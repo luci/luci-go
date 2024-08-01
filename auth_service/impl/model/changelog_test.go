@@ -27,6 +27,10 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/check"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -38,12 +42,9 @@ import (
 	"go.chromium.org/luci/auth_service/api/configspb"
 	"go.chromium.org/luci/auth_service/impl/info"
 	"go.chromium.org/luci/auth_service/testsupport"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func testAuthDBGroupChange(ctx context.Context, target string, changeType ChangeType, authDBRev int64) *AuthDBChange {
+func testAuthDBGroupChange(ctx context.Context, t testing.TB, target string, changeType ChangeType, authDBRev int64) *AuthDBChange {
 	change := &AuthDBChange{
 		Kind:       "AuthDBChange",
 		Parent:     ChangeLogRevisionKey(ctx, authDBRev, false),
@@ -59,11 +60,11 @@ func testAuthDBGroupChange(ctx context.Context, target string, changeType Change
 
 	var err error
 	change.ID, err = ChangeID(ctx, change)
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil)
 	return change
 }
 
-func testAuthDBIPAllowlistChange(ctx context.Context, authDBRev int64) *AuthDBChange {
+func testAuthDBIPAllowlistChange(ctx context.Context, t testing.TB, authDBRev int64) *AuthDBChange {
 	change := &AuthDBChange{
 		Kind:           "AuthDBChange",
 		Parent:         ChangeLogRevisionKey(ctx, authDBRev, false),
@@ -80,11 +81,11 @@ func testAuthDBIPAllowlistChange(ctx context.Context, authDBRev int64) *AuthDBCh
 
 	var err error
 	change.ID, err = ChangeID(ctx, change)
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil)
 	return change
 }
 
-func testAuthDBIPAllowlistAssignmentChange(ctx context.Context, authDBRev int64) *AuthDBChange {
+func testAuthDBIPAllowlistAssignmentChange(ctx context.Context, t testing.TB, authDBRev int64) *AuthDBChange {
 	change := &AuthDBChange{
 		Kind:        "AuthDBChange",
 		Parent:      ChangeLogRevisionKey(ctx, authDBRev, false),
@@ -101,11 +102,11 @@ func testAuthDBIPAllowlistAssignmentChange(ctx context.Context, authDBRev int64)
 
 	var err error
 	change.ID, err = ChangeID(ctx, change)
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil)
 	return change
 }
 
-func testAuthDBConfigChange(ctx context.Context, authDBRev int64) *AuthDBChange {
+func testAuthDBConfigChange(ctx context.Context, t testing.TB, authDBRev int64) *AuthDBChange {
 	change := &AuthDBChange{
 		Kind:              "AuthDBChange",
 		Parent:            ChangeLogRevisionKey(ctx, authDBRev, false),
@@ -122,11 +123,11 @@ func testAuthDBConfigChange(ctx context.Context, authDBRev int64) *AuthDBChange 
 
 	var err error
 	change.ID, err = ChangeID(ctx, change)
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil)
 	return change
 }
 
-func testAuthRealmsGlobalsChange(ctx context.Context, authDBRev int64) *AuthDBChange {
+func testAuthRealmsGlobalsChange(ctx context.Context, t testing.TB, authDBRev int64) *AuthDBChange {
 	change := &AuthDBChange{
 		Kind:             "AuthDBChange",
 		Parent:           ChangeLogRevisionKey(ctx, authDBRev, false),
@@ -142,11 +143,11 @@ func testAuthRealmsGlobalsChange(ctx context.Context, authDBRev int64) *AuthDBCh
 
 	var err error
 	change.ID, err = ChangeID(ctx, change)
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil)
 	return change
 }
 
-func testAuthProjectRealmsChange(ctx context.Context, authDBRev int64) *AuthDBChange {
+func testAuthProjectRealmsChange(ctx context.Context, t testing.TB, authDBRev int64) *AuthDBChange {
 	change := &AuthDBChange{
 		Kind:         "AuthDBChange",
 		Parent:       ChangeLogRevisionKey(ctx, authDBRev, false),
@@ -165,7 +166,7 @@ func testAuthProjectRealmsChange(ctx context.Context, authDBRev int64) *AuthDBCh
 
 	var err error
 	change.ID, err = ChangeID(ctx, change)
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil)
 	return change
 }
 
@@ -173,64 +174,64 @@ func testAuthProjectRealmsChange(ctx context.Context, authDBRev int64) *AuthDBCh
 
 func TestGetAllAuthDBChange(t *testing.T) {
 	t.Parallel()
-	Convey("Testing GetAllAuthDBChange", t, func() {
+	ftt.Run("Testing GetAllAuthDBChange", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 
-		So(datastore.Put(ctx,
-			testAuthDBGroupChange(ctx, "AuthGroup$groupA", ChangeGroupCreated, 1120),
-			testAuthDBGroupChange(ctx, "AuthGroup$groupB", ChangeGroupMembersAdded, 1120),
-			testAuthDBGroupChange(ctx, "AuthGroup$groupB", ChangeGroupMembersAdded, 1136),
-			testAuthDBGroupChange(ctx, "AuthGroup$groupC", ChangeGroupMembersAdded, 1135),
-			testAuthDBGroupChange(ctx, "AuthGroup$groupC", ChangeGroupOwnersChanged, 1110),
-			testAuthDBIPAllowlistChange(ctx, 1120),
-			testAuthDBIPAllowlistAssignmentChange(ctx, 1121),
-			testAuthDBConfigChange(ctx, 1115),
-			testAuthRealmsGlobalsChange(ctx, 1120),
-			testAuthProjectRealmsChange(ctx, 1115),
-		), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx,
+			testAuthDBGroupChange(ctx, t, "AuthGroup$groupA", ChangeGroupCreated, 1120),
+			testAuthDBGroupChange(ctx, t, "AuthGroup$groupB", ChangeGroupMembersAdded, 1120),
+			testAuthDBGroupChange(ctx, t, "AuthGroup$groupB", ChangeGroupMembersAdded, 1136),
+			testAuthDBGroupChange(ctx, t, "AuthGroup$groupC", ChangeGroupMembersAdded, 1135),
+			testAuthDBGroupChange(ctx, t, "AuthGroup$groupC", ChangeGroupOwnersChanged, 1110),
+			testAuthDBIPAllowlistChange(ctx, t, 1120),
+			testAuthDBIPAllowlistAssignmentChange(ctx, t, 1121),
+			testAuthDBConfigChange(ctx, t, 1115),
+			testAuthRealmsGlobalsChange(ctx, t, 1120),
+			testAuthProjectRealmsChange(ctx, t, 1115),
+		), should.BeNil)
 
-		Convey("Sort by key", func() {
+		t.Run("Sort by key", func(t *ftt.Test) {
 			changes, pageToken, err := GetAllAuthDBChange(ctx, "", 0, 5, "")
-			So(err, ShouldBeNil)
-			So(pageToken, ShouldNotBeEmpty)
-			So(changes, ShouldResemble, []*AuthDBChange{
-				testAuthDBGroupChange(ctx, "AuthGroup$groupB", ChangeGroupMembersAdded, 1136),
-				testAuthDBGroupChange(ctx, "AuthGroup$groupC", ChangeGroupMembersAdded, 1135),
-				testAuthDBIPAllowlistAssignmentChange(ctx, 1121),
-				testAuthRealmsGlobalsChange(ctx, 1120),
-				testAuthDBIPAllowlistChange(ctx, 1120),
-			})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, pageToken, should.NotBeEmpty)
+			assert.Loosely(t, changes, should.Resemble([]*AuthDBChange{
+				testAuthDBGroupChange(ctx, t, "AuthGroup$groupB", ChangeGroupMembersAdded, 1136),
+				testAuthDBGroupChange(ctx, t, "AuthGroup$groupC", ChangeGroupMembersAdded, 1135),
+				testAuthDBIPAllowlistAssignmentChange(ctx, t, 1121),
+				testAuthRealmsGlobalsChange(ctx, t, 1120),
+				testAuthDBIPAllowlistChange(ctx, t, 1120),
+			}))
 
 			changes, _, err = GetAllAuthDBChange(ctx, "", 0, 5, pageToken)
-			So(err, ShouldBeNil)
-			So(changes, ShouldResemble, []*AuthDBChange{
-				testAuthDBGroupChange(ctx, "AuthGroup$groupB", ChangeGroupMembersAdded, 1120),
-				testAuthDBGroupChange(ctx, "AuthGroup$groupA", ChangeGroupCreated, 1120),
-				testAuthProjectRealmsChange(ctx, 1115),
-				testAuthDBConfigChange(ctx, 1115),
-				testAuthDBGroupChange(ctx, "AuthGroup$groupC", ChangeGroupOwnersChanged, 1110),
-			})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, changes, should.Resemble([]*AuthDBChange{
+				testAuthDBGroupChange(ctx, t, "AuthGroup$groupB", ChangeGroupMembersAdded, 1120),
+				testAuthDBGroupChange(ctx, t, "AuthGroup$groupA", ChangeGroupCreated, 1120),
+				testAuthProjectRealmsChange(ctx, t, 1115),
+				testAuthDBConfigChange(ctx, t, 1115),
+				testAuthDBGroupChange(ctx, t, "AuthGroup$groupC", ChangeGroupOwnersChanged, 1110),
+			}))
 		})
-		Convey("Filter by target", func() {
+		t.Run("Filter by target", func(t *ftt.Test) {
 			changes, _, err := GetAllAuthDBChange(ctx, "AuthGroup$groupB", 0, 10, "")
-			So(err, ShouldBeNil)
-			So(changes, ShouldResemble, []*AuthDBChange{
-				testAuthDBGroupChange(ctx, "AuthGroup$groupB", ChangeGroupMembersAdded, 1136),
-				testAuthDBGroupChange(ctx, "AuthGroup$groupB", ChangeGroupMembersAdded, 1120),
-			})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, changes, should.Resemble([]*AuthDBChange{
+				testAuthDBGroupChange(ctx, t, "AuthGroup$groupB", ChangeGroupMembersAdded, 1136),
+				testAuthDBGroupChange(ctx, t, "AuthGroup$groupB", ChangeGroupMembersAdded, 1120),
+			}))
 		})
-		Convey("Filter by authDBRev", func() {
+		t.Run("Filter by authDBRev", func(t *ftt.Test) {
 			changes, _, err := GetAllAuthDBChange(ctx, "", 1136, 10, "")
-			So(err, ShouldBeNil)
-			So(changes, ShouldResemble, []*AuthDBChange{
-				testAuthDBGroupChange(ctx, "AuthGroup$groupB", ChangeGroupMembersAdded, 1136),
-			})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, changes, should.Resemble([]*AuthDBChange{
+				testAuthDBGroupChange(ctx, t, "AuthGroup$groupB", ChangeGroupMembersAdded, 1136),
+			}))
 		})
-		Convey("Return error when target is invalid", func() {
+		t.Run("Return error when target is invalid", func(t *ftt.Test) {
 			_, _, err := GetAllAuthDBChange(ctx, "groupname", 0, 10, "")
-			So(err, ShouldErrLike, "Invalid change log target \"groupname\"")
+			assert.Loosely(t, err, should.ErrLike("Invalid change log target \"groupname\""))
 		})
 	})
 }
@@ -238,7 +239,7 @@ func TestGetAllAuthDBChange(t *testing.T) {
 func TestGenerateChanges(t *testing.T) {
 	t.Parallel()
 
-	Convey("GenerateChanges", t, func() {
+	ftt.Run("GenerateChanges", t, func(t *ftt.Test) {
 		ctx := auth.WithState(memory.Use(context.Background()), &authtest.FakeState{
 			Identity:       "user:someone@example.com",
 			IdentityGroups: []string{AdminGroup},
@@ -248,7 +249,7 @@ func TestGenerateChanges(t *testing.T) {
 		ctx = clock.Set(ctx, testclock.New(testCreatedTS))
 		ctx, taskScheduler := tq.TestingContext(txndefer.FilterRDS(ctx), nil)
 
-		So(datastore.Put(ctx, testAuthGroup(ctx, AdminGroup)), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, testAuthGroup(ctx, AdminGroup)), should.BeNil)
 
 		//////////////////////////////////////////////////////////
 		// Helper functions
@@ -259,7 +260,7 @@ func TestGenerateChanges(t *testing.T) {
 			err := datastore.Run(ctx, query, func(change *AuthDBChange) {
 				changes = append(changes, change)
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			return changes
 		}
 
@@ -270,7 +271,9 @@ func TestGenerateChanges(t *testing.T) {
 
 		validateChanges := func(ctx context.Context, msg string, authDBRev int64, actualChanges []*AuthDBChange, expectedChanges []*AuthDBChange) {
 			changeCount := len(expectedChanges)
-			SoMsg(msg, actualChanges, ShouldHaveLength, changeCount)
+			if !check.Loosely(t, actualChanges, should.HaveLength(changeCount)) {
+				t.Fatal(msg)
+			}
 
 			// Check each actual and exxpected changes are similar.
 			for i := 0; i < changeCount; i++ {
@@ -287,21 +290,23 @@ func TestGenerateChanges(t *testing.T) {
 			sort.Slice(actualChanges, func(i, j int) bool {
 				return actualChanges[i].ChangeType < actualChanges[j].ChangeType
 			})
-			SoMsg(msg, getChanges(ctx, authDBRev, false), ShouldResemble, actualChanges)
+			if !check.Loosely(t, getChanges(ctx, authDBRev, false), should.Resemble(actualChanges)) {
+				t.Fatal(msg)
+			}
 		}
 		//////////////////////////////////////////////////////////
 
-		Convey("AuthGroup changes", func() {
-			Convey("AuthGroup Created/Deleted", func() {
+		t.Run("AuthGroup changes", func(t *ftt.Test) {
+			t.Run("AuthGroup Created/Deleted", func(t *ftt.Test) {
 				ag1 := makeAuthGroup(ctx, "group-1")
 				_, err := CreateAuthGroup(ctx, ag1, false, "Go pRPC API", false)
-				So(err, ShouldBeNil)
-				So(taskScheduler.Tasks(), ShouldHaveLength, 2)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(2))
 				actualChanges, err := generateChanges(ctx, 1, false)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				// Check that common fields were set as expected; these fields
 				// are ignored for most other test cases.
-				So(actualChanges, ShouldResembleProto, []*AuthDBChange{{
+				assert.Loosely(t, actualChanges, should.Resemble([]*AuthDBChange{{
 					ID:         "AuthGroup$group-1!1000",
 					Class:      []string{"AuthDBChange", "AuthDBGroupChange"},
 					ChangeType: ChangeGroupCreated,
@@ -314,16 +319,16 @@ func TestGenerateChanges(t *testing.T) {
 					Comment:    "Go pRPC API",
 					AppVersion: "test-version",
 					Owners:     AdminGroup,
-				}})
+				}}))
 				validateChanges(ctx, "create group", 1, actualChanges, []*AuthDBChange{{
 					ChangeType: ChangeGroupCreated,
 					Owners:     AdminGroup,
 				}})
 
-				So(DeleteAuthGroup(ctx, ag1.ID, "", false, "Go pRPC API", false), ShouldBeNil)
-				So(taskScheduler.Tasks(), ShouldHaveLength, 4)
+				assert.Loosely(t, DeleteAuthGroup(ctx, ag1.ID, "", false, "Go pRPC API", false), should.BeNil)
+				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(4))
 				actualChanges, err = generateChanges(ctx, 2, false)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				validateChanges(ctx, "delete group", 2, actualChanges, []*AuthDBChange{{
 					ChangeType: ChangeGroupDeleted,
 					OldOwners:  AdminGroup,
@@ -332,26 +337,26 @@ func TestGenerateChanges(t *testing.T) {
 				// Check calling generateChanges for an already-processed
 				// AuthDB revision does not make duplicate changes.
 				repeated, err := generateChanges(ctx, 2, false)
-				So(err, ShouldBeNil)
-				So(repeated, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, repeated, should.BeNil)
 				// Check the changelog for the revision actually exists.
 				expectedStoredChanges := []*AuthDBChange(actualChanges)
 				sort.Slice(expectedStoredChanges, func(i, j int) bool {
 					return expectedStoredChanges[i].ChangeType < expectedStoredChanges[j].ChangeType
 				})
-				So(getChanges(ctx, 2, false), ShouldResemble, expectedStoredChanges)
+				assert.Loosely(t, getChanges(ctx, 2, false), should.Resemble(expectedStoredChanges))
 			})
 
-			Convey("AuthGroup Owners / Description changed", func() {
+			t.Run("AuthGroup Owners / Description changed", func(t *ftt.Test) {
 				og := makeAuthGroup(ctx, "owning-group")
-				So(datastore.Put(ctx, og), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, og), should.BeNil)
 
 				ag1 := makeAuthGroup(ctx, "group-1")
 				_, err := CreateAuthGroup(ctx, ag1, false, "Go pRPC API", false)
-				So(err, ShouldBeNil)
-				So(taskScheduler.Tasks(), ShouldHaveLength, 2)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(2))
 				actualChanges, err := generateChanges(ctx, 1, false)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				validateChanges(ctx, "create group no owners", 1, actualChanges, []*AuthDBChange{{
 					ChangeType: ChangeGroupCreated,
 					Owners:     AdminGroup,
@@ -360,10 +365,10 @@ func TestGenerateChanges(t *testing.T) {
 				ag1.Owners = og.ID
 				ag1.Description = "test-desc"
 				_, err = UpdateAuthGroup(ctx, ag1, nil, "", false, "Go pRPC API", false)
-				So(err, ShouldBeNil)
-				So(taskScheduler.Tasks(), ShouldHaveLength, 4)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(4))
 				actualChanges, err = generateChanges(ctx, 2, false)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				validateChanges(ctx, "update group owners & desc", 2, actualChanges, []*AuthDBChange{{
 					ChangeType:  ChangeGroupDescriptionChanged,
 					Description: "test-desc",
@@ -375,10 +380,10 @@ func TestGenerateChanges(t *testing.T) {
 
 				ag1.Description = "new-desc"
 				_, err = UpdateAuthGroup(ctx, ag1, nil, "", false, "Go pRPC API", false)
-				So(err, ShouldBeNil)
-				So(taskScheduler.Tasks(), ShouldHaveLength, 6)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(6))
 				actualChanges, err = generateChanges(ctx, 3, false)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				validateChanges(ctx, "update group desc", 3, actualChanges, []*AuthDBChange{{
 					ChangeType:     ChangeGroupDescriptionChanged,
 					Description:    "new-desc",
@@ -386,15 +391,15 @@ func TestGenerateChanges(t *testing.T) {
 				}})
 			})
 
-			Convey("AuthGroup add/remove Members", func() {
+			t.Run("AuthGroup add/remove Members", func(t *ftt.Test) {
 				// Add members in Create
 				ag1 := makeAuthGroup(ctx, "group-1")
 				ag1.Members = []string{"user:someone@example.com"}
 				_, err := CreateAuthGroup(ctx, ag1, false, "Go pRPC API", false)
-				So(err, ShouldBeNil)
-				So(taskScheduler.Tasks(), ShouldHaveLength, 2)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(2))
 				actualChanges, err := generateChanges(ctx, 1, false)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				validateChanges(ctx, "create group +mems", 1, actualChanges, []*AuthDBChange{{
 					ChangeType: ChangeGroupCreated,
 					Owners:     AdminGroup,
@@ -406,10 +411,10 @@ func TestGenerateChanges(t *testing.T) {
 				// Add members to already existing group
 				ag1.Members = append(ag1.Members, "user:another-one@example.com")
 				_, err = UpdateAuthGroup(ctx, ag1, nil, "", false, "Go pRPC API", false)
-				So(err, ShouldBeNil)
-				So(taskScheduler.Tasks(), ShouldHaveLength, 4)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(4))
 				actualChanges, err = generateChanges(ctx, 2, false)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				validateChanges(ctx, "update group +mems", 2, actualChanges, []*AuthDBChange{{
 					ChangeType: ChangeGroupMembersAdded,
 					Members:    []string{"user:another-one@example.com"},
@@ -418,20 +423,20 @@ func TestGenerateChanges(t *testing.T) {
 				// Remove members from existing group
 				ag1.Members = []string{"user:someone@example.com"}
 				_, err = UpdateAuthGroup(ctx, ag1, nil, "", false, "Go pRPC API", false)
-				So(err, ShouldBeNil)
-				So(taskScheduler.Tasks(), ShouldHaveLength, 6)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(6))
 				actualChanges, err = generateChanges(ctx, 3, false)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				validateChanges(ctx, "update group -mems", 3, actualChanges, []*AuthDBChange{{
 					ChangeType: ChangeGroupMembersRemoved,
 					Members:    []string{"user:another-one@example.com"},
 				}})
 
 				// Remove members when deleting group
-				So(DeleteAuthGroup(ctx, ag1.ID, "", false, "Go pRPC API", false), ShouldBeNil)
-				So(taskScheduler.Tasks(), ShouldHaveLength, 8)
+				assert.Loosely(t, DeleteAuthGroup(ctx, ag1.ID, "", false, "Go pRPC API", false), should.BeNil)
+				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(8))
 				actualChanges, err = generateChanges(ctx, 4, false)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				validateChanges(ctx, "delete group -mems", 4, actualChanges, []*AuthDBChange{{
 					ChangeType: ChangeGroupMembersRemoved,
 					Members:    []string{"user:someone@example.com"},
@@ -441,15 +446,15 @@ func TestGenerateChanges(t *testing.T) {
 				}})
 			})
 
-			Convey("AuthGroup add/remove globs", func() {
+			t.Run("AuthGroup add/remove globs", func(t *ftt.Test) {
 				// Add globs in create
 				ag1 := makeAuthGroup(ctx, "group-1")
 				ag1.Globs = []string{"user:*@example.com"}
 				_, err := CreateAuthGroup(ctx, ag1, false, "Go pRPC API", false)
-				So(err, ShouldBeNil)
-				So(taskScheduler.Tasks(), ShouldHaveLength, 2)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(2))
 				actualChanges, err := generateChanges(ctx, 1, false)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				validateChanges(ctx, "create group +globs", 1, actualChanges, []*AuthDBChange{{
 					ChangeType: ChangeGroupCreated,
 					Owners:     AdminGroup,
@@ -461,10 +466,10 @@ func TestGenerateChanges(t *testing.T) {
 				// Add globs to already existing group
 				ag1.Globs = append(ag1.Globs, "user:test-*@test.com")
 				_, err = UpdateAuthGroup(ctx, ag1, nil, "", false, "Go pRPC API", false)
-				So(err, ShouldBeNil)
-				So(taskScheduler.Tasks(), ShouldHaveLength, 4)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(4))
 				actualChanges, err = generateChanges(ctx, 2, false)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				validateChanges(ctx, "update group +globs", 2, actualChanges, []*AuthDBChange{{
 					ChangeType: ChangeGroupGlobsAdded,
 					Globs:      []string{"user:test-*@test.com"},
@@ -472,20 +477,20 @@ func TestGenerateChanges(t *testing.T) {
 
 				ag1.Globs = []string{"user:test-*@test.com"}
 				_, err = UpdateAuthGroup(ctx, ag1, nil, "", false, "Go pRPC API", false)
-				So(err, ShouldBeNil)
-				So(taskScheduler.Tasks(), ShouldHaveLength, 6)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(6))
+				assert.Loosely(t, err, should.BeNil)
 				actualChanges, err = generateChanges(ctx, 3, false)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				validateChanges(ctx, "update group -globs", 3, actualChanges, []*AuthDBChange{{
 					ChangeType: ChangeGroupGlobsRemoved,
 					Globs:      []string{"user:*@example.com"},
 				}})
 
-				So(DeleteAuthGroup(ctx, ag1.ID, "", false, "Go pRPC API", false), ShouldBeNil)
-				So(taskScheduler.Tasks(), ShouldHaveLength, 8)
+				assert.Loosely(t, DeleteAuthGroup(ctx, ag1.ID, "", false, "Go pRPC API", false), should.BeNil)
+				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(8))
 				actualChanges, err = generateChanges(ctx, 4, false)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				validateChanges(ctx, "delete group -globs", 4, actualChanges, []*AuthDBChange{{
 					ChangeType: ChangeGroupGlobsRemoved,
 					Globs:      []string{"user:test-*@test.com"},
@@ -495,19 +500,19 @@ func TestGenerateChanges(t *testing.T) {
 				}})
 			})
 
-			Convey("AuthGroup add/remove nested", func() {
+			t.Run("AuthGroup add/remove nested", func(t *ftt.Test) {
 				ag2 := makeAuthGroup(ctx, "group-2")
 				ag3 := makeAuthGroup(ctx, "group-3")
-				So(datastore.Put(ctx, ag2, ag3), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, ag2, ag3), should.BeNil)
 
 				// Add globs in create
 				ag1 := makeAuthGroup(ctx, "group-1")
 				ag1.Nested = []string{ag2.ID}
 				_, err := CreateAuthGroup(ctx, ag1, false, "Go pRPC API", false)
-				So(err, ShouldBeNil)
-				So(taskScheduler.Tasks(), ShouldHaveLength, 2)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(2))
 				actualChanges, err := generateChanges(ctx, 1, false)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				validateChanges(ctx, "create group +nested", 1, actualChanges, []*AuthDBChange{{
 					ChangeType: ChangeGroupCreated,
 					Owners:     AdminGroup,
@@ -519,10 +524,10 @@ func TestGenerateChanges(t *testing.T) {
 				// Add globs to already existing group
 				ag1.Nested = append(ag1.Nested, ag3.ID)
 				_, err = UpdateAuthGroup(ctx, ag1, nil, "", false, "Go pRPC API", false)
-				So(err, ShouldBeNil)
-				So(taskScheduler.Tasks(), ShouldHaveLength, 4)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(4))
 				actualChanges, err = generateChanges(ctx, 2, false)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				validateChanges(ctx, "update group +nested", 2, actualChanges, []*AuthDBChange{{
 					ChangeType: ChangeGroupNestedAdded,
 					Nested:     []string{"group-3"},
@@ -530,20 +535,20 @@ func TestGenerateChanges(t *testing.T) {
 
 				ag1.Nested = []string{"group-2"}
 				_, err = UpdateAuthGroup(ctx, ag1, nil, "", false, "Go pRPC API", false)
-				So(err, ShouldBeNil)
-				So(taskScheduler.Tasks(), ShouldHaveLength, 6)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(6))
+				assert.Loosely(t, err, should.BeNil)
 				actualChanges, err = generateChanges(ctx, 3, false)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				validateChanges(ctx, "update group -nested", 3, actualChanges, []*AuthDBChange{{
 					ChangeType: ChangeGroupNestedRemoved,
 					Nested:     []string{"group-3"},
 				}})
 
-				So(DeleteAuthGroup(ctx, ag1.ID, "", false, "Go pRPC API", false), ShouldBeNil)
-				So(taskScheduler.Tasks(), ShouldHaveLength, 8)
+				assert.Loosely(t, DeleteAuthGroup(ctx, ag1.ID, "", false, "Go pRPC API", false), should.BeNil)
+				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(8))
 				actualChanges, err = generateChanges(ctx, 4, false)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				validateChanges(ctx, "delete group -nested", 4, actualChanges, []*AuthDBChange{{
 					ChangeType: ChangeGroupNestedRemoved,
 					Nested:     []string{"group-2"},
@@ -554,15 +559,15 @@ func TestGenerateChanges(t *testing.T) {
 			})
 		})
 
-		Convey("AuthIPAllowlist changes", func() {
-			Convey("AuthIPAllowlist Created/Deleted +/- subnets", func() {
+		t.Run("AuthIPAllowlist changes", func(t *ftt.Test) {
+			t.Run("AuthIPAllowlist Created/Deleted +/- subnets", func(t *ftt.Test) {
 				// Creation with no subnet
 				baseSubnetMap := make(map[string][]string)
 				baseSubnetMap["test-allowlist-1"] = []string{}
-				So(updateAllAuthIPAllowlists(ctx, baseSubnetMap, false, "Go pRPC API"), ShouldBeNil)
-				So(taskScheduler.Tasks(), ShouldHaveLength, 2)
+				assert.Loosely(t, updateAllAuthIPAllowlists(ctx, baseSubnetMap, false, "Go pRPC API"), should.BeNil)
+				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(2))
 				actualChanges, err := generateChanges(ctx, 1, false)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				validateChanges(ctx, "create allowlist", 1, actualChanges, []*AuthDBChange{{
 					ChangeType:  ChangeIPALCreated,
 					Description: "Imported from ip_allowlist.cfg",
@@ -570,10 +575,10 @@ func TestGenerateChanges(t *testing.T) {
 
 				// Deletion with no subnet
 				baseSubnetMap = map[string][]string{}
-				So(updateAllAuthIPAllowlists(ctx, baseSubnetMap, false, "Go pRPC API"), ShouldBeNil)
-				So(taskScheduler.Tasks(), ShouldHaveLength, 4)
+				assert.Loosely(t, updateAllAuthIPAllowlists(ctx, baseSubnetMap, false, "Go pRPC API"), should.BeNil)
+				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(4))
 				actualChanges, err = generateChanges(ctx, 2, false)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				validateChanges(ctx, "delete allowlist", 2, actualChanges, []*AuthDBChange{{
 					ChangeType:     ChangeIPALDeleted,
 					OldDescription: "Imported from ip_allowlist.cfg",
@@ -581,10 +586,10 @@ func TestGenerateChanges(t *testing.T) {
 
 				// Creation with subnets
 				baseSubnetMap["test-allowlist-1"] = []string{"123.4.5.6"}
-				So(updateAllAuthIPAllowlists(ctx, baseSubnetMap, false, "Go pRPC API"), ShouldBeNil)
-				So(taskScheduler.Tasks(), ShouldHaveLength, 6)
+				assert.Loosely(t, updateAllAuthIPAllowlists(ctx, baseSubnetMap, false, "Go pRPC API"), should.BeNil)
+				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(6))
 				actualChanges, err = generateChanges(ctx, 3, false)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				validateChanges(ctx, "create allowlist w/ subnet", 3, actualChanges, []*AuthDBChange{{
 					ChangeType:  ChangeIPALCreated,
 					Description: "Imported from ip_allowlist.cfg",
@@ -595,10 +600,10 @@ func TestGenerateChanges(t *testing.T) {
 
 				// Add subnet
 				baseSubnetMap["test-allowlist-1"] = append(baseSubnetMap["test-allowlist-1"], "567.8.9.10")
-				So(updateAllAuthIPAllowlists(ctx, baseSubnetMap, false, "Go pRPC API"), ShouldBeNil)
-				So(taskScheduler.Tasks(), ShouldHaveLength, 8)
+				assert.Loosely(t, updateAllAuthIPAllowlists(ctx, baseSubnetMap, false, "Go pRPC API"), should.BeNil)
+				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(8))
 				actualChanges, err = generateChanges(ctx, 4, false)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				validateChanges(ctx, "add subnet", 4, actualChanges, []*AuthDBChange{{
 					ChangeType: ChangeIPALSubnetsAdded,
 					Subnets:    []string{"567.8.9.10"},
@@ -606,10 +611,10 @@ func TestGenerateChanges(t *testing.T) {
 
 				// Remove subnet
 				baseSubnetMap["test-allowlist-1"] = baseSubnetMap["test-allowlist-1"][1:]
-				So(updateAllAuthIPAllowlists(ctx, baseSubnetMap, false, "Go pRPC API"), ShouldBeNil)
-				So(taskScheduler.Tasks(), ShouldHaveLength, 10)
+				assert.Loosely(t, updateAllAuthIPAllowlists(ctx, baseSubnetMap, false, "Go pRPC API"), should.BeNil)
+				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(10))
 				actualChanges, err = generateChanges(ctx, 5, false)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				validateChanges(ctx, "remove subnet", 5, actualChanges, []*AuthDBChange{{
 					ChangeType: ChangeIPALSubnetsRemoved,
 					Subnets:    []string{"123.4.5.6"},
@@ -617,10 +622,10 @@ func TestGenerateChanges(t *testing.T) {
 
 				// Delete allowlist with subnet
 				baseSubnetMap = map[string][]string{}
-				So(updateAllAuthIPAllowlists(ctx, baseSubnetMap, false, "Go pRPC API"), ShouldBeNil)
-				So(taskScheduler.Tasks(), ShouldHaveLength, 12)
+				assert.Loosely(t, updateAllAuthIPAllowlists(ctx, baseSubnetMap, false, "Go pRPC API"), should.BeNil)
+				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(12))
 				actualChanges, err = generateChanges(ctx, 6, false)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				validateChanges(ctx, "delete allowlist w/ subnet", 6, actualChanges, []*AuthDBChange{{
 					ChangeType:     ChangeIPALDeleted,
 					OldDescription: "Imported from ip_allowlist.cfg",
@@ -630,22 +635,22 @@ func TestGenerateChanges(t *testing.T) {
 				}})
 			})
 
-			Convey("AuthIPAllowlist description changed", func() {
+			t.Run("AuthIPAllowlist description changed", func(t *ftt.Test) {
 				baseSubnetMap := make(map[string][]string)
 				baseSubnetMap["test-allowlist-1"] = []string{}
-				So(updateAllAuthIPAllowlists(ctx, baseSubnetMap, false, "Go pRPC API"), ShouldBeNil)
-				So(taskScheduler.Tasks(), ShouldHaveLength, 2)
+				assert.Loosely(t, updateAllAuthIPAllowlists(ctx, baseSubnetMap, false, "Go pRPC API"), should.BeNil)
+				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(2))
 				_, err := generateChanges(ctx, 1, false)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				al, err := GetAuthIPAllowlist(ctx, "test-allowlist-1")
-				So(err, ShouldBeNil)
-				So(runAuthDBChange(ctx, "test for AuthIPAllowlist changelog", func(ctx context.Context, cae commitAuthEntity) error {
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, runAuthDBChange(ctx, "test for AuthIPAllowlist changelog", func(ctx context.Context, cae commitAuthEntity) error {
 					al.Description = "new-desc"
 					return cae(al, clock.Now(ctx).UTC(), auth.CurrentIdentity(ctx), false)
-				}), ShouldBeNil)
+				}), should.BeNil)
 				actualChanges, err := generateChanges(ctx, 2, false)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				validateChanges(ctx, "change description", 2, actualChanges, []*AuthDBChange{{
 					ChangeType:     ChangeIPALDescriptionChanged,
 					Description:    "new-desc",
@@ -654,18 +659,18 @@ func TestGenerateChanges(t *testing.T) {
 			})
 		})
 
-		Convey("AuthGlobalConfig changes", func() {
-			Convey("AuthGlobalConfig ClientID/ClientSecret mismatch", func() {
+		t.Run("AuthGlobalConfig changes", func(t *ftt.Test) {
+			t.Run("AuthGlobalConfig ClientID/ClientSecret mismatch", func(t *ftt.Test) {
 				baseCfg := &configspb.OAuthConfig{
 					PrimaryClientId:     "test-client-id",
 					PrimaryClientSecret: "test-client-secret",
 				}
 
 				// Old doesn't exist yet
-				So(updateAuthGlobalConfig(ctx, baseCfg, nil, false, "Go pRPC API"), ShouldBeNil)
-				So(taskScheduler.Tasks(), ShouldHaveLength, 2)
+				assert.Loosely(t, updateAuthGlobalConfig(ctx, baseCfg, nil, false, "Go pRPC API"), should.BeNil)
+				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(2))
 				actualChanges, err := generateChanges(ctx, 1, false)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				validateChanges(ctx, "update config with no old config present", 1, actualChanges, []*AuthDBChange{{
 					ChangeType:        ChangeConfOauthClientChanged,
 					OauthClientID:     "test-client-id",
@@ -675,25 +680,25 @@ func TestGenerateChanges(t *testing.T) {
 				newCfg := &configspb.OAuthConfig{
 					PrimaryClientId: "diff-client-id",
 				}
-				So(updateAuthGlobalConfig(ctx, newCfg, nil, false, "Go pRPC API"), ShouldBeNil)
-				So(taskScheduler.Tasks(), ShouldHaveLength, 4)
+				assert.Loosely(t, updateAuthGlobalConfig(ctx, newCfg, nil, false, "Go pRPC API"), should.BeNil)
+				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(4))
 				actualChanges, err = generateChanges(ctx, 2, false)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				validateChanges(ctx, "update config with client id changed", 2, actualChanges, []*AuthDBChange{{
 					ChangeType:    ChangeConfOauthClientChanged,
 					OauthClientID: "diff-client-id",
 				}})
 			})
 
-			Convey("AuthGlobalConfig additional +/- ClientID's", func() {
+			t.Run("AuthGlobalConfig additional +/- ClientID's", func(t *ftt.Test) {
 				baseCfg := &configspb.OAuthConfig{
 					ClientIds: []string{"test.example.com"},
 				}
 
-				So(updateAuthGlobalConfig(ctx, baseCfg, nil, false, "Go pRPC API"), ShouldBeNil)
-				So(taskScheduler.Tasks(), ShouldHaveLength, 2)
+				assert.Loosely(t, updateAuthGlobalConfig(ctx, baseCfg, nil, false, "Go pRPC API"), should.BeNil)
+				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(2))
 				actualChanges, err := generateChanges(ctx, 1, false)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				validateChanges(ctx, "update config with client ids, old config not present", 1, actualChanges, []*AuthDBChange{{
 					ChangeType:               ChangeConfClientIDsAdded,
 					OauthAdditionalClientIDs: []string{"test.example.com"},
@@ -702,10 +707,10 @@ func TestGenerateChanges(t *testing.T) {
 				newCfg := &configspb.OAuthConfig{
 					ClientIds: []string{"not-test.example.com"},
 				}
-				So(updateAuthGlobalConfig(ctx, newCfg, nil, false, "Go pRPC API"), ShouldBeNil)
-				So(taskScheduler.Tasks(), ShouldHaveLength, 4)
+				assert.Loosely(t, updateAuthGlobalConfig(ctx, newCfg, nil, false, "Go pRPC API"), should.BeNil)
+				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(4))
 				actualChanges, err = generateChanges(ctx, 2, false)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				validateChanges(ctx, "update config with client id added and client id removed, old config is present",
 					2, actualChanges, []*AuthDBChange{{
 						ChangeType:               ChangeConfClientIDsAdded,
@@ -716,30 +721,30 @@ func TestGenerateChanges(t *testing.T) {
 					}})
 			})
 
-			Convey("AuthGlobalConfig TokenServerURL change", func() {
+			t.Run("AuthGlobalConfig TokenServerURL change", func(t *ftt.Test) {
 				baseCfg := &configspb.OAuthConfig{
 					TokenServerUrl: "test-token-server-url.example.com",
 				}
 
-				So(updateAuthGlobalConfig(ctx, baseCfg, nil, false, "Go pRPC API"), ShouldBeNil)
-				So(taskScheduler.Tasks(), ShouldHaveLength, 2)
+				assert.Loosely(t, updateAuthGlobalConfig(ctx, baseCfg, nil, false, "Go pRPC API"), should.BeNil)
+				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(2))
 				actualChanges, err := generateChanges(ctx, 1, false)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				validateChanges(ctx, "update config with token server url, old config not present", 1, actualChanges, []*AuthDBChange{{
 					ChangeType:        ChangeConfTokenServerURLChanged,
 					TokenServerURLNew: "test-token-server-url.example.com",
 				}})
 			})
 
-			Convey("AuthGlobalConfig Security Config change", func() {
+			t.Run("AuthGlobalConfig Security Config change", func(t *ftt.Test) {
 				baseCfg := &configspb.OAuthConfig{}
 				secCfg := &protocol.SecurityConfig{
 					InternalServiceRegexp: []string{"abc"},
 				}
-				So(updateAuthGlobalConfig(ctx, baseCfg, secCfg, false, "Go pRPC API"), ShouldBeNil)
-				So(taskScheduler.Tasks(), ShouldHaveLength, 2)
+				assert.Loosely(t, updateAuthGlobalConfig(ctx, baseCfg, secCfg, false, "Go pRPC API"), should.BeNil)
+				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(2))
 				actualChanges, err := generateChanges(ctx, 1, false)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				expectedNewConfig, _ := proto.Marshal(secCfg)
 				validateChanges(ctx, "update config with security config, old config not present", 1, actualChanges, []*AuthDBChange{{
 					ChangeType:        ChangeConfSecurityConfigChanged,
@@ -751,10 +756,10 @@ func TestGenerateChanges(t *testing.T) {
 				}
 				expectedOldConfig := expectedNewConfig
 				expectedNewConfig, _ = proto.Marshal(secCfg)
-				So(updateAuthGlobalConfig(ctx, baseCfg, secCfg, false, "Go pRPC API"), ShouldBeNil)
-				So(taskScheduler.Tasks(), ShouldHaveLength, 4)
+				assert.Loosely(t, updateAuthGlobalConfig(ctx, baseCfg, secCfg, false, "Go pRPC API"), should.BeNil)
+				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(4))
 				actualChanges, err = generateChanges(ctx, 2, false)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				validateChanges(ctx, "update config with security config, old config present", 2, actualChanges, []*AuthDBChange{{
 					ChangeType:        ChangeConfSecurityConfigChanged,
 					SecurityConfigNew: expectedNewConfig,
@@ -762,7 +767,7 @@ func TestGenerateChanges(t *testing.T) {
 				}})
 			})
 
-			Convey("AuthGlobalConfig all changes at once", func() {
+			t.Run("AuthGlobalConfig all changes at once", func(t *ftt.Test) {
 				baseCfg := &configspb.OAuthConfig{
 					PrimaryClientId:     "test-client-id",
 					PrimaryClientSecret: "test-client-secret",
@@ -773,10 +778,10 @@ func TestGenerateChanges(t *testing.T) {
 					InternalServiceRegexp: []string{"test"},
 				}
 				expectedNewConfig, _ := proto.Marshal(secCfg)
-				So(updateAuthGlobalConfig(ctx, baseCfg, secCfg, false, "Go pRPC API"), ShouldBeNil)
-				So(taskScheduler.Tasks(), ShouldHaveLength, 2)
+				assert.Loosely(t, updateAuthGlobalConfig(ctx, baseCfg, secCfg, false, "Go pRPC API"), should.BeNil)
+				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(2))
 				actualChanges, err := generateChanges(ctx, 1, false)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				validateChanges(ctx, "all changes at once, old config not present", 1, actualChanges, []*AuthDBChange{{
 					ChangeType:        ChangeConfOauthClientChanged,
 					OauthClientID:     "test-client-id",
@@ -794,7 +799,7 @@ func TestGenerateChanges(t *testing.T) {
 			})
 		})
 
-		Convey("AuthProjectRealms changes", func() {
+		t.Run("AuthProjectRealms changes", func(t *ftt.Test) {
 			proj1Realms := &protocol.Realms{
 				Permissions: makeTestPermissions("luci.dev.p2", "luci.dev.z", "luci.dev.p1"),
 				Realms: []*protocol.Realm{
@@ -823,9 +828,9 @@ func TestGenerateChanges(t *testing.T) {
 				},
 			}
 			err := updateAuthProjectRealms(ctx, expandedRealms, "permissions.cfg:abc", false, "Go pRPC API")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			Convey("project realms created", func() {
+			t.Run("project realms created", func(t *ftt.Test) {
 				expandedRealms := []*ExpandedRealms{
 					{
 						CfgRev: &RealmsCfgRev{
@@ -837,10 +842,10 @@ func TestGenerateChanges(t *testing.T) {
 				}
 
 				err := updateAuthProjectRealms(ctx, expandedRealms, "permissions.cfg:abc", false, "Go pRPC API")
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				actualChanges, err := generateChanges(ctx, 2, false)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				validateChanges(ctx, "project realms created", 2, actualChanges, []*AuthDBChange{{
 					ChangeType:   ChangeProjectRealmsCreated,
 					ConfigRevNew: "1",
@@ -848,12 +853,12 @@ func TestGenerateChanges(t *testing.T) {
 				}})
 			})
 
-			Convey("project realms deleted", func() {
+			t.Run("project realms deleted", func(t *ftt.Test) {
 				err = deleteAuthProjectRealms(ctx, "proj1", false, "Go pRPC API")
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				actualChanges, err := generateChanges(ctx, 2, false)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				validateChanges(ctx, "project realms removed", 2, actualChanges, []*AuthDBChange{{
 					ChangeType:   ChangeProjectRealmsRemoved,
 					ConfigRevOld: "10001",
@@ -861,7 +866,7 @@ func TestGenerateChanges(t *testing.T) {
 				}})
 			})
 
-			Convey("project config superficially changed", func() {
+			t.Run("project config superficially changed", func(t *ftt.Test) {
 				// New config revision, but the resulting realms are identical.
 				updatedExpandedRealms := []*ExpandedRealms{
 					{
@@ -874,14 +879,14 @@ func TestGenerateChanges(t *testing.T) {
 					},
 				}
 				err = updateAuthProjectRealms(ctx, updatedExpandedRealms, "permissions.cfg:abc", false, "Go pRPC API")
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				actualChanges, err := generateChanges(ctx, 2, false)
-				So(err, ShouldBeNil)
-				So(actualChanges, ShouldBeEmpty)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, actualChanges, should.BeEmpty)
 			})
 
-			Convey("project config revision changed", func() {
+			t.Run("project config revision changed", func(t *ftt.Test) {
 				updatedExpandedRealms := []*ExpandedRealms{
 					{
 						CfgRev: &RealmsCfgRev{
@@ -893,10 +898,10 @@ func TestGenerateChanges(t *testing.T) {
 					},
 				}
 				err = updateAuthProjectRealms(ctx, updatedExpandedRealms, "permissions.cfg:abc", false, "Go pRPC API")
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				actualChanges, err := generateChanges(ctx, 2, false)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				validateChanges(ctx, "project realms changed", 2, actualChanges, []*AuthDBChange{{
 					ChangeType:   ChangeProjectRealmsChanged,
 					ConfigRevOld: "10001",
@@ -904,7 +909,7 @@ func TestGenerateChanges(t *testing.T) {
 				}})
 			})
 
-			Convey("realms changed but revisions identical", func() {
+			t.Run("realms changed but revisions identical", func(t *ftt.Test) {
 				updatedExpandedRealms := []*ExpandedRealms{
 					{
 						CfgRev: &RealmsCfgRev{
@@ -916,10 +921,10 @@ func TestGenerateChanges(t *testing.T) {
 					},
 				}
 				err = updateAuthProjectRealms(ctx, updatedExpandedRealms, "permissions.cfg:abc", false, "Go pRPC API")
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				actualChanges, err := generateChanges(ctx, 2, false)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				validateChanges(ctx, "project realms changed", 2, actualChanges, []*AuthDBChange{{
 					ChangeType:   ChangeProjectRealmsChanged,
 					ConfigRevOld: "10001",
@@ -927,7 +932,7 @@ func TestGenerateChanges(t *testing.T) {
 				}})
 			})
 
-			Convey("both project config and permissions config changed", func() {
+			t.Run("both project config and permissions config changed", func(t *ftt.Test) {
 				updatedProj1Realms := &protocol.Realms{
 					Permissions: makeTestPermissions("luci.dev.p2", "luci.dev.p1"),
 					Realms: []*protocol.Realm{
@@ -954,10 +959,10 @@ func TestGenerateChanges(t *testing.T) {
 					},
 				}
 				err = updateAuthProjectRealms(ctx, updatedExpandedRealms, "permissions.cfg:def", false, "Go pRPC API")
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				actualChanges, err := generateChanges(ctx, 2, false)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				validateChanges(ctx, "project realms changed and reevaluated", 2, actualChanges, []*AuthDBChange{
 					{
 						ChangeType:   ChangeProjectRealmsChanged,
@@ -973,8 +978,8 @@ func TestGenerateChanges(t *testing.T) {
 			})
 		})
 
-		Convey("AuthRealmsGlobals changes", func() {
-			Convey("v1 permissions", func() {
+		t.Run("AuthRealmsGlobals changes", func(t *ftt.Test) {
+			t.Run("v1 permissions", func(t *ftt.Test) {
 				// Helper function to mimic AuthRealmsGlobals being
 				// updated by Auth Service v1.
 				updateAuthRealmsGlobalsV1Perms := func(ctx context.Context, permissions []*protocol.Permission) error {
@@ -1002,23 +1007,23 @@ func TestGenerateChanges(t *testing.T) {
 				}
 
 				// Add permissions when there's no config.
-				So(updateAuthRealmsGlobalsV1Perms(ctx, []*protocol.Permission{
+				assert.Loosely(t, updateAuthRealmsGlobalsV1Perms(ctx, []*protocol.Permission{
 					{Name: "test.perm.create"},
 					{Name: "test.perm.edit"},
-				}), ShouldBeNil)
+				}), should.BeNil)
 				actualChanges, err := generateChanges(ctx, 1, false)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				validateChanges(ctx, "update realms globals, old config not present", 1, actualChanges, []*AuthDBChange{{
 					ChangeType:       ChangeRealmsGlobalsChanged,
 					PermissionsAdded: []string{"test.perm.create", "test.perm.edit"},
 				}})
 
 				// Modify the existing permissions.
-				So(updateAuthRealmsGlobalsV1Perms(ctx, []*protocol.Permission{
+				assert.Loosely(t, updateAuthRealmsGlobalsV1Perms(ctx, []*protocol.Permission{
 					{Name: "test.perm.create", Internal: true},
-				}), ShouldBeNil)
+				}), should.BeNil)
 				actualChanges, err = generateChanges(ctx, 2, false)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				validateChanges(ctx, "update realms globals, old config present", 2, actualChanges, []*AuthDBChange{{
 					ChangeType:         ChangeRealmsGlobalsChanged,
 					PermissionsChanged: []string{"test.perm.create"},
@@ -1026,19 +1031,19 @@ func TestGenerateChanges(t *testing.T) {
 				}})
 
 				// Add a permission to the existing permissions.
-				So(updateAuthRealmsGlobalsV1Perms(ctx, []*protocol.Permission{
+				assert.Loosely(t, updateAuthRealmsGlobalsV1Perms(ctx, []*protocol.Permission{
 					{Name: "test.perm.create", Internal: true},
 					{Name: "test.perm.edit"},
-				}), ShouldBeNil)
+				}), should.BeNil)
 				actualChanges, err = generateChanges(ctx, 3, false)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				validateChanges(ctx, "add perm to realms globals, old config present", 3, actualChanges, []*AuthDBChange{{
 					ChangeType:       ChangeRealmsGlobalsChanged,
 					PermissionsAdded: []string{"test.perm.edit"},
 				}})
 			})
 
-			Convey("v2 permissions", func() {
+			t.Run("v2 permissions", func(t *ftt.Test) {
 				permCfg := &configspb.PermissionsConfig{
 					Role: []*configspb.PermissionsConfig_Role{
 						{
@@ -1059,10 +1064,10 @@ func TestGenerateChanges(t *testing.T) {
 						},
 					},
 				}
-				So(updateAuthRealmsGlobals(ctx, permCfg, false, "Go pRPC API"), ShouldBeNil)
-				So(taskScheduler.Tasks(), ShouldHaveLength, 2)
+				assert.Loosely(t, updateAuthRealmsGlobals(ctx, permCfg, false, "Go pRPC API"), should.BeNil)
+				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(2))
 				actualChanges, err := generateChanges(ctx, 1, false)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				validateChanges(ctx, "update realms globals, old config not present", 1, actualChanges, []*AuthDBChange{{
 					ChangeType:       ChangeRealmsGlobalsChanged,
 					PermissionsAdded: []string{"test.perm.create", "test.perm.edit"},
@@ -1081,10 +1086,10 @@ func TestGenerateChanges(t *testing.T) {
 						},
 					},
 				}
-				So(updateAuthRealmsGlobals(ctx, permCfg, false, "Go pRPC API"), ShouldBeNil)
-				So(taskScheduler.Tasks(), ShouldHaveLength, 4)
+				assert.Loosely(t, updateAuthRealmsGlobals(ctx, permCfg, false, "Go pRPC API"), should.BeNil)
+				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(4))
 				actualChanges, err = generateChanges(ctx, 2, false)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				validateChanges(ctx, "update realms globals, old config present", 2, actualChanges, []*AuthDBChange{{
 					ChangeType:         ChangeRealmsGlobalsChanged,
 					PermissionsChanged: []string{"test.perm.create"},
@@ -1111,10 +1116,10 @@ func TestGenerateChanges(t *testing.T) {
 						},
 					},
 				}
-				So(updateAuthRealmsGlobals(ctx, permCfg, false, "Go pRPC API"), ShouldBeNil)
-				So(taskScheduler.Tasks(), ShouldHaveLength, 6)
+				assert.Loosely(t, updateAuthRealmsGlobals(ctx, permCfg, false, "Go pRPC API"), should.BeNil)
+				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(6))
 				actualChanges, err = generateChanges(ctx, 3, false)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				validateChanges(ctx, "add perm to realms globals, old config present", 3, actualChanges, []*AuthDBChange{{
 					ChangeType:         ChangeRealmsGlobalsChanged,
 					PermissionsAdded:   []string{"test.perm.edit"},
@@ -1123,82 +1128,82 @@ func TestGenerateChanges(t *testing.T) {
 			})
 		})
 
-		Convey("Changelog generation cascades", func() {
+		t.Run("Changelog generation cascades", func(t *ftt.Test) {
 			// Create and add 3 AuthGroups.
 			groupNames := []string{"group-1", "group-2", "group-3"}
 			for _, groupName := range groupNames {
 				ag := makeAuthGroup(ctx, groupName)
 				_, err := CreateAuthGroup(ctx, ag, false, "Go pRPC API", false)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			}
 			// There should be a changelog task and replication task for
 			// each group.
-			So(taskScheduler.Tasks(), ShouldHaveLength, 6)
+			assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(6))
 
 			actualChanges, err := generateChanges(ctx, 1, false)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			validateChanges(ctx, "created first group in cascade test", 1, actualChanges, []*AuthDBChange{{
 				ChangeType: ChangeGroupCreated,
 				Owners:     AdminGroup,
 			}})
 			// First change has no prior revision, so a task should not
 			// have been added.
-			So(taskScheduler.Tasks(), ShouldHaveLength, 6)
+			assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(6))
 
 			actualChanges, err = generateChanges(ctx, 3, false)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			validateChanges(ctx, "created third group in cascade test", 3, actualChanges, []*AuthDBChange{{
 				ChangeType: ChangeGroupCreated,
 				Owners:     AdminGroup,
 			}})
 			// Changelog for rev 2 has not been generated yet, so there
 			// should be an added task.
-			So(taskScheduler.Tasks(), ShouldHaveLength, 7)
+			assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(7))
 
 			actualChanges, err = generateChanges(ctx, 2, false)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			validateChanges(ctx, "created second group in cascade test", 2, actualChanges, []*AuthDBChange{{
 				ChangeType: ChangeGroupCreated,
 				Owners:     AdminGroup,
 			}})
 			// Changelog for rev 1 has already been generated, so a task
 			// should not have been added.
-			So(taskScheduler.Tasks(), ShouldHaveLength, 7)
+			assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(7))
 		})
 
-		Convey("dry run of changelog generation works", func() {
+		t.Run("dry run of changelog generation works", func(t *ftt.Test) {
 			agDryRun := makeAuthGroup(ctx, "group-dry-run")
 			_, err := CreateAuthGroup(ctx, agDryRun, false, "Go pRPC API", false)
-			So(err, ShouldBeNil)
-			So(taskScheduler.Tasks(), ShouldHaveLength, 2)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(2))
 			_, err = generateChanges(ctx, 1, true)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// Check the changelog was created in dry run mode.
 			actualChanges := getChanges(ctx, 1, true)
-			So(actualChanges, ShouldHaveLength, 1)
-			So(actualChanges[0].Kind, ShouldEqual, "V2AuthDBChange")
-			So(actualChanges[0].Parent, ShouldEqual, ChangeLogRevisionKey(ctx, 1, true))
-			So(actualChanges[0].ChangeType, ShouldEqual, ChangeGroupCreated)
-			So(actualChanges[0].Owners, ShouldEqual, AdminGroup)
+			assert.Loosely(t, actualChanges, should.HaveLength(1))
+			assert.Loosely(t, actualChanges[0].Kind, should.Equal("V2AuthDBChange"))
+			assert.Loosely(t, actualChanges[0].Parent, should.Resemble(ChangeLogRevisionKey(ctx, 1, true)))
+			assert.Loosely(t, actualChanges[0].ChangeType, should.Equal(ChangeGroupCreated))
+			assert.Loosely(t, actualChanges[0].Owners, should.Equal(AdminGroup))
 
 			// Check there were no changes written with dry run mode off.
-			So(getChanges(ctx, 1, false), ShouldBeEmpty)
+			assert.Loosely(t, getChanges(ctx, 1, false), should.BeEmpty)
 		})
 	})
 }
 
 func TestPropertyMapHelpers(t *testing.T) {
-	Convey("getStringSliceProp robustly returns strings", t, func() {
+	ftt.Run("getStringSliceProp robustly returns strings", t, func(t *ftt.Test) {
 		pm := datastore.PropertyMap{}
 		pm["testField"] = datastore.PropertySlice{
 			datastore.MkPropertyNI([]byte("test data first entry")),
 			datastore.MkPropertyNI("test data second entry"),
 		}
 
-		So(getStringSliceProp(pm, "testField"), ShouldEqual, []string{
+		assert.Loosely(t, getStringSliceProp(pm, "testField"), should.Resemble([]string{
 			"test data first entry",
 			"test data second entry",
-		})
+		}))
 	})
 }
