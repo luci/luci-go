@@ -17,21 +17,68 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
+import {
+  emptyPageTokenUpdater,
+  getPageToken,
+  usePagerContext,
+} from './context';
 import { ParamsPager } from './params_pager';
-import { getPageToken } from './params_pager_utils';
 
-const ParamsPagerTestContainer = () => {
-  const [searchParams, _] = useSyncedSearchParams();
-  const pageToken = getPageToken(searchParams);
+function NavigationTestContainer() {
+  const pagerCtx = usePagerContext({
+    pageSizeOptions: [25, 50, 100, 200],
+    defaultPageSize: 50,
+  });
+  const [searchParams] = useSyncedSearchParams();
+  const pageToken = getPageToken(pagerCtx, searchParams);
   const nextPageToken =
     { '': 'page2', page2: 'page3', page3: '' }[pageToken] || '';
-  return <ParamsPager nextPageToken={nextPageToken} />;
-};
+  return <ParamsPager pagerCtx={pagerCtx} nextPageToken={nextPageToken} />;
+}
+
+function MultiplePagersTestContainer() {
+  const pagerCtx = usePagerContext({
+    pageSizeOptions: [25, 50, 100, 200],
+    defaultPageSize: 50,
+  });
+  const [searchParams] = useSyncedSearchParams();
+  const pageToken = getPageToken(pagerCtx, searchParams);
+  const nextPageToken =
+    { '': 'page2', page2: 'page3', page3: '' }[pageToken] || '';
+  return (
+    <>
+      <ParamsPager pagerCtx={pagerCtx} nextPageToken={nextPageToken} />
+      <ParamsPager pagerCtx={pagerCtx} nextPageToken={nextPageToken} />
+    </>
+  );
+}
+
+function EmptyPageTokenTestContainer() {
+  const pagerCtx = usePagerContext({
+    pageSizeOptions: [25, 50, 100, 200],
+    defaultPageSize: 50,
+  });
+  const [searchParams, setSearchParams] = useSyncedSearchParams();
+  const pageToken = getPageToken(pagerCtx, searchParams);
+  const nextPageToken =
+    { '': 'page2', page2: 'page3', page3: '' }[pageToken] || '';
+
+  return (
+    <>
+      <ParamsPager pagerCtx={pagerCtx} nextPageToken={nextPageToken} />
+      <button
+        data-testid="empty-button"
+        onClick={() => setSearchParams(emptyPageTokenUpdater(pagerCtx))}
+      />
+    </>
+  );
+}
+
 describe('ParamsPager', () => {
   it('should navigate between pages properly', async () => {
     render(
       <FakeContextProvider>
-        <ParamsPagerTestContainer />
+        <NavigationTestContainer />
       </FakeContextProvider>,
     );
 
@@ -60,6 +107,114 @@ describe('ParamsPager', () => {
     expect(nextPageLink).toHaveAttribute('href', '/?cursor=page3');
 
     fireEvent.click(prevPageLink);
+    expect(prevPageLink).toHaveAttribute('aria-disabled', 'true');
+    expect(nextPageLink).not.toHaveAttribute('aria-disabled', 'true');
+    expect(nextPageLink).toHaveAttribute('href', '/?cursor=page2');
+  });
+
+  it('allows users to go back to the first page when initial page token is provided', async () => {
+    render(
+      <FakeContextProvider
+        routerOptions={{ initialEntries: ['?cursor=page3'] }}
+      >
+        <NavigationTestContainer />
+      </FakeContextProvider>,
+    );
+
+    const prevPageLink = screen.getByText('Previous Page');
+    const nextPageLink = screen.getByText('Next Page');
+
+    expect(prevPageLink).not.toHaveAttribute('aria-disabled', 'true');
+    expect(prevPageLink).toHaveAttribute('href', '/');
+    expect(nextPageLink).toHaveAttribute('aria-disabled', 'true');
+
+    fireEvent.click(prevPageLink);
+    expect(prevPageLink).toHaveAttribute('aria-disabled', 'true');
+    expect(nextPageLink).not.toHaveAttribute('aria-disabled', 'true');
+    expect(nextPageLink).toHaveAttribute('href', '/?cursor=page2');
+  });
+
+  it('should navigate between pages properly when there are multiple pagers', async () => {
+    render(
+      <FakeContextProvider>
+        <MultiplePagersTestContainer />
+      </FakeContextProvider>,
+    );
+
+    const [prevPageLink1, prevPageLink2] = screen.getAllByText('Previous Page');
+    const [nextPageLink1, nextPageLink2] = screen.getAllByText('Next Page');
+
+    expect(prevPageLink1).toHaveAttribute('aria-disabled', 'true');
+    expect(prevPageLink2).toHaveAttribute('aria-disabled', 'true');
+    expect(nextPageLink1).not.toHaveAttribute('aria-disabled', 'true');
+    expect(nextPageLink2).not.toHaveAttribute('aria-disabled', 'true');
+    expect(nextPageLink1).toHaveAttribute('href', '/?cursor=page2');
+    expect(nextPageLink2).toHaveAttribute('href', '/?cursor=page2');
+
+    fireEvent.click(nextPageLink1);
+    expect(prevPageLink1).not.toHaveAttribute('aria-disabled', 'true');
+    expect(prevPageLink2).not.toHaveAttribute('aria-disabled', 'true');
+    expect(prevPageLink1).toHaveAttribute('href', '/');
+    expect(prevPageLink2).toHaveAttribute('href', '/');
+    expect(nextPageLink1).not.toHaveAttribute('aria-disabled', 'true');
+    expect(nextPageLink2).not.toHaveAttribute('aria-disabled', 'true');
+    expect(nextPageLink1).toHaveAttribute('href', '/?cursor=page3');
+    expect(nextPageLink2).toHaveAttribute('href', '/?cursor=page3');
+
+    fireEvent.click(nextPageLink2);
+    expect(prevPageLink1).not.toHaveAttribute('aria-disabled', 'true');
+    expect(prevPageLink2).not.toHaveAttribute('aria-disabled', 'true');
+    expect(prevPageLink1).toHaveAttribute('href', '/?cursor=page2');
+    expect(prevPageLink2).toHaveAttribute('href', '/?cursor=page2');
+    expect(nextPageLink1).toHaveAttribute('aria-disabled', 'true');
+    expect(nextPageLink2).toHaveAttribute('aria-disabled', 'true');
+
+    fireEvent.click(prevPageLink1);
+    expect(prevPageLink1).not.toHaveAttribute('aria-disabled', 'true');
+    expect(prevPageLink2).not.toHaveAttribute('aria-disabled', 'true');
+    expect(prevPageLink1).toHaveAttribute('href', '/');
+    expect(prevPageLink2).toHaveAttribute('href', '/');
+    expect(nextPageLink1).not.toHaveAttribute('aria-disabled', 'true');
+    expect(nextPageLink2).not.toHaveAttribute('aria-disabled', 'true');
+    expect(nextPageLink1).toHaveAttribute('href', '/?cursor=page3');
+    expect(nextPageLink2).toHaveAttribute('href', '/?cursor=page3');
+
+    fireEvent.click(prevPageLink2);
+    expect(prevPageLink1).toHaveAttribute('aria-disabled', 'true');
+    expect(prevPageLink2).toHaveAttribute('aria-disabled', 'true');
+    expect(nextPageLink1).not.toHaveAttribute('aria-disabled', 'true');
+    expect(nextPageLink2).not.toHaveAttribute('aria-disabled', 'true');
+    expect(nextPageLink1).toHaveAttribute('href', '/?cursor=page2');
+    expect(nextPageLink2).toHaveAttribute('href', '/?cursor=page2');
+  });
+
+  it('emptyPageTokenUpdater should discard prev page tokens', async () => {
+    render(
+      <FakeContextProvider>
+        <EmptyPageTokenTestContainer />
+      </FakeContextProvider>,
+    );
+
+    const prevPageLink = screen.getByText('Previous Page');
+    const nextPageLink = screen.getByText('Next Page');
+    const emptyPageTokenButton = screen.getByTestId('empty-button');
+
+    expect(prevPageLink).toHaveAttribute('aria-disabled', 'true');
+    expect(nextPageLink).not.toHaveAttribute('aria-disabled', 'true');
+    expect(nextPageLink).toHaveAttribute('href', '/?cursor=page2');
+
+    fireEvent.click(nextPageLink);
+    expect(prevPageLink).not.toHaveAttribute('aria-disabled', 'true');
+    expect(prevPageLink).toHaveAttribute('href', '/');
+    expect(nextPageLink).not.toHaveAttribute('aria-disabled', 'true');
+    expect(nextPageLink).toHaveAttribute('href', '/?cursor=page3');
+
+    fireEvent.click(nextPageLink);
+    expect(prevPageLink).not.toHaveAttribute('aria-disabled', 'true');
+    expect(prevPageLink).toHaveAttribute('href', '/?cursor=page2');
+    expect(nextPageLink).toHaveAttribute('aria-disabled', 'true');
+
+    fireEvent.click(emptyPageTokenButton);
     expect(prevPageLink).toHaveAttribute('aria-disabled', 'true');
     expect(nextPageLink).not.toHaveAttribute('aria-disabled', 'true');
     expect(nextPageLink).toHaveAttribute('href', '/?cursor=page2');

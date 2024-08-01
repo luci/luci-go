@@ -16,13 +16,14 @@ import { Alert, CircularProgress } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { useParams } from 'react-router-dom';
 
-import {
-  getPageSize,
-  getPageToken,
-} from '@/build/pages/builder_page/ended_builds_section/search_param_utils';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { PageMeta } from '@/common/components/page_meta';
-import { ParamsPager } from '@/common/components/params_pager';
+import {
+  ParamsPager,
+  getPageSize,
+  getPageToken,
+  usePagerContext,
+} from '@/common/components/params_pager';
 import { UiPage } from '@/common/constants/view';
 import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
@@ -35,9 +36,13 @@ import { TreeStatusUpdater } from '@/tree_status/components/tree_status_updater'
 
 export const TreeStatusListPage = () => {
   const { tree: treeName } = useParams();
-  const [searchParams, _] = useSyncedSearchParams();
-  const pageSize = getPageSize(searchParams);
-  const pageToken = getPageToken(searchParams);
+  const pagerCtx = usePagerContext({
+    pageSizeOptions: [25, 50, 100, 200],
+    defaultPageSize: 50,
+  });
+  const [searchParams] = useSyncedSearchParams();
+  const pageSize = getPageSize(pagerCtx, searchParams);
+  const pageToken = getPageToken(pagerCtx, searchParams);
 
   const treeStatusClient = usePrpcServiceClient({
     host: SETTINGS.luciTreeStatus.host,
@@ -105,7 +110,10 @@ export const TreeStatusListPage = () => {
       ) : (
         <TreeStatusTable status={status.data.status} />
       )}
-      <ParamsPager nextPageToken={status.data?.nextPageToken || ''} />
+      <ParamsPager
+        pagerCtx={pagerCtx}
+        nextPageToken={status.data?.nextPageToken || ''}
+      />
     </div>
   );
 };

@@ -22,6 +22,7 @@ import {
   getPageSize,
   getPageToken,
 } from '@/common/components/params_pager';
+import { PagerContext } from '@/common/components/params_pager/context';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { QueryTestVariantArtifactGroupsRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 import { useResultDbClient } from '@/test_verdict/hooks/prpc_clients';
@@ -31,21 +32,19 @@ import { FormData } from '../form_data';
 
 import { LogGroup } from './log_group';
 
-const DEFAULT_PAGE_SIZE = 10;
-const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
-
 export interface LogSearchProps {
   readonly project: string;
+  readonly pagerCtx: PagerContext;
   readonly form: FormData;
 }
 
 // TODO (beining@):
 // * search for invocation artifact, and display on a different tab.
 // * link to log viewer.
-export function LogTable({ project, form }: LogSearchProps) {
-  const [searchParams, _] = useSyncedSearchParams();
-  const pageSize = getPageSize(searchParams, DEFAULT_PAGE_SIZE);
-  const pageToken = getPageToken(searchParams);
+export function LogTable({ project, form, pagerCtx }: LogSearchProps) {
+  const [searchParams] = useSyncedSearchParams();
+  const pageSize = getPageSize(pagerCtx, searchParams);
+  const pageToken = getPageToken(pagerCtx, searchParams);
   const client = useResultDbClient();
   const searchString = FormData.getSearchString(form);
   const startTime = form.startTime ? form.startTime.toString() : '';
@@ -104,9 +103,8 @@ export function LogTable({ project, form }: LogSearchProps) {
           </>
         )}
         <ParamsPager
+          pagerCtx={pagerCtx}
           nextPageToken={data?.nextPageToken || ''}
-          pageSizes={PAGE_SIZE_OPTIONS}
-          defaultPageSize={DEFAULT_PAGE_SIZE}
         />
       </Box>
     </>

@@ -13,4 +13,18 @@
 // limitations under the License.
 
 export * from './params_pager';
-export * from './params_pager_utils';
+
+export {
+  emptyPageTokenUpdater,
+  getPageSize,
+  getPageToken,
+  pageSizeUpdater,
+  usePagerContext,
+
+  // Do not export the following. The state should be managed by the
+  // `<ParamsPager />`. Otherwise we can't keep track of the previous page
+  // tokens.
+  //
+  // getState,
+  // pageTokenUpdater,
+} from './context';

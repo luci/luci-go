@@ -17,6 +17,10 @@ import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { DateTime } from 'luxon';
 import { useState } from 'react';
 
+import {
+  emptyPageTokenUpdater,
+  usePagerContext,
+} from '@/common/components/params_pager';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
 import {
@@ -96,6 +100,10 @@ export interface LogSearchProps {
 // * implement some validation before sending request.
 // * improve date range selection, eg quick select last 3 days, 5 days. 7 days.
 export function LogSearch({ project }: LogSearchProps) {
+  const pagerCtx = usePagerContext({
+    pageSizeOptions: [10, 20, 50, 100],
+    defaultPageSize: 10,
+  });
   const [searchParams, setSearchParams] = useSyncedSearchParams();
   const [pendingForm, setPendingForm] = useState<FormData>(
     parseSearchParam(searchParams),
@@ -212,6 +220,7 @@ export function LogSearch({ project }: LogSearchProps) {
           onClick={() => {
             setFormToSearch({ ...pendingForm });
             setSearchParams(searchParamUpdater(pendingForm));
+            setSearchParams(emptyPageTokenUpdater(pagerCtx));
           }}
         >
           Search
@@ -225,7 +234,11 @@ export function LogSearch({ project }: LogSearchProps) {
       <LogGroupListStateProvider>
         {formToSearch && (
           <>
-            <LogTable project={project} form={formToSearch} />
+            <LogTable
+              project={project}
+              pagerCtx={pagerCtx}
+              form={formToSearch}
+            />
             <LogListDialog project={project} form={formToSearch} />
           </>
         )}

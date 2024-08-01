@@ -14,40 +14,6 @@
 
 import { DateTime } from 'luxon';
 
-const DEFAULT_PAGE_SIZE = 25;
-
-export function getPageSize(params: URLSearchParams) {
-  return Number(params.get('limit')) || DEFAULT_PAGE_SIZE;
-}
-
-export function pageSizeUpdater(newPageSize: number) {
-  return (params: URLSearchParams) => {
-    const searchParams = new URLSearchParams(params);
-    if (newPageSize === DEFAULT_PAGE_SIZE) {
-      searchParams.delete('limit');
-    } else {
-      searchParams.set('limit', String(newPageSize));
-    }
-    return searchParams;
-  };
-}
-
-export function getPageToken(params: URLSearchParams) {
-  return params.get('cursor') || '';
-}
-
-export function pageTokenUpdater(newPageToken: string) {
-  return (params: URLSearchParams) => {
-    const searchParams = new URLSearchParams(params);
-    if (!newPageToken) {
-      searchParams.delete('cursor');
-    } else {
-      searchParams.set('cursor', newPageToken);
-    }
-    return searchParams;
-  };
-}
-
 export function getCreatedBefore(params: URLSearchParams) {
   const createdBefore = params.get('createdBefore');
   return createdBefore ? DateTime.fromSeconds(Number(createdBefore)) : null;

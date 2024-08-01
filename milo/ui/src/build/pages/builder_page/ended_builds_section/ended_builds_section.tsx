@@ -12,14 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, Button, ToggleButton, ToggleButtonGroup } from '@mui/material';
+import { Box } from '@mui/material';
 import { DateTimePicker } from '@mui/x-date-pickers';
 import { useQuery } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
-import { useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useRef } from 'react';
 
 import { OutputBuild } from '@/build/types';
+import {
+  ParamsPager,
+  emptyPageTokenUpdater,
+  getPageSize,
+  getPageToken,
+  usePagerContext,
+} from '@/common/components/params_pager';
 import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
 import { SHORT_TIME_FORMAT } from '@/common/tools/time_utils';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
@@ -31,14 +37,7 @@ import {
 import { Status } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 
 import { EndedBuildTable } from './ended_build_table';
-import {
-  createdBeforeUpdater,
-  getCreatedBefore,
-  getPageSize,
-  getPageToken,
-  pageSizeUpdater,
-  pageTokenUpdater,
-} from './search_param_utils';
+import { createdBeforeUpdater, getCreatedBefore } from './search_param_utils';
 
 const FIELD_MASK = Object.freeze([
   'builds.*.status',
@@ -59,18 +58,16 @@ export interface EndedBuildsSectionProps {
 
 export function EndedBuildsSection({ builderId }: EndedBuildsSectionProps) {
   const [searchParams, setSearchParams] = useSyncedSearchParams();
-  const pageSize = getPageSize(searchParams);
-  const pageToken = getPageToken(searchParams);
-  const createdBefore = getCreatedBefore(searchParams);
-
-  // There could be a lot of prev pages. Do not keep those tokens in the URL.
-  const [prevPageTokens, setPrevPageTokens] = useState(() => {
-    // If there's a page token when the component is FIRST INITIALIZED, allow
-    // users to go back to the first page by inserting a blank page token.
-    return pageToken ? [''] : [];
-  });
-
   const headingRef = useRef<HTMLHeadingElement>(null);
+  const pagerCtx = usePagerContext({
+    pageSizeOptions: [25, 50, 100, 200],
+    defaultPageSize: 25,
+    onPrevPage: () => headingRef.current?.scrollIntoView(),
+    onNextPage: () => headingRef.current?.scrollIntoView(),
+  });
+  const pageSize = getPageSize(pagerCtx, searchParams);
+  const pageToken = getPageToken(pagerCtx, searchParams);
+  const createdBefore = getCreatedBefore(searchParams);
 
   const client = usePrpcServiceClient({
     host: SETTINGS.buildbucket.host,
@@ -98,11 +95,7 @@ export function EndedBuildsSection({ builderId }: EndedBuildsSectionProps) {
     throw error;
   }
 
-  const prevPageToken = prevPageTokens.length
-    ? prevPageTokens[prevPageTokens.length - 1]
-    : null;
-  const nextPageToken =
-    !isPreviousData && data?.nextPageToken ? data?.nextPageToken : null;
+  const nextPageToken = isPreviousData ? '' : data?.nextPageToken || '';
   const builds = (data?.builds || []) as readonly OutputBuild[];
 
   return (
@@ -126,9 +119,8 @@ export function EndedBuildsSection({ builderId }: EndedBuildsSectionProps) {
             },
           }}
           onAccept={(t) => {
-            setPrevPageTokens([]);
             setSearchParams(createdBeforeUpdater(t));
-            setSearchParams(pageTokenUpdater(''));
+            setSearchParams(emptyPageTokenUpdater(pagerCtx));
             headingRef.current?.scrollIntoView();
           }}
         />
@@ -138,49 +130,7 @@ export function EndedBuildsSection({ builderId }: EndedBuildsSectionProps) {
         isLoading={isLoading || isPreviousData}
       />
       <Box sx={{ mt: '5px' }}>
-        Page Size:{' '}
-        <ToggleButtonGroup exclusive value={pageSize} size="small">
-          {[25, 50, 100, 200].map((s) => (
-            <ToggleButton
-              key={s}
-              component={Link}
-              to={`?${pageSizeUpdater(s)(searchParams)}`}
-              value={s}
-            >
-              {s}
-            </ToggleButton>
-          ))}
-        </ToggleButtonGroup>{' '}
-        <Button
-          disabled={prevPageToken === null}
-          component={Link}
-          to={`?${pageTokenUpdater(prevPageToken || '')(searchParams)}`}
-          onClick={(e) => {
-            if (e.altKey || e.ctrlKey || e.shiftKey || e.metaKey) {
-              return;
-            }
-
-            setPrevPageTokens(prevPageTokens.slice(0, -1));
-            headingRef.current?.scrollIntoView();
-          }}
-        >
-          Previous Page
-        </Button>
-        <Button
-          disabled={nextPageToken === null}
-          component={Link}
-          to={`?${pageTokenUpdater(nextPageToken || '')(searchParams)}`}
-          onClick={(e) => {
-            if (e.altKey || e.ctrlKey || e.shiftKey || e.metaKey) {
-              return;
-            }
-
-            setPrevPageTokens([...prevPageTokens, pageToken]);
-            headingRef.current?.scrollIntoView();
-          }}
-        >
-          Next Page
-        </Button>
+        <ParamsPager pagerCtx={pagerCtx} nextPageToken={nextPageToken} />
       </Box>
     </>
   );
