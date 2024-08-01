@@ -13,19 +13,11 @@
 // limitations under the License.
 
 import { SxProps, Theme } from '@mui/material';
-import {
-  Dispatch,
-  ReactNode,
-  SetStateAction,
-  createContext,
-  useContext,
-} from 'react';
+import { Dispatch, SetStateAction, createContext, useContext } from 'react';
 
 import { OutputCommit } from '@/gitiles/types';
 
-const RepoContext = createContext<string | undefined>(undefined);
-
-export const RepoUrlProvider = RepoContext.Provider;
+export const RepoContext = createContext<string | undefined>(undefined);
 
 export function useRepoUrl() {
   const ctx = useContext(RepoContext);
@@ -37,37 +29,21 @@ export function useRepoUrl() {
   return ctx;
 }
 
-const TableSxContext = createContext<SxProps<Theme> | undefined>(undefined);
-
-export const TableSxProvider = TableSxContext.Provider;
+export const TableSxContext = createContext<SxProps<Theme> | undefined>(
+  undefined,
+);
 
 export function useTableSx() {
   return useContext(TableSxContext);
 }
 
-const TableRowPropsContext = createContext<
+export const TableRowPropsContext = createContext<
   { [key: string]: unknown } | undefined
 >(undefined);
 
-const TableRowIndexContext = createContext<number | undefined>(undefined);
-
-interface TableRowPropsProviderProps {
-  readonly 'data-item-index'?: number;
-  readonly children?: ReactNode;
-}
-
-export function TableRowPropsProvider({
-  children,
-  ...props
-}: TableRowPropsProviderProps) {
-  return (
-    <TableRowIndexContext.Provider value={props['data-item-index']}>
-      <TableRowPropsContext.Provider value={props}>
-        {children}
-      </TableRowPropsContext.Provider>
-    </TableRowIndexContext.Provider>
-  );
-}
+export const TableRowIndexContext = createContext<number | undefined>(
+  undefined,
+);
 
 export function useTableRowProps() {
   return useContext(TableRowPropsContext);
@@ -77,9 +53,9 @@ export function useTableRowIndex() {
   return useContext(TableRowIndexContext);
 }
 
-const DefaultExpandedContext = createContext<boolean | undefined>(undefined);
-
-export const DefaultExpandedProvider = DefaultExpandedContext.Provider;
+export const DefaultExpandedContext = createContext<boolean | undefined>(
+  undefined,
+);
 
 export function useDefaultExpanded() {
   const ctx = useContext(DefaultExpandedContext);
@@ -91,11 +67,9 @@ export function useDefaultExpanded() {
   return ctx;
 }
 
-const SetDefaultExpandedContext = createContext<
+export const SetDefaultExpandedContext = createContext<
   Dispatch<SetStateAction<boolean>> | undefined
 >(undefined);
-
-export const SetDefaultExpandedProvider = SetDefaultExpandedContext.Provider;
 
 export function useSetDefaultExpanded() {
   const ctx = useContext(SetDefaultExpandedContext);
@@ -107,17 +81,15 @@ export function useSetDefaultExpanded() {
   return ctx;
 }
 
-const ExpandStateStoreContext = createContext<boolean[] | undefined>(undefined);
-
-export const ExpandStateStoreProvider = ExpandStateStoreContext.Provider;
+export const ExpandStateStoreContext = createContext<boolean[] | undefined>(
+  undefined,
+);
 
 export function useExpandStateStore() {
   return useContext(ExpandStateStoreContext);
 }
 
-const ExpandedContext = createContext<boolean | undefined>(undefined);
-
-export const ExpandedProvider = ExpandedContext.Provider;
+export const ExpandedContext = createContext<boolean | undefined>(undefined);
 
 export function useExpanded() {
   const ctx = useContext(ExpandedContext);
@@ -129,11 +101,9 @@ export function useExpanded() {
   return ctx;
 }
 
-const SetExpandedContext = createContext<
+export const SetExpandedContext = createContext<
   Dispatch<SetStateAction<boolean>> | undefined
 >(undefined);
-
-export const SetExpandedProvider = SetExpandedContext.Provider;
 
 export function useSetExpanded() {
   const ctx = useContext(SetExpandedContext);
@@ -145,9 +115,9 @@ export function useSetExpanded() {
   return ctx;
 }
 
-const CommitContext = createContext<OutputCommit | undefined | null>(undefined);
-
-export const CommitProvider = CommitContext.Provider;
+export const CommitContext = createContext<OutputCommit | undefined | null>(
+  undefined,
+);
 
 /**
  * Get the commit to be rendered in this row.
