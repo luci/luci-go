@@ -166,7 +166,7 @@ func TestDispatcher(t *testing.T) {
 			d.RegisterTask(&emptypb.Empty{}, handler, "another-q", nil)
 			installRoutes()
 
-			t := []*Task{}
+			tasks := []*Task{}
 			for i := 0; i < 200; i++ {
 				var task *Task
 
@@ -184,14 +184,14 @@ func TestDispatcher(t *testing.T) {
 					}
 				}
 
-				t = append(t, task)
+				tasks = append(tasks, task)
 
 				// Mix in some duplicates.
 				if i > 0 && i%100 == 0 {
-					t = append(t, task)
+					tasks = append(tasks, task)
 				}
 			}
-			err := d.AddTask(ctx, t...)
+			err := d.AddTask(ctx, tasks...)
 			So(err, ShouldBeNil)
 
 			// Added all the tasks.
@@ -208,7 +208,7 @@ func TestDispatcher(t *testing.T) {
 			So(len(delaysAnotherQ), ShouldEqual, 100)
 
 			// Delete the tasks.
-			So(d.DeleteTask(ctx, t...), ShouldBeNil)
+			So(d.DeleteTask(ctx, tasks...), ShouldBeNil)
 			So(runTasks(ctx), ShouldHaveLength, 0)
 		})
 
