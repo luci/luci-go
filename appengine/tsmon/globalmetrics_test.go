@@ -17,26 +17,27 @@ package tsmon
 import (
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/monitor"
 	"go.chromium.org/luci/common/tsmon/store"
 	"go.chromium.org/luci/common/tsmon/target"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestGlobalMetrics(t *testing.T) {
 	t.Parallel()
 
-	Convey("Default version", t, func() {
+	ftt.Run("Default version", t, func(t *ftt.Test) {
 		c, _ := buildGAETestContext()
 		tsmon.GetState(c).SetStore(store.NewInMemory(&target.Task{ServiceName: "default target"}))
 		collectGlobalMetrics(c)
 		tsmon.Flush(c)
 
 		monitor := tsmon.GetState(c).Monitor().(*monitor.Fake)
-		So(len(monitor.Cells), ShouldEqual, 1)
-		So(monitor.Cells[0][0].Name, ShouldEqual, "appengine/default_version")
-		So(monitor.Cells[0][0].Value, ShouldEqual, "testVersion1")
+		assert.Loosely(t, len(monitor.Cells), should.Equal(1))
+		assert.Loosely(t, monitor.Cells[0][0].Name, should.Equal("appengine/default_version"))
+		assert.Loosely(t, monitor.Cells[0][0].Value, should.Equal("testVersion1"))
 	})
 }

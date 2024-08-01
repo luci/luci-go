@@ -20,8 +20,10 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/appengine/gaetesting"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/router"
 )
 
@@ -33,26 +35,26 @@ func init() {
 func TestRequireCron(t *testing.T) {
 	t.Parallel()
 
-	Convey("Test RequireCron", t, func() {
+	ftt.Run("Test RequireCron", t, func(t *ftt.Test) {
 		hit := false
 		f := func(c *router.Context) {
 			hit = true
 			c.Writer.Write([]byte("ok"))
 		}
 
-		Convey("from non-cron fails", func() {
+		t.Run("from non-cron fails", func(t *ftt.Test) {
 			rec := httptest.NewRecorder()
 			c := &router.Context{
 				Writer:  rec,
 				Request: (&http.Request{}).WithContext(gaetesting.TestingContext()),
 			}
 			router.RunMiddleware(c, router.NewMiddlewareChain(RequireCron), f)
-			So(hit, ShouldBeFalse)
-			So(rec.Body.String(), ShouldEqual, "error: must be run from cron\n")
-			So(rec.Code, ShouldEqual, http.StatusForbidden)
+			assert.Loosely(t, hit, should.BeFalse)
+			assert.Loosely(t, rec.Body.String(), should.Equal("error: must be run from cron\n"))
+			assert.Loosely(t, rec.Code, should.Equal(http.StatusForbidden))
 		})
 
-		Convey("from cron succeeds", func() {
+		t.Run("from cron succeeds", func(t *ftt.Test) {
 			rec := httptest.NewRecorder()
 			c := &router.Context{
 				Writer: rec,
@@ -63,9 +65,9 @@ func TestRequireCron(t *testing.T) {
 				}).WithContext(gaetesting.TestingContext()),
 			}
 			router.RunMiddleware(c, router.NewMiddlewareChain(RequireCron), f)
-			So(hit, ShouldBeTrue)
-			So(rec.Body.String(), ShouldEqual, "ok")
-			So(rec.Code, ShouldEqual, http.StatusOK)
+			assert.Loosely(t, hit, should.BeTrue)
+			assert.Loosely(t, rec.Body.String(), should.Equal("ok"))
+			assert.Loosely(t, rec.Code, should.Equal(http.StatusOK))
 		})
 	})
 }
@@ -73,38 +75,38 @@ func TestRequireCron(t *testing.T) {
 func TestRequireTQ(t *testing.T) {
 	t.Parallel()
 
-	Convey("Test RequireTQ", t, func() {
+	ftt.Run("Test RequireTQ", t, func(t *ftt.Test) {
 		hit := false
 		f := func(c *router.Context) {
 			hit = true
 			c.Writer.Write([]byte("ok"))
 		}
 
-		Convey("from non-tq fails (wat)", func() {
+		t.Run("from non-tq fails (wat)", func(t *ftt.Test) {
 			rec := httptest.NewRecorder()
 			c := &router.Context{
 				Writer:  rec,
 				Request: (&http.Request{}).WithContext(gaetesting.TestingContext()),
 			}
 			router.RunMiddleware(c, router.NewMiddlewareChain(RequireTaskQueue("wat")), f)
-			So(hit, ShouldBeFalse)
-			So(rec.Body.String(), ShouldEqual, "error: must be run from the correct taskqueue\n")
-			So(rec.Code, ShouldEqual, http.StatusForbidden)
+			assert.Loosely(t, hit, should.BeFalse)
+			assert.Loosely(t, rec.Body.String(), should.Equal("error: must be run from the correct taskqueue\n"))
+			assert.Loosely(t, rec.Code, should.Equal(http.StatusForbidden))
 		})
 
-		Convey("from non-tq fails", func() {
+		t.Run("from non-tq fails", func(t *ftt.Test) {
 			rec := httptest.NewRecorder()
 			c := &router.Context{
 				Writer:  rec,
 				Request: (&http.Request{}).WithContext(gaetesting.TestingContext()),
 			}
 			router.RunMiddleware(c, router.NewMiddlewareChain(RequireTaskQueue("")), f)
-			So(hit, ShouldBeFalse)
-			So(rec.Body.String(), ShouldEqual, "error: must be run from the correct taskqueue\n")
-			So(rec.Code, ShouldEqual, http.StatusForbidden)
+			assert.Loosely(t, hit, should.BeFalse)
+			assert.Loosely(t, rec.Body.String(), should.Equal("error: must be run from the correct taskqueue\n"))
+			assert.Loosely(t, rec.Code, should.Equal(http.StatusForbidden))
 		})
 
-		Convey("from wrong tq fails (wat)", func() {
+		t.Run("from wrong tq fails (wat)", func(t *ftt.Test) {
 			rec := httptest.NewRecorder()
 			c := &router.Context{
 				Writer: rec,
@@ -115,12 +117,12 @@ func TestRequireTQ(t *testing.T) {
 				}).WithContext(gaetesting.TestingContext()),
 			}
 			router.RunMiddleware(c, router.NewMiddlewareChain(RequireTaskQueue("wat")), f)
-			So(hit, ShouldBeFalse)
-			So(rec.Body.String(), ShouldEqual, "error: must be run from the correct taskqueue\n")
-			So(rec.Code, ShouldEqual, http.StatusForbidden)
+			assert.Loosely(t, hit, should.BeFalse)
+			assert.Loosely(t, rec.Body.String(), should.Equal("error: must be run from the correct taskqueue\n"))
+			assert.Loosely(t, rec.Code, should.Equal(http.StatusForbidden))
 		})
 
-		Convey("from right tq succeeds (wat)", func() {
+		t.Run("from right tq succeeds (wat)", func(t *ftt.Test) {
 			rec := httptest.NewRecorder()
 			c := &router.Context{
 				Writer: rec,
@@ -131,12 +133,12 @@ func TestRequireTQ(t *testing.T) {
 				}).WithContext(gaetesting.TestingContext()),
 			}
 			router.RunMiddleware(c, router.NewMiddlewareChain(RequireTaskQueue("wat")), f)
-			So(hit, ShouldBeTrue)
-			So(rec.Body.String(), ShouldEqual, "ok")
-			So(rec.Code, ShouldEqual, http.StatusOK)
+			assert.Loosely(t, hit, should.BeTrue)
+			assert.Loosely(t, rec.Body.String(), should.Equal("ok"))
+			assert.Loosely(t, rec.Code, should.Equal(http.StatusOK))
 		})
 
-		Convey("from any tq succeeds", func() {
+		t.Run("from any tq succeeds", func(t *ftt.Test) {
 			rec := httptest.NewRecorder()
 			c := &router.Context{
 				Writer: rec,
@@ -147,9 +149,9 @@ func TestRequireTQ(t *testing.T) {
 				}).WithContext(gaetesting.TestingContext()),
 			}
 			router.RunMiddleware(c, router.NewMiddlewareChain(RequireTaskQueue("")), f)
-			So(hit, ShouldBeTrue)
-			So(rec.Body.String(), ShouldEqual, "ok")
-			So(rec.Code, ShouldEqual, http.StatusOK)
+			assert.Loosely(t, hit, should.BeTrue)
+			assert.Loosely(t, rec.Body.String(), should.Equal("ok"))
+			assert.Loosely(t, rec.Code, should.Equal(http.StatusOK))
 		})
 	})
 }

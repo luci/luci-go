@@ -22,12 +22,13 @@ import (
 
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/target"
 	"go.chromium.org/luci/gae/service/datastore"
 	srvtsmon "go.chromium.org/luci/server/tsmon"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestFindGaps(t *testing.T) {
@@ -46,7 +47,7 @@ func TestFindGaps(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		Convey(fmt.Sprintf("%d. %v", i, test.numbers), t, func() {
+		ftt.Run(fmt.Sprintf("%d. %v", i, test.numbers), t, func(t *ftt.Test) {
 			numbers := map[int]struct{}{}
 			for _, n := range test.numbers {
 				numbers[n] = struct{}{}
@@ -60,7 +61,7 @@ func TestFindGaps(t *testing.T) {
 				got = append(got, nextNum())
 			}
 
-			So(got, ShouldResemble, test.wantFirst5Gaps)
+			assert.Loosely(t, got, should.Resemble(test.wantFirst5Gaps))
 		})
 	}
 }
@@ -81,78 +82,78 @@ func TestAssignTaskNumbers(t *testing.T) {
 
 	allocator := DatastoreTaskNumAllocator{}
 
-	Convey("Assigns task numbers to unassigned instances", t, func() {
+	ftt.Run("Assigns task numbers to unassigned instances", t, func(t *ftt.Test) {
 		c, _ := buildGAETestContext()
 
 		// Two new processes belonging to different targets.
 		_, err := allocator.NotifyTaskIsAlive(c, &task1, "some.id")
-		So(err, ShouldEqual, srvtsmon.ErrNoTaskNumber)
+		assert.Loosely(t, err, should.Equal(srvtsmon.ErrNoTaskNumber))
 		_, err = allocator.NotifyTaskIsAlive(c, &task2, "some.id")
-		So(err, ShouldEqual, srvtsmon.ErrNoTaskNumber)
+		assert.Loosely(t, err, should.Equal(srvtsmon.ErrNoTaskNumber))
 
-		So(AssignTaskNumbers(c), ShouldBeNil)
+		assert.Loosely(t, AssignTaskNumbers(c), should.BeNil)
 
 		// Both get 0, since they belong to different targets.
 		i, err := allocator.NotifyTaskIsAlive(c, &task1, "some.id")
-		So(err, ShouldBeNil)
-		So(i, ShouldEqual, 0)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, i, should.BeZero)
 		i, err = allocator.NotifyTaskIsAlive(c, &task2, "some.id")
-		So(err, ShouldBeNil)
-		So(i, ShouldEqual, 0)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, i, should.BeZero)
 
 		// Once numbers are assigned, AssignTaskNumbers is noop.
-		So(AssignTaskNumbers(c), ShouldBeNil)
+		assert.Loosely(t, AssignTaskNumbers(c), should.BeNil)
 	})
 
-	Convey("Doesn't assign the same task number", t, func() {
+	ftt.Run("Doesn't assign the same task number", t, func(t *ftt.Test) {
 		c, _ := buildGAETestContext()
 
 		// Two processes belonging to a single target.
 		allocator.NotifyTaskIsAlive(c, &task1, "some.task.0")
 		allocator.NotifyTaskIsAlive(c, &task1, "some.task.1")
 
-		So(AssignTaskNumbers(c), ShouldBeNil)
+		assert.Loosely(t, AssignTaskNumbers(c), should.BeNil)
 
 		// Get different task numbers.
 		i, err := allocator.NotifyTaskIsAlive(c, &task1, "some.task.0")
-		So(err, ShouldBeNil)
-		So(i, ShouldEqual, 0)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, i, should.BeZero)
 		i, err = allocator.NotifyTaskIsAlive(c, &task1, "some.task.1")
-		So(err, ShouldBeNil)
-		So(i, ShouldEqual, 1)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, i, should.Equal(1))
 	})
 
-	Convey("Expires old instances", t, func() {
+	ftt.Run("Expires old instances", t, func(t *ftt.Test) {
 		c, clock := buildGAETestContext()
 
 		for _, count := range []int{1, taskQueryBatchSize + 1} {
-			Convey(fmt.Sprintf("Count: %d", count), func() {
+			t.Run(fmt.Sprintf("Count: %d", count), func(t *ftt.Test) {
 				// Request a bunch of task numbers.
 				for i := 0; i < count; i++ {
 					_, err := allocator.NotifyTaskIsAlive(c, &task1, fmt.Sprintf("%d", i))
-					So(err, ShouldEqual, srvtsmon.ErrNoTaskNumber)
+					assert.Loosely(t, err, should.Equal(srvtsmon.ErrNoTaskNumber))
 				}
 
 				// Get all the numbers assigned.
-				So(AssignTaskNumbers(c), ShouldBeNil)
+				assert.Loosely(t, AssignTaskNumbers(c), should.BeNil)
 
 				// Yep. Assigned.
 				numbers := map[int]struct{}{}
 				for i := 0; i < count; i++ {
 					num, err := allocator.NotifyTaskIsAlive(c, &task1, fmt.Sprintf("%d", i))
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					numbers[num] = struct{}{}
 				}
-				So(len(numbers), ShouldEqual, count)
+				assert.Loosely(t, len(numbers), should.Equal(count))
 
 				// Move time to make number assignments expire.
 				clock.Add(instanceExpirationTimeout + time.Second)
-				So(AssignTaskNumbers(c), ShouldBeNil)
+				assert.Loosely(t, AssignTaskNumbers(c), should.BeNil)
 
 				// Yep. Expired.
 				for i := 0; i < count; i++ {
 					_, err := allocator.NotifyTaskIsAlive(c, &task1, fmt.Sprintf("%d", i))
-					So(err, ShouldEqual, srvtsmon.ErrNoTaskNumber)
+					assert.Loosely(t, err, should.Equal(srvtsmon.ErrNoTaskNumber))
 				}
 			})
 		}

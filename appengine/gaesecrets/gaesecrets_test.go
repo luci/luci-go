@@ -18,35 +18,36 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/secrets"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestWorks(t *testing.T) {
-	Convey("gaesecrets.Store works", t, func() {
+	ftt.Run("gaesecrets.Store works", t, func(t *ftt.Test) {
 		c := Use(memory.Use(context.Background()), nil)
 		c = caching.WithEmptyProcessCache(c)
 
 		// Autogenerates one.
 		s1, err := secrets.RandomSecret(c, "key1")
-		So(err, ShouldBeNil)
-		So(len(s1.Active), ShouldEqual, 32)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, len(s1.Active), should.Equal(32))
 
 		// Returns same one.
 		s2, err := secrets.RandomSecret(c, "key1")
-		So(err, ShouldBeNil)
-		So(s2, ShouldResemble, s1)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, s2, should.Resemble(s1))
 
 		// Can also be fetched as stored.
 		s3, err := secrets.StoredSecret(c, "key1")
-		So(err, ShouldBeNil)
-		So(s3, ShouldResemble, s1)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, s3, should.Resemble(s1))
 
 		// Missing stored secrets are not auto-generated though.
 		_, err = secrets.StoredSecret(c, "key2")
-		So(err, ShouldEqual, secrets.ErrNoSuchSecret)
+		assert.Loosely(t, err, should.Equal(secrets.ErrNoSuchSecret))
 	})
 }
