@@ -29,8 +29,9 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestProtocol(t *testing.T) {
@@ -39,7 +40,7 @@ func TestProtocol(t *testing.T) {
 	ctx := context.Background()
 	ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 
-	Convey("With server", t, func(c C) {
+	ftt.Run("With server", t, func(c *ftt.Test) {
 		s := Server{
 			Source: oauth2.StaticTokenSource(&oauth2.Token{
 				AccessToken: "tok1",
@@ -48,20 +49,21 @@ func TestProtocol(t *testing.T) {
 			Email: "some@example.com",
 		}
 		p, err := s.Start(ctx)
-		So(err, ShouldBeNil)
+		assert.Loosely(c, err, should.BeNil)
 		defer s.Stop(ctx)
 
 		conn, err := net.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", p.Port))
 		if err != nil {
 			panic(err)
 		}
+		defer conn.Close()
 
-		Convey("Happy path", func() {
-			So(call(conn, "[]"), ShouldEqual, `["some@example.com",null,"tok1",1800]`)
+		c.Run("Happy path", func(c *ftt.Test) {
+			assert.Loosely(c, call(conn, "[]"), should.Equal(`["some@example.com",null,"tok1",1800]`))
 		})
 
-		Convey("Wrong format", func() {
-			So(call(conn, "{BADJSON"), ShouldEqual, `["failed to deserialize from JSON: invalid character 'B' looking for beginning of object key string"]`)
+		c.Run("Wrong format", func(c *ftt.Test) {
+			assert.Loosely(c, call(conn, "{BADJSON"), should.Equal(`["failed to deserialize from JSON: invalid character 'B' looking for beginning of object key string"]`))
 		})
 	})
 }
