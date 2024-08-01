@@ -70,12 +70,10 @@ export const HeuristicResult = ({ heuristicResult }: HeuristicResultProps) => {
                   target="_blank"
                   rel="noopener"
                   onClick={() => {
-                    ga('send', {
-                      hitType: 'event',
-                      eventCategory: 'LuciBisection',
-                      eventAction: 'ClickSuspectLink',
-                      eventLabel: s.reviewUrl,
-                      transport: 'beacon',
+                    gtag('event', 'ClickSuspectLink', {
+                      event_category: 'LuciBisection',
+                      event_label: s.reviewUrl,
+                      transport_type: 'beacon',
                     });
                   }}
                 >

@@ -47,12 +47,10 @@ export const CulpritSection = ({
               target="_blank"
               rel="noopener"
               onClick={() => {
-                ga('send', {
-                  hitType: 'event',
-                  eventCategory: 'LuciBisection',
-                  eventAction: 'ClickCulpritLink',
-                  eventLabel: c.review_url,
-                  transport: 'beacon',
+                gtag('event', 'ClickCulpritLink', {
+                  event_category: 'LuciBisection',
+                  event_label: c.review_url,
+                  transport_type: 'beacon',
                 });
               }}
             >

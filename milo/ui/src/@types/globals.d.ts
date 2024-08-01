@@ -70,15 +70,3 @@ declare const SETTINGS: {
  * Import all JS modules. This ensures all modules are initialized.
  */
 declare function preloadModules(): void;
-
-/**
- * Google Analytics interfaces.
- */
-interface GAArgs {
-  hitType: string;
-  eventCategory: string;
-  eventAction: string;
-  eventLabel: string;
-  transport: string;
-}
-declare const ga: (operation: string, args: GAArgs) => void;

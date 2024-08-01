@@ -46,12 +46,10 @@ export const NthSectionResult = ({
           target="_blank"
           rel="noopener"
           onClick={() => {
-            ga('send', {
-              hitType: 'event',
-              eventCategory: 'LuciBisection',
-              eventAction: 'ClickSuspectLink',
-              eventLabel: nth_section_result.suspect!.reviewUrl,
-              transport: 'beacon',
+            gtag('event', 'ClickSuspectLink', {
+              event_category: 'LuciBisection',
+              event_label: nth_section_result.suspect!.reviewUrl,
+              transport_type: 'beacon',
             });
           }}
         >
@@ -73,12 +71,10 @@ export const NthSectionResult = ({
           target="_blank"
           rel="noopener"
           onClick={() => {
-            ga('send', {
-              hitType: 'event',
-              eventCategory: 'LuciBisection',
-              eventAction: 'ClickRegressionLink',
-              eventLabel: rrLink,
-              transport: 'beacon',
+            gtag('event', 'ClickRegressionLink', {
+              event_category: 'LuciBisection',
+              event_label: rrLink,
+              transport_type: 'beacon',
             });
           }}
         >

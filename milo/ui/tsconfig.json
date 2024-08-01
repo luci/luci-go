@@ -24,7 +24,12 @@
     // type checking step.
     "moduleResolution": "node",
     "resolveJsonModule": true,
-    "types": ["vite/client", "@types/jest", "@types/gapi"],
+    "types": [
+      "@types/gapi",
+      "@types/gtag.js",
+      "@types/jest",
+      "vite/client",
+    ],
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "experimentalDecorators": true,
