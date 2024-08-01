@@ -161,7 +161,7 @@ func validateCustomMetric(ctx *validation.Context, cm *pb.CustomMetric) {
 		}
 	}
 
-	if isBuilderMetric(base) && len(cm.GetExtraFields()) > 0 {
+	if metrics.IsBuilderMetric(base) && len(cm.GetExtraFields()) > 0 {
 		ctx.Errorf("custom builder metric cannot have extra_fields")
 	}
 }

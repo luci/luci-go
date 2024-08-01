@@ -16,13 +16,128 @@ package rpc
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/proto/protowalk"
+	"go.chromium.org/luci/grpc/appstatus"
 
+	"go.chromium.org/luci/buildbucket/appengine/common"
+	"go.chromium.org/luci/buildbucket/appengine/common/buildcel"
+	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
+	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
+	"go.chromium.org/luci/buildbucket/appengine/model"
+	"go.chromium.org/luci/buildbucket/bbperms"
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
+func validateCustomMetricPreviewRequest(ctx context.Context, req *pb.CustomMetricPreviewRequest) error {
+	if procRes := protowalk.Fields(req, &protowalk.RequiredProcessor{}); procRes != nil {
+		if resStrs := procRes.Strings(); len(resStrs) > 0 {
+			logging.Infof(ctx, strings.Join(resStrs, ". "))
+		}
+		if err := procRes.Err(); err != nil {
+			return err
+		}
+	}
+	if len(req.MetricDefinition.Predicates) == 0 {
+		return errors.Reason("metric_definition.predicates is required").Err()
+	}
+
+	if req.GetMetricBase() == pb.CustomMetricBase_CUSTOM_METRIC_BASE_UNSET {
+		return errors.Reason("metric_base is required").Err()
+	}
+
+	baseFields, err := metrics.GetCommonBaseFields(req.GetMetricBase())
+	if err != nil {
+		return err
+	}
+	baseFieldsSet := stringset.NewFromSlice(baseFields...)
+	var dupedBaseFieldsInExtra []string
+	for f := range req.MetricDefinition.ExtraFields {
+		if baseFieldsSet.Has(f) {
+			dupedBaseFieldsInExtra = append(dupedBaseFieldsInExtra, f)
+		}
+	}
+	if len(dupedBaseFieldsInExtra) > 0 {
+		return errors.Reason("base fields %q cannot be used in extra_fields", dupedBaseFieldsInExtra).Err()
+	}
+	return nil
+}
+
 // CustomMetricPreview evaluates a build with a custom metric definition and returns the preview result. Implements pb.BuildsServer.
 func (*Builds) CustomMetricPreview(ctx context.Context, req *pb.CustomMetricPreviewRequest) (*pb.CustomMetricPreviewResponse, error) {
-	return nil, errors.New("not implemented")
+	if err := validateCustomMetricPreviewRequest(ctx, req); err != nil {
+		return nil, appstatus.BadRequest(err)
+	}
+
+	bld, err := common.GetBuild(ctx, req.BuildId)
+	if err != nil {
+		return nil, err
+	}
+	// Preview needs to read everything from the build, so require the caller
+	// has the permission to get the whole build.
+	if err := perm.HasInBuilder(ctx, bbperms.BuildsGet, bld.Proto.Builder); err != nil {
+		return nil, err
+	}
+
+	// Get build details.
+	m, err := model.NewBuildMask("", nil, &pb.BuildMask{AllFields: true})
+	if err != nil {
+		return nil, err
+	}
+	bp, err := bld.ToProto(ctx, m, func(b *pb.Build) error {
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	res := &pb.CustomMetricPreviewResponse{}
+	// Evaluate predicates.
+	matched, err := buildcel.BoolEval(bp, req.MetricDefinition.Predicates)
+	switch {
+	case err != nil:
+		res.Response = &pb.CustomMetricPreviewResponse_Error{
+			Error: fmt.Sprintf("failed to evaluate the build with predicates: %s", err),
+		}
+		return res, nil
+	case !matched:
+		res.Response = &pb.CustomMetricPreviewResponse_Error{
+			Error: "the build doesn't pass the predicates evaluation, it will not be reported by the custom metric",
+		}
+		return res, nil
+	}
+
+	// Evaluate extra_fields.
+	baseFieldMap, err := metrics.GetBaseFieldMap(bp, req.GetMetricBase())
+	if err != nil {
+		return nil, err
+	}
+	var extraFieldMap map[string]string
+	if len(req.MetricDefinition.ExtraFields) > 0 {
+		extraFieldMap, err = buildcel.StringMapEval(bp, req.MetricDefinition.ExtraFields)
+		if err != nil {
+			res.Response = &pb.CustomMetricPreviewResponse_Error{
+				Error: fmt.Sprintf("failed to evaluate the build with extra_fields: %s", err),
+			}
+			return res, nil
+		}
+	}
+	fields := make([]*pb.StringPair, 0, len(baseFieldMap)+len(extraFieldMap))
+	for f, v := range baseFieldMap {
+		fields = append(fields, &pb.StringPair{Key: f, Value: v})
+	}
+	for f, v := range extraFieldMap {
+		fields = append(fields, &pb.StringPair{Key: f, Value: v})
+	}
+	res.Response = &pb.CustomMetricPreviewResponse_Report_{
+		Report: &pb.CustomMetricPreviewResponse_Report{
+			Fields: fields,
+		},
+	}
+	return res, nil
 }

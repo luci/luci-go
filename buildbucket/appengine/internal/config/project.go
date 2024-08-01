@@ -45,6 +45,7 @@ import (
 
 	"go.chromium.org/luci/buildbucket/appengine/common/buildcel"
 	"go.chromium.org/luci/buildbucket/appengine/internal/clients"
+	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	modeldefs "go.chromium.org/luci/buildbucket/appengine/model/defs"
 	pb "go.chromium.org/luci/buildbucket/proto"
@@ -1154,12 +1155,6 @@ func isLiteBackend(target string, globalCfg *pb.SettingsCfg) bool {
 	return false
 }
 
-func isBuilderMetric(base pb.CustomMetricBase) bool {
-	return base == pb.CustomMetricBase_CUSTOM_METRIC_BASE_COUNT ||
-		base == pb.CustomMetricBase_CUSTOM_METRIC_BASE_CONSECUTIVE_FAILURE_COUNT ||
-		base == pb.CustomMetricBase_CUSTOM_METRIC_BASE_MAX_AGE_SCHEDULED
-}
-
 // mapBuilderMetricsToBuilders calculates a map where the key is a custom builder
 // metric names, and the value are a list of builder names (in the format of
 // "<project>.<bucket>.<builder>") that report to the metric.
@@ -1170,7 +1165,7 @@ func mapBuilderMetricsToBuilders(ctx context.Context) (map[string]stringset.Set,
 	}
 	res := make(map[string]stringset.Set)
 	for _, gm := range globalCfg.GetCustomMetrics() {
-		if isBuilderMetric(gm.GetMetricBase()) {
+		if metrics.IsBuilderMetric(gm.GetMetricBase()) {
 			res[gm.Name] = stringset.New(0)
 		}
 	}

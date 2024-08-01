@@ -46,6 +46,32 @@ func GetCommonBaseFields(base pb.CustomMetricBase) ([]string, error) {
 	return bfs.common, nil
 }
 
+// GetBaseFieldMap returns the common default fields and their values of metrics
+// with the provided base.
+func GetBaseFieldMap(bp *pb.Build, base pb.CustomMetricBase) (map[string]string, error) {
+	baseFields, err := GetCommonBaseFields(base)
+	if err != nil {
+		return nil, err
+	}
+	fieldMap := make(map[string]string, len(baseFields))
+	for _, f := range baseFields {
+		switch f {
+		case "status":
+			fieldMap[f] = pb.Status_name[int32(bp.Status)]
+		default:
+			return nil, errors.Reason("unsupported base field %s", f).Err()
+		}
+	}
+	return fieldMap, nil
+}
+
+// IsBuilderMetric returns whether the provided base is for a builder metric.
+func IsBuilderMetric(base pb.CustomMetricBase) bool {
+	return base == pb.CustomMetricBase_CUSTOM_METRIC_BASE_COUNT ||
+		base == pb.CustomMetricBase_CUSTOM_METRIC_BASE_CONSECUTIVE_FAILURE_COUNT ||
+		base == pb.CustomMetricBase_CUSTOM_METRIC_BASE_MAX_AGE_SCHEDULED
+}
+
 func generateBaseFields(base pb.CustomMetricBase) []field.Field {
 	bfs, ok := BaseFields[base]
 	if !ok {
