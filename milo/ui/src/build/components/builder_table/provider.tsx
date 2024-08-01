@@ -12,17 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ReactNode, createContext, useContext } from 'react';
+import { ReactNode } from 'react';
 
-import {
-  DecoratedClient,
-  usePrpcServiceClient,
-} from '@/common/hooks/prpc_query';
+import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
 import { BatchedBuildsClientImpl } from '@/proto_utils/batched_builds_client';
 
-const BuildsClientCtx =
-  createContext<DecoratedClient<BatchedBuildsClientImpl> | null>(null);
-const NumOfBuildsCtx = createContext<number | null>(null);
+import { BuildsClientCtx, NumOfBuildsCtx } from './context';
 
 export interface BuilderTableContextProviderProps {
   readonly numOfBuilds: number;
@@ -52,24 +47,4 @@ export function BuilderTableContextProvider({
       </NumOfBuildsCtx.Provider>
     </BuildsClientCtx.Provider>
   );
-}
-
-export function useBuildsClient() {
-  const ctx = useContext(BuildsClientCtx);
-  if (ctx === null) {
-    throw new Error(
-      'useBuildsClient can only be used in a BuilderTableContextProvider',
-    );
-  }
-  return ctx;
-}
-
-export function useNumOfBuilds() {
-  const ctx = useContext(NumOfBuildsCtx);
-  if (ctx === null) {
-    throw new Error(
-      'useNumOfBuilds can only be used in a BuilderTableContextProvider',
-    );
-  }
-  return ctx;
 }

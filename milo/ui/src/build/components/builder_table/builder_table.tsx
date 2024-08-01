@@ -17,7 +17,7 @@ import { TableVirtuoso } from 'react-virtuoso';
 import { BuilderID } from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_common.pb';
 
 import { BuilderRow } from './builder_row';
-import { BuilderTableContextProvider } from './context';
+import { BuilderTableContextProvider } from './provider';
 
 export interface BuilderTableProps {
   readonly builders: readonly BuilderID[];
