@@ -38,6 +38,8 @@ import (
 	_ "go.chromium.org/luci/server/tq/txn/datastore"
 )
 
+// TODO(vadimsh): Remove this line.
+
 const (
 	// Members are actuation agents running actual deployments.
 	actuatorsGroup = "luci-deploy-actuators"
