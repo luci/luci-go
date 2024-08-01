@@ -26,7 +26,7 @@ const USE_REACT_NODE = Symbol('use-react-node');
  *
  * Extends this class like `LitElement` except that
  * 1. use `.renderReact()` instead of `.render()` to render a component,
- * 2. the created custom web component can only be used under a
+ * 2. the created custom web component can only be used in a
  *    `<ReactLitBridge />`.
  */
 export abstract class ReactLitElement extends LitElement {

@@ -127,7 +127,7 @@ export function useSizeRecorder() {
   const ctx = useContext(SizeRecorderCtx);
   if (ctx === undefined) {
     throw new Error(
-      'useSizeRecorder must be used within QueuedStickyContextProvider',
+      'useSizeRecorder can only be used in a QueuedStickyContextProvider',
     );
   }
 
@@ -138,7 +138,7 @@ export function useOffsets() {
   const ctx = useContext(OffsetsCtx);
   if (ctx === undefined) {
     throw new Error(
-      'useOffsets must be used within QueuedStickyContextProvider',
+      'useOffsets can only be used in a QueuedStickyContextProvider',
     );
   }
 
@@ -148,7 +148,7 @@ export function useOffsets() {
 export function useDepth() {
   const ctx = useContext(DepthCtx);
   if (ctx === undefined) {
-    throw new Error('useDepth must be used within QueuedStickyContextProvider');
+    throw new Error('useDepth can only be used in a QueuedStickyContextProvider');
   }
   return ctx;
 }

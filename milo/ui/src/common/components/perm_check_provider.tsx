@@ -61,7 +61,7 @@ export function usePermCheck(
 ): [allowed: boolean, isLoading: boolean] {
   const client = useContext(ClientCtx);
   if (!client) {
-    throw new Error('usePermCheck must be used within PermCheckProvider');
+    throw new Error('usePermCheck can only be used in a PermCheckProvider');
   }
 
   const { data, isError, error, isLoading } = useQuery({

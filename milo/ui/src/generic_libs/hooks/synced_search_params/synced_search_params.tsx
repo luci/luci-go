@@ -73,7 +73,7 @@ export function SyncedSearchParamsProvider({ children }: ContextProviderProps) {
 
 /**
  * Similar to `useSearchParams` from `'react-router-dom'`, except that
- * 1. it can only be used within SyncedSearchParamsProvider, and
+ * 1. it can only be used in a SyncedSearchParamsProvider, and
  * 2. multiple search param updates can be scheduled at the same time with the
  *    [updater pattern][1], and
  * 3. results from intermediate updaters are not discarded [2].
@@ -87,7 +87,7 @@ export function useSyncedSearchParams() {
   const ctx = useContext(SyncedSearchParamsContext);
   if (!ctx) {
     throw new Error(
-      'useSyncedSearchParams must be used within SyncedSearchParamsProvider',
+      'useSyncedSearchParams can only be used in a SyncedSearchParamsProvider',
     );
   }
 

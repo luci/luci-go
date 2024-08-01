@@ -13,13 +13,7 @@
 // limitations under the License.
 
 import { useInfiniteQuery } from '@tanstack/react-query';
-import {
-  ReactNode,
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-} from 'react';
+import { ReactNode, useEffect, useMemo } from 'react';
 
 import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
 import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
@@ -30,18 +24,11 @@ import {
 import { TestResult } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
 import { parseTestResultName } from '@/test_verdict/tools/utils';
 
-interface ResultDataContext {
-  readonly result: TestResult;
-  readonly resultArtifacts: readonly Artifact[];
-  readonly invArtifacts: readonly Artifact[];
-  artifactsLoading: boolean;
-}
-
-export const ResultDataCtx = createContext<ResultDataContext | null>(null);
+import { ResultDataCtx } from './context';
 
 interface ResultDataProviderProps {
-  result: TestResult;
-  children: ReactNode;
+  readonly result: TestResult;
+  readonly children: ReactNode;
 }
 
 export function ResultDataProvider({
@@ -136,60 +123,4 @@ export function ResultDataProvider({
       {children}
     </ResultDataCtx.Provider>
   );
-}
-
-export function useResultArtifacts() {
-  const ctx = useContext(ResultDataCtx);
-
-  if (!ctx) {
-    throw new Error(
-      'useResultArtifacts can only be used in ResultDataProvider',
-    );
-  }
-
-  return ctx.resultArtifacts;
-}
-
-export function useInvArtifacts() {
-  const ctx = useContext(ResultDataCtx);
-
-  if (!ctx) {
-    throw new Error('useInvArtifacts can only be used in ResultDataProvider');
-  }
-
-  return ctx.invArtifacts;
-}
-
-export function useCombinedArtifacts() {
-  const ctx = useContext(ResultDataCtx);
-
-  if (!ctx) {
-    throw new Error(
-      'useCombinedArtifacts can only be used in ResultDataProvider',
-    );
-  }
-
-  return ctx.resultArtifacts.concat(ctx.invArtifacts);
-}
-
-export function useArtifactsLoading() {
-  const ctx = useContext(ResultDataCtx);
-
-  if (!ctx) {
-    throw new Error(
-      'useArtifactsLoading can only be used in ResultDataProvider',
-    );
-  }
-
-  return ctx.artifactsLoading;
-}
-
-export function useResult() {
-  const ctx = useContext(ResultDataCtx);
-
-  if (!ctx) {
-    throw new Error('useResult can only be used in ResultDataProvider');
-  }
-
-  return ctx.result;
 }

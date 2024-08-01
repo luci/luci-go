@@ -28,7 +28,7 @@ export function useBlamelistDispatch() {
   const ctx = useContext(BlamelistDispatcherCtx);
   if (ctx === undefined) {
     throw new Error(
-      'useBlamelistDispatch can only be used within BlamelistStateProvider',
+      'useBlamelistDispatch can only be used in a BlamelistStateProvider',
     );
   }
   return ctx;
@@ -38,7 +38,7 @@ export function useBlamelistState() {
   const ctx = useContext(BlamelistStateCtx);
   if (ctx === undefined) {
     throw new Error(
-      'useBlamelistState can only be used within BlamelistStateProvider',
+      'useBlamelistState can only be used in a BlamelistStateProvider',
     );
   }
   return ctx;
@@ -62,7 +62,7 @@ export function useConfig() {
   const ctx = useContext(ChangeTableCtx);
   if (ctx === undefined) {
     throw new Error(
-      'useConfig must be used within ChangepointTableContextProvider',
+      'useConfig can only be used in a ChangepointTableContextProvider',
     );
   }
   return ctx;

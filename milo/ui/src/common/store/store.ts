@@ -81,7 +81,7 @@ export const StoreProvider = StoreContext.Provider;
 export function useStore() {
   const context = useContext(StoreContext);
   if (!context) {
-    throw new Error('useStore must be used within StoreProvider');
+    throw new Error('useStore can only be used in a StoreProvider');
   }
 
   return context;

@@ -16,7 +16,7 @@ import { UseQueryOptions, useQueries } from '@tanstack/react-query';
 import { debounce } from 'lodash-es';
 import { useState } from 'react';
 
-import { BatchedClustersClientProvider } from '@/analysis/hooks/batched_clusters_client';
+import { BatchedClustersClientProvider } from '@/analysis/hooks/bached_clusters_client/provider';
 import { useTestVariantBranchesClient } from '@/analysis/hooks/prpc_clients';
 import {
   OutputQuerySourcePositionsResponse,

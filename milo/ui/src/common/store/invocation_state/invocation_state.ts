@@ -339,7 +339,7 @@ export const InvocationProvider = InvocationContext.Provider;
 export function useInvocation() {
   const context = useContext(InvocationContext);
   if (!context) {
-    throw new Error('useInvocation must be used within InvocationProvider');
+    throw new Error('useInvocation can only be used in a InvocationProvider');
   }
 
   return context;

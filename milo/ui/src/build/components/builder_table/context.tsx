@@ -58,7 +58,7 @@ export function useBuildsClient() {
   const ctx = useContext(BuildsClientCtx);
   if (ctx === null) {
     throw new Error(
-      'useBuildsClient can only be used within BuilderTableContextProvider',
+      'useBuildsClient can only be used in a BuilderTableContextProvider',
     );
   }
   return ctx;
@@ -68,7 +68,7 @@ export function useNumOfBuilds() {
   const ctx = useContext(NumOfBuildsCtx);
   if (ctx === null) {
     throw new Error(
-      'useNumOfBuilds can only be used within BuilderTableContextProvider',
+      'useNumOfBuilds can only be used in a BuilderTableContextProvider',
     );
   }
   return ctx;

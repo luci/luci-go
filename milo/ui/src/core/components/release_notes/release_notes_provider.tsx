@@ -65,7 +65,7 @@ export function ReleaseNotesProvider({
 export function useReleaseNotes() {
   const ctx = useContext(ReleaseNotesCtx);
   if (ctx === null) {
-    throw new Error('useReleaseNotes must be used within ReleaseNotesProvider');
+    throw new Error('useReleaseNotes can only be used in a ReleaseNotesProvider');
   }
   return ctx;
 }
@@ -73,7 +73,7 @@ export function useHasNewRelease() {
   const ctx = useContext(HasNewReleaseCtx);
   if (ctx === null) {
     throw new Error(
-      'useHasNewRelease must be used within ReleaseNotesProvider',
+      'useHasNewRelease can only be used in a ReleaseNotesProvider',
     );
   }
   return ctx;
@@ -83,7 +83,7 @@ export function useMarkReleaseNotesRead() {
   const ctx = useContext(MarkReleaseNotesAsReadCtx);
   if (ctx === null) {
     throw new Error(
-      'useMarkReleaseNotesRead must be used within ReleaseNotesProvider',
+      'useMarkReleaseNotesRead can only be used in a ReleaseNotesProvider',
     );
   }
   return ctx;

@@ -64,7 +64,7 @@ export function useLogGroupListDispatch() {
   const ctx = useContext(LogGroupListDispatcherCtx);
   if (ctx === undefined) {
     throw new Error(
-      'useLogGroupListDispatch can only be used within LogGroupListStateProvider',
+      'useLogGroupListDispatch can only be used in a LogGroupListStateProvider',
     );
   }
   return ctx;
@@ -74,7 +74,7 @@ export function useLogGroupListState() {
   const ctx = useContext(LogGroupListStateCtx);
   if (ctx === undefined) {
     throw new Error(
-      'useLogGroupListState can only be used within LogGroupListStateProvider',
+      'useLogGroupListState can only be used in a LogGroupListStateProvider',
     );
   }
   return ctx;

@@ -19,7 +19,7 @@ import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params
 import { useResults } from '../context';
 import { getSelectedResultIndex } from '../utils';
 
-import { ResultDataProvider } from './context';
+import { ResultDataProvider } from './provider';
 import { ResultArtifacts } from './result_artifacts';
 import { ResultBasicInfo } from './result_basic_info';
 import { ResultTags } from './result_tags';

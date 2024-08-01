@@ -36,7 +36,7 @@ export function useDetailsUrlPath(regression: OutputChangepointGroupSummary) {
   const ctx = useContext(Ctx);
   if (ctx === null) {
     throw new Error(
-      'useDetailsUrlPath can only be used within RegressionTable',
+      'useDetailsUrlPath can only be used in a RegressionTable',
     );
   }
   return ctx(regression);

@@ -74,7 +74,7 @@ export function useSetShowPageConfig() {
   const ctx = useContext(Context);
   if (ctx === null) {
     throw new Error(
-      'useSetShowPageConfig must be used within PageConfigProvider',
+      'useSetShowPageConfig can only be used in a PageConfigProvider',
     );
   }
 
@@ -94,7 +94,7 @@ export function usePageSpecificConfig() {
   const ctx = useContext(Context);
   if (ctx === null) {
     throw new Error(
-      'usePageSpecificConfig must be used within PageConfigProvider',
+      'usePageSpecificConfig can only be used in a PageConfigProvider',
     );
   }
 

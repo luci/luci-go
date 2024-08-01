@@ -31,7 +31,7 @@ export function useActiveTabId() {
   const ctx = useContext(ActiveTabContext);
 
   if (!ctx) {
-    throw new Error('useActiveTabId must be used within RoutedTabs');
+    throw new Error('useActiveTabId can only be used in a RoutedTabs');
   }
 
   return ctx.activeTabId;
@@ -54,7 +54,7 @@ export function useTabId(id: string) {
   const hookRef = useRef();
   const dispatch = useContext(ActiveTabUpdaterContext);
   if (!dispatch) {
-    throw new Error('useTabId must be used within RoutedTabs');
+    throw new Error('useTabId can only be used in a RoutedTabs');
   }
 
   useEffect(() => {

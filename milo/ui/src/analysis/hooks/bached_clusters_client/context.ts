@@ -14,42 +14,21 @@
 
 import { ReactNode, createContext, useContext } from 'react';
 
-import {
-  DecoratedClient,
-  usePrpcServiceClient,
-} from '@/common/hooks/prpc_query';
+import { DecoratedClient } from '@/common/hooks/prpc_query';
 import { BatchedClustersClientImpl } from '@/proto_utils/batched_clusters_client';
 
-const BatchedClustersClientCtx = createContext<
+export const BatchedClustersClientCtx = createContext<
   DecoratedClient<BatchedClustersClientImpl> | undefined
 >(undefined);
 
 export interface BatchedClustersClientProviderProps {
   readonly children: ReactNode;
 }
-
-export function BatchedClustersClientProvider({
-  children,
-}: BatchedClustersClientProviderProps) {
-  // Use a single client instance so all requests in the same rendering cycle
-  // can be batched together.
-  const client = usePrpcServiceClient({
-    host: SETTINGS.luciAnalysis.host,
-    ClientImpl: BatchedClustersClientImpl,
-  });
-
-  return (
-    <BatchedClustersClientCtx.Provider value={client}>
-      {children}
-    </BatchedClustersClientCtx.Provider>
-  );
-}
-
 export function useBatchedClustersClient() {
   const ctx = useContext(BatchedClustersClientCtx);
   if (ctx === undefined) {
     throw new Error(
-      'useBatchedClustersClient must be used in a BatchedClustersClientProvider',
+      'useBatchedClustersClient can only be used in a BatchedClustersClientProvider',
     );
   }
   return ctx;

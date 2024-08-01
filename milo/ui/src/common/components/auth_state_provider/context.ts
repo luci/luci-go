@@ -41,7 +41,7 @@ export function useAuthState(): Pick<
   const value = useContext(AuthStateContext);
 
   if (!value) {
-    throw new Error('useAuthState must be used under a AuthStateProvider');
+    throw new Error('useAuthState can only be used in a AuthStateProvider');
   }
 
   return value.getAuthState();
@@ -62,7 +62,9 @@ export function useGetAccessToken(): () => Promise<string> {
   const value = useContext(AuthStateContext);
 
   if (!value) {
-    throw new Error('useGetAccessToken must be used under a AuthStateProvider');
+    throw new Error(
+      'useGetAccessToken can only be used in a AuthStateProvider',
+    );
   }
 
   return value.getAccessToken;
@@ -83,7 +85,7 @@ export function useGetIdToken(): () => Promise<string> {
   const value = useContext(AuthStateContext);
 
   if (!value) {
-    throw new Error('useGetIdToken must be used under a AuthStateProvider');
+    throw new Error('useGetIdToken can only be used in a AuthStateProvider');
   }
 
   return value.getIdToken;

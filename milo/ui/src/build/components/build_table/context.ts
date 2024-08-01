@@ -24,7 +24,7 @@ export function useDefaultExpanded() {
   const ctx = useContext(DefaultExpandedContext);
 
   if (ctx === null) {
-    throw new Error('useDefaultExpanded must be used within BuildTable');
+    throw new Error('useDefaultExpanded can only be used in a BuildTable');
   }
 
   return ctx;
@@ -40,7 +40,7 @@ export function useSetDefaultExpanded() {
   const ctx = useContext(SetDefaultExpandedContext);
 
   if (!ctx) {
-    throw new Error('useSetDefaultExpanded must be used within BuildTable');
+    throw new Error('useSetDefaultExpanded can only be used in a BuildTable');
   }
 
   return ctx;
@@ -54,7 +54,7 @@ export function useBuild() {
   const ctx = useContext(BuildContext);
 
   if (!ctx) {
-    throw new Error('useBuild must be used within BuildTableRow');
+    throw new Error('useBuild can only be used in a BuildTableRow');
   }
 
   return ctx;
@@ -68,7 +68,7 @@ export function useRowExpanded() {
   const ctx = useContext(RowExpandedContext);
 
   if (!ctx) {
-    throw new Error('useRowExpandedState must be used within BuildTableRow');
+    throw new Error('useRowExpandedState can only be used in a BuildTableRow');
   }
 
   return ctx;
@@ -84,7 +84,7 @@ export function useSetRowExpanded() {
   const ctx = useContext(SetRowExpandedContext);
 
   if (!ctx) {
-    throw new Error('useSetRowExpanded must be used within BuildTableRow');
+    throw new Error('useSetRowExpanded can only be used in a BuildTableRow');
   }
 
   return ctx;

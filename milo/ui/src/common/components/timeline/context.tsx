@@ -73,7 +73,7 @@ export function TimelineContextProvider({
 export function useTimelineConfig() {
   const ctx = useContext(ConfigCtx);
   if (ctx === null) {
-    throw new Error('useTimelineConfig can only be used within Timeline');
+    throw new Error('useTimelineConfig can only be used in a Timeline');
   }
 
   return ctx;
@@ -82,7 +82,7 @@ export function useTimelineConfig() {
 export function useRulerStateSetters() {
   const ctx = useContext(RulerStateSettersCtx);
   if (ctx === null) {
-    throw new Error('useRulerStateSetters can only be used within Timeline');
+    throw new Error('useRulerStateSetters can only be used in a Timeline');
   }
 
   return ctx;
