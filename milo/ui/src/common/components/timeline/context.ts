@@ -13,15 +13,7 @@
 // limitations under the License.
 
 import { ScaleLinear, ScaleTime, TimeInterval } from 'd3';
-import {
-  Dispatch,
-  ReactNode,
-  SetStateAction,
-  createContext,
-  useContext,
-  useMemo,
-  useState,
-} from 'react';
+import { Dispatch, SetStateAction, createContext, useContext } from 'react';
 
 export interface TimelineConfig {
   readonly startTimeMs: number;
@@ -33,42 +25,17 @@ export interface TimelineConfig {
   readonly yScale: ScaleLinear<number, number, never>;
   readonly timeInterval: TimeInterval;
 }
-const ConfigCtx = createContext<TimelineConfig | null>(null);
+export const ConfigCtx = createContext<TimelineConfig | null>(null);
 
 interface RulerStateSetters {
   readonly setDisplay: Dispatch<SetStateAction<boolean>>;
   readonly setX: Dispatch<SetStateAction<number>>;
 }
 
-const RulerStateSettersCtx = createContext<RulerStateSetters | null>(null);
-const RulerStateCtx = createContext<number | null>(null);
-
-export interface TimelineContextProviderProps {
-  readonly config: TimelineConfig;
-  readonly children: ReactNode;
-}
-
-export function TimelineContextProvider({
-  config,
-  children,
-}: TimelineContextProviderProps) {
-  const [rulerX, setRulerX] = useState(0);
-  const [displayRuler, setDisplayRuler] = useState(false);
-  const rulerStateSetters = useMemo(
-    () => ({ setX: setRulerX, setDisplay: setDisplayRuler }),
-    [setRulerX, setDisplayRuler],
-  );
-
-  return (
-    <ConfigCtx.Provider value={config}>
-      <RulerStateSettersCtx.Provider value={rulerStateSetters}>
-        <RulerStateCtx.Provider value={displayRuler ? rulerX : null}>
-          {children}
-        </RulerStateCtx.Provider>
-      </RulerStateSettersCtx.Provider>
-    </ConfigCtx.Provider>
-  );
-}
+export const RulerStateSettersCtx = createContext<RulerStateSetters | null>(
+  null,
+);
+export const RulerStateCtx = createContext<number | null>(null);
 
 export function useTimelineConfig() {
   const ctx = useContext(ConfigCtx);

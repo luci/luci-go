@@ -21,7 +21,8 @@ import { PREDEFINED_TIME_INTERVALS } from '@/common/constants/time';
 import { roundDown } from '@/generic_libs/tools/num_utils';
 
 import { V_GRID_LINE_MAX_GAP } from './constants';
-import { TimelineConfig, TimelineContextProvider } from './context';
+import { TimelineConfig } from './context';
+import { TimelineContextProvider } from './provider';
 
 const Container = styled(Box)`
   display: grid;
