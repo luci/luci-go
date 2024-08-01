@@ -1013,6 +1013,13 @@ func UpdateAuthGroup(ctx context.Context, groupUpdate *AuthGroup, updateMask *fi
 			if err := validateGlobs(groupUpdate.Globs); err != nil {
 				return nil, fmt.Errorf("%w: %s", ErrInvalidIdentity, err)
 			}
+		case "owners":
+			// Admin group must always be owned by itself.
+			// Note: empty owners field is permitted as the admin group is the
+			// default for owners.
+			if groupUpdate.ID == AdminGroup && groupUpdate.Owners != "" && groupUpdate.Owners != AdminGroup {
+				return nil, fmt.Errorf("%w: changing %q group owners is forbidden", ErrInvalidArgument, AdminGroup)
+			}
 		}
 	}
 

@@ -698,6 +698,23 @@ func TestUpdateAuthGroup(t *testing.T) {
 			So(err, ShouldBeNil)
 		})
 
+		Convey("can't change admin owners", func() {
+			ctx := auth.WithState(ctx, &authtest.FakeState{
+				Identity:       "user:someone@example.com",
+				IdentityGroups: []string{AdminGroup},
+			})
+
+			// Set up the admin group and another self-owned test group.
+			adminAuthGroup := emptyAuthGroup(ctx, AdminGroup)
+			So(datastore.Put(
+				ctx, adminAuthGroup, emptyAuthGroup(ctx, "foo")), ShouldBeNil)
+
+			// Attempt to change the owners of the admin group.
+			adminAuthGroup.Owners = "foo"
+			_, err := UpdateAuthGroup(ctx, adminAuthGroup, nil, etag, false, "Go pRPC API", false)
+			So(err, ShouldErrLike, fmt.Sprintf("changing %q group owners is forbidden", AdminGroup))
+		})
+
 		Convey("can't delete if etag doesn't match", func() {
 			So(datastore.Put(ctx, group), ShouldBeNil)
 			_, err := UpdateAuthGroup(ctx, group, nil, "bad-etag", false, "Go pRPC API", false)
