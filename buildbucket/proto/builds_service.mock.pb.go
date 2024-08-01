@@ -11,6 +11,76 @@ import (
 	grpc "google.golang.org/grpc"
 )
 
+// MockisCustomMetricPreviewRequest_Class is a mock of isCustomMetricPreviewRequest_Class interface.
+type MockisCustomMetricPreviewRequest_Class struct {
+	ctrl     *gomock.Controller
+	recorder *MockisCustomMetricPreviewRequest_ClassMockRecorder
+}
+
+// MockisCustomMetricPreviewRequest_ClassMockRecorder is the mock recorder for MockisCustomMetricPreviewRequest_Class.
+type MockisCustomMetricPreviewRequest_ClassMockRecorder struct {
+	mock *MockisCustomMetricPreviewRequest_Class
+}
+
+// NewMockisCustomMetricPreviewRequest_Class creates a new mock instance.
+func NewMockisCustomMetricPreviewRequest_Class(ctrl *gomock.Controller) *MockisCustomMetricPreviewRequest_Class {
+	mock := &MockisCustomMetricPreviewRequest_Class{ctrl: ctrl}
+	mock.recorder = &MockisCustomMetricPreviewRequest_ClassMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockisCustomMetricPreviewRequest_Class) EXPECT() *MockisCustomMetricPreviewRequest_ClassMockRecorder {
+	return m.recorder
+}
+
+// isCustomMetricPreviewRequest_Class mocks base method.
+func (m *MockisCustomMetricPreviewRequest_Class) isCustomMetricPreviewRequest_Class() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "isCustomMetricPreviewRequest_Class")
+}
+
+// isCustomMetricPreviewRequest_Class indicates an expected call of isCustomMetricPreviewRequest_Class.
+func (mr *MockisCustomMetricPreviewRequest_ClassMockRecorder) isCustomMetricPreviewRequest_Class() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "isCustomMetricPreviewRequest_Class", reflect.TypeOf((*MockisCustomMetricPreviewRequest_Class)(nil).isCustomMetricPreviewRequest_Class))
+}
+
+// MockisCustomMetricPreviewResponse_Response is a mock of isCustomMetricPreviewResponse_Response interface.
+type MockisCustomMetricPreviewResponse_Response struct {
+	ctrl     *gomock.Controller
+	recorder *MockisCustomMetricPreviewResponse_ResponseMockRecorder
+}
+
+// MockisCustomMetricPreviewResponse_ResponseMockRecorder is the mock recorder for MockisCustomMetricPreviewResponse_Response.
+type MockisCustomMetricPreviewResponse_ResponseMockRecorder struct {
+	mock *MockisCustomMetricPreviewResponse_Response
+}
+
+// NewMockisCustomMetricPreviewResponse_Response creates a new mock instance.
+func NewMockisCustomMetricPreviewResponse_Response(ctrl *gomock.Controller) *MockisCustomMetricPreviewResponse_Response {
+	mock := &MockisCustomMetricPreviewResponse_Response{ctrl: ctrl}
+	mock.recorder = &MockisCustomMetricPreviewResponse_ResponseMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockisCustomMetricPreviewResponse_Response) EXPECT() *MockisCustomMetricPreviewResponse_ResponseMockRecorder {
+	return m.recorder
+}
+
+// isCustomMetricPreviewResponse_Response mocks base method.
+func (m *MockisCustomMetricPreviewResponse_Response) isCustomMetricPreviewResponse_Response() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "isCustomMetricPreviewResponse_Response")
+}
+
+// isCustomMetricPreviewResponse_Response indicates an expected call of isCustomMetricPreviewResponse_Response.
+func (mr *MockisCustomMetricPreviewResponse_ResponseMockRecorder) isCustomMetricPreviewResponse_Response() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "isCustomMetricPreviewResponse_Response", reflect.TypeOf((*MockisCustomMetricPreviewResponse_Response)(nil).isCustomMetricPreviewResponse_Response))
+}
+
 // MockisBatchRequest_Request_Request is a mock of isBatchRequest_Request_Request interface.
 type MockisBatchRequest_Request_Request struct {
 	ctrl     *gomock.Controller
@@ -162,6 +232,26 @@ func (mr *MockBuildsClientMockRecorder) CreateBuild(ctx, in interface{}, opts ..
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, in}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateBuild", reflect.TypeOf((*MockBuildsClient)(nil).CreateBuild), varargs...)
+}
+
+// CustomMetricPreview mocks base method.
+func (m *MockBuildsClient) CustomMetricPreview(ctx context.Context, in *CustomMetricPreviewRequest, opts ...grpc.CallOption) (*CustomMetricPreviewResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "CustomMetricPreview", varargs...)
+	ret0, _ := ret[0].(*CustomMetricPreviewResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CustomMetricPreview indicates an expected call of CustomMetricPreview.
+func (mr *MockBuildsClientMockRecorder) CustomMetricPreview(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CustomMetricPreview", reflect.TypeOf((*MockBuildsClient)(nil).CustomMetricPreview), varargs...)
 }
 
 // GetBuild mocks base method.
@@ -370,6 +460,21 @@ func (m *MockBuildsServer) CreateBuild(arg0 context.Context, arg1 *CreateBuildRe
 func (mr *MockBuildsServerMockRecorder) CreateBuild(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateBuild", reflect.TypeOf((*MockBuildsServer)(nil).CreateBuild), arg0, arg1)
+}
+
+// CustomMetricPreview mocks base method.
+func (m *MockBuildsServer) CustomMetricPreview(arg0 context.Context, arg1 *CustomMetricPreviewRequest) (*CustomMetricPreviewResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CustomMetricPreview", arg0, arg1)
+	ret0, _ := ret[0].(*CustomMetricPreviewResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CustomMetricPreview indicates an expected call of CustomMetricPreview.
+func (mr *MockBuildsServerMockRecorder) CustomMetricPreview(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CustomMetricPreview", reflect.TypeOf((*MockBuildsServer)(nil).CustomMetricPreview), arg0, arg1)
 }
 
 // GetBuild mocks base method.

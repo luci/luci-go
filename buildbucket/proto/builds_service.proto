@@ -17,6 +17,8 @@ import "go.chromium.org/luci/buildbucket/proto/build.proto";
 import "go.chromium.org/luci/buildbucket/proto/builder_common.proto";
 import "go.chromium.org/luci/buildbucket/proto/common.proto";
 import "go.chromium.org/luci/buildbucket/proto/notification.proto";
+import "go.chromium.org/luci/buildbucket/proto/project_config.proto";
+import "go.chromium.org/luci/buildbucket/proto/service_config.proto";
 import "go.chromium.org/luci/common/proto/structmask/structmask.proto";
 
 // Manages builds.
@@ -121,6 +123,11 @@ service Builds {
   // StartBuild will associate a task with a build if the association is not done
   // after RunTaskResponse is returned to buildbucket.
   rpc StartBuild(StartBuildRequest) returns (StartBuildResponse) {};
+
+  // Preview a custom metric definition with a build.
+  // It's useful for builder owners to test the CEL expressions they plan to
+  // use in their custom metric predicates and extra_fields.
+  rpc CustomMetricPreview(CustomMetricPreviewRequest) returns (CustomMetricPreviewResponse) {};
 }
 
 // A request message for GetBuild RPC.
@@ -622,6 +629,37 @@ message GetBuildStatusRequest {
   // Build number.
   // Requires builder. Mutually exclusive with id.
   int32 build_number = 3;
+}
+
+// A request message for CustomMetricPreview RPC.
+message CustomMetricPreviewRequest {
+  // ID of a build to use to test the custom metric difinition.
+  int64 build_id = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Definition of the custom metric.
+  CustomMetricDefinition metric_definition = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // Metric class determines which data to be collected and reported
+  // to the metric.
+  oneof class {
+    CustomMetricBase metric_base = 3;
+  }
+}
+
+// A response message for CustomMetricPreview RPC.
+message CustomMetricPreviewResponse {
+  message Report {
+    // Metric fields with their values.
+    // Includes the base fields and extra fields for the custom metric.
+    repeated StringPair fields = 1;
+  }
+  oneof response {
+    // Metric report if the build passes the metric predicate evaluation.
+    Report report = 1;
+
+    // Error details of the evaluation.
+    string error = 100;
+  }
 }
 
 // Defines a subset of Build fields and properties to return.

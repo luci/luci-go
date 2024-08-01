@@ -46,6 +46,7 @@ type CustomMetricBase int32
 
 const (
 	CustomMetricBase_CUSTOM_METRIC_BASE_UNSET CustomMetricBase = 0
+	// Build event metrics.
 	// A counter metric for Build creation.
 	// Default metric field: None.
 	CustomMetricBase_CUSTOM_METRIC_BASE_CREATED CustomMetricBase = 1
@@ -65,6 +66,7 @@ const (
 	// The time elapsed from the build creation to the start.
 	// Default metric field: None.
 	CustomMetricBase_CUSTOM_METRIC_BASE_SCHEDULING_DURATIONS CustomMetricBase = 6
+	// Builder metrics.
 	// The age of the oldest build that has been scheduled but not started yet
 	// (aka age of the oldest pending build).
 	// Default metric field: None.

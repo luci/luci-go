@@ -192,3 +192,20 @@ func (s *DecoratedBuilds) StartBuild(ctx context.Context, req *StartBuildRequest
 	}
 	return
 }
+
+func (s *DecoratedBuilds) CustomMetricPreview(ctx context.Context, req *CustomMetricPreviewRequest) (rsp *CustomMetricPreviewResponse, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "CustomMetricPreview", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.CustomMetricPreview(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "CustomMetricPreview", rsp, err)
+	}
+	return
+}

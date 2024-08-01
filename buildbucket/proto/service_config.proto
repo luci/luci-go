@@ -350,6 +350,8 @@ message CipdSettings {
 // http://shortn/_6bc0aXIouD to find all the supported metric bases.
 enum CustomMetricBase {
   CUSTOM_METRIC_BASE_UNSET = 0;
+
+  // Build event metrics.
   // A counter metric for Build creation.
   // Default metric field: None.
   CUSTOM_METRIC_BASE_CREATED = 1;
@@ -368,6 +370,8 @@ enum CustomMetricBase {
   // The time elapsed from the build creation to the start.
   // Default metric field: None.
   CUSTOM_METRIC_BASE_SCHEDULING_DURATIONS = 6;
+
+  // Builder metrics.
   // The age of the oldest build that has been scheduled but not started yet
   // (aka age of the oldest pending build).
   // Default metric field: None.
