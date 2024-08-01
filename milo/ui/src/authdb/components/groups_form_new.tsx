@@ -54,6 +54,8 @@ export function GroupsFormNew () {
   const [ownersErrorMessage, setOwnersErrorMessage] = useState<string>('');
   const [members, setMembers] = useState<string>('');
   const [membersErrorMessage, setMembersErrorMessage] = useState<string>('');
+  const [globs, setGlobs] = useState<string>('');
+  const [globsErrorMessage, setGlobsErrorMessage] = useState<string>('');
 
     const createGroup = () => {
       if (!nameRe.test(name)) {
@@ -79,7 +81,21 @@ export function GroupsFormNew () {
       } else {
         setMembersErrorMessage('');
       }
+      const globsArray = globs.split(/[\n ]+/).filter((item) => item !== "");
+      let invalidGlobs = globsArray.filter((glob) => !isGlob(glob));
+      if (invalidGlobs.length > 0) {
+        let errorMessage = 'Invalid globs: ' + invalidGlobs.join(', ');
+        setGlobsErrorMessage(errorMessage);
+      } else {
+        setGlobsErrorMessage('');
+      }
     }
+
+    // True if string looks like a glob pattern (and not a group member name).
+    const isGlob = (item: string) => {
+      // Glob patterns contain '*' and '[]' not allowed in member names.
+      return item.search(/[\*\[\]]/) != -1;
+    };
 
   return (
     <Box sx={{minHeight:'500px', p:'20px', ml:'5px'}}>
@@ -127,6 +143,16 @@ export function GroupsFormNew () {
               <TableRow>
                 <TableCell align='left' style={{width: '95%'}} sx={{pt: 0, pb: '8px'}}>
                   <TextField multiline value={members} style={{width: '100%', minHeight: '60px'}} onChange={(e) => setMembers(e.target.value)} id='membersTextfield' data-testid='members-textfield' error={membersErrorMessage !== ""} helperText={membersErrorMessage}></TextField>
+                </TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell sx={{pb: 0}} style={{display: 'flex', flexDirection: 'row', alignItems:'center', minHeight: '45px'}}>
+                  <Typography variant="h6"> Globs</Typography>
+                </TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell align='left' style={{width: '95%'}} sx={{pt: 0, pb: '8px'}}>
+                  <TextField multiline value={globs} style={{width: '100%', minHeight: '60px'}} onChange={(e) => setGlobs(e.target.value)} id='globsTextfield' data-testid='globs-textfield' error={globsErrorMessage !== ""} helperText={globsErrorMessage}></TextField>
                 </TableCell>
               </TableRow>
             </TableBody>
