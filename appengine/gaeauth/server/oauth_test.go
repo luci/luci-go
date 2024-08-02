@@ -20,9 +20,10 @@ import (
 
 	"golang.org/x/oauth2"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/auth/authtest"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestGetUserCredentials(t *testing.T) {
@@ -37,21 +38,21 @@ func TestGetUserCredentials(t *testing.T) {
 		return m.GetUserCredentials(ctx, req)
 	}
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		tok, err := call("Bearer abc.def")
-		So(err, ShouldBeNil)
-		So(tok, ShouldResemble, &oauth2.Token{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, tok, should.Resemble(&oauth2.Token{
 			AccessToken: "abc.def",
 			TokenType:   "Bearer",
-		})
+		}))
 	})
 
-	Convey("Bad headers", t, func() {
+	ftt.Run("Bad headers", t, func(t *ftt.Test) {
 		_, err := call("")
-		So(err, ShouldEqual, errBadAuthHeader)
+		assert.Loosely(t, err, should.Equal(errBadAuthHeader))
 		_, err = call("abc.def")
-		So(err, ShouldEqual, errBadAuthHeader)
+		assert.Loosely(t, err, should.Equal(errBadAuthHeader))
 		_, err = call("Basic abc.def")
-		So(err, ShouldEqual, errBadAuthHeader)
+		assert.Loosely(t, err, should.Equal(errBadAuthHeader))
 	})
 }

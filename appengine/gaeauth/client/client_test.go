@@ -29,66 +29,69 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/caching"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestGetAccessToken(t *testing.T) {
-	Convey("GetAccessToken works", t, func() {
+	ftt.Run("GetAccessToken works", t, func(t *ftt.Test) {
 		ctx := testContext()
 
 		// Getting initial token.
-		ctx = mockAccessTokenRPC(ctx, []string{"A", "B"}, "access_token_1", testclock.TestRecentTimeUTC.Add(time.Hour))
+		ctx = mockAccessTokenRPC(ctx, t, []string{"A", "B"}, "access_token_1", testclock.TestRecentTimeUTC.Add(time.Hour))
 		tok, err := GetAccessToken(ctx, []string{"B", "B", "A"})
-		So(err, ShouldBeNil)
-		So(tok, ShouldResemble, &oauth2.Token{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, tok, should.Resemble(&oauth2.Token{
 			AccessToken: "access_token_1",
 			TokenType:   "Bearer",
 			Expiry:      testclock.TestRecentTimeUTC.Add(time.Hour).Add(-expirationMinLifetime),
-		})
+		}))
 
 		// Some time later same cached token is used.
 		clock.Get(ctx).(testclock.TestClock).Add(30 * time.Minute)
 
-		ctx = mockAccessTokenRPC(ctx, []string{"A", "B"}, "access_token_none", testclock.TestRecentTimeUTC.Add(time.Hour))
+		ctx = mockAccessTokenRPC(ctx, t, []string{"A", "B"}, "access_token_none", testclock.TestRecentTimeUTC.Add(time.Hour))
 		tok, err = GetAccessToken(ctx, []string{"B", "B", "A"})
-		So(err, ShouldBeNil)
-		So(tok, ShouldResemble, &oauth2.Token{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, tok, should.Resemble(&oauth2.Token{
 			AccessToken: "access_token_1",
 			TokenType:   "Bearer",
 			Expiry:      testclock.TestRecentTimeUTC.Add(time.Hour).Add(-expirationMinLifetime),
-		})
+		}))
 
 		// Closer to expiration, the token is updated, at some random invocation,
 		// (depends on the seed, defines the loop limit in the test).
 		clock.Get(ctx).(testclock.TestClock).Add(26 * time.Minute)
 		for i := 0; ; i++ {
-			ctx = mockAccessTokenRPC(ctx, []string{"A", "B"}, fmt.Sprintf("access_token_%d", i+2), testclock.TestRecentTimeUTC.Add(2*time.Hour))
+			ctx = mockAccessTokenRPC(ctx, t, []string{"A", "B"}, fmt.Sprintf("access_token_%d", i+2), testclock.TestRecentTimeUTC.Add(2*time.Hour))
 			tok, err = GetAccessToken(ctx, []string{"B", "B", "A"})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			if tok.AccessToken != "access_token_1" {
 				break // got refreshed token!
 			}
-			So(i, ShouldBeLessThan, 1000) // the test is hanging, this means randomization doesn't work
+			assert.Loosely(t, i, should.BeLessThan(1000)) // the test is hanging, this means randomization doesn't work
 		}
-		So(tok, ShouldResemble, &oauth2.Token{
+		assert.Loosely(t, tok, should.Resemble(&oauth2.Token{
 			AccessToken: "access_token_3",
 			TokenType:   "Bearer",
 			Expiry:      testclock.TestRecentTimeUTC.Add(2 * time.Hour).Add(-expirationMinLifetime),
-		})
+		}))
 
 		// No randomization for token that are long expired.
 		clock.Get(ctx).(testclock.TestClock).Add(2 * time.Hour)
-		ctx = mockAccessTokenRPC(ctx, []string{"A", "B"}, "access_token_new", testclock.TestRecentTimeUTC.Add(5*time.Hour))
+		ctx = mockAccessTokenRPC(ctx, t, []string{"A", "B"}, "access_token_new", testclock.TestRecentTimeUTC.Add(5*time.Hour))
 		tok, err = GetAccessToken(ctx, []string{"B", "B", "A"})
-		So(err, ShouldBeNil)
-		So(tok.AccessToken, ShouldEqual, "access_token_new")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, tok.AccessToken, should.Equal("access_token_new"))
 	})
 }
 
 type mockedInfo struct {
 	info.RawInterface
+
+	t testing.TB
 
 	scopes []string
 	tok    string
@@ -96,7 +99,7 @@ type mockedInfo struct {
 }
 
 func (m *mockedInfo) AccessToken(scopes ...string) (string, time.Time, error) {
-	So(scopes, ShouldResemble, m.scopes)
+	assert.Loosely(m.t, scopes, should.Resemble(m.scopes))
 	return m.tok, m.exp, nil
 }
 
@@ -109,8 +112,8 @@ func testContext() context.Context {
 	return ctx
 }
 
-func mockAccessTokenRPC(ctx context.Context, scopes []string, tok string, exp time.Time) context.Context {
+func mockAccessTokenRPC(ctx context.Context, t testing.TB, scopes []string, tok string, exp time.Time) context.Context {
 	return info.AddFilters(ctx, func(ci context.Context, i info.RawInterface) info.RawInterface {
-		return &mockedInfo{i, scopes, tok, exp}
+		return &mockedInfo{i, t, scopes, tok, exp}
 	})
 }

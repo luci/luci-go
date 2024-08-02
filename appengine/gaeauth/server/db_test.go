@@ -21,40 +21,41 @@ import (
 
 	"go.chromium.org/luci/appengine/gaeauth/server/internal/authdbimpl"
 	"go.chromium.org/luci/appengine/gaetesting"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/service"
 	"go.chromium.org/luci/server/auth/service/protocol"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestGetAuthDB(t *testing.T) {
-	Convey("Unconfigured", t, func() {
+	ftt.Run("Unconfigured", t, func(t *ftt.Test) {
 		ctx := gaetesting.TestingContext()
 		authDB, err := GetAuthDB(ctx, nil)
-		So(err, ShouldBeNil)
-		So(authDB, ShouldHaveSameTypeAs, authdb.DevServerDB{})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, authDB, should.HaveType[authdb.DevServerDB])
 	})
 
-	Convey("Reuses instance if no changes", t, func() {
+	ftt.Run("Reuses instance if no changes", t, func(t *ftt.Test) {
 		ctx := gaetesting.TestingContext()
 
 		bumpAuthDB(ctx, 123)
 		authDB, err := GetAuthDB(ctx, nil)
-		So(err, ShouldBeNil)
-		So(authDB, ShouldHaveSameTypeAs, &authdb.SnapshotDB{})
-		So(authDB.(*authdb.SnapshotDB).Rev, ShouldEqual, 123)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, authDB, should.HaveType[*authdb.SnapshotDB])
+		assert.Loosely(t, authDB.(*authdb.SnapshotDB).Rev, should.Equal(123))
 
 		newOne, err := GetAuthDB(ctx, authDB)
-		So(err, ShouldBeNil)
-		So(newOne, ShouldEqual, authDB) // exact same pointer
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, newOne, should.Equal(authDB)) // exact same pointer
 
 		bumpAuthDB(ctx, 124)
 		anotherOne, err := GetAuthDB(ctx, authDB)
-		So(err, ShouldBeNil)
-		So(anotherOne, ShouldHaveSameTypeAs, &authdb.SnapshotDB{})
-		So(anotherOne.(*authdb.SnapshotDB).Rev, ShouldEqual, 124)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, anotherOne, should.HaveType[*authdb.SnapshotDB])
+		assert.Loosely(t, anotherOne.(*authdb.SnapshotDB).Rev, should.Equal(124))
 	})
 }
 

@@ -22,197 +22,197 @@ import (
 
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth/service"
 	"go.chromium.org/luci/server/auth/service/protocol"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestConfigureAuthService(t *testing.T) {
 	t.Parallel()
 
-	Convey("Initial config", t, func() {
+	ftt.Run("Initial config", t, func(t *ftt.Test) {
 		srv := &fakeAuthService{LatestRev: 123}
 		ctx := setAuthService(gaetesting.TestingContext(), srv)
 
-		So(ConfigureAuthService(ctx, "http://base_url", "http://auth-service"), ShouldBeNil)
-		So(srv.Calls, ShouldResemble, []string{
+		assert.Loosely(t, ConfigureAuthService(ctx, "http://base_url", "http://auth-service"), should.BeNil)
+		assert.Loosely(t, srv.Calls, should.Resemble([]string{
 			`EnsureSubscription "projects/app/subscriptions/dev-app-server-v1+auth-service" ""`,
-		})
+		}))
 
 		info, err := GetLatestSnapshotInfo(ctx)
-		So(err, ShouldBeNil)
-		So(info, ShouldResemble, &SnapshotInfo{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, info, should.Resemble(&SnapshotInfo{
 			AuthServiceURL: "http://auth-service",
 			Rev:            123,
-		})
+		}))
 
 		// Coverage for GetAuthDBSnapshot.
 		_, err = GetAuthDBSnapshot(ctx, "missing")
-		So(err, ShouldEqual, datastore.ErrNoSuchEntity)
+		assert.Loosely(t, err, should.Equal(datastore.ErrNoSuchEntity))
 		snap, err := GetAuthDBSnapshot(ctx, info.GetSnapshotID())
-		So(err, ShouldBeNil)
-		So(snap, ShouldResembleProto, &protocol.AuthDB{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, snap, should.Resemble(&protocol.AuthDB{
 			OauthClientId:     "client-id-for-rev-123",
 			OauthClientSecret: "secret",
-		})
+		}))
 
 		// Same config call again triggers resubsciption.
 		srv.Calls = nil
-		So(ConfigureAuthService(ctx, "http://base_url", "http://auth-service"), ShouldBeNil)
-		So(srv.Calls, ShouldResemble, []string{
+		assert.Loosely(t, ConfigureAuthService(ctx, "http://base_url", "http://auth-service"), should.BeNil)
+		assert.Loosely(t, srv.Calls, should.Resemble([]string{
 			`EnsureSubscription "projects/app/subscriptions/dev-app-server-v1+auth-service" ""`,
-		})
+		}))
 	})
 
-	Convey("Switching cfg", t, func() {
+	ftt.Run("Switching cfg", t, func(t *ftt.Test) {
 		srv := &fakeAuthService{LatestRev: 123}
 		ctx := setAuthService(gaetesting.TestingContext(), srv)
 
 		// Initial config.
-		So(ConfigureAuthService(ctx, "http://base_url", "http://auth-service-1"), ShouldBeNil)
+		assert.Loosely(t, ConfigureAuthService(ctx, "http://base_url", "http://auth-service-1"), should.BeNil)
 		// Change URL of the service.
-		So(ConfigureAuthService(ctx, "http://base_url", "http://auth-service-2"), ShouldBeNil)
+		assert.Loosely(t, ConfigureAuthService(ctx, "http://base_url", "http://auth-service-2"), should.BeNil)
 
 		info, err := GetLatestSnapshotInfo(ctx)
-		So(err, ShouldBeNil)
-		So(info, ShouldResemble, &SnapshotInfo{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, info, should.Resemble(&SnapshotInfo{
 			AuthServiceURL: "http://auth-service-2",
 			Rev:            123,
-		})
+		}))
 
-		So(srv.Calls, ShouldResemble, []string{
+		assert.Loosely(t, srv.Calls, should.Resemble([]string{
 			`EnsureSubscription "projects/app/subscriptions/dev-app-server-v1+auth-service-1" ""`,
 			`EnsureSubscription "projects/app/subscriptions/dev-app-server-v1+auth-service-2" ""`,
 			`DeleteSubscription "projects/app/subscriptions/dev-app-server-v1+auth-service-1"`,
-		})
+		}))
 	})
 
-	Convey("Removing cfg", t, func() {
+	ftt.Run("Removing cfg", t, func(t *ftt.Test) {
 		srv := &fakeAuthService{LatestRev: 123}
 		ctx := setAuthService(gaetesting.TestingContext(), srv)
 
 		// Initial config.
-		So(ConfigureAuthService(ctx, "http://base_url", "http://auth-service-1"), ShouldBeNil)
+		assert.Loosely(t, ConfigureAuthService(ctx, "http://base_url", "http://auth-service-1"), should.BeNil)
 		// Remove.
-		So(ConfigureAuthService(ctx, "http://base_url", ""), ShouldBeNil)
+		assert.Loosely(t, ConfigureAuthService(ctx, "http://base_url", ""), should.BeNil)
 
 		info, err := GetLatestSnapshotInfo(ctx)
-		So(err, ShouldBeNil)
-		So(info, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, info, should.BeNil)
 
-		So(srv.Calls, ShouldResemble, []string{
+		assert.Loosely(t, srv.Calls, should.Resemble([]string{
 			`EnsureSubscription "projects/app/subscriptions/dev-app-server-v1+auth-service-1" ""`,
 			`DeleteSubscription "projects/app/subscriptions/dev-app-server-v1+auth-service-1"`,
-		})
+		}))
 	})
 }
 
 func TestSyncAuthDB(t *testing.T) {
 	t.Parallel()
 
-	Convey("No new changes", t, func() {
+	ftt.Run("No new changes", t, func(t *ftt.Test) {
 		srv := &fakeAuthService{LatestRev: 123}
 		ctx := setAuthService(gaetesting.TestingContext(), srv)
-		So(ConfigureAuthService(ctx, "http://base_url", "http://auth-service"), ShouldBeNil)
+		assert.Loosely(t, ConfigureAuthService(ctx, "http://base_url", "http://auth-service"), should.BeNil)
 
 		info, err := syncAuthDB(ctx)
-		So(err, ShouldBeNil)
-		So(info, ShouldResemble, &SnapshotInfo{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, info, should.Resemble(&SnapshotInfo{
 			AuthServiceURL: "http://auth-service",
 			Rev:            123,
-		})
+		}))
 	})
 
-	Convey("Have update", t, func() {
+	ftt.Run("Have update", t, func(t *ftt.Test) {
 		srv := &fakeAuthService{LatestRev: 123}
 		ctx := setAuthService(gaetesting.TestingContext(), srv)
-		So(ConfigureAuthService(ctx, "http://base_url", "http://auth-service"), ShouldBeNil)
+		assert.Loosely(t, ConfigureAuthService(ctx, "http://base_url", "http://auth-service"), should.BeNil)
 
 		srv.LatestRev = 456
 
 		info, err := syncAuthDB(ctx)
-		So(err, ShouldBeNil)
-		So(info, ShouldResemble, &SnapshotInfo{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, info, should.Resemble(&SnapshotInfo{
 			AuthServiceURL: "http://auth-service",
 			Rev:            456,
-		})
+		}))
 	})
 }
 
 func TestSharding(t *testing.T) {
 	t.Parallel()
 
-	Convey("With datastore", t, func() {
+	ftt.Run("With datastore", t, func(t *ftt.Test) {
 		ctx := gaetesting.TestingContext()
 
-		Convey("Shard+unshard", func() {
+		t.Run("Shard+unshard", func(t *ftt.Test) {
 			shardIDs, err := shardAuthDB(ctx, "some-id", []byte("0123456789"), 3)
-			So(err, ShouldBeNil)
-			So(shardIDs, ShouldResemble, []string{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, shardIDs, should.Resemble([]string{
 				"some-id:bf6aaaab7c143ca12ae448c69fb72bb4cf1b29154b9086a927a0a91ae334cdf7",
 				"some-id:da70dfa4d9f95ac979f921e8e623358236313f334afcd06cddf8a5621cf6a1e9",
 				"some-id:cebe3d9d614ba5c19f633566104315854a11353a333bf96f16b5afa0e90abdc4",
 				"some-id:19581e27de7ced00ff1ce50b2047e7a567c76b1cbaebabe5ef03f7c3017bb5b7",
-			})
+			}))
 
-			Convey("OK", func() {
+			t.Run("OK", func(t *ftt.Test) {
 				blob, err := unshardAuthDB(ctx, shardIDs)
-				So(err, ShouldBeNil)
-				So(string(blob), ShouldEqual, "0123456789")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, string(blob), should.Equal("0123456789"))
 			})
 
-			Convey("Missing one", func() {
+			t.Run("Missing one", func(t *ftt.Test) {
 				_, err := unshardAuthDB(ctx, append(shardIDs, "missing"))
-				So(err, ShouldNotBeNil)
-				So(transient.Tag.In(err), ShouldBeFalse)
+				assert.Loosely(t, err, should.NotBeNil)
+				assert.Loosely(t, transient.Tag.In(err), should.BeFalse)
 			})
 		})
 
-		Convey("Store+load unsharded", func() {
-			So(storeDeflated(ctx, "some-id", []byte("0123456789"), time.Now(), 1000), ShouldBeNil)
+		t.Run("Store+load unsharded", func(t *ftt.Test) {
+			assert.Loosely(t, storeDeflated(ctx, "some-id", []byte("0123456789"), time.Now(), 1000), should.BeNil)
 
-			Convey("OK", func() {
+			t.Run("OK", func(t *ftt.Test) {
 				blob, _, err := fetchDeflated(ctx, "some-id")
-				So(err, ShouldBeNil)
-				So(string(blob), ShouldEqual, "0123456789")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, string(blob), should.Equal("0123456789"))
 			})
 
-			Convey("Missing snapshot", func() {
+			t.Run("Missing snapshot", func(t *ftt.Test) {
 				_, code, err := fetchDeflated(ctx, "another-id")
-				So(err, ShouldNotBeNil)
-				So(transient.Tag.In(err), ShouldBeFalse)
-				So(code, ShouldEqual, "ERROR_NO_SNAPSHOT")
+				assert.Loosely(t, err, should.NotBeNil)
+				assert.Loosely(t, transient.Tag.In(err), should.BeFalse)
+				assert.Loosely(t, code, should.Equal("ERROR_NO_SNAPSHOT"))
 			})
 		})
 
-		Convey("Store+load sharded", func() {
-			So(storeDeflated(ctx, "some-id", []byte("0123456789"), time.Now(), 3), ShouldBeNil)
+		t.Run("Store+load sharded", func(t *ftt.Test) {
+			assert.Loosely(t, storeDeflated(ctx, "some-id", []byte("0123456789"), time.Now(), 3), should.BeNil)
 
-			Convey("OK", func() {
+			t.Run("OK", func(t *ftt.Test) {
 				blob, _, err := fetchDeflated(ctx, "some-id")
-				So(err, ShouldBeNil)
-				So(string(blob), ShouldEqual, "0123456789")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, string(blob), should.Equal("0123456789"))
 			})
 
-			Convey("Missing snapshot", func() {
+			t.Run("Missing snapshot", func(t *ftt.Test) {
 				_, code, err := fetchDeflated(ctx, "another-id")
-				So(err, ShouldNotBeNil)
-				So(transient.Tag.In(err), ShouldBeFalse)
-				So(code, ShouldEqual, "ERROR_NO_SNAPSHOT")
+				assert.Loosely(t, err, should.NotBeNil)
+				assert.Loosely(t, transient.Tag.In(err), should.BeFalse)
+				assert.Loosely(t, code, should.Equal("ERROR_NO_SNAPSHOT"))
 			})
 
-			Convey("Missing shard", func() {
+			t.Run("Missing shard", func(t *ftt.Test) {
 				// See the test above for the ID.
 				datastore.Delete(ctx, datastore.KeyForObj(ctx, &SnapshotShard{
 					ID: "some-id:bf6aaaab7c143ca12ae448c69fb72bb4cf1b29154b9086a927a0a91ae334cdf7",
 				}))
 				_, code, err := fetchDeflated(ctx, "some-id")
-				So(err, ShouldNotBeNil)
-				So(transient.Tag.In(err), ShouldBeTrue)
-				So(code, ShouldEqual, "ERROR_SHARDS_MISSING")
+				assert.Loosely(t, err, should.NotBeNil)
+				assert.Loosely(t, transient.Tag.In(err), should.BeTrue)
+				assert.Loosely(t, code, should.Equal("ERROR_SHARDS_MISSING"))
 			})
 		})
 	})

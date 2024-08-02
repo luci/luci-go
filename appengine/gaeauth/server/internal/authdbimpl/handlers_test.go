@@ -22,49 +22,50 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/appengine/gaetesting"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/auth/service"
 	"go.chromium.org/luci/server/router"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestPubSubHandlers(t *testing.T) {
-	Convey("pubSubPush skips when not configured", t, func() {
+	ftt.Run("pubSubPush skips when not configured", t, func(t *ftt.Test) {
 		c := gaetesting.TestingContext()
 		rec := httptest.NewRecorder()
 		pubSubPush(&router.Context{
 			Writer:  rec,
 			Request: makePostRequest(c),
 		})
-		So(rec.Code, ShouldEqual, 200)
-		So(rec.Body.String(), ShouldEqual, "Auth Service URL is not configured, skipping the message")
+		assert.Loosely(t, rec.Code, should.Equal(200))
+		assert.Loosely(t, rec.Body.String(), should.Equal("Auth Service URL is not configured, skipping the message"))
 	})
 
-	Convey("pubSubPush works when no notification", t, func() {
-		c, _ := setupCtx()
+	ftt.Run("pubSubPush works when no notification", t, func(t *ftt.Test) {
+		c, _ := setupCtx(t)
 		rec := httptest.NewRecorder()
 		pubSubPush(&router.Context{
 			Writer:  rec,
 			Request: makePostRequest(c),
 		})
-		So(rec.Code, ShouldEqual, 200)
-		So(rec.Body.String(), ShouldEqual, "No new valid AuthDB change notifications")
+		assert.Loosely(t, rec.Code, should.Equal(200))
+		assert.Loosely(t, rec.Body.String(), should.Equal("No new valid AuthDB change notifications"))
 	})
 
-	Convey("pubSubPush old notification", t, func() {
-		c, srv := setupCtx()
+	ftt.Run("pubSubPush old notification", t, func(t *ftt.Test) {
+		c, srv := setupCtx(t)
 		srv.Notification = &service.Notification{Revision: 122} // older than 123
 		rec := httptest.NewRecorder()
 		pubSubPush(&router.Context{
 			Writer:  rec,
 			Request: makePostRequest(c),
 		})
-		So(rec.Code, ShouldEqual, 200)
-		So(rec.Body.String(), ShouldEqual, "Processed PubSub notification for rev 122: 123 -> 123")
+		assert.Loosely(t, rec.Code, should.Equal(200))
+		assert.Loosely(t, rec.Body.String(), should.Equal("Processed PubSub notification for rev 122: 123 -> 123"))
 	})
 
-	Convey("pubSubPush fresh notification", t, func() {
-		c, srv := setupCtx()
+	ftt.Run("pubSubPush fresh notification", t, func(t *ftt.Test) {
+		c, srv := setupCtx(t)
 		srv.LatestRev = 130
 		srv.Notification = &service.Notification{Revision: 124}
 		rec := httptest.NewRecorder()
@@ -72,15 +73,15 @@ func TestPubSubHandlers(t *testing.T) {
 			Writer:  rec,
 			Request: makePostRequest(c),
 		})
-		So(rec.Code, ShouldEqual, 200)
-		So(rec.Body.String(), ShouldEqual, "Processed PubSub notification for rev 124: 123 -> 130")
+		assert.Loosely(t, rec.Code, should.Equal(200))
+		assert.Loosely(t, rec.Body.String(), should.Equal("Processed PubSub notification for rev 124: 123 -> 130"))
 	})
 }
 
-func setupCtx() (context.Context, *fakeAuthService) {
+func setupCtx(t testing.TB) (context.Context, *fakeAuthService) {
 	srv := &fakeAuthService{LatestRev: 123}
 	c := setAuthService(gaetesting.TestingContext(), srv)
-	So(ConfigureAuthService(c, "http://base_url", "http://auth-service"), ShouldBeNil)
+	assert.Loosely(t, ConfigureAuthService(c, "http://base_url", "http://auth-service"), should.BeNil)
 	return c, srv
 }
 
