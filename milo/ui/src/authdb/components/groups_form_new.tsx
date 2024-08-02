@@ -56,6 +56,8 @@ export function GroupsFormNew () {
   const [membersErrorMessage, setMembersErrorMessage] = useState<string>('');
   const [globs, setGlobs] = useState<string>('');
   const [globsErrorMessage, setGlobsErrorMessage] = useState<string>('');
+  const [subgroups, setSubgroups] = useState<string>('');
+  const [subgroupsErrorMessage, setSubgroupsErrorMessage] = useState<string>('');
 
     const createGroup = () => {
       if (!nameRe.test(name)) {
@@ -88,6 +90,14 @@ export function GroupsFormNew () {
         setGlobsErrorMessage(errorMessage);
       } else {
         setGlobsErrorMessage('');
+      }
+      const subgroupsArray = subgroups.split(/[\n ]+/).filter((item) => item !== "");
+      let invalidSubgroups = subgroupsArray.filter((subgroup) => !(nameRe.test(subgroup) && (subgroup !== name)));
+      if (invalidSubgroups.length > 0) {
+        let errorMessage = 'Invalid subgroups: ' + invalidSubgroups.join(', ');
+        setSubgroupsErrorMessage(errorMessage);
+      } else {
+        setSubgroupsErrorMessage('');
       }
     }
 
@@ -153,6 +163,16 @@ export function GroupsFormNew () {
               <TableRow>
                 <TableCell align='left' style={{width: '95%'}} sx={{pt: 0, pb: '8px'}}>
                   <TextField multiline value={globs} style={{width: '100%', minHeight: '60px'}} onChange={(e) => setGlobs(e.target.value)} id='globsTextfield' data-testid='globs-textfield' error={globsErrorMessage !== ""} helperText={globsErrorMessage}></TextField>
+                </TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell sx={{pb: 0}} style={{display: 'flex', flexDirection: 'row', alignItems:'center', minHeight: '45px'}}>
+                  <Typography variant="h6"> Subgroups</Typography>
+                </TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell align='left' style={{width: '95%'}} sx={{pt: 0, pb: '8px'}}>
+                  <TextField multiline value={subgroups} style={{width: '100%', minHeight: '60px'}} onChange={(e) => setSubgroups(e.target.value)} id='subgroupsTextfield' data-testid='subgroups-textfield' error={subgroupsErrorMessage !== ""} helperText={subgroupsErrorMessage}></TextField>
                 </TableCell>
               </TableRow>
             </TableBody>

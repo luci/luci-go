@@ -49,12 +49,14 @@ describe('<GroupsFormNew />', () => {
     const descriptionTextfield = screen.getByTestId('description-textfield').querySelector('input');
     const membersTextfield = screen.getByTestId('members-textfield').querySelector('textarea');
     const globsTextfield = screen.getByTestId('globs-textfield').querySelector('textarea');
+    const subgroupsTextfield = screen.getByTestId('subgroups-textfield').querySelector('textarea');
 
     fireEvent.change(nameTextfield!, {target: { value: 'name'}});
     fireEvent.change(ownersTextfield!, {target: { value: 'administrators'}});
     fireEvent.change(descriptionTextfield!, {target: { value: 'test group'}});
     fireEvent.change(membersTextfield!, {target: { value: 'name-name@email.com'}});
     fireEvent.change(globsTextfield!, {target: { value: '*.com'}});
+    fireEvent.change(subgroupsTextfield!, {target: { value: 'subgroup'}});
 
     const createButton = screen.getByTestId('create-button');
     act(() => createButton.click());
@@ -63,6 +65,7 @@ describe('<GroupsFormNew />', () => {
     expect(screen.queryByText('Invalid owners name. Must be a group.')).toBeNull();
     expect(screen.queryByText('Invalid members:', {exact: false})).toBeNull();
     expect(screen.queryByText('Invalid globs:', {exact: false})).toBeNull();
+    expect(screen.queryByText('Invalid subgroups:', {exact: false})).toBeNull();
 });
 
 
@@ -152,5 +155,23 @@ describe('<GroupsFormNew />', () => {
     const createButton = screen.getByTestId('create-button');
     act(() => createButton.click());
     expect(screen.getByText('Invalid globs: !.com')).toBeInTheDocument();
+  });
+
+  test('error is shown on invalid subgroups name', async () => {
+
+    render(
+      <FakeContextProvider>
+        <List>
+            <GroupsFormNew/>
+        </List>
+      </FakeContextProvider>,
+    );
+
+    await screen.findByTestId('groups-form-new');
+    const textfield = screen.getByTestId('subgroups-textfield').querySelector('textarea');
+    fireEvent.change(textfield!, {target: { value: 'Subgroup'}});
+    const createButton = screen.getByTestId('create-button');
+    act(() => createButton.click());
+    expect(screen.getByText('Invalid subgroups: Subgroup')).toBeInTheDocument();
   });
 });
