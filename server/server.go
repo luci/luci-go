@@ -2654,10 +2654,24 @@ func (s *Server) otelSampler(ctx context.Context) (trace.Sampler, error) {
 		return req != nil && !req.healthCheck
 	})
 
-	// Inherit the sampling decision from a parent span. Note this totally ignores
-	// `sampler` if there's a parent span (local or remote). This is usually what
-	// we want to get complete trace trees with well-defined root and no gaps.
-	return trace.ParentBased(sampler), nil
+	// Inherit the sampling decision as is (ignoring `sampler`) from local
+	// parents. That way traces from a single request handler will have no gaps.
+	// If the parent is remote, then agree with it if it wants sampling (to avoid
+	// gaps in the parent's span tree), but use our own sampling rate if it
+	// doesn't want sampling. This is important when running behind the GCLB,
+	// which seems to add unsampled trace contexts to every request by default: if
+	// we always unconditionally agree with it most requests will never be sampled
+	// (only ones which had a sampled trace context before hitting GCLB will).
+	//
+	// Note that unlike GCLB, the load balancer in front of GAE and Cloud Run
+	// backends does occasionally trace requests, and we actually totally rely on
+	// it to make sampling decisions for us (see the check above).
+	return trace.ParentBased(sampler, // used if there's no trace context
+		trace.WithLocalParentSampled(trace.AlwaysSample()),
+		trace.WithLocalParentNotSampled(trace.NeverSample()),
+		trace.WithRemoteParentSampled(trace.AlwaysSample()), // TODO: rate limit?
+		trace.WithRemoteParentNotSampled(sampler),
+	), nil
 }
 
 // otelSpanExporter initializes a trace spans exporter.
