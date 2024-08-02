@@ -202,10 +202,10 @@ func TestQueryTextArtifacts(t *testing.T) {
 			testutil.MustApply(ctx,
 				insert.Invocation("inv1", pb.Invocation_FINALIZED, map[string]any{"Realm": "testproject:testrealm"}),
 				insert.Artifact("inv1", "", "a0", map[string]any{"ContentType": "text/plain; encoding=utf-8", "Size": "100", "RBECASHash": "deadbeef"}),
-				insert.Artifact("inv1", "tr/testid/0", "a1", map[string]any{"ContentType": "text/html", "Size": "5000000", "RBECASHash": "deadbeef"}),
+				insert.Artifact("inv1", "tr/testid/0", "a1", map[string]any{"ContentType": "text/html", "Size": "50000000", "RBECASHash": "deadbeef"}),
 				insert.Artifact("inv1", "tr/testid/0", "a2", map[string]any{"ContentType": "image/png", "Size": "100", "RBECASHash": "deadbeef"}),
 				insert.Artifact("inv1", "", "a3", map[string]any{"Size": "100"}),
-				insert.Artifact("inv1", "tr/testid/0", "a4", map[string]any{"ContentType": "text/html", "Size": "6000000", "RBECASHash": "deadbeef"}),
+				insert.Artifact("inv1", "tr/testid/0", "a4", map[string]any{"ContentType": "text/html", "Size": "60000000", "RBECASHash": "deadbeef"}),
 			)
 
 			testutil.MustApply(ctx, testutil.CombineMutations(
@@ -232,7 +232,7 @@ func TestQueryTextArtifacts(t *testing.T) {
 					ResultID:        "0",
 					ArtifactID:      "a1",
 					ContentType:     "text/html",
-					Size:            5000000,
+					Size:            50_000_000,
 					RBECASHash:      "deadbeef",
 					TestStatus:      pb.TestStatus_PASS,
 					TestVariant:     &pb.Variant{Def: map[string]string{"os": "linux"}},

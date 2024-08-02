@@ -76,7 +76,7 @@ const ArtifactRequestOverhead = 100
 // We do not export ChromeOS artifacts exceeding this size.
 // This is just a temporary solution, when we decide a reasonable limit
 // for the artifact exporter.
-const ChromeOSMaxArtifactSize = 5 * 1024 * 1024
+const ChromeOSMaxArtifactSize = 50 * 1024 * 1024
 
 // MaxTotalArtifactSizeForInvocation is the max total size of artifacts in an invocation.
 // If an invocation has total artifact size exceeding this value, we will not export it.
