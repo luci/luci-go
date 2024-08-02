@@ -23,7 +23,6 @@ import (
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
-	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/run"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -35,16 +34,31 @@ func TestLocationFilterMatch(t *testing.T) {
 		ctx, cancel := ct.SetUp(t)
 		defer cancel()
 
+		const refMain = "refs/heads/main"
+
 		// For the purpose of locationFilterMatch, only the Gerrit host,
-		// project and paths matter. Parent commits are also taken into
+		// project, ref and paths matter. Parent commits are also taken into
 		// consideration when checking if a CL is a merge commit.
-		makeCL := func(host, project string, paths []string) *run.RunCL {
+		makeCL := func(host, project, ref string, paths []string) *run.RunCL {
 			return &run.RunCL{
 				ID: common.CLID(1234),
 				Detail: &changelist.Snapshot{
 					Kind: &changelist.Snapshot_Gerrit{
 						Gerrit: &changelist.Gerrit{
-							Info:  &gerritpb.ChangeInfo{Project: project},
+							Info: &gerritpb.ChangeInfo{
+								Project:         project,
+								Ref:             ref,
+								CurrentRevision: "deadbeef",
+								Revisions: map[string]*gerritpb.RevisionInfo{
+									"deadbeef": {
+										Commit: &gerritpb.CommitInfo{
+											Parents: []*gerritpb.CommitInfo_Parent{
+												{Id: "parentSha"},
+											},
+										},
+									},
+								},
+							},
 							Host:  host,
 							Files: paths,
 						},
@@ -58,12 +72,14 @@ func TestLocationFilterMatch(t *testing.T) {
 				{
 					GerritHostRegexp:    "x-review.googlesource.com",
 					GerritProjectRegexp: "gp",
+					GerritRefRegexp:     refMain,
 					PathRegexp:          "included/.*",
 					Exclude:             false,
 				},
 				{
 					GerritHostRegexp:    "x-review.googlesource.com",
 					GerritProjectRegexp: "gp",
+					GerritRefRegexp:     refMain,
 					PathRegexp:          "included/excluded/.*",
 					Exclude:             true,
 				},
@@ -71,55 +87,77 @@ func TestLocationFilterMatch(t *testing.T) {
 
 			Convey("in included dir", func() {
 				included, err := locationFilterMatch(ctx, lfs,
-					[]*run.RunCL{makeCL("x-review.googlesource.com", "gp", []string{"included/readme.md"})})
+					[]*run.RunCL{makeCL("x-review.googlesource.com", "gp", refMain, []string{"included/readme.md"})})
 				So(err, ShouldBeNil)
 				So(included, ShouldBeTrue)
 			})
 
 			Convey("in excluded dir", func() {
 				included, err := locationFilterMatch(ctx, lfs,
-					[]*run.RunCL{makeCL("x-review.googlesource.com", "gp", []string{"included/excluded/foo"})})
+					[]*run.RunCL{makeCL("x-review.googlesource.com", "gp", refMain, []string{"included/excluded/foo"})})
 				So(err, ShouldBeNil)
 				So(included, ShouldBeFalse)
 			})
 
 			Convey("host doesn't match", func() {
 				included, err := locationFilterMatch(ctx, lfs,
-					[]*run.RunCL{makeCL("other-review.googlesource.com", "gp", []string{"included/foo"})})
+					[]*run.RunCL{makeCL("other-review.googlesource.com", "gp", refMain, []string{"included/foo"})})
 				So(err, ShouldBeNil)
 				So(included, ShouldBeFalse)
 			})
 
 			Convey("project doesn't match", func() {
 				included, err := locationFilterMatch(ctx, lfs,
-					[]*run.RunCL{makeCL("x-review.googlesource.com", "xyz", []string{"included/foo"})})
+					[]*run.RunCL{makeCL("x-review.googlesource.com", "xyz", refMain, []string{"included/foo"})})
 				So(err, ShouldBeNil)
 				So(included, ShouldBeFalse)
 			})
 
-			Convey("merge commit: no files changed and two parents", func() {
-				mergeCL := makeCL("x-review.googlesource.com", "gp", []string{})
-				mergeCL.Detail.GetGerrit().Info = gf.CI(1234, gf.Project("gp"), gf.ParentCommits([]string{"one", "two"}))
-				included, err := locationFilterMatch(ctx, lfs, []*run.RunCL{mergeCL})
-				So(err, ShouldBeNil)
-				So(included, ShouldBeTrue)
-			})
-
-			Convey("no files changed and one parents", func() {
-				// Any empty diff with no files is possible for non-merge-commits.
-				// Not treated as merge commit, so builder should not be triggered.
-				mergeCL := makeCL("x-review.googlesource.com", "gp", []string{})
-				mergeCL.Detail.GetGerrit().Info = gf.CI(1234, gf.Project("gp"), gf.ParentCommits([]string{"one"}))
-				included, err := locationFilterMatch(ctx, lfs, []*run.RunCL{mergeCL})
+			Convey("ref doesn't match", func() {
+				included, err := locationFilterMatch(ctx, lfs,
+					[]*run.RunCL{makeCL("x-review.googlesource.com", "gp", "refs/heads/experimental", []string{"included/foo"})})
 				So(err, ShouldBeNil)
 				So(included, ShouldBeFalse)
+			})
+
+			Convey("merge commit", func() {
+				mergeCL := makeCL("x-review.googlesource.com", "gp", refMain, []string{})
+				info := mergeCL.Detail.GetGerrit().GetInfo()
+				commit := info.GetRevisions()[info.GetCurrentRevision()].GetCommit()
+				commit.Parents = append(commit.Parents, &gerritpb.CommitInfo_Parent{
+					Id: "anotherParentSha",
+				})
+
+				Convey("matches host, project, ref", func() {
+					included, err := locationFilterMatch(ctx, lfs, []*run.RunCL{mergeCL})
+					So(err, ShouldBeNil)
+					So(included, ShouldBeTrue)
+				})
+				Convey("doesn't match host", func() {
+					mergeCL.Detail.GetGerrit().Host = "other-review.googlesource.com"
+					included, err := locationFilterMatch(ctx, lfs, []*run.RunCL{mergeCL})
+					So(err, ShouldBeNil)
+					So(included, ShouldBeFalse)
+				})
+				Convey("doesn't match project", func() {
+					mergeCL.Detail.GetGerrit().GetInfo().Project = "other_proj"
+					included, err := locationFilterMatch(ctx, lfs, []*run.RunCL{mergeCL})
+					So(err, ShouldBeNil)
+					So(included, ShouldBeFalse)
+				})
+				Convey("doesn't match ref", func() {
+					mergeCL.Detail.GetGerrit().GetInfo().Project = "other_ref"
+					included, err := locationFilterMatch(ctx, lfs, []*run.RunCL{mergeCL})
+					So(err, ShouldBeNil)
+					So(included, ShouldBeFalse)
+				})
 			})
 
 			Convey("with multiple CLs and multiple files", func() {
 				included, err := locationFilterMatch(ctx, lfs,
 					[]*run.RunCL{
-						makeCL("x-review.googlesource.com", "gp", []string{"included/readme.md", "included/excluded/foo.txt"}),
-						makeCL("x-review.googlesource.com", "foo", []string{"readme.md"}),
+						makeCL("x-review.googlesource.com", "gp", refMain, []string{"included/readme.md", "included/excluded/foo.txt"}),
+						makeCL("x-review.googlesource.com", "foo", refMain, []string{"readme.md"}),
 					})
 				So(err, ShouldBeNil)
 				So(included, ShouldBeTrue)
@@ -131,18 +169,19 @@ func TestLocationFilterMatch(t *testing.T) {
 				{
 					GerritHostRegexp:    "x-review.googlesource.com",
 					GerritProjectRegexp: "gp",
+					GerritRefRegexp:     refMain,
 					PathRegexp:          "excluded/.*",
 					Exclude:             true,
 				},
 			}
 
 			included, err := locationFilterMatch(ctx, lfs,
-				[]*run.RunCL{makeCL("x-review.googlesource.com", "gp", []string{"excluded/readme.md"})})
+				[]*run.RunCL{makeCL("x-review.googlesource.com", "gp", refMain, []string{"excluded/readme.md"})})
 			So(err, ShouldBeNil)
 			So(included, ShouldBeFalse)
 
 			included, err = locationFilterMatch(ctx, lfs,
-				[]*run.RunCL{makeCL("x-review.googlesource.com", "gp", []string{"somewhere/else"})})
+				[]*run.RunCL{makeCL("x-review.googlesource.com", "gp", refMain, []string{"somewhere/else"})})
 			So(err, ShouldBeNil)
 			So(included, ShouldBeTrue)
 		})
@@ -156,17 +195,17 @@ func TestLocationFilterMatch(t *testing.T) {
 			}
 
 			included, err := locationFilterMatch(ctx, lfs,
-				[]*run.RunCL{makeCL("x-review.googlesource.com", "gp", []string{"included/readme.md"})})
+				[]*run.RunCL{makeCL("x-review.googlesource.com", "gp", refMain, []string{"included/readme.md"})})
 			So(err, ShouldBeNil)
 			So(included, ShouldBeTrue)
 
 			included, err = locationFilterMatch(ctx, lfs,
-				[]*run.RunCL{makeCL("example.com", "blah", []string{"included/readme.md"})})
+				[]*run.RunCL{makeCL("example.com", "blah", refMain, []string{"included/readme.md"})})
 			So(err, ShouldBeNil)
 			So(included, ShouldBeTrue)
 
 			included, err = locationFilterMatch(ctx, lfs,
-				[]*run.RunCL{makeCL("example.com", "blah", []string{"somewhere/else"})})
+				[]*run.RunCL{makeCL("example.com", "blah", refMain, []string{"somewhere/else"})})
 			So(err, ShouldBeNil)
 			So(included, ShouldBeFalse)
 		})
@@ -178,7 +217,7 @@ func TestLocationFilterMatch(t *testing.T) {
 				},
 			}
 			included, err := locationFilterMatch(ctx, lfs,
-				[]*run.RunCL{makeCL("x-review.googlesource.com", "gp", []string{"included/readme.md"})})
+				[]*run.RunCL{makeCL("x-review.googlesource.com", "gp", refMain, []string{"included/readme.md"})})
 			So(err, ShouldNotBeNil)
 			So(included, ShouldBeFalse)
 		})
@@ -200,107 +239,21 @@ func TestLocationFilterMatch(t *testing.T) {
 			}
 
 			included, err := locationFilterMatch(ctx, lfs,
-				[]*run.RunCL{makeCL("x-review.googlesource.com", "gp", []string{"included/readme.md"})})
+				[]*run.RunCL{makeCL("x-review.googlesource.com", "gp", refMain, []string{"included/readme.md"})})
 			So(err, ShouldBeNil)
 			So(included, ShouldBeTrue)
 
 			// In excluded dir.
 			included, err = locationFilterMatch(ctx, lfs,
-				[]*run.RunCL{makeCL("x-review.googlesource.com", "gp", []string{"included/excluded/foo"})})
+				[]*run.RunCL{makeCL("x-review.googlesource.com", "gp", refMain, []string{"included/excluded/foo"})})
 			So(err, ShouldBeNil)
 			So(included, ShouldBeFalse)
 
 			// In excluded dir, but an exception.
 			included, err = locationFilterMatch(ctx, lfs,
-				[]*run.RunCL{makeCL("x-review.googlesource.com", "gp", []string{"included/excluded/included.txt"})})
+				[]*run.RunCL{makeCL("x-review.googlesource.com", "gp", refMain, []string{"included/excluded/included.txt"})})
 			So(err, ShouldBeNil)
 			So(included, ShouldBeTrue)
-		})
-	})
-}
-
-func TestHelperFunctions(t *testing.T) {
-	Convey("isMergeCommit", t, func() {
-
-		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
-		Convey("returns false on missing data", func() {
-			So(isMergeCommit(ctx, nil), ShouldBeFalse)
-			So(isMergeCommit(ctx, &changelist.Gerrit{}), ShouldBeFalse)
-			So(isMergeCommit(ctx, &changelist.Gerrit{Info: &gerritpb.ChangeInfo{}}), ShouldBeFalse)
-			So(isMergeCommit(ctx, &changelist.Gerrit{Info: gf.CI(10)}), ShouldBeFalse)
-		})
-		Convey("returns true with no files and two parents", func() {
-			So(isMergeCommit(
-				ctx,
-				&changelist.Gerrit{
-					Files: []string{},
-					Info:  gf.CI(10, gf.ParentCommits([]string{"one", "two"})),
-				}), ShouldBeTrue)
-		})
-		Convey("returns false with no files and one parent", func() {
-			So(isMergeCommit(
-				ctx,
-				&changelist.Gerrit{
-					Files: []string{},
-					Info:  gf.CI(10, gf.ParentCommits([]string{"one"})),
-				}), ShouldBeFalse)
-		})
-	})
-
-	Convey("hostAndProjectMatch", t, func() {
-		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
-
-		Convey("when only some files in a repo are included", func() {
-			lfs := []*cfgpb.Verifiers_Tryjob_Builder_LocationFilter{
-				{
-					GerritHostRegexp:    "x-review.googlesource.com",
-					GerritProjectRegexp: "gp",
-					PathRegexp:          "included/.*",
-					Exclude:             false,
-				},
-				{
-					GerritHostRegexp:    "x-review.googlesource.com",
-					GerritProjectRegexp: "gp",
-					PathRegexp:          "included/excluded/.*",
-					Exclude:             true,
-				},
-			}
-			compiled, err := compileLocationFilters(ctx, lfs)
-			So(err, ShouldBeNil)
-			So(hostAndProjectMatch(compiled, "x-review.googlesource.com", "gp"), ShouldBeTrue)
-			So(hostAndProjectMatch(compiled, "x-review.googlesource.com", "other"), ShouldBeFalse)
-		})
-
-		Convey("simple match all case", func() {
-			lfs := []*cfgpb.Verifiers_Tryjob_Builder_LocationFilter{
-				{
-					GerritHostRegexp:    ".*",
-					GerritProjectRegexp: ".*",
-					PathRegexp:          "foo/.*",
-					Exclude:             false,
-				},
-			}
-			compiled, err := compileLocationFilters(ctx, lfs)
-			So(err, ShouldBeNil)
-			So(hostAndProjectMatch(compiled, "x-review.googlesource.com", "gp"), ShouldBeTrue)
-		})
-
-		Convey("default include case", func() {
-			lfs := []*cfgpb.Verifiers_Tryjob_Builder_LocationFilter{
-				{
-					GerritHostRegexp:    ".*",
-					GerritProjectRegexp: ".*",
-					PathRegexp:          "foo/.*",
-					Exclude:             true,
-				},
-			}
-			compiled, err := compileLocationFilters(ctx, lfs)
-			So(err, ShouldBeNil)
-			So(hostAndProjectMatch(compiled, "x-review.googlesource.com", "gp"), ShouldBeTrue)
 		})
 	})
 }

@@ -3709,6 +3709,8 @@ func (m *Verifiers_Tryjob_Builder_LocationFilter) validate(all bool) error {
 
 	// no validation rules for GerritProjectRegexp
 
+	// no validation rules for GerritRefRegexp
+
 	// no validation rules for PathRegexp
 
 	// no validation rules for Exclude

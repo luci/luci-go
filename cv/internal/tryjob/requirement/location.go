@@ -38,7 +38,7 @@ func locationFilterMatch(ctx context.Context, locationFilters []*cfgpb.Verifiers
 
 	// For efficiency, pre-compile all regexes here. This also checks whether
 	// the regexes are valid.
-	compiled, err := compileLocationFilters(ctx, locationFilters)
+	compiled, err := compileLocationFilters(locationFilters)
 	if err != nil {
 		return false, err
 	}
@@ -51,9 +51,10 @@ func locationFilterMatch(ctx context.Context, locationFilters []*cfgpb.Verifiers
 		}
 		host := gerrit.GetHost()
 		project := gerrit.GetInfo().GetProject()
+		ref := gerrit.GetInfo().GetRef()
 
 		if isMergeCommit(ctx, gerrit) {
-			if hostAndProjectMatch(compiled, host, project) {
+			if hostProjectAndRefMatch(compiled, host, project, ref) {
 				// Gerrit treats CLs representing merged commits (i.e. CLs with with a
 				// git commit with multiple parents) as having no file diff. There may
 				// also be no file diff if there is no longer a diff after rebase.
@@ -81,7 +82,7 @@ func locationFilterMatch(ctx context.Context, locationFilters []*cfgpb.Verifiers
 				f := compiled[i]
 				// Check for inclusion; if it matches then this is the filter
 				// that applies.
-				if match(f.hostRE, host) && match(f.projectRE, project) && match(f.pathRE, path) {
+				if match(f.hostRE, host) && match(f.projectRE, project) && match(f.refRE, ref) && match(f.pathRE, path) {
 					included = !f.exclude
 					break
 				}
@@ -106,7 +107,7 @@ func match(re *regexp.Regexp, str string) bool {
 // compileLocationFilters precompiles regexes in a LocationFilter.
 //
 // Returns an error if a regex is invalid.
-func compileLocationFilters(ctx context.Context, locationFilters []*cfgpb.Verifiers_Tryjob_Builder_LocationFilter) ([]compiledLocationFilter, error) {
+func compileLocationFilters(locationFilters []*cfgpb.Verifiers_Tryjob_Builder_LocationFilter) ([]compiledLocationFilter, error) {
 	ret := make([]compiledLocationFilter, len(locationFilters))
 	for i, lf := range locationFilters {
 		var err error
@@ -118,6 +119,12 @@ func compileLocationFilters(ctx context.Context, locationFilters []*cfgpb.Verifi
 		}
 		if lf.GerritProjectRegexp != "" {
 			ret[i].projectRE, err = regexp.Compile(fmt.Sprintf("^%s$", lf.GerritProjectRegexp))
+			if err != nil {
+				return nil, err
+			}
+		}
+		if lf.GerritRefRegexp != "" {
+			ret[i].refRE, err = regexp.Compile(fmt.Sprintf("^%s$", lf.GerritRefRegexp))
 			if err != nil {
 				return nil, err
 			}
@@ -137,16 +144,16 @@ func compileLocationFilters(ctx context.Context, locationFilters []*cfgpb.Verifi
 // message in the config proto, but with compiled regexes.
 type compiledLocationFilter struct {
 	// Compiled regexes; nil if the regex is nil in the LocationFilter.
-	hostRE, projectRE, pathRE *regexp.Regexp
+	hostRE, projectRE, refRE, pathRE *regexp.Regexp
 	// Whether this filter is an exclude filter.
 	exclude bool
 }
 
-// hostAndProjectMatch returns true if the Gerrit host and project could match
-// the filters (for any possible files).
-func hostAndProjectMatch(compiled []compiledLocationFilter, host, project string) bool {
+// hostProjectAndRefMatch returns true if the Gerrit host, project, ref could
+// match the filters (for any possible files).
+func hostProjectAndRefMatch(compiled []compiledLocationFilter, host, project, ref string) bool {
 	for _, f := range compiled {
-		if !f.exclude && match(f.hostRE, host) && match(f.projectRE, project) {
+		if !f.exclude && match(f.hostRE, host) && match(f.projectRE, project) && match(f.refRE, ref) {
 			return true
 		}
 	}

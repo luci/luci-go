@@ -689,23 +689,31 @@ message Verifiers {
       //     in the "excluded" directory will not match.
       //
       //   location_filters: {path_regexp: ".*", exclude: false} // include all by default
-      //   location_filters: {host_regexp: "example.com",
-      //                      project_regexp: "repo",
-      //                      exclude: true}
-      //   location_filters: {host_regexp: "example.com",
-      //                      project_regexp: "repo",
-      //                      path_regexp: "all/one.txt",
-      //                      exclude: false}
+      //   location_filters: {
+      //       host_regexp: "example.com",
+      //       project_regexp: "repo",
+      //       ref_regexp: "refs/heads/.+",
+      //       exclude: true,
+      //   }
+      //   location_filters: {
+      //       host_regexp: "example.com",
+      //       project_regexp: "repo",
+      //       ref_regexp: "refs/heads/.+",
+      //       path_regexp: "all/one.txt"
+      //       exclude: false,
+      //   }
       //
-      //     Result: files in the specified host and repo will not be included,
-      //     except all/one.txt which will be included; files outside of the
-      //     given host/repo will be included.
+      // Result: files in the specified host, repo and ref will not be included,
+      // except all/one.txt which will be included; files outside of the
+      // given host/repo/ref will be included.
       message LocationFilter {
         // Pattern to match Gerrit host. Does not include scheme, which is
         // always assumed to be "https://".
         string gerrit_host_regexp = 1;
         // Pattern to match Gerrit project, e.g. "infra/luci/luci-go".
         string gerrit_project_regexp = 2;
+        // Pattern to match fully qualified GoB refs, e.g. "refs/heads/.*".
+        string gerrit_ref_regexp = 5;
         // Pattern to match file path. This is a relative path from repo root
         // (no starting slash).
         string path_regexp = 3;
