@@ -26,8 +26,8 @@ import { useAuthServiceClient } from '@/authdb/hooks/prpc_clients';
 import { AuthGroup } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/groups.pb';
 import { GroupsListItem } from '@/authdb/components/groups_list_item';
 import { useState } from 'react';
-import {GroupsForm} from '@/authdb/components/groups_form';
-import {GroupsFormNew} from '@/authdb/components/groups_form_new';
+import { GroupsForm } from '@/authdb/components/groups_form';
+import { GroupsFormNew } from '@/authdb/components/groups_form_new';
 import Grid from '@mui/material/Grid';
 
 export function GroupsList() {
@@ -88,37 +88,37 @@ export function GroupsList() {
     <Paper>
       <Grid container className="groups-container">
         <Grid item xs={4}>
-          <Box sx={{p: 2}}>
+          <Box sx={{ p: 2 }}>
             <TextField
               id="outlined-basic"
               label="Search for an existing group"
               variant="outlined"
-              style={{width: '100%'}}
-              onChange={e => changeSearchQuery(e.target.value)}/>
+              style={{ width: '100%' }}
+              onChange={e => changeSearchQuery(e.target.value)} />
           </Box>
           <Box>
-            <Button variant="contained" disableElevation sx={{m: '16px', mt: 0}} data-testid='create-button' onClick={() => setShowCreateForm(true)}>
-            Create Group
+            <Button variant="contained" disableElevation sx={{ m: '16px', mt: 0 }} data-testid='create-button' onClick={() => setShowCreateForm(true)}>
+              Create Group
             </Button>
           </Box>
           <Box className="groups-list-container">
             <List data-testid="groups-list" disablePadding>
               {groups && groups.map((group) => (
-              <GroupsListItem
-                key={group.name}
-                group={group}
-                setSelected={() => {setSelected(group.name)}}
-                selected={group.name === selectedGroup}
-              />
+                <GroupsListItem
+                  key={group.name}
+                  group={group}
+                  setSelected={() => { setSelected(group.name) }}
+                  selected={group.name === selectedGroup}
+                />
               ))}
             </List>
           </Box>
         </Grid>
         <Grid item xs={8}>
           {showCreateForm
-          ? <GroupsFormNew/>
-          : <>
-            {selectedGroup && <GroupsForm name={selectedGroup} onDelete={onDeletedGroup}/>}
+            ? <GroupsFormNew />
+            : <>
+              {selectedGroup && <GroupsForm key={selectedGroup} name={selectedGroup} onDelete={onDeletedGroup} />}
             </>
           }
         </Grid>
