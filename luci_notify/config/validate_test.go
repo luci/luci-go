@@ -241,9 +241,8 @@ func TestValidation(t *testing.T) {
 				So(err, assertions.ShouldErrLike, expect)
 			})
 		}
-		testValidation(`empty`, ``, requiredFieldError, "milo_host")
-		testValidation(`bad hostname`, `milo_host: "9mNRn29%^^%#"`, invalidFieldError, "milo_host")
-		testValidation(`good`, `milo_host: "luci-milo.example.com"`, "")
+		testValidation(`bad hostname`, `luci_tree_status_host: "9mNRn29%^^%#"`, invalidFieldError, "luci_tree_status_host")
+		testValidation(`good`, `luci_tree_status_host: "luci-tree-status.example.com"`, "")
 	})
 
 	Convey("email template filename validation", t, func() {

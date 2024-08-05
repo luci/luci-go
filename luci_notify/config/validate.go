@@ -160,12 +160,6 @@ func validateSettings(ctx *validation.Context, settings *notifypb.Settings) {
 			ctx.Errorf(invalidFieldError, "luci_tree_status_host")
 		}
 	}
-	switch {
-	case settings.MiloHost == "":
-		ctx.Errorf(requiredFieldError, "milo_host")
-	case validation.ValidateHostname(settings.MiloHost) != nil:
-		ctx.Errorf(invalidFieldError, "milo_host")
-	}
 }
 
 // validateEmailTemplateFile validates an email template file, including

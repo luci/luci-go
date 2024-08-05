@@ -12,16 +12,14 @@ option go_package = "go.chromium.org/luci/luci_notify/api/config";
 
 // Settings is the top-level configuration message.
 message Settings {
-  // MiloHost is the hostname of the Milo instance luci-notify queries for
-  // additional build information.
-  //
-  // Required.
+  // Deprecated, no longer used. Retained only for compatibility
+  // with existing configurations.
   string milo_host = 1;
 
   // luci_tree_status_host is the hostname of the LUCI tree status app
   // to use for closing and opening trees.
   //
-  // e.g. luci-tree-status.appspot.com
+  // e.g. treestatus.api.luci.app
   //
   // Required.
   string luci_tree_status_host = 2;
