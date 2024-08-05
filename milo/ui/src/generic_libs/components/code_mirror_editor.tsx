@@ -68,7 +68,7 @@ export function CodeMirrorEditor({
   css,
   className,
 }: CodeMirrorEditorProps) {
-  const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
+  const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const editorRef = useRef<CodeMirror.EditorFromTextArea | null>(null);
 
   // Wrap them in refs so eslint doesn't complain about missing dependencies in

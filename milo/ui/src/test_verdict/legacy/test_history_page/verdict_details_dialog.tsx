@@ -29,7 +29,7 @@ import { ConfigWidget } from './test_history_details_table/config_widget';
 export const VerdictDetailsDialog = observer(() => {
   const store = useStore();
   const pageState = store.testHistoryPage;
-  const detailsTableRef = useRef<null | TestHistoryDetailsTableElement>(null);
+  const detailsTableRef = useRef<TestHistoryDetailsTableElement>(null);
 
   return (
     <Dialog

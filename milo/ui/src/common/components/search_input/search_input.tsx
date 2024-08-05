@@ -56,7 +56,7 @@ export function SearchInput<Variant extends TextFieldVariants>({
   const valueRef = useRef(value);
   const previousUpdateValueRef = useRef(value);
 
-  const inputRef = useRef<HTMLInputElement | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   useKey(
     (e) => {
       if (e.key !== focusShortcut) {

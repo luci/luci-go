@@ -43,7 +43,7 @@ export function SidePanel({ testVariantBranches }: SidePanelProps) {
   const { criticalVariantKeys, yScale, testVariantBranchCount, rowHeight } =
     useConfig();
 
-  const gridLineElement = useRef<SVGGElement | null>(null);
+  const gridLineElement = useRef<SVGGElement>(null);
   useEffect(() => {
     const gridLines = axisLeft(yScale)
       .ticks(testVariantBranchCount)

@@ -528,7 +528,7 @@ export function TestVariantEntry({
   columnGetters,
   historyUrl,
 }: TestVariantEntryProps) {
-  const container = useRef<HTMLDivElement | null>(null);
+  const container = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // This will never happen. But useful for type checking.

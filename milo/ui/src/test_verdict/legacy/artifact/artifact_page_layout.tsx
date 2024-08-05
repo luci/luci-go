@@ -134,7 +134,7 @@ export class ArtifactPageLayoutElement extends MobxExtLitElement {
 export function ArtifactPageLayout() {
   const { invId, testId, resultId, artifactId } = useParams();
 
-  const container = useRef<HTMLDivElement | null>(null);
+  const container = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // This never happens, but useful for type narrowing.

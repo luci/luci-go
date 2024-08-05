@@ -34,7 +34,7 @@ export function Body({ testVariantBranches }: BodyProps) {
   const width = xScale.range()[1];
   const height = yScale.range()[1];
 
-  const horizontalGridLineElement = useRef<SVGGElement | null>(null);
+  const horizontalGridLineElement = useRef<SVGGElement>(null);
   useEffect(() => {
     const gridLines = axisLeft(yScale)
       .ticks(testVariantBranchCount)
@@ -43,7 +43,7 @@ export function Body({ testVariantBranches }: BodyProps) {
     gridLines(select(horizontalGridLineElement.current!));
   }, [yScale, testVariantBranchCount, width]);
 
-  const verticalGridLineElement = useRef<SVGGElement | null>(null);
+  const verticalGridLineElement = useRef<SVGGElement>(null);
   useEffect(() => {
     const gridLines = axisBottom(xScale)
       .ticks(criticalCommits.length)

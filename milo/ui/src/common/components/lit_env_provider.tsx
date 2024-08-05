@@ -107,7 +107,7 @@ export interface LitEnvProviderProps {
 
 export function LitEnvProvider({ children }: LitEnvProviderProps) {
   const store = useStore();
-  const envProviderRef = useRef<LitEnvProviderElement | null>(null);
+  const envProviderRef = useRef<LitEnvProviderElement>(null);
   const [initialized, setInitialized] = useState(false);
 
   // Keep React2LitAdaptorElement.store up to date.

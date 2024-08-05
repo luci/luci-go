@@ -22,7 +22,7 @@ import { useConfig } from './context';
 export function TopAxis() {
   const { criticalCommits, rowHeight, xScale } = useConfig();
 
-  const gridLineElement = useRef<SVGGElement | null>(null);
+  const gridLineElement = useRef<SVGGElement>(null);
   useEffect(() => {
     const gridLines = axisTop(xScale)
       .ticks(criticalCommits.length)

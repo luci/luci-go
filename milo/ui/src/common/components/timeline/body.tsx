@@ -56,9 +56,9 @@ const BodySvg = forwardRef<HTMLDivElement, OptionalChildrenProps>(
   function BodySvg({ children, ...props }, _ref) {
     const config = useTimelineConfig();
     const rulerStateSetters = useRulerStateSetters();
-    const svgRef = useRef<SVGSVGElement | null>(null);
+    const svgRef = useRef<SVGSVGElement>(null);
 
-    const horizontalGridLineElement = useRef<SVGGElement | null>(null);
+    const horizontalGridLineElement = useRef<SVGGElement>(null);
     useEffect(() => {
       const horizontalGridLines = axisLeft(config.yScale)
         .ticks(config.itemCount)
@@ -68,7 +68,7 @@ const BodySvg = forwardRef<HTMLDivElement, OptionalChildrenProps>(
       horizontalGridLines(select(horizontalGridLineElement.current!));
     }, [config.itemCount, config.yScale, config.bodyWidth]);
 
-    const verticalGridLineElement = useRef<SVGGElement | null>(null);
+    const verticalGridLineElement = useRef<SVGGElement>(null);
     useEffect(() => {
       const verticalGridLines = axisTop(config.xScale)
         .ticks(config.timeInterval)

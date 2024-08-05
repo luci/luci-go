@@ -32,7 +32,7 @@ const SidePanelSvg = forwardRef<HTMLDivElement, OptionalChildrenProps>(
   function SidePanelSvg({ children, ...props }, _ref) {
     const config = useTimelineConfig();
 
-    const gridLineElement = useRef<SVGGElement | null>(null);
+    const gridLineElement = useRef<SVGGElement>(null);
     useEffect(() => {
       const horizontalGridLines = axisLeft(config.yScale)
         .ticks(config.itemCount)
