@@ -25,12 +25,14 @@ luci.cq_group(
                 cq.location_filter(
                     gerrit_host_regexp = "example.com",
                     gerrit_project_regexp = "repo",
+                    gerrit_ref_regexp = "refs/heads/.*",
                     path_regexp = "all/one.txt",
                     exclude = True,
                 ),
                 cq.location_filter(
                     gerrit_host_regexp = "example.com",
                     gerrit_project_regexp = "external/github.com/repo",
+                    gerrit_ref_regexp = "refs/heads/main",
                     path_regexp = "all/one.txt",
                     exclude = True,
                 ),
@@ -61,38 +63,45 @@ luci.cq_group(
 #         location_filters {
 #           gerrit_host_regexp: ".*"
 #           gerrit_project_regexp: ".*"
+#           gerrit_ref_regexp: ".*"
 #           path_regexp: "3pp/.+"
 #         }
 #         location_filters {
 #           gerrit_host_regexp: ".*"
 #           gerrit_project_regexp: ".*"
+#           gerrit_ref_regexp: ".*"
 #           path_regexp: "dashboard/.+"
 #         }
 #         location_filters {
 #           gerrit_host_regexp: ".*"
 #           gerrit_project_regexp: ".*manifest"
+#           gerrit_ref_regexp: ".*"
 #           path_regexp: ".*"
 #         }
 #         location_filters {
 #           gerrit_host_regexp: ".*"
 #           gerrit_project_regexp: ".+"
+#           gerrit_ref_regexp: ".*"
 #           path_regexp: ".*/OWNERS"
 #         }
 #         location_filters {
 #           gerrit_host_regexp: ".*"
 #           gerrit_project_regexp: ".*"
+#           gerrit_ref_regexp: ".*"
 #           path_regexp: "3pp/exception/.+"
 #           exclude: true
 #         }
 #         location_filters {
 #           gerrit_host_regexp: "example.com"
 #           gerrit_project_regexp: "repo"
+#           gerrit_ref_regexp: "refs/heads/.*"
 #           path_regexp: "all/one.txt"
 #           exclude: true
 #         }
 #         location_filters {
 #           gerrit_host_regexp: "example.com"
 #           gerrit_project_regexp: "external/github.com/repo"
+#           gerrit_ref_regexp: "refs/heads/main"
 #           path_regexp: "all/one.txt"
 #           exclude: true
 #         }

@@ -1343,6 +1343,7 @@ def _cq_location_filter(node):
     return cq_pb.Verifiers.Tryjob.Builder.LocationFilter(
         gerrit_host_regexp = node.gerrit_host_regexp or ".*",
         gerrit_project_regexp = node.gerrit_project_regexp or ".*",
+        gerrit_ref_regexp = node.gerrit_ref_regexp or ".*",
         path_regexp = node.path_regexp or ".*",
         exclude = node.exclude,
     )

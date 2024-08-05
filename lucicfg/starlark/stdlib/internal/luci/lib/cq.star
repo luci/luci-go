@@ -211,6 +211,7 @@ def _validate_run_mode(attr, val, *, default = None, required = True):
 def _location_filter(
         gerrit_host_regexp = None,
         gerrit_project_regexp = None,
+        gerrit_ref_regexp = None,
         path_regexp = None,
         exclude = False):
     """Defines a location filter for the builder location_filters field.
@@ -222,6 +223,7 @@ def _location_filter(
     Args:
       gerrit_host_regexp: Gerrit host regex. Must be a valid regex.
       gerrit_project_regexp: Gerrit project pattern. Must be a valid regex.
+      gerrit_ref_regexp: Gerrit ref pattern. Must be a valid regex.
       path_regexp: File path pattern. Must be a valid regex.
       exclude: Whether this is an "exclude" pattern.
 
@@ -239,6 +241,13 @@ def _location_filter(
         gerrit_project_regexp = validate.string(
             "gerrit_project_regexp",
             gerrit_project_regexp,
+            default = "",
+            allow_empty = True,
+            required = False,
+        ),
+        gerrit_ref_regexp = validate.string(
+            "gerrit_ref_regexp",
+            gerrit_ref_regexp,
             default = "",
             allow_empty = True,
             required = False,

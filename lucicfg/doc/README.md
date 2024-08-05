@@ -2428,13 +2428,14 @@ Please talk to CQ owners if these restrictions are limiting you.
 ##### Examples
 
 Enable the verifier only for all CLs touching any file in `third_party/blink`
-directory of the `chromium/src` repo.
+directory of the main branch of `chromium/src` repo.
 
     luci.cq_tryjob_verifier(
         location_filters = [
             cq.location_filter(
                 gerrit_host_regexp = 'chromium-review.googlesource.com',
                 gerrit_project_regexp = 'chromium/src'
+                gerrit_ref_regexp = 'refs/heads/main'
                 path_regexp = 'third_party/blink/.+')
         ],
     )
@@ -3580,6 +3581,7 @@ cq.location_filter(
     # Optional arguments.
     gerrit_host_regexp = None,
     gerrit_project_regexp = None,
+    gerrit_ref_regexp = None,
     path_regexp = None,
     exclude = None,
 )
@@ -3597,6 +3599,7 @@ wildcard which should match anything. Patterns are implicitly wrapped with
 
 * **gerrit_host_regexp**: Gerrit host regex. Must be a valid regex.
 * **gerrit_project_regexp**: Gerrit project pattern. Must be a valid regex.
+* **gerrit_ref_regexp**: Gerrit ref pattern. Must be a valid regex.
 * **path_regexp**: File path pattern. Must be a valid regex.
 * **exclude**: Whether this is an "exclude" pattern.
 

@@ -89,11 +89,13 @@ luci.cq_group(
 #         location_filters {
 #           gerrit_host_regexp: "example-review.googlesource.com"
 #           gerrit_project_regexp: "proj/repo1"
+#           gerrit_ref_regexp: ".*"
 #           path_regexp: ".+\\.go"
 #         }
 #         location_filters {
 #           gerrit_host_regexp: "example-internal-review.googlesource.com"
 #           gerrit_project_regexp: "proj/repo2"
+#           gerrit_ref_regexp: ".*"
 #           path_regexp: ".+\\.go"
 #         }
 #         owner_whitelist_group: "project-contributor"
@@ -104,11 +106,13 @@ luci.cq_group(
 #         location_filters {
 #           gerrit_host_regexp: "example-review.googlesource.com"
 #           gerrit_project_regexp: "proj/repo1"
+#           gerrit_ref_regexp: ".*"
 #           path_regexp: ".*"
 #         }
 #         location_filters {
 #           gerrit_host_regexp: "example-internal-review.googlesource.com"
 #           gerrit_project_regexp: "proj/repo2"
+#           gerrit_ref_regexp: ".*"
 #           path_regexp: ".+"
 #         }
 #         owner_whitelist_group: "project-contributor"

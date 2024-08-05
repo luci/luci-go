@@ -494,6 +494,7 @@ luci.cq_group(
                 cq.location_filter(
                     gerrit_host_regexp = "example.com",
                     gerrit_project_regexp = "repo",
+                    gerrit_ref_regexp = "refs/heads/.*",
                     path_regexp = "all/one.txt",
                     exclude = True,
                 ),
@@ -507,6 +508,7 @@ luci.cq_group(
                 cq.location_filter(
                     gerrit_host_regexp = "example.com",
                     gerrit_project_regexp = "repo",
+                    gerrit_ref_regexp = "refs/heads/.*",
                     path_regexp = "all/two.txt",
                     exclude = True,
                 ),
@@ -648,16 +650,19 @@ lucicfg.emit(
 #         location_filters {
 #           gerrit_host_regexp: ".*"
 #           gerrit_project_regexp: ".*"
+#           gerrit_ref_regexp: ".*"
 #           path_regexp: ".+\\.py"
 #         }
 #         location_filters {
 #           gerrit_host_regexp: ".*"
 #           gerrit_project_regexp: ".*"
+#           gerrit_ref_regexp: ".*"
 #           path_regexp: ".+\\.go"
 #         }
 #         location_filters {
 #           gerrit_host_regexp: ".*"
 #           gerrit_project_regexp: ".*"
+#           gerrit_ref_regexp: ".*"
 #           path_regexp: ".+\\.X4"
 #         }
 #         owner_whitelist_group: "project-contributor"
@@ -687,6 +692,7 @@ lucicfg.emit(
 #         location_filters {
 #           gerrit_host_regexp: "example.com"
 #           gerrit_project_regexp: "repo"
+#           gerrit_ref_regexp: "refs/heads/.*"
 #           path_regexp: "all/one.txt"
 #           exclude: true
 #         }
@@ -699,6 +705,7 @@ lucicfg.emit(
 #         location_filters {
 #           gerrit_host_regexp: "example.com"
 #           gerrit_project_regexp: "repo"
+#           gerrit_ref_regexp: "refs/heads/.*"
 #           path_regexp: "all/two.txt"
 #           exclude: true
 #         }
