@@ -13,14 +13,15 @@
 // limitations under the License.
 
 import { Alert, Box, Button, styled } from '@mui/material';
-import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { DateTime } from 'luxon';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 
 import {
   emptyPageTokenUpdater,
   usePagerContext,
 } from '@/common/components/params_pager';
+import { TimeRangeSelector } from '@/common/components/time_range_selector';
+import { getAbsoluteStartEndTime } from '@/common/components/time_range_selector';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
 import {
@@ -28,12 +29,11 @@ import {
   EXACT_MATCH_OPTION,
   REGEX_MATCH_OPTION,
 } from './constants';
-import { FormData } from './form_data';
+import { FormData, CompleteFormToSearch } from './form_data';
 import { LogListDialog } from './log_list_dialog';
 import { LogTable } from './log_table';
 import { LogGroupListStateProvider } from './providers';
 import { SelectTextField } from './select_text_field';
-
 const FormContainer = styled(Box)`
   margin: 10px;
   padding: 10px;
@@ -47,20 +47,15 @@ const FormRowDiv = styled(Box)`
   margin: 10px;
 `;
 
-interface searchUrlParam extends Omit<FormData, 'startTime' | 'endTime'> {
-  readonly startTime?: string;
-  readonly endTime?: string;
-}
-
 function searchParamUpdater(newFormData: FormData) {
-  const searchParams = new URLSearchParams();
-  const sp: searchUrlParam = {
-    ...newFormData,
-    startTime: newFormData.startTime?.toISO(),
-    endTime: newFormData.endTime?.toISO(),
+  return (params: URLSearchParams) => {
+    const searchParams = new URLSearchParams(params);
+    // TODO (beining@): Using JSON.stringify for the search parameter is backward incompatible
+    // if any property is renamed. A better way is to have a constant search parameter key for each
+    // of these field.
+    searchParams.set('filter', JSON.stringify(newFormData));
+    return searchParams;
   };
-  searchParams.set('filter', JSON.stringify(sp));
-  return searchParams;
 }
 
 const emptyForm: FormData = {
@@ -69,26 +64,14 @@ const emptyForm: FormData = {
   artifactIDStr: '',
   isArtifactIDStrPrefix: false,
   searchStr: '',
-  isSearchStrRegex: true,
-  startTime: null,
-  endTime: null,
+  isSearchStrRegex: false,
 };
 
 function parseSearchParam(searchParams: URLSearchParams): FormData {
-  const urlParam: searchUrlParam = JSON.parse(
-    searchParams.get('filter') || '{}',
-  );
-  const currentTime = DateTime.now().toUTC();
-  const threeDaysAgo = currentTime.minus({ days: 3 });
+  const urlParam: FormData = JSON.parse(searchParams.get('filter') || '{}');
   return {
     ...emptyForm,
     ...urlParam,
-    startTime: urlParam.startTime
-      ? DateTime.fromISO(urlParam.startTime).toUTC()
-      : threeDaysAgo,
-    endTime: urlParam.endTime
-      ? DateTime.fromISO(urlParam.endTime).toUTC()
-      : currentTime,
   };
 }
 
@@ -98,7 +81,6 @@ export interface LogSearchProps {
 
 // TODO(@beining) :
 // * implement some validation before sending request.
-// * improve date range selection, eg quick select last 3 days, 5 days. 7 days.
 export function LogSearch({ project }: LogSearchProps) {
   const pagerCtx = usePagerContext({
     pageSizeOptions: [10, 20, 50, 100],
@@ -108,12 +90,21 @@ export function LogSearch({ project }: LogSearchProps) {
   const [pendingForm, setPendingForm] = useState<FormData>(
     parseSearchParam(searchParams),
   );
-  const [formToSearch, setFormToSearch] = useState<FormData>();
-
+  // formToSearch is not initialized with filters from the URL parameters.
+  // This is because we only want to initiate a search when user click the search button.
+  // Search can be expensive, we should encourage checking the filters before searching.
+  const [formToSearch, setFormToSearch] = useState<CompleteFormToSearch>();
+  // Persist current time between re-render, so that anchor for relative time calculation is consistent.
+  const nowRef = useRef(DateTime.now().toUTC());
+  const { startTime, endTime } = getAbsoluteStartEndTime(
+    searchParams,
+    nowRef.current,
+  );
   return (
     <>
       <FormContainer>
         <FormRowDiv>
+          <TimeRangeSelector />
           <SelectTextField
             sx={{ flex: 3 }}
             label="Search string"
@@ -136,33 +127,6 @@ export function LogSearch({ project }: LogSearchProps) {
                 searchStr: str,
               }));
             }}
-          />
-
-          <DateTimePicker
-            sx={{ flex: 1 }}
-            label="From (UTC)"
-            timezone="UTC"
-            value={pendingForm.startTime}
-            slotProps={{ textField: { size: 'small' } }}
-            onChange={(newValue) =>
-              setPendingForm((prev) => ({
-                ...prev,
-                startTime: newValue?.startOf('minute') || null,
-              }))
-            }
-          />
-          <DateTimePicker
-            sx={{ flex: 1 }}
-            label="To (UTC)"
-            timezone="UTC"
-            value={pendingForm.endTime}
-            slotProps={{ textField: { size: 'small' } }}
-            onChange={(newValue) =>
-              setPendingForm((prev) => ({
-                ...prev,
-                endTime: newValue?.startOf('minute') || null,
-              }))
-            }
           />
         </FormRowDiv>
         <FormRowDiv>
@@ -218,7 +182,7 @@ export function LogSearch({ project }: LogSearchProps) {
           size="small"
           variant="contained"
           onClick={() => {
-            setFormToSearch({ ...pendingForm });
+            setFormToSearch({ ...pendingForm, startTime, endTime });
             setSearchParams(searchParamUpdater(pendingForm));
             setSearchParams(emptyPageTokenUpdater(pagerCtx));
           }}

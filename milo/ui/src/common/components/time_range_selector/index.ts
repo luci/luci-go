@@ -1,4 +1,4 @@
-// Copyright 2023 The LUCI Authors.
+// Copyright 2024 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,5 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export * from './synced_search_params';
-export * from './synced_search_params_utils';
+export * from './time_range_selector';
+export { getAbsoluteStartEndTime } from './time_range_selector_utils';

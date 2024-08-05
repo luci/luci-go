@@ -28,14 +28,14 @@ import { QueryTestVariantArtifactGroupsRequest } from '@/proto/go.chromium.org/l
 import { useResultDbClient } from '@/test_verdict/hooks/prpc_clients';
 import { OutputQueryTestVariantArtifactGroupsResponse } from '@/test_verdict/types';
 
-import { FormData } from '../form_data';
+import { FormData, CompleteFormToSearch } from '../form_data';
 
 import { LogGroup } from './log_group';
 
 export interface LogSearchProps {
   readonly project: string;
   readonly pagerCtx: PagerContext;
-  readonly form: FormData;
+  readonly form: CompleteFormToSearch;
 }
 
 // TODO (beining@):
@@ -47,8 +47,6 @@ export function LogTable({ project, form, pagerCtx }: LogSearchProps) {
   const pageToken = getPageToken(pagerCtx, searchParams);
   const client = useResultDbClient();
   const searchString = FormData.getSearchString(form);
-  const startTime = form.startTime ? form.startTime.toString() : '';
-  const endTime = form.endTime ? form.endTime.toString() : '';
   const { data, isLoading, error, isError } = useQuery({
     ...client.QueryTestVariantArtifactGroups.query(
       QueryTestVariantArtifactGroupsRequest.fromPartial({
@@ -56,8 +54,8 @@ export function LogTable({ project, form, pagerCtx }: LogSearchProps) {
         searchString,
         testIdMatcher: FormData.getTestIDMatcher(form),
         artifactIdMatcher: FormData.getArtifactIDMatcher(form),
-        startTime,
-        endTime,
+        startTime: form.startTime ? form.startTime.toISO() : '',
+        endTime: form.endTime ? form.endTime.toISO() : '',
         pageSize: pageSize,
         pageToken: pageToken,
       }),

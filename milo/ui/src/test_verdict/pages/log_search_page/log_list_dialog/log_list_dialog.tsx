@@ -16,14 +16,14 @@ import { Close } from '@mui/icons-material';
 import { Box, Dialog, DialogContent, DialogTitle } from '@mui/material';
 
 import { useLogGroupListDispatch, useLogGroupListState } from '../contexts';
-import { FormData } from '../form_data';
+import { CompleteFormToSearch, FormData } from '../form_data';
 import { VariantLine } from '../variant_line';
 
 import { LogList } from './log_list';
 
 export interface LogListDialogProps {
   readonly project: string;
-  readonly form: FormData;
+  readonly form: CompleteFormToSearch;
 }
 
 export function LogListDialog({ project, form }: LogListDialogProps) {

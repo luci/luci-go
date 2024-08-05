@@ -18,6 +18,10 @@ import {
   ArtifactContentMatcher,
   IDMatcher,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
+
+/**
+ * FormData represent fields directly managed by the <LogSearch />.
+ */
 export interface FormData {
   testIDStr: string;
   isTestIDStrPrefix: boolean;
@@ -25,6 +29,14 @@ export interface FormData {
   isArtifactIDStrPrefix: boolean;
   searchStr: string;
   isSearchStrRegex: boolean;
+}
+
+/**
+ * CompleteFormToSearch represent all fields that can be used for searching artifacts.
+ * startTime and endTime are not directly managed by <LogSearch />,
+ * but they are needed for the log search query.
+ */
+export interface CompleteFormToSearch extends FormData {
   startTime: DateTime | null;
   endTime: DateTime | null;
 }

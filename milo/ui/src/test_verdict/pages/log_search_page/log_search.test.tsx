@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import { fireEvent, render, screen } from '@testing-library/react';
-import { DateTime } from 'luxon';
 
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 import { URLObserver } from '@/testing_tools/url_observer';
@@ -27,9 +26,7 @@ describe('<LogSearch />', () => {
         mountedPath="/"
         routerOptions={{
           initialEntries: [
-            '/?filter=%7B"startTime"%3A"2024-07-18T08%3A31%3A12.000Z"%2C ' +
-              '"endTime"%3A"2024-07-21T08%3A31%3A12.000Z"%2C' +
-              '"searchStr"%3A"example+search+string"%2C' +
+            '/?filter=%7B"searchStr"%3A"example+search+string"%2C' +
               '"testIDStr"%3A"example+test+id"%2C' +
               '"artifactIDStr"%3A"snippet"%2C' +
               '"isSearchStrRegex"%3Atrue%7D',
@@ -53,11 +50,6 @@ describe('<LogSearch />', () => {
     expect(artifactIDSelectEle).toHaveValue('Exact equal:');
     const artifactIDInputEle = screen.getByTestId('Log file input');
     expect(artifactIDInputEle).toHaveValue('snippet');
-
-    const fromTimeInputEle = screen.getByLabelText('From (UTC)');
-    expect(fromTimeInputEle).toHaveValue('07/18/2024 08:31 AM');
-    const toTimeInputEle = screen.getByLabelText('To (UTC)');
-    expect(toTimeInputEle).toHaveValue('07/21/2024 08:31 AM');
   });
 
   it('can save form data to search param', () => {
@@ -93,15 +85,6 @@ describe('<LogSearch />', () => {
     fireEvent.change(artifactIDInputEle, {
       target: { value: 'test artifact id' },
     });
-
-    const fromTimeInputEle = screen.getByLabelText('From (UTC)');
-    fireEvent.change(fromTimeInputEle, {
-      target: { value: '06/10/2024 12:00 AM' },
-    });
-    const toTimeInputEle = screen.getByLabelText('To (UTC)');
-    fireEvent.change(toTimeInputEle, {
-      target: { value: '06/12/2024 11:00 PM' },
-    });
     fireEvent.click(screen.getByText('Search'));
 
     expect(urlCallback).toHaveBeenLastCalledWith(
@@ -114,15 +97,6 @@ describe('<LogSearch />', () => {
             isArtifactIDStrPrefix: false,
             searchStr: 'test search string',
             isSearchStrRegex: true,
-            startTime: DateTime.fromFormat(
-              '06/10/2024 12:00 AM',
-              'MM/dd/yyyy t',
-            )
-              .toUTC()
-              .toISO(),
-            endTime: DateTime.fromFormat('06/12/2024 11:00 PM', 'MM/dd/yyyy t')
-              .toUTC()
-              .toISO(),
           }),
         },
       }),
