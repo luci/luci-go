@@ -105,7 +105,6 @@ export function GroupsForm({ name, onDelete = () => { } }: GroupsFormProps) {
     // TODO(heidichan): Set the state values outside of onSuccess.
     // This is necessary due to the queryKey implicitly using the auth state,
     // which changes if the user navigates away from the page.
-    setOwners(group?.owners || "");
     setReadonlyMode();
     setIsExternal(isExternalGroupName(group?.name!));
     const members: string[] = (group?.members)?.map((member => stripPrefix('user', member))) || [] as string[];
@@ -261,9 +260,11 @@ export function GroupsForm({ name, onDelete = () => { } }: GroupsFormProps) {
     );
   }
 
-  const initialDesc = response?.description || '';
   if (description == null) {
-    setDescription(initialDesc);
+    setDescription(response?.description || '');
+  }
+  if (owners == null) {
+    setOwners(response?.owners || '');
   }
 
   return (
