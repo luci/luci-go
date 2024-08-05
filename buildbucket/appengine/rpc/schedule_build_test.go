@@ -6552,9 +6552,9 @@ func TestScheduleBuild(t *testing.T) {
 						},
 					},
 					{
-						Name: "chrome/infra/custom/builds/count",
+						Name: "chrome/infra/custom/builds/max_age",
 						Class: &pb.CustomMetric_MetricBase{
-							MetricBase: pb.CustomMetricBase_CUSTOM_METRIC_BASE_COUNT,
+							MetricBase: pb.CustomMetricBase_CUSTOM_METRIC_BASE_MAX_AGE_SCHEDULED,
 						},
 					},
 				},
@@ -6578,7 +6578,7 @@ func TestScheduleBuild(t *testing.T) {
 				ExtraFields: map[string]string{"os": `build.tags.get_value("os")`},
 			}
 			cm4 := &pb.CustomMetricDefinition{
-				Name:       "chrome/infra/custom/builds/count",
+				Name:       "chrome/infra/custom/builds/max_age",
 				Predicates: []string{`build.tags.get_value("buildset")!=""`},
 			}
 			So(datastore.Put(ctx, &model.Builder{
@@ -6641,9 +6641,9 @@ func TestScheduleBuild(t *testing.T) {
 			So(bld.CustomMetrics[0].Metric, ShouldResembleProto, cm1)
 			So(bld.CustomMetrics[1].Base, ShouldEqual, pb.CustomMetricBase_CUSTOM_METRIC_BASE_COMPLETED)
 			So(bld.CustomMetrics[1].Metric, ShouldResembleProto, cm2)
-			So(bld.CustomMetrics[2].Base, ShouldEqual, pb.CustomMetricBase_CUSTOM_METRIC_BASE_COUNT)
+			So(bld.CustomMetrics[2].Base, ShouldEqual, pb.CustomMetricBase_CUSTOM_METRIC_BASE_MAX_AGE_SCHEDULED)
 			So(bld.CustomMetrics[2].Metric, ShouldResembleProto, cm4)
-			So(bld.CustomBuilderMetrics, ShouldResemble, []string{"chrome/infra/custom/builds/count"})
+			So(bld.CustomBuilderMaxAgeMetrics, ShouldResemble, []string{"chrome/infra/custom/builds/max_age"})
 		})
 
 		Convey("many", func() {

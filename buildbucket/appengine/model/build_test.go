@@ -667,7 +667,7 @@ func TestBuild(t *testing.T) {
 								},
 							},
 						},
-						CustomBuilderMetrics: []string{"custom_metric_count"},
+						CustomBuilderCountMetrics: []string{"custom_metric_count"},
 					},
 				}
 				for _, bld := range blds {
@@ -730,11 +730,11 @@ func TestBuild(t *testing.T) {
 							},
 						},
 					},
-					CustomBuilderMetrics: []string{"custom_metric_count1"},
+					CustomBuilderCountMetrics: []string{"custom_metric_count1"},
 				}
 				err := EvaluateBuildForCustomBuilderMetrics(ctx, b, false)
 				So(err, ShouldBeNil)
-				So(b.CustomBuilderMetrics, ShouldResemble, []string{"custom_metric_count2"})
+				So(b.CustomBuilderCountMetrics, ShouldResemble, []string{"custom_metric_count2"})
 			})
 
 			Convey("loadDetails", func() {
@@ -769,10 +769,10 @@ func TestBuild(t *testing.T) {
 				}), ShouldBeNil)
 				err := EvaluateBuildForCustomBuilderMetrics(ctx, b, false)
 				So(err, ShouldBeNil)
-				So(len(b.CustomBuilderMetrics), ShouldEqual, 0)
+				So(len(b.CustomBuilderCountMetrics), ShouldEqual, 0)
 				err = EvaluateBuildForCustomBuilderMetrics(ctx, b, true)
 				So(err, ShouldBeNil)
-				So(b.CustomBuilderMetrics, ShouldResemble, []string{"custom_metric_count"})
+				So(b.CustomBuilderCountMetrics, ShouldResemble, []string{"custom_metric_count"})
 			})
 		})
 	})

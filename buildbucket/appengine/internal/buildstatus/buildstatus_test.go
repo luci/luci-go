@@ -257,7 +257,7 @@ func TestUpdate(t *testing.T) {
 						So(err, ShouldBeNil)
 						So(bs.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
 						So(updatedStatus, ShouldEqual, pb.Status_INFRA_FAILURE)
-						So(b.CustomBuilderMetrics, ShouldResemble, []string{"chrome/infra/custom/builds/failure_count_2"})
+						So(b.CustomBuilderConsecutiveFailuresMetrics, ShouldResemble, []string{"chrome/infra/custom/builds/failure_count_2"})
 					})
 					Convey("output status not ended when task status success with SucceedBuildIfTaskSucceeded true", func() {
 						b.Proto.Output.Status = pb.Status_STARTED

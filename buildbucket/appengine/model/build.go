@@ -204,11 +204,14 @@ type Build struct {
 	CustomMetrics []CustomMetric `gae:"custome_metrics,noindex"`
 
 	// Names of the custom builder metrics this build could report to.
+	// Each base has a separate field for custom builder metrics based on it.
 	// We report builder metrics by querying datastore, so doing predicate checks
 	// on query results is infeasible or expensive. Instead we should do the
 	// predicate check when an event happens then saves the metric name if the
 	// check passes. So later we could run a query for that specific custom metric.
-	CustomBuilderMetrics []string `gae:"custom_builder_metrics"`
+	CustomBuilderCountMetrics               []string `gae:"custom_builder_count_metrics"`
+	CustomBuilderMaxAgeMetrics              []string `gae:"custom_builder_max_age_metrics"`
+	CustomBuilderConsecutiveFailuresMetrics []string `gae:"custom_builder_consecutive_failures_metrics"`
 }
 
 // Realm returns this build's auth realm, or an empty string if not opted into the
@@ -538,20 +541,20 @@ func LoadBuildDetails(ctx context.Context, m *BuildMask, redact func(*pb.Build) 
 	return nil
 }
 
-func getBuilderMetricBasesByStatus(status pb.Status) map[pb.CustomMetricBase]struct{} {
+func getBuilderMetricBasesByStatus(status pb.Status) map[pb.CustomMetricBase][]*pb.CustomMetricDefinition {
 	switch {
 	case status == pb.Status_SCHEDULED:
-		return map[pb.CustomMetricBase]struct{}{
-			pb.CustomMetricBase_CUSTOM_METRIC_BASE_COUNT:             {},
-			pb.CustomMetricBase_CUSTOM_METRIC_BASE_MAX_AGE_SCHEDULED: {},
+		return map[pb.CustomMetricBase][]*pb.CustomMetricDefinition{
+			pb.CustomMetricBase_CUSTOM_METRIC_BASE_COUNT:             nil,
+			pb.CustomMetricBase_CUSTOM_METRIC_BASE_MAX_AGE_SCHEDULED: nil,
 		}
 	case status == pb.Status_STARTED:
-		return map[pb.CustomMetricBase]struct{}{
-			pb.CustomMetricBase_CUSTOM_METRIC_BASE_COUNT: {},
+		return map[pb.CustomMetricBase][]*pb.CustomMetricDefinition{
+			pb.CustomMetricBase_CUSTOM_METRIC_BASE_COUNT: nil,
 		}
 	case protoutil.IsEnded(status):
-		return map[pb.CustomMetricBase]struct{}{
-			pb.CustomMetricBase_CUSTOM_METRIC_BASE_CONSECUTIVE_FAILURE_COUNT: {},
+		return map[pb.CustomMetricBase][]*pb.CustomMetricDefinition{
+			pb.CustomMetricBase_CUSTOM_METRIC_BASE_CONSECUTIVE_FAILURE_COUNT: nil,
 		}
 	default:
 		panic(fmt.Sprintf("invalid build status %s", status))
@@ -560,16 +563,17 @@ func getBuilderMetricBasesByStatus(status pb.Status) map[pb.CustomMetricBase]str
 
 // EvaluateBuildForCustomBuilderMetrics finds the custom builder metrics from
 // bld.CustomMetrics and evaluates the build against those metrics' predicates.
-// Update bld.CustomBuilderMetrics to add names of the matching metrics.
+// Update bld.CustomBuilderXXMetrics to add names of the matching metrics.
 func EvaluateBuildForCustomBuilderMetrics(ctx context.Context, bld *Build, loadDetails bool) error {
-	toEvaluate := make([]*pb.CustomMetricDefinition, 0, len(bld.CustomMetrics))
-	bases := getBuilderMetricBasesByStatus(bld.Proto.Status)
+	toEvaluate := getBuilderMetricBasesByStatus(bld.Proto.Status)
+	needToEvaluate := false
 	for _, cm := range bld.CustomMetrics {
-		if _, ok := bases[cm.Base]; ok {
-			toEvaluate = append(toEvaluate, cm.Metric)
+		if _, ok := toEvaluate[cm.Base]; ok {
+			needToEvaluate = true
+			toEvaluate[cm.Base] = append(toEvaluate[cm.Base], cm.Metric)
 		}
 	}
-	if len(toEvaluate) == 0 {
+	if !needToEvaluate {
 		return nil
 	}
 
@@ -589,19 +593,35 @@ func EvaluateBuildForCustomBuilderMetrics(ctx context.Context, bld *Build, loadD
 	}
 
 	// Evaluate the build.
-	// Clear bld.CustomBuilderMetrics to (re)evaluate all possible builder metrics.
-	// Practically speaking we only need to re-evaluate builder count metrics at
-	// build updates, since the other builder metrics are only evaluated once
-	// at either build creation or completion. And re-evaluating at build updates
-	// is cheap since we don't need to load details of the build from datastore.
-	bld.CustomBuilderMetrics = nil
-	for _, cm := range toEvaluate {
-		matched, err := buildcel.BoolEval(bp, cm.Predicates)
-		if err != nil {
-			return err
+	for base, cms := range toEvaluate {
+		if base == pb.CustomMetricBase_CUSTOM_METRIC_BASE_COUNT {
+			// Clear bld.CustomBuilderCountMetrics to (re)evaluate all possible
+			// builder metrics with this base at build updates (first evaluation
+			// happens at build creation). Re-evaluating at build updates is cheap
+			// since we don't need to load details of the build from datastore.
+			//
+			// No need to re-evaluate builder metrics with other bases, since they are
+			// only evaluated once at either build creation or completion.
+			bld.CustomBuilderCountMetrics = nil
 		}
-		if matched {
-			bld.CustomBuilderMetrics = append(bld.CustomBuilderMetrics, cm.Name)
+
+		for _, cm := range cms {
+			matched, err := buildcel.BoolEval(bp, cm.Predicates)
+			if err != nil {
+				return err
+			}
+			if matched {
+				switch base {
+				case pb.CustomMetricBase_CUSTOM_METRIC_BASE_COUNT:
+					bld.CustomBuilderCountMetrics = append(bld.CustomBuilderCountMetrics, cm.Name)
+				case pb.CustomMetricBase_CUSTOM_METRIC_BASE_MAX_AGE_SCHEDULED:
+					bld.CustomBuilderMaxAgeMetrics = append(bld.CustomBuilderMaxAgeMetrics, cm.Name)
+				case pb.CustomMetricBase_CUSTOM_METRIC_BASE_CONSECUTIVE_FAILURE_COUNT:
+					bld.CustomBuilderConsecutiveFailuresMetrics = append(bld.CustomBuilderConsecutiveFailuresMetrics, cm.Name)
+				default:
+					panic(fmt.Sprintf("impossible builder metric base %s", base))
+				}
+			}
 		}
 	}
 	return nil

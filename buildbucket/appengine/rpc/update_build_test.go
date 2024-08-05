@@ -784,7 +784,7 @@ func TestUpdateBuild(t *testing.T) {
 			b, err := common.GetBuild(ctx, req.Build.Id)
 			So(err, ShouldBeNil)
 			So(b.Proto.ViewUrl, ShouldEqual, url)
-			So(len(b.CustomBuilderMetrics), ShouldEqual, 0)
+			So(len(b.CustomBuilderCountMetrics), ShouldEqual, 0)
 		})
 
 		Convey("build.output.properties", func() {
@@ -924,7 +924,7 @@ func TestUpdateBuild(t *testing.T) {
 				b := getBuildWithDetails(ctx, req.Build.Id)
 				expected := []string{strpair.Format("resultdb", "disabled")}
 				So(b.Tags, ShouldResemble, expected)
-				So(b.CustomBuilderMetrics, ShouldResemble, []string{"chrome/infra/custom/builds/count"})
+				So(b.CustomBuilderCountMetrics, ShouldResemble, []string{"chrome/infra/custom/builds/count"})
 
 				// change the value and update it again
 				tag.Value = "enabled"
@@ -934,7 +934,7 @@ func TestUpdateBuild(t *testing.T) {
 				b = getBuildWithDetails(ctx, req.Build.Id)
 				expected = append(expected, strpair.Format("resultdb", "enabled"))
 				So(b.Tags, ShouldResemble, expected)
-				So(b.CustomBuilderMetrics, ShouldResemble, []string{"chrome/infra/custom/builds/count"})
+				So(b.CustomBuilderCountMetrics, ShouldResemble, []string{"chrome/infra/custom/builds/count"})
 			})
 
 			Convey("without mask", func() {
