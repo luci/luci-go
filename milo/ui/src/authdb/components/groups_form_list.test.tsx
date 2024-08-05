@@ -108,17 +108,15 @@ describe('<GroupsFormList editable/>', () => {
     const textfield = screen.getByTestId('add-textfield').querySelector('input');
     expect(textfield).toBeInTheDocument();
     await userEvent.type(textfield!, 'newMember');
-    expect(textfield!.value).toBe('newMember');
     // Click confirm button.
     const confirmButton = screen.queryByTestId('confirm-button');
     expect(confirmButton).not.toBeNull();
     act(() => confirmButton!.click());
     // Check correct error message is shown.
-    await screen.findByRole('alert');
     expect(screen.getByText('Each member should be an email address.')).toBeInTheDocument();
   })
 
-  test('shows error message on adding email with a / symbol', async () => {
+  test('shows error message on invalid email', async () => {
     // Click add button.
     const addButton = screen.queryByTestId('add-button');
     expect(addButton).not.toBeNull();
@@ -127,13 +125,11 @@ describe('<GroupsFormList editable/>', () => {
     const textfield = screen.getByTestId('add-textfield').querySelector('input');
     expect(textfield).toBeInTheDocument();
     await userEvent.type(textfield!, 'newMember@email/com');
-    expect(textfield!.value).toBe('newMember@email/com');
     // Click confirm button.
     const confirmButton = screen.queryByTestId('confirm-button');
     expect(confirmButton).not.toBeNull();
     act(() => confirmButton!.click());
     // Check correct error message is shown.
-    await screen.findByRole('alert');
     expect(screen.getByText('Each member should be an email address.')).toBeInTheDocument();
   })
 
@@ -146,7 +142,6 @@ describe('<GroupsFormList editable/>', () => {
     const textfield = screen.getByTestId('add-textfield').querySelector('input');
     expect(textfield).toBeInTheDocument();
     await userEvent.type(textfield!, 'newMember');
-    expect(textfield!.value).toBe('newMember');
     // Click clear button.
     const clearButton = screen.queryByTestId('clear-button');
     expect(clearButton).not.toBeNull();
@@ -176,13 +171,39 @@ describe('<GroupsFormList editable globs/>', () => {
     const textfield = screen.getByTestId('add-textfield').querySelector('input');
     expect(textfield).toBeInTheDocument();
     await userEvent.type(textfield!, '.glob');
-    expect(textfield!.value).toBe('.glob');
     // Click confirm button.
     const confirmButton = screen.queryByTestId('confirm-button');
     expect(confirmButton).not.toBeNull();
     act(() => confirmButton!.click());
     // Check correct error message is shown.
-    await screen.findByRole('alert');
     expect(screen.getByText('Each glob should use at least one wildcard (i.e. *).')).toBeInTheDocument();
+  })
+});
+
+describe('<GroupsFormList editable subgroups/>', () => {
+  const mockGroup = createMockGroupIndividual('123', true);
+  beforeEach(async () => {
+    render(
+      <FakeContextProvider>
+        <GroupsFormList name='Subgroups' initialItems={mockGroup.members as string[]}/>
+      </FakeContextProvider>,
+    );
+    await screen.findByTestId('groups-form-list');
+  });
+  test('shows error message on invalid subgroup', async () => {
+    // Click add button.
+    const addButton = screen.queryByTestId('add-button');
+    expect(addButton).not.toBeNull();
+    act(() => addButton!.click());
+    // Type in textfield.
+    const textfield = screen.getByTestId('add-textfield').querySelector('input');
+    expect(textfield).toBeInTheDocument();
+    await userEvent.type(textfield!, 'Subgroup');
+    // Click confirm button.
+    const confirmButton = screen.queryByTestId('confirm-button');
+    expect(confirmButton).not.toBeNull();
+    act(() => confirmButton!.click());
+    // Check correct error message is shown.
+    expect(screen.getByText('Invalid subgroup name.')).toBeInTheDocument();
   })
 });

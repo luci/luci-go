@@ -11,7 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
 import ClearIcon from '@mui/icons-material/Clear';
@@ -26,8 +25,12 @@ import TableRow from '@mui/material/TableRow';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import {useState, forwardRef, useImperativeHandle} from 'react';
+import validator from 'validator';
 
 import './groups_list.css';
+
+const membersRe = /^((user|bot|service|anonymous):)?[\w+%.@*\[\]-]+$/;
+const nameRe = /^([a-z\-]+\/)?[0-9a-z_\-\.@]{1,100}$/;
 
 interface GroupsFormListProps {
     initialItems: string[];
@@ -70,15 +73,21 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
       // If this is members or globs, verify accordingly before adding.
       // If it doesn't meet the requirements, show error message.
       if (name == 'Members') {
-        let isEmail = currentItem!.indexOf('@') != -1 && currentItem!.indexOf('/') == -1;
-        if (!isEmail) {
+        let isMember = membersRe.test(currentItem!) && validator.isEmail(currentItem!);
+        if (!isMember) {
           setErrorMessage('Each member should be an email address.');
           return;
         }
       } else if (name == 'Globs') {
-        let isGlob = currentItem!.indexOf('*') != -1;
+        let isGlob = (currentItem!.search(/[\*\[\]]/) != -1);
         if (!isGlob) {
           setErrorMessage('Each glob should use at least one wildcard (i.e. *).');
+          return;
+        }
+      } else if (name == 'Subgroups') {
+        let isSubgroup = nameRe.test(currentItem!);
+        if (!isSubgroup) {
+          setErrorMessage('Invalid subgroup name.');
           return;
         }
       }
@@ -120,7 +129,7 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
       {addingItem && (
         <TableRow>
           <TableCell sx={{p: 0, pt: '15px', pr: '15px'}} style={{width: '94%'}}>
-            <TextField label='Add New' style={{width: '100%'}} onChange={(e) => setCurrentItem(e.target.value)} onKeyDown={submitItem} value={currentItem} data-testid='add-textfield'></TextField>
+            <TextField label='Add New' style={{width: '100%'}} onChange={(e) => setCurrentItem(e.target.value)} onKeyDown={submitItem} value={currentItem} data-testid='add-textfield' error={errorMessage !== ''} helperText={errorMessage}></TextField>
           </TableCell>
           <TableCell align='center' style={{width: '3%'}} sx={{p: 0, pt: '15px'}}>
             <IconButton color='success' sx={{p: 0}} onClick={() => {addToItems()}} data-testid='confirm-button'>
@@ -133,11 +142,6 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
             </IconButton>
           </TableCell>
         </TableRow>)
-      }
-      {(errorMessage != '') &&
-        <div style={{padding: '5px 16px 5px 0px'}}>
-          <Alert sx={{p: 1.5}} severity="error">{errorMessage}</Alert>
-        </div>
       }
       {!addingItem &&
         <TableRow>
