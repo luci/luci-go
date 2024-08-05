@@ -513,3 +513,37 @@ func TestTaskSlice(t *testing.T) {
 		})
 	})
 }
+
+func TestTaskDimensions(t *testing.T) {
+	t.Parallel()
+	Convey("Hash", t, func() {
+		Convey("dimensions keys are sorted when hash", func() {
+			dims1 := TaskDimensions{
+				"d1": {"v1", "v2"},
+				"d2": {"v3"},
+			}
+			dims2 := TaskDimensions{
+				"d2": {"v3"},
+				"d1": {"v1", "v2"},
+			}
+			So(dims1.Hash(), ShouldEqual, dims2.Hash())
+			So(dims1.Hash(), ShouldEqual, 2036451960)
+		})
+
+		Convey("empty dims", func() {
+			var dims1 TaskDimensions
+			dims2 := TaskDimensions{}
+			So(dims1.Hash(), ShouldEqual, dims2.Hash())
+		})
+
+		Convey("dims with OR-ed dimensions", func() {
+			dims1 := TaskDimensions{
+				"d1": {"v1|v2"},
+			}
+			dims2 := TaskDimensions{
+				"d1": {"v2|v1"},
+			}
+			So(dims1.Hash(), ShouldNotEqual, dims2.Hash())
+		})
+	})
+}

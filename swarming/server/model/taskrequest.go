@@ -16,7 +16,10 @@ package model
 
 import (
 	"context"
+	"crypto/md5"
+	"encoding/binary"
 	"reflect"
+	"sort"
 	"time"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -667,12 +670,12 @@ func (p *TaskDimensions) FromProperty(prop datastore.Property) error {
 }
 
 // ToProto converts TaskDimensions to []*apipb.StringPair
-func (p *TaskDimensions) ToProto() []*apipb.StringPair {
-	if len(*p) == 0 {
+func (p TaskDimensions) ToProto() []*apipb.StringPair {
+	if len(p) == 0 {
 		return nil
 	}
 	td := []*apipb.StringPair{}
-	for k, v := range *p {
+	for k, v := range p {
 		for _, val := range v {
 			td = append(td, &apipb.StringPair{
 				Key:   k,
@@ -682,6 +685,41 @@ func (p *TaskDimensions) ToProto() []*apipb.StringPair {
 	}
 	SortStringPairs(td)
 	return td
+}
+
+// Hash returns a 32 bits unsigned int that is a hash of TaskDimensions.
+//
+// Dimensions values still have "|" in them, i.e. this is calculated prior to
+// expansion of OR-ed dimensions into a disjunction of dimension sets.
+//
+// Dimensions values are expected to be sorted, and it's also expected the
+// elements in OR-ed dimensions to be sorted.
+//
+// The return value is guaranteed to be a non-zero int so it can be used as
+// an entity ID.
+func (p TaskDimensions) Hash() uint32 {
+	keys := make([]string, 0, len(p))
+	for k := range p {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	delimiter := []byte{0}
+	hash := md5.New()
+	for _, k := range keys {
+		hash.Write([]byte(k))
+		hash.Write(delimiter)
+		for _, v := range p[k] {
+			hash.Write([]byte(v))
+			hash.Write(delimiter)
+		}
+	}
+	sum := hash.Sum(nil)
+	res := binary.LittleEndian.Uint32(sum[:4])
+	if res == 0 {
+		return uint32(1)
+	}
+	return res
 }
 
 // Env is a list of `(key, value)` pairs with environment variables to set.
