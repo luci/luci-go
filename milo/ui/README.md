@@ -42,9 +42,20 @@ deployed version. Click the login button and you should see the instruction.
 This deploys your local code to GAE as a dev instance that uses real auth
 and can be accessed by other people.
 
+```sh
+cd luci/milo/ui # or `cd luci/milo`.
+make up-dev
 ```
-cd ui
+
+If you use `gae.py` to deploy, you need to deploy all services at least once.
+Otherwise, the browser code will try to call a dev API that doesn't exist.
+```sh
+cd luci/milo/ui
 npm run build
+# Both the `api`, and `default` service should be uploaded at least once.
+gae.py upload -p ../ -A luci-milo-dev
+# After that, you can deploy `default` only for shorter deployment time, if
+# there's no code changes to the API service.
 gae.py upload -p ../ -A luci-milo-dev default
 ```
 

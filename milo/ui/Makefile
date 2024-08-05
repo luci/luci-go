@@ -19,7 +19,12 @@ test: node_deps
 	npm run test
 
 lint: node_deps
-	npx eslint ./src
+	npm run lint
 
 format: node_deps
-	npx eslint ./src --fix
+	npm run lint -- --fix
+
+# Provided for convience.
+# See up-dev in `../Makefile` for details.
+up-dev:
+	cd ../ && make up-dev
