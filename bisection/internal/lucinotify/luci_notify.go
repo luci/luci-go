@@ -26,7 +26,7 @@ import (
 )
 
 const (
-	luciNotifyHost = "luci-notify.appspot.com"
+	luciNotifyHost = "notify.api.luci.app"
 )
 
 // mockedLuciNotifyClientKey is the context key indicates using mocked LUCI Notify client in tests.

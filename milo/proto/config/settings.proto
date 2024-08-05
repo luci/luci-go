@@ -117,7 +117,7 @@ message Settings {
   LuciTreeStatus luci_tree_status = 10;
 
   message LuciNotify {
-    // host is the hostname of the LUCI Notify instance we're pointing to for RPCs (eg. luci-notify.appspot.com).
+    // host is the hostname of the LUCI Notify instance we're pointing to for RPCs (eg. notify.api.luci.app).
     string host = 1;
   }
   LuciNotify luci_notify = 11;

@@ -641,7 +641,7 @@ type Settings_LuciNotify struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// host is the hostname of the LUCI Notify instance we're pointing to for RPCs (eg. luci-notify.appspot.com).
+	// host is the hostname of the LUCI Notify instance we're pointing to for RPCs (eg. notify.api.luci.app).
 	Host string `protobuf:"bytes,1,opt,name=host,proto3" json:"host,omitempty"`
 }
 
