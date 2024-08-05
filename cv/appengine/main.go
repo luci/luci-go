@@ -89,7 +89,7 @@ func main() {
 		srvquota.NewModuleFromFlags(),
 	}
 
-	luciTreeStatusHost := "luci-tree-status-dev.appspot.com"
+	luciTreeStatusHost := "staging.treestatus.api.luci.app"
 	flag.StringVar(&luciTreeStatusHost, "luci-tree-status-host", luciTreeStatusHost, "Host for luci-tree-status.")
 
 	server.Main(nil, modules, func(srv *server.Server) error {

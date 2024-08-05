@@ -13,7 +13,7 @@ luci_gae_vars:
     AUTH_SERVICE_HOST: chrome-infra-auth-dev.appspot.com
     FRONTEND_CLIENT_ID: 880120143479-shb008ruk2kms1178b14nhgjr47o4emm.apps.googleusercontent.com
     CONFIG_SERVICE_HOST: config.luci.app
-    LUCI_TREE_STATUS_HOST: luci-tree-status-dev.appspot.com
+    LUCI_TREE_STATUS_HOST: staging.treestatus.api.luci.app
     TS_MON_ACCOUNT: app-engine-metric-publishers@prodx-mon-chrome-infra.google.com.iam.gserviceaccount.com
     VPC_CONNECTOR: projects/luci-change-verifier-dev/locations/us-central1/connectors/connector
     REDIS_ADDR: 10.42.70.59:6379
