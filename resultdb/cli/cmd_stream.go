@@ -68,9 +68,9 @@ func MustReturnInvURL(rdbHost, invName string) string {
 		panic(err)
 	}
 
-	miloHost := chromeinfra.MiloDevHost
+	miloHost := chromeinfra.MiloDevUIHost
 	if rdbHost == chromeinfra.ResultDBHost {
-		miloHost = chromeinfra.MiloHost
+		miloHost = chromeinfra.MiloUIHost
 	}
 	return fmt.Sprintf("https://%s/ui/inv/%s", miloHost, invID)
 }

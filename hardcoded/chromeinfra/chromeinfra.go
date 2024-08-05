@@ -62,11 +62,11 @@ const (
 	// MachineDatabaseDevHost is the URL of the Machine Database dev instance.
 	MachineDatabaseDevHost = "machine-db-dev.appspot.com"
 
-	// MiloHost is the hostname of the production Milo service.
-	MiloHost = "luci-milo.appspot.com"
+	// MiloUIHost is the hostname of the production Milo UI.
+	MiloUIHost = "luci-milo.appspot.com"
 
-	// MiloDevHost is the hostname of the development Milo service.
-	MiloDevHost = "luci-milo-dev.appspot.com"
+	// MiloDevUIHost is the hostname of the development Milo UI.
+	MiloDevUIHost = "luci-milo-dev.appspot.com"
 
 	// UFSProdHost is the URL of the ufs service.
 	UFSProdHost = "ufs.api.cr.dev"
