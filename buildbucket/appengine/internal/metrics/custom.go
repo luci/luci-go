@@ -154,6 +154,12 @@ func (cms *CustomMetrics) getCustomMetricsByBases(bases map[pb.CustomMetricBase]
 	return res
 }
 
+func (cms *CustomMetrics) getCustomMetricsByBase(base pb.CustomMetricBase) map[string]CustomMetric {
+	cms.m.RLock()
+	defer cms.m.RUnlock()
+	return cms.metrics[base]
+}
+
 // Report tries to report one or more metric. If it couldn't do the report
 // directly (e.g. a metric state recreation is happening), it will save the
 // reports to a buffer.

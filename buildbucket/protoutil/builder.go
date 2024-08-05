@@ -62,9 +62,14 @@ func ValidateRequiredBuilderID(b *pb.BuilderID) error {
 	}
 }
 
-// FormatBuilderID returns "{project}/{bucket}/{builder}" string.
+// ToBuilderIDString returns "{project}/{bucket}/{builder}" string.
+func ToBuilderIDString(project, bucket, builder string) string {
+	return fmt.Sprintf("%s/%s/%s", project, bucket, builder)
+}
+
+// FormatBuilderID converts BuilderID to a "{project}/{bucket}/{builder}" string.
 func FormatBuilderID(id *pb.BuilderID) string {
-	return fmt.Sprintf("%s/%s/%s", id.Project, id.Bucket, id.Builder)
+	return ToBuilderIDString(id.Project, id.Bucket, id.Builder)
 }
 
 // ParseBuilderID parses a "{project}/{bucket}/{builder}" string.

@@ -24,11 +24,11 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/target"
-
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/buildbucket/appengine/model"
+	modeldefs "go.chromium.org/luci/buildbucket/appengine/model/defs"
 	pb "go.chromium.org/luci/buildbucket/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -42,6 +42,7 @@ func TestReportBuilderMetrics(t *testing.T) {
 			WithServiceInfo(memory.Use(context.Background()), "svc", "job", "ins"),
 			testclock.TestTimeUTC.Truncate(time.Millisecond),
 		)
+		ctx, _ = WithCustomMetrics(ctx, &pb.SettingsCfg{})
 		ctx, _ = tsmon.WithDummyInMemory(ctx)
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
@@ -163,6 +164,79 @@ func TestReportBuilderMetrics(t *testing.T) {
 				Convey("v2", func() {
 					So(store.Get(target("b1"), V2.MaxAgeScheduled, time.Time{}, nil), ShouldEqual, 2*age)
 				})
+
+				Convey("custom", func() {
+					base := pb.CustomMetricBase_CUSTOM_METRIC_BASE_MAX_AGE_SCHEDULED
+					name := "chrome/infra/custom/builds/max_age"
+
+					globalCfg := &pb.SettingsCfg{
+						CustomMetrics: []*pb.CustomMetric{
+							{
+								Name: name,
+								Class: &pb.CustomMetric_MetricBase{
+									MetricBase: base,
+								},
+							},
+						},
+					}
+					ctx = WithBuilder(ctx, prj, bkt, "b1")
+					ctx, _ = WithCustomMetrics(ctx, globalCfg)
+
+					Convey("builder no custom metric", func() {
+						So(ReportBuilderMetrics(ctx), ShouldBeNil)
+						res, err := GetCustomMetricsData(ctx, base, name, time.Time{}, nil)
+						So(err, ShouldBeNil)
+						So(res, ShouldBeNil)
+					})
+
+					bldr := &model.Builder{
+						Parent: model.BucketKey(ctx, prj, bkt),
+						ID:     "b1",
+						Config: &pb.BuilderConfig{
+							CustomMetricDefinitions: []*pb.CustomMetricDefinition{
+								{
+									Name: name,
+								},
+							},
+						},
+					}
+					So(datastore.Put(ctx, bldr), ShouldBeNil)
+					bldrMetrics := &model.CustomBuilderMetrics{
+						Key:        model.CustomBuilderMetricsKey(ctx),
+						LastUpdate: testclock.TestRecentTimeUTC,
+						Metrics: &modeldefs.CustomBuilderMetrics{
+							Metrics: []*modeldefs.CustomBuilderMetric{
+								{
+									Name: name,
+									Builders: []*pb.BuilderID{
+										{
+											Project: prj,
+											Bucket:  bkt,
+											Builder: "b1",
+										},
+									},
+								},
+							},
+						},
+					}
+					So(datastore.Put(ctx, bldrMetrics), ShouldBeNil)
+					Convey("no build populates the metric", func() {
+						So(ReportBuilderMetrics(ctx), ShouldBeNil)
+						res, err := GetCustomMetricsData(ctx, base, name, time.Time{}, nil)
+						So(err, ShouldBeNil)
+						So(res, ShouldBeNil)
+					})
+
+					Convey("work", func() {
+						builds[0].CustomBuilderMaxAgeMetrics = []string{name}
+						So(datastore.Put(ctx, builds[0]), ShouldBeNil)
+						So(ReportBuilderMetrics(ctx), ShouldBeNil)
+
+						res, err := GetCustomMetricsData(ctx, base, name, time.Time{}, nil)
+						So(err, ShouldBeNil)
+						So(res, ShouldEqual, age)
+					})
+				})
 			})
 
 			Convey("w/ swarming config in bucket", func() {
@@ -253,6 +327,82 @@ func TestReportBuilderMetrics(t *testing.T) {
 				So(count("FAILURE"), ShouldEqual, 2)
 				So(count("INFRA_FAILURE"), ShouldEqual, 1)
 				So(count("CANCELED"), ShouldEqual, 1)
+
+				Convey("custom", func() {
+					base := pb.CustomMetricBase_CUSTOM_METRIC_BASE_CONSECUTIVE_FAILURE_COUNT
+					name1 := "chrome/infra/custom/builds/failures1"
+					name2 := "chrome/infra/custom/builds/failures2"
+
+					globalCfg := &pb.SettingsCfg{
+						CustomMetrics: []*pb.CustomMetric{
+							{
+								Name: name1,
+								Class: &pb.CustomMetric_MetricBase{
+									MetricBase: base,
+								},
+							},
+							{
+								Name: name2,
+								Class: &pb.CustomMetric_MetricBase{
+									MetricBase: base,
+								},
+							},
+						},
+					}
+					ctx = WithBuilder(ctx, prj, bkt, "b1")
+					ctx, _ = WithCustomMetrics(ctx, globalCfg)
+
+					bldrMetrics := &model.CustomBuilderMetrics{
+						Key:        model.CustomBuilderMetricsKey(ctx),
+						LastUpdate: testclock.TestRecentTimeUTC,
+						Metrics: &modeldefs.CustomBuilderMetrics{
+							Metrics: []*modeldefs.CustomBuilderMetric{
+								{
+									Name: name1,
+									Builders: []*pb.BuilderID{
+										{
+											Project: prj,
+											Bucket:  bkt,
+											Builder: "b1",
+										},
+									},
+								},
+								{
+									Name: name2,
+									Builders: []*pb.BuilderID{
+										{
+											Project: prj,
+											Bucket:  bkt,
+											Builder: "b1",
+										},
+									},
+								},
+							},
+						},
+					}
+					So(datastore.Put(ctx, bldrMetrics), ShouldBeNil)
+					for _, b := range builds {
+						b.CustomBuilderConsecutiveFailuresMetrics = []string{name1}
+					}
+					builds[2].CustomBuilderConsecutiveFailuresMetrics = append(builds[2].CustomBuilderConsecutiveFailuresMetrics, name2)
+					So(datastore.Put(ctx, builds), ShouldBeNil)
+					So(ReportBuilderMetrics(ctx), ShouldBeNil)
+					res, err := GetCustomMetricsData(ctx, base, name1, time.Time{}, []any{"FAILURE"})
+					So(err, ShouldBeNil)
+					So(res, ShouldEqual, 2)
+					res, err = GetCustomMetricsData(ctx, base, name1, time.Time{}, []any{"INFRA_FAILURE"})
+					So(err, ShouldBeNil)
+					So(res, ShouldEqual, 1)
+					res, err = GetCustomMetricsData(ctx, base, name1, time.Time{}, []any{"CANCELED"})
+					So(err, ShouldBeNil)
+					So(res, ShouldEqual, 1)
+					res, err = GetCustomMetricsData(ctx, base, name2, time.Time{}, []any{"FAILURE"})
+					So(err, ShouldBeNil)
+					So(res, ShouldEqual, 1)
+					res, err = GetCustomMetricsData(ctx, base, name2, time.Time{}, []any{"INFRA_FAILURE"})
+					So(err, ShouldBeNil)
+					So(res, ShouldBeNil)
+				})
 			})
 			Convey("w/ a series of failures before a success", func() {
 				builds := []*model.Build{
