@@ -101,18 +101,6 @@ export function GroupsForm({ name, onDelete = () => { } }: GroupsFormProps) {
   const subgroupsRef = createRef<FormListElement>();
   const globsRef = createRef<FormListElement>();
 
-  const resetValues = (group: AuthGroup) => {
-    // TODO(heidichan): Set the state values outside of onSuccess.
-    // This is necessary due to the queryKey implicitly using the auth state,
-    // which changes if the user navigates away from the page.
-    setReadonlyMode();
-    setIsExternal(isExternalGroupName(group?.name!));
-    const members: string[] = (group?.members)?.map((member => stripPrefix('user', member))) || [] as string[];
-    membersRef.current?.changeItems(members);
-    globsRef.current?.changeItems(group?.globs as string[]);
-    subgroupsRef.current?.changeItems(group?.nested as string[]);
-  };
-
   const updateMutation = useMutation({
     mutationFn: (request: UpdateGroupRequest) => {
       return client.UpdateGroup(request);
@@ -153,14 +141,10 @@ export function GroupsForm({ name, onDelete = () => { } }: GroupsFormProps) {
   } = useQuery({
     ...client.GetGroup.query({ "name": name }),
     onSuccess: (response) => {
-      resetValues(response);
-    },
+      setReadonlyMode();
+      setIsExternal(isExternalGroupName(response?.name!));
+      },
   })
-  const members: string[] = (response?.members)?.map((member => stripPrefix('user', member))) || [] as string[];
-  const subgroups: string[] = (response?.nested || []) as string[];
-  const globs: string[] = (response?.globs || []) as string[];
-  const etag = response?.etag;
-  const callerCanModify: boolean = response?.callerCanModify || false;
 
   const setReadonlyMode = () => {
     setDescriptionMode(false);
@@ -260,12 +244,20 @@ export function GroupsForm({ name, onDelete = () => { } }: GroupsFormProps) {
     );
   }
 
+  // Set the state values outside of onSuccess.
+  // This is necessary due to the queryKey implicitly using the auth state,
+  // which changes if the user navigates away from the page.
   if (description == null) {
     setDescription(response?.description || '');
   }
   if (owners == null) {
     setOwners(response?.owners || '');
   }
+  const members: string[] = (response?.members)?.map((member => stripPrefix('user', member))) || [] as string[];
+  const subgroups: string[] = (response?.nested || []) as string[];
+  const globs: string[] = (response?.globs || []) as string[];
+  const etag = response?.etag;
+  const callerCanModify: boolean = response?.callerCanModify || false;
 
   return (
     <Box sx={{ minHeight: '500px', p: '20px', ml: '5px' }}>
