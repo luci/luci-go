@@ -40,6 +40,8 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/distribution"
 	"go.chromium.org/luci/common/tsmon/store"
@@ -68,8 +70,6 @@ import (
 	"go.chromium.org/luci/cv/internal/gerrit"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	listenerpb "go.chromium.org/luci/cv/settings/listener"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 const gaeTopLevelDomain = ".appspot.com"
@@ -120,9 +120,6 @@ type Test struct {
 	// GoMockCtl is the controller for gomock.
 	GoMockCtl *gomock.Controller
 
-	// cleanupFuncs are executed in reverse order in cleanup().
-	cleanupFuncs []func()
-
 	// authDB is used to mock CrIA memberships.
 	authDB *authtest.FakeDB
 }
@@ -152,12 +149,20 @@ func (t *Test) SetUp(testingT *testing.T) (context.Context, func()) {
 		}
 	}
 
+	// TODO - go.dev/issue/48157: use per-test case timeout once Golang provides
+	// native support
 	t.setMaxDuration()
 	ctxShared := context.WithValue(context.Background(), testingContextKeyType{}, struct{}{})
 	// Don't set the deadline (timeout) into the context given to the test,
 	// as it may interfere with test clock.
 	ctx, cancel := context.WithCancel(ctxShared)
 	ctxTimed, cancelTimed := context.WithTimeout(ctxShared, t.MaxDuration)
+	testingT.Cleanup(func() {
+		// Fail the test if the test has timed out.
+		assert.That(testingT, ctxTimed.Err(), should.ErrLike(nil))
+		cancelTimed()
+		cancel()
+	})
 	go func(ctx context.Context) {
 		// Instead, watch for expiry of ctxTimed and cancel test `ctx`.
 		select {
@@ -168,15 +173,8 @@ func (t *Test) SetUp(testingT *testing.T) (context.Context, func()) {
 			cancelTimed()
 		}
 	}(ctx)
-	t.cleanupFuncs = append(t.cleanupFuncs, func() {
-		// Fail the test if the test has timed out.
-		So(ctxTimed.Err(), ShouldBeNil)
-		cancel()
-		cancelTimed()
-	})
-
 	// setup the test clock first so that logger can use test clock timestamp.
-	ctx = t.setUpTestClock(ctx)
+	ctx = t.setUpTestClock(ctx, testingT)
 	if testing.Verbose() {
 		// TODO(crbug/1282023): make this logger emit testclock-based timestamps.
 		ctx = logging.SetLevel(gologger.StdConfig.Use(ctx), logging.Debug)
@@ -187,9 +185,8 @@ func (t *Test) SetUp(testingT *testing.T) (context.Context, func()) {
 	ctx = caching.WithEmptyProcessCache(ctx)
 	ctx = secrets.GeneratePrimaryTinkAEADForTest(ctx)
 
-	if t.TQDispatcher != nil {
-		panic("TQDispatcher must not be set")
-	}
+	// TQDispatcher must not be set
+	assert.Loosely(testingT, t.TQDispatcher, should.BeNil)
 	t.TQDispatcher = &tq.Dispatcher{}
 	ctx, t.TQ = tq.TestingContext(ctx, t.TQDispatcher)
 	t.TQ.TaskSucceeded = tqtesting.TasksCollector(&t.SucceededTQTasks)
@@ -208,7 +205,7 @@ func (t *Test) SetUp(testingT *testing.T) (context.Context, func()) {
 		t.BQFake = &bq.Fake{}
 	}
 
-	ctx = t.installDS(ctx)
+	ctx = t.installDS(ctx, testingT)
 	ctx = txndefer.FilterRDS(ctx)
 	t.authDB = authtest.NewFakeDB()
 	ctx = serverauth.WithState(ctx, &authtest.FakeState{FakeDB: t.authDB})
@@ -218,17 +215,10 @@ func (t *Test) SetUp(testingT *testing.T) (context.Context, func()) {
 	tsmon.GetState(ctx).SetStore(t.TSMonStore)
 
 	t.GoMockCtl = gomock.NewController(testingT)
-	if err := srvcfg.SetTestListenerConfig(ctx, &listenerpb.Settings{}, nil); err != nil {
-		panic(err)
-	}
+	assert.That(testingT, srvcfg.SetTestListenerConfig(ctx, &listenerpb.Settings{}, nil), should.ErrLike(nil))
 
-	return ctx, t.cleanup
-}
-
-func (t *Test) cleanup() {
-	for i := len(t.cleanupFuncs) - 1; i >= 0; i-- {
-		t.cleanupFuncs[i]()
-	}
+	// TODO(yiwzhang): remove the second parameter
+	return ctx, func() {}
 }
 
 func (t *Test) RoundTestClock(multiple time.Duration) {
@@ -298,16 +288,14 @@ func (t *Test) DisableProjectInGerritListener(ctx context.Context, projectRE str
 	}
 }
 
-func (t *Test) installDS(ctx context.Context) context.Context {
-	if !strings.HasSuffix(t.Env.LogicalHostname, gaeTopLevelDomain) {
-		panic(fmt.Errorf("Env.LogicalHostname %q doesn't end with %q", t.Env.LogicalHostname, gaeTopLevelDomain))
-	}
+func (t *Test) installDS(ctx context.Context, testingT *testing.T) context.Context {
+	assert.That(testingT, strings.HasSuffix(t.Env.LogicalHostname, gaeTopLevelDomain), should.BeTrue)
 	appID := t.Env.LogicalHostname[:len(t.Env.LogicalHostname)-len(gaeTopLevelDomain)]
 
-	if ctx, ok := t.installDSReal(ctx); ok {
+	if ctx, ok := t.installDSReal(ctx, testingT); ok {
 		return memory.UseInfo(ctx, appID)
 	}
-	if ctx, ok := t.installDSEmulator(ctx); ok {
+	if ctx, ok := t.installDSEmulator(ctx, testingT); ok {
 		return memory.UseInfo(ctx, appID)
 	}
 
@@ -333,7 +321,7 @@ func (t *Test) installDS(ctx context.Context) context.Context {
 // and then run go tests the usual way, e.g.:
 //
 //	$ go test ./...
-func (t *Test) installDSReal(ctx context.Context) (context.Context, bool) {
+func (t *Test) installDSReal(ctx context.Context, testingT *testing.T) (context.Context, bool) {
 	project := os.Getenv("DATASTORE_PROJECT")
 	if project == "" {
 		return ctx, false
@@ -348,13 +336,13 @@ func (t *Test) installDSReal(ctx context.Context) (context.Context, bool) {
 	ts, err := at.TokenSource()
 	if err != nil {
 		err = errors.Annotate(err, "failed to initialize the token source (are you in `$ luci-auth context`?)").Err()
-		So(err, ShouldBeNil)
+		assert.That(testingT, err, should.ErrLike(nil))
 	}
 
 	logging.Debugf(ctx, "Using DS of project %q", project)
 	client, err := nativeDatastore.NewClient(ctx, project, option.WithTokenSource(ts))
-	So(err, ShouldBeNil)
-	return t.installDSshared(ctx, project, client), true
+	assert.That(testingT, err, should.ErrLike(nil))
+	return t.installDSshared(ctx, testingT, project, client), true
 }
 
 // installDSEmulator configures CV tests to run with DS emulator.
@@ -369,7 +357,7 @@ func (t *Test) installDSReal(ctx context.Context) (context.Context, bool) {
 //
 // NOTE: as of Feb 2021, emulator runs in legacy Datastore mode,
 // not Firestore.
-func (t *Test) installDSEmulator(ctx context.Context) (context.Context, bool) {
+func (t *Test) installDSEmulator(ctx context.Context, testingT *testing.T) (context.Context, bool) {
 	emulatorHost := os.Getenv("DATASTORE_EMULATOR_HOST")
 	if emulatorHost == "" {
 		return ctx, false
@@ -377,16 +365,12 @@ func (t *Test) installDSEmulator(ctx context.Context) (context.Context, bool) {
 
 	logging.Debugf(ctx, "Using DS emulator at %q", emulatorHost)
 	client, err := nativeDatastore.NewClient(ctx, "luci-gae-emulator-test")
-	So(err, ShouldBeNil)
-	return t.installDSshared(ctx, "luci-gae-emulator-test", client), true
+	assert.That(testingT, err, should.ErrLike(nil))
+	return t.installDSshared(ctx, testingT, "luci-gae-emulator-test", client), true
 }
 
-func (t *Test) installDSshared(ctx context.Context, cloudProject string, client *nativeDatastore.Client) context.Context {
-	t.cleanupFuncs = append(t.cleanupFuncs, func() {
-		if err := client.Close(); err != nil {
-			logging.Errorf(ctx, "failed to close DS client: %s", err)
-		}
-	})
+func (t *Test) installDSshared(ctx context.Context, testingT *testing.T, cloudProject string, client *nativeDatastore.Client) context.Context {
+	testingT.Cleanup(func() { _ = client.Close() })
 	ctx = (&cloud.ConfigLite{ProjectID: cloudProject, DS: client}).Use(ctx)
 	maybeCleanupOldDSNamespaces(ctx)
 
@@ -396,12 +380,8 @@ func (t *Test) installDSshared(ctx context.Context, cloudProject string, client 
 	ctx = info.MustNamespace(ctx, ns)
 	// Failure to clear is hard before the test,
 	// ignored after the test.
-	So(clearDS(ctx), ShouldBeNil)
-	t.cleanupFuncs = append(t.cleanupFuncs, func() {
-		if err := clearDS(ctx); err != nil {
-			logging.Errorf(ctx, "failed to clean DS namespace %s: %s", ns, err)
-		}
-	})
+	assert.That(testingT, clearDS(ctx), should.ErrLike(nil))
+	testingT.Cleanup(func() { _ = clearDS(ctx) })
 	return ctx
 }
 
@@ -410,7 +390,7 @@ func genDSNamespaceName(t time.Time) string {
 	if _, err := cryptorand.Read(rnd); err != nil {
 		panic(err)
 	}
-	return fmt.Sprintf("testing-%s-%s", time.Now().Format("2006-01-02"), hex.EncodeToString(rnd))
+	return fmt.Sprintf("testing-%s-%s", t.Format("2006-01-02"), hex.EncodeToString(rnd))
 }
 
 var dsNamespaceRegexp = regexp.MustCompile(`^testing-(\d{4}-\d\d-\d\d)-[0-9a-f]+$`)
@@ -472,7 +452,7 @@ func maybeCleanupOldDSNamespaces(ctx context.Context) {
 }
 
 // setUpTestClock simulates passage of time w/o idling CPU.
-func (t *Test) setUpTestClock(ctx context.Context) context.Context {
+func (t *Test) setUpTestClock(ctx context.Context, testingT *testing.T) context.Context {
 	if t.Clock != nil {
 		return clock.Set(ctx, t.Clock)
 	}
@@ -480,7 +460,7 @@ func (t *Test) setUpTestClock(ctx context.Context) context.Context {
 	utc := time.Date(2020, time.February, 2, 10, 30, 00, 0, time.UTC)
 	// But set it up in a clock as a local time to expose incorrect assumptions of UTC.
 	now := time.Date(2020, time.February, 2, 13, 30, 00, 0, time.FixedZone("Fake local", 3*60*60))
-	So(now.Equal(utc), ShouldBeTrue)
+	assert.That(testingT, now.Equal(utc), should.BeTrue)
 	ctx, t.Clock = testclock.UseTime(ctx, now)
 	return ctx
 }
