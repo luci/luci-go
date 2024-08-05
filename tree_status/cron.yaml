@@ -16,3 +16,6 @@ cron:
 - description: "Clear user columns in TreeStatus table."
   url: /internal/cron/clear-status-users
   schedule: every 1 hours synchronized
+- description: "Export status data to BigQuery."
+  url: /internal/cron/export-status
+  schedule: every 5 minutes from 00:07 to 23:59

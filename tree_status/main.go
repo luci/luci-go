@@ -30,6 +30,7 @@ import (
 	spanmodule "go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
 
+	"go.chromium.org/luci/tree_status/internal/bqexporter"
 	"go.chromium.org/luci/tree_status/internal/span"
 	"go.chromium.org/luci/tree_status/internal/status"
 	pb "go.chromium.org/luci/tree_status/proto/v1"
@@ -79,6 +80,7 @@ func main() {
 		})
 
 		cron.RegisterHandler("clear-status-users", status.ClearStatusUsers)
+		cron.RegisterHandler("export-status", bqexporter.ExportStatus)
 		return nil
 	})
 }
