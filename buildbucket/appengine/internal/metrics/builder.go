@@ -348,7 +348,7 @@ func getBuilderDefinedMetricsPerBase(ctx context.Context, base pb.CustomMetricBa
 		return nil, nil
 	}
 
-	cms := getCustomMetrics(ctx)
+	cms := GetCustomMetrics(ctx)
 	metrics := cms.getCustomMetricsByBase(base)
 	if len(metrics) == 0 {
 		return nil, nil

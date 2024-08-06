@@ -25,7 +25,7 @@ import (
 )
 
 func getCustomMetricsAndState(ctx context.Context) (map[pb.CustomMetricBase]map[string]CustomMetric, *tsmon.State) {
-	cms := getCustomMetrics(ctx)
+	cms := GetCustomMetrics(ctx)
 	cms.m.RLock()
 	defer cms.m.RUnlock()
 	return cms.metrics, cms.state

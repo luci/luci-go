@@ -19,8 +19,10 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"time"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -52,6 +54,7 @@ import (
 	"go.chromium.org/luci/buildbucket/appengine/internal/buildercron"
 	"go.chromium.org/luci/buildbucket/appengine/internal/clients"
 	"go.chromium.org/luci/buildbucket/appengine/internal/config"
+	"go.chromium.org/luci/buildbucket/appengine/internal/internalcontext"
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
 	"go.chromium.org/luci/buildbucket/appengine/internal/redirect"
 	"go.chromium.org/luci/buildbucket/appengine/rpc"
@@ -79,6 +82,26 @@ func handlePubSubMessage(ctx *router.Context, identity identity.Identity, handle
 	}
 }
 
+func flushCustomMetricsPeriodically(ctx context.Context) {
+	for {
+		if r := <-clock.After(ctx, time.Minute); r.Err != nil {
+			return // the context is canceled
+		}
+
+		globalCfg, err := config.GetSettingsCfg(ctx)
+		if err != nil {
+			logging.Errorf(ctx, "failed to get service config: %s", err)
+			continue
+		}
+
+		cms := metrics.GetCustomMetrics(ctx)
+		err = cms.Flush(ctx, globalCfg)
+		if err != nil {
+			logging.Errorf(ctx, "failed to flush custom metrics: %s", err)
+		}
+	}
+}
+
 func main() {
 	mods := []module.Module{
 		bqlog.NewModuleFromFlags(),
@@ -95,6 +118,16 @@ func main() {
 	server.Main(nil, mods, func(srv *server.Server) error {
 		o := srv.Options
 		srv.Context = metrics.WithServiceInfo(srv.Context, o.TsMonServiceName, o.TsMonJobName, o.Hostname)
+
+		// Register custom metrics
+		var err error
+		srv.Context, err = internalcontext.WithCustomMetrics(srv.Context)
+		if err != nil {
+			return errors.Annotate(err, "failed to create custom metrics").Err()
+		}
+
+		// Periodically Flush custom metrics
+		srv.RunInBackground("flush_custom_metrics", flushCustomMetricsPeriodically)
 
 		// Install a global bigquery client.
 		bqClient, err := clients.NewBqClient(srv.Context, o.CloudProject)

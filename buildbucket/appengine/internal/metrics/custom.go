@@ -118,9 +118,9 @@ func withCustomMetrics(ctx context.Context, cms *CustomMetrics) context.Context 
 	return context.WithValue(ctx, &cmKey, cms)
 }
 
-// getCustomMetrics returns the CustomMetrics intalled in the current context.
+// GetCustomMetrics returns the CustomMetrics intalled in the current context.
 // Panic if not found in the context.
-func getCustomMetrics(ctx context.Context) *CustomMetrics {
+func GetCustomMetrics(ctx context.Context) *CustomMetrics {
 	cms := ctx.Value(&cmKey)
 	if cms == nil {
 		panic("missing custom metrics from context")
@@ -454,7 +454,7 @@ func reportToCustomMetrics(ctx context.Context, build *model.Build, cmValues map
 	}
 
 	// Get current active custom metrics.
-	cms := getCustomMetrics(ctx)
+	cms := GetCustomMetrics(ctx)
 	metrics := cms.getCustomMetricsByBases(cmValues)
 
 	// Filter out the inactive custom metrics from the build.

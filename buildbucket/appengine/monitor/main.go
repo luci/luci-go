@@ -17,6 +17,7 @@ package main
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"go.chromium.org/luci/common/clock"
@@ -34,7 +35,10 @@ import (
 	"go.chromium.org/luci/server/secrets"
 	tsmonsrv "go.chromium.org/luci/server/tsmon"
 
+	"go.chromium.org/luci/buildbucket/appengine/internal/config"
+	"go.chromium.org/luci/buildbucket/appengine/internal/internalcontext"
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
+	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
 func main() {
@@ -57,6 +61,15 @@ func main() {
 		state.InhibitGlobalCallbacksOnFlush()
 		ctx := tsmon.WithState(srv.Context, state)
 
+		// Register custom metrics
+		// Directly return error when fail to create custom metrics, since the
+		// sole purpose of this service is monitoring. Failing of setting up
+		// custom metrics would fail the cron jobs.
+		ctx, err := internalcontext.WithCustomMetrics(ctx)
+		if err != nil {
+			return errors.Annotate(err, "failed to create custom metrics").Err()
+		}
+
 		mon, err := tsmonsrv.NewProdXMonitor(ctx, 1024, o.TsMonAccount)
 		if err != nil {
 			srv.Fatal(errors.Annotate(err, "initiating tsmon").Err())
@@ -73,11 +86,40 @@ func main() {
 			}
 			logging.Infof(ctx, "computing builder metrics took %s", clock.Since(ctx, start))
 			start = clock.Now(ctx)
-			if err := state.ParallelFlush(ctx, mon, 8); err != nil {
-				return errors.Annotate(err, "flushing builder metrics").Err()
+
+			var wg sync.WaitGroup
+			wg.Add(2)
+
+			var err1, err2 error
+			go func() {
+				defer wg.Done()
+				err1 = state.ParallelFlush(ctx, mon, 8)
+			}()
+
+			// Flush custom metrics
+			go func() {
+				defer wg.Done()
+				var globalCfg *pb.SettingsCfg
+				globalCfg, err2 = config.GetSettingsCfg(ctx)
+				if err2 != nil {
+					return
+				}
+
+				cms := metrics.GetCustomMetrics(ctx)
+				err2 = cms.Flush(ctx, globalCfg)
+			}()
+
+			wg.Wait()
+
+			switch {
+			case err1 != nil:
+				return err1
+			case err2 != nil:
+				return err2
+			default:
+				logging.Infof(ctx, "flushing builder metrics took %s", clock.Since(ctx, start))
+				return nil
 			}
-			logging.Infof(ctx, "flushing builder metrics took %s", clock.Since(ctx, start))
-			return nil
 		})
 
 		return nil

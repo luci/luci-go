@@ -77,7 +77,7 @@ func resetCustomMetrics(ctx context.Context) context.Context {
 }
 
 func getCurrentMetricsAndState(ctx context.Context) (map[pb.CustomMetricBase]map[string]CustomMetric, *tsmon.State) {
-	cms := getCustomMetrics(ctx)
+	cms := GetCustomMetrics(ctx)
 	cms.m.RLock()
 	defer cms.m.RUnlock()
 	return cms.metrics, cms.state
@@ -116,7 +116,7 @@ func TestUpdateCustomMetrics(t *testing.T) {
 		globalCfg := &pb.SettingsCfg{}
 		_ = prototext.Unmarshal([]byte(cfgContent), globalCfg)
 		Convey("normal report", func() {
-			cms := getCustomMetrics(ctx)
+			cms := GetCustomMetrics(ctx)
 			// Normal report.
 			cms.Report(ctx, &Report{
 				Base: pb.CustomMetricBase_CUSTOM_METRIC_BASE_STARTED,
@@ -137,7 +137,7 @@ func TestUpdateCustomMetrics(t *testing.T) {
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
-				cms := getCustomMetrics(ctx)
+				cms := GetCustomMetrics(ctx)
 				_ = cms.Flush(ctx, globalCfg)
 			}()
 
@@ -145,7 +145,7 @@ func TestUpdateCustomMetrics(t *testing.T) {
 				wg.Add(1)
 				go func() {
 					defer wg.Done()
-					cms := getCustomMetrics(ctx)
+					cms := GetCustomMetrics(ctx)
 					directUpdated := cms.Report(ctx, &Report{
 						Base: pb.CustomMetricBase_CUSTOM_METRIC_BASE_STARTED,
 						Name: "/chrome/infra/custom/builds/started",
@@ -166,18 +166,18 @@ func TestUpdateCustomMetrics(t *testing.T) {
 		}
 
 		Convey("normal report synced", func() {
-			oldCms := getCustomMetrics(ctx)
+			oldCms := GetCustomMetrics(ctx)
 			oldState := oldCms.state
 
 			buffered := false
 			flushAndMultiReports(globalCfg, &buffered)
 			So(buffered, ShouldBeFalse)
-			newCms := getCustomMetrics(ctx)
+			newCms := GetCustomMetrics(ctx)
 			So(newCms.state, ShouldEqual, oldState)
 		})
 
 		Convey("with a metric updating extra_fields", func() {
-			oldCms := getCustomMetrics(ctx)
+			oldCms := GetCustomMetrics(ctx)
 			oldState := oldCms.state
 
 			buffered := false
@@ -185,7 +185,7 @@ func TestUpdateCustomMetrics(t *testing.T) {
 			flushAndMultiReports(globalCfg, &buffered)
 			// This line makes the test flaky.
 			//So(buffered, ShouldBeTrue)
-			newCms := getCustomMetrics(ctx)
+			newCms := GetCustomMetrics(ctx)
 			newCms.m.RLock()
 			So(newCms.state, ShouldNotEqual, oldState)
 			newCms.m.RUnlock()
