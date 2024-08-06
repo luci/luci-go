@@ -14,6 +14,7 @@
 
 import styled from '@emotion/styled';
 import { LinearProgress } from '@mui/material';
+import { useQuery } from '@tanstack/react-query';
 import { observer } from 'mobx-react-lite';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
@@ -104,13 +105,21 @@ export const TestHistoryPage = observer(() => {
     );
   }, [pageState.filterText, setSearchParams]);
 
-  useEffect(() => {
-    pageState.entriesLoader?.loadFirstPage();
-  }, [pageState.entriesLoader]);
+  const entriesQuery = useQuery({
+    queryFn: () => pageState.entriesLoader?.loadFirstPage(),
+    enabled: Boolean(pageState.entriesLoader),
+  });
+  if (entriesQuery.isError) {
+    throw entriesQuery.error;
+  }
 
-  useEffect(() => {
-    pageState.variantsLoader?.loadFirstPage();
-  }, [pageState.variantsLoader]);
+  const variantQuery = useQuery({
+    queryFn: () => pageState.variantsLoader?.loadFirstPage(),
+    enabled: Boolean(pageState.variantsLoader),
+  });
+  if (variantQuery.isError) {
+    throw variantQuery.error;
+  }
 
   const Graph = GRAPH_TYPE_COMPONENT_MAP[pageState.graphType];
 
