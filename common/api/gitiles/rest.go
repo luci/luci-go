@@ -163,8 +163,20 @@ func (c *client) DownloadFile(ctx context.Context, req *gitiles.DownloadFileRequ
 	if err := checkArgs(opts, req); err != nil {
 		return nil, err
 	}
+
+	base64Encoded := false
+	var format string
+	switch req.Format {
+	case gitiles.DownloadFileRequest_JSON:
+		format = "JSON"
+	case gitiles.DownloadFileRequest_TEXT:
+	default:
+		format = "TEXT"
+		base64Encoded = true
+	}
+
 	query := make(url.Values, 1)
-	query.Set("format", "TEXT")
+	query.Set("format", format)
 	ref := strings.TrimRight(req.Committish, "/")
 	path := fmt.Sprintf("/%s/+/%s/%s", url.PathEscape(req.Project), url.PathEscape(ref), req.Path)
 	_, b, err := c.getRaw(ctx, path, query)
@@ -172,12 +184,16 @@ func (c *client) DownloadFile(ctx context.Context, req *gitiles.DownloadFileRequ
 		return nil, err
 	}
 
-	d, err := base64.StdEncoding.DecodeString(string(b))
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to decode response: %s", err)
+	contents := string(b)
+	if base64Encoded {
+		d, err := base64.StdEncoding.DecodeString(contents)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to decode response: %s", err)
+		}
+		contents = string(d)
 	}
 
-	return &gitiles.DownloadFileResponse{Contents: string(d)}, nil
+	return &gitiles.DownloadFileResponse{Contents: contents}, nil
 }
 
 func (c *client) DownloadDiff(ctx context.Context, req *gitiles.DownloadDiffRequest, opts ...grpc.CallOption) (*gitiles.DownloadDiffResponse, error) {

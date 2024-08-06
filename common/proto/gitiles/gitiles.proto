@@ -187,8 +187,13 @@ message DownloadFileRequest {
     // Path relative to the project root to the file to download.
     string path = 3;
 
-    reserved 4;
-    reserved "format";
+    enum Format {
+        FORMAT_INVALID = 0;
+        TEXT = 1;
+        JSON = 2;
+    }
+    // Format to download file in (default is TEXT).
+    Format format = 4;
 }
 
 message DownloadFileResponse {
