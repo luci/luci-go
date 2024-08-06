@@ -18,8 +18,9 @@ import (
 	"regexp"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
 	resultpb "go.chromium.org/luci/resultdb/proto/v1"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestMatchWithContextRegexBuilder(t *testing.T) {

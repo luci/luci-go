@@ -1002,7 +1002,7 @@ message QueryInvocationVariantArtifactGroupsResponse {
     Variant variant_union = 2;
 
     // ID of the artifact.
-    string artifactID = 3;
+    string artifact_id = 3;
 
     // Artifacts that matches the search for this (variant_union_hash, artifact id) combination.
     // Return at most 3 items, ordered by partition time DESC, artifact name ASC.

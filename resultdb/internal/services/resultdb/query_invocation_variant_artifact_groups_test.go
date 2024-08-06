@@ -16,7 +16,6 @@ package resultdb
 
 import (
 	"context"
-	"strings"
 	"testing"
 	"time"
 
@@ -37,8 +36,8 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestQueryTestVariantArtifactGroups(t *testing.T) {
-	Convey(`TestQueryTestVariantArtifactGroups`, t, func() {
+func TestQueryInvocationVariantArtifactGroups(t *testing.T) {
+	Convey(`TestQueryInvocationVariantArtifactGroups`, t, func() {
 		ctx := auth.WithState(testutil.SpannerTestContext(t), &authtest.FakeState{
 			Identity:       "user:someone@example.com",
 			IdentityGroups: []string{"googlers"},
@@ -51,7 +50,7 @@ func TestQueryTestVariantArtifactGroups(t *testing.T) {
 		mockBQClient := artifactstestutil.NewMockBQClient(func(ctx context.Context, opts artifacts.ReadArtifactGroupsOpts) (groups []*artifacts.ArtifactGroup, nextPageToken string, err error) {
 			return []*artifacts.ArtifactGroup{
 				{
-					TestID:           "test1",
+					TestID:           "",
 					VariantHash:      "variant1",
 					Variant:          bigquery.NullJSON{Valid: true, JSONVal: `{"key1": "value1"}`},
 					ArtifactID:       "artifact1",
@@ -60,9 +59,7 @@ func TestQueryTestVariantArtifactGroups(t *testing.T) {
 					Artifacts: []*artifacts.MatchingArtifact{
 						{
 							InvocationID:           "invocation1",
-							ResultID:               "result1",
 							PartitionTime:          time.Unix(10, 0),
-							TestStatus:             bigquery.NullString{Valid: true, StringVal: "PASS"},
 							Match:                  "match1",
 							MatchWithContextBefore: "before1",
 							MatchWithContextAfter:  "after1",
@@ -77,16 +74,11 @@ func TestQueryTestVariantArtifactGroups(t *testing.T) {
 			},
 			Postlude: internal.CommonPostlude,
 		}
-		req := &pb.QueryTestVariantArtifactGroupsRequest{
+		req := &pb.QueryInvocationVariantArtifactGroupsRequest{
 			Project: "testproject",
 			SearchString: &pb.ArtifactContentMatcher{
 				Matcher: &pb.ArtifactContentMatcher_RegexContain{
 					RegexContain: "foo",
-				},
-			},
-			TestIdMatcher: &pb.IDMatcher{
-				Matcher: &pb.IDMatcher_HasPrefix{
-					HasPrefix: "testidprefix",
 				},
 			},
 			ArtifactIdMatcher: &pb.IDMatcher{
@@ -101,7 +93,7 @@ func TestQueryTestVariantArtifactGroups(t *testing.T) {
 		}
 		Convey("no permission", func() {
 			req.Project = "nopermissionproject"
-			res, err := rdbSvr.QueryTestVariantArtifactGroups(ctx, req)
+			res, err := rdbSvr.QueryInvocationVariantArtifactGroups(ctx, req)
 			So(err, ShouldBeRPCPermissionDenied, "caller does not have permission resultdb.artifacts.list in any realm in project \"nopermissionproject\"")
 			So(res, ShouldBeNil)
 		})
@@ -110,7 +102,7 @@ func TestQueryTestVariantArtifactGroups(t *testing.T) {
 
 			Convey("googler", func() {
 				req.StartTime = nil
-				res, err := rdbSvr.QueryTestVariantArtifactGroups(ctx, req)
+				res, err := rdbSvr.QueryInvocationVariantArtifactGroups(ctx, req)
 				So(err, ShouldBeRPCInvalidArgument, `start_time: unspecified`)
 				So(res, ShouldBeNil)
 			})
@@ -125,25 +117,23 @@ func TestQueryTestVariantArtifactGroups(t *testing.T) {
 					},
 				})
 
-				res, err := rdbSvr.QueryTestVariantArtifactGroups(ctx, req)
-				So(err, ShouldBeRPCInvalidArgument, `test_id_matcher: search by prefix is not allowed for non-googlers`)
+				res, err := rdbSvr.QueryInvocationVariantArtifactGroups(ctx, req)
+				So(err, ShouldBeRPCInvalidArgument, `artifact_id_matcher: search by prefix is not allowed for non-googlers`)
 				So(res, ShouldBeNil)
 			})
 		})
 
 		Convey("valid request", func() {
-			rsp, err := rdbSvr.QueryTestVariantArtifactGroups(ctx, req)
+			rsp, err := rdbSvr.QueryInvocationVariantArtifactGroups(ctx, req)
 			So(err, ShouldBeNil)
-			So(rsp, ShouldResembleProto, &pb.QueryTestVariantArtifactGroupsResponse{
-				Groups: []*pb.QueryTestVariantArtifactGroupsResponse_MatchGroup{{
-					TestId:      "test1",
-					VariantHash: "variant1",
-					Variant:     &pb.Variant{Def: map[string]string{"key1": "value1"}},
-					ArtifactId:  "artifact1",
+			So(rsp, ShouldResembleProto, &pb.QueryInvocationVariantArtifactGroupsResponse{
+				Groups: []*pb.QueryInvocationVariantArtifactGroupsResponse_MatchGroup{{
+					ArtifactId:       "artifact1",
+					VariantUnionHash: "variant1",
+					VariantUnion:     &pb.Variant{Def: map[string]string{"key1": "value1"}},
 					Artifacts: []*pb.ArtifactMatchingContent{{
-						Name:          "invocations/invocation1/tests/test1/results/result1/artifacts/artifact1",
+						Name:          "invocations/invocation1/artifacts/artifact1",
 						PartitionTime: timestamppb.New(time.Unix(10, 0)),
-						TestStatus:    pb.TestStatus_PASS,
 						Match:         "match1",
 						BeforeMatch:   "before1",
 						AfterMatch:    "after1",
@@ -157,19 +147,14 @@ func TestQueryTestVariantArtifactGroups(t *testing.T) {
 	})
 }
 
-func TestValidateQueryTestVariantArtifactGroupsRequest(t *testing.T) {
+func TestValidateQueryInvocationVariantArtifactGroupsRequest(t *testing.T) {
 	t.Parallel()
-	Convey(`TestValidateQueryTestVariantArtifactGroupsRequest`, t, func() {
-		req := &pb.QueryTestVariantArtifactGroupsRequest{
+	Convey(`TestValidateQueryInvocationVariantArtifactGroupsRequest`, t, func() {
+		req := &pb.QueryInvocationVariantArtifactGroupsRequest{
 			Project: "chromium",
 			SearchString: &pb.ArtifactContentMatcher{
 				Matcher: &pb.ArtifactContentMatcher_RegexContain{
 					RegexContain: "foo",
-				},
-			},
-			TestIdMatcher: &pb.IDMatcher{
-				Matcher: &pb.IDMatcher_HasPrefix{
-					HasPrefix: "testidprefix",
 				},
 			},
 			ArtifactIdMatcher: &pb.IDMatcher{
@@ -183,165 +168,86 @@ func TestValidateQueryTestVariantArtifactGroupsRequest(t *testing.T) {
 			PageToken: "",
 		}
 		Convey(`valid`, func() {
-			err := validateQueryTestVariantArtifactGroupsRequest(req, true)
+			err := validateQueryInvocationVariantArtifactGroupsRequest(req, true)
 			So(err, ShouldBeNil)
 		})
 
 		Convey(`no project`, func() {
 			req.Project = ""
-			err := validateQueryTestVariantArtifactGroupsRequest(req, true)
+			err := validateQueryInvocationVariantArtifactGroupsRequest(req, true)
 			So(err, ShouldErrLike, `project: unspecified`)
 		})
 
 		Convey(`invalid page size`, func() {
 			req.PageSize = -1
-			err := validateQueryTestVariantArtifactGroupsRequest(req, true)
+			err := validateQueryInvocationVariantArtifactGroupsRequest(req, true)
 			So(err, ShouldErrLike, `page_size: negative`)
 		})
 
 		Convey(`no search string`, func() {
 			req.SearchString = &pb.ArtifactContentMatcher{}
-			err := validateQueryTestVariantArtifactGroupsRequest(req, true)
+			err := validateQueryInvocationVariantArtifactGroupsRequest(req, true)
 			So(err, ShouldErrLike, `search_string: unspecified`)
 		})
 
-		Convey(`test id matcher`, func() {
-			Convey(`invalid test id prefix`, func() {
-				req.TestIdMatcher = &pb.IDMatcher{
+		Convey(`artifact id matcher`, func() {
+			Convey(`invalid artifact id prefix`, func() {
+				req.ArtifactIdMatcher = &pb.IDMatcher{
 					Matcher: &pb.IDMatcher_HasPrefix{
-						HasPrefix: "invalid-test-id-\r",
+						HasPrefix: "invalid-artifact-id-\r",
 					},
 				}
-				err := validateQueryTestVariantArtifactGroupsRequest(req, true)
-				So(err, ShouldErrLike, `test_id_matcher`)
+				err := validateQueryInvocationVariantArtifactGroupsRequest(req, true)
+				So(err, ShouldErrLike, `artifact_id_matcher`)
 			})
 
-			Convey(`no test id matcher called by googler`, func() {
-				req.TestIdMatcher = nil
-				err := validateQueryTestVariantArtifactGroupsRequest(req, true)
+			Convey(`no artifact id matcher called by googler`, func() {
+				req.ArtifactIdMatcher = nil
+				err := validateQueryInvocationVariantArtifactGroupsRequest(req, true)
 				So(err, ShouldBeNil)
 			})
 
-			Convey(`no test id matcher called by non-googler`, func() {
-				req.TestIdMatcher = nil
-				err := validateQueryTestVariantArtifactGroupsRequest(req, false)
-				So(err, ShouldErrLike, `test_id_matcher: unspecified`)
+			Convey(`no artifact id matcher called by non-googler`, func() {
+				req.ArtifactIdMatcher = nil
+				err := validateQueryInvocationVariantArtifactGroupsRequest(req, false)
+				So(err, ShouldErrLike, `artifact_id_matcher: unspecified`)
 			})
 
-			Convey(`test id prefix called by non-googler`, func() {
-				req.TestIdMatcher = &pb.IDMatcher{
+			Convey(`artifact id prefix called by non-googler`, func() {
+				req.ArtifactIdMatcher = &pb.IDMatcher{
 					Matcher: &pb.IDMatcher_HasPrefix{
-						HasPrefix: "test-id-prefix",
+						HasPrefix: "artifact-prefix",
 					},
 				}
-				err := validateQueryTestVariantArtifactGroupsRequest(req, false)
-				So(err, ShouldErrLike, `test_id_matcher: search by prefix is not allowed for non-googlers`)
+				err := validateQueryInvocationVariantArtifactGroupsRequest(req, false)
+				So(err, ShouldErrLike, `artifact_id_matcher: search by prefix is not allowed for non-googlers`)
 			})
-		})
-
-		Convey(`invalid artifact id prefix`, func() {
-			req.ArtifactIdMatcher = &pb.IDMatcher{
-				Matcher: &pb.IDMatcher_HasPrefix{
-					HasPrefix: "invalid-artifact-id-\r",
-				},
-			}
-			err := validateQueryTestVariantArtifactGroupsRequest(req, true)
-			So(err, ShouldErrLike, `artifact_id_matcher`)
 		})
 
 		Convey(`no start time`, func() {
 			req.StartTime = nil
-			err := validateQueryTestVariantArtifactGroupsRequest(req, true)
+			err := validateQueryInvocationVariantArtifactGroupsRequest(req, true)
 			So(err, ShouldErrLike, `start_time: unspecified`)
 		})
 
 		Convey(`no end time`, func() {
 			req.EndTime = nil
-			err := validateQueryTestVariantArtifactGroupsRequest(req, true)
+			err := validateQueryInvocationVariantArtifactGroupsRequest(req, true)
 			So(err, ShouldErrLike, `end_time: unspecified`)
 		})
 
 		Convey(`start time after end time`, func() {
 			req.StartTime = timestamppb.New(time.Unix(100, 0))
 			req.EndTime = timestamppb.New(time.Unix(10, 0))
-			err := validateQueryTestVariantArtifactGroupsRequest(req, true)
+			err := validateQueryInvocationVariantArtifactGroupsRequest(req, true)
 			So(err, ShouldErrLike, `start time must not be later than end time`)
 		})
 
 		Convey(`time difference greater than 7 days`, func() {
 			req.StartTime = timestamppb.New(time.Unix(0, 0))
 			req.EndTime = timestamppb.New(time.Unix(7*24*60*60+1, 0))
-			err := validateQueryTestVariantArtifactGroupsRequest(req, true)
+			err := validateQueryInvocationVariantArtifactGroupsRequest(req, true)
 			So(err, ShouldErrLike, `difference between start_time and end_time must not be greater than 7 days`)
-		})
-	})
-}
-
-func TestTruncateMatchWithContext(t *testing.T) {
-	Convey("truncateMatchWithContext", t, func() {
-		Convey("no truncate", func() {
-			atf := &artifacts.MatchingArtifact{
-				Match:                  "match",
-				MatchWithContextBefore: "before",
-				MatchWithContextAfter:  "after",
-			}
-
-			match, before, after := truncateMatchWithContext(atf)
-			So(match, ShouldEqual, "match")
-			So(before, ShouldEqual, "before")
-			So(after, ShouldEqual, "after")
-		})
-		Convey("truncate match", func() {
-			atf := &artifacts.MatchingArtifact{
-				Match:                  strings.Repeat("a", maxMatchWithContextLength+1),
-				MatchWithContextBefore: "before",
-				MatchWithContextAfter:  "after",
-			}
-
-			match, before, after := truncateMatchWithContext(atf)
-			So(match, ShouldEqual, strings.Repeat("a", maxMatchWithContextLength-3)+"...")
-			So(before, ShouldEqual, "")
-			So(after, ShouldEqual, "")
-		})
-		Convey("truncate before and after with no enough remaining bytes", func() {
-			atf := &artifacts.MatchingArtifact{
-				Match:                  strings.Repeat("a", maxMatchWithContextLength-5),
-				MatchWithContextBefore: "before",
-				MatchWithContextAfter:  "after",
-			}
-
-			match, before, after := truncateMatchWithContext(atf)
-			So(match, ShouldEqual, atf.Match)
-			So(before, ShouldEqual, "")
-			So(after, ShouldEqual, "")
-		})
-		Convey("truncate before and after", func() {
-			atf := &artifacts.MatchingArtifact{
-				Match:                  strings.Repeat("a", maxMatchWithContextLength-9),
-				MatchWithContextBefore: "before",
-				MatchWithContextAfter:  "after",
-			}
-
-			match, before, after := truncateMatchWithContext(atf)
-			So(match, ShouldEqual, atf.Match)
-			So(before, ShouldEqual, "...e")
-			So(after, ShouldEqual, "a...")
-		})
-		Convey("doesn't truncate in the middle of a rune", func() {
-			// There are 15 remaining bytes to fit in context before and after the match.
-			// Each end gets 7 bytes. Each chinese character below is 3 bytes, and the ellipsis takes 3 bytes.
-			atf := &artifacts.MatchingArtifact{
-				Match:                  strings.Repeat("a", maxMatchWithContextLength-15),
-				MatchWithContextBefore: "之前之前之前",
-				MatchWithContextAfter:  "之后之后之后",
-			}
-
-			match, before, after := truncateMatchWithContext(atf)
-			So(match, ShouldEqual, atf.Match)
-			// A string of 6 bytes have been returned, when 7 bytes are allowed for each end.
-			// Because it doesn't cut from the middle of a chinese character.
-			So(before, ShouldEqual, "...前")
-			So(after, ShouldEqual, "之...")
 		})
 	})
 }

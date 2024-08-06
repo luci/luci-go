@@ -21,19 +21,19 @@ import (
 	"go.chromium.org/luci/resultdb/internal/artifacts"
 )
 
-type ReadTestArtifactGroupsFunc func(ctx context.Context, opts artifacts.ReadTestArtifactGroupsOpts) (groups []*artifacts.TestArtifactGroup, nextPageToken string, err error)
+type ReadArtifactGroupsFunc func(ctx context.Context, opts artifacts.ReadArtifactGroupsOpts) (groups []*artifacts.ArtifactGroup, nextPageToken string, err error)
 type ReadTestArtifactsFunc func(ctx context.Context, opts artifacts.ReadTestArtifactsOpts) (rows []*artifacts.MatchingArtifact, nextPageToken string, err error)
 
 // MockBQClient is a mock implementation of the BQClient interface.
 type MockBQClient struct {
-	ReadTestArtifactGroupsFunc ReadTestArtifactGroupsFunc
-	ReadTestArtifactsFunc      ReadTestArtifactsFunc
+	ReadArtifactGroupsFunc ReadArtifactGroupsFunc
+	ReadTestArtifactsFunc  ReadTestArtifactsFunc
 }
 
-// ReadTestArtifactGroups implements the BQClient interface.
-func (m *MockBQClient) ReadTestArtifactGroups(ctx context.Context, opts artifacts.ReadTestArtifactGroupsOpts) (groups []*artifacts.TestArtifactGroup, nextPageToken string, err error) {
-	if m.ReadTestArtifactGroupsFunc != nil {
-		return m.ReadTestArtifactGroupsFunc(ctx, opts)
+// ReadArtifactGroups implements the BQClient interface.
+func (m *MockBQClient) ReadArtifactGroups(ctx context.Context, opts artifacts.ReadArtifactGroupsOpts) (groups []*artifacts.ArtifactGroup, nextPageToken string, err error) {
+	if m.ReadArtifactGroupsFunc != nil {
+		return m.ReadArtifactGroupsFunc(ctx, opts)
 	}
 	return nil, "", nil
 }
@@ -47,9 +47,9 @@ func (m *MockBQClient) ReadTestArtifacts(ctx context.Context, opts artifacts.Rea
 }
 
 // NewMockBQClient creates a new MockBQClient with the given ReadTestArtifactGroupsFunc.
-func NewMockBQClient(readTestArtifactGroupsFunc ReadTestArtifactGroupsFunc, readTestArtifactsFunc ReadTestArtifactsFunc) *MockBQClient {
+func NewMockBQClient(readTestArtifactGroupsFunc ReadArtifactGroupsFunc, readTestArtifactsFunc ReadTestArtifactsFunc) *MockBQClient {
 	return &MockBQClient{
-		ReadTestArtifactGroupsFunc: readTestArtifactGroupsFunc,
-		ReadTestArtifactsFunc:      readTestArtifactsFunc,
+		ReadArtifactGroupsFunc: readTestArtifactGroupsFunc,
+		ReadTestArtifactsFunc:  readTestArtifactsFunc,
 	}
 }

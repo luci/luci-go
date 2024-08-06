@@ -17,10 +17,119 @@ package resultdb
 import (
 	"context"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/server/auth"
+
+	"go.chromium.org/luci/resultdb/internal/artifacts"
+	"go.chromium.org/luci/resultdb/internal/pagination"
+	"go.chromium.org/luci/resultdb/internal/permissions"
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
+	"go.chromium.org/luci/resultdb/rdbperms"
 )
 
 func (s *resultDBServer) QueryInvocationVariantArtifactGroups(ctx context.Context, req *pb.QueryInvocationVariantArtifactGroupsRequest) (rsp *pb.QueryInvocationVariantArtifactGroupsResponse, err error) {
-	// TODO (beining): Implement.
-	return nil, nil
+	// Validate project before using it to check permission.
+	if err := pbutil.ValidateProject(req.Project); err != nil {
+		return nil, appstatus.BadRequest(errors.Annotate(err, "project").Err())
+	}
+	subRealms, err := permissions.QuerySubRealmsNonEmpty(ctx, req.Project, nil, rdbperms.PermListArtifacts)
+	if err != nil {
+		return nil, err
+	}
+	isGoogler, err := auth.IsMember(ctx, googlerOnlyGroup)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to check ACL").Err()
+	}
+	if err := validateQueryInvocationVariantArtifactGroupsRequest(req, isGoogler); err != nil {
+		return nil, appstatus.BadRequest(err)
+	}
+
+	limit := int(artifactSearchPageSizeLimiter.Adjust(req.PageSize))
+	opts := artifacts.ReadArtifactGroupsOpts{
+		Project:           req.Project,
+		SearchString:      req.SearchString,
+		ArtifactIDMatcher: req.ArtifactIdMatcher,
+		IsInvocationLevel: true,
+		StartTime:         req.StartTime.AsTime(),
+		EndTime:           req.EndTime.AsTime(),
+		SubRealms:         subRealms,
+		Limit:             limit,
+		PageToken:         req.PageToken,
+	}
+	rows, nextPageToken, err := s.artifactBQClient.ReadArtifactGroups(ctx, opts)
+	if err != nil {
+		return nil, errors.Annotate(err, "read invocation artifacts groups").Err()
+	}
+	pbGroups, err := toInvocationArtifactGroupsProto(rows)
+	if err != nil {
+		return nil, errors.Annotate(err, "to invocation artifact groups proto").Err()
+	}
+	return &pb.QueryInvocationVariantArtifactGroupsResponse{
+		Groups:        pbGroups,
+		NextPageToken: nextPageToken,
+	}, nil
+}
+
+func validateQueryInvocationVariantArtifactGroupsRequest(req *pb.QueryInvocationVariantArtifactGroupsRequest, isGoogler bool) error {
+	if err := pbutil.ValidateProject(req.Project); err != nil {
+		return errors.Annotate(err, "project").Err()
+	}
+	if req.SearchString.GetExactContain() == "" && req.SearchString.GetRegexContain() == "" {
+		return errors.New("search_string: unspecified")
+	}
+
+	// Non-googler caller have to specify an exact artifact id.
+	// Because search with empty artifact id, or artifact id prefix can be expensive.
+	// So we want to avoid people outside of google from abusing it.
+	if req.ArtifactIdMatcher != nil || !isGoogler {
+		allowPrefixMatcher := isGoogler
+		if err := validateArtifactIDMatcher(req.ArtifactIdMatcher, allowPrefixMatcher); err != nil {
+			return errors.Annotate(err, "artifact_id_matcher").Err()
+		}
+	}
+	if err := validateStartEndTime(req.StartTime, req.EndTime); err != nil {
+		return err
+	}
+	if err := pagination.ValidatePageSize(req.GetPageSize()); err != nil {
+		return errors.Annotate(err, "page_size").Err()
+	}
+	return nil
+}
+
+func toInvocationArtifactGroupsProto(groups []*artifacts.ArtifactGroup) ([]*pb.QueryInvocationVariantArtifactGroupsResponse_MatchGroup, error) {
+	pbGroups := make([]*pb.QueryInvocationVariantArtifactGroupsResponse_MatchGroup, 0, len(groups))
+	for _, g := range groups {
+		variant, err := pbutil.VariantFromJSON(g.Variant.String())
+		if err != nil {
+			return nil, errors.Annotate(err, "variant from JSON").Err()
+		}
+		match := &pb.QueryInvocationVariantArtifactGroupsResponse_MatchGroup{
+			VariantUnionHash: g.VariantHash,
+			VariantUnion:     variant,
+			ArtifactId:       g.ArtifactID,
+			Artifacts:        toInvocationArtifactMatchingContents(g.Artifacts, g.ArtifactID),
+			MatchingCount:    g.MatchingCount,
+		}
+		pbGroups = append(pbGroups, match)
+	}
+	return pbGroups, nil
+}
+
+func toInvocationArtifactMatchingContents(bqArtifacts []*artifacts.MatchingArtifact, artifactID string) []*pb.ArtifactMatchingContent {
+	res := make([]*pb.ArtifactMatchingContent, 0, len(bqArtifacts))
+	for _, a := range bqArtifacts {
+		matchStr, before, after := truncateMatchWithContext(a)
+		res = append(res, &pb.ArtifactMatchingContent{
+			Name:          pbutil.InvocationArtifactName(a.InvocationID, artifactID),
+			PartitionTime: timestamppb.New(a.PartitionTime),
+			Match:         matchStr,
+			BeforeMatch:   before,
+			AfterMatch:    after,
+		})
+	}
+	return res
 }

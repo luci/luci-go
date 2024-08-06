@@ -61,7 +61,7 @@ func (s *resultDBServer) QueryTestVariantArtifactGroups(ctx context.Context, req
 	}
 
 	limit := int(artifactSearchPageSizeLimiter.Adjust(req.PageSize))
-	opts := artifacts.ReadTestArtifactGroupsOpts{
+	opts := artifacts.ReadArtifactGroupsOpts{
 		Project:           req.Project,
 		SearchString:      req.SearchString,
 		TestIDMatcher:     req.TestIdMatcher,
@@ -72,7 +72,7 @@ func (s *resultDBServer) QueryTestVariantArtifactGroups(ctx context.Context, req
 		Limit:             limit,
 		PageToken:         req.PageToken,
 	}
-	rows, nextPageToken, err := s.artifactBQClient.ReadTestArtifactGroups(ctx, opts)
+	rows, nextPageToken, err := s.artifactBQClient.ReadArtifactGroups(ctx, opts)
 	if err != nil {
 		return nil, errors.Annotate(err, "read test artifacts groups").Err()
 	}
@@ -103,7 +103,7 @@ func validateQueryTestVariantArtifactGroupsRequest(req *pb.QueryTestVariantArtif
 		}
 	}
 	if req.ArtifactIdMatcher != nil {
-		if err := validateArtifactIDMatcher(req.ArtifactIdMatcher); err != nil {
+		if err := validateArtifactIDMatcher(req.ArtifactIdMatcher, true); err != nil {
 			return errors.Annotate(err, "artifact_id_matcher").Err()
 		}
 	}
@@ -134,9 +134,15 @@ func validateTestIDMatcher(m *pb.IDMatcher, isGoogler bool) error {
 	}
 }
 
-func validateArtifactIDMatcher(m *pb.IDMatcher) error {
+func validateArtifactIDMatcher(m *pb.IDMatcher, allowPrefixMatcher bool) error {
+	if m == nil {
+		return errors.New("unspecified")
+	}
 	switch x := m.Matcher.(type) {
 	case *pb.IDMatcher_HasPrefix:
+		if !allowPrefixMatcher {
+			return errors.New("search by prefix is not allowed for non-googlers")
+		}
 		return pbutil.ValidateArtifactIDPrefix(m.GetHasPrefix())
 	case *pb.IDMatcher_ExactEqual:
 		return pbutil.ValidateArtifactID(m.GetExactEqual())
@@ -164,7 +170,7 @@ func validateStartEndTime(startTime, endTime *timestamppb.Timestamp) error {
 	return nil
 }
 
-func toTestArtifactGroupsProto(groups []*artifacts.TestArtifactGroup) ([]*pb.QueryTestVariantArtifactGroupsResponse_MatchGroup, error) {
+func toTestArtifactGroupsProto(groups []*artifacts.ArtifactGroup) ([]*pb.QueryTestVariantArtifactGroupsResponse_MatchGroup, error) {
 	pbGroups := make([]*pb.QueryTestVariantArtifactGroupsResponse_MatchGroup, 0, len(groups))
 	for _, g := range groups {
 		variant, err := pbutil.VariantFromJSON(g.Variant.String())
@@ -176,7 +182,7 @@ func toTestArtifactGroupsProto(groups []*artifacts.TestArtifactGroup) ([]*pb.Que
 			VariantHash:   g.VariantHash,
 			Variant:       variant,
 			ArtifactId:    g.ArtifactID,
-			Artifacts:     toArtifactMatchingContents(g.Artifacts, g.TestID, g.ArtifactID),
+			Artifacts:     toTestArtifactMatchingContents(g.Artifacts, g.TestID, g.ArtifactID),
 			MatchingCount: g.MatchingCount,
 		}
 		pbGroups = append(pbGroups, match)
@@ -184,7 +190,7 @@ func toTestArtifactGroupsProto(groups []*artifacts.TestArtifactGroup) ([]*pb.Que
 	return pbGroups, nil
 }
 
-func toArtifactMatchingContents(bqArtifacts []*artifacts.MatchingArtifact, testID, artifactID string) []*pb.ArtifactMatchingContent {
+func toTestArtifactMatchingContents(bqArtifacts []*artifacts.MatchingArtifact, testID, artifactID string) []*pb.ArtifactMatchingContent {
 	res := make([]*pb.ArtifactMatchingContent, 0, len(bqArtifacts))
 	for _, a := range bqArtifacts {
 		matchStr, before, after := truncateMatchWithContext(a)

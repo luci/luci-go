@@ -34,7 +34,7 @@ import (
 )
 
 type BQClient interface {
-	ReadTestArtifactGroups(ctx context.Context, opts ReadTestArtifactGroupsOpts) (groups []*TestArtifactGroup, nextPageToken string, err error)
+	ReadArtifactGroups(ctx context.Context, opts ReadArtifactGroupsOpts) (groups []*ArtifactGroup, nextPageToken string, err error)
 	ReadTestArtifacts(ctx context.Context, opts ReadTestArtifactsOpts) (rows []*MatchingArtifact, nextPageToken string, err error)
 }
 
@@ -57,10 +57,15 @@ func (c *Client) Close() error {
 	return c.client.Close()
 }
 
-// TestArtifactGroup represents matching artifacts in each (test id, variant hash, artifact id) group.
-type TestArtifactGroup struct {
-	TestID      string
-	Variant     bigquery.NullJSON
+// ArtifactGroup represents matching artifacts in each (test id, variant hash, artifact id) group.
+// This can be either invocation or test result level artifacts.
+type ArtifactGroup struct {
+	// For invocation level artifact, this field will be empty.
+	TestID string
+	// For invocation level artifact, this is union of all variants of test results directly included by the invocation.
+	// For result level artifact, this is the test variant.
+	Variant bigquery.NullJSON
+	// A hash of the variant above.
 	VariantHash string
 	ArtifactID  string
 	// At most 3 matching artifacts are included here.
@@ -72,12 +77,15 @@ type TestArtifactGroup struct {
 	MaxPartitionTime time.Time
 }
 
+// MatchingArtifact is a single matching artifact.
 type MatchingArtifact struct {
 	InvocationID string
-	ResultID     string
+	// For invocation level artifact, this field will be empty.
+	ResultID string
 	// The creation time of the parent invocation.
 	PartitionTime time.Time
 	// Test status associated with this artifact.
+	// For invocation level artifact, this field will be empty.
 	TestStatus bigquery.NullString
 	// Artifact content that matches the search.
 	Match string
@@ -87,7 +95,7 @@ type MatchingArtifact struct {
 	MatchWithContextAfter string
 }
 
-func parseReadTestArtifactGroupsPageToken(pageToken string) (afterMaxPartitionTimeUnix, maxInsertTimeUnix int, afterTestID, afterVariantHash, afterArtifactID string, err error) {
+func parseReadArtifactGroupsPageToken(pageToken string) (afterMaxPartitionTimeUnix, maxInsertTimeUnix int, afterTestID, afterVariantHash, afterArtifactID string, err error) {
 	tokens, err := pagination.ParseToken(pageToken)
 	if err != nil {
 		return 0, 0, "", "", "", err
@@ -116,15 +124,23 @@ var maxMatchSize = 10 * 1024 // 10kib.
 // - The match content may split to multiple shards
 // - The match content is fully in a shard, but a context being split in another shard
 // - Multiple match content in different shards
-var readTestArtifactGroupTmpl = template.Must(template.New("").Parse(`
+var readArtifactGroupTmpl = template.Must(template.New("").Parse(`
 	WITH dedup AS (
 		SELECT
 			invocation_id,
 			test_id,
 			result_id,
 			artifact_id,
-			ANY_VALUE(test_variant) as test_variant,
-			ANY_VALUE(test_variant_hash) as test_variant_hash,
+			-- variant is used as grouping key, and pagination token in the following query.
+			-- For invocation level artifact, the invocation variant union is used.
+			-- For result level artifact, the test variant is used.
+			{{if .invocationLevel}}
+				ANY_VALUE(invocation_variant_union) as variant,
+				ANY_VALUE(invocation_variant_union_hash) as variant_hash,
+			{{else}}
+				ANY_VALUE(test_variant) as variant,
+				ANY_VALUE(test_variant_hash) as variant_hash,
+			{{end}}
 			ANY_VALUE(content) as content,
 			ANY_VALUE(test_status) as test_status,
 			ANY_VALUE(partition_time) as partition_time,
@@ -147,8 +163,13 @@ var readTestArtifactGroupTmpl = template.Must(template.New("").Parse(`
 			AND partition_time > @startTime
 			-- End time is inclusive.
 			AND partition_time <= @endTime
-			-- Exclude invocation level artifact.
-			AND test_id != ""
+			{{if .invocationLevel}}
+				-- Invocation level artifact has empty test id.
+				AND test_id = ""
+			{{else}}
+				-- Exclude invocation level artifact.
+				AND test_id != ""
+			{{end}}
 			-- Only return artifacts which caller has permission to access.
 			AND realm in UNNEST(@subRealms)
 			-- Exclude rows that are added after the max insert time.
@@ -156,8 +177,8 @@ var readTestArtifactGroupTmpl = template.Must(template.New("").Parse(`
 		GROUP BY project, test_id, artifact_id, invocation_id, result_id, shard_id
 	)
 	SELECT test_id as TestID,
-			ANY_VALUE(test_variant) as Variant,
-			test_variant_hash as VariantHash,
+			ANY_VALUE(variant) as Variant,
+			variant_hash as VariantHash,
 			artifact_id as ArtifactID,
 			COUNT(*) as MatchingCount,
 			max(partition_time) as MaxPartitionTime,
@@ -172,7 +193,7 @@ var readTestArtifactGroupTmpl = template.Must(template.New("").Parse(`
 					SUBSTR(REGEXP_EXTRACT(content, @searchContextAfterRegex), 0, @maxMatchSize) AS MatchWithContextAfter)
 				ORDER BY partition_time DESC, invocation_id, result_id LIMIT 3) as Artifacts,
 		FROM dedup
-		GROUP BY test_id, test_variant_hash, artifact_id
+		GROUP BY test_id, variant_hash, artifact_id
 		{{if .pagination}}
 			HAVING
 				UNIX_SECONDS(MaxPartitionTime) < @afterMaxPartitionTimeUnix
@@ -184,26 +205,33 @@ var readTestArtifactGroupTmpl = template.Must(template.New("").Parse(`
 		LIMIT @limit
 	`))
 
-func generateReadTestArtifactGroupsQuery(opts ReadTestArtifactGroupsOpts) (string, error) {
+func generateReadArtifactGroupsQuery(opts ReadArtifactGroupsOpts) (string, error) {
 	var b bytes.Buffer
-	err := readTestArtifactGroupTmpl.ExecuteTemplate(&b, "", map[string]any{
+	data := map[string]any{
 		"pagination":            opts.PageToken != "",
-		"prefixMatchTestID":     isPrefixMatch(opts.TestIDMatcher),
 		"prefixMatchArtifactID": isPrefixMatch(opts.ArtifactIDMatcher),
-		"exactMatchTestID":      isExactMatch(opts.TestIDMatcher),
 		"exactMatchArtifactID":  isExactMatch(opts.ArtifactIDMatcher),
-	})
+		"invocationLevel":       opts.IsInvocationLevel,
+	}
+	if !opts.IsInvocationLevel {
+		data["prefixMatchTestID"] = isPrefixMatch(opts.TestIDMatcher)
+		data["exactMatchTestID"] = isExactMatch(opts.TestIDMatcher)
+	}
+	err := readArtifactGroupTmpl.ExecuteTemplate(&b, "", data)
 	if err != nil {
 		return "", errors.Annotate(err, "execute template").Err()
 	}
 	return b.String(), nil
 }
 
-type ReadTestArtifactGroupsOpts struct {
-	Project           string
-	SearchString      *pb.ArtifactContentMatcher
+type ReadArtifactGroupsOpts struct {
+	Project      string
+	SearchString *pb.ArtifactContentMatcher
+	// This field is ignore, if IsInvocationLevel is True.
 	TestIDMatcher     *pb.IDMatcher
 	ArtifactIDMatcher *pb.IDMatcher
+	// If true, query invocation level artifacts. Otherwise, query test result level artifacts.
+	IsInvocationLevel bool
 	StartTime         time.Time
 	EndTime           time.Time
 	SubRealms         []string
@@ -211,7 +239,8 @@ type ReadTestArtifactGroupsOpts struct {
 	PageToken         string
 }
 
-func (c *Client) ReadTestArtifactGroups(ctx context.Context, opts ReadTestArtifactGroupsOpts) (groups []*TestArtifactGroup, nextPageToken string, err error) {
+// ReadArtifactGroups reads either test result level artifacts or invocation level artifacts depending on opts.IsInvocationLevel.
+func (c *Client) ReadArtifactGroups(ctx context.Context, opts ReadArtifactGroupsOpts) (groups []*ArtifactGroup, nextPageToken string, err error) {
 	var afterMaxPartitionTimeUnix int
 	// We exclude rows that are added after the max insert time from this query, and queries for subsequent pages.
 	// Because newly added rows might cause some test variant artifact group disappear during pagination (adding a new row with partition_time greater than afterMaxPartitionTimeUnix).
@@ -221,12 +250,12 @@ func (c *Client) ReadTestArtifactGroups(ctx context.Context, opts ReadTestArtifa
 	maxInsertTimeUnix := int(time.Now().Add(-10 * time.Second).Unix())
 	var afterTestID, afterVariantHash, afterArtifactID string
 	if opts.PageToken != "" {
-		afterMaxPartitionTimeUnix, maxInsertTimeUnix, afterTestID, afterVariantHash, afterArtifactID, err = parseReadTestArtifactGroupsPageToken(opts.PageToken)
+		afterMaxPartitionTimeUnix, maxInsertTimeUnix, afterTestID, afterVariantHash, afterArtifactID, err = parseReadArtifactGroupsPageToken(opts.PageToken)
 		if err != nil {
 			return nil, "", err
 		}
 	}
-	query, err := generateReadTestArtifactGroupsQuery(opts)
+	query, err := generateReadArtifactGroupsQuery(opts)
 	if err != nil {
 		return nil, "", err
 	}
@@ -256,27 +285,29 @@ func (c *Client) ReadTestArtifactGroups(ctx context.Context, opts ReadTestArtifa
 	if err != nil {
 		return nil, "", errors.Annotate(err, "running query").Err()
 	}
-	results := []*TestArtifactGroup{}
+	results := []*ArtifactGroup{}
 	for {
-		row := &TestArtifactGroup{}
+		row := &ArtifactGroup{}
 		err := it.Next(row)
 		if errors.Is(err, iterator.Done) {
 			break
 		}
 		if err != nil {
-			return nil, "", errors.Annotate(err, "obtain next test artifact groups row").Err()
+			return nil, "", errors.Annotate(err, "obtain next artifact groups row").Err()
 		}
 		results = append(results, row)
 	}
 	if opts.Limit != 0 && len(results) == int(opts.Limit) {
 		lastGroup := results[len(results)-1]
+		// Page token are constructed in the same way for both invocation and test result level artifact.
+		// For invocation artifact, test id is already empty string, the rest of the token element are enough to ensure absolute ordering.
 		nextPageToken = pagination.Token(fmt.Sprint(lastGroup.MaxPartitionTime.Unix()), fmt.Sprint(maxInsertTimeUnix), lastGroup.TestID, lastGroup.VariantHash, lastGroup.ArtifactID)
 	}
 	return results, nextPageToken, nil
 }
 
 // TODO (beining@): This query only search the first 10MB of each artifact.
-// See the comment of readTestArtifactGroupTmpl for more detail.
+// See the comment of readArtifactGroupTmpl for more detail.
 var readTestArtifactsTmpl = template.Must(template.New("").Parse(`
 	SELECT
 		invocation_id as InvocationID,
