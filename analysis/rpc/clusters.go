@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/data/stringset"
@@ -38,6 +39,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/clustering/runs"
 	"go.chromium.org/luci/analysis/internal/config/compiledcfg"
 	"go.chromium.org/luci/analysis/internal/perms"
+	"go.chromium.org/luci/analysis/internal/tracing"
 	"go.chromium.org/luci/analysis/pbutil"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 )
@@ -114,11 +116,7 @@ func (*clustersServer) Cluster(ctx context.Context, req *pb.ClusterRequest) (*pb
 		return nil, err
 	}
 
-	// Perform clustering from scratch. (Incremental clustering does not make
-	// sense for this RPC.)
-	existing := algorithms.NewEmptyClusterResults(len(req.TestResults))
-
-	results := algorithms.Cluster(cfg, ruleset, existing, failures)
+	results := cluster(ctx, cfg, ruleset, failures)
 
 	// Construct the response proto.
 	clusteredTRs := make([]*pb.ClusterResponse_ClusteredTestResult, 0, len(results.Clusters))
@@ -157,6 +155,18 @@ func (*clustersServer) Cluster(ctx context.Context, req *pb.ClusterRequest) (*pb
 		ClusteredTestResults: clusteredTRs,
 		ClusteringVersion:    version,
 	}, nil
+}
+
+func cluster(ctx context.Context, cfg *compiledcfg.ProjectConfig, ruleset *cache.Ruleset, failures []*clustering.Failure) clustering.ClusterResults {
+	_, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/rpc.cluster",
+		attribute.String("project", ruleset.Project),
+	)
+	defer func() { tracing.End(s, nil) }()
+
+	// Perform clustering from scratch. (Incremental clustering does not make
+	// sense for this RPC.)
+	existing := algorithms.NewEmptyClusterResults(len(failures))
+	return algorithms.Cluster(cfg, ruleset, existing, failures)
 }
 
 func validateTestResult(i int, tr *pb.ClusterRequest_TestResult) error {
