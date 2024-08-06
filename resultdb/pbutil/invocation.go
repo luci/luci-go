@@ -22,6 +22,7 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/validate"
 
 	"go.chromium.org/luci/resultdb/internal/invocations/invocationspb"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -43,7 +44,7 @@ var invocationExtendedPropertyTypeNameRe = regexpf("^%s$", invocationExtendedPro
 
 // ValidateInvocationID returns a non-nil error if id is invalid.
 func ValidateInvocationID(id string) error {
-	return validateWithRe(invocationIDRe, id)
+	return validate.SpecifiedWithRe(invocationIDRe, id)
 }
 
 // ValidateInvocationName returns a non-nil error if name is invalid.
@@ -55,12 +56,12 @@ func ValidateInvocationName(name string) error {
 // ParseInvocationName extracts the invocation id.
 func ParseInvocationName(name string) (id string, err error) {
 	if name == "" {
-		return "", unspecified()
+		return "", validate.Unspecified()
 	}
 
 	m := invocationNameRe.FindStringSubmatch(name)
 	if m == nil {
-		return "", doesNotMatch(invocationNameRe)
+		return "", validate.DoesNotMatchReErr(invocationNameRe)
 	}
 	return m[1], nil
 }
@@ -129,7 +130,7 @@ func ValidateSources(sources *pb.Sources) error {
 
 // ValidateInvocationExtendedPropertyKey returns a non-nil error if key is invalid.
 func ValidateInvocationExtendedPropertyKey(key string) error {
-	return validateWithRe(invocationExtendedPropertyKeyRe, key)
+	return validate.SpecifiedWithRe(invocationExtendedPropertyKeyRe, key)
 }
 
 // ValidateInvocationExtendedProperties returns a non-nil error if extendedProperties is invalid.
@@ -168,7 +169,7 @@ func validateInvocationExtendedPropertyTypeField(value *structpb.Struct) error {
 		return errors.Annotate(err, `"@type" value %q`, typeStr).Err()
 	}
 	typeName := typeStr[slashIndex+1:]
-	if err := validateWithRe(invocationExtendedPropertyTypeNameRe, typeName); err != nil {
+	if err := validate.SpecifiedWithRe(invocationExtendedPropertyTypeNameRe, typeName); err != nil {
 		return errors.Annotate(err, `"@type" type name %q`, typeName).Err()
 	}
 	return nil

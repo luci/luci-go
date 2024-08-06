@@ -69,7 +69,7 @@ func TestServiceConfigValidator(t *testing.T) {
 
 		Convey("must be specified", func() {
 			cfg.MonorailHostname = ""
-			So(validate(cfg), ShouldErrLike, "(monorail_hostname): must be specified")
+			So(validate(cfg), ShouldErrLike, "(monorail_hostname): unspecified")
 		})
 		Convey("must be correctly formed", func() {
 			cfg.MonorailHostname = "monorail host"
@@ -82,7 +82,7 @@ func TestServiceConfigValidator(t *testing.T) {
 
 		Convey("must be specified", func() {
 			cfg.ChunkGcsBucket = ""
-			So(validate(cfg), ShouldErrLike, `(chunk_gcs_bucket): must be specified`)
+			So(validate(cfg), ShouldErrLike, `(chunk_gcs_bucket): unspecified`)
 		})
 		Convey("must be correctly formed", func() {
 			cfg, err := CreatePlaceholderConfig()
@@ -145,7 +145,7 @@ func TestProjectConfigValidator(t *testing.T) {
 			Convey("name", func() {
 				Convey("unset", func() {
 					rule.Name = ""
-					So(validate(project, cfg), ShouldErrLike, `(`+path+` / name): must be specified`)
+					So(validate(project, cfg), ShouldErrLike, `(`+path+` / name): unspecified`)
 				})
 				Convey("invalid", func() {
 					rule.Name = "<script>evil()</script>"
@@ -158,7 +158,7 @@ func TestProjectConfigValidator(t *testing.T) {
 					// Make sure the like template does not refer to capture
 					// groups in the pattern, to avoid other errors in this test.
 					rule.LikeTemplate = "%blah%"
-					So(validate(project, cfg), ShouldErrLike, `(`+path+` / pattern): must be specified`)
+					So(validate(project, cfg), ShouldErrLike, `(`+path+` / pattern): unspecified`)
 				})
 				Convey("invalid", func() {
 					rule.Pattern = "["
@@ -168,7 +168,7 @@ func TestProjectConfigValidator(t *testing.T) {
 			Convey("like pattern", func() {
 				Convey("unset", func() {
 					rule.LikeTemplate = ""
-					So(validate(project, cfg), ShouldErrLike, `(`+path+` / like_template): must be specified`)
+					So(validate(project, cfg), ShouldErrLike, `(`+path+` / like_template): unspecified`)
 				})
 				Convey("invalid", func() {
 					rule.LikeTemplate = "blah${broken"
@@ -293,7 +293,7 @@ func TestProjectConfigValidator(t *testing.T) {
 				path := path + ` / project`
 				Convey("unset", func() {
 					m.Project = ""
-					So(validate(project, cfg), ShouldErrLike, `(`+path+`): must be specified`)
+					So(validate(project, cfg), ShouldErrLike, `(`+path+`): unspecified`)
 				})
 				Convey("invalid", func() {
 					m.Project = "<>"
@@ -304,7 +304,7 @@ func TestProjectConfigValidator(t *testing.T) {
 				path := path + ` / monorail_hostname`
 				Convey("unset", func() {
 					m.MonorailHostname = ""
-					So(validate(project, cfg), ShouldErrLike, `(`+path+`): must be specified`)
+					So(validate(project, cfg), ShouldErrLike, `(`+path+`): unspecified`)
 				})
 				Convey("invalid", func() {
 					m.MonorailHostname = "<>"
@@ -315,7 +315,7 @@ func TestProjectConfigValidator(t *testing.T) {
 				path := path + ` / display_prefix`
 				Convey("unset", func() {
 					m.DisplayPrefix = ""
-					So(validate(project, cfg), ShouldErrLike, `(`+path+`): must be specified`)
+					So(validate(project, cfg), ShouldErrLike, `(`+path+`): unspecified`)
 				})
 				Convey("invalid", func() {
 					m.DisplayPrefix = "<>"
@@ -402,7 +402,7 @@ func TestProjectConfigValidator(t *testing.T) {
 				path := path + " / [0] / id"
 				Convey("unset", func() {
 					policy.Id = ""
-					So(validate(project, cfg), ShouldErrLike, `(`+path+`): must be specified`)
+					So(validate(project, cfg), ShouldErrLike, `(`+path+`): unspecified`)
 				})
 				Convey("invalid", func() {
 					policy.Id = "-a-"
@@ -417,7 +417,7 @@ func TestProjectConfigValidator(t *testing.T) {
 				path := path + " / [0] / human_readable_name"
 				Convey("unset", func() {
 					policy.HumanReadableName = ""
-					So(validate(project, cfg), ShouldErrLike, `(`+path+`): must be specified`)
+					So(validate(project, cfg), ShouldErrLike, `(`+path+`): unspecified`)
 				})
 				Convey("invalid", func() {
 					policy.HumanReadableName = "\x00"
@@ -444,7 +444,7 @@ func TestProjectConfigValidator(t *testing.T) {
 				Convey("invalid - empty", func() {
 					// Must have a @google.com owner.
 					policy.Owners = []string{""}
-					So(validate(project, cfg), ShouldErrLike, `(`+path+` / [0]): must be specified`)
+					So(validate(project, cfg), ShouldErrLike, `(`+path+` / [0]): unspecified`)
 				})
 				Convey("invalid - non @google.com", func() {
 					// Must have a @google.com owner.
@@ -754,7 +754,7 @@ func TestProjectConfigValidator(t *testing.T) {
 						})
 						Convey("invalid - empty label", func() {
 							monorail.Labels[0] = ""
-							So(validate(project, cfg), ShouldErrLike, `(`+path+` / [0]): must be specified`)
+							So(validate(project, cfg), ShouldErrLike, `(`+path+` / [0]): unspecified`)
 						})
 						Convey("invalid - bad label", func() {
 							monorail.Labels[0] = "!test"

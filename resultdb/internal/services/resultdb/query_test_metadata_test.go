@@ -82,7 +82,7 @@ func TestQueryTestMetadata(t *testing.T) {
 						TestIds: []string{"test"},
 					},
 				})
-				So(err, ShouldBeRPCInvalidArgument, `project: does not match ^[a-z0-9\-]{1,40}$`)
+				So(err, ShouldBeRPCInvalidArgument, `project: does not match pattern "^[a-z0-9\\-]{1,40}$"`)
 				So(res, ShouldBeNil)
 			})
 

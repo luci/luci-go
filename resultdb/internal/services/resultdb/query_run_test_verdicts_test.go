@@ -157,7 +157,7 @@ func TestQueryRunTestVerdicts(t *testing.T) {
 					Invocation: "x",
 				})
 
-				So(err, ShouldBeRPCInvalidArgument, `does not match ^invocations/([a-z][a-z0-9_\-:.]{0,99})$`)
+				So(err, ShouldBeRPCInvalidArgument, `does not match pattern "^invocations/([a-z][a-z0-9_\\-:.]{0,99})$"`)
 			})
 			Convey(`Invalid result limit`, func() {
 				_, err := srv.QueryRunTestVerdicts(ctx, &pb.QueryRunTestVerdictsRequest{

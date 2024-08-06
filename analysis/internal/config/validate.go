@@ -24,12 +24,12 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	luciproto "go.chromium.org/luci/common/proto"
+	"go.chromium.org/luci/common/validate"
 	"go.chromium.org/luci/config/validation"
 
 	"go.chromium.org/luci/analysis/internal/analysis/metrics"
 	"go.chromium.org/luci/analysis/internal/bugs"
 	"go.chromium.org/luci/analysis/internal/clustering/algorithms/testname/rules"
-	"go.chromium.org/luci/analysis/pbutil"
 	configpb "go.chromium.org/luci/analysis/proto/config"
 )
 
@@ -121,11 +121,9 @@ func validateStringConfig(ctx *validation.Context, name, cfg string, re *regexp.
 		ctx.Errorf("exceeds maximum allowed length of %v bytes", maxLengthBytes)
 		return
 	}
-	switch err := pbutil.ValidateWithRe(re, cfg); err {
-	case pbutil.Unspecified:
-		ctx.Errorf(unspecifiedMessage)
-	case pbutil.DoesNotMatch:
-		ctx.Errorf("does not match pattern %q", re)
+	if err := validate.SpecifiedWithRe(re, cfg); err != nil {
+		ctx.Error(err)
+		return
 	}
 }
 
@@ -658,12 +656,8 @@ func validateBugManagementPolicyID(ctx *validation.Context, id string, seenIDs m
 		ctx.Errorf("exceeds maximum allowed length of %v bytes", policyIDMaxLengthBytes)
 		return
 	}
-	switch err := pbutil.ValidateWithRe(policyIDRE, id); err {
-	case pbutil.Unspecified:
-		ctx.Errorf(unspecifiedMessage)
-		return
-	case pbutil.DoesNotMatch:
-		ctx.Errorf("does not match pattern %q", policyIDRE)
+	if err := validate.SpecifiedWithRe(policyIDRE, id); err != nil {
+		ctx.Error(err)
 		return
 	}
 	if _, ok := seenIDs[id]; ok {

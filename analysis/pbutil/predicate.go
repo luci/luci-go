@@ -18,58 +18,16 @@ package pbutil
 import (
 	"context"
 	"fmt"
-	"regexp"
-	"regexp/syntax"
-	"strings"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/validate"
 
 	pb "go.chromium.org/luci/analysis/proto/v1"
 )
 
-var (
-	// Unspecified is the error to be used when something is unspecified when it's
-	// supposed to.
-	Unspecified = errors.Reason("unspecified").Err()
-
-	// DoesNotMatch is the error to be used when a string does not match a regex.
-	DoesNotMatch = errors.Reason("does not match").Err()
-)
-
-// validateRegexp returns a non-nil error if re is an invalid regular
-// expression.
-func validateRegexp(re string) error {
-	// Note: regexp.Compile uses syntax.Perl.
-	if _, err := syntax.Parse(re, syntax.Perl); err != nil {
-		return err
-	}
-
-	// Do not allow ^ and $ in the regexp, because we need to be able to prepend
-	// a pattern to the user-supplied pattern.
-	if strings.HasPrefix(re, "^") {
-		return errors.Reason("must not start with ^; it is prepended automatically").Err()
-	}
-	if strings.HasSuffix(re, "$") {
-		return errors.Reason("must not end with $; it is appended automatically").Err()
-	}
-
-	return nil
-}
-
-// ValidateWithRe validates a value matches the given re.
-func ValidateWithRe(re *regexp.Regexp, value string) error {
-	if value == "" {
-		return Unspecified
-	}
-	if !re.MatchString(value) {
-		return DoesNotMatch
-	}
-	return nil
-}
-
 // ValidateStringPair returns an error if p is invalid.
 func ValidateStringPair(p *pb.StringPair) error {
-	if err := ValidateWithRe(stringPairKeyRe, p.Key); err != nil {
+	if err := validate.SpecifiedWithRe(stringPairKeyRe, p.Key); err != nil {
 		return errors.Annotate(err, "key").Err()
 	}
 	if len(p.Key) > maxStringPairKeyLength {
@@ -101,9 +59,9 @@ func ValidateVariantPredicate(p *pb.VariantPredicate) error {
 	case *pb.VariantPredicate_Contains:
 		return errors.Annotate(ValidateVariant(pr.Contains), "contains").Err()
 	case *pb.VariantPredicate_HashEquals:
-		return errors.Annotate(ValidateWithRe(variantHashRe, pr.HashEquals), "hash_equals").Err()
+		return errors.Annotate(validate.SpecifiedWithRe(variantHashRe, pr.HashEquals), "hash_equals").Err()
 	case nil:
-		return Unspecified
+		return validate.Unspecified()
 	default:
 		panic("impossible")
 	}
@@ -113,7 +71,7 @@ func ValidateVariantPredicate(p *pb.VariantPredicate) error {
 // invalid.
 func ValidateTestVerdictPredicate(predicate *pb.TestVerdictPredicate) error {
 	if predicate == nil {
-		return Unspecified
+		return validate.Unspecified()
 	}
 
 	if predicate.GetVariantPredicate() != nil {
@@ -137,7 +95,7 @@ func ValidateEnum(value int32, validValues map[int32]string) error {
 // and the Earliest time must be chronologically before the Latest time.
 func ValidateTimeRange(ctx context.Context, tr *pb.TimeRange) error {
 	if tr == nil {
-		return Unspecified
+		return validate.Unspecified()
 	}
 
 	earliest, err := AsTime(tr.Earliest)

@@ -15,10 +15,8 @@
 package pbutil
 
 import (
-	"regexp/syntax"
-	"strings"
-
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/validate"
 
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -33,7 +31,7 @@ type testObjectPredicate interface {
 // validateTestObjectPredicate returns a non-nil error if p is determined to be
 // invalid.
 func validateTestObjectPredicate(p testObjectPredicate) error {
-	if err := validateRegexp(p.GetTestIdRegexp()); err != nil {
+	if err := validate.RegexpFragment(p.GetTestIdRegexp()); err != nil {
 		return errors.Annotate(err, "test_id_regexp").Err()
 	}
 
@@ -65,26 +63,6 @@ func ValidateTestExonerationPredicate(p *pb.TestExonerationPredicate) error {
 	return validateTestObjectPredicate(p)
 }
 
-// validateRegexp returns a non-nil error if re is an invalid regular
-// expression.
-func validateRegexp(re string) error {
-	// Note: regexp.Compile uses syntax.Perl.
-	if _, err := syntax.Parse(re, syntax.Perl); err != nil {
-		return err
-	}
-
-	// Do not allow ^ and $ in the regexp, because we need to be able to prepend
-	// a pattern to the user-supplied pattern.
-	if strings.HasPrefix(re, "^") {
-		return errors.Reason("must not start with ^; it is prepended automatically").Err()
-	}
-	if strings.HasSuffix(re, "$") {
-		return errors.Reason("must not end with $; it is appended automatically").Err()
-	}
-
-	return nil
-}
-
 // ValidateVariantPredicate returns a non-nil error if p is determined to be
 // invalid.
 func ValidateVariantPredicate(p *pb.VariantPredicate) error {
@@ -94,7 +72,7 @@ func ValidateVariantPredicate(p *pb.VariantPredicate) error {
 	case *pb.VariantPredicate_Contains:
 		return errors.Annotate(ValidateVariant(pr.Contains), "contains").Err()
 	case nil:
-		return unspecified()
+		return validate.Unspecified()
 	default:
 		panic("impossible")
 	}
@@ -106,7 +84,7 @@ func ValidateArtifactPredicate(p *pb.ArtifactPredicate) error {
 	if err := ValidateTestResultPredicate(p.GetTestResultPredicate()); err != nil {
 		return errors.Annotate(err, "text_result_predicate").Err()
 	}
-	if err := validateRegexp(p.GetContentTypeRegexp()); err != nil {
+	if err := validate.RegexpFragment(p.GetContentTypeRegexp()); err != nil {
 		return errors.Annotate(err, "content_type_regexp").Err()
 	}
 	return nil

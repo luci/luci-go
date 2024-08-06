@@ -18,8 +18,8 @@ import (
 	"context"
 	"regexp"
 
-	"go.chromium.org/luci/analysis/pbutil"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/validate"
 
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -30,7 +30,7 @@ const allowedGroup = "googlers"
 var messageRE = regexp.MustCompile(`^[[:print:]]+$`)
 
 func validateEchoRequest(req *pb.EchoRequest) error {
-	if err := pbutil.ValidateWithRe(messageRE, req.Message); err != nil {
+	if err := validate.SpecifiedWithRe(messageRE, req.Message); err != nil {
 		return errors.Annotate(err, "message").Err()
 	}
 	if len(req.Message) > 1024 {

@@ -21,14 +21,17 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/validate"
+
 	pb "go.chromium.org/luci/resultdb/proto/v1"
+
+	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 // validTestResult returns a valid TestResult sample.
@@ -65,12 +68,12 @@ func validTestResult(now time.Time) *pb.TestResult {
 
 // fieldDoesNotMatch returns the string of unspecified error with the field name.
 func fieldUnspecified(fieldName string) string {
-	return fmt.Sprintf("%s: %s", fieldName, unspecified())
+	return fmt.Sprintf("%s: %s", fieldName, validate.Unspecified())
 }
 
 // fieldDoesNotMatch returns the string of doesNotMatch error with the field name.
 func fieldDoesNotMatch(fieldName string, re *regexp.Regexp) string {
-	return fmt.Sprintf("%s: %s", fieldName, doesNotMatch(re))
+	return fmt.Sprintf("%s: %s", fieldName, validate.DoesNotMatchReErr(re))
 }
 
 func TestTestResultName(t *testing.T) {
@@ -90,7 +93,7 @@ func TestTestResultName(t *testing.T) {
 			Convey(`has slashes`, func() {
 				_, _, _, err := ParseTestResultName(
 					"invocations/inv/tests/ninja://test/results/result1")
-				So(err, ShouldErrLike, doesNotMatch(testResultNameRe))
+				So(err, ShouldErrLike, validate.DoesNotMatchReErr(testResultNameRe))
 			})
 
 			Convey(`bad unescape`, func() {
@@ -117,51 +120,51 @@ func TestTestResultName(t *testing.T) {
 func TestValidateTestResult(t *testing.T) {
 	t.Parallel()
 	now := testclock.TestRecentTimeUTC
-	validate := func(result *pb.TestResult) error {
+	validateTR := func(result *pb.TestResult) error {
 		return ValidateTestResult(now, result)
 	}
 
 	Convey("Succeeds", t, func() {
 		msg := validTestResult(now)
-		So(validate(msg), ShouldBeNil)
+		So(validateTR(msg), ShouldBeNil)
 
 		Convey("with unicode TestID", func() {
 			// Uses printable unicode character 'µ'.
 			msg.TestId = "TestVariousDeadlines/5µs"
 			So(ValidateTestID(msg.TestId), ShouldErrLike, nil)
-			So(validate(msg), ShouldBeNil)
+			So(validateTR(msg), ShouldBeNil)
 		})
 
 		Convey("with invalid Name", func() {
 			// ValidateTestResult should skip validating TestResult.Name.
 			msg.Name = "this is not a valid name for TestResult.Name"
-			So(ValidateTestResultName(msg.Name), ShouldErrLike, doesNotMatch(testResultNameRe))
-			So(validate(msg), ShouldBeNil)
+			So(ValidateTestResultName(msg.Name), ShouldErrLike, validate.DoesNotMatchReErr(testResultNameRe))
+			So(validateTR(msg), ShouldBeNil)
 		})
 
 		Convey("with no variant", func() {
 			msg.Variant = nil
-			So(validate(msg), ShouldBeNil)
+			So(validateTR(msg), ShouldBeNil)
 		})
 
 		Convey("with valid summary", func() {
 			msg.SummaryHtml = strings.Repeat("1", maxLenSummaryHTML)
-			So(validate(msg), ShouldBeNil)
+			So(validateTR(msg), ShouldBeNil)
 		})
 
 		Convey("with empty tags", func() {
 			msg.Tags = nil
-			So(validate(msg), ShouldBeNil)
+			So(validateTR(msg), ShouldBeNil)
 		})
 
 		Convey("with nil start_time", func() {
 			msg.StartTime = nil
-			So(validate(msg), ShouldBeNil)
+			So(validateTR(msg), ShouldBeNil)
 		})
 
 		Convey("with nil duration", func() {
 			msg.Duration = nil
-			So(validate(msg), ShouldBeNil)
+			So(validateTR(msg), ShouldBeNil)
 		})
 
 		Convey("with valid properties", func() {
@@ -170,25 +173,25 @@ func TestValidateTestResult(t *testing.T) {
 					"key": structpb.NewStringValue("value"),
 				},
 			}
-			So(validate(msg), ShouldBeNil)
+			So(validateTR(msg), ShouldBeNil)
 		})
 
 		Convey("with skip reason", func() {
 			msg.Status = pb.TestStatus_SKIP
 			msg.SkipReason = pb.SkipReason_AUTOMATICALLY_DISABLED_FOR_FLAKINESS
-			So(validate(msg), ShouldBeNil)
+			So(validateTR(msg), ShouldBeNil)
 		})
 	})
 
 	Convey("Fails", t, func() {
 		msg := validTestResult(now)
 		Convey("with nil", func() {
-			So(validate(nil), ShouldErrLike, unspecified())
+			So(validateTR(nil), ShouldErrLike, validate.Unspecified())
 		})
 
 		Convey("with empty TestID", func() {
 			msg.TestId = ""
-			So(validate(msg), ShouldErrLike, fieldUnspecified("test_id"))
+			So(validateTR(msg), ShouldErrLike, fieldUnspecified("test_id"))
 		})
 
 		Convey("with invalid TestID", func() {
@@ -200,13 +203,13 @@ func TestValidateTestResult(t *testing.T) {
 			}
 			for _, in := range badInputs {
 				msg.TestId = in
-				So(validate(msg), ShouldErrLike, "")
+				So(validateTR(msg), ShouldErrLike, "")
 			}
 		})
 
 		Convey("with empty ResultID", func() {
 			msg.ResultId = ""
-			So(validate(msg), ShouldErrLike, fieldUnspecified("result_id"))
+			So(validateTR(msg), ShouldErrLike, fieldUnspecified("result_id"))
 		})
 
 		Convey("with invalid ResultID", func() {
@@ -216,7 +219,7 @@ func TestValidateTestResult(t *testing.T) {
 			}
 			for _, in := range badInputs {
 				msg.ResultId = in
-				So(validate(msg), ShouldErrLike, fieldDoesNotMatch("result_id", resultIDRe))
+				So(validateTR(msg), ShouldErrLike, fieldDoesNotMatch("result_id", resultIDRe))
 			}
 		})
 
@@ -227,41 +230,41 @@ func TestValidateTestResult(t *testing.T) {
 			}
 			for _, in := range badInputs {
 				msg.Variant = in
-				So(validate(msg), ShouldErrLike, fieldUnspecified("key"))
+				So(validateTR(msg), ShouldErrLike, fieldUnspecified("key"))
 			}
 		})
 
 		Convey("with invalid Status", func() {
 			msg.Status = pb.TestStatus(len(pb.TestStatus_name) + 1)
-			So(validate(msg), ShouldErrLike, "status: invalid value")
+			So(validateTR(msg), ShouldErrLike, "status: invalid value")
 		})
 
 		Convey("with STATUS_UNSPECIFIED", func() {
 			msg.Status = pb.TestStatus_STATUS_UNSPECIFIED
-			So(validate(msg), ShouldErrLike, "status: cannot be STATUS_UNSPECIFIED")
+			So(validateTR(msg), ShouldErrLike, "status: cannot be STATUS_UNSPECIFIED")
 		})
 
 		Convey("with skip reason but not skip status", func() {
 			msg.Status = pb.TestStatus_ABORT
 			msg.SkipReason = pb.SkipReason_AUTOMATICALLY_DISABLED_FOR_FLAKINESS
-			So(validate(msg), ShouldErrLike, "skip_reason: value must be zero (UNSPECIFIED) when status is not SKIP")
+			So(validateTR(msg), ShouldErrLike, "skip_reason: value must be zero (UNSPECIFIED) when status is not SKIP")
 		})
 
 		Convey("with too big summary", func() {
 			msg.SummaryHtml = strings.Repeat("☕", maxLenSummaryHTML)
-			So(validate(msg), ShouldErrLike, "summary_html: exceeds the maximum size")
+			So(validateTR(msg), ShouldErrLike, "summary_html: exceeds the maximum size")
 		})
 
 		Convey("with invalid StartTime and Duration", func() {
 			Convey("because start_time is in the future", func() {
 				future := timestamppb.New(now.Add(time.Hour))
 				msg.StartTime = future
-				So(validate(msg), ShouldErrLike, fmt.Sprintf("start_time: cannot be > (now + %s)", clockSkew))
+				So(validateTR(msg), ShouldErrLike, fmt.Sprintf("start_time: cannot be > (now + %s)", clockSkew))
 			})
 
 			Convey("because duration is < 0", func() {
 				msg.Duration = durationpb.New(-1 * time.Minute)
-				So(validate(msg), ShouldErrLike, "duration: is < 0")
+				So(validateTR(msg), ShouldErrLike, "duration: is < 0")
 			})
 
 			Convey("because (start_time + duration) is in the future", func() {
@@ -269,50 +272,50 @@ func TestValidateTestResult(t *testing.T) {
 				msg.StartTime = st
 				msg.Duration = durationpb.New(2 * time.Hour)
 				expected := fmt.Sprintf("start_time + duration: cannot be > (now + %s)", clockSkew)
-				So(validate(msg), ShouldErrLike, expected)
+				So(validateTR(msg), ShouldErrLike, expected)
 			})
 		})
 
 		Convey("with invalid StringPairs", func() {
 			msg.Tags = StringPairs("", "")
-			So(validate(msg), ShouldErrLike, `"":"": key: unspecified`)
+			So(validateTR(msg), ShouldErrLike, `"":"": key: unspecified`)
 		})
 
 		Convey("Test metadata", func() {
 			Convey("filename", func() {
 				Convey("unspecified", func() {
 					msg.TestMetadata.Location.FileName = ""
-					So(validate(msg), ShouldErrLike, "test_metadata: location: file_name: unspecified")
+					So(validateTR(msg), ShouldErrLike, "test_metadata: location: file_name: unspecified")
 				})
 				Convey("too long", func() {
 					msg.TestMetadata.Location.FileName = "//" + strings.Repeat("super long", 100)
-					So(validate(msg), ShouldErrLike, "test_metadata: location: file_name: length exceeds 512")
+					So(validateTR(msg), ShouldErrLike, "test_metadata: location: file_name: length exceeds 512")
 				})
 				Convey("no double slashes", func() {
 					msg.TestMetadata.Location.FileName = "file_name"
-					So(validate(msg), ShouldErrLike, "test_metadata: location: file_name: doesn't start with //")
+					So(validateTR(msg), ShouldErrLike, "test_metadata: location: file_name: doesn't start with //")
 				})
 				Convey("back slash", func() {
 					msg.TestMetadata.Location.FileName = "//dir\\file"
-					So(validate(msg), ShouldErrLike, "test_metadata: location: file_name: has \\")
+					So(validateTR(msg), ShouldErrLike, "test_metadata: location: file_name: has \\")
 				})
 				Convey("trailing slash", func() {
 					msg.TestMetadata.Location.FileName = "//file_name/"
-					So(validate(msg), ShouldErrLike, "test_metadata: location: file_name: ends with /")
+					So(validateTR(msg), ShouldErrLike, "test_metadata: location: file_name: ends with /")
 				})
 			})
 			Convey("line", func() {
 				msg.TestMetadata.Location.Line = -1
-				So(validate(msg), ShouldErrLike, "test_metadata: location: line: must not be negative")
+				So(validateTR(msg), ShouldErrLike, "test_metadata: location: line: must not be negative")
 			})
 			Convey("repo", func() {
 				msg.TestMetadata.Location.Repo = "https://chromium.googlesource.com/chromium/src.git"
-				So(validate(msg), ShouldErrLike, "test_metadata: location: repo: must not end with .git")
+				So(validateTR(msg), ShouldErrLike, "test_metadata: location: repo: must not end with .git")
 			})
 
 			Convey("no location and no bug component", func() {
 				msg.TestMetadata = &pb.TestMetadata{Name: "name"}
-				So(validate(msg), ShouldBeNil)
+				So(validateTR(msg), ShouldBeNil)
 			})
 			Convey("location no repo", func() {
 				msg.TestMetadata = &pb.TestMetadata{
@@ -321,7 +324,7 @@ func TestValidateTestResult(t *testing.T) {
 						FileName: "//file_name",
 					},
 				}
-				So(validate(msg), ShouldErrLike, "test_metadata: location: repo: required")
+				So(validateTR(msg), ShouldErrLike, "test_metadata: location: repo: required")
 			})
 
 			Convey("nil bug system in bug component", func() {
@@ -331,7 +334,7 @@ func TestValidateTestResult(t *testing.T) {
 						System: nil,
 					},
 				}
-				So(validate(msg), ShouldErrLike, "bug system is required for bug components")
+				So(validateTR(msg), ShouldErrLike, "bug system is required for bug components")
 			})
 			Convey("valid monorail bug component", func() {
 				msg.TestMetadata = &pb.TestMetadata{
@@ -345,7 +348,7 @@ func TestValidateTestResult(t *testing.T) {
 						},
 					},
 				}
-				So(validate(msg), ShouldBeNil)
+				So(validateTR(msg), ShouldBeNil)
 			})
 			Convey("wrong size monorail bug component value", func() {
 				msg.TestMetadata = &pb.TestMetadata{
@@ -359,7 +362,7 @@ func TestValidateTestResult(t *testing.T) {
 						},
 					},
 				}
-				So(validate(msg), ShouldErrLike, "monorail.value: is invalid")
+				So(validateTR(msg), ShouldErrLike, "monorail.value: is invalid")
 			})
 			Convey("invalid monorail bug component value", func() {
 				msg.TestMetadata = &pb.TestMetadata{
@@ -373,7 +376,7 @@ func TestValidateTestResult(t *testing.T) {
 						},
 					},
 				}
-				So(validate(msg), ShouldErrLike, "monorail.value: is invalid")
+				So(validateTR(msg), ShouldErrLike, "monorail.value: is invalid")
 			})
 			Convey("wrong size monorail bug component project", func() {
 				msg.TestMetadata = &pb.TestMetadata{
@@ -387,7 +390,7 @@ func TestValidateTestResult(t *testing.T) {
 						},
 					},
 				}
-				So(validate(msg), ShouldErrLike, "monorail.project: is invalid")
+				So(validateTR(msg), ShouldErrLike, "monorail.project: is invalid")
 			})
 			Convey("using invalid characters in monorail bug component project", func() {
 				msg.TestMetadata = &pb.TestMetadata{
@@ -401,7 +404,7 @@ func TestValidateTestResult(t *testing.T) {
 						},
 					},
 				}
-				So(validate(msg), ShouldErrLike, "monorail.project: is invalid")
+				So(validateTR(msg), ShouldErrLike, "monorail.project: is invalid")
 			})
 			Convey("using only numbers in monorail bug component project", func() {
 				msg.TestMetadata = &pb.TestMetadata{
@@ -415,7 +418,7 @@ func TestValidateTestResult(t *testing.T) {
 						},
 					},
 				}
-				So(validate(msg), ShouldErrLike, "monorail.project: is invalid")
+				So(validateTR(msg), ShouldErrLike, "monorail.project: is invalid")
 			})
 			Convey("valid buganizer component", func() {
 				msg.TestMetadata = &pb.TestMetadata{
@@ -428,7 +431,7 @@ func TestValidateTestResult(t *testing.T) {
 						},
 					},
 				}
-				So(validate(msg), ShouldBeNil)
+				So(validateTR(msg), ShouldBeNil)
 			})
 			Convey("invalid buganizer component id", func() {
 				msg.TestMetadata = &pb.TestMetadata{
@@ -441,7 +444,7 @@ func TestValidateTestResult(t *testing.T) {
 						},
 					},
 				}
-				So(validate(msg), ShouldErrLike, "issue_tracker.component_id: is invalid")
+				So(validateTR(msg), ShouldErrLike, "issue_tracker.component_id: is invalid")
 			})
 			Convey("with too big properties", func() {
 				msg.TestMetadata = &pb.TestMetadata{
@@ -452,7 +455,7 @@ func TestValidateTestResult(t *testing.T) {
 						},
 					},
 				}
-				So(validate(msg), ShouldErrLike, "properties: exceeds the maximum size")
+				So(validateTR(msg), ShouldErrLike, "properties: exceeds the maximum size")
 			})
 			Convey("no properties_schema with non-empty properties", func() {
 				msg.TestMetadata = &pb.TestMetadata{
@@ -462,13 +465,13 @@ func TestValidateTestResult(t *testing.T) {
 						},
 					},
 				}
-				So(validate(msg), ShouldErrLike, "properties_schema must be specified with non-empty properties")
+				So(validateTR(msg), ShouldErrLike, "properties_schema must be specified with non-empty properties")
 			})
 			Convey("invalid properties_schema", func() {
 				msg.TestMetadata = &pb.TestMetadata{
 					PropertiesSchema: "package",
 				}
-				So(validate(msg), ShouldErrLike, "properties_schema: does not match")
+				So(validateTR(msg), ShouldErrLike, "properties_schema: does not match")
 			})
 			Convey("valid properties_schema and non-empty properties", func() {
 				msg.TestMetadata = &pb.TestMetadata{
@@ -479,7 +482,7 @@ func TestValidateTestResult(t *testing.T) {
 						},
 					},
 				}
-				So(validate(msg), ShouldBeNil)
+				So(validateTR(msg), ShouldBeNil)
 			})
 		})
 
@@ -489,7 +492,7 @@ func TestValidateTestResult(t *testing.T) {
 					"key": structpb.NewStringValue(strings.Repeat("1", MaxSizeTestResultProperties)),
 				},
 			}
-			So(validate(msg), ShouldErrLike, "properties: exceeds the maximum size")
+			So(validateTR(msg), ShouldErrLike, "properties: exceeds the maximum size")
 		})
 
 		Convey("Validate failure reason", func() {
@@ -505,14 +508,14 @@ func TestValidateTestResult(t *testing.T) {
 					},
 					TruncatedErrorsCount: 0,
 				}
-				So(validate(msg), ShouldBeNil)
+				So(validateTR(msg), ShouldBeNil)
 			})
 
 			Convey("primary_error_message exceeds the maximum limit", func() {
 				msg.FailureReason = &pb.FailureReason{
 					PrimaryErrorMessage: longErrorMessage,
 				}
-				So(validate(msg), ShouldErrLike, "primary_error_message: "+
+				So(validateTR(msg), ShouldErrLike, "primary_error_message: "+
 					"exceeds the maximum")
 			})
 
@@ -525,7 +528,7 @@ func TestValidateTestResult(t *testing.T) {
 					},
 					TruncatedErrorsCount: 0,
 				}
-				So(validate(msg), ShouldErrLike,
+				So(validateTR(msg), ShouldErrLike,
 					"errors[1]: message: exceeds the maximum size of 1024 "+
 						"bytes")
 			})
@@ -538,7 +541,7 @@ func TestValidateTestResult(t *testing.T) {
 					},
 					TruncatedErrorsCount: 0,
 				}
-				So(validate(msg), ShouldErrLike,
+				So(validateTR(msg), ShouldErrLike,
 					"errors[0]: message: must match primary_error_message")
 			})
 
@@ -554,7 +557,7 @@ func TestValidateTestResult(t *testing.T) {
 					},
 					TruncatedErrorsCount: 1,
 				}
-				So(validate(msg), ShouldErrLike,
+				So(validateTR(msg), ShouldErrLike,
 					"errors: exceeds the maximum total size of 3172 bytes")
 			})
 
@@ -567,7 +570,7 @@ func TestValidateTestResult(t *testing.T) {
 					},
 					TruncatedErrorsCount: -1,
 				}
-				So(validate(msg), ShouldErrLike, "truncated_errors_count: "+
+				So(validateTR(msg), ShouldErrLike, "truncated_errors_count: "+
 					"must be non-negative")
 			})
 		})

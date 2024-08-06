@@ -16,6 +16,8 @@ package pbutil
 
 import (
 	"fmt"
+
+	"go.chromium.org/luci/common/validate"
 )
 
 var (
@@ -28,12 +30,12 @@ var (
 // ParseInstructionName extracts invocationID and instructionID.
 func ParseInstructionName(name string) (invocationID, instructionID string, err error) {
 	if name == "" {
-		return "", "", unspecified()
+		return "", "", validate.Unspecified()
 	}
 
 	m := instructionNameRe.FindStringSubmatch(name)
 	if m == nil {
-		return "", "", doesNotMatch(instructionNameRe)
+		return "", "", validate.DoesNotMatchReErr(instructionNameRe)
 	}
 
 	return m[1], m[2], nil

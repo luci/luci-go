@@ -16,6 +16,8 @@ package pbutil
 
 import (
 	"strings"
+
+	"go.chromium.org/luci/common/validate"
 )
 
 const baselineIDPattern = `[a-z0-9\-_.]{1,100}:[a-zA-Z0-9\-_.\(\) ]{1,128}`
@@ -25,17 +27,17 @@ var baselineNameRe = regexpf("^projects/%s/baselines/%s", projectPattern, baseli
 
 // ValidateBaselineID returns a non-nil error if the id is invalid.
 func ValidateBaselineID(baseline string) error {
-	return validateWithRe(baselineIDRe, baseline)
+	return validate.SpecifiedWithRe(baselineIDRe, baseline)
 }
 
 // ParseBaselineName extracts the project and baselineID.
 func ParseBaselineName(name string) (project, baselineID string, err error) {
 	if name == "" {
-		return "", "", unspecified()
+		return "", "", validate.Unspecified()
 	}
 
 	if m := baselineNameRe.FindStringSubmatch(name); m == nil {
-		return "", "", doesNotMatch(baselineNameRe)
+		return "", "", validate.DoesNotMatchReErr(baselineNameRe)
 	}
 
 	sp := strings.Split(name, "/")

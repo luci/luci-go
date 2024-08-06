@@ -16,6 +16,7 @@ package pbutil
 
 import (
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/validate"
 
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -25,11 +26,11 @@ import (
 func ValidateBigQueryExport(bqExport *pb.BigQueryExport) error {
 	switch {
 	case bqExport.Project == "":
-		return errors.Annotate(unspecified(), "project").Err()
+		return errors.Annotate(validate.Unspecified(), "project").Err()
 	case bqExport.Dataset == "":
-		return errors.Annotate(unspecified(), "dataset").Err()
+		return errors.Annotate(validate.Unspecified(), "dataset").Err()
 	case bqExport.Table == "":
-		return errors.Annotate(unspecified(), "table").Err()
+		return errors.Annotate(validate.Unspecified(), "table").Err()
 	}
 
 	switch resultType := bqExport.ResultType.(type) {
@@ -38,7 +39,7 @@ func ValidateBigQueryExport(bqExport *pb.BigQueryExport) error {
 	case *pb.BigQueryExport_TextArtifacts_:
 		return errors.Annotate(ValidateArtifactPredicate(resultType.TextArtifacts.GetPredicate()), "artifacts: predicate").Err()
 	case nil:
-		return errors.Annotate(unspecified(), "result_type").Err()
+		return errors.Annotate(validate.Unspecified(), "result_type").Err()
 	default:
 		panic("impossible")
 	}

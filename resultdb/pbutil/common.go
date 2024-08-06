@@ -29,6 +29,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/validate"
 
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -80,24 +81,6 @@ func regexpf(patternFormat string, subpatterns ...any) *regexp.Regexp {
 	return regexp.MustCompile(fmt.Sprintf(patternFormat, subpatterns...))
 }
 
-func doesNotMatch(r *regexp.Regexp) error {
-	return errors.Reason("does not match %s", r).Err()
-}
-
-func unspecified() error {
-	return errors.Reason("unspecified").Err()
-}
-
-func validateWithRe(re *regexp.Regexp, value string) error {
-	if value == "" {
-		return unspecified()
-	}
-	if !re.MatchString(value) {
-		return doesNotMatch(re)
-	}
-	return nil
-}
-
 // MustTimestampProto converts a time.Time to a *timestamppb.Timestamp and panics
 // on failure.
 func MustTimestampProto(t time.Time) *timestamppb.Timestamp {
@@ -122,7 +105,7 @@ func MustTimestamp(ts *timestamppb.Timestamp) time.Time {
 // Returns nil if requestID is empty.
 func ValidateRequestID(requestID string) error {
 	if !requestIDRe.MatchString(requestID) {
-		return doesNotMatch(requestIDRe)
+		return validate.DoesNotMatchReErr(requestIDRe)
 	}
 	return nil
 }

@@ -17,6 +17,8 @@ package pbutil
 import (
 	"fmt"
 	"net/url"
+
+	"go.chromium.org/luci/common/validate"
 )
 
 var testExonerationNameRe = regexpf(`^invocations/(%s)/tests/([^/]+)/exonerations/(.+)$`, invocationIDPattern)
@@ -31,11 +33,11 @@ func TestExonerationName(invocationID, testID, exonerationID string) string {
 // from the name.
 func ParseTestExonerationName(name string) (invocationID, testID, exonerationID string, err error) {
 	if name == "" {
-		return "", "", "", unspecified()
+		return "", "", "", validate.Unspecified()
 	}
 	m := testExonerationNameRe.FindStringSubmatch(name)
 	if m == nil {
-		return "", "", "", doesNotMatch(testExonerationNameRe)
+		return "", "", "", validate.DoesNotMatchReErr(testExonerationNameRe)
 	}
 	invocationID = m[1]
 	if testID, err = url.PathUnescape(m[2]); err != nil {

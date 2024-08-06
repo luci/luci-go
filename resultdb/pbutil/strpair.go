@@ -21,6 +21,8 @@ import (
 
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/validate"
+
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -74,7 +76,7 @@ func SortStringPairs(tags []*pb.StringPair) {
 
 // ValidateStringPair returns an error if p is invalid.
 func ValidateStringPair(p *pb.StringPair) error {
-	if err := validateWithRe(stringPairKeyRe, p.Key); err != nil {
+	if err := validate.SpecifiedWithRe(stringPairKeyRe, p.Key); err != nil {
 		return errors.Annotate(err, "key").Err()
 	}
 	if len(p.Key) > maxStringPairKeyLength {
@@ -100,7 +102,7 @@ func ValidateStringPairs(pairs []*pb.StringPair) error {
 func StringPairFromString(s string) (*pb.StringPair, error) {
 	m := stringPairRe.FindStringSubmatch(s)
 	if m == nil {
-		return nil, doesNotMatch(stringPairRe)
+		return nil, validate.DoesNotMatchReErr(stringPairRe)
 	}
 	return StringPair(m[1], m[3]), nil
 }

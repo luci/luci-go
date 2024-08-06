@@ -31,6 +31,8 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/validate"
+
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -82,13 +84,13 @@ func (c *checker) isErr(err error, format string, args ...any) bool {
 
 // ValidateProject returns a non-nil error if project is invalid.
 func ValidateProject(project string) error {
-	return validateWithRe(projectRe, project)
+	return validate.SpecifiedWithRe(projectRe, project)
 }
 
 // ValidateTestID returns a non-nil error if testID is invalid.
 func ValidateTestID(testID string) error {
 	if testID == "" {
-		return unspecified()
+		return validate.Unspecified()
 	}
 	if len(testID) > 512 {
 		return errors.Reason("longer than 512 bytes").Err()
@@ -110,7 +112,7 @@ func ValidateTestID(testID string) error {
 // ValidateVariantHash returns a non-nil error if variantHash is invalid.
 func ValidateVariantHash(variantHash string) error {
 	if variantHash == "" {
-		return unspecified()
+		return validate.Unspecified()
 	}
 	if !variantHashRe.MatchString(variantHash) {
 		return errors.Reason("variant hash %s must match %s", variantHash, variantHashRe).Err()
@@ -120,7 +122,7 @@ func ValidateVariantHash(variantHash string) error {
 
 // ValidateResultID returns a non-nil error if resultID is invalid.
 func ValidateResultID(resultID string) error {
-	return validateWithRe(resultIDRe, resultID)
+	return validate.SpecifiedWithRe(resultIDRe, resultID)
 }
 
 // ValidateTestResultName returns a non-nil error if name is invalid.
@@ -165,7 +167,7 @@ func ValidateTestResult(now time.Time, msg *pb.TestResult) (err error) {
 	ec := checker{&err}
 	switch {
 	case msg == nil:
-		return unspecified()
+		return validate.Unspecified()
 	// skip `Name`
 	case ec.isErr(ValidateTestID(msg.TestId), "test_id"):
 	case ec.isErr(ValidateResultID(msg.ResultId), "result_id"):
@@ -227,7 +229,7 @@ func ValidatePropertiesSchema(propertiesSchema string) error {
 	if len(propertiesSchema) > maxLenPropertiesSchema {
 		return errors.Reason("exceeds the maximum size of %d bytes", maxLenPropertiesSchema).Err()
 	}
-	return validateWithRe(propertiesSchemaRe, propertiesSchema)
+	return validate.SpecifiedWithRe(propertiesSchemaRe, propertiesSchema)
 }
 
 // ValidateBugComponent returns a non-nil error if bug component is invalid.
@@ -363,13 +365,13 @@ func ValidateTestResultSkipReason(status pb.TestStatus, reason pb.SkipReason) er
 // result ID.
 func ParseTestResultName(name string) (invID, testID, resultID string, err error) {
 	if name == "" {
-		err = unspecified()
+		err = validate.Unspecified()
 		return
 	}
 
 	m := testResultNameRe.FindStringSubmatch(name)
 	if m == nil {
-		err = doesNotMatch(testResultNameRe)
+		err = validate.DoesNotMatchReErr(testResultNameRe)
 		return
 	}
 	unescapedTestID, err := url.PathUnescape(m[2])

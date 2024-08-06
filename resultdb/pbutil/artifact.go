@@ -20,6 +20,7 @@ import (
 	"regexp"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/validate"
 )
 
 const (
@@ -43,17 +44,17 @@ var (
 
 // ValidateArtifactID returns a non-nil error if id is invalid.
 func ValidateArtifactID(id string) error {
-	return validateWithRe(artifactIDRe, id)
+	return validate.SpecifiedWithRe(artifactIDRe, id)
 }
 
 // ValidateArtifactIDPrefix returns a non-nil error if prefix is invalid.
 func ValidateArtifactIDPrefix(idPrefix string) error {
-	return validateWithRe(artifactIDPrefixRe, idPrefix)
+	return validate.SpecifiedWithRe(artifactIDPrefixRe, idPrefix)
 }
 
 // ValidateArtifactName returns a non-nil error if name is invalid.
 func ValidateArtifactName(name string) error {
-	return validateWithRe(artifactNameRe, name)
+	return validate.SpecifiedWithRe(artifactNameRe, name)
 }
 
 // ParseArtifactName extracts the invocation ID, unescaped test id, result ID
@@ -61,7 +62,7 @@ func ValidateArtifactName(name string) error {
 // The testID and resultID are empty if this is an invocation-level artifact.
 func ParseArtifactName(name string) (invocationID, testID, resultID, artifactID string, err error) {
 	if name == "" {
-		err = unspecified()
+		err = validate.Unspecified()
 		return
 	}
 
@@ -71,7 +72,7 @@ func ParseArtifactName(name string) (invocationID, testID, resultID, artifactID 
 			return "", errors.Annotate(err, "%q", escaped).Err()
 		}
 
-		if err := validateWithRe(re, unescaped); err != nil {
+		if err := validate.SpecifiedWithRe(re, unescaped); err != nil {
 			return "", errors.Annotate(err, "%q", unescaped).Err()
 		}
 
@@ -110,7 +111,7 @@ func ParseArtifactName(name string) (invocationID, testID, resultID, artifactID 
 		return
 	}
 
-	err = doesNotMatch(artifactNameRe)
+	err = validate.DoesNotMatchReErr(artifactNameRe)
 	return
 }
 
