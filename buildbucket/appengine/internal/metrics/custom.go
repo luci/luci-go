@@ -554,3 +554,26 @@ func getDefaultMetricFieldValues(b *pb.Build, base pb.CustomMetricBase) (map[str
 	}
 	return baseFieldValues, nil
 }
+
+// ValidateExtraFieldsWithBase performs metric base related validations on extraFields.
+func ValidateExtraFieldsWithBase(base pb.CustomMetricBase, extraFields []string) error {
+	// No extra fields for builder metrics
+	if IsBuilderMetric(base) && len(extraFields) > 0 {
+		return errors.Reason("custom builder metric cannot have extra_fields").Err()
+	}
+
+	// no base fields in extra fields
+	baseFields, err := GetCommonBaseFields(base)
+	if err != nil {
+		return errors.Reason("base %s is invalid", base).Err()
+	}
+	if len(baseFields) == 0 {
+		return nil
+	}
+	bfSet := stringset.NewFromSlice(baseFields...)
+	fSet := stringset.NewFromSlice(extraFields...)
+	if fSet.Contains(bfSet) {
+		return errors.Reason("cannot contain base fields %q in extra_fields", baseFields).Err()
+	}
+	return nil
+}

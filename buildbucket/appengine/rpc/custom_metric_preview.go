@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"strings"
 
-	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/protowalk"
@@ -51,21 +50,11 @@ func validateCustomMetricPreviewRequest(ctx context.Context, req *pb.CustomMetri
 		return errors.Reason("metric_base is required").Err()
 	}
 
-	baseFields, err := metrics.GetCommonBaseFields(req.GetMetricBase())
-	if err != nil {
-		return err
-	}
-	baseFieldsSet := stringset.NewFromSlice(baseFields...)
-	var dupedBaseFieldsInExtra []string
+	var extraFields []string
 	for f := range req.MetricDefinition.ExtraFields {
-		if baseFieldsSet.Has(f) {
-			dupedBaseFieldsInExtra = append(dupedBaseFieldsInExtra, f)
-		}
+		extraFields = append(extraFields, f)
 	}
-	if len(dupedBaseFieldsInExtra) > 0 {
-		return errors.Reason("base fields %q cannot be used in extra_fields", dupedBaseFieldsInExtra).Err()
-	}
-	return nil
+	return metrics.ValidateExtraFieldsWithBase(req.GetMetricBase(), extraFields)
 }
 
 // CustomMetricPreview evaluates a build with a custom metric definition and returns the preview result. Implements pb.BuildsServer.

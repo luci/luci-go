@@ -148,21 +148,8 @@ func validateCustomMetric(ctx *validation.Context, cm *pb.CustomMetric) {
 		}
 	}
 
-	base := cm.GetMetricBase()
-	baseFields, err := metrics.GetCommonBaseFields(base)
-	if err != nil {
-		ctx.Errorf("base %s is invalid", base)
-	}
-	if len(baseFields) > 0 {
-		bfSet := stringset.NewFromSlice(baseFields...)
-		fSet := stringset.NewFromSlice(cm.GetExtraFields()...)
-		if fSet.Contains(bfSet) {
-			ctx.Errorf("cannot contain base fields %q in extra_fields", baseFields)
-		}
-	}
-
-	if metrics.IsBuilderMetric(base) && len(cm.GetExtraFields()) > 0 {
-		ctx.Errorf("custom builder metric cannot have extra_fields")
+	if err := metrics.ValidateExtraFieldsWithBase(cm.GetMetricBase(), cm.GetExtraFields()); err != nil {
+		ctx.Errorf("%s", err)
 	}
 }
 

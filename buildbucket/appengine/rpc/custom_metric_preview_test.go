@@ -89,6 +89,26 @@ func TestCustomMetricPreview(t *testing.T) {
 				So(err, ShouldErrLike, "metric_definition.predicates is required")
 				So(rsp, ShouldBeNil)
 			})
+
+			Convey("builder metric has extra_fields", func() {
+				req := &pb.CustomMetricPreviewRequest{
+					BuildId: 1,
+					MetricDefinition: &pb.CustomMetricDefinition{
+						Name:       "chrome/infra/custom/builds/count",
+						Predicates: []string{`build.tags.get_value("os")!=""`},
+						ExtraFields: map[string]string{
+							"os": `"os"`,
+						},
+					},
+					Class: &pb.CustomMetricPreviewRequest_MetricBase{
+						MetricBase: pb.CustomMetricBase_CUSTOM_METRIC_BASE_COUNT,
+					},
+				}
+				rsp, err := srv.CustomMetricPreview(ctx, req)
+				So(err, ShouldErrLike, `custom builder metric cannot have extra_fields`)
+				So(rsp, ShouldBeNil)
+			})
+
 			Convey("metric reuses base fields in extra_fields", func() {
 				req := &pb.CustomMetricPreviewRequest{
 					BuildId: 1,
@@ -104,7 +124,7 @@ func TestCustomMetricPreview(t *testing.T) {
 					},
 				}
 				rsp, err := srv.CustomMetricPreview(ctx, req)
-				So(err, ShouldErrLike, `base fields ["status"] cannot be used in extra_fields`)
+				So(err, ShouldErrLike, `cannot contain base fields ["status"] in extra_fields`)
 				So(rsp, ShouldBeNil)
 			})
 
