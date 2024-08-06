@@ -888,6 +888,9 @@ func validateMandatoryString(s string, maxLengthBytes int) error {
 }
 
 func validateBugComponent(b *pb.BugComponent) error {
+	if b == nil {
+		return errors.New("unspecified")
+	}
 	if b.System == nil {
 		return errors.New("system: unspecified")
 	}

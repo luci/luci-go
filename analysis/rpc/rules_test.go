@@ -1116,6 +1116,51 @@ func TestRules(t *testing.T) {
 							So(err, ShouldBeRPCInvalidArgument, `issue: priority: invalid value, must be a valid BuganizerPriority`)
 						})
 					})
+					Convey("component", func() {
+						Convey("unspecified", func() {
+							request.Issue.Component = nil
+
+							_, err := srv.CreateWithNewIssue(ctx, request)
+							So(err, ShouldBeRPCInvalidArgument, `issue: component: unspecified`)
+						})
+						Convey("system unspecified", func() {
+							request.Issue.Component.System = nil
+
+							_, err := srv.CreateWithNewIssue(ctx, request)
+							So(err, ShouldBeRPCInvalidArgument, `issue: component: system: unspecified`)
+						})
+						Convey("invalid - monorail system", func() {
+							request.Issue.Component.System = &pb.BugComponent_Monorail{
+								Monorail: &pb.MonorailComponent{
+									Project: "testproject",
+									Value:   "MyComponent",
+								},
+							}
+
+							_, err := srv.CreateWithNewIssue(ctx, request)
+							So(err, ShouldBeRPCInvalidArgument, `issue: component: monorail: filing bugs into monorail is not supported by this RPC`)
+						})
+						Convey("invalid - issue tracker unspecified", func() {
+							request.Issue.Component.System = &pb.BugComponent_IssueTracker{
+								IssueTracker: nil,
+							}
+
+							_, err := srv.CreateWithNewIssue(ctx, request)
+							So(err, ShouldBeRPCInvalidArgument, `issue: component: issue_tracker: unspecified`)
+						})
+						Convey("component ID unspecified", func() {
+							request.Issue.Component.GetIssueTracker().ComponentId = 0
+
+							_, err := srv.CreateWithNewIssue(ctx, request)
+							So(err, ShouldBeRPCInvalidArgument, `issue: component: issue_tracker: component_id: unspecified`)
+						})
+						Convey("component ID invalid", func() {
+							request.Issue.Component.GetIssueTracker().ComponentId = -1
+
+							_, err := srv.CreateWithNewIssue(ctx, request)
+							So(err, ShouldBeRPCInvalidArgument, `issue: component: issue_tracker: component_id: must be positive`)
+						})
+					})
 				})
 			})
 			Convey("Success", func() {
