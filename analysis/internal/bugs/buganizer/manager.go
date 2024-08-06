@@ -286,6 +286,20 @@ func (bm *BugManager) Update(ctx context.Context, requests []bugs.BugUpdateReque
 		}
 		updateResponse := bm.updateIssue(ctx, request, issue)
 		responses = append(responses, updateResponse)
+
+		fields := logging.Fields{
+			"Project":                    bm.project,
+			"BuganizerBugID":             request.Bug.ID,
+			"ShouldArchive":              updateResponse.ShouldArchive,
+			"DisableRulePriorityUpdates": updateResponse.DisableRulePriorityUpdates,
+			"IsDuplicate":                updateResponse.IsDuplicate,
+			"IsDuplicateAndAssigned":     updateResponse.IsDuplicateAndAssigned,
+		}
+		if updateResponse.Error != nil {
+			fields.Errorf(ctx, "Error updating buganizer issue (%s): %s.", request.Bug.ID, updateResponse.Error)
+		} else {
+			fields.Debugf(ctx, "Ran updates for buganizer issue (%s), see fields for details.", request.Bug.ID)
+		}
 	}
 	return responses, nil
 }
