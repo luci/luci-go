@@ -32,7 +32,6 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/span"
 
-	"go.chromium.org/luci/resultdb/bqutil"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/invocations/graph"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
@@ -63,7 +62,7 @@ func generateTestResultRowSchema() (schema bigquery.Schema, err error) {
 	fdfr, _ := descriptor.MessageDescriptorProto(&pb.FailureReason{})
 	fdinv, _ := descriptor.MessageDescriptorProto(&bqpb.InvocationRecord{})
 	fdset := &desc.FileDescriptorSet{File: []*desc.FileDescriptorProto{fd, fdsp, fdtmd, fds, fdfr, fdinv}}
-	return bqutil.GenerateSchema(fdset, testResultRowMessage)
+	return bq.GenerateSchema(fdset, testResultRowMessage)
 }
 
 // Row size limit is 5MB according to

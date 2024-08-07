@@ -21,7 +21,8 @@ import (
 	desc "github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"google.golang.org/protobuf/types/descriptorpb"
 
-	"go.chromium.org/luci/analysis/internal/bqutil"
+	"go.chromium.org/luci/common/bq"
+
 	bqpb "go.chromium.org/luci/analysis/proto/bq"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 )
@@ -62,7 +63,7 @@ func generateRowSchema() (schema bigquery.Schema, err error) {
 	fdbms, _ := descriptor.MessageDescriptorProto(&pb.BugManagementState{})
 	fdps, _ := descriptor.MessageDescriptorProto(&pb.BugManagementState_PolicyState{})
 	fdset := &desc.FileDescriptorSet{File: []*desc.FileDescriptorProto{fd, fdci, fdbms, fdps}}
-	return bqutil.GenerateSchema(fdset, rowMessage)
+	return bq.GenerateSchema(fdset, rowMessage)
 }
 
 func generateRowSchemaDescriptor() (*desc.DescriptorProto, error) {

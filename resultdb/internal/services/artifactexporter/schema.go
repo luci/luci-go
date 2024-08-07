@@ -25,7 +25,6 @@ import (
 
 	"go.chromium.org/luci/common/bq"
 
-	"go.chromium.org/luci/resultdb/bqutil"
 	bqpb "go.chromium.org/luci/resultdb/proto/bq"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -73,7 +72,7 @@ func generateRowSchema() (schema bigquery.Schema, err error) {
 	fd, _ := descriptor.MessageDescriptorProto(&bqpb.TextArtifactRow{})
 	fdsp, _ := descriptor.MessageDescriptorProto(&pb.StringPair{})
 	fdset := &desc.FileDescriptorSet{File: []*desc.FileDescriptorProto{fd, fdsp}}
-	return bqutil.GenerateSchema(fdset, rowMessage)
+	return bq.GenerateSchema(fdset, rowMessage)
 }
 
 func generateRowSchemaDescriptor() (*desc.DescriptorProto, error) {

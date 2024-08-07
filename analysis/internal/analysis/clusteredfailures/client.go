@@ -22,6 +22,7 @@ import (
 	"cloud.google.com/go/bigquery/storage/managedwriter"
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/errors"
 
 	"go.chromium.org/luci/analysis/internal/bqutil"
@@ -45,7 +46,7 @@ func NewClient(ctx context.Context, projectID string) (s *Client, reterr error) 
 		}
 	}()
 
-	mwClient, err := bqutil.NewWriterClient(ctx, projectID)
+	mwClient, err := bq.NewWriterClient(ctx, projectID)
 	if err != nil {
 		return nil, errors.Annotate(err, "create managed writer client").Err()
 	}
@@ -92,7 +93,7 @@ func (s *Client) Insert(ctx context.Context, rows []*bqpb.ClusteredFailureRow) e
 		return errors.Annotate(err, "ensure schema").Err()
 	}
 	tableName := fmt.Sprintf("projects/%s/datasets/%s/tables/%s", s.projectID, bqutil.InternalDatasetID, tableName)
-	writer := bqutil.NewWriter(s.mwClient, tableName, tableSchemaDescriptor)
+	writer := bq.NewWriter(s.mwClient, tableName, tableSchemaDescriptor)
 	payload := make([]proto.Message, len(rows))
 	for i, r := range rows {
 		payload[i] = r

@@ -26,6 +26,7 @@ import (
 	"google.golang.org/api/iterator"
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
@@ -188,7 +189,7 @@ func backfill(ctx context.Context, client *bigquery.Client, task *taskspb.Backfi
 	if err != nil {
 		return errors.Annotate(err, "start non-merging backfill").Err()
 	}
-	status, err := bqutil.WaitForJob(ctx, job)
+	status, err := bq.WaitForJob(ctx, job)
 	if err != nil {
 		return errors.Annotate(err, "wait for non-merging backfill").Err()
 	}
@@ -243,7 +244,7 @@ func mergingBackfill(ctx context.Context, client *bigquery.Client, task *taskspb
 	if err != nil {
 		return errors.Annotate(err, "start merging backfill").Err()
 	}
-	status, err := bqutil.WaitForJob(ctx, job)
+	status, err := bq.WaitForJob(ctx, job)
 	if err != nil {
 		return errors.Annotate(err, "wait for merging backfill").Err()
 	}

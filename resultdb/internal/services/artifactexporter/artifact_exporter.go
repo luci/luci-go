@@ -33,6 +33,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
@@ -44,7 +45,6 @@ import (
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
 
-	"go.chromium.org/luci/resultdb/bqutil"
 	"go.chromium.org/luci/resultdb/internal/artifactcontent"
 	"go.chromium.org/luci/resultdb/internal/artifacts"
 	"go.chromium.org/luci/resultdb/internal/config"
@@ -59,7 +59,7 @@ import (
 // MaxShardContentSize is the maximum content size in BQ row.
 // Artifacts content bigger than this size needs to be sharded.
 // Leave 10 KB for other fields, the rest is content.
-const MaxShardContentSize = bqutil.RowMaxBytes - 10*1024
+const MaxShardContentSize = bq.RowMaxBytes - 10*1024
 
 // MaxRBECasBatchSize is the batch size limit when we read artifact content.
 // TODO(nqmtuan): Call the Capacity API to find out the exact size limit for
@@ -319,10 +319,10 @@ func (ae *artifactExporter) exportToBigQuery(ctx context.Context, rowC chan *bqp
 		// The bqutil package also does the batching, but we don't want to send
 		// a just slightly bigger group of row to it, to prevent a big batch and
 		// a tiny batch, so we make sure that the rows we send just fit in one batch.
-		rowSize := bqutil.RowSize(row)
+		rowSize := bq.RowSize(row)
 
 		// Exceed max batch size, send whatever we have.
-		if currentSize+rowSize > bqutil.RowMaxBytes {
+		if currentSize+rowSize > bq.RowMaxBytes {
 			logging.Infof(ctx, "Start inserting %d rows to BigQuery", len(rows))
 			err := ae.bqExportClient.InsertArtifactRows(ctx, rows)
 			if err != nil {

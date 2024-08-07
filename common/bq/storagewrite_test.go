@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bqutil
+package bq
 
 import (
 	"strings"
@@ -20,26 +20,28 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
-	bqpb "go.chromium.org/luci/resultdb/proto/bq"
+	bqpb "go.chromium.org/luci/analysis/proto/bq"
+
+	_ "go.chromium.org/luci/server/tq/txn/spanner"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestBatch(t *testing.T) {
-	Convey(`Batch`, t, func() {
+func TestToBatches(t *testing.T) {
+	Convey(`ToBatches`, t, func() {
 		Convey(`Non-empty`, func() {
 			var rows []proto.Message
 			for i := 0; i < 10; i++ {
 				// Rows of ~1 MB each.
-				row := &bqpb.TextArtifactRow{
+				row := &bqpb.TestVerdictRow{
 					TestId: strings.Repeat("a", 999950),
 				}
 				So(proto.Size(row), ShouldEqual, 999954)
 				rows = append(rows, row)
 			}
 
-			result, err := batch(rows)
+			result, err := toBatches(rows)
 			So(err, ShouldBeNil)
 			// ~9 MB in the first batch.
 			So(result[0], ShouldHaveLength, 9)
@@ -47,18 +49,18 @@ func TestBatch(t *testing.T) {
 			So(result[1], ShouldHaveLength, 1)
 		})
 		Convey(`Empty`, func() {
-			result, err := batch(nil)
+			result, err := toBatches(nil)
 			So(err, ShouldBeNil)
 			So(result, ShouldHaveLength, 0)
 		})
 		Convey(`Single row too large`, func() {
 			// 10 MB row.
-			row := &bqpb.TextArtifactRow{
-				TestId: strings.Repeat("a", 10*1024*1024),
+			row := &bqpb.TestVerdictRow{
+				TestId: strings.Repeat("a", 10*1000*1000),
 			}
 			rows := []proto.Message{row}
-			_, err := batch(rows)
-			So(err, ShouldErrLike, "a single row exceeds the maximum BigQuery AppendRows request size of 9437184 bytes")
+			_, err := toBatches(rows)
+			So(err, ShouldErrLike, "a single row exceeds the maximum BigQuery AppendRows request size of 9000000 bytes")
 		})
 	})
 }

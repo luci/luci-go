@@ -25,6 +25,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/api/iterator"
 
+	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
@@ -211,7 +212,7 @@ func (c *Client) rebuildAnalysisForDataset(ctx context.Context, dataset *bigquer
 
 	waitCtx, cancel := context.WithTimeout(ctx, time.Minute*5)
 	defer cancel()
-	js, err := bqutil.WaitForJob(waitCtx, job)
+	js, err := bq.WaitForJob(waitCtx, job)
 	if err != nil {
 		return errors.Annotate(err, "waiting for cluster summary analysis to complete").Err()
 	}

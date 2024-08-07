@@ -1,4 +1,4 @@
-// Copyright 2023 The LUCI Authors.
+// Copyright 2024 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bqutil
+package bq
 
 import (
 	"context"
@@ -22,8 +22,6 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-
-	"go.chromium.org/luci/analysis/internal/bugs"
 )
 
 // WaitForJob waits for a BigQuery job to finish.
@@ -37,7 +35,7 @@ import (
 // If the context does not have a deadline, the bigquery job will
 // have no timeout.
 func WaitForJob(ctx context.Context, job *bigquery.Job) (*bigquery.JobStatus, error) {
-	waitCtx, cancel := bugs.Shorten(ctx, time.Second*5)
+	waitCtx, cancel := shorten(ctx, time.Second*5)
 
 	defer func() {
 		// Cancel the waitCtx and release all resource.
@@ -66,4 +64,14 @@ func WaitForJob(ctx context.Context, job *bigquery.Job) (*bigquery.JobStatus, er
 		return nil, errors.Annotate(err, "wait for job").Err()
 	}
 	return js, nil
+}
+
+// Shorten returns a derived context with its deadline shortened by d.
+// The context can also be cancelled with the returned cancel function.
+func shorten(ctx context.Context, d time.Duration) (context.Context, context.CancelFunc) {
+	deadline, ok := ctx.Deadline()
+	if !ok {
+		return context.WithCancel(ctx)
+	}
+	return context.WithDeadline(ctx, deadline.Add(-d))
 }

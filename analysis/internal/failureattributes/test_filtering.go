@@ -20,9 +20,9 @@ import (
 
 	"cloud.google.com/go/bigquery"
 
+	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/errors"
 
-	"go.chromium.org/luci/analysis/internal/bqutil"
 	"go.chromium.org/luci/analysis/internal/config"
 )
 
@@ -225,7 +225,7 @@ func (s *Client) attributeFilteredRuns(ctx context.Context, project string) erro
 
 	waitCtx, cancel := context.WithTimeout(ctx, time.Minute*9)
 	defer cancel()
-	js, err := bqutil.WaitForJob(waitCtx, job)
+	js, err := bq.WaitForJob(waitCtx, job)
 	if err != nil {
 		return errors.Annotate(err, "waiting for filtered test run attribution query to complete").Err()
 	}

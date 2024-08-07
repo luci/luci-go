@@ -20,6 +20,7 @@ import (
 
 	"cloud.google.com/go/bigquery"
 
+	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
@@ -101,7 +102,7 @@ func runDMLMerge(ctx context.Context, client *bigquery.Client) error {
 
 	waitCtx, cancel := context.WithTimeout(ctx, time.Minute*9)
 	defer cancel()
-	js, err := bqutil.WaitForJob(waitCtx, job)
+	js, err := bq.WaitForJob(waitCtx, job)
 	if err != nil {
 		return errors.Annotate(err, "waiting for merging to complete").Err()
 	}

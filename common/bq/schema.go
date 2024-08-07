@@ -27,6 +27,7 @@ import (
 
 	"github.com/pmezard/go-difflib/difflib"
 
+	desc "github.com/golang/protobuf/protoc-gen-go/descriptor"
 	bqpb "go.chromium.org/luci/common/bq/pb"
 	"go.chromium.org/luci/common/data/text/indented"
 	"go.chromium.org/luci/common/errors"
@@ -308,4 +309,21 @@ func indexFields(s bigquery.Schema) map[string]*bigquery.FieldSchema {
 		ret[f.Name] = f
 	}
 	return ret
+}
+
+// GenerateSchema generates BigQuery schema for the given proto message
+// using the given set of message definitions.
+func GenerateSchema(fdset *desc.FileDescriptorSet, message string) (schema bigquery.Schema, err error) {
+	conv := SchemaConverter{
+		Desc:           fdset,
+		SourceCodeInfo: make(map[*desc.FileDescriptorProto]SourceCodeInfoMap, len(fdset.File)),
+	}
+	for _, f := range fdset.File {
+		conv.SourceCodeInfo[f], err = descutil.IndexSourceCodeInfo(f)
+		if err != nil {
+			return nil, errors.Annotate(err, "failed to index source code info in file %q", f.GetName()).Err()
+		}
+	}
+	schema, _, err = conv.Schema(message)
+	return schema, err
 }

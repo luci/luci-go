@@ -50,7 +50,7 @@ func NewClient(ctx context.Context, projectID string) (s *Client, reterr error) 
 		}
 	}()
 
-	mwClient, err := bqutil.NewWriterClient(ctx, projectID)
+	mwClient, err := bq.NewWriterClient(ctx, projectID)
 	if err != nil {
 		return nil, errors.Annotate(err, "creating managed writer client").Err()
 	}
@@ -102,7 +102,7 @@ func (c *Client) InsertArtifactRows(ctx context.Context, rows []*bqpb.TextArtifa
 	}
 	now := timestamppb.Now()
 	tableName := fmt.Sprintf("projects/%s/datasets/%s/tables/%s", c.projectID, bqutil.InternalDatasetID, tableName)
-	writer := bqutil.NewWriter(c.mwClient, tableName, tableSchemaDescriptor)
+	writer := bq.NewWriter(c.mwClient, tableName, tableSchemaDescriptor)
 	payload := make([]proto.Message, len(rows))
 	for i, r := range rows {
 		r.InsertTime = now

@@ -23,10 +23,12 @@ import (
 	"google.golang.org/api/iterator"
 	"google.golang.org/protobuf/proto"
 
-	bqpb "go.chromium.org/luci/bisection/proto/bq"
-	"go.chromium.org/luci/bisection/util/bqutil"
+	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/service/info"
+
+	bqpb "go.chromium.org/luci/bisection/proto/bq"
+	"go.chromium.org/luci/bisection/util/bqutil"
 )
 
 // NewClient creates a new client for exporting test analyses
@@ -47,7 +49,7 @@ func NewClient(ctx context.Context, projectID string) (s *Client, reterr error) 
 		}
 	}()
 
-	mwClient, err := bqutil.NewWriterClient(ctx, projectID)
+	mwClient, err := bq.NewWriterClient(ctx, projectID)
 	if err != nil {
 		return nil, errors.Annotate(err, "create managed writer client").Err()
 	}
@@ -94,7 +96,7 @@ func (client *Client) Insert(ctx context.Context, rows []*bqpb.TestAnalysisRow) 
 		return errors.Annotate(err, "ensure schema").Err()
 	}
 	tableName := fmt.Sprintf("projects/%s/datasets/%s/tables/%s", client.projectID, bqutil.InternalDatasetID, testFailureAnalysesTableName)
-	writer := bqutil.NewWriter(client.mwClient, tableName, tableSchemaDescriptor)
+	writer := bq.NewWriter(client.mwClient, tableName, tableSchemaDescriptor)
 	payload := make([]proto.Message, len(rows))
 	for i, r := range rows {
 		payload[i] = r

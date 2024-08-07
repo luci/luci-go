@@ -23,11 +23,11 @@ import (
 	desc "github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"google.golang.org/protobuf/types/descriptorpb"
 
-	bqpb "go.chromium.org/luci/bisection/proto/bq"
-	pb "go.chromium.org/luci/bisection/proto/v1"
-	"go.chromium.org/luci/bisection/util/bqutil"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/bq"
+
+	bqpb "go.chromium.org/luci/bisection/proto/bq"
+	pb "go.chromium.org/luci/bisection/proto/v1"
 )
 
 // The table containing test analyses.
@@ -88,7 +88,7 @@ func generateRowSchema() (schema bigquery.Schema, err error) {
 	fdvr, _ := descriptor.MessageDescriptorProto(&pb.Variant{})
 	fdrr, _ := descriptor.MessageDescriptorProto(&pb.RegressionRange{})
 	fdset := &desc.FileDescriptorSet{File: []*desc.FileDescriptorProto{fd, fdtc, fdbid, fdtf, fdgc, fdtns, fdca, fdvr, fdrr}}
-	return bqutil.GenerateSchema(fdset, rowMessage)
+	return bq.GenerateSchema(fdset, rowMessage)
 }
 
 func generateRowSchemaDescriptor() (*desc.DescriptorProto, error) {

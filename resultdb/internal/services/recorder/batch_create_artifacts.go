@@ -27,6 +27,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
+	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/appstatus"
@@ -34,7 +35,6 @@ import (
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/span"
 
-	"go.chromium.org/luci/resultdb/bqutil"
 	"go.chromium.org/luci/resultdb/internal/artifacts"
 	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/gsutil"
@@ -50,7 +50,7 @@ const MaxBatchCreateArtifactSize = 10 * 1024 * 1024
 // MaxShardContentSize is the maximum content size in BQ row.
 // Artifacts content bigger than this size needs to be sharded.
 // Leave 10 KB for other fields, the rest is content.
-const MaxShardContentSize = bqutil.RowMaxBytes - 10*1024
+const MaxShardContentSize = bq.RowMaxBytes - 10*1024
 
 // LookbackWindow is used when chunking. It specifies how many bytes we should
 // look back to find new line/white space characters to split the chunks.

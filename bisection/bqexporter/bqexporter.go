@@ -19,16 +19,17 @@ import (
 	"context"
 	"time"
 
-	"go.chromium.org/luci/bisection/model"
-	bqpb "go.chromium.org/luci/bisection/proto/bq"
-	pb "go.chromium.org/luci/bisection/proto/v1"
-	"go.chromium.org/luci/bisection/util/bqutil"
-	"go.chromium.org/luci/bisection/util/datastoreutil"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/gae/service/info"
+
+	"go.chromium.org/luci/bisection/model"
+	bqpb "go.chromium.org/luci/bisection/proto/bq"
+	pb "go.chromium.org/luci/bisection/proto/v1"
+	"go.chromium.org/luci/bisection/util/bqutil"
+	"go.chromium.org/luci/bisection/util/datastoreutil"
 )
 
 // The number of days to look back for past analyses.

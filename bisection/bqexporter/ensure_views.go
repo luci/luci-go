@@ -22,11 +22,12 @@ import (
 	"cloud.google.com/go/bigquery"
 	"google.golang.org/api/iterator"
 
-	"go.chromium.org/luci/bisection/util/bqutil"
 	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/info"
+
+	"go.chromium.org/luci/bisection/util/bqutil"
 )
 
 type makeTableMetadata func(luciProject string) *bigquery.TableMetadata

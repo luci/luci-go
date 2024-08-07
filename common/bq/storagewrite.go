@@ -1,4 +1,4 @@
-// Copyright 2023 The LUCI Authors.
+// Copyright 2024 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bqutil
+package bq
 
 import (
 	"context"
@@ -32,16 +32,26 @@ import (
 	"go.chromium.org/luci/server/auth"
 )
 
-// batchMaxBytes is the maximum number of row bytes to send in one
+// RowMaxBytes is the maximum number of row bytes to send in one
 // BigQuery Storage Write API - AppendRows request. As at writing, the
 // request size limit for this RPC is 10 MB:
 // https://cloud.google.com/bigquery/quotas#write-api-limits.
 // The maximum size of rows must be less than this as there are
 // some overheads in each request.
-const batchMaxBytes = 9 * 1000 * 1000 // 9 MB
+// This also includes the overhead (16 bytes) for each row when calculating the row size.
+// Please see RowSize for details.
+const RowMaxBytes = 9 * 1000 * 1000 // 9 MB
+
+// RowSizeOverhead is the overhead for each row.
+// It got added to proto.Size for the overhead not being captured.
+const RowSizeOverhead = 16 // 16 bytes
+
+// InvalidRowTagKey will be attached to error when appending rows if
+// the rows are invalid (e.g. not UTF-8 compliance, or too large).
+var InvalidRowTagKey = errors.NewTagKey("InvalidRow")
 
 // NewWriterClient returns a new BigQuery managedwriter client for use with the
-// given GCP project, that authenticates as LUCI Analysis itself.
+// given GCP project, that authenticates as the project itself.
 func NewWriterClient(ctx context.Context, gcpProject string) (*managedwriter.Client, error) {
 	// Create shared client for all writes.
 	// This will ensure a shared connection pool is used for all writes,
@@ -133,10 +143,11 @@ func (s *Writer) AppendRowsWithPendingStream(ctx context.Context, rows []proto.M
 }
 
 // batchAppendRows chunk rows into batches and append each batch to the provided managedStream.
+// If the input rows are invalid, the error returned will be tagged with InvalidRowTagKey.
 func (s *Writer) batchAppendRows(ctx context.Context, ms *managedwriter.ManagedStream, rows []proto.Message) error {
-	batches, err := batch(rows)
+	batches, err := toBatches(rows)
 	if err != nil {
-		return errors.Annotate(err, "batching rows").Err()
+		return errors.Annotate(err, "batching rows").Tag(errors.BoolTag{Key: InvalidRowTagKey}).Err()
 	}
 	results := make([]*managedwriter.AppendResult, 0, len(batches))
 	for _, batch := range batches {
@@ -144,7 +155,7 @@ func (s *Writer) batchAppendRows(ctx context.Context, ms *managedwriter.ManagedS
 		for _, r := range batch {
 			b, err := proto.Marshal(r)
 			if err != nil {
-				return errors.Annotate(err, "marshal proto").Err()
+				return errors.Annotate(err, "marshal proto").Tag(errors.BoolTag{Key: InvalidRowTagKey}).Err()
 			}
 			encoded = append(encoded, b)
 		}
@@ -170,19 +181,18 @@ func (s *Writer) batchAppendRows(ctx context.Context, ms *managedwriter.ManagedS
 	return nil
 }
 
-// batch divides the rows to be inserted into batches, with each
+// toBatches divides the rows to be inserted into batches, with each
 // batch having an on-the-wire size not exceeding batchMaxBytes.
-func batch(rows []proto.Message) ([][]proto.Message, error) {
+func toBatches(rows []proto.Message) ([][]proto.Message, error) {
 	var result [][]proto.Message
 
 	batchStartIndex := 0
 	batchSizeInBytes := 0
 	for i, row := range rows {
-		// Assume 16 bytes of overhead per row not captured here.
-		rowSize := proto.Size(row) + 16
-		if (batchSizeInBytes + rowSize) > batchMaxBytes {
-			if rowSize > batchMaxBytes {
-				return nil, errors.Reason("a single row exceeds the maximum BigQuery AppendRows request size of %v bytes", batchMaxBytes).Err()
+		rowSize := RowSize(row)
+		if (batchSizeInBytes + rowSize) > RowMaxBytes {
+			if rowSize > RowMaxBytes {
+				return nil, errors.Reason("a single row exceeds the maximum BigQuery AppendRows request size of %v bytes", RowMaxBytes).Err()
 			}
 			// Output batch from batchStartIndex (inclusive) to i (exclusive).
 			result = append(result, rows[batchStartIndex:i])
@@ -198,4 +208,10 @@ func batch(rows []proto.Message) ([][]proto.Message, error) {
 		result = append(result, lastBatch)
 	}
 	return result, nil
+}
+
+// RowSize return size of row when we do batching.
+func RowSize(row proto.Message) int {
+	// Assume 16 bytes of overhead per row not captured here.
+	return proto.Size(row) + RowSizeOverhead
 }
