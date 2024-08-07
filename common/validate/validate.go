@@ -32,19 +32,29 @@ var (
 	doesNotMatchRe = errors.Reason("does not match").Err()
 )
 
+// Unspecified returns an error indicating that a value is unspecified.
 func Unspecified() error {
 	return unspecified
 }
 
+// DoesNotMatchReErr returns an error indicating that a value does not match a
+// regex.
 func DoesNotMatchReErr(r *regexp.Regexp) error {
 	return errors.Annotate(doesNotMatchRe, "does not match pattern %q", r).Err()
+}
+
+// Regexp returns a non-nil error if re is not a valid regular
+// expression.
+func Regexp(re string) error {
+	// Note: regexp.Compile uses syntax.Perl.
+	_, err := syntax.Parse(re, syntax.Perl)
+	return err
 }
 
 // RegexpFragment returns a non-nil error if re is not a valid regular
 // expression fragment that can be embedded in a regex template.
 func RegexpFragment(re string) error {
-	// Note: regexp.Compile uses syntax.Perl.
-	if _, err := syntax.Parse(re, syntax.Perl); err != nil {
+	if err := Regexp(re); err != nil {
 		return err
 	}
 
@@ -66,6 +76,32 @@ func RegexpFragment(re string) error {
 
 // SpecifiedWithRe validates a value is non-empty and matches the given re.
 func SpecifiedWithRe(re *regexp.Regexp, value string) error {
+	if value == "" {
+		return unspecified
+	}
+	if !re.MatchString(value) {
+		return DoesNotMatchReErr(re)
+	}
+	return nil
+}
+
+// MatchReWithLength validates a value matches the given re and its length is
+// within the specific range [minLen, maxLen].
+//
+// For convenience, if minLen > 0 and value == "", returns "unspecified" as the
+// error message (instead of referring to length limit in the error message).
+func MatchReWithLength(re *regexp.Regexp, minLen, maxLen int, value string) error {
+	if value == "" && minLen > 0 {
+		return unspecified
+	}
+
+	if len(value) < minLen {
+		return errors.Reason("must be at least %d bytes", minLen).Err()
+	}
+	if len(value) > maxLen {
+		return errors.Reason("must be at most %d bytes", minLen).Err()
+	}
+
 	if value == "" {
 		return unspecified
 	}

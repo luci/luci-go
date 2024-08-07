@@ -25,6 +25,8 @@ import (
 	"go.chromium.org/luci/server/module"
 	spanmodule "go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
+
+	"go.chromium.org/luci/source_index/internal/config"
 )
 
 // Main implements the common entrypoint for all LUCI Source Index GAE services.
@@ -57,6 +59,7 @@ func RegisterPRPCHandlers(srv *luciserver.Server) error {
 
 // RegisterCrons registers cron handlers.
 func RegisterCrons(srv *luciserver.Server) error {
+	cron.RegisterHandler("update-config", config.Update)
 	return nil
 }
 
