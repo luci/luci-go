@@ -146,7 +146,7 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 	uts := make([]*uploadTask, 0, len(in.TestResults)*4)
 	// Unexpected passed test results that need to be exonerated.
 	trsForExo := make([]*sinkpb.TestResult, 0, len(in.TestResults))
-	for _, tr := range in.TestResults {
+	for i, tr := range in.TestResults {
 		tr.TestId = s.cfg.TestIDPrefix + tr.GetTestId()
 
 		// assign a random, unique ID if resultID omitted.
@@ -169,13 +169,14 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 		if duration := tr.GetDuration(); duration != nil && s.cfg.CoerceNegativeDuration {
 			// If a negative duration was reported, remove the duration.
 			if d := duration.AsDuration(); d < 0 {
-				logging.Warningf(ctx, "TestResult(%s) has a negative duration(%s); coercing it to 0", tr.TestId, d)
+				logging.Warningf(ctx, "Test result for %q has a negative duration(%s); coercing it to 0", tr.TestId, d)
 				tr.Duration = zeroDuration
 			}
 		}
 
 		if err := validateTestResult(now, tr); err != nil {
-			return nil, status.Errorf(codes.InvalidArgument, "%s", err)
+			logging.Warningf(ctx, "Test result for %q is invalid: %s", tr.TestId, err)
+			return nil, status.Errorf(codes.InvalidArgument, "test_results[%d]: %s", i, err)
 		}
 
 		for id, a := range tr.GetArtifacts() {
