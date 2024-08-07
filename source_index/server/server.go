@@ -27,6 +27,8 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/source_index/internal/config"
+	sourceindexpb "go.chromium.org/luci/source_index/proto/v1"
+	"go.chromium.org/luci/source_index/rpc"
 )
 
 // Main implements the common entrypoint for all LUCI Source Index GAE services.
@@ -54,6 +56,7 @@ func RegisterPRPCHandlers(srv *luciserver.Server) error {
 		s.HackFixFieldMasksForJSON = true
 	})
 
+	sourceindexpb.RegisterSourceIndexServer(srv, rpc.NewSourceIndexServer())
 	return nil
 }
 

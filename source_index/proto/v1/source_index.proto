@@ -1,0 +1,55 @@
+// Copyright 2024 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.source_index.v1;
+
+option go_package = "go.chromium.org/luci/source_index/proto/v1;sourceindexpb";
+
+// Provides methods to retrieve metadata of git commits.
+service SourceIndex {
+  // QueryCommitHash returns commit that matches desired position of commit,
+  // based on QueryCommitHashRequest parameters. Commit position is based on
+  // git-footer git-svn-id or Cr-Commit-Position.
+  //
+  // Returns `NOT_FOUND` if the commit is not indexed by source-index.
+  // When there are multiple matches (i.e. the same commit position occurs on
+  // different commits somehow), the first match (determined arbitrarily) will
+  // be returned.
+  rpc QueryCommitHash(QueryCommitHashRequest) returns (QueryCommitHashResponse);
+}
+
+message QueryCommitHashRequest {
+  // Required. The gitiles host. Must be a subdomain of `.googlesource.com`
+  // (e.g. chromium.googlesource.com).
+  string host = 1;
+
+  // Required. The Git project to query the commit in (e.g. chromium/src).
+  string repository = 2;
+
+  // Required. The name of position defined in value of git-footer git-svn-id
+  // or Cr-Commit-Position (e.g. refs/heads/master,
+  // svn://svn.chromium.org/chrome/trunk/src)
+  string position_ref = 3;
+
+  // Required. The sequential identifier of the commit in the given branch
+  // (position_ref).
+  int64 position_number = 4;
+}
+
+message QueryCommitHashResponse {
+  // The full git commit hash of the matched commit.
+  string hash = 1;
+}
