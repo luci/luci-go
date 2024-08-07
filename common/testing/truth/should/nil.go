@@ -58,6 +58,10 @@ func BeNil(actual any) *failure.Summary {
 // NotBeNil implements comparison.Func[any] and asserts that `actual` is a nillable
 // type (like a pointer, slice, channel, etc) and is not nil.
 //
+// Note that this will NOT accept any("hello"), because `string` is not
+// a nillable type. If you just care that `actual` has SOME value at all, use
+// NotBeNilInterface.
+//
 // Note that this is a slightly stricter form than should.NotBeZero.
 func NotBeNil(actual any) *failure.Summary {
 	const cmpName = "should.NotBeNil"
@@ -66,6 +70,22 @@ func NotBeNil(actual any) *failure.Summary {
 		if isNil, rslt := isNil(cmpName, actual); !isNil || rslt != nil {
 			return rslt
 		}
+	}
+
+	return comparison.NewSummaryBuilder(cmpName).Summary
+}
+
+// NotBeNilInterface implements comparison.Func[any] and asserts that `actual`
+// contains ANY value.
+//
+// Note that this will accept a typed-nil e.g. `any((*Type)(nil)`, because this
+// interface is not, itself, nil. If you want to check the value contained in
+// the interface for non-nil-ness, use NotBeNil.
+func NotBeNilInterface(actual any) *failure.Summary {
+	const cmpName = "should.NotBeNilInterface"
+
+	if actual != nil {
+		return nil
 	}
 
 	return comparison.NewSummaryBuilder(cmpName).Summary

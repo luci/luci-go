@@ -19,6 +19,9 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	cfgmem "go.chromium.org/luci/config/impl/memory"
@@ -27,15 +30,12 @@ import (
 
 	configpb "go.chromium.org/luci/swarming/proto/config"
 	"go.chromium.org/luci/swarming/server/cfg/internalcfgpb"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestUpdateConfigs(t *testing.T) {
 	t.Parallel()
 
-	Convey("With test context", t, func() {
+	ftt.Run("With test context", t, func(t *ftt.Test) {
 		ctx := testCtx()
 
 		call := func(files cfgmem.Files) error {
@@ -47,19 +47,19 @@ func TestUpdateConfigs(t *testing.T) {
 		fetchDS := func() *configBundle {
 			bundle := &configBundle{Key: configBundleKey(ctx)}
 			rev := &configBundleRev{Key: configBundleRevKey(ctx)}
-			So(datastore.Get(ctx, bundle, rev), ShouldBeNil)
-			So(bundle.Revision, ShouldEqual, rev.Revision)
-			So(bundle.Digest, ShouldEqual, rev.Digest)
-			So(bundle.Fetched.Equal(rev.Fetched), ShouldBeTrue)
+			assert.Loosely(t, datastore.Get(ctx, bundle, rev), should.BeNil)
+			assert.Loosely(t, bundle.Revision, should.Equal(rev.Revision))
+			assert.Loosely(t, bundle.Digest, should.Equal(rev.Digest))
+			assert.Loosely(t, bundle.Fetched.Equal(rev.Fetched), should.BeTrue)
 			return bundle
 		}
 
 		// Start with no configs. Should store default empty config.
-		So(call(nil), ShouldBeNil)
-		So(fetchDS().Bundle, ShouldResembleProto, defaultConfigs())
+		assert.Loosely(t, call(nil), should.BeNil)
+		assert.Loosely(t, fetchDS().Bundle, should.Resemble(defaultConfigs()))
 		// Call it again. Still no configs.
-		So(call(nil), ShouldBeNil)
-		So(fetchDS().Bundle, ShouldResembleProto, defaultConfigs())
+		assert.Loosely(t, call(nil), should.BeNil)
+		assert.Loosely(t, fetchDS().Bundle, should.Resemble(defaultConfigs()))
 
 		configSet1 := cfgmem.Files{"bots.cfg": `
 			trusted_dimensions: "pool"
@@ -76,10 +76,10 @@ func TestUpdateConfigs(t *testing.T) {
 		}
 
 		// A config appears. It is stored.
-		So(call(configSet1), ShouldBeNil)
-		So(fetchDS().Bundle, ShouldResembleProto, configBundle1)
+		assert.Loosely(t, call(configSet1), should.BeNil)
+		assert.Loosely(t, fetchDS().Bundle, should.Resemble(configBundle1))
 
-		Convey("Updates good configs", func() {
+		t.Run("Updates good configs", func(t *ftt.Test) {
 			configSet2 := cfgmem.Files{"bots.cfg": `
 				trusted_dimensions: "pool"
 				trusted_dimensions: "blah"
@@ -95,17 +95,17 @@ func TestUpdateConfigs(t *testing.T) {
 			}
 
 			// Another config appears. It is store.
-			So(call(configSet2), ShouldBeNil)
-			So(fetchDS().Bundle, ShouldResembleProto, configBundle2)
+			assert.Loosely(t, call(configSet2), should.BeNil)
+			assert.Loosely(t, fetchDS().Bundle, should.Resemble(configBundle2))
 			// Call it again, the same config is there.
-			So(call(configSet1), ShouldBeNil)
-			So(fetchDS().Bundle, ShouldResembleProto, configBundle1)
+			assert.Loosely(t, call(configSet1), should.BeNil)
+			assert.Loosely(t, fetchDS().Bundle, should.Resemble(configBundle1))
 		})
 
-		Convey("Ignores bad configs", func() {
+		t.Run("Ignores bad configs", func(t *ftt.Test) {
 			// A broken config appears. The old valid config is left unchanged.
-			So(call(cfgmem.Files{"bots.cfg": `what is this`}), ShouldNotBeNil)
-			So(fetchDS().Bundle, ShouldResembleProto, configBundle1)
+			assert.Loosely(t, call(cfgmem.Files{"bots.cfg": `what is this`}), should.NotBeNil)
+			assert.Loosely(t, fetchDS().Bundle, should.Resemble(configBundle1))
 		})
 	})
 }
@@ -121,7 +121,7 @@ func TestParseAndValidateConfigs(t *testing.T) {
 		return parseAndValidateConfigs(context.Background(), "rev", cfgs)
 	}
 
-	Convey("Good", t, func() {
+	ftt.Run("Good", t, func(t *ftt.Test) {
 		bundle, err := call(map[string]string{
 			"settings.cfg": `
 				google_analytics: "boo"
@@ -160,8 +160,8 @@ func TestParseAndValidateConfigs(t *testing.T) {
 			"scripts/script2.py": "script2 body",
 			"scripts/ignored.py": "ignored",
 		})
-		So(err, ShouldBeNil)
-		So(bundle, ShouldResembleProto, &internalcfgpb.ConfigBundle{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, bundle, should.Resemble(&internalcfgpb.ConfigBundle{
 			Revision: "rev",
 			Digest:   "LBLN3ToniTYTTcn5xamgqOWbmwiFx32hNaQfOdrW3mQ",
 			Settings: &configpb.SettingsCfg{
@@ -196,23 +196,23 @@ func TestParseAndValidateConfigs(t *testing.T) {
 				"script1.py": "script1 body",
 				"script2.py": "script2 body",
 			},
-		})
+		}))
 	})
 
-	Convey("Empty", t, func() {
+	ftt.Run("Empty", t, func(t *ftt.Test) {
 		empty := defaultConfigs()
 		empty.Revision = "rev"
 		bundle, err := call(nil)
-		So(err, ShouldBeNil)
-		So(bundle, ShouldResembleProto, empty)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, bundle, should.Resemble(empty))
 	})
 
-	Convey("Broken", t, func() {
+	ftt.Run("Broken", t, func(t *ftt.Test) {
 		_, err := call(map[string]string{"bots.cfg": "what is this"})
-		So(err, ShouldErrLike, "bots.cfg: proto")
+		assert.Loosely(t, err, should.ErrLike("bots.cfg: proto"))
 	})
 
-	Convey("Missing scripts", t, func() {
+	ftt.Run("Missing scripts", t, func(t *ftt.Test) {
 		_, err := call(map[string]string{
 			"bots.cfg": `
 				trusted_dimensions: "pool"
@@ -234,14 +234,14 @@ func TestParseAndValidateConfigs(t *testing.T) {
 			"scripts/script1.py": "script1 body",
 			"scripts/ignored.py": "ignored",
 		})
-		So(err, ShouldErrLike, `bot group #2 refers to undefined bot config script "missing.py"`)
+		assert.Loosely(t, err, should.ErrLike(`bot group #2 refers to undefined bot config script "missing.py"`))
 	})
 }
 
 func TestFetchFromDatastore(t *testing.T) {
 	t.Parallel()
 
-	Convey("With test context", t, func() {
+	ftt.Run("With test context", t, func(t *ftt.Test) {
 		ctx := testCtx()
 
 		update := func(files cfgmem.Files) error {
@@ -254,41 +254,41 @@ func TestFetchFromDatastore(t *testing.T) {
 			return fetchFromDatastore(ctx, cur)
 		}
 
-		Convey("Empty datastore", func() {
+		t.Run("Empty datastore", func(t *ftt.Test) {
 			cfg, err := fetch(nil)
-			So(err, ShouldBeNil)
-			So(cfg.Revision, ShouldEqual, emptyRev)
-			So(cfg.Digest, ShouldEqual, emptyDigest)
-			So(cfg.settings, ShouldResembleProto, defaultConfigs().Settings)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cfg.Revision, should.Equal(emptyRev))
+			assert.Loosely(t, cfg.Digest, should.Equal(emptyDigest))
+			assert.Loosely(t, cfg.settings, should.Resemble(defaultConfigs().Settings))
 		})
 
-		Convey("Default configs in datastore", func() {
+		t.Run("Default configs in datastore", func(t *ftt.Test) {
 			// A cron job runs and discovers no configs.
-			So(update(nil), ShouldBeNil)
+			assert.Loosely(t, update(nil), should.BeNil)
 
 			// Fetches initial copy of default config.
 			cfg, err := fetch(nil)
-			So(err, ShouldBeNil)
-			So(cfg.Revision, ShouldEqual, emptyRev)
-			So(cfg.Digest, ShouldEqual, emptyDigest)
-			So(cfg.settings, ShouldResembleProto, defaultConfigs().Settings)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cfg.Revision, should.Equal(emptyRev))
+			assert.Loosely(t, cfg.Digest, should.Equal(emptyDigest))
+			assert.Loosely(t, cfg.settings, should.Resemble(defaultConfigs().Settings))
 
 			// Does nothing, there's still no real config.
 			cfg, err = fetch(cfg)
-			So(err, ShouldBeNil)
-			So(cfg.Revision, ShouldEqual, emptyRev)
-			So(cfg.Digest, ShouldEqual, emptyDigest)
-			So(cfg.settings, ShouldResembleProto, defaultConfigs().Settings)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cfg.Revision, should.Equal(emptyRev))
+			assert.Loosely(t, cfg.Digest, should.Equal(emptyDigest))
+			assert.Loosely(t, cfg.settings, should.Resemble(defaultConfigs().Settings))
 
 			// A real config appears.
-			So(update(cfgmem.Files{"settings.cfg": `google_analytics: "boo"`}), ShouldBeNil)
+			assert.Loosely(t, update(cfgmem.Files{"settings.cfg": `google_analytics: "boo"`}), should.BeNil)
 
 			// It replaces the empty config when fetched (with defaults filled in).
 			cfg, err = fetch(cfg)
-			So(err, ShouldBeNil)
-			So(cfg.Revision, ShouldEqual, "bcf7460a098890cc7efc8eda1c8279658ec25eb3")
-			So(cfg.Digest, ShouldEqual, "xv7iFT37ovx5Qc9kjYK0kEa3Eq47cNNC0ZbEd61eOYQ")
-			So(cfg.settings, ShouldResembleProto, &configpb.SettingsCfg{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cfg.Revision, should.Equal("bcf7460a098890cc7efc8eda1c8279658ec25eb3"))
+			assert.Loosely(t, cfg.Digest, should.Equal("xv7iFT37ovx5Qc9kjYK0kEa3Eq47cNNC0ZbEd61eOYQ"))
+			assert.Loosely(t, cfg.settings, should.Resemble(&configpb.SettingsCfg{
 				GoogleAnalytics: "boo",
 				Auth: &configpb.AuthSettings{
 					AdminsGroup:          "administrators",
@@ -300,66 +300,66 @@ func TestFetchFromDatastore(t *testing.T) {
 				},
 				BotDeathTimeoutSecs: 600,
 				ReusableTaskAgeSecs: 604800,
-			})
+			}))
 
 			// Suddenly the config is completely gone.
-			So(datastore.Delete(ctx, configBundleKey(ctx), configBundleRevKey(ctx)), ShouldBeNil)
+			assert.Loosely(t, datastore.Delete(ctx, configBundleKey(ctx), configBundleRevKey(ctx)), should.BeNil)
 
 			// The default config is used again.
 			cfg, err = fetch(cfg)
-			So(err, ShouldBeNil)
-			So(cfg.Revision, ShouldEqual, emptyRev)
-			So(cfg.Digest, ShouldEqual, emptyDigest)
-			So(cfg.settings, ShouldResembleProto, defaultConfigs().Settings)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cfg.Revision, should.Equal(emptyRev))
+			assert.Loosely(t, cfg.Digest, should.Equal(emptyDigest))
+			assert.Loosely(t, cfg.settings, should.Resemble(defaultConfigs().Settings))
 		})
 
-		Convey("Some configs in datastore", func() {
+		t.Run("Some configs in datastore", func(t *ftt.Test) {
 			// Some initial config.
-			So(update(cfgmem.Files{"settings.cfg": `google_analytics: "boo"`}), ShouldBeNil)
+			assert.Loosely(t, update(cfgmem.Files{"settings.cfg": `google_analytics: "boo"`}), should.BeNil)
 
 			// Fetches initial copy of this config.
 			cfg, err := fetch(nil)
-			So(err, ShouldBeNil)
-			So(cfg.Revision, ShouldEqual, "bcf7460a098890cc7efc8eda1c8279658ec25eb3")
-			So(cfg.Digest, ShouldEqual, "xv7iFT37ovx5Qc9kjYK0kEa3Eq47cNNC0ZbEd61eOYQ")
-			So(cfg.settings, ShouldResembleProto, withDefaultSettings(&configpb.SettingsCfg{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cfg.Revision, should.Equal("bcf7460a098890cc7efc8eda1c8279658ec25eb3"))
+			assert.Loosely(t, cfg.Digest, should.Equal("xv7iFT37ovx5Qc9kjYK0kEa3Eq47cNNC0ZbEd61eOYQ"))
+			assert.Loosely(t, cfg.settings, should.Resemble(withDefaultSettings(&configpb.SettingsCfg{
 				GoogleAnalytics: "boo",
-			}))
+			})))
 
 			// Nothing change. The same config is returned.
 			cfg, err = fetch(cfg)
-			So(err, ShouldBeNil)
-			So(cfg.Revision, ShouldEqual, "bcf7460a098890cc7efc8eda1c8279658ec25eb3")
-			So(cfg.Digest, ShouldEqual, "xv7iFT37ovx5Qc9kjYK0kEa3Eq47cNNC0ZbEd61eOYQ")
-			So(cfg.settings, ShouldResembleProto, withDefaultSettings(&configpb.SettingsCfg{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cfg.Revision, should.Equal("bcf7460a098890cc7efc8eda1c8279658ec25eb3"))
+			assert.Loosely(t, cfg.Digest, should.Equal("xv7iFT37ovx5Qc9kjYK0kEa3Eq47cNNC0ZbEd61eOYQ"))
+			assert.Loosely(t, cfg.settings, should.Resemble(withDefaultSettings(&configpb.SettingsCfg{
 				GoogleAnalytics: "boo",
-			}))
+			})))
 
 			// A noop config change happens.
-			So(update(cfgmem.Files{
+			assert.Loosely(t, update(cfgmem.Files{
 				"settings.cfg": `google_analytics: "boo"`,
 				"unrelated":    "change",
-			}), ShouldBeNil)
+			}), should.BeNil)
 
 			// Has the new revision, but the same digest and the exact same body.
 			prev := cfg.settings
 			cfg, err = fetch(cfg)
-			So(err, ShouldBeNil)
-			So(cfg.Revision, ShouldEqual, "725455c37c09b5dfa3dc31b47c9f787d555cbfb3")
-			So(cfg.Digest, ShouldEqual, "xv7iFT37ovx5Qc9kjYK0kEa3Eq47cNNC0ZbEd61eOYQ")
-			So(cfg.settings == prev, ShouldBeTrue) // equal as pointers
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cfg.Revision, should.Equal("725455c37c09b5dfa3dc31b47c9f787d555cbfb3"))
+			assert.Loosely(t, cfg.Digest, should.Equal("xv7iFT37ovx5Qc9kjYK0kEa3Eq47cNNC0ZbEd61eOYQ"))
+			assert.Loosely(t, cfg.settings == prev, should.BeTrue) // equal as pointers
 
 			// A real config change happens.
-			So(update(cfgmem.Files{"settings.cfg": `google_analytics: "blah"`}), ShouldBeNil)
+			assert.Loosely(t, update(cfgmem.Files{"settings.cfg": `google_analytics: "blah"`}), should.BeNil)
 
 			// Causes the config update.
 			cfg, err = fetch(cfg)
-			So(err, ShouldBeNil)
-			So(cfg.Revision, ShouldEqual, "3a7123badfd5426f2a75932433f99b0aee8baf9b")
-			So(cfg.Digest, ShouldEqual, "+JawsgfwWonAz8wFE/iR2AcdVmMhK3OwFbNSgCjBiRo")
-			So(cfg.settings, ShouldResembleProto, withDefaultSettings(&configpb.SettingsCfg{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cfg.Revision, should.Equal("3a7123badfd5426f2a75932433f99b0aee8baf9b"))
+			assert.Loosely(t, cfg.Digest, should.Equal("+JawsgfwWonAz8wFE/iR2AcdVmMhK3OwFbNSgCjBiRo"))
+			assert.Loosely(t, cfg.settings, should.Resemble(withDefaultSettings(&configpb.SettingsCfg{
 				GoogleAnalytics: "blah",
-			}))
+			})))
 		})
 	})
 }
@@ -375,7 +375,7 @@ func TestBuildQueriableConfig(t *testing.T) {
 		})
 	}
 
-	Convey("OK", t, func() {
+	ftt.Run("OK", t, func(t *ftt.Test) {
 		cfg, err := build(&internalcfgpb.ConfigBundle{
 			Settings: withDefaultSettings(&configpb.SettingsCfg{
 				TrafficMigration: &configpb.TrafficMigration{
@@ -418,29 +418,29 @@ func TestBuildQueriableConfig(t *testing.T) {
 				},
 			},
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		// Pools.cfg processed correctly.
-		So(cfg.Pools(), ShouldResemble, []string{"a", "b"})
-		So(cfg.Pool("a").Realm, ShouldEqual, "realm:a")
-		So(cfg.Pool("b").Realm, ShouldEqual, "realm:b")
-		So(cfg.Pool("unknown"), ShouldBeNil)
+		assert.Loosely(t, cfg.Pools(), should.Resemble([]string{"a", "b"}))
+		assert.Loosely(t, cfg.Pool("a").Realm, should.Equal("realm:a"))
+		assert.Loosely(t, cfg.Pool("b").Realm, should.Equal("realm:b"))
+		assert.Loosely(t, cfg.Pool("unknown"), should.BeNil)
 
 		// Bots.cfg processed correctly.
 		botPool := func(botID string) string {
 			return cfg.BotGroup(botID).Dimensions["pool"][0]
 		}
-		So(botPool("host-0-0"), ShouldEqual, "a")
-		So(botPool("host-0-1--abc"), ShouldEqual, "a")
-		So(botPool("host-0-1"), ShouldEqual, "b")
-		So(botPool("host-1-0"), ShouldEqual, "c")
-		So(botPool("host-0"), ShouldEqual, "default")
+		assert.Loosely(t, botPool("host-0-0"), should.Equal("a"))
+		assert.Loosely(t, botPool("host-0-1--abc"), should.Equal("a"))
+		assert.Loosely(t, botPool("host-0-1"), should.Equal("b"))
+		assert.Loosely(t, botPool("host-1-0"), should.Equal("c"))
+		assert.Loosely(t, botPool("host-0"), should.Equal("default"))
 
 		// Traffic routing rules are processed.
-		So(cfg.RouteToGoPercent("/prpc/unknown"), ShouldEqual, 0)
-		So(cfg.RouteToGoPercent("/prpc/service/method1"), ShouldEqual, 0)
-		So(cfg.RouteToGoPercent("/prpc/service/method2"), ShouldEqual, 50)
-		So(cfg.RouteToGoPercent("/prpc/service/method3"), ShouldEqual, 100)
+		assert.Loosely(t, cfg.RouteToGoPercent("/prpc/unknown"), should.BeZero)
+		assert.Loosely(t, cfg.RouteToGoPercent("/prpc/service/method1"), should.BeZero)
+		assert.Loosely(t, cfg.RouteToGoPercent("/prpc/service/method2"), should.Equal(50))
+		assert.Loosely(t, cfg.RouteToGoPercent("/prpc/service/method3"), should.Equal(100))
 	})
 }
 

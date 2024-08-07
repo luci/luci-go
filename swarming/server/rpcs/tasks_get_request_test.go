@@ -27,8 +27,11 @@ import (
 	"go.chromium.org/luci/swarming/server/acls"
 	"go.chromium.org/luci/swarming/server/model"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestGetRequest(t *testing.T) {
@@ -81,31 +84,31 @@ func TestGetRequest(t *testing.T) {
 		})
 	}
 
-	Convey("Bad task ID", t, func() {
+	ftt.Run("Bad task ID", t, func(t *ftt.Test) {
 		_, err := call("")
-		So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
 	})
 
-	Convey("Missing task", t, func() {
+	ftt.Run("Missing task", t, func(t *ftt.Test) {
 		// Note: existence of a task is not a secret (task IDs are predictable).
 		_, err := call(model.RequestKeyToTaskID(missingReq, model.AsRequest))
-		So(err, ShouldHaveGRPCStatus, codes.NotFound)
+		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.NotFound))
 	})
 
-	Convey("No permissions", t, func() {
+	ftt.Run("No permissions", t, func(t *ftt.Test) {
 		_, err := call(model.RequestKeyToTaskID(hiddenReq, model.AsRequest))
-		So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
+		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
 	})
 
-	Convey("OK", t, func() {
+	ftt.Run("OK", t, func(t *ftt.Test) {
 		resp, err := call(model.RequestKeyToTaskID(visibleReq, model.AsRequest))
-		So(err, ShouldBeNil)
-		So(resp.TaskId, ShouldEqual, model.RequestKeyToTaskID(visibleReq, model.AsRequest))
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, resp.TaskId, should.Equal(model.RequestKeyToTaskID(visibleReq, model.AsRequest)))
 	})
 
-	Convey("OK via ID of RunResult", t, func() {
+	ftt.Run("OK via ID of RunResult", t, func(t *ftt.Test) {
 		resp, err := call(model.RequestKeyToTaskID(visibleReq, model.AsRunResult))
-		So(err, ShouldBeNil)
-		So(resp.TaskId, ShouldEqual, model.RequestKeyToTaskID(visibleReq, model.AsRequest))
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, resp.TaskId, should.Equal(model.RequestKeyToTaskID(visibleReq, model.AsRequest)))
 	})
 }

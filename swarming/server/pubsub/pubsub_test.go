@@ -29,18 +29,18 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/router"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestPubSubHandler(t *testing.T) {
 	t.Parallel()
 
-	Convey("With mocks", t, func() {
+	ftt.Run("With mocks", t, func(t *ftt.Test) {
 		const expectedPusherID = "user:push@example.com"
 		var (
 			testTime = time.Unix(1689000000, 0)
@@ -77,7 +77,7 @@ func TestPubSubHandler(t *testing.T) {
 			return rr.Code
 		}
 
-		Convey("Success", func() {
+		t.Run("Success", func(t *ftt.Test) {
 			var gotMsg *timestamppb.Timestamp
 			var gotMD *Metadata
 			resp := call(ctx, "/p?a=1&b=2", goodBlob, func(ctx context.Context, msg *timestamppb.Timestamp, md *Metadata) error {
@@ -86,30 +86,30 @@ func TestPubSubHandler(t *testing.T) {
 				return nil
 			})
 
-			So(resp, ShouldEqual, http.StatusOK)
-			So(gotMsg, ShouldResembleProto, testMsg)
-			So(gotMD.Subscription, ShouldEqual, "sub")
-			So(gotMD.MessageID, ShouldEqual, "msg")
-			So(gotMD.PublishTime, ShouldEqual, testTime)
-			So(gotMD.Attributes, ShouldResemble, body.Message.Attributes)
-			So(gotMD.Query, ShouldResemble, url.Values{"a": {"1"}, "b": {"2"}})
+			assert.Loosely(t, resp, should.Equal(http.StatusOK))
+			assert.Loosely(t, gotMsg, should.Resemble(testMsg))
+			assert.Loosely(t, gotMD.Subscription, should.Equal("sub"))
+			assert.Loosely(t, gotMD.MessageID, should.Equal("msg"))
+			assert.Loosely(t, gotMD.PublishTime, should.Equal(testTime))
+			assert.Loosely(t, gotMD.Attributes, should.Resemble(body.Message.Attributes))
+			assert.Loosely(t, gotMD.Query, should.Resemble(url.Values{"a": {"1"}, "b": {"2"}}))
 		})
 
-		Convey("Transient error", func() {
+		t.Run("Transient error", func(t *ftt.Test) {
 			resp := call(ctx, "/p", goodBlob, func(ctx context.Context, msg *timestamppb.Timestamp, md *Metadata) error {
 				return errors.New("boo", transient.Tag)
 			})
-			So(resp, ShouldEqual, http.StatusInternalServerError)
+			assert.Loosely(t, resp, should.Equal(http.StatusInternalServerError))
 		})
 
-		Convey("Fatal error", func() {
+		t.Run("Fatal error", func(t *ftt.Test) {
 			resp := call(ctx, "/p", goodBlob, func(ctx context.Context, msg *timestamppb.Timestamp, md *Metadata) error {
 				return errors.New("boo")
 			})
-			So(resp, ShouldEqual, http.StatusAccepted)
+			assert.Loosely(t, resp, should.Equal(http.StatusAccepted))
 		})
 
-		Convey("Wrong caller ID", func() {
+		t.Run("Wrong caller ID", func(t *ftt.Test) {
 			ctx := auth.WithState(context.Background(),
 				&authtest.FakeState{
 					Identity: "user:wrong@example.com",
@@ -118,24 +118,24 @@ func TestPubSubHandler(t *testing.T) {
 			resp := call(ctx, "/p", goodBlob, func(ctx context.Context, msg *timestamppb.Timestamp, md *Metadata) error {
 				return nil
 			})
-			So(resp, ShouldEqual, http.StatusForbidden)
+			assert.Loosely(t, resp, should.Equal(http.StatusForbidden))
 		})
 
-		Convey("Bad wrapper", func() {
+		t.Run("Bad wrapper", func(t *ftt.Test) {
 			resp := call(ctx, "/p", []byte("not json"), func(ctx context.Context, msg *timestamppb.Timestamp, md *Metadata) error {
 				return nil
 			})
-			So(resp, ShouldEqual, http.StatusBadRequest)
+			assert.Loosely(t, resp, should.Equal(http.StatusBadRequest))
 		})
 
-		Convey("Bad payload", func() {
+		t.Run("Bad payload", func(t *ftt.Test) {
 			var body pushRequestBody
 			body.Message.Data = []byte("bad proto")
 			blob, _ := json.Marshal(&body)
 			resp := call(ctx, "/p", blob, func(ctx context.Context, msg *timestamppb.Timestamp, md *Metadata) error {
 				return nil
 			})
-			So(resp, ShouldEqual, http.StatusBadRequest)
+			assert.Loosely(t, resp, should.Equal(http.StatusBadRequest))
 		})
 	})
 }

@@ -45,6 +45,20 @@ func TestNotBeNil(t *testing.T) {
 	t.Run("empty string not nil", shouldFail(NotBeNil(""), "cannot be checked for nil"))
 }
 
+func TestNotBeNilInterface(t *testing.T) {
+	t.Parallel()
+
+	t.Run("untyped", shouldFail(NotBeNilInterface(nil)))
+
+	t.Run("non-empty slice", shouldPass(NotBeNilInterface([]string{"yo"})))
+	t.Run("pointer", shouldPass(NotBeNilInterface(&struct{}{})))
+
+	t.Run("slice", shouldPass(NotBeNilInterface([]int(nil))))
+	t.Run("channel", shouldPass(NotBeNilInterface((chan int)(nil))))
+
+	t.Run("empty string not nil", shouldPass(NotBeNilInterface("")))
+}
+
 func TestBeZero(t *testing.T) {
 	t.Parallel()
 

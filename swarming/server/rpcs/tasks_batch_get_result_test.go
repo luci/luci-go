@@ -26,8 +26,11 @@ import (
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestBatchGetResult(t *testing.T) {
@@ -54,29 +57,29 @@ func TestBatchGetResult(t *testing.T) {
 		return
 	}
 
-	Convey("Requires task_ids", t, func() {
+	ftt.Run("Requires task_ids", t, func(t *ftt.Test) {
 		_, err := call(&apipb.BatchGetResultRequest{})
-		So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
-		So(err, ShouldErrLike, "task_ids is required")
+		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+		assert.Loosely(t, err, should.ErrLike("task_ids is required"))
 	})
 
-	Convey("Limits task_ids", t, func() {
+	ftt.Run("Limits task_ids", t, func(t *ftt.Test) {
 		_, err := call(&apipb.BatchGetResultRequest{
 			TaskIds: make([]string, 1001),
 		})
-		So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
-		So(err, ShouldErrLike, "task_ids length should be no more than")
+		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+		assert.Loosely(t, err, should.ErrLike("task_ids length should be no more than"))
 	})
 
-	Convey("Checks task_ids are valid", t, func() {
+	ftt.Run("Checks task_ids are valid", t, func(t *ftt.Test) {
 		_, err := call(&apipb.BatchGetResultRequest{
 			TaskIds: []string{tasks["running-0"], "zzz"},
 		})
-		So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
-		So(err, ShouldErrLike, "task_ids: zzz: bad task ID")
+		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+		assert.Loosely(t, err, should.ErrLike("task_ids: zzz: bad task ID"))
 	})
 
-	Convey("Checks for dups", t, func() {
+	ftt.Run("Checks for dups", t, func(t *ftt.Test) {
 		_, err := call(&apipb.BatchGetResultRequest{
 			TaskIds: []string{
 				tasks["running-0"],
@@ -85,11 +88,11 @@ func TestBatchGetResult(t *testing.T) {
 				tasks["running-0"],
 			},
 		})
-		So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
-		So(err, ShouldErrLike, fmt.Sprintf("%s is specified more than once", tasks["running-0"]))
+		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+		assert.Loosely(t, err, should.ErrLike(fmt.Sprintf("%s is specified more than once", tasks["running-0"])))
 	})
 
-	Convey("All missing", t, func() {
+	ftt.Run("All missing", t, func(t *ftt.Test) {
 		resp, err := call(&apipb.BatchGetResultRequest{
 			TaskIds: []string{
 				tasks["missing-0"],
@@ -97,15 +100,15 @@ func TestBatchGetResult(t *testing.T) {
 				tasks["missing-2"],
 			},
 		})
-		So(err, ShouldBeNil)
-		So(respCodes(resp), ShouldResemble, []codes.Code{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, respCodes(resp), should.Resemble([]codes.Code{
 			codes.NotFound,
 			codes.NotFound,
 			codes.NotFound,
-		})
+		}))
 	})
 
-	Convey("All access denied", t, func() {
+	ftt.Run("All access denied", t, func(t *ftt.Test) {
 		resp, err := call(&apipb.BatchGetResultRequest{
 			TaskIds: []string{
 				tasks["running-1"],
@@ -113,15 +116,15 @@ func TestBatchGetResult(t *testing.T) {
 				tasks["failure-1"],
 			},
 		})
-		So(err, ShouldBeNil)
-		So(respCodes(resp), ShouldResemble, []codes.Code{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, respCodes(resp), should.Resemble([]codes.Code{
 			codes.PermissionDenied,
 			codes.PermissionDenied,
 			codes.PermissionDenied,
-		})
+		}))
 	})
 
-	Convey("Mix of codes", t, func() {
+	ftt.Run("Mix of codes", t, func(t *ftt.Test) {
 		resp, err := call(&apipb.BatchGetResultRequest{
 			TaskIds: []string{
 				tasks["running-0"], // visible
@@ -136,7 +139,7 @@ func TestBatchGetResult(t *testing.T) {
 			},
 			IncludePerformanceStats: true,
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		// Fetched correct data.
 		type result struct {
@@ -148,7 +151,7 @@ func TestBatchGetResult(t *testing.T) {
 		var results []result
 		for _, r := range resp.Results {
 			if res := r.GetResult(); res != nil {
-				So(res.TaskId, ShouldEqual, r.TaskId)
+				assert.Loosely(t, res.TaskId, should.Equal(r.TaskId))
 				results = append(results, result{
 					taskID: r.TaskId,
 					code:   codes.OK,
@@ -162,7 +165,7 @@ func TestBatchGetResult(t *testing.T) {
 				})
 			}
 		}
-		So(results, ShouldResemble, []result{
+		assert.Loosely(t, results, should.Resemble([]result{
 			{tasks["running-0"], codes.OK, "running-0", false},
 			{tasks["missing-0"], codes.NotFound, "", false},
 			{tasks["running-1"], codes.PermissionDenied, "", false},
@@ -172,6 +175,6 @@ func TestBatchGetResult(t *testing.T) {
 			{tasks["failure-0"], codes.OK, "failure-0", true},
 			{tasks["missing-2"], codes.NotFound, "", false},
 			{tasks["pending-0"], codes.OK, "pending-0", false},
-		})
+		}))
 	})
 }

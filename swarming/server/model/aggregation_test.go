@@ -24,14 +24,14 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	"go.chromium.org/luci/swarming/server/model/internalmodelpb"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestBotsDimensionsSets(t *testing.T) {
@@ -40,7 +40,7 @@ func TestBotsDimensionsSets(t *testing.T) {
 	testTime := time.Date(2024, 7, 1, 0, 0, 0, 0, time.UTC)
 	testTimeTS := timestamppb.New(testTime)
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		bs := NewBotsDimensionsSets([]*internalmodelpb.AggregatedDimensions_Pool{
 			{
 				Pool: "p1",
@@ -68,7 +68,7 @@ func TestBotsDimensionsSets(t *testing.T) {
 			},
 		}, testTime)
 
-		So(bs.DimensionsGlobally(), ShouldResembleProto, &apipb.BotsDimensions{
+		assert.Loosely(t, bs.DimensionsGlobally(), should.Resemble(&apipb.BotsDimensions{
 			BotsDimensions: []*apipb.StringListPair{
 				{Key: "d1", Value: []string{"v1", "v2", "v3", "v4"}},
 				{Key: "d2", Value: []string{"c1", "c2", "c3", "c4"}},
@@ -76,34 +76,34 @@ func TestBotsDimensionsSets(t *testing.T) {
 				{Key: "d4", Value: []string{"b1", "b2"}},
 			},
 			Ts: testTimeTS,
-		})
+		}))
 
-		So(bs.DimensionsInPools(nil), ShouldResembleProto, &apipb.BotsDimensions{
+		assert.Loosely(t, bs.DimensionsInPools(nil), should.Resemble(&apipb.BotsDimensions{
 			Ts: testTimeTS,
-		})
-		So(bs.DimensionsInPools([]string{"unknown"}), ShouldResembleProto, &apipb.BotsDimensions{
+		}))
+		assert.Loosely(t, bs.DimensionsInPools([]string{"unknown"}), should.Resemble(&apipb.BotsDimensions{
 			Ts: testTimeTS,
-		})
-		So(bs.DimensionsInPools([]string{"unknown1", "unknown2"}), ShouldResembleProto, &apipb.BotsDimensions{
+		}))
+		assert.Loosely(t, bs.DimensionsInPools([]string{"unknown1", "unknown2"}), should.Resemble(&apipb.BotsDimensions{
 			Ts: testTimeTS,
-		})
+		}))
 
-		So(bs.DimensionsInPools([]string{"p1"}), ShouldResembleProto, &apipb.BotsDimensions{
+		assert.Loosely(t, bs.DimensionsInPools([]string{"p1"}), should.Resemble(&apipb.BotsDimensions{
 			BotsDimensions: []*apipb.StringListPair{
 				{Key: "d1", Value: []string{"v1", "v2"}},
 				{Key: "d2", Value: []string{"c1", "c2"}},
 			},
 			Ts: testTimeTS,
-		})
+		}))
 
-		So(bs.DimensionsInPools([]string{"p1", "p2", "unknown"}), ShouldResembleProto, &apipb.BotsDimensions{
+		assert.Loosely(t, bs.DimensionsInPools([]string{"p1", "p2", "unknown"}), should.Resemble(&apipb.BotsDimensions{
 			BotsDimensions: []*apipb.StringListPair{
 				{Key: "d1", Value: []string{"v1", "v2", "v3"}},
 				{Key: "d2", Value: []string{"c1", "c2", "c3"}},
 				{Key: "d3", Value: []string{"a1", "a2"}},
 			},
 			Ts: testTimeTS,
-		})
+		}))
 	})
 }
 
@@ -112,7 +112,7 @@ func TestBotsDimensionsCache(t *testing.T) {
 
 	testTime := time.Date(2024, 7, 1, 0, 0, 0, 0, time.UTC)
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		ctx, tc := testclock.UseTime(ctx, testTime)
 
@@ -128,27 +128,27 @@ func TestBotsDimensionsCache(t *testing.T) {
 					LastUpdate: lastUpdate,
 				},
 			)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		}
 
 		var cache BotsDimensionsCache
 
 		// Getting the initial copy fails, since there's nothing in datastore yet.
 		_, err := cache.Get(ctx)
-		So(errors.Is(err, datastore.ErrNoSuchEntity), ShouldBeTrue)
+		assert.Loosely(t, errors.Is(err, datastore.ErrNoSuchEntity), should.BeTrue)
 
 		// Put something and try again. It should work now.
 		expectedUpdate1 := testTime.Add(-5 * time.Hour)
 		updateDS(expectedUpdate1)
 		set1, err := cache.Get(ctx)
-		So(err, ShouldBeNil)
-		So(set1.lastUpdate.Equal(expectedUpdate1), ShouldBeTrue)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, set1.lastUpdate.Equal(expectedUpdate1), should.BeTrue)
 
 		// At a later time returns the exact same object since nothing has changed.
 		tc.Add(time.Hour)
 		set2, err := cache.Get(ctx)
-		So(err, ShouldBeNil)
-		So(set2 == set1, ShouldBeTrue) // equal pointers
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, set2 == set1, should.BeTrue) // equal pointers
 
 		// Datastore is updated, but we are still using a cached copy since it
 		// hasn't expired yet.
@@ -156,14 +156,14 @@ func TestBotsDimensionsCache(t *testing.T) {
 		expectedUpdate2 := clock.Now(ctx).UTC()
 		updateDS(expectedUpdate2)
 		set3, err := cache.Get(ctx)
-		So(err, ShouldBeNil)
-		So(set3 == set1, ShouldBeTrue) // equal pointers
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, set3 == set1, should.BeTrue) // equal pointers
 
 		// Few seconds later the cached copy has expired and we got a new one.
 		tc.Add(11 * time.Second)
 		set4, err := cache.Get(ctx)
-		So(err, ShouldBeNil)
-		So(set4 != set1, ShouldBeTrue)
-		So(set4.lastUpdate.Equal(expectedUpdate2), ShouldBeTrue)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, set4 != set1, should.BeTrue)
+		assert.Loosely(t, set4.lastUpdate.Equal(expectedUpdate2), should.BeTrue)
 	})
 }

@@ -30,6 +30,9 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/auth/openid"
@@ -39,9 +42,6 @@ import (
 
 	internalspb "go.chromium.org/luci/swarming/proto/internals"
 	"go.chromium.org/luci/swarming/server/hmactoken"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 type testRequest struct {
@@ -58,7 +58,7 @@ func (r *testRequest) ExtractDebugRequest() any               { return r }
 func TestBotHandler(t *testing.T) {
 	t.Parallel()
 
-	Convey("With server", t, func() {
+	ftt.Run("With server", t, func(t *ftt.Test) {
 		now := time.Date(2044, time.April, 4, 4, 4, 4, 4, time.UTC)
 		ctx := context.Background()
 		ctx, _ = testclock.UseTime(ctx, now)
@@ -100,7 +100,7 @@ func TestBotHandler(t *testing.T) {
 			srv.router.ServeHTTP(rw, rq)
 			res := rw.Result()
 			if res.StatusCode == http.StatusOK {
-				So(res.Header.Get("Content-Type"), ShouldEqual, "application/json; charset=utf-8")
+				assert.Loosely(t, res.Header.Get("Content-Type"), should.Equal("application/json; charset=utf-8"))
 			}
 			respBody, _ := io.ReadAll(res.Body)
 			return lastBody, lastRequest, res.StatusCode, string(respBody)
@@ -108,7 +108,7 @@ func TestBotHandler(t *testing.T) {
 
 		call := func(body testRequest, mockedResp Response, mockedErr error) (b *testRequest, req *Request, status int, resp string) {
 			blob, err := json.Marshal(&body)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			return callRaw(blob, "application/json; charset=utf-8", mockedResp, mockedErr)
 		}
 
@@ -128,7 +128,7 @@ func TestBotHandler(t *testing.T) {
 			}
 		}
 
-		Convey("Happy path with poll token", func() {
+		t.Run("Happy path with poll token", func(t *ftt.Test) {
 			pollState := makePollState("poll-state-id")
 
 			req := testRequest{
@@ -140,16 +140,16 @@ func TestBotHandler(t *testing.T) {
 			}
 
 			body, seenReq, status, resp := call(req, "some-response", nil)
-			So(status, ShouldEqual, http.StatusOK)
-			So(resp, ShouldEqual, "\"some-response\"\n")
-			So(body, ShouldResemble, &req)
-			So(seenReq.BotID, ShouldEqual, "bot-id")
-			So(seenReq.SessionID, ShouldEqual, "")
-			So(seenReq.SessionTokenExpired, ShouldBeFalse)
-			So(seenReq.PollState, ShouldResembleProto, pollState)
+			assert.Loosely(t, status, should.Equal(http.StatusOK))
+			assert.Loosely(t, resp, should.Equal("\"some-response\"\n"))
+			assert.Loosely(t, body, should.Resemble(&req))
+			assert.Loosely(t, seenReq.BotID, should.Equal("bot-id"))
+			assert.Loosely(t, seenReq.SessionID, should.BeEmpty)
+			assert.Loosely(t, seenReq.SessionTokenExpired, should.BeFalse)
+			assert.Loosely(t, seenReq.PollState, should.Resemble(pollState))
 		})
 
-		Convey("Happy path with session token", func() {
+		t.Run("Happy path with session token", func(t *ftt.Test) {
 			pollState := makePollState("poll-state-id")
 
 			req := testRequest{
@@ -165,16 +165,16 @@ func TestBotHandler(t *testing.T) {
 			}
 
 			body, seenReq, status, resp := call(req, "some-response", nil)
-			So(status, ShouldEqual, http.StatusOK)
-			So(resp, ShouldEqual, "\"some-response\"\n")
-			So(body, ShouldResemble, &req)
-			So(seenReq.BotID, ShouldEqual, "bot-id")
-			So(seenReq.SessionID, ShouldEqual, "bot-session-id")
-			So(seenReq.SessionTokenExpired, ShouldBeFalse)
-			So(seenReq.PollState, ShouldResembleProto, pollState)
+			assert.Loosely(t, status, should.Equal(http.StatusOK))
+			assert.Loosely(t, resp, should.Equal("\"some-response\"\n"))
+			assert.Loosely(t, body, should.Resemble(&req))
+			assert.Loosely(t, seenReq.BotID, should.Equal("bot-id"))
+			assert.Loosely(t, seenReq.SessionID, should.Equal("bot-session-id"))
+			assert.Loosely(t, seenReq.SessionTokenExpired, should.BeFalse)
+			assert.Loosely(t, seenReq.PollState, should.Resemble(pollState))
 		})
 
-		Convey("Happy path with both tokens", func() {
+		t.Run("Happy path with both tokens", func(t *ftt.Test) {
 			pollStateInPollToken := makePollState("in-poll-token")
 			pollStateInSessionToken := makePollState("in-session-token")
 
@@ -192,16 +192,16 @@ func TestBotHandler(t *testing.T) {
 			}
 
 			body, seenReq, status, resp := call(req, "some-response", nil)
-			So(status, ShouldEqual, http.StatusOK)
-			So(resp, ShouldEqual, "\"some-response\"\n")
-			So(body, ShouldResemble, &req)
-			So(seenReq.BotID, ShouldEqual, "bot-id")
-			So(seenReq.SessionID, ShouldEqual, "bot-session-id")
-			So(seenReq.SessionTokenExpired, ShouldBeFalse)
-			So(seenReq.PollState, ShouldResembleProto, pollStateInPollToken)
+			assert.Loosely(t, status, should.Equal(http.StatusOK))
+			assert.Loosely(t, resp, should.Equal("\"some-response\"\n"))
+			assert.Loosely(t, body, should.Resemble(&req))
+			assert.Loosely(t, seenReq.BotID, should.Equal("bot-id"))
+			assert.Loosely(t, seenReq.SessionID, should.Equal("bot-session-id"))
+			assert.Loosely(t, seenReq.SessionTokenExpired, should.BeFalse)
+			assert.Loosely(t, seenReq.PollState, should.Resemble(pollStateInPollToken))
 		})
 
-		Convey("Happy path with session token and expired poll token", func() {
+		t.Run("Happy path with session token and expired poll token", func(t *ftt.Test) {
 			pollStateInPollToken := makePollState("in-poll-token")
 			pollStateInPollToken.Expiry = timestamppb.New(now.Add(-5 * time.Minute))
 
@@ -221,18 +221,18 @@ func TestBotHandler(t *testing.T) {
 			}
 
 			body, seenReq, status, resp := call(req, "some-response", nil)
-			So(status, ShouldEqual, http.StatusOK)
-			So(resp, ShouldEqual, "\"some-response\"\n")
-			So(body, ShouldResemble, &req)
-			So(seenReq.BotID, ShouldEqual, "bot-id")
-			So(seenReq.SessionID, ShouldEqual, "bot-session-id")
-			So(seenReq.SessionTokenExpired, ShouldBeFalse)
+			assert.Loosely(t, status, should.Equal(http.StatusOK))
+			assert.Loosely(t, resp, should.Equal("\"some-response\"\n"))
+			assert.Loosely(t, body, should.Resemble(&req))
+			assert.Loosely(t, seenReq.BotID, should.Equal("bot-id"))
+			assert.Loosely(t, seenReq.SessionID, should.Equal("bot-session-id"))
+			assert.Loosely(t, seenReq.SessionTokenExpired, should.BeFalse)
 
 			// Used the session token.
-			So(seenReq.PollState, ShouldResembleProto, pollStateInSessionToken)
+			assert.Loosely(t, seenReq.PollState, should.Resemble(pollStateInSessionToken))
 		})
 
-		Convey("Happy path with poll token and expired session token", func() {
+		t.Run("Happy path with poll token and expired session token", func(t *ftt.Test) {
 			pollStateInPollToken := makePollState("in-poll-token")
 
 			pollStateInSessionToken := makePollState("in-session-token")
@@ -252,18 +252,18 @@ func TestBotHandler(t *testing.T) {
 			}
 
 			body, seenReq, status, resp := call(req, "some-response", nil)
-			So(status, ShouldEqual, http.StatusOK)
-			So(resp, ShouldEqual, "\"some-response\"\n")
-			So(body, ShouldResemble, &req)
-			So(seenReq.BotID, ShouldEqual, "bot-id")
-			So(seenReq.SessionID, ShouldEqual, "")
-			So(seenReq.SessionTokenExpired, ShouldBeTrue)
+			assert.Loosely(t, status, should.Equal(http.StatusOK))
+			assert.Loosely(t, resp, should.Equal("\"some-response\"\n"))
+			assert.Loosely(t, body, should.Resemble(&req))
+			assert.Loosely(t, seenReq.BotID, should.Equal("bot-id"))
+			assert.Loosely(t, seenReq.SessionID, should.BeEmpty)
+			assert.Loosely(t, seenReq.SessionTokenExpired, should.BeTrue)
 
 			// Used the poll token.
-			So(seenReq.PollState, ShouldResembleProto, pollStateInPollToken)
+			assert.Loosely(t, seenReq.PollState, should.Resemble(pollStateInPollToken))
 		})
 
-		Convey("Wrong bot credentials", func() {
+		t.Run("Wrong bot credentials", func(t *ftt.Test) {
 			pollState := &internalspb.PollState{
 				Id:          "poll-state-id",
 				Expiry:      timestamppb.New(now.Add(5 * time.Minute)),
@@ -286,26 +286,26 @@ func TestBotHandler(t *testing.T) {
 			}
 
 			_, seenReq, status, resp := call(req, "some-response", nil)
-			So(seenReq, ShouldBeNil)
-			So(status, ShouldEqual, http.StatusUnauthorized)
-			So(resp, ShouldContainSubstring, "bad bot credentials: wrong FQDN in the LUCI machine token")
+			assert.Loosely(t, seenReq, should.BeNil)
+			assert.Loosely(t, status, should.Equal(http.StatusUnauthorized))
+			assert.Loosely(t, resp, should.ContainSubstring("bad bot credentials: wrong FQDN in the LUCI machine token"))
 		})
 
-		Convey("Bad Content-Type", func() {
+		t.Run("Bad Content-Type", func(t *ftt.Test) {
 			_, seenReq, status, resp := callRaw([]byte("ignored"), "application/x-www-form-urlencoded", nil, nil)
-			So(seenReq, ShouldBeNil)
-			So(status, ShouldEqual, http.StatusBadRequest)
-			So(resp, ShouldContainSubstring, "bad content type")
+			assert.Loosely(t, seenReq, should.BeNil)
+			assert.Loosely(t, status, should.Equal(http.StatusBadRequest))
+			assert.Loosely(t, resp, should.ContainSubstring("bad content type"))
 		})
 
-		Convey("Not JSON", func() {
+		t.Run("Not JSON", func(t *ftt.Test) {
 			_, seenReq, status, resp := callRaw([]byte("what is this"), "application/json; charset=utf-8", nil, nil)
-			So(seenReq, ShouldBeNil)
-			So(status, ShouldEqual, http.StatusBadRequest)
-			So(resp, ShouldContainSubstring, "failed to deserialized")
+			assert.Loosely(t, seenReq, should.BeNil)
+			assert.Loosely(t, status, should.Equal(http.StatusBadRequest))
+			assert.Loosely(t, resp, should.ContainSubstring("failed to deserialized"))
 		})
 
-		Convey("Wrong poll token", func() {
+		t.Run("Wrong poll token", func(t *ftt.Test) {
 			req := testRequest{
 				PollToken: genToken(&internalspb.BotSession{
 					RbeBotSessionId: "not-a-poll-token",
@@ -313,12 +313,12 @@ func TestBotHandler(t *testing.T) {
 				}, []byte("also-secret")),
 			}
 			_, seenReq, status, resp := call(req, "some-response", nil)
-			So(seenReq, ShouldBeNil)
-			So(status, ShouldEqual, http.StatusUnauthorized)
-			So(resp, ShouldContainSubstring, "failed to verify poll token: invalid payload type")
+			assert.Loosely(t, seenReq, should.BeNil)
+			assert.Loosely(t, status, should.Equal(http.StatusUnauthorized))
+			assert.Loosely(t, resp, should.ContainSubstring("failed to verify poll token: invalid payload type"))
 		})
 
-		Convey("Wrong session token", func() {
+		t.Run("Wrong session token", func(t *ftt.Test) {
 			req := testRequest{
 				SessionToken: genToken(&internalspb.PollState{
 					Id:     "not-a-session-token",
@@ -326,12 +326,12 @@ func TestBotHandler(t *testing.T) {
 				}, []byte("also-secret")),
 			}
 			_, seenReq, status, resp := call(req, "some-response", nil)
-			So(seenReq, ShouldBeNil)
-			So(status, ShouldEqual, http.StatusUnauthorized)
-			So(resp, ShouldContainSubstring, "failed to verify session token: invalid payload type")
+			assert.Loosely(t, seenReq, should.BeNil)
+			assert.Loosely(t, status, should.Equal(http.StatusUnauthorized))
+			assert.Loosely(t, resp, should.ContainSubstring("failed to verify session token: invalid payload type"))
 		})
 
-		Convey("Expired poll token", func() {
+		t.Run("Expired poll token", func(t *ftt.Test) {
 			req := testRequest{
 				PollToken: genToken(&internalspb.PollState{
 					Id:     "poll-state-id",
@@ -339,12 +339,12 @@ func TestBotHandler(t *testing.T) {
 				}, []byte("also-secret")),
 			}
 			_, seenReq, status, resp := call(req, "some-response", nil)
-			So(seenReq, ShouldBeNil)
-			So(status, ShouldEqual, http.StatusUnauthorized)
-			So(resp, ShouldContainSubstring, "no valid poll or state token")
+			assert.Loosely(t, seenReq, should.BeNil)
+			assert.Loosely(t, status, should.Equal(http.StatusUnauthorized))
+			assert.Loosely(t, resp, should.ContainSubstring("no valid poll or state token"))
 		})
 
-		Convey("Expired session token", func() {
+		t.Run("Expired session token", func(t *ftt.Test) {
 			req := testRequest{
 				SessionToken: genToken(&internalspb.BotSession{
 					RbeBotSessionId: "session-id",
@@ -353,12 +353,12 @@ func TestBotHandler(t *testing.T) {
 				}, []byte("also-secret")),
 			}
 			_, seenReq, status, resp := call(req, "some-response", nil)
-			So(seenReq, ShouldBeNil)
-			So(status, ShouldEqual, http.StatusUnauthorized)
-			So(resp, ShouldContainSubstring, "no valid poll or state token")
+			assert.Loosely(t, seenReq, should.BeNil)
+			assert.Loosely(t, status, should.Equal(http.StatusUnauthorized))
+			assert.Loosely(t, resp, should.ContainSubstring("no valid poll or state token"))
 		})
 
-		Convey("Expired session and poll tokens", func() {
+		t.Run("Expired session and poll tokens", func(t *ftt.Test) {
 			req := testRequest{
 				PollToken: genToken(&internalspb.PollState{
 					Id:     "poll-state-id",
@@ -371,12 +371,12 @@ func TestBotHandler(t *testing.T) {
 				}, []byte("also-secret")),
 			}
 			_, seenReq, status, resp := call(req, "some-response", nil)
-			So(seenReq, ShouldBeNil)
-			So(status, ShouldEqual, http.StatusUnauthorized)
-			So(resp, ShouldContainSubstring, "no valid poll or state token")
+			assert.Loosely(t, seenReq, should.BeNil)
+			assert.Loosely(t, status, should.Equal(http.StatusUnauthorized))
+			assert.Loosely(t, resp, should.ContainSubstring("no valid poll or state token"))
 		})
 
-		Convey("Session token with no session ID", func() {
+		t.Run("Session token with no session ID", func(t *ftt.Test) {
 			req := testRequest{
 				SessionToken: genToken(&internalspb.BotSession{
 					Expiry:    timestamppb.New(now.Add(5 * time.Minute)),
@@ -384,12 +384,12 @@ func TestBotHandler(t *testing.T) {
 				}, []byte("also-secret")),
 			}
 			_, seenReq, status, resp := call(req, "some-response", nil)
-			So(seenReq, ShouldBeNil)
-			So(status, ShouldEqual, http.StatusBadRequest)
-			So(resp, ShouldContainSubstring, "no session ID")
+			assert.Loosely(t, seenReq, should.BeNil)
+			assert.Loosely(t, status, should.Equal(http.StatusBadRequest))
+			assert.Loosely(t, resp, should.ContainSubstring("no session ID"))
 		})
 
-		Convey("Poll state dimension overrides", func() {
+		t.Run("Poll state dimension overrides", func(t *ftt.Test) {
 			pollState := &internalspb.PollState{
 				Id:          "poll-state-id",
 				Expiry:      timestamppb.New(now.Add(5 * time.Minute)),
@@ -421,8 +421,8 @@ func TestBotHandler(t *testing.T) {
 			}
 
 			body, seenReq, status, _ := call(req, nil, nil)
-			So(status, ShouldEqual, http.StatusOK)
-			So(body, ShouldResemble, &testRequest{
+			assert.Loosely(t, status, should.Equal(http.StatusOK))
+			assert.Loosely(t, body, should.Resemble(&testRequest{
 				Dimensions: map[string][]string{
 					"id":         {"correct-bot-id"},
 					"pool":       {"pool"},
@@ -433,8 +433,8 @@ func TestBotHandler(t *testing.T) {
 					"inject":     {"a"},
 				},
 				PollToken: req.PollToken,
-			})
-			So(seenReq.BotID, ShouldEqual, "correct-bot-id")
+			}))
+			assert.Loosely(t, seenReq.BotID, should.Equal("correct-bot-id"))
 		})
 	})
 }
@@ -442,7 +442,7 @@ func TestBotHandler(t *testing.T) {
 func TestCheckCredentials(t *testing.T) {
 	t.Parallel()
 
-	Convey("No creds", t, func() {
+	ftt.Run("No creds", t, func(t *ftt.Test) {
 		ctx := auth.WithState(context.Background(), &authtest.FakeState{
 			Identity: identity.AnonymousIdentity,
 		})
@@ -455,7 +455,7 @@ func TestCheckCredentials(t *testing.T) {
 				},
 			},
 		})
-		So(err, ShouldErrLike, "expecting GCE VM token auth")
+		assert.Loosely(t, err, should.ErrLike("expecting GCE VM token auth"))
 
 		err = checkCredentials(ctx, &internalspb.PollState{
 			AuthMethod: &internalspb.PollState_ServiceAccountAuth_{
@@ -464,7 +464,7 @@ func TestCheckCredentials(t *testing.T) {
 				},
 			},
 		})
-		So(err, ShouldErrLike, "expecting service account credentials")
+		assert.Loosely(t, err, should.ErrLike("expecting service account credentials"))
 
 		err = checkCredentials(ctx, &internalspb.PollState{
 			AuthMethod: &internalspb.PollState_LuciMachineTokenAuth{
@@ -473,16 +473,16 @@ func TestCheckCredentials(t *testing.T) {
 				},
 			},
 		})
-		So(err, ShouldErrLike, "expecting LUCI machine token auth")
+		assert.Loosely(t, err, should.ErrLike("expecting LUCI machine token auth"))
 
 		err = checkCredentials(ctx, &internalspb.PollState{
 			AuthMethod:  &internalspb.PollState_IpAllowlistAuth{},
 			IpAllowlist: "some-ip-allowlist",
 		})
-		So(err, ShouldErrLike, "is not in the allowlist")
+		assert.Loosely(t, err, should.ErrLike("is not in the allowlist"))
 	})
 
-	Convey("GCE auth", t, func() {
+	ftt.Run("GCE auth", t, func(t *ftt.Test) {
 		ctx := auth.WithState(context.Background(), &authtest.FakeState{
 			Identity: "bot:ignored",
 			UserExtra: &openid.GoogleComputeTokenInfo{
@@ -500,7 +500,7 @@ func TestCheckCredentials(t *testing.T) {
 				},
 			},
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		// Wrong parameters #1.
 		err = checkCredentials(ctx, &internalspb.PollState{
@@ -511,7 +511,7 @@ func TestCheckCredentials(t *testing.T) {
 				},
 			},
 		})
-		So(err, ShouldErrLike, "wrong GCE VM token")
+		assert.Loosely(t, err, should.ErrLike("wrong GCE VM token"))
 
 		// Wrong parameters #2.
 		err = checkCredentials(ctx, &internalspb.PollState{
@@ -522,10 +522,10 @@ func TestCheckCredentials(t *testing.T) {
 				},
 			},
 		})
-		So(err, ShouldErrLike, "wrong GCE VM token")
+		assert.Loosely(t, err, should.ErrLike("wrong GCE VM token"))
 	})
 
-	Convey("Service account auth", t, func() {
+	ftt.Run("Service account auth", t, func(t *ftt.Test) {
 		ctx := auth.WithState(context.Background(), &authtest.FakeState{
 			Identity: "user:some-account@example.com",
 		})
@@ -538,7 +538,7 @@ func TestCheckCredentials(t *testing.T) {
 				},
 			},
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		// Wrong email.
 		err = checkCredentials(ctx, &internalspb.PollState{
@@ -548,10 +548,10 @@ func TestCheckCredentials(t *testing.T) {
 				},
 			},
 		})
-		So(err, ShouldErrLike, "wrong service account")
+		assert.Loosely(t, err, should.ErrLike("wrong service account"))
 	})
 
-	Convey("Machine token auth", t, func() {
+	ftt.Run("Machine token auth", t, func(t *ftt.Test) {
 		ctx := auth.WithState(context.Background(), &authtest.FakeState{
 			Identity: "bot:ignored",
 			UserExtra: &machine.MachineTokenInfo{
@@ -567,7 +567,7 @@ func TestCheckCredentials(t *testing.T) {
 				},
 			},
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		// Wrong FQDN.
 		err = checkCredentials(ctx, &internalspb.PollState{
@@ -577,10 +577,10 @@ func TestCheckCredentials(t *testing.T) {
 				},
 			},
 		})
-		So(err, ShouldErrLike, "wrong FQDN in the LUCI machine token")
+		assert.Loosely(t, err, should.ErrLike("wrong FQDN in the LUCI machine token"))
 	})
 
-	Convey("IP allowlist", t, func() {
+	ftt.Run("IP allowlist", t, func(t *ftt.Test) {
 		ctx := auth.WithState(context.Background(), &authtest.FakeState{
 			Identity:       identity.AnonymousIdentity,
 			PeerIPOverride: net.ParseIP("127.1.1.1"),
@@ -595,14 +595,14 @@ func TestCheckCredentials(t *testing.T) {
 			AuthMethod:  &internalspb.PollState_IpAllowlistAuth{},
 			IpAllowlist: "good",
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		// Wrong IP.
 		err = checkCredentials(ctx, &internalspb.PollState{
 			AuthMethod:  &internalspb.PollState_IpAllowlistAuth{},
 			IpAllowlist: "bad",
 		})
-		So(err, ShouldErrLike, "bot IP 127.1.1.1 is not in the allowlist")
+		assert.Loosely(t, err, should.ErrLike("bot IP 127.1.1.1 is not in the allowlist"))
 	})
 }
 

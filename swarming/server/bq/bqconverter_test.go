@@ -22,6 +22,9 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/data/packedintset"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -29,9 +32,6 @@ import (
 	bqpb "go.chromium.org/luci/swarming/proto/bq"
 	configpb "go.chromium.org/luci/swarming/proto/config"
 	"go.chromium.org/luci/swarming/server/model"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func createTaskRequest(key *datastore.Key, testTime time.Time) *model.TaskRequest {
@@ -465,22 +465,22 @@ func TestTaskRequestConversion(t *testing.T) {
 	t.Parallel()
 	var testTime = time.Date(2023, time.January, 1, 2, 3, 4, 0, time.UTC)
 
-	Convey("Convert TaskRequest with empty parent task", t, func() {
+	ftt.Run("Convert TaskRequest with empty parent task", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		taskID := "65aba3a3e6b99310"
 		key, err := model.TaskIDToRequestKey(ctx, taskID)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		sampleRequest := createTaskRequest(key, testTime)
 		expected := createBQTaskRequest(taskID, testTime)
 		actual := taskRequest(sampleRequest)
-		So(actual, ShouldResembleProto, expected)
+		assert.Loosely(t, actual, should.Resemble(expected))
 	})
 
-	Convey("Converting empty EnvPrefixes works", t, func() {
+	ftt.Run("Converting empty EnvPrefixes works", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		taskID := "65aba3a3e6b99310"
 		key, err := model.TaskIDToRequestKey(ctx, taskID)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		sampleRequest := createTaskRequest(key, testTime)
 		// Set this field to zero
 		sampleRequest.TaskSlices[0].Properties.EnvPrefixes = make(model.EnvPrefixes)
@@ -489,18 +489,18 @@ func TestTaskRequestConversion(t *testing.T) {
 		expected := createBQTaskRequest(taskID, testTime)
 		expected.TaskSlices[0].Properties.EnvPaths = make([]*bqpb.StringListPair, 0)
 		actual := taskRequest(sampleRequest)
-		So(err, ShouldBeNil)
-		So(actual, ShouldResembleProto, expected)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, actual, should.Resemble(expected))
 	})
 }
 
 func TestPerformanceStatsConversion(t *testing.T) {
 	t.Parallel()
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		got := performanceStats(createPerformanceStats(), 123.456)
 		want := createBQPerformanceStats(123.456)
-		So(got, ShouldResembleProto, want)
+		assert.Loosely(t, got, should.Resemble(want))
 	})
 }
 
@@ -516,14 +516,14 @@ func TestTaskResultCommonConversion(t *testing.T) {
 		panic(err)
 	}
 
-	Convey("Full", t, func() {
+	ftt.Run("Full", t, func(t *ftt.Test) {
 		res := createTaskResultCommon(testTime)
 		got := taskResultCommon(res, createTaskRequest(key, testTime))
 		want := createBQTaskResultBase(taskID, testTime)
-		So(got, ShouldResembleProto, want)
+		assert.Loosely(t, got, should.Resemble(want))
 	})
 
-	Convey("Internal error", t, func() {
+	ftt.Run("Internal error", t, func(t *ftt.Test) {
 		res := createTaskResultCommon(testTime)
 		res.InternalFailure = true
 		got := taskResultCommon(res, createTaskRequest(key, testTime))
@@ -532,7 +532,7 @@ func TestTaskResultCommonConversion(t *testing.T) {
 		want.State = bqpb.TaskState_RAN_INTERNAL_FAILURE
 		want.StateCategory = bqpb.TaskStateCategory_CATEGORY_TRANSIENT_DONE
 
-		So(got, ShouldResembleProto, want)
+		assert.Loosely(t, got, should.Resemble(want))
 	})
 }
 
@@ -548,7 +548,7 @@ func TestTaskResultSummaryConversion(t *testing.T) {
 		panic(err)
 	}
 
-	Convey("Not dedupped", t, func() {
+	ftt.Run("Not dedupped", t, func(t *ftt.Test) {
 		summary := &model.TaskResultSummary{
 			Created:          testTime,
 			TaskResultCommon: *createTaskResultCommon(testTime),
@@ -567,10 +567,10 @@ func TestTaskResultSummaryConversion(t *testing.T) {
 		want.TryNumber = 1
 		want.Performance = createBQPerformanceStats(123.456)
 
-		So(got, ShouldResembleProto, want)
+		assert.Loosely(t, got, should.Resemble(want))
 	})
 
-	Convey("Dedupped", t, func() {
+	ftt.Run("Dedupped", t, func(t *ftt.Test) {
 		const dedupedFrom = "65aba3a3e6b00001"
 
 		summary := &model.TaskResultSummary{
@@ -595,7 +595,7 @@ func TestTaskResultSummaryConversion(t *testing.T) {
 		want.State = bqpb.TaskState_DEDUPED
 		want.StateCategory = bqpb.TaskStateCategory_CATEGORY_NEVER_RAN_DONE
 
-		So(got, ShouldResembleProto, want)
+		assert.Loosely(t, got, should.Resemble(want))
 	})
 }
 
@@ -611,7 +611,7 @@ func TestTaskRunResultConversion(t *testing.T) {
 		panic(err)
 	}
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		res := &model.TaskRunResult{
 			TaskResultCommon: *createTaskResultCommon(testTime),
 			CostUSD:          123.456,
@@ -628,7 +628,7 @@ func TestTaskRunResultConversion(t *testing.T) {
 		want.TryNumber = 1
 		want.Performance = createBQPerformanceStats(123.456)
 
-		So(got, ShouldResembleProto, want)
+		assert.Loosely(t, got, should.Resemble(want))
 	})
 }
 
@@ -697,36 +697,36 @@ func TestBotEventConversion(t *testing.T) {
 		}
 	}
 
-	Convey("Works", t, func() {
-		So(
+	ftt.Run("Works", t, func(t *ftt.Test) {
+		assert.Loosely(t,
 			botEvent(event(model.BotEventMissing, false, "", `{}`)),
-			ShouldResembleProto,
-			expected(bqpb.BotEventType_BOT_MISSING, bqpb.BotStatusType_MISSING, "", `{}`),
-		)
+			should.Resemble(
+				expected(bqpb.BotEventType_BOT_MISSING, bqpb.BotStatusType_MISSING, "", `{}`),
+			))
 
-		So(
+		assert.Loosely(t,
 			botEvent(event(model.BotEventSleep, false, "", `{}`)),
-			ShouldResembleProto,
-			expected(bqpb.BotEventType_INSTRUCT_IDLE, bqpb.BotStatusType_IDLE, "", `{}`),
-		)
+			should.Resemble(
+				expected(bqpb.BotEventType_INSTRUCT_IDLE, bqpb.BotStatusType_IDLE, "", `{}`),
+			))
 
 		state := `{"quarantined": "broke"}`
-		So(
+		assert.Loosely(t,
 			botEvent(event(model.BotEventSleep, true, "ignored", state)),
-			ShouldResembleProto,
-			expected(bqpb.BotEventType_INSTRUCT_IDLE, bqpb.BotStatusType_QUARANTINED_BY_BOT, "broke", state),
-		)
+			should.Resemble(
+				expected(bqpb.BotEventType_INSTRUCT_IDLE, bqpb.BotStatusType_QUARANTINED_BY_BOT, "broke", state),
+			))
 
-		So(
+		assert.Loosely(t,
 			botEvent(event(model.BotEventSleep, false, "maintenance", `{}`)),
-			ShouldResembleProto,
-			expected(bqpb.BotEventType_INSTRUCT_IDLE, bqpb.BotStatusType_OVERHEAD_MAINTENANCE_EXTERNAL, "maintenance", `{}`),
-		)
+			should.Resemble(
+				expected(bqpb.BotEventType_INSTRUCT_IDLE, bqpb.BotStatusType_OVERHEAD_MAINTENANCE_EXTERNAL, "maintenance", `{}`),
+			))
 
-		So(
+		assert.Loosely(t,
 			botEvent(event(model.BotEventTask, false, "", `{}`)),
-			ShouldResembleProto,
-			expected(bqpb.BotEventType_INSTRUCT_START_TASK, bqpb.BotStatusType_BUSY, "", `{}`),
-		)
+			should.Resemble(
+				expected(bqpb.BotEventType_INSTRUCT_START_TASK, bqpb.BotStatusType_BUSY, "", `{}`),
+			))
 	})
 }

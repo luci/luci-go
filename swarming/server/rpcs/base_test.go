@@ -24,6 +24,9 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	cfgmem "go.chromium.org/luci/config/impl/memory"
@@ -38,8 +41,6 @@ import (
 	"go.chromium.org/luci/swarming/server/acls"
 	"go.chromium.org/luci/swarming/server/cfg"
 	"go.chromium.org/luci/swarming/server/model"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 const (
@@ -420,7 +421,7 @@ func SetupTestTasks(ctx context.Context) (*MockedRequestState, map[string]string
 func TestServerInterceptor(t *testing.T) {
 	t.Parallel()
 
-	Convey("With config in datastore", t, func() {
+	ftt.Run("With config in datastore", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		ctx = auth.WithState(ctx, &authtest.FakeState{
 			Identity: identity.AnonymousIdentity,
@@ -431,28 +432,28 @@ func TestServerInterceptor(t *testing.T) {
 			"swarming.v2.Swarming",
 		})
 
-		Convey("Sets up state", func() {
+		t.Run("Sets up state", func(t *ftt.Test) {
 			var state *RequestState
 			err := interceptor(ctx, "/swarming.v2.Swarming/GetPermissions", func(ctx context.Context) error {
 				state = State(ctx)
 				return nil
 			})
-			So(err, ShouldBeNil)
-			So(state, ShouldNotBeNil)
-			So(state.Config, ShouldNotBeNil)
-			So(state.ACL, ShouldNotBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, state, should.NotBeNil)
+			assert.Loosely(t, state.Config, should.NotBeNil)
+			assert.Loosely(t, state.ACL, should.NotBeNil)
 		})
 
-		Convey("Skips unrelated APIs", func() {
+		t.Run("Skips unrelated APIs", func(t *ftt.Test) {
 			var called bool
 			err := interceptor(ctx, "/another.Service/GetPermissions", func(ctx context.Context) error {
 				called = true
-				defer func() { So(recover(), ShouldNotBeNil) }()
+				defer func() { assert.Loosely(t, recover(), should.NotBeNilInterface) }()
 				State(ctx) // panics
 				return nil
 			})
-			So(err, ShouldBeNil)
-			So(called, ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, called, should.BeTrue)
 		})
 	})
 }

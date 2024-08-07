@@ -25,6 +25,9 @@ import (
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/filter/featureBreaker"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -32,15 +35,12 @@ import (
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	bqpb "go.chromium.org/luci/swarming/proto/bq"
 	"go.chromium.org/luci/swarming/server/model"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestFetcher(t *testing.T) {
 	t.Parallel()
 
-	Convey("With datastore", t, func() {
+	ftt.Run("With datastore", t, func(t *ftt.Test) {
 		var testTime = time.Date(2024, time.March, 3, 4, 5, 6, 0, time.UTC)
 		const queryBatchSize = 3
 		const flushThreshold = 7
@@ -53,10 +53,10 @@ func TestFetcher(t *testing.T) {
 			TS time.Time
 		}
 		for i := 1; i < 20; i++ {
-			So(datastore.Put(ctx, &entity{
+			assert.Loosely(t, datastore.Put(ctx, &entity{
 				ID: int64(i),
 				TS: testTime.Add(time.Duration(i) * time.Second),
-			}), ShouldBeNil)
+			}), should.BeNil)
 		}
 		datastore.GetTestable(ctx).CatchupIndexes()
 
@@ -112,37 +112,37 @@ func TestFetcher(t *testing.T) {
 			},
 		}
 
-		Convey("Visits correct time range", func() {
+		t.Run("Visits correct time range", func(t *ftt.Test) {
 			err := fetcher.Fetch(ctx, testTime.Add(3*time.Second), 10*time.Second, []*Flusher{flusher})
-			So(err, ShouldBeNil)
-			So(collected, ShouldResemble, []int64{3, 4, 5, 6, 7, 8, 9, 10, 11, 12})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, collected, should.Resemble([]int64{3, 4, 5, 6, 7, 8, 9, 10, 11, 12}))
 
 			// Respects queryBatchSize (== 3 entities).
-			So(convertCalls, ShouldResemble, []int{3, 3, 3, 1})
+			assert.Loosely(t, convertCalls, should.Resemble([]int{3, 3, 3, 1}))
 
 			// Respects flushThreshold (== 7 bytes). Each message is 2 bytes long. It
 			// takes 4 messages (== 8 bytes) to trigger the flush. The last flush
 			// sends the remaining 2 messages.
-			So(flushCalls, ShouldResemble, []int{8, 8, 4})
+			assert.Loosely(t, flushCalls, should.Resemble([]int{8, 8, 4}))
 		})
 
-		Convey("Convert error", func() {
+		t.Run("Convert error", func(t *ftt.Test) {
 			wantErr := errors.New("BOOM")
 			convertErr = wantErr
 			gotErr := fetcher.Fetch(ctx, testTime.Add(3*time.Second), 10*time.Second, []*Flusher{flusher})
-			So(gotErr, ShouldEqual, wantErr)
-			So(collected, ShouldBeEmpty)
+			assert.Loosely(t, gotErr, should.Equal(wantErr))
+			assert.Loosely(t, collected, should.BeEmpty)
 		})
 
-		Convey("Flush error", func() {
+		t.Run("Flush error", func(t *ftt.Test) {
 			wantErr := errors.New("BOOM")
 			flushErr = func(int) error { return wantErr }
 			gotErr := fetcher.Fetch(ctx, testTime.Add(3*time.Second), 10*time.Second, []*Flusher{flusher})
-			So(gotErr, ShouldEqual, wantErr)
-			So(collected, ShouldBeEmpty)
+			assert.Loosely(t, gotErr, should.Equal(wantErr))
+			assert.Loosely(t, collected, should.BeEmpty)
 		})
 
-		Convey("Final flush error", func() {
+		t.Run("Final flush error", func(t *ftt.Test) {
 			wantErr := errors.New("BOOM")
 			flushErr = func(size int) error {
 				if size == 4 {
@@ -151,8 +151,8 @@ func TestFetcher(t *testing.T) {
 				return nil
 			}
 			gotErr := fetcher.Fetch(ctx, testTime.Add(3*time.Second), 10*time.Second, []*Flusher{flusher})
-			So(gotErr, ShouldEqual, wantErr)
-			So(collected, ShouldResemble, []int64{3, 4, 5, 6, 7, 8, 9, 10}) // doesn't have the last 2
+			assert.Loosely(t, gotErr, should.Equal(wantErr))
+			assert.Loosely(t, collected, should.Resemble([]int64{3, 4, 5, 6, 7, 8, 9, 10})) // doesn't have the last 2
 		})
 	})
 }
@@ -160,19 +160,19 @@ func TestFetcher(t *testing.T) {
 func TestConvertTaskResults(t *testing.T) {
 	t.Parallel()
 
-	Convey("With datastore", t, func() {
+	ftt.Run("With datastore", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 
 		// TaskRunResult that has both TaskRequest and PerformanceStats.
 		req1, _ := model.TaskIDToRequestKey(ctx, "692b33d4feb00010")
-		So(datastore.Put(ctx, &model.TaskRequest{
+		assert.Loosely(t, datastore.Put(ctx, &model.TaskRequest{
 			Key:  req1,
 			Name: "req-1",
-		}), ShouldBeNil)
-		So(datastore.Put(ctx, &model.PerformanceStats{
+		}), should.BeNil)
+		assert.Loosely(t, datastore.Put(ctx, &model.PerformanceStats{
 			Key:             model.PerformanceStatsKey(ctx, req1),
 			BotOverheadSecs: 123,
-		}), ShouldBeNil)
+		}), should.BeNil)
 		res1 := &model.TaskRunResult{
 			Key: model.TaskRunResultKey(ctx, req1),
 			TaskResultCommon: model.TaskResultCommon{
@@ -191,10 +191,10 @@ func TestConvertTaskResults(t *testing.T) {
 
 		// TaskRunResult that has TaskRequest, but not PerformanceStats.
 		req3, _ := model.TaskIDToRequestKey(ctx, "692b33d4feb00030")
-		So(datastore.Put(ctx, &model.TaskRequest{
+		assert.Loosely(t, datastore.Put(ctx, &model.TaskRequest{
 			Key:  req3,
 			Name: "req-3",
-		}), ShouldBeNil)
+		}), should.BeNil)
 		res3 := &model.TaskRunResult{
 			Key: model.TaskRunResultKey(ctx, req3),
 			TaskResultCommon: model.TaskResultCommon{
@@ -204,10 +204,10 @@ func TestConvertTaskResults(t *testing.T) {
 
 		// TaskRunResult with PerformanceStats entity missing.
 		req4, _ := model.TaskIDToRequestKey(ctx, "692b33d4feb00040")
-		So(datastore.Put(ctx, &model.TaskRequest{
+		assert.Loosely(t, datastore.Put(ctx, &model.TaskRequest{
 			Key:  req4,
 			Name: "req-4",
-		}), ShouldBeNil)
+		}), should.BeNil)
 		res4 := &model.TaskRunResult{
 			Key: model.TaskRunResultKey(ctx, req4),
 			TaskResultCommon: model.TaskResultCommon{
@@ -215,7 +215,7 @@ func TestConvertTaskResults(t *testing.T) {
 			},
 		}
 
-		Convey("Works", func() {
+		t.Run("Works", func(t *ftt.Test) {
 			out, err := convertTaskResults(ctx,
 				[]*model.TaskRunResult{res1, res2, res3, res4},
 				func(res *model.TaskRunResult, req *model.TaskRequest, perf *model.PerformanceStats) *bqpb.TaskResult {
@@ -232,16 +232,16 @@ func TestConvertTaskResults(t *testing.T) {
 					}
 				},
 			)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(out, ShouldResembleProto, []*bqpb.TaskResult{
+			assert.Loosely(t, out, should.Resemble([]*bqpb.TaskResult{
 				{TaskId: "692b33d4feb00010", ServerVersions: []string{"req-1", "123"}},
 				{TaskId: "692b33d4feb00030", ServerVersions: []string{"req-3", "none"}},
 				{TaskId: "692b33d4feb00040", ServerVersions: []string{"req-4", "none"}},
-			})
+			}))
 		})
 
-		Convey("Transient error", func() {
+		t.Run("Transient error", func(t *ftt.Test) {
 			var fb featureBreaker.FeatureBreaker
 			ctx, fb = featureBreaker.FilterRDS(ctx, nil)
 			fb.BreakFeatures(errors.New("BOOM"), "GetMulti")
@@ -253,8 +253,8 @@ func TestConvertTaskResults(t *testing.T) {
 				},
 			)
 
-			So(err, ShouldErrLike, "BOOM")
-			So(transient.Tag.In(err), ShouldBeTrue)
+			assert.Loosely(t, err, should.ErrLike("BOOM"))
+			assert.Loosely(t, transient.Tag.In(err), should.BeTrue)
 		})
 	})
 }

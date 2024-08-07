@@ -32,8 +32,11 @@ import (
 	"go.chromium.org/luci/swarming/server/acls"
 	"go.chromium.org/luci/swarming/server/model"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestListBotEvents(t *testing.T) {
@@ -108,103 +111,103 @@ func TestListBotEvents(t *testing.T) {
 		return (&BotsServer{}).ListBotEvents(ctx, req)
 	}
 
-	Convey("Bad bot ID", t, func() {
+	ftt.Run("Bad bot ID", t, func(t *ftt.Test) {
 		_, err := call(&apipb.BotEventsRequest{
 			BotId: "",
 			Limit: 10,
 		})
-		So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
 	})
 
-	Convey("Limit is checked", t, func() {
+	ftt.Run("Limit is checked", t, func(t *ftt.Test) {
 		_, err := call(&apipb.BotEventsRequest{
 			BotId: "doesnt-matter",
 			Limit: -10,
 		})
-		So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
 		_, err = call(&apipb.BotEventsRequest{
 			BotId: "doesnt-matter",
 			Limit: 1001,
 		})
-		So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
 	})
 
-	Convey("Cursor is checked", t, func() {
+	ftt.Run("Cursor is checked", t, func(t *ftt.Test) {
 		_, err := call(&apipb.BotEventsRequest{
 			BotId:  "doesnt-matter",
 			Cursor: "!!!!",
 		})
-		So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
 	})
 
-	Convey("No permissions", t, func() {
+	ftt.Run("No permissions", t, func(t *ftt.Test) {
 		_, err := call(&apipb.BotEventsRequest{
 			BotId: "hidden-bot",
 			Limit: 10,
 		})
-		So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
+		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
 	})
 
-	Convey("Bot not in a config", t, func() {
+	ftt.Run("Bot not in a config", t, func(t *ftt.Test) {
 		_, err := call(&apipb.BotEventsRequest{
 			BotId: "unknown-bot",
 			Limit: 10,
 		})
-		So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
+		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
 	})
 
-	Convey("All events", t, func() {
+	ftt.Run("All events", t, func(t *ftt.Test) {
 		resp, err := call(&apipb.BotEventsRequest{
 			BotId: "visible-bot",
 		})
-		So(err, ShouldBeNil)
-		So(resp.Cursor, ShouldEqual, "")
-		So(resp.Items, ShouldResembleProto, []*apipb.BotEventResponse{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, resp.Cursor, should.BeEmpty)
+		assert.Loosely(t, resp.Items, should.Resemble([]*apipb.BotEventResponse{
 			expectedEvent("visible-bot", 4*time.Hour),
 			expectedEvent("visible-bot", 3*time.Hour),
 			expectedEvent("visible-bot", 2*time.Hour),
 			expectedEvent("visible-bot", 1*time.Hour),
 			expectedEvent("visible-bot", 0),
-		})
+		}))
 	})
 
-	Convey("Pagination", t, func() {
+	ftt.Run("Pagination", t, func(t *ftt.Test) {
 		resp, err := call(&apipb.BotEventsRequest{
 			BotId: "visible-bot",
 			Limit: 3,
 		})
-		So(err, ShouldBeNil)
-		So(resp.Cursor, ShouldNotEqual, "")
-		So(resp.Items, ShouldResembleProto, []*apipb.BotEventResponse{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, resp.Cursor, should.NotEqual(""))
+		assert.Loosely(t, resp.Items, should.Resemble([]*apipb.BotEventResponse{
 			expectedEvent("visible-bot", 4*time.Hour),
 			expectedEvent("visible-bot", 3*time.Hour),
 			expectedEvent("visible-bot", 2*time.Hour),
-		})
+		}))
 		resp, err = call(&apipb.BotEventsRequest{
 			BotId:  "visible-bot",
 			Limit:  3,
 			Cursor: resp.Cursor,
 		})
-		So(err, ShouldBeNil)
-		So(resp.Cursor, ShouldEqual, "")
-		So(resp.Items, ShouldResembleProto, []*apipb.BotEventResponse{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, resp.Cursor, should.BeEmpty)
+		assert.Loosely(t, resp.Items, should.Resemble([]*apipb.BotEventResponse{
 			expectedEvent("visible-bot", 1*time.Hour),
 			expectedEvent("visible-bot", 0),
-		})
+		}))
 	})
 
-	Convey("Time range", t, func() {
+	ftt.Run("Time range", t, func(t *ftt.Test) {
 		resp, err := call(&apipb.BotEventsRequest{
 			BotId: "visible-bot",
 			Start: timestamppb.New(TestTime.Add(time.Hour)),     // inclusive range
 			End:   timestamppb.New(TestTime.Add(4 * time.Hour)), // exclusive range
 		})
-		So(err, ShouldBeNil)
-		So(resp.Cursor, ShouldEqual, "")
-		So(resp.Items, ShouldResembleProto, []*apipb.BotEventResponse{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, resp.Cursor, should.BeEmpty)
+		assert.Loosely(t, resp.Items, should.Resemble([]*apipb.BotEventResponse{
 			expectedEvent("visible-bot", 3*time.Hour),
 			expectedEvent("visible-bot", 2*time.Hour),
 			expectedEvent("visible-bot", 1*time.Hour),
-		})
+		}))
 	})
 }

@@ -19,11 +19,12 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config/validation"
 
 	configpb "go.chromium.org/luci/swarming/proto/config"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 var goodBotsCfg = &configpb.BotsCfg{
@@ -75,25 +76,25 @@ var goodBotsCfg = &configpb.BotsCfg{
 func TestNewBotGroups(t *testing.T) {
 	t.Parallel()
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		bg, err := newBotGroups(goodBotsCfg)
-		So(err, ShouldBeNil)
-		So(bg.trustedDimensions, ShouldResemble, []string{"a", "b", "pool"})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, bg.trustedDimensions, should.Resemble([]string{"a", "b", "pool"}))
 
 		group0 := bg.directMatches["bot-0"]
-		So(group0, ShouldNotBeNil)
-		So(group0.Dimensions, ShouldResemble, map[string][]string{
+		assert.Loosely(t, group0, should.NotBeNil)
+		assert.Loosely(t, group0.Dimensions, should.Resemble(map[string][]string{
 			"pool": {"a"},
 			"dim":  {"1", "2"},
-		})
+		}))
 
 		group1 := bg.directMatches["bot-1"]
-		So(group1, ShouldNotBeNil)
-		So(group1.Dimensions, ShouldResemble, map[string][]string{
+		assert.Loosely(t, group1, should.NotBeNil)
+		assert.Loosely(t, group1.Dimensions, should.Resemble(map[string][]string{
 			"pool": {"b"},
-		})
+		}))
 
-		So(bg.directMatches, ShouldResemble, map[string]*BotGroup{
+		assert.Loosely(t, bg.directMatches, should.Resemble(map[string]*BotGroup{
 			"bot-0":         group0,
 			"vm0-m4":        group0,
 			"vm1-m4":        group0,
@@ -103,33 +104,33 @@ func TestNewBotGroups(t *testing.T) {
 			"vm0-m5":        group1,
 			"vm1-m5":        group1,
 			"vm2-m5":        group1,
-		})
+		}))
 
 		prefixes := map[string]*BotGroup{}
 		bg.prefixMatches.Walk(func(pfx string, val any) bool {
 			prefixes[pfx] = val.(*BotGroup)
 			return false
 		})
-		So(prefixes, ShouldResemble, map[string]*BotGroup{
+		assert.Loosely(t, prefixes, should.Resemble(map[string]*BotGroup{
 			"gce-vms-0-": group0,
 			"gce-vms-1-": group1,
-		})
+		}))
 
-		So(bg.defaultGroup.Dimensions, ShouldResemble, map[string][]string{
+		assert.Loosely(t, bg.defaultGroup.Dimensions, should.Resemble(map[string][]string{
 			"pool":  {"unassigned"},
 			"extra": {"1"},
-		})
+		}))
 	})
 }
 
 func TestHostBotID(t *testing.T) {
 	t.Parallel()
 
-	Convey("Works", t, func() {
-		So(HostBotID("abc"), ShouldEqual, "abc")
-		So(HostBotID("abc-def"), ShouldEqual, "abc-def")
-		So(HostBotID("abc--def"), ShouldEqual, "abc")
-		So(HostBotID("abc--def--xyz"), ShouldEqual, "abc")
+	ftt.Run("Works", t, func(t *ftt.Test) {
+		assert.Loosely(t, HostBotID("abc"), should.Equal("abc"))
+		assert.Loosely(t, HostBotID("abc-def"), should.Equal("abc-def"))
+		assert.Loosely(t, HostBotID("abc--def"), should.Equal("abc"))
+		assert.Loosely(t, HostBotID("abc--def--xyz"), should.Equal("abc"))
 	})
 }
 
@@ -152,17 +153,17 @@ func TestValidateBotsCfg(t *testing.T) {
 		return nil
 	}
 
-	Convey("Empty", t, func() {
-		So(call(&configpb.BotsCfg{
+	ftt.Run("Empty", t, func(t *ftt.Test) {
+		assert.Loosely(t, call(&configpb.BotsCfg{
 			TrustedDimensions: []string{"pool"},
-		}), ShouldBeNil)
+		}), should.BeNil)
 	})
 
-	Convey("Good", t, func() {
-		So(call(goodBotsCfg), ShouldBeNil)
+	ftt.Run("Good", t, func(t *ftt.Test) {
+		assert.Loosely(t, call(goodBotsCfg), should.BeNil)
 	})
 
-	Convey("Errors", t, func() {
+	ftt.Run("Errors", t, func(t *ftt.Test) {
 		groups := func(gr ...*configpb.BotGroup) *configpb.BotsCfg {
 			return &configpb.BotsCfg{
 				TrustedDimensions: []string{"pool"},
@@ -290,7 +291,7 @@ func TestValidateBotsCfg(t *testing.T) {
 			},
 		}
 		for _, cs := range testCases {
-			So(call(cs.cfg), ShouldResemble, []string{`in "bots.cfg" ` + cs.err})
+			assert.Loosely(t, call(cs.cfg), should.Resemble([]string{`in "bots.cfg" ` + cs.err}))
 		}
 	})
 }

@@ -21,50 +21,50 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestTaskID(t *testing.T) {
 	t.Parallel()
 
-	Convey("With datastore", t, func() {
+	ftt.Run("With datastore", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 
-		Convey("Key to string", func() {
+		t.Run("Key to string", func(t *ftt.Test) {
 			key := datastore.NewKey(ctx, "TaskRequest", "", 8787878774240697582, nil)
-			So("60b2ed0a43023110", ShouldEqual, RequestKeyToTaskID(key, AsRequest))
-			So("60b2ed0a43023111", ShouldEqual, RequestKeyToTaskID(key, AsRunResult))
+			assert.Loosely(t, "60b2ed0a43023110", should.Equal(RequestKeyToTaskID(key, AsRequest)))
+			assert.Loosely(t, "60b2ed0a43023111", should.Equal(RequestKeyToTaskID(key, AsRunResult)))
 		})
 
-		Convey("String to key: AsRequest", func() {
+		t.Run("String to key: AsRequest", func(t *ftt.Test) {
 			key, err := TaskIDToRequestKey(ctx, "60b2ed0a43023110")
-			So(err, ShouldBeNil)
-			So(key.IntID(), ShouldEqual, 8787878774240697582)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, key.IntID(), should.Equal(8787878774240697582))
 		})
 
-		Convey("String to key: AsRunResult", func() {
+		t.Run("String to key: AsRunResult", func(t *ftt.Test) {
 			key, err := TaskIDToRequestKey(ctx, "60b2ed0a43023111")
-			So(err, ShouldBeNil)
-			So(key.IntID(), ShouldEqual, 8787878774240697582)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, key.IntID(), should.Equal(8787878774240697582))
 		})
 
-		Convey("Bad hex", func() {
+		t.Run("Bad hex", func(t *ftt.Test) {
 			_, err := TaskIDToRequestKey(ctx, "60b2ed0a4302311z")
-			So(err, ShouldErrLike, "bad task ID: bad lowercase hex string")
+			assert.Loosely(t, err, should.ErrLike("bad task ID: bad lowercase hex string"))
 		})
 
-		Convey("Empty", func() {
+		t.Run("Empty", func(t *ftt.Test) {
 			_, err := TaskIDToRequestKey(ctx, "")
-			So(err, ShouldErrLike, "bad task ID: too small")
+			assert.Loosely(t, err, should.ErrLike("bad task ID: too small"))
 		})
 
-		Convey("Overflow", func() {
+		t.Run("Overflow", func(t *ftt.Test) {
 			_, err := TaskIDToRequestKey(ctx, "ff60b2ed0a4302311f")
-			So(err, ShouldErrLike, "value out of range")
+			assert.Loosely(t, err, should.ErrLike("value out of range"))
 		})
 	})
 }
@@ -72,47 +72,47 @@ func TestTaskID(t *testing.T) {
 func TestTimestampToRequestKey(t *testing.T) {
 	t.Parallel()
 
-	Convey("TestTimestampToRequestKey", t, func() {
+	ftt.Run("TestTimestampToRequestKey", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 
-		Convey("ok", func() {
+		t.Run("ok", func(t *ftt.Test) {
 			in := time.Date(2024, 2, 9, 0, 0, 0, 0, time.UTC)
 			resp, err := TimestampToRequestKey(ctx, in, 0)
-			So(err, ShouldBeNil)
-			So(resp.IntID(), ShouldEqual, 8756616465961975806)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp.IntID(), should.Equal(8756616465961975806))
 		})
 
-		Convey("ok; use timestamppb", func() {
+		t.Run("ok; use timestamppb", func(t *ftt.Test) {
 			in := timestamppb.New(time.Date(2024, 2, 9, 0, 0, 0, 0, time.UTC))
 			resp, err := TimestampToRequestKey(ctx, in.AsTime(), 0)
-			So(err, ShouldBeNil)
-			So(resp.IntID(), ShouldEqual, 8756616465961975806)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp.IntID(), should.Equal(8756616465961975806))
 		})
 
-		Convey("two timestamps to keys maintain order", func() {
+		t.Run("two timestamps to keys maintain order", func(t *ftt.Test) {
 			ts1 := time.Date(2023, 2, 9, 0, 0, 0, 0, time.UTC)
 			ts2 := time.Date(2024, 2, 9, 0, 0, 0, 0, time.UTC)
 			key1, err := TimestampToRequestKey(ctx, ts1, 0)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			key2, err := TimestampToRequestKey(ctx, ts2, 0)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			// The keys are in reverse chronological order, so the inequality is
 			// the opposite of what we expect it to be.
-			So(key1.IntID(), ShouldBeGreaterThan, key2.IntID())
+			assert.Loosely(t, key1.IntID(), should.BeGreaterThan(key2.IntID()))
 		})
 
-		Convey("not ok; bad timestamp", func() {
+		t.Run("not ok; bad timestamp", func(t *ftt.Test) {
 			in := timestamppb.New(time.Date(2000, 2, 9, 0, 0, 0, 0, time.UTC))
 			resp, err := TimestampToRequestKey(ctx, in.AsTime(), 0)
-			So(err, ShouldErrLike, "time 2000-02-09 00:00:00 +0000 UTC is before epoch 2010-01-01 00:00:00 +0000 UTC")
-			So(resp, ShouldBeNil)
+			assert.Loosely(t, err, should.ErrLike("time 2000-02-09 00:00:00 +0000 UTC is before epoch 2010-01-01 00:00:00 +0000 UTC"))
+			assert.Loosely(t, resp, should.BeNil)
 		})
 
-		Convey("not ok; bad suffix", func() {
+		t.Run("not ok; bad suffix", func(t *ftt.Test) {
 			in := timestamppb.New(time.Date(2025, 2, 9, 0, 0, 0, 0, time.UTC))
 			resp, err := TimestampToRequestKey(ctx, in.AsTime(), -1)
-			So(err, ShouldErrLike, "invalid suffix")
-			So(resp, ShouldBeNil)
+			assert.Loosely(t, err, should.ErrLike("invalid suffix"))
+			assert.Loosely(t, resp, should.BeNil)
 		})
 	})
 }

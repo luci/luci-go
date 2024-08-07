@@ -17,15 +17,16 @@ package model
 import (
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestBotInfoQuery(t *testing.T) {
 	t.Parallel()
 
-	Convey("Filters", t, func() {
+	ftt.Run("Filters", t, func(t *ftt.Test) {
 		q := FilterBotsByState(BotInfoQuery(), StateFilter{
 			Quarantined:   apipb.NullableBool_TRUE,
 			InMaintenance: apipb.NullableBool_TRUE,
@@ -38,35 +39,35 @@ func TestBotInfoQuery(t *testing.T) {
 			{Key: "k2", Value: "v1|v2"},
 			{Key: "k3", Value: "v1"},
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		qs := FilterBotsByDimensions(q, SplitOptimally, dims)
-		So(qs, ShouldHaveLength, 2)
+		assert.Loosely(t, qs, should.HaveLength(2))
 
 		q1, err := qs[0].Finalize()
-		So(err, ShouldBeNil)
-		So(q1.GQL(), ShouldEqual,
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, q1.GQL(), should.Equal(
 			"SELECT * FROM `BotInfo` "+
 				"WHERE `composite` = 1 AND `composite` = 4 AND "+
 				"`composite` = 64 AND `composite` = 256 AND "+
 				"`dimensions_flat` = \"k1:v1\" AND `dimensions_flat` = \"k3:v1\" AND "+
-				"`dimensions_flat` IN ARRAY(\"k2:v1\", \"k2:v2\") ORDER BY `__key__`")
+				"`dimensions_flat` IN ARRAY(\"k2:v1\", \"k2:v2\") ORDER BY `__key__`"))
 
 		q2, err := qs[1].Finalize()
-		So(err, ShouldBeNil)
-		So(q2.GQL(), ShouldEqual,
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, q2.GQL(), should.Equal(
 			"SELECT * FROM `BotInfo` "+
 				"WHERE `composite` = 1 AND `composite` = 4 AND "+
 				"`composite` = 64 AND `composite` = 256 AND "+
 				"`dimensions_flat` = \"k1:v2\" AND `dimensions_flat` = \"k3:v1\" AND "+
-				"`dimensions_flat` IN ARRAY(\"k2:v1\", \"k2:v2\") ORDER BY `__key__`")
+				"`dimensions_flat` IN ARRAY(\"k2:v1\", \"k2:v2\") ORDER BY `__key__`"))
 	})
 }
 
 func TestBotEvent(t *testing.T) {
 	t.Parallel()
 
-	Convey("QuarantineMessage", t, func() {
+	ftt.Run("QuarantineMessage", t, func(t *ftt.Test) {
 		event := func(state string) *BotEvent {
 			return &BotEvent{
 				BotCommon: BotCommon{
@@ -75,14 +76,14 @@ func TestBotEvent(t *testing.T) {
 			}
 		}
 
-		So(event(`{"quarantined": "yes", "blah": 1}`).QuarantineMessage(), ShouldEqual, "yes")
-		So(event(`{"quarantined": true}`).QuarantineMessage(), ShouldEqual, "true")
-		So(event(`{"quarantined": 0}`).QuarantineMessage(), ShouldEqual, "true")
-		So(event(`{"quarantined": false}`).QuarantineMessage(), ShouldEqual, "")
-		So(event(`{"quarantined": null}`).QuarantineMessage(), ShouldEqual, "")
-		So(event(`{}`).QuarantineMessage(), ShouldEqual, "")
-		So(event(``).QuarantineMessage(), ShouldEqual, "")
-		So(event(`broken`).QuarantineMessage(), ShouldEqual, "")
-		So(event(`[]`).QuarantineMessage(), ShouldEqual, "")
+		assert.Loosely(t, event(`{"quarantined": "yes", "blah": 1}`).QuarantineMessage(), should.Equal("yes"))
+		assert.Loosely(t, event(`{"quarantined": true}`).QuarantineMessage(), should.Equal("true"))
+		assert.Loosely(t, event(`{"quarantined": 0}`).QuarantineMessage(), should.Equal("true"))
+		assert.Loosely(t, event(`{"quarantined": false}`).QuarantineMessage(), should.BeEmpty)
+		assert.Loosely(t, event(`{"quarantined": null}`).QuarantineMessage(), should.BeEmpty)
+		assert.Loosely(t, event(`{}`).QuarantineMessage(), should.BeEmpty)
+		assert.Loosely(t, event(``).QuarantineMessage(), should.BeEmpty)
+		assert.Loosely(t, event(`broken`).QuarantineMessage(), should.BeEmpty)
+		assert.Loosely(t, event(`[]`).QuarantineMessage(), should.BeEmpty)
 	})
 }

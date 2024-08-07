@@ -28,8 +28,11 @@ import (
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	"go.chromium.org/luci/swarming/server/model"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestCountTasks(t *testing.T) {
@@ -57,95 +60,95 @@ func TestCountTasks(t *testing.T) {
 		return callImpl(MockRequestState(ctx, state.SetCaller(AdminFakeCaller)), req)
 	}
 
-	Convey("Tags filter is checked", t, func() {
+	ftt.Run("Tags filter is checked", t, func(t *ftt.Test) {
 		_, err := callAsAdmin(&apipb.TasksCountRequest{
 			Start: startTS,
 			End:   endTS,
 			Tags:  []string{"k:"},
 		})
-		So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
 	})
 
-	Convey("Time range is checked", t, func() {
-		Convey("No start time", func() {
+	ftt.Run("Time range is checked", t, func(t *ftt.Test) {
+		t.Run("No start time", func(t *ftt.Test) {
 			_, err := callAsAdmin(&apipb.TasksCountRequest{})
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
-			So(err, ShouldErrLike, "start timestamp is required")
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("start timestamp is required"))
 		})
 
-		Convey("Ancient start time", func() {
+		t.Run("Ancient start time", func(t *ftt.Test) {
 			_, err := callAsAdmin(&apipb.TasksCountRequest{
 				Start: timestamppb.New(time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)),
 			})
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
-			So(err, ShouldErrLike, "invalid time range")
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("invalid time range"))
 		})
 
-		Convey("Ancient end time", func() {
+		t.Run("Ancient end time", func(t *ftt.Test) {
 			_, err := callAsAdmin(&apipb.TasksCountRequest{
 				Start: startTS,
 				End:   timestamppb.New(time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)),
 			})
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
-			So(err, ShouldErrLike, "invalid time range")
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("invalid time range"))
 		})
 
-		Convey("End must be after start", func() {
+		t.Run("End must be after start", func(t *ftt.Test) {
 			_, err := callAsAdmin(&apipb.TasksCountRequest{
 				Start: endTS,
 				End:   startTS,
 			})
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
-			So(err, ShouldErrLike, "invalid time range")
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("invalid time range"))
 		})
 	})
 
-	Convey("ACLs", t, func() {
-		Convey("Listing only visible pools: OK", func() {
+	ftt.Run("ACLs", t, func(t *ftt.Test) {
+		t.Run("Listing only visible pools: OK", func(t *ftt.Test) {
 			_, err := call(&apipb.TasksCountRequest{
 				Start: startTS,
 				End:   endTS,
 				Tags:  []string{"pool:visible-pool1|visible-pool2"},
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey("Listing visible and invisible pool: permission denied", func() {
+		t.Run("Listing visible and invisible pool: permission denied", func(t *ftt.Test) {
 			_, err := call(&apipb.TasksCountRequest{
 				Start: startTS,
 				End:   endTS,
 				Tags:  []string{"pool:visible-pool1|hidden-pool1"},
 			})
-			So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
 		})
 
-		Convey("Listing visible and invisible pool as admin: OK", func() {
+		t.Run("Listing visible and invisible pool as admin: OK", func(t *ftt.Test) {
 			_, err := callAsAdmin(&apipb.TasksCountRequest{
 				Start: startTS,
 				End:   endTS,
 				Tags:  []string{"pool:visible-pool1|hidden-pool1"},
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey("Listing all pools as non-admin: permission denied", func() {
+		t.Run("Listing all pools as non-admin: permission denied", func(t *ftt.Test) {
 			_, err := call(&apipb.TasksCountRequest{
 				Start: startTS,
 				End:   endTS,
 			})
-			So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
 		})
 
-		Convey("Listing all pools as admin: OK", func() {
+		t.Run("Listing all pools as admin: OK", func(t *ftt.Test) {
 			_, err := callAsAdmin(&apipb.TasksCountRequest{
 				Start: startTS,
 				End:   endTS,
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 	})
 
-	Convey("Filtering", t, func() {
+	ftt.Run("Filtering", t, func(t *ftt.Test) {
 		endRange := endTS
 
 		count := func(state apipb.StateQuery, tags ...string) int {
@@ -155,56 +158,56 @@ func TestCountTasks(t *testing.T) {
 				End:   endRange,
 				Tags:  tags,
 			})
-			So(err, ShouldBeNil)
-			So(resp.Now, ShouldNotBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp.Now, should.NotBeNil)
 			return int(resp.Count)
 		}
 
 		// No filters at all.
-		So(count(apipb.StateQuery_QUERY_ALL), ShouldEqual, 36)
+		assert.Loosely(t, count(apipb.StateQuery_QUERY_ALL), should.Equal(36))
 
 		// State filters on their own (without tag filtering).
-		So(count(apipb.StateQuery_QUERY_PENDING), ShouldEqual, 3)
-		So(count(apipb.StateQuery_QUERY_RUNNING), ShouldEqual, 3)
-		So(count(apipb.StateQuery_QUERY_PENDING_RUNNING), ShouldEqual, 6)
-		So(count(apipb.StateQuery_QUERY_COMPLETED), ShouldEqual, 9)         // success+failure+dedup
-		So(count(apipb.StateQuery_QUERY_COMPLETED_SUCCESS), ShouldEqual, 6) // success+dedup
-		So(count(apipb.StateQuery_QUERY_COMPLETED_FAILURE), ShouldEqual, 3)
-		So(count(apipb.StateQuery_QUERY_EXPIRED), ShouldEqual, 3)
-		So(count(apipb.StateQuery_QUERY_TIMED_OUT), ShouldEqual, 3)
-		So(count(apipb.StateQuery_QUERY_BOT_DIED), ShouldEqual, 3)
-		So(count(apipb.StateQuery_QUERY_CANCELED), ShouldEqual, 3)
-		So(count(apipb.StateQuery_QUERY_DEDUPED), ShouldEqual, 3)
-		So(count(apipb.StateQuery_QUERY_KILLED), ShouldEqual, 3)
-		So(count(apipb.StateQuery_QUERY_NO_RESOURCE), ShouldEqual, 3)
-		So(count(apipb.StateQuery_QUERY_CLIENT_ERROR), ShouldEqual, 3)
+		assert.Loosely(t, count(apipb.StateQuery_QUERY_PENDING), should.Equal(3))
+		assert.Loosely(t, count(apipb.StateQuery_QUERY_RUNNING), should.Equal(3))
+		assert.Loosely(t, count(apipb.StateQuery_QUERY_PENDING_RUNNING), should.Equal(6))
+		assert.Loosely(t, count(apipb.StateQuery_QUERY_COMPLETED), should.Equal(9))         // success+failure+dedup
+		assert.Loosely(t, count(apipb.StateQuery_QUERY_COMPLETED_SUCCESS), should.Equal(6)) // success+dedup
+		assert.Loosely(t, count(apipb.StateQuery_QUERY_COMPLETED_FAILURE), should.Equal(3))
+		assert.Loosely(t, count(apipb.StateQuery_QUERY_EXPIRED), should.Equal(3))
+		assert.Loosely(t, count(apipb.StateQuery_QUERY_TIMED_OUT), should.Equal(3))
+		assert.Loosely(t, count(apipb.StateQuery_QUERY_BOT_DIED), should.Equal(3))
+		assert.Loosely(t, count(apipb.StateQuery_QUERY_CANCELED), should.Equal(3))
+		assert.Loosely(t, count(apipb.StateQuery_QUERY_DEDUPED), should.Equal(3))
+		assert.Loosely(t, count(apipb.StateQuery_QUERY_KILLED), should.Equal(3))
+		assert.Loosely(t, count(apipb.StateQuery_QUERY_NO_RESOURCE), should.Equal(3))
+		assert.Loosely(t, count(apipb.StateQuery_QUERY_CLIENT_ERROR), should.Equal(3))
 
 		// Simple tags filter.
-		So(count(apipb.StateQuery_QUERY_ALL, "idx:0"), ShouldEqual, 12)
+		assert.Loosely(t, count(apipb.StateQuery_QUERY_ALL, "idx:0"), should.Equal(12))
 		// AND tags filter.
-		So(count(apipb.StateQuery_QUERY_ALL, "idx:0", "pfx:pending"), ShouldEqual, 1)
+		assert.Loosely(t, count(apipb.StateQuery_QUERY_ALL, "idx:0", "pfx:pending"), should.Equal(1))
 		// OR tags filter.
-		So(count(apipb.StateQuery_QUERY_ALL, "idx:0|1"), ShouldEqual, 24)
+		assert.Loosely(t, count(apipb.StateQuery_QUERY_ALL, "idx:0|1"), should.Equal(24))
 		// OR tags filter with intersecting results.
-		So(count(apipb.StateQuery_QUERY_ALL, "idx:0|1", "dup:0|1"), ShouldEqual, 24)
+		assert.Loosely(t, count(apipb.StateQuery_QUERY_ALL, "idx:0|1", "dup:0|1"), should.Equal(24))
 		// OR tags filter with no results.
-		So(count(apipb.StateQuery_QUERY_ALL, "idx:4|5|6"), ShouldEqual, 0)
+		assert.Loosely(t, count(apipb.StateQuery_QUERY_ALL, "idx:4|5|6"), should.BeZero)
 
 		// Filtering on state + tags (selected non-trivial cases).
-		So(count(apipb.StateQuery_QUERY_PENDING, "idx:0|1", "dup:0|1"), ShouldEqual, 2)
-		So(count(apipb.StateQuery_QUERY_PENDING_RUNNING, "idx:0|1", "dup:0|1"), ShouldEqual, 4)
-		So(count(apipb.StateQuery_QUERY_COMPLETED, "idx:0|1", "dup:0|1"), ShouldEqual, 6)
-		So(count(apipb.StateQuery_QUERY_COMPLETED_SUCCESS, "idx:0|1", "dup:0|1"), ShouldEqual, 4)
-		So(count(apipb.StateQuery_QUERY_DEDUPED, "idx:0|1", "dup:0|1"), ShouldEqual, 2)
+		assert.Loosely(t, count(apipb.StateQuery_QUERY_PENDING, "idx:0|1", "dup:0|1"), should.Equal(2))
+		assert.Loosely(t, count(apipb.StateQuery_QUERY_PENDING_RUNNING, "idx:0|1", "dup:0|1"), should.Equal(4))
+		assert.Loosely(t, count(apipb.StateQuery_QUERY_COMPLETED, "idx:0|1", "dup:0|1"), should.Equal(6))
+		assert.Loosely(t, count(apipb.StateQuery_QUERY_COMPLETED_SUCCESS, "idx:0|1", "dup:0|1"), should.Equal(4))
+		assert.Loosely(t, count(apipb.StateQuery_QUERY_DEDUPED, "idx:0|1", "dup:0|1"), should.Equal(2))
 
 		// Limited time range (covers only 1 mocked task per category instead of 3).
 		endRange = timestamppb.New(TestTime.Add(5 * time.Minute))
 
-		So(count(apipb.StateQuery_QUERY_ALL), ShouldEqual, 12)
-		So(count(apipb.StateQuery_QUERY_ALL, "idx:0"), ShouldEqual, 12)
-		So(count(apipb.StateQuery_QUERY_ALL, "idx:1"), ShouldEqual, 0)
-		So(count(apipb.StateQuery_QUERY_COMPLETED), ShouldEqual, 3)
-		So(count(apipb.StateQuery_QUERY_PENDING_RUNNING), ShouldEqual, 2)
-		So(count(apipb.StateQuery_QUERY_PENDING_RUNNING, "idx:0|1", "dup:0|1"), ShouldEqual, 2)
+		assert.Loosely(t, count(apipb.StateQuery_QUERY_ALL), should.Equal(12))
+		assert.Loosely(t, count(apipb.StateQuery_QUERY_ALL, "idx:0"), should.Equal(12))
+		assert.Loosely(t, count(apipb.StateQuery_QUERY_ALL, "idx:1"), should.BeZero)
+		assert.Loosely(t, count(apipb.StateQuery_QUERY_COMPLETED), should.Equal(3))
+		assert.Loosely(t, count(apipb.StateQuery_QUERY_PENDING_RUNNING), should.Equal(2))
+		assert.Loosely(t, count(apipb.StateQuery_QUERY_PENDING_RUNNING, "idx:0|1", "dup:0|1"), should.Equal(2))
 	})
 }

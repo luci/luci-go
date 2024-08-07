@@ -32,6 +32,9 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
@@ -39,15 +42,12 @@ import (
 	"go.chromium.org/luci/swarming/internal/remoteworkers"
 	internalspb "go.chromium.org/luci/swarming/proto/internals"
 	"go.chromium.org/luci/swarming/server/model"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestReservationServer(t *testing.T) {
 	t.Parallel()
 
-	Convey("With mocks", t, func() {
+	ftt.Run("With mocks", t, func(t *ftt.Test) {
 		const rbeInstance = "projects/x/instances/y"
 		const rbeReservation = "reservation-id"
 
@@ -89,7 +89,7 @@ func TestReservationServer(t *testing.T) {
 		}
 
 		taskReqKey, err := model.TaskIDToRequestKey(ctx, enqueueTask.Payload.TaskId)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		taskToRun := &model.TaskToRun{
 			Key: model.TaskToRunKey(ctx, taskReqKey,
 				enqueueTask.Payload.TaskToRunShard,
@@ -97,11 +97,11 @@ func TestReservationServer(t *testing.T) {
 			),
 			Expiration: datastore.NewIndexedOptional(expiry),
 		}
-		So(datastore.Put(ctx, taskToRun), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, taskToRun), should.BeNil)
 
-		Convey("handleEnqueueRBETask ok", func() {
+		t.Run("handleEnqueueRBETask ok", func(t *ftt.Test) {
 			err := srv.handleEnqueueRBETask(ctx, enqueueTask)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			expectedPayload, _ := anypb.New(&internalspb.TaskPayload{
 				ReservationId:  rbeReservation,
@@ -114,7 +114,7 @@ func TestReservationServer(t *testing.T) {
 				},
 			})
 
-			So(rbe.reservation, ShouldResembleProto, &remoteworkers.Reservation{
+			assert.Loosely(t, rbe.reservation, should.Resemble(&remoteworkers.Reservation{
 				Name:    fmt.Sprintf("%s/reservations/%s", rbeInstance, rbeReservation),
 				State:   remoteworkers.ReservationState_RESERVATION_PENDING,
 				Payload: expectedPayload,
@@ -127,119 +127,119 @@ func TestReservationServer(t *testing.T) {
 				ExecutionTimeout: durationpb.New(executionTimeout),
 				Priority:         123,
 				RequestedBotId:   "some-bot-id",
-			})
+			}))
 		})
 
-		Convey("handleEnqueueRBETask TaskToRun is gone", func() {
-			So(datastore.Delete(ctx, datastore.KeyForObj(ctx, taskToRun)), ShouldBeNil)
+		t.Run("handleEnqueueRBETask TaskToRun is gone", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Delete(ctx, datastore.KeyForObj(ctx, taskToRun)), should.BeNil)
 
 			err := srv.handleEnqueueRBETask(ctx, enqueueTask)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// Didn't call RBE.
-			So(rbe.reservation, ShouldBeNil)
+			assert.Loosely(t, rbe.reservation, should.BeNil)
 		})
 
-		Convey("handleEnqueueRBETask TaskToRun is claimed", func() {
+		t.Run("handleEnqueueRBETask TaskToRun is claimed", func(t *ftt.Test) {
 			taskToRun.Expiration.Unset()
-			So(datastore.Put(ctx, taskToRun), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, taskToRun), should.BeNil)
 
 			err := srv.handleEnqueueRBETask(ctx, enqueueTask)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// Didn't call RBE.
-			So(rbe.reservation, ShouldBeNil)
+			assert.Loosely(t, rbe.reservation, should.BeNil)
 		})
 
-		Convey("handleEnqueueRBETask transient err", func() {
+		t.Run("handleEnqueueRBETask transient err", func(t *ftt.Test) {
 			rbe.errCreate = status.Errorf(codes.Internal, "boom")
 			err := srv.handleEnqueueRBETask(ctx, enqueueTask)
-			So(err, ShouldNotBeNil)
-			So(transient.Tag.In(err), ShouldBeTrue)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, transient.Tag.In(err), should.BeTrue)
 		})
 
-		Convey("handleEnqueueRBETask already exists", func() {
+		t.Run("handleEnqueueRBETask already exists", func(t *ftt.Test) {
 			rbe.errCreate = status.Errorf(codes.AlreadyExists, "boom")
 			err := srv.handleEnqueueRBETask(ctx, enqueueTask)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey("handleEnqueueRBETask fatal error", func() {
-			Convey("expected error, report ok", func() {
+		t.Run("handleEnqueueRBETask fatal error", func(t *ftt.Test) {
+			t.Run("expected error, report ok", func(t *ftt.Test) {
 				rbe.errCreate = status.Errorf(codes.FailedPrecondition, "boom")
 				internals.expireSlice = func(req *internalspb.ExpireSliceRequest) error {
-					So(req, ShouldResembleProto, &internalspb.ExpireSliceRequest{
+					assert.Loosely(t, req, should.Resemble(&internalspb.ExpireSliceRequest{
 						TaskId:         enqueueTask.Payload.TaskId,
 						TaskToRunShard: enqueueTask.Payload.TaskToRunShard,
 						TaskToRunId:    enqueueTask.Payload.TaskToRunId,
 						Reason:         internalspb.ExpireSliceRequest_NO_RESOURCE,
 						Details:        "rpc error: code = FailedPrecondition desc = boom",
-					})
+					}))
 					return nil
 				}
 				err := srv.handleEnqueueRBETask(ctx, enqueueTask)
-				So(tq.Ignore.In(err), ShouldBeTrue)
+				assert.Loosely(t, tq.Ignore.In(err), should.BeTrue)
 			})
 
-			Convey("unexpected error, report ok", func() {
+			t.Run("unexpected error, report ok", func(t *ftt.Test) {
 				rbe.errCreate = status.Errorf(codes.PermissionDenied, "boom")
 				internals.expireSlice = func(req *internalspb.ExpireSliceRequest) error {
-					So(req, ShouldResembleProto, &internalspb.ExpireSliceRequest{
+					assert.Loosely(t, req, should.Resemble(&internalspb.ExpireSliceRequest{
 						TaskId:         enqueueTask.Payload.TaskId,
 						TaskToRunShard: enqueueTask.Payload.TaskToRunShard,
 						TaskToRunId:    enqueueTask.Payload.TaskToRunId,
 						Reason:         internalspb.ExpireSliceRequest_PERMISSION_DENIED,
 						Details:        "rpc error: code = PermissionDenied desc = boom",
-					})
+					}))
 					return nil
 				}
 				err := srv.handleEnqueueRBETask(ctx, enqueueTask)
-				So(tq.Fatal.In(err), ShouldBeTrue)
+				assert.Loosely(t, tq.Fatal.In(err), should.BeTrue)
 			})
 
-			Convey("expected, report failed", func() {
+			t.Run("expected, report failed", func(t *ftt.Test) {
 				rbe.errCreate = status.Errorf(codes.FailedPrecondition, "boom")
 				internals.expireSlice = func(_ *internalspb.ExpireSliceRequest) error {
 					return status.Errorf(codes.InvalidArgument, "boom")
 				}
 				err := srv.handleEnqueueRBETask(ctx, enqueueTask)
-				So(err, ShouldNotBeNil)
-				So(tq.Ignore.In(err), ShouldBeFalse)
-				So(tq.Fatal.In(err), ShouldBeFalse)
+				assert.Loosely(t, err, should.NotBeNil)
+				assert.Loosely(t, tq.Ignore.In(err), should.BeFalse)
+				assert.Loosely(t, tq.Fatal.In(err), should.BeFalse)
 			})
 		})
 
-		Convey("handleCancelRBETask ok", func() {
+		t.Run("handleCancelRBETask ok", func(t *ftt.Test) {
 			err := srv.handleCancelRBETask(ctx, &internalspb.CancelRBETask{
 				RbeInstance:   rbeInstance,
 				ReservationId: rbeReservation,
 			})
-			So(err, ShouldBeNil)
-			So(rbe.lastCancel, ShouldResembleProto, &remoteworkers.CancelReservationRequest{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, rbe.lastCancel, should.Resemble(&remoteworkers.CancelReservationRequest{
 				Name:   fmt.Sprintf("%s/reservations/%s", rbeInstance, rbeReservation),
 				Intent: remoteworkers.CancelReservationIntent_ANY,
-			})
+			}))
 		})
 
-		Convey("handleCancelRBETask not found", func() {
+		t.Run("handleCancelRBETask not found", func(t *ftt.Test) {
 			rbe.errCancel = status.Errorf(codes.NotFound, "boo")
 			err := srv.handleCancelRBETask(ctx, &internalspb.CancelRBETask{
 				RbeInstance:   rbeInstance,
 				ReservationId: rbeReservation,
 			})
-			So(tq.Ignore.In(err), ShouldBeTrue)
+			assert.Loosely(t, tq.Ignore.In(err), should.BeTrue)
 		})
 
-		Convey("handleCancelRBETask internal", func() {
+		t.Run("handleCancelRBETask internal", func(t *ftt.Test) {
 			rbe.errCancel = status.Errorf(codes.Internal, "boo")
 			err := srv.handleCancelRBETask(ctx, &internalspb.CancelRBETask{
 				RbeInstance:   rbeInstance,
 				ReservationId: rbeReservation,
 			})
-			So(transient.Tag.In(err), ShouldBeTrue)
+			assert.Loosely(t, transient.Tag.In(err), should.BeTrue)
 		})
 
-		Convey("ExpireSliceBasedOnReservation", func() {
+		t.Run("ExpireSliceBasedOnReservation", func(t *ftt.Test) {
 			const (
 				reservationName = "projects/.../instances/.../reservations/..."
 				taskSliceIndex  = 1
@@ -253,10 +253,10 @@ func TestReservationServer(t *testing.T) {
 				expireSliceDetails string
 			)
 			internals.expireSlice = func(r *internalspb.ExpireSliceRequest) error {
-				So(r.TaskId, ShouldEqual, taskID)
-				So(r.TaskToRunShard, ShouldEqual, taskToRunShard)
-				So(r.TaskToRunId, ShouldEqual, taskToRunID)
-				So(r.Reason, ShouldNotEqual, internalspb.ExpireSliceRequest_REASON_UNSPECIFIED)
+				assert.Loosely(t, r.TaskId, should.Equal(taskID))
+				assert.Loosely(t, r.TaskToRunShard, should.Equal(taskToRunShard))
+				assert.Loosely(t, r.TaskToRunId, should.Equal(taskToRunID))
+				assert.Loosely(t, r.Reason, should.NotEqual(internalspb.ExpireSliceRequest_REASON_UNSPECIFIED))
 				expireSliceReason = r.Reason
 				expireSliceDetails = r.Details
 				return nil
@@ -268,10 +268,10 @@ func TestReservationServer(t *testing.T) {
 					exp.Set(testclock.TestRecentTimeUTC.Add(time.Hour))
 				}
 				taskReqKey, _ := model.TaskIDToRequestKey(ctx, taskID)
-				So(datastore.Put(ctx, &model.TaskToRun{
+				assert.Loosely(t, datastore.Put(ctx, &model.TaskToRun{
 					Key:        model.TaskToRunKey(ctx, taskReqKey, taskToRunShard, taskToRunID),
 					Expiration: exp,
-				}), ShouldBeNil)
+				}), should.BeNil)
 			}
 
 			prepReapableTaskToRun := func() { prepTaskToRun(true) }
@@ -295,19 +295,19 @@ func TestReservationServer(t *testing.T) {
 				}
 				expireSliceReason = internalspb.ExpireSliceRequest_REASON_UNSPECIFIED
 				expireSliceDetails = ""
-				So(srv.ExpireSliceBasedOnReservation(ctx, reservationName), ShouldBeNil)
+				assert.Loosely(t, srv.ExpireSliceBasedOnReservation(ctx, reservationName), should.BeNil)
 			}
 
 			expectNoExpireSlice := func() {
-				So(expireSliceReason, ShouldEqual, internalspb.ExpireSliceRequest_REASON_UNSPECIFIED)
+				assert.Loosely(t, expireSliceReason, should.Equal(internalspb.ExpireSliceRequest_REASON_UNSPECIFIED))
 			}
 
 			expectExpireSlice := func(r internalspb.ExpireSliceRequest_Reason, details string) {
-				So(expireSliceReason, ShouldEqual, r)
-				So(expireSliceDetails, ShouldContainSubstring, details)
+				assert.Loosely(t, expireSliceReason, should.Equal(r))
+				assert.Loosely(t, expireSliceDetails, should.ContainSubstring(details))
 			}
 
-			Convey("Still pending", func() {
+			t.Run("Still pending", func(t *ftt.Test) {
 				prepReapableTaskToRun()
 				expireBasedOnReservation(
 					remoteworkers.ReservationState_RESERVATION_PENDING,
@@ -317,7 +317,7 @@ func TestReservationServer(t *testing.T) {
 				expectNoExpireSlice()
 			})
 
-			Convey("Successful", func() {
+			t.Run("Successful", func(t *ftt.Test) {
 				prepClaimedTaskToRun()
 				expireBasedOnReservation(
 					remoteworkers.ReservationState_RESERVATION_COMPLETED,
@@ -327,7 +327,7 @@ func TestReservationServer(t *testing.T) {
 				expectNoExpireSlice()
 			})
 
-			Convey("Canceled #1", func() {
+			t.Run("Canceled #1", func(t *ftt.Test) {
 				prepClaimedTaskToRun()
 				expireBasedOnReservation(
 					remoteworkers.ReservationState_RESERVATION_COMPLETED,
@@ -337,7 +337,7 @@ func TestReservationServer(t *testing.T) {
 				expectNoExpireSlice()
 			})
 
-			Convey("Canceled #2", func() {
+			t.Run("Canceled #2", func(t *ftt.Test) {
 				prepClaimedTaskToRun()
 				expireBasedOnReservation(
 					remoteworkers.ReservationState_RESERVATION_CANCELLED,
@@ -347,7 +347,7 @@ func TestReservationServer(t *testing.T) {
 				expectNoExpireSlice()
 			})
 
-			Convey("Expired", func() {
+			t.Run("Expired", func(t *ftt.Test) {
 				prepReapableTaskToRun()
 				expireBasedOnReservation(
 					remoteworkers.ReservationState_RESERVATION_COMPLETED,
@@ -357,7 +357,7 @@ func TestReservationServer(t *testing.T) {
 				expectExpireSlice(internalspb.ExpireSliceRequest_EXPIRED, "deadline")
 			})
 
-			Convey("No resources", func() {
+			t.Run("No resources", func(t *ftt.Test) {
 				prepReapableTaskToRun()
 				expireBasedOnReservation(
 					remoteworkers.ReservationState_RESERVATION_COMPLETED,
@@ -367,7 +367,7 @@ func TestReservationServer(t *testing.T) {
 				expectExpireSlice(internalspb.ExpireSliceRequest_NO_RESOURCE, "no bots")
 			})
 
-			Convey("Bot internal error", func() {
+			t.Run("Bot internal error", func(t *ftt.Test) {
 				prepReapableTaskToRun()
 				expireBasedOnReservation(
 					remoteworkers.ReservationState_RESERVATION_COMPLETED,
@@ -377,7 +377,7 @@ func TestReservationServer(t *testing.T) {
 				expectExpireSlice(internalspb.ExpireSliceRequest_BOT_INTERNAL_ERROR, "boom")
 			})
 
-			Convey("Aborted before claimed", func() {
+			t.Run("Aborted before claimed", func(t *ftt.Test) {
 				prepReapableTaskToRun()
 				expireBasedOnReservation(
 					remoteworkers.ReservationState_RESERVATION_COMPLETED,
@@ -387,7 +387,7 @@ func TestReservationServer(t *testing.T) {
 				expectExpireSlice(internalspb.ExpireSliceRequest_BOT_INTERNAL_ERROR, "bot died")
 			})
 
-			Convey("Unexpectedly successful reservations", func() {
+			t.Run("Unexpectedly successful reservations", func(t *ftt.Test) {
 				prepReapableTaskToRun()
 				expireBasedOnReservation(
 					remoteworkers.ReservationState_RESERVATION_COMPLETED,
@@ -397,7 +397,7 @@ func TestReservationServer(t *testing.T) {
 				expectExpireSlice(internalspb.ExpireSliceRequest_BOT_INTERNAL_ERROR, "unexpectedly finished")
 			})
 
-			Convey("Unexpectedly canceled reservations", func() {
+			t.Run("Unexpectedly canceled reservations", func(t *ftt.Test) {
 				prepReapableTaskToRun()
 				expireBasedOnReservation(
 					remoteworkers.ReservationState_RESERVATION_COMPLETED,
@@ -407,7 +407,7 @@ func TestReservationServer(t *testing.T) {
 				expectNoExpireSlice()
 			})
 
-			Convey("Skips already claimed TaskToRun", func() {
+			t.Run("Skips already claimed TaskToRun", func(t *ftt.Test) {
 				prepClaimedTaskToRun()
 				expireBasedOnReservation(
 					remoteworkers.ReservationState_RESERVATION_COMPLETED,
@@ -417,7 +417,7 @@ func TestReservationServer(t *testing.T) {
 				expectNoExpireSlice()
 			})
 
-			Convey("Skips missing TaskToRun", func() {
+			t.Run("Skips missing TaskToRun", func(t *ftt.Test) {
 				expireBasedOnReservation(
 					remoteworkers.ReservationState_RESERVATION_COMPLETED,
 					status.Errorf(codes.FailedPrecondition, "no bots"),

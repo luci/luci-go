@@ -19,11 +19,12 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config/validation"
 
 	configpb "go.chromium.org/luci/swarming/proto/config"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestSettingsValidation(t *testing.T) {
@@ -45,12 +46,12 @@ func TestSettingsValidation(t *testing.T) {
 		return nil
 	}
 
-	Convey("Empty", t, func() {
-		So(call(&configpb.SettingsCfg{}), ShouldBeNil)
+	ftt.Run("Empty", t, func(t *ftt.Test) {
+		assert.Loosely(t, call(&configpb.SettingsCfg{}), should.BeNil)
 	})
 
-	Convey("Good", t, func() {
-		So(call(withDefaultSettings(&configpb.SettingsCfg{
+	ftt.Run("Good", t, func(t *ftt.Test) {
+		assert.Loosely(t, call(withDefaultSettings(&configpb.SettingsCfg{
 			DisplayServerUrlTemplate: "https://something.example.com/swarming/task/%s",
 			ExtraChildSrcCspUrl:      []string{"https://something.example.com/raw/build/"},
 			Cipd: &configpb.CipdSettings{
@@ -67,10 +68,10 @@ func TestSettingsValidation(t *testing.T) {
 					{Name: "/prpc/service/method3", RouteToGoPercent: 100},
 				},
 			},
-		})), ShouldBeNil)
+		})), should.BeNil)
 	})
 
-	Convey("Errors", t, func() {
+	ftt.Run("Errors", t, func(t *ftt.Test) {
 		testCases := []struct {
 			cfg *configpb.SettingsCfg
 			err string
@@ -210,7 +211,7 @@ func TestSettingsValidation(t *testing.T) {
 			},
 		}
 		for _, cs := range testCases {
-			So(call(cs.cfg), ShouldResemble, []string{`in "settings.cfg" ` + cs.err})
+			assert.Loosely(t, call(cs.cfg), should.Resemble([]string{`in "settings.cfg" ` + cs.err}))
 		}
 	})
 }

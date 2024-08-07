@@ -31,8 +31,11 @@ import (
 	"go.chromium.org/luci/swarming/server/acls"
 	"go.chromium.org/luci/swarming/server/model"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestListBotTasks(t *testing.T) {
@@ -145,58 +148,58 @@ func TestListBotTasks(t *testing.T) {
 		now += 500 * time.Millisecond
 	}
 
-	Convey("Bad bot ID", t, func() {
+	ftt.Run("Bad bot ID", t, func(t *ftt.Test) {
 		_, err := call(&apipb.BotTasksRequest{
 			BotId: "",
 			Limit: 10,
 			State: apipb.StateQuery_QUERY_ALL,
 		})
-		So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
 	})
 
-	Convey("Limit is checked", t, func() {
+	ftt.Run("Limit is checked", t, func(t *ftt.Test) {
 		_, err := call(&apipb.BotTasksRequest{
 			BotId: "doesnt-matter",
 			Limit: -10,
 			State: apipb.StateQuery_QUERY_ALL,
 		})
-		So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
 		_, err = call(&apipb.BotTasksRequest{
 			BotId: "doesnt-matter",
 			Limit: 1001,
 			State: apipb.StateQuery_QUERY_ALL,
 		})
-		So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
 	})
 
-	Convey("Cursor is checked", t, func() {
+	ftt.Run("Cursor is checked", t, func(t *ftt.Test) {
 		_, err := call(&apipb.BotTasksRequest{
 			BotId:  "doesnt-matter",
 			Cursor: "!!!!",
 			State:  apipb.StateQuery_QUERY_ALL,
 		})
-		So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
 	})
 
-	Convey("No permissions", t, func() {
+	ftt.Run("No permissions", t, func(t *ftt.Test) {
 		_, err := call(&apipb.BotTasksRequest{
 			BotId: "hidden-bot",
 			Limit: 10,
 			State: apipb.StateQuery_QUERY_ALL,
 		})
-		So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
+		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
 	})
 
-	Convey("Bot not in a config", t, func() {
+	ftt.Run("Bot not in a config", t, func(t *ftt.Test) {
 		_, err := call(&apipb.BotTasksRequest{
 			BotId: "unknown-bot",
 			Limit: 10,
 			State: apipb.StateQuery_QUERY_ALL,
 		})
-		So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
+		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
 	})
 
-	Convey("Unsupported state filters", t, func() {
+	ftt.Run("Unsupported state filters", t, func(t *ftt.Test) {
 		filters := []apipb.StateQuery{
 			apipb.StateQuery_QUERY_PENDING,
 			apipb.StateQuery_QUERY_PENDING_RUNNING,
@@ -211,12 +214,12 @@ func TestListBotTasks(t *testing.T) {
 				Limit: 10,
 				State: f,
 			})
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
-			So(err, ShouldErrLike, "filter")
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("filter"))
 		}
 	})
 
-	Convey("Unsupported order", t, func() {
+	ftt.Run("Unsupported order", t, func(t *ftt.Test) {
 		pairs := []struct {
 			sort  apipb.SortQuery
 			state apipb.StateQuery
@@ -232,29 +235,29 @@ func TestListBotTasks(t *testing.T) {
 				Sort:  pair.sort,
 				State: pair.state,
 			})
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
-			So(err, ShouldErrLike, "sort")
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("sort"))
 		}
 	})
 
-	Convey("Order by created_ts", t, func() {
-		Convey("Bad time range", func() {
+	ftt.Run("Order by created_ts", t, func(t *ftt.Test) {
+		t.Run("Bad time range", func(t *ftt.Test) {
 			_, err := call(&apipb.BotTasksRequest{
 				BotId: botID,
 				State: apipb.StateQuery_QUERY_ALL,
 				Start: timestamppb.New(time.Date(1977, time.January, 1, 2, 3, 4, 0, time.UTC)),
 			})
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
-			So(err, ShouldErrLike, "invalid start time")
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("invalid start time"))
 		})
 
-		Convey("Unpaginated, unfiltered, all states", func() {
+		t.Run("Unpaginated, unfiltered, all states", func(t *ftt.Test) {
 			resp, err := call(&apipb.BotTasksRequest{
 				BotId: botID,
 				State: apipb.StateQuery_QUERY_ALL,
 			})
-			So(err, ShouldBeNil)
-			So(payloads(resp), ShouldResemble, []string{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, payloads(resp), should.Resemble([]string{
 				"KILLED-9s",
 				"COMPLETED-8s",
 				"KILLED-7s",
@@ -265,73 +268,73 @@ func TestListBotTasks(t *testing.T) {
 				"COMPLETED-2s",
 				"KILLED-1s",
 				"COMPLETED-0s",
-			})
+			}))
 		})
 
-		Convey("Unpaginated, unfiltered, COMPLETED only", func() {
+		t.Run("Unpaginated, unfiltered, COMPLETED only", func(t *ftt.Test) {
 			resp, err := call(&apipb.BotTasksRequest{
 				BotId: botID,
 				State: apipb.StateQuery_QUERY_COMPLETED,
 			})
-			So(err, ShouldBeNil)
-			So(payloads(resp), ShouldResemble, []string{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, payloads(resp), should.Resemble([]string{
 				"COMPLETED-8s",
 				"COMPLETED-6s",
 				"COMPLETED-4s",
 				"COMPLETED-2s",
 				"COMPLETED-0s",
-			})
+			}))
 		})
 
-		Convey("Unpaginated, filtered, all states", func() {
+		t.Run("Unpaginated, filtered, all states", func(t *ftt.Test) {
 			resp, err := call(&apipb.BotTasksRequest{
 				BotId: botID,
 				Start: timestamppb.New(TestTime.Add(2 * time.Second)), // inclusive
 				End:   timestamppb.New(TestTime.Add(8 * time.Second)), // non-inclusive
 				State: apipb.StateQuery_QUERY_ALL,
 			})
-			So(err, ShouldBeNil)
-			So(payloads(resp), ShouldResemble, []string{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, payloads(resp), should.Resemble([]string{
 				"KILLED-7s",
 				"COMPLETED-6s",
 				"KILLED-5s",
 				"COMPLETED-4s",
 				"KILLED-3s",
 				"COMPLETED-2s",
-			})
+			}))
 		})
 
-		Convey("Paginated, filtered, all states", func() {
+		t.Run("Paginated, filtered, all states", func(t *ftt.Test) {
 			resp, err := paginatedCall(&apipb.BotTasksRequest{
 				BotId: botID,
 				Start: timestamppb.New(TestTime.Add(2 * time.Second)), // inclusive
 				End:   timestamppb.New(TestTime.Add(8 * time.Second)), // non-inclusive
 				State: apipb.StateQuery_QUERY_ALL,
 			})
-			So(err, ShouldBeNil)
-			So(payloads(resp), ShouldResemble, []string{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, payloads(resp), should.Resemble([]string{
 				"KILLED-7s",
 				"COMPLETED-6s",
 				"KILLED-5s",
 				"COMPLETED-4s",
 				"KILLED-3s",
 				"COMPLETED-2s",
-			})
+			}))
 		})
 	})
 
-	Convey("Order by started_ts", t, func() {
+	ftt.Run("Order by started_ts", t, func(t *ftt.Test) {
 		// Note: state filtering is not supported, only StateQuery_QUERY_ALL can be
 		// used.
 
-		Convey("Unpaginated, unfiltered", func() {
+		t.Run("Unpaginated, unfiltered", func(t *ftt.Test) {
 			resp, err := call(&apipb.BotTasksRequest{
 				BotId: botID,
 				Sort:  apipb.SortQuery_QUERY_STARTED_TS,
 				State: apipb.StateQuery_QUERY_ALL,
 			})
-			So(err, ShouldBeNil)
-			So(payloads(resp), ShouldResemble, []string{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, payloads(resp), should.Resemble([]string{
 				"KILLED-9s",
 				"COMPLETED-8s",
 				"KILLED-7s",
@@ -342,10 +345,10 @@ func TestListBotTasks(t *testing.T) {
 				"COMPLETED-2s",
 				"KILLED-1s",
 				"COMPLETED-0s",
-			})
+			}))
 		})
 
-		Convey("Unpaginated, filtered", func() {
+		t.Run("Unpaginated, filtered", func(t *ftt.Test) {
 			resp, err := call(&apipb.BotTasksRequest{
 				BotId: botID,
 				Sort:  apipb.SortQuery_QUERY_STARTED_TS,
@@ -353,18 +356,18 @@ func TestListBotTasks(t *testing.T) {
 				End:   timestamppb.New(TestTime.Add(8 * time.Second)), // non-inclusive
 				State: apipb.StateQuery_QUERY_ALL,
 			})
-			So(err, ShouldBeNil)
-			So(payloads(resp), ShouldResemble, []string{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, payloads(resp), should.Resemble([]string{
 				"KILLED-7s",
 				"COMPLETED-6s",
 				"KILLED-5s",
 				"COMPLETED-4s",
 				"KILLED-3s",
 				"COMPLETED-2s",
-			})
+			}))
 		})
 
-		Convey("Paginated, filtered", func() {
+		t.Run("Paginated, filtered", func(t *ftt.Test) {
 			resp, err := paginatedCall(&apipb.BotTasksRequest{
 				BotId: botID,
 				Sort:  apipb.SortQuery_QUERY_STARTED_TS,
@@ -372,24 +375,24 @@ func TestListBotTasks(t *testing.T) {
 				End:   timestamppb.New(TestTime.Add(8 * time.Second)), // non-inclusive
 				State: apipb.StateQuery_QUERY_ALL,
 			})
-			So(err, ShouldBeNil)
-			So(payloads(resp), ShouldResemble, []string{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, payloads(resp), should.Resemble([]string{
 				"KILLED-7s",
 				"COMPLETED-6s",
 				"KILLED-5s",
 				"COMPLETED-4s",
 				"KILLED-3s",
 				"COMPLETED-2s",
-			})
+			}))
 		})
 	})
 
-	Convey("Performance stats included", t, func() {
+	ftt.Run("Performance stats included", t, func(t *ftt.Test) {
 		countTasksWithPerf := func(tasks []*apipb.TaskResultResponse) int {
 			tasksWithPerf := 0
 			for _, task := range tasks {
 				if task.PerformanceStats != nil {
-					So(task.PerformanceStats.BotOverhead, ShouldEqual, float32(123.0))
+					assert.Loosely(t, task.PerformanceStats.BotOverhead, should.Equal(float32(123.0)))
 					tasksWithPerf++
 				}
 			}
@@ -401,34 +404,34 @@ func TestListBotTasks(t *testing.T) {
 			State:                   apipb.StateQuery_QUERY_ALL,
 			IncludePerformanceStats: true,
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		// All tasks have performance stats (since they ran on the bot).
-		So(countTasksWithPerf(resp.Items), ShouldEqual, len(resp.Items))
+		assert.Loosely(t, countTasksWithPerf(resp.Items), should.Equal(len(resp.Items)))
 
 		resp, err = call(&apipb.BotTasksRequest{
 			BotId:                   botID,
 			State:                   apipb.StateQuery_QUERY_ALL,
 			IncludePerformanceStats: false,
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		// All performance stats are omitted if IncludePerformanceStats is false.
-		So(countTasksWithPerf(resp.Items), ShouldEqual, 0)
+		assert.Loosely(t, countTasksWithPerf(resp.Items), should.BeZero)
 	})
 
-	Convey("Fetches TaskRequest fields", t, func() {
+	ftt.Run("Fetches TaskRequest fields", t, func(t *ftt.Test) {
 		resp, err := call(&apipb.BotTasksRequest{
 			BotId: botID,
 			State: apipb.StateQuery_QUERY_ALL,
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		var names []string
 		for _, task := range resp.Items {
 			names = append(names, task.Name)
-			So(task.CreatedTs, ShouldResembleProto, timestamppb.New(TestTime))
-			So(task.Tags, ShouldResemble, []string{"a:b", "c:d"})
-			So(task.User, ShouldEqual, "request-user")
+			assert.Loosely(t, task.CreatedTs, should.Resemble(timestamppb.New(TestTime)))
+			assert.Loosely(t, task.Tags, should.Resemble([]string{"a:b", "c:d"}))
+			assert.Loosely(t, task.User, should.Equal("request-user"))
 		}
-		So(names, ShouldResemble, []string{
+		assert.Loosely(t, names, should.Resemble([]string{
 			"KILLED-9s",
 			"COMPLETED-8s",
 			"KILLED-7s",
@@ -439,6 +442,6 @@ func TestListBotTasks(t *testing.T) {
 			"COMPLETED-2s",
 			"KILLED-1s",
 			"COMPLETED-0s",
-		})
+		}))
 	})
 }

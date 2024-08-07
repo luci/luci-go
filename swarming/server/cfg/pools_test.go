@@ -19,11 +19,12 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config/validation"
 
 	configpb "go.chromium.org/luci/swarming/proto/config"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 var goodPoolsCfg = &configpb.PoolsCfg{
@@ -43,18 +44,18 @@ var goodPoolsCfg = &configpb.PoolsCfg{
 func TestNewPoolsConfig(t *testing.T) {
 	t.Parallel()
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		pools, err := newPoolsConfig(goodPoolsCfg)
-		So(err, ShouldBeNil)
-		So(pools, ShouldHaveLength, 3)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, pools, should.HaveLength(3))
 
-		So(pools["a"].Realm, ShouldEqual, "test:1")
-		So(pools["b"].Realm, ShouldEqual, "test:2")
-		So(pools["c"].Realm, ShouldEqual, "test:2")
+		assert.Loosely(t, pools["a"].Realm, should.Equal("test:1"))
+		assert.Loosely(t, pools["b"].Realm, should.Equal("test:2"))
+		assert.Loosely(t, pools["c"].Realm, should.Equal("test:2"))
 
-		So(pools["a"].DefaultTaskRealm, ShouldEqual, "test:default")
-		So(pools["b"].DefaultTaskRealm, ShouldEqual, "")
-		So(pools["c"].DefaultTaskRealm, ShouldEqual, "")
+		assert.Loosely(t, pools["a"].DefaultTaskRealm, should.Equal("test:default"))
+		assert.Loosely(t, pools["b"].DefaultTaskRealm, should.BeEmpty)
+		assert.Loosely(t, pools["c"].DefaultTaskRealm, should.BeEmpty)
 	})
 }
 
@@ -77,15 +78,15 @@ func TestPoolsValidation(t *testing.T) {
 		return nil
 	}
 
-	Convey("Empty", t, func() {
-		So(call(&configpb.PoolsCfg{}), ShouldBeNil)
+	ftt.Run("Empty", t, func(t *ftt.Test) {
+		assert.Loosely(t, call(&configpb.PoolsCfg{}), should.BeNil)
 	})
 
-	Convey("Good", t, func() {
-		So(call(goodPoolsCfg), ShouldBeNil)
+	ftt.Run("Good", t, func(t *ftt.Test) {
+		assert.Loosely(t, call(goodPoolsCfg), should.BeNil)
 	})
 
-	Convey("Errors", t, func() {
+	ftt.Run("Errors", t, func(t *ftt.Test) {
 		onePool := func(p *configpb.Pool) *configpb.PoolsCfg {
 			return &configpb.PoolsCfg{
 				Pool: []*configpb.Pool{p},
@@ -155,7 +156,7 @@ func TestPoolsValidation(t *testing.T) {
 			},
 		}
 		for _, cs := range testCases {
-			So(call(cs.cfg), ShouldResemble, []string{`in "pools.cfg" ` + cs.err})
+			assert.Loosely(t, call(cs.cfg), should.Resemble([]string{`in "pools.cfg" ` + cs.err}))
 		}
 	})
 }

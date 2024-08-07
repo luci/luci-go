@@ -22,24 +22,24 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/secrets"
 
 	internalspb "go.chromium.org/luci/swarming/proto/internals"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestValidateToken(t *testing.T) {
 	t.Parallel()
 
-	Convey("With secret", t, func() {
+	ftt.Run("With secret", t, func(t *ftt.Test) {
 		s := NewStaticSecret(secrets.Secret{
 			Active:  []byte("secret"),
 			Passive: [][]byte{[]byte("also-secret")},
 		})
 
-		Convey("Good token", func() {
+		t.Run("Good token", func(t *ftt.Test) {
 			original := &internalspb.PollState{Id: "some-id"}
 
 			extracted := &internalspb.PollState{}
@@ -48,8 +48,8 @@ func TestValidateToken(t *testing.T) {
 				internalspb.TaggedMessage_POLL_STATE,
 				[]byte("secret"),
 			), extracted)
-			So(err, ShouldBeNil)
-			So(extracted, ShouldResembleProto, original)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, extracted, should.Resemble(original))
 
 			// Non-active secret is also OK.
 			extracted = &internalspb.PollState{}
@@ -58,31 +58,31 @@ func TestValidateToken(t *testing.T) {
 				internalspb.TaggedMessage_POLL_STATE,
 				[]byte("also-secret"),
 			), extracted)
-			So(err, ShouldBeNil)
-			So(extracted, ShouldResembleProto, original)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, extracted, should.Resemble(original))
 		})
 
-		Convey("Bad TaggedMessage proto", func() {
+		t.Run("Bad TaggedMessage proto", func(t *ftt.Test) {
 			err := s.ValidateToken([]byte("what is this"), &internalspb.PollState{})
-			So(err, ShouldErrLike, "failed to deserialize TaggedMessage")
+			assert.Loosely(t, err, should.ErrLike("failed to deserialize TaggedMessage"))
 		})
 
-		Convey("Wrong type", func() {
+		t.Run("Wrong type", func(t *ftt.Test) {
 			err := s.ValidateToken(genPollToken(
 				&internalspb.PollState{Id: "some-id"},
 				123,
 				[]byte("secret"),
 			), &internalspb.PollState{})
-			So(err, ShouldErrLike, "invalid payload type")
+			assert.Loosely(t, err, should.ErrLike("invalid payload type"))
 		})
 
-		Convey("Bad MAC", func() {
+		t.Run("Bad MAC", func(t *ftt.Test) {
 			err := s.ValidateToken(genPollToken(
 				&internalspb.PollState{Id: "some-id"},
 				internalspb.TaggedMessage_POLL_STATE,
 				[]byte("some-other-secret"),
 			), &internalspb.PollState{})
-			So(err, ShouldErrLike, "bad token HMAC")
+			assert.Loosely(t, err, should.ErrLike("bad token HMAC"))
 		})
 	})
 }
@@ -90,32 +90,32 @@ func TestValidateToken(t *testing.T) {
 func TestGenerateToken(t *testing.T) {
 	t.Parallel()
 
-	Convey("With secret", t, func() {
+	ftt.Run("With secret", t, func(t *ftt.Test) {
 		s := NewStaticSecret(secrets.Secret{
 			Active:  []byte("secret"),
 			Passive: [][]byte{[]byte("also-secret")},
 		})
 
-		Convey("PollState", func() {
+		t.Run("PollState", func(t *ftt.Test) {
 			original := &internalspb.PollState{Id: "testing"}
 			tok, err := s.GenerateToken(original)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			decoded := &internalspb.PollState{}
-			So(s.ValidateToken(tok, decoded), ShouldBeNil)
+			assert.Loosely(t, s.ValidateToken(tok, decoded), should.BeNil)
 
-			So(decoded, ShouldResembleProto, original)
+			assert.Loosely(t, decoded, should.Resemble(original))
 		})
 
-		Convey("BotSession", func() {
+		t.Run("BotSession", func(t *ftt.Test) {
 			original := &internalspb.BotSession{RbeBotSessionId: "testing"}
 			tok, err := s.GenerateToken(original)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			decoded := &internalspb.BotSession{}
-			So(s.ValidateToken(tok, decoded), ShouldBeNil)
+			assert.Loosely(t, s.ValidateToken(tok, decoded), should.BeNil)
 
-			So(decoded, ShouldResembleProto, original)
+			assert.Loosely(t, decoded, should.Resemble(original))
 		})
 	})
 }

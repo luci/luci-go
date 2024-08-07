@@ -30,8 +30,11 @@ import (
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	"go.chromium.org/luci/swarming/server/model"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestListTasks(t *testing.T) {
@@ -63,112 +66,112 @@ func TestListTasks(t *testing.T) {
 		return callImpl(MockRequestState(ctx, state.SetCaller(AdminFakeCaller)), req)
 	}
 
-	Convey("Limit is checked", t, func() {
+	ftt.Run("Limit is checked", t, func(t *ftt.Test) {
 		_, err := call(&apipb.TasksWithPerfRequest{
 			Limit: -10,
 		})
-		So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
 		_, err = call(&apipb.TasksWithPerfRequest{
 			Limit: 1001,
 		})
-		So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
 	})
 
-	Convey("Cursor is checked", t, func() {
+	ftt.Run("Cursor is checked", t, func(t *ftt.Test) {
 		_, err := call(&apipb.TasksWithPerfRequest{
 			Cursor: "!!!!",
 		})
-		So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
 	})
 
-	Convey("Tags filter is checked", t, func() {
+	ftt.Run("Tags filter is checked", t, func(t *ftt.Test) {
 		_, err := callAsAdmin(&apipb.TasksWithPerfRequest{
 			Start: startTS,
 			End:   endTS,
 			Tags:  []string{"k:"},
 		})
-		So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
 	})
 
-	Convey("Time range is checked", t, func() {
-		Convey("Ancient start time", func() {
+	ftt.Run("Time range is checked", t, func(t *ftt.Test) {
+		t.Run("Ancient start time", func(t *ftt.Test) {
 			_, err := callAsAdmin(&apipb.TasksWithPerfRequest{
 				Start: timestamppb.New(time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)),
 			})
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
-			So(err, ShouldErrLike, "invalid time range")
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("invalid time range"))
 		})
 
-		Convey("Ancient end time", func() {
+		t.Run("Ancient end time", func(t *ftt.Test) {
 			_, err := callAsAdmin(&apipb.TasksWithPerfRequest{
 				Start: startTS,
 				End:   timestamppb.New(time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)),
 			})
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
-			So(err, ShouldErrLike, "invalid time range")
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("invalid time range"))
 		})
 
-		Convey("End must be after start", func() {
+		t.Run("End must be after start", func(t *ftt.Test) {
 			_, err := callAsAdmin(&apipb.TasksWithPerfRequest{
 				Start: endTS,
 				End:   startTS,
 			})
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
-			So(err, ShouldErrLike, "invalid time range")
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("invalid time range"))
 		})
 	})
 
-	Convey("ACLs", t, func() {
-		Convey("Listing only visible pools: OK", func() {
+	ftt.Run("ACLs", t, func(t *ftt.Test) {
+		t.Run("Listing only visible pools: OK", func(t *ftt.Test) {
 			_, err := call(&apipb.TasksWithPerfRequest{
 				Start: startTS,
 				End:   endTS,
 				Tags:  []string{"pool:visible-pool1|visible-pool2"},
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey("Listing visible and invisible pool: permission denied", func() {
+		t.Run("Listing visible and invisible pool: permission denied", func(t *ftt.Test) {
 			_, err := call(&apipb.TasksWithPerfRequest{
 				Start: startTS,
 				End:   endTS,
 				Tags:  []string{"pool:visible-pool1|hidden-pool1"},
 			})
-			So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
 		})
 
-		Convey("Listing visible and invisible pool as admin: OK", func() {
+		t.Run("Listing visible and invisible pool as admin: OK", func(t *ftt.Test) {
 			_, err := callAsAdmin(&apipb.TasksWithPerfRequest{
 				Start: startTS,
 				End:   endTS,
 				Tags:  []string{"pool:visible-pool1|hidden-pool1"},
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey("Listing all pools as non-admin: permission denied", func() {
+		t.Run("Listing all pools as non-admin: permission denied", func(t *ftt.Test) {
 			_, err := call(&apipb.TasksWithPerfRequest{
 				Start: startTS,
 				End:   endTS,
 			})
-			So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
 		})
 
-		Convey("Listing all pools as admin: OK", func() {
+		t.Run("Listing all pools as admin: OK", func(t *ftt.Test) {
 			_, err := callAsAdmin(&apipb.TasksWithPerfRequest{
 				Start: startTS,
 				End:   endTS,
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 	})
 
-	Convey("Performance stats included", t, func() {
+	ftt.Run("Performance stats included", t, func(t *ftt.Test) {
 		tasksWithPerf := func(tasks []*apipb.TaskResultResponse) []string {
 			var tasksWithPerf []string
 			for _, task := range tasks {
 				if task.PerformanceStats != nil {
-					So(task.PerformanceStats.BotOverhead, ShouldEqual, float32(123.0))
+					assert.Loosely(t, task.PerformanceStats.BotOverhead, should.Equal(float32(123.0)))
 					tasksWithPerf = append(tasksWithPerf, task.Name)
 				}
 			}
@@ -181,9 +184,9 @@ func TestListTasks(t *testing.T) {
 			End:                     endTS,
 			IncludePerformanceStats: true,
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		// Only tasks that ran on the bot have perf stats.
-		So(tasksWithPerf(resp.Items), ShouldResemble, []string{
+		assert.Loosely(t, tasksWithPerf(resp.Items), should.Resemble([]string{
 			"clienterror-2",
 			"killed-2",
 			"timeout-2",
@@ -199,7 +202,7 @@ func TestListTasks(t *testing.T) {
 			"timeout-0",
 			"failure-0",
 			"success-0",
-		})
+		}))
 
 		resp, err = callAsAdmin(&apipb.TasksWithPerfRequest{
 			State:                   apipb.StateQuery_QUERY_ALL,
@@ -207,12 +210,12 @@ func TestListTasks(t *testing.T) {
 			End:                     endTS,
 			IncludePerformanceStats: false,
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		// All performance stats are omitted if IncludePerformanceStats is false.
-		So(tasksWithPerf(resp.Items), ShouldResemble, []string(nil))
+		assert.Loosely(t, tasksWithPerf(resp.Items), should.Resemble([]string(nil)))
 	})
 
-	Convey("Filtering", t, func() {
+	ftt.Run("Filtering", t, func(t *ftt.Test) {
 		endRange := endTS
 
 		checkQuery := func(state apipb.StateQuery, tags []string, expected []string) {
@@ -223,13 +226,13 @@ func TestListTasks(t *testing.T) {
 				End:   endRange,
 				Tags:  tags,
 			})
-			So(err, ShouldBeNil)
-			So(resp.Now, ShouldNotBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp.Now, should.NotBeNil)
 			var got []string
 			for _, t := range resp.Items {
 				got = append(got, t.Name)
 			}
-			So(got, ShouldResemble, expected)
+			assert.Loosely(t, got, should.Resemble(expected))
 
 			// With pagination.
 			cursor := ""
@@ -243,7 +246,7 @@ func TestListTasks(t *testing.T) {
 					Cursor: cursor,
 					Limit:  2,
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				for _, t := range resp.Items {
 					got = append(got, t.Name)
 				}
@@ -252,7 +255,7 @@ func TestListTasks(t *testing.T) {
 					break
 				}
 			}
-			So(got, ShouldResemble, expected)
+			assert.Loosely(t, got, should.Resemble(expected))
 		}
 
 		// A helper to generate expected results. See SetupTestTask.

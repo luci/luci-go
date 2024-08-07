@@ -28,8 +28,11 @@ import (
 
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestTaskResults(t *testing.T) {
@@ -53,36 +56,36 @@ func TestTaskResults(t *testing.T) {
 		return
 	}
 
-	Convey("With mocks", t, func() {
+	ftt.Run("With mocks", t, func(t *ftt.Test) {
 		ctx := context.Background()
 		mockedRPC := &mockedTasksClient{}
 		impl := &swarmingServiceImpl{tasksClient: mockedRPC}
 		taskIDs := genTasks(0, 1100) // 3 calls: 500 + 500 + 100
 
-		Convey("OK", func() {
+		t.Run("OK", func(t *ftt.Test) {
 			res, err := impl.TaskResults(ctx, taskIDs, nil)
-			So(err, ShouldBeNil)
-			So(getTaskIDs(res), ShouldResemble, taskIDs)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, getTaskIDs(res), should.Resemble(taskIDs))
 
 			// No overlaps between calls. Requested all tasks. Note that the order of
 			// calls is non-deterministic due to use of goroutines.
 			seen := stringset.New(0)
-			So(mockedRPC.calls, ShouldHaveLength, 3)
+			assert.Loosely(t, mockedRPC.calls, should.HaveLength(3))
 			for _, call := range mockedRPC.calls {
-				So(len(call) == 500 || len(call) == 100, ShouldBeTrue)
+				assert.Loosely(t, len(call) == 500 || len(call) == 100, should.BeTrue)
 				for _, taskID := range call {
-					So(seen.Add(taskID), ShouldBeTrue)
+					assert.Loosely(t, seen.Add(taskID), should.BeTrue)
 				}
 			}
-			So(seen.Len(), ShouldEqual, 1100)
+			assert.Loosely(t, seen.Len(), should.Equal(1100))
 		})
 
-		Convey("RPC error", func() {
+		t.Run("RPC error", func(t *ftt.Test) {
 			// Make one of RPCs fail. It should abort everything.
 			mockedRPC.errs = []error{status.Errorf(codes.PermissionDenied, "boom")}
 			res, err := impl.TaskResults(ctx, taskIDs, nil)
-			So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
-			So(res, ShouldBeNil)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
+			assert.Loosely(t, res, should.BeNil)
 		})
 	})
 }

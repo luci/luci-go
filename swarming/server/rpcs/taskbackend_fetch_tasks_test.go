@@ -27,8 +27,11 @@ import (
 
 	"go.chromium.org/luci/swarming/server/model"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestTaskBackendFetchTasks(t *testing.T) {
@@ -68,26 +71,26 @@ func TestTaskBackendFetchTasks(t *testing.T) {
 		return
 	}
 
-	Convey("No task_ids", t, func() {
+	ftt.Run("No task_ids", t, func(t *ftt.Test) {
 		resp, err := call(nil)
-		So(err, ShouldBeNil)
-		So(resp.Responses, ShouldHaveLength, 0)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, resp.Responses, should.HaveLength(0))
 	})
 
-	Convey("Limits task_ids", t, func() {
+	ftt.Run("Limits task_ids", t, func(t *ftt.Test) {
 		_, err := call(make([]string, fetchTasksLimit+1))
-		So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
-		So(err, ShouldErrLike, "the allowed max is")
+		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+		assert.Loosely(t, err, should.ErrLike("the allowed max is"))
 	})
 
-	Convey("Checks task_ids are valid", t, func() {
+	ftt.Run("Checks task_ids are valid", t, func(t *ftt.Test) {
 		resp, err := call([]string{tasks["running-0"], "zzz", tasks["pending-0"]})
-		So(err, ShouldBeNil)
-		So(respCodes(resp), ShouldResemble, []codes.Code{codes.OK, codes.InvalidArgument, codes.OK})
-		So(resp.Responses[1].GetError().Message, ShouldContainSubstring, "bad task ID")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, respCodes(resp), should.Resemble([]codes.Code{codes.OK, codes.InvalidArgument, codes.OK}))
+		assert.Loosely(t, resp.Responses[1].GetError().Message, should.ContainSubstring("bad task ID"))
 	})
 
-	Convey("Success", t, func() {
+	ftt.Run("Success", t, func(t *ftt.Test) {
 		expectedTask := func(name, payload string, status bbpb.Status, summary string) *bbpb.Task {
 			return &bbpb.Task{
 				Status:          status,
@@ -110,49 +113,49 @@ func TestTaskBackendFetchTasks(t *testing.T) {
 		}
 
 		resp, err := call([]string{tasks["running-0"], tasks["success-0"], tasks["failure-0"], tasks["pending-0"]})
-		So(err, ShouldBeNil)
-		So(resp.Responses, ShouldHaveLength, 4)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, resp.Responses, should.HaveLength(4))
 
-		So(resp.Responses[0].GetTask(),
-			ShouldResembleProto,
-			expectedTask("running-0", "RUNNING-0s", bbpb.Status_STARTED, ""),
-		)
-		So(resp.Responses[1].GetTask(),
-			ShouldResembleProto,
-			expectedTask("success-0", "COMPLETED-0s", bbpb.Status_SUCCESS, ""),
-		)
-		So(resp.Responses[2].GetTask(),
-			ShouldResembleProto,
-			expectedTask("failure-0", "COMPLETED-0s", bbpb.Status_FAILURE, "Task completed with failure."),
-		)
-		So(resp.Responses[3].GetTask(),
-			ShouldResembleProto,
-			expectedTask("pending-0", "PENDING-0s", bbpb.Status_SCHEDULED, ""),
-		)
+		assert.Loosely(t, resp.Responses[0].GetTask(),
+			should.Resemble(
+				expectedTask("running-0", "RUNNING-0s", bbpb.Status_STARTED, ""),
+			))
+		assert.Loosely(t, resp.Responses[1].GetTask(),
+			should.Resemble(
+				expectedTask("success-0", "COMPLETED-0s", bbpb.Status_SUCCESS, ""),
+			))
+		assert.Loosely(t, resp.Responses[2].GetTask(),
+			should.Resemble(
+				expectedTask("failure-0", "COMPLETED-0s", bbpb.Status_FAILURE, "Task completed with failure."),
+			))
+		assert.Loosely(t, resp.Responses[3].GetTask(),
+			should.Resemble(
+				expectedTask("pending-0", "PENDING-0s", bbpb.Status_SCHEDULED, ""),
+			))
 	})
 
-	Convey("Missing task", t, func() {
+	ftt.Run("Missing task", t, func(t *ftt.Test) {
 		resp, err := call([]string{tasks["running-0"], tasks["missing-0"], tasks["pending-0"]})
-		So(err, ShouldBeNil)
-		So(respCodes(resp), ShouldResemble, []codes.Code{codes.OK, codes.NotFound, codes.OK})
-		So(resp.Responses[1].GetError().Message, ShouldContainSubstring, "no such task")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, respCodes(resp), should.Resemble([]codes.Code{codes.OK, codes.NotFound, codes.OK}))
+		assert.Loosely(t, resp.Responses[1].GetError().Message, should.ContainSubstring("no such task"))
 	})
 
-	Convey("Missing BuildTask", t, func() {
+	ftt.Run("Missing BuildTask", t, func(t *ftt.Test) {
 		resp, err := call([]string{tasks["running-0"], tasks["dedup-0"], tasks["pending-0"]})
-		So(err, ShouldBeNil)
-		So(respCodes(resp), ShouldResemble, []codes.Code{codes.OK, codes.NotFound, codes.OK})
-		So(resp.Responses[1].GetError().Message, ShouldContainSubstring, "not a Buildbucket task")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, respCodes(resp), should.Resemble([]codes.Code{codes.OK, codes.NotFound, codes.OK}))
+		assert.Loosely(t, resp.Responses[1].GetError().Message, should.ContainSubstring("not a Buildbucket task"))
 	})
 
-	Convey("No permission", t, func() {
+	ftt.Run("No permission", t, func(t *ftt.Test) {
 		resp, err := call([]string{tasks["running-0"], tasks["success-1"], tasks["pending-0"]})
-		So(err, ShouldBeNil)
-		So(respCodes(resp), ShouldResemble, []codes.Code{codes.OK, codes.PermissionDenied, codes.OK})
-		So(resp.Responses[1].GetError().Message, ShouldContainSubstring, "doesn't have permission")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, respCodes(resp), should.Resemble([]codes.Code{codes.OK, codes.PermissionDenied, codes.OK}))
+		assert.Loosely(t, resp.Responses[1].GetError().Message, should.ContainSubstring("doesn't have permission"))
 	})
 
-	Convey("Many kinds of errors at once", t, func() {
+	ftt.Run("Many kinds of errors at once", t, func(t *ftt.Test) {
 		resp, err := call([]string{
 			tasks["running-0"], // OK
 			"zzz",              // bad task ID
@@ -164,8 +167,8 @@ func TestTaskBackendFetchTasks(t *testing.T) {
 			tasks["dedup-0"],   // missing BuildTask
 			tasks["expired-0"], // OK
 		})
-		So(err, ShouldBeNil)
-		So(respCodes(resp), ShouldResemble, []codes.Code{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, respCodes(resp), should.Resemble([]codes.Code{
 			codes.OK,
 			codes.InvalidArgument,
 			codes.OK,
@@ -175,6 +178,6 @@ func TestTaskBackendFetchTasks(t *testing.T) {
 			codes.OK,
 			codes.NotFound,
 			codes.OK,
-		})
+		}))
 	})
 }

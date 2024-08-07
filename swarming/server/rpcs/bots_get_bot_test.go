@@ -30,8 +30,11 @@ import (
 	"go.chromium.org/luci/swarming/server/acls"
 	"go.chromium.org/luci/swarming/server/model"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestGetBot(t *testing.T) {
@@ -103,30 +106,30 @@ func TestGetBot(t *testing.T) {
 		})
 	}
 
-	Convey("Bad bot ID", t, func() {
+	ftt.Run("Bad bot ID", t, func(t *ftt.Test) {
 		_, err := call("")
-		So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
 	})
 
-	Convey("No permissions", t, func() {
+	ftt.Run("No permissions", t, func(t *ftt.Test) {
 		_, err := call("hidden-bot")
-		So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
+		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
 	})
 
-	Convey("Bot not in a config", t, func() {
+	ftt.Run("Bot not in a config", t, func(t *ftt.Test) {
 		_, err := call("unknown-bot")
-		So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
+		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
 	})
 
-	Convey("Unconnected bot", t, func() {
+	ftt.Run("Unconnected bot", t, func(t *ftt.Test) {
 		_, err := call("unconnected-bot")
-		So(err, ShouldHaveGRPCStatus, codes.NotFound)
+		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.NotFound))
 	})
 
-	Convey("Alive bot", t, func() {
+	ftt.Run("Alive bot", t, func(t *ftt.Test) {
 		resp, err := call("alive-bot")
-		So(err, ShouldBeNil)
-		So(resp, ShouldResembleProto, &apipb.BotInfo{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, resp, should.Resemble(&apipb.BotInfo{
 			BotId:           "alive-bot",
 			TaskId:          "task-id",
 			TaskName:        "task-name",
@@ -141,13 +144,13 @@ func TestGetBot(t *testing.T) {
 			},
 			Version: "some-version",
 			State:   `{"state": "1"}`,
-		})
+		}))
 	})
 
-	Convey("Deleted bot", t, func() {
+	ftt.Run("Deleted bot", t, func(t *ftt.Test) {
 		resp, err := call("deleted-bot")
-		So(err, ShouldBeNil)
-		So(resp, ShouldResembleProto, &apipb.BotInfo{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, resp, should.Resemble(&apipb.BotInfo{
 			BotId:           "deleted-bot",
 			TaskId:          "task-id",
 			ExternalIp:      "1.2.3.4",
@@ -160,6 +163,6 @@ func TestGetBot(t *testing.T) {
 			Version: "some-version",
 			State:   `{"state": "1"}`,
 			Deleted: true,
-		})
+		}))
 	})
 }

@@ -16,39 +16,40 @@ package runner
 
 import (
 	"context"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"path/filepath"
 	"runtime"
 	"testing"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestReplaceCommandParameters(t *testing.T) {
 	t.Parallel()
 
-	Convey("ReplaceCommandParameters", t, func() {
+	ftt.Run("ReplaceCommandParameters", t, func(t *ftt.Test) {
 		ctx := context.Background()
 
-		Convey("test EXECUTABLE_SUFFIX", func() {
+		t.Run("test EXECUTABLE_SUFFIX", func(t *ftt.Test) {
 			arg, err := ReplaceCommandParameters(ctx, "program${EXECUTABLE_SUFFIX}", "", "")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			if runtime.GOOS == "windows" {
-				So(arg, ShouldEqual, "program.exe")
+				assert.Loosely(t, arg, should.Equal("program.exe"))
 			} else {
-				So(arg, ShouldEqual, "program")
+				assert.Loosely(t, arg, should.Equal("program"))
 			}
 		})
 
-		Convey("test ISOLATED_OUTDIR", func() {
+		t.Run("test ISOLATED_OUTDIR", func(t *ftt.Test) {
 			arg, err := ReplaceCommandParameters(ctx, "${ISOLATED_OUTDIR}/result.txt", "out", "")
-			So(err, ShouldBeNil)
-			So(arg, ShouldEqual, filepath.Join("out", "result.txt"))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, arg, should.Equal(filepath.Join("out", "result.txt")))
 		})
 
-		Convey("test SWARMING_BOT_FILE", func() {
+		t.Run("test SWARMING_BOT_FILE", func(t *ftt.Test) {
 			arg, err := ReplaceCommandParameters(ctx, "${SWARMING_BOT_FILE}/config", "", "cfgdir")
-			So(err, ShouldBeNil)
-			So(arg, ShouldEqual, filepath.Join("cfgdir", "config"))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, arg, should.Equal(filepath.Join("cfgdir", "config")))
 		})
 	})
 }
@@ -56,7 +57,7 @@ func TestReplaceCommandParameters(t *testing.T) {
 func TestProcessCommand(t *testing.T) {
 	t.Parallel()
 
-	Convey("ProcessCommand", t, func() {
+	ftt.Run("ProcessCommand", t, func(t *ftt.Test) {
 		ctx := context.Background()
 		args, err := ProcessCommand(ctx, []string{
 			"program${EXECUTABLE_SUFFIX}",
@@ -64,17 +65,17 @@ func TestProcessCommand(t *testing.T) {
 			"${SWARMING_BOT_FILE}/config",
 		}, "out", "cfgdir")
 
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		executableSuffix := ""
 		if runtime.GOOS == "windows" {
 			executableSuffix = ".exe"
 		}
 
-		So(args, ShouldResemble, []string{
+		assert.Loosely(t, args, should.Resemble([]string{
 			"program" + executableSuffix,
 			filepath.Join("out", "result.txt"),
 			filepath.Join("cfgdir", "config"),
-		})
+		}))
 	})
 }

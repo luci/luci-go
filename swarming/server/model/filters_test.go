@@ -19,59 +19,59 @@ import (
 	"strings"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestFilter(t *testing.T) {
 	t.Parallel()
 
-	Convey("Ok", t, func() {
+	ftt.Run("Ok", t, func(t *ftt.Test) {
 		f, err := NewFilter([]*apipb.StringPair{
 			{Key: "x", Value: "c|b|a"},
 			{Key: "x", Value: "y"},
 			{Key: "pool", Value: "P1"},
 			{Key: "pool", Value: "P1|P2|P3"},
 		})
-		So(err, ShouldBeNil)
-		So(f, ShouldResemble, Filter{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, f, should.Resemble(Filter{
 			filters: []perKeyFilter{
 				{key: "pool", values: []string{"P1"}},
 				{key: "pool", values: []string{"P1", "P2", "P3"}},
 				{key: "x", values: []string{"a", "b", "c"}},
 				{key: "x", values: []string{"y"}},
 			},
-		})
-		So(f.Pools(), ShouldResemble, []string{"P1", "P2", "P3"})
+		}))
+		assert.Loosely(t, f.Pools(), should.Resemble([]string{"P1", "P2", "P3"}))
 	})
 
-	Convey("Errors", t, func() {
+	ftt.Run("Errors", t, func(t *ftt.Test) {
 		call := func(k, v string) error {
 			_, err := NewFilter([]*apipb.StringPair{
 				{Key: k, Value: v},
 			})
 			return err
 		}
-		So(call("", "val"), ShouldErrLike, "bad key")
-		So(call("  key", "val"), ShouldErrLike, "bad key")
-		So(call("key", ""), ShouldErrLike, "bad value")
-		So(call("key", "  val"), ShouldErrLike, "bad value")
+		assert.Loosely(t, call("", "val"), should.ErrLike("bad key"))
+		assert.Loosely(t, call("  key", "val"), should.ErrLike("bad key"))
+		assert.Loosely(t, call("key", ""), should.ErrLike("bad value"))
+		assert.Loosely(t, call("key", "  val"), should.ErrLike("bad value"))
 	})
 
-	Convey("Empty", t, func() {
+	ftt.Run("Empty", t, func(t *ftt.Test) {
 		f, err := NewFilter(nil)
-		So(err, ShouldBeNil)
-		So(f.IsEmpty(), ShouldBeTrue)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, f.IsEmpty(), should.BeTrue)
 	})
 
-	Convey("SplitForQuery", t, func() {
+	ftt.Run("SplitForQuery", t, func(t *ftt.Test) {
 		split := func(q string, mode SplitMode) []string {
 			in, err := NewFilterFromKV(strings.Split(q, " "))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			parts := in.SplitForQuery(mode)
 
@@ -86,63 +86,63 @@ func TestFilter(t *testing.T) {
 			return out
 		}
 
-		Convey("Empty", func() {
+		t.Run("Empty", func(t *ftt.Test) {
 			f, err := NewFilter(nil)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			for _, mode := range []SplitMode{SplitCompletely, SplitOptimally} {
 				out := f.SplitForQuery(mode)
-				So(out, ShouldHaveLength, 1)
-				So(out[0].IsEmpty(), ShouldBeTrue)
+				assert.Loosely(t, out, should.HaveLength(1))
+				assert.Loosely(t, out[0].IsEmpty(), should.BeTrue)
 
 				q := datastore.NewQuery("Something")
 				split := f.Apply(q, "doesntmatter", mode)
-				So(split, ShouldHaveLength, 1)
-				So(split[0] == q, ShouldBeTrue) // the exact same original query
+				assert.Loosely(t, split, should.HaveLength(1))
+				assert.Loosely(t, split[0] == q, should.BeTrue) // the exact same original query
 			}
 		})
 
-		Convey("SplitCompletely", func() {
+		t.Run("SplitCompletely", func(t *ftt.Test) {
 			// Already simple query.
-			So(split("k1:v1 k2:v2", SplitCompletely), ShouldResemble, []string{"k1:v1 k2:v2"})
+			assert.Loosely(t, split("k1:v1 k2:v2", SplitCompletely), should.Resemble([]string{"k1:v1 k2:v2"}))
 			// One disjunction.
-			So(split("k1:v1|v2 k2:v3", SplitCompletely), ShouldResemble, []string{
+			assert.Loosely(t, split("k1:v1|v2 k2:v3", SplitCompletely), should.Resemble([]string{
 				"k1:v1 k2:v3",
 				"k1:v2 k2:v3",
-			})
+			}))
 			// Two disjunctions.
-			So(split("k1:v1|v2 k2:v3 k3:v4|v5", SplitCompletely), ShouldResemble, []string{
+			assert.Loosely(t, split("k1:v1|v2 k2:v3 k3:v4|v5", SplitCompletely), should.Resemble([]string{
 				"k1:v1 k2:v3 k3:v4",
 				"k1:v1 k2:v3 k3:v5",
 				"k1:v2 k2:v3 k3:v4",
 				"k1:v2 k2:v3 k3:v5",
-			})
+			}))
 			// Repeated keys are OK, but may result in redundant filters.
-			So(split("k1:v1|v2 k1:v2|v3 k1:v4", SplitCompletely), ShouldResemble, []string{
+			assert.Loosely(t, split("k1:v1|v2 k1:v2|v3 k1:v4", SplitCompletely), should.Resemble([]string{
 				"k1:v1 k1:v2 k1:v4",
 				"k1:v1 k1:v3 k1:v4",
 				"k1:v2 k1:v2 k1:v4",
 				"k1:v2 k1:v3 k1:v4",
-			})
+			}))
 		})
 
-		Convey("SplitOptimally", func() {
+		t.Run("SplitOptimally", func(t *ftt.Test) {
 			// Already simple enough query.
-			So(split("k1:v1 k2:v2", SplitOptimally), ShouldResemble, []string{"k1:v1 k2:v2"})
-			So(split("k1:v1|v2 k2:v3", SplitOptimally), ShouldResemble, []string{"k1:v1|v2 k2:v3"})
+			assert.Loosely(t, split("k1:v1 k2:v2", SplitOptimally), should.Resemble([]string{"k1:v1 k2:v2"}))
+			assert.Loosely(t, split("k1:v1|v2 k2:v3", SplitOptimally), should.Resemble([]string{"k1:v1|v2 k2:v3"}))
 			// Splits on the smallest term.
-			So(split("k1:v1|v2|v3 k2:v1|v2 k3:v3", SplitOptimally), ShouldResemble, []string{
+			assert.Loosely(t, split("k1:v1|v2|v3 k2:v1|v2 k3:v3", SplitOptimally), should.Resemble([]string{
 				"k1:v1|v2|v3 k2:v1 k3:v3",
 				"k1:v1|v2|v3 k2:v2 k3:v3",
-			})
+			}))
 			// Leaves at most one disjunction (the largest one).
-			So(split("k1:v1|v2|v3 k2:v1|v2|v3|v4 k3:v1|v2 k4:v1", SplitOptimally), ShouldResemble, []string{
+			assert.Loosely(t, split("k1:v1|v2|v3 k2:v1|v2|v3|v4 k3:v1|v2 k4:v1", SplitOptimally), should.Resemble([]string{
 				"k1:v1 k2:v1|v2|v3|v4 k3:v1 k4:v1",
 				"k1:v2 k2:v1|v2|v3|v4 k3:v1 k4:v1",
 				"k1:v3 k2:v1|v2|v3|v4 k3:v1 k4:v1",
 				"k1:v1 k2:v1|v2|v3|v4 k3:v2 k4:v1",
 				"k1:v2 k2:v1|v2|v3|v4 k3:v2 k4:v1",
 				"k1:v3 k2:v1|v2|v3|v4 k3:v2 k4:v1",
-			})
+			}))
 		})
 	})
 }

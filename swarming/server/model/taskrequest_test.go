@@ -21,14 +21,14 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	configpb "go.chromium.org/luci/swarming/proto/config"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestTaskRequest(t *testing.T) {
@@ -36,7 +36,7 @@ func TestTaskRequest(t *testing.T) {
 
 	var testTime = time.Date(2023, time.January, 1, 2, 3, 4, 0, time.UTC)
 
-	Convey("With datastore", t, func() {
+	ftt.Run("With datastore", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 
 		taskSlice := func(val string, exp time.Time, pool, botID string) TaskSlice {
@@ -112,7 +112,7 @@ func TestTaskRequest(t *testing.T) {
 		}
 
 		key, err := TaskIDToRequestKey(ctx, "65aba3a3e6b99310")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		fullyPopulated := TaskRequest{
 			Key:     key,
@@ -145,10 +145,10 @@ func TestTaskRequest(t *testing.T) {
 		}
 
 		// Can round-trip.
-		So(datastore.Put(ctx, &fullyPopulated), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, &fullyPopulated), should.BeNil)
 		loaded := TaskRequest{Key: key}
-		So(datastore.Get(ctx, &loaded), ShouldBeNil)
-		So(loaded, ShouldResemble, fullyPopulated)
+		assert.Loosely(t, datastore.Get(ctx, &loaded), should.BeNil)
+		assert.Loosely(t, loaded, should.Resemble(fullyPopulated))
 
 		partiallyPopulated := TaskRequest{
 			Key:     key,
@@ -180,14 +180,14 @@ func TestTaskRequest(t *testing.T) {
 			HasBuildTask:         true,
 		}
 
-		Convey("TestGetters", func() {
-			Convey("ok", func() {
-				So(loaded.Pool(), ShouldEqual, "pool")
-				So(loaded.BotID(), ShouldEqual, "botID")
+		t.Run("TestGetters", func(t *ftt.Test) {
+			t.Run("ok", func(t *ftt.Test) {
+				assert.Loosely(t, loaded.Pool(), should.Equal("pool"))
+				assert.Loosely(t, loaded.BotID(), should.Equal("botID"))
 			})
-			Convey("nil", func() {
-				So(partiallyPopulated.Pool(), ShouldEqual, "")
-				So(partiallyPopulated.BotID(), ShouldEqual, "")
+			t.Run("nil", func(t *ftt.Test) {
+				assert.Loosely(t, partiallyPopulated.Pool(), should.BeEmpty)
+				assert.Loosely(t, partiallyPopulated.BotID(), should.BeEmpty)
 			})
 		})
 	})
@@ -198,11 +198,11 @@ func TestTaskRequestToProto(t *testing.T) {
 
 	var testTime = time.Date(2023, time.January, 1, 2, 3, 4, 0, time.UTC)
 
-	Convey("ToProto", t, func() {
+	ftt.Run("ToProto", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 
 		key, err := TaskIDToRequestKey(ctx, "65aba3a3e6b99310")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		tr := &TaskRequest{
 			Key:     key,
@@ -348,7 +348,7 @@ func TestTaskRequestToProto(t *testing.T) {
 			RelativeCwd:          "./rel/cwd",
 			SecretBytes:          []byte("<REDACTED>"),
 		}
-		So(resp, ShouldResembleProto, &apipb.TaskRequestResponse{
+		assert.Loosely(t, resp, should.Resemble(&apipb.TaskRequestResponse{
 			Authenticated:        "user:authenticated",
 			BotPingToleranceSecs: 456,
 			CreatedTs:            timestamppb.New(time.Date(2023, time.January, 1, 2, 3, 4, 0, time.UTC)),
@@ -373,7 +373,7 @@ func TestTaskRequestToProto(t *testing.T) {
 				},
 			},
 			User: "user",
-		})
+		}))
 	})
 }
 
@@ -382,12 +382,12 @@ func TestTaskSlice(t *testing.T) {
 
 	// This testcase will cover the TaskProperties.ToProto() function as well
 	// since TaskProperties is a field in TaskSlice.
-	Convey("ToProto", t, func() {
-		Convey("null", func() {
+	ftt.Run("ToProto", t, func(t *ftt.Test) {
+		t.Run("null", func(t *ftt.Test) {
 			ts := TaskSlice{}
-			So(ts.ToProto(), ShouldResembleProto, &apipb.TaskSlice{})
+			assert.Loosely(t, ts.ToProto(), should.Resemble(&apipb.TaskSlice{}))
 		})
-		Convey("fullyPopulated", func() {
+		t.Run("fullyPopulated", func(t *ftt.Test) {
 			ts := TaskSlice{
 				Properties: TaskProperties{
 					Idempotent:           true,
@@ -501,14 +501,14 @@ func TestTaskSlice(t *testing.T) {
 					},
 				},
 			}
-			Convey("HasSecretBytes is true", func() {
+			t.Run("HasSecretBytes is true", func(t *ftt.Test) {
 				ts.Properties.HasSecretBytes = true
 				expected.Properties.SecretBytes = []byte("<REDACTED>")
-				So(ts.ToProto(), ShouldResembleProto, expected)
+				assert.Loosely(t, ts.ToProto(), should.Resemble(expected))
 			})
-			Convey("HasSecretBytes is false", func() {
+			t.Run("HasSecretBytes is false", func(t *ftt.Test) {
 				ts.Properties.HasSecretBytes = false
-				So(ts.ToProto(), ShouldResembleProto, expected)
+				assert.Loosely(t, ts.ToProto(), should.Resemble(expected))
 			})
 		})
 	})
@@ -516,8 +516,8 @@ func TestTaskSlice(t *testing.T) {
 
 func TestTaskDimensions(t *testing.T) {
 	t.Parallel()
-	Convey("Hash", t, func() {
-		Convey("dimensions keys are sorted when hash", func() {
+	ftt.Run("Hash", t, func(t *ftt.Test) {
+		t.Run("dimensions keys are sorted when hash", func(t *ftt.Test) {
 			dims1 := TaskDimensions{
 				"d1": {"v1", "v2"},
 				"d2": {"v3"},
@@ -526,24 +526,24 @@ func TestTaskDimensions(t *testing.T) {
 				"d2": {"v3"},
 				"d1": {"v1", "v2"},
 			}
-			So(dims1.Hash(), ShouldEqual, dims2.Hash())
-			So(dims1.Hash(), ShouldEqual, 2036451960)
+			assert.Loosely(t, dims1.Hash(), should.Equal(dims2.Hash()))
+			assert.Loosely(t, dims1.Hash(), should.Equal(2036451960))
 		})
 
-		Convey("empty dims", func() {
+		t.Run("empty dims", func(t *ftt.Test) {
 			var dims1 TaskDimensions
 			dims2 := TaskDimensions{}
-			So(dims1.Hash(), ShouldEqual, dims2.Hash())
+			assert.Loosely(t, dims1.Hash(), should.Equal(dims2.Hash()))
 		})
 
-		Convey("dims with OR-ed dimensions", func() {
+		t.Run("dims with OR-ed dimensions", func(t *ftt.Test) {
 			dims1 := TaskDimensions{
 				"d1": {"v1|v2"},
 			}
 			dims2 := TaskDimensions{
 				"d1": {"v2|v1"},
 			}
-			So(dims1.Hash(), ShouldNotEqual, dims2.Hash())
+			assert.Loosely(t, dims1.Hash(), should.NotEqual(dims2.Hash()))
 		})
 	})
 }

@@ -17,15 +17,16 @@ package bq
 import (
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	bqpb "go.chromium.org/luci/swarming/proto/bq"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestExportToJSON(t *testing.T) {
 	t.Parallel()
 
-	Convey("JSON works", t, func() {
+	ftt.Run("JSON works", t, func(t *ftt.Test) {
 		out, err := exportToJSON(&bqpb.BotEvent{
 			Bot: &bqpb.Bot{
 				BotId: "bot-id",
@@ -44,8 +45,8 @@ func TestExportToJSON(t *testing.T) {
 			Event:    bqpb.BotEventType_BOT_NEW_SESSION,
 			EventMsg: "hello",
 		})
-		So(err, ShouldBeNil)
-		So(string(out), ShouldEqual, `{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, string(out), should.Equal(`{
   "bot": {
     "bot_id": "bot-id",
     "info": {
@@ -74,10 +75,10 @@ func TestExportToJSON(t *testing.T) {
   },
   "event": "BOT_NEW_SESSION",
   "event_msg": "hello"
-}`)
+}`))
 	})
 
-	Convey("Duration works", t, func() {
+	ftt.Run("Duration works", t, func(t *ftt.Test) {
 		out, err := exportToJSON(&bqpb.TaskRequest{
 			TaskSlices: []*bqpb.TaskSlice{
 				{
@@ -99,8 +100,8 @@ func TestExportToJSON(t *testing.T) {
 			},
 			BotPingTolerance: 9.5,
 		})
-		So(err, ShouldBeNil)
-		So(string(out), ShouldEqual, `{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, string(out), should.Equal(`{
   "bot_ping_tolerance": "9.500s",
   "task_slices": [
     {
@@ -120,6 +121,6 @@ func TestExportToJSON(t *testing.T) {
       }
     }
   ]
-}`)
+}`))
 	})
 }

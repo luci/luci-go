@@ -29,8 +29,11 @@ import (
 	"go.chromium.org/luci/swarming/server/model"
 	"go.chromium.org/luci/swarming/server/model/internalmodelpb"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestGetBotDimensions(t *testing.T) {
@@ -95,31 +98,31 @@ func TestGetBotDimensions(t *testing.T) {
 		return (&BotsServer{}).GetBotDimensions(ctx, &apipb.BotsDimensionsRequest{Pool: pool})
 	}
 
-	Convey("Concrete pool: visible pool", t, func() {
+	ftt.Run("Concrete pool: visible pool", t, func(t *ftt.Test) {
 		out, err := call("visible-pool1")
-		So(err, ShouldBeNil)
-		So(out, ShouldResembleProto, &apipb.BotsDimensions{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, out, should.Resemble(&apipb.BotsDimensions{
 			BotsDimensions: []*apipb.StringListPair{
 				{Key: "d1", Value: []string{"v"}},
 			},
 			Ts: timestamppb.New(TestTime),
-		})
+		}))
 	})
 
-	Convey("Concrete pool: no permission", t, func() {
+	ftt.Run("Concrete pool: no permission", t, func(t *ftt.Test) {
 		_, err := call("hidden-pool")
-		So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
+		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
 	})
 
-	Convey("Concrete pool: unknown pool", t, func() {
+	ftt.Run("Concrete pool: unknown pool", t, func(t *ftt.Test) {
 		_, err := call("unknown-pool")
-		So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
+		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
 	})
 
-	Convey("All pools: admin", t, func() {
+	ftt.Run("All pools: admin", t, func(t *ftt.Test) {
 		out, err := callAsAdmin("")
-		So(err, ShouldBeNil)
-		So(out, ShouldResembleProto, &apipb.BotsDimensions{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, out, should.Resemble(&apipb.BotsDimensions{
 			BotsDimensions: []*apipb.StringListPair{
 				{Key: "d1", Value: []string{"v"}},
 				{Key: "d2", Value: []string{"v"}},
@@ -127,18 +130,18 @@ func TestGetBotDimensions(t *testing.T) {
 				{Key: "d4", Value: []string{"v"}},
 			},
 			Ts: timestamppb.New(TestTime),
-		})
+		}))
 	})
 
-	Convey("All pools: non-admin", t, func() {
+	ftt.Run("All pools: non-admin", t, func(t *ftt.Test) {
 		out, err := call("")
-		So(err, ShouldBeNil)
-		So(out, ShouldResembleProto, &apipb.BotsDimensions{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, out, should.Resemble(&apipb.BotsDimensions{
 			BotsDimensions: []*apipb.StringListPair{
 				{Key: "d1", Value: []string{"v"}},
 				{Key: "d2", Value: []string{"v"}},
 			},
 			Ts: timestamppb.New(TestTime),
-		})
+		}))
 	})
 }

@@ -27,16 +27,17 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestGetOne(t *testing.T) {
 	t.Parallel()
 
-	Convey("With context", t, func() {
+	ftt.Run("With context", t, func(t *ftt.Test) {
 		sleeps := 0
 		contextTimeout := 2 * time.Hour
 		ctx := mockContext(&sleeps, &contextTimeout, nil)
@@ -64,46 +65,46 @@ func TestGetOne(t *testing.T) {
 			},
 		}
 
-		Convey("Already done task: Wait", func() {
+		t.Run("Already done task: Wait", func(t *ftt.Test) {
 			res, err := GetOne(ctx, client, doneTaskID, nil, WaitAll)
-			So(err, ShouldBeNil)
-			So(res.State, ShouldEqual, swarmingv2.TaskState_COMPLETED)
-			So(sleeps, ShouldEqual, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.State, should.Equal(swarmingv2.TaskState_COMPLETED))
+			assert.Loosely(t, sleeps, should.BeZero)
 		})
 
-		Convey("Already done task: Poll", func() {
+		t.Run("Already done task: Poll", func(t *ftt.Test) {
 			res, err := GetOne(ctx, client, doneTaskID, nil, NoWait)
-			So(err, ShouldBeNil)
-			So(res.State, ShouldEqual, swarmingv2.TaskState_COMPLETED)
-			So(sleeps, ShouldEqual, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.State, should.Equal(swarmingv2.TaskState_COMPLETED))
+			assert.Loosely(t, sleeps, should.BeZero)
 		})
 
-		Convey("Pending task: Wait", func() {
+		t.Run("Pending task: Wait", func(t *ftt.Test) {
 			res, err := GetOne(ctx, client, doneLaterID, nil, WaitAll)
-			So(err, ShouldBeNil)
-			So(res.State, ShouldEqual, swarmingv2.TaskState_COMPLETED)
-			So(sleeps, ShouldEqual, 254) // ~= 1h / 15s sans ramp up and random
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.State, should.Equal(swarmingv2.TaskState_COMPLETED))
+			assert.Loosely(t, sleeps, should.Equal(254)) // ~= 1h / 15s sans ramp up and random
 		})
 
-		Convey("Pending task: Poll", func() {
+		t.Run("Pending task: Poll", func(t *ftt.Test) {
 			res, err := GetOne(ctx, client, doneLaterID, nil, NoWait)
-			So(err, ShouldBeNil)
-			So(res.State, ShouldEqual, swarmingv2.TaskState_PENDING)
-			So(sleeps, ShouldEqual, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.State, should.Equal(swarmingv2.TaskState_PENDING))
+			assert.Loosely(t, sleeps, should.BeZero)
 		})
 
-		Convey("Context canceled while waiting", func() {
+		t.Run("Context canceled while waiting", func(t *ftt.Test) {
 			res, err := GetOne(ctx, client, doneNever, nil, WaitAll)
-			So(err, ShouldEqual, context.Canceled)
-			So(res.State, ShouldEqual, swarmingv2.TaskState_PENDING)
-			So(sleeps, ShouldEqual, 459) // ~= 2h / 15s sans ramp up and random
+			assert.Loosely(t, err, should.Equal(context.Canceled))
+			assert.Loosely(t, res.State, should.Equal(swarmingv2.TaskState_PENDING))
+			assert.Loosely(t, sleeps, should.Equal(459)) // ~= 2h / 15s sans ramp up and random
 		})
 
-		Convey("Fatal RPC failure", func() {
+		t.Run("Fatal RPC failure", func(t *ftt.Test) {
 			res, err := GetOne(ctx, client, fatalTaskID, nil, WaitAll)
-			So(status.Code(err), ShouldEqual, codes.PermissionDenied)
-			So(res, ShouldBeNil)
-			So(sleeps, ShouldEqual, 0)
+			assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
+			assert.Loosely(t, res, should.BeNil)
+			assert.Loosely(t, sleeps, should.BeZero)
 		})
 	})
 }
@@ -111,7 +112,7 @@ func TestGetOne(t *testing.T) {
 func TestGetMany(t *testing.T) {
 	t.Parallel()
 
-	Convey("With context", t, func() {
+	ftt.Run("With context", t, func(t *ftt.Test) {
 		sleeps := 0
 		contextTimeout := 2 * time.Hour
 		onSleep := func() {}
@@ -169,32 +170,32 @@ func TestGetMany(t *testing.T) {
 				}
 				out[taskID] = s
 			})
-			So(len(out), ShouldEqual, len(taskIDs))
+			assert.Loosely(t, len(out), should.Equal(len(taskIDs)))
 			return out
 		}
 
-		Convey("NoWait: no RPC errors", func() {
+		t.Run("NoWait: no RPC errors", func(t *ftt.Test) {
 			mockedState["done"] = swarmingv2.TaskState_COMPLETED
 			mockedState["pending"] = swarmingv2.TaskState_PENDING
 			mockedErr["missing"] = codes.NotFound
 			out := call(ctx, []string{"done", "pending", "missing"}, NoWait)
-			So(out, ShouldResemble, map[string]stateOrErr{
+			assert.Loosely(t, out, should.Resemble(map[string]stateOrErr{
 				"done":    {state: swarmingv2.TaskState_COMPLETED},
 				"pending": {state: swarmingv2.TaskState_PENDING},
 				"missing": {err: codes.NotFound},
-			})
+			}))
 		})
 
-		Convey("NoWait: fatal RPC error", func() {
+		t.Run("NoWait: fatal RPC error", func(t *ftt.Test) {
 			mockedRPCErr = codes.PermissionDenied
 			out := call(ctx, []string{"t1", "t2"}, NoWait)
-			So(out, ShouldResemble, map[string]stateOrErr{
+			assert.Loosely(t, out, should.Resemble(map[string]stateOrErr{
 				"t1": {err: codes.PermissionDenied},
 				"t2": {err: codes.PermissionDenied},
-			})
+			}))
 		})
 
-		Convey("NoWait: transient RPC errors", func() {
+		t.Run("NoWait: transient RPC errors", func(t *ftt.Test) {
 			mockedState["done"] = swarmingv2.TaskState_COMPLETED
 			mockedState["pending"] = swarmingv2.TaskState_PENDING
 
@@ -206,14 +207,14 @@ func TestGetMany(t *testing.T) {
 			}
 
 			out := call(ctx, []string{"done", "pending"}, NoWait)
-			So(out, ShouldResemble, map[string]stateOrErr{
+			assert.Loosely(t, out, should.Resemble(map[string]stateOrErr{
 				"done":    {state: swarmingv2.TaskState_COMPLETED},
 				"pending": {state: swarmingv2.TaskState_PENDING},
-			})
-			So(sleeps, ShouldEqual, 6)
+			}))
+			assert.Loosely(t, sleeps, should.Equal(6))
 		})
 
-		Convey("WaitAll: no RPC errors", func() {
+		t.Run("WaitAll: no RPC errors", func(t *ftt.Test) {
 			mockedState["t1"] = swarmingv2.TaskState_COMPLETED
 			mockedState["t2"] = swarmingv2.TaskState_PENDING
 			mockedState["t3"] = swarmingv2.TaskState_PENDING
@@ -231,16 +232,16 @@ func TestGetMany(t *testing.T) {
 			}
 
 			out := call(ctx, []string{"t1", "t2", "t3", "t4"}, WaitAll)
-			So(out, ShouldResemble, map[string]stateOrErr{
+			assert.Loosely(t, out, should.Resemble(map[string]stateOrErr{
 				"t1": {state: swarmingv2.TaskState_COMPLETED},
 				"t2": {state: swarmingv2.TaskState_PENDING, err: codes.NotFound},
 				"t3": {state: swarmingv2.TaskState_COMPLETED},
 				"t4": {state: swarmingv2.TaskState_COMPLETED},
-			})
-			So(sleeps, ShouldEqual, 4)
+			}))
+			assert.Loosely(t, sleeps, should.Equal(4))
 		})
 
-		Convey("WaitAll: fatal RPC error", func() {
+		t.Run("WaitAll: fatal RPC error", func(t *ftt.Test) {
 			mockedState["t1"] = swarmingv2.TaskState_COMPLETED
 			mockedState["t2"] = swarmingv2.TaskState_PENDING
 			mockedState["t3"] = swarmingv2.TaskState_PENDING
@@ -256,16 +257,16 @@ func TestGetMany(t *testing.T) {
 			}
 
 			out := call(ctx, []string{"t1", "t2", "t3", "t4"}, WaitAll)
-			So(out, ShouldResemble, map[string]stateOrErr{
+			assert.Loosely(t, out, should.Resemble(map[string]stateOrErr{
 				"t1": {state: swarmingv2.TaskState_COMPLETED},
 				"t2": {state: swarmingv2.TaskState_PENDING, err: codes.PermissionDenied},
 				"t3": {state: swarmingv2.TaskState_PENDING, err: codes.PermissionDenied},
 				"t4": {state: swarmingv2.TaskState_COMPLETED},
-			})
-			So(sleeps, ShouldEqual, 3)
+			}))
+			assert.Loosely(t, sleeps, should.Equal(3))
 		})
 
-		Convey("WaitAll: transient RPC errors", func() {
+		t.Run("WaitAll: transient RPC errors", func(t *ftt.Test) {
 			mockedState["t1"] = swarmingv2.TaskState_COMPLETED
 			mockedState["t2"] = swarmingv2.TaskState_PENDING
 			mockedState["t3"] = swarmingv2.TaskState_PENDING
@@ -287,40 +288,40 @@ func TestGetMany(t *testing.T) {
 			}
 
 			out := call(ctx, []string{"t1", "t2", "t3", "t4"}, WaitAll)
-			So(out, ShouldResemble, map[string]stateOrErr{
+			assert.Loosely(t, out, should.Resemble(map[string]stateOrErr{
 				"t1": {state: swarmingv2.TaskState_COMPLETED},
 				"t2": {state: swarmingv2.TaskState_PENDING, err: codes.NotFound},
 				"t3": {state: swarmingv2.TaskState_COMPLETED},
 				"t4": {state: swarmingv2.TaskState_COMPLETED},
-			})
-			So(sleeps, ShouldEqual, 12)
+			}))
+			assert.Loosely(t, sleeps, should.Equal(12))
 		})
 
-		Convey("WaitAll: context deadline", func() {
+		t.Run("WaitAll: context deadline", func(t *ftt.Test) {
 			mockedState["t1"] = swarmingv2.TaskState_COMPLETED
 			mockedState["t2"] = swarmingv2.TaskState_PENDING
 
 			out := call(ctx, []string{"t1", "t2"}, WaitAll)
-			So(out, ShouldResemble, map[string]stateOrErr{
+			assert.Loosely(t, out, should.Resemble(map[string]stateOrErr{
 				"t1": {state: swarmingv2.TaskState_COMPLETED},
 				"t2": {state: swarmingv2.TaskState_PENDING, err: codes.DeadlineExceeded},
-			})
-			So(sleeps, ShouldEqual, 459)
+			}))
+			assert.Loosely(t, sleeps, should.Equal(459))
 		})
 
-		Convey("WaitAny: no RPC errors, no waiting", func() {
+		t.Run("WaitAny: no RPC errors, no waiting", func(t *ftt.Test) {
 			mockedState["t1"] = swarmingv2.TaskState_COMPLETED
 			mockedState["t2"] = swarmingv2.TaskState_PENDING
 
 			out := call(ctx, []string{"t1", "t2"}, WaitAny)
-			So(out, ShouldResemble, map[string]stateOrErr{
+			assert.Loosely(t, out, should.Resemble(map[string]stateOrErr{
 				"t1": {state: swarmingv2.TaskState_COMPLETED},
 				"t2": {state: swarmingv2.TaskState_PENDING},
-			})
-			So(sleeps, ShouldEqual, 0)
+			}))
+			assert.Loosely(t, sleeps, should.BeZero)
 		})
 
-		Convey("WaitAny: no RPC errors, waiting", func() {
+		t.Run("WaitAny: no RPC errors, waiting", func(t *ftt.Test) {
 			mockedState["t1"] = swarmingv2.TaskState_PENDING
 			mockedState["t2"] = swarmingv2.TaskState_PENDING
 			mockedState["t3"] = swarmingv2.TaskState_PENDING
@@ -337,16 +338,16 @@ func TestGetMany(t *testing.T) {
 			}
 
 			out := call(ctx, []string{"t1", "t2", "t3", "t4"}, WaitAny)
-			So(out, ShouldResemble, map[string]stateOrErr{
+			assert.Loosely(t, out, should.Resemble(map[string]stateOrErr{
 				"t1": {state: swarmingv2.TaskState_COMPLETED},
 				"t2": {state: swarmingv2.TaskState_PENDING, err: codes.NotFound},
 				"t3": {state: swarmingv2.TaskState_PENDING},
 				"t4": {state: swarmingv2.TaskState_COMPLETED},
-			})
-			So(sleeps, ShouldEqual, 6)
+			}))
+			assert.Loosely(t, sleeps, should.Equal(6))
 		})
 
-		Convey("WaitAny: fatal RPC error", func() {
+		t.Run("WaitAny: fatal RPC error", func(t *ftt.Test) {
 			mockedState["t1"] = swarmingv2.TaskState_PENDING
 			mockedState["t2"] = swarmingv2.TaskState_PENDING
 			mockedState["t3"] = swarmingv2.TaskState_PENDING
@@ -362,16 +363,16 @@ func TestGetMany(t *testing.T) {
 			}
 
 			out := call(ctx, []string{"t1", "t2", "t3", "t4"}, WaitAny)
-			So(out, ShouldResemble, map[string]stateOrErr{
+			assert.Loosely(t, out, should.Resemble(map[string]stateOrErr{
 				"t1": {state: swarmingv2.TaskState_PENDING, err: codes.PermissionDenied},
 				"t2": {state: swarmingv2.TaskState_PENDING, err: codes.NotFound},
 				"t3": {state: swarmingv2.TaskState_PENDING, err: codes.PermissionDenied},
 				"t4": {state: swarmingv2.TaskState_PENDING, err: codes.PermissionDenied},
-			})
-			So(sleeps, ShouldEqual, 6)
+			}))
+			assert.Loosely(t, sleeps, should.Equal(6))
 		})
 
-		Convey("WaitAny: transient RPC errors", func() {
+		t.Run("WaitAny: transient RPC errors", func(t *ftt.Test) {
 			mockedState["t1"] = swarmingv2.TaskState_PENDING
 			mockedState["t2"] = swarmingv2.TaskState_PENDING
 
@@ -387,23 +388,23 @@ func TestGetMany(t *testing.T) {
 			}
 
 			out := call(ctx, []string{"t1", "t2"}, WaitAny)
-			So(out, ShouldResemble, map[string]stateOrErr{
+			assert.Loosely(t, out, should.Resemble(map[string]stateOrErr{
 				"t1": {state: swarmingv2.TaskState_PENDING},
 				"t2": {state: swarmingv2.TaskState_COMPLETED},
-			})
-			So(sleeps, ShouldEqual, 10)
+			}))
+			assert.Loosely(t, sleeps, should.Equal(10))
 		})
 
-		Convey("WaitAny: context deadline", func() {
+		t.Run("WaitAny: context deadline", func(t *ftt.Test) {
 			mockedState["t1"] = swarmingv2.TaskState_PENDING
 			mockedState["t2"] = swarmingv2.TaskState_PENDING
 
 			out := call(ctx, []string{"t1", "t2"}, WaitAny)
-			So(out, ShouldResemble, map[string]stateOrErr{
+			assert.Loosely(t, out, should.Resemble(map[string]stateOrErr{
 				"t1": {state: swarmingv2.TaskState_PENDING, err: codes.DeadlineExceeded},
 				"t2": {state: swarmingv2.TaskState_PENDING, err: codes.DeadlineExceeded},
-			})
-			So(sleeps, ShouldEqual, 459)
+			}))
+			assert.Loosely(t, sleeps, should.Equal(459))
 		})
 	})
 }

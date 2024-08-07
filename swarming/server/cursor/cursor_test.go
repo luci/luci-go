@@ -18,23 +18,24 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/secrets"
 
 	"go.chromium.org/luci/swarming/server/cursor/cursorpb"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestCursor(t *testing.T) {
 	t.Parallel()
 
-	Convey("With key", t, func() {
+	ftt.Run("With key", t, func(t *ftt.Test) {
 		ctx := context.Background()
 		ctx = secrets.GeneratePrimaryTinkAEADForTest(ctx)
 
-		Convey("OpaqueCursor", func() {
+		t.Run("OpaqueCursor", func(t *ftt.Test) {
 			for _, kind := range []cursorpb.RequestKind{
 				cursorpb.RequestKind_LIST_BOT_EVENTS,
 				cursorpb.RequestKind_LIST_BOT_TASKS,
@@ -42,44 +43,44 @@ func TestCursor(t *testing.T) {
 				cur, err := Encode(ctx, kind, &cursorpb.OpaqueCursor{
 					Cursor: []byte("hello"),
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				yes, err := IsValidCursor(ctx, cur)
-				So(err, ShouldBeNil)
-				So(yes, ShouldBeTrue)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, yes, should.BeTrue)
 
 				dec, err := Decode[cursorpb.OpaqueCursor](ctx, kind, cur)
-				So(err, ShouldBeNil)
-				So(string(dec.Cursor), ShouldEqual, "hello")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, string(dec.Cursor), should.Equal("hello"))
 
-				So(func() { _, _ = Encode(ctx, kind, &cursorpb.BotsCursor{}) }, ShouldPanic)
-				So(func() { _, _ = Decode[cursorpb.BotsCursor](ctx, kind, cur) }, ShouldPanic)
+				assert.Loosely(t, func() { _, _ = Encode(ctx, kind, &cursorpb.BotsCursor{}) }, should.Panic)
+				assert.Loosely(t, func() { _, _ = Decode[cursorpb.BotsCursor](ctx, kind, cur) }, should.Panic)
 			}
 		})
 
-		Convey("BotsCursor", func() {
+		t.Run("BotsCursor", func(t *ftt.Test) {
 			for _, kind := range []cursorpb.RequestKind{
 				cursorpb.RequestKind_LIST_BOTS,
 			} {
 				cur, err := Encode(ctx, kind, &cursorpb.BotsCursor{
 					LastBotId: "hello",
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				yes, err := IsValidCursor(ctx, cur)
-				So(err, ShouldBeNil)
-				So(yes, ShouldBeTrue)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, yes, should.BeTrue)
 
 				dec, err := Decode[cursorpb.BotsCursor](ctx, kind, cur)
-				So(err, ShouldBeNil)
-				So(dec.LastBotId, ShouldEqual, "hello")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, dec.LastBotId, should.Equal("hello"))
 
-				So(func() { _, _ = Encode(ctx, kind, &cursorpb.TasksCursor{}) }, ShouldPanic)
-				So(func() { _, _ = Decode[cursorpb.TasksCursor](ctx, kind, cur) }, ShouldPanic)
+				assert.Loosely(t, func() { _, _ = Encode(ctx, kind, &cursorpb.TasksCursor{}) }, should.Panic)
+				assert.Loosely(t, func() { _, _ = Decode[cursorpb.TasksCursor](ctx, kind, cur) }, should.Panic)
 			}
 		})
 
-		Convey("TasksCursor", func() {
+		t.Run("TasksCursor", func(t *ftt.Test) {
 			for _, kind := range []cursorpb.RequestKind{
 				cursorpb.RequestKind_LIST_TASKS,
 				cursorpb.RequestKind_LIST_TASK_REQUESTS,
@@ -88,54 +89,54 @@ func TestCursor(t *testing.T) {
 				cur, err := Encode(ctx, kind, &cursorpb.TasksCursor{
 					LastTaskRequestEntityId: 12345,
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				yes, err := IsValidCursor(ctx, cur)
-				So(err, ShouldBeNil)
-				So(yes, ShouldBeTrue)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, yes, should.BeTrue)
 
 				dec, err := Decode[cursorpb.TasksCursor](ctx, kind, cur)
-				So(err, ShouldBeNil)
-				So(dec.LastTaskRequestEntityId, ShouldEqual, 12345)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, dec.LastTaskRequestEntityId, should.Equal(12345))
 
-				So(func() { _, _ = Encode(ctx, kind, &cursorpb.OpaqueCursor{}) }, ShouldPanic)
-				So(func() { _, _ = Decode[cursorpb.OpaqueCursor](ctx, kind, cur) }, ShouldPanic)
+				assert.Loosely(t, func() { _, _ = Encode(ctx, kind, &cursorpb.OpaqueCursor{}) }, should.Panic)
+				assert.Loosely(t, func() { _, _ = Decode[cursorpb.OpaqueCursor](ctx, kind, cur) }, should.Panic)
 			}
 		})
 
-		Convey("With encrypted cursor", func() {
+		t.Run("With encrypted cursor", func(t *ftt.Test) {
 			cur, err := Encode(ctx, cursorpb.RequestKind_LIST_TASKS, &cursorpb.TasksCursor{
 				LastTaskRequestEntityId: 12345,
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			Convey("Corrupted", func() {
+			t.Run("Corrupted", func(t *ftt.Test) {
 				dec, err := Decode[cursorpb.TasksCursor](ctx, cursorpb.RequestKind_LIST_TASKS, cur[:len(cur)-2])
-				So(dec, ShouldBeNil)
-				So(err, ShouldEqual, cursorDecodeErr)
+				assert.Loosely(t, dec, should.BeNil)
+				assert.Loosely(t, err, should.Equal(cursorDecodeErr))
 			})
 
-			Convey("Wrong kind #1", func() {
+			t.Run("Wrong kind #1", func(t *ftt.Test) {
 				dec, err := Decode[cursorpb.TasksCursor](ctx, cursorpb.RequestKind_LIST_TASK_REQUESTS, cur)
-				So(dec, ShouldBeNil)
-				So(err, ShouldEqual, cursorDecodeErr)
+				assert.Loosely(t, dec, should.BeNil)
+				assert.Loosely(t, err, should.Equal(cursorDecodeErr))
 			})
 
-			Convey("Wrong kind #2", func() {
+			t.Run("Wrong kind #2", func(t *ftt.Test) {
 				dec, err := Decode[cursorpb.BotsCursor](ctx, cursorpb.RequestKind_LIST_BOTS, cur)
-				So(dec, ShouldBeNil)
-				So(err, ShouldEqual, cursorDecodeErr)
+				assert.Loosely(t, dec, should.BeNil)
+				assert.Loosely(t, err, should.Equal(cursorDecodeErr))
 			})
 		})
 
-		Convey("EncodeOpaqueCursor + DecodeOpaqueCursor", func() {
+		t.Run("EncodeOpaqueCursor + DecodeOpaqueCursor", func(t *ftt.Test) {
 			ctx = memory.Use(ctx)
 
 			type Entity struct {
 				ID int64 `gae:"$id"`
 			}
 			for i := 1; i <= 10; i++ {
-				So(datastore.Put(ctx, &Entity{ID: int64(i)}), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, &Entity{ID: int64(i)}), should.BeNil)
 			}
 			datastore.GetTestable(ctx).CatchupIndexes()
 
@@ -148,18 +149,18 @@ func TestCursor(t *testing.T) {
 					if len(fetched) == 5 {
 						var err error
 						cur, err = cb()
-						So(err, ShouldBeNil)
+						assert.Loosely(t, err, should.BeNil)
 						return datastore.Stop
 					}
 					return nil
 				},
 			)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			enc, err := EncodeOpaqueCursor(ctx, cursorpb.RequestKind_LIST_BOT_EVENTS, cur)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			dec, err := DecodeOpaqueCursor(ctx, cursorpb.RequestKind_LIST_BOT_EVENTS, enc)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			err = datastore.Run(ctx,
 				datastore.NewQuery("Entity").Start(dec),
@@ -168,10 +169,10 @@ func TestCursor(t *testing.T) {
 					return nil
 				},
 			)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// Resumed from the cursor correctly and finished fetching entities.
-			So(fetched, ShouldResemble, []int64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10})
+			assert.Loosely(t, fetched, should.Resemble([]int64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}))
 		})
 	})
 }

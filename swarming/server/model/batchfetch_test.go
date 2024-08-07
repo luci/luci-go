@@ -21,11 +21,12 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/filter/featureBreaker"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestBatchFetcher(t *testing.T) {
@@ -60,7 +61,7 @@ func TestBatchFetcher(t *testing.T) {
 		{1, 100}, // edge case
 	}
 	for _, param := range params {
-		Convey(fmt.Sprintf("Works for %d %d", param.batchSize, param.concurrencyLimit), t, func() {
+		ftt.Run(fmt.Sprintf("Works for %d %d", param.batchSize, param.concurrencyLimit), t, func(t *ftt.Test) {
 			f := NewBatchFetcher[int, entity](ctx, param.batchSize, param.concurrencyLimit)
 			defer f.Close()
 
@@ -72,27 +73,27 @@ func TestBatchFetcher(t *testing.T) {
 			// A bunch of missing entities first.
 			for i := 1; i < minID; i++ {
 				_, err := f.Get(i)
-				So(err, ShouldEqual, datastore.ErrNoSuchEntity)
+				assert.Loosely(t, err, should.Equal(datastore.ErrNoSuchEntity))
 			}
 			// Then correctly fetched ones.
 			for i := minID; i <= maxID; i++ {
 				e, err := f.Get(i)
-				So(err, ShouldBeNil)
-				So(e.Value, ShouldEqual, i)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, e.Value, should.Equal(i))
 			}
 			// Then a bunch more of missing ones.
 			for i := maxID + 1; i < maxID+10; i++ {
 				_, err := f.Get(i)
-				So(err, ShouldEqual, datastore.ErrNoSuchEntity)
+				assert.Loosely(t, err, should.Equal(datastore.ErrNoSuchEntity))
 			}
 
 			// This one wasn't fetched at all.
 			_, err := f.Get(1000)
-			So(err, ShouldEqual, ErrNoSuchFetchOperation)
+			assert.Loosely(t, err, should.Equal(ErrNoSuchFetchOperation))
 		})
 	}
 
-	Convey("Fatal errors", t, func() {
+	ftt.Run("Fatal errors", t, func(t *ftt.Test) {
 		ctx, fb := featureBreaker.FilterRDS(ctx, nil)
 
 		fatalErr := errors.New("BOOM")
@@ -107,11 +108,11 @@ func TestBatchFetcher(t *testing.T) {
 
 		for i := minID; i <= maxID; i++ {
 			_, err := f.Get(i)
-			So(err, ShouldEqual, fatalErr)
+			assert.Loosely(t, err, should.Equal(fatalErr))
 		}
 	})
 
-	Convey("Cancellation", t, func() {
+	ftt.Run("Cancellation", t, func(t *ftt.Test) {
 		const batchSize = 3
 		const expectedCalls = 5
 
@@ -153,7 +154,7 @@ func TestBatchFetcher(t *testing.T) {
 		// All operations are cancelled.
 		for i := 1; i <= batchSize*expectedCalls; i++ {
 			_, err := f.Get(i)
-			So(err, ShouldEqual, context.Canceled)
+			assert.Loosely(t, err, should.Equal(context.Canceled))
 		}
 	})
 }

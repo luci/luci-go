@@ -24,14 +24,14 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/swarming/server/bq/taskspb"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestScheduleExportTasks(t *testing.T) {
@@ -40,7 +40,7 @@ func TestScheduleExportTasks(t *testing.T) {
 	// TODO(jonahhooper) Add custom error handler to test failure to schedule
 	// a task.
 	// See: https://crrev.com/c/5054492/11..14/swarming/server/bq/export.go#b97
-	Convey("With mocks", t, func() {
+	ftt.Run("With mocks", t, func(t *ftt.Test) {
 		var testTime = testclock.TestRecentTimeUTC.Truncate(time.Microsecond)
 
 		disp := &tq.Dispatcher{}
@@ -50,16 +50,16 @@ func TestScheduleExportTasks(t *testing.T) {
 		ctx = memory.Use(ctx)
 		ctx, tasks := tq.TestingContext(ctx, disp)
 
-		Convey("Creates 4 export tasks", func() {
+		t.Run("Creates 4 export tasks", func(t *ftt.Test) {
 			start := testTime.Add(-minEventAge - time.Minute - time.Second)
 			schedule := ExportSchedule{
 				ID:         TaskRequests,
 				NextExport: start,
 			}
 			err := datastore.Put(ctx, &schedule)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			err = scheduleExportTasks(ctx, disp, "", maxTasksToSchedule, "foo", "bar", TaskRequests)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			expected := []*taskspb.ExportInterval{
 				{
 					OperationId:  "task_requests:1454472125:15",
@@ -94,7 +94,7 @@ func TestScheduleExportTasks(t *testing.T) {
 					Duration:     durationpb.New(exportDuration),
 				},
 			}
-			So(tasks.Tasks(), ShouldHaveLength, len(expected))
+			assert.Loosely(t, tasks.Tasks(), should.HaveLength(len(expected)))
 			payloads := make([]*taskspb.ExportInterval, len(expected))
 			for idx, tsk := range tasks.Tasks().Payloads() {
 				payloads[idx] = tsk.(*taskspb.ExportInterval)
@@ -104,54 +104,54 @@ func TestScheduleExportTasks(t *testing.T) {
 			sort.Slice(payloads, func(i, j int) bool {
 				return payloads[i].Start.AsTime().Before(payloads[j].Start.AsTime())
 			})
-			So(payloads, ShouldResembleProto, expected)
+			assert.Loosely(t, payloads, should.Resemble(expected))
 			err = datastore.Get(ctx, &schedule)
-			So(err, ShouldBeNil)
-			So(schedule.NextExport, ShouldEqual, start.Add(4*exportDuration))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, schedule.NextExport, should.Equal(start.Add(4*exportDuration)))
 		})
 
-		Convey("Creates 0 export tasks if ExportSchedule doesn't exist", func() {
+		t.Run("Creates 0 export tasks if ExportSchedule doesn't exist", func(t *ftt.Test) {
 			err := scheduleExportTasks(ctx, disp, "", maxTasksToSchedule, "foo", "bar", TaskRequests)
-			So(err, ShouldBeNil)
-			So(tasks.Tasks(), ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tasks.Tasks(), should.BeEmpty)
 			schedule := ExportSchedule{ID: TaskRequests}
 			err = datastore.Get(ctx, &schedule)
-			So(err, ShouldBeNil)
-			So(schedule.NextExport, ShouldEqual, testTime.Add(-minEventAge).Truncate(time.Minute))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, schedule.NextExport, should.Equal(testTime.Add(-minEventAge).Truncate(time.Minute)))
 		})
 
-		Convey("We cannot create more than 20 tasks at a time", func() {
+		t.Run("We cannot create more than 20 tasks at a time", func(t *ftt.Test) {
 			start := testTime.Add(-(2 + 10) * time.Minute).Truncate(time.Minute)
-			So(datastore.Put(ctx, &ExportSchedule{
+			assert.Loosely(t, datastore.Put(ctx, &ExportSchedule{
 				ID:         TaskRequests,
 				NextExport: start,
-			}), ShouldBeNil)
+			}), should.BeNil)
 			err := scheduleExportTasks(ctx, disp, "", maxTasksToSchedule, "foo", "bar", TaskRequests)
-			So(err, ShouldBeNil)
-			So(tasks.Tasks(), ShouldHaveLength, 20)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tasks.Tasks(), should.HaveLength(20))
 		})
 
-		Convey("We cannot schedule an exportTask in the future", func() {
+		t.Run("We cannot schedule an exportTask in the future", func(t *ftt.Test) {
 			start := testTime.Add(5 * time.Minute)
-			So(datastore.Put(ctx, &ExportSchedule{
+			assert.Loosely(t, datastore.Put(ctx, &ExportSchedule{
 				ID:         TaskRequests,
 				NextExport: start,
-			}), ShouldBeNil)
+			}), should.BeNil)
 			err := scheduleExportTasks(ctx, disp, "", maxTasksToSchedule, "foo", "bar", TaskRequests)
-			So(err, ShouldBeNil)
-			So(tasks.Tasks(), ShouldHaveLength, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tasks.Tasks(), should.HaveLength(0))
 		})
 
-		Convey("Custom key prefix and max tasks to schedule", func() {
-			So(datastore.Put(ctx, &ExportSchedule{
+		t.Run("Custom key prefix and max tasks to schedule", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(ctx, &ExportSchedule{
 				ID:         "key-prefix:" + TaskRequests,
 				NextExport: testTime.Add(-minEventAge - time.Minute),
-			}), ShouldBeNil)
+			}), should.BeNil)
 			err := scheduleExportTasks(ctx, disp, "key-prefix:", 1, "foo", "bar", TaskRequests)
-			So(err, ShouldBeNil)
-			So(tasks.Tasks(), ShouldHaveLength, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tasks.Tasks(), should.HaveLength(1))
 			task := tasks.Tasks().Payloads()[0].(*taskspb.ExportInterval)
-			So(task.OperationId, ShouldEqual, "key-prefix:task_requests:1454472126:15")
+			assert.Loosely(t, task.OperationId, should.Equal("key-prefix:task_requests:1454472126:15"))
 		})
 	})
 }

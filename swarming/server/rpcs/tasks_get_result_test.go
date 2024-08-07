@@ -30,21 +30,24 @@ import (
 	"go.chromium.org/luci/swarming/server/acls"
 	"go.chromium.org/luci/swarming/server/model"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestGetResult(t *testing.T) {
 	t.Parallel()
 
-	Convey("TestGetResult", t, func() {
+	ftt.Run("TestGetResult", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		state := NewMockedRequestState()
 		state.MockPerm("project:visible-realm", acls.PermTasksGet)
 		ctx = MockRequestState(ctx, state)
 		srv := TasksServer{}
 		reqKey, err := model.TaskIDToRequestKey(ctx, "65aba3a3e6b99310")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		var testTime = time.Date(2023, time.January, 1, 2, 3, 4, 0, time.UTC)
 		tr := &model.TaskRequest{
 			Key:     reqKey,
@@ -193,9 +196,9 @@ func TestGetResult(t *testing.T) {
 			ExpirationDelay:      datastore.NewUnindexedOptional(0.0),
 		}
 
-		So(datastore.Put(ctx, tr, trs), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, tr, trs), should.BeNil)
 
-		Convey("with performance stats", func() {
+		t.Run("with performance stats", func(t *ftt.Test) {
 			ps := &model.PerformanceStats{
 				Key:                  model.PerformanceStatsKey(ctx, reqKey),
 				BotOverheadSecs:      float64(200),
@@ -204,11 +207,11 @@ func TestGetResult(t *testing.T) {
 				NamedCachesInstall:   model.OperationStats{DurationSecs: float64(3)},
 				NamedCachesUninstall: model.OperationStats{DurationSecs: float64(4)},
 			}
-			So(datastore.Put(ctx, ps), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, ps), should.BeNil)
 			req := &apipb.TaskIdWithPerfRequest{TaskId: "65aba3a3e6b99310", IncludePerformanceStats: true}
 			resp, err := srv.GetResult(ctx, req)
-			So(err, ShouldBeNil)
-			So(resp, ShouldResembleProto, &apipb.TaskResultResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.Resemble(&apipb.TaskResultResponse{
 				BotDimensions: []*apipb.StringListPair{
 					{Key: "cpu", Value: []string{"x86_64"}},
 					{Key: "os", Value: []string{"linux"}},
@@ -256,14 +259,14 @@ func TestGetResult(t *testing.T) {
 				Tags:           []string{"tag1", "tag2"},
 				TaskId:         "65aba3a3e6b99310",
 				User:           "user@example.com",
-			})
+			}))
 		})
 
-		Convey("no performance stats", func() {
+		t.Run("no performance stats", func(t *ftt.Test) {
 			req := &apipb.TaskIdWithPerfRequest{TaskId: "65aba3a3e6b99310", IncludePerformanceStats: false}
 			resp, err := srv.GetResult(ctx, req)
-			So(err, ShouldBeNil)
-			So(resp, ShouldResembleProto, &apipb.TaskResultResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.Resemble(&apipb.TaskResultResponse{
 				BotDimensions: []*apipb.StringListPair{
 					{Key: "cpu", Value: []string{"x86_64"}},
 					{Key: "os", Value: []string{"linux"}},
@@ -304,33 +307,33 @@ func TestGetResult(t *testing.T) {
 				Tags:           []string{"tag1", "tag2"},
 				TaskId:         "65aba3a3e6b99310",
 				User:           "user@example.com",
-			})
+			}))
 		})
 
-		Convey("no task_id", func() {
+		t.Run("no task_id", func(t *ftt.Test) {
 			req := &apipb.TaskIdWithPerfRequest{TaskId: "", IncludePerformanceStats: false}
 			_, err := srv.GetResult(ctx, req)
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
-			So(err, ShouldErrLike, "task_id is required")
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("task_id is required"))
 		})
 
-		Convey("error with task_id", func() {
+		t.Run("error with task_id", func(t *ftt.Test) {
 			req := &apipb.TaskIdWithPerfRequest{TaskId: "1", IncludePerformanceStats: false}
 			_, err := srv.GetResult(ctx, req)
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
-			So(err, ShouldErrLike, "task_id 1: bad task ID: too small")
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("task_id 1: bad task ID: too small"))
 		})
 
-		Convey("no such task", func() {
+		t.Run("no such task", func(t *ftt.Test) {
 			req := &apipb.TaskIdWithPerfRequest{TaskId: "65aba3a3e6b99320", IncludePerformanceStats: false}
 			_, err := srv.GetResult(ctx, req)
-			So(err, ShouldHaveGRPCStatus, codes.NotFound)
-			So(err, ShouldErrLike, "no such task")
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.NotFound))
+			assert.Loosely(t, err, should.ErrLike("no such task"))
 		})
 
-		Convey("requestor does not have ACLs", func() {
+		t.Run("requestor does not have ACLs", func(t *ftt.Test) {
 			reqKey, err := model.TaskIDToRequestKey(ctx, "65aba3a3e6b99320")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			trs := model.TaskResultSummary{
 				Key:                  model.TaskResultSummaryKey(ctx, reqKey),
 				RequestRealm:         "project:no-access-realm",
@@ -338,11 +341,11 @@ func TestGetResult(t *testing.T) {
 				RequestBotID:         "da bot",
 				RequestAuthenticated: "user:someone@notyou.com",
 			}
-			So(datastore.Put(ctx, &trs), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, &trs), should.BeNil)
 			req := &apipb.TaskIdWithPerfRequest{TaskId: "65aba3a3e6b99320", IncludePerformanceStats: false}
 			_, err = srv.GetResult(ctx, req)
-			So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
-			So(err, ShouldErrLike, "the caller \"user:test@example.com\" doesn't have permission \"swarming.tasks.get\" for the task \"65aba3a3e6b99320\"")
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
+			assert.Loosely(t, err, should.ErrLike("the caller \"user:test@example.com\" doesn't have permission \"swarming.tasks.get\" for the task \"65aba3a3e6b99320\""))
 		})
 	})
 }
