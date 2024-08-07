@@ -36,6 +36,7 @@ import { useState, useEffect, createRef } from 'react';
 import { GroupsFormList, FormListElement } from '@/authdb/components/groups_form_list';
 import { GroupsFormListReadonly } from '@/authdb/components/groups_form_list_readonly';
 import { AuthGroup, UpdateGroupRequest, DeleteGroupRequest } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/groups.pb';
+import { addPrefixToItems } from '@/authdb/common/helpers';
 
 interface GroupsFormProps {
   name: string;
@@ -68,15 +69,6 @@ function stripPrefix(prefix: string, str: string) {
   } else {
     return str;
   }
-};
-
-// Appends '<prefix>:' to a string if it doesn't have a prefix.
-const addPrefix = (prefix: string, str: string) => {
-  return str.indexOf(':') == -1 ? prefix + ':' + str : str;
-};
-
-const addPrefixToItems = (prefix: string, items: string[]) => {
-  return items.map((item) => addPrefix(prefix, item));
 };
 
 // True if group name starts with '<something>/' prefix, where

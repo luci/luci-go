@@ -25,12 +25,9 @@ import TableRow from '@mui/material/TableRow';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import {useState, forwardRef, useImperativeHandle} from 'react';
-import validator from 'validator';
+import { isGlob, isMember, isSubgroup } from '@/authdb/common/helpers';
 
 import './groups_list.css';
-
-const membersRe = /^((user|bot|service|anonymous):)?[\w+%.@*\[\]-]+$/;
-const nameRe = /^([a-z\-]+\/)?[0-9a-z_\-\.@]{1,100}$/;
 
 interface GroupsFormListProps {
     initialItems: string[];
@@ -73,20 +70,17 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
       // If this is members or globs, verify accordingly before adding.
       // If it doesn't meet the requirements, show error message.
       if (name == 'Members') {
-        let isMember = membersRe.test(currentItem!) && validator.isEmail(currentItem!);
-        if (!isMember) {
+        if (!isMember(currentItem!)) {
           setErrorMessage('Each member should be an email address.');
           return;
         }
       } else if (name == 'Globs') {
-        let isGlob = (currentItem!.search(/[\*\[\]]/) != -1);
-        if (!isGlob) {
+        if (!isGlob(currentItem!)) {
           setErrorMessage('Each glob should use at least one wildcard (i.e. *).');
           return;
         }
       } else if (name == 'Subgroups') {
-        let isSubgroup = nameRe.test(currentItem!);
-        if (!isSubgroup) {
+        if (!isSubgroup(currentItem!)) {
           setErrorMessage('Invalid subgroup name.');
           return;
         }

@@ -17,10 +17,10 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 import List from '@mui/material/List';
 import { GroupsFormNew } from './groups_form_new';
+import { mockResponseCreateGroup, createMockGroup, mockErrorCreateGroup } from '../testing_tools/mocks/create_group_mock';
 
 describe('<GroupsFormNew />', () => {
   test('if group name, description textarea is displayed', async () => {
-
     render(
       <FakeContextProvider>
         <List>
@@ -140,7 +140,6 @@ describe('<GroupsFormNew />', () => {
   });
 
   test('error is shown on invalid globs name', async () => {
-
     render(
       <FakeContextProvider>
         <List>
@@ -158,7 +157,6 @@ describe('<GroupsFormNew />', () => {
   });
 
   test('error is shown on invalid subgroups name', async () => {
-
     render(
       <FakeContextProvider>
         <List>
@@ -173,5 +171,40 @@ describe('<GroupsFormNew />', () => {
     const createButton = screen.getByTestId('create-button');
     act(() => createButton.click());
     expect(screen.getByText('Invalid subgroups: Subgroup')).toBeInTheDocument();
+  });
+
+  test('success shown on successfully created group', async () => {
+    const mockGroup = createMockGroup('new-group');
+    mockResponseCreateGroup(mockGroup);
+    render(
+        <FakeContextProvider>
+          <List>
+              <GroupsFormNew/>
+          </List>
+        </FakeContextProvider>,
+      );
+      await screen.findByTestId('groups-form-new');
+
+      const createButton = screen.getByTestId('create-button');
+      act(() => createButton.click());
+      await screen.findByRole('alert');
+      expect(screen.getByText('Group created'));
+  });
+
+  test('error shown on error creating group', async () => {
+    mockErrorCreateGroup();
+    render(
+        <FakeContextProvider>
+          <List>
+              <GroupsFormNew/>
+          </List>
+        </FakeContextProvider>,
+      );
+      await screen.findByTestId('groups-form-new');
+
+      const createButton = screen.getByTestId('create-button');
+      act(() => createButton.click());
+      await screen.findByRole('alert');
+      expect(screen.getByText('Error creating group'));
   });
 });
