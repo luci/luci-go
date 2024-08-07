@@ -17,9 +17,10 @@ package main
 import (
 	"net/http"
 
-	"go.chromium.org/luci/analysis/server"
 	luciserver "go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/router"
+
+	"go.chromium.org/luci/source_index/server"
 )
 
 // main implements the entrypoint for the default (api) service.
