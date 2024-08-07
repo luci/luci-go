@@ -22,8 +22,10 @@ import (
 	"fmt"
 	"hash/fnv"
 	"io"
+	"net/url"
 	"sort"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"cloud.google.com/go/spanner"
@@ -47,18 +49,31 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/artifactcontent"
 	"go.chromium.org/luci/resultdb/internal/artifacts"
+	"go.chromium.org/luci/resultdb/internal/checkpoints"
 	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
+	"go.chromium.org/luci/resultdb/internal/tracing"
 	"go.chromium.org/luci/resultdb/pbutil"
 	bqpb "go.chromium.org/luci/resultdb/proto/bq"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
+const CheckpointProcessID = "artifact-exporter"
+
+// CheckpointTTL specifies the TTL for checkpoints in Spanner.
+// 7 days for checkpoints should be enough to handle any production issues.
+// Another option is to set it to 510 days (equals to Artifact TTL), but
+// that may be wasteful.
+const CheckpointTTL = 7 * 24 * time.Hour
+
 // MaxShardContentSize is the maximum content size in BQ row.
 // Artifacts content bigger than this size needs to be sharded.
 // Leave 10 KB for other fields, the rest is content.
+// If you need to change this value, please be aware that it may result
+// in a different way to split an artifact. This may lead to the current
+// checkpoint being incorrect.
 const MaxShardContentSize = bq.RowMaxBytes - 10*1024
 
 // MaxRBECasBatchSize is the batch size limit when we read artifact content.
@@ -66,6 +81,8 @@ const MaxShardContentSize = bq.RowMaxBytes - 10*1024
 // batch operations.
 // For now, hardcode to be 2MB. It should be under the limit,
 // since BatchUpdateBlobs in BatchCreateArtifacts can handle up to 10MB.
+// If you need to change this value, please make sure MaxRBECasBatchSize < MaxShardContentSize,
+// as we only use 1 Bigquery shard to store these small artifacts.
 const MaxRBECasBatchSize = 2 * 1024 * 1024 // 2 MB
 
 // ArtifactRequestOverhead is the overhead (in bytes) applying to each artifact
@@ -163,6 +180,13 @@ type artifactExporter struct {
 	bqExportClient BQExportClient
 }
 
+// Row represent the data to be inserted in the exporter channel.
+type Row struct {
+	content *bqpb.TextArtifactRow
+	// isLastShard is true iff this is the last shard of an artifact.
+	isLastShard bool
+}
+
 // InitServer initializes a artifactexporter server.
 func InitServer(srv *server.Server, opts Options) error {
 	if opts.ArtifactRBEInstance == "" {
@@ -215,6 +239,9 @@ func Schedule(ctx context.Context, invID invocations.ID) error {
 // exportArtifact reads all text artifacts (including artifact content
 // in RBE-CAS) for an invocation and exports to BigQuery.
 func (ae *artifactExporter) exportArtifacts(ctx context.Context, invID invocations.ID) (err error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/services/artifactexporter.artifactExporter.exportArtifacts")
+	defer func() { tracing.End(ts, err) }()
+
 	ctx = logging.SetField(ctx, "invocation_id", invID)
 	shouldUpload, err := shouldUploadToBQ(ctx)
 	if err != nil {
@@ -225,21 +252,27 @@ func (ae *artifactExporter) exportArtifacts(ctx context.Context, invID invocatio
 		return nil
 	}
 
-	ctx, cancel := span.ReadOnlyTransaction(ctx)
-	defer cancel()
-
 	// Get the invocation.
-	inv, err := invocations.Read(ctx, invID)
+	inv, err := invocations.Read(span.Single(ctx), invID)
 	if err != nil {
 		return errors.Annotate(err, "error reading exported invocation").Err()
 	}
 	if inv.State != pb.Invocation_FINALIZED {
 		return errors.Reason("invocation not finalized").Err()
 	}
+	project, _ := realms.Split(inv.Realm)
+
+	// Query for checkpoints.
+	cps, err := checkpoints.ReadAllUniquifiers(span.Single(ctx), project, string(invID), CheckpointProcessID)
+	if err != nil {
+		return errors.Annotate(err, "read all uniquifiers").Err()
+	}
+	if len(cps) > 0 {
+		logging.Infof(ctx, "Found %d checkpoints for invocation %v", len(cps), invID)
+	}
 
 	// Query for artifacts.
-	project, _ := realms.Split(inv.Realm)
-	artifacts, err := ae.queryTextArtifacts(ctx, invID, project, MaxTotalArtifactSizeForInvocation)
+	artifacts, err := ae.queryTextArtifacts(span.Single(ctx), invID, project, MaxTotalArtifactSizeForInvocation, cps)
 	if err != nil {
 		return errors.Annotate(err, "query text artifacts").Err()
 	}
@@ -266,13 +299,12 @@ func (ae *artifactExporter) exportArtifacts(ctx context.Context, invID invocatio
 	// fit into memory (we allow artifacts upto 640MB [1]).
 	// We need to "break" them in to sizeable chunks.
 	// [1] https://source.corp.google.com/h/chromium/infra/infra_superproject/+/main:data/k8s/projects/luci-resultdb/resultdb.star;l=307?q=max-artifact-content-stream-length
-	rowC := make(chan *bqpb.TextArtifactRow, 10)
-
+	rowC := make(chan *Row, 10)
 	err = parallel.FanOutIn(func(work chan<- func() error) {
 		// Download artifacts content and put the rows in a channel.
 		work <- func() error {
 			defer close(rowC)
-			err := ae.downloadMultipleArtifactContent(ctx, artifacts, inv, rowC, MaxShardContentSize, MaxRBECasBatchSize)
+			err := ae.downloadMultipleArtifactContent(ctx, artifacts, inv, rowC, MaxShardContentSize, MaxRBECasBatchSize, cps)
 			if err != nil {
 				return errors.Annotate(err, "download multiple artifact content").Err()
 			}
@@ -307,60 +339,151 @@ func (ae *artifactExporter) exportArtifacts(ctx context.Context, invID invocatio
 // Another alternative is add a field in the Artifact spanner table to mark which
 // rows have been exported.
 // [1] https://cloud.google.com/bigquery/docs/write-api#pending_type
-func (ae *artifactExporter) exportToBigQuery(ctx context.Context, rowC chan *bqpb.TextArtifactRow) error {
+
+func (ae *artifactExporter) exportToBigQuery(ctx context.Context, rowC chan *Row) (err error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/services/artifactexporter.artifactExporter.exportToBigQuery")
+	defer func() { tracing.End(ts, err) }()
+
 	logging.Infof(ctx, "Start exporting to BigQuery")
 
-	// rows contains the rows that will be sent to AppendRows.
-	rows := []*bqpb.TextArtifactRow{}
+	// bqrows contains the rows that will be sent to AppendRows.
+	bqrows := []*bqpb.TextArtifactRow{}
+	rows := []*Row{}
 	currentSize := 0
 	for row := range rowC {
+		bqrow := row.content
 		// Group the rows together such that the total size of the batch
 		// does not exceed AppendRows max size.
 		// The bqutil package also does the batching, but we don't want to send
 		// a just slightly bigger group of row to it, to prevent a big batch and
 		// a tiny batch, so we make sure that the rows we send just fit in one batch.
-		rowSize := bq.RowSize(row)
+		rowSize := bq.RowSize(bqrow)
 
 		// Exceed max batch size, send whatever we have.
 		if currentSize+rowSize > bq.RowMaxBytes {
-			logging.Infof(ctx, "Start inserting %d rows to BigQuery", len(rows))
-			err := ae.bqExportClient.InsertArtifactRows(ctx, rows)
+			logging.Infof(ctx, "Start inserting %d rows to BigQuery", len(bqrows))
+			err := ae.bqExportClient.InsertArtifactRows(ctx, bqrows)
 			if err != nil {
-				artifactExportCounter.Add(ctx, int64(len(rows)), row.Project, "failure_bq")
+				artifactExportCounter.Add(ctx, int64(len(bqrows)), bqrow.Project, "failure_bq")
 				return errors.Annotate(err, "insert artifact rows").Err()
 			}
-			logging.Infof(ctx, "Finished inserting %d rows to BigQuery", len(rows))
-			artifactExportCounter.Add(ctx, int64(len(rows)), row.Project, "success")
+			// Create checkpoints for the rows.
+			err = ae.createCheckPoints(ctx, rows)
+			if err != nil {
+				// Non-critical, just log and proceed.
+				logging.Errorf(ctx, "Failed to create checkpoint for invocation %v: %v", bqrow.InvocationId, err.Error())
+			}
+			logging.Infof(ctx, "Finished inserting %d rows to BigQuery", len(bqrows))
+			artifactExportCounter.Add(ctx, int64(len(bqrows)), bqrow.Project, "success")
 			// Reset
-			rows = []*bqpb.TextArtifactRow{}
+			bqrows = []*bqpb.TextArtifactRow{}
+			rows = []*Row{}
 			currentSize = 0
 		}
 
+		bqrows = append(bqrows, bqrow)
 		rows = append(rows, row)
 		currentSize += rowSize
 	}
 
 	// Upload the remaining rows.
 	if currentSize > 0 {
-		logging.Infof(ctx, "Start inserting last batch of %d rows to BigQuery", len(rows))
-		err := ae.bqExportClient.InsertArtifactRows(ctx, rows)
+		logging.Infof(ctx, "Start inserting last batch of %d rows to BigQuery", len(bqrows))
+		err := ae.bqExportClient.InsertArtifactRows(ctx, bqrows)
 		if err != nil {
-			artifactExportCounter.Add(ctx, int64(len(rows)), rows[0].Project, "failure_bq")
+			artifactExportCounter.Add(ctx, int64(len(bqrows)), bqrows[0].Project, "failure_bq")
 			return errors.Annotate(err, "insert artifact rows").Err()
 		}
-		logging.Infof(ctx, "Finished inserting last batch of %d rows to BigQuery", len(rows))
-		artifactExportCounter.Add(ctx, int64(len(rows)), rows[0].Project, "success")
+		logging.Infof(ctx, "Finished inserting last batch of %d rows to BigQuery", len(bqrows))
+		artifactExportCounter.Add(ctx, int64(len(bqrows)), bqrows[0].Project, "success")
+
+		// Create checkpoints for the rows.
+		err = ae.createCheckPoints(ctx, rows)
+		if err != nil {
+			// Non-critical, just log and proceed.
+			logging.Errorf(ctx, "Failed to create checkpoint for invocation %v: %v", bqrows[0].InvocationId, err.Error())
+		}
 	}
 
 	logging.Infof(ctx, "Finished exporting to BigQuery")
 	return nil
 }
 
+// createCheckPoints create CheckPoint in spanner for rows.
+// If an artifact has been fully exported, a row with the artifactUniquifier is created.
+// If only part of it has been exported, only those shardUniquifier will be exported.
+// Note: we do not delete the shardUniquifier once an artifact is fully exported,
+// they will be deleted after TTL.
+// If an artifact has its artifactUniquifier in spanner, it means all of its shards have
+// been exported.
+func (ae *artifactExporter) createCheckPoints(ctx context.Context, rows []*Row) (err error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/services/artifactexporter.artifactExporter.createCheckPoints")
+	defer func() { tracing.End(ts, err) }()
+
+	ms := []*spanner.Mutation{}
+
+	for _, row := range rows {
+		bqrow := row.content
+		uniquifier := shardUniquifier(bqrow.TestId, bqrow.ResultId, bqrow.ArtifactId, int(bqrow.ShardId))
+		if row.isLastShard {
+			uniquifier = artifactUniquifier(bqrow.TestId, bqrow.ResultId, bqrow.ArtifactId)
+		}
+
+		checkpointKey := checkpoints.Key{
+			Project:    bqrow.Project,
+			ResourceID: bqrow.InvocationId,
+			ProcessID:  CheckpointProcessID,
+			Uniquifier: uniquifier,
+		}
+		ms = append(ms, checkpoints.Insert(ctx, checkpointKey, CheckpointTTL))
+		// Spanner has a limit of 80k mutations per commit.
+		// https://cloud.google.com/spanner/quotas#limits-for
+		// To be safe, we will do batch of 5k.
+		if len(ms) >= 5_000 {
+			logging.Infof(ctx, "Writing %d mutations to spanner", len(ms))
+			_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+				span.BufferWrite(ctx, ms...)
+				return nil
+			})
+			if err != nil {
+				return errors.Annotate(err, "apply mutations").Err()
+			}
+			logging.Infof(ctx, "Finish writing %d mutations to spanner", len(ms))
+			ms = []*spanner.Mutation{}
+		}
+	}
+
+	// Apply the remaining mutations.
+	if len(ms) > 0 {
+		logging.Infof(ctx, "Writing %d mutations", len(ms))
+		_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+			span.BufferWrite(ctx, ms...)
+			return nil
+		})
+		if err != nil {
+			return errors.Annotate(err, "apply mutations").Err()
+		}
+		logging.Infof(ctx, "Finish writing %d mutations to spanner", len(ms))
+	}
+	return nil
+}
+
+func artifactUniquifier(testID, resultID, artifactID string) string {
+	return fmt.Sprintf("%s/%s/%s", url.PathEscape(testID), resultID, url.PathEscape(artifactID))
+}
+
+func shardUniquifier(testID, resultID, artifactID string, shardID int) string {
+	return fmt.Sprintf("%s/%s/%s/%d", url.PathEscape(testID), resultID, url.PathEscape(artifactID), shardID)
+}
+
 // queryTextArtifacts queries all text artifacts contained in an invocation.
 // The query also join with TestResult table for test status.
 // The content of the artifact is not populated in this function,
 // this will keep the size of the slice small enough to fit in memory.
-func (ae *artifactExporter) queryTextArtifacts(ctx context.Context, invID invocations.ID, project string, maxTotalArtifactSizeForInvocation int) ([]*Artifact, error) {
+func (ae *artifactExporter) queryTextArtifacts(ctx context.Context, invID invocations.ID, project string, maxTotalArtifactSizeForInvocation int, checkpoints map[string]bool) (artifacts []*Artifact, err error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/services/artifactexporter.artifactExporter.queryTextArtifacts")
+	defer func() { tracing.End(ts, err) }()
+
 	chromeOSMaxSizeCondition := ""
 	if project == "chromeos" {
 		chromeOSMaxSizeCondition = "AND a.Size <= @chromeOSMaxSize"
@@ -394,12 +517,18 @@ func (ae *artifactExporter) queryTextArtifacts(ctx context.Context, invID invoca
 	it := span.Query(ctx, st)
 	var b spanutil.Buffer
 	totalSize := 0
-	err := it.Do(func(r *spanner.Row) error {
+	err = it.Do(func(r *spanner.Row) error {
 		a := &Artifact{InvocationID: string(invID)}
 		err := b.FromSpanner(r, &a.TestID, &a.ResultID, &a.ArtifactID, &a.ContentType, &a.Size, &a.RBECASHash, &a.TestStatus, &a.TestVariant, &a.TestVariantHash)
 		if err != nil {
 			return errors.Annotate(err, "read row").Err()
 		}
+		// We skip all artifacts in checkpoints, because we have fully exported them.
+		uq := artifactUniquifier(a.TestID, a.ResultID, a.ArtifactID)
+		if _, ok := checkpoints[uq]; ok {
+			return nil
+		}
+
 		if a.ContentType == "" {
 			artifactContentCounter.Add(ctx, 1, project, "empty")
 		} else {
@@ -428,9 +557,11 @@ func (ae *artifactExporter) queryTextArtifacts(ctx context.Context, invID invoca
 // The rows will be pushed in rowC.
 // Artifacts with content size smaller or equal than MaxRBECasBatchSize will be downloaded in batch.
 // Artifacts with content size bigger than MaxRBECasBatchSize will be downloaded in streaming manner.
-func (ae *artifactExporter) downloadMultipleArtifactContent(ctx context.Context, artifacts []*Artifact, inv *pb.Invocation, rowC chan *bqpb.TextArtifactRow, maxShardContentSize, maxRBECasBatchSize int) error {
-	logging.Infof(ctx, "Start downloading artifact contents")
+func (ae *artifactExporter) downloadMultipleArtifactContent(ctx context.Context, artifacts []*Artifact, inv *pb.Invocation, rowC chan *Row, maxShardContentSize, maxRBECasBatchSize int, checkpoints map[string]bool) (err error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/services/artifactexporter.artifactExporter.downloadMultipleArtifactContent")
+	defer func() { tracing.End(ts, err) }()
 
+	logging.Infof(ctx, "Start downloading artifact contents")
 	project, _ := realms.Split(inv.Realm)
 
 	// Sort the artifacts by size, make it easier to do batching.
@@ -439,7 +570,7 @@ func (ae *artifactExporter) downloadMultipleArtifactContent(ctx context.Context,
 	})
 
 	// Limit to 10 workers to avoid possible OOM.
-	return parallel.WorkPool(10, func(work chan<- func() error) {
+	err = parallel.WorkPool(10, func(work chan<- func() error) {
 		// Smaller artifacts should be downloaded in batch.
 		logging.Infof(ctx, "Start downloading artifact contents in batch manner")
 		currentBatchSize := 0
@@ -480,7 +611,7 @@ func (ae *artifactExporter) downloadMultipleArtifactContent(ctx context.Context,
 				return nil
 			}
 		}
-		logging.Infof(ctx, "Finished downloading artifact contents in batch manner")
+		logging.Infof(ctx, "Finished scheduling work to download artifact contents in batch manner")
 
 		// Download the big artifacts in streaming manner.
 		if bigArtifactStartIndex > -1 {
@@ -489,7 +620,7 @@ func (ae *artifactExporter) downloadMultipleArtifactContent(ctx context.Context,
 			for i := bigArtifactStartIndex; i < len(artifacts); i++ {
 				artifact := artifacts[i]
 				work <- func() error {
-					err := ae.streamArtifactContent(ctx, artifact, inv, rowC, maxShardContentSize)
+					err := ae.streamArtifactContent(ctx, artifact, inv, rowC, maxShardContentSize, checkpoints)
 					if err != nil {
 						// We don't want to retry on this error. Just log a warning.
 						if errors.Is(err, ErrInvalidUTF8) {
@@ -507,10 +638,11 @@ func (ae *artifactExporter) downloadMultipleArtifactContent(ctx context.Context,
 					return nil
 				}
 			}
-			logging.Infof(ctx, "Finished downloading %d artifact contents in streaming manner", numBigArtifacts)
+			logging.Infof(ctx, "Finished scheduling work to download %d artifact contents in streaming manner", numBigArtifacts)
 		}
-		logging.Infof(ctx, "Finished downloading artifact contents")
 	})
+	logging.Infof(ctx, "Finished downloading artifact contents")
+	return err
 }
 
 func artifactSizeWithOverhead(artifactSize int64) int {
@@ -519,16 +651,20 @@ func artifactSizeWithOverhead(artifactSize int64) int {
 
 // batchDownloadArtifacts downloads artifact content from RBE-CAS in batch.
 // It generates one or more TextArtifactRows for the content and push in rowC.
-func (ae *artifactExporter) batchDownloadArtifacts(ctx context.Context, batch []*Artifact, inv *pb.Invocation, rowC chan *bqpb.TextArtifactRow) error {
-	logging.Infof(ctx, "Start batch download of %d artifacts", len(batch))
+func (ae *artifactExporter) batchDownloadArtifacts(ctx context.Context, batch []*Artifact, inv *pb.Invocation, rowC chan *Row) (err error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/services/artifactexporter.artifactExporter.batchDownloadArtifacts")
+	defer func() { tracing.End(ts, err) }()
 
 	req := &repb.BatchReadBlobsRequest{InstanceName: ae.rbecasInstance}
+	totalSize := 0
 	for _, artifact := range batch {
 		req.Digests = append(req.Digests, &repb.Digest{
 			Hash:      artifacts.TrimHashPrefix(artifact.RBECASHash),
 			SizeBytes: artifact.Size,
 		})
+		totalSize += int(artifact.Size)
 	}
+	logging.Infof(ctx, "Start batch download of %d artifacts. Total size = %d.", len(batch), totalSize)
 	resp, err := ae.casClient.BatchReadBlobs(ctx, req)
 	if err != nil {
 		// The Invalid argument or ResourceExhausted suggest something is wrong with the
@@ -615,7 +751,11 @@ func (ae *artifactExporter) batchDownloadArtifacts(ctx context.Context, batch []
 			InvocationVariantUnion:     invocationVariantJSON,
 			InvocationVariantUnionHash: invocationVariantHash,
 		}
-		rowC <- row
+
+		rowC <- &Row{
+			content:     row,
+			isLastShard: true,
+		}
 	}
 	logging.Infof(ctx, "Finished batch download of %d artifacts", len(batch))
 	return nil
@@ -623,7 +763,10 @@ func (ae *artifactExporter) batchDownloadArtifacts(ctx context.Context, batch []
 
 // streamArtifactContent downloads artifact content from RBE-CAS in streaming manner.
 // It generates one or more TextArtifactRows for the content and push in rowC.
-func (ae *artifactExporter) streamArtifactContent(ctx context.Context, a *Artifact, inv *pb.Invocation, rowC chan *bqpb.TextArtifactRow, maxShardContentSize int) error {
+func (ae *artifactExporter) streamArtifactContent(ctx context.Context, a *Artifact, inv *pb.Invocation, rowC chan *Row, maxShardContentSize int, checkpoints map[string]bool) (err error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/services/artifactexporter.artifactExporter.streamArtifactContent")
+	defer func() { tracing.End(ts, err) }()
+
 	ac := artifactcontent.Reader{
 		RBEInstance: ae.rbecasInstance,
 		Hash:        a.RBECASHash,
@@ -637,6 +780,7 @@ func (ae *artifactExporter) streamArtifactContent(ctx context.Context, a *Artifa
 	if err != nil {
 		return errors.Annotate(err, "variant to json").Err()
 	}
+	isLastShard := false
 	invocationVariantHash := ""
 	invocationVariantJSON := pbutil.EmptyJSON
 	// Invocation variant should only be set for invocation level artifacts.
@@ -649,30 +793,34 @@ func (ae *artifactExporter) streamArtifactContent(ctx context.Context, a *Artifa
 			invocationVariantHash = pbutil.VariantHash(inv.TestResultVariantUnion)
 		}
 	}
-	input := func() *bqpb.TextArtifactRow {
-		return &bqpb.TextArtifactRow{
-			Project:                    project,
-			Realm:                      realm,
-			InvocationId:               string(a.InvocationID),
-			TestId:                     a.TestID,
-			ResultId:                   a.ResultID,
-			ArtifactId:                 a.ArtifactID,
-			ShardId:                    int32(shardID),
-			ContentType:                a.ContentType,
-			Content:                    str.String(),
-			ArtifactContentSize:        int32(a.Size),
-			ShardContentSize:           int32(str.Len()),
-			TestStatus:                 testStatusToString(a.TestStatus),
-			TestVariant:                variantJSON,
-			TestVariantHash:            a.TestVariantHash,
-			InvocationVariantUnion:     invocationVariantJSON,
-			InvocationVariantUnionHash: invocationVariantHash,
-			PartitionTime:              timestamppb.New(inv.CreateTime.AsTime()),
-			// We don't populated numshards here because we don't know
-			// exactly how many shards we need until we finish scanning.
-			// Still we are not sure if this field is useful (e.g. from bigquery, we can
-			// just query for all artifacts and get the max shardID).
-			NumShards: 0,
+
+	input := func() *Row {
+		return &Row{
+			content: &bqpb.TextArtifactRow{
+				Project:                    project,
+				Realm:                      realm,
+				InvocationId:               string(a.InvocationID),
+				TestId:                     a.TestID,
+				ResultId:                   a.ResultID,
+				ArtifactId:                 a.ArtifactID,
+				ShardId:                    int32(shardID),
+				ContentType:                a.ContentType,
+				Content:                    str.String(),
+				ArtifactContentSize:        int32(a.Size),
+				ShardContentSize:           int32(str.Len()),
+				TestStatus:                 testStatusToString(a.TestStatus),
+				TestVariant:                variantJSON,
+				TestVariantHash:            a.TestVariantHash,
+				InvocationVariantUnion:     invocationVariantJSON,
+				InvocationVariantUnionHash: invocationVariantHash,
+				PartitionTime:              timestamppb.New(inv.CreateTime.AsTime()),
+				// We don't populated numshards here because we don't know
+				// exactly how many shards we need until we finish scanning.
+				// Still we are not sure if this field is useful (e.g. from bigquery, we can
+				// just query for all artifacts and get the max shardID).
+				NumShards: 0,
+			},
+			isLastShard: isLastShard,
 		}
 	}
 
@@ -691,11 +839,15 @@ func (ae *artifactExporter) streamArtifactContent(ctx context.Context, a *Artifa
 			if r == utf8.RuneError {
 				return ErrInvalidUTF8
 			}
+			suq := shardUniquifier(a.TestID, a.ResultID, a.ArtifactID, shardID)
 			if str.Len()+len(sc.Bytes()) > maxShardContentSize {
-				select {
-				case <-ctx.Done():
-					return ctx.Err()
-				case rowC <- input():
+				// Only export shards not having a checkpoint.
+				if _, ok := checkpoints[suq]; !ok {
+					select {
+					case <-ctx.Done():
+						return ctx.Err()
+					case rowC <- input():
+					}
 				}
 				shardID++
 				str.Reset()
@@ -706,19 +858,21 @@ func (ae *artifactExporter) streamArtifactContent(ctx context.Context, a *Artifa
 			return errors.Annotate(err, "scanner error").Err()
 		}
 
-		if str.Len() > 0 {
-			select {
-			case <-ctx.Done():
-				return ctx.Err()
-			case rowC <- input():
-			}
+		// Last shard should always be added to the list of shards to be exported,
+		// because it should not have been exported before.
+		isLastShard = true
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case rowC <- input():
 		}
+
 		return nil
 	})
 	if err != nil {
 		return errors.Annotate(err, "read artifact content").Err()
 	}
-	return err
+	return nil
 }
 
 // throttleArtifactsForBQ limits the artifacts being to BigQuery based on percentage.
