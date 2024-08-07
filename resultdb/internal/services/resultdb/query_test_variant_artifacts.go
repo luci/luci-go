@@ -41,7 +41,7 @@ func (s *resultDBServer) QueryTestVariantArtifacts(ctx context.Context, req *pb.
 		return nil, appstatus.BadRequest(err)
 	}
 	limit := int(artifactSearchPageSizeLimiter.Adjust(req.PageSize))
-	opts := artifacts.ReadTestArtifactsOpts{
+	opts := artifacts.ReadArtifactsOpts{
 		Project:      req.Project,
 		SearchString: req.SearchString,
 		TestID:       req.TestId,
@@ -53,7 +53,7 @@ func (s *resultDBServer) QueryTestVariantArtifacts(ctx context.Context, req *pb.
 		Limit:        limit,
 		PageToken:    req.PageToken,
 	}
-	rows, nextPageToken, err := s.artifactBQClient.ReadTestArtifacts(ctx, opts)
+	rows, nextPageToken, err := s.artifactBQClient.ReadArtifacts(ctx, opts)
 	if err != nil {
 		return nil, errors.Annotate(err, "read test artifacts").Err()
 	}

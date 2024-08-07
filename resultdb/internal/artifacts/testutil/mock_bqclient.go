@@ -22,12 +22,12 @@ import (
 )
 
 type ReadArtifactGroupsFunc func(ctx context.Context, opts artifacts.ReadArtifactGroupsOpts) (groups []*artifacts.ArtifactGroup, nextPageToken string, err error)
-type ReadTestArtifactsFunc func(ctx context.Context, opts artifacts.ReadTestArtifactsOpts) (rows []*artifacts.MatchingArtifact, nextPageToken string, err error)
+type ReadArtifactsFunc func(ctx context.Context, opts artifacts.ReadArtifactsOpts) (rows []*artifacts.MatchingArtifact, nextPageToken string, err error)
 
 // MockBQClient is a mock implementation of the BQClient interface.
 type MockBQClient struct {
 	ReadArtifactGroupsFunc ReadArtifactGroupsFunc
-	ReadTestArtifactsFunc  ReadTestArtifactsFunc
+	ReadArtifactsFunc      ReadArtifactsFunc
 }
 
 // ReadArtifactGroups implements the BQClient interface.
@@ -38,18 +38,18 @@ func (m *MockBQClient) ReadArtifactGroups(ctx context.Context, opts artifacts.Re
 	return nil, "", nil
 }
 
-// ReadTestArtifacts implements the BQClient interface.
-func (m *MockBQClient) ReadTestArtifacts(ctx context.Context, opts artifacts.ReadTestArtifactsOpts) (groups []*artifacts.MatchingArtifact, nextPageToken string, err error) {
-	if m.ReadTestArtifactsFunc != nil {
-		return m.ReadTestArtifactsFunc(ctx, opts)
+// ReadArtifacts implements the BQClient interface.
+func (m *MockBQClient) ReadArtifacts(ctx context.Context, opts artifacts.ReadArtifactsOpts) (groups []*artifacts.MatchingArtifact, nextPageToken string, err error) {
+	if m.ReadArtifactsFunc != nil {
+		return m.ReadArtifactsFunc(ctx, opts)
 	}
 	return nil, "", nil
 }
 
 // NewMockBQClient creates a new MockBQClient with the given ReadTestArtifactGroupsFunc.
-func NewMockBQClient(readTestArtifactGroupsFunc ReadArtifactGroupsFunc, readTestArtifactsFunc ReadTestArtifactsFunc) *MockBQClient {
+func NewMockBQClient(readArtifactGroupsFunc ReadArtifactGroupsFunc, readArtifactsFunc ReadArtifactsFunc) *MockBQClient {
 	return &MockBQClient{
-		ReadArtifactGroupsFunc: readTestArtifactGroupsFunc,
-		ReadTestArtifactsFunc:  readTestArtifactsFunc,
+		ReadArtifactGroupsFunc: readArtifactGroupsFunc,
+		ReadArtifactsFunc:      readArtifactsFunc,
 	}
 }

@@ -35,7 +35,7 @@ import (
 
 type BQClient interface {
 	ReadArtifactGroups(ctx context.Context, opts ReadArtifactGroupsOpts) (groups []*ArtifactGroup, nextPageToken string, err error)
-	ReadTestArtifacts(ctx context.Context, opts ReadTestArtifactsOpts) (rows []*MatchingArtifact, nextPageToken string, err error)
+	ReadArtifacts(ctx context.Context, opts ReadArtifactsOpts) (rows []*MatchingArtifact, nextPageToken string, err error)
 }
 
 // NewClient creates a new client for reading text_artifacts table.
@@ -308,7 +308,7 @@ func (c *Client) ReadArtifactGroups(ctx context.Context, opts ReadArtifactGroups
 
 // TODO (beining@): This query only search the first 10MB of each artifact.
 // See the comment of readArtifactGroupTmpl for more detail.
-var readTestArtifactsTmpl = template.Must(template.New("").Parse(`
+var readArtifactsTmpl = template.Must(template.New("").Parse(`
 	SELECT
 		invocation_id as InvocationID,
 		result_id as ResultID,
@@ -320,9 +320,14 @@ var readTestArtifactsTmpl = template.Must(template.New("").Parse(`
 		SUBSTR(REGEXP_EXTRACT(ANY_VALUE(content), @searchContextAfterRegex), 0, @maxMatchSize) AS MatchWithContextAfter
 	FROM text_artifacts
 	WHERE project = @project
-		AND test_id = @testID
+		{{if .invocationLevel }}
+				AND test_id = ""
+				AND invocation_variant_union_hash = @variantHash
+		{{else}}
+				AND test_id = @testID
+				AND test_variant_hash = @variantHash
+		{{end}}
 		AND artifact_id = @artifactID
-		AND test_variant_hash = @testVariantHash
 		-- Only include the first shard for each artifact.
 		AND shard_id = 0
 		AND REGEXP_CONTAINS(content, @searchRegex)
@@ -345,10 +350,11 @@ var readTestArtifactsTmpl = template.Must(template.New("").Parse(`
 	LIMIT @limit
 `))
 
-func generateReadTestArtifactsQuery(opts ReadTestArtifactsOpts) (string, error) {
+func generateReadArtifactsQuery(opts ReadArtifactsOpts) (string, error) {
 	var b bytes.Buffer
-	err := readTestArtifactsTmpl.ExecuteTemplate(&b, "", map[string]any{
-		"pagination": opts.PageToken != "",
+	err := readArtifactsTmpl.ExecuteTemplate(&b, "", map[string]any{
+		"pagination":      opts.PageToken != "",
+		"InvocationLevel": opts.IsInvocationLevel,
 	})
 	if err != nil {
 		return "", errors.Annotate(err, "execute template").Err()
@@ -356,7 +362,7 @@ func generateReadTestArtifactsQuery(opts ReadTestArtifactsOpts) (string, error) 
 	return b.String(), nil
 }
 
-func parseReadTestArtifactsPageToken(pageToken string) (afterPartitionTimeUnix int, afterInvocationID, afterResultID string, err error) {
+func parseReadArtifactsPageToken(pageToken string) (afterPartitionTimeUnix int, afterInvocationID, afterResultID string, err error) {
 	tokens, err := pagination.ParseToken(pageToken)
 	if err != nil {
 		return 0, "", "", err
@@ -373,29 +379,36 @@ func parseReadTestArtifactsPageToken(pageToken string) (afterPartitionTimeUnix i
 	return afterPartitionTimeUnix, tokens[1], tokens[2], nil
 }
 
-type ReadTestArtifactsOpts struct {
+type ReadArtifactsOpts struct {
 	Project      string
 	SearchString *pb.ArtifactContentMatcher
-	TestID       string
-	VariantHash  string
-	ArtifactID   string
-	StartTime    time.Time
-	EndTime      time.Time
-	SubRealms    []string
-	Limit        int
-	PageToken    string
+	// If true, query invocation level artifact. Otherwise, query test result level artifacts.
+	IsInvocationLevel bool
+	// If IsInvocationLevel is true, this field is ignored.
+	TestID string
+	// If IsInvocationLevel is true, this field is the hash of invocaiton variant union (union of all variants of test results directly included by the invocation).
+	// Otherwise, this is the test variant hash.
+	VariantHash string
+	ArtifactID  string
+	StartTime   time.Time
+	EndTime     time.Time
+	SubRealms   []string
+	Limit       int
+	PageToken   string
 }
 
-func (c *Client) ReadTestArtifacts(ctx context.Context, opts ReadTestArtifactsOpts) (rows []*MatchingArtifact, nextPageToken string, err error) {
+// ReadArtifacts reads either test result artifacts or invocation level artifacts,
+// depending on opts.IsInvocationLevel.
+func (c *Client) ReadArtifacts(ctx context.Context, opts ReadArtifactsOpts) (rows []*MatchingArtifact, nextPageToken string, err error) {
 	var afterPartitionTimeUnix int
 	var afterInvocationID, afterResultID string
 	if opts.PageToken != "" {
-		afterPartitionTimeUnix, afterInvocationID, afterResultID, err = parseReadTestArtifactsPageToken(opts.PageToken)
+		afterPartitionTimeUnix, afterInvocationID, afterResultID, err = parseReadArtifactsPageToken(opts.PageToken)
 		if err != nil {
 			return nil, "", err
 		}
 	}
-	query, err := generateReadTestArtifactsQuery(opts)
+	query, err := generateReadArtifactsQuery(opts)
 	if err != nil {
 		return nil, "", err
 	}
@@ -405,7 +418,7 @@ func (c *Client) ReadTestArtifacts(ctx context.Context, opts ReadTestArtifactsOp
 		{Name: "project", Value: opts.Project},
 		{Name: "testID", Value: opts.TestID},
 		{Name: "artifactID", Value: opts.ArtifactID},
-		{Name: "testVariantHash", Value: opts.VariantHash},
+		{Name: "variantHash", Value: opts.VariantHash},
 		{Name: "searchRegex", Value: newMatchWithContextRegexBuilder(opts.SearchString).withCaptureMatch(true).build()},
 		{Name: "searchContextBeforeRegex", Value: newMatchWithContextRegexBuilder(opts.SearchString).withCaptureContextBefore(true).build()},
 		{Name: "searchContextAfterRegex", Value: newMatchWithContextRegexBuilder(opts.SearchString).withCaptureContextAfter(true).build()},
@@ -437,6 +450,8 @@ func (c *Client) ReadTestArtifacts(ctx context.Context, opts ReadTestArtifactsOp
 	}
 	if opts.Limit != 0 && len(results) == int(opts.Limit) {
 		last := results[len(results)-1]
+		// Page token are constructed in the same way for both invocation and test result level artifact.
+		// For invocation artifact, result id is already empty string, the rest of the token element are enough to ensure absolute ordering.
 		nextPageToken = pagination.Token(fmt.Sprint(last.PartitionTime.Unix()), last.InvocationID, last.ResultID)
 	}
 	return results, nextPageToken, nil

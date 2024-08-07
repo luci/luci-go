@@ -20,7 +20,6 @@ import (
 	"testing"
 	"time"
 
-	"cloud.google.com/go/bigquery"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
@@ -38,8 +37,8 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestQueryTestVariantArtifacts(t *testing.T) {
-	Convey("QueryTestVariantArtifacts", t, func() {
+func TestQueryInvocationVariantArtifacts(t *testing.T) {
+	Convey("QueryInvocationVariantArtifacts", t, func() {
 		ctx := auth.WithState(testutil.SpannerTestContext(t), &authtest.FakeState{
 			Identity: "user:someone@example.com",
 			IdentityPermissions: []authtest.RealmPermission{
@@ -52,18 +51,14 @@ func TestQueryTestVariantArtifacts(t *testing.T) {
 				return []*artifacts.MatchingArtifact{
 					{
 						InvocationID:           "12345678901234567890",
-						ResultID:               "1",
 						PartitionTime:          time.Date(2024, 5, 6, 5, 58, 57, 490076000, time.UTC),
-						TestStatus:             bigquery.NullString{StringVal: "PASS", Valid: true},
 						Match:                  "log line 1",
 						MatchWithContextBefore: "log line 0",
 						MatchWithContextAfter:  "log line 2",
 					},
 					{
-						InvocationID:           "12345678901234567890",
-						ResultID:               "2",
+						InvocationID:           "12345678901234567891",
 						PartitionTime:          time.Date(2024, 5, 6, 5, 58, 57, 491037000, time.UTC),
-						TestStatus:             bigquery.NullString{Valid: false},
 						Match:                  "log line 3",
 						MatchWithContextBefore: "log line 2",
 						MatchWithContextAfter:  "log line 4",
@@ -77,11 +72,10 @@ func TestQueryTestVariantArtifacts(t *testing.T) {
 			},
 			Postlude: internal.CommonPostlude,
 		}
-		req := &pb.QueryTestVariantArtifactsRequest{
-			Project:     "testproject",
-			TestId:      "test_id",
-			ArtifactId:  "artifact_id",
-			VariantHash: strings.Repeat("a", 16),
+		req := &pb.QueryInvocationVariantArtifactsRequest{
+			Project:          "testproject",
+			ArtifactId:       "artifact_id",
+			VariantUnionHash: strings.Repeat("a", 16),
 			SearchString: &pb.ArtifactContentMatcher{
 				Matcher: &pb.ArtifactContentMatcher_RegexContain{
 					RegexContain: "f.*oo",
@@ -93,34 +87,32 @@ func TestQueryTestVariantArtifacts(t *testing.T) {
 		}
 		Convey("no permission", func() {
 			req.Project = "nopermissionproject"
-			res, err := srv.QueryTestVariantArtifacts(ctx, req)
+			res, err := srv.QueryInvocationVariantArtifacts(ctx, req)
 			So(err, ShouldBeRPCPermissionDenied, "caller does not have permission resultdb.artifacts.list in any realm in project \"nopermissionproject\"")
 			So(res, ShouldBeNil)
 		})
 
 		Convey("invalid request", func() {
 			req.StartTime = nil
-			res, err := srv.QueryTestVariantArtifacts(ctx, req)
+			res, err := srv.QueryInvocationVariantArtifacts(ctx, req)
 			So(err, ShouldBeRPCInvalidArgument, `start_time: unspecified`)
 			So(res, ShouldBeNil)
 		})
 
 		Convey("Valid request", func() {
-			rsp, err := srv.QueryTestVariantArtifacts(ctx, req)
+			rsp, err := srv.QueryInvocationVariantArtifacts(ctx, req)
 			So(err, ShouldBeNil)
-			So(rsp, ShouldResembleProto, &pb.QueryTestVariantArtifactsResponse{
+			So(rsp, ShouldResembleProto, &pb.QueryInvocationVariantArtifactsResponse{
 				Artifacts: []*pb.ArtifactMatchingContent{{
-					Name:          "invocations/12345678901234567890/tests/test_id/results/1/artifacts/artifact_id",
+					Name:          "invocations/12345678901234567890/artifacts/artifact_id",
 					PartitionTime: timestamppb.New(time.Date(2024, 5, 6, 5, 58, 57, 490076000, time.UTC)),
-					TestStatus:    pb.TestStatus_PASS,
 					Match:         "log line 1",
 					BeforeMatch:   "log line 0",
 					AfterMatch:    "log line 2",
 				},
 					{
-						Name:          "invocations/12345678901234567890/tests/test_id/results/2/artifacts/artifact_id",
+						Name:          "invocations/12345678901234567891/artifacts/artifact_id",
 						PartitionTime: timestamppb.New(time.Date(2024, 5, 6, 5, 58, 57, 491037000, time.UTC)),
-						TestStatus:    pb.TestStatus_STATUS_UNSPECIFIED,
 						Match:         "log line 3",
 						BeforeMatch:   "log line 2",
 						AfterMatch:    "log line 4",
@@ -138,20 +130,19 @@ func TestQueryTestVariantArtifacts(t *testing.T) {
 			srv := &resultDBServer{
 				artifactBQClient: bqClient,
 			}
-			_, err := srv.QueryTestVariantArtifacts(ctx, req)
+			_, err := srv.QueryInvocationVariantArtifacts(ctx, req)
 			So(err, ShouldNotBeNil)
-			So(err.Error(), ShouldContainSubstring, "read test artifacts")
+			So(err.Error(), ShouldContainSubstring, "read artifacts")
 		})
 	})
 }
 
-func TestValidateQueryTestVariantArtifactsRequest(t *testing.T) {
-	Convey("ValidateQueryTestVariantArtifactsRequest", t, func() {
-		req := &pb.QueryTestVariantArtifactsRequest{
-			Project:     "testproject",
-			TestId:      "test_id",
-			VariantHash: strings.Repeat("a", 16),
-			ArtifactId:  "artifact_id",
+func TestValidateQueryInvocationVariantArtifactsRequest(t *testing.T) {
+	Convey("ValidateQueryInvocationVariantArtifactsRequest", t, func() {
+		req := &pb.QueryInvocationVariantArtifactsRequest{
+			Project:          "testproject",
+			VariantUnionHash: strings.Repeat("a", 16),
+			ArtifactId:       "artifact_id",
 			SearchString: &pb.ArtifactContentMatcher{
 				Matcher: &pb.ArtifactContentMatcher_RegexContain{
 					RegexContain: "foo",
@@ -162,56 +153,49 @@ func TestValidateQueryTestVariantArtifactsRequest(t *testing.T) {
 			PageSize:  10,
 		}
 		Convey("Valid request", func() {
-			err := validateQueryTestVariantArtifactsRequest(req)
+			err := validateQueryInvocationVariantArtifactsRequest(req)
 			So(err, ShouldBeNil)
 		})
 
 		Convey("Invalid request", func() {
 			Convey("Invalid project", func() {
 				req.Project = "invalid_project"
-				err := validateQueryTestVariantArtifactsRequest(req)
+				err := validateQueryInvocationVariantArtifactsRequest(req)
 				So(err, ShouldNotBeNil)
 				So(err.Error(), ShouldContainSubstring, "project")
 			})
 
 			Convey("Search string unspecified", func() {
 				req.SearchString = &pb.ArtifactContentMatcher{}
-				err := validateQueryTestVariantArtifactsRequest(req)
+				err := validateQueryInvocationVariantArtifactsRequest(req)
 				So(err, ShouldNotBeNil)
 				So(err.Error(), ShouldContainSubstring, "search_string: unspecified")
 			})
 
-			Convey("Invalid test_id", func() {
-				req.TestId = "invalid-test-id-\r"
-				err := validateQueryTestVariantArtifactsRequest(req)
+			Convey("Invalid variant union hash", func() {
+				req.VariantUnionHash = "varianthash"
+				err := validateQueryInvocationVariantArtifactsRequest(req)
 				So(err, ShouldNotBeNil)
-				So(err.Error(), ShouldContainSubstring, "test_id")
-			})
-
-			Convey("Invalid variant hash", func() {
-				req.VariantHash = "varianthash"
-				err := validateQueryTestVariantArtifactsRequest(req)
-				So(err, ShouldNotBeNil)
-				So(err.Error(), ShouldContainSubstring, "variant_hash")
+				So(err.Error(), ShouldContainSubstring, "variant_union_hash")
 			})
 
 			Convey("Invalid artifact_id", func() {
 				req.ArtifactId = "invalid-artifact-id-\r"
-				err := validateQueryTestVariantArtifactsRequest(req)
+				err := validateQueryInvocationVariantArtifactsRequest(req)
 				So(err, ShouldNotBeNil)
 				So(err.Error(), ShouldContainSubstring, "artifact_id")
 			})
 
 			Convey("Start time unspecified", func() {
 				req.StartTime = nil
-				err := validateQueryTestVariantArtifactsRequest(req)
+				err := validateQueryInvocationVariantArtifactsRequest(req)
 				So(err, ShouldNotBeNil)
 				So(err.Error(), ShouldContainSubstring, "start_time: unspecified")
 			})
 
 			Convey("End time unspecified", func() {
 				req.EndTime = nil
-				err := validateQueryTestVariantArtifactsRequest(req)
+				err := validateQueryInvocationVariantArtifactsRequest(req)
 				So(err, ShouldNotBeNil)
 				So(err.Error(), ShouldContainSubstring, "end_time: unspecified")
 			})
@@ -219,7 +203,7 @@ func TestValidateQueryTestVariantArtifactsRequest(t *testing.T) {
 			Convey("Start time after end time", func() {
 				req.StartTime = timestamppb.New(time.Date(2024, 5, 7, 0, 0, 0, 0, time.UTC))
 				req.EndTime = timestamppb.New(time.Date(2024, 5, 5, 0, 0, 0, 0, time.UTC))
-				err := validateQueryTestVariantArtifactsRequest(req)
+				err := validateQueryInvocationVariantArtifactsRequest(req)
 				So(err, ShouldNotBeNil)
 				So(err.Error(), ShouldContainSubstring, "start time must not be later than end time")
 			})
@@ -227,14 +211,14 @@ func TestValidateQueryTestVariantArtifactsRequest(t *testing.T) {
 			Convey("Time difference greater than 7 days", func() {
 				req.StartTime = timestamppb.New(time.Date(2024, 5, 1, 0, 0, 0, 0, time.UTC))
 				req.EndTime = timestamppb.New(time.Date(2024, 5, 9, 0, 0, 0, 0, time.UTC))
-				err := validateQueryTestVariantArtifactsRequest(req)
+				err := validateQueryInvocationVariantArtifactsRequest(req)
 				So(err, ShouldNotBeNil)
 				So(err.Error(), ShouldContainSubstring, "difference between start_time and end_time must not be greater than 7 days")
 			})
 
 			Convey("Invalid page size", func() {
 				req.PageSize = -1
-				err := validateQueryTestVariantArtifactsRequest(req)
+				err := validateQueryInvocationVariantArtifactsRequest(req)
 				So(err, ShouldNotBeNil)
 				So(err.Error(), ShouldContainSubstring, "page_size: negative")
 			})
