@@ -62,6 +62,7 @@ paths =
     milo
     mmutex
     provenance
+    recipes_py
     resultdb
     scheduler
     server

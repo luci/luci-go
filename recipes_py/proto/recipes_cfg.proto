@@ -1,0 +1,156 @@
+// Copyright 2016 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+// This is a copy of https://chromium.googlesource.com/infra/luci/recipes-py/+/HEAD/recipe_engine/recipes_cfg.proto
+syntax = "proto3";
+
+package recipe_engine;
+
+option go_package = "go.chromium.org/luci/recipes_py/proto;recipespb";
+
+message DepSpec {
+  // (required) The URL of where to fetch the repo. Must be a valid git URL.
+  //
+  // If you wish to avoid network/git operations, please use the `-O` override
+  // functionality of recipes.py. See also `recipes.py bundle`.
+  string url = 1;
+
+  // (required) The ref to git-fetch when syncing this dependency.
+  //
+  // This must be an absolute ref which the server at `url` recognizes (e.g.
+  // 'refs/heads/...').
+  //
+  // DEPRECATED: Short refs (like 'main') will be implicitly converted to
+  // 'refs/heads/...' with a warning.
+  string branch = 2;
+
+  // (required) The git commit that we depend on.
+  string revision = 3;
+}
+
+// These options control the behavior of the autoroller recipe:
+//   https://chromium.googlesource.com/infra/infra/+/main/recipes/recipes/recipe_autoroller.py
+message AutorollRecipeOptions {
+  // These control the behavior of the autoroller when it finds a trivial roll
+  // (i.e. a roll without expectation changes).
+  message TrivialOptions {
+    // One of these email addresses will be randomly selected to be TBR'd.
+    repeated string tbr_emails = 1;
+
+    // If true, the autoroller recipe will automatically CQ the change.
+    bool automatic_commit = 2;
+
+    // If true and automatic_commit is false, the autoroller recipe will
+    // automatically do a CQ dry run when uploading the change.
+    bool dry_run = 3;
+
+    enum SelfApproveMethod {
+      // Will set Bot-Commit+1 label.
+      BOT_COMMIT_APPROVE = 0;
+
+      // Will set Code-Review+1 label.
+      CODE_REVIEW_1_APPROVE = 1;
+
+      // Will set Code-Review+2 label.
+      CODE_REVIEW_2_APPROVE = 2;
+
+      // Will not set any labels besides Commit-Queue.
+      NO_LABELS_APPROVE = 3;
+    }
+
+    SelfApproveMethod self_approve_method = 4;
+  }
+  TrivialOptions trivial = 1;
+
+  // These control the behavior of the autoroller when it finds a non-trivial
+  // roll (i.e. a roll with expectation changes but which otherwise completes
+  // the simulation tests).
+  message NontrivialOptions {
+    // These add additional reviewer emails on the change.
+    repeated string extra_reviewer_emails = 1;
+
+    // If true, the autoroller recipe will automatically do a CQ dry run when
+    // uploading the change.
+    bool automatic_commit_dry_run = 2;
+
+    // If true, the autoroller recipe will set the Auto-Submit+1 label when
+    // uploading the change. This should only be enabled for projects which
+    // support Auto-Submit.
+    bool set_autosubmit = 3;
+  }
+  NontrivialOptions nontrivial = 2;
+
+  // Make the autoroller skip this repo entirely with a human-readable message.
+  string disable_reason = 3;
+
+  // If true, skip the autoroller will skip CCing authors of CLs in this repo
+  // when rolling those CLs downstream.
+  bool no_cc_authors = 4;
+
+  // If true, don't use the --r-owner option to 'git cl upload'.
+  bool no_owners = 5;
+}
+
+message RepoSpec {
+  // The "API Version" of this proto. Should always equal 2, currently.
+  int32 api_version = 1;  // Version 2
+
+  // The "repo name" of this recipe repository. This becomes
+  // the prefix in DEPS when something depends on one of this repo's modules
+  // (e.g.  DEPS=["recipe_engine/path"]).
+  //
+  // By convention, this should match the luci-config project_id for this repo,
+  // but the only requirements are that:
+  //   * It is unique within its recipes microcosm (i.e. no dependency tree of
+  //     recipe repos can ever have two repos with the same name).
+  //   * It must not contain slashes.
+  //
+  // One of 'repo_name' and 'project_id' (the old field) must be specified;
+  // 'repo_name' takes precedence, and the autoroller will upgrade all
+  // recipes.cfg files to have both. Eventually we will remove 'project_id'.
+  string repo_name = 7;
+
+  // Deprecated: The old field for specifying repo_name.
+  string project_id = 2;
+
+  // This is the URL which points to the 'source of truth' for this repo. It's
+  // meant to be used for documentation generation.
+  string canonical_repo_url = 3;
+
+  // The path (using forward slashes) to where the base of the recipes are found
+  // in the repo (i.e. where the "recipes" and/or "recipe_modules" directories
+  // live).
+  string recipes_path = 4;
+
+  // A mapping of a dependency ("repo_name") to spec needed to fetch its code.
+  map<string, DepSpec> deps = 5;
+
+  // The autoroller options for this repo. These options will be respected by
+  // the autoroller recipe (which currently lives here:
+  //   https://chromium.googlesource.com/infra/infra/+/main/recipes/recipes/recipe_autoroller.py
+  // ).
+  AutorollRecipeOptions autoroll_recipe_options = 6;
+
+  // If true, `recipes.py test train` will not generate the README.recipes.md
+  // docs file, and `recipes.py test run` will not assert that the docs file is
+  // up-to-date.
+  bool no_docs = 8;
+
+  // DEPRECATED; python3 is always required.
+  bool require_py3_compatibility = 9;
+
+  // DEPRECATED; python3 is always used.
+  bool py3_only = 10;
+
+  // If true, this repo will not allow any tests to exit with a status code that
+  // mismatches the expected status of the `test` kwarg of the test data (e.g.
+  // `yield api.test("name", ..., status="FAILURE")`), which defaults to SUCCESS
+  // if not specified.
+  bool enforce_test_expected_status = 11;
+}
+
+// Emitted by the `recipes.py dump_specs` command.
+message DepRepoSpecs {
+  map<string, RepoSpec> repo_specs = 1;
+}
