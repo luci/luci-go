@@ -168,17 +168,9 @@ export class FusedGitilesClientImpl implements Gitiles {
         }),
       );
     } else {
-      const host = SETTINGS.milo.host;
-      const isLoopback =
-        host === 'localhost' ||
-        host.startsWith('localhost:') ||
-        host === '127.0.0.1' ||
-        host.startsWith('127.0.0.1:');
-      const useInsecure = isLoopback && document.location.protocol === 'http:';
       this.miloClient = new MiloInternalClientImpl(
         new PrpcClient({
-          host: host,
-          insecure: useInsecure,
+          host: SETTINGS.milo.host,
           getAuthToken: rpc.getAuthToken,
         }),
       );

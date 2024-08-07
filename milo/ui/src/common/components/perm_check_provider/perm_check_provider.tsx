@@ -12,21 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { MiloInternalClientImpl } from '@/proto/go.chromium.org/luci/milo/proto/v1/rpc.pb';
-import { BatchedMiloInternalClientImpl } from '@/proto_utils/batched_milo_internal_client';
+import { ReactNode } from 'react';
 
-import { usePrpcServiceClient } from './prpc_query';
+import { useBatchedMiloInternalClient } from '@/common/hooks/prpc_clients';
 
-export function useMiloInternalClient() {
-  return usePrpcServiceClient({
-    host: SETTINGS.milo.host,
-    ClientImpl: MiloInternalClientImpl,
-  });
+import { ClientCtx } from './context';
+
+export interface PermCheckProviderProps {
+  readonly children: ReactNode;
 }
 
-export function useBatchedMiloInternalClient() {
-  return usePrpcServiceClient({
-    host: SETTINGS.milo.host,
-    ClientImpl: BatchedMiloInternalClientImpl,
-  });
+export function PermCheckProvider({ children }: PermCheckProviderProps) {
+  // Use a single client instance so all requests in the same rendering cycle
+  // can be batched together.
+  const client = useBatchedMiloInternalClient();
+
+  return <ClientCtx.Provider value={client}>{children}</ClientCtx.Provider>;
 }

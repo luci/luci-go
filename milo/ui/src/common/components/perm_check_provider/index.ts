@@ -12,21 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { MiloInternalClientImpl } from '@/proto/go.chromium.org/luci/milo/proto/v1/rpc.pb';
-import { BatchedMiloInternalClientImpl } from '@/proto_utils/batched_milo_internal_client';
-
-import { usePrpcServiceClient } from './prpc_query';
-
-export function useMiloInternalClient() {
-  return usePrpcServiceClient({
-    host: SETTINGS.milo.host,
-    ClientImpl: MiloInternalClientImpl,
-  });
-}
-
-export function useBatchedMiloInternalClient() {
-  return usePrpcServiceClient({
-    host: SETTINGS.milo.host,
-    ClientImpl: BatchedMiloInternalClientImpl,
-  });
-}
+export { usePermCheck } from './context';
+export * from './perm_check_provider';

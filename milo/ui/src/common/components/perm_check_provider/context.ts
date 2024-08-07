@@ -13,39 +13,13 @@
 // limitations under the License.
 
 import { useQuery } from '@tanstack/react-query';
-import { createContext, ReactNode, useContext } from 'react';
+import { createContext, useContext } from 'react';
 
-import {
-  DecoratedClient,
-  usePrpcServiceClient,
-} from '@/common/hooks/prpc_query';
+import { DecoratedClient } from '@/common/hooks/prpc_query';
 import { BatchedMiloInternalClientImpl } from '@/proto_utils/batched_milo_internal_client';
 
-const ClientCtx =
+export const ClientCtx =
   createContext<DecoratedClient<BatchedMiloInternalClientImpl> | null>(null);
-
-export interface PermCheckProviderProps {
-  readonly children: ReactNode;
-}
-
-export function PermCheckProvider({ children }: PermCheckProviderProps) {
-  // Use a single client instance so all requests in the same rendering cycle
-  // can be batched together.
-  const host = SETTINGS.milo.host;
-  const isLoopback =
-    host === 'localhost' ||
-    host.startsWith('localhost:') ||
-    host === '127.0.0.1' ||
-    host.startsWith('127.0.0.1:');
-  const useInsecure = isLoopback && document.location.protocol === 'http:';
-  const client = usePrpcServiceClient({
-    host: host,
-    insecure: useInsecure,
-    ClientImpl: BatchedMiloInternalClientImpl,
-  });
-
-  return <ClientCtx.Provider value={client}>{children}</ClientCtx.Provider>;
-}
 
 /**
  * Checks whether the user has permission `perm` in realm `realm`.
