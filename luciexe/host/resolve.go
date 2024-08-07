@@ -16,11 +16,63 @@ package host
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 
+	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
 )
+
+// ResolveExeCmd resolves the given host options and returns the command for
+// luciexe host to invoke as a luciexe.
+//
+// This includes resolving paths relative to the current working directory, or
+// the directory contains agent inputs if DownloadAgentInputs enabled.
+func ResolveExeCmd(opts *Options, defaultPayloadPath string) ([]string, error) {
+	exeArgs := make([]string, 0, len(opts.BaseBuild.Exe.Wrapper)+len(opts.BaseBuild.Exe.Cmd)+1)
+
+	if len(opts.BaseBuild.Exe.Wrapper) != 0 {
+		exeArgs = append(exeArgs, opts.BaseBuild.Exe.Wrapper...)
+		exeArgs = append(exeArgs, "--")
+
+		if strings.Contains(exeArgs[0], "/") || strings.Contains(exeArgs[0], "\\") {
+			absPath, err := filepath.Abs(exeArgs[0])
+			if err != nil {
+				return nil, errors.Annotate(err, "absoluting wrapper path: %q", exeArgs[0]).Err()
+			}
+			exeArgs[0] = absPath
+		}
+
+		cmdPath, err := exec.LookPath(exeArgs[0])
+		if err != nil {
+			return nil, errors.Annotate(err, "wrapper not found: %q", exeArgs[0]).Err()
+		}
+		exeArgs[0] = cmdPath
+	}
+
+	exeCmd := opts.BaseBuild.Exe.Cmd[0]
+	payloadPath := defaultPayloadPath
+	for p, purpose := range opts.BaseBuild.GetInfra().GetBuildbucket().GetAgent().GetPurposes() {
+		if purpose == bbpb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD {
+			payloadPath = p
+			break
+		}
+	}
+
+	if !filepath.IsAbs(payloadPath) && opts.DownloadAgentInputs {
+		payloadPath = filepath.Join(opts.agentInputsDir, payloadPath)
+	}
+	exePath, err := processCmd(payloadPath, exeCmd)
+	if err != nil {
+		return nil, err
+	}
+	exeArgs = append(exeArgs, exePath)
+	exeArgs = append(exeArgs, opts.BaseBuild.Exe.Cmd[1:]...)
+
+	return exeArgs, nil
+}
 
 func resolveExe(path string) (string, error) {
 	if filepath.Ext(path) != "" {

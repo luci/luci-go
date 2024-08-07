@@ -61,6 +61,8 @@ type cmdLaunch struct {
 
 	modernize     bool
 	dump          bool
+	local         bool
+	leakDir       string
 	noLEDTag      bool
 	resultdb      job.RDBEnablement
 	realBuild     bool
@@ -71,6 +73,9 @@ func (c *cmdLaunch) initFlags(opts cmdBaseOptions) {
 	c.Flags.BoolVar(&c.modernize, "modernize", false, "Update the launched task to modern LUCI standards.")
 	c.Flags.BoolVar(&c.noLEDTag, "no-led-tag", false, "Don't add user_agent:led tag")
 	c.Flags.BoolVar(&c.dump, "dump", false, "Dump swarming task to stdout instead of running it.")
+	c.Flags.BoolVar(&c.local, "local", false,
+		"Execute a buildbucket build locally. This will block until the build completes.")
+	c.Flags.StringVar(&c.leakDir, "leak-dir", "", "Base directory to leak when running task locally.")
 	c.resultdb = ""
 	c.Flags.Var(&c.resultdb, "resultdb", text.Doc(`
 		Flag for Swarming/ResultDB integration on the launched task. Can be "on" or "off".
@@ -117,6 +122,8 @@ func (c *cmdLaunch) execute(ctx context.Context, authClient *http.Client, _ auth
 
 	opts := ledcmd.LaunchSwarmingOpts{
 		DryRun:           c.dump,
+		Local:            c.local,
+		LeakDir:          c.leakDir,
 		UserID:           uid,
 		FinalBuildProto:  "build.proto.json",
 		KitchenSupport:   c.kitchenSupport,

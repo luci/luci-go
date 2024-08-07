@@ -16,7 +16,10 @@ package ledcmd
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"os"
+	"path/filepath"
 	"sort"
 	"time"
 
@@ -28,11 +31,16 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/gcloud/googleoauth"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/led/job"
+	"go.chromium.org/luci/common/system/environ"
+	"go.chromium.org/luci/common/system/filesystem"
+	"go.chromium.org/luci/logdog/client/butler/output/directory"
+	"go.chromium.org/luci/lucictx"
+	"go.chromium.org/luci/luciexe/host"
+	"go.chromium.org/luci/luciexe/invoke"
 	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
 
+	"go.chromium.org/luci/led/job"
 	"go.chromium.org/luci/led/job/jobexport"
-	"go.chromium.org/luci/lucictx"
 )
 
 // UserAgentTag is added by default to all Swarming tasks launched by LED.
@@ -43,6 +51,14 @@ type LaunchSwarmingOpts struct {
 	// If true, just generates the NewTaskRequest but does not send it to swarming
 	// (SwarmingRpcsTaskRequestMetadata will be nil).
 	DryRun bool
+
+	// If true, lauch task with local luciexe host instead of sending to
+	// swarming. This can be used for testing locally.
+	Local bool
+
+	// A path to be leaked when running task locally. Only be effective if Local
+	// is true.
+	LeakDir string
 
 	// Must be a unique user identity string and must not be empty.
 	//
@@ -101,6 +117,9 @@ func GetUID(ctx context.Context, authenticator *auth.Authenticator) (string, err
 // LaunchSwarming launches the given job Definition on swarming, returning the
 // NewTaskRequest launched, as well as the launch metadata.
 func LaunchSwarming(ctx context.Context, authClient *http.Client, jd *job.Definition, opts LaunchSwarmingOpts) (*swarmingpb.NewTaskRequest, *swarmingpb.TaskRequestMetadataResponse, error) {
+	if opts.Local {
+		return nil, nil, errors.New("local swarming task not supported. '--local' must be used with a buildbucket job.")
+	}
 	if opts.KitchenSupport == nil {
 		opts.KitchenSupport = job.NoKitchenSupport()
 	}
@@ -169,8 +188,19 @@ func LaunchBuild(ctx context.Context, authClient *http.Client, jd *job.Definitio
 	sort.Slice(tags, func(i, j int) bool { return tags[i].Key < tags[j].Key })
 	build.Tags = tags
 
+	// TODO(b/338121346): Seperate dryrun, local, and remote.
 	if opts.DryRun {
 		return build, nil
+	} else if opts.Local {
+		baseDir := opts.LeakDir
+		if baseDir == "" {
+			if baseDir, err = os.MkdirTemp("", "led-"); err != nil {
+				return nil, err
+			}
+			defer filesystem.RemoveAll(baseDir)
+		}
+
+		return launchLocal(ctx, build, baseDir)
 	}
 
 	bbClient := newBuildbucketClient(authClient, build.GetInfra().GetBuildbucket().GetHostname())
@@ -184,4 +214,65 @@ func LaunchBuild(ctx context.Context, authClient *http.Client, jd *job.Definitio
 	return bbClient.CreateBuild(ctx, &bbpb.CreateBuildRequest{
 		Build: build,
 	})
+}
+
+func launchLocal(ctx context.Context, build *bbpb.Build, baseDir string) (*bbpb.Build, error) {
+	// TODO(b/338121346): We should warn user if the task launching on a
+	// different platform.
+
+	luciexeOpts := &host.Options{
+		BaseDir:             baseDir,
+		BaseBuild:           build,
+		ButlerLogLevel:      logging.Warning,
+		LogdogOutput:        directory.Options{Path: filepath.Join(baseDir, "log")}.New(ctx),
+		ExeAuth:             host.DefaultExeAuth("led", nil),
+		DownloadAgentInputs: true,
+	}
+
+	var runErr error
+	finalBuild := build
+
+	builds, err := host.Run(ctx, luciexeOpts, func(ctx context.Context, hostOpts host.Options, deadlineEvntCh <-chan lucictx.DeadlineEvent, shutdown func()) {
+		logging.Infof(ctx, "running luciexe: %q", build.Exe.Cmd)
+		logging.Infof(ctx, "  (cache dir): %q", hostOpts.CacheDir)
+		invokeOpts := &invoke.Options{
+			BaseDir:  hostOpts.BaseDir,
+			CacheDir: hostOpts.CacheDir,
+			Env:      environ.System(),
+		}
+
+		go func() {
+			if evt := <-deadlineEvntCh; evt == lucictx.InterruptEvent {
+				shutdown()
+				logging.Infof(ctx, "interrupt event recieved")
+			}
+		}()
+
+		exeArgs, err := host.ResolveExeCmd(&hostOpts, "")
+		if err != nil {
+			runErr = err
+			return
+		}
+		subp, err := invoke.Start(ctx, exeArgs, build, invokeOpts)
+		if err != nil {
+			runErr = err
+			return
+		}
+
+		var build *bbpb.Build
+		build, err = subp.Wait()
+		if err != nil {
+			runErr = err
+			return
+		}
+		logging.Infof(ctx, fmt.Sprintf("Final build status from subprocess: %s", build.Status.String()))
+	})
+
+	// TODO(b/338121346): run a local webserver and display the build state in a
+	// browser (or any other ways).
+	for build := range builds {
+		finalBuild = build
+	}
+
+	return finalBuild, errors.Join(err, runErr)
 }

@@ -20,6 +20,7 @@ import (
 	"context"
 
 	"github.com/mattn/go-tty"
+
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 )

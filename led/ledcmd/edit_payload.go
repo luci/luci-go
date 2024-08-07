@@ -20,7 +20,6 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 
 	"go.chromium.org/luci/common/errors"
-
 	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
 
 	"go.chromium.org/luci/led/job"
