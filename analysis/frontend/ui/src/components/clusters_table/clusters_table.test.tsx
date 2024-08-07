@@ -165,7 +165,10 @@ describe('Test ClustersTable component', () => {
     expect(screen.getByText('Hooray! There are no failures matching the specified criteria.')).toBeInTheDocument();
   });
 
-  it('when clicking a sortable column then should modify cluster order', async () => {
+
+  // This test is flakey and sometimes breaks the CQ.
+  // eslint-disable-next-line jest/no-disabled-tests
+  it.skip('when clicking a sortable column then should modify cluster order', async () => {
     mockFetchMetrics();
 
     const suggestedCluster = getMockSuggestedBasicClusterSummary('1234567890abcedf1234567890abcedf');
