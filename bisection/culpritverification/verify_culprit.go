@@ -17,29 +17,28 @@ package culpritverification
 
 import (
 	"context"
-	"fmt"
 
 	"google.golang.org/protobuf/proto"
 
-	"go.chromium.org/luci/bisection/compilefailureanalysis/heuristic"
-	"go.chromium.org/luci/bisection/compilefailureanalysis/statusupdater"
-	cpvt "go.chromium.org/luci/bisection/culpritverification/task"
-	"go.chromium.org/luci/bisection/internal/config"
-	"go.chromium.org/luci/bisection/internal/gitiles"
-	"go.chromium.org/luci/bisection/model"
-	pb "go.chromium.org/luci/bisection/proto/v1"
-	"go.chromium.org/luci/bisection/rerun"
-	"go.chromium.org/luci/bisection/util"
-	"go.chromium.org/luci/bisection/util/datastoreutil"
-	"go.chromium.org/luci/bisection/util/loggingutil"
-
-	taskpb "go.chromium.org/luci/bisection/task/proto"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/info"
+
+	"go.chromium.org/luci/bisection/compilefailureanalysis/heuristic"
+	"go.chromium.org/luci/bisection/compilefailureanalysis/statusupdater"
+	cpvt "go.chromium.org/luci/bisection/culpritverification/task"
+	"go.chromium.org/luci/bisection/hosts"
+	"go.chromium.org/luci/bisection/internal/config"
+	"go.chromium.org/luci/bisection/internal/gitiles"
+	"go.chromium.org/luci/bisection/model"
+	pb "go.chromium.org/luci/bisection/proto/v1"
+	"go.chromium.org/luci/bisection/rerun"
+	taskpb "go.chromium.org/luci/bisection/task/proto"
+	"go.chromium.org/luci/bisection/util"
+	"go.chromium.org/luci/bisection/util/datastoreutil"
+	"go.chromium.org/luci/bisection/util/loggingutil"
 )
 
 // RegisterTaskClass registers the task class for tq dispatcher
@@ -148,10 +147,15 @@ func VerifySuspect(c context.Context, suspect *model.Suspect, failedBuildID int6
 		}
 	}
 
+	host, err := hosts.APIHost(c)
+	if err != nil {
+		return errors.Annotate(err, "get bisection API Host").Err()
+	}
+
 	// Get rerun build property
 	props := map[string]any{
 		"analysis_id":    analysisID,
-		"bisection_host": fmt.Sprintf("%s.appspot.com", info.AppID(c)),
+		"bisection_host": host,
 		// For culprit verification, we should remove builder cache
 		"should_clobber": true,
 	}

@@ -19,6 +19,16 @@ import (
 	"context"
 	"fmt"
 
+	"google.golang.org/protobuf/proto"
+
+	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/tq"
+
 	"go.chromium.org/luci/bisection/culpritverification/task"
 	"go.chromium.org/luci/bisection/internal/buildbucket"
 	"go.chromium.org/luci/bisection/internal/config"
@@ -34,14 +44,6 @@ import (
 	"go.chromium.org/luci/bisection/util/changelogutil"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 	"go.chromium.org/luci/bisection/util/loggingutil"
-	bbpb "go.chromium.org/luci/buildbucket/proto"
-	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/server"
-	"go.chromium.org/luci/server/tq"
-	"google.golang.org/protobuf/proto"
 
 	// Add support for datastore transactions in TQ.
 	_ "go.chromium.org/luci/server/tq/txn/datastore"

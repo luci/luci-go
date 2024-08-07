@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/server/tq"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/bisection/hosts"
 	"go.chromium.org/luci/bisection/internal/buildbucket"
 	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/internal/gitiles"
@@ -145,6 +146,10 @@ func TestAnalyze(t *testing.T) {
 		testutil.UpdateIndices(c)
 		cl := testclock.New(testclock.TestTimeUTC)
 		c = clock.Set(c, cl)
+
+		c = hosts.UseHosts(c, hosts.ModuleOptions{
+			APIHost: "test-bisection-host",
+		})
 
 		// Set up the config
 		projectCfg := config.CreatePlaceholderProjectConfig()

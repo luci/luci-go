@@ -34,6 +34,7 @@ import (
 	"go.chromium.org/luci/bisection/compilefailuredetection"
 	"go.chromium.org/luci/bisection/culpritaction/revertculprit"
 	"go.chromium.org/luci/bisection/culpritverification"
+	"go.chromium.org/luci/bisection/hosts"
 	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/internal/lucianalysis"
 	"go.chromium.org/luci/bisection/metrics"
@@ -89,6 +90,7 @@ func main() {
 	modules := []module.Module{
 		cfgmodule.NewModuleFromFlags(),
 		cron.NewModuleFromFlags(),
+		hosts.NewModuleFromFlags(),
 		gaeemulation.NewModuleFromFlags(),
 		secrets.NewModuleFromFlags(),
 		tq.NewModuleFromFlags(),

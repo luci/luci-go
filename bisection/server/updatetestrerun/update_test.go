@@ -35,6 +35,7 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/bisection/culpritverification"
+	"go.chromium.org/luci/bisection/hosts"
 	"go.chromium.org/luci/bisection/internal/buildbucket"
 	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/model"
@@ -82,6 +83,10 @@ func TestUpdate(t *testing.T) {
 		cl := testclock.New(testclock.TestTimeUTC)
 		cl.Set(time.Unix(10000, 0).UTC())
 		ctx = clock.Set(ctx, cl)
+
+		ctx = hosts.UseHosts(ctx, hosts.ModuleOptions{
+			APIHost: "test-bisection-host",
+		})
 
 		ctl := gomock.NewController(t)
 		defer ctl.Finish()
@@ -641,6 +646,10 @@ func TestScheduleNewRerun(t *testing.T) {
 	ctx := memory.Use(context.Background())
 	testutil.UpdateIndices(ctx)
 
+	ctx = hosts.UseHosts(ctx, hosts.ModuleOptions{
+		APIHost: "test-bisection-host",
+	})
+
 	cl := testclock.New(testclock.TestTimeUTC)
 	cl.Set(time.Unix(10000, 0).UTC())
 	ctx = clock.Set(ctx, cl)
@@ -977,7 +986,7 @@ func mockBuildBucket(mc *buildbucket.MockedClient, withBotID bool) {
 				Fields: map[string]*structpb.Value{
 					"$bootstrap/properties": structpb.NewStructValue(bootstrapProperties),
 					"analysis_id":           structpb.NewNumberValue(100),
-					"bisection_host":        structpb.NewStringValue("app.appspot.com"),
+					"bisection_host":        structpb.NewStringValue("test-bisection-host"),
 					"builder_group":         structpb.NewStringValue("buildergroup1"),
 					"target_builder": structpb.NewStructValue(&structpb.Struct{
 						Fields: map[string]*structpb.Value{

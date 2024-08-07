@@ -19,6 +19,12 @@ import (
 	"context"
 	"fmt"
 
+	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/gae/service/datastore"
+
+	"go.chromium.org/luci/bisection/hosts"
 	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/internal/lucianalysis"
 	"go.chromium.org/luci/bisection/model"
@@ -27,11 +33,6 @@ import (
 	"go.chromium.org/luci/bisection/testfailureanalysis/bisection/projectbisector"
 	"go.chromium.org/luci/bisection/util"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
-	bbpb "go.chromium.org/luci/buildbucket/proto"
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/info"
 )
 
 type Bisector struct{}
@@ -62,7 +63,10 @@ func (b *Bisector) TriggerRerun(ctx context.Context, tfa *model.TestFailureAnaly
 		return nil, errors.Annotate(err, "get test builder").Err()
 	}
 
-	extraProperties := getExtraProperties(ctx, tfa, tfs, option)
+	extraProperties, err := getExtraProperties(ctx, tfa, tfs, option)
+	if err != nil {
+		return nil, errors.Annotate(err, "get extra properties").Err()
+	}
 	extraDimensions := getExtraDimensions(option)
 
 	options := &rerun.TriggerOptions{
@@ -82,7 +86,7 @@ func (b *Bisector) TriggerRerun(ctx context.Context, tfa *model.TestFailureAnaly
 	return build, nil
 }
 
-func getExtraProperties(ctx context.Context, tfa *model.TestFailureAnalysis, tfs []*model.TestFailure, option projectbisector.RerunOption) map[string]any {
+func getExtraProperties(ctx context.Context, tfa *model.TestFailureAnalysis, tfs []*model.TestFailure, option projectbisector.RerunOption) (map[string]any, error) {
 	// This may change depending on what the recipe needs.
 	var testsToRun []map[string]string
 	for _, tf := range tfs {
@@ -93,16 +97,21 @@ func getExtraProperties(ctx context.Context, tfa *model.TestFailureAnalysis, tfs
 			"variant_hash":    tf.VariantHash,
 		})
 	}
+	host, err := hosts.APIHost(ctx)
+	if err != nil {
+		return nil, errors.Annotate(err, "get bisection API Host").Err()
+	}
+
 	props := map[string]any{
 		"analysis_id":    tfa.ID,
-		"bisection_host": fmt.Sprintf("%s.appspot.com", info.AppID(ctx)),
+		"bisection_host": host,
 		"tests_to_run":   testsToRun,
 	}
 	if option.FullRun {
 		props["should_clobber"] = true
 		props["run_all"] = true
 	}
-	return props
+	return props, nil
 }
 
 func getExtraDimensions(option projectbisector.RerunOption) map[string]string {

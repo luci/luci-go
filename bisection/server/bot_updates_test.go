@@ -32,6 +32,7 @@ import (
 
 	"go.chromium.org/luci/bisection/compilefailureanalysis/cancelanalysis"
 	"go.chromium.org/luci/bisection/culpritverification"
+	"go.chromium.org/luci/bisection/hosts"
 	"go.chromium.org/luci/bisection/internal/buildbucket"
 	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/model"
@@ -196,6 +197,11 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 		c = mc.Ctx
 
 		mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(&bbpb.Build{}, nil).AnyTimes()
+
+		// Define hosts bots should talk to.
+		c = hosts.UseHosts(c, hosts.ModuleOptions{
+			APIHost: "test-bisection-host",
+		})
 
 		// Set up the config
 		projectCfg := config.CreatePlaceholderProjectConfig()

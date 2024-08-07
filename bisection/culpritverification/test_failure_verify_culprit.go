@@ -18,15 +18,16 @@ package culpritverification
 import (
 	"context"
 
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/gae/service/datastore"
+
 	"go.chromium.org/luci/bisection/model"
 	tpb "go.chromium.org/luci/bisection/task/proto"
 	"go.chromium.org/luci/bisection/testfailureanalysis/bisection"
 	"go.chromium.org/luci/bisection/testfailureanalysis/bisection/projectbisector"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 	"go.chromium.org/luci/bisection/util/loggingutil"
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/gae/service/datastore"
 )
 
 func processTestFailureTask(ctx context.Context, task *tpb.TestFailureCulpritVerificationTask) error {

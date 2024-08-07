@@ -22,7 +22,17 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-	. "github.com/smartystreets/goconvey/convey"
+	"google.golang.org/protobuf/types/known/structpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
+	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/tq"
+
+	"go.chromium.org/luci/bisection/hosts"
 	"go.chromium.org/luci/bisection/internal/buildbucket"
 	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/internal/gitiles"
@@ -33,15 +43,9 @@ import (
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	tpb "go.chromium.org/luci/bisection/task/proto"
 	"go.chromium.org/luci/bisection/util/testutil"
-	bbpb "go.chromium.org/luci/buildbucket/proto"
-	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/clock/testclock"
+
+	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
-	"go.chromium.org/luci/gae/impl/memory"
-	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/server/tq"
-	"google.golang.org/protobuf/types/known/structpb"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func TestRunBisector(t *testing.T) {
@@ -53,6 +57,11 @@ func TestRunBisector(t *testing.T) {
 	ctx = clock.Set(ctx, cl)
 	ctx, skdr := tq.TestingContext(ctx, nil)
 	luciAnalysisClient := &fakeLUCIAnalysisClient{}
+
+	// Define hosts bots should talk to.
+	ctx = hosts.UseHosts(ctx, hosts.ModuleOptions{
+		APIHost: "test-bisection-host",
+	})
 
 	// Mock gitiles response.
 	gitilesResponse := model.ChangeLogResponse{

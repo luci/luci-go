@@ -21,6 +21,7 @@ import (
 
 	"go.chromium.org/luci/bisection/compilefailureanalysis/statusupdater"
 	"go.chromium.org/luci/bisection/culpritverification"
+	"go.chromium.org/luci/bisection/hosts"
 	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/model"
 	"go.chromium.org/luci/bisection/nthsectionsnapshot"
@@ -37,7 +38,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/info"
 )
 
 func Analyze(
@@ -288,9 +288,14 @@ func getRerunProps(c context.Context, nthSectionAnalysis *model.CompileNthSectio
 	// In such cases, we should detect from the recipe side
 	failedTargets := compileFailure.OutputTargets
 
+	host, err := hosts.APIHost(c)
+	if err != nil {
+		return nil, errors.Annotate(err, "get bisection API Host").Err()
+	}
+
 	props := map[string]any{
 		"analysis_id":    analysisID,
-		"bisection_host": fmt.Sprintf("%s.appspot.com", info.AppID(c)),
+		"bisection_host": host,
 	}
 	if len(failedTargets) > 0 {
 		props["compile_targets"] = failedTargets

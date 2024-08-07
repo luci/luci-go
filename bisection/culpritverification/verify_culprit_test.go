@@ -21,14 +21,15 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-	. "github.com/smartystreets/goconvey/convey"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
-	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/bisection/hosts"
 	"go.chromium.org/luci/bisection/internal/buildbucket"
 	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/internal/gitiles"
@@ -36,6 +37,8 @@ import (
 	configpb "go.chromium.org/luci/bisection/proto/config"
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/util/testutil"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestVerifySuspect(t *testing.T) {
@@ -47,6 +50,10 @@ func TestVerifySuspect(t *testing.T) {
 
 		cl := testclock.New(testclock.TestTimeUTC)
 		c = clock.Set(c, cl)
+
+		c = hosts.UseHosts(c, hosts.ModuleOptions{
+			APIHost: "test-bisection-host",
+		})
 
 		// Setup config.
 		projectCfg := config.CreatePlaceholderProjectConfig()
