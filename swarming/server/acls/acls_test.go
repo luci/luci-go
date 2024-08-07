@@ -28,6 +28,11 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/option"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	cfgmem "go.chromium.org/luci/config/impl/memory"
@@ -38,7 +43,6 @@ import (
 	configpb "go.chromium.org/luci/swarming/proto/config"
 	"go.chromium.org/luci/swarming/server/cfg"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -68,7 +72,7 @@ func TestServerLevel(t *testing.T) {
 		var permitted []realms.Permission
 		for _, perm := range allPermissions() {
 			res := chk.CheckServerPerm(ctx, perm)
-			So(res.InternalError, ShouldBeFalse)
+			assert.Loosely(t, res.InternalError, should.BeFalse)
 			if res.Permitted {
 				permitted = append(permitted, perm)
 			}
@@ -76,12 +80,12 @@ func TestServerLevel(t *testing.T) {
 		return permitted
 	}
 
-	Convey("Unknown", t, func() {
-		So(permittedPerms("user:unknown@example.com"), ShouldBeEmpty)
+	ftt.Run("Unknown", t, func(t *ftt.Test) {
+		assert.Loosely(t, permittedPerms("user:unknown@example.com"), should.BeEmpty)
 	})
 
-	Convey("Admin", t, func() {
-		assertSame(permittedPerms("user:admin@example.com"), []realms.Permission{
+	ftt.Run("Admin", t, func(t *ftt.Test) {
+		assertSame(t, permittedPerms("user:admin@example.com"), []realms.Permission{
 			PermTasksGet,
 			PermTasksCancel,
 			PermPoolsListBots,
@@ -93,40 +97,40 @@ func TestServerLevel(t *testing.T) {
 		})
 	})
 
-	Convey("Bootstrap", t, func() {
-		assertSame(permittedPerms("user:bootstrap@example.com"), []realms.Permission{
+	ftt.Run("Bootstrap", t, func(t *ftt.Test) {
+		assertSame(t, permittedPerms("user:bootstrap@example.com"), []realms.Permission{
 			PermPoolsCreateBot,
 		})
 	})
 
-	Convey("Privileged", t, func() {
-		assertSame(permittedPerms("user:privileged@example.com"), []realms.Permission{
+	ftt.Run("Privileged", t, func(t *ftt.Test) {
+		assertSame(t, permittedPerms("user:privileged@example.com"), []realms.Permission{
 			PermTasksGet,
 			PermPoolsListBots,
 			PermPoolsListTasks,
 		})
 	})
 
-	Convey("View all bots", t, func() {
-		assertSame(permittedPerms("user:view-all-bots@example.com"), []realms.Permission{
+	ftt.Run("View all bots", t, func(t *ftt.Test) {
+		assertSame(t, permittedPerms("user:view-all-bots@example.com"), []realms.Permission{
 			PermPoolsListBots,
 		})
 	})
 
-	Convey("View all tasks", t, func() {
-		assertSame(permittedPerms("user:view-all-tasks@example.com"), []realms.Permission{
+	ftt.Run("View all tasks", t, func(t *ftt.Test) {
+		assertSame(t, permittedPerms("user:view-all-tasks@example.com"), []realms.Permission{
 			PermTasksGet,
 			PermPoolsListTasks,
 		})
 	})
 
-	Convey("Error message", t, func() {
+	ftt.Run("Error message", t, func(t *ftt.Test) {
 		chk := Checker{cfg: cfg, db: db, caller: "user:unknown@example.com"}
 		res := chk.CheckServerPerm(ctx, PermTasksCancel)
-		So(res.Permitted, ShouldBeFalse)
+		assert.Loosely(t, res.Permitted, should.BeFalse)
 		err := res.ToGrpcErr()
-		So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
-		So(err, ShouldErrLike, `the caller "user:unknown@example.com" doesn't have server-level permission "swarming.tasks.cancel"`)
+		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
+		assert.Loosely(t, err, should.ErrLike(`the caller "user:unknown@example.com" doesn't have server-level permission "swarming.tasks.cancel"`))
 	})
 }
 
@@ -166,7 +170,7 @@ func TestPoolLevel(t *testing.T) {
 		authtest.MockPermission(anotherID, "project:hidden-realm", PermPoolsListBots),
 	)
 
-	Convey("CheckPoolPerm", t, func() {
+	ftt.Run("CheckPoolPerm", t, func(t *ftt.Test) {
 		// Note the implementation doesn't depend on exact permission being checked,
 		// we'll check only PermPoolsListBots.
 		poolsWithListBots := func(caller identity.Identity) []string {
@@ -174,7 +178,7 @@ func TestPoolLevel(t *testing.T) {
 			var pools []string
 			for _, pool := range allPools {
 				res := chk.CheckPoolPerm(ctx, pool, PermPoolsListBots)
-				So(res.InternalError, ShouldBeFalse)
+				assert.Loosely(t, res.InternalError, should.BeFalse)
 				if res.Permitted {
 					pools = append(pools, pool)
 				}
@@ -182,140 +186,140 @@ func TestPoolLevel(t *testing.T) {
 			return pools
 		}
 
-		Convey("Unknown", func() {
-			So(poolsWithListBots(unknownID), ShouldBeEmpty)
+		t.Run("Unknown", func(t *ftt.Test) {
+			assert.Loosely(t, poolsWithListBots(unknownID), should.BeEmpty)
 		})
 
-		Convey("Privileged", func() {
-			So(poolsWithListBots(privilegedID), ShouldResemble, allPools)
+		t.Run("Privileged", func(t *ftt.Test) {
+			assert.Loosely(t, poolsWithListBots(privilegedID), should.Resemble(allPools))
 		})
 
-		Convey("Authorized", func() {
-			So(poolsWithListBots(authorizedID), ShouldResemble, []string{
+		t.Run("Authorized", func(t *ftt.Test) {
+			assert.Loosely(t, poolsWithListBots(authorizedID), should.Resemble([]string{
 				"visible-pool-1",
 				"visible-pool-2",
-			})
+			}))
 		})
 
-		Convey("Error message", func() {
+		t.Run("Error message", func(t *ftt.Test) {
 			chk := Checker{cfg: cfg, db: db, caller: unknownID}
 			for _, pool := range allPools {
 				res := chk.CheckPoolPerm(ctx, pool, PermPoolsListBots)
-				So(res.Permitted, ShouldBeFalse)
+				assert.Loosely(t, res.Permitted, should.BeFalse)
 				err := res.ToGrpcErr()
-				So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
-				So(err, ShouldErrLike,
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike(
 					fmt.Sprintf(`the caller "user:unknown@example.com" doesn't have permission "swarming.pools.listBots"`+
-						` in the pool %q or the pool doesn't exist`, pool))
+						` in the pool %q or the pool doesn't exist`, pool)))
 			}
 		})
 	})
 
-	Convey("FilterPoolsByPerm", t, func() {
+	ftt.Run("FilterPoolsByPerm", t, func(t *ftt.Test) {
 		poolsWithListBots := func(caller identity.Identity) []string {
 			chk := Checker{cfg: cfg, db: db, caller: caller}
 			pools, err := chk.FilterPoolsByPerm(ctx, allPools, PermPoolsListBots)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			return pools
 		}
 
-		Convey("Unknown", func() {
-			So(poolsWithListBots(unknownID), ShouldBeEmpty)
+		t.Run("Unknown", func(t *ftt.Test) {
+			assert.Loosely(t, poolsWithListBots(unknownID), should.BeEmpty)
 		})
 
-		Convey("Privileged", func() {
-			So(poolsWithListBots(privilegedID), ShouldResemble, allPools)
+		t.Run("Privileged", func(t *ftt.Test) {
+			assert.Loosely(t, poolsWithListBots(privilegedID), should.Resemble(allPools))
 		})
 
-		Convey("Authorized", func() {
-			So(poolsWithListBots(authorizedID), ShouldResemble, []string{
+		t.Run("Authorized", func(t *ftt.Test) {
+			assert.Loosely(t, poolsWithListBots(authorizedID), should.Resemble([]string{
 				"visible-pool-1",
 				"visible-pool-2",
-			})
+			}))
 		})
 	})
 
-	Convey("CheckAllPoolsPerm", t, func() {
+	ftt.Run("CheckAllPoolsPerm", t, func(t *ftt.Test) {
 		checkAll := func(caller identity.Identity, pools []string) bool {
 			chk := Checker{cfg: cfg, db: db, caller: caller}
 			res := chk.CheckAllPoolsPerm(ctx, pools, PermPoolsListBots)
-			So(res.InternalError, ShouldBeFalse)
+			assert.Loosely(t, res.InternalError, should.BeFalse)
 			return res.Permitted
 		}
 
-		Convey("Unknown", func() {
-			So(checkAll(unknownID, []string{"visible-pool-1"}), ShouldBeFalse)
-			So(checkAll(unknownID, []string{"visible-pool-1", "visible-pool-2"}), ShouldBeFalse)
-			So(checkAll(unknownID, allPools), ShouldBeFalse)
+		t.Run("Unknown", func(t *ftt.Test) {
+			assert.Loosely(t, checkAll(unknownID, []string{"visible-pool-1"}), should.BeFalse)
+			assert.Loosely(t, checkAll(unknownID, []string{"visible-pool-1", "visible-pool-2"}), should.BeFalse)
+			assert.Loosely(t, checkAll(unknownID, allPools), should.BeFalse)
 		})
 
-		Convey("Privileged", func() {
-			So(checkAll(privilegedID, []string{"visible-pool-1"}), ShouldBeTrue)
-			So(checkAll(privilegedID, []string{"visible-pool-1", "visible-pool-2"}), ShouldBeTrue)
-			So(checkAll(privilegedID, []string{"hidden-pool-1"}), ShouldBeTrue)
-			So(checkAll(privilegedID, []string{"hidden-pool-1", "hidden-pool-2"}), ShouldBeTrue)
-			So(checkAll(privilegedID, allPools), ShouldBeTrue)
+		t.Run("Privileged", func(t *ftt.Test) {
+			assert.Loosely(t, checkAll(privilegedID, []string{"visible-pool-1"}), should.BeTrue)
+			assert.Loosely(t, checkAll(privilegedID, []string{"visible-pool-1", "visible-pool-2"}), should.BeTrue)
+			assert.Loosely(t, checkAll(privilegedID, []string{"hidden-pool-1"}), should.BeTrue)
+			assert.Loosely(t, checkAll(privilegedID, []string{"hidden-pool-1", "hidden-pool-2"}), should.BeTrue)
+			assert.Loosely(t, checkAll(privilegedID, allPools), should.BeTrue)
 		})
 
-		Convey("Authorized", func() {
-			So(checkAll(authorizedID, []string{"visible-pool-1"}), ShouldBeTrue)
-			So(checkAll(authorizedID, []string{"visible-pool-1", "visible-pool-2"}), ShouldBeTrue)
-			So(checkAll(authorizedID, []string{"hidden-pool-1"}), ShouldBeFalse)
-			So(checkAll(authorizedID, []string{"hidden-pool-1", "hidden-pool-2"}), ShouldBeFalse)
-			So(checkAll(authorizedID, []string{"visible-pool-1", "visible-pool-2", "hidden-pool-1"}), ShouldBeFalse)
-			So(checkAll(authorizedID, []string{"visible-pool-1", "visible-pool-2", "deleted-pool-1"}), ShouldBeFalse)
+		t.Run("Authorized", func(t *ftt.Test) {
+			assert.Loosely(t, checkAll(authorizedID, []string{"visible-pool-1"}), should.BeTrue)
+			assert.Loosely(t, checkAll(authorizedID, []string{"visible-pool-1", "visible-pool-2"}), should.BeTrue)
+			assert.Loosely(t, checkAll(authorizedID, []string{"hidden-pool-1"}), should.BeFalse)
+			assert.Loosely(t, checkAll(authorizedID, []string{"hidden-pool-1", "hidden-pool-2"}), should.BeFalse)
+			assert.Loosely(t, checkAll(authorizedID, []string{"visible-pool-1", "visible-pool-2", "hidden-pool-1"}), should.BeFalse)
+			assert.Loosely(t, checkAll(authorizedID, []string{"visible-pool-1", "visible-pool-2", "deleted-pool-1"}), should.BeFalse)
 		})
 
-		Convey("Error message", func() {
+		t.Run("Error message", func(t *ftt.Test) {
 			chk := Checker{cfg: cfg, db: db, caller: authorizedID}
 			res := chk.CheckAllPoolsPerm(ctx, allPools, PermPoolsListBots)
-			So(res.InternalError, ShouldBeFalse)
+			assert.Loosely(t, res.InternalError, should.BeFalse)
 			err := res.ToGrpcErr()
-			So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
-			So(err, ShouldErrLike, `the caller "user:authorized@example.com" doesn't have permission "swarming.pools.listBots" in some of the requested pools`)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
+			assert.Loosely(t, err, should.ErrLike(`the caller "user:authorized@example.com" doesn't have permission "swarming.pools.listBots" in some of the requested pools`))
 		})
 	})
 
-	Convey("CheckAnyPoolsPerm", t, func() {
+	ftt.Run("CheckAnyPoolsPerm", t, func(t *ftt.Test) {
 		checkAny := func(caller identity.Identity, pools []string) bool {
 			chk := Checker{cfg: cfg, db: db, caller: caller}
 			res := chk.CheckAnyPoolsPerm(ctx, pools, PermPoolsListBots)
-			So(res.InternalError, ShouldBeFalse)
+			assert.Loosely(t, res.InternalError, should.BeFalse)
 			return res.Permitted
 		}
 
-		Convey("Unknown", func() {
-			So(checkAny(unknownID, []string{"visible-pool-1"}), ShouldBeFalse)
-			So(checkAny(unknownID, []string{"visible-pool-1", "visible-pool-2"}), ShouldBeFalse)
-			So(checkAny(unknownID, allPools), ShouldBeFalse)
+		t.Run("Unknown", func(t *ftt.Test) {
+			assert.Loosely(t, checkAny(unknownID, []string{"visible-pool-1"}), should.BeFalse)
+			assert.Loosely(t, checkAny(unknownID, []string{"visible-pool-1", "visible-pool-2"}), should.BeFalse)
+			assert.Loosely(t, checkAny(unknownID, allPools), should.BeFalse)
 		})
 
-		Convey("Privileged", func() {
-			So(checkAny(privilegedID, []string{"visible-pool-1"}), ShouldBeTrue)
-			So(checkAny(privilegedID, []string{"visible-pool-1", "visible-pool-2"}), ShouldBeTrue)
-			So(checkAny(privilegedID, []string{"hidden-pool-1"}), ShouldBeTrue)
-			So(checkAny(privilegedID, []string{"hidden-pool-1", "hidden-pool-2"}), ShouldBeTrue)
-			So(checkAny(privilegedID, allPools), ShouldBeTrue)
+		t.Run("Privileged", func(t *ftt.Test) {
+			assert.Loosely(t, checkAny(privilegedID, []string{"visible-pool-1"}), should.BeTrue)
+			assert.Loosely(t, checkAny(privilegedID, []string{"visible-pool-1", "visible-pool-2"}), should.BeTrue)
+			assert.Loosely(t, checkAny(privilegedID, []string{"hidden-pool-1"}), should.BeTrue)
+			assert.Loosely(t, checkAny(privilegedID, []string{"hidden-pool-1", "hidden-pool-2"}), should.BeTrue)
+			assert.Loosely(t, checkAny(privilegedID, allPools), should.BeTrue)
 		})
 
-		Convey("Authorized", func() {
-			So(checkAny(authorizedID, []string{"visible-pool-1"}), ShouldBeTrue)
-			So(checkAny(authorizedID, []string{"visible-pool-1", "visible-pool-2"}), ShouldBeTrue)
-			So(checkAny(authorizedID, []string{"hidden-pool-1"}), ShouldBeFalse)
-			So(checkAny(authorizedID, []string{"hidden-pool-1", "hidden-pool-2"}), ShouldBeFalse)
-			So(checkAny(authorizedID, []string{"deleted-pool-1"}), ShouldBeFalse)
-			So(checkAny(authorizedID, []string{"deleted-pool-1", "deleted-pool-2"}), ShouldBeFalse)
-			So(checkAny(authorizedID, []string{"hidden-pool-1", "visible-pool-1"}), ShouldBeTrue)
-			So(checkAny(authorizedID, []string{"deleted-pool-1", "visible-pool-1"}), ShouldBeTrue)
+		t.Run("Authorized", func(t *ftt.Test) {
+			assert.Loosely(t, checkAny(authorizedID, []string{"visible-pool-1"}), should.BeTrue)
+			assert.Loosely(t, checkAny(authorizedID, []string{"visible-pool-1", "visible-pool-2"}), should.BeTrue)
+			assert.Loosely(t, checkAny(authorizedID, []string{"hidden-pool-1"}), should.BeFalse)
+			assert.Loosely(t, checkAny(authorizedID, []string{"hidden-pool-1", "hidden-pool-2"}), should.BeFalse)
+			assert.Loosely(t, checkAny(authorizedID, []string{"deleted-pool-1"}), should.BeFalse)
+			assert.Loosely(t, checkAny(authorizedID, []string{"deleted-pool-1", "deleted-pool-2"}), should.BeFalse)
+			assert.Loosely(t, checkAny(authorizedID, []string{"hidden-pool-1", "visible-pool-1"}), should.BeTrue)
+			assert.Loosely(t, checkAny(authorizedID, []string{"deleted-pool-1", "visible-pool-1"}), should.BeTrue)
 		})
 
-		Convey("Error message", func() {
+		t.Run("Error message", func(t *ftt.Test) {
 			chk := Checker{cfg: cfg, db: db, caller: authorizedID}
 			res := chk.CheckAnyPoolsPerm(ctx, []string{"hidden-pool-1", "deleted-pool-1"}, PermPoolsListBots)
-			So(res.InternalError, ShouldBeFalse)
+			assert.Loosely(t, res.InternalError, should.BeFalse)
 			err := res.ToGrpcErr()
-			So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
-			So(err, ShouldErrLike, `the caller "user:authorized@example.com" doesn't have permission "swarming.pools.listBots" in any of the requested pools`)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
+			assert.Loosely(t, err, should.ErrLike(`the caller "user:authorized@example.com" doesn't have permission "swarming.pools.listBots" in any of the requested pools`))
 		})
 	})
 }
@@ -349,36 +353,36 @@ func TestBotLevel(t *testing.T) {
 	checkBotVisible := func(caller identity.Identity, botID string) bool {
 		chk := Checker{cfg: cfg, db: db, caller: caller}
 		res := chk.CheckBotPerm(ctx, botID, PermPoolsListBots)
-		So(res.InternalError, ShouldBeFalse)
+		assert.Loosely(t, res.InternalError, should.BeFalse)
 		return res.Permitted
 	}
 
-	Convey("Unknown", t, func() {
-		So(checkBotVisible(unknownID, "visible-bot"), ShouldBeFalse)
-		So(checkBotVisible(unknownID, "hidden-bot"), ShouldBeFalse)
-		So(checkBotVisible(unknownID, "unknown-bot"), ShouldBeFalse)
+	ftt.Run("Unknown", t, func(t *ftt.Test) {
+		assert.Loosely(t, checkBotVisible(unknownID, "visible-bot"), should.BeFalse)
+		assert.Loosely(t, checkBotVisible(unknownID, "hidden-bot"), should.BeFalse)
+		assert.Loosely(t, checkBotVisible(unknownID, "unknown-bot"), should.BeFalse)
 	})
 
-	Convey("Privileged", t, func() {
-		So(checkBotVisible(privilegedID, "visible-bot"), ShouldBeTrue)
-		So(checkBotVisible(privilegedID, "hidden-bot"), ShouldBeTrue)
-		So(checkBotVisible(privilegedID, "unknown-bot"), ShouldBeTrue)
+	ftt.Run("Privileged", t, func(t *ftt.Test) {
+		assert.Loosely(t, checkBotVisible(privilegedID, "visible-bot"), should.BeTrue)
+		assert.Loosely(t, checkBotVisible(privilegedID, "hidden-bot"), should.BeTrue)
+		assert.Loosely(t, checkBotVisible(privilegedID, "unknown-bot"), should.BeTrue)
 	})
 
-	Convey("Authorized", t, func() {
-		So(checkBotVisible(authorizedID, "visible-bot"), ShouldBeTrue)
-		So(checkBotVisible(authorizedID, "hidden-bot"), ShouldBeFalse)
-		So(checkBotVisible(authorizedID, "unknown-bot"), ShouldBeFalse)
+	ftt.Run("Authorized", t, func(t *ftt.Test) {
+		assert.Loosely(t, checkBotVisible(authorizedID, "visible-bot"), should.BeTrue)
+		assert.Loosely(t, checkBotVisible(authorizedID, "hidden-bot"), should.BeFalse)
+		assert.Loosely(t, checkBotVisible(authorizedID, "unknown-bot"), should.BeFalse)
 	})
 
-	Convey("Error message", t, func() {
+	ftt.Run("Error message", t, func(t *ftt.Test) {
 		chk := Checker{cfg: cfg, db: db, caller: authorizedID}
 		res := chk.CheckBotPerm(ctx, "hidden-bot", PermPoolsListBots)
-		So(res.InternalError, ShouldBeFalse)
+		assert.Loosely(t, res.InternalError, should.BeFalse)
 		err := res.ToGrpcErr()
-		So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
-		So(err, ShouldErrLike, `the caller "user:authorized@example.com" doesn't have permission `+
-			`"swarming.pools.listBots" in the pool that contains bot "hidden-bot" or this bot doesn't exist`)
+		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
+		assert.Loosely(t, err, should.ErrLike(`the caller "user:authorized@example.com" doesn't have permission `+
+			`"swarming.pools.listBots" in the pool that contains bot "hidden-bot" or this bot doesn't exist`))
 	})
 }
 
@@ -413,77 +417,77 @@ func TestTaskLevel(t *testing.T) {
 		info.TaskID = "65aba3a3e6b99310"
 		chk := Checker{cfg: cfg, db: db, caller: caller}
 		res := chk.CheckTaskPerm(ctx, &mockedTask{info: info}, PermTasksCancel)
-		So(res.InternalError, ShouldBeFalse)
+		assert.Loosely(t, res.InternalError, should.BeFalse)
 		return res.Permitted
 	}
 
-	Convey("Unknown", t, func() {
-		So(checkCanCancel(unknownID, TaskAuthInfo{
+	ftt.Run("Unknown", t, func(t *ftt.Test) {
+		assert.Loosely(t, checkCanCancel(unknownID, TaskAuthInfo{
 			Realm:     "project:visible-task-realm",
 			Pool:      "visible-pool",
 			Submitter: authorizedID,
-		}), ShouldBeFalse)
+		}), should.BeFalse)
 	})
 
-	Convey("Submitter", t, func() {
-		So(checkCanCancel(unknownID, TaskAuthInfo{
+	ftt.Run("Submitter", t, func(t *ftt.Test) {
+		assert.Loosely(t, checkCanCancel(unknownID, TaskAuthInfo{
 			Realm:     "project:doesnt-matter",
 			Pool:      "doesnt-matter",
 			Submitter: unknownID,
-		}), ShouldBeTrue)
+		}), should.BeTrue)
 	})
 
-	Convey("Admin", t, func() {
-		So(checkCanCancel(adminID, TaskAuthInfo{
+	ftt.Run("Admin", t, func(t *ftt.Test) {
+		assert.Loosely(t, checkCanCancel(adminID, TaskAuthInfo{
 			Realm:     "project:doesnt-matter",
 			Pool:      "doesnt-matter",
 			Submitter: unknownID,
-		}), ShouldBeTrue)
+		}), should.BeTrue)
 	})
 
-	Convey("Via task realm", t, func() {
-		So(checkCanCancel(authorizedID, TaskAuthInfo{
+	ftt.Run("Via task realm", t, func(t *ftt.Test) {
+		assert.Loosely(t, checkCanCancel(authorizedID, TaskAuthInfo{
 			Realm:     "project:visible-task-realm",
 			Pool:      "doesnt-matter",
 			Submitter: unknownID,
-		}), ShouldBeTrue)
+		}), should.BeTrue)
 
-		So(checkCanCancel(authorizedID, TaskAuthInfo{
+		assert.Loosely(t, checkCanCancel(authorizedID, TaskAuthInfo{
 			Realm:     "project:hidden-task-realm",
 			Pool:      "doesnt-matter",
 			Submitter: unknownID,
-		}), ShouldBeFalse)
+		}), should.BeFalse)
 	})
 
-	Convey("Via pool realm", t, func() {
-		So(checkCanCancel(authorizedID, TaskAuthInfo{
+	ftt.Run("Via pool realm", t, func(t *ftt.Test) {
+		assert.Loosely(t, checkCanCancel(authorizedID, TaskAuthInfo{
 			Realm:     "project:doesnt-matter",
 			Pool:      "visible-pool",
 			Submitter: unknownID,
-		}), ShouldBeTrue)
+		}), should.BeTrue)
 
-		So(checkCanCancel(authorizedID, TaskAuthInfo{
+		assert.Loosely(t, checkCanCancel(authorizedID, TaskAuthInfo{
 			Realm:     "project:doesnt-matter",
 			Pool:      "hidden-pool",
 			Submitter: unknownID,
-		}), ShouldBeFalse)
+		}), should.BeFalse)
 	})
 
-	Convey("Via bot realm", t, func() {
-		So(checkCanCancel(authorizedID, TaskAuthInfo{
+	ftt.Run("Via bot realm", t, func(t *ftt.Test) {
+		assert.Loosely(t, checkCanCancel(authorizedID, TaskAuthInfo{
 			Realm:     "project:doesnt-matter",
 			BotID:     "visible-bot",
 			Submitter: unknownID,
-		}), ShouldBeTrue)
+		}), should.BeTrue)
 
-		So(checkCanCancel(authorizedID, TaskAuthInfo{
+		assert.Loosely(t, checkCanCancel(authorizedID, TaskAuthInfo{
 			Realm:     "project:doesnt-matter",
 			BotID:     "hidden-bot",
 			Submitter: unknownID,
-		}), ShouldBeFalse)
+		}), should.BeFalse)
 	})
 
-	Convey("Error message", t, func() {
+	ftt.Run("Error message", t, func(t *ftt.Test) {
 		chk := Checker{cfg: cfg, db: db, caller: authorizedID}
 		res := chk.CheckTaskPerm(ctx, &mockedTask{
 			info: TaskAuthInfo{
@@ -493,17 +497,17 @@ func TestTaskLevel(t *testing.T) {
 				Submitter: unknownID,
 			},
 		}, PermTasksCancel)
-		So(res.InternalError, ShouldBeFalse)
+		assert.Loosely(t, res.InternalError, should.BeFalse)
 		err := res.ToGrpcErr()
-		So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
-		So(err, ShouldErrLike, `the caller "user:authorized@example.com" doesn't have `+
-			`permission "swarming.tasks.cancel" for the task "65aba3a3e6b99310"`)
+		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
+		assert.Loosely(t, err, should.ErrLike(`the caller "user:authorized@example.com" doesn't have `+
+			`permission "swarming.tasks.cancel" for the task "65aba3a3e6b99310"`))
 	})
 
-	Convey("Error from TaskAuthInfo", t, func() {
+	ftt.Run("Error from TaskAuthInfo", t, func(t *ftt.Test) {
 		chk := Checker{cfg: cfg, db: db, caller: authorizedID}
 		res := chk.CheckTaskPerm(ctx, &mockedTask{err: errors.New("BOOM")}, PermTasksCancel)
-		So(res.InternalError, ShouldBeTrue)
+		assert.Loosely(t, res.InternalError, should.BeTrue)
 	})
 }
 
@@ -522,7 +526,9 @@ func allPermissions() []realms.Permission {
 }
 
 // assertSame fails if permissions sets have differences.
-func assertSame(got, want []realms.Permission) {
+func assertSame(t testing.TB, got, want []realms.Permission) {
+	t.Helper()
+
 	asSet := func(x []realms.Permission) []string {
 		s := stringset.New(len(x))
 		for _, p := range x {
@@ -530,7 +536,7 @@ func assertSame(got, want []realms.Permission) {
 		}
 		return s.ToSortedSlice()
 	}
-	So(asSet(got), ShouldResemble, asSet(want))
+	assert.Loosely(t, asSet(got), should.Resemble(asSet(want)), option.LineContext())
 }
 
 // mockedConfig prepares a queryable config.

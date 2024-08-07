@@ -44,9 +44,9 @@ import (
 //	    // will see the file:line within this helper function.
 //	    check.That(t, actual.field1, should.Equal(expected.field1).LineContext())
 //	    check.That(t, actual.field2, should.Equal(expected.field2).LineContext())
-//	 }
-//	 // ...
-//	 myHelper(a, expected)
+//	  }
+//	  // ...
+//	  myHelper(a, expected)
 //	}
 //
 // In this example, the test will output something like:
