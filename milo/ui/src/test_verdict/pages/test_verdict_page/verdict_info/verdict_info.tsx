@@ -43,7 +43,13 @@ export function VerdictInfo() {
   }
 
   return (
-    <Grid item container columnGap={1} alignItems="center" sx={{ ml: 0.5 }}>
+    <Grid
+      item
+      container
+      columnGap={1}
+      alignItems="center"
+      sx={{ ml: 0.5, mb: 0.5 }}
+    >
       {verdict.variant && (
         <>
           <Typography fontSize="0.9rem">

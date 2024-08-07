@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { ReactNode, useEffect, useMemo } from 'react';
+import { ReactNode, useEffect, useMemo, useState } from 'react';
 
 import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
 import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
@@ -35,6 +35,7 @@ export function ResultDataProvider({
   result,
   children,
 }: ResultDataProviderProps) {
+  const [topPanelExpanded, setTopPanelExpanded] = useState(true);
   const client = usePrpcServiceClient({
     host: SETTINGS.resultdb.host,
     ClientImpl: ResultDBClientImpl,
@@ -118,6 +119,8 @@ export function ResultDataProvider({
         resultArtifacts,
         invArtifacts,
         artifactsLoading: invArtifactsLoading || resultArtifactsLoading,
+        topPanelExpanded,
+        setTopPanelExpanded,
       }}
     >
       {children}

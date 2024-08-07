@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import { Collapse, Divider, IconButton } from '@mui/material';
 import Grid from '@mui/material/Grid';
 
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
@@ -19,15 +22,58 @@ import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params
 import { useResults } from '../context';
 import { getSelectedResultIndex } from '../utils';
 
+import { useSetTopPanelExpanded, useTopPanelExpanded } from './context';
 import { ResultDataProvider } from './provider';
 import { ResultArtifacts } from './result_artifacts';
 import { ResultBasicInfo } from './result_basic_info';
+import { ResultLogs } from './result_logs';
 import { ResultTags } from './result_tags';
+
+function TopPanel() {
+  const topPanelExpanded = useTopPanelExpanded();
+  const setTopPanelExpandendCtx = useSetTopPanelExpanded();
+
+  function handleToggleTopPanel() {
+    setTopPanelExpandendCtx(!topPanelExpanded);
+  }
+
+  return (
+    <>
+      <Collapse in={topPanelExpanded}>
+        <Grid
+          item
+          container
+          flexDirection="column"
+          sx={{
+            width: '100%',
+          }}
+        >
+          <ResultBasicInfo />
+          <ResultTags />
+          <ResultArtifacts />
+        </Grid>
+      </Collapse>
+      <Divider
+        sx={{
+          padding: 0,
+          mt: 1,
+        }}
+      >
+        <IconButton size="small" onClick={handleToggleTopPanel}>
+          {topPanelExpanded ? (
+            <ExpandLessIcon fontSize="small" />
+          ) : (
+            <ExpandMoreIcon fontSize="small" />
+          )}
+        </IconButton>
+      </Divider>
+    </>
+  );
+}
 
 export function ResultDetails() {
   const [searchParams] = useSyncedSearchParams();
   const results = useResults();
-
   const selecteResultIndex = getSelectedResultIndex(searchParams);
 
   if (selecteResultIndex === null) {
@@ -45,18 +91,8 @@ export function ResultDetails() {
 
   return (
     <ResultDataProvider result={result.result}>
-      <Grid
-        item
-        container
-        flexDirection="column"
-        sx={{
-          mb: 2,
-        }}
-      >
-        <ResultBasicInfo />
-        <ResultTags />
-        <ResultArtifacts />
-      </Grid>
+      <TopPanel />
+      <ResultLogs />
     </ResultDataProvider>
   );
 }

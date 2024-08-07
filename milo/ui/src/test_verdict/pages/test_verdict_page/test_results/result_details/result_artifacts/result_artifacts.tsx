@@ -107,7 +107,9 @@ function ArtifactsAccordion({
   >([]);
 
   useEffect(() => {
-    setFilteredLinkArtifacts(filterArtifacts(currentTerm, processedArtifacts.links));
+    setFilteredLinkArtifacts(
+      filterArtifacts(currentTerm, processedArtifacts.links),
+    );
   }, [processedArtifacts.links, currentTerm]);
 
   function handleExpandedClicked(isExpanded: boolean) {
@@ -140,9 +142,7 @@ function ArtifactsAccordion({
         >
           <SearchInput
             label={searchLabel}
-            onSearchTermChange={(term) =>
-              setCurrentTerm(term)
-            }
+            onSearchTermChange={(term) => setCurrentTerm(term)}
           />
         </Grid>
         <Grid

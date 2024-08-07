@@ -63,16 +63,21 @@ export function ArtifactContentLink({ artifact, label }: Props) {
 
   let url = getRawArtifactURLPath(artifact.name);
   if (data) {
-    const dataUrl = new URL(data);
-    const allowedProtocol = ['http:', 'https:'].includes(dataUrl.protocol);
-    const allowedHost = LINK_ARTIFACT_HOST_ALLOWLIST.includes(dataUrl.host);
-    if (allowedProtocol && allowedHost) {
-      url = data;
-    } else {
-      logging.warn(
-        `Invalid target URL for link artifact ${artifact.name} - ` +
-          'returning the original fetch URL for the artifact instead',
-      );
+    try {
+      const dataUrl = new URL(data);
+      const allowedProtocol = ['http:', 'https:'].includes(dataUrl.protocol);
+      const allowedHost = LINK_ARTIFACT_HOST_ALLOWLIST.includes(dataUrl.host);
+      if (allowedProtocol && allowedHost) {
+        url = data;
+      } else {
+        logging.warn(
+          `Invalid target URL for link artifact ${artifact.name} - ` +
+            'returning the original fetch URL for the artifact instead',
+        );
+      }
+    } catch (e) {
+      logging.error('Failed to create url: ' + data);
+      logging.error(e);
     }
   }
   return (

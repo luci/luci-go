@@ -84,10 +84,9 @@ export function TestVerdictPage() {
     <Grid
       container
       sx={{
-        px: 3,
+        px: 1,
         mt: 1,
       }}
-      rowGap={1}
       flexDirection="column"
     >
       <PageMeta

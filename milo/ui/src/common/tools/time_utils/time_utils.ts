@@ -19,6 +19,7 @@ import { Duration as ProtoDuration } from '@/proto/google/protobuf/duration.pb';
 export const SHORT_TIME_FORMAT = 'y-MM-dd HH:mm';
 export const LONG_TIME_FORMAT = 'HH:mm:ss ccc, MMM dd yyyy ZZZZ';
 export const NUMERIC_TIME_FORMAT = 'y-MM-dd HH:mm:ss ZZ';
+export const NUMERIC_TIME_FORMAT_WITH_MS = 'y-MM-dd HH:mm:ss.SSS';
 
 /**
  * Displays a non-negative duration.
