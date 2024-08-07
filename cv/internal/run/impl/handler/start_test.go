@@ -55,8 +55,7 @@ func TestStart(t *testing.T) {
 
 	Convey("StartRun", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		const (
 			lProject           = "chromium"
@@ -440,8 +439,7 @@ func TestOnCompletedPostStartMessage(t *testing.T) {
 
 	Convey("onCompletedPostStartMessage works", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		const (
 			lProject = "chromium"

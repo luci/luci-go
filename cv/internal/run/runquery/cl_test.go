@@ -32,8 +32,7 @@ func TestCLQueryBuilder(t *testing.T) {
 
 	Convey("CLQueryBuilder works", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		// getAll asserts that LoadRuns returns Runs with the given RunIDs.
 		getAll := func(q CLQueryBuilder) common.RunIDs {

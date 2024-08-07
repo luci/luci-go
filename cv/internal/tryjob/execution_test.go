@@ -33,8 +33,7 @@ func TestLoadExecutionLogs(t *testing.T) {
 
 	Convey("LoadExecutionLogs works", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		ev := int64(1)
 		put := func(runID common.RunID, entries ...*ExecutionLogEntry) {

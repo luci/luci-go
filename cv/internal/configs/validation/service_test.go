@@ -32,8 +32,7 @@ func TestListenerConfigValidation(t *testing.T) {
 
 	Convey("Validate Config", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		vctx := &validation.Context{Context: ctx}
 		configSet := "services/luci-change-verifier"

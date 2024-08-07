@@ -32,8 +32,7 @@ func TestGerritCLDeleted(t *testing.T) {
 
 	Convey("CV cancels a Run with some grace period after Gerrit CL is deleted", t, func() {
 		ct := Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		const lProject = "infra"
 		const gHost = "g-review.example.com"

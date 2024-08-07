@@ -39,8 +39,7 @@ func TestLoadChildRuns(t *testing.T) {
 
 	Convey("LoadChildRuns works", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		put := func(runID common.RunID, depRuns common.RunIDs) {
 			So(datastore.Put(ctx, &Run{
@@ -73,8 +72,7 @@ func TestLoadRunLogEntries(t *testing.T) {
 
 	Convey("LoadRunLogEntries works", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		ev := int64(1)
 		put := func(runID common.RunID, entries ...*LogEntry) {
@@ -143,8 +141,7 @@ func TestLoadRunsBuilder(t *testing.T) {
 
 	Convey("LoadRunsBuilder works", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		const lProject = "proj"
 		// Run statuses are used in this test to ensure Runs were actually loaded.

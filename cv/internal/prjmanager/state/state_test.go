@@ -61,12 +61,12 @@ type ctest struct {
 	clUpdater *changelist.Updater
 }
 
-func (ct *ctest) SetUp(testingT *testing.T) (context.Context, func()) {
-	ctx, cancel := ct.Test.SetUp(testingT)
+func (ct *ctest) SetUp(testingT *testing.T) context.Context {
+	ctx := ct.Test.SetUp(testingT)
 	ct.pm = prjmanager.NewNotifier(ct.TQDispatcher)
 	ct.clUpdater = changelist.NewUpdater(ct.TQDispatcher, changelist.NewMutator(ct.TQDispatcher, ct.pm, nil, tryjob.NewNotifier(ct.TQDispatcher)))
 	gerritupdater.RegisterUpdater(ct.clUpdater, ct.GFactory())
-	return ctx, cancel
+	return ctx
 }
 
 func (ct ctest) runCLUpdater(ctx context.Context, change int64) *changelist.CL {
@@ -150,8 +150,7 @@ func TestUpdateConfig(t *testing.T) {
 			gHost:    "c-review.example.com",
 			Test:     cvtesting.Test{},
 		}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		cfg1 := &cfgpb.Config{}
 		So(prototext.Unmarshal([]byte(cfgText1), cfg1), ShouldBeNil)
@@ -572,8 +571,7 @@ func TestOnCLsUpdated(t *testing.T) {
 			lProject: "test",
 			gHost:    "c-review.example.com",
 		}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		cfg1 := &cfgpb.Config{}
 		So(prototext.Unmarshal([]byte(cfgText1), cfg1), ShouldBeNil)
@@ -847,8 +845,7 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 			lProject: "test",
 			gHost:    "c-review.example.com",
 		}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		cfg1 := &cfgpb.Config{}
 		So(prototext.Unmarshal([]byte(cfgText1), cfg1), ShouldBeNil)
@@ -1184,8 +1181,7 @@ func TestOnPurgesCompleted(t *testing.T) {
 			gHost:    "c-review.example.com",
 			Test:     cvtesting.Test{},
 		}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		cfg1 := &cfgpb.Config{}
 		So(prototext.Unmarshal([]byte(cfgText1), cfg1), ShouldBeNil)
@@ -1406,8 +1402,7 @@ func TestOnTriggeringCLDepsCompleted(t *testing.T) {
 			gHost:    "c-review.example.com",
 			Test:     cvtesting.Test{},
 		}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		cfg1 := &cfgpb.Config{}
 		So(prototext.Unmarshal([]byte(cfgText1), cfg1), ShouldBeNil)

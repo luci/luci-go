@@ -54,8 +54,7 @@ func TestProjectTQLateTasks(t *testing.T) {
 
 	Convey("PM task does nothing if it comes too late", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		pmNotifier := prjmanager.NewNotifier(ct.TQDispatcher)
 		runNotifier := runNotifierMock{}
@@ -99,8 +98,7 @@ func TestProjectLifeCycle(t *testing.T) {
 
 	Convey("Project can be created, updated, deleted", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		pmNotifier := prjmanager.NewNotifier(ct.TQDispatcher)
 		runNotifier := runNotifierMock{}
@@ -225,8 +223,7 @@ func TestProjectHandlesManyEvents(t *testing.T) {
 
 	Convey("PM handles many events", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		const lProject = "infra"
 		const gHost = "host"

@@ -48,8 +48,7 @@ func TestCategorizeAndLoadActiveIntoPCLs(t *testing.T) {
 			lProject: "test",
 			gHost:    "c-review.example.com",
 		}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		cfg := &cfgpb.Config{}
 		So(prototext.Unmarshal([]byte(cfgText1), cfg), ShouldBeNil)

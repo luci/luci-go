@@ -48,10 +48,9 @@ func TestTaskHandler(t *testing.T) {
 			So(panicker, ShouldPanicLike, "patchset numbers expected to increase")
 		})
 		Convey("works with", func() {
-			cvt := &cvtesting.Test{}
-			ctx, cancel := cvt.SetUp(t)
-			defer cancel()
-			n := tryjob.NewNotifier(cvt.TQDispatcher)
+			ct := &cvtesting.Test{}
+			ctx := ct.SetUp(t)
+			n := tryjob.NewNotifier(ct.TQDispatcher)
 			c := NewCancellator(n)
 			mb := &mockBackend{}
 			c.RegisterBackend(mb)
@@ -119,9 +118,9 @@ func TestTaskHandler(t *testing.T) {
 				// Should not modify the entity.
 				So(tj21.EVersion, ShouldEqual, 1)
 				So(tj21.Status, ShouldEqual, tryjob.Status_TRIGGERED)
-				So(cvt.TQ.Tasks(), ShouldHaveLength, 1)
-				So(cvt.TQ.Tasks()[0].Payload, ShouldResembleProto, task)
-				So(cvt.TQ.Tasks()[0].ETA, ShouldEqual, cvt.Clock.Now().Add(cancelLaterDuration))
+				So(ct.TQ.Tasks(), ShouldHaveLength, 1)
+				So(ct.TQ.Tasks()[0].Payload, ShouldResembleProto, task)
+				So(ct.TQ.Tasks()[0].ETA, ShouldEqual, ct.Clock.Now().Add(cancelLaterDuration))
 			})
 			Convey("tryjob not triggered by cv", func() {
 				tj31 := putTryjob(ctx, clid, 2, tryjob.Status_TRIGGERED, 31, run.Status_CANCELLED, func(tj *tryjob.Tryjob) {

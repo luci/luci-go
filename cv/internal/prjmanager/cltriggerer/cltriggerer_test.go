@@ -67,8 +67,7 @@ func TestTriggerer(t *testing.T) {
 
 	Convey("Triggerer", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 		now := ct.Clock.Now()
 
 		// Set mockup data with CLs and Project.

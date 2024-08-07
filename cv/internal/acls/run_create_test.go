@@ -48,8 +48,7 @@ func TestCheckRunCLs(t *testing.T) {
 
 	Convey("CheckRunCreate", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 		cg := prjcfg.ConfigGroup{
 			Content: &cfgpb.ConfigGroup{
 				Verifiers: &cfgpb.Verifiers{

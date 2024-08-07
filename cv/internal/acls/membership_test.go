@@ -35,8 +35,7 @@ func TestMembership(t *testing.T) {
 
 	Convey("Membership", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 		const lProject = "test-proj"
 		prjcfgtest.Create(ctx, lProject, &cfgpb.Config{
 			ConfigGroups: []*cfgpb.ConfigGroup{{

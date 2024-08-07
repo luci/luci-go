@@ -38,8 +38,7 @@ func TestScheduleWipeoutRuns(t *testing.T) {
 
 	Convey("Schedule wipeout runs tasks", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 		registerWipeoutRunsTask(ct.TQDispatcher, &mockRM{})
 
 		// Test Scenario: Create a lot of runs under 2 LUCI Projects (1 disabled).
@@ -104,8 +103,7 @@ func TestWipeoutRuns(t *testing.T) {
 
 	Convey("Wipeout", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		const lProject = "infra"
 		mockRM := &mockRM{}

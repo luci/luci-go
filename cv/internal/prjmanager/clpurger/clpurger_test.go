@@ -49,8 +49,7 @@ func TestPurgeCL(t *testing.T) {
 
 	Convey("PurgeCL works", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 		ctx, pmDispatcher := pmtest.MockDispatch(ctx)
 
 		pmNotifier := prjmanager.NewNotifier(ct.TQDispatcher)

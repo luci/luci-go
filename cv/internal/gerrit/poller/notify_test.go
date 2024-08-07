@@ -30,8 +30,7 @@ func TestNotifyOnUnmatchedCLs(t *testing.T) {
 
 	Convey("notifyOnUnmatchedCLs works", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		const lProject = "chromium"
 		const gHost = "chromium-review.example.com"

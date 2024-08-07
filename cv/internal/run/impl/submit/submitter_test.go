@@ -45,8 +45,7 @@ import (
 func TestSubmitter(t *testing.T) {
 	Convey("Submitter", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		const (
 			lProject = "test_proj"

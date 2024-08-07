@@ -36,8 +36,7 @@ func TestConfigChangeStartsAndStopsRuns(t *testing.T) {
 
 	Convey("CV starts new and stops old Runs on config change as needed", t, func() {
 		ct := Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		const (
 			lProject            = "infra"

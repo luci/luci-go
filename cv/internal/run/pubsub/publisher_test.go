@@ -37,8 +37,7 @@ func TestExportRunToBQ(t *testing.T) {
 
 	Convey("Publisher", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		publisher := NewPublisher(ct.TQDispatcher, ct.Env)
 		epoch := ct.Clock.Now().UTC()

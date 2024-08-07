@@ -39,8 +39,7 @@ func TestCancel(t *testing.T) {
 
 	Convey("Cancel", t, func() {
 		ct := cvtesting.Test{}
-		ctx, close := ct.SetUp(t)
-		defer close()
+		ctx := ct.SetUp(t)
 		ctx, _ = pmtest.MockDispatch(ctx)
 
 		const lProject = "chromium"

@@ -35,8 +35,7 @@ func TestExecutePostActionOp(t *testing.T) {
 
 	Convey("report", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		postActionCfg := &cfgpb.ConfigGroup_PostAction{
 			Name: "vote verification labels",

@@ -49,8 +49,7 @@ func TestUpdaterSchedule(t *testing.T) {
 
 	Convey("Correctly generate dedup keys for Updater TQ tasks", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		Convey("Correctly generate dedup keys for Updater TQ tasks", func() {
 			Convey("Diff CLIDs have diff dedup keys", func() {
@@ -210,8 +209,7 @@ func TestUpdaterBatch(t *testing.T) {
 
 	Convey("Correctly handle batches", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		sortedTQPayloads := func() []proto.Message {
 			payloads := ct.TQ.Tasks().Payloads()
@@ -273,8 +271,7 @@ func TestUpdaterHappyPath(t *testing.T) {
 
 	Convey("Updater's happy path with simplest possible backend", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		pm, rm, tj := pmMock{}, rmMock{}, tjMock{}
 		u := NewUpdater(ct.TQDispatcher, NewMutator(ct.TQDispatcher, &pm, &rm, &tj))
@@ -410,8 +407,7 @@ func TestUpdaterFetchedNoNewData(t *testing.T) {
 
 	Convey("Updater skips updating the CL when no new data is fetched", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		pm, rm, tj := pmMock{}, rmMock{}, tjMock{}
 		u := NewUpdater(ct.TQDispatcher, NewMutator(ct.TQDispatcher, &pm, &rm, &tj))
@@ -502,8 +498,7 @@ func TestUpdaterAccessRestriction(t *testing.T) {
 		// This is a long test, don't debug it first if other TestUpdater* tests are
 		// also failing.
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		pm, rm, tj := pmMock{}, rmMock{}, tjMock{}
 		u := NewUpdater(ct.TQDispatcher, NewMutator(ct.TQDispatcher, &pm, &rm, &tj))
@@ -616,8 +611,7 @@ func TestUpdaterHandlesErrors(t *testing.T) {
 
 	Convey("Updater handles errors", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		u := NewUpdater(ct.TQDispatcher, nil)
 
@@ -691,8 +685,7 @@ func TestUpdaterAvoidsFetchWhenPossible(t *testing.T) {
 
 	Convey("Updater skips fetching when possible", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		u := NewUpdater(ct.TQDispatcher, NewMutator(ct.TQDispatcher, &pmMock{}, &rmMock{}, &tjMock{}))
 		b := &fakeUpdaterBackend{}
@@ -861,8 +854,7 @@ func TestUpdaterResolveAndScheduleDepsUpdate(t *testing.T) {
 
 	Convey("ResolveAndScheduleDepsUpdate correctly resolves deps", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		u := NewUpdater(ct.TQDispatcher, NewMutator(ct.TQDispatcher, &pmMock{}, &rmMock{}, &tjMock{}))
 

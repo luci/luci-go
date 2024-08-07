@@ -41,8 +41,7 @@ func TestConfigRefreshCron(t *testing.T) {
 
 	Convey("Config refresh cron works", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		pm := mockPM{}
 		qm := mockQM{}

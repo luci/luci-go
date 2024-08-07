@@ -49,8 +49,7 @@ func TestOnTryjobsUpdated(t *testing.T) {
 
 	Convey("OnTryjobsUpdated", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		const lProject = "infra"
 
@@ -118,8 +117,7 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 
 	Convey("OnCompletedExecuteTryjobs works", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		const (
 			lProject = "chromium"

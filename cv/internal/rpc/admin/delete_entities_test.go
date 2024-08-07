@@ -35,8 +35,7 @@ func TestDeleteEntities(t *testing.T) {
 
 	Convey("Delete entities", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		ent := &MockEntity{
 			ID: "foo",

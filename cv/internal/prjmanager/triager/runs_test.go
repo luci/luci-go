@@ -37,8 +37,7 @@ func TestFindImmediateHardDeps(t *testing.T) {
 
 	Convey("findImmediateHardDeps", t, func() {
 		ct := cvtesting.Test{}
-		_, cancel := ct.SetUp(t)
-		defer cancel()
+		_ = ct.SetUp(t)
 
 		cls := make(map[int64]*clInfo)
 		nextCLID := int64(1)

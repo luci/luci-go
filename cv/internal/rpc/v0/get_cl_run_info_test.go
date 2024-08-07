@@ -45,8 +45,7 @@ func TestGetCLRunInfo(t *testing.T) {
 
 	Convey("GetCLRunInfo", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		gis := GerritIntegrationServer{}
 

@@ -43,8 +43,7 @@ func TestConcurrentRunsSingular(t *testing.T) {
 
 	Convey("CV juggles a bunch of concurrent Runs", t, func() {
 		ct := Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		const lProject = "infra"
 		const gHost = "g-review"

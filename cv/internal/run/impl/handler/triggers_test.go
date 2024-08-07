@@ -38,8 +38,7 @@ func TestOnCompletedResetTriggers(t *testing.T) {
 
 	Convey("OnCompletedResetTriggers works", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		const (
 			lProject = "chromium"

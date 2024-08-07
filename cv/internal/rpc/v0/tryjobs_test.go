@@ -37,8 +37,7 @@ func TestMakeTryjobInvocations(t *testing.T) {
 
 	Convey("MakeTryjobInvocations", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 		const lProject = "infra"
 		const bbHost = "buildbucket.example.com"
 		r := &run.Run{

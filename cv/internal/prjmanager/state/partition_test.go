@@ -348,8 +348,7 @@ func TestPartitionSpecialCases(t *testing.T) {
 
 	Convey("Special cases of partitioning", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 		epoch := ct.Clock.Now().Truncate(time.Hour)
 
 		Convey("crbug/1217775", func() {

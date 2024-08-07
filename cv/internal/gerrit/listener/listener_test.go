@@ -37,8 +37,7 @@ func TestListener(t *testing.T) {
 
 	Convey("Listener", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 		client, closeFn := mockPubSub(ctx)
 		defer closeFn()
 		_ = mockTopicSub(ctx, client, "a.example.org", "a.example.org")
@@ -58,7 +57,7 @@ func TestListener(t *testing.T) {
 		}
 
 		Convey("Run stops if context cancelled", func() {
-			ctx, cancel = context.WithCancel(ctx)
+			ctx, cancel := context.WithCancel(ctx)
 			defer cancel()
 			lCfg := &listenerpb.Settings{
 				GerritSubscriptions: []*listenerpb.Settings_GerritSubscription{

@@ -36,8 +36,7 @@ func TestFindReuseInCV(t *testing.T) {
 
 	Convey("FindReuseInCV", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		const reuseKey = "cafecafe"
 		const lProject = "testProj"

@@ -31,8 +31,7 @@ func TestHandleLargeCLStack(t *testing.T) {
 
 	Convey("CV full runs and submits a large CL stack.", t, func() {
 		ct := Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		const lProject = "infra"
 		const gHost = "g-review"

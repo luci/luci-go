@@ -35,8 +35,7 @@ func TestSaveTryjobs(t *testing.T) {
 
 	Convey("SaveTryjobs works", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 		const bbHost = "buildbucket.example.com"
 		now := ct.Clock.Now().UTC()
 		var runID = common.MakeRunID("infra", now.Add(-1*time.Hour), 1, []byte("foo"))
@@ -189,8 +188,7 @@ func TestQueryTryjobIDsUpdatedBefore(t *testing.T) {
 
 	Convey("QueryTryjobIDsUpdatedBefore", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		nextBuildID := int64(1)
 		createNTryjobs := func(n int) []*Tryjob {

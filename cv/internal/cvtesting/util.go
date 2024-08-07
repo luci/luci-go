@@ -81,8 +81,7 @@ const gaeTopLevelDomain = ".appspot.com"
 // Typical use:
 //
 //	ct := cvtesting.Test{}
-//	ctx, cancel := ct.SetUp(t)
-//	defer cancel()
+//	ctx := ct.SetUp(t)
 type Test struct {
 	// Env simulates CV environment.
 	Env *common.Env
@@ -132,7 +131,7 @@ func IsTestingContext(ctx context.Context) bool {
 	return ctx.Value(testingContextKeyType{}) != nil
 }
 
-func (t *Test) SetUp(testingT *testing.T) (context.Context, func()) {
+func (t *Test) SetUp(testingT *testing.T) context.Context {
 	if t.Env == nil {
 		t.Env = &common.Env{
 			LogicalHostname: "luci-change-verifier" + gaeTopLevelDomain,
@@ -217,8 +216,7 @@ func (t *Test) SetUp(testingT *testing.T) (context.Context, func()) {
 	t.GoMockCtl = gomock.NewController(testingT)
 	assert.That(testingT, srvcfg.SetTestListenerConfig(ctx, &listenerpb.Settings{}, nil), should.ErrLike(nil))
 
-	// TODO(yiwzhang): remove the second parameter
-	return ctx, func() {}
+	return ctx
 }
 
 func (t *Test) RoundTestClock(multiple time.Duration) {

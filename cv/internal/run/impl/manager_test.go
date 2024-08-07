@@ -54,8 +54,7 @@ func TestRunManager(t *testing.T) {
 
 	Convey("RunManager", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 		const runID = "chromium/222-1-deadbeef"
 		const initialEVersion = 10
 		So(datastore.Put(ctx, &run.Run{
@@ -386,8 +385,7 @@ func TestRunManager(t *testing.T) {
 
 	Convey("Poke", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 		const (
 			lProject   = "chromium"
 			dryRunners = "dry-runner-group"

@@ -40,15 +40,13 @@ func TestDriver(t *testing.T) {
 
 	Convey("Driver smoke test", t, func() {
 		ct := cvtesting.Test{}
-		_, cancel := ct.SetUp(t)
-		defer cancel()
+		_ = ct.SetUp(t)
 		_ = New(ct.Env)
 	})
 
 	Convey("Driver works", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		mSent := func(fields ...any) any {
 			return ct.TSMonSentValue(ctx, testMetric, fields...)

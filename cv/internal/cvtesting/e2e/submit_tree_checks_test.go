@@ -33,8 +33,7 @@ func TestSubmissionDuringClosedTree(t *testing.T) {
 	//	t.Parallel()
 	Convey("Test closed tree", t, func() {
 		ct := Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		const lProject = "infra"
 		const gHost = "g-review"

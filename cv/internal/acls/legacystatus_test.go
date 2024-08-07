@@ -33,8 +33,7 @@ func TestCheckLegacy(t *testing.T) {
 
 	Convey("CheckLegacyCQStatusAccess works", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		cfg := &cfgpb.Config{
 			CqStatusHost: "", // modified in tests below

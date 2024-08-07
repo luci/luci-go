@@ -42,8 +42,7 @@ import (
 func TestMakeAttempt(t *testing.T) {
 	Convey("makeAttempt", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 		epoch := ct.Clock.Now().UTC()
 		const (
 			lProject      = "infra"

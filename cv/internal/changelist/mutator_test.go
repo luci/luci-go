@@ -46,8 +46,7 @@ func TestMutatorSingleCL(t *testing.T) {
 
 	Convey("Mutator works on a single CL", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		const lProject = "infra"
 		const run1 = lProject + "/1"
@@ -316,8 +315,7 @@ func TestMutatorBatch(t *testing.T) {
 
 	Convey("Mutator works on batch of CLs", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		const lProjectAlt = "alt"
 		const lProject = "infra"
@@ -495,8 +493,7 @@ func TestMutatorConcurrent(t *testing.T) {
 
 	Convey("Mutator works on single CL when called concurrently with flaky datastore", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 		// Truncate to seconds to reduce noise in diffs of proto timestamps.
 		// use Seconds with lots of 0s at the end for easy grasp of assertion
 		// failures since they are done on protos.

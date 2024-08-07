@@ -52,8 +52,7 @@ func TestExternalID(t *testing.T) {
 
 	Convey("Resolve works", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 		host := "example.com"
 
 		Convey("None exist", func() {

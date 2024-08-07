@@ -144,8 +144,7 @@ func TestStageTriggerCLDeps(t *testing.T) {
 
 	Convey("stargeTriggerCLDeps", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		cq2 := &run.Trigger{Mode: string(run.FullRun)}
 		cls := make(map[int64]*clInfo)

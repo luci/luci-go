@@ -232,8 +232,7 @@ var (
 func TestGetDisallowedOwners(t *testing.T) {
 	Convey("getDisallowedOwners", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 		ctx = auth.WithState(ctx, &authtest.FakeState{
 			FakeDB: authtest.NewFakeDB(
 				authtest.MockMembership(userA, group1),
@@ -279,8 +278,7 @@ func TestGetDisallowedOwners(t *testing.T) {
 func TestCompute(t *testing.T) {
 	Convey("Compute works", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 		ct.AddMember(userA.Email(), group1)
 		ct.AddMember(userB.Email(), group1)
 		ct.AddMember(userD.Email(), group2)

@@ -49,8 +49,7 @@ func TestUpdaterBackend(t *testing.T) {
 	Convey("updaterBackend methods work, except Fetch()", t, func() {
 		// Fetch() is covered in TestUpdaterBackendFetch.
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		gu := &updaterBackend{
 			clUpdater: changelist.NewUpdater(ct.TQDispatcher, changelist.NewMutator(ct.TQDispatcher, &pmMock{}, &rmMock{}, &tjMock{})),
@@ -164,8 +163,7 @@ func TestUpdaterBackendFetch(t *testing.T) {
 
 	Convey("updaterBackend.Fetch() works", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		const (
 			lProject      = "proj-1"

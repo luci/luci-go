@@ -82,8 +82,7 @@ func TestCLsTriage(t *testing.T) {
 
 	Convey("Component's PCL deps triage", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		// Truncate start time point s.t. easy to see diff in test failures.
 		epoch := testclock.TestRecentTimeUTC.Truncate(10000 * time.Second)

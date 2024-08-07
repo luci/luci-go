@@ -32,8 +32,7 @@ func TestProjectQueryBuilder(t *testing.T) {
 
 	Convey("ProjectQueryBuilder works", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		getAll := func(qb ProjectQueryBuilder) common.RunIDs {
 			return execQueryInTestSameRunsAndKeys(ctx, qb)

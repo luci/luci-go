@@ -99,8 +99,7 @@ func TestRunBuilder(t *testing.T) {
 
 	Convey("RunBuilder works", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 		pmNotifier := prjmanager.NewNotifier(ct.TQDispatcher)
 		runNotifier := run.NewNotifier(ct.TQDispatcher)
 		tjNotifier := tryjob.NewNotifier(ct.TQDispatcher)

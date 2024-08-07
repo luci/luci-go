@@ -77,8 +77,7 @@ func TestLoadingConfigs(t *testing.T) {
 	t.Parallel()
 	Convey("Load project config works", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		const project = "chromium"
 		cfgGroups := []*cfgpb.ConfigGroup{

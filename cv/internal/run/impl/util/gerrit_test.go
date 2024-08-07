@@ -38,8 +38,7 @@ func TestIsActionTakenOnGerritCL(t *testing.T) {
 
 	Convey("IsActionTakenOnGerritCL works", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		const (
 			lProject = "infra"

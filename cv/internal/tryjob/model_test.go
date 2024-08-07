@@ -32,8 +32,7 @@ func TestTryjob(t *testing.T) {
 
 	Convey("Tryjob", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		Convey("Populate RetentionKey", func() {
 			epoch := datastore.RoundTime(ct.Clock.Now().UTC())
@@ -62,8 +61,7 @@ func TestDelete(t *testing.T) {
 
 	Convey("Delete", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		tj := MustBuildbucketID("bb.example.com", 10).MustCreateIfNotExists(ctx)
 

@@ -41,8 +41,7 @@ func TestLoadRunsFromQuery(t *testing.T) {
 
 	Convey("loadRunsFromQuery", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		makeRun := func(proj string, delay time.Duration, clids ...common.CLID) common.RunID {
 			createdAt := ct.Clock.Now().Add(delay)

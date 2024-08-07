@@ -36,8 +36,7 @@ import (
 func TestRecorderClient(t *testing.T) {
 	Convey(`MarkInvocationSubmitted`, t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		mcf := NewMockRecorderClientFactory(ct.GoMockCtl)
 		rc, err := mcf.MakeClient(ctx, "rdbhost")

@@ -130,7 +130,7 @@ type Test struct {
 // SetUp sets up the end to end test.
 //
 // Must be called exactly once.
-func (t *Test) SetUp(testingT *testing.T) (context.Context, func()) {
+func (t *Test) SetUp(testingT *testing.T) context.Context {
 	if t.Test == nil {
 		t.Test = &cvtesting.Test{}
 	}
@@ -147,8 +147,7 @@ func (t *Test) SetUp(testingT *testing.T) (context.Context, func()) {
 	}
 
 	// Delegate most setup to cvtesting.Test.
-	ctx, ctxCancel := t.Test.SetUp(testingT)
-	cleanupFns := []func(){ctxCancel}
+	ctx := t.Test.SetUp(testingT)
 	t.Test.DisableProjectInGerritListener(ctx, ".*")
 
 	if (*dsFlakinessFlag) != 0 {
@@ -158,7 +157,7 @@ func (t *Test) SetUp(testingT *testing.T) (context.Context, func()) {
 		}
 		logging.Warningf(ctx, "Using %.4f flaky Datastore", t.dsFlakiness)
 		t.dsFlakinessRand = rand.NewSource(0)
-		cleanupFns = append(cleanupFns, t.startTQSweeping(ctx))
+		testingT.Cleanup(func() { t.startTQSweeping(ctx) })
 	}
 
 	gFactory := t.GFactory()
@@ -169,10 +168,10 @@ func (t *Test) SetUp(testingT *testing.T) (context.Context, func()) {
 	clUpdater := changelist.NewUpdater(t.TQDispatcher, clMutator)
 	bbFactory := t.BuildbucketFake.NewClientFactory()
 	topic, sub, cleanupFn := t.makeBuildbucketPubsub(ctx)
-	cleanupFns = append(cleanupFns, cleanupFn)
+	testingT.Cleanup(cleanupFn)
 	t.BuildbucketFake.RegisterPubsubTopic(buildbucketHost, topic)
 	cleanupFn = bblistener.StartListenerForTest(ctx, sub, tjNotifier)
-	cleanupFns = append(cleanupFns, cleanupFn)
+	testingT.Cleanup(cleanupFn)
 	qm := quota.NewManager(gFactory)
 	gerritupdater.RegisterUpdater(clUpdater, gFactory)
 	rdbFactory := rdb.NewMockRecorderClientFactory(t.Test.GoMockCtl)
@@ -186,11 +185,7 @@ func (t *Test) SetUp(testingT *testing.T) (context.Context, func()) {
 	tryjobCancellator := tjcancel.NewCancellator(tjNotifier)
 	tryjobCancellator.RegisterBackend(bbFacade)
 	t.AdminServer = admin.New(t.TQDispatcher, &dsmapper.Controller{}, clUpdater, t.PMNotifier, t.RunNotifier)
-	return ctx, func() {
-		for i := len(cleanupFns) - 1; i >= 0; i-- {
-			cleanupFns[i]()
-		}
-	}
+	return ctx
 }
 
 // RunUntil runs TQ tasks, while stopIf returns false.

@@ -99,8 +99,7 @@ func TestComponentsActions(t *testing.T) {
 
 	Convey("Component actions logic work in the abstract", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 		now := ct.Clock.Now()
 
 		const lProject = "luci-project"

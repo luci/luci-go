@@ -35,8 +35,7 @@ func TestScheduleWipeoutCLs(t *testing.T) {
 
 	Convey("Schedule wipeout cls tasks", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 		registerWipeoutCLsTask(ct.TQDispatcher)
 
 		// create 1000 CLs with 1 minute interval.
@@ -74,8 +73,7 @@ func TestWipeoutCLs(t *testing.T) {
 
 	Convey("Wipeout CLs", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		cl := changelist.MustGobID("example.com", 1111).MustCreateIfNotExists(ctx)
 		ct.Clock.Add(2 * retentionPeriod) // make cl eligible for wipeout

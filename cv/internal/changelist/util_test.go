@@ -60,8 +60,7 @@ func TestQueryCLIDsUpdatedBefore(t *testing.T) {
 
 	Convey("QueryCLIDsUpdatedBefore", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		nextChangeNumber := 1
 		createNCLs := func(n int) []*CL {

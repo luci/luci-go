@@ -35,8 +35,7 @@ func TestScheduleWipeoutTryjobs(t *testing.T) {
 
 	Convey("Schedule wipeout tryjobs tasks", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 		registerWipeoutTryjobsTask(ct.TQDispatcher)
 
 		// create tryjobs with 1 minute interval.
@@ -75,8 +74,7 @@ func TestWipeoutTryjobs(t *testing.T) {
 
 	Convey("Wipeout Tryjobs", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		tj := tryjob.MustBuildbucketID("bb.example.com", 12345).
 			MustCreateIfNotExists(ctx)

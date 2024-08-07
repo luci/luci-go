@@ -48,8 +48,7 @@ func TestExecutePostActionOp(t *testing.T) {
 
 	Convey("Do", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		const (
 			lProject = "chromeos"
@@ -203,7 +202,7 @@ func TestExecutePostActionOp(t *testing.T) {
 		Convey("cancel if requested", func() {
 			exe := newExecutor(ctx, makeRunWithCLs(gf.CI(gChange1)))
 			configPostVote("label-1", 2)
-			ctx, cancel = context.WithTimeout(ctx, 10*time.Second)
+			ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 			defer cancel()
 
 			Convey("before the execution started", func() {

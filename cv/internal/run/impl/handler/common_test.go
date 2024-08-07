@@ -62,8 +62,7 @@ func TestEndRun(t *testing.T) {
 
 	Convey("EndRun", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		const (
 			clid     = 1
@@ -243,8 +242,7 @@ func TestCheckRunCreate(t *testing.T) {
 	t.Parallel()
 	Convey("CheckRunCreate", t, func() {
 		ct := &cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 		const clid1 = 1
 		const clid2 = 2
 		const gHost = "x-review.example.com"

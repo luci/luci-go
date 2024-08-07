@@ -52,8 +52,7 @@ func TestGetProject(t *testing.T) {
 
 	Convey("GetProject works", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		const lProject = "luci"
 		a := AdminServer{}
@@ -84,8 +83,7 @@ func TestGetProjectLogs(t *testing.T) {
 
 	Convey("GetProjectLogs works", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		const lProject = "luci"
 		a := AdminServer{}
@@ -117,8 +115,7 @@ func TestGetRun(t *testing.T) {
 
 	Convey("GetRun works", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		const rid = "proj/123-deadbeef"
 		So(datastore.Put(ctx, &run.Run{ID: rid}), ShouldBeNil)
@@ -155,8 +152,7 @@ func TestGetCL(t *testing.T) {
 
 	Convey("GetCL works", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		a := AdminServer{}
 
@@ -186,8 +182,7 @@ func TestGetPoller(t *testing.T) {
 
 	Convey("GetPoller works", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		const lProject = "luci"
 		a := AdminServer{}
@@ -222,8 +217,7 @@ func TestSearchRuns(t *testing.T) {
 
 	Convey("SearchRuns works", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		const lProject = "proj"
 		const earlierID = lProject + "/124-earlier-has-higher-number"
@@ -564,8 +558,7 @@ func TestDeleteProjectEvents(t *testing.T) {
 
 	Convey("DeleteProjectEvents works", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		const lProject = "luci"
 		a := AdminServer{}
@@ -613,8 +606,7 @@ func TestRefreshProjectCLs(t *testing.T) {
 
 	Convey("RefreshProjectCLs works", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		const lProject = "luci"
 		a := AdminServer{
@@ -670,8 +662,7 @@ func TestSendProjectEvent(t *testing.T) {
 
 	Convey("SendProjectEvent works", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		const lProject = "luci"
 		a := AdminServer{
@@ -707,8 +698,7 @@ func TestSendRunEvent(t *testing.T) {
 
 	Convey("SendRunEvent works", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		const rid = "proj/123-deadbeef"
 		a := AdminServer{
@@ -744,8 +734,7 @@ func TestScheduleTask(t *testing.T) {
 
 	Convey("ScheduleTask works", t, func() {
 		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp(t)
-		defer cancel()
+		ctx := ct.SetUp(t)
 
 		const lProject = "infra"
 		a := AdminServer{
