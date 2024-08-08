@@ -20,6 +20,7 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 )
 

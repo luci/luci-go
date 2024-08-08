@@ -27,6 +27,10 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/secrets"
 
 	"go.chromium.org/luci/swarming/internal/remoteworkers"
@@ -34,14 +38,13 @@ import (
 	"go.chromium.org/luci/swarming/server/botsrv"
 	"go.chromium.org/luci/swarming/server/hmactoken"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestSessionServer(t *testing.T) {
 	t.Parallel()
 
-	Convey("With server", t, func() {
+	ftt.Run("With server", t, func(t *ftt.Test) {
 		const (
 			fakeRBEInstance   = "fake-rbe-instance"
 			fakeBotID         = "fake-bot-id"
@@ -72,13 +75,13 @@ func TestSessionServer(t *testing.T) {
 
 		payload := func(taskID string) *anypb.Any {
 			msg, err := anypb.New(&internalspb.TaskPayload{TaskId: taskID})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			return msg
 		}
 
 		result := func() *anypb.Any {
 			msg, err := anypb.New(&internalspb.TaskResult{})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			return msg
 		}
 
@@ -95,9 +98,9 @@ func TestSessionServer(t *testing.T) {
 			}),
 		}
 
-		Convey("CreateBotSession works", func() {
+		t.Run("CreateBotSession works", func(t *ftt.Test) {
 			rbe.expectCreateBotSession(func(r *remoteworkers.CreateBotSessionRequest) (*remoteworkers.BotSession, error) {
-				So(r, ShouldResembleProto, &remoteworkers.CreateBotSessionRequest{
+				assert.Loosely(t, r, should.Resemble(&remoteworkers.CreateBotSessionRequest{
 					Parent: fakeRBEInstance,
 					BotSession: &remoteworkers.BotSession{
 						BotId:   fakeBotID,
@@ -122,7 +125,7 @@ func TestSessionServer(t *testing.T) {
 							},
 						},
 					},
-				})
+				}))
 				return &remoteworkers.BotSession{
 					Name:   fakeSessionID,
 					Status: remoteworkers.BotStatus_INITIALIZING,
@@ -140,35 +143,35 @@ func TestSessionServer(t *testing.T) {
 				},
 			}, fakeRequest)
 
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			expectedExpiry := now.Add(sessionTokenExpiry).Round(time.Second)
 
 			msg := resp.(*CreateBotSessionResponse)
-			So(msg.SessionExpiry, ShouldEqual, expectedExpiry.Unix())
-			So(msg.SessionID, ShouldEqual, fakeSessionID)
+			assert.Loosely(t, msg.SessionExpiry, should.Equal(expectedExpiry.Unix()))
+			assert.Loosely(t, msg.SessionID, should.Equal(fakeSessionID))
 
 			session := &internalspb.BotSession{}
-			So(srv.hmacSecret.ValidateToken(msg.SessionToken, session), ShouldBeNil)
-			So(session, ShouldResembleProto, &internalspb.BotSession{
+			assert.Loosely(t, srv.hmacSecret.ValidateToken(msg.SessionToken, session), should.BeNil)
+			assert.Loosely(t, session, should.Resemble(&internalspb.BotSession{
 				RbeBotSessionId: fakeSessionID,
 				PollState:       fakePollState,
 				Expiry:          timestamppb.New(expectedExpiry),
-			})
+			}))
 		})
 
-		Convey("CreateBotSession propagates RBE error", func() {
+		t.Run("CreateBotSession propagates RBE error", func(t *ftt.Test) {
 			rbe.expectCreateBotSession(func(r *remoteworkers.CreateBotSessionRequest) (*remoteworkers.BotSession, error) {
 				return nil, status.Errorf(codes.FailedPrecondition, "boom")
 			})
 			_, err := srv.CreateBotSession(ctx, &CreateBotSessionRequest{}, fakeRequest)
-			So(err, ShouldHaveGRPCStatus, codes.FailedPrecondition)
-			So(err, ShouldErrLike, "boom")
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.FailedPrecondition))
+			assert.Loosely(t, err, should.ErrLike("boom"))
 		})
 
-		Convey("UpdateBotSession IDLE", func() {
+		t.Run("UpdateBotSession IDLE", func(t *ftt.Test) {
 			rbe.expectUpdateBotSession(func(r *remoteworkers.UpdateBotSessionRequest) (*remoteworkers.BotSession, error) {
-				So(r, ShouldResembleProto, &remoteworkers.UpdateBotSessionRequest{
+				assert.Loosely(t, r, should.Resemble(&remoteworkers.UpdateBotSessionRequest{
 					Name: fakeSessionID,
 					BotSession: &remoteworkers.BotSession{
 						Name:    fakeSessionID,
@@ -194,7 +197,7 @@ func TestSessionServer(t *testing.T) {
 							},
 						},
 					},
-				})
+				}))
 				return &remoteworkers.BotSession{
 					Name:   fakeSessionID,
 					Status: remoteworkers.BotStatus_OK,
@@ -213,25 +216,25 @@ func TestSessionServer(t *testing.T) {
 				},
 			}, fakeRequest)
 
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			expectedExpiry := now.Add(sessionTokenExpiry).Round(time.Second)
 
 			msg := resp.(*UpdateBotSessionResponse)
-			So(msg.Status, ShouldEqual, "OK")
-			So(msg.SessionExpiry, ShouldEqual, expectedExpiry.Unix())
-			So(msg.Lease, ShouldBeNil)
+			assert.Loosely(t, msg.Status, should.Equal("OK"))
+			assert.Loosely(t, msg.SessionExpiry, should.Equal(expectedExpiry.Unix()))
+			assert.Loosely(t, msg.Lease, should.BeNil)
 
 			session := &internalspb.BotSession{}
-			So(srv.hmacSecret.ValidateToken(msg.SessionToken, session), ShouldBeNil)
-			So(session, ShouldResembleProto, &internalspb.BotSession{
+			assert.Loosely(t, srv.hmacSecret.ValidateToken(msg.SessionToken, session), should.BeNil)
+			assert.Loosely(t, session, should.Resemble(&internalspb.BotSession{
 				RbeBotSessionId: fakeSessionID,
 				PollState:       fakePollState,
 				Expiry:          timestamppb.New(expectedExpiry),
-			})
+			}))
 		})
 
-		Convey("UpdateBotSession IDLE + DEADLINE_EXCEEDED", func() {
+		t.Run("UpdateBotSession IDLE + DEADLINE_EXCEEDED", func(t *ftt.Test) {
 			rbe.expectUpdateBotSession(func(r *remoteworkers.UpdateBotSessionRequest) (*remoteworkers.BotSession, error) {
 				return nil, status.Errorf(codes.DeadlineExceeded, "boom")
 			})
@@ -240,19 +243,19 @@ func TestSessionServer(t *testing.T) {
 				Status: "OK",
 			}, fakeRequest)
 
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			expectedExpiry := now.Add(sessionTokenExpiry).Round(time.Second)
 
 			msg := resp.(*UpdateBotSessionResponse)
-			So(msg.Status, ShouldEqual, "OK")
-			So(msg.SessionExpiry, ShouldEqual, expectedExpiry.Unix())
-			So(msg.Lease, ShouldBeNil)
+			assert.Loosely(t, msg.Status, should.Equal("OK"))
+			assert.Loosely(t, msg.SessionExpiry, should.Equal(expectedExpiry.Unix()))
+			assert.Loosely(t, msg.Lease, should.BeNil)
 		})
 
-		Convey("UpdateBotSession TERMINATING", func() {
+		t.Run("UpdateBotSession TERMINATING", func(t *ftt.Test) {
 			rbe.expectUpdateBotSession(func(r *remoteworkers.UpdateBotSessionRequest) (*remoteworkers.BotSession, error) {
-				So(r.BotSession.Status, ShouldEqual, remoteworkers.BotStatus_BOT_TERMINATING)
+				assert.Loosely(t, r.BotSession.Status, should.Equal(remoteworkers.BotStatus_BOT_TERMINATING))
 				return &remoteworkers.BotSession{
 					Name:   fakeSessionID,
 					Status: remoteworkers.BotStatus_OK,
@@ -271,16 +274,16 @@ func TestSessionServer(t *testing.T) {
 				Status: "BOT_TERMINATING",
 			}, fakeRequest)
 
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			msg := resp.(*UpdateBotSessionResponse)
-			So(msg.Status, ShouldEqual, "OK")
-			So(msg.Lease, ShouldBeNil)
+			assert.Loosely(t, msg.Status, should.Equal("OK"))
+			assert.Loosely(t, msg.Lease, should.BeNil)
 		})
 
-		Convey("UpdateBotSession TERMINATING by RBE", func() {
+		t.Run("UpdateBotSession TERMINATING by RBE", func(t *ftt.Test) {
 			rbe.expectUpdateBotSession(func(r *remoteworkers.UpdateBotSessionRequest) (*remoteworkers.BotSession, error) {
-				So(r.BotSession.Status, ShouldEqual, remoteworkers.BotStatus_OK)
+				assert.Loosely(t, r.BotSession.Status, should.Equal(remoteworkers.BotStatus_OK))
 				return &remoteworkers.BotSession{
 					Name:   fakeSessionID,
 					Status: remoteworkers.BotStatus_BOT_TERMINATING,
@@ -299,16 +302,16 @@ func TestSessionServer(t *testing.T) {
 				Status: "OK",
 			}, fakeRequest)
 
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			msg := resp.(*UpdateBotSessionResponse)
-			So(msg.Status, ShouldEqual, "BOT_TERMINATING")
-			So(msg.Lease, ShouldBeNil)
+			assert.Loosely(t, msg.Status, should.Equal("BOT_TERMINATING"))
+			assert.Loosely(t, msg.Lease, should.BeNil)
 		})
 
-		Convey("UpdateBotSession IDLE => PENDING", func() {
+		t.Run("UpdateBotSession IDLE => PENDING", func(t *ftt.Test) {
 			rbe.expectUpdateBotSession(func(r *remoteworkers.UpdateBotSessionRequest) (*remoteworkers.BotSession, error) {
-				So(r.BotSession.Status, ShouldEqual, remoteworkers.BotStatus_OK)
+				assert.Loosely(t, r.BotSession.Status, should.Equal(remoteworkers.BotStatus_OK))
 				return &remoteworkers.BotSession{
 					Name:   fakeSessionID,
 					Status: remoteworkers.BotStatus_OK,
@@ -332,25 +335,25 @@ func TestSessionServer(t *testing.T) {
 				Status: "OK",
 			}, fakeRequest)
 
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			lease := resp.(*UpdateBotSessionResponse).Lease
-			So(lease.ID, ShouldEqual, fakeFirstLeaseID)
-			So(lease.State, ShouldEqual, "PENDING")
-			So(lease.Payload, ShouldResembleProto, &internalspb.TaskPayload{
+			assert.Loosely(t, lease.ID, should.Equal(fakeFirstLeaseID))
+			assert.Loosely(t, lease.State, should.Equal("PENDING"))
+			assert.Loosely(t, lease.Payload, should.Resemble(&internalspb.TaskPayload{
 				TaskId: fakeFirstTaskID,
-			})
+			}))
 		})
 
-		Convey("UpdateBotSession ACTIVE", func() {
+		t.Run("UpdateBotSession ACTIVE", func(t *ftt.Test) {
 			rbe.expectUpdateBotSession(func(r *remoteworkers.UpdateBotSessionRequest) (*remoteworkers.BotSession, error) {
-				So(r.BotSession.Status, ShouldEqual, remoteworkers.BotStatus_OK)
-				So(r.BotSession.Leases, ShouldResembleProto, []*remoteworkers.Lease{
+				assert.Loosely(t, r.BotSession.Status, should.Equal(remoteworkers.BotStatus_OK))
+				assert.Loosely(t, r.BotSession.Leases, should.Resemble([]*remoteworkers.Lease{
 					{
 						Id:    fakeFirstLeaseID,
 						State: remoteworkers.LeaseState_ACTIVE,
 					},
-				})
+				}))
 				return &remoteworkers.BotSession{
 					Name:   fakeSessionID,
 					Status: remoteworkers.BotStatus_OK,
@@ -377,23 +380,23 @@ func TestSessionServer(t *testing.T) {
 				},
 			}, fakeRequest)
 
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			lease := resp.(*UpdateBotSessionResponse).Lease
-			So(lease.ID, ShouldEqual, fakeFirstLeaseID)
-			So(lease.State, ShouldEqual, "ACTIVE")
-			So(lease.Payload, ShouldBeNil)
+			assert.Loosely(t, lease.ID, should.Equal(fakeFirstLeaseID))
+			assert.Loosely(t, lease.State, should.Equal("ACTIVE"))
+			assert.Loosely(t, lease.Payload, should.BeNil)
 		})
 
-		Convey("UpdateBotSession ACTIVE => CANCELLED", func() {
+		t.Run("UpdateBotSession ACTIVE => CANCELLED", func(t *ftt.Test) {
 			rbe.expectUpdateBotSession(func(r *remoteworkers.UpdateBotSessionRequest) (*remoteworkers.BotSession, error) {
-				So(r.BotSession.Status, ShouldEqual, remoteworkers.BotStatus_OK)
-				So(r.BotSession.Leases, ShouldResembleProto, []*remoteworkers.Lease{
+				assert.Loosely(t, r.BotSession.Status, should.Equal(remoteworkers.BotStatus_OK))
+				assert.Loosely(t, r.BotSession.Leases, should.Resemble([]*remoteworkers.Lease{
 					{
 						Id:    fakeFirstLeaseID,
 						State: remoteworkers.LeaseState_ACTIVE,
 					},
-				})
+				}))
 				return &remoteworkers.BotSession{
 					Name:   fakeSessionID,
 					Status: remoteworkers.BotStatus_OK,
@@ -420,25 +423,25 @@ func TestSessionServer(t *testing.T) {
 				},
 			}, fakeRequest)
 
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			lease := resp.(*UpdateBotSessionResponse).Lease
-			So(lease.ID, ShouldEqual, fakeFirstLeaseID)
-			So(lease.State, ShouldEqual, "CANCELLED")
-			So(lease.Payload, ShouldBeNil)
+			assert.Loosely(t, lease.ID, should.Equal(fakeFirstLeaseID))
+			assert.Loosely(t, lease.State, should.Equal("CANCELLED"))
+			assert.Loosely(t, lease.Payload, should.BeNil)
 		})
 
-		Convey("UpdateBotSession ACTIVE => IDLE", func() {
+		t.Run("UpdateBotSession ACTIVE => IDLE", func(t *ftt.Test) {
 			rbe.expectUpdateBotSession(func(r *remoteworkers.UpdateBotSessionRequest) (*remoteworkers.BotSession, error) {
-				So(r.BotSession.Status, ShouldEqual, remoteworkers.BotStatus_OK)
-				So(r.BotSession.Leases, ShouldResembleProto, []*remoteworkers.Lease{
+				assert.Loosely(t, r.BotSession.Status, should.Equal(remoteworkers.BotStatus_OK))
+				assert.Loosely(t, r.BotSession.Leases, should.Resemble([]*remoteworkers.Lease{
 					{
 						Id:     fakeFirstLeaseID,
 						State:  remoteworkers.LeaseState_COMPLETED,
 						Status: &statuspb.Status{},
 						Result: result(),
 					},
-				})
+				}))
 				return &remoteworkers.BotSession{
 					Name:   fakeSessionID,
 					Status: remoteworkers.BotStatus_OK,
@@ -454,21 +457,21 @@ func TestSessionServer(t *testing.T) {
 				},
 			}, fakeRequest)
 
-			So(err, ShouldBeNil)
-			So(resp.(*UpdateBotSessionResponse).Lease, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp.(*UpdateBotSessionResponse).Lease, should.BeNil)
 		})
 
-		Convey("UpdateBotSession ACTIVE => PENDING", func() {
+		t.Run("UpdateBotSession ACTIVE => PENDING", func(t *ftt.Test) {
 			rbe.expectUpdateBotSession(func(r *remoteworkers.UpdateBotSessionRequest) (*remoteworkers.BotSession, error) {
-				So(r.BotSession.Status, ShouldEqual, remoteworkers.BotStatus_OK)
-				So(r.BotSession.Leases, ShouldResembleProto, []*remoteworkers.Lease{
+				assert.Loosely(t, r.BotSession.Status, should.Equal(remoteworkers.BotStatus_OK))
+				assert.Loosely(t, r.BotSession.Leases, should.Resemble([]*remoteworkers.Lease{
 					{
 						Id:     fakeFirstLeaseID,
 						State:  remoteworkers.LeaseState_COMPLETED,
 						Status: &statuspb.Status{},
 						Result: result(),
 					},
-				})
+				}))
 				return &remoteworkers.BotSession{
 					Name:   fakeSessionID,
 					Status: remoteworkers.BotStatus_OK,
@@ -491,89 +494,89 @@ func TestSessionServer(t *testing.T) {
 				},
 			}, fakeRequest)
 
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			lease := resp.(*UpdateBotSessionResponse).Lease
-			So(lease.ID, ShouldEqual, fakeSecondLeaseID)
-			So(lease.State, ShouldEqual, "PENDING")
-			So(lease.Payload, ShouldResembleProto, &internalspb.TaskPayload{
+			assert.Loosely(t, lease.ID, should.Equal(fakeSecondLeaseID))
+			assert.Loosely(t, lease.State, should.Equal("PENDING"))
+			assert.Loosely(t, lease.Payload, should.Resemble(&internalspb.TaskPayload{
 				TaskId: fakeSecondTaskID,
-			})
+			}))
 		})
 
-		Convey("UpdateBotSession no session ID", func() {
+		t.Run("UpdateBotSession no session ID", func(t *ftt.Test) {
 			_, err := srv.UpdateBotSession(ctx, &UpdateBotSessionRequest{
 				Status: "OK",
 			}, &botsrv.Request{})
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
-			So(err, ShouldErrLike, "missing session ID")
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("missing session ID"))
 		})
 
-		Convey("UpdateBotSession expired session token", func() {
+		t.Run("UpdateBotSession expired session token", func(t *ftt.Test) {
 			resp, err := srv.UpdateBotSession(ctx, &UpdateBotSessionRequest{
 				Status: "OK",
 			}, &botsrv.Request{
 				SessionTokenExpired: true,
 			})
-			So(err, ShouldBeNil)
-			So(resp, ShouldResemble, &UpdateBotSessionResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.Resemble(&UpdateBotSessionResponse{
 				Status: "BOT_TERMINATING",
-			})
+			}))
 		})
 
-		Convey("UpdateBotSession propagates RBE error", func() {
+		t.Run("UpdateBotSession propagates RBE error", func(t *ftt.Test) {
 			rbe.expectUpdateBotSession(func(r *remoteworkers.UpdateBotSessionRequest) (*remoteworkers.BotSession, error) {
 				return nil, status.Errorf(codes.FailedPrecondition, "boom")
 			})
 			_, err := srv.UpdateBotSession(ctx, &UpdateBotSessionRequest{
 				Status: "OK",
 			}, fakeRequest)
-			So(err, ShouldHaveGRPCStatus, codes.FailedPrecondition)
-			So(err, ShouldErrLike, "boom")
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.FailedPrecondition))
+			assert.Loosely(t, err, should.ErrLike("boom"))
 		})
 
-		Convey("UpdateBotSession bad session status", func() {
+		t.Run("UpdateBotSession bad session status", func(t *ftt.Test) {
 			_, err := srv.UpdateBotSession(ctx, &UpdateBotSessionRequest{
 				Status: "huh",
 			}, fakeRequest)
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
-			So(err, ShouldErrLike, "unrecognized session status")
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("unrecognized session status"))
 		})
 
-		Convey("UpdateBotSession missing session status", func() {
+		t.Run("UpdateBotSession missing session status", func(t *ftt.Test) {
 			_, err := srv.UpdateBotSession(ctx, &UpdateBotSessionRequest{}, fakeRequest)
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
-			So(err, ShouldErrLike, "missing session status")
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("missing session status"))
 		})
 
-		Convey("UpdateBotSession bad lease state", func() {
+		t.Run("UpdateBotSession bad lease state", func(t *ftt.Test) {
 			_, err := srv.UpdateBotSession(ctx, &UpdateBotSessionRequest{
 				Status: "OK",
 				Lease:  &Lease{State: "huh"},
 			}, fakeRequest)
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
-			So(err, ShouldErrLike, "unrecognized lease state")
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("unrecognized lease state"))
 		})
 
-		Convey("UpdateBotSession missing lease state", func() {
+		t.Run("UpdateBotSession missing lease state", func(t *ftt.Test) {
 			_, err := srv.UpdateBotSession(ctx, &UpdateBotSessionRequest{
 				Status: "OK",
 				Lease:  &Lease{},
 			}, fakeRequest)
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
-			So(err, ShouldErrLike, "missing lease state")
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("missing lease state"))
 		})
 
-		Convey("UpdateBotSession unexpected lease state", func() {
+		t.Run("UpdateBotSession unexpected lease state", func(t *ftt.Test) {
 			_, err := srv.UpdateBotSession(ctx, &UpdateBotSessionRequest{
 				Status: "OK",
 				Lease:  &Lease{State: "CANCELLED"},
 			}, fakeRequest)
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
-			So(err, ShouldErrLike, "unexpected lease state")
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("unexpected lease state"))
 		})
 
-		Convey("UpdateBotSession ACTIVE lease disappears", func() {
+		t.Run("UpdateBotSession ACTIVE lease disappears", func(t *ftt.Test) {
 			rbe.expectUpdateBotSession(func(r *remoteworkers.UpdateBotSessionRequest) (*remoteworkers.BotSession, error) {
 				return &remoteworkers.BotSession{
 					Name:   fakeSessionID,
@@ -597,11 +600,11 @@ func TestSessionServer(t *testing.T) {
 				},
 			}, fakeRequest)
 
-			So(err, ShouldBeNil)
-			So(resp.(*UpdateBotSessionResponse).Lease, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp.(*UpdateBotSessionResponse).Lease, should.BeNil)
 		})
 
-		Convey("UpdateBotSession unexpected ACTIVE lease transition", func() {
+		t.Run("UpdateBotSession unexpected ACTIVE lease transition", func(t *ftt.Test) {
 			rbe.expectUpdateBotSession(func(r *remoteworkers.UpdateBotSessionRequest) (*remoteworkers.BotSession, error) {
 				return &remoteworkers.BotSession{
 					Name:   fakeSessionID,
@@ -623,11 +626,11 @@ func TestSessionServer(t *testing.T) {
 				},
 			}, fakeRequest)
 
-			So(err, ShouldHaveGRPCStatus, codes.Internal)
-			So(err, ShouldErrLike, "unexpected ACTIVE lease state transition to PENDING")
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.Internal))
+			assert.Loosely(t, err, should.ErrLike("unexpected ACTIVE lease state transition to PENDING"))
 		})
 
-		Convey("UpdateBotSession unrecognized payload type", func() {
+		t.Run("UpdateBotSession unrecognized payload type", func(t *ftt.Test) {
 			rbe.expectUpdateBotSession(func(r *remoteworkers.UpdateBotSessionRequest) (*remoteworkers.BotSession, error) {
 				wrong, _ := anypb.New(&timestamppb.Timestamp{})
 				return &remoteworkers.BotSession{
@@ -647,8 +650,8 @@ func TestSessionServer(t *testing.T) {
 				Status: "OK",
 			}, fakeRequest)
 
-			So(err, ShouldHaveGRPCStatus, codes.Internal)
-			So(err, ShouldErrLike, "failed to unmarshal pending lease payload")
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.Internal))
+			assert.Loosely(t, err, should.ErrLike("failed to unmarshal pending lease payload"))
 		})
 	})
 }
@@ -661,6 +664,8 @@ type (
 )
 
 type mockedBotsClient struct {
+	t testing.TB
+
 	expected []any // either expectedCreate or expectedUpdate
 }
 
@@ -673,19 +678,19 @@ func (m *mockedBotsClient) expectUpdateBotSession(cb expectedUpdate) {
 }
 
 func (m *mockedBotsClient) popExpected() (cb any) {
-	So(m.expected, ShouldNotBeEmpty)
+	assert.Loosely(m.t, m.expected, should.NotBeEmpty)
 	cb, m.expected = m.expected[0], m.expected[1:]
 	return cb
 }
 
 func (m *mockedBotsClient) CreateBotSession(ctx context.Context, in *remoteworkers.CreateBotSessionRequest, opts ...grpc.CallOption) (*remoteworkers.BotSession, error) {
 	cb := m.popExpected()
-	So(cb, ShouldHaveSameTypeAs, expectedCreate(nil))
+	assert.Loosely(m.t, cb, should.HaveType[expectedCreate])
 	return cb.(expectedCreate)(in)
 }
 
 func (m *mockedBotsClient) UpdateBotSession(ctx context.Context, in *remoteworkers.UpdateBotSessionRequest, opts ...grpc.CallOption) (*remoteworkers.BotSession, error) {
 	cb := m.popExpected()
-	So(cb, ShouldHaveSameTypeAs, expectedUpdate(nil))
+	assert.Loosely(m.t, cb, should.HaveType[expectedUpdate])
 	return cb.(expectedUpdate)(in)
 }

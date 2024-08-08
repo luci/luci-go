@@ -31,6 +31,9 @@ import (
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -40,21 +43,18 @@ import (
 	"go.chromium.org/luci/swarming/server/metrics"
 	"go.chromium.org/luci/swarming/server/model"
 	"go.chromium.org/luci/swarming/server/notifications/taskspb"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestHandlePubSubNotifyTask(t *testing.T) {
 	t.Parallel()
 
-	Convey("send pubsub", t, func() {
+	ftt.Run("send pubsub", t, func(t *ftt.Test) {
 		ctx := context.Background()
 		ctx, _ = tsmon.WithDummyInMemory(ctx)
 		now := time.Date(2024, time.January, 1, 1, 1, 1, 1, time.UTC)
 		ctx, _ = testclock.UseTime(ctx, now)
 		psServer, psClient, err := setupTestPubsub(ctx, "foo")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		defer func() {
 			_ = psClient.Close()
 			_ = psServer.Close()
@@ -64,7 +64,7 @@ func TestHandlePubSubNotifyTask(t *testing.T) {
 			client: psClient,
 		}
 		fooTopic, err := psClient.CreateTopic(ctx, "swarming-updates")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		psTask := &taskspb.PubSubNotifyTask{
 			TaskId:    "task_id_0",
@@ -75,37 +75,38 @@ func TestHandlePubSubNotifyTask(t *testing.T) {
 			StartTime: timestamppb.New(now.Add(-100 * time.Millisecond).UTC()), // make the latency to be 100ms.
 		}
 
-		Convey("invalid topic", func() {
+		t.Run("invalid topic", func(t *ftt.Test) {
 			psTask.Topic = "any"
 			err := notifier.handlePubSubNotifyTask(ctx, psTask)
-			So(err, ShouldErrLike, `topic "any" does not match "^projects/(.*)/topics/(.*)$"`)
+			assert.Loosely(t, err, should.ErrLike(`topic "any" does not match "^projects/(.*)/topics/(.*)$"`))
 		})
 
-		Convey("topic not exist", func() {
-			So(fooTopic.Delete(ctx), ShouldBeNil)
+		t.Run("topic not exist", func(t *ftt.Test) {
+			assert.Loosely(t, fooTopic.Delete(ctx), should.BeNil)
 			err := notifier.handlePubSubNotifyTask(ctx, psTask)
-			So(err, ShouldErrLike, `failed to publish the msg to projects/foo/topics/swarming-updates`, "NotFound")
+			assert.Loosely(t, err, should.ErrLike(`failed to publish the msg to projects/foo/topics/swarming-updates`))
+			assert.Loosely(t, err, should.ErrLike("NotFound"))
 			pushedTsmonData := metrics.TaskStatusChangePubsubLatency.Get(ctx, "", psTask.State.String(), 404)
-			So(pushedTsmonData.Count(), ShouldEqual, 1)
-			So(pushedTsmonData.Sum(), ShouldAlmostEqual, float64(100))
+			assert.Loosely(t, pushedTsmonData.Count(), should.Equal(1))
+			assert.Loosely(t, pushedTsmonData.Sum(), should.AlmostEqual(float64(100)))
 		})
 
-		Convey("ok", func() {
+		t.Run("ok", func(t *ftt.Test) {
 			err := notifier.handlePubSubNotifyTask(ctx, psTask)
-			So(err, ShouldBeNil)
-			So(psServer.Messages(), ShouldHaveLength, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, psServer.Messages(), should.HaveLength(1))
 			publishedMsg := psServer.Messages()[0]
-			So(publishedMsg.Attributes["auth_token"], ShouldEqual, "auth_token")
+			assert.Loosely(t, publishedMsg.Attributes["auth_token"], should.Equal("auth_token"))
 			data := &PubSubNotification{}
 			err = json.Unmarshal(publishedMsg.Data, data)
-			So(err, ShouldBeNil)
-			So(data, ShouldResemble, &PubSubNotification{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, data, should.Resemble(&PubSubNotification{
 				TaskID:   "task_id_0",
 				Userdata: "user_data",
-			})
+			}))
 			pushedTsmonData := metrics.TaskStatusChangePubsubLatency.Get(ctx, "", psTask.State.String(), 200)
-			So(pushedTsmonData.Count(), ShouldEqual, 1)
-			So(pushedTsmonData.Sum(), ShouldAlmostEqual, float64(100))
+			assert.Loosely(t, pushedTsmonData.Count(), should.Equal(1))
+			assert.Loosely(t, pushedTsmonData.Sum(), should.AlmostEqual(float64(100)))
 		})
 	})
 }
@@ -129,10 +130,10 @@ func setupTestPubsub(ctx context.Context, cloudProject string) (*pstest.Server, 
 func TestHandleBBNotifyTask(t *testing.T) {
 	t.Parallel()
 
-	Convey("handleBBNotifyTask", t, func() {
+	ftt.Run("handleBBNotifyTask", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		psServer, psClient, err := setupTestPubsub(ctx, "bb")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		defer func() {
 			_ = psClient.Close()
 			_ = psServer.Close()
@@ -143,10 +144,10 @@ func TestHandleBBNotifyTask(t *testing.T) {
 			cloudProject: "app",
 		}
 		bbTopic, err := psClient.CreateTopic(ctx, "bb-updates")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		reqKey, err := model.TaskIDToRequestKey(ctx, "65aba3a3e6b99310")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		buildTask := &model.BuildTask{
 			Key:              model.BuildTaskKey(ctx, reqKey),
@@ -163,43 +164,43 @@ func TestHandleBBNotifyTask(t *testing.T) {
 				BotDimensions: model.BotDimensions{"dim": []string{"a", "b"}},
 			},
 		}
-		So(datastore.Put(ctx, buildTask, resultSummary), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, buildTask, resultSummary), should.BeNil)
 
-		Convey("build task not exist", func() {
+		t.Run("build task not exist", func(t *ftt.Test) {
 			psTask := &taskspb.BuildbucketNotifyTask{
 				TaskId:   "65aba3a3e6b00000",
 				State:    apipb.TaskState_RUNNING,
 				UpdateId: 101,
 			}
 			err := notifier.handleBBNotifyTask(ctx, psTask)
-			So(err, ShouldErrLike, "cannot find BuildTask")
-			So(tq.Fatal.In(err), ShouldBeTrue)
+			assert.Loosely(t, err, should.ErrLike("cannot find BuildTask"))
+			assert.Loosely(t, tq.Fatal.In(err), should.BeTrue)
 		})
 
-		Convey("prior update id", func() {
+		t.Run("prior update id", func(t *ftt.Test) {
 			psTask := &taskspb.BuildbucketNotifyTask{
 				TaskId:   "65aba3a3e6b99310",
 				State:    apipb.TaskState_RUNNING,
 				UpdateId: 99, // update id < prior update id
 			}
-			So(notifier.handleBBNotifyTask(ctx, psTask), ShouldBeNil)
+			assert.Loosely(t, notifier.handleBBNotifyTask(ctx, psTask), should.BeNil)
 			psTask.UpdateId = 100 // update id == prior update id
-			So(notifier.handleBBNotifyTask(ctx, psTask), ShouldBeNil)
-			So(psServer.Messages(), ShouldHaveLength, 0)
+			assert.Loosely(t, notifier.handleBBNotifyTask(ctx, psTask), should.BeNil)
+			assert.Loosely(t, psServer.Messages(), should.HaveLength(0))
 		})
 
-		Convey("no state change", func() {
+		t.Run("no state change", func(t *ftt.Test) {
 			psTask := &taskspb.BuildbucketNotifyTask{
 				TaskId:   "65aba3a3e6b99310",
 				State:    apipb.TaskState_PENDING,
 				UpdateId: 101,
 			}
 			err := notifier.handleBBNotifyTask(ctx, psTask)
-			So(err, ShouldBeNil)
-			So(psServer.Messages(), ShouldHaveLength, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, psServer.Messages(), should.HaveLength(0))
 		})
 
-		Convey("state change", func() {
+		t.Run("state change", func(t *ftt.Test) {
 			psTask := &taskspb.BuildbucketNotifyTask{
 				TaskId:   "65aba3a3e6b99310",
 				State:    apipb.TaskState_RUNNING,
@@ -208,14 +209,14 @@ func TestHandleBBNotifyTask(t *testing.T) {
 
 			err := notifier.handleBBNotifyTask(ctx, psTask)
 
-			So(err, ShouldBeNil)
-			So(psServer.Messages(), ShouldHaveLength, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, psServer.Messages(), should.HaveLength(1))
 			bbTopic.Stop()
 			publishedMsg := psServer.Messages()[0]
 			sentBBUpdate := &bbpb.BuildTaskUpdate{}
 			err = proto.Unmarshal(publishedMsg.Data, sentBBUpdate)
-			So(err, ShouldBeNil)
-			So(sentBBUpdate, ShouldResembleProto, &bbpb.BuildTaskUpdate{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, sentBBUpdate, should.Resemble(&bbpb.BuildTaskUpdate{
 				BuildId: "1",
 				Task: &bbpb.Task{
 					Status: bbpb.Status_STARTED,
@@ -247,12 +248,12 @@ func TestHandleBBNotifyTask(t *testing.T) {
 						},
 					},
 				},
-			})
+			}))
 
 			updatedBuildTask := &model.BuildTask{Key: model.BuildTaskKey(ctx, reqKey)}
-			So(datastore.Get(ctx, updatedBuildTask), ShouldBeNil)
-			So(updatedBuildTask.LatestTaskStatus, ShouldEqual, apipb.TaskState_RUNNING)
-			So(updatedBuildTask.BotDimensions, ShouldEqual, resultSummary.BotDimensions)
+			assert.Loosely(t, datastore.Get(ctx, updatedBuildTask), should.BeNil)
+			assert.Loosely(t, updatedBuildTask.LatestTaskStatus, should.Equal(apipb.TaskState_RUNNING))
+			assert.Loosely(t, updatedBuildTask.BotDimensions, should.Resemble(resultSummary.BotDimensions))
 		})
 	})
 }
