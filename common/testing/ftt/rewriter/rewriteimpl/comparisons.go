@@ -255,10 +255,10 @@ var assertionMap = map[assertionKey]*mappedComp{
 			return name, hasArgs, extraArgs
 		}},
 
-	{originalConveyPkg, "ShouldBeGreaterOrEqualTo"}: {name: "BeGreaterThanOrEqualTo", argState: hasArgs},
-	{originalConveyPkg, "ShouldBeGreaterThan"}:      {name: "BeGreaterThan", argState: hasArgs},
-	{originalConveyPkg, "ShouldBeLessOrEqualTo"}:    {name: "BeLessThanOrEqualTo", argState: hasArgs},
-	{originalConveyPkg, "ShouldBeLessThan"}:         {name: "BeLessThan", argState: hasArgs},
+	{originalConveyPkg, "ShouldBeGreaterThanOrEqualTo"}: {name: "BeGreaterThanOrEqual", argState: hasArgs},
+	{originalConveyPkg, "ShouldBeGreaterThan"}:          {name: "BeGreaterThan", argState: hasArgs},
+	{originalConveyPkg, "ShouldBeLessThanOrEqualTo"}:    {name: "BeLessThanOrEqual", argState: hasArgs},
+	{originalConveyPkg, "ShouldBeLessThan"}:             {name: "BeLessThan", argState: hasArgs},
 
 	// These two are a little silly - they either take a collection as a single
 	// expected argument OR they take a series of elements...

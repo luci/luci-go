@@ -22,6 +22,10 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -31,10 +35,6 @@ import (
 	"go.chromium.org/luci/swarming/server/model"
 
 	. "go.chromium.org/luci/common/testing/assertions"
-	"go.chromium.org/luci/common/testing/ftt"
-	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
-	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestGetResult(t *testing.T) {

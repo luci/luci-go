@@ -21,16 +21,16 @@ import (
 
 	"google.golang.org/grpc/codes"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 
 	. "go.chromium.org/luci/common/testing/assertions"
-	"go.chromium.org/luci/common/testing/ftt"
-	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
-	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestBatchGetResult(t *testing.T) {

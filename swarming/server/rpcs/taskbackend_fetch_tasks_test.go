@@ -22,16 +22,16 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/swarming/server/model"
 
 	. "go.chromium.org/luci/common/testing/assertions"
-	"go.chromium.org/luci/common/testing/ftt"
-	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
-	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestTaskBackendFetchTasks(t *testing.T) {

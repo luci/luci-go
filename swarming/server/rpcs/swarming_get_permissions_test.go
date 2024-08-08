@@ -21,6 +21,11 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/option"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth/authtest"
@@ -31,14 +36,13 @@ import (
 	"go.chromium.org/luci/swarming/server/acls"
 	"go.chromium.org/luci/swarming/server/model"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestSwarmingServer(t *testing.T) {
 	t.Parallel()
 
-	Convey("With mocks", t, func() {
+	ftt.Run("With mocks", t, func(t *ftt.Test) {
 		const (
 			adminID      identity.Identity = "user:admin@example.com"
 			unknownID    identity.Identity = "user:unknown@example.com"
@@ -106,8 +110,8 @@ func TestSwarmingServer(t *testing.T) {
 
 		ctx := memory.Use(context.Background())
 
-		createFakeTask(ctx, allowedTaskID, "project:task-realm", "visible-pool-1", submitterID)
-		createFakeTask(ctx, forbiddenTaskID, "project:hidden-realm", "hidden-pool-1", unknownID)
+		createFakeTask(ctx, t, allowedTaskID, "project:task-realm", "visible-pool-1", submitterID)
+		createFakeTask(ctx, t, forbiddenTaskID, "project:hidden-realm", "hidden-pool-1", unknownID)
 
 		srv := SwarmingServer{}
 
@@ -126,12 +130,12 @@ func TestSwarmingServer(t *testing.T) {
 
 		call := func(caller identity.Identity, botID, taskID string, tags []string) *apipb.ClientPermissions {
 			resp, err := callWithErr(caller, botID, taskID, tags)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			return resp
 		}
 
-		Convey("Admin", func() {
-			So(call(adminID, "", allowedTaskID, nil), ShouldResembleProto, &apipb.ClientPermissions{
+		t.Run("Admin", func(t *ftt.Test) {
+			assert.Loosely(t, call(adminID, "", allowedTaskID, nil), should.Resemble(&apipb.ClientPermissions{
 				DeleteBot:         true,
 				DeleteBots:        true,
 				TerminateBot:      true,
@@ -152,88 +156,90 @@ func TestSwarmingServer(t *testing.T) {
 					"visible-pool-1",
 					"visible-pool-2",
 				},
-			})
+			}))
 		})
 
-		Convey("Unknown", func() {
-			So(call(unknownID, "", allowedTaskID, nil), ShouldResembleProto, &apipb.ClientPermissions{
+		t.Run("Unknown", func(t *ftt.Test) {
+			assert.Loosely(t, call(unknownID, "", allowedTaskID, nil), should.Resemble(&apipb.ClientPermissions{
 				// All empty.
-			})
+			}))
 		})
 
-		Convey("Authorized pools", func() {
-			So(call(authorizedID, "", "", []string{"pool:visible-pool-1"}),
-				ShouldResembleProto,
-				&apipb.ClientPermissions{
-					CancelTask:  true,
-					CancelTasks: true,
-					DeleteBots:  true,
-					ListBots:    expectedVisiblePools,
-					ListTasks:   expectedVisiblePools,
-				},
-			)
+		t.Run("Authorized pools", func(t *ftt.Test) {
+			assert.Loosely(t, call(authorizedID, "", "", []string{"pool:visible-pool-1"}),
+				should.Resemble(
+					&apipb.ClientPermissions{
+						CancelTask:  true,
+						CancelTasks: true,
+						DeleteBots:  true,
+						ListBots:    expectedVisiblePools,
+						ListTasks:   expectedVisiblePools,
+					},
+				))
 		})
 
-		Convey("Hidden pools", func() {
-			So(call(authorizedID, "", "", []string{"pool:hidden-pool-1"}),
-				ShouldResembleProto,
-				&apipb.ClientPermissions{
-					ListBots:  expectedVisiblePools,
-					ListTasks: expectedVisiblePools,
-				},
-			)
+		t.Run("Hidden pools", func(t *ftt.Test) {
+			assert.Loosely(t, call(authorizedID, "", "", []string{"pool:hidden-pool-1"}),
+				should.Resemble(
+					&apipb.ClientPermissions{
+						ListBots:  expectedVisiblePools,
+						ListTasks: expectedVisiblePools,
+					},
+				))
 		})
 
-		Convey("Accessing task", func() {
-			So(call(authorizedID, "", allowedTaskID, nil),
-				ShouldResembleProto,
-				&apipb.ClientPermissions{
-					CancelTask: true,
-					ListBots:   expectedVisiblePools,
-					ListTasks:  expectedVisiblePools,
-				},
-			)
+		t.Run("Accessing task", func(t *ftt.Test) {
+			assert.Loosely(t, call(authorizedID, "", allowedTaskID, nil),
+				should.Resemble(
+					&apipb.ClientPermissions{
+						CancelTask: true,
+						ListBots:   expectedVisiblePools,
+						ListTasks:  expectedVisiblePools,
+					},
+				))
 
-			So(call(authorizedID, "", forbiddenTaskID, nil),
-				ShouldResembleProto,
-				&apipb.ClientPermissions{
-					ListBots:  expectedVisiblePools,
-					ListTasks: expectedVisiblePools,
-				},
-			)
+			assert.Loosely(t, call(authorizedID, "", forbiddenTaskID, nil),
+				should.Resemble(
+					&apipb.ClientPermissions{
+						ListBots:  expectedVisiblePools,
+						ListTasks: expectedVisiblePools,
+					},
+				))
 
 			// We allow leaking existence of a task ID for better error message. Task
 			// ID is mostly random and it doesn't have any private bits in it.
 			_, err := callWithErr(authorizedID, "", unknownTaskID, nil)
-			So(err, ShouldHaveGRPCStatus, codes.NotFound)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.NotFound))
 		})
 
-		Convey("Accessing bot", func() {
-			So(call(authorizedID, "visible-bot", "", nil),
-				ShouldResembleProto,
-				&apipb.ClientPermissions{
-					DeleteBot:    true,
-					TerminateBot: true,
-					ListBots:     expectedVisiblePools,
-					ListTasks:    expectedVisiblePools,
-				},
-			)
+		t.Run("Accessing bot", func(t *ftt.Test) {
+			assert.Loosely(t, call(authorizedID, "visible-bot", "", nil),
+				should.Resemble(
+					&apipb.ClientPermissions{
+						DeleteBot:    true,
+						TerminateBot: true,
+						ListBots:     expectedVisiblePools,
+						ListTasks:    expectedVisiblePools,
+					},
+				))
 
-			So(call(authorizedID, "hidden-bot", "", nil),
-				ShouldResembleProto,
-				&apipb.ClientPermissions{
-					ListBots:  expectedVisiblePools,
-					ListTasks: expectedVisiblePools,
-				},
-			)
+			assert.Loosely(t, call(authorizedID, "hidden-bot", "", nil),
+				should.Resemble(
+					&apipb.ClientPermissions{
+						ListBots:  expectedVisiblePools,
+						ListTasks: expectedVisiblePools,
+					},
+				))
 		})
 	})
 }
 
-func createFakeTask(ctx context.Context, taskID, realm, pool string, submitterID identity.Identity) {
+func createFakeTask(ctx context.Context, t testing.TB, taskID, realm, pool string, submitterID identity.Identity) {
+	t.Helper()
+
 	key, err := model.TaskIDToRequestKey(ctx, taskID)
-	So(err, ShouldBeNil)
-	So(datastore.Put(ctx, &model.TaskRequest{
+	assert.Loosely(t, err, should.BeNil, option.LineContext())
+	assert.Loosely(t, datastore.Put(ctx, &model.TaskRequest{
 		Key:           key,
 		Realm:         realm,
 		Authenticated: submitterID,
@@ -246,5 +252,5 @@ func createFakeTask(ctx context.Context, taskID, realm, pool string, submitterID
 				},
 			},
 		},
-	}), ShouldBeNil)
+	}), should.BeNil, option.LineContext())
 }

@@ -20,6 +20,10 @@ import (
 
 	"google.golang.org/grpc/codes"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/secrets"
@@ -27,7 +31,6 @@ import (
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	"go.chromium.org/luci/swarming/server/model"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -62,78 +65,78 @@ func TestListBots(t *testing.T) {
 		return ids
 	}
 
-	Convey("Limit is checked", t, func() {
+	ftt.Run("Limit is checked", t, func(t *ftt.Test) {
 		_, err := call(&apipb.BotsRequest{
 			Limit: -10,
 		})
-		So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
 		_, err = call(&apipb.BotsRequest{
 			Limit: 1001,
 		})
-		So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
 	})
 
-	Convey("Cursor is checked", t, func() {
+	ftt.Run("Cursor is checked", t, func(t *ftt.Test) {
 		_, err := call(&apipb.BotsRequest{
 			Cursor: "!!!!",
 		})
-		So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
 	})
 
-	Convey("Dimensions filter is checked", t, func() {
+	ftt.Run("Dimensions filter is checked", t, func(t *ftt.Test) {
 		_, err := call(&apipb.BotsRequest{
 			Dimensions: []*apipb.StringPair{
 				{Key: "", Value: ""},
 			},
 		})
-		So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
 	})
 
-	Convey("ACLs", t, func() {
-		Convey("Listing only visible pools: OK", func() {
+	ftt.Run("ACLs", t, func(t *ftt.Test) {
+		t.Run("Listing only visible pools: OK", func(t *ftt.Test) {
 			_, err := call(&apipb.BotsRequest{
 				Dimensions: []*apipb.StringPair{
 					{Key: "pool", Value: "visible-pool1|visible-pool2"},
 				},
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey("Listing visible and invisible pool: permission denied", func() {
+		t.Run("Listing visible and invisible pool: permission denied", func(t *ftt.Test) {
 			_, err := call(&apipb.BotsRequest{
 				Dimensions: []*apipb.StringPair{
 					{Key: "pool", Value: "visible-pool1|hidden-pool1"},
 				},
 			})
-			So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
 		})
 
-		Convey("Listing visible and invisible pool as admin: OK", func() {
+		t.Run("Listing visible and invisible pool as admin: OK", func(t *ftt.Test) {
 			_, err := callAsAdmin(&apipb.BotsRequest{
 				Dimensions: []*apipb.StringPair{
 					{Key: "pool", Value: "visible-pool1|hidden-pool1"},
 				},
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey("Listing all pools as non-admin: permission denied", func() {
+		t.Run("Listing all pools as non-admin: permission denied", func(t *ftt.Test) {
 			_, err := call(&apipb.BotsRequest{})
-			So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
 		})
 
-		Convey("Listing all pools as admin: OK", func() {
+		t.Run("Listing all pools as admin: OK", func(t *ftt.Test) {
 			_, err := callAsAdmin(&apipb.BotsRequest{})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 	})
 
-	Convey("Filtering and cursors", t, func() {
+	ftt.Run("Filtering and cursors", t, func(t *ftt.Test) {
 		checkQuery := func(req *apipb.BotsRequest, expected []string) {
 			// An unlimited query first.
 			resp, err := callAsAdmin(req)
-			So(err, ShouldBeNil)
-			So(botIDs(resp.Items), ShouldResemble, expected)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, botIDs(resp.Items), should.Resemble(expected))
 
 			// A paginated one should return the same results.
 			var out []*apipb.BotInfo
@@ -142,18 +145,18 @@ func TestListBots(t *testing.T) {
 				req.Cursor = cursor
 				req.Limit = 2
 				resp, err := callAsAdmin(req)
-				So(err, ShouldBeNil)
-				So(len(resp.Items), ShouldBeLessThanOrEqualTo, req.Limit)
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, len(resp.Items), should.BeLessThanOrEqual(int(req.Limit)))
 				out = append(out, resp.Items...)
 				cursor = resp.Cursor
 				if cursor == "" {
 					break
 				}
 			}
-			So(botIDs(out), ShouldResemble, expected)
+			assert.Loosely(t, botIDs(out), should.Resemble(expected))
 		}
 
-		Convey("No filters", func() {
+		t.Run("No filters", func(t *ftt.Test) {
 			checkQuery(
 				&apipb.BotsRequest{},
 				[]string{
@@ -169,7 +172,7 @@ func TestListBots(t *testing.T) {
 			)
 		})
 
-		Convey("Busy only", func() {
+		t.Run("Busy only", func(t *ftt.Test) {
 			checkQuery(
 				&apipb.BotsRequest{
 					IsBusy: apipb.NullableBool_TRUE,
@@ -180,7 +183,7 @@ func TestListBots(t *testing.T) {
 			)
 		})
 
-		Convey("Dead only", func() {
+		t.Run("Dead only", func(t *ftt.Test) {
 			checkQuery(
 				&apipb.BotsRequest{
 					IsDead: apipb.NullableBool_TRUE,
@@ -191,7 +194,7 @@ func TestListBots(t *testing.T) {
 			)
 		})
 
-		Convey("Maintenance only", func() {
+		t.Run("Maintenance only", func(t *ftt.Test) {
 			checkQuery(
 				&apipb.BotsRequest{
 					InMaintenance: apipb.NullableBool_TRUE,
@@ -202,7 +205,7 @@ func TestListBots(t *testing.T) {
 			)
 		})
 
-		Convey("Quarantined only", func() {
+		t.Run("Quarantined only", func(t *ftt.Test) {
 			checkQuery(
 				&apipb.BotsRequest{
 					Quarantined: apipb.NullableBool_TRUE,
@@ -216,7 +219,7 @@ func TestListBots(t *testing.T) {
 		// Note: assuming all "positive" filter checks passed, it is sufficient to
 		// test only one "negative" filter. Negative tests are just a tweak in
 		// a code path already tested by "positive" filters.
-		Convey("Non-busy only", func() {
+		t.Run("Non-busy only", func(t *ftt.Test) {
 			checkQuery(
 				&apipb.BotsRequest{
 					IsBusy: apipb.NullableBool_FALSE,
@@ -233,7 +236,7 @@ func TestListBots(t *testing.T) {
 			)
 		})
 
-		Convey("Empty state intersection", func() {
+		t.Run("Empty state intersection", func(t *ftt.Test) {
 			checkQuery(
 				&apipb.BotsRequest{
 					IsBusy: apipb.NullableBool_TRUE,
@@ -241,7 +244,7 @@ func TestListBots(t *testing.T) {
 				}, nil)
 		})
 
-		Convey("Simple dimension filter", func() {
+		t.Run("Simple dimension filter", func(t *ftt.Test) {
 			checkQuery(
 				&apipb.BotsRequest{
 					Dimensions: []*apipb.StringPair{
@@ -261,7 +264,7 @@ func TestListBots(t *testing.T) {
 			)
 		})
 
-		Convey("Simple dimension filter + state filter", func() {
+		t.Run("Simple dimension filter + state filter", func(t *ftt.Test) {
 			checkQuery(
 				&apipb.BotsRequest{
 					Dimensions: []*apipb.StringPair{
@@ -275,7 +278,7 @@ func TestListBots(t *testing.T) {
 			)
 		})
 
-		Convey("AND dimension filter", func() {
+		t.Run("AND dimension filter", func(t *ftt.Test) {
 			checkQuery(
 				&apipb.BotsRequest{
 					Dimensions: []*apipb.StringPair{
@@ -289,7 +292,7 @@ func TestListBots(t *testing.T) {
 			)
 		})
 
-		Convey("Complex OR dimension filter", func() {
+		t.Run("Complex OR dimension filter", func(t *ftt.Test) {
 			checkQuery(
 				&apipb.BotsRequest{
 					Dimensions: []*apipb.StringPair{
@@ -309,7 +312,7 @@ func TestListBots(t *testing.T) {
 			)
 		})
 
-		Convey("Complex OR dimension filter + state filter", func() {
+		t.Run("Complex OR dimension filter + state filter", func(t *ftt.Test) {
 			checkQuery(
 				&apipb.BotsRequest{
 					Dimensions: []*apipb.StringPair{
@@ -325,9 +328,9 @@ func TestListBots(t *testing.T) {
 		})
 	})
 
-	Convey("DeathTimeout", t, func() {
+	ftt.Run("DeathTimeout", t, func(t *ftt.Test) {
 		resp, err := callAsAdmin(&apipb.BotsRequest{})
-		So(err, ShouldBeNil)
-		So(resp.DeathTimeout, ShouldEqual, state.Configs.Settings.BotDeathTimeoutSecs)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, resp.DeathTimeout, should.Equal(state.Configs.Settings.BotDeathTimeoutSecs))
 	})
 }

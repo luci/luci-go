@@ -23,9 +23,9 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestValidateConfigs(t *testing.T) {
@@ -52,13 +52,13 @@ func TestValidateConfigs(t *testing.T) {
 		return srv.ValidateConfigs(context.Background(), req)
 	}
 
-	Convey("No configs", t, func() {
+	ftt.Run("No configs", t, func(t *ftt.Test) {
 		resp, err := call(nil)
-		So(err, ShouldBeNil)
-		So(resp.ConfigErrors, ShouldHaveLength, 0)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, resp.ConfigErrors, should.HaveLength(0))
 	})
 
-	Convey("pass", t, func() {
+	ftt.Run("pass", t, func(t *ftt.Test) {
 		cfgMap := map[string]any{
 			"priority":           30,
 			"bot_ping_tolerance": 300,
@@ -69,11 +69,11 @@ func TestValidateConfigs(t *testing.T) {
 			},
 		}
 		resp, err := call([]map[string]any{cfgMap})
-		So(err, ShouldBeNil)
-		So(resp.ConfigErrors, ShouldHaveLength, 0)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, resp.ConfigErrors, should.HaveLength(0))
 	})
 
-	Convey("one pass, one fail ingestion, on fail validation", t, func() {
+	ftt.Run("one pass, one fail ingestion, on fail validation", t, func(t *ftt.Test) {
 		cfgMap1 := map[string]any{
 			"priority":           30,
 			"bot_ping_tolerance": 300,
@@ -97,14 +97,14 @@ func TestValidateConfigs(t *testing.T) {
 			},
 		}
 		resp, err := call([]map[string]any{cfgMap1, cfgMap2, cfgMap3})
-		So(err, ShouldBeNil)
-		So(resp.ConfigErrors, ShouldHaveLength, 5)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, resp.ConfigErrors, should.HaveLength(5))
 		for i, ed := range resp.ConfigErrors {
 			if i == 0 {
-				So(ed.Index, ShouldEqual, 1)
+				assert.Loosely(t, ed.Index, should.Equal(1))
 				continue
 			}
-			So(ed.Index, ShouldEqual, 2)
+			assert.Loosely(t, ed.Index, should.Equal(2))
 		}
 	})
 }
@@ -112,54 +112,54 @@ func TestValidateConfigs(t *testing.T) {
 func TestSubValidations(t *testing.T) {
 	t.Parallel()
 
-	Convey("priority", t, func() {
-		Convey("too small", func() {
+	ftt.Run("priority", t, func(t *ftt.Test) {
+		t.Run("too small", func(t *ftt.Test) {
 			err := validatePriority(-1)
-			So(err, ShouldErrLike, "invalid priority -1, must be between 0 and 255")
+			assert.Loosely(t, err, should.ErrLike("invalid priority -1, must be between 0 and 255"))
 		})
 
-		Convey("too big", func() {
+		t.Run("too big", func(t *ftt.Test) {
 			err := validatePriority(256)
-			So(err, ShouldErrLike, "invalid priority 256, must be between 0 and 255")
+			assert.Loosely(t, err, should.ErrLike("invalid priority 256, must be between 0 and 255"))
 		})
 	})
 
-	Convey("bot_ping_tolerance", t, func() {
-		Convey("too small", func() {
+	ftt.Run("bot_ping_tolerance", t, func(t *ftt.Test) {
+		t.Run("too small", func(t *ftt.Test) {
 			err := validateBotPingTolerance(int64(30))
-			So(err, ShouldErrLike, "invalid bot_ping_tolerance 30, must be between 60 and 1200")
+			assert.Loosely(t, err, should.ErrLike("invalid bot_ping_tolerance 30, must be between 60 and 1200"))
 		})
 
-		Convey("too big", func() {
+		t.Run("too big", func(t *ftt.Test) {
 			err := validateBotPingTolerance(int64(2000))
-			So(err, ShouldErrLike, "invalid bot_ping_tolerance 2000, must be between 60 and 1200")
+			assert.Loosely(t, err, should.ErrLike("invalid bot_ping_tolerance 2000, must be between 60 and 1200"))
 		})
 	})
 
-	Convey("service account", t, func() {
-		Convey("too long", func() {
+	ftt.Run("service account", t, func(t *ftt.Test) {
+		t.Run("too long", func(t *ftt.Test) {
 			sa := strings.Repeat("l", maxServiceAccountLength+1)
 			err := validateServiceAccount(sa)
-			So(err, ShouldErrLike, "service account too long")
+			assert.Loosely(t, err, should.ErrLike("service account too long"))
 		})
 
-		Convey("invalid", func() {
+		t.Run("invalid", func(t *ftt.Test) {
 			err := validateServiceAccount("invalid")
-			So(err, ShouldErrLike, "invalid service account")
+			assert.Loosely(t, err, should.ErrLike("invalid service account"))
 		})
 	})
 
-	Convey("tag", t, func() {
-		Convey("invalid tag", func() {
+	ftt.Run("tag", t, func(t *ftt.Test) {
+		t.Run("invalid tag", func(t *ftt.Test) {
 			cases := []string{
 				"tag",
 				"tag:",
 				":tag",
 			}
 
-			for _, t := range cases {
-				err := validateTag(t)
-				So(err, ShouldErrLike, "tag must be in key:value form")
+			for _, tc := range cases {
+				err := validateTag(tc)
+				assert.Loosely(t, err, should.ErrLike("tag must be in key:value form"))
 			}
 		})
 	})
