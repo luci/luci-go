@@ -19,87 +19,87 @@ import (
 	"compress/zlib"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestToJSONProperty(t *testing.T) {
 	t.Parallel()
 
-	Convey("With a value", t, func() {
+	ftt.Run("With a value", t, func(t *ftt.Test) {
 		p, err := ToJSONProperty(map[string]string{"a": "b"})
-		So(err, ShouldBeNil)
-		So(p.Type(), ShouldEqual, datastore.PTString)
-		So(p.Value().(string), ShouldEqual, `{"a":"b"}`)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, p.Type(), should.Equal(datastore.PTString))
+		assert.Loosely(t, p.Value().(string), should.Equal(`{"a":"b"}`))
 	})
 
-	Convey("With empty map", t, func() {
+	ftt.Run("With empty map", t, func(t *ftt.Test) {
 		p, err := ToJSONProperty(map[string]string{})
-		So(err, ShouldBeNil)
-		So(p.Type(), ShouldEqual, datastore.PTNull)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, p.Type(), should.Equal(datastore.PTNull))
 	})
 
-	Convey("With empty list", t, func() {
+	ftt.Run("With empty list", t, func(t *ftt.Test) {
 		p, err := ToJSONProperty([]string{})
-		So(err, ShouldBeNil)
-		So(p.Type(), ShouldEqual, datastore.PTNull)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, p.Type(), should.Equal(datastore.PTNull))
 	})
 
-	Convey("With nil", t, func() {
+	ftt.Run("With nil", t, func(t *ftt.Test) {
 		p, err := ToJSONProperty(nil)
-		So(err, ShouldBeNil)
-		So(p.Type(), ShouldEqual, datastore.PTNull)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, p.Type(), should.Equal(datastore.PTNull))
 	})
 
-	Convey("With typed nil", t, func() {
+	ftt.Run("With typed nil", t, func(t *ftt.Test) {
 		var m map[string]string
 		p, err := ToJSONProperty(m)
-		So(err, ShouldBeNil)
-		So(p.Type(), ShouldEqual, datastore.PTNull)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, p.Type(), should.Equal(datastore.PTNull))
 	})
 }
 
 func TestFromJSONProperty(t *testing.T) {
 	t.Parallel()
 
-	Convey("Null", t, func() {
+	ftt.Run("Null", t, func(t *ftt.Test) {
 		var v map[string]string
-		So(FromJSONProperty(datastore.MkProperty(nil), &v), ShouldBeNil)
-		So(v, ShouldResemble, map[string]string(nil))
+		assert.Loosely(t, FromJSONProperty(datastore.MkProperty(nil), &v), should.BeNil)
+		assert.Loosely(t, v, should.Resemble(map[string]string(nil)))
 	})
 
-	Convey("Empty", t, func() {
+	ftt.Run("Empty", t, func(t *ftt.Test) {
 		var v map[string]string
-		So(FromJSONProperty(datastore.MkProperty(""), &v), ShouldBeNil)
-		So(v, ShouldResemble, map[string]string(nil))
+		assert.Loosely(t, FromJSONProperty(datastore.MkProperty(""), &v), should.BeNil)
+		assert.Loosely(t, v, should.Resemble(map[string]string(nil)))
 	})
 
-	Convey("Null", t, func() {
+	ftt.Run("Null", t, func(t *ftt.Test) {
 		var v map[string]string
-		So(FromJSONProperty(datastore.MkProperty("null"), &v), ShouldBeNil)
-		So(v, ShouldResemble, map[string]string(nil))
+		assert.Loosely(t, FromJSONProperty(datastore.MkProperty("null"), &v), should.BeNil)
+		assert.Loosely(t, v, should.Resemble(map[string]string(nil)))
 	})
 
-	Convey("Bytes", t, func() {
+	ftt.Run("Bytes", t, func(t *ftt.Test) {
 		var v map[string]string
-		So(FromJSONProperty(datastore.MkProperty([]byte(`{"a":"b"}`)), &v), ShouldBeNil)
-		So(v, ShouldResemble, map[string]string{"a": "b"})
+		assert.Loosely(t, FromJSONProperty(datastore.MkProperty([]byte(`{"a":"b"}`)), &v), should.BeNil)
+		assert.Loosely(t, v, should.Resemble(map[string]string{"a": "b"}))
 	})
 
-	Convey("String", t, func() {
+	ftt.Run("String", t, func(t *ftt.Test) {
 		var v map[string]string
-		So(FromJSONProperty(datastore.MkProperty(`{"a":"b"}`), &v), ShouldBeNil)
-		So(v, ShouldResemble, map[string]string{"a": "b"})
+		assert.Loosely(t, FromJSONProperty(datastore.MkProperty(`{"a":"b"}`), &v), should.BeNil)
+		assert.Loosely(t, v, should.Resemble(map[string]string{"a": "b"}))
 	})
 
-	Convey("Compressed", t, func() {
+	ftt.Run("Compressed", t, func(t *ftt.Test) {
 		var v map[string]string
-		So(FromJSONProperty(datastore.MkProperty(deflate([]byte(`{"a":"b"}`))), &v), ShouldBeNil)
-		So(v, ShouldResemble, map[string]string{"a": "b"})
+		assert.Loosely(t, FromJSONProperty(datastore.MkProperty(deflate([]byte(`{"a":"b"}`))), &v), should.BeNil)
+		assert.Loosely(t, v, should.Resemble(map[string]string{"a": "b"}))
 	})
 }
 
@@ -162,9 +162,9 @@ func TestDimensionsFlatToPb(t *testing.T) {
 		},
 	}
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		for _, cs := range cases {
-			So(DimensionsFlatToPb(cs.flat), ShouldResembleProto, cs.list)
+			assert.Loosely(t, DimensionsFlatToPb(cs.flat), should.Resemble(cs.list))
 		}
 	})
 }
@@ -172,48 +172,48 @@ func TestDimensionsFlatToPb(t *testing.T) {
 func TestMapToStringListPair(t *testing.T) {
 	t.Parallel()
 
-	Convey("ok", t, func() {
+	ftt.Run("ok", t, func(t *ftt.Test) {
 		m := map[string][]string{
-			"key2": []string{"val3", "val4"},
-			"key1": []string{"val1", "val2"},
-			"key3": []string{"val3", "val2"},
+			"key2": {"val3", "val4"},
+			"key1": {"val1", "val2"},
+			"key3": {"val3", "val2"},
 		}
 		// Since iteration over a map randomizes the keys in Go, we need to
 		// assert that all the items are in the []*apipb.StringListPair and that
 		// the lengths match. If we compared tp an apipb.StringListPair type directly,
 		// the test would be flakey.
-		Convey("unsorted", func() {
+		t.Run("unsorted", func(t *ftt.Test) {
 			spl := MapToStringListPair(m, false)
-			So(len(spl), ShouldEqual, len(m))
-			So(&apipb.StringListPair{
+			assert.Loosely(t, len(spl), should.Equal(len(m)))
+			assert.Loosely(t, &apipb.StringListPair{
 				Key:   "key2",
 				Value: []string{"val3", "val4"},
-			}, ShouldBeIn, spl)
-			So(&apipb.StringListPair{
+			}, should.MatchIn(spl))
+			assert.Loosely(t, &apipb.StringListPair{
 				Key:   "key1",
 				Value: []string{"val1", "val2"},
-			}, ShouldBeIn, spl)
-			So(&apipb.StringListPair{
+			}, should.MatchIn(spl))
+			assert.Loosely(t, &apipb.StringListPair{
 				Key:   "key3",
 				Value: []string{"val3", "val2"},
-			}, ShouldBeIn, spl)
+			}, should.MatchIn(spl))
 		})
 
-		Convey("sorted", func() {
-			So(MapToStringListPair(m, true), ShouldEqual, []*apipb.StringListPair{
+		t.Run("sorted", func(t *ftt.Test) {
+			assert.Loosely(t, MapToStringListPair(m, true), should.Match([]*apipb.StringListPair{
 				{Key: "key1", Value: []string{"val1", "val2"}},
 				{Key: "key2", Value: []string{"val3", "val4"}},
 				{Key: "key3", Value: []string{"val3", "val2"}},
-			})
+			}))
 		})
 	})
 
-	Convey("empty", t, func() {
+	ftt.Run("empty", t, func(t *ftt.Test) {
 		m := map[string][]string{}
-		So(MapToStringListPair(m, false), ShouldBeNil)
+		assert.Loosely(t, MapToStringListPair(m, false), should.BeNil)
 	})
-	Convey("nil", t, func() {
-		So(MapToStringListPair(nil, false), ShouldBeNil)
+	ftt.Run("nil", t, func(t *ftt.Test) {
+		assert.Loosely(t, MapToStringListPair(nil, false), should.BeNil)
 	})
 
 }

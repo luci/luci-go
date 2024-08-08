@@ -15,12 +15,15 @@
 package should
 
 import (
+	"github.com/google/go-cmp/cmp"
+
 	"go.chromium.org/luci/common/testing/truth/comparison"
 	"go.chromium.org/luci/common/testing/truth/failure"
+	"go.chromium.org/luci/common/testing/typed"
 )
 
 // BeIn returns a Comparison which checks to see if `actual` is equal to any of
-// the entries in `items`.
+// the entries in `collection`.
 //
 // Comparison is done via simple equality check.
 func BeIn[T comparable](collection ...T) comparison.Func[T] {
@@ -31,6 +34,24 @@ func BeIn[T comparable](collection ...T) comparison.Func[T] {
 			}
 		}
 		return comparison.NewSummaryBuilder("should.BeIn", actual).
+			AddFindingf("Item", "%#v", actual).
+			AddFindingf("Collection", "%#v", collection).
+			Summary
+	}
+}
+
+// MatchIn returns a Comparison which checks to see if `actual` Matches any of
+// the entries in `collection`.
+//
+// Comparison is done via the same mechanism as should.Match.
+func MatchIn[T comparable](collection []T, opts ...cmp.Option) comparison.Func[T] {
+	return func(actual T) *failure.Summary {
+		for _, obj := range collection {
+			if typed.Diff(actual, obj, opts...) == "" {
+				return nil
+			}
+		}
+		return comparison.NewSummaryBuilder("should.MatchIn", actual).
 			AddFindingf("Item", "%#v", actual).
 			AddFindingf("Collection", "%#v", collection).
 			Summary
@@ -66,6 +87,23 @@ func Contain[T comparable](target T) comparison.Func[[]T] {
 			}
 		}
 		return comparison.NewSummaryBuilder("should.Contain", actual).
+			AddFindingf("Collection", "%#v", actual).
+			AddFindingf("Item", "%#v", target).
+			Summary
+	}
+}
+
+// ContainMatch returns a Comparison which checks to see if `actual` contains `item`.
+//
+// Comparison is done via the same algorithm as Match.
+func ContainMatch[T comparable](target T, opts ...cmp.Option) comparison.Func[[]T] {
+	return func(actual []T) *failure.Summary {
+		for _, item := range actual {
+			if typed.Diff(item, target, opts...) == "" {
+				return nil
+			}
+		}
+		return comparison.NewSummaryBuilder("should.ContainMatch", actual).
 			AddFindingf("Collection", "%#v", actual).
 			AddFindingf("Item", "%#v", target).
 			Summary

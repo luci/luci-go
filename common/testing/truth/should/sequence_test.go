@@ -27,6 +27,26 @@ func TestBeIn(t *testing.T) {
 	t.Run("string missing", shouldFail(BeIn("hi", "there")("morp")))
 }
 
+func TestMatchIn(t *testing.T) {
+	t.Parallel()
+
+	t.Run("int", shouldPass(MatchIn([]int{7, 8, 9, 10})(10)))
+	t.Run("string", shouldPass(MatchIn([]string{"hi", "there"})("hi")))
+
+	type S struct {
+		Value string
+	}
+
+	coll := []*S{
+		{"HI"},
+		{"THERE"},
+	}
+	t.Run("*struct", shouldPass(MatchIn(coll)(&S{"THERE"})))
+
+	t.Run("string missing", shouldFail(MatchIn([]string{"hi", "there"})("morp")))
+	t.Run("*struct missing", shouldFail(MatchIn(coll)(&S{"NORP"})))
+}
+
 func TestNotBeIn(t *testing.T) {
 	t.Parallel()
 
@@ -43,6 +63,21 @@ func TestContain(t *testing.T) {
 	t.Run("string", shouldPass(Contain("hi")([]string{"hi", "there"})))
 
 	t.Run("int missing", shouldFail(Contain(9)([]int{1, 2, 3})))
+}
+
+func TestContainMatch(t *testing.T) {
+	t.Parallel()
+
+	t.Run("int", shouldPass(ContainMatch(10)([]int{7, 8, 9, 10})))
+	t.Run("string", shouldPass(ContainMatch("hi")([]string{"hi", "there"})))
+
+	type S struct {
+		Value string
+	}
+	t.Run("*struct", shouldPass(ContainMatch(&S{"HI"})([]*S{{"HI"}, {"THERE"}})))
+
+	t.Run("*struct missing", shouldFail(ContainMatch(&S{"MORP"})([]*S{{"HI"}, {"THERE"}})))
+	t.Run("int missing", shouldFail(ContainMatch(9)([]int{1, 2, 3})))
 }
 
 func TestNotContain(t *testing.T) {

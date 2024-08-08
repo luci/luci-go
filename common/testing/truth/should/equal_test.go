@@ -26,6 +26,10 @@ func TestEqual(t *testing.T) {
 
 	t.Run("int inequal", shouldFail(Equal(10)(100), "Expected"))
 	t.Run("int NaN", shouldFail(Equal(math.NaN())(10.1), "should.BeNaN"))
+
+	a := 100
+	b := 100
+	t.Run("pointer inequal", shouldFail(Equal(&a)(&b), "did you want should.Match"))
 }
 
 func TestNotEqual(t *testing.T) {

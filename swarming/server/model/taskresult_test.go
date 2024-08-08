@@ -26,31 +26,31 @@ import (
 
 	"go.chromium.org/luci/common/data/packedintset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	"go.chromium.org/luci/swarming/server/acls"
 	"go.chromium.org/luci/swarming/server/cursor/cursorpb"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestResultDBInfo(t *testing.T) {
 	t.Parallel()
 
-	Convey("ToProto", t, func() {
-		Convey("nil", func() {
+	ftt.Run("ToProto", t, func(t *ftt.Test) {
+		t.Run("nil", func(t *ftt.Test) {
 			r := ResultDBInfo{}
-			So(r.ToProto(), ShouldBeNil)
+			assert.Loosely(t, r.ToProto(), should.BeNil)
 		})
-		Convey("ok", func() {
+		t.Run("ok", func(t *ftt.Test) {
 			r := ResultDBInfo{Hostname: "abc.com", Invocation: "1234acb"}
-			So(r.ToProto(), ShouldResembleProto, apipb.ResultDBInfo{
+			assert.Loosely(t, r.ToProto(), should.Resemble(&apipb.ResultDBInfo{
 				Hostname:   "abc.com",
 				Invocation: "1234acb",
-			})
+			}))
 		})
 	})
 }
@@ -59,11 +59,11 @@ func TestTaskResultSummary(t *testing.T) {
 	t.Parallel()
 	var testTime = time.Date(2023, time.January, 1, 2, 3, 4, 0, time.UTC)
 
-	Convey("With Datastore", t, func() {
+	ftt.Run("With Datastore", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 
 		reqKey, err := TaskIDToRequestKey(ctx, "65aba3a3e6b99310")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		fullyPopulated := TaskResultSummary{
 			TaskResultCommon: TaskResultCommon{
@@ -137,15 +137,15 @@ func TestTaskResultSummary(t *testing.T) {
 			ExpirationDelay:      datastore.NewUnindexedOptional(0.0),
 		}
 
-		Convey("Can round trip", func() {
-			So(datastore.Put(ctx, &fullyPopulated), ShouldBeNil)
+		t.Run("Can round trip", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(ctx, &fullyPopulated), should.BeNil)
 			loaded := TaskResultSummary{Key: fullyPopulated.Key}
-			So(datastore.Get(ctx, &loaded), ShouldBeNil)
-			So(loaded, ShouldResemble, fullyPopulated)
+			assert.Loosely(t, datastore.Get(ctx, &loaded), should.BeNil)
+			assert.Loosely(t, loaded, should.Resemble(fullyPopulated))
 		})
 
-		Convey("ToProto", func() {
-			So(fullyPopulated.ToProto(), ShouldResembleProto, &apipb.TaskResultResponse{
+		t.Run("ToProto", func(t *ftt.Test) {
+			assert.Loosely(t, fullyPopulated.ToProto(), should.Resemble(&apipb.TaskResultResponse{
 				BotDimensions: []*apipb.StringListPair{
 					{Key: "cpu", Value: []string{"x86_64"}},
 					{Key: "os", Value: []string{"linux"}},
@@ -202,10 +202,10 @@ func TestTaskResultSummary(t *testing.T) {
 				Tags:           []string{"tag1", "tag2"},
 				TaskId:         "65aba3a3e6b99310",
 				User:           "user@example.com",
-			})
+			}))
 		})
 
-		Convey("ToProto: mostly empty", func() {
+		t.Run("ToProto: mostly empty", func(t *ftt.Test) {
 			trs := TaskResultSummary{
 				TaskResultCommon: TaskResultCommon{
 					Modified: testTime,
@@ -213,32 +213,32 @@ func TestTaskResultSummary(t *testing.T) {
 				Created: testTime.Add(-2 * time.Hour),
 				Key:     TaskResultSummaryKey(ctx, reqKey),
 			}
-			So(trs.ToProto(), ShouldResembleProto, &apipb.TaskResultResponse{
+			assert.Loosely(t, trs.ToProto(), should.Resemble(&apipb.TaskResultResponse{
 				CreatedTs:  timestamppb.New(testTime.Add(-2 * time.Hour)),
 				ModifiedTs: timestamppb.New(testTime),
 				TaskId:     "65aba3a3e6b99310",
-			})
+			}))
 		})
 	})
 
-	Convey("CostsUSD", t, func() {
-		Convey("ok", func() {
+	ftt.Run("CostsUSD", t, func(t *ftt.Test) {
+		t.Run("ok", func(t *ftt.Test) {
 			trs := TaskResultSummary{CostUSD: 100.00}
-			So(trs.CostsUSD(), ShouldEqual, []float32{float32(100)})
+			assert.Loosely(t, trs.CostsUSD(), should.Match([]float32{float32(100)}))
 		})
 
-		Convey("nil", func() {
+		t.Run("nil", func(t *ftt.Test) {
 			trs := TaskResultSummary{}
-			So(trs.CostsUSD(), ShouldBeNil)
+			assert.Loosely(t, trs.CostsUSD(), should.BeNil)
 		})
 	})
 
-	Convey("PerformanceStats", t, func() {
+	ftt.Run("PerformanceStats", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		reqKey, err := TaskIDToRequestKey(ctx, "65aba3a3e6b99310")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		Convey("ok", func() {
+		t.Run("ok", func(t *ftt.Test) {
 			trs := TaskResultSummary{
 				Key: TaskResultSummaryKey(ctx, reqKey),
 				TaskResultCommon: TaskResultCommon{
@@ -256,16 +256,16 @@ func TestTaskResultSummary(t *testing.T) {
 				IsolatedDownload:     CASOperationStats{DurationSecs: 7},
 				IsolatedUpload:       CASOperationStats{DurationSecs: 7},
 			}
-			So(datastore.Put(ctx, &trs, &ps), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, &trs, &ps), should.BeNil)
 
 			statsKey := trs.PerformanceStatsKey(ctx)
-			So(statsKey, ShouldNotBeNil)
+			assert.Loosely(t, statsKey, should.NotBeNil)
 			stats := &PerformanceStats{Key: statsKey}
-			So(datastore.Get(ctx, stats), ShouldBeNil)
+			assert.Loosely(t, datastore.Get(ctx, stats), should.BeNil)
 
 			resp, err := stats.ToProto()
-			So(err, ShouldBeNil)
-			So(resp, ShouldEqual, &apipb.PerformanceStats{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.Match(&apipb.PerformanceStats{
 				BotOverhead:          float32(1),
 				CacheTrim:            &apipb.OperationStats{Duration: float32(2)},
 				PackageInstallation:  &apipb.OperationStats{Duration: float32(3)},
@@ -274,16 +274,16 @@ func TestTaskResultSummary(t *testing.T) {
 				Cleanup:              &apipb.OperationStats{Duration: float32(6)},
 				IsolatedDownload:     &apipb.CASOperationStats{Duration: float32(7)},
 				IsolatedUpload:       &apipb.CASOperationStats{Duration: float32(7)},
-			})
+			}))
 		})
 	})
 
-	Convey("TaskAuthInfo", t, func() {
+	ftt.Run("TaskAuthInfo", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		reqKey, err := TaskIDToRequestKey(ctx, "65aba3a3e6b99310")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		Convey("Fresh enough entity", func() {
+		t.Run("Fresh enough entity", func(t *ftt.Test) {
 			trs := TaskResultSummary{
 				Key:                  TaskResultSummaryKey(ctx, reqKey),
 				RequestAuthenticated: "authenticated-user@example.com",
@@ -293,22 +293,22 @@ func TestTaskResultSummary(t *testing.T) {
 			}
 
 			info, err := trs.TaskAuthInfo(ctx)
-			So(err, ShouldBeNil)
-			So(info, ShouldResemble, &acls.TaskAuthInfo{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, info, should.Resemble(&acls.TaskAuthInfo{
 				TaskID:    "65aba3a3e6b99310",
 				Realm:     "example-realm",
 				Pool:      "example-pool",
 				BotID:     "bot123",
 				Submitter: "authenticated-user@example.com",
-			})
+			}))
 		})
 
-		Convey("Old entity", func() {
+		t.Run("Old entity", func(t *ftt.Test) {
 			trs := TaskResultSummary{
 				Key: TaskResultSummaryKey(ctx, reqKey),
 			}
 
-			So(datastore.Put(ctx, &TaskRequest{
+			assert.Loosely(t, datastore.Put(ctx, &TaskRequest{
 				Key:           reqKey,
 				Realm:         "request-realm",
 				Authenticated: "request-user@example.com",
@@ -321,23 +321,23 @@ func TestTaskResultSummary(t *testing.T) {
 						},
 					},
 				},
-			}), ShouldBeNil)
+			}), should.BeNil)
 
 			info, err := trs.TaskAuthInfo(ctx)
-			So(err, ShouldBeNil)
-			So(info, ShouldResemble, &acls.TaskAuthInfo{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, info, should.Resemble(&acls.TaskAuthInfo{
 				TaskID:    "65aba3a3e6b99310",
 				Realm:     "request-realm",
 				Pool:      "request-pool",
 				Submitter: "request-user@example.com",
-			})
+			}))
 		})
 	})
 
-	Convey("GetOutput", t, func() {
+	ftt.Run("GetOutput", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		reqKey, err := TaskIDToRequestKey(ctx, "65aba3a3e6b99310")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		// Generate non-repeating text, to make sure that offsets are respected
 		// precisely (no off by one errors) when reading chunks.
@@ -386,7 +386,7 @@ func TestTaskResultSummary(t *testing.T) {
 		writeChunk(unfinishedSize, true) // incomplete, being written now
 
 		const totalSize = ChunkSize*4 + unfinishedSize
-		So(expectedOutput.Len(), ShouldEqual, totalSize)
+		assert.Loosely(t, expectedOutput.Len(), should.Equal(totalSize))
 
 		trs := TaskResultSummary{
 			TaskResultCommon: TaskResultCommon{StdoutChunks: chunkIndex},
@@ -398,15 +398,15 @@ func TestTaskResultSummary(t *testing.T) {
 			var expected []byte
 			all := expectedOutput.Bytes()
 			expected = all[offset:min(offset+length, len(all))]
-			So(len(expected), ShouldEqual, expectedLen)
+			assert.Loosely(t, len(expected), should.Equal(expectedLen))
 
 			got, err := trs.GetOutput(ctx, int64(offset), int64(length))
-			So(err, ShouldBeNil)
-			So(len(got), ShouldEqual, expectedLen)
-			So(got, ShouldResemble, expected)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(got), should.Equal(expectedLen))
+			assert.Loosely(t, got, should.Resemble(expected))
 		}
 
-		Convey("No offset", func() {
+		t.Run("No offset", func(t *ftt.Test) {
 			// Reading a part of the first chunk.
 			assertExpectedOutput(0, 100, 100)
 			// Reading one chunk precisely.
@@ -425,7 +425,7 @@ func TestTaskResultSummary(t *testing.T) {
 			assertExpectedOutput(0, ChunkSize*5, totalSize)
 		})
 
-		Convey("With offset within the first chunk", func() {
+		t.Run("With offset within the first chunk", func(t *ftt.Test) {
 			// Reading a part of the first chunk.
 			assertExpectedOutput(200, 100, 100)
 			// Reading one chunk precisely.
@@ -436,7 +436,7 @@ func TestTaskResultSummary(t *testing.T) {
 			assertExpectedOutput(200, ChunkSize*5, totalSize-200)
 		})
 
-		Convey("With offset within non-first chunk", func() {
+		t.Run("With offset within non-first chunk", func(t *ftt.Test) {
 			// Reading a part of the chunk.
 			assertExpectedOutput(2*ChunkSize+200, 100, 100)
 			// Reading one chunk precisely.
@@ -447,7 +447,7 @@ func TestTaskResultSummary(t *testing.T) {
 			assertExpectedOutput(2*ChunkSize+200, ChunkSize*5, totalSize-2*ChunkSize-200)
 		})
 
-		Convey("With offset in the last chunk", func() {
+		t.Run("With offset in the last chunk", func(t *ftt.Test) {
 			// Reading a part of the last chunk
 			assertExpectedOutput(4*ChunkSize+100, 100, 100)
 			// Reading all available data in the last chunk.
@@ -456,21 +456,21 @@ func TestTaskResultSummary(t *testing.T) {
 			assertExpectedOutput(totalSize-1, ChunkSize, 1)
 		})
 
-		Convey("With offset outside of available range", func() {
+		t.Run("With offset outside of available range", func(t *ftt.Test) {
 			// Precisely after the last byte.
 			got, err := trs.GetOutput(ctx, 4*ChunkSize+unfinishedSize, 10000)
-			So(err, ShouldBeNil)
-			So(got, ShouldHaveLength, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, got, should.HaveLength(0))
 
 			// Pointing to an incomplete portion of the last chunk.
 			got, err = trs.GetOutput(ctx, 4*ChunkSize+unfinishedSize+100, 10000)
-			So(err, ShouldBeNil)
-			So(got, ShouldHaveLength, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, got, should.HaveLength(0))
 
 			// Outside of the last chunk entirely.
 			got, err = trs.GetOutput(ctx, 5*ChunkSize+1, 10000)
-			So(err, ShouldBeNil)
-			So(got, ShouldHaveLength, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, got, should.HaveLength(0))
 		})
 	})
 }
@@ -479,11 +479,11 @@ func TestTaskRunResult(t *testing.T) {
 	t.Parallel()
 	var testTime = time.Date(2023, time.January, 1, 2, 3, 4, 0, time.UTC)
 
-	Convey("With Datastore", t, func() {
+	ftt.Run("With Datastore", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 
 		reqKey, err := TaskIDToRequestKey(ctx, "65aba3a3e6b99310")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		fullyPopulated := TaskRunResult{
 			TaskResultCommon: TaskResultCommon{
@@ -549,15 +549,15 @@ func TestTaskRunResult(t *testing.T) {
 			DeadAfter:      datastore.NewUnindexedOptional(testTime.Add(time.Hour)),
 		}
 
-		Convey("Can round-trip", func() {
-			So(datastore.Put(ctx, &fullyPopulated), ShouldBeNil)
+		t.Run("Can round-trip", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(ctx, &fullyPopulated), should.BeNil)
 			loaded := TaskRunResult{Key: fullyPopulated.Key}
-			So(datastore.Get(ctx, &loaded), ShouldBeNil)
-			So(loaded, ShouldResemble, fullyPopulated)
+			assert.Loosely(t, datastore.Get(ctx, &loaded), should.BeNil)
+			assert.Loosely(t, loaded, should.Resemble(fullyPopulated))
 		})
 
-		Convey("ToProto", func() {
-			So(fullyPopulated.ToProto(), ShouldResembleProto, &apipb.TaskResultResponse{
+		t.Run("ToProto", func(t *ftt.Test) {
+			assert.Loosely(t, fullyPopulated.ToProto(), should.Resemble(&apipb.TaskResultResponse{
 				BotDimensions: []*apipb.StringListPair{
 					{Key: "cpu", Value: []string{"x86_64"}},
 					{Key: "os", Value: []string{"linux"}},
@@ -614,7 +614,7 @@ func TestTaskRunResult(t *testing.T) {
 				Tags:           []string{"a:b", "c:d"},
 				TaskId:         "65aba3a3e6b99310",
 				User:           "request-user",
-			})
+			}))
 		})
 	})
 }
@@ -622,11 +622,11 @@ func TestTaskRunResult(t *testing.T) {
 func TestPerformanceStats(t *testing.T) {
 	t.Parallel()
 
-	Convey("With Datastore", t, func() {
+	ftt.Run("With Datastore", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 
 		reqKey, err := TaskIDToRequestKey(ctx, "65aba3a3e6b99310")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		fullyPopulated := PerformanceStats{
 			Key:                  PerformanceStatsKey(ctx, reqKey),
@@ -639,19 +639,19 @@ func TestPerformanceStats(t *testing.T) {
 			IsolatedDownload:     CASOperationStats{DurationSecs: 7},
 			IsolatedUpload:       CASOperationStats{DurationSecs: 7},
 		}
-		So(datastore.Put(ctx, &fullyPopulated), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, &fullyPopulated), should.BeNil)
 		loaded := PerformanceStats{Key: PerformanceStatsKey(ctx, reqKey)}
-		So(datastore.Get(ctx, &loaded), ShouldBeNil)
-		So(loaded, ShouldResemble, fullyPopulated)
+		assert.Loosely(t, datastore.Get(ctx, &loaded), should.BeNil)
+		assert.Loosely(t, loaded, should.Resemble(fullyPopulated))
 	})
 
-	Convey("ToProto", t, func() {
+	ftt.Run("ToProto", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 
 		reqKey, err := TaskIDToRequestKey(ctx, "65aba3a3e6b99310")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		Convey("ok", func() {
+		t.Run("ok", func(t *ftt.Test) {
 			ps := PerformanceStats{
 				Key:                  PerformanceStatsKey(ctx, reqKey),
 				BotOverheadSecs:      1,
@@ -664,8 +664,8 @@ func TestPerformanceStats(t *testing.T) {
 				IsolatedUpload:       CASOperationStats{DurationSecs: 7},
 			}
 			resp, err := ps.ToProto()
-			So(err, ShouldBeNil)
-			So(resp, ShouldEqual, &apipb.PerformanceStats{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.Match(&apipb.PerformanceStats{
 				BotOverhead:          float32(1),
 				CacheTrim:            &apipb.OperationStats{Duration: float32(2)},
 				PackageInstallation:  &apipb.OperationStats{Duration: float32(3)},
@@ -674,9 +674,9 @@ func TestPerformanceStats(t *testing.T) {
 				Cleanup:              &apipb.OperationStats{Duration: float32(6)},
 				IsolatedDownload:     &apipb.CASOperationStats{Duration: float32(7)},
 				IsolatedUpload:       &apipb.CASOperationStats{Duration: float32(7)},
-			})
+			}))
 		})
-		Convey("error with CASOperationStats", func() {
+		t.Run("error with CASOperationStats", func(t *ftt.Test) {
 			ps := PerformanceStats{
 				Key:                  PerformanceStatsKey(ctx, reqKey),
 				BotOverheadSecs:      1,
@@ -692,7 +692,7 @@ func TestPerformanceStats(t *testing.T) {
 				IsolatedUpload: CASOperationStats{DurationSecs: 7},
 			}
 			_, err := ps.ToProto()
-			So(err, ShouldErrLike, "failed to get zlib reader: zlib: invalid header")
+			assert.Loosely(t, err, should.ErrLike("failed to get zlib reader: zlib: invalid header"))
 		})
 	})
 }
@@ -700,17 +700,17 @@ func TestPerformanceStats(t *testing.T) {
 func TestOperationStats(t *testing.T) {
 	t.Parallel()
 
-	Convey("ToProto", t, func() {
-		Convey("nil", func() {
+	ftt.Run("ToProto", t, func(t *ftt.Test) {
+		t.Run("nil", func(t *ftt.Test) {
 			r := OperationStats{}
-			So(r.ToProto(), ShouldBeNil)
+			assert.Loosely(t, r.ToProto(), should.BeNil)
 		})
 
-		Convey("ok", func() {
+		t.Run("ok", func(t *ftt.Test) {
 			r := OperationStats{DurationSecs: 1}
-			So(r.ToProto(), ShouldResembleProto, apipb.OperationStats{
+			assert.Loosely(t, r.ToProto(), should.Resemble(&apipb.OperationStats{
 				Duration: 1,
-			})
+			}))
 		})
 
 	})
@@ -719,29 +719,29 @@ func TestOperationStats(t *testing.T) {
 func TestCASOperationStats(t *testing.T) {
 	t.Parallel()
 
-	Convey("ToProto", t, func() {
-		Convey("nil", func() {
+	ftt.Run("ToProto", t, func(t *ftt.Test) {
+		t.Run("nil", func(t *ftt.Test) {
 			r := CASOperationStats{}
 			resp, err := r.ToProto()
-			So(err, ShouldBeNil)
-			So(resp, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.BeNil)
 		})
 
-		Convey("ok", func() {
+		t.Run("ok", func(t *ftt.Test) {
 			r := CASOperationStats{
 				DurationSecs: 1,
 				InitialItems: 2,
 				InitialSize:  3,
 			}
 			itemsColdBytes, err := packedintset.Pack([]int64{1, 2, 3})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			itemsHotBytes, err := packedintset.Pack([]int64{4, 5, 5, 6})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			r.ItemsCold = itemsColdBytes
 			r.ItemsHot = itemsHotBytes
 			resp, err := r.ToProto()
-			So(err, ShouldBeNil)
-			So(resp, ShouldResembleProto, apipb.CASOperationStats{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.Resemble(&apipb.CASOperationStats{
 				Duration:            1,
 				InitialNumberItems:  2,
 				InitialSize:         3,
@@ -751,10 +751,10 @@ func TestCASOperationStats(t *testing.T) {
 				TotalBytesItemsCold: 6,
 				NumItemsHot:         4,
 				TotalBytesItemsHot:  20,
-			})
+			}))
 		})
 
-		Convey("error with Unpack used for ItemsCold and ItemsHot", func() {
+		t.Run("error with Unpack used for ItemsCold and ItemsHot", func(t *ftt.Test) {
 			r := CASOperationStats{
 				DurationSecs: 1,
 				InitialItems: 2,
@@ -762,7 +762,7 @@ func TestCASOperationStats(t *testing.T) {
 				ItemsCold:    []byte("abcdefg"),
 			}
 			_, err := r.ToProto()
-			So(err, ShouldErrLike, "failed to get zlib reader: zlib: invalid header")
+			assert.Loosely(t, err, should.ErrLike("failed to get zlib reader: zlib: invalid header"))
 		})
 	})
 }
@@ -772,52 +772,52 @@ func TestTaskResultSummaryQueries(t *testing.T) {
 	ctx := memory.Use(context.Background())
 	testTime := time.Date(2023, 1, 1, 2, 3, 4, 0, time.UTC)
 
-	Convey("FilterTasksByCreationTime: ok", t, func() {
+	ftt.Run("FilterTasksByCreationTime: ok", t, func(t *ftt.Test) {
 		q, err := FilterTasksByCreationTime(ctx,
 			TaskResultSummaryQuery(),
 			testTime,
 			testTime.Add(1*time.Hour),
 			nil,
 		)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		fq, err := q.Finalize()
-		So(err, ShouldBeNil)
-		So(fq.GQL(), ShouldEqual,
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, fq.GQL(), should.Equal(
 			"SELECT * FROM `TaskResultSummary` WHERE "+
 				"`__key__` > KEY(DATASET(\"dev~app\"), \"TaskRequest\", 8793206122828791806, \"TaskResultSummary\", 1) AND "+
 				"`__key__` <= KEY(DATASET(\"dev~app\"), \"TaskRequest\", 8793209897702391806, \"TaskResultSummary\", 1) "+
 				"ORDER BY `__key__`",
-		)
+		))
 	})
 
-	Convey("FilterTasksByCreationTime: open end", t, func() {
+	ftt.Run("FilterTasksByCreationTime: open end", t, func(t *ftt.Test) {
 		q, err := FilterTasksByCreationTime(ctx,
 			TaskResultSummaryQuery(),
 			testTime,
 			time.Time{},
 			nil,
 		)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		fq, err := q.Finalize()
-		So(err, ShouldBeNil)
-		So(fq.GQL(), ShouldEqual,
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, fq.GQL(), should.Equal(
 			"SELECT * FROM `TaskResultSummary` WHERE "+
 				"`__key__` <= KEY(DATASET(\"dev~app\"), \"TaskRequest\", 8793209897702391806, \"TaskResultSummary\", 1) "+
 				"ORDER BY `__key__`",
-		)
+		))
 	})
 
-	Convey("FilterTasksByCreationTime: bad time", t, func() {
+	ftt.Run("FilterTasksByCreationTime: bad time", t, func(t *ftt.Test) {
 		_, err := FilterTasksByCreationTime(ctx,
 			TaskResultSummaryQuery(),
 			time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC),
 			time.Time{},
 			nil,
 		)
-		So(err, ShouldErrLike, "invalid start time")
+		assert.Loosely(t, err, should.ErrLike("invalid start time"))
 	})
 
-	Convey("FilterTasksByCreationTime: with cursor", t, func() {
+	ftt.Run("FilterTasksByCreationTime: with cursor", t, func(t *ftt.Test) {
 		q, err := FilterTasksByCreationTime(ctx,
 			TaskResultSummaryQuery(),
 			testTime,
@@ -826,18 +826,18 @@ func TestTaskResultSummaryQueries(t *testing.T) {
 				LastTaskRequestEntityId: 8793206122828796666, // larger than the original end age
 			},
 		)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		fq, err := q.Finalize()
-		So(err, ShouldBeNil)
-		So(fq.GQL(), ShouldEqual,
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, fq.GQL(), should.Equal(
 			"SELECT * FROM `TaskResultSummary` WHERE "+
 				"`__key__` > KEY(DATASET(\"dev~app\"), \"TaskRequest\", 8793206122828796666, \"TaskResultSummary\", 1) AND "+
 				"`__key__` <= KEY(DATASET(\"dev~app\"), \"TaskRequest\", 8793209897702391806, \"TaskResultSummary\", 1) "+
 				"ORDER BY `__key__`",
-		)
+		))
 	})
 
-	Convey("FilterTasksByCreationTime: with cursor past the start time", t, func() {
+	ftt.Run("FilterTasksByCreationTime: with cursor past the start time", t, func(t *ftt.Test) {
 		_, err := FilterTasksByCreationTime(ctx,
 			TaskResultSummaryQuery(),
 			testTime,
@@ -846,17 +846,17 @@ func TestTaskResultSummaryQueries(t *testing.T) {
 				LastTaskRequestEntityId: 8793209897702391807, // larger than the start age
 			},
 		)
-		So(err, ShouldErrLike, "the cursor is outside of the requested time range")
+		assert.Loosely(t, err, should.ErrLike("the cursor is outside of the requested time range"))
 	})
 
-	Convey("FilterTasksByCreationTime: many tasks in a millisecond", t, func() {
+	ftt.Run("FilterTasksByCreationTime: many tasks in a millisecond", t, func(t *ftt.Test) {
 		put := func(when time.Time, sfx int64) {
 			reqKey, err := TimestampToRequestKey(ctx, when, sfx)
-			So(err, ShouldBeNil)
-			So(datastore.Put(ctx, &TaskResultSummary{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, datastore.Put(ctx, &TaskResultSummary{
 				Key:     TaskResultSummaryKey(ctx, reqKey),
 				Created: when,
-			}), ShouldBeNil)
+			}), should.BeNil)
 		}
 
 		// Create a bunch of tasks, all within the same millisecond.
@@ -891,17 +891,17 @@ func TestTaskResultSummaryQueries(t *testing.T) {
 			if errors.Is(err, datastore.ErrNullQuery) {
 				return nil
 			}
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			var out []int64
 			err = datastore.Run(ctx, q, func(e *TaskResultSummary) error {
-				So(e.Created.Equal(testTime), ShouldBeTrue)
+				assert.Loosely(t, e.Created.Equal(testTime), should.BeTrue)
 				out = append(out, e.TaskRequestKey().IntID())
 				if len(out) == limit {
 					return datastore.Stop
 				}
 				return nil
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			return out
 		}
 
@@ -917,63 +917,63 @@ func TestTaskResultSummaryQueries(t *testing.T) {
 		// Querying all tasks at once. Note that tasks scheduled within the same
 		// millisecond are not ordered (that are ordered by an ID suffix, which is
 		// random in prod, but deterministic in this test).
-		So(suffixes(query(0, 100)), ShouldResemble, []int{0xffff, 4, 3, 2, 1, 0})
+		assert.Loosely(t, suffixes(query(0, 100)), should.Resemble([]int{0xffff, 4, 3, 2, 1, 0}))
 
 		// Querying with a cursor.
 		q := query(0, 2)
-		So(suffixes(q), ShouldResemble, []int{0xffff, 4})
+		assert.Loosely(t, suffixes(q), should.Resemble([]int{0xffff, 4}))
 		q = query(q[1], 2)
-		So(suffixes(q), ShouldResemble, []int{3, 2})
+		assert.Loosely(t, suffixes(q), should.Resemble([]int{3, 2}))
 		q = query(q[1], 2)
-		So(suffixes(q), ShouldResemble, []int{1, 0})
+		assert.Loosely(t, suffixes(q), should.Resemble([]int{1, 0}))
 
 		// This was the last page, but callers don't really know that yet (because
 		// the listing ends exactly on the page boundary). When querying the next
 		// page, we should get no results: this signals to callers the end of the
 		// listing.
 		q = query(q[1], 2)
-		So(suffixes(q), ShouldResemble, []int(nil))
+		assert.Loosely(t, suffixes(q), should.Resemble([]int(nil)))
 	})
 
-	Convey("FilterTasksByState: running", t, func() {
+	ftt.Run("FilterTasksByState: running", t, func(t *ftt.Test) {
 		qs, mode := FilterTasksByState(TaskResultSummaryQuery(), apipb.StateQuery_QUERY_RUNNING, SplitOptimally)
-		So(qs, ShouldHaveLength, 1)
-		So(mode, ShouldEqual, SplitOptimally)
+		assert.Loosely(t, qs, should.HaveLength(1))
+		assert.Loosely(t, mode, should.Equal(SplitOptimally))
 		fq, err := qs[0].Finalize()
-		So(err, ShouldBeNil)
-		So(fq.GQL(), ShouldEqual,
-			"SELECT * FROM `TaskResultSummary` WHERE `state` = 16 ORDER BY `__key__`")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, fq.GQL(), should.Equal(
+			"SELECT * FROM `TaskResultSummary` WHERE `state` = 16 ORDER BY `__key__`"))
 	})
 
-	Convey("FilterTasksByState: pending+running", t, func() {
-		Convey("SplitOptimally", func() {
+	ftt.Run("FilterTasksByState: pending+running", t, func(t *ftt.Test) {
+		t.Run("SplitOptimally", func(t *ftt.Test) {
 			qs, mode := FilterTasksByState(TaskResultSummaryQuery(), apipb.StateQuery_QUERY_PENDING_RUNNING, SplitOptimally)
-			So(qs, ShouldHaveLength, 1)
-			So(mode, ShouldEqual, SplitCompletely)
+			assert.Loosely(t, qs, should.HaveLength(1))
+			assert.Loosely(t, mode, should.Equal(SplitCompletely))
 			fq, err := qs[0].Finalize()
-			So(err, ShouldBeNil)
-			So(fq.GQL(), ShouldEqual,
-				"SELECT * FROM `TaskResultSummary` WHERE `state` IN ARRAY(16, 32) ORDER BY `__key__`")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, fq.GQL(), should.Equal(
+				"SELECT * FROM `TaskResultSummary` WHERE `state` IN ARRAY(16, 32) ORDER BY `__key__`"))
 		})
 
-		Convey("SplitCompletely", func() {
+		t.Run("SplitCompletely", func(t *ftt.Test) {
 			qs, mode := FilterTasksByState(TaskResultSummaryQuery(), apipb.StateQuery_QUERY_PENDING_RUNNING, SplitCompletely)
-			So(qs, ShouldHaveLength, 2)
-			So(mode, ShouldEqual, SplitCompletely)
+			assert.Loosely(t, qs, should.HaveLength(2))
+			assert.Loosely(t, mode, should.Equal(SplitCompletely))
 
 			fq0, err := qs[0].Finalize()
-			So(err, ShouldBeNil)
-			So(fq0.GQL(), ShouldEqual,
-				"SELECT * FROM `TaskResultSummary` WHERE `state` = 16 ORDER BY `__key__`")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, fq0.GQL(), should.Equal(
+				"SELECT * FROM `TaskResultSummary` WHERE `state` = 16 ORDER BY `__key__`"))
 
 			fq1, err := qs[1].Finalize()
-			So(err, ShouldBeNil)
-			So(fq1.GQL(), ShouldEqual,
-				"SELECT * FROM `TaskResultSummary` WHERE `state` = 32 ORDER BY `__key__`")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, fq1.GQL(), should.Equal(
+				"SELECT * FROM `TaskResultSummary` WHERE `state` = 32 ORDER BY `__key__`"))
 		})
 	})
 
-	Convey("FilterTasksByTags", t, func() {
+	ftt.Run("FilterTasksByTags", t, func(t *ftt.Test) {
 		tags := []*apipb.StringPair{
 			{Key: "pool", Value: "chromium.tests"},
 			{Key: "buildbucket_id", Value: "1"},
@@ -981,14 +981,14 @@ func TestTaskResultSummaryQueries(t *testing.T) {
 			{Key: "board", Value: "board1|board2"},
 		}
 		filter, err := NewFilter(tags)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		queries := FilterTasksByTags(TaskResultSummaryQuery(), SplitOptimally, filter)
-		So(len(queries), ShouldEqual, 2)
+		assert.Loosely(t, len(queries), should.Equal(2))
 
 		q1, err := queries[0].Finalize()
-		So(err, ShouldBeNil)
-		So(q1.GQL(), ShouldEqual,
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, q1.GQL(), should.Equal(
 			"SELECT * FROM `TaskResultSummary` "+
 				"WHERE "+
 				"`tags` = \"board:board1\" AND "+
@@ -996,11 +996,11 @@ func TestTaskResultSummaryQueries(t *testing.T) {
 				"`tags` = \"pool:chromium.tests\" AND "+
 				"`tags` IN ARRAY(\"os:ubuntu1\", \"os:ubuntu2\") "+
 				"ORDER BY `__key__`",
-		)
+		))
 
 		q2, err := queries[1].Finalize()
-		So(err, ShouldBeNil)
-		So(q2.GQL(), ShouldEqual,
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, q2.GQL(), should.Equal(
 			"SELECT * FROM `TaskResultSummary` "+
 				"WHERE "+
 				"`tags` = \"board:board2\" AND "+
@@ -1008,6 +1008,6 @@ func TestTaskResultSummaryQueries(t *testing.T) {
 				"`tags` = \"pool:chromium.tests\" AND "+
 				"`tags` IN ARRAY(\"os:ubuntu1\", \"os:ubuntu2\") "+
 				"ORDER BY `__key__`",
-		)
+		))
 	})
 }

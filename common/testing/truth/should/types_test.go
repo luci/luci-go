@@ -30,4 +30,3 @@ func TestHasType(t *testing.T) {
 	actual = 100
 	shouldFail(fn.CastCompare(actual))
 }
-

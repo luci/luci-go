@@ -55,9 +55,13 @@ func Equal[T comparable](expected T) comparison.Func[T] {
 			return nil
 		}
 
-		return comparison.NewSummaryBuilder(cmpName, expected).
-			SmartCmpDiff(actual, expected).
-			Summary
+		builder := comparison.NewSummaryBuilder(cmpName, expected)
+		if reflect.TypeFor[T]().Kind() == reflect.Pointer {
+			builder.AddFindingf("Warning",
+				"This compared two pointers - did you want should.Match instead?")
+		}
+
+		return builder.SmartCmpDiff(actual, expected).Summary
 	}
 }
 
