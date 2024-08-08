@@ -20,31 +20,12 @@ import (
 
 	"cloud.google.com/go/bigquery"
 	"google.golang.org/api/googleapi"
-	"google.golang.org/api/option"
 
 	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/server/auth"
 )
-
-// Client returns a new BigQuery client for use with the given GCP project,
-// that authenticates as LUCI Analysis itself. Only use this method if the
-// specification of the BigQuery dataset to access is not under the
-// control of the project (e.g. via configuration).
-func Client(ctx context.Context, gcpProject string) (*bigquery.Client, error) {
-	if gcpProject == "" {
-		return nil, errors.New("GCP Project must be specified")
-	}
-	tr, err := auth.GetRPCTransport(ctx, auth.AsSelf, auth.WithScopes(bigquery.Scope))
-	if err != nil {
-		return nil, err
-	}
-	return bigquery.NewClient(ctx, gcpProject, option.WithHTTPClient(&http.Client{
-		Transport: tr,
-	}))
-}
 
 // Inserter provides methods to insert rows into a BigQuery table.
 type Inserter struct {

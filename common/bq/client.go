@@ -1,4 +1,4 @@
-// Copyright 2023 The LUCI Authors.
+// Copyright 2024 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,22 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bqutil
+package bq
 
 import (
 	"context"
 	"net/http"
 
 	"cloud.google.com/go/bigquery"
-	"google.golang.org/api/option"
-
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/auth"
+	"google.golang.org/api/option"
 )
 
-// Client returns a new BigQuery client for use with the given GCP project,
-// that authenticates as LUCI Bisection.
-func Client(ctx context.Context, gcpProject string) (*bigquery.Client, error) {
+// NewClient returns a new BigQuery client for use with the given GCP project,
+// that authenticates as the LUCI service itself.
+func NewClient(ctx context.Context, gcpProject string) (*bigquery.Client, error) {
 	if gcpProject == "" {
 		return nil, errors.New("GCP Project must be specified")
 	}

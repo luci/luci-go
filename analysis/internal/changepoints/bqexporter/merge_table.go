@@ -41,7 +41,7 @@ func MergeTables(ctx context.Context, gcpProject string) (retErr error) {
 		return nil
 	}
 
-	client, err := bqutil.Client(ctx, gcpProject)
+	client, err := bq.NewClient(ctx, gcpProject)
 	if err != nil {
 		return errors.Annotate(err, "create bq client").Err()
 	}

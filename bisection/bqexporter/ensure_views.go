@@ -46,7 +46,7 @@ func EnsureViews(ctx context.Context) error {
 		logging.Warningf(ctx, "ensure view is not enabled")
 	}
 
-	client, err := bqutil.Client(ctx, info.AppID(ctx))
+	client, err := bq.NewClient(ctx, info.AppID(ctx))
 	if err != nil {
 		return errors.Annotate(err, "create bq client").Err()
 	}

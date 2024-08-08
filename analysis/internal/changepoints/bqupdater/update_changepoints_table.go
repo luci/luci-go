@@ -30,7 +30,7 @@ import (
 // UpdateChangepointTable is the entry point of the update-changepoint-table cron job.
 // It runs DDL to create or replace the test_variant_changepoints table.
 func UpdateChangepointTable(ctx context.Context, gcpProject string) (retErr error) {
-	client, err := bqutil.Client(ctx, gcpProject)
+	client, err := bq.NewClient(ctx, gcpProject)
 	if err != nil {
 		return errors.Annotate(err, "create bq client").Err()
 	}

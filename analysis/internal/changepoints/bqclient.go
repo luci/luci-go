@@ -22,15 +22,15 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/api/iterator"
 
+	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/errors"
 
-	"go.chromium.org/luci/analysis/internal/bqutil"
 	"go.chromium.org/luci/analysis/internal/tracing"
 )
 
 // NewClient creates a new client for reading changepints.
 func NewClient(ctx context.Context, gcpProject string) (*Client, error) {
-	client, err := bqutil.Client(ctx, gcpProject)
+	client, err := bq.NewClient(ctx, gcpProject)
 	if err != nil {
 		return nil, err
 	}

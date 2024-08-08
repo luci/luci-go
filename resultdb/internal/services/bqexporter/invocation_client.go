@@ -101,7 +101,7 @@ func NewInvClient(ctx context.Context, projectID string) (s *InvClient, reterr e
 		return nil, errors.New("GCP project must be specified")
 	}
 
-	bqClient, err := bqutil.Client(ctx, projectID)
+	bqClient, err := bq.NewClient(ctx, projectID)
 	if err != nil {
 		return nil, errors.Annotate(err, "creating BQ client").Err()
 	}

@@ -23,6 +23,7 @@ import (
 	sppb "cloud.google.com/go/spanner/apiv1/spannerpb"
 	"google.golang.org/genproto/googleapis/bytestream"
 
+	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/prpc"
@@ -30,7 +31,6 @@ import (
 	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/gerritauth"
 
-	"go.chromium.org/luci/resultdb/bqutil"
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/artifactcontent"
 	"go.chromium.org/luci/resultdb/internal/artifacts"
@@ -84,7 +84,7 @@ func InitServer(srv *server.Server, opts Options) error {
 		contentServer.InstallHandlers(srv.VirtualHost(host))
 	}
 
-	bqClient, err := bqutil.Client(srv.Context, srv.Options.CloudProject)
+	bqClient, err := bq.NewClient(srv.Context, srv.Options.CloudProject)
 	if err != nil {
 		return errors.Annotate(err, "creating BQ client").Err()
 	}

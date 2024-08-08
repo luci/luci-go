@@ -1,4 +1,4 @@
-// Copyright 2022 The LUCI Authors.
+// Copyright 2024 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package clusteredfailures
+package bqexporter
 
 import (
 	"context"
@@ -25,11 +25,11 @@ import (
 	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/errors"
 
-	"go.chromium.org/luci/analysis/internal/bqutil"
-	bqpb "go.chromium.org/luci/analysis/proto/bq"
+	"go.chromium.org/luci/tree_status/bqutil"
+	bqpb "go.chromium.org/luci/tree_status/proto/bq"
 )
 
-// NewClient creates a new client for exporting clustered failures
+// NewClient creates a new client for exporting statuses
 // via the BigQuery Write API.
 func NewClient(ctx context.Context, projectID string) (s *Client, reterr error) {
 	if projectID == "" {
@@ -42,13 +42,16 @@ func NewClient(ctx context.Context, projectID string) (s *Client, reterr error) 
 	}
 	defer func() {
 		if reterr != nil {
+			// This method failed for some reason, clean up the
+			// BigQuery client. Swallow any error returned by the Close()
+			// call.
 			bqClient.Close()
 		}
 	}()
 
 	mwClient, err := bq.NewWriterClient(ctx, projectID)
 	if err != nil {
-		return nil, errors.Annotate(err, "create managed writer client").Err()
+		return nil, errors.Annotate(err, "creating managed writer client").Err()
 	}
 	return &Client{
 		projectID: projectID,
@@ -58,45 +61,51 @@ func NewClient(ctx context.Context, projectID string) (s *Client, reterr error) 
 }
 
 // Close releases resources held by the client.
-func (s *Client) Close() (reterr error) {
-	// Ensure all Close() methods are called, even if one panics or fails.
+func (c *Client) Close() (reterr error) {
+	// Ensure both bqClient and mwClient Close() methods
+	// are called, even if one panics or fails.
 	defer func() {
-		err := s.mwClient.Close()
+		err := c.mwClient.Close()
 		if reterr == nil {
 			reterr = err
 		}
 	}()
-	return s.bqClient.Close()
+	return c.bqClient.Close()
 }
 
-// Client provides methods to export clustered failures to BigQuery
+// Client provides methods to export statuses to BigQuery
 // via the BigQuery Write API.
 type Client struct {
-	// projectID is the name of the GCP project that contains LUCI Analysis datasets.
+	// projectID is the name of the GCP project that contains Tree Status
+	// BigQuery datasets.
 	projectID string
 	bqClient  *bigquery.Client
 	mwClient  *managedwriter.Client
 }
 
-func (s *Client) ensureSchema(ctx context.Context) error {
-	// Dataset for the project may have to be manually created.
-	table := s.bqClient.Dataset(bqutil.InternalDatasetID).Table(tableName)
-	if err := schemaApplyer.EnsureTable(ctx, table, tableMetadata); err != nil {
-		return errors.Annotate(err, "ensuring clustered failures table").Err()
+// schemaApplier ensures BQ schema matches the row proto definitions.
+var schemaApplyer = bq.NewSchemaApplyer(bq.RegisterSchemaApplyerCache(1))
+
+func (c *Client) EnsureSchema(ctx context.Context) error {
+	table := c.bqClient.Dataset(bqutil.InternalDatasetID).Table(tableName)
+	if err := schemaApplyer.EnsureTable(ctx, table, tableMetadata, bq.UpdateMetadata()); err != nil {
+		return errors.Annotate(err, "ensuring statuses table").Err()
 	}
 	return nil
 }
 
-// Insert inserts the given rows in BigQuery.
-func (s *Client) Insert(ctx context.Context, rows []*bqpb.ClusteredFailureRow) error {
-	if err := s.ensureSchema(ctx); err != nil {
+// InsertStatusRows inserts the given rows in BigQuery.
+func (c *Client) InsertStatusRows(ctx context.Context, rows []*bqpb.StatusRow) error {
+	if err := c.EnsureSchema(ctx); err != nil {
 		return errors.Annotate(err, "ensure schema").Err()
 	}
-	tableName := fmt.Sprintf("projects/%s/datasets/%s/tables/%s", s.projectID, bqutil.InternalDatasetID, tableName)
-	writer := bq.NewWriter(s.mwClient, tableName, tableSchemaDescriptor)
+	tableName := fmt.Sprintf("projects/%s/datasets/%s/tables/%s", c.projectID, bqutil.InternalDatasetID, tableName)
+	writer := bq.NewWriter(c.mwClient, tableName, tableSchemaDescriptor)
 	payload := make([]proto.Message, len(rows))
 	for i, r := range rows {
 		payload[i] = r
 	}
+	// TODO (nqmtuan): Consider using commit stream with offset if we really want
+	// exactly-once semantic.
 	return writer.AppendRowsWithDefaultStream(ctx, payload)
 }

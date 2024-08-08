@@ -21,15 +21,14 @@ import (
 	"cloud.google.com/go/bigquery"
 	"google.golang.org/api/iterator"
 
+	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/auth/realms"
-
-	"go.chromium.org/luci/analysis/internal/bqutil"
 )
 
 // NewReadClient creates a new client for reading test results BigQuery table.
 func NewReadClient(ctx context.Context, gcpProject string) (*ReadClient, error) {
-	client, err := bqutil.Client(ctx, gcpProject)
+	client, err := bq.NewClient(ctx, gcpProject)
 	if err != nil {
 		return nil, err
 	}

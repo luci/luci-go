@@ -46,7 +46,7 @@ func NewClient(ctx context.Context, projectID string) (s *Client, reterr error) 
 	if projectID == "" {
 		return nil, errors.New("GCP Project must be specified")
 	}
-	bqClient, err := bqutil.Client(ctx, projectID)
+	bqClient, err := bq.NewClient(ctx, projectID)
 	if err != nil {
 		return nil, errors.Annotate(err, "creating BQ client").Err()
 	}

@@ -53,7 +53,7 @@ var luciProjectViewQueries = map[string]makeTableMetadata{
 
 // CronHandler is then entry-point for the ensure views cron job.
 func CronHandler(ctx context.Context, gcpProject string) error {
-	client, err := bqutil.Client(ctx, gcpProject)
+	client, err := bq.NewClient(ctx, gcpProject)
 	if err != nil {
 		return errors.Annotate(err, "create bq client").Err()
 	}

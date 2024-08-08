@@ -22,6 +22,7 @@ import (
 	"cloud.google.com/go/bigquery"
 	"google.golang.org/api/iterator"
 
+	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/errors"
 
 	"go.chromium.org/luci/analysis/internal/bqutil"
@@ -34,7 +35,7 @@ var InvalidArgumentTag = errors.BoolTag{Key: errors.NewTagKey("invalid argument"
 // NewClient creates a new client for reading clusters. Close() MUST
 // be called after you have finished using this client.
 func NewClient(ctx context.Context, gcpProject string) (*Client, error) {
-	client, err := bqutil.Client(ctx, gcpProject)
+	client, err := bq.NewClient(ctx, gcpProject)
 	if err != nil {
 		return nil, err
 	}

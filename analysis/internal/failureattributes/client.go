@@ -19,6 +19,7 @@ import (
 
 	"cloud.google.com/go/bigquery"
 
+	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/errors"
 
 	"go.chromium.org/luci/analysis/internal/bqutil"
@@ -31,7 +32,7 @@ func NewClient(ctx context.Context, projectID string) (s *Client, reterr error) 
 		return nil, errors.New("GCP Project must be specified")
 	}
 
-	bqClient, err := bqutil.Client(ctx, projectID)
+	bqClient, err := bq.NewClient(ctx, projectID)
 	if err != nil {
 		return nil, errors.Annotate(err, "creating BQ client").Err()
 	}

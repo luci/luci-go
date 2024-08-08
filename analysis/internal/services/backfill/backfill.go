@@ -34,7 +34,6 @@ import (
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/tq"
 
-	"go.chromium.org/luci/analysis/internal/bqutil"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 )
 
@@ -58,7 +57,7 @@ var tc = tq.RegisterTaskClass(tq.TaskClass{
 
 // RegisterTaskHandler registers the handler for backfill tasks.
 func RegisterTaskHandler(srv *server.Server) error {
-	client, err := bqutil.Client(srv.Context, srv.Options.CloudProject)
+	client, err := bq.NewClient(srv.Context, srv.Options.CloudProject)
 	if err != nil {
 		return err
 	}

@@ -26,9 +26,9 @@ import (
 	"cloud.google.com/go/bigquery"
 	"google.golang.org/api/iterator"
 
+	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/errors"
 
-	"go.chromium.org/luci/resultdb/bqutil"
 	"go.chromium.org/luci/resultdb/internal/pagination"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -40,7 +40,7 @@ type BQClient interface {
 
 // NewClient creates a new client for reading text_artifacts table.
 func NewClient(ctx context.Context, gcpProject string) (*Client, error) {
-	client, err := bqutil.Client(ctx, gcpProject)
+	client, err := bq.NewClient(ctx, gcpProject)
 	if err != nil {
 		return nil, err
 	}
