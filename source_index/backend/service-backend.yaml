@@ -15,6 +15,7 @@
 runtime: go122
 instance_class: F4
 service: backend
+service_account: ${BACKEND_SERVICE_ACCOUNT}
 
 # Note: this is interpreted by gae.py, it maps the app ID being deployed to
 # values of ${...} vars.
@@ -32,8 +33,9 @@ luci_gae_vars:
   luci-source-index-dev:
     AUTH_SERVICE_HOST: chrome-infra-auth-dev.appspot.com
     CONFIG_SERVICE_HOST: config.luci.app
-    TS_MON_ACCOUNT: app-engine-metric-publishers@prodx-mon-chrome-infra.google.com.iam.gserviceaccount.com
+    BACKEND_SERVICE_ACCOUNT: backend-service@luci-source-index-dev.iam.gserviceaccount.com
     SPANNER_DB: projects/luci-source-index-dev/instances/dev/databases/luci-source-index-dev
+    TS_MON_ACCOUNT: app-engine-metric-publishers@prodx-mon-chrome-infra.google.com.iam.gserviceaccount.com
 
 handlers:
 - url: /.*
@@ -44,5 +46,5 @@ entrypoint: >
   main
   -auth-service-host ${AUTH_SERVICE_HOST}
   -config-service-host ${CONFIG_SERVICE_HOST}
-  -ts-mon-account ${TS_MON_ACCOUNT}
   -spanner-database ${SPANNER_DB}
+  -ts-mon-account ${TS_MON_ACCOUNT}
