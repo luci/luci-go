@@ -12,22 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package assert contains two alternate spellings of truth.Assert and
-// truth.AssertLoosely, spelled `assert.That` and `assert.Loosely`
-// respectively.
+// Package assert contains two functions, which allow you to make fluent truth
+// comparisons which t.FailNow a test.
 //
-// This allows test writers to more concisely express assertions like:
+// Example:
 //
 //	assert.That(t, 10, should.Equal(20))
 //	assert.Loosely(t, myCustomInt(10), should.Equal(20))
 //
-// Rather than
+// In the example above, the test case would halt immediately after the first
+// `assert.That`, because 10 does not equal 20, and `assert.That` will call
+// t.FailNow().
 //
-//	truth.Assert(t, 10, should.Equal(20))
-//	truth.AssertLoosely(t, myCustomInt(10), should.Equal(20))
-//
-// This package has a counterpart sibling `check` which covers `Check` and
-// `CheckLoosely`.
+// This package has a sibling package `check` which instead does t.Fail,
+// allowing tests to make multiple checks without halting.
 package assert
 
 import (

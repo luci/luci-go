@@ -12,22 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package check contains two alternate spellings of truth.Check and
-// truth.CheckLoosely, spelled `check.That` and `check.Loosely`
-// respectively.
+// Package check contains two functions, which allow you to make fluent truth
+// comparisons which t.Fail a test.
 //
-// This allows test writers to have fluent expressions in tests such allows
+// This is the preferred form for tests which need to check many conditions
+// without necessarially failing the entire test on the first failed condition.
+//
+// Example:
 //
 //	check.That(t, 10, should.Equal(20))
 //	check.Loosely(t, myCustomInt(10), should.Equal(20))
 //
-// Rather than
+// The functions in check return a boolean value, and can be used to gate
+// additional checks or asserts:
 //
-//	truth.Check(t, 10, should.Equal(20))
-//	truth.CheckLoosely(t, myCustomInt(10), should.Equal(20))
+//	if check.That(t, 10, should.Equal(20)) {
+//	  // additional logic/conditions/subtests if 10 == 20
+//	}
 //
-// This package has a counterpart sibling `assert` which cover `Check` and
-// `CheckLoosely`.
+// This package has a sibling package `assert` which instead does t.FailNow,
+// causing tests to immediately halt on the first error.
 package check
 
 import (
