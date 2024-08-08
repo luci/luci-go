@@ -14,6 +14,7 @@
 
 import { LinearProgress } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
+import { observer } from 'mobx-react-lite';
 import { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 
@@ -65,7 +66,7 @@ const STATUS_FAVICON_MAP = Object.freeze({
   [Status.CANCELED]: tealFavicon,
 });
 
-export function BuildPage() {
+export const BuildPage = observer(() => {
   const { project, bucket, builder, buildNumOrId } = useParams();
 
   if (!project || !bucket || !builder || !buildNumOrId) {
@@ -206,7 +207,7 @@ export function BuildPage() {
       </InvocationProvider>
     </BuildContextProvider>
   );
-}
+});
 
 export function Component() {
   return (
