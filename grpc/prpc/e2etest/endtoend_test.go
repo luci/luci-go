@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/hex"
 	"math/rand"
+	"net"
 	"net/http"
 	"strings"
 	"sync"
@@ -35,6 +36,7 @@ import (
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/testing/prpctest"
+
 	"go.chromium.org/luci/grpc/prpc"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -97,8 +99,23 @@ func newTestClient(ctx context.Context, svc *service, opts *prpc.Options) (*prpc
 		panic(err)
 	}
 
+	// Use a new transport each time to reduce interference of tests with one
+	// another. Also increase transport-level timeouts from defaults since tests
+	// can be quite slow on bots.
+	transport := &http.Transport{
+		DialContext: (&net.Dialer{
+			Timeout:   300 * time.Second,
+			KeepAlive: 300 * time.Second,
+		}).DialContext,
+		ForceAttemptHTTP2:     true,
+		MaxIdleConns:          100,
+		IdleConnTimeout:       900 * time.Second,
+		TLSHandshakeTimeout:   100 * time.Second,
+		ExpectContinueTimeout: 10 * time.Second,
+	}
+
 	prpcClient.C = &http.Client{
-		Transport: auth.NewModifyingTransport(http.DefaultTransport, func(r *http.Request) error {
+		Transport: auth.NewModifyingTransport(transport, func(r *http.Request) error {
 			r.AddCookie(&http.Cookie{
 				Name:  "cookie_1",
 				Value: "value_1",
