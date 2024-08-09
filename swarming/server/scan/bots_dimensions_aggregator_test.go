@@ -46,7 +46,7 @@ func TestBotsDimensionsAggregator(t *testing.T) {
 		{
 			name: "one bot",
 			bots: [][]string{
-				{"pool:a", "d2:v3", "d1:v2", "d1:v1", "id:skip", "dut_name:skip", "dut_id:skip"},
+				{"pool:a", "d2:v3", "d1:v2", "d1:v1", "id:skip"},
 			},
 			pools: []*internalmodelpb.AggregatedDimensions_Pool{
 				{

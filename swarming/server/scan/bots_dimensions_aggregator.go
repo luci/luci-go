@@ -243,7 +243,5 @@ func isHighCardinalityDimension(key string) bool {
 	// automatically and auto-magically exclude dimensions with lots of values.
 	// This will look weird though if a dimension is close to the cutting
 	// threshold: sometimes it would appear in the aggregation, sometimes not.
-	return key == "id" || // the bot ID itself, each bot reports it as a dimension
-		key == "dut_name" || // ChromeOS-specific
-		key == "dut_id" // ChromeOS-specific
+	return key == "id" // the bot ID itself, each bot reports it as a dimension
 }
