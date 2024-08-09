@@ -200,6 +200,7 @@ import (
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
 	oteltrace "go.opentelemetry.io/otel/trace"
 	oteltracenoop "go.opentelemetry.io/otel/trace/noop"
@@ -790,18 +791,6 @@ func (o *Options) ImageName() string {
 // userAgent derives a user-agent like string identifying the server.
 func (o *Options) userAgent() string {
 	return fmt.Sprintf("LUCI-Server (service: %s; job: %s; ver: %s);", o.TsMonServiceName, o.TsMonJobName, o.ImageVersion())
-}
-
-// shouldEnableTracing is true if options indicate we should enable tracing.
-func (o *Options) shouldEnableTracing() bool {
-	switch {
-	case o.CloudProject == "":
-		return false // nowhere to upload traces to
-	case !o.Prod && o.TraceSampling == "":
-		return false // in dev mode don't upload samples by default
-	default:
-		return !o.testDisableTracing
-	}
 }
 
 // hostOptions constructs HostOptions for module.Initialize(...).
@@ -2617,7 +2606,7 @@ func (s *Server) otelErrorHandler(ctx context.Context) otel.ErrorHandlerFunc {
 }
 
 // otelSampler prepares a sampler based on CLI flags and environment.
-func (s *Server) otelSampler(ctx context.Context) (trace.Sampler, error) {
+func (s *Server) otelSampler(ctx context.Context, enableExporter bool) (trace.Sampler, error) {
 	// On GCP Serverless let the GCP load balancer make decisions about
 	// sampling. If it decides to sample a trace, it will let us know through
 	// options of the parent span in X-Cloud-Trace-Context. We will collect only
@@ -2626,7 +2615,9 @@ func (s *Server) otelSampler(ctx context.Context) (trace.Sampler, error) {
 	// background goroutines aren't sampled either (i.e. we don't need GateSampler
 	// as used below).
 	if s.Options.Serverless.IsGCP() {
-		logging.Infof(ctx, "Setting up Cloud Trace exports to %q using GCP Serverless sampling strategy", s.Options.CloudProject)
+		if enableExporter {
+			logging.Infof(ctx, "Setting up Cloud Trace exports to %q using GCP Serverless sampling strategy", s.Options.CloudProject)
+		}
 		return trace.ParentBased(trace.NeverSample()), nil
 	}
 
@@ -2635,7 +2626,9 @@ func (s *Server) otelSampler(ctx context.Context) (trace.Sampler, error) {
 	if sampling == "" {
 		sampling = "0.1qps"
 	}
-	logging.Infof(ctx, "Setting up Cloud Trace exports to %q (%s)", s.Options.CloudProject, sampling)
+	if enableExporter {
+		logging.Infof(ctx, "Setting up Cloud Trace exports to %q (%s)", s.Options.CloudProject, sampling)
+	}
 	sampler, err := internal.BaseSampler(sampling)
 	if err != nil {
 		return nil, errors.Annotate(err, "bad -trace-sampling").Err()
@@ -2675,7 +2668,10 @@ func (s *Server) otelSampler(ctx context.Context) (trace.Sampler, error) {
 }
 
 // otelSpanExporter initializes a trace spans exporter.
-func (s *Server) otelSpanExporter(ctx context.Context) (trace.SpanExporter, error) {
+func (s *Server) otelSpanExporter(ctx context.Context, enableExporter bool) (trace.SpanExporter, error) {
+	if !enableExporter {
+		return tracetest.NewNoopExporter(), nil
+	}
 	return texporter.New(
 		texporter.WithContext(ctx),
 		texporter.WithProjectID(s.Options.CloudProject),
@@ -2700,10 +2696,38 @@ func (s *Server) initOpenTelemetry() error {
 		propagation.TraceContext{},
 	)
 
-	// If tracing is disabled, initialize OTEL with noop providers that just
-	// silently discard everything. Otherwise OTEL leaks memory, see
+	var enableTracing bool
+	var enableExporter bool
+	if !s.Options.Prod {
+		// In the dev mode we'll fully initialize tracing, but will just not export
+		// any spans (using noop exporter instead). That way various OTEL code paths
+		// are exercised even locally without any extra configuration, which is
+		// important since changes in OTEL libraries have been observed to cause
+		// issues in production. It would be nice to be able to hit them earlier in
+		// dev.
+		enableTracing = true
+		// To be able to test actual Cloud Trace interaction in dev, enable real
+		// exporter when both `-cloud-project` and `-trace-sampling` flags are set:
+		//   * -cloud-project is needed to know where to upload traces to.
+		//   * -trace-sampling acts as a signal to enable real tracing.
+		enableExporter = s.Options.CloudProject != "" && s.Options.TraceSampling != ""
+	} else {
+		// In prod enable tracing only if we know where to upload traces to. Always
+		// use real exporter.
+		enableTracing = s.Options.CloudProject != ""
+		enableExporter = true
+	}
+
+	// Some of server's own unit tests do not want interference from OTEL.
+	if s.Options.testDisableTracing {
+		enableTracing = false
+		enableExporter = false
+	}
+
+	// If tracing is completely disabled, initialize OTEL with noop providers that
+	// just silently discard everything ASAP. Otherwise OTEL leaks memory, see
 	// https://github.com/open-telemetry/opentelemetry-go-contrib/issues/5190
-	if !s.Options.shouldEnableTracing() {
+	if !enableTracing {
 		otel.SetTracerProvider(oteltracenoop.TracerProvider{})
 		otel.SetMeterProvider(otelmetricnoop.MeterProvider{})
 		return nil
@@ -2721,11 +2745,11 @@ func (s *Server) initOpenTelemetry() error {
 	if err != nil {
 		return errors.Annotate(err, "failed to init OpenTelemetry resource").Err()
 	}
-	sampler, err := s.otelSampler(ctx)
+	sampler, err := s.otelSampler(ctx, enableExporter)
 	if err != nil {
 		return errors.Annotate(err, "failed to init OpenTelemetry sampler").Err()
 	}
-	exp, err := s.otelSpanExporter(ctx)
+	exp, err := s.otelSpanExporter(ctx, enableExporter)
 	if err != nil {
 		return errors.Annotate(err, "failed to init OpenTelemetry span exporter").Err()
 	}

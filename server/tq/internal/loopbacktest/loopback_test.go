@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package tq
+package loopbacktest
 
 import (
 	"context"
@@ -28,6 +28,7 @@ import (
 
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/module"
+	"go.chromium.org/luci/server/tq"
 )
 
 func TestLoopbackHTTPExecutor(t *testing.T) {
@@ -38,11 +39,11 @@ func TestLoopbackHTTPExecutor(t *testing.T) {
 	incomingTasks := make(chan proto.Message)
 
 	// Register a task class.
-	disp := Dispatcher{}
-	disp.RegisterTaskClass(TaskClass{
+	disp := tq.Dispatcher{}
+	disp.RegisterTaskClass(tq.TaskClass{
 		ID:        "test-dur",
 		Prototype: &durationpb.Duration{}, // just some proto type
-		Kind:      NonTransactional,
+		Kind:      tq.NonTransactional,
 		Queue:     "queue-1",
 		Handler: func(ctx context.Context, payload proto.Message) error {
 			incomingTasks <- payload
@@ -71,7 +72,7 @@ func TestLoopbackHTTPExecutor(t *testing.T) {
 		HTTPAddr:  "127.0.0.1:0",
 		AdminAddr: "-",
 	}, []module.Module{
-		NewModule(&ModuleOptions{
+		tq.NewModule(&tq.ModuleOptions{
 			Dispatcher:    &disp,
 			ServingPrefix: "/internal/tasks",
 			SweepMode:     "inproc",
@@ -90,7 +91,7 @@ func TestLoopbackHTTPExecutor(t *testing.T) {
 	// Emit a bunch of tasks via the submitter assigned to the server (it lives
 	// in the server's context).
 	for i := time.Duration(0); i < time.Duration(TaskCount); i++ {
-		err = disp.AddTask(srv.Context, &Task{Payload: durationpb.New(i)})
+		err = disp.AddTask(srv.Context, &tq.Task{Payload: durationpb.New(i)})
 		if err != nil {
 			t.Fatalf("failed to add a task: %s", err)
 		}
