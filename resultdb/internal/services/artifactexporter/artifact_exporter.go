@@ -775,6 +775,9 @@ func (ae *artifactExporter) streamArtifactContent(ctx context.Context, a *Artifa
 
 	var str strings.Builder
 	shardID := 0
+	// shardUniquifier calculation may be expensive, so we only update it
+	// whenever the shardID changes.
+	suq := shardUniquifier(a.TestID, a.ResultID, a.ArtifactID, shardID)
 	project, realm := realms.Split(inv.Realm)
 	variantJSON, err := pbutil.VariantToJSON(a.TestVariant)
 	if err != nil {
@@ -839,7 +842,7 @@ func (ae *artifactExporter) streamArtifactContent(ctx context.Context, a *Artifa
 			if r == utf8.RuneError {
 				return ErrInvalidUTF8
 			}
-			suq := shardUniquifier(a.TestID, a.ResultID, a.ArtifactID, shardID)
+
 			if str.Len()+len(sc.Bytes()) > maxShardContentSize {
 				// Only export shards not having a checkpoint.
 				if _, ok := checkpoints[suq]; !ok {
@@ -850,6 +853,7 @@ func (ae *artifactExporter) streamArtifactContent(ctx context.Context, a *Artifa
 					}
 				}
 				shardID++
+				suq = shardUniquifier(a.TestID, a.ResultID, a.ArtifactID, shardID)
 				str.Reset()
 			}
 			str.Write(sc.Bytes())
