@@ -45,7 +45,10 @@ message StatusRow {
 
 // Represents a LUCI builder.
 message Builder {
+  // The LUCI project (e.g. chromium).
   string project = 1;
+  // The LUCI bucket (e.g. ci).
   string bucket = 2;
+  // The LUCI builder name (e.g. linux-rel).
   string builder = 3;
 }

@@ -15,7 +15,6 @@
 package status
 
 import (
-	"context"
 	"strings"
 	"testing"
 	"time"
@@ -212,81 +211,25 @@ func TestStatusTable(t *testing.T) {
 			So(hasThirdPage, ShouldBeFalse)
 		})
 	})
-}
 
-type StatusBuilder struct {
-	status Status
-}
+	Convey("ListAfter", t, func() {
+		Convey("Empty", func() {
+			ctx := testutil.SpannerTestContext(t)
+			results, err := ListAfter(span.Single(ctx), time.Unix(1000, 0))
+			So(err, ShouldBeNil)
+			So(results, ShouldHaveLength, 0)
+		})
 
-func NewStatusBuilder() *StatusBuilder {
-	id, err := GenerateID()
-	So(err, ShouldBeNil)
-	return &StatusBuilder{status: Status{
-		TreeName:      "chromium",
-		StatusID:      id,
-		GeneralStatus: pb.GeneralState_OPEN,
-		Message:       "Tree is open!",
-		CreateUser:    "user1",
-		CreateTime:    spanner.CommitTimestamp,
-	}}
-}
+		Convey("Have data", func() {
+			ctx := testutil.SpannerTestContext(t)
+			NewStatusBuilder().WithMessage("mes1").WithCreateTime(time.Unix(300, 0).UTC()).CreateInDB(ctx)
+			mes2 := NewStatusBuilder().WithMessage("mes2").WithCreateTime(time.Unix(500, 0).UTC()).CreateInDB(ctx)
+			NewStatusBuilder().WithMessage("mes3").WithCreateTime(time.Unix(200, 0).UTC()).CreateInDB(ctx)
+			mes4 := NewStatusBuilder().WithMessage("mes3").WithCreateTime(time.Unix(400, 0).UTC()).CreateInDB(ctx)
 
-func (b *StatusBuilder) WithTreeName(treeName string) *StatusBuilder {
-	b.status.TreeName = treeName
-	return b
-}
-
-func (b *StatusBuilder) WithStatusID(id string) *StatusBuilder {
-	b.status.StatusID = id
-	return b
-}
-
-func (b *StatusBuilder) WithGeneralStatus(state pb.GeneralState) *StatusBuilder {
-	b.status.GeneralStatus = state
-	return b
-}
-
-func (b *StatusBuilder) WithMessage(message string) *StatusBuilder {
-	b.status.Message = message
-	return b
-}
-
-func (b *StatusBuilder) WithCreateTime(createTime time.Time) *StatusBuilder {
-	b.status.CreateTime = createTime
-	return b
-}
-
-func (b *StatusBuilder) WithCreateUser(user string) *StatusBuilder {
-	b.status.CreateUser = user
-	return b
-}
-
-func (b *StatusBuilder) WithClosingBuilderName(closingBuilderName string) *StatusBuilder {
-	b.status.ClosingBuilderName = closingBuilderName
-	return b
-}
-
-func (b *StatusBuilder) Build() *Status {
-	s := b.status
-	return &s
-}
-
-func (b *StatusBuilder) CreateInDB(ctx context.Context) *Status {
-	s := b.Build()
-	row := map[string]any{
-		"TreeName":           s.TreeName,
-		"StatusId":           s.StatusID,
-		"GeneralStatus":      int64(s.GeneralStatus),
-		"Message":            s.Message,
-		"CreateUser":         s.CreateUser,
-		"CreateTime":         s.CreateTime,
-		"ClosingBuilderName": s.ClosingBuilderName,
-	}
-	m := spanner.InsertOrUpdateMap("Status", row)
-	ts, err := span.Apply(ctx, []*spanner.Mutation{m})
-	So(err, ShouldBeNil)
-	if s.CreateTime == spanner.CommitTimestamp {
-		s.CreateTime = ts.UTC()
-	}
-	return s
+			results, err := ListAfter(span.Single(ctx), time.Unix(350, 0))
+			So(err, ShouldBeNil)
+			So(results, ShouldResemble, []*Status{mes4, mes2})
+		})
+	})
 }

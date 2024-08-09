@@ -17,13 +17,16 @@ package bqexporter
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"cloud.google.com/go/bigquery"
 	"cloud.google.com/go/bigquery/storage/managedwriter"
+	"google.golang.org/api/iterator"
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/gae/service/info"
 
 	"go.chromium.org/luci/tree_status/bqutil"
 	bqpb "go.chromium.org/luci/tree_status/proto/bq"
@@ -108,4 +111,38 @@ func (c *Client) InsertStatusRows(ctx context.Context, rows []*bqpb.StatusRow) e
 	// TODO (nqmtuan): Consider using commit stream with offset if we really want
 	// exactly-once semantic.
 	return writer.AppendRowsWithDefaultStream(ctx, payload)
+}
+
+// statusRow represents one row in statuses table in BigQuery.
+type statusRow struct {
+	// We only need CreateTime for now.
+	CreateTime time.Time
+}
+
+// ReadMostRecentCreateTime reads the most recent create_time from `luci-tree-status.internal.statuses` table.
+// If the table is empty, it will returns time.Time{}.
+func (c *Client) ReadMostRecentCreateTime(ctx context.Context) (time.Time, error) {
+	queryStm := `
+		SELECT
+			create_time as CreateTime
+		FROM statuses
+		ORDER BY create_time DESC
+		LIMIT 1`
+	q := c.bqClient.Query(queryStm)
+	q.DefaultDatasetID = bqutil.InternalDatasetID
+	q.DefaultProjectID = info.AppID(ctx)
+	it, err := q.Read(ctx)
+	if err != nil {
+		return time.Time{}, errors.Annotate(err, "querying statuses").Err()
+	}
+	row := &statusRow{}
+	err = it.Next(row)
+	// No row.
+	if err == iterator.Done {
+		return time.Time{}, nil
+	}
+	if err != nil {
+		return time.Time{}, errors.Annotate(err, "obtain next status row").Err()
+	}
+	return row.CreateTime, nil
 }

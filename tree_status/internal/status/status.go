@@ -42,7 +42,7 @@ const (
 	// StatusIDExpression is a partial regular expression that validates status identifiers.
 	StatusIDExpression = `[0-9a-f]{32}`
 	// BuilderNameExpression is a partial regular expression that validates builder name.
-	BuilderNameExpression = `projects/[a-z0-9\-_]{1,40}/buckets/[a-z0-9\-_.]{1,100}/builders/[a-zA-Z0-9\-_.\(\) ]{1,128}`
+	BuilderNameExpression = `projects/([a-z0-9\-_]{1,40})/buckets/([a-z0-9\-_.]{1,100})/builders/([a-zA-Z0-9\-_.\(\) ]{1,128})`
 )
 
 // NotExistsErr is returned when the requested object was not found in the database.
@@ -186,20 +186,21 @@ func Create(status *Status, currentUser string) (*spanner.Mutation, error) {
 
 // Read retrieves a status update from the database given the exact time the status update was made.
 func Read(ctx context.Context, treeName, statusID string) (*Status, error) {
-	row, err := span.ReadRow(ctx, "Status", spanner.Key{treeName, statusID}, []string{"StatusId", "GeneralStatus", "Message", "CreateUser", "CreateTime", "ClosingBuilderName"})
+	row, err := span.ReadRow(ctx, "Status", spanner.Key{treeName, statusID}, []string{"TreeName", "StatusId", "GeneralStatus", "Message", "CreateUser", "CreateTime", "ClosingBuilderName"})
 	if err != nil {
 		if spanner.ErrCode(err) == codes.NotFound {
 			return nil, NotExistsErr
 		}
 		return nil, errors.Annotate(err, "get status").Err()
 	}
-	return fromRow(treeName, row)
+	return fromRow(row)
 }
 
 // ReadLatest retrieves the most recent status update for a tree from the database.
 func ReadLatest(ctx context.Context, treeName string) (*Status, error) {
 	stmt := spanner.NewStatement(`
 		SELECT
+			TreeName,
 			StatusId,
 			GeneralStatus,
 			Message,
@@ -220,7 +221,7 @@ func ReadLatest(ctx context.Context, treeName string) (*Status, error) {
 	} else if err != nil {
 		return nil, errors.Annotate(err, "get latest status").Err()
 	}
-	return fromRow(treeName, row)
+	return fromRow(row)
 }
 
 // ListOptions allows specifying extra options to the List method.
@@ -245,6 +246,7 @@ func List(ctx context.Context, treeName string, options *ListOptions) ([]*Status
 
 	stmt := spanner.NewStatement(`
 		SELECT
+			TreeName,
 			StatusId,
 			GeneralStatus,
 			Message,
@@ -266,7 +268,7 @@ func List(ctx context.Context, treeName string, options *ListOptions) ([]*Status
 
 	statusList := []*Status{}
 	if err := iter.Do(func(row *spanner.Row) error {
-		status, err := fromRow(treeName, row)
+		status, err := fromRow(row)
 		statusList = append(statusList, status)
 		return err
 	}); err != nil {
@@ -280,26 +282,66 @@ func List(ctx context.Context, treeName string, options *ListOptions) ([]*Status
 	return statusList, hasNextPage, nil
 }
 
-func fromRow(treeName string, row *spanner.Row) (*Status, error) {
-	status := &Status{TreeName: treeName}
-	generalStatus := int64(0)
-	if err := row.Column(0, &status.StatusID); err != nil {
+// ListAfter retrieves a list of status values from the Spanner that were
+// created after a particular timestamp.
+//
+//	Status values are listed in ascending order of CreateTime.
+func ListAfter(ctx context.Context, afterTime time.Time) ([]*Status, error) {
+	stmt := spanner.NewStatement(`
+		SELECT
+			TreeName,
+			StatusId,
+			GeneralStatus,
+			Message,
+			CreateUser,
+			CreateTime,
+			ClosingBuilderName
+		FROM Status
+		WHERE
+			CreateTime > @afterTime
+		ORDER BY CreateTime`)
+
+	stmt.Params["afterTime"] = afterTime
+
+	iter := span.Query(ctx, stmt)
+	results := []*Status{}
+	err := iter.Do(func(row *spanner.Row) error {
+		status, err := fromRow(row)
+		if err != nil {
+			return errors.Annotate(err, "from row").Err()
+		}
+		results = append(results, status)
+		return nil
+	})
+	if err != nil {
+		return nil, errors.Annotate(err, "query status").Err()
+	}
+	return results, nil
+}
+
+func fromRow(row *spanner.Row) (*Status, error) {
+	status := &Status{}
+	if err := row.Column(0, &status.TreeName); err != nil {
+		return nil, errors.Annotate(err, "reading TreeName column").Err()
+	}
+	if err := row.Column(1, &status.StatusID); err != nil {
 		return nil, errors.Annotate(err, "reading StatusID column").Err()
 	}
-	if err := row.Column(1, &generalStatus); err != nil {
+	generalStatus := int64(0)
+	if err := row.Column(2, &generalStatus); err != nil {
 		return nil, errors.Annotate(err, "reading GeneralStatus column").Err()
 	}
 	status.GeneralStatus = pb.GeneralState(generalStatus)
-	if err := row.Column(2, &status.Message); err != nil {
+	if err := row.Column(3, &status.Message); err != nil {
 		return nil, errors.Annotate(err, "reading Message column").Err()
 	}
-	if err := row.Column(3, &status.CreateUser); err != nil {
+	if err := row.Column(4, &status.CreateUser); err != nil {
 		return nil, errors.Annotate(err, "reading CreateUser column").Err()
 	}
-	if err := row.Column(4, &status.CreateTime); err != nil {
+	if err := row.Column(5, &status.CreateTime); err != nil {
 		return nil, errors.Annotate(err, "reading CreateTime column").Err()
 	}
-	if err := row.Column(5, &status.ClosingBuilderName); err != nil {
+	if err := row.Column(6, &status.ClosingBuilderName); err != nil {
 		return nil, errors.Annotate(err, "reading ClosingBuilderName column").Err()
 	}
 	return status, nil

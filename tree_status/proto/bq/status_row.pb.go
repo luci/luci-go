@@ -137,8 +137,11 @@ type Builder struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// The LUCI project (e.g. chromium).
 	Project string `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
-	Bucket  string `protobuf:"bytes,2,opt,name=bucket,proto3" json:"bucket,omitempty"`
+	// The LUCI bucket (e.g. ci).
+	Bucket string `protobuf:"bytes,2,opt,name=bucket,proto3" json:"bucket,omitempty"`
+	// The LUCI builder name (e.g. linux-rel).
 	Builder string `protobuf:"bytes,3,opt,name=builder,proto3" json:"builder,omitempty"`
 }
 
