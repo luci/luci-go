@@ -74,6 +74,8 @@ type Server struct {
 	MinTokenLifetime time.Duration
 	// Port is a local TCP port to bind to or 0 to allow the OS to pick one.
 	Port int
+	// AssumeNonGCE is true to avoid calling any GCE metadata methods itself.
+	AssumeNonGCE bool
 
 	srv localsrv.Server
 	md  *serverMetadata
@@ -81,13 +83,14 @@ type Server struct {
 
 func (s *Server) setupMetadata(ctx context.Context) {
 	if s.md != nil {
-		// This path might be usd for the test.
+		// This path might be used for the test.
 		// We do not configure metadata again if it has already been
 		// configured.
 		return
 	}
-	if !metadata.OnGCE() {
-		// We did not decide what to do for non GCE LUCI bots.
+	if s.AssumeNonGCE || !metadata.OnGCE() {
+		// If not on real GCE, just do not expose zone and instance name. We don't
+		// really know them.
 		return
 	}
 	zone, err := metadata.Zone()
