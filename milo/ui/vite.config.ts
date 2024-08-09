@@ -12,14 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import * as path from 'node:path';
-
 import replace from '@rollup/plugin-replace';
 import react from '@vitejs/plugin-react';
-import { Plugin, defineConfig, loadEnv } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import { VitePWA as vitePWA } from 'vite-plugin-pwa';
 import tsconfigPaths from 'vite-tsconfig-paths';
 
+import {
+  getLocalDevConfigsJs,
+  getVirtualConfigsJsPlugin,
+  overrideMiloHostPlugin,
+} from './dev_utils/configs_js_utils';
 import { localAuthPlugin } from './dev_utils/local_auth_plugin';
 import { regexpsForRoutes } from './src/generic_libs/tools/react_router_utils';
 import { routes } from './src/routes';
@@ -31,7 +34,7 @@ import { routes } from './src/routes';
  * Otherwise, return null.
  */
 function getBoolEnv(
-  envDir: Record<string, string>,
+  envDir: Record<string, string | undefined>,
   key: string,
 ): boolean | null {
   const value = envDir[key];
@@ -44,109 +47,16 @@ function getBoolEnv(
   return null;
 }
 
-/**
- * Construct a `configs.js` file from environment variables.
- */
-function getLocalDevConfigsJs(env: Record<string, string>) {
-  const localVersion = env['VITE_MILO_VERSION'];
-  const localSettings: typeof SETTINGS = {
-    buildbucket: {
-      host: env['VITE_BUILDBUCKET_HOST'],
-    },
-    swarming: {
-      defaultHost: env['VITE_SWARMING_DEFAULT_HOST'],
-    },
-    resultdb: {
-      host: env['VITE_RESULT_DB_HOST'],
-    },
-    luciAnalysis: {
-      host: env['VITE_LUCI_ANALYSIS_HOST'],
-      uiHost: env['VITE_LUCI_ANALYSIS_UI_HOST'],
-    },
-    luciBisection: {
-      host: env['VITE_LUCI_BISECTION_HOST'],
-    },
-    luciNotify: {
-      host: env['VITE_LUCI_NOTIFY_HOST'],
-    },
-    sheriffOMatic: {
-      host: env['VITE_SHERIFF_O_MATIC_HOST'],
-    },
-    luciTreeStatus: {
-      host: env['VITE_TREE_STATUS_HOST'],
-    },
-    authService: {
-      host: env['VITE_AUTH_SERVICE_HOST'],
-    },
-    crRev: {
-      host: env['VITE_CR_REV_HOST'],
-    },
-    milo: {
-      host: env['VITE_MILO_HOST'],
-    },
-  };
-
-  const localDevConfigsJs =
-    `self.VERSION = '${localVersion}';\n` +
-    `self.SETTINGS = Object.freeze(${JSON.stringify(
-      localSettings,
-      undefined,
-      2,
-    )});\n`;
-
-  return localDevConfigsJs;
-}
-
-/**
- * Get a virtual-configs-js plugin so we can import configs.js in the service
- * workers with the correct syntax required by different environments.
- */
-function getVirtualConfigsJsPlugin(
-  mode: string,
-  configsContent: string,
-): Plugin {
-  return {
-    name: 'virtual-configs-js',
-    resolveId: (id, importer) => {
-      if (id !== 'virtual:configs.js') {
-        return null;
-      }
-
-      // `importScripts` is only available in workers.
-      // Ensure this module is only used by service workers.
-      if (
-        !['src/sw/root_sw.ts', 'src/sw/ui_sw.ts']
-          .map((p) => path.join(__dirname, p))
-          .includes(importer || '')
-      ) {
-        throw new Error(
-          'virtual:configs.js should only be imported by a service worker script.',
-        );
-      }
-      return '\0virtual:config.js';
-    },
-    load: (id) => {
-      if (id !== '\0virtual:config.js') {
-        return null;
-      }
-      // During development, the service worker script can only be a JS module,
-      // because it runs through the same pipeline as the rest of the scripts.
-      // It cannot use the `importScripts`. So we inject the configs directly.
-      // In production, the service worker script cannot be a JS module due to
-      // limited browser support. So we need to use `importScripts` instead of
-      // `import` to load `/configs.js`.
-      return mode === 'development'
-        ? configsContent
-        : "importScripts('/configs.js');";
-    },
-  };
-}
-
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd());
+  const env = {
+    ...Object.fromEntries(
+      Object.entries(process.env).filter(([k]) => k.startsWith('VITE_')),
+    ),
+    ...loadEnv(mode, process.cwd()),
+  };
 
-  const localDevConfigsJs = getLocalDevConfigsJs(env);
-  const virtualConfigJs = getVirtualConfigsJsPlugin(mode, localDevConfigsJs);
+  const virtualConfigJs = getVirtualConfigsJsPlugin(mode, env);
+  const overrideMiloHost = overrideMiloHostPlugin(env);
 
   return {
     base: '/ui',
@@ -186,7 +96,7 @@ export default defineConfig(({ mode }) => {
           ),
         },
       }),
-      virtualConfigJs,
+      overrideMiloHost,
       {
         name: 'inject-configs-js-in-html',
         // Vite resolves external resources with relative URLs (URLs without a
@@ -264,7 +174,7 @@ export default defineConfig(({ mode }) => {
               return next();
             }
             res.setHeader('content-type', 'application/javascript');
-            res.end(localDevConfigsJs);
+            res.end(getLocalDevConfigsJs(env));
           });
 
           // When VitePWA is enabled in -dev mode, the entry files are somehow
@@ -332,6 +242,7 @@ export default defineConfig(({ mode }) => {
               },
             }),
             virtualConfigJs,
+            overrideMiloHost,
             tsconfigPaths(),
           ],
           // Set to 8 MB. Some files might be larger than the default.

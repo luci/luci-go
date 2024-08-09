@@ -28,3 +28,15 @@ format: node_deps
 # See up-dev in `../Makefile` for details.
 up-dev:
 	cd ../ && make up-dev
+
+# Deploys a UI demo.
+#
+# Comapring to `up-dev`, this is much faster because it only deploys the default
+# service and does not run `npm ci` (which means you need to ensure the
+# dependencies are installed).
+# It also overrides the Milo host when deploying the default service only for UI
+# demo so the UI does not talk to the demo version of the Milo API service which
+# may not exist.
+deploy-ui-demo:
+	export VITE_OVERRIDE_MILO_HOST=staging.milo.api.luci.app && npm run build
+	gae.py upload -p ../ -A luci-milo-dev default

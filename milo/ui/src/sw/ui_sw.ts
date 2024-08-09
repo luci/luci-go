@@ -15,6 +15,7 @@
 // TODO(weiweilin): add integration tests to ensure the SW works properly.
 
 import 'virtual:configs.js';
+import 'virtual:override-milo-host';
 import {
   cleanupOutdatedCaches,
   createHandlerBoundToURL,
