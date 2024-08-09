@@ -12,9 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { Help } from '@mui/icons-material';
 import { Box, Link, SxProps, Theme, styled } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
 
+import { HtmlTooltip } from '@/common/components/html_tooltip';
+import { SanitizedHtml } from '@/common/components/sanitized_html';
 import { getBuilderURLPath } from '@/common/tools/url_utils';
 import { BuilderID } from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_common.pb';
 
@@ -31,12 +34,14 @@ function Divider() {
 export interface BuildIdDisplayProps {
   readonly builderId: BuilderID;
   readonly buildNumOrId: string;
+  readonly builderDescription?: string;
   readonly sx?: SxProps<Theme>;
 }
 
 export function BuildIdDisplay({
   builderId,
   buildNumOrId,
+  builderDescription,
   sx,
 }: BuildIdDisplayProps) {
   return (
@@ -44,9 +49,29 @@ export function BuildIdDisplay({
       <span css={{ opacity: 0.4 }}>Build: </span>
       <span>{builderId.bucket}</span>
       <Divider />
-      <Link component={RouterLink} to={getBuilderURLPath(builderId)}>
-        {builderId.builder}
-      </Link>
+      <HtmlTooltip
+        arrow
+        title={
+          builderDescription && (
+            <div>
+              <h3 css={{ margin: '5px 0' }}>Builder Info</h3>
+              <SanitizedHtml html={builderDescription} />
+            </div>
+          )
+        }
+      >
+        <span>
+          <Link component={RouterLink} to={getBuilderURLPath(builderId)}>
+            {builderId.builder}
+          </Link>
+          {builderDescription && (
+            <>
+              {' '}
+              <Help fontSize="small" sx={{ verticalAlign: 'text-top' }} />
+            </>
+          )}
+        </span>
+      </HtmlTooltip>
       <Divider />
       <span>{buildNumOrId}</span>
     </Container>

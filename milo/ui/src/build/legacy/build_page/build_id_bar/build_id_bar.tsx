@@ -111,6 +111,7 @@ export function BuildIdBar({ builderId, buildNumOrId }: BuildIdBarProps) {
         <BuildIdDisplay
           builderId={realBuilderId}
           buildNumOrId={realBuildNumOrId}
+          builderDescription={build?.builderInfo?.description}
           sx={{ gridArea: 'id' }}
         />
         <Box sx={{ gridArea: 'info' }}>
