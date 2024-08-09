@@ -47,6 +47,20 @@ cd luci/milo/ui # or `cd luci/milo`.
 make up-dev
 ```
 
+Alternatively, you can deploy the demo using the following commands.
+```sh
+cd luci/milo/ui
+npm ci # if you haven't installed/updated the dependencies.
+make deploy-ui-demo
+```
+
+`make deploy-ui-demo` is faster than `make up-dev`. However,
+1. it does not install npm dependencies. You need to ensure they are installed
+   and up-to-date yourselves. And,
+2. the deployed UI demo will always send pRPC requests to
+   `staging.milo.api.luci.app`. If your demo includes pRPC changes, use
+   `make up-dev` instead.
+
 If you use `gae.py` to deploy, you need to deploy all services at least once.
 Otherwise, the browser code will try to call a dev API that doesn't exist.
 ```sh
