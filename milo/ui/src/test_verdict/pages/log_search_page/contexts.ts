@@ -16,7 +16,15 @@ import { useContext, createContext, Dispatch } from 'react';
 
 import { Variant } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/common.pb';
 
-export interface LogGroupIdentifier {
+import { CurrentTimeCtx } from './providers';
+
+export interface InvocationLogGroupIdentifier {
+  readonly variantUnionHash: string;
+  readonly variantUnion?: Variant;
+  readonly artifactID: string;
+}
+
+export interface TestLogGroupIdentifier {
   readonly testID: string;
   readonly variantHash: string;
   readonly variant?: Variant;
@@ -24,31 +32,49 @@ export interface LogGroupIdentifier {
 }
 
 export interface LogGroupListState {
-  readonly logGroupIdentifer: LogGroupIdentifier | null;
+  readonly testLogGroupIdentifier: TestLogGroupIdentifier | null;
+  readonly invocationLogGroupIdentifier: InvocationLogGroupIdentifier | null;
 }
 
-interface ShowLogGroupListAction {
-  readonly type: 'showLogGroupList';
-  readonly logGroupIdentifer: LogGroupIdentifier | null;
+interface ShowTestLogGroupListAction {
+  readonly type: 'showTestLogGroupList';
+  readonly logGroupIdentifer: TestLogGroupIdentifier;
+}
+
+interface ShowInvocationGroupListAction {
+  readonly type: 'showInvocationLogGroupList';
+  readonly logGroupIdentifer: InvocationLogGroupIdentifier;
 }
 
 interface DismissAction {
   readonly type: 'dismiss';
 }
 
-type Action = ShowLogGroupListAction | DismissAction;
+export type Action =
+  | ShowTestLogGroupListAction
+  | ShowInvocationGroupListAction
+  | DismissAction;
 
 export function reducer(
   _state: LogGroupListState,
   action: Action,
 ): LogGroupListState {
   switch (action.type) {
-    case 'showLogGroupList':
+    case 'showTestLogGroupList':
       return {
-        logGroupIdentifer: action.logGroupIdentifer,
+        testLogGroupIdentifier: action.logGroupIdentifer,
+        invocationLogGroupIdentifier: null,
+      };
+    case 'showInvocationLogGroupList':
+      return {
+        testLogGroupIdentifier: null,
+        invocationLogGroupIdentifier: action.logGroupIdentifer,
       };
     case 'dismiss':
-      return { logGroupIdentifer: null };
+      return {
+        testLogGroupIdentifier: null,
+        invocationLogGroupIdentifier: null,
+      };
   }
 }
 
@@ -76,6 +102,14 @@ export function useLogGroupListState() {
     throw new Error(
       'useLogGroupListState can only be used in a LogGroupListStateProvider',
     );
+  }
+  return ctx;
+}
+
+export function useCurrentTime() {
+  const ctx = useContext(CurrentTimeCtx);
+  if (!ctx) {
+    throw new Error('useCurrentTime can only be used in a CurrentTimeProvider');
   }
   return ctx;
 }

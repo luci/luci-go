@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { DateTime } from 'luxon';
-
 import {
   ArtifactContentMatcher,
   IDMatcher,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 
+const FILTER_KEY = 'filter';
+
 /**
- * FormData represent fields directly managed by the <LogSearch />.
+ * FormData represent filter fields directly managed by the <LogSearch />.
  */
 export interface FormData {
   testIDStr: string;
@@ -31,17 +31,30 @@ export interface FormData {
   isSearchStrRegex: boolean;
 }
 
-/**
- * CompleteFormToSearch represent all fields that can be used for searching artifacts.
- * startTime and endTime are not directly managed by <LogSearch />,
- * but they are needed for the log search query.
- */
-export interface CompleteFormToSearch extends FormData {
-  startTime: DateTime | null;
-  endTime: DateTime | null;
-}
+export const EMPTY_FORM: FormData = {
+  testIDStr: '',
+  isTestIDStrPrefix: false,
+  artifactIDStr: '',
+  isArtifactIDStrPrefix: false,
+  searchStr: '',
+  isSearchStrRegex: false,
+};
 
 export const FormData = {
+  fromSearchParam(searchParams: URLSearchParams): FormData | null {
+    const form = searchParams.get(FILTER_KEY);
+    return form ? { ...EMPTY_FORM, ...JSON.parse(form) } : null;
+  },
+  toSearchParamUpdater(newFormData: FormData) {
+    return (params: URLSearchParams) => {
+      const searchParams = new URLSearchParams(params);
+      // TODO (beining@): Using JSON.stringify for the search parameter is backward incompatible
+      // if any property is renamed. A better way is to have a constant search parameter key for each
+      // of these field.
+      searchParams.set('filter', JSON.stringify(newFormData));
+      return searchParams;
+    };
+  },
   getSearchString(form: FormData): ArtifactContentMatcher | undefined {
     return form.searchStr === ''
       ? undefined

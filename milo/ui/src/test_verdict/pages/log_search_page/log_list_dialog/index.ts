@@ -12,4 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export * from './log_list_dialog';
+export * from './invocation_log_dialog';
+export * from './test_log_dialog';

@@ -14,25 +14,17 @@
 
 import { Close } from '@mui/icons-material';
 import { Box, Dialog, DialogContent, DialogTitle } from '@mui/material';
+import { ReactNode } from 'react';
 
-import { useLogGroupListDispatch, useLogGroupListState } from '../contexts';
-import { CompleteFormToSearch, FormData } from '../form_data';
-import { VariantLine } from '../variant_line';
+import { useLogGroupListDispatch } from '../contexts';
 
-import { LogList } from './log_list';
-
-export interface LogListDialogProps {
-  readonly project: string;
-  readonly form: CompleteFormToSearch;
+export interface LogDialogBaseProps {
+  readonly dialogHeader: ReactNode;
+  readonly children: ReactNode;
 }
 
-export function LogListDialog({ project, form }: LogListDialogProps) {
+export function LogDialogBase({ dialogHeader, children }: LogDialogBaseProps) {
   const dispatch = useLogGroupListDispatch();
-  const state = useLogGroupListState();
-  const { logGroupIdentifer } = state;
-  if (!logGroupIdentifer) {
-    return <></>;
-  }
 
   return (
     <Dialog
@@ -65,32 +57,7 @@ export function LogListDialog({ project, form }: LogListDialogProps) {
           fontSize: '16px',
         }}
       >
-        <table>
-          <tbody>
-            <tr>
-              <td width="1px" style={{ whiteSpace: 'nowrap' }}>
-                Test ID:
-              </td>
-              <td css={{ fontWeight: 400 }}>{logGroupIdentifer.testID}</td>
-            </tr>
-            <tr>
-              <td width="1px" style={{ whiteSpace: 'nowrap' }}>
-                Variant:
-              </td>
-              <td css={{ fontWeight: 400 }}>
-                {logGroupIdentifer.variant && (
-                  <VariantLine variant={logGroupIdentifer.variant} />
-                )}
-              </td>
-            </tr>
-            <tr>
-              <td width="1px" style={{ whiteSpace: 'nowrap' }}>
-                Log file:
-              </td>
-              <td css={{ fontWeight: 400 }}>{logGroupIdentifer.artifactID}</td>
-            </tr>
-          </tbody>
-        </table>
+        <Box>{dialogHeader}</Box>
         <Box
           title="press esc to close the log group overlay"
           onClick={() => dispatch({ type: 'dismiss' })}
@@ -105,15 +72,7 @@ export function LogListDialog({ project, form }: LogListDialogProps) {
           />
         </Box>
       </DialogTitle>
-      <DialogContent>
-        <LogList
-          project={project}
-          logGroupIdentifer={logGroupIdentifer}
-          searchString={FormData.getSearchString(form)}
-          startTime={form.startTime ? form.startTime.toString() : ''}
-          endTime={form.endTime ? form.endTime.toString() : ''}
-        />
-      </DialogContent>
+      <DialogContent>{children}</DialogContent>
     </Dialog>
   );
 }

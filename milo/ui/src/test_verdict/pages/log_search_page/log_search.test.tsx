@@ -33,7 +33,7 @@ describe('<LogSearch />', () => {
           ],
         }}
       >
-        <LogSearch project="proj" />
+        <LogSearch />
       </FakeContextProvider>,
     );
     const searchStringSelectEle = screen.getByTestId('Search string select');
@@ -56,7 +56,7 @@ describe('<LogSearch />', () => {
     const urlCallback = jest.fn();
     render(
       <FakeContextProvider mountedPath="/">
-        <LogSearch project="proj" />
+        <LogSearch />
         <URLObserver callback={urlCallback} />
       </FakeContextProvider>,
     );

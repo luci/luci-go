@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ReactNode, useReducer } from 'react';
+import { DateTime } from 'luxon';
+import { ReactNode, useReducer, createContext } from 'react';
 
 import {
   reducer,
@@ -28,7 +29,8 @@ export function LogGroupListStateProvider({
   children,
 }: LogGroupListStateProviderProps) {
   const [state, dispatch] = useReducer(reducer, {
-    logGroupIdentifer: null,
+    testLogGroupIdentifier: null,
+    invocationLogGroupIdentifier: null,
   });
 
   return (
@@ -37,5 +39,24 @@ export function LogGroupListStateProvider({
         {children}
       </LogGroupListStateCtx.Provider>
     </LogGroupListDispatcherCtx.Provider>
+  );
+}
+
+/**
+ * Provide a stable current time for children.
+ */
+export const CurrentTimeCtx = createContext<DateTime | null>(null);
+
+export interface CurrentTimeProviderProps {
+  readonly now: DateTime;
+  readonly children: ReactNode;
+}
+
+export function CurrentTimeProvider({
+  now,
+  children,
+}: CurrentTimeProviderProps) {
+  return (
+    <CurrentTimeCtx.Provider value={now}>{children}</CurrentTimeCtx.Provider>
   );
 }

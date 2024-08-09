@@ -13,9 +13,11 @@
 // limitations under the License.
 
 import { GrpcError, ProtocolError } from '@chopsui/prpc-client';
+import { ArrowForwardIos } from '@mui/icons-material';
 import { Box, Alert, AlertTitle } from '@mui/material';
 import LinearProgress from '@mui/material/LinearProgress';
 import { useQuery } from '@tanstack/react-query';
+import { DateTime } from 'luxon';
 
 import {
   ParamsPager,
@@ -24,45 +26,49 @@ import {
 } from '@/common/components/params_pager';
 import { PagerContext } from '@/common/components/params_pager/context';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
-import { QueryTestVariantArtifactGroupsRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
+import { QueryInvocationVariantArtifactGroupsRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 import { useResultDbClient } from '@/test_verdict/hooks/prpc_clients';
-import { OutputQueryTestVariantArtifactGroupsResponse } from '@/test_verdict/types';
+import { OutputQueryInvocationVariantArtifactGroupsResponse } from '@/test_verdict/types';
 
-import { FormData, CompleteFormToSearch } from '../form_data';
+import { FormData } from '../form_data';
+import { VariantLine } from '../variant_line';
 
-import { LogGroup } from './log_group';
+import { LogGroup } from './log_group_base';
 
-export interface LogSearchProps {
+export interface InvocationLogsTableProps {
   readonly project: string;
   readonly pagerCtx: PagerContext;
-  readonly form: CompleteFormToSearch;
+  readonly form: FormData;
+  readonly startTime: DateTime;
+  readonly endTime: DateTime;
 }
 
-// TODO (beining@):
-// * search for invocation artifact, and display on a different tab.
-// * link to log viewer.
-export function LogTable({ project, form, pagerCtx }: LogSearchProps) {
+export function InvocationLogsTable({
+  project,
+  form,
+  pagerCtx,
+  startTime,
+  endTime,
+}: InvocationLogsTableProps) {
   const [searchParams] = useSyncedSearchParams();
   const pageSize = getPageSize(pagerCtx, searchParams);
   const pageToken = getPageToken(pagerCtx, searchParams);
   const client = useResultDbClient();
-  const searchString = FormData.getSearchString(form);
   const { data, isLoading, error, isError } = useQuery({
-    ...client.QueryTestVariantArtifactGroups.query(
-      QueryTestVariantArtifactGroupsRequest.fromPartial({
+    ...client.QueryInvocationVariantArtifactGroups.query(
+      QueryInvocationVariantArtifactGroupsRequest.fromPartial({
         project: project,
-        searchString,
-        testIdMatcher: FormData.getTestIDMatcher(form),
+        searchString: FormData.getSearchString(form),
         artifactIdMatcher: FormData.getArtifactIDMatcher(form),
-        startTime: form.startTime ? form.startTime.toISO() : '',
-        endTime: form.endTime ? form.endTime.toISO() : '',
+        startTime: startTime.toISO(),
+        endTime: endTime.toISO(),
         pageSize: pageSize,
         pageToken: pageToken,
       }),
     ),
-    select: (data) => data as OutputQueryTestVariantArtifactGroupsResponse,
+    select: (data) =>
+      data as OutputQueryInvocationVariantArtifactGroupsResponse,
   });
-
   if (isError) {
     const isReqError =
       error instanceof GrpcError || error instanceof ProtocolError;
@@ -89,13 +95,31 @@ export function LogTable({ project, form, pagerCtx }: LogSearchProps) {
         ) : (
           <>
             {data.groups.length === 0 && (
-              <Box sx={{ padding: '0px 15px' }}>no matching artifact</Box>
+              <Box sx={{ padding: '0px 15px' }}>no matching logs</Box>
             )}
             {data.groups.map((g) => (
               <LogGroup
-                project={project}
+                key={g.variantUnionHash + g.artifactId}
+                dialogAction={{
+                  type: 'showInvocationLogGroupList',
+                  logGroupIdentifer: {
+                    variantUnion: g.variantUnion,
+                    variantUnionHash: g.variantUnionHash,
+                    artifactID: g.artifactId,
+                  },
+                }}
                 group={g}
-                key={g.testId + g.variantHash + g.artifactId}
+                groupHeader={
+                  <>
+                    <Box>
+                      {g.variantUnion && (
+                        <VariantLine variant={g.variantUnion} />
+                      )}
+                    </Box>
+                    <ArrowForwardIos sx={{ fontSize: '14px' }} />
+                    {g.artifactId}
+                  </>
+                }
               />
             ))}
           </>

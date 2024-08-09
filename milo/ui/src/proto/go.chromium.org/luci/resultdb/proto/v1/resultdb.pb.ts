@@ -1018,7 +1018,7 @@ export interface QueryInvocationVariantArtifactGroupsResponse_MatchGroup {
     | Variant
     | undefined;
   /** ID of the artifact. */
-  readonly artifactID: string;
+  readonly artifactId: string;
   /**
    * Artifacts that matches the search for this (variant_union_hash, artifact id) combination.
    * Return at most 3 items, ordered by partition time DESC, artifact name ASC.
@@ -5546,7 +5546,7 @@ export const QueryInvocationVariantArtifactGroupsResponse = {
 };
 
 function createBaseQueryInvocationVariantArtifactGroupsResponse_MatchGroup(): QueryInvocationVariantArtifactGroupsResponse_MatchGroup {
-  return { variantUnionHash: "", variantUnion: undefined, artifactID: "", artifacts: [], matchingCount: 0 };
+  return { variantUnionHash: "", variantUnion: undefined, artifactId: "", artifacts: [], matchingCount: 0 };
 }
 
 export const QueryInvocationVariantArtifactGroupsResponse_MatchGroup = {
@@ -5560,8 +5560,8 @@ export const QueryInvocationVariantArtifactGroupsResponse_MatchGroup = {
     if (message.variantUnion !== undefined) {
       Variant.encode(message.variantUnion, writer.uint32(18).fork()).ldelim();
     }
-    if (message.artifactID !== "") {
-      writer.uint32(26).string(message.artifactID);
+    if (message.artifactId !== "") {
+      writer.uint32(26).string(message.artifactId);
     }
     for (const v of message.artifacts) {
       ArtifactMatchingContent.encode(v!, writer.uint32(34).fork()).ldelim();
@@ -5598,7 +5598,7 @@ export const QueryInvocationVariantArtifactGroupsResponse_MatchGroup = {
             break;
           }
 
-          message.artifactID = reader.string();
+          message.artifactId = reader.string();
           continue;
         case 4:
           if (tag !== 34) {
@@ -5627,7 +5627,7 @@ export const QueryInvocationVariantArtifactGroupsResponse_MatchGroup = {
     return {
       variantUnionHash: isSet(object.variantUnionHash) ? globalThis.String(object.variantUnionHash) : "",
       variantUnion: isSet(object.variantUnion) ? Variant.fromJSON(object.variantUnion) : undefined,
-      artifactID: isSet(object.artifactID) ? globalThis.String(object.artifactID) : "",
+      artifactId: isSet(object.artifactId) ? globalThis.String(object.artifactId) : "",
       artifacts: globalThis.Array.isArray(object?.artifacts)
         ? object.artifacts.map((e: any) => ArtifactMatchingContent.fromJSON(e))
         : [],
@@ -5643,8 +5643,8 @@ export const QueryInvocationVariantArtifactGroupsResponse_MatchGroup = {
     if (message.variantUnion !== undefined) {
       obj.variantUnion = Variant.toJSON(message.variantUnion);
     }
-    if (message.artifactID !== "") {
-      obj.artifactID = message.artifactID;
+    if (message.artifactId !== "") {
+      obj.artifactId = message.artifactId;
     }
     if (message.artifacts?.length) {
       obj.artifacts = message.artifacts.map((e) => ArtifactMatchingContent.toJSON(e));
@@ -5668,7 +5668,7 @@ export const QueryInvocationVariantArtifactGroupsResponse_MatchGroup = {
     message.variantUnion = (object.variantUnion !== undefined && object.variantUnion !== null)
       ? Variant.fromPartial(object.variantUnion)
       : undefined;
-    message.artifactID = object.artifactID ?? "";
+    message.artifactId = object.artifactId ?? "";
     message.artifacts = object.artifacts?.map((e) => ArtifactMatchingContent.fromPartial(e)) || [];
     message.matchingCount = object.matchingCount ?? 0;
     return message;

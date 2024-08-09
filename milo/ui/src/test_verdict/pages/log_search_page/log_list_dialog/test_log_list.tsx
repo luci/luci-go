@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Button, CircularProgress } from '@mui/material';
+import { LoadingButton } from '@mui/lab';
+import { CircularProgress } from '@mui/material';
 import { InfiniteData, useInfiniteQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
@@ -23,24 +24,24 @@ import {
 import { useResultDbClient } from '@/test_verdict/hooks/prpc_clients';
 import { OutputQueryTestVariantArtifactsResponse } from '@/test_verdict/types';
 
-import { LogGroupIdentifier } from '../contexts';
+import { TestLogGroupIdentifier } from '../contexts';
 import { LogSnippetRow } from '../log_snippet_row';
 
-export interface LogListProps {
+export interface TestLogListProps {
   readonly project: string;
-  readonly logGroupIdentifer: LogGroupIdentifier;
+  readonly logGroupIdentifer: TestLogGroupIdentifier;
   readonly searchString?: ArtifactContentMatcher;
   readonly startTime: string;
   readonly endTime: string;
 }
 
-export function LogList({
+export function TestLogList({
   project,
   searchString,
   startTime,
   endTime,
   logGroupIdentifer,
-}: LogListProps) {
+}: TestLogListProps) {
   const client = useResultDbClient();
   const { testID, variantHash, artifactID } = logGroupIdentifer;
   const {
@@ -82,9 +83,14 @@ export function LogList({
       {matchingLogs.map((a) => (
         <LogSnippetRow artifact={a} key={a.name} />
       ))}
-      {isFetchingNextPage && <CircularProgress sx={{ font: '14px' }} />}
       {hasNextPage && (
-        <Button onClick={() => fetchNextPage()}>Load more</Button>
+        <LoadingButton
+          onClick={() => fetchNextPage()}
+          variant="outlined"
+          loading={isFetchingNextPage}
+        >
+          Load more
+        </LoadingButton>
       )}
     </>
   );

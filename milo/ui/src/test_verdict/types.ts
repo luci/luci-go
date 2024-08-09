@@ -30,6 +30,9 @@ import {
   QueryTestVariantArtifactGroupsResponse_MatchGroup,
   QueryTestVariantArtifactGroupsResponse,
   QueryTestVariantArtifactsResponse,
+  QueryInvocationVariantArtifactGroupsResponse_MatchGroup,
+  QueryInvocationVariantArtifactGroupsResponse,
+  QueryInvocationVariantArtifactsResponse,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 import {
   TestResultBundle,
@@ -97,6 +100,21 @@ export interface OutputQueryTestVariantArtifactsResponse
 
 export interface OutputQueryTestVariantArtifactGroupsResponse_MatchGroup
   extends QueryTestVariantArtifactGroupsResponse_MatchGroup {
+  readonly artifacts: readonly OutputArtifactMatchingContent[];
+}
+
+export interface OutputQueryInvocationVariantArtifactGroupsResponse
+  extends QueryInvocationVariantArtifactGroupsResponse {
+  readonly groups: readonly OutputQueryInvocationVariantArtifactGroupsResponse_MatchGroup[];
+}
+
+export interface OutputQueryInvocationVariantArtifactsResponse
+  extends QueryInvocationVariantArtifactsResponse {
+  readonly artifacts: readonly OutputArtifactMatchingContent[];
+}
+
+export interface OutputQueryInvocationVariantArtifactGroupsResponse_MatchGroup
+  extends QueryInvocationVariantArtifactGroupsResponse_MatchGroup {
   readonly artifacts: readonly OutputArtifactMatchingContent[];
 }
 

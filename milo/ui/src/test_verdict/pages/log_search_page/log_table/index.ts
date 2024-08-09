@@ -12,4 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export * from './log_table';
+export * from './invocation_logs_table';
+export * from './test_logs_table';

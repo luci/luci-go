@@ -12,19 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { InsertDriveFile, AspectRatio } from '@mui/icons-material';
+import { Button, styled, Box } from '@mui/material';
+import { ReactNode } from 'react';
+
 import {
-  InsertDriveFile,
-  ArrowForwardIos,
-  AspectRatio,
-} from '@mui/icons-material';
-import { Box, Link, Button, styled } from '@mui/material';
+  OutputQueryTestVariantArtifactGroupsResponse_MatchGroup,
+  OutputQueryInvocationVariantArtifactGroupsResponse_MatchGroup,
+} from '@/test_verdict/types';
 
-import { getTestHistoryURLPath } from '@/common/tools/url_utils';
-import { OutputQueryTestVariantArtifactGroupsResponse_MatchGroup } from '@/test_verdict/types';
-
-import { useLogGroupListDispatch } from '../contexts';
+import { useLogGroupListDispatch, Action } from '../contexts';
 import { LogSnippetRow } from '../log_snippet_row';
-import { VariantLine } from '../variant_line';
 
 const LogGroupHeaderDiv = styled(Box)`
   background: #e8f0fe;
@@ -46,56 +44,36 @@ const ExpandableRowDiv = styled(Box)`
   gap: 5px;
 `;
 
-interface LogGroupProps {
-  readonly project: string;
-  readonly group: OutputQueryTestVariantArtifactGroupsResponse_MatchGroup;
+export interface LogGroupProps {
+  readonly groupHeader: ReactNode;
+  readonly group:
+    | OutputQueryTestVariantArtifactGroupsResponse_MatchGroup
+    | OutputQueryInvocationVariantArtifactGroupsResponse_MatchGroup;
+  readonly dialogAction: Action;
 }
 
-export function LogGroup({ project, group }: LogGroupProps) {
-  const { testId, variant, variantHash, artifactId, artifacts, matchingCount } =
-    group;
+export function LogGroup({ groupHeader, group, dialogAction }: LogGroupProps) {
+  const { artifacts, matchingCount } = group;
   const dispatch = useLogGroupListDispatch();
 
   return (
     <>
       <LogGroupHeaderDiv>
         <InsertDriveFile color="action" sx={{ fontSize: '17px' }} />
-        <Link
-          href={getTestHistoryURLPath(project, testId)}
-          color="inherit"
-          underline="hover"
-          target="_blank"
-          rel="noopenner"
-        >
-          {testId}
-        </Link>
-        <ArrowForwardIos sx={{ fontSize: '14px' }} />
-        <Box>{variant && <VariantLine variant={variant} />}</Box>
-        <ArrowForwardIos sx={{ fontSize: '14px' }} />
-        {artifactId}
+        {groupHeader}
       </LogGroupHeaderDiv>
       {artifacts.map((a) => (
         <LogSnippetRow artifact={a} key={a.name} />
       ))}
       {matchingCount - artifacts.length > 0 && (
         <Button
-          onClick={() =>
-            dispatch({
-              type: 'showLogGroupList',
-              logGroupIdentifer: {
-                testID: testId,
-                variantHash,
-                variant,
-                artifactID: artifactId,
-              },
-            })
-          }
+          onClick={() => dispatch(dialogAction)}
           sx={{ width: '100%', textTransform: 'none', fontSize: 'inherit' }}
         >
           <ExpandableRowDiv>
             <AspectRatio sx={{ fontSize: '15px' }} />
             Show {matchingCount - artifacts.length} more matching log for this
-            test varaint artifact
+            group
           </ExpandableRowDiv>
         </Button>
       )}

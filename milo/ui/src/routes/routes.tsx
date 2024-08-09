@@ -239,6 +239,23 @@ export const routes: RouteObject[] = [
       {
         path: 'p/:project/log-search',
         lazy: () => import('@/test_verdict/pages/log_search_page'),
+        children: [
+          {
+            index: true,
+            lazy: () =>
+              import('@/test_verdict/pages/log_search_page/log_default_tab'),
+          },
+          {
+            path: 'test-logs',
+            lazy: () =>
+              import('@/test_verdict/pages/log_search_page/test_logs_tab'),
+          },
+          {
+            path: 'shared-logs',
+            lazy: () =>
+              import('@/test_verdict/pages/log_search_page/shared_logs_tab'),
+          },
+        ],
       },
       {
         // TODO(b/321110247): once we have a stable regression group ID, replace

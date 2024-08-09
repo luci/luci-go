@@ -15,13 +15,10 @@
 import { Alert, Box, Button, styled } from '@mui/material';
 import { DateTime } from 'luxon';
 import { useState, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 
-import {
-  emptyPageTokenUpdater,
-  usePagerContext,
-} from '@/common/components/params_pager';
+import { AppRoutedTab, AppRoutedTabs } from '@/common/components/routed_tabs';
 import { TimeRangeSelector } from '@/common/components/time_range_selector';
-import { getAbsoluteStartEndTime } from '@/common/components/time_range_selector';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
 import {
@@ -29,10 +26,8 @@ import {
   EXACT_MATCH_OPTION,
   REGEX_MATCH_OPTION,
 } from './constants';
-import { FormData, CompleteFormToSearch } from './form_data';
-import { LogListDialog } from './log_list_dialog';
-import { LogTable } from './log_table';
-import { LogGroupListStateProvider } from './providers';
+import { EMPTY_FORM, FormData } from './form_data';
+import { CurrentTimeProvider, LogGroupListStateProvider } from './providers';
 import { SelectTextField } from './select_text_field';
 const FormContainer = styled(Box)`
   margin: 10px;
@@ -47,59 +42,18 @@ const FormRowDiv = styled(Box)`
   margin: 10px;
 `;
 
-function searchParamUpdater(newFormData: FormData) {
-  return (params: URLSearchParams) => {
-    const searchParams = new URLSearchParams(params);
-    // TODO (beining@): Using JSON.stringify for the search parameter is backward incompatible
-    // if any property is renamed. A better way is to have a constant search parameter key for each
-    // of these field.
-    searchParams.set('filter', JSON.stringify(newFormData));
-    return searchParams;
-  };
-}
-
-const emptyForm: FormData = {
-  testIDStr: '',
-  isTestIDStrPrefix: false,
-  artifactIDStr: '',
-  isArtifactIDStrPrefix: false,
-  searchStr: '',
-  isSearchStrRegex: false,
-};
-
-function parseSearchParam(searchParams: URLSearchParams): FormData {
-  const urlParam: FormData = JSON.parse(searchParams.get('filter') || '{}');
-  return {
-    ...emptyForm,
-    ...urlParam,
-  };
-}
-
-export interface LogSearchProps {
-  readonly project: string;
-}
-
 // TODO(@beining) :
 // * implement some validation before sending request.
-export function LogSearch({ project }: LogSearchProps) {
-  const pagerCtx = usePagerContext({
-    pageSizeOptions: [10, 20, 50, 100],
-    defaultPageSize: 10,
-  });
+export function LogSearch() {
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSyncedSearchParams();
   const [pendingForm, setPendingForm] = useState<FormData>(
-    parseSearchParam(searchParams),
+    FormData.fromSearchParam(searchParams) || EMPTY_FORM,
   );
-  // formToSearch is not initialized with filters from the URL parameters.
-  // This is because we only want to initiate a search when user click the search button.
-  // Search can be expensive, we should encourage checking the filters before searching.
-  const [formToSearch, setFormToSearch] = useState<CompleteFormToSearch>();
+
   // Persist current time between re-render, so that anchor for relative time calculation is consistent.
+  // This improve the cache hit rate of log search queries.
   const nowRef = useRef(DateTime.now().toUTC());
-  const { startTime, endTime } = getAbsoluteStartEndTime(
-    searchParams,
-    nowRef.current,
-  );
   return (
     <>
       <FormContainer>
@@ -182,9 +136,7 @@ export function LogSearch({ project }: LogSearchProps) {
           size="small"
           variant="contained"
           onClick={() => {
-            setFormToSearch({ ...pendingForm, startTime, endTime });
-            setSearchParams(searchParamUpdater(pendingForm));
-            setSearchParams(emptyPageTokenUpdater(pagerCtx));
+            setSearchParams(FormData.toSearchParamUpdater(pendingForm));
           }}
         >
           Search
@@ -196,16 +148,20 @@ export function LogSearch({ project }: LogSearchProps) {
         </Alert>
       )}
       <LogGroupListStateProvider>
-        {formToSearch && (
-          <>
-            <LogTable
-              project={project}
-              pagerCtx={pagerCtx}
-              form={formToSearch}
+        <CurrentTimeProvider now={nowRef.current}>
+          <AppRoutedTabs>
+            <AppRoutedTab
+              label="Test result logs"
+              value="test-logs"
+              to={`test-logs${location.search}`}
             />
-            <LogListDialog project={project} form={formToSearch} />
-          </>
-        )}
+            <AppRoutedTab
+              label="Shared logs"
+              value="shared-logs"
+              to={`shared-logs${location.search}`}
+            />
+          </AppRoutedTabs>
+        </CurrentTimeProvider>
       </LogGroupListStateProvider>
     </>
   );

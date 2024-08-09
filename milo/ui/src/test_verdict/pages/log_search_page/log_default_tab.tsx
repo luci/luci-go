@@ -12,38 +12,37 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useParams } from 'react-router-dom';
+import { useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { PageMeta } from '@/common/components/page_meta';
-import { UiPage } from '@/common/constants/view';
 
-import { LogSearch } from './log_search';
+export function LogDefaultTab() {
+  const { pathname } = useLocation();
+  const navigate = useNavigate();
 
-export function LogSearchPage() {
-  const { project } = useParams();
-  if (!project) {
-    throw new Error('project must be set');
-  }
+  // Remove any trailing '/' so the new URL won't contain '//'.
+  const basePath = pathname.replace(/\/*$/, '');
+  const newUrl = `${basePath}/test-logs`;
 
-  return (
-    <>
-      <PageMeta
-        selectedPage={UiPage.LogSearch}
-        title="log search"
-        project={project}
-      ></PageMeta>
-      <LogSearch />
-    </>
+  useEffect(
+    () => navigate(newUrl, { replace: true }),
+    // The react-router router implementation could trigger URL related updates
+    // (e.g. search query update) before unmounting the component and
+    // redirecting users to the new component.
+    // This may cause infinite loops if the dependency isn't specified.
+    [navigate, newUrl],
   );
+
+  return <></>;
 }
 
 export function Component() {
   return (
     // See the documentation for `<LoginPage />` for why we handle error this
     // way.
-    <RecoverableErrorBoundary key="log-search">
-      <LogSearchPage />
+    <RecoverableErrorBoundary key="default">
+      <LogDefaultTab />
     </RecoverableErrorBoundary>
   );
 }

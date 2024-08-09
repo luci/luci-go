@@ -6,7 +6,6 @@
 
 /* eslint-disable */
 import _m0 from "protobufjs/minimal";
-import { OSRPM } from "./rpm.pb";
 
 export const protobufPackage = "unifiedfleet.api.v1.models.chromeos.lab";
 
@@ -44,7 +43,7 @@ export function dolosHWMajorRevisionToJSON(object: DolosHWMajorRevision): string
   }
 }
 
-/** Next Tag: 7 */
+/** Next Tag: 6 */
 export interface Dolos {
   /** Serial used to identify device over USB */
   readonly serialCable: string;
@@ -56,12 +55,10 @@ export interface Dolos {
   readonly fwVersion: string;
   /** Hostname of the host machine the dolos connected to via USB cable. */
   readonly hostname: string;
-  /** RPM that controls the power source for Dolos. */
-  readonly rpm: OSRPM | undefined;
 }
 
 function createBaseDolos(): Dolos {
-  return { serialCable: "", serialUsb: "", hwMajorRevision: 0, fwVersion: "", hostname: "", rpm: undefined };
+  return { serialCable: "", serialUsb: "", hwMajorRevision: 0, fwVersion: "", hostname: "" };
 }
 
 export const Dolos = {
@@ -80,9 +77,6 @@ export const Dolos = {
     }
     if (message.hostname !== "") {
       writer.uint32(42).string(message.hostname);
-    }
-    if (message.rpm !== undefined) {
-      OSRPM.encode(message.rpm, writer.uint32(50).fork()).ldelim();
     }
     return writer;
   },
@@ -129,13 +123,6 @@ export const Dolos = {
 
           message.hostname = reader.string();
           continue;
-        case 6:
-          if (tag !== 50) {
-            break;
-          }
-
-          message.rpm = OSRPM.decode(reader, reader.uint32());
-          continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -152,7 +139,6 @@ export const Dolos = {
       hwMajorRevision: isSet(object.hwMajorRevision) ? dolosHWMajorRevisionFromJSON(object.hwMajorRevision) : 0,
       fwVersion: isSet(object.fwVersion) ? globalThis.String(object.fwVersion) : "",
       hostname: isSet(object.hostname) ? globalThis.String(object.hostname) : "",
-      rpm: isSet(object.rpm) ? OSRPM.fromJSON(object.rpm) : undefined,
     };
   },
 
@@ -173,9 +159,6 @@ export const Dolos = {
     if (message.hostname !== "") {
       obj.hostname = message.hostname;
     }
-    if (message.rpm !== undefined) {
-      obj.rpm = OSRPM.toJSON(message.rpm);
-    }
     return obj;
   },
 
@@ -189,7 +172,6 @@ export const Dolos = {
     message.hwMajorRevision = object.hwMajorRevision ?? 0;
     message.fwVersion = object.fwVersion ?? "";
     message.hostname = object.hostname ?? "";
-    message.rpm = (object.rpm !== undefined && object.rpm !== null) ? OSRPM.fromPartial(object.rpm) : undefined;
     return message;
   },
 };
