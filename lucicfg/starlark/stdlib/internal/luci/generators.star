@@ -472,6 +472,7 @@ def _buildbucket_builder(node, def_swarming_host):
         task_template_canary_percentage = task_template_canary_percentage,
         resultdb = node.props.resultdb,
         contact_team_email = node.props.contact_team_email,
+        custom_metric_definitions = _buildbucket_custom_metrics(node.props.custom_metrics),
     )
     if node.props.backend != None:
         backend = graph.node(node.props.backend)
@@ -502,6 +503,7 @@ def _buildbucket_builder(node, def_swarming_host):
             properties = to_json(node.props.shadow_properties) if node.props.shadow_properties else None,
             dimensions = _buildbucket_dimensions(node.props.shadow_dimensions, allow_none = True),
         )
+
     return bldr_config, def_swarming_host
 
 def _buildbucket_builders(bucket):
@@ -650,6 +652,17 @@ def _gen_shadow_service_account_bindings(realms_cfg, shadow_bucket_constraints):
             role = "role/buildbucket.builderServiceAccount",
             principals = principals,
         ))
+
+def _buildbucket_custom_metrics(custom_metrics):
+    """[buildbucket.custom_metric] => [buildbucket_pb.CustomMetricDefinition]."""
+    out = []
+    for cm in custom_metrics:
+        out.append(buildbucket_pb.CustomMetricDefinition(
+            name = cm.name,
+            predicates = cm.predicates,
+            extra_fields = cm.extra_fields,
+        ))
+    return sorted(out, key = lambda x: x.name)
 
 ################################################################################
 ## scheduler.cfg.

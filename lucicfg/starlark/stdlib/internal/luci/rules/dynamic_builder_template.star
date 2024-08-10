@@ -52,7 +52,10 @@ def _dynamic_builder_template(
         backend_alt = None,
 
         # Builder health indicators
-        contact_team_email = None):
+        contact_team_email = None,
+
+        # Custom metrics
+        custom_metrics = None):
     """Defines a dynamic builder template for a dynamic bucket.
 
     Args:
@@ -118,6 +121,10 @@ def _dynamic_builder_template(
 
       contact_team_email: the owning team's contact email. This team is responsible for fixing
         any builder health issues (see BuilderConfig.ContactTeamEmail).
+
+      custom_metrics: a list of buildbucket_pb.CustomMetricDefinition() protos,
+        returned by buildbucket.custom_metric(...). Defines the custom metrics
+        the builders created by this template should report to.
     """
 
     bucket_key = keys.bucket(bucket)
@@ -145,6 +152,7 @@ def _dynamic_builder_template(
         backend = backend,
         backend_alt = backend_alt,
         contact_team_email = contact_team_email,
+        custom_metrics = custom_metrics,
         dynamic = True,
     )
 

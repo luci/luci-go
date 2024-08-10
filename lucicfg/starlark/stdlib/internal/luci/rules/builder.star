@@ -19,6 +19,7 @@ load("@stdlib//internal/graph.star", "graph")
 load("@stdlib//internal/lucicfg.star", "lucicfg")
 load("@stdlib//internal/validate.star", "validate")
 load("@stdlib//internal/luci/common.star", "builder_ref", "keys", "triggerer")
+load("@stdlib//internal/luci/lib/buildbucket.star", "buildbucket")
 load("@stdlib//internal/luci/lib/resultdb.star", "resultdb", "resultdbimpl")
 load("@stdlib//internal/luci/lib/scheduler.star", "schedulerimpl")
 load("@stdlib//internal/luci/lib/swarming.star", "swarming")
@@ -77,6 +78,9 @@ def _generate_builder(
 
         # Builder health indicators
         contact_team_email = None,
+
+        # Custom metrics
+        custom_metrics = None,
 
         # Dynamic builder template.
         dynamic = False):
@@ -230,6 +234,9 @@ def _generate_builder(
       contact_team_email: the owning team's contact email. This team is responsible for fixing
         any builder health issues (see BuilderConfig.ContactTeamEmail).
 
+      custom_metrics: a list of buildbucket.custom_metric(...) objects.
+        Defines the custom metrics this builder should report to.
+
       dynamic: Flag for if to generate a dynamic_builder_template or a pre-defined builder.
     """
     if dynamic:
@@ -278,6 +285,7 @@ def _generate_builder(
         "shadow_properties": validate.str_dict("shadow_properties", shadow_properties, required = False),
         "shadow_dimensions": swarming.validate_dimensions("shadow_dimensions", shadow_dimensions, allow_none = True),
         "contact_team_email": validate.email("contact_team_email", contact_team_email, required = False),
+        "custom_metrics": buildbucket.validate_custom_metrics("custom_metrics", custom_metrics),
     }
 
     # Merge explicitly passed properties with the module-scoped defaults.
@@ -424,7 +432,10 @@ def _builder(
         notifies = None,
 
         # Builder health indicators
-        contact_team_email = None):
+        contact_team_email = None,
+
+        # Custom metrics
+        custom_metrics = None):
     """Defines a generic builder.
 
     It runs some executable (usually a recipe) in some requested environment,
@@ -622,6 +633,9 @@ def _builder(
 
       contact_team_email: the owning team's contact email. This team is responsible for fixing
         any builder health issues (see BuilderConfig.ContactTeamEmail).
+
+      custom_metrics: a list of buildbucket.custom_metric(...) objects.
+        Defines the custom metrics this builder should report to.
     """
 
     name = validate.string("name", name)
@@ -677,6 +691,9 @@ def _builder(
 
         # Builder health indicators
         contact_team_email = contact_team_email,
+
+        # Custom metrics
+        custom_metrics = custom_metrics,
     )
 
     # Add a node that carries the full definition of the builder.

@@ -57,6 +57,7 @@
 {{ $native := Symbol "@stdlib//native_doc.star" "" }}
 {{ $json := Symbol "@stdlib//json_doc.star" "json" }}
 {{ $proto := Symbol "@stdlib//proto_doc.star" "proto" }}
+{{ $buildbucket := Symbol "@stdlib//builtins.star" "buildbucket" }}
 
 {{/*
   Some symbols referenced from the non-generated portion of the doc below.
@@ -608,6 +609,9 @@ Similarly some roles can be assigned to individual users, other only to groups.
 
 ## CQ  {#cq-doc}
 {{template "gen-funcs-doc" $cq}}
+
+## Buildbucket
+{{template "gen-funcs-doc" $buildbucket}}
 
 ## Built-in constants and functions
 
