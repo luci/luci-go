@@ -127,10 +127,10 @@ func reportMaxAge(ctx context.Context, project, bucket, legacyBucket, builder st
 		Eq("experimental", false).
 		Order("create_time").
 		Limit(1)
-	eg, ctx := errgroup.WithContext(ctx)
+	eg, eCtx := errgroup.WithContext(ctx)
 	eg.Go(func() error {
 		var b []*model.Build
-		if err := datastore.GetAll(ctx, q.Eq("never_leased", false), &b); err != nil {
+		if err := datastore.GetAll(eCtx, q.Eq("never_leased", false), &b); err != nil {
 			return err
 		}
 		if len(b) > 0 {
@@ -140,7 +140,7 @@ func reportMaxAge(ctx context.Context, project, bucket, legacyBucket, builder st
 	})
 	eg.Go(func() error {
 		var b []*model.Build
-		if err := datastore.GetAll(ctx, q.Eq("never_leased", true), &b); err != nil {
+		if err := datastore.GetAll(eCtx, q.Eq("never_leased", true), &b); err != nil {
 			return err
 		}
 		if len(b) > 0 {
@@ -157,7 +157,7 @@ func reportMaxAge(ctx context.Context, project, bucket, legacyBucket, builder st
 		name := name
 		eg.Go(func() (err error) {
 			var b []*model.Build
-			if err = datastore.GetAll(ctx, q.Eq("custom_builder_max_age_metrics", name), &b); err != nil {
+			if err = datastore.GetAll(eCtx, q.Eq("custom_builder_max_age_metrics", name), &b); err != nil {
 				return
 			}
 			if len(b) > 0 {
@@ -215,13 +215,13 @@ func reportBuildCount(ctx context.Context, project, bucket, legacyBucket, builde
 		Eq("bucket_id", protoutil.FormatBucketID(project, bucket)).
 		Eq("experimental", false).
 		Eq("tags", "builder:"+builder)
-	eg, ctx := errgroup.WithContext(ctx)
+	eg, eCtx := errgroup.WithContext(ctx)
 	eg.Go(func() (err error) {
-		nScheduled, err = datastore.Count(ctx, q.Eq("status_v2", pb.Status_SCHEDULED))
+		nScheduled, err = datastore.Count(eCtx, q.Eq("status_v2", pb.Status_SCHEDULED))
 		return
 	})
 	eg.Go(func() (err error) {
-		nStarted, err = datastore.Count(ctx, q.Eq("status_v2", pb.Status_STARTED))
+		nStarted, err = datastore.Count(eCtx, q.Eq("status_v2", pb.Status_STARTED))
 		return
 	})
 
@@ -240,7 +240,7 @@ func reportBuildCount(ctx context.Context, project, bucket, legacyBucket, builde
 			eg.Go(func() (err error) {
 				mu.Lock()
 				defer mu.Unlock()
-				cmCounts[name][status], err = datastore.Count(ctx, q.Eq("status_v2", status).Eq("custom_builder_count_metrics", name))
+				cmCounts[name][status], err = datastore.Count(eCtx, q.Eq("status_v2", status).Eq("custom_builder_count_metrics", name))
 				return
 			})
 		}
@@ -277,17 +277,17 @@ func reportConsecutiveFailures(ctx context.Context, project, bucket, builder str
 	}
 
 	var nCancels, nFailures, nInfraFailures int64
-	eg, ctx := errgroup.WithContext(ctx)
+	eg, eCtx := errgroup.WithContext(ctx)
 	eg.Go(func() (err error) {
-		nCancels, err = datastore.Count(ctx, q.Eq("status_v2", pb.Status_CANCELED))
+		nCancels, err = datastore.Count(eCtx, q.Eq("status_v2", pb.Status_CANCELED))
 		return
 	})
 	eg.Go(func() (err error) {
-		nFailures, err = datastore.Count(ctx, q.Eq("status_v2", pb.Status_FAILURE))
+		nFailures, err = datastore.Count(eCtx, q.Eq("status_v2", pb.Status_FAILURE))
 		return
 	})
 	eg.Go(func() (err error) {
-		nInfraFailures, err = datastore.Count(ctx, q.Eq("status_v2", pb.Status_INFRA_FAILURE))
+		nInfraFailures, err = datastore.Count(eCtx, q.Eq("status_v2", pb.Status_INFRA_FAILURE))
 		return
 	})
 
@@ -306,7 +306,7 @@ func reportConsecutiveFailures(ctx context.Context, project, bucket, builder str
 			eg.Go(func() (err error) {
 				mu.Lock()
 				defer mu.Unlock()
-				cmCounts[name][status], err = datastore.Count(ctx, q.Eq("status_v2", status).Eq("custom_builder_consecutive_failures_metrics", name))
+				cmCounts[name][status], err = datastore.Count(eCtx, q.Eq("status_v2", status).Eq("custom_builder_consecutive_failures_metrics", name))
 				return
 			})
 		}
