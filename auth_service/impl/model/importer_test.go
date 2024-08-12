@@ -265,15 +265,16 @@ func TestLoadTarball(t *testing.T) {
 		})
 		Convey("valid tarball with skippable files", func() {
 			bundle := testsupport.BuildTargz(map[string][]byte{
-				"at_root":             []byte("a\nb"),
-				"ldap/ bad name":      []byte("a\nb"),
-				"ldap/group-a":        []byte("a\nb"),
-				"ldap/group-b":        []byte("a\nb"),
-				"ldap/group-c":        []byte("a\nb"),
-				"ldap/deeper/group-a": []byte("a\nb"),
-				"not-ldap/group-a":    []byte("a\nb"),
+				"at_root":                   []byte("a\nb"),
+				"ldap/ bad name":            []byte("a\nb"),
+				"ldap/group-a":              []byte("a\nb"),
+				"ldap/group-b":              []byte("a\nb"),
+				"ldap/group-c":              []byte("a\nb"),
+				"ldap/deeper/group-a":       []byte("a\nb"),
+				"not-ldap/group-a":          []byte("a\nb"),
+				"InvalidSystem/group-valid": []byte("a\nb"),
 			})
-			m, err := loadTarball(ctx, bytes.NewReader(bundle), "example.com", []string{"ldap"}, []string{"ldap/group-a", "ldap/group-b"})
+			m, err := loadTarball(ctx, bytes.NewReader(bundle), "example.com", []string{"ldap", "InvalidSystem"}, []string{"ldap/group-a", "ldap/group-b", "InvalidSystem/group-valid"})
 			So(err, ShouldBeNil)
 			aIdent, _ := identity.MakeIdentity("user:a@example.com")
 			bIdent, _ := identity.MakeIdentity("user:b@example.com")

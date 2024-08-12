@@ -251,7 +251,7 @@ func loadTarball(ctx context.Context, content io.Reader, domain string, systems,
 	// verify system/groupname and then parse blob if valid
 	for filename, fileobj := range entries {
 		chunks := strings.Split(filename, "/")
-		if len(chunks) != 2 || !GroupNameRe.MatchString(chunks[1]) {
+		if len(chunks) != 2 || !GroupNameRe.MatchString(filename) {
 			logging.Warningf(ctx, "Skipping file %s, not a valid name", filename)
 			continue
 		}
