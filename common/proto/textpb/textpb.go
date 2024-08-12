@@ -118,7 +118,7 @@ func jsonTransformTextPBNode(node *ast.Node, parentName string) error {
 			return nil
 		}
 	}
-	s, err := unquote.Unquote(node)
+	s, _, err := unquote.Unquote(node)
 	if err != nil {
 		return errors.Annotate(err, "internal error: could not parse value for '%s' as string", name(parentName, node)).Err()
 	}

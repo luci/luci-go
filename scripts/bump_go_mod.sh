@@ -74,10 +74,11 @@ deps=(
   github.com/yosuke-furukawa/json5@latest
   go.opentelemetry.io/contrib/detectors/gcp@latest
   go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc@latest
-  go.opentelemetry.io/contrib/instrumentation/net/http/httptrace/otelhttptrace@latest
   go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp@latest
   go.opentelemetry.io/otel/sdk@latest
   go.opentelemetry.io/otel/trace@latest
+  go.opentelemetry.io/otel/metric@latest
+  go.opentelemetry.io/otel/sdk/metric@latest
   go.opentelemetry.io/otel@latest
   go.starlark.net@latest
   golang.org/x/crypto@latest

@@ -74,3 +74,17 @@ func Get(err error) (st *status.Status, ok bool) {
 
 	return v.(*status.Status), true
 }
+
+// Code returns a gRPC code in the application-specific Status attached to err
+// using this package. If err is nil, returns OK. If there's no status attached
+// returns Unknown.
+func Code(err error) codes.Code {
+	if err == nil {
+		return codes.OK
+	}
+	st, ok := Get(err)
+	if !ok {
+		return codes.Unknown
+	}
+	return st.Code()
+}

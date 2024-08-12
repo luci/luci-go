@@ -239,12 +239,13 @@ type rowInput interface {
 
 func (b *bqExporter) batchExportRows(ctx context.Context, ins inserter, batchC chan []rowInput, errorLogger func(ctx context.Context, err bigquery.PutMultiError, rows []*bq.Row)) error {
 	eg, ctx := errgroup.WithContext(ctx)
-	defer eg.Wait()
 
 	for rows := range batchC {
 		rows := rows
 		if err := b.batchSem.Acquire(ctx, 1); err != nil {
-			return err
+			// This can happen only if errgroup context is canceled, which usually
+			// happens on errors. Grab the error from the errgroup.
+			return eg.Wait()
 		}
 
 		eg.Go(func() error {

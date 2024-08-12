@@ -23,7 +23,6 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
-	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/span"
@@ -47,7 +46,7 @@ func validateMarkInvocationSubmittedPermissions(ctx context.Context, inv invocat
 	if err != nil {
 		// If the invocation does not exist, we mask the error with permission
 		// denied to avoid leaking resource existence.
-		if grpcutil.Code(err) == codes.NotFound {
+		if appstatus.Code(err) == codes.NotFound {
 			return appstatus.Errorf(codes.PermissionDenied, noPermissionsError(inv))
 		} else {
 			return err
