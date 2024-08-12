@@ -42,7 +42,13 @@ import (
 )
 
 const (
+	// Suffix for Google temporary accounts, which need to be handled
+	// differently when constructing principal identities.
 	gTempSuffix = "@gtempaccount.com"
+)
+
+var (
+	ErrConcurrentAuthDBUpdate = errors.New("AuthDB changed between transactions")
 )
 
 // Imports groups from some external tar.gz bundle or plain text list.
@@ -384,9 +390,10 @@ func importBundles(ctx context.Context, bundles map[string]GroupBundle, provided
 				return err
 			}
 
-			// DB changed between transactions try again.
+			// DB changed between transactions.
 			if rev != expectedRevision {
-				return errors.New("revision numbers don't match")
+				return fmt.Errorf("%w: expected rev %d but it was actually %d",
+					ErrConcurrentAuthDBUpdate, expectedRevision, rev)
 			}
 			for _, e := range entitiesToPut {
 				if err := cae(e, ts, providedBy, false); err != nil {
@@ -442,13 +449,14 @@ func importBundles(ctx context.Context, bundles map[string]GroupBundle, provided
 		}
 
 		// An `applyImport` transaction can touch at most 500 entities. Cap the
-		// number of entities we create/delete by 200 each since we attach a historical
-		// entity to each entity. The rest will be updated on the next cycle of the loop.
-		// This is safe to do since:
-		//  * Imported groups are "leaf" groups (have no subgroups) and can be added
-		//    in arbitrary order without worrying about referential integrity.
-		//  * Deleted groups are guaranteed to be unreferenced by `prepareImport`
-		//    and can be deleted in arbitrary order as well.
+		// number of entities we create/delete to 200 in total since we attach a
+		// historical entity to each entity. The rest will be updated on the
+		// next cycle of the loop. This is safe to do since:
+		//  * Imported groups are "leaf" groups (have no subgroups) and can be
+		//    added in arbitrary order without worrying about referential
+		//    integrity.
+		//  * Deleted groups are guaranteed to be unreferenced by
+		//    `prepareImport` and can be deleted in arbitrary order as well.
 		truncated := false
 
 		// Both these operations happen in the same transaction so we have
@@ -475,19 +483,23 @@ func importBundles(ctx context.Context, bundles map[string]GroupBundle, provided
 
 		// Land the change iff the current AuthDB revision is still == `revision`.
 		err := applyImport(revision, entitiesToPut, entitiesToDel, ts)
-		if err != nil && strings.Contains(err.Error(), "revision numbers don't match") {
-			logging.Warningf(ctx, "authdb changed between transactions, retrying...")
-			continue
-		} else if err != nil {
+		if err != nil {
+			if errors.Is(err, ErrConcurrentAuthDBUpdate) {
+				// Retry because the AuthDB changed between transactions.
+				logging.Warningf(ctx, "%s - retrying...", err.Error())
+				continue
+			}
+
 			logging.Errorf(ctx, "couldn't apply changes to datastore entities %s", err.Error())
 			return nil, revision, err
 		}
 
-		// The new revision has landed
+		// The new revision has landed.
 		revision += 1
 
+		// Check if there are still changes to land.
 		if truncated {
-			logging.Infof(ctx, "going for another round to push the rest of the groups")
+			logging.Infof(ctx, "going for another round to push the rest of the groups...")
 			clock.Sleep(ctx, 5*time.Second)
 			continue
 		}
@@ -497,7 +509,7 @@ func importBundles(ctx context.Context, bundles map[string]GroupBundle, provided
 	}
 
 	if len(updatedGroups) > 0 {
-		return updatedGroups.ToSortedSlice(), int64(revision), nil
+		return updatedGroups.ToSortedSlice(), revision, nil
 	}
 
 	return nil, 0, nil
