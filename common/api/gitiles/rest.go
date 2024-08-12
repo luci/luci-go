@@ -170,6 +170,7 @@ func (c *client) DownloadFile(ctx context.Context, req *gitiles.DownloadFileRequ
 	case gitiles.DownloadFileRequest_JSON:
 		format = "JSON"
 	case gitiles.DownloadFileRequest_TEXT:
+		fallthrough
 	default:
 		format = "TEXT"
 		base64Encoded = true
