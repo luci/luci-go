@@ -15,10 +15,16 @@
 package recipespy
 
 import (
-	"errors"
+	"fmt"
+	"os"
+	"path/filepath"
+
+	"google.golang.org/protobuf/encoding/protojson"
 
 	recipepb "go.chromium.org/luci/recipes_py/proto"
 )
+
+var cfgPathSegments = []string{"infra", "config", "recipes.cfg"}
 
 // Repo represents a recipe repo.
 //
@@ -34,7 +40,41 @@ type Repo struct {
 	Spec *recipepb.RepoSpec
 }
 
+// Name is a shorthand to get the recipe repo name.
+func (r *Repo) Name() string {
+	return r.Spec.GetRepoName()
+}
+
+// CfgPathRel returns the relative path from the repo root to recipes.cfg.
+func (r *Repo) CfgPathRel() string {
+	return filepath.Join(cfgPathSegments...)
+}
+
+// CfgPath returns the absolute path to recipes.cfg
+func (r *Repo) CfgPath() string {
+	return filepath.Join(r.Path, r.CfgPathRel())
+}
+
 // RepoFromPath creates a recipe Repo instance from a local path.
 func RepoFromPath(path string) (*Repo, error) {
-	return nil, errors.New("implement")
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert repo path %q to absolute path: %w", path, err)
+	}
+	cfgPath := path
+	for _, seg := range cfgPathSegments {
+		cfgPath = filepath.Join(cfgPath, seg)
+	}
+	cfgContent, err := os.ReadFile(cfgPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read recipes.cfg at %q: %w", cfgPath, err)
+	}
+	repo := &Repo{
+		Path: absPath,
+		Spec: &recipepb.RepoSpec{},
+	}
+	if err := protojson.Unmarshal(cfgContent, repo.Spec); err != nil {
+		return nil, fmt.Errorf("failed to parse recipes.cfg: %w", err)
+	}
+	return repo, nil
 }
