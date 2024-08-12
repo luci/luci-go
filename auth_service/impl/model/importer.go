@@ -506,20 +506,22 @@ func importBundles(ctx context.Context, bundles map[string]GroupBundle, provided
 // prepareImport compares the bundle given to the what is currently present in datastore
 // to get the operations for all the groups.
 func prepareImport(ctx context.Context, systemName string, existingGroups map[string]*AuthGroup, iGroups GroupBundle) (toPut []*AuthGroup, toDel []*AuthGroup) {
-	systemGroups := []string{}
-	iGroupsSet := stringset.New(len(iGroups))
+	// Filter existing groups to those that belong to the given system.
+	sysGroupsSet := stringset.New(0)
+	sysPrefix := fmt.Sprintf("%s/", systemName)
 	for gID := range existingGroups {
-		if strings.HasPrefix(gID, fmt.Sprintf("%s/", systemName)) {
-			systemGroups = append(systemGroups, gID)
+		if strings.HasPrefix(gID, sysPrefix) {
+			sysGroupsSet.Add(gID)
 		}
 	}
 
+	// Get the unique group names in this system's bundle.
+	iGroupsSet := stringset.New(len(iGroups))
 	for groupName := range iGroups {
 		iGroupsSet.Add(groupName)
 	}
 
-	sysGroupsSet := stringset.NewFromSlice(systemGroups...)
-
+	// Create new groups.
 	toCreate := iGroupsSet.Difference(sysGroupsSet).ToSlice()
 	for _, g := range toCreate {
 		group := makeAuthGroup(ctx, g)
@@ -527,21 +529,40 @@ func prepareImport(ctx context.Context, systemName string, existingGroups map[st
 		toPut = append(toPut, group)
 	}
 
+	// Update existing groups.
 	toUpdate := sysGroupsSet.Intersect(iGroupsSet).ToSlice()
 	for _, g := range toUpdate {
+		existingGroup := existingGroups[g]
 		importGMems := stringset.NewFromSlice(identitiesToStrings(iGroups[g])...)
-		existMems := existingGroups[g].Members
-		if !(len(importGMems) == len(existMems) && importGMems.HasAll(existMems...)) {
-			group := makeAuthGroup(ctx, g)
-			group.Members = importGMems.ToSlice()
-			toPut = append(toPut, group)
+		existMems := existingGroup.Members
+		if len(importGMems) != len(existMems) || !importGMems.HasAll(existMems...) {
+			existingGroup.Members = importGMems.ToSortedSlice()
+			toPut = append(toPut, existingGroup)
 		}
 	}
 
+	// Delete or clear members of groups that are no longer present in the
+	// bundle. If the group is referenced somewhere, just clear its members list
+	// to avoid inconsistency in group inclusion graphs.
 	toDelete := sysGroupsSet.Difference(iGroupsSet).ToSlice()
-	for _, g := range toDelete {
-		group := makeAuthGroup(ctx, g)
-		toDel = append(toDel, group)
+	for _, groupName := range toDelete {
+		isSubgroup := false
+		for _, existingGroup := range existingGroups {
+			if contains(groupName, existingGroup.Nested) {
+				isSubgroup = true
+				break
+			}
+		}
+
+		existingGroup := existingGroups[groupName]
+		if isSubgroup {
+			// The group is a subgroup of another so just clear the members.
+			existingGroup.Members = []string{}
+			toPut = append(toPut, existingGroup)
+			continue
+		}
+
+		toDel = append(toDel, existingGroup)
 	}
 
 	return toPut, toDel

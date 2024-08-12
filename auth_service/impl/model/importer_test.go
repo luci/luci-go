@@ -482,6 +482,28 @@ func TestImportBundles(t *testing.T) {
 			So(err, ShouldErrLike, datastore.ErrNoSuchEntity)
 		})
 
+		Convey("Clearing Groups", func() {
+			g := testExternalAuthGroup(ctx, "sys/group-e", []string{"user:a@example.com"})
+			_, err := CreateAuthGroup(ctx, g, true, "Imported from group bundles", false)
+			So(err, ShouldBeNil)
+			superGroup := testAuthGroup(ctx, "test-group")
+			superGroup.Nested = []string{"sys/group-e"}
+			So(datastore.Put(ctx, superGroup), ShouldBeNil)
+
+			grDS, err := GetAuthGroup(ctx, g.ID)
+			So(err, ShouldBeNil)
+			So(grDS.Members, ShouldResemble, g.Members)
+
+			updatedGroups, revision, err := importBundles(ctx, bundles, userIdent, nil)
+			So(err, ShouldBeNil)
+			So(updatedGroups, ShouldResemble, append(baseGroupBundles, "sys/group-e"))
+			So(revision, ShouldEqual, 2)
+
+			actual, err := GetAuthGroup(ctx, g.ID)
+			So(err, ShouldBeNil)
+			So(actual.Members, ShouldBeEmpty)
+		})
+
 		Convey("Large groups", func() {
 			bundle, groupsBundled := makeGroupBundle("test", 400)
 			updatedGroups, rev, err := importBundles(ctx, bundle, userIdent, nil)
