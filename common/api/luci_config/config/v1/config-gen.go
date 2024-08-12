@@ -1,4 +1,4 @@
-// Copyright 2023 The LUCI Authors.
+// Copyright 2024 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,6 +16,17 @@
 
 // Package config provides access to the Configuration Service.
 //
+// # Library status
+//
+// These client libraries are officially supported by Google. However, this
+// library is considered complete and is in maintenance mode. This means
+// that we will address critical bugs and security issues but will not add
+// any new features.
+//
+// When possible, we recommend using our newer
+// [Cloud Client Libraries for Go](https://pkg.go.dev/cloud.google.com/go)
+// that are still actively being worked and iterated on.
+//
 // # Creating a client
 //
 // Usage example:
@@ -25,24 +36,26 @@
 //	ctx := context.Background()
 //	configService, err := config.NewService(ctx)
 //
-// In this example, Google Application Default Credentials are used for authentication.
-//
-// For information on how to create and obtain Application Default Credentials, see https://developers.google.com/identity/protocols/application-default-credentials.
+// In this example, Google Application Default Credentials are used for
+// authentication. For information on how to create and obtain Application
+// Default Credentials, see https://developers.google.com/identity/protocols/application-default-credentials.
 //
 // # Other authentication options
 //
-// To use an API key for authentication (note: some APIs do not support API keys), use option.WithAPIKey:
+// To use an API key for authentication (note: some APIs do not support API
+// keys), use [google.golang.org/api/option.WithAPIKey]:
 //
 //	configService, err := config.NewService(ctx, option.WithAPIKey("AIza..."))
 //
-// To use an OAuth token (e.g., a user token obtained via a three-legged OAuth flow), use option.WithTokenSource:
+// To use an OAuth token (e.g., a user token obtained via a three-legged OAuth
+// flow, use [google.golang.org/api/option.WithTokenSource]:
 //
 //	config := &oauth2.Config{...}
 //	// ...
 //	token, err := config.Exchange(ctx, ...)
 //	configService, err := config.NewService(ctx, option.WithTokenSource(config.TokenSource(ctx, token)))
 //
-// See https://godoc.org/google.golang.org/api/option/ for details on options.
+// See [google.golang.org/api/option.ClientOption] for details on options.
 package config // import "go.chromium.org/luci/common/api/luci_config/config/v1"
 
 import (
@@ -84,6 +97,7 @@ const apiId = "config:v1"
 const apiName = "config"
 const apiVersion = "v1"
 const basePath = "http://localhost:8080/_ah/api/config/v1"
+const basePathTemplate = "http://localhost:8080/_ah/api/config/v1"
 
 // OAuth2 scopes used by this API.
 const (
@@ -99,6 +113,8 @@ func NewService(ctx context.Context, opts ...option.ClientOption) (*Service, err
 	// NOTE: prepend, so we don't override user-specified scopes.
 	opts = append([]option.ClientOption{scopesOption}, opts...)
 	opts = append(opts, internaloption.WithDefaultEndpoint(basePath))
+	opts = append(opts, internaloption.WithDefaultEndpointTemplate(basePathTemplate))
+	opts = append(opts, internaloption.EnableNewAuthLibrary())
 	client, endpoint, err := htransport.NewClient(ctx, opts...)
 	if err != nil {
 		return nil, err
@@ -141,7 +157,6 @@ func (s *Service) userAgent() string {
 
 type ComponentsConfigEndpointValidationMessage struct {
 	Path string `json:"path,omitempty"`
-
 	// Possible values:
 	//   "CRITICAL"
 	//   "DEBUG"
@@ -149,590 +164,439 @@ type ComponentsConfigEndpointValidationMessage struct {
 	//   "INFO"
 	//   "WARNING"
 	Severity string `json:"severity,omitempty"`
-
-	Text string `json:"text,omitempty"`
-
-	// ForceSendFields is a list of field names (e.g. "Path") to
-	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	Text     string `json:"text,omitempty"`
+	// ForceSendFields is a list of field names (e.g. "Path") to unconditionally
+	// include in API requests. By default, fields with empty or default values are
+	// omitted from API requests. See
+	// https://pkg.go.dev/google.golang.org/api#hdr-ForceSendFields for more
+	// details.
 	ForceSendFields []string `json:"-"`
-
-	// NullFields is a list of field names (e.g. "Path") to include in API
-	// requests with the JSON null value. By default, fields with empty
-	// values are omitted from API requests. However, any field with an
-	// empty value appearing in NullFields will be sent to the server as
-	// null. It is an error if a field in this list has a non-empty value.
-	// This may be used to include null fields in Patch requests.
+	// NullFields is a list of field names (e.g. "Path") to include in API requests
+	// with the JSON null value. By default, fields with empty values are omitted
+	// from API requests. See
+	// https://pkg.go.dev/google.golang.org/api#hdr-NullFields for more details.
 	NullFields []string `json:"-"`
 }
 
-func (s *ComponentsConfigEndpointValidationMessage) MarshalJSON() ([]byte, error) {
+func (s ComponentsConfigEndpointValidationMessage) MarshalJSON() ([]byte, error) {
 	type NoMethod ComponentsConfigEndpointValidationMessage
-	raw := NoMethod(*s)
-	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
+	return gensupport.MarshalJSON(NoMethod(s), s.ForceSendFields, s.NullFields)
 }
 
 // LuciConfigConfigSet: Describes a config set.
 type LuciConfigConfigSet struct {
 	ConfigSet string `json:"config_set,omitempty"`
-
 	// Files: Describes a file.
-	Files []*LuciConfigFile `json:"files,omitempty"`
-
+	Files             []*LuciConfigFile                 `json:"files,omitempty"`
 	LastImportAttempt *LuciConfigConfigSetImportAttempt `json:"last_import_attempt,omitempty"`
-
-	Location string `json:"location,omitempty"`
-
-	Revision *LuciConfigRevision `json:"revision,omitempty"`
-
+	Location          string                            `json:"location,omitempty"`
+	Revision          *LuciConfigRevision               `json:"revision,omitempty"`
 	// ForceSendFields is a list of field names (e.g. "ConfigSet") to
-	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// unconditionally include in API requests. By default, fields with empty or
+	// default values are omitted from API requests. See
+	// https://pkg.go.dev/google.golang.org/api#hdr-ForceSendFields for more
+	// details.
 	ForceSendFields []string `json:"-"`
-
-	// NullFields is a list of field names (e.g. "ConfigSet") to include in
-	// API requests with the JSON null value. By default, fields with empty
-	// values are omitted from API requests. However, any field with an
-	// empty value appearing in NullFields will be sent to the server as
-	// null. It is an error if a field in this list has a non-empty value.
-	// This may be used to include null fields in Patch requests.
+	// NullFields is a list of field names (e.g. "ConfigSet") to include in API
+	// requests with the JSON null value. By default, fields with empty values are
+	// omitted from API requests. See
+	// https://pkg.go.dev/google.golang.org/api#hdr-NullFields for more details.
 	NullFields []string `json:"-"`
 }
 
-func (s *LuciConfigConfigSet) MarshalJSON() ([]byte, error) {
+func (s LuciConfigConfigSet) MarshalJSON() ([]byte, error) {
 	type NoMethod LuciConfigConfigSet
-	raw := NoMethod(*s)
-	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
+	return gensupport.MarshalJSON(NoMethod(s), s.ForceSendFields, s.NullFields)
 }
 
 type LuciConfigConfigSetImportAttempt struct {
-	Message string `json:"message,omitempty"`
-
-	Revision *LuciConfigRevision `json:"revision,omitempty"`
-
-	Success bool `json:"success,omitempty"`
-
-	Timestamp int64 `json:"timestamp,omitempty,string"`
-
+	Message            string                                       `json:"message,omitempty"`
+	Revision           *LuciConfigRevision                          `json:"revision,omitempty"`
+	Success            bool                                         `json:"success,omitempty"`
+	Timestamp          int64                                        `json:"timestamp,omitempty,string"`
 	ValidationMessages []*ComponentsConfigEndpointValidationMessage `json:"validation_messages,omitempty"`
-
-	// ForceSendFields is a list of field names (e.g. "Message") to
-	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// ForceSendFields is a list of field names (e.g. "Message") to unconditionally
+	// include in API requests. By default, fields with empty or default values are
+	// omitted from API requests. See
+	// https://pkg.go.dev/google.golang.org/api#hdr-ForceSendFields for more
+	// details.
 	ForceSendFields []string `json:"-"`
-
-	// NullFields is a list of field names (e.g. "Message") to include in
-	// API requests with the JSON null value. By default, fields with empty
-	// values are omitted from API requests. However, any field with an
-	// empty value appearing in NullFields will be sent to the server as
-	// null. It is an error if a field in this list has a non-empty value.
-	// This may be used to include null fields in Patch requests.
+	// NullFields is a list of field names (e.g. "Message") to include in API
+	// requests with the JSON null value. By default, fields with empty values are
+	// omitted from API requests. See
+	// https://pkg.go.dev/google.golang.org/api#hdr-NullFields for more details.
 	NullFields []string `json:"-"`
 }
 
-func (s *LuciConfigConfigSetImportAttempt) MarshalJSON() ([]byte, error) {
+func (s LuciConfigConfigSetImportAttempt) MarshalJSON() ([]byte, error) {
 	type NoMethod LuciConfigConfigSetImportAttempt
-	raw := NoMethod(*s)
-	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
+	return gensupport.MarshalJSON(NoMethod(s), s.ForceSendFields, s.NullFields)
 }
 
 // LuciConfigFile: Describes a file.
 type LuciConfigFile struct {
 	Path string `json:"path,omitempty"`
-
-	// ForceSendFields is a list of field names (e.g. "Path") to
-	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// ForceSendFields is a list of field names (e.g. "Path") to unconditionally
+	// include in API requests. By default, fields with empty or default values are
+	// omitted from API requests. See
+	// https://pkg.go.dev/google.golang.org/api#hdr-ForceSendFields for more
+	// details.
 	ForceSendFields []string `json:"-"`
-
-	// NullFields is a list of field names (e.g. "Path") to include in API
-	// requests with the JSON null value. By default, fields with empty
-	// values are omitted from API requests. However, any field with an
-	// empty value appearing in NullFields will be sent to the server as
-	// null. It is an error if a field in this list has a non-empty value.
-	// This may be used to include null fields in Patch requests.
+	// NullFields is a list of field names (e.g. "Path") to include in API requests
+	// with the JSON null value. By default, fields with empty values are omitted
+	// from API requests. See
+	// https://pkg.go.dev/google.golang.org/api#hdr-NullFields for more details.
 	NullFields []string `json:"-"`
 }
 
-func (s *LuciConfigFile) MarshalJSON() ([]byte, error) {
+func (s LuciConfigFile) MarshalJSON() ([]byte, error) {
 	type NoMethod LuciConfigFile
-	raw := NoMethod(*s)
-	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
+	return gensupport.MarshalJSON(NoMethod(s), s.ForceSendFields, s.NullFields)
 }
 
 type LuciConfigGetConfigByHashResponseMessage struct {
 	Content string `json:"content,omitempty"`
 
-	// ServerResponse contains the HTTP response code and headers from the
-	// server.
+	// ServerResponse contains the HTTP response code and headers from the server.
 	googleapi.ServerResponse `json:"-"`
-
-	// ForceSendFields is a list of field names (e.g. "Content") to
-	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// ForceSendFields is a list of field names (e.g. "Content") to unconditionally
+	// include in API requests. By default, fields with empty or default values are
+	// omitted from API requests. See
+	// https://pkg.go.dev/google.golang.org/api#hdr-ForceSendFields for more
+	// details.
 	ForceSendFields []string `json:"-"`
-
-	// NullFields is a list of field names (e.g. "Content") to include in
-	// API requests with the JSON null value. By default, fields with empty
-	// values are omitted from API requests. However, any field with an
-	// empty value appearing in NullFields will be sent to the server as
-	// null. It is an error if a field in this list has a non-empty value.
-	// This may be used to include null fields in Patch requests.
+	// NullFields is a list of field names (e.g. "Content") to include in API
+	// requests with the JSON null value. By default, fields with empty values are
+	// omitted from API requests. See
+	// https://pkg.go.dev/google.golang.org/api#hdr-NullFields for more details.
 	NullFields []string `json:"-"`
 }
 
-func (s *LuciConfigGetConfigByHashResponseMessage) MarshalJSON() ([]byte, error) {
+func (s LuciConfigGetConfigByHashResponseMessage) MarshalJSON() ([]byte, error) {
 	type NoMethod LuciConfigGetConfigByHashResponseMessage
-	raw := NoMethod(*s)
-	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
+	return gensupport.MarshalJSON(NoMethod(s), s.ForceSendFields, s.NullFields)
 }
 
 type LuciConfigGetConfigMultiResponseMessage struct {
 	Configs []*LuciConfigGetConfigMultiResponseMessageConfigEntry `json:"configs,omitempty"`
 
-	// ServerResponse contains the HTTP response code and headers from the
-	// server.
+	// ServerResponse contains the HTTP response code and headers from the server.
 	googleapi.ServerResponse `json:"-"`
-
-	// ForceSendFields is a list of field names (e.g. "Configs") to
-	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// ForceSendFields is a list of field names (e.g. "Configs") to unconditionally
+	// include in API requests. By default, fields with empty or default values are
+	// omitted from API requests. See
+	// https://pkg.go.dev/google.golang.org/api#hdr-ForceSendFields for more
+	// details.
 	ForceSendFields []string `json:"-"`
-
-	// NullFields is a list of field names (e.g. "Configs") to include in
-	// API requests with the JSON null value. By default, fields with empty
-	// values are omitted from API requests. However, any field with an
-	// empty value appearing in NullFields will be sent to the server as
-	// null. It is an error if a field in this list has a non-empty value.
-	// This may be used to include null fields in Patch requests.
+	// NullFields is a list of field names (e.g. "Configs") to include in API
+	// requests with the JSON null value. By default, fields with empty values are
+	// omitted from API requests. See
+	// https://pkg.go.dev/google.golang.org/api#hdr-NullFields for more details.
 	NullFields []string `json:"-"`
 }
 
-func (s *LuciConfigGetConfigMultiResponseMessage) MarshalJSON() ([]byte, error) {
+func (s LuciConfigGetConfigMultiResponseMessage) MarshalJSON() ([]byte, error) {
 	type NoMethod LuciConfigGetConfigMultiResponseMessage
-	raw := NoMethod(*s)
-	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
+	return gensupport.MarshalJSON(NoMethod(s), s.ForceSendFields, s.NullFields)
 }
 
 type LuciConfigGetConfigMultiResponseMessageConfigEntry struct {
-	ConfigSet string `json:"config_set,omitempty"`
-
-	Content string `json:"content,omitempty"`
-
+	ConfigSet   string `json:"config_set,omitempty"`
+	Content     string `json:"content,omitempty"`
 	ContentHash string `json:"content_hash,omitempty"`
-
-	Revision string `json:"revision,omitempty"`
-
-	Url string `json:"url,omitempty"`
-
+	Revision    string `json:"revision,omitempty"`
+	Url         string `json:"url,omitempty"`
 	// ForceSendFields is a list of field names (e.g. "ConfigSet") to
-	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// unconditionally include in API requests. By default, fields with empty or
+	// default values are omitted from API requests. See
+	// https://pkg.go.dev/google.golang.org/api#hdr-ForceSendFields for more
+	// details.
 	ForceSendFields []string `json:"-"`
-
-	// NullFields is a list of field names (e.g. "ConfigSet") to include in
-	// API requests with the JSON null value. By default, fields with empty
-	// values are omitted from API requests. However, any field with an
-	// empty value appearing in NullFields will be sent to the server as
-	// null. It is an error if a field in this list has a non-empty value.
-	// This may be used to include null fields in Patch requests.
+	// NullFields is a list of field names (e.g. "ConfigSet") to include in API
+	// requests with the JSON null value. By default, fields with empty values are
+	// omitted from API requests. See
+	// https://pkg.go.dev/google.golang.org/api#hdr-NullFields for more details.
 	NullFields []string `json:"-"`
 }
 
-func (s *LuciConfigGetConfigMultiResponseMessageConfigEntry) MarshalJSON() ([]byte, error) {
+func (s LuciConfigGetConfigMultiResponseMessageConfigEntry) MarshalJSON() ([]byte, error) {
 	type NoMethod LuciConfigGetConfigMultiResponseMessageConfigEntry
-	raw := NoMethod(*s)
-	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
+	return gensupport.MarshalJSON(NoMethod(s), s.ForceSendFields, s.NullFields)
 }
 
 type LuciConfigGetConfigResponseMessage struct {
-	Content string `json:"content,omitempty"`
+	Content          string `json:"content,omitempty"`
+	ContentHash      string `json:"content_hash,omitempty"`
+	IsZlibCompressed bool   `json:"is_zlib_compressed,omitempty"`
+	Revision         string `json:"revision,omitempty"`
+	Url              string `json:"url,omitempty"`
 
-	ContentHash string `json:"content_hash,omitempty"`
-
-	IsZlibCompressed bool `json:"is_zlib_compressed,omitempty"`
-
-	Revision string `json:"revision,omitempty"`
-
-	Url string `json:"url,omitempty"`
-
-	// ServerResponse contains the HTTP response code and headers from the
-	// server.
+	// ServerResponse contains the HTTP response code and headers from the server.
 	googleapi.ServerResponse `json:"-"`
-
-	// ForceSendFields is a list of field names (e.g. "Content") to
-	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// ForceSendFields is a list of field names (e.g. "Content") to unconditionally
+	// include in API requests. By default, fields with empty or default values are
+	// omitted from API requests. See
+	// https://pkg.go.dev/google.golang.org/api#hdr-ForceSendFields for more
+	// details.
 	ForceSendFields []string `json:"-"`
-
-	// NullFields is a list of field names (e.g. "Content") to include in
-	// API requests with the JSON null value. By default, fields with empty
-	// values are omitted from API requests. However, any field with an
-	// empty value appearing in NullFields will be sent to the server as
-	// null. It is an error if a field in this list has a non-empty value.
-	// This may be used to include null fields in Patch requests.
+	// NullFields is a list of field names (e.g. "Content") to include in API
+	// requests with the JSON null value. By default, fields with empty values are
+	// omitted from API requests. See
+	// https://pkg.go.dev/google.golang.org/api#hdr-NullFields for more details.
 	NullFields []string `json:"-"`
 }
 
-func (s *LuciConfigGetConfigResponseMessage) MarshalJSON() ([]byte, error) {
+func (s LuciConfigGetConfigResponseMessage) MarshalJSON() ([]byte, error) {
 	type NoMethod LuciConfigGetConfigResponseMessage
-	raw := NoMethod(*s)
-	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
+	return gensupport.MarshalJSON(NoMethod(s), s.ForceSendFields, s.NullFields)
 }
 
 type LuciConfigGetConfigSetsResponseMessage struct {
 	// ConfigSets: Describes a config set.
 	ConfigSets []*LuciConfigConfigSet `json:"config_sets,omitempty"`
 
-	// ServerResponse contains the HTTP response code and headers from the
-	// server.
+	// ServerResponse contains the HTTP response code and headers from the server.
 	googleapi.ServerResponse `json:"-"`
-
 	// ForceSendFields is a list of field names (e.g. "ConfigSets") to
-	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// unconditionally include in API requests. By default, fields with empty or
+	// default values are omitted from API requests. See
+	// https://pkg.go.dev/google.golang.org/api#hdr-ForceSendFields for more
+	// details.
 	ForceSendFields []string `json:"-"`
-
-	// NullFields is a list of field names (e.g. "ConfigSets") to include in
-	// API requests with the JSON null value. By default, fields with empty
-	// values are omitted from API requests. However, any field with an
-	// empty value appearing in NullFields will be sent to the server as
-	// null. It is an error if a field in this list has a non-empty value.
-	// This may be used to include null fields in Patch requests.
+	// NullFields is a list of field names (e.g. "ConfigSets") to include in API
+	// requests with the JSON null value. By default, fields with empty values are
+	// omitted from API requests. See
+	// https://pkg.go.dev/google.golang.org/api#hdr-NullFields for more details.
 	NullFields []string `json:"-"`
 }
 
-func (s *LuciConfigGetConfigSetsResponseMessage) MarshalJSON() ([]byte, error) {
+func (s LuciConfigGetConfigSetsResponseMessage) MarshalJSON() ([]byte, error) {
 	type NoMethod LuciConfigGetConfigSetsResponseMessage
-	raw := NoMethod(*s)
-	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
+	return gensupport.MarshalJSON(NoMethod(s), s.ForceSendFields, s.NullFields)
 }
 
 type LuciConfigGetMappingResponseMessage struct {
 	Mappings []*LuciConfigGetMappingResponseMessageMapping `json:"mappings,omitempty"`
 
-	// ServerResponse contains the HTTP response code and headers from the
-	// server.
+	// ServerResponse contains the HTTP response code and headers from the server.
 	googleapi.ServerResponse `json:"-"`
-
 	// ForceSendFields is a list of field names (e.g. "Mappings") to
-	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// unconditionally include in API requests. By default, fields with empty or
+	// default values are omitted from API requests. See
+	// https://pkg.go.dev/google.golang.org/api#hdr-ForceSendFields for more
+	// details.
 	ForceSendFields []string `json:"-"`
-
-	// NullFields is a list of field names (e.g. "Mappings") to include in
-	// API requests with the JSON null value. By default, fields with empty
-	// values are omitted from API requests. However, any field with an
-	// empty value appearing in NullFields will be sent to the server as
-	// null. It is an error if a field in this list has a non-empty value.
-	// This may be used to include null fields in Patch requests.
+	// NullFields is a list of field names (e.g. "Mappings") to include in API
+	// requests with the JSON null value. By default, fields with empty values are
+	// omitted from API requests. See
+	// https://pkg.go.dev/google.golang.org/api#hdr-NullFields for more details.
 	NullFields []string `json:"-"`
 }
 
-func (s *LuciConfigGetMappingResponseMessage) MarshalJSON() ([]byte, error) {
+func (s LuciConfigGetMappingResponseMessage) MarshalJSON() ([]byte, error) {
 	type NoMethod LuciConfigGetMappingResponseMessage
-	raw := NoMethod(*s)
-	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
+	return gensupport.MarshalJSON(NoMethod(s), s.ForceSendFields, s.NullFields)
 }
 
 type LuciConfigGetMappingResponseMessageMapping struct {
 	ConfigSet string `json:"config_set,omitempty"`
-
-	Location string `json:"location,omitempty"`
-
+	Location  string `json:"location,omitempty"`
 	// ForceSendFields is a list of field names (e.g. "ConfigSet") to
-	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// unconditionally include in API requests. By default, fields with empty or
+	// default values are omitted from API requests. See
+	// https://pkg.go.dev/google.golang.org/api#hdr-ForceSendFields for more
+	// details.
 	ForceSendFields []string `json:"-"`
-
-	// NullFields is a list of field names (e.g. "ConfigSet") to include in
-	// API requests with the JSON null value. By default, fields with empty
-	// values are omitted from API requests. However, any field with an
-	// empty value appearing in NullFields will be sent to the server as
-	// null. It is an error if a field in this list has a non-empty value.
-	// This may be used to include null fields in Patch requests.
+	// NullFields is a list of field names (e.g. "ConfigSet") to include in API
+	// requests with the JSON null value. By default, fields with empty values are
+	// omitted from API requests. See
+	// https://pkg.go.dev/google.golang.org/api#hdr-NullFields for more details.
 	NullFields []string `json:"-"`
 }
 
-func (s *LuciConfigGetMappingResponseMessageMapping) MarshalJSON() ([]byte, error) {
+func (s LuciConfigGetMappingResponseMessageMapping) MarshalJSON() ([]byte, error) {
 	type NoMethod LuciConfigGetMappingResponseMessageMapping
-	raw := NoMethod(*s)
-	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
+	return gensupport.MarshalJSON(NoMethod(s), s.ForceSendFields, s.NullFields)
 }
 
 type LuciConfigGetProjectsResponseMessage struct {
 	Projects []*LuciConfigProject `json:"projects,omitempty"`
 
-	// ServerResponse contains the HTTP response code and headers from the
-	// server.
+	// ServerResponse contains the HTTP response code and headers from the server.
 	googleapi.ServerResponse `json:"-"`
-
 	// ForceSendFields is a list of field names (e.g. "Projects") to
-	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// unconditionally include in API requests. By default, fields with empty or
+	// default values are omitted from API requests. See
+	// https://pkg.go.dev/google.golang.org/api#hdr-ForceSendFields for more
+	// details.
 	ForceSendFields []string `json:"-"`
-
-	// NullFields is a list of field names (e.g. "Projects") to include in
-	// API requests with the JSON null value. By default, fields with empty
-	// values are omitted from API requests. However, any field with an
-	// empty value appearing in NullFields will be sent to the server as
-	// null. It is an error if a field in this list has a non-empty value.
-	// This may be used to include null fields in Patch requests.
+	// NullFields is a list of field names (e.g. "Projects") to include in API
+	// requests with the JSON null value. By default, fields with empty values are
+	// omitted from API requests. See
+	// https://pkg.go.dev/google.golang.org/api#hdr-NullFields for more details.
 	NullFields []string `json:"-"`
 }
 
-func (s *LuciConfigGetProjectsResponseMessage) MarshalJSON() ([]byte, error) {
+func (s LuciConfigGetProjectsResponseMessage) MarshalJSON() ([]byte, error) {
 	type NoMethod LuciConfigGetProjectsResponseMessage
-	raw := NoMethod(*s)
-	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
+	return gensupport.MarshalJSON(NoMethod(s), s.ForceSendFields, s.NullFields)
 }
 
 type LuciConfigGetRefsResponseMessage struct {
 	Refs []*LuciConfigGetRefsResponseMessageRef `json:"refs,omitempty"`
 
-	// ServerResponse contains the HTTP response code and headers from the
-	// server.
+	// ServerResponse contains the HTTP response code and headers from the server.
 	googleapi.ServerResponse `json:"-"`
-
-	// ForceSendFields is a list of field names (e.g. "Refs") to
-	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// ForceSendFields is a list of field names (e.g. "Refs") to unconditionally
+	// include in API requests. By default, fields with empty or default values are
+	// omitted from API requests. See
+	// https://pkg.go.dev/google.golang.org/api#hdr-ForceSendFields for more
+	// details.
 	ForceSendFields []string `json:"-"`
-
-	// NullFields is a list of field names (e.g. "Refs") to include in API
-	// requests with the JSON null value. By default, fields with empty
-	// values are omitted from API requests. However, any field with an
-	// empty value appearing in NullFields will be sent to the server as
-	// null. It is an error if a field in this list has a non-empty value.
-	// This may be used to include null fields in Patch requests.
+	// NullFields is a list of field names (e.g. "Refs") to include in API requests
+	// with the JSON null value. By default, fields with empty values are omitted
+	// from API requests. See
+	// https://pkg.go.dev/google.golang.org/api#hdr-NullFields for more details.
 	NullFields []string `json:"-"`
 }
 
-func (s *LuciConfigGetRefsResponseMessage) MarshalJSON() ([]byte, error) {
+func (s LuciConfigGetRefsResponseMessage) MarshalJSON() ([]byte, error) {
 	type NoMethod LuciConfigGetRefsResponseMessage
-	raw := NoMethod(*s)
-	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
+	return gensupport.MarshalJSON(NoMethod(s), s.ForceSendFields, s.NullFields)
 }
 
 type LuciConfigGetRefsResponseMessageRef struct {
 	Name string `json:"name,omitempty"`
-
-	// ForceSendFields is a list of field names (e.g. "Name") to
-	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// ForceSendFields is a list of field names (e.g. "Name") to unconditionally
+	// include in API requests. By default, fields with empty or default values are
+	// omitted from API requests. See
+	// https://pkg.go.dev/google.golang.org/api#hdr-ForceSendFields for more
+	// details.
 	ForceSendFields []string `json:"-"`
-
-	// NullFields is a list of field names (e.g. "Name") to include in API
-	// requests with the JSON null value. By default, fields with empty
-	// values are omitted from API requests. However, any field with an
-	// empty value appearing in NullFields will be sent to the server as
-	// null. It is an error if a field in this list has a non-empty value.
-	// This may be used to include null fields in Patch requests.
+	// NullFields is a list of field names (e.g. "Name") to include in API requests
+	// with the JSON null value. By default, fields with empty values are omitted
+	// from API requests. See
+	// https://pkg.go.dev/google.golang.org/api#hdr-NullFields for more details.
 	NullFields []string `json:"-"`
 }
 
-func (s *LuciConfigGetRefsResponseMessageRef) MarshalJSON() ([]byte, error) {
+func (s LuciConfigGetRefsResponseMessageRef) MarshalJSON() ([]byte, error) {
 	type NoMethod LuciConfigGetRefsResponseMessageRef
-	raw := NoMethod(*s)
-	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
+	return gensupport.MarshalJSON(NoMethod(s), s.ForceSendFields, s.NullFields)
 }
 
 type LuciConfigProject struct {
-	Id string `json:"id,omitempty"`
-
+	Id   string `json:"id,omitempty"`
 	Name string `json:"name,omitempty"`
-
 	// Possible values:
 	//   "GITILES"
 	RepoType string `json:"repo_type,omitempty"`
-
-	RepoUrl string `json:"repo_url,omitempty"`
-
-	// ForceSendFields is a list of field names (e.g. "Id") to
-	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	RepoUrl  string `json:"repo_url,omitempty"`
+	// ForceSendFields is a list of field names (e.g. "Id") to unconditionally
+	// include in API requests. By default, fields with empty or default values are
+	// omitted from API requests. See
+	// https://pkg.go.dev/google.golang.org/api#hdr-ForceSendFields for more
+	// details.
 	ForceSendFields []string `json:"-"`
-
-	// NullFields is a list of field names (e.g. "Id") to include in API
-	// requests with the JSON null value. By default, fields with empty
-	// values are omitted from API requests. However, any field with an
-	// empty value appearing in NullFields will be sent to the server as
-	// null. It is an error if a field in this list has a non-empty value.
-	// This may be used to include null fields in Patch requests.
+	// NullFields is a list of field names (e.g. "Id") to include in API requests
+	// with the JSON null value. By default, fields with empty values are omitted
+	// from API requests. See
+	// https://pkg.go.dev/google.golang.org/api#hdr-NullFields for more details.
 	NullFields []string `json:"-"`
 }
 
-func (s *LuciConfigProject) MarshalJSON() ([]byte, error) {
+func (s LuciConfigProject) MarshalJSON() ([]byte, error) {
 	type NoMethod LuciConfigProject
-	raw := NoMethod(*s)
-	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
+	return gensupport.MarshalJSON(NoMethod(s), s.ForceSendFields, s.NullFields)
 }
 
 type LuciConfigRevision struct {
 	CommitterEmail string `json:"committer_email,omitempty"`
-
-	Id string `json:"id,omitempty"`
-
-	Timestamp int64 `json:"timestamp,omitempty,string"`
-
-	Url string `json:"url,omitempty"`
-
+	Id             string `json:"id,omitempty"`
+	Timestamp      int64  `json:"timestamp,omitempty,string"`
+	Url            string `json:"url,omitempty"`
 	// ForceSendFields is a list of field names (e.g. "CommitterEmail") to
-	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// unconditionally include in API requests. By default, fields with empty or
+	// default values are omitted from API requests. See
+	// https://pkg.go.dev/google.golang.org/api#hdr-ForceSendFields for more
+	// details.
 	ForceSendFields []string `json:"-"`
-
-	// NullFields is a list of field names (e.g. "CommitterEmail") to
-	// include in API requests with the JSON null value. By default, fields
-	// with empty values are omitted from API requests. However, any field
-	// with an empty value appearing in NullFields will be sent to the
-	// server as null. It is an error if a field in this list has a
-	// non-empty value. This may be used to include null fields in Patch
-	// requests.
+	// NullFields is a list of field names (e.g. "CommitterEmail") to include in
+	// API requests with the JSON null value. By default, fields with empty values
+	// are omitted from API requests. See
+	// https://pkg.go.dev/google.golang.org/api#hdr-NullFields for more details.
 	NullFields []string `json:"-"`
 }
 
-func (s *LuciConfigRevision) MarshalJSON() ([]byte, error) {
+func (s LuciConfigRevision) MarshalJSON() ([]byte, error) {
 	type NoMethod LuciConfigRevision
-	raw := NoMethod(*s)
-	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
+	return gensupport.MarshalJSON(NoMethod(s), s.ForceSendFields, s.NullFields)
 }
 
 type LuciConfigValidateConfigRequestMessage struct {
-	ConfigSet string `json:"config_set,omitempty"`
-
-	Files []*LuciConfigValidateConfigRequestMessageFile `json:"files,omitempty"`
-
+	ConfigSet string                                        `json:"config_set,omitempty"`
+	Files     []*LuciConfigValidateConfigRequestMessageFile `json:"files,omitempty"`
 	// ForceSendFields is a list of field names (e.g. "ConfigSet") to
-	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// unconditionally include in API requests. By default, fields with empty or
+	// default values are omitted from API requests. See
+	// https://pkg.go.dev/google.golang.org/api#hdr-ForceSendFields for more
+	// details.
 	ForceSendFields []string `json:"-"`
-
-	// NullFields is a list of field names (e.g. "ConfigSet") to include in
-	// API requests with the JSON null value. By default, fields with empty
-	// values are omitted from API requests. However, any field with an
-	// empty value appearing in NullFields will be sent to the server as
-	// null. It is an error if a field in this list has a non-empty value.
-	// This may be used to include null fields in Patch requests.
+	// NullFields is a list of field names (e.g. "ConfigSet") to include in API
+	// requests with the JSON null value. By default, fields with empty values are
+	// omitted from API requests. See
+	// https://pkg.go.dev/google.golang.org/api#hdr-NullFields for more details.
 	NullFields []string `json:"-"`
 }
 
-func (s *LuciConfigValidateConfigRequestMessage) MarshalJSON() ([]byte, error) {
+func (s LuciConfigValidateConfigRequestMessage) MarshalJSON() ([]byte, error) {
 	type NoMethod LuciConfigValidateConfigRequestMessage
-	raw := NoMethod(*s)
-	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
+	return gensupport.MarshalJSON(NoMethod(s), s.ForceSendFields, s.NullFields)
 }
 
 type LuciConfigValidateConfigRequestMessageFile struct {
 	Content string `json:"content,omitempty"`
-
-	Path string `json:"path,omitempty"`
-
-	// ForceSendFields is a list of field names (e.g. "Content") to
-	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	Path    string `json:"path,omitempty"`
+	// ForceSendFields is a list of field names (e.g. "Content") to unconditionally
+	// include in API requests. By default, fields with empty or default values are
+	// omitted from API requests. See
+	// https://pkg.go.dev/google.golang.org/api#hdr-ForceSendFields for more
+	// details.
 	ForceSendFields []string `json:"-"`
-
-	// NullFields is a list of field names (e.g. "Content") to include in
-	// API requests with the JSON null value. By default, fields with empty
-	// values are omitted from API requests. However, any field with an
-	// empty value appearing in NullFields will be sent to the server as
-	// null. It is an error if a field in this list has a non-empty value.
-	// This may be used to include null fields in Patch requests.
+	// NullFields is a list of field names (e.g. "Content") to include in API
+	// requests with the JSON null value. By default, fields with empty values are
+	// omitted from API requests. See
+	// https://pkg.go.dev/google.golang.org/api#hdr-NullFields for more details.
 	NullFields []string `json:"-"`
 }
 
-func (s *LuciConfigValidateConfigRequestMessageFile) MarshalJSON() ([]byte, error) {
+func (s LuciConfigValidateConfigRequestMessageFile) MarshalJSON() ([]byte, error) {
 	type NoMethod LuciConfigValidateConfigRequestMessageFile
-	raw := NoMethod(*s)
-	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
+	return gensupport.MarshalJSON(NoMethod(s), s.ForceSendFields, s.NullFields)
 }
 
 type LuciConfigValidateConfigResponseMessage struct {
 	Messages []*ComponentsConfigEndpointValidationMessage `json:"messages,omitempty"`
 
-	// ServerResponse contains the HTTP response code and headers from the
-	// server.
+	// ServerResponse contains the HTTP response code and headers from the server.
 	googleapi.ServerResponse `json:"-"`
-
 	// ForceSendFields is a list of field names (e.g. "Messages") to
-	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// unconditionally include in API requests. By default, fields with empty or
+	// default values are omitted from API requests. See
+	// https://pkg.go.dev/google.golang.org/api#hdr-ForceSendFields for more
+	// details.
 	ForceSendFields []string `json:"-"`
-
-	// NullFields is a list of field names (e.g. "Messages") to include in
-	// API requests with the JSON null value. By default, fields with empty
-	// values are omitted from API requests. However, any field with an
-	// empty value appearing in NullFields will be sent to the server as
-	// null. It is an error if a field in this list has a non-empty value.
-	// This may be used to include null fields in Patch requests.
+	// NullFields is a list of field names (e.g. "Messages") to include in API
+	// requests with the JSON null value. By default, fields with empty values are
+	// omitted from API requests. See
+	// https://pkg.go.dev/google.golang.org/api#hdr-NullFields for more details.
 	NullFields []string `json:"-"`
 }
 
-func (s *LuciConfigValidateConfigResponseMessage) MarshalJSON() ([]byte, error) {
+func (s LuciConfigValidateConfigResponseMessage) MarshalJSON() ([]byte, error) {
 	type NoMethod LuciConfigValidateConfigResponseMessage
-	raw := NoMethod(*s)
-	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
+	return gensupport.MarshalJSON(NoMethod(s), s.ForceSendFields, s.NullFields)
 }
-
-// method id "config.get_config":
 
 type GetConfigCall struct {
 	s            *Service
@@ -774,33 +638,29 @@ func (c *GetConfigCall) UseZlib(useZlib bool) *GetConfigCall {
 }
 
 // Fields allows partial responses to be retrieved. See
-// https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
-// for more information.
+// https://developers.google.com/gdata/docs/2.0/basics#PartialResponse for more
+// details.
 func (c *GetConfigCall) Fields(s ...googleapi.Field) *GetConfigCall {
 	c.urlParams_.Set("fields", googleapi.CombineFields(s))
 	return c
 }
 
-// IfNoneMatch sets the optional parameter which makes the operation
-// fail if the object's ETag matches the given value. This is useful for
-// getting updates only after the object has changed since the last
-// request. Use googleapi.IsNotModified to check whether the response
-// error from Do is the result of In-None-Match.
+// IfNoneMatch sets an optional parameter which makes the operation fail if the
+// object's ETag matches the given value. This is useful for getting updates
+// only after the object has changed since the last request.
 func (c *GetConfigCall) IfNoneMatch(entityTag string) *GetConfigCall {
 	c.ifNoneMatch_ = entityTag
 	return c
 }
 
-// Context sets the context to be used in this call's Do method. Any
-// pending HTTP request will be aborted if the provided context is
-// canceled.
+// Context sets the context to be used in this call's Do method.
 func (c *GetConfigCall) Context(ctx context.Context) *GetConfigCall {
 	c.ctx_ = ctx
 	return c
 }
 
-// Header returns an http.Header that can be modified by the caller to
-// add HTTP headers to the request.
+// Header returns a http.Header that can be modified by the caller to add
+// headers to the request.
 func (c *GetConfigCall) Header() http.Header {
 	if c.header_ == nil {
 		c.header_ = make(http.Header)
@@ -809,12 +669,7 @@ func (c *GetConfigCall) Header() http.Header {
 }
 
 func (c *GetConfigCall) doRequest(alt string) (*http.Response, error) {
-	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/"+"luci-go")
-	for k, v := range c.header_ {
-		reqHeaders[k] = v
-	}
-	reqHeaders.Set("User-Agent", c.s.userAgent())
+	reqHeaders := gensupport.SetHeaders(c.s.userAgent(), "", c.header_)
 	if c.ifNoneMatch_ != "" {
 		reqHeaders.Set("If-None-Match", c.ifNoneMatch_)
 	}
@@ -836,13 +691,11 @@ func (c *GetConfigCall) doRequest(alt string) (*http.Response, error) {
 }
 
 // Do executes the "config.get_config" call.
-// Exactly one of *LuciConfigGetConfigResponseMessage or error will be
-// non-nil. Any non-2xx status code is an error. Response headers are in
-// either *LuciConfigGetConfigResponseMessage.ServerResponse.Header or
-// (if a response was returned at all) in
-// error.(*googleapi.Error).Header. Use googleapi.IsNotModified to check
-// whether the returned error was because http.StatusNotModified was
-// returned.
+// Any non-2xx status code is an error. Response headers are in either
+// *LuciConfigGetConfigResponseMessage.ServerResponse.Header or (if a response
+// was returned at all) in error.(*googleapi.Error).Header. Use
+// googleapi.IsNotModified to check whether the returned error was because
+// http.StatusNotModified was returned.
 func (c *GetConfigCall) Do(opts ...googleapi.CallOption) (*LuciConfigGetConfigResponseMessage, error) {
 	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
@@ -873,50 +726,7 @@ func (c *GetConfigCall) Do(opts ...googleapi.CallOption) (*LuciConfigGetConfigRe
 		return nil, err
 	}
 	return ret, nil
-	// {
-	//   "description": "Gets a config file.",
-	//   "httpMethod": "GET",
-	//   "id": "config.get_config",
-	//   "parameterOrder": [
-	//     "config_set",
-	//     "path"
-	//   ],
-	//   "parameters": {
-	//     "config_set": {
-	//       "location": "path",
-	//       "required": true,
-	//       "type": "string"
-	//     },
-	//     "hash_only": {
-	//       "location": "query",
-	//       "type": "boolean"
-	//     },
-	//     "path": {
-	//       "location": "path",
-	//       "required": true,
-	//       "type": "string"
-	//     },
-	//     "revision": {
-	//       "location": "query",
-	//       "type": "string"
-	//     },
-	//     "use_zlib": {
-	//       "location": "query",
-	//       "type": "boolean"
-	//     }
-	//   },
-	//   "path": "config_sets/{config_set}/config/{path}",
-	//   "response": {
-	//     "$ref": "LuciConfigGetConfigResponseMessage"
-	//   },
-	//   "scopes": [
-	//     "https://www.googleapis.com/auth/userinfo.email"
-	//   ]
-	// }
-
 }
-
-// method id "config.get_config_by_hash":
 
 type GetConfigByHashCall struct {
 	s            *Service
@@ -937,33 +747,29 @@ func (s *Service) GetConfigByHash(contentHash string) *GetConfigByHashCall {
 }
 
 // Fields allows partial responses to be retrieved. See
-// https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
-// for more information.
+// https://developers.google.com/gdata/docs/2.0/basics#PartialResponse for more
+// details.
 func (c *GetConfigByHashCall) Fields(s ...googleapi.Field) *GetConfigByHashCall {
 	c.urlParams_.Set("fields", googleapi.CombineFields(s))
 	return c
 }
 
-// IfNoneMatch sets the optional parameter which makes the operation
-// fail if the object's ETag matches the given value. This is useful for
-// getting updates only after the object has changed since the last
-// request. Use googleapi.IsNotModified to check whether the response
-// error from Do is the result of In-None-Match.
+// IfNoneMatch sets an optional parameter which makes the operation fail if the
+// object's ETag matches the given value. This is useful for getting updates
+// only after the object has changed since the last request.
 func (c *GetConfigByHashCall) IfNoneMatch(entityTag string) *GetConfigByHashCall {
 	c.ifNoneMatch_ = entityTag
 	return c
 }
 
-// Context sets the context to be used in this call's Do method. Any
-// pending HTTP request will be aborted if the provided context is
-// canceled.
+// Context sets the context to be used in this call's Do method.
 func (c *GetConfigByHashCall) Context(ctx context.Context) *GetConfigByHashCall {
 	c.ctx_ = ctx
 	return c
 }
 
-// Header returns an http.Header that can be modified by the caller to
-// add HTTP headers to the request.
+// Header returns a http.Header that can be modified by the caller to add
+// headers to the request.
 func (c *GetConfigByHashCall) Header() http.Header {
 	if c.header_ == nil {
 		c.header_ = make(http.Header)
@@ -972,12 +778,7 @@ func (c *GetConfigByHashCall) Header() http.Header {
 }
 
 func (c *GetConfigByHashCall) doRequest(alt string) (*http.Response, error) {
-	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/"+"luci-go")
-	for k, v := range c.header_ {
-		reqHeaders[k] = v
-	}
-	reqHeaders.Set("User-Agent", c.s.userAgent())
+	reqHeaders := gensupport.SetHeaders(c.s.userAgent(), "", c.header_)
 	if c.ifNoneMatch_ != "" {
 		reqHeaders.Set("If-None-Match", c.ifNoneMatch_)
 	}
@@ -998,14 +799,11 @@ func (c *GetConfigByHashCall) doRequest(alt string) (*http.Response, error) {
 }
 
 // Do executes the "config.get_config_by_hash" call.
-// Exactly one of *LuciConfigGetConfigByHashResponseMessage or error
-// will be non-nil. Any non-2xx status code is an error. Response
-// headers are in either
-// *LuciConfigGetConfigByHashResponseMessage.ServerResponse.Header or
-// (if a response was returned at all) in
-// error.(*googleapi.Error).Header. Use googleapi.IsNotModified to check
-// whether the returned error was because http.StatusNotModified was
-// returned.
+// Any non-2xx status code is an error. Response headers are in either
+// *LuciConfigGetConfigByHashResponseMessage.ServerResponse.Header or (if a
+// response was returned at all) in error.(*googleapi.Error).Header. Use
+// googleapi.IsNotModified to check whether the returned error was because
+// http.StatusNotModified was returned.
 func (c *GetConfigByHashCall) Do(opts ...googleapi.CallOption) (*LuciConfigGetConfigByHashResponseMessage, error) {
 	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
@@ -1036,32 +834,7 @@ func (c *GetConfigByHashCall) Do(opts ...googleapi.CallOption) (*LuciConfigGetCo
 		return nil, err
 	}
 	return ret, nil
-	// {
-	//   "description": "Gets a config file by its hash.",
-	//   "httpMethod": "GET",
-	//   "id": "config.get_config_by_hash",
-	//   "parameterOrder": [
-	//     "content_hash"
-	//   ],
-	//   "parameters": {
-	//     "content_hash": {
-	//       "location": "path",
-	//       "required": true,
-	//       "type": "string"
-	//     }
-	//   },
-	//   "path": "config/{content_hash}",
-	//   "response": {
-	//     "$ref": "LuciConfigGetConfigByHashResponseMessage"
-	//   },
-	//   "scopes": [
-	//     "https://www.googleapis.com/auth/userinfo.email"
-	//   ]
-	// }
-
 }
-
-// method id "config.get_config_sets":
 
 type GetConfigSetsCall struct {
 	s            *Service
@@ -1097,33 +870,29 @@ func (c *GetConfigSetsCall) IncludeLastImportAttempt(includeLastImportAttempt bo
 }
 
 // Fields allows partial responses to be retrieved. See
-// https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
-// for more information.
+// https://developers.google.com/gdata/docs/2.0/basics#PartialResponse for more
+// details.
 func (c *GetConfigSetsCall) Fields(s ...googleapi.Field) *GetConfigSetsCall {
 	c.urlParams_.Set("fields", googleapi.CombineFields(s))
 	return c
 }
 
-// IfNoneMatch sets the optional parameter which makes the operation
-// fail if the object's ETag matches the given value. This is useful for
-// getting updates only after the object has changed since the last
-// request. Use googleapi.IsNotModified to check whether the response
-// error from Do is the result of In-None-Match.
+// IfNoneMatch sets an optional parameter which makes the operation fail if the
+// object's ETag matches the given value. This is useful for getting updates
+// only after the object has changed since the last request.
 func (c *GetConfigSetsCall) IfNoneMatch(entityTag string) *GetConfigSetsCall {
 	c.ifNoneMatch_ = entityTag
 	return c
 }
 
-// Context sets the context to be used in this call's Do method. Any
-// pending HTTP request will be aborted if the provided context is
-// canceled.
+// Context sets the context to be used in this call's Do method.
 func (c *GetConfigSetsCall) Context(ctx context.Context) *GetConfigSetsCall {
 	c.ctx_ = ctx
 	return c
 }
 
-// Header returns an http.Header that can be modified by the caller to
-// add HTTP headers to the request.
+// Header returns a http.Header that can be modified by the caller to add
+// headers to the request.
 func (c *GetConfigSetsCall) Header() http.Header {
 	if c.header_ == nil {
 		c.header_ = make(http.Header)
@@ -1132,12 +901,7 @@ func (c *GetConfigSetsCall) Header() http.Header {
 }
 
 func (c *GetConfigSetsCall) doRequest(alt string) (*http.Response, error) {
-	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/"+"luci-go")
-	for k, v := range c.header_ {
-		reqHeaders[k] = v
-	}
-	reqHeaders.Set("User-Agent", c.s.userAgent())
+	reqHeaders := gensupport.SetHeaders(c.s.userAgent(), "", c.header_)
 	if c.ifNoneMatch_ != "" {
 		reqHeaders.Set("If-None-Match", c.ifNoneMatch_)
 	}
@@ -1155,13 +919,11 @@ func (c *GetConfigSetsCall) doRequest(alt string) (*http.Response, error) {
 }
 
 // Do executes the "config.get_config_sets" call.
-// Exactly one of *LuciConfigGetConfigSetsResponseMessage or error will
-// be non-nil. Any non-2xx status code is an error. Response headers are
-// in either
-// *LuciConfigGetConfigSetsResponseMessage.ServerResponse.Header or (if
-// a response was returned at all) in error.(*googleapi.Error).Header.
-// Use googleapi.IsNotModified to check whether the returned error was
-// because http.StatusNotModified was returned.
+// Any non-2xx status code is an error. Response headers are in either
+// *LuciConfigGetConfigSetsResponseMessage.ServerResponse.Header or (if a
+// response was returned at all) in error.(*googleapi.Error).Header. Use
+// googleapi.IsNotModified to check whether the returned error was because
+// http.StatusNotModified was returned.
 func (c *GetConfigSetsCall) Do(opts ...googleapi.CallOption) (*LuciConfigGetConfigSetsResponseMessage, error) {
 	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
@@ -1192,36 +954,7 @@ func (c *GetConfigSetsCall) Do(opts ...googleapi.CallOption) (*LuciConfigGetConf
 		return nil, err
 	}
 	return ret, nil
-	// {
-	//   "description": "Returns config sets.",
-	//   "httpMethod": "GET",
-	//   "id": "config.get_config_sets",
-	//   "parameters": {
-	//     "config_set": {
-	//       "location": "query",
-	//       "type": "string"
-	//     },
-	//     "include_files": {
-	//       "location": "query",
-	//       "type": "boolean"
-	//     },
-	//     "include_last_import_attempt": {
-	//       "location": "query",
-	//       "type": "boolean"
-	//     }
-	//   },
-	//   "path": "config-sets",
-	//   "response": {
-	//     "$ref": "LuciConfigGetConfigSetsResponseMessage"
-	//   },
-	//   "scopes": [
-	//     "https://www.googleapis.com/auth/userinfo.email"
-	//   ]
-	// }
-
 }
-
-// method id "config.get_mapping":
 
 type GetMappingCall struct {
 	s            *Service
@@ -1244,33 +977,29 @@ func (c *GetMappingCall) ConfigSet(configSet string) *GetMappingCall {
 }
 
 // Fields allows partial responses to be retrieved. See
-// https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
-// for more information.
+// https://developers.google.com/gdata/docs/2.0/basics#PartialResponse for more
+// details.
 func (c *GetMappingCall) Fields(s ...googleapi.Field) *GetMappingCall {
 	c.urlParams_.Set("fields", googleapi.CombineFields(s))
 	return c
 }
 
-// IfNoneMatch sets the optional parameter which makes the operation
-// fail if the object's ETag matches the given value. This is useful for
-// getting updates only after the object has changed since the last
-// request. Use googleapi.IsNotModified to check whether the response
-// error from Do is the result of In-None-Match.
+// IfNoneMatch sets an optional parameter which makes the operation fail if the
+// object's ETag matches the given value. This is useful for getting updates
+// only after the object has changed since the last request.
 func (c *GetMappingCall) IfNoneMatch(entityTag string) *GetMappingCall {
 	c.ifNoneMatch_ = entityTag
 	return c
 }
 
-// Context sets the context to be used in this call's Do method. Any
-// pending HTTP request will be aborted if the provided context is
-// canceled.
+// Context sets the context to be used in this call's Do method.
 func (c *GetMappingCall) Context(ctx context.Context) *GetMappingCall {
 	c.ctx_ = ctx
 	return c
 }
 
-// Header returns an http.Header that can be modified by the caller to
-// add HTTP headers to the request.
+// Header returns a http.Header that can be modified by the caller to add
+// headers to the request.
 func (c *GetMappingCall) Header() http.Header {
 	if c.header_ == nil {
 		c.header_ = make(http.Header)
@@ -1279,12 +1008,7 @@ func (c *GetMappingCall) Header() http.Header {
 }
 
 func (c *GetMappingCall) doRequest(alt string) (*http.Response, error) {
-	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/"+"luci-go")
-	for k, v := range c.header_ {
-		reqHeaders[k] = v
-	}
-	reqHeaders.Set("User-Agent", c.s.userAgent())
+	reqHeaders := gensupport.SetHeaders(c.s.userAgent(), "", c.header_)
 	if c.ifNoneMatch_ != "" {
 		reqHeaders.Set("If-None-Match", c.ifNoneMatch_)
 	}
@@ -1302,13 +1026,11 @@ func (c *GetMappingCall) doRequest(alt string) (*http.Response, error) {
 }
 
 // Do executes the "config.get_mapping" call.
-// Exactly one of *LuciConfigGetMappingResponseMessage or error will be
-// non-nil. Any non-2xx status code is an error. Response headers are in
-// either *LuciConfigGetMappingResponseMessage.ServerResponse.Header or
-// (if a response was returned at all) in
-// error.(*googleapi.Error).Header. Use googleapi.IsNotModified to check
-// whether the returned error was because http.StatusNotModified was
-// returned.
+// Any non-2xx status code is an error. Response headers are in either
+// *LuciConfigGetMappingResponseMessage.ServerResponse.Header or (if a response
+// was returned at all) in error.(*googleapi.Error).Header. Use
+// googleapi.IsNotModified to check whether the returned error was because
+// http.StatusNotModified was returned.
 func (c *GetMappingCall) Do(opts ...googleapi.CallOption) (*LuciConfigGetMappingResponseMessage, error) {
 	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
@@ -1339,28 +1061,7 @@ func (c *GetMappingCall) Do(opts ...googleapi.CallOption) (*LuciConfigGetMapping
 		return nil, err
 	}
 	return ret, nil
-	// {
-	//   "description": "DEPRECATED. Use get_config_sets.",
-	//   "httpMethod": "GET",
-	//   "id": "config.get_mapping",
-	//   "parameters": {
-	//     "config_set": {
-	//       "location": "query",
-	//       "type": "string"
-	//     }
-	//   },
-	//   "path": "mapping",
-	//   "response": {
-	//     "$ref": "LuciConfigGetMappingResponseMessage"
-	//   },
-	//   "scopes": [
-	//     "https://www.googleapis.com/auth/userinfo.email"
-	//   ]
-	// }
-
 }
-
-// method id "config.get_project_configs":
 
 type GetProjectConfigsCall struct {
 	s            *Service
@@ -1387,33 +1088,29 @@ func (c *GetProjectConfigsCall) HashesOnly(hashesOnly bool) *GetProjectConfigsCa
 }
 
 // Fields allows partial responses to be retrieved. See
-// https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
-// for more information.
+// https://developers.google.com/gdata/docs/2.0/basics#PartialResponse for more
+// details.
 func (c *GetProjectConfigsCall) Fields(s ...googleapi.Field) *GetProjectConfigsCall {
 	c.urlParams_.Set("fields", googleapi.CombineFields(s))
 	return c
 }
 
-// IfNoneMatch sets the optional parameter which makes the operation
-// fail if the object's ETag matches the given value. This is useful for
-// getting updates only after the object has changed since the last
-// request. Use googleapi.IsNotModified to check whether the response
-// error from Do is the result of In-None-Match.
+// IfNoneMatch sets an optional parameter which makes the operation fail if the
+// object's ETag matches the given value. This is useful for getting updates
+// only after the object has changed since the last request.
 func (c *GetProjectConfigsCall) IfNoneMatch(entityTag string) *GetProjectConfigsCall {
 	c.ifNoneMatch_ = entityTag
 	return c
 }
 
-// Context sets the context to be used in this call's Do method. Any
-// pending HTTP request will be aborted if the provided context is
-// canceled.
+// Context sets the context to be used in this call's Do method.
 func (c *GetProjectConfigsCall) Context(ctx context.Context) *GetProjectConfigsCall {
 	c.ctx_ = ctx
 	return c
 }
 
-// Header returns an http.Header that can be modified by the caller to
-// add HTTP headers to the request.
+// Header returns a http.Header that can be modified by the caller to add
+// headers to the request.
 func (c *GetProjectConfigsCall) Header() http.Header {
 	if c.header_ == nil {
 		c.header_ = make(http.Header)
@@ -1422,12 +1119,7 @@ func (c *GetProjectConfigsCall) Header() http.Header {
 }
 
 func (c *GetProjectConfigsCall) doRequest(alt string) (*http.Response, error) {
-	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/"+"luci-go")
-	for k, v := range c.header_ {
-		reqHeaders[k] = v
-	}
-	reqHeaders.Set("User-Agent", c.s.userAgent())
+	reqHeaders := gensupport.SetHeaders(c.s.userAgent(), "", c.header_)
 	if c.ifNoneMatch_ != "" {
 		reqHeaders.Set("If-None-Match", c.ifNoneMatch_)
 	}
@@ -1448,13 +1140,11 @@ func (c *GetProjectConfigsCall) doRequest(alt string) (*http.Response, error) {
 }
 
 // Do executes the "config.get_project_configs" call.
-// Exactly one of *LuciConfigGetConfigMultiResponseMessage or error will
-// be non-nil. Any non-2xx status code is an error. Response headers are
-// in either
-// *LuciConfigGetConfigMultiResponseMessage.ServerResponse.Header or (if
-// a response was returned at all) in error.(*googleapi.Error).Header.
-// Use googleapi.IsNotModified to check whether the returned error was
-// because http.StatusNotModified was returned.
+// Any non-2xx status code is an error. Response headers are in either
+// *LuciConfigGetConfigMultiResponseMessage.ServerResponse.Header or (if a
+// response was returned at all) in error.(*googleapi.Error).Header. Use
+// googleapi.IsNotModified to check whether the returned error was because
+// http.StatusNotModified was returned.
 func (c *GetProjectConfigsCall) Do(opts ...googleapi.CallOption) (*LuciConfigGetConfigMultiResponseMessage, error) {
 	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
@@ -1485,36 +1175,7 @@ func (c *GetProjectConfigsCall) Do(opts ...googleapi.CallOption) (*LuciConfigGet
 		return nil, err
 	}
 	return ret, nil
-	// {
-	//   "description": "Gets configs in all project config sets.",
-	//   "httpMethod": "GET",
-	//   "id": "config.get_project_configs",
-	//   "parameterOrder": [
-	//     "path"
-	//   ],
-	//   "parameters": {
-	//     "hashes_only": {
-	//       "location": "query",
-	//       "type": "boolean"
-	//     },
-	//     "path": {
-	//       "location": "path",
-	//       "required": true,
-	//       "type": "string"
-	//     }
-	//   },
-	//   "path": "configs/projects/{path}",
-	//   "response": {
-	//     "$ref": "LuciConfigGetConfigMultiResponseMessage"
-	//   },
-	//   "scopes": [
-	//     "https://www.googleapis.com/auth/userinfo.email"
-	//   ]
-	// }
-
 }
-
-// method id "config.get_projects":
 
 type GetProjectsCall struct {
 	s            *Service
@@ -1524,41 +1185,37 @@ type GetProjectsCall struct {
 	header_      http.Header
 }
 
-// GetProjects: Gets list of registered projects. The project list is
-// stored in services/luci-config:projects.cfg.
+// GetProjects: Gets list of registered projects. The project list is stored in
+// services/luci-config:projects.cfg.
 func (s *Service) GetProjects() *GetProjectsCall {
 	c := &GetProjectsCall{s: s, urlParams_: make(gensupport.URLParams)}
 	return c
 }
 
 // Fields allows partial responses to be retrieved. See
-// https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
-// for more information.
+// https://developers.google.com/gdata/docs/2.0/basics#PartialResponse for more
+// details.
 func (c *GetProjectsCall) Fields(s ...googleapi.Field) *GetProjectsCall {
 	c.urlParams_.Set("fields", googleapi.CombineFields(s))
 	return c
 }
 
-// IfNoneMatch sets the optional parameter which makes the operation
-// fail if the object's ETag matches the given value. This is useful for
-// getting updates only after the object has changed since the last
-// request. Use googleapi.IsNotModified to check whether the response
-// error from Do is the result of In-None-Match.
+// IfNoneMatch sets an optional parameter which makes the operation fail if the
+// object's ETag matches the given value. This is useful for getting updates
+// only after the object has changed since the last request.
 func (c *GetProjectsCall) IfNoneMatch(entityTag string) *GetProjectsCall {
 	c.ifNoneMatch_ = entityTag
 	return c
 }
 
-// Context sets the context to be used in this call's Do method. Any
-// pending HTTP request will be aborted if the provided context is
-// canceled.
+// Context sets the context to be used in this call's Do method.
 func (c *GetProjectsCall) Context(ctx context.Context) *GetProjectsCall {
 	c.ctx_ = ctx
 	return c
 }
 
-// Header returns an http.Header that can be modified by the caller to
-// add HTTP headers to the request.
+// Header returns a http.Header that can be modified by the caller to add
+// headers to the request.
 func (c *GetProjectsCall) Header() http.Header {
 	if c.header_ == nil {
 		c.header_ = make(http.Header)
@@ -1567,12 +1224,7 @@ func (c *GetProjectsCall) Header() http.Header {
 }
 
 func (c *GetProjectsCall) doRequest(alt string) (*http.Response, error) {
-	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/"+"luci-go")
-	for k, v := range c.header_ {
-		reqHeaders[k] = v
-	}
-	reqHeaders.Set("User-Agent", c.s.userAgent())
+	reqHeaders := gensupport.SetHeaders(c.s.userAgent(), "", c.header_)
 	if c.ifNoneMatch_ != "" {
 		reqHeaders.Set("If-None-Match", c.ifNoneMatch_)
 	}
@@ -1590,13 +1242,11 @@ func (c *GetProjectsCall) doRequest(alt string) (*http.Response, error) {
 }
 
 // Do executes the "config.get_projects" call.
-// Exactly one of *LuciConfigGetProjectsResponseMessage or error will be
-// non-nil. Any non-2xx status code is an error. Response headers are in
-// either *LuciConfigGetProjectsResponseMessage.ServerResponse.Header or
-// (if a response was returned at all) in
-// error.(*googleapi.Error).Header. Use googleapi.IsNotModified to check
-// whether the returned error was because http.StatusNotModified was
-// returned.
+// Any non-2xx status code is an error. Response headers are in either
+// *LuciConfigGetProjectsResponseMessage.ServerResponse.Header or (if a
+// response was returned at all) in error.(*googleapi.Error).Header. Use
+// googleapi.IsNotModified to check whether the returned error was because
+// http.StatusNotModified was returned.
 func (c *GetProjectsCall) Do(opts ...googleapi.CallOption) (*LuciConfigGetProjectsResponseMessage, error) {
 	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
@@ -1627,22 +1277,7 @@ func (c *GetProjectsCall) Do(opts ...googleapi.CallOption) (*LuciConfigGetProjec
 		return nil, err
 	}
 	return ret, nil
-	// {
-	//   "description": "Gets list of registered projects. The project list is stored in services/luci-config:projects.cfg.",
-	//   "httpMethod": "GET",
-	//   "id": "config.get_projects",
-	//   "path": "projects",
-	//   "response": {
-	//     "$ref": "LuciConfigGetProjectsResponseMessage"
-	//   },
-	//   "scopes": [
-	//     "https://www.googleapis.com/auth/userinfo.email"
-	//   ]
-	// }
-
 }
-
-// method id "config.get_ref_configs":
 
 type GetRefConfigsCall struct {
 	s            *Service
@@ -1669,33 +1304,29 @@ func (c *GetRefConfigsCall) HashesOnly(hashesOnly bool) *GetRefConfigsCall {
 }
 
 // Fields allows partial responses to be retrieved. See
-// https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
-// for more information.
+// https://developers.google.com/gdata/docs/2.0/basics#PartialResponse for more
+// details.
 func (c *GetRefConfigsCall) Fields(s ...googleapi.Field) *GetRefConfigsCall {
 	c.urlParams_.Set("fields", googleapi.CombineFields(s))
 	return c
 }
 
-// IfNoneMatch sets the optional parameter which makes the operation
-// fail if the object's ETag matches the given value. This is useful for
-// getting updates only after the object has changed since the last
-// request. Use googleapi.IsNotModified to check whether the response
-// error from Do is the result of In-None-Match.
+// IfNoneMatch sets an optional parameter which makes the operation fail if the
+// object's ETag matches the given value. This is useful for getting updates
+// only after the object has changed since the last request.
 func (c *GetRefConfigsCall) IfNoneMatch(entityTag string) *GetRefConfigsCall {
 	c.ifNoneMatch_ = entityTag
 	return c
 }
 
-// Context sets the context to be used in this call's Do method. Any
-// pending HTTP request will be aborted if the provided context is
-// canceled.
+// Context sets the context to be used in this call's Do method.
 func (c *GetRefConfigsCall) Context(ctx context.Context) *GetRefConfigsCall {
 	c.ctx_ = ctx
 	return c
 }
 
-// Header returns an http.Header that can be modified by the caller to
-// add HTTP headers to the request.
+// Header returns a http.Header that can be modified by the caller to add
+// headers to the request.
 func (c *GetRefConfigsCall) Header() http.Header {
 	if c.header_ == nil {
 		c.header_ = make(http.Header)
@@ -1704,12 +1335,7 @@ func (c *GetRefConfigsCall) Header() http.Header {
 }
 
 func (c *GetRefConfigsCall) doRequest(alt string) (*http.Response, error) {
-	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/"+"luci-go")
-	for k, v := range c.header_ {
-		reqHeaders[k] = v
-	}
-	reqHeaders.Set("User-Agent", c.s.userAgent())
+	reqHeaders := gensupport.SetHeaders(c.s.userAgent(), "", c.header_)
 	if c.ifNoneMatch_ != "" {
 		reqHeaders.Set("If-None-Match", c.ifNoneMatch_)
 	}
@@ -1730,13 +1356,11 @@ func (c *GetRefConfigsCall) doRequest(alt string) (*http.Response, error) {
 }
 
 // Do executes the "config.get_ref_configs" call.
-// Exactly one of *LuciConfigGetConfigMultiResponseMessage or error will
-// be non-nil. Any non-2xx status code is an error. Response headers are
-// in either
-// *LuciConfigGetConfigMultiResponseMessage.ServerResponse.Header or (if
-// a response was returned at all) in error.(*googleapi.Error).Header.
-// Use googleapi.IsNotModified to check whether the returned error was
-// because http.StatusNotModified was returned.
+// Any non-2xx status code is an error. Response headers are in either
+// *LuciConfigGetConfigMultiResponseMessage.ServerResponse.Header or (if a
+// response was returned at all) in error.(*googleapi.Error).Header. Use
+// googleapi.IsNotModified to check whether the returned error was because
+// http.StatusNotModified was returned.
 func (c *GetRefConfigsCall) Do(opts ...googleapi.CallOption) (*LuciConfigGetConfigMultiResponseMessage, error) {
 	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
@@ -1767,36 +1391,7 @@ func (c *GetRefConfigsCall) Do(opts ...googleapi.CallOption) (*LuciConfigGetConf
 		return nil, err
 	}
 	return ret, nil
-	// {
-	//   "description": "Gets configs in all ref config sets.",
-	//   "httpMethod": "GET",
-	//   "id": "config.get_ref_configs",
-	//   "parameterOrder": [
-	//     "path"
-	//   ],
-	//   "parameters": {
-	//     "hashes_only": {
-	//       "location": "query",
-	//       "type": "boolean"
-	//     },
-	//     "path": {
-	//       "location": "path",
-	//       "required": true,
-	//       "type": "string"
-	//     }
-	//   },
-	//   "path": "configs/refs/{path}",
-	//   "response": {
-	//     "$ref": "LuciConfigGetConfigMultiResponseMessage"
-	//   },
-	//   "scopes": [
-	//     "https://www.googleapis.com/auth/userinfo.email"
-	//   ]
-	// }
-
 }
-
-// method id "config.get_refs":
 
 type GetRefsCall struct {
 	s            *Service
@@ -1817,33 +1412,29 @@ func (s *Service) GetRefs(projectId string) *GetRefsCall {
 }
 
 // Fields allows partial responses to be retrieved. See
-// https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
-// for more information.
+// https://developers.google.com/gdata/docs/2.0/basics#PartialResponse for more
+// details.
 func (c *GetRefsCall) Fields(s ...googleapi.Field) *GetRefsCall {
 	c.urlParams_.Set("fields", googleapi.CombineFields(s))
 	return c
 }
 
-// IfNoneMatch sets the optional parameter which makes the operation
-// fail if the object's ETag matches the given value. This is useful for
-// getting updates only after the object has changed since the last
-// request. Use googleapi.IsNotModified to check whether the response
-// error from Do is the result of In-None-Match.
+// IfNoneMatch sets an optional parameter which makes the operation fail if the
+// object's ETag matches the given value. This is useful for getting updates
+// only after the object has changed since the last request.
 func (c *GetRefsCall) IfNoneMatch(entityTag string) *GetRefsCall {
 	c.ifNoneMatch_ = entityTag
 	return c
 }
 
-// Context sets the context to be used in this call's Do method. Any
-// pending HTTP request will be aborted if the provided context is
-// canceled.
+// Context sets the context to be used in this call's Do method.
 func (c *GetRefsCall) Context(ctx context.Context) *GetRefsCall {
 	c.ctx_ = ctx
 	return c
 }
 
-// Header returns an http.Header that can be modified by the caller to
-// add HTTP headers to the request.
+// Header returns a http.Header that can be modified by the caller to add
+// headers to the request.
 func (c *GetRefsCall) Header() http.Header {
 	if c.header_ == nil {
 		c.header_ = make(http.Header)
@@ -1852,12 +1443,7 @@ func (c *GetRefsCall) Header() http.Header {
 }
 
 func (c *GetRefsCall) doRequest(alt string) (*http.Response, error) {
-	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/"+"luci-go")
-	for k, v := range c.header_ {
-		reqHeaders[k] = v
-	}
-	reqHeaders.Set("User-Agent", c.s.userAgent())
+	reqHeaders := gensupport.SetHeaders(c.s.userAgent(), "", c.header_)
 	if c.ifNoneMatch_ != "" {
 		reqHeaders.Set("If-None-Match", c.ifNoneMatch_)
 	}
@@ -1878,12 +1464,11 @@ func (c *GetRefsCall) doRequest(alt string) (*http.Response, error) {
 }
 
 // Do executes the "config.get_refs" call.
-// Exactly one of *LuciConfigGetRefsResponseMessage or error will be
-// non-nil. Any non-2xx status code is an error. Response headers are in
-// either *LuciConfigGetRefsResponseMessage.ServerResponse.Header or (if
-// a response was returned at all) in error.(*googleapi.Error).Header.
-// Use googleapi.IsNotModified to check whether the returned error was
-// because http.StatusNotModified was returned.
+// Any non-2xx status code is an error. Response headers are in either
+// *LuciConfigGetRefsResponseMessage.ServerResponse.Header or (if a response
+// was returned at all) in error.(*googleapi.Error).Header. Use
+// googleapi.IsNotModified to check whether the returned error was because
+// http.StatusNotModified was returned.
 func (c *GetRefsCall) Do(opts ...googleapi.CallOption) (*LuciConfigGetRefsResponseMessage, error) {
 	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
@@ -1914,32 +1499,7 @@ func (c *GetRefsCall) Do(opts ...googleapi.CallOption) (*LuciConfigGetRefsRespon
 		return nil, err
 	}
 	return ret, nil
-	// {
-	//   "description": "Gets list of refs of a project.",
-	//   "httpMethod": "GET",
-	//   "id": "config.get_refs",
-	//   "parameterOrder": [
-	//     "project_id"
-	//   ],
-	//   "parameters": {
-	//     "project_id": {
-	//       "location": "path",
-	//       "required": true,
-	//       "type": "string"
-	//     }
-	//   },
-	//   "path": "projects/{project_id}/refs",
-	//   "response": {
-	//     "$ref": "LuciConfigGetRefsResponseMessage"
-	//   },
-	//   "scopes": [
-	//     "https://www.googleapis.com/auth/userinfo.email"
-	//   ]
-	// }
-
 }
-
-// method id "config.reimport":
 
 type ReimportCall struct {
 	s          *Service
@@ -1958,23 +1518,21 @@ func (s *Service) Reimport(configSet string) *ReimportCall {
 }
 
 // Fields allows partial responses to be retrieved. See
-// https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
-// for more information.
+// https://developers.google.com/gdata/docs/2.0/basics#PartialResponse for more
+// details.
 func (c *ReimportCall) Fields(s ...googleapi.Field) *ReimportCall {
 	c.urlParams_.Set("fields", googleapi.CombineFields(s))
 	return c
 }
 
-// Context sets the context to be used in this call's Do method. Any
-// pending HTTP request will be aborted if the provided context is
-// canceled.
+// Context sets the context to be used in this call's Do method.
 func (c *ReimportCall) Context(ctx context.Context) *ReimportCall {
 	c.ctx_ = ctx
 	return c
 }
 
-// Header returns an http.Header that can be modified by the caller to
-// add HTTP headers to the request.
+// Header returns a http.Header that can be modified by the caller to add
+// headers to the request.
 func (c *ReimportCall) Header() http.Header {
 	if c.header_ == nil {
 		c.header_ = make(http.Header)
@@ -1983,12 +1541,7 @@ func (c *ReimportCall) Header() http.Header {
 }
 
 func (c *ReimportCall) doRequest(alt string) (*http.Response, error) {
-	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/"+"luci-go")
-	for k, v := range c.header_ {
-		reqHeaders[k] = v
-	}
-	reqHeaders.Set("User-Agent", c.s.userAgent())
+	reqHeaders := gensupport.SetHeaders(c.s.userAgent(), "", c.header_)
 	var body io.Reader = nil
 	c.urlParams_.Set("alt", alt)
 	c.urlParams_.Set("prettyPrint", "false")
@@ -2014,29 +1567,7 @@ func (c *ReimportCall) Do(opts ...googleapi.CallOption) error {
 		return gensupport.WrapError(err)
 	}
 	return nil
-	// {
-	//   "description": "Reimports a config set.",
-	//   "httpMethod": "POST",
-	//   "id": "config.reimport",
-	//   "parameterOrder": [
-	//     "config_set"
-	//   ],
-	//   "parameters": {
-	//     "config_set": {
-	//       "location": "query",
-	//       "required": true,
-	//       "type": "string"
-	//     }
-	//   },
-	//   "path": "reimport",
-	//   "scopes": [
-	//     "https://www.googleapis.com/auth/userinfo.email"
-	//   ]
-	// }
-
 }
-
-// method id "config.validate_config":
 
 type ValidateConfigCall struct {
 	s                                      *Service
@@ -2054,23 +1585,21 @@ func (s *Service) ValidateConfig(luciconfigvalidateconfigrequestmessage *LuciCon
 }
 
 // Fields allows partial responses to be retrieved. See
-// https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
-// for more information.
+// https://developers.google.com/gdata/docs/2.0/basics#PartialResponse for more
+// details.
 func (c *ValidateConfigCall) Fields(s ...googleapi.Field) *ValidateConfigCall {
 	c.urlParams_.Set("fields", googleapi.CombineFields(s))
 	return c
 }
 
-// Context sets the context to be used in this call's Do method. Any
-// pending HTTP request will be aborted if the provided context is
-// canceled.
+// Context sets the context to be used in this call's Do method.
 func (c *ValidateConfigCall) Context(ctx context.Context) *ValidateConfigCall {
 	c.ctx_ = ctx
 	return c
 }
 
-// Header returns an http.Header that can be modified by the caller to
-// add HTTP headers to the request.
+// Header returns a http.Header that can be modified by the caller to add
+// headers to the request.
 func (c *ValidateConfigCall) Header() http.Header {
 	if c.header_ == nil {
 		c.header_ = make(http.Header)
@@ -2079,18 +1608,12 @@ func (c *ValidateConfigCall) Header() http.Header {
 }
 
 func (c *ValidateConfigCall) doRequest(alt string) (*http.Response, error) {
-	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/"+"luci-go")
-	for k, v := range c.header_ {
-		reqHeaders[k] = v
-	}
-	reqHeaders.Set("User-Agent", c.s.userAgent())
+	reqHeaders := gensupport.SetHeaders(c.s.userAgent(), "application/json", c.header_)
 	var body io.Reader = nil
 	body, err := googleapi.WithoutDataWrapper.JSONReader(c.luciconfigvalidateconfigrequestmessage)
 	if err != nil {
 		return nil, err
 	}
-	reqHeaders.Set("Content-Type", "application/json")
 	c.urlParams_.Set("alt", alt)
 	c.urlParams_.Set("prettyPrint", "false")
 	urls := googleapi.ResolveRelative(c.s.BasePath, "validate-config")
@@ -2104,13 +1627,11 @@ func (c *ValidateConfigCall) doRequest(alt string) (*http.Response, error) {
 }
 
 // Do executes the "config.validate_config" call.
-// Exactly one of *LuciConfigValidateConfigResponseMessage or error will
-// be non-nil. Any non-2xx status code is an error. Response headers are
-// in either
-// *LuciConfigValidateConfigResponseMessage.ServerResponse.Header or (if
-// a response was returned at all) in error.(*googleapi.Error).Header.
-// Use googleapi.IsNotModified to check whether the returned error was
-// because http.StatusNotModified was returned.
+// Any non-2xx status code is an error. Response headers are in either
+// *LuciConfigValidateConfigResponseMessage.ServerResponse.Header or (if a
+// response was returned at all) in error.(*googleapi.Error).Header. Use
+// googleapi.IsNotModified to check whether the returned error was because
+// http.StatusNotModified was returned.
 func (c *ValidateConfigCall) Do(opts ...googleapi.CallOption) (*LuciConfigValidateConfigResponseMessage, error) {
 	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
@@ -2141,20 +1662,4 @@ func (c *ValidateConfigCall) Do(opts ...googleapi.CallOption) (*LuciConfigValida
 		return nil, err
 	}
 	return ret, nil
-	// {
-	//   "httpMethod": "POST",
-	//   "id": "config.validate_config",
-	//   "path": "validate-config",
-	//   "request": {
-	//     "$ref": "LuciConfigValidateConfigRequestMessage",
-	//     "parameterName": "resource"
-	//   },
-	//   "response": {
-	//     "$ref": "LuciConfigValidateConfigResponseMessage"
-	//   },
-	//   "scopes": [
-	//     "https://www.googleapis.com/auth/userinfo.email"
-	//   ]
-	// }
-
 }

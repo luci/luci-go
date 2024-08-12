@@ -100,6 +100,8 @@ func (o *Options) apply(callOptions []grpc.CallOption) {
 			o.resHeaderMetadata = val.HeaderAddr
 		case grpc.TrailerCallOption:
 			o.resTrailerMetadata = val.TrailerAddr
+		case grpc.StaticMethodCallOption:
+			// Noop.
 		case *CallOption:
 			val.apply(o)
 		default:

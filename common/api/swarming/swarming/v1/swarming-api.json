@@ -1966,12 +1966,6 @@
         "cas_output_root": {
           "$ref": "SwarmingRpcsCASReference"
         },
-        "children_task_ids": {
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
-        },
         "cipd_pins": {
           "$ref": "SwarmingRpcsCipdPins",
           "description": "Defines pinned CIPD packages that were installed during the task."
