@@ -22,10 +22,10 @@ import (
 	"fmt"
 	"io"
 	"regexp"
-	"sort"
 	"strings"
 	"time"
 
+	"golang.org/x/exp/slices"
 	"google.golang.org/protobuf/encoding/prototext"
 
 	"go.chromium.org/luci/auth/identity"
@@ -39,6 +39,10 @@ import (
 
 	"go.chromium.org/luci/auth_service/api/configspb"
 	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/importscfg"
+)
+
+const (
+	gTempSuffix = "@gtempaccount.com"
 )
 
 // Imports groups from some external tar.gz bundle or plain text list.
@@ -259,7 +263,7 @@ func loadTarball(ctx context.Context, content io.Reader, domain string, systems,
 			logging.Warningf(ctx, "Skipping file %s, not allowed", filename)
 			continue
 		}
-		identities, err := loadGroupFile(string(fileobj), domain)
+		identities, err := loadGroupFile(ctx, string(fileobj), domain)
 		if err != nil {
 			return nil, err
 		}
@@ -271,36 +275,42 @@ func loadTarball(ctx context.Context, content io.Reader, domain string, systems,
 	return bundles, nil
 }
 
-func loadGroupFile(identities string, domain string) ([]identity.Identity, error) {
-	members := make(map[identity.Identity]bool)
+func loadGroupFile(ctx context.Context, identities string, domain string) ([]identity.Identity, error) {
 	memsSplit := strings.Split(identities, "\n")
+	uniqueMembers := make(map[identity.Identity]struct{}, len(memsSplit))
 	for _, uid := range memsSplit {
 		uid = strings.TrimSpace(uid)
 		if uid == "" {
 			continue
 		}
-		var ident string
-		if domain == "" {
-			ident = fmt.Sprintf("user:%s", uid)
-		} else {
-			ident = fmt.Sprintf("user:%s@%s", uid, domain)
+		ident := fmt.Sprintf("user:%s", uid)
+		if domain != "" {
+			ident = fmt.Sprintf("%s@%s", ident, domain)
 		}
+
+		// Handle gtemp accounts. These emails look like
+		// "name%domain@gtempaccount.com". Convert them to "name@domain".
+		// See https://support.google.com/a/answer/185186?hl=en
+		if strings.HasSuffix(ident, gTempSuffix) {
+			logging.Warningf(ctx, "found %s account", gTempSuffix)
+			ident = strings.TrimSuffix(ident, gTempSuffix)
+			ident = strings.ReplaceAll(ident, "%", "@")
+		}
+
 		emailIdent, err := identity.MakeIdentity(ident)
 		if err != nil {
 			return nil, err
 		}
-		members[emailIdent] = true
+		uniqueMembers[emailIdent] = struct{}{}
 	}
 
-	membersSorted := make([]identity.Identity, 0, len(members))
-	for mem := range members {
-		membersSorted = append(membersSorted, mem)
+	members := make([]identity.Identity, 0, len(uniqueMembers))
+	for mem := range uniqueMembers {
+		members = append(members, mem)
 	}
-	sort.Slice(membersSorted, func(i, j int) bool {
-		return membersSorted[i].Value() < membersSorted[j].Value()
-	})
+	slices.Sort(members)
 
-	return membersSorted, nil
+	return members, nil
 }
 
 // importBundles imports given set of bundles all at once.

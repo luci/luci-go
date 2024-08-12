@@ -203,21 +203,29 @@ func TestLoadGroupFile(t *testing.T) {
 	testDomain := "example.com"
 
 	Convey("Testing LoadGroupFile()", t, func() {
+		ctx := context.Background()
 		Convey("OK", func() {
 			body := strings.Join([]string{"", "b", "a", "a", ""}, "\n")
 			aIdent, _ := identity.MakeIdentity(fmt.Sprintf("user:a@%s", testDomain))
 			bIdent, _ := identity.MakeIdentity(fmt.Sprintf("user:b@%s", testDomain))
-
-			actual, err := loadGroupFile(body, testDomain)
+			actual, err := loadGroupFile(ctx, body, testDomain)
 			So(err, ShouldBeNil)
 			So(actual, ShouldResemble, []identity.Identity{
 				aIdent,
 				bIdent,
 			})
 		})
+		Convey("Handles temporary accounts", func() {
+			cIdent, _ := identity.MakeIdentity("user:c@test")
+			actual, err := loadGroupFile(ctx, "c%test@gtempaccount.com", "")
+			So(err, ShouldBeNil)
+			So(actual, ShouldResemble, []identity.Identity{
+				cIdent,
+			})
+		})
 		Convey("bad id", func() {
 			body := "bad id"
-			_, err := loadGroupFile(body, testDomain)
+			_, err := loadGroupFile(ctx, body, testDomain)
 			So(err, ShouldErrLike, `auth: bad value "bad id@example.com" for identity kind "user"`)
 		})
 	})
