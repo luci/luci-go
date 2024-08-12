@@ -113,7 +113,7 @@ func parseReadArtifactGroupsPageToken(pageToken string) (afterMaxPartitionTimeUn
 	if err != nil {
 		return 0, 0, "", "", "", pagination.InvalidToken(errors.Reason("expect the second page_token component to be an integer").Err())
 	}
-	return afterMaxPartitionTimeUnix, maxInsertTimeUnix, tokens[1], tokens[2], tokens[3], nil
+	return afterMaxPartitionTimeUnix, maxInsertTimeUnix, tokens[2], tokens[3], tokens[4], nil
 }
 
 var maxMatchSize = 10 * 1024 // 10kib.
