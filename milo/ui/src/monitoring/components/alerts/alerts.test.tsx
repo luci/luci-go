@@ -14,41 +14,70 @@
 
 import { render, screen } from '@testing-library/react';
 
+import { MonitoringCtx } from '@/monitoring/pages/monitoring_page/context';
 import { configuredTrees } from '@/monitoring/util/config';
 import { Bug } from '@/monitoring/util/server_json';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { Alerts } from './alerts';
 
-it('displays filter and alert groups', async () => {
-  render(
-    <FakeContextProvider>
-      <Alerts tree={configuredTrees[0]} alerts={[]} bugs={[]} />
-    </FakeContextProvider>,
-  );
-  expect(screen.getByRole('textbox')).toBeInTheDocument();
-  expect(screen.getByText('Untriaged Consistent Failures')).toBeInTheDocument();
-  expect(screen.getByText('Untriaged New Failures')).toBeInTheDocument();
-});
+describe('<Alerts />', () => {
+  it('displays filter and alert groups', async () => {
+    render(
+      <FakeContextProvider>
+        <MonitoringCtx.Provider
+          value={{
+            alerts: [],
+            bugs: [],
+            tree: configuredTrees[0],
+          }}
+        >
+          <Alerts />
+        </MonitoringCtx.Provider>
+      </FakeContextProvider>,
+    );
+    expect(screen.getByRole('textbox')).toBeInTheDocument();
+    expect(
+      screen.getByText('Untriaged Consistent Failures'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Untriaged New Failures')).toBeInTheDocument();
+  });
 
-it('displays no bugs mesage', async () => {
-  render(
-    <FakeContextProvider>
-      <Alerts tree={configuredTrees[0]} alerts={[]} bugs={[]} />
-    </FakeContextProvider>,
-  );
-  expect(
-    screen.getByText('There are currently no bugs in the hotlist.'),
-  ).toBeInTheDocument();
-});
+  it('displays no bugs mesage', async () => {
+    render(
+      <FakeContextProvider>
+        <MonitoringCtx.Provider
+          value={{
+            alerts: [],
+            bugs: [],
+            tree: configuredTrees[0],
+          }}
+        >
+          <Alerts />
+        </MonitoringCtx.Provider>
+      </FakeContextProvider>,
+    );
+    expect(
+      screen.getByText('There are currently no bugs in the hotlist.'),
+    ).toBeInTheDocument();
+  });
 
-it('displays a group for a bug in the hotlist when there are no alerts', async () => {
-  render(
-    <FakeContextProvider>
-      <Alerts tree={configuredTrees[0]} alerts={[]} bugs={[hotlistBug]} />
-    </FakeContextProvider>,
-  );
-  expect(screen.getByText('Hotlist Bug')).toBeInTheDocument();
+  it('displays a group for a bug in the hotlist when there are no alerts', async () => {
+    render(
+      <FakeContextProvider>
+        <MonitoringCtx.Provider
+          value={{
+            alerts: [],
+            bugs: [hotlistBug],
+            tree: configuredTrees[0],
+          }}
+        >
+          <Alerts />
+        </MonitoringCtx.Provider>
+      </FakeContextProvider>,
+    );
+    expect(screen.getByText('Hotlist Bug')).toBeInTheDocument();
+  });
 });
 
 const hotlistBug: Bug = {

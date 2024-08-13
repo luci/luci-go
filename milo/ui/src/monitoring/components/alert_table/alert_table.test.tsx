@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import { fireEvent, render, screen } from '@testing-library/react';
+import { userEvent } from '@testing-library/user-event';
 import { act } from 'react';
 
 import { configuredTrees } from '@/monitoring/util/config';
@@ -24,7 +25,12 @@ import { AlertTable } from './alert_table';
 it('displays an alert', async () => {
   render(
     <FakeContextProvider>
-      <AlertTable tree={configuredTrees[0]} alerts={[alert]} bugs={[]} />
+      <AlertTable
+        tree={configuredTrees[0]}
+        alerts={[alert]}
+        bugs={[]}
+        setFilter={(_) => {}}
+      />
     </FakeContextProvider>,
   );
   expect(screen.getByText('linux-rel')).toBeInTheDocument();
@@ -34,13 +40,36 @@ it('displays an alert', async () => {
 it('expands an alert on click', async () => {
   render(
     <FakeContextProvider>
-      <AlertTable tree={configuredTrees[0]} alerts={[alert]} bugs={[]} />
+      <AlertTable
+        tree={configuredTrees[0]}
+        alerts={[alert]}
+        bugs={[]}
+        setFilter={(_) => {}}
+      />
     </FakeContextProvider>,
   );
   expect(screen.getByText('compile')).toBeInTheDocument();
   expect(screen.queryByText('test.Example')).toBeNull();
   await act(() => fireEvent.click(screen.getByText('compile')));
   expect(screen.getByText('test.Example')).toBeInTheDocument();
+});
+
+it('sets filter when icon clicked', async () => {
+  let filter = '';
+  render(
+    <FakeContextProvider>
+      <AlertTable
+        tree={configuredTrees[0]}
+        alerts={[alert]}
+        bugs={[]}
+        setFilter={(arg) => {
+          filter = arg;
+        }}
+      />
+    </FakeContextProvider>,
+  );
+  await userEvent.click(await screen.findByTestId('SearchIcon'));
+  expect(filter).toBe('linux-rel');
 });
 
 it('sorts alerts on header click', async () => {
@@ -50,6 +79,7 @@ it('sorts alerts on header click', async () => {
         tree={configuredTrees[0]}
         alerts={[alert, alert2]}
         bugs={[]}
+        setFilter={(_) => {}}
       />
     </FakeContextProvider>,
   );

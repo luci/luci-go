@@ -47,10 +47,17 @@ interface AlertTableProps {
   alerts: AlertJson[];
   bug?: Bug;
   bugs: Bug[];
+  setFilter: (filter: string) => void;
 }
 
 // An AlertTable shows a list of alerts.  There are usually several on the page at once.
-export const AlertTable = ({ tree, alerts, bug, bugs }: AlertTableProps) => {
+export const AlertTable = ({
+  tree,
+  alerts,
+  bug,
+  bugs,
+  setFilter,
+}: AlertTableProps) => {
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
   const [expanded, setExpanded] = useState({} as { [alert: string]: boolean });
   const [expandAll, setExpandAll] = useState(false);
@@ -173,7 +180,7 @@ export const AlertTable = ({ tree, alerts, bug, bugs }: AlertTableProps) => {
           </TableCell>
           <TableCell>
             <div style={{ display: 'flex' }}>
-              <Tooltip title="Link bug to ALL alerts">
+              <Tooltip title="Link bug to all displayed alerts">
                 <IconButton onClick={(e) => setMenuAnchorEl(e.currentTarget)}>
                   <BugReportIcon />
                 </IconButton>
@@ -185,7 +192,7 @@ export const AlertTable = ({ tree, alerts, bug, bugs }: AlertTableProps) => {
                 tree={tree}
                 bugs={bugs}
               />
-              <Tooltip title="Snooze ALL alerts until the next build">
+              <Tooltip title="Snooze all displayed alerts until the next build">
                 <IconButton onClick={() => silenceAllMutation.mutate(alerts)}>
                   <NotificationsPausedIcon />
                 </IconButton>
@@ -215,6 +222,7 @@ export const AlertTable = ({ tree, alerts, bug, bugs }: AlertTableProps) => {
                       }}
                       tree={tree}
                       bugs={bugs}
+                      setFilter={setFilter}
                     />
                     {expanded[alert.key] && (
                       <AlertDetailsRow
@@ -222,6 +230,7 @@ export const AlertTable = ({ tree, alerts, bug, bugs }: AlertTableProps) => {
                         alert={alert}
                         bug={bug}
                         key={alert.key + builder.name}
+                        setFilter={setFilter}
                       />
                     )}
                   </Fragment>

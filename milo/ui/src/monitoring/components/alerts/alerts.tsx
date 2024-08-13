@@ -14,35 +14,50 @@
 
 import CloseIcon from '@mui/icons-material/Close';
 import SearchIcon from '@mui/icons-material/Search';
-import { Box, InputAdornment, TextField, Typography } from '@mui/material';
+import {
+  Alert,
+  Box,
+  CircularProgress,
+  InputAdornment,
+  LinearProgress,
+  TextField,
+  Typography,
+} from '@mui/material';
 import { useState } from 'react';
 
-import { AlertJson, TreeJson, Bug } from '@/monitoring/util/server_json';
+import {
+  useAlerts,
+  useTree,
+  useBugs,
+} from '@/monitoring/pages/monitoring_page/hooks';
+import { AlertJson } from '@/monitoring/util/server_json';
 
 import { AlertGroup } from './alert_group';
 import { BugGroup } from './bug_group';
 import { TreeStatusCard } from './tree_status_card';
 
-interface AlertsProps {
-  tree: TreeJson;
-  alerts: AlertJson[] | undefined | null;
-  bugs: Bug[];
-}
-export const Alerts = ({ tree, alerts, bugs }: AlertsProps) => {
+export const Alerts = () => {
   const [filter, setFilter] = useState('');
-  if (!tree || !alerts) {
+  const { alerts, alertsLoading } = useAlerts();
+  const tree = useTree();
+  const { bugs, bugsLoading, bugsError, isBugsError } = useBugs();
+
+  if (!tree) {
     return <></>;
   }
-  const filtered = filterAlerts(alerts, filter);
+  const filtered = filterAlerts(alerts || [], filter);
   const categories = categorizeAlerts(filtered);
 
-  const bugsWithAlerts = bugs.filter((b) =>
-    alerts.some((a) => a.bug === b.number),
-  );
-  const bugsWithoutAlerts = bugs.filter(
-    (b) => !alerts.some((a) => a.bug === b.number),
-  );
+  const bugsWithAlerts =
+    (alerts && bugs?.filter((b) => alerts.some((a) => a.bug === b.number))) ||
+    [];
+  const bugsWithoutAlerts =
+    (alerts && bugs?.filter((b) => !alerts.some((a) => a.bug === b.number))) ||
+    [];
 
+  if (alertsLoading) {
+    return <CircularProgress />;
+  }
   return (
     <>
       <Box
@@ -89,7 +104,8 @@ export const Alerts = ({ tree, alerts, bugs }: AlertsProps) => {
           tree={tree}
           groupDescription="Failures that have occurred at least 2 times in a row and are not linked with a bug"
           defaultExpanded={true}
-          bugs={bugs}
+          bugs={bugs || []}
+          setFilter={setFilter}
         />
         <AlertGroup
           groupName={'Untriaged New Failures'}
@@ -97,14 +113,19 @@ export const Alerts = ({ tree, alerts, bugs }: AlertsProps) => {
           tree={tree}
           groupDescription="Failures that have only been seen once and are not linked with a bug"
           defaultExpanded={false}
-          bugs={bugs}
+          bugs={bugs || []}
+          setFilter={setFilter}
         />
 
         <Typography variant="h6" sx={{ margin: '24px 0 8px' }}>
           Bugs
         </Typography>
+        {bugsLoading ? <LinearProgress /> : null}
+        {isBugsError ? (
+          <Alert severity="error">Failed to fetch bugs: {`${bugsError}`}</Alert>
+        ) : null}
         {/* TODO: Get hotlist name */}
-        {bugs.length === 0 ? (
+        {bugs?.length === 0 ? (
           <Typography>There are currently no bugs in the hotlist.</Typography>
         ) : null}
         {bugsWithAlerts.map((bug) => {
@@ -118,7 +139,8 @@ export const Alerts = ({ tree, alerts, bugs }: AlertsProps) => {
               bug={bug}
               alerts={categories.bugAlerts[bug.number]}
               tree={tree}
-              bugs={bugs}
+              bugs={bugs || []}
+              setFilter={setFilter}
             />
           );
         })}
@@ -133,7 +155,8 @@ export const Alerts = ({ tree, alerts, bugs }: AlertsProps) => {
               bug={bug}
               alerts={categories.bugAlerts[bug.number]}
               tree={tree}
-              bugs={bugs}
+              bugs={bugs || []}
+              setFilter={setFilter}
             />
           );
         })}
@@ -194,7 +217,7 @@ const filterAlerts = (alerts: AlertJson[], filter: string): AlertJson[] => {
   if (filter === '') {
     return alerts;
   }
-  const re = new RegExp(filter);
+  const re = new RegExp(filter, 'i');
   return alerts.filter((alert) => {
     if (
       alert.extension.builders.filter(

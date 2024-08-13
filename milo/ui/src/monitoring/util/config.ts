@@ -120,6 +120,6 @@ export const configuredTrees: TreeJson[] = [
     display_name: 'Devtools Frontend',
     hotlistId: '5674718',
     project: 'chromium',
-    treeStatusName: 'chromium',
+    treeStatusName: 'devtools',
   },
 ];

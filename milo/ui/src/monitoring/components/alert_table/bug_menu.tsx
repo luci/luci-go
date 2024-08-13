@@ -108,7 +108,7 @@ export const BugMenu = ({
             setLinkBugOpen(true);
           }}
         >
-          Other...
+          Other/Create...
         </MenuItem>
       </Menu>
       <FileBugDialog

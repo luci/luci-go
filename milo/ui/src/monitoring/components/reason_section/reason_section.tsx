@@ -21,6 +21,7 @@ import {
   TableHead,
   TableRow,
 } from '@mui/material';
+import { Stack } from '@mui/material';
 
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { DisableTestButton } from '@/monitoring/components/disable_button';
@@ -31,6 +32,8 @@ import {
   TreeJson,
 } from '@/monitoring/util/server_json';
 
+import { PrefillFilterIcon } from '../alert_table/prefill_filter_icon';
+
 import { AIAnalysis } from './ai_analysis';
 
 interface ReasonSectionProps {
@@ -38,6 +41,7 @@ interface ReasonSectionProps {
   tree: TreeJson;
   reason?: AlertReasonJson;
   bug?: Bug;
+  setFilter: (filter: string) => void;
 }
 
 export const ReasonSection = ({
@@ -45,6 +49,7 @@ export const ReasonSection = ({
   failureBuildUrl,
   reason,
   bug,
+  setFilter,
 }: ReasonSectionProps) => {
   const [searchParams] = useSyncedSearchParams();
   const useAIAnalysis = searchParams.get('aia');
@@ -75,6 +80,7 @@ export const ReasonSection = ({
               tree={tree}
               bug={bug}
               failureBuildUrl={failureBuildUrl}
+              setFilter={setFilter}
             />
           ))}
           {reason.tests.length < reason.num_failing_tests && (
@@ -154,6 +160,7 @@ interface TestFailureRowProps {
   tree: TreeJson;
   bug?: Bug;
   failureBuildUrl: string;
+  setFilter: (filter: string) => void;
 }
 
 const TestFailureRow = ({
@@ -161,6 +168,7 @@ const TestFailureRow = ({
   tree,
   bug,
   failureBuildUrl,
+  setFilter,
 }: TestFailureRowProps) => {
   const [searchParams] = useSyncedSearchParams();
   const useAIAnalysis = searchParams.get('aia');
@@ -190,13 +198,16 @@ const TestFailureRow = ({
   return (
     <TableRow hover>
       <TableCell>
-        <Link
-          href={`${failureBuildUrl}/test-results?q=ID%3A${test.test_id}`}
-          target="_blank"
-          rel="noreferrer"
-        >
-          {test.test_name}
-        </Link>
+        <Stack direction="row">
+          <Link
+            href={`${failureBuildUrl}/test-results?q=ID%3A${test.test_id}`}
+            target="_blank"
+            rel="noreferrer"
+          >
+            {test.test_name}
+          </Link>
+          <PrefillFilterIcon filter={test.test_name} setFilter={setFilter} />
+        </Stack>
       </TableCell>
       <TableCell sx={{ backgroundColor: cellColor(currentRate) }}>
         {currentRate === undefined

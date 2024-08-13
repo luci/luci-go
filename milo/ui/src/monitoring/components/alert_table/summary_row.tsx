@@ -19,6 +19,7 @@ import NotificationsIcon from '@mui/icons-material/Notifications';
 import NotificationsPausedIcon from '@mui/icons-material/NotificationsPaused';
 import { IconButton, TableCell, TableRow, Tooltip } from '@mui/material';
 import { Link } from '@mui/material';
+import { Stack } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 
@@ -36,6 +37,7 @@ import {
 } from '@/proto/go.chromium.org/luci/luci_notify/api/service/v1/alerts.pb';
 
 import { BugMenu } from './bug_menu';
+import { PrefillFilterIcon } from './prefill_filter_icon';
 
 interface AlertSummaryRowProps {
   alert: AlertJson;
@@ -44,6 +46,7 @@ interface AlertSummaryRowProps {
   onExpand: () => void;
   tree: TreeJson;
   bugs: Bug[];
+  setFilter: (filter: string) => void;
 }
 // An expandable row in the AlertTable containing a summary of a single alert.
 export const AlertSummaryRow = ({
@@ -53,6 +56,7 @@ export const AlertSummaryRow = ({
   onExpand,
   tree,
   bugs,
+  setFilter,
 }: AlertSummaryRowProps) => {
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
 
@@ -112,14 +116,17 @@ export const AlertSummaryRow = ({
         </IconButton>
       </TableCell>
       <TableCell>
-        <Link
-          href={builder.url}
-          target="_blank"
-          rel="noreferrer"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {builder.name}
-        </Link>
+        <Stack alignItems="center" direction="row">
+          <Link
+            href={builder.url}
+            target="_blank"
+            rel="noreferrer"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {builder.name}
+          </Link>
+          <PrefillFilterIcon filter={builder.name} setFilter={setFilter} />
+        </Stack>
       </TableCell>
       <TableCell>
         {step}
