@@ -17,6 +17,16 @@ package recipespy
 import (
 	"context"
 	"errors"
+	"fmt"
+	"io/fs"
+	"os"
+	"path/filepath"
+	"slices"
+	"strings"
+
+	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/system/filesystem"
 )
 
 // Bundle creates a hermetically runnable recipe bundle.
@@ -58,11 +68,21 @@ import (
 // process leverages the git index, so any untracked file will NOT be in the
 // final bundle.
 func Bundle(ctx context.Context, repoPath string, dest string, overrides map[string]string) error {
+	switch {
+	case repoPath == "":
+		return errors.New("recipes_py.Bundle: repoPath is required")
+	case dest == "":
+		return errors.New("recipes_py.Bundle: destination is required")
+	}
+
 	mainRepo, err := RepoFromPath(repoPath)
 	if err != nil {
 		return err
 	}
-	depRepos, err := calculateDepRepos(ctx, mainRepo, overrides)
+	if err := mainRepo.ensureDeps(ctx); err != nil {
+		return err
+	}
+	depRepos, err := calculateDepRepos(mainRepo, overrides)
 	if err != nil {
 		return err
 	}
@@ -88,8 +108,34 @@ func Bundle(ctx context.Context, repoPath string, dest string, overrides map[str
 // the overrides.
 //
 // Returns are sorted by the repo name.
-func calculateDepRepos(ctx context.Context, main *Repo, overrides map[string]string) ([]*Repo, error) {
-	return nil, errors.New("implement")
+// Returns error if the provided overridden dep is not the dep of the main
+// repo.
+func calculateDepRepos(main *Repo, overrides map[string]string) ([]*Repo, error) {
+	unusedOverrides := stringset.New(len(overrides))
+	for dep := range overrides {
+		unusedOverrides.Add(dep)
+	}
+	depRepos := make([]*Repo, 0, len(main.Spec.GetDeps()))
+	for dep := range main.Spec.GetDeps() {
+		depRepoPath, overridden := overrides[dep]
+		if !overridden {
+			depRepoPath = filepath.Join(main.RecipeDepsPath(), dep)
+		} else {
+			unusedOverrides.Del(dep)
+		}
+		repo, err := RepoFromPath(depRepoPath)
+		if err != nil {
+			return nil, err
+		}
+		depRepos = append(depRepos, repo)
+	}
+	if unusedOverrides.Len() > 0 {
+		return nil, fmt.Errorf("overrides %s provided but not used", strings.Join(unusedOverrides.ToSortedSlice(), ", "))
+	}
+	slices.SortFunc(depRepos, func(left, right *Repo) int {
+		return strings.Compare(left.Name(), right.Name())
+	})
+	return depRepos, nil
 }
 
 // prepareDestDir creates the destination dir if it doesn't exists.
@@ -100,7 +146,23 @@ func calculateDepRepos(ctx context.Context, main *Repo, overrides map[string]str
 //
 // Returns the absolute path to the destination dir.
 func prepareDestDir(ctx context.Context, dest string) (string, error) {
-	return "", errors.New("implement")
+	logging.Infof(ctx, "preparing destination directory %q", dest)
+	ret, err := filepath.Abs(dest)
+	if err != nil {
+		return "", fmt.Errorf("failed to convert dest path %q to absolute path: %w", dest, err)
+	}
+
+	switch empty, err := filesystem.IsEmptyDir(ret); {
+	case errors.Is(err, fs.ErrNotExist):
+		if err := os.MkdirAll(ret, fs.ModePerm); err != nil {
+			return "", fmt.Errorf("failed to create dir %q: %w", ret, err)
+		}
+	case err != nil:
+		return "", err
+	case !empty:
+		return "", fmt.Errorf("dest path %q exists but the directory is not empty", dest)
+	}
+	return ret, nil
 }
 
 // exportRepo packages the repo to the provided dest.

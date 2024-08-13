@@ -15,12 +15,16 @@
 package recipespy
 
 import (
+	"context"
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 
 	"google.golang.org/protobuf/encoding/protojson"
 
+	"go.chromium.org/luci/common/exec"
 	recipepb "go.chromium.org/luci/recipes_py/proto"
 )
 
@@ -53,6 +57,53 @@ func (r *Repo) CfgPathRel() string {
 // CfgPath returns the absolute path to recipes.cfg
 func (r *Repo) CfgPath() string {
 	return filepath.Join(r.Path, r.CfgPathRel())
+}
+
+// RecipesRootPath returns the path to the base where all recipes are found in
+// the repo.
+//
+// This is where the "recipes" and "recipe_modules" directories live.
+func (r *Repo) RecipesRootPath() string {
+	if r.Spec.GetRecipesPath() == "" {
+		return r.Path
+	}
+	return filepath.Join(r.Path, r.RecipesRootPathRel())
+}
+
+// RecipesRootPathRel is like RecipesRootPath but returns relative path to the
+// root. Returns empty path if root path is the repo root.
+func (r *Repo) RecipesRootPathRel() string {
+	if r.Spec.GetRecipesPath() == "" {
+		return ""
+	}
+	return filepath.FromSlash(r.Spec.GetRecipesPath())
+}
+
+// RecipeDepsPath returns the absolute path to the `.recipe_deps` directory.
+func (r *Repo) RecipeDepsPath() string {
+	return filepath.Join(r.RecipesRootPath(), ".recipe_deps")
+}
+
+// ensureDeps ensures the dependencies of the repo is populated.
+//
+// This is done by checking the existence of `RecipeDepsPath`.
+// Invoke `recipes.py fetch` if `RecipeDepsPath` doesn't exist.
+func (r *Repo) ensureDeps(ctx context.Context) error {
+	switch _, err := os.Stat(r.RecipeDepsPath()); {
+	case errors.Is(err, fs.ErrNotExist):
+		cmd := exec.CommandContext(ctx, filepath.Join(r.RecipesRootPath(), "recipes.py"), "fetch")
+		if err := cmd.Run(); err != nil {
+			return errors.New("failed to run `recipes.py fetch`")
+		}
+		if _, err := os.Stat(r.RecipeDepsPath()); err != nil {
+			// recipe_deps should have been populated by now.
+			return err
+		}
+	case err != nil:
+		return err
+	}
+	return nil
+
 }
 
 // RepoFromPath creates a recipe Repo instance from a local path.
