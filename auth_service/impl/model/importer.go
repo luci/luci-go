@@ -309,7 +309,7 @@ func loadGroupFile(ctx context.Context, identities string, domain string) ([]ide
 		// "name%domain@gtempaccount.com". Convert them to "name@domain".
 		// See https://support.google.com/a/answer/185186?hl=en
 		if strings.HasSuffix(ident, gTempSuffix) {
-			logging.Warningf(ctx, "found %s account", gTempSuffix)
+			logging.Warningf(ctx, "found %s account: %s", gTempSuffix, ident)
 			ident = strings.TrimSuffix(ident, gTempSuffix)
 			ident = strings.ReplaceAll(ident, "%", "@")
 		}
@@ -579,9 +579,12 @@ func prepareImport(ctx context.Context, systemName string, existingGroups map[st
 
 		existingGroup := existingGroups[groupName]
 		if isSubgroup {
-			// The group is a subgroup of another so just clear the members.
-			existingGroup.Members = []string{}
-			toPut = append(toPut, existingGroup)
+			// The group is a subgroup of another so it shouldn't be deleted.
+			// Clear members only if there are currently members in the group.
+			if len(existingGroup.Members) != 0 {
+				existingGroup.Members = []string{}
+				toPut = append(toPut, existingGroup)
+			}
 			continue
 		}
 
