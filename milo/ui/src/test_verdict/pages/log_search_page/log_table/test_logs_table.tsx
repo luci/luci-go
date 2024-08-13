@@ -17,7 +17,6 @@ import { ArrowForwardIos } from '@mui/icons-material';
 import { Box, Alert, AlertTitle, Link } from '@mui/material';
 import LinearProgress from '@mui/material/LinearProgress';
 import { useQuery } from '@tanstack/react-query';
-import { DateTime } from 'luxon';
 
 import {
   ParamsPager,
@@ -30,30 +29,24 @@ import { QueryTestVariantArtifactGroupsRequest } from '@/proto/go.chromium.org/l
 import { useResultDbClient } from '@/test_verdict/hooks/prpc_clients';
 import { OutputQueryTestVariantArtifactGroupsResponse } from '@/test_verdict/types';
 
-import { useTestLogPagerCtx } from '../contexts';
+import { SearchFilter, useTestLogPagerCtx } from '../contexts';
 import { FormData } from '../form_data';
 import { VariantLine } from '../variant_line';
 
-import { LogGroup } from './log_group_base';
+import { LogGroup } from './log_group';
 
 export interface TestLogsTableProps {
   readonly project: string;
-  readonly form: FormData;
-  readonly startTime: DateTime;
-  readonly endTime: DateTime;
+  readonly filter: SearchFilter;
 }
 
-export function TestLogsTable({
-  project,
-  form,
-  startTime,
-  endTime,
-}: TestLogsTableProps) {
+export function TestLogsTable({ project, filter }: TestLogsTableProps) {
   const [searchParams] = useSyncedSearchParams();
   const pagerCtx = useTestLogPagerCtx();
   const pageSize = getPageSize(pagerCtx, searchParams);
   const pageToken = getPageToken(pagerCtx, searchParams);
   const client = useResultDbClient();
+  const { form, startTime, endTime } = filter;
   const { data, isLoading, error, isError } = useQuery({
     ...client.QueryTestVariantArtifactGroups.query(
       QueryTestVariantArtifactGroupsRequest.fromPartial({
@@ -61,8 +54,8 @@ export function TestLogsTable({
         searchString: FormData.getSearchString(form),
         testIdMatcher: FormData.getTestIDMatcher(form),
         artifactIdMatcher: FormData.getArtifactIDMatcher(form),
-        startTime: startTime ? startTime.toISO() : '',
-        endTime: endTime ? endTime.toISO() : '',
+        startTime: startTime.toISO(),
+        endTime: endTime.toISO(),
         pageSize: pageSize,
         pageToken: pageToken,
       }),

@@ -12,16 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { DateTime } from 'luxon';
 import { ReactNode, useReducer } from 'react';
 
 import {
   reducer,
   LogGroupListDispatcherCtx,
   LogGroupListStateCtx,
-  CurrentTimeCtx,
   PaginationCtx,
   LogPaginationState,
+  SearchFilterCtx,
+  SearchFilter,
 } from './contexts';
 
 export interface LogGroupListStateProviderProps {
@@ -45,20 +45,6 @@ export function LogGroupListStateProvider({
   );
 }
 
-export interface CurrentTimeProviderProps {
-  readonly now: DateTime;
-  readonly children: ReactNode;
-}
-
-export function CurrentTimeProvider({
-  now,
-  children,
-}: CurrentTimeProviderProps) {
-  return (
-    <CurrentTimeCtx.Provider value={now}>{children}</CurrentTimeCtx.Provider>
-  );
-}
-
 export interface PaginationProviderProps {
   readonly state: LogPaginationState;
   readonly children: ReactNode;
@@ -70,5 +56,21 @@ export function PaginationProvider({
 }: PaginationProviderProps) {
   return (
     <PaginationCtx.Provider value={state}>{children}</PaginationCtx.Provider>
+  );
+}
+
+export interface SearchFilterProviderProps {
+  readonly searchFilter: SearchFilter | null;
+  readonly children: ReactNode;
+}
+
+export function SearchFilterProvider({
+  searchFilter,
+  children,
+}: SearchFilterProviderProps) {
+  return (
+    <SearchFilterCtx.Provider value={searchFilter}>
+      {children}
+    </SearchFilterCtx.Provider>
   );
 }

@@ -22,7 +22,10 @@ import {
   usePagerContext,
 } from '@/common/components/params_pager';
 import { AppRoutedTab, AppRoutedTabs } from '@/common/components/routed_tabs';
-import { TimeRangeSelector } from '@/common/components/time_range_selector';
+import {
+  getAbsoluteStartEndTime,
+  TimeRangeSelector,
+} from '@/common/components/time_range_selector';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
 import {
@@ -30,11 +33,12 @@ import {
   EXACT_MATCH_OPTION,
   REGEX_MATCH_OPTION,
 } from './constants';
+import { SearchFilter } from './contexts';
 import { EMPTY_FORM, FormData } from './form_data';
 import {
-  CurrentTimeProvider,
   LogGroupListStateProvider,
   PaginationProvider,
+  SearchFilterProvider,
 } from './providers';
 import { SelectTextField } from './select_text_field';
 const FormContainer = styled(Box)`
@@ -61,9 +65,14 @@ export function LogSearch() {
   const [pendingForm, setPendingForm] = useState<FormData>(
     FormData.fromSearchParam(searchParams) || EMPTY_FORM,
   );
+  const [searchFilter, setSearchFilter] = useState<SearchFilter | null>(null);
   // Persist current time between re-render, so that anchor for relative time calculation is consistent.
   // This improve the cache hit rate of log search queries.
   const nowRef = useRef(DateTime.now().toUTC());
+  const { startTime, endTime } = getAbsoluteStartEndTime(
+    searchParams,
+    nowRef.current,
+  );
   const pagerContexts = {
     testLogPagerCtx: usePagerContext({
       pageSizeOptions: PAGE_SIZE_OPTIONS,
@@ -163,6 +172,13 @@ export function LogSearch() {
           size="small"
           variant="contained"
           onClick={() => {
+            startTime &&
+              endTime &&
+              setSearchFilter({
+                form: { ...pendingForm },
+                startTime,
+                endTime,
+              });
             setSearchParams(FormData.toSearchParamUpdater(pendingForm));
             setSearchParams(
               emptyPageTokenUpdater(pagerContexts.invocationLogPagerCtx),
@@ -180,9 +196,9 @@ export function LogSearch() {
           Query will be slow without an test ID filter or log file filter.
         </Alert>
       )}
-      <PaginationProvider state={pagerContexts}>
-        <LogGroupListStateProvider>
-          <CurrentTimeProvider now={nowRef.current}>
+      <SearchFilterProvider searchFilter={searchFilter}>
+        <PaginationProvider state={pagerContexts}>
+          <LogGroupListStateProvider>
             <AppRoutedTabs>
               <AppRoutedTab
                 label="Test result logs"
@@ -195,9 +211,9 @@ export function LogSearch() {
                 to={`shared-logs${location.search}`}
               />
             </AppRoutedTabs>
-          </CurrentTimeProvider>
-        </LogGroupListStateProvider>
-      </PaginationProvider>
+          </LogGroupListStateProvider>
+        </PaginationProvider>
+      </SearchFilterProvider>
     </>
   );
 }

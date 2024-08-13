@@ -17,7 +17,6 @@ import { ArrowForwardIos } from '@mui/icons-material';
 import { Box, Alert, AlertTitle } from '@mui/material';
 import LinearProgress from '@mui/material/LinearProgress';
 import { useQuery } from '@tanstack/react-query';
-import { DateTime } from 'luxon';
 
 import {
   ParamsPager,
@@ -29,29 +28,26 @@ import { QueryInvocationVariantArtifactGroupsRequest } from '@/proto/go.chromium
 import { useResultDbClient } from '@/test_verdict/hooks/prpc_clients';
 import { OutputQueryInvocationVariantArtifactGroupsResponse } from '@/test_verdict/types';
 
-import { useInvocationLogPagerCtx } from '../contexts';
+import { SearchFilter, useInvocationLogPagerCtx } from '../contexts';
 import { FormData } from '../form_data';
 import { VariantLine } from '../variant_line';
 
-import { LogGroup } from './log_group_base';
+import { LogGroup } from './log_group';
 
 export interface InvocationLogsTableProps {
   readonly project: string;
-  readonly form: FormData;
-  readonly startTime: DateTime;
-  readonly endTime: DateTime;
+  readonly filter: SearchFilter;
 }
 
 export function InvocationLogsTable({
   project,
-  form,
-  startTime,
-  endTime,
+  filter,
 }: InvocationLogsTableProps) {
   const [searchParams] = useSyncedSearchParams();
   const pagerCtx = useInvocationLogPagerCtx();
   const pageSize = getPageSize(pagerCtx, searchParams);
   const pageToken = getPageToken(pagerCtx, searchParams);
+  const { form, startTime, endTime } = filter;
   const client = useResultDbClient();
   const { data, isLoading, error, isError } = useQuery({
     ...client.QueryInvocationVariantArtifactGroups.query(

@@ -15,12 +15,9 @@
 import { useParams } from 'react-router-dom';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { getAbsoluteStartEndTime } from '@/common/components/time_range_selector';
 import { useTabId } from '@/generic_libs/components/routed_tabs';
-import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
-import { useCurrentTime } from './contexts';
-import { FormData } from './form_data';
+import { useSearchFilter } from './contexts';
 import { InvocationLogDialog } from './log_list_dialog';
 import { InvocationLogsTable } from './log_table';
 
@@ -32,35 +29,17 @@ export function SharedLogsTab() {
   if (!project) {
     throw new Error('project must be set');
   }
+  const filter = useSearchFilter();
 
-  const [searchParams] = useSyncedSearchParams();
-
-  const form = FormData.fromSearchParam(searchParams);
-
-  const now = useCurrentTime();
-  const { startTime, endTime } = getAbsoluteStartEndTime(searchParams, now);
-  if (form && form.testIDStr.length > 0) {
-    return <>no matching log</>;
+  // Do NOT search for invocation level logs when a non-empty test id is provided.
+  if (filter && filter.form.testIDStr !== '') {
+    return <>No shared logs when search with test ID filter</>;
   }
   return (
-    form &&
-    startTime &&
-    endTime && (
-      <>
-        <InvocationLogsTable
-          project={project}
-          form={form}
-          startTime={startTime}
-          endTime={endTime}
-        />
-        <InvocationLogDialog
-          project={project}
-          form={form}
-          startTime={startTime}
-          endTime={endTime}
-        />
-      </>
-    )
+    <>
+      {filter && <InvocationLogsTable project={project} filter={filter} />}
+      <InvocationLogDialog project={project} />
+    </>
   );
 }
 

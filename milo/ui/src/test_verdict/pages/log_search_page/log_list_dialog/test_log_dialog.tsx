@@ -12,9 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { DateTime } from 'luxon';
-
-import { useLogGroupListState } from '../contexts';
+import { useLogGroupListState, useSearchFilter } from '../contexts';
 import { FormData } from '../form_data';
 import { VariantLine } from '../variant_line';
 
@@ -23,18 +21,11 @@ import { TestLogList } from './test_log_list';
 
 export interface TestLogDialogProps {
   readonly project: string;
-  readonly form: FormData;
-  readonly startTime: DateTime;
-  readonly endTime: DateTime;
 }
 
-export function TestLogDialog({
-  project,
-  form,
-  startTime,
-  endTime,
-}: TestLogDialogProps) {
+export function TestLogDialog({ project }: TestLogDialogProps) {
   const state = useLogGroupListState();
+  const filter = useSearchFilter();
   const { testLogGroupIdentifier } = state;
   if (!testLogGroupIdentifier) {
     return <></>;
@@ -69,13 +60,15 @@ export function TestLogDialog({
         </table>
       }
     >
-      <TestLogList
-        project={project}
-        logGroupIdentifer={testLogGroupIdentifier}
-        searchString={FormData.getSearchString(form)}
-        startTime={startTime.toString()}
-        endTime={endTime.toString()}
-      />
+      {filter && (
+        <TestLogList
+          project={project}
+          logGroupIdentifer={testLogGroupIdentifier}
+          searchString={FormData.getSearchString(filter.form)}
+          startTime={filter.startTime.toString()}
+          endTime={filter.endTime.toString()}
+        />
+      )}
     </LogDialogBase>
   );
 }

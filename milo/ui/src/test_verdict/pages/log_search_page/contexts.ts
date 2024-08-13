@@ -18,6 +18,8 @@ import { useContext, createContext, Dispatch } from 'react';
 import { PagerContext } from '@/common/components/params_pager';
 import { Variant } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/common.pb';
 
+import { FormData } from './form_data';
+
 export interface InvocationLogGroupIdentifier {
   readonly variantUnionHash: string;
   readonly variantUnion?: Variant;
@@ -106,19 +108,6 @@ export function useLogGroupListState() {
   return ctx;
 }
 
-/**
- * Provide a stable current time for children.
- */
-export const CurrentTimeCtx = createContext<DateTime | null>(null);
-
-export function useCurrentTime() {
-  const ctx = useContext(CurrentTimeCtx);
-  if (!ctx) {
-    throw new Error('useCurrentTime can only be used in a CurrentTimeProvider');
-  }
-  return ctx;
-}
-
 export interface LogPaginationState {
   readonly testLogPagerCtx: PagerContext;
   readonly invocationLogPagerCtx: PagerContext;
@@ -144,4 +133,29 @@ export function useInvocationLogPagerCtx() {
     );
   }
   return ctx.invocationLogPagerCtx;
+}
+
+export interface SearchFilter {
+  readonly form: FormData;
+  readonly startTime: DateTime;
+  readonly endTime: DateTime;
+}
+
+/**
+ * SearchFilterCtx holds all fields required for a log search.
+ * Use null to represent the filters are not set, and search should not be initiate.
+ * Use undefine to represent no matching provider in the tree above.
+ */
+export const SearchFilterCtx = createContext<SearchFilter | null | undefined>(
+  undefined,
+);
+
+export function useSearchFilter() {
+  const ctx = useContext(SearchFilterCtx);
+  if (ctx === undefined) {
+    throw new Error(
+      'useSearchFilter can only be used in a SearchFilterProvider',
+    );
+  }
+  return ctx;
 }

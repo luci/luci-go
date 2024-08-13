@@ -15,12 +15,9 @@
 import { useParams } from 'react-router-dom';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { getAbsoluteStartEndTime } from '@/common/components/time_range_selector';
 import { useTabId } from '@/generic_libs/components/routed_tabs';
-import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
-import { useCurrentTime } from './contexts';
-import { FormData } from './form_data';
+import { useSearchFilter } from './contexts';
 import { TestLogDialog } from './log_list_dialog';
 import { TestLogsTable } from './log_table';
 // TODO (beining@):
@@ -31,31 +28,15 @@ export function TestLogsTab() {
   if (!project) {
     throw new Error('project must be set');
   }
+  const searchFilter = useSearchFilter();
 
-  const [searchParams] = useSyncedSearchParams();
-  const form = FormData.fromSearchParam(searchParams);
-
-  const now = useCurrentTime();
-  const { startTime, endTime } = getAbsoluteStartEndTime(searchParams, now);
   return (
-    form &&
-    startTime &&
-    endTime && (
-      <>
-        <TestLogsTable
-          project={project}
-          form={form}
-          startTime={startTime}
-          endTime={endTime}
-        />
-        <TestLogDialog
-          project={project}
-          form={form}
-          startTime={startTime}
-          endTime={endTime}
-        />
-      </>
-    )
+    <>
+      {searchFilter && (
+        <TestLogsTable project={project} filter={searchFilter} />
+      )}
+      <TestLogDialog project={project} />
+    </>
   );
 }
 

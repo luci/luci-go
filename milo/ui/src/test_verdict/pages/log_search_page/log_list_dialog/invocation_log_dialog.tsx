@@ -12,9 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { DateTime } from 'luxon';
-
-import { useLogGroupListState } from '../contexts';
+import { useLogGroupListState, useSearchFilter } from '../contexts';
 import { FormData } from '../form_data';
 import { VariantLine } from '../variant_line';
 
@@ -23,18 +21,11 @@ import { LogDialogBase } from './log_dialog_base';
 
 export interface InvocationLogDialogProps {
   readonly project: string;
-  readonly form: FormData;
-  readonly startTime: DateTime;
-  readonly endTime: DateTime;
 }
 
-export function InvocationLogDialog({
-  project,
-  form,
-  startTime,
-  endTime,
-}: InvocationLogDialogProps) {
+export function InvocationLogDialog({ project }: InvocationLogDialogProps) {
   const { invocationLogGroupIdentifier } = useLogGroupListState();
+  const filter = useSearchFilter();
   if (!invocationLogGroupIdentifier) {
     return <></>;
   }
@@ -62,13 +53,15 @@ export function InvocationLogDialog({
         </table>
       }
     >
-      <InvocationLogList
-        project={project}
-        logGroupIdentifer={invocationLogGroupIdentifier}
-        searchString={FormData.getSearchString(form)}
-        startTime={startTime.toString()}
-        endTime={endTime.toString()}
-      />
+      {filter && (
+        <InvocationLogList
+          project={project}
+          logGroupIdentifer={invocationLogGroupIdentifier}
+          searchString={FormData.getSearchString(filter.form)}
+          startTime={filter.startTime.toString()}
+          endTime={filter.endTime.toString()}
+        />
+      )}
     </LogDialogBase>
   );
 }
