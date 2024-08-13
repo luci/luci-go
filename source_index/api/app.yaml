@@ -31,8 +31,8 @@ service: default
 luci_gae_vars:
   luci-source-index-dev:
     AUTH_SERVICE_HOST: chrome-infra-auth-dev.appspot.com
-    CONFIG_SERVICE_HOST: config.luci.app
     BACKEND_SERVICE_ACCOUNT: backend-service@luci-source-index-dev.iam.gserviceaccount.com
+    CONFIG_SERVICE_HOST: config.luci.app
     SPANNER_DB: projects/luci-source-index-dev/instances/dev/databases/luci-source-index-dev
     TS_MON_ACCOUNT: app-engine-metric-publishers@prodx-mon-chrome-infra.google.com.iam.gserviceaccount.com
 
