@@ -19,7 +19,7 @@ env_variables:
   DRY_RUN_CRON_STALE_AUTH: false
   DRY_RUN_TQ_CHANGELOG: false
   DRY_RUN_TQ_REPLICATION: false
-  ENABLE_GROUP_IMPORTS: false
+  ENABLE_GROUP_IMPORTS: true
 
 inbound_services:
 - warmup
