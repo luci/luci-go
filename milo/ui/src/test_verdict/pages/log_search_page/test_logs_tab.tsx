@@ -15,7 +15,6 @@
 import { useParams } from 'react-router-dom';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { usePagerContext } from '@/common/components/params_pager';
 import { getAbsoluteStartEndTime } from '@/common/components/time_range_selector';
 import { useTabId } from '@/generic_libs/components/routed_tabs';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
@@ -24,23 +23,16 @@ import { useCurrentTime } from './contexts';
 import { FormData } from './form_data';
 import { TestLogDialog } from './log_list_dialog';
 import { TestLogsTable } from './log_table';
-
 // TODO (beining@):
 // * link to log viewer.
 // * only perform the search after some validation of the form.
-// * make pagination working.
 export function TestLogsTab() {
   const { project } = useParams();
   if (!project) {
     throw new Error('project must be set');
   }
 
-  const pagerCtx = usePagerContext({
-    pageSizeOptions: [10, 20, 50, 100],
-    defaultPageSize: 10,
-  });
   const [searchParams] = useSyncedSearchParams();
-
   const form = FormData.fromSearchParam(searchParams);
 
   const now = useCurrentTime();
@@ -52,7 +44,6 @@ export function TestLogsTab() {
       <>
         <TestLogsTable
           project={project}
-          pagerCtx={pagerCtx}
           form={form}
           startTime={startTime}
           endTime={endTime}

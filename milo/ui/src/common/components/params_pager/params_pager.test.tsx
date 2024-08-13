@@ -28,6 +28,9 @@ function NavigationTestContainer() {
   const pagerCtx = usePagerContext({
     pageSizeOptions: [25, 50, 100, 200],
     defaultPageSize: 50,
+    // Keys should be set to default keys when empty string is provided.
+    pageSizeKey: '',
+    pageTokenKey: '',
   });
   const [searchParams] = useSyncedSearchParams();
   const pageToken = getPageToken(pagerCtx, searchParams);
@@ -49,6 +52,34 @@ function MultiplePagersTestContainer() {
     <>
       <ParamsPager pagerCtx={pagerCtx} nextPageToken={nextPageToken} />
       <ParamsPager pagerCtx={pagerCtx} nextPageToken={nextPageToken} />
+    </>
+  );
+}
+
+function MultipleCustomizeKeysTestContainer() {
+  const pagerCtx1 = usePagerContext({
+    pageSizeOptions: [25, 50, 100, 200],
+    defaultPageSize: 50,
+    pageSizeKey: 'q1limit',
+    pageTokenKey: 'q1cursor',
+  });
+  const pagerCtx2 = usePagerContext({
+    pageSizeOptions: [25, 50, 100, 200],
+    defaultPageSize: 50,
+    pageSizeKey: 'q2limit',
+    pageTokenKey: 'q2cursor',
+  });
+  const [searchParams] = useSyncedSearchParams();
+  const pageToken1 = getPageToken(pagerCtx1, searchParams);
+  const pageToken2 = getPageToken(pagerCtx2, searchParams);
+  const nextPageToken1 =
+    { '': 'q1page2', q1page2: 'q1page3', q1page3: '' }[pageToken1] || '';
+  const nextPageToken2 =
+    { '': 'q2page2', q2page2: 'q2page3', q2page3: '' }[pageToken2] || '';
+  return (
+    <>
+      <ParamsPager pagerCtx={pagerCtx1} nextPageToken={nextPageToken1} />
+      <ParamsPager pagerCtx={pagerCtx2} nextPageToken={nextPageToken2} />
     </>
   );
 }
@@ -218,5 +249,71 @@ describe('ParamsPager', () => {
     expect(prevPageLink).toHaveAttribute('aria-disabled', 'true');
     expect(nextPageLink).not.toHaveAttribute('aria-disabled', 'true');
     expect(nextPageLink).toHaveAttribute('href', '/?cursor=page2');
+  });
+
+  it('can customize pageSizeKey and pageTokenKey', async () => {
+    render(
+      <FakeContextProvider>
+        <MultipleCustomizeKeysTestContainer />
+      </FakeContextProvider>,
+    );
+
+    const [prevPageLink1, prevPageLink2] = screen.getAllByText('Previous Page');
+    const [nextPageLink1, nextPageLink2] = screen.getAllByText('Next Page');
+
+    expect(prevPageLink1).toHaveAttribute('aria-disabled', 'true');
+    expect(prevPageLink2).toHaveAttribute('aria-disabled', 'true');
+    expect(nextPageLink1).not.toHaveAttribute('aria-disabled', 'true');
+    expect(nextPageLink2).not.toHaveAttribute('aria-disabled', 'true');
+    expect(nextPageLink1).toHaveAttribute('href', '/?q1cursor=q1page2');
+    expect(nextPageLink2).toHaveAttribute('href', '/?q2cursor=q2page2');
+
+    fireEvent.click(nextPageLink1);
+    expect(prevPageLink1).not.toHaveAttribute('aria-disabled', 'true');
+    expect(prevPageLink1).toHaveAttribute('href', '/');
+    expect(nextPageLink1).not.toHaveAttribute('aria-disabled', 'true');
+    expect(nextPageLink1).toHaveAttribute('href', '/?q1cursor=q1page3');
+    expect(prevPageLink2).toHaveAttribute('aria-disabled', 'true');
+    expect(nextPageLink2).not.toHaveAttribute('aria-disabled', 'true');
+    expect(nextPageLink2).toHaveAttribute(
+      'href',
+      '/?q1cursor=q1page2&q2cursor=q2page2',
+    );
+
+    fireEvent.click(nextPageLink2);
+    expect(prevPageLink1).not.toHaveAttribute('aria-disabled', 'true');
+    expect(prevPageLink1).toHaveAttribute('href', '/?q2cursor=q2page2');
+    expect(nextPageLink1).not.toHaveAttribute('aria-disabled', 'true');
+    expect(nextPageLink1).toHaveAttribute(
+      'href',
+      '/?q1cursor=q1page3&q2cursor=q2page2',
+    );
+    expect(prevPageLink2).not.toHaveAttribute('aria-disabled', 'true');
+    expect(prevPageLink2).toHaveAttribute('href', '/?q1cursor=q1page2');
+    expect(nextPageLink2).not.toHaveAttribute('aria-disabled', 'true');
+    expect(nextPageLink2).toHaveAttribute(
+      'href',
+      '/?q1cursor=q1page2&q2cursor=q2page3',
+    );
+
+    fireEvent.click(prevPageLink1);
+    expect(prevPageLink1).toHaveAttribute('aria-disabled', 'true');
+    expect(nextPageLink1).not.toHaveAttribute('aria-disabled', 'true');
+    expect(nextPageLink1).toHaveAttribute(
+      'href',
+      '/?q2cursor=q2page2&q1cursor=q1page2',
+    );
+    expect(prevPageLink2).not.toHaveAttribute('aria-disabled', 'true');
+    expect(prevPageLink2).toHaveAttribute('href', '/');
+    expect(nextPageLink2).not.toHaveAttribute('aria-disabled', 'true');
+    expect(nextPageLink2).toHaveAttribute('href', '/?q2cursor=q2page3');
+
+    fireEvent.click(prevPageLink2);
+    expect(prevPageLink1).toHaveAttribute('aria-disabled', 'true');
+    expect(prevPageLink2).toHaveAttribute('aria-disabled', 'true');
+    expect(nextPageLink1).not.toHaveAttribute('aria-disabled', 'true');
+    expect(nextPageLink2).not.toHaveAttribute('aria-disabled', 'true');
+    expect(nextPageLink1).toHaveAttribute('href', '/?q1cursor=q1page2');
+    expect(nextPageLink2).toHaveAttribute('href', '/?q2cursor=q2page2');
   });
 });

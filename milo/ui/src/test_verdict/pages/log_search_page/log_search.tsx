@@ -17,6 +17,10 @@ import { DateTime } from 'luxon';
 import { useState, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 
+import {
+  emptyPageTokenUpdater,
+  usePagerContext,
+} from '@/common/components/params_pager';
 import { AppRoutedTab, AppRoutedTabs } from '@/common/components/routed_tabs';
 import { TimeRangeSelector } from '@/common/components/time_range_selector';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
@@ -27,7 +31,11 @@ import {
   REGEX_MATCH_OPTION,
 } from './constants';
 import { EMPTY_FORM, FormData } from './form_data';
-import { CurrentTimeProvider, LogGroupListStateProvider } from './providers';
+import {
+  CurrentTimeProvider,
+  LogGroupListStateProvider,
+  PaginationProvider,
+} from './providers';
 import { SelectTextField } from './select_text_field';
 const FormContainer = styled(Box)`
   margin: 10px;
@@ -42,6 +50,9 @@ const FormRowDiv = styled(Box)`
   margin: 10px;
 `;
 
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
+const DEFAULT_PAGE_SIZE = 10;
+
 // TODO(@beining) :
 // * implement some validation before sending request.
 export function LogSearch() {
@@ -50,10 +61,26 @@ export function LogSearch() {
   const [pendingForm, setPendingForm] = useState<FormData>(
     FormData.fromSearchParam(searchParams) || EMPTY_FORM,
   );
-
   // Persist current time between re-render, so that anchor for relative time calculation is consistent.
   // This improve the cache hit rate of log search queries.
   const nowRef = useRef(DateTime.now().toUTC());
+  const pagerContexts = {
+    testLogPagerCtx: usePagerContext({
+      pageSizeOptions: PAGE_SIZE_OPTIONS,
+      defaultPageSize: DEFAULT_PAGE_SIZE,
+      pageTokenKey: 'testLogCursor',
+      // Use the same page size key for both test log and invocation log,
+      // so that the the page limit is synchronized between both list.
+      // If user decides to use a different page size in one tab, they probably want the same in another tab.
+      pageSizeKey: 'limit',
+    }),
+    invocationLogPagerCtx: usePagerContext({
+      pageSizeOptions: PAGE_SIZE_OPTIONS,
+      defaultPageSize: DEFAULT_PAGE_SIZE,
+      pageTokenKey: 'invLogCursor',
+      pageSizeKey: 'limit',
+    }),
+  };
   return (
     <>
       <FormContainer>
@@ -137,6 +164,12 @@ export function LogSearch() {
           variant="contained"
           onClick={() => {
             setSearchParams(FormData.toSearchParamUpdater(pendingForm));
+            setSearchParams(
+              emptyPageTokenUpdater(pagerContexts.invocationLogPagerCtx),
+            );
+            setSearchParams(
+              emptyPageTokenUpdater(pagerContexts.testLogPagerCtx),
+            );
           }}
         >
           Search
@@ -147,22 +180,24 @@ export function LogSearch() {
           Query will be slow without an test ID filter or log file filter.
         </Alert>
       )}
-      <LogGroupListStateProvider>
-        <CurrentTimeProvider now={nowRef.current}>
-          <AppRoutedTabs>
-            <AppRoutedTab
-              label="Test result logs"
-              value="test-logs"
-              to={`test-logs${location.search}`}
-            />
-            <AppRoutedTab
-              label="Shared logs"
-              value="shared-logs"
-              to={`shared-logs${location.search}`}
-            />
-          </AppRoutedTabs>
-        </CurrentTimeProvider>
-      </LogGroupListStateProvider>
+      <PaginationProvider state={pagerContexts}>
+        <LogGroupListStateProvider>
+          <CurrentTimeProvider now={nowRef.current}>
+            <AppRoutedTabs>
+              <AppRoutedTab
+                label="Test result logs"
+                value="test-logs"
+                to={`test-logs${location.search}`}
+              />
+              <AppRoutedTab
+                label="Shared logs"
+                value="shared-logs"
+                to={`shared-logs${location.search}`}
+              />
+            </AppRoutedTabs>
+          </CurrentTimeProvider>
+        </LogGroupListStateProvider>
+      </PaginationProvider>
     </>
   );
 }

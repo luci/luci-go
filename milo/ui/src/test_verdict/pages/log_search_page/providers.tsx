@@ -13,12 +13,15 @@
 // limitations under the License.
 
 import { DateTime } from 'luxon';
-import { ReactNode, useReducer, createContext } from 'react';
+import { ReactNode, useReducer } from 'react';
 
 import {
   reducer,
   LogGroupListDispatcherCtx,
   LogGroupListStateCtx,
+  CurrentTimeCtx,
+  PaginationCtx,
+  LogPaginationState,
 } from './contexts';
 
 export interface LogGroupListStateProviderProps {
@@ -42,11 +45,6 @@ export function LogGroupListStateProvider({
   );
 }
 
-/**
- * Provide a stable current time for children.
- */
-export const CurrentTimeCtx = createContext<DateTime | null>(null);
-
 export interface CurrentTimeProviderProps {
   readonly now: DateTime;
   readonly children: ReactNode;
@@ -58,5 +56,19 @@ export function CurrentTimeProvider({
 }: CurrentTimeProviderProps) {
   return (
     <CurrentTimeCtx.Provider value={now}>{children}</CurrentTimeCtx.Provider>
+  );
+}
+
+export interface PaginationProviderProps {
+  readonly state: LogPaginationState;
+  readonly children: ReactNode;
+}
+
+export function PaginationProvider({
+  state,
+  children,
+}: PaginationProviderProps) {
+  return (
+    <PaginationCtx.Provider value={state}>{children}</PaginationCtx.Provider>
   );
 }

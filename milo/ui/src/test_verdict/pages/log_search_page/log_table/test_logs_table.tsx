@@ -24,13 +24,13 @@ import {
   getPageSize,
   getPageToken,
 } from '@/common/components/params_pager';
-import { PagerContext } from '@/common/components/params_pager/context';
 import { getTestHistoryURLPath } from '@/common/tools/url_utils';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { QueryTestVariantArtifactGroupsRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 import { useResultDbClient } from '@/test_verdict/hooks/prpc_clients';
 import { OutputQueryTestVariantArtifactGroupsResponse } from '@/test_verdict/types';
 
+import { useTestLogPagerCtx } from '../contexts';
 import { FormData } from '../form_data';
 import { VariantLine } from '../variant_line';
 
@@ -38,7 +38,6 @@ import { LogGroup } from './log_group_base';
 
 export interface TestLogsTableProps {
   readonly project: string;
-  readonly pagerCtx: PagerContext;
   readonly form: FormData;
   readonly startTime: DateTime;
   readonly endTime: DateTime;
@@ -47,11 +46,11 @@ export interface TestLogsTableProps {
 export function TestLogsTable({
   project,
   form,
-  pagerCtx,
   startTime,
   endTime,
 }: TestLogsTableProps) {
   const [searchParams] = useSyncedSearchParams();
+  const pagerCtx = useTestLogPagerCtx();
   const pageSize = getPageSize(pagerCtx, searchParams);
   const pageToken = getPageToken(pagerCtx, searchParams);
   const client = useResultDbClient();

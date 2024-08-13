@@ -30,8 +30,7 @@
  *    component under which the pager and the state (e.g. page size, page token)
  *    it hold is used. As long as the pager is used in any form in the
  *    component, the pager state will not be discarded, even when the pager
- *    component itself is not rendered. In the future, we may allow configuring
- *    search param keys used to store the states.
+ *    component itself is not rendered.
  * 3. Hold most pager configuration in the pager context.
  *    This ensures the pager component and the pager state getters/setters uses
  *    the same set of configuration. If different sets of configurations are
@@ -40,14 +39,12 @@
  *    page size used in the query is 50 but the highlighted selected page size
  *    is 25). Some pager configuration (e.g. `nextPageToken`) are not hold in
  *    the context because they may have not been initialized when pager context
- *    is constructed. In the future, we may allow configuring search param keys
- *    used to store the states.
+ *    is constructed.
  */
 
 import { useRef } from 'react';
 
-const PAGE_SIZE_KEY = 'limit';
-const PAGE_TOKEN_KEY = 'cursor';
+import { NonNullableProps } from '@/generic_libs/types';
 
 export interface PagerOptions {
   /**
@@ -58,6 +55,16 @@ export interface PagerOptions {
    * The default page size.
    */
   readonly defaultPageSize: number;
+  /**
+   * URL search parameter key for page size.
+   * Default to 'limit' when undefined or empty string is provided.
+   */
+  readonly pageSizeKey?: string;
+  /**
+   * URL search parameter key for page token.
+   * Default to 'cursor' when undefined or empty string is provided.
+   */
+  readonly pageTokenKey?: string;
   /**
    * Called when user navigates to the previous page *in the current browser
    * tab*.
@@ -85,7 +92,8 @@ export interface PagerOptions {
 // DO NOT EXPORT OUTSIDE OF param_pager module.
 //
 // So the state is private to the params_pager module.
-export interface PagerState extends PagerOptions {
+export interface PagerState
+  extends NonNullableProps<PagerOptions, 'pageSizeKey' | 'pageTokenKey'> {
   /**
    * Hold the previous page tokens.
    *
@@ -109,8 +117,10 @@ export function usePagerContext(options: PagerOptions): PagerContext {
   const prevTokens = useRef<string[]>([]);
   return {
     [stateSymbol]: {
-      prevTokens: prevTokens.current,
       ...options,
+      pageSizeKey: options.pageSizeKey || 'limit',
+      pageTokenKey: options.pageTokenKey || 'cursor',
+      prevTokens: prevTokens.current,
     },
   };
 }
@@ -124,7 +134,8 @@ export function getState(pagerCtx: PagerContext) {
 
 export function getPageSize(pagerCtx: PagerContext, params: URLSearchParams) {
   return (
-    Number(params.get(PAGE_SIZE_KEY)) || pagerCtx[stateSymbol].defaultPageSize
+    Number(params.get(pagerCtx[stateSymbol].pageSizeKey)) ||
+    pagerCtx[stateSymbol].defaultPageSize
   );
 }
 
@@ -132,28 +143,25 @@ export function pageSizeUpdater(pagerCtx: PagerContext, newPageSize: number) {
   return (params: URLSearchParams) => {
     const searchParams = new URLSearchParams(params);
     if (newPageSize === pagerCtx[stateSymbol].defaultPageSize) {
-      searchParams.delete(PAGE_SIZE_KEY);
+      searchParams.delete(pagerCtx[stateSymbol].pageSizeKey);
     } else {
-      searchParams.set(PAGE_SIZE_KEY, String(newPageSize));
+      searchParams.set(pagerCtx[stateSymbol].pageSizeKey, String(newPageSize));
     }
     return searchParams;
   };
 }
 
-export function getPageToken(_pagerCtx: PagerContext, params: URLSearchParams) {
-  return params.get(PAGE_TOKEN_KEY) || '';
+export function getPageToken(pagerCtx: PagerContext, params: URLSearchParams) {
+  return params.get(pagerCtx[stateSymbol].pageTokenKey) || '';
 }
 
-export function pageTokenUpdater(
-  _pagerCtx: PagerContext,
-  newPageToken: string,
-) {
+export function pageTokenUpdater(pagerCtx: PagerContext, newPageToken: string) {
   return (params: URLSearchParams) => {
     const searchParams = new URLSearchParams(params);
     if (!newPageToken) {
-      searchParams.delete(PAGE_TOKEN_KEY);
+      searchParams.delete(pagerCtx[stateSymbol].pageTokenKey);
     } else {
-      searchParams.set(PAGE_TOKEN_KEY, newPageToken);
+      searchParams.set(pagerCtx[stateSymbol].pageTokenKey, newPageToken);
     }
     return searchParams;
   };

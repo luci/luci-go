@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { DateTime } from 'luxon';
 import { useContext, createContext, Dispatch } from 'react';
 
+import { PagerContext } from '@/common/components/params_pager';
 import { Variant } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/common.pb';
-
-import { CurrentTimeCtx } from './providers';
 
 export interface InvocationLogGroupIdentifier {
   readonly variantUnionHash: string;
@@ -106,10 +106,42 @@ export function useLogGroupListState() {
   return ctx;
 }
 
+/**
+ * Provide a stable current time for children.
+ */
+export const CurrentTimeCtx = createContext<DateTime | null>(null);
+
 export function useCurrentTime() {
   const ctx = useContext(CurrentTimeCtx);
   if (!ctx) {
     throw new Error('useCurrentTime can only be used in a CurrentTimeProvider');
   }
   return ctx;
+}
+
+export interface LogPaginationState {
+  readonly testLogPagerCtx: PagerContext;
+  readonly invocationLogPagerCtx: PagerContext;
+}
+
+export const PaginationCtx = createContext<LogPaginationState | null>(null);
+
+export function useTestLogPagerCtx() {
+  const ctx = useContext(PaginationCtx);
+  if (!ctx) {
+    throw new Error(
+      'useTestLogPagerCtx can only be used in a PaginationProvider',
+    );
+  }
+  return ctx.testLogPagerCtx;
+}
+
+export function useInvocationLogPagerCtx() {
+  const ctx = useContext(PaginationCtx);
+  if (!ctx) {
+    throw new Error(
+      'useInvocationLogPagerCtx can only be used in a PaginationProvider',
+    );
+  }
+  return ctx.invocationLogPagerCtx;
 }

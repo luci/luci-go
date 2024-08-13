@@ -24,12 +24,12 @@ import {
   getPageSize,
   getPageToken,
 } from '@/common/components/params_pager';
-import { PagerContext } from '@/common/components/params_pager/context';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { QueryInvocationVariantArtifactGroupsRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 import { useResultDbClient } from '@/test_verdict/hooks/prpc_clients';
 import { OutputQueryInvocationVariantArtifactGroupsResponse } from '@/test_verdict/types';
 
+import { useInvocationLogPagerCtx } from '../contexts';
 import { FormData } from '../form_data';
 import { VariantLine } from '../variant_line';
 
@@ -37,7 +37,6 @@ import { LogGroup } from './log_group_base';
 
 export interface InvocationLogsTableProps {
   readonly project: string;
-  readonly pagerCtx: PagerContext;
   readonly form: FormData;
   readonly startTime: DateTime;
   readonly endTime: DateTime;
@@ -46,11 +45,11 @@ export interface InvocationLogsTableProps {
 export function InvocationLogsTable({
   project,
   form,
-  pagerCtx,
   startTime,
   endTime,
 }: InvocationLogsTableProps) {
   const [searchParams] = useSyncedSearchParams();
+  const pagerCtx = useInvocationLogPagerCtx();
   const pageSize = getPageSize(pagerCtx, searchParams);
   const pageToken = getPageToken(pagerCtx, searchParams);
   const client = useResultDbClient();
