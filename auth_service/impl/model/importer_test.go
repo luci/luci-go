@@ -330,7 +330,7 @@ func TestIngestTarball(t *testing.T) {
 
 		Convey("not configured", func() {
 			_, _, err := IngestTarball(ctx, "test_groups.tar.gz", nil)
-			So(err, ShouldErrLike, "not configured")
+			So(err, ShouldErrLike, ErrImporterNotConfigured)
 		})
 
 		Convey("with importer configuration set", func() {
@@ -339,18 +339,25 @@ func TestIngestTarball(t *testing.T) {
 
 			Convey("invalid tarball name", func() {
 				_, _, err := IngestTarball(ctx, "", nil)
-				So(err, ShouldErrLike, "empty tarball name")
+				So(err, ShouldErrLike, ErrInvalidTarballName, "empty")
 			})
 			Convey("unknown tarball", func() {
 				_, _, err := IngestTarball(ctx, "zzz", nil)
-				So(err, ShouldErrLike, "entry not found")
+				So(err, ShouldErrLike, ErrInvalidTarballName, "not supported")
 			})
 			Convey("unauthorized", func() {
 				ctx = auth.WithState(ctx, &authtest.FakeState{
 					Identity: "user:someone@example.com",
 				})
 				_, _, err := IngestTarball(ctx, "test_groups.tar.gz", bytes.NewReader(bundle))
-				So(err, ShouldErrLike, `"someone@example.com" is not an authorized uploader`)
+				So(err, ShouldErrLike, ErrUnauthorizedUploader, `"someone@example.com"`)
+			})
+			Convey("invalid tarball data", func() {
+				ctx = auth.WithState(ctx, &authtest.FakeState{
+					Identity: "user:test-push-cron@system.example.com",
+				})
+				_, _, err := IngestTarball(ctx, "test_groups.tar.gz", bytes.NewReader(nil))
+				So(err, ShouldErrLike, ErrInvalidTarball, "EOF")
 			})
 
 			Convey("actually imports groups", func() {

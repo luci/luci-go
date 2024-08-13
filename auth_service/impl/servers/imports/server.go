@@ -18,7 +18,11 @@ package imports
 import (
 	"encoding/json"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/auth_service/impl/model"
@@ -37,7 +41,19 @@ func HandleTarballIngestHandler(ctx *router.Context) error {
 	tarballName := ctx.Params.ByName("tarballName")
 	groups, revision, err := model.IngestTarball(c, tarballName, r.Body)
 	if err != nil {
-		return err
+		switch {
+		case errors.Is(err, model.ErrInvalidTarball):
+			// Loading the tarball is only attempted once the caller has been
+			// verified as an authorized uploader, so we can return the actual
+			// error message.
+			return status.Errorf(codes.InvalidArgument, err.Error())
+		default:
+			// Log the actual error then only return a generic permission error,
+			// to avoid leaking information about the importer config.
+			exposedErr := "unauthorized tarball upload"
+			logging.Errorf(c, "%w", err)
+			return status.Errorf(codes.PermissionDenied, exposedErr)
+		}
 	}
 
 	groupResp, err := json.Marshal(GroupsJSON{
@@ -55,5 +71,5 @@ func HandleTarballIngestHandler(ctx *router.Context) error {
 		return errors.Annotate(err, "Error while writing JSON").Err()
 	}
 
-	return err
+	return nil
 }

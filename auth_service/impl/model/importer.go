@@ -48,7 +48,16 @@ const (
 )
 
 var (
+	// ErrConcurrentAuthDBUpdate signifies the AuthDB was modified in a concurrent transaction.
 	ErrConcurrentAuthDBUpdate = errors.New("AuthDB changed between transactions")
+	// ErrImporterNotConfigured is returned if there is no importer config.
+	ErrImporterNotConfigured = errors.New("no importer config")
+	// ErrInvalidTarball is returned if the tarball data is invalid.
+	ErrInvalidTarball = errors.New("invalid tarball data")
+	// ErrInvalidTarballName is returned if the tarball name is invalid.
+	ErrInvalidTarballName = errors.New("invalid tarball name")
+	// ErrUnauthorizedUploader is returned if the caller is not authorized to upload a given tarball.
+	ErrUnauthorizedUploader = errors.New("unauthorized tarball uploader")
 )
 
 // Imports groups from some external tar.gz bundle or plain text list.
@@ -206,18 +215,19 @@ func updateGroupImporterConfig(ctx context.Context, importsCfg *configspb.GroupI
 //	[]string - list of modified groups
 //	int64 - authDBRevision
 //	error
-//		tarball name is empty
-//		entry not found in tarball upload config
-//		unauthorized uploader
-//		bad tarball structure
+//		ErrImporterNotConfigured if no importer config
+//		ErrUnauthorizedUploader if caller is an unauthorized uploader
+//		ErrInvalidTarballName if tarball name is empty
+//		ErrInvalidTarballName if entry not found in tarball upload config
+//		ErrInvalidTarball if bad tarball structure
 func IngestTarball(ctx context.Context, name string, content io.Reader) ([]string, int64, error) {
 	if name == "" {
-		return nil, 0, errors.New("invalid - empty tarball name")
+		return nil, 0, fmt.Errorf("%w: empty", ErrInvalidTarballName)
 	}
 
 	importsConfig, err := importscfg.Get(ctx)
 	if err != nil {
-		return nil, 0, errors.New("not configured")
+		return nil, 0, ErrImporterNotConfigured
 	}
 
 	// Make sure the tarball_upload entry is specified in the config.
@@ -229,17 +239,18 @@ func IngestTarball(ctx context.Context, name string, content io.Reader) ([]strin
 		}
 	}
 	if entry == nil {
-		return nil, 0, errors.New("entry not found in tarball upload names")
+		return nil, 0, fmt.Errorf("%w: not supported in importer config",
+			ErrInvalidTarballName)
 	}
 
 	caller := auth.CurrentIdentity(ctx)
 	if !contains(caller.Email(), entry.AuthorizedUploader) {
-		return nil, 0, errors.New(fmt.Sprintf("%q is not an authorized uploader", caller.Email()))
+		return nil, 0, fmt.Errorf("%w: %q", ErrUnauthorizedUploader, caller.Email())
 	}
 
 	bundles, err := loadTarball(ctx, content, entry.GetDomain(), entry.GetSystems(), entry.GetGroups())
 	if err != nil {
-		return nil, 0, errors.Annotate(err, "bad tarball").Err()
+		return nil, 0, fmt.Errorf("%w: %s", ErrInvalidTarball, err.Error())
 	}
 
 	return importBundles(ctx, bundles, caller, nil)

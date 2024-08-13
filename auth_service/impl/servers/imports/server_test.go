@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/julienschmidt/httprouter"
+	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
@@ -87,7 +88,6 @@ func TestIngestTarball(t *testing.T) {
 				},
 			},
 		}
-		So(importscfg.SetConfig(ctx, testConfig), ShouldBeNil)
 		So(datastore.Put(ctx, &model.AuthDBSnapshotLatest{
 			Kind:         "AuthDBSnapshotLatest",
 			ID:           "latest",
@@ -96,33 +96,50 @@ func TestIngestTarball(t *testing.T) {
 			ModifiedTS:   time.Date(2021, time.August, 16, 12, 20, 0, 0, time.UTC),
 		}), ShouldBeNil)
 
-		Convey("Empty tarball", func() {
-			_, err := callEndpoint(ctx, "test_groups.tar.gz", io.NopCloser(bytes.NewReader(nil)))
-			So(err, ShouldErrLike, "bad tarball: EOF")
+		tarfile := testsupport.BuildTargz(map[string][]byte{
+			"at_root":      []byte("a\nb"),
+			"test/group-1": []byte("a@example.com\nb@example.com"),
+			"test/group-2": []byte("a@example.com\nb@example.com"),
 		})
 
-		Convey("Happy", func() {
-			tarfile := testsupport.BuildTargz(map[string][]byte{
-				"at_root":      []byte("a\nb"),
-				"test/group-1": []byte("a@example.com\nb@example.com"),
-				"test/group-2": []byte("a@example.com\nb@example.com"),
+		Convey("not configured", func() {
+			_, err := callEndpoint(ctx, "test_groups.tar.gz", io.NopCloser(bytes.NewReader(nil)))
+			So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
+		})
+
+		Convey("with importer configuration", func() {
+			So(importscfg.SetConfig(ctx, testConfig), ShouldBeNil)
+
+			Convey("not authorized", func() {
+				ctx = auth.WithState(ctx, &authtest.FakeState{
+					Identity: "user:somebody@example.com",
+				})
+				_, err := callEndpoint(ctx, "test_groups.tar.gz", io.NopCloser(bytes.NewReader(tarfile)))
+				So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
 			})
 
-			res, err := callEndpoint(ctx, "test_groups.tar.gz", io.NopCloser(bytes.NewReader(tarfile)))
-			So(err, ShouldBeNil)
+			Convey("empty tarball", func() {
+				_, err := callEndpoint(ctx, "test_groups.tar.gz", io.NopCloser(bytes.NewReader(nil)))
+				So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+			})
 
-			actual := GroupsJSON{}
-			So(json.Unmarshal(res, &actual), ShouldBeNil)
+			Convey("groups actually imported", func() {
+				res, err := callEndpoint(ctx, "test_groups.tar.gz", io.NopCloser(bytes.NewReader(tarfile)))
+				So(err, ShouldBeNil)
 
-			expected := GroupsJSON{
-				Groups: []string{
-					"test/group-1",
-					"test/group-2",
-				},
-				AuthDBRev: 1,
-			}
-			So(actual, ShouldResemble, expected)
-			So(taskScheduler.Tasks(), ShouldHaveLength, 2)
+				actual := GroupsJSON{}
+				So(json.Unmarshal(res, &actual), ShouldBeNil)
+
+				expected := GroupsJSON{
+					Groups: []string{
+						"test/group-1",
+						"test/group-2",
+					},
+					AuthDBRev: 1,
+				}
+				So(actual, ShouldResemble, expected)
+				So(taskScheduler.Tasks(), ShouldHaveLength, 2)
+			})
 		})
 	})
 }
