@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/metric"
+	"go.chromium.org/luci/common/tsmon/monitor"
 	"go.chromium.org/luci/common/tsmon/registry"
 	"go.chromium.org/luci/common/tsmon/store"
 	"go.chromium.org/luci/common/tsmon/types"
@@ -211,7 +212,7 @@ func convertFields(fieldKeys []string, fieldMap map[string]string) []any {
 // to the new cms.state.
 //
 // Called by a backendground job periodically. Must not be called concurrently.
-func (cms *CustomMetrics) Flush(ctx context.Context, globalCfg *pb.SettingsCfg) error {
+func (cms *CustomMetrics) Flush(ctx context.Context, globalCfg *pb.SettingsCfg, mon monitor.Monitor) error {
 	cms.m.RLock()
 	state := cms.state
 	metrics := cms.metrics
@@ -226,7 +227,7 @@ func (cms *CustomMetrics) Flush(ctx context.Context, globalCfg *pb.SettingsCfg) 
 	newCmsInCfg := convertCustomMetricConfig(globalCfg)
 	needUpdate := checkUpdates(newCmsInCfg)
 	if !needUpdate {
-		return state.Flush(ctx, nil)
+		return state.ParallelFlush(ctx, mon, 4)
 	}
 
 	// Need to update cms.metrics and recreate cms.state.

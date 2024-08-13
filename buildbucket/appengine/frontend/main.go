@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/tsmon/monitor"
 	"go.chromium.org/luci/config/server/cfgmodule"
 	"go.chromium.org/luci/gae/filter/dscache"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -44,6 +45,7 @@ import (
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/tq"
+	tsmonsrv "go.chromium.org/luci/server/tsmon"
 
 	// Store auth sessions in the datastore.
 	_ "go.chromium.org/luci/server/encryptedcookies/session/datastore"
@@ -82,26 +84,6 @@ func handlePubSubMessage(ctx *router.Context, identity identity.Identity, handle
 	}
 }
 
-func flushCustomMetricsPeriodically(ctx context.Context) {
-	for {
-		if r := <-clock.After(ctx, time.Minute); r.Err != nil {
-			return // the context is canceled
-		}
-
-		globalCfg, err := config.GetSettingsCfg(ctx)
-		if err != nil {
-			logging.Errorf(ctx, "failed to get service config: %s", err)
-			continue
-		}
-
-		cms := metrics.GetCustomMetrics(ctx)
-		err = cms.Flush(ctx, globalCfg)
-		if err != nil {
-			logging.Errorf(ctx, "failed to flush custom metrics: %s", err)
-		}
-	}
-}
-
 func main() {
 	mods := []module.Module{
 		bqlog.NewModuleFromFlags(),
@@ -126,8 +108,39 @@ func main() {
 			return errors.Annotate(err, "failed to create custom metrics").Err()
 		}
 
+		var mon monitor.Monitor
+		switch {
+		case o.Prod && o.TsMonAccount != "":
+			var err error
+			mon, err = tsmonsrv.NewProdXMonitor(srv.Context, 500, o.TsMonAccount)
+			if err != nil {
+				return errors.Annotate(err, "initiating tsmon").Err()
+			}
+		case !o.Prod:
+			mon = monitor.NewDebugMonitor("")
+		default:
+			mon = monitor.NewNilMonitor()
+		}
 		// Periodically Flush custom metrics
-		srv.RunInBackground("flush_custom_metrics", flushCustomMetricsPeriodically)
+		srv.RunInBackground("flush_custom_metrics", func(ctx context.Context) {
+			for {
+				if r := <-clock.After(ctx, time.Minute); r.Err != nil {
+					return // the context is canceled
+				}
+
+				globalCfg, err := config.GetSettingsCfg(ctx)
+				if err != nil {
+					logging.Errorf(ctx, "failed to get service config: %s", err)
+					continue
+				}
+
+				cms := metrics.GetCustomMetrics(ctx)
+				err = cms.Flush(ctx, globalCfg, mon)
+				if err != nil {
+					logging.Errorf(ctx, "failed to flush custom metrics: %s", err)
+				}
+			}
+		})
 
 		// Install a global bigquery client.
 		bqClient, err := clients.NewBqClient(srv.Context, o.CloudProject)

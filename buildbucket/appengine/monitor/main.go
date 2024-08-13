@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/tsmon"
+	"go.chromium.org/luci/common/tsmon/monitor"
 	"go.chromium.org/luci/common/tsmon/store"
 	"go.chromium.org/luci/common/tsmon/target"
 
@@ -70,9 +71,18 @@ func main() {
 			return errors.Annotate(err, "failed to create custom metrics").Err()
 		}
 
-		mon, err := tsmonsrv.NewProdXMonitor(ctx, 1024, o.TsMonAccount)
-		if err != nil {
-			srv.Fatal(errors.Annotate(err, "initiating tsmon").Err())
+		var mon monitor.Monitor
+		switch {
+		case o.Prod && o.TsMonAccount != "":
+			var err error
+			mon, err = tsmonsrv.NewProdXMonitor(srv.Context, 1024, o.TsMonAccount)
+			if err != nil {
+				srv.Fatal(errors.Annotate(err, "initiating tsmon").Err())
+			}
+		case !o.Prod:
+			mon = monitor.NewDebugMonitor("")
+		default:
+			mon = monitor.NewNilMonitor()
 		}
 
 		cron.RegisterHandler("report_builder_metrics", func(_ context.Context) error {
@@ -106,7 +116,7 @@ func main() {
 				}
 
 				cms := metrics.GetCustomMetrics(ctx)
-				err2 = cms.Flush(ctx, globalCfg)
+				err2 = cms.Flush(ctx, globalCfg, mon)
 			}()
 
 			wg.Wait()

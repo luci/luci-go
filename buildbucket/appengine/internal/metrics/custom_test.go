@@ -22,6 +22,7 @@ import (
 	"google.golang.org/protobuf/encoding/prototext"
 
 	"go.chromium.org/luci/common/tsmon"
+	"go.chromium.org/luci/common/tsmon/monitor"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 
@@ -126,7 +127,7 @@ func TestUpdateCustomMetrics(t *testing.T) {
 				},
 				Value: int64(1),
 			})
-			err := cms.Flush(ctx, globalCfg)
+			err := cms.Flush(ctx, globalCfg, monitor.NewNilMonitor())
 			So(err, ShouldBeNil)
 		})
 
@@ -138,7 +139,7 @@ func TestUpdateCustomMetrics(t *testing.T) {
 			go func() {
 				defer wg.Done()
 				cms := GetCustomMetrics(ctx)
-				_ = cms.Flush(ctx, globalCfg)
+				_ = cms.Flush(ctx, globalCfg, monitor.NewNilMonitor())
 			}()
 
 			for i := 0; i < 10; i++ {
