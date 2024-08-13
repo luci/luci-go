@@ -6,3 +6,7 @@ dispatch:
   service: backendv2
 - url: "*/internal/tasks/t/changelog-generation/*"
   service: backendv2
+# Add override of routing for tarball ingestion so importing of
+# groups is handled only by the Go version.
+- url: "*/auth_service/api/v1/importer/ingest_tarball/*"
+  service: defaultv2
