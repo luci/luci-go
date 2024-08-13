@@ -280,7 +280,7 @@ func loadTarball(ctx context.Context, content io.Reader, domain string, systems,
 			logging.Warningf(ctx, "Skipping file %s, not allowed", filename)
 			continue
 		}
-		identities, err := loadGroupFile(ctx, string(fileobj), domain)
+		identities, err := loadGroupFile(string(fileobj), domain)
 		if err != nil {
 			return nil, err
 		}
@@ -292,7 +292,7 @@ func loadTarball(ctx context.Context, content io.Reader, domain string, systems,
 	return bundles, nil
 }
 
-func loadGroupFile(ctx context.Context, identities string, domain string) ([]identity.Identity, error) {
+func loadGroupFile(identities string, domain string) ([]identity.Identity, error) {
 	memsSplit := strings.Split(identities, "\n")
 	uniqueMembers := make(map[identity.Identity]struct{}, len(memsSplit))
 	for _, uid := range memsSplit {
@@ -309,7 +309,6 @@ func loadGroupFile(ctx context.Context, identities string, domain string) ([]ide
 		// "name%domain@gtempaccount.com". Convert them to "name@domain".
 		// See https://support.google.com/a/answer/185186?hl=en
 		if strings.HasSuffix(ident, gTempSuffix) {
-			logging.Warningf(ctx, "found %s account: %s", gTempSuffix, ident)
 			ident = strings.TrimSuffix(ident, gTempSuffix)
 			ident = strings.ReplaceAll(ident, "%", "@")
 		}
