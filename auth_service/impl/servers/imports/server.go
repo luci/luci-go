@@ -50,9 +50,9 @@ func HandleTarballIngestHandler(ctx *router.Context) error {
 		default:
 			// Log the actual error then only return a generic permission error,
 			// to avoid leaking information about the importer config.
-			exposedErr := "unauthorized tarball upload"
 			logging.Errorf(c, "%w", err)
-			return status.Errorf(codes.PermissionDenied, exposedErr)
+			err = model.ErrUnauthorizedUploader
+			return status.Errorf(codes.PermissionDenied, err.Error())
 		}
 	}
 
