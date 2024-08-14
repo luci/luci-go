@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"time"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/service/datastore"
 )
 
@@ -148,6 +149,13 @@ func (t *TaskToRun) IsReapable() bool {
 	return t.Expiration.IsSet()
 }
 
+// Consume moves t into non-reapable state (e.g. when canceling).
+func (t *TaskToRun) Consume(claimID string) {
+	t.ClaimID = datastore.NewUnindexedOptional(claimID)
+	t.Expiration = datastore.Optional[time.Time, datastore.Indexed]{}
+	t.QueueNumber = datastore.Optional[int64, datastore.Indexed]{}
+}
+
 // TaskToRunKey builds a TaskToRun key given the task request key, the entity
 // kind shard index and the task to run ID.
 func TaskToRunKey(ctx context.Context, taskReq *datastore.Key, shardIdx int32, ttrID int64) *datastore.Key {
@@ -157,4 +165,20 @@ func TaskToRunKey(ctx context.Context, taskReq *datastore.Key, shardIdx int32, t
 // TaskToRunKind returns the TaskToRun entity kind name given a shard index.
 func TaskToRunKind(shardIdx int32) string {
 	return fmt.Sprintf("TaskToRunShard%d", shardIdx)
+}
+
+// TaskRequestToToRunKey builds a TaskToRun key given the task request and the
+// slice index.
+func TaskRequestToToRunKey(ctx context.Context, taskReq *TaskRequest, sliceIndex int) (*datastore.Key, error) {
+	if sliceIndex < 0 || sliceIndex >= len(taskReq.TaskSlices) {
+		return nil, errors.Reason("sliceIndex %d out of range: [0, %d)", sliceIndex, len(taskReq.TaskSlices)).Err()
+	}
+	shardIndex := sliceToToRunShardIndex(taskReq.TaskSlices[sliceIndex])
+	ttrID := int64(1 | (sliceIndex << 4))
+	return TaskToRunKey(ctx, taskReq.Key, shardIndex, ttrID), nil
+}
+
+func sliceToToRunShardIndex(slice TaskSlice) int32 {
+	hash := slice.Properties.Dimensions.Hash()
+	return int32(hash % TaskToRunShards)
 }
