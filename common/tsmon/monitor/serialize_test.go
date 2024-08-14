@@ -154,7 +154,8 @@ func TestSerializeCell(t *testing.T) {
 	Convey("Counter", t, func() {
 		ret := SerializeCells([]types.Cell{{
 			types.MetricInfo{
-				Name:        "foo",
+				// Metric name with "/" prefix will be used as it is.
+				Name:        "/foo",
 				Description: "bar",
 				Fields:      []field.Field{},
 				ValueType:   types.CumulativeIntType,
@@ -170,7 +171,7 @@ func TestSerializeCell(t *testing.T) {
 		So(ret, ShouldResemble, []*pb.MetricsCollection{{
 			RootLabels: emptyTaskRootLabels,
 			MetricsDataSet: []*pb.MetricsDataSet{{
-				MetricName:      proto.String("/chrome/infra/foo"),
+				MetricName:      proto.String("/foo"),
 				FieldDescriptor: []*pb.MetricsDataSet_MetricFieldDescriptor{},
 				StreamKind:      pb.StreamKind_CUMULATIVE.Enum(),
 				ValueType:       pb.ValueType_INT64.Enum(),

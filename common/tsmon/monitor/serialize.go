@@ -15,6 +15,8 @@
 package monitor
 
 import (
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/golang/protobuf/proto"
@@ -74,11 +76,18 @@ func SerializeCells(cells []types.Cell, now time.Time) []*pb.MetricsCollection {
 	return ret
 }
 
+func buildMetricName(name string) string {
+	if strings.HasPrefix(name, "/") {
+		return name
+	}
+	return fmt.Sprintf("%s%s", MetricNamePrefix, name)
+}
+
 // SerializeDataSet creates a new MetricsDataSet without any data, but just with
 // the metric metadata fields populated.
 func SerializeDataSet(c types.Cell) *pb.MetricsDataSet {
 	d := pb.MetricsDataSet{}
-	d.MetricName = proto.String(MetricNamePrefix + c.Name)
+	d.MetricName = proto.String(buildMetricName(c.Name))
 	d.FieldDescriptor = field.SerializeDescriptor(c.Fields)
 	d.Description = proto.String(c.Description)
 
