@@ -22,7 +22,6 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -40,6 +39,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
 	"go.chromium.org/luci/analysis/internal/gitiles"
 	"go.chromium.org/luci/analysis/internal/pagination"
+	"go.chromium.org/luci/analysis/internal/perms"
 	"go.chromium.org/luci/analysis/internal/testresults"
 	"go.chromium.org/luci/analysis/internal/testresults/lowlatency"
 	"go.chromium.org/luci/analysis/internal/testutil"
@@ -62,90 +62,95 @@ func TestTestVariantBranchesServer(t *testing.T) {
 
 		server := NewTestVariantBranchesServer(&tvc, &trc, sorbetClient)
 		Convey("GetRaw", func() {
-			Convey("permission denied", func() {
-				ctx = auth.WithState(ctx, &authtest.FakeState{
-					Identity: "anonymous:anonymous",
-				})
+			authState := &authtest.FakeState{
+				Identity:       "user:admin@example.com",
+				IdentityGroups: []string{"service-luci-analysis-admins", "luci-analysis-access"},
+				IdentityPermissions: []authtest.RealmPermission{
+					{
+						Realm:      "myproject:@project",
+						Permission: perms.PermGetTestVariantBranch,
+					},
+				},
+			}
+			ctx = auth.WithState(ctx, authState)
+
+			Convey("permission denied - no admin", func() {
+				authState.IdentityGroups = removeGroup(authState.IdentityGroups, "service-luci-analysis-admins")
+
 				req := &pb.GetRawTestVariantBranchRequest{}
 				res, err := server.GetRaw(ctx, req)
-				So(err, ShouldNotBeNil)
-				So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
+				So(err, ShouldBeRPCPermissionDenied, "not a member of service-luci-analysis-admins")
+				So(res, ShouldBeNil)
+			})
+			Convey("permission denied - no permission", func() {
+				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetTestVariantBranch)
+
+				req := &pb.GetRawTestVariantBranchRequest{
+					Name: "projects/myproject/tests/test/variants/abababababababab/refs/abababababababab",
+				}
+				res, err := server.GetRaw(ctx, req)
+				So(err, ShouldBeRPCPermissionDenied, `caller does not have permission analysis.testvariantbranches.get in realm "myproject:@project"`)
 				So(res, ShouldBeNil)
 			})
 
 			Convey("invalid request", func() {
-				ctx = adminContext(ctx)
 				req := &pb.GetRawTestVariantBranchRequest{
 					Name: "Project/abc/xyz",
 				}
 				res, err := server.GetRaw(ctx, req)
-				So(err, ShouldNotBeNil)
-				So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+				So(err, ShouldBeRPCInvalidArgument, "name: name must be of format projects/{PROJECT}/tests/{URL_ESCAPED_TEST_ID}/variants/{VARIANT_HASH}/refs/{REF_HASH}")
 				So(res, ShouldBeNil)
 			})
 
 			Convey("not found", func() {
-				ctx = adminContext(ctx)
 				req := &pb.GetRawTestVariantBranchRequest{
-					Name: "projects/project/tests/test/variants/abababababababab/refs/abababababababab",
+					Name: "projects/myproject/tests/test/variants/abababababababab/refs/abababababababab",
 				}
 				res, err := server.GetRaw(ctx, req)
-				So(err, ShouldNotBeNil)
-				So(err, ShouldHaveGRPCStatus, codes.NotFound)
+				So(err, ShouldBeRPCNotFound)
 				So(res, ShouldBeNil)
 			})
 
 			Convey("invalid ref_hash", func() {
-				ctx = adminContext(ctx)
 				req := &pb.GetRawTestVariantBranchRequest{
-					Name: "projects/project/tests/this//is/a/test/variants/abababababababab/refs/abababababababgh",
+					Name: "projects/myproject/tests/thisisatest/variants/abababababababab/refs/abababababababgh",
 				}
 				res, err := server.GetRaw(ctx, req)
-				So(err, ShouldNotBeNil)
-				So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+				So(err, ShouldBeRPCInvalidArgument, "name: ")
 				So(res, ShouldBeNil)
 			})
 
 			Convey("invalid test id", func() {
-				ctx = adminContext(ctx)
 				Convey("bad structure", func() {
-					ctx = adminContext(ctx)
 					req := &pb.GetRawTestVariantBranchRequest{
-						Name: "projects/project/tests/a/variants/0123456789abcdef/refs/7265665f68617368/bad/subpath",
+						Name: "projects/myproject/tests/a/variants/0123456789abcdef/refs/7265665f68617368/bad/subpath",
 					}
 					res, err := server.GetRaw(ctx, req)
-					So(err, ShouldNotBeNil)
-					So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
-					So(err, ShouldErrLike, "name must be of format projects/{PROJECT}/tests/{URL_ESCAPED_TEST_ID}/variants/{VARIANT_HASH}/refs/{REF_HASH}")
+					So(err, ShouldBeRPCInvalidArgument, "name must be of format projects/{PROJECT}/tests/{URL_ESCAPED_TEST_ID}/variants/{VARIANT_HASH}/refs/{REF_HASH}")
 					So(res, ShouldBeNil)
 				})
 				Convey("bad URL escaping", func() {
 					req := &pb.GetRawTestVariantBranchRequest{
-						Name: "projects/project/tests/abcdef%test/variants/0123456789abcdef/refs/7265665f68617368",
+						Name: "projects/myproject/tests/abcdef%test/variants/0123456789abcdef/refs/7265665f68617368",
 					}
 					res, err := server.GetRaw(ctx, req)
-					So(err, ShouldNotBeNil)
-					So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
-					So(err, ShouldErrLike, "malformed test id: invalid URL escape \"%te\"")
+					So(err, ShouldBeRPCInvalidArgument, "malformed test id: invalid URL escape \"%te\"")
 					So(res, ShouldBeNil)
 				})
 				Convey("bad value", func() {
 					req := &pb.GetRawTestVariantBranchRequest{
-						Name: "projects/project/tests/\u0001atest/variants/0123456789abcdef/refs/7265665f68617368",
+						Name: "projects/myproject/tests/\u0001atest/variants/0123456789abcdef/refs/7265665f68617368",
 					}
 					res, err := server.GetRaw(ctx, req)
-					So(err, ShouldNotBeNil)
-					So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
-					So(err, ShouldErrLike, `test id "\x01atest": non-printable rune`)
+					So(err, ShouldBeRPCInvalidArgument, `test id "\x01atest": non-printable rune`)
 					So(res, ShouldBeNil)
 				})
 			})
 			Convey("ok", func() {
-				ctx = adminContext(ctx)
 				// Insert test variant branch to Spanner.
 				tvb := &testvariantbranch.Entry{
 					IsNew:       true,
-					Project:     "project",
+					Project:     "myproject",
 					TestID:      "this//is/a/test",
 					VariantHash: "0123456789abcdef",
 					RefHash:     []byte("ref_hash"),
@@ -263,7 +268,7 @@ func TestTestVariantBranchesServer(t *testing.T) {
 
 				hexStr := "7265665f68617368" // hex string of "ref_hash".
 				req := &pb.GetRawTestVariantBranchRequest{
-					Name: "projects/project/tests/this%2F%2Fis%2Fa%2Ftest/variants/0123456789abcdef/refs/7265665f68617368",
+					Name: "projects/myproject/tests/this%2F%2Fis%2Fa%2Ftest/variants/0123456789abcdef/refs/7265665f68617368",
 				}
 				res, err := server.GetRaw(ctx, req)
 				So(err, ShouldBeNil)
@@ -278,8 +283,8 @@ func TestTestVariantBranchesServer(t *testing.T) {
 				So(err, ShouldBeNil)
 
 				So(res, ShouldResembleProto, &pb.TestVariantBranchRaw{
-					Name:              "projects/project/tests/this%2F%2Fis%2Fa%2Ftest/variants/0123456789abcdef/refs/7265665f68617368",
-					Project:           "project",
+					Name:              "projects/myproject/tests/this%2F%2Fis%2Fa%2Ftest/variants/0123456789abcdef/refs/7265665f68617368",
+					Project:           "myproject",
 					TestId:            "this//is/a/test",
 					VariantHash:       "0123456789abcdef",
 					RefHash:           hexStr,
@@ -335,18 +340,25 @@ func TestTestVariantBranchesServer(t *testing.T) {
 					Identity:       "user:someone@example.com",
 					IdentityGroups: []string{"luci-analysis-access"},
 				})
-				req := &pb.BatchGetTestVariantBranchRequest{}
+				req := &pb.BatchGetTestVariantBranchRequest{
+					Names: []string{
+						"projects/testproject/tests/this%2F%2Fis%2Fa%2Ftest/variants/0123456789abcdef/refs/7265665f68617368",
+					},
+				}
 
 				res, err := server.BatchGet(ctx, req)
-				So(err, ShouldNotBeNil)
-				So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
+				So(err, ShouldBeRPCPermissionDenied, `does not have permission analysis.testvariantbranches.get in realm "testproject:@project"`)
 				So(res, ShouldBeNil)
 			})
 
 			Convey("invalid request", func() {
 				ctx = auth.WithState(ctx, &authtest.FakeState{
 					Identity:       "user:someone@example.com",
-					IdentityGroups: []string{"googlers", "luci-analysis-access"},
+					IdentityGroups: []string{"luci-analysis-access"},
+					IdentityPermissions: []authtest.RealmPermission{{
+						Realm:      "myproject:@project",
+						Permission: perms.PermGetTestVariantBranch,
+					}},
 				})
 				Convey("invalid name", func() {
 					req := &pb.BatchGetTestVariantBranchRequest{
@@ -354,24 +366,21 @@ func TestTestVariantBranchesServer(t *testing.T) {
 					}
 
 					res, err := server.BatchGet(ctx, req)
-					So(err, ShouldNotBeNil)
-					So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+					So(err, ShouldBeRPCInvalidArgument, "name must be of format projects/{PROJECT}/tests/{URL_ESCAPED_TEST_ID}/variants/{VARIANT_HASH}/refs/{REF_HASH}")
 					So(res, ShouldBeNil)
 				})
 
 				Convey("too many test variant branch requested", func() {
 					names := []string{}
 					for i := 0; i < 200; i++ {
-						names = append(names, "projects/project/tests/this%2F%2Fis%2Fa%2Ftest/variants/0123456789abcdef/refs/7265665f68617368")
+						names = append(names, "projects/myproject/tests/this%2F%2Fis%2Fa%2Ftest/variants/0123456789abcdef/refs/7265665f68617368")
 					}
 					req := &pb.BatchGetTestVariantBranchRequest{
 						Names: names,
 					}
 
 					res, err := server.BatchGet(ctx, req)
-					So(err, ShouldNotBeNil)
-					So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
-					So(err, ShouldErrLike, "names: no more than 100 may be queried at a time")
+					So(err, ShouldBeRPCInvalidArgument, "names: no more than 100 may be queried at a time")
 					So(res, ShouldBeNil)
 				})
 			})
@@ -379,12 +388,16 @@ func TestTestVariantBranchesServer(t *testing.T) {
 			Convey("e2e", func() {
 				ctx = auth.WithState(ctx, &authtest.FakeState{
 					Identity:       "user:someone@example.com",
-					IdentityGroups: []string{"googlers", "luci-analysis-access"},
+					IdentityGroups: []string{"luci-analysis-access"},
+					IdentityPermissions: []authtest.RealmPermission{{
+						Realm:      "myproject:@project",
+						Permission: perms.PermGetTestVariantBranch,
+					}},
 				})
 				// Insert test variant branch to Spanner.
 				tvb := &testvariantbranch.Entry{
 					IsNew:       true,
-					Project:     "project",
+					Project:     "myproject",
 					TestID:      "this//is/a/test",
 					VariantHash: "0123456789abcdef",
 					RefHash:     []byte("ref_hash"),
@@ -456,8 +469,8 @@ func TestTestVariantBranchesServer(t *testing.T) {
 				testutil.MustApply(ctx, mutation)
 				req := &pb.BatchGetTestVariantBranchRequest{
 					Names: []string{
-						"projects/project/tests/not%2Fexist%2Ftest/variants/0123456789abcdef/refs/7265665f68617368",
-						"projects/project/tests/this%2F%2Fis%2Fa%2Ftest/variants/0123456789abcdef/refs/7265665f68617368",
+						"projects/myproject/tests/not%2Fexist%2Ftest/variants/0123456789abcdef/refs/7265665f68617368",
+						"projects/myproject/tests/this%2F%2Fis%2Fa%2Ftest/variants/0123456789abcdef/refs/7265665f68617368",
 					},
 				}
 
@@ -466,8 +479,8 @@ func TestTestVariantBranchesServer(t *testing.T) {
 				So(res.TestVariantBranches, ShouldHaveLength, 2)
 				So(res.TestVariantBranches[0], ShouldBeNil)
 				So(res.TestVariantBranches[1], ShouldResembleProto, &pb.TestVariantBranch{
-					Name:        "projects/project/tests/this%2F%2Fis%2Fa%2Ftest/variants/0123456789abcdef/refs/7265665f68617368",
-					Project:     "project",
+					Name:        "projects/myproject/tests/this%2F%2Fis%2Fa%2Ftest/variants/0123456789abcdef/refs/7265665f68617368",
+					Project:     "myproject",
 					TestId:      "this//is/a/test",
 					VariantHash: "0123456789abcdef",
 					RefHash:     "7265665f68617368",
@@ -531,24 +544,30 @@ func TestTestVariantBranchesServer(t *testing.T) {
 		})
 
 		Convey("Query", func() {
+			authState := &authtest.FakeState{
+				Identity:       "user:someone@example.com",
+				IdentityGroups: []string{"luci-analysis-access"},
+				IdentityPermissions: []authtest.RealmPermission{{
+					Realm:      "myproject:@project",
+					Permission: perms.PermListTestVariantBranches,
+				}},
+			}
+			ctx = auth.WithState(ctx, authState)
+
 			Convey("permission denied", func() {
-				ctx = auth.WithState(ctx, &authtest.FakeState{
-					Identity: "anonymous:anonymous",
-				})
-				req := &pb.QueryTestVariantBranchRequest{}
+				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermListTestVariantBranches)
+
+				req := &pb.QueryTestVariantBranchRequest{
+					Project: "myproject",
+				}
 
 				res, err := server.Query(ctx, req)
-				So(err, ShouldNotBeNil)
-				So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
+				So(err, ShouldBeRPCPermissionDenied, `caller does not have permission analysis.testvariantbranches.list in realm "myproject:@project"`)
 				So(res, ShouldBeNil)
 			})
 			Convey("invalid request", func() {
-				ctx = auth.WithState(ctx, &authtest.FakeState{
-					Identity:       "user:someone@example.com",
-					IdentityGroups: []string{"googlers", "luci-analysis-access"},
-				})
 				req := &pb.QueryTestVariantBranchRequest{
-					Project: "project",
+					Project: "myproject",
 					TestId:  "test://is/a/test",
 					Ref: &pb.SourceRef{
 						System: &pb.SourceRef_Gitiles{
@@ -564,31 +583,29 @@ func TestTestVariantBranchesServer(t *testing.T) {
 					req.Project = ""
 
 					_, err := server.Query(ctx, req)
-					So(err, ShouldNotBeNil)
-					So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
-					So(err.Error(), ShouldContainSubstring, "project")
+					So(err, ShouldBeRPCInvalidArgument, "project: unspecified")
 				})
 				Convey("invalid test id", func() {
 					req.TestId = ""
 
 					_, err := server.Query(ctx, req)
-					So(err, ShouldNotBeNil)
-					So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
-					So(err.Error(), ShouldContainSubstring, "test_id")
+					So(err, ShouldBeRPCInvalidArgument, "test_id: unspecified")
 				})
 				Convey("invalid ref", func() {
 					req.Ref.GetGitiles().Host = ""
 
 					_, err := server.Query(ctx, req)
-					So(err, ShouldNotBeNil)
-					So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
-					So(err.Error(), ShouldContainSubstring, "host")
+					So(err, ShouldBeRPCInvalidArgument, "ref: gitiles: host: unspecified")
 				})
 			})
 			Convey("e2e", func() {
 				ctx = auth.WithState(ctx, &authtest.FakeState{
 					Identity:       "user:someone@example.com",
-					IdentityGroups: []string{"googlers", "luci-analysis-access"},
+					IdentityGroups: []string{"luci-analysis-access"},
+					IdentityPermissions: []authtest.RealmPermission{{
+						Realm:      "myproject:@project",
+						Permission: perms.PermListTestVariantBranches,
+					}},
 				})
 				ref := &pb.SourceRef{
 					System: &pb.SourceRef_Gitiles{
@@ -604,14 +621,14 @@ func TestTestVariantBranchesServer(t *testing.T) {
 				var2 := pbutil.Variant("key1", "val2", "key2", "val1")
 				var3 := pbutil.Variant("key1", "val2", "key2", "val2")
 				var4 := pbutil.Variant("key1", "val1", "key2", "val2")
-				tvb1 := newBuilder().WithProject("project").WithTestID("test://is/a/test").WithVariantHash(pbutil.VariantHash(var1)).WithRefHash(refHash)
-				tvb2 := newBuilder().WithProject("project").WithTestID("test://is/a/test").WithVariantHash(pbutil.VariantHash(var2)).WithRefHash(refHash)
-				tvb3 := newBuilder().WithProject("project").WithTestID("test://is/a/test").WithVariantHash(pbutil.VariantHash(var3)).WithRefHash(refHash)
-				tvb4 := newBuilder().WithProject("project").WithTestID("test://is/a/test").WithVariantHash(pbutil.VariantHash(var4)).WithRefHash(refHash)
+				tvb1 := newBuilder().WithProject("myproject").WithTestID("test://is/a/test").WithVariantHash(pbutil.VariantHash(var1)).WithRefHash(refHash)
+				tvb2 := newBuilder().WithProject("myproject").WithTestID("test://is/a/test").WithVariantHash(pbutil.VariantHash(var2)).WithRefHash(refHash)
+				tvb3 := newBuilder().WithProject("myproject").WithTestID("test://is/a/test").WithVariantHash(pbutil.VariantHash(var3)).WithRefHash(refHash)
+				tvb4 := newBuilder().WithProject("myproject").WithTestID("test://is/a/test").WithVariantHash(pbutil.VariantHash(var4)).WithRefHash(refHash)
 				// Different test id, should not appear in the response.
-				tvb5 := newBuilder().WithProject("project").WithTestID("test://is/a/different/test").WithVariantHash(pbutil.VariantHash(var4)).WithRefHash(refHash)
+				tvb5 := newBuilder().WithProject("myproject").WithTestID("test://is/a/different/test").WithVariantHash(pbutil.VariantHash(var4)).WithRefHash(refHash)
 				// Different ref, should not appear in the response.
-				tvb6 := newBuilder().WithProject("project").WithTestID("test://is/a/test").WithVariantHash(pbutil.VariantHash(var4)).WithRefHash([]byte("refhash"))
+				tvb6 := newBuilder().WithProject("myproject").WithTestID("test://is/a/test").WithVariantHash(pbutil.VariantHash(var4)).WithRefHash([]byte("refhash"))
 
 				var hs inputbuffer.HistorySerializer
 				tvb1.saveInDB(ctx, hs)
@@ -621,7 +638,7 @@ func TestTestVariantBranchesServer(t *testing.T) {
 				tvb5.saveInDB(ctx, hs)
 				tvb6.saveInDB(ctx, hs)
 				req := &pb.QueryTestVariantBranchRequest{
-					Project:   "project",
+					Project:   "myproject",
 					TestId:    "test://is/a/test",
 					Ref:       ref,
 					PageSize:  3,
@@ -684,16 +701,14 @@ func TestTestVariantBranchesServer(t *testing.T) {
 					IdentityGroups: []string{"luci-analysis-access"},
 				})
 				res, err := server.QuerySourcePositions(ctx, req)
-				So(err, ShouldErrLike, `caller does not have permission`, `in any realm in project "project"`)
-				So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
+				So(err, ShouldBeRPCPermissionDenied, `caller does not have permission`)
 				So(res, ShouldBeNil)
 			})
 
 			Convey("invalid requests are rejected", func() {
 				req.PageSize = -1
 				res, err := server.QuerySourcePositions(ctx, req)
-				So(err, ShouldNotBeNil)
-				So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+				So(err, ShouldBeRPCInvalidArgument, "page_size: negative")
 				So(res, ShouldBeNil)
 			})
 
@@ -724,9 +739,7 @@ func TestTestVariantBranchesServer(t *testing.T) {
 				}
 
 				res, err := server.QuerySourcePositions(ctx, req)
-				So(err, ShouldNotBeNil)
-				So(err, ShouldErrLike, `cannot find source positions because test verdicts is too sparse`)
-				So(err, ShouldHaveGRPCStatus, codes.NotFound)
+				So(err, ShouldBeRPCNotFound, `cannot find source positions because test verdicts is too sparse`)
 				So(res, ShouldBeNil)
 			})
 
@@ -742,9 +755,7 @@ func TestTestVariantBranchesServer(t *testing.T) {
 				}
 
 				res, err := server.QuerySourcePositions(ctx, req)
-				So(err, ShouldNotBeNil)
-				So(err, ShouldErrLike, `no commit at or after the requested start position`)
-				So(err, ShouldHaveGRPCStatus, codes.NotFound)
+				So(err, ShouldBeRPCNotFound, `no commit at or after the requested start position`)
 				So(res, ShouldBeNil)
 			})
 
@@ -1317,13 +1328,6 @@ func TestValidateQuerySourcePositionsRequest(t *testing.T) {
 			err := validateQuerySourcePositionsRequest(req)
 			So(err, ShouldErrLike, "page_size", "negative")
 		})
-	})
-}
-
-func adminContext(ctx context.Context) context.Context {
-	return auth.WithState(ctx, &authtest.FakeState{
-		Identity:       "user:admin@example.com",
-		IdentityGroups: []string{"service-luci-analysis-admins", "luci-analysis-access"},
 	})
 }
 

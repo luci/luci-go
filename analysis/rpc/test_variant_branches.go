@@ -82,15 +82,30 @@ type testVariantBranchesServer struct {
 
 // Get fetches Spanner for test variant analysis.
 func (*testVariantBranchesServer) GetRaw(ctx context.Context, req *pb.GetRawTestVariantBranchRequest) (*pb.TestVariantBranchRaw, error) {
-	// Currently, we only allow LUCI Analysis admins to use this API.
-	// In the future, if this end point is used for the UI, we should
-	// have proper ACL check.
+	// This endpoint is designed for use by LUCI Analysis admins only.
+	// This check prevents other applications unexpectedly creating a dependency
+	// on the RPC.
 	if err := checkAllowed(ctx, luciAnalysisAdminGroup); err != nil {
 		return nil, err
 	}
-	tvbk, err := validateGetRawTestVariantBranchRequest(req)
+	project, testID, variantHash, refHash, err := parseTestVariantBranchName(req.Name)
 	if err != nil {
-		return nil, invalidArgumentError(err)
+		return nil, invalidArgumentError(errors.Annotate(err, "name").Err())
+	}
+	if err := perms.VerifyProjectPermissions(ctx, project, perms.PermGetTestVariantBranch); err != nil {
+		return nil, err
+	}
+
+	// Check ref hash.
+	refHashBytes, err := hex.DecodeString(refHash)
+	if err != nil {
+		return nil, invalidArgumentError(errors.Reason("name: ref component must be an encoded hexadecimal string").Err())
+	}
+	tvbk := testvariantbranch.Key{
+		Project:     project,
+		TestID:      testID,
+		VariantHash: variantHash,
+		RefHash:     testvariantbranch.RefHash(refHashBytes),
 	}
 
 	txn, cancel := span.ReadOnlyTransaction(ctx)
@@ -117,14 +132,20 @@ func (*testVariantBranchesServer) GetRaw(ctx context.Context, req *pb.GetRawTest
 
 // BatchGet returns current state of segments for test variant branches.
 func (*testVariantBranchesServer) BatchGet(ctx context.Context, req *pb.BatchGetTestVariantBranchRequest) (*pb.BatchGetTestVariantBranchResponse, error) {
-	// Currently, we only allow Googlers to use this API.
-	// TODO: implement proper ACL check with realms.
-	if err := checkAllowed(ctx, googlerOnlyGroup); err != nil {
-		return nil, err
+	// AIP-211: Perform authorisation checks before validating request proper.
+	for i, name := range req.Names {
+		project, _, _, _, err := parseTestVariantBranchName(name)
+		if err != nil {
+			return nil, invalidArgumentError(errors.Annotate(err, "names[%d]", i).Err())
+		}
+		if err := perms.VerifyProjectPermissions(ctx, project, perms.PermGetTestVariantBranch); err != nil {
+			return nil, err
+		}
 	}
 	if err := validateBatchGetTestVariantBranchRequest(req); err != nil {
 		return nil, invalidArgumentError(err)
 	}
+
 	keys := make([]testvariantbranch.Key, 0, len(req.Names))
 	for _, name := range req.Names {
 		project, testID, variantHash, refHash, err := parseTestVariantBranchName(name)
@@ -153,25 +174,6 @@ func (*testVariantBranchesServer) BatchGet(ctx context.Context, req *pb.BatchGet
 
 	return &pb.BatchGetTestVariantBranchResponse{
 		TestVariantBranches: toTestVariantBranches(ctx, tvbs),
-	}, nil
-}
-
-func validateGetRawTestVariantBranchRequest(req *pb.GetRawTestVariantBranchRequest) (testvariantbranch.Key, error) {
-	project, testID, variantHash, refHash, err := parseTestVariantBranchName(req.Name)
-	if err != nil {
-		return testvariantbranch.Key{}, errors.Annotate(err, "name").Err()
-	}
-
-	// Check ref hash.
-	refHashBytes, err := hex.DecodeString(refHash)
-	if err != nil {
-		return testvariantbranch.Key{}, errors.Reason("ref component must be an encoded hexadecimal string").Err()
-	}
-	return testvariantbranch.Key{
-		Project:     project,
-		TestID:      testID,
-		VariantHash: variantHash,
-		RefHash:     testvariantbranch.RefHash(refHashBytes),
 	}, nil
 }
 
@@ -363,11 +365,7 @@ func validateBatchGetTestVariantBranchRequest(req *pb.BatchGetTestVariantBranchR
 	if len(req.Names) > MaxTestVariantBranch {
 		return errors.Reason("names: no more than %v may be queried at a time", MaxTestVariantBranch).Err()
 	}
-	for _, name := range req.Names {
-		if _, _, _, _, err := parseTestVariantBranchName(name); err != nil {
-			return errors.Annotate(err, "name %s", name).Err()
-		}
-	}
+	// Contents of names collection already validated by caller.
 	return nil
 }
 
@@ -800,9 +798,10 @@ func toChangelistBigQuery(cls []testresults.BQChangelist) []*pb.Changelist {
 
 // Query queries test variant branches with a given test id and ref.
 func (s *testVariantBranchesServer) Query(ctx context.Context, req *pb.QueryTestVariantBranchRequest) (*pb.QueryTestVariantBranchResponse, error) {
-	// Currently, we only allow Googlers to use this API.
-	// TODO: implement proper ACL check with realms.
-	if err := checkAllowed(ctx, googlerOnlyGroup); err != nil {
+	if err := pbutil.ValidateProject(req.GetProject()); err != nil {
+		return nil, invalidArgumentError(errors.Annotate(err, "project").Err())
+	}
+	if err := perms.VerifyProjectPermissions(ctx, req.Project, perms.PermListTestVariantBranches); err != nil {
 		return nil, err
 	}
 	if err := validateQueryTestVariantBranchRequest(req); err != nil {
@@ -833,9 +832,7 @@ func (s *testVariantBranchesServer) Query(ctx context.Context, req *pb.QueryTest
 }
 
 func validateQueryTestVariantBranchRequest(req *pb.QueryTestVariantBranchRequest) error {
-	if err := pbutil.ValidateProject(req.GetProject()); err != nil {
-		return errors.Annotate(err, "project").Err()
-	}
+	// Project already validated.
 	if err := rdbpbutil.ValidateTestID(req.TestId); err != nil {
 		return errors.Annotate(err, "test_id").Err()
 	}

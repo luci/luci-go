@@ -103,6 +103,30 @@ var (
 	PermUpdateRule = realms.RegisterPermission("analysis.rules.update")
 )
 
+// Permissions for viewing changepoint analysis.
+// These are granted at the project-level. They allow the user to
+// enumerate all test variant branches (including variant definition
+// and source ref definition) in a project as well as their segments.
+var (
+	// Grants permission to get a test variant branch in a project.
+	PermGetTestVariantBranch = realms.RegisterPermission("analysis.testvariantbranches.get")
+
+	// Grants permission to list all test variant branches in a project.
+	// This includes the test ID, variant definition, source ref definition
+	// and segments identified by changepoint analysis.
+	PermListTestVariantBranches = realms.RegisterPermission("analysis.testvariantbranches.list")
+
+	// Grants permission to get a changepoint group in a project.
+	// A changepoint group is a set of changepoints with similar
+	// test id and regression range.
+	PermGetChangepointGroup = realms.RegisterPermission("analysis.changepointgroups.get")
+
+	// Grants permission to list all changepoint groups in a project.
+	// A changepoint group is a set of changepoints with similar
+	// test id and regression range.
+	PermListChangepointGroups = realms.RegisterPermission("analysis.changepointgroups.list")
+)
+
 // Permissions used to control access to test results.
 var ListTestResultsAndExonerations = []realms.Permission{
 	rdbperms.PermListTestResults,

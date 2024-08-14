@@ -21,13 +21,13 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
 	"go.chromium.org/luci/analysis/internal/changepoints"
+	"go.chromium.org/luci/analysis/internal/perms"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -37,40 +37,72 @@ import (
 func TestChangepointsServer(t *testing.T) {
 	Convey("TestChangepointsServer", t, func() {
 		ctx := context.Background()
-		ctx = auth.WithState(ctx, &authtest.FakeState{
+		authState := &authtest.FakeState{
 			Identity:       "user:someone@example.com",
 			IdentityGroups: []string{"luci-analysis-access"},
-		})
+		}
+		ctx = auth.WithState(ctx, authState)
 		client := fakeChangepointClient{}
 		server := NewChangepointsServer(&client)
+
+		Convey("Unauthorised requests are rejected", func() {
+			// Ensure no access to luci-analysis-access.
+			ctx = auth.WithState(ctx, &authtest.FakeState{
+				Identity: "user:someone@example.com",
+				// Not a member of luci-analysis-access.
+				IdentityGroups: []string{"other-group"},
+			})
+
+			// Make some request (the request should not matter, as
+			// a common decorator is used for all requests.)
+			req := &pb.QueryChangepointGroupSummariesRequest{
+				Project: "chromium",
+			}
+
+			res, err := server.QueryChangepointGroupSummaries(ctx, req)
+			So(err, ShouldBeRPCPermissionDenied, "not a member of luci-analysis-access")
+			So(res, ShouldBeNil)
+		})
 		Convey("QueryChangepointGroupSummaries", func() {
+			authState.IdentityPermissions = append(authState.IdentityPermissions, authtest.RealmPermission{
+				Realm:      "chromium:@project",
+				Permission: perms.PermListChangepointGroups,
+			})
+
 			Convey("unauthorised requests are rejected", func() {
+				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermListChangepointGroups)
+
 				req := &pb.QueryChangepointGroupSummariesRequest{
 					Project: "chromium",
 				}
 
 				res, err := server.QueryChangepointGroupSummaries(ctx, req)
-				So(err, ShouldErrLike, `not a member of googlers`)
-				So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
+				So(err, ShouldBeRPCPermissionDenied, `caller does not have permission analysis.changepointgroups.list in realm "chromium:@project"`)
 				So(res, ShouldBeNil)
 			})
-			Convey("invalid requests are rejected", func() {
-				ctx = auth.WithState(ctx, &authtest.FakeState{
-					Identity:       "user:someone@google.com",
-					IdentityGroups: []string{"googlers", "luci-analysis-access"},
-				})
+			Convey("invalid requests are rejected - project unspecified", func() {
+				// This is the only request validation that occurs prior to permission check
+				// comply with https://google.aip.dev/211.
 				req := &pb.QueryChangepointGroupSummariesRequest{}
 
 				res, err := server.QueryChangepointGroupSummaries(ctx, req)
-				So(err, ShouldNotBeNil)
-				So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+				So(err, ShouldBeRPCInvalidArgument, "project: unspecified")
+				So(res, ShouldBeNil)
+			})
+			Convey("invalid requests are rejected - other", func() {
+				// Test one type of error detected by validateQueryChangepointGroupSummariesRequest.
+				req := &pb.QueryChangepointGroupSummariesRequest{
+					Project: "chromium",
+					Predicate: &pb.ChangepointPredicate{
+						TestIdPrefix: "\u0000",
+					},
+				}
+
+				res, err := server.QueryChangepointGroupSummaries(ctx, req)
+				So(err, ShouldBeRPCInvalidArgument, `predicate: test_id_prefix: non-printable rune '\x00' at byte index 0`)
 				So(res, ShouldBeNil)
 			})
 			Convey("e2e", func() {
-				ctx = auth.WithState(ctx, &authtest.FakeState{
-					Identity:       "user:someone@google.com",
-					IdentityGroups: []string{"googlers", "luci-analysis-access"},
-				})
 				cp1 := makeChangepointRow(1, 2, 4)
 				cp2 := makeChangepointRow(2, 2, 3)
 				client.ReadChangepointsResult = []*changepoints.ChangepointRow{cp1, cp2}
@@ -177,34 +209,43 @@ func TestChangepointsServer(t *testing.T) {
 		})
 
 		Convey("QueryChangepointsInGroup", func() {
+			authState.IdentityPermissions = append(authState.IdentityPermissions, authtest.RealmPermission{
+				Realm:      "chromium:@project",
+				Permission: perms.PermGetChangepointGroup,
+			})
+
 			Convey("unauthorised requests are rejected", func() {
+				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetChangepointGroup)
 				req := &pb.QueryChangepointsInGroupRequest{
 					Project: "chromium",
 				}
 
 				res, err := server.QueryChangepointsInGroup(ctx, req)
-				So(err, ShouldErrLike, `not a member of googlers`)
-				So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
+				So(err, ShouldBeRPCPermissionDenied, `caller does not have permission analysis.changepointgroups.get in realm "chromium:@project"`)
 				So(res, ShouldBeNil)
 			})
-			Convey("invalid requests are rejected", func() {
-				ctx = auth.WithState(ctx, &authtest.FakeState{
-					Identity:       "user:someone@google.com",
-					IdentityGroups: []string{"googlers", "luci-analysis-access"},
-				})
+			Convey("invalid requests are rejected - project unspecified", func() {
+				// This is the only request validation that occurs prior to permission check
+				// comply with https://google.aip.dev/211.
 				req := &pb.QueryChangepointsInGroupRequest{}
 
 				res, err := server.QueryChangepointsInGroup(ctx, req)
-				So(err, ShouldNotBeNil)
-				So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+				So(err, ShouldBeRPCInvalidArgument, "project: unspecified")
+				So(res, ShouldBeNil)
+			})
+			Convey("invalid requests are rejected - other", func() {
+				// Test a validation error identified by validateQueryChangepointsInGroupRequest.
+				req := &pb.QueryChangepointsInGroupRequest{
+					Project:  "chromium",
+					GroupKey: &pb.QueryChangepointsInGroupRequest_ChangepointIdentifier{},
+				}
+
+				res, err := server.QueryChangepointsInGroup(ctx, req)
+				So(err, ShouldBeRPCInvalidArgument, "group_key: test_id: unspecified")
 				So(res, ShouldBeNil)
 			})
 
 			Convey("e2e", func() {
-				ctx = auth.WithState(ctx, &authtest.FakeState{
-					Identity:       "user:someone@google.com",
-					IdentityGroups: []string{"googlers", "luci-analysis-access"},
-				})
 				// Group1.
 				cp1 := makeChangepointRow(1, 2, 4)
 				cp2 := makeChangepointRow(2, 2, 3)
@@ -254,7 +295,7 @@ func TestChangepointsServer(t *testing.T) {
 					req.GroupKey.NominalStartPosition = 100 // no match.
 
 					res, err := server.QueryChangepointsInGroup(ctx, req)
-					So(err, ShouldHaveGRPCStatus, codes.NotFound)
+					So(err, ShouldBeRPCNotFound)
 					So(res, ShouldBeNil)
 				})
 			})
@@ -280,11 +321,6 @@ func TestValidateRequest(t *testing.T) {
 			err := validateQueryChangepointGroupSummariesRequest(req)
 			So(err, ShouldBeNil)
 		})
-		Convey("no project", func() {
-			req.Project = ""
-			err := validateQueryChangepointGroupSummariesRequest(req)
-			So(err, ShouldErrLike, "project: unspecified")
-		})
 		Convey("invalid predicate", func() {
 			req.Predicate.TestIdPrefix = "\xFF"
 			err := validateQueryChangepointGroupSummariesRequest(req)
@@ -307,11 +343,6 @@ func TestValidateRequest(t *testing.T) {
 		Convey("valid", func() {
 			err := validateQueryChangepointsInGroupRequest(req)
 			So(err, ShouldBeNil)
-		})
-		Convey("no project", func() {
-			req.Project = ""
-			err := validateQueryChangepointsInGroupRequest(req)
-			So(err, ShouldErrLike, "project: unspecified")
 		})
 		Convey("no group key", func() {
 			req.GroupKey = nil

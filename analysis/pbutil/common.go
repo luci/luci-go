@@ -303,13 +303,13 @@ func ValidateSourceRef(ref *pb.SourceRef) error {
 		return errors.Reason("unspecified").Err()
 	}
 	if ref.GetGitiles().GetHost() == "" {
-		return errors.Reason("host unspecified").Err()
+		return errors.Reason("gitiles: host: unspecified").Err()
 	}
 	if ref.GetGitiles().GetProject() == "" {
-		return errors.Reason("project unspecified").Err()
+		return errors.Reason("gitiles: project: unspecified").Err()
 	}
 	if ref.GetGitiles().GetRef() == "" {
-		return errors.Reason("ref unspecified").Err()
+		return errors.Reason("gitiles: ref: unspecified").Err()
 	}
 	return nil
 }

@@ -30,6 +30,7 @@ import (
 	rdbpbutil "go.chromium.org/luci/resultdb/pbutil"
 
 	"go.chromium.org/luci/analysis/internal/changepoints"
+	"go.chromium.org/luci/analysis/internal/perms"
 	"go.chromium.org/luci/analysis/internal/tracing"
 	"go.chromium.org/luci/analysis/pbutil"
 	pb "go.chromium.org/luci/analysis/proto/v1"
@@ -58,9 +59,10 @@ type changepointsServer struct {
 
 // QueryChangepointGroupSummaries groups changepoints in a LUCI project and returns a summary of each group.
 func (c *changepointsServer) QueryChangepointGroupSummaries(ctx context.Context, request *pb.QueryChangepointGroupSummariesRequest) (*pb.QueryChangepointGroupSummariesResponse, error) {
-	// Currently, we only allow Googlers to use this API.
-	// TODO: implement proper ACL check with realms.
-	if err := checkAllowed(ctx, googlerOnlyGroup); err != nil {
+	if err := pbutil.ValidateProject(request.GetProject()); err != nil {
+		return nil, invalidArgumentError(errors.Annotate(err, "project").Err())
+	}
+	if err := perms.VerifyProjectPermissions(ctx, request.Project, perms.PermListChangepointGroups); err != nil {
 		return nil, err
 	}
 	if err := validateQueryChangepointGroupSummariesRequest(request); err != nil {
@@ -109,9 +111,10 @@ func (c *changepointsServer) QueryChangepointGroupSummaries(ctx context.Context,
 
 // QueryChangepointsInGroup finds and returns changepoints in a particular group.
 func (c *changepointsServer) QueryChangepointsInGroup(ctx context.Context, req *pb.QueryChangepointsInGroupRequest) (*pb.QueryChangepointsInGroupResponse, error) {
-	// Currently, we only allow Googlers to use this API.
-	// TODO: implement proper ACL check with realms.
-	if err := checkAllowed(ctx, googlerOnlyGroup); err != nil {
+	if err := pbutil.ValidateProject(req.GetProject()); err != nil {
+		return nil, invalidArgumentError(errors.Annotate(err, "project").Err())
+	}
+	if err := perms.VerifyProjectPermissions(ctx, req.Project, perms.PermGetChangepointGroup); err != nil {
 		return nil, err
 	}
 	if err := validateQueryChangepointsInGroupRequest(req); err != nil {
@@ -292,9 +295,8 @@ func toPBChangepoint(cp *changepoints.ChangepointRow) (*pb.Changepoint, error) {
 }
 
 func validateQueryChangepointGroupSummariesRequest(req *pb.QueryChangepointGroupSummariesRequest) error {
-	if err := pbutil.ValidateProject(req.Project); err != nil {
-		return errors.Annotate(err, "project").Err()
-	}
+	// Project already validated by caller.
+
 	if req.Predicate != nil {
 		if err := validateChangepointPredicate(req.Predicate); err != nil {
 			return errors.Annotate(err, "predicate").Err()
@@ -304,24 +306,30 @@ func validateQueryChangepointGroupSummariesRequest(req *pb.QueryChangepointGroup
 }
 
 func validateQueryChangepointsInGroupRequest(req *pb.QueryChangepointsInGroupRequest) error {
-	if err := pbutil.ValidateProject(req.Project); err != nil {
-		return errors.Annotate(err, "project").Err()
-	}
+	// Project already validated by caller.
+
 	if req.Predicate != nil {
 		if err := validateChangepointPredicate(req.Predicate); err != nil {
 			return errors.Annotate(err, "predicate").Err()
 		}
 	}
-	if req.GroupKey == nil {
-		return errors.New("group_key: unspecified")
+	if err := validateGroupKey(req.GroupKey); err != nil {
+		return errors.Annotate(err, "group_key").Err()
 	}
-	if err := rdbpbutil.ValidateTestID(req.GroupKey.TestId); err != nil {
+	return nil
+}
+
+func validateGroupKey(key *pb.QueryChangepointsInGroupRequest_ChangepointIdentifier) error {
+	if key == nil {
+		return errors.New("unspecified")
+	}
+	if err := rdbpbutil.ValidateTestID(key.TestId); err != nil {
 		return errors.Annotate(err, "test_id").Err()
 	}
-	if err := ValidateVariantHash(req.GroupKey.VariantHash); err != nil {
+	if err := ValidateVariantHash(key.VariantHash); err != nil {
 		return errors.Annotate(err, "variant_hash").Err()
 	}
-	if err := ValidateRefHash(req.GroupKey.RefHash); err != nil {
+	if err := ValidateRefHash(key.RefHash); err != nil {
 		return errors.Annotate(err, "ref_hash").Err()
 	}
 	return nil
