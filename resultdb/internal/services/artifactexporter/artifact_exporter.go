@@ -89,11 +89,9 @@ const MaxRBECasBatchSize = 2 * 1024 * 1024 // 2 MB
 // when calculating the size.
 const ArtifactRequestOverhead = 100
 
-// ChromeOSMaxArtifactSize is the temporary fix for b/351046122.
-// We do not export ChromeOS artifacts exceeding this size.
-// This is just a temporary solution, when we decide a reasonable limit
-// for the artifact exporter.
-const ChromeOSMaxArtifactSize = 50 * 1024 * 1024
+// MaxArtifactSize is the maximum size of an artifact to be exported to BigQuery.
+// Artifacts bigger than this size will not be exported.
+const MaxArtifactSize = 100 * 1024 * 1024
 
 // MaxTotalArtifactSizeForInvocation is the max total size of artifacts in an invocation.
 // If an invocation has total artifact size exceeding this value, we will not export it.
@@ -141,6 +139,7 @@ var (
 		// (e.g. artifact contains invalid UTF-8 character).
 		// - "failure_bq": There was an error with BigQuery (e.g. throttling, load shedding),
 		// which made the artifact failed to export.
+		// - "skipped_over_limit": The artifact was skipped because it is too big.
 		field.String("status"),
 	)
 
@@ -155,6 +154,19 @@ var (
 		// We record the group instead of the actual value to prevent
 		// the explosion in cardinality.
 		field.String("content_type"),
+	)
+
+	artifactInvocationCounter = metric.NewCounter(
+		"resultdb/artifacts/invocation_exported",
+		"The number of invocations got exported, grouped by project and status.",
+		nil,
+		// The LUCI Project.
+		field.String("project"),
+		// The status of the export.
+		// Possible values:
+		// - "success": The export was successful.
+		// - "skipped_over_limit": The invocation was skipped because it is too big.
+		field.String("status"),
 	)
 )
 
@@ -322,6 +334,7 @@ func (ae *artifactExporter) exportArtifacts(ctx context.Context, invID invocatio
 
 	if err == nil {
 		logging.Infof(ctx, "Finished exporting artifacts task")
+		artifactInvocationCounter.Add(ctx, 1, project, "success")
 	}
 
 	return err
@@ -484,11 +497,7 @@ func (ae *artifactExporter) queryTextArtifacts(ctx context.Context, invID invoca
 	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/services/artifactexporter.artifactExporter.queryTextArtifacts")
 	defer func() { tracing.End(ts, err) }()
 
-	chromeOSMaxSizeCondition := ""
-	if project == "chromeos" {
-		chromeOSMaxSizeCondition = "AND a.Size <= @chromeOSMaxSize"
-	}
-	statementStr := fmt.Sprintf(`
+	statementStr := `
 		SELECT
 			tr.TestId,
 			tr.ResultId,
@@ -504,13 +513,11 @@ func (ae *artifactExporter) queryTextArtifacts(ctx context.Context, invID invoca
 		ON a.InvocationId = tr.InvocationId
 		AND a.ParentId = CONCAT("tr/", tr.TestId , "/" , tr.ResultId)
 		WHERE a.InvocationId=@invID
-		%s
 		ORDER BY tr.TestId, tr.ResultId, a.ArtifactId
-	`, chromeOSMaxSizeCondition)
+	`
 	st := spanner.NewStatement(statementStr)
 	st.Params = spanutil.ToSpannerMap(map[string]any{
-		"invID":           invID,
-		"chromeOSMaxSize": ChromeOSMaxArtifactSize,
+		"invID": invID,
 	})
 
 	results := []*Artifact{}
@@ -529,16 +536,26 @@ func (ae *artifactExporter) queryTextArtifacts(ctx context.Context, invID invoca
 			return nil
 		}
 
+		// Update tsmon metrics.
+		// Note: In case a task is retried, the metric may got double-counted.
+		// As we don't expect many tasks to get retried, this should still provide
+		// a fairly good approximation of the data.
+		if a.Size > MaxArtifactSize {
+			artifactExportCounter.Add(ctx, 1, project, "skipped_over_limit")
+		}
 		if a.ContentType == "" {
 			artifactContentCounter.Add(ctx, 1, project, "empty")
 		} else {
 			if pbutil.IsTextArtifact(a.ContentType) {
 				artifactContentCounter.Add(ctx, 1, project, "text")
-				results = append(results, a)
-				totalSize += int(a.Size)
 			} else {
 				artifactContentCounter.Add(ctx, 1, project, "nontext")
 			}
+		}
+
+		if a.Size <= MaxArtifactSize && pbutil.IsTextArtifact(a.ContentType) {
+			results = append(results, a)
+			totalSize += int(a.Size)
 		}
 		return nil
 	})
@@ -547,6 +564,7 @@ func (ae *artifactExporter) queryTextArtifacts(ctx context.Context, invID invoca
 	}
 	if totalSize > maxTotalArtifactSizeForInvocation {
 		logging.Warningf(ctx, "Total artifact size %d exceeds limit: %d", totalSize, MaxTotalArtifactSizeForInvocation)
+		artifactInvocationCounter.Add(ctx, 1, project, "skipped_over_limit")
 		return []*Artifact{}, nil
 	}
 	return results, nil
