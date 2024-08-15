@@ -18,6 +18,7 @@ package server
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"sort"
 	"strconv"
 
@@ -26,6 +27,7 @@ import (
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	analysispb "go.chromium.org/luci/analysis/proto/v1"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -36,9 +38,9 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	rdbpbutil "go.chromium.org/luci/resultdb/pbutil"
 
+	"go.chromium.org/luci/bisection/analysis"
 	"go.chromium.org/luci/bisection/compilefailureanalysis/heuristic"
 	"go.chromium.org/luci/bisection/compilefailureanalysis/nthsection"
-	"go.chromium.org/luci/bisection/internal/lucianalysis"
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/util"
@@ -64,13 +66,10 @@ var listTestAnalysesPageSizeLimiter = PageSizeLimiter{
 	Default: 50,
 }
 
-type AnalysisClient interface {
-	ChangepointAnalysisForTestVariant(ctx context.Context, project string, keys []lucianalysis.TestVerdictKey) (map[lucianalysis.TestVerdictKey]*lucianalysis.ChangepointResult, error)
-}
-
 // AnalysesServer implements the LUCI Bisection proto service for Analyses.
 type AnalysesServer struct {
-	AnalysisClient AnalysisClient
+	// Hostname of the LUCI Analysis pRPC service, e.g. analysis.api.luci.app
+	LUCIAnalysisHost string
 }
 
 // GetAnalysis returns the analysis given the analysis id
@@ -278,16 +277,18 @@ func (server *AnalysesServer) BatchGetTestAnalyses(ctx context.Context, req *pb.
 	if err != nil {
 		return nil, errors.Annotate(err, "from field mask").Err()
 	}
-	// Query Changepoint analysis.
-	keys := []lucianalysis.TestVerdictKey{}
-	for _, tf := range req.TestFailures {
-		keys = append(keys, lucianalysis.TestVerdictKey{
-			TestID:      tf.TestId,
-			VariantHash: tf.VariantHash,
-			RefHash:     tf.RefHash,
-		})
+
+	client, err := analysis.NewTestVariantBranchesClient(ctx, server.LUCIAnalysisHost, req.Project)
+	if err != nil {
+		return nil, errors.Annotate(err, "create LUCI Analysis client").Err()
 	}
-	changePointResults, err := server.AnalysisClient.ChangepointAnalysisForTestVariant(ctx, req.Project, keys)
+
+	// Query Changepoint analysis.
+	tvbRequest := &analysispb.BatchGetTestVariantBranchRequest{}
+	for _, tf := range req.TestFailures {
+		tvbRequest.Names = append(tvbRequest.Names, fmt.Sprintf("projects/%s/tests/%s/variants/%s/refs/%s", req.Project, url.PathEscape(tf.TestId), tf.VariantHash, tf.RefHash))
+	}
+	changePointResults, err := client.BatchGet(ctx, tvbRequest)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "read changepoint analysis %s", err)
 	}
@@ -315,15 +316,7 @@ func (server *AnalysesServer) BatchGetTestAnalyses(ctx context.Context, req *pb.
 					// Because diverged test failure is considered excluded from the test analyses.
 					return nil
 				}
-				changepointResult, ok := changePointResults[lucianalysis.TestVerdictKey{
-					TestID:      tf.TestId,
-					VariantHash: tf.VariantHash,
-					RefHash:     tf.RefHash,
-				}]
-				if !ok {
-					logging.Infof(ctx, "no changepoint analysis for test %s %s %s", tf.TestId, tf.VariantHash, tf.RefHash)
-					return nil
-				}
+				changepointResult := changePointResults.TestVariantBranches[i]
 				ongoing, reason := isTestFailureDeterministicallyOngoing(latestTestFailure, changepointResult)
 				// Do not return the test analysis if the failure is not ongoing.
 				if !ongoing {
@@ -357,7 +350,7 @@ func (server *AnalysesServer) BatchGetTestAnalyses(ctx context.Context, req *pb.
 // IsTestFailureDeterministicallyOngoing returns a boolean which indicate whether
 // a test failure is still deterministically failing.
 // It also returns a string to explain why it is not deterministically failing.
-func isTestFailureDeterministicallyOngoing(tf *model.TestFailure, changepointResult *lucianalysis.ChangepointResult) (bool, string) {
+func isTestFailureDeterministicallyOngoing(tf *model.TestFailure, changepointResult *analysispb.TestVariantBranch) (bool, string) {
 	segments := changepointResult.Segments
 	if len(segments) < 2 {
 		return false, "not deterministically failing"
@@ -365,7 +358,7 @@ func isTestFailureDeterministicallyOngoing(tf *model.TestFailure, changepointRes
 	curSegment := segments[0]
 	prevSegment := segments[1]
 	// The latest failure is not deterministically failing, return false.
-	if curSegment.CountTotalResults != curSegment.CountUnexpectedResults {
+	if curSegment.Counts.TotalResults != curSegment.Counts.UnexpectedResults {
 		return false, "not deterministically failing"
 	}
 	// If the test failure is still ongoing, the regression range of the failure
@@ -373,8 +366,8 @@ func isTestFailureDeterministicallyOngoing(tf *model.TestFailure, changepointRes
 	// the latest segment in changepoint analysis.
 	// Because the regression range of deterministic failure obtained from changepoint analysis
 	// only shrinks or stays the same over time.
-	if (curSegment.StartPosition.Int64 <= tf.RegressionEndPosition) &&
-		(prevSegment.EndPosition.Int64 >= tf.RegressionStartPosition) {
+	if (curSegment.StartPosition <= tf.RegressionEndPosition) &&
+		(prevSegment.EndPosition >= tf.RegressionStartPosition) {
 		return true, ""
 	}
 	return false, "latest bisected failure is not ongoing"

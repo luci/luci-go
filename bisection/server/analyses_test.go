@@ -17,21 +17,22 @@ package server
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"testing"
 	"time"
 
-	"cloud.google.com/go/bigquery"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	analysispb "go.chromium.org/luci/analysis/proto/v1"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/secrets"
 
-	"go.chromium.org/luci/bisection/internal/lucianalysis"
+	"go.chromium.org/luci/bisection/analysis"
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/util/testutil"
@@ -791,8 +792,7 @@ func TestGetTestAnalyses(t *testing.T) {
 
 func TestBatchGetTestAnalyses(t *testing.T) {
 	t.Parallel()
-	analysisClient := &fakeLUCIAnalysisClient{}
-	server := &AnalysesServer{AnalysisClient: analysisClient}
+	server := &AnalysesServer{LUCIAnalysisHost: "fake-host"}
 	Convey("invalid request", t, func() {
 		ctx := memory.Use(context.Background())
 		testutil.UpdateIndices(ctx)
@@ -848,8 +848,10 @@ func TestBatchGetTestAnalyses(t *testing.T) {
 		ctx := memory.Use(context.Background())
 		testutil.UpdateIndices(ctx)
 
+		fakeAnalysisClient := &analysis.FakeTestVariantBranchesClient{}
+		ctx = analysis.UseFakeClient(ctx, fakeAnalysisClient)
+
 		testFailureInRequest := []*pb.BatchGetTestAnalysesRequest_TestFailureIdentifier{}
-		testVerdictKeys := []lucianalysis.TestVerdictKey{}
 		for i := 1; i < 6; i++ {
 			tfa := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
 				ID:             int64(100 + i),
@@ -884,11 +886,27 @@ func TestBatchGetTestAnalyses(t *testing.T) {
 				VariantHash: "aaaaaaaaaaaaaaa" + fmt.Sprint(i),
 				RefHash:     "bbbbbbbbbbbbbbb" + fmt.Sprint(i),
 			})
-			testVerdictKeys = append(testVerdictKeys, lucianalysis.TestVerdictKey{
-				TestID:      "testid" + fmt.Sprint(i),
-				VariantHash: "aaaaaaaaaaaaaaa" + fmt.Sprint(i),
-				RefHash:     "bbbbbbbbbbbbbbb" + fmt.Sprint(i),
-			})
+		}
+
+		fakeAnalysisClient.TestVariantBranches = []*analysispb.TestVariantBranch{
+			makeFakeTestVariantBranch(0, nil), // No changepoint data -> return nil.
+			makeFakeTestVariantBranch(1, []*analysispb.Segment{{
+				StartPosition: 1,
+				EndPosition:   100,
+				Counts: &analysispb.Segment_Counts{
+					TotalResults:      1,
+					UnexpectedResults: 1,
+				},
+			}}), // One segment -> return nil.
+			makeFakeTestVariantBranch(1, []*analysispb.Segment{{
+				StartPosition: 1,
+				EndPosition:   100,
+				Counts: &analysispb.Segment_Counts{
+					TotalResults:      1,
+					UnexpectedResults: 1,
+				},
+			}}), // One segment -> return nil.
+
 		}
 
 		Convey("request with multiple test failures", func() {
@@ -896,52 +914,72 @@ func TestBatchGetTestAnalyses(t *testing.T) {
 				Project:      "chromium",
 				TestFailures: testFailureInRequest,
 			}
-			segments := [][]*lucianalysis.Segment{
+			segments := [][]*analysispb.Segment{
 				nil, // No changepoint data -> return nil.
 				{{
-					StartPosition:          bigquery.NullInt64{Int64: 1, Valid: true},
-					EndPosition:            bigquery.NullInt64{Int64: 100, Valid: true},
-					CountTotalResults:      bigquery.NullInt64{Int64: 1, Valid: true},
-					CountUnexpectedResults: bigquery.NullInt64{Int64: 1, Valid: true},
+					StartPosition: 1,
+					EndPosition:   100,
+					Counts: &analysispb.Segment_Counts{
+						TotalResults:      1,
+						UnexpectedResults: 1,
+					},
 				}}, // One segment -> return nil.
 				{{
-					StartPosition:          bigquery.NullInt64{Int64: 111, Valid: true},
-					EndPosition:            bigquery.NullInt64{Int64: 200, Valid: true},
-					CountTotalResults:      bigquery.NullInt64{Int64: 1, Valid: true},
-					CountUnexpectedResults: bigquery.NullInt64{Int64: 1, Valid: true},
+					StartPosition: 111,
+					EndPosition:   200,
+					Counts: &analysispb.Segment_Counts{
+						TotalResults:      1,
+						UnexpectedResults: 1,
+					},
 				},
 					{
-						StartPosition:          bigquery.NullInt64{Int64: 1, Valid: true},
-						EndPosition:            bigquery.NullInt64{Int64: 105, Valid: true},
-						CountTotalResults:      bigquery.NullInt64{Int64: 1, Valid: true},
-						CountUnexpectedResults: bigquery.NullInt64{Int64: 0, Valid: true},
+						StartPosition: 1,
+						EndPosition:   105,
+						Counts: &analysispb.Segment_Counts{
+							TotalResults:      1,
+							UnexpectedResults: 0,
+						},
 					}}, // Two segment, failure not ongoing, regression range (105,111]-> return nil.
 				{{
-					StartPosition:          bigquery.NullInt64{Int64: 109, Valid: true},
-					EndPosition:            bigquery.NullInt64{Int64: 200, Valid: true},
-					CountTotalResults:      bigquery.NullInt64{Int64: 1, Valid: true},
-					CountUnexpectedResults: bigquery.NullInt64{Int64: 1, Valid: true},
+					StartPosition: 109,
+					EndPosition:   200,
+					Counts: &analysispb.Segment_Counts{
+						TotalResults:      1,
+						UnexpectedResults: 1,
+					},
 				},
 					{
-						StartPosition:          bigquery.NullInt64{Int64: 1, Valid: true},
-						EndPosition:            bigquery.NullInt64{Int64: 101, Valid: true},
-						CountTotalResults:      bigquery.NullInt64{Int64: 1, Valid: true},
-						CountUnexpectedResults: bigquery.NullInt64{Int64: 0, Valid: true},
+						StartPosition: 1,
+						EndPosition:   101,
+						Counts: &analysispb.Segment_Counts{
+							TotalResults:      1,
+							UnexpectedResults: 0,
+						},
 					}}, // Two segment, failure is ongoing, regression range (101,109] -> return test analysis 104.
 				{{
-					StartPosition:          bigquery.NullInt64{Int64: 109, Valid: true},
-					EndPosition:            bigquery.NullInt64{Int64: 200, Valid: true},
-					CountTotalResults:      bigquery.NullInt64{Int64: 1, Valid: true},
-					CountUnexpectedResults: bigquery.NullInt64{Int64: 1, Valid: true},
+					StartPosition: 109,
+					EndPosition:   200,
+					Counts: &analysispb.Segment_Counts{
+						TotalResults:      1,
+						UnexpectedResults: 1,
+					},
 				},
 					{
-						StartPosition:          bigquery.NullInt64{Int64: 1, Valid: true},
-						EndPosition:            bigquery.NullInt64{Int64: 101, Valid: true},
-						CountTotalResults:      bigquery.NullInt64{Int64: 1, Valid: true},
-						CountUnexpectedResults: bigquery.NullInt64{Int64: 0, Valid: true},
+						StartPosition: 1,
+						EndPosition:   101,
+						Counts: &analysispb.Segment_Counts{
+							TotalResults:      1,
+							UnexpectedResults: 0,
+						},
 					}}, // Two segment, failure is ongoing, regression range (101,109] -> not return test analysis because test failure is diverged.
 			}
-			analysisClient.ChangepointAnalysisForTestVariantResponse = makeChangepointAnalysisForTestVariantResponse(testVerdictKeys, segments)
+
+			var branches []*analysispb.TestVariantBranch
+			for i, segs := range segments {
+				branches = append(branches, makeFakeTestVariantBranch(i+1, segs))
+			}
+
+			fakeAnalysisClient.TestVariantBranches = branches
 
 			resp, err := server.BatchGetTestAnalyses(ctx, req)
 			So(err, ShouldBeNil)
@@ -970,23 +1008,17 @@ func TestBatchGetTestAnalyses(t *testing.T) {
 	})
 }
 
-type fakeLUCIAnalysisClient struct {
-	ChangepointAnalysisForTestVariantResponse map[lucianalysis.TestVerdictKey]*lucianalysis.ChangepointResult
-}
+func makeFakeTestVariantBranch(i int, segments []*analysispb.Segment) *analysispb.TestVariantBranch {
+	testID := "testid" + fmt.Sprint(i)
+	variantHash := "aaaaaaaaaaaaaaa" + fmt.Sprint(i)
+	refHash := "bbbbbbbbbbbbbbb" + fmt.Sprint(i)
 
-func (cl *fakeLUCIAnalysisClient) ChangepointAnalysisForTestVariant(ctx context.Context, project string, keys []lucianalysis.TestVerdictKey) (map[lucianalysis.TestVerdictKey]*lucianalysis.ChangepointResult, error) {
-	return cl.ChangepointAnalysisForTestVariantResponse, nil
-}
-
-func makeChangepointAnalysisForTestVariantResponse(keys []lucianalysis.TestVerdictKey, segments [][]*lucianalysis.Segment) map[lucianalysis.TestVerdictKey]*lucianalysis.ChangepointResult {
-	results := map[lucianalysis.TestVerdictKey]*lucianalysis.ChangepointResult{}
-	for i, key := range keys {
-		results[key] = &lucianalysis.ChangepointResult{
-			TestID:      key.TestID,
-			VariantHash: key.VariantHash,
-			RefHash:     key.RefHash,
-			Segments:    segments[i],
-		}
+	return &analysispb.TestVariantBranch{
+		Name:        fmt.Sprintf("projects/chromium/tests/%s/variants/%s/refs/%s", url.PathEscape(testID), variantHash, refHash),
+		Project:     "chromium",
+		TestId:      testID,
+		VariantHash: variantHash,
+		RefHash:     refHash,
+		Segments:    segments,
 	}
-	return results
 }

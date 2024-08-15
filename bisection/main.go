@@ -36,7 +36,6 @@ import (
 	"go.chromium.org/luci/bisection/culpritverification"
 	"go.chromium.org/luci/bisection/hosts"
 	"go.chromium.org/luci/bisection/internal/config"
-	"go.chromium.org/luci/bisection/internal/lucianalysis"
 	"go.chromium.org/luci/bisection/metrics"
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/pubsub"
@@ -99,6 +98,11 @@ func main() {
 	flag.StringVar(
 		&luciAnalysisProject, "luci-analysis-project", luciAnalysisProject, `the GCP project id of LUCI analysis.`,
 	)
+	luciAnalysisHost := ""
+	flag.StringVar(
+		&luciAnalysisHost, "luci-analysis-host", luciAnalysisHost, `the LUCI Analysis pRPC service hostname, e.g. analysis.api.luci.app.`,
+	)
+
 	uiRedirectURL := "luci-milo-dev.appspot.com/ui/bisection"
 	flag.StringVar(
 		&uiRedirectURL, "ui-redirect-url", uiRedirectURL, `the redirect url for the frontend.`,
@@ -136,15 +140,11 @@ func main() {
 		pg := &LUCIAnalysisProject{
 			DefaultProject: luciAnalysisProject,
 		}
-		ac, err := lucianalysis.NewClient(srv.Context, srv.Options.CloudProject, pg.Project)
-		if err != nil {
-			return errors.Annotate(err, "creating analysis client").Err()
-		}
 
 		// Installs gRPC service.
 		pb.RegisterAnalysesServer(srv, &pb.DecoratedAnalyses{
 			Service: &server.AnalysesServer{
-				AnalysisClient: ac,
+				LUCIAnalysisHost: luciAnalysisHost,
 			},
 			Prelude: checkAPIAccess,
 		})
