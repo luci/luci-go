@@ -15,9 +15,11 @@
 import { AccessTime } from '@mui/icons-material';
 import { Box, Button, Menu, MenuItem, Popover } from '@mui/material';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
+import { DateTime } from 'luxon';
 import React, { useState } from 'react';
 
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
+import { Result } from '@/generic_libs/types';
 
 import {
   getSelectedOption,
@@ -32,12 +34,27 @@ import {
   OPTION_KEY,
 } from './time_range_selector_utils';
 
+export interface TimeRangeSelectorProps {
+  /**
+   * A function that returns error message when the given startTime and endTime is an invalid
+   * time range. Return null or empty string means no error.
+   */
+  readonly validateCustomizeTimeRange?: (
+    startTime: DateTime,
+    endTime: DateTime,
+  ) => Result<'', string>;
+  readonly disableFuture?: boolean;
+}
+
 /**
  * TimeRangeSelector implement a component that supports absolute and relative time range selection.
  * It saves the selected time range option to search params. It also read the search params to set existing selection.
  * Parent can use getAbsoluteStartEndTime function to obtain the selected start and end time.
  */
-export function TimeRangeSelector() {
+export function TimeRangeSelector({
+  validateCustomizeTimeRange,
+  disableFuture = false,
+}: TimeRangeSelectorProps) {
   const [searchParams, setSearchParams] = useSyncedSearchParams();
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
   const [pickerAnchorEl, setPickerAnchorElPicker] =
@@ -72,6 +89,22 @@ export function TimeRangeSelector() {
     setMenuAnchorEl(null);
   };
 
+  const startTimeErrMsg = (() => {
+    if (selectedOption !== CUSTOMIZE_OPTION) {
+      return null;
+    }
+    if (!startTime) {
+      return 'unspecified';
+    }
+    // Show the time range error only under start time to avoid displaying duplicated error messages.
+    return endTime && validateCustomizeTimeRange
+      ? validateCustomizeTimeRange(startTime, endTime).value
+      : null;
+  })();
+
+  const endTimeErrMsg =
+    selectedOption === CUSTOMIZE_OPTION && !endTime ? 'unspecified' : null;
+
   return (
     <div>
       <Button
@@ -79,12 +112,13 @@ export function TimeRangeSelector() {
         onClick={handleClick}
         sx={{ display: 'flex', gap: '7px' }}
         data-testid="time-button"
+        color={!startTimeErrMsg && !endTimeErrMsg ? 'primary' : 'error'}
       >
         <AccessTime />
         {selectedOption === CUSTOMIZE_OPTION ? (
           <>
-            {startTime && startTime.toFormat('yyyy-MM-dd HH:mm')} -{' '}
-            {endTime && endTime.toFormat('yyyy-MM-dd HH:mm')}
+            {startTime ? startTime.toFormat('yyyy-MM-dd HH:mm') : 'unspecified'}{' '}
+            - {endTime ? endTime.toFormat('yyyy-MM-dd HH:mm') : 'unspecified'}
           </>
         ) : (
           RELATIVE_TIME_OPTIONS[selectedOption].displayText
@@ -127,13 +161,21 @@ export function TimeRangeSelector() {
         <Box
           sx={{
             padding: '5px',
+            maxWidth: '350px',
           }}
         >
           <Box sx={{ margin: '12px' }}>
             <DateTimePicker
+              disableFuture={disableFuture}
               label="From (UTC)"
               timezone="UTC"
               value={startTime}
+              slotProps={{
+                textField: {
+                  error: !!startTimeErrMsg,
+                  helperText: startTimeErrMsg,
+                },
+              }}
               onChange={(newValue) =>
                 newValue &&
                 setSearchParams(
@@ -147,6 +189,7 @@ export function TimeRangeSelector() {
           </Box>
           <Box sx={{ margin: '12px' }}>
             <DateTimePicker
+              disableFuture={disableFuture}
               label="To (UTC)"
               timezone="UTC"
               value={endTime}
@@ -159,6 +202,12 @@ export function TimeRangeSelector() {
                   ),
                 )
               }
+              slotProps={{
+                textField: {
+                  error: !!endTimeErrMsg,
+                  helperText: endTimeErrMsg,
+                },
+              }}
             />
           </Box>
         </Box>

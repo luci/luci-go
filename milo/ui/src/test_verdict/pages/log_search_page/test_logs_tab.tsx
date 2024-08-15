@@ -22,7 +22,6 @@ import { TestLogDialog } from './log_list_dialog';
 import { TestLogsTable } from './log_table';
 // TODO (beining@):
 // * link to log viewer.
-// * only perform the search after some validation of the form.
 export function TestLogsTab() {
   const { project } = useParams();
   if (!project) {

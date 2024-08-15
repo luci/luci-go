@@ -33,6 +33,7 @@ interface SelectTextFieldProps {
   selectOnChange: (value: string) => void;
   textOnChange: (value: string) => void;
   sx?: SxProps<Theme>;
+  required?: boolean;
 }
 
 // SelectTextField is a component that combines a dropdown field with a text input field.
@@ -44,6 +45,7 @@ export function SelectTextField({
   options,
   selectOnChange,
   textOnChange,
+  required = false,
 }: SelectTextFieldProps) {
   const handleTextChange = (event: ChangeEvent<HTMLInputElement>) => {
     textOnChange(event.target.value);
@@ -53,49 +55,59 @@ export function SelectTextField({
     selectOnChange(event.target.value);
   };
 
+  const unspecified = required && textValue === '';
   return (
-    <Box display="flex" alignItems="center" sx={{ flex: 1, ...sx }}>
-      <FormControl variant="outlined" size="small">
-        <InputLabel id="select-label">{label}</InputLabel>
-        <Select
-          value={selectValue}
-          labelId="select-label"
-          label={label}
-          onChange={handleSelectChange}
+    <Box sx={{ flex: 1, ...sx }}>
+      <Box display="flex" alignItems="center">
+        <FormControl variant="outlined" size="small">
+          <InputLabel id="select-label">
+            {label} {required && '*'}
+          </InputLabel>
+          <Select
+            value={selectValue}
+            labelId="select-label"
+            label={label}
+            onChange={handleSelectChange}
+            size="small"
+            sx={{ borderRadius: '4px 0px 0px 4px' }}
+            inputProps={{
+              'data-testid': label + ' select',
+            }}
+          >
+            {options.map((option) => (
+              <MenuItem key={option} value={option}>
+                {option}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        <TextField
+          onChange={handleTextChange}
+          fullWidth
+          value={textValue}
+          variant="outlined"
           size="small"
-          sx={{ borderRadius: '4px 0px 0px 4px' }}
-          inputProps={{
-            'data-testid': label + ' select',
+          sx={{
+            ml: 0,
+            flex: 1,
+            '& .MuiInputBase-root': {
+              borderRadius: '0px 4px 4px 0px',
+              borderLeft: '0',
+            },
+            '& .MuiOutlinedInput-notchedOutline': {
+              borderLeftColor: 'rgba(0, 0, 0, 0.0)',
+            },
           }}
-        >
-          {options.map((option) => (
-            <MenuItem key={option} value={option}>
-              {option}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
-      <TextField
-        onChange={handleTextChange}
-        fullWidth
-        value={textValue}
-        variant="outlined"
-        size="small"
-        sx={{
-          ml: 0,
-          flex: 1,
-          '& .MuiInputBase-root': {
-            borderRadius: '0px 4px 4px 0px',
-            borderLeft: '0',
-          },
-          '& .MuiOutlinedInput-notchedOutline': {
-            borderLeftColor: 'rgba(0, 0, 0, 0.0)',
-          },
-        }}
-        inputProps={{
-          'data-testid': label + ' input',
-        }}
-      />
+          inputProps={{
+            'data-testid': label + ' input',
+          }}
+        />
+      </Box>
+      {unspecified && (
+        <Box sx={{ color: '#d23a2d', paddingLeft: '15px' }}>
+          {label} is required
+        </Box>
+      )}
     </Box>
   );
 }

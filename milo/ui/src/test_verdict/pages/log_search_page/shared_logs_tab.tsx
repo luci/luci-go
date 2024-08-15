@@ -23,7 +23,6 @@ import { InvocationLogsTable } from './log_table';
 
 // TODO (beining@):
 // * link to log viewer.
-// * only perform the search after some validation of the form.
 export function SharedLogsTab() {
   const { project } = useParams();
   if (!project) {

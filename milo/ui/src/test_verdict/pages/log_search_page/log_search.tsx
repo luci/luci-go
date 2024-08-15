@@ -27,6 +27,7 @@ import {
   TimeRangeSelector,
 } from '@/common/components/time_range_selector';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
+import { Result } from '@/generic_libs/types';
 
 import {
   PREFIX_MATCH_OPTION,
@@ -57,21 +58,58 @@ const FormRowDiv = styled(Box)`
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 const DEFAULT_PAGE_SIZE = 10;
 
-// TODO(@beining) :
-// * implement some validation before sending request.
+const validateTimeRange = (
+  startTime: DateTime,
+  endTime: DateTime,
+): Result<'', string> => {
+  if (startTime >= endTime) {
+    return { ok: false, value: 'start time must be before end time' };
+  }
+  if (endTime.diff(startTime, ['days']).days > 7) {
+    return {
+      ok: false,
+      value: 'start time should not be more than 7 days older than end time',
+    };
+  }
+  return { ok: true, value: '' };
+};
+
 export function LogSearch() {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSyncedSearchParams();
   const [pendingForm, setPendingForm] = useState<FormData>(
     FormData.fromSearchParam(searchParams) || EMPTY_FORM,
   );
-  const [searchFilter, setSearchFilter] = useState<SearchFilter | null>(null);
   // Persist current time between re-render, so that anchor for relative time calculation is consistent.
   // This improve the cache hit rate of log search queries.
   const nowRef = useRef(DateTime.now().toUTC());
   const { startTime, endTime } = getAbsoluteStartEndTime(
     searchParams,
     nowRef.current,
+  );
+
+  // Basic Validation of the filters.
+  // Filters passes this validation does NOT guarantee to be a valid
+  // log search request. Backend does a more comprehensive validation.
+  const isSubmittable = (() => {
+    if (!startTime || !endTime) {
+      return false;
+    }
+    if (!validateTimeRange(startTime, endTime).ok) {
+      return false;
+    }
+    if (pendingForm.searchStr === '') {
+      return false;
+    }
+    return true;
+  })();
+  // Prefill the search filter when data derived from URL parameter is submittable.
+  // The page will start to query search results once user land this page (without click the search buttom).
+  const initialFilter: SearchFilter | null = isSubmittable
+    ? { form: { ...pendingForm }, startTime: startTime!, endTime: endTime! }
+    : null;
+  const [searchFilter, setSearchFilter] = useState<SearchFilter | null>(
+    initialFilter,
   );
   const pagerContexts = {
     testLogPagerCtx: usePagerContext({
@@ -90,12 +128,17 @@ export function LogSearch() {
       pageSizeKey: 'limit',
     }),
   };
+
   return (
     <>
       <FormContainer>
         <FormRowDiv>
-          <TimeRangeSelector />
+          <TimeRangeSelector
+            validateCustomizeTimeRange={validateTimeRange}
+            disableFuture
+          />
           <SelectTextField
+            required
             sx={{ flex: 3 }}
             label="Search string"
             selectValue={
@@ -171,14 +214,16 @@ export function LogSearch() {
           sx={{ margin: '0px 10px' }}
           size="small"
           variant="contained"
+          disabled={!isSubmittable}
           onClick={() => {
-            startTime &&
-              endTime &&
-              setSearchFilter({
-                form: { ...pendingForm },
-                startTime,
-                endTime,
-              });
+            if (!isSubmittable) {
+              return;
+            }
+            setSearchFilter({
+              form: { ...pendingForm },
+              startTime: startTime!,
+              endTime: endTime!,
+            });
             setSearchParams(FormData.toSearchParamUpdater(pendingForm));
             setSearchParams(
               emptyPageTokenUpdater(pagerContexts.invocationLogPagerCtx),
@@ -199,7 +244,7 @@ export function LogSearch() {
       <SearchFilterProvider searchFilter={searchFilter}>
         <PaginationProvider state={pagerContexts}>
           <LogGroupListStateProvider>
-            <AppRoutedTabs>
+            <AppRoutedTabs sx={{ display: searchFilter ? '' : 'none' }}>
               <AppRoutedTab
                 label="Test result logs"
                 value="test-logs"
