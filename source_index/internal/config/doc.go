@@ -12,7 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package rpc contains implementations for remote procedure calls
-// exposed by LUCI Source Index. Explore RPCs at
-// https://sourceindex.api.luci.app.
-package rpc
+// Package config implements service-level config for LUCI Source Index.
+package config

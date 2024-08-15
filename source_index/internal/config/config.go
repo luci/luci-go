@@ -16,37 +16,43 @@
 package config
 
 import (
-	"context"
-
-	"google.golang.org/protobuf/proto"
-
-	"go.chromium.org/luci/config/server/cfgcache"
-	"go.chromium.org/luci/config/validation"
+	"regexp"
+	"slices"
 
 	configpb "go.chromium.org/luci/source_index/proto/config"
 )
 
-// Cached service config.
-var cachedCfg = cfgcache.Register(&cfgcache.Entry{
-	Path: "config.cfg",
-	Type: (*configpb.Config)(nil),
-	Validator: func(ctx *validation.Context, msg proto.Message) error {
-		validateConfig(ctx, msg.(*configpb.Config))
-		return nil
-	},
-})
-
-// Update fetches the config and puts it into the datastore.
-func Update(ctx context.Context) error {
-	_, err := cachedCfg.Update(ctx, nil)
-	return err
+// config is a wrapper around `*configpb.Config` that implements `Config`.
+type config struct {
+	*configpb.Config
 }
 
-// Get returns the config stored in the context.
-func Get(ctx context.Context) (*configpb.Config, error) {
-	cfg, err := cachedCfg.Get(ctx, nil)
-	if err != nil {
-		return nil, err
+// Config provides some methods for interacting with the config.
+type Config interface {
+	// ShouldIndexRef returns whether the specified ref should be indexed.
+	ShouldIndexRef(host, repo, ref string) bool
+}
+
+// ShouldIndexRef implements Config.
+func (c *config) ShouldIndexRef(host, repo, ref string) bool {
+	hostIndex := slices.IndexFunc(c.Hosts, func(hostConfig *configpb.Config_Host) bool {
+		return hostConfig.Host == host
+	})
+	if hostIndex < 0 {
+		return false
 	}
-	return cfg.(*configpb.Config), nil
+	hostConfig := c.Hosts[hostIndex]
+
+	repoIndex := slices.IndexFunc(hostConfig.Repositories, func(repoConfig *configpb.Config_Host_Repository) bool {
+		return repoConfig.Name == repo
+	})
+	if repoIndex < 0 {
+		return false
+	}
+	repoConfig := hostConfig.Repositories[repoIndex]
+
+	return slices.ContainsFunc(repoConfig.IncludeRefRegexes, func(regexStr string) bool {
+		regex := regexp.MustCompile(regexStr)
+		return regex.MatchString(ref)
+	})
 }
