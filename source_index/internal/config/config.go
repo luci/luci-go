@@ -29,8 +29,17 @@ type config struct {
 
 // Config provides some methods for interacting with the config.
 type Config interface {
+	// HasHost returns whether the host is configured.
+	HasHost(host string) bool
 	// ShouldIndexRef returns whether the specified ref should be indexed.
 	ShouldIndexRef(host, repo, ref string) bool
+}
+
+// HasHost implements Config.
+func (c *config) HasHost(host string) bool {
+	return slices.ContainsFunc(c.Hosts, func(hostConfig *configpb.Config_Host) bool {
+		return hostConfig.Host == host
+	})
 }
 
 // ShouldIndexRef implements Config.

@@ -17,8 +17,6 @@ package config
 import (
 	"testing"
 
-	configpb "go.chromium.org/luci/source_index/proto/config"
-
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -26,36 +24,18 @@ func TestConfig(t *testing.T) {
 	t.Parallel()
 
 	Convey("Config", t, func() {
-		var cfg Config = &config{&configpb.Config{
-			Hosts: []*configpb.Config_Host{
-				{
-					Host: "chromium.googlesource.com",
-					Repositories: []*configpb.Config_Host_Repository{
-						{
-							Name:              "chromium/src",
-							IncludeRefRegexes: []string{"^refs/branch-heads/.+$", "^refs/heads/main$"},
-						},
-						{
-							Name:              "chromiumos/manifest",
-							IncludeRefRegexes: []string{"^refs/heads/staging-snapshot$"},
-						},
-						{
-							Name:              "v8/v8",
-							IncludeRefRegexes: []string{"^refs/heads/main$"},
-						},
-					},
-				},
-				{
-					Host: "webrtc.googlesource.com",
-					Repositories: []*configpb.Config_Host_Repository{
-						{
-							Name:              "src",
-							IncludeRefRegexes: []string{"^refs/heads/main$"},
-						},
-					},
-				},
-			},
-		}}
+		var cfg Config = &config{TestCfg}
+
+		Convey("HasHost", func() {
+			// Match one host.
+			So(cfg.HasHost("chromium.googlesource.com"), ShouldBeTrue)
+
+			// Match another host.
+			So(cfg.HasHost("webrtc.googlesource.com"), ShouldBeTrue)
+
+			// Do not match any host.
+			So(cfg.HasHost("another-host.googlesource.com"), ShouldBeFalse)
+		})
 
 		Convey("ShouldIndexRef", func() {
 			// Match regex.
