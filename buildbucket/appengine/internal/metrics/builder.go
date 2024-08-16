@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -366,6 +367,8 @@ func getBuilderDefinedMetricsPerBase(ctx context.Context, base pb.CustomMetricBa
 func reportCustomBuilderCounts(ctx context.Context, cms *CustomMetrics, base pb.CustomMetricBase, cmNames []string, statuses []pb.Status, cmCounts map[string]map[pb.Status]int64) {
 	for _, name := range cmNames {
 		for _, status := range statuses {
+			// TODO(b/338071541): remove after confirming the feature works.
+			logging.Infof(ctx, "reporting to %s for status %s with count %d", name, status, cmCounts[name][status])
 			if cmCounts[name][status] != 0 {
 				cms.Report(ctx, &Report{
 					Base:     base,
