@@ -26,7 +26,7 @@ CREATE TABLE Commits (
   Repository STRING(100) NOT NULL,
 
   -- The full hex sha1 of the commit in lowercase.
-  Hash STRING(40) NOT NULL,
+  CommitHash STRING(40) NOT NULL,
 
   -- The name of position defined in value of git-footer git-svn-id
   -- or Cr-Commit-Position (e.g. refs/heads/master,
@@ -36,7 +36,7 @@ CREATE TABLE Commits (
   -- The sequential identifier of the commit in the given branch
   -- (position_ref).
   Position INT64
-) PRIMARY KEY(Host, Repository, Hash);
+) PRIMARY KEY(Host, Repository, CommitHash);
 
 -- Index commits by commit position.
 -- To support mapping commit positions to commit hashes.

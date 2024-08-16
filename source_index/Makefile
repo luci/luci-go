@@ -9,8 +9,11 @@ help:
 format:
 	gofmt -s -w .
 
+install-spanner-emulator:
+	gcloud components install cloud-spanner-emulator -q
+
 test:
-	go test ./...
+	INTEGRATION_TESTS=1 go test ./...
 
 deploy:
 	$(GAE_PY) upload -A luci-source-index-dev -f
