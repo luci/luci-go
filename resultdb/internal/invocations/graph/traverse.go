@@ -23,6 +23,7 @@ import (
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
@@ -89,4 +90,105 @@ func FindInheritSourcesDescendants(ctx context.Context, invID invocations.ID) (i
 		return nil, err
 	}
 	return seen, nil
+}
+
+// FindRoots returns ALL root invocations for a given invocation.
+// A root either
+//   - has is_export_root = true, or
+//   - has no parent invocation.
+//
+// If the given invocation is already a root, it will return a ID set that only contains the given invocation.
+// If the given invocation has no root (eg. a <-> b), it will return an empty ID set.
+//
+// It will stop traverse the current path further once a root is encountered.
+// For example, with graph a(is_export_root) -> b (is_export_root) -> c <- d,
+// FindRoots(c) will return [b,d]. -> means includes.
+func FindRoots(ctx context.Context, invID invocations.ID) (invocations.IDSet, error) {
+	var isExportRoot spanner.NullBool
+	err := invocations.ReadColumns(ctx, invID, map[string]any{"IsExportRoot": &isExportRoot})
+	if err != nil {
+		return nil, err
+	}
+	// Special case when the given invocation is an export root.
+	if isExportRoot.Valid && isExportRoot.Bool {
+		return invocations.NewIDSet(invID), nil
+	}
+
+	// Walk the graph of invocations, starting from the leaf, along the inclusion
+	// edges to roots.
+	// Store all visited invocations to avoid duplicates and cycles.
+	visited := invocations.NewIDSet()
+	visited.Add(invID)
+
+	// findRoots recursively find all roots for an invocation.
+	// TODO: This will run out of stack space if we have a very deep graph.
+	// It is very unlikely, but if it happens we can rewrite it iteratively instead.
+	var findRoots func(id invocations.ID) (invocations.IDSet, error)
+	findRoots = func(id invocations.ID) (invocations.IDSet, error) {
+		parents, err := queryParentInvocations(ctx, id)
+		if err != nil {
+			return nil, errors.Annotate(err, "queryParentInvocations for %s", id).Err()
+		}
+		roots := invocations.NewIDSet()
+		if len(parents) == 0 {
+			// Invocation is a root of itself when it has no parent.
+			roots.Add(id)
+			return roots, nil
+		}
+		for _, parent := range parents {
+			if _, ok := visited[parent.invocationID]; ok {
+				// parent already visited, ignore.
+				continue
+			}
+			visited.Add(parent.invocationID)
+			if parent.isExportRoot {
+				roots.Add(parent.invocationID)
+				continue
+			}
+			// Roots of parent invocation are also roots of the current invocation.
+			parentRoots, err := findRoots(parent.invocationID)
+			if err != nil {
+				return nil, err
+			}
+			roots.Union(parentRoots)
+		}
+		return roots, nil
+	}
+	return findRoots(invID)
+}
+
+type invocationInfo struct {
+	invocationID invocations.ID
+	isExportRoot bool
+}
+
+// queryParentInvocations returns all parents of a given invocation.
+func queryParentInvocations(ctx context.Context, invID invocations.ID) ([]invocationInfo, error) {
+	st := spanner.NewStatement(`
+	SELECT
+		iinv.InvocationId, inv.IsExportRoot
+	FROM IncludedInvocations iinv
+	JOIN Invocations inv ON iinv.InvocationId = inv.InvocationId
+	WHERE IncludedInvocationId = @invocationID`)
+	st.Params = spanutil.ToSpannerMap(spanutil.ToSpannerMap(map[string]any{
+		"invocationID": invID,
+	}))
+
+	parents := make([]invocationInfo, 0)
+	b := &spanutil.Buffer{}
+	if err := span.Query(ctx, st).Do(func(r *spanner.Row) error {
+		var invocationID invocations.ID
+		var isExportRoot spanner.NullBool
+		if err := b.FromSpanner(r, &invocationID, &isExportRoot); err != nil {
+			return err
+		}
+		parents = append(parents, invocationInfo{
+			invocationID: invocationID,
+			isExportRoot: isExportRoot.Valid && isExportRoot.Bool,
+		})
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+	return parents, nil
 }

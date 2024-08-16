@@ -40,6 +40,23 @@ func (s *DecoratedResultDB) GetInvocation(ctx context.Context, req *GetInvocatio
 	return
 }
 
+func (s *DecoratedResultDB) QueryRootInvocationNames(ctx context.Context, req *QueryRootInvocationNamesRequest) (rsp *QueryRootInvocationNamesResponse, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "QueryRootInvocationNames", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.QueryRootInvocationNames(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "QueryRootInvocationNames", rsp, err)
+	}
+	return
+}
+
 func (s *DecoratedResultDB) GetTestResult(ctx context.Context, req *GetTestResultRequest) (rsp *TestResult, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context

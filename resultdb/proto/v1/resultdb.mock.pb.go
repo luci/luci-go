@@ -424,6 +424,26 @@ func (mr *MockResultDBClientMockRecorder) QueryNewTestVariants(ctx, in interface
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryNewTestVariants", reflect.TypeOf((*MockResultDBClient)(nil).QueryNewTestVariants), varargs...)
 }
 
+// QueryRootInvocationNames mocks base method.
+func (m *MockResultDBClient) QueryRootInvocationNames(ctx context.Context, in *QueryRootInvocationNamesRequest, opts ...grpc.CallOption) (*QueryRootInvocationNamesResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "QueryRootInvocationNames", varargs...)
+	ret0, _ := ret[0].(*QueryRootInvocationNamesResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// QueryRootInvocationNames indicates an expected call of QueryRootInvocationNames.
+func (mr *MockResultDBClientMockRecorder) QueryRootInvocationNames(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryRootInvocationNames", reflect.TypeOf((*MockResultDBClient)(nil).QueryRootInvocationNames), varargs...)
+}
+
 // QueryRunTestVerdicts mocks base method.
 func (m *MockResultDBClient) QueryRunTestVerdicts(ctx context.Context, in *QueryRunTestVerdictsRequest, opts ...grpc.CallOption) (*QueryRunTestVerdictsResponse, error) {
 	m.ctrl.T.Helper()
@@ -845,6 +865,21 @@ func (m *MockResultDBServer) QueryNewTestVariants(arg0 context.Context, arg1 *Qu
 func (mr *MockResultDBServerMockRecorder) QueryNewTestVariants(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryNewTestVariants", reflect.TypeOf((*MockResultDBServer)(nil).QueryNewTestVariants), arg0, arg1)
+}
+
+// QueryRootInvocationNames mocks base method.
+func (m *MockResultDBServer) QueryRootInvocationNames(arg0 context.Context, arg1 *QueryRootInvocationNamesRequest) (*QueryRootInvocationNamesResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "QueryRootInvocationNames", arg0, arg1)
+	ret0, _ := ret[0].(*QueryRootInvocationNamesResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// QueryRootInvocationNames indicates an expected call of QueryRootInvocationNames.
+func (mr *MockResultDBServerMockRecorder) QueryRootInvocationNames(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryRootInvocationNames", reflect.TypeOf((*MockResultDBServer)(nil).QueryRootInvocationNames), arg0, arg1)
 }
 
 // QueryRunTestVerdicts mocks base method.

@@ -35,6 +35,9 @@ service ResultDB {
   // Retrieves an invocation.
   rpc GetInvocation(GetInvocationRequest) returns (Invocation) {};
 
+  // Retrieve names of all root invocations for a given invocation.
+  rpc QueryRootInvocationNames(QueryRootInvocationNamesRequest) returns (QueryRootInvocationNamesResponse) {};
+
   // == Test results ===========================================================
 
   // Retrieves a test result.
@@ -184,6 +187,28 @@ message GetInvocationRequest {
   // The name of the invocation to request, see Invocation.name.
   string name = 1 [ (google.api.field_behavior) = REQUIRED ];
 }
+
+// A request message for QueryRootInvocationNames RPC.
+message QueryRootInvocationNamesRequest {
+  // The name of the invocation to request, see Invocation.name.
+  string name = 1 [ (google.api.field_behavior) = REQUIRED ];
+}
+
+// A response message for QueryRootInvocationNames RPC.
+message QueryRootInvocationNamesResponse {
+  // The name of all root invocations to the invocation in the request.
+  // A root either
+  //   - has is_export_root = true, or
+  //   - has no parent invocation.
+  //
+  // If the invocation to request is already a root,
+  // the root_invocation_names will only contains the invocation in the request
+  // (i.e. a invocation can be its own root).
+  //
+  // root_invocation_names can be empty when no root is found (in the presence of cycles).
+  repeated string root_invocation_names = 1;
+}
+
 
 // A request message for GetTestResult RPC.
 message GetTestResultRequest {
