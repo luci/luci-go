@@ -924,9 +924,9 @@ func validateCustomMetricDefinitions(ctx *validation.Context, cms []*pb.CustomMe
 	ctx.Enter("custome_build_metrics")
 	defer ctx.Exit()
 
-	registeredMetrics := make(map[string][]string, len(globalCfg.GetCustomMetrics()))
+	registeredMetrics := make(map[string]*pb.CustomMetric, len(globalCfg.GetCustomMetrics()))
 	for _, gm := range globalCfg.GetCustomMetrics() {
-		registeredMetrics[gm.Name] = gm.GetExtraFields()
+		registeredMetrics[gm.Name] = gm
 	}
 
 	for _, cm := range cms {
@@ -934,7 +934,7 @@ func validateCustomMetricDefinitions(ctx *validation.Context, cms []*pb.CustomMe
 	}
 }
 
-func validateCustomMetricDefinition(ctx *validation.Context, cm *pb.CustomMetricDefinition, registeredMetrics map[string][]string) {
+func validateCustomMetricDefinition(ctx *validation.Context, cm *pb.CustomMetricDefinition, registeredMetrics map[string]*pb.CustomMetric) {
 	ctx.Enter("custome_build_metrics %s", cm.Name)
 	defer ctx.Exit()
 	// Name
@@ -943,7 +943,7 @@ func validateCustomMetricDefinition(ctx *validation.Context, cm *pb.CustomMetric
 		return
 	}
 
-	gmFields, ok := registeredMetrics[cm.Name]
+	cmRgst, ok := registeredMetrics[cm.Name]
 	if !ok {
 		ctx.Errorf("not registered in Buildbucket service config")
 		return
@@ -956,7 +956,7 @@ func validateCustomMetricDefinition(ctx *validation.Context, cm *pb.CustomMetric
 
 	// Fields
 	var missedFs []string
-	for _, f := range gmFields {
+	for _, f := range cmRgst.ExtraFields {
 		if _, ok := cm.GetExtraFields()[f]; !ok {
 			missedFs = append(missedFs, f)
 		}
@@ -966,6 +966,9 @@ func validateCustomMetricDefinition(ctx *validation.Context, cm *pb.CustomMetric
 	}
 
 	if len(cm.GetExtraFields()) > 0 {
+		if metrics.IsBuilderMetric(cmRgst.GetMetricBase()) {
+			ctx.Errorf("custom builder metric cannot have extra_fields")
+		}
 		if _, err := buildcel.NewStringMap(cm.GetExtraFields()); err != nil {
 			ctx.Errorf("extra_fields: %s", err)
 		}

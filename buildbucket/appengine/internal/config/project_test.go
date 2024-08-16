@@ -1087,11 +1087,24 @@ func TestValidateProject(t *testing.T) {
 			settingsCfg := &pb.SettingsCfg{
 				CustomMetrics: []*pb.CustomMetric{
 					{
-						Name:        "chrome/infra/custom/builds/started",
+						Name: "chrome/infra/custom/builds/started",
+						Class: &pb.CustomMetric_MetricBase{
+							MetricBase: pb.CustomMetricBase_CUSTOM_METRIC_BASE_STARTED,
+						},
 						ExtraFields: []string{"os"},
 					},
 					{
-						Name:        "chrome/infra/custom/builds/completed",
+						Name: "chrome/infra/custom/builds/completed",
+						Class: &pb.CustomMetric_MetricBase{
+							MetricBase: pb.CustomMetricBase_CUSTOM_METRIC_BASE_COMPLETED,
+						},
+						ExtraFields: []string{"os"},
+					},
+					{
+						Name: "chrome/infra/custom/builds/count",
+						Class: &pb.CustomMetric_MetricBase{
+							MetricBase: pb.CustomMetricBase_CUSTOM_METRIC_BASE_COUNT,
+						},
 						ExtraFields: []string{"os"},
 					},
 				},
@@ -1303,6 +1316,45 @@ func TestValidateProject(t *testing.T) {
 				So(ok, ShouldEqual, true)
 				So(len(ve.Errors), ShouldEqual, 1)
 				So(ve.Errors[0].Error(), ShouldContainSubstring, `failed to generate CEL expression`)
+			})
+
+			Convey("metric fields for builder metric", func() {
+				content := `
+					builders {
+						name: "both default"
+						swarming_host: "example.com"
+						dimensions: "os:Linux"
+						dimensions: "cpu:x86-64"
+						dimensions: "cores:8"
+						dimensions: "60:cores:64"
+						service_account: "robot@example.com"
+						caches {
+							name: "git_chromium"
+							path: "git_cache"
+						}
+						recipe {
+							name: "foo"
+							cipd_package: "infra/recipe_bundle"
+							cipd_version: "refs/heads/main"
+							properties: "a:b'"
+							properties_j: "x:true"
+						}
+						custom_metric_definitions {
+							name: "chrome/infra/custom/builds/count"
+							predicates: "build.tags.get_value(\"os\")!=\"\""
+							extra_fields {
+								key: "os",
+								value: "build.tags.get_value(\"os\")",
+							}
+						}
+					}
+				`
+
+				validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", settingsCfg)
+				ve, ok := vctx.Finalize().(*validation.Error)
+				So(ok, ShouldEqual, true)
+				So(len(ve.Errors), ShouldEqual, 1)
+				So(ve.Errors[0].Error(), ShouldContainSubstring, `custom builder metric cannot have extra_fields`)
 			})
 
 			Convey("OK", func() {
