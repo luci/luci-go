@@ -349,7 +349,7 @@ func TestCheckRunCreate(t *testing.T) {
 		}
 		So(datastore.Put(ctx, cls, rcls), ShouldBeNil)
 		ct.GFake.AddLinkedAccountMapping([]*gerritpb.EmailInfo{
-			&gerritpb.EmailInfo{Email: "user-1@example.com"},
+			{Email: "user-1@example.com"},
 		})
 
 		Convey("Returns empty metas for new patchset run", func() {
