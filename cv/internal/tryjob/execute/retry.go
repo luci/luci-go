@@ -66,7 +66,7 @@ func (e *Executor) canRetryAll(
 		exec := execState.GetExecutions()[idx]
 		attempt := tryjob.LatestAttempt(exec)
 		ensureTryjobCriticalAndFailed(definition, attempt)
-		switch canRetry(definition, attempt) {
+		switch canRetry(attempt) {
 		case retryDenied:
 			canRetryAll = false
 			e.logRetryDenied(ctx, execState, []int{idx}, "tryjob explicitly denies retry in its output")
@@ -114,7 +114,7 @@ func ensureTryjobCriticalAndFailed(def *tryjob.Definition, attempt *tryjob.Execu
 }
 
 // canRetry determines whether an individual attempt can be retried.
-func canRetry(definition *tryjob.Definition, attempt *tryjob.ExecutionState_Execution_Attempt) retriability {
+func canRetry(attempt *tryjob.ExecutionState_Execution_Attempt) retriability {
 	switch {
 	// If this run did not trigger the tryjob, do not count its failure
 	// towards retry quota. Also ignores the output_retry_denied property.
