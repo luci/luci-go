@@ -66,7 +66,7 @@ func findInitScript() (string, error) {
 	}
 
 	for {
-		scriptPath := filepath.Join(ancestor, "internal", "span", "init_db.sql")
+		scriptPath := filepath.Join(ancestor, "internal", "spanutil", "init_db.sql")
 		_, err := os.Stat(scriptPath)
 		if os.IsNotExist(err) {
 			parent := filepath.Dir(ancestor)

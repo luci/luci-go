@@ -35,13 +35,14 @@ CREATE TABLE Commits (
 
   -- The sequential identifier of the commit in the given branch
   -- (position_ref).
-  Position INT64
+  -- This is defined when and only when PositionRef is defined.
+  PositionNumber INT64
 ) PRIMARY KEY(Host, Repository, CommitHash);
 
 -- Index commits by commit position.
 -- To support mapping commit positions to commit hashes.
 CREATE NULL_FILTERED INDEX CommitsByPosition
-  ON Commits (Host, Repository, PositionRef, Position DESC);
+  ON Commits (Host, Repository, PositionRef, PositionNumber DESC);
 
 -- Stores transactional tasks reminders.
 -- See https://go.chromium.org/luci/server/tq. Scanned by tq-sweeper-spanner.
