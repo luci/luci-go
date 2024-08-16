@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <head>
   <meta http-equiv="Content-Security-Policy" content="require-trusted-types-for 'script';">
   <!-- The tag manager to inject a GA4 tag with a proper measurement ID base on
@@ -16,14 +17,17 @@
       .createScriptURL('') || gtmJs;
 
     // The script is modified to support trusted types.
-    (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=trustedGtmJs;f.parentNode.insertBefore(j,f);
-    })(window,document,'script','dataLayer','GTM-5SMGXGB');
+    (function (w, d, s, l, i) {
+      w[l] = w[l] || []; w[l].push({
+        'gtm.start':
+          new Date().getTime(), event: 'gtm.js'
+      }); var f = d.getElementsByTagName(s)[0],
+        j = d.createElement(s), dl = l != 'dataLayer' ? '&l=' + l : ''; j.async = true; j.src = trustedGtmJs; f.parentNode.insertBefore(j, f);
+    })(window, document, 'script', 'dataLayer', 'GTM-5SMGXGB');
 
     // A custom implementation of gtag.
     // See https://developers.google.com/tag-platform/tag-manager/datalayer#installation.
-    function gtag(){dataLayer.push(arguments)};
+    function gtag() { dataLayer.push(arguments) };
   </script>
   <!-- End Google Tag Manager -->
 
@@ -34,20 +38,47 @@
   <link href="https://fonts.googleapis.com/css?family=Material+Icons&display=block" rel="stylesheet">
 
   <script type="module" src="/src/main.tsx" defer></script>
+  <style>
+    #app-root {
+      min-height: calc(100vh - 46px)
+    }
+
+    #footer {
+      background-color: #f2f2f2;
+      border-top: solid 1px #dadce0;
+      display: flex;
+      justify-content: end;
+      gap: 15px;
+      line-height: 15px;
+      font-size: 14px;
+      padding: 15px 15px;
+      margin-top: auto;
+    }
+
+    #footer a {
+      text-decoration: none;
+      color: rgb(31, 31, 31);
+    }
+  </style>
 </head>
+
 <body>
   <!-- Google Tag Manager (noscript) -->
-  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5SMGXGB"
-  height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5SMGXGB" height="0" width="0"
+      style="display:none;visibility:hidden"></iframe></noscript>
   <!-- End Google Tag Manager (noscript) -->
   <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoad()"></script>
   <script>
     // Load GAPI client.
-    function gapiLoad(){
-      gapi.load('client', function(){
+    function gapiLoad() {
+      gapi.load('client', function () {
         gapi.client.init({})
       })
     }
   </script>
   <div id="app-root"></div>
+  <div id="footer">
+    <div><a href="https://policies.google.com/privacy">Privacy</a></div>
+    <div><a href="https://policies.google.com/terms">Terms</a></div>
+  </div>
 </body>
