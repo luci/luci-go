@@ -24,6 +24,7 @@ import IconButton from '@mui/material/IconButton';
 import EditIcon from '@mui/icons-material/Edit';
 import DoneIcon from '@mui/icons-material/Done';
 import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableRow from '@mui/material/TableRow';
@@ -135,7 +136,7 @@ export function GroupsForm({ name, onDelete = () => { } }: GroupsFormProps) {
     onSuccess: (response) => {
       setReadonlyMode();
       setIsExternal(isExternalGroupName(response?.name!));
-      },
+    },
   })
 
   const setReadonlyMode = () => {
@@ -259,50 +260,54 @@ export function GroupsForm({ name, onDelete = () => { } }: GroupsFormProps) {
           {!isExternal &&
             <TableContainer sx={{ p: 0, width: '100%' }} >
               <Table onMouseEnter={() => setShowDescriptionEdit(true)} onMouseLeave={() => setShowDescriptionEdit(false)}>
-                <TableRow>
-                  <TableCell sx={{ pb: 0 }} style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', minHeight: '45px' }}>
-                    <Typography variant="h6"> Description</Typography>
-                    {(showDescriptionEdit || descriptionMode) && callerCanModify &&
-                      <IconButton color='primary' onClick={changeDescriptionMode} sx={{ p: 0, ml: 1.5 }}>
-                        {descriptionMode
-                          ? <DoneIcon />
-                          : <EditIcon />
-                        }
-                      </IconButton>
-                    }
-                  </TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell align='left' style={{ width: '95%' }} sx={{ pt: 0 }}>
-                    {descriptionMode
-                      ? <TextareaAutosize value={description} style={{ width: '100%', whiteSpace: 'pre-wrap' }} onChange={(e) => setDescription(e.target.value)} id='descriptionTextfield'></TextareaAutosize>
-                      : <Typography variant="body2" style={{ width: '100%' }}> {description} </Typography>
-                    }
-                  </TableCell>
-                </TableRow>
+                <TableBody>
+                  <TableRow>
+                    <TableCell sx={{ pb: 0 }} style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', minHeight: '45px' }}>
+                      <Typography variant="h6"> Description</Typography>
+                      {(showDescriptionEdit || descriptionMode) && callerCanModify &&
+                        <IconButton color='primary' onClick={changeDescriptionMode} sx={{ p: 0, ml: 1.5 }}>
+                          {descriptionMode
+                            ? <DoneIcon />
+                            : <EditIcon />
+                          }
+                        </IconButton>
+                      }
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell align='left' style={{ width: '95%' }} sx={{ pt: 0 }}>
+                      {descriptionMode
+                        ? <TextareaAutosize value={description} style={{ width: '100%', whiteSpace: 'pre-wrap' }} onChange={(e) => setDescription(e.target.value)} id='descriptionTextfield'></TextareaAutosize>
+                        : <Typography variant="body2" style={{ width: '100%' }}> {description} </Typography>
+                      }
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
               </Table>
               <Table onMouseEnter={() => setShowOwnersEdit(true)} onMouseLeave={() => setShowOwnersEdit(false)}>
-                <TableRow >
-                  <TableCell sx={{ pb: 0 }} style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', minHeight: '45px' }}>
-                    <Typography variant="h6"> Owners</Typography>
-                    {(showOwnersEdit || ownersMode) && callerCanModify &&
-                      <IconButton color='primary' onClick={changeOwnersMode} sx={{ p: 0, ml: 1.5 }}>
-                        {ownersMode
-                          ? <DoneIcon />
-                          : <EditIcon />
-                        }
-                      </IconButton>
-                    }
-                  </TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell align='left' style={{ width: '95%' }} sx={{ pt: 0 }}>
-                    {ownersMode
-                      ? <TextareaAutosize value={owners} style={{ width: '100%' }} onChange={(e) => setOwners(e.target.value)} id='ownersTextfield'></TextareaAutosize>
-                      : <Typography variant="body2" style={{ width: '100%' }}> {owners} </Typography>
-                    }
-                  </TableCell>
-                </TableRow>
+                <TableBody>
+                  <TableRow >
+                    <TableCell sx={{ pb: 0 }} style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', minHeight: '45px' }}>
+                      <Typography variant="h6"> Owners</Typography>
+                      {(showOwnersEdit || ownersMode) && callerCanModify &&
+                        <IconButton color='primary' onClick={changeOwnersMode} sx={{ p: 0, ml: 1.5 }}>
+                          {ownersMode
+                            ? <DoneIcon />
+                            : <EditIcon />
+                          }
+                        </IconButton>
+                      }
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell align='left' style={{ width: '95%' }} sx={{ pt: 0 }}>
+                      {ownersMode
+                        ? <TextareaAutosize value={owners} style={{ width: '100%' }} onChange={(e) => setOwners(e.target.value)} id='ownersTextfield'></TextareaAutosize>
+                        : <Typography variant="body2" style={{ width: '100%' }}> {owners} </Typography>
+                      }
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
               </Table>
             </TableContainer>}
           {isExternal
