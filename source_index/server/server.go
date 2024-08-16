@@ -17,23 +17,17 @@
 package server
 
 import (
-	"fmt"
-	"net/http"
-
-	"go.chromium.org/luci/auth/identity"
-	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/config/server/cfgmodule"
 	"go.chromium.org/luci/grpc/prpc"
 	luciserver "go.chromium.org/luci/server"
-	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/auth/openid"
 	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/module"
-	"go.chromium.org/luci/server/router"
 	spanmodule "go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
 
+	"go.chromium.org/luci/source_index/internal/commitingester"
 	"go.chromium.org/luci/source_index/internal/config"
 	sourceindexpb "go.chromium.org/luci/source_index/proto/v1"
 	"go.chromium.org/luci/source_index/rpc"
@@ -76,29 +70,18 @@ func RegisterCrons(srv *luciserver.Server) error {
 
 // RegisterPubSubHandlers registers pub/sub handlers.
 func RegisterPubSubHandlers(srv *luciserver.Server) error {
-	pubsubMW := router.NewMiddlewareChain(
-		auth.Authenticate(&openid.GoogleIDTokenAuthMethod{
-			AudienceCheck: openid.AudienceMatchesHost,
-		}),
-	)
-	pusherID := identity.Identity(fmt.Sprintf("user:gitiles-pubsub@%s.iam.gserviceaccount.com", srv.Options.CloudProject))
-
-	// PubSub subscription endpoints.
-	srv.Routes.POST("/push-handlers/gitiles/:gitiles_host", pubsubMW, func(ctx *router.Context) {
-		if got := auth.CurrentIdentity(ctx.Request.Context()); got != pusherID {
-			logging.Errorf(ctx.Request.Context(), "Expecting ID token of %q, got %q", pusherID, got)
-			ctx.Writer.WriteHeader(http.StatusForbidden)
-		} else {
-			// Ignore the pubsub request for now.
-			// TODO(b/356027716): implement commit ingestion.
-			ctx.Writer.WriteHeader(http.StatusOK)
-		}
-	})
+	if err := commitingester.RegisterPubSubHandlers(srv); err != nil {
+		return errors.Annotate(err, "failed to register commit ingester PubSub handlers").Err()
+	}
 
 	return nil
 }
 
 // RegisterTaskQueueHandlers registers task queue handlers.
 func RegisterTaskQueueHandlers(srv *luciserver.Server) error {
+	if err := commitingester.RegisterTaskQueueHandlers(srv); err != nil {
+		return errors.Annotate(err, "failed to register commit ingester task queue handlers").Err()
+	}
+
 	return nil
 }

@@ -13,4 +13,4 @@ test:
 	go test ./...
 
 deploy:
-	$(GAE_PY) upload --target-version ${USER} -A luci-source-index-dev
+	$(GAE_PY) upload -A luci-source-index-dev -f
