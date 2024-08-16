@@ -37,7 +37,7 @@ type Position struct {
 // CommitSaveCols is the set of columns written to in a commit save.
 // Allocated here once to avoid reallocating on every commit save.
 var CommitSaveCols = []string{
-	"Host", "Repository", "CommitHash", "PositionRef", "PositionNumber",
+	"Host", "Repository", "CommitHash", "PositionRef", "PositionNumber", "UpdateTime",
 }
 
 // SaveUnverified creates a mutation to save/overwrite the commit into the
@@ -58,6 +58,7 @@ func (c *Commit) SaveUnverified() *spanner.Mutation {
 		c.CommitHash,
 		positionRef,
 		position,
+		spanner.CommitTimestamp,
 	}
 
 	return spanner.InsertOrUpdate("Commits", CommitSaveCols, vals)

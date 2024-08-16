@@ -36,7 +36,18 @@ CREATE TABLE Commits (
   -- The sequential identifier of the commit in the given branch
   -- (position_ref).
   -- This is defined when and only when PositionRef is defined.
-  PositionNumber INT64
+  PositionNumber INT64,
+
+  -- The time the commit was last written to the table.
+  --
+  -- This is usually the time when the commit was created. But it might be
+  -- updated if a commit is written multiple times (e.g. when the first commit
+  -- in a commit page is not yet ingested but the tail commits in the same page
+  -- are already ingested.
+  --
+  -- This will be useful if we need to purge commits ingested after certain
+  -- timestamp due to errors.
+  UpdateTime TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true)
 ) PRIMARY KEY(Host, Repository, CommitHash);
 
 -- Index commits by commit position.
