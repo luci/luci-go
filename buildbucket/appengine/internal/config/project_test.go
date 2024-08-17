@@ -1849,31 +1849,26 @@ func TestUpdateProject(t *testing.T) {
 			}
 			`
 			chromiumRevision = "new!"
-			// Delete the entire v8 and dart cfg
-			v8BuildbucketCfg = ""
+			// Delete the entire dart cfg
 			dartBuildbucketCfg = ""
 
 			So(UpdateProjectCfg(ctx), ShouldBeNil)
 			var actualBkts []*model.Bucket
 			So(datastore.GetAll(ctx, datastore.NewQuery(model.BucketKind), &actualBkts), ShouldBeNil)
-			So(len(actualBkts), ShouldEqual, 1)
-			So(stripBucketProtos(actualBkts), ShouldResembleProto, []*pb.Bucket{
-				{
-					Name: "try",
-					Swarming: &pb.Swarming{
-						Builders:                     []*pb.BuilderConfig{},
-						TaskTemplateCanaryPercentage: &wrapperspb.UInt32Value{Value: uint32(10)},
-					},
+			So(len(actualBkts), ShouldEqual, 2)
+			So(stripBucketProtos(actualBkts)[0], ShouldResembleProto, &pb.Bucket{
+				Name: "try",
+				Swarming: &pb.Swarming{
+					Builders:                     []*pb.BuilderConfig{},
+					TaskTemplateCanaryPercentage: &wrapperspb.UInt32Value{Value: uint32(10)},
 				},
 			})
-			So(actualBkts, ShouldResemble, []*model.Bucket{
-				{
-					ID:       "try",
-					Parent:   model.ProjectKey(ctx, "chromium"),
-					Bucket:   "try",
-					Schema:   CurrentBucketSchemaVersion,
-					Revision: "new!",
-				},
+			So(actualBkts[0], ShouldResemble, &model.Bucket{
+				ID:       "try",
+				Parent:   model.ProjectKey(ctx, "chromium"),
+				Bucket:   "try",
+				Schema:   CurrentBucketSchemaVersion,
+				Revision: "new!",
 			})
 
 			var actualBuilders []*model.Builder
@@ -1923,6 +1918,17 @@ func TestUpdateProject(t *testing.T) {
 					},
 				},
 			}
+			So(bldrMetrics.Metrics, ShouldResembleProto, expectedBldrMetricsP)
+
+			// Delete the entire v8 cfg
+			v8BuildbucketCfg = ""
+			So(UpdateProjectCfg(ctx), ShouldBeNil)
+			So(datastore.Get(ctx, bldrMetrics), ShouldBeNil)
+			So(bldrMetrics.Metrics, ShouldResembleProto, expectedBldrMetricsP)
+
+			// no change on the configs.
+			So(UpdateProjectCfg(ctx), ShouldBeNil)
+			So(datastore.Get(ctx, bldrMetrics), ShouldBeNil)
 			So(bldrMetrics.Metrics, ShouldResembleProto, expectedBldrMetricsP)
 		})
 

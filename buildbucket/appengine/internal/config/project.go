@@ -216,6 +216,18 @@ func UpdateProjectCfg(ctx context.Context) error {
 				return err
 			}
 
+			// Collect the custom builder metric -> builders mapping.
+			// We need to get the full mapping regardless if this project's config
+			// is changed or not. That's why we do it here instead of later when
+			// iterating through builders.
+			for _, cfgBuilder := range cfgBucket.GetSwarming().GetBuilders() {
+				for _, cm := range cfgBuilder.CustomMetricDefinitions {
+					if _, ok := bldrMetrics[cm.Name]; ok {
+						bldrMetrics[cm.Name].Add(fmt.Sprintf("%s/%s/%s", project, cfgBktName, cfgBuilder.Name))
+					}
+				}
+			}
+
 			if storedBucket.Schema == CurrentBucketSchemaVersion && storedBucket.Revision == revision {
 				// Keep the stored buckets for now, so that in the case that a newly
 				// added bucket reuses an existing bucket as its shadow bucket, the shadow
@@ -255,12 +267,6 @@ func UpdateProjectCfg(ctx context.Context) error {
 				cfgBuilderHash, bldrSize, err := computeBuilderHash(cfgBuilder)
 				if err != nil {
 					return errors.Annotate(err, "while computing hash for builder:%s", cfgBldrName).Err()
-				}
-
-				for _, cm := range cfgBuilder.CustomMetricDefinitions {
-					if _, ok := bldrMetrics[cm.Name]; ok {
-						bldrMetrics[cm.Name].Add(cfgBldrName)
-					}
 				}
 
 				if bldr, ok := bldrMap[cfgBldrName]; ok {
