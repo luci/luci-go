@@ -17,20 +17,39 @@ package groups
 
 import (
 	"context"
-	"errors"
+	"encoding/json"
+	"time"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/auth_service/api/rpcpb"
 	"go.chromium.org/luci/auth_service/impl/model"
 	"go.chromium.org/luci/auth_service/impl/model/graph"
 )
+
+// AuthGroupJSON is the underlying data structure returned by the legacy
+// method of getting an AuthGroup.
+type AuthGroupJSON struct {
+	Name            string   `json:"name"`
+	Description     string   `json:"description"`
+	Owners          string   `json:"owners"`
+	Members         []string `json:"members"`
+	Globs           []string `json:"globs"`
+	Nested          []string `json:"nested"`
+	CreatedBy       string   `json:"created_by"`
+	CreatedTS       int64    `json:"created_ts"`
+	ModifiedBy      string   `json:"modified_by"`
+	ModifiedTS      int64    `json:"modified_ts"`
+	CallerCanModify bool     `json:"caller_can_modify"`
+}
 
 // AuthGroupsProvider is the interface to get all AuthGroup entities.
 type AuthGroupsProvider interface {
@@ -242,6 +261,49 @@ func (srv *Server) GetSubgraph(ctx context.Context, request *rpcpb.GetSubgraphRe
 
 	subgraphProto := subgraph.ToProto()
 	return subgraphProto, nil
+}
+
+func (s *Server) GetLegacyAuthGroup(ctx *router.Context) error {
+	c, _, w := ctx.Request.Context(), ctx.Request, ctx.Writer
+	name := ctx.Params.ByName("groupName")
+
+	group, err := model.GetAuthGroup(c, name)
+	if err != nil {
+		if errors.Is(err, datastore.ErrNoSuchEntity) {
+			return status.Errorf(codes.NotFound, "no such group %s", name)
+		}
+		err = errors.Annotate(err, "legacyGetAuthGroup failed").Err()
+		logging.Errorf(c, err.Error())
+		return status.Errorf(codes.Internal, "failed to fetch group %q", name)
+	}
+
+	// Set the Last-Modified header.
+	w.Header().Set("Last-Modified", group.ModifiedTS.Format(time.RFC1123Z))
+
+	blob, err := json.Marshal(map[string]AuthGroupJSON{
+		"group": {
+			Name:            group.ID,
+			Description:     group.Description,
+			Owners:          group.Owners,
+			Members:         group.Members,
+			Globs:           group.Globs,
+			Nested:          group.Nested,
+			CreatedBy:       group.CreatedBy,
+			CreatedTS:       group.CreatedTS.UnixMicro(),
+			ModifiedBy:      group.ModifiedBy,
+			ModifiedTS:      group.ModifiedTS.UnixMicro(),
+			CallerCanModify: canCallerModify(c, group),
+		},
+	})
+	if err != nil {
+		return errors.Annotate(err, "error marshalling JSON").Err()
+	}
+
+	if _, err = w.Write(blob); err != nil {
+		return errors.Annotate(err, "error writing JSON").Err()
+	}
+
+	return nil
 }
 
 // convertPrincipal handles the conversion of rpcpb.Principal -> graph.NodeKey

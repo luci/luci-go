@@ -173,6 +173,9 @@ func main() {
 		srv.Routes.POST("/auth_service/api/v1/authdb/subscription/authorization", apiMw, adaptGrpcErr(subscription.Authorize))
 		srv.Routes.DELETE("/auth_service/api/v1/authdb/subscription/authorization", apiMw, adaptGrpcErr(subscription.Deauthorize))
 
+		// Support legacy endpoint to get an AuthGroup.
+		srv.Routes.GET("/auth/api/v1/groups/*groupName", apiMw, adaptGrpcErr(groupsServer.GetLegacyAuthGroup))
+
 		// Legacy authdbrevision serving.
 		// TODO(cjacomet): Add smoke test for this endpoint
 		srv.Routes.GET("/auth_service/api/v1/authdb/revisions/:revID", apiMw, adaptGrpcErr(authdbServer.HandleLegacyAuthDBServing))

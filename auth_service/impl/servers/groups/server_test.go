@@ -16,9 +16,13 @@ package groups
 
 import (
 	"context"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
+	"github.com/julienschmidt/httprouter"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/emptypb"
 	fieldmaskpb "google.golang.org/protobuf/types/known/fieldmaskpb"
@@ -29,6 +33,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/auth_service/api/rpcpb"
@@ -45,10 +50,13 @@ func TestGroupsServer(t *testing.T) {
 	createdTime := time.Date(2021, time.August, 16, 15, 20, 0, 0, time.UTC)
 	modifiedTime := time.Date(2022, time.July, 4, 15, 45, 0, 0, time.UTC)
 	versionedEntity := model.AuthVersionedEntityMixin{
+		ModifiedBy: "user:test-modifier@example.com",
 		ModifiedTS: modifiedTime,
 	}
 	// Etag derived from the above modified time.
 	etag := `W/"MjAyMi0wNy0wNFQxNTo0NTowMFo="`
+	// Last-Modified header derived from the above modified time.
+	lastModifiedHeader := "Mon, 04 Jul 2022 15:45:00 +0000"
 
 	Convey("ListGroups RPC call", t, func() {
 		srv := Server{
@@ -217,6 +225,87 @@ func TestGroupsServer(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(actualGroupResponse, ShouldResembleProto, expectedResponse)
 
+	})
+
+	Convey("Legacy GetAuthGroup REST call", t, func() {
+		srv := Server{
+			authGroupsProvider: &CachingGroupsProvider{},
+		}
+		ctx := auth.WithState(memory.Use(context.Background()), &authtest.FakeState{
+			Identity:       "user:someone@example.com",
+			IdentityGroups: []string{"testers"},
+		})
+
+		Convey("not found", func() {
+			rw := httptest.NewRecorder()
+			rctx := &router.Context{
+				Request: (&http.Request{}).WithContext(ctx),
+				Params: []httprouter.Param{
+					{Key: "groupName", Value: "test-group"},
+				},
+				Writer: rw,
+			}
+			err := srv.GetLegacyAuthGroup(rctx)
+			So(err, ShouldHaveGRPCStatus, codes.NotFound)
+			So(rw.Body.Bytes(), ShouldBeEmpty)
+		})
+
+		Convey("returns group details", func() {
+			// Setup by adding a group in Datastore.
+			So(datastore.Put(ctx,
+				&model.AuthGroup{
+					ID:     "test-group",
+					Parent: model.RootKey(ctx),
+					Members: []string{
+						"user:test-user-1@example.com",
+						"user:test-user-2@example.com",
+					},
+					Globs: []string{
+						"*@example.com",
+					},
+					Nested: []string{
+						"group/tester",
+					},
+					Description:              "This is a test group.",
+					Owners:                   "testers",
+					CreatedTS:                createdTime,
+					CreatedBy:                "user:test-user-1@example.com",
+					AuthVersionedEntityMixin: versionedEntity,
+				}), ShouldBeNil)
+
+			rw := httptest.NewRecorder()
+			rctx := &router.Context{
+				Request: (&http.Request{}).WithContext(ctx),
+				Params: []httprouter.Param{
+					{Key: "groupName", Value: "test-group"},
+				},
+				Writer: rw,
+			}
+			err := srv.GetLegacyAuthGroup(rctx)
+			So(err, ShouldBeNil)
+
+			expectedBlob, err := json.Marshal(map[string]any{
+				"group": AuthGroupJSON{
+					Name:        "test-group",
+					Description: "This is a test group.",
+					Owners:      "testers",
+					Members: []string{
+						"user:test-user-1@example.com",
+						"user:test-user-2@example.com",
+					},
+					Globs:           []string{"*@example.com"},
+					Nested:          []string{"group/tester"},
+					CreatedBy:       "user:test-user-1@example.com",
+					CreatedTS:       createdTime.UnixMicro(),
+					ModifiedBy:      "user:test-modifier@example.com",
+					ModifiedTS:      modifiedTime.UnixMicro(),
+					CallerCanModify: true,
+				},
+			})
+			So(err, ShouldBeNil)
+			So(rw.Body.Bytes(), ShouldEqual, expectedBlob)
+			So(rw.Header().Get("Last-Modified"), ShouldEqual, lastModifiedHeader)
+		})
 	})
 
 	Convey("CreateGroup RPC call", t, func() {
