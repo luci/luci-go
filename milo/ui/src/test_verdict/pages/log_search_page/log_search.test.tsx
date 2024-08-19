@@ -28,6 +28,7 @@ describe('<LogSearch />', () => {
           initialEntries: [
             '/?filter=%7B"searchStr"%3A"example+search+string"%2C' +
               '"testIDStr"%3A"example+test+id"%2C' +
+              '"isTestIDStrPrefix"%3Afalse%2C' +
               '"artifactIDStr"%3A"snippet"%2C' +
               '"isSearchStrRegex"%3Atrue%7D',
           ],
@@ -37,7 +38,7 @@ describe('<LogSearch />', () => {
       </FakeContextProvider>,
     );
     const searchStringSelectEle = screen.getByTestId('Search string select');
-    expect(searchStringSelectEle).toHaveValue('Regex match:');
+    expect(searchStringSelectEle).toHaveValue('Regex:');
     const searchStringInputEle = screen.getByTestId('Search string input');
     expect(searchStringInputEle).toHaveValue('example search string');
 
@@ -63,7 +64,7 @@ describe('<LogSearch />', () => {
 
     const searchStringSelectEle = screen.getByTestId('Search string select');
     fireEvent.change(searchStringSelectEle, {
-      target: { value: 'Regex match:' },
+      target: { value: 'Regex:' },
     });
     const searchStringInputEle = screen.getByTestId('Search string input');
     fireEvent.change(searchStringInputEle, {
@@ -71,10 +72,10 @@ describe('<LogSearch />', () => {
     });
 
     const testIDSelectEle = screen.getByTestId('Test ID select');
-    fireEvent.change(testIDSelectEle, { target: { value: 'Has prefix:' } });
+    fireEvent.change(testIDSelectEle, { target: { value: 'Exact equal:' } });
     const testIDInputEle = screen.getByTestId('Test ID input');
     fireEvent.change(testIDInputEle, {
-      target: { value: 'test test id prefix' },
+      target: { value: 'test test id exact' },
     });
 
     const artifactIDSelectEle = screen.getByTestId('Log file select');
@@ -91,8 +92,8 @@ describe('<LogSearch />', () => {
       expect.objectContaining({
         search: {
           filter: JSON.stringify({
-            testIDStr: 'test test id prefix',
-            isTestIDStrPrefix: true,
+            testIDStr: 'test test id exact',
+            isTestIDStrPrefix: false,
             artifactIDStr: 'test artifact id',
             isArtifactIDStrPrefix: false,
             searchStr: 'test search string',

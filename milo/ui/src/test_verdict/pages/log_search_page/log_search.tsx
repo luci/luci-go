@@ -32,7 +32,8 @@ import { Result } from '@/generic_libs/types';
 import {
   PREFIX_MATCH_OPTION,
   EXACT_MATCH_OPTION,
-  REGEX_MATCH_OPTION,
+  REGEX_CONTAIN_OPTION,
+  EXACT_CONTAIN_OPTION,
 } from './constants';
 import { SearchFilter } from './contexts';
 import { EMPTY_FORM, FormData } from './form_data';
@@ -143,15 +144,15 @@ export function LogSearch() {
             label="Search string"
             selectValue={
               pendingForm.isSearchStrRegex
-                ? REGEX_MATCH_OPTION
-                : EXACT_MATCH_OPTION
+                ? REGEX_CONTAIN_OPTION
+                : EXACT_CONTAIN_OPTION
             }
             textValue={pendingForm.searchStr}
-            options={[REGEX_MATCH_OPTION, EXACT_MATCH_OPTION]}
+            options={[REGEX_CONTAIN_OPTION, EXACT_CONTAIN_OPTION]}
             selectOnChange={(str) => {
               setPendingForm((prev) => ({
                 ...prev,
-                isSearchStrRegex: str === REGEX_MATCH_OPTION,
+                isSearchStrRegex: str === REGEX_CONTAIN_OPTION,
               }));
             }}
             textOnChange={(str) => {

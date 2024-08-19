@@ -14,4 +14,5 @@
 
 export const PREFIX_MATCH_OPTION = 'Has prefix:';
 export const EXACT_MATCH_OPTION = 'Exact equal:';
-export const REGEX_MATCH_OPTION = 'Regex match:';
+export const EXACT_CONTAIN_OPTION = 'Contain:';
+export const REGEX_CONTAIN_OPTION = 'Regex:';

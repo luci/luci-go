@@ -31,9 +31,12 @@ export interface FormData {
   isSearchStrRegex: boolean;
 }
 
+/**
+ * Empty form is the default state of the form before any user modification.
+ */
 export const EMPTY_FORM: FormData = {
   testIDStr: '',
-  isTestIDStrPrefix: false,
+  isTestIDStrPrefix: true,
   artifactIDStr: '',
   isArtifactIDStrPrefix: false,
   searchStr: '',
