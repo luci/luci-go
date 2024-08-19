@@ -28,10 +28,10 @@ import {
   MenuOption,
   RELATIVE_TIME_OPTIONS,
   CUSTOMIZE_OPTION_DISPLAY_TEXT,
-  updateSeletorInSearchParameter,
+  timeRangeParamUpdater,
+  optionParamUpdater,
   END_TIME_KEY,
   START_TIME_KEY,
-  OPTION_KEY,
 } from './time_range_selector_utils';
 
 export interface TimeRangeSelectorProps {
@@ -66,20 +66,31 @@ export function TimeRangeSelector({
     setMenuAnchorEl(event.currentTarget);
   };
 
+  // TODO: Currently, clicking the customise option will immediately change the selection.
+  // A better user experience is to only update the selection
+  // after user puts in a valid time range and clicks confirm.
   const handleMenuItemClick = (
     option: MenuOption,
     event: React.MouseEvent<HTMLLIElement>,
   ) => {
+    const prevOption = getSelectedOption(searchParams);
     // Update search params
-    setSearchParams(
-      updateSeletorInSearchParameter(OPTION_KEY, option.toString()),
-    );
+    setSearchParams(optionParamUpdater(option));
     if (option === CUSTOMIZE_OPTION) {
+      if (prevOption !== CUSTOMIZE_OPTION) {
+        // Prefill time range with previouly selected relative range.
+        const endTime = DateTime.now();
+        const startTime = endTime.minus(
+          RELATIVE_TIME_OPTIONS[prevOption].duration,
+        );
+        setSearchParams(timeRangeParamUpdater(START_TIME_KEY, startTime));
+        setSearchParams(timeRangeParamUpdater(END_TIME_KEY, endTime));
+      }
       setPickerAnchorElPicker(event.currentTarget);
       return;
     }
-    setSearchParams(updateSeletorInSearchParameter(START_TIME_KEY, null));
-    setSearchParams(updateSeletorInSearchParameter(END_TIME_KEY, null));
+    setSearchParams(timeRangeParamUpdater(START_TIME_KEY, null));
+    setSearchParams(timeRangeParamUpdater(END_TIME_KEY, null));
     // Close the main menu
     setMenuAnchorEl(null);
   };
@@ -179,9 +190,9 @@ export function TimeRangeSelector({
               onChange={(newValue) =>
                 newValue &&
                 setSearchParams(
-                  updateSeletorInSearchParameter(
+                  timeRangeParamUpdater(
                     START_TIME_KEY,
-                    newValue.startOf('minute').toUnixInteger().toString(),
+                    newValue.startOf('minute'),
                   ),
                 )
               }
@@ -196,9 +207,9 @@ export function TimeRangeSelector({
               onChange={(newValue) =>
                 newValue &&
                 setSearchParams(
-                  updateSeletorInSearchParameter(
+                  timeRangeParamUpdater(
                     END_TIME_KEY,
-                    newValue.startOf('minute').toUnixInteger().toString(),
+                    newValue.startOf('minute'),
                   ),
                 )
               }

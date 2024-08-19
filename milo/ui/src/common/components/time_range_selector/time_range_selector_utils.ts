@@ -49,13 +49,12 @@ export const OPTION_KEY = 'time_option';
 export const START_TIME_KEY = 'start_time';
 export const END_TIME_KEY = 'end_time';
 
-export type TimeRangeSelectorKey =
-  | typeof OPTION_KEY
-  | typeof START_TIME_KEY
-  | typeof END_TIME_KEY;
-
 export const getSelectedOption = (params: URLSearchParams): MenuOption =>
   (params.get(OPTION_KEY) as MenuOption) || DEFAULT_MENU_OPTION;
+
+export function optionParamUpdater(value: MenuOption) {
+  return searchParamUpdater(OPTION_KEY, value, DEFAULT_MENU_OPTION.toString());
+}
 
 export const getStartEndTime = (params: URLSearchParams) => {
   const start = params.get(START_TIME_KEY);
@@ -66,14 +65,11 @@ export const getStartEndTime = (params: URLSearchParams) => {
   };
 };
 
-export function updateSeletorInSearchParameter(
-  key: TimeRangeSelectorKey,
-  value: string | null,
+export function timeRangeParamUpdater(
+  key: typeof END_TIME_KEY | typeof START_TIME_KEY,
+  value: DateTime | null,
 ) {
-  if (key === OPTION_KEY) {
-    return searchParamUpdater(key, value, DEFAULT_MENU_OPTION.toString());
-  }
-  return searchParamUpdater(key, value);
+  return searchParamUpdater(key, value?.toUnixInteger().toString() || null);
 }
 
 /**

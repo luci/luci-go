@@ -22,6 +22,9 @@ import { TimeRangeSelector } from './time_range_selector';
 import { CUSTOMIZE_OPTION } from './time_range_selector_utils';
 
 describe('<TimeRangeSelector />', () => {
+  afterEach(() => {
+    jest.restoreAllMocks(); // Clean up mocks after each test
+  });
   it('use default when no search param', () => {
     render(
       <FakeContextProvider>
@@ -113,6 +116,51 @@ describe('<TimeRangeSelector />', () => {
       expect.objectContaining({
         search: {
           time_option: '7d',
+        },
+      }),
+    );
+  });
+
+  it('can prefill customized time range with previous relative time range selection', () => {
+    const urlCallback = jest.fn();
+    render(
+      <FakeContextProvider>
+        <TimeRangeSelector />
+        <URLObserver callback={urlCallback} />
+      </FakeContextProvider>,
+    );
+
+    const mockNow = DateTime.fromISO('2024-08-15T12:00:00.000Z');
+    jest.spyOn(DateTime, 'now').mockReturnValue(mockNow);
+
+    // Select Last 7 days.
+    const buttonElement = screen.getByTestId('time-button');
+    fireEvent.click(buttonElement);
+    const last7dMenuItem = screen.getByTestId('7d');
+    fireEvent.click(last7dMenuItem);
+    expect(urlCallback).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        search: {
+          time_option: '7d',
+        },
+      }),
+    );
+
+    // Select customise.
+    const customiseMenuItem = screen.getByTestId(CUSTOMIZE_OPTION);
+    fireEvent.click(customiseMenuItem);
+    expect(urlCallback).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        search: {
+          time_option: CUSTOMIZE_OPTION,
+          start_time: DateTime.fromFormat('08/08/2024 12:00 PM', 'MM/dd/yyyy t')
+            .toUTC()
+            .toUnixInteger()
+            .toString(),
+          end_time: DateTime.fromFormat('08/15/2024 12:00 PM', 'MM/dd/yyyy t')
+            .toUTC()
+            .toUnixInteger()
+            .toString(),
         },
       }),
     );
