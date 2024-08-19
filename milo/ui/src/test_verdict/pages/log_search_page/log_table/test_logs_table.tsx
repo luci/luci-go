@@ -23,7 +23,10 @@ import {
   getPageSize,
   getPageToken,
 } from '@/common/components/params_pager';
-import { getTestHistoryURLPath } from '@/common/tools/url_utils';
+import {
+  getTestHistoryURLWithSearchParam,
+  generateTestHistoryURLSearchParams,
+} from '@/common/tools/url_utils';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { QueryTestVariantArtifactGroupsRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 import { useResultDbClient } from '@/test_verdict/hooks/prpc_clients';
@@ -106,7 +109,13 @@ export function TestLogsTable({ project, filter }: TestLogsTableProps) {
                 groupHeader={
                   <>
                     <Link
-                      href={getTestHistoryURLPath(project, g.testId)}
+                      href={getTestHistoryURLWithSearchParam(
+                        project,
+                        g.testId,
+                        generateTestHistoryURLSearchParams(
+                          g.variant || { def: {} },
+                        ),
+                      )}
                       color="inherit"
                       underline="hover"
                       target="_blank"
@@ -114,11 +123,11 @@ export function TestLogsTable({ project, filter }: TestLogsTableProps) {
                     >
                       {g.testId}
                     </Link>
-                    <ArrowForwardIos sx={{ fontSize: '14px' }} />
+                    <ArrowForwardIos sx={{ fontSize: 'inherit' }} />
                     <Box>
                       {g.variant && <VariantLine variant={g.variant} />}
                     </Box>
-                    <ArrowForwardIos sx={{ fontSize: '14px' }} />
+                    <ArrowForwardIos sx={{ fontSize: 'inherit' }} />
                     {g.artifactId}
                   </>
                 }

@@ -29,7 +29,7 @@ const LogGroupHeaderDiv = styled(Box)`
   padding: 2px 5px;
   display: flex;
   align-items: center;
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.5;
   letter-spacing: normal;
   gap: 5px;

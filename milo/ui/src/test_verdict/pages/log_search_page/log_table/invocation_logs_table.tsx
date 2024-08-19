@@ -111,7 +111,7 @@ export function InvocationLogsTable({
                         <VariantLine variant={g.variantUnion} />
                       )}
                     </Box>
-                    <ArrowForwardIos sx={{ fontSize: '14px' }} />
+                    <ArrowForwardIos sx={{ fontSize: 'inherit' }} />
                     {g.artifactId}
                   </>
                 }

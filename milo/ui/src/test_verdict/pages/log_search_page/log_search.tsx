@@ -238,7 +238,8 @@ export function LogSearch() {
       </FormContainer>
       {pendingForm.artifactIDStr === '' && pendingForm.testIDStr === '' && (
         <Alert severity="warning">
-          Query will be slow without an test ID filter or log file filter.
+          Query might be slow without a<strong> test ID filter</strong> or{' '}
+          <strong>log file filter</strong>.
         </Alert>
       )}
       <SearchFilterProvider searchFilter={searchFilter}>

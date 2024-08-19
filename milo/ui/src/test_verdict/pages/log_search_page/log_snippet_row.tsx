@@ -40,7 +40,7 @@ export function LogSnippetRow({ artifact }: LogSnippetRowProps) {
     artifact;
   return (
     <Container>
-      <Box>
+      <Box sx={{ flex: 'none', width: '100px' }}>
         <Timestamp
           datetime={DateTime.fromISO(partitionTime!)}
           format="MMM dd, HH:mm"
