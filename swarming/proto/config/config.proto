@@ -84,6 +84,9 @@ message SettingsCfg {
 
   // Configuration for Python => Go RPC servers migration.
   TrafficMigration traffic_migration = 21;
+
+  // Configuration of the bot deployment process.
+  BotDeployment bot_deployment = 22;
 }
 
 
@@ -200,4 +203,22 @@ message TrafficMigration {
 
   // All routes where traffic splitting is enabled.
   repeated Route routes = 1;
+}
+
+// Configuration of the bot deployment process.
+message BotDeployment {
+  message BotPackage {
+    // The CIPD server URL, e.g. "https://chrome-infra-packages.appspot.com".
+    string server = 1;
+    // The CIPD package with the Swarming bot e.g. "infra/luci/swarming_bot".
+    string pkg = 2;
+    // The version of the package to use e.g. "git_revision:XXX".
+    string version = 3;
+  }
+  // The bot package to use on majority of bots.
+  BotPackage stable = 1;
+  // The bot package to use on a canary subset of bots.
+  BotPackage canary = 2;
+  // Percent of bots to put into the canary set.
+  int32 canary_percent = 3;
 }
