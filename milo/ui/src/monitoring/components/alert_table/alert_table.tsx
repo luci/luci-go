@@ -47,17 +47,10 @@ interface AlertTableProps {
   alerts: AlertJson[];
   bug?: Bug;
   bugs: Bug[];
-  setFilter: (filter: string) => void;
 }
 
 // An AlertTable shows a list of alerts.  There are usually several on the page at once.
-export const AlertTable = ({
-  tree,
-  alerts,
-  bug,
-  bugs,
-  setFilter,
-}: AlertTableProps) => {
+export const AlertTable = ({ tree, alerts, bug, bugs }: AlertTableProps) => {
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
   const [expanded, setExpanded] = useState({} as { [alert: string]: boolean });
   const [expandAll, setExpandAll] = useState(false);
@@ -222,7 +215,6 @@ export const AlertTable = ({
                       }}
                       tree={tree}
                       bugs={bugs}
-                      setFilter={setFilter}
                     />
                     {expanded[alert.key] && (
                       <AlertDetailsRow
@@ -230,7 +222,6 @@ export const AlertTable = ({
                         alert={alert}
                         bug={bug}
                         key={alert.key + builder.name}
-                        setFilter={setFilter}
                       />
                     )}
                   </Fragment>

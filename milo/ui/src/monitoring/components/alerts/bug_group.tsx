@@ -33,17 +33,10 @@ interface BugGroupProps {
   alerts: AlertJson[];
   tree: TreeJson;
   bugs: Bug[];
-  setFilter: (filter: string) => void;
 }
 // A collapsible group of failures that are associated with a bug.
 // Similar to AlertGroup, but displays bug information as well.
-export const BugGroup = ({
-  bug,
-  alerts,
-  tree,
-  bugs,
-  setFilter,
-}: BugGroupProps) => {
+export const BugGroup = ({ bug, alerts, tree, bugs }: BugGroupProps) => {
   return (
     <>
       <Accordion defaultExpanded={false}>
@@ -110,12 +103,7 @@ export const BugGroup = ({
         </AccordionSummary>
         <AccordionDetails>
           {alerts && alerts.length ? (
-            <AlertTable
-              alerts={alerts}
-              tree={tree}
-              bugs={bugs}
-              setFilter={setFilter}
-            />
+            <AlertTable alerts={alerts} tree={tree} bugs={bugs} />
           ) : (
             <>
               <Typography sx={{ opacity: '50%' }}>

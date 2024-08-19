@@ -12,19 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import CloseIcon from '@mui/icons-material/Close';
-import SearchIcon from '@mui/icons-material/Search';
 import {
   Alert,
   Box,
   CircularProgress,
-  InputAdornment,
   LinearProgress,
-  TextField,
   Typography,
 } from '@mui/material';
-import { useState } from 'react';
 
+import { SearchInput } from '@/common/components/search_input';
 import {
   useAlerts,
   useTree,
@@ -34,10 +30,24 @@ import { AlertJson } from '@/monitoring/util/server_json';
 
 import { AlertGroup } from './alert_group';
 import { BugGroup } from './bug_group';
+import { useFilterQuery } from './hooks';
 import { TreeStatusCard } from './tree_status_card';
 
+function SearchAlertInput() {
+  const [filter, updateFilter] = useFilterQuery('');
+  return (
+    <SearchInput
+      initDelayMs={200}
+      onValueChange={(value) => updateFilter(value)}
+      size="small"
+      value={filter}
+      placeholder="Filter Alerts - hint: use this to perform operations like linking all matching alerts to a bug"
+    />
+  );
+}
+
 export const Alerts = () => {
-  const [filter, setFilter] = useState('');
+  const [filter] = useFilterQuery('');
   const { alerts, alertsLoading } = useAlerts();
   const tree = useTree();
   const { bugs, bugsLoading, bugsError, isBugsError } = useBugs();
@@ -45,6 +55,7 @@ export const Alerts = () => {
   if (!tree) {
     return <></>;
   }
+
   const filtered = filterAlerts(alerts || [], filter);
   const categories = categorizeAlerts(filtered);
 
@@ -70,31 +81,7 @@ export const Alerts = () => {
           boxShadow: 3,
         }}
       >
-        <TextField
-          id="input-with-icon-textfield"
-          placeholder="Filter Alerts - hint: use this to perform operations like linking all matching alerts to a bug"
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
-            endAdornment: (
-              <InputAdornment position="end">
-                {filter ? (
-                  <CloseIcon
-                    onClick={() => setFilter('')}
-                    sx={{ cursor: 'pointer' }}
-                  />
-                ) : null}
-              </InputAdornment>
-            ),
-          }}
-          variant="outlined"
-          fullWidth
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-        />
+        <SearchAlertInput />
       </Box>
       <div style={{ margin: '16px 0', padding: '0 16px' }}>
         <TreeStatusCard tree={tree} />
@@ -105,7 +92,6 @@ export const Alerts = () => {
           groupDescription="Failures that have occurred at least 2 times in a row and are not linked with a bug"
           defaultExpanded={true}
           bugs={bugs || []}
-          setFilter={setFilter}
         />
         <AlertGroup
           groupName={'Untriaged New Failures'}
@@ -114,7 +100,6 @@ export const Alerts = () => {
           groupDescription="Failures that have only been seen once and are not linked with a bug"
           defaultExpanded={false}
           bugs={bugs || []}
-          setFilter={setFilter}
         />
 
         <Typography variant="h6" sx={{ margin: '24px 0 8px' }}>
@@ -140,7 +125,6 @@ export const Alerts = () => {
               alerts={categories.bugAlerts[bug.number]}
               tree={tree}
               bugs={bugs || []}
-              setFilter={setFilter}
             />
           );
         })}
@@ -156,7 +140,6 @@ export const Alerts = () => {
               alerts={categories.bugAlerts[bug.number]}
               tree={tree}
               bugs={bugs || []}
-              setFilter={setFilter}
             />
           );
         })}

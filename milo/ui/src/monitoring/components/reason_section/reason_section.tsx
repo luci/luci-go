@@ -41,7 +41,6 @@ interface ReasonSectionProps {
   tree: TreeJson;
   reason?: AlertReasonJson;
   bug?: Bug;
-  setFilter: (filter: string) => void;
 }
 
 export const ReasonSection = ({
@@ -49,7 +48,6 @@ export const ReasonSection = ({
   failureBuildUrl,
   reason,
   bug,
-  setFilter,
 }: ReasonSectionProps) => {
   const [searchParams] = useSyncedSearchParams();
   const useAIAnalysis = searchParams.get('aia');
@@ -80,7 +78,6 @@ export const ReasonSection = ({
               tree={tree}
               bug={bug}
               failureBuildUrl={failureBuildUrl}
-              setFilter={setFilter}
             />
           ))}
           {reason.tests.length < reason.num_failing_tests && (
@@ -160,7 +157,6 @@ interface TestFailureRowProps {
   tree: TreeJson;
   bug?: Bug;
   failureBuildUrl: string;
-  setFilter: (filter: string) => void;
 }
 
 const TestFailureRow = ({
@@ -168,7 +164,6 @@ const TestFailureRow = ({
   tree,
   bug,
   failureBuildUrl,
-  setFilter,
 }: TestFailureRowProps) => {
   const [searchParams] = useSyncedSearchParams();
   const useAIAnalysis = searchParams.get('aia');
@@ -206,7 +201,7 @@ const TestFailureRow = ({
           >
             {test.test_name}
           </Link>
-          <PrefillFilterIcon filter={test.test_name} setFilter={setFilter} />
+          <PrefillFilterIcon filter={test.test_name} />
         </Stack>
       </TableCell>
       <TableCell sx={{ backgroundColor: cellColor(currentRate) }}>

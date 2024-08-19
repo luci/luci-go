@@ -22,17 +22,11 @@ interface AlertDetailsRowProps {
   tree: TreeJson;
   alert: AlertJson;
   bug?: Bug;
-  setFilter: (filter: string) => void;
 }
 
 // A row in the AlertTable showing the details for an alert.  These will only be displayed if the alert is expanded.  They are always shown
 // directly below the AlertSummaryRow for the same alert.
-export const AlertDetailsRow = ({
-  alert,
-  tree,
-  bug,
-  setFilter,
-}: AlertDetailsRowProps) => {
+export const AlertDetailsRow = ({ alert, tree, bug }: AlertDetailsRowProps) => {
   return (
     <TableRow sx={{ backgroundColor: 'var(--block-background-color)' }}>
       <TableCell></TableCell>
@@ -43,8 +37,7 @@ export const AlertDetailsRow = ({
             reason={alert.extension.reason}
             failureBuildUrl={alert.extension.builders[0].latest_failure_url}
             bug={bug}
-            setFilter={setFilter}
-          ></ReasonSection>
+          />
           {alert.extension.luci_bisection_result ? (
             <LuciBisectionResultSection
               result={alert.extension.luci_bisection_result}

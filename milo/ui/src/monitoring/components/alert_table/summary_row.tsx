@@ -46,7 +46,6 @@ interface AlertSummaryRowProps {
   onExpand: () => void;
   tree: TreeJson;
   bugs: Bug[];
-  setFilter: (filter: string) => void;
 }
 // An expandable row in the AlertTable containing a summary of a single alert.
 export const AlertSummaryRow = ({
@@ -56,7 +55,6 @@ export const AlertSummaryRow = ({
   onExpand,
   tree,
   bugs,
-  setFilter,
 }: AlertSummaryRowProps) => {
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
 
@@ -125,7 +123,7 @@ export const AlertSummaryRow = ({
           >
             {builder.name}
           </Link>
-          <PrefillFilterIcon filter={builder.name} setFilter={setFilter} />
+          <PrefillFilterIcon filter={builder.name} />
         </Stack>
       </TableCell>
       <TableCell>

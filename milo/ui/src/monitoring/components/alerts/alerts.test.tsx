@@ -78,6 +78,28 @@ describe('<Alerts />', () => {
     );
     expect(screen.getByText('Hotlist Bug')).toBeInTheDocument();
   });
+
+  it('sets filter when icon clicked', async () => {
+    render(
+      <FakeContextProvider
+        routerOptions={{
+          initialEntries: ['/?q=linux-rel'],
+        }}
+        mountedPath="/"
+      >
+        <MonitoringCtx.Provider
+          value={{
+            alerts: [],
+            bugs: [hotlistBug],
+            tree: configuredTrees[0],
+          }}
+        >
+          <Alerts />
+        </MonitoringCtx.Provider>
+      </FakeContextProvider>,
+    );
+    expect(screen.getByRole('textbox')).toHaveValue('linux-rel');
+  });
 });
 
 const hotlistBug: Bug = {

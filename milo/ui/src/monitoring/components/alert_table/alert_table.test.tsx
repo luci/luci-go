@@ -13,246 +13,63 @@
 // limitations under the License.
 
 import { fireEvent, render, screen } from '@testing-library/react';
-import { userEvent } from '@testing-library/user-event';
 import { act } from 'react';
 
 import { configuredTrees } from '@/monitoring/util/config';
-import { AlertJson, RevisionJson } from '@/monitoring/util/server_json';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
+
+import { testAlert, testAlert2 } from '../testing_tools/test_utils';
 
 import { AlertTable } from './alert_table';
 
-it('displays an alert', async () => {
-  render(
-    <FakeContextProvider>
-      <AlertTable
-        tree={configuredTrees[0]}
-        alerts={[alert]}
-        bugs={[]}
-        setFilter={(_) => {}}
-      />
-    </FakeContextProvider>,
-  );
-  expect(screen.getByText('linux-rel')).toBeInTheDocument();
-  expect(screen.getByText('compile')).toBeInTheDocument();
+describe('<AlertTable />', () => {
+  it('displays an alert', async () => {
+    render(
+      <FakeContextProvider>
+        <AlertTable tree={configuredTrees[0]} alerts={[testAlert]} bugs={[]} />
+      </FakeContextProvider>,
+    );
+    expect(screen.getByText('linux-rel')).toBeInTheDocument();
+    expect(screen.getByText('compile')).toBeInTheDocument();
+  });
+
+  it('expands an alert on click', async () => {
+    render(
+      <FakeContextProvider>
+        <AlertTable tree={configuredTrees[0]} alerts={[testAlert]} bugs={[]} />
+      </FakeContextProvider>,
+    );
+    expect(screen.getByText('compile')).toBeInTheDocument();
+    expect(screen.queryByText('test.Example')).toBeNull();
+    await act(() => fireEvent.click(screen.getByText('compile')));
+    expect(screen.getByText('test.Example')).toBeInTheDocument();
+  });
+
+  it('sorts alerts on header click', async () => {
+    render(
+      <FakeContextProvider>
+        <AlertTable
+          tree={configuredTrees[0]}
+          alerts={[testAlert, testAlert2]}
+          bugs={[]}
+        />
+      </FakeContextProvider>,
+    );
+    expect(screen.getByText('linux-rel')).toBeInTheDocument();
+    expect(screen.getByText('win-rel')).toBeInTheDocument();
+    // Sort asc
+    await act(() => fireEvent.click(screen.getByText('Failed Builder')));
+    let linux = screen.getByText('linux-rel');
+    let win = screen.getByText('win-rel');
+    expect(linux.compareDocumentPosition(win)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+    // Sort desc
+    await act(() => fireEvent.click(screen.getByText('Failed Builder')));
+    linux = screen.getByText('linux-rel');
+    win = screen.getByText('win-rel');
+    expect(linux.compareDocumentPosition(win)).toBe(
+      Node.DOCUMENT_POSITION_PRECEDING,
+    );
+  });
 });
-
-it('expands an alert on click', async () => {
-  render(
-    <FakeContextProvider>
-      <AlertTable
-        tree={configuredTrees[0]}
-        alerts={[alert]}
-        bugs={[]}
-        setFilter={(_) => {}}
-      />
-    </FakeContextProvider>,
-  );
-  expect(screen.getByText('compile')).toBeInTheDocument();
-  expect(screen.queryByText('test.Example')).toBeNull();
-  await act(() => fireEvent.click(screen.getByText('compile')));
-  expect(screen.getByText('test.Example')).toBeInTheDocument();
-});
-
-it('sets filter when icon clicked', async () => {
-  let filter = '';
-  render(
-    <FakeContextProvider>
-      <AlertTable
-        tree={configuredTrees[0]}
-        alerts={[alert]}
-        bugs={[]}
-        setFilter={(arg) => {
-          filter = arg;
-        }}
-      />
-    </FakeContextProvider>,
-  );
-  await userEvent.click(await screen.findByTestId('SearchIcon'));
-  expect(filter).toBe('linux-rel');
-});
-
-it('sorts alerts on header click', async () => {
-  render(
-    <FakeContextProvider>
-      <AlertTable
-        tree={configuredTrees[0]}
-        alerts={[alert, alert2]}
-        bugs={[]}
-        setFilter={(_) => {}}
-      />
-    </FakeContextProvider>,
-  );
-  expect(screen.getByText('linux-rel')).toBeInTheDocument();
-  expect(screen.getByText('win-rel')).toBeInTheDocument();
-  // Sort asc
-  await act(() => fireEvent.click(screen.getByText('Failed Builder')));
-  let linux = screen.getByText('linux-rel');
-  let win = screen.getByText('win-rel');
-  expect(linux.compareDocumentPosition(win)).toBe(
-    Node.DOCUMENT_POSITION_FOLLOWING,
-  );
-  // Sort desc
-  await act(() => fireEvent.click(screen.getByText('Failed Builder')));
-  linux = screen.getByText('linux-rel');
-  win = screen.getByText('win-rel');
-  expect(linux.compareDocumentPosition(win)).toBe(
-    Node.DOCUMENT_POSITION_PRECEDING,
-  );
-});
-
-const revision: RevisionJson = {
-  author: 'Player 1',
-  branch: 'main',
-  commit_position: 123,
-  description: 'A fun CL.',
-  git_hash: '12345677',
-  host: 'host',
-  link: 'host/123',
-  repo: 'chromium/src',
-  when: 1,
-};
-
-const alert: AlertJson = {
-  key: 'alert-1',
-  title: 'Step "compile" failuing on builder linux-rel',
-  body: '',
-  links: null,
-  resolved: false,
-  severity: 1,
-  start_time: new Date().valueOf(),
-  tags: null,
-  time: new Date().valueOf(),
-  type: 'compile',
-  extension: {
-    builders: [
-      {
-        project: 'chromium',
-        builder_group: 'linux',
-        bucket: 'ci',
-        name: 'linux-rel',
-        build_status: 'FAILED',
-        count: 2,
-        start_time: new Date().valueOf(),
-        url: '/p/chromium/b/linux-rel',
-        failing_tests_trunc: '',
-        latest_passing: 3,
-        first_failing_rev: { ...revision, commit_position: 10 },
-        first_failure: 23,
-        first_failure_build_number: 342,
-        first_failure_url: '/b/342',
-        last_passing_rev: { ...revision, commit_position: 5 },
-        latest_failure: 46,
-        latest_failure_build_number: 356,
-        latest_failure_url: '/b/356',
-      },
-    ],
-    culprits: null,
-    has_findings: false,
-    is_finished: false,
-    is_supported: false,
-    regression_ranges: [],
-    suspected_cls: null,
-    tree_closer: false,
-    reason: {
-      num_failing_tests: 0,
-      step: 'test step',
-      tests: [
-        {
-          test_id: 'ninja://test.Example',
-          realm: 'ci',
-          test_name: 'test.Example',
-          cluster_name: 'chromium/rules-v2/4242',
-          variant_hash: '1234',
-          cur_counts: {
-            unexpected_results: 10,
-            total_results: 10,
-          },
-          cur_start_hour: '9:00',
-          regression_start_position: 123450,
-          prev_counts: {
-            unexpected_results: 1,
-            total_results: 100,
-          },
-          prev_end_hour: '8:00',
-          regression_end_position: 123456,
-          ref_hash: '5678',
-        },
-      ],
-    },
-  },
-  bug: '0',
-  silenceUntil: '0',
-};
-
-const alert2: AlertJson = {
-  key: 'alert-2',
-  title: 'Step "compile" failuing on builder win-rel',
-  body: '',
-  links: null,
-  resolved: false,
-  severity: 1,
-  start_time: new Date().valueOf(),
-  tags: null,
-  time: new Date().valueOf(),
-  type: 'compile',
-  extension: {
-    builders: [
-      {
-        project: 'chromium',
-        builder_group: 'windows',
-        bucket: 'ci',
-        name: 'win-rel',
-        build_status: 'FAILED',
-        count: 2,
-        start_time: new Date().valueOf(),
-        url: '/p/chromium/b/win-rel',
-        failing_tests_trunc: '',
-        latest_passing: 3,
-        first_failing_rev: { ...revision, commit_position: 10 },
-        first_failure: 23,
-        first_failure_build_number: 342,
-        first_failure_url: '/b/342',
-        last_passing_rev: { ...revision, commit_position: 5 },
-        latest_failure: 46,
-        latest_failure_build_number: 356,
-        latest_failure_url: '/b/356',
-      },
-    ],
-    culprits: null,
-    has_findings: false,
-    is_finished: false,
-    is_supported: false,
-    regression_ranges: [],
-    suspected_cls: null,
-    tree_closer: false,
-    reason: {
-      num_failing_tests: 0,
-      step: 'test step',
-      tests: [
-        {
-          test_id: 'ninja://test.Example',
-          realm: 'ci',
-          test_name: 'test.Example',
-          cluster_name: 'chromium/rules-v2/4242',
-          variant_hash: '1234',
-          cur_counts: {
-            unexpected_results: 10,
-            total_results: 10,
-          },
-          cur_start_hour: '9:00',
-          regression_start_position: 123450,
-          prev_counts: {
-            unexpected_results: 1,
-            total_results: 100,
-          },
-          prev_end_hour: '8:00',
-          regression_end_position: 123456,
-          ref_hash: '5678',
-        },
-      ],
-    },
-  },
-  bug: '0',
-  silenceUntil: '0',
-};

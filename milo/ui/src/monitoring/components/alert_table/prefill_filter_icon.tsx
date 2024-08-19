@@ -15,18 +15,17 @@
 import SearchIcon from '@mui/icons-material/Search';
 import { Tooltip } from '@mui/material';
 
+import { useFilterQuery } from '../alerts/hooks';
+
 interface PrefillFilterIconProps {
   filter: string;
-  setFilter: (filter: string) => void;
 }
 
 /**
  * An AlertTable shows a list of alerts.  There are usually several on the page at once.
  */
-export const PrefillFilterIcon = ({
-  filter,
-  setFilter,
-}: PrefillFilterIconProps) => {
+export const PrefillFilterIcon = ({ filter }: PrefillFilterIconProps) => {
+  const [_, updateFilter] = useFilterQuery();
   return (
     <Tooltip title="show matching alerts">
       <SearchIcon
@@ -35,7 +34,7 @@ export const PrefillFilterIcon = ({
         sx={{ cursor: 'pointer' }}
         onClick={(e: React.MouseEvent<SVGElement>): void => {
           e.stopPropagation();
-          setFilter(filter);
+          updateFilter(filter);
         }}
       />
     </Tooltip>

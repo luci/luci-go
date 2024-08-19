@@ -33,7 +33,6 @@ interface AlertGroupProps {
   groupDescription: string;
   defaultExpanded: boolean;
   bugs: Bug[];
-  setFilter: (filter: string) => void;
 }
 // A collapsible group of alerts like 'consistent failures' or 'new failures'.
 // Similar to BugGroup, but is never associated with a bug.
@@ -44,7 +43,6 @@ export const AlertGroup = ({
   groupDescription,
   defaultExpanded,
   bugs,
-  setFilter,
 }: AlertGroupProps) => {
   return (
     <Accordion defaultExpanded={defaultExpanded}>
@@ -71,12 +69,7 @@ export const AlertGroup = ({
       </AccordionSummary>
       <AccordionDetails>
         {alerts.length > 0 ? (
-          <AlertTable
-            alerts={alerts}
-            tree={tree}
-            bugs={bugs}
-            setFilter={setFilter}
-          />
+          <AlertTable alerts={alerts} tree={tree} bugs={bugs} />
         ) : (
           <Typography sx={{ opacity: '50%' }}>
             No alerts are currently in the {groupName} group.
