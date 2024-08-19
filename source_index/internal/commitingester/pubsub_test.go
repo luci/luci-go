@@ -97,7 +97,7 @@ func TestProcessSourceRepoEvent(t *testing.T) {
 		}
 
 		Convey(`With repo that should be ingested`, func() {
-			err := processSourceRepoEvent(ctx, gitilesHost, event)
+			_, err := processSourceRepoEvent(ctx, gitilesHost, event)
 
 			So(err, ShouldBeNil)
 			assertTasksExpected()
@@ -108,7 +108,7 @@ func TestProcessSourceRepoEvent(t *testing.T) {
 			event.Url = "https://source.developers.google.com/p/chromium-gerrit/r/another-repo"
 			expectedTasks = make(map[string]*taskspb.IngestCommits)
 
-			err := processSourceRepoEvent(ctx, gitilesHost, event)
+			_, err := processSourceRepoEvent(ctx, gitilesHost, event)
 
 			So(err, ShouldBeNil)
 			So(assertTasksExpected(), ShouldBeEmpty)
@@ -118,7 +118,7 @@ func TestProcessSourceRepoEvent(t *testing.T) {
 			gitilesHost = "another-host.googlesource.com"
 			expectedTasks = make(map[string]*taskspb.IngestCommits)
 
-			err := processSourceRepoEvent(ctx, gitilesHost, event)
+			_, err := processSourceRepoEvent(ctx, gitilesHost, event)
 
 			So(err, ShouldNotBeNil)
 			So(assertTasksExpected(), ShouldBeEmpty)
