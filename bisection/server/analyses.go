@@ -268,6 +268,7 @@ func (server *AnalysesServer) BatchGetTestAnalyses(ctx context.Context, req *pb.
 	if err := validateBatchGetTestAnalysesRequest(req); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
+
 	// By default, returning all fields.
 	fieldMask := req.Fields
 	if fieldMask == nil {
@@ -278,19 +279,32 @@ func (server *AnalysesServer) BatchGetTestAnalyses(ctx context.Context, req *pb.
 		return nil, errors.Annotate(err, "from field mask").Err()
 	}
 
+	// Query Changepoint analysis.
 	client, err := analysis.NewTestVariantBranchesClient(ctx, server.LUCIAnalysisHost, req.Project)
 	if err != nil {
 		return nil, errors.Annotate(err, "create LUCI Analysis client").Err()
 	}
 
-	// Query Changepoint analysis.
 	tvbRequest := &analysispb.BatchGetTestVariantBranchRequest{}
 	for _, tf := range req.TestFailures {
 		tvbRequest.Names = append(tvbRequest.Names, fmt.Sprintf("projects/%s/tests/%s/variants/%s/refs/%s", req.Project, url.PathEscape(tf.TestId), tf.VariantHash, tf.RefHash))
 	}
 	changePointResults, err := client.BatchGet(ctx, tvbRequest)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "read changepoint analysis %s", err)
+		code := status.Code(err)
+		if code == codes.PermissionDenied {
+			logging.Fields{
+				"Project": req.Project,
+			}.Warningf(ctx, "User requested test analyses for project %q, but obtained permission denied from LUCI Analysis while trying to read test variant branches (project may not exist).", req.Project)
+
+			// Project does not exist (or this LUCI Bisection deployment
+			// does not have access). Return an empty set of results.
+			return &pb.BatchGetTestAnalysesResponse{
+				TestAnalyses: make([]*pb.TestAnalysis, len(req.TestFailures)),
+			}, nil
+		} else {
+			return nil, status.Errorf(codes.Internal, "read changepoint analysis: %s", err)
+		}
 	}
 
 	result := make([]*pb.TestAnalysis, len(req.TestFailures))

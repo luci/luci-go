@@ -26,9 +26,13 @@ import (
 
 type FakeTestVariantBranchesClient struct {
 	TestVariantBranches []*pb.TestVariantBranch
+	BatchGetErr         error
 }
 
 func (c *FakeTestVariantBranchesClient) BatchGet(ctx context.Context, req *pb.BatchGetTestVariantBranchRequest, opts ...grpc.CallOption) (*pb.BatchGetTestVariantBranchResponse, error) {
+	if c.BatchGetErr != nil {
+		return nil, c.BatchGetErr
+	}
 	response := &pb.BatchGetTestVariantBranchResponse{}
 
 	itemsByKey := make(map[string]*pb.TestVariantBranch)

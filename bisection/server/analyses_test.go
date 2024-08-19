@@ -793,217 +793,236 @@ func TestGetTestAnalyses(t *testing.T) {
 func TestBatchGetTestAnalyses(t *testing.T) {
 	t.Parallel()
 	server := &AnalysesServer{LUCIAnalysisHost: "fake-host"}
-	Convey("invalid request", t, func() {
+	Convey("With server", t, func() {
 		ctx := memory.Use(context.Background())
 		testutil.UpdateIndices(ctx)
-		Convey("missing project", func() {
-			req := &pb.BatchGetTestAnalysesRequest{
-				TestFailures: []*pb.BatchGetTestAnalysesRequest_TestFailureIdentifier{},
-			}
-			_, err := server.BatchGetTestAnalyses(ctx, req)
-			So(err, ShouldNotBeNil)
-			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-			So(err.Error(), ShouldContainSubstring, "project: unspecified")
-		})
 
-		Convey("missing test failures", func() {
-			req := &pb.BatchGetTestAnalysesRequest{
-				Project:      "chromium",
-				TestFailures: []*pb.BatchGetTestAnalysesRequest_TestFailureIdentifier{},
-			}
-			_, err := server.BatchGetTestAnalyses(ctx, req)
-			So(err, ShouldNotBeNil)
-			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-			So(err.Error(), ShouldContainSubstring, "test_failures: unspecified")
-		})
+		Convey("invalid request", func() {
+			Convey("missing project", func() {
+				req := &pb.BatchGetTestAnalysesRequest{
+					TestFailures: []*pb.BatchGetTestAnalysesRequest_TestFailureIdentifier{},
+				}
+				_, err := server.BatchGetTestAnalyses(ctx, req)
+				So(err, ShouldNotBeNil)
+				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(err.Error(), ShouldContainSubstring, "project: unspecified")
+			})
+			Convey("missing test failures", func() {
+				req := &pb.BatchGetTestAnalysesRequest{
+					Project:      "chromium",
+					TestFailures: []*pb.BatchGetTestAnalysesRequest_TestFailureIdentifier{},
+				}
+				_, err := server.BatchGetTestAnalyses(ctx, req)
+				So(err, ShouldNotBeNil)
+				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(err.Error(), ShouldContainSubstring, "test_failures: unspecified")
+			})
 
-		Convey("missing test id", func() {
-			req := &pb.BatchGetTestAnalysesRequest{
-				Project:      "chromium",
-				TestFailures: []*pb.BatchGetTestAnalysesRequest_TestFailureIdentifier{{}},
-			}
-			_, err := server.BatchGetTestAnalyses(ctx, req)
-			So(err, ShouldNotBeNil)
-			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-			So(err.Error(), ShouldContainSubstring, "test_variants[0]: test_id: unspecified")
-		})
+			Convey("missing test id", func() {
+				req := &pb.BatchGetTestAnalysesRequest{
+					Project:      "chromium",
+					TestFailures: []*pb.BatchGetTestAnalysesRequest_TestFailureIdentifier{{}},
+				}
+				_, err := server.BatchGetTestAnalyses(ctx, req)
+				So(err, ShouldNotBeNil)
+				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(err.Error(), ShouldContainSubstring, "test_variants[0]: test_id: unspecified")
+			})
 
-		Convey("invalid variant hash", func() {
-			req := &pb.BatchGetTestAnalysesRequest{
-				Project: "chromium",
-				TestFailures: []*pb.BatchGetTestAnalysesRequest_TestFailureIdentifier{{
-					TestId:      "testid",
-					VariantHash: "randomstring",
-					RefHash:     "randomstring",
-				}},
-			}
-			_, err := server.BatchGetTestAnalyses(ctx, req)
-			So(err, ShouldNotBeNil)
-			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-			So(err.Error(), ShouldContainSubstring, "test_variants[0].variant_hash")
+			Convey("invalid variant hash", func() {
+				req := &pb.BatchGetTestAnalysesRequest{
+					Project: "chromium",
+					TestFailures: []*pb.BatchGetTestAnalysesRequest_TestFailureIdentifier{{
+						TestId:      "testid",
+						VariantHash: "randomstring",
+						RefHash:     "randomstring",
+					}},
+				}
+				_, err := server.BatchGetTestAnalyses(ctx, req)
+				So(err, ShouldNotBeNil)
+				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(err.Error(), ShouldContainSubstring, "test_variants[0].variant_hash")
+			})
 		})
-	})
-
-	Convey("valid request", t, func() {
-		ctx := memory.Use(context.Background())
-		testutil.UpdateIndices(ctx)
 
 		fakeAnalysisClient := &analysis.FakeTestVariantBranchesClient{}
 		ctx = analysis.UseFakeClient(ctx, fakeAnalysisClient)
 
-		testFailureInRequest := []*pb.BatchGetTestAnalysesRequest_TestFailureIdentifier{}
-		for i := 1; i < 6; i++ {
-			tfa := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
-				ID:             int64(100 + i),
-				CreateTime:     time.Unix(int64(100), 0).UTC(),
-				TestFailureKey: datastore.MakeKey(ctx, "TestFailure", 100+i),
-			})
-			// Create the most recent test failure.
-			testutil.CreateTestFailure(ctx, &testutil.TestFailureCreationOption{
-				ID:            int64(100 + i),
-				Analysis:      tfa,
-				TestID:        "testid" + fmt.Sprint(i),
-				VariantHash:   "aaaaaaaaaaaaaaa" + fmt.Sprint(i),
-				RefHash:       "bbbbbbbbbbbbbbb" + fmt.Sprint(i),
-				StartPosition: 101,
-				EndPosition:   110,
-				IsPrimary:     true,
-				StartHour:     time.Unix(int64(99), 0).UTC(),
-				IsDiverged:    i == 5, // TestFailure 105 is diverged.
-			})
-			// Create another less recent test failure.
-			testutil.CreateTestFailure(ctx, &testutil.TestFailureCreationOption{
-				ID:            int64(1000 + i),
-				TestID:        "testid" + fmt.Sprint(i),
-				VariantHash:   "aaaaaaaaaaaaaaa" + fmt.Sprint(i),
-				RefHash:       "bbbbbbbbbbbbbbb" + fmt.Sprint(i),
-				StartPosition: 90,
-				EndPosition:   99,
-				IsPrimary:     true,
-			})
-			testFailureInRequest = append(testFailureInRequest, &pb.BatchGetTestAnalysesRequest_TestFailureIdentifier{
-				TestId:      "testid" + fmt.Sprint(i),
-				VariantHash: "aaaaaaaaaaaaaaa" + fmt.Sprint(i),
-				RefHash:     "bbbbbbbbbbbbbbb" + fmt.Sprint(i),
-			})
-		}
-
-		fakeAnalysisClient.TestVariantBranches = []*analysispb.TestVariantBranch{
-			makeFakeTestVariantBranch(0, nil), // No changepoint data -> return nil.
-			makeFakeTestVariantBranch(1, []*analysispb.Segment{{
-				StartPosition: 1,
-				EndPosition:   100,
-				Counts: &analysispb.Segment_Counts{
-					TotalResults:      1,
-					UnexpectedResults: 1,
-				},
-			}}), // One segment -> return nil.
-			makeFakeTestVariantBranch(1, []*analysispb.Segment{{
-				StartPosition: 1,
-				EndPosition:   100,
-				Counts: &analysispb.Segment_Counts{
-					TotalResults:      1,
-					UnexpectedResults: 1,
-				},
-			}}), // One segment -> return nil.
-
-		}
-
-		Convey("request with multiple test failures", func() {
-			req := &pb.BatchGetTestAnalysesRequest{
-				Project:      "chromium",
-				TestFailures: testFailureInRequest,
+		Convey("valid request", func() {
+			testFailureInRequest := []*pb.BatchGetTestAnalysesRequest_TestFailureIdentifier{}
+			for i := 1; i < 6; i++ {
+				tfa := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
+					ID:             int64(100 + i),
+					CreateTime:     time.Unix(int64(100), 0).UTC(),
+					TestFailureKey: datastore.MakeKey(ctx, "TestFailure", 100+i),
+				})
+				// Create the most recent test failure.
+				testutil.CreateTestFailure(ctx, &testutil.TestFailureCreationOption{
+					ID:            int64(100 + i),
+					Analysis:      tfa,
+					TestID:        "testid" + fmt.Sprint(i),
+					VariantHash:   "aaaaaaaaaaaaaaa" + fmt.Sprint(i),
+					RefHash:       "bbbbbbbbbbbbbbb" + fmt.Sprint(i),
+					StartPosition: 101,
+					EndPosition:   110,
+					IsPrimary:     true,
+					StartHour:     time.Unix(int64(99), 0).UTC(),
+					IsDiverged:    i == 5, // TestFailure 105 is diverged.
+				})
+				// Create another less recent test failure.
+				testutil.CreateTestFailure(ctx, &testutil.TestFailureCreationOption{
+					ID:            int64(1000 + i),
+					TestID:        "testid" + fmt.Sprint(i),
+					VariantHash:   "aaaaaaaaaaaaaaa" + fmt.Sprint(i),
+					RefHash:       "bbbbbbbbbbbbbbb" + fmt.Sprint(i),
+					StartPosition: 90,
+					EndPosition:   99,
+					IsPrimary:     true,
+				})
+				testFailureInRequest = append(testFailureInRequest, &pb.BatchGetTestAnalysesRequest_TestFailureIdentifier{
+					TestId:      "testid" + fmt.Sprint(i),
+					VariantHash: "aaaaaaaaaaaaaaa" + fmt.Sprint(i),
+					RefHash:     "bbbbbbbbbbbbbbb" + fmt.Sprint(i),
+				})
 			}
-			segments := [][]*analysispb.Segment{
-				nil, // No changepoint data -> return nil.
-				{{
+
+			fakeAnalysisClient.TestVariantBranches = []*analysispb.TestVariantBranch{
+				makeFakeTestVariantBranch(0, nil), // No changepoint data -> return nil.
+				makeFakeTestVariantBranch(1, []*analysispb.Segment{{
 					StartPosition: 1,
 					EndPosition:   100,
 					Counts: &analysispb.Segment_Counts{
 						TotalResults:      1,
 						UnexpectedResults: 1,
 					},
-				}}, // One segment -> return nil.
-				{{
-					StartPosition: 111,
-					EndPosition:   200,
+				}}), // One segment -> return nil.
+				makeFakeTestVariantBranch(1, []*analysispb.Segment{{
+					StartPosition: 1,
+					EndPosition:   100,
 					Counts: &analysispb.Segment_Counts{
 						TotalResults:      1,
 						UnexpectedResults: 1,
 					},
-				},
-					{
-						StartPosition: 1,
-						EndPosition:   105,
-						Counts: &analysispb.Segment_Counts{
-							TotalResults:      1,
-							UnexpectedResults: 0,
-						},
-					}}, // Two segment, failure not ongoing, regression range (105,111]-> return nil.
-				{{
-					StartPosition: 109,
-					EndPosition:   200,
-					Counts: &analysispb.Segment_Counts{
-						TotalResults:      1,
-						UnexpectedResults: 1,
-					},
-				},
-					{
-						StartPosition: 1,
-						EndPosition:   101,
-						Counts: &analysispb.Segment_Counts{
-							TotalResults:      1,
-							UnexpectedResults: 0,
-						},
-					}}, // Two segment, failure is ongoing, regression range (101,109] -> return test analysis 104.
-				{{
-					StartPosition: 109,
-					EndPosition:   200,
-					Counts: &analysispb.Segment_Counts{
-						TotalResults:      1,
-						UnexpectedResults: 1,
-					},
-				},
-					{
-						StartPosition: 1,
-						EndPosition:   101,
-						Counts: &analysispb.Segment_Counts{
-							TotalResults:      1,
-							UnexpectedResults: 0,
-						},
-					}}, // Two segment, failure is ongoing, regression range (101,109] -> not return test analysis because test failure is diverged.
+				}}), // One segment -> return nil.
+
 			}
 
-			var branches []*analysispb.TestVariantBranch
-			for i, segs := range segments {
-				branches = append(branches, makeFakeTestVariantBranch(i+1, segs))
-			}
-
-			fakeAnalysisClient.TestVariantBranches = branches
-
-			resp, err := server.BatchGetTestAnalyses(ctx, req)
-			So(err, ShouldBeNil)
-			So(resp, ShouldResembleProto, &pb.BatchGetTestAnalysesResponse{
-				TestAnalyses: []*pb.TestAnalysis{nil, nil, nil, {
-					AnalysisId:  104,
-					Builder:     &buildbucketpb.BuilderID{Project: "chromium", Bucket: "bucket", Builder: "builder"},
-					CreatedTime: timestamppb.New(time.Unix(int64(100), 0).UTC()),
-					EndCommit:   &buildbucketpb.GitilesCommit{Position: 110},
-					SampleBbid:  8000,
-					StartCommit: &buildbucketpb.GitilesCommit{Position: 101},
-					TestFailures: []*pb.TestFailure{
+			Convey("request with multiple test failures", func() {
+				req := &pb.BatchGetTestAnalysesRequest{
+					Project:      "chromium",
+					TestFailures: testFailureInRequest,
+				}
+				segments := [][]*analysispb.Segment{
+					nil, // No changepoint data -> return nil.
+					{{
+						StartPosition: 1,
+						EndPosition:   100,
+						Counts: &analysispb.Segment_Counts{
+							TotalResults:      1,
+							UnexpectedResults: 1,
+						},
+					}}, // One segment -> return nil.
+					{{
+						StartPosition: 111,
+						EndPosition:   200,
+						Counts: &analysispb.Segment_Counts{
+							TotalResults:      1,
+							UnexpectedResults: 1,
+						},
+					},
 						{
-							TestId:      "testid4",
-							VariantHash: "aaaaaaaaaaaaaaa4",
-							RefHash:     "bbbbbbbbbbbbbbb4",
-							Variant:     &pb.Variant{},
-							IsDiverged:  false,
-							IsPrimary:   true,
-							StartHour:   timestamppb.New(time.Unix(int64(99), 0).UTC()),
+							StartPosition: 1,
+							EndPosition:   105,
+							Counts: &analysispb.Segment_Counts{
+								TotalResults:      1,
+								UnexpectedResults: 0,
+							},
+						}}, // Two segment, failure not ongoing, regression range (105,111]-> return nil.
+					{{
+						StartPosition: 109,
+						EndPosition:   200,
+						Counts: &analysispb.Segment_Counts{
+							TotalResults:      1,
+							UnexpectedResults: 1,
 						},
 					},
-				}, nil},
+						{
+							StartPosition: 1,
+							EndPosition:   101,
+							Counts: &analysispb.Segment_Counts{
+								TotalResults:      1,
+								UnexpectedResults: 0,
+							},
+						}}, // Two segment, failure is ongoing, regression range (101,109] -> return test analysis 104.
+					{{
+						StartPosition: 109,
+						EndPosition:   200,
+						Counts: &analysispb.Segment_Counts{
+							TotalResults:      1,
+							UnexpectedResults: 1,
+						},
+					},
+						{
+							StartPosition: 1,
+							EndPosition:   101,
+							Counts: &analysispb.Segment_Counts{
+								TotalResults:      1,
+								UnexpectedResults: 0,
+							},
+						}}, // Two segment, failure is ongoing, regression range (101,109] -> not return test analysis because test failure is diverged.
+				}
+
+				var branches []*analysispb.TestVariantBranch
+				for i, segs := range segments {
+					branches = append(branches, makeFakeTestVariantBranch(i+1, segs))
+				}
+
+				fakeAnalysisClient.TestVariantBranches = branches
+
+				resp, err := server.BatchGetTestAnalyses(ctx, req)
+				So(err, ShouldBeNil)
+				So(resp, ShouldResembleProto, &pb.BatchGetTestAnalysesResponse{
+					TestAnalyses: []*pb.TestAnalysis{nil, nil, nil, {
+						AnalysisId:  104,
+						Builder:     &buildbucketpb.BuilderID{Project: "chromium", Bucket: "bucket", Builder: "builder"},
+						CreatedTime: timestamppb.New(time.Unix(int64(100), 0).UTC()),
+						EndCommit:   &buildbucketpb.GitilesCommit{Position: 110},
+						SampleBbid:  8000,
+						StartCommit: &buildbucketpb.GitilesCommit{Position: 101},
+						TestFailures: []*pb.TestFailure{
+							{
+								TestId:      "testid4",
+								VariantHash: "aaaaaaaaaaaaaaa4",
+								RefHash:     "bbbbbbbbbbbbbbb4",
+								Variant:     &pb.Variant{},
+								IsDiverged:  false,
+								IsPrimary:   true,
+								StartHour:   timestamppb.New(time.Unix(int64(99), 0).UTC()),
+							},
+						},
+					}, nil},
+				})
 			})
+		})
+		Convey("valid request, permission denied obtaining LUCI Analysis test variant branches", func() {
+			// When a project does not exist in LUCI, LUCI Analysis returns a permission denied error.
+			fakeAnalysisClient.BatchGetErr = status.Error(codes.PermissionDenied, "permission denied")
+
+			req := &pb.BatchGetTestAnalysesRequest{
+				Project: "other",
+				TestFailures: []*pb.BatchGetTestAnalysesRequest_TestFailureIdentifier{
+					{
+						TestId:      "aaaa",
+						VariantHash: "1234567890abcdef",
+						RefHash:     "1234567890abcdef",
+					},
+				},
+			}
+
+			// Expect a response with an empty item for each requested test failure in this case.
+			rsp, err := server.BatchGetTestAnalyses(ctx, req)
+			So(err, ShouldBeNil)
+			So(rsp.TestAnalyses, ShouldResembleProto, []*pb.TestAnalysis{nil})
 		})
 	})
 }
