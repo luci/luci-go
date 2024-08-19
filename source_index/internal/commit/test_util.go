@@ -45,25 +45,25 @@ func ReadAllForTesting(ctx context.Context) ([]Commit, error) {
 	f := func(row *spanner.Row) error {
 		commit := Commit{}
 		var positionRef spanner.NullString
-		var position spanner.NullInt64
+		var positionNum spanner.NullInt64
 		err := row.Columns(
 			&commit.Host,
 			&commit.Repository,
 			&commit.CommitHash,
 			&positionRef,
-			&position,
+			&positionNum,
 		)
 		if err != nil {
 			return err
 		}
 
-		if positionRef.Valid != position.Valid {
-			return errors.New("invariant violated: PositionRef and Position must be defined/undefined at the same time")
+		if positionRef.Valid != positionNum.Valid {
+			return errors.New("invariant violated: PositionRef and PositionNumber must be defined/undefined at the same time")
 		}
 		if positionRef.Valid {
 			commit.Position = &Position{
 				Ref:    positionRef.StringVal,
-				Number: position.Int64,
+				Number: positionNum.Int64,
 			}
 		}
 

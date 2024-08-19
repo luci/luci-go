@@ -65,18 +65,18 @@ func ReadCommit(ctx context.Context, k Key) (commits *Commit, err error) {
 		return nil, errors.Annotate(err, "reading PositionRef column").Err()
 	}
 
-	var position spanner.NullInt64
-	if err := row.Column(1, &position); err != nil {
-		return nil, errors.Annotate(err, "reading Position column").Err()
+	var positionNum spanner.NullInt64
+	if err := row.Column(1, &positionNum); err != nil {
+		return nil, errors.Annotate(err, "reading PositionNumber column").Err()
 	}
 
-	if positionRef.Valid != position.Valid {
-		return nil, errors.New("invariant violated: PositionRef and Position must be defined/undefined at the same time")
+	if positionRef.Valid != positionNum.Valid {
+		return nil, errors.New("invariant violated: PositionRef and PositionNumber must be defined/undefined at the same time")
 	}
 	if positionRef.Valid {
 		commit.Position = &Position{
 			Ref:    positionRef.StringVal,
-			Number: position.Int64,
+			Number: positionNum.Int64,
 		}
 	}
 
