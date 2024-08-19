@@ -50,11 +50,11 @@
 //
 // # Enabling the sweeper on Appengine
 //
-// In cron.yaml:
+// In cron.yaml (required):
 //   - url: /internal/tasks/c/sweep
 //     schedule: every 1 minutes
 //
-// In queue.yaml:
+// In queue.yaml (required when using the default distributed sweep mode):
 //   - name: tq-sweep
 //     rate: 500/s
 //

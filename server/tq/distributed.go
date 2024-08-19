@@ -22,6 +22,7 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
 
@@ -205,9 +206,10 @@ func sweepTaskRouting(disp *Dispatcher, opts DistributedSweeperOptions, exec swe
 		},
 	})
 	return func(ctx context.Context, task *tqpb.SweepTask) error {
-		return disp.AddTask(ctx, &Task{
+		err := disp.AddTask(ctx, &Task{
 			Payload: task,
 			Title:   fmt.Sprintf("l%d_%d_%d", task.Level, task.ShardIndex, task.ShardCount),
 		})
+		return errors.Annotate(err, "adding task to sweeper task queue %q", opts.TaskQueue).Err()
 	}
 }
