@@ -126,7 +126,7 @@ func TestQueryTestVariantArtifactGroups(t *testing.T) {
 				})
 
 				res, err := rdbSvr.QueryTestVariantArtifactGroups(ctx, req)
-				So(err, ShouldBeRPCInvalidArgument, `test_id_matcher: search by prefix is not allowed for non-googlers`)
+				So(err, ShouldBeRPCPermissionDenied, `test_id_matcher: search by prefix is not allowed: insufficient permission to run this query with current filters`)
 				So(res, ShouldBeNil)
 			})
 		})
@@ -235,7 +235,7 @@ func TestValidateQueryTestVariantArtifactGroupsRequest(t *testing.T) {
 					},
 				}
 				err := validateQueryTestVariantArtifactGroupsRequest(req, false)
-				So(err, ShouldErrLike, `test_id_matcher: search by prefix is not allowed for non-googlers`)
+				So(err, ShouldErrLike, `test_id_matcher: search by prefix is not allowed: insufficient permission to run this query with current filters`)
 			})
 		})
 

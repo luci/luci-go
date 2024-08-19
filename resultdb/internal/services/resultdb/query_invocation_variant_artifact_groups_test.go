@@ -118,7 +118,7 @@ func TestQueryInvocationVariantArtifactGroups(t *testing.T) {
 				})
 
 				res, err := rdbSvr.QueryInvocationVariantArtifactGroups(ctx, req)
-				So(err, ShouldBeRPCInvalidArgument, `artifact_id_matcher: search by prefix is not allowed for non-googlers`)
+				So(err, ShouldBeRPCPermissionDenied, `artifact_id_matcher: search by prefix is not allowed: insufficient permission to run this query with current filters`)
 				So(res, ShouldBeNil)
 			})
 		})
@@ -210,7 +210,7 @@ func TestValidateQueryInvocationVariantArtifactGroupsRequest(t *testing.T) {
 			Convey(`no artifact id matcher called by non-googler`, func() {
 				req.ArtifactIdMatcher = nil
 				err := validateQueryInvocationVariantArtifactGroupsRequest(req, false)
-				So(err, ShouldErrLike, `artifact_id_matcher: unspecified`)
+				So(err, ShouldErrLike, `artifact_id_matcher: unspecified: insufficient permission to run this query with current filters`)
 			})
 
 			Convey(`artifact id prefix called by non-googler`, func() {
@@ -220,7 +220,7 @@ func TestValidateQueryInvocationVariantArtifactGroupsRequest(t *testing.T) {
 					},
 				}
 				err := validateQueryInvocationVariantArtifactGroupsRequest(req, false)
-				So(err, ShouldErrLike, `artifact_id_matcher: search by prefix is not allowed for non-googlers`)
+				So(err, ShouldErrLike, `artifact_id_matcher: search by prefix is not allowed: insufficient permission to run this query with current filters`)
 			})
 		})
 

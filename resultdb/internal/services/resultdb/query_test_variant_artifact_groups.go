@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"time"
 
+	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
@@ -43,6 +44,8 @@ var artifactSearchPageSizeLimiter = pagination.PageSizeLimiter{
 	Max:     100,
 }
 
+var insufficientPermissionWithQueryFilter = errors.New("insufficient permission to run this query with current filters")
+
 func (s *resultDBServer) QueryTestVariantArtifactGroups(ctx context.Context, req *pb.QueryTestVariantArtifactGroupsRequest) (rsp *pb.QueryTestVariantArtifactGroupsResponse, err error) {
 	// Validate project before using it to check permission.
 	if err := pbutil.ValidateProject(req.Project); err != nil {
@@ -57,6 +60,9 @@ func (s *resultDBServer) QueryTestVariantArtifactGroups(ctx context.Context, req
 		return nil, errors.Annotate(err, "failed to check ACL").Err()
 	}
 	if err := validateQueryTestVariantArtifactGroupsRequest(req, isGoogler); err != nil {
+		if errors.Contains(err, insufficientPermissionWithQueryFilter) {
+			return nil, appstatus.Errorf(codes.PermissionDenied, err.Error())
+		}
 		return nil, appstatus.BadRequest(err)
 	}
 
@@ -93,20 +99,19 @@ func validateQueryTestVariantArtifactGroupsRequest(req *pb.QueryTestVariantArtif
 	if req.SearchString.GetExactContain() == "" && req.SearchString.GetRegexContain() == "" {
 		return errors.New("search_string: unspecified")
 	}
-
 	// Non-googler caller have to specify an exact test id.
 	// Because search with empty test id, or test id prefix can uses around 36 BigQuery slot hours.
 	// This is expensive and we want to avoid people outside of google from abusing it.
-	if req.TestIdMatcher != nil || !isGoogler {
-		if err := validateTestIDMatcher(req.TestIdMatcher, isGoogler); err != nil {
-			return errors.Annotate(err, "test_id_matcher").Err()
-		}
+	allowNonExactMatch := isGoogler
+	if err := validateTestIDMatcher(req.TestIdMatcher, allowNonExactMatch); err != nil {
+		return errors.Annotate(err, "test_id_matcher").Err()
 	}
-	if req.ArtifactIdMatcher != nil {
-		if err := validateArtifactIDMatcher(req.ArtifactIdMatcher, true); err != nil {
-			return errors.Annotate(err, "artifact_id_matcher").Err()
-		}
+	// Non-exact artifact id match is already allowed here,
+	// because this matcher has minimal impact on the query performance for this search,.
+	if err := validateArtifactIDMatcher(req.ArtifactIdMatcher, true); err != nil {
+		return errors.Annotate(err, "artifact_id_matcher").Err()
 	}
+
 	if err := validateStartEndTime(req.StartTime, req.EndTime); err != nil {
 		return err
 	}
@@ -116,14 +121,17 @@ func validateQueryTestVariantArtifactGroupsRequest(req *pb.QueryTestVariantArtif
 	return nil
 }
 
-func validateTestIDMatcher(m *pb.IDMatcher, isGoogler bool) error {
+func validateTestIDMatcher(m *pb.IDMatcher, allowNonExactMatch bool) error {
 	if m == nil {
-		return errors.New("unspecified")
+		if !allowNonExactMatch {
+			return errors.Annotate(insufficientPermissionWithQueryFilter, "unspecified").Err()
+		}
+		return nil
 	}
 	switch x := m.Matcher.(type) {
 	case *pb.IDMatcher_HasPrefix:
-		if !isGoogler {
-			return errors.New("search by prefix is not allowed for non-googlers")
+		if !allowNonExactMatch {
+			return errors.Annotate(insufficientPermissionWithQueryFilter, "search by prefix is not allowed").Err()
 		}
 		// ValidateTestID can also be used to validate test id prefix.
 		return pbutil.ValidateTestID(m.GetHasPrefix())
@@ -134,14 +142,17 @@ func validateTestIDMatcher(m *pb.IDMatcher, isGoogler bool) error {
 	}
 }
 
-func validateArtifactIDMatcher(m *pb.IDMatcher, allowPrefixMatcher bool) error {
+func validateArtifactIDMatcher(m *pb.IDMatcher, allowNonExactMatch bool) error {
 	if m == nil {
-		return errors.New("unspecified")
+		if !allowNonExactMatch {
+			return errors.Annotate(insufficientPermissionWithQueryFilter, "unspecified").Err()
+		}
+		return nil
 	}
 	switch x := m.Matcher.(type) {
 	case *pb.IDMatcher_HasPrefix:
-		if !allowPrefixMatcher {
-			return errors.New("search by prefix is not allowed for non-googlers")
+		if !allowNonExactMatch {
+			return errors.Annotate(insufficientPermissionWithQueryFilter, "search by prefix is not allowed").Err()
 		}
 		return pbutil.ValidateArtifactIDPrefix(m.GetHasPrefix())
 	case *pb.IDMatcher_ExactEqual:

@@ -17,6 +17,7 @@ package resultdb
 import (
 	"context"
 
+	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
@@ -45,6 +46,9 @@ func (s *resultDBServer) QueryInvocationVariantArtifactGroups(ctx context.Contex
 		return nil, errors.Annotate(err, "failed to check ACL").Err()
 	}
 	if err := validateQueryInvocationVariantArtifactGroupsRequest(req, isGoogler); err != nil {
+		if errors.Contains(err, insufficientPermissionWithQueryFilter) {
+			return nil, appstatus.Errorf(codes.PermissionDenied, err.Error())
+		}
 		return nil, appstatus.BadRequest(err)
 	}
 
@@ -85,12 +89,11 @@ func validateQueryInvocationVariantArtifactGroupsRequest(req *pb.QueryInvocation
 	// Non-googler caller have to specify an exact artifact id.
 	// Because search with empty artifact id, or artifact id prefix can be expensive.
 	// So we want to avoid people outside of google from abusing it.
-	if req.ArtifactIdMatcher != nil || !isGoogler {
-		allowPrefixMatcher := isGoogler
-		if err := validateArtifactIDMatcher(req.ArtifactIdMatcher, allowPrefixMatcher); err != nil {
-			return errors.Annotate(err, "artifact_id_matcher").Err()
-		}
+	allowNonExactMatch := isGoogler
+	if err := validateArtifactIDMatcher(req.ArtifactIdMatcher, allowNonExactMatch); err != nil {
+		return errors.Annotate(err, "artifact_id_matcher").Err()
 	}
+
 	if err := validateStartEndTime(req.StartTime, req.EndTime); err != nil {
 		return err
 	}
