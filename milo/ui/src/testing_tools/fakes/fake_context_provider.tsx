@@ -16,7 +16,7 @@ import { ThemeProvider } from '@emotion/react';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterLuxon } from '@mui/x-date-pickers/AdapterLuxon';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import React, { useState } from 'react';
+import { ReactNode, useState } from 'react';
 import { Outlet, RouterProvider, createMemoryRouter } from 'react-router-dom';
 
 import { PageConfigStateProvider } from '@/common/components/page_config_state_provider';
@@ -32,10 +32,11 @@ import { FakeAuthStateProvider } from './fake_auth_state_provider';
 interface FakeContextProviderProps {
   readonly mountedPath?: string;
   readonly routerOptions?: Parameters<typeof createMemoryRouter>[1];
-  readonly children: React.ReactNode;
+  readonly errorElement?: ReactNode;
+  readonly children: ReactNode;
   readonly pageMeta?: {
-    project?: string;
-    selectedPage?: UiPage;
+    readonly project?: string;
+    readonly selectedPage?: UiPage;
   };
 }
 
@@ -44,9 +45,10 @@ interface FakeContextProviderProps {
  */
 export function FakeContextProvider({
   mountedPath,
+  routerOptions,
+  errorElement,
   children,
   pageMeta,
-  routerOptions,
 }: FakeContextProviderProps) {
   const [client] = useState(() => {
     const errorMock = jest
@@ -83,14 +85,22 @@ export function FakeContextProvider({
     [
       {
         element: (
+          // N.B. keep the provider declaration order and placement in sync with
+          // App.tsx so it's easier to test the effect of missing contexts.
+          // e.g. `errorElement` shall not rely on `<AuthStateProvider />`.
           <SyncedSearchParamsProvider>
-            <Outlet />
+            <FakeAuthStateProvider>
+              <PermCheckProvider>
+                <Outlet />
+              </PermCheckProvider>
+            </FakeAuthStateProvider>
           </SyncedSearchParamsProvider>
         ),
         children: [
           {
             path: mountedPath || '/',
             element: children,
+            errorElement: errorElement,
           },
         ],
       },
@@ -101,24 +111,20 @@ export function FakeContextProvider({
   return (
     <ThemeProvider theme={theme}>
       <LocalizationProvider dateAdapter={AdapterLuxon}>
-        <FakeAuthStateProvider>
-          <QueryClientProvider client={client}>
-            <PermCheckProvider>
-              <PageMetaProvider
-                initPage={pageMeta?.selectedPage}
-                initProject={pageMeta?.project}
-              >
-                <ReleaseNotesProvider
-                  initReleaseNotes={{ latest: '', latestVersion: -1, past: '' }}
-                >
-                  <PageConfigStateProvider>
-                    <RouterProvider router={router} />
-                  </PageConfigStateProvider>
-                </ReleaseNotesProvider>
-              </PageMetaProvider>
-            </PermCheckProvider>
-          </QueryClientProvider>
-        </FakeAuthStateProvider>
+        <QueryClientProvider client={client}>
+          <PageMetaProvider
+            initPage={pageMeta?.selectedPage}
+            initProject={pageMeta?.project}
+          >
+            <ReleaseNotesProvider
+              initReleaseNotes={{ latest: '', latestVersion: -1, past: '' }}
+            >
+              <PageConfigStateProvider>
+                <RouterProvider router={router} />
+              </PageConfigStateProvider>
+            </ReleaseNotesProvider>
+          </PageMetaProvider>
+        </QueryClientProvider>
       </LocalizationProvider>
     </ThemeProvider>
   );

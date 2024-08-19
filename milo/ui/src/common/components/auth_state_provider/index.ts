@@ -16,3 +16,13 @@ export * from './auth_state_initializer';
 export * from './auth_state_provider';
 export * from './constants';
 export { useAuthState, useGetAccessToken, useGetIdToken } from './context';
+
+import { AuthStateContext } from './context';
+
+/**
+ * Should only be used to override auth state context in tests.
+ */
+// Don't `export { AuthStateContext as TestAuthStateContext } from './context'`.
+// Reassign and export to breaks IDE's find reference feature won't mix
+// `AuthStateContext` and `TestAuthStateContext` together.
+export const TestAuthStateContext = AuthStateContext;

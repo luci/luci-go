@@ -22,9 +22,9 @@ export interface AuthStateContextValue {
   readonly getIdToken: () => Promise<string>;
 }
 
-export const AuthStateContext = createContext<AuthStateContextValue | null>(
-  null,
-);
+export const AuthStateContext = createContext<
+  AuthStateContextValue | undefined
+>(undefined);
 
 /**
  * Returns the latest auth state. For ephemeral properties (e.g. ID/access
@@ -61,7 +61,7 @@ export function useAuthState(): Pick<
 export function useGetAccessToken(): () => Promise<string> {
   const value = useContext(AuthStateContext);
 
-  if (!value) {
+  if (value === undefined) {
     throw new Error(
       'useGetAccessToken can only be used in a AuthStateProvider',
     );
@@ -84,7 +84,7 @@ export function useGetAccessToken(): () => Promise<string> {
 export function useGetIdToken(): () => Promise<string> {
   const value = useContext(AuthStateContext);
 
-  if (!value) {
+  if (value === undefined) {
     throw new Error('useGetIdToken can only be used in a AuthStateProvider');
   }
 

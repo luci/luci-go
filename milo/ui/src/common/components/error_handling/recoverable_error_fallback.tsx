@@ -75,6 +75,7 @@ export function RecoverableErrorFallback({
           </b>
         )
       }
+      showFileBugButton={initialIdentity.current !== ANONYMOUS_IDENTITY}
       onTryAgain={() => resetErrorBoundary()}
     />
   );

@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useLatest } from 'react-use';
 
 import { AuthState } from '@/common/api/auth_state';
-import { AuthStateContext } from '@/common/components/auth_state_provider/context';
+import { TestAuthStateContext } from '@/common/components/auth_state_provider';
 import { createMockAuthState } from '@/testing_tools/mocks/authstate_mock';
 
 interface props {
@@ -29,8 +29,8 @@ export const FakeAuthStateProvider = ({ value, children }: props) => {
   );
 
   return (
-    <AuthStateContext.Provider value={ctxValue}>
+    <TestAuthStateContext.Provider value={ctxValue}>
       {children}
-    </AuthStateContext.Provider>
+    </TestAuthStateContext.Provider>
   );
 };

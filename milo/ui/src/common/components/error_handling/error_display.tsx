@@ -25,12 +25,14 @@ export interface ErrorDisplayProps {
    * the error message.
    */
   readonly instruction?: ReactNode;
+  readonly showFileBugButton?: boolean;
   readonly onTryAgain?: () => void;
 }
 
 export function ErrorDisplay({
   error,
   instruction,
+  showFileBugButton,
   onTryAgain,
 }: ErrorDisplayProps) {
   useEffect(() => {
@@ -54,13 +56,16 @@ export function ErrorDisplay({
       >
         {error.message}
       </pre>
-      <Button
-        href={genFeedbackUrl(error.message, error.stack)}
-        target="_blank"
-        rel="noopener"
-      >
-        File a bug
-      </Button>
+      {showFileBugButton && (
+        <Button
+          href={genFeedbackUrl(error.message, error.stack)}
+          target="_blank"
+          rel="noopener"
+          color="secondary"
+        >
+          File a bug
+        </Button>
+      )}
       {onTryAgain && <Button onClick={() => onTryAgain()}>Try Again</Button>}
     </Alert>
   );
