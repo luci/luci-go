@@ -401,7 +401,7 @@ func TestReportBuilderMetrics(t *testing.T) {
 					So(res, ShouldEqual, 1)
 					res, err = GetCustomMetricsData(ctx, base, name2, time.Time{}, []any{"INFRA_FAILURE"})
 					So(err, ShouldBeNil)
-					So(res, ShouldBeNil)
+					So(res, ShouldEqual, 0)
 				})
 			})
 			Convey("w/ a series of failures before a success", func() {

@@ -369,14 +369,12 @@ func reportCustomBuilderCounts(ctx context.Context, cms *CustomMetrics, base pb.
 		for _, status := range statuses {
 			// TODO(b/338071541): remove after confirming the feature works.
 			logging.Infof(ctx, "reporting to %s for status %s with count %d", name, status, cmCounts[name][status])
-			if cmCounts[name][status] != 0 {
-				cms.Report(ctx, &Report{
-					Base:     base,
-					Name:     name,
-					FieldMap: map[string]string{"status": pb.Status_name[int32(status)]},
-					Value:    cmCounts[name][status],
-				})
-			}
+			cms.Report(ctx, &Report{
+				Base:     base,
+				Name:     name,
+				FieldMap: map[string]string{"status": pb.Status_name[int32(status)]},
+				Value:    cmCounts[name][status],
+			})
 		}
 	}
 }
