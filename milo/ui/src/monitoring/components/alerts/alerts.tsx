@@ -69,6 +69,9 @@ export const Alerts = () => {
   if (alertsLoading) {
     return <CircularProgress />;
   }
+
+  const bugsErrorMessage =
+    bugsError && bugsError instanceof Error ? bugsError.message : bugsError;
   return (
     <>
       <Box
@@ -107,7 +110,9 @@ export const Alerts = () => {
         </Typography>
         {bugsLoading ? <LinearProgress /> : null}
         {isBugsError ? (
-          <Alert severity="error">Failed to fetch bugs: {`${bugsError}`}</Alert>
+          <Alert severity="error">
+            Failed to fetch bugs: {`${bugsErrorMessage}`}
+          </Alert>
         ) : null}
         {/* TODO: Get hotlist name */}
         {bugs?.length === 0 ? (

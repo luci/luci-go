@@ -60,6 +60,14 @@ interface MonitoringContext {
   readonly bugsLoading?: boolean;
 }
 
+interface BugsQueryError {
+  readonly result: {
+    error: {
+      message: string;
+    };
+  };
+}
+
 export const MonitoringCtx = createContext<MonitoringContext | null>(null);
 
 interface Props {
@@ -109,7 +117,7 @@ export function MonitoringProvider({ children, treeName, tree }: Props) {
     (extendedAlertsData || []).map((a) => a?.bug).filter((b) => b && b !== '0'),
   );
 
-  const bugQuery = useIssueListQuery(
+  const bugsQuery = useIssueListQuery(
     {
       query: `(status:open AND hotlistid:${tree?.hotlistId})${
         linkedBugs.length > 0 ? ' OR ' : ''
@@ -130,7 +138,7 @@ export function MonitoringProvider({ children, treeName, tree }: Props) {
     throw extendedAlertsQuery.find((q) => q.isError && q.error);
   }
 
-  const bugs = bugQuery.data?.issues?.map((i) => bugFromJson(i));
+  const bugs = bugsQuery.data?.issues?.map((i) => bugFromJson(i));
 
   const alerts = alertsQuery.data?.alerts.map((a, i) => {
     const extended =
@@ -142,6 +150,7 @@ export function MonitoringProvider({ children, treeName, tree }: Props) {
       silenceUntil: extended?.silenceUntil,
     };
   });
+  const bugsQueryError = bugsQuery.error as BugsQueryError;
   return (
     <MonitoringCtx.Provider
       value={{
@@ -152,9 +161,12 @@ export function MonitoringProvider({ children, treeName, tree }: Props) {
           alertsQuery.isRefetching ||
           extendedAlertsQuery.some((q) => q.isLoading || q.isRefetching),
         bugs,
-        bugsError: bugQuery.error,
-        isBugsError: bugQuery.isError || bugQuery.isRefetchError,
-        bugsLoading: bugQuery.isLoading || bugQuery.isRefetching,
+        bugsError:
+          bugsQueryError !== null
+            ? new Error(bugsQueryError.result.error.message)
+            : null,
+        isBugsError: bugsQuery.isError || bugsQuery.isRefetchError,
+        bugsLoading: bugsQuery.isLoading || bugsQuery.isRefetching,
       }}
     >
       {children}
