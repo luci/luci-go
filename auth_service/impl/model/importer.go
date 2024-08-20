@@ -21,7 +21,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"regexp"
 	"strings"
 	"time"
 
@@ -110,8 +109,6 @@ type GroupImporterConfig struct {
 	// ModifiedTS is the time when this entity was last modified.
 	ModifiedTS time.Time `gae:"modified_ts,noindex"`
 }
-
-var GroupNameRe = regexp.MustCompile(`^([a-z\-]+/)?[0-9a-z_\-\.@]{1,100}$`)
 
 // GroupBundle is a map where k: groupName, v: list of identities belonging to group k.
 type GroupBundle = map[string][]identity.Identity
@@ -268,7 +265,7 @@ func loadTarball(ctx context.Context, content io.Reader, domain string, systems,
 	// verify system/groupname and then parse blob if valid
 	for filename, fileobj := range entries {
 		chunks := strings.Split(filename, "/")
-		if len(chunks) != 2 || !GroupNameRe.MatchString(filename) {
+		if len(chunks) != 2 || !auth.IsValidGroupName(filename) {
 			logging.Warningf(ctx, "Skipping file %s, not a valid name", filename)
 			continue
 		}
