@@ -43,6 +43,9 @@ const (
 	settingsCfg = "settings.cfg"
 	poolsCfg    = "pools.cfg"
 	botsCfg     = "bots.cfg"
+
+	// The main hooks file embedded into the bot package. It is under `scripts/`.
+	botConfigPy = "bot_config.py"
 )
 
 // hookScriptRe matches paths like `scripts/hooks.py`. It intentionally doesn't
@@ -259,6 +262,11 @@ func parseAndValidateConfigs(ctx context.Context, rev string, files map[string]c
 			return nil, errors.Reason("bot group #%d refers to undefined bot config script %q", idx+1, group.BotConfigScript).Err()
 		}
 		bundle.Scripts[group.BotConfigScript] = body.Content
+	}
+
+	// Pick up the main hooks script (if any) to embed it into the bot package.
+	if body, ok := files["scripts/"+botConfigPy]; ok {
+		bundle.Scripts[botConfigPy] = body.Content
 	}
 
 	// Derive the digest based exclusively on configs content, regardless of the

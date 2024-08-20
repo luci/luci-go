@@ -26,4 +26,7 @@
 //  3. A validation logic used by LUCI Config callback to validate configs in
 //     config presubmit checks and used by the cron job to double check new
 //     configs are good.
+//
+// This package is also responsible for assembling the deployable bot package
+// based on the server configuration and the bot package in CIPD.
 package cfg

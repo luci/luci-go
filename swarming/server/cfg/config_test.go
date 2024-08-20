@@ -156,14 +156,15 @@ func TestParseAndValidateConfigs(t *testing.T) {
 					}
 				}
 			`,
-			"scripts/script1.py": "script1 body",
-			"scripts/script2.py": "script2 body",
-			"scripts/ignored.py": "ignored",
+			"scripts/bot_config.py": "hooks",
+			"scripts/script1.py":    "script1 body",
+			"scripts/script2.py":    "script2 body",
+			"scripts/ignored.py":    "ignored",
 		})
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, bundle, should.Resemble(&internalcfgpb.ConfigBundle{
 			Revision: "rev",
-			Digest:   "LBLN3ToniTYTTcn5xamgqOWbmwiFx32hNaQfOdrW3mQ",
+			Digest:   "+nNhDZVFV3KtgSXbP7rBM+CsTzGpz50lwooB+0wf+AA",
 			Settings: &configpb.SettingsCfg{
 				GoogleAnalytics: "boo",
 			},
@@ -193,8 +194,9 @@ func TestParseAndValidateConfigs(t *testing.T) {
 				},
 			},
 			Scripts: map[string]string{
-				"script1.py": "script1 body",
-				"script2.py": "script2 body",
+				"bot_config.py": "hooks",
+				"script1.py":    "script1 body",
+				"script2.py":    "script2 body",
 			},
 		}))
 	})
