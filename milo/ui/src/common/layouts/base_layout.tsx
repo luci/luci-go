@@ -23,15 +23,18 @@ import {
 } from '@/generic_libs/components/queued_sticky';
 
 import { AppBar } from './app_bar';
+import { PrivacyFooter } from './privacy_footer';
 import { Sidebar } from './side_bar';
 
 const ScrollingBase = styled(QueuedStickyScrollingBase)`
   display: grid;
-  grid-template-rows: auto 1fr;
+  min-height: 100vh;
+  grid-template-rows: auto 1fr auto;
   grid-template-columns: auto 1fr;
   grid-template-areas:
     'app-bar app-bar'
-    'sidebar main';
+    'sidebar main'
+    'sidebar footer';
 `;
 
 export const SIDE_BAR_OPEN_CACHE_KEY = 'side-bar-open';
@@ -54,6 +57,9 @@ export const BaseLayout = () => {
         sx={{ gridArea: 'sidebar', zIndex: (theme) => theme.zIndex.drawer }}
       >
         <Sidebar open={sidebarOpen} />
+      </Sticky>
+      <Sticky top sx={{ gridArea: 'footer' }}>
+        <PrivacyFooter />
       </Sticky>
       <StickyOffset component="main" sx={{ gridArea: 'main' }}>
         {/* Do not conditionally render the <Outlet /> base on the navigation

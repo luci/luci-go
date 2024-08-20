@@ -51,7 +51,7 @@ const LeftGroupContainer = styled(Box)`
 const RightGroupContainer = styled(Box)`
   position: sticky;
   // Stick to right in case the page grows wider than 100vw.
-  right: calc(var(--accumulated-right) + 16px);
+  right: calc(var(--accumulated-right) + 17px);
   display: grid;
   grid-template-rows: 1fr auto;
 `;

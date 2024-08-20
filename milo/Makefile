@@ -15,7 +15,7 @@ projdir := $(patsubst %/,%,$(dir $(mkfile_path)))
 # * separate the API service to a standalone GAE service so their deployments
 #   are decoupled.
 up-dev: build-ui
-	gae.py upload -p ./ -A luci-milo-dev
+	gae.py upload -p ./ -A luci-milo-dev -f
 
 test:
 	go test ./...
