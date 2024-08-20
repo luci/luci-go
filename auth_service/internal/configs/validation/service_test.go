@@ -18,10 +18,10 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config/validation"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestAllowlistConfigValidation(t *testing.T) {
@@ -29,15 +29,15 @@ func TestAllowlistConfigValidation(t *testing.T) {
 
 	ctx := context.Background()
 
-	Convey("Validate Config", t, func() {
+	ftt.Run("Validate Config", t, func(t *ftt.Test) {
 		vctx := &validation.Context{Context: ctx}
 		path := "ip_allowlist.cfg"
 		configSet := ""
 
-		Convey("Loading bad proto", func() {
+		t.Run("Loading bad proto", func(t *ftt.Test) {
 			content := []byte(` bad: "config" `)
-			So(validateAllowlist(vctx, configSet, path, content), ShouldBeNil)
-			So(vctx.Finalize().Error(), ShouldContainSubstring, "unknown field")
+			assert.Loosely(t, validateAllowlist(vctx, configSet, path, content), should.BeNil)
+			assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("unknown field"))
 		})
 
 		const okCfg = `
@@ -61,29 +61,29 @@ func TestAllowlistConfigValidation(t *testing.T) {
 			}
 		`
 
-		Convey("OK", func() {
-			Convey("fully loaded", func() {
-				So(validateAllowlist(vctx, configSet, path, []byte(okCfg)), ShouldBeNil)
-				So(vctx.Finalize(), ShouldBeNil)
+		t.Run("OK", func(t *ftt.Test) {
+			t.Run("fully loaded", func(t *ftt.Test) {
+				assert.Loosely(t, validateAllowlist(vctx, configSet, path, []byte(okCfg)), should.BeNil)
+				assert.Loosely(t, vctx.Finalize(), should.BeNil)
 			})
-			Convey("empty", func() {
-				So(validateAllowlist(vctx, configSet, path, []byte{}), ShouldBeNil)
-				So(vctx.Finalize(), ShouldBeNil)
+			t.Run("empty", func(t *ftt.Test) {
+				assert.Loosely(t, validateAllowlist(vctx, configSet, path, []byte{}), should.BeNil)
+				assert.Loosely(t, vctx.Finalize(), should.BeNil)
 			})
 		})
 
-		Convey("Catches regexp bugs", func() {
+		t.Run("Catches regexp bugs", func(t *ftt.Test) {
 			badCfg := `
 				ip_allowlists {
 					name: "?!chromium-test-dev-bots"
 					includes: "bots"
 				}
 			`
-			So(validateAllowlist(vctx, configSet, path, []byte(badCfg)), ShouldBeNil)
-			So(vctx.Finalize(), ShouldErrLike, "invalid IP allowlist name")
+			assert.Loosely(t, validateAllowlist(vctx, configSet, path, []byte(badCfg)), should.BeNil)
+			assert.Loosely(t, vctx.Finalize(), should.ErrLike("invalid IP allowlist name"))
 		})
 
-		Convey("Catches duplicate allowlist bug", func() {
+		t.Run("Catches duplicate allowlist bug", func(t *ftt.Test) {
 			badCfg := `
 				ip_allowlists {
 					name: "bots"
@@ -96,55 +96,55 @@ func TestAllowlistConfigValidation(t *testing.T) {
 					name: "bots"
 				}
 			`
-			So(validateAllowlist(vctx, configSet, path, []byte(badCfg)), ShouldBeNil)
-			So(vctx.Finalize(), ShouldErrLike, "IP allowlist is defined twice")
+			assert.Loosely(t, validateAllowlist(vctx, configSet, path, []byte(badCfg)), should.BeNil)
+			assert.Loosely(t, vctx.Finalize(), should.ErrLike("IP allowlist is defined twice"))
 		})
 
-		Convey("Bad CIDR format", func() {
+		t.Run("Bad CIDR format", func(t *ftt.Test) {
 			badCfg := `
 				ip_allowlists {
 					name: "bots"
 					subnets: "not a subnet/"
 				}
 			`
-			So(validateAllowlist(vctx, configSet, path, []byte(badCfg)), ShouldBeNil)
-			So(vctx.Finalize(), ShouldErrLike, "invalid CIDR address")
+			assert.Loosely(t, validateAllowlist(vctx, configSet, path, []byte(badCfg)), should.BeNil)
+			assert.Loosely(t, vctx.Finalize(), should.ErrLike("invalid CIDR address"))
 		})
 
-		Convey("Bad standard IP format", func() {
+		t.Run("Bad standard IP format", func(t *ftt.Test) {
 			badCfg := `
 				ip_allowlists {
 					name: "bots"
 					subnets: "not a subnet"
 				}
 			`
-			So(validateAllowlist(vctx, configSet, path, []byte(badCfg)), ShouldBeNil)
-			So(vctx.Finalize(), ShouldErrLike, "unable to parse IP for subnet")
+			assert.Loosely(t, validateAllowlist(vctx, configSet, path, []byte(badCfg)), should.BeNil)
+			assert.Loosely(t, vctx.Finalize(), should.ErrLike("unable to parse IP for subnet"))
 		})
 
-		Convey("Bad Identity format", func() {
+		t.Run("Bad Identity format", func(t *ftt.Test) {
 			badCfg := `
 				assignments {
 					identity: "test-user@example.com"
 					ip_allowlist_name: "bots"
 				}
 			`
-			So(validateAllowlist(vctx, configSet, path, []byte(badCfg)), ShouldBeNil)
-			So(vctx.Finalize(), ShouldErrLike, "bad identity")
+			assert.Loosely(t, validateAllowlist(vctx, configSet, path, []byte(badCfg)), should.BeNil)
+			assert.Loosely(t, vctx.Finalize(), should.ErrLike("bad identity"))
 		})
 
-		Convey("Unknown allowlist in assignment", func() {
+		t.Run("Unknown allowlist in assignment", func(t *ftt.Test) {
 			badCfg := `
 				assignments {
 					identity: "user:test-user@example.com"
 					ip_allowlist_name: "bots"
 				}
 			`
-			So(validateAllowlist(vctx, configSet, path, []byte(badCfg)), ShouldBeNil)
-			So(vctx.Finalize(), ShouldErrLike, "unknown allowlist")
+			assert.Loosely(t, validateAllowlist(vctx, configSet, path, []byte(badCfg)), should.BeNil)
+			assert.Loosely(t, vctx.Finalize(), should.ErrLike("unknown allowlist"))
 		})
 
-		Convey("Identity defined twice", func() {
+		t.Run("Identity defined twice", func(t *ftt.Test) {
 			badCfg := `
 				ip_allowlists {
 					name: "bots"
@@ -158,11 +158,11 @@ func TestAllowlistConfigValidation(t *testing.T) {
 					ip_allowlist_name: "bots"
 				}
 			`
-			So(validateAllowlist(vctx, configSet, path, []byte(badCfg)), ShouldBeNil)
-			So(vctx.Finalize(), ShouldErrLike, "defined twice")
+			assert.Loosely(t, validateAllowlist(vctx, configSet, path, []byte(badCfg)), should.BeNil)
+			assert.Loosely(t, vctx.Finalize(), should.ErrLike("defined twice"))
 		})
 
-		Convey("Validate allowlist unknown includes", func() {
+		t.Run("Validate allowlist unknown includes", func(t *ftt.Test) {
 			badCfg := `
 				ip_allowlists {
 					name: "bots"
@@ -170,11 +170,11 @@ func TestAllowlistConfigValidation(t *testing.T) {
 					includes: ["unknown"]
 				}
 			`
-			So(validateAllowlist(vctx, configSet, path, []byte(badCfg)), ShouldBeNil)
-			So(vctx.Finalize(), ShouldErrLike, "contains unknown allowlist")
+			assert.Loosely(t, validateAllowlist(vctx, configSet, path, []byte(badCfg)), should.BeNil)
+			assert.Loosely(t, vctx.Finalize(), should.ErrLike("contains unknown allowlist"))
 		})
 
-		Convey("Validate allowlist includes cycle 1", func() {
+		t.Run("Validate allowlist includes cycle 1", func(t *ftt.Test) {
 			badCfg := `
 				ip_allowlists {
 					name: "abc"
@@ -182,11 +182,11 @@ func TestAllowlistConfigValidation(t *testing.T) {
 					includes: ["abc"]
 				}
 			`
-			So(validateAllowlist(vctx, configSet, path, []byte(badCfg)), ShouldBeNil)
-			So(vctx.Finalize(), ShouldErrLike, "part of an included cycle")
+			assert.Loosely(t, validateAllowlist(vctx, configSet, path, []byte(badCfg)), should.BeNil)
+			assert.Loosely(t, vctx.Finalize(), should.ErrLike("part of an included cycle"))
 		})
 
-		Convey("Validate allowlist includes cycle 2", func() {
+		t.Run("Validate allowlist includes cycle 2", func(t *ftt.Test) {
 			badCfg := `
 				ip_allowlists {
 					name: "abc"
@@ -199,11 +199,11 @@ func TestAllowlistConfigValidation(t *testing.T) {
 					includes: ["abc"]
 				}
 			`
-			So(validateAllowlist(vctx, configSet, path, []byte(badCfg)), ShouldBeNil)
-			So(vctx.Finalize(), ShouldErrLike, "part of an included cycle")
+			assert.Loosely(t, validateAllowlist(vctx, configSet, path, []byte(badCfg)), should.BeNil)
+			assert.Loosely(t, vctx.Finalize(), should.ErrLike("part of an included cycle"))
 		})
 
-		Convey("Validate allowlist includes diamond", func() {
+		t.Run("Validate allowlist includes diamond", func(t *ftt.Test) {
 			goodCfg := `
 				ip_allowlists {
 					name: "abc"
@@ -225,8 +225,8 @@ func TestAllowlistConfigValidation(t *testing.T) {
 					subnets: []
 				}
 			`
-			So(validateAllowlist(vctx, configSet, path, []byte(goodCfg)), ShouldBeNil)
-			So(vctx.Finalize(), ShouldBeNil)
+			assert.Loosely(t, validateAllowlist(vctx, configSet, path, []byte(goodCfg)), should.BeNil)
+			assert.Loosely(t, vctx.Finalize(), should.BeNil)
 		})
 	})
 }
@@ -236,15 +236,15 @@ func TestOAuthConfigValidation(t *testing.T) {
 
 	ctx := context.Background()
 
-	Convey("Validate oauth.cfg", t, func() {
+	ftt.Run("Validate oauth.cfg", t, func(t *ftt.Test) {
 		vctx := &validation.Context{Context: ctx}
 		path := "oauth.cfg"
 		configSet := ""
 
-		Convey("Loading bad proto", func() {
+		t.Run("Loading bad proto", func(t *ftt.Test) {
 			content := []byte(` bad: "config" `)
-			So(validateOAuth(vctx, configSet, path, content), ShouldBeNil)
-			So(vctx.Finalize().Error(), ShouldContainSubstring, "unknown field")
+			assert.Loosely(t, validateOAuth(vctx, configSet, path, content), should.BeNil)
+			assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("unknown field"))
 		})
 
 		const okCfg = `
@@ -258,32 +258,32 @@ func TestOAuthConfigValidation(t *testing.T) {
 			client_ids: "6789-morerandomtext.apps.example.com"
 		`
 
-		Convey("OK", func() {
-			Convey("Fully loaded", func() {
-				So(validateOAuth(vctx, configSet, path, []byte(okCfg)), ShouldBeNil)
-				So(vctx.Finalize(), ShouldBeNil)
+		t.Run("OK", func(t *ftt.Test) {
+			t.Run("Fully loaded", func(t *ftt.Test) {
+				assert.Loosely(t, validateOAuth(vctx, configSet, path, []byte(okCfg)), should.BeNil)
+				assert.Loosely(t, vctx.Finalize(), should.BeNil)
 			})
 
-			Convey("empty", func() {
-				So(validateOAuth(vctx, configSet, path, []byte{}), ShouldBeNil)
-				So(vctx.Finalize(), ShouldBeNil)
+			t.Run("empty", func(t *ftt.Test) {
+				assert.Loosely(t, validateOAuth(vctx, configSet, path, []byte{}), should.BeNil)
+				assert.Loosely(t, vctx.Finalize(), should.BeNil)
 			})
 		})
 
-		Convey("Bad URL Scheme in Token Server URL (appspot)", func() {
+		t.Run("Bad URL Scheme in Token Server URL (appspot)", func(t *ftt.Test) {
 			badCfg := `
 				token_server_url: "http://example-token-server.appspot.com"
 			`
-			So(validateOAuth(vctx, configSet, path, []byte(badCfg)), ShouldBeNil)
-			So(vctx.Finalize(), ShouldErrLike, "http:// can only be used with localhost servers")
+			assert.Loosely(t, validateOAuth(vctx, configSet, path, []byte(badCfg)), should.BeNil)
+			assert.Loosely(t, vctx.Finalize(), should.ErrLike("http:// can only be used with localhost servers"))
 		})
 
-		Convey("Bad URL Scheme in Token Server URL ", func() {
+		t.Run("Bad URL Scheme in Token Server URL ", func(t *ftt.Test) {
 			badCfg := `
 				token_server_url: "ftp://example-token-server.appspot.com"
 			`
-			So(validateOAuth(vctx, configSet, path, []byte(badCfg)), ShouldBeNil)
-			So(vctx.Finalize(), ShouldErrLike, "only http:// or https:// scheme is accepted")
+			assert.Loosely(t, validateOAuth(vctx, configSet, path, []byte(badCfg)), should.BeNil)
+			assert.Loosely(t, vctx.Finalize(), should.ErrLike("only http:// or https:// scheme is accepted"))
 		})
 	})
 }
@@ -293,15 +293,15 @@ func TestSecurityConfigValidation(t *testing.T) {
 
 	ctx := context.Background()
 
-	Convey("Validate security.cfg", t, func() {
+	ftt.Run("Validate security.cfg", t, func(t *ftt.Test) {
 		vctx := &validation.Context{Context: ctx}
 		path := "security.cfg"
 		configSet := ""
 
-		Convey("Loading bad proto", func() {
+		t.Run("Loading bad proto", func(t *ftt.Test) {
 			content := []byte(` bad: "config" `)
-			So(validateSecurityCfg(vctx, configSet, path, content), ShouldBeNil)
-			So(vctx.Finalize().Error(), ShouldContainSubstring, "unknown field")
+			assert.Loosely(t, validateSecurityCfg(vctx, configSet, path, content), should.BeNil)
+			assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("unknown field"))
 		})
 
 		const okCfg = `
@@ -312,23 +312,23 @@ func TestSecurityConfigValidation(t *testing.T) {
 			internal_service_regexp: "staging\\.example\\.api\\.dev"
 		`
 
-		Convey("OK", func() {
-			Convey("Fully loaded", func() {
-				So(validateSecurityCfg(vctx, configSet, path, []byte(okCfg)), ShouldBeNil)
-				So(vctx.Finalize(), ShouldBeNil)
+		t.Run("OK", func(t *ftt.Test) {
+			t.Run("Fully loaded", func(t *ftt.Test) {
+				assert.Loosely(t, validateSecurityCfg(vctx, configSet, path, []byte(okCfg)), should.BeNil)
+				assert.Loosely(t, vctx.Finalize(), should.BeNil)
 			})
 
-			Convey("empty", func() {
-				So(validateSecurityCfg(vctx, configSet, path, []byte{}), ShouldBeNil)
-				So(vctx.Finalize(), ShouldBeNil)
+			t.Run("empty", func(t *ftt.Test) {
+				assert.Loosely(t, validateSecurityCfg(vctx, configSet, path, []byte{}), should.BeNil)
+				assert.Loosely(t, vctx.Finalize(), should.BeNil)
 			})
 		})
 
-		Convey("Bad regexp", func() {
+		t.Run("Bad regexp", func(t *ftt.Test) {
 			content := []byte(` internal_service_regexp: "???" `)
-			So(validateSecurityCfg(vctx, configSet, path, content), ShouldBeNil)
+			assert.Loosely(t, validateSecurityCfg(vctx, configSet, path, content), should.BeNil)
 			// Syntax is Perl, in Perl it is not allowed to stack repetition operators.
-			So(vctx.Finalize().Error(), ShouldContainSubstring, "invalid nested repetition operator")
+			assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("invalid nested repetition operator"))
 		})
 
 	})
@@ -339,41 +339,41 @@ func TestImportsConfigValidation(t *testing.T) {
 
 	ctx := context.Background()
 
-	Convey("validate imports.cfg", t, func() {
+	ftt.Run("validate imports.cfg", t, func(t *ftt.Test) {
 		vctx := &validation.Context{Context: ctx}
 		path := "imports.cfg"
 		configSet := ""
 
-		Convey("Loading bad proto", func() {
+		t.Run("Loading bad proto", func(t *ftt.Test) {
 			content := []byte(` bad: "config" `)
-			So(validateImportsCfg(vctx, configSet, path, content), ShouldBeNil)
-			So(vctx.Finalize().Error(), ShouldContainSubstring, "unknown field")
+			assert.Loosely(t, validateImportsCfg(vctx, configSet, path, content), should.BeNil)
+			assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("unknown field"))
 		})
 
-		Convey("load config bad config structure", func() {
-			Convey("no urls", func() {
-				Convey("url field required in tarball entry", func() {
+		t.Run("load config bad config structure", func(t *ftt.Test) {
+			t.Run("no urls", func(t *ftt.Test) {
+				t.Run("url field required in tarball entry", func(t *ftt.Test) {
 					content := []byte(`
 						tarball {
 							systems: "s1"
 						}
 					`)
-					So(validateImportsCfg(vctx, configSet, path, content), ShouldBeNil)
-					So(vctx.Finalize().Error(), ShouldContainSubstring, "url field required")
+					assert.Loosely(t, validateImportsCfg(vctx, configSet, path, content), should.BeNil)
+					assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("url field required"))
 				})
 
-				Convey("url field required in plainlist entry", func() {
+				t.Run("url field required in plainlist entry", func(t *ftt.Test) {
 					content := []byte(`
 						plainlist {
 							group: "test-group"
 						}
 					`)
-					So(validateImportsCfg(vctx, configSet, path, content), ShouldBeNil)
-					So(vctx.Finalize().Error(), ShouldContainSubstring, "url field required")
+					assert.Loosely(t, validateImportsCfg(vctx, configSet, path, content), should.BeNil)
+					assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("url field required"))
 				})
 			})
 
-			Convey("tarball_upload entry \"ball\" is specified twice", func() {
+			t.Run("tarball_upload entry \"ball\" is specified twice", func(t *ftt.Test) {
 				content := []byte(`
 					tarball_upload {
 						name: "ball"
@@ -386,23 +386,23 @@ func TestImportsConfigValidation(t *testing.T) {
 						systems: "s"
 					}
 				`)
-				So(validateImportsCfg(vctx, configSet, path, content), ShouldBeNil)
-				So(vctx.Finalize().Error(), ShouldContainSubstring, "specified twice")
+				assert.Loosely(t, validateImportsCfg(vctx, configSet, path, content), should.BeNil)
+				assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("specified twice"))
 			})
 
-			Convey("bad authorized_uploader", func() {
-				Convey("authorized_uploader is required in tarball_upload entry", func() {
+			t.Run("bad authorized_uploader", func(t *ftt.Test) {
+				t.Run("authorized_uploader is required in tarball_upload entry", func(t *ftt.Test) {
 					content := []byte(`
 						tarball_upload {
 							name: "ball"
 							systems: "s"
 						}
 					`)
-					So(validateImportsCfg(vctx, configSet, path, content), ShouldBeNil)
-					So(vctx.Finalize().Error(), ShouldContainSubstring, "authorized_uploader is required in tarball_upload entry")
+					assert.Loosely(t, validateImportsCfg(vctx, configSet, path, content), should.BeNil)
+					assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("authorized_uploader is required in tarball_upload entry"))
 				})
 
-				Convey("invalid email \"not an email\" in tarball_upload entry \"ball\"", func() {
+				t.Run("invalid email \"not an email\" in tarball_upload entry \"ball\"", func(t *ftt.Test) {
 					content := []byte(`
 						tarball_upload {
 							name: "ball"
@@ -410,34 +410,34 @@ func TestImportsConfigValidation(t *testing.T) {
 							systems: "s"
 						}
 					`)
-					So(validateImportsCfg(vctx, configSet, path, content), ShouldBeNil)
-					So(vctx.Finalize().Error(), ShouldContainSubstring, "not an email")
+					assert.Loosely(t, validateImportsCfg(vctx, configSet, path, content), should.BeNil)
+					assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("not an email"))
 				})
 			})
 
-			Convey("bad systems", func() {
-				Convey("tarball entry with URL \"https//example.com/tarball\" needs systems field", func() {
+			t.Run("bad systems", func(t *ftt.Test) {
+				t.Run("tarball entry with URL \"https//example.com/tarball\" needs systems field", func(t *ftt.Test) {
 					content := []byte(`
 						tarball {
 							url: "http://example.com/tarball"
 						}
 					`)
-					So(validateImportsCfg(vctx, configSet, path, content), ShouldBeNil)
-					So(vctx.Finalize().Error(), ShouldContainSubstring, "needs a \"systems\" field")
+					assert.Loosely(t, validateImportsCfg(vctx, configSet, path, content), should.BeNil)
+					assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("needs a \"systems\" field"))
 				})
 
-				Convey("tarball_upload entry with name \"ball\" needs systems field", func() {
+				t.Run("tarball_upload entry with name \"ball\" needs systems field", func(t *ftt.Test) {
 					content := []byte(`
 						tarball_upload {
 							name: "ball"
 							authorized_uploader: "abc@example.com"
 						}
 					`)
-					So(validateImportsCfg(vctx, configSet, path, content), ShouldBeNil)
-					So(vctx.Finalize().Error(), ShouldContainSubstring, "needs a \"systems\" field")
+					assert.Loosely(t, validateImportsCfg(vctx, configSet, path, content), should.BeNil)
+					assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("needs a \"systems\" field"))
 				})
 
-				Convey("\"tarball_upload\" entry with name \"conflicting\" specifies duplicated system(s)", func() {
+				t.Run("\"tarball_upload\" entry with name \"conflicting\" specifies duplicated system(s)", func(t *ftt.Test) {
 					content := []byte(`
 						tarball {
 							url: "http://example.com/tarball1"
@@ -468,23 +468,23 @@ func TestImportsConfigValidation(t *testing.T) {
 							systems: "ok"
 						}
 					  `)
-					So(validateImportsCfg(vctx, configSet, path, content), ShouldBeNil)
-					So(vctx.Finalize().Error(), ShouldContainSubstring, "\"conflicting\" is specifying a duplicated system(s): [external s1 s3 s5]")
+					assert.Loosely(t, validateImportsCfg(vctx, configSet, path, content), should.BeNil)
+					assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("\"conflicting\" is specifying a duplicated system(s): [external s1 s3 s5]"))
 				})
 			})
 
-			Convey("bad plainlists", func() {
-				Convey("\"plainlist\" entry \"http://example.com/plainlist\" needs a \"group\" field", func() {
+			t.Run("bad plainlists", func(t *ftt.Test) {
+				t.Run("\"plainlist\" entry \"http://example.com/plainlist\" needs a \"group\" field", func(t *ftt.Test) {
 					content := []byte(`
 						plainlist {
 							url: "http://example.com/plainlist"
 						}
 					`)
-					So(validateImportsCfg(vctx, configSet, path, content), ShouldBeNil)
-					So(vctx.Finalize().Error(), ShouldContainSubstring, "entry \"http://example.com/plainlist\" needs a \"group\" field")
+					assert.Loosely(t, validateImportsCfg(vctx, configSet, path, content), should.BeNil)
+					assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("entry \"http://example.com/plainlist\" needs a \"group\" field"))
 				})
 
-				Convey("group \"gr\" is imported twice", func() {
+				t.Run("group \"gr\" is imported twice", func(t *ftt.Test) {
 					content := []byte(`
 						plainlist {
 							url: "http://example.com/plainlist1"
@@ -495,13 +495,13 @@ func TestImportsConfigValidation(t *testing.T) {
 							group: "gr"
 						}
 					`)
-					So(validateImportsCfg(vctx, configSet, path, content), ShouldBeNil)
-					So(vctx.Finalize().Error(), ShouldContainSubstring, "the group \"gr\" is imported twice")
+					assert.Loosely(t, validateImportsCfg(vctx, configSet, path, content), should.BeNil)
+					assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("the group \"gr\" is imported twice"))
 				})
 			})
 		})
 
-		Convey("load config happy config", func() {
+		t.Run("load config happy config", func(t *ftt.Test) {
 			okCfg := []byte(`
 				# Realistic config.
 				tarball_upload {
@@ -520,8 +520,8 @@ func TestImportsConfigValidation(t *testing.T) {
 					group: "test-group"
 				}
 			`)
-			So(validateImportsCfg(vctx, configSet, path, okCfg), ShouldBeNil)
-			So(vctx.Finalize(), ShouldBeNil)
+			assert.Loosely(t, validateImportsCfg(vctx, configSet, path, okCfg), should.BeNil)
+			assert.Loosely(t, vctx.Finalize(), should.BeNil)
 		})
 	})
 }
@@ -531,19 +531,19 @@ func TestPermissionsConfigValidation(t *testing.T) {
 
 	ctx := context.Background()
 
-	Convey("validate permissions.cfg", t, func() {
+	ftt.Run("validate permissions.cfg", t, func(t *ftt.Test) {
 		vctx := &validation.Context{Context: ctx}
 		path := "permissions.cfg"
 		configSet := ""
 
-		Convey("loading bad proto", func() {
+		t.Run("loading bad proto", func(t *ftt.Test) {
 			content := []byte(` bad: "config" `)
-			So(validatePermissionsCfg(vctx, configSet, path, content), ShouldBeNil)
-			So(vctx.Finalize().Error(), ShouldContainSubstring, "unknown field")
+			assert.Loosely(t, validatePermissionsCfg(vctx, configSet, path, content), should.BeNil)
+			assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("unknown field"))
 		})
 
-		Convey("load config bad config structure", func() {
-			Convey("name undefined", func() {
+		t.Run("load config bad config structure", func(t *ftt.Test) {
+			t.Run("name undefined", func(t *ftt.Test) {
 				content := []byte(`
 					role {
 						permissions: [
@@ -559,21 +559,21 @@ func TestPermissionsConfigValidation(t *testing.T) {
 						]
 					}
 				`)
-				So(validatePermissionsCfg(vctx, configSet, path, content), ShouldBeNil)
-				So(vctx.Finalize().Error(), ShouldContainSubstring, "name is required")
+				assert.Loosely(t, validatePermissionsCfg(vctx, configSet, path, content), should.BeNil)
+				assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("name is required"))
 			})
 
-			Convey("testing prefixes", func() {
+			t.Run("testing prefixes", func(t *ftt.Test) {
 				content := []byte(`
 					role {
 						name: "notRole/test.role"
 					}
 				`)
-				So(validatePermissionsCfg(vctx, configSet, path, content), ShouldBeNil)
-				So(vctx.Finalize().Error(), ShouldContainSubstring, `invalid prefix, possible prefixes: ("role/", "customRole/", "role/luci.internal.")`)
+				assert.Loosely(t, validatePermissionsCfg(vctx, configSet, path, content), should.BeNil)
+				assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring(`invalid prefix, possible prefixes: ("role/", "customRole/", "role/luci.internal.")`))
 			})
 
-			Convey("role defined twice", func() {
+			t.Run("role defined twice", func(t *ftt.Test) {
 				content := []byte(`
 					role {
 						name: "role/test.role"
@@ -585,11 +585,11 @@ func TestPermissionsConfigValidation(t *testing.T) {
 						name: "role/test.role"
 					}
 				`)
-				So(validatePermissionsCfg(vctx, configSet, path, content), ShouldBeNil)
-				So(vctx.Finalize().Error(), ShouldContainSubstring, "role/test.role is already defined")
+				assert.Loosely(t, validatePermissionsCfg(vctx, configSet, path, content), should.BeNil)
+				assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("role/test.role is already defined"))
 			})
 
-			Convey("invalid permissions format", func() {
+			t.Run("invalid permissions format", func(t *ftt.Test) {
 				content := []byte(`
 					role {
 						name: "role/test.role"
@@ -600,11 +600,11 @@ func TestPermissionsConfigValidation(t *testing.T) {
 						]
 					}
 				`)
-				So(validatePermissionsCfg(vctx, configSet, path, content), ShouldBeNil)
-				So(vctx.Finalize().Error(), ShouldContainSubstring, "Permissions must have the form <service>.<subject>.<verb>")
+				assert.Loosely(t, validatePermissionsCfg(vctx, configSet, path, content), should.BeNil)
+				assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("Permissions must have the form <service>.<subject>.<verb>"))
 			})
 
-			Convey("invalid internal definition", func() {
+			t.Run("invalid internal definition", func(t *ftt.Test) {
 				content := []byte(`
 					role {
 						name: "role/test.role"
@@ -616,11 +616,11 @@ func TestPermissionsConfigValidation(t *testing.T) {
 						]
 					}
 				`)
-				So(validatePermissionsCfg(vctx, configSet, path, content), ShouldBeNil)
-				So(vctx.Finalize().Error(), ShouldContainSubstring, "invalid format: can only define internal permissions for internal roles")
+				assert.Loosely(t, validatePermissionsCfg(vctx, configSet, path, content), should.BeNil)
+				assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("invalid format: can only define internal permissions for internal roles"))
 			})
 
-			Convey("role not defined in includes", func() {
+			t.Run("role not defined in includes", func(t *ftt.Test) {
 				content := []byte(`
 					role {
 						name: "role/test.role"
@@ -629,12 +629,12 @@ func TestPermissionsConfigValidation(t *testing.T) {
 						]
 					}
 				`)
-				So(validatePermissionsCfg(vctx, configSet, path, content), ShouldBeNil)
-				So(vctx.Finalize().Error(), ShouldContainSubstring, "role/not.defined not defined")
+				assert.Loosely(t, validatePermissionsCfg(vctx, configSet, path, content), should.BeNil)
+				assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("role/not.defined not defined"))
 			})
 
-			Convey("cycles", func() {
-				Convey("reference self", func() {
+			t.Run("cycles", func(t *ftt.Test) {
+				t.Run("reference self", func(t *ftt.Test) {
 					content := []byte(`
 						role {
 							name: "role/test.role"
@@ -643,11 +643,11 @@ func TestPermissionsConfigValidation(t *testing.T) {
 							]
 						}
 					`)
-					So(validatePermissionsCfg(vctx, configSet, path, content), ShouldBeNil)
-					So(vctx.Finalize().Error(), ShouldContainSubstring, "cycle found:")
+					assert.Loosely(t, validatePermissionsCfg(vctx, configSet, path, content), should.BeNil)
+					assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("cycle found:"))
 				})
 
-				Convey("small cycle", func() {
+				t.Run("small cycle", func(t *ftt.Test) {
 					content := []byte(`
 						role {
 							name: "role/test.role"
@@ -662,11 +662,11 @@ func TestPermissionsConfigValidation(t *testing.T) {
 							]
 						}
 					`)
-					So(validatePermissionsCfg(vctx, configSet, path, content), ShouldBeNil)
-					So(vctx.Finalize().Error(), ShouldContainSubstring, "cycle found: role/test.role -> role/test.role2 -> role/test.role")
+					assert.Loosely(t, validatePermissionsCfg(vctx, configSet, path, content), should.BeNil)
+					assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("cycle found: role/test.role -> role/test.role2 -> role/test.role"))
 				})
 
-				Convey("bigger cycle", func() {
+				t.Run("bigger cycle", func(t *ftt.Test) {
 					content := []byte(`
 						role {
 							name: "role/test.role"
@@ -693,11 +693,11 @@ func TestPermissionsConfigValidation(t *testing.T) {
 							]
 						}
 					`)
-					So(validatePermissionsCfg(vctx, configSet, path, content), ShouldBeNil)
-					So(vctx.Finalize().Error(), ShouldContainSubstring, "cycle found: role/test.role -> role/test.role3 -> role/test.role4 -> role/test.role2 -> role/test.role")
+					assert.Loosely(t, validatePermissionsCfg(vctx, configSet, path, content), should.BeNil)
+					assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("cycle found: role/test.role -> role/test.role3 -> role/test.role4 -> role/test.role2 -> role/test.role"))
 				})
 
-				Convey("cross edge", func() {
+				t.Run("cross edge", func(t *ftt.Test) {
 					// This is ok!
 					//          (r1)
 					//          /  \
@@ -750,15 +750,15 @@ func TestPermissionsConfigValidation(t *testing.T) {
 							name: "role/test.role8"
 						}
 					`)
-					So(validatePermissionsCfg(vctx, configSet, path, content), ShouldBeNil)
-					So(vctx.Finalize(), ShouldBeNil)
+					assert.Loosely(t, validatePermissionsCfg(vctx, configSet, path, content), should.BeNil)
+					assert.Loosely(t, vctx.Finalize(), should.BeNil)
 				})
 			})
 		})
 
-		Convey("valid configs", func() {
+		t.Run("valid configs", func(t *ftt.Test) {
 
-			Convey("1 entry", func() {
+			t.Run("1 entry", func(t *ftt.Test) {
 				content := []byte(`
 					role {
 						name: "role/test.role.writer"
@@ -772,11 +772,11 @@ func TestPermissionsConfigValidation(t *testing.T) {
 						]
 					}
 				`)
-				So(validatePermissionsCfg(vctx, configSet, path, content), ShouldBeNil)
-				So(vctx.Finalize(), ShouldBeNil)
+				assert.Loosely(t, validatePermissionsCfg(vctx, configSet, path, content), should.BeNil)
+				assert.Loosely(t, vctx.Finalize(), should.BeNil)
 			})
 
-			Convey("multiple entries", func() {
+			t.Run("multiple entries", func(t *ftt.Test) {
 				content := []byte(`
 					role {
 						name: "role/test.role.writer"
@@ -822,8 +822,8 @@ func TestPermissionsConfigValidation(t *testing.T) {
 						]
 					}
 				`)
-				So(validatePermissionsCfg(vctx, configSet, path, content), ShouldBeNil)
-				So(vctx.Finalize(), ShouldBeNil)
+				assert.Loosely(t, validatePermissionsCfg(vctx, configSet, path, content), should.BeNil)
+				assert.Loosely(t, vctx.Finalize(), should.BeNil)
 			})
 		})
 	})
@@ -832,8 +832,8 @@ func TestPermissionsConfigValidation(t *testing.T) {
 func TestNormalizeSubnet(t *testing.T) {
 	t.Parallel()
 
-	Convey("Test normalizeSubnet works", t, func() {
-		Convey("Invalid IP", func() {
+	ftt.Run("Test normalizeSubnet works", t, func(t *ftt.Test) {
+		t.Run("Invalid IP", func(t *ftt.Test) {
 			invalidValues := []string{
 				"not a subnet",
 				"still not/",
@@ -843,28 +843,28 @@ func TestNormalizeSubnet(t *testing.T) {
 			}
 			for _, value := range invalidValues {
 				_, err := normalizeSubnet(value)
-				So(err, ShouldNotBeNil)
+				assert.Loosely(t, err, should.NotBeNil)
 			}
 		})
-		Convey("IPv4 CIDR", func() {
+		t.Run("IPv4 CIDR", func(t *ftt.Test) {
 			subnet, err := normalizeSubnet("123.4.5.64/26")
-			So(err, ShouldBeNil)
-			So(subnet, ShouldEqual, "123.4.5.64/26")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, subnet, should.Equal("123.4.5.64/26"))
 		})
-		Convey("IPv6 CIDR", func() {
+		t.Run("IPv6 CIDR", func(t *ftt.Test) {
 			subnet, err := normalizeSubnet("123:0004:0050:0:0000:0:0:abcd/120")
-			So(err, ShouldBeNil)
-			So(subnet, ShouldEqual, "123:4:50::ab00/120")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, subnet, should.Equal("123:4:50::ab00/120"))
 		})
-		Convey("Single IPv4", func() {
+		t.Run("Single IPv4", func(t *ftt.Test) {
 			subnet, err := normalizeSubnet("123.4.5.6")
-			So(err, ShouldBeNil)
-			So(subnet, ShouldEqual, "123.4.5.6/32")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, subnet, should.Equal("123.4.5.6/32"))
 		})
-		Convey("Single IPv6", func() {
+		t.Run("Single IPv6", func(t *ftt.Test) {
 			subnet, err := normalizeSubnet("123:0004:0050:0:0000:0:0:abcd")
-			So(err, ShouldBeNil)
-			So(subnet, ShouldEqual, "123:4:50::abcd/128")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, subnet, should.Equal("123:4:50::abcd/128"))
 		})
 	})
 }

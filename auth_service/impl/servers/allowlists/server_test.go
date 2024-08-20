@@ -32,8 +32,11 @@ import (
 	"go.chromium.org/luci/auth_service/impl/model"
 	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/allowlistcfg"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestAllowlistsServer(t *testing.T) {
@@ -41,7 +44,7 @@ func TestAllowlistsServer(t *testing.T) {
 	srv := Server{}
 	createdTime := time.Date(2021, time.September, 16, 15, 20, 0, 0, time.UTC)
 
-	Convey("GetAllowlist RPC call", t, func() {
+	ftt.Run("GetAllowlist RPC call", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 
 		request := &rpcpb.GetAllowlistRequest{
@@ -49,10 +52,10 @@ func TestAllowlistsServer(t *testing.T) {
 		}
 
 		_, err := srv.GetAllowlist(ctx, request)
-		So(err, ShouldHaveGRPCStatus, codes.NotFound)
+		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.NotFound))
 
 		// Allowlist built from model.AuthIPAllowlist definition.
-		So(datastore.Put(ctx,
+		assert.Loosely(t, datastore.Put(ctx,
 			&model.AuthIPAllowlist{
 				AuthVersionedEntityMixin: model.AuthVersionedEntityMixin{},
 				Parent:                   model.RootKey(ctx),
@@ -64,7 +67,7 @@ func TestAllowlistsServer(t *testing.T) {
 				Description: "This is a test allowlist.",
 				CreatedTS:   createdTime,
 				CreatedBy:   "user:test-user-1",
-			}), ShouldBeNil)
+			}), should.BeNil)
 
 		expectedResponse := &rpcpb.Allowlist{
 			Name: "test-allowlist",
@@ -78,14 +81,14 @@ func TestAllowlistsServer(t *testing.T) {
 		}
 
 		actualResponse, err := srv.GetAllowlist(ctx, request)
-		So(err, ShouldBeNil)
-		So(actualResponse, ShouldResembleProto, expectedResponse)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, actualResponse, should.Resemble(expectedResponse))
 	})
 
-	Convey("ListAllowlists RPC call", t, func() {
+	ftt.Run("ListAllowlists RPC call", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 
-		So(datastore.Put(ctx,
+		assert.Loosely(t, datastore.Put(ctx,
 			&model.AuthIPAllowlist{
 				AuthVersionedEntityMixin: model.AuthVersionedEntityMixin{},
 				ID:                       "z-test-allowlist",
@@ -117,11 +120,11 @@ func TestAllowlistsServer(t *testing.T) {
 				Description:              "This is a test allowlist, should show up second.",
 				CreatedTS:                createdTime,
 				CreatedBy:                "user:test-user-3",
-			}), ShouldBeNil)
+			}), should.BeNil)
 
 		_, err := srv.ListAllowlists(ctx, &emptypb.Empty{})
-		So(err, ShouldHaveGRPCStatus, codes.Internal)
-		So(err, ShouldErrLike, "failed to get config metadata")
+		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.Internal))
+		assert.Loosely(t, err, should.ErrLike("failed to get config metadata"))
 
 		// Set up the allowlist config and its metadata.
 		testConfig := &configspb.IPAllowlistConfig{}
@@ -130,7 +133,7 @@ func TestAllowlistsServer(t *testing.T) {
 			Revision: "123abc",
 			ViewURL:  "https://example.com/config/revision/123abc",
 		}
-		So(allowlistcfg.SetConfigWithMetadata(ctx, testConfig, testConfigMetadata), ShouldBeNil)
+		assert.Loosely(t, allowlistcfg.SetConfigWithMetadata(ctx, testConfig, testConfigMetadata), should.BeNil)
 
 		// Expected response, build with pb.
 		expectedAllowlists := &rpcpb.ListAllowlistsResponse{
@@ -167,7 +170,7 @@ func TestAllowlistsServer(t *testing.T) {
 		}
 
 		actualResponse, err := srv.ListAllowlists(ctx, &emptypb.Empty{})
-		So(err, ShouldBeNil)
-		So(expectedAllowlists.Allowlists, ShouldResembleProto, actualResponse.Allowlists)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, expectedAllowlists.Allowlists, should.Resemble(actualResponse.Allowlists))
 	})
 }

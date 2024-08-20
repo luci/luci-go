@@ -18,14 +18,14 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/server/auth/service/protocol"
 
 	"go.chromium.org/luci/auth_service/api/configspb"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestConfigContext(t *testing.T) {
@@ -70,30 +70,30 @@ func TestConfigContext(t *testing.T) {
 		},
 	}
 
-	Convey("Getting without setting fails", t, func() {
+	ftt.Run("Getting without setting fails", t, func(t *ftt.Test) {
 		_, err := Get(ctx)
-		So(err, ShouldNotBeNil)
+		assert.Loosely(t, err, should.NotBeNil)
 
 		_, _, err = GetWithMetadata(ctx)
-		So(err, ShouldNotBeNil)
+		assert.Loosely(t, err, should.NotBeNil)
 	})
 
-	Convey("Testing basic config operations", t, func() {
-		So(SetConfig(ctx, permissionsCfg), ShouldBeNil)
+	ftt.Run("Testing basic config operations", t, func(t *ftt.Test) {
+		assert.Loosely(t, SetConfig(ctx, permissionsCfg), should.BeNil)
 		cfgFromGet, err := Get(ctx)
-		So(err, ShouldBeNil)
-		So(cfgFromGet, ShouldResembleProto, permissionsCfg)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, cfgFromGet, should.Resemble(permissionsCfg))
 	})
 
-	Convey("Testing config operations with metadata", t, func() {
+	ftt.Run("Testing config operations with metadata", t, func(t *ftt.Test) {
 		metadata := &config.Meta{
 			Path:     "permissions.cfg",
 			Revision: "123abc",
 		}
-		So(SetConfigWithMetadata(ctx, permissionsCfg, metadata), ShouldBeNil)
+		assert.Loosely(t, SetConfigWithMetadata(ctx, permissionsCfg, metadata), should.BeNil)
 		cfgFromGet, metadataFromGet, err := GetWithMetadata(ctx)
-		So(err, ShouldBeNil)
-		So(cfgFromGet, ShouldResembleProto, permissionsCfg)
-		So(metadataFromGet, ShouldResembleProto, metadata)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, cfgFromGet, should.Resemble(permissionsCfg))
+		assert.Loosely(t, metadataFromGet, should.Resemble(metadata))
 	})
 }

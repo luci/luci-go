@@ -23,13 +23,14 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/authtest"
 
 	"go.chromium.org/luci/auth_service/impl/model"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestAuthorizeRPCAccess(t *testing.T) {
@@ -47,70 +48,70 @@ func TestAuthorizeRPCAccess(t *testing.T) {
 		return status.Code(err)
 	}
 
-	Convey("Anonymous", t, func() {
+	ftt.Run("Anonymous", t, func(t *ftt.Test) {
 		ctx := auth.WithState(context.Background(), &authtest.FakeState{})
 
-		So(check(ctx, "auth.service.Accounts", "GetSelf"), ShouldEqual, codes.OK)
-		So(check(ctx, "discovery.Discovery", "Something"), ShouldEqual, codes.OK)
-		So(check(ctx, "auth.service.Groups", "Something"), ShouldEqual, codes.PermissionDenied)
-		So(check(ctx, "auth.service.Groups", "CreateGroup"), ShouldEqual, codes.PermissionDenied)
-		So(check(ctx, "auth.service.AuthDB", "GetSnapshot"), ShouldEqual, codes.PermissionDenied)
-		So(check(ctx, "unknown.API", "Something"), ShouldEqual, codes.PermissionDenied)
+		assert.Loosely(t, check(ctx, "auth.service.Accounts", "GetSelf"), should.Equal(codes.OK))
+		assert.Loosely(t, check(ctx, "discovery.Discovery", "Something"), should.Equal(codes.OK))
+		assert.Loosely(t, check(ctx, "auth.service.Groups", "Something"), should.Equal(codes.PermissionDenied))
+		assert.Loosely(t, check(ctx, "auth.service.Groups", "CreateGroup"), should.Equal(codes.PermissionDenied))
+		assert.Loosely(t, check(ctx, "auth.service.AuthDB", "GetSnapshot"), should.Equal(codes.PermissionDenied))
+		assert.Loosely(t, check(ctx, "unknown.API", "Something"), should.Equal(codes.PermissionDenied))
 	})
 
-	Convey("Authenticated, but not authorized", t, func() {
+	ftt.Run("Authenticated, but not authorized", t, func(t *ftt.Test) {
 		ctx := auth.WithState(context.Background(), &authtest.FakeState{
 			Identity:       "user:someone@example.com",
 			IdentityGroups: []string{"some-random-group"},
 		})
 
-		So(check(ctx, "auth.service.Accounts", "GetSelf"), ShouldEqual, codes.OK)
-		So(check(ctx, "discovery.Discovery", "Something"), ShouldEqual, codes.OK)
-		So(check(ctx, "auth.service.Groups", "Something"), ShouldEqual, codes.PermissionDenied)
-		So(check(ctx, "auth.service.Groups", "CreateGroup"), ShouldEqual, codes.PermissionDenied)
-		So(check(ctx, "auth.service.AuthDB", "GetSnapshot"), ShouldEqual, codes.PermissionDenied)
-		So(check(ctx, "unknown.API", "Something"), ShouldEqual, codes.PermissionDenied)
+		assert.Loosely(t, check(ctx, "auth.service.Accounts", "GetSelf"), should.Equal(codes.OK))
+		assert.Loosely(t, check(ctx, "discovery.Discovery", "Something"), should.Equal(codes.OK))
+		assert.Loosely(t, check(ctx, "auth.service.Groups", "Something"), should.Equal(codes.PermissionDenied))
+		assert.Loosely(t, check(ctx, "auth.service.Groups", "CreateGroup"), should.Equal(codes.PermissionDenied))
+		assert.Loosely(t, check(ctx, "auth.service.AuthDB", "GetSnapshot"), should.Equal(codes.PermissionDenied))
+		assert.Loosely(t, check(ctx, "unknown.API", "Something"), should.Equal(codes.PermissionDenied))
 	})
 
-	Convey("Authorized", t, func() {
+	ftt.Run("Authorized", t, func(t *ftt.Test) {
 		ctx := auth.WithState(context.Background(), &authtest.FakeState{
 			Identity:       "user:someone@example.com",
 			IdentityGroups: []string{authdb.AuthServiceAccessGroup},
 		})
 
-		So(check(ctx, "auth.service.Accounts", "GetSelf"), ShouldEqual, codes.OK)
-		So(check(ctx, "discovery.Discovery", "Something"), ShouldEqual, codes.OK)
-		So(check(ctx, "auth.service.Groups", "Something"), ShouldEqual, codes.OK)
-		So(check(ctx, "auth.service.Groups", "CreateGroup"), ShouldEqual, codes.PermissionDenied)
-		So(check(ctx, "auth.service.AuthDB", "GetSnapshot"), ShouldEqual, codes.PermissionDenied)
-		So(check(ctx, "unknown.API", "Something"), ShouldEqual, codes.PermissionDenied)
+		assert.Loosely(t, check(ctx, "auth.service.Accounts", "GetSelf"), should.Equal(codes.OK))
+		assert.Loosely(t, check(ctx, "discovery.Discovery", "Something"), should.Equal(codes.OK))
+		assert.Loosely(t, check(ctx, "auth.service.Groups", "Something"), should.Equal(codes.OK))
+		assert.Loosely(t, check(ctx, "auth.service.Groups", "CreateGroup"), should.Equal(codes.PermissionDenied))
+		assert.Loosely(t, check(ctx, "auth.service.AuthDB", "GetSnapshot"), should.Equal(codes.PermissionDenied))
+		assert.Loosely(t, check(ctx, "unknown.API", "Something"), should.Equal(codes.PermissionDenied))
 	})
 
-	Convey("Authorized as admin", t, func() {
+	ftt.Run("Authorized as admin", t, func(t *ftt.Test) {
 		ctx := auth.WithState(context.Background(), &authtest.FakeState{
 			Identity:       "user:someone@example.com",
 			IdentityGroups: []string{authdb.AuthServiceAccessGroup, model.AdminGroup},
 		})
 
-		So(check(ctx, "auth.service.Accounts", "GetSelf"), ShouldEqual, codes.OK)
-		So(check(ctx, "discovery.Discovery", "Something"), ShouldEqual, codes.OK)
-		So(check(ctx, "auth.service.Groups", "Something"), ShouldEqual, codes.OK)
-		So(check(ctx, "auth.service.Groups", "CreateGroup"), ShouldEqual, codes.OK)
-		So(check(ctx, "auth.service.AuthDB", "GetSnapshot"), ShouldEqual, codes.PermissionDenied)
-		So(check(ctx, "unknown.API", "Something"), ShouldEqual, codes.PermissionDenied)
+		assert.Loosely(t, check(ctx, "auth.service.Accounts", "GetSelf"), should.Equal(codes.OK))
+		assert.Loosely(t, check(ctx, "discovery.Discovery", "Something"), should.Equal(codes.OK))
+		assert.Loosely(t, check(ctx, "auth.service.Groups", "Something"), should.Equal(codes.OK))
+		assert.Loosely(t, check(ctx, "auth.service.Groups", "CreateGroup"), should.Equal(codes.OK))
+		assert.Loosely(t, check(ctx, "auth.service.AuthDB", "GetSnapshot"), should.Equal(codes.PermissionDenied))
+		assert.Loosely(t, check(ctx, "unknown.API", "Something"), should.Equal(codes.PermissionDenied))
 	})
 
-	Convey("Authorized as trusted service", t, func() {
+	ftt.Run("Authorized as trusted service", t, func(t *ftt.Test) {
 		ctx := auth.WithState(context.Background(), &authtest.FakeState{
 			Identity:       "user:someone@example.com",
 			IdentityGroups: []string{authdb.AuthServiceAccessGroup, model.TrustedServicesGroup},
 		})
 
-		So(check(ctx, "auth.service.Accounts", "GetSelf"), ShouldEqual, codes.OK)
-		So(check(ctx, "discovery.Discovery", "Something"), ShouldEqual, codes.OK)
-		So(check(ctx, "auth.service.Groups", "Something"), ShouldEqual, codes.OK)
-		So(check(ctx, "auth.service.Groups", "CreateGroup"), ShouldEqual, codes.PermissionDenied)
-		So(check(ctx, "auth.service.AuthDB", "GetSnapshot"), ShouldEqual, codes.OK)
-		So(check(ctx, "unknown.API", "Something"), ShouldEqual, codes.PermissionDenied)
+		assert.Loosely(t, check(ctx, "auth.service.Accounts", "GetSelf"), should.Equal(codes.OK))
+		assert.Loosely(t, check(ctx, "discovery.Discovery", "Something"), should.Equal(codes.OK))
+		assert.Loosely(t, check(ctx, "auth.service.Groups", "Something"), should.Equal(codes.OK))
+		assert.Loosely(t, check(ctx, "auth.service.Groups", "CreateGroup"), should.Equal(codes.PermissionDenied))
+		assert.Loosely(t, check(ctx, "auth.service.AuthDB", "GetSnapshot"), should.Equal(codes.OK))
+		assert.Loosely(t, check(ctx, "unknown.API", "Something"), should.Equal(codes.PermissionDenied))
 	})
 }

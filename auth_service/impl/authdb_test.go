@@ -18,6 +18,9 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth/authdb"
@@ -26,8 +29,6 @@ import (
 
 	"go.chromium.org/luci/auth_service/impl/model"
 	"go.chromium.org/luci/auth_service/internal/permissions"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 var (
@@ -46,7 +47,7 @@ func makeTestPermissions(names ...string) []*protocol.Permission {
 func TestAuthDBProvider(t *testing.T) {
 	t.Setenv(model.DryRunCronRealmsEnvVar, "false")
 
-	Convey("AuthDBProvider works", t, func() {
+	ftt.Run("AuthDBProvider works", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		authDB := &AuthDBProvider{}
 
@@ -86,7 +87,7 @@ func TestAuthDBProvider(t *testing.T) {
 						},
 					},
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				projectRealms := &model.AuthProjectRealms{
 					Kind:   "AuthProjectRealms",
 					ID:     "test-project",
@@ -95,7 +96,7 @@ func TestAuthDBProvider(t *testing.T) {
 				}
 				return datastore.Put(ctx, globals, state, group, realmsGlobals, projectRealms)
 			}, nil)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		}
 
 		// Initial revision.
@@ -103,49 +104,49 @@ func TestAuthDBProvider(t *testing.T) {
 
 		// Got it.
 		db1, err := authDB.GetAuthDB(ctx)
-		So(err, ShouldBeNil)
-		So(authdb.Revision(db1), ShouldEqual, 1000)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, authdb.Revision(db1), should.Equal(1000))
 
 		// Works.
 		yes, err := db1.IsMember(ctx, "user:a@example.com", []string{"test-group"})
-		So(err, ShouldBeNil)
-		So(yes, ShouldBeTrue)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, yes, should.BeTrue)
 
 		// Check permission which hasn't been granted.
 		allowed, err := db1.HasPermission(ctx, "user:a@example.com", testPerm1, "test-project:@root", nil)
-		So(err, ShouldBeNil)
-		So(allowed, ShouldBeFalse)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, allowed, should.BeFalse)
 		// Check permission which has been granted.
 		allowed, err = db1.HasPermission(ctx, "user:a@example.com", testPerm2, "test-project:@root", nil)
-		So(err, ShouldBeNil)
-		So(allowed, ShouldBeTrue)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, allowed, should.BeTrue)
 		// Check realms fall back to @root.
 		allowed, err = db1.HasPermission(ctx, "user:a@example.com", testPerm2, "test-project:unknown", nil)
-		So(err, ShouldBeNil)
-		So(allowed, ShouldBeTrue)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, allowed, should.BeTrue)
 
 		// Calling again returns the exact same object.
 		db2, err := authDB.GetAuthDB(ctx)
-		So(err, ShouldBeNil)
-		So(db2, ShouldEqual, db1)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, db2, should.Equal(db1))
 
 		// Updated.
 		putRev(1001, nil)
 
 		// Got the new one.
 		db3, err := authDB.GetAuthDB(ctx)
-		So(err, ShouldBeNil)
-		So(authdb.Revision(db3), ShouldEqual, 1001)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, authdb.Revision(db3), should.Equal(1001))
 
 		// The group there is updated too.
 		yes, err = db3.IsMember(ctx, "user:a@example.com", []string{"test-group"})
-		So(err, ShouldBeNil)
-		So(yes, ShouldBeFalse)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, yes, should.BeFalse)
 
 		// Check permission which hasn't been granted, as the member is
 		// no longer in the group.
 		allowed, err = db3.HasPermission(ctx, "user:a@example.com", testPerm2, "test-project:@root", nil)
-		So(err, ShouldBeNil)
-		So(allowed, ShouldBeFalse)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, allowed, should.BeFalse)
 	})
 }

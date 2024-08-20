@@ -19,12 +19,13 @@ import (
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/auth_service/impl/model"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 var (
@@ -67,49 +68,49 @@ func putRev(ctx context.Context, authDBRev int64) error {
 func TestCachingGroupsProvider(t *testing.T) {
 	t.Parallel()
 
-	Convey("CachingGroupsProvider works", t, func() {
+	ftt.Run("CachingGroupsProvider works", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		provider := &CachingGroupsProvider{}
 
 		// Set up initial revision with 2 groups.
-		So(datastore.Put(ctx,
+		assert.Loosely(t, datastore.Put(ctx,
 			testGroup(ctx, "test-group-b", []string{"user:bob@example.com"}),
 			testGroup(ctx, "test-group-a", []string{"user:alice@example.com"}),
-		), ShouldBeNil)
-		So(putRev(ctx, 1000), ShouldBeNil)
+		), should.BeNil)
+		assert.Loosely(t, putRev(ctx, 1000), should.BeNil)
 
 		// Check all groups were fetched.
 		groups, err := provider.GetAllAuthGroups(ctx)
-		So(err, ShouldBeNil)
-		So(groups, ShouldResemble, []*model.AuthGroup{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, groups, should.Resemble([]*model.AuthGroup{
 			testGroup(ctx, "test-group-a", []string{"user:alice@example.com"}),
 			testGroup(ctx, "test-group-b", []string{"user:bob@example.com"}),
-		})
+		}))
 
 		// Add a member to test-group-b, WITHOUT updating the revision.
-		So(datastore.Put(ctx,
+		assert.Loosely(t, datastore.Put(ctx,
 			testGroup(ctx, "test-group-a", []string{
 				"user:alice@example.com", "user:eve@example.com"},
-			)), ShouldBeNil)
+			)), should.BeNil)
 
 		// Check the cached group results were returned.
 		groups, err = provider.GetAllAuthGroups(ctx)
-		So(err, ShouldBeNil)
-		So(groups, ShouldResemble, []*model.AuthGroup{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, groups, should.Resemble([]*model.AuthGroup{
 			testGroup(ctx, "test-group-a", []string{"user:alice@example.com"}),
 			testGroup(ctx, "test-group-b", []string{"user:bob@example.com"}),
-		})
+		}))
 
 		// Increase the AuthD replication state revision (making the cached
 		// results outdated).
-		So(putRev(ctx, 1001), ShouldBeNil)
+		assert.Loosely(t, putRev(ctx, 1001), should.BeNil)
 
 		// Check the groups result now has the member update.
 		groups, err = provider.GetAllAuthGroups(ctx)
-		So(err, ShouldBeNil)
-		So(groups, ShouldResemble, []*model.AuthGroup{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, groups, should.Resemble([]*model.AuthGroup{
 			testGroup(ctx, "test-group-a", []string{"user:alice@example.com", "user:eve@example.com"}),
 			testGroup(ctx, "test-group-b", []string{"user:bob@example.com"}),
-		})
+		}))
 	})
 }

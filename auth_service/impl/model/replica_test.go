@@ -23,14 +23,14 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth/service/protocol"
 
 	"go.chromium.org/luci/auth_service/api/rpcpb"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func testReplicaState(ctx context.Context, appID string, authDBRev int64) *AuthReplicaState {
@@ -45,28 +45,28 @@ func testReplicaState(ctx context.Context, appID string, authDBRev int64) *AuthR
 func TestReplicaUpdateError(t *testing.T) {
 	t.Parallel()
 
-	Convey("custom ReplicaUpdateError works", t, func() {
-		Convey("unwrapping works", func() {
+	ftt.Run("custom ReplicaUpdateError works", t, func(t *ftt.Test) {
+		t.Run("unwrapping works", func(t *ftt.Test) {
 			replicaErr := &ReplicaUpdateError{
 				RootErr: errors.Annotate(datastore.ErrNoSuchEntity, "annotated test error").Err(),
 				IsFatal: false,
 			}
 			// Check the root error can be identified when it is a non-fatal error.
-			So(errors.Is(replicaErr, FatalReplicaUpdateError), ShouldBeFalse)
-			So(errors.Is(replicaErr, datastore.ErrNoSuchEntity), ShouldBeTrue)
+			assert.Loosely(t, errors.Is(replicaErr, FatalReplicaUpdateError), should.BeFalse)
+			assert.Loosely(t, errors.Is(replicaErr, datastore.ErrNoSuchEntity), should.BeTrue)
 
 			// Check the root error can be identified when it is a fatal error.
 			replicaErr.IsFatal = true
-			So(errors.Is(replicaErr, FatalReplicaUpdateError), ShouldBeTrue)
-			So(errors.Is(replicaErr, datastore.ErrNoSuchEntity), ShouldBeTrue)
+			assert.Loosely(t, errors.Is(replicaErr, FatalReplicaUpdateError), should.BeTrue)
+			assert.Loosely(t, errors.Is(replicaErr, datastore.ErrNoSuchEntity), should.BeTrue)
 		})
 
-		Convey("returns error message", func() {
+		t.Run("returns error message", func(t *ftt.Test) {
 			replicaErr := &ReplicaUpdateError{
 				RootErr: fmt.Errorf("custom test error"),
 				IsFatal: true,
 			}
-			So(replicaErr.Error(), ShouldEqual, "custom test error")
+			assert.Loosely(t, replicaErr.Error(), should.Equal("custom test error"))
 		})
 	})
 }
@@ -74,7 +74,7 @@ func TestReplicaUpdateError(t *testing.T) {
 func TestAuthReplicaStateToProto(t *testing.T) {
 	t.Parallel()
 
-	Convey("AuthReplicaState ToProto works", t, func() {
+	ftt.Run("AuthReplicaState ToProto works", t, func(t *ftt.Test) {
 		testPushStart := time.Date(2022, time.July, 4, 16, 32, 1, 0, time.UTC)
 		testPushEnd := time.Date(2022, time.July, 4, 16, 32, 9, 0, time.UTC)
 		replica := &AuthReplicaState{
@@ -89,7 +89,7 @@ func TestAuthReplicaStateToProto(t *testing.T) {
 			PushStatus:      ReplicaPushStatusFatalError,
 			PushError:       "some sort of fatal error",
 		}
-		So(replica.ToProto(), ShouldResembleProto, &rpcpb.ReplicaState{
+		assert.Loosely(t, replica.ToProto(), should.Resemble(&rpcpb.ReplicaState{
 			AppId:           "dev~appA",
 			BaseUrl:         "https://test.dev~appA.appspot.com",
 			AuthDbRev:       4,
@@ -99,26 +99,26 @@ func TestAuthReplicaStateToProto(t *testing.T) {
 			PushFinished:    timestamppb.New(testPushEnd),
 			PushStatus:      rpcpb.ReplicaPushStatus_FATAL_ERROR,
 			PushError:       "some sort of fatal error",
-		})
+		}))
 	})
 }
 
 func TestGetAllReplicas(t *testing.T) {
 	t.Parallel()
 
-	Convey("GetAllReplicas works", t, func() {
-		Convey("succeeds even when empty", func() {
+	ftt.Run("GetAllReplicas works", t, func(t *ftt.Test) {
+		t.Run("succeeds even when empty", func(t *ftt.Test) {
 			ctx := memory.Use(context.Background())
 
 			replicas, err := GetAllReplicas(ctx)
-			So(err, ShouldBeNil)
-			So(replicas, ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, replicas, should.BeEmpty)
 		})
 
-		Convey("returns all replicas", func() {
+		t.Run("returns all replicas", func(t *ftt.Test) {
 			// Set up replica states in the datastore.
 			ctx := memory.Use(context.Background())
-			So(datastore.Put(ctx,
+			assert.Loosely(t, datastore.Put(ctx,
 				testReplicaState(ctx, "dev~appG", 1),
 				testReplicaState(ctx, "dev~appF", 2),
 				testReplicaState(ctx, "dev~appE", 3),
@@ -126,12 +126,12 @@ func TestGetAllReplicas(t *testing.T) {
 				testReplicaState(ctx, "dev~appB", 5),
 				testReplicaState(ctx, "dev~appC", 3),
 				testReplicaState(ctx, "dev~appD", 2),
-			), ShouldBeNil)
+			), should.BeNil)
 
 			// Check all the replica states were returned, sorted by App ID.
 			replicas, err := GetAllReplicas(ctx)
-			So(err, ShouldBeNil)
-			So(replicas, ShouldResembleProto, []*AuthReplicaState{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, replicas, should.Resemble([]*AuthReplicaState{
 				testReplicaState(ctx, "dev~appA", 4),
 				testReplicaState(ctx, "dev~appB", 5),
 				testReplicaState(ctx, "dev~appC", 3),
@@ -139,7 +139,7 @@ func TestGetAllReplicas(t *testing.T) {
 				testReplicaState(ctx, "dev~appE", 3),
 				testReplicaState(ctx, "dev~appF", 2),
 				testReplicaState(ctx, "dev~appG", 1),
-			})
+			}))
 		})
 	})
 }
@@ -147,19 +147,19 @@ func TestGetAllReplicas(t *testing.T) {
 func TestGetAllStaleReplicas(t *testing.T) {
 	t.Parallel()
 
-	Convey("GetAllStaleReplicas works", t, func() {
-		Convey("succeeds even when empty", func() {
+	ftt.Run("GetAllStaleReplicas works", t, func(t *ftt.Test) {
+		t.Run("succeeds even when empty", func(t *ftt.Test) {
 			ctx := memory.Use(context.Background())
 
 			replicas, err := GetAllStaleReplicas(ctx, 1000)
-			So(err, ShouldBeNil)
-			So(replicas, ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, replicas, should.BeEmpty)
 		})
 
-		Convey("returns only stale replicas", func() {
+		t.Run("returns only stale replicas", func(t *ftt.Test) {
 			// Set up replica states in the datastore.
 			ctx := memory.Use(context.Background())
-			So(datastore.Put(ctx,
+			assert.Loosely(t, datastore.Put(ctx,
 				testReplicaState(ctx, "dev~appG", 1),
 				testReplicaState(ctx, "dev~appF", 2),
 				testReplicaState(ctx, "dev~appE", 3),
@@ -167,19 +167,19 @@ func TestGetAllStaleReplicas(t *testing.T) {
 				testReplicaState(ctx, "dev~appB", 5),
 				testReplicaState(ctx, "dev~appC", 3),
 				testReplicaState(ctx, "dev~appD", 2),
-			), ShouldBeNil)
+			), should.BeNil)
 
 			// Check the replicas returned were limited to stale ones, and are
 			// in ascending order of the app ID.
 			replicas, err := GetAllStaleReplicas(ctx, 4)
-			So(err, ShouldBeNil)
-			So(replicas, ShouldResembleProto, []*AuthReplicaState{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, replicas, should.Resemble([]*AuthReplicaState{
 				testReplicaState(ctx, "dev~appC", 3),
 				testReplicaState(ctx, "dev~appD", 2),
 				testReplicaState(ctx, "dev~appE", 3),
 				testReplicaState(ctx, "dev~appF", 2),
 				testReplicaState(ctx, "dev~appG", 1),
-			})
+			}))
 		})
 	})
 }
@@ -187,27 +187,27 @@ func TestGetAllStaleReplicas(t *testing.T) {
 func TestGetAuthReplicaState(t *testing.T) {
 	t.Parallel()
 
-	Convey("getAuthReplicaState works", t, func() {
+	ftt.Run("getAuthReplicaState works", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 
 		r := testReplicaState(ctx, "dev~appA", 123)
 
 		_, err := getAuthReplicaState(ctx, replicaStateKey(ctx, "dev~appA"))
-		So(err, ShouldEqual, datastore.ErrNoSuchEntity)
+		assert.Loosely(t, err, should.Equal(datastore.ErrNoSuchEntity))
 
 		// Now set up the replica state.
-		So(datastore.Put(ctx, r), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, r), should.BeNil)
 
 		actual, err := getAuthReplicaState(ctx, replicaStateKey(ctx, "dev~appA"))
-		So(err, ShouldBeNil)
-		So(actual, ShouldResemble, r)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, actual, should.Resemble(r))
 	})
 }
 
 func TestUpdateReplicaStateOnSuccess(t *testing.T) {
 	t.Parallel()
 
-	Convey("updateReplicaStateOnSuccess works", t, func() {
+	ftt.Run("updateReplicaStateOnSuccess works", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 
 		started := testCreatedTS
@@ -219,22 +219,22 @@ func TestUpdateReplicaStateOnSuccess(t *testing.T) {
 		}
 		authCodeVersion := "2.0.test"
 
-		Convey("returns error for unknown replica", func() {
+		t.Run("returns error for unknown replica", func(t *ftt.Test) {
 			storedRev, err := updateReplicaStateOnSuccess(ctx, "dev~unknownApp",
 				started, finished, currentRevision, authCodeVersion)
-			So(err, ShouldEqual, datastore.ErrNoSuchEntity)
-			So(storedRev, ShouldEqual, 0)
+			assert.Loosely(t, err, should.Equal(datastore.ErrNoSuchEntity))
+			assert.Loosely(t, storedRev, should.BeZero)
 		})
 
-		Convey("updates last known state", func() {
+		t.Run("updates last known state", func(t *ftt.Test) {
 			testAppID := "dev~appA"
 			initialState := testReplicaState(ctx, testAppID, 1000)
-			So(datastore.Put(ctx, initialState), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, initialState), should.BeNil)
 
 			storedRev, err := updateReplicaStateOnSuccess(ctx, testAppID,
 				started, finished, currentRevision, authCodeVersion)
-			So(err, ShouldBeNil)
-			So(storedRev, ShouldEqual, 1001)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, storedRev, should.Equal(1001))
 
 			// Check the replica state was updated.
 			actual := &AuthReplicaState{
@@ -242,8 +242,8 @@ func TestUpdateReplicaStateOnSuccess(t *testing.T) {
 				ID:     testAppID,
 				Parent: ReplicasRootKey(ctx),
 			}
-			So(datastore.Get(ctx, actual), ShouldBeNil)
-			So(actual, ShouldResemble, &AuthReplicaState{
+			assert.Loosely(t, datastore.Get(ctx, actual), should.BeNil)
+			assert.Loosely(t, actual, should.Resemble(&AuthReplicaState{
 				Kind:            "AuthReplicaState",
 				ID:              testAppID,
 				Parent:          ReplicasRootKey(ctx),
@@ -255,7 +255,7 @@ func TestUpdateReplicaStateOnSuccess(t *testing.T) {
 				PushFinishedTS:  finished,
 				PushStatus:      ReplicaPushStatusSuccess,
 				PushError:       "",
-			})
+			}))
 		})
 	})
 }
@@ -263,7 +263,7 @@ func TestUpdateReplicaStateOnSuccess(t *testing.T) {
 func TestUpdateReplicaStateOnFail(t *testing.T) {
 	t.Parallel()
 
-	Convey("updateReplicaStateOnSuccess works", t, func() {
+	ftt.Run("updateReplicaStateOnSuccess works", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 
 		started := testCreatedTS
@@ -275,23 +275,23 @@ func TestUpdateReplicaStateOnFail(t *testing.T) {
 			IsFatal: false,
 		}
 
-		Convey("returns error for unknown replica", func() {
+		t.Run("returns error for unknown replica", func(t *ftt.Test) {
 			storedRev, err := updateReplicaStateOnFail(ctx, "dev~unknownApp",
 				oldReplicaRev, started, finished, pushErr)
-			So(err, ShouldEqual, datastore.ErrNoSuchEntity)
-			So(storedRev, ShouldEqual, 0)
+			assert.Loosely(t, err, should.Equal(datastore.ErrNoSuchEntity))
+			assert.Loosely(t, storedRev, should.BeZero)
 		})
 
-		Convey("exits early if the replica has a newer revision", func() {
+		t.Run("exits early if the replica has a newer revision", func(t *ftt.Test) {
 			testAppID := "dev~appA"
 			advancedRev := oldReplicaRev + 1
 			initialState := testReplicaState(ctx, testAppID, advancedRev)
-			So(datastore.Put(ctx, initialState), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, initialState), should.BeNil)
 
 			storedRev, err := updateReplicaStateOnFail(ctx, testAppID,
 				oldReplicaRev, started, finished, pushErr)
-			So(err, ShouldBeNil)
-			So(storedRev, ShouldEqual, advancedRev)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, storedRev, should.Equal(advancedRev))
 
 			// Check the replica state was unchanged.
 			actual := &AuthReplicaState{
@@ -299,19 +299,19 @@ func TestUpdateReplicaStateOnFail(t *testing.T) {
 				ID:     testAppID,
 				Parent: ReplicasRootKey(ctx),
 			}
-			So(datastore.Get(ctx, actual), ShouldBeNil)
-			So(actual, ShouldResemble, initialState)
+			assert.Loosely(t, datastore.Get(ctx, actual), should.BeNil)
+			assert.Loosely(t, actual, should.Resemble(initialState))
 		})
 
-		Convey("updates last known state with error details", func() {
+		t.Run("updates last known state with error details", func(t *ftt.Test) {
 			testAppID := "dev~appA"
 			initialState := testReplicaState(ctx, testAppID, oldReplicaRev)
-			So(datastore.Put(ctx, initialState), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, initialState), should.BeNil)
 
 			storedRev, err := updateReplicaStateOnFail(ctx, testAppID,
 				oldReplicaRev, started, finished, pushErr)
-			So(err, ShouldBeNil)
-			So(storedRev, ShouldEqual, oldReplicaRev)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, storedRev, should.Equal(oldReplicaRev))
 
 			// Check the replica state was updated.
 			actual := &AuthReplicaState{
@@ -319,8 +319,8 @@ func TestUpdateReplicaStateOnFail(t *testing.T) {
 				ID:     testAppID,
 				Parent: ReplicasRootKey(ctx),
 			}
-			So(datastore.Get(ctx, actual), ShouldBeNil)
-			So(actual, ShouldResemble, &AuthReplicaState{
+			assert.Loosely(t, datastore.Get(ctx, actual), should.BeNil)
+			assert.Loosely(t, actual, should.Resemble(&AuthReplicaState{
 				Kind:           "AuthReplicaState",
 				ID:             testAppID,
 				Parent:         ReplicasRootKey(ctx),
@@ -330,7 +330,7 @@ func TestUpdateReplicaStateOnFail(t *testing.T) {
 				PushFinishedTS: finished,
 				PushStatus:     ReplicaPushStatusTransientError,
 				PushError:      errMsg,
-			})
+			}))
 		})
 	})
 }

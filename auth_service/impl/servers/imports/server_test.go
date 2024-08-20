@@ -41,8 +41,11 @@ import (
 	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/importscfg"
 	"go.chromium.org/luci/auth_service/testsupport"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestIngestTarball(t *testing.T) {
@@ -71,7 +74,7 @@ func TestIngestTarball(t *testing.T) {
 		return rw.Body.Bytes(), nil
 	}
 
-	Convey("Test tarball", t, func() {
+	ftt.Run("Test tarball", t, func(t *ftt.Test) {
 		ctx := auth.WithState(memory.Use(context.Background()), &authtest.FakeState{
 			Identity: "user:test-user@example.com",
 		})
@@ -88,13 +91,13 @@ func TestIngestTarball(t *testing.T) {
 				},
 			},
 		}
-		So(datastore.Put(ctx, &model.AuthDBSnapshotLatest{
+		assert.Loosely(t, datastore.Put(ctx, &model.AuthDBSnapshotLatest{
 			Kind:         "AuthDBSnapshotLatest",
 			ID:           "latest",
 			AuthDBRev:    42,
 			AuthDBSha256: "test-sha",
 			ModifiedTS:   time.Date(2021, time.August, 16, 12, 20, 0, 0, time.UTC),
-		}), ShouldBeNil)
+		}), should.BeNil)
 
 		tarfile := testsupport.BuildTargz(map[string][]byte{
 			"at_root":      []byte("a\nb"),
@@ -102,45 +105,45 @@ func TestIngestTarball(t *testing.T) {
 			"test/group-2": []byte("a@example.com\nb@example.com"),
 		})
 
-		Convey("not configured", func() {
+		t.Run("not configured", func(t *ftt.Test) {
 			_, err := callEndpoint(ctx, "test_groups.tar.gz", io.NopCloser(bytes.NewReader(nil)))
-			So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
 		})
 
-		Convey("with importer configuration", func() {
-			So(importscfg.SetConfig(ctx, testConfig), ShouldBeNil)
+		t.Run("with importer configuration", func(t *ftt.Test) {
+			assert.Loosely(t, importscfg.SetConfig(ctx, testConfig), should.BeNil)
 
-			Convey("not authorized", func() {
+			t.Run("not authorized", func(t *ftt.Test) {
 				ctx = auth.WithState(ctx, &authtest.FakeState{
 					Identity: "user:somebody@example.com",
 				})
 				_, err := callEndpoint(ctx, "test_groups.tar.gz", io.NopCloser(bytes.NewReader(tarfile)))
-				So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
 			})
 
-			Convey("empty tarball", func() {
+			t.Run("empty tarball", func(t *ftt.Test) {
 				_, err := callEndpoint(ctx, "test_groups.tar.gz", io.NopCloser(bytes.NewReader(nil)))
-				So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
 			})
 
-			Convey("aborts if admin group doesn't exist", func() {
+			t.Run("aborts if admin group doesn't exist", func(t *ftt.Test) {
 				_, err := callEndpoint(ctx, "test_groups.tar.gz", io.NopCloser(bytes.NewReader(tarfile)))
-				So(err, ShouldHaveGRPCStatus, codes.Internal)
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.Internal))
 			})
 
-			Convey("groups actually imported", func() {
+			t.Run("groups actually imported", func(t *ftt.Test) {
 				// Set up datastore to have the admin group.
-				So(datastore.Put(ctx, &model.AuthGroup{
+				assert.Loosely(t, datastore.Put(ctx, &model.AuthGroup{
 					Kind:   "AuthGroup",
 					ID:     model.AdminGroup,
 					Parent: model.RootKey(ctx),
-				}), ShouldBeNil)
+				}), should.BeNil)
 
 				res, err := callEndpoint(ctx, "test_groups.tar.gz", io.NopCloser(bytes.NewReader(tarfile)))
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				actual := GroupsJSON{}
-				So(json.Unmarshal(res, &actual), ShouldBeNil)
+				assert.Loosely(t, json.Unmarshal(res, &actual), should.BeNil)
 
 				expected := GroupsJSON{
 					Groups: []string{
@@ -149,8 +152,8 @@ func TestIngestTarball(t *testing.T) {
 					},
 					AuthDBRev: 1,
 				}
-				So(actual, ShouldResemble, expected)
-				So(taskScheduler.Tasks(), ShouldHaveLength, 2)
+				assert.Loosely(t, actual, should.Resemble(expected))
+				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(2))
 			})
 		})
 	})

@@ -20,17 +20,18 @@ import (
 
 	"github.com/golang/mock/gomock"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestIsAuthorized(t *testing.T) {
 	t.Parallel()
 
-	Convey("IsAuthorizedSubscriber works", t, func() {
+	ftt.Run("IsAuthorizedSubscriber works", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 
 		// Set up mock Pubsub client
@@ -40,7 +41,7 @@ func TestIsAuthorized(t *testing.T) {
 
 		policy := StubPolicy("someone@example.com")
 
-		Convey("true for authorized account", func() {
+		t.Run("true for authorized account", func(t *ftt.Test) {
 			// Define expected client calls.
 			gomock.InOrder(
 				mockClient.Client.EXPECT().GetIAMPolicy(gomock.Any()).Return(policy, nil).Times(1),
@@ -48,11 +49,11 @@ func TestIsAuthorized(t *testing.T) {
 			)
 
 			authorized, err := IsAuthorizedSubscriber(ctx, "someone@example.com")
-			So(err, ShouldBeNil)
-			So(authorized, ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, authorized, should.BeTrue)
 		})
 
-		Convey("false for unauthorized account", func() {
+		t.Run("false for unauthorized account", func(t *ftt.Test) {
 			// Define expected client calls.
 			gomock.InOrder(
 				mockClient.Client.EXPECT().GetIAMPolicy(gomock.Any()).Return(policy, nil).Times(1),
@@ -60,8 +61,8 @@ func TestIsAuthorized(t *testing.T) {
 			)
 
 			authorized, err := IsAuthorizedSubscriber(ctx, "somebody@example.com")
-			So(err, ShouldBeNil)
-			So(authorized, ShouldBeFalse)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, authorized, should.BeFalse)
 		})
 	})
 }
@@ -69,7 +70,7 @@ func TestIsAuthorized(t *testing.T) {
 func TestAuthorizeSubscriber(t *testing.T) {
 	t.Parallel()
 
-	Convey("AuthorizeSubscriber works", t, func() {
+	ftt.Run("AuthorizeSubscriber works", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 
 		// Set up mock Pubsub client
@@ -79,17 +80,17 @@ func TestAuthorizeSubscriber(t *testing.T) {
 
 		policy := StubPolicy("someone@example.com")
 
-		Convey("exits early for authorized account", func() {
+		t.Run("exits early for authorized account", func(t *ftt.Test) {
 			// Define expected client calls.
 			gomock.InOrder(
 				mockClient.Client.EXPECT().GetIAMPolicy(gomock.Any()).Return(policy, nil).Times(1),
 				mockClient.Client.EXPECT().Close().Times(1),
 			)
 
-			So(AuthorizeSubscriber(ctx, "someone@example.com"), ShouldBeNil)
+			assert.Loosely(t, AuthorizeSubscriber(ctx, "someone@example.com"), should.BeNil)
 		})
 
-		Convey("authorizes account", func() {
+		t.Run("authorizes account", func(t *ftt.Test) {
 			// Define expected client calls.
 			gomock.InOrder(
 				mockClient.Client.EXPECT().GetIAMPolicy(gomock.Any()).Return(policy, nil).Times(1),
@@ -97,7 +98,7 @@ func TestAuthorizeSubscriber(t *testing.T) {
 				mockClient.Client.EXPECT().Close().Times(1),
 			)
 
-			So(AuthorizeSubscriber(ctx, "somebody@example.com"), ShouldBeNil)
+			assert.Loosely(t, AuthorizeSubscriber(ctx, "somebody@example.com"), should.BeNil)
 		})
 	})
 }
@@ -105,7 +106,7 @@ func TestAuthorizeSubscriber(t *testing.T) {
 func TestDeuthorizeSubscriber(t *testing.T) {
 	t.Parallel()
 
-	Convey("DeauthorizeSubscriber works", t, func() {
+	ftt.Run("DeauthorizeSubscriber works", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 
 		// Set up mock Pubsub client
@@ -115,7 +116,7 @@ func TestDeuthorizeSubscriber(t *testing.T) {
 
 		policy := StubPolicy("someone@example.com")
 
-		Convey("deauthorizes account", func() {
+		t.Run("deauthorizes account", func(t *ftt.Test) {
 			// Define expected client calls.
 			gomock.InOrder(
 				mockClient.Client.EXPECT().GetIAMPolicy(gomock.Any()).Return(policy, nil).Times(1),
@@ -123,17 +124,17 @@ func TestDeuthorizeSubscriber(t *testing.T) {
 				mockClient.Client.EXPECT().Close().Times(1),
 			)
 
-			So(DeauthorizeSubscriber(ctx, "someone@example.com"), ShouldBeNil)
+			assert.Loosely(t, DeauthorizeSubscriber(ctx, "someone@example.com"), should.BeNil)
 		})
 
-		Convey("exits early for unauthorized account", func() {
+		t.Run("exits early for unauthorized account", func(t *ftt.Test) {
 			// Define expected client calls.
 			gomock.InOrder(
 				mockClient.Client.EXPECT().GetIAMPolicy(gomock.Any()).Return(policy, nil).Times(1),
 				mockClient.Client.EXPECT().Close().Times(1),
 			)
 
-			So(DeauthorizeSubscriber(ctx, "somebody@example.com"), ShouldBeNil)
+			assert.Loosely(t, DeauthorizeSubscriber(ctx, "somebody@example.com"), should.BeNil)
 		})
 	})
 }
@@ -141,7 +142,7 @@ func TestDeuthorizeSubscriber(t *testing.T) {
 func TestRevokeStaleAuthorization(t *testing.T) {
 	t.Parallel()
 
-	Convey("RevokeStaleAuthorization works", t, func() {
+	ftt.Run("RevokeStaleAuthorization works", t, func(t *ftt.Test) {
 		// Set up mock Pubsub client
 		ctl := gomock.NewController(t)
 		mockClient := NewMockedClient(context.Background(), ctl)
@@ -150,7 +151,7 @@ func TestRevokeStaleAuthorization(t *testing.T) {
 		policy := StubPolicy("old.trusted@example.com")
 		trustedGroup := "trusted-group-name"
 
-		Convey("revokes if not trusted", func() {
+		t.Run("revokes if not trusted", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:someone@example.com",
 				FakeDB: authtest.NewFakeDB(
@@ -165,10 +166,10 @@ func TestRevokeStaleAuthorization(t *testing.T) {
 				mockClient.Client.EXPECT().Close().Times(1),
 			)
 
-			So(RevokeStaleAuthorization(ctx, trustedGroup, false), ShouldBeNil)
+			assert.Loosely(t, RevokeStaleAuthorization(ctx, trustedGroup, false), should.BeNil)
 		})
 
-		Convey("skips policy update if no changes required", func() {
+		t.Run("skips policy update if no changes required", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:someone@example.com",
 				FakeDB: authtest.NewFakeDB(
@@ -182,7 +183,7 @@ func TestRevokeStaleAuthorization(t *testing.T) {
 				mockClient.Client.EXPECT().Close().Times(1),
 			)
 
-			So(RevokeStaleAuthorization(ctx, trustedGroup, false), ShouldBeNil)
+			assert.Loosely(t, RevokeStaleAuthorization(ctx, trustedGroup, false), should.BeNil)
 		})
 	})
 }

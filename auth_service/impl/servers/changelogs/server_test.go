@@ -21,26 +21,26 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/auth_service/api/rpcpb"
 	"go.chromium.org/luci/auth_service/impl/model"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestChangeLogsServer(t *testing.T) {
 	t.Parallel()
 	srv := Server{}
 
-	Convey("ListChangeLogs RPC call", t, func() {
+	ftt.Run("ListChangeLogs RPC call", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 
-		So(datastore.Put(ctx,
+		assert.Loosely(t, datastore.Put(ctx,
 			&model.AuthDBChange{
 				Kind:           "AuthDBChange",
 				ID:             "AuthIPWhitelist$a!3000",
@@ -82,16 +82,16 @@ func TestChangeLogsServer(t *testing.T) {
 				Who:              "user:test@example.com",
 				AppVersion:       "123-45abc",
 			},
-		), ShouldBeNil)
+		), should.BeNil)
 
-		Convey("List all", func() {
+		t.Run("List all", func(t *ftt.Test) {
 			res, err := srv.ListChangeLogs(ctx, &rpcpb.ListChangeLogsRequest{
 				PageSize: 2,
 			})
-			So(err, ShouldBeNil)
-			So(res.NextPageToken, ShouldNotBeEmpty)
-			So(len(res.Changes), ShouldEqual, 2)
-			So(res.Changes[0], ShouldResembleProto, &rpcpb.AuthDBChange{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.NextPageToken, should.NotBeEmpty)
+			assert.Loosely(t, len(res.Changes), should.Equal(2))
+			assert.Loosely(t, res.Changes[0], should.Resemble(&rpcpb.AuthDBChange{
 				ChangeType:       "REALMS_GLOBALS_CHANGED",
 				Comment:          "comment",
 				PermissionsAdded: []string{"a.existInRealm"},
@@ -99,8 +99,8 @@ func TestChangeLogsServer(t *testing.T) {
 				When:             timestamppb.New(time.Date(2021, time.January, 11, 1, 0, 0, 0, time.UTC)),
 				Who:              "user:test@example.com",
 				AppVersion:       "123-45abc",
-			})
-			So(res.Changes[1], ShouldResembleProto, &rpcpb.AuthDBChange{
+			}))
+			assert.Loosely(t, res.Changes[1], should.Resemble(&rpcpb.AuthDBChange{
 				ChangeType:     "IPWL_CREATED",
 				Comment:        "comment",
 				Description:    "description",
@@ -109,16 +109,16 @@ func TestChangeLogsServer(t *testing.T) {
 				When:           timestamppb.New(time.Date(2021, time.December, 12, 1, 0, 0, 0, time.UTC)),
 				Who:            "user:test@example.com",
 				AppVersion:     "123-45abc",
-			})
+			}))
 
 			res, err = srv.ListChangeLogs(ctx, &rpcpb.ListChangeLogsRequest{
 				PageToken: res.NextPageToken,
 				PageSize:  2,
 			})
-			So(err, ShouldBeNil)
-			So(res.NextPageToken, ShouldBeEmpty)
-			So(len(res.Changes), ShouldEqual, 1)
-			So(res.Changes[0], ShouldResembleProto, &rpcpb.AuthDBChange{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.NextPageToken, should.BeEmpty)
+			assert.Loosely(t, len(res.Changes), should.Equal(1))
+			assert.Loosely(t, res.Changes[0], should.Resemble(&rpcpb.AuthDBChange{
 				ChangeType:        "CONF_OAUTH_CLIENT_CHANGED",
 				Comment:           "comment",
 				OauthClientId:     "123.test.example.com",
@@ -127,16 +127,16 @@ func TestChangeLogsServer(t *testing.T) {
 				When:              timestamppb.New(time.Date(2019, time.December, 11, 1, 0, 0, 0, time.UTC)),
 				Who:               "user:test@example.com",
 				AppVersion:        "123-45abc",
-			})
+			}))
 		})
-		Convey("Filter by target", func() {
+		t.Run("Filter by target", func(t *ftt.Test) {
 			res, err := srv.ListChangeLogs(ctx, &rpcpb.ListChangeLogsRequest{
 				Target:   "AuthRealmsGlobals$globals",
 				PageSize: 3,
 			})
-			So(err, ShouldBeNil)
-			So(len(res.Changes), ShouldEqual, 1)
-			So(res.Changes[0], ShouldResembleProto, &rpcpb.AuthDBChange{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(res.Changes), should.Equal(1))
+			assert.Loosely(t, res.Changes[0], should.Resemble(&rpcpb.AuthDBChange{
 				ChangeType:       "REALMS_GLOBALS_CHANGED",
 				Comment:          "comment",
 				PermissionsAdded: []string{"a.existInRealm"},
@@ -144,16 +144,16 @@ func TestChangeLogsServer(t *testing.T) {
 				When:             timestamppb.New(time.Date(2021, time.January, 11, 1, 0, 0, 0, time.UTC)),
 				Who:              "user:test@example.com",
 				AppVersion:       "123-45abc",
-			})
+			}))
 		})
-		Convey("Filter by AuthDBRev", func() {
+		t.Run("Filter by AuthDBRev", func(t *ftt.Test) {
 			res, err := srv.ListChangeLogs(ctx, &rpcpb.ListChangeLogsRequest{
 				AuthDbRev: 10020,
 				PageSize:  3,
 			})
-			So(err, ShouldBeNil)
-			So(len(res.Changes), ShouldEqual, 1)
-			So(res.Changes[0], ShouldResembleProto, &rpcpb.AuthDBChange{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(res.Changes), should.Equal(1))
+			assert.Loosely(t, res.Changes[0], should.Resemble(&rpcpb.AuthDBChange{
 				ChangeType:       "REALMS_GLOBALS_CHANGED",
 				Comment:          "comment",
 				PermissionsAdded: []string{"a.existInRealm"},
@@ -161,7 +161,7 @@ func TestChangeLogsServer(t *testing.T) {
 				When:             timestamppb.New(time.Date(2021, time.January, 11, 1, 0, 0, 0, time.UTC)),
 				Who:              "user:test@example.com",
 				AppVersion:       "123-45abc",
-			})
+			}))
 		})
 	})
 }

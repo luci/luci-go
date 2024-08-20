@@ -31,8 +31,11 @@ import (
 
 	"go.chromium.org/luci/auth_service/impl/model"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestOAuthServing(t *testing.T) {
@@ -96,29 +99,29 @@ func TestOAuthServing(t *testing.T) {
 		PrimaryURL          string   `json:"primary_url"`
 	}
 
-	Convey("Testing legacy endpoint with JSON response", t, func() {
+	ftt.Run("Testing legacy endpoint with JSON response", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 
-		Convey("AuthReplicationState entity not found", func() {
-			So(datastore.Put(ctx, testGlobalConfig), ShouldBeNil)
+		t.Run("AuthReplicationState entity not found", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(ctx, testGlobalConfig), should.BeNil)
 			_, err := legacyCall(ctx)
-			So(err, ShouldHaveGRPCStatus, codes.Internal)
-			So(err.Error(), ShouldContainSubstring, "no Replication State entity found in datastore.")
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.Internal))
+			assert.Loosely(t, err.Error(), should.ContainSubstring("no Replication State entity found in datastore."))
 		})
 
-		Convey("AuthGlobalConfig entity not found", func() {
-			So(datastore.Put(ctx, testAuthReplicationState(ctx)), ShouldBeNil)
+		t.Run("AuthGlobalConfig entity not found", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(ctx, testAuthReplicationState(ctx)), should.BeNil)
 			_, err := legacyCall(ctx)
-			So(err, ShouldHaveGRPCStatus, codes.Internal)
-			So(err.Error(), ShouldContainSubstring, "no Global Config entity found in datastore.")
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.Internal))
+			assert.Loosely(t, err.Error(), should.ContainSubstring("no Global Config entity found in datastore."))
 		})
 
-		Convey("OK", func() {
-			So(datastore.Put(ctx,
+		t.Run("OK", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(ctx,
 				testGlobalConfig,
-				testAuthReplicationState(ctx)), ShouldBeNil)
+				testAuthReplicationState(ctx)), should.BeNil)
 			actualBlob, err := legacyCall(ctx)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			actualJSON := &OAuthJSON{}
 			expectedJSON := &OAuthJSON{
@@ -128,8 +131,8 @@ func TestOAuthServing(t *testing.T) {
 				ClientID:            testClientID,
 				PrimaryURL:          testPrimaryURL,
 			}
-			So(json.Unmarshal(actualBlob, actualJSON), ShouldBeNil)
-			So(actualJSON, ShouldResemble, expectedJSON)
+			assert.Loosely(t, json.Unmarshal(actualBlob, actualJSON), should.BeNil)
+			assert.Loosely(t, actualJSON, should.Resemble(expectedJSON))
 		})
 
 	})

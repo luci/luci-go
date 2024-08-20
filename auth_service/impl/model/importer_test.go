@@ -27,6 +27,9 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
@@ -39,9 +42,6 @@ import (
 	"go.chromium.org/luci/auth_service/impl/info"
 	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/importscfg"
 	"go.chromium.org/luci/auth_service/testsupport"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func testGroupImporterConfig() *GroupImporterConfig {
@@ -77,29 +77,29 @@ func testGroupImporterConfig() *GroupImporterConfig {
 func TestGroupImporterConfigModel(t *testing.T) {
 	t.Parallel()
 
-	Convey("testing GroupImporterConfig entity", t, func() {
+	ftt.Run("testing GroupImporterConfig entity", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 
-		Convey("testing GetGroupImporterConfig", func() {
+		t.Run("testing GetGroupImporterConfig", func(t *ftt.Test) {
 			_, err := GetGroupImporterConfig(ctx)
-			So(err, ShouldEqual, datastore.ErrNoSuchEntity)
+			assert.Loosely(t, err, should.Equal(datastore.ErrNoSuchEntity))
 
 			groupCfg := testGroupImporterConfig()
-			So(datastore.Put(ctx, groupCfg), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, groupCfg), should.BeNil)
 
 			actual, err := GetGroupImporterConfig(ctx)
-			So(err, ShouldBeNil)
-			So(actual, ShouldResemble, groupCfg)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actual, should.Resemble(groupCfg))
 		})
 
-		Convey("updateGroupImporterConfig works", func() {
+		t.Run("updateGroupImporterConfig works", func(t *ftt.Test) {
 			ctx = testsupport.SetTestContextSigner(ctx, "test-app-id", "test-app-id@example.com")
 
-			Convey("creates if it doesn't exist", func() {
+			t.Run("creates if it doesn't exist", func(t *ftt.Test) {
 				ctx = clock.Set(ctx, testclock.New(testCreatedTS))
 
 				_, err := GetGroupImporterConfig(ctx)
-				So(err, ShouldEqual, datastore.ErrNoSuchEntity)
+				assert.Loosely(t, err, should.Equal(datastore.ErrNoSuchEntity))
 
 				testConfig := &configspb.GroupImporterConfig{
 					TarballUpload: []*configspb.GroupImporterConfig_TarballUploadEntry{
@@ -117,29 +117,29 @@ func TestGroupImporterConfigModel(t *testing.T) {
 					Revision:    "10001a",
 					ViewURL:     "config-url.example.com/imports/10001a",
 				}
-				So(updateGroupImporterConfig(ctx, testConfig, testMeta, false), ShouldBeNil)
+				assert.Loosely(t, updateGroupImporterConfig(ctx, testConfig, testMeta, false), should.BeNil)
 
 				stored, err := GetGroupImporterConfig(ctx)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				actual, err := stored.ToProto()
-				So(err, ShouldBeNil)
-				So(actual, ShouldResembleProto, testConfig)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, actual, should.Resemble(testConfig))
 
-				Convey("updating works", func() {
+				t.Run("updating works", func(t *ftt.Test) {
 					ctx = clock.Set(ctx, testclock.New(testModifiedTS))
 
-					Convey("no-op for same revision", func() {
-						So(updateGroupImporterConfig(ctx, testConfig, testMeta, false), ShouldBeNil)
+					t.Run("no-op for same revision", func(t *ftt.Test) {
+						assert.Loosely(t, updateGroupImporterConfig(ctx, testConfig, testMeta, false), should.BeNil)
 
 						stored, err := GetGroupImporterConfig(ctx)
-						So(err, ShouldBeNil)
-						So(stored.ModifiedTS, ShouldEqual, testCreatedTS)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, stored.ModifiedTS, should.Equal(testCreatedTS))
 						actual, err := stored.ToProto()
-						So(err, ShouldBeNil)
-						So(actual, ShouldResembleProto, testConfig)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, actual, should.Resemble(testConfig))
 					})
 
-					Convey("updated for different revision", func() {
+					t.Run("updated for different revision", func(t *ftt.Test) {
 						otherConfig := &configspb.GroupImporterConfig{
 							TarballUpload: []*configspb.GroupImporterConfig_TarballUploadEntry{
 								{
@@ -156,17 +156,17 @@ func TestGroupImporterConfigModel(t *testing.T) {
 							Revision:    "10001b",
 							ViewURL:     "config-url.example.com/imports/10001b",
 						}
-						So(updateGroupImporterConfig(ctx, otherConfig, otherMeta, false), ShouldBeNil)
+						assert.Loosely(t, updateGroupImporterConfig(ctx, otherConfig, otherMeta, false), should.BeNil)
 
 						stored, err := GetGroupImporterConfig(ctx)
-						So(err, ShouldBeNil)
-						So(stored.ModifiedTS, ShouldEqual, testModifiedTS)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, stored.ModifiedTS, should.Equal(testModifiedTS))
 						actual, err := stored.ToProto()
-						So(err, ShouldBeNil)
-						So(actual, ShouldResembleProto, otherConfig)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, actual, should.Resemble(otherConfig))
 					})
 
-					Convey("no-op when in dry run", func() {
+					t.Run("no-op when in dry run", func(t *ftt.Test) {
 						otherConfig := &configspb.GroupImporterConfig{
 							TarballUpload: []*configspb.GroupImporterConfig_TarballUploadEntry{
 								{
@@ -183,14 +183,14 @@ func TestGroupImporterConfigModel(t *testing.T) {
 							Revision:    "10001b",
 							ViewURL:     "config-url.example.com/imports/10001b",
 						}
-						So(updateGroupImporterConfig(ctx, otherConfig, otherMeta, true), ShouldBeNil)
+						assert.Loosely(t, updateGroupImporterConfig(ctx, otherConfig, otherMeta, true), should.BeNil)
 
 						stored, err := GetGroupImporterConfig(ctx)
-						So(err, ShouldBeNil)
-						So(stored.ModifiedTS, ShouldEqual, testCreatedTS)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, stored.ModifiedTS, should.Equal(testCreatedTS))
 						actual, err := stored.ToProto()
-						So(err, ShouldBeNil)
-						So(actual, ShouldResembleProto, testConfig)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, actual, should.Resemble(testConfig))
 					})
 				})
 			})
@@ -202,37 +202,37 @@ func TestLoadGroupFile(t *testing.T) {
 	t.Parallel()
 	testDomain := "example.com"
 
-	Convey("Testing LoadGroupFile()", t, func() {
-		Convey("OK", func() {
+	ftt.Run("Testing LoadGroupFile()", t, func(t *ftt.Test) {
+		t.Run("OK", func(t *ftt.Test) {
 			body := strings.Join([]string{"", "b", "a", "a", ""}, "\n")
 			aIdent, _ := identity.MakeIdentity(fmt.Sprintf("user:a@%s", testDomain))
 			bIdent, _ := identity.MakeIdentity(fmt.Sprintf("user:b@%s", testDomain))
 			actual, err := loadGroupFile(body, testDomain)
-			So(err, ShouldBeNil)
-			So(actual, ShouldResemble, []identity.Identity{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actual, should.Resemble([]identity.Identity{
 				aIdent,
 				bIdent,
-			})
+			}))
 		})
-		Convey("Handles temporary accounts", func() {
+		t.Run("Handles temporary accounts", func(t *ftt.Test) {
 			cIdent, _ := identity.MakeIdentity("user:c@test")
 			actual, err := loadGroupFile("c%test@gtempaccount.com", "")
-			So(err, ShouldBeNil)
-			So(actual, ShouldResemble, []identity.Identity{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actual, should.Resemble([]identity.Identity{
 				cIdent,
-			})
+			}))
 		})
-		Convey("bad id", func() {
+		t.Run("bad id", func(t *ftt.Test) {
 			body := "bad id"
 			_, err := loadGroupFile(body, testDomain)
-			So(err, ShouldErrLike, `auth: bad value "bad id@example.com" for identity kind "user"`)
+			assert.Loosely(t, err, should.ErrLike(`auth: bad value "bad id@example.com" for identity kind "user"`))
 		})
 	})
 }
 
 func TestExtractTarArchive(t *testing.T) {
 	t.Parallel()
-	Convey("valid tarball with skippable files", t, func() {
+	ftt.Run("valid tarball with skippable files", t, func(t *ftt.Test) {
 		expected := map[string][]byte{
 			"at_root":             []byte("a\nb"),
 			"ldap/ bad name":      []byte("a\nb"),
@@ -244,8 +244,8 @@ func TestExtractTarArchive(t *testing.T) {
 		}
 		bundle := testsupport.BuildTargz(expected)
 		entries, err := extractTarArchive(bytes.NewReader(bundle))
-		So(err, ShouldBeNil)
-		So(entries, ShouldResemble, expected)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, entries, should.Resemble(expected))
 	})
 }
 
@@ -253,16 +253,16 @@ func TestLoadTarball(t *testing.T) {
 	t.Parallel()
 	ctx := memory.Use(context.Background())
 
-	Convey("testing loadTarball", t, func() {
-		Convey("invalid tarball bad identity", func() {
+	ftt.Run("testing loadTarball", t, func(t *ftt.Test) {
+		t.Run("invalid tarball bad identity", func(t *ftt.Test) {
 			bundle := testsupport.BuildTargz(map[string][]byte{
 				"at_root":      []byte("a\nb"),
 				"ldap/group-a": []byte("a\n!!!!!!"),
 			})
 			_, err := loadTarball(ctx, bytes.NewReader(bundle), "example.com", []string{"ldap"}, []string{"ldap/group-a", "ldap/group-b"})
-			So(err, ShouldErrLike, `auth: bad value "!!!!!!@example.com" for identity kind "user"`)
+			assert.Loosely(t, err, should.ErrLike(`auth: bad value "!!!!!!@example.com" for identity kind "user"`))
 		})
-		Convey("valid tarball with skippable files", func() {
+		t.Run("valid tarball with skippable files", func(t *ftt.Test) {
 			bundle := testsupport.BuildTargz(map[string][]byte{
 				"at_root":                   []byte("a\nb"),
 				"ldap/ bad name":            []byte("a\nb"),
@@ -274,10 +274,10 @@ func TestLoadTarball(t *testing.T) {
 				"InvalidSystem/group-valid": []byte("a\nb"),
 			})
 			m, err := loadTarball(ctx, bytes.NewReader(bundle), "example.com", []string{"ldap", "InvalidSystem"}, []string{"ldap/group-a", "ldap/group-b", "InvalidSystem/group-valid"})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			aIdent, _ := identity.MakeIdentity("user:a@example.com")
 			bIdent, _ := identity.MakeIdentity("user:b@example.com")
-			So(m, ShouldResemble, map[string]GroupBundle{
+			assert.Loosely(t, m, should.Resemble(map[string]GroupBundle{
 				"ldap": {
 					"ldap/group-a": {
 						aIdent,
@@ -288,7 +288,7 @@ func TestLoadTarball(t *testing.T) {
 						bIdent,
 					},
 				},
-			})
+			}))
 		})
 	})
 }
@@ -296,7 +296,7 @@ func TestLoadTarball(t *testing.T) {
 func TestIngestTarball(t *testing.T) {
 	t.Parallel()
 
-	Convey("testing IngestTarball", t, func() {
+	ftt.Run("testing IngestTarball", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		ctx = clock.Set(ctx, testclock.New(testCreatedTS))
 		ctx = info.SetImageVersion(ctx, "test-version")
@@ -327,56 +327,60 @@ func TestIngestTarball(t *testing.T) {
 			"not-tst/group-a":    []byte("a\nb"),
 		})
 
-		Convey("not configured", func() {
+		t.Run("not configured", func(t *ftt.Test) {
 			_, _, err := IngestTarball(ctx, "test_groups.tar.gz", nil)
-			So(err, ShouldErrLike, ErrImporterNotConfigured)
+			assert.Loosely(t, err, should.ErrLike(ErrImporterNotConfigured))
 		})
 
-		Convey("with importer configuration set", func() {
+		t.Run("with importer configuration set", func(t *ftt.Test) {
 			// Set up imports config for the test cases below.
-			So(importscfg.SetConfig(ctx, testConfig), ShouldBeNil)
+			assert.Loosely(t, importscfg.SetConfig(ctx, testConfig), should.BeNil)
 
-			Convey("invalid tarball name", func() {
+			t.Run("invalid tarball name", func(t *ftt.Test) {
 				_, _, err := IngestTarball(ctx, "", nil)
-				So(err, ShouldErrLike, ErrInvalidTarballName, "empty")
+				assert.Loosely(t, err, should.ErrLike(ErrInvalidTarballName))
+				assert.Loosely(t, err, should.ErrLike("empty"))
 			})
-			Convey("unknown tarball", func() {
+			t.Run("unknown tarball", func(t *ftt.Test) {
 				_, _, err := IngestTarball(ctx, "zzz", nil)
-				So(err, ShouldErrLike, ErrInvalidTarballName, "not supported")
+				assert.Loosely(t, err, should.ErrLike(ErrInvalidTarballName))
+				assert.Loosely(t, err, should.ErrLike("not supported"))
 			})
-			Convey("unauthorized", func() {
+			t.Run("unauthorized", func(t *ftt.Test) {
 				ctx = auth.WithState(ctx, &authtest.FakeState{
 					Identity: "user:someone@example.com",
 				})
 				_, _, err := IngestTarball(ctx, "test_groups.tar.gz", bytes.NewReader(bundle))
-				So(err, ShouldErrLike, ErrUnauthorizedUploader, `"someone@example.com"`)
+				assert.Loosely(t, err, should.ErrLike(ErrUnauthorizedUploader))
+				assert.Loosely(t, err, should.ErrLike(`"someone@example.com"`))
 			})
-			Convey("invalid tarball data", func() {
+			t.Run("invalid tarball data", func(t *ftt.Test) {
 				ctx = auth.WithState(ctx, &authtest.FakeState{
 					Identity: "user:test-push-cron@system.example.com",
 				})
 				_, _, err := IngestTarball(ctx, "test_groups.tar.gz", bytes.NewReader(nil))
-				So(err, ShouldErrLike, ErrInvalidTarball, "EOF")
+				assert.Loosely(t, err, should.ErrLike(ErrInvalidTarball))
+				assert.Loosely(t, err, should.ErrLike("EOF"))
 			})
 
-			Convey("actually imports groups", func() {
+			t.Run("actually imports groups", func(t *ftt.Test) {
 				ctx = auth.WithState(ctx, &authtest.FakeState{
 					Identity: "user:test-push-cron@system.example.com",
 				})
 
 				g := makeAuthGroup(ctx, "administrators")
 				g.AuthVersionedEntityMixin = testAuthVersionedEntityMixin()
-				So(datastore.Put(ctx, g), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, g), should.BeNil)
 
 				updatedGroups, revision, err := IngestTarball(ctx, "test_groups.tar.gz", bytes.NewReader(bundle))
-				So(err, ShouldBeNil)
-				So(revision, ShouldEqual, 1)
-				So(updatedGroups, ShouldResemble, []string{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, revision, should.Equal(1))
+				assert.Loosely(t, updatedGroups, should.Resemble([]string{
 					"tst/group-a",
 					"tst/group-b",
 					"tst/group-c",
-				})
-				So(taskScheduler.Tasks(), ShouldHaveLength, 2)
+				}))
+				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(2))
 			})
 		})
 	})
@@ -385,7 +389,7 @@ func TestIngestTarball(t *testing.T) {
 func TestImportBundles(t *testing.T) {
 	t.Parallel()
 
-	Convey("Testing importBundles", t, func() {
+	ftt.Run("Testing importBundles", t, func(t *ftt.Test) {
 		// Set up craetor and modifier identities.
 		creator := "user:test-creator@example.com"
 		modifier := "user:test-modifier@example.com"
@@ -414,19 +418,20 @@ func TestImportBundles(t *testing.T) {
 		baseSlice := []string{"ext/group-a", "sys/group-a", "sys/group-b", "sys/group-c"}
 		baseGroupBundles := stringset.NewFromSlice(baseSlice...).ToSortedSlice()
 
-		Convey("aborts without AdminGroup", func() {
+		t.Run("aborts without AdminGroup", func(t *ftt.Test) {
 			updatedGroups, revision, err := importBundles(ctx, bundles, callerIdent, nil)
-			So(err, ShouldUnwrapTo, ErrInvalidReference)
-			So(err, ShouldErrLike, "aborting groups import", AdminGroup)
-			So(updatedGroups, ShouldBeEmpty)
-			So(revision, ShouldEqual, 0)
+			assert.Loosely(t, err, should.ErrLike(ErrInvalidReference))
+			assert.Loosely(t, err, should.ErrLike("aborting groups import"))
+			assert.Loosely(t, err, should.ErrLike(AdminGroup))
+			assert.Loosely(t, updatedGroups, should.BeEmpty)
+			assert.Loosely(t, revision, should.BeZero)
 		})
 
-		Convey("with AdminGroup", func() {
+		t.Run("with AdminGroup", func(t *ftt.Test) {
 			adminGroup := emptyAuthGroup(ctx, AdminGroup)
-			So(datastore.Put(ctx, adminGroup), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, adminGroup), should.BeNil)
 
-			Convey("Creating groups", func() {
+			t.Run("Creating groups", func(t *ftt.Test) {
 				// Define the expected groups that should be created.
 				// Note: for created groups, the last modifying action *is* the creation.
 				sGroupA := testExternalAuthGroup(ctx, "sys/group-a", modifier, []string{string(aIdent)}, testModifiedTS)
@@ -435,35 +440,35 @@ func TestImportBundles(t *testing.T) {
 				eGroupA := testExternalAuthGroup(ctx, "ext/group-a", modifier, []string{string(aIdent)}, testModifiedTS)
 
 				updatedGroups, revision, err := importBundles(ctx, bundles, callerIdent, nil)
-				So(err, ShouldBeNil)
-				So(updatedGroups, ShouldResemble, baseGroupBundles)
-				So(revision, ShouldEqual, 1)
-				So(taskScheduler.Tasks(), ShouldHaveLength, 2)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, updatedGroups, should.Resemble(baseGroupBundles))
+				assert.Loosely(t, revision, should.Equal(1))
+				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(2))
 
 				// Check each group was created as expected.
 				groupA, err := GetAuthGroup(ctx, sGroupA.ID)
-				So(err, ShouldBeNil)
-				So(groupA, ShouldResemble, sGroupA)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, groupA, should.Resemble(sGroupA))
 				groupB, err := GetAuthGroup(ctx, sGroupB.ID)
-				So(err, ShouldBeNil)
-				So(groupB, ShouldResemble, sGroupB)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, groupB, should.Resemble(sGroupB))
 				groupC, err := GetAuthGroup(ctx, sGroupC.ID)
-				So(err, ShouldBeNil)
-				So(groupC, ShouldResemble, sGroupC)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, groupC, should.Resemble(sGroupC))
 				groupAe, err := GetAuthGroup(ctx, eGroupA.ID)
-				So(err, ShouldBeNil)
-				So(groupAe, ShouldResemble, eGroupA)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, groupAe, should.Resemble(eGroupA))
 			})
 
-			Convey("Updating Groups", func() {
+			t.Run("Updating Groups", func(t *ftt.Test) {
 				// Set up datastore with the initial state of the external group.
 				g := testExternalAuthGroup(ctx, "sys/group-a", creator, []string{"user:b@example.com", "user:c@example.com"}, testCreatedTS)
-				So(datastore.Put(ctx, g, testAuthReplicationState(ctx, 1)), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, g, testAuthReplicationState(ctx, 1)), should.BeNil)
 
 				updatedGroups, revision, err := importBundles(ctx, bundles, callerIdent, nil)
-				So(err, ShouldBeNil)
-				So(updatedGroups, ShouldResemble, baseGroupBundles)
-				So(revision, ShouldEqual, 2)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, updatedGroups, should.Resemble(baseGroupBundles))
+				assert.Loosely(t, revision, should.Equal(2))
 
 				// Check the group was imported as expected.
 				sGroupA := testExternalAuthGroup(ctx, "sys/group-a", creator, []string{string(aIdent)}, testCreatedTS)
@@ -474,103 +479,103 @@ func TestImportBundles(t *testing.T) {
 					AuthDBPrevRev: 1,
 				}
 				actual, err := GetAuthGroup(ctx, sGroupA.ID)
-				So(err, ShouldBeNil)
-				So(actual, ShouldResemble, sGroupA)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, actual, should.Resemble(sGroupA))
 			})
 
-			Convey("Deleting Groups", func() {
+			t.Run("Deleting Groups", func(t *ftt.Test) {
 				// Set up datastore with the external group.
 				g := testExternalAuthGroup(ctx, "sys/group-d", creator, []string{"user:a@example.com"}, testCreatedTS)
-				So(datastore.Put(ctx, g, testAuthReplicationState(ctx, 1)), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, g, testAuthReplicationState(ctx, 1)), should.BeNil)
 
 				updatedGroups, revision, err := importBundles(ctx, bundles, callerIdent, nil)
-				So(err, ShouldBeNil)
-				So(updatedGroups, ShouldResemble, append(baseGroupBundles, "sys/group-d"))
-				So(revision, ShouldEqual, 2)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, updatedGroups, should.Resemble(append(baseGroupBundles, "sys/group-d")))
+				assert.Loosely(t, revision, should.Equal(2))
 
 				_, err = GetAuthGroup(ctx, g.ID)
-				So(err, ShouldErrLike, datastore.ErrNoSuchEntity)
+				assert.Loosely(t, err, should.ErrLike(datastore.ErrNoSuchEntity))
 			})
 
-			Convey("Clearing Groups", func() {
+			t.Run("Clearing Groups", func(t *ftt.Test) {
 				// Set up datastore with the external group and a group that references it as a subgroup.
 				g := testExternalAuthGroup(ctx, "sys/group-e", creator, []string{"user:a@example.com"}, testCreatedTS)
 				superGroup := testAuthGroup(ctx, "test-group")
 				superGroup.Nested = []string{"sys/group-e"}
-				So(datastore.Put(ctx, g, superGroup, testAuthReplicationState(ctx, 1)), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, g, superGroup, testAuthReplicationState(ctx, 1)), should.BeNil)
 
 				updatedGroups, revision, err := importBundles(ctx, bundles, callerIdent, nil)
-				So(err, ShouldBeNil)
-				So(updatedGroups, ShouldResemble, append(baseGroupBundles, "sys/group-e"))
-				So(revision, ShouldEqual, 2)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, updatedGroups, should.Resemble(append(baseGroupBundles, "sys/group-e")))
+				assert.Loosely(t, revision, should.Equal(2))
 
 				actual, err := GetAuthGroup(ctx, g.ID)
-				So(err, ShouldBeNil)
-				So(actual.Members, ShouldBeEmpty)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, actual.Members, should.BeEmpty)
 			})
 
-			Convey("Large groups", func() {
+			t.Run("Large groups", func(t *ftt.Test) {
 				bundle, groupsBundled := makeGroupBundle("test", 400)
 				updatedGroups, rev, err := importBundles(ctx, bundle, callerIdent, nil)
-				So(err, ShouldBeNil)
-				So(updatedGroups, ShouldResemble, groupsBundled)
-				So(rev, ShouldEqual, 2)
-				So(taskScheduler.Tasks(), ShouldHaveLength, 4)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, updatedGroups, should.Resemble(groupsBundled))
+				assert.Loosely(t, rev, should.Equal(2))
+				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(4))
 				groups, err := GetAllAuthGroups(ctx)
-				So(err, ShouldBeNil)
-				So(groups, ShouldHaveLength, 401)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, groups, should.HaveLength(401))
 			})
 
-			Convey("Revision changes in between transactions", func() {
+			t.Run("Revision changes in between transactions", func(t *ftt.Test) {
 				bundle, groupsBundled := makeGroupBundle("test", 500)
 				updatedGroups, rev, err := importBundles(ctx, bundle, callerIdent, func() {
-					So(datastore.Put(ctx, testAuthReplicationState(ctx, 3)), ShouldBeNil)
+					assert.Loosely(t, datastore.Put(ctx, testAuthReplicationState(ctx, 3)), should.BeNil)
 				})
-				So(err, ShouldBeNil)
-				So(updatedGroups, ShouldResemble, groupsBundled)
-				So(rev, ShouldEqual, 5)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, updatedGroups, should.Resemble(groupsBundled))
+				assert.Loosely(t, rev, should.Equal(5))
 			})
 
-			Convey("Large put Large delete", func() {
+			t.Run("Large put Large delete", func(t *ftt.Test) {
 				bundle, groupsBundledTest := makeGroupBundle("test", 1000)
 				updatedGroups, rev, err := importBundles(ctx, bundle, callerIdent, func() {})
-				So(err, ShouldBeNil)
-				So(updatedGroups, ShouldResemble, groupsBundledTest)
-				So(rev, ShouldEqual, 5)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, updatedGroups, should.Resemble(groupsBundledTest))
+				assert.Loosely(t, rev, should.Equal(5))
 				bundle, groupsBundled := makeGroupBundle("example", 400)
 				updatedGroups, rev, err = importBundles(ctx, bundle, callerIdent, func() {})
-				So(err, ShouldBeNil)
-				So(updatedGroups, ShouldResemble, groupsBundled)
-				So(rev, ShouldEqual, 7)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, updatedGroups, should.Resemble(groupsBundled))
+				assert.Loosely(t, rev, should.Equal(7))
 
 				bundle, groupsBundled = makeGroupBundle("tst", 500)
 				bundle["test"] = GroupBundle{}
 				groupsBundled = append(groupsBundled, groupsBundledTest...)
 				updatedGroups, rev, err = importBundles(ctx, bundle, callerIdent, func() {})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				sort.Strings(groupsBundled)
-				So(updatedGroups, ShouldResemble, groupsBundled)
-				So(rev, ShouldEqual, 15)
+				assert.Loosely(t, updatedGroups, should.Resemble(groupsBundled))
+				assert.Loosely(t, rev, should.Equal(15))
 			})
 
 			// The max number of create, update, or delete in one transaction
 			// is 500. For every entity we modify we attach a history entity
 			// in the code for importing we limit this to 200 so we can be
 			// under the limit by only touching 400 entities.
-			Convey("150 put 150 del", func() {
+			t.Run("150 put 150 del", func(t *ftt.Test) {
 				bundle, groupsBundledTest := makeGroupBundle("test", 150)
 				updatedGroups, rev, err := importBundles(ctx, bundle, callerIdent, func() {})
-				So(err, ShouldBeNil)
-				So(updatedGroups, ShouldResemble, groupsBundledTest)
-				So(rev, ShouldEqual, 1)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, updatedGroups, should.Resemble(groupsBundledTest))
+				assert.Loosely(t, rev, should.Equal(1))
 				bundle, groupsBundled := makeGroupBundle("tst", 150)
 				bundle["test"] = GroupBundle{}
 				groupsBundled = append(groupsBundled, groupsBundledTest...)
 				sort.Strings(groupsBundled)
 				updatedGroups, rev, err = importBundles(ctx, bundle, callerIdent, func() {})
-				So(err, ShouldBeNil)
-				So(updatedGroups, ShouldResemble, groupsBundled)
-				So(rev, ShouldEqual, 3)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, updatedGroups, should.Resemble(groupsBundled))
+				assert.Loosely(t, rev, should.Equal(3))
 			})
 		})
 	})

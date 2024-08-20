@@ -22,46 +22,47 @@ import (
 	"github.com/golang/mock/gomock"
 
 	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/server/auth/service/protocol"
 
 	"go.chromium.org/luci/auth_service/api/configspb"
 	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/settingscfg"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestGetPath(t *testing.T) {
 	t.Parallel()
 
-	Convey("GetPath works", t, func() {
+	ftt.Run("GetPath works", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 
-		Convey("error for no settings.cfg", func() {
+		t.Run("error for no settings.cfg", func(t *ftt.Test) {
 			_, err := GetPath(ctx)
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 		})
 
-		Convey("empty if not set in settings.cfg", func() {
+		t.Run("empty if not set in settings.cfg", func(t *ftt.Test) {
 			// Set up settings config.
 			cfg := &configspb.SettingsCfg{}
-			So(settingscfg.SetConfig(ctx, cfg), ShouldBeNil)
+			assert.Loosely(t, settingscfg.SetConfig(ctx, cfg), should.BeNil)
 
 			gsPath, err := GetPath(ctx)
-			So(err, ShouldBeNil)
-			So(gsPath, ShouldEqual, "")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, gsPath, should.BeEmpty)
 		})
 
-		Convey("allows for a single trailing slash", func() {
+		t.Run("allows for a single trailing slash", func(t *ftt.Test) {
 			// Set up settings config.
 			cfg := &configspb.SettingsCfg{
 				AuthDbGsPath: "chrome-infra-auth-test.appspot.com/auth-db//",
 			}
-			So(settingscfg.SetConfig(ctx, cfg), ShouldBeNil)
+			assert.Loosely(t, settingscfg.SetConfig(ctx, cfg), should.BeNil)
 
 			gsPath, err := GetPath(ctx)
-			So(err, ShouldBeNil)
-			So(gsPath, ShouldEqual, "chrome-infra-auth-test.appspot.com/auth-db/")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, gsPath, should.Equal("chrome-infra-auth-test.appspot.com/auth-db/"))
 		})
 	})
 }
@@ -69,17 +70,17 @@ func TestGetPath(t *testing.T) {
 func TestIsValidPath(t *testing.T) {
 	t.Parallel()
 
-	Convey("IsValidPath works", t, func() {
-		So(IsValidPath(""), ShouldBeFalse)
-		So(IsValidPath("path/to/bucket/trailing/slash/"), ShouldBeFalse)
-		So(IsValidPath("path/to/bucket"), ShouldBeTrue)
+	ftt.Run("IsValidPath works", t, func(t *ftt.Test) {
+		assert.Loosely(t, IsValidPath(""), should.BeFalse)
+		assert.Loosely(t, IsValidPath("path/to/bucket/trailing/slash/"), should.BeFalse)
+		assert.Loosely(t, IsValidPath("path/to/bucket"), should.BeTrue)
 	})
 }
 
 func TestUploadAuthDB(t *testing.T) {
 	t.Parallel()
 
-	Convey("Uploading to Google Storage works", t, func() {
+	ftt.Run("Uploading to Google Storage works", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		// Set up mock GS client
 		ctl := gomock.NewController(t)
@@ -93,19 +94,19 @@ func TestUploadAuthDB(t *testing.T) {
 		}
 		readers := stringset.NewFromSlice("someone@example.com", "a@b.com")
 
-		Convey("exits early if not configured", func() {
+		t.Run("exits early if not configured", func(t *ftt.Test) {
 			// Set up settings config with no GS path.
-			So(settingscfg.SetConfig(ctx, &configspb.SettingsCfg{}), ShouldBeNil)
+			assert.Loosely(t, settingscfg.SetConfig(ctx, &configspb.SettingsCfg{}), should.BeNil)
 			// There should be no client calls.
-			So(UploadAuthDB(ctx, signedAuthDB, rev, readers, false), ShouldBeNil)
+			assert.Loosely(t, UploadAuthDB(ctx, signedAuthDB, rev, readers, false), should.BeNil)
 		})
 
-		Convey("uploads AuthDB and revision", func() {
+		t.Run("uploads AuthDB and revision", func(t *ftt.Test) {
 			// Set up settings config.
 			cfg := &configspb.SettingsCfg{
 				AuthDbGsPath: "chrome-infra-auth-test.appspot.com/auth-db",
 			}
-			So(settingscfg.SetConfig(ctx, cfg), ShouldBeNil)
+			assert.Loosely(t, settingscfg.SetConfig(ctx, cfg), should.BeNil)
 
 			// Define expected client calls.
 			expectedACLs := []storage.ACLRule{
@@ -127,7 +128,7 @@ func TestUploadAuthDB(t *testing.T) {
 			mockClient.Client.EXPECT().Close().Times(1).After(dbWrite).After(revWrite)
 
 			// Upload the AuthDB to GS.
-			So(UploadAuthDB(ctx, signedAuthDB, rev, readers, false), ShouldBeNil)
+			assert.Loosely(t, UploadAuthDB(ctx, signedAuthDB, rev, readers, false), should.BeNil)
 		})
 	})
 }
@@ -135,7 +136,7 @@ func TestUploadAuthDB(t *testing.T) {
 func TestUpdateReaders(t *testing.T) {
 	t.Parallel()
 
-	Convey("Google Storage ACL updates work", t, func() {
+	ftt.Run("Google Storage ACL updates work", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		// Set up mock GS client
 		ctl := gomock.NewController(t)
@@ -143,19 +144,19 @@ func TestUpdateReaders(t *testing.T) {
 		ctx = mockClient.Ctx
 
 		readers := stringset.NewFromSlice("someone@example.com", "a@b.com")
-		Convey("exits early if not configured", func() {
+		t.Run("exits early if not configured", func(t *ftt.Test) {
 			// Set up settings config with no GS path.
-			So(settingscfg.SetConfig(ctx, &configspb.SettingsCfg{}), ShouldBeNil)
+			assert.Loosely(t, settingscfg.SetConfig(ctx, &configspb.SettingsCfg{}), should.BeNil)
 			// There should be no client calls.
-			So(UpdateReaders(ctx, readers), ShouldBeNil)
+			assert.Loosely(t, UpdateReaders(ctx, readers), should.BeNil)
 		})
 
-		Convey("updates both AuthDB and rev ACLs", func() {
+		t.Run("updates both AuthDB and rev ACLs", func(t *ftt.Test) {
 			// Set up settings config.
 			cfg := &configspb.SettingsCfg{
 				AuthDbGsPath: "chrome-infra-auth-test.appspot.com/auth-db",
 			}
-			So(settingscfg.SetConfig(ctx, cfg), ShouldBeNil)
+			assert.Loosely(t, settingscfg.SetConfig(ctx, cfg), should.BeNil)
 
 			// Define expected client calls.
 			dbUpdate := mockClient.Client.EXPECT().UpdateReadACL(gomock.Any(),
@@ -166,7 +167,7 @@ func TestUpdateReaders(t *testing.T) {
 				readers).Times(1)
 			mockClient.Client.EXPECT().Close().Times(1).After(dbUpdate).After(revUpdate)
 
-			So(UpdateReaders(ctx, readers), ShouldBeNil)
+			assert.Loosely(t, UpdateReaders(ctx, readers), should.BeNil)
 		})
 	})
 }

@@ -20,15 +20,15 @@ import (
 	"testing"
 
 	realmsconf "go.chromium.org/luci/common/proto/realms"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/gae/impl/memory"
 
 	"go.chromium.org/luci/auth_service/constants"
 	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/permissionscfg"
 	"go.chromium.org/luci/auth_service/testsupport"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 const (
@@ -128,32 +128,32 @@ const (
 func TestProjectRealmsCfgValidation(t *testing.T) {
 	t.Parallel()
 
-	Convey("Project realms config validation", t, func() {
+	ftt.Run("Project realms config validation", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
-		So(permissionscfg.SetConfigWithMetadata(
+		assert.Loosely(t, permissionscfg.SetConfigWithMetadata(
 			ctx, testsupport.PermissionsCfg(), testsupport.PermissionsCfgMeta(),
-		), ShouldBeNil)
+		), should.BeNil)
 
 		vCtx := &validation.Context{Context: ctx}
 		configSet := "projects/test-project"
 		path := "realms.cfg"
 
-		Convey("loading bad proto", func() {
+		t.Run("loading bad proto", func(t *ftt.Test) {
 			content := []byte(`bad: "config"`)
-			So(validateProjectRealmsCfg(vCtx, configSet, path, content), ShouldBeNil)
-			So(vCtx.Finalize(), ShouldNotBeNil)
+			assert.Loosely(t, validateProjectRealmsCfg(vCtx, configSet, path, content), should.BeNil)
+			assert.Loosely(t, vCtx.Finalize(), should.NotBeNil)
 		})
 
-		Convey("returns error for invalid config", func() {
+		t.Run("returns error for invalid config", func(t *ftt.Test) {
 			content := []byte(serviceRealmsCfgContent)
-			So(validateProjectRealmsCfg(vCtx, configSet, path, content), ShouldBeNil)
-			So(vCtx.Finalize(), ShouldNotBeNil)
+			assert.Loosely(t, validateProjectRealmsCfg(vCtx, configSet, path, content), should.BeNil)
+			assert.Loosely(t, vCtx.Finalize(), should.NotBeNil)
 		})
 
-		Convey("succeeds for valid config", func() {
+		t.Run("succeeds for valid config", func(t *ftt.Test) {
 			content := []byte(projectRealmsCfgContent)
-			So(validateProjectRealmsCfg(vCtx, configSet, path, content), ShouldBeNil)
-			So(vCtx.Finalize(), ShouldBeNil)
+			assert.Loosely(t, validateProjectRealmsCfg(vCtx, configSet, path, content), should.BeNil)
+			assert.Loosely(t, vCtx.Finalize(), should.BeNil)
 		})
 	})
 }
@@ -161,32 +161,32 @@ func TestProjectRealmsCfgValidation(t *testing.T) {
 func TestServiceRealmsCfgValidation(t *testing.T) {
 	t.Parallel()
 
-	Convey("Service realms config validation", t, func() {
+	ftt.Run("Service realms config validation", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
-		So(permissionscfg.SetConfigWithMetadata(
+		assert.Loosely(t, permissionscfg.SetConfigWithMetadata(
 			ctx, testsupport.PermissionsCfg(), testsupport.PermissionsCfgMeta(),
-		), ShouldBeNil)
+		), should.BeNil)
 
 		vCtx := &validation.Context{Context: ctx}
 		configSet := "services/test-app-id"
 		path := "realms.cfg"
 
-		Convey("loading bad proto", func() {
+		t.Run("loading bad proto", func(t *ftt.Test) {
 			content := []byte(`bad: "config"`)
-			So(validateServiceRealmsCfg(vCtx, configSet, path, content), ShouldBeNil)
-			So(vCtx.Finalize(), ShouldNotBeNil)
+			assert.Loosely(t, validateServiceRealmsCfg(vCtx, configSet, path, content), should.BeNil)
+			assert.Loosely(t, vCtx.Finalize(), should.NotBeNil)
 		})
 
-		Convey("returns error for invalid config", func() {
+		t.Run("returns error for invalid config", func(t *ftt.Test) {
 			content := []byte(`custom_roles {name: "role/missing-custom-prefix"}`)
-			So(validateServiceRealmsCfg(vCtx, configSet, path, content), ShouldBeNil)
-			So(vCtx.Finalize(), ShouldNotBeNil)
+			assert.Loosely(t, validateServiceRealmsCfg(vCtx, configSet, path, content), should.BeNil)
+			assert.Loosely(t, vCtx.Finalize(), should.NotBeNil)
 		})
 
-		Convey("succeeds for valid config", func() {
+		t.Run("succeeds for valid config", func(t *ftt.Test) {
 			content := []byte(serviceRealmsCfgContent)
-			So(validateServiceRealmsCfg(vCtx, configSet, path, content), ShouldBeNil)
-			So(vCtx.Finalize(), ShouldBeNil)
+			assert.Loosely(t, validateServiceRealmsCfg(vCtx, configSet, path, content), should.BeNil)
+			assert.Loosely(t, vCtx.Finalize(), should.BeNil)
 		})
 	})
 }
@@ -194,31 +194,31 @@ func TestServiceRealmsCfgValidation(t *testing.T) {
 func TestRealmsValidator(t *testing.T) {
 	t.Parallel()
 
-	Convey("Common realms config validation", t, func() {
+	ftt.Run("Common realms config validation", t, func(t *ftt.Test) {
 		vCtx := &validation.Context{Context: context.Background()}
 		validator := &realmsValidator{
 			db: testsupport.PermissionsDB(true),
 		}
 
-		Convey("empty config is valid", func() {
+		t.Run("empty config is valid", func(t *ftt.Test) {
 			testCfg := &realmsconf.RealmsCfg{}
 			validator.Validate(vCtx, testCfg)
-			So(vCtx.Finalize(), ShouldBeNil)
+			assert.Loosely(t, vCtx.Finalize(), should.BeNil)
 		})
 
-		Convey("custom roles are validated", func() {
-			Convey("must have correct prefix", func() {
+		t.Run("custom roles are validated", func(t *ftt.Test) {
+			t.Run("must have correct prefix", func(t *ftt.Test) {
 				testCfg := &realmsconf.RealmsCfg{
 					CustomRoles: []*realmsconf.CustomRole{
 						{Name: "role/notCustom"},
 					},
 				}
 				validator.Validate(vCtx, testCfg)
-				So(vCtx.Finalize(), ShouldErrLike,
-					fmt.Sprintf("role name should have prefix %q", constants.PrefixCustomRole))
+				assert.Loosely(t, vCtx.Finalize(), should.ErrLike(
+					fmt.Sprintf("role name should have prefix %q", constants.PrefixCustomRole)))
 			})
 
-			Convey("duplicate definitions", func() {
+			t.Run("duplicate definitions", func(t *ftt.Test) {
 				testCfg := &realmsconf.RealmsCfg{
 					CustomRoles: []*realmsconf.CustomRole{
 						{Name: "customRole/tester"},
@@ -226,50 +226,50 @@ func TestRealmsValidator(t *testing.T) {
 					},
 				}
 				validator.Validate(vCtx, testCfg)
-				So(vCtx.Finalize(), ShouldErrLike, "custom role already defined")
+				assert.Loosely(t, vCtx.Finalize(), should.ErrLike("custom role already defined"))
 			})
 
-			Convey("references unknown permission", func() {
+			t.Run("references unknown permission", func(t *ftt.Test) {
 				testCfg := &realmsconf.RealmsCfg{
 					CustomRoles: []*realmsconf.CustomRole{
 						{Name: "customRole/tester", Permissions: []string{"luci.dev.test"}},
 					},
 				}
 				validator.Validate(vCtx, testCfg)
-				So(vCtx.Finalize(), ShouldErrLike, "permission \"luci.dev.test\" is not defined")
+				assert.Loosely(t, vCtx.Finalize(), should.ErrLike("permission \"luci.dev.test\" is not defined"))
 			})
 
-			Convey("references unknown builtin role", func() {
+			t.Run("references unknown builtin role", func(t *ftt.Test) {
 				testCfg := &realmsconf.RealmsCfg{
 					CustomRoles: []*realmsconf.CustomRole{
 						{Name: "customRole/tester", Extends: []string{"role/dev.unknown"}},
 					},
 				}
 				validator.Validate(vCtx, testCfg)
-				So(vCtx.Finalize(), ShouldErrLike, "not defined in permissions DB")
+				assert.Loosely(t, vCtx.Finalize(), should.ErrLike("not defined in permissions DB"))
 			})
 
-			Convey("references unknown custom role", func() {
+			t.Run("references unknown custom role", func(t *ftt.Test) {
 				testCfg := &realmsconf.RealmsCfg{
 					CustomRoles: []*realmsconf.CustomRole{
 						{Name: "customRole/tester", Extends: []string{"customRole/unknown"}},
 					},
 				}
 				validator.Validate(vCtx, testCfg)
-				So(vCtx.Finalize(), ShouldErrLike, "not defined in the realms config")
+				assert.Loosely(t, vCtx.Finalize(), should.ErrLike("not defined in the realms config"))
 			})
 
-			Convey("uses unrecognized role format", func() {
+			t.Run("uses unrecognized role format", func(t *ftt.Test) {
 				testCfg := &realmsconf.RealmsCfg{
 					CustomRoles: []*realmsconf.CustomRole{
 						{Name: "customRole/tester", Extends: []string{"foo/unknown"}},
 					},
 				}
 				validator.Validate(vCtx, testCfg)
-				So(vCtx.Finalize(), ShouldErrLike, "bad role reference")
+				assert.Loosely(t, vCtx.Finalize(), should.ErrLike("bad role reference"))
 			})
 
-			Convey("duplicate extension of custom roles", func() {
+			t.Run("duplicate extension of custom roles", func(t *ftt.Test) {
 				testCfg := &realmsconf.RealmsCfg{
 					CustomRoles: []*realmsconf.CustomRole{
 						{
@@ -282,10 +282,10 @@ func TestRealmsValidator(t *testing.T) {
 					},
 				}
 				validator.Validate(vCtx, testCfg)
-				So(vCtx.Finalize(), ShouldErrLike, "in `extends` more than once")
+				assert.Loosely(t, vCtx.Finalize(), should.ErrLike("in `extends` more than once"))
 			})
 
-			Convey("cyclically extends itself", func() {
+			t.Run("cyclically extends itself", func(t *ftt.Test) {
 				testCfg := &realmsconf.RealmsCfg{
 					CustomRoles: []*realmsconf.CustomRole{
 						{
@@ -297,32 +297,32 @@ func TestRealmsValidator(t *testing.T) {
 					},
 				}
 				validator.Validate(vCtx, testCfg)
-				So(vCtx.Finalize(), ShouldErrLike, "cyclically extends itself")
+				assert.Loosely(t, vCtx.Finalize(), should.ErrLike("cyclically extends itself"))
 			})
 		})
 
-		Convey("realms are validated", func() {
-			Convey("unknown special realm name", func() {
+		t.Run("realms are validated", func(t *ftt.Test) {
+			t.Run("unknown special realm name", func(t *ftt.Test) {
 				testCfg := &realmsconf.RealmsCfg{
 					Realms: []*realmsconf.Realm{
 						{Name: "@notspecialenough"},
 					},
 				}
 				validator.Validate(vCtx, testCfg)
-				So(vCtx.Finalize(), ShouldErrLike, "unknown special realm name")
+				assert.Loosely(t, vCtx.Finalize(), should.ErrLike("unknown special realm name"))
 			})
 
-			Convey("invalid realm name", func() {
+			t.Run("invalid realm name", func(t *ftt.Test) {
 				testCfg := &realmsconf.RealmsCfg{
 					Realms: []*realmsconf.Realm{
 						{Name: "realmWithCapitals"},
 					},
 				}
 				validator.Validate(vCtx, testCfg)
-				So(vCtx.Finalize(), ShouldErrLike, "invalid realm name")
+				assert.Loosely(t, vCtx.Finalize(), should.ErrLike("invalid realm name"))
 			})
 
-			Convey("duplicate realm definitions", func() {
+			t.Run("duplicate realm definitions", func(t *ftt.Test) {
 				testCfg := &realmsconf.RealmsCfg{
 					Realms: []*realmsconf.Realm{
 						{Name: "some"},
@@ -330,10 +330,10 @@ func TestRealmsValidator(t *testing.T) {
 					},
 				}
 				validator.Validate(vCtx, testCfg)
-				So(vCtx.Finalize(), ShouldErrLike, "realm already defined")
+				assert.Loosely(t, vCtx.Finalize(), should.ErrLike("realm already defined"))
 			})
 
-			Convey("root realm extends", func() {
+			t.Run("root realm extends", func(t *ftt.Test) {
 				testCfg := &realmsconf.RealmsCfg{
 					Realms: []*realmsconf.Realm{
 						{Name: "some"},
@@ -341,20 +341,20 @@ func TestRealmsValidator(t *testing.T) {
 					},
 				}
 				validator.Validate(vCtx, testCfg)
-				So(vCtx.Finalize(), ShouldErrLike, "root realm must not use `extends`")
+				assert.Loosely(t, vCtx.Finalize(), should.ErrLike("root realm must not use `extends`"))
 			})
 
-			Convey("extends unknown realm", func() {
+			t.Run("extends unknown realm", func(t *ftt.Test) {
 				testCfg := &realmsconf.RealmsCfg{
 					Realms: []*realmsconf.Realm{
 						{Name: "some", Extends: []string{"unknown"}},
 					},
 				}
 				validator.Validate(vCtx, testCfg)
-				So(vCtx.Finalize(), ShouldErrLike, "referencing an undefined realm")
+				assert.Loosely(t, vCtx.Finalize(), should.ErrLike("referencing an undefined realm"))
 			})
 
-			Convey("extends duplicate realm", func() {
+			t.Run("extends duplicate realm", func(t *ftt.Test) {
 				testCfg := &realmsconf.RealmsCfg{
 					Realms: []*realmsconf.Realm{
 						{Name: "base"},
@@ -362,10 +362,10 @@ func TestRealmsValidator(t *testing.T) {
 					},
 				}
 				validator.Validate(vCtx, testCfg)
-				So(vCtx.Finalize(), ShouldErrLike, "specified in `extends` more than once")
+				assert.Loosely(t, vCtx.Finalize(), should.ErrLike("specified in `extends` more than once"))
 			})
 
-			Convey("cyclically extends itself", func() {
+			t.Run("cyclically extends itself", func(t *ftt.Test) {
 				testCfg := &realmsconf.RealmsCfg{
 					Realms: []*realmsconf.Realm{
 						{Name: "a", Extends: []string{"b"}},
@@ -373,11 +373,11 @@ func TestRealmsValidator(t *testing.T) {
 					},
 				}
 				validator.Validate(vCtx, testCfg)
-				So(vCtx.Finalize(), ShouldErrLike, "cyclically extends itself")
+				assert.Loosely(t, vCtx.Finalize(), should.ErrLike("cyclically extends itself"))
 			})
 
-			Convey("realm bindings are validated", func() {
-				Convey("references unknown custom role", func() {
+			t.Run("realm bindings are validated", func(t *ftt.Test) {
+				t.Run("references unknown custom role", func(t *ftt.Test) {
 					testCfg := &realmsconf.RealmsCfg{
 						Realms: []*realmsconf.Realm{{
 							Name: "realm",
@@ -387,10 +387,10 @@ func TestRealmsValidator(t *testing.T) {
 						}},
 					}
 					validator.Validate(vCtx, testCfg)
-					So(vCtx.Finalize(), ShouldErrLike, "not defined in the realms config")
+					assert.Loosely(t, vCtx.Finalize(), should.ErrLike("not defined in the realms config"))
 				})
 
-				Convey("has invalid group name", func() {
+				t.Run("has invalid group name", func(t *ftt.Test) {
 					testCfg := &realmsconf.RealmsCfg{
 						Realms: []*realmsconf.Realm{{
 							Name: "realm",
@@ -401,10 +401,10 @@ func TestRealmsValidator(t *testing.T) {
 						}},
 					}
 					validator.Validate(vCtx, testCfg)
-					So(vCtx.Finalize(), ShouldErrLike, "invalid group name")
+					assert.Loosely(t, vCtx.Finalize(), should.ErrLike("invalid group name"))
 				})
 
-				Convey("has invalid principal format", func() {
+				t.Run("has invalid principal format", func(t *ftt.Test) {
 					testCfg := &realmsconf.RealmsCfg{
 						Realms: []*realmsconf.Realm{{
 							Name: "realm",
@@ -415,10 +415,10 @@ func TestRealmsValidator(t *testing.T) {
 						}},
 					}
 					validator.Validate(vCtx, testCfg)
-					So(vCtx.Finalize(), ShouldErrLike, "invalid principal format")
+					assert.Loosely(t, vCtx.Finalize(), should.ErrLike("invalid principal format"))
 				})
 
-				Convey("references unknown attribute", func() {
+				t.Run("references unknown attribute", func(t *ftt.Test) {
 					testCfg := &realmsconf.RealmsCfg{
 						Realms: []*realmsconf.Realm{{
 							Name: "realm",
@@ -436,12 +436,12 @@ func TestRealmsValidator(t *testing.T) {
 						}},
 					}
 					validator.Validate(vCtx, testCfg)
-					So(vCtx.Finalize(), ShouldErrLike, "unknown attribute")
+					assert.Loosely(t, vCtx.Finalize(), should.ErrLike("unknown attribute"))
 				})
 			})
 		})
 
-		Convey("complex valid config succeeds", func() {
+		t.Run("complex valid config succeeds", func(t *ftt.Test) {
 			testCfg := &realmsconf.RealmsCfg{
 				CustomRoles: []*realmsconf.CustomRole{
 					{
@@ -521,28 +521,28 @@ func TestRealmsValidator(t *testing.T) {
 				},
 			}
 			validator.Validate(vCtx, testCfg)
-			So(vCtx.Finalize(), ShouldBeNil)
+			assert.Loosely(t, vCtx.Finalize(), should.BeNil)
 		})
 	})
 
-	Convey("Internal references not allowed", t, func() {
+	ftt.Run("Internal references not allowed", t, func(t *ftt.Test) {
 		vCtx := &validation.Context{Context: context.Background()}
 		validator := &realmsValidator{
 			db:            testsupport.PermissionsDB(true),
 			allowInternal: false,
 		}
 
-		Convey("references internal permission", func() {
+		t.Run("references internal permission", func(t *ftt.Test) {
 			testCfg := &realmsconf.RealmsCfg{
 				CustomRoles: []*realmsconf.CustomRole{
 					{Name: "customRole/tester", Permissions: []string{"luci.dev.implicitRoot"}},
 				},
 			}
 			validator.Validate(vCtx, testCfg)
-			So(vCtx.Finalize(), ShouldErrLike, "is internal")
+			assert.Loosely(t, vCtx.Finalize(), should.ErrLike("is internal"))
 		})
 
-		Convey("references internal role", func() {
+		t.Run("references internal role", func(t *ftt.Test) {
 			testCfg := &realmsconf.RealmsCfg{
 				Realms: []*realmsconf.Realm{{
 					Name: "realm",
@@ -552,28 +552,28 @@ func TestRealmsValidator(t *testing.T) {
 				}},
 			}
 			validator.Validate(vCtx, testCfg)
-			So(vCtx.Finalize(), ShouldErrLike, "is internal")
+			assert.Loosely(t, vCtx.Finalize(), should.ErrLike("is internal"))
 		})
 	})
 
-	Convey("Internal references allowed", t, func() {
+	ftt.Run("Internal references allowed", t, func(t *ftt.Test) {
 		vCtx := &validation.Context{Context: context.Background()}
 		validator := &realmsValidator{
 			db:            testsupport.PermissionsDB(true),
 			allowInternal: true,
 		}
 
-		Convey("references internal permission", func() {
+		t.Run("references internal permission", func(t *ftt.Test) {
 			testCfg := &realmsconf.RealmsCfg{
 				CustomRoles: []*realmsconf.CustomRole{
 					{Name: "customRole/tester", Permissions: []string{"luci.dev.implicitRoot"}},
 				},
 			}
 			validator.Validate(vCtx, testCfg)
-			So(vCtx.Finalize(), ShouldBeNil)
+			assert.Loosely(t, vCtx.Finalize(), should.BeNil)
 		})
 
-		Convey("references internal role", func() {
+		t.Run("references internal role", func(t *ftt.Test) {
 			testCfg := &realmsconf.RealmsCfg{
 				Realms: []*realmsconf.Realm{{
 					Name: "realm",
@@ -583,7 +583,7 @@ func TestRealmsValidator(t *testing.T) {
 				}},
 			}
 			validator.Validate(vCtx, testCfg)
-			So(vCtx.Finalize(), ShouldBeNil)
+			assert.Loosely(t, vCtx.Finalize(), should.BeNil)
 		})
 	})
 }
@@ -591,57 +591,57 @@ func TestRealmsValidator(t *testing.T) {
 func TestFindCycle(t *testing.T) {
 	t.Parallel()
 
-	Convey("Invalid start node", t, func() {
+	ftt.Run("Invalid start node", t, func(t *ftt.Test) {
 		graph := map[string][]string{
 			"A": {},
 		}
 		_, err := findCycle("B", graph)
-		So(err, ShouldErrLike, "unrecognized")
+		assert.Loosely(t, err, should.ErrLike("unrecognized"))
 	})
 
-	Convey("No cycles", t, func() {
+	ftt.Run("No cycles", t, func(t *ftt.Test) {
 		graph := map[string][]string{
 			"A": {"B", "C"},
 			"B": {"C"},
 			"C": {},
 		}
 		cycle, err := findCycle("A", graph)
-		So(err, ShouldBeNil)
-		So(cycle, ShouldBeEmpty)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, cycle, should.BeEmpty)
 	})
 
-	Convey("Trivial cycle", t, func() {
+	ftt.Run("Trivial cycle", t, func(t *ftt.Test) {
 		graph := map[string][]string{
 			"A": {"A"},
 		}
 		cycle, err := findCycle("A", graph)
-		So(err, ShouldBeNil)
-		So(cycle, ShouldEqual, []string{"A", "A"})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, cycle, should.Resemble([]string{"A", "A"}))
 	})
 
-	Convey("Loop", t, func() {
+	ftt.Run("Loop", t, func(t *ftt.Test) {
 		graph := map[string][]string{
 			"A": {"B"},
 			"B": {"C"},
 			"C": {"A"},
 		}
 		cycle, err := findCycle("A", graph)
-		So(err, ShouldBeNil)
-		So(cycle, ShouldEqual, []string{"A", "B", "C", "A"})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, cycle, should.Resemble([]string{"A", "B", "C", "A"}))
 	})
 
-	Convey("Irrelevant cycle", t, func() {
+	ftt.Run("Irrelevant cycle", t, func(t *ftt.Test) {
 		graph := map[string][]string{
 			"A": {"B"},
 			"B": {"C"},
 			"C": {"B"},
 		}
 		cycle, err := findCycle("A", graph)
-		So(err, ShouldBeNil)
-		So(cycle, ShouldBeEmpty)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, cycle, should.BeEmpty)
 	})
 
-	Convey("Only one relevant cycle", t, func() {
+	ftt.Run("Only one relevant cycle", t, func(t *ftt.Test) {
 		graph := map[string][]string{
 			"A": {"B"},
 			"B": {"C"},
@@ -649,11 +649,11 @@ func TestFindCycle(t *testing.T) {
 			"D": {"B", "C", "A"},
 		}
 		cycle, err := findCycle("A", graph)
-		So(err, ShouldBeNil)
-		So(cycle, ShouldEqual, []string{"A", "B", "C", "D", "A"})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, cycle, should.Resemble([]string{"A", "B", "C", "D", "A"}))
 	})
 
-	Convey("Diamond with no cycles", t, func() {
+	ftt.Run("Diamond with no cycles", t, func(t *ftt.Test) {
 		graph := map[string][]string{
 			"A":  {"B1", "B2"},
 			"B1": {"C"},
@@ -661,11 +661,11 @@ func TestFindCycle(t *testing.T) {
 			"C":  {},
 		}
 		cycle, err := findCycle("A", graph)
-		So(err, ShouldBeNil)
-		So(cycle, ShouldBeEmpty)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, cycle, should.BeEmpty)
 	})
 
-	Convey("Diamond with cycles", t, func() {
+	ftt.Run("Diamond with cycles", t, func(t *ftt.Test) {
 		graph := map[string][]string{
 			"A":  {"B2", "B1"},
 			"B1": {"C"},
@@ -673,9 +673,9 @@ func TestFindCycle(t *testing.T) {
 			"C":  {"A"},
 		}
 		cycle, err := findCycle("A", graph)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		// Note: this graph has two cycles, but the slice order dictates
 		// the exploration order.
-		So(cycle, ShouldEqual, []string{"A", "B2", "C", "A"})
+		assert.Loosely(t, cycle, should.Resemble([]string{"A", "B2", "C", "A"}))
 	})
 }

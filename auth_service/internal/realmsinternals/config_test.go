@@ -19,14 +19,14 @@ import (
 	"testing"
 
 	realmsconf "go.chromium.org/luci/common/proto/realms"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/server/auth/service/protocol"
 
 	"go.chromium.org/luci/auth_service/testsupport"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestRealmsExpansion(t *testing.T) {
@@ -51,10 +51,10 @@ func TestRealmsExpansion(t *testing.T) {
 		}
 	}
 
-	Convey("ExpandRealms works", t, func() {
+	ftt.Run("ExpandRealms works", t, func(t *ftt.Test) {
 		ctx := context.Background()
 
-		Convey("completely empty", func() {
+		t.Run("completely empty", func(t *ftt.Test) {
 			permDB := testsupport.PermissionsDB(false)
 			actualRealms, err := ExpandRealms(ctx, permDB, "p", nil)
 
@@ -65,21 +65,21 @@ func TestRealmsExpansion(t *testing.T) {
 					},
 				},
 			}
-			So(err, ShouldBeNil)
-			So(actualRealms, ShouldResembleProto, expectedRealms)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actualRealms, should.Resemble(expectedRealms))
 		})
 
-		Convey("invalid project config", func() {
+		t.Run("invalid project config", func(t *ftt.Test) {
 			permDB := testsupport.PermissionsDB(false)
 			_, err := ExpandRealms(ctx, permDB, "p", &realmsconf.RealmsCfg{
 				CustomRoles: []*realmsconf.CustomRole{
 					{Name: "role/notPrefixedCorrectly"},
 				},
 			})
-			So(err, ShouldErrLike, "invalid realms config")
+			assert.Loosely(t, err, should.ErrLike("invalid realms config"))
 		})
 
-		Convey("empty realm", func() {
+		t.Run("empty realm", func(t *ftt.Test) {
 			permDB := testsupport.PermissionsDB(false)
 			actualRealms, err := ExpandRealms(ctx, permDB, "p", &realmsconf.RealmsCfg{
 				Realms: []*realmsconf.Realm{
@@ -105,11 +105,11 @@ func TestRealmsExpansion(t *testing.T) {
 					},
 				},
 			}
-			So(err, ShouldBeNil)
-			So(actualRealms, ShouldResembleProto, expectedRealms)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actualRealms, should.Resemble(expectedRealms))
 		})
 
-		Convey("simple bindings", func() {
+		t.Run("simple bindings", func(t *ftt.Test) {
 			permDB := testsupport.PermissionsDB(false)
 			actualRealms, err := ExpandRealms(ctx, permDB, "p", &realmsconf.RealmsCfg{
 				Realms: []*realmsconf.Realm{
@@ -153,11 +153,11 @@ func TestRealmsExpansion(t *testing.T) {
 					},
 				},
 			}
-			So(err, ShouldBeNil)
-			So(actualRealms, ShouldResembleProto, expectedRealms)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actualRealms, should.Resemble(expectedRealms))
 		})
 
-		Convey("simple bindings with conditions", func() {
+		t.Run("simple bindings with conditions", func(t *ftt.Test) {
 			permDB := testsupport.PermissionsDB(false)
 			actualRealms, err := ExpandRealms(ctx, permDB, "p", &realmsconf.RealmsCfg{
 				Realms: []*realmsconf.Realm{
@@ -239,11 +239,11 @@ func TestRealmsExpansion(t *testing.T) {
 					},
 				},
 			}
-			So(err, ShouldBeNil)
-			So(actualRealms, ShouldResembleProto, expectedRealms)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actualRealms, should.Resemble(expectedRealms))
 		})
 
-		Convey("custom root", func() {
+		t.Run("custom root", func(t *ftt.Test) {
 			permDB := testsupport.PermissionsDB(false)
 			actualRealms, err := ExpandRealms(ctx, permDB, "p", &realmsconf.RealmsCfg{
 				Realms: []*realmsconf.Realm{
@@ -298,11 +298,11 @@ func TestRealmsExpansion(t *testing.T) {
 					},
 				},
 			}
-			So(err, ShouldBeNil)
-			So(actualRealms, ShouldResembleProto, expectedRealms)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actualRealms, should.Resemble(expectedRealms))
 		})
 
-		Convey("realm inheritance", func() {
+		t.Run("realm inheritance", func(t *ftt.Test) {
 			permDB := testsupport.PermissionsDB(false)
 			actualRealms, err := ExpandRealms(ctx, permDB, "p", &realmsconf.RealmsCfg{
 				Realms: []*realmsconf.Realm{
@@ -379,11 +379,11 @@ func TestRealmsExpansion(t *testing.T) {
 					},
 				},
 			}
-			So(err, ShouldBeNil)
-			So(actualRealms, ShouldResembleProto, expectedRealms)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actualRealms, should.Resemble(expectedRealms))
 		})
 
-		Convey("realm inheritance with conditions", func() {
+		t.Run("realm inheritance with conditions", func(t *ftt.Test) {
 			permDB := testsupport.PermissionsDB(false)
 			actualRealms, err := ExpandRealms(ctx, permDB, "p", &realmsconf.RealmsCfg{
 				Realms: []*realmsconf.Realm{
@@ -493,11 +493,11 @@ func TestRealmsExpansion(t *testing.T) {
 					},
 				},
 			}
-			So(err, ShouldBeNil)
-			So(actualRealms, ShouldResembleProto, expectedRealms)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actualRealms, should.Resemble(expectedRealms))
 		})
 
-		Convey("custom roles", func() {
+		t.Run("custom roles", func(t *ftt.Test) {
 			permDB := testsupport.PermissionsDB(false)
 			actualRealms, err := ExpandRealms(ctx, permDB, "p", &realmsconf.RealmsCfg{
 				CustomRoles: []*realmsconf.CustomRole{
@@ -558,11 +558,11 @@ func TestRealmsExpansion(t *testing.T) {
 					},
 				},
 			}
-			So(err, ShouldBeNil)
-			So(actualRealms, ShouldResembleProto, expectedRealms)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actualRealms, should.Resemble(expectedRealms))
 		})
 
-		Convey("implicit root bindings with no root", func() {
+		t.Run("implicit root bindings with no root", func(t *ftt.Test) {
 			permDB := testsupport.PermissionsDB(true)
 			actualRealms, err := ExpandRealms(ctx, permDB, "p", &realmsconf.RealmsCfg{
 				Realms: []*realmsconf.Realm{
@@ -627,11 +627,11 @@ func TestRealmsExpansion(t *testing.T) {
 				},
 			}
 
-			So(err, ShouldBeNil)
-			So(actualRealms, ShouldResembleProto, expectedRealms)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actualRealms, should.Resemble(expectedRealms))
 		})
 
-		Convey("implicit root bindings with root", func() {
+		t.Run("implicit root bindings with root", func(t *ftt.Test) {
 			permDB := testsupport.PermissionsDB(true)
 			actualRealms, err := ExpandRealms(ctx, permDB, "p", &realmsconf.RealmsCfg{
 				Realms: []*realmsconf.Realm{
@@ -726,11 +726,11 @@ func TestRealmsExpansion(t *testing.T) {
 				},
 			}
 
-			So(err, ShouldBeNil)
-			So(actualRealms, ShouldResembleProto, expectedRealms)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actualRealms, should.Resemble(expectedRealms))
 		})
 
-		Convey("implicit root bindings in internal", func() {
+		t.Run("implicit root bindings in internal", func(t *ftt.Test) {
 			permDB := testsupport.PermissionsDB(true)
 			actualRealms, err := ExpandRealms(ctx, permDB, "@internal", &realmsconf.RealmsCfg{
 				Realms: []*realmsconf.Realm{
@@ -764,11 +764,11 @@ func TestRealmsExpansion(t *testing.T) {
 				},
 			}
 
-			So(err, ShouldBeNil)
-			So(actualRealms, ShouldResembleProto, expectedRealms)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actualRealms, should.Resemble(expectedRealms))
 		})
 
-		Convey("enforce in service", func() {
+		t.Run("enforce in service", func(t *ftt.Test) {
 			permDB := testsupport.PermissionsDB(false)
 			actualRealms, err := ExpandRealms(ctx, permDB, "p", &realmsconf.RealmsCfg{
 				Realms: []*realmsconf.Realm{
@@ -829,8 +829,8 @@ func TestRealmsExpansion(t *testing.T) {
 					},
 				},
 			}
-			So(err, ShouldBeNil)
-			So(actualRealms, ShouldResembleProto, expectedRealms)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actualRealms, should.Resemble(expectedRealms))
 		})
 	})
 }
@@ -838,14 +838,14 @@ func TestRealmsExpansion(t *testing.T) {
 func TestFetchLatestRealmsConfigs(t *testing.T) {
 	t.Parallel()
 
-	Convey("fetching works", t, func() {
+	ftt.Run("fetching works", t, func(t *ftt.Test) {
 		testConfigClient := &testsupport.FakeConfigClient{}
 		ctx := memory.Use(context.Background())
 		ctx = cfgclient.Use(ctx, testConfigClient)
 
 		latestConfigs, err := FetchLatestRealmsConfigs(ctx)
-		So(err, ShouldBeNil)
-		So(latestConfigs, ShouldResemble,
-			testConfigClient.GetExpectedConfigsForTest(ctx))
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, latestConfigs, should.Resemble(
+			testConfigClient.GetExpectedConfigsForTest(ctx)))
 	})
 }

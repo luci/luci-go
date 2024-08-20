@@ -17,50 +17,52 @@ package graph
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestSubgraphOperations(t *testing.T) {
 	t.Parallel()
 
-	Convey("Testing addNode", t, func() {
+	ftt.Run("Testing addNode", t, func(t *ftt.Test) {
 		subgraph := &Subgraph{
 			Nodes:     []*SubgraphNode{},
 			nodesToID: map[NodeKey]int32{},
 		}
 
-		Convey("Testing adding group.", func() {
+		t.Run("Testing adding group.", func(t *ftt.Test) {
 			testGroup := "test-group"
 			nodeID, placed := subgraph.addNode(Group, testGroup)
-			So(nodeID, ShouldEqual, 0)
-			So(placed, ShouldBeTrue)
+			assert.Loosely(t, nodeID, should.BeZero)
+			assert.Loosely(t, placed, should.BeTrue)
 		})
 
-		Convey("Testing adding user.", func() {
+		t.Run("Testing adding user.", func(t *ftt.Test) {
 			testUser := "user:m1@example.com"
 			nodeID, placed := subgraph.addNode(Identity, testUser)
-			So(nodeID, ShouldEqual, 0)
-			So(placed, ShouldBeTrue)
+			assert.Loosely(t, nodeID, should.BeZero)
+			assert.Loosely(t, placed, should.BeTrue)
 		})
 
-		Convey("Testing adding glob.", func() {
+		t.Run("Testing adding glob.", func(t *ftt.Test) {
 			testGlob := "user:*@example.com"
 			nodeID, placed := subgraph.addNode(Glob, testGlob)
-			So(nodeID, ShouldEqual, 0)
-			So(placed, ShouldBeTrue)
+			assert.Loosely(t, nodeID, should.BeZero)
+			assert.Loosely(t, placed, should.BeTrue)
 		})
 
-		Convey("Testing adding same node.", func() {
+		t.Run("Testing adding same node.", func(t *ftt.Test) {
 			testGroup := "test-group"
 			nodeID, placed := subgraph.addNode(Group, testGroup)
-			So(nodeID, ShouldEqual, 0)
-			So(placed, ShouldBeTrue)
+			assert.Loosely(t, nodeID, should.BeZero)
+			assert.Loosely(t, placed, should.BeTrue)
 			nodeID, placed = subgraph.addNode(Group, testGroup)
-			So(nodeID, ShouldEqual, 0)
-			So(placed, ShouldBeFalse)
+			assert.Loosely(t, nodeID, should.BeZero)
+			assert.Loosely(t, placed, should.BeFalse)
 		})
 
-		Convey("Testing key for nodesToID.", func() {
+		t.Run("Testing key for nodesToID.", func(t *ftt.Test) {
 			testGroup := "test-group"
 			testGlob := "user:*@example.com"
 			testUser := "user:m1@example.com"
@@ -74,12 +76,12 @@ func TestSubgraphOperations(t *testing.T) {
 				{Identity, testUser}: 2,
 			}
 
-			So(subgraph.nodesToID, ShouldResemble, expectedNodeMap)
+			assert.Loosely(t, subgraph.nodesToID, should.Resemble(expectedNodeMap))
 		})
 
 	})
 
-	Convey("Testing addEdge", t, func() {
+	ftt.Run("Testing addEdge", t, func(t *ftt.Test) {
 		testGlob := "user:*@example.com"
 		testGroup0 := "test-group-0"
 		testUser := "user:m1@example.com"
@@ -121,7 +123,7 @@ func TestSubgraphOperations(t *testing.T) {
 			},
 		}
 
-		Convey("Testing basic edge adding.", func() {
+		t.Run("Testing basic edge adding.", func(t *ftt.Test) {
 			subgraph.addEdge(0, 1)
 			subgraph.addEdge(2, 1)
 
@@ -161,11 +163,11 @@ func TestSubgraphOperations(t *testing.T) {
 					},
 				},
 			}
-			So(subgraph.Nodes, ShouldResemble, expectedSubgraph.Nodes)
+			assert.Loosely(t, subgraph.Nodes, should.Resemble(expectedSubgraph.Nodes))
 		})
 
 		// Make sure that the order that of the edges stays consistent and is predictable.
-		Convey("Testing stability.", func() {
+		t.Run("Testing stability.", func(t *ftt.Test) {
 			subgraph.addEdge(0, 4)
 			subgraph.addEdge(0, 2)
 			subgraph.addEdge(0, 3)
@@ -209,7 +211,7 @@ func TestSubgraphOperations(t *testing.T) {
 					},
 				},
 			}
-			So(subgraph.Nodes, ShouldResemble, expectedSubgraph.Nodes)
+			assert.Loosely(t, subgraph.Nodes, should.Resemble(expectedSubgraph.Nodes))
 		})
 	})
 }

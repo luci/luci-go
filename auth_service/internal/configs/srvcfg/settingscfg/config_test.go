@@ -18,12 +18,12 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 
 	"go.chromium.org/luci/auth_service/api/configspb"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestConfigContext(t *testing.T) {
@@ -35,15 +35,15 @@ func TestConfigContext(t *testing.T) {
 		AuthDbGsPath:       "chrome-infra-auth-test.appspot.com/auth-db",
 	}
 
-	Convey("Getting without setting fails", t, func() {
+	ftt.Run("Getting without setting fails", t, func(t *ftt.Test) {
 		_, err := Get(ctx)
-		So(err, ShouldNotBeNil)
+		assert.Loosely(t, err, should.NotBeNil)
 	})
 
-	Convey("Testing basic config operations", t, func() {
-		So(SetConfig(ctx, settingsCfg), ShouldBeNil)
+	ftt.Run("Testing basic config operations", t, func(t *ftt.Test) {
+		assert.Loosely(t, SetConfig(ctx, settingsCfg), should.BeNil)
 		cfgFromGet, err := Get(ctx)
-		So(err, ShouldBeNil)
-		So(cfgFromGet, ShouldResembleProto, settingsCfg)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, cfgFromGet, should.Resemble(settingsCfg))
 	})
 }

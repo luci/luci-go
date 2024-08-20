@@ -28,14 +28,17 @@ import (
 
 	"go.chromium.org/luci/auth_service/api/internalspb"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestInternalsServer(t *testing.T) {
 	t.Parallel()
 
-	Convey("With server", t, func() {
+	ftt.Run("With server", t, func(t *ftt.Test) {
 		ctx := secrets.Use(context.Background(), &testsecrets.Store{})
 		ctx = auth.WithState(ctx, &authtest.FakeState{
 			Identity: "user:someone@example.com",
@@ -43,23 +46,23 @@ func TestInternalsServer(t *testing.T) {
 
 		srv := Server{}
 
-		Convey("RefreshXSRFToken: OK", func() {
+		t.Run("RefreshXSRFToken: OK", func(t *ftt.Test) {
 			goodTok, err := xsrf.Token(ctx)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			resp, err := srv.RefreshXSRFToken(ctx, &internalspb.RefreshXSRFTokenRequest{
 				XsrfToken: goodTok,
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(xsrf.Check(ctx, resp.XsrfToken), ShouldBeNil)
+			assert.Loosely(t, xsrf.Check(ctx, resp.XsrfToken), should.BeNil)
 		})
 
-		Convey("RefreshXSRFToken: bad token", func() {
+		t.Run("RefreshXSRFToken: bad token", func(t *ftt.Test) {
 			_, err := srv.RefreshXSRFToken(ctx, &internalspb.RefreshXSRFTokenRequest{
 				XsrfToken: "bad token",
 			})
-			So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
 		})
 	})
 }

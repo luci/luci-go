@@ -19,14 +19,14 @@ import (
 	"fmt"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth/service/protocol"
 
 	"go.chromium.org/luci/auth_service/internal/permissions"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestTakeSnapshot(t *testing.T) {
@@ -34,11 +34,11 @@ func TestTakeSnapshot(t *testing.T) {
 
 	const testAuthDBRev = 12345
 
-	Convey("Testing TakeSnapshot", t, func() {
+	ftt.Run("Testing TakeSnapshot", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 
 		_, err := TakeSnapshot(ctx)
-		So(err, ShouldEqual, datastore.ErrNoSuchEntity)
+		assert.Loosely(t, err, should.Equal(datastore.ErrNoSuchEntity))
 
 		realmsGlobals := testAuthRealmsGlobals(ctx)
 		perms := makeTestPermissions("luci.dev.p1", "luci.dev.p2")
@@ -62,7 +62,7 @@ func TestTakeSnapshot(t *testing.T) {
 				},
 			},
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		projectRealms2 := testAuthProjectRealms(ctx, "project-2")
 		projectRealms2.Realms, err = ToStorableRealms(&protocol.Realms{
 			Permissions: makeTestPermissions("luci.dev.p1"),
@@ -80,8 +80,8 @@ func TestTakeSnapshot(t *testing.T) {
 				},
 			},
 		})
-		So(err, ShouldBeNil)
-		So(datastore.Put(ctx,
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, datastore.Put(ctx,
 			testAuthReplicationState(ctx, testAuthDBRev),
 			testAuthGlobalConfig(ctx),
 			testAuthGroup(ctx, "group-2"),
@@ -91,12 +91,12 @@ func TestTakeSnapshot(t *testing.T) {
 			realmsGlobals,
 			projectRealms2,
 			projectRealms1,
-		), ShouldBeNil)
+		), should.BeNil)
 
 		snap, err := TakeSnapshot(ctx)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		So(snap, ShouldResembleProto, &Snapshot{
+		assert.Loosely(t, snap, should.Resemble(&Snapshot{
 			ReplicationState: testAuthReplicationState(ctx, 12345),
 			GlobalConfig:     testAuthGlobalConfig(ctx),
 			Groups: []*AuthGroup{
@@ -112,9 +112,9 @@ func TestTakeSnapshot(t *testing.T) {
 				projectRealms1,
 				projectRealms2,
 			},
-		})
+		}))
 
-		Convey("ToAuthDBProto", func() {
+		t.Run("ToAuthDBProto", func(t *ftt.Test) {
 			groupProto := func(name string) *protocol.AuthGroup {
 				return &protocol.AuthGroup{
 					Name: name,
@@ -177,8 +177,8 @@ func TestTakeSnapshot(t *testing.T) {
 			}
 
 			authDBProto, err := snap.ToAuthDBProto(ctx, false)
-			So(err, ShouldBeNil)
-			So(authDBProto, ShouldResembleProto, &protocol.AuthDB{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, authDBProto, should.Resemble(&protocol.AuthDB{
 				OauthClientId:     "test-client-id",
 				OauthClientSecret: "test-client-secret",
 				OauthAdditionalClientIds: []string{
@@ -196,9 +196,9 @@ func TestTakeSnapshot(t *testing.T) {
 					allowlistProto("ip-allowlist-2"),
 				},
 				Realms: expectedMergedRealmsProto,
-			})
+			}))
 
-			Convey("empty string fields are set to `empty`", func() {
+			t.Run("empty string fields are set to `empty`", func(t *ftt.Test) {
 				sparseGlobalConfig := &AuthGlobalConfig{
 					Kind:                     "AuthGlobalConfig",
 					ID:                       "root",
@@ -218,8 +218,8 @@ func TestTakeSnapshot(t *testing.T) {
 				expectedGroup1 := groupProto("group-1")
 				expectedGroup1.Description = "empty"
 				authDBProto, err := sparseSnapshot.ToAuthDBProto(ctx, false)
-				So(err, ShouldBeNil)
-				So(authDBProto, ShouldResembleProto, &protocol.AuthDB{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, authDBProto, should.Resemble(&protocol.AuthDB{
 					OauthClientId:     "empty",
 					OauthClientSecret: "empty",
 					TokenServerUrl:    "empty",
@@ -230,14 +230,14 @@ func TestTakeSnapshot(t *testing.T) {
 					Realms: &protocol.Realms{
 						ApiVersion: RealmsAPIVersion,
 					},
-				})
+				}))
 			})
 		})
 
-		Convey("ToAuthDB", func() {
+		t.Run("ToAuthDB", func(t *ftt.Test) {
 			db, err := snap.ToAuthDB(ctx, false)
-			So(err, ShouldBeNil)
-			So(db.Rev, ShouldEqual, testAuthDBRev)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, db.Rev, should.Equal(testAuthDBRev))
 		})
 	})
 }

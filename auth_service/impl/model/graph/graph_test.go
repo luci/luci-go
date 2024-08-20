@@ -20,12 +20,12 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/auth_service/api/rpcpb"
 	"go.chromium.org/luci/auth_service/impl/model"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -57,7 +57,7 @@ func testAuthGroup(name string, items ...string) *model.AuthGroup {
 func TestGraphBuilding(t *testing.T) {
 	t.Parallel()
 
-	Convey("Testing basic Graph Building.", t, func() {
+	ftt.Run("Testing basic Graph Building.", t, func(t *ftt.Test) {
 
 		authGroups := []*model.AuthGroup{
 			testAuthGroup("group-0", "user:m1@example.com", "user:*@example.com"),
@@ -91,10 +91,10 @@ func TestGraphBuilding(t *testing.T) {
 			},
 		}
 
-		So(actualGraph, ShouldResemble, expectedGraph)
+		assert.Loosely(t, actualGraph, should.Resemble(expectedGraph))
 	})
 
-	Convey("Testing group nesting.", t, func() {
+	ftt.Run("Testing group nesting.", t, func(t *ftt.Test) {
 		authGroups := []*model.AuthGroup{
 			testAuthGroup("group-0"),
 			testAuthGroup("group-1", "group-0"),
@@ -103,17 +103,17 @@ func TestGraphBuilding(t *testing.T) {
 
 		actualGraph := NewGraph(authGroups)
 
-		So(actualGraph.groups["group-0"].included[0].group, ShouldResemble, authGroups[1])
-		So(actualGraph.groups["group-1"].included[0].group, ShouldResemble, authGroups[2])
-		So(actualGraph.groups["group-1"].includes[0].group, ShouldResemble, authGroups[0])
-		So(actualGraph.groups["group-2"].includes[0].group, ShouldResemble, authGroups[1])
+		assert.Loosely(t, actualGraph.groups["group-0"].included[0].group, should.Resemble(authGroups[1]))
+		assert.Loosely(t, actualGraph.groups["group-1"].included[0].group, should.Resemble(authGroups[2]))
+		assert.Loosely(t, actualGraph.groups["group-1"].includes[0].group, should.Resemble(authGroups[0]))
+		assert.Loosely(t, actualGraph.groups["group-2"].includes[0].group, should.Resemble(authGroups[1]))
 	})
 }
 
 func TestGetExpandedGroup(t *testing.T) {
 	t.Parallel()
 
-	Convey("Testing GetExpandedGroup", t, func() {
+	ftt.Run("Testing GetExpandedGroup", t, func(t *ftt.Test) {
 		testGroup0 := "group-0"
 		testGroup1 := "group-1"
 		testGroup2 := "group-2"
@@ -129,42 +129,42 @@ func TestGetExpandedGroup(t *testing.T) {
 
 		graph := NewGraph(authGroups)
 
-		Convey("unknown group should return error", func() {
+		t.Run("unknown group should return error", func(t *ftt.Test) {
 			_, err := graph.GetExpandedGroup("unknown-group")
-			So(errors.Is(err, ErrNoSuchGroup), ShouldBeTrue)
+			assert.Loosely(t, errors.Is(err, ErrNoSuchGroup), should.BeTrue)
 		})
 
-		Convey("group with no nesting works", func() {
+		t.Run("group with no nesting works", func(t *ftt.Test) {
 			expanded, err := graph.GetExpandedGroup(testGroup0)
-			So(err, ShouldBeNil)
-			So(expanded, ShouldResembleProto, &rpcpb.AuthGroup{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, expanded, should.Resemble(&rpcpb.AuthGroup{
 				Name:    testGroup0,
 				Members: []string{testUser0},
 				Globs:   []string{testGlob},
 				Nested:  []string{},
-			})
+			}))
 		})
 
-		Convey("group with nested group works", func() {
+		t.Run("group with nested group works", func(t *ftt.Test) {
 			expanded, err := graph.GetExpandedGroup(testGroup1)
-			So(err, ShouldBeNil)
-			So(expanded, ShouldResembleProto, &rpcpb.AuthGroup{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, expanded, should.Resemble(&rpcpb.AuthGroup{
 				Name:    testGroup1,
 				Members: []string{testUser0, testUser1},
 				Globs:   []string{testGlob},
 				Nested:  []string{testGroup0},
-			})
+			}))
 		})
 
-		Convey("subgroup nested twice", func() {
+		t.Run("subgroup nested twice", func(t *ftt.Test) {
 			expanded, err := graph.GetExpandedGroup(testGroup2)
-			So(err, ShouldBeNil)
-			So(expanded, ShouldResembleProto, &rpcpb.AuthGroup{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, expanded, should.Resemble(&rpcpb.AuthGroup{
 				Name:    testGroup2,
 				Members: []string{testUser0, testUser1},
 				Globs:   []string{testGlob},
 				Nested:  []string{testGroup0, testGroup1},
-			})
+			}))
 		})
 	})
 }
@@ -172,7 +172,7 @@ func TestGetExpandedGroup(t *testing.T) {
 func TestGetRelevantSubgraph(t *testing.T) {
 	t.Parallel()
 
-	Convey("Testing GetRelevantSubgraph", t, func() {
+	ftt.Run("Testing GetRelevantSubgraph", t, func(t *ftt.Test) {
 		testGroup0 := "group-0"
 		testGroup1 := "group-1"
 		testGroup2 := "group-2"
@@ -188,11 +188,11 @@ func TestGetRelevantSubgraph(t *testing.T) {
 
 		graph := NewGraph(authGroups)
 
-		Convey("Testing Group Principal.", func() {
+		t.Run("Testing Group Principal.", func(t *ftt.Test) {
 			principal := NodeKey{Group, testGroup1}
 
 			subgraph, err := graph.GetRelevantSubgraph(principal)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			expectedSubgraph := &Subgraph{
 				Nodes: []*SubgraphNode{
@@ -208,14 +208,14 @@ func TestGetRelevantSubgraph(t *testing.T) {
 				},
 			}
 
-			So(subgraph, ShouldResemble, expectedSubgraph)
+			assert.Loosely(t, subgraph, should.Resemble(expectedSubgraph))
 		})
 
-		Convey("Testing Identity Principal.", func() {
+		t.Run("Testing Identity Principal.", func(t *ftt.Test) {
 			principal := NodeKey{Identity, testUser0}
 
 			subgraph, err := graph.GetRelevantSubgraph(principal)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			expectedSubgraph := &Subgraph{
 				Nodes: []*SubgraphNode{
@@ -262,14 +262,14 @@ func TestGetRelevantSubgraph(t *testing.T) {
 				},
 			}
 
-			So(subgraph, ShouldResemble, expectedSubgraph)
+			assert.Loosely(t, subgraph, should.Resemble(expectedSubgraph))
 		})
 
-		Convey("Testing Glob principal.", func() {
+		t.Run("Testing Glob principal.", func(t *ftt.Test) {
 			principal := NodeKey{Glob, testGlob}
 
 			subgraph, err := graph.GetRelevantSubgraph(principal)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			expectedSubgraph := &Subgraph{
 				Nodes: []*SubgraphNode{
@@ -308,10 +308,10 @@ func TestGetRelevantSubgraph(t *testing.T) {
 				},
 			}
 
-			So(subgraph, ShouldResemble, expectedSubgraph)
+			assert.Loosely(t, subgraph, should.Resemble(expectedSubgraph))
 		})
 
-		Convey("Testing Stability", func() {
+		t.Run("Testing Stability", func(t *ftt.Test) {
 			principal := NodeKey{Identity, testUser0}
 			testGlob1 := "*ser:m0@example.com"
 			testGlob2 := "user:m0@*"
@@ -328,7 +328,7 @@ func TestGetRelevantSubgraph(t *testing.T) {
 			graph2 := NewGraph(authGroups2)
 
 			subgraph, err := graph2.GetRelevantSubgraph(principal)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			expectedSubgraph := &Subgraph{
 				Nodes: []*SubgraphNode{
@@ -390,7 +390,7 @@ func TestGetRelevantSubgraph(t *testing.T) {
 				},
 			}
 
-			So(subgraph, ShouldResemble, expectedSubgraph)
+			assert.Loosely(t, subgraph, should.Resemble(expectedSubgraph))
 		})
 	})
 }

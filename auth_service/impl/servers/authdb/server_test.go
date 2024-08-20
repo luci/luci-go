@@ -36,8 +36,11 @@ import (
 	"go.chromium.org/luci/auth_service/api/rpcpb"
 	"go.chromium.org/luci/auth_service/impl/model"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestAuthDBServing(t *testing.T) {
@@ -93,92 +96,92 @@ func TestAuthDBServing(t *testing.T) {
 			Writer: rw,
 		}
 		err := server.HandleLegacyAuthDBServing(rctx)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		return rw.Body.Bytes()
 	}
 
 	t.Parallel()
 	ctx := memory.Use(context.Background())
 
-	Convey("Testing pRPC API", t, func() {
+	ftt.Run("Testing pRPC API", t, func(t *ftt.Test) {
 		server := Server{}
-		So(datastore.Put(ctx,
+		assert.Loosely(t, datastore.Put(ctx,
 			testAuthDBSnapshot(1),
 			testAuthDBSnapshot(2),
 			testAuthDBSnapshot(3),
-			testAuthDBSnapshot(4)), ShouldBeNil)
+			testAuthDBSnapshot(4)), should.BeNil)
 
-		Convey("Testing Error Codes", func() {
+		t.Run("Testing Error Codes", func(t *ftt.Test) {
 			requestNegative := &rpcpb.GetSnapshotRequest{
 				Revision: -1,
 			}
 			_, err := server.GetSnapshot(ctx, requestNegative)
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
 
 			requestNotPresent := &rpcpb.GetSnapshotRequest{
 				Revision: 42,
 			}
 			_, err = server.GetSnapshot(ctx, requestNotPresent)
-			So(err, ShouldHaveGRPCStatus, codes.NotFound)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.NotFound))
 		})
 
-		Convey("Testing valid revision ID", func() {
+		t.Run("Testing valid revision ID", func(t *ftt.Test) {
 			request := &rpcpb.GetSnapshotRequest{
 				Revision: 2,
 			}
 			snapshot, err := server.GetSnapshot(ctx, request)
-			So(err, ShouldBeNil)
-			So(snapshot, ShouldResembleProto, &rpcpb.Snapshot{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, snapshot, should.Resemble(&rpcpb.Snapshot{
 				AuthDbRev:      2,
 				AuthDbSha256:   testHash,
 				AuthDbDeflated: testDeflated,
 				CreatedTs:      timestamppb.New(testTS),
-			})
+			}))
 		})
 
-		Convey("Testing GetSnapshotLatest", func() {
-			So(datastore.Put(ctx, testAuthDBSnapshotLatest(4)), ShouldBeNil)
+		t.Run("Testing GetSnapshotLatest", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(ctx, testAuthDBSnapshotLatest(4)), should.BeNil)
 			request := &rpcpb.GetSnapshotRequest{
 				Revision: 0,
 			}
 			latestSnapshot, err := server.GetSnapshot(ctx, request)
-			So(err, ShouldBeNil)
-			So(latestSnapshot, ShouldResembleProto, &rpcpb.Snapshot{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, latestSnapshot, should.Resemble(&rpcpb.Snapshot{
 				AuthDbRev:      4,
 				AuthDbSha256:   testHash,
 				AuthDbDeflated: testDeflated,
 				CreatedTs:      timestamppb.New(testTS),
-			})
+			}))
 		})
 
-		Convey("Testing skipbody", func() {
+		t.Run("Testing skipbody", func(t *ftt.Test) {
 			requestSnapshotSkip := &rpcpb.GetSnapshotRequest{
 				Revision: 3,
 				SkipBody: true,
 			}
 			snapshot, err := server.GetSnapshot(ctx, requestSnapshotSkip)
-			So(err, ShouldBeNil)
-			So(snapshot, ShouldResembleProto, &rpcpb.Snapshot{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, snapshot, should.Resemble(&rpcpb.Snapshot{
 				AuthDbRev:    3,
 				AuthDbSha256: testHash,
 				CreatedTs:    timestamppb.New(testTS),
-			})
+			}))
 
-			So(datastore.Put(ctx, testAuthDBSnapshotLatest(4)), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, testAuthDBSnapshotLatest(4)), should.BeNil)
 			requestLatestSkip := &rpcpb.GetSnapshotRequest{
 				Revision: 0,
 				SkipBody: true,
 			}
 			latest, err := server.GetSnapshot(ctx, requestLatestSkip)
-			So(err, ShouldBeNil)
-			So(latest, ShouldResembleProto, &rpcpb.Snapshot{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, latest, should.Resemble(&rpcpb.Snapshot{
 				AuthDbRev:    4,
 				AuthDbSha256: testHash,
 				CreatedTs:    timestamppb.New(testTS),
-			})
+			}))
 		})
 
-		Convey("Testing GetSnapshot with sharded DB in datastore.", func() {
+		t.Run("Testing GetSnapshot with sharded DB in datastore.", func(t *ftt.Test) {
 			shardedSnapshot := &model.AuthDBSnapshot{
 				Kind: "AuthDBSnapshot",
 				ID:   42,
@@ -200,22 +203,22 @@ func TestAuthDBServing(t *testing.T) {
 				ID:   "42:shard-2",
 				Blob: []byte("shard-2-groups"),
 			}
-			So(datastore.Put(ctx, shard1, shard2, shardedSnapshot), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, shard1, shard2, shardedSnapshot), should.BeNil)
 			requestSnapshot := &rpcpb.GetSnapshotRequest{
 				Revision: 42,
 			}
 			snapshot, err := server.GetSnapshot(ctx, requestSnapshot)
-			So(err, ShouldBeNil)
-			So(snapshot, ShouldResembleProto, &rpcpb.Snapshot{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, snapshot, should.Resemble(&rpcpb.Snapshot{
 				AuthDbRev:      42,
 				AuthDbSha256:   testHash,
 				AuthDbDeflated: []byte("shard-1-groupsshard-2-groups"),
 				CreatedTs:      timestamppb.New(testTS),
-			})
+			}))
 		})
 	})
 
-	Convey("Testing legacy API Server with JSON response", t, func() {
+	ftt.Run("Testing legacy API Server with JSON response", t, func(t *ftt.Test) {
 		server := Server{}
 		type TestSnapshotJSON struct {
 			AuthDBRev      int64  `json:"auth_db_rev"`
@@ -237,47 +240,47 @@ func TestAuthDBServing(t *testing.T) {
 			})
 		}
 
-		So(datastore.Put(ctx,
+		assert.Loosely(t, datastore.Put(ctx,
 			testAuthDBSnapshot(1),
 			testAuthDBSnapshot(2),
 			testAuthDBSnapshot(3),
-			testAuthDBSnapshot(4)), ShouldBeNil)
+			testAuthDBSnapshot(4)), should.BeNil)
 
-		Convey("Testing GetSnapshotLegacy skipBody=true", func() {
+		t.Run("Testing GetSnapshotLegacy skipBody=true", func(t *ftt.Test) {
 			rid := int64(3)
 			skipBody := true
 			actualBlob := legacyCall(server, ctx, rid, skipBody)
 			expectedBlob, err := expectedJSON(rid, skipBody)
-			So(err, ShouldBeNil)
-			So(actualBlob, ShouldResemble, expectedBlob)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actualBlob, should.Resemble(expectedBlob))
 		})
 
-		Convey("Testing GetSnapshotLegacy skipBody=false", func() {
+		t.Run("Testing GetSnapshotLegacy skipBody=false", func(t *ftt.Test) {
 			rid := int64(3)
 			skipBody := false
 			actualBlob := legacyCall(server, ctx, rid, skipBody)
 			expectedBlob, err := expectedJSON(rid, skipBody)
-			So(err, ShouldBeNil)
-			So(actualBlob, ShouldResemble, expectedBlob)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actualBlob, should.Resemble(expectedBlob))
 		})
 
-		Convey("Testing GetSnapshotLatestLegacy skipBody=true", func() {
+		t.Run("Testing GetSnapshotLatestLegacy skipBody=true", func(t *ftt.Test) {
 			rid := int64(4)
 			skipBody := true
 			actualBlob := legacyCall(server, ctx, rid, skipBody)
 			expectedBlob, err := expectedJSON(rid, skipBody)
-			So(err, ShouldBeNil)
-			So(actualBlob, ShouldResemble, expectedBlob)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actualBlob, should.Resemble(expectedBlob))
 
 		})
 
-		Convey("Testing GetSnapshotLatestLegacy skipBody=false", func() {
+		t.Run("Testing GetSnapshotLatestLegacy skipBody=false", func(t *ftt.Test) {
 			rid := int64(4)
 			skipBody := false
 			actualBlob := legacyCall(server, ctx, rid, skipBody)
 			expectedBlob, err := expectedJSON(rid, skipBody)
-			So(err, ShouldBeNil)
-			So(actualBlob, ShouldResemble, expectedBlob)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actualBlob, should.Resemble(expectedBlob))
 		})
 	})
 }

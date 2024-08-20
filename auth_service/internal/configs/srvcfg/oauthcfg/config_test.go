@@ -18,12 +18,12 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 
 	"go.chromium.org/luci/auth_service/api/configspb"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestConfigContext(t *testing.T) {
@@ -39,15 +39,15 @@ func TestConfigContext(t *testing.T) {
 		TokenServerUrl: "https://test-token-server.example.com",
 	}
 
-	Convey("Getting without setting fails", t, func() {
+	ftt.Run("Getting without setting fails", t, func(t *ftt.Test) {
 		_, err := Get(ctx)
-		So(err, ShouldNotBeNil)
+		assert.Loosely(t, err, should.NotBeNil)
 	})
 
-	Convey("Testing basic Config operations", t, func() {
-		So(SetConfig(ctx, oauthCfg), ShouldBeNil)
+	ftt.Run("Testing basic Config operations", t, func(t *ftt.Test) {
+		assert.Loosely(t, SetConfig(ctx, oauthCfg), should.BeNil)
 		cfgFromGet, err := Get(ctx)
-		So(err, ShouldBeNil)
-		So(cfgFromGet, ShouldResembleProto, oauthCfg)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, cfgFromGet, should.Resemble(oauthCfg))
 	})
 }

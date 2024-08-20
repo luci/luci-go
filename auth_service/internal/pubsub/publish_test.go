@@ -21,29 +21,29 @@ import (
 
 	"github.com/golang/mock/gomock"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/service/protocol"
 	"go.chromium.org/luci/server/auth/signing"
 	"go.chromium.org/luci/server/auth/signing/signingtest"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestPublishAuthDBRevision(t *testing.T) {
 	t.Parallel()
 
 	testAppID := "chrome-infra-auth-test"
-	Convey("PublishAuthDBRevision works", t, func() {
+	ftt.Run("PublishAuthDBRevision works", t, func(t *ftt.Test) {
 
-		Convey("returns error for invalid revision", func() {
+		t.Run("returns error for invalid revision", func(t *ftt.Test) {
 			ctx := context.Background()
-			So(PublishAuthDBRevision(ctx, nil, false), ShouldErrLike, "invalid AuthDBRevision")
+			assert.Loosely(t, PublishAuthDBRevision(ctx, nil, false), should.ErrLike("invalid AuthDBRevision"))
 		})
 
-		Convey("skips publishing for local dev server", func() {
+		t.Run("skips publishing for local dev server", func(t *ftt.Test) {
 			ctx := memory.UseWithAppID(context.Background(), "dev~"+testAppID)
 
 			testModifiedTS := time.Date(2021, time.August, 16, 12, 20, 0, 0, time.UTC)
@@ -53,11 +53,11 @@ func TestPublishAuthDBRevision(t *testing.T) {
 				ModifiedTs: testModifiedTS.UnixMicro(),
 			}
 			err := PublishAuthDBRevision(ctx, testRev, false)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 	})
 
-	Convey("publish works", t, func() {
+	ftt.Run("publish works", t, func(t *ftt.Test) {
 		ctx := memory.UseWithAppID(context.Background(), testAppID)
 		ctx = auth.ModifyConfig(ctx, func(cfg auth.Config) auth.Config {
 			cfg.Signer = signingtest.NewSigner(&signing.ServiceInfo{
@@ -85,6 +85,6 @@ func TestPublishAuthDBRevision(t *testing.T) {
 			ModifiedTs: testModifiedTS.UnixMicro(),
 		}
 		err := publish(ctx, testRev, false)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 	})
 }

@@ -24,6 +24,9 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/gae/service/info"
@@ -31,15 +34,12 @@ import (
 
 	"go.chromium.org/luci/auth_service/api/rpcpb"
 	"go.chromium.org/luci/auth_service/impl/model"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestReplicasServer(t *testing.T) {
 	t.Parallel()
 
-	Convey("ListReplicas RPC call", t, func() {
+	ftt.Run("ListReplicas RPC call", t, func(t *ftt.Test) {
 		createdTime := time.Date(2021, time.August, 16, 15, 20, 0, 0, time.UTC)
 		modifiedTime := time.Date(2022, time.July, 4, 15, 45, 0, 0, time.UTC)
 		pushStartedTime := time.Date(2022, time.July, 4, 16, 32, 1, 0, time.UTC)
@@ -50,7 +50,7 @@ func TestReplicasServer(t *testing.T) {
 		ctx = memory.Use(ctx)
 
 		// Set up replica states and AuthDB replication state into Datastore.
-		So(datastore.Put(ctx,
+		assert.Loosely(t, datastore.Put(ctx,
 			&model.AuthReplicaState{
 				Kind:            "AuthReplicaState",
 				ID:              "dev~appB",
@@ -81,7 +81,7 @@ func TestReplicasServer(t *testing.T) {
 				Parent:     model.RootKey(ctx),
 				ModifiedTS: modifiedTime,
 				AuthDBRev:  5,
-			}), ShouldBeNil)
+			}), should.BeNil)
 
 		expectedResp := &rpcpb.ListReplicasResponse{
 			PrimaryRevision: &protocol.AuthDBRevision{
@@ -118,7 +118,7 @@ func TestReplicasServer(t *testing.T) {
 
 		srv := Server{}
 		resp, err := srv.ListReplicas(ctx, &emptypb.Empty{})
-		So(err, ShouldBeNil)
-		So(resp, ShouldResembleProto, expectedResp)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, resp, should.Resemble(expectedResp))
 	})
 }

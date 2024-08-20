@@ -18,13 +18,13 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/gae/impl/memory"
 
 	"go.chromium.org/luci/auth_service/api/configspb"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestConfigContext(t *testing.T) {
@@ -54,30 +54,30 @@ func TestConfigContext(t *testing.T) {
 		},
 	}
 
-	Convey("Getting without setting fails", t, func() {
+	ftt.Run("Getting without setting fails", t, func(t *ftt.Test) {
 		_, err := Get(ctx)
-		So(err, ShouldNotBeNil)
+		assert.Loosely(t, err, should.NotBeNil)
 
 		_, err = GetMetadata(ctx)
-		So(err, ShouldNotBeNil)
+		assert.Loosely(t, err, should.NotBeNil)
 	})
 
-	Convey("Testing basic Config operations", t, func() {
-		So(SetConfig(ctx, allowlistCfg), ShouldBeNil)
+	ftt.Run("Testing basic Config operations", t, func(t *ftt.Test) {
+		assert.Loosely(t, SetConfig(ctx, allowlistCfg), should.BeNil)
 		cfgFromGet, err := Get(ctx)
-		So(err, ShouldBeNil)
-		So(cfgFromGet, ShouldResembleProto, allowlistCfg)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, cfgFromGet, should.Resemble(allowlistCfg))
 	})
 
-	Convey("Testing config operations with metadata", t, func() {
+	ftt.Run("Testing config operations with metadata", t, func(t *ftt.Test) {
 		metadata := &config.Meta{
 			Path:     "ip_allowlist.cfg",
 			Revision: "123abc",
 			ViewURL:  "https://example.com/config/revision/123abc",
 		}
-		So(SetConfigWithMetadata(ctx, allowlistCfg, metadata), ShouldBeNil)
+		assert.Loosely(t, SetConfigWithMetadata(ctx, allowlistCfg, metadata), should.BeNil)
 		metadataFromGet, err := GetMetadata(ctx)
-		So(err, ShouldBeNil)
-		So(metadataFromGet, ShouldResembleProto, metadata)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, metadataFromGet, should.Resemble(metadata))
 	})
 }

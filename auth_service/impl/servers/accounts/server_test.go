@@ -21,42 +21,42 @@ import (
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
 	"go.chromium.org/luci/auth_service/api/rpcpb"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestAccountsServer(t *testing.T) {
 	t.Parallel()
 
-	Convey("With server", t, func() {
+	ftt.Run("With server", t, func(t *ftt.Test) {
 		ctx := auth.WithState(context.Background(), &authtest.FakeState{})
 		srv := Server{}
 
-		Convey("GetSelf anonymous", func() {
+		t.Run("GetSelf anonymous", func(t *ftt.Test) {
 			resp, err := srv.GetSelf(ctx, &emptypb.Empty{})
-			So(err, ShouldBeNil)
-			So(resp, ShouldResembleProto, &rpcpb.SelfInfo{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.Resemble(&rpcpb.SelfInfo{
 				Identity: "anonymous:anonymous",
 				Ip:       "127.0.0.1",
-			})
+			}))
 		})
 
-		Convey("GetSelf authenticated", func() {
+		t.Run("GetSelf authenticated", func(t *ftt.Test) {
 			ctx := auth.WithState(context.Background(), &authtest.FakeState{
 				Identity:       "user:someone@example.com",
 				PeerIPOverride: net.ParseIP("192.168.0.1"),
 			})
 			resp, err := srv.GetSelf(ctx, &emptypb.Empty{})
-			So(err, ShouldBeNil)
-			So(resp, ShouldResembleProto, &rpcpb.SelfInfo{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.Resemble(&rpcpb.SelfInfo{
 				Identity: "user:someone@example.com",
 				Ip:       "192.168.0.1",
-			})
+			}))
 		})
 	})
 }
