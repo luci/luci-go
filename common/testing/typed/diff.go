@@ -16,6 +16,8 @@
 package typed
 
 import (
+	"slices"
+
 	"github.com/google/go-cmp/cmp"
 
 	"go.chromium.org/luci/common/testing/registry"
@@ -32,8 +34,7 @@ import (
 // if you want to extend the defaults, take a look at:
 // - "go.chromium.org/luci/common/testing/registry"
 func Diff[T any](want T, got T, opts ...cmp.Option) string {
-	opts = append(opts, registry.GetCmpOptions()...)
-	return cmp.Diff(want, got, opts...)
+	return cmp.Diff(want, got, slices.Concat(opts, registry.GetCmpOptions())...)
 }
 
 // Got supports the got-before-want style, it can be used as:

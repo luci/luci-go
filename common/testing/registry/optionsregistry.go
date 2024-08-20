@@ -16,6 +16,7 @@
 package registry
 
 import (
+	"slices"
 	"sync"
 
 	"github.com/google/go-cmp/cmp"
@@ -48,5 +49,5 @@ func RegisterCmpOption(opt cmp.Option) {
 func GetCmpOptions() []cmp.Option {
 	globalOptionsRegistryMutex.Lock()
 	defer globalOptionsRegistryMutex.Unlock()
-	return append([]cmp.Option{}, globalOptionsRegistry...)
+	return slices.Clone(globalOptionsRegistry)
 }
