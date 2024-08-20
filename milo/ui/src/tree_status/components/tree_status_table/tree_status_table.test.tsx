@@ -22,14 +22,14 @@ import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider
 
 import { TreeStatusTable } from './tree_status_table';
 
-const status: Status[] = [
-  {
+const status = [
+  Status.fromPartial({
     name: 'ignored',
     generalState: GeneralState.OPEN,
     message: 'Tree is ready for commits',
     createTime: '2024-01-22T00:29:47.998Z',
     createUser: 'test@example.com',
-  },
+  }),
 ];
 
 it('displays a status update', async () => {

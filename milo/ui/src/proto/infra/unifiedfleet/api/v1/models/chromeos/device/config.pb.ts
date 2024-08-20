@@ -463,7 +463,7 @@ export function config_VideoAccelerationToJSON(object: Config_VideoAcceleration)
   }
 }
 
-/** Next Tag: 49 */
+/** Next Tag: 50 */
 export enum Config_SOC {
   SOC_UNSPECIFIED = 0,
   /** SOC_AMBERLAKE_Y - Aka AML-Y */
@@ -517,6 +517,7 @@ export enum Config_SOC {
   SOC_MENDOCINO = 46,
   SOC_RAPTOR_LAKE = 47,
   SOC_MT8196 = 48,
+  SOC_MT8189 = 49,
 }
 
 export function config_SOCFromJSON(object: any): Config_SOC {
@@ -668,6 +669,9 @@ export function config_SOCFromJSON(object: any): Config_SOC {
     case 48:
     case "SOC_MT8196":
       return Config_SOC.SOC_MT8196;
+    case 49:
+    case "SOC_MT8189":
+      return Config_SOC.SOC_MT8189;
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum Config_SOC");
   }
@@ -773,6 +777,8 @@ export function config_SOCToJSON(object: Config_SOC): string {
       return "SOC_RAPTOR_LAKE";
     case Config_SOC.SOC_MT8196:
       return "SOC_MT8196";
+    case Config_SOC.SOC_MT8189:
+      return "SOC_MT8189";
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum Config_SOC");
   }

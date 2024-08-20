@@ -31,6 +31,29 @@ export interface GetInvocationRequest {
   readonly name: string;
 }
 
+/** A request message for QueryRootInvocationNames RPC. */
+export interface QueryRootInvocationNamesRequest {
+  /** The name of the invocation to request, see Invocation.name. */
+  readonly name: string;
+}
+
+/** A response message for QueryRootInvocationNames RPC. */
+export interface QueryRootInvocationNamesResponse {
+  /**
+   * The name of all root invocations to the invocation in the request.
+   * A root either
+   *   - has is_export_root = true, or
+   *   - has no parent invocation.
+   *
+   * If the invocation to request is already a root,
+   * the root_invocation_names will only contains the invocation in the request
+   * (i.e. a invocation can be its own root).
+   *
+   * root_invocation_names can be empty when no root is found (in the presence of cycles).
+   */
+  readonly rootInvocationNames: readonly string[];
+}
+
 /** A request message for GetTestResult RPC. */
 export interface GetTestResultRequest {
   /** The name of the test result to request, see TestResult.name. */
@@ -1202,6 +1225,124 @@ export const GetInvocationRequest = {
   fromPartial(object: DeepPartial<GetInvocationRequest>): GetInvocationRequest {
     const message = createBaseGetInvocationRequest() as any;
     message.name = object.name ?? "";
+    return message;
+  },
+};
+
+function createBaseQueryRootInvocationNamesRequest(): QueryRootInvocationNamesRequest {
+  return { name: "" };
+}
+
+export const QueryRootInvocationNamesRequest = {
+  encode(message: QueryRootInvocationNamesRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.name !== "") {
+      writer.uint32(10).string(message.name);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): QueryRootInvocationNamesRequest {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueryRootInvocationNamesRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): QueryRootInvocationNamesRequest {
+    return { name: isSet(object.name) ? globalThis.String(object.name) : "" };
+  },
+
+  toJSON(message: QueryRootInvocationNamesRequest): unknown {
+    const obj: any = {};
+    if (message.name !== "") {
+      obj.name = message.name;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<QueryRootInvocationNamesRequest>): QueryRootInvocationNamesRequest {
+    return QueryRootInvocationNamesRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<QueryRootInvocationNamesRequest>): QueryRootInvocationNamesRequest {
+    const message = createBaseQueryRootInvocationNamesRequest() as any;
+    message.name = object.name ?? "";
+    return message;
+  },
+};
+
+function createBaseQueryRootInvocationNamesResponse(): QueryRootInvocationNamesResponse {
+  return { rootInvocationNames: [] };
+}
+
+export const QueryRootInvocationNamesResponse = {
+  encode(message: QueryRootInvocationNamesResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    for (const v of message.rootInvocationNames) {
+      writer.uint32(10).string(v!);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): QueryRootInvocationNamesResponse {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueryRootInvocationNamesResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.rootInvocationNames.push(reader.string());
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): QueryRootInvocationNamesResponse {
+    return {
+      rootInvocationNames: globalThis.Array.isArray(object?.rootInvocationNames)
+        ? object.rootInvocationNames.map((e: any) => globalThis.String(e))
+        : [],
+    };
+  },
+
+  toJSON(message: QueryRootInvocationNamesResponse): unknown {
+    const obj: any = {};
+    if (message.rootInvocationNames?.length) {
+      obj.rootInvocationNames = message.rootInvocationNames;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<QueryRootInvocationNamesResponse>): QueryRootInvocationNamesResponse {
+    return QueryRootInvocationNamesResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<QueryRootInvocationNamesResponse>): QueryRootInvocationNamesResponse {
+    const message = createBaseQueryRootInvocationNamesResponse() as any;
+    message.rootInvocationNames = object.rootInvocationNames?.map((e) => e) || [];
     return message;
   },
 };
@@ -6212,6 +6353,8 @@ export const IDMatcher = {
 export interface ResultDB {
   /** Retrieves an invocation. */
   GetInvocation(request: GetInvocationRequest): Promise<Invocation>;
+  /** Retrieve names of all root invocations for a given invocation. */
+  QueryRootInvocationNames(request: QueryRootInvocationNamesRequest): Promise<QueryRootInvocationNamesResponse>;
   /** Retrieves a test result. */
   GetTestResult(request: GetTestResultRequest): Promise<TestResult>;
   /**
@@ -6370,6 +6513,7 @@ export class ResultDBClientImpl implements ResultDB {
     this.service = opts?.service || ResultDBServiceName;
     this.rpc = rpc;
     this.GetInvocation = this.GetInvocation.bind(this);
+    this.QueryRootInvocationNames = this.QueryRootInvocationNames.bind(this);
     this.GetTestResult = this.GetTestResult.bind(this);
     this.ListTestResults = this.ListTestResults.bind(this);
     this.GetTestExoneration = this.GetTestExoneration.bind(this);
@@ -6398,6 +6542,12 @@ export class ResultDBClientImpl implements ResultDB {
     const data = GetInvocationRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "GetInvocation", data);
     return promise.then((data) => Invocation.fromJSON(data));
+  }
+
+  QueryRootInvocationNames(request: QueryRootInvocationNamesRequest): Promise<QueryRootInvocationNamesResponse> {
+    const data = QueryRootInvocationNamesRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "QueryRootInvocationNames", data);
+    return promise.then((data) => QueryRootInvocationNamesResponse.fromJSON(data));
   }
 
   GetTestResult(request: GetTestResultRequest): Promise<TestResult> {

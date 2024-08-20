@@ -57,6 +57,8 @@ export interface DeviceUnderTest {
    * Example: satlab-abc123
    */
   readonly hive: string;
+  /** Power subrail config file */
+  readonly subrailConfig: string;
 }
 
 /**
@@ -141,12 +143,13 @@ export interface DeviceUnderTest_RoVpdMapEntry {
   readonly value: string;
 }
 
-/** Next Tag: 5 */
+/** Next Tag: 6 */
 export interface Labstation {
   readonly hostname: string;
   readonly servos: readonly Servo[];
   readonly rpm: OSRPM | undefined;
   readonly pools: readonly string[];
+  readonly hive: string;
 }
 
 /** Next Tag: 3 */
@@ -317,6 +320,7 @@ function createBaseDeviceUnderTest(): DeviceUnderTest {
     cbi: undefined,
     cbx: false,
     hive: "",
+    subrailConfig: "",
   };
 }
 
@@ -356,6 +360,9 @@ export const DeviceUnderTest = {
     }
     if (message.hive !== "") {
       writer.uint32(90).string(message.hive);
+    }
+    if (message.subrailConfig !== "") {
+      writer.uint32(98).string(message.subrailConfig);
     }
     return writer;
   },
@@ -457,6 +464,13 @@ export const DeviceUnderTest = {
 
           message.hive = reader.string();
           continue;
+        case 12:
+          if (tag !== 98) {
+            break;
+          }
+
+          message.subrailConfig = reader.string();
+          continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -486,6 +500,7 @@ export const DeviceUnderTest = {
       cbi: isSet(object.cbi) ? Cbi.fromJSON(object.cbi) : undefined,
       cbx: isSet(object.cbx) ? globalThis.Boolean(object.cbx) : false,
       hive: isSet(object.hive) ? globalThis.String(object.hive) : "",
+      subrailConfig: isSet(object.subrailConfig) ? globalThis.String(object.subrailConfig) : "",
     };
   },
 
@@ -530,6 +545,9 @@ export const DeviceUnderTest = {
     if (message.hive !== "") {
       obj.hive = message.hive;
     }
+    if (message.subrailConfig !== "") {
+      obj.subrailConfig = message.subrailConfig;
+    }
     return obj;
   },
 
@@ -558,6 +576,7 @@ export const DeviceUnderTest = {
     message.cbi = (object.cbi !== undefined && object.cbi !== null) ? Cbi.fromPartial(object.cbi) : undefined;
     message.cbx = object.cbx ?? false;
     message.hive = object.hive ?? "";
+    message.subrailConfig = object.subrailConfig ?? "";
     return message;
   },
 };
@@ -637,7 +656,7 @@ export const DeviceUnderTest_RoVpdMapEntry = {
 };
 
 function createBaseLabstation(): Labstation {
-  return { hostname: "", servos: [], rpm: undefined, pools: [] };
+  return { hostname: "", servos: [], rpm: undefined, pools: [], hive: "" };
 }
 
 export const Labstation = {
@@ -653,6 +672,9 @@ export const Labstation = {
     }
     for (const v of message.pools) {
       writer.uint32(34).string(v!);
+    }
+    if (message.hive !== "") {
+      writer.uint32(42).string(message.hive);
     }
     return writer;
   },
@@ -692,6 +714,13 @@ export const Labstation = {
 
           message.pools.push(reader.string());
           continue;
+        case 5:
+          if (tag !== 42) {
+            break;
+          }
+
+          message.hive = reader.string();
+          continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -707,6 +736,7 @@ export const Labstation = {
       servos: globalThis.Array.isArray(object?.servos) ? object.servos.map((e: any) => Servo.fromJSON(e)) : [],
       rpm: isSet(object.rpm) ? OSRPM.fromJSON(object.rpm) : undefined,
       pools: globalThis.Array.isArray(object?.pools) ? object.pools.map((e: any) => globalThis.String(e)) : [],
+      hive: isSet(object.hive) ? globalThis.String(object.hive) : "",
     };
   },
 
@@ -724,6 +754,9 @@ export const Labstation = {
     if (message.pools?.length) {
       obj.pools = message.pools;
     }
+    if (message.hive !== "") {
+      obj.hive = message.hive;
+    }
     return obj;
   },
 
@@ -736,6 +769,7 @@ export const Labstation = {
     message.servos = object.servos?.map((e) => Servo.fromPartial(e)) || [];
     message.rpm = (object.rpm !== undefined && object.rpm !== null) ? OSRPM.fromPartial(object.rpm) : undefined;
     message.pools = object.pools?.map((e) => e) || [];
+    message.hive = object.hive ?? "";
     return message;
   },
 };

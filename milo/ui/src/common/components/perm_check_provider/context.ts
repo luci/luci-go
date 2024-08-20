@@ -28,6 +28,10 @@ export const ClientCtx =
  * RPC request and the results are cached by react-query.
  *
  * When either `perm` or `realm` is not specified, the query will not be sent.
+ *
+ * N.B. Only permissions registered [here][1] can be checked.
+ *
+ * [1]: https://source.corp.google.com/h/github/googlesource/codesearch/+/master:luci/luci-go/milo/rpc/batch_check_permissions.go;l=26;drc=e952557609eade6037c66866ebc00c506d8800a8
  */
 export function usePermCheck(
   realm?: string | null,

@@ -220,6 +220,43 @@ export interface DownloadFileRequest {
   readonly committish: string;
   /** Path relative to the project root to the file to download. */
   readonly path: string;
+  /** Format to download file in (default is TEXT). */
+  readonly format: DownloadFileRequest_Format;
+}
+
+export enum DownloadFileRequest_Format {
+  FORMAT_INVALID = 0,
+  TEXT = 1,
+  JSON = 2,
+}
+
+export function downloadFileRequest_FormatFromJSON(object: any): DownloadFileRequest_Format {
+  switch (object) {
+    case 0:
+    case "FORMAT_INVALID":
+      return DownloadFileRequest_Format.FORMAT_INVALID;
+    case 1:
+    case "TEXT":
+      return DownloadFileRequest_Format.TEXT;
+    case 2:
+    case "JSON":
+      return DownloadFileRequest_Format.JSON;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum DownloadFileRequest_Format");
+  }
+}
+
+export function downloadFileRequest_FormatToJSON(object: DownloadFileRequest_Format): string {
+  switch (object) {
+    case DownloadFileRequest_Format.FORMAT_INVALID:
+      return "FORMAT_INVALID";
+    case DownloadFileRequest_Format.TEXT:
+      return "TEXT";
+    case DownloadFileRequest_Format.JSON:
+      return "JSON";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum DownloadFileRequest_Format");
+  }
 }
 
 export interface DownloadFileResponse {
@@ -941,7 +978,7 @@ export const ArchiveResponse = {
 };
 
 function createBaseDownloadFileRequest(): DownloadFileRequest {
-  return { project: "", committish: "", path: "" };
+  return { project: "", committish: "", path: "", format: 0 };
 }
 
 export const DownloadFileRequest = {
@@ -954,6 +991,9 @@ export const DownloadFileRequest = {
     }
     if (message.path !== "") {
       writer.uint32(26).string(message.path);
+    }
+    if (message.format !== 0) {
+      writer.uint32(32).int32(message.format);
     }
     return writer;
   },
@@ -986,6 +1026,13 @@ export const DownloadFileRequest = {
 
           message.path = reader.string();
           continue;
+        case 4:
+          if (tag !== 32) {
+            break;
+          }
+
+          message.format = reader.int32() as any;
+          continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1000,6 +1047,7 @@ export const DownloadFileRequest = {
       project: isSet(object.project) ? globalThis.String(object.project) : "",
       committish: isSet(object.committish) ? globalThis.String(object.committish) : "",
       path: isSet(object.path) ? globalThis.String(object.path) : "",
+      format: isSet(object.format) ? downloadFileRequest_FormatFromJSON(object.format) : 0,
     };
   },
 
@@ -1014,6 +1062,9 @@ export const DownloadFileRequest = {
     if (message.path !== "") {
       obj.path = message.path;
     }
+    if (message.format !== 0) {
+      obj.format = downloadFileRequest_FormatToJSON(message.format);
+    }
     return obj;
   },
 
@@ -1025,6 +1076,7 @@ export const DownloadFileRequest = {
     message.project = object.project ?? "";
     message.committish = object.committish ?? "";
     message.path = object.path ?? "";
+    message.format = object.format ?? 0;
     return message;
   },
 };

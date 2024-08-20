@@ -92,6 +92,70 @@ export function deviceStateToJSON(object: DeviceState): string {
   }
 }
 
+export enum LeaseDeviceResponseErrorType {
+  LEASE_ERROR_TYPE_NONE = 0,
+  LEASE_ERROR_TYPE_DEVICE_NOT_FOUND = 1,
+  LEASE_ERROR_TYPE_DEVICE_ALREADY_LEASED = 2,
+}
+
+export function leaseDeviceResponseErrorTypeFromJSON(object: any): LeaseDeviceResponseErrorType {
+  switch (object) {
+    case 0:
+    case "LEASE_ERROR_TYPE_NONE":
+      return LeaseDeviceResponseErrorType.LEASE_ERROR_TYPE_NONE;
+    case 1:
+    case "LEASE_ERROR_TYPE_DEVICE_NOT_FOUND":
+      return LeaseDeviceResponseErrorType.LEASE_ERROR_TYPE_DEVICE_NOT_FOUND;
+    case 2:
+    case "LEASE_ERROR_TYPE_DEVICE_ALREADY_LEASED":
+      return LeaseDeviceResponseErrorType.LEASE_ERROR_TYPE_DEVICE_ALREADY_LEASED;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum LeaseDeviceResponseErrorType");
+  }
+}
+
+export function leaseDeviceResponseErrorTypeToJSON(object: LeaseDeviceResponseErrorType): string {
+  switch (object) {
+    case LeaseDeviceResponseErrorType.LEASE_ERROR_TYPE_NONE:
+      return "LEASE_ERROR_TYPE_NONE";
+    case LeaseDeviceResponseErrorType.LEASE_ERROR_TYPE_DEVICE_NOT_FOUND:
+      return "LEASE_ERROR_TYPE_DEVICE_NOT_FOUND";
+    case LeaseDeviceResponseErrorType.LEASE_ERROR_TYPE_DEVICE_ALREADY_LEASED:
+      return "LEASE_ERROR_TYPE_DEVICE_ALREADY_LEASED";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum LeaseDeviceResponseErrorType");
+  }
+}
+
+export enum ReleaseDeviceResponseErrorType {
+  ERROR_TYPE_NONE = 0,
+  ERROR_TYPE_DEVICE_ALREADY_RELEASED = 1,
+}
+
+export function releaseDeviceResponseErrorTypeFromJSON(object: any): ReleaseDeviceResponseErrorType {
+  switch (object) {
+    case 0:
+    case "ERROR_TYPE_NONE":
+      return ReleaseDeviceResponseErrorType.ERROR_TYPE_NONE;
+    case 1:
+    case "ERROR_TYPE_DEVICE_ALREADY_RELEASED":
+      return ReleaseDeviceResponseErrorType.ERROR_TYPE_DEVICE_ALREADY_RELEASED;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum ReleaseDeviceResponseErrorType");
+  }
+}
+
+export function releaseDeviceResponseErrorTypeToJSON(object: ReleaseDeviceResponseErrorType): string {
+  switch (object) {
+    case ReleaseDeviceResponseErrorType.ERROR_TYPE_NONE:
+      return "ERROR_TYPE_NONE";
+    case ReleaseDeviceResponseErrorType.ERROR_TYPE_DEVICE_ALREADY_RELEASED:
+      return "ERROR_TYPE_DEVICE_ALREADY_RELEASED";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum ReleaseDeviceResponseErrorType");
+  }
+}
+
 export interface Device {
   /**
    * In the case of VMs, device id could be the GCE instance name. For physical
@@ -219,6 +283,8 @@ export interface LeaseDeviceRequest {
 
 export interface LeaseDeviceResponse {
   readonly deviceLease: DeviceLeaseRecord | undefined;
+  readonly errorType: LeaseDeviceResponseErrorType;
+  readonly errorString: string;
 }
 
 export interface ReleaseDeviceRequest {
@@ -227,6 +293,8 @@ export interface ReleaseDeviceRequest {
 
 export interface ReleaseDeviceResponse {
   readonly leaseId: string;
+  readonly errorType: ReleaseDeviceResponseErrorType;
+  readonly errorString: string;
 }
 
 export interface GetDeviceRequest {
@@ -924,13 +992,19 @@ export const LeaseDeviceRequest = {
 };
 
 function createBaseLeaseDeviceResponse(): LeaseDeviceResponse {
-  return { deviceLease: undefined };
+  return { deviceLease: undefined, errorType: 0, errorString: "" };
 }
 
 export const LeaseDeviceResponse = {
   encode(message: LeaseDeviceResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.deviceLease !== undefined) {
       DeviceLeaseRecord.encode(message.deviceLease, writer.uint32(10).fork()).ldelim();
+    }
+    if (message.errorType !== 0) {
+      writer.uint32(16).int32(message.errorType);
+    }
+    if (message.errorString !== "") {
+      writer.uint32(26).string(message.errorString);
     }
     return writer;
   },
@@ -949,6 +1023,20 @@ export const LeaseDeviceResponse = {
 
           message.deviceLease = DeviceLeaseRecord.decode(reader, reader.uint32());
           continue;
+        case 2:
+          if (tag !== 16) {
+            break;
+          }
+
+          message.errorType = reader.int32() as any;
+          continue;
+        case 3:
+          if (tag !== 26) {
+            break;
+          }
+
+          message.errorString = reader.string();
+          continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -959,13 +1047,23 @@ export const LeaseDeviceResponse = {
   },
 
   fromJSON(object: any): LeaseDeviceResponse {
-    return { deviceLease: isSet(object.deviceLease) ? DeviceLeaseRecord.fromJSON(object.deviceLease) : undefined };
+    return {
+      deviceLease: isSet(object.deviceLease) ? DeviceLeaseRecord.fromJSON(object.deviceLease) : undefined,
+      errorType: isSet(object.errorType) ? leaseDeviceResponseErrorTypeFromJSON(object.errorType) : 0,
+      errorString: isSet(object.errorString) ? globalThis.String(object.errorString) : "",
+    };
   },
 
   toJSON(message: LeaseDeviceResponse): unknown {
     const obj: any = {};
     if (message.deviceLease !== undefined) {
       obj.deviceLease = DeviceLeaseRecord.toJSON(message.deviceLease);
+    }
+    if (message.errorType !== 0) {
+      obj.errorType = leaseDeviceResponseErrorTypeToJSON(message.errorType);
+    }
+    if (message.errorString !== "") {
+      obj.errorString = message.errorString;
     }
     return obj;
   },
@@ -978,6 +1076,8 @@ export const LeaseDeviceResponse = {
     message.deviceLease = (object.deviceLease !== undefined && object.deviceLease !== null)
       ? DeviceLeaseRecord.fromPartial(object.deviceLease)
       : undefined;
+    message.errorType = object.errorType ?? 0;
+    message.errorString = object.errorString ?? "";
     return message;
   },
 };
@@ -1040,13 +1140,19 @@ export const ReleaseDeviceRequest = {
 };
 
 function createBaseReleaseDeviceResponse(): ReleaseDeviceResponse {
-  return { leaseId: "" };
+  return { leaseId: "", errorType: 0, errorString: "" };
 }
 
 export const ReleaseDeviceResponse = {
   encode(message: ReleaseDeviceResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.leaseId !== "") {
       writer.uint32(10).string(message.leaseId);
+    }
+    if (message.errorType !== 0) {
+      writer.uint32(16).int32(message.errorType);
+    }
+    if (message.errorString !== "") {
+      writer.uint32(26).string(message.errorString);
     }
     return writer;
   },
@@ -1065,6 +1171,20 @@ export const ReleaseDeviceResponse = {
 
           message.leaseId = reader.string();
           continue;
+        case 2:
+          if (tag !== 16) {
+            break;
+          }
+
+          message.errorType = reader.int32() as any;
+          continue;
+        case 3:
+          if (tag !== 26) {
+            break;
+          }
+
+          message.errorString = reader.string();
+          continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1075,13 +1195,23 @@ export const ReleaseDeviceResponse = {
   },
 
   fromJSON(object: any): ReleaseDeviceResponse {
-    return { leaseId: isSet(object.leaseId) ? globalThis.String(object.leaseId) : "" };
+    return {
+      leaseId: isSet(object.leaseId) ? globalThis.String(object.leaseId) : "",
+      errorType: isSet(object.errorType) ? releaseDeviceResponseErrorTypeFromJSON(object.errorType) : 0,
+      errorString: isSet(object.errorString) ? globalThis.String(object.errorString) : "",
+    };
   },
 
   toJSON(message: ReleaseDeviceResponse): unknown {
     const obj: any = {};
     if (message.leaseId !== "") {
       obj.leaseId = message.leaseId;
+    }
+    if (message.errorType !== 0) {
+      obj.errorType = releaseDeviceResponseErrorTypeToJSON(message.errorType);
+    }
+    if (message.errorString !== "") {
+      obj.errorString = message.errorString;
     }
     return obj;
   },
@@ -1092,6 +1222,8 @@ export const ReleaseDeviceResponse = {
   fromPartial(object: DeepPartial<ReleaseDeviceResponse>): ReleaseDeviceResponse {
     const message = createBaseReleaseDeviceResponse() as any;
     message.leaseId = object.leaseId ?? "";
+    message.errorType = object.errorType ?? 0;
+    message.errorString = object.errorString ?? "";
     return message;
   },
 };

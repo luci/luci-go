@@ -29,6 +29,8 @@ import {
   trinaryToJSON,
 } from "./common.pb";
 import { NotificationConfig } from "./notification.pb";
+import { CustomMetricDefinition } from "./project_config.pb";
+import { CustomMetricBase, customMetricBaseFromJSON, customMetricBaseToJSON } from "./service_config.pb";
 
 export const protobufPackage = "buildbucket.v2";
 
@@ -654,6 +656,33 @@ export interface GetBuildStatusRequest {
    * Requires builder. Mutually exclusive with id.
    */
   readonly buildNumber: number;
+}
+
+/** A request message for CustomMetricPreview RPC. */
+export interface CustomMetricPreviewRequest {
+  /** ID of a build to use to test the custom metric difinition. */
+  readonly buildId: string;
+  /** Definition of the custom metric. */
+  readonly metricDefinition: CustomMetricDefinition | undefined;
+  readonly metricBase?: CustomMetricBase | undefined;
+}
+
+/** A response message for CustomMetricPreview RPC. */
+export interface CustomMetricPreviewResponse {
+  /** Metric report if the build passes the metric predicate evaluation. */
+  readonly report?:
+    | CustomMetricPreviewResponse_Report
+    | undefined;
+  /** Error details of the evaluation. */
+  readonly error?: string | undefined;
+}
+
+export interface CustomMetricPreviewResponse_Report {
+  /**
+   * Metric fields with their values.
+   * Includes the base fields and extra fields for the custom metric.
+   */
+  readonly fields: readonly StringPair[];
 }
 
 /** Defines a subset of Build fields and properties to return. */
@@ -3034,6 +3063,234 @@ export const GetBuildStatusRequest = {
   },
 };
 
+function createBaseCustomMetricPreviewRequest(): CustomMetricPreviewRequest {
+  return { buildId: "0", metricDefinition: undefined, metricBase: undefined };
+}
+
+export const CustomMetricPreviewRequest = {
+  encode(message: CustomMetricPreviewRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.buildId !== "0") {
+      writer.uint32(8).int64(message.buildId);
+    }
+    if (message.metricDefinition !== undefined) {
+      CustomMetricDefinition.encode(message.metricDefinition, writer.uint32(18).fork()).ldelim();
+    }
+    if (message.metricBase !== undefined) {
+      writer.uint32(24).int32(message.metricBase);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): CustomMetricPreviewRequest {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCustomMetricPreviewRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 8) {
+            break;
+          }
+
+          message.buildId = longToString(reader.int64() as Long);
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.metricDefinition = CustomMetricDefinition.decode(reader, reader.uint32());
+          continue;
+        case 3:
+          if (tag !== 24) {
+            break;
+          }
+
+          message.metricBase = reader.int32() as any;
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): CustomMetricPreviewRequest {
+    return {
+      buildId: isSet(object.buildId) ? globalThis.String(object.buildId) : "0",
+      metricDefinition: isSet(object.metricDefinition)
+        ? CustomMetricDefinition.fromJSON(object.metricDefinition)
+        : undefined,
+      metricBase: isSet(object.metricBase) ? customMetricBaseFromJSON(object.metricBase) : undefined,
+    };
+  },
+
+  toJSON(message: CustomMetricPreviewRequest): unknown {
+    const obj: any = {};
+    if (message.buildId !== "0") {
+      obj.buildId = message.buildId;
+    }
+    if (message.metricDefinition !== undefined) {
+      obj.metricDefinition = CustomMetricDefinition.toJSON(message.metricDefinition);
+    }
+    if (message.metricBase !== undefined) {
+      obj.metricBase = customMetricBaseToJSON(message.metricBase);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<CustomMetricPreviewRequest>): CustomMetricPreviewRequest {
+    return CustomMetricPreviewRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<CustomMetricPreviewRequest>): CustomMetricPreviewRequest {
+    const message = createBaseCustomMetricPreviewRequest() as any;
+    message.buildId = object.buildId ?? "0";
+    message.metricDefinition = (object.metricDefinition !== undefined && object.metricDefinition !== null)
+      ? CustomMetricDefinition.fromPartial(object.metricDefinition)
+      : undefined;
+    message.metricBase = object.metricBase ?? undefined;
+    return message;
+  },
+};
+
+function createBaseCustomMetricPreviewResponse(): CustomMetricPreviewResponse {
+  return { report: undefined, error: undefined };
+}
+
+export const CustomMetricPreviewResponse = {
+  encode(message: CustomMetricPreviewResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.report !== undefined) {
+      CustomMetricPreviewResponse_Report.encode(message.report, writer.uint32(10).fork()).ldelim();
+    }
+    if (message.error !== undefined) {
+      writer.uint32(802).string(message.error);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): CustomMetricPreviewResponse {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCustomMetricPreviewResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.report = CustomMetricPreviewResponse_Report.decode(reader, reader.uint32());
+          continue;
+        case 100:
+          if (tag !== 802) {
+            break;
+          }
+
+          message.error = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): CustomMetricPreviewResponse {
+    return {
+      report: isSet(object.report) ? CustomMetricPreviewResponse_Report.fromJSON(object.report) : undefined,
+      error: isSet(object.error) ? globalThis.String(object.error) : undefined,
+    };
+  },
+
+  toJSON(message: CustomMetricPreviewResponse): unknown {
+    const obj: any = {};
+    if (message.report !== undefined) {
+      obj.report = CustomMetricPreviewResponse_Report.toJSON(message.report);
+    }
+    if (message.error !== undefined) {
+      obj.error = message.error;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<CustomMetricPreviewResponse>): CustomMetricPreviewResponse {
+    return CustomMetricPreviewResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<CustomMetricPreviewResponse>): CustomMetricPreviewResponse {
+    const message = createBaseCustomMetricPreviewResponse() as any;
+    message.report = (object.report !== undefined && object.report !== null)
+      ? CustomMetricPreviewResponse_Report.fromPartial(object.report)
+      : undefined;
+    message.error = object.error ?? undefined;
+    return message;
+  },
+};
+
+function createBaseCustomMetricPreviewResponse_Report(): CustomMetricPreviewResponse_Report {
+  return { fields: [] };
+}
+
+export const CustomMetricPreviewResponse_Report = {
+  encode(message: CustomMetricPreviewResponse_Report, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    for (const v of message.fields) {
+      StringPair.encode(v!, writer.uint32(10).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): CustomMetricPreviewResponse_Report {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCustomMetricPreviewResponse_Report() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.fields.push(StringPair.decode(reader, reader.uint32()));
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): CustomMetricPreviewResponse_Report {
+    return {
+      fields: globalThis.Array.isArray(object?.fields) ? object.fields.map((e: any) => StringPair.fromJSON(e)) : [],
+    };
+  },
+
+  toJSON(message: CustomMetricPreviewResponse_Report): unknown {
+    const obj: any = {};
+    if (message.fields?.length) {
+      obj.fields = message.fields.map((e) => StringPair.toJSON(e));
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<CustomMetricPreviewResponse_Report>): CustomMetricPreviewResponse_Report {
+    return CustomMetricPreviewResponse_Report.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<CustomMetricPreviewResponse_Report>): CustomMetricPreviewResponse_Report {
+    const message = createBaseCustomMetricPreviewResponse_Report() as any;
+    message.fields = object.fields?.map((e) => StringPair.fromPartial(e)) || [];
+    return message;
+  },
+};
+
 function createBaseBuildMask(): BuildMask {
   return {
     fields: undefined,
@@ -3651,6 +3908,12 @@ export interface Builds {
    * after RunTaskResponse is returned to buildbucket.
    */
   StartBuild(request: StartBuildRequest): Promise<StartBuildResponse>;
+  /**
+   * Preview a custom metric definition with a build.
+   * It's useful for builder owners to test the CEL expressions they plan to
+   * use in their custom metric predicates and extra_fields.
+   */
+  CustomMetricPreview(request: CustomMetricPreviewRequest): Promise<CustomMetricPreviewResponse>;
 }
 
 export const BuildsServiceName = "buildbucket.v2.Builds";
@@ -3671,6 +3934,7 @@ export class BuildsClientImpl implements Builds {
     this.SynthesizeBuild = this.SynthesizeBuild.bind(this);
     this.GetBuildStatus = this.GetBuildStatus.bind(this);
     this.StartBuild = this.StartBuild.bind(this);
+    this.CustomMetricPreview = this.CustomMetricPreview.bind(this);
   }
   GetBuild(request: GetBuildRequest): Promise<Build> {
     const data = GetBuildRequest.toJSON(request);
@@ -3730,6 +3994,12 @@ export class BuildsClientImpl implements Builds {
     const data = StartBuildRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "StartBuild", data);
     return promise.then((data) => StartBuildResponse.fromJSON(data));
+  }
+
+  CustomMetricPreview(request: CustomMetricPreviewRequest): Promise<CustomMetricPreviewResponse> {
+    const data = CustomMetricPreviewRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "CustomMetricPreview", data);
+    return promise.then((data) => CustomMetricPreviewResponse.fromJSON(data));
   }
 }
 

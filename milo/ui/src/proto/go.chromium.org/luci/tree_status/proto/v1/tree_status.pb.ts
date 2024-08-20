@@ -116,7 +116,22 @@ export interface Status {
    */
   readonly createUser: string;
   /** The time the status update was made. */
-  readonly createTime: string | undefined;
+  readonly createTime:
+    | string
+    | undefined;
+  /**
+   * Optional. Only applicable when general_state == CLOSED.
+   * If this field is set when general_state != CLOSED, it will be ignored.
+   * The name of the LUCI builder that caused the tree to close.
+   * Format: projects/{project}/buckets/{bucket}/builders/{builder}.
+   * This field will be populated by LUCI Notify, when it automatically
+   * closes a tree. When a human closes a tree, we do not require this field
+   * to be set.
+   * Note: If a tree is closed due to multiple builders, only the first failure
+   * will be recorded.
+   * This field will be exported to BigQuery for analysis.
+   */
+  readonly closingBuilderName: string;
 }
 
 export interface ListStatusRequest {
@@ -223,7 +238,7 @@ export const GetStatusRequest = {
 };
 
 function createBaseStatus(): Status {
-  return { name: "", generalState: 0, message: "", createUser: "", createTime: undefined };
+  return { name: "", generalState: 0, message: "", createUser: "", createTime: undefined, closingBuilderName: "" };
 }
 
 export const Status = {
@@ -242,6 +257,9 @@ export const Status = {
     }
     if (message.createTime !== undefined) {
       Timestamp.encode(toTimestamp(message.createTime), writer.uint32(42).fork()).ldelim();
+    }
+    if (message.closingBuilderName !== "") {
+      writer.uint32(50).string(message.closingBuilderName);
     }
     return writer;
   },
@@ -288,6 +306,13 @@ export const Status = {
 
           message.createTime = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
           continue;
+        case 6:
+          if (tag !== 50) {
+            break;
+          }
+
+          message.closingBuilderName = reader.string();
+          continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -304,6 +329,7 @@ export const Status = {
       message: isSet(object.message) ? globalThis.String(object.message) : "",
       createUser: isSet(object.createUser) ? globalThis.String(object.createUser) : "",
       createTime: isSet(object.createTime) ? globalThis.String(object.createTime) : undefined,
+      closingBuilderName: isSet(object.closingBuilderName) ? globalThis.String(object.closingBuilderName) : "",
     };
   },
 
@@ -324,6 +350,9 @@ export const Status = {
     if (message.createTime !== undefined) {
       obj.createTime = message.createTime;
     }
+    if (message.closingBuilderName !== "") {
+      obj.closingBuilderName = message.closingBuilderName;
+    }
     return obj;
   },
 
@@ -337,6 +366,7 @@ export const Status = {
     message.message = object.message ?? "";
     message.createUser = object.createUser ?? "";
     message.createTime = object.createTime ?? undefined;
+    message.closingBuilderName = object.closingBuilderName ?? "";
     return message;
   },
 };

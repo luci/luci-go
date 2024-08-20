@@ -290,6 +290,10 @@ export interface BatchCheckPermissionsRequest {
    * String representation of the permissions.
    *
    * Permissions must have the following format: `<service>.<subject>.<verb>`.
+   *
+   * N.B. Only permissions registered [here][1] are allowed.
+   *
+   * [1]: https://source.corp.google.com/h/github/googlesource/codesearch/+/master:luci/luci-go/milo/rpc/batch_check_permissions.go;l=26;drc=e952557609eade6037c66866ebc00c506d8800a8
    */
   readonly permissions: readonly string[];
 }
@@ -2506,7 +2510,13 @@ export interface MiloInternal {
   ListBuilders(request: ListBuildersRequest): Promise<ListBuildersResponse>;
   /** Get the statistics associated with a builder. */
   QueryBuilderStats(request: QueryBuilderStatsRequest): Promise<BuilderStats>;
-  /** Check whether the users has the specified permissions in the given realm. */
+  /**
+   * Check whether the users has the specified permissions in the given realm.
+   *
+   * N.B. Only permissions registered [here][1] can be checked.
+   *
+   * [1]: https://source.corp.google.com/h/github/googlesource/codesearch/+/master:luci/luci-go/milo/rpc/batch_check_permissions.go;l=26;drc=e952557609eade6037c66866ebc00c506d8800a8
+   */
   BatchCheckPermissions(request: BatchCheckPermissionsRequest): Promise<BatchCheckPermissionsResponse>;
   /** Retrieves a list of consoles. */
   QueryConsoles(request: QueryConsolesRequest): Promise<QueryConsolesResponse>;

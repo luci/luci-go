@@ -813,7 +813,7 @@ export interface Shard {
  *
  * Keep sorted by field name.
  *
- * NEXT TAG: 42
+ * NEXT TAG: 43
  */
 export interface SchedulableLabels {
   /** Whether this device supports ARC execution environment. */
@@ -916,7 +916,15 @@ export interface SchedulableLabels {
     | SchedulableLabels_DevboardType
     | undefined;
   /** Indicates whether we have wifi network setup on the hosting location. */
-  readonly wifiOnSite?: boolean | undefined;
+  readonly wifiOnSite?:
+    | boolean
+    | undefined;
+  /**
+   * TODO(b/350065958): Remove when bot/dut is decoupled from device manager.
+   * bot_size is used for test scheduler and device manager to assign tests to
+   * bots with enough RAM size.
+   */
+  readonly botSize?: SchedulableLabels_BotSize | undefined;
 }
 
 /**
@@ -1269,6 +1277,36 @@ export function schedulableLabels_PhaseToJSON(object: SchedulableLabels_Phase): 
       return "PHASE_MP";
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum SchedulableLabels_Phase");
+  }
+}
+
+/** NEXT TAG: 2 */
+export enum SchedulableLabels_BotSize {
+  BOT_SIZE_INVALID = 0,
+  BOT_SIZE_LARGE = 1,
+}
+
+export function schedulableLabels_BotSizeFromJSON(object: any): SchedulableLabels_BotSize {
+  switch (object) {
+    case 0:
+    case "BOT_SIZE_INVALID":
+      return SchedulableLabels_BotSize.BOT_SIZE_INVALID;
+    case 1:
+    case "BOT_SIZE_LARGE":
+      return SchedulableLabels_BotSize.BOT_SIZE_LARGE;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum SchedulableLabels_BotSize");
+  }
+}
+
+export function schedulableLabels_BotSizeToJSON(object: SchedulableLabels_BotSize): string {
+  switch (object) {
+    case SchedulableLabels_BotSize.BOT_SIZE_INVALID:
+      return "BOT_SIZE_INVALID";
+    case SchedulableLabels_BotSize.BOT_SIZE_LARGE:
+      return "BOT_SIZE_LARGE";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum SchedulableLabels_BotSize");
   }
 }
 
@@ -3579,6 +3617,7 @@ function createBaseSchedulableLabels(): SchedulableLabels {
     wifiChip: "",
     devboardType: 0,
     wifiOnSite: false,
+    botSize: 0,
   };
 }
 
@@ -3694,6 +3733,9 @@ export const SchedulableLabels = {
     }
     if (message.wifiOnSite !== undefined && message.wifiOnSite !== false) {
       writer.uint32(328).bool(message.wifiOnSite);
+    }
+    if (message.botSize !== undefined && message.botSize !== 0) {
+      writer.uint32(336).int32(message.botSize);
     }
     return writer;
   },
@@ -3980,6 +4022,13 @@ export const SchedulableLabels = {
 
           message.wifiOnSite = reader.bool();
           continue;
+        case 42:
+          if (tag !== 336) {
+            break;
+          }
+
+          message.botSize = reader.int32() as any;
+          continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -4042,6 +4091,7 @@ export const SchedulableLabels = {
       wifiChip: isSet(object.wifiChip) ? globalThis.String(object.wifiChip) : "",
       devboardType: isSet(object.devboardType) ? schedulableLabels_DevboardTypeFromJSON(object.devboardType) : 0,
       wifiOnSite: isSet(object.wifiOnSite) ? globalThis.Boolean(object.wifiOnSite) : false,
+      botSize: isSet(object.botSize) ? schedulableLabels_BotSizeFromJSON(object.botSize) : 0,
     };
   },
 
@@ -4152,6 +4202,9 @@ export const SchedulableLabels = {
     if (message.wifiOnSite !== undefined && message.wifiOnSite !== false) {
       obj.wifiOnSite = message.wifiOnSite;
     }
+    if (message.botSize !== undefined && message.botSize !== 0) {
+      obj.botSize = schedulableLabels_BotSizeToJSON(message.botSize);
+    }
     return obj;
   },
 
@@ -4203,6 +4256,7 @@ export const SchedulableLabels = {
     message.wifiChip = object.wifiChip ?? "";
     message.devboardType = object.devboardType ?? 0;
     message.wifiOnSite = object.wifiOnSite ?? false;
+    message.botSize = object.botSize ?? 0;
     return message;
   },
 };
