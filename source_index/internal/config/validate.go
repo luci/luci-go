@@ -15,22 +15,12 @@
 package config
 
 import (
-	"regexp"
-
 	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/validate"
 	"go.chromium.org/luci/config/validation"
 
+	"go.chromium.org/luci/source_index/internal/validationutil"
 	configpb "go.chromium.org/luci/source_index/proto/config"
-)
-
-var (
-	// The GoB repository naming restriction doesn't appear to be well documented.
-	// The following is derived from
-	//  * GitHub repository naming restriction, and
-	//  * observation of existing repositories on various gitiles hosts.
-	repositoryRE     = regexp.MustCompile(`^[a-zA-Z0-9_.-]+(/[a-zA-Z0-9_.-]+)*$`)
-	repositoryMaxLen = 100
 )
 
 func validateConfig(ctx *validation.Context, cfg *configpb.Config) {
@@ -69,7 +59,7 @@ func validateHost(ctx *validation.Context, host *configpb.Config_Host) {
 
 func validateRepositories(ctx *validation.Context, repository *configpb.Config_Host_Repository) {
 	ctx.Enter("name")
-	if err := validate.MatchReWithLength(repositoryRE, 1, repositoryMaxLen, repository.Name); err != nil {
+	if err := validationutil.ValidateRepoName(repository.Name); err != nil {
 		ctx.Error(err)
 	}
 	ctx.Exit()
