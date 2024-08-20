@@ -145,24 +145,17 @@ var readArtifactGroupTmpl = template.Must(template.New("").Parse(`
 			ANY_VALUE(test_status) as test_status,
 			ANY_VALUE(partition_time) as partition_time,
   	FROM text_artifacts
-		WHERE project = @project
-			-- Only include the first shard for each artifact.
-			AND shard_id = 0
-			AND REGEXP_CONTAINS(content, @searchRegex)
+		WHERE
+			-- Start time is exclusive.
+			partition_time > @startTime
+			-- End time is inclusive.
+			AND partition_time <= @endTime
+			AND project = @project
 			{{if .prefixMatchTestID}}
 				AND STARTS_WITH(test_id, @testIDMatcherString)
 			{{else if .exactMatchTestID}}
 				AND test_id = @testIDMatcherString
 			{{end}}
-			{{if .prefixMatchArtifactID}}
-				AND STARTS_WITH(artifact_id, @artifactIDMatcherString)
-			{{else if .exactMatchArtifactID}}
-				AND artifact_id = @artifactIDMatcherString
-			{{end}}
-			-- Start time is exclusive.
-			AND partition_time > @startTime
-			-- End time is inclusive.
-			AND partition_time <= @endTime
 			{{if .invocationLevel}}
 				-- Invocation level artifact has empty test id.
 				AND test_id = ""
@@ -170,6 +163,14 @@ var readArtifactGroupTmpl = template.Must(template.New("").Parse(`
 				-- Exclude invocation level artifact.
 				AND test_id != ""
 			{{end}}
+			{{if .prefixMatchArtifactID}}
+				AND STARTS_WITH(artifact_id, @artifactIDMatcherString)
+			{{else if .exactMatchArtifactID}}
+				AND artifact_id = @artifactIDMatcherString
+			{{end}}
+			-- Only include the first shard for each artifact.
+			AND shard_id = 0
+			AND REGEXP_CONTAINS(content, @searchRegex)
 			-- Only return artifacts which caller has permission to access.
 			AND realm in UNNEST(@subRealms)
 			-- Exclude rows that are added after the max insert time.
@@ -319,7 +320,12 @@ var readArtifactsTmpl = template.Must(template.New("").Parse(`
 		REVERSE(SUBSTR(REVERSE(REGEXP_EXTRACT(ANY_VALUE(content), @searchContextBeforeRegex)), 0, @maxMatchSize)) AS MatchWithContextBefore,
 		SUBSTR(REGEXP_EXTRACT(ANY_VALUE(content), @searchContextAfterRegex), 0, @maxMatchSize) AS MatchWithContextAfter
 	FROM text_artifacts
-	WHERE project = @project
+	WHERE
+		-- Start time is exclusive.
+		partition_time > @startTime
+		-- End time is inclusive.
+		AND partition_time <= @endTime
+		AND project = @project
 		{{if .invocationLevel }}
 				AND test_id = ""
 				AND invocation_variant_union_hash = @variantHash
@@ -331,10 +337,6 @@ var readArtifactsTmpl = template.Must(template.New("").Parse(`
 		-- Only include the first shard for each artifact.
 		AND shard_id = 0
 		AND REGEXP_CONTAINS(content, @searchRegex)
-		-- Start time is exclusive.
-		AND partition_time > @startTime
-		-- End time is inclusive.
-		AND partition_time <= @endTime
 		-- Only return artifacts which caller has permission to access.
 		AND realm in UNNEST(@subRealms)
 	{{if .pagination}}
