@@ -60,17 +60,25 @@ const (
 	emptyDigest = "0NpkIis/WMci8PDKkLD3PB/t8B86nbBVjyD59iosjOM"
 )
 
+// VersionInfo identifies versions of Swarming configs.
+//
+// It is stored in the datastore as part of ConfigBundle and ConfigBundleRev.
+type VersionInfo struct {
+	// Revision is the config repo commit the config was loaded from.
+	Revision string `gae:",noindex"`
+	// Digest is derived from the configs and bot code.
+	Digest string `gae:",noindex"`
+	// Fetched is when this config was fetched for the first time.
+	Fetched time.Time `gae:",noindex"`
+}
+
 // Config is an immutable queryable representation of Swarming server configs.
 //
 // It is a snapshot of configs at some particular revision. Use an instance of
 // Provider to get it.
 type Config struct {
-	// Revision is the config repo commit the config was loaded from.
-	Revision string
-	// Digest is derived exclusively from the configs content.
-	Digest string
-	// Fetched is when the stored config was fetched from LUIC Config.
-	Fetched time.Time
+	// VersionInfo contains versions of the fetched configs.
+	VersionInfo VersionInfo
 	// Refreshed is when the process config was fetched from the datastore.
 	Refreshed time.Time
 
@@ -186,20 +194,20 @@ func UpdateConfigs(ctx context.Context) error {
 
 	// Store as the new authoritative config.
 	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-		now := clock.Now(ctx).UTC()
+		info := VersionInfo{
+			Revision: bundle.Revision,
+			Digest:   bundle.Digest,
+			Fetched:  clock.Now(ctx).UTC(),
+		}
 		return datastore.Put(ctx,
 			&configBundle{
-				Key:      configBundleKey(ctx),
-				Revision: bundle.Revision,
-				Digest:   bundle.Digest,
-				Fetched:  now,
-				Bundle:   bundle,
+				VersionInfo: info,
+				Key:         configBundleKey(ctx),
+				Bundle:      bundle,
 			},
 			&configBundleRev{
-				Key:      configBundleRevKey(ctx),
-				Revision: bundle.Revision,
-				Digest:   bundle.Digest,
-				Fetched:  now,
+				VersionInfo: info,
+				Key:         configBundleRevKey(ctx),
 			})
 	}, nil)
 
@@ -326,23 +334,21 @@ func parseAndValidate[T any, TP interface {
 
 // configBundle is an entity that stores latest configs as compressed protos.
 type configBundle struct {
-	_ datastore.PropertyMap `gae:"-,extra"`
+	VersionInfo
 
-	Key      *datastore.Key              `gae:"$key"`
-	Revision string                      `gae:",noindex"`
-	Digest   string                      `gae:",noindex"`
-	Fetched  time.Time                   `gae:",noindex"`
-	Bundle   *internalcfgpb.ConfigBundle `gae:",zstd"`
+	Key    *datastore.Key              `gae:"$key"`
+	Bundle *internalcfgpb.ConfigBundle `gae:",zstd"`
+
+	_ datastore.PropertyMap `gae:"-,extra"`
 }
 
 // configBundleRev just stores the metadata for faster fetches.
 type configBundleRev struct {
-	_ datastore.PropertyMap `gae:"-,extra"`
+	VersionInfo
 
-	Key      *datastore.Key `gae:"$key"`
-	Revision string         `gae:",noindex"`
-	Digest   string         `gae:",noindex"`
-	Fetched  time.Time      `gae:",noindex"`
+	Key *datastore.Key `gae:"$key"`
+
+	_ datastore.PropertyMap `gae:"-,extra"`
 }
 
 // configBundleKey is a key of the singleton configBundle entity.
@@ -372,10 +378,9 @@ func fetchFromDatastore(ctx context.Context, cur *Config) (*Config, error) {
 		case err != nil:
 			return nil, errors.Annotate(err, "fetching configBundleRev").Err()
 		}
-		if cur.Digest == rev.Digest {
+		if cur.VersionInfo.Digest == rev.Digest {
 			clone := *cur
-			clone.Revision = rev.Revision
-			clone.Fetched = rev.Fetched
+			clone.VersionInfo = rev.VersionInfo
 			clone.Refreshed = clock.Now(ctx).UTC()
 			return &clone, nil
 		}
@@ -406,7 +411,7 @@ func fetchFromDatastore(ctx context.Context, cur *Config) (*Config, error) {
 		)
 		return nil, errors.Annotate(err, "broken config in the datastore").Err()
 	}
-	logging.Infof(ctx, "Loaded configs at rev %s", cfg.Revision)
+	logging.Infof(ctx, "Loaded configs at rev %s", cfg.VersionInfo.Revision)
 	return cfg, nil
 }
 
@@ -437,14 +442,12 @@ func buildQueriableConfig(ctx context.Context, ent *configBundle) (*Config, erro
 	}
 
 	return &Config{
-		Revision:  ent.Revision,
-		Digest:    ent.Digest,
-		Fetched:   ent.Fetched,
-		Refreshed: clock.Now(ctx).UTC(),
-		settings:  settings,
-		traffic:   traffic,
-		poolMap:   pools,
-		poolNames: poolNames,
-		botGroups: botGroups,
+		VersionInfo: ent.VersionInfo,
+		Refreshed:   clock.Now(ctx).UTC(),
+		settings:    settings,
+		traffic:     traffic,
+		poolMap:     pools,
+		poolNames:   poolNames,
+		botGroups:   botGroups,
 	}, nil
 }

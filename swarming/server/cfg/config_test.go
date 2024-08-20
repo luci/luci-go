@@ -259,8 +259,8 @@ func TestFetchFromDatastore(t *testing.T) {
 		t.Run("Empty datastore", func(t *ftt.Test) {
 			cfg, err := fetch(nil)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, cfg.Revision, should.Equal(emptyRev))
-			assert.Loosely(t, cfg.Digest, should.Equal(emptyDigest))
+			assert.Loosely(t, cfg.VersionInfo.Revision, should.Equal(emptyRev))
+			assert.Loosely(t, cfg.VersionInfo.Digest, should.Equal(emptyDigest))
 			assert.Loosely(t, cfg.settings, should.Resemble(defaultConfigs().Settings))
 		})
 
@@ -271,15 +271,15 @@ func TestFetchFromDatastore(t *testing.T) {
 			// Fetches initial copy of default config.
 			cfg, err := fetch(nil)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, cfg.Revision, should.Equal(emptyRev))
-			assert.Loosely(t, cfg.Digest, should.Equal(emptyDigest))
+			assert.Loosely(t, cfg.VersionInfo.Revision, should.Equal(emptyRev))
+			assert.Loosely(t, cfg.VersionInfo.Digest, should.Equal(emptyDigest))
 			assert.Loosely(t, cfg.settings, should.Resemble(defaultConfigs().Settings))
 
 			// Does nothing, there's still no real config.
 			cfg, err = fetch(cfg)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, cfg.Revision, should.Equal(emptyRev))
-			assert.Loosely(t, cfg.Digest, should.Equal(emptyDigest))
+			assert.Loosely(t, cfg.VersionInfo.Revision, should.Equal(emptyRev))
+			assert.Loosely(t, cfg.VersionInfo.Digest, should.Equal(emptyDigest))
 			assert.Loosely(t, cfg.settings, should.Resemble(defaultConfigs().Settings))
 
 			// A real config appears.
@@ -288,8 +288,8 @@ func TestFetchFromDatastore(t *testing.T) {
 			// It replaces the empty config when fetched (with defaults filled in).
 			cfg, err = fetch(cfg)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, cfg.Revision, should.Equal("bcf7460a098890cc7efc8eda1c8279658ec25eb3"))
-			assert.Loosely(t, cfg.Digest, should.Equal("xv7iFT37ovx5Qc9kjYK0kEa3Eq47cNNC0ZbEd61eOYQ"))
+			assert.Loosely(t, cfg.VersionInfo.Revision, should.Equal("bcf7460a098890cc7efc8eda1c8279658ec25eb3"))
+			assert.Loosely(t, cfg.VersionInfo.Digest, should.Equal("xv7iFT37ovx5Qc9kjYK0kEa3Eq47cNNC0ZbEd61eOYQ"))
 			assert.Loosely(t, cfg.settings, should.Resemble(&configpb.SettingsCfg{
 				GoogleAnalytics: "boo",
 				Auth: &configpb.AuthSettings{
@@ -310,8 +310,8 @@ func TestFetchFromDatastore(t *testing.T) {
 			// The default config is used again.
 			cfg, err = fetch(cfg)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, cfg.Revision, should.Equal(emptyRev))
-			assert.Loosely(t, cfg.Digest, should.Equal(emptyDigest))
+			assert.Loosely(t, cfg.VersionInfo.Revision, should.Equal(emptyRev))
+			assert.Loosely(t, cfg.VersionInfo.Digest, should.Equal(emptyDigest))
 			assert.Loosely(t, cfg.settings, should.Resemble(defaultConfigs().Settings))
 		})
 
@@ -322,8 +322,8 @@ func TestFetchFromDatastore(t *testing.T) {
 			// Fetches initial copy of this config.
 			cfg, err := fetch(nil)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, cfg.Revision, should.Equal("bcf7460a098890cc7efc8eda1c8279658ec25eb3"))
-			assert.Loosely(t, cfg.Digest, should.Equal("xv7iFT37ovx5Qc9kjYK0kEa3Eq47cNNC0ZbEd61eOYQ"))
+			assert.Loosely(t, cfg.VersionInfo.Revision, should.Equal("bcf7460a098890cc7efc8eda1c8279658ec25eb3"))
+			assert.Loosely(t, cfg.VersionInfo.Digest, should.Equal("xv7iFT37ovx5Qc9kjYK0kEa3Eq47cNNC0ZbEd61eOYQ"))
 			assert.Loosely(t, cfg.settings, should.Resemble(withDefaultSettings(&configpb.SettingsCfg{
 				GoogleAnalytics: "boo",
 			})))
@@ -331,8 +331,8 @@ func TestFetchFromDatastore(t *testing.T) {
 			// Nothing change. The same config is returned.
 			cfg, err = fetch(cfg)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, cfg.Revision, should.Equal("bcf7460a098890cc7efc8eda1c8279658ec25eb3"))
-			assert.Loosely(t, cfg.Digest, should.Equal("xv7iFT37ovx5Qc9kjYK0kEa3Eq47cNNC0ZbEd61eOYQ"))
+			assert.Loosely(t, cfg.VersionInfo.Revision, should.Equal("bcf7460a098890cc7efc8eda1c8279658ec25eb3"))
+			assert.Loosely(t, cfg.VersionInfo.Digest, should.Equal("xv7iFT37ovx5Qc9kjYK0kEa3Eq47cNNC0ZbEd61eOYQ"))
 			assert.Loosely(t, cfg.settings, should.Resemble(withDefaultSettings(&configpb.SettingsCfg{
 				GoogleAnalytics: "boo",
 			})))
@@ -347,8 +347,8 @@ func TestFetchFromDatastore(t *testing.T) {
 			prev := cfg.settings
 			cfg, err = fetch(cfg)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, cfg.Revision, should.Equal("725455c37c09b5dfa3dc31b47c9f787d555cbfb3"))
-			assert.Loosely(t, cfg.Digest, should.Equal("xv7iFT37ovx5Qc9kjYK0kEa3Eq47cNNC0ZbEd61eOYQ"))
+			assert.Loosely(t, cfg.VersionInfo.Revision, should.Equal("725455c37c09b5dfa3dc31b47c9f787d555cbfb3"))
+			assert.Loosely(t, cfg.VersionInfo.Digest, should.Equal("xv7iFT37ovx5Qc9kjYK0kEa3Eq47cNNC0ZbEd61eOYQ"))
 			assert.Loosely(t, cfg.settings == prev, should.BeTrue) // equal as pointers
 
 			// A real config change happens.
@@ -357,8 +357,8 @@ func TestFetchFromDatastore(t *testing.T) {
 			// Causes the config update.
 			cfg, err = fetch(cfg)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, cfg.Revision, should.Equal("3a7123badfd5426f2a75932433f99b0aee8baf9b"))
-			assert.Loosely(t, cfg.Digest, should.Equal("+JawsgfwWonAz8wFE/iR2AcdVmMhK3OwFbNSgCjBiRo"))
+			assert.Loosely(t, cfg.VersionInfo.Revision, should.Equal("3a7123badfd5426f2a75932433f99b0aee8baf9b"))
+			assert.Loosely(t, cfg.VersionInfo.Digest, should.Equal("+JawsgfwWonAz8wFE/iR2AcdVmMhK3OwFbNSgCjBiRo"))
 			assert.Loosely(t, cfg.settings, should.Resemble(withDefaultSettings(&configpb.SettingsCfg{
 				GoogleAnalytics: "blah",
 			})))
@@ -371,9 +371,11 @@ func TestBuildQueriableConfig(t *testing.T) {
 
 	build := func(bundle *internalcfgpb.ConfigBundle) (*Config, error) {
 		return buildQueriableConfig(context.Background(), &configBundle{
-			Revision: "some-revision",
-			Digest:   "some-digest",
-			Bundle:   bundle,
+			VersionInfo: VersionInfo{
+				Revision: "some-revision",
+				Digest:   "some-digest",
+			},
+			Bundle: bundle,
 		})
 	}
 
