@@ -65,7 +65,7 @@ func TestClientDigestsFile(t *testing.T) {
 		So(df.AddClientRef("linux-amd64", &api.ObjectRef{
 			HashAlgo:  12345,
 			HexDigest: "aaaa",
-		}), ShouldErrLike, "unsupported hash algorithm")
+		}), ShouldErrLike, "unsupported unknown hash algorithm")
 
 		df.AddClientRef("linux-amd64", sha1("a"))
 		So(df.AddClientRef("linux-amd64", sha1("a")), ShouldErrLike, "has already been added")

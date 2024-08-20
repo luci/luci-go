@@ -113,7 +113,7 @@ func TestValidateObjectRef(t *testing.T) {
 		So(ValidateObjectRef(&api.ObjectRef{
 			HashAlgo:  33,
 			HexDigest: "a948904f2f0f479b8f8197694b30184b0d2ed1c1cd2a1ec0fb85d299a192a447",
-		}, KnownHash), ShouldErrLike, "unsupported hash algorithm 33")
+		}, KnownHash), ShouldErrLike, "unsupported unknown hash algorithm #33")
 	})
 
 	Convey("Some future hash in AnyHash mode", t, func() {

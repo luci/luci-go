@@ -58,6 +58,10 @@ func ValidateInstanceID(iid string, v HashAlgoValidation) (err error) {
 	if len(iid) == 40 {
 		// Legacy SHA1-based instances use hex(sha1) as instance ID, 40 chars.
 		err = checkIsHex(iid)
+		// Refuse SHA1s if the binary doesn't have SHA1 support compiled in.
+		if err == nil && v == KnownHash {
+			err = ValidateHashAlgo(api.HashAlgo_SHA1)
+		}
 	} else {
 		var ref *api.ObjectRef
 		ref, err = decodeObjectRef(iid)

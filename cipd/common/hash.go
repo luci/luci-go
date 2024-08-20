@@ -75,8 +75,10 @@ func ValidateHashAlgo(h api.HashAlgo) error {
 	switch {
 	case h == api.HashAlgo_HASH_ALGO_UNSPECIFIED:
 		return validationErr("the hash algorithm is not specified or unrecognized")
-	case int(h) >= len(supportedAlgos) || supportedAlgos[h].hash == nil:
-		return validationErr("unsupported hash algorithm %d", h)
+	case int(h) >= len(supportedAlgos):
+		return validationErr("unsupported unknown hash algorithm #%d", h)
+	case supportedAlgos[h].hash == nil:
+		return validationErr("unsupported hash algorithm %s (the support was explicitly disabled)", h)
 	}
 	return nil
 }

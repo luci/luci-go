@@ -129,7 +129,7 @@ var (
 	// ClientPackage is a package with the CIPD client. Used during self-update.
 	ClientPackage = "infra/tools/cipd/${platform}"
 	// UserAgent is HTTP user agent string for CIPD client.
-	UserAgent = "cipd 2.6.16"
+	UserAgent = "cipd 2.6.17"
 )
 
 func init() {
@@ -1874,6 +1874,15 @@ func (c *clientImpl) remoteFetchInstance(ctx context.Context, pin common.Pin, ou
 		}
 	}()
 
+	// We are going to check the hash of this instance, make sure we support the
+	// corresponding hash algo. This check can fail if an older client is used
+	// to repair a package that uses a newer hash algo, installed by a newer
+	// client. In other cases an unsupported hash algo is detected sooner.
+	err = common.ValidateInstanceID(pin.InstanceID, common.KnownHash)
+	if err != nil {
+		return
+	}
+
 	objRef := common.InstanceIDToObjectRef(pin.InstanceID)
 
 	logging.Infof(ctx, "Resolving fetch URL for %s", pin)
@@ -1902,7 +1911,7 @@ func (c *clientImpl) FindDeployed(ctx context.Context) (common.PinSliceBySubdir,
 }
 
 func (c *clientImpl) EnsurePackages(ctx context.Context, allPins common.PinSliceBySubdir, opts *EnsureOptions) (aMap ActionMap, err error) {
-	if err = allPins.Validate(common.AnyHash); err != nil {
+	if err = allPins.Validate(common.KnownHash); err != nil {
 		return
 	}
 
