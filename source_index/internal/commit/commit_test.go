@@ -34,14 +34,14 @@ func TestCommit(t *testing.T) {
 		now := time.Date(2055, time.May, 5, 5, 5, 5, 5, time.UTC)
 		ctx, _ = testclock.UseTime(ctx, now)
 
-		Convey("SaveUnverified", func() {
+		Convey("Save", func() {
 			commitToSave := Commit{
-				Key: Key{
-					Host:       "chromium.googlesource.com",
-					Repository: "chromium/src",
-					CommitHash: "50791c81152633c73485745d8311fafde0e4935a",
+				key: Key{
+					host:       "chromium.googlesource.com",
+					repository: "chromium/src",
+					commitHash: "50791c81152633c73485745d8311fafde0e4935a",
 				},
-				Position: &Position{
+				position: &Position{
 					Ref:    "refs/heads/main",
 					Number: 10,
 				},
@@ -49,7 +49,7 @@ func TestCommit(t *testing.T) {
 
 			saveCommit := func() error {
 				_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
-					span.BufferWrite(ctx, commitToSave.SaveUnverified())
+					span.BufferWrite(ctx, commitToSave.Save())
 					return nil
 				})
 				return err
@@ -70,7 +70,7 @@ func TestCommit(t *testing.T) {
 			})
 
 			Convey("without position", func() {
-				commitToSave.Position = nil
+				commitToSave.position = nil
 
 				err := saveCommit()
 

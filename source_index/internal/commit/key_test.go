@@ -24,67 +24,127 @@ import (
 	"go.chromium.org/luci/source_index/internal/testutil"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestKey(t *testing.T) {
 	Convey("Key", t, func() {
-		ctx := testutil.SpannerTestContext(t)
+		Convey("NewKey", func() {
+			host := "chromium.googlesource.com"
+			repository := "chromium/src"
+			commitHash := "b66c0785db818311bf0ea486779f3326ba3ddf11"
 
-		now := time.Date(2055, time.May, 5, 5, 5, 5, 5, time.UTC)
-		ctx, _ = testclock.UseTime(ctx, now)
-
-		key := Key{
-			Host:       "chromium.googlesource.com",
-			Repository: "chromium/src",
-			CommitHash: "50791c81152633c73485745d8311fafde0e4935a",
-		}
-		commitToStore := Commit{
-			Key: key,
-			Position: &Position{
-				Ref:    "refs/heads/main",
-				Number: 10,
-			},
-		}
-
-		Convey("ReadCommit", func() {
-			Convey("with position", func() {
-				So(SetForTesting(ctx, commitToStore), ShouldBeNil)
-
-				readCommit, err := ReadCommit(span.Single(ctx), key)
+			Convey("valid", func() {
+				key, err := NewKey(host, repository, commitHash)
 
 				So(err, ShouldBeNil)
-				So(readCommit, ShouldResemble, &commitToStore)
+				So(key, ShouldResemble, Key{
+					host:       host,
+					repository: repository,
+					commitHash: commitHash,
+				})
 			})
 
-			Convey("without position", func() {
-				commitToStore.Position = nil
-				So(SetForTesting(ctx, commitToStore), ShouldBeNil)
+			Convey("invalid host", func() {
+				host = "chromium.invalidsource.com"
 
-				readCommit, err := ReadCommit(span.Single(ctx), key)
+				key, err := NewKey(host, repository, commitHash)
+
+				So(err, ShouldErrLike, "invalid host")
+				So(key, ShouldResemble, Key{})
+			})
+
+			Convey("invalid repository", func() {
+				repository = "chromium/"
+
+				key, err := NewKey(host, repository, commitHash)
+
+				So(err, ShouldErrLike, "invalid repository")
+				So(key, ShouldResemble, Key{})
+			})
+
+			Convey("invalid commit hash", func() {
+				commitHash = "not-a-hash"
+
+				key, err := NewKey(host, repository, commitHash)
+
+				So(err, ShouldErrLike, "invalid commit hash")
+				So(key, ShouldResemble, Key{})
+			})
+
+			Convey("mixed case commit hash", func() {
+				commitHash = "B66c0785Db818311bf0ea486779F3326ba3ddf11"
+
+				key, err := NewKey(host, repository, commitHash)
 
 				So(err, ShouldBeNil)
-				So(readCommit, ShouldResemble, &commitToStore)
+				So(key, ShouldResemble, Key{
+					host:       host,
+					repository: repository,
+					commitHash: "b66c0785db818311bf0ea486779f3326ba3ddf11",
+				})
 			})
 		})
 
-		Convey("Exits", func() {
-			Convey("existing commit", func() {
-				So(SetForTesting(ctx, commitToStore), ShouldBeNil)
+		Convey("spanner", func() {
+			ctx := testutil.SpannerTestContext(t)
 
-				exists, err := Exists(span.Single(ctx), key)
+			now := time.Date(2055, time.May, 5, 5, 5, 5, 5, time.UTC)
+			ctx, _ = testclock.UseTime(ctx, now)
 
-				So(err, ShouldBeNil)
-				So(exists, ShouldBeTrue)
+			key := Key{
+				host:       "chromium.googlesource.com",
+				repository: "chromium/src",
+				commitHash: "50791c81152633c73485745d8311fafde0e4935a",
+			}
+			commitToStore := Commit{
+				key: key,
+				position: &Position{
+					Ref:    "refs/heads/main",
+					Number: 10,
+				},
+			}
+
+			Convey("ReadCommit", func() {
+				Convey("with position", func() {
+					So(SetForTesting(ctx, commitToStore), ShouldBeNil)
+
+					readCommit, err := ReadCommit(span.Single(ctx), key)
+
+					So(err, ShouldBeNil)
+					So(readCommit, ShouldResemble, commitToStore)
+				})
+
+				Convey("without position", func() {
+					commitToStore.position = nil
+					So(SetForTesting(ctx, commitToStore), ShouldBeNil)
+
+					readCommit, err := ReadCommit(span.Single(ctx), key)
+
+					So(err, ShouldBeNil)
+					So(readCommit, ShouldResemble, commitToStore)
+				})
 			})
 
-			Convey("non-existing commit", func() {
-				commitToStore.CommitHash = "94f4b5c7c0bacc03caf215987a068db54b88af20"
-				So(SetForTesting(ctx, commitToStore), ShouldBeNil)
+			Convey("Exits", func() {
+				Convey("existing commit", func() {
+					So(SetForTesting(ctx, commitToStore), ShouldBeNil)
 
-				exists, err := Exists(span.Single(ctx), key)
+					exists, err := Exists(span.Single(ctx), key)
 
-				So(err, ShouldBeNil)
-				So(exists, ShouldBeFalse)
+					So(err, ShouldBeNil)
+					So(exists, ShouldBeTrue)
+				})
+
+				Convey("non-existing commit", func() {
+					commitToStore.key.commitHash = "94f4b5c7c0bacc03caf215987a068db54b88af20"
+					So(SetForTesting(ctx, commitToStore), ShouldBeNil)
+
+					exists, err := Exists(span.Single(ctx), key)
+
+					So(err, ShouldBeNil)
+					So(exists, ShouldBeFalse)
+				})
 			})
 		})
 	})

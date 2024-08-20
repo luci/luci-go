@@ -16,31 +16,56 @@ package commit
 
 import (
 	"context"
+	"strings"
 
 	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
 
+	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/source_index/internal/spanutil"
+	"go.chromium.org/luci/source_index/internal/validationutil"
 )
 
 // Key denotes the primary key for the Commits table.
 type Key struct {
-	// Host is the gitiles host of the repository. Must be a subdomain of
+	// host is the gitiles host of the repository. Must be a subdomain of
 	// `.googlesource.com` (e.g. chromium.googlesource.com).
-	Host string
-	// Repository is the Gitiles project of the commit (e.g. "chromium/src" part
+	host string
+	// repository is the Gitiles project of the commit (e.g. "chromium/src" part
 	// in https://chromium.googlesource.com/chromium/src/+/main).
-	Repository string
-	// CommitHash is the full hex sha1 of the commit in lowercase.
-	CommitHash string
+	repository string
+	// commitHash is the full hex sha1 of the commit in lowercase.
+	commitHash string
+}
+
+// NewKey creates a new Commit key.
+func NewKey(host, repository, commitHash string) (Key, error) {
+	if err := gitiles.ValidateRepoHost(host); err != nil {
+		return Key{}, errors.Annotate(err, "invalid host").Err()
+	}
+
+	if err := validationutil.ValidateRepoName(repository); err != nil {
+		return Key{}, errors.Annotate(err, "invalid repository").Err()
+	}
+
+	commitHash = strings.ToLower(commitHash)
+	if err := validationutil.ValidateCommitHash(commitHash); err != nil {
+		return Key{}, errors.Annotate(err, "invalid commit hash").Err()
+	}
+
+	return Key{
+		host:       host,
+		repository: repository,
+		commitHash: commitHash,
+	}, nil
 }
 
 // spannerKey returns the spanner key for the commit key.
 func (k Key) spannerKey() spanner.Key {
-	return spanner.Key{k.Host, k.Repository, k.CommitHash}
+	return spanner.Key{k.host, k.repository, k.commitHash}
 }
 
 // CommitReadCols is the set of columns read from in a commit read.
@@ -49,32 +74,32 @@ var CommitReadCols = []string{
 }
 
 // ReadCommit retrieves a commit from the database given the commit key.
-func ReadCommit(ctx context.Context, k Key) (commits *Commit, err error) {
+func ReadCommit(ctx context.Context, k Key) (commits Commit, err error) {
 	row, err := span.ReadRow(ctx, "Commits", k.spannerKey(), CommitReadCols)
 	if err != nil {
 		if spanner.ErrCode(err) == codes.NotFound {
-			return nil, spanutil.ErrNotExists
+			return Commit{}, spanutil.ErrNotExists
 		}
-		return nil, errors.Annotate(err, "reading Commits table row").Err()
+		return Commit{}, errors.Annotate(err, "reading Commits table row").Err()
 	}
 
-	commit := &Commit{Key: k}
+	commit := Commit{key: k}
 
 	var positionRef spanner.NullString
 	if err := row.Column(0, &positionRef); err != nil {
-		return nil, errors.Annotate(err, "reading PositionRef column").Err()
+		return Commit{}, errors.Annotate(err, "reading PositionRef column").Err()
 	}
 
 	var positionNum spanner.NullInt64
 	if err := row.Column(1, &positionNum); err != nil {
-		return nil, errors.Annotate(err, "reading PositionNumber column").Err()
+		return Commit{}, errors.Annotate(err, "reading PositionNumber column").Err()
 	}
 
 	if positionRef.Valid != positionNum.Valid {
-		return nil, errors.New("invariant violated: PositionRef and PositionNumber must be defined/undefined at the same time")
+		return Commit{}, errors.New("invariant violated: PositionRef and PositionNumber must be defined/undefined at the same time")
 	}
 	if positionRef.Valid {
-		commit.Position = &Position{
+		commit.position = &Position{
 			Ref:    positionRef.StringVal,
 			Number: positionNum.Int64,
 		}

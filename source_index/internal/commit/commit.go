@@ -20,10 +20,10 @@ import (
 
 // Commit represents a row in the Commits table.
 type Commit struct {
-	// Key is the primary key of the commit in Commits table.
-	Key
-	// Position is the position of the commit along a ref.
-	Position *Position
+	// key is the primary key of the commit in the Commits table.
+	key Key
+	// position is the position of the commit along a ref.
+	position *Position
 }
 
 // Position represents the position of a commit along a ref.
@@ -34,28 +34,38 @@ type Position struct {
 	Number int64
 }
 
+// Key returns the primary key of the commit in the Commits table.
+func (c Commit) Key() Key {
+	return c.key
+}
+
+// Position returns the position of the commit along a ref.
+func (c Commit) Position() *Position {
+	return c.position
+}
+
 // CommitSaveCols is the set of columns written to in a commit save.
 // Allocated here once to avoid reallocating on every commit save.
 var CommitSaveCols = []string{
 	"Host", "Repository", "CommitHash", "PositionRef", "PositionNumber", "LastUpdatedTime",
 }
 
-// SaveUnverified creates a mutation to save/overwrite the commit into the
-// Commits table. The commit is not verified.
-func (c *Commit) SaveUnverified() *spanner.Mutation {
+// Save creates a mutation to save/overwrite the commit into the Commits table.
+// The commit should've already been verified during struct creation.
+func (c Commit) Save() *spanner.Mutation {
 	var positionRef spanner.NullString
 	var position spanner.NullInt64
-	if c.Position != nil {
+	if c.position != nil {
 		positionRef.Valid = true
-		positionRef.StringVal = c.Position.Ref
+		positionRef.StringVal = c.position.Ref
 		position.Valid = true
-		position.Int64 = c.Position.Number
+		position.Int64 = c.position.Number
 	}
 
 	vals := []any{
-		c.Host,
-		c.Repository,
-		c.CommitHash,
+		c.key.host,
+		c.key.repository,
+		c.key.commitHash,
 		positionRef,
 		position,
 		spanner.CommitTimestamp,

@@ -47,9 +47,9 @@ func ReadAllForTesting(ctx context.Context) ([]Commit, error) {
 		var positionRef spanner.NullString
 		var positionNum spanner.NullInt64
 		err := row.Columns(
-			&commit.Host,
-			&commit.Repository,
-			&commit.CommitHash,
+			&commit.key.host,
+			&commit.key.repository,
+			&commit.key.commitHash,
 			&positionRef,
 			&positionNum,
 		)
@@ -61,7 +61,7 @@ func ReadAllForTesting(ctx context.Context) ([]Commit, error) {
 			return errors.New("invariant violated: PositionRef and PositionNumber must be defined/undefined at the same time")
 		}
 		if positionRef.Valid {
-			commit.Position = &Position{
+			commit.position = &Position{
 				Ref:    positionRef.StringVal,
 				Number: positionNum.Int64,
 			}
@@ -84,7 +84,7 @@ func SetForTesting(ctx context.Context, cs ...Commit) error {
 	// Insert some commits.
 	_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 		for _, c := range cs {
-			span.BufferWrite(ctx, c.SaveUnverified())
+			span.BufferWrite(ctx, c.Save())
 		}
 		return nil
 	})
