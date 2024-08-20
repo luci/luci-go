@@ -460,7 +460,7 @@ func (c *Client) ReadArtifacts(ctx context.Context, opts ReadArtifactsOpts) (row
 type matchWithContextRegexBuilder struct {
 	matcher              *pb.ArtifactContentMatcher
 	captureMatch         bool
-	captureContextbefore bool
+	captureContextBefore bool
 	captureContextAfter  bool
 }
 
@@ -479,7 +479,7 @@ func (b *matchWithContextRegexBuilder) withCaptureMatch(captureMatch bool) *matc
 
 // withCaptureContextBefore sets the captureContextBefore flag.
 func (b *matchWithContextRegexBuilder) withCaptureContextBefore(captureContextBefore bool) *matchWithContextRegexBuilder {
-	b.captureContextbefore = captureContextBefore
+	b.captureContextBefore = captureContextBefore
 	return b
 }
 
@@ -492,31 +492,37 @@ func (b *matchWithContextRegexBuilder) withCaptureContextAfter(captureContextAft
 func (b *matchWithContextRegexBuilder) build() string {
 	optionalLineBreakRegex := "(?:\\r\\n|\\r|\\n)?"
 	searchRegex := regexPattern(b.matcher)
-	matchWithOptionalLineBreak := fmt.Sprintf("[^\\r\\n]*%s[^\\r\\n]*", optionalLineBreakRegex)
 
-	matchBefore := matchWithOptionalLineBreak
-	matchAfter := matchWithOptionalLineBreak
-	if b.captureContextbefore {
-		matchBefore = fmt.Sprintf("(%s)", matchWithOptionalLineBreak)
+	// matchWithOptionalLineBreakGreedy and matchWithOptionalLineBreakLazy match
+	// a sequence of text that may or may not include a line break.
+	// The main difference between these two regex patterns lies in the use of
+	// greedy (*) versus non-greedy (*?) quantifiers on the non-line-break characters.
+	matchWithOptionalLineBreakGreedy := fmt.Sprintf("[^\\r\\n]*%s[^\\r\\n]*", optionalLineBreakRegex)
+	matchWithOptionalLineBreakLazy := fmt.Sprintf("[^\\r\\n]*?%s[^\\r\\n]*?", optionalLineBreakRegex)
+
+	matchBefore := matchWithOptionalLineBreakLazy
+	matchAfter := matchWithOptionalLineBreakGreedy
+	if b.captureContextBefore {
+		matchBefore = fmt.Sprintf("(%s)", matchWithOptionalLineBreakLazy)
 	}
 	if b.captureContextAfter {
-		matchAfter = fmt.Sprintf("(%s)", matchWithOptionalLineBreak)
+		matchAfter = fmt.Sprintf("(%s)", matchWithOptionalLineBreakGreedy)
 	}
 	if b.captureMatch {
 		searchRegex = fmt.Sprintf("(%s)", searchRegex)
 	}
-
 	return optionalLineBreakRegex + matchBefore + searchRegex + matchAfter + optionalLineBreakRegex
 }
 
 func regexPattern(matcher *pb.ArtifactContentMatcher) string {
+	caseInsensitiveFlag := "(?i)"
 	if matcher == nil {
 		// This should never happen.
 		panic("match should not be nil")
 	}
 	switch m := matcher.Matcher.(type) {
 	case *pb.ArtifactContentMatcher_ExactContain:
-		return regexp.QuoteMeta(m.ExactContain)
+		return caseInsensitiveFlag + regexp.QuoteMeta(m.ExactContain)
 	case *pb.ArtifactContentMatcher_RegexContain:
 		return m.RegexContain
 	default:
