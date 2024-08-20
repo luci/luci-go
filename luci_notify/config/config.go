@@ -17,6 +17,7 @@ package config
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/golang/protobuf/proto"
@@ -163,9 +164,14 @@ func updateProjectNotifiers(ctx context.Context, parentKey *datastore.Key, notif
 
 				builderKey := datastore.KeyForObj(ctx, builder)
 				for _, cfgTreeCloser := range cfgNotifier.TreeClosers {
+					treeName := cfgTreeCloser.TreeName
+					if treeName == "" {
+						treeName = TreeNameFromHost(cfgTreeCloser.TreeStatusHost)
+					}
+
 					tc := &TreeCloser{
-						BuilderKey:     builderKey,
-						TreeStatusHost: cfgTreeCloser.TreeStatusHost,
+						BuilderKey: builderKey,
+						TreeName:   treeName,
 					}
 					treeClosers = append(treeClosers, tc)
 					liveTreeClosers.Add(datastore.KeyForObj(ctx, tc).String())
@@ -221,6 +227,10 @@ func updateProjectNotifiers(ctx context.Context, parentKey *datastore.Key, notif
 		return updatedNotifiers{}, err
 	}
 	return result, err
+}
+
+func TreeNameFromHost(host string) string {
+	return strings.TrimSuffix(strings.TrimSuffix(host, ".appspot.com"), "-status")
 }
 
 func partitionNotifiers(notifiers []*notifypb.Notifier) [][]*notifypb.Notifier {

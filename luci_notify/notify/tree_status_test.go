@@ -135,18 +135,18 @@ func TestUpdateTrees(t *testing.T) {
 			}
 
 			So(datastore.Put(c, &config.TreeCloser{
-				BuilderKey:     datastore.KeyForObj(c, builder1),
-				TreeStatusHost: "chromium-status.appspot.com",
-				TreeCloser:     notifypb.TreeCloser{},
-				Status:         builder1Status,
-				Timestamp:      time.Now().UTC(),
+				BuilderKey: datastore.KeyForObj(c, builder1),
+				TreeName:   "chromium",
+				TreeCloser: notifypb.TreeCloser{},
+				Status:     builder1Status,
+				Timestamp:  time.Now().UTC(),
 			}), ShouldBeNil)
 			So(datastore.Put(c, &config.TreeCloser{
-				BuilderKey:     datastore.KeyForObj(c, builder2),
-				TreeStatusHost: "chromium-status.appspot.com",
-				TreeCloser:     notifypb.TreeCloser{},
-				Status:         builder2Status,
-				Timestamp:      time.Now().UTC(),
+				BuilderKey: datastore.KeyForObj(c, builder2),
+				TreeName:   "chromium",
+				TreeCloser: notifypb.TreeCloser{},
+				Status:     builder2Status,
+				Timestamp:  time.Now().UTC(),
 			}), ShouldBeNil)
 			defer cleanup()
 
@@ -194,11 +194,11 @@ func TestUpdateTrees(t *testing.T) {
 			}
 
 			So(datastore.Put(c, &config.TreeCloser{
-				BuilderKey:     datastore.KeyForObj(c, builder1),
-				TreeStatusHost: "chromium-status.appspot.com",
-				TreeCloser:     notifypb.TreeCloser{},
-				Status:         config.Open,
-				Timestamp:      time.Now().UTC(),
+				BuilderKey: datastore.KeyForObj(c, builder1),
+				TreeName:   "chromium",
+				TreeCloser: notifypb.TreeCloser{},
+				Status:     config.Open,
+				Timestamp:  time.Now().UTC(),
 			}), ShouldBeNil)
 			defer cleanup()
 
@@ -222,11 +222,11 @@ func TestUpdateTrees(t *testing.T) {
 			}
 
 			So(datastore.Put(c, &config.TreeCloser{
-				BuilderKey:     datastore.KeyForObj(c, builder1),
-				TreeStatusHost: "chromium-status.appspot.com",
-				TreeCloser:     notifypb.TreeCloser{},
-				Status:         config.Closed,
-				Timestamp:      evenEarlierTime,
+				BuilderKey: datastore.KeyForObj(c, builder1),
+				TreeName:   "chromium",
+				TreeCloser: notifypb.TreeCloser{},
+				Status:     config.Closed,
+				Timestamp:  evenEarlierTime,
 			}), ShouldBeNil)
 			defer cleanup()
 
@@ -251,11 +251,11 @@ func TestUpdateTrees(t *testing.T) {
 			}
 
 			So(datastore.Put(c, &config.TreeCloser{
-				BuilderKey:     datastore.KeyForObj(c, builder1),
-				TreeStatusHost: "chromium-status.appspot.com",
-				TreeCloser:     notifypb.TreeCloser{},
-				Status:         config.Closed,
-				Timestamp:      time.Now().UTC(),
+				BuilderKey: datastore.KeyForObj(c, builder1),
+				TreeName:   "chromium",
+				TreeCloser: notifypb.TreeCloser{},
+				Status:     config.Closed,
+				Timestamp:  time.Now().UTC(),
 			}), ShouldBeNil)
 			defer cleanup()
 
@@ -280,11 +280,11 @@ func TestUpdateTrees(t *testing.T) {
 			}
 
 			So(datastore.Put(c, &config.TreeCloser{
-				BuilderKey:     datastore.KeyForObj(c, builder7),
-				TreeStatusHost: "chromium-status.appspot.com",
-				TreeCloser:     notifypb.TreeCloser{},
-				Status:         config.Closed,
-				Timestamp:      time.Now().UTC(),
+				BuilderKey: datastore.KeyForObj(c, builder7),
+				TreeName:   "chromium",
+				TreeCloser: notifypb.TreeCloser{},
+				Status:     config.Closed,
+				Timestamp:  time.Now().UTC(),
 			}), ShouldBeNil)
 			defer cleanup()
 
@@ -315,48 +315,48 @@ func TestUpdateTrees(t *testing.T) {
 			}
 
 			So(datastore.Put(c, &config.TreeCloser{
-				BuilderKey:     datastore.KeyForObj(c, builder1),
-				TreeStatusHost: "chromium-status.appspot.com",
-				TreeCloser:     notifypb.TreeCloser{},
-				Status:         config.Open,
-				Timestamp:      time.Now().UTC(),
+				BuilderKey: datastore.KeyForObj(c, builder1),
+				TreeName:   "chromium",
+				TreeCloser: notifypb.TreeCloser{},
+				Status:     config.Open,
+				Timestamp:  time.Now().UTC(),
 			}), ShouldBeNil)
 			So(datastore.Put(c, &config.TreeCloser{
-				BuilderKey:     datastore.KeyForObj(c, builder2),
-				TreeStatusHost: "chromium-status.appspot.com",
-				TreeCloser:     notifypb.TreeCloser{},
-				Status:         config.Open,
-				Timestamp:      time.Now().UTC(),
+				BuilderKey: datastore.KeyForObj(c, builder2),
+				TreeName:   "chromium",
+				TreeCloser: notifypb.TreeCloser{},
+				Status:     config.Open,
+				Timestamp:  time.Now().UTC(),
 			}), ShouldBeNil)
 			So(datastore.Put(c, &config.TreeCloser{
-				BuilderKey:     datastore.KeyForObj(c, builder3),
-				TreeStatusHost: "chromium-status.appspot.com",
-				TreeCloser:     notifypb.TreeCloser{},
-				Status:         config.Open,
-				Timestamp:      time.Now().UTC(),
+				BuilderKey: datastore.KeyForObj(c, builder3),
+				TreeName:   "chromium",
+				TreeCloser: notifypb.TreeCloser{},
+				Status:     config.Open,
+				Timestamp:  time.Now().UTC(),
 			}), ShouldBeNil)
 
 			So(datastore.Put(c, &config.TreeCloser{
-				BuilderKey:     datastore.KeyForObj(c, builder2),
-				TreeStatusHost: "v8-status.appspot.com",
-				TreeCloser:     notifypb.TreeCloser{},
-				Status:         config.Open,
-				Timestamp:      time.Now().UTC(),
+				BuilderKey: datastore.KeyForObj(c, builder2),
+				TreeName:   "v8",
+				TreeCloser: notifypb.TreeCloser{},
+				Status:     config.Open,
+				Timestamp:  time.Now().UTC(),
 			}), ShouldBeNil)
 			So(datastore.Put(c, &config.TreeCloser{
-				BuilderKey:     datastore.KeyForObj(c, builder3),
-				TreeStatusHost: "v8-status.appspot.com",
-				TreeCloser:     notifypb.TreeCloser{},
-				Status:         config.Open,
-				Timestamp:      time.Now().UTC(),
+				BuilderKey: datastore.KeyForObj(c, builder3),
+				TreeName:   "v8",
+				TreeCloser: notifypb.TreeCloser{},
+				Status:     config.Open,
+				Timestamp:  time.Now().UTC(),
 			}), ShouldBeNil)
 			So(datastore.Put(c, &config.TreeCloser{
-				BuilderKey:     datastore.KeyForObj(c, builder4),
-				TreeStatusHost: "v8-status.appspot.com",
-				TreeCloser:     notifypb.TreeCloser{},
-				Status:         config.Closed,
-				Timestamp:      earlierTime,
-				Message:        "Correct message",
+				BuilderKey: datastore.KeyForObj(c, builder4),
+				TreeName:   "v8",
+				TreeCloser: notifypb.TreeCloser{},
+				Status:     config.Closed,
+				Timestamp:  earlierTime,
+				Message:    "Correct message",
 			}), ShouldBeNil)
 
 			defer cleanup()
@@ -388,11 +388,11 @@ func TestUpdateTrees(t *testing.T) {
 			}
 
 			So(datastore.Put(c, &config.TreeCloser{
-				BuilderKey:     datastore.KeyForObj(c, builder1),
-				TreeStatusHost: "chromium-status.appspot.com",
-				TreeCloser:     notifypb.TreeCloser{},
-				Status:         config.Closed,
-				Timestamp:      evenEarlierTime,
+				BuilderKey: datastore.KeyForObj(c, builder1),
+				TreeName:   "chromium",
+				TreeCloser: notifypb.TreeCloser{},
+				Status:     config.Closed,
+				Timestamp:  evenEarlierTime,
 			}), ShouldBeNil)
 			defer cleanup()
 
@@ -421,17 +421,17 @@ func TestUpdateTrees(t *testing.T) {
 			}
 
 			So(datastore.Put(c, &config.TreeCloser{
-				BuilderKey:     datastore.KeyForObj(c, builder1),
-				TreeStatusHost: "chromium-status.appspot.com",
-				TreeCloser:     notifypb.TreeCloser{},
-				Status:         config.Open,
-				Timestamp:      evenEarlierTime,
+				BuilderKey: datastore.KeyForObj(c, builder1),
+				TreeName:   "chromium",
+				TreeCloser: notifypb.TreeCloser{},
+				Status:     config.Open,
+				Timestamp:  evenEarlierTime,
 			}, &config.TreeCloser{
-				BuilderKey:     datastore.KeyForObj(c, builder2),
-				TreeStatusHost: "chromium-status.appspot.com",
-				TreeCloser:     notifypb.TreeCloser{},
-				Status:         config.Closed,
-				Timestamp:      evenEarlierTime,
+				BuilderKey: datastore.KeyForObj(c, builder2),
+				TreeName:   "chromium",
+				TreeCloser: notifypb.TreeCloser{},
+				Status:     config.Closed,
+				Timestamp:  evenEarlierTime,
 			}), ShouldBeNil)
 			defer cleanup()
 
@@ -459,17 +459,17 @@ func TestUpdateTrees(t *testing.T) {
 			}
 
 			So(datastore.Put(c, &config.TreeCloser{
-				BuilderKey:     datastore.KeyForObj(c, builder1),
-				TreeStatusHost: "chromium-status.appspot.com",
-				TreeCloser:     notifypb.TreeCloser{},
-				Status:         config.Open,
-				Timestamp:      time.Now().UTC(),
+				BuilderKey: datastore.KeyForObj(c, builder1),
+				TreeName:   "chromium",
+				TreeCloser: notifypb.TreeCloser{},
+				Status:     config.Open,
+				Timestamp:  time.Now().UTC(),
 			}, &config.TreeCloser{
-				BuilderKey:     datastore.KeyForObj(c, builder2),
-				TreeStatusHost: "chromium-status.appspot.com",
-				TreeCloser:     notifypb.TreeCloser{},
-				Status:         config.Closed,
-				Timestamp:      evenEarlierTime,
+				BuilderKey: datastore.KeyForObj(c, builder2),
+				TreeName:   "chromium",
+				TreeCloser: notifypb.TreeCloser{},
+				Status:     config.Closed,
+				Timestamp:  evenEarlierTime,
 			}), ShouldBeNil)
 			defer cleanup()
 
@@ -500,18 +500,18 @@ func TestUpdateTrees(t *testing.T) {
 			}
 
 			So(datastore.Put(c, &config.TreeCloser{
-				BuilderKey:     datastore.KeyForObj(c, builder1),
-				TreeStatusHost: "chromium-status.appspot.com",
-				TreeCloser:     notifypb.TreeCloser{},
-				Status:         config.Open,
-				Timestamp:      time.Now().UTC(),
+				BuilderKey: datastore.KeyForObj(c, builder1),
+				TreeName:   "chromium",
+				TreeCloser: notifypb.TreeCloser{},
+				Status:     config.Open,
+				Timestamp:  time.Now().UTC(),
 			}, &config.TreeCloser{
-				BuilderKey:     datastore.KeyForObj(c, builder5),
-				TreeStatusHost: "infra-status.appspot.com",
-				TreeCloser:     notifypb.TreeCloser{},
-				Status:         config.Closed,
-				Timestamp:      time.Now().UTC(),
-				Message:        "Close it up!",
+				BuilderKey: datastore.KeyForObj(c, builder5),
+				TreeName:   "infra",
+				TreeCloser: notifypb.TreeCloser{},
+				Status:     config.Closed,
+				Timestamp:  time.Now().UTC(),
+				Message:    "Close it up!",
 			}), ShouldBeNil)
 			defer cleanup()
 
@@ -557,29 +557,29 @@ func TestUpdateTrees(t *testing.T) {
 			}
 
 			So(datastore.Put(c, &config.TreeCloser{
-				BuilderKey:     datastore.KeyForObj(c, builder1),
-				TreeStatusHost: "chromium-status.appspot.com",
-				TreeCloser:     notifypb.TreeCloser{},
-				Status:         config.Open,
-				Timestamp:      time.Now().UTC(),
+				BuilderKey: datastore.KeyForObj(c, builder1),
+				TreeName:   "chromium",
+				TreeCloser: notifypb.TreeCloser{},
+				Status:     config.Open,
+				Timestamp:  time.Now().UTC(),
 			}, &config.TreeCloser{
-				BuilderKey:     datastore.KeyForObj(c, builder5),
-				TreeStatusHost: "chromium-status.appspot.com",
-				TreeCloser:     notifypb.TreeCloser{},
-				Status:         config.Closed,
-				Timestamp:      time.Now().UTC(),
+				BuilderKey: datastore.KeyForObj(c, builder5),
+				TreeName:   "chromium",
+				TreeCloser: notifypb.TreeCloser{},
+				Status:     config.Closed,
+				Timestamp:  time.Now().UTC(),
 			}, &config.TreeCloser{
-				BuilderKey:     datastore.KeyForObj(c, builder2),
-				TreeStatusHost: "infra-status.appspot.com",
-				TreeCloser:     notifypb.TreeCloser{},
-				Status:         config.Open,
-				Timestamp:      time.Now().UTC(),
+				BuilderKey: datastore.KeyForObj(c, builder2),
+				TreeName:   "infra",
+				TreeCloser: notifypb.TreeCloser{},
+				Status:     config.Open,
+				Timestamp:  time.Now().UTC(),
 			}, &config.TreeCloser{
-				BuilderKey:     datastore.KeyForObj(c, builder6),
-				TreeStatusHost: "infra-status.appspot.com",
-				TreeCloser:     notifypb.TreeCloser{},
-				Status:         config.Closed,
-				Timestamp:      time.Now().UTC(),
+				BuilderKey: datastore.KeyForObj(c, builder6),
+				TreeName:   "infra",
+				TreeCloser: notifypb.TreeCloser{},
+				Status:     config.Closed,
+				Timestamp:  time.Now().UTC(),
 			}), ShouldBeNil)
 			defer cleanup()
 
@@ -607,7 +607,7 @@ func TestHttpTreeStatusClient(t *testing.T) {
 		ts := httpTreeStatusClient{fakePrpcClient}
 
 		Convey("getStatus, open tree", func() {
-			status, err := ts.getStatus(c, "chromium-status.appspot.com")
+			status, err := ts.getStatus(c, "chromium")
 			So(err, ShouldBeNil)
 
 			expectedTime := time.Date(2020, time.March, 31, 5, 33, 52, 682351000, time.UTC)
@@ -620,7 +620,7 @@ func TestHttpTreeStatusClient(t *testing.T) {
 		})
 
 		Convey("getStatus, closed tree", func() {
-			status, err := ts.getStatus(c, "v8-status.appspot.com")
+			status, err := ts.getStatus(c, "v8")
 			So(err, ShouldBeNil)
 
 			expectedTime := time.Date(2020, time.April, 2, 15, 21, 39, 981072000, time.UTC)
@@ -656,7 +656,7 @@ func (c *fakePRPCTreeStatusClient) GetStatus(ctx context.Context, in *tspb.GetSt
 	if c.latestStatus != nil {
 		return c.latestStatus, nil
 	}
-	if strings.HasPrefix(in.Name, "trees/v8-") {
+	if in.Name == "trees/v8/status/latest" {
 		return &tspb.Status{
 			Name:         in.Name,
 			GeneralState: tspb.GeneralState_OPEN,
@@ -665,13 +665,16 @@ func (c *fakePRPCTreeStatusClient) GetStatus(ctx context.Context, in *tspb.GetSt
 			CreateTime:   timestamppb.New(time.Date(2020, time.April, 2, 15, 21, 39, 981072000, time.UTC)),
 		}, nil
 	}
-	return &tspb.Status{
-		Name:         "trees/chromium/status/fallback",
-		GeneralState: tspb.GeneralState_CLOSED,
-		Message:      "Tree is throttled (win rel 32 appears to be a goma flake. the other builds seem to be charging ahead OK. will fully open / fully close if win32 does/doesn't improve)",
-		CreateUser:   "someone@google.com",
-		CreateTime:   timestamppb.New(time.Date(2020, time.March, 31, 5, 33, 52, 682351000, time.UTC)),
-	}, nil
+	if in.Name == "trees/chromium/status/latest" {
+		return &tspb.Status{
+			Name:         "trees/chromium/status/fallback",
+			GeneralState: tspb.GeneralState_CLOSED,
+			Message:      "Tree is throttled (win rel 32 appears to be a goma flake. the other builds seem to be charging ahead OK. will fully open / fully close if win32 does/doesn't improve)",
+			CreateUser:   "someone@google.com",
+			CreateTime:   timestamppb.New(time.Date(2020, time.March, 31, 5, 33, 52, 682351000, time.UTC)),
+		}, nil
+	}
+	return nil, fmt.Errorf("status with name %q not found", in.Name)
 }
 
 func (c *fakePRPCTreeStatusClient) CreateStatus(ctx context.Context, in *tspb.CreateStatusRequest, opts ...grpc.CallOption) (*tspb.Status, error) {

@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
-	"strings"
 	"sync"
 	"time"
 
@@ -190,6 +189,12 @@ func updateTrees(c context.Context, ts treeStatusClient) error {
 						return errors.Annotate(err, "failed to get tree closers").Tag(transient.Tag).Err()
 					}
 
+					for _, tc := range treeClosersForProject {
+						if !config.TreeNameRE.MatchString(tc.TreeName) {
+							return fmt.Errorf("old tree closer found in project %q, %q; pausing tree status updates until data migrated", project.Name, tc.TreeName)
+						}
+					}
+
 					mu.Lock()
 					defer mu.Unlock()
 					logging.Debugf(c, "Appending tree closers for project: %v", project)
@@ -209,47 +214,29 @@ func updateTrees(c context.Context, ts treeStatusClient) error {
 
 	logging.Debugf(c, "closingEnabledProjects: %v", closingEnabledProjects)
 	return parallel.WorkPool(32, func(ch chan<- func() error) {
-		for host, treeClosers := range groupTreeClosers(treeClosers) {
-			host, treeClosers := host, treeClosers
+		for tree, treeClosers := range groupTreeClosersByTree(treeClosers) {
+			tree, treeClosers := tree, treeClosers
 			ch <- func() error {
-				c := logging.SetField(c, "tree-status-host", host)
-				return updateHost(c, ts, treeClosers, closingEnabledProjects, treeNameOrDefault(treeClosers))
+				c := logging.SetField(c, "tree-status-tree", tree)
+				return updateTree(c, ts, treeClosers, closingEnabledProjects, tree)
 			}
 		}
 	})
 }
 
-func groupTreeClosers(treeClosers []*config.TreeCloser) map[string][]*config.TreeCloser {
-	byHost := map[string][]*config.TreeCloser{}
+func groupTreeClosersByTree(treeClosers []*config.TreeCloser) map[string][]*config.TreeCloser {
+	byTree := map[string][]*config.TreeCloser{}
 	for _, tc := range treeClosers {
-		byHost[tc.TreeStatusHost] = append(byHost[tc.TreeStatusHost], tc)
+		byTree[tc.TreeName] = append(byTree[tc.TreeName], tc)
 	}
-
-	return byHost
-}
-
-func treeNameOrDefault(treeClosers []*config.TreeCloser) string {
-	for _, closer := range treeClosers {
-		if closer.TreeCloser.TreeName != "" {
-			return closer.TreeCloser.TreeName
-		}
-	}
-	for _, closer := range treeClosers {
-		if closer.TreeStatusHost != "" {
-			return strings.TrimSuffix(strings.TrimSuffix(closer.TreeStatusHost, ".appspot.com"), "-status")
-		}
-		if closer.TreeCloser.TreeStatusHost != "" {
-			return strings.TrimSuffix(strings.TrimSuffix(closer.TreeCloser.TreeStatusHost, ".appspot.com"), "-status")
-		}
-	}
-	panic("Should not have gotten here, invalid project configuration contains neither host nor tree name")
+	return byTree
 }
 
 func tcProject(tc *config.TreeCloser) string {
 	return tc.BuilderKey.Parent().StringID()
 }
 
-func updateHost(c context.Context, ts treeStatusClient, treeClosers []*config.TreeCloser, closingEnabledProjects stringset.Set, treeName string) error {
+func updateTree(c context.Context, ts treeStatusClient, treeClosers []*config.TreeCloser, closingEnabledProjects stringset.Set, treeName string) error {
 	treeStatus, err := ts.getStatus(c, treeName)
 	if err != nil {
 		return err

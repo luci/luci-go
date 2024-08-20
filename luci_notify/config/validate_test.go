@@ -171,7 +171,7 @@ func TestValidation(t *testing.T) {
 			notifiers {
 				name: "invalid"
 				tree_closers: {
-					tree_status_host: "example.com"
+					tree_name: "example"
 					failed_step_regexp: ")"
 				}
 			}`,
@@ -181,44 +181,87 @@ func TestValidation(t *testing.T) {
 			notifiers {
 				name: "invalid"
 				tree_closers: {
-					tree_status_host: "example.com"
+					tree_name: "example"
 					failed_step_regexp_exclude: "[z-a]"
 				}
 			}`,
 			badRegexError, "failed_step_regexp_exclude", "error parsing regexp: invalid character class range: `z-a`")
 
-		testValidation(`missing tree_status_host in tree_closer`, `
+		testValidation(`missing tree_name in tree_closer`, `
 			notifiers {
 				name: "invalid"
 				tree_closers {
 					template: "foo"
 				}
 			}`,
-			requiredFieldError, "tree_status_host")
+			requiredFieldError, "tree_name")
 
-		testValidation(`duplicate tree_status_host within notifier`, `
+		testValidation(`bad tree_name in tree_closer`, `
 			notifiers {
 				name: "invalid"
 				tree_closers {
-					tree_status_host: "tree1.com"
-				}
-				tree_closers {
-					tree_status_host: "tree1.com"
+					tree_name: "bad.tree.name"
+					template: "foo"
 				}
 			}`,
-			duplicateHostError, "tree1.com")
+			invalidFieldError, "tree_name")
 
-		testValidation(`duplicate tree_status_host, different notifiers`, `
+		testValidation(`bad tree_status_host in tree_closer`, `
+			notifiers {
+				name: "invalid"
+				tree_closers {
+					tree_status_host: "bad.tree.status.host"
+					template: "foo"
+				}
+			}`,
+			invalidFieldError, "tree_status_host")
+
+		testValidation(`both tree_name and tree_status_host in tree_closer`, `
+			notifiers {
+				name: "invalid"
+				tree_closers {
+					tree_status_host: "myapp-status.appspot.com"
+					template: "foo"
+					tree_name: "myapp"
+				}
+			}`,
+			onlyTreeNameOrHostError)
+
+		testValidation(`duplicate tree_name within notifier`, `
+			notifiers {
+				name: "invalid"
+				tree_closers {
+					tree_name: "tree1"
+				}
+				tree_closers {
+					tree_name: "tree1"
+				}
+			}`,
+			duplicateTreeNameError, "tree1")
+
+		testValidation(`duplicate tree_name within notifier (mixed tree_name and tree_status_host)`, `
+			notifiers {
+				name: "invalid"
+				tree_closers {
+					tree_name: "tree1"
+				}
+				tree_closers {
+					tree_status_host: "tree1-status.appspot.com"
+				}
+			}`,
+			duplicateTreeNameError, "tree1")
+
+		testValidation(`duplicate tree_name, different notifiers`, `
 			notifiers {
 				name: "fine"
 				tree_closers {
-					tree_status_host: "tree1.com"
+					tree_name: "tree1"
 				}
 			}
 			notifiers {
 				name: "also fine"
 				tree_closers {
-					tree_status_host: "tree1.com"
+					tree_name: "tree1"
 				}
 			}`,
 			"", "")

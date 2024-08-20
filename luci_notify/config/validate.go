@@ -32,6 +32,9 @@ import (
 	"go.chromium.org/luci/luci_notify/mailtmpl"
 )
 
+// TreeNameRE matches valid LUCI Tree Status tree names.
+var TreeNameRE = regexp.MustCompile("^[a-z](?:[a-z0-9-]{0,61}[a-z0-9])?$")
+
 // init registers validators for the project config and email template files.
 func init() {
 	validation.Rules.Add(
@@ -49,14 +52,15 @@ func init() {
 }
 
 const (
-	requiredFieldError    = "field %q is required"
-	invalidFieldError     = "field %q has invalid format"
-	uniqueFieldError      = "field %q must be unique in %s"
-	badEmailError         = "recipient %q is not a valid RFC 5322 email address"
-	badRepoURLError       = "repo url %q is invalid"
-	duplicateBuilderError = "builder %q is specified more than once in file"
-	duplicateHostError    = "builder has multiple tree closers with host %q"
-	badRegexError         = "field %q contains an invalid regex: %s"
+	requiredFieldError      = "field %q is required"
+	invalidFieldError       = "field %q has invalid format"
+	uniqueFieldError        = "field %q must be unique in %s"
+	badEmailError           = "recipient %q is not a valid RFC 5322 email address"
+	badRepoURLError         = "repo url %q is invalid"
+	duplicateBuilderError   = "builder %q is specified more than once in file"
+	duplicateTreeNameError  = "builder has multiple tree closers with tree name %q"
+	badRegexError           = "field %q contains an invalid regex: %s"
+	onlyTreeNameOrHostError = "only one of tree_name and tree_status_host may be assigned"
 )
 
 // validateNotification is a helper function for validateConfig which validates
@@ -76,13 +80,28 @@ func validateNotification(c *validation.Context, cfgNotification *notifypb.Notif
 
 // validateTreeCloser is a helper function for validateConfig which validates an
 // individual tree closer configuration.
-func validateTreeCloser(c *validation.Context, cfgTreeCloser *notifypb.TreeCloser, treeStatusHosts stringset.Set) {
-	host := cfgTreeCloser.TreeStatusHost
-	if host == "" {
-		c.Errorf(requiredFieldError, "tree_status_host")
+func validateTreeCloser(c *validation.Context, cfgTreeCloser *notifypb.TreeCloser, uniqueTreeNames stringset.Set) {
+	logicalTreeName := cfgTreeCloser.TreeName
+	if logicalTreeName == "" && cfgTreeCloser.TreeStatusHost != "" {
+		logicalTreeName = TreeNameFromHost(cfgTreeCloser.TreeStatusHost)
 	}
-	if !treeStatusHosts.Add(host) {
-		c.Errorf(duplicateHostError, host)
+	if cfgTreeCloser.TreeName != "" && cfgTreeCloser.TreeStatusHost != "" {
+		c.Errorf(onlyTreeNameOrHostError)
+	}
+
+	if logicalTreeName == "" {
+		c.Errorf(requiredFieldError, "tree_name")
+	} else if !TreeNameRE.MatchString(logicalTreeName) {
+		// Allocate the error to whichever of (tree_name, tree_status_host) was assigned.
+		if cfgTreeCloser.TreeName != "" {
+			c.Errorf(invalidFieldError, "tree_name")
+		} else {
+			c.Errorf(invalidFieldError, "tree_status_host")
+		}
+	}
+
+	if !uniqueTreeNames.Add(logicalTreeName) {
+		c.Errorf(duplicateTreeNameError, logicalTreeName)
 	}
 
 	validateRegexField(c, "failed_step_regexp", cfgTreeCloser.FailedStepRegexp)
@@ -128,10 +147,10 @@ func validateNotifier(c *validation.Context, cfgNotifier *notifypb.Notifier, bui
 		validateNotification(c, cfgNotification)
 		c.Exit()
 	}
-	hosts := stringset.New(len(cfgNotifier.TreeClosers))
+	uniqueTreeNames := stringset.New(len(cfgNotifier.TreeClosers))
 	for i, cfgTreeCloser := range cfgNotifier.TreeClosers {
 		c.Enter("tree_closer #%d", i+1)
-		validateTreeCloser(c, cfgTreeCloser, hosts)
+		validateTreeCloser(c, cfgTreeCloser, uniqueTreeNames)
 		c.Exit()
 	}
 	for i, cfgBuilder := range cfgNotifier.Builders {

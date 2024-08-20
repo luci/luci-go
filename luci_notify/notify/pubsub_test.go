@@ -544,8 +544,8 @@ func TestHandleBuild(t *testing.T) {
 			})
 
 			tc := &config.TreeCloser{
-				BuilderKey:     builderKey,
-				TreeStatusHost: "chromium-status.appspot.com",
+				BuilderKey: builderKey,
+				TreeName:   "chromium-status.appspot.com",
 				TreeCloser: apicfg.TreeCloser{
 					FailedStepRegexp:        "include",
 					FailedStepRegexpExclude: "exclude",
@@ -630,11 +630,11 @@ func TestHandleBuild(t *testing.T) {
 			})
 
 			tc := &config.TreeCloser{
-				BuilderKey:     builderKey,
-				TreeStatusHost: "chromium-status.appspot.com",
-				TreeCloser:     apicfg.TreeCloser{Template: "template"},
-				Status:         config.Open,
-				Timestamp:      initialTimestamp,
+				BuilderKey: builderKey,
+				TreeName:   "chromium-status.appspot.com",
+				TreeCloser: apicfg.TreeCloser{Template: "template"},
+				Status:     config.Open,
+				Timestamp:  initialTimestamp,
 			}
 			So(datastore.Put(c, tc), ShouldBeNil)
 

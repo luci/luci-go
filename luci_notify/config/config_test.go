@@ -193,7 +193,7 @@ func TestConfigIngestion(t *testing.T) {
 		So(treeClosers, ShouldHaveLength, 1)
 		t := treeClosers[0]
 		So(t.BuilderKey, ShouldResemble, datastore.MakeKey(c, "Project", "chromium", "Builder", "ci/linux"))
-		So(t.TreeStatusHost, ShouldEqual, "chromium-status.appspot.com")
+		So(t.TreeName, ShouldEqual, "chromium")
 		So(t.Status, ShouldEqual, Open)
 		So(&t.TreeCloser, ShouldResembleProto, &notifypb.TreeCloser{
 			TreeStatusHost:          "chromium-status.appspot.com",
