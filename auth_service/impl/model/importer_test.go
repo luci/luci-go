@@ -366,17 +366,17 @@ func TestIngestTarball(t *testing.T) {
 
 				g := makeAuthGroup(ctx, "administrators")
 				g.AuthVersionedEntityMixin = testAuthVersionedEntityMixin()
-				_, err := CreateAuthGroup(ctx, g, false, "Imported from group bundles", false)
-				So(err, ShouldBeNil)
-				So(taskScheduler.Tasks(), ShouldHaveLength, 2)
+				So(datastore.Put(ctx, g), ShouldBeNil)
+
 				updatedGroups, revision, err := IngestTarball(ctx, "test_groups.tar.gz", bytes.NewReader(bundle))
 				So(err, ShouldBeNil)
-				So(revision, ShouldEqual, 2)
+				So(revision, ShouldEqual, 1)
 				So(updatedGroups, ShouldResemble, []string{
 					"tst/group-a",
 					"tst/group-b",
 					"tst/group-c",
 				})
+				So(taskScheduler.Tasks(), ShouldHaveLength, 2)
 			})
 		})
 	})
@@ -386,7 +386,11 @@ func TestImportBundles(t *testing.T) {
 	t.Parallel()
 
 	Convey("Testing importBundles", t, func() {
-		userIdent := identity.Identity("user:test-modifier@example.com")
+		// Set up craetor and modifier identities.
+		creator := "user:test-creator@example.com"
+		modifier := "user:test-modifier@example.com"
+		callerIdent := identity.Identity(modifier)
+
 		ctx := memory.Use(context.Background())
 		tc := testclock.New(testModifiedTS)
 		ctx = clock.Set(ctx, tc)
@@ -400,86 +404,77 @@ func TestImportBundles(t *testing.T) {
 		So(datastore.Put(ctx, adminGroup), ShouldBeNil)
 
 		aIdent, _ := identity.MakeIdentity("user:a@example.com")
-
-		sGroupA := testExternalAuthGroup(ctx, "sys/group-a", []string{string(aIdent)})
-
-		sGroupB := testExternalAuthGroup(ctx, "sys/group-b", []string{string(aIdent)})
-		sGroupC := testExternalAuthGroup(ctx, "sys/group-c", []string{string(aIdent)})
-
-		eGroupA := testExternalAuthGroup(ctx, "ext/group-a", []string{string(aIdent)})
-
 		bundles := map[string]GroupBundle{
 			"ext": {
-				eGroupA.ID: {
-					aIdent,
-				},
+				"ext/group-a": {aIdent},
 			},
 			"sys": {
-				sGroupA.ID: {
-					aIdent,
-				},
-				sGroupB.ID: {
-					aIdent,
-				},
-				sGroupC.ID: {
-					aIdent,
-				},
+				"sys/group-a": {aIdent},
+				"sys/group-b": {aIdent},
+				"sys/group-c": {aIdent},
 			},
 		}
-
-		baseSlice := []string{eGroupA.ID, sGroupA.ID, sGroupB.ID, sGroupC.ID}
+		baseSlice := []string{"ext/group-a", "sys/group-a", "sys/group-b", "sys/group-c"}
 		baseGroupBundles := stringset.NewFromSlice(baseSlice...).ToSortedSlice()
 
 		Convey("Creating groups", func() {
-			updatedGroups, revision, err := importBundles(ctx, bundles, userIdent, nil)
+			// Define the expected groups that should be created.
+			// Note: for created groups, the last modifying action *is* the creation.
+			sGroupA := testExternalAuthGroup(ctx, "sys/group-a", modifier, []string{string(aIdent)}, testModifiedTS)
+			sGroupB := testExternalAuthGroup(ctx, "sys/group-b", modifier, []string{string(aIdent)}, testModifiedTS)
+			sGroupC := testExternalAuthGroup(ctx, "sys/group-c", modifier, []string{string(aIdent)}, testModifiedTS)
+			eGroupA := testExternalAuthGroup(ctx, "ext/group-a", modifier, []string{string(aIdent)}, testModifiedTS)
+
+			updatedGroups, revision, err := importBundles(ctx, bundles, callerIdent, nil)
 			So(err, ShouldBeNil)
 			So(updatedGroups, ShouldResemble, baseGroupBundles)
 			So(revision, ShouldEqual, 1)
+			So(taskScheduler.Tasks(), ShouldHaveLength, 2)
+
+			// Check each group was created as expected.
 			groupA, err := GetAuthGroup(ctx, sGroupA.ID)
 			So(err, ShouldBeNil)
-			So(groupA.Members, ShouldResemble, sGroupA.Members)
-
+			So(groupA, ShouldResemble, sGroupA)
 			groupB, err := GetAuthGroup(ctx, sGroupB.ID)
 			So(err, ShouldBeNil)
-			So(groupB.Members, ShouldResemble, sGroupB.Members)
-
+			So(groupB, ShouldResemble, sGroupB)
 			groupC, err := GetAuthGroup(ctx, sGroupC.ID)
 			So(err, ShouldBeNil)
-			So(groupC.Members, ShouldResemble, sGroupC.Members)
-
+			So(groupC, ShouldResemble, sGroupC)
 			groupAe, err := GetAuthGroup(ctx, eGroupA.ID)
 			So(err, ShouldBeNil)
-			So(groupAe.Members, ShouldResemble, eGroupA.Members)
-
-			So(taskScheduler.Tasks(), ShouldHaveLength, 2)
+			So(groupAe, ShouldResemble, eGroupA)
 		})
 
 		Convey("Updating Groups", func() {
-			g := testExternalAuthGroup(ctx, "sys/group-a", []string{"user:b@example.com", "user:c@example.com"})
-			_, err := CreateAuthGroup(ctx, g, true, "Imported from group bundles", false)
-			So(err, ShouldBeNil)
-			group, err := GetAuthGroup(ctx, sGroupA.ID)
-			So(err, ShouldBeNil)
-			So(group.Members, ShouldResemble, g.Members)
-			updatedGroups, revision, err := importBundles(ctx, bundles, userIdent, nil)
+			// Set up datastore with the initial state of the external group.
+			g := testExternalAuthGroup(ctx, "sys/group-a", creator, []string{"user:b@example.com", "user:c@example.com"}, testCreatedTS)
+			So(datastore.Put(ctx, g, testAuthReplicationState(ctx, 1)), ShouldBeNil)
+
+			updatedGroups, revision, err := importBundles(ctx, bundles, callerIdent, nil)
 			So(err, ShouldBeNil)
 			So(updatedGroups, ShouldResemble, baseGroupBundles)
 			So(revision, ShouldEqual, 2)
-			group, err = GetAuthGroup(ctx, sGroupA.ID)
+
+			// Check the group was imported as expected.
+			sGroupA := testExternalAuthGroup(ctx, "sys/group-a", creator, []string{string(aIdent)}, testCreatedTS)
+			sGroupA.AuthVersionedEntityMixin = AuthVersionedEntityMixin{
+				ModifiedBy:    modifier,
+				ModifiedTS:    testModifiedTS,
+				AuthDBRev:     2,
+				AuthDBPrevRev: 1,
+			}
+			actual, err := GetAuthGroup(ctx, sGroupA.ID)
 			So(err, ShouldBeNil)
-			So(group.Members, ShouldResemble, sGroupA.Members)
+			So(actual, ShouldResemble, sGroupA)
 		})
 
 		Convey("Deleting Groups", func() {
-			g := testExternalAuthGroup(ctx, "sys/group-d", []string{"user:a@example.com"})
-			_, err := CreateAuthGroup(ctx, g, true, "Imported from group bundles", false)
-			So(err, ShouldBeNil)
+			// Set up datastore with the external group.
+			g := testExternalAuthGroup(ctx, "sys/group-d", creator, []string{"user:a@example.com"}, testCreatedTS)
+			So(datastore.Put(ctx, g, testAuthReplicationState(ctx, 1)), ShouldBeNil)
 
-			grDS, err := GetAuthGroup(ctx, g.ID)
-			So(err, ShouldBeNil)
-			So(grDS.Members, ShouldResemble, g.Members)
-
-			updatedGroups, revision, err := importBundles(ctx, bundles, userIdent, nil)
+			updatedGroups, revision, err := importBundles(ctx, bundles, callerIdent, nil)
 			So(err, ShouldBeNil)
 			So(updatedGroups, ShouldResemble, append(baseGroupBundles, "sys/group-d"))
 			So(revision, ShouldEqual, 2)
@@ -489,18 +484,13 @@ func TestImportBundles(t *testing.T) {
 		})
 
 		Convey("Clearing Groups", func() {
-			g := testExternalAuthGroup(ctx, "sys/group-e", []string{"user:a@example.com"})
-			_, err := CreateAuthGroup(ctx, g, true, "Imported from group bundles", false)
-			So(err, ShouldBeNil)
+			// Set up datastore with the external group and a group that references it as a subgroup.
+			g := testExternalAuthGroup(ctx, "sys/group-e", creator, []string{"user:a@example.com"}, testCreatedTS)
 			superGroup := testAuthGroup(ctx, "test-group")
 			superGroup.Nested = []string{"sys/group-e"}
-			So(datastore.Put(ctx, superGroup), ShouldBeNil)
+			So(datastore.Put(ctx, g, superGroup, testAuthReplicationState(ctx, 1)), ShouldBeNil)
 
-			grDS, err := GetAuthGroup(ctx, g.ID)
-			So(err, ShouldBeNil)
-			So(grDS.Members, ShouldResemble, g.Members)
-
-			updatedGroups, revision, err := importBundles(ctx, bundles, userIdent, nil)
+			updatedGroups, revision, err := importBundles(ctx, bundles, callerIdent, nil)
 			So(err, ShouldBeNil)
 			So(updatedGroups, ShouldResemble, append(baseGroupBundles, "sys/group-e"))
 			So(revision, ShouldEqual, 2)
@@ -512,7 +502,7 @@ func TestImportBundles(t *testing.T) {
 
 		Convey("Large groups", func() {
 			bundle, groupsBundled := makeGroupBundle("test", 400)
-			updatedGroups, rev, err := importBundles(ctx, bundle, userIdent, nil)
+			updatedGroups, rev, err := importBundles(ctx, bundle, callerIdent, nil)
 			So(err, ShouldBeNil)
 			So(updatedGroups, ShouldResemble, groupsBundled)
 			So(rev, ShouldEqual, 2)
@@ -524,7 +514,7 @@ func TestImportBundles(t *testing.T) {
 
 		Convey("Revision changes in between transactions", func() {
 			bundle, groupsBundled := makeGroupBundle("test", 500)
-			updatedGroups, rev, err := importBundles(ctx, bundle, userIdent, func() {
+			updatedGroups, rev, err := importBundles(ctx, bundle, callerIdent, func() {
 				So(datastore.Put(ctx, testAuthReplicationState(ctx, 3)), ShouldBeNil)
 			})
 			So(err, ShouldBeNil)
@@ -534,12 +524,12 @@ func TestImportBundles(t *testing.T) {
 
 		Convey("Large put Large delete", func() {
 			bundle, groupsBundledTest := makeGroupBundle("test", 1000)
-			updatedGroups, rev, err := importBundles(ctx, bundle, userIdent, func() {})
+			updatedGroups, rev, err := importBundles(ctx, bundle, callerIdent, func() {})
 			So(err, ShouldBeNil)
 			So(updatedGroups, ShouldResemble, groupsBundledTest)
 			So(rev, ShouldEqual, 5)
 			bundle, groupsBundled := makeGroupBundle("example", 400)
-			updatedGroups, rev, err = importBundles(ctx, bundle, userIdent, func() {})
+			updatedGroups, rev, err = importBundles(ctx, bundle, callerIdent, func() {})
 			So(err, ShouldBeNil)
 			So(updatedGroups, ShouldResemble, groupsBundled)
 			So(rev, ShouldEqual, 7)
@@ -547,7 +537,7 @@ func TestImportBundles(t *testing.T) {
 			bundle, groupsBundled = makeGroupBundle("tst", 500)
 			bundle["test"] = GroupBundle{}
 			groupsBundled = append(groupsBundled, groupsBundledTest...)
-			updatedGroups, rev, err = importBundles(ctx, bundle, userIdent, func() {})
+			updatedGroups, rev, err = importBundles(ctx, bundle, callerIdent, func() {})
 			So(err, ShouldBeNil)
 			sort.Strings(groupsBundled)
 			So(updatedGroups, ShouldResemble, groupsBundled)
@@ -560,7 +550,7 @@ func TestImportBundles(t *testing.T) {
 		// under the limit by only touching 400 entities.
 		Convey("150 put 150 del", func() {
 			bundle, groupsBundledTest := makeGroupBundle("test", 150)
-			updatedGroups, rev, err := importBundles(ctx, bundle, userIdent, func() {})
+			updatedGroups, rev, err := importBundles(ctx, bundle, callerIdent, func() {})
 			So(err, ShouldBeNil)
 			So(updatedGroups, ShouldResemble, groupsBundledTest)
 			So(rev, ShouldEqual, 1)
@@ -568,7 +558,7 @@ func TestImportBundles(t *testing.T) {
 			bundle["test"] = GroupBundle{}
 			groupsBundled = append(groupsBundled, groupsBundledTest...)
 			sort.Strings(groupsBundled)
-			updatedGroups, rev, err = importBundles(ctx, bundle, userIdent, func() {})
+			updatedGroups, rev, err = importBundles(ctx, bundle, callerIdent, func() {})
 			So(err, ShouldBeNil)
 			So(updatedGroups, ShouldResemble, groupsBundled)
 			So(rev, ShouldEqual, 3)
@@ -586,4 +576,22 @@ func makeGroupBundle(system string, size int) (map[string]GroupBundle, []string)
 		groupsBundled.Add(group)
 	}
 	return bundle, groupsBundled.ToSortedSlice()
+}
+
+func testExternalAuthGroup(ctx context.Context, name, createdBy string, members []string, createdTS time.Time) *AuthGroup {
+	return &AuthGroup{
+		Kind:   "AuthGroup",
+		ID:     name,
+		Parent: RootKey(ctx),
+		AuthVersionedEntityMixin: AuthVersionedEntityMixin{
+			ModifiedBy:    createdBy,
+			ModifiedTS:    createdTS,
+			AuthDBRev:     1,
+			AuthDBPrevRev: 0,
+		},
+		Members:   members,
+		Owners:    AdminGroup,
+		CreatedTS: createdTS,
+		CreatedBy: createdBy,
+	}
 }

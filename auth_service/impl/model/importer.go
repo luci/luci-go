@@ -448,7 +448,7 @@ func importBundles(ctx context.Context, bundles map[string]GroupBundle, provided
 		entitiesToDel := []*AuthGroup{}
 		for sys := range bundles {
 			iGroups := bundles[sys]
-			toPut, toDel := prepareImport(ctx, sys, groups, iGroups)
+			toPut, toDel := prepareImport(ctx, sys, groups, iGroups, providedBy, ts)
 			entitiesToPut = append(entitiesToPut, toPut...)
 			entitiesToDel = append(entitiesToDel, toDel...)
 		}
@@ -527,7 +527,8 @@ func importBundles(ctx context.Context, bundles map[string]GroupBundle, provided
 
 // prepareImport compares the bundle given to the what is currently present in datastore
 // to get the operations for all the groups.
-func prepareImport(ctx context.Context, systemName string, existingGroups map[string]*AuthGroup, iGroups GroupBundle) (toPut []*AuthGroup, toDel []*AuthGroup) {
+func prepareImport(ctx context.Context, systemName string, existingGroups map[string]*AuthGroup, iGroups GroupBundle,
+	providedBy identity.Identity, createdTS time.Time) (toPut []*AuthGroup, toDel []*AuthGroup) {
 	// Filter existing groups to those that belong to the given system.
 	sysGroupsSet := stringset.New(0)
 	sysPrefix := fmt.Sprintf("%s/", systemName)
@@ -548,6 +549,9 @@ func prepareImport(ctx context.Context, systemName string, existingGroups map[st
 	for _, g := range toCreate {
 		group := makeAuthGroup(ctx, g)
 		group.Members = identitiesToStrings(iGroups[g])
+		group.Owners = AdminGroup
+		group.CreatedBy = string(providedBy)
+		group.CreatedTS = createdTS
 		toPut = append(toPut, group)
 	}
 

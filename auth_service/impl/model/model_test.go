@@ -124,24 +124,6 @@ func testAuthGroup(ctx context.Context, name string) *AuthGroup {
 	}
 }
 
-func testExternalAuthGroup(ctx context.Context, name string, members []string) *AuthGroup {
-	return &AuthGroup{
-		Kind:   "AuthGroup",
-		ID:     name,
-		Parent: RootKey(ctx),
-		AuthVersionedEntityMixin: AuthVersionedEntityMixin{
-			ModifiedTS:    testModifiedTS,
-			ModifiedBy:    "user:test-modifier@example.com",
-			AuthDBRev:     1,
-			AuthDBPrevRev: 0,
-		},
-		Members:   members,
-		Owners:    AdminGroup,
-		CreatedTS: testCreatedTS,
-		CreatedBy: "user:test-creator@example.com",
-	}
-}
-
 // emptyAuthGroup creates a new AuthGroup, that owns itself, with no members.
 func emptyAuthGroup(ctx context.Context, name string) *AuthGroup {
 	return &AuthGroup{
