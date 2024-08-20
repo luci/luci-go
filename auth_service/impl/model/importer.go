@@ -488,6 +488,14 @@ func importBundles(ctx context.Context, bundles map[string]GroupBundle, provided
 			updatedGroups.Add(e.ID)
 		}
 
+		// Check the AdminGroup exists before attempting to apply the import,
+		// because it is the owning group for all external groups.
+		if err := checkGroupsExist(ctx, []string{AdminGroup}); err != nil {
+			err = errors.Annotate(err, "aborting groups import").Err()
+			logging.Errorf(ctx, err.Error())
+			return nil, revision, err
+		}
+
 		// Land the change iff the current AuthDB revision is still == `revision`.
 		err := applyImport(revision, entitiesToPut, entitiesToDel, ts)
 		if err != nil {

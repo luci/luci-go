@@ -123,7 +123,19 @@ func TestIngestTarball(t *testing.T) {
 				So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
 			})
 
+			Convey("aborts if admin group doesn't exist", func() {
+				_, err := callEndpoint(ctx, "test_groups.tar.gz", io.NopCloser(bytes.NewReader(tarfile)))
+				So(err, ShouldHaveGRPCStatus, codes.Internal)
+			})
+
 			Convey("groups actually imported", func() {
+				// Set up datastore to have the admin group.
+				So(datastore.Put(ctx, &model.AuthGroup{
+					Kind:   "AuthGroup",
+					ID:     model.AdminGroup,
+					Parent: model.RootKey(ctx),
+				}), ShouldBeNil)
+
 				res, err := callEndpoint(ctx, "test_groups.tar.gz", io.NopCloser(bytes.NewReader(tarfile)))
 				So(err, ShouldBeNil)
 

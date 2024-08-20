@@ -47,6 +47,10 @@ func HandleTarballIngestHandler(ctx *router.Context) error {
 			// verified as an authorized uploader, so we can return the actual
 			// error message.
 			return status.Errorf(codes.InvalidArgument, err.Error())
+		case errors.Is(err, model.ErrInvalidReference):
+			// Importing the groups is only attempted once the caller has been
+			// verified as an authorized uploader.
+			return status.Errorf(codes.Internal, err.Error())
 		default:
 			// Log the actual error then only return a generic permission error,
 			// to avoid leaking information about the importer config.
