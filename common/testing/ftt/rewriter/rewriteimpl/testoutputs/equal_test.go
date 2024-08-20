@@ -33,5 +33,8 @@ func TestEqual(t *testing.T) {
 		assert.Loosely(t, nil, should.BeNil)
 
 		assert.Loosely(t, "nerb", should.Equal("nerb"))
+
+		assert.Loosely(t, []int{1, 2}, should.Resemble([]int{1, 2}))
+		assert.Loosely(t, map[int]int{1: 2}, should.Resemble(map[int]int{1: 2}))
 	})
 }

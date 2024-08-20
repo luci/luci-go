@@ -32,5 +32,8 @@ func TestEqual(t *testing.T) {
 		So(nil, ShouldEqual, nil)
 
 		So("nerb", ShouldEqual, "nerb")
+
+		So([]int{1, 2}, ShouldEqual, []int{1, 2})
+		So(map[int]int{1: 2}, ShouldEqual, map[int]int{1: 2})
 	})
 }

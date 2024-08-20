@@ -192,6 +192,19 @@ var assertionMap = map[assertionKey]*mappedComp{
 						return "BeEmpty", noArgs, nil
 					}
 				}
+				// should.Equal requires that the types are `comparable` in the Go
+				// generics sense. Slices and maps are not.
+				//
+				// In GoConvey ShouldEqual is secretly ShouldResemble for some reason
+				// and so has all kinds of 'mostly equal' behaviors.
+				if cmp, ok := arg.(*dst.CompositeLit); ok {
+					if _, ok := cmp.Type.(*dst.ArrayType); ok {
+						return "Resemble", hasArgs, extraArgs
+					}
+					if _, ok := cmp.Type.(*dst.MapType); ok {
+						return "Resemble", hasArgs, extraArgs
+					}
+				}
 			}
 			// everything else just let it through
 			return name, hasArgs, extraArgs
