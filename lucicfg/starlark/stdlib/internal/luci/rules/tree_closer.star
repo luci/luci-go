@@ -22,6 +22,7 @@ def _tree_closer(
         ctx,  # @unused
         *,
         name = None,
+        tree_name = None,
         tree_status_host = None,
         failed_step_regexp = None,
         failed_step_regexp_exclude = None,
@@ -47,9 +48,13 @@ def _tree_closer(
 
       name: name of this tree closer to reference it from other rules. Required.
 
-      tree_status_host: a hostname of the project tree status app (if any) that
-        this rule will use to open and close the tree. Tree status affects how
-        CQ lands CLs. See `tree_status_host` in luci.cq_group(...). Required.
+      tree_name: the identifier of the tree that this rule will open and close.
+        For example, 'chromium'. Tree status affects how CQ lands CLs. See
+        `tree_status_name` in luci.cq_group(...). Required.
+      tree_status_host: **Deprecated**. Please use tree_name instead.
+        A hostname of the project tree status app (if any) that this rule will use
+        to open and close the tree. Tree status affects how CQ lands CLs. See
+        `tree_status_host` in luci.cq_group(...).
       failed_step_regexp: close the tree only on builds which had a failing step
         matching this regex, or list of regexes.
       failed_step_regexp_exclude: close the tree only on builds which don't have
@@ -70,10 +75,15 @@ def _tree_closer(
         props = {
             "name": name,
             "kind": "luci.tree_closer",
+            "tree_name": validate.string(
+                "tree_name",
+                tree_name,
+                required = False,
+            ),
             "tree_status_host": validate.string(
                 "tree_status_host",
                 tree_status_host,
-                required = True,
+                required = False,
             ),
             "failed_step_regexp": validate.regex_list(
                 "failed_step_regexp",

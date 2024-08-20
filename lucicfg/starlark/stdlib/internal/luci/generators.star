@@ -1524,6 +1524,7 @@ def _notify_notification_pb(node):
 def _notify_tree_closer_pb(node):
     """Given a luci.notifiable node returns notify_pb.TreeCloser."""
     return notify_pb.TreeCloser(
+        tree_name = node.props.tree_name,
         tree_status_host = node.props.tree_status_host,
         failed_step_regexp = node.props.failed_step_regexp,
         failed_step_regexp_exclude = node.props.failed_step_regexp_exclude,
