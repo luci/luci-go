@@ -1191,8 +1191,6 @@ func prepareBuilderMetricsToPut(ctx context.Context, bldrMetrics map[string]stri
 	if err != nil && err != datastore.ErrNoSuchEntity {
 		return nil, errors.Annotate(err, "fetching CustomBuilderMetrics").Err()
 	}
-	// TODO(b/338071541): remove after confirming the feature works.
-	logging.Infof(ctx, "collected bldrMetrics: %v", bldrMetrics)
 	metricNames := make([]string, 0, len(bldrMetrics))
 	for m := range bldrMetrics {
 		metricNames = append(metricNames, m)
@@ -1217,8 +1215,6 @@ func prepareBuilderMetricsToPut(ctx context.Context, bldrMetrics map[string]stri
 		})
 	}
 
-	// TODO(b/338071541): remove after confirming the feature works.
-	logging.Infof(ctx, "current builder metrics: %v, new builder metrics: %v", ent.Metrics, newMetrics)
 	if proto.Equal(ent.Metrics, newMetrics) {
 		// Nothing to update
 		return nil, nil
