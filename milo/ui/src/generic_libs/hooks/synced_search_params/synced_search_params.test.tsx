@@ -16,7 +16,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
-import { useSyncedSearchParams } from './synced_search_params';
+import { useSyncedSearchParams } from './hooks';
 
 function TestComponent() {
   const [searchParams, setSearchParams] = useSyncedSearchParams();

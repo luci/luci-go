@@ -12,13 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {
-  ReactNode,
-  createContext,
-  useCallback,
-  useContext,
-  useMemo,
-} from 'react';
+import { ReactNode, createContext, useCallback, useMemo } from 'react';
 import {
   NavigateOptions,
   // `useSyncedSearchParams` replaces `useSearchParams` but its own implementation
@@ -33,7 +27,7 @@ type SetURLSearchParams = (
   navigateOpts?: NavigateOptions,
 ) => void;
 
-const SyncedSearchParamsContext = createContext<
+export const SyncedSearchParamsContext = createContext<
   readonly [URLSearchParams, SetURLSearchParams] | null
 >(null);
 
@@ -69,27 +63,4 @@ export function SyncedSearchParamsProvider({ children }: ContextProviderProps) {
       {children}
     </SyncedSearchParamsContext.Provider>
   );
-}
-
-/**
- * Similar to `useSearchParams` from `'react-router-dom'`, except that
- * 1. it can only be used in a SyncedSearchParamsProvider, and
- * 2. multiple search param updates can be scheduled at the same time with the
- *    [updater pattern][1], and
- * 3. results from intermediate updaters are not discarded [2].
- *
- * TODO: remove this once the [bug][2] is fixed.
- *
- * [1]: https://react.dev/reference/react/useState#updating-state-based-on-the-previous-state
- * [2]: https://github.com/remix-run/react-router/issues/10799
- */
-export function useSyncedSearchParams() {
-  const ctx = useContext(SyncedSearchParamsContext);
-  if (!ctx) {
-    throw new Error(
-      'useSyncedSearchParams can only be used in a SyncedSearchParamsProvider',
-    );
-  }
-
-  return ctx;
 }

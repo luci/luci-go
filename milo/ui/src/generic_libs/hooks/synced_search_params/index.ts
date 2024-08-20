@@ -12,5 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export * from './synced_search_params';
+export { SyncedSearchParamsProvider } from './synced_search_params';
+export type { ContextProviderProps } from './synced_search_params';
 export * from './synced_search_params_utils';
+export * from './hooks';
