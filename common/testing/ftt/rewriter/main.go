@@ -45,8 +45,6 @@ import (
 var dryrun = flag.Bool("dry", false, "if set, only does a dry run (doesn't overwrite any .go files)")
 var stopwarn = flag.Bool("x", false, "if set, stop on first warning")
 
-const originalConveyPkg = "github.com/smartystreets/goconvey/convey"
-
 func init() {
 	flag.Usage = func() {
 		fmt.Fprintf(flag.CommandLine.Output(), "Usage of %s:\n", os.Args[0])
@@ -107,5 +105,4 @@ func main() {
 			return
 		}
 	}
-	return
 }

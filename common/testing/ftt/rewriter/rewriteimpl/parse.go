@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Rewriter will take one or more existing Go test files on the command-line and
+// Package rewriteimpl will take one or more existing Go test files on the command-line and
 // rewrite "goconvey" tests in them to use
 // go.chromium.org/luci/common/testing/ftt.
 //
