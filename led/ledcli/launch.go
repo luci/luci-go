@@ -146,28 +146,38 @@ func (c *cmdLaunch) execute(ctx context.Context, authClient *http.Client, _ auth
 			bb.LegacyKitchen = false
 		}
 		if c.realBuild {
-			build, err := ledcmd.LaunchBuild(ctx, authClient, inJob, opts)
+			build, err := ledcmd.GetBuildFromJob(inJob, opts)
 			if err != nil {
 				return nil, err
 			}
-			if c.dump {
+
+			switch {
+			case opts.DryRun:
 				return build, nil
-			}
-			logging.Infof(ctx, "LUCI UI: https://%s/b/%d", miloHost, build.Id)
-			if !terminal.IsTerminal(int(os.Stdout.Fd())) {
-				ret := &struct {
-					Buildbucket struct {
-						// The id of the launched build.
-						BuildID int64 `json:"build_id"`
+			case opts.Local:
+				return ledcmd.LaunchLocalBuild(ctx, build, opts)
+			default:
+				build, err = ledcmd.LaunchRemoteBuild(ctx, authClient, build, opts)
+				if err != nil {
+					return nil, err
+				}
 
-						// The hostname of the buildbucket server
-						Hostname string `json:"host_name"`
-					} `json:"buildbucket"`
-				}{}
+				logging.Infof(ctx, "LUCI UI: https://%s/b/%d", miloHost, build.Id)
+				if !terminal.IsTerminal(int(os.Stdout.Fd())) {
+					ret := &struct {
+						Buildbucket struct {
+							// The id of the launched build.
+							BuildID int64 `json:"build_id"`
 
-				ret.Buildbucket.BuildID = build.Id
-				ret.Buildbucket.Hostname = buildbucketHostname
-				return ret, nil
+							// The hostname of the buildbucket server
+							Hostname string `json:"host_name"`
+						} `json:"buildbucket"`
+					}{}
+
+					ret.Buildbucket.BuildID = build.Id
+					ret.Buildbucket.Hostname = buildbucketHostname
+					return ret, nil
+				}
 			}
 			return nil, nil
 		}

@@ -166,8 +166,7 @@ func addUserAgentTag(req *swarmingpb.NewTaskRequest) {
 	req.Tags = append(req.Tags, UserAgentTag)
 }
 
-// LaunchBuild creates a real Buildbucket build based on the given job Definition.
-func LaunchBuild(ctx context.Context, authClient *http.Client, jd *job.Definition, opts LaunchSwarmingOpts) (*bbpb.Build, error) {
+func GetBuildFromJob(jd *job.Definition, opts LaunchSwarmingOpts) (*bbpb.Build, error) {
 	if jd.GetBuildbucket() == nil {
 		return nil, nil
 	}
@@ -188,21 +187,11 @@ func LaunchBuild(ctx context.Context, authClient *http.Client, jd *job.Definitio
 	sort.Slice(tags, func(i, j int) bool { return tags[i].Key < tags[j].Key })
 	build.Tags = tags
 
-	// TODO(b/338121346): Seperate dryrun, local, and remote.
-	if opts.DryRun {
-		return build, nil
-	} else if opts.Local {
-		baseDir := opts.LeakDir
-		if baseDir == "" {
-			if baseDir, err = os.MkdirTemp("", "led-"); err != nil {
-				return nil, err
-			}
-			defer filesystem.RemoveAll(baseDir)
-		}
+	return build, nil
+}
 
-		return launchLocal(ctx, build, baseDir)
-	}
-
+// LaunchRemoteBuild creates a real Buildbucket build based on the given job Definition.
+func LaunchRemoteBuild(ctx context.Context, authClient *http.Client, build *bbpb.Build, opts LaunchSwarmingOpts) (*bbpb.Build, error) {
 	bbClient := newBuildbucketClient(authClient, build.GetInfra().GetBuildbucket().GetHostname())
 
 	bbCtx := lucictx.GetBuildbucket(ctx)
@@ -216,9 +205,18 @@ func LaunchBuild(ctx context.Context, authClient *http.Client, jd *job.Definitio
 	})
 }
 
-func launchLocal(ctx context.Context, build *bbpb.Build, baseDir string) (*bbpb.Build, error) {
+func LaunchLocalBuild(ctx context.Context, build *bbpb.Build, opts LaunchSwarmingOpts) (*bbpb.Build, error) {
 	// TODO(b/338121346): We should warn user if the task launching on a
 	// different platform.
+
+	baseDir := opts.LeakDir
+	if baseDir == "" {
+		var err error
+		if baseDir, err = os.MkdirTemp("", "led-"); err != nil {
+			return nil, err
+		}
+		defer filesystem.RemoveAll(baseDir)
+	}
 
 	luciexeOpts := &host.Options{
 		BaseDir:             baseDir,
