@@ -19,3 +19,7 @@ cron:
 - description: "Export status data to BigQuery."
   url: /internal/cron/export-status
   schedule: every 5 minutes from 00:07 to 23:59
+- description: "Update or create views in datasets."
+  url: /internal/cron/ensure-views
+  schedule: every 10 minutes synchronized
+

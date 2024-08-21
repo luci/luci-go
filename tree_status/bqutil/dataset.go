@@ -15,6 +15,24 @@
 // Package bqutil provides utility functions to interact with BigQuery.
 package bqutil
 
+import (
+	"strings"
+
+	"go.chromium.org/luci/common/errors"
+
+	"go.chromium.org/luci/tree_status/pbutil"
+)
+
 // InternalDatasetID is the name of the BigQuery dataset which is intended
 // for internal service use only.
 const InternalDatasetID = "internal"
+
+// TreeNameForDataset returns the tree name that corresponds
+// to the given BigQuery dataset.
+func TreeNameForDataset(dataset string) (string, error) {
+	treeName := strings.ReplaceAll(dataset, "_", "-")
+	if err := pbutil.ValidateTreeName(treeName); err != nil {
+		return "", errors.Annotate(err, "validate tree name").Err()
+	}
+	return treeName, nil
+}

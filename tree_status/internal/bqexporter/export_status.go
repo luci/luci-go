@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/tree_status/internal/status"
+	"go.chromium.org/luci/tree_status/pbutil"
 	bqpb "go.chromium.org/luci/tree_status/proto/bq"
 	v1 "go.chromium.org/luci/tree_status/proto/v1"
 )
@@ -143,7 +144,7 @@ func toClosingBuilder(closingBuilderName string) (*bqpb.Builder, error) {
 	if closingBuilderName == "" {
 		return nil, nil
 	}
-	re := regexp.MustCompile(`^` + status.BuilderNameExpression + `$`)
+	re := regexp.MustCompile(`^` + pbutil.BuilderNameExpression + `$`)
 	matches := re.FindStringSubmatch(closingBuilderName)
 	if len(matches) != 4 {
 		return nil, errors.Reason("invalid builder name %q", closingBuilderName).Err()

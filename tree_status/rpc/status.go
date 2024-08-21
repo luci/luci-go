@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/tree_status/internal/status"
+	"go.chromium.org/luci/tree_status/pbutil"
 	pb "go.chromium.org/luci/tree_status/proto/v1"
 	"go.chromium.org/luci/tree_status/rpc/paginator"
 )
@@ -204,8 +205,8 @@ func (*treeStatusServer) CreateStatus(ctx context.Context, request *pb.CreateSta
 	}, nil
 }
 
-var statusParentRE = regexp.MustCompile(`^trees/(` + status.TreeNameExpression + `)/status$`)
-var statusNameRE = regexp.MustCompile(`^trees/(` + status.TreeNameExpression + `)/status/(` + status.StatusIDExpression + `|latest)$`)
+var statusParentRE = regexp.MustCompile(`^trees/(` + pbutil.TreeNameExpression + `)/status$`)
+var statusNameRE = regexp.MustCompile(`^trees/(` + pbutil.TreeNameExpression + `)/status/(` + pbutil.StatusIDExpression + `|latest)$`)
 
 // parseStatusParent parses a status resource parent into its constituent ID
 // parts.

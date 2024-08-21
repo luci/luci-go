@@ -19,30 +19,17 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
-	"fmt"
-	"regexp"
 	"time"
-	"unicode"
-	"unicode/utf8"
 
 	"cloud.google.com/go/spanner"
-	"golang.org/x/text/unicode/norm"
 	"google.golang.org/api/iterator"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/span"
 
+	"go.chromium.org/luci/tree_status/pbutil"
 	pb "go.chromium.org/luci/tree_status/proto/v1"
-)
-
-const (
-	// TreeNameExpression is a partial regular expression that validates tree identifiers.
-	TreeNameExpression = `[a-z](?:[a-z0-9-]{0,61}[a-z0-9])?`
-	// StatusIDExpression is a partial regular expression that validates status identifiers.
-	StatusIDExpression = `[0-9a-f]{32}`
-	// BuilderNameExpression is a partial regular expression that validates builder name.
-	BuilderNameExpression = `projects/([a-z0-9\-_]{1,40})/buckets/([a-z0-9\-_.]{1,100})/builders/([a-zA-Z0-9\-_.\(\) ]{1,128})`
 )
 
 // NotExistsErr is returned when the requested object was not found in the database.
@@ -75,90 +62,22 @@ type Status struct {
 // It ignores the CreateUser and CreateTime fields.
 // Reported field names are as they appear in the RPC documentation rather than the Go struct.
 func Validate(status *Status) error {
-	if err := validateTreeName(status.TreeName); err != nil {
+	if err := pbutil.ValidateTreeName(status.TreeName); err != nil {
 		return errors.Annotate(err, "tree").Err()
 	}
-	if err := validateID(status.StatusID); err != nil {
+	if err := pbutil.ValidateStatusID(status.StatusID); err != nil {
 		return errors.Annotate(err, "id").Err()
 	}
-	if err := validateGeneralStatus(status.GeneralStatus); err != nil {
+	if err := pbutil.ValidateGeneralStatus(status.GeneralStatus); err != nil {
 		return errors.Annotate(err, "general_state").Err()
 	}
-	if err := validateMessage(status.Message); err != nil {
+	if err := pbutil.ValidateMessage(status.Message); err != nil {
 		return errors.Annotate(err, "message").Err()
 	}
 	if status.GeneralStatus == pb.GeneralState_CLOSED {
-		if err := validateClosingBuilderName(status.ClosingBuilderName); err != nil {
+		if err := pbutil.ValidateClosingBuilderName(status.ClosingBuilderName); err != nil {
 			return errors.Annotate(err, "closing_builder_name").Err()
 		}
-	}
-	return nil
-}
-
-var treeNameRE = regexp.MustCompile(`^` + TreeNameExpression + `$`)
-
-func validateTreeName(treeName string) error {
-	if treeName == "" {
-		return errors.Reason("must be specified").Err()
-	}
-	if !treeNameRE.MatchString(treeName) {
-		return errors.Reason("expected format: %s", treeNameRE).Err()
-	}
-	return nil
-}
-
-var statusIDRE = regexp.MustCompile(`^` + StatusIDExpression + `$`)
-
-func validateID(id string) error {
-	if id == "" {
-		return errors.Reason("must be specified").Err()
-	}
-	if !statusIDRE.MatchString(id) {
-		return errors.Reason("expected format: %s", statusIDRE).Err()
-	}
-	return nil
-}
-
-func validateGeneralStatus(state pb.GeneralState) error {
-	if state == pb.GeneralState_GENERAL_STATE_UNSPECIFIED {
-		return errors.Reason("must be specified").Err()
-	}
-	if _, ok := pb.GeneralState_name[int32(state)]; !ok {
-		return errors.Reason("invalid enum value").Err()
-	}
-	return nil
-}
-
-func validateMessage(message string) error {
-	if message == "" {
-		return errors.Reason("must be specified").Err()
-	}
-	if len(message) > 1024 {
-		return errors.Reason("longer than 1024 bytes").Err()
-	}
-	if !utf8.ValidString(message) {
-		return errors.Reason("not a valid utf8 string").Err()
-	}
-	if !norm.NFC.IsNormalString(message) {
-		return errors.Reason("not in unicode normalized form C").Err()
-	}
-	for i, rune := range message {
-		if !unicode.IsPrint(rune) {
-			return fmt.Errorf("non-printable rune %+q at byte index %d", rune, i)
-		}
-	}
-	return nil
-}
-
-var builderNameRE = regexp.MustCompile(`^` + BuilderNameExpression + `$`)
-
-func validateClosingBuilderName(name string) error {
-	// We allow closing without specifying builder name.
-	if name == "" {
-		return nil
-	}
-	if !builderNameRE.MatchString(name) {
-		return errors.Reason("expected format: %s", builderNameRE).Err()
 	}
 	return nil
 }

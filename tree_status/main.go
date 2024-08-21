@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/tree_status/internal/bqexporter"
 	"go.chromium.org/luci/tree_status/internal/span"
 	"go.chromium.org/luci/tree_status/internal/status"
+	"go.chromium.org/luci/tree_status/internal/views"
 	pb "go.chromium.org/luci/tree_status/proto/v1"
 	"go.chromium.org/luci/tree_status/rpc"
 
@@ -81,6 +82,10 @@ func main() {
 
 		cron.RegisterHandler("clear-status-users", status.ClearStatusUsers)
 		cron.RegisterHandler("export-status", bqexporter.ExportStatus)
+		cron.RegisterHandler("ensure-views", func(ctx context.Context) error {
+			return views.CronHandler(ctx, srv.Options.CloudProject)
+		})
+
 		return nil
 	})
 }
