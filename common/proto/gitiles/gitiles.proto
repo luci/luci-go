@@ -32,7 +32,7 @@ service Gitiles {
     rpc Archive(ArchiveRequest) returns (ArchiveResponse) {};
     // DownloadFile retrieves a file from the project.
     rpc DownloadFile(DownloadFileRequest) returns (DownloadFileResponse) {};
-    // DownloadDiff retrives a diff of a revision from the project.
+    // DownloadDiff retrieves a diff of a revision from the project.
     rpc DownloadDiff(DownloadDiffRequest) returns (DownloadDiffResponse) {};
     // Projects retrieves list of available Gitiles projects.
     rpc Projects(ProjectsRequest) returns (ProjectsResponse) {};

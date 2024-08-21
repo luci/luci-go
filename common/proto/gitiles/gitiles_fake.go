@@ -16,11 +16,14 @@ package gitiles
 
 import (
 	context "context"
+	"encoding/hex"
 	"fmt"
+	"math/rand"
+
+	"google.golang.org/grpc"
 
 	"go.chromium.org/luci/common/errors"
-	git "go.chromium.org/luci/common/proto/git"
-	grpc "google.golang.org/grpc"
+	"go.chromium.org/luci/common/proto/git"
 )
 
 const defaultPageSize = 100
@@ -54,7 +57,7 @@ func (f *Fake) Log(ctx context.Context, in *LogRequest, opts ...grpc.CallOption)
 	}
 	commit, ok := repository.commits[committish]
 	if !ok {
-		return nil, fmt.Errorf("Commit %s not found", committish)
+		return nil, fmt.Errorf("commit %s not found", committish)
 	}
 	size := int(in.GetPageSize())
 	if size == 0 {
@@ -130,6 +133,12 @@ func (f *Fake) DownloadFile(ctx context.Context, in *DownloadFileRequest, opts .
 	panic("not implemented")
 }
 
+// DownloadDiff retrieves a diff of a revision from the project. This is not implemented.
+func (f *Fake) DownloadDiff(ctx context.Context, in *DownloadDiffRequest, opts ...grpc.CallOption) (*DownloadDiffResponse, error) {
+	f.addCallLog(in)
+	panic("not implemented")
+}
+
 // Projects retrieves list of available Gitiles projects
 func (f *Fake) Projects(ctx context.Context, in *ProjectsRequest, opts ...grpc.CallOption) (*ProjectsResponse, error) {
 	f.addCallLog(in)
@@ -142,6 +151,12 @@ func (f *Fake) Projects(ctx context.Context, in *ProjectsRequest, opts ...grpc.C
 		i++
 	}
 	return resp, nil
+}
+
+// ListFiles retrieves a list of files at the given revision. This is not implemented.
+func (f *Fake) ListFiles(ctx context.Context, in *ListFilesRequest, opts ...grpc.CallOption) (*ListFilesResponse, error) {
+	f.addCallLog(in)
+	panic("not implemented")
 }
 
 // SetRepository stores provided references and commits to desired repository.
@@ -196,4 +211,32 @@ func (f *Fake) GetCallLogs() []any {
 
 func (f *Fake) addCallLog(in any) {
 	f.callLogs = append(f.callLogs, in)
+}
+
+// MakeFakeCommits returns a list of chained commits with randomly generated ID.
+//
+// The commits have the following relationship:
+// ret[0] -> ret[1] -> ... -> ret[n-1] -> parents
+//
+// This can be used to create a chain of fake commits to be passed to
+// Fake.SetRepository.
+//
+// Take a `*rand.Rand` instead of a seed so that the caller can use the same
+// seed to create multiple commit chains and combine them into a more complex
+// tree. It's recommended to seed the `*rand.Rand` so the tests are
+// deterministic.
+func MakeFakeCommits(rng *rand.Rand, n int, parents []string) (ret []*git.Commit) {
+	ret = make([]*git.Commit, n)
+	sha1 := make([]byte, 20)
+
+	for i := n - 1; i >= 0; i-- {
+		rng.Read(sha1)
+		ret[i] = &git.Commit{
+			Id:      hex.EncodeToString(sha1),
+			Parents: parents,
+		}
+		parents = []string{ret[i].Id}
+	}
+
+	return ret
 }

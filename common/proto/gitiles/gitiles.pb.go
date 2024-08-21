@@ -1515,7 +1515,7 @@ type GitilesClient interface {
 	Archive(ctx context.Context, in *ArchiveRequest, opts ...grpc.CallOption) (*ArchiveResponse, error)
 	// DownloadFile retrieves a file from the project.
 	DownloadFile(ctx context.Context, in *DownloadFileRequest, opts ...grpc.CallOption) (*DownloadFileResponse, error)
-	// DownloadDiff retrives a diff of a revision from the project.
+	// DownloadDiff retrieves a diff of a revision from the project.
 	DownloadDiff(ctx context.Context, in *DownloadDiffRequest, opts ...grpc.CallOption) (*DownloadDiffResponse, error)
 	// Projects retrieves list of available Gitiles projects.
 	Projects(ctx context.Context, in *ProjectsRequest, opts ...grpc.CallOption) (*ProjectsResponse, error)
@@ -1677,7 +1677,7 @@ type GitilesServer interface {
 	Archive(context.Context, *ArchiveRequest) (*ArchiveResponse, error)
 	// DownloadFile retrieves a file from the project.
 	DownloadFile(context.Context, *DownloadFileRequest) (*DownloadFileResponse, error)
-	// DownloadDiff retrives a diff of a revision from the project.
+	// DownloadDiff retrieves a diff of a revision from the project.
 	DownloadDiff(context.Context, *DownloadDiffRequest) (*DownloadDiffResponse, error)
 	// Projects retrieves list of available Gitiles projects.
 	Projects(context.Context, *ProjectsRequest) (*ProjectsResponse, error)

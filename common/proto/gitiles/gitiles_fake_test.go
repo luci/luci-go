@@ -19,14 +19,21 @@ import (
 	"strconv"
 	"testing"
 
+	"go.chromium.org/luci/common/proto/git"
+
 	. "github.com/smartystreets/goconvey/convey"
-	git "go.chromium.org/luci/common/proto/git"
 )
 
 func TestFake(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
+
+	Convey("Implements GitilesClient", t, func() {
+		var _ GitilesClient = &Fake{}
+		So(nil, ShouldBeNil)
+	})
+
 	Convey("Edge cases", t, func() {
 		Convey("Empty", func() {
 			fake := Fake{}
