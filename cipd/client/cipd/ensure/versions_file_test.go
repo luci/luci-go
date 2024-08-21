@@ -21,9 +21,9 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/cipd/common"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestVersionsFile(t *testing.T) {
@@ -34,41 +34,41 @@ func TestVersionsFile(t *testing.T) {
 		iid2 = "22222joOfFfFcq7fHCKAIrU34oeFAT174Bf8eHMajMUC"
 	)
 
-	Convey("Setter/getter", t, func() {
+	ftt.Run("Setter/getter", t, func(t *ftt.Test) {
 		v := VersionsFile{}
 
 		_, err := v.ResolveVersion("pkg", "ver")
-		So(err, ShouldErrLike, "not in the versions file")
+		assert.Loosely(t, err, should.ErrLike("not in the versions file"))
 
-		So(v.AddVersion("pkg", "ver", iid1), ShouldBeNil)
-		So(v.AddVersion("pkg", iid1, iid1), ShouldBeNil) // noop
-		So(v, ShouldHaveLength, 1)
+		assert.Loosely(t, v.AddVersion("pkg", "ver", iid1), should.BeNil)
+		assert.Loosely(t, v.AddVersion("pkg", iid1, iid1), should.BeNil) // noop
+		assert.Loosely(t, v, should.HaveLength(1))
 
 		pin, err := v.ResolveVersion("pkg", "ver")
-		So(err, ShouldBeNil)
-		So(pin, ShouldResemble, common.Pin{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, pin, should.Resemble(common.Pin{
 			PackageName: "pkg",
 			InstanceID:  iid1,
-		})
+		}))
 
 		pin, err = v.ResolveVersion("other-pkg", iid1)
-		So(err, ShouldBeNil)
-		So(pin, ShouldResemble, common.Pin{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, pin, should.Resemble(common.Pin{
 			PackageName: "other-pkg",
 			InstanceID:  iid1,
-		})
+		}))
 	})
 
-	Convey("AddVersion errors", t, func() {
+	ftt.Run("AddVersion errors", t, func(t *ftt.Test) {
 		v := VersionsFile{}
 
-		So(v.AddVersion("???", "ver", iid1), ShouldErrLike, "invalid package name")
-		So(v.AddVersion("pkg", "???", iid1), ShouldErrLike, "bad version")
-		So(v.AddVersion("pkg", "ver", "not-id"), ShouldErrLike, "not a valid package instance ID")
-		So(v.AddVersion("pkg", iid1, iid2), ShouldErrLike, "should resolve into that ID")
+		assert.Loosely(t, v.AddVersion("???", "ver", iid1), should.ErrLike("invalid package name"))
+		assert.Loosely(t, v.AddVersion("pkg", "???", iid1), should.ErrLike("bad version"))
+		assert.Loosely(t, v.AddVersion("pkg", "ver", "not-id"), should.ErrLike("not a valid package instance ID"))
+		assert.Loosely(t, v.AddVersion("pkg", iid1, iid2), should.ErrLike("should resolve into that ID"))
 	})
 
-	Convey("Equal", t, func() {
+	ftt.Run("Equal", t, func(t *ftt.Test) {
 		v1 := VersionsFile{
 			{"pkg1", "ver1"}: iid1,
 			{"pkg1", "ver2"}: iid2,
@@ -81,12 +81,12 @@ func TestVersionsFile(t *testing.T) {
 			{"pkg1", "ver1"}: iid1,
 		}
 
-		So(v1.Equal(v1), ShouldBeTrue)
-		So(v1.Equal(v2), ShouldBeFalse)
-		So(v1.Equal(v3), ShouldBeFalse)
+		assert.Loosely(t, v1.Equal(v1), should.BeTrue)
+		assert.Loosely(t, v1.Equal(v2), should.BeFalse)
+		assert.Loosely(t, v1.Equal(v3), should.BeFalse)
 	})
 
-	Convey("Serialization and successful parsing", t, func() {
+	ftt.Run("Serialization and successful parsing", t, func(t *ftt.Test) {
 
 		testVersion := VersionsFile{
 			{"pkg1", "ver1"}:      iid1,
@@ -110,81 +110,81 @@ pkg2
 	%s
 `, iid1, iid1, iid2)
 
-		Convey("Serialization", func() {
+		t.Run("Serialization", func(t *ftt.Test) {
 			b := bytes.Buffer{}
-			So(testVersion.Serialize(&b), ShouldBeNil)
-			So(b.String(), ShouldEqual, expectedSerialization)
+			assert.Loosely(t, testVersion.Serialize(&b), should.BeNil)
+			assert.Loosely(t, b.String(), should.Equal(expectedSerialization))
 		})
 
-		Convey("Parsing success", func() {
+		t.Run("Parsing success", func(t *ftt.Test) {
 			v, err := ParseVersionsFile(strings.NewReader(expectedSerialization))
-			So(err, ShouldBeNil)
-			So(v, ShouldResemble, testVersion)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, v, should.Resemble(testVersion))
 		})
 
-		Convey("Parsing empty", func() {
+		t.Run("Parsing empty", func(t *ftt.Test) {
 			v, err := ParseVersionsFile(strings.NewReader(""))
-			So(err, ShouldBeNil)
-			So(v, ShouldResemble, VersionsFile{})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, v, should.Resemble(VersionsFile{}))
 		})
 
-		Convey("Parsing one", func() {
+		t.Run("Parsing one", func(t *ftt.Test) {
 			v, err := ParseVersionsFile(strings.NewReader(fmt.Sprintf("pkg\nver\n%s", iid1)))
-			So(err, ShouldBeNil)
-			So(v, ShouldResemble, VersionsFile{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, v, should.Resemble(VersionsFile{
 				{"pkg", "ver"}: iid1,
-			})
+			}))
 		})
 
-		Convey("Many new lines", func() {
+		t.Run("Many new lines", func(t *ftt.Test) {
 			v, err := ParseVersionsFile(strings.NewReader(
 				fmt.Sprintf("pkg\nver1\n%s\n\n\npkg\nver2\n%s", iid1, iid2)))
-			So(err, ShouldBeNil)
-			So(v, ShouldResemble, VersionsFile{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, v, should.Resemble(VersionsFile{
 				{"pkg", "ver1"}: iid1,
 				{"pkg", "ver2"}: iid2,
-			})
+			}))
 		})
 	})
 
-	Convey("Parsing errors", t, func() {
+	ftt.Run("Parsing errors", t, func(t *ftt.Test) {
 		p := func(text string, args ...any) error {
 			v, err := ParseVersionsFile(strings.NewReader(fmt.Sprintf(text, args...)))
-			So(err, ShouldNotBeNil)
-			So(v, ShouldBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, v, should.BeNil)
 			return err
 		}
 
-		Convey("Bad format of identifiers", func() {
-			So(p("???\nver\n%s", iid1), ShouldErrLike,
-				"failed to parse versions file (line 1): invalid package name")
+		t.Run("Bad format of identifiers", func(t *ftt.Test) {
+			assert.Loosely(t, p("???\nver\n%s", iid1), should.ErrLike(
+				"failed to parse versions file (line 1): invalid package name"))
 
-			So(p("pkg\n???\n%s", iid1), ShouldErrLike,
-				"failed to parse versions file (line 2): bad version")
+			assert.Loosely(t, p("pkg\n???\n%s", iid1), should.ErrLike(
+				"failed to parse versions file (line 2): bad version"))
 
-			So(p("pkg\nver\nnotid"), ShouldErrLike,
-				"failed to parse versions file (line 3): not a valid package instance ID")
+			assert.Loosely(t, p("pkg\nver\nnotid"), should.ErrLike(
+				"failed to parse versions file (line 3): not a valid package instance ID"))
 		})
 
-		Convey("Unexpected empty line", func() {
-			So(p("pkg\n\nver\n%s\n", iid1), ShouldErrLike,
-				"failed to parse versions file (line 2): expecting a version name, not a new line")
+		t.Run("Unexpected empty line", func(t *ftt.Test) {
+			assert.Loosely(t, p("pkg\n\nver\n%s\n", iid1), should.ErrLike(
+				"failed to parse versions file (line 2): expecting a version name, not a new line"))
 
-			So(p("pkg\nver\n\n%s\n", iid1), ShouldErrLike,
-				"failed to parse versions file (line 3): expecting an instance ID, not a new line")
+			assert.Loosely(t, p("pkg\nver\n\n%s\n", iid1), should.ErrLike(
+				"failed to parse versions file (line 3): expecting an instance ID, not a new line"))
 		})
 
-		Convey("Unexpected EOF", func() {
-			So(p("pkg\n"), ShouldErrLike,
-				"failed to parse versions file (line 1): unexpected EOF, expecting a package version")
+		t.Run("Unexpected EOF", func(t *ftt.Test) {
+			assert.Loosely(t, p("pkg\n"), should.ErrLike(
+				"failed to parse versions file (line 1): unexpected EOF, expecting a package version"))
 
-			So(p("pkg\nver\n"), ShouldErrLike,
-				"failed to parse versions file (line 2): unexpected EOF, expecting an instance ID")
+			assert.Loosely(t, p("pkg\nver\n"), should.ErrLike(
+				"failed to parse versions file (line 2): unexpected EOF, expecting an instance ID"))
 		})
 
-		Convey("Unexpected line after the triple", func() {
-			So(p("pkg\nver\n%s\nsomething", iid1), ShouldErrLike,
-				"failed to parse versions file (line 4): expecting an empty line between each version definition triple")
+		t.Run("Unexpected line after the triple", func(t *ftt.Test) {
+			assert.Loosely(t, p("pkg\nver\n%s\nsomething", iid1), should.ErrLike(
+				"failed to parse versions file (line 4): expecting an empty line between each version definition triple"))
 		})
 	})
 }

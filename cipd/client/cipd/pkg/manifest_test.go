@@ -16,10 +16,11 @@ package pkg
 
 import (
 	"bytes"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"strings"
 	"testing"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestReadManifest(t *testing.T) {
@@ -30,28 +31,28 @@ func TestReadManifest(t *testing.T) {
   "package_name": "package/name"
 }`
 
-	Convey("ReadManifest can read valid manifest", t, func() {
+	ftt.Run("ReadManifest can read valid manifest", t, func(t *ftt.Test) {
 		manifest, err := ReadManifest(strings.NewReader(goodManifest))
-		So(manifest, ShouldResemble, Manifest{
+		assert.Loosely(t, manifest, should.Resemble(Manifest{
 			FormatVersion: "1",
 			PackageName:   "package/name",
-		})
-		So(err, ShouldBeNil)
+		}))
+		assert.Loosely(t, err, should.BeNil)
 	})
 
-	Convey("ReadManifest rejects invalid manifest", t, func() {
+	ftt.Run("ReadManifest rejects invalid manifest", t, func(t *ftt.Test) {
 		manifest, err := ReadManifest(strings.NewReader("I'm not a manifest"))
-		So(manifest, ShouldResemble, Manifest{})
-		So(err, ShouldNotBeNil)
+		assert.Loosely(t, manifest, should.Resemble(Manifest{}))
+		assert.Loosely(t, err, should.NotBeNil)
 	})
 
-	Convey("WriteManifest works", t, func() {
+	ftt.Run("WriteManifest works", t, func(t *ftt.Test) {
 		buf := &bytes.Buffer{}
 		m := Manifest{
 			FormatVersion: "1",
 			PackageName:   "package/name",
 		}
-		So(WriteManifest(&m, buf), ShouldBeNil)
-		So(string(buf.Bytes()), ShouldEqual, goodManifest)
+		assert.Loosely(t, WriteManifest(&m, buf), should.BeNil)
+		assert.Loosely(t, string(buf.Bytes()), should.Equal(goodManifest))
 	})
 }

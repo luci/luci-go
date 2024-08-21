@@ -23,13 +23,13 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/cipd/client/cipd/ensure"
 	"go.chromium.org/luci/cipd/client/cipd/template"
 	"go.chromium.org/luci/cipd/common"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestResolve(t *testing.T) {
@@ -54,13 +54,13 @@ func TestResolve(t *testing.T) {
 		panic(err)
 	}
 
-	Convey("Happy path", t, func() {
+	ftt.Run("Happy path", t, func(t *ftt.Test) {
 		mc := newMockedClient()
 		mc.mockResolve("pkg1/zzz", "ref1", iid1)
 		mc.mockResolve("pkg1/zzz", "ref2", iid1) // same iid
 		mc.mockPin("pkg2", iid2)
 
-		Convey("With VerifyPresence == true and visitor", func() {
+		t.Run("With VerifyPresence == true and visitor", func(t *ftt.Test) {
 			mu := sync.Mutex{}
 			visited := []string{}
 
@@ -75,8 +75,8 @@ func TestResolve(t *testing.T) {
 			}
 
 			res, err := r.Resolve(ctx, file, exp)
-			So(err, ShouldBeNil)
-			So(res.PackagesBySubdir, ShouldResemble, common.PinSliceBySubdir{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.PackagesBySubdir, should.Resemble(common.PinSliceBySubdir{
 				"1": common.PinSlice{
 					{"pkg1/zzz", iid1},
 				},
@@ -84,25 +84,25 @@ func TestResolve(t *testing.T) {
 					{"pkg1/zzz", iid1},
 					{"pkg2", iid2},
 				},
-			})
+			}))
 
-			So(mc.resolveCalls, ShouldEqual, 2)  // only two refs
-			So(mc.describeCalls, ShouldEqual, 2) // refs resolve into 1 iid + pkg2 iid
+			assert.Loosely(t, mc.resolveCalls, should.Equal(2))  // only two refs
+			assert.Loosely(t, mc.describeCalls, should.Equal(2)) // refs resolve into 1 iid + pkg2 iid
 
 			sort.Strings(visited)
-			So(visited, ShouldResemble, []string{
+			assert.Loosely(t, visited, should.Resemble([]string{
 				"pkg1/zzz@ref1 => " + iid1,
 				"pkg1/zzz@ref2 => " + iid1,
 				fmt.Sprintf("pkg2@%s => %s", iid2, iid2),
-			})
+			}))
 		})
 
-		Convey("With VerifyPresence == false", func() {
+		t.Run("With VerifyPresence == false", func(t *ftt.Test) {
 			r := Resolver{Client: mc, VerifyPresence: false}
 
 			res, err := r.Resolve(ctx, file, exp)
-			So(err, ShouldBeNil)
-			So(res.PackagesBySubdir, ShouldResemble, common.PinSliceBySubdir{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.PackagesBySubdir, should.Resemble(common.PinSliceBySubdir{
 				"1": common.PinSlice{
 					{"pkg1/zzz", iid1},
 				},
@@ -110,14 +110,14 @@ func TestResolve(t *testing.T) {
 					{"pkg1/zzz", iid1},
 					{"pkg2", iid2},
 				},
-			})
+			}))
 
-			So(mc.resolveCalls, ShouldEqual, 2)  // only two refs
-			So(mc.describeCalls, ShouldEqual, 0) // nothing is described
+			assert.Loosely(t, mc.resolveCalls, should.Equal(2)) // only two refs
+			assert.Loosely(t, mc.describeCalls, should.BeZero)  // nothing is described
 		})
 	})
 
-	Convey("ResolveVersion error", t, func() {
+	ftt.Run("ResolveVersion error", t, func(t *ftt.Test) {
 		mc := newMockedClient()
 		mc.mockResolve("pkg1/zzz", "ref1", iid1) // no ref2
 		mc.mockPin("pkg2", iid2)
@@ -125,11 +125,11 @@ func TestResolve(t *testing.T) {
 		r := Resolver{Client: mc, VerifyPresence: true}
 
 		res, err := r.Resolve(ctx, file, exp)
-		So(res, ShouldBeNil)
-		So(err, ShouldErrLike, `failed to resolve pkg1/zzz@ref2 (line 6): no version "ref2"`)
+		assert.Loosely(t, res, should.BeNil)
+		assert.Loosely(t, err, should.ErrLike(`failed to resolve pkg1/zzz@ref2 (line 6): no version "ref2"`))
 	})
 
-	Convey("DescribeInstance error", t, func() {
+	ftt.Run("DescribeInstance error", t, func(t *ftt.Test) {
 		mc := newMockedClient()
 		mc.mockResolve("pkg1/zzz", "ref1", iid1)
 		mc.mockResolve("pkg1/zzz", "ref2", iid1) // same iid
@@ -137,24 +137,24 @@ func TestResolve(t *testing.T) {
 		r := Resolver{Client: mc, VerifyPresence: true}
 
 		res, err := r.Resolve(ctx, file, exp)
-		So(res, ShouldBeNil)
-		So(err, ShouldErrLike,
-			fmt.Sprintf(`failed to resolve pkg2@%s (line 7): no such instance`, iid2))
+		assert.Loosely(t, res, should.BeNil)
+		assert.Loosely(t, err, should.ErrLike(
+			fmt.Sprintf(`failed to resolve pkg2@%s (line 7): no such instance`, iid2)))
 	})
 
-	Convey("Many errors", t, func() {
+	ftt.Run("Many errors", t, func(t *ftt.Test) {
 		mc := newMockedClient()
 		r := Resolver{Client: mc, VerifyPresence: true}
 
 		res, err := r.Resolve(ctx, file, exp)
-		So(res, ShouldBeNil)
+		assert.Loosely(t, res, should.BeNil)
 
 		// Errors are sorted by line
 		merr := err.(errors.MultiError)
-		So(merr, ShouldHaveLength, 3)
-		So(merr[0], ShouldErrLike, `(line 3): no version "ref1"`)
-		So(merr[1], ShouldErrLike, `(line 6): no version "ref2"`)
-		So(merr[2], ShouldErrLike, `(line 7): no such instance`)
+		assert.Loosely(t, merr, should.HaveLength(3))
+		assert.Loosely(t, merr[0], should.ErrLike(`(line 3): no version "ref1"`))
+		assert.Loosely(t, merr[1], should.ErrLike(`(line 6): no version "ref2"`))
+		assert.Loosely(t, merr[2], should.ErrLike(`(line 7): no such instance`))
 	})
 }
 
@@ -177,7 +177,7 @@ func TestResolveAllPlatforms(t *testing.T) {
 		panic(err)
 	}
 
-	Convey("Happy path", t, func() {
+	ftt.Run("Happy path", t, func(t *ftt.Test) {
 		mc := newMockedClient()
 		mc.mockResolve("pkg1/windows-amd64", "latest", iid1)
 		mc.mockResolve("pkg1/linux-amd64", "latest", iid2)
@@ -187,40 +187,40 @@ func TestResolveAllPlatforms(t *testing.T) {
 		r := Resolver{Client: mc}
 
 		res, err := r.ResolveAllPlatforms(ctx, file)
-		So(err, ShouldBeNil)
-		So(res, ShouldHaveLength, 2)
-		So(res[template.Platform{"linux", "amd64"}].PackagesBySubdir, ShouldResemble, common.PinSliceBySubdir{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, res, should.HaveLength(2))
+		assert.Loosely(t, res[template.Platform{"linux", "amd64"}].PackagesBySubdir, should.Resemble(common.PinSliceBySubdir{
 			"": common.PinSlice{
 				{"pkg1/linux-amd64", iid2},
 				{"pkg2/linux-amd64", iid4},
 			},
-		})
-		So(res[template.Platform{"windows", "amd64"}].PackagesBySubdir, ShouldResemble, common.PinSliceBySubdir{
+		}))
+		assert.Loosely(t, res[template.Platform{"windows", "amd64"}].PackagesBySubdir, should.Resemble(common.PinSliceBySubdir{
 			"": common.PinSlice{
 				{"pkg1/windows-amd64", iid1},
 				{"pkg2/windows-amd64", iid3},
 			},
-		})
+		}))
 	})
 
-	Convey("Unhappy path", t, func() {
+	ftt.Run("Unhappy path", t, func(t *ftt.Test) {
 		mc := newMockedClient()
 		r := Resolver{Client: mc}
 
 		res, err := r.ResolveAllPlatforms(ctx, file)
-		So(res, ShouldBeNil)
+		assert.Loosely(t, res, should.BeNil)
 
 		// Errors order is stable.
 		var lines []string
 		for _, err := range err.(errors.MultiError) {
 			lines = append(lines, err.Error())
 		}
-		So(lines, ShouldResemble, []string{
+		assert.Loosely(t, lines, should.Resemble([]string{
 			`when resolving windows-amd64: failed to resolve pkg1/windows-amd64@latest (line 3): no version "latest"`,
 			`when resolving windows-amd64: failed to resolve pkg2/windows-amd64@latest (line 4): no version "latest"`,
 			`when resolving linux-amd64: failed to resolve pkg1/linux-amd64@latest (line 3): no version "latest"`,
 			`when resolving linux-amd64: failed to resolve pkg2/linux-amd64@latest (line 4): no version "latest"`,
-		})
+		}))
 	})
 }
 

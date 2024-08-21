@@ -18,41 +18,41 @@ import (
 	"testing"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestNewHash(t *testing.T) {
 	t.Parallel()
 
-	Convey("Unspecified", t, func() {
+	ftt.Run("Unspecified", t, func(t *ftt.Test) {
 		_, err := NewHash(api.HashAlgo_HASH_ALGO_UNSPECIFIED)
-		So(err, ShouldErrLike, "not specified")
+		assert.Loosely(t, err, should.ErrLike("not specified"))
 	})
 
-	Convey("Unknown", t, func() {
+	ftt.Run("Unknown", t, func(t *ftt.Test) {
 		_, err := NewHash(12345)
-		So(err, ShouldErrLike, "unsupported")
+		assert.Loosely(t, err, should.ErrLike("unsupported"))
 	})
 
-	Convey("SHA1", t, func() {
+	ftt.Run("SHA1", t, func(t *ftt.Test) {
 		algo, err := NewHash(api.HashAlgo_SHA1)
-		So(err, ShouldBeNil)
-		So(algo, ShouldNotBeNil)
-		So(ObjectRefFromHash(algo), ShouldResembleProto, &api.ObjectRef{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, algo, should.NotBeNil)
+		assert.Loosely(t, ObjectRefFromHash(algo), should.Resemble(&api.ObjectRef{
 			HashAlgo:  api.HashAlgo_SHA1,
 			HexDigest: "da39a3ee5e6b4b0d3255bfef95601890afd80709",
-		})
+		}))
 	})
 
-	Convey("SHA256", t, func() {
+	ftt.Run("SHA256", t, func(t *ftt.Test) {
 		algo, err := NewHash(api.HashAlgo_SHA256)
-		So(err, ShouldBeNil)
-		So(algo, ShouldNotBeNil)
-		So(ObjectRefFromHash(algo), ShouldResembleProto, &api.ObjectRef{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, algo, should.NotBeNil)
+		assert.Loosely(t, ObjectRefFromHash(algo), should.Resemble(&api.ObjectRef{
 			HashAlgo:  api.HashAlgo_SHA256,
 			HexDigest: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-		})
+		}))
 	})
 }

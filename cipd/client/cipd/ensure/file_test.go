@@ -21,8 +21,9 @@ import (
 	"go.chromium.org/luci/cipd/client/cipd/deployer"
 	"go.chromium.org/luci/cipd/client/cipd/pkg"
 	"go.chromium.org/luci/cipd/client/cipd/template"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func mustMakePlatform(v string) template.Platform {
@@ -114,12 +115,12 @@ var fileSerializationTests = []struct {
 func TestFileSerialization(t *testing.T) {
 	t.Parallel()
 
-	Convey("File.Serialize", t, func() {
+	ftt.Run("File.Serialize", t, func(t *ftt.Test) {
 		for _, tc := range fileSerializationTests {
-			Convey(tc.name, func() {
+			t.Run(tc.name, func(t *ftt.Test) {
 				buf := &bytes.Buffer{}
-				So(tc.f.Serialize(buf), ShouldBeNil)
-				So(buf.String(), ShouldEqual, tc.expect)
+				assert.Loosely(t, tc.f.Serialize(buf), should.BeNil)
+				assert.Loosely(t, buf.String(), should.Equal(tc.expect))
 			})
 		}
 	})
@@ -131,7 +132,7 @@ func TestFileSerialization(t *testing.T) {
 func TestFileClone(t *testing.T) {
 	t.Parallel()
 
-	Convey("File.Clone", t, func() {
+	ftt.Run("File.Clone", t, func(t *ftt.Test) {
 		f := &File{
 			"ServiceURL",
 			"ParanoidMode",
@@ -140,6 +141,6 @@ func TestFileClone(t *testing.T) {
 			map[string]PackageSlice{"key": {{"PackageTemplate", "UnresolvedVersion", 0}}},
 			[]template.Platform{{"os", "arch"}},
 		}
-		So(f.Clone(), ShouldResemble, f)
+		assert.Loosely(t, f.Clone(), should.Resemble(f))
 	})
 }

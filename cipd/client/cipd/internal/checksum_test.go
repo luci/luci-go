@@ -18,12 +18,11 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/cipd/client/cipd/internal/messages"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	"google.golang.org/protobuf/proto"
-
-	. "github.com/smartystreets/goconvey/convey"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestChecksumCheckingWorks(t *testing.T) {
@@ -37,26 +36,26 @@ func TestChecksumCheckingWorks(t *testing.T) {
 		},
 	}
 
-	Convey("Works", t, func(c C) {
+	ftt.Run("Works", t, func(c *ftt.Test) {
 		buf, err := MarshalWithSHA256(&msg)
-		So(err, ShouldBeNil)
+		assert.Loosely(c, err, should.BeNil)
 		out := messages.TagCache{}
-		So(UnmarshalWithSHA256(buf, &out), ShouldBeNil)
-		So(&out, ShouldResembleProto, &msg)
+		assert.Loosely(c, UnmarshalWithSHA256(buf, &out), should.BeNil)
+		assert.Loosely(c, &out, should.Resemble(&msg))
 	})
 
-	Convey("Rejects bad msg", t, func(c C) {
+	ftt.Run("Rejects bad msg", t, func(c *ftt.Test) {
 		buf, err := MarshalWithSHA256(&msg)
-		So(err, ShouldBeNil)
+		assert.Loosely(c, err, should.BeNil)
 		buf[10] = 0
 		out := messages.TagCache{}
-		So(UnmarshalWithSHA256(buf, &out), ShouldNotBeNil)
+		assert.Loosely(c, UnmarshalWithSHA256(buf, &out), should.NotBeNil)
 	})
 
-	Convey("Skips empty sha256", t, func(c C) {
+	ftt.Run("Skips empty sha256", t, func(c *ftt.Test) {
 		buf, err := proto.Marshal(&messages.BlobWithSHA256{Blob: []byte{1, 2, 3}})
-		So(err, ShouldBeNil)
+		assert.Loosely(c, err, should.BeNil)
 		out := messages.TagCache{}
-		So(UnmarshalWithSHA256(buf, &out), ShouldEqual, ErrUnknownSHA256)
+		assert.Loosely(c, UnmarshalWithSHA256(buf, &out), should.Equal(ErrUnknownSHA256))
 	})
 }

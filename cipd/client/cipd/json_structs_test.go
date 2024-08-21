@@ -25,59 +25,60 @@ import (
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/common"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestUnixTime(t *testing.T) {
 	t.Parallel()
 
-	Convey("Zero works", t, func() {
+	ftt.Run("Zero works", t, func(t *ftt.Test) {
 		z := UnixTime{}
 
-		So(z.IsZero(), ShouldBeTrue)
-		So(z.String(), ShouldEqual, "0001-01-01 00:00:00 +0000 UTC")
+		assert.Loosely(t, z.IsZero(), should.BeTrue)
+		assert.Loosely(t, z.String(), should.Equal("0001-01-01 00:00:00 +0000 UTC"))
 
 		buf, err := json.Marshal(map[string]any{
 			"key": z,
 		})
-		So(err, ShouldBeNil)
-		So(string(buf), ShouldEqual, `{"key":0}`)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, string(buf), should.Equal(`{"key":0}`))
 	})
 
-	Convey("Non-zero works", t, func() {
+	ftt.Run("Non-zero works", t, func(t *ftt.Test) {
 		t1 := UnixTime(time.Unix(1530934723, 0).UTC())
 
-		So(t1.IsZero(), ShouldBeFalse)
-		So(t1.String(), ShouldEqual, "2018-07-07 03:38:43 +0000 UTC")
+		assert.Loosely(t, t1.IsZero(), should.BeFalse)
+		assert.Loosely(t, t1.String(), should.Equal("2018-07-07 03:38:43 +0000 UTC"))
 
 		buf, err := json.Marshal(map[string]any{
 			"key": t1,
 		})
-		So(err, ShouldBeNil)
-		So(string(buf), ShouldEqual, `{"key":1530934723}`)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, string(buf), should.Equal(`{"key":1530934723}`))
 
-		So(t1.Before(UnixTime{}), ShouldBeFalse)
+		assert.Loosely(t, t1.Before(UnixTime{}), should.BeFalse)
 	})
 }
 
 func TestJSONError(t *testing.T) {
 	t.Parallel()
 
-	Convey("Nil works", t, func() {
+	ftt.Run("Nil works", t, func(t *ftt.Test) {
 		buf, err := json.Marshal(map[string]any{
 			"key": JSONError{},
 		})
-		So(err, ShouldBeNil)
-		So(string(buf), ShouldEqual, `{"key":null}`)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, string(buf), should.Equal(`{"key":null}`))
 	})
 
-	Convey("Non-nil works", t, func() {
+	ftt.Run("Non-nil works", t, func(t *ftt.Test) {
 		buf, err := json.Marshal(map[string]any{
 			"key": JSONError{fmt.Errorf("some error message")},
 		})
-		So(err, ShouldBeNil)
-		So(string(buf), ShouldEqual, `{"key":"some error message"}`)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, string(buf), should.Equal(`{"key":"some error message"}`))
 	})
 }
 
@@ -105,15 +106,15 @@ func TestApiDescToInfo(t *testing.T) {
 		RegisteredTs: UnixTime(ts),
 	}
 
-	Convey("Only instance info", t, func() {
-		So(
+	ftt.Run("Only instance info", t, func(t *ftt.Test) {
+		assert.Loosely(t,
 			apiDescToInfo(&api.DescribeInstanceResponse{Instance: apiInst}),
-			ShouldResemble,
-			&InstanceDescription{InstanceInfo: instInfo},
-		)
+			should.Resemble(
+				&InstanceDescription{InstanceInfo: instInfo},
+			))
 	})
 
-	Convey("With tags and refs", t, func() {
+	ftt.Run("With tags and refs", t, func(t *ftt.Test) {
 		in := &api.DescribeInstanceResponse{
 			Instance: apiInst,
 			Tags: []*api.Tag{
@@ -133,7 +134,7 @@ func TestApiDescToInfo(t *testing.T) {
 				},
 			},
 		}
-		So(apiDescToInfo(in), ShouldResemble, &InstanceDescription{
+		assert.Loosely(t, apiDescToInfo(in), should.Resemble(&InstanceDescription{
 			InstanceInfo: instInfo,
 			Tags: []TagInfo{
 				{
@@ -150,6 +151,6 @@ func TestApiDescToInfo(t *testing.T) {
 					ModifiedTs: UnixTime(ts.Add(2 * time.Second)),
 				},
 			},
-		})
+		}))
 	})
 }

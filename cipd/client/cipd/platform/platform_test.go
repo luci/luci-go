@@ -15,32 +15,33 @@
 package platform
 
 import (
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"runtime"
 	"testing"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestCurrentResolution(t *testing.T) {
 	t.Parallel()
 
-	Convey("Sanity check on arch/os", t, func() {
-		Convey("Has a known os", func() {
+	ftt.Run("Sanity check on arch/os", t, func(t *ftt.Test) {
+		t.Run("Has a known os", func(t *ftt.Test) {
 			known := false
 			switch currentOS {
 			case runtime.GOOS, "mac":
 				known = true
 			}
-			So(known, ShouldBeTrue)
+			assert.Loosely(t, known, should.BeTrue)
 		})
 
-		Convey("Has a known architecture", func() {
+		t.Run("Has a known architecture", func(t *ftt.Test) {
 			known := false
 			switch currentArchitecture {
 			case runtime.GOARCH, "armv6l":
 				known = true
 			}
-			So(known, ShouldBeTrue)
+			assert.Loosely(t, known, should.BeTrue)
 		})
 	})
 }

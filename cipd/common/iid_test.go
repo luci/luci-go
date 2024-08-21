@@ -20,9 +20,9 @@ import (
 	"testing"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestValidateInstanceID(t *testing.T) {
@@ -36,9 +36,9 @@ func TestValidateInstanceID(t *testing.T) {
 		"ytsp2xXp26LpDqWLjKOUmpGorZXaEJGryJO1-Nkp5t0C",
 	}
 	for _, iid := range good {
-		Convey(fmt.Sprintf("Works with %q", iid), t, func() {
-			So(ValidateInstanceID(iid, KnownHash), ShouldBeNil)
-			So(ValidateInstanceID(iid, AnyHash), ShouldBeNil)
+		ftt.Run(fmt.Sprintf("Works with %q", iid), t, func(t *ftt.Test) {
+			assert.Loosely(t, ValidateInstanceID(iid, KnownHash), should.BeNil)
+			assert.Loosely(t, ValidateInstanceID(iid, AnyHash), should.BeNil)
 		})
 	}
 
@@ -54,9 +54,9 @@ func TestValidateInstanceID(t *testing.T) {
 		"AAAAAAAAAAAAAAAAAAAAAAAAAAAC",                 // bad digest len for an algo
 	}
 	for _, iid := range bad {
-		Convey(fmt.Sprintf("Fails with %q", iid), t, func() {
-			So(ValidateInstanceID(iid, KnownHash), ShouldNotBeNil)
-			So(ValidateInstanceID(iid, AnyHash), ShouldNotBeNil)
+		ftt.Run(fmt.Sprintf("Fails with %q", iid), t, func(t *ftt.Test) {
+			assert.Loosely(t, ValidateInstanceID(iid, KnownHash), should.NotBeNil)
+			assert.Loosely(t, ValidateInstanceID(iid, AnyHash), should.NotBeNil)
 		})
 	}
 
@@ -65,9 +65,9 @@ func TestValidateInstanceID(t *testing.T) {
 		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",      // happens to be looking like unknown hash algo
 	}
 	for _, iid := range unknown {
-		Convey(fmt.Sprintf("Works with %q", iid), t, func() {
-			So(ValidateInstanceID(iid, KnownHash), ShouldNotBeNil)
-			So(ValidateInstanceID(iid, AnyHash), ShouldBeNil)
+		ftt.Run(fmt.Sprintf("Works with %q", iid), t, func(t *ftt.Test) {
+			assert.Loosely(t, ValidateInstanceID(iid, KnownHash), should.NotBeNil)
+			assert.Loosely(t, ValidateInstanceID(iid, AnyHash), should.BeNil)
 		})
 	}
 }
@@ -75,128 +75,128 @@ func TestValidateInstanceID(t *testing.T) {
 func TestValidateObjectRef(t *testing.T) {
 	t.Parallel()
 
-	Convey("SHA1", t, func() {
-		So(ValidateObjectRef(&api.ObjectRef{
+	ftt.Run("SHA1", t, func(t *ftt.Test) {
+		assert.Loosely(t, ValidateObjectRef(&api.ObjectRef{
 			HashAlgo:  api.HashAlgo_SHA1,
 			HexDigest: "0123456789abcdef0123456789abcdef00000000",
-		}, KnownHash), ShouldBeNil)
+		}, KnownHash), should.BeNil)
 
-		So(ValidateObjectRef(&api.ObjectRef{
+		assert.Loosely(t, ValidateObjectRef(&api.ObjectRef{
 			HashAlgo:  api.HashAlgo_SHA1,
 			HexDigest: "abcd",
-		}, KnownHash), ShouldErrLike, "expecting 40 chars, got 4")
+		}, KnownHash), should.ErrLike("expecting 40 chars, got 4"))
 
-		So(ValidateObjectRef(&api.ObjectRef{
+		assert.Loosely(t, ValidateObjectRef(&api.ObjectRef{
 			HashAlgo:  api.HashAlgo_SHA1,
 			HexDigest: strings.Repeat("A", 40), // uppercase are forbidden
-		}, KnownHash), ShouldErrLike, "wrong char")
+		}, KnownHash), should.ErrLike("wrong char"))
 	})
 
-	Convey("SHA256", t, func() {
-		So(ValidateObjectRef(&api.ObjectRef{
+	ftt.Run("SHA256", t, func(t *ftt.Test) {
+		assert.Loosely(t, ValidateObjectRef(&api.ObjectRef{
 			HashAlgo:  api.HashAlgo_SHA256,
 			HexDigest: "a948904f2f0f479b8f8197694b30184b0d2ed1c1cd2a1ec0fb85d299a192a447",
-		}, KnownHash), ShouldBeNil)
+		}, KnownHash), should.BeNil)
 
-		So(ValidateObjectRef(&api.ObjectRef{
+		assert.Loosely(t, ValidateObjectRef(&api.ObjectRef{
 			HashAlgo:  api.HashAlgo_SHA256,
 			HexDigest: "abcd",
-		}, KnownHash), ShouldErrLike, "expecting 64 chars, got 4")
+		}, KnownHash), should.ErrLike("expecting 64 chars, got 4"))
 
-		So(ValidateObjectRef(&api.ObjectRef{
+		assert.Loosely(t, ValidateObjectRef(&api.ObjectRef{
 			HashAlgo:  api.HashAlgo_SHA256,
 			HexDigest: strings.Repeat("A", 64), // uppercase are forbidden
-		}, KnownHash), ShouldErrLike, "wrong char")
+		}, KnownHash), should.ErrLike("wrong char"))
 	})
 
-	Convey("Some future hash in KnownHash mode", t, func() {
-		So(ValidateObjectRef(&api.ObjectRef{
+	ftt.Run("Some future hash in KnownHash mode", t, func(t *ftt.Test) {
+		assert.Loosely(t, ValidateObjectRef(&api.ObjectRef{
 			HashAlgo:  33,
 			HexDigest: "a948904f2f0f479b8f8197694b30184b0d2ed1c1cd2a1ec0fb85d299a192a447",
-		}, KnownHash), ShouldErrLike, "unsupported unknown hash algorithm #33")
+		}, KnownHash), should.ErrLike("unsupported unknown hash algorithm #33"))
 	})
 
-	Convey("Some future hash in AnyHash mode", t, func() {
-		So(ValidateObjectRef(&api.ObjectRef{
+	ftt.Run("Some future hash in AnyHash mode", t, func(t *ftt.Test) {
+		assert.Loosely(t, ValidateObjectRef(&api.ObjectRef{
 			HashAlgo:  33,
 			HexDigest: "a948904f2f0f479b8f8197694b30184b0d2ed1c1cd2a1ec0fb85d299a192a447",
-		}, AnyHash), ShouldBeNil)
+		}, AnyHash), should.BeNil)
 
 		// Still checks that the hex digest looks like a digest.
-		So(ValidateObjectRef(&api.ObjectRef{
+		assert.Loosely(t, ValidateObjectRef(&api.ObjectRef{
 			HashAlgo:  33,
 			HexDigest: "abc",
-		}, KnownHash), ShouldErrLike, "uneven number of symbols")
+		}, KnownHash), should.ErrLike("uneven number of symbols"))
 
-		So(ValidateObjectRef(&api.ObjectRef{
+		assert.Loosely(t, ValidateObjectRef(&api.ObjectRef{
 			HashAlgo:  33,
 			HexDigest: strings.Repeat("A", 64), // uppercase are forbidden
-		}, KnownHash), ShouldErrLike, "wrong char")
+		}, KnownHash), should.ErrLike("wrong char"))
 	})
 
-	Convey("Bad args", t, func() {
-		So(ValidateObjectRef(nil, AnyHash), ShouldErrLike, "not provided")
-		So(ValidateObjectRef(&api.ObjectRef{HashAlgo: 0}, AnyHash), ShouldErrLike, "unspecified hash algo")
+	ftt.Run("Bad args", t, func(t *ftt.Test) {
+		assert.Loosely(t, ValidateObjectRef(nil, AnyHash), should.ErrLike("not provided"))
+		assert.Loosely(t, ValidateObjectRef(&api.ObjectRef{HashAlgo: 0}, AnyHash), should.ErrLike("unspecified hash algo"))
 	})
 }
 
 func TestRefIIDConversion(t *testing.T) {
 	t.Parallel()
 
-	Convey("SHA1 works", t, func() {
+	ftt.Run("SHA1 works", t, func(t *ftt.Test) {
 		sha1hex := strings.Repeat("a", 40)
 		sha1iid := sha1hex // iid and hex digest coincide for SHA1
 
-		So(ObjectRefToInstanceID(&api.ObjectRef{
+		assert.Loosely(t, ObjectRefToInstanceID(&api.ObjectRef{
 			HashAlgo:  api.HashAlgo_SHA1,
 			HexDigest: sha1hex,
-		}), ShouldEqual, sha1iid)
+		}), should.Equal(sha1iid))
 
-		So(InstanceIDToObjectRef(sha1iid), ShouldResembleProto, &api.ObjectRef{
+		assert.Loosely(t, InstanceIDToObjectRef(sha1iid), should.Resemble(&api.ObjectRef{
 			HashAlgo:  api.HashAlgo_SHA1,
 			HexDigest: sha1hex,
-		})
+		}))
 	})
 
-	Convey("SHA256 works", t, func() {
+	ftt.Run("SHA256 works", t, func(t *ftt.Test) {
 		sha256hex := "a948904f2f0f479b8f8197694b30184b0d2ed1c1cd2a1ec0fb85d299a192a447"
 		sha256iid := "qUiQTy8PR5uPgZdpSzAYSw0u0cHNKh7A-4XSmaGSpEcC"
 
-		So(ObjectRefToInstanceID(&api.ObjectRef{
+		assert.Loosely(t, ObjectRefToInstanceID(&api.ObjectRef{
 			HashAlgo:  api.HashAlgo_SHA256,
 			HexDigest: sha256hex,
-		}), ShouldEqual, sha256iid)
+		}), should.Equal(sha256iid))
 
-		So(InstanceIDToObjectRef(sha256iid), ShouldResembleProto, &api.ObjectRef{
+		assert.Loosely(t, InstanceIDToObjectRef(sha256iid), should.Resemble(&api.ObjectRef{
 			HashAlgo:  api.HashAlgo_SHA256,
 			HexDigest: sha256hex,
-		})
+		}))
 	})
 
-	Convey("Some future unknown hash", t, func() {
+	ftt.Run("Some future unknown hash", t, func(t *ftt.Test) {
 		hex := strings.Repeat("a", 60)
 		iid := "qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqIQ"
 
-		So(ObjectRefToInstanceID(&api.ObjectRef{
+		assert.Loosely(t, ObjectRefToInstanceID(&api.ObjectRef{
 			HashAlgo:  33,
 			HexDigest: hex,
-		}), ShouldEqual, iid)
+		}), should.Equal(iid))
 
-		So(InstanceIDToObjectRef(iid), ShouldResembleProto, &api.ObjectRef{
+		assert.Loosely(t, InstanceIDToObjectRef(iid), should.Resemble(&api.ObjectRef{
 			HashAlgo:  33,
 			HexDigest: hex,
-		})
+		}))
 	})
 
-	Convey("Wrong length in InstanceIDToObjectRef", t, func() {
-		So(func() {
+	ftt.Run("Wrong length in InstanceIDToObjectRef", t, func(t *ftt.Test) {
+		assert.Loosely(t, func() {
 			InstanceIDToObjectRef("aaaa")
-		}, ShouldPanicLike, "not a valid size for an encoded digest")
+		}, should.PanicLike("not a valid size for an encoded digest"))
 	})
 
-	Convey("Bad format in InstanceIDToObjectRef", t, func() {
-		So(func() {
+	ftt.Run("Bad format in InstanceIDToObjectRef", t, func(t *ftt.Test) {
+		assert.Loosely(t, func() {
 			InstanceIDToObjectRef("qUiQTy8PR5uPgZdpSzAYSw0u0cHNKh7A-?XSmaGSpEcC")
-		}, ShouldPanicLike, "illegal base64 data")
+		}, should.PanicLike("illegal base64 data"))
 	})
 }

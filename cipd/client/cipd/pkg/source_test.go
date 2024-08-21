@@ -16,73 +16,74 @@ package pkg
 
 import (
 	"bytes"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"io"
 	"testing"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestReadSeekerSource(t *testing.T) {
 	t.Parallel()
 
-	Convey("With buffer", t, func() {
+	ftt.Run("With buffer", t, func(t *ftt.Test) {
 		src, err := NewReadSeekerSource(bytes.NewReader([]byte("12345")))
-		So(err, ShouldBeNil)
-		So(src.Size(), ShouldEqual, 5)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, src.Size(), should.Equal(5))
 
 		buf := make([]byte, 2)
 
-		Convey("Sequential reads", func() {
+		t.Run("Sequential reads", func(t *ftt.Test) {
 			n, err := src.ReadAt(buf, 0)
-			So(err, ShouldBeNil)
-			So(n, ShouldEqual, 2)
-			So(buf, ShouldResemble, []byte("12"))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, n, should.Equal(2))
+			assert.Loosely(t, buf, should.Resemble([]byte("12")))
 
 			n, err = src.ReadAt(buf, 2)
-			So(err, ShouldBeNil)
-			So(n, ShouldEqual, 2)
-			So(buf, ShouldResemble, []byte("34"))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, n, should.Equal(2))
+			assert.Loosely(t, buf, should.Resemble([]byte("34")))
 
 			n, err = src.ReadAt(buf, 4)
-			So(err, ShouldBeNil)
-			So(n, ShouldEqual, 1)
-			So(buf[:1], ShouldResemble, []byte("5"))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, n, should.Equal(1))
+			assert.Loosely(t, buf[:1], should.Resemble([]byte("5")))
 
 			n, err = src.ReadAt(buf, 5)
-			So(err, ShouldEqual, io.EOF)
-			So(n, ShouldEqual, 0)
+			assert.Loosely(t, err, should.Equal(io.EOF))
+			assert.Loosely(t, n, should.BeZero)
 		})
 
-		Convey("Random reads", func() {
+		t.Run("Random reads", func(t *ftt.Test) {
 			n, err := src.ReadAt(buf, 4)
-			So(err, ShouldBeNil)
-			So(n, ShouldEqual, 1)
-			So(buf[:1], ShouldResemble, []byte("5"))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, n, should.Equal(1))
+			assert.Loosely(t, buf[:1], should.Resemble([]byte("5")))
 
 			n, err = src.ReadAt(buf, 0)
-			So(err, ShouldBeNil)
-			So(n, ShouldEqual, 2)
-			So(buf, ShouldResemble, []byte("12"))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, n, should.Equal(2))
+			assert.Loosely(t, buf, should.Resemble([]byte("12")))
 
 			// Again.
 			n, err = src.ReadAt(buf, 0)
-			So(err, ShouldBeNil)
-			So(n, ShouldEqual, 2)
-			So(buf, ShouldResemble, []byte("12"))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, n, should.Equal(2))
+			assert.Loosely(t, buf, should.Resemble([]byte("12")))
 
 			n, err = src.ReadAt(buf, 5)
-			So(err, ShouldEqual, io.EOF)
-			So(n, ShouldEqual, 0)
+			assert.Loosely(t, err, should.Equal(io.EOF))
+			assert.Loosely(t, n, should.BeZero)
 
 			n, err = src.ReadAt(buf, 6)
-			So(err, ShouldEqual, io.EOF)
-			So(n, ShouldEqual, 0)
+			assert.Loosely(t, err, should.Equal(io.EOF))
+			assert.Loosely(t, n, should.BeZero)
 		})
 
-		Convey("Negative offset", func() {
+		t.Run("Negative offset", func(t *ftt.Test) {
 			n, err := src.ReadAt(buf, -1)
-			So(err, ShouldNotBeNil)
-			So(n, ShouldEqual, 0)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, n, should.BeZero)
 		})
 	})
 }

@@ -19,9 +19,9 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/cipd/client/cipd/template"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 var badEnsureFiles = []struct {
@@ -221,23 +221,23 @@ var badEnsureFiles = []struct {
 func TestBadEnsureFiles(t *testing.T) {
 	t.Parallel()
 
-	Convey("bad ensure files", t, func() {
+	ftt.Run("bad ensure files", t, func(t *ftt.Test) {
 		for _, tc := range badEnsureFiles {
-			Convey(tc.name, func() {
+			t.Run(tc.name, func(t *ftt.Test) {
 				buf := bytes.NewBufferString(tc.file)
 				f, err := ParseFile(buf)
 				if err != nil {
-					So(f, ShouldBeNil)
-					So(err, ShouldErrLike, tc.err)
+					assert.Loosely(t, f, should.BeNil)
+					assert.Loosely(t, err, should.ErrLike(tc.err))
 				} else {
-					So(f, ShouldNotBeNil)
+					assert.Loosely(t, f, should.NotBeNil)
 					rf, err := f.Resolve(testResolver, template.Expander{
 						"os":       "test_os",
 						"arch":     "test_arch",
 						"platform": "test_os-test_arch",
 					})
-					So(rf, ShouldBeNil)
-					So(err, ShouldErrLike, tc.err)
+					assert.Loosely(t, rf, should.BeNil)
+					assert.Loosely(t, err, should.ErrLike(tc.err))
 				}
 			})
 		}

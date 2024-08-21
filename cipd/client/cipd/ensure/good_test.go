@@ -24,8 +24,9 @@ import (
 	"go.chromium.org/luci/cipd/client/cipd/pkg"
 	"go.chromium.org/luci/cipd/client/cipd/template"
 	"go.chromium.org/luci/cipd/common"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 // fakeIID returns a SHA256 IIDs that has the 'vers' as a substring.
@@ -249,24 +250,24 @@ func testResolver(pkg, vers string) (common.Pin, error) {
 func TestGoodEnsureFiles(t *testing.T) {
 	t.Parallel()
 
-	Convey("good ensure files", t, func() {
+	ftt.Run("good ensure files", t, func(t *ftt.Test) {
 		for _, tc := range goodEnsureFiles {
-			Convey(tc.name, func() {
+			t.Run(tc.name, func(t *ftt.Test) {
 				buf := bytes.NewBufferString(tc.file)
 				f, err := ParseFile(buf)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				switch expect := tc.expect.(type) {
 				case *File:
-					So(f, ShouldResemble, expect)
+					assert.Loosely(t, f, should.Resemble(expect))
 				case *ResolvedFile:
 					rf, err := f.Resolve(testResolver, template.Expander{
 						"os":       "test_os",
 						"arch":     "test_arch",
 						"platform": "test_os-test_arch",
 					})
-					So(err, ShouldBeNil)
-					So(rf, ShouldResemble, expect)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, rf, should.Resemble(expect))
 				default:
 					panic("unexpected type")
 				}

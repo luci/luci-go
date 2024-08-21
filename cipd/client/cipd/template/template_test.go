@@ -16,10 +16,10 @@ package template
 
 import (
 	"fmt"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"testing"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestTemplateExpander(t *testing.T) {
@@ -56,7 +56,7 @@ func TestTemplateExpander(t *testing.T) {
 		"platform": "SOME_OS-SOME_ARCH",
 	}
 
-	Convey(`TemplateExpander`, t, func() {
+	ftt.Run(`TemplateExpander`, t, func(t *ftt.Test) {
 		for _, tc := range tests {
 			expect := ""
 			if tc.err == "" {
@@ -64,12 +64,12 @@ func TestTemplateExpander(t *testing.T) {
 			} else {
 				expect = fmt.Sprintf("err(%q)", tc.err)
 			}
-			Convey(fmt.Sprintf(`%q -> %s`, tc.template, expect), func() {
+			t.Run(fmt.Sprintf(`%q -> %s`, tc.template, expect), func(t *ftt.Test) {
 				val, err := expander.Expand(tc.template)
 				if tc.err != "" {
-					So(err, ShouldErrLike, tc.err)
+					assert.Loosely(t, err, should.ErrLike(tc.err))
 				} else {
-					So(val, ShouldEqual, tc.expected)
+					assert.Loosely(t, val, should.Equal(tc.expected))
 				}
 			})
 		}

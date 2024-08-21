@@ -38,8 +38,11 @@ import (
 	"go.chromium.org/luci/cipd/client/cipd/plugin/protocol"
 	"go.chromium.org/luci/cipd/common"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 const (
@@ -154,7 +157,7 @@ func TestAdmissionPlugins(t *testing.T) {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	Convey("With a host", t, func() {
+	ftt.Run("With a host", t, func(t *ftt.Test) {
 		fakeRepo := &fakeRepository{}
 		host := &Host{}
 		host.Initialize(plugin.Config{
@@ -167,7 +170,7 @@ func TestAdmissionPlugins(t *testing.T) {
 			return NewAdmissionPlugin(ctx, host, []string{os.Args[0], "PLUGIN_ADMISSION", testCase})
 		}
 
-		Convey("Happy path", func() {
+		t.Run("Happy path", func(t *ftt.Test) {
 			plug := newPlugin("NORMAL_REPLY")
 			defer plug.Close(ctx)
 
@@ -176,21 +179,21 @@ func TestAdmissionPlugins(t *testing.T) {
 
 			// Reuses pending requests.
 			dup := plug.CheckAdmission(testPin("good/a/b"))
-			So(dup, ShouldEqual, good)
+			assert.Loosely(t, dup, should.Equal(good))
 
 			// Wait until completion.
-			So(good.Wait(ctx), ShouldBeNil)
+			assert.Loosely(t, good.Wait(ctx), should.BeNil)
 
 			err := bad.Wait(ctx)
-			So(err, ShouldHaveRPCCode, codes.FailedPrecondition)
-			So(err, ShouldErrLike, "the plugin says boo")
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveRPCCode)(codes.FailedPrecondition))
+			assert.Loosely(t, err, should.ErrLike("the plugin says boo"))
 
 			// Caches the result.
-			So(bad.Wait(ctx), ShouldEqual, err)
+			assert.Loosely(t, bad.Wait(ctx), should.Equal(err))
 
 			// Reuses finished requests.
 			dup = plug.CheckAdmission(testPin("good/a/b"))
-			So(dup, ShouldEqual, good)
+			assert.Loosely(t, dup, should.Equal(good))
 
 			// "Forget" resolved promises.
 			plug.ClearCache()
@@ -200,8 +203,8 @@ func TestAdmissionPlugins(t *testing.T) {
 			// Note: ShouldNotEqual triggers false race condition warning because
 			// GoConvey tries to read more than it should. We just want to compare
 			// pointers.
-			So(anotherGood != good, ShouldBeTrue)
-			So(anotherGood.Wait(ctx), ShouldBeNil)
+			assert.Loosely(t, anotherGood != good, should.BeTrue)
+			assert.Loosely(t, anotherGood.Wait(ctx), should.BeNil)
 
 			// A bit of a stress testing.
 			promises := make([]plugin.Promise, 1000)
@@ -210,7 +213,7 @@ func TestAdmissionPlugins(t *testing.T) {
 			}
 			for _, p := range promises {
 				if err := p.Wait(ctx); err != nil {
-					So(err, ShouldBeNil) // spam convey only on failures
+					assert.Loosely(t, err, should.BeNil) // spam convey only on failures
 				}
 			}
 
@@ -218,14 +221,14 @@ func TestAdmissionPlugins(t *testing.T) {
 
 			// Rejects all requests right away if closed.
 			p := plug.CheckAdmission(testPin("good/a/b/c/d/e"))
-			So(p.Wait(ctx), ShouldEqual, ErrAborted)
+			assert.Loosely(t, p.Wait(ctx), should.Equal(ErrAborted))
 		})
 
-		Convey("VisitMetadata visit all", func() {
+		t.Run("VisitMetadata visit all", func(t *ftt.Test) {
 			plug := newPlugin("VISIT_METADATA_ALL")
 			defer plug.Close(ctx)
-			So(plug.CheckAdmission(testPin("good/a/b")).Wait(ctx), ShouldBeNil)
-			So(fakeRepo.Calls(), ShouldResembleProto, []*api.ListMetadataRequest{
+			assert.Loosely(t, plug.CheckAdmission(testPin("good/a/b")).Wait(ctx), should.BeNil)
+			assert.Loosely(t, fakeRepo.Calls(), should.Resemble([]*api.ListMetadataRequest{
 				{
 					Package:  "good/a/b",
 					Instance: testObjectRef,
@@ -246,44 +249,44 @@ func TestAdmissionPlugins(t *testing.T) {
 					PageSize:  listingPageSize,
 					PageToken: "start-from-14",
 				},
-			})
+			}))
 		})
 
-		Convey("VisitMetadata visit one", func() {
+		t.Run("VisitMetadata visit one", func(t *ftt.Test) {
 			plug := newPlugin("VISIT_METADATA_ONE")
 			defer plug.Close(ctx)
-			So(plug.CheckAdmission(testPin("good/a/b")).Wait(ctx), ShouldBeNil)
-			So(fakeRepo.Calls(), ShouldResembleProto, []*api.ListMetadataRequest{
+			assert.Loosely(t, plug.CheckAdmission(testPin("good/a/b")).Wait(ctx), should.BeNil)
+			assert.Loosely(t, fakeRepo.Calls(), should.Resemble([]*api.ListMetadataRequest{
 				{
 					Package:  "good/a/b",
 					Instance: testObjectRef,
 					Keys:     []string{"some-key"},
 					PageSize: 20, // default
 				},
-			})
+			}))
 		})
 
-		Convey("VisitMetadata visit error", func() {
+		t.Run("VisitMetadata visit error", func(t *ftt.Test) {
 			fakeRepo.SetErr(status.Errorf(codes.PermissionDenied, "the listing says boo"))
 
 			plug := newPlugin("VISIT_METADATA_ALL")
 			defer plug.Close(ctx)
 
 			err := plug.CheckAdmission(testPin("good/a/b")).Wait(ctx)
-			So(err, ShouldHaveRPCCode, codes.PermissionDenied)
-			So(err, ShouldErrLike, "the listing says boo")
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveRPCCode)(codes.PermissionDenied))
+			assert.Loosely(t, err, should.ErrLike("the listing says boo"))
 
-			So(fakeRepo.Calls(), ShouldResembleProto, []*api.ListMetadataRequest{
+			assert.Loosely(t, fakeRepo.Calls(), should.Resemble([]*api.ListMetadataRequest{
 				{
 					Package:  "good/a/b",
 					Instance: testObjectRef,
 					Keys:     []string{"some-key"},
 					PageSize: listingPageSize,
 				},
-			})
+			}))
 		})
 
-		Convey("Closing right after starting", func() {
+		t.Run("Closing right after starting", func(t *ftt.Test) {
 			plug := newPlugin("BLOCK_REQUEST")
 			p := plug.CheckAdmission(testPin("good/a/b"))
 			plug.Close(ctx)
@@ -291,83 +294,83 @@ func TestAdmissionPlugins(t *testing.T) {
 			// The exact error depends on how far we progressed before the plugin
 			// was closed. Either way it should NOT be a context deadline.
 			err := p.Wait(ctx)
-			So(err, ShouldNotBeNil)
-			So(ctx.Err(), ShouldBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, ctx.Err(), should.BeNil)
 		})
 
-		Convey("Plugin is not connecting", func() {
+		t.Run("Plugin is not connecting", func(t *ftt.Test) {
 			plug := newPlugin("NOT_CONNECTING")
 			plug.timeout = time.Second
 			defer plug.Close(ctx)
 
-			Convey("Timeout", func() {
+			t.Run("Timeout", func(t *ftt.Test) {
 				p := plug.CheckAdmission(testPin("good/a/b"))
-				So(p.Wait(ctx), ShouldNotBeNil)
-				So(ctx.Err(), ShouldBeNil)
+				assert.Loosely(t, p.Wait(ctx), should.NotBeNil)
+				assert.Loosely(t, ctx.Err(), should.BeNil)
 			})
 
-			Convey("Closing while waiting", func() {
+			t.Run("Closing while waiting", func(t *ftt.Test) {
 				p := plug.CheckAdmission(testPin("good/a/b"))
 				plug.Close(ctx)
-				So(p.Wait(ctx), ShouldNotBeNil)
-				So(ctx.Err(), ShouldBeNil)
+				assert.Loosely(t, p.Wait(ctx), should.NotBeNil)
+				assert.Loosely(t, ctx.Err(), should.BeNil)
 			})
 		})
 
-		Convey("Plugin is not found", func() {
+		t.Run("Plugin is not found", func(t *ftt.Test) {
 			plug := NewAdmissionPlugin(ctx, host, []string{"doesnt_exist"})
 			defer plug.Close(ctx)
 
 			p := plug.CheckAdmission(testPin("good/a/b"))
-			So(p.Wait(ctx), ShouldNotBeNil)
-			So(ctx.Err(), ShouldBeNil)
+			assert.Loosely(t, p.Wait(ctx), should.NotBeNil)
+			assert.Loosely(t, ctx.Err(), should.BeNil)
 		})
 
-		Convey("Plugin is using unexpected protocol version", func() {
+		t.Run("Plugin is using unexpected protocol version", func(t *ftt.Test) {
 			plug := newPlugin("NORMAL_REPLY")
 			plug.protocolVersion = 666
 			defer plug.Close(ctx)
 
 			p := plug.CheckAdmission(testPin("good/a/b"))
-			So(p.Wait(ctx), ShouldNotBeNil)
-			So(ctx.Err(), ShouldBeNil)
+			assert.Loosely(t, p.Wait(ctx), should.NotBeNil)
+			assert.Loosely(t, ctx.Err(), should.BeNil)
 		})
 
-		Convey("Plugin is crashing when connecting", func() {
+		t.Run("Plugin is crashing when connecting", func(t *ftt.Test) {
 			plug := newPlugin("CRASHING_WHEN_CONNECTING")
 			defer plug.Close(ctx)
 
 			p := plug.CheckAdmission(testPin("good/a/b"))
-			So(p.Wait(ctx), ShouldNotBeNil)
-			So(ctx.Err(), ShouldBeNil)
+			assert.Loosely(t, p.Wait(ctx), should.NotBeNil)
+			assert.Loosely(t, ctx.Err(), should.BeNil)
 		})
 
-		Convey("Plugin is crashing midway", func() {
+		t.Run("Plugin is crashing midway", func(t *ftt.Test) {
 			plug := newPlugin("CRASH_ON_SECOND_REQUEST")
 			defer plug.Close(ctx)
 
 			p1 := plug.CheckAdmission(testPin("good/a/b/1"))
-			So(p1.Wait(ctx), ShouldBeNil)
+			assert.Loosely(t, p1.Wait(ctx), should.BeNil)
 
 			p2 := plug.CheckAdmission(testPin("good/a/b/2"))
-			So(p2.Wait(ctx), ShouldNotBeNil)
+			assert.Loosely(t, p2.Wait(ctx), should.NotBeNil)
 		})
 
-		Convey("Terminating with pending queue", func() {
+		t.Run("Terminating with pending queue", func(t *ftt.Test) {
 			plug := newPlugin("BLOCK_ALL_BUT_FIRST")
 			defer plug.Close(ctx)
 
 			p1 := plug.CheckAdmission(testPin("good/a/b/1"))
-			So(p1.Wait(ctx), ShouldBeNil)
+			assert.Loosely(t, p1.Wait(ctx), should.BeNil)
 
 			p2 := plug.CheckAdmission(testPin("good/a/b/2"))
 			p3 := plug.CheckAdmission(testPin("good/a/b/3"))
 
 			plug.Close(ctx)
 
-			So(p2.Wait(ctx), ShouldNotBeNil)
-			So(p3.Wait(ctx), ShouldNotBeNil)
-			So(ctx.Err(), ShouldBeNil)
+			assert.Loosely(t, p2.Wait(ctx), should.NotBeNil)
+			assert.Loosely(t, p3.Wait(ctx), should.NotBeNil)
+			assert.Loosely(t, ctx.Err(), should.BeNil)
 		})
 	})
 }

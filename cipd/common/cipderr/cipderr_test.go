@@ -20,59 +20,60 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/errors"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestError(t *testing.T) {
 	t.Parallel()
 
-	Convey("Setting and getting code", t, func() {
-		So(ToCode(nil), ShouldEqual, Unknown)
-		So(ToCode(fmt.Errorf("old school")), ShouldEqual, Unknown)
-		So(ToCode(errors.New("new")), ShouldEqual, Unknown)
+	ftt.Run("Setting and getting code", t, func(t *ftt.Test) {
+		assert.Loosely(t, ToCode(nil), should.Equal(Unknown))
+		assert.Loosely(t, ToCode(fmt.Errorf("old school")), should.Equal(Unknown))
+		assert.Loosely(t, ToCode(errors.New("new")), should.Equal(Unknown))
 
-		So(ToCode(errors.New("tagged", Auth)), ShouldEqual, Auth)
-		So(ToCode(errors.New("tagged", Auth.WithDetails(Details{
+		assert.Loosely(t, ToCode(errors.New("tagged", Auth)), should.Equal(Auth))
+		assert.Loosely(t, ToCode(errors.New("tagged", Auth.WithDetails(Details{
 			Package: "zzz",
-		}))), ShouldEqual, Auth)
+		}))), should.Equal(Auth))
 
 		err1 := errors.Annotate(errors.New("tagged", Auth), "deeper").Err()
-		So(ToCode(err1), ShouldEqual, Auth)
+		assert.Loosely(t, ToCode(err1), should.Equal(Auth))
 
 		err2 := errors.Annotate(errors.New("tagged", Auth), "deeper").Tag(IO).Err()
-		So(ToCode(err2), ShouldEqual, IO)
+		assert.Loosely(t, ToCode(err2), should.Equal(IO))
 
 		err3 := errors.MultiError{
 			fmt.Errorf("old school"),
 			errors.New("1", Auth),
 			errors.New("1", IO),
 		}
-		So(ToCode(err3), ShouldEqual, Auth)
+		assert.Loosely(t, ToCode(err3), should.Equal(Auth))
 
 		err4 := errors.Annotate(context.DeadlineExceeded, "blah").Err()
-		So(ToCode(err4), ShouldEqual, Timeout)
+		assert.Loosely(t, ToCode(err4), should.Equal(Timeout))
 	})
 
-	Convey("Details", t, func() {
-		So(ToDetails(nil), ShouldBeNil)
-		So(ToDetails(errors.New("blah", Auth)), ShouldBeNil)
+	ftt.Run("Details", t, func(t *ftt.Test) {
+		assert.Loosely(t, ToDetails(nil), should.BeNil)
+		assert.Loosely(t, ToDetails(errors.New("blah", Auth)), should.BeNil)
 
 		d := Details{Package: "a", Version: "b"}
-		So(ToDetails(errors.New("blah", Auth.WithDetails(d))), ShouldResemble, &d)
+		assert.Loosely(t, ToDetails(errors.New("blah", Auth.WithDetails(d))), should.Resemble(&d))
 
 		var err error
 		AttachDetails(&err, d)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		err = errors.New("blah", Auth)
 		AttachDetails(&err, d)
-		So(ToCode(err), ShouldEqual, Auth)
-		So(ToDetails(err), ShouldResemble, &d)
+		assert.Loosely(t, ToCode(err), should.Equal(Auth))
+		assert.Loosely(t, ToDetails(err), should.Resemble(&d))
 
 		err = errors.New("blah", Auth.WithDetails(Details{Package: "zzz"}))
 		AttachDetails(&err, d)
-		So(ToCode(err), ShouldEqual, Auth)
-		So(ToDetails(err), ShouldResemble, &d)
+		assert.Loosely(t, ToCode(err), should.Equal(Auth))
+		assert.Loosely(t, ToDetails(err), should.Resemble(&d))
 	})
 }
