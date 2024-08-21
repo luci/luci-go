@@ -128,7 +128,7 @@ func TestIngestTarball(t *testing.T) {
 
 			t.Run("aborts if admin group doesn't exist", func(t *ftt.Test) {
 				_, err := callEndpoint(ctx, "test_groups.tar.gz", io.NopCloser(bytes.NewReader(tarfile)))
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.Internal))
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
 			})
 
 			t.Run("groups actually imported", func(t *ftt.Test) {
@@ -152,7 +152,7 @@ func TestIngestTarball(t *testing.T) {
 					},
 					AuthDBRev: 1,
 				}
-				assert.Loosely(t, actual, should.Resemble(expected))
+				assert.Loosely(t, actual, should.Match(expected))
 				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(2))
 			})
 		})

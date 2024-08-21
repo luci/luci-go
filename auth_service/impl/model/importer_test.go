@@ -89,7 +89,7 @@ func TestGroupImporterConfigModel(t *testing.T) {
 
 			actual, err := GetGroupImporterConfig(ctx)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actual, should.Resemble(groupCfg))
+			assert.Loosely(t, actual, should.Match(groupCfg))
 		})
 
 		t.Run("updateGroupImporterConfig works", func(t *ftt.Test) {
@@ -123,7 +123,7 @@ func TestGroupImporterConfigModel(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 				actual, err := stored.ToProto()
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, actual, should.Resemble(testConfig))
+				assert.Loosely(t, actual, should.Match(testConfig))
 
 				t.Run("updating works", func(t *ftt.Test) {
 					ctx = clock.Set(ctx, testclock.New(testModifiedTS))
@@ -136,7 +136,7 @@ func TestGroupImporterConfigModel(t *testing.T) {
 						assert.Loosely(t, stored.ModifiedTS, should.Equal(testCreatedTS))
 						actual, err := stored.ToProto()
 						assert.Loosely(t, err, should.BeNil)
-						assert.Loosely(t, actual, should.Resemble(testConfig))
+						assert.Loosely(t, actual, should.Match(testConfig))
 					})
 
 					t.Run("updated for different revision", func(t *ftt.Test) {
@@ -163,7 +163,7 @@ func TestGroupImporterConfigModel(t *testing.T) {
 						assert.Loosely(t, stored.ModifiedTS, should.Equal(testModifiedTS))
 						actual, err := stored.ToProto()
 						assert.Loosely(t, err, should.BeNil)
-						assert.Loosely(t, actual, should.Resemble(otherConfig))
+						assert.Loosely(t, actual, should.Match(otherConfig))
 					})
 
 					t.Run("no-op when in dry run", func(t *ftt.Test) {
@@ -190,7 +190,7 @@ func TestGroupImporterConfigModel(t *testing.T) {
 						assert.Loosely(t, stored.ModifiedTS, should.Equal(testCreatedTS))
 						actual, err := stored.ToProto()
 						assert.Loosely(t, err, should.BeNil)
-						assert.Loosely(t, actual, should.Resemble(testConfig))
+						assert.Loosely(t, actual, should.Match(testConfig))
 					})
 				})
 			})
@@ -209,7 +209,7 @@ func TestLoadGroupFile(t *testing.T) {
 			bIdent, _ := identity.MakeIdentity(fmt.Sprintf("user:b@%s", testDomain))
 			actual, err := loadGroupFile(body, testDomain)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actual, should.Resemble([]identity.Identity{
+			assert.Loosely(t, actual, should.Match([]identity.Identity{
 				aIdent,
 				bIdent,
 			}))
@@ -218,7 +218,7 @@ func TestLoadGroupFile(t *testing.T) {
 			cIdent, _ := identity.MakeIdentity("user:c@test")
 			actual, err := loadGroupFile("c%test@gtempaccount.com", "")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actual, should.Resemble([]identity.Identity{
+			assert.Loosely(t, actual, should.Match([]identity.Identity{
 				cIdent,
 			}))
 		})
@@ -245,7 +245,7 @@ func TestExtractTarArchive(t *testing.T) {
 		bundle := testsupport.BuildTargz(expected)
 		entries, err := extractTarArchive(bytes.NewReader(bundle))
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, entries, should.Resemble(expected))
+		assert.Loosely(t, entries, should.Match(expected))
 	})
 }
 
@@ -277,7 +277,7 @@ func TestLoadTarball(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			aIdent, _ := identity.MakeIdentity("user:a@example.com")
 			bIdent, _ := identity.MakeIdentity("user:b@example.com")
-			assert.Loosely(t, m, should.Resemble(map[string]GroupBundle{
+			assert.Loosely(t, m, should.Match(map[string]GroupBundle{
 				"ldap": {
 					"ldap/group-a": {
 						aIdent,
@@ -338,13 +338,11 @@ func TestIngestTarball(t *testing.T) {
 
 			t.Run("invalid tarball name", func(t *ftt.Test) {
 				_, _, err := IngestTarball(ctx, "", nil)
-				assert.Loosely(t, err, should.ErrLike(ErrInvalidTarballName))
-				assert.Loosely(t, err, should.ErrLike("empty"))
+				assert.Loosely(t, err, should.ErrLike(ErrUnauthorizedUploader))
 			})
 			t.Run("unknown tarball", func(t *ftt.Test) {
 				_, _, err := IngestTarball(ctx, "zzz", nil)
-				assert.Loosely(t, err, should.ErrLike(ErrInvalidTarballName))
-				assert.Loosely(t, err, should.ErrLike("not supported"))
+				assert.Loosely(t, err, should.ErrLike(ErrUnauthorizedUploader))
 			})
 			t.Run("unauthorized", func(t *ftt.Test) {
 				ctx = auth.WithState(ctx, &authtest.FakeState{
@@ -375,7 +373,7 @@ func TestIngestTarball(t *testing.T) {
 				updatedGroups, revision, err := IngestTarball(ctx, "test_groups.tar.gz", bytes.NewReader(bundle))
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, revision, should.Equal(1))
-				assert.Loosely(t, updatedGroups, should.Resemble([]string{
+				assert.Loosely(t, updatedGroups, should.Match([]string{
 					"tst/group-a",
 					"tst/group-b",
 					"tst/group-c",
@@ -441,23 +439,23 @@ func TestImportBundles(t *testing.T) {
 
 				updatedGroups, revision, err := importBundles(ctx, bundles, callerIdent, nil)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, updatedGroups, should.Resemble(baseGroupBundles))
+				assert.Loosely(t, updatedGroups, should.Match(baseGroupBundles))
 				assert.Loosely(t, revision, should.Equal(1))
 				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(2))
 
 				// Check each group was created as expected.
 				groupA, err := GetAuthGroup(ctx, sGroupA.ID)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, groupA, should.Resemble(sGroupA))
+				assert.Loosely(t, groupA, should.Match(sGroupA))
 				groupB, err := GetAuthGroup(ctx, sGroupB.ID)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, groupB, should.Resemble(sGroupB))
+				assert.Loosely(t, groupB, should.Match(sGroupB))
 				groupC, err := GetAuthGroup(ctx, sGroupC.ID)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, groupC, should.Resemble(sGroupC))
+				assert.Loosely(t, groupC, should.Match(sGroupC))
 				groupAe, err := GetAuthGroup(ctx, eGroupA.ID)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, groupAe, should.Resemble(eGroupA))
+				assert.Loosely(t, groupAe, should.Match(eGroupA))
 			})
 
 			t.Run("Updating Groups", func(t *ftt.Test) {
@@ -467,7 +465,7 @@ func TestImportBundles(t *testing.T) {
 
 				updatedGroups, revision, err := importBundles(ctx, bundles, callerIdent, nil)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, updatedGroups, should.Resemble(baseGroupBundles))
+				assert.Loosely(t, updatedGroups, should.Match(baseGroupBundles))
 				assert.Loosely(t, revision, should.Equal(2))
 
 				// Check the group was imported as expected.
@@ -480,7 +478,7 @@ func TestImportBundles(t *testing.T) {
 				}
 				actual, err := GetAuthGroup(ctx, sGroupA.ID)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, actual, should.Resemble(sGroupA))
+				assert.Loosely(t, actual, should.Match(sGroupA))
 			})
 
 			t.Run("Deleting Groups", func(t *ftt.Test) {
@@ -490,7 +488,7 @@ func TestImportBundles(t *testing.T) {
 
 				updatedGroups, revision, err := importBundles(ctx, bundles, callerIdent, nil)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, updatedGroups, should.Resemble(append(baseGroupBundles, "sys/group-d")))
+				assert.Loosely(t, updatedGroups, should.Match(append(baseGroupBundles, "sys/group-d")))
 				assert.Loosely(t, revision, should.Equal(2))
 
 				_, err = GetAuthGroup(ctx, g.ID)
@@ -506,7 +504,7 @@ func TestImportBundles(t *testing.T) {
 
 				updatedGroups, revision, err := importBundles(ctx, bundles, callerIdent, nil)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, updatedGroups, should.Resemble(append(baseGroupBundles, "sys/group-e")))
+				assert.Loosely(t, updatedGroups, should.Match(append(baseGroupBundles, "sys/group-e")))
 				assert.Loosely(t, revision, should.Equal(2))
 
 				actual, err := GetAuthGroup(ctx, g.ID)
@@ -518,7 +516,7 @@ func TestImportBundles(t *testing.T) {
 				bundle, groupsBundled := makeGroupBundle("test", 400)
 				updatedGroups, rev, err := importBundles(ctx, bundle, callerIdent, nil)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, updatedGroups, should.Resemble(groupsBundled))
+				assert.Loosely(t, updatedGroups, should.Match(groupsBundled))
 				assert.Loosely(t, rev, should.Equal(2))
 				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(4))
 				groups, err := GetAllAuthGroups(ctx)
@@ -532,7 +530,7 @@ func TestImportBundles(t *testing.T) {
 					assert.Loosely(t, datastore.Put(ctx, testAuthReplicationState(ctx, 3)), should.BeNil)
 				})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, updatedGroups, should.Resemble(groupsBundled))
+				assert.Loosely(t, updatedGroups, should.Match(groupsBundled))
 				assert.Loosely(t, rev, should.Equal(5))
 			})
 
@@ -540,12 +538,12 @@ func TestImportBundles(t *testing.T) {
 				bundle, groupsBundledTest := makeGroupBundle("test", 1000)
 				updatedGroups, rev, err := importBundles(ctx, bundle, callerIdent, func() {})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, updatedGroups, should.Resemble(groupsBundledTest))
+				assert.Loosely(t, updatedGroups, should.Match(groupsBundledTest))
 				assert.Loosely(t, rev, should.Equal(5))
 				bundle, groupsBundled := makeGroupBundle("example", 400)
 				updatedGroups, rev, err = importBundles(ctx, bundle, callerIdent, func() {})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, updatedGroups, should.Resemble(groupsBundled))
+				assert.Loosely(t, updatedGroups, should.Match(groupsBundled))
 				assert.Loosely(t, rev, should.Equal(7))
 
 				bundle, groupsBundled = makeGroupBundle("tst", 500)
@@ -554,7 +552,7 @@ func TestImportBundles(t *testing.T) {
 				updatedGroups, rev, err = importBundles(ctx, bundle, callerIdent, func() {})
 				assert.Loosely(t, err, should.BeNil)
 				sort.Strings(groupsBundled)
-				assert.Loosely(t, updatedGroups, should.Resemble(groupsBundled))
+				assert.Loosely(t, updatedGroups, should.Match(groupsBundled))
 				assert.Loosely(t, rev, should.Equal(15))
 			})
 
@@ -566,7 +564,7 @@ func TestImportBundles(t *testing.T) {
 				bundle, groupsBundledTest := makeGroupBundle("test", 150)
 				updatedGroups, rev, err := importBundles(ctx, bundle, callerIdent, func() {})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, updatedGroups, should.Resemble(groupsBundledTest))
+				assert.Loosely(t, updatedGroups, should.Match(groupsBundledTest))
 				assert.Loosely(t, rev, should.Equal(1))
 				bundle, groupsBundled := makeGroupBundle("tst", 150)
 				bundle["test"] = GroupBundle{}
@@ -574,7 +572,7 @@ func TestImportBundles(t *testing.T) {
 				sort.Strings(groupsBundled)
 				updatedGroups, rev, err = importBundles(ctx, bundle, callerIdent, func() {})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, updatedGroups, should.Resemble(groupsBundled))
+				assert.Loosely(t, updatedGroups, should.Match(groupsBundled))
 				assert.Loosely(t, rev, should.Equal(3))
 			})
 		})

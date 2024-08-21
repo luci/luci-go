@@ -17,6 +17,7 @@ package importscfg
 import (
 	"context"
 
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/server/cfgcache"
 
@@ -28,7 +29,7 @@ var cachedImportsCfg = cfgcache.Register(&cfgcache.Entry{
 	Type: (*configspb.GroupImporterConfig)(nil),
 })
 
-// Get returns teh config stored in context.
+// Get returns the config stored in context.
 func Get(ctx context.Context) (*configspb.GroupImporterConfig, error) {
 	cfg, err := cachedImportsCfg.Get(ctx, nil)
 	if err != nil {
@@ -68,4 +69,42 @@ func Update(ctx context.Context) (*config.Meta, error) {
 		return nil, err
 	}
 	return meta, nil
+}
+
+// getAuthorizedUploaders returns a map of authorized uploaders, where
+// * each key is an account; and
+// * each value is the set of tarballs the account is authorized to upload.
+func getAuthorizedUploaders(ctx context.Context) (map[string]stringset.Set, error) {
+	cfg, err := Get(ctx)
+	if err != nil {
+		return map[string]stringset.Set{}, err
+	}
+
+	uploaders := make(map[string]stringset.Set)
+	for _, entry := range cfg.GetTarballUpload() {
+		for _, u := range entry.GetAuthorizedUploader() {
+			if _, ok := uploaders[u]; !ok {
+				uploaders[u] = stringset.New(1)
+			}
+			uploaders[u].Add(entry.GetName())
+		}
+	}
+
+	return uploaders, nil
+}
+
+// IsAuthorizedUploader returns whether the email is authorized to upload the
+// specified tarball.
+func IsAuthorizedUploader(ctx context.Context, email, tarballName string) (bool, error) {
+	uploaders, err := getAuthorizedUploaders(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	authorizedTarballs, ok := uploaders[email]
+	if !ok || !authorizedTarballs.Has(tarballName) {
+		return false, nil
+	}
+
+	return true, nil
 }

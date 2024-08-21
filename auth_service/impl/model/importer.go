@@ -213,12 +213,28 @@ func updateGroupImporterConfig(ctx context.Context, importsCfg *configspb.GroupI
 //	int64 - authDBRevision
 //	error
 //		ErrImporterNotConfigured if no importer config
-//		ErrUnauthorizedUploader if caller is an unauthorized uploader
+//		ErrUnauthorizedUploader if caller is not an authorized uploader
 //		ErrInvalidTarballName if tarball name is empty
 //		ErrInvalidTarballName if entry not found in tarball upload config
 //		ErrInvalidTarball if bad tarball structure
+//		error from importing the tarball, if one occurs
 func IngestTarball(ctx context.Context, name string, content io.Reader) ([]string, int64, error) {
+	// Check if the caller is authorized to upload this tarball.
+	caller := auth.CurrentIdentity(ctx)
+	email := caller.Email()
+	authorized, err := importscfg.IsAuthorizedUploader(ctx, email, name)
+	if err != nil {
+		return nil, 0, ErrImporterNotConfigured
+	}
+	if !authorized {
+		return nil, 0, fmt.Errorf("%w: %q", ErrUnauthorizedUploader, email)
+	}
+
 	if name == "" {
+		// This should be impossible in practice, because importer config
+		// validation mandates the tarball name being set. Thus, there would be
+		// no such entry in the config and the caller should not have been
+		// considered an authorized uploader.
 		return nil, 0, fmt.Errorf("%w: empty", ErrInvalidTarballName)
 	}
 
@@ -236,13 +252,10 @@ func IngestTarball(ctx context.Context, name string, content io.Reader) ([]strin
 		}
 	}
 	if entry == nil {
+		// This should be impossible to reach because of the early authorized
+		// uploader check.
 		return nil, 0, fmt.Errorf("%w: not supported in importer config",
 			ErrInvalidTarballName)
-	}
-
-	caller := auth.CurrentIdentity(ctx)
-	if !contains(caller.Email(), entry.AuthorizedUploader) {
-		return nil, 0, fmt.Errorf("%w: %q", ErrUnauthorizedUploader, caller.Email())
 	}
 
 	bundles, err := loadTarball(ctx, content, entry.GetDomain(), entry.GetSystems(), entry.GetGroups())

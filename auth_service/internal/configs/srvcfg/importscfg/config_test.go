@@ -29,7 +29,6 @@ import (
 
 func TestConfigContext(t *testing.T) {
 	t.Parallel()
-	ctx := memory.Use(context.Background())
 	importsCfg := &configspb.GroupImporterConfig{
 		Tarball: []*configspb.GroupImporterConfig_TarballEntry{
 			{
@@ -75,6 +74,7 @@ func TestConfigContext(t *testing.T) {
 	}
 
 	ftt.Run("Getting without setting fails", t, func(t *ftt.Test) {
+		ctx := memory.Use(context.Background())
 		_, err := Get(ctx)
 		assert.Loosely(t, err, should.NotBeNil)
 
@@ -83,13 +83,15 @@ func TestConfigContext(t *testing.T) {
 	})
 
 	ftt.Run("Testing basic config operations", t, func(t *ftt.Test) {
+		ctx := memory.Use(context.Background())
 		assert.Loosely(t, SetConfig(ctx, importsCfg), should.BeNil)
 		cfgFromGet, err := Get(ctx)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, cfgFromGet, should.Resemble(importsCfg))
+		assert.Loosely(t, cfgFromGet, should.Match(importsCfg))
 	})
 
 	ftt.Run("Testing config operations with metadata", t, func(t *ftt.Test) {
+		ctx := memory.Use(context.Background())
 		metadata := &config.Meta{
 			Path:     "permissions.cfg",
 			Revision: "123abc",
@@ -97,7 +99,50 @@ func TestConfigContext(t *testing.T) {
 		assert.Loosely(t, SetConfigWithMetadata(ctx, importsCfg, metadata), should.BeNil)
 		cfgFromGet, metadataFromGet, err := GetWithMetadata(ctx)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, cfgFromGet, should.Resemble(importsCfg))
-		assert.Loosely(t, metadataFromGet, should.Resemble(metadata))
+		assert.Loosely(t, cfgFromGet, should.Match(importsCfg))
+		assert.Loosely(t, metadataFromGet, should.Match(metadata))
+	})
+
+	ftt.Run("IsAuthorizedUploader works", t, func(t *ftt.Test) {
+		ctx := memory.Use(context.Background())
+
+		t.Run("fails without setting", func(t *ftt.Test) {
+			authorized, err := IsAuthorizedUploader(
+				ctx, "test-service-account@example.com", "example-tarball.tz")
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, authorized, should.BeFalse)
+		})
+
+		t.Run("with config set", func(t *ftt.Test) {
+			assert.Loosely(t, SetConfig(ctx, importsCfg), should.BeNil)
+
+			t.Run("empty tarball name", func(t *ftt.Test) {
+				authorized, err := IsAuthorizedUploader(
+					ctx, "test-service-account@example.com", "")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, authorized, should.BeFalse)
+			})
+
+			t.Run("unknown tarball", func(t *ftt.Test) {
+				authorized, err := IsAuthorizedUploader(
+					ctx, "test-service-account@example.com", "test-tarball.tz")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, authorized, should.BeFalse)
+			})
+
+			t.Run("unauthorized uploader", func(t *ftt.Test) {
+				authorized, err := IsAuthorizedUploader(
+					ctx, "somebody@example.com", "example-tarball.tz")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, authorized, should.BeFalse)
+			})
+
+			t.Run("authorized uploader", func(t *ftt.Test) {
+				authorized, err := IsAuthorizedUploader(
+					ctx, "test-service-account@example.com", "example-tarball.tz")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, authorized, should.BeTrue)
+			})
+		})
 	})
 }
