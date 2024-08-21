@@ -73,3 +73,19 @@ func (c Commit) Save() *spanner.Mutation {
 
 	return spanner.InsertOrUpdate("Commits", CommitSaveCols, vals)
 }
+
+// NewFromGitCommit creates a new Commit from a GitCommit.
+//
+// N.B. if the GitCommit does not have a valid git commit position, the returned
+// Commit will not have a commit position either.
+func NewFromGitCommit(gitCommit GitCommit) Commit {
+	position, err := gitCommit.Position()
+	if err != nil {
+		position = nil
+	}
+
+	return Commit{
+		key:      gitCommit.key,
+		position: position,
+	}
+}
