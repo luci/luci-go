@@ -19,19 +19,19 @@ import (
 	"strings"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	api "go.chromium.org/luci/cipd/api/admin/v1"
 	"go.chromium.org/luci/cipd/appengine/impl/model"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestFixMalformedTags(t *testing.T) {
 	t.Parallel()
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		ctx, admin, sched := SetupTest()
 
 		iid := strings.Repeat("a", 40)
@@ -43,10 +43,10 @@ func TestFixMalformedTags(t *testing.T) {
 		}
 
 		allTags := func(pkg string) (tags []string) {
-			t := []model.Tag{}
+			mTag := []model.Tag{}
 			q := datastore.NewQuery("InstanceTag").Ancestor(model.PackageKey(ctx, pkg))
-			So(datastore.GetAll(ctx, q, &t), ShouldBeNil)
-			for _, e := range t {
+			assert.Loosely(t, datastore.GetAll(ctx, q, &mTag), should.BeNil)
+			for _, e := range mTag {
 				tags = append(tags, e.Tag)
 			}
 			return
@@ -63,47 +63,47 @@ func TestFixMalformedTags(t *testing.T) {
 			{ID: "t5", Instance: instanceKey("b"), Tag: "bad_b:"},
 			{ID: "t6", Instance: instanceKey("c"), Tag: "bad_c:fixable\n"},
 		}
-		So(datastore.Put(ctx, tags), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, tags), should.BeNil)
 
 		// Make sure allTags actually works too.
-		So(allTags("a"), ShouldResemble, []string{"good_a:tag", "bad_a:", "bad_a:fixable\n"})
+		assert.Loosely(t, allTags("a"), should.Resemble([]string{"good_a:tag", "bad_a:", "bad_a:fixable\n"}))
 
 		jobID, err := RunMapper(ctx, admin, sched, &api.JobConfig{
 			Kind: api.MapperKind_FIND_MALFORMED_TAGS,
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		// Verify all bad tags (and only them) were marked.
 		var marked []markedTag
-		So(datastore.GetAll(ctx, queryMarkedTags(jobID), &marked), ShouldBeNil)
+		assert.Loosely(t, datastore.GetAll(ctx, queryMarkedTags(jobID), &marked), should.BeNil)
 		var badTags []string
-		for _, t := range marked {
-			badTags = append(badTags, t.Tag)
+		for _, mTag := range marked {
+			badTags = append(badTags, mTag.Tag)
 		}
-		So(badTags, ShouldResemble, []string{
+		assert.Loosely(t, badTags, should.Resemble([]string{
 			"bad_c:fixable\n",
 			"bad_b:",
 			"bad_a:fixable\n",
 			"bad_a:",
-		})
+		}))
 
 		// Fix fixable tags and delete unfixable.
 		report, err := fixMarkedTags(ctx, jobID)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		sort.Slice(report, func(i, j int) bool {
 			return report[i].BrokenTag < report[j].BrokenTag
 		})
-		So(report, ShouldResembleProto, []*api.TagFixReport_Tag{
+		assert.Loosely(t, report, should.Resemble([]*api.TagFixReport_Tag{
 			{Pkg: "a", Instance: iid, BrokenTag: "bad_a:", FixedTag: ""},
 			{Pkg: "a", Instance: iid, BrokenTag: "bad_a:fixable\n", FixedTag: "bad_a:fixable"},
 			{Pkg: "b", Instance: iid, BrokenTag: "bad_b:", FixedTag: ""},
 			{Pkg: "c", Instance: iid, BrokenTag: "bad_c:fixable\n", FixedTag: "bad_c:fixable"},
-		})
+		}))
 
 		// Verify the changes actually landed in the datastore.
-		So(allTags("a"), ShouldResemble, []string{"bad_a:fixable", "good_a:tag"})
-		So(allTags("b"), ShouldResemble, []string{"good_b:tag"})
-		So(allTags("c"), ShouldResemble, []string{"bad_c:fixable"})
+		assert.Loosely(t, allTags("a"), should.Resemble([]string{"bad_a:fixable", "good_a:tag"}))
+		assert.Loosely(t, allTags("b"), should.Resemble([]string{"good_b:tag"}))
+		assert.Loosely(t, allTags("c"), should.Resemble([]string{"bad_c:fixable"}))
 	})
 }

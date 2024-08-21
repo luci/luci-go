@@ -18,20 +18,21 @@ import (
 	"strings"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/appengine/impl/model"
 	"go.chromium.org/luci/cipd/appengine/impl/testutil"
 	"go.chromium.org/luci/cipd/common"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestVisitAndMarkTags(t *testing.T) {
 	t.Parallel()
 
-	Convey("With a bunch of instances", t, func() {
+	ftt.Run("With a bunch of instances", t, func(t *ftt.Test) {
 		ctx, _, _ := testutil.TestingContext()
 
 		makeInst := func(pkg, iid string) *model.Instance {
@@ -39,23 +40,23 @@ func TestVisitAndMarkTags(t *testing.T) {
 				InstanceID: iid,
 				Package:    model.PackageKey(ctx, pkg),
 			}
-			So(datastore.Put(ctx, i), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, i), should.BeNil)
 			return i
 		}
 
 		tagKey := func(i *model.Instance, tag string) *datastore.Key {
-			t, err := common.ParseInstanceTag(tag)
-			So(err, ShouldBeNil)
+			parsed, err := common.ParseInstanceTag(tag)
+			assert.Loosely(t, err, should.BeNil)
 			return datastore.KeyForObj(ctx, &model.Tag{
-				ID:       model.TagID(t),
+				ID:       model.TagID(parsed),
 				Instance: datastore.KeyForObj(ctx, i),
 			})
 		}
 
 		attachTag := func(i *model.Instance, tag string) *datastore.Key {
-			t, err := common.ParseInstanceTag(tag)
-			So(err, ShouldBeNil)
-			So(model.AttachTags(ctx, i, []*api.Tag{t}), ShouldBeNil)
+			parsed, err := common.ParseInstanceTag(tag)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, model.AttachTags(ctx, i, []*api.Tag{parsed}), should.BeNil)
 			return tagKey(i, tag)
 		}
 
@@ -64,7 +65,7 @@ func TestVisitAndMarkTags(t *testing.T) {
 		i2 := makeInst("a/b", strings.Repeat("b", 40))
 		i3 := makeInst("c", strings.Repeat("a", 40))
 
-		Convey("Happy path", func() {
+		t.Run("Happy path", func(t *ftt.Test) {
 			// Actually create tags.
 			keys := []*datastore.Key{
 				attachTag(i1, "k:1"),
@@ -74,26 +75,26 @@ func TestVisitAndMarkTags(t *testing.T) {
 			}
 
 			// Mark all k:1 tags.
-			err := visitAndMarkTags(ctx, 1, keys, func(t *model.Tag) string {
-				if t.Tag == "k:1" {
+			err := visitAndMarkTags(ctx, 1, keys, func(mTag *model.Tag) string {
+				if mTag.Tag == "k:1" {
 					return "why not?"
 				}
 				return ""
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// Mark all tags (in a different job).
-			err = visitAndMarkTags(ctx, 2, keys, func(t *model.Tag) string {
+			err = visitAndMarkTags(ctx, 2, keys, func(mTag *model.Tag) string {
 				return "all"
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
 
 			// Correctly have only 1 tags (and only them) in job #1 output!
 			var marked []markedTag
-			So(datastore.GetAll(ctx, queryMarkedTags(1), &marked), ShouldBeNil)
-			So(marked, ShouldResemble, []markedTag{
+			assert.Loosely(t, datastore.GetAll(ctx, queryMarkedTags(1), &marked), should.BeNil)
+			assert.Loosely(t, marked, should.Resemble([]markedTag{
 				{
 					ID:  "AwS3ochdSStSG0z9F5GXpjXLamSw0gUUPVK1oMTWlbg",
 					Job: 1,
@@ -108,12 +109,12 @@ func TestVisitAndMarkTags(t *testing.T) {
 					Tag: "k:1",
 					Why: "why not?",
 				},
-			})
+			}))
 
 			// Job #2 has collected all tags. And IDs are different from job #1.
 			marked = nil
-			So(datastore.GetAll(ctx, queryMarkedTags(2), &marked), ShouldBeNil)
-			So(marked, ShouldResemble, []markedTag{
+			assert.Loosely(t, datastore.GetAll(ctx, queryMarkedTags(2), &marked), should.BeNil)
+			assert.Loosely(t, marked, should.Resemble([]markedTag{
 				{
 					ID:  "1ZOT2ST48S2gc2qrcKcS5C8g18roHwMhujwkluTSx8s",
 					Job: 2,
@@ -142,10 +143,10 @@ func TestVisitAndMarkTags(t *testing.T) {
 					Tag: "k:2",
 					Why: "all",
 				},
-			})
+			}))
 		})
 
-		Convey("Some keys are missing", func() {
+		t.Run("Some keys are missing", func(t *ftt.Test) {
 			keys := []*datastore.Key{
 				attachTag(i1, "k:1"),
 				tagKey(i1, "k:2"), // the key for a missing tag
@@ -154,26 +155,26 @@ func TestVisitAndMarkTags(t *testing.T) {
 			}
 
 			// Mark all discovered tags.
-			err := visitAndMarkTags(ctx, 1, keys, func(t *model.Tag) string {
+			err := visitAndMarkTags(ctx, 1, keys, func(mTag *model.Tag) string {
 				return "all"
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
 
 			var marked []markedTag
-			So(datastore.GetAll(ctx, queryMarkedTags(1), &marked), ShouldBeNil)
+			assert.Loosely(t, datastore.GetAll(ctx, queryMarkedTags(1), &marked), should.BeNil)
 			markedKeys := make([]*datastore.Key, len(marked))
-			for i, t := range marked {
-				markedKeys[i] = t.Key
+			for i, mTag := range marked {
+				markedKeys[i] = mTag.Key
 			}
 
 			// Indeed marked all keys except the missing one.
-			So(markedKeys, ShouldResemble, []*datastore.Key{
+			assert.Loosely(t, markedKeys, should.Resemble([]*datastore.Key{
 				keys[3],
 				keys[2],
 				keys[0],
-			})
+			}))
 		})
 	})
 }

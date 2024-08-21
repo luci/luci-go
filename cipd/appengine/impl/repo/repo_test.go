@@ -49,8 +49,11 @@ import (
 	"go.chromium.org/luci/cipd/appengine/impl/testutil"
 	"go.chromium.org/luci/cipd/common"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	// Using transactional datastore TQ tasks.
 	_ "go.chromium.org/luci/server/tq/txn/datastore"
@@ -62,7 +65,7 @@ import (
 func TestMetadataFetching(t *testing.T) {
 	t.Parallel()
 
-	Convey("With fakes", t, func() {
+	ftt.Run("With fakes", t, func(t *ftt.Test) {
 		_, _, as := testutil.TestingContext(
 			authtest.MockMembership("user:prefixes-viewer@example.com", PrefixesViewers),
 		)
@@ -106,82 +109,82 @@ func TestMetadataFetching(t *testing.T) {
 			return resp.PerPrefixMetadata, nil
 		}
 
-		Convey("GetPrefixMetadata happy path", func() {
+		t.Run("GetPrefixMetadata happy path", func(t *ftt.Test) {
 			resp, err := callGet("a/b/c/d", "user:top-owner@example.com")
-			So(err, ShouldBeNil)
-			So(resp, ShouldResembleProto, leafMeta)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.Resemble(leafMeta))
 		})
 
-		Convey("GetPrefixMetadata happy path via global group", func() {
+		t.Run("GetPrefixMetadata happy path via global group", func(t *ftt.Test) {
 			resp, err := callGet("a/b/c/d", "user:prefixes-viewer@example.com")
-			So(err, ShouldBeNil)
-			So(resp, ShouldResembleProto, leafMeta)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.Resemble(leafMeta))
 		})
 
-		Convey("GetInheritedPrefixMetadata happy path", func() {
+		t.Run("GetInheritedPrefixMetadata happy path", func(t *ftt.Test) {
 			resp, err := callGetInherited("a/b/c/d", "user:top-owner@example.com")
-			So(err, ShouldBeNil)
-			So(resp, ShouldResembleProto, []*api.PrefixMetadata{rootMeta, topMeta, leafMeta})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.Resemble([]*api.PrefixMetadata{rootMeta, topMeta, leafMeta}))
 		})
 
-		Convey("GetInheritedPrefixMetadata happy path via global group", func() {
+		t.Run("GetInheritedPrefixMetadata happy path via global group", func(t *ftt.Test) {
 			resp, err := callGetInherited("a/b/c/d", "user:prefixes-viewer@example.com")
-			So(err, ShouldBeNil)
-			So(resp, ShouldResembleProto, []*api.PrefixMetadata{rootMeta, topMeta, leafMeta})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.Resemble([]*api.PrefixMetadata{rootMeta, topMeta, leafMeta}))
 		})
 
-		Convey("GetPrefixMetadata bad prefix", func() {
+		t.Run("GetPrefixMetadata bad prefix", func(t *ftt.Test) {
 			resp, err := callGet("a//", "user:top-owner@example.com")
-			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-			So(resp, ShouldBeNil)
+			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+			assert.Loosely(t, resp, should.BeNil)
 		})
 
-		Convey("GetInheritedPrefixMetadata bad prefix", func() {
+		t.Run("GetInheritedPrefixMetadata bad prefix", func(t *ftt.Test) {
 			resp, err := callGetInherited("a//", "user:top-owner@example.com")
-			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-			So(resp, ShouldBeNil)
+			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+			assert.Loosely(t, resp, should.BeNil)
 		})
 
-		Convey("GetPrefixMetadata no metadata, caller has access", func() {
+		t.Run("GetPrefixMetadata no metadata, caller has access", func(t *ftt.Test) {
 			resp, err := callGet("a/b", "user:top-owner@example.com")
-			So(status.Code(err), ShouldEqual, codes.NotFound)
-			So(resp, ShouldBeNil)
+			assert.Loosely(t, status.Code(err), should.Equal(codes.NotFound))
+			assert.Loosely(t, resp, should.BeNil)
 		})
 
-		Convey("GetInheritedPrefixMetadata no metadata, caller has access", func() {
+		t.Run("GetInheritedPrefixMetadata no metadata, caller has access", func(t *ftt.Test) {
 			resp, err := callGetInherited("a/b", "user:top-owner@example.com")
-			So(err, ShouldBeNil)
-			So(resp, ShouldResembleProto, []*api.PrefixMetadata{rootMeta, topMeta})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.Resemble([]*api.PrefixMetadata{rootMeta, topMeta}))
 		})
 
-		Convey("GetPrefixMetadata no metadata, caller has no access", func() {
+		t.Run("GetPrefixMetadata no metadata, caller has no access", func(t *ftt.Test) {
 			resp, err := callGet("a/b", "user:someone-else@example.com")
-			So(status.Code(err), ShouldEqual, codes.PermissionDenied)
-			So(resp, ShouldBeNil)
+			assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
+			assert.Loosely(t, resp, should.BeNil)
 			// Existing metadata that the caller has no access to produces same error,
 			// so unauthorized callers can't easily distinguish between the two.
 			resp, err = callGet("a/b/c/d", "user:someone-else@example.com")
-			So(status.Code(err), ShouldEqual, codes.PermissionDenied)
-			So(resp, ShouldBeNil)
+			assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
+			assert.Loosely(t, resp, should.BeNil)
 			// Same for completely unknown prefix.
 			resp, err = callGet("zzz", "user:someone-else@example.com")
-			So(status.Code(err), ShouldEqual, codes.PermissionDenied)
-			So(resp, ShouldBeNil)
+			assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
+			assert.Loosely(t, resp, should.BeNil)
 		})
 
-		Convey("GetInheritedPrefixMetadata no metadata, caller has no access", func() {
+		t.Run("GetInheritedPrefixMetadata no metadata, caller has no access", func(t *ftt.Test) {
 			resp, err := callGetInherited("a/b", "user:someone-else@example.com")
-			So(status.Code(err), ShouldEqual, codes.PermissionDenied)
-			So(resp, ShouldBeNil)
+			assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
+			assert.Loosely(t, resp, should.BeNil)
 			// Existing metadata that the caller has no access to produces same error,
 			// so unauthorized callers can't easily distinguish between the two.
 			resp, err = callGetInherited("a/b/c/d", "user:someone-else@example.com")
-			So(status.Code(err), ShouldEqual, codes.PermissionDenied)
-			So(resp, ShouldBeNil)
+			assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
+			assert.Loosely(t, resp, should.BeNil)
 			// Same for completely unknown prefix.
 			resp, err = callGetInherited("zzz", "user:someone-else@example.com")
-			So(status.Code(err), ShouldEqual, codes.PermissionDenied)
-			So(resp, ShouldBeNil)
+			assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
+			assert.Loosely(t, resp, should.BeNil)
 		})
 	})
 }
@@ -189,7 +192,7 @@ func TestMetadataFetching(t *testing.T) {
 func TestMetadataUpdating(t *testing.T) {
 	t.Parallel()
 
-	Convey("With fakes", t, func() {
+	ftt.Run("With fakes", t, func(t *ftt.Test) {
 		ctx, tc, as := testutil.TestingContext()
 
 		meta := testutil.MetadataStore{}
@@ -222,7 +225,7 @@ func TestMetadataUpdating(t *testing.T) {
 			return
 		}
 
-		Convey("Happy path", func() {
+		t.Run("Happy path", func(t *ftt.Test) {
 			// Create new metadata entry.
 			meta, err := callUpdate("user:top-owner@example.com", &api.PrefixMetadata{
 				Prefix:     "a/b/",
@@ -232,7 +235,7 @@ func TestMetadataUpdating(t *testing.T) {
 					{Role: api.Role_READER, Principals: []string{"user:reader@example.com"}},
 				},
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			expected := &api.PrefixMetadata{
 				Prefix:      "a/b",
@@ -243,26 +246,26 @@ func TestMetadataUpdating(t *testing.T) {
 					{Role: api.Role_READER, Principals: []string{"user:reader@example.com"}},
 				},
 			}
-			So(meta, ShouldResembleProto, expected)
+			assert.Loosely(t, meta, should.Resemble(expected))
 
 			// Update it a bit later.
 			tc.Add(time.Hour)
 			updated := proto.Clone(expected).(*api.PrefixMetadata)
 			updated.Acls = nil
 			meta, err = callUpdate("user:top-owner@example.com", updated)
-			So(err, ShouldBeNil)
-			So(meta, ShouldResembleProto, &api.PrefixMetadata{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, meta, should.Resemble(&api.PrefixMetadata{
 				Prefix:      "a/b",
 				Fingerprint: "oQ2uuVbjV79prXxl4jyJkOpff90",
 				UpdateTime:  timestamppb.New(testutil.TestTime.Add(time.Hour)),
 				UpdateUser:  "user:top-owner@example.com",
-			})
+			}))
 
 			// Have these in the event log as well.
 			datastore.GetTestable(ctx).CatchupIndexes()
 			ev, err := model.QueryEvents(ctx, model.NewEventsQuery())
-			So(err, ShouldBeNil)
-			So(ev, ShouldResembleProto, []*api.Event{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ev, should.Resemble([]*api.Event{
 				{
 					Kind:    api.EventKind_PREFIX_ACL_CHANGED,
 					Package: "a/b",
@@ -281,15 +284,15 @@ func TestMetadataUpdating(t *testing.T) {
 						{Role: api.Role_READER, Principals: []string{"user:reader@example.com"}},
 					},
 				},
-			})
+			}))
 		})
 
-		Convey("Validation works", func() {
+		t.Run("Validation works", func(t *ftt.Test) {
 			meta, err := callUpdate("user:top-owner@example.com", &api.PrefixMetadata{
 				Prefix: "a/b//",
 			})
-			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-			So(meta, ShouldBeNil)
+			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+			assert.Loosely(t, meta, should.BeNil)
 
 			meta, err = callUpdate("user:top-owner@example.com", &api.PrefixMetadata{
 				Prefix: "a/b",
@@ -297,26 +300,26 @@ func TestMetadataUpdating(t *testing.T) {
 					{Role: api.Role_READER, Principals: []string{"huh?"}},
 				},
 			})
-			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-			So(meta, ShouldBeNil)
+			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+			assert.Loosely(t, meta, should.BeNil)
 		})
 
-		Convey("ACLs work", func() {
+		t.Run("ACLs work", func(t *ftt.Test) {
 			meta, err := callUpdate("user:unknown@example.com", &api.PrefixMetadata{
 				Prefix: "a/b",
 			})
-			So(status.Code(err), ShouldEqual, codes.PermissionDenied)
-			So(meta, ShouldBeNil)
+			assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
+			assert.Loosely(t, meta, should.BeNil)
 
 			// Same as completely unknown prefix.
 			meta, err = callUpdate("user:unknown@example.com", &api.PrefixMetadata{
 				Prefix: "zzz",
 			})
-			So(status.Code(err), ShouldEqual, codes.PermissionDenied)
-			So(meta, ShouldBeNil)
+			assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
+			assert.Loosely(t, meta, should.BeNil)
 		})
 
-		Convey("Deleted concurrently", func() {
+		t.Run("Deleted concurrently", func(t *ftt.Test) {
 			m := meta.Populate("a/b", &api.PrefixMetadata{
 				UpdateUser: "user:someone@example.com",
 			})
@@ -324,39 +327,39 @@ func TestMetadataUpdating(t *testing.T) {
 
 			// If the caller is a prefix owner, they see NotFound.
 			meta, err := callUpdate("user:top-owner@example.com", m)
-			So(status.Code(err), ShouldEqual, codes.NotFound)
-			So(meta, ShouldBeNil)
+			assert.Loosely(t, status.Code(err), should.Equal(codes.NotFound))
+			assert.Loosely(t, meta, should.BeNil)
 
 			// Other callers just see regular PermissionDenined.
 			meta, err = callUpdate("user:unknown@example.com", m)
-			So(status.Code(err), ShouldEqual, codes.PermissionDenied)
-			So(meta, ShouldBeNil)
+			assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
+			assert.Loosely(t, meta, should.BeNil)
 		})
 
-		Convey("Creating existing", func() {
+		t.Run("Creating existing", func(t *ftt.Test) {
 			m := meta.Populate("a/b", &api.PrefixMetadata{
 				UpdateUser: "user:someone@example.com",
 			})
 
 			m.Fingerprint = "" // indicates the caller is expecting to create a new one
 			meta, err := callUpdate("user:top-owner@example.com", m)
-			So(status.Code(err), ShouldEqual, codes.AlreadyExists)
-			So(meta, ShouldBeNil)
+			assert.Loosely(t, status.Code(err), should.Equal(codes.AlreadyExists))
+			assert.Loosely(t, meta, should.BeNil)
 		})
 
-		Convey("Changed midway", func() {
+		t.Run("Changed midway", func(t *ftt.Test) {
 			m := meta.Populate("a/b", &api.PrefixMetadata{
 				UpdateUser: "user:someone@example.com",
 			})
 
 			// Someone comes and updates it.
 			updated, err := callUpdate("user:top-owner@example.com", m)
-			So(err, ShouldBeNil)
-			So(updated.Fingerprint, ShouldNotEqual, m.Fingerprint)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, updated.Fingerprint, should.NotEqual(m.Fingerprint))
 
 			// Trying to do it again fails, 'm' is stale now.
 			_, err = callUpdate("user:top-owner@example.com", m)
-			So(status.Code(err), ShouldEqual, codes.FailedPrecondition)
+			assert.Loosely(t, status.Code(err), should.Equal(codes.FailedPrecondition))
 		})
 	})
 }
@@ -364,7 +367,7 @@ func TestMetadataUpdating(t *testing.T) {
 func TestGetRolesInPrefixOnBehalfOf(t *testing.T) {
 	t.Parallel()
 
-	Convey("With fakes", t, func() {
+	ftt.Run("With fakes", t, func(t *ftt.Test) {
 		rootCtx, _, _ := testutil.TestingContext()
 
 		meta := testutil.MetadataStore{}
@@ -400,53 +403,53 @@ func TestGetRolesInPrefixOnBehalfOf(t *testing.T) {
 			}), &api.PrefixRequestOnBehalfOf{Identity: string(user), PrefixRequest: &api.PrefixRequest{Prefix: prefix}})
 		}
 
-		Convey("Happy path", func() {
+		t.Run("Happy path", func(t *ftt.Test) {
 			resp, err := call("a/b/c/d", "user:writer@example.com", true)
-			So(err, ShouldBeNil)
-			So(resp, ShouldResembleProto, &api.RolesInPrefixResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.Resemble(&api.RolesInPrefixResponse{
 				Roles: []*api.RolesInPrefixResponse_RoleInPrefix{
 					{Role: api.Role_READER},
 					{Role: api.Role_WRITER},
 				},
-			})
+			}))
 		})
 
-		Convey("Anonymous", func() {
+		t.Run("Anonymous", func(t *ftt.Test) {
 			resp, err := call("a/b/c/d", "anonymous:anonymous", true)
-			So(err, ShouldBeNil)
-			So(resp, ShouldResembleProto, &api.RolesInPrefixResponse{})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.Resemble(&api.RolesInPrefixResponse{}))
 		})
 
-		Convey("Admin", func() {
+		t.Run("Admin", func(t *ftt.Test) {
 			resp, err := call("a/b/c/d", "user:admin@example.com", true)
-			So(err, ShouldBeNil)
-			So(resp, ShouldResembleProto, &api.RolesInPrefixResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.Resemble(&api.RolesInPrefixResponse{
 				Roles: []*api.RolesInPrefixResponse_RoleInPrefix{
 					{Role: api.Role_READER},
 					{Role: api.Role_WRITER},
 					{Role: api.Role_OWNER},
 				},
-			})
+			}))
 		})
 
-		Convey("Bad prefix", func() {
+		t.Run("Bad prefix", func(t *ftt.Test) {
 			_, err := call("///", "user:writer@example.com", true)
-			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-			So(err, ShouldErrLike, "bad 'prefix'")
+			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("bad 'prefix'"))
 		})
 
-		Convey("Not prefix viewer", func() {
+		t.Run("Not prefix viewer", func(t *ftt.Test) {
 			_, err := call("a/b/c/d", "user:writer@example.com", false)
-			So(status.Code(err), ShouldEqual, codes.PermissionDenied)
+			assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
 		})
 
-		Convey("Disallowed identity types", func() {
+		t.Run("Disallowed identity types", func(t *ftt.Test) {
 			for _, kind := range []identity.Kind{identity.Bot, identity.Project, identity.Service} {
 				ident, err := identity.MakeIdentity(string(kind) + ":somevalue")
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				_, err = call("a/b/c/d", ident, true)
-				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
+				assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
 			}
 		})
 
@@ -456,7 +459,7 @@ func TestGetRolesInPrefixOnBehalfOf(t *testing.T) {
 func TestGetRolesInPrefix(t *testing.T) {
 	t.Parallel()
 
-	Convey("With fakes", t, func() {
+	ftt.Run("With fakes", t, func(t *ftt.Test) {
 		rootCtx, _, _ := testutil.TestingContext()
 
 		meta := testutil.MetadataStore{}
@@ -487,39 +490,39 @@ func TestGetRolesInPrefix(t *testing.T) {
 			}), &api.PrefixRequest{Prefix: prefix})
 		}
 
-		Convey("Happy path", func() {
+		t.Run("Happy path", func(t *ftt.Test) {
 			resp, err := call("a/b/c/d", "user:writer@example.com")
-			So(err, ShouldBeNil)
-			So(resp, ShouldResembleProto, &api.RolesInPrefixResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.Resemble(&api.RolesInPrefixResponse{
 				Roles: []*api.RolesInPrefixResponse_RoleInPrefix{
 					{Role: api.Role_READER},
 					{Role: api.Role_WRITER},
 				},
-			})
+			}))
 		})
 
-		Convey("Anonymous", func() {
+		t.Run("Anonymous", func(t *ftt.Test) {
 			resp, err := call("a/b/c/d", "anonymous:anonymous")
-			So(err, ShouldBeNil)
-			So(resp, ShouldResembleProto, &api.RolesInPrefixResponse{})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.Resemble(&api.RolesInPrefixResponse{}))
 		})
 
-		Convey("Admin", func() {
+		t.Run("Admin", func(t *ftt.Test) {
 			resp, err := call("a/b/c/d", "user:admin@example.com")
-			So(err, ShouldBeNil)
-			So(resp, ShouldResembleProto, &api.RolesInPrefixResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.Resemble(&api.RolesInPrefixResponse{
 				Roles: []*api.RolesInPrefixResponse_RoleInPrefix{
 					{Role: api.Role_READER},
 					{Role: api.Role_WRITER},
 					{Role: api.Role_OWNER},
 				},
-			})
+			}))
 		})
 
-		Convey("Bad prefix", func() {
+		t.Run("Bad prefix", func(t *ftt.Test) {
 			_, err := call("///", "user:writer@example.com")
-			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-			So(err, ShouldErrLike, "bad 'prefix'")
+			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("bad 'prefix'"))
 		})
 	})
 }
@@ -530,7 +533,7 @@ func TestGetRolesInPrefix(t *testing.T) {
 func TestListPrefix(t *testing.T) {
 	t.Parallel()
 
-	Convey("With fakes", t, func() {
+	ftt.Run("With fakes", t, func(t *ftt.Test) {
 		ctx, _, as := testutil.TestingContext()
 
 		meta := testutil.MetadataStore{}
@@ -581,10 +584,10 @@ func TestListPrefix(t *testing.T) {
 		const hidden = true
 		const visible = false
 		mk := func(name string, hidden bool) {
-			So(datastore.Put(ctx, &model.Package{
+			assert.Loosely(t, datastore.Put(ctx, &model.Package{
 				Name:   name,
 				Hidden: hidden,
-			}), ShouldBeNil)
+			}), should.BeNil)
 		}
 
 		// Note: "1" is both a package and a prefix, this is allowed.
@@ -617,125 +620,125 @@ func TestListPrefix(t *testing.T) {
 		//
 		// This 4 test dimensions => 16 test cases.
 
-		Convey("Full listing", func() {
-			Convey("Root recursive (including hidden)", func() {
+		t.Run("Full listing", func(t *ftt.Test) {
+			t.Run("Root recursive (including hidden)", func(t *ftt.Test) {
 				resp, err := call("", true, true, "user:admin@example.com")
-				So(err, ShouldBeNil)
-				So(resp.Packages, ShouldResemble, []string{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, resp.Packages, should.Resemble([]string{
 					"1", "1/a", "1/a/b", "1/a/b/c", "1/a/c", "1/b", "1/c", "1/d/a",
 					"2/a/b/c", "3", "4", "5/a/b", "6", "6/a/b", "7/a",
-				})
-				So(resp.Prefixes, ShouldResemble, []string{
+				}))
+				assert.Loosely(t, resp.Prefixes, should.Resemble([]string{
 					"1", "1/a", "1/a/b", "1/d", "2", "2/a", "2/a/b", "5", "5/a",
 					"6", "6/a", "7",
-				})
+				}))
 			})
 
-			Convey("Root recursive (visible only)", func() {
+			t.Run("Root recursive (visible only)", func(t *ftt.Test) {
 				resp, err := call("", true, false, "user:admin@example.com")
-				So(err, ShouldBeNil)
-				So(resp.Packages, ShouldResemble, []string{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, resp.Packages, should.Resemble([]string{
 					"1", "1/a", "1/a/b", "1/a/b/c", "1/b", "2/a/b/c", "3", "6/a/b",
-				})
-				So(resp.Prefixes, ShouldResemble, []string{
+				}))
+				assert.Loosely(t, resp.Prefixes, should.Resemble([]string{
 					"1", "1/a", "1/a/b", "2", "2/a", "2/a/b", "6", "6/a",
-				})
+				}))
 			})
 
-			Convey("Root non-recursive (including hidden)", func() {
+			t.Run("Root non-recursive (including hidden)", func(t *ftt.Test) {
 				resp, err := call("", false, true, "user:admin@example.com")
-				So(err, ShouldBeNil)
-				So(resp.Packages, ShouldResemble, []string{"1", "3", "4", "6"})
-				So(resp.Prefixes, ShouldResemble, []string{"1", "2", "5", "6", "7"})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, resp.Packages, should.Resemble([]string{"1", "3", "4", "6"}))
+				assert.Loosely(t, resp.Prefixes, should.Resemble([]string{"1", "2", "5", "6", "7"}))
 			})
 
-			Convey("Root non-recursive (visible only)", func() {
+			t.Run("Root non-recursive (visible only)", func(t *ftt.Test) {
 				resp, err := call("", false, false, "user:admin@example.com")
-				So(err, ShouldBeNil)
-				So(resp.Packages, ShouldResemble, []string{"1", "3"})
-				So(resp.Prefixes, ShouldResemble, []string{"1", "2", "6"})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, resp.Packages, should.Resemble([]string{"1", "3"}))
+				assert.Loosely(t, resp.Prefixes, should.Resemble([]string{"1", "2", "6"}))
 			})
 
-			Convey("Non-root recursive (including hidden)", func() {
+			t.Run("Non-root recursive (including hidden)", func(t *ftt.Test) {
 				resp, err := call("1", true, true, "user:admin@example.com")
-				So(err, ShouldBeNil)
-				So(resp.Packages, ShouldResemble, []string{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, resp.Packages, should.Resemble([]string{
 					"1/a", "1/a/b", "1/a/b/c", "1/a/c", "1/b", "1/c", "1/d/a",
-				})
-				So(resp.Prefixes, ShouldResemble, []string{"1/a", "1/a/b", "1/d"})
+				}))
+				assert.Loosely(t, resp.Prefixes, should.Resemble([]string{"1/a", "1/a/b", "1/d"}))
 			})
 
-			Convey("Non-root recursive (visible only)", func() {
+			t.Run("Non-root recursive (visible only)", func(t *ftt.Test) {
 				resp, err := call("1", true, false, "user:admin@example.com")
-				So(err, ShouldBeNil)
-				So(resp.Packages, ShouldResemble, []string{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, resp.Packages, should.Resemble([]string{
 					"1/a", "1/a/b", "1/a/b/c", "1/b",
-				})
-				So(resp.Prefixes, ShouldResemble, []string{"1/a", "1/a/b"})
+				}))
+				assert.Loosely(t, resp.Prefixes, should.Resemble([]string{"1/a", "1/a/b"}))
 			})
 		})
 
-		Convey("Restricted listing", func() {
-			Convey("Root recursive (including hidden)", func() {
+		t.Run("Restricted listing", func(t *ftt.Test) {
+			t.Run("Root recursive (including hidden)", func(t *ftt.Test) {
 				resp, err := call("", true, true, "user:reader@example.com")
-				So(err, ShouldBeNil)
-				So(resp.Packages, ShouldResemble, []string{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, resp.Packages, should.Resemble([]string{
 					"1/a", "1/a/b", "1/a/b/c", "1/a/c", "6", "6/a/b", "7/a",
-				})
-				So(resp.Prefixes, ShouldResemble, []string{
+				}))
+				assert.Loosely(t, resp.Prefixes, should.Resemble([]string{
 					"1", "1/a", "1/a/b", "6", "6/a", "7",
-				})
+				}))
 			})
 
-			Convey("Root recursive (visible only)", func() {
+			t.Run("Root recursive (visible only)", func(t *ftt.Test) {
 				resp, err := call("", true, false, "user:reader@example.com")
-				So(err, ShouldBeNil)
-				So(resp.Packages, ShouldResemble, []string{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, resp.Packages, should.Resemble([]string{
 					"1/a", "1/a/b", "1/a/b/c", "6/a/b",
-				})
-				So(resp.Prefixes, ShouldResemble, []string{
+				}))
+				assert.Loosely(t, resp.Prefixes, should.Resemble([]string{
 					"1", "1/a", "1/a/b", "6", "6/a",
-				})
+				}))
 			})
 
-			Convey("Root non-recursive (including hidden)", func() {
+			t.Run("Root non-recursive (including hidden)", func(t *ftt.Test) {
 				resp, err := call("", false, true, "user:reader@example.com")
-				So(err, ShouldBeNil)
-				So(resp.Packages, ShouldResemble, []string{"6"})
-				So(resp.Prefixes, ShouldResemble, []string{"1", "6", "7"})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, resp.Packages, should.Resemble([]string{"6"}))
+				assert.Loosely(t, resp.Prefixes, should.Resemble([]string{"1", "6", "7"}))
 			})
 
-			Convey("Root non-recursive (visible only)", func() {
+			t.Run("Root non-recursive (visible only)", func(t *ftt.Test) {
 				resp, err := call("", false, false, "user:reader@example.com")
-				So(err, ShouldBeNil)
-				So(resp.Packages, ShouldResemble, []string(nil))
-				So(resp.Prefixes, ShouldResemble, []string{"1", "6"})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, resp.Packages, should.Resemble([]string(nil)))
+				assert.Loosely(t, resp.Prefixes, should.Resemble([]string{"1", "6"}))
 			})
 
-			Convey("Non-root recursive (including hidden)", func() {
+			t.Run("Non-root recursive (including hidden)", func(t *ftt.Test) {
 				resp, err := call("1", true, true, "user:reader@example.com")
-				So(err, ShouldBeNil)
-				So(resp.Packages, ShouldResemble, []string{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, resp.Packages, should.Resemble([]string{
 					"1/a", "1/a/b", "1/a/b/c", "1/a/c",
-				})
-				So(resp.Prefixes, ShouldResemble, []string{"1/a", "1/a/b"})
+				}))
+				assert.Loosely(t, resp.Prefixes, should.Resemble([]string{"1/a", "1/a/b"}))
 			})
 
-			Convey("Non-root recursive (visible only)", func() {
+			t.Run("Non-root recursive (visible only)", func(t *ftt.Test) {
 				resp, err := call("1", true, false, "user:reader@example.com")
-				So(err, ShouldBeNil)
-				So(resp.Packages, ShouldResemble, []string{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, resp.Packages, should.Resemble([]string{
 					"1/a", "1/a/b", "1/a/b/c",
-				})
-				So(resp.Prefixes, ShouldResemble, []string{"1/a", "1/a/b"})
+				}))
+				assert.Loosely(t, resp.Prefixes, should.Resemble([]string{"1/a", "1/a/b"}))
 			})
 		})
 
-		Convey("The package is not listed when listing its name directly", func() {
+		t.Run("The package is not listed when listing its name directly", func(t *ftt.Test) {
 			resp, err := call("3", true, true, "user:admin@example.com")
-			So(err, ShouldBeNil)
-			So(resp.Packages, ShouldHaveLength, 0)
-			So(resp.Prefixes, ShouldHaveLength, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp.Packages, should.HaveLength(0))
+			assert.Loosely(t, resp.Prefixes, should.HaveLength(0))
 		})
 
 	})
@@ -747,7 +750,7 @@ func TestListPrefix(t *testing.T) {
 func TestHideUnhidePackage(t *testing.T) {
 	t.Parallel()
 
-	Convey("With fakes", t, func() {
+	ftt.Run("With fakes", t, func(t *ftt.Test) {
 		ctx, _, as := testutil.TestingContext()
 		ctx = as("owner@example.com")
 
@@ -761,47 +764,47 @@ func TestHideUnhidePackage(t *testing.T) {
 			},
 		})
 
-		So(datastore.Put(ctx, &model.Package{Name: "a/b"}), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, &model.Package{Name: "a/b"}), should.BeNil)
 
 		fetch := func(pkg string) *model.Package {
 			p := &model.Package{Name: pkg}
-			So(datastore.Get(ctx, p), ShouldBeNil)
+			assert.Loosely(t, datastore.Get(ctx, p), should.BeNil)
 			return p
 		}
 
 		impl := repoImpl{meta: &meta}
 
-		Convey("Hides and unhides", func() {
+		t.Run("Hides and unhides", func(t *ftt.Test) {
 			_, err := impl.HidePackage(ctx, &api.PackageRequest{Package: "a/b"})
-			So(err, ShouldBeNil)
-			So(fetch("a/b").Hidden, ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, fetch("a/b").Hidden, should.BeTrue)
 
 			// Noop is fine.
 			_, err = impl.HidePackage(ctx, &api.PackageRequest{Package: "a/b"})
-			So(err, ShouldBeNil)
-			So(fetch("a/b").Hidden, ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, fetch("a/b").Hidden, should.BeTrue)
 
 			_, err = impl.UnhidePackage(ctx, &api.PackageRequest{Package: "a/b"})
-			So(err, ShouldBeNil)
-			So(fetch("a/b").Hidden, ShouldBeFalse)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, fetch("a/b").Hidden, should.BeFalse)
 		})
 
-		Convey("Bad package name", func() {
+		t.Run("Bad package name", func(t *ftt.Test) {
 			_, err := impl.HidePackage(ctx, &api.PackageRequest{Package: "///"})
-			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-			So(err, ShouldErrLike, "invalid package name")
+			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("invalid package name"))
 		})
 
-		Convey("No access", func() {
+		t.Run("No access", func(t *ftt.Test) {
 			_, err := impl.HidePackage(ctx, &api.PackageRequest{Package: "zzz"})
-			So(status.Code(err), ShouldEqual, codes.PermissionDenied)
-			So(err, ShouldErrLike, "not allowed to see it")
+			assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
+			assert.Loosely(t, err, should.ErrLike("not allowed to see it"))
 		})
 
-		Convey("Missing package", func() {
+		t.Run("Missing package", func(t *ftt.Test) {
 			_, err := impl.HidePackage(ctx, &api.PackageRequest{Package: "a/b/c"})
-			So(status.Code(err), ShouldEqual, codes.NotFound)
-			So(err, ShouldErrLike, "no such package")
+			assert.Loosely(t, status.Code(err), should.Equal(codes.NotFound))
+			assert.Loosely(t, err, should.ErrLike("no such package"))
 		})
 	})
 }
@@ -812,7 +815,7 @@ func TestHideUnhidePackage(t *testing.T) {
 func TestDeletePackage(t *testing.T) {
 	t.Parallel()
 
-	Convey("With fakes", t, func() {
+	ftt.Run("With fakes", t, func(t *ftt.Test) {
 		ctx, _, as := testutil.TestingContext()
 
 		meta := testutil.MetadataStore{}
@@ -833,47 +836,47 @@ func TestDeletePackage(t *testing.T) {
 			},
 		})
 
-		So(datastore.Put(ctx, &model.Package{Name: "a/b"}), ShouldBeNil)
-		So(model.CheckPackageExists(ctx, "a/b"), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, &model.Package{Name: "a/b"}), should.BeNil)
+		assert.Loosely(t, model.CheckPackageExists(ctx, "a/b"), should.BeNil)
 
 		impl := repoImpl{meta: &meta}
 
-		Convey("Works", func() {
+		t.Run("Works", func(t *ftt.Test) {
 			_, err := impl.DeletePackage(as("root@example.com"), &api.PackageRequest{
 				Package: "a/b",
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// Gone now.
-			So(model.CheckPackageExists(ctx, "a/b"), ShouldNotBeNil)
+			assert.Loosely(t, model.CheckPackageExists(ctx, "a/b"), should.NotBeNil)
 
 			_, err = impl.DeletePackage(as("root@example.com"), &api.PackageRequest{
 				Package: "a/b",
 			})
-			So(status.Code(err), ShouldEqual, codes.NotFound)
-			So(err, ShouldErrLike, "no such package")
+			assert.Loosely(t, status.Code(err), should.Equal(codes.NotFound))
+			assert.Loosely(t, err, should.ErrLike("no such package"))
 		})
 
-		Convey("Only reader or above can see", func() {
+		t.Run("Only reader or above can see", func(t *ftt.Test) {
 			_, err := impl.DeletePackage(as("someone@example.com"), &api.PackageRequest{
 				Package: "a/b",
 			})
-			So(status.Code(err), ShouldEqual, codes.PermissionDenied)
-			So(err, ShouldErrLike, "is not allowed to see it")
+			assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
+			assert.Loosely(t, err, should.ErrLike("is not allowed to see it"))
 		})
 
-		Convey("Only root owner can delete", func() {
+		t.Run("Only root owner can delete", func(t *ftt.Test) {
 			_, err := impl.DeletePackage(as("non-root-owner@example.com"), &api.PackageRequest{
 				Package: "a/b",
 			})
-			So(status.Code(err), ShouldEqual, codes.PermissionDenied)
-			So(err, ShouldErrLike, "allowed only to service administrators")
+			assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
+			assert.Loosely(t, err, should.ErrLike("allowed only to service administrators"))
 		})
 
-		Convey("Bad package name", func() {
+		t.Run("Bad package name", func(t *ftt.Test) {
 			_, err := impl.DeletePackage(ctx, &api.PackageRequest{Package: "///"})
-			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-			So(err, ShouldErrLike, "invalid package name")
+			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("invalid package name"))
 		})
 	})
 }
@@ -884,7 +887,7 @@ func TestDeletePackage(t *testing.T) {
 func TestRegisterInstance(t *testing.T) {
 	t.Parallel()
 
-	Convey("With fakes", t, func() {
+	ftt.Run("With fakes", t, func(t *ftt.Test) {
 		ctx, _, as := testutil.TestingContext()
 		ctx = as("owner@example.com")
 
@@ -923,7 +926,7 @@ func TestRegisterInstance(t *testing.T) {
 			},
 		}
 
-		Convey("Happy path", func() {
+		t.Run("Happy path", func(t *ftt.Test) {
 			impl.registerProcessor(&mockedProcessor{
 				ProcID:    "proc_id_1",
 				AppliesTo: inst.Package,
@@ -941,22 +944,22 @@ func TestRegisterInstance(t *testing.T) {
 
 			// Mock "successfully started upload op".
 			cas.BeginUploadImpl = func(_ context.Context, req *api.BeginUploadRequest) (*api.UploadOperation, error) {
-				So(req, ShouldResembleProto, &api.BeginUploadRequest{
+				assert.Loosely(t, req, should.Resemble(&api.BeginUploadRequest{
 					Object: &api.ObjectRef{
 						HashAlgo:  api.HashAlgo_SHA1,
 						HexDigest: digest,
 					},
-				})
+				}))
 				return &uploadOp, nil
 			}
 
 			// The instance is not uploaded yet => asks to upload.
 			resp, err := impl.RegisterInstance(ctx, inst)
-			So(err, ShouldBeNil)
-			So(resp, ShouldResembleProto, &api.RegisterInstanceResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.Resemble(&api.RegisterInstanceResponse{
 				Status:   api.RegistrationStatus_NOT_UPLOADED,
 				UploadOp: &uploadOp,
-			})
+			}))
 
 			// Mock "already have it in the storage" response.
 			cas.BeginUploadImpl = func(context.Context, *api.BeginUploadRequest) (*api.UploadOperation, error) {
@@ -971,51 +974,51 @@ func TestRegisterInstance(t *testing.T) {
 				RegisteredTs: timestamppb.New(testutil.TestTime),
 			}
 			resp, err = impl.RegisterInstance(ctx, inst)
-			So(err, ShouldBeNil)
-			So(resp, ShouldResembleProto, &api.RegisterInstanceResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.Resemble(&api.RegisterInstanceResponse{
 				Status:   api.RegistrationStatus_REGISTERED,
 				Instance: fullInstProto,
-			})
+			}))
 
 			// Launched post-processors.
 			ent := (&model.Instance{}).FromProto(ctx, inst)
-			So(datastore.Get(ctx, ent), ShouldBeNil)
-			So(ent.ProcessorsPending, ShouldResemble, []string{"proc_id_1"})
+			assert.Loosely(t, datastore.Get(ctx, ent), should.BeNil)
+			assert.Loosely(t, ent.ProcessorsPending, should.Resemble([]string{"proc_id_1"}))
 			tqt := sched.Tasks()
-			So(tqt, ShouldHaveLength, 1)
-			So(tqt[0].Payload, ShouldResembleProto, &tasks.RunProcessors{
+			assert.Loosely(t, tqt, should.HaveLength(1))
+			assert.Loosely(t, tqt[0].Payload, should.Resemble(&tasks.RunProcessors{
 				Instance: fullInstProto,
-			})
+			}))
 		})
 
-		Convey("Already registered", func() {
+		t.Run("Already registered", func(t *ftt.Test) {
 			instance := (&model.Instance{
 				RegisteredBy: "user:someone@example.com",
 			}).FromProto(ctx, inst)
 			_, _, err := model.RegisterInstance(ctx, instance, nil)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			resp, err := impl.RegisterInstance(ctx, inst)
-			So(err, ShouldBeNil)
-			So(resp, ShouldResembleProto, &api.RegisterInstanceResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.Resemble(&api.RegisterInstanceResponse{
 				Status: api.RegistrationStatus_ALREADY_REGISTERED,
 				Instance: &api.Instance{
 					Package:      inst.Package,
 					Instance:     inst.Instance,
 					RegisteredBy: "user:someone@example.com",
 				},
-			})
+			}))
 		})
 
-		Convey("Bad package name", func() {
+		t.Run("Bad package name", func(t *ftt.Test) {
 			_, err := impl.RegisterInstance(ctx, &api.Instance{
 				Package: "//a",
 			})
-			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-			So(err, ShouldErrLike, "bad 'package'")
+			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("bad 'package'"))
 		})
 
-		Convey("Bad instance ID", func() {
+		t.Run("Bad instance ID", func(t *ftt.Test) {
 			_, err := impl.RegisterInstance(ctx, &api.Instance{
 				Package: "a/b",
 				Instance: &api.ObjectRef{
@@ -1023,23 +1026,23 @@ func TestRegisterInstance(t *testing.T) {
 					HexDigest: "abc",
 				},
 			})
-			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-			So(err, ShouldErrLike, "bad 'instance'")
+			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("bad 'instance'"))
 		})
 
-		Convey("No reader access", func() {
+		t.Run("No reader access", func(t *ftt.Test) {
 			_, err := impl.RegisterInstance(ctx, &api.Instance{
 				Package:  "some/other/root",
 				Instance: inst.Instance,
 			})
-			So(status.Code(err), ShouldEqual, codes.PermissionDenied)
-			So(err, ShouldErrLike, `prefix "some/other/root" doesn't exist or "user:owner@example.com" is not allowed to see it`)
+			assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
+			assert.Loosely(t, err, should.ErrLike(`prefix "some/other/root" doesn't exist or "user:owner@example.com" is not allowed to see it`))
 		})
 
-		Convey("No owner access", func() {
+		t.Run("No owner access", func(t *ftt.Test) {
 			_, err := impl.RegisterInstance(as("reader@example.com"), inst)
-			So(status.Code(err), ShouldEqual, codes.PermissionDenied)
-			So(err, ShouldErrLike, `"user:reader@example.com" has no required WRITER role in prefix "a/b"`)
+			assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
+			assert.Loosely(t, err, should.ErrLike(`"user:reader@example.com" has no required WRITER role in prefix "a/b"`))
 		})
 	})
 }
@@ -1052,7 +1055,7 @@ func TestProcessors(t *testing.T) {
 		"file2": "blah",
 	})
 
-	Convey("With mocks", t, func() {
+	ftt.Run("With mocks", t, func(t *ftt.Test) {
 		ctx, _, _ := testutil.TestingContext()
 
 		cas := testutil.MockCAS{}
@@ -1068,12 +1071,12 @@ func TestProcessors(t *testing.T) {
 
 		storeInstance := func(pending []string) {
 			i := (&model.Instance{ProcessorsPending: pending}).FromProto(ctx, inst)
-			So(datastore.Put(ctx, i), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, i), should.BeNil)
 		}
 
 		fetchInstance := func() *model.Instance {
 			i := (&model.Instance{}).FromProto(ctx, inst)
-			So(datastore.Get(ctx, i), ShouldBeNil)
+			assert.Loosely(t, datastore.Get(ctx, i), should.BeNil)
 			return i
 		}
 
@@ -1083,7 +1086,7 @@ func TestProcessors(t *testing.T) {
 				ProcID:   id,
 				Instance: datastore.KeyForObj(ctx, i),
 			}
-			So(datastore.Get(ctx, p), ShouldBeNil)
+			assert.Loosely(t, datastore.Get(ctx, p), should.BeNil)
 			return p
 		}
 
@@ -1092,65 +1095,65 @@ func TestProcessors(t *testing.T) {
 		// Note: assumes Result is a map[string]string.
 		fetchProcSuccess := func(id string) string {
 			res := fetchProcRes(id)
-			So(res, ShouldNotBeNil)
-			So(res.Success, ShouldBeTrue)
+			assert.Loosely(t, res, should.NotBeNil)
+			assert.Loosely(t, res.Success, should.BeTrue)
 			var r map[string]string
-			So(res.ReadResult(&r), ShouldBeNil)
+			assert.Loosely(t, res.ReadResult(&r), should.BeNil)
 			return r["result"]
 		}
 
 		fetchProcFail := func(id string) string {
 			res := fetchProcRes(id)
-			So(res, ShouldNotBeNil)
-			So(res.Success, ShouldBeFalse)
+			assert.Loosely(t, res, should.NotBeNil)
+			assert.Loosely(t, res.Success, should.BeFalse)
 			return res.Error
 		}
 
-		Convey("Noop updateProcessors", func() {
+		t.Run("Noop updateProcessors", func(t *ftt.Test) {
 			storeInstance([]string{"a", "b"})
-			So(impl.updateProcessors(ctx, inst, map[string]processing.Result{
+			assert.Loosely(t, impl.updateProcessors(ctx, inst, map[string]processing.Result{
 				"some-another": {Err: fmt.Errorf("fail")},
-			}), ShouldBeNil)
-			So(fetchInstance().ProcessorsPending, ShouldResemble, []string{"a", "b"})
+			}), should.BeNil)
+			assert.Loosely(t, fetchInstance().ProcessorsPending, should.Resemble([]string{"a", "b"}))
 		})
 
-		Convey("Updates processors successfully", func() {
+		t.Run("Updates processors successfully", func(t *ftt.Test) {
 			storeInstance([]string{"ok", "fail", "pending"})
 
-			So(impl.updateProcessors(ctx, inst, map[string]processing.Result{
+			assert.Loosely(t, impl.updateProcessors(ctx, inst, map[string]processing.Result{
 				"ok":   {Result: goodResult},
 				"fail": {Err: fmt.Errorf("failed")},
-			}), ShouldBeNil)
+			}), should.BeNil)
 
 			// Updated the Instance entity.
 			inst := fetchInstance()
-			So(inst.ProcessorsPending, ShouldResemble, []string{"pending"})
-			So(inst.ProcessorsSuccess, ShouldResemble, []string{"ok"})
-			So(inst.ProcessorsFailure, ShouldResemble, []string{"fail"})
+			assert.Loosely(t, inst.ProcessorsPending, should.Resemble([]string{"pending"}))
+			assert.Loosely(t, inst.ProcessorsSuccess, should.Resemble([]string{"ok"}))
+			assert.Loosely(t, inst.ProcessorsFailure, should.Resemble([]string{"fail"}))
 
 			// Created ProcessingResult entities.
-			So(fetchProcSuccess("ok"), ShouldEqual, "OK")
-			So(fetchProcFail("fail"), ShouldEqual, "failed")
+			assert.Loosely(t, fetchProcSuccess("ok"), should.Equal("OK"))
+			assert.Loosely(t, fetchProcFail("fail"), should.Equal("failed"))
 		})
 
-		Convey("Missing entity in updateProcessors", func() {
+		t.Run("Missing entity in updateProcessors", func(t *ftt.Test) {
 			err := impl.updateProcessors(ctx, inst, map[string]processing.Result{
 				"proc": {Err: fmt.Errorf("fail")},
 			})
-			So(err, ShouldErrLike, "the entity is unexpectedly gone")
+			assert.Loosely(t, err, should.ErrLike("the entity is unexpectedly gone"))
 		})
 
-		Convey("runProcessorsTask happy path", func() {
+		t.Run("runProcessorsTask happy path", func(t *ftt.Test) {
 			// Setup two pending processors that read 'file2'.
 			runCB := func(i *model.Instance, r *processing.PackageReader) (processing.Result, error) {
-				So(i.Proto(), ShouldResembleProto, inst)
+				assert.Loosely(t, i.Proto(), should.Resemble(inst))
 
 				rd, _, err := r.Open("file2")
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				defer rd.Close()
 				blob, err := io.ReadAll(rd)
-				So(err, ShouldBeNil)
-				So(string(blob), ShouldEqual, "blah")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, string(blob), should.Equal("blah"))
 
 				return processing.Result{Result: goodResult}, nil
 			}
@@ -1161,40 +1164,40 @@ func TestProcessors(t *testing.T) {
 
 			// Setup the package.
 			cas.GetReaderImpl = func(_ context.Context, ref *api.ObjectRef) (gs.Reader, error) {
-				So(inst.Instance, ShouldResembleProto, ref)
+				assert.Loosely(t, inst.Instance, should.Resemble(ref))
 				return testutil.NewMockGSReader(testZip), nil
 			}
 
 			// Run the processor.
 			err := impl.runProcessorsTask(ctx, &tasks.RunProcessors{Instance: inst})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// Both succeeded.
 			inst := fetchInstance()
-			So(inst.ProcessorsPending, ShouldHaveLength, 0)
-			So(inst.ProcessorsSuccess, ShouldResemble, []string{"proc1", "proc2"})
+			assert.Loosely(t, inst.ProcessorsPending, should.HaveLength(0))
+			assert.Loosely(t, inst.ProcessorsSuccess, should.Resemble([]string{"proc1", "proc2"}))
 
 			// And have the result.
-			So(fetchProcSuccess("proc1"), ShouldEqual, "OK")
-			So(fetchProcSuccess("proc2"), ShouldEqual, "OK")
+			assert.Loosely(t, fetchProcSuccess("proc1"), should.Equal("OK"))
+			assert.Loosely(t, fetchProcSuccess("proc2"), should.Equal("OK"))
 		})
 
-		Convey("runProcessorsTask no entity", func() {
+		t.Run("runProcessorsTask no entity", func(t *ftt.Test) {
 			err := impl.runProcessorsTask(ctx, &tasks.RunProcessors{Instance: inst})
-			So(err, ShouldErrLike, "unexpectedly gone from the datastore")
+			assert.Loosely(t, err, should.ErrLike("unexpectedly gone from the datastore"))
 		})
 
-		Convey("runProcessorsTask no processor", func() {
+		t.Run("runProcessorsTask no processor", func(t *ftt.Test) {
 			storeInstance([]string{"proc"})
 
 			err := impl.runProcessorsTask(ctx, &tasks.RunProcessors{Instance: inst})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// Failed.
-			So(fetchProcFail("proc"), ShouldEqual, `unknown processor "proc"`)
+			assert.Loosely(t, fetchProcFail("proc"), should.Equal(`unknown processor "proc"`))
 		})
 
-		Convey("runProcessorsTask broken package", func() {
+		t.Run("runProcessorsTask broken package", func(t *ftt.Test) {
 			impl.registerProcessor(&mockedProcessor{
 				ProcID: "proc",
 				Result: processing.Result{Result: "must not be called"},
@@ -1206,13 +1209,13 @@ func TestProcessors(t *testing.T) {
 			}
 
 			err := impl.runProcessorsTask(ctx, &tasks.RunProcessors{Instance: inst})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// Failed.
-			So(fetchProcFail("proc"), ShouldEqual, `error when opening the package: zip: not a valid zip file`)
+			assert.Loosely(t, fetchProcFail("proc"), should.Equal(`error when opening the package: zip: not a valid zip file`))
 		})
 
-		Convey("runProcessorsTask propagates transient proc errors", func() {
+		t.Run("runProcessorsTask propagates transient proc errors", func(t *ftt.Test) {
 			impl.registerProcessor(&mockedProcessor{
 				ProcID: "good-proc",
 				Result: processing.Result{Result: goodResult},
@@ -1228,16 +1231,16 @@ func TestProcessors(t *testing.T) {
 			}
 
 			err := impl.runProcessorsTask(ctx, &tasks.RunProcessors{Instance: inst})
-			So(transient.Tag.In(err), ShouldBeTrue)
-			So(err, ShouldErrLike, "failed transiently")
+			assert.Loosely(t, transient.Tag.In(err), should.BeTrue)
+			assert.Loosely(t, err, should.ErrLike("failed transiently"))
 
 			// bad-proc is still pending.
-			So(fetchInstance().ProcessorsPending, ShouldResemble, []string{"bad-proc"})
+			assert.Loosely(t, fetchInstance().ProcessorsPending, should.Resemble([]string{"bad-proc"}))
 			// good-proc is done.
-			So(fetchProcSuccess("good-proc"), ShouldEqual, "OK")
+			assert.Loosely(t, fetchProcSuccess("good-proc"), should.Equal("OK"))
 		})
 
-		Convey("runProcessorsTask handles fatal errors", func() {
+		t.Run("runProcessorsTask handles fatal errors", func(t *ftt.Test) {
 			impl.registerProcessor(&mockedProcessor{
 				ProcID: "proc",
 				Result: processing.Result{Err: fmt.Errorf("boom")},
@@ -1249,10 +1252,10 @@ func TestProcessors(t *testing.T) {
 			}
 
 			err := impl.runProcessorsTask(ctx, &tasks.RunProcessors{Instance: inst})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// Failed.
-			So(fetchProcFail("proc"), ShouldEqual, "boom")
+			assert.Loosely(t, fetchProcFail("proc"), should.Equal("boom"))
 		})
 	})
 }
@@ -1288,7 +1291,7 @@ func (m *mockedProcessor) Run(_ context.Context, i *model.Instance, r *processin
 func TestListInstances(t *testing.T) {
 	t.Parallel()
 
-	Convey("With fakes", t, func() {
+	ftt.Run("With fakes", t, func(t *ftt.Test) {
 		ts := time.Unix(1525136124, 0).UTC()
 		ctx, _, as := testutil.TestingContext()
 		ctx = as("reader@example.com")
@@ -1303,15 +1306,15 @@ func TestListInstances(t *testing.T) {
 			},
 		})
 
-		So(datastore.Put(ctx, &model.Package{Name: "a/b"}), ShouldBeNil)
-		So(datastore.Put(ctx, &model.Package{Name: "a/empty"}), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, &model.Package{Name: "a/b"}), should.BeNil)
+		assert.Loosely(t, datastore.Put(ctx, &model.Package{Name: "a/empty"}), should.BeNil)
 
 		for i := 0; i < 4; i++ {
-			So(datastore.Put(ctx, &model.Instance{
+			assert.Loosely(t, datastore.Put(ctx, &model.Instance{
 				InstanceID:   fmt.Sprintf("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa%d", i),
 				Package:      model.PackageKey(ctx, "a/b"),
 				RegisteredTs: ts.Add(time.Duration(i) * time.Minute),
-			}), ShouldBeNil)
+			}), should.BeNil)
 		}
 
 		inst := func(i int) *api.Instance {
@@ -1327,75 +1330,75 @@ func TestListInstances(t *testing.T) {
 
 		impl := repoImpl{meta: &meta}
 
-		Convey("Bad package name", func() {
+		t.Run("Bad package name", func(t *ftt.Test) {
 			_, err := impl.ListInstances(ctx, &api.ListInstancesRequest{
 				Package: "///",
 			})
-			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-			So(err, ShouldErrLike, "invalid package name")
+			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("invalid package name"))
 		})
 
-		Convey("Bad page size", func() {
+		t.Run("Bad page size", func(t *ftt.Test) {
 			_, err := impl.ListInstances(ctx, &api.ListInstancesRequest{
 				Package:  "a/b",
 				PageSize: -1,
 			})
-			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-			So(err, ShouldErrLike, "it should be non-negative")
+			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("it should be non-negative"))
 		})
 
-		Convey("Bad page token", func() {
+		t.Run("Bad page token", func(t *ftt.Test) {
 			_, err := impl.ListInstances(ctx, &api.ListInstancesRequest{
 				Package:   "a/b",
 				PageToken: "zzzz",
 			})
-			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-			So(err, ShouldErrLike, "invalid cursor")
+			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("invalid cursor"))
 		})
 
-		Convey("No access", func() {
+		t.Run("No access", func(t *ftt.Test) {
 			_, err := impl.ListInstances(ctx, &api.ListInstancesRequest{
 				Package: "z",
 			})
-			So(status.Code(err), ShouldEqual, codes.PermissionDenied)
+			assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
 		})
 
-		Convey("No package", func() {
+		t.Run("No package", func(t *ftt.Test) {
 			_, err := impl.ListInstances(ctx, &api.ListInstancesRequest{
 				Package: "a/missing",
 			})
-			So(status.Code(err), ShouldEqual, codes.NotFound)
+			assert.Loosely(t, status.Code(err), should.Equal(codes.NotFound))
 		})
 
-		Convey("Empty listing", func() {
+		t.Run("Empty listing", func(t *ftt.Test) {
 			res, err := impl.ListInstances(ctx, &api.ListInstancesRequest{
 				Package: "a/empty",
 			})
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, &api.ListInstancesResponse{})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(&api.ListInstancesResponse{}))
 		})
 
-		Convey("Full listing (no pagination)", func() {
+		t.Run("Full listing (no pagination)", func(t *ftt.Test) {
 			res, err := impl.ListInstances(ctx, &api.ListInstancesRequest{
 				Package: "a/b",
 			})
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, &api.ListInstancesResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(&api.ListInstancesResponse{
 				Instances: []*api.Instance{inst(3), inst(2), inst(1), inst(0)},
-			})
+			}))
 		})
 
-		Convey("Listing with pagination", func() {
+		t.Run("Listing with pagination", func(t *ftt.Test) {
 			// First page.
 			res, err := impl.ListInstances(ctx, &api.ListInstancesRequest{
 				Package:  "a/b",
 				PageSize: 3,
 			})
-			So(err, ShouldBeNil)
-			So(res.Instances, ShouldResembleProto, []*api.Instance{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.Instances, should.Resemble([]*api.Instance{
 				inst(3), inst(2), inst(1),
-			})
-			So(res.NextPageToken, ShouldNotEqual, "")
+			}))
+			assert.Loosely(t, res.NextPageToken, should.NotEqual(""))
 
 			// Second page.
 			res, err = impl.ListInstances(ctx, &api.ListInstancesRequest{
@@ -1403,10 +1406,10 @@ func TestListInstances(t *testing.T) {
 				PageSize:  3,
 				PageToken: res.NextPageToken,
 			})
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, &api.ListInstancesResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(&api.ListInstancesResponse{
 				Instances: []*api.Instance{inst(0)},
-			})
+			}))
 		})
 	})
 }
@@ -1414,7 +1417,7 @@ func TestListInstances(t *testing.T) {
 func TestSearchInstances(t *testing.T) {
 	t.Parallel()
 
-	Convey("With fakes", t, func() {
+	ftt.Run("With fakes", t, func(t *ftt.Test) {
 		ctx, _, as := testutil.TestingContext()
 		ctx = as("reader@example.com")
 
@@ -1428,7 +1431,7 @@ func TestSearchInstances(t *testing.T) {
 			},
 		})
 
-		So(datastore.Put(ctx, &model.Package{Name: "a/b"}), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, &model.Package{Name: "a/b"}), should.BeNil)
 
 		put := func(when int, iid string, tags ...string) {
 			inst := &model.Instance{
@@ -1437,15 +1440,15 @@ func TestSearchInstances(t *testing.T) {
 				RegisteredTs: testutil.TestTime.Add(time.Duration(when) * time.Second),
 			}
 			ents := make([]*model.Tag, len(tags))
-			for i, t := range tags {
+			for i, mTag := range tags {
 				ents[i] = &model.Tag{
-					ID:           model.TagID(common.MustParseInstanceTag(t)),
+					ID:           model.TagID(common.MustParseInstanceTag(mTag)),
 					Instance:     datastore.KeyForObj(ctx, inst),
-					Tag:          t,
+					Tag:          mTag,
 					RegisteredTs: testutil.TestTime.Add(time.Duration(when) * time.Second),
 				}
 			}
-			So(datastore.Put(ctx, inst, ents), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, inst, ents), should.BeNil)
 		}
 
 		iid := func(i int) string {
@@ -1469,94 +1472,94 @@ func TestSearchInstances(t *testing.T) {
 
 		impl := repoImpl{meta: &meta}
 
-		Convey("Bad package name", func() {
+		t.Run("Bad package name", func(t *ftt.Test) {
 			_, err := impl.SearchInstances(ctx, &api.SearchInstancesRequest{
 				Package: "///",
 			})
-			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-			So(err, ShouldErrLike, "invalid package name")
+			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("invalid package name"))
 		})
 
-		Convey("Bad page size", func() {
+		t.Run("Bad page size", func(t *ftt.Test) {
 			_, err := impl.SearchInstances(ctx, &api.SearchInstancesRequest{
 				Package:  "a/b",
 				PageSize: -1,
 			})
-			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-			So(err, ShouldErrLike, "it should be non-negative")
+			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("it should be non-negative"))
 		})
 
-		Convey("Bad page token", func() {
+		t.Run("Bad page token", func(t *ftt.Test) {
 			_, err := impl.SearchInstances(ctx, &api.SearchInstancesRequest{
 				Package:   "a/b",
 				PageToken: "zzzz",
 			})
-			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-			So(err, ShouldErrLike, "invalid cursor")
+			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("invalid cursor"))
 		})
 
-		Convey("No tags specified", func() {
+		t.Run("No tags specified", func(t *ftt.Test) {
 			_, err := impl.SearchInstances(ctx, &api.SearchInstancesRequest{
 				Package: "a/b",
 			})
-			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-			So(err, ShouldErrLike, "bad 'tags': cannot be empty")
+			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("bad 'tags': cannot be empty"))
 		})
 
-		Convey("Bad tag given", func() {
+		t.Run("Bad tag given", func(t *ftt.Test) {
 			_, err := impl.SearchInstances(ctx, &api.SearchInstancesRequest{
 				Package: "a/b",
 				Tags:    []*api.Tag{{Key: "", Value: "zz"}},
 			})
-			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-			So(err, ShouldErrLike, `bad tag in 'tags': invalid tag key in ":zz"`)
+			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike(`bad tag in 'tags': invalid tag key in ":zz"`))
 		})
 
-		Convey("No access", func() {
+		t.Run("No access", func(t *ftt.Test) {
 			_, err := impl.SearchInstances(ctx, &api.SearchInstancesRequest{
 				Package: "z",
 				Tags:    []*api.Tag{{Key: "a", Value: "b"}},
 			})
-			So(status.Code(err), ShouldEqual, codes.PermissionDenied)
+			assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
 		})
 
-		Convey("No package", func() {
+		t.Run("No package", func(t *ftt.Test) {
 			_, err := impl.SearchInstances(ctx, &api.SearchInstancesRequest{
 				Package: "a/missing",
 				Tags:    []*api.Tag{{Key: "a", Value: "b"}},
 			})
-			So(status.Code(err), ShouldEqual, codes.NotFound)
+			assert.Loosely(t, status.Code(err), should.Equal(codes.NotFound))
 		})
 
-		Convey("Empty results", func() {
+		t.Run("Empty results", func(t *ftt.Test) {
 			out, err := impl.SearchInstances(ctx, &api.SearchInstancesRequest{
 				Package: "a/b",
 				Tags:    []*api.Tag{{Key: "a", Value: "missing"}},
 			})
-			So(err, ShouldBeNil)
-			So(ids(out.Instances), ShouldHaveLength, 0)
-			So(out.NextPageToken, ShouldEqual, "")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ids(out.Instances), should.HaveLength(0))
+			assert.Loosely(t, out.NextPageToken, should.BeEmpty)
 		})
 
-		Convey("Full listing (no pagination)", func() {
+		t.Run("Full listing (no pagination)", func(t *ftt.Test) {
 			out, err := impl.SearchInstances(ctx, &api.SearchInstancesRequest{
 				Package: "a/b",
 				Tags:    []*api.Tag{{Key: "a", Value: "b"}},
 			})
-			So(err, ShouldBeNil)
-			So(ids(out.Instances), ShouldResemble, expectedIIDs)
-			So(out.NextPageToken, ShouldEqual, "")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ids(out.Instances), should.Resemble(expectedIIDs))
+			assert.Loosely(t, out.NextPageToken, should.BeEmpty)
 		})
 
-		Convey("Listing with pagination", func() {
+		t.Run("Listing with pagination", func(t *ftt.Test) {
 			out, err := impl.SearchInstances(ctx, &api.SearchInstancesRequest{
 				Package:  "a/b",
 				Tags:     []*api.Tag{{Key: "a", Value: "b"}},
 				PageSize: 6,
 			})
-			So(err, ShouldBeNil)
-			So(ids(out.Instances), ShouldResemble, expectedIIDs[:6])
-			So(out.NextPageToken, ShouldNotEqual, "")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ids(out.Instances), should.Resemble(expectedIIDs[:6]))
+			assert.Loosely(t, out.NextPageToken, should.NotEqual(""))
 
 			out, err = impl.SearchInstances(ctx, &api.SearchInstancesRequest{
 				Package:   "a/b",
@@ -1564,9 +1567,9 @@ func TestSearchInstances(t *testing.T) {
 				PageSize:  6,
 				PageToken: out.NextPageToken,
 			})
-			So(err, ShouldBeNil)
-			So(ids(out.Instances), ShouldResemble, expectedIIDs[6:])
-			So(out.NextPageToken, ShouldEqual, "")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ids(out.Instances), should.Resemble(expectedIIDs[6:]))
+			assert.Loosely(t, out.NextPageToken, should.BeEmpty)
 		})
 	})
 }
@@ -1577,7 +1580,7 @@ func TestSearchInstances(t *testing.T) {
 func TestRefs(t *testing.T) {
 	t.Parallel()
 
-	Convey("With fakes", t, func() {
+	ftt.Run("With fakes", t, func(t *ftt.Test) {
 		ctx, _, as := testutil.TestingContext()
 		ctx = as("writer@example.com")
 
@@ -1592,14 +1595,14 @@ func TestRefs(t *testing.T) {
 		})
 
 		putInst := func(pkg, iid string, pendingProcs, failedProcs []string) {
-			So(datastore.Put(ctx,
+			assert.Loosely(t, datastore.Put(ctx,
 				&model.Package{Name: pkg},
 				&model.Instance{
 					InstanceID:        iid,
 					Package:           model.PackageKey(ctx, pkg),
 					ProcessorsPending: pendingProcs,
 					ProcessorsFailure: failedProcs,
-				}), ShouldBeNil)
+				}), should.BeNil)
 		}
 
 		digest := strings.Repeat("a", 40)
@@ -1607,7 +1610,7 @@ func TestRefs(t *testing.T) {
 
 		impl := repoImpl{meta: &meta}
 
-		Convey("CreateRef/ListRefs/DeleteRef happy path", func() {
+		t.Run("CreateRef/ListRefs/DeleteRef happy path", func(t *ftt.Test) {
 			_, err := impl.CreateRef(ctx, &api.Ref{
 				Name:    "latest",
 				Package: "a/b/c",
@@ -1616,12 +1619,12 @@ func TestRefs(t *testing.T) {
 					HexDigest: digest,
 				},
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// Can be listed now.
 			refs, err := impl.ListRefs(ctx, &api.ListRefsRequest{Package: "a/b/c"})
-			So(err, ShouldBeNil)
-			So(refs.Refs, ShouldResembleProto, []*api.Ref{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, refs.Refs, should.Resemble([]*api.Ref{
 				{
 					Name:    "latest",
 					Package: "a/b/c",
@@ -1632,22 +1635,22 @@ func TestRefs(t *testing.T) {
 					ModifiedBy: "user:writer@example.com",
 					ModifiedTs: timestamppb.New(testutil.TestTime),
 				},
-			})
+			}))
 
 			_, err = impl.DeleteRef(ctx, &api.DeleteRefRequest{
 				Name:    "latest",
 				Package: "a/b/c",
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// Missing now.
 			refs, err = impl.ListRefs(ctx, &api.ListRefsRequest{Package: "a/b/c"})
-			So(err, ShouldBeNil)
-			So(refs.Refs, ShouldHaveLength, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, refs.Refs, should.HaveLength(0))
 		})
 
-		Convey("Bad ref", func() {
-			Convey("CreateRef", func() {
+		t.Run("Bad ref", func(t *ftt.Test) {
+			t.Run("CreateRef", func(t *ftt.Test) {
 				_, err := impl.CreateRef(ctx, &api.Ref{
 					Name:    "bad:ref:name",
 					Package: "a/b/c",
@@ -1656,21 +1659,21 @@ func TestRefs(t *testing.T) {
 						HexDigest: digest,
 					},
 				})
-				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-				So(err, ShouldErrLike, "bad 'name'")
+				assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("bad 'name'"))
 			})
-			Convey("DeleteRef", func() {
+			t.Run("DeleteRef", func(t *ftt.Test) {
 				_, err := impl.DeleteRef(ctx, &api.DeleteRefRequest{
 					Name:    "bad:ref:name",
 					Package: "a/b/c",
 				})
-				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-				So(err, ShouldErrLike, "bad 'name'")
+				assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("bad 'name'"))
 			})
 		})
 
-		Convey("Bad package name", func() {
-			Convey("CreateRef", func() {
+		t.Run("Bad package name", func(t *ftt.Test) {
+			t.Run("CreateRef", func(t *ftt.Test) {
 				_, err := impl.CreateRef(ctx, &api.Ref{
 					Name:    "latest",
 					Package: "///",
@@ -1679,28 +1682,28 @@ func TestRefs(t *testing.T) {
 						HexDigest: digest,
 					},
 				})
-				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-				So(err, ShouldErrLike, "bad 'package'")
+				assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("bad 'package'"))
 			})
-			Convey("DeleteRef", func() {
+			t.Run("DeleteRef", func(t *ftt.Test) {
 				_, err := impl.DeleteRef(ctx, &api.DeleteRefRequest{
 					Name:    "latest",
 					Package: "///",
 				})
-				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-				So(err, ShouldErrLike, "bad 'package'")
+				assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("bad 'package'"))
 			})
-			Convey("ListRefs", func() {
+			t.Run("ListRefs", func(t *ftt.Test) {
 				_, err := impl.ListRefs(ctx, &api.ListRefsRequest{
 					Package: "///",
 				})
-				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-				So(err, ShouldErrLike, "bad 'package'")
+				assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("bad 'package'"))
 			})
 		})
 
-		Convey("No access", func() {
-			Convey("CreateRef", func() {
+		t.Run("No access", func(t *ftt.Test) {
+			t.Run("CreateRef", func(t *ftt.Test) {
 				_, err := impl.CreateRef(ctx, &api.Ref{
 					Name:    "latest",
 					Package: "z",
@@ -1709,28 +1712,28 @@ func TestRefs(t *testing.T) {
 						HexDigest: digest,
 					},
 				})
-				So(status.Code(err), ShouldEqual, codes.PermissionDenied)
-				So(err, ShouldErrLike, "is not allowed to see it")
+				assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("is not allowed to see it"))
 			})
-			Convey("DeleteRef", func() {
+			t.Run("DeleteRef", func(t *ftt.Test) {
 				_, err := impl.DeleteRef(ctx, &api.DeleteRefRequest{
 					Name:    "latest",
 					Package: "z",
 				})
-				So(status.Code(err), ShouldEqual, codes.PermissionDenied)
-				So(err, ShouldErrLike, "is not allowed to see it")
+				assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("is not allowed to see it"))
 			})
-			Convey("ListRefs", func() {
+			t.Run("ListRefs", func(t *ftt.Test) {
 				_, err := impl.ListRefs(ctx, &api.ListRefsRequest{
 					Package: "z",
 				})
-				So(status.Code(err), ShouldEqual, codes.PermissionDenied)
-				So(err, ShouldErrLike, "is not allowed to see it")
+				assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("is not allowed to see it"))
 			})
 		})
 
-		Convey("Missing package", func() {
-			Convey("CreateRef", func() {
+		t.Run("Missing package", func(t *ftt.Test) {
+			t.Run("CreateRef", func(t *ftt.Test) {
 				_, err := impl.CreateRef(ctx, &api.Ref{
 					Name:    "latest",
 					Package: "a/b/z",
@@ -1739,27 +1742,27 @@ func TestRefs(t *testing.T) {
 						HexDigest: digest,
 					},
 				})
-				So(status.Code(err), ShouldEqual, codes.NotFound)
-				So(err, ShouldErrLike, "no such package")
+				assert.Loosely(t, status.Code(err), should.Equal(codes.NotFound))
+				assert.Loosely(t, err, should.ErrLike("no such package"))
 			})
-			Convey("DeleteRef", func() {
+			t.Run("DeleteRef", func(t *ftt.Test) {
 				_, err := impl.DeleteRef(ctx, &api.DeleteRefRequest{
 					Name:    "latest",
 					Package: "a/b/z",
 				})
-				So(status.Code(err), ShouldEqual, codes.NotFound)
-				So(err, ShouldErrLike, "no such package")
+				assert.Loosely(t, status.Code(err), should.Equal(codes.NotFound))
+				assert.Loosely(t, err, should.ErrLike("no such package"))
 			})
-			Convey("ListRefs", func() {
+			t.Run("ListRefs", func(t *ftt.Test) {
 				_, err := impl.ListRefs(ctx, &api.ListRefsRequest{
 					Package: "a/b/z",
 				})
-				So(status.Code(err), ShouldEqual, codes.NotFound)
-				So(err, ShouldErrLike, "no such package")
+				assert.Loosely(t, status.Code(err), should.Equal(codes.NotFound))
+				assert.Loosely(t, err, should.ErrLike("no such package"))
 			})
 		})
 
-		Convey("Bad instance", func() {
+		t.Run("Bad instance", func(t *ftt.Test) {
 			_, err := impl.CreateRef(ctx, &api.Ref{
 				Name:    "latest",
 				Package: "a/b/c",
@@ -1768,11 +1771,11 @@ func TestRefs(t *testing.T) {
 					HexDigest: "123",
 				},
 			})
-			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-			So(err, ShouldErrLike, "bad 'instance'")
+			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("bad 'instance'"))
 		})
 
-		Convey("Missing instance", func() {
+		t.Run("Missing instance", func(t *ftt.Test) {
 			_, err := impl.CreateRef(ctx, &api.Ref{
 				Name:    "latest",
 				Package: "a/b/c",
@@ -1781,11 +1784,11 @@ func TestRefs(t *testing.T) {
 					HexDigest: strings.Repeat("b", 40),
 				},
 			})
-			So(status.Code(err), ShouldEqual, codes.NotFound)
-			So(err, ShouldErrLike, "no such instance")
+			assert.Loosely(t, status.Code(err), should.Equal(codes.NotFound))
+			assert.Loosely(t, err, should.ErrLike("no such instance"))
 		})
 
-		Convey("Instance is not ready yet", func() {
+		t.Run("Instance is not ready yet", func(t *ftt.Test) {
 			putInst("a/b/c", digest, []string{"proc"}, nil)
 			_, err := impl.CreateRef(ctx, &api.Ref{
 				Name:    "latest",
@@ -1795,11 +1798,11 @@ func TestRefs(t *testing.T) {
 					HexDigest: digest,
 				},
 			})
-			So(status.Code(err), ShouldEqual, codes.FailedPrecondition)
-			So(err, ShouldErrLike, "the instance is not ready yet, pending processors: proc")
+			assert.Loosely(t, status.Code(err), should.Equal(codes.FailedPrecondition))
+			assert.Loosely(t, err, should.ErrLike("the instance is not ready yet, pending processors: proc"))
 		})
 
-		Convey("Failed processors", func() {
+		t.Run("Failed processors", func(t *ftt.Test) {
 			putInst("a/b/c", digest, nil, []string{"proc"})
 			_, err := impl.CreateRef(ctx, &api.Ref{
 				Name:    "latest",
@@ -1809,8 +1812,8 @@ func TestRefs(t *testing.T) {
 					HexDigest: digest,
 				},
 			})
-			So(status.Code(err), ShouldEqual, codes.Aborted)
-			So(err, ShouldErrLike, "some processors failed to process this instance: proc")
+			assert.Loosely(t, status.Code(err), should.Equal(codes.Aborted))
+			assert.Loosely(t, err, should.ErrLike("some processors failed to process this instance: proc"))
 		})
 	})
 }
@@ -1821,7 +1824,7 @@ func TestRefs(t *testing.T) {
 func TestTags(t *testing.T) {
 	t.Parallel()
 
-	Convey("With fakes", t, func() {
+	ftt.Run("With fakes", t, func(t *ftt.Test) {
 		ctx, _, as := testutil.TestingContext()
 
 		meta := testutil.MetadataStore{}
@@ -1849,26 +1852,26 @@ func TestTags(t *testing.T) {
 				ProcessorsPending: pendingProcs,
 				ProcessorsFailure: failedProcs,
 			}
-			So(datastore.Put(ctx, &model.Package{Name: pkg}, inst), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, &model.Package{Name: pkg}, inst), should.BeNil)
 			return inst
 		}
 
 		getTag := func(inst *model.Instance, tag string) *model.Tag {
-			t := &model.Tag{
+			mTag := &model.Tag{
 				ID:       model.TagID(common.MustParseInstanceTag(tag)),
 				Instance: datastore.KeyForObj(ctx, inst),
 			}
-			err := datastore.Get(ctx, t)
+			err := datastore.Get(ctx, mTag)
 			if err == datastore.ErrNoSuchEntity {
 				return nil
 			}
-			So(err, ShouldBeNil)
-			return t
+			assert.Loosely(t, err, should.BeNil)
+			return mTag
 		}
 
-		tags := func(t ...string) []*api.Tag {
-			out := make([]*api.Tag, len(t))
-			for i, s := range t {
+		tags := func(tag ...string) []*api.Tag {
+			out := make([]*api.Tag, len(tag))
+			for i, s := range tag {
 				out[i] = common.MustParseInstanceTag(s)
 			}
 			return out
@@ -1883,17 +1886,17 @@ func TestTags(t *testing.T) {
 
 		impl := repoImpl{meta: &meta}
 
-		Convey("AttachTags/DetachTags happy path", func() {
+		t.Run("AttachTags/DetachTags happy path", func(t *ftt.Test) {
 			_, err := impl.AttachTags(as("writer@example.com"), &api.AttachTagsRequest{
 				Package:  "a/b/c",
 				Instance: objRef,
 				Tags:     tags("a:0", "a:1"),
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// Attached both.
-			So(getTag(inst, "a:0").RegisteredBy, ShouldEqual, "user:writer@example.com")
-			So(getTag(inst, "a:1").RegisteredBy, ShouldEqual, "user:writer@example.com")
+			assert.Loosely(t, getTag(inst, "a:0").RegisteredBy, should.Equal("user:writer@example.com"))
+			assert.Loosely(t, getTag(inst, "a:1").RegisteredBy, should.Equal("user:writer@example.com"))
 
 			// Detaching requires OWNER.
 			_, err = impl.DetachTags(as("owner@example.com"), &api.DetachTagsRequest{
@@ -1901,158 +1904,158 @@ func TestTags(t *testing.T) {
 				Instance: objRef,
 				Tags:     tags("a:0", "a:1", "a:missing"),
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// Missing now.
-			So(getTag(inst, "a:0"), ShouldBeNil)
-			So(getTag(inst, "a:1"), ShouldBeNil)
+			assert.Loosely(t, getTag(inst, "a:0"), should.BeNil)
+			assert.Loosely(t, getTag(inst, "a:1"), should.BeNil)
 		})
 
-		Convey("Bad package", func() {
-			Convey("AttachTags", func() {
+		t.Run("Bad package", func(t *ftt.Test) {
+			t.Run("AttachTags", func(t *ftt.Test) {
 				_, err := impl.AttachTags(as("owner@example.com"), &api.AttachTagsRequest{
 					Package:  "a/b///",
 					Instance: objRef,
 					Tags:     tags("a:0"),
 				})
-				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-				So(err, ShouldErrLike, "bad 'package'")
+				assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("bad 'package'"))
 			})
-			Convey("DetachTags", func() {
+			t.Run("DetachTags", func(t *ftt.Test) {
 				_, err := impl.DetachTags(as("owner@example.com"), &api.DetachTagsRequest{
 					Package:  "a/b///",
 					Instance: objRef,
 					Tags:     tags("a:0"),
 				})
-				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-				So(err, ShouldErrLike, "bad 'package'")
+				assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("bad 'package'"))
 			})
 		})
 
-		Convey("Bad ObjectRef", func() {
-			Convey("AttachTags", func() {
+		t.Run("Bad ObjectRef", func(t *ftt.Test) {
+			t.Run("AttachTags", func(t *ftt.Test) {
 				_, err := impl.AttachTags(as("owner@example.com"), &api.AttachTagsRequest{
 					Package: "a/b/c",
 					Tags:    tags("a:0"),
 				})
-				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-				So(err, ShouldErrLike, "bad 'instance'")
+				assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("bad 'instance'"))
 			})
-			Convey("DetachTags", func() {
+			t.Run("DetachTags", func(t *ftt.Test) {
 				_, err := impl.DetachTags(as("owner@example.com"), &api.DetachTagsRequest{
 					Package: "a/b/c",
 					Tags:    tags("a:0"),
 				})
-				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-				So(err, ShouldErrLike, "bad 'instance'")
+				assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("bad 'instance'"))
 			})
 		})
 
-		Convey("Empty tag list", func() {
-			Convey("AttachTags", func() {
+		t.Run("Empty tag list", func(t *ftt.Test) {
+			t.Run("AttachTags", func(t *ftt.Test) {
 				_, err := impl.AttachTags(as("owner@example.com"), &api.AttachTagsRequest{
 					Package:  "a/b/c",
 					Instance: objRef,
 				})
-				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-				So(err, ShouldErrLike, "cannot be empty")
+				assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("cannot be empty"))
 			})
-			Convey("DetachTags", func() {
+			t.Run("DetachTags", func(t *ftt.Test) {
 				_, err := impl.DetachTags(as("owner@example.com"), &api.DetachTagsRequest{
 					Package:  "a/b/c",
 					Instance: objRef,
 				})
-				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-				So(err, ShouldErrLike, "cannot be empty")
+				assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("cannot be empty"))
 			})
 		})
 
-		Convey("Bad tag", func() {
-			Convey("AttachTags", func() {
+		t.Run("Bad tag", func(t *ftt.Test) {
+			t.Run("AttachTags", func(t *ftt.Test) {
 				_, err := impl.AttachTags(as("owner@example.com"), &api.AttachTagsRequest{
 					Package:  "a/b/c",
 					Instance: objRef,
 					Tags:     []*api.Tag{{Key: ":"}},
 				})
-				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-				So(err, ShouldErrLike, `invalid tag key`)
+				assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike(`invalid tag key`))
 			})
-			Convey("DetachTags", func() {
+			t.Run("DetachTags", func(t *ftt.Test) {
 				_, err := impl.DetachTags(as("owner@example.com"), &api.DetachTagsRequest{
 					Package:  "a/b/c",
 					Instance: objRef,
 					Tags:     []*api.Tag{{Key: ":"}},
 				})
-				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-				So(err, ShouldErrLike, `invalid tag key`)
+				assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike(`invalid tag key`))
 			})
 		})
 
-		Convey("No access", func() {
-			Convey("AttachTags", func() {
+		t.Run("No access", func(t *ftt.Test) {
+			t.Run("AttachTags", func(t *ftt.Test) {
 				_, err := impl.AttachTags(as("reader@example.com"), &api.AttachTagsRequest{
 					Package:  "a/b/c",
 					Instance: objRef,
 					Tags:     tags("good:tag"),
 				})
-				So(status.Code(err), ShouldEqual, codes.PermissionDenied)
-				So(err, ShouldErrLike, "has no required WRITER role")
+				assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("has no required WRITER role"))
 			})
-			Convey("DetachTags", func() {
+			t.Run("DetachTags", func(t *ftt.Test) {
 				_, err := impl.DetachTags(as("writer@example.com"), &api.DetachTagsRequest{
 					Package:  "a/b/c",
 					Instance: objRef,
 					Tags:     tags("good:tag"),
 				})
-				So(status.Code(err), ShouldEqual, codes.PermissionDenied)
-				So(err, ShouldErrLike, "has no required OWNER role")
+				assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("has no required OWNER role"))
 			})
 		})
 
-		Convey("Missing package", func() {
-			Convey("AttachTags", func() {
+		t.Run("Missing package", func(t *ftt.Test) {
+			t.Run("AttachTags", func(t *ftt.Test) {
 				_, err := impl.AttachTags(as("owner@example.com"), &api.AttachTagsRequest{
 					Package:  "a/b/zzz",
 					Instance: objRef,
 					Tags:     tags("a:0"),
 				})
-				So(status.Code(err), ShouldEqual, codes.NotFound)
-				So(err, ShouldErrLike, "no such package")
+				assert.Loosely(t, status.Code(err), should.Equal(codes.NotFound))
+				assert.Loosely(t, err, should.ErrLike("no such package"))
 			})
-			Convey("DetachTags", func() {
+			t.Run("DetachTags", func(t *ftt.Test) {
 				_, err := impl.DetachTags(as("owner@example.com"), &api.DetachTagsRequest{
 					Package:  "a/b/zzz",
 					Instance: objRef,
 					Tags:     tags("a:0"),
 				})
-				So(status.Code(err), ShouldEqual, codes.NotFound)
-				So(err, ShouldErrLike, "no such package")
+				assert.Loosely(t, status.Code(err), should.Equal(codes.NotFound))
+				assert.Loosely(t, err, should.ErrLike("no such package"))
 			})
 		})
 
-		Convey("Missing instance", func() {
+		t.Run("Missing instance", func(t *ftt.Test) {
 			missingRef := &api.ObjectRef{
 				HashAlgo:  api.HashAlgo_SHA1,
 				HexDigest: strings.Repeat("b", 40),
 			}
-			Convey("AttachTags", func() {
+			t.Run("AttachTags", func(t *ftt.Test) {
 				_, err := impl.AttachTags(as("owner@example.com"), &api.AttachTagsRequest{
 					Package:  "a/b/c",
 					Instance: missingRef,
 					Tags:     tags("a:0"),
 				})
-				So(status.Code(err), ShouldEqual, codes.NotFound)
-				So(err, ShouldErrLike, "no such instance")
+				assert.Loosely(t, status.Code(err), should.Equal(codes.NotFound))
+				assert.Loosely(t, err, should.ErrLike("no such instance"))
 			})
-			Convey("DetachTags", func() {
+			t.Run("DetachTags", func(t *ftt.Test) {
 				// DetachTags doesn't care.
 				_, err := impl.DetachTags(as("owner@example.com"), &api.DetachTagsRequest{
 					Package:  "a/b/c",
 					Instance: missingRef,
 					Tags:     tags("a:0"),
 				})
-				So(status.Code(err), ShouldEqual, codes.NotFound)
-				So(err, ShouldErrLike, "no such instance")
+				assert.Loosely(t, status.Code(err), should.Equal(codes.NotFound))
+				assert.Loosely(t, err, should.ErrLike("no such instance"))
 			})
 		})
 	})
@@ -2064,7 +2067,7 @@ func TestTags(t *testing.T) {
 func TestInstanceMetadata(t *testing.T) {
 	t.Parallel()
 
-	Convey("With fakes", t, func() {
+	ftt.Run("With fakes", t, func(t *ftt.Test) {
 		ctx, _, as := testutil.TestingContext()
 
 		meta := testutil.MetadataStore{}
@@ -2092,19 +2095,19 @@ func TestInstanceMetadata(t *testing.T) {
 				ProcessorsPending: pendingProcs,
 				ProcessorsFailure: failedProcs,
 			}
-			So(datastore.Put(ctx, &model.Package{Name: pkg}, inst), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, &model.Package{Name: pkg}, inst), should.BeNil)
 			return inst
 		}
 
 		getMD := func(inst *model.Instance, kv string) *model.InstanceMetadata {
 			split := strings.SplitN(kv, ":", 2)
-			t := &model.InstanceMetadata{
+			meta := &model.InstanceMetadata{
 				Fingerprint: common.InstanceMetadataFingerprint(split[0], []byte(split[1])),
 				Instance:    datastore.KeyForObj(ctx, inst),
 			}
-			if err := datastore.Get(ctx, t); err != datastore.ErrNoSuchEntity {
-				So(err, ShouldBeNil)
-				return t
+			if err := datastore.Get(ctx, meta); err != datastore.ErrNoSuchEntity {
+				assert.Loosely(t, err, should.BeNil)
+				return meta
 			}
 			return nil
 		}
@@ -2130,25 +2133,25 @@ func TestInstanceMetadata(t *testing.T) {
 
 		impl := repoImpl{meta: &meta}
 
-		Convey("AttachMetadata/DetachMetadata/ListMetadata happy path", func() {
+		t.Run("AttachMetadata/DetachMetadata/ListMetadata happy path", func(t *ftt.Test) {
 			_, err := impl.AttachMetadata(as("writer@example.com"), &api.AttachMetadataRequest{
 				Package:  "a/b/c",
 				Instance: objRef,
 				Metadata: md("k0:0", "k1:1"),
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// Attached both.
-			So(getMD(inst, "k0:0").AttachedBy, ShouldEqual, "user:writer@example.com")
-			So(getMD(inst, "k1:1").AttachedBy, ShouldEqual, "user:writer@example.com")
+			assert.Loosely(t, getMD(inst, "k0:0").AttachedBy, should.Equal("user:writer@example.com"))
+			assert.Loosely(t, getMD(inst, "k1:1").AttachedBy, should.Equal("user:writer@example.com"))
 
 			// Can retrieve it all.
 			resp, err := impl.ListMetadata(as("reader@example.com"), &api.ListMetadataRequest{
 				Package:  "a/b/c",
 				Instance: objRef,
 			})
-			So(err, ShouldBeNil)
-			So(resp.Metadata, ShouldHaveLength, 2)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp.Metadata, should.HaveLength(2))
 
 			// Can retrieve an individual key.
 			resp, err = impl.ListMetadata(as("reader@example.com"), &api.ListMetadataRequest{
@@ -2156,8 +2159,8 @@ func TestInstanceMetadata(t *testing.T) {
 				Instance: objRef,
 				Keys:     []string{"k0"},
 			})
-			So(err, ShouldBeNil)
-			So(resp.Metadata, ShouldHaveLength, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp.Metadata, should.HaveLength(1))
 
 			// Detaching requires OWNER. Detach one by giving a KV pair, and another
 			// via its fingerprint.
@@ -2174,139 +2177,139 @@ func TestInstanceMetadata(t *testing.T) {
 					},
 				},
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// Missing now.
-			So(getMD(inst, "k0:0"), ShouldBeNil)
-			So(getMD(inst, "k1:1"), ShouldBeNil)
+			assert.Loosely(t, getMD(inst, "k0:0"), should.BeNil)
+			assert.Loosely(t, getMD(inst, "k1:1"), should.BeNil)
 		})
 
-		Convey("Bad package", func() {
-			Convey("AttachMetadata", func() {
+		t.Run("Bad package", func(t *ftt.Test) {
+			t.Run("AttachMetadata", func(t *ftt.Test) {
 				_, err := impl.AttachMetadata(as("writer@example.com"), &api.AttachMetadataRequest{
 					Package:  "a/b//",
 					Instance: objRef,
 					Metadata: md("k:0", "k:1"),
 				})
-				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-				So(err, ShouldErrLike, "bad 'package'")
+				assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("bad 'package'"))
 			})
-			Convey("DetachMetadata", func() {
+			t.Run("DetachMetadata", func(t *ftt.Test) {
 				_, err := impl.DetachMetadata(as("owner@example.com"), &api.DetachMetadataRequest{
 					Package:  "a/b//",
 					Instance: objRef,
 					Metadata: md("k:0", "k:1"),
 				})
-				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-				So(err, ShouldErrLike, "bad 'package'")
+				assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("bad 'package'"))
 			})
-			Convey("ListMetadata", func() {
+			t.Run("ListMetadata", func(t *ftt.Test) {
 				_, err := impl.ListMetadata(as("reader@example.com"), &api.ListMetadataRequest{
 					Package:  "a/b//",
 					Instance: objRef,
 				})
-				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-				So(err, ShouldErrLike, "bad 'package'")
+				assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("bad 'package'"))
 			})
 		})
 
-		Convey("Bad ObjectRef", func() {
-			Convey("AttachMetadata", func() {
+		t.Run("Bad ObjectRef", func(t *ftt.Test) {
+			t.Run("AttachMetadata", func(t *ftt.Test) {
 				_, err := impl.AttachMetadata(as("writer@example.com"), &api.AttachMetadataRequest{
 					Package:  "a/b/c",
 					Metadata: md("k:0", "k:1"),
 				})
-				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-				So(err, ShouldErrLike, "bad 'instance'")
+				assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("bad 'instance'"))
 			})
-			Convey("DetachMetadata", func() {
+			t.Run("DetachMetadata", func(t *ftt.Test) {
 				_, err := impl.DetachMetadata(as("owner@example.com"), &api.DetachMetadataRequest{
 					Package:  "a/b/c",
 					Metadata: md("k:0", "k:1"),
 				})
-				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-				So(err, ShouldErrLike, "bad 'instance'")
+				assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("bad 'instance'"))
 			})
-			Convey("ListMetadata", func() {
+			t.Run("ListMetadata", func(t *ftt.Test) {
 				_, err := impl.ListMetadata(as("reader@example.com"), &api.ListMetadataRequest{
 					Package: "a/b/c",
 				})
-				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-				So(err, ShouldErrLike, "bad 'instance'")
+				assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("bad 'instance'"))
 			})
 		})
 
-		Convey("Empty metadata list", func() {
-			Convey("AttachMetadata", func() {
+		t.Run("Empty metadata list", func(t *ftt.Test) {
+			t.Run("AttachMetadata", func(t *ftt.Test) {
 				_, err := impl.AttachMetadata(as("writer@example.com"), &api.AttachMetadataRequest{
 					Package:  "a/b/c",
 					Instance: objRef,
 				})
-				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-				So(err, ShouldErrLike, "cannot be empty")
+				assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("cannot be empty"))
 			})
-			Convey("DetachMetadata", func() {
+			t.Run("DetachMetadata", func(t *ftt.Test) {
 				_, err := impl.DetachMetadata(as("owner@example.com"), &api.DetachMetadataRequest{
 					Package:  "a/b/c",
 					Instance: objRef,
 				})
-				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-				So(err, ShouldErrLike, "cannot be empty")
+				assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("cannot be empty"))
 			})
 		})
 
-		Convey("Bad metadata key", func() {
-			Convey("AttachMetadata", func() {
+		t.Run("Bad metadata key", func(t *ftt.Test) {
+			t.Run("AttachMetadata", func(t *ftt.Test) {
 				_, err := impl.AttachMetadata(as("writer@example.com"), &api.AttachMetadataRequest{
 					Package:  "a/b/c",
 					Instance: objRef,
 					Metadata: md("ZZZ:0"),
 				})
-				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-				So(err, ShouldErrLike, `invalid metadata key`)
+				assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike(`invalid metadata key`))
 			})
-			Convey("DetachMetadata", func() {
+			t.Run("DetachMetadata", func(t *ftt.Test) {
 				_, err := impl.DetachMetadata(as("owner@example.com"), &api.DetachMetadataRequest{
 					Package:  "a/b/c",
 					Instance: objRef,
 					Metadata: md("ZZZ:0"),
 				})
-				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-				So(err, ShouldErrLike, `invalid metadata key`)
+				assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike(`invalid metadata key`))
 			})
-			Convey("ListMetadata", func() {
+			t.Run("ListMetadata", func(t *ftt.Test) {
 				_, err := impl.ListMetadata(as("reader@example.com"), &api.ListMetadataRequest{
 					Package:  "a/b/c",
 					Instance: objRef,
 					Keys:     []string{"ZZZ"},
 				})
-				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-				So(err, ShouldErrLike, `invalid metadata key`)
+				assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike(`invalid metadata key`))
 			})
 		})
 
-		Convey("Bad metadata value", func() {
-			Convey("AttachMetadata", func() {
+		t.Run("Bad metadata value", func(t *ftt.Test) {
+			t.Run("AttachMetadata", func(t *ftt.Test) {
 				_, err := impl.AttachMetadata(as("writer@example.com"), &api.AttachMetadataRequest{
 					Package:  "a/b/c",
 					Instance: objRef,
 					Metadata: md("k:" + strings.Repeat("z", 512*1024+1)),
 				})
-				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-				So(err, ShouldErrLike, `metadata with key "k": the metadata value is too long`)
+				assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike(`metadata with key "k": the metadata value is too long`))
 			})
-			Convey("DetachMetadata", func() {
+			t.Run("DetachMetadata", func(t *ftt.Test) {
 				_, err := impl.DetachMetadata(as("owner@example.com"), &api.DetachMetadataRequest{
 					Package:  "a/b/c",
 					Instance: objRef,
 					Metadata: md("k:" + strings.Repeat("z", 512*1024+1)),
 				})
-				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-				So(err, ShouldErrLike, `metadata with key "k": the metadata value is too long`)
+				assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike(`metadata with key "k": the metadata value is too long`))
 			})
 		})
 
-		Convey("Bad metadata content type in AttachMetadata", func() {
+		t.Run("Bad metadata content type in AttachMetadata", func(t *ftt.Test) {
 			m := md("k:0")
 			m[0].ContentType = "zzz zzz"
 			_, err := impl.AttachMetadata(as("writer@example.com"), &api.AttachMetadataRequest{
@@ -2314,11 +2317,11 @@ func TestInstanceMetadata(t *testing.T) {
 				Instance: objRef,
 				Metadata: m,
 			})
-			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-			So(err, ShouldErrLike, `metadata with key "k": bad content type "zzz zzz`)
+			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike(`metadata with key "k": bad content type "zzz zzz`))
 		})
 
-		Convey("Bad fingerprint in DetachMetadata", func() {
+		t.Run("Bad fingerprint in DetachMetadata", func(t *ftt.Test) {
 			_, err := impl.DetachMetadata(as("owner@example.com"), &api.DetachMetadataRequest{
 				Package:  "a/b/c",
 				Instance: objRef,
@@ -2326,98 +2329,98 @@ func TestInstanceMetadata(t *testing.T) {
 					{Fingerprint: "bad"},
 				},
 			})
-			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-			So(err, ShouldErrLike, `bad metadata fingerprint "bad"`)
+			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike(`bad metadata fingerprint "bad"`))
 		})
 
-		Convey("No access", func() {
-			Convey("AttachMetadata", func() {
+		t.Run("No access", func(t *ftt.Test) {
+			t.Run("AttachMetadata", func(t *ftt.Test) {
 				_, err := impl.AttachMetadata(as("reader@example.com"), &api.AttachMetadataRequest{
 					Package:  "a/b/c",
 					Instance: objRef,
 					Metadata: md("k:0", "k:1"),
 				})
-				So(status.Code(err), ShouldEqual, codes.PermissionDenied)
-				So(err, ShouldErrLike, "has no required WRITER role")
+				assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("has no required WRITER role"))
 			})
-			Convey("DetachMetadata", func() {
+			t.Run("DetachMetadata", func(t *ftt.Test) {
 				_, err := impl.DetachMetadata(as("writer@example.com"), &api.DetachMetadataRequest{
 					Package:  "a/b/c",
 					Instance: objRef,
 					Metadata: md("k:0", "k:1"),
 				})
-				So(status.Code(err), ShouldEqual, codes.PermissionDenied)
-				So(err, ShouldErrLike, "has no required OWNER role")
+				assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("has no required OWNER role"))
 			})
-			Convey("ListMetadata", func() {
+			t.Run("ListMetadata", func(t *ftt.Test) {
 				_, err := impl.ListMetadata(as("unknown@example.com"), &api.ListMetadataRequest{
 					Package:  "a/b/c",
 					Instance: objRef,
 				})
-				So(status.Code(err), ShouldEqual, codes.PermissionDenied)
-				So(err, ShouldErrLike, "is not allowed to see it")
+				assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("is not allowed to see it"))
 			})
 		})
 
-		Convey("Missing package", func() {
-			Convey("AttachMetadata", func() {
+		t.Run("Missing package", func(t *ftt.Test) {
+			t.Run("AttachMetadata", func(t *ftt.Test) {
 				_, err := impl.AttachMetadata(as("writer@example.com"), &api.AttachMetadataRequest{
 					Package:  "a/b/c/missing",
 					Instance: objRef,
 					Metadata: md("k:0", "k:1"),
 				})
-				So(status.Code(err), ShouldEqual, codes.NotFound)
-				So(err, ShouldErrLike, "no such package")
+				assert.Loosely(t, status.Code(err), should.Equal(codes.NotFound))
+				assert.Loosely(t, err, should.ErrLike("no such package"))
 			})
-			Convey("DetachMetadata", func() {
+			t.Run("DetachMetadata", func(t *ftt.Test) {
 				_, err := impl.DetachMetadata(as("owner@example.com"), &api.DetachMetadataRequest{
 					Package:  "a/b/c/missing",
 					Instance: objRef,
 					Metadata: md("k:0", "k:1"),
 				})
-				So(status.Code(err), ShouldEqual, codes.NotFound)
-				So(err, ShouldErrLike, "no such package")
+				assert.Loosely(t, status.Code(err), should.Equal(codes.NotFound))
+				assert.Loosely(t, err, should.ErrLike("no such package"))
 			})
-			Convey("ListMetadata", func() {
+			t.Run("ListMetadata", func(t *ftt.Test) {
 				_, err := impl.ListMetadata(as("reader@example.com"), &api.ListMetadataRequest{
 					Package:  "a/b/c/missing",
 					Instance: objRef,
 				})
-				So(status.Code(err), ShouldEqual, codes.NotFound)
-				So(err, ShouldErrLike, "no such package")
+				assert.Loosely(t, status.Code(err), should.Equal(codes.NotFound))
+				assert.Loosely(t, err, should.ErrLike("no such package"))
 			})
 		})
 
-		Convey("Missing instance", func() {
+		t.Run("Missing instance", func(t *ftt.Test) {
 			missingRef := &api.ObjectRef{
 				HashAlgo:  api.HashAlgo_SHA1,
 				HexDigest: strings.Repeat("b", 40),
 			}
-			Convey("AttachMetadata", func() {
+			t.Run("AttachMetadata", func(t *ftt.Test) {
 				_, err := impl.AttachMetadata(as("writer@example.com"), &api.AttachMetadataRequest{
 					Package:  "a/b/c",
 					Instance: missingRef,
 					Metadata: md("k:0", "k:1"),
 				})
-				So(status.Code(err), ShouldEqual, codes.NotFound)
-				So(err, ShouldErrLike, "no such instance")
+				assert.Loosely(t, status.Code(err), should.Equal(codes.NotFound))
+				assert.Loosely(t, err, should.ErrLike("no such instance"))
 			})
-			Convey("DetachMetadata", func() {
+			t.Run("DetachMetadata", func(t *ftt.Test) {
 				_, err := impl.DetachMetadata(as("owner@example.com"), &api.DetachMetadataRequest{
 					Package:  "a/b/c",
 					Instance: missingRef,
 					Metadata: md("k:0", "k:1"),
 				})
-				So(status.Code(err), ShouldEqual, codes.NotFound)
-				So(err, ShouldErrLike, "no such instance")
+				assert.Loosely(t, status.Code(err), should.Equal(codes.NotFound))
+				assert.Loosely(t, err, should.ErrLike("no such instance"))
 			})
-			Convey("ListMetadata", func() {
+			t.Run("ListMetadata", func(t *ftt.Test) {
 				_, err := impl.ListMetadata(as("reader@example.com"), &api.ListMetadataRequest{
 					Package:  "a/b/c",
 					Instance: missingRef,
 				})
-				So(status.Code(err), ShouldEqual, codes.NotFound)
-				So(err, ShouldErrLike, "no such instance")
+				assert.Loosely(t, status.Code(err), should.Equal(codes.NotFound))
+				assert.Loosely(t, err, should.ErrLike("no such instance"))
 			})
 		})
 	})
@@ -2429,7 +2432,7 @@ func TestInstanceMetadata(t *testing.T) {
 func TestResolveVersion(t *testing.T) {
 	t.Parallel()
 
-	Convey("With fakes", t, func() {
+	ftt.Run("With fakes", t, func(t *ftt.Test) {
 		ctx, _, as := testutil.TestingContext()
 		ctx = as("reader@example.com")
 
@@ -2456,96 +2459,96 @@ func TestResolveVersion(t *testing.T) {
 			RegisteredBy: "user:2@example.com",
 		}
 
-		So(datastore.Put(ctx, pkg, inst1, inst2), ShouldBeNil)
-		So(model.SetRef(ctx, "latest", inst2), ShouldBeNil)
-		So(model.AttachTags(ctx, inst1, []*api.Tag{
+		assert.Loosely(t, datastore.Put(ctx, pkg, inst1, inst2), should.BeNil)
+		assert.Loosely(t, model.SetRef(ctx, "latest", inst2), should.BeNil)
+		assert.Loosely(t, model.AttachTags(ctx, inst1, []*api.Tag{
 			{Key: "ver", Value: "1"},
 			{Key: "ver", Value: "ambiguous"},
-		}), ShouldBeNil)
-		So(model.AttachTags(ctx, inst2, []*api.Tag{
+		}), should.BeNil)
+		assert.Loosely(t, model.AttachTags(ctx, inst2, []*api.Tag{
 			{Key: "ver", Value: "2"},
 			{Key: "ver", Value: "ambiguous"},
-		}), ShouldBeNil)
+		}), should.BeNil)
 
-		Convey("Happy path", func() {
+		t.Run("Happy path", func(t *ftt.Test) {
 			inst, err := impl.ResolveVersion(ctx, &api.ResolveVersionRequest{
 				Package: "a/pkg",
 				Version: "latest",
 			})
-			So(err, ShouldBeNil)
-			So(inst, ShouldResembleProto, inst2.Proto())
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, inst, should.Resemble(inst2.Proto()))
 		})
 
-		Convey("Bad package name", func() {
+		t.Run("Bad package name", func(t *ftt.Test) {
 			_, err := impl.ResolveVersion(ctx, &api.ResolveVersionRequest{
 				Package: "///",
 				Version: "latest",
 			})
-			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-			So(err, ShouldErrLike, "bad 'package'")
+			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("bad 'package'"))
 		})
 
-		Convey("Bad version name", func() {
+		t.Run("Bad version name", func(t *ftt.Test) {
 			_, err := impl.ResolveVersion(ctx, &api.ResolveVersionRequest{
 				Package: "a/pkg",
 				Version: "::",
 			})
-			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-			So(err, ShouldErrLike, "bad 'version'")
+			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("bad 'version'"))
 		})
 
-		Convey("No access", func() {
+		t.Run("No access", func(t *ftt.Test) {
 			_, err := impl.ResolveVersion(ctx, &api.ResolveVersionRequest{
 				Package: "b",
 				Version: "latest",
 			})
-			So(status.Code(err), ShouldEqual, codes.PermissionDenied)
-			So(err, ShouldErrLike, "is not allowed to see it")
+			assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
+			assert.Loosely(t, err, should.ErrLike("is not allowed to see it"))
 		})
 
-		Convey("Missing package", func() {
+		t.Run("Missing package", func(t *ftt.Test) {
 			_, err := impl.ResolveVersion(ctx, &api.ResolveVersionRequest{
 				Package: "a/b",
 				Version: "latest",
 			})
-			So(status.Code(err), ShouldEqual, codes.NotFound)
-			So(err, ShouldErrLike, "no such package")
+			assert.Loosely(t, status.Code(err), should.Equal(codes.NotFound))
+			assert.Loosely(t, err, should.ErrLike("no such package"))
 		})
 
-		Convey("Missing instance", func() {
+		t.Run("Missing instance", func(t *ftt.Test) {
 			_, err := impl.ResolveVersion(ctx, &api.ResolveVersionRequest{
 				Package: "a/pkg",
 				Version: strings.Repeat("f", 40),
 			})
-			So(status.Code(err), ShouldEqual, codes.NotFound)
-			So(err, ShouldErrLike, "no such instance")
+			assert.Loosely(t, status.Code(err), should.Equal(codes.NotFound))
+			assert.Loosely(t, err, should.ErrLike("no such instance"))
 		})
 
-		Convey("Missing ref", func() {
+		t.Run("Missing ref", func(t *ftt.Test) {
 			_, err := impl.ResolveVersion(ctx, &api.ResolveVersionRequest{
 				Package: "a/pkg",
 				Version: "missing",
 			})
-			So(status.Code(err), ShouldEqual, codes.NotFound)
-			So(err, ShouldErrLike, "no such ref")
+			assert.Loosely(t, status.Code(err), should.Equal(codes.NotFound))
+			assert.Loosely(t, err, should.ErrLike("no such ref"))
 		})
 
-		Convey("Missing tag", func() {
+		t.Run("Missing tag", func(t *ftt.Test) {
 			_, err := impl.ResolveVersion(ctx, &api.ResolveVersionRequest{
 				Package: "a/pkg",
 				Version: "ver:missing",
 			})
-			So(status.Code(err), ShouldEqual, codes.NotFound)
-			So(err, ShouldErrLike, "no such tag")
+			assert.Loosely(t, status.Code(err), should.Equal(codes.NotFound))
+			assert.Loosely(t, err, should.ErrLike("no such tag"))
 		})
 
-		Convey("Ambiguous tag", func() {
+		t.Run("Ambiguous tag", func(t *ftt.Test) {
 			_, err := impl.ResolveVersion(ctx, &api.ResolveVersionRequest{
 				Package: "a/pkg",
 				Version: "ver:ambiguous",
 			})
-			So(status.Code(err), ShouldEqual, codes.FailedPrecondition)
-			So(err, ShouldErrLike, "ambiguity when resolving the tag")
+			assert.Loosely(t, status.Code(err), should.Equal(codes.FailedPrecondition))
+			assert.Loosely(t, err, should.ErrLike("ambiguity when resolving the tag"))
 		})
 	})
 }
@@ -2553,7 +2556,7 @@ func TestResolveVersion(t *testing.T) {
 func TestGetInstanceURLAndDownloads(t *testing.T) {
 	t.Parallel()
 
-	Convey("With fakes", t, func() {
+	ftt.Run("With fakes", t, func(t *ftt.Test) {
 		ctx, _, as := testutil.TestingContext()
 		ctx = as("reader@example.com")
 
@@ -2575,38 +2578,38 @@ func TestGetInstanceURLAndDownloads(t *testing.T) {
 			Package:      model.PackageKey(ctx, "a/pkg"),
 			RegisteredBy: "user:1@example.com",
 		}
-		So(datastore.Put(ctx, &model.Package{Name: "a/pkg"}, inst), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, &model.Package{Name: "a/pkg"}, inst), should.BeNil)
 
 		cas.GetObjectURLImpl = func(_ context.Context, r *api.GetObjectURLRequest) (*api.ObjectURL, error) {
-			So(r.Object.HashAlgo, ShouldEqual, api.HashAlgo_SHA1)
-			So(r.Object.HexDigest, ShouldEqual, inst.InstanceID)
+			assert.Loosely(t, r.Object.HashAlgo, should.Equal(api.HashAlgo_SHA1))
+			assert.Loosely(t, r.Object.HexDigest, should.Equal(inst.InstanceID))
 			return &api.ObjectURL{
 				SignedUrl: fmt.Sprintf("http://example.com/%s?d=%s", r.Object.HexDigest, r.DownloadFilename),
 			}, nil
 		}
 
-		Convey("GetInstanceURL", func() {
-			Convey("Happy path", func() {
+		t.Run("GetInstanceURL", func(t *ftt.Test) {
+			t.Run("Happy path", func(t *ftt.Test) {
 				resp, err := impl.GetInstanceURL(ctx, &api.GetInstanceURLRequest{
 					Package:  inst.Package.StringID(),
 					Instance: inst.Proto().Instance,
 				})
-				So(err, ShouldBeNil)
-				So(resp, ShouldResembleProto, &api.ObjectURL{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, resp, should.Resemble(&api.ObjectURL{
 					SignedUrl: "http://example.com/1111111111111111111111111111111111111111?d=",
-				})
+				}))
 			})
 
-			Convey("Bad package name", func() {
+			t.Run("Bad package name", func(t *ftt.Test) {
 				_, err := impl.GetInstanceURL(ctx, &api.GetInstanceURLRequest{
 					Package:  "///",
 					Instance: inst.Proto().Instance,
 				})
-				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-				So(err, ShouldErrLike, "bad 'package'")
+				assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("bad 'package'"))
 			})
 
-			Convey("Bad instance", func() {
+			t.Run("Bad instance", func(t *ftt.Test) {
 				_, err := impl.GetInstanceURL(ctx, &api.GetInstanceURLRequest{
 					Package: "a/pkg",
 					Instance: &api.ObjectRef{
@@ -2614,29 +2617,29 @@ func TestGetInstanceURLAndDownloads(t *testing.T) {
 						HexDigest: "huh",
 					},
 				})
-				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-				So(err, ShouldErrLike, "bad 'instance'")
+				assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("bad 'instance'"))
 			})
 
-			Convey("No access", func() {
+			t.Run("No access", func(t *ftt.Test) {
 				_, err := impl.GetInstanceURL(ctx, &api.GetInstanceURLRequest{
 					Package:  "b",
 					Instance: inst.Proto().Instance,
 				})
-				So(status.Code(err), ShouldEqual, codes.PermissionDenied)
-				So(err, ShouldErrLike, "is not allowed to see it")
+				assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("is not allowed to see it"))
 			})
 
-			Convey("Missing package", func() {
+			t.Run("Missing package", func(t *ftt.Test) {
 				_, err := impl.GetInstanceURL(ctx, &api.GetInstanceURLRequest{
 					Package:  "a/missing",
 					Instance: inst.Proto().Instance,
 				})
-				So(status.Code(err), ShouldEqual, codes.NotFound)
-				So(err, ShouldErrLike, "no such package")
+				assert.Loosely(t, status.Code(err), should.Equal(codes.NotFound))
+				assert.Loosely(t, err, should.ErrLike("no such package"))
 			})
 
-			Convey("Missing instance", func() {
+			t.Run("Missing instance", func(t *ftt.Test) {
 				_, err := impl.GetInstanceURL(ctx, &api.GetInstanceURLRequest{
 					Package: "a/pkg",
 					Instance: &api.ObjectRef{
@@ -2644,12 +2647,12 @@ func TestGetInstanceURLAndDownloads(t *testing.T) {
 						HexDigest: strings.Repeat("f", 40),
 					},
 				})
-				So(status.Code(err), ShouldEqual, codes.NotFound)
-				So(err, ShouldErrLike, "no such instance")
+				assert.Loosely(t, status.Code(err), should.Equal(codes.NotFound))
+				assert.Loosely(t, err, should.ErrLike("no such instance"))
 			})
 		})
 
-		Convey("Raw download handler", func() {
+		t.Run("Raw download handler", func(t *ftt.Test) {
 			call := func(path string) *httptest.ResponseRecorder {
 				rr := httptest.NewRecorder()
 				adaptGrpcErr(impl.handlePackageDownload)(&router.Context{
@@ -2662,47 +2665,47 @@ func TestGetInstanceURLAndDownloads(t *testing.T) {
 				return rr
 			}
 
-			Convey("Happy path", func() {
+			t.Run("Happy path", func(t *ftt.Test) {
 				rr := call("/a/pkg/+/1111111111111111111111111111111111111111")
-				So(rr.Code, ShouldEqual, http.StatusFound)
-				So(rr.Header().Get("Location"), ShouldEqual, "http://example.com/1111111111111111111111111111111111111111?d=a-pkg.zip")
-				So(rr.Header().Get(cipdInstanceHeader), ShouldEqual, inst.InstanceID)
+				assert.Loosely(t, rr.Code, should.Equal(http.StatusFound))
+				assert.Loosely(t, rr.Header().Get("Location"), should.Equal("http://example.com/1111111111111111111111111111111111111111?d=a-pkg.zip"))
+				assert.Loosely(t, rr.Header().Get(cipdInstanceHeader), should.Equal(inst.InstanceID))
 			})
 
-			Convey("Malformed URL", func() {
+			t.Run("Malformed URL", func(t *ftt.Test) {
 				rr := call("huh")
-				So(rr.Code, ShouldEqual, http.StatusBadRequest)
-				So(rr.Body.String(), ShouldContainSubstring, "the URL should have form")
+				assert.Loosely(t, rr.Code, should.Equal(http.StatusBadRequest))
+				assert.Loosely(t, rr.Body.String(), should.ContainSubstring("the URL should have form"))
 			})
 
-			Convey("Bad package name", func() {
+			t.Run("Bad package name", func(t *ftt.Test) {
 				rr := call("/???/+/live")
-				So(rr.Code, ShouldEqual, http.StatusBadRequest)
-				So(rr.Body.String(), ShouldContainSubstring, "invalid package name")
+				assert.Loosely(t, rr.Code, should.Equal(http.StatusBadRequest))
+				assert.Loosely(t, rr.Body.String(), should.ContainSubstring("invalid package name"))
 			})
 
-			Convey("Bad version", func() {
+			t.Run("Bad version", func(t *ftt.Test) {
 				rr := call("/pkg/+/???")
-				So(rr.Code, ShouldEqual, http.StatusBadRequest)
-				So(rr.Body.String(), ShouldContainSubstring, "bad version")
+				assert.Loosely(t, rr.Code, should.Equal(http.StatusBadRequest))
+				assert.Loosely(t, rr.Body.String(), should.ContainSubstring("bad version"))
 			})
 
-			Convey("No access", func() {
+			t.Run("No access", func(t *ftt.Test) {
 				rr := call("/b/+/live")
-				So(rr.Code, ShouldEqual, http.StatusForbidden)
-				So(rr.Body.String(), ShouldContainSubstring, "is not allowed to see it")
+				assert.Loosely(t, rr.Code, should.Equal(http.StatusForbidden))
+				assert.Loosely(t, rr.Body.String(), should.ContainSubstring("is not allowed to see it"))
 			})
 
-			Convey("Missing package", func() {
+			t.Run("Missing package", func(t *ftt.Test) {
 				rr := call("/a/missing/+/live")
-				So(rr.Code, ShouldEqual, http.StatusNotFound)
-				So(rr.Body.String(), ShouldContainSubstring, "no such package")
+				assert.Loosely(t, rr.Code, should.Equal(http.StatusNotFound))
+				assert.Loosely(t, rr.Body.String(), should.ContainSubstring("no such package"))
 			})
 
-			Convey("Missing instance", func() {
+			t.Run("Missing instance", func(t *ftt.Test) {
 				rr := call("/a/pkg/+/1111111111111111111111111111111111111112")
-				So(rr.Code, ShouldEqual, http.StatusNotFound)
-				So(rr.Body.String(), ShouldContainSubstring, "no such instance")
+				assert.Loosely(t, rr.Code, should.Equal(http.StatusNotFound))
+				assert.Loosely(t, rr.Body.String(), should.ContainSubstring("no such instance"))
 			})
 		})
 	})
@@ -2711,7 +2714,7 @@ func TestGetInstanceURLAndDownloads(t *testing.T) {
 func TestDescribeInstance(t *testing.T) {
 	t.Parallel()
 
-	Convey("With fakes", t, func() {
+	ftt.Run("With fakes", t, func(t *ftt.Test) {
 		ctx, _, as := testutil.TestingContext()
 		ctx = as("reader@example.com")
 
@@ -2732,20 +2735,20 @@ func TestDescribeInstance(t *testing.T) {
 			Package:      model.PackageKey(ctx, "a/pkg"),
 			RegisteredBy: "user:1@example.com",
 		}
-		So(datastore.Put(ctx, &model.Package{Name: "a/pkg"}, inst), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, &model.Package{Name: "a/pkg"}, inst), should.BeNil)
 
-		Convey("Happy path, basic info", func() {
+		t.Run("Happy path, basic info", func(t *ftt.Test) {
 			resp, err := impl.DescribeInstance(ctx, &api.DescribeInstanceRequest{
 				Package:  "a/pkg",
 				Instance: inst.Proto().Instance,
 			})
-			So(err, ShouldBeNil)
-			So(resp, ShouldResembleProto, &api.DescribeInstanceResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.Resemble(&api.DescribeInstanceResponse{
 				Instance: inst.Proto(),
-			})
+			}))
 		})
 
-		Convey("Happy path, full info", func() {
+		t.Run("Happy path, full info", func(t *ftt.Test) {
 			model.AttachTags(as("tag@example.com"), inst, []*api.Tag{
 				{Key: "a", Value: "0"},
 				{Key: "a", Value: "1"},
@@ -2783,8 +2786,8 @@ func TestDescribeInstance(t *testing.T) {
 				DescribeProcessors: true,
 				DescribeMetadata:   true,
 			})
-			So(err, ShouldBeNil)
-			So(resp, ShouldResembleProto, &api.DescribeInstanceResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.Resemble(&api.DescribeInstanceResponse{
 				Instance: inst.Proto(),
 				Tags: []*api.Tag{
 					{
@@ -2842,19 +2845,19 @@ func TestDescribeInstance(t *testing.T) {
 						AttachedTs:  timestamppb.New(testutil.TestTime),
 					},
 				},
-			})
+			}))
 		})
 
-		Convey("Bad package name", func() {
+		t.Run("Bad package name", func(t *ftt.Test) {
 			_, err := impl.DescribeInstance(ctx, &api.DescribeInstanceRequest{
 				Package:  "///",
 				Instance: inst.Proto().Instance,
 			})
-			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-			So(err, ShouldErrLike, "bad 'package'")
+			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("bad 'package'"))
 		})
 
-		Convey("Bad instance", func() {
+		t.Run("Bad instance", func(t *ftt.Test) {
 			_, err := impl.DescribeInstance(ctx, &api.DescribeInstanceRequest{
 				Package: "a/pkg",
 				Instance: &api.ObjectRef{
@@ -2862,29 +2865,29 @@ func TestDescribeInstance(t *testing.T) {
 					HexDigest: "huh",
 				},
 			})
-			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-			So(err, ShouldErrLike, "bad 'instance'")
+			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("bad 'instance'"))
 		})
 
-		Convey("No access", func() {
+		t.Run("No access", func(t *ftt.Test) {
 			_, err := impl.DescribeInstance(ctx, &api.DescribeInstanceRequest{
 				Package:  "b",
 				Instance: inst.Proto().Instance,
 			})
-			So(status.Code(err), ShouldEqual, codes.PermissionDenied)
-			So(err, ShouldErrLike, "is not allowed to see it")
+			assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
+			assert.Loosely(t, err, should.ErrLike("is not allowed to see it"))
 		})
 
-		Convey("Missing package", func() {
+		t.Run("Missing package", func(t *ftt.Test) {
 			_, err := impl.DescribeInstance(ctx, &api.DescribeInstanceRequest{
 				Package:  "a/missing",
 				Instance: inst.Proto().Instance,
 			})
-			So(status.Code(err), ShouldEqual, codes.NotFound)
-			So(err, ShouldErrLike, "no such package")
+			assert.Loosely(t, status.Code(err), should.Equal(codes.NotFound))
+			assert.Loosely(t, err, should.ErrLike("no such package"))
 		})
 
-		Convey("Missing instance", func() {
+		t.Run("Missing instance", func(t *ftt.Test) {
 			_, err := impl.DescribeInstance(ctx, &api.DescribeInstanceRequest{
 				Package: "a/pkg",
 				Instance: &api.ObjectRef{
@@ -2892,8 +2895,8 @@ func TestDescribeInstance(t *testing.T) {
 					HexDigest: strings.Repeat("f", 40),
 				},
 			})
-			So(status.Code(err), ShouldEqual, codes.NotFound)
-			So(err, ShouldErrLike, "no such instance")
+			assert.Loosely(t, status.Code(err), should.Equal(codes.NotFound))
+			assert.Loosely(t, err, should.ErrLike("no such instance"))
 		})
 	})
 }
@@ -2901,7 +2904,7 @@ func TestDescribeInstance(t *testing.T) {
 func TestDescribeBootstrapBundle(t *testing.T) {
 	t.Parallel()
 
-	Convey("With fakes", t, func() {
+	ftt.Run("With fakes", t, func(t *ftt.Test) {
 		ctx, _, as := testutil.TestingContext()
 		ctx = as("reader@example.com")
 
@@ -2944,13 +2947,13 @@ func TestDescribeBootstrapBundle(t *testing.T) {
 					r.Error = "Extraction broken"
 					inst.ProcessorsFailure = []string{processing.BootstrapPackageExtractorProcID}
 				}
-				So(datastore.Put(ctx, r), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, r), should.BeNil)
 			}
-			So(datastore.Put(ctx,
+			assert.Loosely(t, datastore.Put(ctx,
 				&model.Package{Name: pkg},
 				inst,
 				&model.Ref{Name: "latest", Package: inst.Package, InstanceID: inst.InstanceID},
-			), ShouldBeNil)
+			), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 		}
 
@@ -2980,45 +2983,45 @@ func TestDescribeBootstrapBundle(t *testing.T) {
 			}
 		}
 
-		Convey("Happy path", func() {
+		t.Run("Happy path", func(t *ftt.Test) {
 			putInst("a/pkg/var-1", "file1")
 			putInst("a/pkg/var-2", "file2")
 			putInst("a/pkg/var-3", "file3")
 			putInst("a/pkg", "")             // will be ignored
 			putInst("a/pkg/sun/package", "") // will be ignored
 
-			Convey("With prefix listing", func() {
+			t.Run("With prefix listing", func(t *ftt.Test) {
 				resp, err := impl.DescribeBootstrapBundle(ctx, &api.DescribeBootstrapBundleRequest{
 					Prefix:  "a/pkg",
 					Version: "latest",
 				})
-				So(err, ShouldBeNil)
-				So(resp, ShouldResembleProto, &api.DescribeBootstrapBundleResponse{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, resp, should.Resemble(&api.DescribeBootstrapBundleResponse{
 					Files: []*api.DescribeBootstrapBundleResponse_BootstrapFile{
 						expectedFile("a/pkg/var-1", "file1"),
 						expectedFile("a/pkg/var-2", "file2"),
 						expectedFile("a/pkg/var-3", "file3"),
 					},
-				})
+				}))
 			})
 
-			Convey("With variants", func() {
+			t.Run("With variants", func(t *ftt.Test) {
 				resp, err := impl.DescribeBootstrapBundle(ctx, &api.DescribeBootstrapBundleRequest{
 					Prefix:   "a/pkg",
 					Variants: []string{"var-3", "var-1"},
 					Version:  "latest",
 				})
-				So(err, ShouldBeNil)
-				So(resp, ShouldResembleProto, &api.DescribeBootstrapBundleResponse{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, resp, should.Resemble(&api.DescribeBootstrapBundleResponse{
 					Files: []*api.DescribeBootstrapBundleResponse_BootstrapFile{
 						expectedFile("a/pkg/var-3", "file3"),
 						expectedFile("a/pkg/var-1", "file1"),
 					},
-				})
+				}))
 			})
 		})
 
-		Convey("Partial failure", func() {
+		t.Run("Partial failure", func(t *ftt.Test) {
 			putInst("a/pkg/var-1", "file1")
 			putInst("a/pkg/var-2", "")
 
@@ -3026,16 +3029,16 @@ func TestDescribeBootstrapBundle(t *testing.T) {
 				Prefix:  "a/pkg",
 				Version: "latest",
 			})
-			So(err, ShouldBeNil)
-			So(resp, ShouldResembleProto, &api.DescribeBootstrapBundleResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.Resemble(&api.DescribeBootstrapBundleResponse{
 				Files: []*api.DescribeBootstrapBundleResponse_BootstrapFile{
 					expectedFile("a/pkg/var-1", "file1"),
 					expectedError("a/pkg/var-2", codes.FailedPrecondition, `"a/pkg/var-2" is not a bootstrap package`),
 				},
-			})
+			}))
 		})
 
-		Convey("Total failure", func() {
+		t.Run("Total failure", func(t *ftt.Test) {
 			putInst("a/pkg/var-1", "")
 			putInst("a/pkg/var-2", "")
 			putInst("a/pkg/var-3", "")
@@ -3044,97 +3047,97 @@ func TestDescribeBootstrapBundle(t *testing.T) {
 				Prefix:  "a/pkg",
 				Version: "latest",
 			})
-			So(err, ShouldHaveRPCCode, codes.FailedPrecondition,
-				`"a/pkg/var-1" is not a bootstrap package (and 2 other errors like this)`)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveRPCCode)(codes.FailedPrecondition,
+				`"a/pkg/var-1" is not a bootstrap package (and 2 other errors like this)`))
 		})
 
-		Convey("Empty prefix", func() {
+		t.Run("Empty prefix", func(t *ftt.Test) {
 			_, err := impl.DescribeBootstrapBundle(ctx, &api.DescribeBootstrapBundleRequest{
 				Prefix:  "a/pkg",
 				Version: "latest",
 			})
-			So(err, ShouldHaveRPCCode, codes.NotFound, `no packages directly under prefix "a/pkg"`)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveRPCCode)(codes.NotFound, `no packages directly under prefix "a/pkg"`))
 		})
 
-		Convey("Missing version", func() {
+		t.Run("Missing version", func(t *ftt.Test) {
 			putInst("a/pkg/var-1", "file1")
 			_, err := impl.DescribeBootstrapBundle(ctx, &api.DescribeBootstrapBundleRequest{
 				Prefix:  "a/pkg",
 				Version: "not-latest",
 			})
-			So(err, ShouldHaveRPCCode, codes.NotFound, `no such ref`)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveRPCCode)(codes.NotFound, `no such ref`))
 		})
 
-		Convey("Broken processor", func() {
+		t.Run("Broken processor", func(t *ftt.Test) {
 			putInst("a/pkg/var-1", "BROKEN")
 			_, err := impl.DescribeBootstrapBundle(ctx, &api.DescribeBootstrapBundleRequest{
 				Prefix:  "a/pkg",
 				Version: "latest",
 			})
-			So(err, ShouldHaveRPCCode, codes.Aborted, `some processors failed to process this instance`)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveRPCCode)(codes.Aborted, `some processors failed to process this instance`))
 		})
 
-		Convey("Request validation", func() {
+		t.Run("Request validation", func(t *ftt.Test) {
 			putInst("a/pkg/var-1", "file1")
 
-			Convey("Bad prefix format", func() {
+			t.Run("Bad prefix format", func(t *ftt.Test) {
 				_, err := impl.DescribeBootstrapBundle(ctx, &api.DescribeBootstrapBundleRequest{
 					Prefix:  "///",
 					Version: "latest",
 				})
-				So(err, ShouldHaveRPCCode, codes.InvalidArgument)
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveRPCCode)(codes.InvalidArgument))
 			})
 
-			Convey("Variant with /", func() {
+			t.Run("Variant with /", func(t *ftt.Test) {
 				_, err := impl.DescribeBootstrapBundle(ctx, &api.DescribeBootstrapBundleRequest{
 					Prefix:   "a/pkg",
 					Variants: []string{"some/thing"},
 					Version:  "latest",
 				})
-				So(err, ShouldHaveRPCCode, codes.InvalidArgument)
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveRPCCode)(codes.InvalidArgument))
 			})
 
-			Convey("Empty variant", func() {
+			t.Run("Empty variant", func(t *ftt.Test) {
 				_, err := impl.DescribeBootstrapBundle(ctx, &api.DescribeBootstrapBundleRequest{
 					Prefix:   "a/pkg",
 					Variants: []string{""},
 					Version:  "latest",
 				})
-				So(err, ShouldHaveRPCCode, codes.InvalidArgument)
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveRPCCode)(codes.InvalidArgument))
 			})
 
-			Convey("Malformed variant name", func() {
+			t.Run("Malformed variant name", func(t *ftt.Test) {
 				_, err := impl.DescribeBootstrapBundle(ctx, &api.DescribeBootstrapBundleRequest{
 					Prefix:   "a/pkg",
 					Variants: []string{"BAD"},
 					Version:  "latest",
 				})
-				So(err, ShouldHaveRPCCode, codes.InvalidArgument)
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveRPCCode)(codes.InvalidArgument))
 			})
 
-			Convey("Duplicate variants", func() {
+			t.Run("Duplicate variants", func(t *ftt.Test) {
 				_, err := impl.DescribeBootstrapBundle(ctx, &api.DescribeBootstrapBundleRequest{
 					Prefix:   "a/pkg",
 					Variants: []string{"var-1", "var-1"},
 					Version:  "latest",
 				})
-				So(err, ShouldHaveRPCCode, codes.InvalidArgument)
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveRPCCode)(codes.InvalidArgument))
 			})
 
-			Convey("Bad version", func() {
+			t.Run("Bad version", func(t *ftt.Test) {
 				_, err := impl.DescribeBootstrapBundle(ctx, &api.DescribeBootstrapBundleRequest{
 					Prefix:  "a/pkg",
 					Version: "bad version ID",
 				})
-				So(err, ShouldHaveRPCCode, codes.InvalidArgument)
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveRPCCode)(codes.InvalidArgument))
 			})
 
-			Convey("Not a reader", func() {
+			t.Run("Not a reader", func(t *ftt.Test) {
 				_, err := impl.DescribeBootstrapBundle(as("someone@example.com"), &api.DescribeBootstrapBundleRequest{
 					Prefix:  "a/pkg",
 					Version: "latest",
 				})
-				So(err, ShouldHaveRPCCode, codes.PermissionDenied)
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveRPCCode)(codes.PermissionDenied))
 			})
 		})
 	})
@@ -3146,7 +3149,7 @@ func TestDescribeBootstrapBundle(t *testing.T) {
 func TestClientBootstrap(t *testing.T) {
 	t.Parallel()
 
-	Convey("With fakes", t, func() {
+	ftt.Run("With fakes", t, func(t *ftt.Test) {
 		ctx, _, as := testutil.TestingContext()
 		ctx = as("reader@example.com")
 
@@ -3177,11 +3180,11 @@ func TestClientBootstrap(t *testing.T) {
 			HexDigest: goodDigest,
 		})
 		goodPkg, err := processing.GetClientPackage(goodPlat)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		setup := func(res *processing.ClientExtractorResult, fail string) (*model.Instance, *model.ProcessingResult) {
 			pkgName, err := processing.GetClientPackage(goodPlat)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			pkg := &model.Package{Name: pkgName}
 			inst := &model.Instance{
 				InstanceID: goodIID,
@@ -3199,7 +3202,7 @@ func TestClientBootstrap(t *testing.T) {
 				proc.Error = fail
 				inst.ProcessorsFailure = []string{proc.ProcID}
 			}
-			So(datastore.Put(ctx, pkg, inst, proc), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, pkg, inst, proc), should.BeNil)
 			return inst, proc
 		}
 
@@ -3215,7 +3218,7 @@ func TestClientBootstrap(t *testing.T) {
 
 		expectedClientURL := fmt.Sprintf("http://fake/%s/%s?d=cipd&blah=zzz", res.ClientBinary.HashAlgo, res.ClientBinary.HashDigest)
 
-		Convey("Bootstrap endpoint", func() {
+		t.Run("Bootstrap endpoint", func(t *ftt.Test) {
 			call := func(plat, ver string) *httptest.ResponseRecorder {
 				form := url.Values{}
 				form.Add("platform", plat)
@@ -3228,76 +3231,76 @@ func TestClientBootstrap(t *testing.T) {
 				return rr
 			}
 
-			Convey("Happy path", func() {
+			t.Run("Happy path", func(t *ftt.Test) {
 				rr := call(goodPlat, goodIID)
-				So(rr.Code, ShouldEqual, http.StatusFound)
-				So(rr.Header().Get("Location"), ShouldEqual, expectedClientURL)
-				So(rr.Header().Get(cipdInstanceHeader), ShouldEqual, goodIID)
+				assert.Loosely(t, rr.Code, should.Equal(http.StatusFound))
+				assert.Loosely(t, rr.Header().Get("Location"), should.Equal(expectedClientURL))
+				assert.Loosely(t, rr.Header().Get(cipdInstanceHeader), should.Equal(goodIID))
 			})
 
-			Convey("No plat", func() {
+			t.Run("No plat", func(t *ftt.Test) {
 				rr := call("", goodIID)
-				So(rr.Code, ShouldEqual, http.StatusBadRequest)
-				So(rr.Body.String(), ShouldContainSubstring, "no 'platform' specified")
+				assert.Loosely(t, rr.Code, should.Equal(http.StatusBadRequest))
+				assert.Loosely(t, rr.Body.String(), should.ContainSubstring("no 'platform' specified"))
 			})
 
-			Convey("Bad plat", func() {
+			t.Run("Bad plat", func(t *ftt.Test) {
 				rr := call("...", goodIID)
-				So(rr.Code, ShouldEqual, http.StatusBadRequest)
-				So(rr.Body.String(), ShouldContainSubstring, "bad platform name")
+				assert.Loosely(t, rr.Code, should.Equal(http.StatusBadRequest))
+				assert.Loosely(t, rr.Body.String(), should.ContainSubstring("bad platform name"))
 			})
 
-			Convey("No ver", func() {
+			t.Run("No ver", func(t *ftt.Test) {
 				rr := call(goodPlat, "")
-				So(rr.Code, ShouldEqual, http.StatusBadRequest)
-				So(rr.Body.String(), ShouldContainSubstring, "no 'version' specified")
+				assert.Loosely(t, rr.Code, should.Equal(http.StatusBadRequest))
+				assert.Loosely(t, rr.Body.String(), should.ContainSubstring("no 'version' specified"))
 			})
 
-			Convey("Bad ver", func() {
+			t.Run("Bad ver", func(t *ftt.Test) {
 				rr := call(goodPlat, "!!!!")
-				So(rr.Code, ShouldEqual, http.StatusBadRequest)
-				So(rr.Body.String(), ShouldContainSubstring, "bad version")
+				assert.Loosely(t, rr.Code, should.Equal(http.StatusBadRequest))
+				assert.Loosely(t, rr.Body.String(), should.ContainSubstring("bad version"))
 			})
 
-			Convey("No access", func() {
+			t.Run("No access", func(t *ftt.Test) {
 				ctx = as("someone@example.com")
 				rr := call(goodPlat, goodIID)
-				So(rr.Code, ShouldEqual, http.StatusForbidden)
-				So(rr.Body.String(), ShouldContainSubstring, "is not allowed to see it")
+				assert.Loosely(t, rr.Code, should.Equal(http.StatusForbidden))
+				assert.Loosely(t, rr.Body.String(), should.ContainSubstring("is not allowed to see it"))
 			})
 
-			Convey("Missing ver", func() {
+			t.Run("Missing ver", func(t *ftt.Test) {
 				rr := call(goodPlat, "missing")
-				So(rr.Code, ShouldEqual, http.StatusNotFound)
-				So(rr.Body.String(), ShouldContainSubstring, "no such ref")
+				assert.Loosely(t, rr.Code, should.Equal(http.StatusNotFound))
+				assert.Loosely(t, rr.Body.String(), should.ContainSubstring("no such ref"))
 			})
 
-			Convey("Missing instance ID", func() {
+			t.Run("Missing instance ID", func(t *ftt.Test) {
 				rr := call(goodPlat, strings.Repeat("b", 40))
-				So(rr.Code, ShouldEqual, http.StatusNotFound)
-				So(rr.Body.String(), ShouldContainSubstring, "no such instance")
+				assert.Loosely(t, rr.Code, should.Equal(http.StatusNotFound))
+				assert.Loosely(t, rr.Body.String(), should.ContainSubstring("no such instance"))
 			})
 
-			Convey("Not extracted yet", func() {
+			t.Run("Not extracted yet", func(t *ftt.Test) {
 				inst.ProcessorsPending = []string{proc.ProcID}
 				datastore.Delete(ctx, proc)
 				datastore.Put(ctx, inst)
 
 				rr := call(goodPlat, goodIID)
-				So(rr.Code, ShouldEqual, http.StatusNotFound)
-				So(rr.Body.String(), ShouldContainSubstring, "is not extracted yet")
+				assert.Loosely(t, rr.Code, should.Equal(http.StatusNotFound))
+				assert.Loosely(t, rr.Body.String(), should.ContainSubstring("is not extracted yet"))
 			})
 
-			Convey("Fatal error during extraction", func() {
+			t.Run("Fatal error during extraction", func(t *ftt.Test) {
 				setup(nil, "BOOM")
 
 				rr := call(goodPlat, goodIID)
-				So(rr.Code, ShouldEqual, http.StatusNotFound)
-				So(rr.Body.String(), ShouldContainSubstring, "BOOM")
+				assert.Loosely(t, rr.Code, should.Equal(http.StatusNotFound))
+				assert.Loosely(t, rr.Body.String(), should.ContainSubstring("BOOM"))
 			})
 		})
 
-		Convey("DescribeClient RPC", func() {
+		t.Run("DescribeClient RPC", func(t *ftt.Test) {
 			call := func(pkg, sha256Digest string) (*api.DescribeClientResponse, error) {
 				return impl.DescribeClient(ctx, &api.DescribeClientRequest{
 					Package: pkg,
@@ -3308,10 +3311,10 @@ func TestClientBootstrap(t *testing.T) {
 				})
 			}
 
-			Convey("Happy path", func() {
+			t.Run("Happy path", func(t *ftt.Test) {
 				resp, err := call(goodPkg, goodDigest)
-				So(err, ShouldBeNil)
-				So(resp, ShouldResembleProto, &api.DescribeClientResponse{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, resp, should.Resemble(&api.DescribeClientResponse{
 					Instance: &api.Instance{
 						Package: goodPkg,
 						Instance: &api.ObjectRef{
@@ -3338,54 +3341,54 @@ func TestClientBootstrap(t *testing.T) {
 							HexDigest: res.ClientBinary.AllHashDigests["SHA256"],
 						},
 					},
-				})
+				}))
 			})
 
-			Convey("Bad package name", func() {
+			t.Run("Bad package name", func(t *ftt.Test) {
 				_, err := call("not/a/client", goodDigest)
-				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-				So(err, ShouldErrLike, "not a CIPD client package")
+				assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("not a CIPD client package"))
 			})
 
-			Convey("Bad instance ref", func() {
+			t.Run("Bad instance ref", func(t *ftt.Test) {
 				_, err := call(goodPkg, "not-an-id")
-				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-				So(err, ShouldErrLike, "invalid SHA256 hex digest")
+				assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("invalid SHA256 hex digest"))
 			})
 
-			Convey("Missing instance", func() {
+			t.Run("Missing instance", func(t *ftt.Test) {
 				_, err := call(goodPkg, strings.Repeat("e", 64))
-				So(status.Code(err), ShouldEqual, codes.NotFound)
-				So(err, ShouldErrLike, "no such instance")
+				assert.Loosely(t, status.Code(err), should.Equal(codes.NotFound))
+				assert.Loosely(t, err, should.ErrLike("no such instance"))
 			})
 
-			Convey("No access", func() {
+			t.Run("No access", func(t *ftt.Test) {
 				ctx = as("someone@example.com")
 				_, err := call(goodPkg, goodDigest)
-				So(status.Code(err), ShouldEqual, codes.PermissionDenied)
-				So(err, ShouldErrLike, "not allowed to see it")
+				assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("not allowed to see it"))
 			})
 
-			Convey("Not extracted yet", func() {
+			t.Run("Not extracted yet", func(t *ftt.Test) {
 				inst.ProcessorsPending = []string{proc.ProcID}
 				datastore.Delete(ctx, proc)
 				datastore.Put(ctx, inst)
 
 				_, err := call(goodPkg, goodDigest)
-				So(status.Code(err), ShouldEqual, codes.FailedPrecondition)
-				So(err, ShouldErrLike, "the instance is not ready yet")
+				assert.Loosely(t, status.Code(err), should.Equal(codes.FailedPrecondition))
+				assert.Loosely(t, err, should.ErrLike("the instance is not ready yet"))
 			})
 
-			Convey("Fatal error during extraction", func() {
+			t.Run("Fatal error during extraction", func(t *ftt.Test) {
 				setup(nil, "BOOM")
 
 				_, err := call(goodPkg, goodDigest)
-				So(status.Code(err), ShouldEqual, codes.Aborted)
-				So(err, ShouldErrLike, "some processors failed to process this instance")
+				assert.Loosely(t, status.Code(err), should.Equal(codes.Aborted))
+				assert.Loosely(t, err, should.ErrLike("some processors failed to process this instance"))
 			})
 		})
 
-		Convey("Legacy API", func() {
+		t.Run("Legacy API", func(t *ftt.Test) {
 			call := func(pkg, iid, ct string) (code int, body string) {
 				rr := httptest.NewRecorder()
 				adaptGrpcErr(impl.handleLegacyClientInfo)(&router.Context{
@@ -3399,16 +3402,16 @@ func TestClientBootstrap(t *testing.T) {
 				if ct == "json" {
 					expCT = "application/json; charset=utf-8"
 				}
-				So(rr.Header().Get("Content-Type"), ShouldEqual, expCT)
+				assert.Loosely(t, rr.Header().Get("Content-Type"), should.Equal(expCT))
 				code = rr.Code
 				body = strings.TrimSpace(rr.Body.String())
 				return
 			}
 
-			Convey("Happy path", func() {
+			t.Run("Happy path", func(t *ftt.Test) {
 				code, body := call(goodPkg, goodIID, "json")
-				So(code, ShouldEqual, http.StatusOK)
-				So(body, ShouldEqual,
+				assert.Loosely(t, code, should.Equal(http.StatusOK))
+				assert.Loosely(t, body, should.Equal(
 					fmt.Sprintf(`{
   "client_binary": {
     "fetch_url": "%s",
@@ -3424,63 +3427,63 @@ func TestClientBootstrap(t *testing.T) {
 }`,
 						expectedClientURL,
 						res.ClientBinary.AllHashDigests["SHA1"],
-						inst.InstanceID))
+						inst.InstanceID)))
 			})
 
-			Convey("Bad package name", func() {
+			t.Run("Bad package name", func(t *ftt.Test) {
 				code, body := call("not/a/client", goodIID, "text")
-				So(code, ShouldEqual, http.StatusBadRequest)
-				So(body, ShouldContainSubstring, "not a CIPD client package")
+				assert.Loosely(t, code, should.Equal(http.StatusBadRequest))
+				assert.Loosely(t, body, should.ContainSubstring("not a CIPD client package"))
 			})
 
-			Convey("Bad instance ID", func() {
+			t.Run("Bad instance ID", func(t *ftt.Test) {
 				code, body := call(goodPkg, "not-an-id", "text")
-				So(code, ShouldEqual, http.StatusBadRequest)
-				So(body, ShouldContainSubstring, "not a valid package instance ID")
+				assert.Loosely(t, code, should.Equal(http.StatusBadRequest))
+				assert.Loosely(t, body, should.ContainSubstring("not a valid package instance ID"))
 			})
 
-			Convey("Missing instance", func() {
+			t.Run("Missing instance", func(t *ftt.Test) {
 				badIID := common.ObjectRefToInstanceID(&api.ObjectRef{
 					HashAlgo:  api.HashAlgo_SHA256,
 					HexDigest: strings.Repeat("d", 64),
 				})
 				code, body := call(goodPkg, badIID, "json")
-				So(code, ShouldEqual, http.StatusOK)
-				So(body, ShouldEqual, `{
+				assert.Loosely(t, code, should.Equal(http.StatusOK))
+				assert.Loosely(t, body, should.Equal(`{
   "error_message": "no such instance",
   "status": "INSTANCE_NOT_FOUND"
-}`)
+}`))
 			})
 
-			Convey("No access", func() {
+			t.Run("No access", func(t *ftt.Test) {
 				ctx = as("someone@example.com")
 				code, body := call(goodPkg, goodIID, "text")
-				So(code, ShouldEqual, http.StatusForbidden)
-				So(body, ShouldContainSubstring, "not allowed to see it")
+				assert.Loosely(t, code, should.Equal(http.StatusForbidden))
+				assert.Loosely(t, body, should.ContainSubstring("not allowed to see it"))
 			})
 
-			Convey("Not extracted yet", func() {
+			t.Run("Not extracted yet", func(t *ftt.Test) {
 				inst.ProcessorsPending = []string{proc.ProcID}
 				datastore.Delete(ctx, proc)
 				datastore.Put(ctx, inst)
 
 				code, body := call(goodPkg, goodIID, "json")
-				So(code, ShouldEqual, http.StatusOK)
-				So(body, ShouldEqual, `{
+				assert.Loosely(t, code, should.Equal(http.StatusOK))
+				assert.Loosely(t, body, should.Equal(`{
   "error_message": "the client binary is not extracted yet, try later",
   "status": "NOT_EXTRACTED_YET"
-}`)
+}`))
 			})
 
-			Convey("Fatal error during extraction", func() {
+			t.Run("Fatal error during extraction", func(t *ftt.Test) {
 				setup(nil, "BOOM")
 
 				code, body := call(goodPkg, goodIID, "json")
-				So(code, ShouldEqual, http.StatusOK)
-				So(body, ShouldEqual, `{
+				assert.Loosely(t, code, should.Equal(http.StatusOK))
+				assert.Loosely(t, body, should.Equal(`{
   "error_message": "the client binary is not available: some processors failed to process this instance: cipd_client_binary:v1",
   "status": "ERROR"
-}`)
+}`))
 			})
 		})
 	})
@@ -3489,7 +3492,7 @@ func TestClientBootstrap(t *testing.T) {
 func TestLegacyHandlers(t *testing.T) {
 	t.Parallel()
 
-	Convey("With fakes", t, func() {
+	ftt.Run("With fakes", t, func(t *ftt.Test) {
 		ctx, _, as := testutil.TestingContext()
 		ctx = as("reader@example.com")
 
@@ -3522,7 +3525,7 @@ func TestLegacyHandlers(t *testing.T) {
 			InstanceID: strings.Repeat("b", 40),
 			Package:    model.PackageKey(ctx, "a/b"),
 		}
-		So(datastore.Put(ctx, &model.Package{Name: "a/b"}, inst1, inst2), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, &model.Package{Name: "a/b"}, inst1, inst2), should.BeNil)
 
 		// Make an ambiguous tag.
 		model.AttachTags(ctx, inst1, []*api.Tag{{Key: "k", Value: "v"}})
@@ -3538,13 +3541,13 @@ func TestLegacyHandlers(t *testing.T) {
 			if ct == "json" {
 				expCT = "application/json; charset=utf-8"
 			}
-			So(rr.Header().Get("Content-Type"), ShouldEqual, expCT)
+			assert.Loosely(t, rr.Header().Get("Content-Type"), should.Equal(expCT))
 			code = rr.Code
 			body = strings.TrimSpace(rr.Body.String())
 			return
 		}
 
-		Convey("handleLegacyInstance works", func() {
+		t.Run("handleLegacyInstance works", func(t *ftt.Test) {
 			callInstance := func(pkg, iid, ct string) (code int, body string) {
 				return callHandler(adaptGrpcErr(impl.handleLegacyInstance), url.Values{
 					"package_name": {pkg},
@@ -3552,10 +3555,10 @@ func TestLegacyHandlers(t *testing.T) {
 				}, ct)
 			}
 
-			Convey("Happy path", func() {
+			t.Run("Happy path", func(t *ftt.Test) {
 				code, body := callInstance("a/b", strings.Repeat("a", 40), "json")
-				So(code, ShouldEqual, http.StatusOK)
-				So(body, ShouldEqual, `{
+				assert.Loosely(t, code, should.Equal(http.StatusOK))
+				assert.Loosely(t, body, should.Equal(`{
   "fetch_url": "http://fake/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
   "instance": {
     "package_name": "a/b",
@@ -3564,38 +3567,38 @@ func TestLegacyHandlers(t *testing.T) {
     "registered_ts": "1454472306000000"
   },
   "status": "SUCCESS"
-}`)
+}`))
 			})
 
-			Convey("Bad package", func() {
+			t.Run("Bad package", func(t *ftt.Test) {
 				code, body := callInstance("///", strings.Repeat("a", 40), "plain")
-				So(code, ShouldEqual, http.StatusBadRequest)
-				So(body, ShouldContainSubstring, "invalid package name")
+				assert.Loosely(t, code, should.Equal(http.StatusBadRequest))
+				assert.Loosely(t, body, should.ContainSubstring("invalid package name"))
 			})
 
-			Convey("Bad instance ID", func() {
+			t.Run("Bad instance ID", func(t *ftt.Test) {
 				code, body := callInstance("a/b", strings.Repeat("a", 99), "plain")
-				So(code, ShouldEqual, http.StatusBadRequest)
-				So(body, ShouldContainSubstring, "not a valid package instance ID")
+				assert.Loosely(t, code, should.Equal(http.StatusBadRequest))
+				assert.Loosely(t, body, should.ContainSubstring("not a valid package instance ID"))
 			})
 
-			Convey("No access", func() {
+			t.Run("No access", func(t *ftt.Test) {
 				code, body := callInstance("z/z/z", strings.Repeat("a", 40), "plain")
-				So(code, ShouldEqual, http.StatusForbidden)
-				So(body, ShouldContainSubstring, "not allowed to see")
+				assert.Loosely(t, code, should.Equal(http.StatusForbidden))
+				assert.Loosely(t, body, should.ContainSubstring("not allowed to see"))
 			})
 
-			Convey("Missing pkg", func() {
+			t.Run("Missing pkg", func(t *ftt.Test) {
 				code, body := callInstance("a/z/z", strings.Repeat("a", 40), "json")
-				So(code, ShouldEqual, http.StatusOK)
-				So(body, ShouldEqual, `{
+				assert.Loosely(t, code, should.Equal(http.StatusOK))
+				assert.Loosely(t, body, should.Equal(`{
   "error_message": "no such package: a/z/z",
   "status": "INSTANCE_NOT_FOUND"
-}`)
+}`))
 			})
 		})
 
-		Convey("handleLegacyResolve works", func() {
+		t.Run("handleLegacyResolve works", func(t *ftt.Test) {
 			callResolve := func(pkg, ver, ct string) (code int, body string) {
 				return callHandler(adaptGrpcErr(impl.handleLegacyResolve), url.Values{
 					"package_name": {pkg},
@@ -3603,43 +3606,43 @@ func TestLegacyHandlers(t *testing.T) {
 				}, ct)
 			}
 
-			Convey("Happy path", func() {
+			t.Run("Happy path", func(t *ftt.Test) {
 				code, body := callResolve("a/b", strings.Repeat("a", 40), "json")
-				So(code, ShouldEqual, http.StatusOK)
-				So(body, ShouldEqual, `{
+				assert.Loosely(t, code, should.Equal(http.StatusOK))
+				assert.Loosely(t, body, should.Equal(`{
   "instance_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
   "status": "SUCCESS"
-}`)
+}`))
 			})
 
-			Convey("Bad request", func() {
+			t.Run("Bad request", func(t *ftt.Test) {
 				code, body := callResolve("///", strings.Repeat("a", 40), "plain")
-				So(code, ShouldEqual, http.StatusBadRequest)
-				So(body, ShouldContainSubstring, "invalid package name")
+				assert.Loosely(t, code, should.Equal(http.StatusBadRequest))
+				assert.Loosely(t, body, should.ContainSubstring("invalid package name"))
 			})
 
-			Convey("No access", func() {
+			t.Run("No access", func(t *ftt.Test) {
 				code, body := callResolve("z/z/z", strings.Repeat("a", 40), "plain")
-				So(code, ShouldEqual, http.StatusForbidden)
-				So(body, ShouldContainSubstring, "not allowed to see")
+				assert.Loosely(t, code, should.Equal(http.StatusForbidden))
+				assert.Loosely(t, body, should.ContainSubstring("not allowed to see"))
 			})
 
-			Convey("Missing pkg", func() {
+			t.Run("Missing pkg", func(t *ftt.Test) {
 				code, body := callResolve("a/z/z", strings.Repeat("a", 40), "json")
-				So(code, ShouldEqual, http.StatusOK)
-				So(body, ShouldEqual, `{
+				assert.Loosely(t, code, should.Equal(http.StatusOK))
+				assert.Loosely(t, body, should.Equal(`{
   "error_message": "no such package: a/z/z",
   "status": "INSTANCE_NOT_FOUND"
-}`)
+}`))
 			})
 
-			Convey("Ambiguous version", func() {
+			t.Run("Ambiguous version", func(t *ftt.Test) {
 				code, body := callResolve("a/b", "k:v", "json")
-				So(code, ShouldEqual, http.StatusOK)
-				So(body, ShouldEqual, `{
+				assert.Loosely(t, code, should.Equal(http.StatusOK))
+				assert.Loosely(t, body, should.Equal(`{
   "error_message": "ambiguity when resolving the tag, more than one instance has it",
   "status": "AMBIGUOUS_VERSION"
-}`)
+}`))
 			})
 		})
 	})
@@ -3648,50 +3651,50 @@ func TestLegacyHandlers(t *testing.T) {
 func TestParseDownloadPath(t *testing.T) {
 	t.Parallel()
 
-	Convey("OK", t, func() {
+	ftt.Run("OK", t, func(t *ftt.Test) {
 		pkg, ver, err := parseDownloadPath("/a/b/c/+/latest")
-		So(err, ShouldBeNil)
-		So(pkg, ShouldEqual, "a/b/c")
-		So(ver, ShouldEqual, "latest")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, pkg, should.Equal("a/b/c"))
+		assert.Loosely(t, ver, should.Equal("latest"))
 
 		pkg, ver, err = parseDownloadPath("/a/b/c/+/repo:https://abc")
-		So(err, ShouldBeNil)
-		So(pkg, ShouldEqual, "a/b/c")
-		So(ver, ShouldEqual, "repo:https://abc")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, pkg, should.Equal("a/b/c"))
+		assert.Loosely(t, ver, should.Equal("repo:https://abc"))
 
 		pkg, ver, err = parseDownloadPath("/a/b/c/+/" + strings.Repeat("a", 40))
-		So(err, ShouldBeNil)
-		So(pkg, ShouldEqual, "a/b/c")
-		So(ver, ShouldEqual, strings.Repeat("a", 40))
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, pkg, should.Equal("a/b/c"))
+		assert.Loosely(t, ver, should.Equal(strings.Repeat("a", 40)))
 	})
 
-	Convey("Bad chunks", t, func() {
+	ftt.Run("Bad chunks", t, func(t *ftt.Test) {
 		_, _, err := parseDownloadPath("/+/latest")
-		So(err, ShouldErrLike, `should have form`)
+		assert.Loosely(t, err, should.ErrLike(`should have form`))
 
 		_, _, err = parseDownloadPath("latest")
-		So(err, ShouldErrLike, `should have form`)
+		assert.Loosely(t, err, should.ErrLike(`should have form`))
 
 		_, _, err = parseDownloadPath("/a/b/c")
-		So(err, ShouldErrLike, `should have form`)
+		assert.Loosely(t, err, should.ErrLike(`should have form`))
 	})
 
-	Convey("Bad package", t, func() {
+	ftt.Run("Bad package", t, func(t *ftt.Test) {
 		_, _, err := parseDownloadPath("BAD/+/latest")
-		So(err, ShouldErrLike, `invalid package name`)
+		assert.Loosely(t, err, should.ErrLike(`invalid package name`))
 
 		_, _, err = parseDownloadPath("/a//b/+/latest")
-		So(err, ShouldErrLike, `invalid package name`)
+		assert.Loosely(t, err, should.ErrLike(`invalid package name`))
 
 		_, _, err = parseDownloadPath("//+/latest")
-		So(err, ShouldErrLike, `invalid package name`)
+		assert.Loosely(t, err, should.ErrLike(`invalid package name`))
 	})
 
-	Convey("Bad version", t, func() {
+	ftt.Run("Bad version", t, func(t *ftt.Test) {
 		_, _, err := parseDownloadPath("a/+/")
-		So(err, ShouldErrLike, `bad version`)
+		assert.Loosely(t, err, should.ErrLike(`bad version`))
 
 		_, _, err = parseDownloadPath("a/+/!!!!")
-		So(err, ShouldErrLike, `bad version`)
+		assert.Loosely(t, err, should.ErrLike(`bad version`))
 	})
 }

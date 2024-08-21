@@ -23,22 +23,21 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/appengine/impl/testutil"
 	"go.chromium.org/luci/cipd/common"
-
-	. "github.com/smartystreets/goconvey/convey"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestTags(t *testing.T) {
 	t.Parallel()
 
-	Convey("With datastore", t, func() {
+	ftt.Run("With datastore", t, func(t *ftt.Test) {
 		digest := strings.Repeat("a", 40)
 
 		ctx, tc, as := testutil.TestingContext()
@@ -49,29 +48,29 @@ func TestTags(t *testing.T) {
 				Package:           PackageKey(ctx, pkg),
 				ProcessorsPending: pendingProcs,
 			}
-			So(datastore.Put(ctx, &Package{Name: pkg}, inst), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, &Package{Name: pkg}, inst), should.BeNil)
 			return inst
 		}
 
-		tags := func(t ...string) []*api.Tag {
-			out := make([]*api.Tag, len(t))
-			for i, s := range t {
+		tags := func(tag ...string) []*api.Tag {
+			out := make([]*api.Tag, len(tag))
+			for i, s := range tag {
 				out[i] = common.MustParseInstanceTag(s)
 			}
 			return out
 		}
 
 		getTag := func(inst *Instance, tag string) *Tag {
-			t := &Tag{
+			mTag := &Tag{
 				ID:       TagID(common.MustParseInstanceTag(tag)),
 				Instance: datastore.KeyForObj(ctx, inst),
 			}
-			err := datastore.Get(ctx, t)
+			err := datastore.Get(ctx, mTag)
 			if err == datastore.ErrNoSuchEntity {
 				return nil
 			}
-			So(err, ShouldBeNil)
-			return t
+			assert.Loosely(t, err, should.BeNil)
+			return mTag
 		}
 
 		expectedTag := func(inst *Instance, tag string, secs int, who identity.Identity) *Tag {
@@ -84,50 +83,50 @@ func TestTags(t *testing.T) {
 			}
 		}
 
-		Convey("Proto() works", func() {
+		t.Run("Proto() works", func(t *ftt.Test) {
 			inst := putInst("pkg", digest, nil)
-			t := expectedTag(inst, "k:v", 0, testutil.TestUser)
-			So(t.Proto(), ShouldResembleProto, &api.Tag{
+			mTag := expectedTag(inst, "k:v", 0, testutil.TestUser)
+			assert.Loosely(t, mTag.Proto(), should.Resemble(&api.Tag{
 				Key:        "k",
 				Value:      "v",
 				AttachedBy: string(testutil.TestUser),
 				AttachedTs: timestamppb.New(testutil.TestTime),
-			})
+			}))
 		})
 
-		Convey("AttachTags happy paths", func() {
+		t.Run("AttachTags happy paths", func(t *ftt.Test) {
 			inst := putInst("pkg", digest, nil)
 
 			// Attach one tag and verify it exist.
-			So(AttachTags(ctx, inst, tags("a:0")), ShouldBeNil)
-			So(getTag(inst, "a:0"), ShouldResemble, expectedTag(inst, "a:0", 0, testutil.TestUser))
+			assert.Loosely(t, AttachTags(ctx, inst, tags("a:0")), should.BeNil)
+			assert.Loosely(t, getTag(inst, "a:0"), should.Resemble(expectedTag(inst, "a:0", 0, testutil.TestUser)))
 
 			// Attach few more at once.
 			tc.Add(time.Second)
-			So(AttachTags(ctx, inst, tags("a:1", "a:2")), ShouldBeNil)
-			So(getTag(inst, "a:1"), ShouldResemble, expectedTag(inst, "a:1", 1, testutil.TestUser))
-			So(getTag(inst, "a:2"), ShouldResemble, expectedTag(inst, "a:2", 1, testutil.TestUser))
+			assert.Loosely(t, AttachTags(ctx, inst, tags("a:1", "a:2")), should.BeNil)
+			assert.Loosely(t, getTag(inst, "a:1"), should.Resemble(expectedTag(inst, "a:1", 1, testutil.TestUser)))
+			assert.Loosely(t, getTag(inst, "a:2"), should.Resemble(expectedTag(inst, "a:2", 1, testutil.TestUser)))
 
 			// Try to reattach an existing one (notice the change in the email),
 			// should be ignored.
-			So(AttachTags(as("def@example.com"), inst, tags("a:0")), ShouldBeNil)
-			So(getTag(inst, "a:0"), ShouldResemble, expectedTag(inst, "a:0", 0, testutil.TestUser))
+			assert.Loosely(t, AttachTags(as("def@example.com"), inst, tags("a:0")), should.BeNil)
+			assert.Loosely(t, getTag(inst, "a:0"), should.Resemble(expectedTag(inst, "a:0", 0, testutil.TestUser)))
 
 			// Try to reattach a bunch of existing ones at once.
-			So(AttachTags(as("def@example.com"), inst, tags("a:1", "a:2")), ShouldBeNil)
-			So(getTag(inst, "a:1"), ShouldResemble, expectedTag(inst, "a:1", 1, testutil.TestUser))
-			So(getTag(inst, "a:2"), ShouldResemble, expectedTag(inst, "a:2", 1, testutil.TestUser))
+			assert.Loosely(t, AttachTags(as("def@example.com"), inst, tags("a:1", "a:2")), should.BeNil)
+			assert.Loosely(t, getTag(inst, "a:1"), should.Resemble(expectedTag(inst, "a:1", 1, testutil.TestUser)))
+			assert.Loosely(t, getTag(inst, "a:2"), should.Resemble(expectedTag(inst, "a:2", 1, testutil.TestUser)))
 
 			// Mixed group with new and existing tags.
 			tc.Add(time.Second)
-			So(AttachTags(as("def@example.com"), inst, tags("a:3", "a:0", "a:4", "a:1")), ShouldBeNil)
-			So(getTag(inst, "a:3"), ShouldResemble, expectedTag(inst, "a:3", 2, "user:def@example.com"))
-			So(getTag(inst, "a:0"), ShouldResemble, expectedTag(inst, "a:0", 0, testutil.TestUser))
-			So(getTag(inst, "a:4"), ShouldResemble, expectedTag(inst, "a:4", 2, "user:def@example.com"))
-			So(getTag(inst, "a:1"), ShouldResemble, expectedTag(inst, "a:1", 1, testutil.TestUser))
+			assert.Loosely(t, AttachTags(as("def@example.com"), inst, tags("a:3", "a:0", "a:4", "a:1")), should.BeNil)
+			assert.Loosely(t, getTag(inst, "a:3"), should.Resemble(expectedTag(inst, "a:3", 2, "user:def@example.com")))
+			assert.Loosely(t, getTag(inst, "a:0"), should.Resemble(expectedTag(inst, "a:0", 0, testutil.TestUser)))
+			assert.Loosely(t, getTag(inst, "a:4"), should.Resemble(expectedTag(inst, "a:4", 2, "user:def@example.com")))
+			assert.Loosely(t, getTag(inst, "a:1"), should.Resemble(expectedTag(inst, "a:1", 1, testutil.TestUser)))
 
 			// All events have been collected.
-			So(GetEvents(ctx), ShouldResembleProto, []*api.Event{
+			assert.Loosely(t, GetEvents(ctx), should.Resemble([]*api.Event{
 				{
 					Kind:     api.EventKind_INSTANCE_TAG_ATTACHED,
 					Package:  "pkg",
@@ -168,45 +167,45 @@ func TestTags(t *testing.T) {
 					Who:      string(testutil.TestUser),
 					When:     timestamppb.New(testutil.TestTime),
 				},
-			})
+			}))
 		})
 
-		Convey("DetachTags happy paths", func() {
+		t.Run("DetachTags happy paths", func(t *ftt.Test) {
 			inst := putInst("pkg", digest, nil)
 
 			// Attach a bunch of tags first, so we have something to detach.
-			So(AttachTags(ctx, inst, tags("a:0", "a:1", "a:2", "a:3", "a:4")), ShouldBeNil)
+			assert.Loosely(t, AttachTags(ctx, inst, tags("a:0", "a:1", "a:2", "a:3", "a:4")), should.BeNil)
 
 			// Detaching one existing.
 			tc.Add(time.Second)
-			So(getTag(inst, "a:0"), ShouldNotBeNil)
-			So(DetachTags(ctx, inst, tags("a:0")), ShouldBeNil)
-			So(getTag(inst, "a:0"), ShouldBeNil)
+			assert.Loosely(t, getTag(inst, "a:0"), should.NotBeNil)
+			assert.Loosely(t, DetachTags(ctx, inst, tags("a:0")), should.BeNil)
+			assert.Loosely(t, getTag(inst, "a:0"), should.BeNil)
 
 			// Detaching one missing.
-			So(DetachTags(ctx, inst, tags("a:z0")), ShouldBeNil)
+			assert.Loosely(t, DetachTags(ctx, inst, tags("a:z0")), should.BeNil)
 
 			// Detaching a bunch of existing.
 			tc.Add(time.Second)
-			So(getTag(inst, "a:1"), ShouldNotBeNil)
-			So(getTag(inst, "a:2"), ShouldNotBeNil)
-			So(DetachTags(ctx, inst, tags("a:1", "a:2")), ShouldBeNil)
-			So(getTag(inst, "a:1"), ShouldBeNil)
-			So(getTag(inst, "a:2"), ShouldBeNil)
+			assert.Loosely(t, getTag(inst, "a:1"), should.NotBeNil)
+			assert.Loosely(t, getTag(inst, "a:2"), should.NotBeNil)
+			assert.Loosely(t, DetachTags(ctx, inst, tags("a:1", "a:2")), should.BeNil)
+			assert.Loosely(t, getTag(inst, "a:1"), should.BeNil)
+			assert.Loosely(t, getTag(inst, "a:2"), should.BeNil)
 
 			// Detaching a bunch of missing.
-			So(DetachTags(ctx, inst, tags("a:z1", "a:z2")), ShouldBeNil)
+			assert.Loosely(t, DetachTags(ctx, inst, tags("a:z1", "a:z2")), should.BeNil)
 
 			// Detaching a mix of existing and missing.
 			tc.Add(time.Second)
-			So(getTag(inst, "a:3"), ShouldNotBeNil)
-			So(getTag(inst, "a:4"), ShouldNotBeNil)
-			So(DetachTags(ctx, inst, tags("a:z3", "a:3", "a:z4", "a:4")), ShouldBeNil)
-			So(getTag(inst, "a:3"), ShouldBeNil)
-			So(getTag(inst, "a:4"), ShouldBeNil)
+			assert.Loosely(t, getTag(inst, "a:3"), should.NotBeNil)
+			assert.Loosely(t, getTag(inst, "a:4"), should.NotBeNil)
+			assert.Loosely(t, DetachTags(ctx, inst, tags("a:z3", "a:3", "a:z4", "a:4")), should.BeNil)
+			assert.Loosely(t, getTag(inst, "a:3"), should.BeNil)
+			assert.Loosely(t, getTag(inst, "a:4"), should.BeNil)
 
 			// All 'detach' events have been collected (skip checking 'attach' ones).
-			So(GetEvents(ctx)[:5], ShouldResembleProto, []*api.Event{
+			assert.Loosely(t, GetEvents(ctx)[:5], should.Resemble([]*api.Event{
 				{
 					Kind:     api.EventKind_INSTANCE_TAG_DETACHED,
 					Package:  "pkg",
@@ -247,72 +246,72 @@ func TestTags(t *testing.T) {
 					Who:      string(testutil.TestUser),
 					When:     timestamppb.New(testutil.TestTime.Add(time.Second)),
 				},
-			})
+			}))
 		})
 
-		Convey("AttachTags to not ready instance", func() {
+		t.Run("AttachTags to not ready instance", func(t *ftt.Test) {
 			inst := putInst("pkg", digest, []string{"proc"})
 
 			err := AttachTags(ctx, inst, tags("a:0"))
-			So(grpcutil.Code(err), ShouldEqual, codes.FailedPrecondition)
-			So(err, ShouldErrLike, "the instance is not ready yet")
+			assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.FailedPrecondition))
+			assert.Loosely(t, err, should.ErrLike("the instance is not ready yet"))
 		})
 
-		Convey("Handles SHA1 collision", func() {
+		t.Run("Handles SHA1 collision", func(t *ftt.Test) {
 			inst := putInst("pkg", digest, nil)
 
 			// We fake a collision here. Coming up with a real SHA1 collision to use
 			// in this test is left as an exercise to the reader.
-			So(datastore.Put(ctx, &Tag{
+			assert.Loosely(t, datastore.Put(ctx, &Tag{
 				ID:       TagID(common.MustParseInstanceTag("some:tag")),
 				Instance: datastore.KeyForObj(ctx, inst),
 				Tag:      "another:tag",
-			}), ShouldBeNil)
+			}), should.BeNil)
 
-			Convey("AttachTags", func() {
+			t.Run("AttachTags", func(t *ftt.Test) {
 				err := AttachTags(ctx, inst, tags("some:tag"))
-				So(grpcutil.Code(err), ShouldEqual, codes.Internal)
-				So(err, ShouldErrLike, `tag "some:tag" collides with tag "another:tag", refusing to touch it`)
+				assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.Internal))
+				assert.Loosely(t, err, should.ErrLike(`tag "some:tag" collides with tag "another:tag", refusing to touch it`))
 			})
 
-			Convey("DetachTags", func() {
+			t.Run("DetachTags", func(t *ftt.Test) {
 				err := DetachTags(ctx, inst, tags("some:tag"))
-				So(grpcutil.Code(err), ShouldEqual, codes.Internal)
-				So(err, ShouldErrLike, `tag "some:tag" collides with tag "another:tag", refusing to touch it`)
+				assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.Internal))
+				assert.Loosely(t, err, should.ErrLike(`tag "some:tag" collides with tag "another:tag", refusing to touch it`))
 			})
 		})
 
-		Convey("ResolveTag works", func() {
+		t.Run("ResolveTag works", func(t *ftt.Test) {
 			inst1 := putInst("pkg", strings.Repeat("1", 40), nil)
 			inst2 := putInst("pkg", strings.Repeat("2", 40), nil)
 
 			AttachTags(ctx, inst1, tags("ver:1", "ver:ambiguous"))
 			AttachTags(ctx, inst2, tags("ver:2", "ver:ambiguous"))
 
-			Convey("Happy path", func() {
+			t.Run("Happy path", func(t *ftt.Test) {
 				iid, err := ResolveTag(ctx, "pkg", common.MustParseInstanceTag("ver:1"))
-				So(err, ShouldBeNil)
-				So(iid, ShouldEqual, inst1.InstanceID)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, iid, should.Equal(inst1.InstanceID))
 			})
 
-			Convey("No such tag", func() {
+			t.Run("No such tag", func(t *ftt.Test) {
 				_, err := ResolveTag(ctx, "pkg", common.MustParseInstanceTag("ver:zzz"))
-				So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
-				So(err, ShouldErrLike, "no such tag")
+				assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.NotFound))
+				assert.Loosely(t, err, should.ErrLike("no such tag"))
 			})
 
-			Convey("Ambiguous tag", func() {
+			t.Run("Ambiguous tag", func(t *ftt.Test) {
 				_, err := ResolveTag(ctx, "pkg", common.MustParseInstanceTag("ver:ambiguous"))
-				So(grpcutil.Code(err), ShouldEqual, codes.FailedPrecondition)
-				So(err, ShouldErrLike, "ambiguity when resolving the tag")
+				assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.FailedPrecondition))
+				assert.Loosely(t, err, should.ErrLike("ambiguity when resolving the tag"))
 			})
 		})
 
-		Convey("ListInstanceTags works", func() {
+		t.Run("ListInstanceTags works", func(t *ftt.Test) {
 			asStr := func(tags []*Tag) []string {
 				out := make([]string, len(tags))
-				for i, t := range tags {
-					out[i] = t.Tag
+				for i, mTag := range tags {
+					out[i] = mTag.Tag
 				}
 				return out
 			}
@@ -321,24 +320,24 @@ func TestTags(t *testing.T) {
 
 			// Tags registered at the same time are sorted alphabetically.
 			AttachTags(ctx, inst, tags("z:1", "b:2", "b:1"))
-			t, err := ListInstanceTags(ctx, inst)
-			So(err, ShouldBeNil)
-			So(asStr(t), ShouldResemble, []string{"b:1", "b:2", "z:1"})
+			mTag, err := ListInstanceTags(ctx, inst)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, asStr(mTag), should.Resemble([]string{"b:1", "b:2", "z:1"}))
 
 			tc.Add(time.Minute)
 
 			// Tags are sorted by key first, and then by timestamp within the key.
 			AttachTags(ctx, inst, tags("y:1", "a:1", "b:3"))
-			t, err = ListInstanceTags(ctx, inst)
-			So(err, ShouldBeNil)
-			So(asStr(t), ShouldResemble, []string{
+			mTag, err = ListInstanceTags(ctx, inst)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, asStr(mTag), should.Resemble([]string{
 				"a:1",
 				"b:3",
 				"b:1",
 				"b:2",
 				"y:1",
 				"z:1",
-			})
+			}))
 		})
 	})
 }
