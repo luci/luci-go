@@ -67,8 +67,8 @@ func validateQueryTestVariantArtifactsRequest(req *pb.QueryTestVariantArtifactsR
 	if err := pbutil.ValidateProject(req.Project); err != nil {
 		return errors.Annotate(err, "project").Err()
 	}
-	if req.SearchString.GetExactContain() == "" && req.SearchString.GetRegexContain() == "" {
-		return errors.New("search_string: unspecified")
+	if err := validateSearchString(req.SearchString); err != nil {
+		return errors.Annotate(err, "search_string").Err()
 	}
 	if err := pbutil.ValidateTestID(req.TestId); err != nil {
 		return errors.Annotate(err, "test_id").Err()

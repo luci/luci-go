@@ -42,8 +42,8 @@ func TestMatchWithContextRegexBuilder(t *testing.T) {
 		}
 		Convey(`exact contain mode`, func() {
 			builder := newMatchWithContextRegexBuilder(&resultpb.ArtifactContentMatcher{
-				Matcher: &resultpb.ArtifactContentMatcher_ExactContain{
-					ExactContain: "exact.contain()",
+				Matcher: &resultpb.ArtifactContentMatcher_Contain{
+					Contain: "exact.contain()",
 				},
 			})
 
@@ -73,8 +73,8 @@ func TestMatchWithContextRegexBuilder(t *testing.T) {
 
 			Convey(`should be case insensitive`, func() {
 				builder := newMatchWithContextRegexBuilder(&resultpb.ArtifactContentMatcher{
-					Matcher: &resultpb.ArtifactContentMatcher_ExactContain{
-						ExactContain: "EXACT.contain()",
+					Matcher: &resultpb.ArtifactContentMatcher_Contain{
+						Contain: "EXACT.contain()",
 					},
 				})
 
@@ -120,8 +120,8 @@ func TestMatchWithContextRegexBuilder(t *testing.T) {
 
 		Convey(`should match first occurrence`, func() {
 			builder := newMatchWithContextRegexBuilder(&resultpb.ArtifactContentMatcher{
-				Matcher: &resultpb.ArtifactContentMatcher_ExactContain{
-					ExactContain: "l",
+				Matcher: &resultpb.ArtifactContentMatcher_Contain{
+					Contain: "l",
 				},
 			})
 

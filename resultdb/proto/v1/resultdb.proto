@@ -1136,8 +1136,8 @@ message ArtifactContentMatcher {
     // The string is a regex expression. Use regex match to find matching artifact content.
     string regex_contain = 1;
 
-    // Use equality match with this string to find matching artifact content.
-    string exact_contain = 2;
+    // Use case insensitive equality match with this string to find matching artifact content.
+    string contain = 2;
   }
 }
 

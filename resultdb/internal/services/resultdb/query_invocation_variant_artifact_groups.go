@@ -82,10 +82,9 @@ func validateQueryInvocationVariantArtifactGroupsRequest(req *pb.QueryInvocation
 	if err := pbutil.ValidateProject(req.Project); err != nil {
 		return errors.Annotate(err, "project").Err()
 	}
-	if req.SearchString.GetExactContain() == "" && req.SearchString.GetRegexContain() == "" {
-		return errors.New("search_string: unspecified")
+	if err := validateSearchString(req.SearchString); err != nil {
+		return errors.Annotate(err, "search_string").Err()
 	}
-
 	// Non-googler caller have to specify an exact artifact id.
 	// Because search with empty artifact id, or artifact id prefix can be expensive.
 	// So we want to avoid people outside of google from abusing it.

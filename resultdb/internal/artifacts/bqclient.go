@@ -523,8 +523,8 @@ func regexPattern(matcher *pb.ArtifactContentMatcher) string {
 		panic("match should not be nil")
 	}
 	switch m := matcher.Matcher.(type) {
-	case *pb.ArtifactContentMatcher_ExactContain:
-		return caseInsensitiveFlag + regexp.QuoteMeta(m.ExactContain)
+	case *pb.ArtifactContentMatcher_Contain:
+		return caseInsensitiveFlag + regexp.QuoteMeta(m.Contain)
 	case *pb.ArtifactContentMatcher_RegexContain:
 		return m.RegexContain
 	default:

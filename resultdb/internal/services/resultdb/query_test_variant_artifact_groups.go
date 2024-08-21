@@ -17,6 +17,7 @@ package resultdb
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"time"
 
 	"google.golang.org/grpc/codes"
@@ -36,7 +37,7 @@ import (
 
 const googlerOnlyGroup = "googlers"
 
-// The maximium bytes for
+// The maximum bytes of artifact content in the response.
 const maxMatchWithContextLength = 10 * 1024 // 10KiB.
 
 var artifactSearchPageSizeLimiter = pagination.PageSizeLimiter{
@@ -96,8 +97,8 @@ func validateQueryTestVariantArtifactGroupsRequest(req *pb.QueryTestVariantArtif
 	if err := pbutil.ValidateProject(req.Project); err != nil {
 		return errors.Annotate(err, "project").Err()
 	}
-	if req.SearchString.GetExactContain() == "" && req.SearchString.GetRegexContain() == "" {
-		return errors.New("search_string: unspecified")
+	if err := validateSearchString(req.SearchString); err != nil {
+		return errors.Annotate(err, "search_string").Err()
 	}
 	// Non-googler caller have to specify an exact test id.
 	// Because search with empty test id, or test id prefix can uses around 36 BigQuery slot hours.
@@ -117,6 +118,29 @@ func validateQueryTestVariantArtifactGroupsRequest(req *pb.QueryTestVariantArtif
 	}
 	if err := pagination.ValidatePageSize(req.GetPageSize()); err != nil {
 		return errors.Annotate(err, "page_size").Err()
+	}
+	return nil
+}
+
+func validateSearchString(m *pb.ArtifactContentMatcher) error {
+	if m.GetContain() == "" && m.GetRegexContain() == "" {
+		return errors.New("unspecified")
+	}
+	var matchString string
+	switch x := m.Matcher.(type) {
+	case *pb.ArtifactContentMatcher_Contain:
+		matchString = m.GetContain()
+	case *pb.ArtifactContentMatcher_RegexContain:
+		matchString = m.GetRegexContain()
+		if _, err := regexp.Compile(matchString); err != nil {
+			return err
+		}
+	default:
+		return fmt.Errorf("has unexpected type %T", x)
+	}
+	// 2048 bytes (2kib) is an arbitrary limit for this field. It can be increased if needed.
+	if len(matchString) > 2048 {
+		return errors.Reason("longer than 2048 bytes").Err()
 	}
 	return nil
 }

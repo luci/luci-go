@@ -277,6 +277,35 @@ func TestValidateQueryTestVariantArtifactGroupsRequest(t *testing.T) {
 	})
 }
 
+func TestValidateSearchString(t *testing.T) {
+	Convey("validateSearchString", t, func() {
+		Convey("unspecified", func() {
+			err := validateSearchString(nil)
+			So(err, ShouldErrLike, `unspecified`)
+		})
+		Convey("exceed 2048 bytes", func() {
+			m := &pb.ArtifactContentMatcher{
+				Matcher: &pb.ArtifactContentMatcher_Contain{
+					Contain: strings.Repeat("a", 2049),
+				},
+			}
+
+			err := validateSearchString(m)
+			So(err, ShouldErrLike, `longer than 2048 bytes`)
+		})
+		Convey("invalid regex", func() {
+			m := &pb.ArtifactContentMatcher{
+				Matcher: &pb.ArtifactContentMatcher_RegexContain{
+					RegexContain: "(.*",
+				},
+			}
+
+			err := validateSearchString(m)
+			So(err, ShouldErrLike, `error parsing regexp`)
+		})
+	})
+}
+
 func TestTruncateMatchWithContext(t *testing.T) {
 	Convey("truncateMatchWithContext", t, func() {
 		Convey("no truncate", func() {
