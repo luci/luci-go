@@ -29,6 +29,9 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -43,9 +46,6 @@ import (
 	"go.chromium.org/luci/cipd/appengine/impl/gs"
 	"go.chromium.org/luci/cipd/appengine/impl/settings"
 	"go.chromium.org/luci/cipd/appengine/impl/testutil"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 
 	// Using transactional datastore TQ tasks.
 	_ "go.chromium.org/luci/server/tq/txn/datastore"
@@ -68,37 +68,37 @@ func TestGetReader(t *testing.T) {
 		getGS:    func(context.Context) gs.GoogleStorage { return gsMock },
 	}
 
-	Convey("OK", t, func() {
+	ftt.Run("OK", t, func(t *ftt.Test) {
 		r, err := impl.GetReader(ctx, &api.ObjectRef{
 			HashAlgo:  api.HashAlgo_SHA256,
 			HexDigest: sha256,
 		})
-		So(err, ShouldBeNil)
-		So(r, ShouldNotBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, r, should.NotBeNilInterface)
 
 		body := make([]byte, 100)
 		l, err := r.ReadAt(body, 0)
-		So(err, ShouldEqual, io.EOF)
+		assert.Loosely(t, err, should.Equal(io.EOF))
 		body = body[:l]
-		So(string(body), ShouldEqual, "zzz body")
+		assert.Loosely(t, string(body), should.Equal("zzz body"))
 	})
 
-	Convey("Bad object ref", t, func() {
+	ftt.Run("Bad object ref", t, func(t *ftt.Test) {
 		_, err := impl.GetReader(ctx, &api.ObjectRef{
 			HashAlgo:  api.HashAlgo_SHA256,
 			HexDigest: "zzz",
 		})
-		So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-		So(err, ShouldErrLike, "bad ref")
+		assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+		assert.Loosely(t, err, should.ErrLike("bad ref"))
 	})
 
-	Convey("No such file", t, func() {
+	ftt.Run("No such file", t, func(t *ftt.Test) {
 		_, err := impl.GetReader(ctx, &api.ObjectRef{
 			HashAlgo:  api.HashAlgo_SHA256,
 			HexDigest: strings.Repeat("b", 64),
 		})
-		So(status.Code(err), ShouldEqual, codes.NotFound)
-		So(err, ShouldErrLike, "can't read the object")
+		assert.Loosely(t, status.Code(err), should.Equal(codes.NotFound))
+		assert.Loosely(t, err, should.ErrLike("can't read the object"))
 	})
 }
 
@@ -116,7 +116,7 @@ func TestGetObjectURL(t *testing.T) {
 		},
 	}
 
-	Convey("OK", t, func() {
+	ftt.Run("OK", t, func(t *ftt.Test) {
 		resp, err := impl.GetObjectURL(ctx, &api.GetObjectURLRequest{
 			Object: &api.ObjectRef{
 				HashAlgo:  api.HashAlgo_SHA256,
@@ -124,25 +124,25 @@ func TestGetObjectURL(t *testing.T) {
 			},
 			DownloadFilename: "file.name",
 		})
-		So(err, ShouldBeNil)
-		So(resp, ShouldResembleProto, &api.ObjectURL{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, resp, should.Resemble(&api.ObjectURL{
 			SignedUrl: "http//signed.example.com/bucket/path/SHA256/" +
 				strings.Repeat("a", 64) + "?f=file.name",
-		})
+		}))
 	})
 
-	Convey("Bad object ref", t, func() {
+	ftt.Run("Bad object ref", t, func(t *ftt.Test) {
 		_, err := impl.GetObjectURL(ctx, &api.GetObjectURLRequest{
 			Object: &api.ObjectRef{
 				HashAlgo:  api.HashAlgo_SHA256,
 				HexDigest: "zzz",
 			},
 		})
-		So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-		So(err, ShouldErrLike, "bad 'object' field")
+		assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+		assert.Loosely(t, err, should.ErrLike("bad 'object' field"))
 	})
 
-	Convey("Bad filename", t, func() {
+	ftt.Run("Bad filename", t, func(t *ftt.Test) {
 		_, err := impl.GetObjectURL(ctx, &api.GetObjectURLRequest{
 			Object: &api.ObjectRef{
 				HashAlgo:  api.HashAlgo_SHA256,
@@ -150,11 +150,11 @@ func TestGetObjectURL(t *testing.T) {
 			},
 			DownloadFilename: "abc\ndef",
 		})
-		So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-		So(err, ShouldErrLike, "bad 'download_filename' field")
+		assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+		assert.Loosely(t, err, should.ErrLike("bad 'download_filename' field"))
 	})
 
-	Convey("No such file", t, func() {
+	ftt.Run("No such file", t, func(t *ftt.Test) {
 		signErr = errors.Reason("blah").Tag(grpcutil.NotFoundTag).Err()
 		_, err := impl.GetObjectURL(ctx, &api.GetObjectURLRequest{
 			Object: &api.ObjectRef{
@@ -162,11 +162,11 @@ func TestGetObjectURL(t *testing.T) {
 				HexDigest: strings.Repeat("a", 64),
 			},
 		})
-		So(status.Code(err), ShouldEqual, codes.NotFound)
-		So(err, ShouldErrLike, "blah")
+		assert.Loosely(t, status.Code(err), should.Equal(codes.NotFound))
+		assert.Loosely(t, err, should.ErrLike("blah"))
 	})
 
-	Convey("Internal error", t, func() {
+	ftt.Run("Internal error", t, func(t *ftt.Test) {
 		signErr = errors.Reason("internal").Err()
 		_, err := impl.GetObjectURL(ctx, &api.GetObjectURLRequest{
 			Object: &api.ObjectRef{
@@ -174,8 +174,8 @@ func TestGetObjectURL(t *testing.T) {
 				HexDigest: strings.Repeat("a", 64),
 			},
 		})
-		So(status.Code(err), ShouldEqual, codes.Unknown)
-		So(err, ShouldErrLike, "internal")
+		assert.Loosely(t, status.Code(err), should.Equal(codes.Unknown))
+		assert.Loosely(t, err, should.ErrLike("internal"))
 	})
 }
 
@@ -243,64 +243,64 @@ func (m mockedGSReader) Generation() int64 { return 42 }
 func TestBeginUpload(t *testing.T) {
 	t.Parallel()
 
-	Convey("With mocks", t, func() {
+	ftt.Run("With mocks", t, func(t *ftt.Test) {
 		ctx, gsMock, _, _, impl := storageMocks()
 
-		Convey("Success (no Object)", func() {
+		t.Run("Success (no Object)", func(t *ftt.Test) {
 			resp, err := impl.BeginUpload(ctx, &api.BeginUploadRequest{
 				HashAlgo: api.HashAlgo_SHA256,
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// ID can be decoded back.
 			opID, err := upload.UnwrapOpID(ctx, resp.OperationId, testutil.TestUser)
-			So(err, ShouldBeNil)
-			So(opID, ShouldEqual, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, opID, should.Equal(1))
 
 			// Rest of the response looks OK too.
 			resp.OperationId = ""
-			So(resp, ShouldResembleProto, &api.UploadOperation{
+			assert.Loosely(t, resp, should.Resemble(&api.UploadOperation{
 				UploadUrl: "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
 				Status:    api.UploadStatus_UPLOADING,
-			})
+			}))
 
 			// Created the entity.
 			op := upload.Operation{ID: 1}
-			So(datastore.Get(ctx, &op), ShouldBeNil)
+			assert.Loosely(t, datastore.Get(ctx, &op), should.BeNil)
 
-			So(op.CreatedTS.Equal(testutil.TestTime), ShouldBeTrue)
+			assert.Loosely(t, op.CreatedTS.Equal(testutil.TestTime), should.BeTrue)
 			op.CreatedTS = time.Time{}
-			So(op.UpdatedTS.Equal(testutil.TestTime), ShouldBeTrue)
+			assert.Loosely(t, op.UpdatedTS.Equal(testutil.TestTime), should.BeTrue)
 			op.UpdatedTS = time.Time{}
 
-			So(op, ShouldResemble, upload.Operation{
+			assert.Loosely(t, op, should.Resemble(upload.Operation{
 				ID:         1,
 				Status:     api.UploadStatus_UPLOADING,
 				TempGSPath: "/bucket/tmp_path/1454472306_1",
 				UploadURL:  "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
 				HashAlgo:   api.HashAlgo_SHA256,
 				CreatedBy:  testutil.TestUser,
-			})
+			}))
 		})
 
-		Convey("Success (Object is not present in the store)", func() {
+		t.Run("Success (Object is not present in the store)", func(t *ftt.Test) {
 			resp, err := impl.BeginUpload(ctx, &api.BeginUploadRequest{
 				Object: &api.ObjectRef{
 					HashAlgo:  api.HashAlgo_SHA256,
 					HexDigest: strings.Repeat("a", 64),
 				},
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			resp.OperationId = ""
-			So(resp, ShouldResembleProto, &api.UploadOperation{
+			assert.Loosely(t, resp, should.Resemble(&api.UploadOperation{
 				UploadUrl: "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
 				Status:    api.UploadStatus_UPLOADING,
-			})
+			}))
 
 			op := upload.Operation{ID: 1}
-			So(datastore.Get(ctx, &op), ShouldBeNil)
-			So(op, ShouldResemble, upload.Operation{
+			assert.Loosely(t, datastore.Get(ctx, &op), should.BeNil)
+			assert.Loosely(t, op, should.Resemble(upload.Operation{
 				ID:         1,
 				Status:     api.UploadStatus_UPLOADING,
 				TempGSPath: "/bucket/tmp_path/1454472306_1",
@@ -310,10 +310,10 @@ func TestBeginUpload(t *testing.T) {
 				CreatedBy:  testutil.TestUser,
 				CreatedTS:  op.CreatedTS,
 				UpdatedTS:  op.UpdatedTS,
-			})
+			}))
 		})
 
-		Convey("Object already exists", func() {
+		t.Run("Object already exists", func(t *ftt.Test) {
 			gsMock.exists = true
 			_, err := impl.BeginUpload(ctx, &api.BeginUploadRequest{
 				Object: &api.ObjectRef{
@@ -321,28 +321,28 @@ func TestBeginUpload(t *testing.T) {
 					HexDigest: strings.Repeat("a", 64),
 				},
 			})
-			So(status.Code(err), ShouldEqual, codes.AlreadyExists)
+			assert.Loosely(t, status.Code(err), should.Equal(codes.AlreadyExists))
 		})
 
-		Convey("Bad object", func() {
+		t.Run("Bad object", func(t *ftt.Test) {
 			_, err := impl.BeginUpload(ctx, &api.BeginUploadRequest{
 				Object: &api.ObjectRef{
 					HashAlgo: 1234,
 				},
 			})
-			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-			So(err, ShouldErrLike, "bad 'object'")
+			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("bad 'object'"))
 		})
 
-		Convey("Bad hash_algo", func() {
+		t.Run("Bad hash_algo", func(t *ftt.Test) {
 			_, err := impl.BeginUpload(ctx, &api.BeginUploadRequest{
 				HashAlgo: 1234,
 			})
-			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-			So(err, ShouldErrLike, "bad 'hash_algo'")
+			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("bad 'hash_algo'"))
 		})
 
-		Convey("Mismatch in hash_algo", func() {
+		t.Run("Mismatch in hash_algo", func(t *ftt.Test) {
 			_, err := impl.BeginUpload(ctx, &api.BeginUploadRequest{
 				Object: &api.ObjectRef{
 					HashAlgo:  api.HashAlgo_SHA256,
@@ -350,8 +350,8 @@ func TestBeginUpload(t *testing.T) {
 				},
 				HashAlgo: 333, // something else
 			})
-			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-			So(err, ShouldErrLike, "'hash_algo' and 'object.hash_algo' do not match")
+			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("'hash_algo' and 'object.hash_algo' do not match"))
 		})
 	})
 }
@@ -408,25 +408,25 @@ func storageMocks() (context.Context, *mockedGS, *tqtesting.Scheduler, *verifica
 func TestFinishUpload(t *testing.T) {
 	t.Parallel()
 
-	Convey("With mocks", t, func() {
+	ftt.Run("With mocks", t, func(t *ftt.Test) {
 		ctx, gsMock, tq, verificationLogs, impl := storageMocks()
 
-		Convey("With force hash", func() {
+		t.Run("With force hash", func(t *ftt.Test) {
 			// Initiate an upload to get operation ID.
 			op, err := impl.BeginUpload(ctx, &api.BeginUploadRequest{
 				HashAlgo: api.HashAlgo_SHA256,
 			})
-			So(err, ShouldBeNil)
-			So(op, ShouldResembleProto, &api.UploadOperation{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, op, should.Resemble(&api.UploadOperation{
 				OperationId: op.OperationId,
 				Status:      api.UploadStatus_UPLOADING,
 				UploadUrl:   "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
-			})
+			}))
 
 			// Pretend we've uploaded 5 bytes.
 			gsMock.files["/bucket/tmp_path/1454472306_1"] = "12345"
 
-			Convey("Success", func() {
+			t.Run("Success", func(t *ftt.Test) {
 				op, err = impl.FinishUpload(ctx, &api.FinishUploadRequest{
 					UploadOperationId: op.OperationId,
 					ForceHash: &api.ObjectRef{
@@ -434,8 +434,8 @@ func TestFinishUpload(t *testing.T) {
 						HexDigest: strings.Repeat("a", 64),
 					},
 				})
-				So(err, ShouldBeNil)
-				So(op, ShouldResembleProto, &api.UploadOperation{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, op, should.Resemble(&api.UploadOperation{
 					OperationId: op.OperationId,
 					Status:      api.UploadStatus_PUBLISHED,
 					UploadUrl:   "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
@@ -443,20 +443,20 @@ func TestFinishUpload(t *testing.T) {
 						HashAlgo:  api.HashAlgo_SHA256,
 						HexDigest: strings.Repeat("a", 64),
 					},
-				})
+				}))
 
 				// Published the file, deleted the temporary one.
-				So(gsMock.publisCalls, ShouldResemble, []publishCall{
+				assert.Loosely(t, gsMock.publisCalls, should.Resemble([]publishCall{
 					{
 						dst:    "/bucket/store/SHA256/" + strings.Repeat("a", 64),
 						src:    "/bucket/tmp_path/1454472306_1",
 						srcGen: -1,
 					},
-				})
-				So(gsMock.deleteCalls, ShouldResemble, []string{"/bucket/tmp_path/1454472306_1"})
+				}))
+				assert.Loosely(t, gsMock.deleteCalls, should.Resemble([]string{"/bucket/tmp_path/1454472306_1"}))
 			})
 
-			Convey("Publish transient error", func() {
+			t.Run("Publish transient error", func(t *ftt.Test) {
 				gsMock.publishErr = errors.Reason("blarg").Tag(transient.Tag).Err()
 				op, err = impl.FinishUpload(ctx, &api.FinishUploadRequest{
 					UploadOperationId: op.OperationId,
@@ -465,15 +465,15 @@ func TestFinishUpload(t *testing.T) {
 						HexDigest: strings.Repeat("a", 64),
 					},
 				})
-				So(status.Code(err), ShouldEqual, codes.Internal)
+				assert.Loosely(t, status.Code(err), should.Equal(codes.Internal))
 
 				// Status untouched.
 				entity := upload.Operation{ID: 1}
-				So(datastore.Get(ctx, &entity), ShouldBeNil)
-				So(entity.Status, ShouldEqual, api.UploadStatus_UPLOADING)
+				assert.Loosely(t, datastore.Get(ctx, &entity), should.BeNil)
+				assert.Loosely(t, entity.Status, should.Equal(api.UploadStatus_UPLOADING))
 			})
 
-			Convey("Publish fatal error", func() {
+			t.Run("Publish fatal error", func(t *ftt.Test) {
 				gsMock.publishErr = errors.Reason("blarg").Err()
 				op, err = impl.FinishUpload(ctx, &api.FinishUploadRequest{
 					UploadOperationId: op.OperationId,
@@ -482,27 +482,27 @@ func TestFinishUpload(t *testing.T) {
 						HexDigest: strings.Repeat("a", 64),
 					},
 				})
-				So(err, ShouldBeNil)
-				So(op, ShouldResembleProto, &api.UploadOperation{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, op, should.Resemble(&api.UploadOperation{
 					OperationId:  op.OperationId,
 					Status:       api.UploadStatus_ERRORED,
 					UploadUrl:    "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
 					ErrorMessage: "Failed to publish the object - blarg",
-				})
+				}))
 			})
 		})
 
-		Convey("Without force hash, unknown expected hash", func() {
+		t.Run("Without force hash, unknown expected hash", func(t *ftt.Test) {
 			// Initiate an upload to get operation ID.
 			op, err := impl.BeginUpload(ctx, &api.BeginUploadRequest{
 				HashAlgo: api.HashAlgo_SHA256,
 			})
-			So(err, ShouldBeNil)
-			So(op, ShouldResembleProto, &api.UploadOperation{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, op, should.Resemble(&api.UploadOperation{
 				OperationId: op.OperationId,
 				Status:      api.UploadStatus_UPLOADING,
 				UploadUrl:   "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
-			})
+			}))
 
 			// Pretend we've uploaded 5 bytes.
 			gsMock.files["/bucket/tmp_path/1454472306_1"] = "12345"
@@ -511,50 +511,50 @@ func TestFinishUpload(t *testing.T) {
 			op, err = impl.FinishUpload(ctx, &api.FinishUploadRequest{
 				UploadOperationId: op.OperationId,
 			})
-			So(err, ShouldBeNil)
-			So(op, ShouldResembleProto, &api.UploadOperation{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, op, should.Resemble(&api.UploadOperation{
 				OperationId: op.OperationId,
 				Status:      api.UploadStatus_VERIFYING,
 				UploadUrl:   "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
-			})
+			}))
 
 			// Posted the verification task.
-			t := tq.Tasks()
-			So(t, ShouldHaveLength, 1)
-			So(t[0].Payload, ShouldResembleProto, &tasks.VerifyUpload{UploadOperationId: 1})
+			tqTasks := tq.Tasks()
+			assert.Loosely(t, tqTasks, should.HaveLength(1))
+			assert.Loosely(t, tqTasks[0].Payload, should.Resemble(&tasks.VerifyUpload{UploadOperationId: 1}))
 
-			Convey("Retrying FinishUpload does nothing", func() {
+			t.Run("Retrying FinishUpload does nothing", func(t *ftt.Test) {
 				// Retrying the call does nothing.
 				op, err = impl.FinishUpload(ctx, &api.FinishUploadRequest{
 					UploadOperationId: op.OperationId,
 				})
-				So(err, ShouldBeNil)
-				So(op.Status, ShouldEqual, api.UploadStatus_VERIFYING)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, op.Status, should.Equal(api.UploadStatus_VERIFYING))
 
 				// Still only 1 task in the queue.
-				So(tq.Tasks(), ShouldHaveLength, 1)
+				assert.Loosely(t, tq.Tasks(), should.HaveLength(1))
 			})
 
-			Convey("Successful verification", func() {
+			t.Run("Successful verification", func(t *ftt.Test) {
 				// Execute the pending verification task.
-				So(impl.verifyUploadTask(ctx, t[0].Payload.(*tasks.VerifyUpload)), ShouldBeNil)
+				assert.Loosely(t, impl.verifyUploadTask(ctx, tqTasks[0].Payload.(*tasks.VerifyUpload)), should.BeNil)
 
 				// Published the verified file, deleted the temporary one.
-				So(gsMock.publisCalls, ShouldResemble, []publishCall{
+				assert.Loosely(t, gsMock.publisCalls, should.Resemble([]publishCall{
 					{
 						dst:    "/bucket/store/SHA256/5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5",
 						src:    "/bucket/tmp_path/1454472306_1",
 						srcGen: 42,
 					},
-				})
-				So(gsMock.deleteCalls, ShouldResemble, []string{"/bucket/tmp_path/1454472306_1"})
+				}))
+				assert.Loosely(t, gsMock.deleteCalls, should.Resemble([]string{"/bucket/tmp_path/1454472306_1"}))
 
 				// Caller sees the file is published now.
 				op, err = impl.FinishUpload(ctx, &api.FinishUploadRequest{
 					UploadOperationId: op.OperationId,
 				})
-				So(err, ShouldBeNil)
-				So(op, ShouldResembleProto, &api.UploadOperation{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, op, should.Resemble(&api.UploadOperation{
 					OperationId: op.OperationId,
 					Status:      api.UploadStatus_PUBLISHED,
 					UploadUrl:   "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
@@ -562,10 +562,10 @@ func TestFinishUpload(t *testing.T) {
 						HashAlgo:  api.HashAlgo_SHA256,
 						HexDigest: "5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5",
 					},
-				})
+				}))
 
 				// There's a log entry.
-				So(verificationLogs.last(), ShouldResembleProto, &api.VerificationLogEntry{
+				assert.Loosely(t, verificationLogs.last(), should.Resemble(&api.VerificationLogEntry{
 					OperationId:        1,
 					TraceId:            testutil.TestRequestID.String(),
 					InitiatedBy:        string(testutil.TestUser),
@@ -577,32 +577,32 @@ func TestFinishUpload(t *testing.T) {
 					FileSize:           5,
 					VerificationSpeed:  5000, // this is fake, our time is frozen
 					Outcome:            "PUBLISHED",
-				})
+				}))
 			})
 
-			Convey("Publish transient error", func() {
+			t.Run("Publish transient error", func(t *ftt.Test) {
 				gsMock.publishErr = errors.Reason("blarg").Tag(transient.Tag).Err()
 
 				// Execute the pending verification task.
-				err := impl.verifyUploadTask(ctx, t[0].Payload.(*tasks.VerifyUpload))
-				So(transient.Tag.In(err), ShouldBeTrue)
+				err := impl.verifyUploadTask(ctx, tqTasks[0].Payload.(*tasks.VerifyUpload))
+				assert.Loosely(t, transient.Tag.In(err), should.BeTrue)
 
 				// Didn't delete anything.
-				So(len(gsMock.deleteCalls), ShouldEqual, 0)
+				assert.Loosely(t, len(gsMock.deleteCalls), should.BeZero)
 
 				// Caller sees the file is still being verified.
 				op, err = impl.FinishUpload(ctx, &api.FinishUploadRequest{
 					UploadOperationId: op.OperationId,
 				})
-				So(err, ShouldBeNil)
-				So(op, ShouldResembleProto, &api.UploadOperation{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, op, should.Resemble(&api.UploadOperation{
 					OperationId: op.OperationId,
 					Status:      api.UploadStatus_VERIFYING,
 					UploadUrl:   "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
-				})
+				}))
 
 				// There's a log entry.
-				So(verificationLogs.last(), ShouldResembleProto, &api.VerificationLogEntry{
+				assert.Loosely(t, verificationLogs.last(), should.Resemble(&api.VerificationLogEntry{
 					OperationId:        1,
 					TraceId:            testutil.TestRequestID.String(),
 					InitiatedBy:        string(testutil.TestUser),
@@ -615,34 +615,34 @@ func TestFinishUpload(t *testing.T) {
 					VerificationSpeed:  5000, // this is fake, our time is frozen
 					Outcome:            "ERRORED",
 					Error:              "Transient error: failed to publish the verified file: blarg",
-				})
+				}))
 			})
 
-			Convey("Publish fatal error", func() {
+			t.Run("Publish fatal error", func(t *ftt.Test) {
 				gsMock.publishErr = errors.Reason("blarg").Err()
 
 				// Execute the pending verification task.
-				err := impl.verifyUploadTask(ctx, t[0].Payload.(*tasks.VerifyUpload))
-				So(err, ShouldErrLike, "failed to publish the verified file")
-				So(transient.Tag.In(err), ShouldBeFalse)
+				err := impl.verifyUploadTask(ctx, tqTasks[0].Payload.(*tasks.VerifyUpload))
+				assert.Loosely(t, err, should.ErrLike("failed to publish the verified file"))
+				assert.Loosely(t, transient.Tag.In(err), should.BeFalse)
 
 				// Deleted the temp file.
-				So(gsMock.deleteCalls, ShouldResemble, []string{"/bucket/tmp_path/1454472306_1"})
+				assert.Loosely(t, gsMock.deleteCalls, should.Resemble([]string{"/bucket/tmp_path/1454472306_1"}))
 
 				// Caller is notified about the error.
 				op, err = impl.FinishUpload(ctx, &api.FinishUploadRequest{
 					UploadOperationId: op.OperationId,
 				})
-				So(err, ShouldBeNil)
-				So(op, ShouldResembleProto, &api.UploadOperation{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, op, should.Resemble(&api.UploadOperation{
 					OperationId:  op.OperationId,
 					Status:       api.UploadStatus_ERRORED,
 					UploadUrl:    "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
 					ErrorMessage: "Verification failed: failed to publish the verified file: blarg",
-				})
+				}))
 
 				// There's a log entry.
-				So(verificationLogs.last(), ShouldResembleProto, &api.VerificationLogEntry{
+				assert.Loosely(t, verificationLogs.last(), should.Resemble(&api.VerificationLogEntry{
 					OperationId:        1,
 					TraceId:            testutil.TestRequestID.String(),
 					InitiatedBy:        string(testutil.TestUser),
@@ -655,11 +655,11 @@ func TestFinishUpload(t *testing.T) {
 					VerificationSpeed:  5000, // this is fake, our time is frozen
 					Outcome:            "ERRORED",
 					Error:              "Verification failed: failed to publish the verified file: blarg",
-				})
+				}))
 			})
 		})
 
-		Convey("Without force hash, known expected hash", func() {
+		t.Run("Without force hash, known expected hash", func(t *ftt.Test) {
 			// Initiate an upload to get operation ID.
 			op, err := impl.BeginUpload(ctx, &api.BeginUploadRequest{
 				Object: &api.ObjectRef{
@@ -667,12 +667,12 @@ func TestFinishUpload(t *testing.T) {
 					HexDigest: "5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5",
 				},
 			})
-			So(err, ShouldBeNil)
-			So(op, ShouldResembleProto, &api.UploadOperation{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, op, should.Resemble(&api.UploadOperation{
 				OperationId: op.OperationId,
 				Status:      api.UploadStatus_UPLOADING,
 				UploadUrl:   "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
-			})
+			}))
 
 			// Pretend we've uploaded 5 bytes.
 			gsMock.files["/bucket/tmp_path/1454472306_1"] = "12345"
@@ -681,38 +681,38 @@ func TestFinishUpload(t *testing.T) {
 			op, err = impl.FinishUpload(ctx, &api.FinishUploadRequest{
 				UploadOperationId: op.OperationId,
 			})
-			So(err, ShouldBeNil)
-			So(op, ShouldResembleProto, &api.UploadOperation{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, op, should.Resemble(&api.UploadOperation{
 				OperationId: op.OperationId,
 				Status:      api.UploadStatus_VERIFYING,
 				UploadUrl:   "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
-			})
+			}))
 
 			// Posted the verification task.
-			t := tq.Tasks()
-			So(t, ShouldHaveLength, 1)
-			So(t[0].Payload, ShouldResembleProto, &tasks.VerifyUpload{UploadOperationId: 1})
+			tqTasks := tq.Tasks()
+			assert.Loosely(t, tqTasks, should.HaveLength(1))
+			assert.Loosely(t, tqTasks[0].Payload, should.Resemble(&tasks.VerifyUpload{UploadOperationId: 1}))
 
-			Convey("Successful verification", func() {
+			t.Run("Successful verification", func(t *ftt.Test) {
 				// Execute the pending verification task.
-				So(impl.verifyUploadTask(ctx, t[0].Payload.(*tasks.VerifyUpload)), ShouldBeNil)
+				assert.Loosely(t, impl.verifyUploadTask(ctx, tqTasks[0].Payload.(*tasks.VerifyUpload)), should.BeNil)
 
 				// Published the verified file, deleted the temporary one.
-				So(gsMock.publisCalls, ShouldResemble, []publishCall{
+				assert.Loosely(t, gsMock.publisCalls, should.Resemble([]publishCall{
 					{
 						dst:    "/bucket/store/SHA256/5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5",
 						src:    "/bucket/tmp_path/1454472306_1",
 						srcGen: 42,
 					},
-				})
-				So(gsMock.deleteCalls, ShouldResemble, []string{"/bucket/tmp_path/1454472306_1"})
+				}))
+				assert.Loosely(t, gsMock.deleteCalls, should.Resemble([]string{"/bucket/tmp_path/1454472306_1"}))
 
 				// Caller sees the file is published now.
 				op, err = impl.FinishUpload(ctx, &api.FinishUploadRequest{
 					UploadOperationId: op.OperationId,
 				})
-				So(err, ShouldBeNil)
-				So(op, ShouldResembleProto, &api.UploadOperation{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, op, should.Resemble(&api.UploadOperation{
 					OperationId: op.OperationId,
 					Status:      api.UploadStatus_PUBLISHED,
 					UploadUrl:   "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
@@ -720,10 +720,10 @@ func TestFinishUpload(t *testing.T) {
 						HashAlgo:  api.HashAlgo_SHA256,
 						HexDigest: "5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5",
 					},
-				})
+				}))
 
 				// There's a log entry.
-				So(verificationLogs.last(), ShouldResembleProto, &api.VerificationLogEntry{
+				assert.Loosely(t, verificationLogs.last(), should.Resemble(&api.VerificationLogEntry{
 					OperationId:        1,
 					TraceId:            testutil.TestRequestID.String(),
 					InitiatedBy:        string(testutil.TestUser),
@@ -736,52 +736,52 @@ func TestFinishUpload(t *testing.T) {
 					FileSize:           5,
 					VerificationSpeed:  5000, // this is fake, our time is frozen
 					Outcome:            "PUBLISHED",
-				})
+				}))
 			})
 
-			Convey("Failed verification", func() {
+			t.Run("Failed verification", func(t *ftt.Test) {
 				// Pretend we've uploaded something not expected.
 				gsMock.files["/bucket/tmp_path/1454472306_1"] = "123456"
 
-				err := impl.verifyUploadTask(ctx, t[0].Payload.(*tasks.VerifyUpload))
-				So(err, ShouldErrLike, "expected SHA256 to be")
-				So(transient.Tag.In(err), ShouldBeFalse)
+				err := impl.verifyUploadTask(ctx, tqTasks[0].Payload.(*tasks.VerifyUpload))
+				assert.Loosely(t, err, should.ErrLike("expected SHA256 to be"))
+				assert.Loosely(t, transient.Tag.In(err), should.BeFalse)
 
 				// The temp file is deleted.
-				So(gsMock.deleteCalls, ShouldResemble, []string{"/bucket/tmp_path/1454472306_1"})
+				assert.Loosely(t, gsMock.deleteCalls, should.Resemble([]string{"/bucket/tmp_path/1454472306_1"}))
 
 				// Caller is notified about the error.
 				op, err = impl.FinishUpload(ctx, &api.FinishUploadRequest{
 					UploadOperationId: op.OperationId,
 				})
-				So(err, ShouldBeNil)
-				So(op, ShouldResembleProto, &api.UploadOperation{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, op, should.Resemble(&api.UploadOperation{
 					OperationId: op.OperationId,
 					Status:      api.UploadStatus_ERRORED,
 					UploadUrl:   "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
 					ErrorMessage: "Verification failed: expected SHA256 to be " +
 						"5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5, " +
 						"got 8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
-				})
+				}))
 			})
 
-			Convey("Published file already exists", func() {
+			t.Run("Published file already exists", func(t *ftt.Test) {
 				gsMock.exists = true
 
 				// Execute the pending verification task.
-				So(impl.verifyUploadTask(ctx, t[0].Payload.(*tasks.VerifyUpload)), ShouldBeNil)
+				assert.Loosely(t, impl.verifyUploadTask(ctx, tqTasks[0].Payload.(*tasks.VerifyUpload)), should.BeNil)
 
 				// No 'Publish' calls, unnecessary.
-				So(len(gsMock.publisCalls), ShouldEqual, 0)
+				assert.Loosely(t, len(gsMock.publisCalls), should.BeZero)
 				// Deleted the temp file.
-				So(gsMock.deleteCalls, ShouldResemble, []string{"/bucket/tmp_path/1454472306_1"})
+				assert.Loosely(t, gsMock.deleteCalls, should.Resemble([]string{"/bucket/tmp_path/1454472306_1"}))
 
 				// Caller sees the file is published now.
 				op, err = impl.FinishUpload(ctx, &api.FinishUploadRequest{
 					UploadOperationId: op.OperationId,
 				})
-				So(err, ShouldBeNil)
-				So(op, ShouldResembleProto, &api.UploadOperation{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, op, should.Resemble(&api.UploadOperation{
 					OperationId: op.OperationId,
 					Status:      api.UploadStatus_PUBLISHED,
 					UploadUrl:   "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
@@ -789,29 +789,29 @@ func TestFinishUpload(t *testing.T) {
 						HashAlgo:  api.HashAlgo_SHA256,
 						HexDigest: "5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5",
 					},
-				})
+				}))
 
 				// No log entries since there were no verification.
-				So(verificationLogs.last(), ShouldBeNil)
+				assert.Loosely(t, verificationLogs.last(), should.BeNil)
 			})
 		})
 
-		Convey("Bad force_hash field", func() {
+		t.Run("Bad force_hash field", func(t *ftt.Test) {
 			_, err := impl.FinishUpload(ctx, &api.FinishUploadRequest{
 				ForceHash: &api.ObjectRef{
 					HashAlgo: 1234,
 				},
 			})
-			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-			So(err, ShouldErrLike, "bad 'force_hash' field")
+			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("bad 'force_hash' field"))
 		})
 
-		Convey("Bad operation_id field", func() {
+		t.Run("Bad operation_id field", func(t *ftt.Test) {
 			_, err := impl.FinishUpload(ctx, &api.FinishUploadRequest{
 				UploadOperationId: "zzz",
 			})
-			So(status.Code(err), ShouldEqual, codes.NotFound)
-			So(err, ShouldErrLike, "no such upload operation")
+			assert.Loosely(t, status.Code(err), should.Equal(codes.NotFound))
+			assert.Loosely(t, err, should.ErrLike("no such upload operation"))
 		})
 	})
 }
@@ -819,7 +819,7 @@ func TestFinishUpload(t *testing.T) {
 func TestCancelUpload(t *testing.T) {
 	t.Parallel()
 
-	Convey("With mocks", t, func() {
+	ftt.Run("With mocks", t, func(t *ftt.Test) {
 		const (
 			uploadURL  = "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1"
 			tempGSPath = "/bucket/tmp_path/1454472306_1"
@@ -831,60 +831,60 @@ func TestCancelUpload(t *testing.T) {
 		op, err := impl.BeginUpload(ctx, &api.BeginUploadRequest{
 			HashAlgo: api.HashAlgo_SHA256,
 		})
-		So(err, ShouldBeNil)
-		So(op, ShouldResembleProto, &api.UploadOperation{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, op, should.Resemble(&api.UploadOperation{
 			OperationId: op.OperationId,
 			Status:      api.UploadStatus_UPLOADING,
 			UploadUrl:   uploadURL,
-		})
+		}))
 
-		Convey("Cancel right away", func() {
+		t.Run("Cancel right away", func(t *ftt.Test) {
 			op, err = impl.CancelUpload(ctx, &api.CancelUploadRequest{
 				UploadOperationId: op.OperationId,
 			})
-			So(err, ShouldBeNil)
-			So(op, ShouldResembleProto, &api.UploadOperation{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, op, should.Resemble(&api.UploadOperation{
 				OperationId: op.OperationId,
 				Status:      api.UploadStatus_CANCELED,
 				UploadUrl:   uploadURL,
-			})
+			}))
 
 			// Should create the TQ task to cleanup.
-			t := tq.Tasks()
-			So(t, ShouldHaveLength, 1)
-			So(t[0].Payload, ShouldResembleProto, &tasks.CleanupUpload{
+			tqTasks := tq.Tasks()
+			assert.Loosely(t, tqTasks, should.HaveLength(1))
+			assert.Loosely(t, tqTasks[0].Payload, should.Resemble(&tasks.CleanupUpload{
 				UploadOperationId: 1,
 				UploadUrl:         uploadURL,
 				PathToCleanup:     tempGSPath,
-			})
+			}))
 
 			// Cancel again. Noop, same single task in the queue.
 			op2, err := impl.CancelUpload(ctx, &api.CancelUploadRequest{
 				UploadOperationId: op.OperationId,
 			})
-			So(err, ShouldBeNil)
-			So(op2, ShouldResembleProto, op)
-			So(tq.Tasks(), ShouldHaveLength, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, op2, should.Resemble(op))
+			assert.Loosely(t, tq.Tasks(), should.HaveLength(1))
 
 			// Execute the pending task.
-			So(impl.cleanupUploadTask(ctx, t[0].Payload.(*tasks.CleanupUpload)), ShouldBeNil)
+			assert.Loosely(t, impl.cleanupUploadTask(ctx, tqTasks[0].Payload.(*tasks.CleanupUpload)), should.BeNil)
 
 			// It canceled the session and deleted the file.
-			So(gsMock.cancelUploadCalls, ShouldResemble, []string{uploadURL})
-			So(gsMock.deleteCalls, ShouldResemble, []string{tempGSPath})
+			assert.Loosely(t, gsMock.cancelUploadCalls, should.Resemble([]string{uploadURL}))
+			assert.Loosely(t, gsMock.deleteCalls, should.Resemble([]string{tempGSPath}))
 		})
 
-		Convey("Cancel after finishing", func() {
+		t.Run("Cancel after finishing", func(t *ftt.Test) {
 			_, err := impl.FinishUpload(ctx, &api.FinishUploadRequest{
 				UploadOperationId: op.OperationId,
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			_, err = impl.CancelUpload(ctx, &api.CancelUploadRequest{
 				UploadOperationId: op.OperationId,
 			})
-			So(status.Code(err), ShouldEqual, codes.FailedPrecondition)
-			So(err, ShouldErrLike, "the operation is in state VERIFYING and can't be canceled")
+			assert.Loosely(t, status.Code(err), should.Equal(codes.FailedPrecondition))
+			assert.Loosely(t, err, should.ErrLike("the operation is in state VERIFYING and can't be canceled"))
 		})
 	})
 }
