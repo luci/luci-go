@@ -210,6 +210,15 @@ func TestDispatcher(t *testing.T) {
 				So(metricDist(callsDurationMS, "smaller-boom", "transient"), ShouldEqual, 1)
 			})
 
+			Convey("Message ignored in handler", func() {
+				d.RegisterHandler("ignore-all", func(ctx context.Context, message Message) error {
+					return Ignore.Apply(errors.New("message ignored"))
+				})
+				So(call("/pubsub/ignore-all", validBody), ShouldEqual, 204)
+				So(metric(callsCounter, "ignore-all", "ignore"), ShouldEqual, 1)
+				So(metricDist(callsDurationMS, "ignore-all", "ignore"), ShouldEqual, 1)
+			})
+
 			Convey("Unknown handler", func() {
 				So(call("/pubsub/unknown", validBody), ShouldEqual, 202)
 				So(metric(callsCounter, "unknown", "no_handler"), ShouldEqual, 1)

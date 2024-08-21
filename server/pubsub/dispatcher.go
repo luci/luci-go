@@ -45,7 +45,7 @@ var (
 		"Count of handled pubsub message pushes",
 		nil,
 		field.String("id"),     // pubsub handler ID
-		field.String("result"), // OK | transient | fatal | panic | no_handler | auth
+		field.String("result"), // OK | ignore | transient | fatal | panic | no_handler | auth
 	)
 
 	callsDurationMS = metric.NewCumulativeDistribution(
@@ -54,8 +54,21 @@ var (
 		&types.MetricMetadata{Units: types.Milliseconds},
 		distribution.DefaultBucketer,
 		field.String("id"),     // pubsub handler ID
-		field.String("result"), // OK | transient | fatal | panic
+		field.String("result"), // OK | ignore | transient | fatal | panic
 	)
+)
+
+var (
+	// Ignore is an error tag used to indicate that the handler wants the
+	// pub/sub message to be dropped as it is not useful (e.g. represents
+	// an event that the service does not ingest, such a build state changing
+	// to running when the service is only interested in build completions,
+	// or a replay of a previous accepted message).
+	//
+	// This results in the pub/sub push handler returning status 204
+	// (No Content) as opposed to status 200. This is particularly
+	// useful for allowing SLOs to be defined over useful messages only.
+	Ignore = errors.BoolTag{Key: errors.NewTagKey("the message should be dropped as not useful")}
 )
 
 type Message struct {
@@ -155,16 +168,17 @@ func (d *Dispatcher) InstallPubSubRoutes(r *router.Router, prefix string) {
 		id := handlerID(c)
 
 		if err := d.executeHandlerByID(c.Request.Context(), id, c); err != nil {
-			var status int
 			if transient.Tag.In(err) {
 				err = errors.Annotate(err, "transient error in pubsub handler %q", id).Err()
-				status = 500
+				errors.Log(c.Request.Context(), err)
+				http.Error(c.Writer, err.Error(), http.StatusInternalServerError /* 500 */)
+			} else if Ignore.In(err) {
+				http.Error(c.Writer, "", http.StatusNoContent /* 204 */)
 			} else {
 				err = errors.Annotate(err, "fatal error in pubsub handler %q", id).Err()
-				status = 202
+				errors.Log(c.Request.Context(), err)
+				http.Error(c.Writer, err.Error(), http.StatusAccepted /* 202 */)
 			}
-			errors.Log(c.Request.Context(), err)
-			http.Error(c.Writer, err.Error(), status)
 		} else {
 			c.Writer.Write([]byte("OK"))
 		}
@@ -260,6 +274,8 @@ func (d *Dispatcher) executeHandlerByID(ctx context.Context, id string, c *route
 		result = "OK"
 	case transient.Tag.In(err):
 		result = "transient"
+	case Ignore.In(err):
+		result = "ignore"
 	default:
 		result = "fatal"
 	}
