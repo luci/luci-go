@@ -28,7 +28,7 @@ import (
 )
 
 // CloudAuthMiddleware returns a middleware chain that authorizes requests from
-// Cloud Tasks and Cloud Scheduler.
+// Cloud Tasks, Cloud Scheduler and Cloud Pub/Sub.
 //
 // Checks OpenID Connect tokens have us in the audience, and the email in them
 // is in `callers` list.
