@@ -34,6 +34,7 @@ func TestWhereClause(t *testing.T) {
 			NewColumn().WithFieldPath("bar").WithDatabaseName("db_bar").FilterableImplicitly().Build(),
 			NewColumn().WithFieldPath("baz").WithDatabaseName("db_baz").Filterable().Build(),
 			NewColumn().WithFieldPath("kv").WithDatabaseName("db_kv").KeyValue().Filterable().Build(),
+			NewColumn().WithFieldPath("array").WithDatabaseName("db_array").Array().Filterable().Build(),
 			NewColumn().WithFieldPath("bool").WithDatabaseName("db_bool").Bool().Filterable().Build(),
 			NewColumn().WithFieldPath("unfilterable").WithDatabaseName("unfilterable").Build(),
 			NewColumn().WithFieldPath("qux").WithDatabaseName("db_qux").WithArgumentSubstitutor(subFunc).Filterable().Build(),
@@ -181,6 +182,20 @@ func TestWhereClause(t *testing.T) {
 
 				_, _, err = table.WhereClause(filter, "p_")
 				So(err, ShouldErrLike, "key value columns must specify the key to search on")
+			})
+			Convey("array contains operator", func() {
+				filter, err := ParseFilter("array:somevalue")
+				So(err, ShouldEqual, nil)
+
+				result, pars, err := table.WhereClause(filter, "p_")
+				So(err, ShouldBeNil)
+				So(pars, ShouldResemble, []QueryParameter{
+					{
+						Name:  "p_0",
+						Value: "somevalue",
+					},
+				})
+				So(result, ShouldEqual, "(EXISTS (SELECT value FROM UNNEST(db_array) as value WHERE value LIKE @p_0))")
 			})
 			Convey("unsupported composite to LIKE", func() {
 				filter, err := ParseFilter("foo:(somevalue)")

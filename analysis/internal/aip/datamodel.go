@@ -70,6 +70,9 @@ type Column struct {
 	// Whether this column is an array of structs with two string members: key and value.
 	keyValue bool
 
+	// Whether this column is an array.
+	array bool
+
 	// The type of the column, defaults to ColumnType_STRING.
 	columnType ColumnType
 

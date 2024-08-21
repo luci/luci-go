@@ -50,6 +50,7 @@ var ClusteredFailuresTable = aip.NewTable().WithColumns(
 	aip.NewColumn().WithFieldPath("tags").WithDatabaseName("tags").KeyValue().Filterable().Build(),
 	aip.NewColumn().WithFieldPath("is_test_run_blocked").WithDatabaseName("is_test_run_blocked").Bool().Filterable().Build(),
 	aip.NewColumn().WithFieldPath("is_ingested_invocation_blocked").WithDatabaseName("is_ingested_invocation_blocked").Bool().Filterable().Build(),
+	aip.NewColumn().WithFieldPath("build_gardener_rotations").WithDatabaseName("build_gardener_rotations").Array().Filterable().Build(),
 ).Build()
 
 func resolveAlgorithm(algorithm string) string {

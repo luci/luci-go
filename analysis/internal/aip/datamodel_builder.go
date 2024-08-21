@@ -54,6 +54,14 @@ func (c *ColumnBuilder) KeyValue() *ColumnBuilder {
 	return c
 }
 
+// Array specifies this column is an array.
+// The value can be queried with ':'.  The operator matches if any element of the array matches.
+// Example query: column:value
+func (c *ColumnBuilder) Array() *ColumnBuilder {
+	c.column.array = true
+	return c
+}
+
 // Bool specifies this column has bool type in the database.
 func (c *ColumnBuilder) Bool() *ColumnBuilder {
 	c.column.columnType = ColumnTypeBool

@@ -198,6 +198,16 @@ func (w *whereClause) restrictionQuery(restriction *Restriction) (string, error)
 		// TODO: AIP-160 specifies the has operator on maps will check for the presence of a key.
 		return "", fmt.Errorf("key value columns must specify the key to search on.  Instead of '%s%s' try '%s.key%s'", column.fieldPath.String(), restriction.Comparator, column.fieldPath.String(), restriction.Comparator)
 	}
+	if column.array {
+		value, err := w.argValue(restriction.Arg, column)
+		if err != nil {
+			return "", errors.Annotate(err, "argument for field %s", column.fieldPath.String()).Err()
+		}
+		if restriction.Comparator == ":" {
+			return fmt.Sprintf("(EXISTS (SELECT value FROM UNNEST(%s) as value WHERE value LIKE %s))", column.databaseName, value), nil
+		}
+		return "", fmt.Errorf("comparator operator not implemented for arrays yet")
+	}
 	if restriction.Comparator == "=" {
 		arg, err := w.argValue(restriction.Arg, column)
 		if err != nil {
