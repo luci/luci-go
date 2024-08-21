@@ -48,6 +48,10 @@ const theme = createTheme({
     h6: {
       color: 'black',
     },
+    subtitle1: {
+      color: 'red',
+      fontStyle: 'italic',
+    }
   },
   components: {
     MuiTableCell: {
@@ -90,6 +94,7 @@ export function GroupsForm({ name, onDelete = () => { } }: GroupsFormProps) {
   const [errorMessage, setErrorMessage] = useState<string>();
   const [disableSubmit, setDisableSubmit] = useState<boolean>();
   const [openDeleteDialog, setOpenDeleteDialog] = useState<boolean>();
+  const [changedState, setChangedState] = useState<boolean>();
   const membersRef = createRef<FormListElement>();
   const subgroupsRef = createRef<FormListElement>();
   const globsRef = createRef<FormListElement>();
@@ -129,6 +134,7 @@ export function GroupsForm({ name, onDelete = () => { } }: GroupsFormProps) {
   const {
     isLoading,
     isError,
+    isFetched,
     data: response,
     error
   } = useQuery({
@@ -148,6 +154,7 @@ export function GroupsForm({ name, onDelete = () => { } }: GroupsFormProps) {
   const changeDescriptionMode = () => {
     setDescriptionMode(!descriptionMode);
   }
+
   useEffect(() => {
     if (descriptionMode) {
       addDescriptionEventListener();
@@ -155,10 +162,18 @@ export function GroupsForm({ name, onDelete = () => { } }: GroupsFormProps) {
     if (ownersMode) {
       addOwnersEventListener();
     }
+    // When user presses enter or confirms the changes in description, we check for edited state.
+    if (isFetched) {
+      setChangedState(description != initialDescription || owners != initialOwners);
+    }
   }, [descriptionMode, ownersMode]);
+
   const changeOwnersMode = () => {
     setOwnersMode(!ownersMode);
   }
+
+  useEffect(() => {
+  }, [description]);
 
   const addDescriptionEventListener = () => {
     const descriptionTextfield = document.getElementById('descriptionTextfield');
@@ -237,14 +252,13 @@ export function GroupsForm({ name, onDelete = () => { } }: GroupsFormProps) {
     );
   }
 
-  // Set the state values outside of onSuccess.
-  // This is necessary due to the queryKey implicitly using the auth state,
-  // which changes if the user navigates away from the page.
+  const initialDescription = response?.description;
   if (description == null) {
-    setDescription(response?.description || '');
+    setDescription(initialDescription || '');
   }
+  const initialOwners = response?.owners;
   if (owners == null) {
-    setOwners(response?.owners || '');
+    setOwners(initialOwners || '');
   }
   const members: string[] = (response?.members)?.map((member => stripPrefix('user', member))) || [] as string[];
   const subgroups: string[] = (response?.nested || []) as string[];
@@ -320,6 +334,9 @@ export function GroupsForm({ name, onDelete = () => { } }: GroupsFormProps) {
                   <GroupsFormList name='Members' initialItems={members} ref={membersRef} />
                   <GroupsFormList name='Globs' initialItems={globs} ref={globsRef} />
                   <GroupsFormList name='Subgroups' initialItems={subgroups} ref={subgroupsRef} />
+                  {changedState &&
+                    <Typography variant="subtitle1" sx={{pl: 1.5}}> You have unsaved changes! </Typography>
+                  }
                   <div style={{ display: 'flex', flexDirection: 'row' }}>
                     <Button variant="contained" disableElevation style={{ width: '15%' }} sx={{ mt: 1.5, ml: 1.5 }} onClick={submitForm} data-testid='submit-button' disabled={disableSubmit}>
                       Update Group
