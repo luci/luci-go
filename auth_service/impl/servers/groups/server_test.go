@@ -28,6 +28,10 @@ import (
 	fieldmaskpb "google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -40,7 +44,6 @@ import (
 	"go.chromium.org/luci/auth_service/impl/info"
 	"go.chromium.org/luci/auth_service/impl/model"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -58,7 +61,7 @@ func TestGroupsServer(t *testing.T) {
 	// Last-Modified header derived from the above modified time.
 	lastModifiedHeader := "Mon, 04 Jul 2022 15:45:00 +0000"
 
-	Convey("ListGroups RPC call", t, func() {
+	ftt.Run("ListGroups RPC call", t, func(t *ftt.Test) {
 		srv := Server{
 			authGroupsProvider: &CachingGroupsProvider{},
 		}
@@ -68,7 +71,7 @@ func TestGroupsServer(t *testing.T) {
 		})
 
 		// Groups built from model.AuthGroup definition.
-		So(datastore.Put(ctx,
+		assert.Loosely(t, datastore.Put(ctx,
 			&model.AuthGroup{
 				ID:     "z-test-group",
 				Parent: model.RootKey(ctx),
@@ -120,8 +123,8 @@ func TestGroupsServer(t *testing.T) {
 				CreatedTS:                createdTime,
 				CreatedBy:                "user:test-user-1@example.com",
 				AuthVersionedEntityMixin: versionedEntity,
-			}), ShouldBeNil)
-		So(putRev(ctx, 123), ShouldBeNil)
+			}), should.BeNil)
+		assert.Loosely(t, putRev(ctx, 123), should.BeNil)
 
 		// What expected response should be, built with pb.
 		expectedResp := &rpcpb.ListGroupsResponse{
@@ -157,11 +160,11 @@ func TestGroupsServer(t *testing.T) {
 		}
 
 		resp, err := srv.ListGroups(ctx, &emptypb.Empty{})
-		So(err, ShouldBeNil)
-		So(resp.Groups, ShouldResembleProto, expectedResp.Groups)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, resp.Groups, should.Resemble(expectedResp.Groups))
 	})
 
-	Convey("GetGroup RPC call", t, func() {
+	ftt.Run("GetGroup RPC call", t, func(t *ftt.Test) {
 		srv := Server{
 			authGroupsProvider: &CachingGroupsProvider{},
 		}
@@ -175,10 +178,10 @@ func TestGroupsServer(t *testing.T) {
 		}
 
 		_, err := srv.GetGroup(ctx, request)
-		So(err, ShouldHaveGRPCStatus, codes.NotFound)
+		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.NotFound))
 
 		// Groups built from model.AuthGroup definition.
-		So(datastore.Put(ctx,
+		assert.Loosely(t, datastore.Put(ctx,
 			&model.AuthGroup{
 				ID:     "test-group",
 				Parent: model.RootKey(ctx),
@@ -198,7 +201,7 @@ func TestGroupsServer(t *testing.T) {
 				CreatedTS:                createdTime,
 				CreatedBy:                "user:test-user-1@example.com",
 				AuthVersionedEntityMixin: versionedEntity,
-			}), ShouldBeNil)
+			}), should.BeNil)
 
 		expectedResponse := &rpcpb.AuthGroup{
 			Name: "test-group",
@@ -222,12 +225,12 @@ func TestGroupsServer(t *testing.T) {
 		}
 
 		actualGroupResponse, err := srv.GetGroup(ctx, request)
-		So(err, ShouldBeNil)
-		So(actualGroupResponse, ShouldResembleProto, expectedResponse)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, actualGroupResponse, should.Resemble(expectedResponse))
 
 	})
 
-	Convey("Legacy GetAuthGroup REST call", t, func() {
+	ftt.Run("Legacy GetAuthGroup REST call", t, func(t *ftt.Test) {
 		srv := Server{
 			authGroupsProvider: &CachingGroupsProvider{},
 		}
@@ -236,7 +239,7 @@ func TestGroupsServer(t *testing.T) {
 			IdentityGroups: []string{"testers"},
 		})
 
-		Convey("not found", func() {
+		t.Run("not found", func(t *ftt.Test) {
 			rw := httptest.NewRecorder()
 			rctx := &router.Context{
 				Request: (&http.Request{}).WithContext(ctx),
@@ -246,13 +249,13 @@ func TestGroupsServer(t *testing.T) {
 				Writer: rw,
 			}
 			err := srv.GetLegacyAuthGroup(rctx)
-			So(err, ShouldHaveGRPCStatus, codes.NotFound)
-			So(rw.Body.Bytes(), ShouldBeEmpty)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.NotFound))
+			assert.Loosely(t, rw.Body.Bytes(), should.BeEmpty)
 		})
 
-		Convey("returns group details", func() {
+		t.Run("returns group details", func(t *ftt.Test) {
 			// Setup by adding a group in Datastore.
-			So(datastore.Put(ctx,
+			assert.Loosely(t, datastore.Put(ctx,
 				&model.AuthGroup{
 					ID:     "test-group",
 					Parent: model.RootKey(ctx),
@@ -271,7 +274,7 @@ func TestGroupsServer(t *testing.T) {
 					CreatedTS:                createdTime,
 					CreatedBy:                "user:test-user-1@example.com",
 					AuthVersionedEntityMixin: versionedEntity,
-				}), ShouldBeNil)
+				}), should.BeNil)
 
 			rw := httptest.NewRecorder()
 			rctx := &router.Context{
@@ -282,7 +285,7 @@ func TestGroupsServer(t *testing.T) {
 				Writer: rw,
 			}
 			err := srv.GetLegacyAuthGroup(rctx)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			expectedBlob, err := json.Marshal(map[string]any{
 				"group": AuthGroupJSON{
@@ -302,13 +305,13 @@ func TestGroupsServer(t *testing.T) {
 					CallerCanModify: true,
 				},
 			})
-			So(err, ShouldBeNil)
-			So(rw.Body.Bytes(), ShouldEqual, expectedBlob)
-			So(rw.Header().Get("Last-Modified"), ShouldEqual, lastModifiedHeader)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, rw.Body.Bytes(), should.Match(expectedBlob))
+			assert.Loosely(t, rw.Header().Get("Last-Modified"), should.Equal(lastModifiedHeader))
 		})
 	})
 
-	Convey("CreateGroup RPC call", t, func() {
+	ftt.Run("CreateGroup RPC call", t, func(t *ftt.Test) {
 		srv := Server{
 			authGroupsProvider: &CachingGroupsProvider{},
 		}
@@ -318,7 +321,7 @@ func TestGroupsServer(t *testing.T) {
 		ctx = info.SetImageVersion(ctx, "test-version")
 		ctx, _ = tq.TestingContext(txndefer.FilterRDS(ctx), nil)
 
-		Convey("Invalid name", func() {
+		t.Run("Invalid name", func(t *ftt.Test) {
 			request := &rpcpb.CreateGroupRequest{
 				Group: &rpcpb.AuthGroup{
 					Name:        "#^&",
@@ -326,10 +329,10 @@ func TestGroupsServer(t *testing.T) {
 				},
 			}
 			_, err := srv.CreateGroup(ctx, request)
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
 		})
 
-		Convey("Invalid name (looks like external group)", func() {
+		t.Run("Invalid name (looks like external group)", func(t *ftt.Test) {
 			request := &rpcpb.CreateGroupRequest{
 				Group: &rpcpb.AuthGroup{
 					Name:        "mdb/foo",
@@ -337,10 +340,10 @@ func TestGroupsServer(t *testing.T) {
 				},
 			}
 			_, err := srv.CreateGroup(ctx, request)
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
 		})
 
-		Convey("Invalid members", func() {
+		t.Run("Invalid members", func(t *ftt.Test) {
 			request := &rpcpb.CreateGroupRequest{
 				Group: &rpcpb.AuthGroup{
 					Name:        "test-group",
@@ -350,10 +353,10 @@ func TestGroupsServer(t *testing.T) {
 				},
 			}
 			_, err := srv.CreateGroup(ctx, request)
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
 		})
 
-		Convey("Invalid globs", func() {
+		t.Run("Invalid globs", func(t *ftt.Test) {
 			request := &rpcpb.CreateGroupRequest{
 				Group: &rpcpb.AuthGroup{
 					Name:        "test-group",
@@ -363,11 +366,11 @@ func TestGroupsServer(t *testing.T) {
 				},
 			}
 			_, err := srv.CreateGroup(ctx, request)
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
 		})
 
-		Convey("Group already exists", func() {
-			So(datastore.Put(ctx,
+		t.Run("Group already exists", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(ctx,
 				&model.AuthGroup{
 					ID:          "test-group",
 					Parent:      model.RootKey(ctx),
@@ -375,7 +378,7 @@ func TestGroupsServer(t *testing.T) {
 					Owners:      "testers",
 					CreatedTS:   createdTime,
 					CreatedBy:   "user:test-user-1@example.com",
-				}), ShouldBeNil)
+				}), should.BeNil)
 
 			request := &rpcpb.CreateGroupRequest{
 				Group: &rpcpb.AuthGroup{
@@ -384,10 +387,10 @@ func TestGroupsServer(t *testing.T) {
 				},
 			}
 			_, err := srv.CreateGroup(ctx, request)
-			So(err, ShouldHaveGRPCStatus, codes.AlreadyExists)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.AlreadyExists))
 		})
 
-		Convey("Group refers to another group that doesn't exist", func() {
+		t.Run("Group refers to another group that doesn't exist", func(t *ftt.Test) {
 			request := &rpcpb.CreateGroupRequest{
 				Group: &rpcpb.AuthGroup{
 					Name:        "test-group",
@@ -397,11 +400,11 @@ func TestGroupsServer(t *testing.T) {
 				},
 			}
 			_, err := srv.CreateGroup(ctx, request)
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
-			So(err, ShouldErrLike, "some referenced groups don't exist: bad1, bad2, invalid-owner")
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("some referenced groups don't exist: bad1, bad2, invalid-owner"))
 		})
 
-		Convey("Successful creation", func() {
+		t.Run("Successful creation", func(t *ftt.Test) {
 			request := &rpcpb.CreateGroupRequest{
 				Group: &rpcpb.AuthGroup{
 					Name:        "test-group",
@@ -411,16 +414,16 @@ func TestGroupsServer(t *testing.T) {
 			}
 
 			resp, err := srv.CreateGroup(ctx, request)
-			So(err, ShouldBeNil)
-			So(resp.Name, ShouldEqual, "test-group")
-			So(resp.Description, ShouldEqual, "This is a test group.")
-			So(resp.Owners, ShouldEqual, "test-group")
-			So(resp.CreatedBy, ShouldEqual, "user:someone@example.com")
-			So(resp.CreatedTs.Seconds, ShouldNotBeZeroValue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp.Name, should.Equal("test-group"))
+			assert.Loosely(t, resp.Description, should.Equal("This is a test group."))
+			assert.Loosely(t, resp.Owners, should.Equal("test-group"))
+			assert.Loosely(t, resp.CreatedBy, should.Equal("user:someone@example.com"))
+			assert.Loosely(t, resp.CreatedTs.Seconds, should.NotBeZero)
 		})
 	})
 
-	Convey("UpdateGroup RPC call", t, func() {
+	ftt.Run("UpdateGroup RPC call", t, func(t *ftt.Test) {
 		srv := Server{
 			authGroupsProvider: &CachingGroupsProvider{},
 		}
@@ -431,7 +434,7 @@ func TestGroupsServer(t *testing.T) {
 		ctx = info.SetImageVersion(ctx, "test-version")
 		ctx, _ = tq.TestingContext(txndefer.FilterRDS(ctx), nil)
 
-		So(datastore.Put(ctx,
+		assert.Loosely(t, datastore.Put(ctx,
 			&model.AuthGroup{
 				ID:     "test-group",
 				Parent: model.RootKey(ctx),
@@ -451,9 +454,9 @@ func TestGroupsServer(t *testing.T) {
 				CreatedTS:                createdTime,
 				CreatedBy:                "user:test-user-1@example.com",
 				AuthVersionedEntityMixin: versionedEntity,
-			}), ShouldBeNil)
+			}), should.BeNil)
 
-		Convey("Cannot update external group", func() {
+		t.Run("Cannot update external group", func(t *ftt.Test) {
 			request := &rpcpb.UpdateGroupRequest{
 				Group: &rpcpb.AuthGroup{
 					Name:        "mdb/foo",
@@ -462,11 +465,11 @@ func TestGroupsServer(t *testing.T) {
 			}
 
 			_, err := srv.UpdateGroup(ctx, request)
-			So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
-			So(err, ShouldErrLike, "cannot update external group")
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
+			assert.Loosely(t, err, should.ErrLike("cannot update external group"))
 		})
 
-		Convey("Group not found", func() {
+		t.Run("Group not found", func(t *ftt.Test) {
 			request := &rpcpb.UpdateGroupRequest{
 				Group: &rpcpb.AuthGroup{
 					Name:        "non-existent-group",
@@ -475,10 +478,10 @@ func TestGroupsServer(t *testing.T) {
 			}
 
 			_, err := srv.UpdateGroup(ctx, request)
-			So(err, ShouldHaveGRPCStatus, codes.NotFound)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.NotFound))
 		})
 
-		Convey("Invalid field mask", func() {
+		t.Run("Invalid field mask", func(t *ftt.Test) {
 			request := &rpcpb.UpdateGroupRequest{
 				Group: &rpcpb.AuthGroup{
 					Name:        "test-group",
@@ -488,10 +491,10 @@ func TestGroupsServer(t *testing.T) {
 			}
 
 			_, err := srv.UpdateGroup(ctx, request)
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
 		})
 
-		Convey("Set owners to group that doesn't exist", func() {
+		t.Run("Set owners to group that doesn't exist", func(t *ftt.Test) {
 			request := &rpcpb.UpdateGroupRequest{
 				Group: &rpcpb.AuthGroup{
 					Name:   "test-group",
@@ -501,10 +504,10 @@ func TestGroupsServer(t *testing.T) {
 			}
 
 			_, err := srv.UpdateGroup(ctx, request)
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
 		})
 
-		Convey("Set invalid member identity", func() {
+		t.Run("Set invalid member identity", func(t *ftt.Test) {
 			request := &rpcpb.UpdateGroupRequest{
 				Group: &rpcpb.AuthGroup{
 					Name:    "test-group",
@@ -514,10 +517,10 @@ func TestGroupsServer(t *testing.T) {
 			}
 
 			_, err := srv.UpdateGroup(ctx, request)
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
 		})
 
-		Convey("Cyclic dependency", func() {
+		t.Run("Cyclic dependency", func(t *ftt.Test) {
 			request := &rpcpb.UpdateGroupRequest{
 				Group: &rpcpb.AuthGroup{
 					Name:   "test-group",
@@ -527,10 +530,10 @@ func TestGroupsServer(t *testing.T) {
 			}
 
 			_, err := srv.UpdateGroup(ctx, request)
-			So(err, ShouldHaveGRPCStatus, codes.FailedPrecondition)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.FailedPrecondition))
 		})
 
-		Convey("Permissions", func() {
+		t.Run("Permissions", func(t *ftt.Test) {
 			request := &rpcpb.UpdateGroupRequest{
 				Group: &rpcpb.AuthGroup{
 					Name:        "test-group",
@@ -538,40 +541,40 @@ func TestGroupsServer(t *testing.T) {
 				},
 				UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"description"}},
 			}
-			Convey("Anonymous is denied", func() {
+			t.Run("Anonymous is denied", func(t *ftt.Test) {
 				ctx := auth.WithState(ctx, &authtest.FakeState{})
 				_, err := srv.UpdateGroup(ctx, request)
-				So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
 			})
 
-			Convey("Normal user is denied", func() {
+			t.Run("Normal user is denied", func(t *ftt.Test) {
 				ctx := auth.WithState(ctx, &authtest.FakeState{
 					Identity: "user:someone@example.com",
 				})
 				_, err := srv.UpdateGroup(ctx, request)
-				So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
 			})
 
-			Convey("Group owner succeeds", func() {
+			t.Run("Group owner succeeds", func(t *ftt.Test) {
 				ctx := auth.WithState(ctx, &authtest.FakeState{
 					Identity:       "user:someone@example.com",
 					IdentityGroups: []string{"owners"},
 				})
 				_, err := srv.UpdateGroup(ctx, request)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 
-			Convey("Admin succeeds", func() {
+			t.Run("Admin succeeds", func(t *ftt.Test) {
 				ctx := auth.WithState(ctx, &authtest.FakeState{
 					Identity:       "user:someone@example.com",
 					IdentityGroups: []string{model.AdminGroup},
 				})
 				_, err := srv.UpdateGroup(ctx, request)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 		})
 
-		Convey("Etags", func() {
+		t.Run("Etags", func(t *ftt.Test) {
 			request := &rpcpb.UpdateGroupRequest{
 				Group: &rpcpb.AuthGroup{
 					Name:        "test-group",
@@ -580,27 +583,27 @@ func TestGroupsServer(t *testing.T) {
 				UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"description"}},
 			}
 
-			Convey("Incorrect etag is aborted", func() {
+			t.Run("Incorrect etag is aborted", func(t *ftt.Test) {
 				request.Group.Etag = "blah"
 				_, err := srv.UpdateGroup(ctx, request)
-				So(err, ShouldHaveGRPCStatus, codes.Aborted)
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.Aborted))
 			})
 
-			Convey("Empty etag succeeds", func() {
+			t.Run("Empty etag succeeds", func(t *ftt.Test) {
 				request.Group.Etag = ""
 				_, err := srv.UpdateGroup(ctx, request)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 
-			Convey("Correct etag succeeds if present", func() {
+			t.Run("Correct etag succeeds if present", func(t *ftt.Test) {
 				request.Group.Etag = etag
 				_, err := srv.UpdateGroup(ctx, request)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 		})
 	})
 
-	Convey("DeleteGroup RPC call", t, func() {
+	ftt.Run("DeleteGroup RPC call", t, func(t *ftt.Test) {
 		srv := Server{
 			authGroupsProvider: &CachingGroupsProvider{},
 		}
@@ -608,7 +611,7 @@ func TestGroupsServer(t *testing.T) {
 		ctx = info.SetImageVersion(ctx, "test-version")
 		ctx, _ = tq.TestingContext(txndefer.FilterRDS(ctx), nil)
 
-		So(datastore.Put(ctx,
+		assert.Loosely(t, datastore.Put(ctx,
 			&model.AuthGroup{
 				ID:     "test-group",
 				Parent: model.RootKey(ctx),
@@ -628,69 +631,69 @@ func TestGroupsServer(t *testing.T) {
 				CreatedTS:                createdTime,
 				CreatedBy:                "user:test-user-1@example.com",
 				AuthVersionedEntityMixin: versionedEntity,
-			}), ShouldBeNil)
+			}), should.BeNil)
 
-		Convey("Cannot delete external group", func() {
+		t.Run("Cannot delete external group", func(t *ftt.Test) {
 			request := &rpcpb.DeleteGroupRequest{
 				Name: "mdb/foo",
 			}
 
 			_, err := srv.DeleteGroup(ctx, request)
-			So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
-			So(err, ShouldErrLike, "cannot delete external group")
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
+			assert.Loosely(t, err, should.ErrLike("cannot delete external group"))
 		})
 
-		Convey("Group not found", func() {
+		t.Run("Group not found", func(t *ftt.Test) {
 			request := &rpcpb.DeleteGroupRequest{
 				Name: "non-existent-group",
 			}
 
 			_, err := srv.DeleteGroup(ctx, request)
-			So(err, ShouldHaveGRPCStatus, codes.NotFound)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.NotFound))
 		})
 
-		Convey("Group referenced elsewhere", func() {
+		t.Run("Group referenced elsewhere", func(t *ftt.Test) {
 			ctx := auth.WithState(ctx, &authtest.FakeState{
 				Identity:       "user:someone@example.com",
 				IdentityGroups: []string{"owners"},
 			})
-			So(datastore.Put(ctx,
+			assert.Loosely(t, datastore.Put(ctx,
 				&model.AuthGroup{
 					ID:     "nesting-group",
 					Parent: model.RootKey(ctx),
 					Nested: []string{
 						"test-group",
 					},
-				}), ShouldBeNil)
+				}), should.BeNil)
 			request := &rpcpb.DeleteGroupRequest{
 				Name: "test-group",
 			}
 
 			_, err := srv.DeleteGroup(ctx, request)
-			So(err, ShouldHaveGRPCStatus, codes.FailedPrecondition)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.FailedPrecondition))
 		})
 
-		Convey("Permissions", func() {
+		t.Run("Permissions", func(t *ftt.Test) {
 
-			Convey("Anonymous is denied", func() {
+			t.Run("Anonymous is denied", func(t *ftt.Test) {
 				ctx := auth.WithState(ctx, &authtest.FakeState{})
 				_, err := srv.DeleteGroup(ctx, &rpcpb.DeleteGroupRequest{
 					Name: "test-group",
 				})
-				So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
 			})
 
-			Convey("Normal user is denied", func() {
+			t.Run("Normal user is denied", func(t *ftt.Test) {
 				ctx := auth.WithState(ctx, &authtest.FakeState{
 					Identity: "user:someone@example.com",
 				})
 				_, err := srv.DeleteGroup(ctx, &rpcpb.DeleteGroupRequest{
 					Name: "test-group",
 				})
-				So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
 			})
 
-			Convey("Group owner succeeds", func() {
+			t.Run("Group owner succeeds", func(t *ftt.Test) {
 				ctx := auth.WithState(ctx, &authtest.FakeState{
 					Identity:       "user:someone@example.com",
 					IdentityGroups: []string{"owners"},
@@ -698,10 +701,10 @@ func TestGroupsServer(t *testing.T) {
 				_, err := srv.DeleteGroup(ctx, &rpcpb.DeleteGroupRequest{
 					Name: "test-group",
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 
-			Convey("Admin succeeds", func() {
+			t.Run("Admin succeeds", func(t *ftt.Test) {
 				ctx := auth.WithState(ctx, &authtest.FakeState{
 					Identity:       "user:someone@example.com",
 					IdentityGroups: []string{model.AdminGroup},
@@ -709,42 +712,42 @@ func TestGroupsServer(t *testing.T) {
 				_, err := srv.DeleteGroup(ctx, &rpcpb.DeleteGroupRequest{
 					Name: "test-group",
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 		})
 
-		Convey("Etags", func() {
+		t.Run("Etags", func(t *ftt.Test) {
 			ctx := auth.WithState(ctx, &authtest.FakeState{
 				Identity:       "user:someone@example.com",
 				IdentityGroups: []string{"owners"},
 			})
 
-			Convey("Incorrect etag is aborted", func() {
+			t.Run("Incorrect etag is aborted", func(t *ftt.Test) {
 				_, err := srv.DeleteGroup(ctx, &rpcpb.DeleteGroupRequest{
 					Name: "test-group",
 					Etag: "blah",
 				})
-				So(err, ShouldHaveGRPCStatus, codes.Aborted)
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.Aborted))
 			})
 
-			Convey("Empty etag succeeds", func() {
+			t.Run("Empty etag succeeds", func(t *ftt.Test) {
 				_, err := srv.DeleteGroup(ctx, &rpcpb.DeleteGroupRequest{
 					Name: "test-group",
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 
-			Convey("Correct etag succeeds if present", func() {
+			t.Run("Correct etag succeeds if present", func(t *ftt.Test) {
 				_, err := srv.DeleteGroup(ctx, &rpcpb.DeleteGroupRequest{
 					Name: "test-group",
 					Etag: etag,
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 		})
 	})
 
-	Convey("GetExpandedGroup RPC call", t, func() {
+	ftt.Run("GetExpandedGroup RPC call", t, func(t *ftt.Test) {
 		const (
 			// Identities, groups, globs
 			owningGroup = "owning-group"
@@ -761,7 +764,7 @@ func TestGroupsServer(t *testing.T) {
 			authGroupsProvider: &CachingGroupsProvider{},
 		}
 		ctx := memory.Use(context.Background())
-		So(datastore.Put(ctx,
+		assert.Loosely(t, datastore.Put(ctx,
 			&model.AuthGroup{
 				ID:     owningGroup,
 				Parent: model.RootKey(ctx),
@@ -796,50 +799,50 @@ func TestGroupsServer(t *testing.T) {
 					testGlob1,
 				},
 				Owners: owningGroup,
-			}), ShouldBeNil)
-		So(putRev(ctx, 123), ShouldBeNil)
+			}), should.BeNil)
+		assert.Loosely(t, putRev(ctx, 123), should.BeNil)
 
-		Convey("unknown group returns error", func() {
+		t.Run("unknown group returns error", func(t *ftt.Test) {
 			request := &rpcpb.GetGroupRequest{Name: "unknown"}
 			_, err := srv.GetExpandedGroup(ctx, request)
-			So(err, ShouldErrLike, "not found")
+			assert.Loosely(t, err, should.ErrLike("not found"))
 		})
 
-		Convey("works for standalone group", func() {
+		t.Run("works for standalone group", func(t *ftt.Test) {
 			request := &rpcpb.GetGroupRequest{Name: soloGroup}
 			expandedGroup, err := srv.GetExpandedGroup(ctx, request)
-			So(err, ShouldBeNil)
-			So(expandedGroup, ShouldResembleProto, &rpcpb.AuthGroup{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, expandedGroup, should.Resemble(&rpcpb.AuthGroup{
 				Name:  soloGroup,
 				Globs: []string{testGlob1},
-			})
+			}))
 		})
 
-		Convey("nested memberships returned", func() {
+		t.Run("nested memberships returned", func(t *ftt.Test) {
 			request := &rpcpb.GetGroupRequest{Name: owningGroup}
 			expandedGroup, err := srv.GetExpandedGroup(ctx, request)
-			So(err, ShouldBeNil)
-			So(expandedGroup, ShouldResembleProto, &rpcpb.AuthGroup{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, expandedGroup, should.Resemble(&rpcpb.AuthGroup{
 				Name:    owningGroup,
 				Members: []string{testUser0, testUser1, testUser2},
 				Globs:   []string{testGlob0, testGlob1},
 				Nested:  []string{nestedGroup},
-			})
+			}))
 		})
 
-		Convey("works for nested group with no subgroups", func() {
+		t.Run("works for nested group with no subgroups", func(t *ftt.Test) {
 			request := &rpcpb.GetGroupRequest{Name: nestedGroup}
 			expandedGroup, err := srv.GetExpandedGroup(ctx, request)
-			So(err, ShouldBeNil)
-			So(expandedGroup, ShouldResembleProto, &rpcpb.AuthGroup{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, expandedGroup, should.Resemble(&rpcpb.AuthGroup{
 				Name:    nestedGroup,
 				Members: []string{testUser2},
 				Globs:   []string{testGlob0, testGlob1},
-			})
+			}))
 		})
 	})
 
-	Convey("GetSubgraph RPC call", t, func() {
+	ftt.Run("GetSubgraph RPC call", t, func(t *ftt.Test) {
 		const (
 			// Identities, groups, globs
 			owningGroup = "owning-group"
@@ -856,7 +859,7 @@ func TestGroupsServer(t *testing.T) {
 			authGroupsProvider: &CachingGroupsProvider{},
 		}
 		ctx := memory.Use(context.Background())
-		So(datastore.Put(ctx,
+		assert.Loosely(t, datastore.Put(ctx,
 			&model.AuthGroup{
 				ID:     owningGroup,
 				Parent: model.RootKey(ctx),
@@ -886,10 +889,10 @@ func TestGroupsServer(t *testing.T) {
 					testGlob1,
 				},
 				Owners: owningGroup,
-			}), ShouldBeNil)
-		So(putRev(ctx, 123), ShouldBeNil)
+			}), should.BeNil)
+		assert.Loosely(t, putRev(ctx, 123), should.BeNil)
 
-		Convey("Identity principal", func() {
+		t.Run("Identity principal", func(t *ftt.Test) {
 			request := &rpcpb.GetSubgraphRequest{
 				Principal: &rpcpb.Principal{
 					Kind: rpcpb.PrincipalKind_IDENTITY,
@@ -898,7 +901,7 @@ func TestGroupsServer(t *testing.T) {
 			}
 
 			actualSubgraph, err := srv.GetSubgraph(ctx, request)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			expectedSubgraph := &rpcpb.Subgraph{
 				Nodes: []*rpcpb.Node{
@@ -932,10 +935,10 @@ func TestGroupsServer(t *testing.T) {
 				},
 			}
 
-			So(actualSubgraph, ShouldResemble, expectedSubgraph)
+			assert.Loosely(t, actualSubgraph, should.Resemble(expectedSubgraph))
 		})
 
-		Convey("Group principal", func() {
+		t.Run("Group principal", func(t *ftt.Test) {
 			request := rpcpb.GetSubgraphRequest{
 				Principal: &rpcpb.Principal{
 					Kind: rpcpb.PrincipalKind_GROUP,
@@ -944,7 +947,7 @@ func TestGroupsServer(t *testing.T) {
 			}
 
 			actualSubgraph, err := srv.GetSubgraph(ctx, &request)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			expectedSubgraph := &rpcpb.Subgraph{
 				Nodes: []*rpcpb.Node{
@@ -961,11 +964,11 @@ func TestGroupsServer(t *testing.T) {
 				},
 			}
 
-			So(actualSubgraph, ShouldResemble, expectedSubgraph)
+			assert.Loosely(t, actualSubgraph, should.Resemble(expectedSubgraph))
 
 		})
 
-		Convey("Glob principal", func() {
+		t.Run("Glob principal", func(t *ftt.Test) {
 			request := rpcpb.GetSubgraphRequest{
 				Principal: &rpcpb.Principal{
 					Kind: rpcpb.PrincipalKind_GLOB,
@@ -974,7 +977,7 @@ func TestGroupsServer(t *testing.T) {
 			}
 
 			actualSubgraph, err := srv.GetSubgraph(ctx, &request)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			expectedSubgraph := &rpcpb.Subgraph{
 				Nodes: []*rpcpb.Node{
@@ -1004,10 +1007,10 @@ func TestGroupsServer(t *testing.T) {
 				},
 			}
 
-			So(actualSubgraph, ShouldResemble, expectedSubgraph)
+			assert.Loosely(t, actualSubgraph, should.Resemble(expectedSubgraph))
 		})
 
-		Convey("Unspecified Principal kind", func() {
+		t.Run("Unspecified Principal kind", func(t *ftt.Test) {
 			request := rpcpb.GetSubgraphRequest{
 				Principal: &rpcpb.Principal{
 					Kind: rpcpb.PrincipalKind_PRINCIPAL_KIND_UNSPECIFIED,
@@ -1016,11 +1019,11 @@ func TestGroupsServer(t *testing.T) {
 			}
 
 			_, err := srv.GetSubgraph(ctx, &request)
-			So(err.Error(), ShouldContainSubstring, "invalid principal kind")
+			assert.Loosely(t, err.Error(), should.ContainSubstring("invalid principal kind"))
 
 		})
 
-		Convey("Group principal not in groups graph", func() {
+		t.Run("Group principal not in groups graph", func(t *ftt.Test) {
 			request := rpcpb.GetSubgraphRequest{
 				Principal: &rpcpb.Principal{
 					Kind: rpcpb.PrincipalKind_GROUP,
@@ -1029,7 +1032,7 @@ func TestGroupsServer(t *testing.T) {
 			}
 
 			_, err := srv.GetSubgraph(ctx, &request)
-			So(err.Error(), ShouldContainSubstring, "not found")
+			assert.Loosely(t, err.Error(), should.ContainSubstring("not found"))
 		})
 	})
 }

@@ -28,6 +28,9 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
@@ -38,9 +41,6 @@ import (
 	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/settingscfg"
 	"go.chromium.org/luci/auth_service/internal/gs"
 	"go.chromium.org/luci/auth_service/internal/pubsub"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 var (
@@ -50,7 +50,7 @@ var (
 func TestCheckAccess(t *testing.T) {
 	t.Parallel()
 
-	Convey("CheckAccess works", t, func() {
+	ftt.Run("CheckAccess works", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		ctx = clock.Set(ctx, testclock.New(testModifiedTS))
 
@@ -62,12 +62,12 @@ func TestCheckAccess(t *testing.T) {
 
 		// Set up settings config.
 		cfg := &configspb.SettingsCfg{}
-		So(settingscfg.SetConfig(ctx, cfg), ShouldBeNil)
+		assert.Loosely(t, settingscfg.SetConfig(ctx, cfg), should.BeNil)
 
 		// Set up an authorized user.
-		So(model.AuthorizeReader(ctx, "someone@example.com"), ShouldBeNil)
+		assert.Loosely(t, model.AuthorizeReader(ctx, "someone@example.com"), should.BeNil)
 
-		Convey("user must use email-based auth", func() {
+		t.Run("user must use email-based auth", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "anonymous:anonymous",
 			})
@@ -77,12 +77,12 @@ func TestCheckAccess(t *testing.T) {
 				Writer:  rw,
 			}
 			err := CheckAccess(rctx)
-			So(err, ShouldErrLike, "error getting caller email")
-			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-			So(rw.Body.Bytes(), ShouldBeEmpty)
+			assert.Loosely(t, err, should.ErrLike("error getting caller email"))
+			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+			assert.Loosely(t, rw.Body.Bytes(), should.BeEmpty)
 		})
 
-		Convey("false for unauthorized", func() {
+		t.Run("false for unauthorized", func(t *ftt.Test) {
 			// Set expected Pubsub client calls.
 			gomock.InOrder(
 				mockPubsubClient.Client.EXPECT().GetIAMPolicy(gomock.Any()).Return(policy, nil).Times(1),
@@ -97,12 +97,12 @@ func TestCheckAccess(t *testing.T) {
 				Writer:  rw,
 			}
 			err := CheckAccess(rctx)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			expectedBlob := []byte(`{"topic":"projects/app/topics/auth-db-changed","authorized":false,"gs":{"auth_db_gs_path":"","authorized":false}}`)
-			So(rw.Body.Bytes(), ShouldEqual, expectedBlob)
+			assert.Loosely(t, rw.Body.Bytes(), should.Match(expectedBlob))
 		})
 
-		Convey("true for authorized", func() {
+		t.Run("true for authorized", func(t *ftt.Test) {
 			// Set expected Pubsub client calls.
 			gomock.InOrder(
 				mockPubsubClient.Client.EXPECT().GetIAMPolicy(gomock.Any()).Return(policy, nil).Times(1),
@@ -117,9 +117,9 @@ func TestCheckAccess(t *testing.T) {
 				Writer:  rw,
 			}
 			err := CheckAccess(rctx)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			expectedBlob := []byte(`{"topic":"projects/app/topics/auth-db-changed","authorized":true,"gs":{"auth_db_gs_path":"","authorized":true}}`)
-			So(rw.Body.Bytes(), ShouldEqual, expectedBlob)
+			assert.Loosely(t, rw.Body.Bytes(), should.Match(expectedBlob))
 		})
 	})
 }
@@ -127,7 +127,7 @@ func TestCheckAccess(t *testing.T) {
 func TestAuthorize(t *testing.T) {
 	t.Parallel()
 
-	Convey("Authorize works", t, func() {
+	ftt.Run("Authorize works", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		ctx = clock.Set(ctx, testclock.New(testModifiedTS))
 
@@ -141,9 +141,9 @@ func TestAuthorize(t *testing.T) {
 		cfg := &configspb.SettingsCfg{
 			AuthDbGsPath: "chrome-infra-auth-test.appspot.com/auth-db",
 		}
-		So(settingscfg.SetConfig(ctx, cfg), ShouldBeNil)
+		assert.Loosely(t, settingscfg.SetConfig(ctx, cfg), should.BeNil)
 
-		Convey("user must use email-based auth", func() {
+		t.Run("user must use email-based auth", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "anonymous:anonymous",
 			})
@@ -153,12 +153,12 @@ func TestAuthorize(t *testing.T) {
 				Writer:  rw,
 			}
 			err := Authorize(rctx)
-			So(err, ShouldErrLike, "error getting caller email")
-			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-			So(rw.Body.Bytes(), ShouldBeEmpty)
+			assert.Loosely(t, err, should.ErrLike("error getting caller email"))
+			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+			assert.Loosely(t, rw.Body.Bytes(), should.BeEmpty)
 		})
 
-		Convey("denies ineligible user", func() {
+		t.Run("denies ineligible user", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:someone@example.com",
 			})
@@ -168,12 +168,12 @@ func TestAuthorize(t *testing.T) {
 				Writer:  rw,
 			}
 			err := Authorize(rctx)
-			So(err, ShouldErrLike, "ineligible to subscribe")
-			So(status.Code(err), ShouldEqual, codes.PermissionDenied)
-			So(rw.Body.Bytes(), ShouldBeEmpty)
+			assert.Loosely(t, err, should.ErrLike("ineligible to subscribe"))
+			assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
+			assert.Loosely(t, rw.Body.Bytes(), should.BeEmpty)
 		})
 
-		Convey("authorizes a new user", func() {
+		t.Run("authorizes a new user", func(t *ftt.Test) {
 			// Set expected GS client calls from updating ACLs.
 			gomock.InOrder(
 				mockGSClient.Client.EXPECT().UpdateReadACL(
@@ -196,12 +196,12 @@ func TestAuthorize(t *testing.T) {
 				Writer:  rw,
 			}
 			err := Authorize(rctx)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			expectedBlob := []byte(`{"topic":"projects/app/topics/auth-db-changed","authorized":true,"gs":{"auth_db_gs_path":"chrome-infra-auth-test.appspot.com/auth-db","authorized":true}}`)
-			So(rw.Body.Bytes(), ShouldEqual, expectedBlob)
+			assert.Loosely(t, rw.Body.Bytes(), should.Match(expectedBlob))
 		})
 
-		Convey("succeeds for authorized user", func() {
+		t.Run("succeeds for authorized user", func(t *ftt.Test) {
 			// Set expected GS client calls for test setup, followed by
 			// expected authorization of the user from Subscribe.
 			gomock.InOrder(
@@ -218,7 +218,7 @@ func TestAuthorize(t *testing.T) {
 				mockPubsubClient.Client.EXPECT().Close().Times(1))
 
 			// Set up an authorized user.
-			So(model.AuthorizeReader(ctx, "somebody@example.com"), ShouldBeNil)
+			assert.Loosely(t, model.AuthorizeReader(ctx, "somebody@example.com"), should.BeNil)
 
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity:       "user:somebody@example.com",
@@ -230,9 +230,9 @@ func TestAuthorize(t *testing.T) {
 				Writer:  rw,
 			}
 			err := Authorize(rctx)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			expectedBlob := []byte(`{"topic":"projects/app/topics/auth-db-changed","authorized":true,"gs":{"auth_db_gs_path":"chrome-infra-auth-test.appspot.com/auth-db","authorized":true}}`)
-			So(rw.Body.Bytes(), ShouldEqual, expectedBlob)
+			assert.Loosely(t, rw.Body.Bytes(), should.Match(expectedBlob))
 		})
 	})
 }
@@ -240,7 +240,7 @@ func TestAuthorize(t *testing.T) {
 func TestDeauthorize(t *testing.T) {
 	t.Parallel()
 
-	Convey("Deauthorize works", t, func() {
+	ftt.Run("Deauthorize works", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		ctx = clock.Set(ctx, testclock.New(testModifiedTS))
 
@@ -254,9 +254,9 @@ func TestDeauthorize(t *testing.T) {
 		cfg := &configspb.SettingsCfg{
 			AuthDbGsPath: "chrome-infra-auth-test.appspot.com/auth-db",
 		}
-		So(settingscfg.SetConfig(ctx, cfg), ShouldBeNil)
+		assert.Loosely(t, settingscfg.SetConfig(ctx, cfg), should.BeNil)
 
-		Convey("user must use email-based auth", func() {
+		t.Run("user must use email-based auth", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "anonymous:anonymous",
 			})
@@ -266,12 +266,12 @@ func TestDeauthorize(t *testing.T) {
 				Writer:  rw,
 			}
 			err := Deauthorize(rctx)
-			So(err, ShouldErrLike, "error getting caller email")
-			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-			So(rw.Body.Bytes(), ShouldBeEmpty)
+			assert.Loosely(t, err, should.ErrLike("error getting caller email"))
+			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+			assert.Loosely(t, rw.Body.Bytes(), should.BeEmpty)
 		})
 
-		Convey("revokes for authorized user", func() {
+		t.Run("revokes for authorized user", func(t *ftt.Test) {
 			// Set expected GS client calls for test setup, followed by
 			// expected deauthorization of the user from Unsubscribe.
 			gomock.InOrder(
@@ -289,7 +289,7 @@ func TestDeauthorize(t *testing.T) {
 				mockPubsubClient.Client.EXPECT().Close().Times(1))
 
 			// Set up an authorized user.
-			So(model.AuthorizeReader(ctx, "someone@example.com"), ShouldBeNil)
+			assert.Loosely(t, model.AuthorizeReader(ctx, "someone@example.com"), should.BeNil)
 
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:someone@example.com",
@@ -300,12 +300,12 @@ func TestDeauthorize(t *testing.T) {
 				Writer:  rw,
 			}
 			err := Deauthorize(rctx)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			expectedBlob := []byte(`{"topic":"projects/app/topics/auth-db-changed","authorized":false,"gs":{"auth_db_gs_path":"chrome-infra-auth-test.appspot.com/auth-db","authorized":false}}`)
-			So(rw.Body.Bytes(), ShouldEqual, expectedBlob)
+			assert.Loosely(t, rw.Body.Bytes(), should.Match(expectedBlob))
 		})
 
-		Convey("succeeds for unauthorized user", func() {
+		t.Run("succeeds for unauthorized user", func(t *ftt.Test) {
 			// Set expected client calls from updating ACLs.
 			gomock.InOrder(
 				mockGSClient.Client.EXPECT().UpdateReadACL(
@@ -326,9 +326,9 @@ func TestDeauthorize(t *testing.T) {
 				Writer:  rw,
 			}
 			err := Deauthorize(rctx)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			expectedBlob := []byte(`{"topic":"projects/app/topics/auth-db-changed","authorized":false,"gs":{"auth_db_gs_path":"chrome-infra-auth-test.appspot.com/auth-db","authorized":false}}`)
-			So(rw.Body.Bytes(), ShouldEqual, expectedBlob)
+			assert.Loosely(t, rw.Body.Bytes(), should.Match(expectedBlob))
 		})
 	})
 }

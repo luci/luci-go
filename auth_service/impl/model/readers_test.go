@@ -25,6 +25,9 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
@@ -33,9 +36,6 @@ import (
 	"go.chromium.org/luci/auth_service/api/configspb"
 	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/settingscfg"
 	"go.chromium.org/luci/auth_service/internal/gs"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func testReader(ctx context.Context, email string) *AuthDBReader {
@@ -49,34 +49,34 @@ func testReader(ctx context.Context, email string) *AuthDBReader {
 
 // getRawReaders is a helper function to get all AuthDBReaders in
 // datastore. MUST be called from within a test case.
-func getRawReaders(ctx context.Context) []*AuthDBReader {
+func getRawReaders(t testing.TB, ctx context.Context) []*AuthDBReader {
 	q := datastore.NewQuery("AuthDBReader").Ancestor(authDBReadersRootKey(ctx))
 	readers := []*AuthDBReader{}
-	So(datastore.GetAll(ctx, q, &readers), ShouldBeNil)
+	assert.Loosely(t, datastore.GetAll(ctx, q, &readers), should.BeNil)
 	return readers
 }
 
 func TestIsAuthorizedReader(t *testing.T) {
 	t.Parallel()
 
-	Convey("IsAuthorizedReader works", t, func() {
+	ftt.Run("IsAuthorizedReader works", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 
 		// Set up an authorized user.
-		So(datastore.Put(ctx,
+		assert.Loosely(t, datastore.Put(ctx,
 			testReader(ctx, "someone@example.com"),
-		), ShouldBeNil)
+		), should.BeNil)
 
-		Convey("true for authorized user", func() {
+		t.Run("true for authorized user", func(t *ftt.Test) {
 			authorized, err := IsAuthorizedReader(ctx, "someone@example.com")
-			So(err, ShouldBeNil)
-			So(authorized, ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, authorized, should.BeTrue)
 		})
 
-		Convey("false for not authorized user", func() {
+		t.Run("false for not authorized user", func(t *ftt.Test) {
 			authorized, err := IsAuthorizedReader(ctx, "somebody@example.com")
-			So(err, ShouldBeNil)
-			So(authorized, ShouldBeFalse)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, authorized, should.BeFalse)
 		})
 	})
 }
@@ -84,30 +84,30 @@ func TestIsAuthorizedReader(t *testing.T) {
 func TestGetAuthorizedEmails(t *testing.T) {
 	t.Parallel()
 
-	Convey("GetAuthorizedEmails returns all readers", t, func() {
+	ftt.Run("GetAuthorizedEmails returns all readers", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 
 		// No readers.
 		readers, err := GetAuthorizedEmails(ctx)
-		So(err, ShouldBeNil)
-		So(readers, ShouldBeEmpty)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, readers, should.BeEmpty)
 
 		// A couple of readers.
-		So(datastore.Put(ctx,
+		assert.Loosely(t, datastore.Put(ctx,
 			testReader(ctx, "adam@example.com"),
 			testReader(ctx, "eve@example.com"),
-		), ShouldBeNil)
+		), should.BeNil)
 		readers, err = GetAuthorizedEmails(ctx)
-		So(err, ShouldBeNil)
-		So(readers, ShouldEqual,
-			stringset.NewFromSlice("eve@example.com", "adam@example.com"))
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, readers, should.Match(
+			stringset.NewFromSlice("eve@example.com", "adam@example.com")))
 	})
 }
 
 func TestAuthorizeReader(t *testing.T) {
 	t.Parallel()
 
-	Convey("AuthorizeReader works", t, func() {
+	ftt.Run("AuthorizeReader works", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		ctx = clock.Set(ctx, testclock.New(testModifiedTS))
 
@@ -120,57 +120,57 @@ func TestAuthorizeReader(t *testing.T) {
 		cfg := &configspb.SettingsCfg{
 			AuthDbGsPath: "chrome-infra-auth-test.appspot.com/auth-db",
 		}
-		So(settingscfg.SetConfig(ctx, cfg), ShouldBeNil)
+		assert.Loosely(t, settingscfg.SetConfig(ctx, cfg), should.BeNil)
 
-		Convey("disallows long emails", func() {
+		t.Run("disallows long emails", func(t *ftt.Test) {
 			testEmail := strings.Repeat("a", MaxReaderEmailLength-12) + "@example.com"
-			So(AuthorizeReader(ctx, testEmail), ShouldErrLike,
-				"email is too long")
-			So(getRawReaders(ctx), ShouldBeEmpty)
+			assert.Loosely(t, AuthorizeReader(ctx, testEmail), should.ErrLike(
+				"email is too long"))
+			assert.Loosely(t, getRawReaders(t, ctx), should.BeEmpty)
 		})
 
-		Convey("respects max reader count", func() {
+		t.Run("respects max reader count", func(t *ftt.Test) {
 			// Set up lots of existing readers.
 			dummyReaders := make([]*AuthDBReader, MaxReaders)
 			for i := 0; i < MaxReaders; i++ {
 				dummyReaders[i] = testReader(ctx,
 					fmt.Sprintf("user-%d@example.com", i))
 			}
-			So(datastore.Put(ctx, dummyReaders), ShouldBeNil)
-			So(getRawReaders(ctx), ShouldHaveLength, MaxReaders)
+			assert.Loosely(t, datastore.Put(ctx, dummyReaders), should.BeNil)
+			assert.Loosely(t, getRawReaders(t, ctx), should.HaveLength(MaxReaders))
 
 			// Check authorizing an additional user fails.
-			So(AuthorizeReader(ctx, "someone@example.com"), ShouldErrLike,
-				"soft limit on GCS ACL entries")
-			So(getRawReaders(ctx), ShouldHaveLength, MaxReaders)
+			assert.Loosely(t, AuthorizeReader(ctx, "someone@example.com"), should.ErrLike(
+				"soft limit on GCS ACL entries"))
+			assert.Loosely(t, getRawReaders(t, ctx), should.HaveLength(MaxReaders))
 		})
 
-		Convey("email is recorded", func() {
+		t.Run("email is recorded", func(t *ftt.Test) {
 			// Define expected client calls.
 			gomock.InOrder(
 				mockClient.Client.EXPECT().UpdateReadACL(gomock.Any(),
 					gomock.Any(), stringset.NewFromSlice("someone@example.com")).Times(2),
 				mockClient.Client.EXPECT().Close().Times(1))
 
-			So(AuthorizeReader(ctx, "someone@example.com"), ShouldBeNil)
-			So(getRawReaders(ctx), ShouldResembleProto, []*AuthDBReader{
+			assert.Loosely(t, AuthorizeReader(ctx, "someone@example.com"), should.BeNil)
+			assert.Loosely(t, getRawReaders(t, ctx), should.Resemble([]*AuthDBReader{
 				{
 					Kind:         "AuthDBReader",
 					Parent:       authDBReadersRootKey(ctx),
 					ID:           "someone@example.com",
 					AuthorizedTS: testModifiedTS,
 				},
-			})
+			}))
 
-			Convey("already authorized user is not duplicated", func() {
+			t.Run("already authorized user is not duplicated", func(t *ftt.Test) {
 				// Define expected client calls.
 				gomock.InOrder(
 					mockClient.Client.EXPECT().UpdateReadACL(gomock.Any(),
 						gomock.Any(), stringset.NewFromSlice("someone@example.com")).Times(2),
 					mockClient.Client.EXPECT().Close().Times(1))
 
-				So(AuthorizeReader(ctx, "someone@example.com"), ShouldBeNil)
-				So(getRawReaders(ctx), ShouldHaveLength, 1)
+				assert.Loosely(t, AuthorizeReader(ctx, "someone@example.com"), should.BeNil)
+				assert.Loosely(t, getRawReaders(t, ctx), should.HaveLength(1))
 			})
 		})
 	})
@@ -179,7 +179,7 @@ func TestAuthorizeReader(t *testing.T) {
 func TestDeauthorizeReader(t *testing.T) {
 	t.Parallel()
 
-	Convey("DeauthorizeReader works", t, func() {
+	ftt.Run("DeauthorizeReader works", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		ctx = clock.Set(ctx, testclock.New(testModifiedTS))
 
@@ -192,34 +192,34 @@ func TestDeauthorizeReader(t *testing.T) {
 		cfg := &configspb.SettingsCfg{
 			AuthDbGsPath: "chrome-infra-auth-test.appspot.com/auth-db",
 		}
-		So(settingscfg.SetConfig(ctx, cfg), ShouldBeNil)
+		assert.Loosely(t, settingscfg.SetConfig(ctx, cfg), should.BeNil)
 
 		// Add an authorized user.
-		So(datastore.Put(ctx, testReader(ctx, "someone@example.com")),
-			ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, testReader(ctx, "someone@example.com")),
+			should.BeNil)
 
-		Convey("succeeds for non-authorized user", func() {
+		t.Run("succeeds for non-authorized user", func(t *ftt.Test) {
 			// Define expected client calls.
 			gomock.InOrder(
 				mockClient.Client.EXPECT().UpdateReadACL(gomock.Any(),
 					gomock.Any(), stringset.NewFromSlice("someone@example.com")).Times(2),
 				mockClient.Client.EXPECT().Close().Times(1))
 
-			So(DeauthorizeReader(ctx, "unknown@example.com"), ShouldBeNil)
-			So(getRawReaders(ctx), ShouldResembleProto, []*AuthDBReader{
+			assert.Loosely(t, DeauthorizeReader(ctx, "unknown@example.com"), should.BeNil)
+			assert.Loosely(t, getRawReaders(t, ctx), should.Resemble([]*AuthDBReader{
 				testReader(ctx, "someone@example.com"),
-			})
+			}))
 		})
 
-		Convey("removes the user", func() {
+		t.Run("removes the user", func(t *ftt.Test) {
 			// Define expected client calls.
 			gomock.InOrder(
 				mockClient.Client.EXPECT().UpdateReadACL(gomock.Any(),
 					gomock.Any(), stringset.New(0)).Times(2),
 				mockClient.Client.EXPECT().Close().Times(1))
 
-			So(DeauthorizeReader(ctx, "someone@example.com"), ShouldBeNil)
-			So(getRawReaders(ctx), ShouldBeEmpty)
+			assert.Loosely(t, DeauthorizeReader(ctx, "someone@example.com"), should.BeNil)
+			assert.Loosely(t, getRawReaders(t, ctx), should.BeEmpty)
 		})
 	})
 }
@@ -227,7 +227,7 @@ func TestDeauthorizeReader(t *testing.T) {
 func TestRevokeStaleReaderAccess(t *testing.T) {
 	t.Parallel()
 
-	Convey("RevokeStaleReaderAccess works", t, func() {
+	ftt.Run("RevokeStaleReaderAccess works", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		ctx = clock.Set(ctx, testclock.New(testModifiedTS))
 
@@ -240,20 +240,20 @@ func TestRevokeStaleReaderAccess(t *testing.T) {
 		cfg := &configspb.SettingsCfg{
 			AuthDbGsPath: "chrome-infra-auth-test.appspot.com/auth-db",
 		}
-		So(settingscfg.SetConfig(ctx, cfg), ShouldBeNil)
+		assert.Loosely(t, settingscfg.SetConfig(ctx, cfg), should.BeNil)
 
 		// Add existing readers.
 		err := datastore.Put(ctx,
 			testReader(ctx, "someone@example.com"),
 			testReader(ctx, "somebody@example.com"),
 		)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		// The group name for trusted accounts that are eligible to be
 		// readers.
 		trustedGroup := TrustedServicesGroup
 
-		Convey("revokes if not trusted", func() {
+		t.Run("revokes if not trusted", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:someone@example.com",
 				FakeDB: authtest.NewFakeDB(
@@ -267,13 +267,13 @@ func TestRevokeStaleReaderAccess(t *testing.T) {
 					gomock.Any(), stringset.NewFromSlice("someone@example.com")).Times(2),
 				mockClient.Client.EXPECT().Close().Times(1))
 
-			So(RevokeStaleReaderAccess(ctx, trustedGroup, false), ShouldBeNil)
-			So(getRawReaders(ctx), ShouldResembleProto, []*AuthDBReader{
+			assert.Loosely(t, RevokeStaleReaderAccess(ctx, trustedGroup, false), should.BeNil)
+			assert.Loosely(t, getRawReaders(t, ctx), should.Resemble([]*AuthDBReader{
 				testReader(ctx, "someone@example.com"),
-			})
+			}))
 		})
 
-		Convey("updates ACLs even if there are no deletions", func() {
+		t.Run("updates ACLs even if there are no deletions", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:someone@example.com",
 				FakeDB: authtest.NewFakeDB(
@@ -291,11 +291,11 @@ func TestRevokeStaleReaderAccess(t *testing.T) {
 				).Times(2),
 				mockClient.Client.EXPECT().Close().Times(1))
 
-			So(RevokeStaleReaderAccess(ctx, trustedGroup, false), ShouldBeNil)
-			So(getRawReaders(ctx), ShouldResembleProto, []*AuthDBReader{
+			assert.Loosely(t, RevokeStaleReaderAccess(ctx, trustedGroup, false), should.BeNil)
+			assert.Loosely(t, getRawReaders(t, ctx), should.Resemble([]*AuthDBReader{
 				testReader(ctx, "somebody@example.com"),
 				testReader(ctx, "someone@example.com"),
-			})
+			}))
 		})
 	})
 }

@@ -17,24 +17,26 @@ package zlib
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestCodec(t *testing.T) {
 	t.Parallel()
 
-	Convey("decompressing compressed data works", t, func() {
+	ftt.Run("decompressing compressed data works", t, func(t *ftt.Test) {
 		data := []byte("this is test data")
 
 		// Check compressing executes.
 		compressed, err := Compress(data)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		// Check decompressing executes.
 		decompressed, err := Decompress(compressed)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		// Check the decompressed compressed data matches the original.
-		So(decompressed, ShouldEqual, data)
+		assert.Loosely(t, decompressed, should.Match(data))
 	})
 }

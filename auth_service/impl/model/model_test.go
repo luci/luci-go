@@ -29,6 +29,9 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -44,9 +47,6 @@ import (
 	"go.chromium.org/luci/auth_service/impl/util/zlib"
 	"go.chromium.org/luci/auth_service/internal/permissions"
 	"go.chromium.org/luci/auth_service/testsupport"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 var (
@@ -254,57 +254,57 @@ func isPropIndexed(pm datastore.PropertyMap, key string) bool {
 func TestGetReplicationState(t *testing.T) {
 	t.Parallel()
 
-	Convey("Testing GetReplicationState", t, func() {
+	ftt.Run("Testing GetReplicationState", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 
 		state := testAuthReplicationState(ctx, 12345)
 
 		_, err := GetReplicationState(ctx)
-		So(err, ShouldEqual, datastore.ErrNoSuchEntity)
+		assert.Loosely(t, err, should.Equal(datastore.ErrNoSuchEntity))
 
-		So(datastore.Put(ctx, state), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, state), should.BeNil)
 
 		actual, err := GetReplicationState(ctx)
-		So(err, ShouldBeNil)
-		So(actual, ShouldResemble, state)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, actual, should.Resemble(state))
 	})
 }
 
 func TestGetAuthGroup(t *testing.T) {
 	t.Parallel()
 
-	Convey("Testing GetAuthGroup", t, func() {
-		Convey("returns group if it exists", func() {
+	ftt.Run("Testing GetAuthGroup", t, func(t *ftt.Test) {
+		t.Run("returns group if it exists", func(t *ftt.Test) {
 			ctx := memory.Use(context.Background())
 
 			// Group doesn't exist yet.
 			_, err := GetAuthGroup(ctx, "test-auth-group-1")
-			So(err, ShouldEqual, datastore.ErrNoSuchEntity)
+			assert.Loosely(t, err, should.Equal(datastore.ErrNoSuchEntity))
 
 			// Put the group in datastore.
 			authGroup := testAuthGroup(ctx, "test-auth-group-1")
-			So(datastore.Put(ctx, authGroup), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, authGroup), should.BeNil)
 
 			// Group should be returned now that it exists.
 			actual, err := GetAuthGroup(ctx, "test-auth-group-1")
-			So(err, ShouldBeNil)
-			So(actual, ShouldResemble, authGroup)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actual, should.Resemble(authGroup))
 		})
 
-		Convey("returned group always has Owners", func() {
+		t.Run("returned group always has Owners", func(t *ftt.Test) {
 			ctx := memory.Use(context.Background())
 
 			// Put a group without Owners in datastore.
 			authGroup := testAuthGroup(ctx, "test-auth-group-1")
 			authGroup.Owners = ""
-			So(datastore.Put(ctx, authGroup), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, authGroup), should.BeNil)
 
 			// Returned group should have Owners set to AdminGroup.
 			actual, err := GetAuthGroup(ctx, "test-auth-group-1")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			expected := testAuthGroup(ctx, "test-auth-group-1")
 			expected.Owners = AdminGroup
-			So(actual, ShouldResembleProto, expected)
+			assert.Loosely(t, actual, should.Resemble(expected))
 		})
 	})
 }
@@ -312,47 +312,47 @@ func TestGetAuthGroup(t *testing.T) {
 func TestGetAllAuthGroups(t *testing.T) {
 	t.Parallel()
 
-	Convey("Testing GetAllAuthGroups", t, func() {
-		Convey("returns groups alphabetically", func() {
+	ftt.Run("Testing GetAllAuthGroups", t, func(t *ftt.Test) {
+		t.Run("returns groups alphabetically", func(t *ftt.Test) {
 			ctx := memory.Use(context.Background())
 
 			// Out of order alphabetically by ID.
-			So(datastore.Put(ctx,
+			assert.Loosely(t, datastore.Put(ctx,
 				testAuthGroup(ctx, "test-auth-group-3"),
 				testAuthGroup(ctx, "test-auth-group-1"),
 				testAuthGroup(ctx, "test-auth-group-2"),
-			), ShouldBeNil)
+			), should.BeNil)
 
 			actualAuthGroups, err := GetAllAuthGroups(ctx)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// Returned in alphabetical order.
-			So(actualAuthGroups, ShouldResemble, []*AuthGroup{
+			assert.Loosely(t, actualAuthGroups, should.Resemble([]*AuthGroup{
 				testAuthGroup(ctx, "test-auth-group-1"),
 				testAuthGroup(ctx, "test-auth-group-2"),
 				testAuthGroup(ctx, "test-auth-group-3"),
-			})
+			}))
 		})
 
-		Convey("returned groups always has Owners", func() {
+		t.Run("returned groups always has Owners", func(t *ftt.Test) {
 			ctx := memory.Use(context.Background())
 
 			authGroup1 := testAuthGroup(ctx, "test-auth-group-1")
 			authGroup1.Owners = ""
-			So(datastore.Put(ctx,
+			assert.Loosely(t, datastore.Put(ctx,
 				authGroup1,
 				testAuthGroup(ctx, "test-auth-group-2"),
-			), ShouldBeNil)
+			), should.BeNil)
 
 			actualAuthGroups, err := GetAllAuthGroups(ctx)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			expectedAuthGroup1 := testAuthGroup(ctx, "test-auth-group-1")
 			expectedAuthGroup1.Owners = AdminGroup
-			So(actualAuthGroups, ShouldResembleProto, []*AuthGroup{
+			assert.Loosely(t, actualAuthGroups, should.Resemble([]*AuthGroup{
 				expectedAuthGroup1,
 				testAuthGroup(ctx, "test-auth-group-2"),
-			})
+			}))
 		})
 	})
 }
@@ -360,7 +360,7 @@ func TestGetAllAuthGroups(t *testing.T) {
 func TestCreateAuthGroup(t *testing.T) {
 	t.Parallel()
 
-	Convey("CreateAuthGroup", t, func() {
+	ftt.Run("CreateAuthGroup", t, func(t *ftt.Test) {
 		ctx := auth.WithState(memory.Use(context.Background()), &authtest.FakeState{
 			Identity: "user:someone@example.com",
 		})
@@ -368,169 +368,169 @@ func TestCreateAuthGroup(t *testing.T) {
 		ctx = info.SetImageVersion(ctx, "test-version")
 		ctx, taskScheduler := tq.TestingContext(txndefer.FilterRDS(ctx), nil)
 
-		Convey("empty group name", func() {
+		t.Run("empty group name", func(t *ftt.Test) {
 			group := testAuthGroup(ctx, "")
 
 			_, err := CreateAuthGroup(ctx, group, false, "Go pRPC API", false)
-			So(err, ShouldEqual, ErrInvalidName)
+			assert.Loosely(t, err, should.Equal(ErrInvalidName))
 		})
 
-		Convey("invalid group name", func() {
+		t.Run("invalid group name", func(t *ftt.Test) {
 			group := testAuthGroup(ctx, "foo^")
 
 			_, err := CreateAuthGroup(ctx, group, false, "Go pRPC API", false)
-			So(err, ShouldEqual, ErrInvalidName)
+			assert.Loosely(t, err, should.Equal(ErrInvalidName))
 		})
 
-		Convey("external group name", func() {
+		t.Run("external group name", func(t *ftt.Test) {
 			group := testAuthGroup(ctx, "mdb/foo")
 
 			_, err := CreateAuthGroup(ctx, group, false, "Go pRPC API", false)
-			So(err, ShouldEqual, ErrInvalidName)
+			assert.Loosely(t, err, should.Equal(ErrInvalidName))
 		})
 
-		Convey("group name that already exists", func() {
-			So(datastore.Put(ctx,
+		t.Run("group name that already exists", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(ctx,
 				testAuthGroup(ctx, "foo"),
-			), ShouldBeNil)
+			), should.BeNil)
 
 			group := testAuthGroup(ctx, "foo")
 
 			_, err := CreateAuthGroup(ctx, group, false, "Go pRPC API", false)
-			So(err, ShouldEqual, ErrAlreadyExists)
+			assert.Loosely(t, err, should.Equal(ErrAlreadyExists))
 		})
 
-		Convey("invalid member identities", func() {
+		t.Run("invalid member identities", func(t *ftt.Test) {
 			group := testAuthGroup(ctx, "foo")
 			group.Members = []string{"no-prefix@google.com"}
 
 			_, err := CreateAuthGroup(ctx, group, false, "Go pRPC API", false)
-			So(err, ShouldUnwrapTo, ErrInvalidIdentity)
-			So(err, ShouldErrLike, "bad identity string \"no-prefix@google.com\"")
+			assert.Loosely(t, err, should.ErrLike(ErrInvalidIdentity))
+			assert.Loosely(t, err, should.ErrLike("bad identity string \"no-prefix@google.com\""))
 		})
 
-		Convey("project member identities", func() {
+		t.Run("project member identities", func(t *ftt.Test) {
 			group := testAuthGroup(ctx, "foo")
 			group.Members = []string{"project:abc"}
 
 			_, err := CreateAuthGroup(ctx, group, false, "Go pRPC API", false)
-			So(err, ShouldUnwrapTo, ErrInvalidIdentity)
-			So(err, ShouldErrLike, `"project:..." identities aren't allowed in groups`)
+			assert.Loosely(t, err, should.ErrLike(ErrInvalidIdentity))
+			assert.Loosely(t, err, should.ErrLike(`"project:..." identities aren't allowed in groups`))
 		})
 
-		Convey("invalid identity globs", func() {
+		t.Run("invalid identity globs", func(t *ftt.Test) {
 			group := testAuthGroup(ctx, "foo")
 			group.Globs = []string{"*@no-prefix.com"}
 
 			_, err := CreateAuthGroup(ctx, group, false, "Go pRPC API", false)
-			So(err, ShouldUnwrapTo, ErrInvalidIdentity)
-			So(err, ShouldErrLike, "bad identity glob string \"*@no-prefix.com\"")
+			assert.Loosely(t, err, should.ErrLike(ErrInvalidIdentity))
+			assert.Loosely(t, err, should.ErrLike("bad identity glob string \"*@no-prefix.com\""))
 		})
 
-		Convey("project identity globs", func() {
+		t.Run("project identity globs", func(t *ftt.Test) {
 			group := testAuthGroup(ctx, "foo")
 			group.Globs = []string{"project:*"}
 
 			_, err := CreateAuthGroup(ctx, group, false, "Go pRPC API", false)
-			So(err, ShouldUnwrapTo, ErrInvalidIdentity)
-			So(err, ShouldErrLike, `"project:..." globs aren't allowed in groups`)
+			assert.Loosely(t, err, should.ErrLike(ErrInvalidIdentity))
+			assert.Loosely(t, err, should.ErrLike(`"project:..." globs aren't allowed in groups`))
 		})
 
-		Convey("all referenced groups must exist", func() {
+		t.Run("all referenced groups must exist", func(t *ftt.Test) {
 			group := testAuthGroup(ctx, "foo")
 			group.Owners = "bar"
 			group.Nested = []string{"baz", "qux"}
 
 			_, err := CreateAuthGroup(ctx, group, false, "Go pRPC API", false)
-			So(err, ShouldUnwrapTo, ErrInvalidReference)
-			So(err, ShouldErrLike, "some referenced groups don't exist: baz, qux, bar")
+			assert.Loosely(t, err, should.ErrLike(ErrInvalidReference))
+			assert.Loosely(t, err, should.ErrLike("some referenced groups don't exist: baz, qux, bar"))
 		})
 
-		Convey("owner must exist", func() {
+		t.Run("owner must exist", func(t *ftt.Test) {
 			group := testAuthGroup(ctx, "foo")
 			group.Owners = "bar"
 
 			_, err := CreateAuthGroup(ctx, group, false, "Go pRPC API", false)
-			So(err, ShouldErrLike, "bar")
+			assert.Loosely(t, err, should.ErrLike("bar"))
 		})
 
-		Convey("with empty owners uses 'administrators' group", func() {
-			So(datastore.Put(ctx,
+		t.Run("with empty owners uses 'administrators' group", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(ctx,
 				testAuthGroup(ctx, AdminGroup),
-			), ShouldBeNil)
+			), should.BeNil)
 
 			group := emptyAuthGroup(ctx, "foo")
 			group.Owners = ""
 
 			createdGroup, err := CreateAuthGroup(ctx, group, false, "Go pRPC API", false)
-			So(err, ShouldBeNil)
-			So(createdGroup.Owners, ShouldEqual, AdminGroup)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, createdGroup.Owners, should.Equal(AdminGroup))
 		})
 
-		Convey("group can own itself", func() {
+		t.Run("group can own itself", func(t *ftt.Test) {
 			group := emptyAuthGroup(ctx, "foo")
 			group.Owners = "foo"
 
 			createdGroup, err := CreateAuthGroup(ctx, group, false, "Go pRPC API", false)
-			So(err, ShouldBeNil)
-			So(createdGroup.Owners, ShouldEqual, createdGroup.ID)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, createdGroup.Owners, should.Equal(createdGroup.ID))
 		})
 
-		Convey("successfully writes to datastore", func() {
+		t.Run("successfully writes to datastore", func(t *ftt.Test) {
 			group := emptyAuthGroup(ctx, "foo")
 
 			createdGroup, err := CreateAuthGroup(ctx, group, false, "Go pRPC API", false)
-			So(err, ShouldBeNil)
-			So(createdGroup.ID, ShouldEqual, group.ID)
-			So(createdGroup.Description, ShouldEqual, group.Description)
-			So(createdGroup.Owners, ShouldEqual, group.Owners)
-			So(createdGroup.Members, ShouldResemble, group.Members)
-			So(createdGroup.Globs, ShouldResemble, group.Globs)
-			So(createdGroup.Nested, ShouldResemble, group.Nested)
-			So(createdGroup.CreatedBy, ShouldEqual, "user:someone@example.com")
-			So(createdGroup.CreatedTS.Unix(), ShouldEqual, testCreatedTS.Unix())
-			So(createdGroup.ModifiedBy, ShouldEqual, "user:someone@example.com")
-			So(createdGroup.ModifiedTS.Unix(), ShouldEqual, testCreatedTS.Unix())
-			So(createdGroup.AuthDBRev, ShouldEqual, 1)
-			So(createdGroup.AuthDBPrevRev, ShouldEqual, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, createdGroup.ID, should.Equal(group.ID))
+			assert.Loosely(t, createdGroup.Description, should.Equal(group.Description))
+			assert.Loosely(t, createdGroup.Owners, should.Equal(group.Owners))
+			assert.Loosely(t, createdGroup.Members, should.Resemble(group.Members))
+			assert.Loosely(t, createdGroup.Globs, should.Resemble(group.Globs))
+			assert.Loosely(t, createdGroup.Nested, should.Resemble(group.Nested))
+			assert.Loosely(t, createdGroup.CreatedBy, should.Equal("user:someone@example.com"))
+			assert.Loosely(t, createdGroup.CreatedTS.Unix(), should.Equal(testCreatedTS.Unix()))
+			assert.Loosely(t, createdGroup.ModifiedBy, should.Equal("user:someone@example.com"))
+			assert.Loosely(t, createdGroup.ModifiedTS.Unix(), should.Equal(testCreatedTS.Unix()))
+			assert.Loosely(t, createdGroup.AuthDBRev, should.Equal(1))
+			assert.Loosely(t, createdGroup.AuthDBPrevRev, should.BeZero)
 
 			fetchedGroup, err := GetAuthGroup(ctx, "foo")
-			So(err, ShouldBeNil)
-			So(fetchedGroup.ID, ShouldEqual, group.ID)
-			So(fetchedGroup.Description, ShouldEqual, group.Description)
-			So(fetchedGroup.Owners, ShouldEqual, group.Owners)
-			So(fetchedGroup.Members, ShouldResemble, group.Members)
-			So(fetchedGroup.Globs, ShouldResemble, group.Globs)
-			So(fetchedGroup.Nested, ShouldResemble, group.Nested)
-			So(fetchedGroup.CreatedBy, ShouldEqual, "user:someone@example.com")
-			So(fetchedGroup.CreatedTS.Unix(), ShouldEqual, testCreatedTS.Unix())
-			So(fetchedGroup.ModifiedBy, ShouldEqual, "user:someone@example.com")
-			So(fetchedGroup.ModifiedTS.Unix(), ShouldEqual, testCreatedTS.Unix())
-			So(fetchedGroup.AuthDBRev, ShouldEqual, 1)
-			So(fetchedGroup.AuthDBPrevRev, ShouldEqual, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, fetchedGroup.ID, should.Equal(group.ID))
+			assert.Loosely(t, fetchedGroup.Description, should.Equal(group.Description))
+			assert.Loosely(t, fetchedGroup.Owners, should.Equal(group.Owners))
+			assert.Loosely(t, fetchedGroup.Members, should.Resemble(group.Members))
+			assert.Loosely(t, fetchedGroup.Globs, should.Resemble(group.Globs))
+			assert.Loosely(t, fetchedGroup.Nested, should.Resemble(group.Nested))
+			assert.Loosely(t, fetchedGroup.CreatedBy, should.Equal("user:someone@example.com"))
+			assert.Loosely(t, fetchedGroup.CreatedTS.Unix(), should.Equal(testCreatedTS.Unix()))
+			assert.Loosely(t, fetchedGroup.ModifiedBy, should.Equal("user:someone@example.com"))
+			assert.Loosely(t, fetchedGroup.ModifiedTS.Unix(), should.Equal(testCreatedTS.Unix()))
+			assert.Loosely(t, fetchedGroup.AuthDBRev, should.Equal(1))
+			assert.Loosely(t, fetchedGroup.AuthDBPrevRev, should.BeZero)
 		})
 
-		Convey("updates AuthDB revision only on successful write", func() {
+		t.Run("updates AuthDB revision only on successful write", func(t *ftt.Test) {
 			// Create a group.
 			{
 				group1 := emptyAuthGroup(ctx, "foo")
 
 				createdGroup1, err := CreateAuthGroup(ctx, group1, false, "Go pRPC API", false)
-				So(err, ShouldBeNil)
-				So(createdGroup1.AuthDBRev, ShouldEqual, 1)
-				So(createdGroup1.AuthDBPrevRev, ShouldEqual, 0)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, createdGroup1.AuthDBRev, should.Equal(1))
+				assert.Loosely(t, createdGroup1.AuthDBPrevRev, should.BeZero)
 
 				state1, err := GetReplicationState(ctx)
-				So(err, ShouldBeNil)
-				So(state1.AuthDBRev, ShouldEqual, 1)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, state1.AuthDBRev, should.Equal(1))
 				tasks := taskScheduler.Tasks()
-				So(tasks, ShouldHaveLength, 2)
+				assert.Loosely(t, tasks, should.HaveLength(2))
 				processChangeTask := tasks[0]
-				So(processChangeTask.Class, ShouldEqual, "process-change-task")
-				So(processChangeTask.Payload, ShouldResembleProto, &taskspb.ProcessChangeTask{AuthDbRev: 1})
+				assert.Loosely(t, processChangeTask.Class, should.Equal("process-change-task"))
+				assert.Loosely(t, processChangeTask.Payload, should.Resemble(&taskspb.ProcessChangeTask{AuthDbRev: 1}))
 				replicationTask := tasks[1]
-				So(replicationTask.Class, ShouldEqual, "replication-task")
-				So(replicationTask.Payload, ShouldResembleProto, &taskspb.ReplicationTask{AuthDbRev: 1})
+				assert.Loosely(t, replicationTask.Class, should.Equal("replication-task"))
+				assert.Loosely(t, replicationTask.Payload, should.Resemble(&taskspb.ReplicationTask{AuthDbRev: 1}))
 			}
 
 			// Create a second group.
@@ -538,61 +538,61 @@ func TestCreateAuthGroup(t *testing.T) {
 				group2 := emptyAuthGroup(ctx, "foo2")
 
 				createdGroup2, err := CreateAuthGroup(ctx, group2, false, "Go pRPC API", false)
-				So(err, ShouldBeNil)
-				So(createdGroup2.AuthDBRev, ShouldEqual, 2)
-				So(createdGroup2.AuthDBPrevRev, ShouldEqual, 0)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, createdGroup2.AuthDBRev, should.Equal(2))
+				assert.Loosely(t, createdGroup2.AuthDBPrevRev, should.BeZero)
 
 				state2, err := GetReplicationState(ctx)
-				So(err, ShouldBeNil)
-				So(state2.AuthDBRev, ShouldEqual, 2)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, state2.AuthDBRev, should.Equal(2))
 				tasks := taskScheduler.Tasks()
-				So(tasks, ShouldHaveLength, 4)
+				assert.Loosely(t, tasks, should.HaveLength(4))
 			}
 
 			// Try to create another group the same as the second, which should fail.
 			{
 				_, err := CreateAuthGroup(ctx, emptyAuthGroup(ctx, "foo2"), false, "Go pRPC API", false)
-				So(err, ShouldBeError)
+				assert.Loosely(t, err, should.ErrLike("already exists"))
 
 				state3, err := GetReplicationState(ctx)
-				So(err, ShouldBeNil)
-				So(state3.AuthDBRev, ShouldEqual, 2)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, state3.AuthDBRev, should.Equal(2))
 				tasks := taskScheduler.Tasks()
-				So(tasks, ShouldHaveLength, 4)
+				assert.Loosely(t, tasks, should.HaveLength(4))
 			}
 		})
 
-		Convey("creates historical group entities", func() {
+		t.Run("creates historical group entities", func(t *ftt.Test) {
 			// Create a group.
 			{
 				group := emptyAuthGroup(ctx, "foo")
 
 				_, err := CreateAuthGroup(ctx, group, false, "test historical comment", false)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				entities, err := getAllDatastoreEntities(ctx, "AuthGroupHistory", HistoricalRevisionKey(ctx, 1))
-				So(err, ShouldBeNil)
-				So(entities, ShouldHaveLength, 1)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, entities, should.HaveLength(1))
 				historicalEntity := entities[0]
-				So(getDatastoreKey(historicalEntity).String(), ShouldEqual, "dev~app::/AuthGlobalConfig,\"root\"/Rev,1/AuthGroupHistory,\"foo\"")
-				So(getStringProp(historicalEntity, "description"), ShouldEqual, group.Description)
-				So(getStringProp(historicalEntity, "owners"), ShouldEqual, group.Owners)
-				So(getStringSliceProp(historicalEntity, "members"), ShouldResemble, group.Members)
-				So(getStringSliceProp(historicalEntity, "globs"), ShouldResemble, group.Globs)
-				So(getStringSliceProp(historicalEntity, "nested"), ShouldResemble, group.Nested)
-				So(getStringProp(historicalEntity, "created_by"), ShouldEqual, "user:someone@example.com")
-				So(getTimeProp(historicalEntity, "created_ts").Unix(), ShouldEqual, testCreatedTS.Unix())
-				So(getStringProp(historicalEntity, "modified_by"), ShouldEqual, "user:someone@example.com")
-				So(getTimeProp(historicalEntity, "modified_ts").Unix(), ShouldEqual, testCreatedTS.Unix())
-				So(getInt64Prop(historicalEntity, "auth_db_rev"), ShouldEqual, 1)
-				So(getProp(historicalEntity, "auth_db_prev_rev"), ShouldBeNil)
-				So(getBoolProp(historicalEntity, "auth_db_deleted"), ShouldBeFalse)
-				So(getStringProp(historicalEntity, "auth_db_change_comment"), ShouldEqual, "test historical comment")
-				So(getStringProp(historicalEntity, "auth_db_app_version"), ShouldEqual, "test-version")
+				assert.Loosely(t, getDatastoreKey(historicalEntity).String(), should.Equal("dev~app::/AuthGlobalConfig,\"root\"/Rev,1/AuthGroupHistory,\"foo\""))
+				assert.Loosely(t, getStringProp(historicalEntity, "description"), should.Equal(group.Description))
+				assert.Loosely(t, getStringProp(historicalEntity, "owners"), should.Equal(group.Owners))
+				assert.Loosely(t, getStringSliceProp(historicalEntity, "members"), should.Resemble(group.Members))
+				assert.Loosely(t, getStringSliceProp(historicalEntity, "globs"), should.Resemble(group.Globs))
+				assert.Loosely(t, getStringSliceProp(historicalEntity, "nested"), should.Resemble(group.Nested))
+				assert.Loosely(t, getStringProp(historicalEntity, "created_by"), should.Equal("user:someone@example.com"))
+				assert.Loosely(t, getTimeProp(historicalEntity, "created_ts").Unix(), should.Equal(testCreatedTS.Unix()))
+				assert.Loosely(t, getStringProp(historicalEntity, "modified_by"), should.Equal("user:someone@example.com"))
+				assert.Loosely(t, getTimeProp(historicalEntity, "modified_ts").Unix(), should.Equal(testCreatedTS.Unix()))
+				assert.Loosely(t, getInt64Prop(historicalEntity, "auth_db_rev"), should.Equal(1))
+				assert.Loosely(t, getProp(historicalEntity, "auth_db_prev_rev"), should.BeNil)
+				assert.Loosely(t, getBoolProp(historicalEntity, "auth_db_deleted"), should.BeFalse)
+				assert.Loosely(t, getStringProp(historicalEntity, "auth_db_change_comment"), should.Equal("test historical comment"))
+				assert.Loosely(t, getStringProp(historicalEntity, "auth_db_app_version"), should.Equal("test-version"))
 
 				// Check no properties are indexed.
 				for k := range historicalEntity {
-					So(isPropIndexed(historicalEntity, k), ShouldBeFalse)
+					assert.Loosely(t, isPropIndexed(historicalEntity, k), should.BeFalse)
 				}
 			}
 
@@ -601,31 +601,31 @@ func TestCreateAuthGroup(t *testing.T) {
 				group := emptyAuthGroup(ctx, "foo2")
 
 				_, err := CreateAuthGroup(ctx, group, false, "Go pRPC API", false)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				entities, err := getAllDatastoreEntities(ctx, "AuthGroupHistory", HistoricalRevisionKey(ctx, 2))
-				So(err, ShouldBeNil)
-				So(entities, ShouldHaveLength, 1)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, entities, should.HaveLength(1))
 				historicalEntity := entities[0]
-				So(getDatastoreKey(historicalEntity).String(), ShouldEqual, "dev~app::/AuthGlobalConfig,\"root\"/Rev,2/AuthGroupHistory,\"foo2\"")
-				So(getStringProp(historicalEntity, "description"), ShouldEqual, group.Description)
-				So(getStringProp(historicalEntity, "owners"), ShouldEqual, group.Owners)
-				So(getStringSliceProp(historicalEntity, "members"), ShouldResemble, group.Members)
-				So(getStringSliceProp(historicalEntity, "globs"), ShouldResemble, group.Globs)
-				So(getStringSliceProp(historicalEntity, "nested"), ShouldResemble, group.Nested)
-				So(getStringProp(historicalEntity, "created_by"), ShouldEqual, "user:someone@example.com")
-				So(getTimeProp(historicalEntity, "created_ts").Unix(), ShouldEqual, testCreatedTS.Unix())
-				So(getStringProp(historicalEntity, "modified_by"), ShouldEqual, "user:someone@example.com")
-				So(getTimeProp(historicalEntity, "modified_ts").Unix(), ShouldEqual, testCreatedTS.Unix())
-				So(getInt64Prop(historicalEntity, "auth_db_rev"), ShouldEqual, 2)
-				So(getProp(historicalEntity, "auth_db_prev_rev"), ShouldBeNil)
-				So(getBoolProp(historicalEntity, "auth_db_deleted"), ShouldBeFalse)
-				So(getStringProp(historicalEntity, "auth_db_change_comment"), ShouldEqual, "Go pRPC API")
-				So(getStringProp(historicalEntity, "auth_db_app_version"), ShouldEqual, "test-version")
+				assert.Loosely(t, getDatastoreKey(historicalEntity).String(), should.Equal("dev~app::/AuthGlobalConfig,\"root\"/Rev,2/AuthGroupHistory,\"foo2\""))
+				assert.Loosely(t, getStringProp(historicalEntity, "description"), should.Equal(group.Description))
+				assert.Loosely(t, getStringProp(historicalEntity, "owners"), should.Equal(group.Owners))
+				assert.Loosely(t, getStringSliceProp(historicalEntity, "members"), should.Resemble(group.Members))
+				assert.Loosely(t, getStringSliceProp(historicalEntity, "globs"), should.Resemble(group.Globs))
+				assert.Loosely(t, getStringSliceProp(historicalEntity, "nested"), should.Resemble(group.Nested))
+				assert.Loosely(t, getStringProp(historicalEntity, "created_by"), should.Equal("user:someone@example.com"))
+				assert.Loosely(t, getTimeProp(historicalEntity, "created_ts").Unix(), should.Equal(testCreatedTS.Unix()))
+				assert.Loosely(t, getStringProp(historicalEntity, "modified_by"), should.Equal("user:someone@example.com"))
+				assert.Loosely(t, getTimeProp(historicalEntity, "modified_ts").Unix(), should.Equal(testCreatedTS.Unix()))
+				assert.Loosely(t, getInt64Prop(historicalEntity, "auth_db_rev"), should.Equal(2))
+				assert.Loosely(t, getProp(historicalEntity, "auth_db_prev_rev"), should.BeNil)
+				assert.Loosely(t, getBoolProp(historicalEntity, "auth_db_deleted"), should.BeFalse)
+				assert.Loosely(t, getStringProp(historicalEntity, "auth_db_change_comment"), should.Equal("Go pRPC API"))
+				assert.Loosely(t, getStringProp(historicalEntity, "auth_db_app_version"), should.Equal("test-version"))
 
 				// Check no properties are indexed.
 				for k := range historicalEntity {
-					So(isPropIndexed(historicalEntity, k), ShouldBeFalse)
+					assert.Loosely(t, isPropIndexed(historicalEntity, k), should.BeFalse)
 				}
 			}
 		})
@@ -635,7 +635,7 @@ func TestCreateAuthGroup(t *testing.T) {
 func TestUpdateAuthGroup(t *testing.T) {
 	t.Parallel()
 
-	Convey("UpdateAuthGroup", t, func() {
+	ftt.Run("UpdateAuthGroup", t, func(t *ftt.Test) {
 		ctx := auth.WithState(memory.Use(context.Background()), &authtest.FakeState{
 			Identity:       "user:someone@example.com",
 			IdentityGroups: []string{"owners-foo"},
@@ -652,35 +652,35 @@ func TestUpdateAuthGroup(t *testing.T) {
 		etag := `W/"MjAyMS0wOC0xNlQxMjoyMDowMFo="`
 
 		// Set current auth DB revision to 10.
-		So(datastore.Put(ctx, testAuthReplicationState(ctx, 10)), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, testAuthReplicationState(ctx, 10)), should.BeNil)
 
-		Convey("can't update external group", func() {
+		t.Run("can't update external group", func(t *ftt.Test) {
 			group.ID = "mdb/foo"
-			So(datastore.Put(ctx, group), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, group), should.BeNil)
 			_, err := UpdateAuthGroup(ctx, group, nil, etag, false, "Go pRPC API", false)
-			So(err, ShouldErrLike, "cannot update external group")
+			assert.Loosely(t, err, should.ErrLike("cannot update external group"))
 		})
 
-		Convey("can't update if not an owner", func() {
+		t.Run("can't update if not an owner", func(t *ftt.Test) {
 			ctx := auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:someone@example.com",
 			})
-			So(datastore.Put(ctx, group), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, group), should.BeNil)
 			_, err := UpdateAuthGroup(ctx, group, nil, etag, false, "Go pRPC API", false)
-			So(err, ShouldEqual, ErrPermissionDenied)
+			assert.Loosely(t, err, should.Equal(ErrPermissionDenied))
 		})
 
-		Convey("can update if admin", func() {
+		t.Run("can update if admin", func(t *ftt.Test) {
 			ctx := auth.WithState(ctx, &authtest.FakeState{
 				Identity:       "user:someone@example.com",
 				IdentityGroups: []string{AdminGroup},
 			})
-			So(datastore.Put(ctx, group), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, group), should.BeNil)
 			_, err := UpdateAuthGroup(ctx, group, nil, etag, false, "Go pRPC API", false)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey("can't change admin owners", func() {
+		t.Run("can't change admin owners", func(t *ftt.Test) {
 			ctx := auth.WithState(ctx, &authtest.FakeState{
 				Identity:       "user:someone@example.com",
 				IdentityGroups: []string{AdminGroup},
@@ -688,101 +688,101 @@ func TestUpdateAuthGroup(t *testing.T) {
 
 			// Set up the admin group and another self-owned test group.
 			adminAuthGroup := emptyAuthGroup(ctx, AdminGroup)
-			So(datastore.Put(
-				ctx, adminAuthGroup, emptyAuthGroup(ctx, "foo")), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(
+				ctx, adminAuthGroup, emptyAuthGroup(ctx, "foo")), should.BeNil)
 
 			// Attempt to change the owners of the admin group.
 			adminAuthGroup.Owners = "foo"
 			_, err := UpdateAuthGroup(ctx, adminAuthGroup, nil, etag, false, "Go pRPC API", false)
-			So(err, ShouldErrLike, fmt.Sprintf("changing %q group owners is forbidden", AdminGroup))
+			assert.Loosely(t, err, should.ErrLike(fmt.Sprintf("changing %q group owners is forbidden", AdminGroup)))
 		})
 
-		Convey("can't delete if etag doesn't match", func() {
-			So(datastore.Put(ctx, group), ShouldBeNil)
+		t.Run("can't delete if etag doesn't match", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(ctx, group), should.BeNil)
 			_, err := UpdateAuthGroup(ctx, group, nil, "bad-etag", false, "Go pRPC API", false)
-			So(err, ShouldErrLike, ErrConcurrentModification)
+			assert.Loosely(t, err, should.ErrLike(ErrConcurrentModification))
 		})
 
-		Convey("group name that doesn't exist", func() {
+		t.Run("group name that doesn't exist", func(t *ftt.Test) {
 			group.ID = "non-existent-group"
 			_, err := UpdateAuthGroup(ctx, group, nil, etag, false, "Go pRPC API", false)
-			So(err, ShouldEqual, datastore.ErrNoSuchEntity)
+			assert.Loosely(t, err, should.Equal(datastore.ErrNoSuchEntity))
 		})
 
-		Convey("invalid member identities", func() {
-			So(datastore.Put(ctx, group), ShouldBeNil)
+		t.Run("invalid member identities", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(ctx, group), should.BeNil)
 
 			group.Members = []string{"no-prefix@google.com"}
 
 			_, err := UpdateAuthGroup(ctx, group, &fieldmaskpb.FieldMask{Paths: []string{"members"}}, etag, false, "Go pRPC API", false)
-			So(err, ShouldUnwrapTo, ErrInvalidIdentity)
-			So(err, ShouldErrLike, "bad identity string \"no-prefix@google.com\"")
+			assert.Loosely(t, err, should.ErrLike(ErrInvalidIdentity))
+			assert.Loosely(t, err, should.ErrLike("bad identity string \"no-prefix@google.com\""))
 		})
 
-		Convey("project member identities", func() {
-			So(datastore.Put(ctx, group), ShouldBeNil)
+		t.Run("project member identities", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(ctx, group), should.BeNil)
 
 			group.Members = []string{"project:abc"}
 
 			_, err := UpdateAuthGroup(ctx, group, &fieldmaskpb.FieldMask{Paths: []string{"members"}}, etag, false, "Go pRPC API", false)
-			So(err, ShouldUnwrapTo, ErrInvalidIdentity)
-			So(err, ShouldErrLike, `"project:..." identities aren't allowed in groups`)
+			assert.Loosely(t, err, should.ErrLike(ErrInvalidIdentity))
+			assert.Loosely(t, err, should.ErrLike(`"project:..." identities aren't allowed in groups`))
 		})
 
-		Convey("invalid identity globs", func() {
-			So(datastore.Put(ctx, group), ShouldBeNil)
+		t.Run("invalid identity globs", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(ctx, group), should.BeNil)
 
 			group.Globs = []string{"*@no-prefix.com"}
 
 			_, err := UpdateAuthGroup(ctx, group, &fieldmaskpb.FieldMask{Paths: []string{"globs"}}, etag, false, "Go pRPC API", false)
-			So(err, ShouldUnwrapTo, ErrInvalidIdentity)
-			So(err, ShouldErrLike, "bad identity glob string \"*@no-prefix.com\"")
+			assert.Loosely(t, err, should.ErrLike(ErrInvalidIdentity))
+			assert.Loosely(t, err, should.ErrLike("bad identity glob string \"*@no-prefix.com\""))
 		})
 
-		Convey("project identity globs", func() {
-			So(datastore.Put(ctx, group), ShouldBeNil)
+		t.Run("project identity globs", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(ctx, group), should.BeNil)
 
 			group.Globs = []string{"project:*"}
 
 			_, err := UpdateAuthGroup(ctx, group, &fieldmaskpb.FieldMask{Paths: []string{"globs"}}, etag, false, "Go pRPC API", false)
-			So(err, ShouldUnwrapTo, ErrInvalidIdentity)
-			So(err, ShouldErrLike, `"project:..." globs aren't allowed in groups`)
+			assert.Loosely(t, err, should.ErrLike(ErrInvalidIdentity))
+			assert.Loosely(t, err, should.ErrLike(`"project:..." globs aren't allowed in groups`))
 		})
 
-		Convey("all nested groups must exist", func() {
-			So(datastore.Put(ctx, group), ShouldBeNil)
+		t.Run("all nested groups must exist", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(ctx, group), should.BeNil)
 
 			group.Nested = []string{"baz", "qux"}
 
 			_, err := UpdateAuthGroup(ctx, group, &fieldmaskpb.FieldMask{Paths: []string{"nested"}}, etag, false, "Go pRPC API", false)
-			So(err, ShouldUnwrapTo, ErrInvalidReference)
-			So(err, ShouldErrLike, "some referenced groups don't exist")
+			assert.Loosely(t, err, should.ErrLike(ErrInvalidReference))
+			assert.Loosely(t, err, should.ErrLike("some referenced groups don't exist"))
 		})
 
-		Convey("owner must exist", func() {
-			So(datastore.Put(ctx, group), ShouldBeNil)
+		t.Run("owner must exist", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(ctx, group), should.BeNil)
 
 			group.Owners = "bar"
 
 			_, err := UpdateAuthGroup(ctx, group, &fieldmaskpb.FieldMask{Paths: []string{"owners"}}, etag, false, "Go pRPC API", false)
-			So(err, ShouldErrLike, "bar")
+			assert.Loosely(t, err, should.ErrLike("bar"))
 		})
 
-		Convey("with empty owners uses 'administrators' group", func() {
-			So(datastore.Put(ctx, testAuthGroup(ctx, AdminGroup)), ShouldBeNil)
-			So(datastore.Put(ctx, group), ShouldBeNil)
+		t.Run("with empty owners uses 'administrators' group", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(ctx, testAuthGroup(ctx, AdminGroup)), should.BeNil)
+			assert.Loosely(t, datastore.Put(ctx, group), should.BeNil)
 
 			group.Owners = ""
 
 			updatedGroup, err := UpdateAuthGroup(ctx, group, &fieldmaskpb.FieldMask{Paths: []string{"owners"}}, etag, false, "Go pRPC API", false)
-			So(err, ShouldBeNil)
-			So(updatedGroup.Owners, ShouldEqual, AdminGroup)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, updatedGroup.Owners, should.Equal(AdminGroup))
 		})
 
-		Convey("successfully writes to datastore", func() {
-			So(datastore.Put(ctx, group), ShouldBeNil)
-			So(datastore.Put(ctx, emptyAuthGroup(ctx, "new-owner-group")), ShouldBeNil)
-			So(datastore.Put(ctx, emptyAuthGroup(ctx, "new-nested-group")), ShouldBeNil)
+		t.Run("successfully writes to datastore", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(ctx, group), should.BeNil)
+			assert.Loosely(t, datastore.Put(ctx, emptyAuthGroup(ctx, "new-owner-group")), should.BeNil)
+			assert.Loosely(t, datastore.Put(ctx, emptyAuthGroup(ctx, "new-nested-group")), should.BeNil)
 
 			group.Description = "updated description"
 			group.Owners = "new-owner-group"
@@ -791,40 +791,40 @@ func TestUpdateAuthGroup(t *testing.T) {
 			group.Nested = []string{"new-nested-group"}
 
 			updatedGroup, err := UpdateAuthGroup(ctx, group, nil, etag, false, "Go pRPC API", false)
-			So(err, ShouldBeNil)
-			So(updatedGroup.ID, ShouldEqual, group.ID)
-			So(updatedGroup.Description, ShouldEqual, group.Description)
-			So(updatedGroup.Owners, ShouldEqual, group.Owners)
-			So(updatedGroup.Members, ShouldResemble, group.Members)
-			So(updatedGroup.Globs, ShouldResemble, group.Globs)
-			So(updatedGroup.Nested, ShouldResemble, group.Nested)
-			So(updatedGroup.CreatedBy, ShouldEqual, "user:test-creator@example.com")
-			So(updatedGroup.CreatedTS.Unix(), ShouldEqual, testCreatedTS.Unix())
-			So(updatedGroup.ModifiedBy, ShouldEqual, "user:someone@example.com")
-			So(updatedGroup.ModifiedTS.Unix(), ShouldEqual, testCreatedTS.Unix())
-			So(updatedGroup.AuthDBRev, ShouldEqual, 11)
-			So(updatedGroup.AuthDBPrevRev, ShouldEqual, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, updatedGroup.ID, should.Equal(group.ID))
+			assert.Loosely(t, updatedGroup.Description, should.Equal(group.Description))
+			assert.Loosely(t, updatedGroup.Owners, should.Equal(group.Owners))
+			assert.Loosely(t, updatedGroup.Members, should.Resemble(group.Members))
+			assert.Loosely(t, updatedGroup.Globs, should.Resemble(group.Globs))
+			assert.Loosely(t, updatedGroup.Nested, should.Resemble(group.Nested))
+			assert.Loosely(t, updatedGroup.CreatedBy, should.Equal("user:test-creator@example.com"))
+			assert.Loosely(t, updatedGroup.CreatedTS.Unix(), should.Equal(testCreatedTS.Unix()))
+			assert.Loosely(t, updatedGroup.ModifiedBy, should.Equal("user:someone@example.com"))
+			assert.Loosely(t, updatedGroup.ModifiedTS.Unix(), should.Equal(testCreatedTS.Unix()))
+			assert.Loosely(t, updatedGroup.AuthDBRev, should.Equal(11))
+			assert.Loosely(t, updatedGroup.AuthDBPrevRev, should.Equal(1))
 
 			fetchedGroup, err := GetAuthGroup(ctx, "foo")
-			So(err, ShouldBeNil)
-			So(fetchedGroup.ID, ShouldEqual, group.ID)
-			So(fetchedGroup.Description, ShouldEqual, group.Description)
-			So(fetchedGroup.Owners, ShouldEqual, group.Owners)
-			So(fetchedGroup.Members, ShouldResemble, group.Members)
-			So(fetchedGroup.Globs, ShouldResemble, group.Globs)
-			So(fetchedGroup.Nested, ShouldResemble, group.Nested)
-			So(fetchedGroup.CreatedBy, ShouldEqual, "user:test-creator@example.com")
-			So(fetchedGroup.CreatedTS.Unix(), ShouldEqual, testCreatedTS.Unix())
-			So(fetchedGroup.ModifiedBy, ShouldEqual, "user:someone@example.com")
-			So(fetchedGroup.ModifiedTS.Unix(), ShouldEqual, testCreatedTS.Unix())
-			So(fetchedGroup.AuthDBRev, ShouldEqual, 11)
-			So(fetchedGroup.AuthDBPrevRev, ShouldEqual, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, fetchedGroup.ID, should.Equal(group.ID))
+			assert.Loosely(t, fetchedGroup.Description, should.Equal(group.Description))
+			assert.Loosely(t, fetchedGroup.Owners, should.Equal(group.Owners))
+			assert.Loosely(t, fetchedGroup.Members, should.Resemble(group.Members))
+			assert.Loosely(t, fetchedGroup.Globs, should.Resemble(group.Globs))
+			assert.Loosely(t, fetchedGroup.Nested, should.Resemble(group.Nested))
+			assert.Loosely(t, fetchedGroup.CreatedBy, should.Equal("user:test-creator@example.com"))
+			assert.Loosely(t, fetchedGroup.CreatedTS.Unix(), should.Equal(testCreatedTS.Unix()))
+			assert.Loosely(t, fetchedGroup.ModifiedBy, should.Equal("user:someone@example.com"))
+			assert.Loosely(t, fetchedGroup.ModifiedTS.Unix(), should.Equal(testCreatedTS.Unix()))
+			assert.Loosely(t, fetchedGroup.AuthDBRev, should.Equal(11))
+			assert.Loosely(t, fetchedGroup.AuthDBPrevRev, should.Equal(1))
 		})
 
-		Convey("updates AuthDB revision only on successful write", func() {
-			So(datastore.Put(ctx, group), ShouldBeNil)
-			So(datastore.Put(ctx, emptyAuthGroup(ctx, "new-owner-group")), ShouldBeNil)
-			So(datastore.Put(ctx, emptyAuthGroup(ctx, "new-nested-group")), ShouldBeNil)
+		t.Run("updates AuthDB revision only on successful write", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(ctx, group), should.BeNil)
+			assert.Loosely(t, datastore.Put(ctx, emptyAuthGroup(ctx, "new-owner-group")), should.BeNil)
+			assert.Loosely(t, datastore.Put(ctx, emptyAuthGroup(ctx, "new-nested-group")), should.BeNil)
 
 			// Update a group, should succeed and bump AuthDB revision.
 			group.Description = "updated description"
@@ -834,36 +834,36 @@ func TestUpdateAuthGroup(t *testing.T) {
 			group.Nested = []string{"new-nested-group"}
 
 			updatedGroup, err := UpdateAuthGroup(ctx, group, nil, etag, false, "Go pRPC API", false)
-			So(err, ShouldBeNil)
-			So(updatedGroup.AuthDBRev, ShouldEqual, 11)
-			So(updatedGroup.AuthDBPrevRev, ShouldEqual, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, updatedGroup.AuthDBRev, should.Equal(11))
+			assert.Loosely(t, updatedGroup.AuthDBPrevRev, should.Equal(1))
 
 			state, err := GetReplicationState(ctx)
-			So(err, ShouldBeNil)
-			So(state.AuthDBRev, ShouldEqual, 11)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, state.AuthDBRev, should.Equal(11))
 			tasks := taskScheduler.Tasks()
-			So(tasks, ShouldHaveLength, 2)
+			assert.Loosely(t, tasks, should.HaveLength(2))
 			processChangeTask := tasks[0]
-			So(processChangeTask.Class, ShouldEqual, "process-change-task")
-			So(processChangeTask.Payload, ShouldResembleProto, &taskspb.ProcessChangeTask{AuthDbRev: 11})
+			assert.Loosely(t, processChangeTask.Class, should.Equal("process-change-task"))
+			assert.Loosely(t, processChangeTask.Payload, should.Resemble(&taskspb.ProcessChangeTask{AuthDbRev: 11}))
 			replicationTask := tasks[1]
-			So(replicationTask.Class, ShouldEqual, "replication-task")
-			So(replicationTask.Payload, ShouldResembleProto, &taskspb.ReplicationTask{AuthDbRev: 11})
+			assert.Loosely(t, replicationTask.Class, should.Equal("replication-task"))
+			assert.Loosely(t, replicationTask.Payload, should.Resemble(&taskspb.ReplicationTask{AuthDbRev: 11}))
 
 			// Update a group, should fail (due to bad etag) and *not* bump AuthDB revision.
 			_, err = UpdateAuthGroup(ctx, group, nil, "bad-etag", false, "Go pRPC API", false)
-			So(err, ShouldBeError)
+			assert.Loosely(t, err, should.ErrLike("permission denied"))
 
 			state, err = GetReplicationState(ctx)
-			So(err, ShouldBeNil)
-			So(state.AuthDBRev, ShouldEqual, 11)
-			So(taskScheduler.Tasks(), ShouldHaveLength, 2)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, state.AuthDBRev, should.Equal(11))
+			assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(2))
 		})
 
-		Convey("creates historical group entities", func() {
-			So(datastore.Put(ctx, group), ShouldBeNil)
-			So(datastore.Put(ctx, emptyAuthGroup(ctx, "new-owner-group")), ShouldBeNil)
-			So(datastore.Put(ctx, emptyAuthGroup(ctx, "new-nested-group")), ShouldBeNil)
+		t.Run("creates historical group entities", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(ctx, group), should.BeNil)
+			assert.Loosely(t, datastore.Put(ctx, emptyAuthGroup(ctx, "new-owner-group")), should.BeNil)
+			assert.Loosely(t, datastore.Put(ctx, emptyAuthGroup(ctx, "new-nested-group")), should.BeNil)
 
 			// Update a group, should succeed and bump AuthDB revision.
 			group.Description = "updated description"
@@ -873,35 +873,35 @@ func TestUpdateAuthGroup(t *testing.T) {
 			group.Nested = []string{"new-nested-group"}
 
 			_, err := UpdateAuthGroup(ctx, group, nil, etag, false, "Go pRPC API", false)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			entities, err := getAllDatastoreEntities(ctx, "AuthGroupHistory", HistoricalRevisionKey(ctx, 11))
-			So(err, ShouldBeNil)
-			So(entities, ShouldHaveLength, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, entities, should.HaveLength(1))
 			historicalEntity := entities[0]
-			So(getDatastoreKey(historicalEntity).String(), ShouldEqual, "dev~app::/AuthGlobalConfig,\"root\"/Rev,11/AuthGroupHistory,\"foo\"")
-			So(getStringProp(historicalEntity, "description"), ShouldEqual, group.Description)
-			So(getStringProp(historicalEntity, "owners"), ShouldEqual, group.Owners)
-			So(getStringSliceProp(historicalEntity, "members"), ShouldResemble, group.Members)
-			So(getStringSliceProp(historicalEntity, "globs"), ShouldResemble, group.Globs)
-			So(getStringSliceProp(historicalEntity, "nested"), ShouldResemble, group.Nested)
-			So(getStringProp(historicalEntity, "created_by"), ShouldEqual, "user:test-creator@example.com")
-			So(getTimeProp(historicalEntity, "created_ts").Unix(), ShouldEqual, testCreatedTS.Unix())
-			So(getStringProp(historicalEntity, "modified_by"), ShouldEqual, "user:someone@example.com")
-			So(getTimeProp(historicalEntity, "modified_ts").Unix(), ShouldEqual, testCreatedTS.Unix())
-			So(getInt64Prop(historicalEntity, "auth_db_rev"), ShouldEqual, 11)
-			So(getProp(historicalEntity, "auth_db_prev_rev"), ShouldEqual, 1)
-			So(getBoolProp(historicalEntity, "auth_db_deleted"), ShouldBeFalse)
-			So(getStringProp(historicalEntity, "auth_db_change_comment"), ShouldEqual, "Go pRPC API")
-			So(getStringProp(historicalEntity, "auth_db_app_version"), ShouldEqual, "test-version")
+			assert.Loosely(t, getDatastoreKey(historicalEntity).String(), should.Equal("dev~app::/AuthGlobalConfig,\"root\"/Rev,11/AuthGroupHistory,\"foo\""))
+			assert.Loosely(t, getStringProp(historicalEntity, "description"), should.Equal(group.Description))
+			assert.Loosely(t, getStringProp(historicalEntity, "owners"), should.Equal(group.Owners))
+			assert.Loosely(t, getStringSliceProp(historicalEntity, "members"), should.Resemble(group.Members))
+			assert.Loosely(t, getStringSliceProp(historicalEntity, "globs"), should.Resemble(group.Globs))
+			assert.Loosely(t, getStringSliceProp(historicalEntity, "nested"), should.Resemble(group.Nested))
+			assert.Loosely(t, getStringProp(historicalEntity, "created_by"), should.Equal("user:test-creator@example.com"))
+			assert.Loosely(t, getTimeProp(historicalEntity, "created_ts").Unix(), should.Equal(testCreatedTS.Unix()))
+			assert.Loosely(t, getStringProp(historicalEntity, "modified_by"), should.Equal("user:someone@example.com"))
+			assert.Loosely(t, getTimeProp(historicalEntity, "modified_ts").Unix(), should.Equal(testCreatedTS.Unix()))
+			assert.Loosely(t, getInt64Prop(historicalEntity, "auth_db_rev"), should.Equal(11))
+			assert.Loosely(t, getProp(historicalEntity, "auth_db_prev_rev"), should.Equal(1))
+			assert.Loosely(t, getBoolProp(historicalEntity, "auth_db_deleted"), should.BeFalse)
+			assert.Loosely(t, getStringProp(historicalEntity, "auth_db_change_comment"), should.Equal("Go pRPC API"))
+			assert.Loosely(t, getStringProp(historicalEntity, "auth_db_app_version"), should.Equal("test-version"))
 
 			// Check no properties are indexed.
 			for k := range historicalEntity {
-				So(isPropIndexed(historicalEntity, k), ShouldBeFalse)
+				assert.Loosely(t, isPropIndexed(historicalEntity, k), should.BeFalse)
 			}
 		})
 
-		Convey("cyclic dependencies", func() {
+		t.Run("cyclic dependencies", func(t *ftt.Test) {
 			// Use admin creds for simplicity.
 			ctx := auth.WithState(ctx, &authtest.FakeState{
 				Identity:       "user:someone@example.com",
@@ -922,19 +922,19 @@ func TestUpdateAuthGroup(t *testing.T) {
 			b1.Nested = []string{"C"}
 			b2 := emptyAuthGroup(ctx, "B2")
 			c := emptyAuthGroup(ctx, "C")
-			So(datastore.Put(ctx, []*AuthGroup{a, b1, b2, c}), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, []*AuthGroup{a, b1, b2, c}), should.BeNil)
 
-			Convey("self-reference", func() {
+			t.Run("self-reference", func(t *ftt.Test) {
 				//   A
 				//  /
 				// A
 				a.Nested = []string{"A"}
 
 				_, err := UpdateAuthGroup(ctx, a, &fieldmaskpb.FieldMask{Paths: []string{"nested"}}, "", false, "Go pRPC API", false)
-				So(err, ShouldErrLike, "groups can't have cyclic dependencies: A -> A")
+				assert.Loosely(t, err, should.ErrLike("groups can't have cyclic dependencies: A -> A"))
 			})
 
-			Convey("cycle of length 2", func() {
+			t.Run("cycle of length 2", func(t *ftt.Test) {
 				//   A
 				//  /
 				// B2
@@ -943,10 +943,10 @@ func TestUpdateAuthGroup(t *testing.T) {
 				b2.Nested = []string{"A"}
 
 				_, err := UpdateAuthGroup(ctx, b2, &fieldmaskpb.FieldMask{Paths: []string{"nested"}}, "", false, "Go pRPC API", false)
-				So(err, ShouldErrLike, "groups can't have cyclic dependencies: B2 -> A -> B2")
+				assert.Loosely(t, err, should.ErrLike("groups can't have cyclic dependencies: B2 -> A -> B2"))
 			})
 
-			Convey("cycle of length 3", func() {
+			t.Run("cycle of length 3", func(t *ftt.Test) {
 				//   A
 				//  /
 				// B1
@@ -957,10 +957,10 @@ func TestUpdateAuthGroup(t *testing.T) {
 				c.Nested = []string{"A"}
 
 				_, err := UpdateAuthGroup(ctx, c, &fieldmaskpb.FieldMask{Paths: []string{"nested"}}, "", false, "Go pRPC API", false)
-				So(err, ShouldErrLike, "groups can't have cyclic dependencies: C -> A -> B1 -> C")
+				assert.Loosely(t, err, should.ErrLike("groups can't have cyclic dependencies: C -> A -> B1 -> C"))
 			})
 
-			Convey("cycle not at root", func() {
+			t.Run("cycle not at root", func(t *ftt.Test) {
 				//   B1
 				//  /
 				// C
@@ -969,10 +969,10 @@ func TestUpdateAuthGroup(t *testing.T) {
 				c.Nested = []string{"B1"}
 
 				_, err := UpdateAuthGroup(ctx, c, &fieldmaskpb.FieldMask{Paths: []string{"nested"}}, "", false, "Go pRPC API", false)
-				So(err, ShouldErrLike, "groups can't have cyclic dependencies: C -> B1 -> C")
+				assert.Loosely(t, err, should.ErrLike("groups can't have cyclic dependencies: C -> B1 -> C"))
 			})
 
-			Convey("diamond shape", func() {
+			t.Run("diamond shape", func(t *ftt.Test) {
 				//      A
 				//     / \
 				//    B1 B2
@@ -981,7 +981,7 @@ func TestUpdateAuthGroup(t *testing.T) {
 				b2.Nested = []string{"C"}
 
 				_, err := UpdateAuthGroup(ctx, b2, &fieldmaskpb.FieldMask{Paths: []string{"nested"}}, "", false, "Go pRPC API", false)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 		})
 	})
@@ -990,7 +990,7 @@ func TestUpdateAuthGroup(t *testing.T) {
 func TestDeleteAuthGroup(t *testing.T) {
 	t.Parallel()
 
-	Convey("DeleteAuthGroup", t, func() {
+	ftt.Run("DeleteAuthGroup", t, func(t *ftt.Test) {
 		ctx := auth.WithState(memory.Use(context.Background()), &authtest.FakeState{
 			Identity:       "user:someone@example.com",
 			IdentityGroups: []string{AdminGroup},
@@ -1008,106 +1008,106 @@ func TestDeleteAuthGroup(t *testing.T) {
 		// Etag to use for the group, derived from the last-modified time.
 		etag := `W/"MjAyMS0wOC0xNlQxMjoyMDowMFo="`
 
-		Convey("can't delete the admin group", func() {
+		t.Run("can't delete the admin group", func(t *ftt.Test) {
 			err := DeleteAuthGroup(ctx, AdminGroup, "", false, "Go pRPC API", false)
-			So(err, ShouldEqual, ErrPermissionDenied)
+			assert.Loosely(t, err, should.Equal(ErrPermissionDenied))
 		})
 
-		Convey("can't delete external group", func() {
+		t.Run("can't delete external group", func(t *ftt.Test) {
 			group.ID = "mdb/foo"
-			So(datastore.Put(ctx, group), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, group), should.BeNil)
 			err := DeleteAuthGroup(ctx, group.ID, "", false, "Go pRPC API", false)
-			So(err, ShouldErrLike, "cannot delete external group")
+			assert.Loosely(t, err, should.ErrLike("cannot delete external group"))
 		})
 
-		Convey("can't delete if not an owner or admin", func() {
+		t.Run("can't delete if not an owner or admin", func(t *ftt.Test) {
 			ctx := auth.WithState(memory.Use(context.Background()), &authtest.FakeState{
 				Identity: "user:someone@example.com",
 			})
-			So(datastore.Put(ctx, group), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, group), should.BeNil)
 			err := DeleteAuthGroup(ctx, group.ID, "", false, "Go pRPC API", false)
-			So(err, ShouldEqual, ErrPermissionDenied)
+			assert.Loosely(t, err, should.Equal(ErrPermissionDenied))
 		})
 
-		Convey("can't delete if etag doesn't match", func() {
-			So(datastore.Put(ctx, group), ShouldBeNil)
+		t.Run("can't delete if etag doesn't match", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(ctx, group), should.BeNil)
 			err := DeleteAuthGroup(ctx, group.ID, "bad-etag", false, "Go pRPC API", false)
-			So(err, ShouldErrLike, ErrConcurrentModification)
+			assert.Loosely(t, err, should.ErrLike(ErrConcurrentModification))
 		})
 
-		Convey("group name that doesn't exist", func() {
+		t.Run("group name that doesn't exist", func(t *ftt.Test) {
 			err := DeleteAuthGroup(ctx, "non-existent-group", "", false, "Go pRPC API", false)
-			So(err, ShouldEqual, datastore.ErrNoSuchEntity)
+			assert.Loosely(t, err, should.Equal(datastore.ErrNoSuchEntity))
 		})
 
-		Convey("can't delete if group owns another group", func() {
-			So(datastore.Put(ctx, group), ShouldBeNil)
+		t.Run("can't delete if group owns another group", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(ctx, group), should.BeNil)
 
 			ownedGroup := testAuthGroup(ctx, "owned")
 			ownedGroup.Owners = group.ID
-			So(datastore.Put(ctx, ownedGroup), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, ownedGroup), should.BeNil)
 
 			err := DeleteAuthGroup(ctx, group.ID, "", false, "Go pRPC API", false)
-			So(err, ShouldErrLike, ErrReferencedEntity)
-			So(err, ShouldErrLike, "this group is referenced by other groups: [owned]")
+			assert.Loosely(t, err, should.ErrLike(ErrReferencedEntity))
+			assert.Loosely(t, err, should.ErrLike("this group is referenced by other groups: [owned]"))
 		})
 
-		Convey("can't delete if group is nested by group", func() {
-			So(datastore.Put(ctx, group), ShouldBeNil)
+		t.Run("can't delete if group is nested by group", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(ctx, group), should.BeNil)
 
 			nestingGroup := testAuthGroup(ctx, "nester")
 			nestingGroup.Nested = []string{group.ID}
-			So(datastore.Put(ctx, nestingGroup), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, nestingGroup), should.BeNil)
 
 			err := DeleteAuthGroup(ctx, group.ID, "", false, "Go pRPC API", false)
-			So(err, ShouldErrLike, ErrReferencedEntity)
-			So(err, ShouldErrLike, "this group is referenced by other groups: [nester]")
+			assert.Loosely(t, err, should.ErrLike(ErrReferencedEntity))
+			assert.Loosely(t, err, should.ErrLike("this group is referenced by other groups: [nester]"))
 		})
 
-		Convey("successfully deletes from datastore and updates AuthDB", func() {
-			So(datastore.Put(ctx, group), ShouldBeNil)
+		t.Run("successfully deletes from datastore and updates AuthDB", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(ctx, group), should.BeNil)
 			err := DeleteAuthGroup(ctx, group.ID, etag, false, "Go pRPC API", false)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			state1, err := GetReplicationState(ctx)
-			So(err, ShouldBeNil)
-			So(state1.AuthDBRev, ShouldEqual, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, state1.AuthDBRev, should.Equal(1))
 			tasks := taskScheduler.Tasks()
-			So(tasks, ShouldHaveLength, 2)
+			assert.Loosely(t, tasks, should.HaveLength(2))
 			processChangeTask := tasks[0]
-			So(processChangeTask.Class, ShouldEqual, "process-change-task")
-			So(processChangeTask.Payload, ShouldResembleProto, &taskspb.ProcessChangeTask{AuthDbRev: 1})
+			assert.Loosely(t, processChangeTask.Class, should.Equal("process-change-task"))
+			assert.Loosely(t, processChangeTask.Payload, should.Resemble(&taskspb.ProcessChangeTask{AuthDbRev: 1}))
 			replicationTask := tasks[1]
-			So(replicationTask.Class, ShouldEqual, "replication-task")
-			So(replicationTask.Payload, ShouldResembleProto, &taskspb.ReplicationTask{AuthDbRev: 1})
+			assert.Loosely(t, replicationTask.Class, should.Equal("replication-task"))
+			assert.Loosely(t, replicationTask.Payload, should.Resemble(&taskspb.ReplicationTask{AuthDbRev: 1}))
 		})
 
-		Convey("creates historical group entities", func() {
-			So(datastore.Put(ctx, group), ShouldBeNil)
+		t.Run("creates historical group entities", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(ctx, group), should.BeNil)
 			err := DeleteAuthGroup(ctx, group.ID, "", false, "Go pRPC API", false)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			entities, err := getAllDatastoreEntities(ctx, "AuthGroupHistory", HistoricalRevisionKey(ctx, 1))
-			So(err, ShouldBeNil)
-			So(entities, ShouldHaveLength, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, entities, should.HaveLength(1))
 			historicalEntity := entities[0]
-			So(getDatastoreKey(historicalEntity).String(), ShouldEqual, "dev~app::/AuthGlobalConfig,\"root\"/Rev,1/AuthGroupHistory,\"foo\"")
-			So(getStringProp(historicalEntity, "description"), ShouldEqual, group.Description)
-			So(getStringProp(historicalEntity, "owners"), ShouldEqual, group.Owners)
-			So(getStringSliceProp(historicalEntity, "members"), ShouldResemble, group.Members)
-			So(getStringSliceProp(historicalEntity, "globs"), ShouldResemble, group.Globs)
-			So(getStringSliceProp(historicalEntity, "nested"), ShouldResemble, group.Nested)
-			So(getStringProp(historicalEntity, "modified_by"), ShouldEqual, "user:someone@example.com")
-			So(getTimeProp(historicalEntity, "modified_ts").Unix(), ShouldEqual, testCreatedTS.Unix())
-			So(getInt64Prop(historicalEntity, "auth_db_rev"), ShouldEqual, 1)
-			So(getProp(historicalEntity, "auth_db_prev_rev"), ShouldBeNil)
-			So(getBoolProp(historicalEntity, "auth_db_deleted"), ShouldBeTrue)
-			So(getStringProp(historicalEntity, "auth_db_change_comment"), ShouldEqual, "Go pRPC API")
-			So(getStringProp(historicalEntity, "auth_db_app_version"), ShouldEqual, "test-version")
+			assert.Loosely(t, getDatastoreKey(historicalEntity).String(), should.Equal("dev~app::/AuthGlobalConfig,\"root\"/Rev,1/AuthGroupHistory,\"foo\""))
+			assert.Loosely(t, getStringProp(historicalEntity, "description"), should.Equal(group.Description))
+			assert.Loosely(t, getStringProp(historicalEntity, "owners"), should.Equal(group.Owners))
+			assert.Loosely(t, getStringSliceProp(historicalEntity, "members"), should.Resemble(group.Members))
+			assert.Loosely(t, getStringSliceProp(historicalEntity, "globs"), should.Resemble(group.Globs))
+			assert.Loosely(t, getStringSliceProp(historicalEntity, "nested"), should.Resemble(group.Nested))
+			assert.Loosely(t, getStringProp(historicalEntity, "modified_by"), should.Equal("user:someone@example.com"))
+			assert.Loosely(t, getTimeProp(historicalEntity, "modified_ts").Unix(), should.Equal(testCreatedTS.Unix()))
+			assert.Loosely(t, getInt64Prop(historicalEntity, "auth_db_rev"), should.Equal(1))
+			assert.Loosely(t, getProp(historicalEntity, "auth_db_prev_rev"), should.BeNil)
+			assert.Loosely(t, getBoolProp(historicalEntity, "auth_db_deleted"), should.BeTrue)
+			assert.Loosely(t, getStringProp(historicalEntity, "auth_db_change_comment"), should.Equal("Go pRPC API"))
+			assert.Loosely(t, getStringProp(historicalEntity, "auth_db_app_version"), should.Equal("test-version"))
 
 			// Check no properties are indexed.
 			for k := range historicalEntity {
-				So(isPropIndexed(historicalEntity, k), ShouldBeFalse)
+				assert.Loosely(t, isPropIndexed(historicalEntity, k), should.BeFalse)
 			}
 		})
 	})
@@ -1116,7 +1116,7 @@ func TestDeleteAuthGroup(t *testing.T) {
 func TestGetAuthIPAllowlist(t *testing.T) {
 	t.Parallel()
 
-	Convey("Testing GetAuthIPAllowlist", t, func() {
+	ftt.Run("Testing GetAuthIPAllowlist", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 
 		authIPAllowlist := testIPAllowlist(ctx, "test-auth-ip-allowlist-1", []string{
@@ -1125,45 +1125,45 @@ func TestGetAuthIPAllowlist(t *testing.T) {
 		})
 
 		_, err := GetAuthIPAllowlist(ctx, "test-auth-ip-allowlist-1")
-		So(err, ShouldEqual, datastore.ErrNoSuchEntity)
+		assert.Loosely(t, err, should.Equal(datastore.ErrNoSuchEntity))
 
-		So(datastore.Put(ctx, authIPAllowlist), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, authIPAllowlist), should.BeNil)
 
 		actual, err := GetAuthIPAllowlist(ctx, "test-auth-ip-allowlist-1")
-		So(err, ShouldBeNil)
-		So(actual, ShouldResemble, authIPAllowlist)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, actual, should.Resemble(authIPAllowlist))
 	})
 }
 
 func TestGetAllAuthIPAllowlists(t *testing.T) {
 	t.Parallel()
 
-	Convey("Testing GetAllAuthIPAllowlists", t, func() {
+	ftt.Run("Testing GetAllAuthIPAllowlists", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 
 		// Out of order alphabetically by ID.
-		So(datastore.Put(ctx,
+		assert.Loosely(t, datastore.Put(ctx,
 			testIPAllowlist(ctx, "test-allowlist-3", nil),
 			testIPAllowlist(ctx, "test-allowlist-1", nil),
 			testIPAllowlist(ctx, "test-allowlist-2", nil),
-		), ShouldBeNil)
+		), should.BeNil)
 
 		actualAuthIPAllowlists, err := GetAllAuthIPAllowlists(ctx)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		// Returned in alphabetical order.
-		So(actualAuthIPAllowlists, ShouldResemble, []*AuthIPAllowlist{
+		assert.Loosely(t, actualAuthIPAllowlists, should.Resemble([]*AuthIPAllowlist{
 			testIPAllowlist(ctx, "test-allowlist-1", nil),
 			testIPAllowlist(ctx, "test-allowlist-2", nil),
 			testIPAllowlist(ctx, "test-allowlist-3", nil),
-		})
+		}))
 	})
 }
 
 func TestUpdateAllAuthIPAllowlists(t *testing.T) {
 	t.Parallel()
 
-	Convey("Testing updateAllAuthIPAllowlists", t, func() {
+	ftt.Run("Testing updateAllAuthIPAllowlists", t, func(t *ftt.Test) {
 		ctx := auth.WithState(memory.Use(context.Background()), &authtest.FakeState{
 			Identity:       "user:someone@example.com",
 			IdentityGroups: []string{AdminGroup},
@@ -1173,10 +1173,10 @@ func TestUpdateAllAuthIPAllowlists(t *testing.T) {
 		ctx = info.SetImageVersion(ctx, "test-version")
 		ctx, taskScheduler := tq.TestingContext(txndefer.FilterRDS(ctx), nil)
 
-		So(datastore.Put(ctx,
+		assert.Loosely(t, datastore.Put(ctx,
 			testIPAllowlist(ctx, "test-allowlist-1", nil),
 			testIPAllowlist(ctx, "test-allowlist-2", []string{"0.0.0.0/24", "127.0.0.1/20"}),
-		), ShouldBeNil)
+		), should.BeNil)
 
 		baseSubnetMap := map[string][]string{
 			"test-allowlist-1": {"127.0.0.1/10", "127.0.0.1/20"},
@@ -1203,27 +1203,27 @@ func TestUpdateAllAuthIPAllowlists(t *testing.T) {
 			CreatedBy:   "user:test-app-id@example.com",
 		}
 
-		Convey("no-op for identical subnet map", func() {
-			So(updateAllAuthIPAllowlists(ctx, baseSubnetMap, false, "Go pRPC API"), ShouldBeNil)
+		t.Run("no-op for identical subnet map", func(t *ftt.Test) {
+			assert.Loosely(t, updateAllAuthIPAllowlists(ctx, baseSubnetMap, false, "Go pRPC API"), should.BeNil)
 			allowlists, err := GetAllAuthIPAllowlists(ctx)
-			So(err, ShouldBeNil)
-			So(allowlists, ShouldResemble, baseAllowlistSlice)
-			So(taskScheduler.Tasks(), ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, allowlists, should.Resemble(baseAllowlistSlice))
+			assert.Loosely(t, taskScheduler.Tasks(), should.BeEmpty)
 
 		})
 
-		Convey("Create allowlist entity", func() {
+		t.Run("Create allowlist entity", func(t *ftt.Test) {
 			baseSubnetMap["test-allowlist-3"] = []string{"123.4.5.6"}
-			So(updateAllAuthIPAllowlists(ctx, baseSubnetMap, false, "Go pRPC API"), ShouldBeNil)
+			assert.Loosely(t, updateAllAuthIPAllowlists(ctx, baseSubnetMap, false, "Go pRPC API"), should.BeNil)
 			allowlists, err := GetAllAuthIPAllowlists(ctx)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			expectedSlice := append(baseAllowlistSlice, allowlistToCreate)
-			So(allowlists, ShouldResemble, expectedSlice)
+			assert.Loosely(t, allowlists, should.Resemble(expectedSlice))
 		})
 
-		Convey("Update allowlist entity", func() {
+		t.Run("Update allowlist entity", func(t *ftt.Test) {
 			baseSubnetMap["test-allowlist-1"] = []string{"122.22.44.66"}
-			So(updateAllAuthIPAllowlists(ctx, baseSubnetMap, false, "Go pRPC API"), ShouldBeNil)
+			assert.Loosely(t, updateAllAuthIPAllowlists(ctx, baseSubnetMap, false, "Go pRPC API"), should.BeNil)
 			allowlists, err := GetAllAuthIPAllowlists(ctx)
 			baseAllowlistSlice[0].AuthVersionedEntityMixin = AuthVersionedEntityMixin{
 				ModifiedTS:    testCreatedTS,
@@ -1232,24 +1232,24 @@ func TestUpdateAllAuthIPAllowlists(t *testing.T) {
 				AuthDBPrevRev: 1337,
 			}
 			baseAllowlistSlice[0].Subnets = []string{"122.22.44.66"}
-			So(err, ShouldBeNil)
-			So(allowlists, ShouldResemble, baseAllowlistSlice)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, allowlists, should.Resemble(baseAllowlistSlice))
 		})
 
-		Convey("Delete allowlist entity", func() {
+		t.Run("Delete allowlist entity", func(t *ftt.Test) {
 			delete(baseSubnetMap, "test-allowlist-1")
-			So(updateAllAuthIPAllowlists(ctx, baseSubnetMap, false, "Go pRPC API"), ShouldBeNil)
+			assert.Loosely(t, updateAllAuthIPAllowlists(ctx, baseSubnetMap, false, "Go pRPC API"), should.BeNil)
 			allowlists, err := GetAllAuthIPAllowlists(ctx)
 			expectedSlice := baseAllowlistSlice[1:]
-			So(err, ShouldBeNil)
-			So(allowlists, ShouldResemble, expectedSlice)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, allowlists, should.Resemble(expectedSlice))
 		})
 
-		Convey("Multiple allowlist entity changes", func() {
+		t.Run("Multiple allowlist entity changes", func(t *ftt.Test) {
 			baseSubnetMap["test-allowlist-3"] = []string{"123.4.5.6"}
 			baseSubnetMap["test-allowlist-1"] = []string{"122.22.44.66"}
 			delete(baseSubnetMap, "test-allowlist-2")
-			So(updateAllAuthIPAllowlists(ctx, baseSubnetMap, false, "Go pRPC API"), ShouldBeNil)
+			assert.Loosely(t, updateAllAuthIPAllowlists(ctx, baseSubnetMap, false, "Go pRPC API"), should.BeNil)
 			allowlists, err := GetAllAuthIPAllowlists(ctx)
 			allowlist0Copy := *baseAllowlistSlice[0]
 			allowlist0Copy.AuthVersionedEntityMixin = AuthVersionedEntityMixin{
@@ -1260,61 +1260,61 @@ func TestUpdateAllAuthIPAllowlists(t *testing.T) {
 			}
 			allowlist0Copy.Subnets = baseSubnetMap["test-allowlist-1"]
 			expectedAllowlists := []*AuthIPAllowlist{&allowlist0Copy, allowlistToCreate}
-			So(err, ShouldBeNil)
-			So(allowlists, ShouldResemble, expectedAllowlists)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, allowlists, should.Resemble(expectedAllowlists))
 
 			state1, err := GetReplicationState(ctx)
-			So(err, ShouldBeNil)
-			So(state1.AuthDBRev, ShouldEqual, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, state1.AuthDBRev, should.Equal(1))
 			tasks := taskScheduler.Tasks()
-			So(tasks, ShouldHaveLength, 2)
+			assert.Loosely(t, tasks, should.HaveLength(2))
 			processChangeTask := tasks[0]
-			So(processChangeTask.Class, ShouldEqual, "process-change-task")
-			So(processChangeTask.Payload, ShouldResembleProto, &taskspb.ProcessChangeTask{AuthDbRev: 1})
+			assert.Loosely(t, processChangeTask.Class, should.Equal("process-change-task"))
+			assert.Loosely(t, processChangeTask.Payload, should.Resemble(&taskspb.ProcessChangeTask{AuthDbRev: 1}))
 			replicationTask := tasks[1]
-			So(replicationTask.Class, ShouldEqual, "replication-task")
-			So(replicationTask.Payload, ShouldResembleProto, &taskspb.ReplicationTask{AuthDbRev: 1})
+			assert.Loosely(t, replicationTask.Class, should.Equal("replication-task"))
+			assert.Loosely(t, replicationTask.Payload, should.Resemble(&taskspb.ReplicationTask{AuthDbRev: 1}))
 
 			entities, err := getAllDatastoreEntities(ctx, "AuthIPWhitelistHistory", HistoricalRevisionKey(ctx, 1))
-			So(err, ShouldBeNil)
-			So(entities, ShouldHaveLength, 3)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, entities, should.HaveLength(3))
 			historicalEntity := entities[0]
-			So(getDatastoreKey(historicalEntity).String(), ShouldEqual, "dev~app::/AuthGlobalConfig,\"root\"/Rev,1/AuthIPWhitelistHistory,\"test-allowlist-1\"")
-			So(getStringProp(historicalEntity, "description"), ShouldEqual, baseAllowlistSlice[0].Description)
-			So(getStringSliceProp(historicalEntity, "subnets"), ShouldResemble, allowlist0Copy.Subnets)
-			So(getStringProp(historicalEntity, "modified_by"), ShouldEqual, "user:test-app-id@example.com")
-			So(getTimeProp(historicalEntity, "modified_ts").Unix(), ShouldEqual, testCreatedTS.Unix())
-			So(getInt64Prop(historicalEntity, "auth_db_rev"), ShouldEqual, 1)
-			So(getInt64Prop(historicalEntity, "auth_db_prev_rev"), ShouldEqual, 1337)
-			So(getStringProp(historicalEntity, "auth_db_change_comment"), ShouldEqual, "Go pRPC API")
-			So(getStringProp(historicalEntity, "auth_db_app_version"), ShouldEqual, "test-version")
+			assert.Loosely(t, getDatastoreKey(historicalEntity).String(), should.Equal("dev~app::/AuthGlobalConfig,\"root\"/Rev,1/AuthIPWhitelistHistory,\"test-allowlist-1\""))
+			assert.Loosely(t, getStringProp(historicalEntity, "description"), should.Equal(baseAllowlistSlice[0].Description))
+			assert.Loosely(t, getStringSliceProp(historicalEntity, "subnets"), should.Resemble(allowlist0Copy.Subnets))
+			assert.Loosely(t, getStringProp(historicalEntity, "modified_by"), should.Equal("user:test-app-id@example.com"))
+			assert.Loosely(t, getTimeProp(historicalEntity, "modified_ts").Unix(), should.Equal(testCreatedTS.Unix()))
+			assert.Loosely(t, getInt64Prop(historicalEntity, "auth_db_rev"), should.Equal(1))
+			assert.Loosely(t, getInt64Prop(historicalEntity, "auth_db_prev_rev"), should.Equal(1337))
+			assert.Loosely(t, getStringProp(historicalEntity, "auth_db_change_comment"), should.Equal("Go pRPC API"))
+			assert.Loosely(t, getStringProp(historicalEntity, "auth_db_app_version"), should.Equal("test-version"))
 
 			historicalEntity = entities[1]
-			So(getDatastoreKey(historicalEntity).String(), ShouldEqual, "dev~app::/AuthGlobalConfig,\"root\"/Rev,1/AuthIPWhitelistHistory,\"test-allowlist-2\"")
-			So(getStringProp(historicalEntity, "description"), ShouldEqual, baseAllowlistSlice[1].Description)
-			So(getStringSliceProp(historicalEntity, "subnets"), ShouldResemble, baseAllowlistSlice[1].Subnets)
-			So(getStringProp(historicalEntity, "modified_by"), ShouldEqual, "user:test-app-id@example.com")
-			So(getTimeProp(historicalEntity, "modified_ts").Unix(), ShouldEqual, testCreatedTS.Unix())
-			So(getInt64Prop(historicalEntity, "auth_db_rev"), ShouldEqual, 1)
-			So(getInt64Prop(historicalEntity, "auth_db_prev_rev"), ShouldEqual, 1337)
-			So(getStringProp(historicalEntity, "auth_db_change_comment"), ShouldEqual, "Go pRPC API")
-			So(getStringProp(historicalEntity, "auth_db_app_version"), ShouldEqual, "test-version")
-			So(getBoolProp(historicalEntity, "auth_db_deleted"), ShouldBeTrue)
+			assert.Loosely(t, getDatastoreKey(historicalEntity).String(), should.Equal("dev~app::/AuthGlobalConfig,\"root\"/Rev,1/AuthIPWhitelistHistory,\"test-allowlist-2\""))
+			assert.Loosely(t, getStringProp(historicalEntity, "description"), should.Equal(baseAllowlistSlice[1].Description))
+			assert.Loosely(t, getStringSliceProp(historicalEntity, "subnets"), should.Resemble(baseAllowlistSlice[1].Subnets))
+			assert.Loosely(t, getStringProp(historicalEntity, "modified_by"), should.Equal("user:test-app-id@example.com"))
+			assert.Loosely(t, getTimeProp(historicalEntity, "modified_ts").Unix(), should.Equal(testCreatedTS.Unix()))
+			assert.Loosely(t, getInt64Prop(historicalEntity, "auth_db_rev"), should.Equal(1))
+			assert.Loosely(t, getInt64Prop(historicalEntity, "auth_db_prev_rev"), should.Equal(1337))
+			assert.Loosely(t, getStringProp(historicalEntity, "auth_db_change_comment"), should.Equal("Go pRPC API"))
+			assert.Loosely(t, getStringProp(historicalEntity, "auth_db_app_version"), should.Equal("test-version"))
+			assert.Loosely(t, getBoolProp(historicalEntity, "auth_db_deleted"), should.BeTrue)
 
 			historicalEntity = entities[2]
-			So(getDatastoreKey(historicalEntity).String(), ShouldEqual, "dev~app::/AuthGlobalConfig,\"root\"/Rev,1/AuthIPWhitelistHistory,\"test-allowlist-3\"")
-			So(getStringProp(historicalEntity, "description"), ShouldEqual, allowlistToCreate.Description)
-			So(getStringSliceProp(historicalEntity, "subnets"), ShouldResemble, allowlistToCreate.Subnets)
-			So(getStringProp(historicalEntity, "modified_by"), ShouldEqual, "user:test-app-id@example.com")
-			So(getTimeProp(historicalEntity, "modified_ts").Unix(), ShouldEqual, testCreatedTS.Unix())
-			So(getInt64Prop(historicalEntity, "auth_db_rev"), ShouldEqual, 1)
-			So(getProp(historicalEntity, "auth_db_prev_rev"), ShouldBeNil)
-			So(getStringProp(historicalEntity, "auth_db_change_comment"), ShouldEqual, "Go pRPC API")
-			So(getStringProp(historicalEntity, "auth_db_app_version"), ShouldEqual, "test-version")
+			assert.Loosely(t, getDatastoreKey(historicalEntity).String(), should.Equal("dev~app::/AuthGlobalConfig,\"root\"/Rev,1/AuthIPWhitelistHistory,\"test-allowlist-3\""))
+			assert.Loosely(t, getStringProp(historicalEntity, "description"), should.Equal(allowlistToCreate.Description))
+			assert.Loosely(t, getStringSliceProp(historicalEntity, "subnets"), should.Resemble(allowlistToCreate.Subnets))
+			assert.Loosely(t, getStringProp(historicalEntity, "modified_by"), should.Equal("user:test-app-id@example.com"))
+			assert.Loosely(t, getTimeProp(historicalEntity, "modified_ts").Unix(), should.Equal(testCreatedTS.Unix()))
+			assert.Loosely(t, getInt64Prop(historicalEntity, "auth_db_rev"), should.Equal(1))
+			assert.Loosely(t, getProp(historicalEntity, "auth_db_prev_rev"), should.BeNil)
+			assert.Loosely(t, getStringProp(historicalEntity, "auth_db_change_comment"), should.Equal("Go pRPC API"))
+			assert.Loosely(t, getStringProp(historicalEntity, "auth_db_app_version"), should.Equal("test-version"))
 
 			// Check no properties are indexed.
 			for k := range historicalEntity {
-				So(isPropIndexed(historicalEntity, k), ShouldBeFalse)
+				assert.Loosely(t, isPropIndexed(historicalEntity, k), should.BeFalse)
 			}
 		})
 	})
@@ -1323,22 +1323,22 @@ func TestUpdateAllAuthIPAllowlists(t *testing.T) {
 func TestAuthGlobalConfig(t *testing.T) {
 	t.Parallel()
 
-	Convey("Testing GetAuthGlobalConfig", t, func() {
+	ftt.Run("Testing GetAuthGlobalConfig", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 
 		_, err := GetAuthGlobalConfig(ctx)
-		So(err, ShouldEqual, datastore.ErrNoSuchEntity)
+		assert.Loosely(t, err, should.Equal(datastore.ErrNoSuchEntity))
 
 		cfg := testAuthGlobalConfig(ctx)
 		err = datastore.Put(ctx, cfg)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		actual, err := GetAuthGlobalConfig(ctx)
-		So(err, ShouldBeNil)
-		So(actual, ShouldResemble, cfg)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, actual, should.Resemble(cfg))
 	})
 
-	Convey("Testing updateAuthGlobalConfig", t, func() {
+	ftt.Run("Testing updateAuthGlobalConfig", t, func(t *ftt.Test) {
 		ctx := auth.WithState(memory.Use(context.Background()), &authtest.FakeState{
 			Identity:       "user:someone@example.com",
 			IdentityGroups: []string{AdminGroup},
@@ -1358,11 +1358,11 @@ func TestAuthGlobalConfig(t *testing.T) {
 		}
 		seccfgpb := testSecurityConfig()
 
-		Convey("Creating new AuthGlobalConfig", func() {
-			So(updateAuthGlobalConfig(ctx, oauthcfgpb, seccfgpb, false, "Go pRPC API"), ShouldBeNil)
+		t.Run("Creating new AuthGlobalConfig", func(t *ftt.Test) {
+			assert.Loosely(t, updateAuthGlobalConfig(ctx, oauthcfgpb, seccfgpb, false, "Go pRPC API"), should.BeNil)
 			updatedCfg, err := GetAuthGlobalConfig(ctx)
-			So(err, ShouldBeNil)
-			So(updatedCfg, ShouldResemble, &AuthGlobalConfig{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, updatedCfg, should.Resemble(&AuthGlobalConfig{
 				AuthVersionedEntityMixin: AuthVersionedEntityMixin{
 					ModifiedTS:    testCreatedTS,
 					ModifiedBy:    "user:test-app-id@example.com",
@@ -1376,43 +1376,43 @@ func TestAuthGlobalConfig(t *testing.T) {
 				OAuthClientSecret:        "new-test-client-secret",
 				TokenServerURL:           "https://new-token-server-url.example.com",
 				SecurityConfig:           testSecurityConfigBlob(),
-			})
+			}))
 			state1, err := GetReplicationState(ctx)
-			So(err, ShouldBeNil)
-			So(state1.AuthDBRev, ShouldEqual, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, state1.AuthDBRev, should.Equal(1))
 			tasks := taskScheduler.Tasks()
-			So(tasks, ShouldHaveLength, 2)
+			assert.Loosely(t, tasks, should.HaveLength(2))
 			processChangeTask := tasks[0]
-			So(processChangeTask.Class, ShouldEqual, "process-change-task")
-			So(processChangeTask.Payload, ShouldResembleProto, &taskspb.ProcessChangeTask{AuthDbRev: 1})
+			assert.Loosely(t, processChangeTask.Class, should.Equal("process-change-task"))
+			assert.Loosely(t, processChangeTask.Payload, should.Resemble(&taskspb.ProcessChangeTask{AuthDbRev: 1}))
 			replicationTask := tasks[1]
-			So(replicationTask.Class, ShouldEqual, "replication-task")
-			So(replicationTask.Payload, ShouldResembleProto, &taskspb.ReplicationTask{AuthDbRev: 1})
+			assert.Loosely(t, replicationTask.Class, should.Equal("replication-task"))
+			assert.Loosely(t, replicationTask.Payload, should.Resemble(&taskspb.ReplicationTask{AuthDbRev: 1}))
 
 			entities, err := getAllDatastoreEntities(ctx, "AuthGlobalConfigHistory", HistoricalRevisionKey(ctx, 1))
-			So(err, ShouldBeNil)
-			So(entities, ShouldHaveLength, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, entities, should.HaveLength(1))
 			historicalEntity := entities[0]
-			So(getDatastoreKey(historicalEntity).String(), ShouldEqual, "dev~app::/AuthGlobalConfig,\"root\"/Rev,1/AuthGlobalConfigHistory,\"root\"")
-			So(getStringProp(historicalEntity, "oauth_client_id"), ShouldEqual, "new-test-client-id")
-			So(getStringProp(historicalEntity, "oauth_client_secret"), ShouldEqual, "new-test-client-secret")
-			So(getStringProp(historicalEntity, "token_server_url"), ShouldEqual, "https://new-token-server-url.example.com")
-			So(getStringSliceProp(historicalEntity, "oauth_additional_client_ids"), ShouldResemble, []string{"new-test-client-id-1", "new-test-client-id-2"})
-			So(getStringProp(historicalEntity, "modified_by"), ShouldEqual, "user:test-app-id@example.com")
-			So(getTimeProp(historicalEntity, "modified_ts").Unix(), ShouldEqual, testCreatedTS.Unix())
-			So(getInt64Prop(historicalEntity, "auth_db_rev"), ShouldEqual, 1)
-			So(getProp(historicalEntity, "auth_db_prev_rev"), ShouldBeNil)
-			So(getStringProp(historicalEntity, "auth_db_change_comment"), ShouldEqual, "Go pRPC API")
-			So(getStringProp(historicalEntity, "auth_db_app_version"), ShouldEqual, "test-version")
-			So(getBoolProp(historicalEntity, "auth_db_deleted"), ShouldBeFalse)
+			assert.Loosely(t, getDatastoreKey(historicalEntity).String(), should.Equal("dev~app::/AuthGlobalConfig,\"root\"/Rev,1/AuthGlobalConfigHistory,\"root\""))
+			assert.Loosely(t, getStringProp(historicalEntity, "oauth_client_id"), should.Equal("new-test-client-id"))
+			assert.Loosely(t, getStringProp(historicalEntity, "oauth_client_secret"), should.Equal("new-test-client-secret"))
+			assert.Loosely(t, getStringProp(historicalEntity, "token_server_url"), should.Equal("https://new-token-server-url.example.com"))
+			assert.Loosely(t, getStringSliceProp(historicalEntity, "oauth_additional_client_ids"), should.Resemble([]string{"new-test-client-id-1", "new-test-client-id-2"}))
+			assert.Loosely(t, getStringProp(historicalEntity, "modified_by"), should.Equal("user:test-app-id@example.com"))
+			assert.Loosely(t, getTimeProp(historicalEntity, "modified_ts").Unix(), should.Equal(testCreatedTS.Unix()))
+			assert.Loosely(t, getInt64Prop(historicalEntity, "auth_db_rev"), should.Equal(1))
+			assert.Loosely(t, getProp(historicalEntity, "auth_db_prev_rev"), should.BeNil)
+			assert.Loosely(t, getStringProp(historicalEntity, "auth_db_change_comment"), should.Equal("Go pRPC API"))
+			assert.Loosely(t, getStringProp(historicalEntity, "auth_db_app_version"), should.Equal("test-version"))
+			assert.Loosely(t, getBoolProp(historicalEntity, "auth_db_deleted"), should.BeFalse)
 		})
 
-		Convey("Updating AuthGlobalConfig", func() {
-			So(datastore.Put(ctx, testAuthGlobalConfig(ctx)), ShouldBeNil)
-			So(updateAuthGlobalConfig(ctx, oauthcfgpb, seccfgpb, false, "Go pRPC API"), ShouldBeNil)
+		t.Run("Updating AuthGlobalConfig", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(ctx, testAuthGlobalConfig(ctx)), should.BeNil)
+			assert.Loosely(t, updateAuthGlobalConfig(ctx, oauthcfgpb, seccfgpb, false, "Go pRPC API"), should.BeNil)
 			updatedCfg, err := GetAuthGlobalConfig(ctx)
-			So(err, ShouldBeNil)
-			So(updatedCfg, ShouldResemble, &AuthGlobalConfig{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, updatedCfg, should.Resemble(&AuthGlobalConfig{
 				AuthVersionedEntityMixin: AuthVersionedEntityMixin{
 					ModifiedTS:    testCreatedTS,
 					ModifiedBy:    "user:test-app-id@example.com",
@@ -1426,40 +1426,40 @@ func TestAuthGlobalConfig(t *testing.T) {
 				OAuthClientSecret:        "new-test-client-secret",
 				TokenServerURL:           "https://new-token-server-url.example.com",
 				SecurityConfig:           testSecurityConfigBlob(),
-			})
+			}))
 			state1, err := GetReplicationState(ctx)
-			So(err, ShouldBeNil)
-			So(state1.AuthDBRev, ShouldEqual, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, state1.AuthDBRev, should.Equal(1))
 			tasks := taskScheduler.Tasks()
-			So(tasks, ShouldHaveLength, 2)
+			assert.Loosely(t, tasks, should.HaveLength(2))
 			processChangeTask := tasks[0]
-			So(processChangeTask.Class, ShouldEqual, "process-change-task")
-			So(processChangeTask.Payload, ShouldResembleProto, &taskspb.ProcessChangeTask{AuthDbRev: 1})
+			assert.Loosely(t, processChangeTask.Class, should.Equal("process-change-task"))
+			assert.Loosely(t, processChangeTask.Payload, should.Resemble(&taskspb.ProcessChangeTask{AuthDbRev: 1}))
 			replicationTask := tasks[1]
-			So(replicationTask.Class, ShouldEqual, "replication-task")
-			So(replicationTask.Payload, ShouldResembleProto, &taskspb.ReplicationTask{AuthDbRev: 1})
+			assert.Loosely(t, replicationTask.Class, should.Equal("replication-task"))
+			assert.Loosely(t, replicationTask.Payload, should.Resemble(&taskspb.ReplicationTask{AuthDbRev: 1}))
 
 			entities, err := getAllDatastoreEntities(ctx, "AuthGlobalConfigHistory", HistoricalRevisionKey(ctx, 1))
-			So(err, ShouldBeNil)
-			So(entities, ShouldHaveLength, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, entities, should.HaveLength(1))
 			historicalEntity := entities[0]
-			So(getDatastoreKey(historicalEntity).String(), ShouldEqual, "dev~app::/AuthGlobalConfig,\"root\"/Rev,1/AuthGlobalConfigHistory,\"root\"")
-			So(getStringProp(historicalEntity, "oauth_client_id"), ShouldEqual, "new-test-client-id")
-			So(getStringProp(historicalEntity, "oauth_client_secret"), ShouldEqual, "new-test-client-secret")
-			So(getStringProp(historicalEntity, "token_server_url"), ShouldEqual, "https://new-token-server-url.example.com")
-			So(getByteSliceProp(historicalEntity, "security_config"), ShouldResemble, testSecurityConfigBlob())
-			So(getStringSliceProp(historicalEntity, "oauth_additional_client_ids"), ShouldResemble, []string{"new-test-client-id-1", "new-test-client-id-2"})
-			So(getStringProp(historicalEntity, "modified_by"), ShouldEqual, "user:test-app-id@example.com")
-			So(getTimeProp(historicalEntity, "modified_ts").Unix(), ShouldEqual, testCreatedTS.Unix())
-			So(getInt64Prop(historicalEntity, "auth_db_rev"), ShouldEqual, 1)
-			So(getInt64Prop(historicalEntity, "auth_db_prev_rev"), ShouldEqual, 1337)
-			So(getStringProp(historicalEntity, "auth_db_change_comment"), ShouldEqual, "Go pRPC API")
-			So(getStringProp(historicalEntity, "auth_db_app_version"), ShouldEqual, "test-version")
-			So(getBoolProp(historicalEntity, "auth_db_deleted"), ShouldBeFalse)
+			assert.Loosely(t, getDatastoreKey(historicalEntity).String(), should.Equal("dev~app::/AuthGlobalConfig,\"root\"/Rev,1/AuthGlobalConfigHistory,\"root\""))
+			assert.Loosely(t, getStringProp(historicalEntity, "oauth_client_id"), should.Equal("new-test-client-id"))
+			assert.Loosely(t, getStringProp(historicalEntity, "oauth_client_secret"), should.Equal("new-test-client-secret"))
+			assert.Loosely(t, getStringProp(historicalEntity, "token_server_url"), should.Equal("https://new-token-server-url.example.com"))
+			assert.Loosely(t, getByteSliceProp(historicalEntity, "security_config"), should.Resemble(testSecurityConfigBlob()))
+			assert.Loosely(t, getStringSliceProp(historicalEntity, "oauth_additional_client_ids"), should.Resemble([]string{"new-test-client-id-1", "new-test-client-id-2"}))
+			assert.Loosely(t, getStringProp(historicalEntity, "modified_by"), should.Equal("user:test-app-id@example.com"))
+			assert.Loosely(t, getTimeProp(historicalEntity, "modified_ts").Unix(), should.Equal(testCreatedTS.Unix()))
+			assert.Loosely(t, getInt64Prop(historicalEntity, "auth_db_rev"), should.Equal(1))
+			assert.Loosely(t, getInt64Prop(historicalEntity, "auth_db_prev_rev"), should.Equal(1337))
+			assert.Loosely(t, getStringProp(historicalEntity, "auth_db_change_comment"), should.Equal("Go pRPC API"))
+			assert.Loosely(t, getStringProp(historicalEntity, "auth_db_app_version"), should.Equal("test-version"))
+			assert.Loosely(t, getBoolProp(historicalEntity, "auth_db_deleted"), should.BeFalse)
 		})
-		Convey("no-op for identical configs", func() {
+		t.Run("no-op for identical configs", func(t *ftt.Test) {
 			// Set up an initial global config.
-			So(datastore.Put(ctx, testAuthGlobalConfig(ctx)), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, testAuthGlobalConfig(ctx)), should.BeNil)
 
 			// Update global config with identical configs.
 			sameOauthCfg := &configspb.OAuthConfig{
@@ -1471,15 +1471,15 @@ func TestAuthGlobalConfig(t *testing.T) {
 				},
 				TokenServerUrl: "https://token-server.example.com",
 			}
-			So(updateAuthGlobalConfig(ctx, sameOauthCfg, seccfgpb, false, "Go pRPC API"), ShouldBeNil)
+			assert.Loosely(t, updateAuthGlobalConfig(ctx, sameOauthCfg, seccfgpb, false, "Go pRPC API"), should.BeNil)
 
 			// Check this is a no-op.
-			So(taskScheduler.Tasks(), ShouldHaveLength, 0)
+			assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(0))
 
 			// AuthGlobalConfig should be unchanged.
 			updatedCfg, err := GetAuthGlobalConfig(ctx)
-			So(err, ShouldBeNil)
-			So(updatedCfg, ShouldResemble, testAuthGlobalConfig(ctx))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, updatedCfg, should.Resemble(testAuthGlobalConfig(ctx)))
 		})
 	})
 }
@@ -1497,64 +1497,64 @@ func TestAuthRealmsConfig(t *testing.T) {
 		return tq.TestingContext(txndefer.FilterRDS(ctx), nil)
 	}
 
-	Convey("Testing GetAuthRealmsGlobals", t, func() {
+	ftt.Run("Testing GetAuthRealmsGlobals", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 
 		_, err := GetAuthRealmsGlobals(ctx)
-		So(err, ShouldEqual, datastore.ErrNoSuchEntity)
+		assert.Loosely(t, err, should.Equal(datastore.ErrNoSuchEntity))
 
 		realmGlobals := testAuthRealmsGlobals(ctx)
 		err = datastore.Put(ctx, realmGlobals)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		actual, err := GetAuthRealmsGlobals(ctx)
-		So(err, ShouldBeNil)
-		So(actual, ShouldResemble, realmGlobals)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, actual, should.Resemble(realmGlobals))
 	})
 
-	Convey("Testing GetAuthProjectRealms", t, func() {
+	ftt.Run("Testing GetAuthProjectRealms", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 
 		testProject := "testproject"
 		_, err := GetAuthProjectRealms(ctx, testProject)
-		So(err, ShouldEqual, datastore.ErrNoSuchEntity)
+		assert.Loosely(t, err, should.Equal(datastore.ErrNoSuchEntity))
 
 		projectRealms := testAuthProjectRealms(ctx, testProject)
 		err = datastore.Put(ctx, projectRealms)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		actual, err := GetAuthProjectRealms(ctx, testProject)
-		So(err, ShouldBeNil)
-		So(actual, ShouldResemble, projectRealms)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, actual, should.Resemble(projectRealms))
 	})
 
-	Convey("Testing GetAllAuthProjectRealms", t, func() {
+	ftt.Run("Testing GetAllAuthProjectRealms", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 
 		// Querying when there are no project realms should succeed.
 		actual, err := GetAllAuthProjectRealms(ctx)
-		So(err, ShouldBeNil)
-		So(actual, ShouldBeEmpty)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, actual, should.BeEmpty)
 
 		// Put 2 project realms in datastore.
 		projectRealmsA := testAuthProjectRealms(ctx, "testproject-a")
 		projectRealmsB := testAuthProjectRealms(ctx, "testproject-b")
-		So(datastore.Put(ctx, projectRealmsA, projectRealmsB), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, projectRealmsA, projectRealmsB), should.BeNil)
 
 		actual, err = GetAllAuthProjectRealms(ctx)
-		So(err, ShouldBeNil)
-		So(actual, ShouldHaveLength, 2)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, actual, should.HaveLength(2))
 		// No guarantees on order, so sort the output before comparing.
 		sort.Slice(actual, func(i, j int) bool {
 			return actual[i].ID < actual[j].ID
 		})
-		So(actual, ShouldResembleProto, []*AuthProjectRealms{
+		assert.Loosely(t, actual, should.Resemble([]*AuthProjectRealms{
 			projectRealmsA,
 			projectRealmsB,
-		})
+		}))
 	})
 
-	Convey("Testing updateAuthProjectRealms", t, func() {
+	ftt.Run("Testing updateAuthProjectRealms", t, func(t *ftt.Test) {
 		permissionsRev := "permissions.cfg:abc"
 		proj1Realms := &protocol.Realms{
 			Permissions: makeTestPermissions("luci.dev.p2", "luci.dev.z", "luci.dev.p1"),
@@ -1583,24 +1583,24 @@ func TestAuthRealmsConfig(t *testing.T) {
 			},
 		}
 		expectedRealms, err := ToStorableRealms(proj1Realms)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		Convey("created for a new project", func() {
+		t.Run("created for a new project", func(t *ftt.Test) {
 			ctx, ts := getCtx()
 
 			// Check updating realms for a new project works.
 			err := updateAuthProjectRealms(ctx, expandedRealms, permissionsRev, false, "Go pRPC API")
-			So(err, ShouldBeNil)
-			So(ts.Tasks(), ShouldHaveLength, 2)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ts.Tasks(), should.HaveLength(2))
 			// Check the newly added project realms are as expected.
 			authProjectRealms, err := GetAuthProjectRealms(ctx, "proj1")
-			So(err, ShouldBeNil)
-			So(authProjectRealms.ID, ShouldEqual, "proj1")
-			So(authProjectRealms.ModifiedBy, ShouldEqual, "user:test-app-id@example.com")
-			So(authProjectRealms.Realms, ShouldResembleProto, expectedRealms)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, authProjectRealms.ID, should.Equal("proj1"))
+			assert.Loosely(t, authProjectRealms.ModifiedBy, should.Equal("user:test-app-id@example.com"))
+			assert.Loosely(t, authProjectRealms.Realms, should.Resemble(expectedRealms))
 			authProjectRealmsMeta, err := GetAuthProjectRealmsMeta(ctx, "proj1")
-			So(err, ShouldBeNil)
-			So(authProjectRealmsMeta, ShouldResembleProto, &AuthProjectRealmsMeta{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, authProjectRealmsMeta, should.Resemble(&AuthProjectRealmsMeta{
 				Kind:         "AuthProjectRealmsMeta",
 				ID:           "meta",
 				Parent:       projectRealmsKey(ctx, "proj1"),
@@ -1608,29 +1608,29 @@ func TestAuthRealmsConfig(t *testing.T) {
 				PermsRev:     permissionsRev,
 				ConfigDigest: "test config digest",
 				ModifiedTS:   testCreatedTS,
-			})
+			}))
 		})
 
-		Convey("updated for an existing project", func() {
+		t.Run("updated for an existing project", func(t *ftt.Test) {
 			ctx, ts := getCtx()
 
 			originalAuthProjectRealms := testAuthProjectRealms(ctx, "proj1")
 			originalAuthProjectRealmsMeta := testAuthProjectRealmsMeta(ctx, "proj1", "abc123")
-			So(datastore.Put(ctx, originalAuthProjectRealms, originalAuthProjectRealmsMeta), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, originalAuthProjectRealms, originalAuthProjectRealmsMeta), should.BeNil)
 
 			// Check updating realms for an existing project works.
 			err = updateAuthProjectRealms(ctx, expandedRealms, permissionsRev, false, "Go pRPC API")
-			So(err, ShouldBeNil)
-			So(ts.Tasks(), ShouldHaveLength, 2)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ts.Tasks(), should.HaveLength(2))
 			// Check the newly added project realms are as expected.
 			authProjectRealms, err := GetAuthProjectRealms(ctx, "proj1")
-			So(err, ShouldBeNil)
-			So(authProjectRealms.ID, ShouldEqual, "proj1")
-			So(authProjectRealms.ModifiedBy, ShouldEqual, "user:test-app-id@example.com")
-			So(authProjectRealms.Realms, ShouldResembleProto, expectedRealms)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, authProjectRealms.ID, should.Equal("proj1"))
+			assert.Loosely(t, authProjectRealms.ModifiedBy, should.Equal("user:test-app-id@example.com"))
+			assert.Loosely(t, authProjectRealms.Realms, should.Resemble(expectedRealms))
 			authProjectRealmsMeta, err := GetAuthProjectRealmsMeta(ctx, "proj1")
-			So(err, ShouldBeNil)
-			So(authProjectRealmsMeta, ShouldResembleProto, &AuthProjectRealmsMeta{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, authProjectRealmsMeta, should.Resemble(&AuthProjectRealmsMeta{
 				Kind:         "AuthProjectRealmsMeta",
 				ID:           "meta",
 				Parent:       projectRealmsKey(ctx, "proj1"),
@@ -1638,91 +1638,91 @@ func TestAuthRealmsConfig(t *testing.T) {
 				PermsRev:     permissionsRev,
 				ConfigDigest: expandedRealms[0].CfgRev.ConfigDigest,
 				ModifiedTS:   testCreatedTS,
-			})
+			}))
 		})
 
-		Convey("updating with dry run mode changes nothing", func() {
-			Convey("for a new project", func() {
+		t.Run("updating with dry run mode changes nothing", func(t *ftt.Test) {
+			t.Run("for a new project", func(t *ftt.Test) {
 				ctx, ts := getCtx()
 
 				// Check updating realms for a new project succeeds but doesn't
 				// create an AuthProjectRealms or AuthProjectRealmsMeta entity.
 				err := updateAuthProjectRealms(ctx, expandedRealms, permissionsRev, true, "Go pRPC API")
-				So(err, ShouldBeNil)
-				So(ts.Tasks(), ShouldHaveLength, 0)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, ts.Tasks(), should.HaveLength(0))
 				authProjectRealms, err := GetAllAuthProjectRealms(ctx)
-				So(err, ShouldBeNil)
-				So(authProjectRealms, ShouldBeEmpty)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, authProjectRealms, should.BeEmpty)
 				authProjectRealmsMeta, err := GetAllAuthProjectRealmsMeta(ctx)
-				So(err, ShouldBeNil)
-				So(authProjectRealmsMeta, ShouldBeEmpty)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, authProjectRealmsMeta, should.BeEmpty)
 			})
 
-			Convey("for an existing project", func() {
+			t.Run("for an existing project", func(t *ftt.Test) {
 				ctx, ts := getCtx()
 
 				originalAuthProjectRealms := testAuthProjectRealms(ctx, "proj1")
 				originalAuthProjectRealmsMeta := testAuthProjectRealmsMeta(ctx, "proj1", "abc123")
-				So(datastore.Put(ctx, originalAuthProjectRealms, originalAuthProjectRealmsMeta), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, originalAuthProjectRealms, originalAuthProjectRealmsMeta), should.BeNil)
 
 				// Check updating realms for a new project succeeds but doesn't
 				// update the AuthProjectRealms or AuthProjectRealmsMeta entity.
 				err = updateAuthProjectRealms(ctx, expandedRealms, permissionsRev, true, "Go pRPC API")
-				So(err, ShouldBeNil)
-				So(ts.Tasks(), ShouldHaveLength, 0)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, ts.Tasks(), should.HaveLength(0))
 
 				// Check the newly added project realms are unchanged.
 				authProjectRealms, err := GetAuthProjectRealms(ctx, "proj1")
-				So(err, ShouldBeNil)
-				So(authProjectRealms, ShouldResembleProto, originalAuthProjectRealms)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, authProjectRealms, should.Resemble(originalAuthProjectRealms))
 				authProjectRealmsMeta, err := GetAuthProjectRealmsMeta(ctx, "proj1")
-				So(err, ShouldBeNil)
-				So(authProjectRealmsMeta, ShouldResembleProto, originalAuthProjectRealmsMeta)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, authProjectRealmsMeta, should.Resemble(originalAuthProjectRealmsMeta))
 			})
 		})
 	})
 
-	Convey("Testing DeleteAuthProjectRealms", t, func() {
+	ftt.Run("Testing DeleteAuthProjectRealms", t, func(t *ftt.Test) {
 		ctx, ts := getCtx()
 
 		testProject := "testproject"
 		projectRealms := testAuthProjectRealms(ctx, testProject)
 		err := datastore.Put(ctx, projectRealms)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		_, err = GetAuthProjectRealms(ctx, testProject)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		err = deleteAuthProjectRealms(ctx, testProject, false, "Go pRPC API")
-		So(err, ShouldBeNil)
-		So(ts.Tasks(), ShouldHaveLength, 2)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, ts.Tasks(), should.HaveLength(2))
 
 		err = deleteAuthProjectRealms(ctx, testProject, false, "Go pRPC API")
-		So(err, ShouldErrLike, datastore.ErrNoSuchEntity)
+		assert.Loosely(t, err, should.ErrLike(datastore.ErrNoSuchEntity))
 	})
 
-	Convey("Testing GetAuthProjectRealmsMeta", t, func() {
+	ftt.Run("Testing GetAuthProjectRealmsMeta", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 
 		testProject := "testproject"
 		_, err := GetAuthProjectRealmsMeta(ctx, testProject)
-		So(err, ShouldEqual, datastore.ErrNoSuchEntity)
+		assert.Loosely(t, err, should.Equal(datastore.ErrNoSuchEntity))
 
 		projectRealms := testAuthProjectRealms(ctx, testProject)
 		projectRealmsMeta := makeAuthProjectRealmsMeta(ctx, testProject)
 
-		So(datastore.Put(ctx, projectRealms), ShouldBeNil)
-		So(datastore.Put(ctx, projectRealmsMeta), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, projectRealms), should.BeNil)
+		assert.Loosely(t, datastore.Put(ctx, projectRealmsMeta), should.BeNil)
 
 		actual, err := GetAuthProjectRealmsMeta(ctx, testProject)
-		So(err, ShouldBeNil)
-		So(actual, ShouldResemble, projectRealmsMeta)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, actual, should.Resemble(projectRealmsMeta))
 		actualID, err := actual.ProjectID()
-		So(err, ShouldBeNil)
-		So(actualID, ShouldEqual, testProject)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, actualID, should.Equal(testProject))
 	})
 
-	Convey("Testing GetAllAuthProjectRealmsMeta", t, func() {
+	ftt.Run("Testing GetAllAuthProjectRealmsMeta", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 
 		testProjects := []string{"testproject-1", "testproject-2", "testproject-3"}
@@ -1733,20 +1733,20 @@ func TestAuthRealmsConfig(t *testing.T) {
 			projectRealmsMeta[i] = makeAuthProjectRealmsMeta(ctx, project)
 		}
 
-		So(datastore.Put(ctx, projectRealms, projectRealmsMeta), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, projectRealms, projectRealmsMeta), should.BeNil)
 
 		actual, err := GetAllAuthProjectRealmsMeta(ctx)
-		So(err, ShouldBeNil)
-		So(actual, ShouldResemble, projectRealmsMeta)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, actual, should.Resemble(projectRealmsMeta))
 		for idx, proj := range testProjects {
 			id, err := actual[idx].ProjectID()
-			So(err, ShouldBeNil)
-			So(id, ShouldEqual, proj)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, id, should.Equal(proj))
 		}
 	})
 
-	Convey("Testing updateAuthRealmsGlobals", t, func() {
-		Convey("no previous AuthRealmsGlobals entity present", func() {
+	ftt.Run("Testing updateAuthRealmsGlobals", t, func(t *ftt.Test) {
+		t.Run("no previous AuthRealmsGlobals entity present", func(t *ftt.Test) {
 			ctx, ts := getCtx()
 
 			permCfg := &configspb.PermissionsConfig{
@@ -1763,24 +1763,24 @@ func TestAuthRealmsConfig(t *testing.T) {
 			}
 
 			err := updateAuthRealmsGlobals(ctx, permCfg, false, "Go pRPC API")
-			So(err, ShouldBeNil)
-			So(ts.Tasks(), ShouldHaveLength, 2)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ts.Tasks(), should.HaveLength(2))
 
 			fetched, err := GetAuthRealmsGlobals(ctx)
-			So(err, ShouldBeNil)
-			So(fetched.PermissionsList.GetPermissions(), ShouldResembleProto,
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, fetched.PermissionsList.GetPermissions(), should.Resemble(
 				[]*protocol.Permission{
 					{
 						Name:     "test.perm.create",
 						Internal: false,
 					},
-				})
+				}))
 		})
 
-		Convey("updating permissions entity already present", func() {
+		t.Run("updating permissions entity already present", func(t *ftt.Test) {
 			ctx, ts := getCtx()
 			authRealmGlobals := testAuthRealmsGlobals(ctx)
-			So(datastore.Put(ctx, authRealmGlobals), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, authRealmGlobals), should.BeNil)
 
 			permsCfg := &configspb.PermissionsConfig{
 				Role: []*configspb.PermissionsConfig_Role{
@@ -1813,12 +1813,12 @@ func TestAuthRealmsConfig(t *testing.T) {
 				},
 			}
 
-			So(updateAuthRealmsGlobals(ctx, permsCfg, false, "Go pRPC API"), ShouldBeNil)
-			So(ts.Tasks(), ShouldHaveLength, 2)
+			assert.Loosely(t, updateAuthRealmsGlobals(ctx, permsCfg, false, "Go pRPC API"), should.BeNil)
+			assert.Loosely(t, ts.Tasks(), should.HaveLength(2))
 
 			fetched, err := GetAuthRealmsGlobals(ctx)
-			So(err, ShouldBeNil)
-			So(fetched.PermissionsList.GetPermissions(), ShouldResembleProto,
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, fetched.PermissionsList.GetPermissions(), should.Resemble(
 				[]*protocol.Permission{
 					{
 						Name:     "test.perm.create",
@@ -1832,10 +1832,10 @@ func TestAuthRealmsConfig(t *testing.T) {
 						Name:     "testtwo.perm.delete",
 						Internal: false,
 					},
-				})
+				}))
 		})
 
-		Convey("skip update if permissions unchanged", func() {
+		t.Run("skip update if permissions unchanged", func(t *ftt.Test) {
 			ctx, ts := getCtx()
 			authRealmGlobals := testAuthRealmsGlobals(ctx)
 			authRealmGlobals.PermissionsList = &permissions.PermissionsList{
@@ -1854,7 +1854,7 @@ func TestAuthRealmsConfig(t *testing.T) {
 					},
 				},
 			}
-			So(datastore.Put(ctx, authRealmGlobals), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, authRealmGlobals), should.BeNil)
 
 			permsCfg := &configspb.PermissionsConfig{
 				Role: []*configspb.PermissionsConfig_Role{
@@ -1887,12 +1887,12 @@ func TestAuthRealmsConfig(t *testing.T) {
 				},
 			}
 
-			So(updateAuthRealmsGlobals(ctx, permsCfg, false, "Go pRPC API"), ShouldBeNil)
-			So(ts.Tasks(), ShouldHaveLength, 0)
+			assert.Loosely(t, updateAuthRealmsGlobals(ctx, permsCfg, false, "Go pRPC API"), should.BeNil)
+			assert.Loosely(t, ts.Tasks(), should.HaveLength(0))
 
 			fetched, err := GetAuthRealmsGlobals(ctx)
-			So(err, ShouldBeNil)
-			So(fetched.PermissionsList.GetPermissions(), ShouldResembleProto,
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, fetched.PermissionsList.GetPermissions(), should.Resemble(
 				[]*protocol.Permission{
 					{
 						Name:     "test.perm.create",
@@ -1906,7 +1906,7 @@ func TestAuthRealmsConfig(t *testing.T) {
 						Name:     "testtwo.perm.delete",
 						Internal: false,
 					},
-				})
+				}))
 		})
 	})
 }
@@ -1916,30 +1916,30 @@ func TestGetAuthDBSnapshot(t *testing.T) {
 	ctx := memory.Use(context.Background())
 	dryRun := false
 
-	Convey("Testing GetAuthDBSnapshot", t, func() {
+	ftt.Run("Testing GetAuthDBSnapshot", t, func(t *ftt.Test) {
 		_, err := GetAuthDBSnapshot(ctx, 42, false, dryRun)
-		So(err, ShouldEqual, datastore.ErrNoSuchEntity)
+		assert.Loosely(t, err, should.Equal(datastore.ErrNoSuchEntity))
 
 		snapshot := testAuthDBSnapshot(ctx, 42)
 
 		err = datastore.Put(ctx, snapshot)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		actual, err := GetAuthDBSnapshot(ctx, 42, false, dryRun)
-		So(err, ShouldBeNil)
-		So(actual, ShouldResemble, snapshot)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, actual, should.Resemble(snapshot))
 
 		err = datastore.Put(ctx, snapshot)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		actual, err = GetAuthDBSnapshot(ctx, 42, false, dryRun)
-		So(err, ShouldBeNil)
-		So(actual, ShouldResemble, snapshot)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, actual, should.Resemble(snapshot))
 	})
 
-	Convey("Testing GetAuthDBSnapshotLatest", t, func() {
+	ftt.Run("Testing GetAuthDBSnapshotLatest", t, func(t *ftt.Test) {
 		_, err := GetAuthDBSnapshotLatest(ctx, dryRun)
-		So(err, ShouldEqual, datastore.ErrNoSuchEntity)
+		assert.Loosely(t, err, should.Equal(datastore.ErrNoSuchEntity))
 
 		snapshot := testAuthDBSnapshot(ctx, 42)
 
@@ -1952,14 +1952,14 @@ func TestGetAuthDBSnapshot(t *testing.T) {
 		}
 		err = datastore.Put(ctx, authDBSnapshotLatest)
 
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		actual, err := GetAuthDBSnapshotLatest(ctx, dryRun)
-		So(err, ShouldBeNil)
-		So(actual, ShouldResemble, authDBSnapshotLatest)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, actual, should.Resemble(authDBSnapshotLatest))
 	})
 
-	Convey("Testing unshardAuthDB", t, func() {
+	ftt.Run("Testing unshardAuthDB", t, func(t *ftt.Test) {
 		authDBShard1 := &AuthDBShard{
 			Kind: "AuthDBShard",
 			ID:   "42:7F404D83A3F440591C25A09B0A471EC4BB7D4EA3B50C081BCE37AA879E15EB69",
@@ -1973,26 +1973,26 @@ func TestGetAuthDBSnapshot(t *testing.T) {
 		shardIDs := []string{authDBShard1.ID, authDBShard2.ID}
 
 		expectedBlob := []byte("half-1half-2")
-		So(datastore.Put(ctx, authDBShard1), ShouldBeNil)
-		So(datastore.Put(ctx, authDBShard2), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, authDBShard1), should.BeNil)
+		assert.Loosely(t, datastore.Put(ctx, authDBShard2), should.BeNil)
 
 		actualBlob, err := unshardAuthDB(ctx, shardIDs, dryRun)
-		So(err, ShouldBeNil)
-		So(actualBlob, ShouldResemble, expectedBlob)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, actualBlob, should.Resemble(expectedBlob))
 	})
 
-	Convey("Testing GetAuthDBSnapshot with sharded DB", t, func() {
+	ftt.Run("Testing GetAuthDBSnapshot with sharded DB", t, func(t *ftt.Test) {
 		snapshot, expectedAuthDB, err := testAuthDBSnapshotSharded(ctx, 42, 3)
-		So(err, ShouldBeNil)
-		So(datastore.Put(ctx, snapshot), ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, datastore.Put(ctx, snapshot), should.BeNil)
 
 		actualSnapshot, err := GetAuthDBSnapshot(ctx, 42, false, dryRun)
-		So(err, ShouldBeNil)
-		So(actualSnapshot.AuthDBDeflated, ShouldResemble, expectedAuthDB)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, actualSnapshot.AuthDBDeflated, should.Resemble(expectedAuthDB))
 
 		actualSnapshot, err = GetAuthDBSnapshot(ctx, 42, true, dryRun)
-		So(err, ShouldBeNil)
-		So(actualSnapshot.AuthDBDeflated, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, actualSnapshot.AuthDBDeflated, should.BeNil)
 	})
 }
 
@@ -2000,52 +2000,52 @@ func TestStoreAuthDBSnapshot(t *testing.T) {
 	t.Parallel()
 	dryRun := false
 
-	Convey("storing AuthDBSnapshot works", t, func() {
+	ftt.Run("storing AuthDBSnapshot works", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 
 		// Set up the test data.
 		authDBBlob := []byte("test-authdb-blob")
 		expectedDeflated, err := zlib.Compress(authDBBlob)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		blobChecksum := sha256.Sum256(authDBBlob)
 		expectedHexDigest := hex.EncodeToString(blobChecksum[:])
 
 		// Store the AuthDBSnapshot.
 		err = StoreAuthDBSnapshot(ctx, testAuthReplicationState(ctx, 1), authDBBlob, dryRun)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		// Check the AuthDBSnapshot stored data.
 		authDBSnapshot, err := GetAuthDBSnapshot(ctx, 1, false, dryRun)
-		So(err, ShouldBeNil)
-		So(authDBSnapshot, ShouldResembleProto, &AuthDBSnapshot{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, authDBSnapshot, should.Resemble(&AuthDBSnapshot{
 			Kind:           "AuthDBSnapshot",
 			ID:             1,
 			AuthDBDeflated: expectedDeflated,
 			AuthDBSha256:   expectedHexDigest,
 			CreatedTS:      testModifiedTS,
-		})
+		}))
 		decompressedBlob, _ := zlib.Decompress(authDBSnapshot.AuthDBDeflated)
-		So(decompressedBlob, ShouldEqual, authDBBlob)
+		assert.Loosely(t, decompressedBlob, should.Match(authDBBlob))
 
-		Convey("no overwriting for existing revision", func() {
+		t.Run("no overwriting for existing revision", func(t *ftt.Test) {
 			// Attempt to store the AuthDBSnapshot for an existing revision.
 			err = StoreAuthDBSnapshot(ctx, testAuthReplicationState(ctx, 1), []byte("test-authdb-blob-changed"), dryRun)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// Check the AuthDBSnapshot stored data was not actually changed.
 			authDBSnapshot, err := GetAuthDBSnapshot(ctx, 1, false, dryRun)
-			So(err, ShouldBeNil)
-			So(authDBSnapshot, ShouldResembleProto, &AuthDBSnapshot{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, authDBSnapshot, should.Resemble(&AuthDBSnapshot{
 				Kind:           "AuthDBSnapshot",
 				ID:             1,
 				AuthDBDeflated: expectedDeflated,
 				AuthDBSha256:   expectedHexDigest,
 				CreatedTS:      testModifiedTS,
-			})
+			}))
 		})
 	})
 
-	Convey("AuthDBSnapshotLatest is appropriately updated", t, func() {
+	ftt.Run("AuthDBSnapshotLatest is appropriately updated", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 
 		// Set the latest revision to 24.
@@ -2054,78 +2054,78 @@ func TestStoreAuthDBSnapshot(t *testing.T) {
 			ID:        "latest",
 			AuthDBRev: 24,
 		}
-		So(datastore.Put(ctx, latestSnapshot), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, latestSnapshot), should.BeNil)
 
-		Convey("updated for later revision", func() {
-			So(StoreAuthDBSnapshot(ctx, testAuthReplicationState(ctx, 28), nil, dryRun), ShouldBeNil)
+		t.Run("updated for later revision", func(t *ftt.Test) {
+			assert.Loosely(t, StoreAuthDBSnapshot(ctx, testAuthReplicationState(ctx, 28), nil, dryRun), should.BeNil)
 
 			// Check the latest AuthDBSnapshot pointer was updated.
 			latestSnapshot, err := GetAuthDBSnapshotLatest(ctx, dryRun)
-			So(err, ShouldBeNil)
-			So(latestSnapshot.AuthDBRev, ShouldEqual, 28)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, latestSnapshot.AuthDBRev, should.Equal(28))
 		})
 
-		Convey("not updated for earlier revision", func() {
-			So(StoreAuthDBSnapshot(ctx, testAuthReplicationState(ctx, 23), nil, dryRun), ShouldBeNil)
+		t.Run("not updated for earlier revision", func(t *ftt.Test) {
+			assert.Loosely(t, StoreAuthDBSnapshot(ctx, testAuthReplicationState(ctx, 23), nil, dryRun), should.BeNil)
 
 			// Check the latest AuthDBSnapshot pointer was not updated.
 			latestSnapshot, err := GetAuthDBSnapshotLatest(ctx, dryRun)
-			So(err, ShouldBeNil)
-			So(latestSnapshot.AuthDBRev, ShouldEqual, 24)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, latestSnapshot.AuthDBRev, should.Equal(24))
 		})
 	})
 
-	Convey("unsharding sharded data works", t, func() {
+	ftt.Run("unsharding sharded data works", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 
 		// Shard an AuthDB compressed blob.
 		authDBDeflatedBlob := []byte("this is test data")
 		shardIDs, err := shardAuthDB(ctx, 32, authDBDeflatedBlob, 8, dryRun)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		// Check the blob is reconstructed given the same shard IDs.
 		unshardedBlob, err := unshardAuthDB(ctx, shardIDs, dryRun)
-		So(err, ShouldBeNil)
-		So(unshardedBlob, ShouldEqual, authDBDeflatedBlob)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, unshardedBlob, should.Match(authDBDeflatedBlob))
 	})
 
-	Convey("storing snapshot in dry run mode works", t, func() {
+	ftt.Run("storing snapshot in dry run mode works", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 
 		// Set up the test data.
 		authDBBlob := []byte("test-authdb-blob")
 		expectedDeflated, err := zlib.Compress(authDBBlob)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		blobChecksum := sha256.Sum256(authDBBlob)
 		expectedHexDigest := hex.EncodeToString(blobChecksum[:])
 
 		// Store the AuthDBSnapshot in dry run mode.
 		err = StoreAuthDBSnapshot(ctx, testAuthReplicationState(ctx, 12), authDBBlob, true)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		// Check the AuthDBSnapshot was stored in dry run mode.
 		authDBSnapshot, err := GetAuthDBSnapshot(ctx, 12, false, true)
-		So(err, ShouldBeNil)
-		So(authDBSnapshot, ShouldResembleProto, &AuthDBSnapshot{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, authDBSnapshot, should.Resemble(&AuthDBSnapshot{
 			Kind:           "V2AuthDBSnapshot",
 			ID:             12,
 			AuthDBDeflated: expectedDeflated,
 			AuthDBSha256:   expectedHexDigest,
 			CreatedTS:      testModifiedTS,
-		})
+		}))
 		decompressedBlob, _ := zlib.Decompress(authDBSnapshot.AuthDBDeflated)
-		So(decompressedBlob, ShouldEqual, authDBBlob)
+		assert.Loosely(t, decompressedBlob, should.Match(authDBBlob))
 
 		// Check the AuthDBSnapshotLatest for dry run mode was updated.
 		latestSnapshot, err := GetAuthDBSnapshotLatest(ctx, true)
-		So(err, ShouldBeNil)
-		So(latestSnapshot.AuthDBRev, ShouldEqual, 12)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, latestSnapshot.AuthDBRev, should.Equal(12))
 
 		// Check no snapshot was written with dry run mode off.
 		_, err = GetAuthDBSnapshot(ctx, 12, false, false)
-		So(errors.Is(err, datastore.ErrNoSuchEntity), ShouldBeTrue)
+		assert.Loosely(t, errors.Is(err, datastore.ErrNoSuchEntity), should.BeTrue)
 		_, err = GetAuthDBSnapshotLatest(ctx, false)
-		So(errors.Is(err, datastore.ErrNoSuchEntity), ShouldBeTrue)
+		assert.Loosely(t, errors.Is(err, datastore.ErrNoSuchEntity), should.BeTrue)
 	})
 }
 
@@ -2137,7 +2137,7 @@ func TestDryRun(t *testing.T) {
 func TestProtoConversion(t *testing.T) {
 	t.Parallel()
 
-	Convey("AuthGroup FromProto and ToProto round trip equivalence", t, func() {
+	ftt.Run("AuthGroup FromProto and ToProto round trip equivalence", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 
 		empty := &AuthGroup{
@@ -2145,20 +2145,20 @@ func TestProtoConversion(t *testing.T) {
 			Parent: RootKey(ctx),
 		}
 
-		So(AuthGroupFromProto(ctx, empty.ToProto(true)), ShouldResemble, empty)
+		assert.Loosely(t, AuthGroupFromProto(ctx, empty.ToProto(true)), should.Resemble(empty))
 
 		g := testAuthGroup(ctx, "foo-group")
 		// Ignore the versioned entity mixin since this doesn't survive the proto conversion round trip.
 		g.AuthVersionedEntityMixin = AuthVersionedEntityMixin{}
 
-		So(AuthGroupFromProto(ctx, g.ToProto(true)), ShouldResemble, g)
+		assert.Loosely(t, AuthGroupFromProto(ctx, g.ToProto(true)), should.Resemble(g))
 	})
 }
 
 func TestRealmsToProto(t *testing.T) {
 	t.Parallel()
 
-	Convey("Parsing Realms from AuthProjectRealms", t, func() {
+	ftt.Run("Parsing Realms from AuthProjectRealms", t, func(t *ftt.Test) {
 		projRealms := &protocol.Realms{
 			Permissions: makeTestPermissions("luci.dev.p2", "luci.dev.z", "luci.dev.p1"),
 			Realms: []*protocol.Realm{
@@ -2175,47 +2175,47 @@ func TestRealmsToProto(t *testing.T) {
 			},
 		}
 
-		Convey("modern format", func() {
+		t.Run("modern format", func(t *ftt.Test) {
 			modernFormat, err := ToStorableRealms(projRealms)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			apr := &AuthProjectRealms{
 				ID:     "testProj",
 				Realms: modernFormat,
 			}
 			parsed, err := apr.RealmsToProto()
-			So(err, ShouldBeNil)
-			So(parsed, ShouldResembleProto, projRealms)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, parsed, should.Resemble(projRealms))
 		})
 
-		Convey("uncompressed format", func() {
+		t.Run("uncompressed format", func(t *ftt.Test) {
 			marshalled, err := proto.Marshal(projRealms)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			apr := &AuthProjectRealms{
 				ID:     "testProj",
 				Realms: marshalled,
 			}
 			parsed, err := apr.RealmsToProto()
-			So(err, ShouldBeNil)
-			So(parsed, ShouldResembleProto, projRealms)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, parsed, should.Resemble(projRealms))
 		})
 
-		Convey("legacy format", func() {
+		t.Run("legacy format", func(t *ftt.Test) {
 			// This is an approximation of what the Python version of
 			// Auth Service would have put in Datastore.
 			marshalled, err := proto.Marshal(projRealms)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			legacyFormat, err := zlib.Compress(marshalled)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			apr := &AuthProjectRealms{
 				ID:     "testProj",
 				Realms: legacyFormat,
 			}
 			parsed, err := apr.RealmsToProto()
-			So(err, ShouldBeNil)
-			So(parsed, ShouldResembleProto, projRealms)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, parsed, should.Resemble(projRealms))
 		})
 	})
 }
@@ -2223,7 +2223,7 @@ func TestRealmsToProto(t *testing.T) {
 func TestStorableRealms(t *testing.T) {
 	t.Parallel()
 
-	Convey("FromStorableRealms is inverse of ToStorableRealms", t, func() {
+	ftt.Run("FromStorableRealms is inverse of ToStorableRealms", t, func(t *ftt.Test) {
 		projRealms := &protocol.Realms{
 			Permissions: makeTestPermissions("luci.dev.p2", "luci.dev.z", "luci.dev.p1"),
 			Realms: []*protocol.Realm{
@@ -2240,10 +2240,10 @@ func TestStorableRealms(t *testing.T) {
 			},
 		}
 		blob, err := ToStorableRealms(projRealms)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		actual, err := FromStorableRealms(blob)
-		So(err, ShouldBeNil)
-		So(actual, ShouldResembleProto, projRealms)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, actual, should.Resemble(projRealms))
 	})
 }
