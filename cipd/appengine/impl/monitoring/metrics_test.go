@@ -19,6 +19,9 @@ import (
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/server/auth"
@@ -26,8 +29,6 @@ import (
 	"go.chromium.org/luci/server/caching"
 
 	api "go.chromium.org/luci/cipd/api/config/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestMetrics(t *testing.T) {
@@ -39,27 +40,27 @@ func TestMetrics(t *testing.T) {
 	s := tsmon.Store(ctx)
 	fields := []any{"bots", "anonymous:anonymous", "GCS"}
 
-	Convey("FileSize", t, func() {
-		So(cachedCfg.Set(ctx, &api.ClientMonitoringWhitelist{
+	ftt.Run("FileSize", t, func(t *ftt.Test) {
+		assert.Loosely(t, cachedCfg.Set(ctx, &api.ClientMonitoringWhitelist{
 			ClientMonitoringConfig: []*api.ClientMonitoringConfig{
 				{IpWhitelist: "bots", Label: "bots"},
 			},
-		}, nil), ShouldBeNil)
+		}, nil), should.BeNil)
 
-		Convey("not configured", func() {
+		t.Run("not configured", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{})
 			FileSize(ctx, 123)
-			So(s.Get(ctx, bytesRequested, time.Time{}, fields), ShouldBeNil)
+			assert.Loosely(t, s.Get(ctx, bytesRequested, time.Time{}, fields), should.BeNil)
 		})
 
-		Convey("configured", func() {
+		t.Run("configured", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				PeerIPAllowlist: []string{"bots"},
 			})
 			FileSize(ctx, 123)
-			So(s.Get(ctx, bytesRequested, time.Time{}, fields).(int64), ShouldEqual, 123)
+			assert.Loosely(t, s.Get(ctx, bytesRequested, time.Time{}, fields).(int64), should.Equal(123))
 			FileSize(ctx, 1)
-			So(s.Get(ctx, bytesRequested, time.Time{}, fields).(int64), ShouldEqual, 124)
+			assert.Loosely(t, s.Get(ctx, bytesRequested, time.Time{}, fields).(int64), should.Equal(124))
 		})
 	})
 }

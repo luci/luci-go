@@ -21,15 +21,14 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/appengine/impl/testutil"
-
-	. "github.com/smartystreets/goconvey/convey"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestDeletePackage(t *testing.T) {
@@ -39,13 +38,13 @@ func TestDeletePackage(t *testing.T) {
 	// variable here in this parallel test.
 	deletionBatchSize = 7
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		ctx, _, _ := testutil.TestingContext()
 
 		// Returns number of entities in an entity group, skipping unimportant ones.
 		entitiesCount := func(root *datastore.Key) (count int64) {
 			q := datastore.NewQuery("").Ancestor(root).KeysOnly(true)
-			So(datastore.Run(ctx, q, func(k *datastore.Key) {
+			assert.Loosely(t, datastore.Run(ctx, q, func(k *datastore.Key) {
 				switch {
 				// Skip magical __entity_group__ entities created by the datastore.
 				// This is roughly same as using GetTestable(ctx).DisableSpecialEntities
@@ -60,7 +59,7 @@ func TestDeletePackage(t *testing.T) {
 				default:
 					count++
 				}
-			}), ShouldBeNil)
+			}), should.BeNil)
 			return
 		}
 
@@ -72,22 +71,22 @@ func TestDeletePackage(t *testing.T) {
 				InstanceID: strings.Repeat(chr, 40),
 				Package:    PackageKey(ctx, "pkg"),
 			}, nil)
-			So(reg, ShouldBeTrue)
+			assert.Loosely(t, reg, should.BeTrue)
 
-			So(datastore.Put(ctx, &ProcessingResult{
+			assert.Loosely(t, datastore.Put(ctx, &ProcessingResult{
 				ProcID:   "zzz",
 				Instance: datastore.KeyForObj(ctx, inst),
-			}), ShouldBeNil)
+			}), should.BeNil)
 
-			So(SetRef(ctx, chr+"-ref", inst), ShouldBeNil)
-			So(AttachTags(ctx, inst, []*api.Tag{
+			assert.Loosely(t, SetRef(ctx, chr+"-ref", inst), should.BeNil)
+			assert.Loosely(t, AttachTags(ctx, inst, []*api.Tag{
 				{Key: "k1", Value: chr},
 				{Key: "k2", Value: chr},
-			}), ShouldBeNil)
-			So(AttachMetadata(ctx, inst, []*api.InstanceMetadata{
+			}), should.BeNil)
+			assert.Loosely(t, AttachMetadata(ctx, inst, []*api.InstanceMetadata{
 				{Key: "k1", Value: []byte(chr)},
 				{Key: "k2", Value: []byte(chr)},
-			}), ShouldBeNil)
+			}), should.BeNil)
 		}
 
 		// Some unrelated instance in a different package to be left alone.
@@ -95,32 +94,32 @@ func TestDeletePackage(t *testing.T) {
 			InstanceID: strings.Repeat("a", 40),
 			Package:    PackageKey(ctx, "another-pkg"),
 		}, nil)
-		So(reg, ShouldBeTrue)
+		assert.Loosely(t, reg, should.BeTrue)
 
 		// Before the deletion.
-		So(entitiesCount(PackageKey(ctx, "pkg")), ShouldEqual, 29)
-		So(entitiesCount(PackageKey(ctx, "another-pkg")), ShouldEqual, 2)
+		assert.Loosely(t, entitiesCount(PackageKey(ctx, "pkg")), should.Equal(29))
+		assert.Loosely(t, entitiesCount(PackageKey(ctx, "another-pkg")), should.Equal(2))
 
-		So(DeletePackage(ctx, "pkg"), ShouldBeNil)
+		assert.Loosely(t, DeletePackage(ctx, "pkg"), should.BeNil)
 
 		// After the deletion we are left only with another-pkg.
-		So(entitiesCount(PackageKey(ctx, "pkg")), ShouldEqual, 0)
-		So(entitiesCount(PackageKey(ctx, "another-pkg")), ShouldEqual, 2)
+		assert.Loosely(t, entitiesCount(PackageKey(ctx, "pkg")), should.BeZero)
+		assert.Loosely(t, entitiesCount(PackageKey(ctx, "another-pkg")), should.Equal(2))
 
 		// Have the event in the log as well.
 		events := GetEvents(ctx)
-		So(events[len(events)-1], ShouldResembleProto, &api.Event{
+		assert.Loosely(t, events[len(events)-1], should.Resemble(&api.Event{
 			Kind:    api.EventKind_PACKAGE_DELETED,
 			Package: "pkg",
 			Who:     string(testutil.TestUser),
 			When:    timestamppb.New(testutil.TestTime),
-		})
+		}))
 
 		// And DeletePackage now complains that the package is gone.
 		err := DeletePackage(ctx, "pkg")
-		So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
+		assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.NotFound))
 
 		// And it didn't generate any new events.
-		So(GetEvents(ctx), ShouldHaveLength, len(events))
+		assert.Loosely(t, GetEvents(ctx), should.HaveLength(len(events)))
 	})
 }

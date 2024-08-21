@@ -24,17 +24,17 @@ import (
 
 	"go.chromium.org/luci/cipd/appengine/impl/testutil"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/caching"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestGetSignedURL(t *testing.T) {
 	t.Parallel()
 
-	Convey("with context", t, func() {
+	ftt.Run("with context", t, func(t *ftt.Test) {
 		ctx := caching.WithEmptyProcessCache(context.Background())
 		// Use TestRecentTimeUTC, not TestRecentTimeLocal, so the
 		// timestamps in the following tests do not depend on the
@@ -54,72 +54,72 @@ func TestGetSignedURL(t *testing.T) {
 			}, nil
 		}
 
-		Convey("Works", func() {
+		t.Run("Works", func(t *ftt.Test) {
 			signature = "sig1"
 			url1, size, err := getSignedURL(ctx, "/bucket/path", "", signer, &mockedSignerGS{exists: true})
-			So(err, ShouldBeNil)
-			So(url1, ShouldEqual, "https://storage.googleapis.com"+
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, url1, should.Equal("https://storage.googleapis.com"+
 				"/bucket/path?Expires=1454479506&"+
 				"GoogleAccessId=test%40example.com&"+
-				"Signature=c2lnMQ%3D%3D")
-			So(size, ShouldEqual, 123)
-			So(string(signed), ShouldEqual, "GET\n\n\n1454479506\n/bucket/path")
+				"Signature=c2lnMQ%3D%3D"))
+			assert.That(t, size, should.Equal[uint64](123))
+			assert.Loosely(t, string(signed), should.Equal("GET\n\n\n1454479506\n/bucket/path"))
 
 			// 1h later returns same cached URL.
 			cl.Add(time.Hour)
 
 			signature = "sig2" // must not be picked up
 			url2, _, err := getSignedURL(ctx, "/bucket/path", "", signer, &mockedSignerGS{exists: true})
-			So(err, ShouldBeNil)
-			So(url2, ShouldEqual, url1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, url2, should.Equal(url1))
 
 			// 31min later the cache expires and new link is generated.
 			cl.Add(31 * time.Minute)
 
 			signature = "sig3"
 			url3, _, err := getSignedURL(ctx, "/bucket/path", "", signer, &mockedSignerGS{exists: true})
-			So(err, ShouldBeNil)
-			So(url3, ShouldEqual, "https://storage.googleapis.com"+
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, url3, should.Equal("https://storage.googleapis.com"+
 				"/bucket/path?Expires=1454484966&"+
 				"GoogleAccessId=test%40example.com&"+
-				"Signature=c2lnMw%3D%3D")
+				"Signature=c2lnMw%3D%3D"))
 		})
 
-		Convey("Absence is cached", func() {
+		t.Run("Absence is cached", func(t *ftt.Test) {
 			gs := &mockedSignerGS{exists: false}
 			_, _, err := getSignedURL(ctx, "/bucket/path", "", signer, gs)
-			So(err, ShouldErrLike, "doesn't exist")
-			So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
-			So(gs.calls, ShouldEqual, 1)
+			assert.Loosely(t, err, should.ErrLike("doesn't exist"))
+			assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.NotFound))
+			assert.Loosely(t, gs.calls, should.Equal(1))
 
 			// 30 sec later same check is reused.
 			cl.Add(30 * time.Second)
 			_, _, err = getSignedURL(ctx, "/bucket/path", "", signer, gs)
-			So(err, ShouldErrLike, "doesn't exist")
-			So(gs.calls, ShouldEqual, 1)
+			assert.Loosely(t, err, should.ErrLike("doesn't exist"))
+			assert.Loosely(t, gs.calls, should.Equal(1))
 
 			// 31 sec later the cache expires and new check is made.
 			cl.Add(31 * time.Second)
 			_, _, err = getSignedURL(ctx, "/bucket/path", "", signer, gs)
-			So(err, ShouldErrLike, "doesn't exist")
-			So(gs.calls, ShouldEqual, 2)
+			assert.Loosely(t, err, should.ErrLike("doesn't exist"))
+			assert.Loosely(t, gs.calls, should.Equal(2))
 		})
 
-		Convey("Signing error", func() {
+		t.Run("Signing error", func(t *ftt.Test) {
 			signErr = fmt.Errorf("boo, error")
 			_, _, err := getSignedURL(ctx, "/bucket/path", "", signer, &mockedSignerGS{exists: true})
-			So(err, ShouldErrLike, "boo, error")
-			So(grpcutil.Code(err), ShouldEqual, codes.Internal)
+			assert.Loosely(t, err, should.ErrLike("boo, error"))
+			assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.Internal))
 		})
 
-		Convey("Content-Disposition", func() {
+		t.Run("Content-Disposition", func(t *ftt.Test) {
 			signature = "sig1"
 			url, _, _ := getSignedURL(ctx, "/bucket/path", "name.txt", signer, &mockedSignerGS{exists: true})
-			So(url, ShouldEqual, "https://storage.googleapis.com"+
+			assert.Loosely(t, url, should.Equal("https://storage.googleapis.com"+
 				"/bucket/path?Expires=1454479506&"+
 				"GoogleAccessId=test%40example.com&"+
 				"Signature=c2lnMQ%3D%3D&"+
-				"response-content-disposition=attachment%3B+filename%3D%22name.txt%22")
+				"response-content-disposition=attachment%3B+filename%3D%22name.txt%22"))
 		})
 	})
 }

@@ -25,74 +25,74 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/retry/transient"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestRetryAndStatusCode(t *testing.T) {
 	t.Parallel()
 
-	Convey("With clock", t, func() {
+	ftt.Run("With clock", t, func(t *ftt.Test) {
 		ctx, cl := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
 		cl.SetTimerCallback(func(d time.Duration, t clock.Timer) { cl.Add(d) })
 
-		Convey("Happy path", func() {
+		t.Run("Happy path", func(t *ftt.Test) {
 			calls := 0
 			err := withRetry(ctx, func() error {
 				calls++
 				return nil
 			})
-			So(calls, ShouldEqual, 1)
-			So(err, ShouldBeNil)
-			So(StatusCode(err), ShouldEqual, 200)
+			assert.Loosely(t, calls, should.Equal(1))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, StatusCode(err), should.Equal(200))
 		})
 
-		Convey("Retrying generic connection error", func() {
+		t.Run("Retrying generic connection error", func(t *ftt.Test) {
 			calls := 0
 			err := withRetry(ctx, func() error {
 				calls++
 				return fmt.Errorf("generic error")
 			})
-			So(calls, ShouldEqual, 11)
-			So(err, ShouldErrLike, "generic error")
-			So(transient.Tag.In(err), ShouldBeTrue)
-			So(StatusCode(err), ShouldEqual, 0)
+			assert.Loosely(t, calls, should.Equal(11))
+			assert.Loosely(t, err, should.ErrLike("generic error"))
+			assert.Loosely(t, transient.Tag.In(err), should.BeTrue)
+			assert.Loosely(t, StatusCode(err), should.BeZero)
 		})
 
-		Convey("Retrying transient API error", func() {
+		t.Run("Retrying transient API error", func(t *ftt.Test) {
 			calls := 0
 			err := withRetry(ctx, func() error {
 				calls++
 				return &googleapi.Error{Code: 500}
 			})
-			So(calls, ShouldEqual, 11)
-			So(err, ShouldErrLike, "HTTP code 500")
-			So(transient.Tag.In(err), ShouldBeTrue)
-			So(StatusCode(err), ShouldEqual, 500)
+			assert.Loosely(t, calls, should.Equal(11))
+			assert.Loosely(t, err, should.ErrLike("HTTP code 500"))
+			assert.Loosely(t, transient.Tag.In(err), should.BeTrue)
+			assert.Loosely(t, StatusCode(err), should.Equal(500))
 		})
 
-		Convey("Giving up on fatal API error", func() {
+		t.Run("Giving up on fatal API error", func(t *ftt.Test) {
 			calls := 0
 			err := withRetry(ctx, func() error {
 				calls++
 				return &googleapi.Error{Code: 403}
 			})
-			So(calls, ShouldEqual, 1)
-			So(err, ShouldErrLike, "HTTP code 403")
-			So(transient.Tag.In(err), ShouldBeFalse)
-			So(StatusCode(err), ShouldEqual, 403)
+			assert.Loosely(t, calls, should.Equal(1))
+			assert.Loosely(t, err, should.ErrLike("HTTP code 403"))
+			assert.Loosely(t, transient.Tag.In(err), should.BeFalse)
+			assert.Loosely(t, StatusCode(err), should.Equal(403))
 		})
 
-		Convey("Passes through *RestartUploadError", func() {
+		t.Run("Passes through *RestartUploadError", func(t *ftt.Test) {
 			uploadErr := &RestartUploadError{Offset: 123}
 			calls := 0
 			err := withRetry(ctx, func() error {
 				calls++
 				return uploadErr
 			})
-			So(calls, ShouldEqual, 1)
-			So(err, ShouldEqual, uploadErr) // exact same error object
+			assert.Loosely(t, calls, should.Equal(1))
+			assert.Loosely(t, err, should.Equal(uploadErr)) // exact same error object
 		})
 	})
 }

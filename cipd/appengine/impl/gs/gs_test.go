@@ -27,15 +27,15 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestImpl(t *testing.T) {
 	t.Parallel()
 
-	Convey("With mocked service", t, func(c C) {
+	ftt.Run("With mocked service", t, func(c *ftt.Test) {
 		ctx, cl := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
 		cl.SetTimerCallback(func(d time.Duration, t clock.Timer) { cl.Add(d) })
 
@@ -80,9 +80,9 @@ func TestImpl(t *testing.T) {
 			q := r.URL.Query()
 			q.Del("prettyPrint") // not really relevant to anything
 
-			c.So(r.Method+" "+r.URL.Path, ShouldEqual, next.Method+" "+next.Path)
-			c.So(q, ShouldResemble, next.Query)
-			c.So(r.Header.Get("Range"), ShouldEqual, next.Range)
+			assert.Loosely(c, r.Method+" "+r.URL.Path, should.Equal(next.Method+" "+next.Path))
+			assert.Loosely(c, q, should.Resemble(next.Query))
+			assert.Loosely(c, r.Header.Get("Range"), should.Equal(next.Range))
 
 			var response []byte
 			var err error
@@ -94,7 +94,7 @@ func TestImpl(t *testing.T) {
 				} else {
 					w.Header().Set("Content-Type", "application/json")
 					response, err = json.Marshal(next.Response)
-					c.So(err, ShouldBeNil)
+					assert.Loosely(c, err, should.BeNil)
 				}
 			}
 
@@ -116,50 +116,50 @@ func TestImpl(t *testing.T) {
 			testingBasePath:  srv.URL,
 		}
 
-		Convey("Size - exists", func() {
+		c.Run("Size - exists", func(c *ftt.Test) {
 			expect(call{
 				Method: "GET",
 				Path:   "/b/bucket/o/a/b/c",
 			})
 			s, yes, err := gs.Size(ctx, "/bucket/a/b/c")
-			So(err, ShouldBeNil)
-			So(s, ShouldEqual, 123)
-			So(yes, ShouldBeTrue)
+			assert.Loosely(c, err, should.BeNil)
+			assert.That(c, s, should.Equal[uint64](123))
+			assert.Loosely(c, yes, should.BeTrue)
 		})
 
-		Convey("Size - missing", func() {
+		c.Run("Size - missing", func(c *ftt.Test) {
 			expect(call{
 				Method: "GET",
 				Path:   "/b/bucket/o/a/b/c",
 				Code:   http.StatusNotFound,
 			})
 			s, yes, err := gs.Size(ctx, "/bucket/a/b/c")
-			So(err, ShouldBeNil)
-			So(s, ShouldEqual, 0)
-			So(yes, ShouldBeFalse)
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, s, should.BeZero)
+			assert.Loosely(c, yes, should.BeFalse)
 		})
 
-		Convey("Size - error", func() {
+		c.Run("Size - error", func(c *ftt.Test) {
 			expect(call{
 				Method: "GET",
 				Path:   "/b/bucket/o/a/b/c",
 				Code:   http.StatusForbidden,
 			})
 			s, yes, err := gs.Size(ctx, "/bucket/a/b/c")
-			So(StatusCode(err), ShouldEqual, http.StatusForbidden)
-			So(s, ShouldEqual, 0)
-			So(yes, ShouldBeFalse)
+			assert.Loosely(c, StatusCode(err), should.Equal(http.StatusForbidden))
+			assert.Loosely(c, s, should.BeZero)
+			assert.Loosely(c, yes, should.BeFalse)
 		})
 
-		Convey("Copy unconditional", func() {
+		c.Run("Copy unconditional", func(c *ftt.Test) {
 			expect(call{
 				Method: "POST",
 				Path:   "/b/src_bucket/o/src_obj/copyTo/b/dst_bucket/o/dst_obj",
 			})
-			So(gs.Copy(ctx, "/dst_bucket/dst_obj", -1, "/src_bucket/src_obj", -1), ShouldBeNil)
+			assert.Loosely(c, gs.Copy(ctx, "/dst_bucket/dst_obj", -1, "/src_bucket/src_obj", -1), should.BeNil)
 		})
 
-		Convey("Copy conditional", func() {
+		c.Run("Copy conditional", func(c *ftt.Test) {
 			expect(call{
 				Method: "POST",
 				Path:   "/b/src_bucket/o/src_obj/copyTo/b/dst_bucket/o/dst_obj",
@@ -168,46 +168,46 @@ func TestImpl(t *testing.T) {
 					"ifGenerationMatch":       {"2"},
 				},
 			})
-			So(gs.Copy(ctx, "/dst_bucket/dst_obj", 2, "/src_bucket/src_obj", 1), ShouldBeNil)
+			assert.Loosely(c, gs.Copy(ctx, "/dst_bucket/dst_obj", 2, "/src_bucket/src_obj", 1), should.BeNil)
 		})
 
-		Convey("Copy error", func() {
+		c.Run("Copy error", func(c *ftt.Test) {
 			expect(call{
 				Method: "POST",
 				Path:   "/b/src_bucket/o/src_obj/copyTo/b/dst_bucket/o/dst_obj",
 				Code:   http.StatusForbidden,
 			})
 			err := gs.Copy(ctx, "/dst_bucket/dst_obj", -1, "/src_bucket/src_obj", -1)
-			So(StatusCode(err), ShouldEqual, http.StatusForbidden)
+			assert.Loosely(c, StatusCode(err), should.Equal(http.StatusForbidden))
 		})
 
-		Convey("Delete present", func() {
+		c.Run("Delete present", func(c *ftt.Test) {
 			expect(call{
 				Method: "DELETE",
 				Path:   "/b/bucket/o/a/b/c",
 			})
-			So(gs.Delete(ctx, "/bucket/a/b/c"), ShouldBeNil)
+			assert.Loosely(c, gs.Delete(ctx, "/bucket/a/b/c"), should.BeNil)
 		})
 
-		Convey("Delete missing", func() {
+		c.Run("Delete missing", func(c *ftt.Test) {
 			expect(call{
 				Method: "DELETE",
 				Path:   "/b/bucket/o/a/b/c",
 				Code:   http.StatusNotFound,
 			})
-			So(gs.Delete(ctx, "/bucket/a/b/c"), ShouldBeNil)
+			assert.Loosely(c, gs.Delete(ctx, "/bucket/a/b/c"), should.BeNil)
 		})
 
-		Convey("Delete error", func() {
+		c.Run("Delete error", func(c *ftt.Test) {
 			expect(call{
 				Method: "DELETE",
 				Path:   "/b/bucket/o/a/b/c",
 				Code:   http.StatusForbidden,
 			})
-			So(StatusCode(gs.Delete(ctx, "/bucket/a/b/c")), ShouldEqual, http.StatusForbidden)
+			assert.Loosely(c, StatusCode(gs.Delete(ctx, "/bucket/a/b/c")), should.Equal(http.StatusForbidden))
 		})
 
-		Convey("Publish success", func() {
+		c.Run("Publish success", func(c *ftt.Test) {
 			expect(call{
 				Method: "POST",
 				Path:   "/b/src_bucket/o/src_obj/copyTo/b/dst_bucket/o/dst_obj",
@@ -216,10 +216,10 @@ func TestImpl(t *testing.T) {
 					"ifSourceGenerationMatch": {"1"},
 				},
 			})
-			So(gs.Publish(ctx, "/dst_bucket/dst_obj", "/src_bucket/src_obj", 1), ShouldBeNil)
+			assert.Loosely(c, gs.Publish(ctx, "/dst_bucket/dst_obj", "/src_bucket/src_obj", 1), should.BeNil)
 		})
 
-		Convey("Publish bad precondition on srcGen", func() {
+		c.Run("Publish bad precondition on srcGen", func(c *ftt.Test) {
 			expect(call{
 				Method: "POST",
 				Path:   "/b/src_bucket/o/src_obj/copyTo/b/dst_bucket/o/dst_obj",
@@ -235,11 +235,11 @@ func TestImpl(t *testing.T) {
 				Code:   http.StatusNotFound,
 			})
 			err := gs.Publish(ctx, "/dst_bucket/dst_obj", "/src_bucket/src_obj", 1)
-			So(StatusCode(err), ShouldEqual, http.StatusPreconditionFailed)
-			So(err, ShouldErrLike, "unexpected generation number")
+			assert.Loosely(c, StatusCode(err), should.Equal(http.StatusPreconditionFailed))
+			assert.Loosely(c, err, should.ErrLike("unexpected generation number"))
 		})
 
-		Convey("Publish general error", func() {
+		c.Run("Publish general error", func(c *ftt.Test) {
 			expect(call{
 				Method: "POST",
 				Path:   "/b/src_bucket/o/src_obj/copyTo/b/dst_bucket/o/dst_obj",
@@ -250,10 +250,10 @@ func TestImpl(t *testing.T) {
 				Code: http.StatusForbidden,
 			})
 			err := gs.Publish(ctx, "/dst_bucket/dst_obj", "/src_bucket/src_obj", 1)
-			So(StatusCode(err), ShouldEqual, http.StatusForbidden)
+			assert.Loosely(c, StatusCode(err), should.Equal(http.StatusForbidden))
 		})
 
-		Convey("Publish missing source object", func() {
+		c.Run("Publish missing source object", func(c *ftt.Test) {
 			expect(call{
 				Method: "POST",
 				Path:   "/b/src_bucket/o/src_obj/copyTo/b/dst_bucket/o/dst_obj",
@@ -269,11 +269,11 @@ func TestImpl(t *testing.T) {
 				Code:   http.StatusNotFound,
 			})
 			err := gs.Publish(ctx, "/dst_bucket/dst_obj", "/src_bucket/src_obj", 1)
-			So(StatusCode(err), ShouldEqual, http.StatusNotFound)
-			So(err, ShouldErrLike, "the source object is missing")
+			assert.Loosely(c, StatusCode(err), should.Equal(http.StatusNotFound))
+			assert.Loosely(c, err, should.ErrLike("the source object is missing"))
 		})
 
-		Convey("Publish already published (failed precondition on dstGen)", func() {
+		c.Run("Publish already published (failed precondition on dstGen)", func(c *ftt.Test) {
 			expect(call{
 				Method: "POST",
 				Path:   "/b/src_bucket/o/src_obj/copyTo/b/dst_bucket/o/dst_obj",
@@ -287,10 +287,10 @@ func TestImpl(t *testing.T) {
 				Method: "GET",
 				Path:   "/b/dst_bucket/o/dst_obj",
 			})
-			So(gs.Publish(ctx, "/dst_bucket/dst_obj", "/src_bucket/src_obj", 1), ShouldBeNil)
+			assert.Loosely(c, gs.Publish(ctx, "/dst_bucket/dst_obj", "/src_bucket/src_obj", 1), should.BeNil)
 		})
 
-		Convey("Publish already published, only srcDst precondition", func() {
+		c.Run("Publish already published, only srcDst precondition", func(c *ftt.Test) {
 			expect(call{
 				Method: "POST",
 				Path:   "/b/src_bucket/o/src_obj/copyTo/b/dst_bucket/o/dst_obj",
@@ -299,10 +299,10 @@ func TestImpl(t *testing.T) {
 				},
 				Code: http.StatusPreconditionFailed,
 			})
-			So(gs.Publish(ctx, "/dst_bucket/dst_obj", "/src_bucket/src_obj", -1), ShouldBeNil)
+			assert.Loosely(c, gs.Publish(ctx, "/dst_bucket/dst_obj", "/src_bucket/src_obj", -1), should.BeNil)
 		})
 
-		Convey("Publish error when checking presence", func() {
+		c.Run("Publish error when checking presence", func(c *ftt.Test) {
 			expect(call{
 				Method: "POST",
 				Path:   "/b/src_bucket/o/src_obj/copyTo/b/dst_bucket/o/dst_obj",
@@ -318,10 +318,10 @@ func TestImpl(t *testing.T) {
 				Code:   http.StatusForbidden,
 			})
 			err := gs.Publish(ctx, "/dst_bucket/dst_obj", "/src_bucket/src_obj", 1)
-			So(StatusCode(err), ShouldEqual, http.StatusForbidden)
+			assert.Loosely(c, StatusCode(err), should.Equal(http.StatusForbidden))
 		})
 
-		Convey("StartUpload success", func() {
+		c.Run("StartUpload success", func(c *ftt.Test) {
 			expect(call{
 				Method: "POST",
 				Path:   "/upload/storage/v1/b/bucket/o",
@@ -332,11 +332,11 @@ func TestImpl(t *testing.T) {
 				Location: "http://upload-session.example.com/a/b/c",
 			})
 			url, err := gs.StartUpload(ctx, "/bucket/a/b/c")
-			So(err, ShouldBeNil)
-			So(url, ShouldEqual, "http://upload-session.example.com/a/b/c")
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, url, should.Equal("http://upload-session.example.com/a/b/c"))
 		})
 
-		Convey("StartUpload error", func() {
+		c.Run("StartUpload error", func(c *ftt.Test) {
 			expect(call{
 				Method: "POST",
 				Path:   "/upload/storage/v1/b/bucket/o",
@@ -347,31 +347,31 @@ func TestImpl(t *testing.T) {
 				Code: http.StatusForbidden,
 			})
 			url, err := gs.StartUpload(ctx, "/bucket/a/b/c")
-			So(StatusCode(err), ShouldEqual, http.StatusForbidden)
-			So(url, ShouldEqual, "")
+			assert.Loosely(c, StatusCode(err), should.Equal(http.StatusForbidden))
+			assert.Loosely(c, url, should.BeEmpty)
 		})
 
-		Convey("CancelUpload success", func() {
+		c.Run("CancelUpload success", func(c *ftt.Test) {
 			expect(call{
 				Method:  "DELETE",
 				Path:    "/upload_url",
 				NonJSON: true,
 				Code:    499,
 			})
-			So(gs.CancelUpload(ctx, srv.URL+"/upload_url"), ShouldBeNil)
+			assert.Loosely(c, gs.CancelUpload(ctx, srv.URL+"/upload_url"), should.BeNil)
 		})
 
-		Convey("CancelUpload error", func() {
+		c.Run("CancelUpload error", func(c *ftt.Test) {
 			expect(call{
 				Method:  "DELETE",
 				Path:    "/upload_url",
 				NonJSON: true,
 				Code:    400,
 			})
-			So(gs.CancelUpload(ctx, srv.URL+"/upload_url"), ShouldNotBeNil)
+			assert.Loosely(c, gs.CancelUpload(ctx, srv.URL+"/upload_url"), should.NotBeNil)
 		})
 
-		Convey("Reader works", func() {
+		c.Run("Reader works", func(c *ftt.Test) {
 			expect(call{
 				Method: "GET",
 				Path:   "/b/bucket/o/a/b/c",
@@ -381,11 +381,11 @@ func TestImpl(t *testing.T) {
 				},
 			})
 			r, err := gs.Reader(ctx, "/bucket/a/b/c", 0)
-			So(err, ShouldBeNil)
-			So(r, ShouldNotBeNil)
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, r, should.NotBeNil)
 
-			So(r.Generation(), ShouldEqual, 123)
-			So(r.Size(), ShouldEqual, 1000)
+			assert.Loosely(c, r.Generation(), should.Equal(123))
+			assert.Loosely(c, r.Size(), should.Equal(1000))
 
 			// Read from the middle.
 			expect(call{
@@ -400,9 +400,9 @@ func TestImpl(t *testing.T) {
 			})
 			buf := make([]byte, 5)
 			n, err := r.ReadAt(buf, 100)
-			So(err, ShouldBeNil)
-			So(n, ShouldEqual, 5)
-			So(string(buf), ShouldEqual, "12345")
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, n, should.Equal(5))
+			assert.Loosely(c, string(buf), should.Equal("12345"))
 
 			// Read close to the end.
 			expect(call{
@@ -417,17 +417,17 @@ func TestImpl(t *testing.T) {
 			})
 			buf = make([]byte, 5)
 			n, err = r.ReadAt(buf, 998)
-			So(err, ShouldEqual, io.EOF)
-			So(n, ShouldEqual, 2)
-			So(string(buf), ShouldEqual, "12\x00\x00\x00")
+			assert.Loosely(c, err, should.Equal(io.EOF))
+			assert.Loosely(c, n, should.Equal(2))
+			assert.Loosely(c, string(buf), should.Equal("12\x00\x00\x00"))
 
 			// Read past the end.
 			n, err = r.ReadAt(buf, 1000)
-			So(err, ShouldEqual, io.EOF)
-			So(n, ShouldEqual, 0)
+			assert.Loosely(c, err, should.Equal(io.EOF))
+			assert.Loosely(c, n, should.BeZero)
 		})
 
-		Convey("Reader with generation", func() {
+		c.Run("Reader with generation", func(c *ftt.Test) {
 			expect(call{
 				Method: "GET",
 				Path:   "/b/bucket/o/a/b/c",
@@ -440,10 +440,10 @@ func TestImpl(t *testing.T) {
 				},
 			})
 			r, err := gs.Reader(ctx, "/bucket/a/b/c", 123)
-			So(err, ShouldBeNil)
-			So(r, ShouldNotBeNil)
-			So(r.Generation(), ShouldEqual, 123)
-			So(r.Size(), ShouldEqual, 1000)
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, r, should.NotBeNil)
+			assert.Loosely(c, r.Generation(), should.Equal(123))
+			assert.Loosely(c, r.Size(), should.Equal(1000))
 		})
 	})
 }

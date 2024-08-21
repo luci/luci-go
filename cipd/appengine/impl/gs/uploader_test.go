@@ -24,14 +24,15 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestUploader(t *testing.T) {
 	t.Parallel()
 
-	Convey("With mocks", t, func(c C) {
+	ftt.Run("With mocks", t, func(c *ftt.Test) {
 		ctx, cl := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
 		cl.SetTimerCallback(func(d time.Duration, t clock.Timer) { cl.Add(d) })
 
@@ -54,16 +55,16 @@ func TestUploader(t *testing.T) {
 			next := expected[0]
 			expected = expected[1:]
 
-			c.So(r.Method, ShouldEqual, "PUT")
-			c.So(r.URL.Path, ShouldEqual, "/file")
-			c.So(r.Header.Get("Content-Range"), ShouldEqual, next.ContentRange)
+			assert.Loosely(c, r.Method, should.Equal("PUT"))
+			assert.Loosely(c, r.URL.Path, should.Equal("/file"))
+			assert.Loosely(c, r.Header.Get("Content-Range"), should.Equal(next.ContentRange))
 
 			body, err := io.ReadAll(r.Body)
-			So(err, ShouldBeNil)
+			assert.Loosely(c, err, should.BeNil)
 			if len(body) == 0 {
 				body = nil
 			}
-			So(body, ShouldResemble, next.Body)
+			assert.Loosely(c, body, should.Resemble(next.Body))
 
 			if next.Err != nil {
 				return nil, next.Err
@@ -84,7 +85,7 @@ func TestUploader(t *testing.T) {
 			requestMock: requestMock,
 		}
 
-		Convey("Happy path", func() {
+		c.Run("Happy path", func(c *ftt.Test) {
 			expect(call{
 				ContentRange: "bytes 0-2/5",
 				Body:         []uint8{0, 1, 2},
@@ -92,8 +93,8 @@ func TestUploader(t *testing.T) {
 				Range:        "bytes=0-2",
 			})
 			n, err := upl.Write([]byte{0, 1, 2})
-			So(err, ShouldBeNil)
-			So(n, ShouldEqual, 3)
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, n, should.Equal(3))
 
 			expect(call{
 				ContentRange: "bytes 3-4/5",
@@ -101,11 +102,11 @@ func TestUploader(t *testing.T) {
 				Code:         201,
 			})
 			n, err = upl.Write([]byte{3, 4})
-			So(err, ShouldBeNil)
-			So(n, ShouldEqual, 2)
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, n, should.Equal(2))
 		})
 
-		Convey("Restarts successfully", func() {
+		c.Run("Restarts successfully", func(c *ftt.Test) {
 			expect(call{
 				ContentRange: "bytes 0-2/5",
 				Body:         []uint8{0, 1, 2},
@@ -113,8 +114,8 @@ func TestUploader(t *testing.T) {
 				Range:        "bytes=0-2",
 			})
 			n, err := upl.Write([]byte{0, 1, 2})
-			So(err, ShouldBeNil)
-			So(n, ShouldEqual, 3)
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, n, should.Equal(3))
 
 			// Tries to upload, fails, resumes, fails during the resuming, retries,
 			// succeeds.
@@ -138,11 +139,11 @@ func TestUploader(t *testing.T) {
 				Code:         201,
 			})
 			n, err = upl.Write([]byte{3, 4})
-			So(err, ShouldBeNil)
-			So(n, ShouldEqual, 2)
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, n, should.Equal(2))
 		})
 
-		Convey("Restarting on first write", func() {
+		c.Run("Restarting on first write", func(c *ftt.Test) {
 			expect(call{
 				ContentRange: "bytes 0-2/5",
 				Body:         []uint8{0, 1, 2},
@@ -160,11 +161,11 @@ func TestUploader(t *testing.T) {
 				Range:        "bytes=0-2",
 			})
 			n, err := upl.Write([]byte{0, 1, 2})
-			So(err, ShouldBeNil)
-			So(n, ShouldEqual, 3)
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, n, should.Equal(3))
 		})
 
-		Convey("Restarting with far away offset", func() {
+		c.Run("Restarting with far away offset", func(c *ftt.Test) {
 			expect(call{
 				ContentRange: "bytes 0-2/5",
 				Body:         []uint8{0, 1, 2},
@@ -172,8 +173,8 @@ func TestUploader(t *testing.T) {
 				Range:        "bytes=0-2",
 			})
 			n, err := upl.Write([]byte{0, 1, 2})
-			So(err, ShouldBeNil)
-			So(n, ShouldEqual, 3)
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, n, should.Equal(3))
 
 			expect(call{
 				ContentRange: "bytes 3-4/5",
@@ -186,8 +187,8 @@ func TestUploader(t *testing.T) {
 				Range:        "bytes=0-1",
 			})
 			n, err = upl.Write([]byte{3, 4})
-			So(err, ShouldResemble, &RestartUploadError{Offset: 2})
-			So(n, ShouldEqual, 0)
+			assert.Loosely(c, err, should.Resemble(&RestartUploadError{Offset: 2}))
+			assert.Loosely(c, n, should.BeZero)
 		})
 	})
 }

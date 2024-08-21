@@ -29,14 +29,15 @@ import (
 	"go.chromium.org/luci/cipd/client/cipd/fs"
 	"go.chromium.org/luci/cipd/client/cipd/pkg"
 	"go.chromium.org/luci/cipd/common"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestBuildInstance(t *testing.T) {
 	ctx := context.Background()
 
-	Convey("Building empty package", t, func() {
+	ftt.Run("Building empty package", t, func(t *ftt.Test) {
 		out := bytes.Buffer{}
 		pin, err := BuildInstance(ctx, Options{
 			Input:            []fs.File{},
@@ -44,16 +45,16 @@ func TestBuildInstance(t *testing.T) {
 			PackageName:      "testing",
 			CompressionLevel: 5,
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		// BuildInstance builds deterministic zip. It MUST NOT depend on
 		// the platform, or a time of day, or anything else, only on the input data,
 		// CIPD code and compress/deflat and archive/zip code.
-		So(getSHA256(&out), ShouldEqual, "3cf335f34fb98be575ab9e79e1ec0a18ee23ab871607e70ec13bb28680afde3a")
-		So(pin, ShouldResemble, common.Pin{
+		assert.Loosely(t, getSHA256(&out), should.Equal("3cf335f34fb98be575ab9e79e1ec0a18ee23ab871607e70ec13bb28680afde3a"))
+		assert.Loosely(t, pin, should.Resemble(common.Pin{
 			PackageName: "testing",
 			InstanceID:  "PPM180-5i-V1q5554ewKGO4jq4cWB-cOwTuyhoCv3joC",
-		})
+		}))
 
 		// There should be a single file: the manifest.
 		goodManifest := `{
@@ -61,17 +62,17 @@ func TestBuildInstance(t *testing.T) {
   "package_name": "testing"
 }`
 		files := readZip(out.Bytes())
-		So(files, ShouldResemble, []zippedFile{
+		assert.Loosely(t, files, should.Resemble([]zippedFile{
 			{
 				name: pkg.ManifestName,
 				size: uint64(len(goodManifest)),
 				mode: 0400,
 				body: []byte(goodManifest),
 			},
-		})
+		}))
 	})
 
-	Convey("Building package with a bunch of files at different deflate levels", t, func() {
+	ftt.Run("Building package with a bunch of files at different deflate levels", t, func(t *ftt.Test) {
 		testMTime := time.Date(2018, 1, 1, 0, 0, 0, 0, time.UTC)
 		makeOpts := func(out io.Writer, level int) Options {
 			return Options{
@@ -163,12 +164,12 @@ func TestBuildInstance(t *testing.T) {
 		for lvl := 0; lvl <= 9; lvl++ {
 			out := bytes.Buffer{}
 			_, err := BuildInstance(ctx, makeOpts(&out, lvl))
-			So(err, ShouldBeNil)
-			So(readZip(out.Bytes()), ShouldResemble, goodFiles)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, readZip(out.Bytes()), should.Resemble(goodFiles))
 		}
 	})
 
-	Convey("Building package with a bunch of files preserving mtime and u+w", t, func() {
+	ftt.Run("Building package with a bunch of files preserving mtime and u+w", t, func(t *ftt.Test) {
 		testMTime := time.Date(2018, 1, 1, 0, 0, 0, 0, time.UTC)
 		makeOpts := func(out io.Writer, level int) Options {
 			return Options{
@@ -260,12 +261,12 @@ func TestBuildInstance(t *testing.T) {
 		for lvl := 0; lvl <= 9; lvl++ {
 			out := bytes.Buffer{}
 			_, err := BuildInstance(ctx, makeOpts(&out, lvl))
-			So(err, ShouldBeNil)
-			So(readZip(out.Bytes()), ShouldResemble, goodFiles)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, readZip(out.Bytes()), should.Resemble(goodFiles))
 		}
 	})
 
-	Convey("Duplicate files fail", t, func() {
+	ftt.Run("Duplicate files fail", t, func(t *ftt.Test) {
 		_, err := BuildInstance(ctx, Options{
 			Input: []fs.File{
 				fs.NewTestFile("a", "12345", fs.TestFileOpts{}),
@@ -274,10 +275,10 @@ func TestBuildInstance(t *testing.T) {
 			Output:      &bytes.Buffer{},
 			PackageName: "testing",
 		})
-		So(err, ShouldNotBeNil)
+		assert.Loosely(t, err, should.NotBeNil)
 	})
 
-	Convey("Writing to service dir fails", t, func() {
+	ftt.Run("Writing to service dir fails", t, func(t *ftt.Test) {
 		_, err := BuildInstance(ctx, Options{
 			Input: []fs.File{
 				fs.NewTestFile(".cipdpkg/stuff", "12345", fs.TestFileOpts{}),
@@ -285,24 +286,24 @@ func TestBuildInstance(t *testing.T) {
 			Output:      &bytes.Buffer{},
 			PackageName: "testing",
 		})
-		So(err, ShouldNotBeNil)
+		assert.Loosely(t, err, should.NotBeNil)
 	})
 
-	Convey("Bad name fails", t, func() {
+	ftt.Run("Bad name fails", t, func(t *ftt.Test) {
 		_, err := BuildInstance(ctx, Options{
 			Output:      &bytes.Buffer{},
 			PackageName: "../../asdad",
 		})
-		So(err, ShouldNotBeNil)
+		assert.Loosely(t, err, should.NotBeNil)
 	})
 
-	Convey("Bad version file fails", t, func() {
+	ftt.Run("Bad version file fails", t, func(t *ftt.Test) {
 		_, err := BuildInstance(ctx, Options{
 			Output:      &bytes.Buffer{},
 			PackageName: "abc",
 			VersionFile: "../bad/path",
 		})
-		So(err, ShouldNotBeNil)
+		assert.Loosely(t, err, should.NotBeNil)
 	})
 }
 

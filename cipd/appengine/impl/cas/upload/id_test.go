@@ -21,50 +21,50 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/secrets/testsecrets"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestIDs(t *testing.T) {
 	t.Parallel()
 
-	Convey("With mocks", t, func() {
+	ftt.Run("With mocks", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		ctx = secrets.Use(ctx, &testsecrets.Store{})
 		ctx, clk := testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 
-		Convey("NewOpID works", func() {
+		t.Run("NewOpID works", func(t *ftt.Test) {
 			op1, err := NewOpID(ctx)
-			So(err, ShouldBeNil)
-			So(op1, ShouldEqual, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, op1, should.Equal(1))
 
 			op2, err := NewOpID(ctx)
-			So(err, ShouldBeNil)
-			So(op2, ShouldEqual, 2)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, op2, should.Equal(2))
 		})
 
-		Convey("Wrap/unwrap works", func() {
+		t.Run("Wrap/unwrap works", func(t *ftt.Test) {
 			caller := identity.Identity("user:caller@example.com")
 			wrapped, err := WrapOpID(ctx, 1234, caller)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// Ok.
 			unwrapped, err := UnwrapOpID(ctx, wrapped, caller)
-			So(err, ShouldBeNil)
-			So(unwrapped, ShouldEqual, 1234)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, unwrapped, should.Equal(1234))
 
 			// Wrong caller ID.
 			_, err = UnwrapOpID(ctx, wrapped, "user:another@example.com")
-			So(err, ShouldErrLike, "failed to validate")
+			assert.Loosely(t, err, should.ErrLike("failed to validate"))
 
 			// Expired.
 			clk.Add(5*time.Hour + time.Minute)
 			_, err = UnwrapOpID(ctx, wrapped, caller)
-			So(err, ShouldErrLike, "failed to validate")
+			assert.Loosely(t, err, should.ErrLike("failed to validate"))
 		})
 	})
 }

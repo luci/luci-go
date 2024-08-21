@@ -18,20 +18,20 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/impl/memory"
 	gae "go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/server/caching"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestConfig(t *testing.T) {
 	t.Parallel()
 
-	Convey("With mocks", t, func() {
+	ftt.Run("With mocks", t, func(t *ftt.Test) {
 		configs := map[config.Set]memory.Files{
 			"services/${appid}": map[string]string{},
 		}
@@ -43,20 +43,20 @@ func TestConfig(t *testing.T) {
 		ctx = cfgclient.Use(ctx, memory.New(configs))
 		ctx = caching.WithEmptyProcessCache(ctx)
 
-		Convey("No config", func() {
-			So(ImportConfig(ctx), ShouldBeNil)
+		t.Run("No config", func(t *ftt.Test) {
+			assert.Loosely(t, ImportConfig(ctx), should.BeNil)
 
 			cfg, err := BootstrapConfig(ctx, "some/pkg")
-			So(err, ShouldBeNil)
-			So(cfg, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cfg, should.BeNil)
 		})
 
-		Convey("Broken config", func() {
+		t.Run("Broken config", func(t *ftt.Test) {
 			mockConfig("broken")
-			So(ImportConfig(ctx), ShouldErrLike, "validation errors")
+			assert.Loosely(t, ImportConfig(ctx), should.ErrLike("validation errors"))
 		})
 
-		Convey("Good config", func() {
+		t.Run("Good config", func(t *ftt.Test) {
 			mockConfig(`
 				bootstrap_config {
 					prefix: "pkg/a/specific"
@@ -65,26 +65,26 @@ func TestConfig(t *testing.T) {
 					prefix: "pkg/a"
 				}
 			`)
-			So(ImportConfig(ctx), ShouldBeNil)
+			assert.Loosely(t, ImportConfig(ctx), should.BeNil)
 
-			Convey("Scans in order", func() {
+			t.Run("Scans in order", func(t *ftt.Test) {
 				cfg, err := BootstrapConfig(ctx, "pkg/a/specific/zzz")
-				So(err, ShouldBeNil)
-				So(cfg.Prefix, ShouldEqual, "pkg/a/specific")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, cfg.Prefix, should.Equal("pkg/a/specific"))
 
 				cfg, err = BootstrapConfig(ctx, "pkg/a/specific")
-				So(err, ShouldBeNil)
-				So(cfg.Prefix, ShouldEqual, "pkg/a/specific")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, cfg.Prefix, should.Equal("pkg/a/specific"))
 
 				cfg, err = BootstrapConfig(ctx, "pkg/a/another")
-				So(err, ShouldBeNil)
-				So(cfg.Prefix, ShouldEqual, "pkg/a")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, cfg.Prefix, should.Equal("pkg/a"))
 			})
 
-			Convey("No matching entry", func() {
+			t.Run("No matching entry", func(t *ftt.Test) {
 				cfg, err := BootstrapConfig(ctx, "pkg/b/another")
-				So(err, ShouldBeNil)
-				So(cfg, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, cfg, should.BeNil)
 			})
 		})
 	})

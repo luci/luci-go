@@ -21,23 +21,22 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/appengine/impl/testutil"
-
-	. "github.com/smartystreets/goconvey/convey"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestEvents(t *testing.T) {
 	t.Parallel()
 
-	Convey("With datastore", t, func() {
+	ftt.Run("With datastore", t, func(t *ftt.Test) {
 		ctx, tc, _ := testutil.TestingContext()
 
-		Convey("Emitting events", func() {
+		t.Run("Emitting events", func(t *ftt.Test) {
 			// First batch.
 			ev := Events{}
 			ev.Emit(&api.Event{
@@ -50,7 +49,7 @@ func TestEvents(t *testing.T) {
 				Instance: "cccc",
 				Tag:      "k:v",
 			})
-			So(ev.Flush(ctx), ShouldBeNil)
+			assert.Loosely(t, ev.Flush(ctx), should.BeNil)
 
 			// Second batch a bit later.
 			tc.Add(time.Second)
@@ -62,11 +61,11 @@ func TestEvents(t *testing.T) {
 				Kind:    api.EventKind_INSTANCE_TAG_ATTACHED,
 				Package: "x/y/z",
 			})
-			So(ev.Flush(ctx), ShouldBeNil)
+			assert.Loosely(t, ev.Flush(ctx), should.BeNil)
 
 			// Stored events have Who and When populated too. Ordered by newest to
 			// oldest, with events in a single batch separated by a fake nanosecond.
-			So(GetEvents(ctx), ShouldResembleProto, []*api.Event{
+			assert.Loosely(t, GetEvents(ctx), should.Resemble([]*api.Event{
 				{
 					Kind:    api.EventKind_INSTANCE_TAG_ATTACHED,
 					Package: "x/y/z",
@@ -93,7 +92,7 @@ func TestEvents(t *testing.T) {
 					Who:     string(testutil.TestUser),
 					When:    timestamppb.New(testutil.TestTime),
 				},
-			})
+			}))
 		})
 	})
 }
@@ -101,30 +100,30 @@ func TestEvents(t *testing.T) {
 func TestEmitMetadataEvents(t *testing.T) {
 	t.Parallel()
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		ctx, _, _ := testutil.TestingContext()
 
 		diffACLs := func(before, after []*api.PrefixMetadata_ACL) *api.Event {
 			datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-				So(EmitMetadataEvents(ctx,
+				assert.Loosely(t, EmitMetadataEvents(ctx,
 					&api.PrefixMetadata{Prefix: "pfx", Acls: before},
 					&api.PrefixMetadata{Prefix: "pfx", Acls: after},
-				), ShouldBeNil)
+				), should.BeNil)
 				return nil
 			}, nil)
 			events := GetEvents(ctx)
 			if len(events) == 0 {
 				return nil
 			}
-			So(events, ShouldHaveLength, 1)
+			assert.Loosely(t, events, should.HaveLength(1))
 			return events[0]
 		}
 
-		Convey("Empty", func() {
-			So(diffACLs(nil, nil), ShouldBeNil)
+		t.Run("Empty", func(t *ftt.Test) {
+			assert.Loosely(t, diffACLs(nil, nil), should.BeNil)
 		})
 
-		Convey("Add some", func() {
+		t.Run("Add some", func(t *ftt.Test) {
 			ev := diffACLs(nil, []*api.PrefixMetadata_ACL{
 				{
 					Role:       api.Role_OWNER,
@@ -138,7 +137,7 @@ func TestEmitMetadataEvents(t *testing.T) {
 					Role: api.Role_WRITER,
 				},
 			})
-			So(ev, ShouldResembleProto, &api.Event{
+			assert.Loosely(t, ev, should.Resemble(&api.Event{
 				Kind:    api.EventKind_PREFIX_ACL_CHANGED,
 				Package: "pfx",
 				Who:     string(testutil.TestUser),
@@ -153,10 +152,10 @@ func TestEmitMetadataEvents(t *testing.T) {
 						Principals: []string{"a", "b"}, // sorted here
 					},
 				},
-			})
+			}))
 		})
 
-		Convey("Remove some", func() {
+		t.Run("Remove some", func(t *ftt.Test) {
 			ev := diffACLs([]*api.PrefixMetadata_ACL{
 				{
 					Role:       api.Role_OWNER,
@@ -170,7 +169,7 @@ func TestEmitMetadataEvents(t *testing.T) {
 					Role: api.Role_WRITER,
 				},
 			}, nil)
-			So(ev, ShouldResembleProto, &api.Event{
+			assert.Loosely(t, ev, should.Resemble(&api.Event{
 				Kind:    api.EventKind_PREFIX_ACL_CHANGED,
 				Package: "pfx",
 				Who:     string(testutil.TestUser),
@@ -185,10 +184,10 @@ func TestEmitMetadataEvents(t *testing.T) {
 						Principals: []string{"a", "b"}, // sorted here
 					},
 				},
-			})
+			}))
 		})
 
-		Convey("Change some", func() {
+		t.Run("Change some", func(t *ftt.Test) {
 			ev := diffACLs([]*api.PrefixMetadata_ACL{
 				{
 					Role:       api.Role_OWNER,
@@ -200,7 +199,7 @@ func TestEmitMetadataEvents(t *testing.T) {
 					Principals: []string{"b", "d", "e"},
 				},
 			})
-			So(ev, ShouldResembleProto, &api.Event{
+			assert.Loosely(t, ev, should.Resemble(&api.Event{
 				Kind:    api.EventKind_PREFIX_ACL_CHANGED,
 				Package: "pfx",
 				Who:     string(testutil.TestUser),
@@ -217,7 +216,7 @@ func TestEmitMetadataEvents(t *testing.T) {
 						Principals: []string{"a", "c"}, // sorted here
 					},
 				},
-			})
+			}))
 		})
 	})
 }

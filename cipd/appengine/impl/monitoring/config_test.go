@@ -18,6 +18,9 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/impl/memory"
@@ -25,15 +28,12 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/caching"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestConfig(t *testing.T) {
 	t.Parallel()
 
-	Convey("With mocks", t, func() {
+	ftt.Run("With mocks", t, func(t *ftt.Test) {
 		configs := map[config.Set]memory.Files{
 			"services/${appid}": map[string]string{},
 		}
@@ -45,20 +45,20 @@ func TestConfig(t *testing.T) {
 		ctx = cfgclient.Use(ctx, memory.New(configs))
 		ctx = caching.WithEmptyProcessCache(ctx)
 
-		Convey("No config", func() {
-			So(ImportConfig(ctx), ShouldBeNil)
+		t.Run("No config", func(t *ftt.Test) {
+			assert.Loosely(t, ImportConfig(ctx), should.BeNil)
 
 			cfg, err := monitoringConfig(ctx)
-			So(err, ShouldBeNil)
-			So(cfg, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cfg, should.BeNil)
 		})
 
-		Convey("Broken config", func() {
+		t.Run("Broken config", func(t *ftt.Test) {
 			mockConfig("broken")
-			So(ImportConfig(ctx), ShouldErrLike, "validation errors")
+			assert.Loosely(t, ImportConfig(ctx), should.ErrLike("validation errors"))
 		})
 
-		Convey("Good config", func() {
+		t.Run("Good config", func(t *ftt.Test) {
 			mockConfig(`
 				client_monitoring_config {
 					ip_whitelist: "ignored"
@@ -69,22 +69,22 @@ func TestConfig(t *testing.T) {
 					label: "bots-label"
 				}
 			`)
-			So(ImportConfig(ctx), ShouldBeNil)
+			assert.Loosely(t, ImportConfig(ctx), should.BeNil)
 
-			Convey("Has matching entry", func() {
+			t.Run("Has matching entry", func(t *ftt.Test) {
 				e, err := monitoringConfig(auth.WithState(ctx, &authtest.FakeState{
 					PeerIPAllowlist: []string{"bots"},
 				}))
-				So(err, ShouldBeNil)
-				So(e.Label, ShouldEqual, "bots-label")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, e.Label, should.Equal("bots-label"))
 			})
 
-			Convey("No matching entry", func() {
+			t.Run("No matching entry", func(t *ftt.Test) {
 				e, err := monitoringConfig(auth.WithState(ctx, &authtest.FakeState{
 					PeerIPAllowlist: []string{"something-else"},
 				}))
-				So(err, ShouldBeNil)
-				So(e, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, e, should.BeNil)
 			})
 		})
 	})

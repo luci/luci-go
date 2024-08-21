@@ -18,16 +18,17 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestGetACLs(t *testing.T) {
 	t.Parallel()
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		m := &api.PrefixMetadata{
 			Acls: []*api.PrefixMetadata_ACL{
 				{
@@ -44,9 +45,9 @@ func TestGetACLs(t *testing.T) {
 				},
 			},
 		}
-		So(GetACLs(m), ShouldResemble, map[api.Role]stringset.Set{
+		assert.Loosely(t, GetACLs(m), should.Resemble(map[api.Role]stringset.Set{
 			api.Role_READER: {"c": struct{}{}},
 			api.Role_WRITER: {"a": struct{}{}, "b": struct{}{}},
-		})
+		}))
 	})
 }

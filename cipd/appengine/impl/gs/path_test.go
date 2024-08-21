@@ -15,21 +15,22 @@
 package gs
 
 import (
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"testing"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestValidatePath(t *testing.T) {
 	t.Parallel()
 
-	Convey("ValidatePath works", t, func() {
+	ftt.Run("ValidatePath works", t, func(t *ftt.Test) {
 		good := []string{
 			"/z/z",
 			"/z/z/z/z/z/z/z",
 		}
 		for _, p := range good {
-			So(ValidatePath(p), ShouldBeNil)
+			assert.Loosely(t, ValidatePath(p), should.BeNil)
 		}
 		bad := []string{
 			"",
@@ -42,7 +43,7 @@ func TestValidatePath(t *testing.T) {
 			"/z/🤦",
 		}
 		for _, p := range bad {
-			So(ValidatePath(p), ShouldNotBeNil)
+			assert.Loosely(t, ValidatePath(p), should.NotBeNil)
 		}
 	})
 }
@@ -50,12 +51,12 @@ func TestValidatePath(t *testing.T) {
 func TestSplitPath(t *testing.T) {
 	t.Parallel()
 
-	Convey("SplitPath works", t, func() {
+	ftt.Run("SplitPath works", t, func(t *ftt.Test) {
 		bucket, path := SplitPath("/a/b/c/d")
-		So(bucket, ShouldEqual, "a")
-		So(path, ShouldEqual, "b/c/d")
+		assert.Loosely(t, bucket, should.Equal("a"))
+		assert.Loosely(t, path, should.Equal("b/c/d"))
 
-		So(func() { SplitPath("") }, ShouldPanic)
-		So(func() { SplitPath("/zzz") }, ShouldPanic)
+		assert.Loosely(t, func() { SplitPath("") }, should.Panic)
+		assert.Loosely(t, func() { SplitPath("/zzz") }, should.Panic)
 	})
 }

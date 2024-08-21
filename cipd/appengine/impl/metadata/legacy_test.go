@@ -24,27 +24,26 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestLegacyMetadata(t *testing.T) {
 	t.Parallel()
 
-	Convey("With legacy entities", t, func() {
+	ftt.Run("With legacy entities", t, func(t *ftt.Test) {
 		impl := legacyStorageImpl{}
 
 		ctx := memory.Use(context.Background())
 		ts := time.Unix(1525136124, 0).UTC()
 
 		root := rootKey(ctx)
-		So(datastore.Put(ctx, []*packageACL{
+		assert.Loosely(t, datastore.Put(ctx, []*packageACL{
 			// ACLs for "a".
 			{
 				ID:         "OWNER:a",
@@ -89,7 +88,7 @@ func TestLegacyMetadata(t *testing.T) {
 				ModifiedBy: "user:d-owner-mod@example.com",
 				ModifiedTS: ts,
 			},
-		}), ShouldBeNil)
+		}), should.BeNil)
 
 		rootMeta := rootMetadata()
 
@@ -124,11 +123,11 @@ func TestLegacyMetadata(t *testing.T) {
 			},
 		}
 
-		Convey("GetMetadata returns root metadata which has fingerprint", func() {
+		t.Run("GetMetadata returns root metadata which has fingerprint", func(t *ftt.Test) {
 			md, err := impl.GetMetadata(ctx, "")
-			So(err, ShouldBeNil)
-			So(md, ShouldResembleProto, []*api.PrefixMetadata{rootMeta})
-			So(rootMeta, ShouldResembleProto, &api.PrefixMetadata{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, md, should.Resemble([]*api.PrefixMetadata{rootMeta}))
+			assert.Loosely(t, rootMeta, should.Resemble(&api.PrefixMetadata{
 				Acls: []*api.PrefixMetadata_ACL{
 					{
 						Role:       api.Role_OWNER,
@@ -136,58 +135,58 @@ func TestLegacyMetadata(t *testing.T) {
 					},
 				},
 				Fingerprint: "G7Hov8WrEwWHx1dQd7SMsKJERUI",
-			})
+			}))
 		})
 
-		Convey("GetMetadata handles one prefix", func() {
+		t.Run("GetMetadata handles one prefix", func(t *ftt.Test) {
 			md, err := impl.GetMetadata(ctx, "a")
-			So(err, ShouldBeNil)
-			So(md, ShouldResembleProto, []*api.PrefixMetadata{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, md, should.Resemble([]*api.PrefixMetadata{
 				rootMeta,
 				expected["a"],
-			})
+			}))
 		})
 
-		Convey("GetMetadata handles many prefixes", func() {
+		t.Run("GetMetadata handles many prefixes", func(t *ftt.Test) {
 			// Returns only existing metadata, silently skipping undefined.
 			md, err := impl.GetMetadata(ctx, "a/b/c/d/e/")
-			So(err, ShouldBeNil)
-			So(md, ShouldResembleProto, []*api.PrefixMetadata{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, md, should.Resemble([]*api.PrefixMetadata{
 				rootMeta,
 				expected["a"],
 				expected["a/b"],
 				expected["a/b/c/d"],
-			})
+			}))
 		})
 
-		Convey("GetMetadata handles root metadata", func() {
+		t.Run("GetMetadata handles root metadata", func(t *ftt.Test) {
 			md, err := impl.GetMetadata(ctx, "")
-			So(err, ShouldBeNil)
-			So(md, ShouldResembleProto, []*api.PrefixMetadata{rootMeta})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, md, should.Resemble([]*api.PrefixMetadata{rootMeta}))
 		})
 
-		Convey("GetMetadata fails on bad prefix", func() {
+		t.Run("GetMetadata fails on bad prefix", func(t *ftt.Test) {
 			_, err := impl.GetMetadata(ctx, "???")
-			So(err, ShouldErrLike, "invalid package prefix")
+			assert.Loosely(t, err, should.ErrLike("invalid package prefix"))
 		})
 
-		Convey("UpdateMetadata noop call with existing metadata", func() {
+		t.Run("UpdateMetadata noop call with existing metadata", func(t *ftt.Test) {
 			updated, err := impl.UpdateMetadata(ctx, "a", func(_ context.Context, md *api.PrefixMetadata) error {
-				So(md, ShouldResembleProto, expected["a"])
+				assert.Loosely(t, md, should.Resemble(expected["a"]))
 				return nil
 			})
-			So(err, ShouldBeNil)
-			So(updated, ShouldResembleProto, expected["a"])
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, updated, should.Resemble(expected["a"]))
 		})
 
-		Convey("UpdateMetadata refuses to update root metadata", func() {
+		t.Run("UpdateMetadata refuses to update root metadata", func(t *ftt.Test) {
 			_, err := impl.UpdateMetadata(ctx, "", func(_ context.Context, md *api.PrefixMetadata) error {
 				panic("must not be called")
 			})
-			So(err, ShouldErrLike, "the root metadata is not modifiable")
+			assert.Loosely(t, err, should.ErrLike("the root metadata is not modifiable"))
 		})
 
-		Convey("UpdateMetadata updates existing metadata", func() {
+		t.Run("UpdateMetadata updates existing metadata", func(t *ftt.Test) {
 			modTime := ts.Add(10 * time.Second)
 
 			newMD := proto.Clone(expected["a"]).(*api.PrefixMetadata)
@@ -200,11 +199,11 @@ func TestLegacyMetadata(t *testing.T) {
 			}
 
 			updated, err := impl.UpdateMetadata(ctx, "a", func(_ context.Context, md *api.PrefixMetadata) error {
-				So(md, ShouldResembleProto, expected["a"])
+				assert.Loosely(t, md, should.Resemble(expected["a"]))
 				*md = *newMD
 				return nil
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// The returned metadata is different from newMD: order of principals is
 			// not preserved, and the fingerprint is populated.
@@ -214,17 +213,17 @@ func TestLegacyMetadata(t *testing.T) {
 				"group:another-group",
 			}
 			newMD.Fingerprint = "MCRIAGe9tfXGxAZ-mTQbjQiJAlA" // new FP
-			So(updated, ShouldResembleProto, newMD)
+			assert.Loosely(t, updated, should.Resemble(newMD))
 
 			// GetMetadata sees the new metadata.
 			md, err := impl.GetMetadata(ctx, "a")
-			So(err, ShouldBeNil)
-			So(md, ShouldResembleProto, []*api.PrefixMetadata{rootMeta, newMD})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, md, should.Resemble([]*api.PrefixMetadata{rootMeta, newMD}))
 
 			// Only touched "OWNER:..." legacy entity, since only owners changed.
 			legacy := prefixACLs(ctx, "a", nil)
-			So(datastore.Get(ctx, legacy), ShouldBeNil)
-			So(legacy, ShouldResemble, []*packageACL{
+			assert.Loosely(t, datastore.Get(ctx, legacy), should.BeNil)
+			assert.Loosely(t, legacy, should.Resemble([]*packageACL{
 				{
 					ID:         "OWNER:a",
 					Parent:     root,
@@ -252,26 +251,26 @@ func TestLegacyMetadata(t *testing.T) {
 					ModifiedBy: "user:a-reader-mod@example.com",
 					ModifiedTS: ts,
 				},
-			})
+			}))
 		})
 
-		Convey("UpdateMetadata noop call with missing metadata", func() {
+		t.Run("UpdateMetadata noop call with missing metadata", func(t *ftt.Test) {
 			updated, err := impl.UpdateMetadata(ctx, "z", func(_ context.Context, md *api.PrefixMetadata) error {
-				So(md, ShouldResembleProto, &api.PrefixMetadata{Prefix: "z"})
+				assert.Loosely(t, md, should.Resemble(&api.PrefixMetadata{Prefix: "z"}))
 				return nil
 			})
-			So(err, ShouldBeNil)
-			So(updated, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, updated, should.BeNil)
 
 			// Still missing.
 			md, err := impl.GetMetadata(ctx, "z")
-			So(err, ShouldBeNil)
-			So(md, ShouldResembleProto, []*api.PrefixMetadata{rootMeta})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, md, should.Resemble([]*api.PrefixMetadata{rootMeta}))
 		})
 
-		Convey("UpdateMetadata creates new metadata", func() {
+		t.Run("UpdateMetadata creates new metadata", func(t *ftt.Test) {
 			updated, err := impl.UpdateMetadata(ctx, "z", func(_ context.Context, md *api.PrefixMetadata) error {
-				So(md, ShouldResembleProto, &api.PrefixMetadata{Prefix: "z"})
+				assert.Loosely(t, md, should.Resemble(&api.PrefixMetadata{Prefix: "z"}))
 				md.UpdateTime = timestamppb.New(ts)
 				md.UpdateUser = "user:updater@example.com"
 				md.Acls = []*api.PrefixMetadata_ACL{
@@ -289,7 +288,7 @@ func TestLegacyMetadata(t *testing.T) {
 				}
 				return nil
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// Changes compared to what was stored in the callback:
 			//  * Acls are ordered by Role now.
@@ -311,27 +310,27 @@ func TestLegacyMetadata(t *testing.T) {
 					},
 				},
 			}
-			So(updated, ShouldResembleProto, expected)
+			assert.Loosely(t, updated, should.Resemble(expected))
 
 			// Stored indeed.
 			md, err := impl.GetMetadata(ctx, "z")
-			So(err, ShouldBeNil)
-			So(md, ShouldResembleProto, []*api.PrefixMetadata{rootMeta, expected})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, md, should.Resemble([]*api.PrefixMetadata{rootMeta, expected}))
 		})
 
-		Convey("UpdateMetadata call with failing callback", func() {
+		t.Run("UpdateMetadata call with failing callback", func(t *ftt.Test) {
 			cbErr := errors.New("blah")
 			updated, err := impl.UpdateMetadata(ctx, "z", func(_ context.Context, md *api.PrefixMetadata) error {
 				md.UpdateUser = "user:must-be-ignored@example.com"
 				return cbErr
 			})
-			So(err, ShouldEqual, cbErr) // exact same error object
-			So(updated, ShouldBeNil)
+			assert.Loosely(t, err, should.Equal(cbErr)) // exact same error object
+			assert.Loosely(t, updated, should.BeNil)
 
 			// Still missing.
 			md, err := impl.GetMetadata(ctx, "z")
-			So(err, ShouldBeNil)
-			So(md, ShouldResembleProto, []*api.PrefixMetadata{rootMeta})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, md, should.Resemble([]*api.PrefixMetadata{rootMeta}))
 		})
 	})
 }
@@ -339,19 +338,19 @@ func TestLegacyMetadata(t *testing.T) {
 func TestVisitMetadata(t *testing.T) {
 	t.Parallel()
 
-	Convey("With datastore", t, func() {
+	ftt.Run("With datastore", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		ts := time.Unix(1525136124, 0).UTC()
 
 		impl := legacyStorageImpl{}
 
 		add := func(role, pfx, group string) {
-			So(datastore.Put(ctx, &packageACL{
+			assert.Loosely(t, datastore.Put(ctx, &packageACL{
 				ID:         role + ":" + pfx,
 				Parent:     rootKey(ctx),
 				ModifiedTS: ts,
 				Groups:     []string{group},
-			}), ShouldBeNil)
+			}), should.BeNil)
 		}
 
 		type visited struct {
@@ -372,7 +371,7 @@ func TestVisitMetadata(t *testing.T) {
 				res = append(res, visited{p, extract})
 				return true, nil
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			return
 		}
 
@@ -388,8 +387,8 @@ func TestVisitMetadata(t *testing.T) {
 		add("OWNER", "ab", "o-ab")
 		add("READER", "ab", "r-ab")
 
-		Convey("Root listing", func() {
-			So(visit(""), ShouldResemble, []visited{
+		t.Run("Root listing", func(t *ftt.Test) {
+			assert.Loosely(t, visit(""), should.Resemble([]visited{
 				{
 					"", []string{
 						":OWNER:group:administrators",
@@ -430,11 +429,11 @@ func TestVisitMetadata(t *testing.T) {
 						"ab:READER:group:r-ab",
 					},
 				},
-			})
+			}))
 		})
 
-		Convey("Prefix listing", func() {
-			So(visit("a"), ShouldResemble, []visited{
+		t.Run("Prefix listing", func(t *ftt.Test) {
+			assert.Loosely(t, visit("a"), should.Resemble([]visited{
 				{
 					"a", []string{
 						":OWNER:group:administrators",
@@ -463,35 +462,35 @@ func TestVisitMetadata(t *testing.T) {
 						"a/b/c/d:READER:group:r-abcd",
 					},
 				},
-			})
+			}))
 		})
 
-		Convey("Missing prefix listing", func() {
-			So(visit("z/z/z"), ShouldResemble, []visited{
+		t.Run("Missing prefix listing", func(t *ftt.Test) {
+			assert.Loosely(t, visit("z/z/z"), should.Resemble([]visited{
 				{
 					"z/z/z", []string{":OWNER:group:administrators"},
 				},
-			})
+			}))
 		})
 
-		Convey("Callback return value is respected, stopping right away", func() {
+		t.Run("Callback return value is respected, stopping right away", func(t *ftt.Test) {
 			seen := []string{}
 			err := impl.VisitMetadata(ctx, "a", func(p string, md []*api.PrefixMetadata) (bool, error) {
 				seen = append(seen, p)
 				return false, nil
 			})
-			So(err, ShouldBeNil)
-			So(seen, ShouldResemble, []string{"a"})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, seen, should.Resemble([]string{"a"}))
 		})
 
-		Convey("Callback return value is respected, stopping later", func() {
+		t.Run("Callback return value is respected, stopping later", func(t *ftt.Test) {
 			seen := []string{}
 			err := impl.VisitMetadata(ctx, "a", func(p string, md []*api.PrefixMetadata) (bool, error) {
 				seen = append(seen, p)
 				return p != "a/b/c", nil
 			})
-			So(err, ShouldBeNil)
-			So(seen, ShouldResemble, []string{"a", "a/b/c"}) // no a/b/c/d
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, seen, should.Resemble([]string{"a", "a/b/c"})) // no a/b/c/d
 		})
 	})
 }
@@ -513,14 +512,14 @@ func TestParseKey(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		Convey(fmt.Sprintf("works for %q", c.id), t, func() {
+		ftt.Run(fmt.Sprintf("works for %q", c.id), t, func(t *ftt.Test) {
 			role, pfx, err := (&packageACL{ID: c.id}).parseKey()
-			So(role, ShouldEqual, c.role)
-			So(pfx, ShouldEqual, c.prefix)
+			assert.Loosely(t, role, should.Equal(c.role))
+			assert.Loosely(t, pfx, should.Equal(c.prefix))
 			if c.err == "" {
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			} else {
-				So(err, ShouldErrLike, c.err)
+				assert.Loosely(t, err, should.ErrLike(c.err))
 			}
 		})
 	}
@@ -529,22 +528,22 @@ func TestParseKey(t *testing.T) {
 func TestListACLsByPrefix(t *testing.T) {
 	t.Parallel()
 
-	Convey("With datastore", t, func() {
+	ftt.Run("With datastore", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 
 		add := func(role, pfx string) {
-			So(datastore.Put(ctx, &packageACL{
+			assert.Loosely(t, datastore.Put(ctx, &packageACL{
 				ID:     role + ":" + pfx,
 				Parent: rootKey(ctx),
 				Groups: []string{"blah"}, //  to make sure bodies are fetched too
-			}), ShouldBeNil)
+			}), should.BeNil)
 		}
 
 		list := func(role, pfx string) (out []string) {
 			acls, err := listACLsByPrefix(ctx, role, pfx)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			for _, acl := range acls {
-				So(acl.Groups, ShouldResemble, []string{"blah"})
+				assert.Loosely(t, acl.Groups, should.Resemble([]string{"blah"}))
 				out = append(out, acl.ID)
 			}
 			return
@@ -558,24 +557,24 @@ func TestListACLsByPrefix(t *testing.T) {
 		add("READER", "a/b/c/d")
 		add("READER", "ab")
 
-		Convey("Root listing", func() {
-			So(list("OWNER", ""), ShouldResemble, []string{
+		t.Run("Root listing", func(t *ftt.Test) {
+			assert.Loosely(t, list("OWNER", ""), should.Resemble([]string{
 				"OWNER:a", "OWNER:a/b/c", "OWNER:ab",
-			})
-			So(list("READER", ""), ShouldResemble, []string{
+			}))
+			assert.Loosely(t, list("READER", ""), should.Resemble([]string{
 				"READER:a", "READER:a/b/c", "READER:a/b/c/d", "READER:ab",
-			})
-			So(list("WRITER", ""), ShouldResemble, []string(nil))
+			}))
+			assert.Loosely(t, list("WRITER", ""), should.Resemble([]string(nil)))
 		})
 
-		Convey("Non-root listing", func() {
-			So(list("OWNER", "a"), ShouldResemble, []string{"OWNER:a/b/c"})
-			So(list("READER", "a"), ShouldResemble, []string{"READER:a/b/c", "READER:a/b/c/d"})
-			So(list("WRITER", "a"), ShouldResemble, []string(nil))
+		t.Run("Non-root listing", func(t *ftt.Test) {
+			assert.Loosely(t, list("OWNER", "a"), should.Resemble([]string{"OWNER:a/b/c"}))
+			assert.Loosely(t, list("READER", "a"), should.Resemble([]string{"READER:a/b/c", "READER:a/b/c/d"}))
+			assert.Loosely(t, list("WRITER", "a"), should.Resemble([]string(nil)))
 		})
 
-		Convey("Non-existing prefix listing", func() {
-			So(list("OWNER", "z"), ShouldResemble, []string(nil))
+		t.Run("Non-existing prefix listing", func(t *ftt.Test) {
+			assert.Loosely(t, list("OWNER", "z"), should.Resemble([]string(nil)))
 		})
 	})
 }
@@ -583,7 +582,7 @@ func TestListACLsByPrefix(t *testing.T) {
 func TestMetadataGraph(t *testing.T) {
 	t.Parallel()
 
-	Convey("With metadataGraph", t, func() {
+	ftt.Run("With metadataGraph", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		ts := time.Unix(1525136124, 0).UTC()
 
@@ -629,7 +628,7 @@ func TestMetadataGraph(t *testing.T) {
 				v = append(v, visited{n.prefix, extract})
 				return true, nil
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			return
 		}
 
@@ -641,8 +640,8 @@ func TestMetadataGraph(t *testing.T) {
 		insert("READER", "a/bc", "reader-abc")
 		insert("BOGUS", "a/b", "bogus-ab")
 
-		Convey("Traverse from the root", func() {
-			So(freezeAndVisit(""), ShouldResemble, []visited{
+		t.Run("Traverse from the root", func(t *ftt.Test) {
+			assert.Loosely(t, freezeAndVisit(""), should.Resemble([]visited{
 				{"", []string{":OWNER:group:root"}},
 				{
 					"a", []string{
@@ -690,11 +689,11 @@ func TestMetadataGraph(t *testing.T) {
 						"b:OWNER:group:owner-b",
 					},
 				},
-			})
+			}))
 		})
 
-		Convey("Traverse from some prefix", func() {
-			So(freezeAndVisit("a/b"), ShouldResemble, []visited{
+		t.Run("Traverse from some prefix", func(t *ftt.Test) {
+			assert.Loosely(t, freezeAndVisit("a/b"), should.Resemble([]visited{
 				{
 					"a/b", []string{
 						":OWNER:group:root",
@@ -720,11 +719,11 @@ func TestMetadataGraph(t *testing.T) {
 						"a/b/c/d:OWNER:group:owner-abc",
 					},
 				},
-			})
+			}))
 		})
 
-		Convey("Traverse from some deep prefix", func() {
-			So(freezeAndVisit("a/b/c/d/e"), ShouldResemble, []visited{
+		t.Run("Traverse from some deep prefix", func(t *ftt.Test) {
+			assert.Loosely(t, freezeAndVisit("a/b/c/d/e"), should.Resemble([]visited{
 				{
 					"a/b/c/d/e", []string{
 						":OWNER:group:root",
@@ -734,15 +733,15 @@ func TestMetadataGraph(t *testing.T) {
 						"a/b/c/d:OWNER:group:owner-abc",
 					},
 				},
-			})
+			}))
 		})
 
-		Convey("Traverse from some non-existing prefix", func() {
-			So(freezeAndVisit("z/z/z"), ShouldResemble, []visited{
+		t.Run("Traverse from some non-existing prefix", func(t *ftt.Test) {
+			assert.Loosely(t, freezeAndVisit("z/z/z"), should.Resemble([]visited{
 				{
 					"z/z/z", []string{":OWNER:group:root"},
 				},
-			})
+			}))
 		})
 	})
 }

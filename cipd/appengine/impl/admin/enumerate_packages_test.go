@@ -19,33 +19,35 @@ import (
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/memlogger"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	api "go.chromium.org/luci/cipd/api/admin/v1"
 	"go.chromium.org/luci/cipd/appengine/impl/model"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestEnumeratePackages(t *testing.T) {
 	t.Parallel()
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		ctx, admin, sched := SetupTest()
 		ctx = memlogger.Use(ctx)
 		log := logging.Get(ctx).(*memlogger.MemLogger)
 
-		So(datastore.Put(ctx, []*model.Package{
+		assert.Loosely(t, datastore.Put(ctx, []*model.Package{
 			{Name: "a/b"},
 			{Name: "a/b/c"},
-		}), ShouldBeNil)
+		}), should.BeNil)
 
 		_, err := RunMapper(ctx, admin, sched, &api.JobConfig{
 			Kind: api.MapperKind_ENUMERATE_PACKAGES,
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		So(log, memlogger.ShouldHaveLog, logging.Info, "Found package: a/b")
-		So(log, memlogger.ShouldHaveLog, logging.Info, "Found package: a/b/c")
+		assert.Loosely(t, log, convey.Adapt(memlogger.ShouldHaveLog)(logging.Info, "Found package: a/b"))
+		assert.Loosely(t, log, convey.Adapt(memlogger.ShouldHaveLog)(logging.Info, "Found package: a/b/c"))
 	})
 }

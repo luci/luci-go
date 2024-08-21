@@ -24,6 +24,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -32,9 +35,6 @@ import (
 	"go.chromium.org/luci/cipd/appengine/impl/model"
 	"go.chromium.org/luci/cipd/appengine/impl/testutil"
 	"go.chromium.org/luci/cipd/common"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func phonyHexDigest(algo api.HashAlgo, letter string) string {
@@ -69,15 +69,15 @@ func hexDigest(algo api.HashAlgo, body string) string {
 func TestGetClientPackage(t *testing.T) {
 	t.Parallel()
 
-	Convey("works", t, func() {
+	ftt.Run("works", t, func(t *ftt.Test) {
 		pkg, err := GetClientPackage("linux-amd64")
-		So(err, ShouldBeNil)
-		So(pkg, ShouldEqual, "infra/tools/cipd/linux-amd64")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, pkg, should.Equal("infra/tools/cipd/linux-amd64"))
 	})
 
-	Convey("fails", t, func() {
+	ftt.Run("fails", t, func(t *ftt.Test) {
 		_, err := GetClientPackage("../sneaky")
-		So(err, ShouldErrLike, "invalid package name")
+		assert.Loosely(t, err, should.ErrLike("invalid package name"))
 	})
 }
 
@@ -97,7 +97,7 @@ func TestClientExtractor(t *testing.T) {
 
 	goodPkg := packageReader(map[string]string{"cipd": originalBody})
 
-	Convey("With mocks", t, func() {
+	ftt.Run("With mocks", t, func(t *ftt.Test) {
 		var publishedRef *api.ObjectRef
 		var canceled bool
 
@@ -105,19 +105,19 @@ func TestClientExtractor(t *testing.T) {
 
 		cas := testutil.MockCAS{
 			BeginUploadImpl: func(_ context.Context, r *api.BeginUploadRequest) (*api.UploadOperation, error) {
-				So(r.HashAlgo, ShouldEqual, expectedUploadAlgo)
+				assert.Loosely(t, r.HashAlgo, should.Equal(expectedUploadAlgo))
 				return &api.UploadOperation{
 					OperationId: "op_id",
 					UploadUrl:   "http://example.com/upload",
 				}, nil
 			},
 			FinishUploadImpl: func(_ context.Context, r *api.FinishUploadRequest) (*api.UploadOperation, error) {
-				So(r.UploadOperationId, ShouldEqual, "op_id")
+				assert.Loosely(t, r.UploadOperationId, should.Equal("op_id"))
 				publishedRef = r.ForceHash
 				return &api.UploadOperation{Status: api.UploadStatus_PUBLISHED}, nil
 			},
 			CancelUploadImpl: func(_ context.Context, r *api.CancelUploadRequest) (*api.UploadOperation, error) {
-				So(r.UploadOperationId, ShouldEqual, "op_id")
+				assert.Loosely(t, r.UploadOperationId, should.Equal("op_id"))
 				canceled = true
 				return &api.UploadOperation{Status: api.UploadStatus_CANCELED}, nil
 			},
@@ -133,94 +133,94 @@ func TestClientExtractor(t *testing.T) {
 			bufferSize: 64 * 1024,
 		}
 
-		Convey("Happy path, SHA256", func() {
+		t.Run("Happy path, SHA256", func(t *ftt.Test) {
 			res, err := ce.Run(ctx, instSHA256, goodPkg)
-			So(err, ShouldBeNil)
-			So(res.Err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.Err, should.BeNil)
 
 			r := res.Result.(ClientExtractorResult)
-			So(r.ClientBinary.Size, ShouldEqual, len(originalBody))
-			So(r.ClientBinary.HashAlgo, ShouldEqual, "SHA256")
-			So(r.ClientBinary.HashDigest, ShouldEqual, expectedDigests["SHA256"])
-			So(r.ClientBinary.AllHashDigests, ShouldResemble, expectedDigests)
+			assert.Loosely(t, r.ClientBinary.Size, should.Equal(len(originalBody)))
+			assert.Loosely(t, r.ClientBinary.HashAlgo, should.Equal("SHA256"))
+			assert.Loosely(t, r.ClientBinary.HashDigest, should.Equal(expectedDigests["SHA256"]))
+			assert.Loosely(t, r.ClientBinary.AllHashDigests, should.Resemble(expectedDigests))
 
-			So(extracted.String(), ShouldEqual, originalBody)
-			So(publishedRef, ShouldResembleProto, &api.ObjectRef{
+			assert.Loosely(t, extracted.String(), should.Equal(originalBody))
+			assert.Loosely(t, publishedRef, should.Resemble(&api.ObjectRef{
 				HashAlgo:  api.HashAlgo_SHA256,
 				HexDigest: expectedDigests["SHA256"],
-			})
+			}))
 
 			// Was written by 64 Kb chunks, NOT 32 Kb (as used by zip.Reader).
-			So(uploader.calls, ShouldResemble, []int{64 * 1024, 6 * 1024})
+			assert.Loosely(t, uploader.calls, should.Resemble([]int{64 * 1024, 6 * 1024}))
 		})
 
 		// TODO(vadimsh): Delete this test once SHA1 uploads are forbidden.
-		Convey("Happy path, SHA1", func() {
+		t.Run("Happy path, SHA1", func(t *ftt.Test) {
 			expectedUploadAlgo = api.HashAlgo_SHA1
 			res, err := ce.Run(ctx, instSHA1, goodPkg)
-			So(err, ShouldBeNil)
-			So(res.Err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.Err, should.BeNil)
 
 			r := res.Result.(ClientExtractorResult)
-			So(r.ClientBinary.Size, ShouldEqual, len(originalBody))
-			So(r.ClientBinary.HashAlgo, ShouldEqual, "SHA1")
-			So(r.ClientBinary.HashDigest, ShouldEqual, expectedDigests["SHA1"])
-			So(r.ClientBinary.AllHashDigests, ShouldResemble, expectedDigests)
+			assert.Loosely(t, r.ClientBinary.Size, should.Equal(len(originalBody)))
+			assert.Loosely(t, r.ClientBinary.HashAlgo, should.Equal("SHA1"))
+			assert.Loosely(t, r.ClientBinary.HashDigest, should.Equal(expectedDigests["SHA1"]))
+			assert.Loosely(t, r.ClientBinary.AllHashDigests, should.Resemble(expectedDigests))
 
-			So(publishedRef, ShouldResembleProto, &api.ObjectRef{
+			assert.Loosely(t, publishedRef, should.Resemble(&api.ObjectRef{
 				HashAlgo:  api.HashAlgo_SHA1,
 				HexDigest: expectedDigests["SHA1"],
-			})
+			}))
 		})
 
-		Convey("No such file in the package", func() {
+		t.Run("No such file in the package", func(t *ftt.Test) {
 			res, err := ce.Run(ctx, instSHA256, packageReader(nil))
-			So(err, ShouldBeNil)
-			So(res.Err, ShouldErrLike, `failed to open the file for reading: no file "cipd" inside the package`)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.Err, should.ErrLike(`failed to open the file for reading: no file "cipd" inside the package`))
 		})
 
-		Convey("Internal error when initiating the upload", func() {
+		t.Run("Internal error when initiating the upload", func(t *ftt.Test) {
 			cas.BeginUploadImpl = func(_ context.Context, r *api.BeginUploadRequest) (*api.UploadOperation, error) {
 				return nil, status.Errorf(codes.Internal, "boo")
 			}
 			_, err := ce.Run(ctx, instSHA256, goodPkg)
-			So(err, ShouldErrLike, `failed to open a CAS upload: rpc error: code = Internal desc = boo`)
+			assert.Loosely(t, err, should.ErrLike(`failed to open a CAS upload: rpc error: code = Internal desc = boo`))
 		})
 
-		Convey("Internal error when finalizing the upload", func() {
+		t.Run("Internal error when finalizing the upload", func(t *ftt.Test) {
 			cas.FinishUploadImpl = func(_ context.Context, r *api.FinishUploadRequest) (*api.UploadOperation, error) {
 				return nil, status.Errorf(codes.Internal, "boo")
 			}
 			_, err := ce.Run(ctx, instSHA256, goodPkg)
-			So(err, ShouldErrLike, `failed to finalize the CAS upload: rpc error: code = Internal desc = boo`)
+			assert.Loosely(t, err, should.ErrLike(`failed to finalize the CAS upload: rpc error: code = Internal desc = boo`))
 		})
 
-		Convey("Asked to restart the upload", func() {
+		t.Run("Asked to restart the upload", func(t *ftt.Test) {
 			uploader.err = &gs.RestartUploadError{Offset: 124}
 
 			_, err := ce.Run(ctx, instSHA256, goodPkg)
-			So(err, ShouldErrLike, `asked to restart the upload from faraway offset: the upload should be restarted from offset 124`)
-			So(canceled, ShouldBeTrue)
+			assert.Loosely(t, err, should.ErrLike(`asked to restart the upload from faraway offset: the upload should be restarted from offset 124`))
+			assert.Loosely(t, canceled, should.BeTrue)
 		})
 	})
 
-	Convey("Applicable works", t, func() {
+	ftt.Run("Applicable works", t, func(t *ftt.Test) {
 		ce := ClientExtractor{}
 
 		res, err := ce.Applicable(ctx, instance(ctx, "infra/tools/cipd/linux", api.HashAlgo_SHA256))
-		So(err, ShouldBeNil)
-		So(res, ShouldBeTrue)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, res, should.BeTrue)
 
 		res, err = ce.Applicable(ctx, instance(ctx, "infra/tools/stuff/linux", api.HashAlgo_SHA256))
-		So(err, ShouldBeNil)
-		So(res, ShouldBeFalse)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, res, should.BeFalse)
 	})
 }
 
 func TestGetResult(t *testing.T) {
 	t.Parallel()
 
-	Convey("With datastore", t, func() {
+	ftt.Run("With datastore", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 
 		instRef := &api.ObjectRef{
@@ -238,14 +238,14 @@ func TestGetResult(t *testing.T) {
 			}
 			if res != nil {
 				r.Success = true
-				So(r.WriteResult(&res), ShouldBeNil)
+				assert.Loosely(t, r.WriteResult(&res), should.BeNil)
 			} else {
 				r.Error = err
 			}
-			So(datastore.Put(ctx, &r), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, &r), should.BeNil)
 		}
 
-		Convey("Happy path", func() {
+		t.Run("Happy path", func(t *ftt.Test) {
 			res := ClientExtractorResult{}
 			res.ClientBinary.HashAlgo = "SHA256"
 			res.ClientBinary.HashDigest = phonyHexDigest(api.HashAlgo_SHA256, "b")
@@ -260,55 +260,55 @@ func TestGetResult(t *testing.T) {
 				Package:  "a/b/c",
 				Instance: instRef,
 			})
-			So(err, ShouldBeNil)
-			So(out, ShouldResemble, &res)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, out, should.Resemble(&res))
 
 			ref, err := out.ToObjectRef()
-			So(err, ShouldBeNil)
-			So(ref, ShouldResembleProto, &api.ObjectRef{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ref, should.Resemble(&api.ObjectRef{
 				HashAlgo:  api.HashAlgo_SHA256,
 				HexDigest: res.ClientBinary.HashDigest,
-			})
+			}))
 
-			So(out.ObjectRefAliases(), ShouldResembleProto, []*api.ObjectRef{
+			assert.Loosely(t, out.ObjectRefAliases(), should.Resemble([]*api.ObjectRef{
 				{HashAlgo: api.HashAlgo_SHA1, HexDigest: phonyHexDigest(api.HashAlgo_SHA1, "c")},
 				{HashAlgo: api.HashAlgo_SHA256, HexDigest: phonyHexDigest(api.HashAlgo_SHA256, "b")},
-			})
+			}))
 		})
 
-		Convey("Legacy SHA1 record with no AllHashDigests", func() {
+		t.Run("Legacy SHA1 record with no AllHashDigests", func(t *ftt.Test) {
 			res := ClientExtractorResult{}
 			res.ClientBinary.HashAlgo = "SHA1"
 			res.ClientBinary.HashDigest = phonyHexDigest(api.HashAlgo_SHA1, "a")
 
 			ref, err := res.ToObjectRef()
-			So(err, ShouldBeNil)
-			So(ref, ShouldResembleProto, &api.ObjectRef{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ref, should.Resemble(&api.ObjectRef{
 				HashAlgo:  api.HashAlgo_SHA1,
 				HexDigest: res.ClientBinary.HashDigest,
-			})
+			}))
 
-			So(res.ObjectRefAliases(), ShouldResembleProto, []*api.ObjectRef{
+			assert.Loosely(t, res.ObjectRefAliases(), should.Resemble([]*api.ObjectRef{
 				{HashAlgo: api.HashAlgo_SHA1, HexDigest: res.ClientBinary.HashDigest},
-			})
+			}))
 		})
 
-		Convey("Failed processor", func() {
+		t.Run("Failed processor", func(t *ftt.Test) {
 			write(nil, "boom")
 
 			_, err := GetClientExtractorResult(ctx, &api.Instance{
 				Package:  "a/b/c",
 				Instance: instRef,
 			})
-			So(err, ShouldErrLike, "boom")
+			assert.Loosely(t, err, should.ErrLike("boom"))
 		})
 
-		Convey("No result", func() {
+		t.Run("No result", func(t *ftt.Test) {
 			_, err := GetClientExtractorResult(ctx, &api.Instance{
 				Package:  "a/b/c",
 				Instance: instRef,
 			})
-			So(err, ShouldEqual, datastore.ErrNoSuchEntity)
+			assert.Loosely(t, err, should.Equal(datastore.ErrNoSuchEntity))
 		})
 	})
 }

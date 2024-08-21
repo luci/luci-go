@@ -20,20 +20,20 @@ import (
 
 	"google.golang.org/grpc/codes"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/appengine/impl/testutil"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestResolveVersion(t *testing.T) {
 	t.Parallel()
 
-	Convey("With datastore", t, func() {
+	ftt.Run("With datastore", t, func(t *ftt.Test) {
 		ctx, _, _ := testutil.TestingContext()
 
 		pkg := &Package{Name: "pkg"}
@@ -53,7 +53,7 @@ func TestResolveVersion(t *testing.T) {
 			RegisteredBy: "user:3@example.com",
 		}
 
-		So(datastore.Put(ctx,
+		assert.Loosely(t, datastore.Put(ctx,
 			pkg, inst1, inst2, // note: do not store 'missing' here
 			&Ref{
 				Name:       "latest",
@@ -85,84 +85,84 @@ func TestResolveVersion(t *testing.T) {
 				Instance: datastore.KeyForObj(ctx, missing),
 				Tag:      "ver:broken",
 			},
-		), ShouldBeNil)
+		), should.BeNil)
 
-		Convey("Resolves instance ID", func() {
+		t.Run("Resolves instance ID", func(t *ftt.Test) {
 			inst, err := ResolveVersion(ctx, "pkg", inst1.InstanceID)
-			So(err, ShouldBeNil)
-			So(inst, ShouldResemble, inst1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, inst, should.Resemble(inst1))
 		})
 
-		Convey("Resolves ref", func() {
+		t.Run("Resolves ref", func(t *ftt.Test) {
 			inst, err := ResolveVersion(ctx, "pkg", "latest")
-			So(err, ShouldBeNil)
-			So(inst, ShouldResemble, inst2)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, inst, should.Resemble(inst2))
 		})
 
-		Convey("Resolves tag", func() {
+		t.Run("Resolves tag", func(t *ftt.Test) {
 			inst, err := ResolveVersion(ctx, "pkg", "ver:1")
-			So(err, ShouldBeNil)
-			So(inst, ShouldResemble, inst1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, inst, should.Resemble(inst1))
 		})
 
-		Convey("Fails on unrecognized version format", func() {
+		t.Run("Fails on unrecognized version format", func(t *ftt.Test) {
 			_, err := ResolveVersion(ctx, "pkg", "::::")
-			So(grpcutil.Code(err), ShouldEqual, codes.InvalidArgument)
-			So(err, ShouldErrLike, "not a valid version identifier")
+			assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("not a valid version identifier"))
 		})
 
-		Convey("Handles missing instance", func() {
-			Convey("Via instance ID", func() {
+		t.Run("Handles missing instance", func(t *ftt.Test) {
+			t.Run("Via instance ID", func(t *ftt.Test) {
 				_, err := ResolveVersion(ctx, "pkg", missing.InstanceID)
-				So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
-				So(err, ShouldErrLike, "no such instance")
+				assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.NotFound))
+				assert.Loosely(t, err, should.ErrLike("no such instance"))
 			})
-			Convey("Via broken ref", func() {
+			t.Run("Via broken ref", func(t *ftt.Test) {
 				_, err := ResolveVersion(ctx, "pkg", "broken")
-				So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
-				So(err, ShouldErrLike, "no such instance")
+				assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.NotFound))
+				assert.Loosely(t, err, should.ErrLike("no such instance"))
 			})
-			Convey("Via broken tag", func() {
+			t.Run("Via broken tag", func(t *ftt.Test) {
 				_, err := ResolveVersion(ctx, "pkg", "ver:broken")
-				So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
-				So(err, ShouldErrLike, "no such instance")
+				assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.NotFound))
+				assert.Loosely(t, err, should.ErrLike("no such instance"))
 			})
 		})
 
-		Convey("Handles missing package", func() {
-			Convey("Via instance ID", func() {
+		t.Run("Handles missing package", func(t *ftt.Test) {
+			t.Run("Via instance ID", func(t *ftt.Test) {
 				_, err := ResolveVersion(ctx, "pkg2", inst1.InstanceID)
-				So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
-				So(err, ShouldErrLike, "no such package")
+				assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.NotFound))
+				assert.Loosely(t, err, should.ErrLike("no such package"))
 			})
-			Convey("Via ref", func() {
+			t.Run("Via ref", func(t *ftt.Test) {
 				_, err := ResolveVersion(ctx, "pkg2", "latest")
-				So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
-				So(err, ShouldErrLike, "no such package")
+				assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.NotFound))
+				assert.Loosely(t, err, should.ErrLike("no such package"))
 			})
-			Convey("Via tag", func() {
+			t.Run("Via tag", func(t *ftt.Test) {
 				_, err := ResolveVersion(ctx, "pkg2", "ver:1")
-				So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
-				So(err, ShouldErrLike, "no such package")
+				assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.NotFound))
+				assert.Loosely(t, err, should.ErrLike("no such package"))
 			})
 		})
 
-		Convey("Missing ref", func() {
+		t.Run("Missing ref", func(t *ftt.Test) {
 			_, err := ResolveVersion(ctx, "pkg", "missing")
-			So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
-			So(err, ShouldErrLike, "no such ref")
+			assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.NotFound))
+			assert.Loosely(t, err, should.ErrLike("no such ref"))
 		})
 
-		Convey("Missing tag", func() {
+		t.Run("Missing tag", func(t *ftt.Test) {
 			_, err := ResolveVersion(ctx, "pkg", "ver:missing")
-			So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
-			So(err, ShouldErrLike, "no such tag")
+			assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.NotFound))
+			assert.Loosely(t, err, should.ErrLike("no such tag"))
 		})
 
-		Convey("Ambiguous tag", func() {
+		t.Run("Ambiguous tag", func(t *ftt.Test) {
 			_, err := ResolveVersion(ctx, "pkg", "ver:ambiguous")
-			So(grpcutil.Code(err), ShouldEqual, codes.FailedPrecondition)
-			So(err, ShouldErrLike, "ambiguity when resolving the tag")
+			assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.FailedPrecondition))
+			assert.Loosely(t, err, should.ErrLike("ambiguity when resolving the tag"))
 		})
 	})
 }

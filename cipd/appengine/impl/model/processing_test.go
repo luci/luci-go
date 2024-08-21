@@ -22,10 +22,9 @@ import (
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/appengine/impl/testutil"
-
-	. "github.com/smartystreets/goconvey/convey"
-
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestProcessingResult(t *testing.T) {
@@ -36,36 +35,36 @@ func TestProcessingResult(t *testing.T) {
 		"c": "d",
 	}
 
-	Convey("Read/Write result works", t, func() {
+	ftt.Run("Read/Write result works", t, func(t *ftt.Test) {
 		p := ProcessingResult{}
 
-		So(p.WriteResult(res), ShouldBeNil)
+		assert.Loosely(t, p.WriteResult(res), should.BeNil)
 
 		out := map[string]string{}
-		So(p.ReadResult(&out), ShouldBeNil)
-		So(out, ShouldResemble, res)
+		assert.Loosely(t, p.ReadResult(&out), should.BeNil)
+		assert.Loosely(t, out, should.Resemble(res))
 
 		st := &structpb.Struct{}
-		So(p.ReadResultIntoStruct(st), ShouldBeNil)
-		So(st, ShouldResembleProto, &structpb.Struct{
+		assert.Loosely(t, p.ReadResultIntoStruct(st), should.BeNil)
+		assert.Loosely(t, st, should.Resemble(&structpb.Struct{
 			Fields: map[string]*structpb.Value{
 				"a": {Kind: &structpb.Value_StringValue{StringValue: "b"}},
 				"c": {Kind: &structpb.Value_StringValue{StringValue: "d"}},
 			},
-		})
+		}))
 	})
 
-	Convey("Conversion to proto", t, func() {
-		Convey("Pending", func() {
+	ftt.Run("Conversion to proto", t, func(t *ftt.Test) {
+		t.Run("Pending", func(t *ftt.Test) {
 			p, err := (&ProcessingResult{ProcID: "zzz"}).Proto()
-			So(err, ShouldBeNil)
-			So(p, ShouldResembleProto, &api.Processor{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, p, should.Resemble(&api.Processor{
 				Id:    "zzz",
 				State: api.Processor_PENDING,
-			})
+			}))
 		})
 
-		Convey("Success", func() {
+		t.Run("Success", func(t *ftt.Test) {
 			proc := &ProcessingResult{
 				ProcID:    "zzz",
 				CreatedTs: testutil.TestTime,
@@ -74,8 +73,8 @@ func TestProcessingResult(t *testing.T) {
 			proc.WriteResult(map[string]int{"a": 1})
 
 			p, err := proc.Proto()
-			So(err, ShouldBeNil)
-			So(p, ShouldResembleProto, &api.Processor{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, p, should.Resemble(&api.Processor{
 				Id:         "zzz",
 				State:      api.Processor_SUCCEEDED,
 				FinishedTs: timestamppb.New(testutil.TestTime),
@@ -84,22 +83,22 @@ func TestProcessingResult(t *testing.T) {
 						"a": {Kind: &structpb.Value_NumberValue{NumberValue: 1}},
 					},
 				},
-			})
+			}))
 		})
 
-		Convey("Failure", func() {
+		t.Run("Failure", func(t *ftt.Test) {
 			p, err := (&ProcessingResult{
 				ProcID:    "zzz",
 				CreatedTs: testutil.TestTime,
 				Error:     "blah",
 			}).Proto()
-			So(err, ShouldBeNil)
-			So(p, ShouldResembleProto, &api.Processor{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, p, should.Resemble(&api.Processor{
 				Id:         "zzz",
 				State:      api.Processor_FAILED,
 				FinishedTs: timestamppb.New(testutil.TestTime),
 				Error:      "blah",
-			})
+			}))
 		})
 	})
 }

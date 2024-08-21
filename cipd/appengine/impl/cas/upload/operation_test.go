@@ -22,25 +22,25 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestOperation(t *testing.T) {
 	t.Parallel()
 
-	Convey("With mocks", t, func() {
+	ftt.Run("With mocks", t, func(t *ftt.Test) {
 		testTime := testclock.TestRecentTimeUTC.Round(time.Millisecond)
 
 		ctx := memory.Use(context.Background())
 		ctx, _ = testclock.UseTime(ctx, testTime)
 
-		Convey("ToProto", func() {
+		t.Run("ToProto", func(t *ftt.Test) {
 			op := Operation{
 				ID:        123,
 				Status:    api.UploadStatus_UPLOADING,
@@ -51,16 +51,16 @@ func TestOperation(t *testing.T) {
 			}
 
 			// No Object when in UPLOADING.
-			So(op.ToProto("wrappedID"), ShouldResembleProto, &api.UploadOperation{
+			assert.Loosely(t, op.ToProto("wrappedID"), should.Resemble(&api.UploadOperation{
 				OperationId:  "wrappedID",
 				UploadUrl:    "http://upload-url.example.com",
 				Status:       api.UploadStatus_UPLOADING,
 				ErrorMessage: "zzz",
-			})
+			}))
 
 			// With Object when in PUBLISHED.
 			op.Status = api.UploadStatus_PUBLISHED
-			So(op.ToProto("wrappedID"), ShouldResembleProto, &api.UploadOperation{
+			assert.Loosely(t, op.ToProto("wrappedID"), should.Resemble(&api.UploadOperation{
 				OperationId: "wrappedID",
 				UploadUrl:   "http://upload-url.example.com",
 				Status:      api.UploadStatus_PUBLISHED,
@@ -69,66 +69,66 @@ func TestOperation(t *testing.T) {
 					HexDigest: op.HexDigest,
 				},
 				ErrorMessage: "zzz",
-			})
+			}))
 		})
 
-		Convey("Advance works", func() {
+		t.Run("Advance works", func(t *ftt.Test) {
 			op := &Operation{
 				ID:     123,
 				Status: api.UploadStatus_UPLOADING,
 			}
 
-			Convey("Success", func() {
-				So(datastore.Put(ctx, op), ShouldBeNil)
+			t.Run("Success", func(t *ftt.Test) {
+				assert.Loosely(t, datastore.Put(ctx, op), should.BeNil)
 				newOp, err := op.Advance(ctx, func(_ context.Context, o *Operation) error {
 					o.Status = api.UploadStatus_ERRORED
 					o.Error = "zzz"
 					return nil
 				})
-				So(err, ShouldBeNil)
-				So(newOp, ShouldResemble, &Operation{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, newOp, should.Resemble(&Operation{
 					ID:        123,
 					Status:    api.UploadStatus_ERRORED,
 					Error:     "zzz",
 					UpdatedTS: testTime,
-				})
+				}))
 
 				// Original one untouched.
-				So(op.Error, ShouldEqual, "")
+				assert.Loosely(t, op.Error, should.BeEmpty)
 
 				// State in the datastore is really updated.
-				So(datastore.Get(ctx, op), ShouldBeNil)
-				So(op, ShouldResemble, newOp)
+				assert.Loosely(t, datastore.Get(ctx, op), should.BeNil)
+				assert.Loosely(t, op, should.Resemble(newOp))
 			})
 
-			Convey("Skips because of unexpected status", func() {
+			t.Run("Skips because of unexpected status", func(t *ftt.Test) {
 				cpy := *op
 				cpy.Status = api.UploadStatus_ERRORED
-				So(datastore.Put(ctx, &cpy), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, &cpy), should.BeNil)
 
 				newOp, err := op.Advance(ctx, func(context.Context, *Operation) error {
 					panic("must not be called")
 				})
-				So(err, ShouldBeNil)
-				So(newOp, ShouldResemble, &cpy)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, newOp, should.Resemble(&cpy))
 			})
 
-			Convey("Callback error", func() {
-				So(datastore.Put(ctx, op), ShouldBeNil)
+			t.Run("Callback error", func(t *ftt.Test) {
+				assert.Loosely(t, datastore.Put(ctx, op), should.BeNil)
 				_, err := op.Advance(ctx, func(_ context.Context, o *Operation) error {
 					o.Error = "zzz" // must be ignored
 					return errors.New("omg")
 				})
-				So(err, ShouldErrLike, "omg")
-				So(datastore.Get(ctx, op), ShouldBeNil)
-				So(op.Error, ShouldEqual, "")
+				assert.Loosely(t, err, should.ErrLike("omg"))
+				assert.Loosely(t, datastore.Get(ctx, op), should.BeNil)
+				assert.Loosely(t, op.Error, should.BeEmpty)
 			})
 
-			Convey("Missing entity", func() {
+			t.Run("Missing entity", func(t *ftt.Test) {
 				_, err := op.Advance(ctx, func(context.Context, *Operation) error {
 					panic("must not be called")
 				})
-				So(err, ShouldErrLike, "no such entity")
+				assert.Loosely(t, err, should.ErrLike("no such entity"))
 			})
 		})
 	})

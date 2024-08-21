@@ -19,19 +19,20 @@ import (
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/appengine/impl/testutil"
 	"go.chromium.org/luci/cipd/common"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestSearchInstances(t *testing.T) {
 	t.Parallel()
 
-	Convey("With datastore", t, func() {
+	ftt.Run("With datastore", t, func(t *ftt.Test) {
 		ctx, _, _ := testutil.TestingContext()
 
 		iid := func(i int) string {
@@ -62,51 +63,51 @@ func TestSearchInstances(t *testing.T) {
 					RegisteredTs: testutil.TestTime.Add(time.Duration(when) * time.Second),
 				}
 			}
-			So(datastore.Put(ctx, inst, ents), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, inst, ents), should.BeNil)
 		}
 
-		Convey("Search by one tag works", func() {
+		t.Run("Search by one tag works", func(t *ftt.Test) {
 			expectedIIDs := make([]string, 10)
 			for i := 0; i < 10; i++ {
 				put(i, iid(i), "k:v0")
 				expectedIIDs[9-i] = iid(i) // sorted by creation time, most recent first
 			}
 
-			Convey("Empty", func() {
+			t.Run("Empty", func(t *ftt.Test) {
 				out, cur, err := SearchInstances(ctx, "pkg", []*api.Tag{
 					{Key: "k", Value: "missing"},
 				}, 11, nil)
-				So(err, ShouldBeNil)
-				So(cur, ShouldBeNil)
-				So(out, ShouldHaveLength, 0)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, cur, should.BeNil)
+				assert.Loosely(t, out, should.HaveLength(0))
 			})
 
-			Convey("No pagination", func() {
+			t.Run("No pagination", func(t *ftt.Test) {
 				out, cur, err := SearchInstances(ctx, "pkg", []*api.Tag{
 					{Key: "k", Value: "v0"},
 				}, 11, nil)
-				So(err, ShouldBeNil)
-				So(cur, ShouldBeNil)
-				So(ids(out), ShouldResemble, expectedIIDs)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, cur, should.BeNil)
+				assert.Loosely(t, ids(out), should.Resemble(expectedIIDs))
 			})
 
-			Convey("With pagination", func() {
+			t.Run("With pagination", func(t *ftt.Test) {
 				out, cur, err := SearchInstances(ctx, "pkg", []*api.Tag{
 					{Key: "k", Value: "v0"},
 				}, 6, nil)
-				So(err, ShouldBeNil)
-				So(cur, ShouldNotBeNil)
-				So(ids(out), ShouldResemble, expectedIIDs[:6])
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, cur, should.NotBeNil)
+				assert.Loosely(t, ids(out), should.Resemble(expectedIIDs[:6]))
 
 				out, cur, err = SearchInstances(ctx, "pkg", []*api.Tag{
 					{Key: "k", Value: "v0"},
 				}, 6, cur)
-				So(err, ShouldBeNil)
-				So(cur, ShouldBeNil)
-				So(ids(out), ShouldResemble, expectedIIDs[6:10])
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, cur, should.BeNil)
+				assert.Loosely(t, ids(out), should.Resemble(expectedIIDs[6:10]))
 			})
 
-			Convey("Handle missing instances", func() {
+			t.Run("Handle missing instances", func(t *ftt.Test) {
 				datastore.Delete(ctx, &Instance{
 					InstanceID: iid(5),
 					Package:    PackageKey(ctx, "pkg"),
@@ -115,15 +116,15 @@ func TestSearchInstances(t *testing.T) {
 				out, cur, err := SearchInstances(ctx, "pkg", []*api.Tag{
 					{Key: "k", Value: "v0"},
 				}, 11, nil)
-				So(err, ShouldBeNil)
-				So(cur, ShouldBeNil)
-				So(ids(out), ShouldResemble, append(append([]string(nil),
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, cur, should.BeNil)
+				assert.Loosely(t, ids(out), should.Resemble(append(append([]string(nil),
 					expectedIIDs[:4]...),
-					expectedIIDs[5:]...))
+					expectedIIDs[5:]...)))
 			})
 		})
 
-		Convey("Search by many tags works", func() {
+		t.Run("Search by many tags works", func(t *ftt.Test) {
 			expectedIIDs := make([]string, 10)
 			for i := 0; i < 10; i++ {
 				tags := []string{"k:v0"}
@@ -137,77 +138,77 @@ func TestSearchInstances(t *testing.T) {
 				expectedIIDs[9-i] = iid(i) // sorted by creation time, most recent first
 			}
 
-			Convey("Empty result", func() {
+			t.Run("Empty result", func(t *ftt.Test) {
 				out, cur, err := SearchInstances(ctx, "pkg", []*api.Tag{
 					{Key: "k", Value: "v0"},
 					{Key: "k", Value: "v1"},
 					{Key: "k", Value: "missing"},
 					{Key: "k", Value: "v2"},
 				}, 11, nil)
-				So(err, ShouldBeNil)
-				So(cur, ShouldBeNil)
-				So(out, ShouldHaveLength, 0)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, cur, should.BeNil)
+				assert.Loosely(t, out, should.HaveLength(0))
 			})
 
-			Convey("No pagination", func() {
+			t.Run("No pagination", func(t *ftt.Test) {
 				out, cur, err := SearchInstances(ctx, "pkg", []*api.Tag{
 					{Key: "k", Value: "v0"},
 					{Key: "k", Value: "v1"},
 					{Key: "k", Value: "v1"}, // dup
 				}, 11, nil)
-				So(err, ShouldBeNil)
-				So(cur, ShouldBeNil)
-				So(ids(out), ShouldResemble, []string{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, cur, should.BeNil)
+				assert.Loosely(t, ids(out), should.Resemble([]string{
 					iid(8), iid(6), iid(4), iid(2), iid(0),
-				})
+				}))
 			})
 
-			Convey("With pagination", func() {
+			t.Run("With pagination", func(t *ftt.Test) {
 				out, cur, err := SearchInstances(ctx, "pkg", []*api.Tag{
 					{Key: "k", Value: "v0"},
 					{Key: "k", Value: "v1"},
 				}, 3, nil)
-				So(err, ShouldBeNil)
-				So(cur, ShouldNotBeNil)
-				So(ids(out), ShouldResemble, []string{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, cur, should.NotBeNil)
+				assert.Loosely(t, ids(out), should.Resemble([]string{
 					iid(8), iid(6), iid(4),
-				})
+				}))
 
 				out, cur, err = SearchInstances(ctx, "pkg", []*api.Tag{
 					{Key: "k", Value: "v0"},
 					{Key: "k", Value: "v1"},
 				}, 3, cur)
-				So(err, ShouldBeNil)
-				So(cur, ShouldBeNil)
-				So(ids(out), ShouldResemble, []string{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, cur, should.BeNil)
+				assert.Loosely(t, ids(out), should.Resemble([]string{
 					iid(2), iid(0),
-				})
+				}))
 			})
 
-			Convey("More filters", func() {
+			t.Run("More filters", func(t *ftt.Test) {
 				out, cur, err := SearchInstances(ctx, "pkg", []*api.Tag{
 					{Key: "k", Value: "v0"},
 					{Key: "k", Value: "v1"},
 					{Key: "k", Value: "v2"},
 				}, 11, nil)
-				So(err, ShouldBeNil)
-				So(cur, ShouldBeNil)
-				So(ids(out), ShouldResemble, []string{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, cur, should.BeNil)
+				assert.Loosely(t, ids(out), should.Resemble([]string{
 					iid(6), iid(0),
-				})
+				}))
 			})
 
-			Convey("Tags order doesn't matter", func() {
+			t.Run("Tags order doesn't matter", func(t *ftt.Test) {
 				out, cur, err := SearchInstances(ctx, "pkg", []*api.Tag{
 					{Key: "k", Value: "v2"},
 					{Key: "k", Value: "v1"},
 					{Key: "k", Value: "v0"},
 				}, 11, nil)
-				So(err, ShouldBeNil)
-				So(cur, ShouldBeNil)
-				So(ids(out), ShouldResemble, []string{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, cur, should.BeNil)
+				assert.Loosely(t, ids(out), should.Resemble([]string{
 					iid(6), iid(0),
-				})
+				}))
 			})
 		})
 	})

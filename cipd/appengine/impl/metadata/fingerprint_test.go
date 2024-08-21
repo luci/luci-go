@@ -18,8 +18,9 @@ import (
 	"testing"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestCalculateFingerprint(t *testing.T) {
@@ -30,9 +31,9 @@ func TestCalculateFingerprint(t *testing.T) {
 		return md.Fingerprint
 	}
 
-	Convey("Works", t, func() {
-		So(call(&api.PrefixMetadata{}), ShouldEqual, "MvCPQuqSLssfbtMFiqBzZOdINQo")
-		So(call(&api.PrefixMetadata{Fingerprint: "zzz"}), ShouldEqual, "MvCPQuqSLssfbtMFiqBzZOdINQo")
-		So(call(&api.PrefixMetadata{Prefix: "a"}), ShouldEqual, "B96o1ElnpJUTe-Hf3dyT_S7KoTw")
+	ftt.Run("Works", t, func(t *ftt.Test) {
+		assert.Loosely(t, call(&api.PrefixMetadata{}), should.Equal("MvCPQuqSLssfbtMFiqBzZOdINQo"))
+		assert.Loosely(t, call(&api.PrefixMetadata{Fingerprint: "zzz"}), should.Equal("MvCPQuqSLssfbtMFiqBzZOdINQo"))
+		assert.Loosely(t, call(&api.PrefixMetadata{Prefix: "a"}), should.Equal("B96o1ElnpJUTe-Hf3dyT_S7KoTw"))
 	})
 }

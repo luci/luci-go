@@ -23,22 +23,21 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/appengine/impl/testutil"
 	"go.chromium.org/luci/cipd/common"
-
-	. "github.com/smartystreets/goconvey/convey"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestMetadata(t *testing.T) {
 	t.Parallel()
 
-	Convey("With datastore", t, func() {
+	ftt.Run("With datastore", t, func(t *ftt.Test) {
 		digest := strings.Repeat("a", 40)
 
 		ctx, tc, as := testutil.TestingContext()
@@ -53,7 +52,7 @@ func TestMetadata(t *testing.T) {
 				Package:           PackageKey(ctx, pkg),
 				ProcessorsPending: pendingProcs,
 			}
-			So(datastore.Put(ctx, &Package{Name: pkg}, inst), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, &Package{Name: pkg}, inst), should.BeNil)
 			return inst
 		}
 
@@ -64,7 +63,7 @@ func TestMetadata(t *testing.T) {
 				Instance:    datastore.KeyForObj(ctx, inst),
 			}
 			if err := datastore.Get(ctx, ent); err != datastore.ErrNoSuchEntity {
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				return ent
 			}
 			return nil
@@ -83,24 +82,24 @@ func TestMetadata(t *testing.T) {
 			}
 		}
 
-		Convey("AttachMetadata happy paths", func() {
+		t.Run("AttachMetadata happy paths", func(t *ftt.Test) {
 			inst := putInst("pkg", digest, nil)
 
 			// Attach one entry and verify it exist.
-			So(AttachMetadata(ctx, inst, []*api.InstanceMetadata{
+			assert.Loosely(t, AttachMetadata(ctx, inst, []*api.InstanceMetadata{
 				{
 					Key:   "key",
 					Value: []byte("some value"),
 				},
-			}), ShouldBeNil)
-			So(
-				getMD("key", "some value", inst), ShouldResemble,
-				expMD("key", "some value", inst, "text/plain", 0, testutil.TestUser),
-			)
+			}), should.BeNil)
+			assert.Loosely(t,
+				getMD("key", "some value", inst), should.Resemble(
+					expMD("key", "some value", inst, "text/plain", 0, testutil.TestUser),
+				))
 
 			// Attach few more at once.
 			tc.Add(time.Second)
-			So(AttachMetadata(ctx, inst, []*api.InstanceMetadata{
+			assert.Loosely(t, AttachMetadata(ctx, inst, []*api.InstanceMetadata{
 				{
 					Key:         "key",
 					Value:       []byte("some value 1"),
@@ -111,32 +110,32 @@ func TestMetadata(t *testing.T) {
 					Value:       []byte("some value 2"),
 					ContentType: "application/octet-stream",
 				},
-			}), ShouldBeNil)
-			So(
-				getMD("key", "some value 1", inst), ShouldResemble,
-				expMD("key", "some value 1", inst, "text/plain", 1, testutil.TestUser),
-			)
-			So(
-				getMD("another", "some value 2", inst), ShouldResemble,
-				expMD("another", "some value 2", inst, "application/octet-stream", 1, testutil.TestUser),
-			)
+			}), should.BeNil)
+			assert.Loosely(t,
+				getMD("key", "some value 1", inst), should.Resemble(
+					expMD("key", "some value 1", inst, "text/plain", 1, testutil.TestUser),
+				))
+			assert.Loosely(t,
+				getMD("another", "some value 2", inst), should.Resemble(
+					expMD("another", "some value 2", inst, "application/octet-stream", 1, testutil.TestUser),
+				))
 
 			// Try to reattach an existing one (notice the change in the email),
 			// should be ignored.
-			So(AttachMetadata(as("zzz@example.com"), inst, []*api.InstanceMetadata{
+			assert.Loosely(t, AttachMetadata(as("zzz@example.com"), inst, []*api.InstanceMetadata{
 				{
 					Key:         "key",
 					Value:       []byte("some value"),
 					ContentType: "ignored when dedupping",
 				},
-			}), ShouldBeNil)
-			So(
-				getMD("key", "some value", inst), ShouldResemble,
-				expMD("key", "some value", inst, "text/plain", 0, testutil.TestUser),
-			)
+			}), should.BeNil)
+			assert.Loosely(t,
+				getMD("key", "some value", inst), should.Resemble(
+					expMD("key", "some value", inst, "text/plain", 0, testutil.TestUser),
+				))
 
 			// Try to reattach a bunch of existing ones at once.
-			So(AttachMetadata(as("zzz@example.com"), inst, []*api.InstanceMetadata{
+			assert.Loosely(t, AttachMetadata(as("zzz@example.com"), inst, []*api.InstanceMetadata{
 				{
 					Key:         "key",
 					Value:       []byte("some value 1"),
@@ -147,19 +146,19 @@ func TestMetadata(t *testing.T) {
 					Value:       []byte("some value 2"),
 					ContentType: "ignored when dedupping",
 				},
-			}), ShouldBeNil)
-			So(
-				getMD("key", "some value 1", inst), ShouldResemble,
-				expMD("key", "some value 1", inst, "text/plain", 1, testutil.TestUser),
-			)
-			So(
-				getMD("another", "some value 2", inst), ShouldResemble,
-				expMD("another", "some value 2", inst, "application/octet-stream", 1, testutil.TestUser),
-			)
+			}), should.BeNil)
+			assert.Loosely(t,
+				getMD("key", "some value 1", inst), should.Resemble(
+					expMD("key", "some value 1", inst, "text/plain", 1, testutil.TestUser),
+				))
+			assert.Loosely(t,
+				getMD("another", "some value 2", inst), should.Resemble(
+					expMD("another", "some value 2", inst, "application/octet-stream", 1, testutil.TestUser),
+				))
 
 			// Mixed group with new and existing entries.
 			tc.Add(time.Second)
-			So(AttachMetadata(as("zzz@example.com"), inst, []*api.InstanceMetadata{
+			assert.Loosely(t, AttachMetadata(as("zzz@example.com"), inst, []*api.InstanceMetadata{
 				{
 					Key:         "key",
 					Value:       []byte("some value 1"),
@@ -180,26 +179,26 @@ func TestMetadata(t *testing.T) {
 					Value:       []byte("value 2"),
 					ContentType: "text/plain",
 				},
-			}), ShouldBeNil)
-			So(
-				getMD("key", "some value 1", inst), ShouldResemble,
-				expMD("key", "some value 1", inst, "text/plain", 1, testutil.TestUser),
-			)
-			So(
-				getMD("new-key", "value 1", inst), ShouldResemble,
-				expMD("new-key", "value 1", inst, "text/plain", 2, "user:zzz@example.com"),
-			)
-			So(
-				getMD("another", "some value 2", inst), ShouldResemble,
-				expMD("another", "some value 2", inst, "application/octet-stream", 1, testutil.TestUser),
-			)
-			So(
-				getMD("new-key", "value 2", inst), ShouldResemble,
-				expMD("new-key", "value 2", inst, "text/plain", 2, "user:zzz@example.com"),
-			)
+			}), should.BeNil)
+			assert.Loosely(t,
+				getMD("key", "some value 1", inst), should.Resemble(
+					expMD("key", "some value 1", inst, "text/plain", 1, testutil.TestUser),
+				))
+			assert.Loosely(t,
+				getMD("new-key", "value 1", inst), should.Resemble(
+					expMD("new-key", "value 1", inst, "text/plain", 2, "user:zzz@example.com"),
+				))
+			assert.Loosely(t,
+				getMD("another", "some value 2", inst), should.Resemble(
+					expMD("another", "some value 2", inst, "application/octet-stream", 1, testutil.TestUser),
+				))
+			assert.Loosely(t,
+				getMD("new-key", "value 2", inst), should.Resemble(
+					expMD("new-key", "value 2", inst, "text/plain", 2, "user:zzz@example.com"),
+				))
 
 			// A duplicate in a batch. The first one wins.
-			So(AttachMetadata(ctx, inst, []*api.InstanceMetadata{
+			assert.Loosely(t, AttachMetadata(ctx, inst, []*api.InstanceMetadata{
 				{
 					Key:         "dup-key",
 					Value:       []byte("dup-value"),
@@ -210,14 +209,14 @@ func TestMetadata(t *testing.T) {
 					Value:       []byte("dup-value"),
 					ContentType: "text/2",
 				},
-			}), ShouldBeNil)
-			So(
-				getMD("dup-key", "dup-value", inst), ShouldResemble,
-				expMD("dup-key", "dup-value", inst, "text/1", 2, testutil.TestUser),
-			)
+			}), should.BeNil)
+			assert.Loosely(t,
+				getMD("dup-key", "dup-value", inst), should.Resemble(
+					expMD("dup-key", "dup-value", inst, "text/1", 2, testutil.TestUser),
+				))
 
 			// All events have been collected.
-			So(GetEvents(ctx), ShouldResembleProto, []*api.Event{
+			assert.Loosely(t, GetEvents(ctx), should.Resemble([]*api.Event{
 				{
 					Kind:          api.EventKind_INSTANCE_METADATA_ATTACHED,
 					Package:       "pkg",
@@ -283,10 +282,10 @@ func TestMetadata(t *testing.T) {
 					MdContentType: "text/plain",
 					MdFingerprint: fp("key", "some value"),
 				},
-			})
+			}))
 		})
 
-		Convey("AttachMetadata to not ready instance", func() {
+		t.Run("AttachMetadata to not ready instance", func(t *ftt.Test) {
 			inst := putInst("pkg", digest, []string{"proc"})
 
 			err := AttachMetadata(ctx, inst, []*api.InstanceMetadata{
@@ -295,78 +294,78 @@ func TestMetadata(t *testing.T) {
 					Value: []byte("some value"),
 				},
 			})
-			So(grpcutil.Code(err), ShouldEqual, codes.FailedPrecondition)
-			So(err, ShouldErrLike, "the instance is not ready yet")
+			assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.FailedPrecondition))
+			assert.Loosely(t, err, should.ErrLike("the instance is not ready yet"))
 		})
 
-		Convey("DetachMetadata happy paths", func() {
+		t.Run("DetachMetadata happy paths", func(t *ftt.Test) {
 			inst := putInst("pkg", digest, nil)
 
 			// Attach a bunch of metadata first, so we have something to detach.
-			So(AttachMetadata(ctx, inst, []*api.InstanceMetadata{
+			assert.Loosely(t, AttachMetadata(ctx, inst, []*api.InstanceMetadata{
 				{Key: "a", Value: []byte("0"), ContentType: "text/0"},
 				{Key: "a", Value: []byte("1"), ContentType: "text/1"},
 				{Key: "a", Value: []byte("2"), ContentType: "text/2"},
 				{Key: "a", Value: []byte("3"), ContentType: "text/3"},
 				{Key: "a", Value: []byte("4"), ContentType: "text/4"},
 				{Key: "a", Value: []byte("5"), ContentType: "text/5"},
-			}), ShouldBeNil)
+			}), should.BeNil)
 
 			// Detach one existing using a key-value pair.
 			tc.Add(time.Second)
-			So(getMD("a", "0", inst), ShouldNotBeNil)
-			So(DetachMetadata(ctx, inst, []*api.InstanceMetadata{
+			assert.Loosely(t, getMD("a", "0", inst), should.NotBeNil)
+			assert.Loosely(t, DetachMetadata(ctx, inst, []*api.InstanceMetadata{
 				{Key: "a", Value: []byte("0")},
-			}), ShouldBeNil)
-			So(getMD("a", "0", inst), ShouldBeNil)
+			}), should.BeNil)
+			assert.Loosely(t, getMD("a", "0", inst), should.BeNil)
 
 			// Detach one existing using a fingerprint pair.
 			tc.Add(time.Second)
-			So(getMD("a", "1", inst), ShouldNotBeNil)
-			So(DetachMetadata(ctx, inst, []*api.InstanceMetadata{
+			assert.Loosely(t, getMD("a", "1", inst), should.NotBeNil)
+			assert.Loosely(t, DetachMetadata(ctx, inst, []*api.InstanceMetadata{
 				{Fingerprint: fp("a", "1")},
-			}), ShouldBeNil)
-			So(getMD("a", "1", inst), ShouldBeNil)
+			}), should.BeNil)
+			assert.Loosely(t, getMD("a", "1", inst), should.BeNil)
 
 			// Detach one missing.
-			So(DetachMetadata(ctx, inst, []*api.InstanceMetadata{
+			assert.Loosely(t, DetachMetadata(ctx, inst, []*api.InstanceMetadata{
 				{Key: "a", Value: []byte("z0")},
-			}), ShouldBeNil)
+			}), should.BeNil)
 
 			// Detach a bunch of existing, including dups.
 			tc.Add(time.Second)
-			So(getMD("a", "2", inst), ShouldNotBeNil)
-			So(getMD("a", "3", inst), ShouldNotBeNil)
-			So(DetachMetadata(ctx, inst, []*api.InstanceMetadata{
+			assert.Loosely(t, getMD("a", "2", inst), should.NotBeNil)
+			assert.Loosely(t, getMD("a", "3", inst), should.NotBeNil)
+			assert.Loosely(t, DetachMetadata(ctx, inst, []*api.InstanceMetadata{
 				{Key: "a", Value: []byte("2")},
 				{Key: "a", Value: []byte("3")},
 				{Key: "a", Value: []byte("2")},
 				{Fingerprint: fp("a", "3")},
-			}), ShouldBeNil)
-			So(getMD("a", "2", inst), ShouldBeNil)
-			So(getMD("a", "3", inst), ShouldBeNil)
+			}), should.BeNil)
+			assert.Loosely(t, getMD("a", "2", inst), should.BeNil)
+			assert.Loosely(t, getMD("a", "3", inst), should.BeNil)
 
 			// Detach a bunch of missing.
-			So(DetachMetadata(ctx, inst, []*api.InstanceMetadata{
+			assert.Loosely(t, DetachMetadata(ctx, inst, []*api.InstanceMetadata{
 				{Key: "a", Value: []byte("z1")},
 				{Key: "a", Value: []byte("z2")},
-			}), ShouldBeNil)
+			}), should.BeNil)
 
 			// Detach a mix of existing and missing.
 			tc.Add(time.Second)
-			So(getMD("a", "4", inst), ShouldNotBeNil)
-			So(getMD("a", "5", inst), ShouldNotBeNil)
-			So(DetachMetadata(ctx, inst, []*api.InstanceMetadata{
+			assert.Loosely(t, getMD("a", "4", inst), should.NotBeNil)
+			assert.Loosely(t, getMD("a", "5", inst), should.NotBeNil)
+			assert.Loosely(t, DetachMetadata(ctx, inst, []*api.InstanceMetadata{
 				{Key: "a", Value: []byte("z3")},
 				{Key: "a", Value: []byte("4")},
 				{Key: "a", Value: []byte("z4")},
 				{Key: "a", Value: []byte("5")},
-			}), ShouldBeNil)
-			So(getMD("a", "4", inst), ShouldBeNil)
-			So(getMD("a", "5", inst), ShouldBeNil)
+			}), should.BeNil)
+			assert.Loosely(t, getMD("a", "4", inst), should.BeNil)
+			assert.Loosely(t, getMD("a", "5", inst), should.BeNil)
 
 			// All 'detach' events have been collected (skip checking 'attach' ones).
-			So(GetEvents(ctx)[:6], ShouldResembleProto, []*api.Event{
+			assert.Loosely(t, GetEvents(ctx)[:6], should.Resemble([]*api.Event{
 				{
 					Kind:          api.EventKind_INSTANCE_METADATA_DETACHED,
 					Package:       "pkg",
@@ -433,31 +432,31 @@ func TestMetadata(t *testing.T) {
 					MdContentType: "text/0",
 					MdFingerprint: fp("a", "0"),
 				},
-			})
+			}))
 		})
 
-		Convey("Listing works", func() {
+		t.Run("Listing works", func(t *ftt.Test) {
 			inst := putInst("pkg", digest, nil)
 
-			So(AttachMetadata(ctx, inst, []*api.InstanceMetadata{
+			assert.Loosely(t, AttachMetadata(ctx, inst, []*api.InstanceMetadata{
 				{Key: "a", Value: []byte("0")},
 				{Key: "b", Value: []byte("0")},
 				{Key: "c", Value: []byte("0")},
-			}), ShouldBeNil)
+			}), should.BeNil)
 
 			tc.Add(time.Second)
-			So(AttachMetadata(ctx, inst, []*api.InstanceMetadata{
+			assert.Loosely(t, AttachMetadata(ctx, inst, []*api.InstanceMetadata{
 				{Key: "a", Value: []byte("1")},
 				{Key: "b", Value: []byte("1")},
 				{Key: "c", Value: []byte("1")},
-			}), ShouldBeNil)
+			}), should.BeNil)
 
 			tc.Add(time.Second)
-			So(AttachMetadata(ctx, inst, []*api.InstanceMetadata{
+			assert.Loosely(t, AttachMetadata(ctx, inst, []*api.InstanceMetadata{
 				{Key: "a", Value: []byte("2")},
 				{Key: "b", Value: []byte("2")},
 				{Key: "c", Value: []byte("2")},
-			}), ShouldBeNil)
+			}), should.BeNil)
 
 			pairs := func(md []*InstanceMetadata) []string {
 				var out []string
@@ -467,34 +466,34 @@ func TestMetadata(t *testing.T) {
 				return out
 			}
 
-			Convey("ListMetadata", func() {
-				Convey("Some", func() {
+			t.Run("ListMetadata", func(t *ftt.Test) {
+				t.Run("Some", func(t *ftt.Test) {
 					md, err := ListMetadata(ctx, inst)
-					So(err, ShouldBeNil)
-					So(pairs(md), ShouldResemble, []string{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, pairs(md), should.Resemble([]string{
 						"a:2", "b:2", "c:2", "a:1", "b:1", "c:1", "a:0", "b:0", "c:0",
-					})
+					}))
 				})
-				Convey("None", func() {
+				t.Run("None", func(t *ftt.Test) {
 					inst := putInst("another/pkg", digest, nil)
 					md, err := ListMetadata(ctx, inst)
-					So(err, ShouldBeNil)
-					So(md, ShouldHaveLength, 0)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, md, should.HaveLength(0))
 				})
 			})
 
-			Convey("ListMetadataWithKeys", func() {
-				Convey("Some", func() {
+			t.Run("ListMetadataWithKeys", func(t *ftt.Test) {
+				t.Run("Some", func(t *ftt.Test) {
 					md, err := ListMetadataWithKeys(ctx, inst, []string{"a", "c", "missing"})
-					So(err, ShouldBeNil)
-					So(pairs(md), ShouldResemble, []string{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, pairs(md), should.Resemble([]string{
 						"a:2", "c:2", "a:1", "c:1", "a:0", "c:0",
-					})
+					}))
 				})
-				Convey("None", func() {
+				t.Run("None", func(t *ftt.Test) {
 					md, err := ListMetadataWithKeys(ctx, inst, []string{"missing"})
-					So(err, ShouldBeNil)
-					So(md, ShouldHaveLength, 0)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, md, should.HaveLength(0))
 				})
 			})
 		})
@@ -504,11 +503,11 @@ func TestMetadata(t *testing.T) {
 func TestGuessPlainText(t *testing.T) {
 	t.Parallel()
 
-	Convey("guessPlainText works", t, func() {
-		So(guessPlainText([]byte("")), ShouldBeTrue)
-		So(guessPlainText([]byte("abc")), ShouldBeTrue)
-		So(guessPlainText([]byte(" ~\t\r\n")), ShouldBeTrue)
-		So(guessPlainText([]byte{0x19}), ShouldBeFalse)
-		So(guessPlainText([]byte{0x7F}), ShouldBeFalse)
+	ftt.Run("guessPlainText works", t, func(t *ftt.Test) {
+		assert.Loosely(t, guessPlainText([]byte("")), should.BeTrue)
+		assert.Loosely(t, guessPlainText([]byte("abc")), should.BeTrue)
+		assert.Loosely(t, guessPlainText([]byte(" ~\t\r\n")), should.BeTrue)
+		assert.Loosely(t, guessPlainText([]byte{0x19}), should.BeFalse)
+		assert.Loosely(t, guessPlainText([]byte{0x7F}), should.BeFalse)
 	})
 }

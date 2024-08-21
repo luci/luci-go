@@ -23,12 +23,13 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestACLDecorator(t *testing.T) {
@@ -91,13 +92,13 @@ func TestACLDecorator(t *testing.T) {
 	}
 
 	for idx, cs := range cases {
-		Convey(fmt.Sprintf("%d - %s by %s", idx, cs.method, cs.caller), t, func() {
+		ftt.Run(fmt.Sprintf("%d - %s by %s", idx, cs.method, cs.caller), t, func(t *ftt.Test) {
 			state.Identity = cs.caller
 			_, err := cs.request()
 			if cs.allowed {
-				So(status.Code(err), ShouldEqual, codes.Unimplemented)
+				assert.Loosely(t, status.Code(err), should.Equal(codes.Unimplemented))
 			} else {
-				So(status.Code(err), ShouldEqual, codes.PermissionDenied)
+				assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
 			}
 		})
 	}

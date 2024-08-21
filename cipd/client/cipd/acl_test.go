@@ -21,10 +21,9 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestPrefixMetadataToACLs(t *testing.T) {
@@ -32,7 +31,7 @@ func TestPrefixMetadataToACLs(t *testing.T) {
 
 	epoch := time.Date(2018, time.February, 1, 2, 3, 0, 0, time.UTC)
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		out := prefixMetadataToACLs(&api.InheritedPrefixMetadata{
 			PerPrefixMetadata: []*api.PrefixMetadata{
 				{
@@ -57,7 +56,7 @@ func TestPrefixMetadataToACLs(t *testing.T) {
 			},
 		})
 
-		So(out, ShouldResemble, []PackageACL{
+		assert.Loosely(t, out, should.Resemble([]PackageACL{
 			{
 				PackagePath: "a",
 				Role:        "READER",
@@ -86,7 +85,7 @@ func TestPrefixMetadataToACLs(t *testing.T) {
 				ModifiedBy:  "user:c-updater@example.com",
 				ModifiedTs:  UnixTime(epoch),
 			},
-		})
+		}))
 	})
 }
 
@@ -101,72 +100,72 @@ func TestMutateACLs(t *testing.T) {
 		}
 	}
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		meta := original()
 		dirty, err := mutateACLs(&meta, []PackageACLChange{
 			{Action: GrantRole, Role: "OWNER", Principal: "group:b"},
 			{Action: RevokeRole, Role: "READER", Principal: "group:a"},
 		})
-		So(err, ShouldBeNil)
-		So(dirty, ShouldBeTrue)
-		So(meta, ShouldResemble, api.PrefixMetadata{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, dirty, should.BeTrue)
+		assert.Loosely(t, meta, should.Resemble(api.PrefixMetadata{
 			Acls: []*api.PrefixMetadata_ACL{
 				{Role: api.Role_OWNER, Principals: []string{"group:b"}},
 			},
-		})
+		}))
 	})
 
-	Convey("Noop change", t, func() {
+	ftt.Run("Noop change", t, func(t *ftt.Test) {
 		meta := original()
 		dirty, err := mutateACLs(&meta, []PackageACLChange{
 			{Action: GrantRole, Role: "READER", Principal: "group:a"},
 		})
-		So(err, ShouldBeNil)
-		So(dirty, ShouldBeFalse)
-		So(meta, ShouldResemble, original())
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, dirty, should.BeFalse)
+		assert.Loosely(t, meta, should.Resemble(original()))
 	})
 
-	Convey("Bad role", t, func() {
+	ftt.Run("Bad role", t, func(t *ftt.Test) {
 		meta := original()
 		dirty, err := mutateACLs(&meta, []PackageACLChange{
 			{Action: GrantRole, Role: "OWNER", Principal: "group:a"},
 			{Action: GrantRole, Role: "ZZZ", Principal: "group:a"},
 		})
-		So(err, ShouldErrLike, `unrecognized role "ZZZ"`)
-		So(dirty, ShouldBeTrue) // granted OWNER before failing
+		assert.Loosely(t, err, should.ErrLike(`unrecognized role "ZZZ"`))
+		assert.Loosely(t, dirty, should.BeTrue) // granted OWNER before failing
 	})
 
-	Convey("Bad action", t, func() {
+	ftt.Run("Bad action", t, func(t *ftt.Test) {
 		meta := original()
 		dirty, err := mutateACLs(&meta, []PackageACLChange{
 			{Action: GrantRole, Role: "OWNER", Principal: "group:a"},
 			{Action: "ZZZ", Role: "WRITER", Principal: "group:a"},
 		})
-		So(err, ShouldErrLike, `unrecognized PackageACLChangeAction "ZZZ"`)
-		So(dirty, ShouldBeTrue) // granted OWNER before failing
+		assert.Loosely(t, err, should.ErrLike(`unrecognized PackageACLChangeAction "ZZZ"`))
+		assert.Loosely(t, dirty, should.BeTrue) // granted OWNER before failing
 	})
 }
 
 func TestGrantRevokeRole(t *testing.T) {
 	t.Parallel()
 
-	Convey("Grant role", t, func() {
+	ftt.Run("Grant role", t, func(t *ftt.Test) {
 		m := &api.PrefixMetadata{}
 
-		So(grantRole(m, api.Role_READER, "group:a"), ShouldBeTrue)
-		So(grantRole(m, api.Role_READER, "group:b"), ShouldBeTrue)
-		So(grantRole(m, api.Role_READER, "group:a"), ShouldBeFalse)
-		So(grantRole(m, api.Role_WRITER, "group:a"), ShouldBeTrue)
+		assert.Loosely(t, grantRole(m, api.Role_READER, "group:a"), should.BeTrue)
+		assert.Loosely(t, grantRole(m, api.Role_READER, "group:b"), should.BeTrue)
+		assert.Loosely(t, grantRole(m, api.Role_READER, "group:a"), should.BeFalse)
+		assert.Loosely(t, grantRole(m, api.Role_WRITER, "group:a"), should.BeTrue)
 
-		So(m, ShouldResembleProto, &api.PrefixMetadata{
+		assert.Loosely(t, m, should.Resemble(&api.PrefixMetadata{
 			Acls: []*api.PrefixMetadata_ACL{
 				{Role: api.Role_READER, Principals: []string{"group:a", "group:b"}},
 				{Role: api.Role_WRITER, Principals: []string{"group:a"}},
 			},
-		})
+		}))
 	})
 
-	Convey("Revoke role", t, func() {
+	ftt.Run("Revoke role", t, func(t *ftt.Test) {
 		m := &api.PrefixMetadata{
 			Acls: []*api.PrefixMetadata_ACL{
 				{Role: api.Role_READER, Principals: []string{"group:a", "group:b"}},
@@ -174,11 +173,11 @@ func TestGrantRevokeRole(t *testing.T) {
 			},
 		}
 
-		So(revokeRole(m, api.Role_READER, "group:a"), ShouldBeTrue)
-		So(revokeRole(m, api.Role_READER, "group:b"), ShouldBeTrue)
-		So(revokeRole(m, api.Role_READER, "group:a"), ShouldBeFalse)
-		So(revokeRole(m, api.Role_WRITER, "group:a"), ShouldBeTrue)
+		assert.Loosely(t, revokeRole(m, api.Role_READER, "group:a"), should.BeTrue)
+		assert.Loosely(t, revokeRole(m, api.Role_READER, "group:b"), should.BeTrue)
+		assert.Loosely(t, revokeRole(m, api.Role_READER, "group:a"), should.BeFalse)
+		assert.Loosely(t, revokeRole(m, api.Role_WRITER, "group:a"), should.BeTrue)
 
-		So(m, ShouldResembleProto, &api.PrefixMetadata{})
+		assert.Loosely(t, m, should.Resemble(&api.PrefixMetadata{}))
 	})
 }

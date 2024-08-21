@@ -22,8 +22,9 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/cipd/appengine/impl/testutil"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 type cbReaderAt struct {
@@ -46,29 +47,29 @@ func TestPackageReader(t *testing.T) {
 
 	readErr := fmt.Errorf("some read error")
 
-	Convey("Happy path", t, func() {
+	ftt.Run("Happy path", t, func(t *ftt.Test) {
 		pkg, err := NewPackageReader(reader, size)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		So(pkg.Files(), ShouldResemble, []string{"file1", "file2"})
+		assert.Loosely(t, pkg.Files(), should.Resemble([]string{"file1", "file2"}))
 
 		fr, actualSize, err := pkg.Open("file2")
-		So(err, ShouldBeNil)
-		So(actualSize, ShouldEqual, 4)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, actualSize, should.Equal(4))
 		blob, err := io.ReadAll(fr)
-		So(err, ShouldBeNil)
-		So(string(blob), ShouldEqual, "blah")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, string(blob), should.Equal("blah"))
 	})
 
-	Convey("No such file", t, func() {
+	ftt.Run("No such file", t, func(t *ftt.Test) {
 		pkg, err := NewPackageReader(reader, size)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		_, _, err = pkg.Open("zzz")
-		So(err.Error(), ShouldEqual, `no file "zzz" inside the package`)
+		assert.Loosely(t, err.Error(), should.Equal(`no file "zzz" inside the package`))
 	})
 
-	Convey("Propagates errors when opening", t, func() {
+	ftt.Run("Propagates errors when opening", t, func(t *ftt.Test) {
 		calls := 0
 		r := &cbReaderAt{
 			readAt: func(p []byte, off int64) (int, error) {
@@ -82,19 +83,19 @@ func TestPackageReader(t *testing.T) {
 		}
 
 		_, err := NewPackageReader(r, size)
-		So(err, ShouldEqual, readErr) // exact same error object
+		assert.Loosely(t, err, should.Equal(readErr)) // exact same error object
 	})
 
-	Convey("Propagates errors when reading", t, func() {
+	ftt.Run("Propagates errors when reading", t, func(t *ftt.Test) {
 		r := &cbReaderAt{readAt: reader.ReadAt}
 
 		// Let the directory be read successfully.
 		pkg, err := NewPackageReader(r, size)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		// Now inject errors.
 		r.readAt = func([]byte, int64) (int, error) { return 0, readErr }
 		_, _, err = pkg.Open("file1")
-		So(err, ShouldEqual, readErr) // exact same error object
+		assert.Loosely(t, err, should.Equal(readErr)) // exact same error object
 	})
 }

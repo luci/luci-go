@@ -20,18 +20,19 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestRoles(t *testing.T) {
 	t.Parallel()
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		fakeDB := authtest.NewFakeDB(
 			authtest.MockMembership("user:admin@example.com", "admins"),
 
@@ -84,30 +85,30 @@ func TestRoles(t *testing.T) {
 		}
 
 		for _, tc := range expectedRoles {
-			Convey(fmt.Sprintf("User %s roles", tc.user), func() {
+			t.Run(fmt.Sprintf("User %s roles", tc.user), func(t *ftt.Test) {
 				ctx := auth.WithState(context.Background(), &authtest.FakeState{
 					Identity: tc.user,
 					FakeDB:   fakeDB,
 				})
 
 				// Get the roles by checking explicitly each one via hasRole.
-				Convey("hasRole works", func() {
+				t.Run("hasRole works", func(t *ftt.Test) {
 					haveRoles := []api.Role{}
 					for _, r := range allRoles {
 						yes, err := hasRole(ctx, metas, r)
-						So(err, ShouldBeNil)
+						assert.Loosely(t, err, should.BeNil)
 						if yes {
 							haveRoles = append(haveRoles, r)
 						}
 					}
-					So(haveRoles, ShouldResemble, tc.expectedRoles)
+					assert.Loosely(t, haveRoles, should.Resemble(tc.expectedRoles))
 				})
 
 				// Get the same set of roles through rolesInPrefix.
-				Convey("rolesInPrefix", func() {
+				t.Run("rolesInPrefix", func(t *ftt.Test) {
 					haveRoles, err := rolesInPrefix(ctx, tc.user, metas)
-					So(err, ShouldBeNil)
-					So(haveRoles, ShouldResemble, tc.expectedRoles)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, haveRoles, should.Resemble(tc.expectedRoles))
 				})
 			})
 		}

@@ -19,9 +19,9 @@ import (
 	"testing"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestMetadataStore(t *testing.T) {
@@ -37,7 +37,7 @@ func TestMetadataStore(t *testing.T) {
 
 	getMD := func(s *MetadataStore, pfx string) []string {
 		md, err := s.GetMetadata(ctx, pfx)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		out := make([]string, len(md))
 		for i, m := range md {
 			out[i] = m.Prefix
@@ -50,67 +50,67 @@ func TestMetadataStore(t *testing.T) {
 			visited = append(visited, p)
 			return true, nil
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		return
 	}
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		s := MetadataStore{}
 
 		// Empty at the start.
 		metas, err := s.GetMetadata(ctx, "a/b/c")
-		So(err, ShouldBeNil)
-		So(metas, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, metas, should.BeNil)
 
 		// Start creating metadata for 'a', but don't actually touch it.
 		meta, err := s.UpdateMetadata(ctx, "a/", func(_ context.Context, m *api.PrefixMetadata) error {
 			return nil
 		})
-		So(err, ShouldBeNil)
-		So(meta, ShouldBeNil) // it is missing
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, meta, should.BeNil) // it is missing
 
 		// Still missing.
 		metas, err = s.GetMetadata(ctx, "a/b/c")
-		So(err, ShouldBeNil)
-		So(metas, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, metas, should.BeNil)
 
 		// Create metadata for 'a' for real this time.
 		meta, err = s.UpdateMetadata(ctx, "a/", func(_ context.Context, m *api.PrefixMetadata) error {
-			So(m.Prefix, ShouldEqual, "a")
-			So(m.Fingerprint, ShouldEqual, "")
+			assert.Loosely(t, m.Prefix, should.Equal("a"))
+			assert.Loosely(t, m.Fingerprint, should.BeEmpty)
 			m.UpdateUser = "user:a@example.com"
 			return nil
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		expected_a := &api.PrefixMetadata{
 			Prefix:      "a",
 			Fingerprint: "ccAI44xVAoO3SUzK2x6b0wZMD00",
 			UpdateUser:  "user:a@example.com",
 		}
-		So(meta, ShouldResembleProto, expected_a)
+		assert.Loosely(t, meta, should.Resemble(expected_a))
 
 		// Again, sees the updated metadata now.
 		meta, err = s.UpdateMetadata(ctx, "a/", func(_ context.Context, m *api.PrefixMetadata) error {
-			So(m, ShouldResembleProto, expected_a)
+			assert.Loosely(t, m, should.Resemble(expected_a))
 			return nil
 		})
-		So(err, ShouldBeNil)
-		So(meta, ShouldResembleProto, expected_a)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, meta, should.Resemble(expected_a))
 
 		// Create metadata for 'a/b/c'.
 		meta, err = s.UpdateMetadata(ctx, "a/b/c", func(_ context.Context, m *api.PrefixMetadata) error {
 			m.UpdateUser = "user:abc@example.com"
 			return nil
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		expected_abc := &api.PrefixMetadata{
 			Prefix:      "a/b/c",
 			Fingerprint: "HZozZp-6ZMi8lZp11-w54xJBjhA",
 			UpdateUser:  "user:abc@example.com",
 		}
-		So(meta, ShouldResembleProto, expected_abc)
+		assert.Loosely(t, meta, should.Resemble(expected_abc))
 
 		// Create metadata for 'a/b/d' (sibling), to make sure it will not appear
 		// in responses below.
@@ -118,35 +118,35 @@ func TestMetadataStore(t *testing.T) {
 			m.UpdateUser = "user:abd@example.com"
 			return nil
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		// Fetching 'a' returns only 'a'.
 		metas, err = s.GetMetadata(ctx, "a")
-		So(err, ShouldBeNil)
-		So(metas, ShouldResembleProto, []*api.PrefixMetadata{expected_a})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, metas, should.Resemble([]*api.PrefixMetadata{expected_a}))
 
 		// Prefix matches respects '/'.
 		metas, err = s.GetMetadata(ctx, "ab")
-		So(err, ShouldBeNil)
-		So(metas, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, metas, should.BeNil)
 
 		// Still only 'a'.
 		metas, err = s.GetMetadata(ctx, "a/b")
-		So(err, ShouldBeNil)
-		So(metas, ShouldResembleProto, []*api.PrefixMetadata{expected_a})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, metas, should.Resemble([]*api.PrefixMetadata{expected_a}))
 
 		// And now we also see 'a/b/c'.
 		metas, err = s.GetMetadata(ctx, "a/b/c")
-		So(err, ShouldBeNil)
-		So(metas, ShouldResembleProto, []*api.PrefixMetadata{expected_a, expected_abc})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, metas, should.Resemble([]*api.PrefixMetadata{expected_a, expected_abc}))
 
 		// And that's all we can ever see, even if we do deeper.
 		metas, err = s.GetMetadata(ctx, "a/b/c/d/e/f")
-		So(err, ShouldBeNil)
-		So(metas, ShouldResembleProto, []*api.PrefixMetadata{expected_a, expected_abc})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, metas, should.Resemble([]*api.PrefixMetadata{expected_a, expected_abc}))
 	})
 
-	Convey("Root metadata", t, func() {
+	ftt.Run("Root metadata", t, func(t *ftt.Test) {
 		s := MetadataStore{}
 
 		// Create the metadata for the root.
@@ -154,99 +154,99 @@ func TestMetadataStore(t *testing.T) {
 			m.UpdateUser = "user:root@example.com"
 			return nil
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		So(rootMeta, ShouldResembleProto, &api.PrefixMetadata{
+		assert.Loosely(t, rootMeta, should.Resemble(&api.PrefixMetadata{
 			Fingerprint: "a7QYP7C3AXksn_pfotXl2OwBevc",
 			UpdateUser:  "user:root@example.com",
-		})
+		}))
 
 		// Fetchable now.
 		metas, err := s.GetMetadata(ctx, "")
-		So(err, ShouldBeNil)
-		So(metas, ShouldResembleProto, []*api.PrefixMetadata{rootMeta})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, metas, should.Resemble([]*api.PrefixMetadata{rootMeta}))
 
 		// "/" is also accepted.
 		metas, err = s.GetMetadata(ctx, "/")
-		So(err, ShouldBeNil)
-		So(metas, ShouldResembleProto, []*api.PrefixMetadata{rootMeta})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, metas, should.Resemble([]*api.PrefixMetadata{rootMeta}))
 
 		// Make sure UpdateMetadata see the root metadata too.
 		_, err = s.UpdateMetadata(ctx, "", func(_ context.Context, m *api.PrefixMetadata) error {
-			So(m, ShouldResembleProto, rootMeta)
+			assert.Loosely(t, m, should.Resemble(rootMeta))
 			return nil
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		// Create metadata for some prefix.
 		abMeta, err := s.UpdateMetadata(ctx, "a/b", func(_ context.Context, m *api.PrefixMetadata) error {
 			m.UpdateUser = "user:ab@example.com"
 			return nil
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		// Fetching meta for prefixes picks up root metadata too.
 		metas, err = s.GetMetadata(ctx, "a")
-		So(err, ShouldBeNil)
-		So(metas, ShouldResembleProto, []*api.PrefixMetadata{rootMeta})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, metas, should.Resemble([]*api.PrefixMetadata{rootMeta}))
 		metas, err = s.GetMetadata(ctx, "a/b/c")
-		So(err, ShouldBeNil)
-		So(metas, ShouldResembleProto, []*api.PrefixMetadata{rootMeta, abMeta})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, metas, should.Resemble([]*api.PrefixMetadata{rootMeta, abMeta}))
 	})
 
-	Convey("GetMetadata filters by prefix correctly", t, func() {
+	ftt.Run("GetMetadata filters by prefix correctly", t, func(t *ftt.Test) {
 		s := MetadataStore{}
 		populateMD(&s, []string{"", "a", "ab", "a/b", "b", "a/b/c"})
 
-		So(getMD(&s, ""), ShouldResemble, []string{""})
-		So(getMD(&s, "a"), ShouldResemble, []string{"", "a"})
-		So(getMD(&s, "a/b"), ShouldResemble, []string{"", "a", "a/b"})
-		So(getMD(&s, "a/b/c"), ShouldResemble, []string{"", "a", "a/b", "a/b/c"})
+		assert.Loosely(t, getMD(&s, ""), should.Resemble([]string{""}))
+		assert.Loosely(t, getMD(&s, "a"), should.Resemble([]string{"", "a"}))
+		assert.Loosely(t, getMD(&s, "a/b"), should.Resemble([]string{"", "a", "a/b"}))
+		assert.Loosely(t, getMD(&s, "a/b/c"), should.Resemble([]string{"", "a", "a/b", "a/b/c"}))
 	})
 
-	Convey("Purge works", t, func() {
+	ftt.Run("Purge works", t, func(t *ftt.Test) {
 		s := MetadataStore{}
 		populateMD(&s, []string{"", "a", "a/b", "a/b/c"})
 
 		s.Purge("a/b")
-		So(getMD(&s, "a/b/c"), ShouldResemble, []string{"", "a", "a/b/c"})
+		assert.Loosely(t, getMD(&s, "a/b/c"), should.Resemble([]string{"", "a", "a/b/c"}))
 
 		s.Purge("")
-		So(getMD(&s, "a/b/c"), ShouldResemble, []string{"a", "a/b/c"})
+		assert.Loosely(t, getMD(&s, "a/b/c"), should.Resemble([]string{"a", "a/b/c"}))
 
 		s.Purge("a/b/c")
-		So(getMD(&s, "a/b/c"), ShouldResemble, []string{"a"})
+		assert.Loosely(t, getMD(&s, "a/b/c"), should.Resemble([]string{"a"}))
 
 		s.Purge("a")
-		So(getMD(&s, "a/b/c"), ShouldResemble, []string{})
+		assert.Loosely(t, getMD(&s, "a/b/c"), should.Resemble([]string{}))
 	})
 
-	Convey("VisitMetadata visits", t, func() {
+	ftt.Run("VisitMetadata visits", t, func(t *ftt.Test) {
 		s := MetadataStore{}
 		populateMD(&s, []string{
 			"", "a", "ab", "a/b", "a/b/c",
 			"b", "b/c/d/e", "b/c/d/f",
 		})
 
-		So(visitAll(&s, ""), ShouldResemble, []string{
+		assert.Loosely(t, visitAll(&s, ""), should.Resemble([]string{
 			"", "a", "a/b", "a/b/c", "ab", "b", "b/c/d/e", "b/c/d/f",
-		})
-		So(visitAll(&s, "a"), ShouldResemble, []string{"a", "a/b", "a/b/c"})
-		So(visitAll(&s, "a/b"), ShouldResemble, []string{"a/b", "a/b/c"})
+		}))
+		assert.Loosely(t, visitAll(&s, "a"), should.Resemble([]string{"a", "a/b", "a/b/c"}))
+		assert.Loosely(t, visitAll(&s, "a/b"), should.Resemble([]string{"a/b", "a/b/c"}))
 	})
 
-	Convey("VisitMetadata always visits pfx even if it has no metadata", t, func() {
+	ftt.Run("VisitMetadata always visits pfx even if it has no metadata", t, func(t *ftt.Test) {
 		s := MetadataStore{}
 		populateMD(&s, []string{"a", "ab", "a/b", "a/b/c", "a/c"})
 
-		So(visitAll(&s, ""), ShouldResemble, []string{
+		assert.Loosely(t, visitAll(&s, ""), should.Resemble([]string{
 			"", "a", "a/b", "a/b/c", "a/c", "ab",
-		})
-		So(visitAll(&s, "a/b/c/d"), ShouldResemble, []string{"a/b/c/d"})
-		So(visitAll(&s, "some"), ShouldResemble, []string{"some"})
+		}))
+		assert.Loosely(t, visitAll(&s, "a/b/c/d"), should.Resemble([]string{"a/b/c/d"}))
+		assert.Loosely(t, visitAll(&s, "some"), should.Resemble([]string{"some"}))
 	})
 
-	Convey("VisitMetadata respects callback return value", t, func() {
+	ftt.Run("VisitMetadata respects callback return value", t, func(t *ftt.Test) {
 		s := MetadataStore{}
 		populateMD(&s, []string{
 			"1", "1/a", "1/a/b", "1/a/b/c",
@@ -258,10 +258,10 @@ func TestMetadataStore(t *testing.T) {
 			visited = append(visited, p)
 			return len(md) <= 2, nil // explore no deeper than 3 levels
 		})
-		So(visited, ShouldResemble, []string{
+		assert.Loosely(t, visited, should.Resemble([]string{
 			"",
 			"1", "1/a", "1/a/b",
 			"2", "2/a", "2/a/b",
-		})
+		}))
 	})
 }

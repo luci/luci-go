@@ -17,15 +17,16 @@ package cipd
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-
 	"go.chromium.org/luci/cipd/common"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestPerPinActions(t *testing.T) {
 	t.Parallel()
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		p1 := common.Pin{PackageName: "p", InstanceID: "1"}
 		p2 := common.Pin{PackageName: "p", InstanceID: "2"}
 		p3 := common.Pin{PackageName: "p", InstanceID: "3"}
@@ -77,7 +78,7 @@ func TestPerPinActions(t *testing.T) {
 			},
 		}
 
-		So(am.perPinActions(), ShouldResemble, perPinActions{
+		assert.Loosely(t, am.perPinActions(), should.Resemble(perPinActions{
 			maintenance: []pinAction{
 				{action: ActionRemove, pin: p4},
 				{action: ActionRelink, pin: p6, repairPlan: relinkPlan},
@@ -135,6 +136,6 @@ func TestPerPinActions(t *testing.T) {
 					},
 				},
 			},
-		})
+		}))
 	})
 }

@@ -26,21 +26,20 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/cipd/common"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/appengine/impl/testutil"
-
-	. "github.com/smartystreets/goconvey/convey"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestRegisterInstance(t *testing.T) {
 	t.Parallel()
 
-	Convey("With datastore", t, func() {
+	ftt.Run("With datastore", t, func(t *ftt.Test) {
 		ctx, _, _ := testutil.TestingContext()
 
 		pkg := &Package{
@@ -56,8 +55,8 @@ func TestRegisterInstance(t *testing.T) {
 			RegisteredTs: testutil.TestTime,
 		}
 
-		Convey("To proto", func() {
-			So(inst.Proto(), ShouldResembleProto, &api.Instance{
+		t.Run("To proto", func(t *ftt.Test) {
+			assert.Loosely(t, inst.Proto(), should.Resemble(&api.Instance{
 				Package: "a/b/c",
 				Instance: &api.ObjectRef{
 					HashAlgo:  api.HashAlgo_SHA1,
@@ -65,16 +64,16 @@ func TestRegisterInstance(t *testing.T) {
 				},
 				RegisteredBy: "user:a@example.com",
 				RegisteredTs: timestamppb.New(testutil.TestTime),
-			})
+			}))
 		})
 
-		Convey("New package and instance", func() {
+		t.Run("New package and instance", func(t *ftt.Test) {
 			reg, out, err := RegisterInstance(ctx, inst, func(ctx context.Context, inst *Instance) error {
 				inst.ProcessorsPending = []string{"a"}
 				return nil
 			})
-			So(err, ShouldBeNil)
-			So(reg, ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, reg, should.BeTrue)
 
 			expected := &Instance{
 				InstanceID:        inst.InstanceID,
@@ -83,7 +82,7 @@ func TestRegisterInstance(t *testing.T) {
 				RegisteredTs:      inst.RegisteredTs,
 				ProcessorsPending: []string{"a"},
 			}
-			So(out, ShouldResemble, expected)
+			assert.Loosely(t, out, should.Resemble(expected))
 
 			// Created instance and package entities.
 			storedInst := &Instance{
@@ -91,12 +90,12 @@ func TestRegisterInstance(t *testing.T) {
 				Package:    inst.Package,
 			}
 			storedPkg := &Package{Name: "a/b/c"}
-			So(datastore.Get(ctx, storedInst, storedPkg), ShouldBeNil)
+			assert.Loosely(t, datastore.Get(ctx, storedInst, storedPkg), should.BeNil)
 
-			So(storedInst, ShouldResemble, expected)
-			So(storedPkg, ShouldResemble, pkg)
+			assert.Loosely(t, storedInst, should.Resemble(expected))
+			assert.Loosely(t, storedPkg, should.Resemble(pkg))
 
-			So(GetEvents(ctx), ShouldResembleProto, []*api.Event{
+			assert.Loosely(t, GetEvents(ctx), should.Resemble([]*api.Event{
 				{
 					Kind:     api.EventKind_INSTANCE_CREATED,
 					Who:      string(testutil.TestUser),
@@ -110,33 +109,33 @@ func TestRegisterInstance(t *testing.T) {
 					When:    timestamppb.New(testutil.TestTime),
 					Package: pkg.Name,
 				},
-			})
+			}))
 		})
 
-		Convey("Existing package, new instance", func() {
-			So(datastore.Put(ctx, pkg), ShouldBeNil)
+		t.Run("Existing package, new instance", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(ctx, pkg), should.BeNil)
 
 			inst.RegisteredBy = "user:someoneelse@example.com"
 			reg, out, err := RegisterInstance(ctx, inst, func(ctx context.Context, inst *Instance) error {
 				inst.ProcessorsPending = []string{"a"}
 				return nil
 			})
-			So(err, ShouldBeNil)
-			So(reg, ShouldBeTrue)
-			So(out, ShouldResemble, &Instance{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, reg, should.BeTrue)
+			assert.Loosely(t, out, should.Resemble(&Instance{
 				InstanceID:        inst.InstanceID,
 				Package:           inst.Package,
 				RegisteredBy:      inst.RegisteredBy,
 				RegisteredTs:      inst.RegisteredTs,
 				ProcessorsPending: []string{"a"},
-			})
+			}))
 
 			// Package entity wasn't touched.
 			storedPkg := &Package{Name: "a/b/c"}
-			So(datastore.Get(ctx, storedPkg), ShouldBeNil)
-			So(storedPkg, ShouldResemble, pkg)
+			assert.Loosely(t, datastore.Get(ctx, storedPkg), should.BeNil)
+			assert.Loosely(t, storedPkg, should.Resemble(pkg))
 
-			So(GetEvents(ctx), ShouldResembleProto, []*api.Event{
+			assert.Loosely(t, GetEvents(ctx), should.Resemble([]*api.Event{
 				{
 					Kind:     api.EventKind_INSTANCE_CREATED,
 					Who:      string(testutil.TestUser),
@@ -144,22 +143,22 @@ func TestRegisterInstance(t *testing.T) {
 					Package:  pkg.Name,
 					Instance: inst.InstanceID,
 				},
-			})
+			}))
 		})
 
-		Convey("Existing instance", func() {
-			So(datastore.Put(ctx, pkg, inst), ShouldBeNil)
+		t.Run("Existing instance", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(ctx, pkg, inst), should.BeNil)
 
 			modified := *inst
 			modified.RegisteredBy = "user:someoneelse@example.com"
 			reg, out, err := RegisterInstance(ctx, &modified, func(ctx context.Context, inst *Instance) error {
 				panic("must not be called")
 			})
-			So(err, ShouldBeNil)
-			So(reg, ShouldBeFalse)
-			So(out, ShouldResemble, inst) // the original one
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, reg, should.BeFalse)
+			assert.Loosely(t, out, should.Resemble(inst)) // the original one
 
-			So(GetEvents(ctx), ShouldHaveLength, 0)
+			assert.Loosely(t, GetEvents(ctx), should.HaveLength(0))
 		})
 	})
 }
@@ -167,7 +166,7 @@ func TestRegisterInstance(t *testing.T) {
 func TestListInstances(t *testing.T) {
 	t.Parallel()
 
-	Convey("With datastore", t, func() {
+	ftt.Run("With datastore", t, func(t *ftt.Test) {
 		ctx, _, _ := testutil.TestingContext()
 
 		inst := func(i int) *Instance {
@@ -178,26 +177,26 @@ func TestListInstances(t *testing.T) {
 			}
 		}
 		for i := 0; i < 4; i++ {
-			So(datastore.Put(ctx, inst(i)), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, inst(i)), should.BeNil)
 		}
 
-		Convey("Full listing", func() {
+		t.Run("Full listing", func(t *ftt.Test) {
 			out, cur, err := ListInstances(ctx, "a/b", 100, nil)
-			So(err, ShouldBeNil)
-			So(cur, ShouldBeNil)
-			So(out, ShouldResemble, []*Instance{inst(3), inst(2), inst(1), inst(0)})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cur, should.BeNil)
+			assert.Loosely(t, out, should.Resemble([]*Instance{inst(3), inst(2), inst(1), inst(0)}))
 		})
 
-		Convey("Paginated listing", func() {
+		t.Run("Paginated listing", func(t *ftt.Test) {
 			out, cur, err := ListInstances(ctx, "a/b", 3, nil)
-			So(err, ShouldBeNil)
-			So(cur, ShouldNotBeNil)
-			So(out, ShouldResemble, []*Instance{inst(3), inst(2), inst(1)})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cur, should.NotBeNil)
+			assert.Loosely(t, out, should.Resemble([]*Instance{inst(3), inst(2), inst(1)}))
 
 			out, cur, err = ListInstances(ctx, "a/b", 3, cur)
-			So(err, ShouldBeNil)
-			So(cur, ShouldBeNil)
-			So(out, ShouldResemble, []*Instance{inst(0)})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cur, should.BeNil)
+			assert.Loosely(t, out, should.Resemble([]*Instance{inst(0)}))
 		})
 	})
 }
@@ -205,18 +204,18 @@ func TestListInstances(t *testing.T) {
 func TestCheckInstance(t *testing.T) {
 	t.Parallel()
 
-	Convey("With datastore", t, func() {
+	ftt.Run("With datastore", t, func(t *ftt.Test) {
 		ctx, _, _ := testutil.TestingContext()
 
 		put := func(pkg, iid string, failedProcs, pendingProcs []string) {
-			So(datastore.Put(ctx,
+			assert.Loosely(t, datastore.Put(ctx,
 				&Package{Name: pkg},
 				&Instance{
 					InstanceID:        iid,
 					Package:           PackageKey(ctx, pkg),
 					ProcessorsFailure: failedProcs,
 					ProcessorsPending: pendingProcs,
-				}), ShouldBeNil)
+				}), should.BeNil)
 		}
 
 		iid := common.ObjectRefToInstanceID(&api.ObjectRef{
@@ -228,52 +227,52 @@ func TestCheckInstance(t *testing.T) {
 			Package:    PackageKey(ctx, "pkg"),
 		}
 
-		Convey("Happy path", func() {
+		t.Run("Happy path", func(t *ftt.Test) {
 			put("pkg", iid, nil, nil)
-			So(CheckInstanceExists(ctx, inst), ShouldBeNil)
-			So(CheckInstanceReady(ctx, inst), ShouldBeNil)
+			assert.Loosely(t, CheckInstanceExists(ctx, inst), should.BeNil)
+			assert.Loosely(t, CheckInstanceReady(ctx, inst), should.BeNil)
 		})
 
-		Convey("No such instance", func() {
+		t.Run("No such instance", func(t *ftt.Test) {
 			put("pkg", "f"+iid[1:], nil, nil)
 
 			err := CheckInstanceExists(ctx, inst)
-			So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
-			So(err, ShouldErrLike, "no such instance")
+			assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.NotFound))
+			assert.Loosely(t, err, should.ErrLike("no such instance"))
 
 			err = CheckInstanceReady(ctx, inst)
-			So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
-			So(err, ShouldErrLike, "no such instance")
+			assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.NotFound))
+			assert.Loosely(t, err, should.ErrLike("no such instance"))
 		})
 
-		Convey("No such package", func() {
+		t.Run("No such package", func(t *ftt.Test) {
 			put("pkg2", iid, nil, nil)
 
 			err := CheckInstanceExists(ctx, inst)
-			So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
-			So(err, ShouldErrLike, "no such package")
+			assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.NotFound))
+			assert.Loosely(t, err, should.ErrLike("no such package"))
 
 			err = CheckInstanceReady(ctx, inst)
-			So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
-			So(err, ShouldErrLike, "no such package")
+			assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.NotFound))
+			assert.Loosely(t, err, should.ErrLike("no such package"))
 		})
 
-		Convey("Failed processors", func() {
+		t.Run("Failed processors", func(t *ftt.Test) {
 			put("pkg", iid, []string{"f1", "f2"}, []string{"p1", "p2"})
 			err := CheckInstanceReady(ctx, inst)
-			So(grpcutil.Code(err), ShouldEqual, codes.Aborted)
-			So(err, ShouldErrLike, "some processors failed to process this instance: f1, f2")
+			assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.Aborted))
+			assert.Loosely(t, err, should.ErrLike("some processors failed to process this instance: f1, f2"))
 
-			So(CheckInstanceExists(ctx, inst), ShouldBeNil) // doesn't care
+			assert.Loosely(t, CheckInstanceExists(ctx, inst), should.BeNil) // doesn't care
 		})
 
-		Convey("Pending processors", func() {
+		t.Run("Pending processors", func(t *ftt.Test) {
 			put("pkg", iid, nil, []string{"p1", "p2"})
 			err := CheckInstanceReady(ctx, inst)
-			So(grpcutil.Code(err), ShouldEqual, codes.FailedPrecondition)
-			So(err, ShouldErrLike, "the instance is not ready yet, pending processors: p1, p2")
+			assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.FailedPrecondition))
+			assert.Loosely(t, err, should.ErrLike("the instance is not ready yet, pending processors: p1, p2"))
 
-			So(CheckInstanceExists(ctx, inst), ShouldBeNil) // doesn't care
+			assert.Loosely(t, CheckInstanceExists(ctx, inst), should.BeNil) // doesn't care
 		})
 	})
 }
@@ -281,7 +280,7 @@ func TestCheckInstance(t *testing.T) {
 func TestFetchProcessors(t *testing.T) {
 	t.Parallel()
 
-	Convey("With datastore", t, func() {
+	ftt.Run("With datastore", t, func(t *ftt.Test) {
 		ctx, _, _ := testutil.TestingContext()
 		ts := time.Unix(1525136124, 0).UTC()
 
@@ -301,24 +300,24 @@ func TestFetchProcessors(t *testing.T) {
 			}
 			if res != "" {
 				p.Success = true
-				So(p.WriteResult(map[string]string{"result": res}), ShouldBeNil)
+				assert.Loosely(t, p.WriteResult(map[string]string{"result": res}), should.BeNil)
 			} else {
 				p.Error = err
 			}
 			return p
 		}
 
-		So(datastore.Put(ctx,
+		assert.Loosely(t, datastore.Put(ctx,
 			proc("f1", "", "fail 1"),
 			proc("f2", "", "fail 2"),
 			proc("s1", "success 1", ""),
 			proc("s2", "success 2", ""),
-		), ShouldBeNil)
+		), should.BeNil)
 
-		Convey("Works", func() {
+		t.Run("Works", func(t *ftt.Test) {
 			procs, err := FetchProcessors(ctx, inst)
-			So(err, ShouldBeNil)
-			So(procs, ShouldResembleProto, []*api.Processor{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, procs, should.Resemble([]*api.Processor{
 				{
 					Id:         "f1",
 					State:      api.Processor_FAILED,
@@ -359,7 +358,7 @@ func TestFetchProcessors(t *testing.T) {
 						},
 					},
 				},
-			})
+			}))
 		})
 	})
 }
