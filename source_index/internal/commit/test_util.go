@@ -16,8 +16,11 @@ package commit
 
 import (
 	"context"
+	"fmt"
+	"reflect"
 
 	"cloud.google.com/go/spanner"
+	"github.com/smartystreets/goconvey/convey"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/span"
@@ -89,4 +92,38 @@ func SetForTesting(ctx context.Context, cs ...Commit) error {
 		return nil
 	})
 	return err
+}
+
+// ShouldEqualCommitSet determines if the expected commits matches the actual
+// commits. The order of the commits do not matter.
+func ShouldEqualCommitSet(actual any, expected ...any) string {
+	if len(expected) != 1 {
+		return fmt.Sprintf("ShouldSavedCommits expects 1 value, got %d", len(expected))
+	}
+
+	actualCommits, ok := actual.([]Commit)
+	if !ok {
+		return fmt.Sprintf("You must provide an actual value of type %v (was %v)!", reflect.TypeOf([]Commit{}), reflect.TypeOf(actual))
+	}
+	expectedCommits, ok := expected[0].([]Commit)
+	if !ok {
+		return fmt.Sprintf("You must provide an expected value of type %v (was %v)!", reflect.TypeOf([]Commit{}), reflect.TypeOf(expected))
+	}
+	err := convey.ShouldHaveLength(actualCommits, len(expectedCommits))
+	if err != "" {
+		return err
+	}
+
+	actualCommitsMap := make(map[Key]Commit, len(actualCommits))
+	for _, c := range actualCommits {
+		actualCommitsMap[c.Key()] = c
+	}
+	for i, c := range expectedCommits {
+		err := convey.ShouldResemble(actualCommitsMap[c.Key()], c)
+		if err != "" {
+			return fmt.Sprintf("Comparing commit #%d: %s", i, err)
+		}
+	}
+
+	return ""
 }

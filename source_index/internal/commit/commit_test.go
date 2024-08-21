@@ -55,18 +55,17 @@ func TestCommit(t *testing.T) {
 				return err
 			}
 
-			assertCommitExpected := func() {
-				readCommits, err := ReadAllForTesting(span.Single(ctx))
+			assertCommitExpected := func() string {
+				savedCommits, err := ReadAllForTesting(span.Single(ctx))
 				So(err, ShouldBeNil)
-				So(readCommits, ShouldHaveLength, 1)
-				So(readCommits[0], ShouldResemble, commitToSave)
+				return ShouldEqualCommitSet(savedCommits, []Commit{commitToSave})
 			}
 
 			Convey("with position", func() {
 				err := saveCommit()
 
 				So(err, ShouldBeNil)
-				assertCommitExpected()
+				So(assertCommitExpected(), ShouldBeEmpty)
 			})
 
 			Convey("without position", func() {
@@ -75,7 +74,7 @@ func TestCommit(t *testing.T) {
 				err := saveCommit()
 
 				So(err, ShouldBeNil)
-				assertCommitExpected()
+				So(assertCommitExpected(), ShouldBeEmpty)
 			})
 		})
 	})

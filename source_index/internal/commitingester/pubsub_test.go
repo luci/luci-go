@@ -100,7 +100,7 @@ func TestProcessSourceRepoEvent(t *testing.T) {
 			_, err := processSourceRepoEvent(ctx, gitilesHost, event)
 
 			So(err, ShouldBeNil)
-			assertTasksExpected()
+			So(assertTasksExpected(), ShouldBeEmpty)
 		})
 
 		Convey(`With repo that should not be ingested`, func() {
