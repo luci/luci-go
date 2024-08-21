@@ -328,7 +328,11 @@ func Rewrite(dec *decorator.Decorator, f *dst.File, adaptedAssertions stringset.
 			if resetCall, _ := isConveyCall(c, []string{conveyImportName, conveyContextName}, "Reset"); resetCall != nil {
 				// conveyImportName.Reset(func() { ... })
 				// conveyContextName.Reset(func() { ... })
-				rewriteResetCall(resetCall, conveyContextName)
+				contextName := conveyContextName
+				if contextName == "." {
+					contextName = "t"
+				}
+				rewriteResetCall(resetCall, contextName)
 				return false
 			}
 
@@ -339,7 +343,11 @@ func Rewrite(dec *decorator.Decorator, f *dst.File, adaptedAssertions stringset.
 				// conveyContextName.Println(func() { ... })
 				// conveyImportName.Printf(func() { ... })
 				// conveyContextName.Printf(func() { ... })
-				rewritePrintCall(printCall, callText, conveyContextName)
+				contextName := conveyContextName
+				if contextName == "." {
+					contextName = "t"
+				}
+				rewritePrintCall(printCall, callText, contextName)
 				return false
 			}
 
