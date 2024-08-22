@@ -263,6 +263,11 @@ func IngestTarball(ctx context.Context, name string, content io.Reader) ([]strin
 		return nil, 0, fmt.Errorf("%w: %s", ErrInvalidTarball, err.Error())
 	}
 
+	// If here, all group bundles are valid and the caller is authorized, i.e.
+	// * all group names are valid external group names; and
+	// * all members are valid identities; and
+	// * the caller is a valid identity, who is authorized to do this upload.
+	// Do the import.
 	return importBundles(ctx, bundles, caller, nil)
 }
 
@@ -565,11 +570,7 @@ func prepareImport(ctx context.Context, systemName string, existingGroups map[st
 	// Create new groups.
 	toCreate := iGroupsSet.Difference(sysGroupsSet).ToSlice()
 	for _, g := range toCreate {
-		group := makeAuthGroup(ctx, g)
-		group.Members = identitiesToStrings(iGroups[g])
-		group.Owners = AdminGroup
-		group.CreatedBy = string(providedBy)
-		group.CreatedTS = createdTS
+		group := makeNewExternalAuthGroup(ctx, g, iGroups[g], providedBy, createdTS)
 		toPut = append(toPut, group)
 	}
 
@@ -577,10 +578,10 @@ func prepareImport(ctx context.Context, systemName string, existingGroups map[st
 	toUpdate := sysGroupsSet.Intersect(iGroupsSet).ToSlice()
 	for _, g := range toUpdate {
 		existingGroup := existingGroups[g]
-		importGMems := stringset.NewFromSlice(identitiesToStrings(iGroups[g])...)
-		existMems := existingGroup.Members
-		if len(importGMems) != len(existMems) || !importGMems.HasAll(existMems...) {
-			existingGroup.Members = importGMems.ToSortedSlice()
+		importedMembers := identitiesToStrings(iGroups[g])
+		if len(importedMembers) != len(existingGroup.Members) ||
+			!stringset.NewFromSlice(importedMembers...).HasAll(existingGroup.Members...) {
+			existingGroup.Members = importedMembers
 			toPut = append(toPut, existingGroup)
 		}
 	}
@@ -672,4 +673,18 @@ func (g *GroupImporterConfig) ToProto() (*configspb.GroupImporterConfig, error) 
 		return nil, err
 	}
 	return gConfig, nil
+}
+
+// makeNewExternalAuthGroup is a helper function for creating an external
+// AuthGroup.
+func makeNewExternalAuthGroup(ctx context.Context, name string, members []identity.Identity, creator identity.Identity, ts time.Time) *AuthGroup {
+	return &AuthGroup{
+		Kind:      "AuthGroup",
+		ID:        name,
+		Parent:    RootKey(ctx),
+		Members:   identitiesToStrings(members),
+		Owners:    AdminGroup,
+		CreatedBy: string(creator),
+		CreatedTS: ts,
+	}
 }
