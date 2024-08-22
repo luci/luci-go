@@ -18,25 +18,25 @@ import (
 	"testing"
 
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/source_index/internal/commitingester/taskspb"
 	"go.chromium.org/luci/source_index/internal/config"
 	"go.chromium.org/luci/source_index/internal/testutil"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestProcessSourceRepoEvent(t *testing.T) {
-	Convey(`ProcessSourceRepoEvent`, t, func() {
+	ftt.Run(`ProcessSourceRepoEvent`, t, func(t *ftt.Test) {
 		ctx := testutil.IntegrationTestContext(t)
 		ctx, skdr := tq.TestingContext(ctx, nil)
 
 		ctx = memory.Use(ctx)
 		err := config.SetTestConfig(ctx, config.TestCfg)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		gitilesHost := "chromium.googlesource.com"
 		event := &gerritpb.SourceRepoEvent{
@@ -86,42 +86,42 @@ func TestProcessSourceRepoEvent(t *testing.T) {
 			},
 		}
 
-		assertTasksExpected := func() string {
+		getOutputTasks := func() map[string]*taskspb.IngestCommits {
 			actualTasks := make(map[string]*taskspb.IngestCommits, len(skdr.Tasks().Payloads()))
 			for _, payload := range skdr.Tasks().Payloads() {
 				t := payload.(*taskspb.IngestCommits)
 				actualTasks[t.Commitish] = t
 			}
 
-			return ShouldResembleProto(actualTasks, expectedTasks)
+			return actualTasks
 		}
 
-		Convey(`With repo that should be ingested`, func() {
+		t.Run(`With repo that should be ingested`, func(t *ftt.Test) {
 			_, err := processSourceRepoEvent(ctx, gitilesHost, event)
 
-			So(err, ShouldBeNil)
-			So(assertTasksExpected(), ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.That(t, getOutputTasks(), should.Match(expectedTasks))
 		})
 
-		Convey(`With repo that should not be ingested`, func() {
+		t.Run(`With repo that should not be ingested`, func(t *ftt.Test) {
 			event.Name = "projects/chromium-gerrit/repos/another-repo"
 			event.Url = "https://source.developers.google.com/p/chromium-gerrit/r/another-repo"
 			expectedTasks = make(map[string]*taskspb.IngestCommits)
 
 			_, err := processSourceRepoEvent(ctx, gitilesHost, event)
 
-			So(err, ShouldBeNil)
-			So(assertTasksExpected(), ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.That(t, getOutputTasks(), should.Match(expectedTasks))
 		})
 
-		Convey(`With host that is not configured`, func() {
+		t.Run(`With host that is not configured`, func(t *ftt.Test) {
 			gitilesHost = "another-host.googlesource.com"
 			expectedTasks = make(map[string]*taskspb.IngestCommits)
 
 			_, err := processSourceRepoEvent(ctx, gitilesHost, event)
 
-			So(err, ShouldNotBeNil)
-			So(assertTasksExpected(), ShouldBeEmpty)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.That(t, getOutputTasks(), should.Match(expectedTasks))
 		})
 	})
 }

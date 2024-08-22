@@ -18,18 +18,18 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config/validation"
 
 	configpb "go.chromium.org/luci/source_index/proto/config"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestValidateConfig(t *testing.T) {
 	t.Parallel()
 
-	Convey("ValidateConfig", t, func() {
+	ftt.Run("ValidateConfig", t, func(t *ftt.Test) {
 		var cfg = &configpb.Config{
 			Hosts: []*configpb.Config_Host{
 				{
@@ -67,28 +67,44 @@ func TestValidateConfig(t *testing.T) {
 			return c.Finalize()
 		}
 
-		Convey("accept valid config", func() {
-			So(validateCfg(cfg), ShouldBeNil)
+		t.Run("accept valid config", func(t *ftt.Test) {
+			assert.Loosely(t, validateCfg(cfg), should.BeNil)
 		})
 
-		Convey("reject invalid gitiles host", func() {
+		t.Run("reject invalid gitiles host", func(t *ftt.Test) {
 			cfg.Hosts[1].Host = "chromium.not-googlesource.com"
-			So(validateCfg(cfg), ShouldErrLike, "hosts #2 / host", "is not a valid Gitiles host")
+
+			err := validateCfg(cfg)
+
+			assert.That(t, err, should.ErrLike("hosts #2 / host"))
+			assert.That(t, err, should.ErrLike("is not a valid Gitiles host"))
 		})
 
-		Convey("reject invalid repo", func() {
+		t.Run("reject invalid repo", func(t *ftt.Test) {
 			cfg.Hosts[0].Repositories[0].Name = "not-a-valid-repo/"
-			So(validateCfg(cfg), ShouldErrLike, "hosts #1 / repositories #1 / name", "does not match pattern")
+
+			err := validateCfg(cfg)
+
+			assert.That(t, err, should.ErrLike("hosts #1 / repositories #1 / name"))
+			assert.That(t, err, should.ErrLike("does not match pattern"))
 		})
 
-		Convey("reject invalid regex", func() {
+		t.Run("reject invalid regex", func(t *ftt.Test) {
 			cfg.Hosts[0].Repositories[0].IncludeRefRegexes[1] = "^main($"
-			So(validateCfg(cfg), ShouldErrLike, "hosts #1 / repositories #1 / include_ref_regexes #2", "error parsing regexp")
+
+			err := validateCfg(cfg)
+
+			assert.That(t, err, should.ErrLike("hosts #1 / repositories #1 / include_ref_regexes #2"))
+			assert.That(t, err, should.ErrLike("error parsing regexp"))
 		})
 
-		Convey("reject empty regex", func() {
+		t.Run("reject empty regex", func(t *ftt.Test) {
 			cfg.Hosts[0].Repositories[0].IncludeRefRegexes[1] = ""
-			So(validateCfg(cfg), ShouldErrLike, "hosts #1 / repositories #1 / include_ref_regexes #2", "regex should not be empty")
+
+			err := validateCfg(cfg)
+
+			assert.That(t, err, should.ErrLike("hosts #1 / repositories #1 / include_ref_regexes #2"))
+			assert.That(t, err, should.ErrLike("regex should not be empty"))
 		})
 	})
 }

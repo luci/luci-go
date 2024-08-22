@@ -19,9 +19,9 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/proto/git"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 const msgWithNoCommitPosition = `
@@ -70,7 +70,7 @@ Cr-Commit-Position: not-valid
 `
 
 func TestGitCommit(t *testing.T) {
-	Convey("GitCommit", t, func() {
+	ftt.Run("GitCommit", t, func(t *ftt.Test) {
 		host := "chromium.googlesource.com"
 		repository := "chromium/src"
 		commitHash := "2ebba24554e605777702c68d34617ae050024e71"
@@ -78,119 +78,119 @@ func TestGitCommit(t *testing.T) {
 			Id: commitHash,
 		}
 
-		Convey("NewGitCommit", func() {
-			Convey("valid", func() {
+		t.Run("NewGitCommit", func(t *ftt.Test) {
+			t.Run("valid", func(t *ftt.Test) {
 				commit.Message = msgWithNoCommitPosition
 
 				commit, err := NewGitCommit(host, repository, commit)
 
-				So(err, ShouldBeNil)
-				So(commit.Key(), ShouldResemble, Key{
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, commit.Key(), ShouldMatchKey(Key{
 					host:       host,
 					commitHash: commitHash,
 					repository: repository,
-				})
+				}))
 			})
 
-			Convey("with invalid commit position", func() {
+			t.Run("with invalid commit position", func(t *ftt.Test) {
 				commit.Message = msgWithInvalidCommitPosition
 
 				commit, err := NewGitCommit(host, repository, commit)
 
-				So(err, ShouldBeNil)
-				So(commit.Key(), ShouldResemble, Key{
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, commit.Key(), ShouldMatchKey(Key{
 					host:       host,
 					commitHash: commitHash,
 					repository: repository,
-				})
+				}))
 			})
 
-			Convey("with invalid commit key", func() {
+			t.Run("with invalid commit key", func(t *ftt.Test) {
 				commit.Id = "not-a-valid-hash"
 
 				commit, err := NewGitCommit(host, repository, commit)
 
-				So(err, ShouldErrLike, "invalid commit key")
-				So(commit, ShouldResemble, GitCommit{})
+				assert.That(t, err, should.ErrLike("invalid commit key"))
+				assert.That(t, commit, ShouldMatchGitCommit(GitCommit{}))
 			})
 		})
 
-		Convey("Position", func() {
-			Convey("no commit position", func() {
+		t.Run("Position", func(t *ftt.Test) {
+			t.Run("no commit position", func(t *ftt.Test) {
 				commit.Message = msgWithNoCommitPosition
 				c, err := NewGitCommit(host, repository, commit)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				pos, err := c.Position()
 
-				So(err, ShouldBeNil)
-				So(pos, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, pos, should.BeNil)
 			})
 
-			Convey("with Cr-Commit-Position footer", func() {
+			t.Run("with Cr-Commit-Position footer", func(t *ftt.Test) {
 				commit.Message = msgWithCrCommitPosition
 				c, err := NewGitCommit(host, repository, commit)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				pos, err := c.Position()
 
-				So(err, ShouldBeNil)
-				So(pos, ShouldResemble, &Position{Ref: "refs/heads/main", Number: 42})
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, pos, should.Match(&Position{Ref: "refs/heads/main", Number: 42}))
 			})
 
-			Convey("with multiple Cr-Commit-Position footers", func() {
+			t.Run("with multiple Cr-Commit-Position footers", func(t *ftt.Test) {
 				commit.Message = msgWithMultipleCrCommitPositions
 				c, err := NewGitCommit(host, repository, commit)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				pos, err := c.Position()
 
-				So(err, ShouldBeNil)
-				So(pos, ShouldResemble, &Position{Ref: "refs/heads/main", Number: 42})
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, pos, should.Match(&Position{Ref: "refs/heads/main", Number: 42}))
 			})
 
-			Convey("with git-svn-id footer", func() {
+			t.Run("with git-svn-id footer", func(t *ftt.Test) {
 				commit.Message = msgWithSVNCommitPosition
 				c, err := NewGitCommit(host, repository, commit)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				pos, err := c.Position()
 
-				So(err, ShouldBeNil)
-				So(pos, ShouldResemble, &Position{Ref: "svn://svn.chromium.org/chrome/trunk/src", Number: 42})
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, pos, should.Match(&Position{Ref: "svn://svn.chromium.org/chrome/trunk/src", Number: 42}))
 			})
 
-			Convey("with mixed footers", func() {
+			t.Run("with mixed footers", func(t *ftt.Test) {
 				commit.Message = msgWithMixedCommitPositions
 				c, err := NewGitCommit(host, repository, commit)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				pos, err := c.Position()
 
-				So(err, ShouldBeNil)
-				So(pos, ShouldResemble, &Position{Ref: "refs/heads/main", Number: 42})
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, pos, should.Match(&Position{Ref: "refs/heads/main", Number: 42}))
 			})
 
-			Convey("with mixed footers ans git-svn-id first", func() {
+			t.Run("with mixed footers ans git-svn-id first", func(t *ftt.Test) {
 				commit.Message = msgWithMixedCommitPositionsSvnFirst
 				c, err := NewGitCommit(host, repository, commit)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				pos, err := c.Position()
 
-				So(err, ShouldBeNil)
-				So(pos, ShouldResemble, &Position{Ref: "refs/heads/main", Number: 42})
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, pos, should.Match(&Position{Ref: "refs/heads/main", Number: 42}))
 			})
 
-			Convey("with invalid footer", func() {
+			t.Run("with invalid footer", func(t *ftt.Test) {
 				commit.Message = msgWithInvalidCommitPosition
 				c, err := NewGitCommit(host, repository, commit)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				pos, err := c.Position()
 
-				So(errors.Is(err, ErrInvalidPositionFooter), ShouldBeTrue)
-				So(pos, ShouldBeNil)
+				assert.That(t, errors.Is(err, ErrInvalidPositionFooter), should.BeTrue)
+				assert.Loosely(t, pos, should.BeNil)
 			})
 		})
 	})

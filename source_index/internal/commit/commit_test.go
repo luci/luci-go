@@ -20,21 +20,22 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/source_index/internal/testutil"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestCommit(t *testing.T) {
-	Convey("Commit", t, func() {
+	ftt.Run("Commit", t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 
 		now := time.Date(2055, time.May, 5, 5, 5, 5, 5, time.UTC)
 		ctx, _ = testclock.UseTime(ctx, now)
 
-		Convey("Save", func() {
+		t.Run("Save", func(t *ftt.Test) {
 			commitToSave := Commit{
 				key: Key{
 					host:       "chromium.googlesource.com",
@@ -55,26 +56,20 @@ func TestCommit(t *testing.T) {
 				return err
 			}
 
-			assertCommitExpected := func() string {
-				savedCommits, err := ReadAllForTesting(span.Single(ctx))
-				So(err, ShouldBeNil)
-				return ShouldEqualCommitSet(savedCommits, []Commit{commitToSave})
-			}
-
-			Convey("with position", func() {
+			t.Run("with position", func(t *ftt.Test) {
 				err := saveCommit()
 
-				So(err, ShouldBeNil)
-				So(assertCommitExpected(), ShouldBeEmpty)
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, MustReadAllForTesting(span.Single(ctx)), ShouldMatchCommits(([]Commit{commitToSave})))
 			})
 
-			Convey("without position", func() {
+			t.Run("without position", func(t *ftt.Test) {
 				commitToSave.position = nil
 
 				err := saveCommit()
 
-				So(err, ShouldBeNil)
-				So(assertCommitExpected(), ShouldBeEmpty)
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, MustReadAllForTesting(span.Single(ctx)), ShouldMatchCommits(([]Commit{commitToSave})))
 			})
 		})
 	})

@@ -16,13 +16,12 @@ package commit
 
 import (
 	"context"
-	"fmt"
-	"reflect"
 
 	"cloud.google.com/go/spanner"
-	"github.com/smartystreets/goconvey/convey"
+	"github.com/google/go-cmp/cmp"
 
-	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/testing/truth/comparison"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/source_index/internal/testutil"
@@ -34,15 +33,15 @@ var readAllSQL = `
   ORDER BY Host, Repository, CommitHash
 `
 
-// ReadAllForTesting reads all commits for testing, e.g. to assert all expected
-// commits were inserted.
+// MustReadAllForTesting reads all commits for testing, e.g. to assert all
+// expected commits were inserted.
 //
 // Must be called in a spanner transactional context.
 // Do not use in production, will not scale.
-func ReadAllForTesting(ctx context.Context) ([]Commit, error) {
+func MustReadAllForTesting(ctx context.Context) map[Key]Commit {
 	stmt := spanner.NewStatement(readAllSQL)
 
-	var results []Commit
+	results := make(map[Key]Commit)
 	it := span.Query(ctx, stmt)
 
 	f := func(row *spanner.Row) error {
@@ -60,28 +59,28 @@ func ReadAllForTesting(ctx context.Context) ([]Commit, error) {
 			return err
 		}
 
-		if positionRef.Valid != positionNum.Valid {
-			return errors.New("invariant violated: PositionRef and PositionNumber must be defined/undefined at the same time")
-		}
-		if positionRef.Valid {
+		// Do not validate that both PositionRef and PositionNumber are always
+		// specified at the same time when reading for testing purpose.
+		// It's up to the test cases to assert the content.
+		if positionRef.Valid || positionNum.Valid {
 			commit.position = &Position{
 				Ref:    positionRef.StringVal,
 				Number: positionNum.Int64,
 			}
 		}
 
-		results = append(results, commit)
+		results[commit.key] = commit
 		return nil
 	}
 	err := it.Do(f)
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
-	return results, nil
+	return results
 }
 
-// SetForTesting replaces the set of stored commits to match the given set.
-func SetForTesting(ctx context.Context, cs ...Commit) error {
+// MustSetForTesting replaces the set of stored commits to match the given set.
+func MustSetForTesting(ctx context.Context, cs ...Commit) {
 	testutil.MustApply(ctx,
 		spanner.Delete("Commits", spanner.AllKeys()))
 	// Insert some commits.
@@ -91,39 +90,37 @@ func SetForTesting(ctx context.Context, cs ...Commit) error {
 		}
 		return nil
 	})
-	return err
+
+	if err != nil {
+		panic(err)
+	}
 }
 
-// ShouldEqualCommitSet determines if the expected commits matches the actual
-// commits. The order of the commits do not matter.
-func ShouldEqualCommitSet(actual any, expected ...any) string {
-	if len(expected) != 1 {
-		return fmt.Sprintf("ShouldSavedCommits expects 1 value, got %d", len(expected))
+// ShouldMatchCommit returns a comparison.Func which checks if the expected
+// commit matches the actual commit.
+func ShouldMatchCommit(commit Commit) comparison.Func[Commit] {
+	return should.Match(commit, cmp.AllowUnexported(Commit{}, Key{}))
+}
+
+// ShouldMatchCommits returns a comparison.Func which checks if the expected
+// commits matches the actual commits. The order of the commits does not matter.
+func ShouldMatchCommits(commits []Commit) comparison.Func[map[Key]Commit] {
+	commitsMap := make(map[Key]Commit, len(commits))
+	for _, c := range commits {
+		commitsMap[c.Key()] = c
 	}
 
-	actualCommits, ok := actual.([]Commit)
-	if !ok {
-		return fmt.Sprintf("You must provide an actual value of type %v (was %v)!", reflect.TypeOf([]Commit{}), reflect.TypeOf(actual))
-	}
-	expectedCommits, ok := expected[0].([]Commit)
-	if !ok {
-		return fmt.Sprintf("You must provide an expected value of type %v (was %v)!", reflect.TypeOf([]Commit{}), reflect.TypeOf(expected))
-	}
-	err := convey.ShouldHaveLength(actualCommits, len(expectedCommits))
-	if err != "" {
-		return err
-	}
+	return should.Match(commitsMap, cmp.AllowUnexported(Commit{}, Key{}))
+}
 
-	actualCommitsMap := make(map[Key]Commit, len(actualCommits))
-	for _, c := range actualCommits {
-		actualCommitsMap[c.Key()] = c
-	}
-	for i, c := range expectedCommits {
-		err := convey.ShouldResemble(actualCommitsMap[c.Key()], c)
-		if err != "" {
-			return fmt.Sprintf("Comparing commit #%d: %s", i, err)
-		}
-	}
+// ShouldMatchKey returns a comparison.Func which checks if the expected commit
+// key matches the actual commit key.
+func ShouldMatchKey(key Key) comparison.Func[Key] {
+	return should.Match(key, cmp.AllowUnexported(Key{}))
+}
 
-	return ""
+// ShouldMatchGitCommit returns a comparison.Func which checks if the expected
+// GitCommit matches the actual GitCommit.
+func ShouldMatchGitCommit(commit GitCommit) comparison.Func[GitCommit] {
+	return should.Match(commit, cmp.AllowUnexported(GitCommit{}, Key{}))
 }

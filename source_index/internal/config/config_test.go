@@ -17,47 +17,49 @@ package config
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestConfig(t *testing.T) {
 	t.Parallel()
 
-	Convey("Config", t, func() {
+	ftt.Run("Config", t, func(t *ftt.Test) {
 		var cfg Config = &config{TestCfg}
 
-		Convey("HasHost", func() {
+		t.Run("HasHost", func(t *ftt.Test) {
 			// Match one host.
-			So(cfg.HasHost("chromium.googlesource.com"), ShouldBeTrue)
+			assert.That(t, cfg.HasHost("chromium.googlesource.com"), should.BeTrue)
 
 			// Match another host.
-			So(cfg.HasHost("webrtc.googlesource.com"), ShouldBeTrue)
+			assert.That(t, cfg.HasHost("webrtc.googlesource.com"), should.BeTrue)
 
 			// Do not match any host.
-			So(cfg.HasHost("another-host.googlesource.com"), ShouldBeFalse)
+			assert.That(t, cfg.HasHost("another-host.googlesource.com"), should.BeFalse)
 		})
 
-		Convey("ShouldIndexRef", func() {
+		t.Run("ShouldIndexRef", func(t *ftt.Test) {
 			// Match regex.
-			So(cfg.ShouldIndexRef("chromium.googlesource.com", "chromium/src", "refs/branch-heads/release-101"), ShouldBeTrue)
+			assert.That(t, cfg.ShouldIndexRef("chromium.googlesource.com", "chromium/src", "refs/branch-heads/release-101"), should.BeTrue)
 
 			// Match another regex.
-			So(cfg.ShouldIndexRef("chromium.googlesource.com", "chromium/src", "refs/heads/main"), ShouldBeTrue)
+			assert.That(t, cfg.ShouldIndexRef("chromium.googlesource.com", "chromium/src", "refs/heads/main"), should.BeTrue)
 
 			// Don't match any regex.
-			So(cfg.ShouldIndexRef("chromium.googlesource.com", "chromium/src", "refs/heads/another-branch"), ShouldBeFalse)
+			assert.That(t, cfg.ShouldIndexRef("chromium.googlesource.com", "chromium/src", "refs/heads/another-branch"), should.BeFalse)
 
 			// Match regex in another repo.
-			So(cfg.ShouldIndexRef("chromium.googlesource.com", "chromiumos/manifest", "refs/heads/staging-snapshot"), ShouldBeTrue)
+			assert.That(t, cfg.ShouldIndexRef("chromium.googlesource.com", "chromiumos/manifest", "refs/heads/staging-snapshot"), should.BeTrue)
 
 			// Do not match any repo.
-			So(cfg.ShouldIndexRef("chromium.googlesource.com", "another-repo", "refs/heads/main"), ShouldBeFalse)
+			assert.That(t, cfg.ShouldIndexRef("chromium.googlesource.com", "another-repo", "refs/heads/main"), should.BeFalse)
 
 			// Match regex in another host.
-			So(cfg.ShouldIndexRef("webrtc.googlesource.com", "src", "refs/heads/main"), ShouldBeTrue)
+			assert.That(t, cfg.ShouldIndexRef("webrtc.googlesource.com", "src", "refs/heads/main"), should.BeTrue)
 
 			// Do not match any host.
-			So(cfg.ShouldIndexRef("another-host.googlesource.com", "src", "refs/heads/main"), ShouldBeFalse)
+			assert.That(t, cfg.ShouldIndexRef("another-host.googlesource.com", "src", "refs/heads/main"), should.BeFalse)
 		})
 	})
 }

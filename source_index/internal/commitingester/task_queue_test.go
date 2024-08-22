@@ -19,6 +19,9 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/proto/gitiles"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
@@ -27,19 +30,16 @@ import (
 	"go.chromium.org/luci/source_index/internal/commitingester/taskspb"
 	"go.chromium.org/luci/source_index/internal/config"
 	"go.chromium.org/luci/source_index/internal/testutil"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestProcessCommitIngestionTask(t *testing.T) {
-	Convey(`ProcessCommitIngestionTask`, t, func() {
+	ftt.Run(`ProcessCommitIngestionTask`, t, func(t *ftt.Test) {
 		ctx := testutil.IntegrationTestContext(t)
 		ctx, skdr := tq.TestingContext(ctx, nil)
 
 		ctx = memory.Use(ctx)
 		err := config.SetTestConfig(ctx, config.TestCfg)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		rng := rand.New(rand.NewSource(7671861294544766002))
 		commits := gitiles.MakeFakeCommits(rng, 1001, nil)
@@ -67,14 +67,8 @@ func TestProcessCommitIngestionTask(t *testing.T) {
 		expectedSavedCommits := make([]commit.Commit, 0, len(commitsInPage))
 		for _, c := range commitsInPage {
 			gitCommit, err := commit.NewGitCommit(host, repository, c)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			expectedSavedCommits = append(expectedSavedCommits, commit.NewFromGitCommit(gitCommit))
-		}
-		assertSavedCommitsExpected := func() string {
-			actualSavedCommits, err := commit.ReadAllForTesting(span.Single(ctx))
-			So(err, ShouldBeNil)
-
-			return commit.ShouldEqualCommitSet(actualSavedCommits, expectedSavedCommits)
 		}
 
 		expectedTasks := []*taskspb.IngestCommits{
@@ -86,26 +80,26 @@ func TestProcessCommitIngestionTask(t *testing.T) {
 				TaskIndex:  1,
 			},
 		}
-		assertOutputTaskExpected := func() string {
+		getOutputTasks := func() []*taskspb.IngestCommits {
 			actualTasks := make([]*taskspb.IngestCommits, 0, len(skdr.Tasks().Payloads()))
 			for _, payload := range skdr.Tasks().Payloads() {
 				actualTasks = append(actualTasks, payload.(*taskspb.IngestCommits))
 			}
 
-			return ShouldResembleProto(actualTasks, expectedTasks)
+			return actualTasks
 		}
 
-		Convey(`with next page`, func() {
+		t.Run(`with next page`, func(t *ftt.Test) {
 			fakeGitilesClient.SetRepository(repository, nil, commits)
 
 			err := processCommitIngestionTask(ctx, fakeGitilesClient, inputTask)
 
-			So(err, ShouldBeNil)
-			So(assertSavedCommitsExpected(), ShouldBeEmpty)
-			So(assertOutputTaskExpected(), ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.That(t, commit.MustReadAllForTesting(span.Single(ctx)), commit.ShouldMatchCommits(expectedSavedCommits))
+			assert.That(t, getOutputTasks(), should.Match(expectedTasks))
 		})
 
-		Convey(`without next page`, func() {
+		t.Run(`without next page`, func(t *ftt.Test) {
 			commits = commits[:800]
 			commits[len(commits)-1].Parents = nil
 			commitsInPage = commits[:1000]
@@ -115,25 +109,25 @@ func TestProcessCommitIngestionTask(t *testing.T) {
 
 			err := processCommitIngestionTask(ctx, fakeGitilesClient, inputTask)
 
-			So(err, ShouldBeNil)
-			So(assertSavedCommitsExpected(), ShouldBeEmpty)
-			So(assertOutputTaskExpected(), ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.That(t, commit.MustReadAllForTesting(span.Single(ctx)), commit.ShouldMatchCommits(expectedSavedCommits))
+			assert.That(t, getOutputTasks(), should.Match(expectedTasks))
 		})
 
-		Convey(`with already ingested first commit`, func() {
+		t.Run(`with already ingested first commit`, func(t *ftt.Test) {
 			firstGitCommit, err := commit.NewGitCommit(host, repository, commits[0])
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			alreadySavedCommit := commit.NewFromGitCommit(firstGitCommit)
-			So(commit.SetForTesting(ctx, alreadySavedCommit), ShouldBeNil)
+			commit.MustSetForTesting(ctx, alreadySavedCommit)
 			fakeGitilesClient.SetRepository(repository, nil, commits)
 			expectedSavedCommits = []commit.Commit{alreadySavedCommit}
 			expectedTasks = []*taskspb.IngestCommits{}
 
 			err = processCommitIngestionTask(ctx, fakeGitilesClient, inputTask)
 
-			So(err, ShouldBeNil)
-			So(assertSavedCommitsExpected(), ShouldBeEmpty)
-			So(assertOutputTaskExpected(), ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.That(t, commit.MustReadAllForTesting(span.Single(ctx)), commit.ShouldMatchCommits(expectedSavedCommits))
+			assert.That(t, getOutputTasks(), should.Match(expectedTasks))
 		})
 	})
 }

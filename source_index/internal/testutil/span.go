@@ -22,7 +22,6 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
-	"github.com/smartystreets/goconvey/convey"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/spantest"
@@ -96,6 +95,8 @@ func SpannerTestMain(m *testing.M) {
 // Returns the commit timestamp.
 func MustApply(ctx context.Context, ms ...*spanner.Mutation) time.Time {
 	ct, err := span.Apply(ctx, ms)
-	convey.So(err, convey.ShouldBeNil)
+	if err != nil {
+		panic(err)
+	}
 	return ct
 }

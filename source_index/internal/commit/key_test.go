@@ -19,74 +19,74 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/source_index/internal/testutil"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestKey(t *testing.T) {
-	Convey("Key", t, func() {
-		Convey("NewKey", func() {
+	ftt.Run("Key", t, func(t *ftt.Test) {
+		t.Run("NewKey", func(t *ftt.Test) {
 			host := "chromium.googlesource.com"
 			repository := "chromium/src"
 			commitHash := "b66c0785db818311bf0ea486779f3326ba3ddf11"
 
-			Convey("valid", func() {
+			t.Run("valid", func(t *ftt.Test) {
 				key, err := NewKey(host, repository, commitHash)
 
-				So(err, ShouldBeNil)
-				So(key, ShouldResemble, Key{
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, key, ShouldMatchKey(Key{
 					host:       host,
 					repository: repository,
 					commitHash: commitHash,
-				})
+				}))
 			})
 
-			Convey("invalid host", func() {
+			t.Run("invalid host", func(t *ftt.Test) {
 				host = "chromium.invalidsource.com"
 
 				key, err := NewKey(host, repository, commitHash)
 
-				So(err, ShouldErrLike, "invalid host")
-				So(key, ShouldResemble, Key{})
+				assert.That(t, err, should.ErrLike("invalid host"))
+				assert.That(t, key, ShouldMatchKey(Key{}))
 			})
 
-			Convey("invalid repository", func() {
+			t.Run("invalid repository", func(t *ftt.Test) {
 				repository = "chromium/"
 
 				key, err := NewKey(host, repository, commitHash)
 
-				So(err, ShouldErrLike, "invalid repository")
-				So(key, ShouldResemble, Key{})
+				assert.That(t, err, should.ErrLike("invalid repository"))
+				assert.That(t, key, ShouldMatchKey(Key{}))
 			})
 
-			Convey("invalid commit hash", func() {
+			t.Run("invalid commit hash", func(t *ftt.Test) {
 				commitHash = "not-a-hash"
 
 				key, err := NewKey(host, repository, commitHash)
 
-				So(err, ShouldErrLike, "invalid commit hash")
-				So(key, ShouldResemble, Key{})
+				assert.That(t, err, should.ErrLike("invalid commit hash"))
+				assert.That(t, key, ShouldMatchKey(Key{}))
 			})
 
-			Convey("mixed case commit hash", func() {
+			t.Run("mixed case commit hash", func(t *ftt.Test) {
 				commitHash = "B66c0785Db818311bf0ea486779F3326ba3ddf11"
 
 				key, err := NewKey(host, repository, commitHash)
 
-				So(err, ShouldBeNil)
-				So(key, ShouldResemble, Key{
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, key, ShouldMatchKey(Key{
 					host:       host,
 					repository: repository,
 					commitHash: "b66c0785db818311bf0ea486779f3326ba3ddf11",
-				})
+				}))
 			})
 		})
 
-		Convey("spanner", func() {
+		t.Run("spanner", func(t *ftt.Test) {
 			ctx := testutil.SpannerTestContext(t)
 
 			now := time.Date(2055, time.May, 5, 5, 5, 5, 5, time.UTC)
@@ -105,45 +105,45 @@ func TestKey(t *testing.T) {
 				},
 			}
 
-			Convey("ReadCommit", func() {
-				Convey("with position", func() {
-					So(SetForTesting(ctx, commitToStore), ShouldBeNil)
+			t.Run("ReadCommit", func(t *ftt.Test) {
+				t.Run("with position", func(t *ftt.Test) {
+					MustSetForTesting(ctx, commitToStore)
 
 					readCommit, err := ReadCommit(span.Single(ctx), key)
 
-					So(err, ShouldBeNil)
-					So(readCommit, ShouldResemble, commitToStore)
+					assert.Loosely(t, err, should.BeNil)
+					assert.That(t, readCommit, ShouldMatchCommit(commitToStore))
 				})
 
-				Convey("without position", func() {
+				t.Run("without position", func(t *ftt.Test) {
 					commitToStore.position = nil
-					So(SetForTesting(ctx, commitToStore), ShouldBeNil)
+					MustSetForTesting(ctx, commitToStore)
 
 					readCommit, err := ReadCommit(span.Single(ctx), key)
 
-					So(err, ShouldBeNil)
-					So(readCommit, ShouldResemble, commitToStore)
+					assert.Loosely(t, err, should.BeNil)
+					assert.That(t, readCommit, ShouldMatchCommit(commitToStore))
 				})
 			})
 
-			Convey("Exits", func() {
-				Convey("existing commit", func() {
-					So(SetForTesting(ctx, commitToStore), ShouldBeNil)
+			t.Run("Exits", func(t *ftt.Test) {
+				t.Run("existing commit", func(t *ftt.Test) {
+					MustSetForTesting(ctx, commitToStore)
 
 					exists, err := Exists(span.Single(ctx), key)
 
-					So(err, ShouldBeNil)
-					So(exists, ShouldBeTrue)
+					assert.Loosely(t, err, should.BeNil)
+					assert.That(t, exists, should.BeTrue)
 				})
 
-				Convey("non-existing commit", func() {
+				t.Run("non-existing commit", func(t *ftt.Test) {
 					commitToStore.key.commitHash = "94f4b5c7c0bacc03caf215987a068db54b88af20"
-					So(SetForTesting(ctx, commitToStore), ShouldBeNil)
+					MustSetForTesting(ctx, commitToStore)
 
 					exists, err := Exists(span.Single(ctx), key)
 
-					So(err, ShouldBeNil)
-					So(exists, ShouldBeFalse)
+					assert.Loosely(t, err, should.BeNil)
+					assert.That(t, exists, should.BeFalse)
 				})
 			})
 		})
