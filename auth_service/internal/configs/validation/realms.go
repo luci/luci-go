@@ -18,9 +18,9 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"slices"
 	"strings"
 
-	"golang.org/x/exp/slices"
 	"google.golang.org/protobuf/encoding/prototext"
 
 	"go.chromium.org/luci/auth/identity"
@@ -438,7 +438,7 @@ func findCycle(start string, graph map[string][]string) ([]string, error) {
 			return false, nil
 		}
 
-		if contains(visiting, node) {
+		if slices.Contains(visiting, node) {
 			// Found a cycle that starts and ends with `node`. Return true if it
 			// is a `start` cycle; we don't care otherwise.
 			return node == start, nil

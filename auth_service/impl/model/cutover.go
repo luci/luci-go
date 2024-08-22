@@ -26,11 +26,11 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"slices"
 	"strings"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"golang.org/x/exp/slices"
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/errors"

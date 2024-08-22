@@ -21,10 +21,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"slices"
 	"strings"
 	"time"
 
-	"golang.org/x/exp/slices"
 	"google.golang.org/protobuf/encoding/prototext"
 
 	"go.chromium.org/luci/auth/identity"
@@ -287,11 +287,11 @@ func loadTarball(ctx context.Context, content io.Reader, domain string, systems,
 			logging.Warningf(ctx, "Skipping file %s, not a valid name", filename)
 			continue
 		}
-		if groups != nil && !contains(filename, groups) {
+		if groups != nil && !slices.Contains(groups, filename) {
 			continue
 		}
 		system := chunks[0]
-		if !contains(system, systems) {
+		if !slices.Contains(systems, system) {
 			logging.Warningf(ctx, "Skipping file %s, not allowed", filename)
 			continue
 		}
@@ -593,7 +593,7 @@ func prepareImport(ctx context.Context, systemName string, existingGroups map[st
 	for _, groupName := range toDelete {
 		isSubgroup := false
 		for _, existingGroup := range existingGroups {
-			if contains(groupName, existingGroup.Nested) {
+			if slices.Contains(existingGroup.Nested, groupName) {
 				isSubgroup = true
 				break
 			}
@@ -653,17 +653,6 @@ func extractTarArchive(r io.Reader) (map[string][]byte, error) {
 		return nil, err
 	}
 	return entries, nil
-}
-
-// TODO(cjacomet): replace with slices.Contains when
-// slices package isn't experimental.
-func contains(key string, search []string) bool {
-	for _, val := range search {
-		if val == key {
-			return true
-		}
-	}
-	return false
 }
 
 // ToProto converts the GroupImporterConfig entity to the proto equivalent.

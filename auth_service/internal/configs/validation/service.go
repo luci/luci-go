@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"net"
 	"regexp"
+	"slices"
 	"sort"
 	"strings"
 
@@ -428,7 +429,7 @@ func getSubnetsRecursive(al *configspb.IPAllowlistConfig_IPAllowlist, visiting [
 	}
 
 	// Cycle check.
-	if contains(visiting, alName) {
+	if slices.Contains(visiting, alName) {
 		errorCycle := fmt.Sprintf("%s -> %s", strings.Join(visiting, " -> "), alName)
 		return nil, errors.New(fmt.Sprintf("IP allowlist is part of an included cycle %s", errorCycle))
 	}
@@ -488,13 +489,4 @@ func normalizeSubnet(raw string) (string, error) {
 		maskBits = 32
 	}
 	return fmt.Sprintf("%s/%d", ip.String(), maskBits), nil
-}
-
-func contains(s []string, val string) bool {
-	for _, v := range s {
-		if v == val {
-			return true
-		}
-	}
-	return false
 }

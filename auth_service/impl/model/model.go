@@ -24,10 +24,10 @@ import (
 	"encoding/hex"
 	stderrors "errors"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
-	"golang.org/x/exp/slices"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
