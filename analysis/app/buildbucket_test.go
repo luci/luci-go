@@ -24,7 +24,12 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon"
+	"go.chromium.org/luci/server/pubsub"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/tq"
 
@@ -43,7 +48,66 @@ const (
 func TestHandleBuild(t *testing.T) {
 	buildjoiner.RegisterTaskClass()
 
-	Convey(`Test BuildbucketPubSubHandler`, t, func() {
+	ftt.Run(`Test BuildbucketPubSubHandler`, t, func(t *ftt.Test) {
+		ctx, _ := tsmon.WithDummyInMemory(context.Background())
+		ctx, skdr := tq.TestingContext(ctx, nil)
+
+		pubSubMessage := &buildbucketpb.BuildsV2PubSub{
+			Build: &buildbucketpb.Build{
+				Builder: &buildbucketpb.BuilderID{
+					Project: "buildproject",
+				},
+				Id: 14141414,
+				Infra: &buildbucketpb.BuildInfra{
+					Buildbucket: &buildbucketpb.BuildInfra_Buildbucket{
+						Hostname: bbHost,
+					},
+				},
+			},
+		}
+		t.Run(`Completed build`, func(t *ftt.Test) {
+			pubSubMessage.Build.Status = buildbucketpb.Status_SUCCESS
+
+			request := makeBBV2Req(pubSubMessage)
+			err := BuildbucketPubSubHandler(ctx, request)
+			assert.That(t, err, should.ErrLike(nil))
+			assert.Loosely(t, buildCounter.Get(ctx, "buildproject", "success"), should.Equal(1))
+
+			assert.Loosely(t, len(skdr.Tasks().Payloads()), should.Equal(1))
+			resultsTask := skdr.Tasks().Payloads()[0].(*taskspb.JoinBuild)
+
+			expectedTask := &taskspb.JoinBuild{
+				Host:    bbHost,
+				Project: "buildproject",
+				Id:      14141414,
+			}
+			assert.Loosely(t, resultsTask, should.Match(expectedTask))
+		})
+		t.Run(`Uncompleted build`, func(t *ftt.Test) {
+			pubSubMessage.Build.Status = buildbucketpb.Status_STARTED
+
+			request := makeBBV2Req(pubSubMessage)
+			err := BuildbucketPubSubHandler(ctx, request)
+			assert.That(t, pubsub.Ignore.In(err), should.BeTrue)
+			assert.Loosely(t, buildCounter.Get(ctx, "buildproject", "ignored"), should.Equal(1))
+
+			assert.Loosely(t, len(skdr.Tasks().Payloads()), should.BeZero)
+		})
+		t.Run(`Invalid data`, func(t *ftt.Test) {
+			attributes := map[string]string{
+				"version": "v2",
+			}
+			request := pubsub.Message{Data: []byte("Hello"), Attributes: attributes}
+			err := BuildbucketPubSubHandler(ctx, request)
+			assert.That(t, err, should.ErrLike("unmarshal buildbucket v2 pub/sub message"))
+			assert.That(t, transient.Tag.In(err), should.BeFalse)
+			assert.Loosely(t, buildCounter.Get(ctx, "unknown", "permanent-failure"), should.Equal(1))
+			assert.Loosely(t, len(skdr.Tasks().Payloads()), should.BeZero)
+		})
+	})
+
+	// Legacy pub/sub handler tests, delete once handler migration complete.
+	Convey(`Test BuildbucketPubSubHandler (Legacy)`, t, func() {
 		ctx, _ := tsmon.WithDummyInMemory(context.Background())
 		ctx, skdr := tq.TestingContext(ctx, nil)
 
@@ -67,8 +131,8 @@ func TestHandleBuild(t *testing.T) {
 		Convey(`Completed build`, func() {
 			pubSubMessage.Build.Status = buildbucketpb.Status_SUCCESS
 
-			rctx.Request = (&http.Request{Body: makeBBV2Req(pubSubMessage)}).WithContext(ctx)
-			BuildbucketPubSubHandler(rctx)
+			rctx.Request = (&http.Request{Body: makeBBV2ReqLegacy(pubSubMessage)}).WithContext(ctx)
+			BuildbucketPubSubHandlerLegacy(rctx)
 			So(rsp.Code, ShouldEqual, http.StatusOK)
 			So(buildCounter.Get(ctx, "buildproject", "success"), ShouldEqual, 1)
 
@@ -85,8 +149,8 @@ func TestHandleBuild(t *testing.T) {
 		Convey(`Uncompleted build`, func() {
 			pubSubMessage.Build.Status = buildbucketpb.Status_STARTED
 
-			rctx.Request = (&http.Request{Body: makeBBV2Req(pubSubMessage)}).WithContext(ctx)
-			BuildbucketPubSubHandler(rctx)
+			rctx.Request = (&http.Request{Body: makeBBV2ReqLegacy(pubSubMessage)}).WithContext(ctx)
+			BuildbucketPubSubHandlerLegacy(rctx)
 			So(rsp.Code, ShouldEqual, http.StatusNoContent)
 			So(buildCounter.Get(ctx, "buildproject", "ignored"), ShouldEqual, 1)
 
@@ -97,7 +161,7 @@ func TestHandleBuild(t *testing.T) {
 				"version": "v2",
 			}
 			rctx.Request = (&http.Request{Body: makeReq([]byte("Hello"), attributes)}).WithContext(ctx)
-			BuildbucketPubSubHandler(rctx)
+			BuildbucketPubSubHandlerLegacy(rctx)
 			So(rsp.Code, ShouldEqual, http.StatusAccepted)
 			So(buildCounter.Get(ctx, "unknown", "permanent-failure"), ShouldEqual, 1)
 
@@ -106,7 +170,22 @@ func TestHandleBuild(t *testing.T) {
 	})
 }
 
-func makeBBV2Req(message *buildbucketpb.BuildsV2PubSub) io.ReadCloser {
+func makeBBV2Req(message *buildbucketpb.BuildsV2PubSub) pubsub.Message {
+	bm, err := protojson.Marshal(message)
+	if err != nil {
+		panic(err)
+	}
+
+	attributes := map[string]string{
+		"version": "v2",
+	}
+	return pubsub.Message{
+		Data:       bm,
+		Attributes: attributes,
+	}
+}
+
+func makeBBV2ReqLegacy(message *buildbucketpb.BuildsV2PubSub) io.ReadCloser {
 	bm, err := protojson.Marshal(message)
 	if err != nil {
 		panic(err)

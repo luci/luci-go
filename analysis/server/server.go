@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/server/encryptedcookies"
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/module"
+	"go.chromium.org/luci/server/pubsub"
 	"go.chromium.org/luci/server/secrets"
 	spanmodule "go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
@@ -78,6 +79,7 @@ func Main(init func(srv *luciserver.Server) error) {
 		encryptedcookies.NewModuleFromFlags(), // Required for auth sessions.
 		gaeemulation.NewModuleFromFlags(),     // Needed by cfgmodule.
 		hosts.NewModuleFromFlags(),
+		pubsub.NewModuleFromFlags(),
 		secrets.NewModuleFromFlags(), // Needed by encryptedcookies.
 		spanmodule.NewModuleFromFlags(nil),
 		scopedauth.NewModuleFromFlags(),
@@ -144,7 +146,7 @@ func RegisterPRPCHandlers(srv *luciserver.Server) error {
 }
 
 // RegisterCrons registers cron handlers.
-func RegisterCrons(srv *luciserver.Server) error {
+func RegisterCrons(srv *luciserver.Server) {
 	updateAnalysisAndBugsHandler := bugscron.NewHandler(srv.Options.CloudProject, uiBaseURL(srv), srv.Options.Prod)
 	cron.RegisterHandler("update-analysis-and-bugs", updateAnalysisAndBugsHandler.CronHandler)
 	attributeFilteredTestRunsHandler := failureattributes.NewFilteredRunsAttributionHandler(srv.Options.CloudProject)
@@ -165,16 +167,22 @@ func RegisterCrons(srv *luciserver.Server) error {
 	cron.RegisterHandler("update-changepoint-table", func(ctx context.Context) error {
 		return bqupdator.UpdateChangepointTable(ctx, srv.Options.CloudProject)
 	})
-	return nil
 }
 
 // RegisterPubSubHandlers registers pub/sub handlers.
-func RegisterPubSubHandlers(srv *luciserver.Server) error {
-	srv.Routes.POST("/_ah/push-handlers/buildbucket", nil, app.BuildbucketPubSubHandler)
-	srv.Routes.POST("/_ah/push-handlers/cvrun", nil, app.NewCVRunHandler().Handle)
-	srv.Routes.POST("/_ah/push-handlers/invocation-finalized", nil, app.NewInvocationFinalizedHandler().Handle)
-	srv.Routes.POST("/_ah/push-handlers/invocation-ready-for-export", nil, app.NewInvocationReadyForExportHandler().Handle)
-	return nil
+func RegisterPubSubHandlers() {
+	pubsub.RegisterHandler("buildbucket", app.BuildbucketPubSubHandler)
+	pubsub.RegisterHandler("cvrun", app.NewCVRunHandler().Handle)
+	pubsub.RegisterHandler("invocation-finalized", app.NewInvocationFinalizedHandler().Handle)
+	pubsub.RegisterHandler("invocation-ready-for-export", app.NewInvocationReadyForExportHandler().Handle)
+}
+
+// RegisterLegacyPubSubHandlers registers legacy pub/sub handlers.
+func RegisterLegacyPubSubHandlers(srv *luciserver.Server) {
+	srv.Routes.POST("/_ah/push-handlers/buildbucket", nil, app.BuildbucketPubSubHandlerLegacy)
+	srv.Routes.POST("/_ah/push-handlers/cvrun", nil, app.NewCVRunHandler().HandleLegacy)
+	srv.Routes.POST("/_ah/push-handlers/invocation-finalized", nil, app.NewInvocationFinalizedHandler().HandleLegacy)
+	srv.Routes.POST("/_ah/push-handlers/invocation-ready-for-export", nil, app.NewInvocationReadyForExportHandler().HandleLegacy)
 }
 
 // RegisterTaskQueueHandlers registers task queue handlers.

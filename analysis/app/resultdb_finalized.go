@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/common/tsmon/metric"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/auth/realms"
+	"go.chromium.org/luci/server/pubsub"
 	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/analysis/internal/ingestion/join"
@@ -60,15 +61,56 @@ func NewInvocationFinalizedHandler() *InvocationFinalizedHandler {
 	}
 }
 
-// Handle processes a ResultDB Invocation Finalized Pub/Sub message.
-func (h *InvocationFinalizedHandler) Handle(ctx *router.Context) {
+func (h *InvocationFinalizedHandler) Handle(ctx context.Context, message pubsub.Message) error {
+	status := "unknown"
+	project := "unknown"
+	defer func() {
+		// Closure for late binding.
+		invocationsFinalizedCounter.Add(ctx, 1, project, status)
+	}()
+
+	var err error
+	project, processed, err := h.handleImpl(ctx, message)
+	if err == nil && !processed {
+		err = pubsub.Ignore.Apply(errors.Reason("ignoring invocation finalized notification").Err())
+	}
+	status = errStatus(err)
+	return err
+}
+
+func (h *InvocationFinalizedHandler) handleImpl(ctx context.Context, message pubsub.Message) (project string, processed bool, err error) {
+	notification, err := extractNotification(message)
+	if err != nil {
+		return "unknown", false, errors.Annotate(err, "extract invocation finalized notification").Err()
+	}
+
+	project, _ = realms.Split(notification.Realm)
+	processed, err = h.handleInvocation(ctx, notification)
+	if err != nil {
+		return project, false, errors.Annotate(err, "processing notification").Err()
+	}
+	return project, processed, nil
+}
+
+func extractNotification(message pubsub.Message) (*rdbpb.InvocationFinalizedNotification, error) {
+	var run rdbpb.InvocationFinalizedNotification
+	unmarshalOpts := protojson.UnmarshalOptions{DiscardUnknown: true}
+	err := unmarshalOpts.Unmarshal(message.Data, &run)
+	if err != nil {
+		return nil, errors.Annotate(err, "parsing pubsub message data").Err()
+	}
+	return &run, nil
+}
+
+// HandleLegacy processes a ResultDB Invocation Finalized Pub/Sub message.
+func (h *InvocationFinalizedHandler) HandleLegacy(ctx *router.Context) {
 	status := "unknown"
 	project := "unknown"
 	defer func() {
 		// Closure for late binding.
 		invocationsFinalizedCounter.Add(ctx.Request.Context(), 1, project, status)
 	}()
-	project, processed, err := h.handleImpl(ctx.Request.Context(), ctx.Request)
+	project, processed, err := h.handleImplLegacy(ctx.Request.Context(), ctx.Request)
 
 	switch {
 	case err != nil:
@@ -88,8 +130,8 @@ func (h *InvocationFinalizedHandler) Handle(ctx *router.Context) {
 	}
 }
 
-func (h *InvocationFinalizedHandler) handleImpl(ctx context.Context, request *http.Request) (project string, processed bool, err error) {
-	notification, err := extractNotification(request)
+func (h *InvocationFinalizedHandler) handleImplLegacy(ctx context.Context, request *http.Request) (project string, processed bool, err error) {
+	notification, err := extractNotificationLegacy(request)
 	if err != nil {
 		return "unknown", false, errors.Annotate(err, "failed to extract invocation finalized notification").Err()
 	}
@@ -102,7 +144,7 @@ func (h *InvocationFinalizedHandler) handleImpl(ctx context.Context, request *ht
 	return project, processed, nil
 }
 
-func extractNotification(r *http.Request) (*rdbpb.InvocationFinalizedNotification, error) {
+func extractNotificationLegacy(r *http.Request) (*rdbpb.InvocationFinalizedNotification, error) {
 	var msg pubsubMessage
 	if err := json.NewDecoder(r.Body).Decode(&msg); err != nil {
 		return nil, errors.Annotate(err, "decoding pubsub message").Err()

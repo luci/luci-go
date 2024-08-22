@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
+	"go.chromium.org/luci/server/pubsub"
 	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/analysis/internal/services/buildjoiner"
@@ -43,11 +44,38 @@ var (
 		field.String("status"))
 )
 
-// BuildbucketPubSubHandler accepts and process buildbucket v2 Pub/Sub messages.
+func BuildbucketPubSubHandler(ctx context.Context, message pubsub.Message) error {
+	project := "unknown"
+	status := "unknown"
+	defer func() {
+		// Closure for late binding.
+		buildCounter.Add(ctx, 1, project, status)
+	}()
+
+	var err error
+	project, err = bbPubSubHandlerImpl(ctx, message)
+	status = errStatus(err)
+	return err
+}
+
+func bbPubSubHandlerImpl(ctx context.Context, message pubsub.Message) (project string, err error) {
+	// Handle message from the builds (v2) topic.
+	msg, err := parseBBV2Message(ctx, message.Data)
+	if err != nil {
+		return "unknown", errors.Annotate(err, "unmarshal buildbucket v2 pub/sub message").Err()
+	}
+	err = processBBV2Message(ctx, msg)
+	if err != nil {
+		return msg.Build.Builder.Project, errors.Annotate(err, "process buildbucket v2 build").Err()
+	}
+	return msg.Build.Builder.Project, nil
+}
+
+// BuildbucketPubSubHandlerLegacy accepts and process buildbucket v2 Pub/Sub messages.
 // LUCI Analysis ingests buildbucket builds upon completion, with the
 // caveat that for builds related to CV runs, we also wait for the
 // CV run to complete (via CV Pub/Sub).
-func BuildbucketPubSubHandler(ctx *router.Context) {
+func BuildbucketPubSubHandlerLegacy(ctx *router.Context) {
 	project := "unknown"
 	status := "unknown"
 	defer func() {
@@ -55,46 +83,40 @@ func BuildbucketPubSubHandler(ctx *router.Context) {
 		buildCounter.Add(ctx.Request.Context(), 1, project, status)
 	}()
 
-	project, processed, err := bbPubSubHandlerImpl(ctx.Request.Context(), ctx.Request)
+	var err error
+	project, err = bbPubSubHandlerImplLegacy(ctx.Request.Context(), ctx.Request)
 	if err != nil {
-		errors.Log(ctx.Request.Context(), errors.Annotate(err, "handling buildbucket pubsub event").Err())
 		status = processErr(ctx, err)
+		if status != "ignored" {
+			errors.Log(ctx.Request.Context(), errors.Annotate(err, "handling buildbucket pubsub event").Err())
+		}
 		return
 	}
-	if processed {
-		status = "success"
-		// Use subtly different "success" response codes to surface in
-		// standard GAE logs whether an ingestion was ignored or not,
-		// while still acknowledging the pub/sub.
-		// See https://cloud.google.com/pubsub/docs/push#receiving_messages.
-		ctx.Writer.WriteHeader(http.StatusOK)
-	} else {
-		status = "ignored"
-		ctx.Writer.WriteHeader(http.StatusNoContent) // 204
-	}
+	status = "success"
+	ctx.Writer.WriteHeader(http.StatusOK)
 }
 
-func bbPubSubHandlerImpl(ctx context.Context, request *http.Request) (project string, processed bool, err error) {
+func bbPubSubHandlerImplLegacy(ctx context.Context, request *http.Request) (project string, err error) {
 	var psMsg pubsubMessage
 	if err := json.NewDecoder(request.Body).Decode(&psMsg); err != nil {
-		return "unknown", false, errors.Annotate(err, "could not decode buildbucket pubsub message").Err()
+		return "unknown", errors.Annotate(err, "could not decode buildbucket pubsub message").Err()
 	}
 	// Handle message from the builds (v2) topic.
-	msg, err := parseBBV2Message(ctx, psMsg)
+	msg, err := parseBBV2Message(ctx, psMsg.Message.Data)
 	if err != nil {
-		return "unknown", false, errors.Annotate(err, "unmarshal buildbucket v2 pub/sub message").Err()
+		return "unknown", errors.Annotate(err, "unmarshal buildbucket v2 pub/sub message").Err()
 	}
-	processed, err = processBBV2Message(ctx, msg)
+	err = processBBV2Message(ctx, msg)
 	if err != nil {
-		return msg.Build.Builder.Project, false, errors.Annotate(err, "process buildbucket v2 build").Err()
+		return msg.Build.Builder.Project, errors.Annotate(err, "process buildbucket v2 build").Err()
 	}
-	return msg.Build.Builder.Project, processed, nil
+	return msg.Build.Builder.Project, nil
 }
 
-func parseBBV2Message(ctx context.Context, pbMsg pubsubMessage) (*buildbucketpb.BuildsV2PubSub, error) {
+func parseBBV2Message(ctx context.Context, data []byte) (*buildbucketpb.BuildsV2PubSub, error) {
 	buildsV2Msg := &buildbucketpb.BuildsV2PubSub{}
 	opts := protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}
-	if err := opts.Unmarshal(pbMsg.Message.Data, buildsV2Msg); err != nil {
+	if err := opts.Unmarshal(data, buildsV2Msg); err != nil {
 		return nil, err
 	}
 	// Optional: implement decompression of large fields. As we don't need build.input,
@@ -104,15 +126,15 @@ func parseBBV2Message(ctx context.Context, pbMsg pubsubMessage) (*buildbucketpb.
 	return buildsV2Msg, nil
 }
 
-func processBBV2Message(ctx context.Context, message *buildbucketpb.BuildsV2PubSub) (processed bool, err error) {
+func processBBV2Message(ctx context.Context, message *buildbucketpb.BuildsV2PubSub) error {
 	if message.Build.Status&buildbucketpb.Status_ENDED_MASK != buildbucketpb.Status_ENDED_MASK {
 		// Received build that hasn't completed yet, ignore it.
-		return false, nil
+		return pubsub.Ignore.Apply(errors.Reason("build did not complete yet, ignoring").Err())
 	}
 	if message.Build.Infra.GetBuildbucket().GetHostname() == "" {
 		// Invalid build. Ignore.
 		logging.Warningf(ctx, "Build %v did not specify buildbucket hostname, ignoring.", message.Build.Id)
-		return false, nil
+		return pubsub.Ignore.Apply(errors.Reason("build %v did not specify hostname, ignoring", message.Build.Id).Err())
 	}
 
 	project := message.Build.Builder.Project
@@ -121,9 +143,9 @@ func processBBV2Message(ctx context.Context, message *buildbucketpb.BuildsV2PubS
 		Id:      message.Build.Id,
 		Host:    message.Build.Infra.Buildbucket.Hostname,
 	}
-	err = buildjoiner.Schedule(ctx, task)
+	err := buildjoiner.Schedule(ctx, task)
 	if err != nil {
-		return false, err
+		return err
 	}
-	return true, nil
+	return nil
 }

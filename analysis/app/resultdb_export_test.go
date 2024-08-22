@@ -24,8 +24,13 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon"
 	resultpb "go.chromium.org/luci/resultdb/proto/v1"
+	"go.chromium.org/luci/server/pubsub"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/tq"
 
@@ -38,6 +43,52 @@ import (
 )
 
 func TestInvocationReadyForExportHandler(t *testing.T) {
+	ftt.Run(`Test InvocationReadyForExportHandler`, t, func(t *ftt.Test) {
+		ctx, _ := tsmon.WithDummyInMemory(context.Background())
+		ctx, taskScheduler := tq.TestingContext(ctx, nil)
+
+		h := &InvocationReadyForExportHandler{}
+
+		t.Run(`Valid message`, func(t *ftt.Test) {
+			notification := &resultpb.InvocationReadyForExportNotification{
+				RootInvocation:      "root-invocation",
+				RootInvocationRealm: "testproject:ci",
+				Invocation:          "my-invocation",
+				InvocationRealm:     "includedproject:test_runner",
+				Sources: &resultpb.Sources{
+					GitilesCommit: &resultpb.GitilesCommit{
+						Host:       "testproject.googlesource.com",
+						Project:    "testproject/src",
+						Ref:        "refs/heads/main",
+						CommitHash: "1234567890123456789012345678901234567890",
+						Position:   123,
+					},
+				},
+			}
+			// Process invocation finalization.
+			request := makeInvocationReadyForExportReq(notification)
+
+			err := h.Handle(ctx, request)
+			assert.That(t, err, should.ErrLike(nil))
+			assert.Loosely(t, invocationsReadyForExportCounter.Get(ctx, "testproject", "success"), should.Equal(1))
+			assert.That(t, taskScheduler.Tasks().Payloads(), should.Match([]proto.Message{
+				&taskspb.IngestTestResults{
+					Notification: notification,
+					TaskIndex:    1,
+				},
+			}))
+		})
+		t.Run(`Invalid message`, func(t *ftt.Test) {
+			message := pubsub.Message{Data: []byte("Hello")}
+			err := h.Handle(ctx, message)
+			assert.That(t, err, should.ErrLike("extract invocation ready for export notification: parsing pubsub message data"))
+			assert.That(t, transient.Tag.In(err), should.BeFalse)
+			assert.Loosely(t, invocationsReadyForExportCounter.Get(ctx, "unknown", "permanent-failure"), should.Equal(1))
+		})
+	})
+}
+
+func TestInvocationReadyForExportHandlerLegacy(t *testing.T) {
 	Convey(`Test InvocationReadyForExportHandler`, t, func() {
 		ctx, _ := tsmon.WithDummyInMemory(context.Background())
 		ctx, taskScheduler := tq.TestingContext(ctx, nil)
@@ -65,9 +116,9 @@ func TestInvocationReadyForExportHandler(t *testing.T) {
 				},
 			}
 			// Process invocation finalization.
-			rctx.Request = (&http.Request{Body: makeInvocationReadyForExportReq(notification)}).WithContext(ctx)
+			rctx.Request = (&http.Request{Body: makeInvocationReadyForExportReqLegacy(notification)}).WithContext(ctx)
 
-			h.Handle(rctx)
+			h.HandleLegacy(rctx)
 			So(rsp.Code, ShouldEqual, http.StatusOK)
 			So(invocationsReadyForExportCounter.Get(ctx, "testproject", "success"), ShouldEqual, 1)
 			So(taskScheduler.Tasks().Payloads(), ShouldResembleProto, []proto.Message{
@@ -80,14 +131,19 @@ func TestInvocationReadyForExportHandler(t *testing.T) {
 		Convey(`Invalid message`, func() {
 			rctx.Request = (&http.Request{Body: makeReq([]byte("Hello"), nil)}).WithContext(ctx)
 
-			h.Handle(rctx)
+			h.HandleLegacy(rctx)
 			So(rsp.Code, ShouldEqual, http.StatusAccepted)
 			So(invocationsReadyForExportCounter.Get(ctx, "unknown", "permanent-failure"), ShouldEqual, 1)
 		})
 	})
 }
 
-func makeInvocationReadyForExportReq(notification *resultpb.InvocationReadyForExportNotification) io.ReadCloser {
+func makeInvocationReadyForExportReq(notification *resultpb.InvocationReadyForExportNotification) pubsub.Message {
+	blob, _ := protojson.Marshal(notification)
+	return pubsub.Message{Data: blob}
+}
+
+func makeInvocationReadyForExportReqLegacy(notification *resultpb.InvocationReadyForExportNotification) io.ReadCloser {
 	blob, _ := protojson.Marshal(notification)
 	return makeReq(blob, nil)
 }

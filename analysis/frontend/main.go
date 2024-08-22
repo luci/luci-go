@@ -89,12 +89,8 @@ func main() {
 		if err := analysisserver.RegisterPRPCHandlers(srv); err != nil {
 			return errors.Annotate(err, "register pRPC handlers").Err()
 		}
-		if err := analysisserver.RegisterCrons(srv); err != nil {
-			return errors.Annotate(err, "register crons").Err()
-		}
-		if err := analysisserver.RegisterPubSubHandlers(srv); err != nil {
-			return errors.Annotate(err, "register pub/sub handlers").Err()
-		}
+		analysisserver.RegisterCrons(srv)
+		analysisserver.RegisterLegacyPubSubHandlers(srv)
 		if err := analysisserver.RegisterTaskQueueHandlers(srv); err != nil {
 			return errors.Annotate(err, "register task queue handlers").Err()
 		}

@@ -24,8 +24,13 @@ import (
 
 	"google.golang.org/protobuf/encoding/protojson"
 
+	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon"
 	cvv1 "go.chromium.org/luci/cv/api/v1"
+	"go.chromium.org/luci/server/pubsub"
 	"go.chromium.org/luci/server/router"
 
 	_ "go.chromium.org/luci/analysis/internal/services/verdictingester" // Needed to ensure task class is registered.
@@ -35,7 +40,63 @@ import (
 )
 
 func TestCVRunHandler(t *testing.T) {
-	Convey(`Test CVRunHandler`, t, func() {
+	ftt.Run(`Test CVRunHandler`, t, func(t *ftt.Test) {
+		ctx, _ := tsmon.WithDummyInMemory(context.Background())
+
+		rID := "id_full_run"
+		fullRunID := fullRunID("cvproject", rID)
+
+		h := &CVRunHandler{}
+		t.Run(`Valid message`, func(t *ftt.Test) {
+			message := &cvv1.PubSubRun{
+				Id:       fullRunID,
+				Status:   cvv1.Run_SUCCEEDED,
+				Hostname: "cvhost",
+			}
+
+			called := false
+			var processed bool
+			h.handleCVRun = func(ctx context.Context, psRun *cvv1.PubSubRun) (project string, wasProcessed bool, err error) {
+				assert.Loosely(t, called, should.BeFalse)
+				assert.Loosely(t, psRun, should.Match(message))
+
+				called = true
+				return "cvproject", processed, nil
+			}
+
+			t.Run(`Processed`, func(t *ftt.Test) {
+				processed = true
+
+				request := makeCVRunReq(message)
+				err := h.Handle(ctx, request)
+				assert.That(t, err, should.ErrLike(nil))
+				assert.Loosely(t, cvRunCounter.Get(ctx, "cvproject", "success"), should.Equal(1))
+			})
+			t.Run(`Not processed`, func(t *ftt.Test) {
+				processed = false
+
+				request := makeCVRunReq(message)
+				err := h.Handle(ctx, request)
+				assert.That(t, pubsub.Ignore.In(err), should.BeTrue)
+				assert.Loosely(t, cvRunCounter.Get(ctx, "cvproject", "ignored"), should.Equal(1))
+			})
+		})
+		t.Run(`Invalid data`, func(t *ftt.Test) {
+			h.handleCVRun = func(ctx context.Context, psRun *cvv1.PubSubRun) (project string, wasProcessed bool, err error) {
+				panic("Should not be reached.")
+			}
+
+			message := pubsub.Message{Data: []byte("Hello")}
+			err := h.Handle(ctx, message)
+			assert.That(t, transient.Tag.In(err), should.BeFalse)
+			assert.That(t, err, should.ErrLike("parse cv pubsub message data"))
+			assert.Loosely(t, cvRunCounter.Get(ctx, "unknown", "permanent-failure"), should.Equal(1))
+		})
+	})
+}
+
+func TestCVRunHandlerLegacy(t *testing.T) {
+	Convey(`Test CVRunHandler (Legacy)`, t, func() {
 		ctx, _ := tsmon.WithDummyInMemory(context.Background())
 
 		rID := "id_full_run"
@@ -66,16 +127,16 @@ func TestCVRunHandler(t *testing.T) {
 			Convey(`Processed`, func() {
 				processed = true
 
-				rctx.Request = (&http.Request{Body: makeCVRunReq(message)}).WithContext(ctx)
-				h.Handle(rctx)
+				rctx.Request = (&http.Request{Body: makeCVRunReqLegacy(message)}).WithContext(ctx)
+				h.HandleLegacy(rctx)
 				So(rsp.Code, ShouldEqual, http.StatusOK)
 				So(cvRunCounter.Get(ctx, "cvproject", "success"), ShouldEqual, 1)
 			})
 			Convey(`Not processed`, func() {
 				processed = false
 
-				rctx.Request = (&http.Request{Body: makeCVRunReq(message)}).WithContext(ctx)
-				h.Handle(rctx)
+				rctx.Request = (&http.Request{Body: makeCVRunReqLegacy(message)}).WithContext(ctx)
+				h.HandleLegacy(rctx)
 				So(rsp.Code, ShouldEqual, http.StatusNoContent)
 				So(cvRunCounter.Get(ctx, "cvproject", "ignored"), ShouldEqual, 1)
 			})
@@ -86,14 +147,19 @@ func TestCVRunHandler(t *testing.T) {
 			}
 
 			rctx.Request = (&http.Request{Body: makeReq([]byte("Hello"), nil)}).WithContext(ctx)
-			h.Handle(rctx)
+			h.HandleLegacy(rctx)
 			So(rsp.Code, ShouldEqual, http.StatusAccepted)
 			So(cvRunCounter.Get(ctx, "unknown", "permanent-failure"), ShouldEqual, 1)
 		})
 	})
 }
 
-func makeCVRunReq(message *cvv1.PubSubRun) io.ReadCloser {
+func makeCVRunReq(message *cvv1.PubSubRun) pubsub.Message {
+	blob, _ := protojson.Marshal(message)
+	return pubsub.Message{Data: blob}
+}
+
+func makeCVRunReqLegacy(message *cvv1.PubSubRun) io.ReadCloser {
 	blob, _ := protojson.Marshal(message)
 	return makeReq(blob, nil)
 }

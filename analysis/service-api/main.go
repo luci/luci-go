@@ -32,6 +32,9 @@ func main() {
 		if err := server.RegisterPRPCHandlers(srv); err != nil {
 			return err
 		}
+		server.RegisterPubSubHandlers()
+		server.RegisterCrons(srv)
+
 		// Redirect the frontend to RPC explorer.
 		srv.Routes.GET("/", nil, func(ctx *router.Context) {
 			http.Redirect(ctx.Writer, ctx.Request, "/rpcexplorer/", http.StatusFound)

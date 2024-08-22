@@ -18,6 +18,7 @@ import (
 	"net/http"
 
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/server/pubsub"
 	"go.chromium.org/luci/server/router"
 )
 
@@ -31,11 +32,31 @@ type pubsubMessage struct {
 	}
 }
 
+func errStatus(err error) string {
+	if err == nil {
+		return "success"
+	}
+	if transient.Tag.In(err) {
+		return "transient-failure"
+	} else if pubsub.Ignore.In(err) {
+		return "ignored"
+	} else {
+		return "permanent-failure"
+	}
+}
+
 func processErr(ctx *router.Context, err error) string {
 	if transient.Tag.In(err) {
 		// Transient errors are 500 so that PubSub retries them.
 		ctx.Writer.WriteHeader(http.StatusInternalServerError)
 		return "transient-failure"
+	} else if pubsub.Ignore.In(err) {
+		// Use subtly different "success" response codes to surface in
+		// standard GAE logs whether an ingestion was ignored or not,
+		// while still acknowledging the pub/sub.
+		// See https://cloud.google.com/pubsub/docs/push#receiving_messages.
+		ctx.Writer.WriteHeader(http.StatusNoContent)
+		return "ignored"
 	} else {
 		// Permanent failures are 202s so that:
 		// - PubSub does not retry them, and

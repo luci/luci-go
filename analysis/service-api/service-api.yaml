@@ -43,7 +43,9 @@ luci_gae_vars:
   luci-analysis-dev:
     AUTH_SERVICE_HOST: chrome-infra-auth-dev.appspot.com
     CONFIG_SERVICE_HOST: config.luci.app
+    CRON_AUTHORIZED_CALLER: cloud-scheduler-jobs@luci-analysis-dev.iam.gserviceaccount.com
     LUCI_ANALYSIS_HOST: VERSION.staging.analysis.api.luci.app
+    PUBSUB_AUTHORIZED_CALLER: cloud-pubsub-pusher@luci-analysis-dev.iam.gserviceaccount.com
     TS_MON_ACCOUNT: app-engine-metric-publishers@prodx-mon-chrome-infra.google.com.iam.gserviceaccount.com
     OAUTH_CLIENT_ID: 171536942974-su83vlacqnbccpm2h32ki6gs5a2hi7eo.apps.googleusercontent.com
     OAUTH_CLIENT_SECRET: sm://oauth-client-secret
@@ -81,7 +83,9 @@ entrypoint: >
   main
   -auth-service-host ${AUTH_SERVICE_HOST}
   -config-service-host ${CONFIG_SERVICE_HOST}
+  -cron-authorized-caller ${CRON_AUTHORIZED_CALLER}
   -luci-analysis-host ${LUCI_ANALYSIS_HOST}
+  -pubsub-authorized-caller ${PUBSUB_AUTHORIZED_CALLER}
   -ts-mon-account ${TS_MON_ACCOUNT}
   -encrypted-cookies-client-id ${OAUTH_CLIENT_ID}
   -frontend-client-id ${OAUTH_CLIENT_ID}

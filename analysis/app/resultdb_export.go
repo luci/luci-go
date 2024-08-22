@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/common/tsmon/metric"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/auth/realms"
+	"go.chromium.org/luci/server/pubsub"
 	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/analysis/internal/services/resultingester"
@@ -54,15 +55,59 @@ func NewInvocationReadyForExportHandler() *InvocationReadyForExportHandler {
 	return &InvocationReadyForExportHandler{}
 }
 
-// Handle processes a ResultDB Invocation Ready for Export Pub/Sub message.
-func (h *InvocationReadyForExportHandler) Handle(ctx *router.Context) {
+func (h *InvocationReadyForExportHandler) Handle(ctx context.Context, message pubsub.Message) error {
+	status := "unknown"
+	project := "unknown"
+	defer func() {
+		// Closure for late binding.
+		invocationsReadyForExportCounter.Add(ctx, 1, project, status)
+	}()
+
+	var err error
+	project, err = h.handleImpl(ctx, message)
+	status = errStatus(err)
+	return err
+}
+
+func (h *InvocationReadyForExportHandler) handleImpl(ctx context.Context, message pubsub.Message) (project string, err error) {
+	notification, err := extractReadyForExportNotification(message)
+	if err != nil {
+		return "unknown", errors.Annotate(err, "extract invocation ready for export notification").Err()
+	}
+
+	project, _ = realms.Split(notification.RootInvocationRealm)
+
+	// Throw result ingestion tasks onto a task queue rather than attempting
+	// ingestion inline so that we can rate-limit outbound RPCs to ResultDB
+	// and so that we can split the work up into multiple subtasks (one
+	// per page).
+	resultingester.Schedule(ctx, &taskspb.IngestTestResults{
+		Notification: notification,
+		PageToken:    "",
+		TaskIndex:    1,
+	})
+	return project, nil
+}
+
+func extractReadyForExportNotification(message pubsub.Message) (*rdbpb.InvocationReadyForExportNotification, error) {
+	var run rdbpb.InvocationReadyForExportNotification
+	unmarshalOpts := protojson.UnmarshalOptions{DiscardUnknown: true}
+	err := unmarshalOpts.Unmarshal(message.Data, &run)
+	if err != nil {
+		return nil, errors.Annotate(err, "parsing pubsub message data").Err()
+	}
+	return &run, nil
+}
+
+// HandleLegacy processes a ResultDB Invocation Ready for Export Pub/Sub message.
+func (h *InvocationReadyForExportHandler) HandleLegacy(ctx *router.Context) {
 	status := "unknown"
 	project := "unknown"
 	defer func() {
 		// Closure for late binding.
 		invocationsReadyForExportCounter.Add(ctx.Request.Context(), 1, project, status)
 	}()
-	project, err := h.handleImpl(ctx.Request.Context(), ctx.Request)
+	project, err := h.handleImplLegacy(ctx.Request.Context(), ctx.Request)
 
 	switch {
 	case err != nil:
@@ -75,8 +120,8 @@ func (h *InvocationReadyForExportHandler) Handle(ctx *router.Context) {
 	}
 }
 
-func (h *InvocationReadyForExportHandler) handleImpl(ctx context.Context, request *http.Request) (project string, err error) {
-	notification, err := extractReadyForExportNotification(request)
+func (h *InvocationReadyForExportHandler) handleImplLegacy(ctx context.Context, request *http.Request) (project string, err error) {
+	notification, err := extractReadyForExportNotificationLegacy(request)
 	if err != nil {
 		return "unknown", errors.Annotate(err, "failed to extract invocation ready for export notification").Err()
 	}
@@ -95,7 +140,7 @@ func (h *InvocationReadyForExportHandler) handleImpl(ctx context.Context, reques
 	return project, nil
 }
 
-func extractReadyForExportNotification(r *http.Request) (*rdbpb.InvocationReadyForExportNotification, error) {
+func extractReadyForExportNotificationLegacy(r *http.Request) (*rdbpb.InvocationReadyForExportNotification, error) {
 	var msg pubsubMessage
 	if err := json.NewDecoder(r.Body).Decode(&msg); err != nil {
 		return nil, errors.Annotate(err, "decoding pubsub message").Err()
