@@ -83,7 +83,7 @@ func (s *resultDBServer) QueryTestVariantArtifactGroups(ctx context.Context, req
 	if err != nil {
 		return nil, errors.Annotate(err, "read test artifacts groups").Err()
 	}
-	pbGroups, err := toTestArtifactGroupsProto(rows)
+	pbGroups, err := toTestArtifactGroupsProto(rows, req.SearchString)
 	if err != nil {
 		return nil, errors.Annotate(err, "to test artifact groups proto").Err()
 	}
@@ -205,7 +205,7 @@ func validateStartEndTime(startTime, endTime *timestamppb.Timestamp) error {
 	return nil
 }
 
-func toTestArtifactGroupsProto(groups []*artifacts.ArtifactGroup) ([]*pb.QueryTestVariantArtifactGroupsResponse_MatchGroup, error) {
+func toTestArtifactGroupsProto(groups []*artifacts.ArtifactGroup, searchString *pb.ArtifactContentMatcher) ([]*pb.QueryTestVariantArtifactGroupsResponse_MatchGroup, error) {
 	pbGroups := make([]*pb.QueryTestVariantArtifactGroupsResponse_MatchGroup, 0, len(groups))
 	for _, g := range groups {
 		variant, err := pbutil.VariantFromJSON(g.Variant.String())
@@ -217,7 +217,7 @@ func toTestArtifactGroupsProto(groups []*artifacts.ArtifactGroup) ([]*pb.QueryTe
 			VariantHash:   g.VariantHash,
 			Variant:       variant,
 			ArtifactId:    g.ArtifactID,
-			Artifacts:     toTestArtifactMatchingContents(g.Artifacts, g.TestID, g.ArtifactID),
+			Artifacts:     toTestArtifactMatchingContents(g.Artifacts, g.TestID, g.ArtifactID, searchString),
 			MatchingCount: g.MatchingCount,
 		}
 		pbGroups = append(pbGroups, match)
@@ -225,46 +225,83 @@ func toTestArtifactGroupsProto(groups []*artifacts.ArtifactGroup) ([]*pb.QueryTe
 	return pbGroups, nil
 }
 
-func toTestArtifactMatchingContents(bqArtifacts []*artifacts.MatchingArtifact, testID, artifactID string) []*pb.ArtifactMatchingContent {
+func toTestArtifactMatchingContents(bqArtifacts []*artifacts.MatchingArtifact, testID, artifactID string, searchString *pb.ArtifactContentMatcher) []*pb.ArtifactMatchingContent {
 	res := make([]*pb.ArtifactMatchingContent, 0, len(bqArtifacts))
 	for _, a := range bqArtifacts {
-		matchStr, before, after := truncateMatchWithContext(a)
+		snippet, matches := constructSnippetAndMatches(a, searchString)
 		res = append(res, &pb.ArtifactMatchingContent{
 			Name:          pbutil.TestResultArtifactName(a.InvocationID, testID, a.ResultID, artifactID),
 			PartitionTime: timestamppb.New(a.PartitionTime),
 			TestStatus:    pb.TestStatus(pb.TestStatus_value[a.TestStatus.String()]),
-			Match:         matchStr,
-			BeforeMatch:   before,
-			AfterMatch:    after,
+			Snippet:       snippet,
+			Matches:       matches,
 		})
 	}
 	return res
 }
 
-// truncateMatchWithContext truncates match, and contents immediately before and after,
-// so that the total size of them are not greater than maxMatchWithContextLength.
-func truncateMatchWithContext(artifact *artifacts.MatchingArtifact) (match, before, after string) {
+// constructSnippetAndMatches constructs the snippet contains the match and content immediately before and after,
+// and the location of all matches in this snippet.
+// It also truncate the snippet so that the total size of it is not greater than maxMatchWithContextLength.
+// It will prioritize fiting first match first, divided the remaining bytes equally to fit content immediately before and after.
+func constructSnippetAndMatches(artifact *artifacts.MatchingArtifact, searchString *pb.ArtifactContentMatcher) (snippet string, matches []*pb.ArtifactMatchingContent_Match) {
 	if len(artifact.Match) >= maxMatchWithContextLength {
-		return truncateString(artifact.Match, maxMatchWithContextLength), "", ""
+		snippet, _ := truncateString(artifact.Match, maxMatchWithContextLength)
+		return snippet, []*pb.ArtifactMatchingContent_Match{{
+			StartIndex: 0,
+			EndIndex:   int32(len(snippet)),
+		}}
 	}
+
 	// Divide remaining bytes to before and after evenly.
 	remainBytes := maxMatchWithContextLength - len(artifact.Match)
+	beforeReversed, _ := truncateString(reverseString(artifact.MatchWithContextBefore), remainBytes/2)
+	before := reverseString(beforeReversed)
+	after, endEllipsis := truncateString(artifact.MatchWithContextAfter, remainBytes/2)
+	indexOffset := len(artifact.Match) + len(before)
+	// Add the first match to matches.
+	matches = []*pb.ArtifactMatchingContent_Match{{
+		StartIndex: int32(len(before)), EndIndex: int32(indexOffset),
+	}}
+	// Because artifact.Match is guaranteed to be the first match in the artifact content.
+	// (i.e. no match can be found in MatchWithContextBefore, or in the boundary between match and MatchWithContextAfter)
+	// We only need to search the MatchWithContextAfter for remaining matches.
+	afterEndIdx := len(after)
+	if endEllipsis {
+		// We need to remove the ellipsis when perform match finding.
+		afterEndIdx = len(after) - 3
+	}
+	matches = append(matches, findAllMatches(after[0:afterEndIdx], searchString, indexOffset)...)
 
-	before = reverseString(truncateString(reverseString(artifact.MatchWithContextBefore), remainBytes/2))
-	after = truncateString(artifact.MatchWithContextAfter, remainBytes/2)
-	return artifact.Match, before, after
+	return before + artifact.Match + after, matches
+}
+
+// findAllMatches finds the location by indexOffset of all matches in str.
+func findAllMatches(str string, searchString *pb.ArtifactContentMatcher, indexOffset int) []*pb.ArtifactMatchingContent_Match {
+	matches := make([]*pb.ArtifactMatchingContent_Match, 0)
+	pattern := artifacts.RegexPattern(searchString)
+	re := regexp.MustCompile(pattern)
+	matchIndices := re.FindAllStringIndex(str, -1)
+	for _, matchIndex := range matchIndices {
+		matches = append(matches, &pb.ArtifactMatchingContent_Match{
+			StartIndex: int32(matchIndex[0] + indexOffset),
+			EndIndex:   int32(matchIndex[1] + indexOffset),
+		})
+	}
+	return matches
 }
 
 // truncateString truncates a UTF-8 string to the given number of bytes.
-// If the string is truncated and length is >= 3, ellipsis ("...") are added.
+// If the string is truncated AND length is >= 3, ellipsis ("...") are added.
 // Truncation is aware of UTF-8 runes and will only truncate whole runes.
 // length must be at least 3 (to leave space for ellipsis, if needed).
-func truncateString(s string, length int) string {
+// It will returns the truncated string and a bool to indicate whether ellipsis is appended.
+func truncateString(s string, length int) (result string, ellipsisAppended bool) {
 	if len(s) <= length {
-		return s
+		return s, false
 	}
 	if length < 3 {
-		return ""
+		return "", false
 	}
 	// The index (in bytes) at which to begin truncating the string.
 	lastIndex := 0
@@ -276,7 +313,7 @@ func truncateString(s string, length int) string {
 			lastIndex = i
 		}
 	}
-	return s[:lastIndex] + "..."
+	return s[:lastIndex] + "...", true
 }
 
 // reverseString reverses a UTF-8 string.

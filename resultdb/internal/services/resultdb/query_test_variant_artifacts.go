@@ -58,7 +58,7 @@ func (s *resultDBServer) QueryTestVariantArtifacts(ctx context.Context, req *pb.
 		return nil, errors.Annotate(err, "read test artifacts").Err()
 	}
 	return &pb.QueryTestVariantArtifactsResponse{
-		Artifacts:     toTestArtifactMatchingContents(rows, req.TestId, req.ArtifactId),
+		Artifacts:     toTestArtifactMatchingContents(rows, req.TestId, req.ArtifactId, req.SearchString),
 		NextPageToken: nextPageToken,
 	}, nil
 }

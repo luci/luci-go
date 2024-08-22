@@ -78,7 +78,7 @@ func TestQueryInvocationVariantArtifacts(t *testing.T) {
 			VariantUnionHash: strings.Repeat("a", 16),
 			SearchString: &pb.ArtifactContentMatcher{
 				Matcher: &pb.ArtifactContentMatcher_RegexContain{
-					RegexContain: "f.*oo",
+					RegexContain: "log line [13]",
 				},
 			},
 			StartTime: timestamppb.New(time.Date(2024, 5, 5, 0, 0, 0, 0, time.UTC)),
@@ -106,16 +106,20 @@ func TestQueryInvocationVariantArtifacts(t *testing.T) {
 				Artifacts: []*pb.ArtifactMatchingContent{{
 					Name:          "invocations/12345678901234567890/artifacts/artifact_id",
 					PartitionTime: timestamppb.New(time.Date(2024, 5, 6, 5, 58, 57, 490076000, time.UTC)),
-					Match:         "log line 1",
-					BeforeMatch:   "log line 0",
-					AfterMatch:    "log line 2",
+					Snippet:       "log line 0log line 1log line 2",
+					Matches: []*pb.ArtifactMatchingContent_Match{{
+						StartIndex: 10,
+						EndIndex:   20,
+					}},
 				},
 					{
 						Name:          "invocations/12345678901234567891/artifacts/artifact_id",
 						PartitionTime: timestamppb.New(time.Date(2024, 5, 6, 5, 58, 57, 491037000, time.UTC)),
-						Match:         "log line 3",
-						BeforeMatch:   "log line 2",
-						AfterMatch:    "log line 4",
+						Snippet:       "log line 2log line 3log line 4",
+						Matches: []*pb.ArtifactMatchingContent_Match{{
+							StartIndex: 10,
+							EndIndex:   20,
+						}},
 					}},
 				NextPageToken: "",
 			})

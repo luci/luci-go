@@ -78,7 +78,7 @@ func TestQueryInvocationVariantArtifactGroups(t *testing.T) {
 			Project: "testproject",
 			SearchString: &pb.ArtifactContentMatcher{
 				Matcher: &pb.ArtifactContentMatcher_RegexContain{
-					RegexContain: "foo",
+					RegexContain: "match[1-9]",
 				},
 			},
 			ArtifactIdMatcher: &pb.IDMatcher{
@@ -134,9 +134,11 @@ func TestQueryInvocationVariantArtifactGroups(t *testing.T) {
 					Artifacts: []*pb.ArtifactMatchingContent{{
 						Name:          "invocations/invocation1/artifacts/artifact1",
 						PartitionTime: timestamppb.New(time.Unix(10, 0)),
-						Match:         "match1",
-						BeforeMatch:   "before1",
-						AfterMatch:    "after1",
+						Snippet:       "before1match1after1",
+						Matches: []*pb.ArtifactMatchingContent_Match{{
+							StartIndex: 7,
+							EndIndex:   13,
+						}},
 					}},
 					MatchingCount: 10,
 				}},

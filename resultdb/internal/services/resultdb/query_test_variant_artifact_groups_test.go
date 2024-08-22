@@ -16,6 +16,7 @@ package resultdb
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -81,7 +82,7 @@ func TestQueryTestVariantArtifactGroups(t *testing.T) {
 			Project: "testproject",
 			SearchString: &pb.ArtifactContentMatcher{
 				Matcher: &pb.ArtifactContentMatcher_RegexContain{
-					RegexContain: "foo",
+					RegexContain: "match[1-9]",
 				},
 			},
 			TestIdMatcher: &pb.IDMatcher{
@@ -144,9 +145,11 @@ func TestQueryTestVariantArtifactGroups(t *testing.T) {
 						Name:          "invocations/invocation1/tests/test1/results/result1/artifacts/artifact1",
 						PartitionTime: timestamppb.New(time.Unix(10, 0)),
 						TestStatus:    pb.TestStatus_PASS,
-						Match:         "match1",
-						BeforeMatch:   "before1",
-						AfterMatch:    "after1",
+						Snippet:       "before1match1after1",
+						Matches: []*pb.ArtifactMatchingContent_Match{{
+							StartIndex: 7,
+							EndIndex:   13,
+						}},
 					}},
 					MatchingCount: 10,
 				}},
@@ -306,8 +309,15 @@ func TestValidateSearchString(t *testing.T) {
 	})
 }
 
-func TestTruncateMatchWithContext(t *testing.T) {
-	Convey("truncateMatchWithContext", t, func() {
+func TestConstructSnippetAndMatches(t *testing.T) {
+	Convey("constructSnippetAndMatches", t, func() {
+		containSearchMatcher := func(str string) *pb.ArtifactContentMatcher {
+			return &pb.ArtifactContentMatcher{
+				Matcher: &pb.ArtifactContentMatcher_Contain{
+					Contain: str,
+				},
+			}
+		}
 		Convey("no truncate", func() {
 			atf := &artifacts.MatchingArtifact{
 				Match:                  "match",
@@ -315,62 +325,116 @@ func TestTruncateMatchWithContext(t *testing.T) {
 				MatchWithContextAfter:  "after",
 			}
 
-			match, before, after := truncateMatchWithContext(atf)
-			So(match, ShouldEqual, "match")
-			So(before, ShouldEqual, "before")
-			So(after, ShouldEqual, "after")
+			snippet, matches := constructSnippetAndMatches(atf, containSearchMatcher("match"))
+			So(snippet, ShouldEqual, "beforematchafter")
+			So(matches, ShouldResembleProto, []*pb.ArtifactMatchingContent_Match{{
+				StartIndex: 6, EndIndex: 11,
+			}})
 		})
+
 		Convey("truncate match", func() {
+			match := strings.Repeat("a", maxMatchWithContextLength+1)
 			atf := &artifacts.MatchingArtifact{
-				Match:                  strings.Repeat("a", maxMatchWithContextLength+1),
+				Match:                  match,
 				MatchWithContextBefore: "before",
 				MatchWithContextAfter:  "after",
 			}
 
-			match, before, after := truncateMatchWithContext(atf)
-			So(match, ShouldEqual, strings.Repeat("a", maxMatchWithContextLength-3)+"...")
-			So(before, ShouldEqual, "")
-			So(after, ShouldEqual, "")
+			snippet, matches := constructSnippetAndMatches(atf, containSearchMatcher(match))
+			So(snippet, ShouldEqual, strings.Repeat("a", maxMatchWithContextLength-3)+"...")
+			So(matches, ShouldResembleProto, []*pb.ArtifactMatchingContent_Match{{
+				StartIndex: 0, EndIndex: maxMatchWithContextLength,
+			}})
 		})
 		Convey("truncate before and after with no enough remaining bytes", func() {
+			match := strings.Repeat("a", maxMatchWithContextLength-5)
 			atf := &artifacts.MatchingArtifact{
-				Match:                  strings.Repeat("a", maxMatchWithContextLength-5),
+				Match:                  match,
 				MatchWithContextBefore: "before",
 				MatchWithContextAfter:  "after",
 			}
 
-			match, before, after := truncateMatchWithContext(atf)
-			So(match, ShouldEqual, atf.Match)
-			So(before, ShouldEqual, "")
-			So(after, ShouldEqual, "")
+			snippet, matches := constructSnippetAndMatches(atf, containSearchMatcher(match))
+			So(snippet, ShouldEqual, atf.Match)
+			So(matches, ShouldResembleProto, []*pb.ArtifactMatchingContent_Match{{
+				StartIndex: 0, EndIndex: int32(len(snippet)),
+			}})
+
 		})
-		Convey("truncate before and after", func() {
+		Convey("truncate before and after append ellipsis", func() {
+			match := strings.Repeat("a", maxMatchWithContextLength-9)
 			atf := &artifacts.MatchingArtifact{
-				Match:                  strings.Repeat("a", maxMatchWithContextLength-9),
+				Match:                  match,
 				MatchWithContextBefore: "before",
 				MatchWithContextAfter:  "after",
 			}
 
-			match, before, after := truncateMatchWithContext(atf)
-			So(match, ShouldEqual, atf.Match)
-			So(before, ShouldEqual, "...e")
-			So(after, ShouldEqual, "a...")
+			snippet, matches := constructSnippetAndMatches(atf, containSearchMatcher(match))
+			So(snippet, ShouldEqual, fmt.Sprintf("...e%sa...", atf.Match))
+			So(matches, ShouldResembleProto, []*pb.ArtifactMatchingContent_Match{{
+				StartIndex: 4, EndIndex: int32(len(snippet) - 4),
+			}})
 		})
 		Convey("doesn't truncate in the middle of a rune", func() {
+			match := strings.Repeat("a", maxMatchWithContextLength-15)
 			// There are 15 remaining bytes to fit in context before and after the match.
 			// Each end gets 7 bytes. Each chinese character below is 3 bytes, and the ellipsis takes 3 bytes.
 			atf := &artifacts.MatchingArtifact{
-				Match:                  strings.Repeat("a", maxMatchWithContextLength-15),
+				Match:                  match,
 				MatchWithContextBefore: "之前之前之前",
 				MatchWithContextAfter:  "之后之后之后",
 			}
 
-			match, before, after := truncateMatchWithContext(atf)
-			So(match, ShouldEqual, atf.Match)
+			snippet, matches := constructSnippetAndMatches(atf, containSearchMatcher(match))
 			// A string of 6 bytes have been returned, when 7 bytes are allowed for each end.
 			// Because it doesn't cut from the middle of a chinese character.
-			So(before, ShouldEqual, "...前")
-			So(after, ShouldEqual, "之...")
+			So(snippet, ShouldEqual, fmt.Sprintf("...前%s之...", atf.Match))
+			So(matches, ShouldResembleProto, []*pb.ArtifactMatchingContent_Match{{
+				StartIndex: 6, EndIndex: int32(len(snippet) - 6),
+			}})
 		})
+		Convey("find all remaining matches and no truncation", func() {
+			atf := &artifacts.MatchingArtifact{
+				Match:                  "a",
+				MatchWithContextBefore: "before",
+				MatchWithContextAfter:  "aaa",
+			}
+			search := &pb.ArtifactContentMatcher{
+				Matcher: &pb.ArtifactContentMatcher_RegexContain{
+					RegexContain: "a",
+				},
+			}
+
+			snippet, matches := constructSnippetAndMatches(atf, search)
+			So(snippet, ShouldEqual, "beforeaaaa")
+			So(matches, ShouldResembleProto, []*pb.ArtifactMatchingContent_Match{
+				{StartIndex: 6, EndIndex: 7},
+				{StartIndex: 7, EndIndex: 8},
+				{StartIndex: 8, EndIndex: 9},
+				{StartIndex: 9, EndIndex: 10},
+			})
+		})
+
+		Convey("find all remaining matches with truncation", func() {
+			atf := &artifacts.MatchingArtifact{
+				Match:                  "a",
+				MatchWithContextBefore: strings.Repeat("b", maxMatchWithContextLength),
+				MatchWithContextAfter:  strings.Repeat("a", maxMatchWithContextLength),
+			}
+			search := &pb.ArtifactContentMatcher{
+				Matcher: &pb.ArtifactContentMatcher_RegexContain{
+					RegexContain: "a",
+				},
+			}
+			snippet, matches := constructSnippetAndMatches(atf, search)
+			// (10240-1)/2 bytes left for each side.
+			So(snippet, ShouldEqual, "..."+strings.Repeat("b", 5116)+"a"+strings.Repeat("a", 5116)+"...")
+			expectedMatches := []*pb.ArtifactMatchingContent_Match{}
+			for i := 5119; i < 5119+1+5116; i++ {
+				expectedMatches = append(expectedMatches, &pb.ArtifactMatchingContent_Match{StartIndex: int32(i), EndIndex: int32(i + 1)})
+			}
+			So(matches, ShouldResembleProto, expectedMatches)
+		})
+
 	})
 }

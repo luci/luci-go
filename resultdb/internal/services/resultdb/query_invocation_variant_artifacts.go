@@ -58,7 +58,7 @@ func (s *resultDBServer) QueryInvocationVariantArtifacts(ctx context.Context, re
 		return nil, errors.Annotate(err, "read artifacts").Err()
 	}
 	return &pb.QueryInvocationVariantArtifactsResponse{
-		Artifacts:     toInvocationArtifactMatchingContents(rows, req.ArtifactId),
+		Artifacts:     toInvocationArtifactMatchingContents(rows, req.ArtifactId, req.SearchString),
 		NextPageToken: nextPageToken,
 	}, nil
 }

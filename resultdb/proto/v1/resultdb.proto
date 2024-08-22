@@ -1108,26 +1108,24 @@ message ArtifactMatchingContent {
   // The test result status, only populated if it is a result level artifact .
   TestStatus test_status = 3;
 
-  // Part of the artifact content that matches the search string.
-	// Size(match) + Size(before_match) + Size(after_match) is at most 10KiB.
-  // Prioritize fiting `match` into the 10KiB first, divided the remaining bytes equally
-  // to display content immediately before and after the matched part.
-  // including at most one more line above and below.
-  // Match is truncated only if it is more than 10KiB. Ellipsis ("...") are added, if it is truncated.
-  // `match`, `before_match`, and `after_match` can be concatenated to form part of the full artifact content.
-  string match = 4;
+  // Part of the artifact content that contains the first occurrence of the match.
+  // The snippet is at most 10 KiB.
+  // Prioritize fiting first match into the 10KiB first, divided the remaining bytes equally
+  // to fit content immediately before and after the first match, including at most one more line above and below.
+  // If the first match is more than 10KiB, it will be truncated.
+  // Ellipsis ("...") are added, if the snippet is truncated.
+  string snippet = 4;
 
-  // Artifact content that immediately before the match. Include at most one additional line.
-  // Size(match) + Size(before_match) + Size(after_match) is at most 10KiB,
-  // see how this 10KB is allocated in `match` field comment.
-  // If before_match is truncated from the front, ellipsis ("...") are added to the front.
-  string before_match = 5;
+  // Represent the byte location of a match in snippet.
+  message Match {
+    // Start byte index of the match, inclusive.
+    int32 start_index = 1;
+    // End byte index of the match, exclusive.
+    int32 end_index = 2;
+  }
 
-  // Artifact content that immediately after the match. Include at most one additional line.
-  // Size(match) + Size(before_match) + Size(after_match) is at most 10KiB,
-  // see how this 10KB is allocated in `match` field comment.
-  // If after_match is truncated, ellipsis ("...") are added..
-  string after_match = 6;
+  // All non-overlapping matches exists in the snippet from front to end in order (i.e. matches[i].end_index <= matches[i+1].start_index).
+  repeated Match matches = 5;
 }
 
 // Used to match a artifact content.

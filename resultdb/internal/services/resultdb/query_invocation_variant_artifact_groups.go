@@ -68,7 +68,7 @@ func (s *resultDBServer) QueryInvocationVariantArtifactGroups(ctx context.Contex
 	if err != nil {
 		return nil, errors.Annotate(err, "read invocation artifacts groups").Err()
 	}
-	pbGroups, err := toInvocationArtifactGroupsProto(rows)
+	pbGroups, err := toInvocationArtifactGroupsProto(rows, req.SearchString)
 	if err != nil {
 		return nil, errors.Annotate(err, "to invocation artifact groups proto").Err()
 	}
@@ -102,7 +102,7 @@ func validateQueryInvocationVariantArtifactGroupsRequest(req *pb.QueryInvocation
 	return nil
 }
 
-func toInvocationArtifactGroupsProto(groups []*artifacts.ArtifactGroup) ([]*pb.QueryInvocationVariantArtifactGroupsResponse_MatchGroup, error) {
+func toInvocationArtifactGroupsProto(groups []*artifacts.ArtifactGroup, searchString *pb.ArtifactContentMatcher) ([]*pb.QueryInvocationVariantArtifactGroupsResponse_MatchGroup, error) {
 	pbGroups := make([]*pb.QueryInvocationVariantArtifactGroupsResponse_MatchGroup, 0, len(groups))
 	for _, g := range groups {
 		variant, err := pbutil.VariantFromJSON(g.Variant.String())
@@ -113,7 +113,7 @@ func toInvocationArtifactGroupsProto(groups []*artifacts.ArtifactGroup) ([]*pb.Q
 			VariantUnionHash: g.VariantHash,
 			VariantUnion:     variant,
 			ArtifactId:       g.ArtifactID,
-			Artifacts:        toInvocationArtifactMatchingContents(g.Artifacts, g.ArtifactID),
+			Artifacts:        toInvocationArtifactMatchingContents(g.Artifacts, g.ArtifactID, searchString),
 			MatchingCount:    g.MatchingCount,
 		}
 		pbGroups = append(pbGroups, match)
@@ -121,16 +121,15 @@ func toInvocationArtifactGroupsProto(groups []*artifacts.ArtifactGroup) ([]*pb.Q
 	return pbGroups, nil
 }
 
-func toInvocationArtifactMatchingContents(bqArtifacts []*artifacts.MatchingArtifact, artifactID string) []*pb.ArtifactMatchingContent {
+func toInvocationArtifactMatchingContents(bqArtifacts []*artifacts.MatchingArtifact, artifactID string, searchString *pb.ArtifactContentMatcher) []*pb.ArtifactMatchingContent {
 	res := make([]*pb.ArtifactMatchingContent, 0, len(bqArtifacts))
 	for _, a := range bqArtifacts {
-		matchStr, before, after := truncateMatchWithContext(a)
+		snippet, matches := constructSnippetAndMatches(a, searchString)
 		res = append(res, &pb.ArtifactMatchingContent{
 			Name:          pbutil.InvocationArtifactName(a.InvocationID, artifactID),
 			PartitionTime: timestamppb.New(a.PartitionTime),
-			Match:         matchStr,
-			BeforeMatch:   before,
-			AfterMatch:    after,
+			Snippet:       snippet,
+			Matches:       matches,
 		})
 	}
 	return res

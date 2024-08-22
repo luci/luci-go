@@ -87,7 +87,7 @@ type MatchingArtifact struct {
 	// Test status associated with this artifact.
 	// For invocation level artifact, this field will be empty.
 	TestStatus bigquery.NullString
-	// Artifact content that matches the search.
+	// The first occurrence of a match in artifact content.
 	Match string
 	// Artifact content that is immediately before the match. At most one line above.
 	MatchWithContextBefore string
@@ -493,7 +493,7 @@ func (b *matchWithContextRegexBuilder) withCaptureContextAfter(captureContextAft
 
 func (b *matchWithContextRegexBuilder) build() string {
 	optionalLineBreakRegex := "(?:\\r\\n|\\r|\\n)?"
-	searchRegex := regexPattern(b.matcher)
+	searchRegex := RegexPattern(b.matcher)
 
 	// matchWithOptionalLineBreakGreedy and matchWithOptionalLineBreakLazy match
 	// a sequence of text that may or may not include a line break.
@@ -516,7 +516,7 @@ func (b *matchWithContextRegexBuilder) build() string {
 	return optionalLineBreakRegex + matchBefore + searchRegex + matchAfter + optionalLineBreakRegex
 }
 
-func regexPattern(matcher *pb.ArtifactContentMatcher) string {
+func RegexPattern(matcher *pb.ArtifactContentMatcher) string {
 	caseInsensitiveFlag := "(?i)"
 	if matcher == nil {
 		// This should never happen.
