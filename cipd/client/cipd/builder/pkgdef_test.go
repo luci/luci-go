@@ -15,7 +15,6 @@
 package builder
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -23,24 +22,25 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/cipd/client/cipd/fs"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestLoadPackageDef(t *testing.T) {
 	t.Parallel()
 
-	Convey("LoadPackageDef empty works", t, func() {
+	ftt.Run("LoadPackageDef empty works", t, func(t *ftt.Test) {
 		body := strings.NewReader(`{"package": "package/name"}`)
 		def, err := LoadPackageDef(body, nil)
-		So(err, ShouldBeNil)
-		So(def, ShouldResemble, PackageDef{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, def, should.Resemble(PackageDef{
 			Package: "package/name",
 			Root:    ".",
-		})
+		}))
 	})
 
-	Convey("LoadPackageDef works", t, func() {
+	ftt.Run("LoadPackageDef works", t, func(t *ftt.Test) {
 		body := strings.NewReader(`{
 			"package": "package/${var1}",
 			"root": "../..",
@@ -71,8 +71,8 @@ func TestLoadPackageDef(t *testing.T) {
 			"var1": "value1",
 			"var2": "value2",
 		})
-		So(err, ShouldBeNil)
-		So(def, ShouldResemble, PackageDef{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, def, should.Resemble(PackageDef{
 			Package:     "package/value1",
 			Root:        "../..",
 			InstallMode: "copy",
@@ -97,47 +97,47 @@ func TestLoadPackageDef(t *testing.T) {
 					},
 				},
 			},
-		})
-		So(def.VersionFile(), ShouldEqual, "some/path/version_value1.json")
+		}))
+		assert.Loosely(t, def.VersionFile(), should.Equal("some/path/version_value1.json"))
 	})
 
-	Convey("LoadPackageDef not yaml", t, func() {
+	ftt.Run("LoadPackageDef not yaml", t, func(t *ftt.Test) {
 		body := strings.NewReader(`{ not yaml)`)
 		_, err := LoadPackageDef(body, nil)
-		So(err, ShouldNotBeNil)
+		assert.Loosely(t, err, should.NotBeNil)
 	})
 
-	Convey("LoadPackageDef bad type", t, func() {
+	ftt.Run("LoadPackageDef bad type", t, func(t *ftt.Test) {
 		body := strings.NewReader(`{"package": []}`)
 		_, err := LoadPackageDef(body, nil)
-		So(err, ShouldNotBeNil)
+		assert.Loosely(t, err, should.NotBeNil)
 	})
 
-	Convey("LoadPackageDef missing variable", t, func() {
+	ftt.Run("LoadPackageDef missing variable", t, func(t *ftt.Test) {
 		body := strings.NewReader(`{
 			"package": "abd",
 			"data": [{"file": "${missing_var}"}]
 		}`)
 		_, err := LoadPackageDef(body, nil)
-		So(err, ShouldNotBeNil)
+		assert.Loosely(t, err, should.NotBeNil)
 	})
 
-	Convey("LoadPackageDef space in missing variable", t, func() {
+	ftt.Run("LoadPackageDef space in missing variable", t, func(t *ftt.Test) {
 		body := strings.NewReader(`{
 			"package": "abd",
 			"data": [{"file": "${missing var}"}]
 		}`)
 		_, err := LoadPackageDef(body, nil)
-		So(err, ShouldNotBeNil)
+		assert.Loosely(t, err, should.NotBeNil)
 	})
 
-	Convey("LoadPackageDef bad package name", t, func() {
+	ftt.Run("LoadPackageDef bad package name", t, func(t *ftt.Test) {
 		body := strings.NewReader(`{"package": "not a valid name"}`)
 		_, err := LoadPackageDef(body, nil)
-		So(err, ShouldNotBeNil)
+		assert.Loosely(t, err, should.NotBeNil)
 	})
 
-	Convey("LoadPackageDef bad file section (no dir or file)", t, func() {
+	ftt.Run("LoadPackageDef bad file section (no dir or file)", t, func(t *ftt.Test) {
 		body := strings.NewReader(`{
 			"package": "package/name",
 			"data": [
@@ -145,10 +145,10 @@ func TestLoadPackageDef(t *testing.T) {
 			]
 		}`)
 		_, err := LoadPackageDef(body, nil)
-		So(err, ShouldNotBeNil)
+		assert.Loosely(t, err, should.NotBeNil)
 	})
 
-	Convey("LoadPackageDef bad file section (both dir and file)", t, func() {
+	ftt.Run("LoadPackageDef bad file section (both dir and file)", t, func(t *ftt.Test) {
 		body := strings.NewReader(`{
 			"package": "package/name",
 			"data": [
@@ -156,10 +156,10 @@ func TestLoadPackageDef(t *testing.T) {
 			]
 		}`)
 		_, err := LoadPackageDef(body, nil)
-		So(err, ShouldNotBeNil)
+		assert.Loosely(t, err, should.NotBeNil)
 	})
 
-	Convey("LoadPackageDef bad version_file", t, func() {
+	ftt.Run("LoadPackageDef bad version_file", t, func(t *ftt.Test) {
 		body := strings.NewReader(`{
 			"package": "package/name",
 			"data": [
@@ -167,10 +167,10 @@ func TestLoadPackageDef(t *testing.T) {
 			]
 		}`)
 		_, err := LoadPackageDef(body, nil)
-		So(err, ShouldNotBeNil)
+		assert.Loosely(t, err, should.NotBeNil)
 	})
 
-	Convey("LoadPackageDef two version_file entries", t, func() {
+	ftt.Run("LoadPackageDef two version_file entries", t, func(t *ftt.Test) {
 		body := strings.NewReader(`{
 			"package": "package/name",
 			"data": [
@@ -179,59 +179,59 @@ func TestLoadPackageDef(t *testing.T) {
 			]
 		}`)
 		_, err := LoadPackageDef(body, nil)
-		So(err, ShouldNotBeNil)
+		assert.Loosely(t, err, should.NotBeNil)
 	})
 }
 
 func TestExclusion(t *testing.T) {
 	t.Parallel()
 
-	Convey("makeExclusionFilter works", t, func() {
+	ftt.Run("makeExclusionFilter works", t, func(t *ftt.Test) {
 		filter, err := makeExclusionFilter([]string{
 			".*\\.pyc",
 			".*/pip-.*-build/.*",
 			"bin/activate",
 			"lib/.*/site-packages/.*\\.dist-info/RECORD",
 		})
-		So(err, ShouldBeNil)
-		So(filter, ShouldNotBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, filter, should.NotBeNil)
 
 		// *.pyc filtering.
-		So(filter(filepath.FromSlash("test.pyc")), ShouldBeTrue)
-		So(filter(filepath.FromSlash("test.py")), ShouldBeFalse)
-		So(filter(filepath.FromSlash("d/e/f/test.pyc")), ShouldBeTrue)
-		So(filter(filepath.FromSlash("d/e/f/test.py")), ShouldBeFalse)
+		assert.Loosely(t, filter(filepath.FromSlash("test.pyc")), should.BeTrue)
+		assert.Loosely(t, filter(filepath.FromSlash("test.py")), should.BeFalse)
+		assert.Loosely(t, filter(filepath.FromSlash("d/e/f/test.pyc")), should.BeTrue)
+		assert.Loosely(t, filter(filepath.FromSlash("d/e/f/test.py")), should.BeFalse)
 
 		// Subdir filtering.
-		So(filter(filepath.FromSlash("x/pip-blah-build/d/e/f")), ShouldBeTrue)
+		assert.Loosely(t, filter(filepath.FromSlash("x/pip-blah-build/d/e/f")), should.BeTrue)
 
 		// Single file exclusion.
-		So(filter(filepath.FromSlash("bin/activate")), ShouldBeTrue)
-		So(filter(filepath.FromSlash("bin/activate2")), ShouldBeFalse)
-		So(filter(filepath.FromSlash("d/bin/activate")), ShouldBeFalse)
+		assert.Loosely(t, filter(filepath.FromSlash("bin/activate")), should.BeTrue)
+		assert.Loosely(t, filter(filepath.FromSlash("bin/activate2")), should.BeFalse)
+		assert.Loosely(t, filter(filepath.FromSlash("d/bin/activate")), should.BeFalse)
 
 		// More complicated regexp.
 		p := "lib/python2.7/site-packages/coverage-3.7.1.dist-info/RECORD"
-		So(filter(filepath.FromSlash(p)), ShouldBeTrue)
+		assert.Loosely(t, filter(filepath.FromSlash(p)), should.BeTrue)
 	})
 
-	Convey("makeExclusionFilter bad regexp", t, func() {
+	ftt.Run("makeExclusionFilter bad regexp", t, func(t *ftt.Test) {
 		_, err := makeExclusionFilter([]string{"****"})
-		So(err, ShouldNotBeNil)
+		assert.Loosely(t, err, should.NotBeNil)
 	})
 }
 
 func TestFindFiles(t *testing.T) {
 	t.Parallel()
 
-	Convey("Given a temp directory", t, func() {
-		tempDir := mkTempDir()
+	ftt.Run("Given a temp directory", t, func(t *ftt.Test) {
+		tempDir := t.TempDir()
 
 		mkF := func(path string) { writeFile(tempDir, path, "", 0666) }
 		mkD := func(path string) { mkDir(tempDir, path) }
 		mkL := func(path, target string) { writeSymlink(tempDir, path, target) }
 
-		Convey("FindFiles works", func() {
+		t.Run("FindFiles works", func(t *ftt.Test) {
 			mkF("ENV/abc.py")
 			mkF("ENV/abc.pyc") // excluded via "exclude: '.*\.pyc'"
 			mkF("ENV/abc.pyo")
@@ -260,7 +260,7 @@ func TestFindFiles(t *testing.T) {
 
 			assertFiles := func(pkgDef PackageDef, cwd string) {
 				files, err := pkgDef.FindFiles(cwd)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				names := make([]string, len(files))
 				byName := make(map[string]fs.File, len(files))
 				for i, f := range files {
@@ -269,16 +269,16 @@ func TestFindFiles(t *testing.T) {
 				}
 
 				if runtime.GOOS == "windows" {
-					So(names, ShouldResemble, []string{
+					assert.Loosely(t, names, should.Resemble([]string{
 						"ENV/abc.py",
 						"ENV/abc.pyo",
 						"ENV/dir/def.py",
 						"dir/file2.py",
 						"file1.py",
 						"infra/xyz.py",
-					})
+					}))
 				} else {
-					So(names, ShouldResemble, []string{
+					assert.Loosely(t, names, should.Resemble([]string{
 						"ENV/abc.py",
 						"ENV/abc.pyo",
 						"ENV/abs_in_root",
@@ -288,11 +288,11 @@ func TestFindFiles(t *testing.T) {
 						"dir/file2.py",
 						"file1.py",
 						"infra/xyz.py",
-					})
+					}))
 					// Separately check symlinks.
-					ensureSymlinkTarget(byName["ENV/abs_in_root"], "dir/def.py")
-					ensureSymlinkTarget(byName["ENV/abs_link"], filepath.ToSlash(filepath.Dir(tempDir)))
-					ensureSymlinkTarget(byName["ENV/rel_link"], "abc.py")
+					ensureSymlinkTarget(t, byName["ENV/abs_in_root"], "dir/def.py")
+					ensureSymlinkTarget(t, byName["ENV/abs_link"], filepath.ToSlash(filepath.Dir(tempDir)))
+					ensureSymlinkTarget(t, byName["ENV/rel_link"], "abc.py")
 				}
 			}
 
@@ -318,16 +318,16 @@ func TestFindFiles(t *testing.T) {
 				},
 			}
 
-			Convey("with relative root", func() {
+			t.Run("with relative root", func(t *ftt.Test) {
 				pkgDef.Root = "../../"
 
 				assertFiles(pkgDef, filepath.Join(tempDir, "a", "b"))
 			})
 
-			Convey("with absolute root", func() {
+			t.Run("with absolute root", func(t *ftt.Test) {
 				pkgDef.Root = tempDir
 
-				someOtherTmpDir := mkTempDir()
+				someOtherTmpDir := t.TempDir()
 				assertFiles(pkgDef, someOtherTmpDir)
 			})
 
@@ -337,13 +337,6 @@ func TestFindFiles(t *testing.T) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-
-func mkTempDir() string {
-	tempDir, err := ioutil.TempDir("", "cipd_test")
-	So(err, ShouldBeNil)
-	Reset(func() { os.RemoveAll(tempDir) })
-	return tempDir
-}
 
 func mkDir(root string, path string) {
 	abs := filepath.Join(root, filepath.FromSlash(path))
@@ -371,9 +364,9 @@ func writeSymlink(root string, path string, target string) {
 	}
 }
 
-func ensureSymlinkTarget(file fs.File, target string) {
-	So(file.Symlink(), ShouldBeTrue)
+func ensureSymlinkTarget(t testing.TB, file fs.File, target string) {
+	assert.Loosely(t, file.Symlink(), should.BeTrue)
 	discoveredTarget, err := file.SymlinkTarget()
-	So(err, ShouldBeNil)
-	So(discoveredTarget, ShouldEqual, target)
+	assert.Loosely(t, err, should.BeNil)
+	assert.Loosely(t, discoveredTarget, should.Equal(target))
 }

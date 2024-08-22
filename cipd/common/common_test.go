@@ -20,162 +20,162 @@ import (
 	"testing"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestValidatePackageName(t *testing.T) {
 	t.Parallel()
 
-	Convey("ValidatePackageName works", t, func() {
-		So(ValidatePackageName("good/name"), ShouldBeNil)
-		So(ValidatePackageName("good_name"), ShouldBeNil)
-		So(ValidatePackageName("123-_/also/good/name"), ShouldBeNil)
-		So(ValidatePackageName("good.name/.name/..name"), ShouldBeNil)
-		So(ValidatePackageName(""), ShouldNotBeNil)
-		So(ValidatePackageName("/"), ShouldNotBeNil)
-		So(ValidatePackageName("BAD/name"), ShouldNotBeNil)
-		So(ValidatePackageName("bad//name"), ShouldNotBeNil)
-		So(ValidatePackageName("bad/name/"), ShouldNotBeNil)
-		So(ValidatePackageName("/bad/name"), ShouldNotBeNil)
-		So(ValidatePackageName("bad/name\nyeah"), ShouldNotBeNil)
-		So(ValidatePackageName("./name"), ShouldNotBeNil)
-		So(ValidatePackageName("name/../name"), ShouldNotBeNil)
-		So(ValidatePackageName("../../yeah"), ShouldNotBeNil)
-		So(ValidatePackageName("..."), ShouldNotBeNil)
+	ftt.Run("ValidatePackageName works", t, func(t *ftt.Test) {
+		assert.Loosely(t, ValidatePackageName("good/name"), should.BeNil)
+		assert.Loosely(t, ValidatePackageName("good_name"), should.BeNil)
+		assert.Loosely(t, ValidatePackageName("123-_/also/good/name"), should.BeNil)
+		assert.Loosely(t, ValidatePackageName("good.name/.name/..name"), should.BeNil)
+		assert.Loosely(t, ValidatePackageName(""), should.NotBeNil)
+		assert.Loosely(t, ValidatePackageName("/"), should.NotBeNil)
+		assert.Loosely(t, ValidatePackageName("BAD/name"), should.NotBeNil)
+		assert.Loosely(t, ValidatePackageName("bad//name"), should.NotBeNil)
+		assert.Loosely(t, ValidatePackageName("bad/name/"), should.NotBeNil)
+		assert.Loosely(t, ValidatePackageName("/bad/name"), should.NotBeNil)
+		assert.Loosely(t, ValidatePackageName("bad/name\nyeah"), should.NotBeNil)
+		assert.Loosely(t, ValidatePackageName("./name"), should.NotBeNil)
+		assert.Loosely(t, ValidatePackageName("name/../name"), should.NotBeNil)
+		assert.Loosely(t, ValidatePackageName("../../yeah"), should.NotBeNil)
+		assert.Loosely(t, ValidatePackageName("..."), should.NotBeNil)
 	})
 }
 
 func TestValidatePackagePrefix(t *testing.T) {
 	t.Parallel()
 
-	Convey("ValidatePackagePrefix strips suffix", t, func() {
+	ftt.Run("ValidatePackagePrefix strips suffix", t, func(t *ftt.Test) {
 		p, err := ValidatePackagePrefix("good/name/")
-		So(err, ShouldBeNil)
-		So(p, ShouldEqual, "good/name")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, p, should.Equal("good/name"))
 	})
 
-	Convey("ValidatePackagePrefix works", t, func() {
+	ftt.Run("ValidatePackagePrefix works", t, func(t *ftt.Test) {
 		call := func(p string) error {
 			_, err := ValidatePackagePrefix(p)
 			return err
 		}
 
-		So(call("good/name"), ShouldBeNil)
-		So(call("good/name/"), ShouldBeNil)
-		So(call("good_name"), ShouldBeNil)
-		So(call("123-_/also/good/name"), ShouldBeNil)
-		So(call("good.name/.name/..name"), ShouldBeNil)
-		So(call(""), ShouldBeNil)  // repo root
-		So(call("/"), ShouldBeNil) // repo root
-		So(call("BAD/name"), ShouldNotBeNil)
-		So(call("bad//name"), ShouldNotBeNil)
-		So(call("bad/name//"), ShouldNotBeNil)
-		So(call("/bad/name"), ShouldNotBeNil)
-		So(call("bad/name\nyeah"), ShouldNotBeNil)
-		So(call("./name"), ShouldNotBeNil)
-		So(call("name/../name"), ShouldNotBeNil)
-		So(call("../../yeah"), ShouldNotBeNil)
-		So(call("..."), ShouldNotBeNil)
+		assert.Loosely(t, call("good/name"), should.BeNil)
+		assert.Loosely(t, call("good/name/"), should.BeNil)
+		assert.Loosely(t, call("good_name"), should.BeNil)
+		assert.Loosely(t, call("123-_/also/good/name"), should.BeNil)
+		assert.Loosely(t, call("good.name/.name/..name"), should.BeNil)
+		assert.Loosely(t, call(""), should.BeNil)  // repo root
+		assert.Loosely(t, call("/"), should.BeNil) // repo root
+		assert.Loosely(t, call("BAD/name"), should.NotBeNil)
+		assert.Loosely(t, call("bad//name"), should.NotBeNil)
+		assert.Loosely(t, call("bad/name//"), should.NotBeNil)
+		assert.Loosely(t, call("/bad/name"), should.NotBeNil)
+		assert.Loosely(t, call("bad/name\nyeah"), should.NotBeNil)
+		assert.Loosely(t, call("./name"), should.NotBeNil)
+		assert.Loosely(t, call("name/../name"), should.NotBeNil)
+		assert.Loosely(t, call("../../yeah"), should.NotBeNil)
+		assert.Loosely(t, call("..."), should.NotBeNil)
 	})
 }
 
 func TestValidateInstanceTag(t *testing.T) {
 	t.Parallel()
 
-	Convey("ValidateInstanceTag works", t, func() {
-		So(ValidateInstanceTag(""), ShouldNotBeNil)
-		So(ValidateInstanceTag("notapair"), ShouldNotBeNil)
-		So(ValidateInstanceTag(strings.Repeat("long", 200)+":abc"), ShouldNotBeNil)
-		So(ValidateInstanceTag("BADKEY:value"), ShouldNotBeNil)
-		So(ValidateInstanceTag("empty_val:"), ShouldNotBeNil)
-		So(ValidateInstanceTag(" space:a"), ShouldNotBeNil)
-		So(ValidateInstanceTag("space :a"), ShouldNotBeNil)
-		So(ValidateInstanceTag("space: a"), ShouldNotBeNil)
-		So(ValidateInstanceTag("space:a "), ShouldNotBeNil)
-		So(ValidateInstanceTag("newline:a\n"), ShouldNotBeNil)
-		So(ValidateInstanceTag("tab:a\tb"), ShouldNotBeNil)
-		So(ValidateInstanceTag("good:tag"), ShouldBeNil)
-		So(ValidateInstanceTag("good:tag:blah"), ShouldBeNil)
-		So(ValidateInstanceTag("good_tag:A a0$()*+,-./:;<=>@\\_{}~"), ShouldBeNil)
+	ftt.Run("ValidateInstanceTag works", t, func(t *ftt.Test) {
+		assert.Loosely(t, ValidateInstanceTag(""), should.NotBeNil)
+		assert.Loosely(t, ValidateInstanceTag("notapair"), should.NotBeNil)
+		assert.Loosely(t, ValidateInstanceTag(strings.Repeat("long", 200)+":abc"), should.NotBeNil)
+		assert.Loosely(t, ValidateInstanceTag("BADKEY:value"), should.NotBeNil)
+		assert.Loosely(t, ValidateInstanceTag("empty_val:"), should.NotBeNil)
+		assert.Loosely(t, ValidateInstanceTag(" space:a"), should.NotBeNil)
+		assert.Loosely(t, ValidateInstanceTag("space :a"), should.NotBeNil)
+		assert.Loosely(t, ValidateInstanceTag("space: a"), should.NotBeNil)
+		assert.Loosely(t, ValidateInstanceTag("space:a "), should.NotBeNil)
+		assert.Loosely(t, ValidateInstanceTag("newline:a\n"), should.NotBeNil)
+		assert.Loosely(t, ValidateInstanceTag("tab:a\tb"), should.NotBeNil)
+		assert.Loosely(t, ValidateInstanceTag("good:tag"), should.BeNil)
+		assert.Loosely(t, ValidateInstanceTag("good:tag:blah"), should.BeNil)
+		assert.Loosely(t, ValidateInstanceTag("good_tag:A a0$()*+,-./:;<=>@\\_{}~"), should.BeNil)
 	})
 }
 
 func TestParseInstanceTag(t *testing.T) {
 	t.Parallel()
 
-	Convey("ParseInstanceTag works", t, func() {
-		t, err := ParseInstanceTag("good:tag")
-		So(err, ShouldBeNil)
-		So(t, ShouldResembleProto, &api.Tag{
+	ftt.Run("ParseInstanceTag works", t, func(t *ftt.Test) {
+		pTag, err := ParseInstanceTag("good:tag")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, pTag, should.Resemble(&api.Tag{
 			Key:   "good",
 			Value: "tag",
-		})
+		}))
 
-		t, err = ParseInstanceTag("good:tag:blah")
-		So(err, ShouldBeNil)
-		So(t, ShouldResembleProto, &api.Tag{
+		pTag, err = ParseInstanceTag("good:tag:blah")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, pTag, should.Resemble(&api.Tag{
 			Key:   "good",
 			Value: "tag:blah",
-		})
+		}))
 
-		t, err = ParseInstanceTag("good_tag:A a0$()*+,-./:;<=>@\\_{}~")
-		So(err, ShouldBeNil)
-		So(t, ShouldResembleProto, &api.Tag{
+		pTag, err = ParseInstanceTag("good_tag:A a0$()*+,-./:;<=>@\\_{}~")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, pTag, should.Resemble(&api.Tag{
 			Key:   "good_tag",
 			Value: "A a0$()*+,-./:;<=>@\\_{}~",
-		})
+		}))
 
-		t, err = ParseInstanceTag("")
-		So(err, ShouldNotBeNil)
+		pTag, err = ParseInstanceTag("")
+		assert.Loosely(t, err, should.NotBeNil)
 
-		t, err = ParseInstanceTag("notapair")
-		So(err, ShouldNotBeNil)
+		pTag, err = ParseInstanceTag("notapair")
+		assert.Loosely(t, err, should.NotBeNil)
 
-		t, err = ParseInstanceTag(strings.Repeat("long", 200) + ":abc")
-		So(err, ShouldNotBeNil)
+		pTag, err = ParseInstanceTag(strings.Repeat("long", 200) + ":abc")
+		assert.Loosely(t, err, should.NotBeNil)
 
-		t, err = ParseInstanceTag("BADKEY:value")
-		So(err, ShouldNotBeNil)
+		pTag, err = ParseInstanceTag("BADKEY:value")
+		assert.Loosely(t, err, should.NotBeNil)
 	})
 
-	Convey("MustParseInstanceTag panics on bad tag", t, func() {
-		So(func() { MustParseInstanceTag("") }, ShouldPanic)
+	ftt.Run("MustParseInstanceTag panics on bad tag", t, func(t *ftt.Test) {
+		assert.Loosely(t, func() { MustParseInstanceTag("") }, should.Panic)
 	})
 }
 
 func TestValidatePin(t *testing.T) {
 	t.Parallel()
 
-	Convey("ValidatePin works", t, func() {
-		So(ValidatePin(Pin{"good/name", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}, KnownHash), ShouldBeNil)
-		So(ValidatePin(Pin{"BAD/name", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}, KnownHash), ShouldNotBeNil)
-		So(ValidatePin(Pin{"good/name", "aaaaaaaaaaa"}, KnownHash), ShouldNotBeNil)
+	ftt.Run("ValidatePin works", t, func(t *ftt.Test) {
+		assert.Loosely(t, ValidatePin(Pin{"good/name", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}, KnownHash), should.BeNil)
+		assert.Loosely(t, ValidatePin(Pin{"BAD/name", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}, KnownHash), should.NotBeNil)
+		assert.Loosely(t, ValidatePin(Pin{"good/name", "aaaaaaaaaaa"}, KnownHash), should.NotBeNil)
 	})
 }
 
 func TestValidatePackageRef(t *testing.T) {
 	t.Parallel()
 
-	Convey("ValidatePackageRef works", t, func() {
-		So(ValidatePackageRef("some-ref"), ShouldBeNil)
-		So(ValidatePackageRef("ref/with/slashes.and.dots"), ShouldBeNil)
+	ftt.Run("ValidatePackageRef works", t, func(t *ftt.Test) {
+		assert.Loosely(t, ValidatePackageRef("some-ref"), should.BeNil)
+		assert.Loosely(t, ValidatePackageRef("ref/with/slashes.and.dots"), should.BeNil)
 
-		So(ValidatePackageRef(""), ShouldNotBeNil)
-		So(ValidatePackageRef("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), ShouldNotBeNil)
-		So(ValidatePackageRef("good:tag"), ShouldNotBeNil)
+		assert.Loosely(t, ValidatePackageRef(""), should.NotBeNil)
+		assert.Loosely(t, ValidatePackageRef("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), should.NotBeNil)
+		assert.Loosely(t, ValidatePackageRef("good:tag"), should.NotBeNil)
 	})
 }
 
 func TestValidateInstanceVersion(t *testing.T) {
 	t.Parallel()
 
-	Convey("ValidateInstanceVersion works", t, func() {
-		So(ValidateInstanceVersion("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), ShouldBeNil)
-		So(ValidateInstanceVersion("good:tag"), ShouldBeNil)
-		So(ValidatePackageRef("some-read"), ShouldBeNil)
-		So(ValidateInstanceVersion("BADTAG:"), ShouldNotBeNil)
+	ftt.Run("ValidateInstanceVersion works", t, func(t *ftt.Test) {
+		assert.Loosely(t, ValidateInstanceVersion("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), should.BeNil)
+		assert.Loosely(t, ValidateInstanceVersion("good:tag"), should.BeNil)
+		assert.Loosely(t, ValidatePackageRef("some-read"), should.BeNil)
+		assert.Loosely(t, ValidateInstanceVersion("BADTAG:"), should.NotBeNil)
 	})
 }
 
@@ -206,19 +206,19 @@ func TestValidateSubdir(t *testing.T) {
 		{"spaces", "some path/with/ spaces"},
 	}
 
-	Convey("ValidtateSubdir", t, func() {
-		Convey("rejects bad subdirs", func() {
+	ftt.Run("ValidtateSubdir", t, func(t *ftt.Test) {
+		t.Run("rejects bad subdirs", func(t *ftt.Test) {
 			for _, tc := range badSubdirs {
-				Convey(tc.name, func() {
-					So(ValidateSubdir(tc.subdir), ShouldErrLike, tc.err)
+				t.Run(tc.name, func(t *ftt.Test) {
+					assert.Loosely(t, ValidateSubdir(tc.subdir), should.ErrLike(tc.err))
 				})
 			}
 		})
 
-		Convey("accepts good subdirs", func() {
+		t.Run("accepts good subdirs", func(t *ftt.Test) {
 			for _, tc := range goodSubdirs {
-				Convey(tc.name, func() {
-					So(ValidateSubdir(tc.subdir), ShouldErrLike, nil)
+				t.Run(tc.name, func(t *ftt.Test) {
+					assert.Loosely(t, ValidateSubdir(tc.subdir), should.ErrLike(nil))
 				})
 			}
 		})
@@ -228,7 +228,7 @@ func TestValidateSubdir(t *testing.T) {
 func TestValidatePrincipalName(t *testing.T) {
 	t.Parallel()
 
-	Convey("ValidatePrincipalName OK", t, func() {
+	ftt.Run("ValidatePrincipalName OK", t, func(t *ftt.Test) {
 		cases := []string{
 			"group:abc",
 			"user:a@example.com",
@@ -237,11 +237,11 @@ func TestValidatePrincipalName(t *testing.T) {
 			"service:blah",
 		}
 		for _, tc := range cases {
-			So(ValidatePrincipalName(tc), ShouldBeNil)
+			assert.Loosely(t, ValidatePrincipalName(tc), should.BeNil)
 		}
 	})
 
-	Convey("ValidatePrincipalName not OK", t, func() {
+	ftt.Run("ValidatePrincipalName not OK", t, func(t *ftt.Test) {
 		cases := []struct{ p, err string }{
 			{"", "doesn't look like a principal id"},
 			{":", "doesn't look like a principal id"},
@@ -252,7 +252,7 @@ func TestValidatePrincipalName(t *testing.T) {
 			{"user:abc", `bad value "abc" for identity kind "user"`},
 		}
 		for _, tc := range cases {
-			So(ValidatePrincipalName(tc.p), ShouldErrLike, tc.err)
+			assert.Loosely(t, ValidatePrincipalName(tc.p), should.ErrLike(tc.err))
 		}
 	})
 }
@@ -260,7 +260,7 @@ func TestValidatePrincipalName(t *testing.T) {
 func TestNormalizePrefixMetadata(t *testing.T) {
 	t.Parallel()
 
-	Convey("Happy path", t, func() {
+	ftt.Run("Happy path", t, func(t *ftt.Test) {
 		m := &api.PrefixMetadata{
 			Prefix: "abc/",
 			Acls: []*api.PrefixMetadata_ACL{
@@ -269,88 +269,88 @@ func TestNormalizePrefixMetadata(t *testing.T) {
 				{Role: 123}, // some future unknown role
 			},
 		}
-		So(NormalizePrefixMetadata(m), ShouldBeNil)
-		So(m, ShouldResembleProto, &api.PrefixMetadata{
+		assert.Loosely(t, NormalizePrefixMetadata(m), should.BeNil)
+		assert.Loosely(t, m, should.Resemble(&api.PrefixMetadata{
 			Prefix: "abc",
 			Acls: []*api.PrefixMetadata_ACL{
 				{Role: api.Role_READER, Principals: []string{"group:z"}},
 				{Role: api.Role_OWNER, Principals: []string{"group:a", "user:abc@example.com"}},
 				{Role: 123},
 			},
-		})
+		}))
 	})
 
-	Convey("Validates prefix", t, func() {
-		So(NormalizePrefixMetadata(&api.PrefixMetadata{Prefix: "//"}),
-			ShouldErrLike, "invalid package prefix")
+	ftt.Run("Validates prefix", t, func(t *ftt.Test) {
+		assert.Loosely(t, NormalizePrefixMetadata(&api.PrefixMetadata{Prefix: "//"}),
+			should.ErrLike("invalid package prefix"))
 	})
 
-	Convey("No role", t, func() {
-		So(NormalizePrefixMetadata(&api.PrefixMetadata{
+	ftt.Run("No role", t, func(t *ftt.Test) {
+		assert.Loosely(t, NormalizePrefixMetadata(&api.PrefixMetadata{
 			Prefix: "abc",
 			Acls: []*api.PrefixMetadata_ACL{
 				{},
 			},
-		}), ShouldErrLike, "ACL entry #0 doesn't have a role specified")
+		}), should.ErrLike("ACL entry #0 doesn't have a role specified"))
 	})
 
-	Convey("Double ACL entries", t, func() {
-		So(NormalizePrefixMetadata(&api.PrefixMetadata{
+	ftt.Run("Double ACL entries", t, func(t *ftt.Test) {
+		assert.Loosely(t, NormalizePrefixMetadata(&api.PrefixMetadata{
 			Prefix: "abc",
 			Acls: []*api.PrefixMetadata_ACL{
 				{Role: api.Role_READER},
 				{Role: api.Role_READER},
 			},
-		}), ShouldErrLike, "role READER is specified twice")
+		}), should.ErrLike("role READER is specified twice"))
 	})
 
-	Convey("Bad principal", t, func() {
-		So(NormalizePrefixMetadata(&api.PrefixMetadata{
+	ftt.Run("Bad principal", t, func(t *ftt.Test) {
+		assert.Loosely(t, NormalizePrefixMetadata(&api.PrefixMetadata{
 			Prefix: "abc",
 			Acls: []*api.PrefixMetadata_ACL{
 				{Role: api.Role_READER, Principals: []string{":"}},
 			},
-		}), ShouldErrLike, `in ACL entry for role READER: ":" doesn't look like a principal id`)
+		}), should.ErrLike(`in ACL entry for role READER: ":" doesn't look like a principal id`))
 	})
 }
 
 func TestPinToString(t *testing.T) {
 	t.Parallel()
 
-	Convey("Pin.String works", t, func() {
-		So(
+	ftt.Run("Pin.String works", t, func(t *ftt.Test) {
+		assert.Loosely(t,
 			fmt.Sprintf("%s", Pin{"good/name", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}),
-			ShouldEqual,
-			"good/name:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+			should.Equal(
+				"good/name:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"))
 	})
 }
 
 func TestPinSliceAndMap(t *testing.T) {
 	t.Parallel()
 
-	Convey("PinSlice", t, func() {
+	ftt.Run("PinSlice", t, func(t *ftt.Test) {
 		ps := PinSlice{{"pkg2", "vers"}, {"pkg", "vers"}}
 
-		Convey("can convert to a map", func() {
+		t.Run("can convert to a map", func(t *ftt.Test) {
 			pm := ps.ToMap()
-			So(pm, ShouldResemble, PinMap{
+			assert.Loosely(t, pm, should.Resemble(PinMap{
 				"pkg":  "vers",
 				"pkg2": "vers",
-			})
+			}))
 
 			pm["new/pkg"] = "some:tag"
 
-			Convey("and back to a slice", func() {
-				So(pm.ToSlice(), ShouldResemble, PinSlice{
+			t.Run("and back to a slice", func(t *ftt.Test) {
+				assert.Loosely(t, pm.ToSlice(), should.Resemble(PinSlice{
 					{"new/pkg", "some:tag"},
 					{"pkg", "vers"},
 					{"pkg2", "vers"},
-				})
+				}))
 			})
 		})
 	})
 
-	Convey("PinSliceBySubdir", t, func() {
+	ftt.Run("PinSliceBySubdir", t, func(t *ftt.Test) {
 		id := func(letter rune) string {
 			return strings.Repeat(string(letter), 40)
 		}
@@ -365,28 +365,28 @@ func TestPinSliceAndMap(t *testing.T) {
 			},
 		}
 
-		Convey("Can validate", func() {
-			So(pmr.Validate(AnyHash), ShouldErrLike, nil)
+		t.Run("Can validate", func(t *ftt.Test) {
+			assert.Loosely(t, pmr.Validate(AnyHash), should.ErrLike(nil))
 
-			Convey("can see bad subdirs", func() {
+			t.Run("can see bad subdirs", func(t *ftt.Test) {
 				pmr["/"] = PinSlice{{"something", "version"}}
-				So(pmr.Validate(AnyHash), ShouldErrLike, "bad subdir")
+				assert.Loosely(t, pmr.Validate(AnyHash), should.ErrLike("bad subdir"))
 			})
 
-			Convey("can see duplicate packages", func() {
+			t.Run("can see duplicate packages", func(t *ftt.Test) {
 				pmr[""] = append(pmr[""], Pin{"pkg", strings.Repeat("2", 40)})
-				So(pmr.Validate(AnyHash), ShouldErrLike, `subdir "": duplicate package "pkg"`)
+				assert.Loosely(t, pmr.Validate(AnyHash), should.ErrLike(`subdir "": duplicate package "pkg"`))
 			})
 
-			Convey("can see bad pins", func() {
+			t.Run("can see bad pins", func(t *ftt.Test) {
 				pmr[""] = append(pmr[""], Pin{"quxxly", "nurbs"})
-				So(pmr.Validate(AnyHash), ShouldErrLike, `subdir "": not a valid package instance ID`)
+				assert.Loosely(t, pmr.Validate(AnyHash), should.ErrLike(`subdir "": not a valid package instance ID`))
 			})
 		})
 
-		Convey("can convert to ByMap", func() {
+		t.Run("can convert to ByMap", func(t *ftt.Test) {
 			pmm := pmr.ToMap()
-			So(pmm, ShouldResemble, PinMapBySubdir{
+			assert.Loosely(t, pmm, should.Resemble(PinMapBySubdir{
 				"": PinMap{
 					"pkg":  id('0'),
 					"pkg2": id('1'),
@@ -394,10 +394,10 @@ func TestPinSliceAndMap(t *testing.T) {
 				"other": PinMap{
 					"something": id('2'),
 				},
-			})
+			}))
 
-			Convey("and back", func() {
-				So(pmm.ToSlice(), ShouldResemble, PinSliceBySubdir{
+			t.Run("and back", func(t *ftt.Test) {
+				assert.Loosely(t, pmm.ToSlice(), should.Resemble(PinSliceBySubdir{
 					"": PinSlice{
 						{"pkg", id('0')},
 						{"pkg2", id('1')},
@@ -405,7 +405,7 @@ func TestPinSliceAndMap(t *testing.T) {
 					"other": PinSlice{
 						{"something", id('2')},
 					},
-				})
+				}))
 			})
 		})
 
@@ -415,35 +415,35 @@ func TestPinSliceAndMap(t *testing.T) {
 func TestInstanceMetadata(t *testing.T) {
 	t.Parallel()
 
-	Convey("ValidateInstanceMetadataKey works", t, func() {
-		So(ValidateInstanceMetadataKey("a"), ShouldBeNil)
-		So(ValidateInstanceMetadataKey("az_-09"), ShouldBeNil)
-		So(ValidateInstanceMetadataKey(strings.Repeat("z", 400)), ShouldBeNil)
+	ftt.Run("ValidateInstanceMetadataKey works", t, func(t *ftt.Test) {
+		assert.Loosely(t, ValidateInstanceMetadataKey("a"), should.BeNil)
+		assert.Loosely(t, ValidateInstanceMetadataKey("az_-09"), should.BeNil)
+		assert.Loosely(t, ValidateInstanceMetadataKey(strings.Repeat("z", 400)), should.BeNil)
 
-		So(ValidateInstanceMetadataKey(""), ShouldNotBeNil)
-		So(ValidateInstanceMetadataKey(strings.Repeat("z", 401)), ShouldNotBeNil)
-		So(ValidateInstanceMetadataKey("a a"), ShouldNotBeNil)
-		So(ValidateInstanceMetadataKey("A"), ShouldNotBeNil)
-		So(ValidateInstanceMetadataKey("a:a"), ShouldNotBeNil)
+		assert.Loosely(t, ValidateInstanceMetadataKey(""), should.NotBeNil)
+		assert.Loosely(t, ValidateInstanceMetadataKey(strings.Repeat("z", 401)), should.NotBeNil)
+		assert.Loosely(t, ValidateInstanceMetadataKey("a a"), should.NotBeNil)
+		assert.Loosely(t, ValidateInstanceMetadataKey("A"), should.NotBeNil)
+		assert.Loosely(t, ValidateInstanceMetadataKey("a:a"), should.NotBeNil)
 	})
 
-	Convey("ValidateContentType works", t, func() {
-		So(ValidateContentType(""), ShouldBeNil)
-		So(ValidateContentType("text/plain; encoding=utf-8"), ShouldBeNil)
+	ftt.Run("ValidateContentType works", t, func(t *ftt.Test) {
+		assert.Loosely(t, ValidateContentType(""), should.BeNil)
+		assert.Loosely(t, ValidateContentType("text/plain; encoding=utf-8"), should.BeNil)
 
-		So(ValidateContentType("zzz zzz"), ShouldNotBeNil)
-		So(ValidateContentType(strings.Repeat("z", 401)), ShouldNotBeNil)
+		assert.Loosely(t, ValidateContentType("zzz zzz"), should.NotBeNil)
+		assert.Loosely(t, ValidateContentType(strings.Repeat("z", 401)), should.NotBeNil)
 	})
 
-	Convey("InstanceMetadataFingerprint works", t, func() {
+	ftt.Run("InstanceMetadataFingerprint works", t, func(t *ftt.Test) {
 		fp := InstanceMetadataFingerprint("key", []byte("value"))
-		So(fp, ShouldEqual, "06dd3884aa86b22603764bd7e5b0b41e")
+		assert.Loosely(t, fp, should.Equal("06dd3884aa86b22603764bd7e5b0b41e"))
 	})
 
-	Convey("ValidateInstanceMetadataFingerprint works", t, func() {
+	ftt.Run("ValidateInstanceMetadataFingerprint works", t, func(t *ftt.Test) {
 		fp := InstanceMetadataFingerprint("key", []byte("value"))
-		So(ValidateInstanceMetadataFingerprint(fp), ShouldBeNil)
-		So(ValidateInstanceMetadataFingerprint("aaaa"), ShouldNotBeNil)
-		So(ValidateInstanceMetadataFingerprint(strings.Repeat("Z", 32)), ShouldNotBeNil)
+		assert.Loosely(t, ValidateInstanceMetadataFingerprint(fp), should.BeNil)
+		assert.Loosely(t, ValidateInstanceMetadataFingerprint("aaaa"), should.NotBeNil)
+		assert.Loosely(t, ValidateInstanceMetadataFingerprint(strings.Repeat("Z", 32)), should.NotBeNil)
 	})
 }

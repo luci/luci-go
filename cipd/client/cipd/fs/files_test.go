@@ -17,110 +17,109 @@ package fs
 import (
 	"context"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestScanFileSystem(t *testing.T) {
 	t.Parallel()
 
-	Convey("Given a temp directory", t, func() {
-		tempDir, err := ioutil.TempDir("", "cipd_test")
-		So(err, ShouldBeNil)
-		defer os.RemoveAll(tempDir)
+	ftt.Run("Given a temp directory", t, func(t *ftt.Test) {
+		tempDir := t.TempDir()
 
-		Convey("Scan empty dir works", func() {
+		t.Run("Scan empty dir works", func(t *ftt.Test) {
 			files, err := ScanFileSystem(tempDir, tempDir, nil, ScanOptions{})
-			So(err, ShouldBeNil)
-			So(files, ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, files, should.BeEmpty)
 		})
 
-		Convey("Discovering single file works", func() {
+		t.Run("Discovering single file works", func(t *ftt.Test) {
 			writeFile(tempDir, "single_file", "12345", 0666)
 			files, err := ScanFileSystem(tempDir, tempDir, nil, ScanOptions{})
-			So(err, ShouldBeNil)
-			So(len(files), ShouldEqual, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(files), should.Equal(1))
 
 			file := files[0]
-			So(file.Name(), ShouldEqual, "single_file")
-			So(file.Size(), ShouldEqual, uint64(5))
-			So(file.Executable(), ShouldBeFalse)
+			assert.Loosely(t, file.Name(), should.Equal("single_file"))
+			assert.Loosely(t, file.Size(), should.Equal(uint64(5)))
+			assert.Loosely(t, file.Executable(), should.BeFalse)
 
 			r, err := file.Open()
 			if r != nil {
 				defer r.Close()
 			}
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			buf, err := io.ReadAll(r)
-			So(err, ShouldBeNil)
-			So(buf, ShouldResemble, []byte("12345"))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, buf, should.Resemble([]byte("12345")))
 		})
 
-		Convey("Enumerating subdirectories", func() {
+		t.Run("Enumerating subdirectories", func(t *ftt.Test) {
 			writeFile(tempDir, "a", "", 0666)
 			writeFile(tempDir, "b", "", 0666)
 			writeFile(tempDir, "1/a", "", 0666)
 			writeFile(tempDir, "1/b", "", 0666)
 			writeFile(tempDir, "1/2/a", "", 0666)
 			files, err := ScanFileSystem(tempDir, tempDir, nil, ScanOptions{})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			names := make([]string, len(files))
 			for i, f := range files {
 				names[i] = f.Name()
 			}
 			// Order matters. Slashes matters.
-			So(names, ShouldResemble, []string{
+			assert.Loosely(t, names, should.Resemble([]string{
 				"1/2/a",
 				"1/a",
 				"1/b",
 				"a",
 				"b",
-			})
+			}))
 		})
 
-		Convey("Empty subdirectories are skipped", func() {
+		t.Run("Empty subdirectories are skipped", func(t *ftt.Test) {
 			mkDir(tempDir, "a")
 			mkDir(tempDir, "1/2/3")
 			mkDir(tempDir, "1/c")
 			writeFile(tempDir, "1/d/file", "1234", 0666)
 			files, err := ScanFileSystem(tempDir, tempDir, nil, ScanOptions{})
-			So(err, ShouldBeNil)
-			So(len(files), ShouldEqual, 1)
-			So(files[0].Name(), ShouldEqual, "1/d/file")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(files), should.Equal(1))
+			assert.Loosely(t, files[0].Name(), should.Equal("1/d/file"))
 		})
 
-		Convey("Non root start path works", func() {
+		t.Run("Non root start path works", func(t *ftt.Test) {
 			writeFile(tempDir, "a", "", 0666)
 			writeFile(tempDir, "b", "", 0666)
 			writeFile(tempDir, "1/a", "", 0666)
 			writeFile(tempDir, "1/b", "", 0666)
 			writeFile(tempDir, "1/2/a", "", 0666)
 			files, err := ScanFileSystem(filepath.Join(tempDir, "1"), tempDir, nil, ScanOptions{})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			names := make([]string, len(files))
 			for i, f := range files {
 				names[i] = f.Name()
 			}
 			// Order matters. Slashes matters.
-			So(names, ShouldResemble, []string{
+			assert.Loosely(t, names, should.Resemble([]string{
 				"1/2/a",
 				"1/a",
 				"1/b",
-			})
+			}))
 		})
 
-		Convey("Start path must be under root", func() {
+		t.Run("Start path must be under root", func(t *ftt.Test) {
 			_, err := ScanFileSystem(filepath.Dir(tempDir), tempDir, nil, ScanOptions{})
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 		})
 
-		Convey("Exclude filter works", func() {
+		t.Run("Exclude filter works", func(t *ftt.Test) {
 			writeFile(tempDir, "a", "", 0666)
 			writeFile(tempDir, "b", "", 0666)
 			writeFile(tempDir, "c/a", "", 0666)
@@ -136,18 +135,18 @@ func TestScanFileSystem(t *testing.T) {
 			}
 
 			files, err := ScanFileSystem(tempDir, tempDir, excluder, ScanOptions{})
-			So(err, ShouldBeNil)
-			So(len(files), ShouldEqual, 2)
-			So(files[0].Name(), ShouldEqual, "b")
-			So(files[1].Name(), ShouldEqual, "c/a")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(files), should.Equal(2))
+			assert.Loosely(t, files[0].Name(), should.Equal("b"))
+			assert.Loosely(t, files[1].Name(), should.Equal("c/a"))
 
 			// "1/*" subdir should have been skipped completely.
-			So(excluderCalls, ShouldResemble, []string{
+			assert.Loosely(t, excluderCalls, should.Resemble([]string{
 				"1", "a", "b", "c", filepath.FromSlash("c/a"),
-			})
+			}))
 		})
 
-		Convey(".cipd links turn into real files", func() {
+		t.Run(".cipd links turn into real files", func(t *ftt.Test) {
 			writeFile(tempDir, ".cipd/pkgs/0/deadbeef/some_file", "hello", 0666)
 			writeFile(tempDir, ".cipd/pkgs/0/deadbeef/some_executable", "#!/usr/bin/python", 0777)
 			writeSymlink(tempDir, ".cipd/pkgs/0/current", "deadbeef")
@@ -155,53 +154,53 @@ func TestScanFileSystem(t *testing.T) {
 			writeSymlink(tempDir, "some_file", ".cipd/pkgs/0/current/some_file")
 
 			files, err := ScanFileSystem(tempDir, tempDir, nil, ScanOptions{})
-			So(err, ShouldBeNil)
-			So(len(files), ShouldEqual, 2)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(files), should.Equal(2))
 
 			if runtime.GOOS != "windows" {
-				So(files[0].Executable(), ShouldBeTrue)
+				assert.Loosely(t, files[0].Executable(), should.BeTrue)
 			}
 
-			So(files[1].Size(), ShouldEqual, 5)
-			So(files[1].Name(), ShouldEqual, "some_file")
-			So(files[1].Symlink(), ShouldBeFalse)
-			So(files[1].Executable(), ShouldBeFalse)
+			assert.Loosely(t, files[1].Size(), should.Equal[uint64](5))
+			assert.Loosely(t, files[1].Name(), should.Equal("some_file"))
+			assert.Loosely(t, files[1].Symlink(), should.BeFalse)
+			assert.Loosely(t, files[1].Executable(), should.BeFalse)
 			rc, err := files[1].Open()
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			defer rc.Close()
 
 			data, err := io.ReadAll(rc)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(string(data), ShouldResemble, "hello")
+			assert.Loosely(t, string(data), should.Match("hello"))
 		})
 
 		if runtime.GOOS != "windows" {
-			Convey("Discovering single executable file works", func() {
+			t.Run("Discovering single executable file works", func(t *ftt.Test) {
 				writeFile(tempDir, "single_file", "12345", 0766)
 				files, err := ScanFileSystem(tempDir, tempDir, nil, ScanOptions{})
-				So(err, ShouldBeNil)
-				So(len(files), ShouldEqual, 1)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, len(files), should.Equal(1))
 				file := files[0]
-				So(file.Executable(), ShouldBeTrue)
+				assert.Loosely(t, file.Executable(), should.BeTrue)
 			})
 
-			Convey("Relative symlink to outside of package cause error", func() {
+			t.Run("Relative symlink to outside of package cause error", func(t *ftt.Test) {
 				writeSymlink(tempDir, "a/b1/rel_symlink", filepath.FromSlash("../../.."))
 				_, err := ScanFileSystem(tempDir, tempDir, nil, ScanOptions{})
-				So(err, ShouldNotBeNil)
+				assert.Loosely(t, err, should.NotBeNil)
 			})
 
-			Convey("Scanning a symlink", func() {
+			t.Run("Scanning a symlink", func(t *ftt.Test) {
 				writeFile(tempDir, "zzz/real_root/file", "12345", 0666)
 				writeSymlink(tempDir, "symlink_root", filepath.FromSlash("zzz/real_root"))
 
 				symlinkRootAbs := filepath.Join(tempDir, "symlink_root")
 
 				files, err := ScanFileSystem(symlinkRootAbs, symlinkRootAbs, nil, ScanOptions{})
-				So(err, ShouldBeNil)
-				So(len(files), ShouldEqual, 1)
-				So(files[0].Name(), ShouldEqual, "file")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, len(files), should.Equal(1))
+				assert.Loosely(t, files[0].Name(), should.Equal("file"))
 			})
 		}
 	})
@@ -210,87 +209,85 @@ func TestScanFileSystem(t *testing.T) {
 func TestWrapFile(t *testing.T) {
 	t.Parallel()
 
-	Convey("Given a temp directory", t, func() {
-		tempDir, err := ioutil.TempDir("", "cipd_test")
-		So(err, ShouldBeNil)
-		defer os.RemoveAll(tempDir)
+	ftt.Run("Given a temp directory", t, func(t *ftt.Test) {
+		tempDir := t.TempDir()
 
-		Convey("WrapFile simple file works", func() {
+		t.Run("WrapFile simple file works", func(t *ftt.Test) {
 			writeFile(tempDir, "dir/a/b", "12345", 0666)
 			out, err := WrapFile(filepath.Join(tempDir, "dir", "a", "b"), tempDir, nil, ScanOptions{})
-			So(err, ShouldBeNil)
-			So(out.Name(), ShouldEqual, "dir/a/b")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, out.Name(), should.Equal("dir/a/b"))
 		})
 
-		Convey("WrapFile directory fails", func() {
+		t.Run("WrapFile directory fails", func(t *ftt.Test) {
 			mkDir(tempDir, "dir")
 			_, err := WrapFile(filepath.Join(tempDir, "dir"), tempDir, nil, ScanOptions{})
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 		})
 
-		Convey("WrapFile outside of root fails", func() {
+		t.Run("WrapFile outside of root fails", func(t *ftt.Test) {
 			mkDir(tempDir, "a")
 			writeFile(tempDir, "b", "body", 0666)
 			_, err := WrapFile(filepath.Join(tempDir, "b"), filepath.Join(tempDir, "a"), nil, ScanOptions{})
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 		})
 
-		Convey("WrapFile outside of root fails (tricky path)", func() {
+		t.Run("WrapFile outside of root fails (tricky path)", func(t *ftt.Test) {
 			mkDir(tempDir, "a")
 			// "abc" starts with "a", it tricks naive string.HasPrefix subpath check.
 			writeFile(tempDir, "abc", "body", 0666)
 			_, err := WrapFile(filepath.Join(tempDir, "abc"), filepath.Join(tempDir, "a"), nil, ScanOptions{})
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 		})
 
 		if runtime.GOOS != "windows" {
-			Convey("WrapFile executable file works", func() {
+			t.Run("WrapFile executable file works", func(t *ftt.Test) {
 				writeFile(tempDir, "single_file", "12345", 0766)
 				out, err := WrapFile(filepath.Join(tempDir, "single_file"), tempDir, nil, ScanOptions{})
-				So(err, ShouldBeNil)
-				So(out.Executable(), ShouldBeTrue)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, out.Executable(), should.BeTrue)
 			})
 
-			Convey("WrapFile rel symlink in root", func() {
+			t.Run("WrapFile rel symlink in root", func(t *ftt.Test) {
 				writeSymlink(tempDir, "a/b/c", filepath.FromSlash("../../d"))
 				mkDir(tempDir, "d")
 				out, err := WrapFile(filepath.Join(tempDir, "a", "b", "c"), tempDir, nil, ScanOptions{})
-				So(err, ShouldBeNil)
-				ensureSymlinkTarget(out, "../../d")
+				assert.Loosely(t, err, should.BeNil)
+				ensureSymlinkTarget(t, out, "../../d")
 			})
 
-			Convey("WrapFile .cipd symlink", func() {
+			t.Run("WrapFile .cipd symlink", func(t *ftt.Test) {
 				writeFile(tempDir, ".cipd/pkgs/0/deadbeef/some_executable", "#!/usr/bin/python", 0777)
 				writeSymlink(tempDir, ".cipd/pkgs/0/current", "deadbeef")
 				writeSymlink(tempDir, "some_executable", ".cipd/pkgs/0/current/some_executable")
 
 				out, err := WrapFile(filepath.Join(tempDir, "some_executable"), tempDir, nil, ScanOptions{})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				if runtime.GOOS != "windows" {
-					So(out.Executable(), ShouldBeTrue)
+					assert.Loosely(t, out.Executable(), should.BeTrue)
 				}
-				So(out.Symlink(), ShouldBeFalse)
-				So(out.Size(), ShouldEqual, 17)
+				assert.Loosely(t, out.Symlink(), should.BeFalse)
+				assert.That(t, out.Size(), should.Equal[uint64](17))
 			})
 
-			Convey("WrapFile rel symlink outside root", func() {
+			t.Run("WrapFile rel symlink outside root", func(t *ftt.Test) {
 				writeSymlink(tempDir, "a/b/c", filepath.FromSlash("../../../d"))
 				_, err := WrapFile(filepath.Join(tempDir, "a", "b", "c"), tempDir, nil, ScanOptions{})
-				So(err, ShouldNotBeNil)
+				assert.Loosely(t, err, should.NotBeNil)
 			})
 
-			Convey("WrapFile abs symlink in root", func() {
+			t.Run("WrapFile abs symlink in root", func(t *ftt.Test) {
 				writeSymlink(tempDir, "a/b/c", filepath.Join(tempDir, "a", "d"))
 				out, err := WrapFile(filepath.Join(tempDir, "a", "b", "c"), tempDir, nil, ScanOptions{})
-				So(err, ShouldBeNil)
-				ensureSymlinkTarget(out, "../d")
+				assert.Loosely(t, err, should.BeNil)
+				ensureSymlinkTarget(t, out, "../d")
 			})
 
-			Convey("WrapFile abs symlink outside root", func() {
+			t.Run("WrapFile abs symlink outside root", func(t *ftt.Test) {
 				writeSymlink(tempDir, "a/b/c", filepath.Dir(tempDir))
 				out, err := WrapFile(filepath.Join(tempDir, "a", "b", "c"), tempDir, nil, ScanOptions{})
-				So(err, ShouldBeNil)
-				ensureSymlinkTarget(out, filepath.ToSlash(filepath.Dir(tempDir)))
+				assert.Loosely(t, err, should.BeNil)
+				ensureSymlinkTarget(t, out, filepath.ToSlash(filepath.Dir(tempDir)))
 			})
 		}
 	})
@@ -322,51 +319,51 @@ func writeSymlink(root string, path string, target string) {
 	}
 }
 
-func writeFileToDest(dest Destination, name string, opts CreateFileOptions, data string) {
+func writeFileToDest(t testing.TB, dest Destination, name string, opts CreateFileOptions, data string) {
 	writer, err := dest.CreateFile(context.Background(), name, opts)
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil)
 	_, err = writer.Write([]byte(data))
-	So(err, ShouldBeNil)
-	So(writer.Close(), ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil)
+	assert.Loosely(t, writer.Close(), should.BeNil)
 }
 
-func writeAttrFileToDest(dest Destination, name string, attr WinAttrs, data string) {
+func writeAttrFileToDest(t testing.TB, dest Destination, name string, attr WinAttrs, data string) {
 	writer, err := dest.CreateFile(context.Background(), name, CreateFileOptions{WinAttrs: attr})
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil)
 	_, err = writer.Write([]byte(data))
-	So(err, ShouldBeNil)
-	So(writer.Close(), ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil)
+	assert.Loosely(t, writer.Close(), should.BeNil)
 }
 
-func writeSymlinkToDest(dest Destination, name string, target string) {
-	So(dest.CreateSymlink(context.Background(), name, target), ShouldBeNil)
+func writeSymlinkToDest(t testing.TB, dest Destination, name string, target string) {
+	assert.Loosely(t, dest.CreateSymlink(context.Background(), name, target), should.BeNil)
 }
 
-func ensureSymlinkTarget(file File, target string) {
-	So(file.Symlink(), ShouldBeTrue)
+func ensureSymlinkTarget(t testing.TB, file File, target string) {
+	assert.Loosely(t, file.Symlink(), should.BeTrue)
 	discoveredTarget, err := file.SymlinkTarget()
-	So(err, ShouldBeNil)
-	So(discoveredTarget, ShouldEqual, target)
+	assert.Loosely(t, err, should.BeNil)
+	assert.Loosely(t, discoveredTarget, should.Equal(target))
 }
 
-func createBunchOfFiles(dest Destination, tempDir string) {
+func createBunchOfFiles(t testing.TB, dest Destination, tempDir string) {
 	testMTime := time.Date(2018, 1, 1, 1, 0, 0, 0, time.UTC)
-	writeFileToDest(dest, "a", CreateFileOptions{}, "a data")
-	writeFileToDest(dest, "exe", CreateFileOptions{Executable: true}, "exe data")
-	writeFileToDest(dest, "dir/c", CreateFileOptions{}, "dir/c data")
-	writeFileToDest(dest, "dir/dir/d", CreateFileOptions{}, "dir/dir/d data")
-	writeFileToDest(dest, "ts", CreateFileOptions{ModTime: testMTime}, "ts data")
-	writeFileToDest(dest, "wr", CreateFileOptions{Writable: true}, "wr data")
+	writeFileToDest(t, dest, "a", CreateFileOptions{}, "a data")
+	writeFileToDest(t, dest, "exe", CreateFileOptions{Executable: true}, "exe data")
+	writeFileToDest(t, dest, "dir/c", CreateFileOptions{}, "dir/c data")
+	writeFileToDest(t, dest, "dir/dir/d", CreateFileOptions{}, "dir/dir/d data")
+	writeFileToDest(t, dest, "ts", CreateFileOptions{ModTime: testMTime}, "ts data")
+	writeFileToDest(t, dest, "wr", CreateFileOptions{Writable: true}, "wr data")
 	if runtime.GOOS != "windows" {
-		writeSymlinkToDest(dest, "abs_symlink", filepath.FromSlash(tempDir))
-		writeSymlinkToDest(dest, "dir/dir/rel_symlink", "../../a")
+		writeSymlinkToDest(t, dest, "abs_symlink", filepath.FromSlash(tempDir))
+		writeSymlinkToDest(t, dest, "dir/dir/rel_symlink", "../../a")
 	} else {
-		writeAttrFileToDest(dest, "secret_file", WinAttrHidden, "ninja")
-		writeAttrFileToDest(dest, "system_file", WinAttrSystem, "system")
+		writeAttrFileToDest(t, dest, "secret_file", WinAttrHidden, "ninja")
+		writeAttrFileToDest(t, dest, "system_file", WinAttrSystem, "system")
 	}
 }
 
-func checkBunchOfFiles(destDir, tempDir string) {
+func checkBunchOfFiles(t testing.TB, destDir, tempDir string) {
 	testMTime := time.Date(2018, 1, 1, 1, 0, 0, 0, time.UTC)
 
 	// Ensure everything is there.
@@ -374,7 +371,7 @@ func checkBunchOfFiles(destDir, tempDir string) {
 		PreserveModTime:  true,
 		PreserveWritable: true,
 	})
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil)
 	names := make([]string, len(files))
 	mapping := make(map[string]File, len(files))
 	for i, f := range files {
@@ -383,7 +380,7 @@ func checkBunchOfFiles(destDir, tempDir string) {
 	}
 
 	if runtime.GOOS == "windows" {
-		So(names, ShouldResemble, []string{
+		assert.Loosely(t, names, should.Resemble([]string{
 			"a",
 			"dir/c",
 			"dir/dir/d",
@@ -392,9 +389,9 @@ func checkBunchOfFiles(destDir, tempDir string) {
 			"system_file",
 			"ts",
 			"wr",
-		})
+		}))
 	} else {
-		So(names, ShouldResemble, []string{
+		assert.Loosely(t, names, should.Resemble([]string{
 			"a",
 			"abs_symlink",
 			"dir/c",
@@ -403,7 +400,7 @@ func checkBunchOfFiles(destDir, tempDir string) {
 			"exe",
 			"ts",
 			"wr",
-		})
+		}))
 	}
 
 	// Ensure data is valid (check first file only).
@@ -411,27 +408,27 @@ func checkBunchOfFiles(destDir, tempDir string) {
 	if r != nil {
 		defer r.Close()
 	}
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil)
 	data, err := io.ReadAll(r)
-	So(err, ShouldBeNil)
-	So(data, ShouldResemble, []byte("a data"))
+	assert.Loosely(t, err, should.BeNil)
+	assert.Loosely(t, data, should.Resemble([]byte("a data")))
 
 	// File mode and symlinks are valid.
 	if runtime.GOOS != "windows" {
-		So(mapping["a"].Writable(), ShouldBeFalse)
-		So(mapping["exe"].Executable(), ShouldBeTrue)
-		So(mapping["ts"].ModTime(), ShouldEqual, testMTime)
-		So(mapping["wr"].Writable(), ShouldBeTrue)
-		ensureSymlinkTarget(mapping["abs_symlink"], filepath.FromSlash(tempDir))
-		ensureSymlinkTarget(mapping["dir/dir/rel_symlink"], "../../a")
+		assert.Loosely(t, mapping["a"].Writable(), should.BeFalse)
+		assert.Loosely(t, mapping["exe"].Executable(), should.BeTrue)
+		assert.Loosely(t, mapping["ts"].ModTime(), should.Match(testMTime))
+		assert.Loosely(t, mapping["wr"].Writable(), should.BeTrue)
+		ensureSymlinkTarget(t, mapping["abs_symlink"], filepath.FromSlash(tempDir))
+		ensureSymlinkTarget(t, mapping["dir/dir/rel_symlink"], "../../a")
 	} else {
-		So(mapping["secret_file"].WinAttrs()&WinAttrHidden, ShouldEqual, WinAttrHidden)
-		So(mapping["system_file"].WinAttrs()&WinAttrSystem, ShouldEqual, WinAttrSystem)
+		assert.Loosely(t, mapping["secret_file"].WinAttrs()&WinAttrHidden, should.Equal(WinAttrHidden))
+		assert.Loosely(t, mapping["system_file"].WinAttrs()&WinAttrSystem, should.Equal(WinAttrSystem))
 	}
 
 	// Ensure no temp files left.
 	allFiles, err := ScanFileSystem(tempDir, tempDir, nil, ScanOptions{})
-	So(len(allFiles), ShouldEqual, len(files))
+	assert.Loosely(t, len(allFiles), should.Equal(len(files)))
 }
 
 func TestExistingDestination(t *testing.T) {
@@ -439,75 +436,73 @@ func TestExistingDestination(t *testing.T) {
 
 	ctx := context.Background()
 
-	Convey("Given a temp directory", t, func() {
-		tempDir, err := ioutil.TempDir("", "cipd_test")
+	ftt.Run("Given a temp directory", t, func(t *ftt.Test) {
+		tempDir := t.TempDir()
 		destDir := filepath.Join(tempDir, "dest")
-		So(err, ShouldBeNil)
 		dest := ExistingDestination(destDir, nil)
-		defer os.RemoveAll(tempDir)
 
 		readFromDest := func(name string) string {
 			b, err := os.ReadFile(filepath.Join(destDir, name))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			return string(b)
 		}
 
-		Convey("Creates files", func() {
-			writeFileToDest(dest, "a/b/c", CreateFileOptions{}, "123")
-			So(readFromDest("a/b/c"), ShouldEqual, "123")
+		t.Run("Creates files", func(t *ftt.Test) {
+			writeFileToDest(t, dest, "a/b/c", CreateFileOptions{}, "123")
+			assert.Loosely(t, readFromDest("a/b/c"), should.Equal("123"))
 		})
 
-		Convey("CreateFile can override read-only files, atomic mode", func() {
-			writeFileToDest(dest, "a/b/c", CreateFileOptions{}, "123")
-			writeFileToDest(dest, "a/b/c", CreateFileOptions{}, "456")
-			So(readFromDest("a/b/c"), ShouldEqual, "456")
+		t.Run("CreateFile can override read-only files, atomic mode", func(t *ftt.Test) {
+			writeFileToDest(t, dest, "a/b/c", CreateFileOptions{}, "123")
+			writeFileToDest(t, dest, "a/b/c", CreateFileOptions{}, "456")
+			assert.Loosely(t, readFromDest("a/b/c"), should.Equal("456"))
 		})
 
-		Convey("CreateFile can override read-only files, non-atomic mode", func() {
+		t.Run("CreateFile can override read-only files, non-atomic mode", func(t *ftt.Test) {
 			dest.(*fsDest).atomic = false
-			writeFileToDest(dest, "a/b/c", CreateFileOptions{}, "123")
-			writeFileToDest(dest, "a/b/c", CreateFileOptions{}, "456")
-			So(readFromDest("a/b/c"), ShouldEqual, "456")
+			writeFileToDest(t, dest, "a/b/c", CreateFileOptions{}, "123")
+			writeFileToDest(t, dest, "a/b/c", CreateFileOptions{}, "456")
+			assert.Loosely(t, readFromDest("a/b/c"), should.Equal("456"))
 		})
 
-		Convey("Can't have two instances of a file open at the same time", func() {
+		t.Run("Can't have two instances of a file open at the same time", func(t *ftt.Test) {
 			wr, err := dest.CreateFile(ctx, "a/b/c", CreateFileOptions{})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// Open same file (perhaps via lexically different path).
 			_, err = dest.CreateFile(ctx, "a/b/d/../c", CreateFileOptions{})
-			So(err.Error(), ShouldEqual, `"a/b/d/../c": already open`)
+			assert.Loosely(t, err.Error(), should.Equal(`"a/b/d/../c": already open`))
 
-			So(wr.Close(), ShouldBeNil)
+			assert.Loosely(t, wr.Close(), should.BeNil)
 
 			// Can be opened now.
 			wr, err = dest.CreateFile(ctx, "a/b/d/../c", CreateFileOptions{})
-			So(err, ShouldBeNil)
-			So(wr.Close(), ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, wr.Close(), should.BeNil)
 		})
 
-		Convey("CreateFile rejects invalid relative paths", func() {
+		t.Run("CreateFile rejects invalid relative paths", func(t *ftt.Test) {
 			// Rel path that is still inside the package is ok.
 			wr, err := dest.CreateFile(ctx, "a/b/c/../../../d", CreateFileOptions{})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			wr.Close()
 			// Rel path pointing outside is forbidden.
 			_, err = dest.CreateFile(ctx, "a/b/c/../../../../d", CreateFileOptions{})
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 		})
 
 		if runtime.GOOS != "windows" {
-			Convey("CreateSymlink rejects invalid relative paths", func() {
+			t.Run("CreateSymlink rejects invalid relative paths", func(t *ftt.Test) {
 				// Rel symlink to a file inside the destination is OK.
-				So(dest.CreateSymlink(ctx, "a/b/c", "../.."), ShouldBeNil)
+				assert.Loosely(t, dest.CreateSymlink(ctx, "a/b/c", "../.."), should.BeNil)
 				// Rel symlink to a file outside -> error.
-				So(dest.CreateSymlink(ctx, "a/b/c", "../../.."), ShouldNotBeNil)
+				assert.Loosely(t, dest.CreateSymlink(ctx, "a/b/c", "../../.."), should.NotBeNil)
 			})
 		}
 
-		Convey("Creating a bunch of files", func() {
-			createBunchOfFiles(dest, tempDir)
-			checkBunchOfFiles(destDir, tempDir)
+		t.Run("Creating a bunch of files", func(t *ftt.Test) {
+			createBunchOfFiles(t, dest, tempDir)
+			checkBunchOfFiles(t, destDir, tempDir)
 		})
 	})
 }
@@ -517,114 +512,112 @@ func TestNewDestination(t *testing.T) {
 
 	ctx := context.Background()
 
-	Convey("Given a temp directory", t, func() {
-		tempDir, err := ioutil.TempDir("", "cipd_test")
+	ftt.Run("Given a temp directory", t, func(t *ftt.Test) {
+		tempDir := t.TempDir()
 		destDir := filepath.Join(tempDir, "dest")
-		So(err, ShouldBeNil)
 		dest := NewDestination(destDir, nil)
-		defer os.RemoveAll(tempDir)
 
-		Convey("Empty success write works", func() {
-			So(dest.Begin(ctx), ShouldBeNil)
-			So(dest.End(ctx, true), ShouldBeNil)
+		t.Run("Empty success write works", func(t *ftt.Test) {
+			assert.Loosely(t, dest.Begin(ctx), should.BeNil)
+			assert.Loosely(t, dest.End(ctx, true), should.BeNil)
 
 			// Should create a new directory.
 			stat, err := os.Stat(destDir)
-			So(err, ShouldBeNil)
-			So(stat.IsDir(), ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, stat.IsDir(), should.BeTrue)
 
 			// And it should be empty.
 			files, err := ScanFileSystem(destDir, destDir, nil, ScanOptions{})
-			So(err, ShouldBeNil)
-			So(len(files), ShouldEqual, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(files), should.BeZero)
 		})
 
-		Convey("Empty failed write works", func() {
-			So(dest.Begin(ctx), ShouldBeNil)
-			So(dest.End(ctx, false), ShouldBeNil)
+		t.Run("Empty failed write works", func(t *ftt.Test) {
+			assert.Loosely(t, dest.Begin(ctx), should.BeNil)
+			assert.Loosely(t, dest.End(ctx, false), should.BeNil)
 
 			// Doesn't create a directory.
 			_, err := os.Stat(destDir)
-			So(os.IsNotExist(err), ShouldBeTrue)
+			assert.Loosely(t, os.IsNotExist(err), should.BeTrue)
 		})
 
-		Convey("Double begin or double end fails", func() {
-			So(dest.Begin(ctx), ShouldBeNil)
-			So(dest.Begin(ctx), ShouldNotBeNil)
-			So(dest.End(ctx, true), ShouldBeNil)
-			So(dest.End(ctx, true), ShouldNotBeNil)
+		t.Run("Double begin or double end fails", func(t *ftt.Test) {
+			assert.Loosely(t, dest.Begin(ctx), should.BeNil)
+			assert.Loosely(t, dest.Begin(ctx), should.NotBeNil)
+			assert.Loosely(t, dest.End(ctx, true), should.BeNil)
+			assert.Loosely(t, dest.End(ctx, true), should.NotBeNil)
 		})
 
-		Convey("CreateFile works only when destination is open", func() {
+		t.Run("CreateFile works only when destination is open", func(t *ftt.Test) {
 			wr, err := dest.CreateFile(ctx, "testing", CreateFileOptions{Executable: true})
-			So(wr, ShouldBeNil)
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, wr, should.BeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 		})
 
-		Convey("Committing bunch of files works", func() {
-			So(dest.Begin(ctx), ShouldBeNil)
-			createBunchOfFiles(dest, tempDir)
-			So(dest.End(ctx, true), ShouldBeNil)
-			checkBunchOfFiles(destDir, tempDir)
+		t.Run("Committing bunch of files works", func(t *ftt.Test) {
+			assert.Loosely(t, dest.Begin(ctx), should.BeNil)
+			createBunchOfFiles(t, dest, tempDir)
+			assert.Loosely(t, dest.End(ctx, true), should.BeNil)
+			checkBunchOfFiles(t, destDir, tempDir)
 		})
 
-		Convey("Rolling back bunch of files works", func() {
-			So(dest.Begin(ctx), ShouldBeNil)
-			createBunchOfFiles(dest, tempDir)
-			So(dest.End(ctx, false), ShouldBeNil)
+		t.Run("Rolling back bunch of files works", func(t *ftt.Test) {
+			assert.Loosely(t, dest.Begin(ctx), should.BeNil)
+			createBunchOfFiles(t, dest, tempDir)
+			assert.Loosely(t, dest.End(ctx, false), should.BeNil)
 
 			// No dest directory.
 			_, err := os.Stat(destDir)
-			So(os.IsNotExist(err), ShouldBeTrue)
+			assert.Loosely(t, os.IsNotExist(err), should.BeTrue)
 
 			// Ensure no temp files left.
 			allFiles, err := ScanFileSystem(tempDir, tempDir, nil, ScanOptions{})
-			So(len(allFiles), ShouldEqual, 0)
+			assert.Loosely(t, len(allFiles), should.BeZero)
 		})
 
-		Convey("Overwriting a directory works", func() {
+		t.Run("Overwriting a directory works", func(t *ftt.Test) {
 			// Create dest directory manually with some stuff.
 			err := os.Mkdir(destDir, 0777)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			err = os.WriteFile(filepath.Join(destDir, "data"), []byte("data"), 0666)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// Now deploy something to it.
-			So(dest.Begin(ctx), ShouldBeNil)
-			createBunchOfFiles(dest, tempDir)
-			So(dest.End(ctx, true), ShouldBeNil)
+			assert.Loosely(t, dest.Begin(ctx), should.BeNil)
+			createBunchOfFiles(t, dest, tempDir)
+			assert.Loosely(t, dest.End(ctx, true), should.BeNil)
 
 			// Overwritten.
-			checkBunchOfFiles(destDir, tempDir)
+			checkBunchOfFiles(t, destDir, tempDir)
 		})
 
-		Convey("Not overwriting a directory works", func() {
+		t.Run("Not overwriting a directory works", func(t *ftt.Test) {
 			// Create dest directory manually with some stuff.
 			err := os.Mkdir(destDir, 0777)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			err = os.WriteFile(filepath.Join(destDir, "data"), []byte("data"), 0666)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// Now attempt deploy something to it, but roll back.
-			So(dest.Begin(ctx), ShouldBeNil)
-			createBunchOfFiles(dest, tempDir)
-			So(dest.End(ctx, false), ShouldBeNil)
+			assert.Loosely(t, dest.Begin(ctx), should.BeNil)
+			createBunchOfFiles(t, dest, tempDir)
+			assert.Loosely(t, dest.End(ctx, false), should.BeNil)
 
 			// Kept as is.
 			files, err := ScanFileSystem(destDir, destDir, nil, ScanOptions{})
-			So(err, ShouldBeNil)
-			So(len(files), ShouldEqual, 1)
-			So(files[0].Name(), ShouldEqual, "data")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(files), should.Equal(1))
+			assert.Loosely(t, files[0].Name(), should.Equal("data"))
 		})
 
-		Convey("End with opened files fail", func() {
-			So(dest.Begin(ctx), ShouldBeNil)
+		t.Run("End with opened files fail", func(t *ftt.Test) {
+			assert.Loosely(t, dest.Begin(ctx), should.BeNil)
 			w, err := dest.CreateFile(ctx, "a", CreateFileOptions{})
-			So(w, ShouldNotBeNil)
-			So(err, ShouldBeNil)
-			So(dest.End(ctx, true), ShouldNotBeNil)
+			assert.Loosely(t, w, should.NotBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, dest.End(ctx, true), should.NotBeNil)
 			w.Close()
-			So(dest.End(ctx, true), ShouldBeNil)
+			assert.Loosely(t, dest.End(ctx, true), should.BeNil)
 		})
 	})
 }

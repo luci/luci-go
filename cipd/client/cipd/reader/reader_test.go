@@ -31,8 +31,12 @@ import (
 	"go.chromium.org/luci/cipd/client/cipd/builder"
 	"go.chromium.org/luci/cipd/client/cipd/fs"
 	"go.chromium.org/luci/cipd/client/cipd/pkg"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/comparison"
+	"go.chromium.org/luci/common/testing/truth/failure"
+	"go.chromium.org/luci/common/testing/truth/should"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/cipd/common"
 )
 
@@ -46,11 +50,10 @@ func stringCounts(values []string) map[string]int {
 
 // shouldContainSameStrings checks if the left and right side are slices that
 // contain the same strings, regardless of the ordering.
-func shouldContainSameStrings(actual any, expected ...any) string {
-	if len(expected) != 1 {
-		return "Too many arguments for shouldContainSameStrings"
+func shouldContainSameStrings(expected []string) comparison.Func[[]string] {
+	return func(actual []string) *failure.Summary {
+		return should.Match(stringCounts(expected))(stringCounts(actual))
 	}
-	return ShouldResemble(stringCounts(actual.([]string)), stringCounts(expected[0].([]string)))
 }
 
 func normalizeJSON(s string) (string, error) {
@@ -66,19 +69,22 @@ func normalizeJSON(s string) (string, error) {
 	return string(blob), nil
 }
 
-func shouldBeSameJSONDict(actual any, expected ...any) string {
-	if len(expected) != 1 {
-		return "Too many arguments for shouldBeSameJSONDict"
-	}
-	actualNorm, err := normalizeJSON(actual.(string))
+func shouldBeSameJSONDict(expected string) comparison.Func[string] {
+	expectedNorm, err := normalizeJSON(expected)
 	if err != nil {
-		return err.Error()
+		return func(_ string) *failure.Summary {
+			return should.ErrLike(nil)(err)
+		}
 	}
-	expectedNorm, err := normalizeJSON(expected[0].(string))
-	if err != nil {
-		return err.Error()
+
+	return func(actual string) *failure.Summary {
+		actualNorm, err := normalizeJSON(actual)
+		if err != nil {
+			return should.ErrLike(nil)(err)
+		}
+
+		return should.Equal(expectedNorm)(actualNorm)
 	}
-	return ShouldEqual(actualNorm, expectedNorm)
 }
 
 type bytesSource struct {
@@ -94,7 +100,7 @@ func bytesFile(buf *bytes.Buffer) pkg.Source {
 func TestPackageReading(t *testing.T) {
 	ctx := context.Background()
 
-	Convey("Open empty package works", t, func() {
+	ftt.Run("Open empty package works", t, func(t *ftt.Test) {
 		// Build an empty package.
 		out := bytes.Buffer{}
 		pin, err := builder.BuildInstance(ctx, builder.Options{
@@ -102,49 +108,49 @@ func TestPackageReading(t *testing.T) {
 			PackageName:      "testing",
 			CompressionLevel: 5,
 		})
-		So(err, ShouldBeNil)
-		So(pin, ShouldResemble, Pin{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, pin, should.Resemble(Pin{
 			PackageName: "testing",
 			InstanceID:  "PPM180-5i-V1q5554ewKGO4jq4cWB-cOwTuyhoCv3joC",
-		})
+		}))
 
 		// Open it.
 		inst, err := OpenInstance(ctx, bytesFile(&out), OpenInstanceOpts{
 			VerificationMode: CalculateHash,
 			HashAlgo:         api.HashAlgo_SHA256,
 		})
-		So(inst, ShouldNotBeNil)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, inst, should.NotBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		defer inst.Close(ctx, false)
 
-		So(inst.Pin(), ShouldResemble, pin)
-		So(len(inst.Files()), ShouldEqual, 1)
+		assert.Loosely(t, inst.Pin(), should.Resemble(pin))
+		assert.Loosely(t, len(inst.Files()), should.Equal(1))
 
 		// CalculatePin also agrees with the value of the pin.
 		calcedPin, err := CalculatePin(ctx, pkg.NewBytesSource(out.Bytes()), api.HashAlgo_SHA256)
-		So(err, ShouldBeNil)
-		So(calcedPin, ShouldResemble, pin)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, calcedPin, should.Resemble(pin))
 
 		// Contains single manifest file.
 		f := inst.Files()[0]
-		So(f.Name(), ShouldEqual, ".cipdpkg/manifest.json")
-		So(f.Executable(), ShouldBeFalse)
+		assert.Loosely(t, f.Name(), should.Equal(".cipdpkg/manifest.json"))
+		assert.Loosely(t, f.Executable(), should.BeFalse)
 		r, err := f.Open()
 		if r != nil {
 			defer r.Close()
 		}
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		manifest, err := io.ReadAll(r)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		goodManifest := `{
 			"format_version": "1.1",
 			"package_name": "testing"
 		}`
-		So(string(manifest), shouldBeSameJSONDict, goodManifest)
+		assert.Loosely(t, string(manifest), shouldBeSameJSONDict(goodManifest))
 	})
 
-	Convey("Open empty package with unexpected instance ID", t, func() {
+	ftt.Run("Open empty package with unexpected instance ID", t, func(t *ftt.Test) {
 		// Build an empty package.
 		out := bytes.Buffer{}
 		_, err := builder.BuildInstance(ctx, builder.Options{
@@ -152,49 +158,49 @@ func TestPackageReading(t *testing.T) {
 			PackageName:      "testing",
 			CompressionLevel: 5,
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		// Attempt to open it, providing correct instance ID, should work.
 		inst, err := OpenInstance(ctx, bytesFile(&out), OpenInstanceOpts{
 			VerificationMode: VerifyHash,
 			InstanceID:       "PPM180-5i-V1q5554ewKGO4jq4cWB-cOwTuyhoCv3joC",
 		})
-		So(err, ShouldBeNil)
-		So(inst, ShouldNotBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, inst, should.NotBeNil)
 		defer inst.Close(ctx, false)
 
-		So(inst.Pin(), ShouldResemble, Pin{
+		assert.Loosely(t, inst.Pin(), should.Resemble(Pin{
 			PackageName: "testing",
 			InstanceID:  "PPM180-5i-V1q5554ewKGO4jq4cWB-cOwTuyhoCv3joC",
-		})
+		}))
 
 		// Attempt to open it, providing incorrect instance ID.
 		inst, err = OpenInstance(ctx, bytesFile(&out), OpenInstanceOpts{
 			VerificationMode: VerifyHash,
 			InstanceID:       "ZZZZZZZZ_LlIHZUsZlTzpmiCs8AqvAhz9TZzN96Qpx4C",
 		})
-		So(err, ShouldEqual, ErrHashMismatch)
-		So(inst, ShouldBeNil)
+		assert.Loosely(t, err, should.Equal(ErrHashMismatch))
+		assert.Loosely(t, inst, should.BeNil)
 
 		// Open with incorrect instance ID, but skipping the verification..
 		inst, err = OpenInstance(ctx, bytesFile(&out), OpenInstanceOpts{
 			VerificationMode: SkipHashVerification,
 			InstanceID:       "ZZZZZZZZ_LlIHZUsZlTzpmiCs8AqvAhz9TZzN96Qpx4C",
 		})
-		So(err, ShouldBeNil)
-		So(inst, ShouldNotBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, inst, should.NotBeNil)
 		defer inst.Close(ctx, false)
 
-		So(inst.Pin(), ShouldResemble, Pin{
+		assert.Loosely(t, inst.Pin(), should.Resemble(Pin{
 			PackageName: "testing",
 			InstanceID:  "ZZZZZZZZ_LlIHZUsZlTzpmiCs8AqvAhz9TZzN96Qpx4C",
-		})
+		}))
 	})
 
-	Convey("OpenInstanceFile works", t, func() {
+	ftt.Run("OpenInstanceFile works", t, func(t *ftt.Test) {
 		// Open temp file.
 		tempFile, err := ioutil.TempFile("", "cipdtest")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		tempFilePath := tempFile.Name()
 		defer os.Remove(tempFilePath)
 
@@ -204,7 +210,7 @@ func TestPackageReading(t *testing.T) {
 			PackageName:      "testing",
 			CompressionLevel: 5,
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		tempFile.Close()
 
 		// Read the package.
@@ -212,12 +218,12 @@ func TestPackageReading(t *testing.T) {
 			VerificationMode: CalculateHash,
 			HashAlgo:         api.HashAlgo_SHA256,
 		})
-		So(err, ShouldBeNil)
-		So(inst, ShouldNotBeNil)
-		So(inst.Close(ctx, false), ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, inst, should.NotBeNil)
+		assert.Loosely(t, inst.Close(ctx, false), should.BeNil)
 	})
 
-	Convey("ExtractFiles works", t, func() {
+	ftt.Run("ExtractFiles works", t, func(t *ftt.Test) {
 		testMTime := time.Date(2018, 1, 1, 0, 0, 0, 0, time.UTC)
 
 		inFiles := []fs.File{
@@ -243,21 +249,21 @@ func TestPackageReading(t *testing.T) {
 			VersionFile:      "subpath/version.json",
 			CompressionLevel: 5,
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		// Extract files.
 		inst, err := OpenInstance(ctx, bytesFile(&out), OpenInstanceOpts{
 			VerificationMode: CalculateHash,
 			HashAlgo:         api.HashAlgo_SHA256,
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		defer inst.Close(ctx, false)
 
 		dest := &testDestination{}
 		_, err = ExtractFilesTxn(ctx, inst.Files(), dest, 16, pkg.WithManifest, "")
-		So(err, ShouldBeNil)
-		So(dest.beginCalls, ShouldEqual, 1)
-		So(dest.endCalls, ShouldEqual, 1)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, dest.beginCalls, should.Equal(1))
+		assert.Loosely(t, dest.endCalls, should.Equal(1))
 
 		// Verify file list, file data and flags are correct.
 		names := make([]string, len(dest.files))
@@ -265,7 +271,7 @@ func TestPackageReading(t *testing.T) {
 			names[i] = f.name
 		}
 		if runtime.GOOS != "windows" {
-			So(names, shouldContainSameStrings, []string{
+			assert.Loosely(t, names, shouldContainSameStrings([]string{
 				"testing/qwerty",
 				"abc",
 				"writable",
@@ -274,9 +280,9 @@ func TestPackageReading(t *testing.T) {
 				"abs_symlink",
 				"subpath/version.json",
 				".cipdpkg/manifest.json",
-			})
+			}))
 		} else {
-			So(names, shouldContainSameStrings, []string{
+			assert.Loosely(t, names, shouldContainSameStrings([]string{
 				"testing/qwerty",
 				"abc",
 				"writable",
@@ -287,17 +293,17 @@ func TestPackageReading(t *testing.T) {
 				"system",
 				"subpath/version.json",
 				".cipdpkg/manifest.json",
-			})
+			}))
 		}
 
-		So(string(dest.fileByName("testing/qwerty").Bytes()), ShouldEqual, "12345")
-		So(dest.fileByName("abc").executable, ShouldBeTrue)
-		So(dest.fileByName("abc").writable, ShouldBeFalse)
-		So(dest.fileByName("writable").writable, ShouldBeTrue)
-		So(dest.fileByName("writable").modtime.IsZero(), ShouldBeTrue)
-		So(dest.fileByName("timestamped").modtime, ShouldEqual, testMTime)
-		So(dest.fileByName("rel_symlink").symlinkTarget, ShouldEqual, "abc")
-		So(dest.fileByName("abs_symlink").symlinkTarget, ShouldEqual, "/abc/def")
+		assert.Loosely(t, string(dest.fileByName("testing/qwerty").Bytes()), should.Equal("12345"))
+		assert.Loosely(t, dest.fileByName("abc").executable, should.BeTrue)
+		assert.Loosely(t, dest.fileByName("abc").writable, should.BeFalse)
+		assert.Loosely(t, dest.fileByName("writable").writable, should.BeTrue)
+		assert.Loosely(t, dest.fileByName("writable").modtime.IsZero(), should.BeTrue)
+		assert.Loosely(t, dest.fileByName("timestamped").modtime, should.Equal(testMTime))
+		assert.Loosely(t, dest.fileByName("rel_symlink").symlinkTarget, should.Equal("abc"))
+		assert.Loosely(t, dest.fileByName("abs_symlink").symlinkTarget, should.Equal("/abc/def"))
 
 		// Verify version file is correct.
 		goodVersionFile := `{
@@ -310,8 +316,8 @@ func TestPackageReading(t *testing.T) {
 				"package_name": "testing"
 			}`
 		}
-		So(string(dest.fileByName("subpath/version.json").Bytes()),
-			shouldBeSameJSONDict, goodVersionFile)
+		assert.Loosely(t, string(dest.fileByName("subpath/version.json").Bytes()),
+			shouldBeSameJSONDict(goodVersionFile))
 
 		// Verify manifest file is correct.
 		goodManifest := `{
@@ -379,11 +385,11 @@ func TestPackageReading(t *testing.T) {
 				"hash": "XD6QlRyLX4Cj09wtPLAEQGacygrySk317U38Ku2d9zIC"
 			}`)
 		}
-		So(string(dest.fileByName(".cipdpkg/manifest.json").Bytes()),
-			shouldBeSameJSONDict, goodManifest)
+		assert.Loosely(t, string(dest.fileByName(".cipdpkg/manifest.json").Bytes()),
+			shouldBeSameJSONDict(goodManifest))
 	})
 
-	Convey("ExtractFiles handles v1 packages correctly", t, func() {
+	ftt.Run("ExtractFiles handles v1 packages correctly", t, func(t *ftt.Test) {
 		// ZipInfos in packages with format_version "1" always have the writable bit
 		// set, and always have 0 timestamp. During the extraction of such package,
 		// the writable bit should be cleared, and the timestamp should not be reset
@@ -410,21 +416,21 @@ func TestPackageReading(t *testing.T) {
 			CompressionLevel:      5,
 			OverrideFormatVersion: "1",
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		// Extract files.
 		inst, err := OpenInstance(ctx, bytesFile(&out), OpenInstanceOpts{
 			VerificationMode: CalculateHash,
 			HashAlgo:         api.HashAlgo_SHA256,
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		defer inst.Close(ctx, false)
 
 		dest := &testDestination{}
 		_, err = ExtractFilesTxn(ctx, inst.Files(), dest, 16, pkg.WithManifest, "")
-		So(err, ShouldBeNil)
-		So(dest.beginCalls, ShouldEqual, 1)
-		So(dest.endCalls, ShouldEqual, 1)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, dest.beginCalls, should.Equal(1))
+		assert.Loosely(t, dest.endCalls, should.Equal(1))
 
 		// Verify file list, file data and flags are correct.
 		names := make([]string, len(dest.files))
@@ -432,16 +438,16 @@ func TestPackageReading(t *testing.T) {
 			names[i] = f.name
 		}
 		if runtime.GOOS != "windows" {
-			So(names, shouldContainSameStrings, []string{
+			assert.Loosely(t, names, shouldContainSameStrings([]string{
 				"testing/qwerty",
 				"abc",
 				"rel_symlink",
 				"abs_symlink",
 				"subpath/version.json",
 				".cipdpkg/manifest.json",
-			})
+			}))
 		} else {
-			So(names, shouldContainSameStrings, []string{
+			assert.Loosely(t, names, shouldContainSameStrings([]string{
 				"testing/qwerty",
 				"abc",
 				"rel_symlink",
@@ -450,14 +456,14 @@ func TestPackageReading(t *testing.T) {
 				"system",
 				"subpath/version.json",
 				".cipdpkg/manifest.json",
-			})
+			}))
 		}
 
-		So(string(dest.fileByName("testing/qwerty").Bytes()), ShouldEqual, "12345")
-		So(dest.fileByName("abc").executable, ShouldBeTrue)
-		So(dest.fileByName("abc").writable, ShouldBeFalse)
-		So(dest.fileByName("rel_symlink").symlinkTarget, ShouldEqual, "abc")
-		So(dest.fileByName("abs_symlink").symlinkTarget, ShouldEqual, "/abc/def")
+		assert.Loosely(t, string(dest.fileByName("testing/qwerty").Bytes()), should.Equal("12345"))
+		assert.Loosely(t, dest.fileByName("abc").executable, should.BeTrue)
+		assert.Loosely(t, dest.fileByName("abc").writable, should.BeFalse)
+		assert.Loosely(t, dest.fileByName("rel_symlink").symlinkTarget, should.Equal("abc"))
+		assert.Loosely(t, dest.fileByName("abs_symlink").symlinkTarget, should.Equal("/abc/def"))
 
 		// Verify version file is correct.
 		goodVersionFile := `{
@@ -470,8 +476,8 @@ func TestPackageReading(t *testing.T) {
 				"package_name": "testing"
 			}`
 		}
-		So(string(dest.fileByName("subpath/version.json").Bytes()),
-			shouldBeSameJSONDict, goodVersionFile)
+		assert.Loosely(t, string(dest.fileByName("subpath/version.json").Bytes()),
+			shouldBeSameJSONDict(goodVersionFile))
 
 		// Verify manifest file is correct.
 		goodManifest := `{
@@ -527,8 +533,8 @@ func TestPackageReading(t *testing.T) {
 				"hash": "JlgQS4Xa4D7f94PYzpQcvgPsDfQqySYVlUBBYfF6x8sC"
 			}`)
 		}
-		So(string(dest.fileByName(".cipdpkg/manifest.json").Bytes()),
-			shouldBeSameJSONDict, goodManifest)
+		assert.Loosely(t, string(dest.fileByName(".cipdpkg/manifest.json").Bytes()),
+			shouldBeSameJSONDict(goodManifest))
 	})
 }
 

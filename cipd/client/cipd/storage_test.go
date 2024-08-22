@@ -19,7 +19,6 @@ import (
 	"context"
 	"crypto/sha256"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -32,14 +31,15 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging/gologger"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestUpload(t *testing.T) {
 	ctx := makeTestContext()
 
-	Convey("Upload full flow", t, func(c C) {
+	ftt.Run("Upload full flow", t, func(c *ftt.Test) {
 		storage := mockStorageImpl(c, []expectedHTTPCall{
 			{
 				Method:  "PUT",
@@ -87,22 +87,20 @@ func TestUpload(t *testing.T) {
 			},
 		})
 		err := storage.upload(ctx, "http://localhost/upl", bytes.NewReader([]byte("0123456789abc")))
-		So(err, ShouldBeNil)
+		assert.Loosely(c, err, should.BeNil)
 	})
 }
 
 func TestDownload(t *testing.T) {
 	ctx := makeTestContext()
 
-	Convey("With temp directory", t, func() {
-		tempDir, err := ioutil.TempDir("", "cipd_test")
-		So(err, ShouldBeNil)
-		defer os.RemoveAll(tempDir)
+	ftt.Run("With temp directory", t, func(t *ftt.Test) {
+		tempDir := t.TempDir()
 		tempFile := filepath.Join(tempDir, "pkg")
 
-		Convey("Download full flow", func(c C) {
+		t.Run("Download full flow", func(c *ftt.Test) {
 			out, err := os.OpenFile(tempFile, os.O_RDWR|os.O_CREATE, 0666)
-			So(err, ShouldBeNil)
+			assert.Loosely(c, err, should.BeNil)
 			defer out.Close()
 
 			storage := mockStorageImpl(c, []expectedHTTPCall{
@@ -122,13 +120,13 @@ func TestDownload(t *testing.T) {
 			})
 			h := sha256.New()
 			err = storage.download(ctx, "http://localhost/dwn", out, h)
-			So(err, ShouldBeNil)
+			assert.Loosely(c, err, should.BeNil)
 
 			_, _ = out.Seek(0, io.SeekStart)
 			fetched, err := io.ReadAll(out)
-			So(err, ShouldBeNil)
-			So(string(fetched), ShouldEqual, "file data")
-			So(common.HexDigest(h), ShouldEqual, "86f3c70fb6673cf303d2206db5f23c237b665d5df9d3e44efef5114845fc9f59")
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, string(fetched), should.Equal("file data"))
+			assert.Loosely(c, common.HexDigest(h), should.Equal("86f3c70fb6673cf303d2206db5f23c237b665d5df9d3e44efef5114845fc9f59"))
 		})
 	})
 }
@@ -143,10 +141,10 @@ func makeTestContext() context.Context {
 	return gologger.StdConfig.Use(ctx)
 }
 
-func mockStorageImpl(c C, expectations []expectedHTTPCall) *storageImpl {
+func mockStorageImpl(t testing.TB, expectations []expectedHTTPCall) *storageImpl {
 	return &storageImpl{
 		chunkSize: 5,
-		client:    mockClient(c, expectations),
+		client:    mockClient(t, expectations),
 	}
 }
 
@@ -162,16 +160,16 @@ type expectedHTTPCall struct {
 }
 
 // mockClient returns http.Client that hits the given mocks.
-func mockClient(c C, expectations []expectedHTTPCall) *http.Client {
-	handler := &expectedHTTPCallHandler{c, expectations, 0}
+func mockClient(t testing.TB, expectations []expectedHTTPCall) *http.Client {
+	handler := &expectedHTTPCallHandler{t, expectations, 0}
 	server := httptest.NewServer(handler)
-	Reset(func() {
+	t.Cleanup(func() {
 		server.Close()
 		// All expected calls should be made.
 		if handler.index != len(handler.calls) {
-			c.Printf("Unfinished calls: %v\n", handler.calls[handler.index:])
+			t.Logf("Unfinished calls: %v\n", handler.calls[handler.index:])
 		}
-		c.So(handler.index, ShouldEqual, len(handler.calls))
+		assert.That(t, handler.index, should.Equal(len(handler.calls)))
 	})
 	return &http.Client{
 		Transport: &http.Transport{
@@ -184,7 +182,7 @@ func mockClient(c C, expectations []expectedHTTPCall) *http.Client {
 
 // expectedHTTPCallHandler is http.Handler that serves mocked HTTP calls.
 type expectedHTTPCallHandler struct {
-	c     C
+	t     testing.TB
 	calls []expectedHTTPCall
 	index int
 }
@@ -192,9 +190,9 @@ type expectedHTTPCallHandler struct {
 func (s *expectedHTTPCallHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Unexpected call?
 	if s.index == len(s.calls) {
-		s.c.Printf("Unexpected call: %v\n", r)
+		s.t.Logf("Unexpected call: %v\n", r)
 	}
-	s.c.So(s.index, ShouldBeLessThan, len(s.calls))
+	assert.That(s.t, s.index, should.BeLessThan(len(s.calls)))
 
 	// Fill in defaults.
 	exp := s.calls[s.index]
@@ -210,7 +208,7 @@ func (s *expectedHTTPCallHandler) ServeHTTP(w http.ResponseWriter, r *http.Reque
 
 	// Read body and essential headers.
 	body, err := io.ReadAll(r.Body)
-	s.c.So(err, ShouldBeNil)
+	assert.That(s.t, err, should.ErrLike(nil))
 	ignorelist := map[string]bool{
 		"Accept-Encoding": true,
 		"Content-Length":  true,
@@ -226,11 +224,11 @@ func (s *expectedHTTPCallHandler) ServeHTTP(w http.ResponseWriter, r *http.Reque
 	}
 
 	// Check that request is what it is expected to be.
-	s.c.So(r.Method, ShouldEqual, exp.Method)
-	s.c.So(r.URL.Path, ShouldEqual, exp.Path)
-	s.c.So(r.URL.Query(), ShouldResemble, exp.Query)
-	s.c.So(headers, ShouldResemble, exp.Headers)
-	s.c.So(string(body), ShouldEqual, exp.Body)
+	assert.That(s.t, r.Method, should.Equal(exp.Method))
+	assert.That(s.t, r.URL.Path, should.Equal(exp.Path))
+	assert.That(s.t, r.URL.Query(), should.Match(exp.Query))
+	assert.That(s.t, headers, should.Match(exp.Headers))
+	assert.That(s.t, string(body), should.Equal(exp.Body))
 
 	// Mocked reply.
 	if exp.Status != 0 {

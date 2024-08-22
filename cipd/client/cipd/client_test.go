@@ -36,6 +36,9 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/system/environ"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/client/cipd/builder"
@@ -47,10 +50,6 @@ import (
 	"go.chromium.org/luci/cipd/client/cipd/reader"
 	"go.chromium.org/luci/cipd/client/cipd/template"
 	"go.chromium.org/luci/cipd/common"
-
-	. "github.com/smartystreets/goconvey/convey"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -59,11 +58,11 @@ import (
 func TestFetchACL(t *testing.T) {
 	t.Parallel()
 
-	Convey("With mocks", t, func(c C) {
+	ftt.Run("With mocks", t, func(c *ftt.Test) {
 		ctx := context.Background()
 		client, _, repo, _ := mockedCipdClient(c)
 
-		Convey("Works", func() {
+		c.Run("Works", func(c *ftt.Test) {
 			repo.expect(rpcCall{
 				method: "GetInheritedPrefixMetadata",
 				in:     &api.PrefixRequest{Prefix: "a/b/c"},
@@ -80,30 +79,30 @@ func TestFetchACL(t *testing.T) {
 			})
 
 			acl, err := client.FetchACL(ctx, "a/b/c")
-			So(err, ShouldBeNil)
+			assert.Loosely(c, err, should.BeNil)
 
-			So(acl, ShouldResemble, []PackageACL{
+			assert.Loosely(c, acl, should.Resemble([]PackageACL{
 				{
 					PackagePath: "a",
 					Role:        "READER",
 					Principals:  []string{"group:a"},
 				},
-			})
+			}))
 		})
 
-		Convey("Bad prefix", func() {
+		c.Run("Bad prefix", func(c *ftt.Test) {
 			_, err := client.FetchACL(ctx, "a/b////")
-			So(err, ShouldErrLike, "invalid package prefix")
+			assert.Loosely(c, err, should.ErrLike("invalid package prefix"))
 		})
 
-		Convey("Error response", func() {
+		c.Run("Error response", func(c *ftt.Test) {
 			repo.expect(rpcCall{
 				method: "GetInheritedPrefixMetadata",
 				in:     &api.PrefixRequest{Prefix: "a/b/c"},
 				err:    status.Errorf(codes.PermissionDenied, "blah error"),
 			})
 			_, err := client.FetchACL(ctx, "a/b/c")
-			So(err, ShouldErrLike, "blah error")
+			assert.Loosely(c, err, should.ErrLike("blah error"))
 		})
 	})
 }
@@ -111,11 +110,11 @@ func TestFetchACL(t *testing.T) {
 func TestModifyACL(t *testing.T) {
 	t.Parallel()
 
-	Convey("With mocks", t, func(c C) {
+	ftt.Run("With mocks", t, func(c *ftt.Test) {
 		ctx := context.Background()
 		client, _, repo, _ := mockedCipdClient(c)
 
-		Convey("Modifies existing", func() {
+		c.Run("Modifies existing", func(c *ftt.Test) {
 			repo.expect(rpcCall{
 				method: "GetPrefixMetadata",
 				in:     &api.PrefixRequest{Prefix: "a"},
@@ -136,12 +135,12 @@ func TestModifyACL(t *testing.T) {
 				out: &api.PrefixMetadata{}, // ignored
 			})
 
-			So(client.ModifyACL(ctx, "a", []PackageACLChange{
+			assert.Loosely(c, client.ModifyACL(ctx, "a", []PackageACLChange{
 				{Action: RevokeRole, Role: "READER", Principal: "group:a"},
-			}), ShouldBeNil)
+			}), should.BeNil)
 		})
 
-		Convey("Creates new", func() {
+		c.Run("Creates new", func(c *ftt.Test) {
 			repo.expect(rpcCall{
 				method: "GetPrefixMetadata",
 				in:     &api.PrefixRequest{Prefix: "a"},
@@ -158,12 +157,12 @@ func TestModifyACL(t *testing.T) {
 				out: &api.PrefixMetadata{}, // ignored
 			})
 
-			So(client.ModifyACL(ctx, "a", []PackageACLChange{
+			assert.Loosely(c, client.ModifyACL(ctx, "a", []PackageACLChange{
 				{Action: GrantRole, Role: "READER", Principal: "group:a"},
-			}), ShouldBeNil)
+			}), should.BeNil)
 		})
 
-		Convey("Noop update", func() {
+		c.Run("Noop update", func(c *ftt.Test) {
 			repo.expect(rpcCall{
 				method: "GetPrefixMetadata",
 				in:     &api.PrefixRequest{Prefix: "a"},
@@ -176,26 +175,26 @@ func TestModifyACL(t *testing.T) {
 				},
 			})
 
-			So(client.ModifyACL(ctx, "a", []PackageACLChange{
+			assert.Loosely(c, client.ModifyACL(ctx, "a", []PackageACLChange{
 				{Action: GrantRole, Role: "READER", Principal: "group:a"},
-			}), ShouldBeNil)
+			}), should.BeNil)
 		})
 
 		someChanges := []PackageACLChange{
 			{Action: RevokeRole, Role: "READER", Principal: "group:a"},
 		}
 
-		Convey("Bad prefix", func() {
-			So(client.ModifyACL(ctx, "a/b////", someChanges), ShouldErrLike, "invalid package prefix")
+		c.Run("Bad prefix", func(c *ftt.Test) {
+			assert.Loosely(c, client.ModifyACL(ctx, "a/b////", someChanges), should.ErrLike("invalid package prefix"))
 		})
 
-		Convey("Error response", func() {
+		c.Run("Error response", func(c *ftt.Test) {
 			repo.expect(rpcCall{
 				method: "GetPrefixMetadata",
 				in:     &api.PrefixRequest{Prefix: "a/b/c"},
 				err:    status.Errorf(codes.PermissionDenied, "blah error"),
 			})
-			So(client.ModifyACL(ctx, "a/b/c", someChanges), ShouldErrLike, "blah error")
+			assert.Loosely(c, client.ModifyACL(ctx, "a/b/c", someChanges), should.ErrLike("blah error"))
 		})
 	})
 }
@@ -203,11 +202,11 @@ func TestModifyACL(t *testing.T) {
 func TestFetchRoles(t *testing.T) {
 	t.Parallel()
 
-	Convey("With mocks", t, func(c C) {
+	ftt.Run("With mocks", t, func(c *ftt.Test) {
 		ctx := context.Background()
 		client, _, repo, _ := mockedCipdClient(c)
 
-		Convey("Works", func() {
+		c.Run("Works", func(c *ftt.Test) {
 			repo.expect(rpcCall{
 				method: "GetRolesInPrefix",
 				in:     &api.PrefixRequest{Prefix: "a/b/c"},
@@ -221,23 +220,23 @@ func TestFetchRoles(t *testing.T) {
 			})
 
 			roles, err := client.FetchRoles(ctx, "a/b/c")
-			So(err, ShouldBeNil)
-			So(roles, ShouldResemble, []string{"OWNER", "WRITER", "READER"})
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, roles, should.Resemble([]string{"OWNER", "WRITER", "READER"}))
 		})
 
-		Convey("Bad prefix", func() {
+		c.Run("Bad prefix", func(c *ftt.Test) {
 			_, err := client.FetchRoles(ctx, "a/b////")
-			So(err, ShouldErrLike, "invalid package prefix")
+			assert.Loosely(c, err, should.ErrLike("invalid package prefix"))
 		})
 
-		Convey("Error response", func() {
+		c.Run("Error response", func(c *ftt.Test) {
 			repo.expect(rpcCall{
 				method: "GetRolesInPrefix",
 				in:     &api.PrefixRequest{Prefix: "a/b/c"},
 				err:    status.Errorf(codes.PermissionDenied, "blah error"),
 			})
 			_, err := client.FetchRoles(ctx, "a/b/c")
-			So(err, ShouldErrLike, "blah error")
+			assert.Loosely(c, err, should.ErrLike("blah error"))
 		})
 	})
 }
@@ -245,11 +244,11 @@ func TestFetchRoles(t *testing.T) {
 func TestFetchRolesOnBehalfOf(t *testing.T) {
 	t.Parallel()
 
-	Convey("With mocks", t, func(c C) {
+	ftt.Run("With mocks", t, func(c *ftt.Test) {
 		ctx := context.Background()
 		client, _, repo, _ := mockedCipdClient(c)
 
-		Convey("Works", func() {
+		c.Run("Works", func(c *ftt.Test) {
 			repo.expect(rpcCall{
 				method: "GetRolesInPrefixOnBehalfOf",
 				in: &api.PrefixRequestOnBehalfOf{
@@ -266,23 +265,23 @@ func TestFetchRolesOnBehalfOf(t *testing.T) {
 			})
 			id := identity.Identity("anonymous:anonymous")
 			roles, err := client.FetchRolesOnBehalfOf(ctx, "a/b/c", id)
-			So(err, ShouldBeNil)
-			So(roles, ShouldResemble, []string{"OWNER", "WRITER", "READER"})
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, roles, should.Resemble([]string{"OWNER", "WRITER", "READER"}))
 		})
 
-		Convey("Bad prefix", func() {
+		c.Run("Bad prefix", func(c *ftt.Test) {
 			id := identity.Identity("anonymous:anonymous")
 			_, err := client.FetchRolesOnBehalfOf(ctx, "a/b////", id)
-			So(err, ShouldErrLike, "invalid package prefix")
+			assert.Loosely(c, err, should.ErrLike("invalid package prefix"))
 		})
 
-		Convey("Bad id", func() {
+		c.Run("Bad id", func(c *ftt.Test) {
 			id := identity.Identity("chicken")
 			_, err := client.FetchRolesOnBehalfOf(ctx, "a/b/c", id)
-			So(err, ShouldErrLike, "auth: bad identity string \"chicken\"")
+			assert.Loosely(c, err, should.ErrLike("auth: bad identity string \"chicken\""))
 		})
 
-		Convey("Error response", func() {
+		c.Run("Error response", func(c *ftt.Test) {
 			repo.expect(rpcCall{
 				method: "GetRolesInPrefixOnBehalfOf",
 				in: &api.PrefixRequestOnBehalfOf{
@@ -293,7 +292,7 @@ func TestFetchRolesOnBehalfOf(t *testing.T) {
 			})
 			id := identity.Identity("anonymous:anonymous")
 			_, err := client.FetchRolesOnBehalfOf(ctx, "a/b/c", id)
-			So(err, ShouldErrLike, "blah error")
+			assert.Loosely(c, err, should.ErrLike("blah error"))
 		})
 	})
 }
@@ -304,7 +303,7 @@ func TestFetchRolesOnBehalfOf(t *testing.T) {
 func TestRegisterInstance(t *testing.T) {
 	t.Parallel()
 
-	Convey("With mocks", t, func(c C) {
+	ftt.Run("With mocks", t, func(c *ftt.Test) {
 		ctx, tc := testclock.UseTime(context.Background(), testclock.TestTimeLocal)
 		tc.SetTimerCallback(func(d time.Duration, t clock.Timer) {
 			if testclock.HasTags(t, "cipd-sleeping") {
@@ -313,7 +312,7 @@ func TestRegisterInstance(t *testing.T) {
 		})
 
 		client, cas, repo, storage := mockedCipdClient(c)
-		inst := fakeInstance("pkg/inst")
+		inst := fakeInstance(t, "pkg/inst")
 
 		registerInstanceRPC := func(s api.RegistrationStatus, op *api.UploadOperation) rpcCall {
 			return rpcCall{
@@ -346,7 +345,7 @@ func TestRegisterInstance(t *testing.T) {
 			UploadUrl:   "http://example.com/zzz_op",
 		}
 
-		Convey("Happy path", func() {
+		c.Run("Happy path", func(c *ftt.Test) {
 			repo.expect(registerInstanceRPC(api.RegistrationStatus_NOT_UPLOADED, &op))
 			cas.expect(finishUploadRPC(op.OperationId, &api.UploadOperation{
 				Status: api.UploadStatus_VERIFYING,
@@ -356,52 +355,52 @@ func TestRegisterInstance(t *testing.T) {
 			}))
 			repo.expect(registerInstanceRPC(api.RegistrationStatus_REGISTERED, nil))
 
-			So(client.RegisterInstance(ctx, inst.Pin(), inst.Source(), 0), ShouldBeNil)
-			So(storage.getStored(op.UploadUrl), ShouldNotEqual, "")
+			assert.Loosely(c, client.RegisterInstance(ctx, inst.Pin(), inst.Source(), 0), should.BeNil)
+			assert.Loosely(c, storage.getStored(op.UploadUrl), should.NotEqual(""))
 		})
 
-		Convey("Already registered", func() {
+		c.Run("Already registered", func(c *ftt.Test) {
 			repo.expect(registerInstanceRPC(api.RegistrationStatus_ALREADY_REGISTERED, nil))
-			So(client.RegisterInstance(ctx, inst.Pin(), inst.Source(), 0), ShouldBeNil)
+			assert.Loosely(c, client.RegisterInstance(ctx, inst.Pin(), inst.Source(), 0), should.BeNil)
 		})
 
-		Convey("Registration error", func() {
+		c.Run("Registration error", func(c *ftt.Test) {
 			rpc := registerInstanceRPC(api.RegistrationStatus_ALREADY_REGISTERED, nil)
 			rpc.err = status.Errorf(codes.PermissionDenied, "denied blah")
 			repo.expect(rpc)
-			So(client.RegisterInstance(ctx, inst.Pin(), inst.Source(), 0), ShouldErrLike, "denied blah")
+			assert.Loosely(c, client.RegisterInstance(ctx, inst.Pin(), inst.Source(), 0), should.ErrLike("denied blah"))
 		})
 
-		Convey("Upload error", func() {
+		c.Run("Upload error", func(c *ftt.Test) {
 			storage.returnErr(fmt.Errorf("upload err blah"))
 			repo.expect(registerInstanceRPC(api.RegistrationStatus_NOT_UPLOADED, &op))
-			So(client.RegisterInstance(ctx, inst.Pin(), inst.Source(), 0), ShouldErrLike, "upload err blah")
+			assert.Loosely(c, client.RegisterInstance(ctx, inst.Pin(), inst.Source(), 0), should.ErrLike("upload err blah"))
 		})
 
-		Convey("Verification error", func() {
+		c.Run("Verification error", func(c *ftt.Test) {
 			repo.expect(registerInstanceRPC(api.RegistrationStatus_NOT_UPLOADED, &op))
 			cas.expect(finishUploadRPC(op.OperationId, &api.UploadOperation{
 				Status:       api.UploadStatus_ERRORED,
 				ErrorMessage: "baaaaad",
 			}))
-			So(client.RegisterInstance(ctx, inst.Pin(), inst.Source(), 0), ShouldErrLike, "baaaaad")
+			assert.Loosely(c, client.RegisterInstance(ctx, inst.Pin(), inst.Source(), 0), should.ErrLike("baaaaad"))
 		})
 
-		Convey("Confused backend", func() {
+		c.Run("Confused backend", func(c *ftt.Test) {
 			repo.expect(registerInstanceRPC(api.RegistrationStatus_NOT_UPLOADED, &op))
 			cas.expect(finishUploadRPC(op.OperationId, &api.UploadOperation{
 				Status: api.UploadStatus_PUBLISHED,
 			}))
 			repo.expect(registerInstanceRPC(api.RegistrationStatus_NOT_UPLOADED, &op))
-			So(client.RegisterInstance(ctx, inst.Pin(), inst.Source(), 0), ShouldErrLike, "servers asks us to upload it again")
+			assert.Loosely(c, client.RegisterInstance(ctx, inst.Pin(), inst.Source(), 0), should.ErrLike("servers asks us to upload it again"))
 		})
 
-		Convey("Verification timeout", func() {
+		c.Run("Verification timeout", func(c *ftt.Test) {
 			repo.expect(registerInstanceRPC(api.RegistrationStatus_NOT_UPLOADED, &op))
 			cas.expectMany(finishUploadRPC(op.OperationId, &api.UploadOperation{
 				Status: api.UploadStatus_VERIFYING,
 			}))
-			So(client.RegisterInstance(ctx, inst.Pin(), inst.Source(), 0), ShouldErrLike, "timeout while waiting")
+			assert.Loosely(c, client.RegisterInstance(ctx, inst.Pin(), inst.Source(), 0), should.ErrLike("timeout while waiting"))
 		})
 	})
 }
@@ -412,7 +411,7 @@ func TestRegisterInstance(t *testing.T) {
 func TestAttachingStuffWhenReady(t *testing.T) {
 	t.Parallel()
 
-	Convey("With mocks", t, func(c C) {
+	ftt.Run("With mocks", t, func(c *ftt.Test) {
 		ctx, tc := testclock.UseTime(context.Background(), testclock.TestTimeLocal)
 		tc.SetTimerCallback(func(d time.Duration, t clock.Timer) {
 			if testclock.HasTags(t, "cipd-sleeping") {
@@ -478,114 +477,114 @@ func TestAttachingStuffWhenReady(t *testing.T) {
 			{Key: "k2", Value: []byte("v2"), ContentType: "text/2"},
 		}
 
-		Convey("SetRefWhenReady happy path", func() {
+		c.Run("SetRefWhenReady happy path", func(c *ftt.Test) {
 			repo.expect(createRefRPC())
-			So(client.SetRefWhenReady(ctx, "zzz", pin), ShouldBeNil)
+			assert.Loosely(c, client.SetRefWhenReady(ctx, "zzz", pin), should.BeNil)
 		})
 
-		Convey("AttachTagsWhenReady happy path", func() {
+		c.Run("AttachTagsWhenReady happy path", func(c *ftt.Test) {
 			repo.expect(attachTagsRPC())
-			So(client.AttachTagsWhenReady(ctx, pin, []string{"k1:v1", "k2:v2"}), ShouldBeNil)
+			assert.Loosely(c, client.AttachTagsWhenReady(ctx, pin, []string{"k1:v1", "k2:v2"}), should.BeNil)
 		})
 
-		Convey("AttachMetadataWhenReady happy path", func() {
+		c.Run("AttachMetadataWhenReady happy path", func(c *ftt.Test) {
 			repo.expect(attachMetadataRPC())
-			So(client.AttachMetadataWhenReady(ctx, pin, cannedMD), ShouldBeNil)
+			assert.Loosely(c, client.AttachMetadataWhenReady(ctx, pin, cannedMD), should.BeNil)
 		})
 
-		Convey("SetRefWhenReady timeout", func() {
+		c.Run("SetRefWhenReady timeout", func(c *ftt.Test) {
 			rpc := createRefRPC()
 			rpc.err = status.Errorf(codes.FailedPrecondition, "not ready")
 			repo.expectMany(rpc)
-			So(client.SetRefWhenReady(ctx, "zzz", pin), ShouldErrLike, "timeout")
+			assert.Loosely(c, client.SetRefWhenReady(ctx, "zzz", pin), should.ErrLike("timeout"))
 		})
 
-		Convey("AttachTagsWhenReady timeout", func() {
+		c.Run("AttachTagsWhenReady timeout", func(c *ftt.Test) {
 			rpc := attachTagsRPC()
 			rpc.err = status.Errorf(codes.FailedPrecondition, "not ready")
 			repo.expectMany(rpc)
-			So(client.AttachTagsWhenReady(ctx, pin, []string{"k1:v1", "k2:v2"}), ShouldErrLike, "timeout")
+			assert.Loosely(c, client.AttachTagsWhenReady(ctx, pin, []string{"k1:v1", "k2:v2"}), should.ErrLike("timeout"))
 		})
 
-		Convey("AttachMetadataWhenReady timeout", func() {
+		c.Run("AttachMetadataWhenReady timeout", func(c *ftt.Test) {
 			rpc := attachMetadataRPC()
 			rpc.err = status.Errorf(codes.FailedPrecondition, "not ready")
 			repo.expectMany(rpc)
-			So(client.AttachMetadataWhenReady(ctx, pin, cannedMD), ShouldErrLike, "timeout")
+			assert.Loosely(c, client.AttachMetadataWhenReady(ctx, pin, cannedMD), should.ErrLike("timeout"))
 		})
 
-		Convey("SetRefWhenReady fatal RPC err", func() {
+		c.Run("SetRefWhenReady fatal RPC err", func(c *ftt.Test) {
 			rpc := createRefRPC()
 			rpc.err = status.Errorf(codes.PermissionDenied, "boo")
 			repo.expect(rpc)
-			So(client.SetRefWhenReady(ctx, "zzz", pin), ShouldErrLike, "boo")
+			assert.Loosely(c, client.SetRefWhenReady(ctx, "zzz", pin), should.ErrLike("boo"))
 		})
 
-		Convey("AttachTagsWhenReady fatal RPC err", func() {
+		c.Run("AttachTagsWhenReady fatal RPC err", func(c *ftt.Test) {
 			rpc := attachTagsRPC()
 			rpc.err = status.Errorf(codes.PermissionDenied, "boo")
 			repo.expect(rpc)
-			So(client.AttachTagsWhenReady(ctx, pin, []string{"k1:v1", "k2:v2"}), ShouldErrLike, "boo")
+			assert.Loosely(c, client.AttachTagsWhenReady(ctx, pin, []string{"k1:v1", "k2:v2"}), should.ErrLike("boo"))
 		})
 
-		Convey("AttachMetadataWhenReady fatal RPC err", func() {
+		c.Run("AttachMetadataWhenReady fatal RPC err", func(c *ftt.Test) {
 			rpc := attachMetadataRPC()
 			rpc.err = status.Errorf(codes.PermissionDenied, "boo")
 			repo.expect(rpc)
-			So(client.AttachMetadataWhenReady(ctx, pin, cannedMD), ShouldErrLike, "boo")
+			assert.Loosely(c, client.AttachMetadataWhenReady(ctx, pin, cannedMD), should.ErrLike("boo"))
 		})
 
-		Convey("SetRefWhenReady bad pin", func() {
-			So(client.SetRefWhenReady(ctx, "zzz", common.Pin{
+		c.Run("SetRefWhenReady bad pin", func(c *ftt.Test) {
+			assert.Loosely(c, client.SetRefWhenReady(ctx, "zzz", common.Pin{
 				PackageName: "////",
-			}), ShouldErrLike, "invalid package name")
+			}), should.ErrLike("invalid package name"))
 		})
 
-		Convey("SetRefWhenReady bad ref", func() {
-			So(client.SetRefWhenReady(ctx, "????", pin), ShouldErrLike, "invalid ref name")
+		c.Run("SetRefWhenReady bad ref", func(c *ftt.Test) {
+			assert.Loosely(c, client.SetRefWhenReady(ctx, "????", pin), should.ErrLike("invalid ref name"))
 		})
 
-		Convey("AttachTagsWhenReady noop", func() {
-			So(client.AttachTagsWhenReady(ctx, pin, nil), ShouldBeNil)
+		c.Run("AttachTagsWhenReady noop", func(c *ftt.Test) {
+			assert.Loosely(c, client.AttachTagsWhenReady(ctx, pin, nil), should.BeNil)
 		})
 
-		Convey("AttachTagsWhenReady bad pin", func() {
-			So(client.AttachTagsWhenReady(ctx, common.Pin{
+		c.Run("AttachTagsWhenReady bad pin", func(c *ftt.Test) {
+			assert.Loosely(c, client.AttachTagsWhenReady(ctx, common.Pin{
 				PackageName: "////",
-			}, []string{"k:v"}), ShouldErrLike, "invalid package name")
+			}, []string{"k:v"}), should.ErrLike("invalid package name"))
 		})
 
-		Convey("AttachTagsWhenReady bad tag", func() {
-			So(client.AttachTagsWhenReady(ctx, pin, []string{"good:tag", "bad_tag"}), ShouldErrLike,
-				"doesn't look like a tag")
+		c.Run("AttachTagsWhenReady bad tag", func(c *ftt.Test) {
+			assert.Loosely(c, client.AttachTagsWhenReady(ctx, pin, []string{"good:tag", "bad_tag"}), should.ErrLike(
+				"doesn't look like a tag"))
 		})
 
-		Convey("AttachMetadataWhenReady noop", func() {
-			So(client.AttachMetadataWhenReady(ctx, pin, nil), ShouldBeNil)
+		c.Run("AttachMetadataWhenReady noop", func(c *ftt.Test) {
+			assert.Loosely(c, client.AttachMetadataWhenReady(ctx, pin, nil), should.BeNil)
 		})
 
-		Convey("AttachMetadataWhenReady bad pin", func() {
-			So(client.AttachMetadataWhenReady(ctx, common.Pin{
+		c.Run("AttachMetadataWhenReady bad pin", func(c *ftt.Test) {
+			assert.Loosely(c, client.AttachMetadataWhenReady(ctx, common.Pin{
 				PackageName: "////",
-			}, cannedMD), ShouldErrLike, "invalid package name")
+			}, cannedMD), should.ErrLike("invalid package name"))
 		})
 
-		Convey("AttachMetadataWhenReady bad key", func() {
-			So(client.AttachMetadataWhenReady(ctx, pin, []Metadata{
+		c.Run("AttachMetadataWhenReady bad key", func(c *ftt.Test) {
+			assert.Loosely(c, client.AttachMetadataWhenReady(ctx, pin, []Metadata{
 				{Key: "ZZZ", Value: nil},
-			}), ShouldErrLike, "invalid metadata key")
+			}), should.ErrLike("invalid metadata key"))
 		})
 
-		Convey("AttachMetadataWhenReady bad value", func() {
-			So(client.AttachMetadataWhenReady(ctx, pin, []Metadata{
+		c.Run("AttachMetadataWhenReady bad value", func(c *ftt.Test) {
+			assert.Loosely(c, client.AttachMetadataWhenReady(ctx, pin, []Metadata{
 				{Key: "k", Value: bytes.Repeat([]byte{0}, 512*1024+1)},
-			}), ShouldErrLike, "the metadata value is too long")
+			}), should.ErrLike("the metadata value is too long"))
 		})
 
-		Convey("AttachMetadataWhenReady bad content type", func() {
-			So(client.AttachMetadataWhenReady(ctx, pin, []Metadata{
+		c.Run("AttachMetadataWhenReady bad content type", func(c *ftt.Test) {
+			assert.Loosely(c, client.AttachMetadataWhenReady(ctx, pin, []Metadata{
 				{Key: "k", ContentType: "zzz zzz"},
-			}), ShouldErrLike, "bad content type")
+			}), should.ErrLike("bad content type"))
 		})
 	})
 }
@@ -596,11 +595,11 @@ func TestAttachingStuffWhenReady(t *testing.T) {
 func TestListPackages(t *testing.T) {
 	t.Parallel()
 
-	Convey("With mocks", t, func(c C) {
+	ftt.Run("With mocks", t, func(c *ftt.Test) {
 		ctx := context.Background()
 		client, _, repo, _ := mockedCipdClient(c)
 
-		Convey("Works", func() {
+		c.Run("Works", func(c *ftt.Test) {
 			repo.expect(rpcCall{
 				method: "ListPrefix",
 				in: &api.ListPrefixRequest{
@@ -615,29 +614,29 @@ func TestListPackages(t *testing.T) {
 			})
 
 			out, err := client.ListPackages(ctx, "a/b/c", true, true)
-			So(err, ShouldBeNil)
-			So(out, ShouldResemble, []string{
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, out, should.Resemble([]string{
 				"a/b/c/d/",
 				"a/b/c/d/pkg1",
 				"a/b/c/d/pkg2",
 				"a/b/c/e/",
 				"a/b/c/e/f/",
-			})
+			}))
 		})
 
-		Convey("Bad prefix", func() {
+		c.Run("Bad prefix", func(c *ftt.Test) {
 			_, err := client.ListPackages(ctx, "a/b////", true, true)
-			So(err, ShouldErrLike, "invalid package prefix")
+			assert.Loosely(c, err, should.ErrLike("invalid package prefix"))
 		})
 
-		Convey("Error response", func() {
+		c.Run("Error response", func(c *ftt.Test) {
 			repo.expect(rpcCall{
 				method: "ListPrefix",
 				in:     &api.ListPrefixRequest{Prefix: "a/b/c"},
 				err:    status.Errorf(codes.PermissionDenied, "blah error"),
 			})
 			_, err := client.ListPackages(ctx, "a/b/c", false, false)
-			So(err, ShouldErrLike, "blah error")
+			assert.Loosely(c, err, should.ErrLike("blah error"))
 		})
 	})
 }
@@ -645,7 +644,7 @@ func TestListPackages(t *testing.T) {
 func TestSearchInstances(t *testing.T) {
 	t.Parallel()
 
-	Convey("With mocks", t, func(c C) {
+	ftt.Run("With mocks", t, func(c *ftt.Test) {
 		ctx := context.Background()
 		client, _, repo, _ := mockedCipdClient(c)
 
@@ -676,49 +675,49 @@ func TestSearchInstances(t *testing.T) {
 			}
 		}
 
-		Convey("Works", func() {
+		c.Run("Works", func(c *ftt.Test) {
 			repo.expect(searchInstanceRPC())
 
 			out, err := client.SearchInstances(ctx, "a/b", []string{"k1:v1", "k2:v2"})
-			So(err, ShouldBeNil)
-			So(out, ShouldResemble, common.PinSlice{
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, out, should.Resemble(common.PinSlice{
 				{PackageName: "a/b", InstanceID: fakeIID("0")},
 				{PackageName: "a/b", InstanceID: fakeIID("1")},
-			})
+			}))
 		})
 
-		Convey("Bad package name", func() {
+		c.Run("Bad package name", func(c *ftt.Test) {
 			_, err := client.SearchInstances(ctx, "a/b////", []string{"k:v"})
-			So(err, ShouldErrLike, "invalid package name")
+			assert.Loosely(c, err, should.ErrLike("invalid package name"))
 		})
 
-		Convey("No tags", func() {
+		c.Run("No tags", func(c *ftt.Test) {
 			_, err := client.SearchInstances(ctx, "a/b", nil)
-			So(err, ShouldErrLike, "at least one tag is required")
+			assert.Loosely(c, err, should.ErrLike("at least one tag is required"))
 		})
 
-		Convey("Bad tag", func() {
+		c.Run("Bad tag", func(c *ftt.Test) {
 			_, err := client.SearchInstances(ctx, "a/b", []string{"bad_tag"})
-			So(err, ShouldErrLike, "doesn't look like a tag")
+			assert.Loosely(c, err, should.ErrLike("doesn't look like a tag"))
 		})
 
-		Convey("Error response", func() {
+		c.Run("Error response", func(c *ftt.Test) {
 			rpc := searchInstanceRPC()
 			rpc.err = status.Errorf(codes.PermissionDenied, "blah error")
 			repo.expect(rpc)
 
 			_, err := client.SearchInstances(ctx, "a/b", []string{"k1:v1", "k2:v2"})
-			So(err, ShouldErrLike, "blah error")
+			assert.Loosely(c, err, should.ErrLike("blah error"))
 		})
 
-		Convey("No package", func() {
+		c.Run("No package", func(c *ftt.Test) {
 			rpc := searchInstanceRPC()
 			rpc.err = status.Errorf(codes.NotFound, "no such package")
 			repo.expect(rpc)
 
 			out, err := client.SearchInstances(ctx, "a/b", []string{"k1:v1", "k2:v2"})
-			So(out, ShouldHaveLength, 0)
-			So(err, ShouldBeNil)
+			assert.Loosely(c, out, should.HaveLength(0))
+			assert.Loosely(c, err, should.BeNil)
 		})
 	})
 }
@@ -726,7 +725,7 @@ func TestSearchInstances(t *testing.T) {
 func TestListInstances(t *testing.T) {
 	t.Parallel()
 
-	Convey("With mocks", t, func(c C) {
+	ftt.Run("With mocks", t, func(c *ftt.Test) {
 		ctx := context.Background()
 		client, _, repo, _ := mockedCipdClient(c)
 
@@ -746,7 +745,7 @@ func TestListInstances(t *testing.T) {
 			}
 		}
 
-		Convey("Works", func() {
+		c.Run("Works", func(c *ftt.Test) {
 			repo.expect(rpcCall{
 				method: "ListInstances",
 				in: &api.ListInstancesRequest{
@@ -771,31 +770,31 @@ func TestListInstances(t *testing.T) {
 			})
 
 			enum, err := client.ListInstances(ctx, "a/b")
-			So(err, ShouldBeNil)
+			assert.Loosely(c, err, should.BeNil)
 
 			all := []InstanceInfo{}
 			for {
 				batch, err := enum.Next(ctx, 2)
-				So(err, ShouldBeNil)
+				assert.Loosely(c, err, should.BeNil)
 				if len(batch) == 0 {
 					break
 				}
 				all = append(all, batch...)
 			}
 
-			So(all, ShouldResemble, []InstanceInfo{
+			assert.Loosely(c, all, should.Resemble([]InstanceInfo{
 				fakeInstInfo("0"),
 				fakeInstInfo("1"),
 				fakeInstInfo("2"),
-			})
+			}))
 		})
 
-		Convey("Bad package name", func() {
+		c.Run("Bad package name", func(c *ftt.Test) {
 			_, err := client.ListInstances(ctx, "a/b////")
-			So(err, ShouldErrLike, "invalid package name")
+			assert.Loosely(c, err, should.ErrLike("invalid package name"))
 		})
 
-		Convey("Error response", func() {
+		c.Run("Error response", func(c *ftt.Test) {
 			repo.expect(rpcCall{
 				method: "ListInstances",
 				in: &api.ListInstancesRequest{
@@ -805,9 +804,9 @@ func TestListInstances(t *testing.T) {
 				err: status.Errorf(codes.PermissionDenied, "blah error"),
 			})
 			enum, err := client.ListInstances(ctx, "a/b")
-			So(err, ShouldBeNil)
+			assert.Loosely(c, err, should.BeNil)
 			_, err = enum.Next(ctx, 100)
-			So(err, ShouldErrLike, "blah error")
+			assert.Loosely(c, err, should.ErrLike("blah error"))
 		})
 	})
 }
@@ -815,11 +814,11 @@ func TestListInstances(t *testing.T) {
 func TestFetchPackageRefs(t *testing.T) {
 	t.Parallel()
 
-	Convey("With mocks", t, func(c C) {
+	ftt.Run("With mocks", t, func(c *ftt.Test) {
 		ctx := context.Background()
 		client, _, repo, _ := mockedCipdClient(c)
 
-		Convey("Works", func() {
+		c.Run("Works", func(c *ftt.Test) {
 			repo.expect(rpcCall{
 				method: "ListRefs",
 				in:     &api.ListRefsRequest{Package: "a/b"},
@@ -838,26 +837,26 @@ func TestFetchPackageRefs(t *testing.T) {
 			})
 
 			out, err := client.FetchPackageRefs(ctx, "a/b")
-			So(err, ShouldBeNil)
-			So(out, ShouldResemble, []RefInfo{
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, out, should.Resemble([]RefInfo{
 				{Ref: "r1", InstanceID: fakeIID("0")},
 				{Ref: "r2", InstanceID: fakeIID("1")},
-			})
+			}))
 		})
 
-		Convey("Bad package name", func() {
+		c.Run("Bad package name", func(c *ftt.Test) {
 			_, err := client.FetchPackageRefs(ctx, "a/b////")
-			So(err, ShouldErrLike, "invalid package name")
+			assert.Loosely(c, err, should.ErrLike("invalid package name"))
 		})
 
-		Convey("Error response", func() {
+		c.Run("Error response", func(c *ftt.Test) {
 			repo.expect(rpcCall{
 				method: "ListRefs",
 				in:     &api.ListRefsRequest{Package: "a/b"},
 				err:    status.Errorf(codes.PermissionDenied, "blah error"),
 			})
 			_, err := client.FetchPackageRefs(ctx, "a/b")
-			So(err, ShouldErrLike, "blah error")
+			assert.Loosely(c, err, should.ErrLike("blah error"))
 		})
 	})
 }
@@ -865,7 +864,7 @@ func TestFetchPackageRefs(t *testing.T) {
 func TestDescribeInstance(t *testing.T) {
 	t.Parallel()
 
-	Convey("With mocks", t, func(c C) {
+	ftt.Run("With mocks", t, func(c *ftt.Test) {
 		ctx := context.Background()
 		client, _, repo, _ := mockedCipdClient(c)
 
@@ -874,7 +873,7 @@ func TestDescribeInstance(t *testing.T) {
 			InstanceID:  fakeIID("0"),
 		}
 
-		Convey("Works", func() {
+		c.Run("Works", func(c *ftt.Test) {
 			repo.expect(rpcCall{
 				method: "DescribeInstance",
 				in: &api.DescribeInstanceRequest{
@@ -895,20 +894,20 @@ func TestDescribeInstance(t *testing.T) {
 				DescribeRefs: true,
 				DescribeTags: true,
 			})
-			So(err, ShouldBeNil)
-			So(desc, ShouldResemble, &InstanceDescription{
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, desc, should.Resemble(&InstanceDescription{
 				InstanceInfo: InstanceInfo{Pin: pin},
-			})
+			}))
 		})
 
-		Convey("Bad pin", func() {
+		c.Run("Bad pin", func(c *ftt.Test) {
 			_, err := client.DescribeInstance(ctx, common.Pin{
 				PackageName: "a/b////",
 			}, nil)
-			So(err, ShouldErrLike, "invalid package name")
+			assert.Loosely(c, err, should.ErrLike("invalid package name"))
 		})
 
-		Convey("Error response", func() {
+		c.Run("Error response", func(c *ftt.Test) {
 			repo.expect(rpcCall{
 				method: "DescribeInstance",
 				in: &api.DescribeInstanceRequest{
@@ -918,7 +917,7 @@ func TestDescribeInstance(t *testing.T) {
 				err: status.Errorf(codes.PermissionDenied, "blah error"),
 			})
 			_, err := client.DescribeInstance(ctx, pin, nil)
-			So(err, ShouldErrLike, "blah error")
+			assert.Loosely(c, err, should.ErrLike("blah error"))
 		})
 	})
 }
@@ -926,7 +925,7 @@ func TestDescribeInstance(t *testing.T) {
 func TestDescribeClient(t *testing.T) {
 	t.Parallel()
 
-	Convey("With mocks", t, func(c C) {
+	ftt.Run("With mocks", t, func(c *ftt.Test) {
 		ctx := context.Background()
 		client, _, repo, _ := mockedCipdClient(c)
 
@@ -935,7 +934,7 @@ func TestDescribeClient(t *testing.T) {
 			InstanceID:  fakeIID("0"),
 		}
 
-		Convey("Works", func() {
+		c.Run("Works", func(c *ftt.Test) {
 			sha1Ref := &api.ObjectRef{
 				HashAlgo:  api.HashAlgo_SHA1,
 				HexDigest: strings.Repeat("a", 40),
@@ -970,24 +969,24 @@ func TestDescribeClient(t *testing.T) {
 			})
 
 			desc, err := client.DescribeClient(ctx, pin)
-			So(err, ShouldBeNil)
-			So(desc, ShouldResemble, &ClientDescription{
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, desc, should.Resemble(&ClientDescription{
 				InstanceInfo:       InstanceInfo{Pin: pin},
 				Size:               12345,
 				SignedURL:          "http://example.com/client_binary",
 				Digest:             sha256Ref, // best supported
 				AlternativeDigests: []*api.ObjectRef{sha1Ref, futureRef},
-			})
+			}))
 		})
 
-		Convey("Bad pin", func() {
+		c.Run("Bad pin", func(c *ftt.Test) {
 			_, err := client.DescribeClient(ctx, common.Pin{
 				PackageName: "a/b////",
 			})
-			So(err, ShouldErrLike, "invalid package name")
+			assert.Loosely(c, err, should.ErrLike("invalid package name"))
 		})
 
-		Convey("Error response", func() {
+		c.Run("Error response", func(c *ftt.Test) {
 			repo.expect(rpcCall{
 				method: "DescribeClient",
 				in: &api.DescribeClientRequest{
@@ -997,7 +996,7 @@ func TestDescribeClient(t *testing.T) {
 				err: status.Errorf(codes.PermissionDenied, "blah error"),
 			})
 			_, err := client.DescribeClient(ctx, pin)
-			So(err, ShouldErrLike, "blah error")
+			assert.Loosely(c, err, should.ErrLike("blah error"))
 		})
 	})
 }
@@ -1008,7 +1007,7 @@ func TestDescribeClient(t *testing.T) {
 func TestResolveVersion(t *testing.T) {
 	t.Parallel()
 
-	Convey("With mocks", t, func(c C) {
+	ftt.Run("With mocks", t, func(c *ftt.Test) {
 		ctx := context.Background()
 		client, _, repo, _ := mockedCipdClient(c)
 
@@ -1021,7 +1020,7 @@ func TestResolveVersion(t *testing.T) {
 			Instance: fakeObjectRef("0"),
 		}
 
-		Convey("Resolves ref", func() {
+		c.Run("Resolves ref", func(c *ftt.Test) {
 			repo.expect(rpcCall{
 				method: "ResolveVersion",
 				in: &api.ResolveVersionRequest{
@@ -1031,17 +1030,17 @@ func TestResolveVersion(t *testing.T) {
 				out: resolvedInst,
 			})
 			pin, err := client.ResolveVersion(ctx, "a/b", "latest")
-			So(err, ShouldBeNil)
-			So(pin, ShouldResemble, expectedPin)
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, pin, should.Resemble(expectedPin))
 		})
 
-		Convey("Skips resolving instance ID", func() {
+		c.Run("Skips resolving instance ID", func(c *ftt.Test) {
 			pin, err := client.ResolveVersion(ctx, "a/b", expectedPin.InstanceID)
-			So(err, ShouldBeNil)
-			So(pin, ShouldResemble, expectedPin)
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, pin, should.Resemble(expectedPin))
 		})
 
-		Convey("Resolves tag (no tag cache)", func() {
+		c.Run("Resolves tag (no tag cache)", func(c *ftt.Test) {
 			repo.expect(rpcCall{
 				method: "ResolveVersion",
 				in: &api.ResolveVersionRequest{
@@ -1051,11 +1050,11 @@ func TestResolveVersion(t *testing.T) {
 				out: resolvedInst,
 			})
 			pin, err := client.ResolveVersion(ctx, "a/b", "k:v")
-			So(err, ShouldBeNil)
-			So(pin, ShouldResemble, expectedPin)
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, pin, should.Resemble(expectedPin))
 		})
 
-		Convey("Resolves tag (with tag cache)", func() {
+		c.Run("Resolves tag (with tag cache)", func(c *ftt.Test) {
 			setupTagCache(client, c)
 
 			// Only one RPC, even though we did two ResolveVersion calls.
@@ -1070,26 +1069,26 @@ func TestResolveVersion(t *testing.T) {
 
 			// Cache miss.
 			pin, err := client.ResolveVersion(ctx, "a/b", "k:v")
-			So(err, ShouldBeNil)
-			So(pin, ShouldResemble, expectedPin)
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, pin, should.Resemble(expectedPin))
 
 			// Cache hit.
 			pin, err = client.ResolveVersion(ctx, "a/b", "k:v")
-			So(err, ShouldBeNil)
-			So(pin, ShouldResemble, expectedPin)
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, pin, should.Resemble(expectedPin))
 		})
 
-		Convey("Bad package name", func() {
+		c.Run("Bad package name", func(c *ftt.Test) {
 			_, err := client.ResolveVersion(ctx, "a/b////", "latest")
-			So(err, ShouldErrLike, "invalid package name")
+			assert.Loosely(c, err, should.ErrLike("invalid package name"))
 		})
 
-		Convey("Bad version identifier", func() {
+		c.Run("Bad version identifier", func(c *ftt.Test) {
 			_, err := client.ResolveVersion(ctx, "a/b", "???")
-			So(err, ShouldErrLike, "bad version")
+			assert.Loosely(c, err, should.ErrLike("bad version"))
 		})
 
-		Convey("Error response", func() {
+		c.Run("Error response", func(c *ftt.Test) {
 			repo.expect(rpcCall{
 				method: "ResolveVersion",
 				in: &api.ResolveVersionRequest{
@@ -1099,7 +1098,7 @@ func TestResolveVersion(t *testing.T) {
 				err: status.Errorf(codes.FailedPrecondition, "conflict"),
 			})
 			_, err := client.ResolveVersion(ctx, "a/b", "k:v")
-			So(err, ShouldErrLike, "conflict")
+			assert.Loosely(c, err, should.ErrLike("conflict"))
 		})
 	})
 }
@@ -1119,97 +1118,101 @@ func TestEnsurePackage(t *testing.T) {
 	}
 	testFileBody := buf.String()
 
-	Convey("With mocks", t, func(c C) {
+	ftt.Run("With mocks", t, func(t *ftt.Test) {
 		ctx := makeTestContext()
-		client, _, repo, storage := mockedCipdClient(c)
+		client, _, repo, storage := mockedCipdClient(t)
 
 		body, pin := buildTestInstance("pkg", map[string]string{"test_name": testFileBody})
-		setupRemoteInstance(body, pin, repo, storage)
 
 		ensurePackages := func(ps common.PinSliceBySubdir) (ActionMap, error) {
 			return client.EnsurePackages(ctx, ps, nil)
 		}
 
-		Convey("EnsurePackages works", func() {
+		t.Run("EnsurePackages works", func(t *ftt.Test) {
+			setupRemoteInstance(body, pin, repo, storage)
+
 			_, err := ensurePackages(common.PinSliceBySubdir{"": {pin}})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			body, err = os.ReadFile(filepath.Join(client.Root, "test_name"))
-			So(err, ShouldBeNil)
-			So(string(body), ShouldEqual, testFileBody)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, string(body), should.Equal(testFileBody))
 		})
 
 		// on windows the ONLY install mode is copy, so this is pointless.
 		if platform.CurrentOS() != "windows" {
-			Convey("EnsurePackages works with OverrideInstallMode", func() {
+			t.Run("EnsurePackages works with OverrideInstallMode", func(t *ftt.Test) {
+				setupRemoteInstance(body, pin, repo, storage)
 				pins := common.PinSliceBySubdir{"": {pin}}
 				eo := &EnsureOptions{
 					Paranoia:            CheckPresence,
 					OverrideInstallMode: pkg.InstallModeCopy,
 				}
 				_, err := client.EnsurePackages(ctx, pins, eo)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				testFile := filepath.Join(client.Root, "test_name")
 				fi, err := os.Lstat(testFile)
-				So(err, ShouldBeNil)
-				So(fi.Mode().IsRegular(), ShouldBeTrue) // it's a file
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, fi.Mode().IsRegular(), should.BeTrue) // it's a file
 
 				// and can reverse the override
 				// setupRemoteInstance adds another mock call to GetInstanceURL
 				setupRemoteInstance(body, pin, repo, storage)
 				eo.OverrideInstallMode = ""
 				_, err = client.EnsurePackages(ctx, pins, eo)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				fi, err = os.Lstat(testFile)
-				So(err, ShouldBeNil)
-				So(fi.Mode().IsRegular(), ShouldBeFalse) // it's a symlink
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, fi.Mode().IsRegular(), should.BeFalse) // it's a symlink
 			})
 		}
 
-		Convey("EnsurePackages uses instance cache", func() {
-			cacheDir := setupInstanceCache(client, c)
+		t.Run("EnsurePackages uses instance cache", func(t *ftt.Test) {
+			setupRemoteInstance(body, pin, repo, storage)
+			cacheDir := setupInstanceCache(client, t)
 
 			// The initial fetch.
 			_, err := ensurePackages(common.PinSliceBySubdir{"1": {pin}})
-			So(err, ShouldBeNil)
-			So(storage.downloads(), ShouldEqual, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, storage.downloads(), should.Equal(1))
 
 			// The file is in the cache now.
 			_, err = os.Stat(filepath.Join(cacheDir, "instances", pin.InstanceID))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// The second fetch should use the instance cache (and thus make no
 			// additional RPCs).
 			_, err = ensurePackages(common.PinSliceBySubdir{"1": {pin}, "2": {pin}})
-			So(err, ShouldBeNil)
-			So(storage.downloads(), ShouldEqual, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, storage.downloads(), should.Equal(1))
 		})
 
-		Convey("EnsurePackages handles cache corruption", func() {
-			cacheDir := setupInstanceCache(client, c)
+		t.Run("EnsurePackages handles cache corruption", func(t *ftt.Test) {
+			setupRemoteInstance(body, pin, repo, storage)
+			cacheDir := setupInstanceCache(client, t)
 
 			// The initial fetch.
 			_, err := ensurePackages(common.PinSliceBySubdir{"1": {pin}})
-			So(err, ShouldBeNil)
-			So(storage.downloads(), ShouldEqual, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, storage.downloads(), should.Equal(1))
 
 			// The file is in the cache now. Corrupt it by writing a bunch of zeros
 			// in the middle.
 			f, err := os.OpenFile(filepath.Join(cacheDir, "instances", pin.InstanceID), os.O_RDWR, 0644)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			off, _ := f.Seek(1000, 0)
-			So(off, ShouldEqual, 1000)
+			assert.Loosely(t, off, should.Equal(1000))
 			_, err = f.Write(bytes.Repeat([]byte{0}, 100))
-			So(err, ShouldBeNil)
-			So(f.Close(), ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, f.Close(), should.BeNil)
 
 			// The second fetch should discard the cache and redownload the package.
 			setupRemoteInstance(body, pin, repo, storage)
 			_, err = ensurePackages(common.PinSliceBySubdir{"1": {pin}, "2": {pin}})
-			So(err, ShouldBeNil)
-			So(storage.downloads(), ShouldEqual, 2)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, storage.downloads(), should.Equal(2))
 		})
 
 		// TODO: Add more tests.
@@ -1234,12 +1237,8 @@ func TestMaybeUpdateClient(t *testing.T) {
 
 	ctx := context.Background()
 
-	Convey("MaybeUpdateClient", t, func(c C) {
-		tempDir, err := os.MkdirTemp("", "cipd_tag_cache")
-		c.So(err, ShouldBeNil)
-		c.Reset(func() {
-			os.RemoveAll(tempDir)
-		})
+	ftt.Run("MaybeUpdateClient", t, func(c *ftt.Test) {
+		tempDir := t.TempDir()
 
 		clientOpts, _, repo, storage := mockedClientOpts(c)
 
@@ -1264,12 +1263,12 @@ func TestMaybeUpdateClient(t *testing.T) {
 		}
 
 		writeFile := func(path, body string) {
-			So(os.WriteFile(path, []byte(body), 0777), ShouldBeNil)
+			assert.Loosely(c, os.WriteFile(path, []byte(body), 0777), should.BeNil)
 		}
 
 		readFile := func(path string) string {
 			body, err := os.ReadFile(path)
-			So(err, ShouldBeNil)
+			assert.Loosely(c, err, should.BeNil)
 			return string(body)
 		}
 
@@ -1328,28 +1327,28 @@ func TestMaybeUpdateClient(t *testing.T) {
 			expectDescribeClient(refs...)
 		}
 
-		Convey("Updates outdated client, warming cold caches", func() {
+		c.Run("Updates outdated client, warming cold caches", func(c *ftt.Test) {
 			// Should update 'outdated' to 'up-to-date' and warm up the tag cache.
 			expectRPCs()
 			pin, err := MaybeUpdateClient(ctx, clientOpts, "git:deadbeef", clientBin, nil)
-			So(err, ShouldBeNil)
-			So(pin, ShouldResemble, clientPin)
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, pin, should.Resemble(clientPin))
 
 			// Yep, updated.
-			So(readFile(clientBin), ShouldEqual, "up-to-date")
+			assert.Loosely(c, readFile(clientBin), should.Equal("up-to-date"))
 
 			// Also drops .cipd_version file.
 			verFile := filepath.Join(tempDir, ".versions", clientFileName+".cipd_version")
-			So(readFile(verFile), ShouldEqual,
-				fmt.Sprintf(`{"package_name":"%s","instance_id":"%s"}`, clientPin.PackageName, clientPin.InstanceID))
+			assert.Loosely(c, readFile(verFile), should.Equal(
+				fmt.Sprintf(`{"package_name":"%s","instance_id":"%s"}`, clientPin.PackageName, clientPin.InstanceID)))
 
 			// And the second update call does nothing and hits no RPCs, since the
 			// client is up-to-date and the tag cache is warm.
 			pin, err = MaybeUpdateClient(ctx, clientOpts, "git:deadbeef", clientBin, nil)
-			So(err, ShouldBeNil)
-			So(pin, ShouldResemble, clientPin)
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, pin, should.Resemble(clientPin))
 
-			Convey("Updates outdated client using warm cache", func() {
+			c.Run("Updates outdated client using warm cache", func(c *ftt.Test) {
 				writeFile(clientBin, "outdated")
 
 				// Should update 'outdated' to 'up-to-date'. It skips ResolveVersion,
@@ -1357,70 +1356,70 @@ func TestMaybeUpdateClient(t *testing.T) {
 				// the download URL.
 				expectDescribeClient()
 				pin, err := MaybeUpdateClient(ctx, clientOpts, "git:deadbeef", clientBin, nil)
-				So(err, ShouldBeNil)
-				So(pin, ShouldResemble, clientPin)
+				assert.Loosely(c, err, should.BeNil)
+				assert.Loosely(c, pin, should.Resemble(clientPin))
 
 				// Yep, updated.
-				So(readFile(clientBin), ShouldEqual, "up-to-date")
+				assert.Loosely(c, readFile(clientBin), should.Equal("up-to-date"))
 			})
 		})
 
-		Convey("Skips updating up-to-date client, warming the cache", func() {
+		c.Run("Skips updating up-to-date client, warming the cache", func(c *ftt.Test) {
 			writeFile(clientBin, "up-to-date")
 
 			// Should just warm the tag cache.
 			expectRPCs()
 			pin, err := MaybeUpdateClient(ctx, clientOpts, "git:deadbeef", clientBin, nil)
-			So(err, ShouldBeNil)
-			So(pin, ShouldResemble, clientPin)
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, pin, should.Resemble(clientPin))
 
 			// Also drops .cipd_version file.
 			verFile := filepath.Join(tempDir, ".versions", clientFileName+".cipd_version")
-			So(readFile(verFile), ShouldEqual,
-				fmt.Sprintf(`{"package_name":"%s","instance_id":"%s"}`, clientPin.PackageName, clientPin.InstanceID))
+			assert.Loosely(c, readFile(verFile), should.Equal(
+				fmt.Sprintf(`{"package_name":"%s","instance_id":"%s"}`, clientPin.PackageName, clientPin.InstanceID)))
 
 			// And the second update call does nothing and hits no RPCs, since the
 			// client is up-to-date and the tag cache is warm.
 			pin, err = MaybeUpdateClient(ctx, clientOpts, "git:deadbeef", clientBin, nil)
-			So(err, ShouldBeNil)
-			So(pin, ShouldResemble, clientPin)
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, pin, should.Resemble(clientPin))
 		})
 
-		Convey("Updates outdated client using digests file", func() {
+		c.Run("Updates outdated client using digests file", func(c *ftt.Test) {
 			dig := digests.ClientDigestsFile{}
 			dig.AddClientRef(platform, upToDateSHA256Ref)
 
 			// Should update 'outdated' to 'up-to-date' and warm up the tag cache.
 			expectRPCs()
 			pin, err := MaybeUpdateClient(ctx, clientOpts, "git:deadbeef", clientBin, &dig)
-			So(err, ShouldBeNil)
-			So(pin, ShouldResemble, clientPin)
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, pin, should.Resemble(clientPin))
 
 			// Yep, updated.
-			So(readFile(clientBin), ShouldEqual, "up-to-date")
+			assert.Loosely(c, readFile(clientBin), should.Equal("up-to-date"))
 
 			// And the second update call does nothing and hits no RPCs, since the
 			// client is up-to-date already.
 			pin, err = MaybeUpdateClient(ctx, clientOpts, "git:deadbeef", clientBin, &dig)
-			So(err, ShouldBeNil)
-			So(pin, ShouldResemble, clientPin)
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, pin, should.Resemble(clientPin))
 		})
 
-		Convey("Refuses to update if *.digests doesn't match what backend says", func() {
+		c.Run("Refuses to update if *.digests doesn't match what backend says", func(c *ftt.Test) {
 			dig := digests.ClientDigestsFile{}
 			dig.AddClientRef(platform, caclObjRef("something-else", api.HashAlgo_SHA256))
 
 			// Should refuse the update.
 			expectRPCs()
 			pin, err := MaybeUpdateClient(ctx, clientOpts, "git:deadbeef", clientBin, &dig)
-			So(err, ShouldErrLike, "is not in *.digests file")
-			So(pin, ShouldResemble, common.Pin{})
+			assert.Loosely(c, err, should.ErrLike("is not in *.digests file"))
+			assert.Loosely(c, pin, should.Resemble(common.Pin{}))
 
 			// The client file wasn't replaced.
-			So(readFile(clientBin), ShouldEqual, "outdated")
+			assert.Loosely(c, readFile(clientBin), should.Equal("outdated"))
 		})
 
-		Convey("Refuses to update on hash mismatch", func() {
+		c.Run("Refuses to update on hash mismatch", func(c *ftt.Test) {
 			expectedRef := caclObjRef("something-else", api.HashAlgo_SHA256)
 
 			dig := digests.ClientDigestsFile{}
@@ -1429,24 +1428,24 @@ func TestMaybeUpdateClient(t *testing.T) {
 			// Should refuse the update.
 			expectRPCs(expectedRef)
 			pin, err := MaybeUpdateClient(ctx, clientOpts, "git:deadbeef", clientBin, &dig)
-			So(err, ShouldErrLike, "file hash mismatch")
-			So(pin, ShouldResemble, common.Pin{})
+			assert.Loosely(c, err, should.ErrLike("file hash mismatch"))
+			assert.Loosely(c, pin, should.Resemble(common.Pin{}))
 
 			// The client file wasn't replaced.
-			So(readFile(clientBin), ShouldEqual, "outdated")
+			assert.Loosely(c, readFile(clientBin), should.Equal("outdated"))
 		})
 
-		Convey("Refuses to fetch unknown unpinned platform", func() {
+		c.Run("Refuses to fetch unknown unpinned platform", func(c *ftt.Test) {
 			dig := digests.ClientDigestsFile{}
 
 			// Should refuse the update.
 			expectRPCs()
 			pin, err := MaybeUpdateClient(ctx, clientOpts, "git:deadbeef", clientBin, &dig)
-			So(err, ShouldErrLike, "there's no supported hash for")
-			So(pin, ShouldResemble, common.Pin{})
+			assert.Loosely(c, err, should.ErrLike("there's no supported hash for"))
+			assert.Loosely(c, pin, should.Resemble(common.Pin{}))
 
 			// The client file wasn't replaced.
-			So(readFile(clientBin), ShouldEqual, "outdated")
+			assert.Loosely(c, readFile(clientBin), should.Equal("outdated"))
 		})
 	})
 }
@@ -1465,28 +1464,28 @@ func TestNewClientFromEnv(t *testing.T) {
 	ctx := context.Background()
 	ctx = environ.New(nil).SetInCtx(ctx)
 
-	Convey("Defaults", t, func() {
+	ftt.Run("Defaults", t, func(t *ftt.Test) {
 		cl, err := NewClientFromEnv(ctx, ClientOptions{
 			mockedConfigFile: "something-definitely-missing-and-thats-ok.cfg",
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		opts := cl.Options()
-		So(opts.ServiceURL, ShouldStartWith, "https://")
-		So(opts.Root, ShouldEqual, "")
-		So(opts.CacheDir, ShouldEqual, "")
-		So(opts.Versions, ShouldBeNil)
-		So(opts.AnonymousClient, ShouldEqual, http.DefaultClient)
-		So(opts.AuthenticatedClient, ShouldNotBeNil)
-		So(opts.MaxThreads, ShouldEqual, runtime.NumCPU())
-		So(opts.ParallelDownloads, ShouldEqual, 0) // replaced with DefaultParallelDownloads later
-		So(opts.UserAgent, ShouldEqual, UserAgent)
-		So(opts.LoginInstructions, ShouldNotBeEmpty)
-		So(opts.PluginsContext, ShouldEqual, ctx)
-		So(opts.AdmissionPlugin, ShouldBeNil)
+		assert.Loosely(t, opts.ServiceURL, should.HavePrefix("https://"))
+		assert.Loosely(t, opts.Root, should.BeEmpty)
+		assert.Loosely(t, opts.CacheDir, should.BeEmpty)
+		assert.Loosely(t, opts.Versions, should.BeNil)
+		assert.Loosely(t, opts.AnonymousClient, should.Equal(http.DefaultClient))
+		assert.Loosely(t, opts.AuthenticatedClient, should.NotBeNil)
+		assert.Loosely(t, opts.MaxThreads, should.Equal(runtime.NumCPU()))
+		assert.Loosely(t, opts.ParallelDownloads, should.BeZero) // replaced with DefaultParallelDownloads later
+		assert.Loosely(t, opts.UserAgent, should.Equal(UserAgent))
+		assert.Loosely(t, opts.LoginInstructions, should.NotBeEmpty)
+		assert.Loosely(t, opts.PluginsContext, should.Equal(ctx))
+		assert.Loosely(t, opts.AdmissionPlugin, should.BeNil)
 	})
 
-	Convey("With default config file", t, func() {
+	ftt.Run("With default config file", t, func(t *ftt.Test) {
 		cfg := filepath.Join(t.TempDir(), "cipd.cfg")
 		err := os.WriteFile(cfg, []byte(`
 		plugins: {
@@ -1500,15 +1499,15 @@ func TestNewClientFromEnv(t *testing.T) {
 				}
 			}
 		}`), 0600)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		Convey("Without CIPD_CONFIG_FILE", func() {
+		t.Run("Without CIPD_CONFIG_FILE", func(t *ftt.Test) {
 			cl, err := NewClientFromEnv(ctx, ClientOptions{mockedConfigFile: cfg})
-			So(err, ShouldBeNil)
-			So(cl.Options().AdmissionPlugin, ShouldResemble, []string{"something", "arg 1", "arg 2"})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cl.Options().AdmissionPlugin, should.Resemble([]string{"something", "arg 1", "arg 2"}))
 		})
 
-		Convey("With CIPD_CONFIG_FILE", func() {
+		t.Run("With CIPD_CONFIG_FILE", func(t *ftt.Test) {
 			cfg2 := filepath.Join(t.TempDir(), "cipd_2.cfg")
 			err := os.WriteFile(cfg2, []byte(`
 			plugins: {
@@ -1516,38 +1515,38 @@ func TestNewClientFromEnv(t *testing.T) {
 					cmd: "override"
 				}
 			}`), 0600)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			env := environ.FromCtx(ctx)
 			env.Set(EnvConfigFile, cfg2)
 			ctx := env.SetInCtx(ctx)
 
 			cl, err := NewClientFromEnv(ctx, ClientOptions{mockedConfigFile: cfg})
-			So(err, ShouldBeNil)
-			So(cl.Options().AdmissionPlugin, ShouldResemble, []string{"override"})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cl.Options().AdmissionPlugin, should.Resemble([]string{"override"}))
 		})
 
-		Convey("CIPD_CONFIG_FILE is empty", func() {
+		t.Run("CIPD_CONFIG_FILE is empty", func(t *ftt.Test) {
 			env := environ.FromCtx(ctx)
 			env.Set(EnvConfigFile, "")
 			ctx := env.SetInCtx(ctx)
 
 			cl, err := NewClientFromEnv(ctx, ClientOptions{mockedConfigFile: cfg})
-			So(err, ShouldBeNil)
-			So(cl.Options().AdmissionPlugin, ShouldResemble, []string{"something", "arg 1", "arg 2"})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cl.Options().AdmissionPlugin, should.Resemble([]string{"something", "arg 1", "arg 2"}))
 		})
 
-		Convey("CIPD_CONFIG_FILE is -", func() {
+		t.Run("CIPD_CONFIG_FILE is -", func(t *ftt.Test) {
 			env := environ.FromCtx(ctx)
 			env.Set(EnvConfigFile, "-")
 			ctx := env.SetInCtx(ctx)
 
 			cl, err := NewClientFromEnv(ctx, ClientOptions{mockedConfigFile: cfg})
-			So(err, ShouldBeNil)
-			So(cl.Options().AdmissionPlugin, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cl.Options().AdmissionPlugin, should.BeNil)
 		})
 
-		Convey("CIPD_CONFIG_FILE missing", func() {
+		t.Run("CIPD_CONFIG_FILE missing", func(t *ftt.Test) {
 			missingAbs, _ := filepath.Abs("something-definitely-missing.cfg")
 
 			env := environ.FromCtx(ctx)
@@ -1555,16 +1554,16 @@ func TestNewClientFromEnv(t *testing.T) {
 			ctx := env.SetInCtx(ctx)
 
 			_, err := NewClientFromEnv(ctx, ClientOptions{mockedConfigFile: cfg})
-			So(err, ShouldErrLike, "loading CIPD config")
+			assert.Loosely(t, err, should.ErrLike("loading CIPD config"))
 		})
 
-		Convey("CIPD_CONFIG_FILE is not absolute", func() {
+		t.Run("CIPD_CONFIG_FILE is not absolute", func(t *ftt.Test) {
 			env := environ.FromCtx(ctx)
 			env.Set(EnvConfigFile, "relative-not-allowed")
 			ctx := env.SetInCtx(ctx)
 
 			_, err := NewClientFromEnv(ctx, ClientOptions{mockedConfigFile: cfg})
-			So(err, ShouldErrLike, "must be an absolute path")
+			assert.Loosely(t, err, should.ErrLike("must be an absolute path"))
 		})
 	})
 }
@@ -1581,19 +1580,19 @@ func bytesInstance(data []byte) pkg.Source {
 	return bytesInstanceFile{bytes.NewReader(data)}
 }
 
-func fakeInstance(name string) pkg.Instance {
+func fakeInstance(t testing.TB, name string) pkg.Instance {
 	ctx := context.Background()
 	out := bytes.Buffer{}
 	_, err := builder.BuildInstance(ctx, builder.Options{
 		Output:      &out,
 		PackageName: name,
 	})
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil)
 	inst, err := reader.OpenInstance(ctx, bytesInstance(out.Bytes()), reader.OpenInstanceOpts{
 		VerificationMode: reader.CalculateHash,
 		HashAlgo:         api.HashAlgo_SHA256,
 	})
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil)
 	return inst
 }
 
@@ -1635,23 +1634,21 @@ func buildTestInstance(pkg string, blobs map[string]string) ([]byte, common.Pin)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-func mockedClientOpts(c C) (ClientOptions, *mockedStorageClient, *mockedRepoClient, *mockedStorage) {
+func mockedClientOpts(t testing.TB) (ClientOptions, *mockedStorageClient, *mockedRepoClient, *mockedStorage) {
 	cas := &mockedStorageClient{}
-	cas.C(c)
+	cas.TB(t)
 	repo := &mockedRepoClient{}
-	repo.C(c)
+	repo.TB(t)
 
 	// When the test case ends, make sure all expected RPCs were called.
-	c.Reset(func() {
+	t.Cleanup(func() {
 		cas.assertAllCalled()
 		repo.assertAllCalled()
 	})
 
 	storage := &mockedStorage{}
 
-	siteRoot, err := os.MkdirTemp("", "cipd_site_root")
-	c.So(err, ShouldBeNil)
-	c.Reset(func() { os.RemoveAll(siteRoot) })
+	siteRoot := t.TempDir()
 
 	return ClientOptions{
 		ServiceURL:  "https://service.example.com",
@@ -1662,30 +1659,25 @@ func mockedClientOpts(c C) (ClientOptions, *mockedStorageClient, *mockedRepoClie
 	}, cas, repo, storage
 }
 
-func mockedCipdClient(c C) (*clientImpl, *mockedStorageClient, *mockedRepoClient, *mockedStorage) {
-	opts, cas, repo, storage := mockedClientOpts(c)
+func mockedCipdClient(t testing.TB) (*clientImpl, *mockedStorageClient, *mockedRepoClient, *mockedStorage) {
+	opts, cas, repo, storage := mockedClientOpts(t)
 	client, err := NewClient(opts)
-	c.So(err, ShouldBeNil)
-	c.Reset(func() { client.Close(context.Background()) })
+	assert.Loosely(t, err, should.BeNil)
+	t.Cleanup(func() { client.Close(context.Background()) })
 	impl := client.(*clientImpl)
 	return impl, cas, repo, storage
 }
 
-func setupTagCache(cl *clientImpl, c C) string {
-	c.So(cl.tagCache, ShouldBeNil)
-	tempDir, err := os.MkdirTemp("", "cipd_tag_cache")
-	c.So(err, ShouldBeNil)
-	c.Reset(func() { os.RemoveAll(tempDir) })
+func setupTagCache(cl *clientImpl, t testing.TB) string {
+	assert.Loosely(t, cl.tagCache, should.BeNil)
+	tempDir := t.TempDir()
 	cl.tagCache = internal.NewTagCache(fs.NewFileSystem(tempDir, ""), "service.example.com")
 	return tempDir
 }
 
-func setupInstanceCache(cl *clientImpl, c C) string {
-	tempDir, err := os.MkdirTemp("", "cipd_instance_cache")
-	c.So(err, ShouldBeNil)
-	c.Reset(func() { os.RemoveAll(tempDir) })
-	cl.CacheDir = tempDir
-	return tempDir
+func setupInstanceCache(cl *clientImpl, t testing.TB) string {
+	cl.CacheDir = t.TempDir()
+	return cl.CacheDir
 }
 
 func setupRemoteInstance(body []byte, pin common.Pin, repo *mockedRepoClient, storage *mockedStorage) {

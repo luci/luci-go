@@ -19,7 +19,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -32,25 +31,18 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/memlogger"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/cipd/client/cipd/fs"
 	"go.chromium.org/luci/cipd/client/cipd/pkg"
 	. "go.chromium.org/luci/cipd/common"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func mkTempDir() string {
-	tempDir, err := ioutil.TempDir("", "cipd_test")
-	So(err, ShouldBeNil)
-	Reset(func() { os.RemoveAll(tempDir) })
-	return tempDir
-}
-
-func mkSymlink(target string, link string) {
+func mkSymlink(t testing.TB, target string, link string) {
 	err := os.Symlink(target, link)
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil)
 }
 
 func withMemLogger() context.Context {
@@ -71,32 +63,32 @@ func TestUtilities(t *testing.T) {
 
 	ctx := context.Background()
 
-	Convey("Given a temp directory", t, func() {
-		tempDir := mkTempDir()
+	ftt.Run("Given a temp directory", t, func(t *ftt.Test) {
+		tempDir := t.TempDir()
 
 		// Wrappers that accept paths relative to tempDir.
 		touch := func(rel string) {
 			abs := filepath.Join(tempDir, filepath.FromSlash(rel))
 			err := os.MkdirAll(filepath.Dir(abs), 0777)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			f, err := os.Create(abs)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			f.Close()
 		}
 		ensureLink := func(symlinkRel string, target string) {
 			err := os.Symlink(target, filepath.Join(tempDir, symlinkRel))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		}
 
-		Convey("scanPackageDir works with empty dir", func() {
+		t.Run("scanPackageDir works with empty dir", func(t *ftt.Test) {
 			err := os.Mkdir(filepath.Join(tempDir, "dir"), 0777)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			files, err := scanPackageDir(ctx, filepath.Join(tempDir, "dir"))
-			So(err, ShouldBeNil)
-			So(len(files), ShouldEqual, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(files), should.BeZero)
 		})
 
-		Convey("scanPackageDir works", func() {
+		t.Run("scanPackageDir works", func(t *ftt.Test) {
 			touch("unrelated/1")
 			touch("dir/a/1")
 			touch("dir/a/2")
@@ -106,7 +98,7 @@ func TestUtilities(t *testing.T) {
 
 			runScanPackageDir := func() sort.StringSlice {
 				files, err := scanPackageDir(ctx, filepath.Join(tempDir, "dir"))
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				names := sort.StringSlice{}
 				for _, f := range files {
 					names = append(names, f.Name)
@@ -117,22 +109,22 @@ func TestUtilities(t *testing.T) {
 
 			// Symlinks doesn't work on Windows, test them only on Posix.
 			if runtime.GOOS == "windows" {
-				Convey("works on Windows", func() {
-					So(runScanPackageDir(), ShouldResemble, sort.StringSlice{
+				t.Run("works on Windows", func(t *ftt.Test) {
+					assert.Loosely(t, runScanPackageDir(), should.Resemble(sort.StringSlice{
 						"a/1",
 						"a/2",
 						"b/1",
-					})
+					}))
 				})
 			} else {
-				Convey("works on Posix", func() {
+				t.Run("works on Posix", func(t *ftt.Test) {
 					ensureLink("dir/a/sym_link", "target")
-					So(runScanPackageDir(), ShouldResemble, sort.StringSlice{
+					assert.Loosely(t, runScanPackageDir(), should.Resemble(sort.StringSlice{
 						"a/1",
 						"a/2",
 						"a/sym_link",
 						"b/1",
-					})
+					}))
 				})
 			}
 		})
@@ -144,27 +136,27 @@ func TestDeployInstance(t *testing.T) {
 
 	ctx := context.Background()
 
-	Convey("Given a temp directory", t, func() {
-		tempDir := mkTempDir()
+	ftt.Run("Given a temp directory", t, func(t *ftt.Test) {
+		tempDir := t.TempDir()
 
-		Convey("Try to deploy package instance with bad package name", func() {
+		t.Run("Try to deploy package instance with bad package name", func(t *ftt.Test) {
 			_, err := New(tempDir).DeployInstance(
 				ctx, "", makeTestInstance("../test/package", nil, pkg.InstallModeCopy), "", 0)
-			So(err, ShouldErrLike, "invalid package name")
+			assert.Loosely(t, err, should.ErrLike("invalid package name"))
 		})
 
-		Convey("Try to deploy package instance with bad instance ID", func() {
+		t.Run("Try to deploy package instance with bad instance ID", func(t *ftt.Test) {
 			inst := makeTestInstance("test/package", nil, pkg.InstallModeCopy)
 			inst.instanceID = "../000000000"
 			_, err := New(tempDir).DeployInstance(ctx, "", inst, "", 0)
-			So(err, ShouldErrLike, "not a valid package instance ID")
+			assert.Loosely(t, err, should.ErrLike("not a valid package instance ID"))
 		})
 
-		Convey("Try to deploy package instance in bad subdir", func() {
+		t.Run("Try to deploy package instance in bad subdir", func(t *ftt.Test) {
 			inst := makeTestInstance("test/package", nil, pkg.InstallModeCopy)
 			inst.instanceID = "../000000000"
 			_, err := New(tempDir).DeployInstance(ctx, "/abspath", inst, "", 0)
-			So(err, ShouldErrLike, "bad subdir")
+			assert.Loosely(t, err, should.ErrLike("bad subdir"))
 		})
 	})
 }
@@ -178,29 +170,29 @@ func TestDeployInstanceSymlinkMode(t *testing.T) {
 
 	ctx := context.Background()
 
-	Convey("Given a temp directory", t, func() {
-		tempDir := mkTempDir()
+	ftt.Run("Given a temp directory", t, func(t *ftt.Test) {
+		tempDir := t.TempDir()
 
-		Convey("DeployInstance new empty package instance", func() {
+		t.Run("DeployInstance new empty package instance", func(t *ftt.Test) {
 			inst := makeTestInstance("test/package", nil, pkg.InstallModeSymlink)
 			info, err := New(tempDir).DeployInstance(ctx, "", inst, "", 0)
-			So(err, ShouldBeNil)
-			So(info, ShouldResemble, inst.Pin())
-			So(scanDir(tempDir), ShouldResemble, []string{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, info, should.Resemble(inst.Pin()))
+			assert.Loosely(t, scanDir(tempDir), should.Resemble([]string{
 				".cipd/pkgs/0/-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/.cipdpkg/manifest.json",
 				".cipd/pkgs/0/_current:-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC",
 				".cipd/pkgs/0/description.json",
 				".cipd/tmp!",
-			})
+			}))
 			fInfo, err := os.Stat(filepath.Join(tempDir, ".cipd", "pkgs", "0"))
-			So(err, ShouldBeNil)
-			So(fInfo.Mode(), ShouldEqual, os.FileMode(0755)|os.ModeDir)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, fInfo.Mode(), should.Equal(os.FileMode(0755)|os.ModeDir))
 
-			Convey("in subdir", func() {
+			t.Run("in subdir", func(t *ftt.Test) {
 				info, err := New(tempDir).DeployInstance(ctx, "subdir", inst, "", 0)
-				So(err, ShouldBeNil)
-				So(info, ShouldResemble, inst.Pin())
-				So(scanDir(tempDir), ShouldResemble, []string{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, info, should.Resemble(inst.Pin()))
+				assert.Loosely(t, scanDir(tempDir), should.Resemble([]string{
 					".cipd/pkgs/0/-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/.cipdpkg/manifest.json",
 					".cipd/pkgs/0/_current:-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC",
 					".cipd/pkgs/0/description.json",
@@ -209,11 +201,11 @@ func TestDeployInstanceSymlinkMode(t *testing.T) {
 					".cipd/pkgs/1/description.json",
 					".cipd/tmp!",
 					"subdir!",
-				})
+				}))
 			})
 		})
 
-		Convey("DeployInstance new non-empty package instance", func() {
+		t.Run("DeployInstance new non-empty package instance", func(t *ftt.Test) {
 			inst := makeTestInstance("test/package", []fs.File{
 				fs.NewTestFile("some/file/path", "data a", fs.TestFileOpts{}),
 				fs.NewTestFile("some/executable", "data b", fs.TestFileOpts{Executable: true}),
@@ -221,8 +213,8 @@ func TestDeployInstanceSymlinkMode(t *testing.T) {
 				fs.NewTestFile(".cipd/pkg/0/description.json", "{}", fs.TestFileOpts{}), // should be ignored
 			}, pkg.InstallModeSymlink)
 			_, err := New(tempDir).DeployInstance(ctx, "", inst, "", 0)
-			So(err, ShouldBeNil)
-			So(scanDir(tempDir), ShouldResemble, []string{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, scanDir(tempDir), should.Resemble([]string{
 				".cipd/pkgs/0/-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/.cipdpkg/manifest.json",
 				".cipd/pkgs/0/-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/some/executable*",
 				".cipd/pkgs/0/-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/some/file/path",
@@ -233,20 +225,20 @@ func TestDeployInstanceSymlinkMode(t *testing.T) {
 				"some/executable:../.cipd/pkgs/0/_current/some/executable",
 				"some/file/path:../../.cipd/pkgs/0/_current/some/file/path",
 				"some/symlink:../.cipd/pkgs/0/_current/some/symlink",
-			})
+			}))
 			// Ensure symlinks are actually traversable.
 			body, err := os.ReadFile(filepath.Join(tempDir, "some", "file", "path"))
-			So(err, ShouldBeNil)
-			So(string(body), ShouldEqual, "data a")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, string(body), should.Equal("data a"))
 			// Symlink to symlink is traversable too.
 			body, err = os.ReadFile(filepath.Join(tempDir, "some", "symlink"))
-			So(err, ShouldBeNil)
-			So(string(body), ShouldEqual, "data b")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, string(body), should.Equal("data b"))
 
-			Convey("in subdir", func() {
+			t.Run("in subdir", func(t *ftt.Test) {
 				_, err := New(tempDir).DeployInstance(ctx, "subdir", inst, "", 0)
-				So(err, ShouldBeNil)
-				So(scanDir(tempDir), ShouldResemble, []string{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, scanDir(tempDir), should.Resemble([]string{
 					".cipd/pkgs/0/-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/.cipdpkg/manifest.json",
 					".cipd/pkgs/0/-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/some/executable*",
 					".cipd/pkgs/0/-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/some/file/path",
@@ -266,20 +258,20 @@ func TestDeployInstanceSymlinkMode(t *testing.T) {
 					"subdir/some/executable:../../.cipd/pkgs/1/_current/some/executable",
 					"subdir/some/file/path:../../../.cipd/pkgs/1/_current/some/file/path",
 					"subdir/some/symlink:../../.cipd/pkgs/1/_current/some/symlink",
-				})
+				}))
 
 				// Ensure symlinks are actually traversable.
 				body, err := os.ReadFile(filepath.Join(tempDir, "subdir", "some", "file", "path"))
-				So(err, ShouldBeNil)
-				So(string(body), ShouldEqual, "data a")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, string(body), should.Equal("data a"))
 				// Symlink to symlink is traversable too.
 				body, err = os.ReadFile(filepath.Join(tempDir, "subdir", "some", "symlink"))
-				So(err, ShouldBeNil)
-				So(string(body), ShouldEqual, "data b")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, string(body), should.Equal("data b"))
 			})
 		})
 
-		Convey("DeployInstance new non-empty package instance (copy mode override)", func() {
+		t.Run("DeployInstance new non-empty package instance (copy mode override)", func(t *ftt.Test) {
 			inst := makeTestInstance("test/package", []fs.File{
 				fs.NewTestFile("some/file/path", "data a", fs.TestFileOpts{}),
 				fs.NewTestFile("some/executable", "data b", fs.TestFileOpts{Executable: true}),
@@ -287,8 +279,8 @@ func TestDeployInstanceSymlinkMode(t *testing.T) {
 				fs.NewTestFile(".cipd/pkg/0/description.json", "{}", fs.TestFileOpts{}), // should be ignored
 			}, pkg.InstallModeSymlink)
 			_, err := New(tempDir).DeployInstance(ctx, "", inst, pkg.InstallModeCopy, 0)
-			So(err, ShouldBeNil)
-			So(scanDir(tempDir), ShouldResemble, []string{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, scanDir(tempDir), should.Resemble([]string{
 				".cipd/pkgs/0/-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/.cipdpkg/manifest.json",
 				".cipd/pkgs/0/_current:-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC",
 				".cipd/pkgs/0/description.json",
@@ -296,34 +288,34 @@ func TestDeployInstanceSymlinkMode(t *testing.T) {
 				"some/executable*",
 				"some/file/path",
 				"some/symlink:executable",
-			})
+			}))
 			// Ensure symlinks are actually traversable.
 			body, err := os.ReadFile(filepath.Join(tempDir, "some", "file", "path"))
-			So(err, ShouldBeNil)
-			So(string(body), ShouldEqual, "data a")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, string(body), should.Equal("data a"))
 			// Symlink to symlink is traversable too.
 			body, err = os.ReadFile(filepath.Join(tempDir, "some", "symlink"))
-			So(err, ShouldBeNil)
-			So(string(body), ShouldEqual, "data b")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, string(body), should.Equal("data b"))
 			// manifest lists actual install mode
 			manifest, err := New(tempDir).(*deployerImpl).readManifest(
 				ctx, filepath.Join(tempDir, ".cipd/pkgs/0/-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"))
-			So(err, ShouldBeNil)
-			So(manifest.InstallMode, ShouldEqual, pkg.InstallModeSymlink)
-			So(manifest.ActualInstallMode, ShouldEqual, pkg.InstallModeCopy)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, manifest.InstallMode, should.Equal(pkg.InstallModeSymlink))
+			assert.Loosely(t, manifest.ActualInstallMode, should.Equal(pkg.InstallModeCopy))
 		})
 
-		Convey("Redeploy same package instance", func() {
+		t.Run("Redeploy same package instance", func(t *ftt.Test) {
 			inst := makeTestInstance("test/package", []fs.File{
 				fs.NewTestFile("some/file/path", "data a", fs.TestFileOpts{}),
 				fs.NewTestFile("some/executable", "data b", fs.TestFileOpts{Executable: true}),
 				fs.NewTestSymlink("some/symlink", "executable"),
 			}, pkg.InstallModeSymlink)
 			_, err := New(tempDir).DeployInstance(ctx, "", inst, "", 0)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			_, err = New(tempDir).DeployInstance(ctx, "", inst, "", 0)
-			So(err, ShouldBeNil)
-			So(scanDir(tempDir), ShouldResemble, []string{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, scanDir(tempDir), should.Resemble([]string{
 				".cipd/pkgs/0/-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/.cipdpkg/manifest.json",
 				".cipd/pkgs/0/-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/some/executable*",
 				".cipd/pkgs/0/-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/some/file/path",
@@ -335,14 +327,14 @@ func TestDeployInstanceSymlinkMode(t *testing.T) {
 				"some/executable:../.cipd/pkgs/0/_current/some/executable",
 				"some/file/path:../../.cipd/pkgs/0/_current/some/file/path",
 				"some/symlink:../.cipd/pkgs/0/_current/some/symlink",
-			})
+			}))
 
-			Convey("in subdir", func() {
+			t.Run("in subdir", func(t *ftt.Test) {
 				_, err := New(tempDir).DeployInstance(ctx, "subdir", inst, "", 0)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				_, err = New(tempDir).DeployInstance(ctx, "subdir", inst, "", 0)
-				So(err, ShouldBeNil)
-				So(scanDir(tempDir), ShouldResemble, []string{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, scanDir(tempDir), should.Resemble([]string{
 					".cipd/pkgs/0/-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/.cipdpkg/manifest.json",
 					".cipd/pkgs/0/-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/some/executable*",
 					".cipd/pkgs/0/-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/some/file/path",
@@ -363,11 +355,11 @@ func TestDeployInstanceSymlinkMode(t *testing.T) {
 					"subdir/some/executable:../../.cipd/pkgs/1/_current/some/executable",
 					"subdir/some/file/path:../../../.cipd/pkgs/1/_current/some/file/path",
 					"subdir/some/symlink:../../.cipd/pkgs/1/_current/some/symlink",
-				})
+				}))
 			})
 		})
 
-		Convey("DeployInstance package update", func() {
+		t.Run("DeployInstance package update", func(t *ftt.Test) {
 			oldPkg := makeTestInstance("test/package", []fs.File{
 				fs.NewTestFile("some/file/path", "data a old", fs.TestFileOpts{}),
 				fs.NewTestFile("some/executable", "data b old", fs.TestFileOpts{Executable: true}),
@@ -392,11 +384,11 @@ func TestDeployInstanceSymlinkMode(t *testing.T) {
 			newPkg.instanceID = "111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"
 
 			_, err := New(tempDir).DeployInstance(ctx, "", oldPkg, "", 0)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			_, err = New(tempDir).DeployInstance(ctx, "", newPkg, "", 0)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(scanDir(tempDir), ShouldResemble, []string{
+			assert.Loosely(t, scanDir(tempDir), should.Resemble([]string{
 				".cipd/pkgs/0/111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/.cipdpkg/manifest.json",
 				".cipd/pkgs/0/111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/mode change 1",
 				".cipd/pkgs/0/111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/mode change 2*",
@@ -413,15 +405,15 @@ func TestDeployInstanceSymlinkMode(t *testing.T) {
 				"some/file/path:../../.cipd/pkgs/0/_current/some/file/path",
 				"symlink changed:.cipd/pkgs/0/_current/symlink changed",
 				"symlink unchanged:.cipd/pkgs/0/_current/symlink unchanged",
-			})
+			}))
 
-			Convey("in subdir", func() {
+			t.Run("in subdir", func(t *ftt.Test) {
 				_, err := New(tempDir).DeployInstance(ctx, "subdir", oldPkg, "", 0)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				_, err = New(tempDir).DeployInstance(ctx, "subdir", newPkg, "", 0)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
-				So(scanDir(tempDir), ShouldResemble, []string{
+				assert.Loosely(t, scanDir(tempDir), should.Resemble([]string{
 					".cipd/pkgs/0/111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/.cipdpkg/manifest.json",
 					".cipd/pkgs/0/111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/mode change 1",
 					".cipd/pkgs/0/111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/mode change 2*",
@@ -453,11 +445,11 @@ func TestDeployInstanceSymlinkMode(t *testing.T) {
 					"subdir/symlink unchanged:../.cipd/pkgs/1/_current/symlink unchanged",
 					"symlink changed:.cipd/pkgs/0/_current/symlink changed",
 					"symlink unchanged:.cipd/pkgs/0/_current/symlink unchanged",
-				})
+				}))
 			})
 		})
 
-		Convey("DeployInstance two different packages", func() {
+		t.Run("DeployInstance two different packages", func(t *ftt.Test) {
 			pkg1 := makeTestInstance("test/package", []fs.File{
 				fs.NewTestFile("some/file/path", "data a old", fs.TestFileOpts{}),
 				fs.NewTestFile("some/executable", "data b old", fs.TestFileOpts{Executable: true}),
@@ -474,13 +466,13 @@ func TestDeployInstanceSymlinkMode(t *testing.T) {
 			pkg2.instanceID = "111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"
 
 			_, err := New(tempDir).DeployInstance(ctx, "", pkg1, "", 0)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			_, err = New(tempDir).DeployInstance(ctx, "", pkg2, "", 0)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// TODO: Conflicting symlinks point to last installed package, it is not
 			// very deterministic.
-			So(scanDir(tempDir), ShouldResemble, []string{
+			assert.Loosely(t, scanDir(tempDir), should.Resemble([]string{
 				".cipd/pkgs/0/000000000_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/.cipdpkg/manifest.json",
 				".cipd/pkgs/0/000000000_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/pkg1 file",
 				".cipd/pkgs/0/000000000_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/some/executable*",
@@ -498,17 +490,17 @@ func TestDeployInstanceSymlinkMode(t *testing.T) {
 				"pkg2 file:.cipd/pkgs/1/_current/pkg2 file",
 				"some/executable:../.cipd/pkgs/1/_current/some/executable",
 				"some/file/path:../../.cipd/pkgs/1/_current/some/file/path",
-			})
+			}))
 
-			Convey("in subdir", func() {
+			t.Run("in subdir", func(t *ftt.Test) {
 				_, err := New(tempDir).DeployInstance(ctx, "subdir", pkg1, "", 0)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				_, err = New(tempDir).DeployInstance(ctx, "subdir", pkg2, "", 0)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				// TODO: Conflicting symlinks point to last installed package, it is not
 				// very deterministic.
-				So(scanDir(tempDir), ShouldResemble, []string{
+				assert.Loosely(t, scanDir(tempDir), should.Resemble([]string{
 					".cipd/pkgs/0/000000000_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/.cipdpkg/manifest.json",
 					".cipd/pkgs/0/000000000_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/pkg1 file",
 					".cipd/pkgs/0/000000000_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/some/executable*",
@@ -542,7 +534,7 @@ func TestDeployInstanceSymlinkMode(t *testing.T) {
 					"subdir/pkg2 file:../.cipd/pkgs/3/_current/pkg2 file",
 					"subdir/some/executable:../../.cipd/pkgs/3/_current/some/executable",
 					"subdir/some/file/path:../../../.cipd/pkgs/3/_current/some/file/path",
-				})
+				}))
 			})
 		})
 	})
@@ -557,27 +549,27 @@ func TestDeployInstanceCopyModePosix(t *testing.T) {
 
 	ctx := context.Background()
 
-	Convey("Given a temp directory", t, func() {
-		tempDir := mkTempDir()
+	ftt.Run("Given a temp directory", t, func(t *ftt.Test) {
+		tempDir := t.TempDir()
 
-		Convey("DeployInstance new empty package instance", func() {
+		t.Run("DeployInstance new empty package instance", func(t *ftt.Test) {
 			inst := makeTestInstance("test/package", nil, pkg.InstallModeCopy)
 			info, err := New(tempDir).DeployInstance(ctx, "", inst, "", 0)
-			So(err, ShouldBeNil)
-			So(info, ShouldResemble, inst.Pin())
-			So(scanDir(tempDir), ShouldResemble, []string{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, info, should.Resemble(inst.Pin()))
+			assert.Loosely(t, scanDir(tempDir), should.Resemble([]string{
 				".cipd/pkgs/0/-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/.cipdpkg/manifest.json",
 				".cipd/pkgs/0/_current:-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC",
 				".cipd/pkgs/0/description.json",
 				".cipd/tmp!",
-			})
+			}))
 
-			Convey("in subdir", func() {
+			t.Run("in subdir", func(t *ftt.Test) {
 				inst := makeTestInstance("test/package", nil, pkg.InstallModeCopy)
 				info, err := New(tempDir).DeployInstance(ctx, "subdir", inst, "", 0)
-				So(err, ShouldBeNil)
-				So(info, ShouldResemble, inst.Pin())
-				So(scanDir(tempDir), ShouldResemble, []string{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, info, should.Resemble(inst.Pin()))
+				assert.Loosely(t, scanDir(tempDir), should.Resemble([]string{
 					".cipd/pkgs/0/-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/.cipdpkg/manifest.json",
 					".cipd/pkgs/0/_current:-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC",
 					".cipd/pkgs/0/description.json",
@@ -586,11 +578,11 @@ func TestDeployInstanceCopyModePosix(t *testing.T) {
 					".cipd/pkgs/1/description.json",
 					".cipd/tmp!",
 					"subdir!",
-				})
+				}))
 			})
 		})
 
-		Convey("DeployInstance new non-empty package instance", func() {
+		t.Run("DeployInstance new non-empty package instance", func(t *ftt.Test) {
 			inst := makeTestInstance("test/package", []fs.File{
 				fs.NewTestFile("some/file/path", "data a", fs.TestFileOpts{}),
 				fs.NewTestFile("some/executable", "data b", fs.TestFileOpts{Executable: true}),
@@ -598,8 +590,8 @@ func TestDeployInstanceCopyModePosix(t *testing.T) {
 				fs.NewTestFile(".cipd/pkg/0/description.json", "{}", fs.TestFileOpts{}), // should be ignored
 			}, pkg.InstallModeCopy)
 			_, err := New(tempDir).DeployInstance(ctx, "", inst, "", 0)
-			So(err, ShouldBeNil)
-			So(scanDir(tempDir), ShouldResemble, []string{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, scanDir(tempDir), should.Resemble([]string{
 				".cipd/pkgs/0/-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/.cipdpkg/manifest.json",
 				".cipd/pkgs/0/_current:-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC",
 				".cipd/pkgs/0/description.json",
@@ -607,12 +599,12 @@ func TestDeployInstanceCopyModePosix(t *testing.T) {
 				"some/executable*",
 				"some/file/path",
 				"some/symlink:executable",
-			})
+			}))
 
-			Convey("in subdir", func() {
+			t.Run("in subdir", func(t *ftt.Test) {
 				_, err := New(tempDir).DeployInstance(ctx, "subdir", inst, "", 0)
-				So(err, ShouldBeNil)
-				So(scanDir(tempDir), ShouldResemble, []string{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, scanDir(tempDir), should.Resemble([]string{
 					".cipd/pkgs/0/-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/.cipdpkg/manifest.json",
 					".cipd/pkgs/0/_current:-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC",
 					".cipd/pkgs/0/description.json",
@@ -626,21 +618,21 @@ func TestDeployInstanceCopyModePosix(t *testing.T) {
 					"subdir/some/executable*",
 					"subdir/some/file/path",
 					"subdir/some/symlink:executable",
-				})
+				}))
 			})
 		})
 
-		Convey("Redeploy same package instance", func() {
+		t.Run("Redeploy same package instance", func(t *ftt.Test) {
 			inst := makeTestInstance("test/package", []fs.File{
 				fs.NewTestFile("some/file/path", "data a", fs.TestFileOpts{}),
 				fs.NewTestFile("some/executable", "data b", fs.TestFileOpts{Executable: true}),
 				fs.NewTestSymlink("some/symlink", "executable"),
 			}, pkg.InstallModeCopy)
 			_, err := New(tempDir).DeployInstance(ctx, "", inst, "", 0)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			_, err = New(tempDir).DeployInstance(ctx, "", inst, "", 0)
-			So(err, ShouldBeNil)
-			So(scanDir(tempDir), ShouldResemble, []string{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, scanDir(tempDir), should.Resemble([]string{
 				".cipd/pkgs/0/-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/.cipdpkg/manifest.json",
 				".cipd/pkgs/0/_current:-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC",
 				".cipd/pkgs/0/description.json",
@@ -649,14 +641,14 @@ func TestDeployInstanceCopyModePosix(t *testing.T) {
 				"some/executable*",
 				"some/file/path",
 				"some/symlink:executable",
-			})
+			}))
 
-			Convey("in subdir", func() {
+			t.Run("in subdir", func(t *ftt.Test) {
 				_, err := New(tempDir).DeployInstance(ctx, "somedir", inst, "", 0)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				_, err = New(tempDir).DeployInstance(ctx, "somedir", inst, "", 0)
-				So(err, ShouldBeNil)
-				So(scanDir(tempDir), ShouldResemble, []string{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, scanDir(tempDir), should.Resemble([]string{
 					".cipd/pkgs/0/-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/.cipdpkg/manifest.json",
 					".cipd/pkgs/0/_current:-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC",
 					".cipd/pkgs/0/description.json",
@@ -671,11 +663,11 @@ func TestDeployInstanceCopyModePosix(t *testing.T) {
 					"somedir/some/executable*",
 					"somedir/some/file/path",
 					"somedir/some/symlink:executable",
-				})
+				}))
 			})
 		})
 
-		Convey("DeployInstance package update", func() {
+		t.Run("DeployInstance package update", func(t *ftt.Test) {
 			oldPkg := makeTestInstance("test/package", []fs.File{
 				fs.NewTestFile("some/file/path", "data a old", fs.TestFileOpts{}),
 				fs.NewTestFile("some/executable", "data b old", fs.TestFileOpts{Executable: true}),
@@ -700,11 +692,11 @@ func TestDeployInstanceCopyModePosix(t *testing.T) {
 			newPkg.instanceID = "111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"
 
 			_, err := New(tempDir).DeployInstance(ctx, "", oldPkg, "", 0)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			_, err = New(tempDir).DeployInstance(ctx, "", newPkg, "", 0)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(scanDir(tempDir), ShouldResemble, []string{
+			assert.Loosely(t, scanDir(tempDir), should.Resemble([]string{
 				".cipd/pkgs/0/111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/.cipdpkg/manifest.json",
 				".cipd/pkgs/0/_current:111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC",
 				".cipd/pkgs/0/description.json",
@@ -715,15 +707,15 @@ func TestDeployInstanceCopyModePosix(t *testing.T) {
 				"some/file/path",
 				"symlink changed:new target",
 				"symlink unchanged:target",
-			})
+			}))
 
-			Convey("in subdir", func() {
+			t.Run("in subdir", func(t *ftt.Test) {
 				_, err := New(tempDir).DeployInstance(ctx, "subdir", oldPkg, "", 0)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				_, err = New(tempDir).DeployInstance(ctx, "subdir", newPkg, "", 0)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
-				So(scanDir(tempDir), ShouldResemble, []string{
+				assert.Loosely(t, scanDir(tempDir), should.Resemble([]string{
 					".cipd/pkgs/0/111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/.cipdpkg/manifest.json",
 					".cipd/pkgs/0/_current:111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC",
 					".cipd/pkgs/0/description.json",
@@ -743,11 +735,11 @@ func TestDeployInstanceCopyModePosix(t *testing.T) {
 					"subdir/symlink unchanged:target",
 					"symlink changed:new target",
 					"symlink unchanged:target",
-				})
+				}))
 			})
 		})
 
-		Convey("DeployInstance two different packages", func() {
+		t.Run("DeployInstance two different packages", func(t *ftt.Test) {
 			pkg1 := makeTestInstance("test/package", []fs.File{
 				fs.NewTestFile("some/file/path", "data a old", fs.TestFileOpts{}),
 				fs.NewTestFile("some/executable", "data b old", fs.TestFileOpts{Executable: true}),
@@ -764,11 +756,11 @@ func TestDeployInstanceCopyModePosix(t *testing.T) {
 			pkg2.instanceID = "111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"
 
 			_, err := New(tempDir).DeployInstance(ctx, "", pkg1, "", 0)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			_, err = New(tempDir).DeployInstance(ctx, "", pkg2, "", 0)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(scanDir(tempDir), ShouldResemble, []string{
+			assert.Loosely(t, scanDir(tempDir), should.Resemble([]string{
 				".cipd/pkgs/0/000000000_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/.cipdpkg/manifest.json",
 				".cipd/pkgs/0/_current:000000000_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC",
 				".cipd/pkgs/0/description.json",
@@ -780,15 +772,15 @@ func TestDeployInstanceCopyModePosix(t *testing.T) {
 				"pkg2 file",
 				"some/executable*",
 				"some/file/path",
-			})
+			}))
 
-			Convey("in subdir", func() {
+			t.Run("in subdir", func(t *ftt.Test) {
 				_, err := New(tempDir).DeployInstance(ctx, "somedir", pkg1, "", 0)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				_, err = New(tempDir).DeployInstance(ctx, "somedir", pkg2, "", 0)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
-				So(scanDir(tempDir), ShouldResemble, []string{
+				assert.Loosely(t, scanDir(tempDir), should.Resemble([]string{
 					".cipd/pkgs/0/000000000_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/.cipdpkg/manifest.json",
 					".cipd/pkgs/0/_current:000000000_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC",
 					".cipd/pkgs/0/description.json",
@@ -810,7 +802,7 @@ func TestDeployInstanceCopyModePosix(t *testing.T) {
 					"somedir/pkg2 file",
 					"somedir/some/executable*",
 					"somedir/some/file/path",
-				})
+				}))
 			})
 		})
 	})
@@ -825,28 +817,28 @@ func TestDeployInstanceCopyModeWindows(t *testing.T) {
 
 	ctx := context.Background()
 
-	Convey("Given a temp directory", t, func() {
-		tempDir := mkTempDir()
+	ftt.Run("Given a temp directory", t, func(t *ftt.Test) {
+		tempDir := t.TempDir()
 
-		Convey("DeployInstance new empty package instance", func() {
+		t.Run("DeployInstance new empty package instance", func(t *ftt.Test) {
 			inst := makeTestInstance("test/package", nil, pkg.InstallModeCopy)
 			info, err := New(tempDir).DeployInstance(ctx, "", inst, "", 0)
-			So(err, ShouldBeNil)
-			So(info, ShouldResemble, inst.Pin())
-			So(scanDir(tempDir), ShouldResemble, []string{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, info, should.Resemble(inst.Pin()))
+			assert.Loosely(t, scanDir(tempDir), should.Resemble([]string{
 				".cipd/pkgs/0/-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/.cipdpkg/manifest.json",
 				".cipd/pkgs/0/_current.txt",
 				".cipd/pkgs/0/description.json",
 				".cipd/tmp!",
-			})
-			cur := readFile(tempDir, ".cipd/pkgs/0/_current.txt")
-			So(cur, ShouldEqual, "-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC")
+			}))
+			cur := readFile(t, tempDir, ".cipd/pkgs/0/_current.txt")
+			assert.Loosely(t, cur, should.Equal("-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"))
 
-			Convey("in subdir", func() {
+			t.Run("in subdir", func(t *ftt.Test) {
 				info, err := New(tempDir).DeployInstance(ctx, "subdir", inst, "", 0)
-				So(err, ShouldBeNil)
-				So(info, ShouldResemble, inst.Pin())
-				So(scanDir(tempDir), ShouldResemble, []string{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, info, should.Resemble(inst.Pin()))
+				assert.Loosely(t, scanDir(tempDir), should.Resemble([]string{
 					".cipd/pkgs/0/-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/.cipdpkg/manifest.json",
 					".cipd/pkgs/0/_current.txt",
 					".cipd/pkgs/0/description.json",
@@ -855,37 +847,37 @@ func TestDeployInstanceCopyModeWindows(t *testing.T) {
 					".cipd/pkgs/1/description.json",
 					".cipd/tmp!",
 					"subdir!",
-				})
-				cur := readFile(tempDir, ".cipd/pkgs/0/_current.txt")
-				So(cur, ShouldEqual, "-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC")
-				cur = readFile(tempDir, ".cipd/pkgs/1/_current.txt")
-				So(cur, ShouldEqual, "-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC")
+				}))
+				cur := readFile(t, tempDir, ".cipd/pkgs/0/_current.txt")
+				assert.Loosely(t, cur, should.Equal("-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"))
+				cur = readFile(t, tempDir, ".cipd/pkgs/1/_current.txt")
+				assert.Loosely(t, cur, should.Equal("-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"))
 			})
 		})
 
-		Convey("DeployInstance new non-empty package instance", func() {
+		t.Run("DeployInstance new non-empty package instance", func(t *ftt.Test) {
 			inst := makeTestInstance("test/package", []fs.File{
 				fs.NewTestFile("some/file/path", "data a", fs.TestFileOpts{}),
 				fs.NewTestFile("some/executable", "data b", fs.TestFileOpts{Executable: true}),
 				fs.NewTestFile(".cipd/pkg/0/description.json", "{}", fs.TestFileOpts{}), // should be ignored
 			}, pkg.InstallModeCopy)
 			_, err := New(tempDir).DeployInstance(ctx, "", inst, "", 0)
-			So(err, ShouldBeNil)
-			So(scanDir(tempDir), ShouldResemble, []string{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, scanDir(tempDir), should.Resemble([]string{
 				".cipd/pkgs/0/-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/.cipdpkg/manifest.json",
 				".cipd/pkgs/0/_current.txt",
 				".cipd/pkgs/0/description.json",
 				".cipd/tmp!",
 				"some/executable",
 				"some/file/path",
-			})
-			cur := readFile(tempDir, ".cipd/pkgs/0/_current.txt")
-			So(cur, ShouldEqual, "-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC")
+			}))
+			cur := readFile(t, tempDir, ".cipd/pkgs/0/_current.txt")
+			assert.Loosely(t, cur, should.Equal("-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"))
 
-			Convey("in subdir", func() {
+			t.Run("in subdir", func(t *ftt.Test) {
 				_, err := New(tempDir).DeployInstance(ctx, "subdir", inst, "", 0)
-				So(err, ShouldBeNil)
-				So(scanDir(tempDir), ShouldResemble, []string{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, scanDir(tempDir), should.Resemble([]string{
 					".cipd/pkgs/0/-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/.cipdpkg/manifest.json",
 					".cipd/pkgs/0/_current.txt",
 					".cipd/pkgs/0/description.json",
@@ -897,24 +889,24 @@ func TestDeployInstanceCopyModeWindows(t *testing.T) {
 					"some/file/path",
 					"subdir/some/executable",
 					"subdir/some/file/path",
-				})
-				cur := readFile(tempDir, ".cipd/pkgs/0/_current.txt")
-				So(cur, ShouldEqual, "-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC")
-				cur = readFile(tempDir, ".cipd/pkgs/1/_current.txt")
-				So(cur, ShouldEqual, "-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC")
+				}))
+				cur := readFile(t, tempDir, ".cipd/pkgs/0/_current.txt")
+				assert.Loosely(t, cur, should.Equal("-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"))
+				cur = readFile(t, tempDir, ".cipd/pkgs/1/_current.txt")
+				assert.Loosely(t, cur, should.Equal("-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"))
 			})
 		})
 
-		Convey("Redeploy same package instance", func() {
+		t.Run("Redeploy same package instance", func(t *ftt.Test) {
 			inst := makeTestInstance("test/package", []fs.File{
 				fs.NewTestFile("some/file/path", "data a", fs.TestFileOpts{}),
 				fs.NewTestFile("some/executable", "data b", fs.TestFileOpts{Executable: true}),
 			}, pkg.InstallModeCopy)
 			_, err := New(tempDir).DeployInstance(ctx, "", inst, "", 0)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			_, err = New(tempDir).DeployInstance(ctx, "", inst, "", 0)
-			So(err, ShouldBeNil)
-			So(scanDir(tempDir), ShouldResemble, []string{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, scanDir(tempDir), should.Resemble([]string{
 				".cipd/pkgs/0/-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/.cipdpkg/manifest.json",
 				".cipd/pkgs/0/_current.txt",
 				".cipd/pkgs/0/description.json",
@@ -922,16 +914,16 @@ func TestDeployInstanceCopyModeWindows(t *testing.T) {
 				".cipd/trash!",
 				"some/executable",
 				"some/file/path",
-			})
-			cur := readFile(tempDir, ".cipd/pkgs/0/_current.txt")
-			So(cur, ShouldEqual, "-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC")
+			}))
+			cur := readFile(t, tempDir, ".cipd/pkgs/0/_current.txt")
+			assert.Loosely(t, cur, should.Equal("-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"))
 
-			Convey("in subdir", func() {
+			t.Run("in subdir", func(t *ftt.Test) {
 				_, err := New(tempDir).DeployInstance(ctx, "subdir", inst, "", 0)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				_, err = New(tempDir).DeployInstance(ctx, "subdir", inst, "", 0)
-				So(err, ShouldBeNil)
-				So(scanDir(tempDir), ShouldResemble, []string{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, scanDir(tempDir), should.Resemble([]string{
 					".cipd/pkgs/0/-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/.cipdpkg/manifest.json",
 					".cipd/pkgs/0/_current.txt",
 					".cipd/pkgs/0/description.json",
@@ -944,15 +936,15 @@ func TestDeployInstanceCopyModeWindows(t *testing.T) {
 					"some/file/path",
 					"subdir/some/executable",
 					"subdir/some/file/path",
-				})
-				cur := readFile(tempDir, ".cipd/pkgs/0/_current.txt")
-				So(cur, ShouldEqual, "-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC")
-				cur = readFile(tempDir, ".cipd/pkgs/1/_current.txt")
-				So(cur, ShouldEqual, "-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC")
+				}))
+				cur := readFile(t, tempDir, ".cipd/pkgs/0/_current.txt")
+				assert.Loosely(t, cur, should.Equal("-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"))
+				cur = readFile(t, tempDir, ".cipd/pkgs/1/_current.txt")
+				assert.Loosely(t, cur, should.Equal("-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"))
 			})
 		})
 
-		Convey("DeployInstance package update", func() {
+		t.Run("DeployInstance package update", func(t *ftt.Test) {
 			oldPkg := makeTestInstance("test/package", []fs.File{
 				fs.NewTestFile("some/file/path", "data a old", fs.TestFileOpts{}),
 				fs.NewTestFile("some/executable", "data b old", fs.TestFileOpts{Executable: true}),
@@ -972,11 +964,11 @@ func TestDeployInstanceCopyModeWindows(t *testing.T) {
 			newPkg.instanceID = "111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"
 
 			_, err := New(tempDir).DeployInstance(ctx, "", oldPkg, "", 0)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			_, err = New(tempDir).DeployInstance(ctx, "", newPkg, "", 0)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(scanDir(tempDir), ShouldResemble, []string{
+			assert.Loosely(t, scanDir(tempDir), should.Resemble([]string{
 				".cipd/pkgs/0/111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/.cipdpkg/manifest.json",
 				".cipd/pkgs/0/_current.txt",
 				".cipd/pkgs/0/description.json",
@@ -985,17 +977,17 @@ func TestDeployInstanceCopyModeWindows(t *testing.T) {
 				"mode change 2",
 				"some/executable",
 				"some/file/path",
-			})
-			cur := readFile(tempDir, ".cipd/pkgs/0/_current.txt")
-			So(cur, ShouldEqual, "111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC")
+			}))
+			cur := readFile(t, tempDir, ".cipd/pkgs/0/_current.txt")
+			assert.Loosely(t, cur, should.Equal("111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"))
 
-			Convey("in subdir", func() {
+			t.Run("in subdir", func(t *ftt.Test) {
 				_, err := New(tempDir).DeployInstance(ctx, "subdir", oldPkg, "", 0)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				_, err = New(tempDir).DeployInstance(ctx, "subdir", newPkg, "", 0)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
-				So(scanDir(tempDir), ShouldResemble, []string{
+				assert.Loosely(t, scanDir(tempDir), should.Resemble([]string{
 					".cipd/pkgs/0/111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/.cipdpkg/manifest.json",
 					".cipd/pkgs/0/_current.txt",
 					".cipd/pkgs/0/description.json",
@@ -1011,15 +1003,15 @@ func TestDeployInstanceCopyModeWindows(t *testing.T) {
 					"subdir/mode change 2",
 					"subdir/some/executable",
 					"subdir/some/file/path",
-				})
-				cur := readFile(tempDir, ".cipd/pkgs/0/_current.txt")
-				So(cur, ShouldEqual, "111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC")
-				cur = readFile(tempDir, ".cipd/pkgs/1/_current.txt")
-				So(cur, ShouldEqual, "111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC")
+				}))
+				cur := readFile(t, tempDir, ".cipd/pkgs/0/_current.txt")
+				assert.Loosely(t, cur, should.Equal("111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"))
+				cur = readFile(t, tempDir, ".cipd/pkgs/1/_current.txt")
+				assert.Loosely(t, cur, should.Equal("111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"))
 			})
 		})
 
-		Convey("DeployInstance two different packages", func() {
+		t.Run("DeployInstance two different packages", func(t *ftt.Test) {
 			pkg1 := makeTestInstance("test/package", []fs.File{
 				fs.NewTestFile("some/file/path", "data a old", fs.TestFileOpts{}),
 				fs.NewTestFile("some/executable", "data b old", fs.TestFileOpts{Executable: true}),
@@ -1036,11 +1028,11 @@ func TestDeployInstanceCopyModeWindows(t *testing.T) {
 			pkg2.instanceID = "111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"
 
 			_, err := New(tempDir).DeployInstance(ctx, "", pkg1, "", 0)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			_, err = New(tempDir).DeployInstance(ctx, "", pkg2, "", 0)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(scanDir(tempDir), ShouldResemble, []string{
+			assert.Loosely(t, scanDir(tempDir), should.Resemble([]string{
 				".cipd/pkgs/0/000000000_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/.cipdpkg/manifest.json",
 				".cipd/pkgs/0/_current.txt",
 				".cipd/pkgs/0/description.json",
@@ -1052,19 +1044,19 @@ func TestDeployInstanceCopyModeWindows(t *testing.T) {
 				"pkg2 file",
 				"some/executable",
 				"some/file/path",
-			})
-			cur1 := readFile(tempDir, ".cipd/pkgs/1/_current.txt")
-			So(cur1, ShouldEqual, "111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC")
-			cur2 := readFile(tempDir, ".cipd/pkgs/0/_current.txt")
-			So(cur2, ShouldEqual, "000000000_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC")
+			}))
+			cur1 := readFile(t, tempDir, ".cipd/pkgs/1/_current.txt")
+			assert.Loosely(t, cur1, should.Equal("111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"))
+			cur2 := readFile(t, tempDir, ".cipd/pkgs/0/_current.txt")
+			assert.Loosely(t, cur2, should.Equal("000000000_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"))
 
-			Convey("in subdir", func() {
+			t.Run("in subdir", func(t *ftt.Test) {
 				_, err := New(tempDir).DeployInstance(ctx, "subdir", pkg1, "", 0)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				_, err = New(tempDir).DeployInstance(ctx, "subdir", pkg2, "", 0)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
-				So(scanDir(tempDir), ShouldResemble, []string{
+				assert.Loosely(t, scanDir(tempDir), should.Resemble([]string{
 					".cipd/pkgs/0/000000000_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/.cipdpkg/manifest.json",
 					".cipd/pkgs/0/_current.txt",
 					".cipd/pkgs/0/description.json",
@@ -1086,11 +1078,11 @@ func TestDeployInstanceCopyModeWindows(t *testing.T) {
 					"subdir/pkg2 file",
 					"subdir/some/executable",
 					"subdir/some/file/path",
-				})
-				cur1 := readFile(tempDir, ".cipd/pkgs/1/_current.txt")
-				So(cur1, ShouldEqual, "111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC")
-				cur2 := readFile(tempDir, ".cipd/pkgs/0/_current.txt")
-				So(cur2, ShouldEqual, "000000000_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC")
+				}))
+				cur1 := readFile(t, tempDir, ".cipd/pkgs/1/_current.txt")
+				assert.Loosely(t, cur1, should.Equal("111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"))
+				cur2 := readFile(t, tempDir, ".cipd/pkgs/0/_current.txt")
+				assert.Loosely(t, cur2, should.Equal("000000000_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"))
 			})
 		})
 	})
@@ -1105,8 +1097,8 @@ func TestDeployInstanceSwitchingModes(t *testing.T) {
 
 	ctx := context.Background()
 
-	Convey("Given a temp directory", t, func() {
-		tempDir := mkTempDir()
+	ftt.Run("Given a temp directory", t, func(t *ftt.Test) {
+		tempDir := t.TempDir()
 
 		files := []fs.File{
 			fs.NewTestFile("some/file/path", "data a", fs.TestFileOpts{}),
@@ -1114,18 +1106,18 @@ func TestDeployInstanceSwitchingModes(t *testing.T) {
 			fs.NewTestSymlink("some/symlink", "executable"),
 		}
 
-		Convey("InstallModeCopy => InstallModeSymlink", func() {
+		t.Run("InstallModeCopy => InstallModeSymlink", func(t *ftt.Test) {
 			inst := makeTestInstance("test/package", files, pkg.InstallModeCopy)
 			inst.instanceID = "000000000_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"
 			_, err := New(tempDir).DeployInstance(ctx, "", inst, "", 0)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			inst = makeTestInstance("test/package", files, pkg.InstallModeSymlink)
 			inst.instanceID = "111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"
 			_, err = New(tempDir).DeployInstance(ctx, "", inst, "", 0)
 
-			So(err, ShouldBeNil)
-			So(scanDir(tempDir), ShouldResemble, []string{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, scanDir(tempDir), should.Resemble([]string{
 				".cipd/pkgs/0/111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/.cipdpkg/manifest.json",
 				".cipd/pkgs/0/111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/some/executable*",
 				".cipd/pkgs/0/111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/some/file/path",
@@ -1136,20 +1128,20 @@ func TestDeployInstanceSwitchingModes(t *testing.T) {
 				"some/executable:../.cipd/pkgs/0/_current/some/executable",
 				"some/file/path:../../.cipd/pkgs/0/_current/some/file/path",
 				"some/symlink:../.cipd/pkgs/0/_current/some/symlink",
-			})
+			}))
 
-			Convey("in subidr", func() {
+			t.Run("in subidr", func(t *ftt.Test) {
 				inst := makeTestInstance("test/package", files, pkg.InstallModeCopy)
 				inst.instanceID = "000000000_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"
 				_, err := New(tempDir).DeployInstance(ctx, "subdir", inst, "", 0)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				inst = makeTestInstance("test/package", files, pkg.InstallModeSymlink)
 				inst.instanceID = "111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"
 				_, err = New(tempDir).DeployInstance(ctx, "subdir", inst, "", 0)
 
-				So(err, ShouldBeNil)
-				So(scanDir(tempDir), ShouldResemble, []string{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, scanDir(tempDir), should.Resemble([]string{
 					".cipd/pkgs/0/111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/.cipdpkg/manifest.json",
 					".cipd/pkgs/0/111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/some/executable*",
 					".cipd/pkgs/0/111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/some/file/path",
@@ -1169,22 +1161,22 @@ func TestDeployInstanceSwitchingModes(t *testing.T) {
 					"subdir/some/executable:../../.cipd/pkgs/1/_current/some/executable",
 					"subdir/some/file/path:../../../.cipd/pkgs/1/_current/some/file/path",
 					"subdir/some/symlink:../../.cipd/pkgs/1/_current/some/symlink",
-				})
+				}))
 			})
 		})
 
-		Convey("InstallModeSymlink => InstallModeCopy", func() {
+		t.Run("InstallModeSymlink => InstallModeCopy", func(t *ftt.Test) {
 			inst := makeTestInstance("test/package", files, pkg.InstallModeSymlink)
 			inst.instanceID = "000000000_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"
 			_, err := New(tempDir).DeployInstance(ctx, "", inst, "", 0)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			inst = makeTestInstance("test/package", files, pkg.InstallModeCopy)
 			inst.instanceID = "111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"
 			_, err = New(tempDir).DeployInstance(ctx, "", inst, "", 0)
 
-			So(err, ShouldBeNil)
-			So(scanDir(tempDir), ShouldResemble, []string{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, scanDir(tempDir), should.Resemble([]string{
 				".cipd/pkgs/0/111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/.cipdpkg/manifest.json",
 				".cipd/pkgs/0/_current:111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC",
 				".cipd/pkgs/0/description.json",
@@ -1192,20 +1184,20 @@ func TestDeployInstanceSwitchingModes(t *testing.T) {
 				"some/executable*",
 				"some/file/path",
 				"some/symlink:executable",
-			})
+			}))
 
-			Convey("in subdir", func() {
+			t.Run("in subdir", func(t *ftt.Test) {
 				inst := makeTestInstance("test/package", files, pkg.InstallModeSymlink)
 				inst.instanceID = "000000000_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"
 				_, err := New(tempDir).DeployInstance(ctx, "subdir", inst, "", 0)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				inst = makeTestInstance("test/package", files, pkg.InstallModeCopy)
 				inst.instanceID = "111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"
 				_, err = New(tempDir).DeployInstance(ctx, "subdir", inst, "", 0)
 
-				So(err, ShouldBeNil)
-				So(scanDir(tempDir), ShouldResemble, []string{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, scanDir(tempDir), should.Resemble([]string{
 					".cipd/pkgs/0/111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/.cipdpkg/manifest.json",
 					".cipd/pkgs/0/_current:111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC",
 					".cipd/pkgs/0/description.json",
@@ -1219,7 +1211,7 @@ func TestDeployInstanceSwitchingModes(t *testing.T) {
 					"subdir/some/executable*",
 					"subdir/some/file/path",
 					"subdir/some/symlink:executable",
-				})
+				}))
 			})
 		})
 	})
@@ -1228,9 +1220,9 @@ func TestDeployInstanceSwitchingModes(t *testing.T) {
 func TestDeployInstanceUpgradeFileToDir(t *testing.T) {
 	t.Parallel()
 
-	Convey("DeployInstance can replace files with directories", t, func() {
+	ftt.Run("DeployInstance can replace files with directories", t, func(t *ftt.Test) {
 		ctx := withMemLogger()
-		tempDir := mkTempDir()
+		tempDir := t.TempDir()
 
 		// Here "some/path" is a file.
 		oldPkg := makeTestInstance("test/package", []fs.File{
@@ -1247,24 +1239,24 @@ func TestDeployInstanceUpgradeFileToDir(t *testing.T) {
 		// Note: specifically use '/' even on Windows here, to make sure deployer
 		// guts do slash conversion correctly inside.
 		_, err := New(tempDir).DeployInstance(ctx, "sub/dir", oldPkg, "", 0)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		_, err = New(tempDir).DeployInstance(ctx, "sub/dir", newPkg, "", 0)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		// The new file is deployed successfully.
-		So(readFile(tempDir, "sub/dir/some/path/file"), ShouldEqual, "data new")
+		assert.Loosely(t, readFile(t, tempDir, "sub/dir/some/path/file"), should.Equal("data new"))
 
 		// No complaints during the upgrade.
-		So(loggerWarnings(ctx), ShouldResemble, []string(nil))
+		assert.Loosely(t, loggerWarnings(ctx), should.Resemble([]string(nil)))
 	})
 }
 
 func TestDeployInstanceDirAndSymlinkSwaps(t *testing.T) {
 	t.Parallel()
 
-	Convey("With packages", t, func() {
+	ftt.Run("With packages", t, func(t *ftt.Test) {
 		ctx := withMemLogger()
-		tempDir := mkTempDir()
+		tempDir := t.TempDir()
 
 		// Here "some/path" is a directory.
 		pkgWithDir := makeTestInstance("test/package", []fs.File{
@@ -1288,74 +1280,74 @@ func TestDeployInstanceDirAndSymlinkSwaps(t *testing.T) {
 		for _, subDir := range []string{"", "sub", "sub/dir"} {
 			subDirAbsPath := filepath.Join(tempDir, filepath.FromSlash(subDir))
 
-			Convey(fmt.Sprintf("Replace directory with symlink (subdir %q)", subDir), func() {
+			t.Run(fmt.Sprintf("Replace directory with symlink (subdir %q)", subDir), func(t *ftt.Test) {
 				_, err := New(tempDir).DeployInstance(ctx, subDir, pkgWithDir, "", 0)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				_, err = New(tempDir).DeployInstance(ctx, subDir, pkgWithSym, "", 0)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
-				So(scanDirAndSkipGuts(subDirAbsPath), ShouldResemble, []string{
+				assert.Loosely(t, scanDirAndSkipGuts(subDirAbsPath), should.Resemble([]string{
 					"some/another/a/b/file3",
 					"some/another/a/file2",
 					"some/another/a/file4",
 					"some/another/file1",
 					"some/path:another",
-				})
+				}))
 
-				So(readFile(tempDir, path.Join(subDir, "some/path/file1")), ShouldEqual, "new data 1")
-				So(readFile(tempDir, path.Join(subDir, "some/path/a/file2")), ShouldEqual, "new data 2")
+				assert.Loosely(t, readFile(t, tempDir, path.Join(subDir, "some/path/file1")), should.Equal("new data 1"))
+				assert.Loosely(t, readFile(t, tempDir, path.Join(subDir, "some/path/a/file2")), should.Equal("new data 2"))
 
-				So(loggerWarnings(ctx), ShouldResemble, []string(nil))
+				assert.Loosely(t, loggerWarnings(ctx), should.Resemble([]string(nil)))
 			})
 
-			Convey(fmt.Sprintf("Replace symlink with directory (subdir %q)", subDir), func() {
+			t.Run(fmt.Sprintf("Replace symlink with directory (subdir %q)", subDir), func(t *ftt.Test) {
 				_, err := New(tempDir).DeployInstance(ctx, subDir, pkgWithSym, "", 0)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				_, err = New(tempDir).DeployInstance(ctx, subDir, pkgWithDir, "", 0)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
-				So(scanDirAndSkipGuts(subDirAbsPath), ShouldResemble, []string{
+				assert.Loosely(t, scanDirAndSkipGuts(subDirAbsPath), should.Resemble([]string{
 					"some/path/a/b/file3",
 					"some/path/a/file2",
 					"some/path/file1",
-				})
+				}))
 
-				So(readFile(tempDir, path.Join(subDir, "some/path/file1")), ShouldEqual, "old data 1")
-				So(readFile(tempDir, path.Join(subDir, "some/path/a/file2")), ShouldEqual, "old data 2")
+				assert.Loosely(t, readFile(t, tempDir, path.Join(subDir, "some/path/file1")), should.Equal("old data 1"))
+				assert.Loosely(t, readFile(t, tempDir, path.Join(subDir, "some/path/a/file2")), should.Equal("old data 2"))
 
-				So(loggerWarnings(ctx), ShouldResemble, []string(nil))
+				assert.Loosely(t, loggerWarnings(ctx), should.Resemble([]string(nil)))
 			})
 		}
 
-		Convey("Sub_lk is a symlink and it shouldn't be deleted", func() {
+		t.Run("Sub_lk is a symlink and it shouldn't be deleted", func(t *ftt.Test) {
 			caseSensitiveFS, err := New(tempDir).(*deployerImpl).fs.CaseSensitive()
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			err = os.Mkdir(filepath.Join(tempDir, "sub"), 0777)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			linkName := "Sub_lk"
 			if !caseSensitiveFS {
 				linkName = "sub_lk"
 			}
-			mkSymlink(filepath.Join(tempDir, "sub"), filepath.Join(tempDir, linkName))
+			mkSymlink(t, filepath.Join(tempDir, "sub"), filepath.Join(tempDir, linkName))
 
 			_, err = New(tempDir).DeployInstance(ctx, "Sub_lk/dir", pkgWithSym, "", 0)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			_, err = New(tempDir).DeployInstance(ctx, "Sub_lk/dir", pkgWithDir, "", 0)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(scanDir(filepath.Join(tempDir, "sub", "dir")), ShouldResemble, []string{
+			assert.Loosely(t, scanDir(filepath.Join(tempDir, "sub", "dir")), should.Resemble([]string{
 				"some/path/a/b/file3",
 				"some/path/a/file2",
 				"some/path/file1",
-			})
+			}))
 
-			So(readFile(tempDir, "sub/dir/some/path/file1"), ShouldEqual, "old data 1")
-			So(readFile(tempDir, "sub/dir/some/path/a/file2"), ShouldEqual, "old data 2")
-			So(readFile(tempDir, "Sub_lk/dir/some/path/file1"), ShouldEqual, "old data 1")
-			So(readFile(tempDir, "Sub_lk/dir/some/path/a/file2"), ShouldEqual, "old data 2")
+			assert.Loosely(t, readFile(t, tempDir, "sub/dir/some/path/file1"), should.Equal("old data 1"))
+			assert.Loosely(t, readFile(t, tempDir, "sub/dir/some/path/a/file2"), should.Equal("old data 2"))
+			assert.Loosely(t, readFile(t, tempDir, "Sub_lk/dir/some/path/file1"), should.Equal("old data 1"))
+			assert.Loosely(t, readFile(t, tempDir, "Sub_lk/dir/some/path/a/file2"), should.Equal("old data 2"))
 
-			So(loggerWarnings(ctx), ShouldResemble, []string(nil))
+			assert.Loosely(t, loggerWarnings(ctx), should.Resemble([]string(nil)))
 		})
 	})
 }
@@ -1363,14 +1355,14 @@ func TestDeployInstanceDirAndSymlinkSwaps(t *testing.T) {
 func TestDeployInstanceChangeInCase(t *testing.T) {
 	t.Parallel()
 
-	Convey("DeployInstance handle change in file name case", t, func(c C) {
+	ftt.Run("DeployInstance handle change in file name case", t, func(c *ftt.Test) {
 		ctx := withMemLogger()
-		tempDir := mkTempDir()
+		tempDir := t.TempDir()
 		deployer := New(tempDir).(*deployerImpl)
 
 		caseSensitiveFS, err := deployer.fs.CaseSensitive()
-		So(err, ShouldBeNil)
-		c.Printf("File system is case-sensitive: %v", caseSensitiveFS)
+		assert.Loosely(c, err, should.BeNil)
+		c.Logf("File system is case-sensitive: %v", caseSensitiveFS)
 
 		pkg1 := makeTestInstance("test/package", []fs.File{
 			fs.NewTestFile("keep", "keep", fs.TestFileOpts{}),
@@ -1391,47 +1383,47 @@ func TestDeployInstanceChangeInCase(t *testing.T) {
 		pkg2.instanceID = "111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"
 
 		_, err = deployer.DeployInstance(ctx, "sub/dir", pkg1, "", 0)
-		So(err, ShouldBeNil)
+		assert.Loosely(c, err, should.BeNil)
 		_, err = deployer.DeployInstance(ctx, "sub/dir", pkg2, "", 0)
-		So(err, ShouldBeNil)
+		assert.Loosely(c, err, should.BeNil)
 
 		got := scanDir(filepath.Join(tempDir, "sub", "dir"))
 		sort.Strings(got)
 
 		if caseSensitiveFS {
 			// File case matches pkg2 exactly.
-			So(got, ShouldResemble, []string{
+			assert.Loosely(c, got, should.Resemble([]string{
 				"keep",
 				"some/D/f2",
 				"some/DIR/file_b",
 				"some/d/f1",
 				"some/path/file_A",
-			})
+			}))
 		} else {
 			// Case of the files is somewhat random... It shouldn't really matter much
 			// (since the file system is case-insensitive anyway).
-			So(got[:len(got)-1], ShouldResemble, []string{
+			assert.Loosely(c, got[:len(got)-1], should.Resemble([]string{
 				"keep",
 				"some/D/f1",
 				"some/D/f2",
 				"some/dir/file_b",
-			})
+			}))
 			// On some file systems the original case (fila_a) is preserved, on some
 			// it is switched to a new case (file_A). Go figure...
-			So(got[len(got)-1], ShouldBeIn, []string{
+			assert.Loosely(c, got[len(got)-1], should.BeIn([]string{
 				"some/path/file_A",
 				"some/path/file_a",
-			})
+			}...))
 		}
 
 		// Can read files through their new names, regardless of case-sensitivity of
 		// the file system.
-		So(readFile(tempDir, "sub/dir/some/DIR/file_b"), ShouldEqual, "new data 1")
-		So(readFile(tempDir, "sub/dir/some/D/f2"), ShouldEqual, "new data 2")
-		So(readFile(tempDir, "sub/dir/some/d/f1"), ShouldEqual, "new data 3")
-		So(readFile(tempDir, "sub/dir/some/path/file_A"), ShouldEqual, "new data 4")
+		assert.Loosely(c, readFile(t, tempDir, "sub/dir/some/DIR/file_b"), should.Equal("new data 1"))
+		assert.Loosely(c, readFile(t, tempDir, "sub/dir/some/D/f2"), should.Equal("new data 2"))
+		assert.Loosely(c, readFile(t, tempDir, "sub/dir/some/d/f1"), should.Equal("new data 3"))
+		assert.Loosely(c, readFile(t, tempDir, "sub/dir/some/path/file_A"), should.Equal("new data 4"))
 
-		So(loggerWarnings(ctx), ShouldResemble, []string(nil))
+		assert.Loosely(c, loggerWarnings(ctx), should.Resemble([]string(nil)))
 	})
 }
 
@@ -1440,50 +1432,50 @@ func TestFindDeployed(t *testing.T) {
 
 	ctx := context.Background()
 
-	Convey("Given a temp directory", t, func() {
-		tempDir := mkTempDir()
+	ftt.Run("Given a temp directory", t, func(t *ftt.Test) {
+		tempDir := t.TempDir()
 
-		Convey("FindDeployed works with empty dir", func() {
+		t.Run("FindDeployed works with empty dir", func(t *ftt.Test) {
 			out, err := New(tempDir).FindDeployed(ctx)
-			So(err, ShouldBeNil)
-			So(out, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, out, should.BeNil)
 		})
 
-		Convey("FindDeployed works", func() {
+		t.Run("FindDeployed works", func(t *ftt.Test) {
 			d := New(tempDir)
 
 			// Deploy a bunch of stuff.
 			_, err := d.DeployInstance(ctx, "", makeTestInstance("test/pkg/123", nil, pkg.InstallModeCopy), "", 0)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			_, err = d.DeployInstance(ctx, "", makeTestInstance("test/pkg/456", nil, pkg.InstallModeCopy), "", 0)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			_, err = d.DeployInstance(ctx, "", makeTestInstance("test/pkg", nil, pkg.InstallModeCopy), "", 0)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			_, err = d.DeployInstance(ctx, "", makeTestInstance("test", nil, pkg.InstallModeCopy), "", 0)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			_, err = d.DeployInstance(ctx, "subdir", makeTestInstance("test/pkg/123", nil, pkg.InstallModeCopy), "", 0)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			_, err = d.DeployInstance(ctx, "subdir", makeTestInstance("test/pkg/456", nil, pkg.InstallModeCopy), "", 0)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			_, err = d.DeployInstance(ctx, "subdir", makeTestInstance("test/pkg", nil, pkg.InstallModeCopy), "", 0)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			_, err = d.DeployInstance(ctx, "subdir", makeTestInstance("test", nil, pkg.InstallModeCopy), "", 0)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// including some broken packages
 			_, err = d.DeployInstance(ctx, "", makeTestInstance("broken", nil, pkg.InstallModeCopy), "", 0)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			if runtime.GOOS == "windows" {
 				err = os.Remove(filepath.Join(tempDir, fs.SiteServiceDir, "pkgs", "8", "_current.txt"))
 			} else {
 				err = os.Remove(filepath.Join(tempDir, fs.SiteServiceDir, "pkgs", "8", "_current"))
 			}
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// Verify it is discoverable.
 			out, err := d.FindDeployed(ctx)
-			So(err, ShouldBeNil)
-			So(out, ShouldResemble, PinSliceBySubdir{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, out, should.Resemble(PinSliceBySubdir{
 				"": PinSlice{
 					{"test", "-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"},
 					{"test/pkg", "-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"},
@@ -1496,7 +1488,7 @@ func TestFindDeployed(t *testing.T) {
 					{"test/pkg/123", "-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"},
 					{"test/pkg/456", "-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"},
 				},
-			})
+			}))
 		})
 	})
 }
@@ -1504,14 +1496,14 @@ func TestFindDeployed(t *testing.T) {
 func TestRemoveDeployedCommon(t *testing.T) {
 	ctx := context.Background()
 
-	Convey("Given a temp directory", t, func() {
-		tempDir := mkTempDir()
+	ftt.Run("Given a temp directory", t, func(t *ftt.Test) {
+		tempDir := t.TempDir()
 
-		Convey("RemoveDeployed works with missing package", func() {
+		t.Run("RemoveDeployed works with missing package", func(t *ftt.Test) {
 			err := New(tempDir).RemoveDeployed(ctx, "", "package/path")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			err = New(tempDir).RemoveDeployed(ctx, "subdir", "package/path")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 	})
 }
@@ -1525,10 +1517,10 @@ func TestRemoveDeployedPosix(t *testing.T) {
 
 	ctx := context.Background()
 
-	Convey("Given a temp directory", t, func() {
-		tempDir := mkTempDir()
+	ftt.Run("Given a temp directory", t, func(t *ftt.Test) {
+		tempDir := t.TempDir()
 
-		Convey("RemoveDeployed works", func() {
+		t.Run("RemoveDeployed works", func(t *ftt.Test) {
 			d := New(tempDir)
 
 			// Deploy some instance (to keep it).
@@ -1537,7 +1529,7 @@ func TestRemoveDeployedPosix(t *testing.T) {
 				fs.NewTestFile("some/executable1", "data b", fs.TestFileOpts{Executable: true}),
 			}, pkg.InstallModeCopy)
 			_, err := d.DeployInstance(ctx, "", inst, "", 0)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// Deploy another instance (to remove it).
 			inst2 := makeTestInstance("test/package", []fs.File{
@@ -1547,37 +1539,37 @@ func TestRemoveDeployedPosix(t *testing.T) {
 				fs.NewTestSymlink("some/symlink", "executable"),
 			}, pkg.InstallModeCopy)
 			_, err = d.DeployInstance(ctx, "", inst2, "", 0)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// Now remove the second package.
 			err = d.RemoveDeployed(ctx, "", "test/package")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// Verify the final state (only first package should survive).
-			So(scanDir(tempDir), ShouldResemble, []string{
+			assert.Loosely(t, scanDir(tempDir), should.Resemble([]string{
 				".cipd/pkgs/0/-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/.cipdpkg/manifest.json",
 				".cipd/pkgs/0/_current:-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC",
 				".cipd/pkgs/0/description.json",
 				".cipd/tmp!",
 				"some/executable1*",
 				"some/file/path1",
-			})
+			}))
 
-			Convey("in subdir", func() {
+			t.Run("in subdir", func(t *ftt.Test) {
 				// Deploy some instance (to keep it).
 				_, err := d.DeployInstance(ctx, "subdir", inst2, "", 0)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				// Deploy another instance (to remove it).
 				_, err = d.DeployInstance(ctx, "subdir", inst, "", 0)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				// Now remove the second package.
 				err = d.RemoveDeployed(ctx, "subdir", "test/package")
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				// Verify the final state (only first package should survive).
-				So(scanDir(tempDir), ShouldResemble, []string{
+				assert.Loosely(t, scanDir(tempDir), should.Resemble([]string{
 					".cipd/pkgs/0/-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/.cipdpkg/manifest.json",
 					".cipd/pkgs/0/_current:-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC",
 					".cipd/pkgs/0/description.json",
@@ -1591,7 +1583,7 @@ func TestRemoveDeployedPosix(t *testing.T) {
 					"some/file/path1",
 					"subdir/some/executable1*",
 					"subdir/some/file/path1",
-				})
+				}))
 			})
 		})
 	})
@@ -1606,10 +1598,10 @@ func TestRemoveDeployedWindows(t *testing.T) {
 
 	ctx := context.Background()
 
-	Convey("Given a temp directory", t, func() {
-		tempDir := mkTempDir()
+	ftt.Run("Given a temp directory", t, func(t *ftt.Test) {
+		tempDir := t.TempDir()
 
-		Convey("RemoveDeployed works", func() {
+		t.Run("RemoveDeployed works", func(t *ftt.Test) {
 			d := New(tempDir)
 
 			// Deploy some instance (to keep it).
@@ -1618,7 +1610,7 @@ func TestRemoveDeployedWindows(t *testing.T) {
 				fs.NewTestFile("some/executable1", "data b", fs.TestFileOpts{Executable: true}),
 			}, pkg.InstallModeCopy)
 			_, err := d.DeployInstance(ctx, "", inst, "", 0)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// Deploy another instance (to remove it).
 			inst2 := makeTestInstance("test/package", []fs.File{
@@ -1627,37 +1619,37 @@ func TestRemoveDeployedWindows(t *testing.T) {
 				fs.NewTestFile("some/to-be-empty-dir/file", "data", fs.TestFileOpts{}),
 			}, pkg.InstallModeCopy)
 			_, err = d.DeployInstance(ctx, "", inst2, "", 0)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// Now remove the second package.
 			err = d.RemoveDeployed(ctx, "", "test/package")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// Verify the final state (only first package should survive).
-			So(scanDir(tempDir), ShouldResemble, []string{
+			assert.Loosely(t, scanDir(tempDir), should.Resemble([]string{
 				".cipd/pkgs/0/-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/.cipdpkg/manifest.json",
 				".cipd/pkgs/0/_current.txt",
 				".cipd/pkgs/0/description.json",
 				".cipd/tmp!",
 				"some/executable1",
 				"some/file/path1",
-			})
+			}))
 
-			Convey("in subdir", func() {
+			t.Run("in subdir", func(t *ftt.Test) {
 				// Deploy some instance (to keep it).
 				_, err := d.DeployInstance(ctx, "subdir", inst2, "", 0)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				// Deploy another instance (to remove it).
 				_, err = d.DeployInstance(ctx, "subdir", inst, "", 0)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				// Now remove the second package.
 				err = d.RemoveDeployed(ctx, "subdir", "test/package")
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				// Verify the final state (only first package should survive).
-				So(scanDir(tempDir), ShouldResemble, []string{
+				assert.Loosely(t, scanDir(tempDir), should.Resemble([]string{
 					".cipd/pkgs/0/-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/.cipdpkg/manifest.json",
 					".cipd/pkgs/0/_current.txt",
 					".cipd/pkgs/0/description.json",
@@ -1669,7 +1661,7 @@ func TestRemoveDeployedWindows(t *testing.T) {
 					"some/file/path1",
 					"subdir/some/executable1",
 					"subdir/some/file/path1",
-				})
+				}))
 			})
 		})
 	})
@@ -1680,28 +1672,28 @@ func TestCheckDeployedAndRepair(t *testing.T) {
 
 	ctx := context.Background()
 
-	Convey("Given a temp directory", t, func() {
-		tempDir := mkTempDir()
+	ftt.Run("Given a temp directory", t, func(t *ftt.Test) {
+		tempDir := t.TempDir()
 		dep := New(tempDir)
 
 		deployInst := func(mode pkg.InstallMode, f ...fs.File) pkg.Instance {
 			inst := makeTestInstance("test/package", f, mode)
 			inst.instanceID = "111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"
 			_, err := dep.DeployInstance(ctx, "subdir", inst, "", 0)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			return inst
 		}
 
 		rm := func(p string) {
-			So(os.Remove(filepath.Join(tempDir, filepath.FromSlash(p))), ShouldBeNil)
+			assert.Loosely(t, os.Remove(filepath.Join(tempDir, filepath.FromSlash(p))), should.BeNil)
 		}
 
 		check := func(expected *DeployedPackage) *DeployedPackage {
 			dp, err := dep.CheckDeployed(ctx, "subdir", "test/package", CheckPresence, pkg.WithoutManifest)
-			So(err, ShouldBeNil)
-			So(dp.Manifest, ShouldNotBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, dp.Manifest, should.NotBeNil)
 			dp.Manifest = nil
-			So(dp, ShouldResemble, expected)
+			assert.Loosely(t, dp, should.Resemble(expected))
 			return dp
 		}
 
@@ -1714,18 +1706,18 @@ func TestCheckDeployedAndRepair(t *testing.T) {
 				ToRedeploy: p.ToRedeploy,
 				ToRelink:   p.ToRelink,
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		}
 
 		checkHealthy := func() {
 			dp, err := dep.CheckDeployed(ctx, "subdir", "test/package", CheckPresence, pkg.WithoutManifest)
-			So(err, ShouldBeNil)
-			So(dp.Deployed, ShouldBeTrue)
-			So(dp.ToRedeploy, ShouldHaveLength, 0)
-			So(dp.ToRelink, ShouldHaveLength, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, dp.Deployed, should.BeTrue)
+			assert.Loosely(t, dp.ToRedeploy, should.HaveLength(0))
+			assert.Loosely(t, dp.ToRelink, should.HaveLength(0))
 		}
 
-		Convey("Copy install mode, no symlinks", func() {
+		t.Run("Copy install mode, no symlinks", func(t *ftt.Test) {
 			inst := deployInst(pkg.InstallModeCopy,
 				fs.NewTestFile("some/file/path", "data a", fs.TestFileOpts{}),
 				fs.NewTestFile("another-file", "data b", fs.TestFileOpts{}),
@@ -1752,7 +1744,7 @@ func TestCheckDeployedAndRepair(t *testing.T) {
 		})
 
 		if runtime.GOOS != "windows" {
-			Convey("Copy install mode, with symlink files", func() {
+			t.Run("Copy install mode, with symlink files", func(t *ftt.Test) {
 				inst := deployInst(pkg.InstallModeCopy,
 					fs.NewTestFile("some/file/path", "data a", fs.TestFileOpts{}),
 					fs.NewTestFile("another-file", "data b", fs.TestFileOpts{}),
@@ -1775,7 +1767,7 @@ func TestCheckDeployedAndRepair(t *testing.T) {
 					instancePath:      filepath.Join(tempDir, ".cipd/pkgs/0/"+inst.Pin().InstanceID),
 				})
 
-				Convey("Symlink itself is gone but the target is not", func() {
+				t.Run("Symlink itself is gone but the target is not", func(t *ftt.Test) {
 					rm("subdir/some/symlink")
 					expected.ToRelink = []string{"some/symlink"}
 
@@ -1784,7 +1776,7 @@ func TestCheckDeployedAndRepair(t *testing.T) {
 					checkHealthy()
 				})
 
-				Convey("Target is gone, but the symlink is not", func() {
+				t.Run("Target is gone, but the symlink is not", func(t *ftt.Test) {
 					rm("subdir/some/executable")
 					expected.ToRedeploy = []string{"some/executable"}
 					expected.ToRelink = []string{"some/symlink"} // ~ noop
@@ -1794,7 +1786,7 @@ func TestCheckDeployedAndRepair(t *testing.T) {
 					checkHealthy()
 				})
 
-				Convey("Absolute symlinks are gone", func() {
+				t.Run("Absolute symlinks are gone", func(t *ftt.Test) {
 					rm("subdir/working_abs_symlink")
 					rm("subdir/broken_abs_symlink")
 					expected.ToRelink = []string{"working_abs_symlink", "broken_abs_symlink"}
@@ -1805,7 +1797,7 @@ func TestCheckDeployedAndRepair(t *testing.T) {
 				})
 			})
 
-			Convey("Symlink install mode", func() {
+			t.Run("Symlink install mode", func(t *ftt.Test) {
 				inst := deployInst(pkg.InstallModeSymlink,
 					fs.NewTestFile("some/file/path", "data a", fs.TestFileOpts{}),
 					fs.NewTestFile("another-file", "data b", fs.TestFileOpts{}),
@@ -1825,7 +1817,7 @@ func TestCheckDeployedAndRepair(t *testing.T) {
 					instancePath:      filepath.Join(tempDir, ".cipd/pkgs/0/"+inst.Pin().InstanceID),
 				})
 
-				Convey("Site root files are gone, but gut files are OK", func() {
+				t.Run("Site root files are gone, but gut files are OK", func(t *ftt.Test) {
 					rm("subdir/some/file/path")
 					rm("subdir/some/symlink")
 					rm("subdir/broken_abs_symlink")
@@ -1836,7 +1828,7 @@ func TestCheckDeployedAndRepair(t *testing.T) {
 					checkHealthy()
 				})
 
-				Convey("Regular gut files are gone", func() {
+				t.Run("Regular gut files are gone", func(t *ftt.Test) {
 					rm(".cipd/pkgs/0/111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/some/executable")
 					expected.ToRedeploy = []string{"some/executable"}
 					expected.ToRelink = []string{"some/symlink"}
@@ -1846,7 +1838,7 @@ func TestCheckDeployedAndRepair(t *testing.T) {
 					checkHealthy()
 				})
 
-				Convey("Rel symlink gut files are gone", func() {
+				t.Run("Rel symlink gut files are gone", func(t *ftt.Test) {
 					rm(".cipd/pkgs/0/111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/some/symlink")
 					expected.ToRelink = []string{"some/symlink"}
 
@@ -1855,7 +1847,7 @@ func TestCheckDeployedAndRepair(t *testing.T) {
 					checkHealthy()
 				})
 
-				Convey("Abs symlink gut files are gone", func() {
+				t.Run("Abs symlink gut files are gone", func(t *ftt.Test) {
 					rm(".cipd/pkgs/0/111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/working_abs_symlink")
 					rm(".cipd/pkgs/0/111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/broken_abs_symlink")
 					expected.ToRelink = []string{"working_abs_symlink", "broken_abs_symlink"}
@@ -1874,8 +1866,8 @@ func TestUpgradeOldPkgDir(t *testing.T) {
 
 	ctx := context.Background()
 
-	Convey("Given an old-style pkgs dir", t, func() {
-		tempDir := mkTempDir()
+	ftt.Run("Given an old-style pkgs dir", t, func(t *ftt.Test) {
+		tempDir := t.TempDir()
 
 		d := New(tempDir)
 		trashDir := filepath.Join(tempDir, fs.SiteServiceDir, "trash")
@@ -1883,7 +1875,7 @@ func TestUpgradeOldPkgDir(t *testing.T) {
 
 		inst := makeTestInstance("test/package", nil, pkg.InstallModeSymlink)
 		_, err := d.DeployInstance(ctx, "", inst, "", 0)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		currentLine := func(folder, inst string) string {
 			if runtime.GOOS == "windows" {
@@ -1894,51 +1886,51 @@ func TestUpgradeOldPkgDir(t *testing.T) {
 
 		pkg0 := filepath.Join(tempDir, ".cipd", "pkgs", "0")
 		pkgOldStyle := filepath.Join(tempDir, ".cipd", "pkgs", "test_package-deadbeef")
-		So(fs.EnsureFileGone(ctx, filepath.Join(pkg0, descriptionName)), ShouldBeNil)
-		So(fs.Replace(ctx, pkg0, pkgOldStyle), ShouldBeNil)
-		So(scanDir(tempDir), ShouldResemble, []string{
+		assert.Loosely(t, fs.EnsureFileGone(ctx, filepath.Join(pkg0, descriptionName)), should.BeNil)
+		assert.Loosely(t, fs.Replace(ctx, pkg0, pkgOldStyle), should.BeNil)
+		assert.Loosely(t, scanDir(tempDir), should.Resemble([]string{
 			".cipd/pkgs/test_package-deadbeef/-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/.cipdpkg/manifest.json",
 			currentLine("test_package-deadbeef", "-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"),
 			".cipd/tmp!",
-		})
+		}))
 
-		Convey("reading the packages finds it", func() {
+		t.Run("reading the packages finds it", func(t *ftt.Test) {
 			pins, err := d.FindDeployed(ctx)
-			So(err, ShouldBeNil)
-			So(pins, ShouldResemble, PinSliceBySubdir{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, pins, should.Resemble(PinSliceBySubdir{
 				"": PinSlice{
 					{"test/package", "-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"},
 				},
-			})
+			}))
 
-			Convey("and upgrades the package", func() {
-				So(scanDir(tempDir), ShouldResemble, []string{
+			t.Run("and upgrades the package", func(t *ftt.Test) {
+				assert.Loosely(t, scanDir(tempDir), should.Resemble([]string{
 					".cipd/pkgs/test_package-deadbeef/-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/.cipdpkg/manifest.json",
 					currentLine("test_package-deadbeef", "-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"),
 					".cipd/pkgs/test_package-deadbeef/description.json",
 					".cipd/tmp!",
-				})
+				}))
 			})
 		})
 
-		Convey("can deploy new instance", func() {
+		t.Run("can deploy new instance", func(t *ftt.Test) {
 			inst.instanceID = "111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"
 			_, err := d.DeployInstance(ctx, "", inst, "", 0)
-			So(err, ShouldBeNil)
-			So(scanDir(tempDir), ShouldResemble, []string{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, scanDir(tempDir), should.Resemble([]string{
 				".cipd/pkgs/test_package-deadbeef/111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/.cipdpkg/manifest.json",
 				currentLine("test_package-deadbeef", "111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"),
 				".cipd/pkgs/test_package-deadbeef/description.json",
 				".cipd/tmp!",
-			})
+			}))
 		})
 
-		Convey("can deploy other package", func() {
+		t.Run("can deploy other package", func(t *ftt.Test) {
 			inst.packageName = "something/cool"
 			inst.instanceID = "111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"
 			_, err := d.DeployInstance(ctx, "", inst, "", 0)
-			So(err, ShouldBeNil)
-			So(scanDir(tempDir), ShouldResemble, []string{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, scanDir(tempDir), should.Resemble([]string{
 				".cipd/pkgs/0/111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/.cipdpkg/manifest.json",
 				currentLine("0", "111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"),
 				".cipd/pkgs/0/description.json",
@@ -1946,7 +1938,7 @@ func TestUpgradeOldPkgDir(t *testing.T) {
 				currentLine("test_package-deadbeef", "-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"),
 				".cipd/pkgs/test_package-deadbeef/description.json",
 				".cipd/tmp!",
-			})
+			}))
 		})
 
 	})
@@ -1955,27 +1947,27 @@ func TestUpgradeOldPkgDir(t *testing.T) {
 func TestNumSet(t *testing.T) {
 	t.Parallel()
 
-	Convey("numSet", t, func() {
+	ftt.Run("numSet", t, func(t *ftt.Test) {
 		ns := numSet{}
 
-		Convey("can add numbers out of order", func() {
+		t.Run("can add numbers out of order", func(t *ftt.Test) {
 			for _, n := range []int{392, 1, 7, 29, 4} {
 				ns.addNum(n)
 			}
-			So(ns, ShouldResemble, numSet{1, 4, 7, 29, 392})
+			assert.Loosely(t, ns, should.Resemble(numSet{1, 4, 7, 29, 392}))
 
-			Convey("and rejects duplicates", func() {
+			t.Run("and rejects duplicates", func(t *ftt.Test) {
 				ns.addNum(7)
-				So(ns, ShouldResemble, numSet{1, 4, 7, 29, 392})
+				assert.Loosely(t, ns, should.Resemble(numSet{1, 4, 7, 29, 392}))
 			})
 		})
 
-		Convey("smallestNewNum", func() {
+		t.Run("smallestNewNum", func(t *ftt.Test) {
 			ns = numSet{1, 4, 7, 29, 392}
 
 			smallNums := []int{0, 2, 3, 5, 6, 8}
 			for _, sn := range smallNums {
-				So(ns.smallestNewNum(), ShouldEqual, sn)
+				assert.Loosely(t, ns.smallestNewNum(), should.Equal(sn))
 				ns.addNum(sn)
 			}
 		})
@@ -1988,20 +1980,20 @@ func TestResolveValidPackageDirs(t *testing.T) {
 
 	ctx := context.Background()
 
-	Convey("resolveValidPackageDirs", t, func() {
-		tempDir := mkTempDir()
+	ftt.Run("resolveValidPackageDirs", t, func(t *ftt.Test) {
+		tempDir := t.TempDir()
 		d := New(tempDir).(*deployerImpl)
 		pkgdir, err := d.fs.RootRelToAbs(filepath.FromSlash(packagesDir))
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		writeFiles := func(files ...fs.File) {
 			for _, f := range files {
 				name := filepath.Join(tempDir, f.Name())
 				if f.Symlink() {
 					targ, err := f.SymlinkTarget()
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					err = d.fs.EnsureSymlink(ctx, name, targ)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 				} else {
 					err := d.fs.EnsureFile(ctx, name, func(wf *os.File) error {
 						reader, err := f.Open()
@@ -2012,7 +2004,7 @@ func TestResolveValidPackageDirs(t *testing.T) {
 						_, err = io.Copy(wf, reader)
 						return err
 					})
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 				}
 			}
 		}
@@ -2027,74 +2019,74 @@ func TestResolveValidPackageDirs(t *testing.T) {
 			nums, all := d.resolveValidPackageDirs(ctx, pkgdir)
 			for desc, absPath := range all {
 				rel, err := filepath.Rel(tempDir, absPath)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				all[desc] = strings.Replace(filepath.Clean(rel), "\\", "/", -1)
 			}
 			return nums, all
 		}
 
-		Convey("packagesDir with just description.json", func() {
+		t.Run("packagesDir with just description.json", func(t *ftt.Test) {
 			writeFiles(
 				desc("0", "", "some/package/name"),
 			)
 			nums, all := resolve()
-			So(nums, ShouldResemble, numSet{0})
-			So(all, ShouldResemble, map[description]string{
+			assert.Loosely(t, nums, should.Resemble(numSet{0}))
+			assert.Loosely(t, all, should.Resemble(map[description]string{
 				{"", "some/package/name"}: ".cipd/pkgs/0",
-			})
-			So(scanDir(tempDir), ShouldResemble, []string{
+			}))
+			assert.Loosely(t, scanDir(tempDir), should.Resemble([]string{
 				".cipd/pkgs/0/description.json",
-			})
+			}))
 		})
 
-		Convey("packagesDir with duplicates", func() {
+		t.Run("packagesDir with duplicates", func(t *ftt.Test) {
 			writeFiles(
 				desc("0", "", "some/package/name"),
 				desc("some_other", "", "some/package/name"),
 				desc("1", "", "some/package/name"),
 			)
 			nums, all := resolve()
-			So(nums, ShouldResemble, numSet{0})
-			So(all, ShouldResemble, map[description]string{
+			assert.Loosely(t, nums, should.Resemble(numSet{0}))
+			assert.Loosely(t, all, should.Resemble(map[description]string{
 				{"", "some/package/name"}: ".cipd/pkgs/0",
-			})
-			So(scanDir(tempDir), ShouldResemble, []string{
+			}))
+			assert.Loosely(t, scanDir(tempDir), should.Resemble([]string{
 				".cipd/pkgs/0/description.json",
-			})
+			}))
 		})
 
-		Convey("bogus file", func() {
+		t.Run("bogus file", func(t *ftt.Test) {
 			writeFiles(
 				fs.NewTestFile(".cipd/pkgs/wat", "hello", fs.TestFileOpts{}),
 			)
 			nums, all := resolve()
-			So(nums, ShouldResemble, numSet(nil))
-			So(all, ShouldResemble, map[description]string{})
-			So(scanDir(tempDir), ShouldResemble, []string{".cipd/pkgs!"})
+			assert.Loosely(t, nums, should.Resemble(numSet(nil)))
+			assert.Loosely(t, all, should.Resemble(map[description]string{}))
+			assert.Loosely(t, scanDir(tempDir), should.Resemble([]string{".cipd/pkgs!"}))
 		})
 
-		Convey("bad description.json", func() {
+		t.Run("bad description.json", func(t *ftt.Test) {
 			writeFiles(
 				fs.NewTestFile(".cipd/pkgs/0/description.json", "hello", fs.TestFileOpts{}),
 			)
 			nums, all := resolve()
-			So(nums, ShouldResemble, numSet(nil))
-			So(all, ShouldResemble, map[description]string{})
-			So(scanDir(tempDir), ShouldResemble, []string{".cipd/pkgs!"})
+			assert.Loosely(t, nums, should.Resemble(numSet(nil)))
+			assert.Loosely(t, all, should.Resemble(map[description]string{}))
+			assert.Loosely(t, scanDir(tempDir), should.Resemble([]string{".cipd/pkgs!"}))
 		})
 
-		Convey("package with no manifest", func() {
+		t.Run("package with no manifest", func(t *ftt.Test) {
 			writeFiles(
 				fs.NewTestFile(".cipd/pkgs/0/deadbeef/something", "hello", fs.TestFileOpts{}),
 				fs.NewTestSymlink(".cipd/pkgs/0/_current", "deadbeef"),
 			)
 			nums, all := resolve()
-			So(nums, ShouldResemble, numSet(nil))
-			So(all, ShouldResemble, map[description]string{})
-			So(scanDir(tempDir), ShouldResemble, []string{".cipd/pkgs!"})
+			assert.Loosely(t, nums, should.Resemble(numSet(nil)))
+			assert.Loosely(t, all, should.Resemble(map[description]string{}))
+			assert.Loosely(t, scanDir(tempDir), should.Resemble([]string{".cipd/pkgs!"}))
 		})
 
-		Convey("package with manifest", func() {
+		t.Run("package with manifest", func(t *ftt.Test) {
 			curLink := fs.NewTestSymlink(".cipd/pkgs/oldskool/_current", "-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC")
 			if runtime.GOOS == "windows" {
 				curLink = fs.NewTestFile(".cipd/pkgs/oldskool/_current.txt", "-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC", fs.TestFileOpts{})
@@ -2106,23 +2098,23 @@ func TestResolveValidPackageDirs(t *testing.T) {
 				curLink,
 			)
 			nums, all := resolve()
-			So(nums, ShouldResemble, numSet(nil))
-			So(all, ShouldResemble, map[description]string{
+			assert.Loosely(t, nums, should.Resemble(numSet(nil)))
+			assert.Loosely(t, all, should.Resemble(map[description]string{
 				{"", "cool/cats"}: ".cipd/pkgs/oldskool",
-			})
+			}))
 			linkExpect := curLink.Name()
 			if curLink.Symlink() {
 				targ, err := curLink.SymlinkTarget()
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				linkExpect = fmt.Sprintf("%s:%s", curLink.Name(), targ)
 			}
 
-			So(scanDir(tempDir), ShouldResemble, []string{
+			assert.Loosely(t, scanDir(tempDir), should.Resemble([]string{
 				".cipd/pkgs/oldskool/-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/.cipdpkg/manifest.json",
 				".cipd/pkgs/oldskool/-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC/something",
 				linkExpect,
 				".cipd/pkgs/oldskool/description.json",
-			})
+			}))
 		})
 
 	})
@@ -2137,8 +2129,8 @@ func TestPackagePathCollision(t *testing.T) {
 
 	ctx := context.Background()
 
-	Convey("Collide packagePath", t, func() {
-		tempDir := mkTempDir()
+	ftt.Run("Collide packagePath", t, func(t *ftt.Test) {
+		tempDir := t.TempDir()
 		d := New(tempDir).(*deployerImpl)
 
 		results := make([]struct {
@@ -2164,14 +2156,14 @@ func TestPackagePathCollision(t *testing.T) {
 		seen := stringset.New(0)
 		for _, r := range results {
 			if r.err != nil { // avoid gazillion of goconvey checkmarks
-				So(r.err, ShouldBeNil)
+				assert.Loosely(t, r.err, should.BeNil)
 			} else {
 				seen.Add(fmt.Sprintf("%s:%s", r.pkg, r.path))
 			}
 		}
 
 		// Each 'pkg' got exactly one 'path'.
-		So(seen.ToSlice(), ShouldHaveLength, packages)
+		assert.Loosely(t, seen.ToSlice(), should.HaveLength(packages))
 	})
 }
 
@@ -2188,7 +2180,7 @@ func TestDeployInstanceCollision(t *testing.T) {
 		installMode = pkg.InstallModeCopy
 	}
 
-	Convey("Collide DeployInstance", t, func() {
+	ftt.Run("Collide DeployInstance", t, func(t *ftt.Test) {
 		testInstances := make([]*testPackageInstance, instances)
 		for i := range testInstances {
 			testInstances[i] = makeTestInstance(fmt.Sprintf("pkg/%d", i), []fs.File{
@@ -2198,7 +2190,7 @@ func TestDeployInstanceCollision(t *testing.T) {
 			testInstances[i].instanceID = fmt.Sprintf("-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwF%02d", i)
 		}
 
-		tempDir := mkTempDir()
+		tempDir := t.TempDir()
 		d := New(tempDir).(*deployerImpl)
 
 		wg := sync.WaitGroup{}
@@ -2222,8 +2214,8 @@ func TestRemoveEmptyTrees(t *testing.T) {
 
 	ctx := context.Background()
 
-	Convey("Given a temp directory", t, func() {
-		tempDir := mkTempDir()
+	ftt.Run("Given a temp directory", t, func(t *ftt.Test) {
+		tempDir := t.TempDir()
 
 		absPath := func(rel string) string {
 			return filepath.Join(tempDir, filepath.FromSlash(rel))
@@ -2231,13 +2223,13 @@ func TestRemoveEmptyTrees(t *testing.T) {
 		touch := func(rel string) {
 			abs := absPath(rel)
 			err := os.MkdirAll(filepath.Dir(abs), 0777)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			f, err := os.Create(abs)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			f.Close()
 		}
 		delete := func(rel string) {
-			So(os.Remove(absPath(rel)), ShouldBeNil)
+			assert.Loosely(t, os.Remove(absPath(rel)), should.BeNil)
 		}
 
 		dirSet := func(rel ...string) stringset.Set {
@@ -2248,20 +2240,20 @@ func TestRemoveEmptyTrees(t *testing.T) {
 			return out
 		}
 
-		Convey("Simple case", func() {
+		t.Run("Simple case", func(t *ftt.Test) {
 			touch("1/2/3/4")
 			delete("1/2/3/4")
 			removeEmptyTrees(ctx, absPath("1/2"), dirSet("1/2/3"))
-			So(scanDir(tempDir), ShouldResemble, []string{"1!"})
+			assert.Loosely(t, scanDir(tempDir), should.Resemble([]string{"1!"}))
 		})
 
-		Convey("Non empty", func() {
+		t.Run("Non empty", func(t *ftt.Test) {
 			touch("1/2/3/4")
 			removeEmptyTrees(ctx, absPath("1/2"), dirSet("1/2/3"))
-			So(scanDir(tempDir), ShouldResemble, []string{"1/2/3/4"})
+			assert.Loosely(t, scanDir(tempDir), should.Resemble([]string{"1/2/3/4"}))
 		})
 
-		Convey("Multiple empty", func() {
+		t.Run("Multiple empty", func(t *ftt.Test) {
 			touch("1/2/3a/4")
 			touch("1/2/3b/4")
 
@@ -2269,10 +2261,10 @@ func TestRemoveEmptyTrees(t *testing.T) {
 			delete("1/2/3b/4")
 
 			removeEmptyTrees(ctx, absPath("1/2"), dirSet("1/2/3a", "1/2/3b"))
-			So(scanDir(tempDir), ShouldResemble, []string{"1!"})
+			assert.Loosely(t, scanDir(tempDir), should.Resemble([]string{"1!"}))
 		})
 
-		Convey("Respects 'empty' set", func() {
+		t.Run("Respects 'empty' set", func(t *ftt.Test) {
 			touch("1/2/3a/4")
 			touch("1/2/3b/4")
 
@@ -2280,7 +2272,7 @@ func TestRemoveEmptyTrees(t *testing.T) {
 			delete("1/2/3b/4")
 
 			removeEmptyTrees(ctx, absPath("1/2"), dirSet("1/2/3b"))
-			So(scanDir(tempDir), ShouldResemble, []string{"1/2/3a!"})
+			assert.Loosely(t, scanDir(tempDir), should.Resemble([]string{"1/2/3a!"}))
 		})
 	})
 }
@@ -2391,8 +2383,8 @@ func isEmptyDir(path string) bool {
 
 // readFile reads content of an existing text file. Root path is provided as
 // a native path, rel - as a slash-separated path.
-func readFile(root, rel string) string {
+func readFile(t testing.TB, root, rel string) string {
 	body, err := os.ReadFile(filepath.Join(root, filepath.FromSlash(rel)))
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil)
 	return string(body)
 }

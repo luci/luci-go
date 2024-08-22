@@ -32,8 +32,9 @@ import (
 	"go.chromium.org/luci/cipd/common"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 // No need to create a lot of files in tests.
@@ -42,11 +43,11 @@ const testInstanceCacheMaxSize = 10
 func TestInstanceCache(t *testing.T) {
 	t.Parallel()
 
-	Convey("InstanceCache", t, func() {
+	ftt.Run("InstanceCache", t, func(t *ftt.Test) {
 		ctx, tc := testclock.UseTime(context.Background(), testclock.TestTimeLocal)
 
 		tempDir, err := ioutil.TempDir("", "instanceche_test")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		defer os.RemoveAll(tempDir)
 		fs := fs.NewFileSystem(tempDir, "")
 
@@ -95,7 +96,7 @@ func TestInstanceCache(t *testing.T) {
 				{Context: ctx, Pin: pin},
 			})
 			res := cache.WaitInstance()
-			So(res.Err, ShouldBeNil)
+			assert.Loosely(t, res.Err, should.BeNil)
 
 			fetchM.Lock()
 			created = fetchCalls > before
@@ -106,21 +107,21 @@ func TestInstanceCache(t *testing.T) {
 
 		putNew := func(cache *InstanceCache, pin common.Pin) {
 			created, src := access(cache, pin)
-			So(created, ShouldBeTrue)
-			So(src.Close(ctx, false), ShouldBeNil)
+			assert.Loosely(t, created, should.BeTrue)
+			assert.Loosely(t, src.Close(ctx, false), should.BeNil)
 		}
 
 		readSrc := func(src pkg.Source) string {
 			buf, err := io.ReadAll(io.NewSectionReader(src, 0, src.Size()))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			return string(buf)
 		}
 
 		testHas := func(cache *InstanceCache, pin common.Pin) {
 			created, src := access(cache, pin)
-			So(created, ShouldBeFalse)
-			So(readSrc(src), ShouldEqual, fakeData(pin))
-			So(src.Close(ctx, false), ShouldBeNil)
+			assert.Loosely(t, created, should.BeFalse)
+			assert.Loosely(t, readSrc(src), should.Equal(fakeData(pin)))
+			assert.Loosely(t, src.Close(ctx, false), should.BeNil)
 		}
 
 		accessTime := func(cache *InstanceCache, pin common.Pin) (lastAccess time.Time, ok bool) {
@@ -136,14 +137,14 @@ func TestInstanceCache(t *testing.T) {
 
 		countTempFiles := func() int {
 			tempDirFile, err := os.Open(tempDir)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			defer tempDirFile.Close()
 			files, err := tempDirFile.Readdirnames(0)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			return len(files)
 		}
 
-		Convey("Works in general", func() {
+		t.Run("Works in general", func(t *ftt.Test) {
 			cache2 := &InstanceCache{FS: fs, Fetcher: fetcher}
 			cache2.Launch(ctx)
 			defer cache2.Close(ctx)
@@ -156,7 +157,7 @@ func TestInstanceCache(t *testing.T) {
 			testHas(cache2, pin(0))
 		})
 
-		Convey("Temp cache removes files", func() {
+		t.Run("Temp cache removes files", func(t *ftt.Test) {
 			cache := &InstanceCache{
 				FS:      fs,
 				Tmp:     true,
@@ -165,59 +166,59 @@ func TestInstanceCache(t *testing.T) {
 			cache.Launch(ctx)
 			defer cache.Close(ctx)
 
-			So(countTempFiles(), ShouldEqual, 0)
+			assert.Loosely(t, countTempFiles(), should.BeZero)
 
 			cache.RequestInstances(ctx, []*InstanceRequest{
 				{Context: ctx, Pin: pin(0)},
 			})
 			res := cache.WaitInstance()
-			So(res.Err, ShouldBeNil)
+			assert.Loosely(t, res.Err, should.BeNil)
 
-			So(countTempFiles(), ShouldEqual, 1)
-			So(res.Source.Close(ctx, false), ShouldBeNil)
-			So(countTempFiles(), ShouldEqual, 0)
+			assert.Loosely(t, countTempFiles(), should.Equal(1))
+			assert.Loosely(t, res.Source.Close(ctx, false), should.BeNil)
+			assert.Loosely(t, countTempFiles(), should.BeZero)
 		})
 
-		Convey("Redownloads corrupted files", func() {
-			So(countTempFiles(), ShouldEqual, 0)
+		t.Run("Redownloads corrupted files", func(t *ftt.Test) {
+			assert.Loosely(t, countTempFiles(), should.BeZero)
 
 			// Download the first time.
 			cache.RequestInstances(ctx, []*InstanceRequest{
 				{Context: ctx, Pin: pin(0)},
 			})
 			res := cache.WaitInstance()
-			So(res.Err, ShouldBeNil)
-			So(fetchCalls, ShouldEqual, 1)
-			So(res.Source.Close(ctx, false), ShouldBeNil)
+			assert.Loosely(t, res.Err, should.BeNil)
+			assert.Loosely(t, fetchCalls, should.Equal(1))
+			assert.Loosely(t, res.Source.Close(ctx, false), should.BeNil)
 
 			// Stored in the cache (plus state.db file).
-			So(countTempFiles(), ShouldEqual, 2)
+			assert.Loosely(t, countTempFiles(), should.Equal(2))
 
 			// The second call grabs it from the cache.
 			cache.RequestInstances(ctx, []*InstanceRequest{
 				{Context: ctx, Pin: pin(0)},
 			})
 			res = cache.WaitInstance()
-			So(res.Err, ShouldBeNil)
-			So(fetchCalls, ShouldEqual, 1)
+			assert.Loosely(t, res.Err, should.BeNil)
+			assert.Loosely(t, fetchCalls, should.Equal(1))
 
 			// Close as corrupted. Should be removed from the cache.
-			So(res.Source.Close(ctx, true), ShouldBeNil)
+			assert.Loosely(t, res.Source.Close(ctx, true), should.BeNil)
 
 			// Only state.db file left.
-			So(countTempFiles(), ShouldEqual, 1)
+			assert.Loosely(t, countTempFiles(), should.Equal(1))
 
 			// Download the second time.
 			cache.RequestInstances(ctx, []*InstanceRequest{
 				{Context: ctx, Pin: pin(0)},
 			})
 			res = cache.WaitInstance()
-			So(res.Err, ShouldBeNil)
-			So(fetchCalls, ShouldEqual, 2)
-			So(res.Source.Close(ctx, false), ShouldBeNil)
+			assert.Loosely(t, res.Err, should.BeNil)
+			assert.Loosely(t, fetchCalls, should.Equal(2))
+			assert.Loosely(t, res.Source.Close(ctx, false), should.BeNil)
 		})
 
-		Convey("Concurrency", func() {
+		t.Run("Concurrency", func(t *ftt.Test) {
 			cache := &InstanceCache{
 				FS:      fs,
 				Fetcher: fetcher,
@@ -233,21 +234,21 @@ func TestInstanceCache(t *testing.T) {
 				})
 			}
 
-			Convey("Preserves the order when using single stream", func() {
+			t.Run("Preserves the order when using single stream", func(t *ftt.Test) {
 				cache.ParallelDownloads = 1
 				cache.Launch(ctx)
 
 				cache.RequestInstances(ctx, reqs)
 				for i := 0; i < len(reqs); i++ {
 					res := cache.WaitInstance()
-					So(res.Err, ShouldBeNil)
-					So(res.State.(int), ShouldEqual, i)
-					So(readSrc(res.Source), ShouldEqual, fakeData(pin(i)))
-					So(res.Source.Close(ctx, false), ShouldBeNil)
+					assert.Loosely(t, res.Err, should.BeNil)
+					assert.Loosely(t, res.State.(int), should.Equal(i))
+					assert.Loosely(t, readSrc(res.Source), should.Equal(fakeData(pin(i))))
+					assert.Loosely(t, res.Source.Close(ctx, false), should.BeNil)
 				}
 			})
 
-			Convey("Doesn't deadlock", func() {
+			t.Run("Doesn't deadlock", func(t *ftt.Test) {
 				cache.ParallelDownloads = 4
 				cache.Launch(ctx)
 
@@ -256,15 +257,15 @@ func TestInstanceCache(t *testing.T) {
 				cache.RequestInstances(ctx, reqs)
 				for i := 0; i < len(reqs); i++ {
 					res := cache.WaitInstance()
-					So(res.Err, ShouldBeNil)
-					So(res.Source.Close(ctx, false), ShouldBeNil)
+					assert.Loosely(t, res.Err, should.BeNil)
+					assert.Loosely(t, res.Source.Close(ctx, false), should.BeNil)
 					seen[res.State.(int)] = struct{}{}
 				}
 
-				So(len(seen), ShouldEqual, len(reqs))
+				assert.Loosely(t, len(seen), should.Equal(len(reqs)))
 			})
 
-			Convey("Handles errors", func() {
+			t.Run("Handles errors", func(t *ftt.Test) {
 				fetchErr = make(chan error, len(reqs))
 
 				cache.ParallelDownloads = 4
@@ -285,17 +286,17 @@ func TestInstanceCache(t *testing.T) {
 				for i := 0; i < len(reqs); i++ {
 					res := cache.WaitInstance()
 					if res.Source != nil {
-						So(res.Source.Close(ctx, false), ShouldBeNil)
+						assert.Loosely(t, res.Source.Close(ctx, false), should.BeNil)
 					}
 					if res.Err != nil {
 						errs++
 					}
 				}
-				So(errs, ShouldEqual, errCount)
+				assert.Loosely(t, errs, should.Equal(errCount))
 			})
 		})
 
-		Convey("GC respects MaxSize", func() {
+		t.Run("GC respects MaxSize", func(t *ftt.Test) {
 			// Add twice more the limit.
 			for i := 0; i < testInstanceCacheMaxSize*2; i++ {
 				putNew(cache, pin(i))
@@ -303,7 +304,7 @@ func TestInstanceCache(t *testing.T) {
 			}
 
 			// Check the number of actual files.
-			So(countTempFiles(), ShouldEqual, testInstanceCacheMaxSize+1) // +1 for state.db
+			assert.Loosely(t, countTempFiles(), should.Equal(testInstanceCacheMaxSize+1)) // +1 for state.db
 
 			// Only last testInstanceCacheMaxSize instances are still in the cache.
 			for i := testInstanceCacheMaxSize; i < testInstanceCacheMaxSize*2; i++ {
@@ -315,7 +316,7 @@ func TestInstanceCache(t *testing.T) {
 			}
 		})
 
-		Convey("GC respects MaxAge", func() {
+		t.Run("GC respects MaxAge", func(t *ftt.Test) {
 			cache.maxAge = 2500 * time.Millisecond
 			for i := 0; i < 8; i++ {
 				if i != 0 {
@@ -340,13 +341,13 @@ func TestInstanceCache(t *testing.T) {
 			}
 		})
 
-		Convey("RequestInstancesDoesNotEvictEntriesToBeFetched", func() {
+		t.Run("RequestInstancesDoesNotEvictEntriesToBeFetched", func(t *ftt.Test) {
 			cache.maxAge = 2 * time.Second
 			for i := 0; i < 8; i++ {
 				putNew(cache, pin(i))
 			}
 			// At this point, 8 fetches have been done.
-			So(fetchCalls, ShouldEqual, 8)
+			assert.Loosely(t, fetchCalls, should.Equal(8))
 
 			tc.Add(3 * time.Second)
 
@@ -363,15 +364,15 @@ func TestInstanceCache(t *testing.T) {
 
 			for i := 0; i < 9; i++ {
 				res := cache.WaitInstance()
-				So(res.Err, ShouldBeNil)
-				So(res.Source.Close(ctx, false), ShouldBeNil)
+				assert.Loosely(t, res.Err, should.BeNil)
+				assert.Loosely(t, res.Source.Close(ctx, false), should.BeNil)
 			}
 
 			// Only one new fetch should happen, for pin 10.
-			So(fetchCalls, ShouldEqual, 9)
+			assert.Loosely(t, fetchCalls, should.Equal(9))
 		})
 
-		Convey("Sync", func() {
+		t.Run("Sync", func(t *ftt.Test) {
 			stateDbPath := filepath.Join(tempDir, instanceCacheStateFilename)
 			const count = 10
 
@@ -386,25 +387,25 @@ func TestInstanceCache(t *testing.T) {
 				// state.db must be restored.
 				for i := 0; i < count; i++ {
 					lastAccess, ok := accessTime(cache, pin(i))
-					So(ok, ShouldBeTrue)
-					So(lastAccess.UnixNano(), ShouldEqual, clock.Now(ctx).UnixNano())
+					assert.Loosely(t, ok, should.BeTrue)
+					assert.Loosely(t, lastAccess.UnixNano(), should.Equal(clock.Now(ctx).UnixNano()))
 				}
 
 				_, ok := accessTime(cache, common.Pin{"nonexistent", "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"})
-				So(ok, ShouldBeFalse)
+				assert.Loosely(t, ok, should.BeFalse)
 			}
 
-			Convey("state.db disappeared", func() {
+			t.Run("state.db disappeared", func(t *ftt.Test) {
 				testSync(func() {
 					err := os.Remove(stateDbPath)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 				})
 			})
 
-			Convey("state.db corrupted", func() {
+			t.Run("state.db corrupted", func(t *ftt.Test) {
 				testSync(func() {
 					f, err := os.Create(stateDbPath)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					f.WriteString("blah")
 					defer f.Close()
 				})

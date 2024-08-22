@@ -119,6 +119,9 @@ type InstanceCache struct {
 
 	stateLock sync.Mutex // synchronizes access to the state file.
 
+	// true if Launch was called
+	launched bool
+
 	fetchPending int32
 	fetchReq     chan *InstanceRequest
 	fetchRes     chan *InstanceResult // non-nil only if ParallelDownloads > 0
@@ -181,6 +184,11 @@ func (c *InstanceCache) Launch(ctx context.Context) {
 		panic("ParallelDownloads must be non-negative")
 	}
 
+	if c.launched {
+		panic("Called InstanceCache.Launch more than once")
+	}
+	c.launched = true
+
 	tmp := ""
 	if c.Tmp {
 		tmp = " temporary"
@@ -239,6 +247,11 @@ func (c *InstanceCache) Launch(ctx context.Context) {
 //
 // The caller should ensure there's no pending fetches before making this call.
 func (c *InstanceCache) Close(ctx context.Context) {
+	if !c.launched {
+		// no-op if InstanceCache never launched.
+		return
+	}
+
 	if c.HasPendingFetches() {
 		panic("closing an InstanceCache with some fetches still pending")
 	}

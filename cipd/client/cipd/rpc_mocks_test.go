@@ -16,19 +16,26 @@ package cipd
 
 import (
 	"context"
+	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"google.golang.org/grpc"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/registry"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
+func init() {
+	registry.RegisterCmpOption(cmp.AllowUnexported(rpcCall{}))
+}
+
 // This file has no tests, but contains definition of mocks for cas.Storage and
-// cipd.Repository RPC clients used by tests.
+// ciintipd.Repository RPC clients used by tests.
 
 type rpcCall struct {
 	method string
@@ -38,13 +45,13 @@ type rpcCall struct {
 }
 
 type mockedRPCClient struct {
-	c        C
+	t        testing.TB
 	expected []rpcCall
 	many     *rpcCall
 }
 
-func (m *mockedRPCClient) C(c C) {
-	m.c = c
+func (m *mockedRPCClient) TB(t testing.TB) {
+	m.t = t
 }
 
 func (m *mockedRPCClient) expect(r rpcCall) {
@@ -58,7 +65,7 @@ func (m *mockedRPCClient) expectMany(r rpcCall) {
 
 func (m *mockedRPCClient) assertAllCalled() {
 	if m.many == nil {
-		m.c.So(m.expected, ShouldHaveLength, 0)
+		assert.Loosely(m.t, m.expected, should.BeEmpty)
 	}
 }
 
@@ -72,7 +79,8 @@ func (m *mockedRPCClient) call(method string, in proto.Message, opts []grpc.Call
 			m.expected = m.expected[1:]
 		}
 	}
-	m.c.So(rpcCall{method: method, in: in}, ShouldResemble, rpcCall{method: expected.method, in: expected.in})
+	assert.That(m.t, rpcCall{method: method, in: in},
+		should.Match(rpcCall{method: expected.method, in: expected.in}))
 	return expected.out, expected.err
 }
 

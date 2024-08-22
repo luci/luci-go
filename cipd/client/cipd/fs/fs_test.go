@@ -18,7 +18,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -26,65 +25,67 @@ import (
 	"sync"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestCaseSensitive(t *testing.T) {
 	t.Parallel()
 
-	Convey("CaseSensitive doesn't crash", t, func(c C) {
-		fs := tempFileSystem(c)
+	ftt.Run("CaseSensitive doesn't crash", t, func(c *ftt.Test) {
+		fs := tempFileSystem(t)
 
 		_, err := fs.CaseSensitive()
-		So(err, ShouldBeNil)
+		assert.Loosely(c, err, should.BeNil)
 
 		// No garbage left around.
 		entries, err := os.ReadDir(fs.join(""))
-		So(err, ShouldBeNil)
-		So(entries, ShouldHaveLength, 0)
+		assert.Loosely(c, err, should.BeNil)
+		assert.Loosely(c, entries, should.HaveLength(0))
 	})
 }
 
 func TestCwdRelToAbs(t *testing.T) {
 	t.Parallel()
 
-	Convey("CwdRelToAbs works", t, func(c C) {
-		fs := tempFileSystem(c)
+	ftt.Run("CwdRelToAbs works", t, func(c *ftt.Test) {
+		fs := tempFileSystem(t)
 		p, err := fs.CwdRelToAbs(fs.Root())
-		So(err, ShouldBeNil)
-		So(p, ShouldEqual, fs.Root())
+		assert.Loosely(c, err, should.BeNil)
+		assert.Loosely(c, p, should.Equal(fs.Root()))
 
 		p, err = fs.CwdRelToAbs(fs.join("already_abs/def"))
-		So(err, ShouldBeNil)
-		So(p, ShouldEqual, fs.join("already_abs/def"))
+		assert.Loosely(c, err, should.BeNil)
+		assert.Loosely(c, p, should.Equal(fs.join("already_abs/def")))
 
 		_, err = fs.CwdRelToAbs(fs.join(".."))
-		So(err, ShouldNotBeNil)
+		assert.Loosely(c, err, should.NotBeNil)
 
 		_, err = fs.CwdRelToAbs(fs.join("../.."))
-		So(err, ShouldNotBeNil)
+		assert.Loosely(c, err, should.NotBeNil)
 
 		_, err = fs.CwdRelToAbs(fs.join("../abc"))
-		So(err, ShouldNotBeNil)
+		assert.Loosely(c, err, should.NotBeNil)
 	})
 }
 
 func TestRootRelToAbs(t *testing.T) {
 	t.Parallel()
 
-	Convey("RootRelToAbs works", t, func(c C) {
-		fs := tempFileSystem(c)
+	ftt.Run("RootRelToAbs works", t, func(c *ftt.Test) {
+		fs := tempFileSystem(t)
 
 		p, err := fs.RootRelToAbs(".")
-		So(err, ShouldBeNil)
-		So(p, ShouldEqual, fs.Root())
+		assert.Loosely(c, err, should.BeNil)
+		assert.Loosely(c, p, should.Equal(fs.Root()))
 
 		p, err = fs.RootRelToAbs(fs.join("already_abs/def"))
-		So(err, ShouldBeNil)
-		So(p, ShouldEqual, fs.join("already_abs/def"))
+		assert.Loosely(c, err, should.BeNil)
+		assert.Loosely(c, p, should.Equal(fs.join("already_abs/def")))
 
 		_, err = fs.RootRelToAbs(filepath.FromSlash("abc/../../def"))
-		So(err, ShouldNotBeNil)
+		assert.Loosely(c, err, should.NotBeNil)
 	})
 }
 
@@ -93,47 +94,47 @@ func TestEnsureDirectory(t *testing.T) {
 
 	ctx := context.Background()
 
-	Convey("EnsureDirectory checks root", t, func(c C) {
-		fs := tempFileSystem(c)
+	ftt.Run("EnsureDirectory checks root", t, func(c *ftt.Test) {
+		fs := tempFileSystem(t)
 		_, err := fs.EnsureDirectory(ctx, fs.join(".."))
-		So(err, ShouldNotBeNil)
+		assert.Loosely(c, err, should.NotBeNil)
 	})
 
-	Convey("EnsureDirectory works", t, func(c C) {
-		fs := tempFileSystem(c)
+	ftt.Run("EnsureDirectory works", t, func(c *ftt.Test) {
+		fs := tempFileSystem(t)
 		p, err := fs.EnsureDirectory(ctx, fs.join("x/../y/z"))
-		So(err, ShouldBeNil)
-		So(p, ShouldEqual, fs.join("y/z"))
-		So(fs.isDir("y/z"), ShouldBeTrue)
+		assert.Loosely(c, err, should.BeNil)
+		assert.Loosely(c, p, should.Equal(fs.join("y/z")))
+		assert.Loosely(c, fs.isDir("y/z"), should.BeTrue)
 		// Same one.
 		_, err = fs.EnsureDirectory(ctx, fs.join("x/../y/z"))
-		So(err, ShouldBeNil)
+		assert.Loosely(c, err, should.BeNil)
 	})
 
-	Convey("EnsureDirectory replaces files with directories", t, func(c C) {
-		fs := tempFileSystem(c)
+	ftt.Run("EnsureDirectory replaces files with directories", t, func(c *ftt.Test) {
+		fs := tempFileSystem(t)
 		fs.write("a", "xxx")
 		_, err := fs.EnsureDirectory(ctx, fs.join("a/b/c"))
-		So(err, ShouldBeNil)
-		So(fs.isDir("a/b/c"), ShouldBeTrue)
+		assert.Loosely(c, err, should.BeNil)
+		assert.Loosely(c, fs.isDir("a/b/c"), should.BeTrue)
 	})
 
 	if runtime.GOOS != "windows" {
-		Convey("EnsureDirectory replaces file symlinks with directories", t, func(c C) {
-			fs := tempFileSystem(c)
+		ftt.Run("EnsureDirectory replaces file symlinks with directories", t, func(c *ftt.Test) {
+			fs := tempFileSystem(t)
 			fs.write("target", "xxx")
 			fs.symlink("target", "a")
 			_, err := fs.EnsureDirectory(ctx, fs.join("a"))
-			So(err, ShouldBeNil)
-			So(fs.isDir("a"), ShouldBeTrue)
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, fs.isDir("a"), should.BeTrue)
 		})
 
-		Convey("EnsureDirectory replaces broken symlinks with directories", t, func(c C) {
-			fs := tempFileSystem(c)
+		ftt.Run("EnsureDirectory replaces broken symlinks with directories", t, func(c *ftt.Test) {
+			fs := tempFileSystem(t)
 			fs.symlink("broken", "a")
 			_, err := fs.EnsureDirectory(ctx, fs.join("a"))
-			So(err, ShouldBeNil)
-			So(fs.isDir("a"), ShouldBeTrue)
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, fs.isDir("a"), should.BeTrue)
 		})
 	}
 }
@@ -147,44 +148,44 @@ func TestEnsureSymlink(t *testing.T) {
 
 	ctx := context.Background()
 
-	Convey("EnsureSymlink checks root", t, func(c C) {
-		fs := tempFileSystem(c)
-		So(fs.EnsureSymlink(ctx, fs.join(".."), fs.Root()), ShouldNotBeNil)
+	ftt.Run("EnsureSymlink checks root", t, func(c *ftt.Test) {
+		fs := tempFileSystem(t)
+		assert.Loosely(c, fs.EnsureSymlink(ctx, fs.join(".."), fs.Root()), should.NotBeNil)
 	})
 
-	Convey("EnsureSymlink creates new symlink", t, func(c C) {
-		fs := tempFileSystem(c)
-		So(fs.EnsureSymlink(ctx, fs.join("symlink"), "target"), ShouldBeNil)
-		So(fs.readLink("symlink"), ShouldEqual, "target")
+	ftt.Run("EnsureSymlink creates new symlink", t, func(c *ftt.Test) {
+		fs := tempFileSystem(t)
+		assert.Loosely(c, fs.EnsureSymlink(ctx, fs.join("symlink"), "target"), should.BeNil)
+		assert.Loosely(c, fs.readLink("symlink"), should.Equal("target"))
 	})
 
-	Convey("EnsureSymlink builds full path", t, func(c C) {
-		fs := tempFileSystem(c)
-		So(fs.EnsureSymlink(ctx, fs.join("a/b/c"), "target"), ShouldBeNil)
-		So(fs.readLink("a/b/c"), ShouldEqual, "target")
+	ftt.Run("EnsureSymlink builds full path", t, func(c *ftt.Test) {
+		fs := tempFileSystem(t)
+		assert.Loosely(c, fs.EnsureSymlink(ctx, fs.join("a/b/c"), "target"), should.BeNil)
+		assert.Loosely(c, fs.readLink("a/b/c"), should.Equal("target"))
 	})
 
-	Convey("EnsureSymlink replaces existing symlink", t, func(c C) {
-		fs := tempFileSystem(c)
+	ftt.Run("EnsureSymlink replaces existing symlink", t, func(c *ftt.Test) {
+		fs := tempFileSystem(t)
 		// Replace with same one, then with another one.
-		So(fs.EnsureSymlink(ctx, fs.join("symlink"), "target"), ShouldBeNil)
-		So(fs.EnsureSymlink(ctx, fs.join("symlink"), "target"), ShouldBeNil)
-		So(fs.EnsureSymlink(ctx, fs.join("symlink"), "another"), ShouldBeNil)
-		So(fs.readLink("symlink"), ShouldEqual, "another")
+		assert.Loosely(c, fs.EnsureSymlink(ctx, fs.join("symlink"), "target"), should.BeNil)
+		assert.Loosely(c, fs.EnsureSymlink(ctx, fs.join("symlink"), "target"), should.BeNil)
+		assert.Loosely(c, fs.EnsureSymlink(ctx, fs.join("symlink"), "another"), should.BeNil)
+		assert.Loosely(c, fs.readLink("symlink"), should.Equal("another"))
 	})
 
-	Convey("EnsureSymlink replaces existing file", t, func(c C) {
-		fs := tempFileSystem(c)
+	ftt.Run("EnsureSymlink replaces existing file", t, func(c *ftt.Test) {
+		fs := tempFileSystem(t)
 		fs.write("path", "blah")
-		So(fs.EnsureSymlink(ctx, fs.join("path"), "target"), ShouldBeNil)
-		So(fs.readLink("path"), ShouldEqual, "target")
+		assert.Loosely(c, fs.EnsureSymlink(ctx, fs.join("path"), "target"), should.BeNil)
+		assert.Loosely(c, fs.readLink("path"), should.Equal("target"))
 	})
 
-	Convey("EnsureSymlink replaces existing directory", t, func(c C) {
-		fs := tempFileSystem(c)
+	ftt.Run("EnsureSymlink replaces existing directory", t, func(c *ftt.Test) {
+		fs := tempFileSystem(t)
 		fs.write("a/b/c", "something")
-		So(fs.EnsureSymlink(ctx, fs.join("a"), "target"), ShouldBeNil)
-		So(fs.readLink("a"), ShouldEqual, "target")
+		assert.Loosely(c, fs.EnsureSymlink(ctx, fs.join("a"), "target"), should.BeNil)
+		assert.Loosely(c, fs.readLink("a"), should.Equal("target"))
 	})
 }
 
@@ -193,65 +194,65 @@ func TestEnsureFile(t *testing.T) {
 
 	ctx := context.Background()
 
-	Convey("EnsureFile checks root", t, func(c C) {
-		fs := tempFileSystem(c)
-		So(EnsureFile(ctx, fs, fs.join(".."), strings.NewReader("blah")), ShouldNotBeNil)
+	ftt.Run("EnsureFile checks root", t, func(c *ftt.Test) {
+		fs := tempFileSystem(t)
+		assert.Loosely(c, EnsureFile(ctx, fs, fs.join(".."), strings.NewReader("blah")), should.NotBeNil)
 	})
 
-	Convey("EnsureFile creates new file", t, func(c C) {
-		fs := tempFileSystem(c)
-		So(EnsureFile(ctx, fs, fs.join("name"), strings.NewReader("blah")), ShouldBeNil)
-		So(fs.read("name"), ShouldEqual, "blah")
+	ftt.Run("EnsureFile creates new file", t, func(c *ftt.Test) {
+		fs := tempFileSystem(t)
+		assert.Loosely(c, EnsureFile(ctx, fs, fs.join("name"), strings.NewReader("blah")), should.BeNil)
+		assert.Loosely(c, fs.read("name"), should.Equal("blah"))
 	})
 
-	Convey("EnsureFile builds full path", t, func(c C) {
-		fs := tempFileSystem(c)
-		So(EnsureFile(ctx, fs, fs.join("a/b/c"), strings.NewReader("blah")), ShouldBeNil)
-		So(fs.read("a/b/c"), ShouldEqual, "blah")
+	ftt.Run("EnsureFile builds full path", t, func(c *ftt.Test) {
+		fs := tempFileSystem(t)
+		assert.Loosely(c, EnsureFile(ctx, fs, fs.join("a/b/c"), strings.NewReader("blah")), should.BeNil)
+		assert.Loosely(c, fs.read("a/b/c"), should.Equal("blah"))
 	})
 
 	if runtime.GOOS != "windows" {
-		Convey("EnsureFile replaces existing symlink", t, func(c C) {
-			fs := tempFileSystem(c)
-			So(fs.EnsureSymlink(ctx, fs.join("path"), "target"), ShouldBeNil)
-			So(EnsureFile(ctx, fs, fs.join("path"), strings.NewReader("blah")), ShouldBeNil)
-			So(fs.read("path"), ShouldEqual, "blah")
+		ftt.Run("EnsureFile replaces existing symlink", t, func(c *ftt.Test) {
+			fs := tempFileSystem(t)
+			assert.Loosely(c, fs.EnsureSymlink(ctx, fs.join("path"), "target"), should.BeNil)
+			assert.Loosely(c, EnsureFile(ctx, fs, fs.join("path"), strings.NewReader("blah")), should.BeNil)
+			assert.Loosely(c, fs.read("path"), should.Equal("blah"))
 		})
 	}
 
-	Convey("EnsureFile replaces existing file", t, func(c C) {
-		fs := tempFileSystem(c)
-		So(EnsureFile(ctx, fs, fs.join("path"), strings.NewReader("huh")), ShouldBeNil)
-		So(EnsureFile(ctx, fs, fs.join("path"), strings.NewReader("blah")), ShouldBeNil)
-		So(fs.read("path"), ShouldEqual, "blah")
+	ftt.Run("EnsureFile replaces existing file", t, func(c *ftt.Test) {
+		fs := tempFileSystem(t)
+		assert.Loosely(c, EnsureFile(ctx, fs, fs.join("path"), strings.NewReader("huh")), should.BeNil)
+		assert.Loosely(c, EnsureFile(ctx, fs, fs.join("path"), strings.NewReader("blah")), should.BeNil)
+		assert.Loosely(c, fs.read("path"), should.Equal("blah"))
 	})
 
-	Convey("EnsureFile replaces existing file while it is being read", t, func(c C) {
-		fs := tempFileSystem(c)
+	ftt.Run("EnsureFile replaces existing file while it is being read", t, func(c *ftt.Test) {
+		fs := tempFileSystem(t)
 
 		// Create an initial file, then open it for reading.
-		So(EnsureFile(ctx, fs, fs.join("path"), strings.NewReader("huh")), ShouldBeNil)
+		assert.Loosely(c, EnsureFile(ctx, fs, fs.join("path"), strings.NewReader("huh")), should.BeNil)
 		fd, err := fs.OpenFile(fs.join("path"))
-		So(err, ShouldBeNil)
+		assert.Loosely(c, err, should.BeNil)
 		defer fd.Close()
 
 		// Ensure a second file on top of it.
-		So(EnsureFile(ctx, fs, fs.join("path"), strings.NewReader("blah")), ShouldBeNil)
+		assert.Loosely(c, EnsureFile(ctx, fs, fs.join("path"), strings.NewReader("blah")), should.BeNil)
 
 		// Read and verify the content of the first file.
 		content, err := io.ReadAll(fd)
-		So(err, ShouldBeNil)
-		So(content, ShouldResemble, []byte("huh"))
+		assert.Loosely(c, err, should.BeNil)
+		assert.Loosely(c, content, should.Resemble([]byte("huh")))
 
 		// Verify the content of the second ensured file.
-		So(fs.read("path"), ShouldEqual, "blah")
+		assert.Loosely(c, fs.read("path"), should.Equal("blah"))
 
 		// The first file should successfully close.
-		So(fd.Close(), ShouldBeNil)
+		assert.Loosely(c, fd.Close(), should.BeNil)
 	})
 
-	Convey("EnsureFile replaces existing file while it is being written", t, func(c C) {
-		fs := tempFileSystem(c)
+	ftt.Run("EnsureFile replaces existing file while it is being written", t, func(c *ftt.Test) {
+		fs := tempFileSystem(t)
 
 		// Start one EnsureFile, pausing in the middle so another can start
 		// alongside it.
@@ -270,19 +271,19 @@ func TestEnsureFile(t *testing.T) {
 		// Wait for the first to signal that it's begin, then perform a second
 		// overlapping EnsureFile.
 		<-firstEnsureStartedC
-		So(EnsureFile(ctx, fs, fs.join("path"), strings.NewReader("overwrite me")), ShouldBeNil)
+		assert.Loosely(c, EnsureFile(ctx, fs, fs.join("path"), strings.NewReader("overwrite me")), should.BeNil)
 		close(finishFirstWriteC)
-		So(<-errC, ShouldBeNil)
+		assert.Loosely(c, <-errC, should.BeNil)
 
 		// The first EnsureFile content should be the one that is present.
-		So(fs.read("path"), ShouldEqual, "foo")
+		assert.Loosely(c, fs.read("path"), should.Equal("foo"))
 	})
 
-	Convey("EnsureFile replaces existing directory", t, func(c C) {
-		fs := tempFileSystem(c)
+	ftt.Run("EnsureFile replaces existing directory", t, func(c *ftt.Test) {
+		fs := tempFileSystem(t)
 		fs.write("a/b/c", "something")
-		So(EnsureFile(ctx, fs, fs.join("a"), strings.NewReader("blah")), ShouldBeNil)
-		So(fs.read("a"), ShouldEqual, "blah")
+		assert.Loosely(c, EnsureFile(ctx, fs, fs.join("a"), strings.NewReader("blah")), should.BeNil)
+		assert.Loosely(c, fs.read("a"), should.Equal("blah"))
 	})
 }
 
@@ -291,58 +292,58 @@ func TestEnsureFileGone(t *testing.T) {
 
 	ctx := context.Background()
 
-	Convey("EnsureFileGone checks root", t, func(c C) {
-		fs := tempFileSystem(c)
-		So(fs.EnsureFileGone(ctx, fs.join("../abc")), ShouldNotBeNil)
+	ftt.Run("EnsureFileGone checks root", t, func(c *ftt.Test) {
+		fs := tempFileSystem(t)
+		assert.Loosely(c, fs.EnsureFileGone(ctx, fs.join("../abc")), should.NotBeNil)
 	})
 
-	Convey("EnsureFileGone works", t, func(c C) {
-		fs := tempFileSystem(c)
+	ftt.Run("EnsureFileGone works", t, func(c *ftt.Test) {
+		fs := tempFileSystem(t)
 		fs.write("abc", "")
-		So(fs.EnsureFileGone(ctx, fs.join("abc")), ShouldBeNil)
-		So(fs.isMissing("abc"), ShouldBeTrue)
+		assert.Loosely(c, fs.EnsureFileGone(ctx, fs.join("abc")), should.BeNil)
+		assert.Loosely(c, fs.isMissing("abc"), should.BeTrue)
 	})
 
-	Convey("EnsureFileGone works with missing file", t, func(c C) {
-		fs := tempFileSystem(c)
-		So(fs.EnsureFileGone(ctx, fs.join("abc")), ShouldBeNil)
+	ftt.Run("EnsureFileGone works with missing file", t, func(c *ftt.Test) {
+		fs := tempFileSystem(t)
+		assert.Loosely(c, fs.EnsureFileGone(ctx, fs.join("abc")), should.BeNil)
 	})
 
-	Convey("EnsureFileGone works with empty directory", t, func(c C) {
-		fs := tempFileSystem(c)
+	ftt.Run("EnsureFileGone works with empty directory", t, func(c *ftt.Test) {
+		fs := tempFileSystem(t)
 		fs.mkdir("abc")
-		So(fs.EnsureFileGone(ctx, fs.join("abc")), ShouldBeNil)
-		So(fs.isMissing("abc"), ShouldBeTrue)
+		assert.Loosely(c, fs.EnsureFileGone(ctx, fs.join("abc")), should.BeNil)
+		assert.Loosely(c, fs.isMissing("abc"), should.BeTrue)
 	})
 
-	Convey("EnsureFileGone fails with non-empty directory", t, func(c C) {
-		fs := tempFileSystem(c)
+	ftt.Run("EnsureFileGone fails with non-empty directory", t, func(c *ftt.Test) {
+		fs := tempFileSystem(t)
 		fs.write("abc/file", "zzz")
-		So(fs.EnsureFileGone(ctx, fs.join("abc")), ShouldNotBeNil)
+		assert.Loosely(c, fs.EnsureFileGone(ctx, fs.join("abc")), should.NotBeNil)
 	})
 
-	Convey("EnsureFileGone skips paths that use files as if they are dirs", t, func(c C) {
-		fs := tempFileSystem(c)
+	ftt.Run("EnsureFileGone skips paths that use files as if they are dirs", t, func(c *ftt.Test) {
+		fs := tempFileSystem(t)
 		fs.write("abc/file", "zzz")
-		So(fs.EnsureFileGone(ctx, fs.join("abc/file/huh")), ShouldBeNil)
+		assert.Loosely(c, fs.EnsureFileGone(ctx, fs.join("abc/file/huh")), should.BeNil)
 	})
 
 	if runtime.GOOS != "windows" {
-		Convey("EnsureFileGone works with symlink", t, func(c C) {
-			fs := tempFileSystem(c)
-			So(fs.EnsureSymlink(ctx, fs.join("abc"), "target"), ShouldBeNil)
-			So(fs.EnsureFileGone(ctx, fs.join("abc")), ShouldBeNil)
-			So(fs.isMissing("abc"), ShouldBeTrue)
+		ftt.Run("EnsureFileGone works with symlink", t, func(c *ftt.Test) {
+			fs := tempFileSystem(t)
+			assert.Loosely(c, fs.EnsureSymlink(ctx, fs.join("abc"), "target"), should.BeNil)
+			assert.Loosely(c, fs.EnsureFileGone(ctx, fs.join("abc")), should.BeNil)
+			assert.Loosely(c, fs.isMissing("abc"), should.BeTrue)
 		})
 	}
 
-	Convey("crbug.com/936911: EnsureFileGone can delete files opened with OpenFile", t, func(c C) {
-		fs := tempFileSystem(c)
+	ftt.Run("crbug.com/936911: EnsureFileGone can delete files opened with OpenFile", t, func(c *ftt.Test) {
+		fs := tempFileSystem(t)
 		fs.write("abc/file", "zzz")
 		f, err := fs.OpenFile(fs.join("abc/file"))
-		So(err, ShouldBeNil)
-		So(f.Close(), ShouldBeNil)
-		So(fs.EnsureFileGone(ctx, f.Name()), ShouldBeNil)
+		assert.Loosely(c, err, should.BeNil)
+		assert.Loosely(c, f.Close(), should.BeNil)
+		assert.Loosely(c, fs.EnsureFileGone(ctx, f.Name()), should.BeNil)
 	})
 }
 
@@ -351,23 +352,23 @@ func TestEnsureDirectoryGone(t *testing.T) {
 
 	ctx := context.Background()
 
-	Convey("EnsureDirectoryGone checks root", t, func(c C) {
-		fs := tempFileSystem(c)
-		So(fs.EnsureDirectoryGone(ctx, fs.join("../abc")), ShouldNotBeNil)
+	ftt.Run("EnsureDirectoryGone checks root", t, func(c *ftt.Test) {
+		fs := tempFileSystem(t)
+		assert.Loosely(c, fs.EnsureDirectoryGone(ctx, fs.join("../abc")), should.NotBeNil)
 	})
 
-	Convey("EnsureDirectoryGone works", t, func(c C) {
-		fs := tempFileSystem(c)
+	ftt.Run("EnsureDirectoryGone works", t, func(c *ftt.Test) {
+		fs := tempFileSystem(t)
 		fs.write("dir/a/1", "")
 		fs.write("dir/a/2", "")
 		fs.write("dir/b/1", "")
-		So(fs.EnsureDirectoryGone(ctx, fs.join("dir")), ShouldBeNil)
-		So(fs.isMissing("dir"), ShouldBeTrue)
+		assert.Loosely(c, fs.EnsureDirectoryGone(ctx, fs.join("dir")), should.BeNil)
+		assert.Loosely(c, fs.isMissing("dir"), should.BeTrue)
 	})
 
-	Convey("EnsureDirectoryGone works with missing dir", t, func(c C) {
-		fs := tempFileSystem(c)
-		So(fs.EnsureDirectoryGone(ctx, fs.join("missing")), ShouldBeNil)
+	ftt.Run("EnsureDirectoryGone works with missing dir", t, func(c *ftt.Test) {
+		fs := tempFileSystem(t)
+		assert.Loosely(c, fs.EnsureDirectoryGone(ctx, fs.join("missing")), should.BeNil)
 	})
 
 }
@@ -377,111 +378,112 @@ func TestReplace(t *testing.T) {
 
 	ctx := context.Background()
 
-	Convey("Replace checks root", t, func(c C) {
-		fs := tempFileSystem(c)
-		So(fs.Replace(ctx, fs.join("../abc"), fs.join("def")), ShouldNotBeNil)
+	ftt.Run("Replace checks root", t, func(c *ftt.Test) {
+		fs := tempFileSystem(t)
+		assert.Loosely(c, fs.Replace(ctx, fs.join("../abc"), fs.join("def")), should.NotBeNil)
 		fs.write("def", "")
-		So(fs.Replace(ctx, fs.join("def"), fs.join("../abc")), ShouldNotBeNil)
+		assert.Loosely(c, fs.Replace(ctx, fs.join("def"), fs.join("../abc")), should.NotBeNil)
 	})
 
-	Convey("Replace does nothing if oldpath == newpath", t, func(c C) {
-		fs := tempFileSystem(c)
-		So(fs.Replace(ctx, fs.join("abc"), fs.join("abc/d/..")), ShouldBeNil)
+	ftt.Run("Replace does nothing if oldpath == newpath", t, func(c *ftt.Test) {
+		fs := tempFileSystem(t)
+		assert.Loosely(c, fs.Replace(ctx, fs.join("abc"), fs.join("abc/d/..")), should.BeNil)
 	})
 
-	Convey("Replace recognizes missing oldpath", t, func(c C) {
-		fs := tempFileSystem(c)
-		So(fs.Replace(ctx, fs.join("missing"), fs.join("abc")), ShouldNotBeNil)
+	ftt.Run("Replace recognizes missing oldpath", t, func(c *ftt.Test) {
+		fs := tempFileSystem(t)
+		assert.Loosely(c, fs.Replace(ctx, fs.join("missing"), fs.join("abc")), should.NotBeNil)
 	})
 
-	Convey("Replace creates file and dir if missing", t, func(c C) {
-		fs := tempFileSystem(c)
+	ftt.Run("Replace creates file and dir if missing", t, func(c *ftt.Test) {
+		fs := tempFileSystem(t)
 		fs.write("a/123", "")
-		So(fs.Replace(ctx, fs.join("a/123"), fs.join("b/c/d")), ShouldBeNil)
-		So(fs.isMissing("a/123"), ShouldBeTrue)
-		So(fs.isFile("b/c/d/"), ShouldBeTrue)
+		assert.Loosely(c, fs.Replace(ctx, fs.join("a/123"), fs.join("b/c/d")), should.BeNil)
+		assert.Loosely(c, fs.isMissing("a/123"), should.BeTrue)
+		assert.Loosely(c, fs.isFile("b/c/d/"), should.BeTrue)
 	})
 
-	Convey("Replace replaces regular file with a file", t, func(c C) {
-		fs := tempFileSystem(c)
+	ftt.Run("Replace replaces regular file with a file", t, func(c *ftt.Test) {
+		fs := tempFileSystem(t)
 		fs.write("a/123", "xxx")
 		fs.write("b/c/d", "yyy")
-		So(fs.Replace(ctx, fs.join("a/123"), fs.join("b/c/d")), ShouldBeNil)
-		So(fs.isMissing("a/123"), ShouldBeTrue)
-		So(fs.read("b/c/d"), ShouldEqual, "xxx")
+		assert.Loosely(c, fs.Replace(ctx, fs.join("a/123"), fs.join("b/c/d")), should.BeNil)
+		assert.Loosely(c, fs.isMissing("a/123"), should.BeTrue)
+		assert.Loosely(c, fs.read("b/c/d"), should.Equal("xxx"))
 	})
 
-	Convey("Replace replaces regular file with a dir", t, func(c C) {
-		fs := tempFileSystem(c)
+	ftt.Run("Replace replaces regular file with a dir", t, func(c *ftt.Test) {
+		fs := tempFileSystem(t)
 		fs.write("a/123/456", "xxx")
 		fs.write("b/c/d", "yyy")
-		So(fs.Replace(ctx, fs.join("a/123"), fs.join("b/c/d")), ShouldBeNil)
-		So(fs.isMissing("a/123"), ShouldBeTrue)
-		So(fs.read("b/c/d/456"), ShouldEqual, "xxx")
+		assert.Loosely(c, fs.Replace(ctx, fs.join("a/123"), fs.join("b/c/d")), should.BeNil)
+		assert.Loosely(c, fs.isMissing("a/123"), should.BeTrue)
+		assert.Loosely(c, fs.read("b/c/d/456"), should.Equal("xxx"))
 	})
 
-	Convey("Replace replaces empty dir with a file", t, func(c C) {
-		fs := tempFileSystem(c)
+	ftt.Run("Replace replaces empty dir with a file", t, func(c *ftt.Test) {
+		fs := tempFileSystem(t)
 		fs.write("a/123", "xxx")
 		_, err := fs.EnsureDirectory(ctx, fs.join("b/c/d"))
-		So(err, ShouldBeNil)
-		So(fs.Replace(ctx, fs.join("a/123"), fs.join("b/c/d")), ShouldBeNil)
-		So(fs.isMissing("a/123"), ShouldBeTrue)
-		So(fs.read("b/c/d"), ShouldEqual, "xxx")
+		assert.Loosely(c, err, should.BeNil)
+		assert.Loosely(c, fs.Replace(ctx, fs.join("a/123"), fs.join("b/c/d")), should.BeNil)
+		assert.Loosely(c, fs.isMissing("a/123"), should.BeTrue)
+		assert.Loosely(c, fs.read("b/c/d"), should.Equal("xxx"))
 	})
 
-	Convey("Replace replaces empty dir with a dir", t, func(c C) {
-		fs := tempFileSystem(c)
+	ftt.Run("Replace replaces empty dir with a dir", t, func(c *ftt.Test) {
+		fs := tempFileSystem(t)
 		fs.write("a/123/456", "xxx")
 		_, err := fs.EnsureDirectory(ctx, fs.join("b/c/d"))
-		So(err, ShouldBeNil)
-		So(fs.Replace(ctx, fs.join("a/123"), fs.join("b/c/d")), ShouldBeNil)
-		So(fs.isMissing("a/123"), ShouldBeTrue)
-		So(fs.read("b/c/d/456"), ShouldEqual, "xxx")
+		assert.Loosely(c, err, should.BeNil)
+		assert.Loosely(c, fs.Replace(ctx, fs.join("a/123"), fs.join("b/c/d")), should.BeNil)
+		assert.Loosely(c, fs.isMissing("a/123"), should.BeTrue)
+		assert.Loosely(c, fs.read("b/c/d/456"), should.Equal("xxx"))
 	})
 
-	Convey("Replace replaces dir with a file", t, func(c C) {
-		fs := tempFileSystem(c)
+	ftt.Run("Replace replaces dir with a file", t, func(c *ftt.Test) {
+		fs := tempFileSystem(t)
 		fs.write("a/123", "xxx")
 		fs.write("b/c/d/456", "yyy")
-		So(fs.Replace(ctx, fs.join("a/123"), fs.join("b/c/d")), ShouldBeNil)
-		So(fs.isMissing("a/123"), ShouldBeTrue)
-		So(fs.read("b/c/d"), ShouldEqual, "xxx")
+		assert.Loosely(c, fs.Replace(ctx, fs.join("a/123"), fs.join("b/c/d")), should.BeNil)
+		assert.Loosely(c, fs.isMissing("a/123"), should.BeTrue)
+		assert.Loosely(c, fs.read("b/c/d"), should.Equal("xxx"))
 	})
 
-	Convey("Replace replaces dir with a dir", t, func(c C) {
-		fs := tempFileSystem(c)
+	ftt.Run("Replace replaces dir with a dir", t, func(c *ftt.Test) {
+		fs := tempFileSystem(t)
 		fs.write("a/123/456", "xxx")
 		fs.write("b/c/d/456", "yyy")
-		So(fs.Replace(ctx, fs.join("a/123"), fs.join("b/c/d")), ShouldBeNil)
-		So(fs.isMissing("a/123"), ShouldBeTrue)
-		So(fs.read("b/c/d/456"), ShouldEqual, "xxx")
+		assert.Loosely(c, fs.Replace(ctx, fs.join("a/123"), fs.join("b/c/d")), should.BeNil)
+		assert.Loosely(c, fs.isMissing("a/123"), should.BeTrue)
+		assert.Loosely(c, fs.read("b/c/d/456"), should.Equal("xxx"))
 	})
 
-	Convey("Replace replaces file in dir path with a directory", t, func(c C) {
-		fs := tempFileSystem(c)
+	ftt.Run("Replace replaces file in dir path with a directory", t, func(c *ftt.Test) {
+		fs := tempFileSystem(t)
 		fs.write("a/123", "xxx")
 		fs.write("f", "yyy")
-		So(fs.Replace(ctx, fs.join("f"), fs.join("a/123/456")), ShouldBeNil)
-		So(fs.read("a/123/456"), ShouldEqual, "yyy")
+		assert.Loosely(c, fs.Replace(ctx, fs.join("f"), fs.join("a/123/456")), should.BeNil)
+		assert.Loosely(c, fs.read("a/123/456"), should.Equal("yyy"))
 	})
 
-	Convey("Replace works for very long paths", t, func(c C) {
-		fs := tempFileSystem(c)
+	ftt.Run("Replace works for very long paths", t, func(c *ftt.Test) {
+		fs := tempFileSystem(t)
 		// Windows runs into trouble with paths > 260 chars
 		longPath1 := strings.Repeat("abc/", 260/4) + "file"
 		longPath2 := strings.Repeat("xyz/", 260/4) + "file"
-		So(len(longPath1), ShouldBeGreaterThan, 260)
+		assert.Loosely(c, len(longPath1), should.BeGreaterThan(260))
 		fs.write(longPath1, "hi")
 		fs.write(longPath2, "there")
-		So(fs.Replace(ctx, fs.join(longPath1), fs.join(longPath2)), ShouldBeNil)
-		So(fs.read(longPath2), ShouldEqual, "hi")
+		assert.Loosely(c, fs.Replace(ctx, fs.join(longPath1), fs.join(longPath2)), should.BeNil)
+		assert.Loosely(c, fs.read(longPath2), should.Equal("hi"))
 	})
 
-	// TODO(crbug/1442427): Test failed on windows.
-	SkipConvey("Concurrency test", t, func(c C) {
+	ftt.Run("Concurrency test", t, func(t *ftt.Test) {
+		t.Skip("TODO(crbug/1442427): Test failed on windows.")
+
 		const threads = 50
-		fs := tempFileSystem(c)
+		fs := tempFileSystem(t)
 		wg := sync.WaitGroup{}
 		wg.Add(threads)
 		for th := 0; th < threads; th++ {
@@ -512,16 +514,13 @@ func TestReplace(t *testing.T) {
 ///////
 
 // tempFileSystem returns FileSystem for tests built over a temp directory.
-func tempFileSystem(c C) *tempFileSystemImpl {
-	tempDir, err := ioutil.TempDir("", "cipd_test")
-	So(err, ShouldBeNil)
-	Reset(func() { os.RemoveAll(tempDir) })
-	return &tempFileSystemImpl{NewFileSystem(tempDir, ""), c}
+func tempFileSystem(t testing.TB) *tempFileSystemImpl {
+	return &tempFileSystemImpl{NewFileSystem(t.TempDir(), ""), t}
 }
 
 type tempFileSystemImpl struct {
 	FileSystem
-	c C
+	c testing.TB
 }
 
 // join returns absolute path given a slash separated path relative to Root().
@@ -533,38 +532,38 @@ func (f *tempFileSystemImpl) join(path string) string {
 func (f *tempFileSystemImpl) write(rel string, data string) {
 	abs := f.join(rel)
 	err := os.MkdirAll(filepath.Dir(abs), 0777)
-	f.c.So(err, ShouldBeNil)
+	assert.That(f.c, err, should.ErrLike(nil))
 	file, err := os.Create(abs)
-	f.c.So(err, ShouldBeNil)
+	assert.That(f.c, err, should.ErrLike(nil))
 	file.WriteString(data)
-	f.c.So(file.Close(), ShouldBeNil)
+	assert.That(f.c, file.Close(), should.ErrLike(nil))
 }
 
 // mkdir creates an empty directory.
 func (f *tempFileSystemImpl) mkdir(rel string) {
-	f.c.So(os.MkdirAll(f.join(rel), 0777), ShouldBeNil)
+	assert.That(f.c, os.MkdirAll(f.join(rel), 0777), should.ErrLike(nil))
 }
 
 // symlink creates a symlink.
 func (f *tempFileSystemImpl) symlink(oldname, newname string) {
-	f.c.So(os.Symlink(f.join(oldname), f.join(newname)), ShouldBeNil)
+	assert.That(f.c, os.Symlink(f.join(oldname), f.join(newname)), should.ErrLike(nil))
 }
 
 // read reads an existing file at a given slash separated path relative to Root().
 func (f *tempFileSystemImpl) read(rel string) string {
 	fd, err := f.OpenFile(f.join(rel))
-	f.c.So(err, ShouldBeNil)
+	assert.That(f.c, err, should.ErrLike(nil))
 	defer fd.Close()
 
 	data, err := io.ReadAll(fd)
-	f.c.So(err, ShouldBeNil)
+	assert.That(f.c, err, should.ErrLike(nil))
 	return string(data)
 }
 
 // readLink reads a symlink at a given slash separated path relative to Root().
 func (f *tempFileSystemImpl) readLink(rel string) string {
 	val, err := os.Readlink(f.join(rel))
-	f.c.So(err, ShouldBeNil)
+	assert.That(f.c, err, should.ErrLike(nil))
 	return val
 }
 

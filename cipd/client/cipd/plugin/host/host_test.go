@@ -31,12 +31,13 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/logging/memlogger"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/cipd/client/cipd/plugin"
 	"go.chromium.org/luci/cipd/client/cipd/plugin/plugins"
 	"go.chromium.org/luci/cipd/client/cipd/plugin/protocol"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func init() {
@@ -112,81 +113,81 @@ func TestPlugins(t *testing.T) {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	Convey("With a host", t, func() {
+	ftt.Run("With a host", t, func(t *ftt.Test) {
 		host := &Host{}
 		host.Initialize(plugin.Config{ServiceURL: "https://example.com"})
 		defer host.Close(ctx)
 
-		Convey("Plugin wrong command line", func() {
+		t.Run("Plugin wrong command line", func(t *ftt.Test) {
 			_, err := host.LaunchPlugin(ctx, []string{"doesnt_exist"}, &Controller{})
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 		})
 
-		Convey("Plugin exits when host closes", func() {
+		t.Run("Plugin exits when host closes", func(t *ftt.Test) {
 			proc, err := launchPlugin(ctx, host, "WAIT")
-			So(err, ShouldBeNil)
-			So(proc.Err(), ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, proc.Err(), should.BeNil)
 			host.Close(ctx)
-			So(proc.Err(), ShouldEqual, ErrTerminated)
+			assert.Loosely(t, proc.Err(), should.Equal(ErrTerminated))
 		})
 
-		Convey("Terminate works", func() {
+		t.Run("Terminate works", func(t *ftt.Test) {
 			proc, err := launchPlugin(ctx, host, "WAIT")
-			So(err, ShouldBeNil)
-			So(proc.Err(), ShouldBeNil)
-			So(proc.Terminate(ctx), ShouldEqual, ErrTerminated)
-			So(proc.Err(), ShouldEqual, ErrTerminated)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, proc.Err(), should.BeNil)
+			assert.Loosely(t, proc.Terminate(ctx), should.Equal(ErrTerminated))
+			assert.Loosely(t, proc.Err(), should.Equal(ErrTerminated))
 		})
 
-		Convey("Respects Terminate timeout", func() {
+		t.Run("Respects Terminate timeout", func(t *ftt.Test) {
 			proc, err := launchPlugin(ctx, host, "STUCK_IN_TERMINATION")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			ctx, cancel := context.WithTimeout(ctx, 50*time.Millisecond)
 			defer cancel()
-			So(proc.Terminate(ctx), ShouldHaveSameTypeAs, &exec.ExitError{})
+			assert.Loosely(t, proc.Terminate(ctx), should.HaveType[*exec.ExitError])
 		})
 
-		Convey("Plugin crashing on start", func() {
+		t.Run("Plugin crashing on start", func(t *ftt.Test) {
 			_, err := launchPlugin(ctx, host, "CRASHING_ON_START")
 			// This is either an ExitError or a pipe error writing to stdin, depending
 			// on how far LaunchPlugin progressed before the plugin process crashed.
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 		})
 
-		Convey("Plugin crashing after RPC", func() {
+		t.Run("Plugin crashing after RPC", func(t *ftt.Test) {
 			proc, err := launchPlugin(ctx, host, "CRASHING_AFTER_RPC")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			select {
 			case <-time.After(30 * time.Second):
 				panic("the test is stuck")
 			case <-proc.Done():
-				So(proc.Err(), ShouldHaveSameTypeAs, &exec.ExitError{})
+				assert.Loosely(t, proc.Terminate(ctx), should.HaveType[*exec.ExitError])
 			}
 		})
 
-		Convey("Logging from plugin works", func() {
+		t.Run("Logging from plugin works", func(t *ftt.Test) {
 			ctx := memlogger.Use(ctx)
 			proc, err := launchPlugin(ctx, host, "LOG_STUFF_AND_EXIT")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			select {
 			case <-time.After(30 * time.Second):
 				panic("the test is stuck")
 			case <-proc.Done():
-				So(proc.Err(), ShouldEqual, ErrTerminated)
+				assert.Loosely(t, proc.Err(), should.Equal(ErrTerminated))
 			}
 
 			msg := logging.Get(ctx).(*memlogger.MemLogger).Messages()
-			So(msg, ShouldHaveLength, 3)
-			So(msg[0].Level, ShouldEqual, logging.Info)
-			So(msg[0].Msg, ShouldEndWith, "Info")
-			So(msg[1].Level, ShouldEqual, logging.Warning)
-			So(msg[1].Msg, ShouldEndWith, "Warning")
-			So(msg[2].Level, ShouldEqual, logging.Error)
-			So(msg[2].Msg, ShouldEndWith, "Error")
+			assert.Loosely(t, msg, should.HaveLength(3))
+			assert.Loosely(t, msg[0].Level, should.Equal(logging.Info))
+			assert.Loosely(t, msg[0].Msg, should.HaveSuffix("Info"))
+			assert.Loosely(t, msg[1].Level, should.Equal(logging.Warning))
+			assert.Loosely(t, msg[1].Msg, should.HaveSuffix("Warning"))
+			assert.Loosely(t, msg[2].Level, should.Equal(logging.Error))
+			assert.Loosely(t, msg[2].Msg, should.HaveSuffix("Error"))
 		})
 
-		Convey("Multiple plugins", func() {
+		t.Run("Multiple plugins", func(t *ftt.Test) {
 			proc := make([]*PluginProcess, 5)
 			wg := sync.WaitGroup{}
 			for i := 0; i < len(proc); i++ {
@@ -200,24 +201,24 @@ func TestPlugins(t *testing.T) {
 
 			// All are running.
 			for _, p := range proc {
-				So(p, ShouldNotBeNil)
-				So(p.Err(), ShouldBeNil)
+				assert.Loosely(t, p, should.NotBeNil)
+				assert.Loosely(t, p.Err(), should.BeNil)
 			}
 
 			host.Close(ctx)
 
 			// All are stopped.
 			for _, p := range proc {
-				So(p.Err(), ShouldEqual, ErrTerminated)
+				assert.Loosely(t, p.Err(), should.Equal(ErrTerminated))
 			}
 		})
 
-		Convey("Serving error", func() {
+		t.Run("Serving error", func(t *ftt.Test) {
 			host.testServeErr = fmt.Errorf("simulated grpc startup error")
 			_, err := launchPlugin(ctx, host, "WAIT")
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 			_, err = launchPlugin(ctx, host, "WAIT")
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 		})
 	})
 }
