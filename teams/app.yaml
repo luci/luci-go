@@ -10,6 +10,7 @@ runtime: go122
 luci_gae_vars:
   luci-tree-status-dev:
     AUTH_SERVICE_HOST: chrome-infra-auth-dev.appspot.com
+    CRON_AUTHORIZED_CALLER: cloud-scheduler-jobs@luci-teams-dev.iam.gserviceaccount.com
     SPANNER_DB: projects/luci-teams-dev/instances/dev/databases/luci-teams-dev
 
 handlers:
@@ -23,4 +24,5 @@ inbound_services:
 entrypoint: >
   main
   -auth-service-host ${AUTH_SERVICE_HOST}
+  -cron-authorized-caller ${CRON_AUTHORIZED_CALLER}
   -spanner-database ${SPANNER_DB}

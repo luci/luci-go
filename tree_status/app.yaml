@@ -13,6 +13,7 @@ runtime: go122
 luci_gae_vars:
   luci-tree-status-dev:
     AUTH_SERVICE_HOST: chrome-infra-auth-dev.appspot.com
+    CRON_AUTHORIZED_CALLER: cloud-scheduler-jobs@luci-tree-status-dev.iam.gserviceaccount.com
     OAUTH_CLIENT_ID: 713057630411-eqah8ap1ptgnf4nnepk10sutqg0msiv1.apps.googleusercontent.com
     SPANNER_DB: projects/luci-tree-status-dev/instances/dev/databases/luci-tree-status-dev
 
@@ -27,6 +28,7 @@ inbound_services:
 entrypoint: >
   main
   -auth-service-host ${AUTH_SERVICE_HOST}
+  -cron-authorized-caller ${CRON_AUTHORIZED_CALLER}
   -frontend-client-id ${OAUTH_CLIENT_ID}
   -gerrit-auth-signer-account gerritcodereview@system.gserviceaccount.com
   -gerrit-auth-signer-account git-gerrit@system.gserviceaccount.com
