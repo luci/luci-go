@@ -61,7 +61,7 @@ func NewInvocationFinalizedHandler() *InvocationFinalizedHandler {
 	}
 }
 
-func (h *InvocationFinalizedHandler) Handle(ctx context.Context, message pubsub.Message) error {
+func (h *InvocationFinalizedHandler) Handle(ctx context.Context, message pubsub.Message, notification *rdbpb.InvocationFinalizedNotification) error {
 	status := "unknown"
 	project := "unknown"
 	defer func() {
@@ -69,37 +69,16 @@ func (h *InvocationFinalizedHandler) Handle(ctx context.Context, message pubsub.
 		invocationsFinalizedCounter.Add(ctx, 1, project, status)
 	}()
 
-	var err error
-	project, processed, err := h.handleImpl(ctx, message)
+	project, _ = realms.Split(notification.Realm)
+	processed, err := h.handleInvocation(ctx, notification)
+	if err != nil {
+		return errors.Annotate(err, "processing notification").Err()
+	}
 	if err == nil && !processed {
 		err = pubsub.Ignore.Apply(errors.Reason("ignoring invocation finalized notification").Err())
 	}
 	status = errStatus(err)
 	return err
-}
-
-func (h *InvocationFinalizedHandler) handleImpl(ctx context.Context, message pubsub.Message) (project string, processed bool, err error) {
-	notification, err := extractNotification(message)
-	if err != nil {
-		return "unknown", false, errors.Annotate(err, "extract invocation finalized notification").Err()
-	}
-
-	project, _ = realms.Split(notification.Realm)
-	processed, err = h.handleInvocation(ctx, notification)
-	if err != nil {
-		return project, false, errors.Annotate(err, "processing notification").Err()
-	}
-	return project, processed, nil
-}
-
-func extractNotification(message pubsub.Message) (*rdbpb.InvocationFinalizedNotification, error) {
-	var run rdbpb.InvocationFinalizedNotification
-	unmarshalOpts := protojson.UnmarshalOptions{DiscardUnknown: true}
-	err := unmarshalOpts.Unmarshal(message.Data, &run)
-	if err != nil {
-		return nil, errors.Annotate(err, "parsing pubsub message data").Err()
-	}
-	return &run, nil
 }
 
 // HandleLegacy processes a ResultDB Invocation Finalized Pub/Sub message.

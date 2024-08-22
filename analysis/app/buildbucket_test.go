@@ -24,7 +24,6 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
-	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -68,8 +67,7 @@ func TestHandleBuild(t *testing.T) {
 		t.Run(`Completed build`, func(t *ftt.Test) {
 			pubSubMessage.Build.Status = buildbucketpb.Status_SUCCESS
 
-			request := makeBBV2Req(pubSubMessage)
-			err := BuildbucketPubSubHandler(ctx, request)
+			err := BuildbucketPubSubHandler(ctx, pubsub.Message{}, pubSubMessage)
 			assert.That(t, err, should.ErrLike(nil))
 			assert.Loosely(t, buildCounter.Get(ctx, "buildproject", "success"), should.Equal(1))
 
@@ -86,22 +84,10 @@ func TestHandleBuild(t *testing.T) {
 		t.Run(`Uncompleted build`, func(t *ftt.Test) {
 			pubSubMessage.Build.Status = buildbucketpb.Status_STARTED
 
-			request := makeBBV2Req(pubSubMessage)
-			err := BuildbucketPubSubHandler(ctx, request)
+			err := BuildbucketPubSubHandler(ctx, pubsub.Message{}, pubSubMessage)
 			assert.That(t, pubsub.Ignore.In(err), should.BeTrue)
 			assert.Loosely(t, buildCounter.Get(ctx, "buildproject", "ignored"), should.Equal(1))
 
-			assert.Loosely(t, len(skdr.Tasks().Payloads()), should.BeZero)
-		})
-		t.Run(`Invalid data`, func(t *ftt.Test) {
-			attributes := map[string]string{
-				"version": "v2",
-			}
-			request := pubsub.Message{Data: []byte("Hello"), Attributes: attributes}
-			err := BuildbucketPubSubHandler(ctx, request)
-			assert.That(t, err, should.ErrLike("unmarshal buildbucket v2 pub/sub message"))
-			assert.That(t, transient.Tag.In(err), should.BeFalse)
-			assert.Loosely(t, buildCounter.Get(ctx, "unknown", "permanent-failure"), should.Equal(1))
 			assert.Loosely(t, len(skdr.Tasks().Payloads()), should.BeZero)
 		})
 	})

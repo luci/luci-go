@@ -55,25 +55,13 @@ func NewInvocationReadyForExportHandler() *InvocationReadyForExportHandler {
 	return &InvocationReadyForExportHandler{}
 }
 
-func (h *InvocationReadyForExportHandler) Handle(ctx context.Context, message pubsub.Message) error {
+func (h *InvocationReadyForExportHandler) Handle(ctx context.Context, message pubsub.Message, notification *rdbpb.InvocationReadyForExportNotification) error {
 	status := "unknown"
 	project := "unknown"
 	defer func() {
 		// Closure for late binding.
 		invocationsReadyForExportCounter.Add(ctx, 1, project, status)
 	}()
-
-	var err error
-	project, err = h.handleImpl(ctx, message)
-	status = errStatus(err)
-	return err
-}
-
-func (h *InvocationReadyForExportHandler) handleImpl(ctx context.Context, message pubsub.Message) (project string, err error) {
-	notification, err := extractReadyForExportNotification(message)
-	if err != nil {
-		return "unknown", errors.Annotate(err, "extract invocation ready for export notification").Err()
-	}
 
 	project, _ = realms.Split(notification.RootInvocationRealm)
 
@@ -86,17 +74,8 @@ func (h *InvocationReadyForExportHandler) handleImpl(ctx context.Context, messag
 		PageToken:    "",
 		TaskIndex:    1,
 	})
-	return project, nil
-}
-
-func extractReadyForExportNotification(message pubsub.Message) (*rdbpb.InvocationReadyForExportNotification, error) {
-	var run rdbpb.InvocationReadyForExportNotification
-	unmarshalOpts := protojson.UnmarshalOptions{DiscardUnknown: true}
-	err := unmarshalOpts.Unmarshal(message.Data, &run)
-	if err != nil {
-		return nil, errors.Annotate(err, "parsing pubsub message data").Err()
-	}
-	return &run, nil
+	status = "success"
+	return nil
 }
 
 // HandleLegacy processes a ResultDB Invocation Ready for Export Pub/Sub message.

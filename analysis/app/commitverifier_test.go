@@ -24,7 +24,6 @@ import (
 
 	"google.golang.org/protobuf/encoding/protojson"
 
-	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -67,30 +66,17 @@ func TestCVRunHandler(t *testing.T) {
 			t.Run(`Processed`, func(t *ftt.Test) {
 				processed = true
 
-				request := makeCVRunReq(message)
-				err := h.Handle(ctx, request)
+				err := h.Handle(ctx, pubsub.Message{}, message)
 				assert.That(t, err, should.ErrLike(nil))
 				assert.Loosely(t, cvRunCounter.Get(ctx, "cvproject", "success"), should.Equal(1))
 			})
 			t.Run(`Not processed`, func(t *ftt.Test) {
 				processed = false
 
-				request := makeCVRunReq(message)
-				err := h.Handle(ctx, request)
+				err := h.Handle(ctx, pubsub.Message{}, message)
 				assert.That(t, pubsub.Ignore.In(err), should.BeTrue)
 				assert.Loosely(t, cvRunCounter.Get(ctx, "cvproject", "ignored"), should.Equal(1))
 			})
-		})
-		t.Run(`Invalid data`, func(t *ftt.Test) {
-			h.handleCVRun = func(ctx context.Context, psRun *cvv1.PubSubRun) (project string, wasProcessed bool, err error) {
-				panic("Should not be reached.")
-			}
-
-			message := pubsub.Message{Data: []byte("Hello")}
-			err := h.Handle(ctx, message)
-			assert.That(t, transient.Tag.In(err), should.BeFalse)
-			assert.That(t, err, should.ErrLike("parse cv pubsub message data"))
-			assert.Loosely(t, cvRunCounter.Get(ctx, "unknown", "permanent-failure"), should.Equal(1))
 		})
 	})
 }

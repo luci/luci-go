@@ -24,7 +24,6 @@ import (
 
 	"google.golang.org/protobuf/encoding/protojson"
 
-	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -57,13 +56,20 @@ func TestInvocationFinalizedHandler(t *testing.T) {
 				called = true
 				return processed, nil
 			}
-			// Process invocation finalization.
-			request := makeInvocationFinalizedReq(6363636363, "invproject:realm")
+
+			// Implementation does not check properties of this parameter,
+			// so we can leave it unset.
+			message := pubsub.Message{}
+
+			notification := &resultpb.InvocationFinalizedNotification{
+				Invocation: fmt.Sprintf("invocations/build-%v", 6363636363),
+				Realm:      "invproject:realm",
+			}
 
 			t.Run(`Processed`, func(t *ftt.Test) {
 				processed = true
 
-				err := h.Handle(ctx, request)
+				err := h.Handle(ctx, message, notification)
 				assert.That(t, err, should.ErrLike(nil))
 				assert.Loosely(t, invocationsFinalizedCounter.Get(ctx, "invproject", "success"), should.Equal(1))
 				assert.Loosely(t, called, should.BeTrue)
@@ -71,21 +77,11 @@ func TestInvocationFinalizedHandler(t *testing.T) {
 			t.Run(`Not processed`, func(t *ftt.Test) {
 				processed = false
 
-				err := h.Handle(ctx, request)
+				err := h.Handle(ctx, message, notification)
 				assert.That(t, err, should.ErrLike("ignoring invocation finalized notification"))
 				assert.Loosely(t, invocationsFinalizedCounter.Get(ctx, "invproject", "ignored"), should.Equal(1))
 				assert.Loosely(t, called, should.BeTrue)
 			})
-		})
-		t.Run(`Invalid message`, func(t *ftt.Test) {
-			h.handleInvocation = func(ctx context.Context, notification *resultpb.InvocationFinalizedNotification) (bool, error) {
-				panic("Should not be reached.")
-			}
-
-			message := pubsub.Message{Data: []byte("Hello")}
-			err := h.Handle(ctx, message)
-			assert.That(t, err, should.ErrLike("parsing pubsub message data"))
-			assert.That(t, transient.Tag.In(err), should.BeFalse)
 		})
 	})
 }
@@ -144,14 +140,6 @@ func TestInvocationFinalizedHandlerLegacy(t *testing.T) {
 			So(invocationsFinalizedCounter.Get(ctx, "unknown", "permanent-failure"), ShouldEqual, 1)
 		})
 	})
-}
-
-func makeInvocationFinalizedReq(buildID int64, realm string) pubsub.Message {
-	blob, _ := protojson.Marshal(&resultpb.InvocationFinalizedNotification{
-		Invocation: fmt.Sprintf("invocations/build-%v", buildID),
-		Realm:      realm,
-	})
-	return pubsub.Message{Data: blob}
 }
 
 func makeInvocationFinalizedReqLegacy(buildID int64, realm string) io.ReadCloser {

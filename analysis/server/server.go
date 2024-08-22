@@ -171,10 +171,10 @@ func RegisterCrons(srv *luciserver.Server) {
 
 // RegisterPubSubHandlers registers pub/sub handlers.
 func RegisterPubSubHandlers() {
-	pubsub.RegisterHandler("buildbucket", app.BuildbucketPubSubHandler)
-	pubsub.RegisterHandler("cvrun", app.NewCVRunHandler().Handle)
-	pubsub.RegisterHandler("invocation-finalized", app.NewInvocationFinalizedHandler().Handle)
-	pubsub.RegisterHandler("invocation-ready-for-export", app.NewInvocationReadyForExportHandler().Handle)
+	pubsub.RegisterJSONPBHandler("buildbucket", app.BuildbucketPubSubHandler)
+	pubsub.RegisterJSONPBHandler("cvrun", app.NewCVRunHandler().Handle)
+	pubsub.RegisterJSONPBHandler("invocation-finalized", app.NewInvocationFinalizedHandler().Handle)
+	pubsub.RegisterJSONPBHandler("invocation-ready-for-export", app.NewInvocationReadyForExportHandler().Handle)
 }
 
 // RegisterLegacyPubSubHandlers registers legacy pub/sub handlers.

@@ -58,7 +58,7 @@ func NewCVRunHandler() *CVRunHandler {
 	}
 }
 
-func (h *CVRunHandler) Handle(ctx context.Context, message pubsub.Message) error {
+func (h *CVRunHandler) Handle(ctx context.Context, message pubsub.Message, cvMessage *cvv1.PubSubRun) error {
 	status := "unknown"
 	project := "unknown"
 	defer func() {
@@ -67,30 +67,12 @@ func (h *CVRunHandler) Handle(ctx context.Context, message pubsub.Message) error
 	}()
 
 	var err error
-	project, processed, err := h.handlerImpl(ctx, message)
+	project, processed, err := h.handleCVRun(ctx, cvMessage)
 	if err == nil && !processed {
 		err = pubsub.Ignore.Apply(errors.Reason("ignoring CV run").Err())
 	}
 	status = errStatus(err)
 	return err
-}
-
-func (h *CVRunHandler) handlerImpl(ctx context.Context, message pubsub.Message) (project string, processed bool, err error) {
-	psRun, err := extractPubSubRun(message)
-	if err != nil {
-		return "unknown", false, errors.Annotate(err, "failed to extract run").Err()
-	}
-	return h.handleCVRun(ctx, psRun)
-}
-
-func extractPubSubRun(message pubsub.Message) (*cvv1.PubSubRun, error) {
-	var run cvv1.PubSubRun
-	unmarshalOpts := protojson.UnmarshalOptions{DiscardUnknown: true}
-	err := unmarshalOpts.Unmarshal(message.Data, &run)
-	if err != nil {
-		return nil, errors.Annotate(err, "parse cv pubsub message data").Err()
-	}
-	return &run, nil
 }
 
 // HandleLegacy processes a CV Pub/Sub message.

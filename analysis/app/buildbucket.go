@@ -44,31 +44,17 @@ var (
 		field.String("status"))
 )
 
-func BuildbucketPubSubHandler(ctx context.Context, message pubsub.Message) error {
-	project := "unknown"
+func BuildbucketPubSubHandler(ctx context.Context, message pubsub.Message, bbMessage *buildbucketpb.BuildsV2PubSub) error {
+	project := bbMessage.Build.GetBuilder().GetProject()
 	status := "unknown"
 	defer func() {
 		// Closure for late binding.
 		buildCounter.Add(ctx, 1, project, status)
 	}()
 
-	var err error
-	project, err = bbPubSubHandlerImpl(ctx, message)
+	err := processBBV2Message(ctx, bbMessage)
 	status = errStatus(err)
 	return err
-}
-
-func bbPubSubHandlerImpl(ctx context.Context, message pubsub.Message) (project string, err error) {
-	// Handle message from the builds (v2) topic.
-	msg, err := parseBBV2Message(ctx, message.Data)
-	if err != nil {
-		return "unknown", errors.Annotate(err, "unmarshal buildbucket v2 pub/sub message").Err()
-	}
-	err = processBBV2Message(ctx, msg)
-	if err != nil {
-		return msg.Build.Builder.Project, errors.Annotate(err, "process buildbucket v2 build").Err()
-	}
-	return msg.Build.Builder.Project, nil
 }
 
 // BuildbucketPubSubHandlerLegacy accepts and process buildbucket v2 Pub/Sub messages.

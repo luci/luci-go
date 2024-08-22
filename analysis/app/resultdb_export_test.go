@@ -24,7 +24,6 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 
-	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -66,9 +65,7 @@ func TestInvocationReadyForExportHandler(t *testing.T) {
 				},
 			}
 			// Process invocation finalization.
-			request := makeInvocationReadyForExportReq(notification)
-
-			err := h.Handle(ctx, request)
+			err := h.Handle(ctx, pubsub.Message{}, notification)
 			assert.That(t, err, should.ErrLike(nil))
 			assert.Loosely(t, invocationsReadyForExportCounter.Get(ctx, "testproject", "success"), should.Equal(1))
 			assert.That(t, taskScheduler.Tasks().Payloads(), should.Match([]proto.Message{
@@ -77,13 +74,6 @@ func TestInvocationReadyForExportHandler(t *testing.T) {
 					TaskIndex:    1,
 				},
 			}))
-		})
-		t.Run(`Invalid message`, func(t *ftt.Test) {
-			message := pubsub.Message{Data: []byte("Hello")}
-			err := h.Handle(ctx, message)
-			assert.That(t, err, should.ErrLike("extract invocation ready for export notification: parsing pubsub message data"))
-			assert.That(t, transient.Tag.In(err), should.BeFalse)
-			assert.Loosely(t, invocationsReadyForExportCounter.Get(ctx, "unknown", "permanent-failure"), should.Equal(1))
 		})
 	})
 }
@@ -136,11 +126,6 @@ func TestInvocationReadyForExportHandlerLegacy(t *testing.T) {
 			So(invocationsReadyForExportCounter.Get(ctx, "unknown", "permanent-failure"), ShouldEqual, 1)
 		})
 	})
-}
-
-func makeInvocationReadyForExportReq(notification *resultpb.InvocationReadyForExportNotification) pubsub.Message {
-	blob, _ := protojson.Marshal(notification)
-	return pubsub.Message{Data: blob}
 }
 
 func makeInvocationReadyForExportReqLegacy(notification *resultpb.InvocationReadyForExportNotification) io.ReadCloser {
