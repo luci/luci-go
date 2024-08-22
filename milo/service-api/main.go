@@ -18,8 +18,10 @@ import (
 	"net/http"
 
 	luciserver "go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/pubsub"
 	"go.chromium.org/luci/server/router"
 
+	"go.chromium.org/luci/milo/internal/buildsource/buildbucket"
 	"go.chromium.org/luci/milo/server"
 
 	_ "go.chromium.org/luci/server/encryptedcookies/session/datastore"
@@ -31,6 +33,7 @@ func main() {
 	server.Main(func(srv *luciserver.Server) error {
 		service := server.CreateInternalService()
 		server.RegisterPRPCHandlers(srv, service)
+		pubsub.RegisterJSONPBHandler("buildbucket", buildbucket.PubSubHandler)
 
 		// Redirect the frontend to RPC explorer.
 		srv.Routes.GET("/", nil, func(ctx *router.Context) {

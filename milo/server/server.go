@@ -17,13 +17,16 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/golang/protobuf/proto"
 
+	"go.chromium.org/luci/auth/identity"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/api/gitiles"
+	"go.chromium.org/luci/common/logging"
 	gitilespb "go.chromium.org/luci/common/proto/gitiles"
 	"go.chromium.org/luci/config/server/cfgmodule"
 	"go.chromium.org/luci/grpc/appstatus"
@@ -31,13 +34,16 @@ import (
 	resultpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/openid"
 	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/encryptedcookies"
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/gtm"
 	"go.chromium.org/luci/server/loginsessions"
 	"go.chromium.org/luci/server/module"
+	"go.chromium.org/luci/server/pubsub"
 	"go.chromium.org/luci/server/redisconn"
+	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/secrets"
 
 	"go.chromium.org/luci/milo/frontend/handlers"
@@ -67,6 +73,7 @@ func Main(init func(srv *server.Server) error) {
 		encryptedcookies.NewModuleFromFlags(),
 		gaeemulation.NewModuleFromFlags(),
 		hosts.NewModuleFromFlags(),
+		pubsub.NewModuleFromFlags(),
 		redisconn.NewModuleFromFlags(),
 		gtm.NewModuleFromFlags(),
 		loginsessions.NewModuleFromFlags(),
@@ -132,6 +139,24 @@ func RegisterCrons(srv *server.Server, service *rpc.MiloInternalService) {
 
 func RegisterFrontend(srv *server.Server) {
 	handlers.Run(srv, "../frontend/templates")
+
+	// TODO(b/349254870): Delete legacy pub/sub handler once migration complete.
+	pubsubMW := router.NewMiddlewareChain(
+		auth.Authenticate(&openid.GoogleIDTokenAuthMethod{
+			AudienceCheck: openid.AudienceMatchesHost,
+		}),
+	)
+	pusherID := identity.Identity(fmt.Sprintf("user:buildbucket-pubsub@%s.iam.gserviceaccount.com", srv.Options.CloudProject))
+
+	// PubSub subscription endpoints.
+	srv.Routes.POST("/push-handlers/buildbucket_v2", pubsubMW, func(ctx *router.Context) {
+		if got := auth.CurrentIdentity(ctx.Request.Context()); got != pusherID {
+			logging.Errorf(ctx.Request.Context(), "Expecting ID token of %q, got %q", pusherID, got)
+			ctx.Writer.WriteHeader(403)
+		} else {
+			buildbucket.PubSubHandlerLegacy(ctx)
+		}
+	})
 
 	httpService := httpservice.HTTPService{
 		Server: srv,

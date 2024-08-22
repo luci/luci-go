@@ -24,7 +24,7 @@ automatic_scaling:
   max_pending_latency: 30ms  # default value
   max_concurrent_requests: 8  # note: the default value is 10
 
-# Keep app.yaml, service-pubsub.yaml and service-api/service-api.yaml in sync.
+# Keep app.yaml and service-api/service-api.yaml in sync.
 
 # luci_gae_vars is interpreted by gae.py, for apps deployed manually.
 # It maps the app ID being deployed to values of vars used below.
@@ -32,11 +32,13 @@ luci_gae_vars:
   luci-milo-dev:
     AUTH_SERVICE_HOST: chrome-infra-auth-dev.appspot.com
     CONFIG_SERVICE_HOST: config.luci.app
+    CRON_AUTHORIZED_CALLER: cloud-scheduler-jobs@luci-milo-dev.iam.gserviceaccount.com
     MILO_HOST: VERSION.staging.milo.api.luci.app
     TS_MON_ACCOUNT: app-engine-metric-publishers@prodx-mon-chrome-infra.google.com.iam.gserviceaccount.com
     OAUTH_CLIENT_ID: 897369734084-d3t2c39aht2aqeop0f42pp48ejpr54up.apps.googleusercontent.com
     OAUTH_CLIENT_SECRET: sm://oauth-client-secret
     OAUTH_REDIRECT_URL: https://luci-milo-dev.appspot.com/auth/openid/callback
+    PUBSUB_AUTHORIZED_CALLER: cloud-pubsub-pusher@luci-milo-dev.iam.gserviceaccount.com
     ROOT_SECRET: sm://root-secret
     TINK_AEAD_KEY: sm://tink-aead-primary
     REDIS_ADDR: 10.82.28.60:6379
@@ -113,11 +115,13 @@ entrypoint: >
   main
   -auth-service-host ${AUTH_SERVICE_HOST}
   -config-service-host ${CONFIG_SERVICE_HOST}
+  -cron-authorized-caller ${CRON_AUTHORIZED_CALLER}
   -milo-host ${MILO_HOST}
   -ts-mon-account ${TS_MON_ACCOUNT}
   -cloud-error-reporting
   -root-secret ${ROOT_SECRET}
   -primary-tink-aead-key ${TINK_AEAD_KEY}
+  -pubsub-authorized-caller ${PUBSUB_AUTHORIZED_CALLER}
   -encrypted-cookies-client-id ${OAUTH_CLIENT_ID}
   -encrypted-cookies-client-secret ${OAUTH_CLIENT_SECRET}
   -encrypted-cookies-redirect-url ${OAUTH_REDIRECT_URL}

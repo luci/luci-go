@@ -16,6 +16,7 @@ package buildbucket
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -37,6 +38,7 @@ import (
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/pubsub"
 	"go.chromium.org/luci/server/redisconn"
 	"go.chromium.org/luci/server/router"
 
@@ -186,9 +188,24 @@ var summaryBuildMask = &field_mask.FieldMask{
 	},
 }
 
-// PubSubHandler is a webhook that stores the builds coming in from pubsub.
-func PubSubHandler(ctx *router.Context) {
-	err := PubSubHandlerImpl(ctx.Request.Context(), ctx.Request)
+type PubSubMessage struct {
+	Attributes map[string]any `json:"attributes"`
+	Data       string         `json:"data"`
+	MessageID  string         `json:"message_id"`
+}
+
+type pubSubSubscription struct {
+	Message PubSubMessage `json:"message"`
+}
+
+// GetData returns the expanded form of Data (decoded from base64).
+func (m *pubSubSubscription) GetData() ([]byte, error) {
+	return base64.StdEncoding.DecodeString(m.Message.Data)
+}
+
+// PubSubHandlerLegacy is a webhook that stores the builds coming in from pubsub.
+func PubSubHandlerLegacy(ctx *router.Context) {
+	err := pubSubHandlerLegacyImpl(ctx.Request.Context(), ctx.Request)
 	if err != nil {
 		logging.Errorf(ctx.Request.Context(), "error while handling pubsub event")
 		errors.Log(ctx.Request.Context(), err)
@@ -204,11 +221,11 @@ func PubSubHandler(ctx *router.Context) {
 	ctx.Writer.WriteHeader(http.StatusOK)
 }
 
-// PubSubHandlerImpl takes the http.Request, expects to find
+// pubSubHandlerLegacyImpl takes the http.Request, expects to find
 // a common.PubSubSubscription JSON object in the Body, containing a
 // BuildsV2PubSub, and handles the contents with generateSummary.
-func PubSubHandlerImpl(c context.Context, r *http.Request) error {
-	msg := utils.PubSubSubscription{}
+func pubSubHandlerLegacyImpl(c context.Context, r *http.Request) error {
+	msg := pubSubSubscription{}
 	if err := json.NewDecoder(r.Body).Decode(&msg); err != nil {
 		// This might be a transient error, e.g. when the json format changes
 		// and Milo isn't updated yet.
@@ -224,10 +241,10 @@ func PubSubHandlerImpl(c context.Context, r *http.Request) error {
 		return err
 	}
 
-	return processBuild(c, buildsV2Msg.Build)
+	return PubSubHandler(c, pubsub.Message{}, buildsV2Msg.Build)
 }
 
-func processBuild(c context.Context, build *buildbucketpb.Build) error {
+func PubSubHandler(c context.Context, message pubsub.Message, build *buildbucketpb.Build) error {
 	// TODO(iannucci,nodir): get the bot context too
 	// TODO(iannucci,nodir): support manifests/got_revision
 	bs, err := model.BuildSummaryFromBuild(c, build.Infra.Buildbucket.Hostname, build)

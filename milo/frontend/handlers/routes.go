@@ -133,7 +133,7 @@ func Run(srv *server.Server, templatePath string) {
 			logging.Errorf(ctx.Request.Context(), "Expecting ID token of %q, got %q", pusherID, got)
 			ctx.Writer.WriteHeader(403)
 		} else {
-			buildbucket.PubSubHandler(ctx)
+			buildbucket.PubSubHandlerLegacy(ctx)
 		}
 	})
 
