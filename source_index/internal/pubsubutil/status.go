@@ -15,56 +15,17 @@
 package pubsubutil
 
 import (
-	"net/http"
-
 	"go.chromium.org/luci/common/retry/transient"
 )
 
-const (
-	// StatusSuccess is the status code for successful pubsub handler execution.
-	//
-	// Use "200 OK" so that PubSub retries them.
-	StatusSuccess = http.StatusOK
-
-	// StatusTransientFailure is the status code for transient pubsub handler
-	// failures.
-	//
-	// Use "500 Internal Server Error" so that PubSub retries them.
-	StatusTransientFailure = http.StatusInternalServerError
-	// StatusPermanentFailure is the status code for permanent pubsub handler
-	// failures.
-	//
-	// Use "202 Accepted" so that:
-	// - PubSub does not retry them, and
-	// - the results can be distinguished from success / ignored results
-	//   (which are reported as "200 OK" / "204 No Content") in logs.
-	// See https://cloud.google.com/pubsub/docs/push#receiving_messages.
-	StatusPermanentFailure = http.StatusAccepted
-)
-
-// StatusCode returns the appropriate HTTP status code for the given pubsub
-// handler error. Returns StatusSuccess is error is nil.
-func StatusCode(err error) int {
+// StatusString returns the string representation for the pubsub handler status.
+func StatusString(err error) string {
 	switch {
 	case err == nil:
-		return StatusSuccess
-	case transient.Tag.In(err):
-		return StatusTransientFailure
-	default:
-		return StatusPermanentFailure
-	}
-}
-
-// StatusString returns the string representation for the pubsub handler status.
-func StatusString(code int) string {
-	switch code {
-	case StatusSuccess:
 		return "success"
-	case StatusTransientFailure:
+	case transient.Tag.In(err):
 		return "transient-failure"
-	case StatusPermanentFailure:
-		return "permanent-failure"
 	default:
-		return "unknown"
+		return "permanent-failure"
 	}
 }

@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/module"
+	"go.chromium.org/luci/server/pubsub"
 	spanmodule "go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
 
@@ -44,6 +45,7 @@ func Main(init func(srv *luciserver.Server) error) {
 		cfgmodule.NewModuleFromFlags(),
 		cron.NewModuleFromFlags(),
 		gaeemulation.NewModuleFromFlags(), // Needed by cfgmodule.
+		pubsub.NewModuleFromFlags(),
 		spanmodule.NewModuleFromFlags(nil),
 		tq.NewModuleFromFlags(),
 	}

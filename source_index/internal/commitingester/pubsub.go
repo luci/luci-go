@@ -16,14 +16,10 @@ package commitingester
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
-	"net/http"
 	"strings"
 
 	"google.golang.org/grpc/status"
 
-	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
@@ -31,9 +27,7 @@ import (
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/server"
-	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/auth/openid"
-	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/server/pubsub"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/source_index/internal/commitingester/taskspb"
@@ -59,61 +53,29 @@ var (
 // RegisterPubSubHandlers registers the pubsub handlers for Source Index's
 // commit ingestion.
 func RegisterPubSubHandlers(srv *server.Server) error {
-	pusherID := identity.Identity(fmt.Sprintf("user:gitiles-pubsub@%s.iam.gserviceaccount.com", srv.Options.CloudProject))
-
-	// A middleware that restrict the endpoint to the pubsub service account.
-	pubsubMW := router.NewMiddlewareChain(
-		auth.Authenticate(&openid.GoogleIDTokenAuthMethod{
-			AudienceCheck: openid.AudienceMatchesHost,
-		}),
-		func(ctx *router.Context, next router.Handler) {
-			if got := auth.CurrentIdentity(ctx.Request.Context()); got != pusherID {
-				logging.Errorf(ctx.Request.Context(), "Expecting ID token of %q, got %q", pusherID, got)
-				ctx.Writer.WriteHeader(http.StatusForbidden)
-				return
-			}
-			next(ctx)
-		},
-	)
-
-	// PubSub subscription endpoints.
-	srv.Routes.POST("/push-handlers/gitiles/:gitiles_host", pubsubMW, pubSubHandler)
-
+	pubsub.RegisterJSONPBHandler("gitiles", pubSubHandler)
 	return nil
 }
 
-func pubSubHandler(c *router.Context) {
-	ctx := c.Request.Context()
-
-	status := pubsubutil.StatusTransientFailure
+func pubSubHandler(ctx context.Context, message pubsub.Message, event *gerritpb.SourceRepoEvent) (err error) {
 	repo := "unknown"
-	gitilesHost := c.Params.ByName("gitiles_host")
+	// Extract host from URL query parameters, e.g. from
+	// /internal/pubsub/gitiles?host=myhost.googlesource.com
+	gitilesHost := message.Query.Get("host")
 
 	ctx = logging.SetField(ctx, "host", gitilesHost)
 
 	defer func() {
 		// Closure for late binding.
-		c.Writer.WriteHeader(status)
-		repoEventCounter.Add(ctx, 1, gitilesHost, repo, pubsubutil.StatusString(status))
+		repoEventCounter.Add(ctx, 1, gitilesHost, repo, pubsubutil.StatusString(err))
 	}()
 
-	// Parse event.
-	var event gerritpb.SourceRepoEvent
-	if err := json.NewDecoder(c.Request.Body).Decode(&event); err != nil {
-		errors.Log(ctx, errors.Annotate(err, "could not decode gitiles pubsub message").Err())
-		status = pubsubutil.StatusCode(err)
-		return
-	}
-
 	// Process event.
-	repo, err := processSourceRepoEvent(ctx, gitilesHost, &event)
+	repo, err = processSourceRepoEvent(ctx, gitilesHost, event)
 	if err != nil {
-		errors.Log(ctx, errors.Annotate(err, "process event for host: %q", gitilesHost).Err())
-		status = pubsubutil.StatusCode(err)
-		return
+		return errors.Annotate(err, "process event for host %q", gitilesHost).Err()
 	}
-
-	status = pubsubutil.StatusSuccess
+	return nil
 }
 
 // processSourceRepoEvent checks whether the given event should trigger a commit
