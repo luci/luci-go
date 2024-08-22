@@ -17,7 +17,5 @@ dispatch:
 # https://cloud.google.com/appengine/docs/legacy/standard/python/reference/dispatch-yaml#syntax
 - url: "*/internal/*"
   service: backend
-- url: "*/push-handlers/*"
-  service: backend
 
 # All other requests are routed to service 'default' (frontend) by default.

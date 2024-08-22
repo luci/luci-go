@@ -102,18 +102,25 @@ func processSourceRepoEvent(ctx context.Context, gitilesHost string, event *gerr
 	}
 	repo = chunks[3]
 
+	ctx = logging.SetField(ctx, "repository", repo)
+
 	updateEvent := event.GetRefUpdateEvent()
 	if updateEvent == nil {
+		logging.Infof(ctx, "not a ref update event; skipping")
 		return repo, nil
 	}
 
 	for _, update := range updateEvent.RefUpdates {
+		ref := update.RefName
+		ctx = logging.SetField(ctx, "ref", ref)
+
 		if update.UpdateType == gerritpb.SourceRepoEvent_RefUpdateEvent_RefUpdate_DELETE {
+			logging.Infof(ctx, "deletion; skipping this ref update")
 			continue
 		}
 
-		ref := update.RefName
 		if !cfg.ShouldIndexRef(gitilesHost, repo, ref) {
+			logging.Infof(ctx, "not configured to be indexed; skipping this ref update")
 			continue
 		}
 
