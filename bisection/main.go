@@ -38,7 +38,7 @@ import (
 	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/metrics"
 	pb "go.chromium.org/luci/bisection/proto/v1"
-	"go.chromium.org/luci/bisection/pubsub"
+	bbpubsub "go.chromium.org/luci/bisection/pubsub"
 	"go.chromium.org/luci/bisection/server"
 	"go.chromium.org/luci/bisection/testfailureanalysis/bisection"
 	"go.chromium.org/luci/bisection/testfailuredetection"
@@ -53,6 +53,7 @@ import (
 	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/module"
+	"go.chromium.org/luci/server/pubsub"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/tq"
@@ -91,6 +92,7 @@ func main() {
 		cron.NewModuleFromFlags(),
 		hosts.NewModuleFromFlags(),
 		gaeemulation.NewModuleFromFlags(),
+		pubsub.NewModuleFromFlags(),
 		secrets.NewModuleFromFlags(),
 		tq.NewModuleFromFlags(),
 	}
@@ -122,6 +124,9 @@ func main() {
 		})
 
 		// Pubsub handler
+		pubsub.RegisterJSONPBHandler("buildbucket", bbpubsub.BuildbucketPubSubHandler)
+
+		// TODO(b/349254870): Legacy pubsub handler, delete once migrated.
 		pubsubMwc := router.NewMiddlewareChain(
 			auth.Authenticate(&openid.GoogleIDTokenAuthMethod{
 				AudienceCheck: openid.AudienceMatchesHost,
@@ -134,9 +139,10 @@ func main() {
 				logging.Errorf(ctx.Request.Context(), "Expecting ID token of %q, got %q", pusherID, got)
 				ctx.Writer.WriteHeader(http.StatusForbidden)
 			} else {
-				pubsub.BuildbucketPubSubHandler(ctx)
+				bbpubsub.BuildbucketPubSubHandlerLegacy(ctx)
 			}
 		})
+
 		pg := &LUCIAnalysisProject{
 			DefaultProject: luciAnalysisProject,
 		}
