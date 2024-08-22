@@ -927,13 +927,13 @@ func CreateAuthGroup(ctx context.Context, group *AuthGroup, external bool, histo
 // given field has at least one value equal to val.
 func findGroupsWithFieldEq(ctx context.Context, field string, val string) ([]string, error) {
 	q := datastore.NewQuery("AuthGroup").Ancestor(RootKey(ctx)).Eq(field, val)
-	var groups []*AuthGroup
-	if err := datastore.GetAll(ctx, q, &groups); err != nil {
+	var keys []*datastore.Key
+	if err := datastore.GetAll(ctx, q, &keys); err != nil {
 		return nil, err
 	}
-	names := make([]string, len(groups))
-	for i, group := range groups {
-		names[i] = group.ID
+	names := make([]string, len(keys))
+	for i, key := range keys {
+		names[i] = key.StringID()
 	}
 	return names, nil
 }
