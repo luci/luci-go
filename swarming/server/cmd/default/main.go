@@ -94,7 +94,11 @@ func main() {
 
 		// A cron job that fetches most recent configs from LUCI Config and puts
 		// them into the datastore.
-		cron.RegisterHandler("update-config", cfg.UpdateConfigs)
+		cron.RegisterHandler("update-config", func(ctx context.Context) error {
+			return cfg.UpdateConfigs(ctx, &cfg.EmbeddedBotSettings{
+				ServerURL: fmt.Sprintf("https://%s.appspot.com", srv.Options.CloudProject),
+			})
+		})
 
 		// A config loader for the current process which reads configs from the
 		// datastore on launch (i.e. now) and then periodically refetches them in

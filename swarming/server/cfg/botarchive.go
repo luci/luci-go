@@ -16,6 +16,7 @@ package cfg
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -28,6 +29,9 @@ import (
 
 	"go.chromium.org/luci/cipd/client/cipd/pkg"
 	"go.chromium.org/luci/common/errors"
+
+	configpb "go.chromium.org/luci/swarming/proto/config"
+	"go.chromium.org/luci/swarming/server/cipd"
 )
 
 // botArchiveConfig is embedded into the bot archive as config/config.json.
@@ -41,6 +45,13 @@ type botArchiveConfig struct {
 	ServerVersion string `json:"server_version"`
 	// EnableTSMonitoring is deprecated and should not be used.
 	EnableTSMonitoring bool `json:"enable_ts_monitoring"`
+}
+
+// ensureBotArchiveBuilt does everything to build a bot archive and store it
+// in the datastore if it wasn't built before.
+func ensureBotArchiveBuilt(ctx context.Context, cipd *cipd.Client, desc *configpb.BotDeployment_BotPackage, botConfigPy []byte, ebs *EmbeddedBotSettings) (BotArchiveInfo, error) {
+	// TODO(vadimsh): Implement.
+	return BotArchiveInfo{}, nil
 }
 
 // buildBotArchive takes the base bot CIPD package, adds a couple of generated

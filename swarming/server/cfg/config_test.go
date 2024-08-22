@@ -32,6 +32,9 @@ import (
 	"go.chromium.org/luci/swarming/server/cfg/internalcfgpb"
 )
 
+// An overall empty configs digest (including bot versions).
+var emptyDigest = emptyVersionInfo().Digest
+
 func TestUpdateConfigs(t *testing.T) {
 	t.Parallel()
 
@@ -41,7 +44,7 @@ func TestUpdateConfigs(t *testing.T) {
 		call := func(files cfgmem.Files) error {
 			return UpdateConfigs(cfgclient.Use(ctx, cfgmem.New(map[config.Set]cfgmem.Files{
 				"services/${appid}": files,
-			})))
+			})), nil)
 		}
 
 		fetchDS := func() *configBundle {
@@ -164,7 +167,7 @@ func TestParseAndValidateConfigs(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, bundle, should.Resemble(&internalcfgpb.ConfigBundle{
 			Revision: "rev",
-			Digest:   "+nNhDZVFV3KtgSXbP7rBM+CsTzGpz50lwooB+0wf+AA",
+			Digest:   "LBLN3ToniTYTTcn5xamgqOWbmwiFx32hNaQfOdrW3mQ",
 			Settings: &configpb.SettingsCfg{
 				GoogleAnalytics: "boo",
 			},
@@ -194,9 +197,8 @@ func TestParseAndValidateConfigs(t *testing.T) {
 				},
 			},
 			Scripts: map[string]string{
-				"bot_config.py": "hooks",
-				"script1.py":    "script1 body",
-				"script2.py":    "script2 body",
+				"script1.py": "script1 body",
+				"script2.py": "script2 body",
 			},
 		}))
 	})
@@ -249,7 +251,7 @@ func TestFetchFromDatastore(t *testing.T) {
 		update := func(files cfgmem.Files) error {
 			return UpdateConfigs(cfgclient.Use(ctx, cfgmem.New(map[config.Set]cfgmem.Files{
 				"services/${appid}": files,
-			})))
+			})), nil)
 		}
 
 		fetch := func(cur *Config) (*Config, error) {
@@ -289,7 +291,7 @@ func TestFetchFromDatastore(t *testing.T) {
 			cfg, err = fetch(cfg)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, cfg.VersionInfo.Revision, should.Equal("bcf7460a098890cc7efc8eda1c8279658ec25eb3"))
-			assert.Loosely(t, cfg.VersionInfo.Digest, should.Equal("xv7iFT37ovx5Qc9kjYK0kEa3Eq47cNNC0ZbEd61eOYQ"))
+			assert.Loosely(t, cfg.VersionInfo.Digest, should.Equal("qGYmlgeHI+w+f9q08A5MDAt/eTXeK2uXNqyvCH5MoIg"))
 			assert.Loosely(t, cfg.settings, should.Resemble(&configpb.SettingsCfg{
 				GoogleAnalytics: "boo",
 				Auth: &configpb.AuthSettings{
@@ -323,7 +325,7 @@ func TestFetchFromDatastore(t *testing.T) {
 			cfg, err := fetch(nil)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, cfg.VersionInfo.Revision, should.Equal("bcf7460a098890cc7efc8eda1c8279658ec25eb3"))
-			assert.Loosely(t, cfg.VersionInfo.Digest, should.Equal("xv7iFT37ovx5Qc9kjYK0kEa3Eq47cNNC0ZbEd61eOYQ"))
+			assert.Loosely(t, cfg.VersionInfo.Digest, should.Equal("qGYmlgeHI+w+f9q08A5MDAt/eTXeK2uXNqyvCH5MoIg"))
 			assert.Loosely(t, cfg.settings, should.Resemble(withDefaultSettings(&configpb.SettingsCfg{
 				GoogleAnalytics: "boo",
 			})))
@@ -332,7 +334,7 @@ func TestFetchFromDatastore(t *testing.T) {
 			cfg, err = fetch(cfg)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, cfg.VersionInfo.Revision, should.Equal("bcf7460a098890cc7efc8eda1c8279658ec25eb3"))
-			assert.Loosely(t, cfg.VersionInfo.Digest, should.Equal("xv7iFT37ovx5Qc9kjYK0kEa3Eq47cNNC0ZbEd61eOYQ"))
+			assert.Loosely(t, cfg.VersionInfo.Digest, should.Equal("qGYmlgeHI+w+f9q08A5MDAt/eTXeK2uXNqyvCH5MoIg"))
 			assert.Loosely(t, cfg.settings, should.Resemble(withDefaultSettings(&configpb.SettingsCfg{
 				GoogleAnalytics: "boo",
 			})))
@@ -348,7 +350,7 @@ func TestFetchFromDatastore(t *testing.T) {
 			cfg, err = fetch(cfg)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, cfg.VersionInfo.Revision, should.Equal("725455c37c09b5dfa3dc31b47c9f787d555cbfb3"))
-			assert.Loosely(t, cfg.VersionInfo.Digest, should.Equal("xv7iFT37ovx5Qc9kjYK0kEa3Eq47cNNC0ZbEd61eOYQ"))
+			assert.Loosely(t, cfg.VersionInfo.Digest, should.Equal("qGYmlgeHI+w+f9q08A5MDAt/eTXeK2uXNqyvCH5MoIg"))
 			assert.Loosely(t, cfg.settings == prev, should.BeTrue) // equal as pointers
 
 			// A real config change happens.
@@ -358,7 +360,7 @@ func TestFetchFromDatastore(t *testing.T) {
 			cfg, err = fetch(cfg)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, cfg.VersionInfo.Revision, should.Equal("3a7123badfd5426f2a75932433f99b0aee8baf9b"))
-			assert.Loosely(t, cfg.VersionInfo.Digest, should.Equal("+JawsgfwWonAz8wFE/iR2AcdVmMhK3OwFbNSgCjBiRo"))
+			assert.Loosely(t, cfg.VersionInfo.Digest, should.Equal("H46KUNW/yNxJCzDJ8gtjeGbFHoy71njqeL5MN8HaksY"))
 			assert.Loosely(t, cfg.settings, should.Resemble(withDefaultSettings(&configpb.SettingsCfg{
 				GoogleAnalytics: "blah",
 			})))

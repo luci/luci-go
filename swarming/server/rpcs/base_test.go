@@ -156,7 +156,7 @@ func MockConfigs(ctx context.Context, configs MockedConfigs) *cfg.Provider {
 	// Put new configs into the datastore.
 	err := cfg.UpdateConfigs(cfgclient.Use(ctx, cfgmem.New(map[config.Set]cfgmem.Files{
 		"services/${appid}": files,
-	})))
+	})), nil)
 	if err != nil {
 		panic(err)
 	}

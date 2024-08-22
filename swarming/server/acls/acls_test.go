@@ -599,7 +599,7 @@ func mockedConfig(settings *configpb.AuthSettings, pools map[string]string, bots
 	ctx := memory.Use(context.Background())
 	err := cfg.UpdateConfigs(cfgclient.Use(ctx, cfgmem.New(map[config.Set]cfgmem.Files{
 		"services/${appid}": files,
-	})))
+	})), nil)
 	if err != nil {
 		panic(err)
 	}

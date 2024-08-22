@@ -36,6 +36,7 @@ import (
 
 	configpb "go.chromium.org/luci/swarming/proto/config"
 	"go.chromium.org/luci/swarming/server/cfg/internalcfgpb"
+	"go.chromium.org/luci/swarming/server/cipd"
 )
 
 // Individually recognized config files.
@@ -44,8 +45,8 @@ const (
 	poolsCfg    = "pools.cfg"
 	botsCfg     = "bots.cfg"
 
-	// The main hooks file embedded into the bot package. It is under `scripts/`.
-	botConfigPy = "bot_config.py"
+	// The main hooks file embedded into the bot archive.
+	botConfigPy = "scripts/bot_config.py"
 )
 
 // hookScriptRe matches paths like `scripts/hooks.py`. It intentionally doesn't
@@ -56,20 +57,74 @@ var hookScriptRe = regexp.MustCompile(`scripts/[^/]+\.py`)
 const (
 	// A pseudo-revision of an empty config.
 	emptyRev = "0000000000000000000000000000000000000000"
-	// A digest of a default config (calculated in the test).
-	emptyDigest = "0NpkIis/WMci8PDKkLD3PB/t8B86nbBVjyD59iosjOM"
+	// A digest of a default *.cfg configs (calculated in the test).
+	emptyCfgDigest = "0NpkIis/WMci8PDKkLD3PB/t8B86nbBVjyD59iosjOM"
 )
+
+// EmbeddedBotSettings is configuration data that eventually ends up in the
+// bot zip archive inside config.json.
+type EmbeddedBotSettings struct {
+	// ServerURL is "https://..." URL of the Swarming server itself.
+	ServerURL string
+}
 
 // VersionInfo identifies versions of Swarming configs.
 //
 // It is stored in the datastore as part of ConfigBundle and ConfigBundleRev.
 type VersionInfo struct {
-	// Revision is the config repo commit the config was loaded from.
-	Revision string `gae:",noindex"`
-	// Digest is derived from the configs and bot code.
+	// Digest is deterministically derived from the fully expanded configs
+	// (including the bot code archive fetched from CIPD).
+	//
+	// It is used by the config cache to know if something has really changed
+	// and the in-memory copy of the config needs to be reloaded.
 	Digest string `gae:",noindex"`
-	// Fetched is when this config was fetched for the first time.
+
+	// Fetched is when this config content was fetched for the first time.
+	//
+	// This is the first time this specific config digest was seen. Always
+	// monotonically increases.
 	Fetched time.Time `gae:",noindex"`
+
+	// Revision is the config repo git commit processed most recently.
+	//
+	// Note that Revision may changed even if Digest stays the same (happens if
+	// some config file we don't use changes).
+	//
+	// This is FYI mostly. Digest is used in all important places to figure out
+	// if config really changes.
+	Revision string `gae:",noindex"`
+
+	// Touched is when this config was last touched by the UpdateConfig cron.
+	//
+	// This is FYI mostly. It is updated whenever a new revision is seen, even if
+	// it doesn't change the digest.
+	Touched time.Time `gae:",noindex"`
+
+	// StableBot is information about the current stable bot archive version.
+	//
+	// Derived based on the BotDeployment config section and the state in CIPD.
+	StableBot BotArchiveInfo `gae:",noindex"`
+
+	// CanaryBot is information about the current canary bot archive version.
+	//
+	// Derived based on the BotDeployment config section and the state in CIPD.
+	CanaryBot BotArchiveInfo `gae:",noindex"`
+}
+
+// BotArchiveInfo contains information about a concrete assembled bot archive.
+type BotArchiveInfo struct {
+	// Digest is the bot archive SHA256 digest aka "bot archive version".
+	Digest string `gae:",noindex"`
+
+	// TODO(vadimsh): Add more, like pointers to datastore entities with the
+	// bot archive.
+}
+
+// logDiff logs changes in the struct (if any).
+func (old *BotArchiveInfo) logDiff(ctx context.Context, channel string, new BotArchiveInfo) {
+	if old.Digest != new.Digest {
+		logging.Infof(ctx, "%s bot digest: %s => %s", channel, old.Digest, new.Digest)
+	}
 }
 
 // Config is an immutable queryable representation of Swarming server configs.
@@ -144,11 +199,11 @@ func (cfg *Config) RouteToGoPercent(route string) int {
 	return 0
 }
 
-// UpdateConfigs fetches the most recent server configs from LUCI Config and
-// stores them in the local datastore if they appear to be valid.
+// UpdateConfigs fetches the most recent server configs and bot code and stores
+// them in the local datastore if they appear to be valid.
 //
 // Called from a cron job once a minute.
-func UpdateConfigs(ctx context.Context) error {
+func UpdateConfigs(ctx context.Context, ebs *EmbeddedBotSettings) error {
 	// Fetch known config files and everything that looks like a hooks script.
 	files, err := cfgclient.Client(ctx).GetConfigs(ctx, "services/${appid}",
 		func(path string) bool {
@@ -158,72 +213,140 @@ func UpdateConfigs(ctx context.Context) error {
 		return errors.Annotate(err, "failed to fetch the most recent configs from LUCI Config").Err()
 	}
 
-	// Get the revision, to check if we have seen it already.
-	var revision string
+	// Version information about the config we are fetching now. Will be populated
+	// field by field when data is fetched.
+	var fresh VersionInfo
 	if len(files) == 0 {
 		// This can happen in new deployments.
 		logging.Warningf(ctx, "There are no configuration files in LUCI Config")
-		revision = emptyRev
+		fresh.Revision = emptyRev
 	} else {
 		// Per GetConfigs logic, all files are at the same revision. Pick the first.
 		for _, cfg := range files {
-			revision = cfg.Revision
+			fresh.Revision = cfg.Revision
 			break
 		}
 	}
 
-	// No need to do anything if already processed this revision.
-	lastRev := &configBundleRev{Key: configBundleRevKey(ctx)}
-	switch err := datastore.Get(ctx, lastRev); {
-	case err == nil && lastRev.Revision == revision:
-		logging.Infof(ctx, "Configs are already up-to-date at rev %s (fetched %s ago)", lastRev.Revision, clock.Since(ctx, lastRev.Fetched).Round(time.Second))
-		return nil
-	case err == nil && lastRev.Revision != revision:
-		logging.Infof(ctx, "Configs revision changed %s => %s", lastRev.Revision, revision)
-	case errors.Is(err, datastore.ErrNoSuchEntity):
-		logging.Infof(ctx, "First config import ever at rev %s", revision)
-	case err != nil:
-		return errors.Annotate(err, "failed to fetch the latest processed revision from datastore").Err()
-	}
-
-	// Parse and re-validate.
-	bundle, err := parseAndValidateConfigs(ctx, revision, files)
+	// Parse and re-validate the fetched config to get bot package versions.
+	bundle, err := parseAndValidateConfigs(ctx, fresh.Revision, files)
 	if err != nil {
-		return errors.Annotate(err, "bad configs at rev %s", revision).Err()
+		return errors.Annotate(err, "bad configs at rev %s", fresh.Revision).Err()
 	}
 
-	// Store as the new authoritative config.
-	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-		info := VersionInfo{
-			Revision: bundle.Revision,
-			Digest:   bundle.Digest,
-			Fetched:  clock.Now(ctx).UTC(),
+	// Build the bot archive packages if they are missing. This process is
+	// deterministic and idempotent with results stored in the datastore. Inputs
+	// are the CIPD package, bot_config.py and EmbeddedBotSettings. Outputs are
+	// a bot zip archive stored in the datastore (in chunks) and its digest. If
+	// such inputs have already been processed, it is mostly noop.
+	//
+	// TODO(vadimsh): Start requiring bot_deployment section once this is ready
+	// for the final rollout. For now this section is optional and present only
+	// on the dev instance.
+	if stable := bundle.Settings.GetBotDeployment().GetStable(); stable != nil {
+		canary := bundle.Settings.GetBotDeployment().GetCanary()
+		if canary == nil {
+			canary = stable
 		}
+
+		// The hooks file to embed into the bot archive.
+		var botConfigBody []byte
+		if file, ok := files[botConfigPy]; ok {
+			botConfigBody = []byte(file.Content)
+		}
+
+		// Build archives sequentially since often the canary and the stable resolve
+		// to the same thing and the second call will just quickly discover
+		// everything is already done. Also we are in no rush in this background
+		// cron job.
+		var cipdClient cipd.Client
+		fresh.StableBot, err = ensureBotArchiveBuilt(ctx, &cipdClient, stable, botConfigBody, ebs)
+		if err != nil {
+			return errors.Annotate(err, "failed build the stable bot archive").Err()
+		}
+		fresh.CanaryBot, err = ensureBotArchiveBuilt(ctx, &cipdClient, canary, botConfigBody, ebs)
+		if err != nil {
+			return errors.Annotate(err, "failed build the canary bot archive").Err()
+		}
+	}
+
+	// The config is fully expanded at this point and we can calculate its digest
+	// to figure out if anything has really changed. See also emptyVersionInfo().
+	fresh.Digest = digest(map[string]string{
+		"configs": bundle.Digest,          // various *.cfg configs and things they reference
+		"stable":  fresh.StableBot.Digest, // the stable bot package content + bot_config.py + EmbeddedBotSettings
+		"canary":  fresh.CanaryBot.Digest, // the canary bot package content + bot_config.py + EmbeddedBotSettings
+	})
+
+	// Update the config if it has changed. The transaction is needed to make sure
+	// we always bump Fetched monotonically and that both ConfigBundle and
+	// ConfigBundleRev entities are updated at the same time.
+	return datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		lastRev := &configBundleRev{Key: configBundleRevKey(ctx)}
+		switch err := datastore.Get(ctx, lastRev); {
+		case err != nil:
+			if !errors.Is(err, datastore.ErrNoSuchEntity) {
+				return errors.Annotate(err, "failed to fetch the latest processed revision from datastore").Err()
+			}
+			logging.Infof(ctx, "First config import ever at rev %s", fresh.Revision)
+			fresh.Touched = clock.Now(ctx).UTC()
+			fresh.Fetched = fresh.Touched
+
+		case lastRev.Digest == fresh.Digest && lastRev.Revision == fresh.Revision:
+			logging.Infof(ctx, "Configs are already up-to-date at rev %s (processed %s ago, content first seen %s ago)",
+				lastRev.Revision,
+				clock.Since(ctx, lastRev.Touched).Round(time.Second),
+				clock.Since(ctx, lastRev.Fetched).Round(time.Second),
+			)
+			return nil
+
+		case lastRev.Digest == fresh.Digest:
+			// We've got a new git revision, but it didn't actually change any configs
+			// since the digest is the same. Bump only Touched, but not Fetched.
+			fresh.Touched = clock.Now(ctx).UTC()
+			fresh.Fetched = lastRev.Fetched
+			logging.Infof(ctx, "Revision %s didn't change configs in a significant way (last change was %s ago)",
+				fresh.Revision,
+				clock.Since(ctx, lastRev.Fetched).Round(time.Second),
+			)
+
+		default:
+			// We've got a new config either because the git state has changed or the
+			// CIPD state has changed (or both). Log all changes.
+			if lastRev.Revision != fresh.Revision {
+				logging.Infof(ctx, "Config revision change %s => %s", lastRev.Revision, fresh.Revision)
+			}
+			lastRev.CanaryBot.logDiff(ctx, "Canary", fresh.CanaryBot)
+			lastRev.StableBot.logDiff(ctx, "Stable", fresh.StableBot)
+			// Bump both timestamps. Guarantee monotonic increase of Fetched even in
+			// presence of clock skew, since the config cache mechanism relies on
+			// this property.
+			fresh.Touched = clock.Now(ctx).UTC()
+			fresh.Fetched = fresh.Touched
+			if !fresh.Fetched.After(lastRev.Fetched) {
+				fresh.Fetched = lastRev.Fetched.Add(time.Millisecond)
+			}
+		}
+
 		return datastore.Put(ctx,
 			&configBundle{
-				VersionInfo: info,
+				VersionInfo: fresh,
 				Key:         configBundleKey(ctx),
 				Bundle:      bundle,
 			},
 			&configBundleRev{
-				VersionInfo: info,
+				VersionInfo: fresh,
 				Key:         configBundleRevKey(ctx),
-			})
+			},
+		)
 	}, nil)
-
-	if err != nil {
-		return errors.Annotate(err, "failed to store configs at rev %s in the datastore", bundle.Revision).Err()
-	}
-
-	logging.Infof(ctx, "Stored configs at rev %s (digest %s)", bundle.Revision, bundle.Digest)
-	return nil
 }
 
 // defaultConfigs returns default config protos used on an "empty" server.
 func defaultConfigs() *internalcfgpb.ConfigBundle {
 	return &internalcfgpb.ConfigBundle{
 		Revision: emptyRev,
-		Digest:   emptyDigest,
+		Digest:   emptyCfgDigest,
 		Settings: withDefaultSettings(&configpb.SettingsCfg{}),
 		Pools:    &configpb.PoolsCfg{},
 		Bots: &configpb.BotsCfg{
@@ -272,25 +395,18 @@ func parseAndValidateConfigs(ctx context.Context, rev string, files map[string]c
 		bundle.Scripts[group.BotConfigScript] = body.Content
 	}
 
-	// Pick up the main hooks script (if any) to embed it into the bot package.
-	if body, ok := files["scripts/"+botConfigPy]; ok {
-		bundle.Scripts[botConfigPy] = body.Content
-	}
-
 	// Derive the digest based exclusively on configs content, regardless of the
 	// revision. The revision can change even if configs are unchanged. The digest
 	// is used to know when configs are changing **for real**.
-	visit := []string{settingsCfg, poolsCfg, botsCfg}
+	visit := map[string]string{
+		settingsCfg: files[settingsCfg].Content,
+		poolsCfg:    files[poolsCfg].Content,
+		botsCfg:     files[botsCfg].Content,
+	}
 	for script := range bundle.Scripts {
-		visit = append(visit, "scripts/"+script)
+		visit["scripts/"+script] = files["scripts/"+script].Content
 	}
-	sort.Strings(visit)
-	h := sha256.New()
-	_, _ = fmt.Fprintf(h, "version 1\n")
-	for _, path := range visit {
-		_, _ = fmt.Fprintf(h, "%s\n%d\n%s\n", path, len(files[path].Content), files[path].Content)
-	}
-	bundle.Digest = base64.RawStdEncoding.EncodeToString(h.Sum(nil))
+	bundle.Digest = digest(visit)
 
 	return bundle, nil
 }
@@ -330,6 +446,21 @@ func parseAndValidate[T any, TP interface {
 	return nil
 }
 
+// digest calculates a digest of key value pairs.
+func digest(pairs map[string]string) string {
+	keys := make([]string, 0, len(pairs))
+	for key := range pairs {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	h := sha256.New()
+	_, _ = fmt.Fprintf(h, "version 1\n")
+	for _, key := range keys {
+		_, _ = fmt.Fprintf(h, "%s\n%d\n%s\n", key, len(pairs[key]), pairs[key])
+	}
+	return base64.RawStdEncoding.EncodeToString(h.Sum(nil))
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 // configBundle is an entity that stores latest configs as compressed protos.
@@ -361,6 +492,18 @@ func configBundleRevKey(ctx context.Context) *datastore.Key {
 	return datastore.NewKey(ctx, "ConfigBundleRev", "", 1, configBundleKey(ctx))
 }
 
+// emptyVersionInfo is VersionInfo to use on an empty server with no configs.
+func emptyVersionInfo() VersionInfo {
+	return VersionInfo{
+		Revision: emptyRev,
+		Digest: digest(map[string]string{
+			"configs": emptyCfgDigest,
+			"stable":  "",
+			"canary":  "",
+		}),
+	}
+}
+
 // fetchFromDatastore fetches the config from the datastore.
 //
 // If there's no config in the datastore, returns some default empty config.
@@ -373,8 +516,7 @@ func fetchFromDatastore(ctx context.Context, cur *Config) (*Config, error) {
 		rev := &configBundleRev{Key: configBundleRevKey(ctx)}
 		switch err := datastore.Get(ctx, rev); {
 		case errors.Is(err, datastore.ErrNoSuchEntity):
-			rev.Revision = emptyRev
-			rev.Digest = emptyDigest
+			rev.VersionInfo = emptyVersionInfo()
 		case err != nil:
 			return nil, errors.Annotate(err, "fetching configBundleRev").Err()
 		}
@@ -390,8 +532,7 @@ func fetchFromDatastore(ctx context.Context, cur *Config) (*Config, error) {
 	bundle := &configBundle{Key: configBundleKey(ctx)}
 	switch err := datastore.Get(ctx, bundle); {
 	case errors.Is(err, datastore.ErrNoSuchEntity):
-		bundle.Revision = emptyRev
-		bundle.Digest = emptyDigest
+		bundle.VersionInfo = emptyVersionInfo()
 		bundle.Bundle = defaultConfigs()
 	case err != nil:
 		return nil, errors.Annotate(err, "fetching configBundle").Err()
@@ -407,11 +548,25 @@ func fetchFromDatastore(ctx context.Context, cur *Config) (*Config, error) {
 	if err != nil {
 		logging.Errorf(ctx,
 			"Broken config in the datastore at rev %s (digest %s, fetched %s ago): %s",
-			bundle.Revision, bundle.Digest, clock.Since(ctx, bundle.Fetched), err,
+			bundle.VersionInfo.Revision,
+			bundle.VersionInfo.Digest,
+			clock.Since(ctx, bundle.Fetched),
+			err,
 		)
 		return nil, errors.Annotate(err, "broken config in the datastore").Err()
 	}
-	logging.Infof(ctx, "Loaded configs at rev %s", cfg.VersionInfo.Revision)
+
+	if bundle.VersionInfo.Revision != emptyRev {
+		logging.Infof(ctx,
+			"Loaded configs at rev %s (digest %s, first fetched %s ago)",
+			bundle.VersionInfo.Revision,
+			bundle.VersionInfo.Digest,
+			clock.Since(ctx, bundle.Fetched),
+		)
+	} else {
+		logging.Infof(ctx, "Loaded default config")
+	}
+
 	return cfg, nil
 }
 
