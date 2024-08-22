@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ReactNode, createContext, useContext } from 'react';
+import { ReactNode, createContext } from 'react';
 
 import { OutputBuild } from '@/build/types';
 
 // Use `null` to denote missing context provider.
 // `undefined` means there's no build.
-const BuildCtx = createContext<OutputBuild | undefined | null>(null);
+export const BuildCtx = createContext<OutputBuild | undefined | null>(null);
 
 export interface BuildProviderProps {
   readonly build?: OutputBuild;
@@ -27,12 +27,4 @@ export interface BuildProviderProps {
 
 export function BuildContextProvider({ build, children }: BuildProviderProps) {
   return <BuildCtx.Provider value={build}>{children}</BuildCtx.Provider>;
-}
-
-export function useBuild() {
-  const ctx = useContext(BuildCtx);
-  if (ctx === null) {
-    throw new Error('useBuild can only be used in a BuildContextProvider');
-  }
-  return ctx;
 }

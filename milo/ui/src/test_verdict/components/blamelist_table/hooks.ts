@@ -12,28 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { createContext, useContext, useMemo } from 'react';
+import { useContext, useMemo } from 'react';
 
 import { OutputSegment } from '@/analysis/types';
 
-interface BlamelistContext {
-  readonly project: string;
-  /**
-   * Segments sorted by their end commit position in descending order.
-   */
-  readonly segmentsSortedByEnd: readonly OutputSegment[];
-  /**
-   * Segments sorted by their start upper bound commit position in descending
-   * order.
-   */
-  readonly segmentsSortedByStartUpperBound: ReadonlyArray<
-    readonly [segIndex: number, OutputSegment]
-  >;
-}
-
-export const BlamelistCtx = createContext<BlamelistContext | undefined>(
-  undefined,
-);
+import { BlamelistCtx } from './context';
 
 export function useProject() {
   const ctx = useContext(BlamelistCtx);

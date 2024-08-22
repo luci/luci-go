@@ -21,7 +21,7 @@ import {
   RepoUrlProvider,
   SetDefaultExpandedProvider,
   TableSxProvider,
-} from './providers';
+} from './context';
 
 export interface CommitTableProps {
   readonly repoUrl: string;

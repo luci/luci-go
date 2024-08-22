@@ -24,7 +24,7 @@ import { CommitLink } from '@/gitiles/components/commit_link';
 import { CompactClList } from '@/gitiles/components/compact_cl_list';
 import { BuilderID } from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_common.pb';
 
-import { useBuild } from '../context';
+import { useBuild } from '../hooks';
 
 import { AncestorBuildPath } from './ancestor_build_path';
 import { BuildIdDisplay } from './build_id_display';

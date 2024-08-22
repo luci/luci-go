@@ -12,5 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export { BuilderTable } from './builder_table';
-export type { BuilderTableProps } from './builder_table';
+import { useContext } from 'react';
+
+import { BuildsClientCtx, NumOfBuildsCtx } from './context';
+
+export function useBuildsClient() {
+  const ctx = useContext(BuildsClientCtx);
+  if (ctx === null) {
+    throw new Error(
+      'useBuildsClient can only be used in a BuilderTableContextProvider',
+    );
+  }
+  return ctx;
+}
+
+export function useNumOfBuilds() {
+  const ctx = useContext(NumOfBuildsCtx);
+  if (ctx === null) {
+    throw new Error(
+      'useNumOfBuilds can only be used in a BuilderTableContextProvider',
+    );
+  }
+  return ctx;
+}

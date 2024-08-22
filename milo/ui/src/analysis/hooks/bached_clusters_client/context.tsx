@@ -12,39 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ReactNode } from 'react';
+import { createContext, ReactNode } from 'react';
 
 import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
-import { BatchedBuildsClientImpl } from '@/proto_utils/batched_builds_client';
+import { DecoratedClient } from '@/common/hooks/prpc_query';
+import { BatchedClustersClientImpl } from '@/proto_utils/batched_clusters_client';
 
-import { BuildsClientCtx, NumOfBuildsCtx } from './context';
+export const BatchedClustersClientCtx = createContext<
+  DecoratedClient<BatchedClustersClientImpl> | undefined
+>(undefined);
 
-export interface BuilderTableContextProviderProps {
-  readonly numOfBuilds: number;
-  readonly maxBatchSize: number;
+export interface BatchedClustersClientProviderProps {
   readonly children: ReactNode;
 }
-
-export function BuilderTableContextProvider({
-  numOfBuilds,
-  maxBatchSize,
+export function BatchedClustersClientProvider({
   children,
-}: BuilderTableContextProviderProps) {
+}: BatchedClustersClientProviderProps) {
   // Use a single client instance so all requests in the same rendering cycle
   // can be batched together.
-  const buildsClient = usePrpcServiceClient(
-    {
-      host: SETTINGS.buildbucket.host,
-      ClientImpl: BatchedBuildsClientImpl,
-    },
-    { maxBatchSize },
-  );
+  const client = usePrpcServiceClient({
+    host: SETTINGS.luciAnalysis.host,
+    ClientImpl: BatchedClustersClientImpl,
+  });
 
   return (
-    <BuildsClientCtx.Provider value={buildsClient}>
-      <NumOfBuildsCtx.Provider value={numOfBuilds}>
-        {children}
-      </NumOfBuildsCtx.Provider>
-    </BuildsClientCtx.Provider>
+    <BatchedClustersClientCtx.Provider value={client}>
+      {children}
+    </BatchedClustersClientCtx.Provider>
   );
 }

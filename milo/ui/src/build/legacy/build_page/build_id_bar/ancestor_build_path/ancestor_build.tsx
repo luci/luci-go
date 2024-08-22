@@ -35,7 +35,7 @@ import {
 } from '@/common/tools/url_utils';
 import { GetBuildRequest } from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
 
-import { useBuildsClient } from './context';
+import { useBuildsClient } from './hooks';
 
 const ChipContainer = styled(Box)`
   display: grid;

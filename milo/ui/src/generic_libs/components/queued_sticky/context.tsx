@@ -12,39 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { MutableRefObject, ReactNode, useMemo, useRef, useState } from 'react';
+
 import {
-  createContext,
-  MutableRefObject,
-  ReactNode,
-  useContext,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
-
-type Direction = 'top' | 'right' | 'bottom' | 'left';
-
-export const DepthCtx = createContext<number | undefined>(undefined);
-
-export interface Offsets {
-  readonly top: number;
-  readonly right: number;
-  readonly bottom: number;
-  readonly left: number;
-}
-const OffsetsCtx = createContext<Offsets | undefined>(undefined);
-
-export interface SizeRecorder {
-  recordSize(
-    componentRef: MutableRefObject<undefined>,
-    direction: Direction,
-    size: number,
-  ): void;
-
-  remove(componentRef: MutableRefObject<undefined>): void;
-}
-
-const SizeRecorderCtx = createContext<SizeRecorder | undefined>(undefined);
+  DepthCtx,
+  Direction,
+  OffsetsCtx,
+  SizeRecorderCtx,
+  useDepth,
+} from './hooks';
 
 export interface QueuedStickyContextProviderProps {
   readonly children: ReactNode;
@@ -121,34 +97,4 @@ export function QueuedStickyContextProvider({
       </SizeRecorderCtx.Provider>
     </DepthCtx.Provider>
   );
-}
-
-export function useSizeRecorder() {
-  const ctx = useContext(SizeRecorderCtx);
-  if (ctx === undefined) {
-    throw new Error(
-      'useSizeRecorder can only be used in a QueuedStickyContextProvider',
-    );
-  }
-
-  return ctx;
-}
-
-export function useOffsets() {
-  const ctx = useContext(OffsetsCtx);
-  if (ctx === undefined) {
-    throw new Error(
-      'useOffsets can only be used in a QueuedStickyContextProvider',
-    );
-  }
-
-  return ctx;
-}
-
-export function useDepth() {
-  const ctx = useContext(DepthCtx);
-  if (ctx === undefined) {
-    throw new Error('useDepth can only be used in a QueuedStickyContextProvider');
-  }
-  return ctx;
 }

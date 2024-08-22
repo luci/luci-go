@@ -20,15 +20,15 @@ import { OutputCommit } from '@/gitiles/types';
 import { CommitContent } from './commit_content';
 import { StyledTableRow } from './common';
 import {
-  useDefaultExpanded,
-  useExpandStateStore,
-  useTableRowIndex,
-} from './context';
-import {
   CommitProvider,
   ExpandedProvider,
   SetExpandedProvider,
-} from './providers';
+} from './context';
+import {
+  useDefaultExpanded,
+  useExpandStateStore,
+  useTableRowIndex,
+} from './hooks';
 
 export interface CommitTableRowProps {
   /**

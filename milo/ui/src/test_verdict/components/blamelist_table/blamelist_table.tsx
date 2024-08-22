@@ -16,7 +16,7 @@ import { UseQueryOptions, useQueries } from '@tanstack/react-query';
 import { debounce } from 'lodash-es';
 import { useState } from 'react';
 
-import { BatchedClustersClientProvider } from '@/analysis/hooks/bached_clusters_client/provider';
+import { BatchedClustersClientProvider } from '@/analysis/hooks/bached_clusters_client/context';
 import { useTestVariantBranchesClient } from '@/analysis/hooks/prpc_clients';
 import {
   OutputQuerySourcePositionsResponse,
@@ -43,7 +43,7 @@ import {
 } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
 
 import { EntryContent } from './entry_content';
-import { BlamelistContextProvider } from './provider';
+import { BlamelistContextProvider } from './context';
 import { SegmentContentCell, SegmentHeadCell } from './segment_column';
 import {
   VerdictsStatusHeadCell,

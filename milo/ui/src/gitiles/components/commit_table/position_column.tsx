@@ -14,10 +14,7 @@
 
 import { Link, TableCell } from '@mui/material';
 
-import {
-  useCommit,
-  useRepoUrl,
-} from '@/gitiles/components/commit_table/context';
+import { useCommit, useRepoUrl } from './hooks';
 
 export function PositionHeadCell() {
   return <TableCell width="1px">Commit</TableCell>;

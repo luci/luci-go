@@ -20,10 +20,7 @@ import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import { Link as RouterLink } from 'react-router-dom';
 
-import {
-  useSelectedPage,
-  useProject,
-} from '@/common/components/page_meta/page_meta_provider';
+import { useSelectedPage, useProject } from '@/common/components/page_meta';
 import { getProjectURLPath } from '@/common/tools/url_utils';
 
 import { PAGE_LABEL_MAP } from '../../constants';

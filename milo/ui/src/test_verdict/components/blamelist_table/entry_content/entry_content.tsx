@@ -24,7 +24,7 @@ import {
 import { CommitContent } from '@/gitiles/components/commit_table';
 import { TestVerdictEntry } from '@/test_verdict/components/test_verdict_entry';
 
-import { useProject } from '../context';
+import { useProject } from '../hooks';
 
 export interface EntryContentProps {
   readonly verdicts: readonly OutputTestVerdict[] | null;

@@ -12,11 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ReactNode, useMemo } from 'react';
+import { createContext, ReactNode, useMemo } from 'react';
 
-import { OutputTestVariantBranch } from '@/analysis/types';
+import { OutputSegment, OutputTestVariantBranch } from '@/analysis/types';
 
-import { BlamelistCtx } from './context';
+interface BlamelistContext {
+  readonly project: string;
+  /**
+   * Segments sorted by their end commit position in descending order.
+   */
+  readonly segmentsSortedByEnd: readonly OutputSegment[];
+  /**
+   * Segments sorted by their start upper bound commit position in descending
+   * order.
+   */
+  readonly segmentsSortedByStartUpperBound: ReadonlyArray<
+    readonly [segIndex: number, OutputSegment]
+  >;
+}
+
+export const BlamelistCtx = createContext<BlamelistContext | undefined>(
+  undefined,
+);
 
 export interface BlamelistContextProviderProps {
   readonly testVariantBranch: OutputTestVariantBranch;

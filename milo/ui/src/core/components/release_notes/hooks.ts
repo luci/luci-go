@@ -12,30 +12,38 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { createContext, useContext } from 'react';
+import { useContext } from 'react';
 
-import { DecoratedClient } from '@/common/hooks/prpc_query';
-import { BatchedBuildsClientImpl } from '@/proto_utils/batched_builds_client';
+import {
+  HasNewReleaseCtx,
+  MarkReleaseNotesAsReadCtx,
+  ReleaseNotesCtx,
+} from './context';
 
-export const BuildsClientCtx =
-  createContext<DecoratedClient<BatchedBuildsClientImpl> | null>(null);
-export const NumOfBuildsCtx = createContext<number | null>(null);
-
-export function useBuildsClient() {
-  const ctx = useContext(BuildsClientCtx);
+export function useReleaseNotes() {
+  const ctx = useContext(ReleaseNotesCtx);
   if (ctx === null) {
     throw new Error(
-      'useBuildsClient can only be used in a BuilderTableContextProvider',
+      'useReleaseNotes can only be used in a ReleaseNotesProvider',
+    );
+  }
+  return ctx;
+}
+export function useHasNewRelease() {
+  const ctx = useContext(HasNewReleaseCtx);
+  if (ctx === null) {
+    throw new Error(
+      'useHasNewRelease can only be used in a ReleaseNotesProvider',
     );
   }
   return ctx;
 }
 
-export function useNumOfBuilds() {
-  const ctx = useContext(NumOfBuildsCtx);
+export function useMarkReleaseNotesRead() {
+  const ctx = useContext(MarkReleaseNotesAsReadCtx);
   if (ctx === null) {
     throw new Error(
-      'useNumOfBuilds can only be used in a BuilderTableContextProvider',
+      'useMarkReleaseNotesRead can only be used in a ReleaseNotesProvider',
     );
   }
   return ctx;

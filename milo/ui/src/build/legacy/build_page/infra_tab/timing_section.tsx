@@ -22,7 +22,7 @@ import { DurationBadge } from '@/common/components/duration_badge';
 import { Timestamp } from '@/common/components/timestamp';
 import { displayDuration } from '@/common/tools/time_utils';
 
-import { useBuild } from '../context';
+import { useBuild } from '../hooks';
 
 const InlineInfo = styled(Info)<IconProps>({
   verticalAlign: 'bottom',

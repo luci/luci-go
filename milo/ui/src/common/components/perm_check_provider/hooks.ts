@@ -13,13 +13,9 @@
 // limitations under the License.
 
 import { useQuery } from '@tanstack/react-query';
-import { createContext, useContext } from 'react';
+import { useContext } from 'react';
 
-import { DecoratedClient } from '@/common/hooks/prpc_query';
-import { BatchedMiloInternalClientImpl } from '@/proto_utils/batched_milo_internal_client';
-
-export const ClientCtx =
-  createContext<DecoratedClient<BatchedMiloInternalClientImpl> | null>(null);
+import { ClientCtx } from './context';
 
 /**
  * Checks whether the user has permission `perm` in realm `realm`.

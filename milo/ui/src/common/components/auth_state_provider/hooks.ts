@@ -12,19 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { createContext, useContext } from 'react';
+import { useContext } from 'react';
 
 import { AuthState } from '@/common/api/auth_state';
 
-export interface AuthStateContextValue {
-  readonly getAuthState: () => AuthState;
-  readonly getAccessToken: () => Promise<string>;
-  readonly getIdToken: () => Promise<string>;
-}
-
-export const AuthStateContext = createContext<
-  AuthStateContextValue | undefined
->(undefined);
+import { AuthStateContext } from './auth_state_provider';
 
 /**
  * Returns the latest auth state. For ephemeral properties (e.g. ID/access

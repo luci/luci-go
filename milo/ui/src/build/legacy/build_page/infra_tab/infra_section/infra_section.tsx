@@ -14,7 +14,7 @@
 
 import { getRecipeLink } from '@/build/tools/build_utils';
 
-import { useBuild } from '../../context';
+import { useBuild } from '../../hooks';
 
 import { BackendRows } from './backend_rows';
 import { BotLinkRow } from './bot_link_row';

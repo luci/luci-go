@@ -12,15 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {
-  Dispatch,
-  SetStateAction,
-  createContext,
-  useContext,
-  useEffect,
-  useId,
-  useState,
-} from 'react';
+import { Dispatch, SetStateAction, createContext, useState } from 'react';
 
 interface ContextValue {
   readonly setCurrentPageId: (id: string | null) => void;
@@ -29,7 +21,7 @@ interface ContextValue {
   readonly setShowConfigDialog: Dispatch<SetStateAction<boolean>>;
 }
 
-const Context = createContext<ContextValue | null>(null);
+export const PageConfigCtx = createContext<ContextValue | null>(null);
 
 export interface PageConfigStateProviderProps {
   readonly children: React.ReactNode;
@@ -53,7 +45,7 @@ export function PageConfigStateProvider({
   }
 
   return (
-    <Context.Provider
+    <PageConfigCtx.Provider
       value={{
         setCurrentPageId,
         hasConfig: pageId !== null,
@@ -62,48 +54,6 @@ export function PageConfigStateProvider({
       }}
     >
       {children}
-    </Context.Provider>
+    </PageConfigCtx.Provider>
   );
-}
-
-/**
- * Returns a dispatch function to toggle the page config dialog if there are
- * page specific configs.
- */
-export function useSetShowPageConfig() {
-  const ctx = useContext(Context);
-  if (ctx === null) {
-    throw new Error(
-      'useSetShowPageConfig can only be used in a PageConfigProvider',
-    );
-  }
-
-  return ctx.hasConfig ? ctx.setShowConfigDialog : null;
-}
-
-/**
- * Declares that the page has page-specific configs.
- *
- * @throws when there's already another mounted component that has page-specific
- * configs.
- *
- * @returns a boolean that indicates whether the config dialog should be
- * rendered, and a function to update it.
- */
-export function usePageSpecificConfig() {
-  const ctx = useContext(Context);
-  if (ctx === null) {
-    throw new Error(
-      'usePageSpecificConfig can only be used in a PageConfigProvider',
-    );
-  }
-
-  const componentId = useId();
-
-  useEffect(() => {
-    ctx.setCurrentPageId(componentId);
-    return () => ctx.setCurrentPageId(null);
-  }, [ctx, componentId]);
-
-  return [ctx.showConfigDialog, ctx.setShowConfigDialog] as const;
 }

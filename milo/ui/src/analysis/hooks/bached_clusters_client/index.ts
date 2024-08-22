@@ -12,5 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export { useBatchedClustersClient } from './context';
-export * from './provider';
+export * from './hooks';
+export { BatchedClustersClientProvider } from './context';
+export type { BatchedClustersClientProviderProps } from './context';

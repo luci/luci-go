@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { createContext, ReactNode, useContext } from 'react';
+import { createContext, ReactNode } from 'react';
 
-const Ctx = createContext<string | undefined>(undefined);
+export const ArtifactTagsCtx = createContext<string | undefined>(undefined);
 
 export interface ArtifactContextProviderProps {
   readonly resultName: string;
@@ -25,16 +25,9 @@ export function ArtifactContextProvider({
   resultName,
   children,
 }: ArtifactContextProviderProps) {
-  return <Ctx.Provider value={resultName}>{children}</Ctx.Provider>;
-}
-
-export function useResultName() {
-  const ctx = useContext(Ctx);
-  if (ctx === undefined) {
-    throw new Error(
-      'useResultName can only be used in ArtifactContextProvider',
-    );
-  }
-
-  return ctx;
+  return (
+    <ArtifactTagsCtx.Provider value={resultName}>
+      {children}
+    </ArtifactTagsCtx.Provider>
+  );
 }

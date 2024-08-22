@@ -27,10 +27,7 @@ import Toolbar from '@mui/material/Toolbar';
 import { Fragment, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 
-import {
-  useSelectedPage,
-  useProject,
-} from '@/common/components/page_meta/page_meta_provider';
+import { useSelectedPage, useProject } from '@/common/components/page_meta';
 import { UiPage, CommonColors } from '@/common/constants/view';
 
 import { PAGE_LABEL_MAP, drawerWidth } from '../constants';

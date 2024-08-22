@@ -21,7 +21,7 @@ import {
   getBorderColor,
 } from '@/test_verdict/tools/segment_color';
 
-import { useSegmentWithCommit } from '../context';
+import { useSegmentWithCommit } from '../hooks';
 
 import { SEGMENT_SPAN_WIDTH } from './constants';
 

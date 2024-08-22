@@ -12,20 +12,46 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ReactNode } from 'react';
+import { SxProps, Theme } from '@mui/material';
+import { createContext, Dispatch, ReactNode, SetStateAction } from 'react';
 
-import {
-  CommitContext,
-  DefaultExpandedContext,
-  ExpandStateStoreContext,
-  ExpandedContext,
-  RepoContext,
-  SetDefaultExpandedContext,
-  SetExpandedContext,
-  TableRowIndexContext,
-  TableRowPropsContext,
-  TableSxContext,
-} from './context';
+import { OutputCommit } from '@/gitiles/types';
+
+export const RepoContext = createContext<string | undefined>(undefined);
+
+export const TableSxContext = createContext<SxProps<Theme> | undefined>(
+  undefined,
+);
+
+export const TableRowIndexContext = createContext<number | undefined>(
+  undefined,
+);
+
+export const DefaultExpandedContext = createContext<boolean | undefined>(
+  undefined,
+);
+
+export const TableRowPropsContext = createContext<
+  { [key: string]: unknown } | undefined
+>(undefined);
+
+export const ExpandStateStoreContext = createContext<boolean[] | undefined>(
+  undefined,
+);
+
+export const SetDefaultExpandedContext = createContext<
+  Dispatch<SetStateAction<boolean>> | undefined
+>(undefined);
+
+export const ExpandedContext = createContext<boolean | undefined>(undefined);
+
+export const SetExpandedContext = createContext<
+  Dispatch<SetStateAction<boolean>> | undefined
+>(undefined);
+
+export const CommitContext = createContext<OutputCommit | undefined | null>(
+  undefined,
+);
 
 export const RepoUrlProvider = RepoContext.Provider;
 

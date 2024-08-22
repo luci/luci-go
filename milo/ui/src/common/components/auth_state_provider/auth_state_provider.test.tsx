@@ -23,7 +23,7 @@ import { Store, StoreInstance, StoreProvider } from '@/common/store';
 import { timeout } from '@/generic_libs/tools/utils';
 
 import { AuthStateProvider } from './auth_state_provider';
-import { useAuthState, useGetAccessToken, useGetIdToken } from './context';
+import { useAuthState, useGetAccessToken, useGetIdToken } from './hooks';
 
 interface TokenConsumerProps {
   readonly renderCallback: (

@@ -12,5 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export { usePermCheck } from './context';
-export * from './perm_check_provider';
+export { usePermCheck } from './hooks';
+export { PermCheckProvider } from './context';
+export type { PermCheckProviderProps } from './context';

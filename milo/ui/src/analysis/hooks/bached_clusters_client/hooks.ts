@@ -12,20 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ReactNode } from 'react';
+import { useContext } from 'react';
 
-import { useBatchedMiloInternalClient } from '@/common/hooks/prpc_clients';
+import { BatchedClustersClientCtx } from './context';
 
-import { ClientCtx } from './context';
-
-export interface PermCheckProviderProps {
-  readonly children: ReactNode;
-}
-
-export function PermCheckProvider({ children }: PermCheckProviderProps) {
-  // Use a single client instance so all requests in the same rendering cycle
-  // can be batched together.
-  const client = useBatchedMiloInternalClient();
-
-  return <ClientCtx.Provider value={client}>{children}</ClientCtx.Provider>;
+export function useBatchedClustersClient() {
+  const ctx = useContext(BatchedClustersClientCtx);
+  if (ctx === undefined) {
+    throw new Error(
+      'useBatchedClustersClient can only be used in a BatchedClustersClientProvider',
+    );
+  }
+  return ctx;
 }

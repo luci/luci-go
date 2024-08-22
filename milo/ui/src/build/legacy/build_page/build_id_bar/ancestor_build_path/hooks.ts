@@ -1,4 +1,4 @@
-// Copyright 2023 The LUCI Authors.
+// Copyright 2024 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,24 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useBuild } from '../hooks';
+import { useContext } from 'react';
 
-export function ExperimentsSection() {
-  const build = useBuild();
+import { BuildsClientCtx } from './context';
 
-  const experiments = build?.input?.experiments;
-  if (!experiments) {
-    return <></>;
+export function useBuildsClient() {
+  const ctx = useContext(BuildsClientCtx);
+  if (ctx === null) {
+    throw new Error('useBuildsClient can only be used in a AncestorBuildPath');
   }
-
-  return (
-    <>
-      <h3>Enabled Experiments</h3>
-      <ul>
-        {experiments.map((exp) => (
-          <li key={exp}>{exp}</li>
-        ))}
-      </ul>
-    </>
-  );
+  return ctx;
 }

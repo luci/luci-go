@@ -17,7 +17,7 @@ import { act } from 'react';
 
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
-import { ReleaseNotesProvider } from './release_notes_provider';
+import { ReleaseNotesProvider } from './context';
 import { ReleaseNotesTooltip } from './release_notes_tooltip';
 
 describe('ReleaseNotesTooltip', () => {

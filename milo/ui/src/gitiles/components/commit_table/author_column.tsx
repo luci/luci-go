@@ -14,7 +14,7 @@
 
 import { Skeleton, TableCell } from '@mui/material';
 
-import { useCommit } from './context';
+import { useCommit } from './hooks';
 
 export function AuthorHeadCell() {
   return <TableCell width="1px">Author</TableCell>;

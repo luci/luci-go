@@ -19,11 +19,8 @@ import { ErrorBoundary } from 'react-error-boundary';
 import { logging } from '@/common/tools/logging';
 import { resetSilence, silence } from '@/testing_tools/console_filter';
 
-import {
-  PageConfigStateProvider,
-  usePageSpecificConfig,
-  useSetShowPageConfig,
-} from './page_config_state_provider';
+import { usePageSpecificConfig, useSetShowPageConfig } from './hooks';
+import { PageConfigStateProvider } from './page_config_state_provider';
 
 function TestConfigButton() {
   const setShowDialog = useSetShowPageConfig();

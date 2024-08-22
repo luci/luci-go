@@ -18,7 +18,7 @@ import { Breadcrumbs, Stack, SxProps, Theme, Typography } from '@mui/material';
 import { OutputBuild } from '@/build/types';
 
 import { AncestorBuild } from './ancestor_build';
-import { BuildPathContextProvider } from './provider';
+import { BuildPathContextProvider } from './context';
 
 export interface AncestorBuildPathProps {
   readonly build: OutputBuild;

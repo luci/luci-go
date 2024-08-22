@@ -12,14 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {
-  ReactNode,
-  createContext,
-  useCallback,
-  useContext,
-  useRef,
-  useState,
-} from 'react';
+import { ReactNode, createContext, useCallback, useRef, useState } from 'react';
 
 import {
   ReleaseNotes,
@@ -27,9 +20,11 @@ import {
   getLastReadVersion,
 } from './common';
 
-const ReleaseNotesCtx = createContext<ReleaseNotes | null>(null);
-const HasNewReleaseCtx = createContext<boolean | null>(null);
-const MarkReleaseNotesAsReadCtx = createContext<(() => void) | null>(null);
+export const ReleaseNotesCtx = createContext<ReleaseNotes | null>(null);
+export const HasNewReleaseCtx = createContext<boolean | null>(null);
+export const MarkReleaseNotesAsReadCtx = createContext<(() => void) | null>(
+  null,
+);
 
 export interface ReleaseNotesProviderProps {
   readonly initReleaseNotes: ReleaseNotes;
@@ -60,31 +55,4 @@ export function ReleaseNotesProvider({
       </MarkReleaseNotesAsReadCtx.Provider>
     </ReleaseNotesCtx.Provider>
   );
-}
-
-export function useReleaseNotes() {
-  const ctx = useContext(ReleaseNotesCtx);
-  if (ctx === null) {
-    throw new Error('useReleaseNotes can only be used in a ReleaseNotesProvider');
-  }
-  return ctx;
-}
-export function useHasNewRelease() {
-  const ctx = useContext(HasNewReleaseCtx);
-  if (ctx === null) {
-    throw new Error(
-      'useHasNewRelease can only be used in a ReleaseNotesProvider',
-    );
-  }
-  return ctx;
-}
-
-export function useMarkReleaseNotesRead() {
-  const ctx = useContext(MarkReleaseNotesAsReadCtx);
-  if (ctx === null) {
-    throw new Error(
-      'useMarkReleaseNotesRead can only be used in a ReleaseNotesProvider',
-    );
-  }
-  return ctx;
 }

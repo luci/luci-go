@@ -12,13 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {
-  Dispatch,
-  SetStateAction,
-  createContext,
-  useContext,
-  useState,
-} from 'react';
+import { Dispatch, SetStateAction, createContext, useState } from 'react';
 
 import { UiPage } from '@/common/constants/view';
 
@@ -30,46 +24,6 @@ interface PageMetaContextData {
 }
 
 export const PageMetaContext = createContext<PageMetaContextData | null>(null);
-
-export function useSelectedPage() {
-  const context = useContext(PageMetaContext);
-
-  if (!context) {
-    throw new Error('useSelectedPage can only be used in a PageMetaContext');
-  }
-
-  return context.selectedPage;
-}
-
-export function useProject() {
-  const context = useContext(PageMetaContext);
-
-  if (!context) {
-    throw new Error('useSelectedProject can only be used in a PageMetaContext');
-  }
-
-  return context.project;
-}
-
-export function useSetSelectedPage() {
-  const context = useContext(PageMetaContext);
-
-  if (!context) {
-    throw new Error('useSetSelectedPage can only be used in a PageMetaContext');
-  }
-
-  return context.setSelectedPage;
-}
-
-export function useSetProject() {
-  const context = useContext(PageMetaContext);
-
-  if (!context) {
-    throw new Error('useSetProject can only be used in a PageMetaContext');
-  }
-
-  return context.setProject;
-}
 
 interface Props {
   children: React.ReactNode;

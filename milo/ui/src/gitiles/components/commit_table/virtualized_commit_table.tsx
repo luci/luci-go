@@ -31,7 +31,7 @@ import {
   SetDefaultExpandedProvider,
   TableRowPropsProvider,
   TableSxProvider,
-} from './providers';
+} from './context';
 
 function getItemSize(el: HTMLElement, field: 'offsetWidth' | 'offsetHeight') {
   switch (field) {

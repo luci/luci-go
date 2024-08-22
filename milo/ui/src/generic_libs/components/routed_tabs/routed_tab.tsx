@@ -15,7 +15,7 @@
 import { Tab, TabProps } from '@mui/material';
 import { Link } from 'react-router-dom';
 
-import { useActiveTabId } from './context';
+import { useActiveTabId } from './hooks';
 
 export interface RoutedTabProps
   extends Omit<TabProps<typeof Link>, 'component' | 'value'> {

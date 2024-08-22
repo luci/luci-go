@@ -17,13 +17,9 @@ import { Helmet } from 'react-helmet';
 
 import { UiPage } from '@/common/constants/view';
 
-import {
-  useProject,
-  useSetProject,
-  useSetSelectedPage,
-} from './page_meta_provider';
+import { useProject, useSetProject, useSetSelectedPage } from './hooks';
 
-interface Props {
+export interface PageMetaProps {
   title: string;
   selectedPage?: UiPage;
   project?: string;
@@ -32,7 +28,7 @@ interface Props {
 /**
  * Handles setting the sidebar selected item and title of the page.
  */
-export const PageMeta = ({ title, selectedPage, project }: Props) => {
+export const PageMeta = ({ title, selectedPage, project }: PageMetaProps) => {
   const setProject = useSetProject();
   const setSelectedPage = useSetSelectedPage();
   const currentProject = useProject();

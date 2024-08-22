@@ -15,7 +15,7 @@
 import { Box, SxProps, Theme } from '@mui/material';
 import { ReactNode, useEffect, useRef } from 'react';
 
-import { useSizeRecorder } from './context';
+import { useSizeRecorder } from './hooks';
 
 export interface StickyProps {
   /**

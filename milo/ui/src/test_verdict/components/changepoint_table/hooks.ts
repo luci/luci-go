@@ -12,17 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ScaleLinear } from 'd3';
-import { createContext, Dispatch, useContext } from 'react';
+import { useContext } from 'react';
 
-import { Action, BlamelistState } from './reducer';
-
-export const BlamelistDispatcherCtx = createContext<
-  Dispatch<Action> | undefined
->(undefined);
-export const BlamelistStateCtx = createContext<BlamelistState | undefined>(
-  undefined,
-);
+import {
+  BlamelistDispatcherCtx,
+  BlamelistStateCtx,
+  ChangeTableCtx,
+} from './context';
 
 export function useBlamelistDispatch() {
   const ctx = useContext(BlamelistDispatcherCtx);
@@ -42,20 +38,6 @@ export function useBlamelistState() {
     );
   }
   return ctx;
-}
-
-export const ChangeTableCtx = createContext<ChangepointTableConfig | undefined>(
-  undefined,
-);
-
-interface ChangepointTableConfig {
-  readonly criticalCommits: readonly string[];
-  readonly commitMap: { [key: string]: number };
-  readonly criticalVariantKeys: readonly string[];
-  readonly testVariantBranchCount: number;
-  readonly rowHeight: number;
-  readonly xScale: ScaleLinear<number, number, never>;
-  readonly yScale: ScaleLinear<number, number, never>;
 }
 
 export function useConfig() {

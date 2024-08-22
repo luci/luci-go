@@ -12,16 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { scaleLinear } from 'd3';
-import { ReactNode, useMemo, useReducer } from 'react';
+import { ScaleLinear, scaleLinear } from 'd3';
+import { createContext, Dispatch, ReactNode, useMemo, useReducer } from 'react';
 
 import { CELL_WIDTH, LINE_HEIGHT, MIN_ROW_HEIGHT } from './constants';
-import {
-  BlamelistDispatcherCtx,
-  BlamelistStateCtx,
-  ChangeTableCtx,
-} from './context';
-import { reducer } from './reducer';
+import { Action, BlamelistState, reducer } from './reducer';
+
+export const BlamelistDispatcherCtx = createContext<
+  Dispatch<Action> | undefined
+>(undefined);
+export const BlamelistStateCtx = createContext<BlamelistState | undefined>(
+  undefined,
+);
 
 export interface BlamelistStateProviderProps {
   readonly children: ReactNode;
@@ -42,6 +44,20 @@ export function BlamelistStateProvider({
       </BlamelistStateCtx.Provider>
     </BlamelistDispatcherCtx.Provider>
   );
+}
+
+export const ChangeTableCtx = createContext<ChangepointTableConfig | undefined>(
+  undefined,
+);
+
+interface ChangepointTableConfig {
+  readonly criticalCommits: readonly string[];
+  readonly commitMap: { [key: string]: number };
+  readonly criticalVariantKeys: readonly string[];
+  readonly testVariantBranchCount: number;
+  readonly rowHeight: number;
+  readonly xScale: ScaleLinear<number, number, never>;
+  readonly yScale: ScaleLinear<number, number, never>;
 }
 
 export interface ChangepointTableContextProviderProps {

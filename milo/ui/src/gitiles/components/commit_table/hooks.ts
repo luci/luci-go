@@ -12,12 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { SxProps, Theme } from '@mui/material';
-import { Dispatch, SetStateAction, createContext, useContext } from 'react';
+import { useContext } from 'react';
 
-import { OutputCommit } from '@/gitiles/types';
-
-export const RepoContext = createContext<string | undefined>(undefined);
+import {
+  CommitContext,
+  DefaultExpandedContext,
+  ExpandedContext,
+  ExpandStateStoreContext,
+  RepoContext,
+  SetDefaultExpandedContext,
+  SetExpandedContext,
+  TableRowIndexContext,
+  TableRowPropsContext,
+  TableSxContext,
+} from './context';
 
 export function useRepoUrl() {
   const ctx = useContext(RepoContext);
@@ -29,21 +37,9 @@ export function useRepoUrl() {
   return ctx;
 }
 
-export const TableSxContext = createContext<SxProps<Theme> | undefined>(
-  undefined,
-);
-
 export function useTableSx() {
   return useContext(TableSxContext);
 }
-
-export const TableRowPropsContext = createContext<
-  { [key: string]: unknown } | undefined
->(undefined);
-
-export const TableRowIndexContext = createContext<number | undefined>(
-  undefined,
-);
 
 export function useTableRowProps() {
   return useContext(TableRowPropsContext);
@@ -52,10 +48,6 @@ export function useTableRowProps() {
 export function useTableRowIndex() {
   return useContext(TableRowIndexContext);
 }
-
-export const DefaultExpandedContext = createContext<boolean | undefined>(
-  undefined,
-);
 
 export function useDefaultExpanded() {
   const ctx = useContext(DefaultExpandedContext);
@@ -67,10 +59,6 @@ export function useDefaultExpanded() {
   return ctx;
 }
 
-export const SetDefaultExpandedContext = createContext<
-  Dispatch<SetStateAction<boolean>> | undefined
->(undefined);
-
 export function useSetDefaultExpanded() {
   const ctx = useContext(SetDefaultExpandedContext);
 
@@ -81,15 +69,9 @@ export function useSetDefaultExpanded() {
   return ctx;
 }
 
-export const ExpandStateStoreContext = createContext<boolean[] | undefined>(
-  undefined,
-);
-
 export function useExpandStateStore() {
   return useContext(ExpandStateStoreContext);
 }
-
-export const ExpandedContext = createContext<boolean | undefined>(undefined);
 
 export function useExpanded() {
   const ctx = useContext(ExpandedContext);
@@ -101,10 +83,6 @@ export function useExpanded() {
   return ctx;
 }
 
-export const SetExpandedContext = createContext<
-  Dispatch<SetStateAction<boolean>> | undefined
->(undefined);
-
 export function useSetExpanded() {
   const ctx = useContext(SetExpandedContext);
 
@@ -114,10 +92,6 @@ export function useSetExpanded() {
 
   return ctx;
 }
-
-export const CommitContext = createContext<OutputCommit | undefined | null>(
-  undefined,
-);
 
 /**
  * Get the commit to be rendered in this row.

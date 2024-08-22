@@ -12,18 +12,39 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { createContext, useContext } from 'react';
+import { createContext, ReactNode } from 'react';
 
-import { DecoratedClient } from '@/common/hooks/prpc_query';
+import {
+  DecoratedClient,
+  usePrpcServiceClient,
+} from '@/common/hooks/prpc_query';
 import { BatchedBuildsClientImpl } from '@/proto_utils/batched_builds_client';
 
 export const BuildsClientCtx =
   createContext<DecoratedClient<BatchedBuildsClientImpl> | null>(null);
 
-export function useBuildsClient() {
-  const ctx = useContext(BuildsClientCtx);
-  if (ctx === null) {
-    throw new Error('useBuildsClient can only be used in a AncestorBuildPath');
-  }
-  return ctx;
+export interface BuildPathContextProviderProps {
+  readonly maxBatchSize: number;
+  readonly children: ReactNode;
+}
+
+export function BuildPathContextProvider({
+  maxBatchSize,
+  children,
+}: BuildPathContextProviderProps) {
+  // Use a single client instance so all requests in the same rendering cycle
+  // can be batched together.
+  const buildsClient = usePrpcServiceClient(
+    {
+      host: SETTINGS.buildbucket.host,
+      ClientImpl: BatchedBuildsClientImpl,
+    },
+    { maxBatchSize },
+  );
+
+  return (
+    <BuildsClientCtx.Provider value={buildsClient}>
+      {children}
+    </BuildsClientCtx.Provider>
+  );
 }

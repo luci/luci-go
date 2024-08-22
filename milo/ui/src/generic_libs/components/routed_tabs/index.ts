@@ -14,4 +14,4 @@
 
 export * from './routed_tabs';
 export * from './routed_tab';
-export { useTabId } from './context';
+export * from './hooks';

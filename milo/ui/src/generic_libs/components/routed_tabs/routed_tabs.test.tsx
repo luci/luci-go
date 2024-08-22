@@ -16,7 +16,7 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { act } from 'react';
 import { Link, RouterProvider, createMemoryRouter } from 'react-router-dom';
 
-import { useTabId } from './context';
+import { useTabId } from './hooks';
 import { RoutedTab } from './routed_tab';
 import { RoutedTabs } from './routed_tabs';
 

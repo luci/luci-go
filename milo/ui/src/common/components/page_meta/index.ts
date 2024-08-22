@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export * from './page_meta';
+export { PageMeta } from './page_meta';
+export type { PageMetaProps } from './page_meta';
+export * from './hooks';

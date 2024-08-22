@@ -26,7 +26,7 @@ import {
 } from '@/test_verdict/tools/segment_color';
 
 import { SEGMENT_SPAN_HEIGHT, SPAN_MARGIN } from '../constants';
-import { useBlamelistDispatch, useConfig } from '../context';
+import { useBlamelistDispatch, useConfig } from '../hooks';
 
 const Span = styled(Box)`
   display: flex;

@@ -14,7 +14,7 @@
 
 import { BuildTagRow } from '@/common/components/build_tag_row';
 
-import { useBuild } from '../context';
+import { useBuild } from '../hooks';
 
 export function TagsSection() {
   const build = useBuild();

@@ -13,11 +13,12 @@
 // limitations under the License.
 
 export * from './auth_state_initializer';
-export * from './auth_state_provider';
+export { AuthStateProvider } from './auth_state_provider';
+export type { AuthStateProviderProps } from './auth_state_provider';
 export * from './constants';
-export { useAuthState, useGetAccessToken, useGetIdToken } from './context';
+export { useAuthState, useGetAccessToken, useGetIdToken } from './hooks';
 
-import { AuthStateContext } from './context';
+import { AuthStateContext } from './auth_state_provider';
 
 /**
  * Should only be used to override auth state context in tests.

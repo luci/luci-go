@@ -24,7 +24,7 @@ import {
   SPAN_MARGIN,
   SEGMENT_SPAN_HEIGHT,
 } from '../constants';
-import { useBlamelistDispatch, useConfig } from '../context';
+import { useBlamelistDispatch, useConfig } from '../hooks';
 
 const Span = styled(Box)`
   container-type: inline-size;

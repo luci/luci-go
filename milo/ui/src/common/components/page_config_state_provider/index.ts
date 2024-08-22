@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export * from './page_config_state_provider';
+export { PageConfigStateProvider } from './page_config_state_provider';
+export type { PageConfigStateProviderProps } from './page_config_state_provider';
+export * from './hooks';

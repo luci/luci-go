@@ -12,22 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ReactNode } from 'react';
+import { createContext, ReactNode } from 'react';
 
-import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
+import {
+  DecoratedClient,
+  usePrpcServiceClient,
+} from '@/common/hooks/prpc_query';
 import { BatchedBuildsClientImpl } from '@/proto_utils/batched_builds_client';
 
-import { BuildsClientCtx } from './context';
+export const BuildsClientCtx =
+  createContext<DecoratedClient<BatchedBuildsClientImpl> | null>(null);
+export const NumOfBuildsCtx = createContext<number | null>(null);
 
-export interface BuildPathContextProviderProps {
+export interface BuilderTableContextProviderProps {
+  readonly numOfBuilds: number;
   readonly maxBatchSize: number;
   readonly children: ReactNode;
 }
 
-export function BuildPathContextProvider({
+export function BuilderTableContextProvider({
+  numOfBuilds,
   maxBatchSize,
   children,
-}: BuildPathContextProviderProps) {
+}: BuilderTableContextProviderProps) {
   // Use a single client instance so all requests in the same rendering cycle
   // can be batched together.
   const buildsClient = usePrpcServiceClient(
@@ -40,7 +47,9 @@ export function BuildPathContextProvider({
 
   return (
     <BuildsClientCtx.Provider value={buildsClient}>
-      {children}
+      <NumOfBuildsCtx.Provider value={numOfBuilds}>
+        {children}
+      </NumOfBuildsCtx.Provider>
     </BuildsClientCtx.Provider>
   );
 }
