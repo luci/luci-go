@@ -36,10 +36,8 @@ import (
 )
 
 var (
-	// TODO: questions:
-	//  - What's the naming convention for the metrics?
 	repoEventCounter = metric.NewCounter(
-		"source_index/ingestion/pubsub/gitiles_repo_events",
+		"source_index/ingestion/pubsub/gitiles",
 		"The number of repo events received by LUCI Source Index from PubSub.",
 		nil,
 		// The Gitiles host.
@@ -53,7 +51,11 @@ var (
 // RegisterPubSubHandlers registers the pubsub handlers for Source Index's
 // commit ingestion.
 func RegisterPubSubHandlers(srv *server.Server) error {
-	pubsub.RegisterJSONPBHandler("gitiles", pubSubHandler)
+	// Provide one handler for each message format. The message format is decided
+	// by the host configuration. See
+	// https://g3doc.corp.google.com/company/teams/gerritcodereview/users/cloud-pubsub.md#quickstart
+	pubsub.RegisterJSONPBHandler("gitiles/jsonpb", pubSubHandler)
+	pubsub.RegisterWirePBHandler("gitiles/wirepb", pubSubHandler)
 	return nil
 }
 
