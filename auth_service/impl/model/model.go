@@ -1048,13 +1048,24 @@ func UpdateAuthGroup(ctx context.Context, groupUpdate *AuthGroup, updateMask *fi
 		}
 
 		// Update fields according to the mask.
+		updated := false
 		for _, field := range updateMask.GetPaths() {
 			switch field {
 			case "members":
-				authGroup.Members = groupUpdate.Members
+				if !slices.Equal(authGroup.Members, groupUpdate.Members) {
+					authGroup.Members = groupUpdate.Members
+					updated = true
+				}
 			case "globs":
-				authGroup.Globs = groupUpdate.Globs
+				if !slices.Equal(authGroup.Globs, groupUpdate.Globs) {
+					authGroup.Globs = groupUpdate.Globs
+					updated = true
+				}
 			case "nested":
+				if slices.Equal(authGroup.Nested, groupUpdate.Nested) {
+					continue
+				}
+
 				// Check that any new groups being added exist.
 				addingNestedGroups := stringset.NewFromSlice(groupUpdate.Nested...)
 				addingNestedGroups.DelAll(authGroup.Nested)
@@ -1062,6 +1073,7 @@ func UpdateAuthGroup(ctx context.Context, groupUpdate *AuthGroup, updateMask *fi
 					return err
 				}
 				authGroup.Nested = groupUpdate.Nested
+				updated = true
 
 				// Check for group dependency cycles given the new nested groups.
 				if cycle, err := findGroupDependencyCycle(ctx, authGroup); err != nil {
@@ -1071,12 +1083,16 @@ func UpdateAuthGroup(ctx context.Context, groupUpdate *AuthGroup, updateMask *fi
 					return fmt.Errorf("%w: %s", ErrCyclicDependency, cycleStr)
 				}
 			case "description":
-				authGroup.Description = groupUpdate.Description
+				if authGroup.Description != groupUpdate.Description {
+					authGroup.Description = groupUpdate.Description
+					updated = true
+				}
 			case "owners":
 				newOwners := groupUpdate.Owners
 				if newOwners == authGroup.Owners {
 					continue
 				}
+
 				if newOwners == "" {
 					newOwners = AdminGroup
 				}
@@ -1088,9 +1104,16 @@ func UpdateAuthGroup(ctx context.Context, groupUpdate *AuthGroup, updateMask *fi
 					}
 				}
 				authGroup.Owners = newOwners
+				updated = true
 			default:
 				return errors.Annotate(ErrInvalidArgument, "unknown field: %s", field).Err()
 			}
+		}
+
+		if !updated {
+			// No changes were made; nothing to do.
+			logging.Infof(ctx, "skipping update of AuthGroup %q; already up to date", authGroup.ID)
+			return nil
 		}
 
 		if dryRun {
