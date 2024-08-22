@@ -26,7 +26,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/span"
 
-	"go.chromium.org/luci/source_index/internal/spanutil"
 	"go.chromium.org/luci/source_index/internal/validationutil"
 )
 
@@ -72,46 +71,6 @@ func (k Key) URL() string {
 // spannerKey returns the spanner key for the commit key.
 func (k Key) spannerKey() spanner.Key {
 	return spanner.Key{k.host, k.repository, k.commitHash}
-}
-
-// CommitReadCols is the set of columns read from in a commit read.
-var CommitReadCols = []string{
-	"PositionRef", "PositionNumber",
-}
-
-// ReadCommit retrieves a commit from the database given the commit key.
-func ReadCommit(ctx context.Context, k Key) (commits Commit, err error) {
-	row, err := span.ReadRow(ctx, "Commits", k.spannerKey(), CommitReadCols)
-	if err != nil {
-		if spanner.ErrCode(err) == codes.NotFound {
-			return Commit{}, spanutil.ErrNotExists
-		}
-		return Commit{}, errors.Annotate(err, "reading Commits table row").Err()
-	}
-
-	commit := Commit{key: k}
-
-	var positionRef spanner.NullString
-	if err := row.Column(0, &positionRef); err != nil {
-		return Commit{}, errors.Annotate(err, "reading PositionRef column").Err()
-	}
-
-	var positionNum spanner.NullInt64
-	if err := row.Column(1, &positionNum); err != nil {
-		return Commit{}, errors.Annotate(err, "reading PositionNumber column").Err()
-	}
-
-	if positionRef.Valid != positionNum.Valid {
-		return Commit{}, errors.New("invariant violated: PositionRef and PositionNumber must be defined/undefined at the same time")
-	}
-	if positionRef.Valid {
-		commit.position = &Position{
-			Ref:    positionRef.StringVal,
-			Number: positionNum.Int64,
-		}
-	}
-
-	return commit, nil
 }
 
 // Exists checks whether the commit key exists in the database.

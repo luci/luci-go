@@ -96,10 +96,10 @@ func MustSetForTesting(ctx context.Context, cs ...Commit) {
 	}
 }
 
-// ShouldMatchCommit returns a comparison.Func which checks if the expected
-// commit matches the actual commit.
-func ShouldMatchCommit(commit Commit) comparison.Func[Commit] {
-	return should.Match(commit, cmp.AllowUnexported(Commit{}, Key{}))
+// ShouldMatchCommitsIn returns a comparison.Func which checks if the actual
+// actual commit matches any of the expected commits.
+func ShouldMatchCommitsIn(commits ...Commit) comparison.Func[Commit] {
+	return should.MatchIn(commits, cmp.AllowUnexported(Commit{}, Key{}))
 }
 
 // ShouldMatchCommits returns a comparison.Func which checks if the expected

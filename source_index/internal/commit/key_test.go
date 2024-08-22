@@ -16,9 +16,7 @@ package commit
 
 import (
 	"testing"
-	"time"
 
-	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -89,15 +87,12 @@ func TestKey(t *testing.T) {
 		t.Run("spanner", func(t *ftt.Test) {
 			ctx := testutil.SpannerTestContext(t)
 
-			now := time.Date(2055, time.May, 5, 5, 5, 5, 5, time.UTC)
-			ctx, _ = testclock.UseTime(ctx, now)
-
 			key := Key{
 				host:       "chromium.googlesource.com",
 				repository: "chromium/src",
 				commitHash: "50791c81152633c73485745d8311fafde0e4935a",
 			}
-			commitToStore := Commit{
+			commit := Commit{
 				key: key,
 				position: &Position{
 					Ref:    "refs/heads/main",
@@ -105,30 +100,9 @@ func TestKey(t *testing.T) {
 				},
 			}
 
-			t.Run("ReadCommit", func(t *ftt.Test) {
-				t.Run("with position", func(t *ftt.Test) {
-					MustSetForTesting(ctx, commitToStore)
-
-					readCommit, err := ReadCommit(span.Single(ctx), key)
-
-					assert.Loosely(t, err, should.BeNil)
-					assert.That(t, readCommit, ShouldMatchCommit(commitToStore))
-				})
-
-				t.Run("without position", func(t *ftt.Test) {
-					commitToStore.position = nil
-					MustSetForTesting(ctx, commitToStore)
-
-					readCommit, err := ReadCommit(span.Single(ctx), key)
-
-					assert.Loosely(t, err, should.BeNil)
-					assert.That(t, readCommit, ShouldMatchCommit(commitToStore))
-				})
-			})
-
 			t.Run("Exits", func(t *ftt.Test) {
 				t.Run("existing commit", func(t *ftt.Test) {
-					MustSetForTesting(ctx, commitToStore)
+					MustSetForTesting(ctx, commit)
 
 					exists, err := Exists(span.Single(ctx), key)
 
@@ -137,8 +111,8 @@ func TestKey(t *testing.T) {
 				})
 
 				t.Run("non-existing commit", func(t *ftt.Test) {
-					commitToStore.key.commitHash = "94f4b5c7c0bacc03caf215987a068db54b88af20"
-					MustSetForTesting(ctx, commitToStore)
+					commit.key.commitHash = "94f4b5c7c0bacc03caf215987a068db54b88af20"
+					MustSetForTesting(ctx, commit)
 
 					exists, err := Exists(span.Single(ctx), key)
 

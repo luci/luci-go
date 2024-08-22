@@ -15,7 +15,6 @@
 package commit
 
 import (
-	"errors"
 	"testing"
 
 	"go.chromium.org/luci/common/proto/git"
@@ -189,7 +188,7 @@ func TestGitCommit(t *testing.T) {
 
 				pos, err := c.Position()
 
-				assert.That(t, errors.Is(err, ErrInvalidPositionFooter), should.BeTrue)
+				assert.That(t, err, should.ErrLikeError(ErrInvalidPositionFooter))
 				assert.Loosely(t, pos, should.BeNil)
 			})
 		})
