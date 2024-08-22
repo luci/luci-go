@@ -34,6 +34,7 @@ import (
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/mailer"
 	"go.chromium.org/luci/server/module"
+	"go.chromium.org/luci/server/pubsub"
 	"go.chromium.org/luci/server/router"
 	spanmodule "go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
@@ -75,6 +76,7 @@ func main() {
 		cron.NewModuleFromFlags(),
 		gaeemulation.NewModuleFromFlags(),
 		mailer.NewModuleFromFlags(),
+		pubsub.NewModuleFromFlags(),
 		spanmodule.NewModuleFromFlags(nil),
 		tq.NewModuleFromFlags(),
 	}
@@ -87,30 +89,31 @@ func main() {
 		cron.RegisterHandler("update-tree-status", notify.UpdateTreeStatus)
 
 		// Buildbucket Pub/Sub endpoint.
-		srv.Routes.POST("/_ah/push-handlers/buildbucket", nil,
-			func(c *router.Context) {
-				ctx, cancel := context.WithTimeout(c.Request.Context(), notify.PUBSUB_POST_REQUEST_TIMEOUT)
-				defer cancel()
-				c.Request = c.Request.WithContext(ctx)
+		srv.Routes.POST("/_ah/push-handlers/buildbucket", nil, func(c *router.Context) {
+			ctx, cancel := context.WithTimeout(c.Request.Context(), notify.PUBSUB_POST_REQUEST_TIMEOUT)
+			defer cancel()
+			c.Request = c.Request.WithContext(ctx)
 
-				status := ""
-				switch err := notify.BuildbucketPubSubHandler(c); {
-				case transient.Tag.In(err):
-					status = "transient-failure"
-					logging.Errorf(ctx, "transient failure: %s", err)
-					// Retry the message.
-					c.Writer.WriteHeader(http.StatusInternalServerError)
+			status := ""
+			switch err := notify.BuildbucketPubSubHandlerLegacy(c); {
+			case transient.Tag.In(err):
+				status = "transient-failure"
+				logging.Errorf(ctx, "transient failure: %s", err)
+				// Retry the message.
+				c.Writer.WriteHeader(http.StatusInternalServerError)
 
-				case err != nil:
-					status = "permanent-failure"
-					logging.Errorf(ctx, "permanent failure: %s", err)
+			case err != nil:
+				status = "permanent-failure"
+				logging.Errorf(ctx, "permanent failure: %s", err)
 
-				default:
-					status = "success"
-				}
+			default:
+				status = "success"
+			}
 
-				buildbucketPubSub.Add(ctx, 1, status)
-			})
+			buildbucketPubSub.Add(ctx, 1, status)
+		})
+
+		pubsub.RegisterJSONPBHandler("buildbucket", notify.BuildbucketPubSubHandler)
 
 		// Install pRPC services.
 		srv.ConfigurePRPC(func(s *prpc.Server) {

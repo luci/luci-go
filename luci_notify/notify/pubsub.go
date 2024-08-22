@@ -27,14 +27,12 @@ import (
 	"strings"
 	"time"
 
-	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
-	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -42,9 +40,9 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/pubsub"
 	"go.chromium.org/luci/server/router"
 
 	notifypb "go.chromium.org/luci/luci_notify/api/config"
@@ -398,13 +396,13 @@ func newBuildsClient(c context.Context, host, project string) (buildbucketpb.Bui
 	}), nil
 }
 
-// BuildbucketPubSubHandler is the main entrypoint for a new update from buildbucket's pubsub.
+// BuildbucketPubSubHandlerLegacy is the main entrypoint for a new update from buildbucket's pubsub.
 //
 // This handler delegates the actual processing of the build to handleBuild.
 // Its primary purpose is to unwrap context boilerplate and deal with progress-stopping errors.
-func BuildbucketPubSubHandler(ctx *router.Context) error {
+func BuildbucketPubSubHandlerLegacy(ctx *router.Context) error {
 	c := ctx.Request.Context()
-	build, err := extractBuild(c, ctx.Request)
+	build, err := extractBuildLegacy(c, ctx.Request)
 	switch {
 	case err != nil:
 		return errors.Annotate(err, "failed to extract build").Err()
@@ -418,6 +416,18 @@ func BuildbucketPubSubHandler(ctx *router.Context) error {
 	}
 }
 
+// BuildbucketPubSubHandler is the main entrypoint for a new update from buildbucket's pubsub.
+//
+// This handler delegates the actual processing of the build to handleBuild.
+func BuildbucketPubSubHandler(ctx context.Context, message pubsub.Message, buildMsg *buildbucketpb.BuildsV2PubSub) error {
+	build, err := extractBuild(ctx, buildMsg)
+	if err != nil {
+		return errors.Annotate(err, "failed to extract build").Err()
+
+	}
+	return handleBuild(ctx, build, srcmanCheckout, gitilesHistory)
+}
+
 // Build is buildbucketpb.Build along with the parsed 'email_notify' values.
 type Build struct {
 	BuildbucketHostname string
@@ -426,7 +436,7 @@ type Build struct {
 }
 
 // extractBuild constructs a Build from the PubSub HTTP request.
-func extractBuild(c context.Context, r *http.Request) (*Build, error) {
+func extractBuildLegacy(c context.Context, r *http.Request) (*Build, error) {
 	// sent by pubsub.
 	// This struct is just convenient for unwrapping the json message
 	// See https://cloud.google.com/pubsub/docs/push#receive_push
@@ -440,89 +450,42 @@ func extractBuild(c context.Context, r *http.Request) (*Build, error) {
 		return nil, errors.Annotate(err, "could not decode message").Err()
 	}
 
-	// Handle the message from `builds_v2` pubsub topic.
-	if v, ok := msg.Message.Attributes["version"].(string); ok && v == "v2" {
-		buildsV2Msg := &buildbucketpb.BuildsV2PubSub{}
-		opts := protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}
-		if err := opts.Unmarshal(msg.Message.Data, buildsV2Msg); err != nil {
-			return nil, errors.Annotate(err, "failed to unmarshal pubsub message into BuildsV2PubSub proto").Err()
-		}
-		// TODO(crbug.com/1408909): remove the logging after migration is done.
-		logging.Debugf(c, "receiving builds_v2 pubsub msg for build %d, status %s", buildsV2Msg.Build.GetId(), buildsV2Msg.Build.GetStatus())
-		// Double check the received build is completed, although the new subscription has a filter for it.
-		if buildsV2Msg.Build.Status&buildbucketpb.Status_ENDED_MASK != buildbucketpb.Status_ENDED_MASK {
-			logging.Infof(c, "Received build %d that hasn't completed yet, ignoring...", buildsV2Msg.Build.GetId())
-			return nil, nil
-		}
-		largeFieldsData, err := zlibDecompress(buildsV2Msg.BuildLargeFields)
-		if err != nil {
-			return nil, errors.Annotate(err, "failed to decompress build_large_fields for build %d", buildsV2Msg.Build.GetId()).Err()
-		}
-		largeFields := &buildbucketpb.Build{}
-		if err := proto.Unmarshal(largeFieldsData, largeFields); err != nil {
-			return nil, errors.Annotate(err, "failed to unmarshal build_large_fields for build %d", buildsV2Msg.Build.GetId()).Err()
-		}
-		proto.Merge(buildsV2Msg.Build, largeFields)
-
-		emails, err := extractEmailNotifyValues(buildsV2Msg.Build, "")
-		if err != nil {
-			return nil, errors.Annotate(err, "could not decode email_notify in builds_v2 pubsub message for build %d", buildsV2Msg.Build.GetId()).Err()
-		}
-
-		return &Build{
-			BuildbucketHostname: buildsV2Msg.Build.GetInfra().GetBuildbucket().GetHostname(),
-			Build:               *buildsV2Msg.Build,
-			EmailNotify:         emails,
-		}, nil
+	if v, ok := msg.Message.Attributes["version"].(string); ok && v != "v2" {
+		return nil, errors.Reason("received non-v2 buildbucket message").Err()
 	}
 
-	// TODO(crbug.com/1408909): remove the handling for old messages after migration is done.
-	// Handle the message from `builds` pubsub topic.
-	var message struct {
-		Build    bbv1.LegacyApiCommonBuildMessage
-		Hostname string
+	buildsV2Msg := &buildbucketpb.BuildsV2PubSub{}
+	opts := protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}
+	if err := opts.Unmarshal(msg.Message.Data, buildsV2Msg); err != nil {
+		return nil, errors.Annotate(err, "failed to unmarshal pubsub message into BuildsV2PubSub proto").Err()
 	}
-	switch err := json.Unmarshal(msg.Message.Data, &message); {
-	case err != nil:
-		return nil, errors.Annotate(err, "could not parse pubsub message data").Err()
-	case !strings.HasPrefix(message.Build.Bucket, "luci."):
-		logging.Infof(c, "Received build that isn't part of LUCI, ignoring...")
-		return nil, nil
-	case message.Build.Status != bbv1.StatusCompleted:
-		logging.Infof(c, "Received build that hasn't completed yet, ignoring...")
+	return extractBuild(c, buildsV2Msg)
+}
+
+func extractBuild(c context.Context, buildsV2Msg *buildbucketpb.BuildsV2PubSub) (*Build, error) {
+	// Double check the received build is completed, although the new subscription has a filter for it.
+	if buildsV2Msg.Build.Status&buildbucketpb.Status_ENDED_MASK != buildbucketpb.Status_ENDED_MASK {
+		logging.Infof(c, "Received build %d that hasn't completed yet, ignoring...", buildsV2Msg.Build.GetId())
 		return nil, nil
 	}
-
-	buildsClient, err := newBuildsClient(c, message.Hostname, message.Build.Project)
+	largeFieldsData, err := zlibDecompress(buildsV2Msg.BuildLargeFields)
 	if err != nil {
-		return nil, err
+		return nil, errors.Annotate(err, "failed to decompress build_large_fields for build %d", buildsV2Msg.Build.GetId()).Err()
 	}
-
-	logging.Infof(c, "fetching build %d", message.Build.Id)
-	res, err := buildsClient.GetBuild(c, &buildbucketpb.GetBuildRequest{
-		Id: message.Build.Id,
-		Fields: &field_mask.FieldMask{
-			Paths: []string{"*"},
-		},
-	})
-	switch {
-	case status.Code(err) == codes.NotFound:
-		logging.Warningf(c, "no access to build %d", message.Build.Id)
-		return nil, nil
-	case err != nil:
-		err = grpcutil.WrapIfTransient(err)
-		err = errors.Annotate(err, "could not fetch buildbucket build %d", message.Build.Id).Err()
-		return nil, err
+	largeFields := &buildbucketpb.Build{}
+	if err := proto.Unmarshal(largeFieldsData, largeFields); err != nil {
+		return nil, errors.Annotate(err, "failed to unmarshal build_large_fields for build %d", buildsV2Msg.Build.GetId()).Err()
 	}
+	proto.Merge(buildsV2Msg.Build, largeFields)
 
-	emails, err := extractEmailNotifyValues(res, message.Build.ParametersJson)
+	emails, err := extractEmailNotifyValues(buildsV2Msg.Build, "")
 	if err != nil {
-		return nil, errors.Annotate(err, "could not decode email_notify").Err()
+		return nil, errors.Annotate(err, "could not decode email_notify in builds_v2 pubsub message for build %d", buildsV2Msg.Build.GetId()).Err()
 	}
 
 	return &Build{
-		BuildbucketHostname: message.Hostname,
-		Build:               *res,
+		BuildbucketHostname: buildsV2Msg.Build.GetInfra().GetBuildbucket().GetHostname(),
+		Build:               *buildsV2Msg.Build,
 		EmailNotify:         emails,
 	}, nil
 }
