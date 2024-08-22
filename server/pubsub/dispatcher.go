@@ -27,6 +27,9 @@ import (
 	"sync"
 	"time"
 
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
+
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
@@ -96,6 +99,37 @@ type Message struct {
 // Returning a non-transient error results in a error-level logging message
 // and HTTP 202 reply, which does not trigger a retry.
 type Handler func(ctx context.Context, message Message) error
+
+// JSONPB wraps a handler by deserializing messages as JSONPB protobufs
+// before passing them to the handler.
+func JSONPB[T any, TP interface {
+	*T
+	proto.Message
+}](handler func(context.Context, Message, TP) error) Handler {
+	return func(ctx context.Context, message Message) error {
+		var msg TP = new(T)
+		opts := protojson.UnmarshalOptions{DiscardUnknown: true}
+		if err := opts.Unmarshal(message.Data, msg); err != nil {
+			return errors.Annotate(err, "parsing PubSub message as jsonpb proto").Err()
+		}
+		return handler(ctx, message, msg)
+	}
+}
+
+// WirePB wraps a handler by deserializing messages as protobufs in wire
+// encoding before passing them to the handler.
+func WirePB[T any, TP interface {
+	*T
+	proto.Message
+}](handler func(context.Context, Message, TP) error) Handler {
+	return func(ctx context.Context, message Message) error {
+		var msg TP = new(T)
+		if err := proto.Unmarshal(message.Data, msg); err != nil {
+			return errors.Annotate(err, "parsing PubSub message as wirepb proto").Err()
+		}
+		return handler(ctx, message, msg)
+	}
+}
 
 // Dispatcher routes requests from Cloud Pub/Sub to registered handlers.
 type Dispatcher struct {

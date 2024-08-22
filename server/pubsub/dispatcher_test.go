@@ -16,12 +16,18 @@ package pubsub
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
+	"fmt"
 	"net/http/httptest"
 	"net/url"
 	"strings"
 	"testing"
 	"time"
+
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/retry/transient"
@@ -36,6 +42,7 @@ import (
 	"go.chromium.org/luci/server/router"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 // Examples taken from https://cloud.google.com/pubsub/docs/push.
@@ -55,18 +62,20 @@ const (
 		},
 		"subscription": "projects/myproject/subscriptions/mysubscription"
 	}`
+)
 
-	validBodyMinimal = `{
+func validBodyMinimal(payload []byte) string {
+	return fmt.Sprintf(`{
 		"message": {
-				"data": "SGVsbG8gQ2xvdWQgUHViL1N1YiEgSGVyZSBpcyBteSBtZXNzYWdlIQ==",
+				"data": "%s",
 				"messageId": "2070443601311540",
 				"message_id": "2070443601311540",
 				"publishTime": "2021-02-26T19:13:55.749Z",
 				"publish_time": "2021-02-26T19:13:55.749Z"
 		},
 		"subscription": "projects/myproject/subscriptions/mysubscription"
-	}`
-)
+	}`, base64.StdEncoding.EncodeToString(payload))
+}
 
 func TestDispatcher(t *testing.T) {
 	t.Parallel()
@@ -155,10 +164,11 @@ func TestDispatcher(t *testing.T) {
 					So(metricDist(callsDurationMS, "ok", "OK"), ShouldEqual, 1)
 				})
 				Convey("With minimal body", func() {
-					So(call("/pubsub/ok", validBodyMinimal), ShouldEqual, 200)
+					payload := []byte("Hello Cloud Pub/Sub! Here is my message!")
+					So(call("/pubsub/ok", validBodyMinimal(payload)), ShouldEqual, 200)
 					So(called, ShouldBeTrue)
 					So(message, ShouldResemble, Message{
-						Data:         []byte("Hello Cloud Pub/Sub! Here is my message!"),
+						Data:         payload,
 						Subscription: "projects/myproject/subscriptions/mysubscription",
 						MessageID:    "2070443601311540",
 						PublishTime:  time.Date(2021, 2, 26, 19, 13, 55, 749000000, time.UTC),
@@ -167,6 +177,30 @@ func TestDispatcher(t *testing.T) {
 					})
 					So(metric(callsCounter, "ok", "OK"), ShouldEqual, 1)
 					So(metricDist(callsDurationMS, "ok", "OK"), ShouldEqual, 1)
+				})
+				Convey("JSONPB handler", func() {
+					original := timestamppb.New(time.Date(2044, time.April, 4, 4, 4, 4, 4, time.UTC))
+					payload, err := protojson.Marshal(original)
+					So(err, ShouldBeNil)
+					var called *timestamppb.Timestamp
+					d.RegisterHandler("json", JSONPB(func(ctx context.Context, m Message, pb *timestamppb.Timestamp) error {
+						called = pb
+						return nil
+					}))
+					So(call("/pubsub/json", validBodyMinimal(payload)), ShouldEqual, 200)
+					So(called, ShouldResembleProto, original)
+				})
+				Convey("WirePB handler", func() {
+					original := timestamppb.New(time.Date(2044, time.April, 4, 4, 4, 4, 4, time.UTC))
+					payload, err := proto.Marshal(original)
+					So(err, ShouldBeNil)
+					var called *timestamppb.Timestamp
+					d.RegisterHandler("wire", WirePB(func(ctx context.Context, m Message, pb *timestamppb.Timestamp) error {
+						called = pb
+						return nil
+					}))
+					So(call("/pubsub/wire", validBodyMinimal(payload)), ShouldEqual, 200)
+					So(called, ShouldResembleProto, original)
 				})
 			})
 

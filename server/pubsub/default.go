@@ -14,6 +14,12 @@
 
 package pubsub
 
+import (
+	"context"
+
+	"google.golang.org/protobuf/proto"
+)
+
 // Default is a dispatcher installed into the server when using NewModule or
 // NewModuleFromFlags.
 //
@@ -27,4 +33,26 @@ var Default Dispatcher
 // RegisterHandler is a shortcut for Default.RegisterHandler.
 func RegisterHandler(id string, h Handler) {
 	Default.RegisterHandler(id, h)
+}
+
+// RegisterJSONPBHandler is a shortcut for Default.RegisterHandler(JSONPB(...)).
+//
+// It can be used to register handlers that expect JSONPB-serialized protos of
+// a concrete type.
+func RegisterJSONPBHandler[T any, TP interface {
+	*T
+	proto.Message
+}](id string, h func(context.Context, Message, TP) error) {
+	Default.RegisterHandler(id, JSONPB(h))
+}
+
+// RegisterWirePBHandler is a shortcut for Default.RegisterHandler(WirePB(...)).
+//
+// It can be used to register handlers that expect wirepb-serialized protos of
+// a concrete type.
+func RegisterWirePBHandler[T any, TP interface {
+	*T
+	proto.Message
+}](id string, h func(context.Context, Message, TP) error) {
+	Default.RegisterHandler(id, WirePB(h))
 }
