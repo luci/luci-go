@@ -202,7 +202,7 @@ func RegisterTaskQueueHandlers(srv *luciserver.Server) error {
 	if err := bugupdater.RegisterTaskHandler(srv, uiBaseURL(srv)); err != nil {
 		return errors.Annotate(err, "register bug updater").Err()
 	}
-	buildjoiner.RegisterTaskClass()
+	buildjoiner.RegisterTaskHandler()
 	return nil
 }
 

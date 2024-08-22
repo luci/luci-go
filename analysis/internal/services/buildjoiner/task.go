@@ -37,20 +37,20 @@ const (
 	joinBuildQueue     = "join-build"
 )
 
-func RegisterTaskClass() {
-	// RegisterTaskClass registers the task class for tq dispatcher.
-	tq.RegisterTaskClass(tq.TaskClass{
-		ID:        joinBuildTaskClass,
-		Prototype: &taskspb.JoinBuild{},
-		Queue:     joinBuildQueue,
-		Kind:      tq.NonTransactional,
-		Handler: func(ctx context.Context, payload proto.Message) error {
-			task := payload.(*taskspb.JoinBuild)
-			if _, err := join.JoinBuild(ctx, task.Host, task.Project, task.Id); err != nil {
-				return errors.Annotate(err, "join build %s/%v", task.Host, task.Id).Err()
-			}
-			return nil
-		},
+var joinBuild = tq.RegisterTaskClass(tq.TaskClass{
+	ID:        joinBuildTaskClass,
+	Prototype: &taskspb.JoinBuild{},
+	Queue:     joinBuildQueue,
+	Kind:      tq.NonTransactional,
+})
+
+func RegisterTaskHandler() {
+	joinBuild.AttachHandler(func(ctx context.Context, payload proto.Message) error {
+		task := payload.(*taskspb.JoinBuild)
+		if _, err := join.JoinBuild(ctx, task.Host, task.Project, task.Id); err != nil {
+			return errors.Annotate(err, "join build %s/%v", task.Host, task.Id).Err()
+		}
+		return nil
 	})
 }
 

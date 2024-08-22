@@ -32,7 +32,6 @@ import (
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/tq"
 
-	"go.chromium.org/luci/analysis/internal/services/buildjoiner"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -45,8 +44,6 @@ const (
 )
 
 func TestHandleBuild(t *testing.T) {
-	buildjoiner.RegisterTaskClass()
-
 	ftt.Run(`Test BuildbucketPubSubHandler`, t, func(t *ftt.Test) {
 		ctx, _ := tsmon.WithDummyInMemory(context.Background())
 		ctx, skdr := tq.TestingContext(ctx, nil)
