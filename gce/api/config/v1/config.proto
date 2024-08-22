@@ -287,10 +287,6 @@ message Config {
   // The hostname of the Swarming server these VMs should connect to.
   string swarming = 6;
 
-  // The Swarming pools are assosiated with prefix.
-  // Any prefix is expected to be mapped to one Swarming pool.
-  repeated string swarming_pools = 11;
-
   // The timeout of these VMs.
   // If no Swarming bot has connected by the timeout,
   // the VM is deleted and replaced.
@@ -313,6 +309,10 @@ message Config {
   // Should only be set by the server. The current amount of VMs the server is
   // trying to create.
   int32 current_amount = 8;
+
+  // The Swarming pools are assosiated with prefix.
+  // Any prefix is expected to be mapped to one Swarming pool.
+  repeated string swarming_pools = 11;
 }
 
 // A config for several types of VMs.
