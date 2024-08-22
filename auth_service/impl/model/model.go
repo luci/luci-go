@@ -847,16 +847,13 @@ func findGroupDependencyCycle(ctx context.Context, group *AuthGroup) ([]string, 
 // CreateAuthGroup creates a new AuthGroup and writes it to the datastore.
 // Only the following fields will be read from the input:
 // ID, Description, Owners, Members, Globs, Nested.
-func CreateAuthGroup(ctx context.Context, group *AuthGroup, external bool, historicalComment string, dryRun bool) (*AuthGroup, error) {
-	if external {
-		if !IsExternalAuthGroupName(group.ID) {
-			return nil, ErrInvalidName
-		}
-	} else {
-		// Check the supplied group name is valid, and not an external group.
-		if !auth.IsValidGroupName(group.ID) || IsExternalAuthGroupName(group.ID) {
-			return nil, ErrInvalidName
-		}
+//
+// Note: creating external groups using this function is forbidden, as they are
+// handled by the importer. See importer.go in this package.
+func CreateAuthGroup(ctx context.Context, group *AuthGroup, historicalComment string, dryRun bool) (*AuthGroup, error) {
+	// Check the supplied group name is valid, and not an external group.
+	if !auth.IsValidGroupName(group.ID) || IsExternalAuthGroupName(group.ID) {
+		return nil, ErrInvalidName
 	}
 
 	// Check that the supplied members and globs are well-formed.
@@ -888,11 +885,15 @@ func CreateAuthGroup(ctx context.Context, group *AuthGroup, external bool, histo
 		newGroup.Globs = group.Globs
 		newGroup.Nested = group.Nested
 
-		// Check that all referenced groups (owning group, nested groups) exist.
-		// It is ok for a new group to have itself as owner.
+		// Set the Owners to AdminGroup if not set.
 		if newGroup.Owners == "" {
 			newGroup.Owners = AdminGroup
 		}
+
+		// Check that all referenced groups (owning group, nested groups) exist.
+		// It is ok for a new group to have itself as owner.
+		// Note: we can skip checking for cycles because all existing groups
+		// should be valid and thus won't have any cycles.
 		toCheck := newGroup.Nested
 		if newGroup.Owners != newGroup.ID {
 			toCheck = append(toCheck, newGroup.Owners)
@@ -966,7 +967,7 @@ func findReferencingGroups(ctx context.Context, groupName string) (stringset.Set
 	return names, nil
 }
 
-// UpdateAuthGroup updates the given auth group.
+// UpdateAuthGroup updates the given AuthGroup.
 // The ID of the AuthGroup is used to determine which group to update.
 // The field mask determines which fields of the AuthGroup will be updated.
 // If the field mask is nil, all fields will be updated.
@@ -979,7 +980,7 @@ func findReferencingGroups(ctx context.Context, groupName string) (stringset.Set
 //	ErrPermissionDenied if the caller is not allowed to update the group.
 //	ErrConcurrentModification if the provided etag is not up-to-date.
 //	Annotated error for other errors.
-func UpdateAuthGroup(ctx context.Context, groupUpdate *AuthGroup, updateMask *fieldmaskpb.FieldMask, etag string, fromExternal bool, historicalComment string, dryRun bool) (*AuthGroup, error) {
+func UpdateAuthGroup(ctx context.Context, groupUpdate *AuthGroup, updateMask *fieldmaskpb.FieldMask, etag, historicalComment string, dryRun bool) (*AuthGroup, error) {
 	// A nil updateMask means we should update all fields.
 	// If updateable fields are added to AuthGroup in future, they need to be
 	// added to the below list.
@@ -996,7 +997,7 @@ func UpdateAuthGroup(ctx context.Context, groupUpdate *AuthGroup, updateMask *fi
 	}
 
 	// External groups cannot be manually updated.
-	if IsExternalAuthGroupName(groupUpdate.ID) && !fromExternal {
+	if IsExternalAuthGroupName(groupUpdate.ID) {
 		return nil, errors.Annotate(ErrPermissionDenied, "cannot update external group").Err()
 	}
 
@@ -1032,12 +1033,7 @@ func UpdateAuthGroup(ctx context.Context, groupUpdate *AuthGroup, updateMask *fi
 		if err != nil {
 			return err
 		}
-		if fromExternal {
-			// Permissions check happens at ingestTarball.
-			ok = true
-		} else {
-			ok, err = auth.IsMember(ctx, AdminGroup, authGroup.Owners)
-		}
+		ok, err = auth.IsMember(ctx, AdminGroup, authGroup.Owners)
 		if err != nil {
 			return errors.Annotate(err, "permission check failed").Err()
 		}
@@ -1111,7 +1107,7 @@ func UpdateAuthGroup(ctx context.Context, groupUpdate *AuthGroup, updateMask *fi
 	return authGroup, nil
 }
 
-// DeleteAuthGroup deletes the specified auth group.
+// DeleteAuthGroup deletes the specified AuthGroup.
 //
 // Possible errors:
 //
@@ -1120,14 +1116,14 @@ func UpdateAuthGroup(ctx context.Context, groupUpdate *AuthGroup, updateMask *fi
 //	ErrConcurrentModification if the provided etag is not up-to-date.
 //	ErrReferencedEntity if the group is referenced by another group.
 //	Annotated error for other errors.
-func DeleteAuthGroup(ctx context.Context, groupName string, etag string, external bool, historicalComment string, dryRun bool) error {
+func DeleteAuthGroup(ctx context.Context, groupName string, etag string, historicalComment string, dryRun bool) error {
 	// Disallow deletion of the admin group.
 	if groupName == AdminGroup {
 		return ErrPermissionDenied
 	}
 
 	// External groups cannot be manually deleted.
-	if IsExternalAuthGroupName(groupName) && !external {
+	if IsExternalAuthGroupName(groupName) {
 		return errors.Annotate(ErrPermissionDenied, "cannot delete external group").Err()
 	}
 
@@ -1137,12 +1133,7 @@ func DeleteAuthGroup(ctx context.Context, groupName string, etag string, externa
 		if err != nil {
 			return err
 		}
-		var ok bool
-		if external {
-			ok = true
-		} else {
-			ok, err = auth.IsMember(ctx, AdminGroup, authGroup.Owners)
-		}
+		ok, err := auth.IsMember(ctx, AdminGroup, authGroup.Owners)
 		if err != nil {
 			return errors.Annotate(err, "permission check failed").Err()
 		}

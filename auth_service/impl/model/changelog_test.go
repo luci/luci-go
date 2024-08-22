@@ -299,7 +299,7 @@ func TestGenerateChanges(t *testing.T) {
 		t.Run("AuthGroup changes", func(t *ftt.Test) {
 			t.Run("AuthGroup Created/Deleted", func(t *ftt.Test) {
 				ag1 := makeAuthGroup(ctx, "group-1")
-				_, err := CreateAuthGroup(ctx, ag1, false, "Go pRPC API", false)
+				_, err := CreateAuthGroup(ctx, ag1, "Go pRPC API", false)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(2))
 				actualChanges, err := generateChanges(ctx, 1, false)
@@ -325,7 +325,7 @@ func TestGenerateChanges(t *testing.T) {
 					Owners:     AdminGroup,
 				}})
 
-				assert.Loosely(t, DeleteAuthGroup(ctx, ag1.ID, "", false, "Go pRPC API", false), should.BeNil)
+				assert.Loosely(t, DeleteAuthGroup(ctx, ag1.ID, "", "Go pRPC API", false), should.BeNil)
 				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(4))
 				actualChanges, err = generateChanges(ctx, 2, false)
 				assert.Loosely(t, err, should.BeNil)
@@ -352,7 +352,7 @@ func TestGenerateChanges(t *testing.T) {
 				assert.Loosely(t, datastore.Put(ctx, og), should.BeNil)
 
 				ag1 := makeAuthGroup(ctx, "group-1")
-				_, err := CreateAuthGroup(ctx, ag1, false, "Go pRPC API", false)
+				_, err := CreateAuthGroup(ctx, ag1, "Go pRPC API", false)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(2))
 				actualChanges, err := generateChanges(ctx, 1, false)
@@ -364,7 +364,7 @@ func TestGenerateChanges(t *testing.T) {
 
 				ag1.Owners = og.ID
 				ag1.Description = "test-desc"
-				_, err = UpdateAuthGroup(ctx, ag1, nil, "", false, "Go pRPC API", false)
+				_, err = UpdateAuthGroup(ctx, ag1, nil, "", "Go pRPC API", false)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(4))
 				actualChanges, err = generateChanges(ctx, 2, false)
@@ -379,7 +379,7 @@ func TestGenerateChanges(t *testing.T) {
 				}})
 
 				ag1.Description = "new-desc"
-				_, err = UpdateAuthGroup(ctx, ag1, nil, "", false, "Go pRPC API", false)
+				_, err = UpdateAuthGroup(ctx, ag1, nil, "", "Go pRPC API", false)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(6))
 				actualChanges, err = generateChanges(ctx, 3, false)
@@ -395,7 +395,7 @@ func TestGenerateChanges(t *testing.T) {
 				// Add members in Create
 				ag1 := makeAuthGroup(ctx, "group-1")
 				ag1.Members = []string{"user:someone@example.com"}
-				_, err := CreateAuthGroup(ctx, ag1, false, "Go pRPC API", false)
+				_, err := CreateAuthGroup(ctx, ag1, "Go pRPC API", false)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(2))
 				actualChanges, err := generateChanges(ctx, 1, false)
@@ -410,7 +410,7 @@ func TestGenerateChanges(t *testing.T) {
 
 				// Add members to already existing group
 				ag1.Members = append(ag1.Members, "user:another-one@example.com")
-				_, err = UpdateAuthGroup(ctx, ag1, nil, "", false, "Go pRPC API", false)
+				_, err = UpdateAuthGroup(ctx, ag1, nil, "", "Go pRPC API", false)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(4))
 				actualChanges, err = generateChanges(ctx, 2, false)
@@ -422,7 +422,7 @@ func TestGenerateChanges(t *testing.T) {
 
 				// Remove members from existing group
 				ag1.Members = []string{"user:someone@example.com"}
-				_, err = UpdateAuthGroup(ctx, ag1, nil, "", false, "Go pRPC API", false)
+				_, err = UpdateAuthGroup(ctx, ag1, nil, "", "Go pRPC API", false)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(6))
 				actualChanges, err = generateChanges(ctx, 3, false)
@@ -433,7 +433,7 @@ func TestGenerateChanges(t *testing.T) {
 				}})
 
 				// Remove members when deleting group
-				assert.Loosely(t, DeleteAuthGroup(ctx, ag1.ID, "", false, "Go pRPC API", false), should.BeNil)
+				assert.Loosely(t, DeleteAuthGroup(ctx, ag1.ID, "", "Go pRPC API", false), should.BeNil)
 				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(8))
 				actualChanges, err = generateChanges(ctx, 4, false)
 				assert.Loosely(t, err, should.BeNil)
@@ -450,7 +450,7 @@ func TestGenerateChanges(t *testing.T) {
 				// Add globs in create
 				ag1 := makeAuthGroup(ctx, "group-1")
 				ag1.Globs = []string{"user:*@example.com"}
-				_, err := CreateAuthGroup(ctx, ag1, false, "Go pRPC API", false)
+				_, err := CreateAuthGroup(ctx, ag1, "Go pRPC API", false)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(2))
 				actualChanges, err := generateChanges(ctx, 1, false)
@@ -465,7 +465,7 @@ func TestGenerateChanges(t *testing.T) {
 
 				// Add globs to already existing group
 				ag1.Globs = append(ag1.Globs, "user:test-*@test.com")
-				_, err = UpdateAuthGroup(ctx, ag1, nil, "", false, "Go pRPC API", false)
+				_, err = UpdateAuthGroup(ctx, ag1, nil, "", "Go pRPC API", false)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(4))
 				actualChanges, err = generateChanges(ctx, 2, false)
@@ -476,7 +476,7 @@ func TestGenerateChanges(t *testing.T) {
 				}})
 
 				ag1.Globs = []string{"user:test-*@test.com"}
-				_, err = UpdateAuthGroup(ctx, ag1, nil, "", false, "Go pRPC API", false)
+				_, err = UpdateAuthGroup(ctx, ag1, nil, "", "Go pRPC API", false)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(6))
 				assert.Loosely(t, err, should.BeNil)
@@ -487,7 +487,7 @@ func TestGenerateChanges(t *testing.T) {
 					Globs:      []string{"user:*@example.com"},
 				}})
 
-				assert.Loosely(t, DeleteAuthGroup(ctx, ag1.ID, "", false, "Go pRPC API", false), should.BeNil)
+				assert.Loosely(t, DeleteAuthGroup(ctx, ag1.ID, "", "Go pRPC API", false), should.BeNil)
 				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(8))
 				actualChanges, err = generateChanges(ctx, 4, false)
 				assert.Loosely(t, err, should.BeNil)
@@ -508,7 +508,7 @@ func TestGenerateChanges(t *testing.T) {
 				// Add globs in create
 				ag1 := makeAuthGroup(ctx, "group-1")
 				ag1.Nested = []string{ag2.ID}
-				_, err := CreateAuthGroup(ctx, ag1, false, "Go pRPC API", false)
+				_, err := CreateAuthGroup(ctx, ag1, "Go pRPC API", false)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(2))
 				actualChanges, err := generateChanges(ctx, 1, false)
@@ -523,7 +523,7 @@ func TestGenerateChanges(t *testing.T) {
 
 				// Add globs to already existing group
 				ag1.Nested = append(ag1.Nested, ag3.ID)
-				_, err = UpdateAuthGroup(ctx, ag1, nil, "", false, "Go pRPC API", false)
+				_, err = UpdateAuthGroup(ctx, ag1, nil, "", "Go pRPC API", false)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(4))
 				actualChanges, err = generateChanges(ctx, 2, false)
@@ -534,7 +534,7 @@ func TestGenerateChanges(t *testing.T) {
 				}})
 
 				ag1.Nested = []string{"group-2"}
-				_, err = UpdateAuthGroup(ctx, ag1, nil, "", false, "Go pRPC API", false)
+				_, err = UpdateAuthGroup(ctx, ag1, nil, "", "Go pRPC API", false)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(6))
 				assert.Loosely(t, err, should.BeNil)
@@ -545,7 +545,7 @@ func TestGenerateChanges(t *testing.T) {
 					Nested:     []string{"group-3"},
 				}})
 
-				assert.Loosely(t, DeleteAuthGroup(ctx, ag1.ID, "", false, "Go pRPC API", false), should.BeNil)
+				assert.Loosely(t, DeleteAuthGroup(ctx, ag1.ID, "", "Go pRPC API", false), should.BeNil)
 				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(8))
 				actualChanges, err = generateChanges(ctx, 4, false)
 				assert.Loosely(t, err, should.BeNil)
@@ -1133,7 +1133,7 @@ func TestGenerateChanges(t *testing.T) {
 			groupNames := []string{"group-1", "group-2", "group-3"}
 			for _, groupName := range groupNames {
 				ag := makeAuthGroup(ctx, groupName)
-				_, err := CreateAuthGroup(ctx, ag, false, "Go pRPC API", false)
+				_, err := CreateAuthGroup(ctx, ag, "Go pRPC API", false)
 				assert.Loosely(t, err, should.BeNil)
 			}
 			// There should be a changelog task and replication task for
@@ -1173,7 +1173,7 @@ func TestGenerateChanges(t *testing.T) {
 
 		t.Run("dry run of changelog generation works", func(t *ftt.Test) {
 			agDryRun := makeAuthGroup(ctx, "group-dry-run")
-			_, err := CreateAuthGroup(ctx, agDryRun, false, "Go pRPC API", false)
+			_, err := CreateAuthGroup(ctx, agDryRun, "Go pRPC API", false)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(2))
 			_, err = generateChanges(ctx, 1, true)

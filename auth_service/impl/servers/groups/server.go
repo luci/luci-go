@@ -130,7 +130,7 @@ func (*Server) GetGroup(ctx context.Context, request *rpcpb.GetGroupRequest) (*r
 // CreateGroup implements the corresponding RPC method.
 func (srv *Server) CreateGroup(ctx context.Context, request *rpcpb.CreateGroupRequest) (*rpcpb.AuthGroup, error) {
 	group := model.AuthGroupFromProto(ctx, request.GetGroup())
-	switch createdGroup, err := model.CreateAuthGroup(ctx, group, false, "Go pRPC API", srv.dryRun); {
+	switch createdGroup, err := model.CreateAuthGroup(ctx, group, "Go pRPC API", srv.dryRun); {
 	case err == nil:
 		return createdGroup.ToProto(true), nil
 	case errors.Is(err, model.ErrAlreadyExists):
@@ -138,9 +138,11 @@ func (srv *Server) CreateGroup(ctx context.Context, request *rpcpb.CreateGroupRe
 	case errors.Is(err, model.ErrInvalidName):
 		return nil, status.Errorf(codes.InvalidArgument, "invalid group name: %s", group.ID)
 	case errors.Is(err, model.ErrInvalidReference):
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	case errors.Is(err, model.ErrInvalidIdentity):
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	case errors.Is(err, model.ErrInvalidArgument):
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	default:
 		return nil, status.Errorf(codes.Internal, "failed to create group %q: %s", request.GetGroup().GetName(), err)
 	}
@@ -149,7 +151,7 @@ func (srv *Server) CreateGroup(ctx context.Context, request *rpcpb.CreateGroupRe
 // UpdateGroup implements the corresponding RPC method.
 func (srv *Server) UpdateGroup(ctx context.Context, request *rpcpb.UpdateGroupRequest) (*rpcpb.AuthGroup, error) {
 	groupUpdate := model.AuthGroupFromProto(ctx, request.GetGroup())
-	switch updatedGroup, err := model.UpdateAuthGroup(ctx, groupUpdate, request.GetUpdateMask(), request.GetGroup().GetEtag(), false, "Go pRPC API", srv.dryRun); {
+	switch updatedGroup, err := model.UpdateAuthGroup(ctx, groupUpdate, request.GetUpdateMask(), request.GetGroup().GetEtag(), "Go pRPC API", srv.dryRun); {
 	case err == nil:
 		return updatedGroup.ToProto(true), nil
 	case errors.Is(err, datastore.ErrNoSuchEntity):
@@ -174,7 +176,7 @@ func (srv *Server) UpdateGroup(ctx context.Context, request *rpcpb.UpdateGroupRe
 // DeleteGroup implements the corresponding RPC method.
 func (srv *Server) DeleteGroup(ctx context.Context, request *rpcpb.DeleteGroupRequest) (*emptypb.Empty, error) {
 	name := request.GetName()
-	switch err := model.DeleteAuthGroup(ctx, name, request.GetEtag(), false, "Go pRPC API", srv.dryRun); {
+	switch err := model.DeleteAuthGroup(ctx, name, request.GetEtag(), "Go pRPC API", srv.dryRun); {
 	case err == nil:
 		return &emptypb.Empty{}, nil
 	case errors.Is(err, datastore.ErrNoSuchEntity):
