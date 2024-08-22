@@ -16,6 +16,7 @@ package commit
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"cloud.google.com/go/spanner"
@@ -61,6 +62,11 @@ func NewKey(host, repository, commitHash string) (Key, error) {
 		repository: repository,
 		commitHash: commitHash,
 	}, nil
+}
+
+// URL returns the URL for the commit.
+func (k Key) URL() string {
+	return fmt.Sprintf("https://%s/%s/+/%s", k.host, k.repository, k.commitHash)
 }
 
 // spannerKey returns the spanner key for the commit key.

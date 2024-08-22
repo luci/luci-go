@@ -17,13 +17,21 @@ package commitingester
 import (
 	"context"
 	"fmt"
+	"net/http"
 
+	"cloud.google.com/go/spanner"
 	"google.golang.org/protobuf/proto"
 
+	gitilesapi "go.chromium.org/luci/common/api/gitiles"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/proto/gitiles"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
 
+	"go.chromium.org/luci/source_index/internal/commit"
 	"go.chromium.org/luci/source_index/internal/commitingester/taskspb"
 
 	// Add support for Spanner transactions in TQ.
@@ -69,7 +77,93 @@ func handleCommitIngestion(ctx context.Context, payload proto.Message) error {
 
 	logging.Infof(ctx, "received commit ingestion task with page token: %q", task.PageToken)
 
-	// TODO(b/356027716): ingest the commits.
+	// TODO(b/356027716): use the service's own credential to query Gitiles.
+	client, err := gitilesapi.NewRESTClient(&http.Client{}, task.Host, false)
+	if err != nil {
+		return errors.Annotate(err, "initialize a Gitiles REST client").Err()
+	}
 
+	return processCommitIngestionTask(ctx, client, task)
+}
+
+func processCommitIngestionTask(ctx context.Context, client gitiles.GitilesClient, task *taskspb.IngestCommits) error {
+	req := &gitiles.LogRequest{
+		Project:    task.Repository,
+		Committish: task.Commitish,
+		PageToken:  task.PageToken,
+		PageSize:   1000,
+	}
+	res, err := client.Log(ctx, req)
+	if err != nil {
+		return errors.Annotate(grpcutil.WrapIfTransient(err), "query Gitiles logs").Err()
+	}
+
+	// If the first commit has already been ingested, all of its ancestor commits
+	// should've been (or scheduled to be) ingested. Stop ingesting.
+	//
+	// N.B. we cannot use `task.Commitish` to check the existence of the commit.
+	// `task.Commitish` may not be a hash. And the first commit may not be the
+	// commitish due to page token.
+	if len(res.Log) > 0 {
+		key, err := commit.NewKey(task.Host, task.Repository, res.Log[0].Id)
+		if err != nil {
+			return errors.Annotate(err, "construct commit key for the first commit in the page").Err()
+		}
+
+		// Keep the Exists check outside of the transaction to write the commits so
+		// 1. the transaction to write commits are blind writes; and
+		// 2. checking the existence of a commit only requires a read transaction.
+		//    After the initial ingestion, we expect half of the tasks to be
+		//	  ignored. Only the first ingestion task kicked of by a pubsub event
+		//    result in an update. All the subsequent tasks will likely be ignored;
+		//    and
+		// 3. the Commits table only contain derived data (other than update
+		//    timestamp). It's OK to overwrite the rows.
+		exists, err := commit.Exists(span.Single(ctx), key)
+		if err != nil {
+			return errors.Annotate(err, "check whether the commit was already ingested").Err()
+		}
+		if exists {
+			logging.Infof(ctx, "commit %q is already ingested; stop ingesting", res.Log[0].Id)
+			return nil
+		}
+	}
+
+	// Prepare commits to write to the database.
+	var commitsToSave = make([]*spanner.Mutation, 0, len(res.Log))
+	for _, log := range res.Log {
+		gitCommit, err := commit.NewGitCommit(task.Host, task.Repository, log)
+		if err != nil {
+			return errors.Annotate(err, "converting git commit to source-index's representation").Err()
+		}
+
+		_, err = gitCommit.Position()
+		if err != nil {
+			// We don't want a commit with a malformed footer to break our ingestion
+			// pipeline. Log the error and move on.
+			logging.WithError(err).Warningf(ctx, "unable to extract position from commit %s", gitCommit.Key().URL())
+		}
+
+		commitsToSave = append(commitsToSave, commit.NewFromGitCommit(gitCommit).Save())
+	}
+
+	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+		span.BufferWrite(ctx, commitsToSave...)
+		if res.NextPageToken != "" {
+			scheduleCommitIngestion(ctx, &taskspb.IngestCommits{
+				Host:       task.Host,
+				Repository: task.Repository,
+				Commitish:  task.Commitish,
+				TaskIndex:  task.TaskIndex + 1,
+				PageToken:  res.NextPageToken,
+			})
+		}
+		return nil
+	})
+	if err != nil {
+		return errors.Annotate(err, "saving commits").Err()
+	}
+
+	logging.Infof(ctx, "finished commit ingestion task")
 	return nil
 }

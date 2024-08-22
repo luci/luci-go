@@ -25,7 +25,7 @@
 //     commit ingestion task with the next page token.
 //
 // Because the ingestion stops when it encounters a commit that is already
-// ingested, it's important to maintain the following constraints:
+// ingested, it's important to maintain the following invariants:
 //   - If a commit is saved into the database, all its ancestors must also have
 //     been saved into the database.
 package commitingester
