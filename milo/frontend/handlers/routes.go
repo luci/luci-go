@@ -23,18 +23,15 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 
-	"go.chromium.org/luci/auth/identity"
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
-	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/milo/internal/buildsource/buildbucket"
-	"go.chromium.org/luci/milo/internal/buildsource/swarming"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/auth/openid"
 	"go.chromium.org/luci/server/auth/xsrf"
 	"go.chromium.org/luci/server/middleware"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
+
+	"go.chromium.org/luci/milo/internal/buildsource/swarming"
 )
 
 // Run sets up all the routes and runs the server.
@@ -118,24 +115,6 @@ func Run(srv *server.Server, templatePath string) {
 	// This mimics the `logdog://logdog_host/project/*path` url scheme seen on
 	// swarming tasks.
 	r.GET("/raw/build/:logdog_host/:project/*path", htmlMW, handleError(handleRawPresentationBuild))
-
-	pubsubMW := router.NewMiddlewareChain(
-		auth.Authenticate(&openid.GoogleIDTokenAuthMethod{
-			AudienceCheck: openid.AudienceMatchesHost,
-		}),
-		withBuildbucketBuildsClient,
-	)
-	pusherID := identity.Identity(fmt.Sprintf("user:buildbucket-pubsub@%s.iam.gserviceaccount.com", srv.Options.CloudProject))
-
-	// PubSub subscription endpoints.
-	r.POST("/push-handlers/buildbucket_v2", pubsubMW, func(ctx *router.Context) {
-		if got := auth.CurrentIdentity(ctx.Request.Context()); got != pusherID {
-			logging.Errorf(ctx.Request.Context(), "Expecting ID token of %q, got %q", pusherID, got)
-			ctx.Writer.WriteHeader(403)
-		} else {
-			buildbucket.PubSubHandlerLegacy(ctx)
-		}
-	})
 
 	r.POST("/actions/cancel_build", xsrfMW, handleError(cancelBuildHandler))
 	r.POST("/actions/retry_build", xsrfMW, handleError(retryBuildHandler))
