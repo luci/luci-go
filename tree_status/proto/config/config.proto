@@ -1,0 +1,58 @@
+// Copyright 2024 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.tree_status.config;
+
+option go_package = "go.chromium.org/luci/tree_status/proto/config;configpb";
+
+// Config is the service-wide configuration data for TreeStatus.
+message Config {
+  // Represents mapping between tree name and its data.
+  // Note: each tree name in use should have exactly 1 TreeNameConfig.
+  // If a tree name have more than 1 TreeNameConfig, the validation of this
+  // config will result in an error.
+  // If a tree name does not have a corresponding TreeNameConfig, accessing the
+  // tree will be denied.
+  repeated Tree trees = 1;
+}
+
+// This represent a mapping between a tree name and its data.
+message Tree {
+  // LUCI Tree Status tree name, e.g. "chromium", "devtools", "fuchsia-stem"
+  string name = 1;
+
+  // Names of the LUCI projects that the tree name applies to.
+  // For example, "v8" tree can be applied to both "v8" and "v8-internal" projects.
+  // This mapping will be used to display tree status in LUCI UI side bar.
+  // The first project in this list is the primary project, in the sense that:
+  //   1. Its "<project>:@project" realm will be used to check for ACL for the tree,
+  //      if the flag "use_default_acls" is unset.
+  //   2. If the tree is access without a LUCI project context, the primary project
+  //      will be displayed at the top left of LUCI UI.
+  // Note: A project can have at most 1 tree attached to it.
+  repeated string projects = 2;
+
+  // If this flag is set, it will use the default ACLs:
+  //   - Read permission without PII: Authenticated users.
+  //   - Read permission with PII: Googlers.
+  //   - Write permission: Googlers.
+  // If this flag is set, the ACLs will be checked against the "<primary_project>:@project" realm.
+  // If this flag is unset, and the projects fields it empty, this will result in PERMISSION_DENIED
+  // error when accessing the tree.
+  // Please see the "projects" field for more information.
+  bool use_default_acls = 3;
+}
+
