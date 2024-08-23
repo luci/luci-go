@@ -103,8 +103,8 @@ func DefaultAuthOptions() auth.Options {
 		TokenServerHost:   TokenServerHost,
 		SecretsDir:        SecretsDir(),
 		LoginSessionsHost: LoginSessionsHost,
-		ClientID:          "446450136466-mj75ourhccki9fffaq8bc1e50di315po.apps.googleusercontent.com",
-		ClientSecret:      "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",
+		ClientID:          "608762726021-luma271nfkof2jrmn0pucj3tv3bvkjf0.apps.googleusercontent.com",
+		ClientSecret:      "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",
 	}
 }
 
