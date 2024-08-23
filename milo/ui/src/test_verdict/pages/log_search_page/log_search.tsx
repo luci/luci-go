@@ -12,12 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Alert, Box, Button, styled } from '@mui/material';
+import { HelpOutline } from '@mui/icons-material';
+import { Alert, Box, Button, InputAdornment, styled } from '@mui/material';
 import { isEqual } from 'lodash-es';
 import { DateTime } from 'luxon';
 import { useState, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 
+import { HtmlTooltip } from '@/common/components/html_tooltip';
 import {
   emptyPageTokenUpdater,
   usePagerContext,
@@ -44,6 +46,8 @@ import {
   SearchFilterProvider,
 } from './providers';
 import { SelectTextField } from './select_text_field';
+import { TabLabel } from './tab_label';
+
 const FormContainer = styled(Box)`
   margin: 10px;
   padding: 10px;
@@ -166,6 +170,24 @@ export function LogSearch() {
                 searchStr: str,
               }));
             }}
+            endAdornment={
+              <InputAdornment position="end">
+                <HtmlTooltip
+                  arrow
+                  title={
+                    <>
+                      <strong>Contain</strong> - case insensitive find for exact
+                      match
+                      <br />
+                      <strong>Regex</strong> - case sensitive regex find,
+                      anchors (^ and $) are not allowed.
+                    </>
+                  }
+                >
+                  <HelpOutline fontSize="small" />
+                </HtmlTooltip>
+              </InputAdornment>
+            }
           />
         </FormRowDiv>
         <FormRowDiv>
@@ -254,12 +276,27 @@ export function LogSearch() {
           <LogGroupListStateProvider>
             <AppRoutedTabs sx={{ display: searchFilter ? '' : 'none' }}>
               <AppRoutedTab
-                label="Test result logs"
+                label={
+                  <TabLabel
+                    label={'Test result logs'}
+                    tooltipText={`Test result logs are directly associated with a
+                          specific test result. They are text files produced by
+                          a test that provide detailed information about the
+                          test's execution.`}
+                  />
+                }
                 value="test-logs"
                 to={`test-logs${location.search}`}
               />
               <AppRoutedTab
-                label="Shared logs"
+                label={
+                  <TabLabel
+                    label={'Shared logs'}
+                    tooltipText={`Shared logs are text files that are associated with a
+                          group of test results, providing shared information
+                          about these test results.`}
+                  />
+                }
                 value="shared-logs"
                 to={`shared-logs${location.search}`}
               />

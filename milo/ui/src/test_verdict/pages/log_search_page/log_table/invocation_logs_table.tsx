@@ -33,6 +33,7 @@ import { FormData } from '../form_data';
 import { VariantLine } from '../variant_line';
 
 import { LogGroup } from './log_group';
+import { SlowQueryTextBox } from './test_logs_table';
 
 export interface InvocationLogsTableProps {
   readonly project: string;
@@ -77,7 +78,6 @@ export function InvocationLogsTable({
     }
     throw error;
   }
-
   return (
     <>
       <Box
@@ -86,7 +86,17 @@ export function InvocationLogsTable({
         }}
       >
         {isLoading ? (
-          <LinearProgress />
+          <>
+            <LinearProgress />
+            {form.artifactIDStr === '' && (
+              <SlowQueryTextBox>
+                Searching for shared logs... <br /> If the query is slow, we
+                highly recommend you to scope down the search by providing a
+                <strong> log file name or log file name prefix.</strong> This
+                can make the query 10-100x faster!
+              </SlowQueryTextBox>
+            )}
+          </>
         ) : (
           <>
             {data.groups.length === 0 && (

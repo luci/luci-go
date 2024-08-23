@@ -34,6 +34,7 @@ interface SelectTextFieldProps {
   textOnChange: (value: string) => void;
   sx?: SxProps<Theme>;
   required?: boolean;
+  endAdornment?: React.ReactNode;
 }
 
 // SelectTextField is a component that combines a dropdown field with a text input field.
@@ -46,6 +47,7 @@ export function SelectTextField({
   selectOnChange,
   textOnChange,
   required = false,
+  endAdornment,
 }: SelectTextFieldProps) {
   const handleTextChange = (event: ChangeEvent<HTMLInputElement>) => {
     textOnChange(event.target.value);
@@ -87,6 +89,7 @@ export function SelectTextField({
           value={textValue}
           variant="outlined"
           size="small"
+          InputProps={{ endAdornment }}
           sx={{
             ml: 0,
             flex: 1,

@@ -14,7 +14,7 @@
 
 import { GrpcError, ProtocolError } from '@chopsui/prpc-client';
 import { ArrowForwardIos } from '@mui/icons-material';
-import { Box, Alert, AlertTitle, Link } from '@mui/material';
+import { Box, Alert, AlertTitle, Link, styled } from '@mui/material';
 import LinearProgress from '@mui/material/LinearProgress';
 import { useQuery } from '@tanstack/react-query';
 
@@ -37,6 +37,14 @@ import { FormData } from '../form_data';
 import { VariantLine } from '../variant_line';
 
 import { LogGroup } from './log_group';
+
+export const SlowQueryTextBox = styled(Box)`
+  background: #e0f0ff;
+  margin: 10px;
+  padding: 20px;
+  border-radius: 10px;
+  font-size: 17px;
+`;
 
 export interface TestLogsTableProps {
   readonly project: string;
@@ -87,7 +95,17 @@ export function TestLogsTable({ project, filter }: TestLogsTableProps) {
         }}
       >
         {isLoading ? (
-          <LinearProgress />
+          <>
+            <LinearProgress />
+            {form.testIDStr === '' && (
+              <SlowQueryTextBox>
+                Searching for test result logs... <br /> If the query is slow,
+                we highly recommend you to scope down the search by providing a
+                <strong> test id or test id prefix.</strong> This can make the
+                query 10-100x faster!
+              </SlowQueryTextBox>
+            )}
+          </>
         ) : (
           <>
             {data.groups.length === 0 && (
