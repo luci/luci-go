@@ -18,6 +18,7 @@ import (
 	"context"
 	"net/http"
 
+	"go.chromium.org/luci/config/server/cfgmodule"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
@@ -31,6 +32,7 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/tree_status/internal/bqexporter"
+	"go.chromium.org/luci/tree_status/internal/config"
 	"go.chromium.org/luci/tree_status/internal/span"
 	"go.chromium.org/luci/tree_status/internal/status"
 	"go.chromium.org/luci/tree_status/internal/views"
@@ -44,6 +46,7 @@ import (
 func main() {
 	// Additional modules that extend the server functionality.
 	modules := []module.Module{
+		cfgmodule.NewModuleFromFlags(),
 		cron.NewModuleFromFlags(),
 		gaeemulation.NewModuleFromFlags(),
 		gerritauth.NewModuleFromFlags(),
@@ -85,6 +88,7 @@ func main() {
 		cron.RegisterHandler("ensure-views", func(ctx context.Context) error {
 			return views.CronHandler(ctx, srv.Options.CloudProject)
 		})
+		cron.RegisterHandler("update-config", config.Update)
 
 		return nil
 	})

@@ -112,5 +112,20 @@ func TestValidation(t *testing.T) {
 				So(err, ShouldErrLike, "expected format")
 			})
 		})
+
+		Convey("project", func() {
+			Convey("valid", func() {
+				err := ValidateProject("chromium-m100")
+				So(err, ShouldBeNil)
+			})
+			Convey("must be specified", func() {
+				err := ValidateProject("")
+				So(err, ShouldErrLike, "must be specified")
+			})
+			Convey("must match format", func() {
+				err := ValidateProject("some name")
+				So(err, ShouldErrLike, "expected format")
+			})
+		})
 	})
 }

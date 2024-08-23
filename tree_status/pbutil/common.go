@@ -35,6 +35,8 @@ const (
 	StatusIDExpression = `[0-9a-f]{32}`
 	// BuilderNameExpression is a partial regular expression that validates builder name.
 	BuilderNameExpression = `projects/([a-z0-9\-_]{1,40})/buckets/([a-z0-9\-_.]{1,100})/builders/([a-zA-Z0-9\-_.\(\) ]{1,128})`
+	// ProjectExpression is a partial regular expression that validates LUCI Project.
+	ProjectExpression = `[a-z0-9\-]{1,40}`
 )
 
 func ValidateTreeName(treeName string) error {
@@ -98,6 +100,17 @@ func ValidateClosingBuilderName(name string) error {
 	var builderNameRE = regexp.MustCompile(`^` + BuilderNameExpression + `$`)
 	if !builderNameRE.MatchString(name) {
 		return errors.Reason("expected format: %s", builderNameRE).Err()
+	}
+	return nil
+}
+
+func ValidateProject(project string) error {
+	if project == "" {
+		return errors.Reason("must be specified").Err()
+	}
+	var projectRE = regexp.MustCompile(`^` + ProjectExpression + `$`)
+	if !projectRE.MatchString(project) {
+		return errors.Reason("expected format: %s", projectRE).Err()
 	}
 	return nil
 }
