@@ -68,6 +68,13 @@ type EmbeddedBotSettings struct {
 	ServerURL string
 }
 
+// digest is a digest of the struct content.
+func (ems *EmbeddedBotSettings) digest() string {
+	return digest(map[string]string{
+		"ServerURL": ems.ServerURL,
+	})
+}
+
 // VersionInfo identifies versions of Swarming configs.
 //
 // It is stored in the datastore as part of ConfigBundle and ConfigBundleRev.
@@ -112,18 +119,49 @@ type VersionInfo struct {
 }
 
 // BotArchiveInfo contains information about a concrete assembled bot archive.
+//
+// It contains both some inputs to the bot archive building process and its
+// output: the bot archive digest and references to its chunks in the datastore
+// that can be assembled together to get the final zip file.
+//
+// Inputs are available through the settings.cfg config as well, but they are
+// copied here for convenience when logging changes.
 type BotArchiveInfo struct {
 	// Digest is the bot archive SHA256 digest aka "bot archive version".
 	Digest string `gae:",noindex"`
+	// Chunks is the list of BotArchiveChunk entities with the archive content.
+	Chunks []string `gae:",noindex"`
 
-	// TODO(vadimsh): Add more, like pointers to datastore entities with the
-	// bot archive.
+	// BotConfigHash is SHA256 of the bot_config.py embedded into the bot archive.
+	BotConfigHash string `gae:",noindex"`
+	// BotConfigRev is the revision of bot_config.py script used.
+	BotConfigRev string `gae:",noindex"`
+
+	// PackageInstanceID is the CIPD instance ID of the base bot package.
+	PackageInstanceID string `gae:",noindex"`
+	// PackageServer is an URL of the CIPD server with the bot package.
+	PackageServer string `gae:",noindex"`
+	// PackageName is the CIPD package name e.g. "luci/swarming/swarming_bot".
+	PacakgeName string `gae:",noindex"`
+	// PackageVersion is e.g. "git_commit:..." CIPD tag or ref.
+	PackageVersion string `gae:",noindex"`
 }
 
 // logDiff logs changes in the struct (if any).
 func (old *BotArchiveInfo) logDiff(ctx context.Context, channel string, new BotArchiveInfo) {
 	if old.Digest != new.Digest {
 		logging.Infof(ctx, "%s bot digest: %s => %s", channel, old.Digest, new.Digest)
+	}
+	if old.PackageVersion != new.PackageVersion {
+		logging.Infof(ctx, "%s version: %s => %s", channel, old.PackageVersion, new.PackageVersion)
+	}
+	if old.PackageInstanceID != new.PackageInstanceID {
+		logging.Infof(ctx, "%s instance: %s => %s", channel, old.PackageInstanceID, new.PackageInstanceID)
+	}
+	// Log revisions only when the content actually changes. Don't log the hash
+	// itself, no one really cares.
+	if old.BotConfigHash != new.BotConfigHash {
+		logging.Infof(ctx, "%s bot_config.py: %s => %s", channel, old.BotConfigRev, new.BotConfigRev)
 	}
 }
 
@@ -260,11 +298,13 @@ func UpdateConfigs(ctx context.Context, ebs *EmbeddedBotSettings) error {
 		// everything is already done. Also we are in no rush in this background
 		// cron job.
 		var cipdClient cipd.Client
-		fresh.StableBot, err = ensureBotArchiveBuilt(ctx, &cipdClient, stable, botConfigBody, ebs)
+		fresh.StableBot, err = ensureBotArchiveBuilt(ctx, &cipdClient, stable,
+			botConfigBody, fresh.Revision, ebs, botArchiveChunkSize)
 		if err != nil {
 			return errors.Annotate(err, "failed build the stable bot archive").Err()
 		}
-		fresh.CanaryBot, err = ensureBotArchiveBuilt(ctx, &cipdClient, canary, botConfigBody, ebs)
+		fresh.CanaryBot, err = ensureBotArchiveBuilt(ctx, &cipdClient, canary,
+			botConfigBody, fresh.Revision, ebs, botArchiveChunkSize)
 		if err != nil {
 			return errors.Annotate(err, "failed build the canary bot archive").Err()
 		}
