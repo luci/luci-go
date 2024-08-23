@@ -87,8 +87,8 @@ func TestQueryTestVariantArtifacts(t *testing.T) {
 					RegexContain: "log line [13]",
 				},
 			},
-			StartTime: timestamppb.New(time.Date(2024, 5, 5, 0, 0, 0, 0, time.UTC)),
-			EndTime:   timestamppb.New(time.Date(2024, 5, 7, 0, 0, 0, 0, time.UTC)),
+			StartTime: timestamppb.New(time.Date(2024, 8, 5, 0, 0, 0, 0, time.UTC)),
+			EndTime:   timestamppb.New(time.Date(2024, 8, 7, 0, 0, 0, 0, time.UTC)),
 			PageSize:  10,
 		}
 		Convey("no permission", func() {
@@ -161,8 +161,8 @@ func TestValidateQueryTestVariantArtifactsRequest(t *testing.T) {
 					RegexContain: "foo",
 				},
 			},
-			StartTime: timestamppb.New(time.Date(2024, 5, 5, 0, 0, 0, 0, time.UTC)),
-			EndTime:   timestamppb.New(time.Date(2024, 5, 7, 0, 0, 0, 0, time.UTC)),
+			StartTime: timestamppb.New(time.Date(2024, 8, 5, 0, 0, 0, 0, time.UTC)),
+			EndTime:   timestamppb.New(time.Date(2024, 8, 7, 0, 0, 0, 0, time.UTC)),
 			PageSize:  10,
 		}
 		Convey("Valid request", func() {
@@ -211,29 +211,6 @@ func TestValidateQueryTestVariantArtifactsRequest(t *testing.T) {
 				err := validateQueryTestVariantArtifactsRequest(req)
 				So(err, ShouldNotBeNil)
 				So(err.Error(), ShouldContainSubstring, "start_time: unspecified")
-			})
-
-			Convey("End time unspecified", func() {
-				req.EndTime = nil
-				err := validateQueryTestVariantArtifactsRequest(req)
-				So(err, ShouldNotBeNil)
-				So(err.Error(), ShouldContainSubstring, "end_time: unspecified")
-			})
-
-			Convey("Start time after end time", func() {
-				req.StartTime = timestamppb.New(time.Date(2024, 5, 7, 0, 0, 0, 0, time.UTC))
-				req.EndTime = timestamppb.New(time.Date(2024, 5, 5, 0, 0, 0, 0, time.UTC))
-				err := validateQueryTestVariantArtifactsRequest(req)
-				So(err, ShouldNotBeNil)
-				So(err.Error(), ShouldContainSubstring, "start time must not be later than end time")
-			})
-
-			Convey("Time difference greater than 7 days", func() {
-				req.StartTime = timestamppb.New(time.Date(2024, 5, 1, 0, 0, 0, 0, time.UTC))
-				req.EndTime = timestamppb.New(time.Date(2024, 5, 9, 0, 0, 0, 0, time.UTC))
-				err := validateQueryTestVariantArtifactsRequest(req)
-				So(err, ShouldNotBeNil)
-				So(err.Error(), ShouldContainSubstring, "difference between start_time and end_time must not be greater than 7 days")
 			})
 
 			Convey("Invalid page size", func() {

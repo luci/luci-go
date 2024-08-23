@@ -40,6 +40,10 @@ const googlerOnlyGroup = "googlers"
 // The maximum bytes of artifact content in the response.
 const maxMatchWithContextLength = 10 * 1024 // 10KiB.
 
+// The cut-off time is when all necessary columns for log search are populated in the text_artifacts table.
+// We should only accept query requests logs after this time.
+var cutOffTime = time.Date(2024, 7, 20, 0, 0, 0, 0, time.UTC)
+
 var artifactSearchPageSizeLimiter = pagination.PageSizeLimiter{
 	Default: 20,
 	Max:     100,
@@ -190,9 +194,9 @@ func validateStartEndTime(startTime, endTime *timestamppb.Timestamp) error {
 	if startTime == nil {
 		return errors.New("start_time: unspecified")
 	}
-	// TODO(beining@): Validate start_time against a cut-off time so that start_time can't be less than the cut-off time.
-	// The cut-off time is when all necessary columns for log search are populated in the text_artifacts table.
-	// Add this vaidation when all necessary columns are been added and rolled to prod, and cut-off time is known.
+	if startTime.AsTime().Before(cutOffTime) {
+		return fmt.Errorf("start_time: must be after %s", cutOffTime)
+	}
 	if endTime == nil {
 		return errors.New("end_time: unspecified")
 	}

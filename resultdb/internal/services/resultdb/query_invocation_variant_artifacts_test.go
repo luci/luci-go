@@ -51,14 +51,14 @@ func TestQueryInvocationVariantArtifacts(t *testing.T) {
 				return []*artifacts.MatchingArtifact{
 					{
 						InvocationID:           "12345678901234567890",
-						PartitionTime:          time.Date(2024, 5, 6, 5, 58, 57, 490076000, time.UTC),
+						PartitionTime:          time.Date(2024, 8, 6, 5, 58, 57, 490076000, time.UTC),
 						Match:                  "log line 1",
 						MatchWithContextBefore: "log line 0",
 						MatchWithContextAfter:  "log line 2",
 					},
 					{
 						InvocationID:           "12345678901234567891",
-						PartitionTime:          time.Date(2024, 5, 6, 5, 58, 57, 491037000, time.UTC),
+						PartitionTime:          time.Date(2024, 8, 6, 5, 58, 57, 491037000, time.UTC),
 						Match:                  "log line 3",
 						MatchWithContextBefore: "log line 2",
 						MatchWithContextAfter:  "log line 4",
@@ -81,8 +81,8 @@ func TestQueryInvocationVariantArtifacts(t *testing.T) {
 					RegexContain: "log line [13]",
 				},
 			},
-			StartTime: timestamppb.New(time.Date(2024, 5, 5, 0, 0, 0, 0, time.UTC)),
-			EndTime:   timestamppb.New(time.Date(2024, 5, 7, 0, 0, 0, 0, time.UTC)),
+			StartTime: timestamppb.New(time.Date(2024, 8, 5, 0, 0, 0, 0, time.UTC)),
+			EndTime:   timestamppb.New(time.Date(2024, 8, 7, 0, 0, 0, 0, time.UTC)),
 			PageSize:  10,
 		}
 		Convey("no permission", func() {
@@ -105,7 +105,7 @@ func TestQueryInvocationVariantArtifacts(t *testing.T) {
 			So(rsp, ShouldResembleProto, &pb.QueryInvocationVariantArtifactsResponse{
 				Artifacts: []*pb.ArtifactMatchingContent{{
 					Name:          "invocations/12345678901234567890/artifacts/artifact_id",
-					PartitionTime: timestamppb.New(time.Date(2024, 5, 6, 5, 58, 57, 490076000, time.UTC)),
+					PartitionTime: timestamppb.New(time.Date(2024, 8, 6, 5, 58, 57, 490076000, time.UTC)),
 					Snippet:       "log line 0log line 1log line 2",
 					Matches: []*pb.ArtifactMatchingContent_Match{{
 						StartIndex: 10,
@@ -114,7 +114,7 @@ func TestQueryInvocationVariantArtifacts(t *testing.T) {
 				},
 					{
 						Name:          "invocations/12345678901234567891/artifacts/artifact_id",
-						PartitionTime: timestamppb.New(time.Date(2024, 5, 6, 5, 58, 57, 491037000, time.UTC)),
+						PartitionTime: timestamppb.New(time.Date(2024, 8, 6, 5, 58, 57, 491037000, time.UTC)),
 						Snippet:       "log line 2log line 3log line 4",
 						Matches: []*pb.ArtifactMatchingContent_Match{{
 							StartIndex: 10,
@@ -152,8 +152,8 @@ func TestValidateQueryInvocationVariantArtifactsRequest(t *testing.T) {
 					RegexContain: "foo",
 				},
 			},
-			StartTime: timestamppb.New(time.Date(2024, 5, 5, 0, 0, 0, 0, time.UTC)),
-			EndTime:   timestamppb.New(time.Date(2024, 5, 7, 0, 0, 0, 0, time.UTC)),
+			StartTime: timestamppb.New(time.Date(2024, 8, 5, 0, 0, 0, 0, time.UTC)),
+			EndTime:   timestamppb.New(time.Date(2024, 8, 7, 0, 0, 0, 0, time.UTC)),
 			PageSize:  10,
 		}
 		Convey("Valid request", func() {
@@ -195,29 +195,6 @@ func TestValidateQueryInvocationVariantArtifactsRequest(t *testing.T) {
 				err := validateQueryInvocationVariantArtifactsRequest(req)
 				So(err, ShouldNotBeNil)
 				So(err.Error(), ShouldContainSubstring, "start_time: unspecified")
-			})
-
-			Convey("End time unspecified", func() {
-				req.EndTime = nil
-				err := validateQueryInvocationVariantArtifactsRequest(req)
-				So(err, ShouldNotBeNil)
-				So(err.Error(), ShouldContainSubstring, "end_time: unspecified")
-			})
-
-			Convey("Start time after end time", func() {
-				req.StartTime = timestamppb.New(time.Date(2024, 5, 7, 0, 0, 0, 0, time.UTC))
-				req.EndTime = timestamppb.New(time.Date(2024, 5, 5, 0, 0, 0, 0, time.UTC))
-				err := validateQueryInvocationVariantArtifactsRequest(req)
-				So(err, ShouldNotBeNil)
-				So(err.Error(), ShouldContainSubstring, "start time must not be later than end time")
-			})
-
-			Convey("Time difference greater than 7 days", func() {
-				req.StartTime = timestamppb.New(time.Date(2024, 5, 1, 0, 0, 0, 0, time.UTC))
-				req.EndTime = timestamppb.New(time.Date(2024, 5, 9, 0, 0, 0, 0, time.UTC))
-				err := validateQueryInvocationVariantArtifactsRequest(req)
-				So(err, ShouldNotBeNil)
-				So(err.Error(), ShouldContainSubstring, "difference between start_time and end_time must not be greater than 7 days")
 			})
 
 			Convey("Invalid page size", func() {

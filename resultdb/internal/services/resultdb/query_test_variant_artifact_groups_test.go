@@ -24,6 +24,9 @@ import (
 	"cloud.google.com/go/bigquery"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
@@ -95,8 +98,8 @@ func TestQueryTestVariantArtifactGroups(t *testing.T) {
 					HasPrefix: "artifactidprefix",
 				},
 			},
-			StartTime: timestamppb.New(time.Unix(10, 0)),
-			EndTime:   timestamppb.New(time.Unix(100, 0)),
+			StartTime: timestamppb.New(time.Date(2024, 7, 20, 0, 0, 0, 0, time.UTC)),
+			EndTime:   timestamppb.New(time.Date(2024, 7, 27, 0, 0, 0, 0, time.UTC)),
 			PageSize:  1,
 			PageToken: "",
 		}
@@ -180,8 +183,8 @@ func TestValidateQueryTestVariantArtifactGroupsRequest(t *testing.T) {
 					HasPrefix: "artifactidprefix",
 				},
 			},
-			StartTime: timestamppb.New(time.Unix(10, 0)),
-			EndTime:   timestamppb.New(time.Unix(100, 0)),
+			StartTime: timestamppb.New(time.Date(2024, 7, 20, 0, 0, 0, 0, time.UTC)),
+			EndTime:   timestamppb.New(time.Date(2024, 7, 27, 0, 0, 0, 0, time.UTC)),
 			PageSize:  1,
 			PageToken: "",
 		}
@@ -257,26 +260,6 @@ func TestValidateQueryTestVariantArtifactGroupsRequest(t *testing.T) {
 			err := validateQueryTestVariantArtifactGroupsRequest(req, true)
 			So(err, ShouldErrLike, `start_time: unspecified`)
 		})
-
-		Convey(`no end time`, func() {
-			req.EndTime = nil
-			err := validateQueryTestVariantArtifactGroupsRequest(req, true)
-			So(err, ShouldErrLike, `end_time: unspecified`)
-		})
-
-		Convey(`start time after end time`, func() {
-			req.StartTime = timestamppb.New(time.Unix(100, 0))
-			req.EndTime = timestamppb.New(time.Unix(10, 0))
-			err := validateQueryTestVariantArtifactGroupsRequest(req, true)
-			So(err, ShouldErrLike, `start time must not be later than end time`)
-		})
-
-		Convey(`time difference greater than 7 days`, func() {
-			req.StartTime = timestamppb.New(time.Unix(0, 0))
-			req.EndTime = timestamppb.New(time.Unix(7*24*60*60+1, 0))
-			err := validateQueryTestVariantArtifactGroupsRequest(req, true)
-			So(err, ShouldErrLike, `difference between start_time and end_time must not be greater than 7 days`)
-		})
 	})
 }
 
@@ -305,6 +288,49 @@ func TestValidateSearchString(t *testing.T) {
 
 			err := validateSearchString(m)
 			So(err, ShouldErrLike, `error parsing regexp`)
+		})
+	})
+}
+
+func TestValidateStartEndTime(t *testing.T) {
+	ftt.Run(`validateStartEndTime`, t, func(t *ftt.Test) {
+		t.Run("no start time", func(t *ftt.Test) {
+			err := validateStartEndTime(nil, nil)
+			assert.That(t, err, should.ErrLike(`start_time: unspecified`))
+		})
+		t.Run("start time before cut off time", func(t *ftt.Test) {
+			startTime := timestamppb.New(time.Date(2024, 7, 20, 0, 0, 0, 0, time.UTC).Add(-time.Millisecond))
+
+			err := validateStartEndTime(startTime, nil)
+			assert.That(t, err, should.ErrLike(`start_time: must be after 2024-07-20 00:00:00 +0000 UTC`))
+		})
+		t.Run(`no end time`, func(t *ftt.Test) {
+			startTime := timestamppb.New(time.Date(2024, 7, 20, 0, 0, 0, 0, time.UTC))
+
+			err := validateStartEndTime(startTime, nil)
+			assert.That(t, err, should.ErrLike(`end_time: unspecified`))
+		})
+		t.Run(`start time after end time`, func(t *ftt.Test) {
+			startTime := timestamppb.New(time.Date(2024, 7, 22, 0, 0, 0, 0, time.UTC))
+			endTime := timestamppb.New(time.Date(2024, 7, 20, 0, 0, 0, 0, time.UTC))
+
+			err := validateStartEndTime(startTime, endTime)
+			assert.That(t, err, should.ErrLike(`start time must not be later than end time`))
+		})
+		t.Run(`time difference greater than 7 days`, func(t *ftt.Test) {
+			startTime := timestamppb.New(time.Date(2024, 7, 20, 0, 0, 0, 0, time.UTC))
+			endTime := timestamppb.New(time.Date(2024, 7, 27, 0, 0, 0, 1, time.UTC))
+
+			err := validateStartEndTime(startTime, endTime)
+			assert.That(t, err, should.ErrLike(`difference between start_time and end_time must not be greater than 7 days`))
+		})
+
+		t.Run(`valid`, func(t *ftt.Test) {
+			startTime := timestamppb.New(time.Date(2024, 7, 20, 0, 0, 0, 0, time.UTC))
+			endTime := timestamppb.New(time.Date(2024, 7, 27, 0, 0, 0, 0, time.UTC))
+
+			err := validateStartEndTime(startTime, endTime)
+			assert.That(t, err, should.ErrLike(nil))
 		})
 	})
 }

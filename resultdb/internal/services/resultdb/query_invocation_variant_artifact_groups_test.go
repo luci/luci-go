@@ -86,8 +86,8 @@ func TestQueryInvocationVariantArtifactGroups(t *testing.T) {
 					HasPrefix: "artifactidprefix",
 				},
 			},
-			StartTime: timestamppb.New(time.Unix(10, 0)),
-			EndTime:   timestamppb.New(time.Unix(100, 0)),
+			StartTime: timestamppb.New(time.Date(2024, 7, 20, 0, 0, 0, 0, time.UTC)),
+			EndTime:   timestamppb.New(time.Date(2024, 7, 27, 0, 0, 0, 0, time.UTC)),
 			PageSize:  1,
 			PageToken: "",
 		}
@@ -164,8 +164,8 @@ func TestValidateQueryInvocationVariantArtifactGroupsRequest(t *testing.T) {
 					HasPrefix: "artifactidprefix",
 				},
 			},
-			StartTime: timestamppb.New(time.Unix(10, 0)),
-			EndTime:   timestamppb.New(time.Unix(100, 0)),
+			StartTime: timestamppb.New(time.Date(2024, 7, 20, 0, 0, 0, 0, time.UTC)),
+			EndTime:   timestamppb.New(time.Date(2024, 7, 27, 0, 0, 0, 0, time.UTC)),
 			PageSize:  1,
 			PageToken: "",
 		}
@@ -230,26 +230,6 @@ func TestValidateQueryInvocationVariantArtifactGroupsRequest(t *testing.T) {
 			req.StartTime = nil
 			err := validateQueryInvocationVariantArtifactGroupsRequest(req, true)
 			So(err, ShouldErrLike, `start_time: unspecified`)
-		})
-
-		Convey(`no end time`, func() {
-			req.EndTime = nil
-			err := validateQueryInvocationVariantArtifactGroupsRequest(req, true)
-			So(err, ShouldErrLike, `end_time: unspecified`)
-		})
-
-		Convey(`start time after end time`, func() {
-			req.StartTime = timestamppb.New(time.Unix(100, 0))
-			req.EndTime = timestamppb.New(time.Unix(10, 0))
-			err := validateQueryInvocationVariantArtifactGroupsRequest(req, true)
-			So(err, ShouldErrLike, `start time must not be later than end time`)
-		})
-
-		Convey(`time difference greater than 7 days`, func() {
-			req.StartTime = timestamppb.New(time.Unix(0, 0))
-			req.EndTime = timestamppb.New(time.Unix(7*24*60*60+1, 0))
-			err := validateQueryInvocationVariantArtifactGroupsRequest(req, true)
-			So(err, ShouldErrLike, `difference between start_time and end_time must not be greater than 7 days`)
 		})
 	})
 }

@@ -2612,6 +2612,7 @@ type QueryTestVariantArtifactGroupsRequest struct {
 	// The artifact id matcher to restrict the scope of the search (optional).
 	ArtifactIdMatcher *IDMatcher `protobuf:"bytes,4,opt,name=artifact_id_matcher,json=artifactIdMatcher,proto3" json:"artifact_id_matcher,omitempty"`
 	// The lower bound of the time range to search in UTC time (exclusive) (required).
+	// start_time must not be before 20 July 2024 UTC.
 	// start_time must be less than the end time.
 	// The duration between start_time and end_time must not be greater than 7 days.
 	StartTime *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
@@ -2794,6 +2795,7 @@ type QueryTestVariantArtifactsRequest struct {
 	// The artifact id (required).
 	ArtifactId string `protobuf:"bytes,5,opt,name=artifact_id,json=artifactId,proto3" json:"artifact_id,omitempty"`
 	// The lower bound of the time range to search in UTC time (exclusive) (required).
+	// start_time must not be before 20 July 2024 UTC.
 	// start_time must be less than the end time.
 	// The duration between start_time and end_time must not be greater than 7 days.
 	StartTime *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
@@ -2979,6 +2981,7 @@ type QueryInvocationVariantArtifactGroupsRequest struct {
 	// The artifact id matcher to restrict the scope of the search (optional).
 	ArtifactIdMatcher *IDMatcher `protobuf:"bytes,3,opt,name=artifact_id_matcher,json=artifactIdMatcher,proto3" json:"artifact_id_matcher,omitempty"`
 	// The lower bound of the time range to search in UTC time (exclusive) (required).
+	// start_time must not be before 20 July 2024 UTC.
 	// start_time must be less than the end time.
 	// The duration between start_time and end_time must not be greater than 7 days.
 	StartTime *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
@@ -3152,6 +3155,7 @@ type QueryInvocationVariantArtifactsRequest struct {
 	// The artifact id (required).
 	ArtifactId string `protobuf:"bytes,4,opt,name=artifact_id,json=artifactId,proto3" json:"artifact_id,omitempty"`
 	// The lower bound of the time range to search in UTC time (exclusive) (required).
+	// start_time must not be before 20 July 2024 UTC.
 	// start_time must be less than the end time.
 	// The duration between start_time and end_time must not be greater than 7 days.
 	StartTime *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`

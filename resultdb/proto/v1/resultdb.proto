@@ -877,6 +877,7 @@ message QueryTestVariantArtifactGroupsRequest {
   IDMatcher artifact_id_matcher = 4;
 
   // The lower bound of the time range to search in UTC time (exclusive) (required).
+  // start_time must not be before 20 July 2024 UTC.
   // start_time must be less than the end time.
   // The duration between start_time and end_time must not be greater than 7 days.
   google.protobuf.Timestamp start_time = 5;
@@ -951,6 +952,7 @@ message QueryTestVariantArtifactsRequest {
   string artifact_id = 5;
 
   // The lower bound of the time range to search in UTC time (exclusive) (required).
+  // start_time must not be before 20 July 2024 UTC.
   // start_time must be less than the end time.
   // The duration between start_time and end_time must not be greater than 7 days.
   google.protobuf.Timestamp start_time = 6;
@@ -994,6 +996,7 @@ message QueryInvocationVariantArtifactGroupsRequest {
   IDMatcher artifact_id_matcher = 3;
 
   // The lower bound of the time range to search in UTC time (exclusive) (required).
+  // start_time must not be before 20 July 2024 UTC.
   // start_time must be less than the end time.
   // The duration between start_time and end_time must not be greater than 7 days.
   google.protobuf.Timestamp start_time = 4;
@@ -1061,6 +1064,7 @@ message QueryInvocationVariantArtifactsRequest {
   string artifact_id = 4;
 
   // The lower bound of the time range to search in UTC time (exclusive) (required).
+  // start_time must not be before 20 July 2024 UTC.
   // start_time must be less than the end time.
   // The duration between start_time and end_time must not be greater than 7 days.
   google.protobuf.Timestamp start_time = 5;
