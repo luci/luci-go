@@ -1429,6 +1429,7 @@ export enum HardwareCapabilities_Carrier {
   CARRIER_CMW500 = 23,
   CARRIER_CMX500 = 24,
   CARRIER_RAK = 25,
+  CARRIER_CBRS = 26,
 }
 
 export function hardwareCapabilities_CarrierFromJSON(object: any): HardwareCapabilities_Carrier {
@@ -1511,6 +1512,9 @@ export function hardwareCapabilities_CarrierFromJSON(object: any): HardwareCapab
     case 25:
     case "CARRIER_RAK":
       return HardwareCapabilities_Carrier.CARRIER_RAK;
+    case 26:
+    case "CARRIER_CBRS":
+      return HardwareCapabilities_Carrier.CARRIER_CBRS;
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum HardwareCapabilities_Carrier");
   }
@@ -1570,6 +1574,8 @@ export function hardwareCapabilities_CarrierToJSON(object: HardwareCapabilities_
       return "CARRIER_CMX500";
     case HardwareCapabilities_Carrier.CARRIER_RAK:
       return "CARRIER_RAK";
+    case HardwareCapabilities_Carrier.CARRIER_CBRS:
+      return "CARRIER_CBRS";
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum HardwareCapabilities_Carrier");
   }

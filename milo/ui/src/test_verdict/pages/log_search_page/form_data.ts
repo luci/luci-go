@@ -63,7 +63,7 @@ export const FormData = {
       ? undefined
       : form.isSearchStrRegex
         ? { regexContain: form.searchStr }
-        : { exactContain: form.searchStr };
+        : { contain: form.searchStr };
   },
 
   getTestIDMatcher(form: FormData): IDMatcher | undefined {

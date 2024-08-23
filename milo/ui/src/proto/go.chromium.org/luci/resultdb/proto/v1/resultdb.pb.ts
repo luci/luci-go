@@ -1127,29 +1127,24 @@ export interface ArtifactMatchingContent {
   /** The test result status, only populated if it is a result level artifact . */
   readonly testStatus: TestStatus;
   /**
-   * Part of the artifact content that matches the search string.
-   * Size(match) + Size(before_match) + Size(after_match) is at most 10KiB.
-   * Prioritize fiting `match` into the 10KiB first, divided the remaining bytes equally
-   * to display content immediately before and after the matched part.
-   * including at most one more line above and below.
-   * Match is truncated only if it is more than 10KiB. Ellipsis ("...") are added, if it is truncated.
-   * `match`, `before_match`, and `after_match` can be concatenated to form part of the full artifact content.
+   * Part of the artifact content that contains the first occurrence of the match.
+   * The snippet is at most 10 KiB.
+   * Prioritize fiting first match into the 10KiB first, divided the remaining bytes equally
+   * to fit content immediately before and after the first match, including at most one more line above and below.
+   * If the first match is more than 10KiB, it will be truncated.
+   * Ellipsis ("...") are added, if the snippet is truncated.
    */
-  readonly match: string;
-  /**
-   * Artifact content that immediately before the match. Include at most one additional line.
-   * Size(match) + Size(before_match) + Size(after_match) is at most 10KiB,
-   * see how this 10KB is allocated in `match` field comment.
-   * If before_match is truncated from the front, ellipsis ("...") are added to the front.
-   */
-  readonly beforeMatch: string;
-  /**
-   * Artifact content that immediately after the match. Include at most one additional line.
-   * Size(match) + Size(before_match) + Size(after_match) is at most 10KiB,
-   * see how this 10KB is allocated in `match` field comment.
-   * If after_match is truncated, ellipsis ("...") are added..
-   */
-  readonly afterMatch: string;
+  readonly snippet: string;
+  /** All non-overlapping matches exists in the snippet from front to end in order (i.e. matches[i].end_index <= matches[i+1].start_index). */
+  readonly matches: readonly ArtifactMatchingContent_Match[];
+}
+
+/** Represent the byte location of a match in snippet. */
+export interface ArtifactMatchingContent_Match {
+  /** Start byte index of the match, inclusive. */
+  readonly startIndex: number;
+  /** End byte index of the match, exclusive. */
+  readonly endIndex: number;
 }
 
 /** Used to match a artifact content. */
@@ -1158,8 +1153,8 @@ export interface ArtifactContentMatcher {
   readonly regexContain?:
     | string
     | undefined;
-  /** Use equality match with this string to find matching artifact content. */
-  readonly exactContain?: string | undefined;
+  /** Use case insensitive equality match with this string to find matching artifact content. */
+  readonly contain?: string | undefined;
 }
 
 /** Used to match IDs (eg. test id, artifact id). */
@@ -6068,7 +6063,7 @@ export const QueryInvocationVariantArtifactsResponse = {
 };
 
 function createBaseArtifactMatchingContent(): ArtifactMatchingContent {
-  return { name: "", partitionTime: undefined, testStatus: 0, match: "", beforeMatch: "", afterMatch: "" };
+  return { name: "", partitionTime: undefined, testStatus: 0, snippet: "", matches: [] };
 }
 
 export const ArtifactMatchingContent = {
@@ -6082,14 +6077,11 @@ export const ArtifactMatchingContent = {
     if (message.testStatus !== 0) {
       writer.uint32(24).int32(message.testStatus);
     }
-    if (message.match !== "") {
-      writer.uint32(34).string(message.match);
+    if (message.snippet !== "") {
+      writer.uint32(34).string(message.snippet);
     }
-    if (message.beforeMatch !== "") {
-      writer.uint32(42).string(message.beforeMatch);
-    }
-    if (message.afterMatch !== "") {
-      writer.uint32(50).string(message.afterMatch);
+    for (const v of message.matches) {
+      ArtifactMatchingContent_Match.encode(v!, writer.uint32(42).fork()).ldelim();
     }
     return writer;
   },
@@ -6127,21 +6119,14 @@ export const ArtifactMatchingContent = {
             break;
           }
 
-          message.match = reader.string();
+          message.snippet = reader.string();
           continue;
         case 5:
           if (tag !== 42) {
             break;
           }
 
-          message.beforeMatch = reader.string();
-          continue;
-        case 6:
-          if (tag !== 50) {
-            break;
-          }
-
-          message.afterMatch = reader.string();
+          message.matches.push(ArtifactMatchingContent_Match.decode(reader, reader.uint32()));
           continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
@@ -6157,9 +6142,10 @@ export const ArtifactMatchingContent = {
       name: isSet(object.name) ? globalThis.String(object.name) : "",
       partitionTime: isSet(object.partitionTime) ? globalThis.String(object.partitionTime) : undefined,
       testStatus: isSet(object.testStatus) ? testStatusFromJSON(object.testStatus) : 0,
-      match: isSet(object.match) ? globalThis.String(object.match) : "",
-      beforeMatch: isSet(object.beforeMatch) ? globalThis.String(object.beforeMatch) : "",
-      afterMatch: isSet(object.afterMatch) ? globalThis.String(object.afterMatch) : "",
+      snippet: isSet(object.snippet) ? globalThis.String(object.snippet) : "",
+      matches: globalThis.Array.isArray(object?.matches)
+        ? object.matches.map((e: any) => ArtifactMatchingContent_Match.fromJSON(e))
+        : [],
     };
   },
 
@@ -6174,14 +6160,11 @@ export const ArtifactMatchingContent = {
     if (message.testStatus !== 0) {
       obj.testStatus = testStatusToJSON(message.testStatus);
     }
-    if (message.match !== "") {
-      obj.match = message.match;
+    if (message.snippet !== "") {
+      obj.snippet = message.snippet;
     }
-    if (message.beforeMatch !== "") {
-      obj.beforeMatch = message.beforeMatch;
-    }
-    if (message.afterMatch !== "") {
-      obj.afterMatch = message.afterMatch;
+    if (message.matches?.length) {
+      obj.matches = message.matches.map((e) => ArtifactMatchingContent_Match.toJSON(e));
     }
     return obj;
   },
@@ -6194,15 +6177,88 @@ export const ArtifactMatchingContent = {
     message.name = object.name ?? "";
     message.partitionTime = object.partitionTime ?? undefined;
     message.testStatus = object.testStatus ?? 0;
-    message.match = object.match ?? "";
-    message.beforeMatch = object.beforeMatch ?? "";
-    message.afterMatch = object.afterMatch ?? "";
+    message.snippet = object.snippet ?? "";
+    message.matches = object.matches?.map((e) => ArtifactMatchingContent_Match.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseArtifactMatchingContent_Match(): ArtifactMatchingContent_Match {
+  return { startIndex: 0, endIndex: 0 };
+}
+
+export const ArtifactMatchingContent_Match = {
+  encode(message: ArtifactMatchingContent_Match, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.startIndex !== 0) {
+      writer.uint32(8).int32(message.startIndex);
+    }
+    if (message.endIndex !== 0) {
+      writer.uint32(16).int32(message.endIndex);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): ArtifactMatchingContent_Match {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseArtifactMatchingContent_Match() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 8) {
+            break;
+          }
+
+          message.startIndex = reader.int32();
+          continue;
+        case 2:
+          if (tag !== 16) {
+            break;
+          }
+
+          message.endIndex = reader.int32();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ArtifactMatchingContent_Match {
+    return {
+      startIndex: isSet(object.startIndex) ? globalThis.Number(object.startIndex) : 0,
+      endIndex: isSet(object.endIndex) ? globalThis.Number(object.endIndex) : 0,
+    };
+  },
+
+  toJSON(message: ArtifactMatchingContent_Match): unknown {
+    const obj: any = {};
+    if (message.startIndex !== 0) {
+      obj.startIndex = Math.round(message.startIndex);
+    }
+    if (message.endIndex !== 0) {
+      obj.endIndex = Math.round(message.endIndex);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ArtifactMatchingContent_Match>): ArtifactMatchingContent_Match {
+    return ArtifactMatchingContent_Match.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ArtifactMatchingContent_Match>): ArtifactMatchingContent_Match {
+    const message = createBaseArtifactMatchingContent_Match() as any;
+    message.startIndex = object.startIndex ?? 0;
+    message.endIndex = object.endIndex ?? 0;
     return message;
   },
 };
 
 function createBaseArtifactContentMatcher(): ArtifactContentMatcher {
-  return { regexContain: undefined, exactContain: undefined };
+  return { regexContain: undefined, contain: undefined };
 }
 
 export const ArtifactContentMatcher = {
@@ -6210,8 +6266,8 @@ export const ArtifactContentMatcher = {
     if (message.regexContain !== undefined) {
       writer.uint32(10).string(message.regexContain);
     }
-    if (message.exactContain !== undefined) {
-      writer.uint32(18).string(message.exactContain);
+    if (message.contain !== undefined) {
+      writer.uint32(18).string(message.contain);
     }
     return writer;
   },
@@ -6235,7 +6291,7 @@ export const ArtifactContentMatcher = {
             break;
           }
 
-          message.exactContain = reader.string();
+          message.contain = reader.string();
           continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
@@ -6249,7 +6305,7 @@ export const ArtifactContentMatcher = {
   fromJSON(object: any): ArtifactContentMatcher {
     return {
       regexContain: isSet(object.regexContain) ? globalThis.String(object.regexContain) : undefined,
-      exactContain: isSet(object.exactContain) ? globalThis.String(object.exactContain) : undefined,
+      contain: isSet(object.contain) ? globalThis.String(object.contain) : undefined,
     };
   },
 
@@ -6258,8 +6314,8 @@ export const ArtifactContentMatcher = {
     if (message.regexContain !== undefined) {
       obj.regexContain = message.regexContain;
     }
-    if (message.exactContain !== undefined) {
-      obj.exactContain = message.exactContain;
+    if (message.contain !== undefined) {
+      obj.contain = message.contain;
     }
     return obj;
   },
@@ -6270,7 +6326,7 @@ export const ArtifactContentMatcher = {
   fromPartial(object: DeepPartial<ArtifactContentMatcher>): ArtifactContentMatcher {
     const message = createBaseArtifactContentMatcher() as any;
     message.regexContain = object.regexContain ?? undefined;
-    message.exactContain = object.exactContain ?? undefined;
+    message.contain = object.contain ?? undefined;
     return message;
   },
 };

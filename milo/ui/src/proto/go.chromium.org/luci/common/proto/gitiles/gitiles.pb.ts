@@ -1561,7 +1561,7 @@ export interface Gitiles {
   Archive(request: ArchiveRequest): Promise<ArchiveResponse>;
   /** DownloadFile retrieves a file from the project. */
   DownloadFile(request: DownloadFileRequest): Promise<DownloadFileResponse>;
-  /** DownloadDiff retrives a diff of a revision from the project. */
+  /** DownloadDiff retrieves a diff of a revision from the project. */
   DownloadDiff(request: DownloadDiffRequest): Promise<DownloadDiffResponse>;
   /** Projects retrieves list of available Gitiles projects. */
   Projects(request: ProjectsRequest): Promise<ProjectsResponse>;

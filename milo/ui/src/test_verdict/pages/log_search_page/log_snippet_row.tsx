@@ -14,9 +14,11 @@
 
 import { Box, Link, styled } from '@mui/material';
 import { DateTime } from 'luxon';
+import { useMemo } from 'react';
 
 import { Timestamp } from '@/common/components/timestamp';
 import { getRawArtifactURLPath } from '@/common/tools/url_utils';
+import { ArtifactMatchingContent_Match } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 import { testStatusToJSON } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
 import { ResultStatusIcon } from '@/test_verdict/components/result_status_icon';
 import { OutputArtifactMatchingContent } from '@/test_verdict/types';
@@ -31,13 +33,60 @@ const Container = styled(Box)`
   letter-spacing: normal;
 `;
 
+interface Token {
+  readonly type: 'matching' | 'non-matching';
+  readonly content: string;
+}
+
+function splitSnippet(
+  snippet: string,
+  matches: readonly ArtifactMatchingContent_Match[],
+) {
+  // matches uses the byte indexing, javascript uses UTF-16 encoding for strings.
+  // To apply the index from match to snippet correct, we need to convert the snippet into UTF-8 first.
+  const encoder = new TextEncoder();
+  const decoder = new TextDecoder();
+  const utf8Bytes = encoder.encode(snippet);
+
+  const tokens: Token[] = [];
+  let currentIndex = 0;
+  for (const { startIndex, endIndex } of matches) {
+    // Add part before a match.
+    if (currentIndex < startIndex) {
+      tokens.push({
+        type: 'non-matching',
+        content: decoder.decode(utf8Bytes.slice(currentIndex, startIndex)),
+      });
+    }
+    // Add a match part.
+    tokens.push({
+      type: 'matching',
+      content: decoder.decode(utf8Bytes.slice(startIndex, endIndex)),
+    });
+    currentIndex = endIndex;
+  }
+  // Add the remaining part after the last match.
+  if (currentIndex < utf8Bytes.length) {
+    tokens.push({
+      type: 'non-matching',
+      content: decoder.decode(utf8Bytes.slice(currentIndex)),
+    });
+  }
+  return tokens;
+}
+
 export interface LogSnippetRowProps {
   readonly artifact: OutputArtifactMatchingContent;
 }
 
 export function LogSnippetRow({ artifact }: LogSnippetRowProps) {
-  const { name, partitionTime, testStatus, beforeMatch, match, afterMatch } =
-    artifact;
+  const { name, partitionTime, testStatus, snippet, matches } = artifact;
+
+  const tokens: Token[] = useMemo(
+    () => splitSnippet(snippet, matches),
+    [snippet, matches],
+  );
+
   return (
     <Container>
       <Box sx={{ flex: 'none', width: '100px' }}>
@@ -67,11 +116,18 @@ export function LogSnippetRow({ artifact }: LogSnippetRowProps) {
             whiteSpace: 'pre-line',
           }}
         >
-          {beforeMatch}
-          <span css={{ backgroundColor: '#ceead6', fontWeight: '700' }}>
-            {match}
-          </span>
-          {afterMatch}
+          {tokens.map((token, i) => {
+            return token.type === 'non-matching' ? (
+              <span key={i}>{token.content}</span>
+            ) : (
+              <mark
+                key={i}
+                css={{ backgroundColor: '#ceead6', fontWeight: '700' }}
+              >
+                {token.content}
+              </mark>
+            );
+          })}
         </Box>
       </Link>
     </Container>
