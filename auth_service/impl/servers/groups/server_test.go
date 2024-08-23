@@ -123,45 +123,72 @@ func TestGroupsServer(t *testing.T) {
 				CreatedTS:                createdTime,
 				CreatedBy:                "user:test-user-1@example.com",
 				AuthVersionedEntityMixin: versionedEntity,
-			}), should.BeNil)
+			},
+			&model.AuthGroup{
+				ID:     "google/test-google-group",
+				Parent: model.RootKey(ctx),
+				Members: []string{
+					"user:test-user-1",
+					"user:test-user-2",
+				},
+				Description:              "This is a test google group.",
+				Owners:                   "test-group",
+				CreatedTS:                createdTime,
+				CreatedBy:                "user:test-user-2@example.com",
+				AuthVersionedEntityMixin: versionedEntity,
+			},
+		), should.BeNil)
 		assert.Loosely(t, putRev(ctx, 123), should.BeNil)
 
 		// What expected response should be, built with pb.
 		expectedResp := &rpcpb.ListGroupsResponse{
 			Groups: []*rpcpb.AuthGroup{
 				{
-					Name:            "test-group-2",
-					Description:     "This is another test group.",
-					Owners:          "test-group",
-					CreatedTs:       timestamppb.New(createdTime),
-					CreatedBy:       "user:test-user-2@example.com",
-					CallerCanModify: false,
-					Etag:            etag,
+					Name:                 "google/test-google-group",
+					Description:          "This is a test google group.",
+					Owners:               "test-group",
+					CreatedTs:            timestamppb.New(createdTime),
+					CreatedBy:            "user:test-user-2@example.com",
+					CallerCanModify:      false,
+					CallerCanViewMembers: false,
+					Etag:                 etag,
 				},
 				{
-					Name:            "test-group-3",
-					Description:     "This is yet another test group.",
-					Owners:          "testers",
-					CreatedTs:       timestamppb.New(createdTime),
-					CreatedBy:       "user:test-user-1@example.com",
-					CallerCanModify: true,
-					Etag:            etag,
+					Name:                 "test-group-2",
+					Description:          "This is another test group.",
+					Owners:               "test-group",
+					CreatedTs:            timestamppb.New(createdTime),
+					CreatedBy:            "user:test-user-2@example.com",
+					CallerCanModify:      false,
+					CallerCanViewMembers: true,
+					Etag:                 etag,
 				},
 				{
-					Name:            "z-test-group",
-					Description:     "This is a test group.",
-					Owners:          "testers",
-					CreatedTs:       timestamppb.New(createdTime),
-					CreatedBy:       "user:test-user-1@example.com",
-					CallerCanModify: true,
-					Etag:            etag,
+					Name:                 "test-group-3",
+					Description:          "This is yet another test group.",
+					Owners:               "testers",
+					CreatedTs:            timestamppb.New(createdTime),
+					CreatedBy:            "user:test-user-1@example.com",
+					CallerCanModify:      true,
+					CallerCanViewMembers: true,
+					Etag:                 etag,
+				},
+				{
+					Name:                 "z-test-group",
+					Description:          "This is a test group.",
+					Owners:               "testers",
+					CreatedTs:            timestamppb.New(createdTime),
+					CreatedBy:            "user:test-user-1@example.com",
+					CallerCanModify:      true,
+					CallerCanViewMembers: true,
+					Etag:                 etag,
 				},
 			},
 		}
 
 		resp, err := srv.ListGroups(ctx, &emptypb.Empty{})
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, resp.Groups, should.Resemble(expectedResp.Groups))
+		assert.Loosely(t, resp.Groups, should.Match(expectedResp.Groups))
 	})
 
 	ftt.Run("GetGroup RPC call", t, func(t *ftt.Test) {
@@ -172,7 +199,6 @@ func TestGroupsServer(t *testing.T) {
 			Identity:       "user:someone@example.com",
 			IdentityGroups: []string{"testers"},
 		})
-
 		request := &rpcpb.GetGroupRequest{
 			Name: "test-group",
 		}
@@ -216,17 +242,101 @@ func TestGroupsServer(t *testing.T) {
 			Nested: []string{
 				"group/tester",
 			},
-			Description:     "This is a test group.",
-			Owners:          "testers",
-			CreatedTs:       timestamppb.New(createdTime),
-			CreatedBy:       "user:test-user-1@example.com",
-			CallerCanModify: true,
-			Etag:            etag,
+			Description:          "This is a test group.",
+			Owners:               "testers",
+			CreatedTs:            timestamppb.New(createdTime),
+			CreatedBy:            "user:test-user-1@example.com",
+			CallerCanModify:      true,
+			CallerCanViewMembers: true,
+			Etag:                 etag,
 		}
 
 		actualGroupResponse, err := srv.GetGroup(ctx, request)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, actualGroupResponse, should.Resemble(expectedResponse))
+		assert.Loosely(t, actualGroupResponse, should.Match(expectedResponse))
+		t.Run("AdminGroup can view external group", func(t *ftt.Test) {
+			ctx := auth.WithState(ctx, &authtest.FakeState{
+				Identity:       "user:someone@example.com",
+				IdentityGroups: []string{model.AdminGroup},
+			})
+			request := &rpcpb.GetGroupRequest{
+				Name: "google/test-group",
+			}
+			_, err := srv.GetGroup(ctx, request)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.NotFound))
+			assert.Loosely(t, datastore.Put(ctx,
+				&model.AuthGroup{
+					ID:     "google/test-group",
+					Parent: model.RootKey(ctx),
+					Members: []string{
+						"user:test-user-1",
+						"user:test-user-2",
+					},
+					Description:              "This is a test google group.",
+					Owners:                   "testers",
+					CreatedTS:                createdTime,
+					CreatedBy:                "user:test-user-1@example.com",
+					AuthVersionedEntityMixin: versionedEntity,
+				}), should.BeNil)
+
+			expectedResponse := &rpcpb.AuthGroup{
+				Name: "google/test-group",
+				Members: []string{
+					"user:test-user-1",
+					"user:test-user-2",
+				},
+				Description:          "This is a test google group.",
+				Owners:               "testers",
+				CreatedTs:            timestamppb.New(createdTime),
+				CreatedBy:            "user:test-user-1@example.com",
+				CallerCanModify:      false,
+				CallerCanViewMembers: true,
+				Etag:                 etag,
+			}
+			actualGroupResponse, err := srv.GetGroup(ctx, request)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actualGroupResponse, should.Match(expectedResponse))
+		})
+		t.Run("Non admin group redacts external group", func(t *ftt.Test) {
+			ctx := auth.WithState(ctx, &authtest.FakeState{
+				Identity:       "user:someone@example.com",
+				IdentityGroups: []string{"testers"},
+			})
+			request := &rpcpb.GetGroupRequest{
+				Name: "google/test-group",
+			}
+			_, err := srv.GetGroup(ctx, request)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.NotFound))
+			assert.Loosely(t, datastore.Put(ctx,
+				&model.AuthGroup{
+					ID:     "google/test-group",
+					Parent: model.RootKey(ctx),
+					Members: []string{
+						"user:test-user-1",
+						"user:test-user-2",
+					},
+					Description:              "This is a test google group.",
+					Owners:                   "testers",
+					CreatedTS:                createdTime,
+					CreatedBy:                "user:test-user-1@example.com",
+					AuthVersionedEntityMixin: versionedEntity,
+				}), should.BeNil)
+
+			expectedResponse := &rpcpb.AuthGroup{
+				Name:                 "google/test-group",
+				Description:          "This is a test google group.",
+				Owners:               "testers",
+				CreatedTs:            timestamppb.New(createdTime),
+				CreatedBy:            "user:test-user-1@example.com",
+				CallerCanModify:      false,
+				CallerCanViewMembers: false,
+				NumRedacted:          2,
+				Etag:                 etag,
+			}
+			actualGroupResponse, err := srv.GetGroup(ctx, request)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actualGroupResponse, should.Match(expectedResponse))
+		})
 
 	})
 
@@ -812,7 +922,7 @@ func TestGroupsServer(t *testing.T) {
 			request := &rpcpb.GetGroupRequest{Name: soloGroup}
 			expandedGroup, err := srv.GetExpandedGroup(ctx, request)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, expandedGroup, should.Resemble(&rpcpb.AuthGroup{
+			assert.Loosely(t, expandedGroup, should.Match(&rpcpb.AuthGroup{
 				Name:  soloGroup,
 				Globs: []string{testGlob1},
 			}))
@@ -822,7 +932,7 @@ func TestGroupsServer(t *testing.T) {
 			request := &rpcpb.GetGroupRequest{Name: owningGroup}
 			expandedGroup, err := srv.GetExpandedGroup(ctx, request)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, expandedGroup, should.Resemble(&rpcpb.AuthGroup{
+			assert.Loosely(t, expandedGroup, should.Match(&rpcpb.AuthGroup{
 				Name:    owningGroup,
 				Members: []string{testUser0, testUser1, testUser2},
 				Globs:   []string{testGlob0, testGlob1},
@@ -834,7 +944,7 @@ func TestGroupsServer(t *testing.T) {
 			request := &rpcpb.GetGroupRequest{Name: nestedGroup}
 			expandedGroup, err := srv.GetExpandedGroup(ctx, request)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, expandedGroup, should.Resemble(&rpcpb.AuthGroup{
+			assert.Loosely(t, expandedGroup, should.Match(&rpcpb.AuthGroup{
 				Name:    nestedGroup,
 				Members: []string{testUser2},
 				Globs:   []string{testGlob0, testGlob1},
@@ -935,7 +1045,7 @@ func TestGroupsServer(t *testing.T) {
 				},
 			}
 
-			assert.Loosely(t, actualSubgraph, should.Resemble(expectedSubgraph))
+			assert.Loosely(t, actualSubgraph, should.Match(expectedSubgraph))
 		})
 
 		t.Run("Group principal", func(t *ftt.Test) {
@@ -964,7 +1074,7 @@ func TestGroupsServer(t *testing.T) {
 				},
 			}
 
-			assert.Loosely(t, actualSubgraph, should.Resemble(expectedSubgraph))
+			assert.Loosely(t, actualSubgraph, should.Match(expectedSubgraph))
 
 		})
 
@@ -1007,7 +1117,7 @@ func TestGroupsServer(t *testing.T) {
 				},
 			}
 
-			assert.Loosely(t, actualSubgraph, should.Resemble(expectedSubgraph))
+			assert.Loosely(t, actualSubgraph, should.Match(expectedSubgraph))
 		})
 
 		t.Run("Unspecified Principal kind", func(t *ftt.Test) {

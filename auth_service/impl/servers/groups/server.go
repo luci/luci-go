@@ -103,7 +103,10 @@ func (srv *Server) ListGroups(ctx context.Context, _ *emptypb.Empty) (*rpcpb.Lis
 
 	var groupList = make([]*rpcpb.AuthGroup, len(groups))
 	for idx, entity := range groups {
-		g := entity.ToProto(false)
+		g, err := entity.ToProto(ctx, false)
+		if err != nil {
+			return nil, err
+		}
 		g.CallerCanModify = canCallerModify(ctx, entity)
 		groupList[idx] = g
 	}
@@ -117,7 +120,10 @@ func (srv *Server) ListGroups(ctx context.Context, _ *emptypb.Empty) (*rpcpb.Lis
 func (*Server) GetGroup(ctx context.Context, request *rpcpb.GetGroupRequest) (*rpcpb.AuthGroup, error) {
 	switch group, err := model.GetAuthGroup(ctx, request.Name); {
 	case err == nil:
-		g := group.ToProto(true)
+		g, err := group.ToProto(ctx, true)
+		if err != nil {
+			return nil, err
+		}
 		g.CallerCanModify = canCallerModify(ctx, group)
 		return g, nil
 	case errors.Is(err, datastore.ErrNoSuchEntity):
@@ -132,7 +138,11 @@ func (srv *Server) CreateGroup(ctx context.Context, request *rpcpb.CreateGroupRe
 	group := model.AuthGroupFromProto(ctx, request.GetGroup())
 	switch createdGroup, err := model.CreateAuthGroup(ctx, group, "Go pRPC API", srv.dryRun); {
 	case err == nil:
-		return createdGroup.ToProto(true), nil
+		newGroup, err := createdGroup.ToProto(ctx, true)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to lookup caller: %s", err)
+		}
+		return newGroup, nil
 	case errors.Is(err, model.ErrAlreadyExists):
 		return nil, status.Errorf(codes.AlreadyExists, "group already exists: %s", group.ID)
 	case errors.Is(err, model.ErrInvalidName):
@@ -153,7 +163,11 @@ func (srv *Server) UpdateGroup(ctx context.Context, request *rpcpb.UpdateGroupRe
 	groupUpdate := model.AuthGroupFromProto(ctx, request.GetGroup())
 	switch updatedGroup, err := model.UpdateAuthGroup(ctx, groupUpdate, request.GetUpdateMask(), request.GetGroup().GetEtag(), "Go pRPC API", srv.dryRun); {
 	case err == nil:
-		return updatedGroup.ToProto(true), nil
+		updatedGroupProto, err := updatedGroup.ToProto(ctx, true)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to lookup caller: %s", err)
+		}
+		return updatedGroupProto, nil
 	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return nil, status.Errorf(codes.NotFound, "no such group %q", groupUpdate.ID)
 	case errors.Is(err, model.ErrPermissionDenied):
