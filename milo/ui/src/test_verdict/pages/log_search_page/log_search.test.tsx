@@ -86,8 +86,7 @@ describe('<LogSearch />', () => {
     fireEvent.change(artifactIDInputEle, {
       target: { value: 'test artifact id' },
     });
-    fireEvent.click(screen.getByText('Search'));
-
+    fireEvent.click(screen.getByTestId('search-button'));
     expect(urlCallback).toHaveBeenLastCalledWith(
       expect.objectContaining({
         search: {

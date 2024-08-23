@@ -114,6 +114,7 @@ export function LogSnippetRow({ artifact }: LogSnippetRowProps) {
         <Box
           sx={{
             whiteSpace: 'pre-line',
+            wordBreak: 'break-all',
           }}
         >
           {tokens.map((token, i) => {

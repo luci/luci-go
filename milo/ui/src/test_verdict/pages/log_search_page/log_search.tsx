@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import { Alert, Box, Button, styled } from '@mui/material';
+import { isEqual } from 'lodash-es';
 import { DateTime } from 'luxon';
 import { useState, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
@@ -112,6 +113,11 @@ export function LogSearch() {
   const [searchFilter, setSearchFilter] = useState<SearchFilter | null>(
     initialFilter,
   );
+  const noUncommittedUpdate = isEqual(searchFilter, {
+    form: { ...pendingForm },
+    startTime: startTime,
+    endTime: endTime,
+  });
   const pagerContexts = {
     testLogPagerCtx: usePagerContext({
       pageSizeOptions: PAGE_SIZE_OPTIONS,
@@ -129,7 +135,6 @@ export function LogSearch() {
       pageSizeKey: 'limit',
     }),
   };
-
   return (
     <>
       <FormContainer>
@@ -215,7 +220,8 @@ export function LogSearch() {
           sx={{ margin: '0px 10px' }}
           size="small"
           variant="contained"
-          disabled={!isSubmittable}
+          disabled={!isSubmittable || noUncommittedUpdate}
+          data-testid="search-button"
           onClick={() => {
             if (!isSubmittable) {
               return;
@@ -234,7 +240,7 @@ export function LogSearch() {
             );
           }}
         >
-          Search
+          {searchFilter ? 'update search' : 'search'}
         </Button>
       </FormContainer>
       {pendingForm.artifactIDStr === '' && pendingForm.testIDStr === '' && (
