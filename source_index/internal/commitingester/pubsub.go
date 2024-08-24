@@ -54,8 +54,8 @@ func RegisterPubSubHandlers(srv *server.Server) error {
 	// Provide one handler for each message format. The message format is decided
 	// by the host configuration. See
 	// https://g3doc.corp.google.com/company/teams/gerritcodereview/users/cloud-pubsub.md#quickstart
-	pubsub.RegisterJSONPBHandler("gitiles/jsonpb", pubSubHandler)
-	pubsub.RegisterWirePBHandler("gitiles/wirepb", pubSubHandler)
+	pubsub.RegisterJSONPBHandler("gitiles-jsonpb", pubSubHandler)
+	pubsub.RegisterWirePBHandler("gitiles-wirepb", pubSubHandler)
 	return nil
 }
 
