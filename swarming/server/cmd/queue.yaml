@@ -122,3 +122,8 @@ queue:
 - name: bq-export-interval
   target: exporter
   rate: 10/s
+
+## TQ sweep
+- name: tq-sweep
+  target: default-go
+  rate: 500/s

@@ -35,6 +35,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon"
+	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
@@ -254,6 +255,101 @@ func TestHandleBBNotifyTask(t *testing.T) {
 			assert.Loosely(t, datastore.Get(ctx, updatedBuildTask), should.BeNil)
 			assert.Loosely(t, updatedBuildTask.LatestTaskStatus, should.Equal(apipb.TaskState_RUNNING))
 			assert.Loosely(t, updatedBuildTask.BotDimensions, should.Resemble(resultSummary.BotDimensions))
+		})
+	})
+}
+
+func TestEnqueueNotificationTasks(t *testing.T) {
+	t.Parallel()
+
+	ctx := memory.Use(context.Background())
+	ctx = txndefer.FilterRDS(ctx)
+	now := testclock.TestRecentTimeUTC
+	ctx, _ = testclock.UseTime(ctx, now)
+	ctx, sch := tq.TestingContext(ctx, nil)
+	psServer, psClient, err := setupTestPubsub(ctx, "bb")
+	assert.Loosely(t, err, should.BeNil)
+	defer func() {
+		_ = psClient.Close()
+		_ = psServer.Close()
+	}()
+	notifier := &PubSubNotifier{
+		client: psClient,
+	}
+	notifier.RegisterTQTasks(&tq.Default)
+
+	ftt.Run("SendOnTaskUpdate", t, func(t *ftt.Test) {
+		tID := "65aba3a3e6b99310"
+		reqKey, err := model.TaskIDToRequestKey(ctx, tID)
+		assert.Loosely(t, err, should.BeNil)
+		tr := &model.TaskRequest{
+			Key:             reqKey,
+			PubSubTopic:     "projects/bb/topics/swarming-updates",
+			PubSubAuthToken: "token",
+			PubSubUserData:  "data",
+		}
+		trs := &model.TaskResultSummary{
+			Key:  model.TaskResultSummaryKey(ctx, reqKey),
+			Tags: []string{"tag1", "tag2"},
+			TaskResultCommon: model.TaskResultCommon{
+				State: apipb.TaskState_COMPLETED,
+			},
+		}
+
+		t.Run("no pubsub topic", func(t *ftt.Test) {
+			tr.PubSubTopic = ""
+			txErr := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+				return SendOnTaskUpdate(ctx, tr, trs)
+			}, nil)
+			assert.Loosely(t, txErr, should.BeNil)
+			assert.Loosely(t, sch.Tasks(), should.BeEmpty)
+		})
+
+		t.Run("not a build task", func(t *ftt.Test) {
+			txErr := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+				return SendOnTaskUpdate(ctx, tr, trs)
+			}, nil)
+			assert.Loosely(t, txErr, should.BeNil)
+			assert.Loosely(t, sch.Tasks(), should.HaveLength(1))
+		})
+
+		t.Run("build task", func(t *ftt.Test) {
+			tr.HasBuildTask = true
+			txErr := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+				return SendOnTaskUpdate(ctx, tr, trs)
+			}, nil)
+			assert.Loosely(t, txErr, should.BeNil)
+			// 1 from above test, 2 from this one.
+			assert.Loosely(t, sch.Tasks(), should.HaveLength(3))
+
+			// Test added tasks are what the handlers expect.
+			_, err := psClient.CreateTopic(ctx, "swarming-updates")
+			assert.Loosely(t, err, should.BeNil)
+			task := sch.Tasks()[1].Payload.(*taskspb.PubSubNotifyTask)
+			err = notifier.handlePubSubNotifyTask(ctx, task)
+			assert.Loosely(t, err, should.BeNil)
+
+			_, err = psClient.CreateTopic(ctx, "bb-updates")
+			assert.Loosely(t, err, should.BeNil)
+			buildTask := &model.BuildTask{
+				Key:              model.BuildTaskKey(ctx, reqKey),
+				BuildID:          "1",
+				BuildbucketHost:  "bb-host",
+				UpdateID:         100,
+				LatestTaskStatus: apipb.TaskState_PENDING,
+				PubSubTopic:      "projects/bb/topics/bb-updates",
+			}
+			resultSummary := &model.TaskResultSummary{
+				Key: model.TaskResultSummaryKey(ctx, reqKey),
+				TaskResultCommon: model.TaskResultCommon{
+					Failure:       false,
+					BotDimensions: model.BotDimensions{"dim": []string{"a", "b"}},
+				},
+			}
+			assert.Loosely(t, datastore.Put(ctx, buildTask, resultSummary), should.BeNil)
+			bbTask := sch.Tasks()[0].Payload.(*taskspb.BuildbucketNotifyTask)
+			err = notifier.handleBBNotifyTask(ctx, bbTask)
+			assert.Loosely(t, err, should.BeNil)
 		})
 	})
 }

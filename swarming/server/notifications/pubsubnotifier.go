@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"sync"
+	"time"
 
 	"cloud.google.com/go/pubsub"
 	"google.golang.org/api/option"
@@ -27,6 +28,7 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
@@ -43,6 +45,9 @@ import (
 	"go.chromium.org/luci/swarming/server/metrics"
 	"go.chromium.org/luci/swarming/server/model"
 	"go.chromium.org/luci/swarming/server/notifications/taskspb"
+
+	// Enable datastore transactional tasks support.
+	_ "go.chromium.org/luci/server/tq/txn/datastore"
 )
 
 type PubSubNotifier struct {
@@ -109,7 +114,7 @@ func (ps *PubSubNotifier) Stop() {
 func (ps *PubSubNotifier) RegisterTQTasks(disp *tq.Dispatcher) {
 	disp.RegisterTaskClass(tq.TaskClass{
 		ID:        "pubsub-go",
-		Kind:      tq.NonTransactional,
+		Kind:      tq.Transactional,
 		Prototype: (*taskspb.PubSubNotifyTask)(nil),
 		Queue:     "pubsub-go", // to replace "pubsub" taskqueue in Py.
 		Handler: func(ctx context.Context, payload proto.Message) error {
@@ -118,7 +123,7 @@ func (ps *PubSubNotifier) RegisterTQTasks(disp *tq.Dispatcher) {
 	})
 	disp.RegisterTaskClass(tq.TaskClass{
 		ID:        "buildbucket-notify-go",
-		Kind:      tq.NonTransactional,
+		Kind:      tq.Transactional,
 		Prototype: (*taskspb.BuildbucketNotifyTask)(nil),
 		Queue:     "buildbucket-notify-go", // to replace "buildbucket-notify" taskqueue in Py.
 		Handler: func(ctx context.Context, payload proto.Message) error {
@@ -284,4 +289,49 @@ func (ps *PubSubNotifier) getTopic(cloudProj, topicID string) (*pubsub.Topic, er
 	ps.topics[topicName] = ps.client.TopicInProject(topicID, cloudProj)
 
 	return ps.topics[topicName], nil
+}
+
+// notifyPubSub enqueues a tq task to send a PubSub message for given task.
+func notifyPubSub(ctx context.Context, taskID string, tr *model.TaskRequest, trs *model.TaskResultSummary, now time.Time) error {
+	return tq.AddTask(ctx, &tq.Task{
+		Payload: &taskspb.PubSubNotifyTask{
+			TaskId:    taskID,
+			Topic:     tr.PubSubTopic,
+			AuthToken: tr.PubSubAuthToken,
+			Userdata:  tr.PubSubUserData,
+			Tags:      trs.Tags,
+			State:     trs.State,
+			StartTime: timestamppb.New(now),
+		},
+	})
+}
+
+// notifyBuildbucket enqueues a tq task to send a PubSub message to Buildbucket
+// about a build task.
+func notifyBuildbucket(ctx context.Context, taskID string, trs *model.TaskResultSummary, now time.Time) error {
+	return tq.AddTask(ctx, &tq.Task{
+		Payload: &taskspb.BuildbucketNotifyTask{
+			TaskId:   taskID,
+			State:    trs.State,
+			UpdateId: now.UnixNano(),
+		},
+	})
+}
+
+// SendOnTaskUpdate sends PubSub notifications for given task.
+func SendOnTaskUpdate(ctx context.Context, tr *model.TaskRequest, trs *model.TaskResultSummary) error {
+	now := clock.Now(ctx).UTC()
+	taskID := model.RequestKeyToTaskID(tr.Key, model.AsRequest)
+	if tr.PubSubTopic != "" {
+		if err := notifyPubSub(ctx, taskID, tr, trs, now); err != nil {
+			return errors.Annotate(err, "failed to enqueue PubSub notification task for %s", taskID).Err()
+		}
+	}
+
+	if tr.HasBuildTask {
+		if err := notifyBuildbucket(ctx, taskID, trs, now); err != nil {
+			return errors.Annotate(err, "failed to enqueue Buildbucket notification task for %s", taskID).Err()
+		}
+	}
+	return nil
 }

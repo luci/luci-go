@@ -122,3 +122,10 @@ cron:
   target: exporter
   url: /internal/cron/bq-export
   schedule: every 1 minutes
+
+### TQ sweep
+
+- description: TQ sweeper
+  target: default-go
+  url: /internal/tasks/c/sweep
+  schedule: every 1 minutes
