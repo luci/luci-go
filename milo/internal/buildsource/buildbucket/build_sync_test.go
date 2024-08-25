@@ -151,7 +151,7 @@ func TestPubSub(t *testing.T) {
 			}
 			buildExp.Output.Properties, _ = structpb.NewStruct(propertiesMap)
 
-			err := PubSubHandler(c, pubsub.Message{}, buildExp)
+			err := PubSubHandler(c, pubsub.Message{}, &buildbucketpb.BuildsV2PubSub{Build: buildExp})
 			assert.Loosely(t, err, should.ErrLike(nil))
 			datastore.GetTestable(c).CatchupIndexes()
 
@@ -195,7 +195,7 @@ func TestPubSub(t *testing.T) {
 				Project: "angle/angle",
 			}
 
-			err := PubSubHandler(c, pubsub.Message{}, buildExp)
+			err := PubSubHandler(c, pubsub.Message{}, &buildbucketpb.BuildsV2PubSub{Build: buildExp})
 			assert.Loosely(t, err, should.ErrLike(nil))
 
 			t.Run("stores BuildSummary and BuilderSummary", func(t *ftt.Test) {
@@ -242,7 +242,7 @@ func TestPubSub(t *testing.T) {
 					Status:     buildbucketpb.Status_STARTED,
 				}
 
-				err := PubSubHandler(c, pubsub.Message{}, eBuild)
+				err := PubSubHandler(c, pubsub.Message{}, &buildbucketpb.BuildsV2PubSub{Build: eBuild})
 				assert.Loosely(t, err, should.ErrLike(nil))
 
 				buildAct := model.BuildSummary{BuildKey: bKey}

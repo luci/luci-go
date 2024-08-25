@@ -241,10 +241,11 @@ func pubSubHandlerLegacyImpl(c context.Context, r *http.Request) error {
 		return err
 	}
 
-	return PubSubHandler(c, pubsub.Message{}, buildsV2Msg.Build)
+	return PubSubHandler(c, pubsub.Message{}, buildsV2Msg)
 }
 
-func PubSubHandler(c context.Context, message pubsub.Message, build *buildbucketpb.Build) error {
+func PubSubHandler(c context.Context, message pubsub.Message, buildPubSub *buildbucketpb.BuildsV2PubSub) error {
+	build := buildPubSub.Build
 	// TODO(iannucci,nodir): get the bot context too
 	// TODO(iannucci,nodir): support manifests/got_revision
 	bs, err := model.BuildSummaryFromBuild(c, build.Infra.Buildbucket.Hostname, build)
