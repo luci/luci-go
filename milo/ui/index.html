@@ -2,34 +2,42 @@
 
 <head>
   <meta http-equiv="Content-Security-Policy" content="require-trusted-types-for 'script';">
-  <!-- The tag manager to inject a GA4 tag with a proper measurement ID base on
-    the host. This allows us to differentiate prod and staging/dev traffics.
 
-    TODO: The current tag manager container is created under an account not
-    linked to the Google corp organization. We should replace it with a
-    container created under a corp organization associated account for better
-    account ownership/ACL management. -->
-  <!-- Google Tag Manager -->
+  <!-- Google tag (gtag.js) -->
+  <!--
+    Modified to:
+     * Support selecting tag ID base on the host.
+     * Work with trusted types.
+     * Anonymize IP address.
+  -->
   <script>
-    const gtmJs = 'https://www.googletagmanager.com/gtm.js?id=GTM-5SMGXGB';
-    const trustedGtmJs = self.trustedTypes
-      ?.createPolicy('luci-ui-gtm-js', { createScriptURL: (_) => gtmJs })
-      .createScriptURL('') || gtmJs;
+    // Select a tag ID based on the host.
+    const isProd = self.location.host === 'ci.chromium.org'
+      // This is not perfect but works well with all the cases we have.
+      // Given that the tag IDs are public, there's no point protecting against
+      // LUCI UI being hosted on weird domains.
+      || self.location.host.includes('luci-milo.');
+    const tagId = isProd ? 'G-59XDL10QJF' : 'G-DZFV9Q535L';
 
-    // The script is modified to support trusted types.
-    (function (w, d, s, l, i) {
-      w[l] = w[l] || []; w[l].push({
-        'gtm.start':
-          new Date().getTime(), event: 'gtm.js'
-      }); var f = d.getElementsByTagName(s)[0],
-        j = d.createElement(s), dl = l != 'dataLayer' ? '&l=' + l : ''; j.async = true; j.src = trustedGtmJs; f.parentNode.insertBefore(j, f);
-    })(window, document, 'script', 'dataLayer', 'GTM-5SMGXGB');
+    // Load gtag.js.
+    const gtagJs = `https://www.googletagmanager.com/gtag/js?id=${tagId}`;
+    const trustedGtagJs = self.trustedTypes
+      ?.createPolicy('luci-ui-gtag-js', { createScriptURL: (_) => gtagJs })
+      .createScriptURL('') || gtagJs;
+    const gtagScript = document.createElement('script')
+    gtagScript.async = true;
+    gtagScript.src = trustedGtagJs;
+    const firstScriptTag = document.getElementsByTagName('script')[0];
+    f.parentNode.insertBefore(gtagScript, firstScriptTag);
 
-    // A custom implementation of gtag.
-    // See https://developers.google.com/tag-platform/tag-manager/datalayer#installation.
-    function gtag() { dataLayer.push(arguments) };
+    // Install gtag.
+    // Also anonymize IP to comply with http://go/ooga-config#ip-scrubbing.
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+    gtag('config', tagId, {'anonymize_ip': true});
   </script>
-  <!-- End Google Tag Manager -->
+  <!-- End Google Tag -->
 
   <meta charset="utf-8">
   <title>LUCI Milo</title>
@@ -41,10 +49,6 @@
 </head>
 
 <body>
-  <!-- Google Tag Manager (noscript) -->
-  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5SMGXGB" height="0" width="0"
-      style="display:none;visibility:hidden"></iframe></noscript>
-  <!-- End Google Tag Manager (noscript) -->
   <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoad()"></script>
   <script>
     // Load GAPI client.

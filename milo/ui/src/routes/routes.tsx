@@ -14,6 +14,10 @@
 
 import type { RouteObject } from 'react-router-dom';
 
+// IMPORTANT:
+// When adding new routes, ensure that the path param does not contain PII.
+// If you need PII in the path param, document it and scrub the URL param from
+// GA4 tracking. See http://go/ooga-config#scrub-urls.
 export const routes: RouteObject[] = [
   {
     index: true,
