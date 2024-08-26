@@ -25,7 +25,7 @@ import { useDebounce } from 'react-use';
 import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
 import { ArtifactLink } from '@/test_verdict/components/artifact_link';
 
-import { useInvArtifacts, useResultArtifacts } from '../context';
+import { useInvArtifacts, useResultArtifacts } from '../hooks';
 
 interface ProcessedArtifacts {
   textDiff?: Artifact;

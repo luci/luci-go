@@ -23,8 +23,8 @@ import { SHORT_TIME_FORMAT } from '@/common/tools/time_utils';
 import { CopyToClipboard } from '@/generic_libs/components/copy_to_clipboard';
 import { getGitilesCommitURL } from '@/gitiles/tools/utils';
 
-import { useDetailsUrlPath } from './context';
 import { FailureRatePieChart } from './failure_rate_pie_chart';
+import { useDetailsUrlPath } from './hooks';
 
 const TextCell = styled(TableCell)({
   whiteSpace: 'nowrap',

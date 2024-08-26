@@ -12,17 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ReactNode, useReducer } from 'react';
+import { DateTime } from 'luxon';
+import { createContext, Dispatch, ReactNode, useReducer } from 'react';
 
-import {
-  reducer,
-  LogGroupListDispatcherCtx,
-  LogGroupListStateCtx,
-  PaginationCtx,
-  LogPaginationState,
-  SearchFilterCtx,
-  SearchFilter,
-} from './contexts';
+import { PagerContext } from '@/common/components/params_pager';
+
+import { FormData } from './form_data';
+import { Action, LogGroupListState, reducer } from './reducer';
+
+export const LogGroupListDispatcherCtx = createContext<
+  Dispatch<Action> | undefined
+>(undefined);
+
+export const LogGroupListStateCtx = createContext<
+  LogGroupListState | undefined
+>(undefined);
 
 export interface LogGroupListStateProviderProps {
   readonly children: ReactNode;
@@ -45,6 +49,13 @@ export function LogGroupListStateProvider({
   );
 }
 
+export interface LogPaginationState {
+  readonly testLogPagerCtx: PagerContext;
+  readonly invocationLogPagerCtx: PagerContext;
+}
+
+export const PaginationCtx = createContext<LogPaginationState | null>(null);
+
 export interface PaginationProviderProps {
   readonly state: LogPaginationState;
   readonly children: ReactNode;
@@ -58,6 +69,21 @@ export function PaginationProvider({
     <PaginationCtx.Provider value={state}>{children}</PaginationCtx.Provider>
   );
 }
+
+export interface SearchFilter {
+  readonly form: FormData;
+  readonly startTime: DateTime;
+  readonly endTime: DateTime;
+}
+
+/**
+ * SearchFilterCtx holds all fields required for a log search.
+ * Use null to represent the filters are not set, and search should not be initiate.
+ * Use undefine to represent no matching provider in the tree above.
+ */
+export const SearchFilterCtx = createContext<SearchFilter | null | undefined>(
+  undefined,
+);
 
 export interface SearchFilterProviderProps {
   readonly searchFilter: SearchFilter | null;

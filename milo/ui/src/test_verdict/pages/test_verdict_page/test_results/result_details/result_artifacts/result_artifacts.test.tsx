@@ -24,7 +24,7 @@ import {
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { createFakeTestResult } from '../../testing_tools/utils';
-import { ResultDataProvider } from '../provider';
+import { ResultDataProvider } from '../context';
 
 import { ResultArtifacts } from './result_artifacts';
 

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useLogGroupListState, useSearchFilter } from '../contexts';
+import { useLogGroupListState, useSearchFilter } from '../hooks';
 import { FormData } from '../form_data';
 import { VariantLine } from '../variant_line';
 

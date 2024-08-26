@@ -15,8 +15,8 @@
 import { Box, SxProps, Theme } from '@mui/material';
 import { ElementType, ForwardedRef, ReactNode, forwardRef } from 'react';
 
-import { QueuedStickyContextProvider } from './context';
-import { DepthCtx } from './hooks';
+import { DepthCtx } from './context';
+import { QueuedStickyContextProvider } from './providers';
 
 export interface QueuedStickyScrollingBaseProps {
   readonly component?: ElementType;

@@ -38,13 +38,13 @@ import {
   REGEX_CONTAIN_OPTION,
   EXACT_CONTAIN_OPTION,
 } from './constants';
-import { SearchFilter } from './contexts';
-import { EMPTY_FORM, FormData } from './form_data';
 import {
   LogGroupListStateProvider,
   PaginationProvider,
+  SearchFilter,
   SearchFilterProvider,
-} from './providers';
+} from './context';
+import { EMPTY_FORM, FormData } from './form_data';
 import { SelectTextField } from './select_text_field';
 import { TabLabel } from './tab_label';
 

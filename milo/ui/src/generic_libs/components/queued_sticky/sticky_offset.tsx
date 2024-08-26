@@ -15,8 +15,8 @@
 import { Box, SxProps, Theme } from '@mui/material';
 import { ElementType, ReactNode } from 'react';
 
-import { QueuedStickyContextProvider } from './context';
 import { useDepth, useOffsets } from './hooks';
+import { QueuedStickyContextProvider } from './providers';
 
 export interface StickyOffsetProps {
   readonly component?: ElementType;

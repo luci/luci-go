@@ -24,8 +24,8 @@ import {
 import { useResultDbClient } from '@/test_verdict/hooks/prpc_clients';
 import { OutputQueryTestVariantArtifactsResponse } from '@/test_verdict/types';
 
-import { TestLogGroupIdentifier } from '../contexts';
 import { LogSnippetRow } from '../log_snippet_row';
+import { TestLogGroupIdentifier } from '../reducer';
 
 export interface TestLogListProps {
   readonly project: string;

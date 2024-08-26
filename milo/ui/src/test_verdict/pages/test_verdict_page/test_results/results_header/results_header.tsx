@@ -33,7 +33,7 @@ import {
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
 import { getSuggestedResultIndex } from '@/test_verdict/tools/test_result_utils';
 
-import { useResults } from '../context';
+import { useResults } from '../hooks';
 import {
   RESULT_INDEX_SEARCH_PARAM_KEY,
   getSelectedResultIndex,

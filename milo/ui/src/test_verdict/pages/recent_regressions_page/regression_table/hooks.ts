@@ -12,24 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ReactNode, createContext } from 'react';
+import { useContext } from 'react';
 
-import { GetDetailsUrlPath } from './types';
+import { OutputChangepointGroupSummary } from '@/analysis/types';
 
-export const RegressionTableCtx = createContext<GetDetailsUrlPath | null>(null);
+import { RegressionTableCtx } from './context';
 
-export interface RegressionTableContextProviderProps {
-  readonly getDetailsUrlPath: GetDetailsUrlPath;
-  readonly children: ReactNode;
-}
-
-export function RegressionTableContextProvider({
-  getDetailsUrlPath,
-  children,
-}: RegressionTableContextProviderProps) {
-  return (
-    <RegressionTableCtx.Provider value={getDetailsUrlPath}>
-      {children}
-    </RegressionTableCtx.Provider>
-  );
+export function useDetailsUrlPath(regression: OutputChangepointGroupSummary) {
+  const ctx = useContext(RegressionTableCtx);
+  if (ctx === null) {
+    throw new Error('useDetailsUrlPath can only be used in a RegressionTable');
+  }
+  return ctx(regression);
 }

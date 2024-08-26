@@ -17,7 +17,7 @@ import { memo, useRef, useState } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { useDebounce, useWindowSize } from 'react-use';
 
-import { useTopPanelExpanded } from '../context';
+import { useTopPanelExpanded } from '../hooks';
 
 import { ArtifactsTree } from './artifacts_tree';
 import { ResultLogsProvider } from './context';

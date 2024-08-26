@@ -29,7 +29,7 @@ import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider
 
 import { FakeTestVerdictContextProvider } from '../../../testing_tools/fake_context';
 import { TestResultsProvider } from '../../context';
-import { ResultDataProvider } from '../provider';
+import { ResultDataProvider } from '../context';
 
 import { ResultBasicInfo } from './result_basic_info';
 

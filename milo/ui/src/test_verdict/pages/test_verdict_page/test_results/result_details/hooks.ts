@@ -12,21 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { createContext, Dispatch, SetStateAction, useContext } from 'react';
+import { useContext } from 'react';
 
-import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
-import { TestResult } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
-
-interface ResultDataContext {
-  readonly result: TestResult;
-  readonly resultArtifacts: readonly Artifact[];
-  readonly invArtifacts: readonly Artifact[];
-  readonly artifactsLoading: boolean;
-  readonly topPanelExpanded: boolean;
-  readonly setTopPanelExpanded: Dispatch<SetStateAction<boolean>>;
-}
-
-export const ResultDataCtx = createContext<ResultDataContext | null>(null);
+import { ResultDataCtx } from './context';
 
 export function useResultArtifacts() {
   const ctx = useContext(ResultDataCtx);

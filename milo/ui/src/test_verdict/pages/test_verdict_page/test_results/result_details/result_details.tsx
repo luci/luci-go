@@ -19,11 +19,11 @@ import Grid from '@mui/material/Grid';
 
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
-import { useResults } from '../context';
+import { useResults } from '../hooks';
 import { getSelectedResultIndex } from '../utils';
 
-import { useSetTopPanelExpanded, useTopPanelExpanded } from './context';
-import { ResultDataProvider } from './provider';
+import { ResultDataProvider } from './context';
+import { useSetTopPanelExpanded, useTopPanelExpanded } from './hooks';
 import { ResultArtifacts } from './result_artifacts';
 import { ResultBasicInfo } from './result_basic_info';
 import { ResultLogs } from './result_logs';

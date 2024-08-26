@@ -17,7 +17,6 @@ import {
   ReactNode,
   SetStateAction,
   createContext,
-  useContext,
   useState,
 } from 'react';
 
@@ -32,7 +31,7 @@ interface TestVerdictContext {
   readonly sources: Sources | null;
 }
 
-const TestVerdictCtx = createContext<TestVerdictContext | null>(null);
+export const TestVerdictCtx = createContext<TestVerdictContext | null>(null);
 
 export interface TestVerdictProviderProps {
   readonly children: ReactNode;
@@ -63,44 +62,4 @@ export function TestVerdictProvider({
       {children}
     </TestVerdictCtx.Provider>
   );
-}
-
-export function useInvocationID() {
-  const context = useContext(TestVerdictCtx);
-  if (!context) {
-    throw Error('useInvocationID can only be used in a TestVerdictProvider.');
-  }
-  return context.invocationID;
-}
-
-export function useProject() {
-  const context = useContext(TestVerdictCtx);
-  if (!context) {
-    throw Error('useProject can only be used in a TestVerdictProvider.');
-  }
-  return context.project;
-}
-
-export function useTestVerdict() {
-  const context = useContext(TestVerdictCtx);
-  if (!context) {
-    throw Error('useTestVerdict can only be used in a TestVerdictProvider.');
-  }
-  return context.testVerdict;
-}
-
-export function useSetTestVerdict() {
-  const context = useContext(TestVerdictCtx);
-  if (!context) {
-    throw Error('useSetTestVerdict can only be used in a TestVerdictProvider.');
-  }
-  return context.setTestVerdict;
-}
-
-export function useSources() {
-  const context = useContext(TestVerdictCtx);
-  if (!context) {
-    throw Error('useSources can only be used in a TestVerdictProvider.');
-  }
-  return context.sources;
 }

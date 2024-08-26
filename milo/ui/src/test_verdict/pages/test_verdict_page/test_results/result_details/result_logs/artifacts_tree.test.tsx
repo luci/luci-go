@@ -23,7 +23,7 @@ import {
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { createFakeTestResult } from '../../testing_tools/utils';
-import { ResultDataProvider } from '../provider';
+import { ResultDataProvider } from '../context';
 
 import { ArtifactsTree } from './artifacts_tree';
 import { ResultLogsProvider } from './context';

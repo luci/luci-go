@@ -21,8 +21,9 @@ import {
   OutputQueryInvocationVariantArtifactGroupsResponse_MatchGroup,
 } from '@/test_verdict/types';
 
-import { useLogGroupListDispatch, Action } from '../contexts';
+import { useLogGroupListDispatch } from '../hooks';
 import { LogSnippetRow } from '../log_snippet_row';
+import { Action } from '../reducer';
 
 const LogGroupHeaderDiv = styled(Box)`
   background: #e8f0fe;

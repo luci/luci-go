@@ -27,7 +27,7 @@ import {
 } from '@/common/tools/url_utils';
 import { getSortedTestVariantDef } from '@/test_verdict/tools/utils';
 
-import { useProject, useTestVerdict } from '../context';
+import { useProject, useTestVerdict } from '../hooks';
 
 export function VerdictInfo() {
   const verdict = useTestVerdict();

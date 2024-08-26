@@ -12,34 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { createContext, MutableRefObject, useContext } from 'react';
+import { useContext } from 'react';
 
-export const DepthCtx = createContext<number | undefined>(undefined);
-
-export type Direction = 'top' | 'right' | 'bottom' | 'left';
-
-export interface Offsets {
-  readonly top: number;
-  readonly right: number;
-  readonly bottom: number;
-  readonly left: number;
-}
-
-export const OffsetsCtx = createContext<Offsets | undefined>(undefined);
-
-export interface SizeRecorder {
-  recordSize(
-    componentRef: MutableRefObject<undefined>,
-    direction: Direction,
-    size: number,
-  ): void;
-
-  remove(componentRef: MutableRefObject<undefined>): void;
-}
-
-export const SizeRecorderCtx = createContext<SizeRecorder | undefined>(
-  undefined,
-);
+import { DepthCtx, OffsetsCtx, SizeRecorderCtx } from './context';
 
 export function useSizeRecorder() {
   const ctx = useContext(SizeRecorderCtx);

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ReactNode, createContext, useContext } from 'react';
+import { ReactNode, createContext } from 'react';
 
 import { OutputClusterEntry } from '@/analysis/types';
 import { OutputTestResultBundle } from '@/test_verdict/types';
@@ -45,22 +45,4 @@ export function TestResultsProvider({
       {children}
     </TestResultsCtx.Provider>
   );
-}
-
-export function useResults() {
-  const context = useContext(TestResultsCtx);
-  if (!context) {
-    throw Error('useResults can only be used in a TestResultsProvider.');
-  }
-  return context.results;
-}
-
-export function useClustersByResultId(resultId: string) {
-  const context = useContext(TestResultsCtx);
-  if (!context) {
-    throw Error(
-      'useClustersByResultId can only be used in a TestResultsProvider.',
-    );
-  }
-  return context.clustersMap && context.clustersMap.get(resultId);
 }

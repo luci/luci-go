@@ -14,13 +14,8 @@
 
 import { MutableRefObject, ReactNode, useMemo, useRef, useState } from 'react';
 
-import {
-  DepthCtx,
-  Direction,
-  OffsetsCtx,
-  SizeRecorderCtx,
-  useDepth,
-} from './hooks';
+import { DepthCtx, Direction, OffsetsCtx, SizeRecorderCtx } from './context';
+import { useDepth } from './hooks';
 
 export interface QueuedStickyContextProviderProps {
   readonly children: ReactNode;

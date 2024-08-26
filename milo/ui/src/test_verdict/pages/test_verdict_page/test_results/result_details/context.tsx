@@ -13,7 +13,15 @@
 // limitations under the License.
 
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { ReactNode, useEffect, useMemo, useState } from 'react';
+import {
+  createContext,
+  Dispatch,
+  ReactNode,
+  SetStateAction,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 
 import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
 import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
@@ -24,7 +32,16 @@ import {
 import { TestResult } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
 import { parseTestResultName } from '@/test_verdict/tools/utils';
 
-import { ResultDataCtx } from './context';
+interface ResultDataContext {
+  readonly result: TestResult;
+  readonly resultArtifacts: readonly Artifact[];
+  readonly invArtifacts: readonly Artifact[];
+  readonly artifactsLoading: boolean;
+  readonly topPanelExpanded: boolean;
+  readonly setTopPanelExpanded: Dispatch<SetStateAction<boolean>>;
+}
+
+export const ResultDataCtx = createContext<ResultDataContext | null>(null);
 
 interface ResultDataProviderProps {
   readonly result: TestResult;

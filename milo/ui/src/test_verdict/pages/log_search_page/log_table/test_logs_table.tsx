@@ -32,8 +32,9 @@ import { QueryTestVariantArtifactGroupsRequest } from '@/proto/go.chromium.org/l
 import { useResultDbClient } from '@/test_verdict/hooks/prpc_clients';
 import { OutputQueryTestVariantArtifactGroupsResponse } from '@/test_verdict/types';
 
-import { SearchFilter, useTestLogPagerCtx } from '../contexts';
+import { SearchFilter } from '../context';
 import { FormData } from '../form_data';
+import { useTestLogPagerCtx } from '../hooks';
 import { VariantLine } from '../variant_line';
 
 import { LogGroup } from './log_group';

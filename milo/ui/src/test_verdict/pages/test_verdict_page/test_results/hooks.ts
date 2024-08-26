@@ -12,24 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ReactNode, createContext } from 'react';
+import { useContext } from 'react';
 
-import { GetDetailsUrlPath } from './types';
+import { TestResultsCtx } from './context';
 
-export const RegressionTableCtx = createContext<GetDetailsUrlPath | null>(null);
-
-export interface RegressionTableContextProviderProps {
-  readonly getDetailsUrlPath: GetDetailsUrlPath;
-  readonly children: ReactNode;
+export function useResults() {
+  const context = useContext(TestResultsCtx);
+  if (!context) {
+    throw Error('useResults can only be used in a TestResultsProvider.');
+  }
+  return context.results;
 }
 
-export function RegressionTableContextProvider({
-  getDetailsUrlPath,
-  children,
-}: RegressionTableContextProviderProps) {
-  return (
-    <RegressionTableCtx.Provider value={getDetailsUrlPath}>
-      {children}
-    </RegressionTableCtx.Provider>
-  );
+export function useClustersByResultId(resultId: string) {
+  const context = useContext(TestResultsCtx);
+  if (!context) {
+    throw Error(
+      'useClustersByResultId can only be used in a TestResultsProvider.',
+    );
+  }
+  return context.clustersMap && context.clustersMap.get(resultId);
 }

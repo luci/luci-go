@@ -17,7 +17,7 @@ import { ReactNode, createContext } from 'react';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
 
-import { useInvArtifacts, useResultArtifacts } from '../context';
+import { useInvArtifacts, useResultArtifacts } from '../hooks';
 
 const SELECTED_ARTIFACT_PARAM = 'selectedArtifact';
 const SELECTED_ARTIFACT_SOURCE_PARAM = 'selectedArtifactSource';

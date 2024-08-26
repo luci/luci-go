@@ -21,7 +21,7 @@ import { HtmlTooltip } from '@/common/components/html_tooltip';
 import { getBuildURLPathFromBuildId } from '@/common/tools/url_utils';
 import { ChangelistLink } from '@/gitiles/components/changelist_link';
 
-import { useInvocationID, useSources } from '../../context';
+import { useInvocationID, useSources } from '../../hooks';
 
 export function CLInfo() {
   const sources = useSources();

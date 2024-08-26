@@ -24,8 +24,8 @@ import {
 import { useResultDbClient } from '@/test_verdict/hooks/prpc_clients';
 import { OutputQueryInvocationVariantArtifactsResponse } from '@/test_verdict/types';
 
-import { InvocationLogGroupIdentifier } from '../contexts';
 import { LogSnippetRow } from '../log_snippet_row';
+import { InvocationLogGroupIdentifier } from '../reducer';
 
 export interface InvocationLogListProps {
   readonly project: string;

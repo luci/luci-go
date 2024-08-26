@@ -16,7 +16,7 @@ import { Close } from '@mui/icons-material';
 import { Box, Dialog, DialogContent, DialogTitle } from '@mui/material';
 import { ReactNode } from 'react';
 
-import { useLogGroupListDispatch } from '../contexts';
+import { useLogGroupListDispatch } from '../hooks';
 
 export interface LogDialogBaseProps {
   readonly dialogHeader: ReactNode;

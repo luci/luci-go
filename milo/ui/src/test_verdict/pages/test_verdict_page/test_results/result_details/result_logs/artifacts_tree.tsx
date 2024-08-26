@@ -25,7 +25,7 @@ import {
   useArtifactsLoading,
   useInvArtifacts,
   useResultArtifacts,
-} from '../context';
+} from '../hooks';
 
 import { SelectedArtifactSource } from './context';
 import { useSelectedArtifact, useUpdateSelectedArtifact } from './hooks';
