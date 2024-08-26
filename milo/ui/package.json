@@ -16,7 +16,7 @@
     "postinstall": "patch-package",
     "type-check": "tsc --noEmit --skipLibCheck",
     "lint": "eslint -c .eslintrc.js ./",
-    "test": "FORCE_COLOR=true jest"
+    "test": "jest"
   },
   "dependencies": {
     "@adobe/lit-mobx": "^2.2.2",
