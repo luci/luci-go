@@ -22,12 +22,13 @@ import (
 	"cloud.google.com/go/spanner"
 	"google.golang.org/protobuf/proto"
 
-	gitilesapi "go.chromium.org/luci/common/api/gitiles"
+	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/gitiles"
+	gitilespb "go.chromium.org/luci/common/proto/gitiles"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
 
@@ -77,8 +78,11 @@ func handleCommitIngestion(ctx context.Context, payload proto.Message) error {
 
 	logging.Infof(ctx, "received commit ingestion task with page token: %q", task.PageToken)
 
-	// TODO(b/356027716): use the service's own credential to query Gitiles.
-	client, err := gitilesapi.NewRESTClient(&http.Client{}, task.Host, false)
+	t, err := auth.GetRPCTransport(ctx, auth.AsSelf, auth.WithScopes(gitiles.OAuthScope))
+	if err != nil {
+		return err
+	}
+	client, err := gitiles.NewRESTClient(&http.Client{Transport: t}, task.Host, false)
 	if err != nil {
 		return errors.Annotate(err, "initialize a Gitiles REST client").Err()
 	}
@@ -86,8 +90,8 @@ func handleCommitIngestion(ctx context.Context, payload proto.Message) error {
 	return processCommitIngestionTask(ctx, client, task)
 }
 
-func processCommitIngestionTask(ctx context.Context, client gitiles.GitilesClient, task *taskspb.IngestCommits) error {
-	req := &gitiles.LogRequest{
+func processCommitIngestionTask(ctx context.Context, client gitilespb.GitilesClient, task *taskspb.IngestCommits) error {
+	req := &gitilespb.LogRequest{
 		Project:    task.Repository,
 		Committish: task.Commitish,
 		PageToken:  task.PageToken,
