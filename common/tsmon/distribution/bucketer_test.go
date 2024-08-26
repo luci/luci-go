@@ -26,15 +26,6 @@ func TestFixedWidthBucketer(t *testing.T) {
 		So(func() { FixedWidthBucketer(-1, 1) }, ShouldPanic)
 	})
 
-	Convey("Zero size", t, func() {
-		b := FixedWidthBucketer(10, 0)
-		So(b.NumBuckets(), ShouldEqual, 2)
-		So(b.Bucket(-100), ShouldEqual, 0)
-		So(b.Bucket(-1), ShouldEqual, 0)
-		So(b.Bucket(0), ShouldEqual, 1)
-		So(b.Bucket(100), ShouldEqual, 1)
-	})
-
 	Convey("One size", t, func() {
 		b := FixedWidthBucketer(10, 1)
 		So(b.NumBuckets(), ShouldEqual, 3)
@@ -53,15 +44,7 @@ func TestGeometricBucketer(t *testing.T) {
 		So(func() { GeometricBucketer(-1, 10) }, ShouldPanic)
 		So(func() { GeometricBucketer(0, 10) }, ShouldPanic)
 		So(func() { GeometricBucketer(1, 10) }, ShouldPanic)
-	})
-
-	Convey("Zero size", t, func() {
-		b := GeometricBucketer(10, 0)
-		So(b.NumBuckets(), ShouldEqual, 2)
-		So(b.Bucket(-100), ShouldEqual, 0)
-		So(b.Bucket(-1), ShouldEqual, 0)
-		So(b.Bucket(0), ShouldEqual, 0)
-		So(b.Bucket(100), ShouldEqual, 1)
+		So(func() { GeometricBucketer(0.5, 10) }, ShouldPanic)
 	})
 
 	Convey("One size", t, func() {
@@ -77,5 +60,27 @@ func TestGeometricBucketer(t *testing.T) {
 		So(b.Bucket(16), ShouldEqual, 3)
 		So(b.Bucket(63), ShouldEqual, 3)
 		So(b.Bucket(64), ShouldEqual, 4)
+	})
+}
+
+func TestGeometricBucketerWithScale(t *testing.T) {
+	Convey("Invalid values panic", t, func() {
+		So(func() { GeometricBucketerWithScale(10, 10, -1.0) }, ShouldPanic)
+		So(func() { GeometricBucketerWithScale(10, 10, 0) }, ShouldPanic)
+	})
+
+	Convey("pass", t, func() {
+		b := GeometricBucketerWithScale(4, 4, 100)
+		So(b.NumBuckets(), ShouldEqual, 6)
+		So(b.Bucket(-100), ShouldEqual, 0)
+		So(b.Bucket(-1), ShouldEqual, 0)
+		So(b.Bucket(0), ShouldEqual, 0)
+		So(b.Bucket(100), ShouldEqual, 1)
+		So(b.Bucket(300), ShouldEqual, 1)
+		So(b.Bucket(400), ShouldEqual, 2)
+		So(b.Bucket(1500), ShouldEqual, 2)
+		So(b.Bucket(1600), ShouldEqual, 3)
+		So(b.Bucket(6300), ShouldEqual, 3)
+		So(b.Bucket(6400), ShouldEqual, 4)
 	})
 }

@@ -176,7 +176,7 @@ func serializeDistribution(d *distribution.Distribution) *pb.MetricsData_Distrib
 			&pb.MetricsData_Distribution_ExponentialOptions{
 				NumFiniteBuckets: proto.Int32(int32(d.Bucketer().NumFiniteBuckets())),
 				GrowthFactor:     proto.Float64(d.Bucketer().GrowthFactor()),
-				Scale:            proto.Float64(1.0),
+				Scale:            proto.Float64(d.Bucketer().Scale()),
 			},
 		}
 	} else {

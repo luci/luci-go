@@ -25,14 +25,16 @@ type Bucketer struct {
 	width, growthFactor float64
 	numFiniteBuckets    int
 	lowerBounds         []float64
+	scale               float64
 }
 
 // NewBucketer creates a bucketer from custom parameters.
-func NewBucketer(width, growthFactor float64, numFiniteBuckets int) *Bucketer {
+func NewBucketer(width, growthFactor float64, numFiniteBuckets int, scale float64) *Bucketer {
 	b := &Bucketer{
 		width:            width,
 		growthFactor:     growthFactor,
 		numFiniteBuckets: numFiniteBuckets,
+		scale:            scale,
 	}
 	b.init()
 	return b
@@ -47,7 +49,7 @@ func NewBucketer(width, growthFactor float64, numFiniteBuckets int) *Bucketer {
 // The width must be greater than 0, and the number of finite buckets must be
 // greater than 0.
 func FixedWidthBucketer(width float64, numFiniteBuckets int) *Bucketer {
-	return NewBucketer(width, 0, numFiniteBuckets)
+	return NewBucketer(width, 0, numFiniteBuckets, 1.0)
 }
 
 // GeometricBucketer returns a Bucketer that uses numFiniteBuckets+2 buckets:
@@ -56,10 +58,22 @@ func FixedWidthBucketer(width float64, numFiniteBuckets int) *Bucketer {
 //	bucket[i] covers [growthFactor^(i−1), growthFactor^i) for i > 0 and i <= numFiniteBuckets
 //	bucket[numFiniteBuckets+1] covers [growthFactor^(numFiniteBuckets−1), +Inf)
 //
-// growthFactor must be positive, and the number of finite buckets must be
-// greater than 0.
+// growthFactor must be greater than 1.0, and the number of finite buckets must
+// be greater than 0.
 func GeometricBucketer(growthFactor float64, numFiniteBuckets int) *Bucketer {
-	return NewBucketer(0, growthFactor, numFiniteBuckets)
+	return NewBucketer(0, growthFactor, numFiniteBuckets, 1.0)
+}
+
+// GeometricBucketerWithScale returns a Bucketer that uses numFiniteBuckets+2 buckets:
+//
+//	bucket[0] covers (−Inf, scale)
+//	bucket[i] covers [scale*growthFactor^(i−1), scale*growthFactor^i) for i > 0 and i <= numFiniteBuckets
+//	bucket[numFiniteBuckets+1] covers [scale*growthFactor^(numFiniteBuckets−1), +Inf)
+//
+// growthFactor must be greater than 1.0, the number of finite buckets and scale
+// must be greater than 0.
+func GeometricBucketerWithScale(growthFactor float64, numFiniteBuckets int, scale float64) *Bucketer {
+	return NewBucketer(0, growthFactor, numFiniteBuckets, scale)
 }
 
 // DefaultBucketer is a bucketer with sensible bucket sizes.
@@ -78,6 +92,9 @@ func (b *Bucketer) Width() float64 { return b.width }
 // GrowthFactor returns the growth factor used to configure this Bucketer.
 func (b *Bucketer) GrowthFactor() float64 { return b.growthFactor }
 
+// Scale returns the scale used to configure this Bucketer.
+func (b *Bucketer) Scale() float64 { return b.scale }
+
 // UnderflowBucket returns the index of the underflow bucket.
 func (b *Bucketer) UnderflowBucket() int { return 0 }
 
@@ -92,8 +109,12 @@ func (b *Bucketer) Bucket(sample float64) int {
 }
 
 func (b *Bucketer) init() {
-	if b.numFiniteBuckets < 0 {
+	if b.numFiniteBuckets <= 0 {
 		panic(fmt.Sprintf("numFiniteBuckets must be positive (was %d)", b.numFiniteBuckets))
+	}
+
+	if b.scale <= 0 {
+		panic(fmt.Sprintf("scale must be positive (was %f)", b.scale))
 	}
 
 	b.lowerBounds = make([]float64, b.NumBuckets())
@@ -123,6 +144,6 @@ func (b *Bucketer) fillLinearBounds() {
 
 func (b *Bucketer) fillExponentialBounds() {
 	for i := 1; i < b.NumBuckets(); i++ {
-		b.lowerBounds[i] = math.Pow(b.growthFactor, float64(i-1))
+		b.lowerBounds[i] = b.scale * math.Pow(b.growthFactor, float64(i-1))
 	}
 }
