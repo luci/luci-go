@@ -199,6 +199,10 @@ with the following rules:
      implement encapsulation and enforce invariants.
  * Modules can themselves have different internal structures to implement
    different layers of encapsulation.
+ * Contexts, providers and hooks are defined as such:
+   * `context.[ts/tsx]` file that contains the context declaration and the provider.
+   * `hooks.[ts/tsx]` file that contains the hooks that are used to access
+     or perform actions on the context, it can also be used to declare common hooks.
 
 Note: At the moment (2023-09-14), some packages are in an inconsistent state.
 Some modules should be moved to other packages. Notable items include but not
@@ -220,6 +224,7 @@ limited to
                           │     ├─■ ./pages                   │                       │
                           │     ├─■ ./components              │                       │
                           │     ├─■ ./hooks                   │                       │
+                          │     ├─■ ./context                 │                       │
                           │     ├─■ ./tools                   │                       │
                           │     └─■ ...                       │                       │
                           │                                   │                       │
