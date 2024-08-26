@@ -157,16 +157,14 @@ export function MonitoringProvider({ children, treeName, tree }: Props) {
         tree,
         alerts,
         alertsLoading:
-          alertsQuery.isLoading ||
-          alertsQuery.isRefetching ||
-          extendedAlertsQuery.some((q) => q.isLoading || q.isRefetching),
+          alertsQuery.isLoading || extendedAlertsQuery.some((q) => q.isLoading),
         bugs,
         bugsError:
           bugsQueryError !== null
             ? new Error(bugsQueryError.result.error.message)
             : null,
         isBugsError: bugsQuery.isError || bugsQuery.isRefetchError,
-        bugsLoading: bugsQuery.isLoading || bugsQuery.isRefetching,
+        bugsLoading: bugsQuery.isLoading,
       }}
     >
       {children}
