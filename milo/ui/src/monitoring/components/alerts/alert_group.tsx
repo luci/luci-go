@@ -29,6 +29,7 @@ import { AlertTable } from '../../components/alert_table';
 interface AlertGroupProps {
   tree: TreeJson;
   alerts: AlertJson[];
+  hiddenAlertsCount: number;
   groupName: string;
   groupDescription: string;
   defaultExpanded: boolean;
@@ -39,6 +40,7 @@ interface AlertGroupProps {
 export const AlertGroup = ({
   tree,
   alerts,
+  hiddenAlertsCount,
   groupName,
   groupDescription,
   defaultExpanded,
@@ -69,9 +71,24 @@ export const AlertGroup = ({
       </AccordionSummary>
       <AccordionDetails>
         {alerts.length > 0 ? (
-          <AlertTable alerts={alerts} tree={tree} bugs={bugs} />
+          <>
+            <AlertTable alerts={alerts} tree={tree} bugs={bugs} />
+            {hiddenAlertsCount > 0 ? (
+              <Typography
+                sx={{ opacity: '60%', marginTop: '20px', paddingLeft: '32px' }}
+              >
+                {hiddenAlertsCount} alert{hiddenAlertsCount > 1 ? 's' : ''}{' '}
+                hidden by the current filter
+              </Typography>
+            ) : null}
+          </>
+        ) : hiddenAlertsCount > 0 ? (
+          <Typography sx={{ opacity: '60%', paddingLeft: '32px' }}>
+            {hiddenAlertsCount} alert{hiddenAlertsCount > 1 ? 's' : ''} hidden
+            by the current filter
+          </Typography>
         ) : (
-          <Typography sx={{ opacity: '50%' }}>
+          <Typography sx={{ opacity: '60%', paddingLeft: '32px' }}>
             No alerts are currently in the {groupName} group.
           </Typography>
         )}

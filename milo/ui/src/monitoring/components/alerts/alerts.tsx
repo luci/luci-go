@@ -57,6 +57,7 @@ export const Alerts = () => {
   }
 
   const filtered = filterAlerts(alerts || [], filter);
+  const unfilteredCategories = categorizeAlerts(alerts || []);
   const categories = categorizeAlerts(filtered);
 
   const bugsWithAlerts =
@@ -91,6 +92,10 @@ export const Alerts = () => {
         <AlertGroup
           groupName={'Untriaged Consistent Failures'}
           alerts={categories.consistentFailures}
+          hiddenAlertsCount={
+            unfilteredCategories.consistentFailures.length -
+            categories.consistentFailures.length
+          }
           tree={tree}
           groupDescription="Failures that have occurred at least 2 times in a row and are not linked with a bug"
           defaultExpanded={true}
@@ -99,6 +104,10 @@ export const Alerts = () => {
         <AlertGroup
           groupName={'Untriaged New Failures'}
           alerts={categories.newFailures}
+          hiddenAlertsCount={
+            unfilteredCategories.consistentFailures.length -
+            categories.newFailures.length
+          }
           tree={tree}
           groupDescription="Failures that have only been seen once and are not linked with a bug"
           defaultExpanded={false}

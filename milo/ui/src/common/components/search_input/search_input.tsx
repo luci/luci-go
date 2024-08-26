@@ -126,6 +126,7 @@ export function SearchInput<Variant extends TextFieldVariants>({
           ...inputProps,
         }}
         size="small"
+        type="search"
         InputProps={{
           startAdornment: (
             <InputAdornment position="start">

@@ -36,7 +36,7 @@ describe('<Alerts />', () => {
         </MonitoringCtx.Provider>
       </FakeContextProvider>,
     );
-    expect(screen.getByRole('textbox')).toBeInTheDocument();
+    expect(screen.getByRole('searchbox')).toBeInTheDocument();
     expect(
       screen.getByText('Untriaged Consistent Failures'),
     ).toBeInTheDocument();
@@ -98,7 +98,7 @@ describe('<Alerts />', () => {
         </MonitoringCtx.Provider>
       </FakeContextProvider>,
     );
-    expect(screen.getByRole('textbox')).toHaveValue('linux-rel');
+    expect(screen.getByRole('searchbox')).toHaveValue('linux-rel');
   });
 });
 
