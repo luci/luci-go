@@ -104,16 +104,18 @@ export const TreeStatusUpdater = ({ tree }: TreeStatusUpdaterProps) => {
             variant="contained"
             color="primary"
             onClick={() =>
-              updateMutation.mutateAsync({
-                parent: `trees/${tree}/status`,
-                status: {
-                  generalState: state,
-                  message,
-                  name: '',
-                  createTime: undefined,
-                  createUser: '',
-                },
-              })
+              updateMutation.mutateAsync(
+                CreateStatusRequest.fromPartial({
+                  parent: `trees/${tree}/status`,
+                  status: {
+                    generalState: state,
+                    message,
+                    name: '',
+                    createTime: undefined,
+                    createUser: '',
+                  },
+                }),
+              )
             }
           >
             Update

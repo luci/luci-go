@@ -4567,12 +4567,12 @@ class PrpcClient {
                 throw new Error(`\`${key}\` cannot be specified as additionalHeaders`);
             }
         }
-        this.host = options?.host || self.location.host;
-        this.getAuthToken = options?.getAuthToken || (() => '');
-        this.tokenType = options?.tokenType || 'Bearer';
+        this.host = options.host;
+        this.getAuthToken = options.getAuthToken || (() => '');
+        this.tokenType = options.tokenType || 'Bearer';
         this.additionalHeaders = Object.fromEntries(headers.entries());
-        this.insecure = options?.insecure || false;
-        this.fetchImpl = options?.fetchImpl || self.fetch.bind(self);
+        this.insecure = options.insecure || false;
+        this.fetchImpl = options.fetchImpl || self.fetch.bind(self);
     }
     /**
      * Send an RPC request.
@@ -77995,10 +77995,19 @@ class ResultDBReporter {
         }
     }
     async onTestCaseResult(test, testCaseResult) {
-        const req = ReportTestResultsRequest.fromPartial({
-            testResults: [await toSinkResult(test, testCaseResult, this.ctx)],
-        });
-        await this.resultSink?.ReportTestResults(req);
+        // Ensure that failing to upload test results to RDB does not prevent the
+        // rest of the tests from executing.
+        try {
+            const req = ReportTestResultsRequest.fromPartial({
+                testResults: [await toSinkResult(test, testCaseResult, this.ctx)],
+            });
+            await this.resultSink?.ReportTestResults(req);
+        }
+        catch (e) {
+            // We need to log the error in builder.
+            // eslint-disable-next-line no-console
+            console.error('failed to report test results to result sink', e);
+        }
     }
 }
 

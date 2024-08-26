@@ -127,9 +127,17 @@ export class ResultDBReporter implements Reporter {
   }
 
   async onTestCaseResult(test: Test, testCaseResult: TestCaseResult) {
-    const req = ReportTestResultsRequest.fromPartial({
-      testResults: [await toSinkResult(test, testCaseResult, this.ctx)],
-    });
-    await this.resultSink?.ReportTestResults(req);
+    // Ensure that failing to upload test results to RDB does not prevent the
+    // rest of the tests from executing.
+    try {
+      const req = ReportTestResultsRequest.fromPartial({
+        testResults: [await toSinkResult(test, testCaseResult, this.ctx)],
+      });
+      await this.resultSink?.ReportTestResults(req);
+    } catch (e) {
+      // We need to log the error in builder.
+      // eslint-disable-next-line no-console
+      console.error('failed to report test results to result sink', e);
+    }
   }
 }
