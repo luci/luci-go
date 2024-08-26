@@ -31,6 +31,8 @@ type config struct {
 type Config interface {
 	// HasHost returns whether the host is configured.
 	HasHost(host string) bool
+	// ShouldIndexRepo returns whether the specified repository should be indexed.
+	ShouldIndexRepo(host, repo string) bool
 	// ShouldIndexRef returns whether the specified ref should be indexed.
 	ShouldIndexRef(host, repo, ref string) bool
 }
@@ -39,6 +41,21 @@ type Config interface {
 func (c *config) HasHost(host string) bool {
 	return slices.ContainsFunc(c.Hosts, func(hostConfig *configpb.Config_Host) bool {
 		return hostConfig.Host == host
+	})
+}
+
+// ShouldIndexRepo implements Config.
+func (c *config) ShouldIndexRepo(host, repo string) bool {
+	hostIndex := slices.IndexFunc(c.Hosts, func(hostConfig *configpb.Config_Host) bool {
+		return hostConfig.Host == host
+	})
+	if hostIndex < 0 {
+		return false
+	}
+	hostConfig := c.Hosts[hostIndex]
+
+	return slices.ContainsFunc(hostConfig.Repositories, func(repoConfig *configpb.Config_Host_Repository) bool {
+		return repoConfig.Name == repo
 	})
 }
 

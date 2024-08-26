@@ -41,6 +41,11 @@ type Key struct {
 	commitHash string
 }
 
+// CommitHash returns the commit hash.
+func (k Key) CommitHash() string {
+	return k.commitHash
+}
+
 // NewKey creates a new Commit key.
 func NewKey(host, repository, commitHash string) (Key, error) {
 	if err := gitiles.ValidateRepoHost(host); err != nil {
