@@ -44,15 +44,6 @@ cron:
   schedule: every 10 minutes synchronized
   target: backend
 
-
-### Caches for the UI
-
-- description: Aggregate all bots dimensions for easier sorting.
-  url: /internal/cron/monitoring/bots/aggregate_dimensions
-  schedule: every 5 minutes
-  target: backend
-
-
 ### External schedulers
 
 - description: Cancel tasks at the behest of external scheduler.
