@@ -65,6 +65,10 @@ func (f *FakeClient) DownloadDiff(ctx context.Context, in *gitilespb.DownloadDif
 	panic("not implemented")
 }
 
+func (f *FakeClient) GetProject(ctx context.Context, in *gitilespb.GetProjectRequest, opts ...grpc.CallOption) (*gitilespb.Project, error) {
+	panic("not implemented")
+}
+
 func (f *FakeClient) Projects(ctx context.Context, in *gitilespb.ProjectsRequest, opts ...grpc.CallOption) (*gitilespb.ProjectsResponse, error) {
 	panic("not implemented")
 }

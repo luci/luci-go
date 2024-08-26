@@ -171,6 +171,32 @@ func TestRefs(t *testing.T) {
 	})
 }
 
+func TestGetProject(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	Convey("GetProject", t, func() {
+		srv, c := newMockClient(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(200)
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprintln(w, `)]}'
+				{
+					"name": "bar",
+					"clone_url": "https://foo.googlesource.com/bar"
+				}
+			`)
+		})
+		defer srv.Close()
+
+		res, err := c.GetProject(ctx, &gitiles.GetProjectRequest{Name: "bar"})
+		So(err, ShouldBeNil)
+		So(res, ShouldResemble, &gitiles.Project{
+			Name:     "bar",
+			CloneUrl: "https://foo.googlesource.com/bar",
+		})
+	})
+}
+
 func TestProjects(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -206,6 +232,7 @@ func TestProjects(t *testing.T) {
 		})
 	})
 }
+
 func TestList(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()

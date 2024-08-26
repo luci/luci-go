@@ -96,6 +96,26 @@ func (mr *MockGitilesClientMockRecorder) DownloadFile(ctx, in interface{}, opts 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DownloadFile", reflect.TypeOf((*MockGitilesClient)(nil).DownloadFile), varargs...)
 }
 
+// GetProject mocks base method.
+func (m *MockGitilesClient) GetProject(ctx context.Context, in *gitiles.GetProjectRequest, opts ...grpc.CallOption) (*gitiles.Project, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetProject", varargs...)
+	ret0, _ := ret[0].(*gitiles.Project)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetProject indicates an expected call of GetProject.
+func (mr *MockGitilesClientMockRecorder) GetProject(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProject", reflect.TypeOf((*MockGitilesClient)(nil).GetProject), varargs...)
+}
+
 // ListFiles mocks base method.
 func (m *MockGitilesClient) ListFiles(ctx context.Context, in *gitiles.ListFilesRequest, opts ...grpc.CallOption) (*gitiles.ListFilesResponse, error) {
 	m.ctrl.T.Helper()
@@ -242,6 +262,21 @@ func (m *MockGitilesServer) DownloadFile(arg0 context.Context, arg1 *gitiles.Dow
 func (mr *MockGitilesServerMockRecorder) DownloadFile(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DownloadFile", reflect.TypeOf((*MockGitilesServer)(nil).DownloadFile), arg0, arg1)
+}
+
+// GetProject mocks base method.
+func (m *MockGitilesServer) GetProject(arg0 context.Context, arg1 *gitiles.GetProjectRequest) (*gitiles.Project, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetProject", arg0, arg1)
+	ret0, _ := ret[0].(*gitiles.Project)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetProject indicates an expected call of GetProject.
+func (mr *MockGitilesServerMockRecorder) GetProject(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProject", reflect.TypeOf((*MockGitilesServer)(nil).GetProject), arg0, arg1)
 }
 
 // ListFiles mocks base method.

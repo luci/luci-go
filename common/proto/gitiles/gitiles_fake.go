@@ -21,6 +21,8 @@ import (
 	"math/rand"
 
 	"google.golang.org/grpc"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/git"
@@ -151,6 +153,21 @@ func (f *Fake) Projects(ctx context.Context, in *ProjectsRequest, opts ...grpc.C
 		i++
 	}
 	return resp, nil
+}
+
+// GetProject retrieves a project.
+func (f *Fake) GetProject(ctx context.Context, in *GetProjectRequest, opts ...grpc.CallOption) (*Project, error) {
+	f.addCallLog(in)
+
+	_, ok := f.m[in.Name]
+	if !ok {
+		return nil, status.Errorf(codes.NotFound, "project not found")
+	}
+
+	return &Project{
+		Name:     in.Name,
+		CloneUrl: fmt.Sprintf("https://fake.googlesource.com/%s", in.Name),
+	}, nil
 }
 
 // ListFiles retrieves a list of files at the given revision. This is not implemented.

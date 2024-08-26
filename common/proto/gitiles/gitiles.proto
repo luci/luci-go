@@ -34,6 +34,8 @@ service Gitiles {
     rpc DownloadFile(DownloadFileRequest) returns (DownloadFileResponse) {};
     // DownloadDiff retrieves a diff of a revision from the project.
     rpc DownloadDiff(DownloadDiffRequest) returns (DownloadDiffResponse) {};
+    // GetProject retrieves a project.
+    rpc GetProject(GetProjectRequest) returns (Project) {};
     // Projects retrieves list of available Gitiles projects.
     rpc Projects(ProjectsRequest) returns (ProjectsResponse) {};
     // ListFiles retrieves a list of files at the given revision.
@@ -236,6 +238,21 @@ message DownloadDiffRequest {
 message DownloadDiffResponse {
     // Decoded contents of the diff.
     string contents = 1;
+}
+
+message GetProjectRequest {
+    // The name of the Gitiles project, e.g. "chromium/src" part in
+    // https://chromium.googlesource.com/chromium/src/+/main
+    // Required.
+    string name = 1;
+}
+
+message Project {
+    // The name of the Gitiles project, e.g. "chromium/src" part in
+    // https://chromium.googlesource.com/chromium/src/+/main
+    string name = 1;
+    // The URL to clone the project.
+    string clone_url = 2;
 }
 
 message ProjectsRequest {

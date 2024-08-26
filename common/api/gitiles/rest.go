@@ -258,6 +258,19 @@ func (c *client) Archive(ctx context.Context, req *gitiles.ArchiveRequest, opts 
 	return resp, nil
 }
 
+func (c *client) GetProject(ctx context.Context, req *gitiles.GetProjectRequest, opts ...grpc.CallOption) (*gitiles.Project, error) {
+	resp := struct {
+		Name     string `json:"name"`
+		CloneURL string `json:"clone_url"`
+	}{}
+
+	path := fmt.Sprintf("/%s", req.Name)
+	if err := c.get(ctx, path, url.Values{}, &resp); err != nil {
+		return nil, err
+	}
+	return &gitiles.Project{Name: resp.Name, CloneUrl: resp.CloneURL}, nil
+}
+
 func (c *client) Projects(ctx context.Context, req *gitiles.ProjectsRequest, opts ...grpc.CallOption) (*gitiles.ProjectsResponse, error) {
 	var resp map[string]project
 
