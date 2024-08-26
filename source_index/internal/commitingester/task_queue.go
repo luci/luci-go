@@ -28,7 +28,6 @@ import (
 	"go.chromium.org/luci/common/proto/gitiles"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server"
-	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
 
@@ -78,11 +77,8 @@ func handleCommitIngestion(ctx context.Context, payload proto.Message) error {
 
 	logging.Infof(ctx, "received commit ingestion task with page token: %q", task.PageToken)
 
-	t, err := auth.GetRPCTransport(ctx, auth.AsSelf)
-	if err != nil {
-		return err
-	}
-	client, err := gitilesapi.NewRESTClient(&http.Client{Transport: t}, task.Host, false)
+	// TODO(b/356027716): use the service's own credential to query Gitiles.
+	client, err := gitilesapi.NewRESTClient(&http.Client{}, task.Host, false)
 	if err != nil {
 		return errors.Annotate(err, "initialize a Gitiles REST client").Err()
 	}
