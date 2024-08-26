@@ -17,30 +17,31 @@ package intsetexpr
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestExpand(t *testing.T) {
 	t.Parallel()
 
-	Convey("Tokenizer works", t, func() {
-		So(tokenize(""), ShouldHaveLength, 0)
-		So(tokenize("abc"), ShouldResemble, []token{{TokRunes, "abc"}})
-		So(tokenize("01234"), ShouldResemble, []token{{TokNum, "01234"}})
-		So(tokenize("{},.."), ShouldResemble, []token{
+	ftt.Run("Tokenizer works", t, func(t *ftt.Test) {
+		assert.Loosely(t, tokenize(""), should.HaveLength(0))
+		assert.Loosely(t, tokenize("abc"), should.Resemble([]token{{TokRunes, "abc"}}))
+		assert.Loosely(t, tokenize("01234"), should.Resemble([]token{{TokNum, "01234"}}))
+		assert.Loosely(t, tokenize("{},.."), should.Resemble([]token{
 			{TokLB, "{"},
 			{TokRB, "}"},
 			{TokComma, ","},
 			{TokDots, ".."},
-		})
-		So(tokenize("{{{}}}"), ShouldResemble, []token{
+		}))
+		assert.Loosely(t, tokenize("{{{}}}"), should.Resemble([]token{
 			{TokRunes, "{"},
 			{TokLB, "{"},
 			{TokRunes, "}"},
 			{TokRB, "}"},
-		})
-		So(tokenize("ab.{01..02,03}{{c}}de"), ShouldResemble, []token{
+		}))
+		assert.Loosely(t, tokenize("ab.{01..02,03}{{c}}de"), should.Resemble([]token{
 			{TokRunes, "ab"},
 			{TokRunes, "."},
 			{TokLB, "{"},
@@ -54,60 +55,60 @@ func TestExpand(t *testing.T) {
 			{TokRunes, "c"},
 			{TokRunes, "}"},
 			{TokRunes, "de"},
-		})
+		}))
 	})
 
-	Convey("Expand works", t, func() {
+	ftt.Run("Expand works", t, func(t *ftt.Test) {
 		call := func(s string) []string {
 			out, err := Expand(s)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			return out
 		}
 
-		So(call(""), ShouldResemble, []string{""})
-		So(call("abc"), ShouldResemble, []string{"abc"})
-		So(call("abc{{}}"), ShouldResemble, []string{"abc{}"})
+		assert.Loosely(t, call(""), should.Resemble([]string{""}))
+		assert.Loosely(t, call("abc"), should.Resemble([]string{"abc"}))
+		assert.Loosely(t, call("abc{{}}"), should.Resemble([]string{"abc{}"}))
 
-		So(call("a{1}b"), ShouldResemble, []string{"a1b"})
-		So(call("{{a{1}b}}"), ShouldResemble, []string{"{a1b}"})
-		So(call("a{1,2}b"), ShouldResemble, []string{"a1b", "a2b"})
-		So(call("a{1..2}b"), ShouldResemble, []string{"a1b", "a2b"})
-		So(call("a{1..2,3}b"), ShouldResemble, []string{"a1b", "a2b", "a3b"})
-		So(call("a{1..2,3,4,8..9}b"), ShouldResemble, []string{"a1b", "a2b", "a3b", "a4b", "a8b", "a9b"})
-		So(call("a{}b"), ShouldResemble, []string{"ab"})
-		So(call("a{1,}b"), ShouldResemble, []string{"a1b"})
-		So(call("a{1..2,}b"), ShouldResemble, []string{"a1b", "a2b"})
+		assert.Loosely(t, call("a{1}b"), should.Resemble([]string{"a1b"}))
+		assert.Loosely(t, call("{{a{1}b}}"), should.Resemble([]string{"{a1b}"}))
+		assert.Loosely(t, call("a{1,2}b"), should.Resemble([]string{"a1b", "a2b"}))
+		assert.Loosely(t, call("a{1..2}b"), should.Resemble([]string{"a1b", "a2b"}))
+		assert.Loosely(t, call("a{1..2,3}b"), should.Resemble([]string{"a1b", "a2b", "a3b"}))
+		assert.Loosely(t, call("a{1..2,3,4,8..9}b"), should.Resemble([]string{"a1b", "a2b", "a3b", "a4b", "a8b", "a9b"}))
+		assert.Loosely(t, call("a{}b"), should.Resemble([]string{"ab"}))
+		assert.Loosely(t, call("a{1,}b"), should.Resemble([]string{"a1b"}))
+		assert.Loosely(t, call("a{1..2,}b"), should.Resemble([]string{"a1b", "a2b"}))
 
-		So(call("a...{1..2}.b"), ShouldResemble, []string{"a...1.b", "a...2.b"})
+		assert.Loosely(t, call("a...{1..2}.b"), should.Resemble([]string{"a...1.b", "a...2.b"}))
 
-		So(call("{1}"), ShouldResemble, []string{"1"})
-		So(call("{}"), ShouldResemble, []string{""})
+		assert.Loosely(t, call("{1}"), should.Resemble([]string{"1"}))
+		assert.Loosely(t, call("{}"), should.Resemble([]string{""}))
 
 		// Zero padding works (but only when range number have the same length).
-		So(call("a{01,02..03}b"), ShouldResemble, []string{"a01b", "a02b", "a03b"})
-		So(call("a{1,02..03}b"), ShouldResemble, []string{"a1b", "a02b", "a03b"})
-		So(call("a{001,02..003}b"), ShouldResemble, []string{"a001b", "a2b", "a3b"})
+		assert.Loosely(t, call("a{01,02..03}b"), should.Resemble([]string{"a01b", "a02b", "a03b"}))
+		assert.Loosely(t, call("a{1,02..03}b"), should.Resemble([]string{"a1b", "a02b", "a03b"}))
+		assert.Loosely(t, call("a{001,02..003}b"), should.Resemble([]string{"a001b", "a2b", "a3b"}))
 	})
 
-	Convey("Expand handles errors", t, func() {
+	ftt.Run("Expand handles errors", t, func(t *ftt.Test) {
 		call := func(s string) error {
 			_, err := Expand(s)
 			return err
 		}
 
-		So(call("}abc"), ShouldErrLike, `"}" must appear after "{"`)
-		So(call("a{}b{}"), ShouldErrLike, `only one "{...}" section is allowed`)
-		So(call("a{z}"), ShouldErrLike, `expecting a number or "}", got "z"`)
-		So(call("a{12z}"), ShouldErrLike, `expecting ",", ".." or "}", got "z"`)
-		So(call("a{1..}"), ShouldErrLike, `expecting a number, got "}"`)
-		So(call("a{1..2z}"), ShouldErrLike, `expecting "," or "}", got "z"`)
+		assert.Loosely(t, call("}abc"), should.ErrLike(`"}" must appear after "{"`))
+		assert.Loosely(t, call("a{}b{}"), should.ErrLike(`only one "{...}" section is allowed`))
+		assert.Loosely(t, call("a{z}"), should.ErrLike(`expecting a number or "}", got "z"`))
+		assert.Loosely(t, call("a{12z}"), should.ErrLike(`expecting ",", ".." or "}", got "z"`))
+		assert.Loosely(t, call("a{1..}"), should.ErrLike(`expecting a number, got "}"`))
+		assert.Loosely(t, call("a{1..2z}"), should.ErrLike(`expecting "," or "}", got "z"`))
 
-		So(call("{10000000000000000000000000000000000000000}"), ShouldErrLike, `is too large`)
-		So(call("{1..10000000000000000000000000000000000000000}"), ShouldErrLike, `is too large`)
+		assert.Loosely(t, call("{10000000000000000000000000000000000000000}"), should.ErrLike(`is too large`))
+		assert.Loosely(t, call("{1..10000000000000000000000000000000000000000}"), should.ErrLike(`is too large`))
 
-		So(call("{2..1}"), ShouldErrLike, `bad range - 1 is not larger than 2`)
-		So(call("{1..1}"), ShouldErrLike, `bad range - 1 is not larger than 1`)
-		So(call("{1,1}"), ShouldErrLike, `the set is not in increasing order - 1 is not larger than 1`)
-		So(call("{1..10,9,10}"), ShouldErrLike, `the set is not in increasing order - 9 is not larger than 10`)
+		assert.Loosely(t, call("{2..1}"), should.ErrLike(`bad range - 1 is not larger than 2`))
+		assert.Loosely(t, call("{1..1}"), should.ErrLike(`bad range - 1 is not larger than 1`))
+		assert.Loosely(t, call("{1,1}"), should.ErrLike(`the set is not in increasing order - 1 is not larger than 1`))
+		assert.Loosely(t, call("{1..10,9,10}"), should.ErrLike(`the set is not in increasing order - 9 is not larger than 10`))
 	})
 }

@@ -17,14 +17,15 @@ package templateproto
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestLoadFromConfig(t *testing.T) {
 	t.Parallel()
 
-	Convey("LoadFile", t, func() {
+	ftt.Run("LoadFile", t, func(t *ftt.Test) {
 		templateContent := `
 		template: <
 			key: "hardcode"
@@ -85,10 +86,10 @@ func TestLoadFromConfig(t *testing.T) {
 		>
 		`
 
-		Convey("basic load", func() {
+		t.Run("basic load", func(t *ftt.Test) {
 			file, err := LoadFile(templateContent)
-			So(err, ShouldBeNil)
-			So(file, ShouldResembleProto, &File{Template: map[string]*File_Template{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, file, should.Resemble(&File{Template: map[string]*File_Template{
 				"hardcode": {
 					Doc:  "it's hard-coded",
 					Body: `{"woot": ["sauce"]}`,
@@ -119,37 +120,37 @@ func TestLoadFromConfig(t *testing.T) {
 						},
 					},
 				},
-			}})
+			}}))
 
-			Convey("basic render", func() {
+			t.Run("basic render", func(t *ftt.Test) {
 				ret, err := file.RenderL("templ_1", LiteralMap{"${thing}": "white", "${json_key}": 20})
-				So(err, ShouldBeNil)
-				So(ret, ShouldEqual, `{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, ret, should.Equal(`{
 	"json_key": 20,
 	"cmd": ["array", "of", "white"],
 	"extra": {"yes":"please"}
-}`)
+}`))
 			})
 
-			Convey("null override", func() {
+			t.Run("null override", func(t *ftt.Test) {
 				ret, err := file.RenderL("templ_1", LiteralMap{"${thing}": "white", "${json_key}": 20, "${extra}": nil})
-				So(err, ShouldBeNil)
-				So(ret, ShouldEqual, `{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, ret, should.Equal(`{
 	"json_key": 20,
 	"cmd": ["array", "of", "white"],
 	"extra": null
-}`)
+}`))
 			})
 
-			Convey("bad render gets context", func() {
+			t.Run("bad render gets context", func(t *ftt.Test) {
 				_, err := file.RenderL("templ_1", LiteralMap{"${thing}": 10, "${json_key}": 20, "${extra}": nil})
-				So(err, ShouldErrLike, "rendering \"templ_1\": param \"${thing}\": type is \"int\", expected \"enum\"")
+				assert.Loosely(t, err, should.ErrLike("rendering \"templ_1\": param \"${thing}\": type is \"int\", expected \"enum\""))
 			})
 
-			Convey("hardcode", func() {
+			t.Run("hardcode", func(t *ftt.Test) {
 				ret, err := file.RenderL("hardcode", nil)
-				So(err, ShouldBeNil)
-				So(ret, ShouldEqual, `{"woot": ["sauce"]}`)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, ret, should.Equal(`{"woot": ["sauce"]}`))
 			})
 		})
 

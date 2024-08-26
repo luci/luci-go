@@ -18,13 +18,15 @@ import (
 	"testing"
 
 	"github.com/golang/protobuf/proto"
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
-func parse(template string) *File_Template {
+func parse(t testing.TB, template string) *File_Template {
 	ret := &File_Template{}
-	So(proto.UnmarshalText(template, ret), ShouldBeNil)
+	assert.Loosely(t, proto.UnmarshalText(template, ret), should.BeNil)
 	return ret
 }
 
@@ -55,19 +57,19 @@ func TestTemplateNormalize(t *testing.T) {
 		{"parsing rendered body: invalid character 'w'", `body: "wumpus"`},
 	}
 
-	Convey("File_Template.Normalize", t, func() {
-		Convey("bad", func() {
+	ftt.Run("File_Template.Normalize", t, func(t *ftt.Test) {
+		t.Run("bad", func(t *ftt.Test) {
 
 			for _, tc := range badCases {
-				Convey(tc.err, func() {
-					t := parse(tc.data)
-					So(t.Normalize(), ShouldErrLike, tc.err)
+				t.Run(tc.err, func(t *ftt.Test) {
+					template := parse(t, tc.data)
+					assert.Loosely(t, template.Normalize(), should.ErrLike(tc.err))
 				})
 			}
 
-			Convey("length", func() {
-				Convey("string", func() {
-					t := parse(`
+			t.Run("length", func(t *ftt.Test) {
+				t.Run("string", func(t *ftt.Test) {
+					template := parse(t, `
 					body: "{\"key\": ${foof}}"
 					param: <
 						key: "${foof}"
@@ -76,13 +78,13 @@ func TestTemplateNormalize(t *testing.T) {
 						>
 					>
 					`)
-					So(t.Normalize(), ShouldBeNil)
-					_, err := t.RenderL(LiteralMap{"${foof}": "hi there"})
-					So(err, ShouldErrLike, "param \"${foof}\": value is too large")
+					assert.Loosely(t, template.Normalize(), should.BeNil)
+					_, err := template.RenderL(LiteralMap{"${foof}": "hi there"})
+					assert.Loosely(t, err, should.ErrLike("param \"${foof}\": value is too large"))
 				})
 
-				Convey("bytes", func() {
-					t := parse(`
+				t.Run("bytes", func(t *ftt.Test) {
+					template := parse(t, `
 					body: "{\"key\": ${foof}}"
 					param: <
 						key: "${foof}"
@@ -91,13 +93,13 @@ func TestTemplateNormalize(t *testing.T) {
 						>
 					>
 					`)
-					So(t.Normalize(), ShouldBeNil)
-					_, err := t.RenderL(LiteralMap{"${foof}": []byte("hi there")})
-					So(err, ShouldErrLike, "param \"${foof}\": value is too large")
+					assert.Loosely(t, template.Normalize(), should.BeNil)
+					_, err := template.RenderL(LiteralMap{"${foof}": []byte("hi there")})
+					assert.Loosely(t, err, should.ErrLike("param \"${foof}\": value is too large"))
 				})
 
-				Convey("object", func() {
-					t := parse(`
+				t.Run("object", func(t *ftt.Test) {
+					template := parse(t, `
 					body: "{\"key\": ${foof}}"
 					param: <
 						key: "${foof}"
@@ -106,13 +108,13 @@ func TestTemplateNormalize(t *testing.T) {
 						>
 					>
 					`)
-					So(t.Normalize(), ShouldBeNil)
-					_, err := t.RenderL(LiteralMap{"${foof}": map[string]any{"hi": 1}})
-					So(err, ShouldErrLike, "param \"${foof}\": value is too large")
+					assert.Loosely(t, template.Normalize(), should.BeNil)
+					_, err := template.RenderL(LiteralMap{"${foof}": map[string]any{"hi": 1}})
+					assert.Loosely(t, err, should.ErrLike("param \"${foof}\": value is too large"))
 				})
 
-				Convey("enum", func() {
-					t := parse(`
+				t.Run("enum", func(t *ftt.Test) {
+					template := parse(t, `
 					body: "{\"key\": ${foof}}"
 					param: <
 						key: "${foof}"
@@ -123,30 +125,30 @@ func TestTemplateNormalize(t *testing.T) {
 						>
 					>
 					`)
-					So(t.Normalize(), ShouldBeNil)
-					_, err := t.RenderL(LiteralMap{"${foof}": "bar"})
-					So(err, ShouldErrLike, "param \"${foof}\": value does not match enum: \"bar\"")
+					assert.Loosely(t, template.Normalize(), should.BeNil)
+					_, err := template.RenderL(LiteralMap{"${foof}": "bar"})
+					assert.Loosely(t, err, should.ErrLike("param \"${foof}\": value does not match enum: \"bar\""))
 				})
 			})
 
-			Convey("parse", func() {
-				Convey("not obj value", func() {
+			t.Run("parse", func(t *ftt.Test) {
+				t.Run("not obj value", func(t *ftt.Test) {
 					m, err := (LiteralMap{"$key": &Value_Object{"querp"}}).Convert()
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					spec := &Specifier{TemplateName: "thing", Params: m}
-					So(spec.Normalize(), ShouldErrLike, "param \"$key\": invalid character 'q'")
+					assert.Loosely(t, spec.Normalize(), should.ErrLike("param \"$key\": invalid character 'q'"))
 				})
 
-				Convey("not ary value", func() {
+				t.Run("not ary value", func(t *ftt.Test) {
 					m, err := (LiteralMap{"$key": &Value_Array{"querp"}}).Convert()
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					spec := &Specifier{TemplateName: "thing", Params: m}
-					So(spec.Normalize(), ShouldErrLike, "param \"$key\": invalid character 'q'")
+					assert.Loosely(t, spec.Normalize(), should.ErrLike("param \"$key\": invalid character 'q'"))
 				})
 			})
 
-			Convey("required param", func() {
-				t := parse(`
+			t.Run("required param", func(t *ftt.Test) {
+				template := parse(t, `
 				body: "{\"key\": ${value}}"
 				param: <
 					key: "${value}"
@@ -155,13 +157,13 @@ func TestTemplateNormalize(t *testing.T) {
 					>
 				>
 				`)
-				So(t.Normalize(), ShouldBeNil)
-				_, err := t.Render(nil)
-				So(err, ShouldErrLike, "param \"${value}\": missing")
+				assert.Loosely(t, template.Normalize(), should.BeNil)
+				_, err := template.Render(nil)
+				assert.Loosely(t, err, should.ErrLike("param \"${value}\": missing"))
 			})
 
-			Convey("extra param", func() {
-				t := parse(`
+			t.Run("extra param", func(t *ftt.Test) {
+				template := parse(t, `
 				body: "{\"key\": ${value}}"
 				param: <
 					key: "${value}"
@@ -170,13 +172,13 @@ func TestTemplateNormalize(t *testing.T) {
 					>
 				>
 				`)
-				So(t.Normalize(), ShouldBeNil)
-				_, err := t.RenderL(LiteralMap{"foo": nil, "${value}": 1})
-				So(err, ShouldErrLike, "unknown parameters: [\"foo\"]")
+				assert.Loosely(t, template.Normalize(), should.BeNil)
+				_, err := template.RenderL(LiteralMap{"foo": nil, "${value}": 1})
+				assert.Loosely(t, err, should.ErrLike("unknown parameters: [\"foo\"]"))
 			})
 
-			Convey("bad type", func() {
-				t := parse(`
+			t.Run("bad type", func(t *ftt.Test) {
+				template := parse(t, `
 				body: "{\"key\": ${value}}"
 				param: <
 					key: "${value}"
@@ -185,34 +187,34 @@ func TestTemplateNormalize(t *testing.T) {
 					>
 				>
 				`)
-				So(t.Normalize(), ShouldBeNil)
-				_, err := t.RenderL(LiteralMap{"${value}": nil})
-				So(err, ShouldErrLike, "param \"${value}\": not nullable")
+				assert.Loosely(t, template.Normalize(), should.BeNil)
+				_, err := template.RenderL(LiteralMap{"${value}": nil})
+				assert.Loosely(t, err, should.ErrLike("param \"${value}\": not nullable"))
 			})
 
-			Convey("prevents JSONi", func() {
-				Convey("object", func() {
+			t.Run("prevents JSONi", func(t *ftt.Test) {
+				t.Run("object", func(t *ftt.Test) {
 					m, err := (LiteralMap{
 						"${value}": &Value_Object{`{}, "otherKey": {}`}}).Convert()
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					spec := &Specifier{TemplateName: "thing", Params: m}
-					So(spec.Normalize(), ShouldErrLike, "param \"${value}\": got extra junk")
+					assert.Loosely(t, spec.Normalize(), should.ErrLike("param \"${value}\": got extra junk"))
 
 					spec.Params["${value}"].Value.(*Value_Object).Object = `{"extra": "space"}      `
-					So(spec.Normalize(), ShouldBeNil)
-					So(spec.Params["${value}"].GetObject(), ShouldEqual, `{"extra":"space"}`)
+					assert.Loosely(t, spec.Normalize(), should.BeNil)
+					assert.Loosely(t, spec.Params["${value}"].GetObject(), should.Equal(`{"extra":"space"}`))
 				})
 
-				Convey("array", func() {
+				t.Run("array", func(t *ftt.Test) {
 					va := &Value_Array{`[], "otherKey": []`}
-					So(va.Normalize(), ShouldErrLike, "got extra junk")
+					assert.Loosely(t, va.Normalize(), should.ErrLike("got extra junk"))
 				})
 			})
 		})
 
-		Convey("good", func() {
-			Convey("default", func() {
-				t := parse(`
+		t.Run("good", func(t *ftt.Test) {
+			t.Run("default", func(t *ftt.Test) {
+				template := parse(t, `
 				body: "{\"key\": ${value}}"
 				param: <
 					key: "${value}"
@@ -222,14 +224,14 @@ func TestTemplateNormalize(t *testing.T) {
 					>
 				>
 				`)
-				So(t.Normalize(), ShouldBeNil)
-				doc, err := t.Render(nil)
-				So(err, ShouldBeNil)
-				So(doc, ShouldEqual, `{"key": 20}`)
+				assert.Loosely(t, template.Normalize(), should.BeNil)
+				doc, err := template.Render(nil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, doc, should.Equal(`{"key": 20}`))
 			})
 
-			Convey("big int", func() {
-				t := parse(`
+			t.Run("big int", func(t *ftt.Test) {
+				template := parse(t, `
 				body: "{\"key\": ${value}}"
 				param: <
 					key: "${value}"
@@ -239,14 +241,14 @@ func TestTemplateNormalize(t *testing.T) {
 					>
 				>
 				`)
-				So(t.Normalize(), ShouldBeNil)
-				doc, err := t.Render(nil)
-				So(err, ShouldBeNil)
-				So(doc, ShouldEqual, `{"key": "9223372036854775807"}`)
+				assert.Loosely(t, template.Normalize(), should.BeNil)
+				doc, err := template.Render(nil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, doc, should.Equal(`{"key": "9223372036854775807"}`))
 			})
 
-			Convey("big uint", func() {
-				t := parse(`
+			t.Run("big uint", func(t *ftt.Test) {
+				template := parse(t, `
 				body: "{\"key\": ${value}}"
 				param: <
 					key: "${value}"
@@ -256,14 +258,14 @@ func TestTemplateNormalize(t *testing.T) {
 					>
 				>
 				`)
-				So(t.Normalize(), ShouldBeNil)
-				doc, err := t.Render(nil)
-				So(err, ShouldBeNil)
-				So(doc, ShouldEqual, `{"key": "18446744073709551615"}`)
+				assert.Loosely(t, template.Normalize(), should.BeNil)
+				doc, err := template.Render(nil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, doc, should.Equal(`{"key": "18446744073709551615"}`))
 			})
 
-			Convey("param", func() {
-				t := parse(`
+			t.Run("param", func(t *ftt.Test) {
+				template := parse(t, `
 				body: "{\"key\": ${value}}"
 				param: <
 					key: "${value}"
@@ -272,14 +274,14 @@ func TestTemplateNormalize(t *testing.T) {
 					>
 				>
 				`)
-				So(t.Normalize(), ShouldBeNil)
-				doc, err := t.RenderL(LiteralMap{"${value}": uint(19)})
-				So(err, ShouldBeNil)
-				So(doc, ShouldEqual, `{"key": 19}`)
+				assert.Loosely(t, template.Normalize(), should.BeNil)
+				doc, err := template.RenderL(LiteralMap{"${value}": uint(19)})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, doc, should.Equal(`{"key": 19}`))
 			})
 
-			Convey("float", func() {
-				t := parse(`
+			t.Run("float", func(t *ftt.Test) {
+				template := parse(t, `
 				body: "{\"key\": ${value}}"
 				param: <
 					key: "${value}"
@@ -288,14 +290,14 @@ func TestTemplateNormalize(t *testing.T) {
 					>
 				>
 				`)
-				So(t.Normalize(), ShouldBeNil)
-				doc, err := t.RenderL(LiteralMap{"${value}": 19.1})
-				So(err, ShouldBeNil)
-				So(doc, ShouldEqual, `{"key": 19.1}`)
+				assert.Loosely(t, template.Normalize(), should.BeNil)
+				doc, err := template.RenderL(LiteralMap{"${value}": 19.1})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, doc, should.Equal(`{"key": 19.1}`))
 			})
 
-			Convey("boolean", func() {
-				t := parse(`
+			t.Run("boolean", func(t *ftt.Test) {
+				template := parse(t, `
 				body: "{\"key\": ${value}}"
 				param: <
 					key: "${value}"
@@ -304,14 +306,14 @@ func TestTemplateNormalize(t *testing.T) {
 					>
 				>
 				`)
-				So(t.Normalize(), ShouldBeNil)
-				doc, err := t.RenderL(LiteralMap{"${value}": true})
-				So(err, ShouldBeNil)
-				So(doc, ShouldEqual, `{"key": true}`)
+				assert.Loosely(t, template.Normalize(), should.BeNil)
+				doc, err := template.RenderL(LiteralMap{"${value}": true})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, doc, should.Equal(`{"key": true}`))
 			})
 
-			Convey("array", func() {
-				t := parse(`
+			t.Run("array", func(t *ftt.Test) {
+				template := parse(t, `
 				body: "{\"key\": ${value}}"
 				param: <
 					key: "${value}"
@@ -320,14 +322,14 @@ func TestTemplateNormalize(t *testing.T) {
 					>
 				>
 				`)
-				So(t.Normalize(), ShouldBeNil)
-				doc, err := t.RenderL(LiteralMap{"${value}": []any{"hi", 20}})
-				So(err, ShouldBeNil)
-				So(doc, ShouldEqual, `{"key": ["hi",20]}`)
+				assert.Loosely(t, template.Normalize(), should.BeNil)
+				doc, err := template.RenderL(LiteralMap{"${value}": []any{"hi", 20}})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, doc, should.Equal(`{"key": ["hi",20]}`))
 			})
 
-			Convey("null", func() {
-				t := parse(`
+			t.Run("null", func(t *ftt.Test) {
+				template := parse(t, `
 				body: "{\"key\": ${value}}"
 				param: <
 					key: "${value}"
@@ -337,10 +339,10 @@ func TestTemplateNormalize(t *testing.T) {
 					>
 				>
 				`)
-				So(t.Normalize(), ShouldBeNil)
-				doc, err := t.RenderL(LiteralMap{"${value}": nil})
-				So(err, ShouldBeNil)
-				So(doc, ShouldEqual, `{"key": null}`)
+				assert.Loosely(t, template.Normalize(), should.BeNil)
+				doc, err := template.RenderL(LiteralMap{"${value}": nil})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, doc, should.Equal(`{"key": null}`))
 			})
 		})
 	})

@@ -18,42 +18,44 @@ import (
 	"regexp"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestPattern(t *testing.T) {
 	t.Parallel()
 
-	Convey("Pattern", t, func() {
-		Convey("Exact", func() {
+	ftt.Run("Pattern", t, func(t *ftt.Test) {
+		t.Run("Exact", func(t *ftt.Test) {
 			p := Exact("a")
-			So(p.Match("a"), ShouldBeTrue)
-			So(p.Match("b"), ShouldBeFalse)
-			So(p.String(), ShouldEqual, "exact:a")
+			assert.Loosely(t, p.Match("a"), should.BeTrue)
+			assert.Loosely(t, p.Match("b"), should.BeFalse)
+			assert.Loosely(t, p.String(), should.Equal("exact:a"))
 		})
 
-		Convey("Regex", func() {
+		t.Run("Regex", func(t *ftt.Test) {
 			p := Regexp(regexp.MustCompile("^ab?$"))
-			So(p.Match("a"), ShouldBeTrue)
-			So(p.Match("ab"), ShouldBeTrue)
-			So(p.Match("b"), ShouldBeFalse)
-			So(p.String(), ShouldEqual, "regex:^ab?$")
+			assert.Loosely(t, p.Match("a"), should.BeTrue)
+			assert.Loosely(t, p.Match("ab"), should.BeTrue)
+			assert.Loosely(t, p.Match("b"), should.BeFalse)
+			assert.Loosely(t, p.String(), should.Equal("regex:^ab?$"))
 		})
 
-		Convey("Any", func() {
-			So(Any.Match("a"), ShouldBeTrue)
-			So(Any.Match("b"), ShouldBeTrue)
-			So(Any.String(), ShouldEqual, "*")
+		t.Run("Any", func(t *ftt.Test) {
+			assert.Loosely(t, Any.Match("a"), should.BeTrue)
+			assert.Loosely(t, Any.Match("b"), should.BeTrue)
+			assert.Loosely(t, Any.String(), should.Equal("*"))
 		})
 
-		Convey("None", func() {
-			So(None.Match("a"), ShouldBeFalse)
-			So(None.Match("b"), ShouldBeFalse)
-			So(None.String(), ShouldEqual, "")
+		t.Run("None", func(t *ftt.Test) {
+			assert.Loosely(t, None.Match("a"), should.BeFalse)
+			assert.Loosely(t, None.Match("b"), should.BeFalse)
+			assert.Loosely(t, None.String(), should.BeEmpty)
 		})
 
-		Convey("Parse", func() {
-			Convey("Good", func() {
+		t.Run("Parse", func(t *ftt.Test) {
+			t.Run("Good", func(t *ftt.Test) {
 				patterns := []Pattern{
 					Exact("a"),
 					Regexp(regexp.MustCompile("^ab$")),
@@ -62,18 +64,18 @@ func TestPattern(t *testing.T) {
 				}
 				for _, p := range patterns {
 					p2, err := Parse(p.String())
-					So(err, ShouldBeNil)
-					So(p2.String(), ShouldEqual, p.String())
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, p2.String(), should.Equal(p.String()))
 				}
 			})
 
-			Convey("Without '^' and '$'", func() {
+			t.Run("Without '^' and '$'", func(t *ftt.Test) {
 				p, err := Parse("regex:deadbeef")
-				So(err, ShouldBeNil)
-				So(p.String(), ShouldEqual, "regex:^deadbeef$")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, p.String(), should.Equal("regex:^deadbeef$"))
 			})
 
-			Convey("Bad", func() {
+			t.Run("Bad", func(t *ftt.Test) {
 				bad := []string{
 					":",
 					"a:",
@@ -82,7 +84,7 @@ func TestPattern(t *testing.T) {
 				}
 				for _, s := range bad {
 					_, err := Parse(s)
-					So(err, ShouldNotBeNil)
+					assert.Loosely(t, err, should.NotBeNil)
 				}
 			})
 		})

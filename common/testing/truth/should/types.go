@@ -15,6 +15,7 @@
 package should
 
 import (
+	"go.chromium.org/luci/common/testing/truth/comparison"
 	"go.chromium.org/luci/common/testing/truth/failure"
 )
 
@@ -29,4 +30,13 @@ import (
 // losslessly to `expectedType`, and display an error if this fails.
 func HaveType[T any](actual T) *failure.Summary {
 	return nil
+}
+
+// StaticallyHaveSameTypeAs checks if two values statically have the same type.
+//
+// Like HaveType, it will fail to compile if the types are incompatible.
+func StaticallyHaveSameTypeAs[T any](expected T) comparison.Func[T] {
+	return func(actual T) *failure.Summary {
+		return nil
+	}
 }

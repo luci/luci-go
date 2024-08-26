@@ -17,12 +17,14 @@ package units
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestSizeToString(t *testing.T) {
 	t.Parallel()
-	Convey(`A size unit should convert to a valid string representation.`, t, func() {
+	ftt.Run(`A size unit should convert to a valid string representation.`, t, func(t *ftt.Test) {
 		data := []struct {
 			in       int64
 			expected string
@@ -41,7 +43,7 @@ func TestSizeToString(t *testing.T) {
 			{1048576, "1.00MiB"},
 		}
 		for _, line := range data {
-			So(SizeToString(line.in), ShouldResemble, line.expected)
+			assert.Loosely(t, SizeToString(line.in), should.Resemble(line.expected))
 		}
 	})
 }
