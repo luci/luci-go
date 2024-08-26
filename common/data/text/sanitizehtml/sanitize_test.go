@@ -19,7 +19,8 @@ import (
 	"strings"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestSanitize(t *testing.T) {
@@ -119,11 +120,11 @@ func TestSanitize(t *testing.T) {
 
 	for _, c := range cases {
 		c := c
-		Convey(c.in, t, func() {
+		t.Run(c.in, func(t *testing.T) {
 			buf := &bytes.Buffer{}
 			err := Sanitize(buf, strings.NewReader(c.in))
-			So(err, ShouldBeNil)
-			So(buf.String(), ShouldEqual, c.out)
+			assert.Loosely(t, err, should.BeNil)
+			assert.That(t, buf.String(), should.Equal(c.out))
 		})
 	}
 }
