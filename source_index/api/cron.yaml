@@ -12,10 +12,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# DO NOT ADD TO THIS FILE. Declare new cron jobs in terraform instead.
 cron:
-- description: "Update the service-wide configuration"
-  url: /internal/cron/update-config
-  schedule: every 10 minutes
-- description: "Sweeper job for transactional tasks."
-  url: /internal/tasks/c/sweep
-  schedule: every 1 minutes
