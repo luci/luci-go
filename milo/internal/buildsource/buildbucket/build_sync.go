@@ -16,17 +16,13 @@ package buildbucket
 
 import (
 	"context"
-	"encoding/base64"
-	"encoding/json"
 	"fmt"
-	"net/http"
 	"time"
 
 	"github.com/gomodule/redigo/redis"
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/encoding/protojson"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
@@ -40,7 +36,6 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/pubsub"
 	"go.chromium.org/luci/server/redisconn"
-	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/milo/internal/model"
 	"go.chromium.org/luci/milo/internal/model/milostatus"
@@ -186,62 +181,6 @@ var summaryBuildMask = &field_mask.FieldMask{
 		"output.properties",
 		"critical",
 	},
-}
-
-type PubSubMessage struct {
-	Attributes map[string]any `json:"attributes"`
-	Data       string         `json:"data"`
-	MessageID  string         `json:"message_id"`
-}
-
-type pubSubSubscription struct {
-	Message PubSubMessage `json:"message"`
-}
-
-// GetData returns the expanded form of Data (decoded from base64).
-func (m *pubSubSubscription) GetData() ([]byte, error) {
-	return base64.StdEncoding.DecodeString(m.Message.Data)
-}
-
-// PubSubHandlerLegacy is a webhook that stores the builds coming in from pubsub.
-func PubSubHandlerLegacy(ctx *router.Context) {
-	err := pubSubHandlerLegacyImpl(ctx.Request.Context(), ctx.Request)
-	if err != nil {
-		logging.Errorf(ctx.Request.Context(), "error while handling pubsub event")
-		errors.Log(ctx.Request.Context(), err)
-	}
-	if transient.Tag.In(err) {
-		// Transient errors are 4xx so that PubSub retries them.
-		// TODO(crbug.com/1099036): Address High traffic builders causing errors.
-		ctx.Writer.WriteHeader(http.StatusTooEarly)
-		return
-	}
-	// No errors or non-transient errors are 200s so that PubSub does not retry
-	// them.
-	ctx.Writer.WriteHeader(http.StatusOK)
-}
-
-// pubSubHandlerLegacyImpl takes the http.Request, expects to find
-// a common.PubSubSubscription JSON object in the Body, containing a
-// BuildsV2PubSub, and handles the contents with generateSummary.
-func pubSubHandlerLegacyImpl(c context.Context, r *http.Request) error {
-	msg := pubSubSubscription{}
-	if err := json.NewDecoder(r.Body).Decode(&msg); err != nil {
-		// This might be a transient error, e.g. when the json format changes
-		// and Milo isn't updated yet.
-		return errors.Annotate(err, "could not decode message").Tag(transient.Tag).Err()
-	}
-	bData, err := msg.GetData()
-	if err != nil {
-		return errors.Annotate(err, "could not parse pubsub message string").Err()
-	}
-	buildsV2Msg := &buildbucketpb.BuildsV2PubSub{}
-	opts := protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}
-	if err := opts.Unmarshal(bData, buildsV2Msg); err != nil {
-		return err
-	}
-
-	return PubSubHandler(c, pubsub.Message{}, buildsV2Msg)
 }
 
 func PubSubHandler(c context.Context, message pubsub.Message, buildPubSub *buildbucketpb.BuildsV2PubSub) error {

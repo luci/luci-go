@@ -15,21 +15,14 @@
 package buildbucket
 
 import (
-	"bytes"
 	"context"
-	"encoding/base64"
-	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
-	"net/http/httptest"
 	"testing"
 	"time"
 
 	"github.com/alicebob/miniredis/v2"
 	"github.com/golang/mock/gomock"
 	"github.com/gomodule/redigo/redis"
-	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -50,7 +43,6 @@ import (
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/pubsub"
 	"go.chromium.org/luci/server/redisconn"
-	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/milo/internal/model"
 	"go.chromium.org/luci/milo/internal/model/milostatus"
@@ -68,19 +60,6 @@ func newMockClient(c context.Context, t *testing.T) (context.Context, *gomock.Co
 
 // Buildbucket timestamps round off to milliseconds, so define a reference.
 var RefTime = time.Date(2016, time.February, 3, 4, 5, 6, 0, time.UTC)
-
-func makeReq(build *buildbucketpb.Build) io.ReadCloser {
-	bmsg := &buildbucketpb.BuildsV2PubSub{Build: build}
-	bm, _ := protojson.Marshal(bmsg)
-
-	msg := pubSubSubscription{
-		Message: PubSubMessage{
-			Data: base64.StdEncoding.EncodeToString(bm),
-		},
-	}
-	jmsg, _ := json.Marshal(msg)
-	return io.NopCloser(bytes.NewReader(jmsg))
-}
 
 func TestPubSub(t *testing.T) {
 	t.Parallel()
@@ -260,205 +239,6 @@ func TestPubSub(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, blder.LastFinishedCreated, should.Match(RefTime.Add(2*time.Hour)))
 				assert.Loosely(t, blder.LastFinishedStatus, should.Match(milostatus.Success))
-				assert.Loosely(t, blder.LastFinishedBuildID, should.Equal("buildbucket/2234"))
-			})
-		})
-	})
-}
-
-func TestPubSubLegacy(t *testing.T) {
-	t.Parallel()
-
-	ftt.Run(`TestPubSub (Legacy)`, t, func(t *ftt.Test) {
-		c := gaetesting.TestingContextWithAppID("luci-milo-dev")
-		datastore.GetTestable(c).Consistent(true)
-		c, _ = testclock.UseTime(c, RefTime)
-		c = auth.WithState(c, &authtest.FakeState{
-			Identity:       identity.AnonymousIdentity,
-			IdentityGroups: []string{"all"},
-		})
-		c = caching.WithRequestCache(c)
-
-		// Initialize the appropriate builder.
-		builderSummary := &model.BuilderSummary{
-			BuilderID: "buildbucket/luci.fake.bucket/fake_builder",
-		}
-		err := datastore.Put(c, builderSummary)
-		assert.Loosely(t, err, should.BeNil)
-
-		// Initialize the appropriate project config.
-		err = datastore.Put(c, &projectconfig.Project{
-			ID: "fake",
-		})
-		assert.Loosely(t, err, should.BeNil)
-
-		// We'll copy this LegacyApiCommonBuildMessage base for convenience.
-		buildBase := &buildbucketpb.Build{
-			Builder: &buildbucketpb.BuilderID{
-				Project: "fake",
-				Bucket:  "bucket",
-				Builder: "fake_builder",
-			},
-			Infra: &buildbucketpb.BuildInfra{
-				Buildbucket: &buildbucketpb.BuildInfra_Buildbucket{
-					Hostname: "hostname",
-				},
-			},
-			Input:      &buildbucketpb.Build_Input{},
-			Output:     &buildbucketpb.Build_Output{},
-			CreatedBy:  string(identity.AnonymousIdentity),
-			CreateTime: timestamppb.New(RefTime.Add(2 * time.Hour)),
-		}
-
-		t.Run("New in-process build", func(t *ftt.Test) {
-			bKey := model.MakeBuildKey(c, "hostname", "1234")
-			buildExp := proto.Clone(buildBase).(*buildbucketpb.Build)
-			buildExp.Id = 1234
-			buildExp.Status = buildbucketpb.Status_STARTED
-			buildExp.CreateTime = timestamppb.New(RefTime.Add(2 * time.Hour))
-			buildExp.StartTime = timestamppb.New(RefTime.Add(3 * time.Hour))
-			buildExp.UpdateTime = timestamppb.New(RefTime.Add(5 * time.Hour))
-			buildExp.Input.Experimental = true
-			propertiesMap := map[string]any{
-				"$recipe_engine/milo/blamelist_pins": []any{
-					map[string]any{
-						"host":    "chromium.googlesource.com",
-						"id":      "8930f18245df678abc944376372c77ba5e2a658b",
-						"project": "angle/angle",
-					},
-					map[string]any{
-						"host":    "chromium.googlesource.com",
-						"id":      "07033c702f81a75dfc2d83888ba3f8b354d0e920",
-						"project": "chromium/src",
-					},
-				},
-			}
-			buildExp.Output.Properties, _ = structpb.NewStruct(propertiesMap)
-
-			h := httptest.NewRecorder()
-			r := &http.Request{Body: makeReq(buildExp)}
-			PubSubHandlerLegacy(&router.Context{
-				Writer:  h,
-				Request: r.WithContext(c),
-			})
-			assert.Loosely(t, h.Code, should.Equal(200))
-			datastore.GetTestable(c).CatchupIndexes()
-
-			t.Run("stores BuildSummary and BuilderSummary", func(t *ftt.Test) {
-				buildAct := model.BuildSummary{BuildKey: bKey}
-				err := datastore.Get(c, &buildAct)
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, buildAct.BuildKey.String(), should.Equal(bKey.String()))
-				assert.Loosely(t, buildAct.BuilderID, should.Equal("buildbucket/luci.fake.bucket/fake_builder"))
-				assert.Loosely(t, buildAct.Summary, should.Resemble(model.Summary{
-					Status: milostatus.Running,
-					Start:  RefTime.Add(3 * time.Hour),
-				}))
-				assert.Loosely(t, buildAct.Created, should.Resemble(RefTime.Add(2*time.Hour)))
-				assert.Loosely(t, buildAct.Experimental, should.BeTrue)
-				assert.Loosely(t, buildAct.BlamelistPins, should.Resemble([]string{
-					"commit/gitiles/chromium.googlesource.com/angle/angle/+/8930f18245df678abc944376372c77ba5e2a658b",
-					"commit/gitiles/chromium.googlesource.com/chromium/src/+/07033c702f81a75dfc2d83888ba3f8b354d0e920",
-				}))
-
-				blder := model.BuilderSummary{BuilderID: "buildbucket/luci.fake.bucket/fake_builder"}
-				err = datastore.Get(c, &blder)
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, blder.LastFinishedStatus, should.Resemble(milostatus.NotRun))
-				assert.Loosely(t, blder.LastFinishedBuildID, should.BeEmpty)
-			})
-		})
-
-		t.Run("Completed build", func(t *ftt.Test) {
-			bKey := model.MakeBuildKey(c, "hostname", "2234")
-			buildExp := buildBase
-			buildExp.Id = 2234
-			buildExp.Status = buildbucketpb.Status_SUCCESS
-			buildExp.CreateTime = timestamppb.New(RefTime.Add(2 * time.Hour))
-			buildExp.StartTime = timestamppb.New(RefTime.Add(3 * time.Hour))
-			buildExp.UpdateTime = timestamppb.New(RefTime.Add(6 * time.Hour))
-			buildExp.EndTime = timestamppb.New(RefTime.Add(6 * time.Hour))
-			buildExp.Input.GitilesCommit = &buildbucketpb.GitilesCommit{
-				Host:    "chromium.googlesource.com",
-				Id:      "8930f18245df678abc944376372c77ba5e2a658b",
-				Project: "angle/angle",
-			}
-
-			h := httptest.NewRecorder()
-			r := &http.Request{Body: makeReq(buildExp)}
-			PubSubHandlerLegacy(&router.Context{
-				Writer:  h,
-				Request: r.WithContext(c),
-			})
-			assert.Loosely(t, h.Code, should.Equal(200))
-
-			t.Run("stores BuildSummary and BuilderSummary", func(t *ftt.Test) {
-				buildAct := model.BuildSummary{BuildKey: bKey}
-				err := datastore.Get(c, &buildAct)
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, buildAct.BuildKey.String(), should.Equal(bKey.String()))
-				assert.Loosely(t, buildAct.BuilderID, should.Equal("buildbucket/luci.fake.bucket/fake_builder"))
-				assert.Loosely(t, buildAct.Summary, should.Resemble(model.Summary{
-					Status: milostatus.Success,
-					Start:  RefTime.Add(3 * time.Hour),
-					End:    RefTime.Add(6 * time.Hour),
-				}))
-				assert.Loosely(t, buildAct.Created, should.Resemble(RefTime.Add(2*time.Hour)))
-
-				blder := model.BuilderSummary{BuilderID: "buildbucket/luci.fake.bucket/fake_builder"}
-				err = datastore.Get(c, &blder)
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, blder.LastFinishedCreated, should.Resemble(RefTime.Add(2*time.Hour)))
-				assert.Loosely(t, blder.LastFinishedStatus, should.Resemble(milostatus.Success))
-				assert.Loosely(t, blder.LastFinishedBuildID, should.Equal("buildbucket/2234"))
-				assert.Loosely(t, buildAct.BlamelistPins, should.Resemble([]string{
-					"commit/gitiles/chromium.googlesource.com/angle/angle/+/8930f18245df678abc944376372c77ba5e2a658b",
-				}))
-			})
-
-			t.Run("results in earlier update not being ingested", func(t *ftt.Test) {
-				eBuild := &buildbucketpb.Build{
-					Id: 2234,
-					Builder: &buildbucketpb.BuilderID{
-						Project: "fake",
-						Bucket:  "bucket",
-						Builder: "fake_builder",
-					},
-					Infra: &buildbucketpb.BuildInfra{
-						Buildbucket: &buildbucketpb.BuildInfra_Buildbucket{
-							Hostname: "hostname",
-						},
-					},
-					CreatedBy:  string(identity.AnonymousIdentity),
-					CreateTime: timestamppb.New(RefTime.Add(2 * time.Hour)),
-					StartTime:  timestamppb.New(RefTime.Add(3 * time.Hour)),
-					UpdateTime: timestamppb.New(RefTime.Add(4 * time.Hour)),
-					Status:     buildbucketpb.Status_STARTED,
-				}
-
-				h := httptest.NewRecorder()
-				r := &http.Request{Body: makeReq(eBuild)}
-				PubSubHandlerLegacy(&router.Context{
-					Writer:  h,
-					Request: r.WithContext(c),
-				})
-				assert.Loosely(t, h.Code, should.Equal(200))
-
-				buildAct := model.BuildSummary{BuildKey: bKey}
-				err := datastore.Get(c, &buildAct)
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, buildAct.Summary, should.Resemble(model.Summary{
-					Status: milostatus.Success,
-					Start:  RefTime.Add(3 * time.Hour),
-					End:    RefTime.Add(6 * time.Hour),
-				}))
-				assert.Loosely(t, buildAct.Created, should.Resemble(RefTime.Add(2*time.Hour)))
-
-				blder := model.BuilderSummary{BuilderID: "buildbucket/luci.fake.bucket/fake_builder"}
-				err = datastore.Get(c, &blder)
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, blder.LastFinishedCreated, should.Resemble(RefTime.Add(2*time.Hour)))
-				assert.Loosely(t, blder.LastFinishedStatus, should.Resemble(milostatus.Success))
 				assert.Loosely(t, blder.LastFinishedBuildID, should.Equal("buildbucket/2234"))
 			})
 		})
