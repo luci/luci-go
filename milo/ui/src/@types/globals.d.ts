@@ -64,6 +64,9 @@ declare const SETTINGS: {
   readonly milo: {
     readonly host: string;
   };
+  readonly luciSourceIndex: {
+    readonly host: string;
+  };
 };
 
 /**

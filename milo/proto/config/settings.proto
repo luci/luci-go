@@ -135,9 +135,15 @@ message Settings {
   CrRev cr_rev = 13;
 
   message Milo {
-    // host is the hostname of the MILO instance we're point to for RPCs (e.g. milo.api.luci.app).
+    // host is the hostname of the MILO instance we're pointing to for RPCs (e.g. milo.api.luci.app).
     string host = 1;
   }
   // Value set in configuration ignored, actual value picked up from command line flags to server binary.
   Milo milo = 14;
+
+  message LUCISourceIndex {
+    // host is the hostname of the LUCI Source Index instance we're pointing to for RPCs (e.g. sourceindex.api.luci.app).
+    string host = 1;
+  }
+  LUCISourceIndex luci_source_index = 15;
 }

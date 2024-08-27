@@ -61,6 +61,7 @@ func (s *HTTPService) configsJSHandler(c *router.Context) error {
 			// developed backend uploaded via gae.py.
 			Host: miloAPIHost,
 		},
+		LuciSourceIndex: settings.LuciSourceIndex,
 	}
 
 	header := c.Writer.Header()

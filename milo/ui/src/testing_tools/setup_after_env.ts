@@ -85,6 +85,9 @@ configJSVars.SETTINGS = Object.freeze({
   milo: {
     host: assertNonNullable(process.env['VITE_MILO_HOST']),
   },
+  luciSourceIndex: {
+    host: assertNonNullable(process.env['VITE_LUCI_SOURCE_INDEX_HOST']),
+  },
 });
 
 // `jest.mock` calls are automatically moved to the beginning of a test file by
