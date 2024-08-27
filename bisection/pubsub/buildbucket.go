@@ -19,22 +19,17 @@ import (
 	"bytes"
 	"compress/zlib"
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
-	"net/http"
 
-	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/server/pubsub"
-	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/bisection/compilefailuredetection"
@@ -82,59 +77,6 @@ const (
 	OutcomeTypeIgnore               OutcomeType = "ignore"
 	OutcomeTypeAnalyze              OutcomeType = "analyze"
 )
-
-type pubsubMessage struct {
-	Message struct {
-		Data       []byte
-		Attributes map[string]any
-	}
-}
-
-// BuildbucketPubSubHandlerLegacy handles pub/sub messages from buildbucket
-func BuildbucketPubSubHandlerLegacy(ctx *router.Context) {
-	if err := buildbucketPubSubHandlerImpl(ctx.Request.Context(), ctx.Request); err != nil {
-		logging.Errorf(ctx.Request.Context(), "Error processing buildbucket pubsub message: %s", err)
-		processError(ctx, err)
-		return
-	}
-	// Just returns OK here so pubsub does not resend the message
-	ctx.Writer.WriteHeader(http.StatusOK)
-}
-
-func processError(ctx *router.Context, err error) {
-	if transient.Tag.In(err) {
-		// Pubsub will retry this
-		ctx.Writer.WriteHeader(http.StatusInternalServerError)
-	} else {
-		// Pubsub will not retry those errors
-		ctx.Writer.WriteHeader(http.StatusAccepted)
-	}
-}
-
-func buildbucketPubSubHandlerImpl(c context.Context, r *http.Request) error {
-	var psMsg pubsubMessage
-	if err := json.NewDecoder(r.Body).Decode(&psMsg); err != nil {
-		return errors.Annotate(err, "could not decode message").Err()
-	}
-
-	// Handle the message from `builds_v2` pubsub topic.
-	if v, ok := psMsg.Message.Attributes["version"].(string); ok && v == "v2" {
-		logging.Debugf(c, "Got message from v2")
-		bbmsg, err := parseBBV2Message(c, psMsg)
-		if err != nil {
-			return errors.Annotate(err, "unmarshal buildbucket v2 pub/sub message").Err()
-		}
-
-		// For compatibility with the new handler.
-		msg := pubsub.Message{
-			Attributes: map[string]string{
-				"version": "v2",
-			},
-		}
-		return BuildbucketPubSubHandler(c, msg, bbmsg)
-	}
-	return nil
-}
 
 func BuildbucketPubSubHandler(c context.Context, msg pubsub.Message, bbmsg *buildbucketpb.BuildsV2PubSub) error {
 	if v := msg.Attributes["version"]; v != "v2" {
@@ -266,15 +208,6 @@ func BuildbucketPubSubHandler(c context.Context, msg pubsub.Message, bbmsg *buil
 	}
 	bbCounter.Add(c, 1, project, string(OutcomeTypeAnalyze))
 	return nil
-}
-
-func parseBBV2Message(ctx context.Context, pbMsg pubsubMessage) (*buildbucketpb.BuildsV2PubSub, error) {
-	buildsV2Msg := &buildbucketpb.BuildsV2PubSub{}
-	opts := protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}
-	if err := opts.Unmarshal(pbMsg.Message.Data, buildsV2Msg); err != nil {
-		return nil, err
-	}
-	return buildsV2Msg, nil
 }
 
 // zlibDecompress decompresses data using zlib.

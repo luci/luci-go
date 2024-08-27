@@ -28,7 +28,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/bisection/bqexporter"
 	"go.chromium.org/luci/bisection/compilefailureanalysis/cancelanalysis"
 	"go.chromium.org/luci/bisection/compilefailuredetection"
@@ -44,12 +43,10 @@ import (
 	"go.chromium.org/luci/bisection/testfailuredetection"
 	"go.chromium.org/luci/bisection/throttle"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config/server/cfgmodule"
 	"go.chromium.org/luci/grpc/prpc"
 	luciserver "go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/auth/openid"
 	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/module"
@@ -125,23 +122,6 @@ func main() {
 
 		// Pubsub handler
 		pubsub.RegisterJSONPBHandler("buildbucket", bbpubsub.BuildbucketPubSubHandler)
-
-		// TODO(b/349254870): Legacy pubsub handler, delete once migrated.
-		pubsubMwc := router.NewMiddlewareChain(
-			auth.Authenticate(&openid.GoogleIDTokenAuthMethod{
-				AudienceCheck: openid.AudienceMatchesHost,
-			}),
-		)
-		pusherID := identity.Identity(fmt.Sprintf("user:buildbucket-pubsub@%s.iam.gserviceaccount.com", srv.Options.CloudProject))
-
-		srv.Routes.POST("/_ah/push-handlers/buildbucket", pubsubMwc, func(ctx *router.Context) {
-			if got := auth.CurrentIdentity(ctx.Request.Context()); got != pusherID {
-				logging.Errorf(ctx.Request.Context(), "Expecting ID token of %q, got %q", pusherID, got)
-				ctx.Writer.WriteHeader(http.StatusForbidden)
-			} else {
-				bbpubsub.BuildbucketPubSubHandlerLegacy(ctx)
-			}
-		})
 
 		pg := &LUCIAnalysisProject{
 			DefaultProject: luciAnalysisProject,
