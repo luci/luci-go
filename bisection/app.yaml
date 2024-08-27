@@ -41,4 +41,5 @@ entrypoint: >
   -primary-tink-aead-key ${TINK_AEAD_KEY}
   -pubsub-authorized-caller ${PUBSUB_AUTHORIZED_CALLER}
   -ts-mon-account ${TS_MON_ACCOUNT}
+  -tq-sweep-initiation-launcher ${CRON_AUTHORIZED_CALLER}
   -ui-redirect-url ${UI_REDIRECT_URL}

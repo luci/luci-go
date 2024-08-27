@@ -52,3 +52,4 @@ entrypoint: >
   -pubsub-authorized-caller ${PUBSUB_AUTHORIZED_CALLER}
   -spanner-database ${SPANNER_DB}
   -ts-mon-account ${TS_MON_ACCOUNT}
+  -tq-sweep-initiation-launcher ${CRON_AUTHORIZED_CALLER}

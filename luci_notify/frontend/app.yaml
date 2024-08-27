@@ -30,8 +30,9 @@ handlers:
 entrypoint: >
   main
   -auth-service-host ${AUTH_SERVICE_HOST}
+  -config-service-host ${CONFIG_SERVICE_HOST}
   -cron-authorized-caller ${CRON_AUTHORIZED_CALLER}
   -ts-mon-account ${TS_MON_ACCOUNT}
   -pubsub-authorized-caller ${PUBSUB_AUTHORIZED_CALLER}
-  -config-service-host ${CONFIG_SERVICE_HOST}
   -spanner-database ${SPANNER_DB}
+  -tq-sweep-initiation-launcher ${CRON_AUTHORIZED_CALLER}
