@@ -19,6 +19,7 @@ import { useMemo } from 'react';
 import { Timestamp } from '@/common/components/timestamp';
 import { getRawArtifactURLPath } from '@/common/tools/url_utils';
 import { ArtifactMatchingContent_Match } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
+import { TestStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
 import { testStatusToJSON } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
 import { ResultStatusIcon } from '@/test_verdict/components/result_status_icon';
 import { OutputArtifactMatchingContent } from '@/test_verdict/types';
@@ -94,15 +95,17 @@ export function LogSnippetRow({ artifact }: LogSnippetRowProps) {
           datetime={DateTime.fromISO(partitionTime!)}
           format="MMM dd, HH:mm"
         />
-        <Box
-          sx={{
-            alignItems: 'center',
-            display: 'flex',
-          }}
-        >
-          <ResultStatusIcon status={testStatus} sx={{ fontSize: '22px' }} />
-          {testStatusToJSON(testStatus)}
-        </Box>
+        {testStatus !== TestStatus.STATUS_UNSPECIFIED && (
+          <Box
+            sx={{
+              alignItems: 'center',
+              display: 'flex',
+            }}
+          >
+            <ResultStatusIcon status={testStatus} sx={{ fontSize: '22px' }} />
+            {testStatusToJSON(testStatus)}
+          </Box>
+        )}
       </Box>
       <Link
         href={getRawArtifactURLPath(name)}
