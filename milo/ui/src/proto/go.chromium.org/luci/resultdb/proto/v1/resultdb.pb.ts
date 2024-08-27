@@ -844,6 +844,7 @@ export interface QueryTestVariantArtifactGroupsRequest {
     | undefined;
   /**
    * The lower bound of the time range to search in UTC time (exclusive) (required).
+   * start_time must not be before 20 July 2024 UTC.
    * start_time must be less than the end time.
    * The duration between start_time and end_time must not be greater than 7 days.
    */
@@ -930,6 +931,7 @@ export interface QueryTestVariantArtifactsRequest {
   readonly artifactId: string;
   /**
    * The lower bound of the time range to search in UTC time (exclusive) (required).
+   * start_time must not be before 20 July 2024 UTC.
    * start_time must be less than the end time.
    * The duration between start_time and end_time must not be greater than 7 days.
    */
@@ -986,6 +988,7 @@ export interface QueryInvocationVariantArtifactGroupsRequest {
     | undefined;
   /**
    * The lower bound of the time range to search in UTC time (exclusive) (required).
+   * start_time must not be before 20 July 2024 UTC.
    * start_time must be less than the end time.
    * The duration between start_time and end_time must not be greater than 7 days.
    */
@@ -1067,6 +1070,7 @@ export interface QueryInvocationVariantArtifactsRequest {
   readonly artifactId: string;
   /**
    * The lower bound of the time range to search in UTC time (exclusive) (required).
+   * start_time must not be before 20 July 2024 UTC.
    * start_time must be less than the end time.
    * The duration between start_time and end_time must not be greater than 7 days.
    */

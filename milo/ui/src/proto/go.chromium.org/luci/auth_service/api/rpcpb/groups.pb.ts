@@ -130,6 +130,10 @@ export interface AuthGroup {
   readonly createdBy: string;
   /** Output only. Whether the caller can modify this group. */
   readonly callerCanModify: boolean;
+  /** Output only. Whether the caller can view member emails. */
+  readonly callerCanViewMembers: boolean;
+  /** Number of member emails redacted, if any. */
+  readonly numRedacted: number;
   /**
    * An opaque string that indicates the version of the group being edited.
    * This will be sent to the client in responses, and should be sent back
@@ -527,6 +531,8 @@ function createBaseAuthGroup(): AuthGroup {
     createdTs: undefined,
     createdBy: "",
     callerCanModify: false,
+    callerCanViewMembers: false,
+    numRedacted: 0,
     etag: "",
   };
 }
@@ -559,6 +565,12 @@ export const AuthGroup = {
     }
     if (message.callerCanModify !== false) {
       writer.uint32(72).bool(message.callerCanModify);
+    }
+    if (message.callerCanViewMembers !== false) {
+      writer.uint32(80).bool(message.callerCanViewMembers);
+    }
+    if (message.numRedacted !== 0) {
+      writer.uint32(88).int32(message.numRedacted);
     }
     if (message.etag !== "") {
       writer.uint32(794).string(message.etag);
@@ -636,6 +648,20 @@ export const AuthGroup = {
 
           message.callerCanModify = reader.bool();
           continue;
+        case 10:
+          if (tag !== 80) {
+            break;
+          }
+
+          message.callerCanViewMembers = reader.bool();
+          continue;
+        case 11:
+          if (tag !== 88) {
+            break;
+          }
+
+          message.numRedacted = reader.int32();
+          continue;
         case 99:
           if (tag !== 794) {
             break;
@@ -663,6 +689,10 @@ export const AuthGroup = {
       createdTs: isSet(object.createdTs) ? globalThis.String(object.createdTs) : undefined,
       createdBy: isSet(object.createdBy) ? globalThis.String(object.createdBy) : "",
       callerCanModify: isSet(object.callerCanModify) ? globalThis.Boolean(object.callerCanModify) : false,
+      callerCanViewMembers: isSet(object.callerCanViewMembers)
+        ? globalThis.Boolean(object.callerCanViewMembers)
+        : false,
+      numRedacted: isSet(object.numRedacted) ? globalThis.Number(object.numRedacted) : 0,
       etag: isSet(object.etag) ? globalThis.String(object.etag) : "",
     };
   },
@@ -696,6 +726,12 @@ export const AuthGroup = {
     if (message.callerCanModify !== false) {
       obj.callerCanModify = message.callerCanModify;
     }
+    if (message.callerCanViewMembers !== false) {
+      obj.callerCanViewMembers = message.callerCanViewMembers;
+    }
+    if (message.numRedacted !== 0) {
+      obj.numRedacted = Math.round(message.numRedacted);
+    }
     if (message.etag !== "") {
       obj.etag = message.etag;
     }
@@ -716,6 +752,8 @@ export const AuthGroup = {
     message.createdTs = object.createdTs ?? undefined;
     message.createdBy = object.createdBy ?? "";
     message.callerCanModify = object.callerCanModify ?? false;
+    message.callerCanViewMembers = object.callerCanViewMembers ?? false;
+    message.numRedacted = object.numRedacted ?? 0;
     message.etag = object.etag ?? "";
     return message;
   },

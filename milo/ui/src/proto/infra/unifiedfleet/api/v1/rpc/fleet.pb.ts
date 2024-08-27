@@ -288,24 +288,9 @@ export interface DeleteChromePlatformRequest {
   readonly name: string;
 }
 
-export interface ImportChromePlatformsRequest {
-  readonly machineDbSource?: MachineDBSource | undefined;
-  readonly configSource?: ConfigSource | undefined;
-}
-
-export interface ImportChromePlatformsResponse {
-  readonly passed: readonly ChromePlatformResult[];
-  readonly failed: readonly ChromePlatformResult[];
-}
-
 export interface ChromePlatformResult {
   readonly platform: ChromePlatform | undefined;
   readonly errorMsg: string;
-}
-
-export interface ImportOSVersionsRequest {
-  readonly machineDbSource?: MachineDBSource | undefined;
-  readonly configSource?: ConfigSource | undefined;
 }
 
 export interface ListOSVersionsRequest {
@@ -780,17 +765,6 @@ export interface RenameMachineLSERequest {
   readonly newName: string;
 }
 
-export interface ImportMachineLSEsRequest {
-  readonly machineDbSource?: MachineDBSource | undefined;
-  readonly configSource?: ConfigSource | undefined;
-}
-
-export interface ImportOSMachineLSEsRequest {
-  /** Continue to use machine_db_source to specify any service host for consistency */
-  readonly machineDbSource?: MachineDBSource | undefined;
-  readonly configSource?: ConfigSource | undefined;
-}
-
 /**
  * Contains the required information for creating a RackLSE represented in
  * the database.
@@ -935,11 +909,6 @@ export interface ListNicsResponse {
 export interface DeleteNicRequest {
   /** The name of the Nic to delete */
   readonly name: string;
-}
-
-export interface ImportNicsRequest {
-  readonly machineDbSource?: MachineDBSource | undefined;
-  readonly configSource?: ConfigSource | undefined;
 }
 
 export interface RenameNicRequest {
@@ -4145,162 +4114,6 @@ export const DeleteChromePlatformRequest = {
   },
 };
 
-function createBaseImportChromePlatformsRequest(): ImportChromePlatformsRequest {
-  return { machineDbSource: undefined, configSource: undefined };
-}
-
-export const ImportChromePlatformsRequest = {
-  encode(message: ImportChromePlatformsRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-    if (message.machineDbSource !== undefined) {
-      MachineDBSource.encode(message.machineDbSource, writer.uint32(10).fork()).ldelim();
-    }
-    if (message.configSource !== undefined) {
-      ConfigSource.encode(message.configSource, writer.uint32(18).fork()).ldelim();
-    }
-    return writer;
-  },
-
-  decode(input: _m0.Reader | Uint8Array, length?: number): ImportChromePlatformsRequest {
-    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseImportChromePlatformsRequest() as any;
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1:
-          if (tag !== 10) {
-            break;
-          }
-
-          message.machineDbSource = MachineDBSource.decode(reader, reader.uint32());
-          continue;
-        case 2:
-          if (tag !== 18) {
-            break;
-          }
-
-          message.configSource = ConfigSource.decode(reader, reader.uint32());
-          continue;
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skipType(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): ImportChromePlatformsRequest {
-    return {
-      machineDbSource: isSet(object.machineDbSource) ? MachineDBSource.fromJSON(object.machineDbSource) : undefined,
-      configSource: isSet(object.configSource) ? ConfigSource.fromJSON(object.configSource) : undefined,
-    };
-  },
-
-  toJSON(message: ImportChromePlatformsRequest): unknown {
-    const obj: any = {};
-    if (message.machineDbSource !== undefined) {
-      obj.machineDbSource = MachineDBSource.toJSON(message.machineDbSource);
-    }
-    if (message.configSource !== undefined) {
-      obj.configSource = ConfigSource.toJSON(message.configSource);
-    }
-    return obj;
-  },
-
-  create(base?: DeepPartial<ImportChromePlatformsRequest>): ImportChromePlatformsRequest {
-    return ImportChromePlatformsRequest.fromPartial(base ?? {});
-  },
-  fromPartial(object: DeepPartial<ImportChromePlatformsRequest>): ImportChromePlatformsRequest {
-    const message = createBaseImportChromePlatformsRequest() as any;
-    message.machineDbSource = (object.machineDbSource !== undefined && object.machineDbSource !== null)
-      ? MachineDBSource.fromPartial(object.machineDbSource)
-      : undefined;
-    message.configSource = (object.configSource !== undefined && object.configSource !== null)
-      ? ConfigSource.fromPartial(object.configSource)
-      : undefined;
-    return message;
-  },
-};
-
-function createBaseImportChromePlatformsResponse(): ImportChromePlatformsResponse {
-  return { passed: [], failed: [] };
-}
-
-export const ImportChromePlatformsResponse = {
-  encode(message: ImportChromePlatformsResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-    for (const v of message.passed) {
-      ChromePlatformResult.encode(v!, writer.uint32(10).fork()).ldelim();
-    }
-    for (const v of message.failed) {
-      ChromePlatformResult.encode(v!, writer.uint32(18).fork()).ldelim();
-    }
-    return writer;
-  },
-
-  decode(input: _m0.Reader | Uint8Array, length?: number): ImportChromePlatformsResponse {
-    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseImportChromePlatformsResponse() as any;
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1:
-          if (tag !== 10) {
-            break;
-          }
-
-          message.passed.push(ChromePlatformResult.decode(reader, reader.uint32()));
-          continue;
-        case 2:
-          if (tag !== 18) {
-            break;
-          }
-
-          message.failed.push(ChromePlatformResult.decode(reader, reader.uint32()));
-          continue;
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skipType(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): ImportChromePlatformsResponse {
-    return {
-      passed: globalThis.Array.isArray(object?.passed)
-        ? object.passed.map((e: any) => ChromePlatformResult.fromJSON(e))
-        : [],
-      failed: globalThis.Array.isArray(object?.failed)
-        ? object.failed.map((e: any) => ChromePlatformResult.fromJSON(e))
-        : [],
-    };
-  },
-
-  toJSON(message: ImportChromePlatformsResponse): unknown {
-    const obj: any = {};
-    if (message.passed?.length) {
-      obj.passed = message.passed.map((e) => ChromePlatformResult.toJSON(e));
-    }
-    if (message.failed?.length) {
-      obj.failed = message.failed.map((e) => ChromePlatformResult.toJSON(e));
-    }
-    return obj;
-  },
-
-  create(base?: DeepPartial<ImportChromePlatformsResponse>): ImportChromePlatformsResponse {
-    return ImportChromePlatformsResponse.fromPartial(base ?? {});
-  },
-  fromPartial(object: DeepPartial<ImportChromePlatformsResponse>): ImportChromePlatformsResponse {
-    const message = createBaseImportChromePlatformsResponse() as any;
-    message.passed = object.passed?.map((e) => ChromePlatformResult.fromPartial(e)) || [];
-    message.failed = object.failed?.map((e) => ChromePlatformResult.fromPartial(e)) || [];
-    return message;
-  },
-};
-
 function createBaseChromePlatformResult(): ChromePlatformResult {
   return { platform: undefined, errorMsg: "" };
 }
@@ -4373,84 +4186,6 @@ export const ChromePlatformResult = {
       ? ChromePlatform.fromPartial(object.platform)
       : undefined;
     message.errorMsg = object.errorMsg ?? "";
-    return message;
-  },
-};
-
-function createBaseImportOSVersionsRequest(): ImportOSVersionsRequest {
-  return { machineDbSource: undefined, configSource: undefined };
-}
-
-export const ImportOSVersionsRequest = {
-  encode(message: ImportOSVersionsRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-    if (message.machineDbSource !== undefined) {
-      MachineDBSource.encode(message.machineDbSource, writer.uint32(10).fork()).ldelim();
-    }
-    if (message.configSource !== undefined) {
-      ConfigSource.encode(message.configSource, writer.uint32(18).fork()).ldelim();
-    }
-    return writer;
-  },
-
-  decode(input: _m0.Reader | Uint8Array, length?: number): ImportOSVersionsRequest {
-    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseImportOSVersionsRequest() as any;
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1:
-          if (tag !== 10) {
-            break;
-          }
-
-          message.machineDbSource = MachineDBSource.decode(reader, reader.uint32());
-          continue;
-        case 2:
-          if (tag !== 18) {
-            break;
-          }
-
-          message.configSource = ConfigSource.decode(reader, reader.uint32());
-          continue;
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skipType(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): ImportOSVersionsRequest {
-    return {
-      machineDbSource: isSet(object.machineDbSource) ? MachineDBSource.fromJSON(object.machineDbSource) : undefined,
-      configSource: isSet(object.configSource) ? ConfigSource.fromJSON(object.configSource) : undefined,
-    };
-  },
-
-  toJSON(message: ImportOSVersionsRequest): unknown {
-    const obj: any = {};
-    if (message.machineDbSource !== undefined) {
-      obj.machineDbSource = MachineDBSource.toJSON(message.machineDbSource);
-    }
-    if (message.configSource !== undefined) {
-      obj.configSource = ConfigSource.toJSON(message.configSource);
-    }
-    return obj;
-  },
-
-  create(base?: DeepPartial<ImportOSVersionsRequest>): ImportOSVersionsRequest {
-    return ImportOSVersionsRequest.fromPartial(base ?? {});
-  },
-  fromPartial(object: DeepPartial<ImportOSVersionsRequest>): ImportOSVersionsRequest {
-    const message = createBaseImportOSVersionsRequest() as any;
-    message.machineDbSource = (object.machineDbSource !== undefined && object.machineDbSource !== null)
-      ? MachineDBSource.fromPartial(object.machineDbSource)
-      : undefined;
-    message.configSource = (object.configSource !== undefined && object.configSource !== null)
-      ? ConfigSource.fromPartial(object.configSource)
-      : undefined;
     return message;
   },
 };
@@ -7600,162 +7335,6 @@ export const RenameMachineLSERequest = {
   },
 };
 
-function createBaseImportMachineLSEsRequest(): ImportMachineLSEsRequest {
-  return { machineDbSource: undefined, configSource: undefined };
-}
-
-export const ImportMachineLSEsRequest = {
-  encode(message: ImportMachineLSEsRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-    if (message.machineDbSource !== undefined) {
-      MachineDBSource.encode(message.machineDbSource, writer.uint32(10).fork()).ldelim();
-    }
-    if (message.configSource !== undefined) {
-      ConfigSource.encode(message.configSource, writer.uint32(18).fork()).ldelim();
-    }
-    return writer;
-  },
-
-  decode(input: _m0.Reader | Uint8Array, length?: number): ImportMachineLSEsRequest {
-    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseImportMachineLSEsRequest() as any;
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1:
-          if (tag !== 10) {
-            break;
-          }
-
-          message.machineDbSource = MachineDBSource.decode(reader, reader.uint32());
-          continue;
-        case 2:
-          if (tag !== 18) {
-            break;
-          }
-
-          message.configSource = ConfigSource.decode(reader, reader.uint32());
-          continue;
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skipType(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): ImportMachineLSEsRequest {
-    return {
-      machineDbSource: isSet(object.machineDbSource) ? MachineDBSource.fromJSON(object.machineDbSource) : undefined,
-      configSource: isSet(object.configSource) ? ConfigSource.fromJSON(object.configSource) : undefined,
-    };
-  },
-
-  toJSON(message: ImportMachineLSEsRequest): unknown {
-    const obj: any = {};
-    if (message.machineDbSource !== undefined) {
-      obj.machineDbSource = MachineDBSource.toJSON(message.machineDbSource);
-    }
-    if (message.configSource !== undefined) {
-      obj.configSource = ConfigSource.toJSON(message.configSource);
-    }
-    return obj;
-  },
-
-  create(base?: DeepPartial<ImportMachineLSEsRequest>): ImportMachineLSEsRequest {
-    return ImportMachineLSEsRequest.fromPartial(base ?? {});
-  },
-  fromPartial(object: DeepPartial<ImportMachineLSEsRequest>): ImportMachineLSEsRequest {
-    const message = createBaseImportMachineLSEsRequest() as any;
-    message.machineDbSource = (object.machineDbSource !== undefined && object.machineDbSource !== null)
-      ? MachineDBSource.fromPartial(object.machineDbSource)
-      : undefined;
-    message.configSource = (object.configSource !== undefined && object.configSource !== null)
-      ? ConfigSource.fromPartial(object.configSource)
-      : undefined;
-    return message;
-  },
-};
-
-function createBaseImportOSMachineLSEsRequest(): ImportOSMachineLSEsRequest {
-  return { machineDbSource: undefined, configSource: undefined };
-}
-
-export const ImportOSMachineLSEsRequest = {
-  encode(message: ImportOSMachineLSEsRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-    if (message.machineDbSource !== undefined) {
-      MachineDBSource.encode(message.machineDbSource, writer.uint32(10).fork()).ldelim();
-    }
-    if (message.configSource !== undefined) {
-      ConfigSource.encode(message.configSource, writer.uint32(18).fork()).ldelim();
-    }
-    return writer;
-  },
-
-  decode(input: _m0.Reader | Uint8Array, length?: number): ImportOSMachineLSEsRequest {
-    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseImportOSMachineLSEsRequest() as any;
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1:
-          if (tag !== 10) {
-            break;
-          }
-
-          message.machineDbSource = MachineDBSource.decode(reader, reader.uint32());
-          continue;
-        case 2:
-          if (tag !== 18) {
-            break;
-          }
-
-          message.configSource = ConfigSource.decode(reader, reader.uint32());
-          continue;
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skipType(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): ImportOSMachineLSEsRequest {
-    return {
-      machineDbSource: isSet(object.machineDbSource) ? MachineDBSource.fromJSON(object.machineDbSource) : undefined,
-      configSource: isSet(object.configSource) ? ConfigSource.fromJSON(object.configSource) : undefined,
-    };
-  },
-
-  toJSON(message: ImportOSMachineLSEsRequest): unknown {
-    const obj: any = {};
-    if (message.machineDbSource !== undefined) {
-      obj.machineDbSource = MachineDBSource.toJSON(message.machineDbSource);
-    }
-    if (message.configSource !== undefined) {
-      obj.configSource = ConfigSource.toJSON(message.configSource);
-    }
-    return obj;
-  },
-
-  create(base?: DeepPartial<ImportOSMachineLSEsRequest>): ImportOSMachineLSEsRequest {
-    return ImportOSMachineLSEsRequest.fromPartial(base ?? {});
-  },
-  fromPartial(object: DeepPartial<ImportOSMachineLSEsRequest>): ImportOSMachineLSEsRequest {
-    const message = createBaseImportOSMachineLSEsRequest() as any;
-    message.machineDbSource = (object.machineDbSource !== undefined && object.machineDbSource !== null)
-      ? MachineDBSource.fromPartial(object.machineDbSource)
-      : undefined;
-    message.configSource = (object.configSource !== undefined && object.configSource !== null)
-      ? ConfigSource.fromPartial(object.configSource)
-      : undefined;
-    return message;
-  },
-};
-
 function createBaseCreateRackLSERequest(): CreateRackLSERequest {
   return { rackLSE: undefined, rackLSEId: "" };
 }
@@ -8636,84 +8215,6 @@ export const DeleteNicRequest = {
   fromPartial(object: DeepPartial<DeleteNicRequest>): DeleteNicRequest {
     const message = createBaseDeleteNicRequest() as any;
     message.name = object.name ?? "";
-    return message;
-  },
-};
-
-function createBaseImportNicsRequest(): ImportNicsRequest {
-  return { machineDbSource: undefined, configSource: undefined };
-}
-
-export const ImportNicsRequest = {
-  encode(message: ImportNicsRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-    if (message.machineDbSource !== undefined) {
-      MachineDBSource.encode(message.machineDbSource, writer.uint32(10).fork()).ldelim();
-    }
-    if (message.configSource !== undefined) {
-      ConfigSource.encode(message.configSource, writer.uint32(18).fork()).ldelim();
-    }
-    return writer;
-  },
-
-  decode(input: _m0.Reader | Uint8Array, length?: number): ImportNicsRequest {
-    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseImportNicsRequest() as any;
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1:
-          if (tag !== 10) {
-            break;
-          }
-
-          message.machineDbSource = MachineDBSource.decode(reader, reader.uint32());
-          continue;
-        case 2:
-          if (tag !== 18) {
-            break;
-          }
-
-          message.configSource = ConfigSource.decode(reader, reader.uint32());
-          continue;
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skipType(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): ImportNicsRequest {
-    return {
-      machineDbSource: isSet(object.machineDbSource) ? MachineDBSource.fromJSON(object.machineDbSource) : undefined,
-      configSource: isSet(object.configSource) ? ConfigSource.fromJSON(object.configSource) : undefined,
-    };
-  },
-
-  toJSON(message: ImportNicsRequest): unknown {
-    const obj: any = {};
-    if (message.machineDbSource !== undefined) {
-      obj.machineDbSource = MachineDBSource.toJSON(message.machineDbSource);
-    }
-    if (message.configSource !== undefined) {
-      obj.configSource = ConfigSource.toJSON(message.configSource);
-    }
-    return obj;
-  },
-
-  create(base?: DeepPartial<ImportNicsRequest>): ImportNicsRequest {
-    return ImportNicsRequest.fromPartial(base ?? {});
-  },
-  fromPartial(object: DeepPartial<ImportNicsRequest>): ImportNicsRequest {
-    const message = createBaseImportNicsRequest() as any;
-    message.machineDbSource = (object.machineDbSource !== undefined && object.machineDbSource !== null)
-      ? MachineDBSource.fromPartial(object.machineDbSource)
-      : undefined;
-    message.configSource = (object.configSource !== undefined && object.configSource !== null)
-      ? ConfigSource.fromPartial(object.configSource)
-      : undefined;
     return message;
   },
 };
@@ -18456,8 +17957,6 @@ export interface Fleet {
   DeleteMachineLSE(request: DeleteMachineLSERequest): Promise<Empty>;
   /** Rename the machine lse */
   RenameMachineLSE(request: RenameMachineLSERequest): Promise<MachineLSE>;
-  /** ImportOSMachineLSEs imports ChromeOS machine LSEs & all related infos if needed. */
-  ImportOSMachineLSEs(request: ImportOSMachineLSEsRequest): Promise<Status>;
   /** CreateRackLSE creates a new rackLSE */
   CreateRackLSE(request: CreateRackLSERequest): Promise<RackLSE>;
   /** Update updates the rackLSE */
@@ -18714,7 +18213,6 @@ export class FleetClientImpl implements Fleet {
     this.ListMachineLSEs = this.ListMachineLSEs.bind(this);
     this.DeleteMachineLSE = this.DeleteMachineLSE.bind(this);
     this.RenameMachineLSE = this.RenameMachineLSE.bind(this);
-    this.ImportOSMachineLSEs = this.ImportOSMachineLSEs.bind(this);
     this.CreateRackLSE = this.CreateRackLSE.bind(this);
     this.UpdateRackLSE = this.UpdateRackLSE.bind(this);
     this.GetRackLSE = this.GetRackLSE.bind(this);
@@ -19029,12 +18527,6 @@ export class FleetClientImpl implements Fleet {
     const data = RenameMachineLSERequest.toJSON(request);
     const promise = this.rpc.request(this.service, "RenameMachineLSE", data);
     return promise.then((data) => MachineLSE.fromJSON(data));
-  }
-
-  ImportOSMachineLSEs(request: ImportOSMachineLSEsRequest): Promise<Status> {
-    const data = ImportOSMachineLSEsRequest.toJSON(request);
-    const promise = this.rpc.request(this.service, "ImportOSMachineLSEs", data);
-    return promise.then((data) => Status.fromJSON(data));
   }
 
   CreateRackLSE(request: CreateRackLSERequest): Promise<RackLSE> {

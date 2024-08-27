@@ -105,7 +105,7 @@ export function labToJSON(object: Lab): string {
 
 /**
  * Zone refers to the different network zones under chrome org
- * Next tag: 78
+ * Next tag: 82
  */
 export enum Zone {
   ZONE_UNSPECIFIED = 0,
@@ -199,7 +199,7 @@ export enum Zone {
   ZONE_SFP_23 = 41,
   /** ZONE_SFP_24 - "sfp_24" // Zone for SfP assets for partner // Testhaus ID:24; */
   ZONE_SFP_24 = 42,
-  /** ZONE_SFP_26 - "sfp_26" // Zone for SfP assets for partner // Testhaus ID:26; */
+  /** ZONE_SFP_26 - ZONE_SFP_25 - intentionally skipped, botched partner setup */
   ZONE_SFP_26 = 43,
   /** ZONE_SFP_27 - "sfp_27" // Zone for SfP assets for partner // Testhaus ID:27; */
   ZONE_SFP_27 = 44,
@@ -269,6 +269,14 @@ export enum Zone {
   ZONE_SFP_59 = 76,
   /** ZONE_SFP_60 - "sfp_60" // Zone for SfP assets for partner // Testhaus ID:60; */
   ZONE_SFP_60 = 77,
+  /** ZONE_SFP_62 - ZONE_SFP_61 - intentionally skipped, botched partner setup */
+  ZONE_SFP_62 = 78,
+  /** ZONE_SFP_63 - "sfp_63" // Zone for SfP assets for partner // Testhaus ID:63; */
+  ZONE_SFP_63 = 79,
+  /** ZONE_SFP_64 - "sfp_64" // Zone for SfP assets for partner // Testhaus ID:64; */
+  ZONE_SFP_64 = 80,
+  /** ZONE_SFP_65 - "sfp_65" // Zone for SfP assets for partner // Testhaus ID:65; */
+  ZONE_SFP_65 = 81,
 }
 
 export function zoneFromJSON(object: any): Zone {
@@ -504,6 +512,18 @@ export function zoneFromJSON(object: any): Zone {
     case 77:
     case "ZONE_SFP_60":
       return Zone.ZONE_SFP_60;
+    case 78:
+    case "ZONE_SFP_62":
+      return Zone.ZONE_SFP_62;
+    case 79:
+    case "ZONE_SFP_63":
+      return Zone.ZONE_SFP_63;
+    case 80:
+    case "ZONE_SFP_64":
+      return Zone.ZONE_SFP_64;
+    case 81:
+    case "ZONE_SFP_65":
+      return Zone.ZONE_SFP_65;
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum Zone");
   }
@@ -665,6 +685,14 @@ export function zoneToJSON(object: Zone): string {
       return "ZONE_SFP_59";
     case Zone.ZONE_SFP_60:
       return "ZONE_SFP_60";
+    case Zone.ZONE_SFP_62:
+      return "ZONE_SFP_62";
+    case Zone.ZONE_SFP_63:
+      return "ZONE_SFP_63";
+    case Zone.ZONE_SFP_64:
+      return "ZONE_SFP_64";
+    case Zone.ZONE_SFP_65:
+      return "ZONE_SFP_65";
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum Zone");
   }

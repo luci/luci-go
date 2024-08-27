@@ -1832,7 +1832,7 @@ export function hardwareCapabilities_VideoAccelerationToJSON(object: HardwareCap
  *
  * Keep sorted by field names.
  *
- * NEXT TAG: 51
+ * NEXT TAG: 52
  */
 export interface Peripherals {
   readonly audioBoard?:
@@ -1976,7 +1976,11 @@ export interface Peripherals {
    * The state of Intel AMT management.
    * See UFS peripherals.proto or go/flex-amt-enabled-repair for more context.
    */
-  readonly amtManagerState?: PeripheralState | undefined;
+  readonly amtManagerState?:
+    | PeripheralState
+    | undefined;
+  /** The type of Audio Beamforming on the DUT. */
+  readonly audioBeamforming?: string | undefined;
 }
 
 /** NEXT TAG: 12 */
@@ -4788,6 +4792,7 @@ function createBasePeripherals(): Peripherals {
     audioLatencyToolkitState: 0,
     pasitComponents: [],
     amtManagerState: 0,
+    audioBeamforming: "",
   };
 }
 
@@ -4936,6 +4941,9 @@ export const Peripherals = {
     }
     if (message.amtManagerState !== undefined && message.amtManagerState !== 0) {
       writer.uint32(400).int32(message.amtManagerState);
+    }
+    if (message.audioBeamforming !== undefined && message.audioBeamforming !== "") {
+      writer.uint32(410).string(message.audioBeamforming);
     }
     return writer;
   },
@@ -5299,6 +5307,13 @@ export const Peripherals = {
 
           message.amtManagerState = reader.int32() as any;
           continue;
+        case 51:
+          if (tag !== 410) {
+            break;
+          }
+
+          message.audioBeamforming = reader.string();
+          continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -5376,6 +5391,7 @@ export const Peripherals = {
         ? object.pasitComponents.map((e: any) => globalThis.String(e))
         : [],
       amtManagerState: isSet(object.amtManagerState) ? peripheralStateFromJSON(object.amtManagerState) : 0,
+      audioBeamforming: isSet(object.audioBeamforming) ? globalThis.String(object.audioBeamforming) : "",
     };
   },
 
@@ -5521,6 +5537,9 @@ export const Peripherals = {
     if (message.amtManagerState !== undefined && message.amtManagerState !== 0) {
       obj.amtManagerState = peripheralStateToJSON(message.amtManagerState);
     }
+    if (message.audioBeamforming !== undefined && message.audioBeamforming !== "") {
+      obj.audioBeamforming = message.audioBeamforming;
+    }
     return obj;
   },
 
@@ -5577,6 +5596,7 @@ export const Peripherals = {
     message.audioLatencyToolkitState = object.audioLatencyToolkitState ?? 0;
     message.pasitComponents = object.pasitComponents?.map((e) => e) || [];
     message.amtManagerState = object.amtManagerState ?? 0;
+    message.audioBeamforming = object.audioBeamforming ?? "";
     return message;
   },
 };

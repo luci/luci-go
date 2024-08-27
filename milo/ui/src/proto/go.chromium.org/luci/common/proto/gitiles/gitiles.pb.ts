@@ -308,6 +308,25 @@ export interface DownloadDiffResponse {
   readonly contents: string;
 }
 
+export interface GetProjectRequest {
+  /**
+   * The name of the Gitiles project, e.g. "chromium/src" part in
+   * https://chromium.googlesource.com/chromium/src/+/main
+   * Required.
+   */
+  readonly name: string;
+}
+
+export interface Project {
+  /**
+   * The name of the Gitiles project, e.g. "chromium/src" part in
+   * https://chromium.googlesource.com/chromium/src/+/main
+   */
+  readonly name: string;
+  /** The URL to clone the project. */
+  readonly cloneUrl: string;
+}
+
 export interface ProjectsRequest {
 }
 
@@ -1299,6 +1318,137 @@ export const DownloadDiffResponse = {
   },
 };
 
+function createBaseGetProjectRequest(): GetProjectRequest {
+  return { name: "" };
+}
+
+export const GetProjectRequest = {
+  encode(message: GetProjectRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.name !== "") {
+      writer.uint32(10).string(message.name);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): GetProjectRequest {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetProjectRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetProjectRequest {
+    return { name: isSet(object.name) ? globalThis.String(object.name) : "" };
+  },
+
+  toJSON(message: GetProjectRequest): unknown {
+    const obj: any = {};
+    if (message.name !== "") {
+      obj.name = message.name;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<GetProjectRequest>): GetProjectRequest {
+    return GetProjectRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<GetProjectRequest>): GetProjectRequest {
+    const message = createBaseGetProjectRequest() as any;
+    message.name = object.name ?? "";
+    return message;
+  },
+};
+
+function createBaseProject(): Project {
+  return { name: "", cloneUrl: "" };
+}
+
+export const Project = {
+  encode(message: Project, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.name !== "") {
+      writer.uint32(10).string(message.name);
+    }
+    if (message.cloneUrl !== "") {
+      writer.uint32(18).string(message.cloneUrl);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): Project {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseProject() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.cloneUrl = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): Project {
+    return {
+      name: isSet(object.name) ? globalThis.String(object.name) : "",
+      cloneUrl: isSet(object.cloneUrl) ? globalThis.String(object.cloneUrl) : "",
+    };
+  },
+
+  toJSON(message: Project): unknown {
+    const obj: any = {};
+    if (message.name !== "") {
+      obj.name = message.name;
+    }
+    if (message.cloneUrl !== "") {
+      obj.cloneUrl = message.cloneUrl;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<Project>): Project {
+    return Project.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<Project>): Project {
+    const message = createBaseProject() as any;
+    message.name = object.name ?? "";
+    message.cloneUrl = object.cloneUrl ?? "";
+    return message;
+  },
+};
+
 function createBaseProjectsRequest(): ProjectsRequest {
   return {};
 }
@@ -1563,6 +1713,8 @@ export interface Gitiles {
   DownloadFile(request: DownloadFileRequest): Promise<DownloadFileResponse>;
   /** DownloadDiff retrieves a diff of a revision from the project. */
   DownloadDiff(request: DownloadDiffRequest): Promise<DownloadDiffResponse>;
+  /** GetProject retrieves a project. */
+  GetProject(request: GetProjectRequest): Promise<Project>;
   /** Projects retrieves list of available Gitiles projects. */
   Projects(request: ProjectsRequest): Promise<ProjectsResponse>;
   /** ListFiles retrieves a list of files at the given revision. */
@@ -1582,6 +1734,7 @@ export class GitilesClientImpl implements Gitiles {
     this.Archive = this.Archive.bind(this);
     this.DownloadFile = this.DownloadFile.bind(this);
     this.DownloadDiff = this.DownloadDiff.bind(this);
+    this.GetProject = this.GetProject.bind(this);
     this.Projects = this.Projects.bind(this);
     this.ListFiles = this.ListFiles.bind(this);
   }
@@ -1613,6 +1766,12 @@ export class GitilesClientImpl implements Gitiles {
     const data = DownloadDiffRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "DownloadDiff", data);
     return promise.then((data) => DownloadDiffResponse.fromJSON(data));
+  }
+
+  GetProject(request: GetProjectRequest): Promise<Project> {
+    const data = GetProjectRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "GetProject", data);
+    return promise.then((data) => Project.fromJSON(data));
   }
 
   Projects(request: ProjectsRequest): Promise<ProjectsResponse> {

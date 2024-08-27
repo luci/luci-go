@@ -356,7 +356,7 @@ export function hardwareStateToJSON(object: HardwareState): string {
 
 /**
  * This proto defines status labels in lab config of a DUT.
- * Next Tag: 31
+ * Next Tag: 32
  */
 export interface DutState {
   readonly id: ChromeOSDeviceID | undefined;
@@ -420,6 +420,8 @@ export interface DutState {
   readonly gpuId: string;
   /** State for AMT management. */
   readonly amtManagerState: PeripheralState;
+  /** The type of Audio Beamforming on the DUT. */
+  readonly audioBeamforming: string;
 }
 
 /**
@@ -591,6 +593,7 @@ function createBaseDutState(): DutState {
     fwApTarget: "",
     gpuId: "",
     amtManagerState: 0,
+    audioBeamforming: "",
   };
 }
 
@@ -687,6 +690,9 @@ export const DutState = {
     }
     if (message.amtManagerState !== 0) {
       writer.uint32(240).int32(message.amtManagerState);
+    }
+    if (message.audioBeamforming !== "") {
+      writer.uint32(250).string(message.audioBeamforming);
     }
     return writer;
   },
@@ -918,6 +924,13 @@ export const DutState = {
 
           message.amtManagerState = reader.int32() as any;
           continue;
+        case 31:
+          if (tag !== 250) {
+            break;
+          }
+
+          message.audioBeamforming = reader.string();
+          continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -967,6 +980,7 @@ export const DutState = {
       fwApTarget: isSet(object.fwApTarget) ? globalThis.String(object.fwApTarget) : "",
       gpuId: isSet(object.gpuId) ? globalThis.String(object.gpuId) : "",
       amtManagerState: isSet(object.amtManagerState) ? peripheralStateFromJSON(object.amtManagerState) : 0,
+      audioBeamforming: isSet(object.audioBeamforming) ? globalThis.String(object.audioBeamforming) : "",
     };
   },
 
@@ -1062,6 +1076,9 @@ export const DutState = {
     if (message.amtManagerState !== 0) {
       obj.amtManagerState = peripheralStateToJSON(message.amtManagerState);
     }
+    if (message.audioBeamforming !== "") {
+      obj.audioBeamforming = message.audioBeamforming;
+    }
     return obj;
   },
 
@@ -1102,6 +1119,7 @@ export const DutState = {
     message.fwApTarget = object.fwApTarget ?? "";
     message.gpuId = object.gpuId ?? "";
     message.amtManagerState = object.amtManagerState ?? 0;
+    message.audioBeamforming = object.audioBeamforming ?? "";
     return message;
   },
 };

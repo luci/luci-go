@@ -22,11 +22,13 @@ import {
   DownloadDiffResponse,
   DownloadFileRequest,
   DownloadFileResponse,
+  GetProjectRequest,
   Gitiles,
   ListFilesRequest,
   ListFilesResponse,
   LogRequest,
   LogResponse,
+  Project,
   ProjectsRequest,
   ProjectsResponse,
   RefsRequest,
@@ -60,6 +62,7 @@ export class RestGitilesClientImpl implements Gitiles {
     this.Archive = this.Archive.bind(this);
     this.DownloadFile = this.DownloadFile.bind(this);
     this.DownloadDiff = this.DownloadDiff.bind(this);
+    this.GetProject = this.GetProject.bind(this);
     this.Projects = this.Projects.bind(this);
     this.ListFiles = this.ListFiles.bind(this);
   }
@@ -150,6 +153,9 @@ export class RestGitilesClientImpl implements Gitiles {
     throw new Error('Method not implemented.');
   }
   DownloadDiff(_request: DownloadDiffRequest): Promise<DownloadDiffResponse> {
+    throw new Error('Method not implemented.');
+  }
+  GetProject(_request: GetProjectRequest): Promise<Project> {
     throw new Error('Method not implemented.');
   }
   Projects(_request: ProjectsRequest): Promise<ProjectsResponse> {
