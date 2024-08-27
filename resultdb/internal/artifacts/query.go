@@ -222,6 +222,7 @@ func (q *Query) run(ctx context.Context, f func(*Artifact) error) (err error) {
 		a.SizeBytes = size.Int64
 		a.RBECASHash = rbecasHash.StringVal
 		a.GcsUri = gcsURI.StringVal
+		a.HasLines = isLogSupportedArtifact(a.ArtifactId, a.ContentType)
 
 		return f(a)
 	})

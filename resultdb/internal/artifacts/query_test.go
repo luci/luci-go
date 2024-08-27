@@ -71,6 +71,7 @@ func TestQuery(t *testing.T) {
 			So(actual, ShouldHaveLength, 1)
 			So(actual[0].ContentType, ShouldEqual, "text/plain")
 			So(actual[0].SizeBytes, ShouldEqual, 64)
+			So(actual[0].HasLines, ShouldBeTrue)
 		})
 
 		Convey(`Reads both invocation and test result artifacts`, func() {
@@ -461,6 +462,20 @@ func TestQuery(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(actual, ShouldHaveLength, 1)
 			So(actual[0].GcsUri, ShouldEqual, "gs://bucket/beyondbeef")
+		})
+
+		Convey(`Populates HasLines field correctly`, func() {
+			testutil.MustApply(ctx,
+				insert.Artifact("inv1", "", "a", map[string]any{
+					"ContentType": "image/jpeg",
+					"Size":        64,
+				}),
+			)
+			actual, _ := mustFetch(q)
+			So(actual, ShouldHaveLength, 1)
+			So(actual[0].ContentType, ShouldEqual, "image/jpeg")
+			So(actual[0].SizeBytes, ShouldEqual, 64)
+			So(actual[0].HasLines, ShouldBeFalse)
 		})
 	})
 }
