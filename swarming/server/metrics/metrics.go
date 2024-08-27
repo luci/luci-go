@@ -17,10 +17,16 @@ package metrics
 
 import (
 	"math"
+	"time"
 
 	"go.chromium.org/luci/common/tsmon/distribution"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
+)
+
+const (
+	buckets     = 100
+	scaleFactor = 100.0
 )
 
 var (
@@ -28,14 +34,33 @@ var (
 		"swarming/tasks/state_change_pubsub_notify_latencies",
 		"Latency (in ms) of PubSub notification when backend receives task_update",
 		nil,
-		// Custom bucketer with 2% resolution in the range of 100ms...100s. Used for
+		// Custom bucketer in the range of 100ms...100s. Used for
 		// pubsub latency measurements.
 		// Roughly speaking measurements range between 150ms and 300ms. However timeout
 		// for pubsub notification is 10s.
-		distribution.GeometricBucketer(math.Pow(10, 0.01), 300),
-		field.String("pool"),          // e.g. 'skia'.
-		field.String("status"),        // e.g. 'User canceled'
+		distribution.GeometricBucketerWithScale(math.Pow(float64((100*time.Second).Milliseconds()/scaleFactor), 1.0/buckets), buckets, scaleFactor),
+		field.String("pool"),          // e.g. "skia".
+		field.String("status"),        // e.g. "User canceled"
 		field.Int("http_status_code")) // e.g. 404
+
+	TaskStatusChangeSchedulerLatency = metric.NewCumulativeDistribution(
+		"swarming/tasks/state_change_scheduling_latencies",
+		"Latency (in ms) of task scheduling request",
+		nil,
+		// Custom bucketer in the range of 100ms...100000s. Used for task scheduling
+		// latency measurements.
+		// Technically the maximum allowed expiration for a pending task is 7 days
+		// (604800s) to accommodate some ChromeOS tasks, but it's rarely reached.
+		// As of Aug 23, 2024, the 99 percentile pending time for chromeos-swarming
+		// is 62447.690s, which is larger than chromium-swarm or chrome-swarming but
+		// still less than 100000s.
+		// Set the bucketer with scale of 100 because the lower bound is 100ms.
+		// Without it the lower bound would be 1ms and we'll waste the first 25 buckets.
+		distribution.GeometricBucketerWithScale(math.Pow(float64((100000*time.Second).Milliseconds()/scaleFactor), 1.0/buckets), buckets, scaleFactor),
+		field.String("pool"),        // e.g. "skia".
+		field.String("spec_name"),   // e.g. "linux_chromium_tsan_rel_ng"
+		field.String("status"),      // e.g. "No resource available"
+		field.String("device_type")) // e.g. "walleye"
 
 	JobsActives = metric.NewInt(
 		"jobs/active",
