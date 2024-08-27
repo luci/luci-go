@@ -33,6 +33,7 @@ func main() {
 	server.Main(func(srv *luciserver.Server) error {
 		service := server.CreateInternalService()
 		server.RegisterPRPCHandlers(srv, service)
+		server.RegisterCrons(srv, service)
 		pubsub.RegisterJSONPBHandler("buildbucket", buildbucket.PubSubHandler)
 
 		// Redirect the frontend to RPC explorer.
