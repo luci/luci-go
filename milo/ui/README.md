@@ -201,8 +201,14 @@ with the following rules:
    different layers of encapsulation.
  * Contexts, providers and hooks are defined as such:
    * `context.[ts/tsx]` file that contains the context declaration and the provider.
-   * `hooks.[ts/tsx]` file that contains the hooks that are used to access
-     or perform actions on the context, it can also be used to declare common hooks.
+   * `hooks.ts` file that contains the hooks that are used to access
+     or perform actions on the context.
+   * In case where the provider depends on hooks from the same context,
+     then the provider and the context need to be further split
+     into `providers.tsx` and `context.ts` files.
+   * If the directory only represents a context, such as to describe a global context,
+     then there is no need to create a separate directory to host the context and the hooks,
+     check `synced_search_params` as an example.
 
 Note: At the moment (2023-09-14), some packages are in an inconsistent state.
 Some modules should be moved to other packages. Notable items include but not
