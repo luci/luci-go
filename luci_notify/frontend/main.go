@@ -24,8 +24,6 @@ import (
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/common/tsmon/field"
-	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/config/server/cfgmodule"
 	"go.chromium.org/luci/grpc/prpc"
 	luciserver "go.chromium.org/luci/server"
@@ -49,14 +47,6 @@ import (
 
 const (
 	AccessGroup = "luci-notify-api-access"
-)
-
-var buildbucketPubSub = metric.NewCounter(
-	"luci/notify/buildbucket-pubsub",
-	"Number of received Buildbucket PubSub messages",
-	nil,
-	// "success", "transient-failure" or "permanent-failure"
-	field.String("status"),
 )
 
 func checkAPIAccess(ctx context.Context, methodName string, req proto.Message) (context.Context, error) {
@@ -94,23 +84,17 @@ func main() {
 			defer cancel()
 			c.Request = c.Request.WithContext(ctx)
 
-			status := ""
 			switch err := notify.BuildbucketPubSubHandlerLegacy(c); {
 			case transient.Tag.In(err):
-				status = "transient-failure"
 				logging.Errorf(ctx, "transient failure: %s", err)
 				// Retry the message.
 				c.Writer.WriteHeader(http.StatusInternalServerError)
 
 			case err != nil:
-				status = "permanent-failure"
 				logging.Errorf(ctx, "permanent failure: %s", err)
 
 			default:
-				status = "success"
 			}
-
-			buildbucketPubSub.Add(ctx, 1, status)
 		})
 
 		pubsub.RegisterJSONPBHandler("buildbucket", notify.BuildbucketPubSubHandler)

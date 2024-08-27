@@ -39,6 +39,8 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/common/tsmon/field"
+	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
@@ -47,6 +49,14 @@ import (
 
 	notifypb "go.chromium.org/luci/luci_notify/api/config"
 	"go.chromium.org/luci/luci_notify/config"
+)
+
+var buildbucketPubSub = metric.NewCounter(
+	"luci/notify/buildbucket-pubsub",
+	"Number of received Buildbucket PubSub messages",
+	nil,
+	// "success", "transient-failure" or "permanent-failure"
+	field.String("status"),
 )
 
 func getBuilderID(b *buildbucketpb.Build) string {
@@ -419,13 +429,27 @@ func BuildbucketPubSubHandlerLegacy(ctx *router.Context) error {
 // BuildbucketPubSubHandler is the main entrypoint for a new update from buildbucket's pubsub.
 //
 // This handler delegates the actual processing of the build to handleBuild.
-func BuildbucketPubSubHandler(ctx context.Context, message pubsub.Message, buildMsg *buildbucketpb.BuildsV2PubSub) error {
+func BuildbucketPubSubHandler(ctx context.Context, message pubsub.Message, buildMsg *buildbucketpb.BuildsV2PubSub) (err error) {
+	defer func() {
+		buildbucketPubSub.Add(ctx, 1, errStatus(err))
+	}()
+
 	build, err := extractBuild(ctx, buildMsg)
 	if err != nil {
 		return errors.Annotate(err, "failed to extract build").Err()
-
 	}
 	return handleBuild(ctx, build, srcmanCheckout, gitilesHistory)
+}
+
+func errStatus(err error) string {
+	if err == nil {
+		return "success"
+	}
+	if transient.Tag.In(err) {
+		return "transient-failure"
+	} else {
+		return "permanent-failure"
+	}
 }
 
 // Build is buildbucketpb.Build along with the parsed 'email_notify' values.
