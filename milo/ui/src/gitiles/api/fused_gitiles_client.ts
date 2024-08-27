@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import { PrpcClient } from '@/generic_libs/tools/prpc_client';
-import { getGitilesHostProject } from '@/gitiles/tools/utils';
 import {
   ArchiveRequest,
   ArchiveResponse,
@@ -36,9 +35,9 @@ import {
 } from '@/proto/go.chromium.org/luci/common/proto/gitiles/gitiles.pb';
 import { MiloInternalClientImpl } from '@/proto/go.chromium.org/luci/milo/proto/v1/rpc.pb';
 import {
-  CrrevClientImpl,
-  NumberingRequest,
-} from '@/proto/infra/appengine/cr-rev/frontend/api/v1/service.pb';
+  QueryCommitHashRequest,
+  SourceIndexClientImpl,
+} from '@/proto/go.chromium.org/luci/source_index/proto/v1/source_index.pb';
 
 import { RestGitilesClientImpl } from './rest_gitiles_client';
 
@@ -137,12 +136,13 @@ export const ExtendedGitilesServiceName = 'extended.gitiles.Gitiles';
 export interface FusedGitilesClientOpts {
   readonly service?: string;
   /**
-   * The host of a CrRev service. This is used when querying commits by commit
-   * position. This does not need to be included in the (react-query) cache key.
-   * Given a gitiles host, project, ref and commit position, the resolved
-   * commit should be the same regardless which CrRev service resolves it.
+   * The host of a LUCI Source Index service. This is used when querying commits
+   * by commit position. This does not need to be included in the (react-query)
+   * cache key. Given a gitiles host, project, ref and commit position, the
+   * resolved commit should be the same regardless which LUCI Source Index
+   * service resolves it.
    */
-  readonly crRevHost: string;
+  readonly sourceIndexHost: string;
 }
 
 /**
@@ -155,7 +155,7 @@ export class FusedGitilesClientImpl implements Gitiles {
 
   private readonly gitilesClient: RestGitilesClientImpl | undefined;
   private readonly miloClient: MiloInternalClientImpl | undefined;
-  private readonly crRevClient: CrrevClientImpl;
+  private readonly sourceIndexClient: SourceIndexClientImpl;
 
   constructor(
     private readonly rpc: PrpcClient,
@@ -177,10 +177,10 @@ export class FusedGitilesClientImpl implements Gitiles {
         }),
       );
     }
-    this.crRevClient = new CrrevClientImpl(
+    this.sourceIndexClient = new SourceIndexClientImpl(
       new PrpcClient({
-        host: opts.crRevHost,
-        // cr-rev does not require an auth token.
+        host: opts.sourceIndexHost,
+        getAuthToken: rpc.getAuthToken,
       }),
     );
 
@@ -221,9 +221,9 @@ export class FusedGitilesClientImpl implements Gitiles {
       // `ExtendedLogRequest`.
       return this.Log(LogRequest.fromPartial(request));
     }
-    const numbering = await this.crRevClient.Numbering(
-      NumberingRequest.fromPartial({
-        host: getGitilesHostProject(this.rpc.host),
+    const res = await this.sourceIndexClient.QueryCommitHash(
+      QueryCommitHashRequest.fromPartial({
+        host: this.rpc.host,
         repository: request.project,
         positionRef: request.ref,
         positionNumber: request.position,
@@ -234,7 +234,7 @@ export class FusedGitilesClientImpl implements Gitiles {
       // `ExtendedLogRequest`.
       LogRequest.fromPartial({
         ...request,
-        committish: numbering.gitHash,
+        committish: res.hash,
       }),
     );
   }

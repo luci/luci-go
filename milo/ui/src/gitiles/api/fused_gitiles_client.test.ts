@@ -22,10 +22,10 @@ import {
   ProxyGitilesLogRequest,
 } from '@/proto/go.chromium.org/luci/milo/proto/v1/rpc.pb';
 import {
-  CrrevClientImpl,
-  NumberingRequest,
-  NumberingResponse,
-} from '@/proto/infra/appengine/cr-rev/frontend/api/v1/service.pb';
+  QueryCommitHashRequest,
+  QueryCommitHashResponse,
+  SourceIndexClientImpl,
+} from '@/proto/go.chromium.org/luci/source_index/proto/v1/source_index.pb';
 
 import {
   FusedGitilesClientImpl,
@@ -65,7 +65,7 @@ describe('FusedGitilesClientImpl', () => {
       gitilesLogSpy.mockResolvedValueOnce(logRes);
       const client = new FusedGitilesClientImpl(
         new PrpcClient({ host: 'chromium.googlesource.com' }),
-        { crRevHost: 'cr-rev.host' },
+        { sourceIndexHost: 'source-index.host' },
       );
       const res = await client.Log(
         LogRequest.fromPartial({
@@ -94,7 +94,7 @@ describe('FusedGitilesClientImpl', () => {
       proxyGitilesLogSpy.mockResolvedValueOnce(logRes);
       const client = new FusedGitilesClientImpl(
         new PrpcClient({ host: 'other.googlesource.com' }),
-        { crRevHost: 'cr-rev.host' },
+        { sourceIndexHost: 'source-index.host' },
       );
       const res = await client.Log(
         LogRequest.fromPartial({
@@ -121,9 +121,9 @@ describe('FusedGitilesClientImpl', () => {
   });
 
   describe('ExtendedLog', () => {
-    let numberingSpy: jest.SpyInstance<
-      Promise<NumberingResponse>,
-      [request: NumberingRequest]
+    let queryCommitHashSpy: jest.SpyInstance<
+      Promise<QueryCommitHashResponse>,
+      [request: QueryCommitHashRequest]
     >;
     let proxyGitilesLogSpy: jest.SpyInstance<
       Promise<LogResponse>,
@@ -132,7 +132,10 @@ describe('FusedGitilesClientImpl', () => {
 
     beforeEach(() => {
       jest.useFakeTimers();
-      numberingSpy = jest.spyOn(CrrevClientImpl.prototype, 'Numbering');
+      queryCommitHashSpy = jest.spyOn(
+        SourceIndexClientImpl.prototype,
+        'QueryCommitHash',
+      );
       proxyGitilesLogSpy = jest.spyOn(
         MiloInternalClientImpl.prototype,
         'ProxyGitilesLog',
@@ -151,7 +154,7 @@ describe('FusedGitilesClientImpl', () => {
       proxyGitilesLogSpy.mockResolvedValueOnce(logRes);
       const client = new FusedGitilesClientImpl(
         new PrpcClient({ host: 'gitiles_host.googlesource.com' }),
-        { crRevHost: 'cr-rev.host' },
+        { sourceIndexHost: 'source-index.host' },
       );
       const res = await client.ExtendedLog(
         ExtendedLogRequest.fromPartial({
@@ -161,7 +164,7 @@ describe('FusedGitilesClientImpl', () => {
         }),
       );
       expect(res).toEqual(logRes);
-      expect(numberingSpy).not.toHaveBeenCalled();
+      expect(queryCommitHashSpy).not.toHaveBeenCalled();
       expect(proxyGitilesLogSpy).toHaveBeenCalledTimes(1);
       expect(proxyGitilesLogSpy).toHaveBeenNthCalledWith(
         1,
@@ -177,8 +180,8 @@ describe('FusedGitilesClientImpl', () => {
     });
 
     it('should work with commit position query', async () => {
-      numberingSpy.mockResolvedValueOnce(
-        NumberingResponse.fromPartial({ gitHash: 'hash_for_1234' }),
+      queryCommitHashSpy.mockResolvedValueOnce(
+        QueryCommitHashResponse.fromPartial({ hash: 'hash_for_1234' }),
       );
       const logRes = LogResponse.fromPartial({
         log: [{ author: { email: 'email@email.com', name: 'name' } }],
@@ -186,7 +189,7 @@ describe('FusedGitilesClientImpl', () => {
       proxyGitilesLogSpy.mockResolvedValueOnce(logRes);
       const client = new FusedGitilesClientImpl(
         new PrpcClient({ host: 'gitiles_host.googlesource.com' }),
-        { crRevHost: 'cr-rev.host' },
+        { sourceIndexHost: 'source-index.host' },
       );
       const res = await client.ExtendedLog(
         ExtendedLogRequest.fromPartial({
@@ -197,11 +200,11 @@ describe('FusedGitilesClientImpl', () => {
         }),
       );
       expect(res).toEqual(logRes);
-      expect(numberingSpy).toHaveBeenCalledTimes(1);
-      expect(numberingSpy).toHaveBeenNthCalledWith(
+      expect(queryCommitHashSpy).toHaveBeenCalledTimes(1);
+      expect(queryCommitHashSpy).toHaveBeenNthCalledWith(
         1,
-        NumberingRequest.fromPartial({
-          host: 'gitiles_host',
+        QueryCommitHashRequest.fromPartial({
+          host: 'gitiles_host.googlesource.com',
           positionNumber: '1234',
           positionRef: 'a_branch',
           repository: 'the_project',
