@@ -313,6 +313,7 @@ func (m *tqModule) initDispatching(ctx context.Context, host module.Host, opts m
 	disp.DisableAuth = !opts.Prod
 	disp.DefaultTargetHost = m.opts.DefaultTargetHost
 	disp.AuthorizedPushers = m.opts.AuthorizedPushers
+	disp.SweepInitiationLaunchers = m.opts.SweepInitiationLaunchers
 
 	disp.CloudProject = m.opts.CloudProject
 	if disp.CloudProject == "" {
