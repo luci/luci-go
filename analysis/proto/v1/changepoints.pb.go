@@ -51,6 +51,13 @@ type QueryChangepointGroupSummariesRequest struct {
 	// A filter to be applied to each changepoint in the groups.
 	// If all changepoints in a group are filtered out, this group will not be returned.
 	Predicate *ChangepointPredicate `protobuf:"bytes,2,opt,name=predicate,proto3" json:"predicate,omitempty"`
+	// A timestamp that select a particular week.
+	// The response will contain changepoints starting from this week (i.e. The nominal start time of changepints is within this week).
+	//
+	// A week is defined as Sunday midnight (inclusive) to next Saturday midnight (exclusive) in UTC.
+	// Therefore, begin_of_week MUST be a timestamp at Sunday midnight (00:00 AM) UTC, otherwise an invalid request error will be returned.
+	// If begin_of_week is nil, the current week will be used.
+	BeginOfWeek *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=begin_of_week,json=beginOfWeek,proto3" json:"begin_of_week,omitempty"`
 }
 
 func (x *QueryChangepointGroupSummariesRequest) Reset() {
@@ -99,6 +106,13 @@ func (x *QueryChangepointGroupSummariesRequest) GetPredicate() *ChangepointPredi
 	return nil
 }
 
+func (x *QueryChangepointGroupSummariesRequest) GetBeginOfWeek() *timestamppb.Timestamp {
+	if x != nil {
+		return x.BeginOfWeek
+	}
+	return nil
+}
+
 // Represent a function Changepoint -> bool
 type ChangepointPredicate struct {
 	state         protoimpl.MessageState
@@ -108,7 +122,8 @@ type ChangepointPredicate struct {
 	// The test id of this changepoint matches this prefix.
 	TestIdPrefix string `protobuf:"bytes,1,opt,name=test_id_prefix,json=testIdPrefix,proto3" json:"test_id_prefix,omitempty"`
 	// Specify a range. The unexpected verdict rate change on this changepoint needs to fall into this range.
-	// Unexpected verdict rate change is calculated by (unexpected verdict rate after changepoint - unexpected verdict rate before changepoint). Negative number means unexpected verdict rate decreases, positive number means increases.
+	// Unexpected verdict rate change is calculated by (unexpected verdict rate after changepoint - unexpected verdict rate before changepoint).
+	// Negative number means unexpected verdict rate decreases, positive number means increases.
 	// eg. {lower_bound:0.1, upper_bound:0.9} means keep changepoint which has a unexpected verdict rate increase >= 10% and <= 90%.
 	UnexpectedVerdictRateChangeRange *NumericRange `protobuf:"bytes,2,opt,name=unexpected_verdict_rate_change_range,json=unexpectedVerdictRateChangeRange,proto3" json:"unexpected_verdict_rate_change_range,omitempty"`
 }
@@ -906,7 +921,7 @@ var file_go_chromium_org_luci_analysis_proto_v1_changepoints_proto_rawDesc = []b
 	0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x33, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75,
 	0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x61, 0x6e, 0x61, 0x6c, 0x79,
 	0x73, 0x69, 0x73, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x76, 0x31, 0x2f, 0x63, 0x6f, 0x6d,
-	0x6d, 0x6f, 0x6e, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x87, 0x01, 0x0a, 0x25, 0x51, 0x75,
+	0x6d, 0x6f, 0x6e, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xc7, 0x01, 0x0a, 0x25, 0x51, 0x75,
 	0x65, 0x72, 0x79, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x70, 0x6f, 0x69, 0x6e, 0x74, 0x47, 0x72,
 	0x6f, 0x75, 0x70, 0x53, 0x75, 0x6d, 0x6d, 0x61, 0x72, 0x69, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75,
 	0x65, 0x73, 0x74, 0x12, 0x18, 0x0a, 0x07, 0x70, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x18, 0x01,
@@ -915,7 +930,11 @@ var file_go_chromium_org_luci_analysis_proto_v1_changepoints_proto_rawDesc = []b
 	0x32, 0x26, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73,
 	0x2e, 0x76, 0x31, 0x2e, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x70, 0x6f, 0x69, 0x6e, 0x74, 0x50,
 	0x72, 0x65, 0x64, 0x69, 0x63, 0x61, 0x74, 0x65, 0x52, 0x09, 0x70, 0x72, 0x65, 0x64, 0x69, 0x63,
-	0x61, 0x74, 0x65, 0x22, 0xac, 0x01, 0x0a, 0x14, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x70, 0x6f,
+	0x61, 0x74, 0x65, 0x12, 0x3e, 0x0a, 0x0d, 0x62, 0x65, 0x67, 0x69, 0x6e, 0x5f, 0x6f, 0x66, 0x5f,
+	0x77, 0x65, 0x65, 0x6b, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f,
+	0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d,
+	0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x52, 0x0b, 0x62, 0x65, 0x67, 0x69, 0x6e, 0x4f, 0x66, 0x57,
+	0x65, 0x65, 0x6b, 0x22, 0xac, 0x01, 0x0a, 0x14, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x70, 0x6f,
 	0x69, 0x6e, 0x74, 0x50, 0x72, 0x65, 0x64, 0x69, 0x63, 0x61, 0x74, 0x65, 0x12, 0x24, 0x0a, 0x0e,
 	0x74, 0x65, 0x73, 0x74, 0x5f, 0x69, 0x64, 0x5f, 0x70, 0x72, 0x65, 0x66, 0x69, 0x78, 0x18, 0x01,
 	0x20, 0x01, 0x28, 0x09, 0x52, 0x0c, 0x74, 0x65, 0x73, 0x74, 0x49, 0x64, 0x50, 0x72, 0x65, 0x66,
@@ -1140,38 +1159,39 @@ var file_go_chromium_org_luci_analysis_proto_v1_changepoints_proto_goTypes = []a
 	(*ChangepointGroupStatistics_RateChangeBuckets)(nil),            // 9: luci.analysis.v1.ChangepointGroupStatistics.RateChangeBuckets
 	(*ChangepointGroupStatistics_RateDistribution_RateBuckets)(nil), // 10: luci.analysis.v1.ChangepointGroupStatistics.RateDistribution.RateBuckets
 	(*QueryChangepointsInGroupRequest_ChangepointIdentifier)(nil),   // 11: luci.analysis.v1.QueryChangepointsInGroupRequest.ChangepointIdentifier
-	(*NumericRange)(nil),                                            // 12: luci.analysis.v1.NumericRange
-	(*Variant)(nil),                                                 // 13: luci.analysis.v1.Variant
-	(*SourceRef)(nil),                                               // 14: luci.analysis.v1.SourceRef
-	(*timestamppb.Timestamp)(nil),                                   // 15: google.protobuf.Timestamp
+	(*timestamppb.Timestamp)(nil),                                   // 12: google.protobuf.Timestamp
+	(*NumericRange)(nil),                                            // 13: luci.analysis.v1.NumericRange
+	(*Variant)(nil),                                                 // 14: luci.analysis.v1.Variant
+	(*SourceRef)(nil),                                               // 15: luci.analysis.v1.SourceRef
 }
 var file_go_chromium_org_luci_analysis_proto_v1_changepoints_proto_depIdxs = []int32{
 	1,  // 0: luci.analysis.v1.QueryChangepointGroupSummariesRequest.predicate:type_name -> luci.analysis.v1.ChangepointPredicate
-	12, // 1: luci.analysis.v1.ChangepointPredicate.unexpected_verdict_rate_change_range:type_name -> luci.analysis.v1.NumericRange
-	3,  // 2: luci.analysis.v1.QueryChangepointGroupSummariesResponse.group_summaries:type_name -> luci.analysis.v1.ChangepointGroupSummary
-	7,  // 3: luci.analysis.v1.ChangepointGroupSummary.canonical_changepoint:type_name -> luci.analysis.v1.Changepoint
-	4,  // 4: luci.analysis.v1.ChangepointGroupSummary.statistics:type_name -> luci.analysis.v1.ChangepointGroupStatistics
-	8,  // 5: luci.analysis.v1.ChangepointGroupStatistics.unexpected_verdict_rate_before:type_name -> luci.analysis.v1.ChangepointGroupStatistics.RateDistribution
-	8,  // 6: luci.analysis.v1.ChangepointGroupStatistics.unexpected_verdict_rate_after:type_name -> luci.analysis.v1.ChangepointGroupStatistics.RateDistribution
-	8,  // 7: luci.analysis.v1.ChangepointGroupStatistics.unexpected_verdict_rate_current:type_name -> luci.analysis.v1.ChangepointGroupStatistics.RateDistribution
-	9,  // 8: luci.analysis.v1.ChangepointGroupStatistics.unexpected_verdict_rate_change:type_name -> luci.analysis.v1.ChangepointGroupStatistics.RateChangeBuckets
-	11, // 9: luci.analysis.v1.QueryChangepointsInGroupRequest.group_key:type_name -> luci.analysis.v1.QueryChangepointsInGroupRequest.ChangepointIdentifier
-	1,  // 10: luci.analysis.v1.QueryChangepointsInGroupRequest.predicate:type_name -> luci.analysis.v1.ChangepointPredicate
-	7,  // 11: luci.analysis.v1.QueryChangepointsInGroupResponse.changepoints:type_name -> luci.analysis.v1.Changepoint
-	13, // 12: luci.analysis.v1.Changepoint.variant:type_name -> luci.analysis.v1.Variant
-	14, // 13: luci.analysis.v1.Changepoint.ref:type_name -> luci.analysis.v1.SourceRef
-	15, // 14: luci.analysis.v1.Changepoint.start_hour:type_name -> google.protobuf.Timestamp
-	10, // 15: luci.analysis.v1.ChangepointGroupStatistics.RateDistribution.buckets:type_name -> luci.analysis.v1.ChangepointGroupStatistics.RateDistribution.RateBuckets
-	15, // 16: luci.analysis.v1.QueryChangepointsInGroupRequest.ChangepointIdentifier.start_hour:type_name -> google.protobuf.Timestamp
-	0,  // 17: luci.analysis.v1.Changepoints.QueryChangepointGroupSummaries:input_type -> luci.analysis.v1.QueryChangepointGroupSummariesRequest
-	5,  // 18: luci.analysis.v1.Changepoints.QueryChangepointsInGroup:input_type -> luci.analysis.v1.QueryChangepointsInGroupRequest
-	2,  // 19: luci.analysis.v1.Changepoints.QueryChangepointGroupSummaries:output_type -> luci.analysis.v1.QueryChangepointGroupSummariesResponse
-	6,  // 20: luci.analysis.v1.Changepoints.QueryChangepointsInGroup:output_type -> luci.analysis.v1.QueryChangepointsInGroupResponse
-	19, // [19:21] is the sub-list for method output_type
-	17, // [17:19] is the sub-list for method input_type
-	17, // [17:17] is the sub-list for extension type_name
-	17, // [17:17] is the sub-list for extension extendee
-	0,  // [0:17] is the sub-list for field type_name
+	12, // 1: luci.analysis.v1.QueryChangepointGroupSummariesRequest.begin_of_week:type_name -> google.protobuf.Timestamp
+	13, // 2: luci.analysis.v1.ChangepointPredicate.unexpected_verdict_rate_change_range:type_name -> luci.analysis.v1.NumericRange
+	3,  // 3: luci.analysis.v1.QueryChangepointGroupSummariesResponse.group_summaries:type_name -> luci.analysis.v1.ChangepointGroupSummary
+	7,  // 4: luci.analysis.v1.ChangepointGroupSummary.canonical_changepoint:type_name -> luci.analysis.v1.Changepoint
+	4,  // 5: luci.analysis.v1.ChangepointGroupSummary.statistics:type_name -> luci.analysis.v1.ChangepointGroupStatistics
+	8,  // 6: luci.analysis.v1.ChangepointGroupStatistics.unexpected_verdict_rate_before:type_name -> luci.analysis.v1.ChangepointGroupStatistics.RateDistribution
+	8,  // 7: luci.analysis.v1.ChangepointGroupStatistics.unexpected_verdict_rate_after:type_name -> luci.analysis.v1.ChangepointGroupStatistics.RateDistribution
+	8,  // 8: luci.analysis.v1.ChangepointGroupStatistics.unexpected_verdict_rate_current:type_name -> luci.analysis.v1.ChangepointGroupStatistics.RateDistribution
+	9,  // 9: luci.analysis.v1.ChangepointGroupStatistics.unexpected_verdict_rate_change:type_name -> luci.analysis.v1.ChangepointGroupStatistics.RateChangeBuckets
+	11, // 10: luci.analysis.v1.QueryChangepointsInGroupRequest.group_key:type_name -> luci.analysis.v1.QueryChangepointsInGroupRequest.ChangepointIdentifier
+	1,  // 11: luci.analysis.v1.QueryChangepointsInGroupRequest.predicate:type_name -> luci.analysis.v1.ChangepointPredicate
+	7,  // 12: luci.analysis.v1.QueryChangepointsInGroupResponse.changepoints:type_name -> luci.analysis.v1.Changepoint
+	14, // 13: luci.analysis.v1.Changepoint.variant:type_name -> luci.analysis.v1.Variant
+	15, // 14: luci.analysis.v1.Changepoint.ref:type_name -> luci.analysis.v1.SourceRef
+	12, // 15: luci.analysis.v1.Changepoint.start_hour:type_name -> google.protobuf.Timestamp
+	10, // 16: luci.analysis.v1.ChangepointGroupStatistics.RateDistribution.buckets:type_name -> luci.analysis.v1.ChangepointGroupStatistics.RateDistribution.RateBuckets
+	12, // 17: luci.analysis.v1.QueryChangepointsInGroupRequest.ChangepointIdentifier.start_hour:type_name -> google.protobuf.Timestamp
+	0,  // 18: luci.analysis.v1.Changepoints.QueryChangepointGroupSummaries:input_type -> luci.analysis.v1.QueryChangepointGroupSummariesRequest
+	5,  // 19: luci.analysis.v1.Changepoints.QueryChangepointsInGroup:input_type -> luci.analysis.v1.QueryChangepointsInGroupRequest
+	2,  // 20: luci.analysis.v1.Changepoints.QueryChangepointGroupSummaries:output_type -> luci.analysis.v1.QueryChangepointGroupSummariesResponse
+	6,  // 21: luci.analysis.v1.Changepoints.QueryChangepointsInGroup:output_type -> luci.analysis.v1.QueryChangepointsInGroupResponse
+	20, // [20:22] is the sub-list for method output_type
+	18, // [18:20] is the sub-list for method input_type
+	18, // [18:18] is the sub-list for extension type_name
+	18, // [18:18] is the sub-list for extension extendee
+	0,  // [0:18] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_analysis_proto_v1_changepoints_proto_init() }

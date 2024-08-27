@@ -42,6 +42,13 @@ message QueryChangepointGroupSummariesRequest {
   // A filter to be applied to each changepoint in the groups.
   // If all changepoints in a group are filtered out, this group will not be returned.
   ChangepointPredicate predicate = 2;
+  // A timestamp that select a particular week.
+  // The response will contain changepoints starting from this week (i.e. The nominal start time of changepints is within this week).
+  //
+  // A week is defined as Sunday midnight (inclusive) to next Saturday midnight (exclusive) in UTC.
+  // Therefore, begin_of_week MUST be a timestamp at Sunday midnight (00:00 AM) UTC, otherwise an invalid request error will be returned.
+  // If begin_of_week is nil, the current week will be used.
+  google.protobuf.Timestamp begin_of_week = 3;
 }
 
 // Represent a function Changepoint -> bool
@@ -50,7 +57,8 @@ message ChangepointPredicate {
   string test_id_prefix = 1;
 
   // Specify a range. The unexpected verdict rate change on this changepoint needs to fall into this range.
-  // Unexpected verdict rate change is calculated by (unexpected verdict rate after changepoint - unexpected verdict rate before changepoint). Negative number means unexpected verdict rate decreases, positive number means increases.
+  // Unexpected verdict rate change is calculated by (unexpected verdict rate after changepoint - unexpected verdict rate before changepoint).
+  // Negative number means unexpected verdict rate decreases, positive number means increases.
   // eg. {lower_bound:0.1, upper_bound:0.9} means keep changepoint which has a unexpected verdict rate increase >= 10% and <= 90%.
   NumericRange unexpected_verdict_rate_change_range = 2;
 }

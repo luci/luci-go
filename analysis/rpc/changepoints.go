@@ -68,7 +68,11 @@ func (c *changepointsServer) QueryChangepointGroupSummaries(ctx context.Context,
 	if err := validateQueryChangepointGroupSummariesRequest(request); err != nil {
 		return nil, invalidArgumentError(err)
 	}
-	rows, err := c.changePointClient.ReadChangepoints(ctx, request.Project, time.Now().UTC())
+	week := time.Now().UTC()
+	if request.BeginOfWeek != nil {
+		week = request.BeginOfWeek.AsTime()
+	}
+	rows, err := c.changePointClient.ReadChangepoints(ctx, request.Project, week)
 	if err != nil {
 		return nil, errors.Annotate(err, "read BigQuery changepoints").Err()
 	}
@@ -302,6 +306,14 @@ func validateQueryChangepointGroupSummariesRequest(req *pb.QueryChangepointGroup
 			return errors.Annotate(err, "predicate").Err()
 		}
 	}
+	if req.BeginOfWeek != nil {
+		isSunday := req.BeginOfWeek.AsTime().Weekday() == time.Sunday
+		isMidnight := req.BeginOfWeek.AsTime().Truncate(24*time.Hour) == req.BeginOfWeek.AsTime()
+		if !isSunday || !isMidnight {
+			return errors.New("begin_of_week: must be Sunday midnight")
+		}
+	}
+
 	return nil
 }
 

@@ -316,6 +316,7 @@ func TestValidateRequest(t *testing.T) {
 					UpperBound: 1,
 				},
 			},
+			BeginOfWeek: timestamppb.New(time.Date(2024, 8, 25, 0, 0, 0, 0, time.UTC)),
 		}
 		Convey("valid", func() {
 			err := validateQueryChangepointGroupSummariesRequest(req)
@@ -325,6 +326,21 @@ func TestValidateRequest(t *testing.T) {
 			req.Predicate.TestIdPrefix = "\xFF"
 			err := validateQueryChangepointGroupSummariesRequest(req)
 			So(err, ShouldErrLike, "test_id_prefix: not a valid utf8 string")
+		})
+		Convey("invalid begin_of_week", func() {
+			req.BeginOfWeek = timestamppb.New(time.Date(2024, 8, 25, 1, 0, 0, 0, time.UTC))
+			err := validateQueryChangepointGroupSummariesRequest(req)
+			So(err, ShouldErrLike, "begin_of_week: must be Sunday midnight")
+		})
+		Convey("begin_of_week at different time zone", func() {
+			req.BeginOfWeek = timestamppb.New(time.Date(2024, 8, 25, 0, 0, 0, 0, time.FixedZone("10sec", 10)))
+			err := validateQueryChangepointGroupSummariesRequest(req)
+			So(err, ShouldErrLike, "begin_of_week: must be Sunday midnight")
+		})
+		Convey("no begin_of_week", func() {
+			req.BeginOfWeek = nil
+			err := validateQueryChangepointGroupSummariesRequest(req)
+			So(err, ShouldBeNil)
 		})
 	})
 
