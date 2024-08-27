@@ -356,7 +356,7 @@ func generateReadArtifactsQuery(opts ReadArtifactsOpts) (string, error) {
 	var b bytes.Buffer
 	err := readArtifactsTmpl.ExecuteTemplate(&b, "", map[string]any{
 		"pagination":      opts.PageToken != "",
-		"InvocationLevel": opts.IsInvocationLevel,
+		"invocationLevel": opts.IsInvocationLevel,
 	})
 	if err != nil {
 		return "", errors.Annotate(err, "execute template").Err()
