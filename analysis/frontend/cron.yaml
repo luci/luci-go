@@ -12,39 +12,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# DO NOT ADD TO THIS FILE. Declare new cron jobs in terraform instead.
 cron:
-- description: "Read configs from LUCI-config"
-  url: /internal/cron/read-config
-  schedule: every 10 minutes
-- description: "Update analysis and create/update bugs for high-impact clusters"
-  url: /internal/cron/update-analysis-and-bugs
-  schedule: every 15 minutes from 00:09 to 23:59
-- description: "Sweeper job for transactional tasks."
-  url: /internal/tasks/c/sweep
-  schedule: every 1 minutes
-- description: "Orchestrate re-clustering of test results."
-  url: /internal/cron/reclustering
-  # The actual reclustering interval is specified in the system config
-  # as reclustering_interval_minutes. This just triggers the orchestrator.
-  schedule: every 1 minutes synchronized
-- description: "Global metrics reporting."
-  url: /internal/cron/global-metrics
-  schedule: every 10 minutes synchronized
-- description: "Clear user columns in FailureAssociationRules table."
-  url: /internal/cron/clear-rules-users
-  schedule: every 1 hours synchronized
-- description: "Export failure association rules from spanner to bigquery."
-  url: /internal/cron/export-rules
-  schedule: every 10 minutes synchronized
-- description: "Update or create views in datasets."
-  url: /internal/cron/ensure-views
-  schedule: every 10 minutes synchronized
-- description: "Merge Bigquery data from test_variant_segment_updates table to test_variant_segments table."
-  url: /internal/cron/merge-test-variant-branches
-  schedule: every 10 minutes from 00:07 to 23:59
-- description: "Attribute filtered test runs to the test failures that caused the test to be filtered."
-  url: /internal/cron/attribute-filtered-test-runs
-  schedule: every 15 minutes from 00:11 to 23:59
-- description: "Create or replace the test_variant_changepoints table."
-  url: /internal/cron/update-changepoint-table
-  schedule: every 5 minutes synchronized
