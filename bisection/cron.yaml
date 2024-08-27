@@ -12,27 +12,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# DO NOT ADD TO THIS FILE. Declare new cron jobs in terraform instead.
 cron:
-- description: "Update cached config to latest from LUCI Config"
-  url: /internal/cron/update-config
-  schedule: every 10 minutes
-
-- description: "Global metrics collection"
-  url: /internal/cron/collect-global-metrics
-  schedule: every 5 minutes
-
-- description: "Sweeper job for transactional tasks."
-  url: /internal/tasks/c/sweep
-  schedule: every 1 minutes
-
-- description: "Send task to test failure detector based on machine availability."
-  url: /internal/cron/throttle-bisection
-  schedule: every 5 minutes
-
-- description: "Job for exporting test failure analyses to BigQuery."
-  url: /internal/cron/export-test-analyses
-  schedule: every 10 minutes from 00:07 to 23:59
-
-- description: "Job for ensuring view schema in project datasets."
-  url: /internal/cron/ensure-views
-  schedule: every 10 minutes
