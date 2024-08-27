@@ -1,19 +1,2 @@
+# DO NOT ADD TO THIS FILE. Declare new cron jobs in terraform instead.
 cron:
- - description: Update service config
-   url: /internal/cron/update-config
-   schedule: every 1 minutes
- - description: Update project configs
-   url: /internal/cron/update-project-configs
-   schedule: every 1 minutes
- - description: Update buildbucket builders cache
-   url: /internal/cron/update-builders
-   schedule: every 5 minutes
- - description: Delete old cached builds
-   url: /internal/cron/delete-builds
-   schedule: every 1 minutes
- - description: Sync old non-terminal builds
-   url: /internal/cron/sync-builds
-   schedule: every 24 hours
- - description: Cleanup old CLI login sessions
-   url: /internal/cron/loginsessions-cleanup
-   schedule: every 5 minutes
