@@ -22,8 +22,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/config/server/cfgmodule"
 	"go.chromium.org/luci/grpc/prpc"
 	luciserver "go.chromium.org/luci/server"
@@ -79,24 +77,6 @@ func main() {
 		cron.RegisterHandler("update-tree-status", notify.UpdateTreeStatus)
 
 		// Buildbucket Pub/Sub endpoint.
-		srv.Routes.POST("/_ah/push-handlers/buildbucket", nil, func(c *router.Context) {
-			ctx, cancel := context.WithTimeout(c.Request.Context(), notify.PUBSUB_POST_REQUEST_TIMEOUT)
-			defer cancel()
-			c.Request = c.Request.WithContext(ctx)
-
-			switch err := notify.BuildbucketPubSubHandlerLegacy(c); {
-			case transient.Tag.In(err):
-				logging.Errorf(ctx, "transient failure: %s", err)
-				// Retry the message.
-				c.Writer.WriteHeader(http.StatusInternalServerError)
-
-			case err != nil:
-				logging.Errorf(ctx, "permanent failure: %s", err)
-
-			default:
-			}
-		})
-
 		pubsub.RegisterJSONPBHandler("buildbucket", notify.BuildbucketPubSubHandler)
 
 		// Install pRPC services.

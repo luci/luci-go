@@ -29,7 +29,6 @@ import (
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
@@ -45,7 +44,6 @@ import (
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/pubsub"
-	"go.chromium.org/luci/server/router"
 
 	notifypb "go.chromium.org/luci/luci_notify/api/config"
 	"go.chromium.org/luci/luci_notify/config"
@@ -406,26 +404,6 @@ func newBuildsClient(c context.Context, host, project string) (buildbucketpb.Bui
 	}), nil
 }
 
-// BuildbucketPubSubHandlerLegacy is the main entrypoint for a new update from buildbucket's pubsub.
-//
-// This handler delegates the actual processing of the build to handleBuild.
-// Its primary purpose is to unwrap context boilerplate and deal with progress-stopping errors.
-func BuildbucketPubSubHandlerLegacy(ctx *router.Context) error {
-	c := ctx.Request.Context()
-	build, err := extractBuildLegacy(c, ctx.Request)
-	switch {
-	case err != nil:
-		return errors.Annotate(err, "failed to extract build").Err()
-
-	case build == nil:
-		// Ignore.
-		return nil
-
-	default:
-		return handleBuild(c, build, srcmanCheckout, gitilesHistory)
-	}
-}
-
 // BuildbucketPubSubHandler is the main entrypoint for a new update from buildbucket's pubsub.
 //
 // This handler delegates the actual processing of the build to handleBuild.
@@ -457,33 +435,6 @@ type Build struct {
 	BuildbucketHostname string
 	buildbucketpb.Build
 	EmailNotify []EmailNotify
-}
-
-// extractBuild constructs a Build from the PubSub HTTP request.
-func extractBuildLegacy(c context.Context, r *http.Request) (*Build, error) {
-	// sent by pubsub.
-	// This struct is just convenient for unwrapping the json message
-	// See https://cloud.google.com/pubsub/docs/push#receive_push
-	var msg struct {
-		Message struct {
-			Data       []byte
-			Attributes map[string]any
-		}
-	}
-	if err := json.NewDecoder(r.Body).Decode(&msg); err != nil {
-		return nil, errors.Annotate(err, "could not decode message").Err()
-	}
-
-	if v, ok := msg.Message.Attributes["version"].(string); ok && v != "v2" {
-		return nil, errors.Reason("received non-v2 buildbucket message").Err()
-	}
-
-	buildsV2Msg := &buildbucketpb.BuildsV2PubSub{}
-	opts := protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}
-	if err := opts.Unmarshal(msg.Message.Data, buildsV2Msg); err != nil {
-		return nil, errors.Annotate(err, "failed to unmarshal pubsub message into BuildsV2PubSub proto").Err()
-	}
-	return extractBuild(c, buildsV2Msg)
 }
 
 func extractBuild(c context.Context, buildsV2Msg *buildbucketpb.BuildsV2PubSub) (*Build, error) {
