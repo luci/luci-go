@@ -1,8 +1,2 @@
+# DO NOT ADD TO THIS FILE. Declare new cron jobs in terraform instead.
 cron:
-- description: Update luci-config configurations
-  url: /internal/cron/update-config
-  schedule: every 1 minutes
-
-- description: Close/re-open trees based on TreeCloser entity status
-  url: /internal/cron/update-tree-status
-  schedule: every 1 minutes
