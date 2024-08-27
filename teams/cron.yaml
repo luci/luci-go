@@ -12,8 +12,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# DO NOT ADD TO THIS FILE. Declare new cron jobs in terraform instead.
 cron:
-# TODO: Specify cron jobs here.
-#- description: "Some job."
-#  url: /internal/cron/my-job
-#  schedule: every 1 hours synchronized
