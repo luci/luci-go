@@ -142,7 +142,7 @@ type BotArchiveInfo struct {
 	// PackageServer is an URL of the CIPD server with the bot package.
 	PackageServer string `gae:",noindex"`
 	// PackageName is the CIPD package name e.g. "luci/swarming/swarming_bot".
-	PacakgeName string `gae:",noindex"`
+	PackageName string `gae:",noindex"`
 	// PackageVersion is e.g. "git_commit:..." CIPD tag or ref.
 	PackageVersion string `gae:",noindex"`
 }

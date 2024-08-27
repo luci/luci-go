@@ -100,7 +100,7 @@ func TestEnsureBotArchiveBuilt(t *testing.T) {
 				BotConfigRev:      "bot-config-rev",
 				PackageInstanceID: "iid-for-v1",
 				PackageServer:     testCIPDServer,
-				PacakgeName:       testCIPDPkg,
+				PackageName:       testCIPDPkg,
 				PackageVersion:    "latest",
 			}))
 			blob, err := fetchBotArchive(ctx, info.Chunks)

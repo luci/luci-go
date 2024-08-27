@@ -44,7 +44,7 @@ const (
 	// How often to bump expiry time of in-use bot archives.
 	botArchiveTouchPeriod = time.Hour
 	// Maximum size of a single chunk of a bot archive in the datastore.
-	botArchiveChunkSize = 900 * 1024
+	botArchiveChunkSize = 300 * 1024
 )
 
 // botArchiverState contains the state of the process that builds bot archives.
@@ -359,7 +359,7 @@ func botArchiveInfo(a *botArchive, desc *configpb.BotDeployment_BotPackage) BotA
 		BotConfigRev:      a.BotConfigRev,
 		PackageInstanceID: a.PackageInstanceID,
 		PackageServer:     desc.Server,
-		PacakgeName:       desc.Pkg,
+		PackageName:       desc.Pkg,
 		PackageVersion:    desc.Version,
 	}
 }
