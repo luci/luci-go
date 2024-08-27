@@ -35,7 +35,7 @@ import {
   ResultDBClientImpl,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 
-import { useSelectedArtifact } from './hooks';
+import { useSelectedArtifact } from './context';
 
 const EMPTY_CELL_VALUE = '-';
 

@@ -14,7 +14,7 @@
 
 import { GitilesCommit } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 
-import { useBuild } from '../hooks';
+import { useBuild } from '../context';
 
 import { RevisionRow } from './revision_row';
 

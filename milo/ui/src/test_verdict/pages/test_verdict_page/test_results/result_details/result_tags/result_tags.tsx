@@ -24,7 +24,7 @@ import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 import { useState } from 'react';
 
-import { useResult } from '../hooks';
+import { useResult } from '../context';
 
 export function ResultTags() {
   const [expanded, setExpanded] = useState(false);

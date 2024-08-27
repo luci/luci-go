@@ -15,7 +15,7 @@
 import { Table, TableRow } from '@mui/material';
 import { ReactNode } from 'react';
 
-import { useTableRowProps, useTableSx } from './hooks';
+import { useTableRowProps, useTableSx } from './context';
 
 export interface StyledTableProps {
   readonly children?: ReactNode;

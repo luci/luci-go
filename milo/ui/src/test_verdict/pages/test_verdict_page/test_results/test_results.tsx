@@ -26,7 +26,7 @@ import {
 import { TestStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
 import { OutputTestResultBundle } from '@/test_verdict/types';
 
-import { useProject, useTestVerdict } from '../hooks';
+import { useProject, useTestVerdict } from '../context';
 
 import { TestResultsProvider } from './context';
 import { ResultDetails } from './result_details';

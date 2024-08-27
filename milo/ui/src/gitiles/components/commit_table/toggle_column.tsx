@@ -21,7 +21,7 @@ import {
   useExpanded,
   useSetDefaultExpanded,
   useSetExpanded,
-} from './hooks';
+} from './context';
 
 export interface ToggleHeadCellProps {
   readonly hotkey?: string;

@@ -14,7 +14,7 @@
 
 import { render, screen } from '@testing-library/react';
 
-import { MonitoringCtx } from '@/monitoring/pages/monitoring_page/context';
+import { MonitoringCtxForTest } from '@/monitoring/pages/monitoring_page/context';
 import { configuredTrees } from '@/monitoring/util/config';
 import { Bug } from '@/monitoring/util/server_json';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
@@ -25,7 +25,7 @@ describe('<Alerts />', () => {
   it('displays filter and alert groups', async () => {
     render(
       <FakeContextProvider>
-        <MonitoringCtx.Provider
+        <MonitoringCtxForTest.Provider
           value={{
             alerts: [],
             bugs: [],
@@ -33,7 +33,7 @@ describe('<Alerts />', () => {
           }}
         >
           <Alerts />
-        </MonitoringCtx.Provider>
+        </MonitoringCtxForTest.Provider>
       </FakeContextProvider>,
     );
     expect(screen.getByRole('searchbox')).toBeInTheDocument();
@@ -46,7 +46,7 @@ describe('<Alerts />', () => {
   it('displays no bugs mesage', async () => {
     render(
       <FakeContextProvider>
-        <MonitoringCtx.Provider
+        <MonitoringCtxForTest.Provider
           value={{
             alerts: [],
             bugs: [],
@@ -54,7 +54,7 @@ describe('<Alerts />', () => {
           }}
         >
           <Alerts />
-        </MonitoringCtx.Provider>
+        </MonitoringCtxForTest.Provider>
       </FakeContextProvider>,
     );
     expect(
@@ -65,7 +65,7 @@ describe('<Alerts />', () => {
   it('displays a group for a bug in the hotlist when there are no alerts', async () => {
     render(
       <FakeContextProvider>
-        <MonitoringCtx.Provider
+        <MonitoringCtxForTest.Provider
           value={{
             alerts: [],
             bugs: [hotlistBug],
@@ -73,7 +73,7 @@ describe('<Alerts />', () => {
           }}
         >
           <Alerts />
-        </MonitoringCtx.Provider>
+        </MonitoringCtxForTest.Provider>
       </FakeContextProvider>,
     );
     expect(screen.getByText('Hotlist Bug')).toBeInTheDocument();
@@ -87,7 +87,7 @@ describe('<Alerts />', () => {
         }}
         mountedPath="/"
       >
-        <MonitoringCtx.Provider
+        <MonitoringCtxForTest.Provider
           value={{
             alerts: [],
             bugs: [hotlistBug],
@@ -95,7 +95,7 @@ describe('<Alerts />', () => {
           }}
         >
           <Alerts />
-        </MonitoringCtx.Provider>
+        </MonitoringCtxForTest.Provider>
       </FakeContextProvider>,
     );
     expect(screen.getByRole('searchbox')).toHaveValue('linux-rel');

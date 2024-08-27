@@ -23,12 +23,10 @@ import {
   CommitProvider,
   ExpandedProvider,
   SetExpandedProvider,
-} from './context';
-import {
   useDefaultExpanded,
   useExpandStateStore,
   useTableRowIndex,
-} from './hooks';
+} from './context';
 
 export interface CommitTableRowProps {
   /**

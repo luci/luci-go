@@ -221,6 +221,7 @@ module.exports = {
 
         // Don't need to restrict imports in test files.
         'no-restricted-imports': 0,
+        'react-refresh/only-export-components': 0,
       },
     },
   ],

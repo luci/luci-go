@@ -24,7 +24,7 @@ import {
   SHORT_TIME_FORMAT,
 } from '@/common/tools/time_utils';
 
-import { useCommit } from './hooks';
+import { useCommit } from './context';
 
 export function TimeHeadCell() {
   return <TableCell width="1px">Time</TableCell>;

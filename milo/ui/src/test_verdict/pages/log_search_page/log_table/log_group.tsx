@@ -21,7 +21,7 @@ import {
   OutputQueryInvocationVariantArtifactGroupsResponse_MatchGroup,
 } from '@/test_verdict/types';
 
-import { useLogGroupListDispatch } from '../hooks';
+import { useLogGroupListDispatch } from '../context';
 import { LogSnippetRow } from '../log_snippet_row';
 import { Action } from '../reducer';
 

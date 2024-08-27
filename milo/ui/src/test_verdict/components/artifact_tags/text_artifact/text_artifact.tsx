@@ -27,8 +27,7 @@ import { ReactLitElement } from '@/generic_libs/components/react_lit_element';
 import { consumer } from '@/generic_libs/tools/lit_context';
 import { urlSetSearchQueryParam } from '@/generic_libs/tools/utils';
 
-import { ArtifactContextProvider } from '../context';
-import { useResultName } from '../hooks';
+import { ArtifactContextProvider, useResultName } from '../context';
 import { consumeResultName } from '../lit_context';
 
 const EXTRA_BYTES = 8;

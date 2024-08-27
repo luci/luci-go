@@ -23,7 +23,7 @@ import { crbugLink } from '@/common/tools/markdown/plugins/crbug_link';
 import { defaultTarget } from '@/common/tools/markdown/plugins/default_target';
 import { reviewerLine } from '@/common/tools/markdown/plugins/reviewer_line';
 
-import { useCommit } from './hooks';
+import { useCommit } from './context';
 
 const md = markdownIt('zero', { breaks: true, linkify: true })
   .enable(['linkify', 'newline'])

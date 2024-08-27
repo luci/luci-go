@@ -34,9 +34,9 @@ import { ArtifactLink } from '@/test_verdict/components/artifact_link';
 import { TestResultSummary } from '@/test_verdict/components/test_result_summary';
 import { parseTestResultName } from '@/test_verdict/tools/utils';
 
-import { useProject } from '../../../hooks';
-import { useClustersByResultId } from '../../hooks';
-import { useCombinedArtifacts, useResult } from '../hooks';
+import { useProject } from '../../../context';
+import { useClustersByResultId } from '../../context';
+import { useCombinedArtifacts, useResult } from '../context';
 
 interface LogArtifactsProps {
   testhausLogs?: Artifact;

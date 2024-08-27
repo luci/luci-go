@@ -22,7 +22,7 @@ import { BuilderID } from '@/proto/go.chromium.org/luci/buildbucket/proto/builde
 import { SearchBuildsRequest } from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
 import { Status } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 
-import { useBuildsClient } from './hooks';
+import { useBuildsClient } from './context';
 
 const SEARCH_BUILD_FIELD_MASK = Object.freeze(['status']);
 

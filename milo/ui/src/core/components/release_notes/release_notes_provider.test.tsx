@@ -16,8 +16,11 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { useEffect } from 'react';
 
 import { getLastReadVersion } from './common';
-import { ReleaseNotesProvider } from './context';
-import { useHasNewRelease, useMarkReleaseNotesRead } from './hooks';
+import {
+  ReleaseNotesProvider,
+  useHasNewRelease,
+  useMarkReleaseNotesRead,
+} from './context';
 
 function ReadReleaseNotesComponent() {
   const markAsRead = useMarkReleaseNotesRead();

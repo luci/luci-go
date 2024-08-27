@@ -17,7 +17,7 @@ import { Box, styled } from '@mui/material';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { useTabId } from '@/generic_libs/components/routed_tabs';
 
-import { useBuild } from '../hooks';
+import { useBuild } from '../context';
 
 import { AlertsSection } from './alerts_section';
 import { BuildLogSection } from './build_log_section';

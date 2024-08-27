@@ -17,7 +17,7 @@ import { Box, styled } from '@mui/material';
 import { HtmlTooltip } from '@/common/components/html_tooltip';
 import { StartPointInfo } from '@/test_verdict/components/changepoint_analysis';
 
-import { useStartPointsWithCommit } from '../hooks';
+import { useStartPointsWithCommit } from '../context';
 
 import { START_POINT_SPAN_WIDTH } from './constants';
 

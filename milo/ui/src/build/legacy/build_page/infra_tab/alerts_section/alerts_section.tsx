@@ -23,7 +23,7 @@ import {
 import { RelativeTimestamp } from '@/common/components/relative_timestamp';
 import { parseProtoDuration } from '@/common/tools/time_utils';
 
-import { useBuild } from '../../hooks';
+import { useBuild } from '../../context';
 
 export function AlertsSection() {
   const build = useBuild();

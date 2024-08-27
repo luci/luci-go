@@ -14,7 +14,7 @@
 
 import { Link, Skeleton, TableCell } from '@mui/material';
 
-import { useCommit, useRepoUrl } from './hooks';
+import { useCommit, useRepoUrl } from './context';
 
 export function IdHeadCell() {
   return <TableCell width="1px">ID</TableCell>;

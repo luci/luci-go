@@ -14,7 +14,7 @@
 
 import { Dispatch, createContext } from 'react';
 
-import { Action } from './reducer';
+import { Action } from '../reducer';
 
 export interface ActiveTabContextValue {
   readonly activeTabId: string | null;

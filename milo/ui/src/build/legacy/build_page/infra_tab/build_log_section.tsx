@@ -14,7 +14,7 @@
 
 import { BuildbucketLogLink } from '@/common/components/buildbucket_log_link';
 
-import { useBuild } from '../hooks';
+import { useBuild } from '../context';
 
 export function BuildLogSection() {
   const build = useBuild();

@@ -42,8 +42,8 @@ import {
   QuerySourcePositionsResponse,
 } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
 
-import { EntryContent } from './entry_content';
 import { BlamelistContextProvider } from './context';
+import { EntryContent } from './entry_content';
 import { SegmentContentCell, SegmentHeadCell } from './segment_column';
 import {
   VerdictsStatusHeadCell,

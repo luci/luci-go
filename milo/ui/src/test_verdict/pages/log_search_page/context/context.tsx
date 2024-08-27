@@ -17,8 +17,8 @@ import { createContext, Dispatch, ReactNode, useReducer } from 'react';
 
 import { PagerContext } from '@/common/components/params_pager';
 
-import { FormData } from './form_data';
-import { Action, LogGroupListState, reducer } from './reducer';
+import { FormData } from '../form_data';
+import { Action, LogGroupListState, reducer } from '../reducer';
 
 export const LogGroupListDispatcherCtx = createContext<
   Dispatch<Action> | undefined

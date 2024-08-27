@@ -25,7 +25,7 @@ import {
   useAlerts,
   useTree,
   useBugs,
-} from '@/monitoring/pages/monitoring_page/hooks';
+} from '@/monitoring/pages/monitoring_page/context';
 import { AlertJson } from '@/monitoring/util/server_json';
 
 import { AlertGroup } from './alert_group';

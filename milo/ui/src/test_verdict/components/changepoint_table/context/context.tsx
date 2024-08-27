@@ -15,8 +15,8 @@
 import { ScaleLinear, scaleLinear } from 'd3';
 import { createContext, Dispatch, ReactNode, useMemo, useReducer } from 'react';
 
-import { CELL_WIDTH, LINE_HEIGHT, MIN_ROW_HEIGHT } from './constants';
-import { Action, BlamelistState, reducer } from './reducer';
+import { CELL_WIDTH, LINE_HEIGHT, MIN_ROW_HEIGHT } from '../constants';
+import { Action, BlamelistState, reducer } from '../reducer';
 
 export const BlamelistDispatcherCtx = createContext<
   Dispatch<Action> | undefined

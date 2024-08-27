@@ -14,7 +14,7 @@
 
 import { Box, Skeleton, TableCell } from '@mui/material';
 
-import { useCommit } from './hooks';
+import { useCommit } from './context';
 
 export function TitleHeadCell() {
   return <TableCell>Title</TableCell>;

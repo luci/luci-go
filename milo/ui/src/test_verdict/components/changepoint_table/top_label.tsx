@@ -16,7 +16,7 @@ import { Box } from '@mui/material';
 
 import { LabelBox } from './common';
 import { SIDE_PANEL_WIDTH } from './constants';
-import { useConfig } from './hooks';
+import { useConfig } from './context';
 
 export function TopLabel() {
   const { criticalVariantKeys, rowHeight } = useConfig();

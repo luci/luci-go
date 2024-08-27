@@ -17,7 +17,7 @@ import { useParams } from 'react-router-dom';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { useTabId } from '@/generic_libs/components/routed_tabs';
 
-import { useSearchFilter } from './hooks';
+import { useSearchFilter } from './context';
 import { TestLogDialog } from './log_list_dialog';
 import { TestLogsTable } from './log_table';
 // TODO (beining@):

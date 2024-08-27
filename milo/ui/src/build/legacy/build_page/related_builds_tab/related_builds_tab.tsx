@@ -17,7 +17,7 @@ import { CircularProgress } from '@mui/material';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { useTabId } from '@/generic_libs/components/routed_tabs';
 
-import { useBuild } from '../hooks';
+import { useBuild } from '../context';
 
 import { RelatedBuildsDisplay } from './related_builds_display';
 

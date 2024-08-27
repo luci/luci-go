@@ -12,14 +12,37 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ReactNode, useMemo, useState } from 'react';
-
+import { ScaleLinear, ScaleTime, TimeInterval } from 'd3';
 import {
-  ConfigCtx,
-  RulerStateCtx,
-  RulerStateSettersCtx,
-  TimelineConfig,
-} from './context';
+  createContext,
+  Dispatch,
+  ReactNode,
+  SetStateAction,
+  useMemo,
+  useState,
+} from 'react';
+
+export interface TimelineConfig {
+  readonly startTimeMs: number;
+  readonly itemCount: number;
+  readonly itemHeight: number;
+  readonly sidePanelWidth: number;
+  readonly bodyWidth: number;
+  readonly xScale: ScaleTime<number, number, never>;
+  readonly yScale: ScaleLinear<number, number, never>;
+  readonly timeInterval: TimeInterval;
+}
+export const ConfigCtx = createContext<TimelineConfig | null>(null);
+
+export interface RulerStateSetters {
+  readonly setDisplay: Dispatch<SetStateAction<boolean>>;
+  readonly setX: Dispatch<SetStateAction<number>>;
+}
+
+export const RulerStateSettersCtx = createContext<RulerStateSetters | null>(
+  null,
+);
+export const RulerStateCtx = createContext<number | null>(null);
 
 export interface TimelineContextProviderProps {
   readonly config: TimelineConfig;

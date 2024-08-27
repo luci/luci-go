@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useBuild } from '../hooks';
+import { useBuild } from '../context';
 
 export function ExperimentsSection() {
   const build = useBuild();

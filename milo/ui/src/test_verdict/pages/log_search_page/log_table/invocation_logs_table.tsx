@@ -28,9 +28,8 @@ import { QueryInvocationVariantArtifactGroupsRequest } from '@/proto/go.chromium
 import { useResultDbClient } from '@/test_verdict/hooks/prpc_clients';
 import { OutputQueryInvocationVariantArtifactGroupsResponse } from '@/test_verdict/types';
 
-import { SearchFilter } from '../context';
+import { SearchFilter, useInvocationLogPagerCtx } from '../context';
 import { FormData } from '../form_data';
-import { useInvocationLogPagerCtx } from '../hooks';
 import { VariantLine } from '../variant_line';
 
 import { LogGroup } from './log_group';

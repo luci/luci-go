@@ -25,10 +25,13 @@ import {
   useArtifactsLoading,
   useInvArtifacts,
   useResultArtifacts,
-} from '../hooks';
+} from '../context';
 
-import { SelectedArtifactSource } from './context';
-import { useSelectedArtifact, useUpdateSelectedArtifact } from './hooks';
+import {
+  useSelectedArtifact,
+  useUpdateSelectedArtifact,
+  SelectedArtifactSource,
+} from './context';
 import { isLogSupportedArtifact } from './utils';
 
 interface ArtifactTreeNode extends ObjectNode {

@@ -18,7 +18,7 @@ import {
   ReleaseNotes,
   bumpLastReadVersion,
   getLastReadVersion,
-} from './common';
+} from '../common';
 
 export const ReleaseNotesCtx = createContext<ReleaseNotes | null>(null);
 export const HasNewReleaseCtx = createContext<boolean | null>(null);

@@ -26,7 +26,7 @@ import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { useTabId } from '@/generic_libs/components/routed_tabs';
 import { getGitilesRepoURL } from '@/gitiles/tools/utils';
 
-import { useBuild } from '../hooks';
+import { useBuild } from '../context';
 
 import { BlamelistDisplay } from './blamelist_display';
 

@@ -20,7 +20,7 @@ import {
   ParsedTestVariantBranchName,
 } from '@/analysis/types';
 
-import { useConfig } from './hooks';
+import { useConfig } from './context';
 import { Row } from './row';
 
 export interface BodyProps {

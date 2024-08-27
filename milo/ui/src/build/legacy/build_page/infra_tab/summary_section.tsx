@@ -18,7 +18,7 @@ import { BUILD_STATUS_DISPLAY_MAP } from '@/build/constants';
 import { SanitizedHtml } from '@/common/components/sanitized_html';
 import { renderMarkdown } from '@/common/tools/markdown/utils';
 
-import { useBuild } from '../hooks';
+import { useBuild } from '../context';
 
 export function SummarySection() {
   const build = useBuild();

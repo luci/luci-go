@@ -17,7 +17,7 @@ import { useEffect, useRef } from 'react';
 
 import { LabelBox } from './common';
 import { CELL_WIDTH } from './constants';
-import { useConfig } from './hooks';
+import { useConfig } from './context';
 
 export function TopAxis() {
   const { criticalCommits, rowHeight, xScale } = useConfig();

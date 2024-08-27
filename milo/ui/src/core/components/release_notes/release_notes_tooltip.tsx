@@ -31,7 +31,7 @@ import {
   useReleaseNotes,
   useHasNewRelease,
   useMarkReleaseNotesRead,
-} from './hooks';
+} from './context';
 
 const TooltipDisplay = styled(
   forwardRef(function TooltipDisplay(

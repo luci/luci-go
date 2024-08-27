@@ -14,7 +14,7 @@
 
 import { Link, TableCell } from '@mui/material';
 
-import { useCommit, useRepoUrl } from './hooks';
+import { useCommit, useRepoUrl } from './context';
 
 export function PositionHeadCell() {
   return <TableCell width="1px">Commit</TableCell>;

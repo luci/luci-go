@@ -14,6 +14,4 @@
 
 export { renderReleaseNotes } from './common';
 export * from './release_notes_tooltip';
-export { ReleaseNotesProvider } from './context';
-export type { ReleaseNotesProviderProps } from './context';
-export * from './hooks';
+export * from './context';

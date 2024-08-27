@@ -25,7 +25,7 @@ import { VERDICT_STATUS_DISPLAY_MAP } from '@/common/constants/test';
 import { TestVariantStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
 import { SpecifiedTestVerdictStatus } from '@/test_verdict/types';
 
-import { useTestVerdict } from '../hooks';
+import { useTestVerdict } from '../context';
 
 import { CLInfo } from './cl_info';
 

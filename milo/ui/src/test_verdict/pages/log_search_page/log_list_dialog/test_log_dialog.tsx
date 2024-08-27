@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { useLogGroupListState, useSearchFilter } from '../context';
 import { FormData } from '../form_data';
-import { useLogGroupListState, useSearchFilter } from '../hooks';
 import { VariantLine } from '../variant_line';
 
 import { LogDialogBase } from './log_dialog_base';
