@@ -22,6 +22,13 @@ declare const VERSION: string;
  * Settings of the app.
  * Declared in the server generated file, /configs.js, included as a script tag.
  */
+// While it's possible to use a code generated binding for this. The JSON
+// representation of a proto message does not necessarily match the generated
+// type of the same proto message, particularly when timestamp, duration, enums,
+// etc are used. Keep this as a hand written binding so we don't need to deal
+// with the complexity of adding a JSON -> JS converter for the settings, which
+// is used in places (e.g. a worker script) that don't want heavy dependencies
+// like a proto message parser.
 declare const SETTINGS: {
   readonly buildbucket: {
     readonly host: string;
