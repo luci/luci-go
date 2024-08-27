@@ -30,20 +30,7 @@ func TestValidateConfig(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("ValidateConfig", t, func(t *ftt.Test) {
-		var cfg = &configpb.Config{
-			Trees: []*configpb.Tree{
-				{
-					Name:           "chromium",
-					Projects:       []string{"chromium"},
-					UseDefaultAcls: true,
-				},
-				{
-					Name:           "v8",
-					Projects:       []string{"v8", "v8-internal"},
-					UseDefaultAcls: true,
-				},
-			},
-		}
+		var cfg = TestConfig()
 
 		validateCfg := func(cfg *configpb.Config) error {
 			c := validation.Context{Context: context.Background()}
@@ -58,20 +45,20 @@ func TestValidateConfig(t *testing.T) {
 		t.Run("reject invalid tree name", func(t *ftt.Test) {
 			cfg.Trees[0].Name = "Invalid tree"
 			err := validateCfg(cfg)
-			assert.That(t, err, should.ErrLike("(trees / trees[0] / name): expected format"))
+			assert.That(t, err, should.ErrLike("(trees / [0] / name): expected format"))
 		})
 
 		t.Run("reject invalid project", func(t *ftt.Test) {
 			cfg.Trees[0].Projects = []string{"Invalid project"}
 			err := validateCfg(cfg)
-			assert.That(t, err, should.ErrLike("(trees / trees[0] / projects / projects[0]): expected format"))
+			assert.That(t, err, should.ErrLike("(trees / [0] / projects / [0]): expected format"))
 		})
 
 		t.Run("reject non-default acls with empty projects", func(t *ftt.Test) {
 			cfg.Trees[0].Projects = []string{}
 			cfg.Trees[0].UseDefaultAcls = false
 			err := validateCfg(cfg)
-			assert.That(t, err, should.ErrLike("(trees / trees[0] / use_default_acls): projects must not be empty when not using default ACL"))
+			assert.That(t, err, should.ErrLike("(trees / [0] / use_default_acls): projects must not be empty when not using default ACL"))
 		})
 
 		t.Run("reject multiple trees with same name", func(t *ftt.Test) {

@@ -25,12 +25,13 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/span"
 
+	"go.chromium.org/luci/tree_status/internal/perms"
 	"go.chromium.org/luci/tree_status/internal/status"
 	"go.chromium.org/luci/tree_status/pbutil"
 	pb "go.chromium.org/luci/tree_status/proto/v1"
@@ -44,7 +45,6 @@ var _ pb.TreeStatusServer = &treeStatusServer{}
 // NewTreeStatusServer creates a new server to handle TreeStatus requests.
 func NewTreeStatusServer() *pb.DecoratedTreeStatus {
 	return &pb.DecoratedTreeStatus{
-		Prelude:  checkAllowedPrelude,
 		Service:  &treeStatusServer{},
 		Postlude: gRPCifyAndLogPostlude,
 	}
@@ -61,6 +61,14 @@ func (*treeStatusServer) ListStatus(ctx context.Context, request *pb.ListStatusR
 	if err != nil {
 		return nil, invalidArgumentError(errors.Annotate(err, "parent").Err())
 	}
+	ctx = logging.SetField(ctx, "tree_name", tree)
+	hasLimitedAccess, msg, err := perms.HasListStatusLimitedPermission(ctx, tree)
+	if err != nil {
+		return nil, errors.Annotate(err, "checking list status limited permission").Err()
+	}
+	if !hasLimitedAccess {
+		return nil, appstatus.Errorf(codes.PermissionDenied, msg)
+	}
 	offset, err := listPaginator.Offset(request)
 	if err != nil {
 		return nil, err
@@ -69,9 +77,11 @@ func (*treeStatusServer) ListStatus(ctx context.Context, request *pb.ListStatusR
 		Offset: offset,
 		Limit:  int64(listPaginator.Limit(request.PageSize)),
 	}
-	includeUserInResponse, err := auth.IsMember(ctx, treeStatusAuditAccessGroup)
+
+	// Check if user can access to PII.
+	includeUserInResponse, _, err := perms.HasListStatusPermission(ctx, tree)
 	if err != nil {
-		return nil, errors.Annotate(err, "checking username access").Err()
+		return nil, errors.Annotate(err, "checking list status permission").Err()
 	}
 
 	values, hasNextPage, err := status.List(span.Single(ctx), tree, &options)
@@ -120,10 +130,19 @@ func (*treeStatusServer) GetStatus(ctx context.Context, request *pb.GetStatusReq
 	if err != nil {
 		return nil, invalidArgumentError(errors.Annotate(err, "name").Err())
 	}
+	ctx = logging.SetField(ctx, "tree_name", tree)
 
-	includeUserInResponse, err := auth.IsMember(ctx, treeStatusAuditAccessGroup)
+	hasLimitedAccess, msg, err := perms.HasGetStatusLimitedPermission(ctx, tree)
 	if err != nil {
-		return nil, errors.Annotate(err, "checking username access").Err()
+		return nil, errors.Annotate(err, "checking get status limited permission").Err()
+	}
+	if !hasLimitedAccess {
+		return nil, appstatus.Errorf(codes.PermissionDenied, msg)
+	}
+
+	includeUserInResponse, _, err := perms.HasGetStatusPermission(ctx, tree)
+	if err != nil {
+		return nil, errors.Annotate(err, "checking get status permission").Err()
 	}
 
 	if id == "latest" {
@@ -153,21 +172,20 @@ func (*treeStatusServer) GetStatus(ctx context.Context, request *pb.GetStatusReq
 
 // CreateStatus creates a new status update for the tree.
 func (*treeStatusServer) CreateStatus(ctx context.Context, request *pb.CreateStatusRequest) (*pb.Status, error) {
-	hasWriteAccess, err := auth.IsMember(ctx, treeStatusWriteAccessGroup)
-	if err != nil {
-		return nil, errors.Annotate(err, "checking write group membership").Err()
-	}
-	if !hasWriteAccess {
-		if auth.CurrentIdentity(ctx).Kind() == identity.Anonymous {
-			return nil, permissionDeniedError(errors.New("please log in before updating the tree status"))
-		}
-		return nil, permissionDeniedError(errors.New("you do not have permission to update the tree status"))
-	}
-
 	tree, err := parseStatusParent(request.GetParent())
 	if err != nil {
 		return nil, invalidArgumentError(errors.Annotate(err, "parent").Err())
 	}
+	ctx = logging.SetField(ctx, "tree_name", tree)
+
+	hasWriteAccess, msg, err := perms.HasCreateStatusPermission(ctx, tree)
+	if err != nil {
+		return nil, errors.Annotate(err, "checking create status permission").Err()
+	}
+	if !hasWriteAccess {
+		return nil, appstatus.Errorf(codes.PermissionDenied, msg)
+	}
+
 	id, err := status.GenerateID()
 	if err != nil {
 		return nil, errors.Annotate(err, "generating status id").Err()

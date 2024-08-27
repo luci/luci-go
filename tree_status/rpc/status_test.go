@@ -24,6 +24,11 @@ import (
 	"cloud.google.com/go/spanner"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/caching"
@@ -31,18 +36,25 @@ import (
 	"go.chromium.org/luci/server/secrets/testsecrets"
 	"go.chromium.org/luci/server/span"
 
+	"go.chromium.org/luci/tree_status/internal/config"
+	"go.chromium.org/luci/tree_status/internal/perms"
 	"go.chromium.org/luci/tree_status/internal/status"
 	"go.chromium.org/luci/tree_status/internal/testutil"
 	pb "go.chromium.org/luci/tree_status/proto/v1"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestStatus(t *testing.T) {
-	Convey("With a Status server", t, func() {
+	ftt.Run("With a Status server", t, func(t *ftt.Test) {
 		ctx := testutil.IntegrationTestContext(t)
 		ctx = caching.WithEmptyProcessCache(ctx)
+
+		// For config.
+		ctx = memory.Use(ctx)
+		testConfig := config.TestConfig()
+		err := config.SetConfig(ctx, testConfig)
+		assert.Loosely(t, err, should.BeNil)
 
 		// For user identification.
 		ctx = authtest.MockAuthConfig(ctx)
@@ -54,44 +66,59 @@ func TestStatus(t *testing.T) {
 		ctx = secrets.Use(ctx, &testsecrets.Store{})
 
 		server := NewTreeStatusServer()
-		Convey("GetStatus", func() {
-			Convey("Anonymous rejected", func() {
-				ctx = fakeAuth().anonymous().setInContext(ctx)
+		t.Run("GetStatus", func(t *ftt.Test) {
+			t.Run("Default ACLs anonymous rejected", func(t *ftt.Test) {
+				ctx = perms.FakeAuth().Anonymous().SetInContext(ctx)
 
 				request := &pb.GetStatusRequest{
 					Name: "trees/chromium/status/latest",
 				}
 				status, err := server.GetStatus(ctx, request)
 
-				So(err, ShouldBeRPCPermissionDenied, "log in")
-				So(status, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("log in"))
+				assert.Loosely(t, status, should.BeNil)
 			})
-			Convey("No read access rejected", func() {
-				ctx = fakeAuth().setInContext(ctx)
+			t.Run("Default ACLs no read access rejected", func(t *ftt.Test) {
+				ctx = perms.FakeAuth().SetInContext(ctx)
 
 				request := &pb.GetStatusRequest{
 					Name: "trees/chromium/status/latest",
 				}
 				status, err := server.GetStatus(ctx, request)
 
-				So(err, ShouldBeRPCPermissionDenied, "not a member of luci-tree-status-access")
-				So(status, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("user is not a member of group \"luci-tree-status-access\""))
+				assert.Loosely(t, status, should.BeNil)
 			})
-			Convey("Read latest when no status updates returns fallback", func() {
-				ctx = fakeAuth().withReadAccess().withAuditAccess().setInContext(ctx)
+			t.Run("Realm-based ACLs no read access rejected", func(t *ftt.Test) {
+				ctx = perms.FakeAuth().SetInContext(ctx)
+				testConfig.Trees[0].UseDefaultAcls = false
+				err := config.SetConfig(ctx, testConfig)
+				assert.Loosely(t, err, should.BeNil)
 
 				request := &pb.GetStatusRequest{
 					Name: "trees/chromium/status/latest",
 				}
 				status, err := server.GetStatus(ctx, request)
 
-				So(err, ShouldBeNil)
-				So(status.Name, ShouldEqual, "trees/chromium/status/fallback")
-				So(status.GeneralState, ShouldEqual, pb.GeneralState_OPEN)
-				So(status.Message, ShouldEqual, "Tree is open (fallback due to no status updates in past 140 days)")
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("user does not have permission to perform this action"))
+				assert.Loosely(t, status, should.BeNil)
 			})
-			Convey("Read latest", func() {
-				ctx = fakeAuth().withReadAccess().withAuditAccess().setInContext(ctx)
+
+			t.Run("Read latest when no status updates returns fallback", func(t *ftt.Test) {
+				ctx = perms.FakeAuth().WithReadAccess().WithAuditAccess().SetInContext(ctx)
+
+				request := &pb.GetStatusRequest{
+					Name: "trees/chromium/status/latest",
+				}
+				status, err := server.GetStatus(ctx, request)
+
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, status.Name, should.Equal("trees/chromium/status/fallback"))
+				assert.Loosely(t, status.GeneralState, should.Equal(pb.GeneralState_OPEN))
+				assert.Loosely(t, status.Message, should.Equal("Tree is open (fallback due to no status updates in past 140 days)"))
+			})
+			t.Run("Default ACLs read latest", func(t *ftt.Test) {
+				ctx = perms.FakeAuth().WithReadAccess().WithAuditAccess().SetInContext(ctx)
 				NewStatusBuilder().WithMessage("earliest").CreateInDB(ctx)
 				latest := NewStatusBuilder().WithMessage("latest").CreateInDB(ctx)
 
@@ -100,17 +127,22 @@ func TestStatus(t *testing.T) {
 				}
 				status, err := server.GetStatus(ctx, request)
 
-				So(err, ShouldBeNil)
-				So(status, ShouldResembleProto, &pb.Status{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, status, should.Match(&pb.Status{
 					Name:         fmt.Sprintf("trees/chromium/status/%s", latest.StatusID),
 					GeneralState: pb.GeneralState_OPEN,
 					Message:      "latest",
 					CreateUser:   "someone@example.com",
 					CreateTime:   timestamppb.New(latest.CreateTime),
-				})
+				}))
 			})
-			Convey("Read latest with no audit access hides username", func() {
-				ctx = fakeAuth().withReadAccess().setInContext(ctx)
+
+			t.Run("Realm-based ACLs read latest", func(t *ftt.Test) {
+				testConfig.Trees[0].UseDefaultAcls = false
+				err := config.SetConfig(ctx, testConfig)
+				assert.Loosely(t, err, should.BeNil)
+
+				ctx = perms.FakeAuth().WithPermissionInRealm(perms.PermGetStatus, "chromium:@project").WithPermissionInRealm(perms.PermGetStatusLimited, "chromium:@project").WithAuditAccess().SetInContext(ctx)
 				NewStatusBuilder().WithMessage("earliest").CreateInDB(ctx)
 				latest := NewStatusBuilder().WithMessage("latest").CreateInDB(ctx)
 
@@ -119,16 +151,83 @@ func TestStatus(t *testing.T) {
 				}
 				status, err := server.GetStatus(ctx, request)
 
-				So(err, ShouldBeNil)
-				So(status, ShouldResembleProto, &pb.Status{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, status, should.Match(&pb.Status{
+					Name:         fmt.Sprintf("trees/chromium/status/%s", latest.StatusID),
+					GeneralState: pb.GeneralState_OPEN,
+					Message:      "latest",
+					CreateUser:   "someone@example.com",
+					CreateTime:   timestamppb.New(latest.CreateTime),
+				}))
+			})
+
+			t.Run("Default ACLs read latest with no audit access hides username", func(t *ftt.Test) {
+				ctx = perms.FakeAuth().WithReadAccess().SetInContext(ctx)
+				NewStatusBuilder().WithMessage("earliest").CreateInDB(ctx)
+				latest := NewStatusBuilder().WithMessage("latest").CreateInDB(ctx)
+
+				request := &pb.GetStatusRequest{
+					Name: "trees/chromium/status/latest",
+				}
+				status, err := server.GetStatus(ctx, request)
+
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, status, should.Match(&pb.Status{
 					Name:         fmt.Sprintf("trees/chromium/status/%s", latest.StatusID),
 					GeneralState: pb.GeneralState_OPEN,
 					Message:      "latest",
 					CreateTime:   timestamppb.New(latest.CreateTime),
-				})
+				}))
 			})
-			Convey("Read by name", func() {
-				ctx = fakeAuth().withReadAccess().withAuditAccess().setInContext(ctx)
+
+			t.Run("Realm-based ACLs read latest with PermGetStatusLimited access hides username", func(t *ftt.Test) {
+				testConfig.Trees[0].UseDefaultAcls = false
+				err := config.SetConfig(ctx, testConfig)
+				assert.Loosely(t, err, should.BeNil)
+
+				ctx = perms.FakeAuth().WithPermissionInRealm(perms.PermGetStatusLimited, "chromium:@project").SetInContext(ctx)
+				NewStatusBuilder().WithMessage("earliest").CreateInDB(ctx)
+				latest := NewStatusBuilder().WithMessage("latest").CreateInDB(ctx)
+
+				request := &pb.GetStatusRequest{
+					Name: "trees/chromium/status/latest",
+				}
+				status, err := server.GetStatus(ctx, request)
+
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, status, should.Match(&pb.Status{
+					Name:         fmt.Sprintf("trees/chromium/status/%s", latest.StatusID),
+					GeneralState: pb.GeneralState_OPEN,
+					Message:      "latest",
+					CreateTime:   timestamppb.New(latest.CreateTime),
+				}))
+			})
+
+			t.Run("Realm-based ACLs read latest without audit access access hides username", func(t *ftt.Test) {
+				testConfig.Trees[0].UseDefaultAcls = false
+				err := config.SetConfig(ctx, testConfig)
+				assert.Loosely(t, err, should.BeNil)
+
+				ctx = perms.FakeAuth().WithPermissionInRealm(perms.PermGetStatus, "chromium:@project").WithPermissionInRealm(perms.PermGetStatusLimited, "chromium:@project").SetInContext(ctx)
+				NewStatusBuilder().WithMessage("earliest").CreateInDB(ctx)
+				latest := NewStatusBuilder().WithMessage("latest").CreateInDB(ctx)
+
+				request := &pb.GetStatusRequest{
+					Name: "trees/chromium/status/latest",
+				}
+				status, err := server.GetStatus(ctx, request)
+
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, status, should.Match(&pb.Status{
+					Name:         fmt.Sprintf("trees/chromium/status/%s", latest.StatusID),
+					GeneralState: pb.GeneralState_OPEN,
+					Message:      "latest",
+					CreateTime:   timestamppb.New(latest.CreateTime),
+				}))
+			})
+
+			t.Run("Default ACLs read by name", func(t *ftt.Test) {
+				ctx = perms.FakeAuth().WithReadAccess().WithAuditAccess().SetInContext(ctx)
 				earliest := NewStatusBuilder().WithMessage("earliest").CreateInDB(ctx)
 				NewStatusBuilder().WithMessage("latest").CreateInDB(ctx)
 
@@ -137,17 +236,22 @@ func TestStatus(t *testing.T) {
 				}
 				status, err := server.GetStatus(ctx, request)
 
-				So(err, ShouldBeNil)
-				So(status, ShouldResembleProto, &pb.Status{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, status, should.Match(&pb.Status{
 					Name:         fmt.Sprintf("trees/chromium/status/%s", earliest.StatusID),
 					GeneralState: pb.GeneralState_OPEN,
 					Message:      "earliest",
 					CreateUser:   "someone@example.com",
 					CreateTime:   timestamppb.New(earliest.CreateTime),
-				})
+				}))
 			})
-			Convey("Read by name with no audit access hides username", func() {
-				ctx = fakeAuth().withReadAccess().setInContext(ctx)
+
+			t.Run("Realm-based ACLs read by name", func(t *ftt.Test) {
+				testConfig.Trees[0].UseDefaultAcls = false
+				err := config.SetConfig(ctx, testConfig)
+				assert.Loosely(t, err, should.BeNil)
+
+				ctx = perms.FakeAuth().WithPermissionInRealm(perms.PermGetStatus, "chromium:@project").WithPermissionInRealm(perms.PermGetStatusLimited, "chromium:@project").WithAuditAccess().SetInContext(ctx)
 				earliest := NewStatusBuilder().WithMessage("earliest").CreateInDB(ctx)
 				NewStatusBuilder().WithMessage("latest").CreateInDB(ctx)
 
@@ -156,72 +260,154 @@ func TestStatus(t *testing.T) {
 				}
 				status, err := server.GetStatus(ctx, request)
 
-				So(err, ShouldBeNil)
-				So(status, ShouldResembleProto, &pb.Status{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, status, should.Match(&pb.Status{
+					Name:         fmt.Sprintf("trees/chromium/status/%s", earliest.StatusID),
+					GeneralState: pb.GeneralState_OPEN,
+					Message:      "earliest",
+					CreateUser:   "someone@example.com",
+					CreateTime:   timestamppb.New(earliest.CreateTime),
+				}))
+			})
+
+			t.Run("Default ACLs read by name with no audit access hides username", func(t *ftt.Test) {
+				ctx = perms.FakeAuth().WithReadAccess().SetInContext(ctx)
+				earliest := NewStatusBuilder().WithMessage("earliest").CreateInDB(ctx)
+				NewStatusBuilder().WithMessage("latest").CreateInDB(ctx)
+
+				request := &pb.GetStatusRequest{
+					Name: fmt.Sprintf("trees/chromium/status/%s", earliest.StatusID),
+				}
+				status, err := server.GetStatus(ctx, request)
+
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, status, should.Match(&pb.Status{
 					Name:         fmt.Sprintf("trees/chromium/status/%s", earliest.StatusID),
 					GeneralState: pb.GeneralState_OPEN,
 					Message:      "earliest",
 					CreateTime:   timestamppb.New(earliest.CreateTime),
-				})
+				}))
 			})
-			Convey("Read of invalid id", func() {
-				ctx = fakeAuth().withReadAccess().setInContext(ctx)
+
+			t.Run("Realm-based ACLs read by name with PermGetStatusLimited permission hides username", func(t *ftt.Test) {
+				testConfig.Trees[0].UseDefaultAcls = false
+				err := config.SetConfig(ctx, testConfig)
+				assert.Loosely(t, err, should.BeNil)
+
+				ctx = perms.FakeAuth().WithPermissionInRealm(perms.PermGetStatusLimited, "chromium:@project").SetInContext(ctx)
+				earliest := NewStatusBuilder().WithMessage("earliest").CreateInDB(ctx)
+				NewStatusBuilder().WithMessage("latest").CreateInDB(ctx)
+
+				request := &pb.GetStatusRequest{
+					Name: fmt.Sprintf("trees/chromium/status/%s", earliest.StatusID),
+				}
+				status, err := server.GetStatus(ctx, request)
+
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, status, should.Match(&pb.Status{
+					Name:         fmt.Sprintf("trees/chromium/status/%s", earliest.StatusID),
+					GeneralState: pb.GeneralState_OPEN,
+					Message:      "earliest",
+					CreateTime:   timestamppb.New(earliest.CreateTime),
+				}))
+			})
+
+			t.Run("Realm-based ACLs read by name with no audit access hides username", func(t *ftt.Test) {
+				testConfig.Trees[0].UseDefaultAcls = false
+				err := config.SetConfig(ctx, testConfig)
+				assert.Loosely(t, err, should.BeNil)
+
+				ctx = perms.FakeAuth().WithPermissionInRealm(perms.PermGetStatus, "chromium:@project").WithPermissionInRealm(perms.PermGetStatusLimited, "chromium:@project").SetInContext(ctx)
+				earliest := NewStatusBuilder().WithMessage("earliest").CreateInDB(ctx)
+				NewStatusBuilder().WithMessage("latest").CreateInDB(ctx)
+
+				request := &pb.GetStatusRequest{
+					Name: fmt.Sprintf("trees/chromium/status/%s", earliest.StatusID),
+				}
+				status, err := server.GetStatus(ctx, request)
+
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, status, should.Match(&pb.Status{
+					Name:         fmt.Sprintf("trees/chromium/status/%s", earliest.StatusID),
+					GeneralState: pb.GeneralState_OPEN,
+					Message:      "earliest",
+					CreateTime:   timestamppb.New(earliest.CreateTime),
+				}))
+			})
+
+			t.Run("Read of invalid id", func(t *ftt.Test) {
+				ctx = perms.FakeAuth().WithReadAccess().SetInContext(ctx)
 
 				request := &pb.GetStatusRequest{
 					Name: "trees/chromium/status/INVALID",
 				}
 				_, err := server.GetStatus(ctx, request)
 
-				So(err, ShouldBeRPCInvalidArgument, "name: expected format")
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("name: expected format"))
 			})
-			Convey("Read of non existing valid id", func() {
-				ctx = fakeAuth().withReadAccess().setInContext(ctx)
+			t.Run("Read of non existing valid id", func(t *ftt.Test) {
+				ctx = perms.FakeAuth().WithReadAccess().SetInContext(ctx)
 
 				request := &pb.GetStatusRequest{
 					Name: "trees/chromium/status/abcd1234abcd1234abcd1234abcd1234",
 				}
 				_, err := server.GetStatus(ctx, request)
 
-				So(err, ShouldBeRPCNotFound, "status value was not found")
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)("status value was not found"))
 			})
 		})
 
-		Convey("Create", func() {
-			Convey("Anonymous rejected", func() {
-				ctx = fakeAuth().anonymous().setInContext(ctx)
+		t.Run("Create", func(t *ftt.Test) {
+			t.Run("Default ACLs anonymous rejected", func(t *ftt.Test) {
+				ctx = perms.FakeAuth().Anonymous().SetInContext(ctx)
 
 				request := &pb.CreateStatusRequest{
 					Parent: "trees/chromium/status",
 				}
 				status, err := server.CreateStatus(ctx, request)
 
-				So(err, ShouldBeRPCPermissionDenied, "log in")
-				So(status, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("log in"))
+				assert.Loosely(t, status, should.BeNil)
 			})
-			Convey("No access rejected", func() {
-				ctx = fakeAuth().setInContext(ctx)
+			t.Run("Default ACLs no access rejected", func(t *ftt.Test) {
+				ctx = perms.FakeAuth().SetInContext(ctx)
 
 				request := &pb.CreateStatusRequest{
 					Parent: "trees/chromium/status",
 				}
 				status, err := server.CreateStatus(ctx, request)
 
-				So(err, ShouldBeRPCPermissionDenied, "not a member of luci-tree-status-access")
-				So(status, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("user is not a member of group \"luci-tree-status-writers\""))
+				assert.Loosely(t, status, should.BeNil)
 			})
-			Convey("No write access rejected", func() {
-				ctx = fakeAuth().withReadAccess().setInContext(ctx)
+			t.Run("Default ACLs no write access rejected", func(t *ftt.Test) {
+				ctx = perms.FakeAuth().WithReadAccess().SetInContext(ctx)
 
 				request := &pb.CreateStatusRequest{
 					Parent: "trees/chromium/status",
 				}
 				status, err := server.CreateStatus(ctx, request)
 
-				So(err, ShouldBeRPCPermissionDenied, "you do not have permission to update the tree status")
-				So(status, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("user is not a member of group \"luci-tree-status-writers\""))
+				assert.Loosely(t, status, should.BeNil)
 			})
-			Convey("Successful Create", func() {
-				ctx = fakeAuth().withReadAccess().withWriteAccess().setInContext(ctx)
+			t.Run("Realm-based ACLs no write access rejected", func(t *ftt.Test) {
+				testConfig.Trees[0].UseDefaultAcls = false
+				err := config.SetConfig(ctx, testConfig)
+				assert.Loosely(t, err, should.BeNil)
+
+				ctx = perms.FakeAuth().SetInContext(ctx)
+
+				request := &pb.CreateStatusRequest{
+					Parent: "trees/chromium/status",
+				}
+				status, err := server.CreateStatus(ctx, request)
+
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("user does not have permission to perform this action"))
+				assert.Loosely(t, status, should.BeNil)
+			})
+			t.Run("Default ACLs successful create", func(t *ftt.Test) {
+				ctx = perms.FakeAuth().WithReadAccess().WithWriteAccess().SetInContext(ctx)
 
 				request := &pb.CreateStatusRequest{
 					Parent: "trees/chromium/status",
@@ -233,22 +419,22 @@ func TestStatus(t *testing.T) {
 				}
 				actual, err := server.CreateStatus(ctx, request)
 
-				So(err, ShouldBeNil)
-				So(actual, ShouldResembleProto, &pb.Status{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, actual, should.Match(&pb.Status{
 					Name:               actual.Name,
 					GeneralState:       pb.GeneralState_CLOSED,
 					Message:            "closed",
 					CreateUser:         "someone@example.com",
 					CreateTime:         actual.CreateTime,
 					ClosingBuilderName: "projects/chromium-m100/buckets/ci.shadow/builders/Linux 123",
-				})
-				So(actual.Name, ShouldContainSubstring, "trees/chromium/status/")
-				So(time.Since(actual.CreateTime.AsTime()), ShouldBeLessThan, time.Minute)
+				}))
+				assert.Loosely(t, actual.Name, should.ContainSubstring("trees/chromium/status/"))
+				assert.Loosely(t, time.Since(actual.CreateTime.AsTime()), should.BeLessThan(time.Minute))
 
 				// Check it was actually written to the DB.
 				s, err := status.ReadLatest(span.Single(ctx), "chromium")
-				So(err, ShouldBeNil)
-				So(s, ShouldResemble, &status.Status{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, s, should.Match(&status.Status{
 					TreeName:           "chromium",
 					StatusID:           strings.Split(actual.Name, "/")[3],
 					GeneralStatus:      pb.GeneralState_CLOSED,
@@ -256,10 +442,54 @@ func TestStatus(t *testing.T) {
 					CreateUser:         "someone@example.com",
 					CreateTime:         actual.CreateTime.AsTime(),
 					ClosingBuilderName: "projects/chromium-m100/buckets/ci.shadow/builders/Linux 123",
-				})
+				}))
 			})
-			Convey("Closing builder name ignored if status is not closed", func() {
-				ctx = fakeAuth().withReadAccess().withWriteAccess().setInContext(ctx)
+
+			t.Run("Realm-based ACLs successful create", func(t *ftt.Test) {
+				testConfig.Trees[0].UseDefaultAcls = false
+				err := config.SetConfig(ctx, testConfig)
+				assert.Loosely(t, err, should.BeNil)
+
+				ctx = perms.FakeAuth().WithPermissionInRealm(perms.PermCreateStatus, "chromium:@project").SetInContext(ctx)
+
+				request := &pb.CreateStatusRequest{
+					Parent: "trees/chromium/status",
+					Status: &pb.Status{
+						GeneralState:       pb.GeneralState_CLOSED,
+						Message:            "closed",
+						ClosingBuilderName: "projects/chromium-m100/buckets/ci.shadow/builders/Linux 123",
+					},
+				}
+				actual, err := server.CreateStatus(ctx, request)
+
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, actual, should.Match(&pb.Status{
+					Name:               actual.Name,
+					GeneralState:       pb.GeneralState_CLOSED,
+					Message:            "closed",
+					CreateUser:         "someone@example.com",
+					CreateTime:         actual.CreateTime,
+					ClosingBuilderName: "projects/chromium-m100/buckets/ci.shadow/builders/Linux 123",
+				}))
+				assert.Loosely(t, actual.Name, should.ContainSubstring("trees/chromium/status/"))
+				assert.Loosely(t, time.Since(actual.CreateTime.AsTime()), should.BeLessThan(time.Minute))
+
+				// Check it was actually written to the DB.
+				s, err := status.ReadLatest(span.Single(ctx), "chromium")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, s, should.Match(&status.Status{
+					TreeName:           "chromium",
+					StatusID:           strings.Split(actual.Name, "/")[3],
+					GeneralStatus:      pb.GeneralState_CLOSED,
+					Message:            "closed",
+					CreateUser:         "someone@example.com",
+					CreateTime:         actual.CreateTime.AsTime(),
+					ClosingBuilderName: "projects/chromium-m100/buckets/ci.shadow/builders/Linux 123",
+				}))
+			})
+
+			t.Run("Closing builder name ignored if status is not closed", func(t *ftt.Test) {
+				ctx = perms.FakeAuth().WithReadAccess().WithWriteAccess().SetInContext(ctx)
 
 				request := &pb.CreateStatusRequest{
 					Parent: "trees/chromium/status",
@@ -271,31 +501,31 @@ func TestStatus(t *testing.T) {
 				}
 				actual, err := server.CreateStatus(ctx, request)
 
-				So(err, ShouldBeNil)
-				So(actual, ShouldResembleProto, &pb.Status{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, actual, should.Match(&pb.Status{
 					Name:         actual.Name,
 					GeneralState: pb.GeneralState_OPEN,
 					Message:      "open",
 					CreateUser:   "someone@example.com",
 					CreateTime:   actual.CreateTime,
-				})
-				So(actual.Name, ShouldContainSubstring, "trees/chromium/status/")
-				So(time.Since(actual.CreateTime.AsTime()), ShouldBeLessThan, time.Minute)
+				}))
+				assert.Loosely(t, actual.Name, should.ContainSubstring("trees/chromium/status/"))
+				assert.Loosely(t, time.Since(actual.CreateTime.AsTime()), should.BeLessThan(time.Minute))
 
 				// Check it was actually written to the DB.
 				s, err := status.ReadLatest(span.Single(ctx), "chromium")
-				So(err, ShouldBeNil)
-				So(s, ShouldResemble, &status.Status{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, s, should.Match(&status.Status{
 					TreeName:      "chromium",
 					StatusID:      strings.Split(actual.Name, "/")[3],
 					GeneralStatus: pb.GeneralState_OPEN,
 					Message:       "open",
 					CreateUser:    "someone@example.com",
 					CreateTime:    actual.CreateTime.AsTime(),
-				})
+				}))
 			})
-			Convey("Invalid parent", func() {
-				ctx = fakeAuth().withReadAccess().withWriteAccess().setInContext(ctx)
+			t.Run("Invalid parent", func(t *ftt.Test) {
+				ctx = perms.FakeAuth().WithReadAccess().WithWriteAccess().SetInContext(ctx)
 
 				request := &pb.CreateStatusRequest{
 					Parent: "chromium",
@@ -306,10 +536,10 @@ func TestStatus(t *testing.T) {
 				}
 				_, err := server.CreateStatus(ctx, request)
 
-				So(err, ShouldBeRPCInvalidArgument, "expected format: ^trees/")
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("expected format: ^trees/"))
 			})
-			Convey("Name ignored", func() {
-				ctx = fakeAuth().withReadAccess().withWriteAccess().setInContext(ctx)
+			t.Run("Name ignored", func(t *ftt.Test) {
+				ctx = perms.FakeAuth().WithReadAccess().WithWriteAccess().SetInContext(ctx)
 
 				request := &pb.CreateStatusRequest{
 					Parent: "trees/chromium/status",
@@ -321,11 +551,11 @@ func TestStatus(t *testing.T) {
 				}
 				actual, err := server.CreateStatus(ctx, request)
 
-				So(err, ShouldBeNil)
-				So(actual.Name, ShouldContainSubstring, "trees/chromium/status/")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, actual.Name, should.ContainSubstring("trees/chromium/status/"))
 			})
-			Convey("Empty general_state", func() {
-				ctx = fakeAuth().withReadAccess().withWriteAccess().setInContext(ctx)
+			t.Run("Empty general_state", func(t *ftt.Test) {
+				ctx = perms.FakeAuth().WithReadAccess().WithWriteAccess().SetInContext(ctx)
 
 				request := &pb.CreateStatusRequest{
 					Parent: "trees/chromium/status",
@@ -335,10 +565,10 @@ func TestStatus(t *testing.T) {
 				}
 				_, err := server.CreateStatus(ctx, request)
 
-				So(err, ShouldBeRPCInvalidArgument, "general_state: must be specified")
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("general_state: must be specified"))
 			})
-			Convey("Empty message", func() {
-				ctx = fakeAuth().withReadAccess().withWriteAccess().setInContext(ctx)
+			t.Run("Empty message", func(t *ftt.Test) {
+				ctx = perms.FakeAuth().WithReadAccess().WithWriteAccess().SetInContext(ctx)
 
 				request := &pb.CreateStatusRequest{
 					Parent: "trees/chromium/status",
@@ -348,10 +578,10 @@ func TestStatus(t *testing.T) {
 				}
 				_, err := server.CreateStatus(ctx, request)
 
-				So(err, ShouldBeRPCInvalidArgument, "message: must be specified")
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("message: must be specified"))
 			})
-			Convey("User ignored", func() {
-				ctx = fakeAuth().withReadAccess().withWriteAccess().setInContext(ctx)
+			t.Run("User ignored", func(t *ftt.Test) {
+				ctx = perms.FakeAuth().WithReadAccess().WithWriteAccess().SetInContext(ctx)
 
 				request := &pb.CreateStatusRequest{
 					Parent: "trees/chromium/status",
@@ -363,11 +593,11 @@ func TestStatus(t *testing.T) {
 				}
 				actual, err := server.CreateStatus(ctx, request)
 
-				So(err, ShouldBeNil)
-				So(actual.CreateUser, ShouldEqual, "someone@example.com")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, actual.CreateUser, should.Equal("someone@example.com"))
 			})
-			Convey("Time ignored", func() {
-				ctx = fakeAuth().withReadAccess().withWriteAccess().setInContext(ctx)
+			t.Run("Time ignored", func(t *ftt.Test) {
+				ctx = perms.FakeAuth().WithReadAccess().WithWriteAccess().SetInContext(ctx)
 
 				request := &pb.CreateStatusRequest{
 					Parent: "trees/chromium/status",
@@ -379,49 +609,65 @@ func TestStatus(t *testing.T) {
 				}
 				actual, err := server.CreateStatus(ctx, request)
 
-				So(err, ShouldBeNil)
-				So(time.Since(actual.CreateTime.AsTime()), ShouldBeLessThan, time.Minute)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, time.Since(actual.CreateTime.AsTime()), should.BeLessThan(time.Minute))
 			})
 
 		})
 
-		Convey("List", func() {
-			Convey("Anonymous rejected", func() {
-				ctx = fakeAuth().anonymous().setInContext(ctx)
+		t.Run("List", func(t *ftt.Test) {
+			t.Run("Default ACLs anonymous rejected", func(t *ftt.Test) {
+				ctx = perms.FakeAuth().Anonymous().SetInContext(ctx)
 
 				request := &pb.ListStatusRequest{
 					Parent: "trees/chromium/status",
 				}
 				status, err := server.ListStatus(ctx, request)
 
-				So(err, ShouldBeRPCPermissionDenied, "log in")
-				So(status, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("log in"))
+				assert.Loosely(t, status, should.BeNil)
 			})
-			Convey("No read access rejected", func() {
-				ctx = fakeAuth().setInContext(ctx)
+			t.Run("Default ACLs no read access rejected", func(t *ftt.Test) {
+				ctx = perms.FakeAuth().SetInContext(ctx)
 
 				request := &pb.ListStatusRequest{
 					Parent: "trees/chromium/status",
 				}
 				status, err := server.ListStatus(ctx, request)
 
-				So(err, ShouldBeRPCPermissionDenied, "not a member of luci-tree-status-access")
-				So(status, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("user is not a member of group \"luci-tree-status-access\""))
+				assert.Loosely(t, status, should.BeNil)
 			})
-			Convey("List with no values", func() {
-				ctx = fakeAuth().withReadAccess().withAuditAccess().setInContext(ctx)
+			t.Run("Realm-based ACLs no read access rejected", func(t *ftt.Test) {
+				testConfig.Trees[0].UseDefaultAcls = false
+				err := config.SetConfig(ctx, testConfig)
+				assert.Loosely(t, err, should.BeNil)
+
+				ctx = perms.FakeAuth().SetInContext(ctx)
+
+				request := &pb.ListStatusRequest{
+					Parent: "trees/chromium/status",
+				}
+				status, err := server.ListStatus(ctx, request)
+
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("user does not have permission to perform this action"))
+				assert.Loosely(t, status, should.BeNil)
+			})
+
+			t.Run("List with no values", func(t *ftt.Test) {
+				ctx = perms.FakeAuth().WithReadAccess().WithAuditAccess().SetInContext(ctx)
 
 				request := &pb.ListStatusRequest{
 					Parent: "trees/chromium/status",
 				}
 				response, err := server.ListStatus(ctx, request)
 
-				So(err, ShouldBeNil)
-				So(response.NextPageToken, ShouldBeEmpty)
-				So(response.Status, ShouldBeEmpty)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, response.NextPageToken, should.BeEmpty)
+				assert.Loosely(t, response.Status, should.BeEmpty)
 			})
-			Convey("List with one page", func() {
-				ctx = fakeAuth().withReadAccess().withAuditAccess().setInContext(ctx)
+			t.Run("List with one page", func(t *ftt.Test) {
+				ctx = perms.FakeAuth().WithReadAccess().WithAuditAccess().SetInContext(ctx)
 				earliest := NewStatusBuilder().WithMessage("earliest").CreateInDB(ctx)
 				latest := NewStatusBuilder().WithMessage("latest").CreateInDB(ctx)
 
@@ -431,17 +677,17 @@ func TestStatus(t *testing.T) {
 				}
 				response, err := server.ListStatus(ctx, request)
 
-				So(err, ShouldBeNil)
-				So(response.NextPageToken, ShouldBeEmpty)
-				So(response, ShouldResembleProto, &pb.ListStatusResponse{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, response.NextPageToken, should.BeEmpty)
+				assert.Loosely(t, response, should.Match(&pb.ListStatusResponse{
 					Status: []*pb.Status{
 						toStatusProto(latest, true),
 						toStatusProto(earliest, true),
 					},
-				})
+				}))
 			})
-			Convey("List with two pages", func() {
-				ctx = fakeAuth().withReadAccess().withAuditAccess().setInContext(ctx)
+			t.Run("List with two pages", func(t *ftt.Test) {
+				ctx = perms.FakeAuth().WithReadAccess().WithAuditAccess().SetInContext(ctx)
 				earliest := NewStatusBuilder().WithMessage("earliest").CreateInDB(ctx)
 				latest := NewStatusBuilder().WithMessage("latest").CreateInDB(ctx)
 
@@ -450,19 +696,43 @@ func TestStatus(t *testing.T) {
 					PageSize: 1,
 				}
 				response1, err := server.ListStatus(ctx, request)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				request.PageToken = response1.NextPageToken
 				response2, err := server.ListStatus(ctx, request)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
-				So(response1.NextPageToken, ShouldNotBeEmpty)
-				So(response2.NextPageToken, ShouldBeEmpty)
-				So(response1.Status[0], ShouldResembleProto, toStatusProto(latest, true))
-				So(response2.Status[0], ShouldResembleProto, toStatusProto(earliest, true))
+				assert.Loosely(t, response1.NextPageToken, should.NotBeEmpty)
+				assert.Loosely(t, response2.NextPageToken, should.BeEmpty)
+				assert.Loosely(t, response1.Status[0], should.Match(toStatusProto(latest, true)))
+				assert.Loosely(t, response2.Status[0], should.Match(toStatusProto(earliest, true)))
 			})
 		})
-		Convey("List with no audit access hides usernames", func() {
-			ctx = fakeAuth().withReadAccess().setInContext(ctx)
+		t.Run("Realm-based ACLs list", func(t *ftt.Test) {
+			testConfig.Trees[0].UseDefaultAcls = false
+			err := config.SetConfig(ctx, testConfig)
+			assert.Loosely(t, err, should.BeNil)
+
+			ctx = perms.FakeAuth().WithPermissionInRealm(perms.PermListStatusLimited, "chromium:@project").WithPermissionInRealm(perms.PermListStatus, "chromium:@project").WithAuditAccess().SetInContext(ctx)
+			earliest := NewStatusBuilder().WithMessage("earliest").CreateInDB(ctx)
+			latest := NewStatusBuilder().WithMessage("latest").CreateInDB(ctx)
+
+			request := &pb.ListStatusRequest{
+				Parent:   "trees/chromium/status",
+				PageSize: 2,
+			}
+			response, err := server.ListStatus(ctx, request)
+
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, response.NextPageToken, should.BeEmpty)
+			assert.Loosely(t, response, should.Match(&pb.ListStatusResponse{
+				Status: []*pb.Status{
+					toStatusProto(latest, true),
+					toStatusProto(earliest, true),
+				},
+			}))
+		})
+		t.Run("Default ACLs list with no audit access hides usernames", func(t *ftt.Test) {
+			ctx = perms.FakeAuth().WithReadAccess().SetInContext(ctx)
 			expected := toStatusProto(NewStatusBuilder().CreateInDB(ctx), true)
 			expected.CreateUser = ""
 
@@ -471,48 +741,53 @@ func TestStatus(t *testing.T) {
 			}
 			response, err := server.ListStatus(ctx, request)
 
-			So(err, ShouldBeNil)
-			So(response, ShouldResembleProto, &pb.ListStatusResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, response, should.Match(&pb.ListStatusResponse{
 				Status: []*pb.Status{expected},
-			})
+			}))
+		})
+
+		t.Run("Realm-based ACLs list with PermListStatusLimited hides usernames", func(t *ftt.Test) {
+			testConfig.Trees[0].UseDefaultAcls = false
+			err := config.SetConfig(ctx, testConfig)
+			assert.Loosely(t, err, should.BeNil)
+
+			ctx = perms.FakeAuth().WithPermissionInRealm(perms.PermListStatusLimited, "chromium:@project").SetInContext(ctx)
+			expected := toStatusProto(NewStatusBuilder().CreateInDB(ctx), true)
+			expected.CreateUser = ""
+
+			request := &pb.ListStatusRequest{
+				Parent: "trees/chromium/status",
+			}
+			response, err := server.ListStatus(ctx, request)
+
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, response, should.Match(&pb.ListStatusResponse{
+				Status: []*pb.Status{expected},
+			}))
+		})
+
+		t.Run("Realm-based ACLs list with no audit access hides usernames", func(t *ftt.Test) {
+			testConfig.Trees[0].UseDefaultAcls = false
+			err := config.SetConfig(ctx, testConfig)
+			assert.Loosely(t, err, should.BeNil)
+
+			ctx = perms.FakeAuth().WithPermissionInRealm(perms.PermListStatusLimited, "chromium:@project").WithPermissionInRealm(perms.PermListStatus, "chromium:@project").SetInContext(ctx)
+			expected := toStatusProto(NewStatusBuilder().CreateInDB(ctx), true)
+			expected.CreateUser = ""
+
+			request := &pb.ListStatusRequest{
+				Parent: "trees/chromium/status",
+			}
+			response, err := server.ListStatus(ctx, request)
+
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, response, should.Match(&pb.ListStatusResponse{
+				Status: []*pb.Status{expected},
+			}))
 		})
 	})
 
-}
-
-type fakeAuthBuilder struct {
-	state *authtest.FakeState
-}
-
-func fakeAuth() *fakeAuthBuilder {
-	return &fakeAuthBuilder{
-		state: &authtest.FakeState{
-			Identity:       "user:someone@example.com",
-			IdentityGroups: []string{},
-		},
-	}
-}
-func (a *fakeAuthBuilder) anonymous() *fakeAuthBuilder {
-	a.state.Identity = "anonymous:anonymous"
-	return a
-}
-func (a *fakeAuthBuilder) withReadAccess() *fakeAuthBuilder {
-	a.state.IdentityGroups = append(a.state.IdentityGroups, treeStatusAccessGroup)
-	return a
-}
-func (a *fakeAuthBuilder) withAuditAccess() *fakeAuthBuilder {
-	a.state.IdentityGroups = append(a.state.IdentityGroups, treeStatusAuditAccessGroup)
-	return a
-}
-func (a *fakeAuthBuilder) withWriteAccess() *fakeAuthBuilder {
-	a.state.IdentityGroups = append(a.state.IdentityGroups, treeStatusWriteAccessGroup)
-	return a
-}
-func (a *fakeAuthBuilder) setInContext(ctx context.Context) context.Context {
-	if a.state.Identity == "anonymous:anonymous" && len(a.state.IdentityGroups) > 0 {
-		panic("You cannot call any of the with methods on fakeAuthBuilder if you call the anonymous method")
-	}
-	return auth.WithState(ctx, a.state)
 }
 
 type StatusBuilder struct {
@@ -521,7 +796,9 @@ type StatusBuilder struct {
 
 func NewStatusBuilder() *StatusBuilder {
 	id, err := status.GenerateID()
-	So(err, ShouldBeNil)
+	if err != nil {
+		panic(err)
+	}
 	return &StatusBuilder{status: status.Status{
 		TreeName:      "chromium",
 		StatusID:      id,
@@ -554,7 +831,9 @@ func (b *StatusBuilder) CreateInDB(ctx context.Context) *status.Status {
 	}
 	m := spanner.InsertOrUpdateMap("Status", row)
 	ts, err := span.Apply(ctx, []*spanner.Mutation{m})
-	So(err, ShouldBeNil)
+	if err != nil {
+		panic(err)
+	}
 	if s.CreateTime == spanner.CommitTimestamp {
 		s.CreateTime = ts.UTC()
 	}

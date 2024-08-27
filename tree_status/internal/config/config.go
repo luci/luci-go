@@ -17,9 +17,11 @@ package config
 
 import (
 	"context"
+	"fmt"
 
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/config/server/cfgcache"
 	"go.chromium.org/luci/config/validation"
 
@@ -36,6 +38,9 @@ var cachedCfg = cfgcache.Register(&cfgcache.Entry{
 	},
 })
 
+// ErrNotFoundTreeConfig will be returned if configuration for a given project does not exist.
+var ErrNotFoundTreeConfig = fmt.Errorf("tree config not found")
+
 // Update fetches the config and puts it into the datastore.
 func Update(ctx context.Context) error {
 	_, err := cachedCfg.Update(ctx, nil)
@@ -49,4 +54,19 @@ func Get(ctx context.Context) (*configpb.Config, error) {
 		return nil, err
 	}
 	return cfg.(*configpb.Config), nil
+}
+
+// GetTreeConfig returns config for a tree name.
+// If the config for the tree name is not found, it will return an ErrNotFoundTreeConfig error.
+func GetTreeConfig(ctx context.Context, treeName string) (*configpb.Tree, error) {
+	cfg, err := Get(ctx)
+	if err != nil {
+		return nil, errors.Annotate(err, "getting config").Err()
+	}
+	for _, treeConfg := range cfg.Trees {
+		if treeConfg.Name == treeName {
+			return treeConfg, nil
+		}
+	}
+	return nil, ErrNotFoundTreeConfig
 }

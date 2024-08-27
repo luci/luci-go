@@ -31,7 +31,7 @@ func validateConfig(ctx *validation.Context, cfg *configpb.Config) {
 	projectMap := map[string][]string{}
 
 	for i, tree := range cfg.Trees {
-		ctx.Enter("trees[%d]", i)
+		ctx.Enter("[%d]", i)
 		validateTree(ctx, tree)
 		ctx.Exit()
 		treeMap[tree.Name] = append(treeMap[tree.Name], i)
@@ -62,7 +62,7 @@ func validateTree(ctx *validation.Context, tree *configpb.Tree) {
 
 	ctx.Enter("projects")
 	for i, project := range tree.Projects {
-		ctx.Enter("projects[%d]", i)
+		ctx.Enter("[%d]", i)
 		if err := pbutil.ValidateProject(project); err != nil {
 			ctx.Error(err)
 		}
