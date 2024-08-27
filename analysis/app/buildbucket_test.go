@@ -16,9 +16,6 @@ package app
 
 import (
 	"context"
-	"io"
-	"net/http"
-	"net/http/httptest"
 	"testing"
 
 	"google.golang.org/protobuf/encoding/protojson"
@@ -29,13 +26,9 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/server/pubsub"
-	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 const (
@@ -88,69 +81,6 @@ func TestHandleBuild(t *testing.T) {
 			assert.Loosely(t, len(skdr.Tasks().Payloads()), should.BeZero)
 		})
 	})
-
-	// Legacy pub/sub handler tests, delete once handler migration complete.
-	Convey(`Test BuildbucketPubSubHandler (Legacy)`, t, func() {
-		ctx, _ := tsmon.WithDummyInMemory(context.Background())
-		ctx, skdr := tq.TestingContext(ctx, nil)
-
-		rsp := httptest.NewRecorder()
-		rctx := &router.Context{
-			Writer: rsp,
-		}
-		pubSubMessage := &buildbucketpb.BuildsV2PubSub{
-			Build: &buildbucketpb.Build{
-				Builder: &buildbucketpb.BuilderID{
-					Project: "buildproject",
-				},
-				Id: 14141414,
-				Infra: &buildbucketpb.BuildInfra{
-					Buildbucket: &buildbucketpb.BuildInfra_Buildbucket{
-						Hostname: bbHost,
-					},
-				},
-			},
-		}
-		Convey(`Completed build`, func() {
-			pubSubMessage.Build.Status = buildbucketpb.Status_SUCCESS
-
-			rctx.Request = (&http.Request{Body: makeBBV2ReqLegacy(pubSubMessage)}).WithContext(ctx)
-			BuildbucketPubSubHandlerLegacy(rctx)
-			So(rsp.Code, ShouldEqual, http.StatusOK)
-			So(buildCounter.Get(ctx, "buildproject", "success"), ShouldEqual, 1)
-
-			So(len(skdr.Tasks().Payloads()), ShouldEqual, 1)
-			resultsTask := skdr.Tasks().Payloads()[0].(*taskspb.JoinBuild)
-
-			expectedTask := &taskspb.JoinBuild{
-				Host:    bbHost,
-				Project: "buildproject",
-				Id:      14141414,
-			}
-			So(resultsTask, ShouldResembleProto, expectedTask)
-		})
-		Convey(`Uncompleted build`, func() {
-			pubSubMessage.Build.Status = buildbucketpb.Status_STARTED
-
-			rctx.Request = (&http.Request{Body: makeBBV2ReqLegacy(pubSubMessage)}).WithContext(ctx)
-			BuildbucketPubSubHandlerLegacy(rctx)
-			So(rsp.Code, ShouldEqual, http.StatusNoContent)
-			So(buildCounter.Get(ctx, "buildproject", "ignored"), ShouldEqual, 1)
-
-			So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
-		})
-		Convey(`Invalid data`, func() {
-			attributes := map[string]any{
-				"version": "v2",
-			}
-			rctx.Request = (&http.Request{Body: makeReq([]byte("Hello"), attributes)}).WithContext(ctx)
-			BuildbucketPubSubHandlerLegacy(rctx)
-			So(rsp.Code, ShouldEqual, http.StatusAccepted)
-			So(buildCounter.Get(ctx, "unknown", "permanent-failure"), ShouldEqual, 1)
-
-			So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
-		})
-	})
 }
 
 func makeBBV2Req(message *buildbucketpb.BuildsV2PubSub) pubsub.Message {
@@ -166,16 +96,4 @@ func makeBBV2Req(message *buildbucketpb.BuildsV2PubSub) pubsub.Message {
 		Data:       bm,
 		Attributes: attributes,
 	}
-}
-
-func makeBBV2ReqLegacy(message *buildbucketpb.BuildsV2PubSub) io.ReadCloser {
-	bm, err := protojson.Marshal(message)
-	if err != nil {
-		panic(err)
-	}
-
-	attributes := map[string]any{
-		"version": "v2",
-	}
-	return makeReq(bm, attributes)
 }

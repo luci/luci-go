@@ -17,9 +17,6 @@ package app
 import (
 	"context"
 	"fmt"
-	"io"
-	"net/http"
-	"net/http/httptest"
 	"testing"
 
 	"google.golang.org/protobuf/encoding/protojson"
@@ -30,12 +27,8 @@ import (
 	"go.chromium.org/luci/common/tsmon"
 	cvv1 "go.chromium.org/luci/cv/api/v1"
 	"go.chromium.org/luci/server/pubsub"
-	"go.chromium.org/luci/server/router"
 
 	_ "go.chromium.org/luci/analysis/internal/services/verdictingester" // Needed to ensure task class is registered.
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestCVRunHandler(t *testing.T) {
@@ -81,73 +74,9 @@ func TestCVRunHandler(t *testing.T) {
 	})
 }
 
-func TestCVRunHandlerLegacy(t *testing.T) {
-	Convey(`Test CVRunHandler (Legacy)`, t, func() {
-		ctx, _ := tsmon.WithDummyInMemory(context.Background())
-
-		rID := "id_full_run"
-		fullRunID := fullRunID("cvproject", rID)
-
-		h := &CVRunHandler{}
-		rsp := httptest.NewRecorder()
-		rctx := &router.Context{
-			Writer: rsp,
-		}
-		Convey(`Valid message`, func() {
-			message := &cvv1.PubSubRun{
-				Id:       fullRunID,
-				Status:   cvv1.Run_SUCCEEDED,
-				Hostname: "cvhost",
-			}
-
-			called := false
-			var processed bool
-			h.handleCVRun = func(ctx context.Context, psRun *cvv1.PubSubRun) (project string, wasProcessed bool, err error) {
-				So(called, ShouldBeFalse)
-				So(psRun, ShouldResembleProto, message)
-
-				called = true
-				return "cvproject", processed, nil
-			}
-
-			Convey(`Processed`, func() {
-				processed = true
-
-				rctx.Request = (&http.Request{Body: makeCVRunReqLegacy(message)}).WithContext(ctx)
-				h.HandleLegacy(rctx)
-				So(rsp.Code, ShouldEqual, http.StatusOK)
-				So(cvRunCounter.Get(ctx, "cvproject", "success"), ShouldEqual, 1)
-			})
-			Convey(`Not processed`, func() {
-				processed = false
-
-				rctx.Request = (&http.Request{Body: makeCVRunReqLegacy(message)}).WithContext(ctx)
-				h.HandleLegacy(rctx)
-				So(rsp.Code, ShouldEqual, http.StatusNoContent)
-				So(cvRunCounter.Get(ctx, "cvproject", "ignored"), ShouldEqual, 1)
-			})
-		})
-		Convey(`Invalid data`, func() {
-			h.handleCVRun = func(ctx context.Context, psRun *cvv1.PubSubRun) (project string, wasProcessed bool, err error) {
-				panic("Should not be reached.")
-			}
-
-			rctx.Request = (&http.Request{Body: makeReq([]byte("Hello"), nil)}).WithContext(ctx)
-			h.HandleLegacy(rctx)
-			So(rsp.Code, ShouldEqual, http.StatusAccepted)
-			So(cvRunCounter.Get(ctx, "unknown", "permanent-failure"), ShouldEqual, 1)
-		})
-	})
-}
-
 func makeCVRunReq(message *cvv1.PubSubRun) pubsub.Message {
 	blob, _ := protojson.Marshal(message)
 	return pubsub.Message{Data: blob}
-}
-
-func makeCVRunReqLegacy(message *cvv1.PubSubRun) io.ReadCloser {
-	blob, _ := protojson.Marshal(message)
-	return makeReq(blob, nil)
 }
 
 func fullRunID(project, runID string) string {

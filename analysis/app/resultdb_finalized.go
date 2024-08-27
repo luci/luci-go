@@ -17,10 +17,6 @@ package app
 
 import (
 	"context"
-	"encoding/json"
-	"net/http"
-
-	"google.golang.org/protobuf/encoding/protojson"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/tsmon/field"
@@ -28,7 +24,6 @@ import (
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/pubsub"
-	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/analysis/internal/ingestion/join"
 )
@@ -79,61 +74,4 @@ func (h *InvocationFinalizedHandler) Handle(ctx context.Context, message pubsub.
 	}
 	status = errStatus(err)
 	return err
-}
-
-// HandleLegacy processes a ResultDB Invocation Finalized Pub/Sub message.
-func (h *InvocationFinalizedHandler) HandleLegacy(ctx *router.Context) {
-	status := "unknown"
-	project := "unknown"
-	defer func() {
-		// Closure for late binding.
-		invocationsFinalizedCounter.Add(ctx.Request.Context(), 1, project, status)
-	}()
-	project, processed, err := h.handleImplLegacy(ctx.Request.Context(), ctx.Request)
-
-	switch {
-	case err != nil:
-		errors.Log(ctx.Request.Context(), errors.Annotate(err, "handling invocation finalized pubsub event").Err())
-		status = processErr(ctx, err)
-		return
-	case !processed:
-		status = "ignored"
-		// Use subtly different "success" response codes to surface in
-		// standard GAE logs whether an ingestion was ignored or not,
-		// while still acknowledging the pub/sub.
-		// See https://cloud.google.com/pubsub/docs/push#receiving_messages.
-		ctx.Writer.WriteHeader(http.StatusNoContent) // 204
-	default:
-		status = "success"
-		ctx.Writer.WriteHeader(http.StatusOK)
-	}
-}
-
-func (h *InvocationFinalizedHandler) handleImplLegacy(ctx context.Context, request *http.Request) (project string, processed bool, err error) {
-	notification, err := extractNotificationLegacy(request)
-	if err != nil {
-		return "unknown", false, errors.Annotate(err, "failed to extract invocation finalized notification").Err()
-	}
-
-	project, _ = realms.Split(notification.Realm)
-	processed, err = h.handleInvocation(ctx, notification)
-	if err != nil {
-		return project, false, errors.Annotate(err, "processing notification").Err()
-	}
-	return project, processed, nil
-}
-
-func extractNotificationLegacy(r *http.Request) (*rdbpb.InvocationFinalizedNotification, error) {
-	var msg pubsubMessage
-	if err := json.NewDecoder(r.Body).Decode(&msg); err != nil {
-		return nil, errors.Annotate(err, "decoding pubsub message").Err()
-	}
-
-	var run rdbpb.InvocationFinalizedNotification
-	unmarshalOpts := protojson.UnmarshalOptions{DiscardUnknown: true}
-	err := unmarshalOpts.Unmarshal(msg.Message.Data, &run)
-	if err != nil {
-		return nil, errors.Annotate(err, "parsing pubsub message data").Err()
-	}
-	return &run, nil
 }

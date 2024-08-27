@@ -177,14 +177,6 @@ func RegisterPubSubHandlers() {
 	pubsub.RegisterJSONPBHandler("invocation-ready-for-export", app.NewInvocationReadyForExportHandler().Handle)
 }
 
-// RegisterLegacyPubSubHandlers registers legacy pub/sub handlers.
-func RegisterLegacyPubSubHandlers(srv *luciserver.Server) {
-	srv.Routes.POST("/_ah/push-handlers/buildbucket", nil, app.BuildbucketPubSubHandlerLegacy)
-	srv.Routes.POST("/_ah/push-handlers/cvrun", nil, app.NewCVRunHandler().HandleLegacy)
-	srv.Routes.POST("/_ah/push-handlers/invocation-finalized", nil, app.NewInvocationFinalizedHandler().HandleLegacy)
-	srv.Routes.POST("/_ah/push-handlers/invocation-ready-for-export", nil, app.NewInvocationReadyForExportHandler().HandleLegacy)
-}
-
 // RegisterTaskQueueHandlers registers task queue handlers.
 func RegisterTaskQueueHandlers(srv *luciserver.Server) error {
 	if err := backfill.RegisterTaskHandler(srv); err != nil {
