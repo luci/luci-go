@@ -35,8 +35,8 @@ var cachedCfg = cfgcache.Register(&cfgcache.Entry{
 	},
 })
 
-// Update fetches the config and puts it into the datastore.
-func Update(ctx context.Context) error {
+// update fetches the config and puts it into the datastore.
+func update(ctx context.Context) error {
 	_, err := cachedCfg.Update(ctx, nil)
 	return err
 }

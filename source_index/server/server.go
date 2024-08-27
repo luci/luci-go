@@ -64,16 +64,18 @@ func RegisterPRPCHandlers(srv *luciserver.Server) error {
 	return nil
 }
 
-// RegisterCrons registers cron handlers.
-func RegisterCrons(srv *luciserver.Server) error {
-	cron.RegisterHandler("update-config", config.Update)
+// RegisterCronHandlers registers cron handlers.
+func RegisterCronHandlers(srv *luciserver.Server) error {
+	if err := config.RegisterCronHandlers(srv); err != nil {
+		return errors.Annotate(err, "register config cron handlers").Err()
+	}
 	return nil
 }
 
 // RegisterPubSubHandlers registers pub/sub handlers.
 func RegisterPubSubHandlers(srv *luciserver.Server) error {
 	if err := commitingester.RegisterPubSubHandlers(srv); err != nil {
-		return errors.Annotate(err, "failed to register commit ingester PubSub handlers").Err()
+		return errors.Annotate(err, "register commit ingester PubSub handlers").Err()
 	}
 
 	return nil
@@ -82,7 +84,7 @@ func RegisterPubSubHandlers(srv *luciserver.Server) error {
 // RegisterTaskQueueHandlers registers task queue handlers.
 func RegisterTaskQueueHandlers(srv *luciserver.Server) error {
 	if err := commitingester.RegisterTaskQueueHandlers(srv); err != nil {
-		return errors.Annotate(err, "failed to register commit ingester task queue handlers").Err()
+		return errors.Annotate(err, "register commit ingester task queue handlers").Err()
 	}
 
 	return nil

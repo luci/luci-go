@@ -24,8 +24,8 @@ import (
 // main implements the entrypoint for the backend service.
 func main() {
 	server.Main(func(srv *luciserver.Server) error {
-		if err := server.RegisterCrons(srv); err != nil {
-			return errors.Annotate(err, "register crons").Err()
+		if err := server.RegisterCronHandlers(srv); err != nil {
+			return errors.Annotate(err, "register cron handlers").Err()
 		}
 		if err := server.RegisterPubSubHandlers(srv); err != nil {
 			return errors.Annotate(err, "register pubsub handlers").Err()
