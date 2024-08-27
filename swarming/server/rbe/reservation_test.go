@@ -35,6 +35,7 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
@@ -426,6 +427,66 @@ func TestReservationServer(t *testing.T) {
 				expectNoExpireSlice()
 			})
 		})
+	})
+}
+
+func TestEnqueueCancel(t *testing.T) {
+	t.Parallel()
+
+	ctx := memory.Use(context.Background())
+	ctx = txndefer.FilterRDS(ctx)
+	now := testclock.TestRecentTimeUTC
+	ctx, _ = testclock.UseTime(ctx, now)
+	ctx, sch := tq.TestingContext(ctx, nil)
+	rbe := mockedReservationClient{
+		newState: remoteworkers.ReservationState_RESERVATION_PENDING,
+	}
+	internals := mockedInternalsClient{}
+	srv := ReservationServer{
+		rbe:           &rbe,
+		internals:     &internals,
+		serverVersion: "go-version",
+	}
+	srv.RegisterTQTasks(&tq.Default)
+
+	ftt.Run("EnqueueCancel", t, func(t *ftt.Test) {
+		tID := "65aba3a3e6b99310"
+		reqKey, _ := model.TaskIDToRequestKey(ctx, tID)
+		tr := &model.TaskRequest{
+			Key:         reqKey,
+			RBEInstance: "rbe-instance",
+			TaskSlices: []model.TaskSlice{
+				{
+					Properties: model.TaskProperties{
+						Dimensions: model.TaskDimensions{
+							"d1": {"v1", "v2"},
+						},
+					},
+				},
+			},
+			Name: "task",
+		}
+		ttrKey, _ := model.TaskRequestToToRunKey(ctx, tr, 0)
+		ttr := &model.TaskToRun{
+			Key:            ttrKey,
+			RBEReservation: "rbe-reservation",
+		}
+		txErr := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+			return EnqueueCancel(ctx, tr, ttr)
+		}, nil)
+		assert.Loosely(t, txErr, should.BeNil)
+		assert.Loosely(t, sch.Tasks(), should.HaveLength(1))
+
+		expected := &internalspb.CancelRBETask{
+			RbeInstance:   "rbe-instance",
+			ReservationId: "rbe-reservation",
+			DebugInfo: &internalspb.CancelRBETask_DebugInfo{
+				Created:  timestamppb.New(now),
+				TaskName: "task",
+			},
+		}
+		actual := sch.Tasks()[0].Payload.(*internalspb.CancelRBETask)
+		assert.Loosely(t, actual, should.Match(expected))
 	})
 }
 

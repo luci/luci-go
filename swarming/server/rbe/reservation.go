@@ -38,6 +38,9 @@ import (
 	"go.chromium.org/luci/swarming/internal/remoteworkers"
 	internalspb "go.chromium.org/luci/swarming/proto/internals"
 	"go.chromium.org/luci/swarming/server/model"
+
+	// Enable datastore transactional tasks support.
+	_ "go.chromium.org/luci/server/tq/txn/datastore"
 )
 
 // ReservationServer is responsible for creating and canceling RBE reservations.
@@ -58,8 +61,6 @@ func NewReservationServer(ctx context.Context, cc grpc.ClientConnInterface, inte
 }
 
 // RegisterTQTasks registers task queue handlers.
-//
-// Tasks are actually submitted from the Python side.
 func (s *ReservationServer) RegisterTQTasks(disp *tq.Dispatcher) {
 	disp.RegisterTaskClass(tq.TaskClass{
 		ID:        "rbe-enqueue",
@@ -431,4 +432,19 @@ func prettyProto(msg proto.Message) string {
 		return fmt.Sprintf("<error: %s>", err)
 	}
 	return string(blob)
+}
+
+// EnqueueCancel enqueues a `rbe-cancel` task to cancel RBE reservation of
+// a task.
+func EnqueueCancel(ctx context.Context, tr *model.TaskRequest, ttr *model.TaskToRun) error {
+	return tq.AddTask(ctx, &tq.Task{
+		Payload: &internalspb.CancelRBETask{
+			RbeInstance:   tr.RBEInstance,
+			ReservationId: ttr.RBEReservation,
+			DebugInfo: &internalspb.CancelRBETask_DebugInfo{
+				Created:  timestamppb.New(clock.Now(ctx)),
+				TaskName: tr.Name,
+			},
+		},
+	})
 }
