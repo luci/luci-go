@@ -28,7 +28,7 @@
     gtagScript.async = true;
     gtagScript.src = trustedGtagJs;
     const firstScriptTag = document.getElementsByTagName('script')[0];
-    f.parentNode.insertBefore(gtagScript, firstScriptTag);
+    firstScriptTag.parentNode.insertBefore(gtagScript, firstScriptTag);
 
     // Install gtag.
     // Also anonymize IP to comply with http://go/ooga-config#ip-scrubbing.
