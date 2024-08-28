@@ -1089,7 +1089,8 @@ then all permissions defined in `B` are also in `A`. Remembering that a
 realm is just a set of `(<principal>, <permission>)` pairs, the "extends"
 relation is just a set inclusion.
 
-There are two special realms that a project can have: "@root" and "@legacy".
+There are three special realms that a project can have: "@root", "@legacy" and
+"@project".
 
 The root realm is implicitly included into all other realms (including
 "@legacy"), and it is also used as a fallback when a resource points to a
@@ -1110,6 +1111,12 @@ to a particular service implementation. Some services may be able to figure
 out an appropriate realm for a legacy resource based on resource's existing
 attributes. Some services may not have legacy resources at all. The legacy
 realm is not used in these case. Refer to the service documentation.
+
+The project realm should be used as the realm for 'project global' resources,
+for example, the project configuration itself, or derivations thereof. Some
+LUCI services may use bindings in this realm to allow federation of
+administration responsibilities to the project (rather than relying on
+exclusively LUCI service administrators).
 
 The primary way of populating the permission set of a realm is via bindings.
 Each binding assigns a role to a set of principals (individuals, groups or
@@ -1147,7 +1154,7 @@ Or separately one by one via [luci.binding(...)](#luci.binding) declarations:
 
 #### Arguments {#luci.realm-args}
 
-* **name**: name of the realm. Must match `[a-z0-9_\.\-/]{1,400}` or be `@root` or `@legacy`. Required.
+* **name**: name of the realm. Must match `[a-z0-9_\.\-/]{1,400}` or be `@root` or `@legacy` or `@project`. Required.
 * **extends**: a reference or a list of references to realms to inherit permission from. Optional. Default (and implicit) is `@root`.
 * **bindings**: a list of [luci.binding(...)](#luci.binding) to add to the realm.
 * **enforce_in**: a list of LUCI service IDs that should enforce this realm's permissions. Children realms inherit and extend this list. Used only during Realms migration to gradually roll out the enforcement realm by realm, service by service.

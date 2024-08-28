@@ -81,7 +81,7 @@ def _realm(
     name = validate.string(
         "name",
         name,
-        regexp = r"^([a-z0-9_\.\-/]{1,400}|@root|@legacy)$",
+        regexp = r"^([a-z0-9_\.\-/]{1,400}|@root|@legacy|@project)$",
     )
 
     # Implicitly add '@root' to parents (unless we are defining it).

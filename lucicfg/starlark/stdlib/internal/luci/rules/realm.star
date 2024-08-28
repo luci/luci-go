@@ -45,7 +45,8 @@ def _realm(
     realm is just a set of `(<principal>, <permission>)` pairs, the "extends"
     relation is just a set inclusion.
 
-    There are two special realms that a project can have: "@root" and "@legacy".
+    There are three special realms that a project can have: "@root", "@legacy"
+    and "@project".
 
     The root realm is implicitly included into all other realms (including
     "@legacy"), and it is also used as a fallback when a resource points to a
@@ -66,6 +67,12 @@ def _realm(
     out an appropriate realm for a legacy resource based on resource's existing
     attributes. Some services may not have legacy resources at all. The legacy
     realm is not used in these case. Refer to the service documentation.
+
+    The project realm should be used as the realm for 'project global' resources,
+    for example, the project configuration itself, or derivations thereof. Some
+    LUCI services may use bindings in this realm to allow federation of
+    administration responsibilities to the project (rather than relying on
+    exclusively LUCI service administrators).
 
     The primary way of populating the permission set of a realm is via bindings.
     Each binding assigns a role to a set of principals (individuals, groups or

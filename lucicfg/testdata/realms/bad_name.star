@@ -6,4 +6,4 @@ luci.realm(name = "not allowed")
 # Traceback (most recent call last):
 #   //testdata/realms/bad_name.star: in <toplevel>
 #   ...
-# Error: bad "name": "not allowed" should match "^([a-z0-9_\\.\\-/]{1,400}|@root|@legacy)$"
+# Error: bad "name": "not allowed" should match "^([a-z0-9_\\.\\-/]{1,400}|@root|@legacy|@project)$"
