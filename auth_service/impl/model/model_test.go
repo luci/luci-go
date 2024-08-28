@@ -409,15 +409,6 @@ func TestCreateAuthGroup(t *testing.T) {
 			assert.Loosely(t, err, should.ErrLike("bad identity string \"no-prefix@google.com\""))
 		})
 
-		t.Run("project member identities", func(t *ftt.Test) {
-			group := testAuthGroup(ctx, "foo")
-			group.Members = []string{"project:abc"}
-
-			_, err := CreateAuthGroup(ctx, group, "Go pRPC API", false)
-			assert.Loosely(t, err, should.ErrLike(ErrInvalidIdentity))
-			assert.Loosely(t, err, should.ErrLike(`"project:..." identities aren't allowed in groups`))
-		})
-
 		t.Run("invalid identity globs", func(t *ftt.Test) {
 			group := testAuthGroup(ctx, "foo")
 			group.Globs = []string{"*@no-prefix.com"}
@@ -425,15 +416,6 @@ func TestCreateAuthGroup(t *testing.T) {
 			_, err := CreateAuthGroup(ctx, group, "Go pRPC API", false)
 			assert.Loosely(t, err, should.ErrLike(ErrInvalidIdentity))
 			assert.Loosely(t, err, should.ErrLike("bad identity glob string \"*@no-prefix.com\""))
-		})
-
-		t.Run("project identity globs", func(t *ftt.Test) {
-			group := testAuthGroup(ctx, "foo")
-			group.Globs = []string{"project:*"}
-
-			_, err := CreateAuthGroup(ctx, group, "Go pRPC API", false)
-			assert.Loosely(t, err, should.ErrLike(ErrInvalidIdentity))
-			assert.Loosely(t, err, should.ErrLike(`"project:..." globs aren't allowed in groups`))
 		})
 
 		t.Run("all referenced groups must exist", func(t *ftt.Test) {
@@ -474,6 +456,18 @@ func TestCreateAuthGroup(t *testing.T) {
 			createdGroup, err := CreateAuthGroup(ctx, group, "Go pRPC API", false)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, createdGroup.Owners, should.Equal(createdGroup.ID))
+		})
+
+		t.Run("group can have project members and globs", func(t *ftt.Test) {
+			group := emptyAuthGroup(ctx, "foo")
+			group.Members = []string{"project:abc"}
+			group.Globs = []string{"project:proj-*-test"}
+
+			createdGroup, err := CreateAuthGroup(ctx, group, "Go pRPC API", false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, createdGroup.ID, should.Equal(group.ID))
+			assert.Loosely(t, createdGroup.Members, should.Match(createdGroup.Members))
+			assert.Loosely(t, createdGroup.Globs, should.Match(createdGroup.Globs))
 		})
 
 		t.Run("successfully writes to datastore", func(t *ftt.Test) {
@@ -733,10 +727,10 @@ func TestUpdateAuthGroup(t *testing.T) {
 
 			group.Members = []string{"project:abc"}
 
-			_, err := UpdateAuthGroup(ctx, group, &fieldmaskpb.FieldMask{Paths: []string{"members"}}, etag, "Go pRPC API", false)
-			assert.Loosely(t, err, should.ErrLike(ErrInvalidIdentity))
-			assert.Loosely(t, err, should.ErrLike(`"project:..." identities aren't allowed in groups`))
-			assert.Loosely(t, taskScheduler.Tasks(), should.BeEmpty)
+			updatedGroup, err := UpdateAuthGroup(ctx, group, &fieldmaskpb.FieldMask{Paths: []string{"members"}}, etag, "Go pRPC API", false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, updatedGroup.Members, should.Match(group.Members))
+			assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(2))
 		})
 
 		t.Run("invalid identity globs", func(t *ftt.Test) {
@@ -755,10 +749,10 @@ func TestUpdateAuthGroup(t *testing.T) {
 
 			group.Globs = []string{"project:*"}
 
-			_, err := UpdateAuthGroup(ctx, group, &fieldmaskpb.FieldMask{Paths: []string{"globs"}}, etag, "Go pRPC API", false)
-			assert.Loosely(t, err, should.ErrLike(ErrInvalidIdentity))
-			assert.Loosely(t, err, should.ErrLike(`"project:..." globs aren't allowed in groups`))
-			assert.Loosely(t, taskScheduler.Tasks(), should.BeEmpty)
+			updatedGroup, err := UpdateAuthGroup(ctx, group, &fieldmaskpb.FieldMask{Paths: []string{"globs"}}, etag, "Go pRPC API", false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, updatedGroup.Globs, should.Match(group.Globs))
+			assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(2))
 		})
 
 		t.Run("all nested groups must exist", func(t *ftt.Test) {
