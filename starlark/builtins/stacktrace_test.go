@@ -20,8 +20,9 @@ import (
 
 	"go.starlark.net/starlark"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestStacktrace(t *testing.T) {
@@ -40,7 +41,7 @@ func TestStacktrace(t *testing.T) {
 		return "", fmt.Errorf("not a string: %s", out["out"])
 	}
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		out, err := runScript(`
 def func1():
   return func2()
@@ -52,16 +53,16 @@ s = func1()
 
 out = str(s)
 `)
-		So(err, ShouldBeNil)
-		So(out, ShouldEqual, `Traceback (most recent call last):
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, out, should.Equal(`Traceback (most recent call last):
   main: in <toplevel>
   main: in func1
   main: in func2
   <builtin>: in stacktrace
-`)
+`))
 	})
 
-	Convey("Skips frames", t, func() {
+	ftt.Run("Skips frames", t, func(t *ftt.Test) {
 		out, err := runScript(`
 def func1():
   return func2()
@@ -71,14 +72,14 @@ def func2():
 
 out = str(func1())
 `)
-		So(err, ShouldBeNil)
-		So(out, ShouldEqual, `Traceback (most recent call last):
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, out, should.Equal(`Traceback (most recent call last):
   main: in <toplevel>
   main: in func1
-`)
+`))
 	})
 
-	Convey("Fails if asked to skip too much", t, func() {
+	ftt.Run("Fails if asked to skip too much", t, func(t *ftt.Test) {
 		_, err := runScript(`
 def func1():
   return func2()
@@ -88,24 +89,24 @@ def func2():
 
 out = str(func1())
 `)
-		So(err, ShouldErrLike, "stacktrace: the stack is not deep enough to skip 5 levels, has only 4 frames")
+		assert.Loosely(t, err, should.ErrLike("stacktrace: the stack is not deep enough to skip 5 levels, has only 4 frames"))
 	})
 
-	Convey("Fails on negative skip", t, func() {
+	ftt.Run("Fails on negative skip", t, func(t *ftt.Test) {
 		_, err := runScript(`stacktrace(-1)`)
-		So(err, ShouldErrLike, "stacktrace: bad 'skip' value -1")
+		assert.Loosely(t, err, should.ErrLike("stacktrace: bad 'skip' value -1"))
 	})
 
-	Convey("Fails on wrong type", t, func() {
+	ftt.Run("Fails on wrong type", t, func(t *ftt.Test) {
 		_, err := runScript(`stacktrace('zzz')`)
-		So(err, ShouldErrLike, "stacktrace: for parameter skip: got string, want int")
+		assert.Loosely(t, err, should.ErrLike("stacktrace: for parameter skip: got string, want int"))
 	})
 }
 
 func TestNormalizeStacktrace(t *testing.T) {
 	t.Parallel()
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		in := `Traceback (most recent call last):
   main:8:1: in <toplevel>
   main:3:2: in func1
@@ -122,6 +123,6 @@ func TestNormalizeStacktrace(t *testing.T) {
 
   skipped line
 `
-		So(NormalizeStacktrace(in), ShouldEqual, out)
+		assert.Loosely(t, NormalizeStacktrace(in), should.Equal(out))
 	})
 }

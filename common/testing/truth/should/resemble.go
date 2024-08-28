@@ -60,6 +60,10 @@ var protoMessageType = reflect.TypeFor[proto.Message]()
 // The result of this function is cached behind an RWMutex, so the second call
 // to this for the same type should be fast.
 func extractAllowUnexportedFrom(typ reflect.Type) []cmp.Option {
+	if typ == nil {
+		return nil
+	}
+
 	resembleOptionCacheMu.RLock()
 	val, ok := resembleOptionCache[typ]
 	resembleOptionCacheMu.RUnlock()

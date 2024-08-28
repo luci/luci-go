@@ -20,8 +20,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 // runs a script in an environment where 'custom' package uses the given loader.
@@ -36,64 +37,64 @@ func runScriptWithLoader(body string, l Loader) (logs []string, err error) {
 func TestLoaders(t *testing.T) {
 	t.Parallel()
 
-	Convey("FileSystemLoader", t, func() {
+	ftt.Run("FileSystemLoader", t, func(t *ftt.Test) {
 		tmp, err := ioutil.TempDir("", "starlark")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		defer os.RemoveAll(tmp)
 
 		loader := FileSystemLoader(tmp)
 
 		put := func(path, body string) {
 			path = filepath.Join(tmp, filepath.FromSlash(path))
-			So(os.MkdirAll(filepath.Dir(path), 0700), ShouldBeNil)
-			So(os.WriteFile(path, []byte(body), 0600), ShouldBeNil)
+			assert.Loosely(t, os.MkdirAll(filepath.Dir(path), 0700), should.BeNil)
+			assert.Loosely(t, os.WriteFile(path, []byte(body), 0600), should.BeNil)
 		}
 
-		Convey("Works", func() {
+		t.Run("Works", func(t *ftt.Test) {
 			put("1.star", `load("//a/b/c/2.star", _sym="sym"); sym = _sym`)
 			put("a/b/c/2.star", "print('Hi')\nsym = 1")
 
 			logs, err := runScriptWithLoader(`load("@custom//1.star", "sym")`, loader)
-			So(err, ShouldBeNil)
-			So(logs, ShouldResemble, []string{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, logs, should.Resemble([]string{
 				"[@custom//a/b/c/2.star:1] Hi",
-			})
+			}))
 		})
 
-		Convey("Missing module", func() {
+		t.Run("Missing module", func(t *ftt.Test) {
 			put("1.star", `load("//a/b/c/2.star", "sym")`)
 
 			_, err := runScriptWithLoader(`load("@custom//1.star", "sym")`, loader)
-			So(err, ShouldErrLike, "cannot load //a/b/c/2.star: no such module")
+			assert.Loosely(t, err, should.ErrLike("cannot load //a/b/c/2.star: no such module"))
 		})
 
-		Convey("Outside the root", func() {
+		t.Run("Outside the root", func(t *ftt.Test) {
 			_, err := runScriptWithLoader(`load("@custom//../1.star", "sym")`, loader)
-			So(err, ShouldErrLike, "cannot load @custom//../1.star: outside the package root")
+			assert.Loosely(t, err, should.ErrLike("cannot load @custom//../1.star: outside the package root"))
 		})
 	})
 
-	Convey("MemoryLoader", t, func() {
-		Convey("Works", func() {
+	ftt.Run("MemoryLoader", t, func(t *ftt.Test) {
+		t.Run("Works", func(t *ftt.Test) {
 			loader := MemoryLoader(map[string]string{
 				"1.star":       `load("//a/b/c/2.star", _sym="sym"); sym = _sym`,
 				"a/b/c/2.star": "print('Hi')\nsym = 1",
 			})
 
 			logs, err := runScriptWithLoader(`load("@custom//1.star", "sym")`, loader)
-			So(err, ShouldBeNil)
-			So(logs, ShouldResemble, []string{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, logs, should.Resemble([]string{
 				"[@custom//a/b/c/2.star:1] Hi",
-			})
+			}))
 		})
 
-		Convey("Missing module", func() {
+		t.Run("Missing module", func(t *ftt.Test) {
 			loader := MemoryLoader(map[string]string{
 				"1.star": `load("//a/b/c/2.star", "sym")`,
 			})
 
 			_, err := runScriptWithLoader(`load("@custom//1.star", "sym")`, loader)
-			So(err, ShouldErrLike, "cannot load //a/b/c/2.star: no such module")
+			assert.Loosely(t, err, should.ErrLike("cannot load //a/b/c/2.star: no such module"))
 		})
 	})
 }

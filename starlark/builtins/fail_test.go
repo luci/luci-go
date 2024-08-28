@@ -19,7 +19,9 @@ import (
 
 	"go.starlark.net/starlark"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestFail(t *testing.T) {
@@ -39,14 +41,14 @@ func TestFail(t *testing.T) {
 		return err
 	}
 
-	Convey("Works with default trace", t, func() {
+	ftt.Run("Works with default trace", t, func(t *ftt.Test) {
 		err := runScript(`fail("boo")`)
-		So(err.Error(), ShouldEqual, "boo")
-		So(NormalizeStacktrace(err.(*Failure).Backtrace()),
-			ShouldContainSubstring, "main: in <toplevel>")
+		assert.Loosely(t, err.Error(), should.Equal("boo"))
+		assert.Loosely(t, NormalizeStacktrace(err.(*Failure).Backtrace()),
+			should.ContainSubstring("main: in <toplevel>"))
 	})
 
-	Convey("Works with custom trace", t, func() {
+	ftt.Run("Works with custom trace", t, func(t *ftt.Test) {
 		err := runScript(`
 def capture():
 	return stacktrace()
@@ -55,8 +57,8 @@ s = capture()
 
 fail("boo", 123, ['z'], None, trace=s)
 `)
-		So(err.Error(), ShouldEqual, `boo 123 ["z"] None`)
-		So(NormalizeStacktrace(err.(*Failure).Backtrace()),
-			ShouldContainSubstring, "main: in capture")
+		assert.Loosely(t, err.Error(), should.Equal(`boo 123 ["z"] None`))
+		assert.Loosely(t, NormalizeStacktrace(err.(*Failure).Backtrace()),
+			should.ContainSubstring("main: in capture"))
 	})
 }

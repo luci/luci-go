@@ -19,8 +19,9 @@ import (
 
 	"go.starlark.net/starlark"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 const regexpTest = `
@@ -57,11 +58,11 @@ func TestRegexp(t *testing.T) {
 		return err
 	}
 
-	Convey("Success", t, func() {
-		So(runScript(regexpTest), ShouldBeNil)
+	ftt.Run("Success", t, func(t *ftt.Test) {
+		assert.Loosely(t, runScript(regexpTest), should.BeNil)
 	})
 
-	Convey("Fails", t, func() {
-		So(runScript(`submatches('(((', '')`), ShouldErrLike, "error parsing regexp")
+	ftt.Run("Fails", t, func(t *ftt.Test) {
+		assert.Loosely(t, runScript(`submatches('(((', '')`), should.ErrLike("error parsing regexp"))
 	})
 }

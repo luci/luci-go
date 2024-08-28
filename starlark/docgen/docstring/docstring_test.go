@@ -15,16 +15,17 @@
 package docstring
 
 import (
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"strings"
 	"testing"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestParse(t *testing.T) {
 	t.Parallel()
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		out := Parse(`An ACL entry: assigns given role (or roles) to given individuals or groups.
 
   Specifying an empty ACL entry is allowed. It is ignored everywhere. Useful for
@@ -57,16 +58,16 @@ func TestParse(t *testing.T) {
   Empty:
 `)
 
-		So(out.Description, ShouldResemble, strings.Join([]string{
+		assert.Loosely(t, out.Description, should.Resemble(strings.Join([]string{
 			"An ACL entry: assigns given role (or roles) to given individuals or groups.",
 			"",
 			"Specifying an empty ACL entry is allowed. It is ignored everywhere. Useful for",
 			"things like:",
 			"",
 			"    luci.project(...)",
-		}, "\n"))
+		}, "\n")))
 
-		So(out.Fields, ShouldResemble, []FieldsBlock{
+		assert.Loosely(t, out.Fields, should.Resemble([]FieldsBlock{
 			{
 				Title: "Args",
 				Fields: []Field{
@@ -77,29 +78,29 @@ func TestParse(t *testing.T) {
 					{"empty", ""},
 				},
 			},
-		})
+		}))
 
-		So(out.Remarks, ShouldResemble, []RemarkBlock{
+		assert.Loosely(t, out.Remarks, should.Resemble([]RemarkBlock{
 			{"Returns", "acl.entry struct, consider it opaque.\nMultiline."},
 			{"Note", "blah-blah."},
 			{"Empty", ""},
-		})
+		}))
 	})
 }
 
 func TestNormalizedLines(t *testing.T) {
 	t.Parallel()
 
-	Convey("Empty", t, func() {
-		So(normalizedLines("  \n\n\t\t\n  "), ShouldHaveLength, 0)
+	ftt.Run("Empty", t, func(t *ftt.Test) {
+		assert.Loosely(t, normalizedLines("  \n\n\t\t\n  "), should.HaveLength(0))
 	})
 
-	Convey("One line and some space", t, func() {
-		So(normalizedLines("  \n\n  Blah   \n\t\t\n  \n"), ShouldResemble, []string{"Blah"})
+	ftt.Run("One line and some space", t, func(t *ftt.Test) {
+		assert.Loosely(t, normalizedLines("  \n\n  Blah   \n\t\t\n  \n"), should.Resemble([]string{"Blah"}))
 	})
 
-	Convey("Deindents", t, func() {
-		So(normalizedLines(`First paragraph,
+	ftt.Run("Deindents", t, func(t *ftt.Test) {
+		assert.Loosely(t, normalizedLines(`First paragraph,
 		perhaps multiline.
 
 		Second paragraph.
@@ -107,7 +108,7 @@ func TestNormalizedLines(t *testing.T) {
 			Deeper indentation.
 
 		Third paragraph.
-		`), ShouldResemble,
+		`), should.Resemble(
 			[]string{
 				"First paragraph,",
 				"perhaps multiline.",
@@ -117,42 +118,42 @@ func TestNormalizedLines(t *testing.T) {
 				"\tDeeper indentation.",
 				"",
 				"Third paragraph.",
-			})
+			}))
 	})
 }
 
 func TestDeindent(t *testing.T) {
 	t.Parallel()
 
-	Convey("Space only", t, func() {
-		So(
+	ftt.Run("Space only", t, func(t *ftt.Test) {
+		assert.Loosely(t,
 			deindent([]string{"  ", " \t\t  \t", ""}),
-			ShouldResemble,
-			[]string{"", "", ""},
-		)
+			should.Resemble(
+				[]string{"", "", ""},
+			))
 	})
 
-	Convey("Nothing to deindent", t, func() {
-		So(
+	ftt.Run("Nothing to deindent", t, func(t *ftt.Test) {
+		assert.Loosely(t,
 			deindent([]string{"  ", "a  ", "b", "  "}),
-			ShouldResemble,
-			[]string{"", "a  ", "b", ""},
-		)
+			should.Resemble(
+				[]string{"", "a  ", "b", ""},
+			))
 	})
 
-	Convey("Deindention works", t, func() {
-		So(
+	ftt.Run("Deindention works", t, func(t *ftt.Test) {
+		assert.Loosely(t,
 			deindent([]string{"   ", "", "  a", "  b", "    c"}),
-			ShouldResemble,
-			[]string{"", "", "a", "b", "  c"},
-		)
+			should.Resemble(
+				[]string{"", "", "a", "b", "  c"},
+			))
 	})
 
-	Convey("Works with tabs too", t, func() {
-		So(
+	ftt.Run("Works with tabs too", t, func(t *ftt.Test) {
+		assert.Loosely(t,
 			deindent([]string{"\t\t", "", "\ta", "\tb", "\t\tc"}),
-			ShouldResemble,
-			[]string{"", "", "a", "b", "\tc"},
-		)
+			should.Resemble(
+				[]string{"", "", "a", "b", "\tc"},
+			))
 	})
 }

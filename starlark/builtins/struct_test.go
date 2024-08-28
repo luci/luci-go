@@ -19,7 +19,9 @@ import (
 
 	"go.starlark.net/starlark"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 const successTest = `
@@ -48,7 +50,7 @@ func TestStruct(t *testing.T) {
 		return err
 	}
 
-	Convey("Success", t, func() {
-		So(runScript(successTest), ShouldBeNil)
+	ftt.Run("Success", t, func(t *ftt.Test) {
+		assert.Loosely(t, runScript(successTest), should.BeNil)
 	})
 }

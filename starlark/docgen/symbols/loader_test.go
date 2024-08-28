@@ -16,11 +16,12 @@ package symbols
 
 import (
 	"fmt"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"io"
 	"strings"
 	"testing"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 var srcs = map[string]string{
@@ -128,29 +129,29 @@ const expectedThirdStar = `third.star = *ast.Namespace at third.star:2:1 {
 func TestLoader(t *testing.T) {
 	t.Parallel()
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		l := Loader{
 			Normalize: func(parent, module string) (string, error) { return module, nil },
 			Source:    source(srcs),
 		}
 
 		init, err := l.Load("init.star")
-		So(err, ShouldBeNil)
-		So(symbolToString(init), ShouldEqual, expectedInitStar)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, symbolToString(init), should.Equal(expectedInitStar))
 
 		third, err := l.Load("third.star")
-		So(err, ShouldBeNil)
-		So(symbolToString(third), ShouldEqual, expectedThirdStar)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, symbolToString(third), should.Equal(expectedThirdStar))
 
 		// 'another.star' is not reparsed. Both init and third eventually refer to
 		// exact same AST nodes.
 		s1 := Lookup(init, "pub1", "sym")
 		s2 := Lookup(third, "exported", "func")
-		So(s1.Def().Name(), ShouldEqual, "_func") // correct node
-		So(s1.Def(), ShouldEqual, s2.Def())       // exact same pointers
+		assert.Loosely(t, s1.Def().Name(), should.Equal("_func")) // correct node
+		assert.Loosely(t, s1.Def(), should.Equal(s2.Def()))       // exact same pointers
 	})
 
-	Convey("Recursive deps", t, func() {
+	ftt.Run("Recursive deps", t, func(t *ftt.Test) {
 		l := Loader{
 			Normalize: func(parent, module string) (string, error) { return module, nil },
 			Source: source(map[string]string{
@@ -158,7 +159,7 @@ func TestLoader(t *testing.T) {
 				"b.star": `load("a.star", "_")`,
 			})}
 		_, err := l.Load("a.star")
-		So(err.Error(), ShouldEqual, "in a.star: in b.star: in a.star: recursive dependency")
+		assert.Loosely(t, err.Error(), should.Equal("in a.star: in b.star: in a.star: recursive dependency"))
 	})
 }
 

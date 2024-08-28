@@ -20,8 +20,10 @@ import (
 	"go.starlark.net/resolve"
 	"go.starlark.net/starlark"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/option"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func init() {
@@ -36,52 +38,54 @@ func TestToGoNative(t *testing.T) {
 		return starlark.ExecFile(&starlark.Thread{}, "main", code, nil)
 	}
 
-	run := func(code string, expected any) {
+	run := func(t testing.TB, code string, expected any) {
+		t.Helper()
+
 		out, err := runScript(code)
-		So(err, ShouldBeNil)
+		assert.That(t, err, should.ErrLike(nil), option.LineContext())
 		result, err := ToGoNative(out["val"])
-		So(err, ShouldBeNil)
-		So(result, ShouldResemble, expected)
+		assert.That(t, err, should.ErrLike(nil), option.LineContext())
+		assert.Loosely(t, result, should.Resemble(expected), option.LineContext())
 	}
 
 	mustFail := func(code string, expectErr string) {
 		out, err := runScript(code)
 		_, err = ToGoNative(out["val"])
-		So(err, ShouldErrLike, expectErr)
+		assert.Loosely(t, err, should.ErrLike(expectErr))
 	}
 
-	Convey("Happy cases", t, func() {
-		Convey("Scalar types", func() {
-			run(`val = None`, nil)
-			run(`val = True`, true)
-			run(`val = 123`, int64(123))
-			run(`val = 123.5`, 123.5)
-			run(`val = "hi"`, "hi")
+	ftt.Run("Happy cases", t, func(t *ftt.Test) {
+		t.Run("Scalar types", func(t *ftt.Test) {
+			run(t, `val = None`, nil)
+			run(t, `val = True`, true)
+			run(t, `val = 123`, int64(123))
+			run(t, `val = 123.5`, 123.5)
+			run(t, `val = "hi"`, "hi")
 		})
 
-		Convey("Dict", func() {
-			run(`val = {}`, map[string]any{})
-			run(`val = {"a": 1, "b": 2}`, map[string]any{"a": int64(1), "b": int64(2)})
+		t.Run("Dict", func(t *ftt.Test) {
+			run(t, `val = {}`, map[string]any{})
+			run(t, `val = {"a": 1, "b": 2}`, map[string]any{"a": int64(1), "b": int64(2)})
 		})
 
-		Convey("Iterables", func() {
-			run(`val = []`, []any{})
-			run(`val = ()`, []any{})
-			run(`val = set()`, []any{})
-			run(`val = [1, 2, 3]`, []any{int64(1), int64(2), int64(3)})
-			run(`val = (1, 2, 3)`, []any{int64(1), int64(2), int64(3)})
-			run(`val = set([1, 2, 3])`, []any{int64(1), int64(2), int64(3)})
+		t.Run("Iterables", func(t *ftt.Test) {
+			run(t, `val = []`, []any{})
+			run(t, `val = ()`, []any{})
+			run(t, `val = set()`, []any{})
+			run(t, `val = [1, 2, 3]`, []any{int64(1), int64(2), int64(3)})
+			run(t, `val = (1, 2, 3)`, []any{int64(1), int64(2), int64(3)})
+			run(t, `val = set([1, 2, 3])`, []any{int64(1), int64(2), int64(3)})
 		})
 
-		Convey("Everything at once", func() {
-			run(`val = {"a": None, "b": ["c", "d", ["e"]]}`, map[string]any{
+		t.Run("Everything at once", func(t *ftt.Test) {
+			run(t, `val = {"a": None, "b": ["c", "d", ["e"]]}`, map[string]any{
 				"a": nil,
 				"b": []any{"c", "d", []any{"e"}},
 			})
 		})
 	})
 
-	Convey("Unhappy cases", t, func() {
+	ftt.Run("Unhappy cases", t, func(t *ftt.Test) {
 		mustFail(`val = list`, `unsupported type builtin_function_or_method`)
 		mustFail(`val = 18446744073709551616`, `can't convert "18446744073709551616" to int64`)
 		mustFail(`val = {1: 2}`, `dict keys should be strings, got int`)
@@ -93,7 +97,7 @@ func TestToGoNative(t *testing.T) {
 		mustFail(`val = set([list])`, `unsupported type builtin_function_or_method`)
 	})
 
-	Convey("Detects recursive structures", t, func() {
+	ftt.Run("Detects recursive structures", t, func(t *ftt.Test) {
 		const msg = "detected recursion in the data structure"
 
 		// With dict.

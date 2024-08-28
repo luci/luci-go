@@ -20,9 +20,10 @@ import (
 	"strings"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.starlark.net/syntax"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 const goodInput = `
@@ -123,58 +124,58 @@ const expectedDumpOutput = `mod.star = module
 func TestParseModule(t *testing.T) {
 	t.Parallel()
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		mod, err := ParseModule("mod.star", goodInput, func(s string) (string, error) { return s, nil })
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		buf := strings.Builder{}
 		dumpTree(mod, &buf, "")
-		So(buf.String(), ShouldEqual, expectedDumpOutput)
+		assert.Loosely(t, buf.String(), should.Equal(expectedDumpOutput))
 
-		Convey("Docstrings extraction", func() {
-			So(mod.Doc(), ShouldEqual, "Module doc string.\n\nMultiline.\n")
-			So(
-				nodeByName(mod, "func1").Doc(), ShouldEqual,
-				"Doc string.\n\n  Multiline.\n  ",
-			)
+		t.Run("Docstrings extraction", func(t *ftt.Test) {
+			assert.Loosely(t, mod.Doc(), should.Equal("Module doc string.\n\nMultiline.\n"))
+			assert.Loosely(t,
+				nodeByName(mod, "func1").Doc(), should.Equal(
+					"Doc string.\n\n  Multiline.\n  ",
+				))
 		})
 
-		Convey("Spans extraction", func() {
+		t.Run("Spans extraction", func(t *ftt.Test) {
 			l, r := nodeByName(mod, "func1").Span()
-			So(l.Filename(), ShouldEqual, "mod.star")
-			So(r.Filename(), ShouldEqual, "mod.star")
+			assert.Loosely(t, l.Filename(), should.Equal("mod.star"))
+			assert.Loosely(t, r.Filename(), should.Equal("mod.star"))
 
 			// Spans the entire function definition.
-			So(extractSpan(goodInput, l, r), ShouldEqual, `def func1(*, a, b, c=None, **kwargs):
+			assert.Loosely(t, extractSpan(goodInput, l, r), should.Equal(`def func1(*, a, b, c=None, **kwargs):
   """Doc string.
 
   Multiline.
   """
-  body`)
+  body`))
 		})
 
-		Convey("Comments extraction", func() {
-			So(nodeByName(mod, "func1").Comments(), ShouldEqual, `Function comment.
+		t.Run("Comments extraction", func(t *ftt.Test) {
+			assert.Loosely(t, nodeByName(mod, "func1").Comments(), should.Equal(`Function comment.
 
   With indent.
 
-More.`)
+More.`))
 
 			strct := nodeByName(mod, "struct_stuff").(*Namespace)
-			So(strct.Comments(), ShouldEqual, "Struct comment.")
+			assert.Loosely(t, strct.Comments(), should.Equal("Struct comment."))
 
 			// Individual struct entries are annotated with comments too.
-			So(nodeByName(strct, "key1").Comments(), ShouldEqual, "Key comment 1.")
+			assert.Loosely(t, nodeByName(strct, "key1").Comments(), should.Equal("Key comment 1."))
 
 			// Nested structs are also annotated.
 			nested := nodeByName(strct, "nested").(*Namespace)
-			So(nested.Comments(), ShouldEqual, "Nested namespace.")
+			assert.Loosely(t, nested.Comments(), should.Equal("Nested namespace."))
 
 			// Keys do not pick up comments not intended for them.
-			So(nodeByName(nested, "key1").Comments(), ShouldEqual, "")
+			assert.Loosely(t, nodeByName(nested, "key1").Comments(), should.BeEmpty)
 
 			// Top module comment is not extracted currently, it is relatively hard
 			// to do. We have a docstring though, so it's not a big deal.
-			So(mod.Comments(), ShouldEqual, "")
+			assert.Loosely(t, mod.Comments(), should.BeEmpty)
 		})
 	})
 }

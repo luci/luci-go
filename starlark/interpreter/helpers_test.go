@@ -24,10 +24,12 @@ import (
 	"testing"
 	"unicode"
 
-	"go.chromium.org/luci/starlark/builtins"
 	"go.starlark.net/starlark"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/starlark/builtins"
 )
 
 // deindent finds first non-empty and non-whitespace line and subtracts its
@@ -70,7 +72,7 @@ func deindentLoader(files map[string]string) Loader {
 
 func TestDeindent(t *testing.T) {
 	t.Parallel()
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		s := deindent(`
 
 		a
@@ -80,7 +82,7 @@ func TestDeindent(t *testing.T) {
 
 		e
 		`)
-		So(s, ShouldResemble, `
+		assert.Loosely(t, s, should.Match(`
 
 a
 	b
@@ -88,7 +90,7 @@ a
 	d
 
 e
-`)
+`))
 	})
 }
 
