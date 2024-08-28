@@ -20,9 +20,9 @@ package vars
 import (
 	"fmt"
 
+	"github.com/bazelbuild/buildtools/build"
 	"go.starlark.net/starlark"
 
-	"github.com/bazelbuild/buildtools/build"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/starlark/builtins"
 	"go.chromium.org/luci/starlark/interpreter"

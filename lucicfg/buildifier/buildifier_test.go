@@ -18,8 +18,9 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/data/stringset"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestNormalizeLintChecks(t *testing.T) {
@@ -35,27 +36,27 @@ func TestNormalizeLintChecks(t *testing.T) {
 		return d
 	}
 
-	Convey("Default", t, func() {
+	ftt.Run("Default", t, func(t *ftt.Test) {
 		s, err := normalizeLintChecks(nil)
-		So(err, ShouldBeNil)
-		So(s.ToSortedSlice(), ShouldResemble, defaultChecks().ToSortedSlice())
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, s.ToSortedSlice(), should.Resemble(defaultChecks().ToSortedSlice()))
 	})
 
-	Convey("Add some", t, func() {
+	ftt.Run("Add some", t, func(t *ftt.Test) {
 		s, err := normalizeLintChecks([]string{
 			"+some1",
 			"+some2",
 			"-some1",
 		})
-		So(err, ShouldBeNil)
-		So(diff(s, defaultChecks()), ShouldResemble, []string{"some2"})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, diff(s, defaultChecks()), should.Resemble([]string{"some2"}))
 	})
 
-	Convey("Remove some", t, func() {
+	ftt.Run("Remove some", t, func(t *ftt.Test) {
 		s, err := normalizeLintChecks([]string{
 			"-module-docstring",
 		})
-		So(err, ShouldBeNil)
-		So(diff(defaultChecks(), s), ShouldResemble, []string{"module-docstring"})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, diff(defaultChecks(), s), should.Resemble([]string{"module-docstring"}))
 	})
 }

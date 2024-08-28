@@ -26,7 +26,6 @@ import (
 	"testing"
 
 	"github.com/sergi/go-diff/diffmatchpatch"
-
 	"go.starlark.net/resolve"
 	"go.starlark.net/starlark"
 

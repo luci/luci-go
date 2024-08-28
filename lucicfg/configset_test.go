@@ -38,10 +38,10 @@ import (
 	legacy_config "go.chromium.org/luci/common/api/luci_config/config/v1"
 	"go.chromium.org/luci/common/proto"
 	"go.chromium.org/luci/common/proto/config"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	configpb "go.chromium.org/luci/config_service/proto"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestConfigSet(t *testing.T) {
@@ -49,42 +49,42 @@ func TestConfigSet(t *testing.T) {
 
 	ctx := context.Background()
 
-	Convey("With temp dir", t, func() {
+	ftt.Run("With temp dir", t, func(t *ftt.Test) {
 		tmp := t.TempDir()
 		path := func(p ...string) string {
 			return filepath.Join(append([]string{tmp}, p...)...)
 		}
 
-		So(os.Mkdir(path("subdir"), 0700), ShouldBeNil)
-		So(os.WriteFile(path("a.cfg"), []byte("a\n"), 0600), ShouldBeNil)
-		So(os.WriteFile(path("subdir", "b.cfg"), []byte("b\n"), 0600), ShouldBeNil)
+		assert.Loosely(t, os.Mkdir(path("subdir"), 0700), should.BeNil)
+		assert.Loosely(t, os.WriteFile(path("a.cfg"), []byte("a\n"), 0600), should.BeNil)
+		assert.Loosely(t, os.WriteFile(path("subdir", "b.cfg"), []byte("b\n"), 0600), should.BeNil)
 
-		Convey("Reading", func() {
-			Convey("Success", func() {
+		t.Run("Reading", func(t *ftt.Test) {
+			t.Run("Success", func(t *ftt.Test) {
 				cfg, err := ReadConfigSet(tmp, "set name")
-				So(err, ShouldBeNil)
-				So(cfg, ShouldResemble, ConfigSet{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, cfg, should.Resemble(ConfigSet{
 					Name: "set name",
 					Data: map[string][]byte{
 						"a.cfg":        []byte("a\n"),
 						"subdir/b.cfg": []byte("b\n"),
 					},
-				})
+				}))
 
-				So(cfg.Files(), ShouldResemble, []string{
+				assert.Loosely(t, cfg.Files(), should.Resemble([]string{
 					"a.cfg",
 					"subdir/b.cfg",
-				})
+				}))
 			})
 
-			Convey("Missing dir", func() {
+			t.Run("Missing dir", func(t *ftt.Test) {
 				_, err := ReadConfigSet(path("unknown"), "zzz")
-				So(err, ShouldNotBeNil)
+				assert.Loosely(t, err, should.NotBeNil)
 			})
 		})
 	})
 
-	Convey("Validation", t, func() {
+	ftt.Run("Validation", t, func(t *ftt.Test) {
 		const configSetName = "config set name"
 
 		errorMsg := &config.ValidationResult_Message{
@@ -104,15 +104,15 @@ func TestConfigSet(t *testing.T) {
 			},
 		}
 
-		So(cfgSet.Validate(ctx, &validator), ShouldResembleProto, &ValidationResult{
+		assert.Loosely(t, cfgSet.Validate(ctx, &validator), should.Resemble(&ValidationResult{
 			ConfigSet: configSetName,
 			Messages:  []ValidationMessage{{errorMsg}},
-		})
+		}))
 
-		So(validator.cs, ShouldResemble, cfgSet)
+		assert.Loosely(t, validator.cs, should.Resemble(cfgSet))
 	})
 
-	Convey("RPC error", t, func() {
+	ftt.Run("RPC error", t, func(t *ftt.Test) {
 		validator := testValidator{
 			err: fmt.Errorf("BOOM"),
 		}
@@ -123,19 +123,19 @@ func TestConfigSet(t *testing.T) {
 		}
 
 		res := cfg.Validate(ctx, &validator)
-		So(res, ShouldResemble, &ValidationResult{
+		assert.Loosely(t, res, should.Resemble(&ValidationResult{
 			ConfigSet: "set",
 			Failed:    true,
 			RPCError:  "BOOM",
-		})
+		}))
 
 		// This is considered overall failure.
 		err := res.OverallError(false)
-		So(err, ShouldErrLike, "BOOM")
-		So(res.Failed, ShouldBeTrue)
+		assert.Loosely(t, err, should.ErrLike("BOOM"))
+		assert.Loosely(t, res.Failed, should.BeTrue)
 	})
 
-	Convey("Overall error check", t, func() {
+	ftt.Run("Overall error check", t, func(t *ftt.Test) {
 		result := func(level ...config.ValidationResult_Severity) *ValidationResult {
 			res := &ValidationResult{}
 			for _, l := range level {
@@ -148,22 +148,22 @@ func TestConfigSet(t *testing.T) {
 		}
 
 		// Fail on warnings = false.
-		So(result().OverallError(false), ShouldBeNil)
-		So(result(config.ValidationResult_INFO, config.ValidationResult_WARNING).OverallError(false), ShouldBeNil)
-		So(result(config.ValidationResult_INFO, config.ValidationResult_ERROR).OverallError(false), ShouldErrLike, "some files were invalid")
+		assert.Loosely(t, result().OverallError(false), should.BeNil)
+		assert.Loosely(t, result(config.ValidationResult_INFO, config.ValidationResult_WARNING).OverallError(false), should.BeNil)
+		assert.Loosely(t, result(config.ValidationResult_INFO, config.ValidationResult_ERROR).OverallError(false), should.ErrLike("some files were invalid"))
 
 		// Fail on warnings = true.
-		So(result().OverallError(true), ShouldBeNil)
-		So(result(config.ValidationResult_INFO).OverallError(true), ShouldBeNil)
-		So(result(config.ValidationResult_INFO, config.ValidationResult_WARNING, config.ValidationResult_ERROR).OverallError(true), ShouldErrLike, "some files were invalid")
-		So(result(config.ValidationResult_INFO, config.ValidationResult_WARNING).OverallError(true), ShouldErrLike, "some files had validation warnings")
+		assert.Loosely(t, result().OverallError(true), should.BeNil)
+		assert.Loosely(t, result(config.ValidationResult_INFO).OverallError(true), should.BeNil)
+		assert.Loosely(t, result(config.ValidationResult_INFO, config.ValidationResult_WARNING, config.ValidationResult_ERROR).OverallError(true), should.ErrLike("some files were invalid"))
+		assert.Loosely(t, result(config.ValidationResult_INFO, config.ValidationResult_WARNING).OverallError(true), should.ErrLike("some files had validation warnings"))
 	})
 }
 
 func TestRemoteValidator(t *testing.T) {
 	t.Parallel()
 
-	Convey("Remote Validator", t, func(c C) {
+	ftt.Run("Remote Validator", t, func(c *ftt.Test) {
 		ctx := context.Background()
 		ctrl := gomock.NewController(t)
 		mockClient := configpb.NewMockConfigsClient(ctrl)
@@ -186,13 +186,13 @@ func TestRemoteValidator(t *testing.T) {
 			},
 		}
 
-		Convey("empty config set", func() {
+		c.Run("empty config set", func(c *ftt.Test) {
 			cs.Data = nil
 			res, err := validator.Validate(ctx, cs)
-			So(err, ShouldBeNil)
-			So(res, ShouldBeEmpty)
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, res, should.BeEmpty)
 		})
-		Convey("successfully validated", func() {
+		c.Run("successfully validated", func(c *ftt.Test) {
 			mockClient.EXPECT().ValidateConfigs(gomock.Any(), proto.MatcherEqual(&configpb.ValidateConfigsRequest{
 				ConfigSet: cs.Name,
 				FileHashes: []*configpb.ValidateConfigsRequest_FileHash{
@@ -205,15 +205,15 @@ func TestRemoteValidator(t *testing.T) {
 				Messages: validationMsgs,
 			}, nil)
 			res, err := validator.Validate(ctx, cs)
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, validationMsgs)
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, res, should.Resemble(validationMsgs))
 		})
-		Convey("unvalidatable files", func() {
+		c.Run("unvalidatable files", func(c *ftt.Test) {
 			cs.Data["unvalidatable.cfg"] = []byte("some content")
 			st, err := status.New(codes.InvalidArgument, "invalid validate config request").WithDetails(&configpb.BadValidationRequestFixInfo{
 				UnvalidatableFiles: []string{"unvalidatable.cfg"},
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(c, err, should.BeNil)
 			mockClient.EXPECT().ValidateConfigs(gomock.Any(), proto.MatcherEqual(&configpb.ValidateConfigsRequest{
 				ConfigSet: cs.Name,
 				FileHashes: []*configpb.ValidateConfigsRequest_FileHash{
@@ -240,22 +240,22 @@ func TestRemoteValidator(t *testing.T) {
 				Messages: validationMsgs,
 			}, nil)
 			res, err := validator.Validate(ctx, cs)
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, validationMsgs)
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, res, should.Resemble(validationMsgs))
 		})
-		Convey("upload files", func(c C) {
-			Convey("succeed", func() {
+		c.Run("upload files", func(c *ftt.Test) {
+			c.Run("succeed", func(c *ftt.Test) {
 				ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					c.So(r.Method, ShouldEqual, http.MethodPut)
-					c.So(r.Header.Get("Content-Encoding"), ShouldEqual, "gzip")
-					c.So(r.Header.Get("x-goog-content-length-range"), ShouldEqual, "0,10240")
+					assert.Loosely(c, r.Method, should.Equal(http.MethodPut))
+					assert.Loosely(c, r.Header.Get("Content-Encoding"), should.Equal("gzip"))
+					assert.Loosely(c, r.Header.Get("x-goog-content-length-range"), should.Equal("0,10240"))
 					compressed, err := io.ReadAll(r.Body)
-					c.So(err, ShouldBeNil)
+					assert.Loosely(c, err, should.BeNil)
 					reader, err := gzip.NewReader(bytes.NewBuffer(compressed))
-					c.So(err, ShouldBeNil)
+					assert.Loosely(c, err, should.BeNil)
 					config, err := io.ReadAll(reader)
-					c.So(err, ShouldBeNil)
-					c.So(string(config), ShouldEqual, "This is the config content")
+					assert.Loosely(c, err, should.BeNil)
+					assert.Loosely(c, string(config), should.Equal("This is the config content"))
 					w.WriteHeader(http.StatusOK)
 				}))
 				defer ts.Close()
@@ -268,7 +268,7 @@ func TestRemoteValidator(t *testing.T) {
 						},
 					},
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(c, err, should.BeNil)
 				mockClient.EXPECT().ValidateConfigs(gomock.Any(), proto.MatcherEqual(&configpb.ValidateConfigsRequest{
 					ConfigSet: cs.Name,
 					FileHashes: []*configpb.ValidateConfigsRequest_FileHash{
@@ -282,18 +282,18 @@ func TestRemoteValidator(t *testing.T) {
 						Messages: validationMsgs,
 					}, nil)
 				res, err := validator.Validate(ctx, cs)
-				So(err, ShouldBeNil)
-				So(res, ShouldResembleProto, validationMsgs)
+				assert.Loosely(c, err, should.BeNil)
+				assert.Loosely(c, res, should.Resemble(validationMsgs))
 			})
 
-			Convey("no file unvalidatable", func() {
+			c.Run("no file unvalidatable", func(c *ftt.Test) {
 				cs.Data = map[string][]byte{
 					"unvalidatable.cfg": []byte("some content"),
 				}
 				st, err := status.New(codes.InvalidArgument, "invalid validate config request").WithDetails(&configpb.BadValidationRequestFixInfo{
 					UnvalidatableFiles: []string{"unvalidatable.cfg"},
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(c, err, should.BeNil)
 				mockClient.EXPECT().ValidateConfigs(gomock.Any(), proto.MatcherEqual(&configpb.ValidateConfigsRequest{
 					ConfigSet: cs.Name,
 					FileHashes: []*configpb.ValidateConfigsRequest_FileHash{
@@ -304,10 +304,10 @@ func TestRemoteValidator(t *testing.T) {
 					},
 				})).Return(nil, st.Err())
 				res, err := validator.Validate(ctx, cs)
-				So(err, ShouldBeNil)
-				So(res, ShouldBeEmpty)
+				assert.Loosely(c, err, should.BeNil)
+				assert.Loosely(c, res, should.BeEmpty)
 			})
-			Convey("failed", func() {
+			c.Run("failed", func(c *ftt.Test) {
 				ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusBadRequest)
 					fmt.Fprintf(w, "config is too large")
@@ -322,7 +322,7 @@ func TestRemoteValidator(t *testing.T) {
 						},
 					},
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(c, err, should.BeNil)
 				mockClient.EXPECT().ValidateConfigs(gomock.Any(), proto.MatcherEqual(&configpb.ValidateConfigsRequest{
 					ConfigSet: cs.Name,
 					FileHashes: []*configpb.ValidateConfigsRequest_FileHash{
@@ -333,11 +333,11 @@ func TestRemoteValidator(t *testing.T) {
 					},
 				})).Return(nil, st.Err())
 				res, err := validator.Validate(ctx, cs)
-				So(err, ShouldErrLike, "failed to upload file")
-				So(res, ShouldBeEmpty)
+				assert.Loosely(c, err, should.ErrLike("failed to upload file"))
+				assert.Loosely(c, res, should.BeEmpty)
 			})
 		})
-		Convey("failed to call LUCI Config", func() {
+		c.Run("failed to call LUCI Config", func(c *ftt.Test) {
 			mockClient.EXPECT().ValidateConfigs(gomock.Any(), proto.MatcherEqual(&configpb.ValidateConfigsRequest{
 				ConfigSet: cs.Name,
 				FileHashes: []*configpb.ValidateConfigsRequest_FileHash{
@@ -348,8 +348,8 @@ func TestRemoteValidator(t *testing.T) {
 				},
 			})).Return(nil, status.Error(codes.InvalidArgument, "invalid validate config request"))
 			res, err := validator.Validate(ctx, cs)
-			So(err, ShouldErrLike, "failed to call LUCI Config")
-			So(res, ShouldBeEmpty)
+			assert.Loosely(c, err, should.ErrLike("failed to call LUCI Config"))
+			assert.Loosely(c, res, should.BeEmpty)
 		})
 	})
 }
@@ -379,7 +379,7 @@ func TestLegacyRemoteValidator(t *testing.T) {
 		},
 	}
 
-	Convey("Splits requests, collects messages", t, func() {
+	ftt.Run("Splits requests, collects messages", t, func(t *ftt.Test) {
 		var reqs []*legacy_config.LuciConfigValidateConfigRequestMessage
 		var lock sync.Mutex
 
@@ -410,13 +410,13 @@ func TestLegacyRemoteValidator(t *testing.T) {
 		}
 
 		msg, err := val.Validate(ctx, cfgSet)
-		So(err, ShouldBeNil)
-		So(msg, ShouldResembleProto, []*config.ValidationResult_Message{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, msg, should.Resemble([]*config.ValidationResult_Message{
 			{Path: "a.cfg", Severity: config.ValidationResult_ERROR, Text: "Boom in a.cfg"},
 			{Path: "b.cfg", Severity: config.ValidationResult_ERROR, Text: "Boom in b.cfg"},
 			{Path: "c.cfg", Severity: config.ValidationResult_ERROR, Text: "Boom in c.cfg"},
 			{Path: "d.cfg", Severity: config.ValidationResult_ERROR, Text: "Boom in d.cfg"},
-		})
+		}))
 
 		var sets []string
 		for _, req := range reqs {
@@ -427,18 +427,18 @@ func TestLegacyRemoteValidator(t *testing.T) {
 				names = append(names, f.Path)
 			}
 			sets = append(sets, strings.Join(names, "+"))
-			So(reqSize, ShouldBeLessThanOrEqualTo, val.requestSizeLimitBytes)
+			assert.Loosely(t, reqSize, should.BeLessThanOrEqual(val.requestSizeLimitBytes))
 		}
 		sort.Strings(sets)
-		So(sets, ShouldResemble, []string{"b.cfg+a.cfg", "c.cfg", "d.cfg"})
-		Convey("Single file too large", func() {
+		assert.Loosely(t, sets, should.Resemble([]string{"b.cfg+a.cfg", "c.cfg", "d.cfg"}))
+		t.Run("Single file too large", func(t *ftt.Test) {
 			val.requestSizeLimitBytes = 10
 			_, err := val.Validate(ctx, cfgSet)
-			So(err, ShouldErrLike, "the size of file \"c.cfg\" is 12")
+			assert.Loosely(t, err, should.ErrLike("the size of file \"c.cfg\" is 12"))
 		})
 	})
 
-	Convey("Handles errors", t, func() {
+	ftt.Run("Handles errors", t, func(t *ftt.Test) {
 		val := &legacyRemoteValidator{
 			requestSizeLimitBytes: 12,
 			validateConfig: func(ctx context.Context, req *legacy_config.LuciConfigValidateConfigRequestMessage) (*legacy_config.LuciConfigValidateConfigResponseMessage, error) {
@@ -465,12 +465,12 @@ func TestLegacyRemoteValidator(t *testing.T) {
 		}
 
 		msg, err := val.Validate(ctx, cfgSet)
-		So(err, ShouldNotBeNil)
-		So(err.Error(), ShouldEqual, "fake error (and 1 other error)")
-		So(msg, ShouldResembleProto, []*config.ValidationResult_Message{
+		assert.Loosely(t, err, should.NotBeNil)
+		assert.Loosely(t, err.Error(), should.Equal("fake error (and 1 other error)"))
+		assert.Loosely(t, msg, should.Resemble([]*config.ValidationResult_Message{
 			{Path: "a.cfg", Severity: config.ValidationResult_ERROR, Text: "Boom in a.cfg"},
 			{Path: "b.cfg", Severity: config.ValidationResult_ERROR, Text: "Boom in b.cfg"},
-		})
+		}))
 	})
 }
 

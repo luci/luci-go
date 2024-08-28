@@ -21,7 +21,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestOutput(t *testing.T) {
@@ -29,9 +31,9 @@ func TestOutput(t *testing.T) {
 
 	ctx := context.Background()
 
-	Convey("With temp dir", t, func() {
+	ftt.Run("With temp dir", t, func(t *ftt.Test) {
 		tmp, err := ioutil.TempDir("", "lucicfg")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		defer os.RemoveAll(tmp)
 
 		path := func(p string) string {
@@ -40,24 +42,24 @@ func TestOutput(t *testing.T) {
 
 		read := func(p string) string {
 			body, err := os.ReadFile(path(p))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			return string(body)
 		}
 
 		write := func(p, body string) {
-			So(os.WriteFile(path(p), []byte(body), 0600), ShouldBeNil)
+			assert.Loosely(t, os.WriteFile(path(p), []byte(body), 0600), should.BeNil)
 		}
 
 		original := map[string][]byte{
 			"a.cfg":        []byte("a\n"),
 			"subdir/b.cfg": []byte("b\n"),
 		}
-		So(os.Mkdir(path("subdir"), 0700), ShouldBeNil)
+		assert.Loosely(t, os.Mkdir(path("subdir"), 0700), should.BeNil)
 		for k, v := range original {
 			write(k, string(v))
 		}
 
-		Convey("Writing", func() {
+		t.Run("Writing", func(t *ftt.Test) {
 			out := Output{
 				Data: map[string]Datum{
 					"a":     BlobDatum("111"),
@@ -65,23 +67,23 @@ func TestOutput(t *testing.T) {
 				},
 			}
 			changed, unchanged, err := out.Write(tmp, false)
-			So(changed, ShouldResemble, []string{"a", "dir/a"})
-			So(unchanged, ShouldHaveLength, 0)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, changed, should.Resemble([]string{"a", "dir/a"}))
+			assert.Loosely(t, unchanged, should.HaveLength(0))
+			assert.Loosely(t, err, should.BeNil)
 
-			So(read("a"), ShouldResemble, "111")
-			So(read("dir/a"), ShouldResemble, "222")
+			assert.Loosely(t, read("a"), should.Match("111"))
+			assert.Loosely(t, read("dir/a"), should.Match("222"))
 
 			out.Data["a"] = BlobDatum("333")
 			changed, unchanged, err = out.Write(tmp, false)
-			So(changed, ShouldResemble, []string{"a"})
-			So(unchanged, ShouldResemble, []string{"dir/a"})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, changed, should.Resemble([]string{"a"}))
+			assert.Loosely(t, unchanged, should.Resemble([]string{"dir/a"}))
+			assert.Loosely(t, err, should.BeNil)
 
-			So(read("a"), ShouldResemble, "333")
+			assert.Loosely(t, read("a"), should.Match("333"))
 		})
 
-		Convey("DiscardChangesToUntracked", func() {
+		t.Run("DiscardChangesToUntracked", func(t *ftt.Test) {
 			generated := func() Output {
 				return Output{
 					Data: map[string]Datum{
@@ -91,41 +93,41 @@ func TestOutput(t *testing.T) {
 				}
 			}
 
-			Convey("No untracked", func() {
+			t.Run("No untracked", func(t *ftt.Test) {
 				out := generated()
-				So(out.DiscardChangesToUntracked(ctx, []string{"**/*"}, "-"), ShouldBeNil)
-				So(out.Data, ShouldResemble, generated().Data)
+				assert.Loosely(t, out.DiscardChangesToUntracked(ctx, []string{"**/*"}, "-"), should.BeNil)
+				assert.Loosely(t, out.Data, should.Resemble(generated().Data))
 			})
 
-			Convey("Untracked files are restored from disk", func() {
+			t.Run("Untracked files are restored from disk", func(t *ftt.Test) {
 				out := generated()
-				So(out.DiscardChangesToUntracked(ctx, []string{"!*/b.cfg"}, tmp), ShouldBeNil)
-				So(out.Data, ShouldResemble, map[string]Datum{
+				assert.Loosely(t, out.DiscardChangesToUntracked(ctx, []string{"!*/b.cfg"}, tmp), should.BeNil)
+				assert.Loosely(t, out.Data, should.Resemble(map[string]Datum{
 					"a.cfg":        generated().Data["a.cfg"],
 					"subdir/b.cfg": BlobDatum(original["subdir/b.cfg"]),
-				})
+				}))
 			})
 
-			Convey("Untracked files are discarded when dumping to stdout", func() {
+			t.Run("Untracked files are discarded when dumping to stdout", func(t *ftt.Test) {
 				out := generated()
-				So(out.DiscardChangesToUntracked(ctx, []string{"!*/b.cfg"}, "-"), ShouldBeNil)
-				So(out.Data, ShouldResemble, map[string]Datum{
+				assert.Loosely(t, out.DiscardChangesToUntracked(ctx, []string{"!*/b.cfg"}, "-"), should.BeNil)
+				assert.Loosely(t, out.Data, should.Resemble(map[string]Datum{
 					"a.cfg": generated().Data["a.cfg"],
-				})
+				}))
 			})
 
-			Convey("Untracked files are discarded if don't exist on disk", func() {
+			t.Run("Untracked files are discarded if don't exist on disk", func(t *ftt.Test) {
 				out := Output{
 					Data: map[string]Datum{
 						"c.cfg": BlobDatum("generated"),
 					},
 				}
-				So(out.DiscardChangesToUntracked(ctx, []string{"!c.cfg"}, tmp), ShouldBeNil)
-				So(out.Data, ShouldHaveLength, 0)
+				assert.Loosely(t, out.DiscardChangesToUntracked(ctx, []string{"!c.cfg"}, tmp), should.BeNil)
+				assert.Loosely(t, out.Data, should.HaveLength(0))
 			})
 		})
 
-		Convey("Reading", func() {
+		t.Run("Reading", func(t *ftt.Test) {
 			out := Output{
 				Data: map[string]Datum{
 					"m1": BlobDatum("111"),
@@ -133,24 +135,24 @@ func TestOutput(t *testing.T) {
 				},
 			}
 
-			Convey("Success", func() {
+			t.Run("Success", func(t *ftt.Test) {
 				write("m1", "new 1")
 				write("m2", "new 2")
 
-				So(out.Read(tmp), ShouldBeNil)
-				So(out.Data, ShouldResemble, map[string]Datum{
+				assert.Loosely(t, out.Read(tmp), should.BeNil)
+				assert.Loosely(t, out.Data, should.Resemble(map[string]Datum{
 					"m1": BlobDatum("new 1"),
 					"m2": BlobDatum("new 2"),
-				})
+				}))
 			})
 
-			Convey("Missing file", func() {
+			t.Run("Missing file", func(t *ftt.Test) {
 				write("m1", "new 1")
-				So(out.Read(tmp), ShouldNotBeNil)
+				assert.Loosely(t, out.Read(tmp), should.NotBeNil)
 			})
 		})
 
-		Convey("Compares protos semantically", func() {
+		t.Run("Compares protos semantically", func(t *ftt.Test) {
 			// Write the initial version.
 			out := Output{
 				Data: map[string]Datum{
@@ -159,88 +161,88 @@ func TestOutput(t *testing.T) {
 				},
 			}
 			changed, unchanged, err := out.Write(tmp, false)
-			So(changed, ShouldResemble, []string{"m1", "m2"})
-			So(unchanged, ShouldHaveLength, 0)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, changed, should.Resemble([]string{"m1", "m2"}))
+			assert.Loosely(t, unchanged, should.HaveLength(0))
+			assert.Loosely(t, err, should.BeNil)
 
-			So(read("m1"), ShouldResemble, "i: 111\n")
-			So(read("m2"), ShouldResemble, "# Header\ni: 222\n")
+			assert.Loosely(t, read("m1"), should.Match("i: 111\n"))
+			assert.Loosely(t, read("m2"), should.Match("# Header\ni: 222\n"))
 
-			Convey("Ignores formatting", func() {
+			t.Run("Ignores formatting", func(t *ftt.Test) {
 				// Mutate m2 in insignificant way (strip the header).
 				write("m2", "i:     222")
 
 				// If using semantic comparison, recognizes nothing has changed.
 				cmp, err := out.Compare(tmp, true)
-				So(err, ShouldBeNil)
-				So(cmp, ShouldResemble, map[string]CompareResult{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, cmp, should.Resemble(map[string]CompareResult{
 					"m1": Identical,
 					"m2": SemanticallyEqual,
-				})
+				}))
 
 				// Byte-to-byte comparison recognizes the change.
 				cmp, err = out.Compare(tmp, false)
-				So(err, ShouldBeNil)
-				So(cmp, ShouldResemble, map[string]CompareResult{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, cmp, should.Resemble(map[string]CompareResult{
 					"m1": Identical,
 					"m2": Different,
-				})
+				}))
 
-				Convey("Write, force=false", func() {
+				t.Run("Write, force=false", func(t *ftt.Test) {
 					// Output didn't really change, so nothing is overwritten.
 					changed, unchanged, err := out.Write(tmp, false)
-					So(err, ShouldBeNil)
-					So(changed, ShouldHaveLength, 0)
-					So(unchanged, ShouldResemble, []string{"m1", "m2"})
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, changed, should.HaveLength(0))
+					assert.Loosely(t, unchanged, should.Resemble([]string{"m1", "m2"}))
 				})
 
-				Convey("Write, force=true", func() {
+				t.Run("Write, force=true", func(t *ftt.Test) {
 					// We ask to overwrite files even if they all are semantically same.
 					changed, unchanged, err := out.Write(tmp, true)
-					So(err, ShouldBeNil)
-					So(changed, ShouldResemble, []string{"m2"})
-					So(unchanged, ShouldResemble, []string{"m1"})
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, changed, should.Resemble([]string{"m2"}))
+					assert.Loosely(t, unchanged, should.Resemble([]string{"m1"}))
 
 					// Overwrote it on disk.
-					So(read("m2"), ShouldResemble, "# Header\ni: 222\n")
+					assert.Loosely(t, read("m2"), should.Match("# Header\ni: 222\n"))
 				})
 			})
 
-			Convey("Detects real changes", func() {
+			t.Run("Detects real changes", func(t *ftt.Test) {
 				// Overwrite m2 with something semantically different.
 				write("m2", "i: 333")
 
 				// Detected it.
 				cmp, err := out.Compare(tmp, true)
-				So(err, ShouldBeNil)
-				So(cmp, ShouldResemble, map[string]CompareResult{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, cmp, should.Resemble(map[string]CompareResult{
 					"m1": Identical,
 					"m2": Different,
-				})
+				}))
 
 				// Writes it to disk, even when force=false.
 				changed, unchanged, err := out.Write(tmp, false)
-				So(err, ShouldBeNil)
-				So(changed, ShouldResemble, []string{"m2"})
-				So(unchanged, ShouldResemble, []string{"m1"})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, changed, should.Resemble([]string{"m2"}))
+				assert.Loosely(t, unchanged, should.Resemble([]string{"m1"}))
 			})
 
-			Convey("Handles bad protos", func() {
+			t.Run("Handles bad protos", func(t *ftt.Test) {
 				// Overwrite m2 with some garbage.
 				write("m2", "not a text proto")
 
 				// Detected the file as changed.
 				cmp, err := out.Compare(tmp, true)
-				So(err, ShouldBeNil)
-				So(cmp, ShouldResemble, map[string]CompareResult{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, cmp, should.Resemble(map[string]CompareResult{
 					"m1": Identical,
 					"m2": Different,
-				})
+				}))
 			})
 		})
 	})
 
-	Convey("ConfigSets", t, func() {
+	ftt.Run("ConfigSets", t, func(t *ftt.Test) {
 		out := Output{
 			Data: map[string]Datum{
 				"f1":          BlobDatum("0"),
@@ -260,37 +262,37 @@ func TestOutput(t *testing.T) {
 
 		configSets := func() []ConfigSet {
 			cs, err := out.ConfigSets()
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			return cs
 		}
 
-		Convey("No roots", func() {
-			So(configSets(), ShouldHaveLength, 0)
+		t.Run("No roots", func(t *ftt.Test) {
+			assert.Loosely(t, configSets(), should.HaveLength(0))
 		})
 
-		Convey("Empty set", func() {
+		t.Run("Empty set", func(t *ftt.Test) {
 			out.Roots["set"] = "zzz"
-			So(configSets(), ShouldResemble, []ConfigSet{
+			assert.Loosely(t, configSets(), should.Resemble([]ConfigSet{
 				{
 					Name: "set",
 					Data: map[string][]byte{},
 				},
-			})
+			}))
 		})
 
-		Convey("`.` root", func() {
+		t.Run("`.` root", func(t *ftt.Test) {
 			out.Roots["set"] = "."
-			So(configSets(), ShouldResemble, []ConfigSet{
+			assert.Loosely(t, configSets(), should.Resemble([]ConfigSet{
 				{
 					Name: "set",
 					Data: everything,
 				},
-			})
+			}))
 		})
 
-		Convey("Subdir root", func() {
+		t.Run("Subdir root", func(t *ftt.Test) {
 			out.Roots["set"] = "dir1/."
-			So(configSets(), ShouldResemble, []ConfigSet{
+			assert.Loosely(t, configSets(), should.Resemble([]ConfigSet{
 				{
 					Name: "set",
 					Data: map[string][]byte{
@@ -299,14 +301,14 @@ func TestOutput(t *testing.T) {
 						"sub/f4": []byte("3"),
 					},
 				},
-			})
+			}))
 		})
 
-		Convey("Multiple roots", func() {
+		t.Run("Multiple roots", func(t *ftt.Test) {
 			out.Roots["set1"] = "dir1"
 			out.Roots["set2"] = "dir2"
 			out.Roots["set3"] = "dir1/sub" // intersecting sets are OK
-			So(configSets(), ShouldResemble, []ConfigSet{
+			assert.Loosely(t, configSets(), should.Resemble([]ConfigSet{
 				{
 					Name: "set1",
 					Data: map[string][]byte{
@@ -327,7 +329,7 @@ func TestOutput(t *testing.T) {
 						"f4": []byte("3"),
 					},
 				},
-			})
+			}))
 		})
 	})
 }

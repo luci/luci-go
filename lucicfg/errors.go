@@ -17,8 +17,9 @@ package lucicfg
 import (
 	"go.starlark.net/starlark"
 
-	"go.chromium.org/luci/lucicfg/graph"
 	"go.chromium.org/luci/starlark/builtins"
+
+	"go.chromium.org/luci/lucicfg/graph"
 )
 
 // BacktracableError is an error that has a starlark backtrace attached to it.

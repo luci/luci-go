@@ -30,13 +30,20 @@ import (
 	"go.chromium.org/luci/starlark/interpreter"
 	"go.chromium.org/luci/starlark/starlarkproto"
 
-	_ "google.golang.org/protobuf/types/known/anypb"
-	_ "google.golang.org/protobuf/types/known/durationpb"
-	_ "google.golang.org/protobuf/types/known/emptypb"
-	_ "google.golang.org/protobuf/types/known/structpb"
-	_ "google.golang.org/protobuf/types/known/timestamppb"
-	_ "google.golang.org/protobuf/types/known/wrapperspb"
-
+	// Dependency of some LUCI protos.
+	_ "github.com/envoyproxy/protoc-gen-validate/validate"
+	_ "go.chromium.org/luci/buildbucket/proto"
+	_ "go.chromium.org/luci/common/proto/config"
+	_ "go.chromium.org/luci/common/proto/realms"
+	_ "go.chromium.org/luci/cv/api/config/legacy"
+	_ "go.chromium.org/luci/cv/api/config/v2"
+	_ "go.chromium.org/luci/logdog/api/config/svcconfig"
+	_ "go.chromium.org/luci/luci_notify/api/config"
+	_ "go.chromium.org/luci/milo/proto/projectconfig"
+	_ "go.chromium.org/luci/resultdb/proto/v1"
+	_ "go.chromium.org/luci/scheduler/appengine/messages"
+	// This covers all of google/api/*.proto
+	_ "google.golang.org/genproto/googleapis/api/annotations"
 	_ "google.golang.org/genproto/googleapis/type/calendarperiod"
 	_ "google.golang.org/genproto/googleapis/type/color"
 	_ "google.golang.org/genproto/googleapis/type/date"
@@ -48,23 +55,12 @@ import (
 	_ "google.golang.org/genproto/googleapis/type/postaladdress"
 	_ "google.golang.org/genproto/googleapis/type/quaternion"
 	_ "google.golang.org/genproto/googleapis/type/timeofday"
-
-	// This covers all of google/api/*.proto
-	_ "google.golang.org/genproto/googleapis/api/annotations"
-
-	// Dependency of some LUCI protos.
-	_ "github.com/envoyproxy/protoc-gen-validate/validate"
-
-	_ "go.chromium.org/luci/buildbucket/proto"
-	_ "go.chromium.org/luci/common/proto/config"
-	_ "go.chromium.org/luci/common/proto/realms"
-	_ "go.chromium.org/luci/cv/api/config/legacy"
-	_ "go.chromium.org/luci/cv/api/config/v2"
-	_ "go.chromium.org/luci/logdog/api/config/svcconfig"
-	_ "go.chromium.org/luci/luci_notify/api/config"
-	_ "go.chromium.org/luci/milo/proto/projectconfig"
-	_ "go.chromium.org/luci/resultdb/proto/v1"
-	_ "go.chromium.org/luci/scheduler/appengine/messages"
+	_ "google.golang.org/protobuf/types/known/anypb"
+	_ "google.golang.org/protobuf/types/known/durationpb"
+	_ "google.golang.org/protobuf/types/known/emptypb"
+	_ "google.golang.org/protobuf/types/known/structpb"
+	_ "google.golang.org/protobuf/types/known/timestamppb"
+	_ "google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 // Collection of built-in descriptor sets built from the protobuf registry

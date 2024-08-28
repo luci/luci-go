@@ -32,8 +32,9 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/sync/parallel"
-	"go.chromium.org/luci/lucicfg/vars"
 	"go.chromium.org/luci/starlark/interpreter"
+
+	"go.chromium.org/luci/lucicfg/vars"
 )
 
 var (

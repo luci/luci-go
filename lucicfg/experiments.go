@@ -19,11 +19,11 @@ import (
 	"sort"
 	"strings"
 
-	"go.chromium.org/luci/common/data/stringset"
-	"go.chromium.org/luci/common/logging"
-
 	"go.starlark.net/starlark"
 	"go.starlark.net/syntax"
+
+	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/logging"
 )
 
 // experiments holds a set of registered experiment IDs and enabled ones.

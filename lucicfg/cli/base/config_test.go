@@ -19,15 +19,17 @@ import (
 	"testing"
 
 	"github.com/bazelbuild/buildtools/build"
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/testfs"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/lucicfg/buildifier"
 )
 
 func TestConvertOrderingToTable(t *testing.T) {
 	t.Parallel()
 
-	Convey("Return names ordered correctly", t, func() {
+	ftt.Run("Return names ordered correctly", t, func(t *ftt.Test) {
 		//Initialize random string array of potential name orders
 		nameOrdering := []string{
 			"argument_name_ordering",
@@ -74,22 +76,22 @@ func TestConvertOrderingToTable(t *testing.T) {
 			"list_view":               -1,
 		}
 
-		So(convertOrderingToTable(nameOrdering), ShouldResemble, convertOrderingCorrectOutput)
+		assert.Loosely(t, convertOrderingToTable(nameOrdering), should.Resemble(convertOrderingCorrectOutput))
 	})
 }
 
 func TestConvertOrderTableEmptyArray(t *testing.T) {
 	t.Parallel()
 
-	Convey("Empty table should be returned if operating on empty table", t, func() {
-		So(convertOrderingToTable([]string{}), ShouldResemble, map[string]int{})
+	ftt.Run("Empty table should be returned if operating on empty table", t, func(t *ftt.Test) {
+		assert.Loosely(t, convertOrderingToTable([]string{}), should.Resemble(map[string]int{}))
 	})
 }
 
 func TestRewriterFromConfig(t *testing.T) {
 	t.Parallel()
 
-	Convey("Receive valid rewriter back from rewriterFromConfig given valid nameOrdering", t, func() {
+	ftt.Run("Receive valid rewriter back from rewriterFromConfig given valid nameOrdering", t, func(t *ftt.Test) {
 		nameOrdering := map[string]int{
 			"name":    -2,
 			"builder": -1,
@@ -107,14 +109,14 @@ func TestRewriterFromConfig(t *testing.T) {
 
 		rewriter.NamePriority = nameOrdering
 		rewriter.RewriteSet = append(rewriter.RewriteSet, "callsort")
-		So(rewriterFromConfig(nameOrdering), ShouldResemble, rewriter)
+		assert.Loosely(t, rewriterFromConfig(nameOrdering), should.Resemble(rewriter))
 	})
 }
 
 func TestRewriterFromConfigEmptyMap(t *testing.T) {
 	t.Parallel()
 
-	Convey("Nil parameter for rewriterFromConfig should return default Rewriter", t, func() {
+	ftt.Run("Nil parameter for rewriterFromConfig should return default Rewriter", t, func(t *ftt.Test) {
 		var rewriter = &build.Rewriter{
 			RewriteSet: []string{
 				"listsort",
@@ -124,15 +126,15 @@ func TestRewriterFromConfigEmptyMap(t *testing.T) {
 				"editoctal",
 			},
 		}
-		So(rewriterFromConfig(nil), ShouldResemble, rewriter)
+		assert.Loosely(t, rewriterFromConfig(nil), should.Resemble(rewriter))
 	})
 }
 
 func TestConfigParsing(t *testing.T) {
 	root := t.TempDir()
 
-	Convey("Config Parsing", t, func() {
-		Convey("Duplicate paths in one rule in lucicfgfmtrc config should return error", func() {
+	ftt.Run("Config Parsing", t, func(t *ftt.Test) {
+		t.Run("Duplicate paths in one rule in lucicfgfmtrc config should return error", func(t *ftt.Test) {
 			var configContent = `
 				rules {
 					path : "/"
@@ -149,10 +151,10 @@ func TestConfigParsing(t *testing.T) {
 			}
 
 			_, err := GetRewriterFactory(filepath.Join(root, ConfigName))
-			So(err, ShouldBeError, "rule[0].path[1]: Found duplicate path '/'")
+			assert.Loosely(t, err, should.ErrLike("rule[0].path[1]: Found duplicate path '/'"))
 		})
 
-		Convey("Multiple rules with same path in lucicfgfmtrc config should return error", func() {
+		t.Run("Multiple rules with same path in lucicfgfmtrc config should return error", func(t *ftt.Test) {
 			var configContent = `
 				rules {
 					path : "/"
@@ -171,10 +173,10 @@ func TestConfigParsing(t *testing.T) {
 			}
 
 			_, err := GetRewriterFactory(filepath.Join(root, ConfigName))
-			So(err, ShouldBeError, "rule[1].path[0]: Found duplicate path '/'")
+			assert.Loosely(t, err, should.ErrLike("rule[1].path[0]: Found duplicate path '/'"))
 		})
 
-		Convey("Backslash in lucicfgfmtrc config should return error", func() {
+		t.Run("Backslash in lucicfgfmtrc config should return error", func(t *ftt.Test) {
 			var configContent = `
 				rules {
 					path : "\\"
@@ -189,10 +191,10 @@ func TestConfigParsing(t *testing.T) {
 				t.Errorf(err.Error())
 			}
 			_, err := GetRewriterFactory(filepath.Join(root, ConfigName))
-			So(err, ShouldBeError, "rule[0].path[0]: Path should not contain backslash '\\'")
+			assert.Loosely(t, err, should.ErrLike("rule[0].path[0]: Path should not contain backslash '\\'"))
 		})
 
-		Convey("Make sure \"\" refers to root", func() {
+		t.Run("Make sure \"\" refers to root", func(t *ftt.Test) {
 			var configContent = `
 				rules {
 					path : ""
@@ -232,10 +234,10 @@ func TestConfigParsing(t *testing.T) {
 			rewriterManualAlphanumeric, _ := rewriterFactoryManualAlphanumeric.GetRewriter(
 				filepath.Join(root, "test.star"))
 			var actualRewriterManualAlphanumeric = rewriterFromConfig(convertOrderingToTable(sampleCallSortArgs))
-			So(rewriterManualAlphanumeric, ShouldResemble, actualRewriterManualAlphanumeric)
+			assert.Loosely(t, rewriterManualAlphanumeric, should.Resemble(actualRewriterManualAlphanumeric))
 		})
 
-		Convey("Differently normalized paths that are the same should result in an error", func() {
+		t.Run("Differently normalized paths that are the same should result in an error", func(t *ftt.Test) {
 			var configContent = `
 				rules {
 					path : "something"
@@ -250,10 +252,10 @@ func TestConfigParsing(t *testing.T) {
 				t.Errorf(err.Error())
 			}
 			_, err := GetRewriterFactory(filepath.Join(root, ConfigName))
-			So(err, ShouldBeError, "rule[0].path[1]: Found duplicate path 'something/'")
+			assert.Loosely(t, err, should.ErrLike("rule[0].path[1]: Found duplicate path 'something/'"))
 		})
 
-		Convey("Rule doesn't contain any paths should throw an error", func() {
+		t.Run("Rule doesn't contain any paths should throw an error", func(t *ftt.Test) {
 			var configContent = `
 				rules {
 				}
@@ -266,15 +268,15 @@ func TestConfigParsing(t *testing.T) {
 				t.Errorf(err.Error())
 			}
 			_, err := GetRewriterFactory(filepath.Join(root, ConfigName))
-			So(err, ShouldBeError, "rule[0]: Does not contain any paths")
+			assert.Loosely(t, err, should.ErrLike("rule[0]: Does not contain any paths"))
 		})
-		Convey("Lucicfg file does not exit, should return default RewriterFactory", func() {
+		t.Run("Lucicfg file does not exit, should return default RewriterFactory", func(t *ftt.Test) {
 			defaultRewriter, _ := GetRewriterFactory("RANDOM_PATH/A/B/C/D")
 			var rewriter = &RewriterFactory{
 				rules:          []pathRules{},
 				configFilePath: "",
 			}
-			So(defaultRewriter, ShouldResemble, rewriter)
+			assert.Loosely(t, defaultRewriter, should.Resemble(rewriter))
 		})
 	})
 }
@@ -282,7 +284,7 @@ func TestConfigParsing(t *testing.T) {
 func TestGetRewriter(t *testing.T) {
 	root := t.TempDir()
 
-	Convey("Testing GetRewriter", t, func() {
+	ftt.Run("Testing GetRewriter", t, func(t *ftt.Test) {
 		abs := func(path string) string {
 			return filepath.Join(root, path)
 		}
@@ -300,7 +302,7 @@ func TestGetRewriter(t *testing.T) {
 			t.Errorf(err.Error())
 		}
 
-		Convey("No matching path returns a rewriter that doesn't apply the callsort rewrite", func() {
+		t.Run("No matching path returns a rewriter that doesn't apply the callsort rewrite", func(t *ftt.Test) {
 			rewriterFactoryNoCallSort, _ := getPostProcessedRewriterFactory(
 				filepath.Join(root, ".lucicfgfmtrc"),
 				&buildifier.LucicfgFmtConfig{
@@ -309,10 +311,10 @@ func TestGetRewriter(t *testing.T) {
 			)
 			rewriterNoCallsort, _ := rewriterFactoryNoCallSort.GetRewriter(abs("no_rule_match/test.star"))
 			var actualRewriterNoCallSort = rewriterFromConfig(nil)
-			So(rewriterNoCallsort, ShouldResemble, actualRewriterNoCallSort)
+			assert.Loosely(t, rewriterNoCallsort, should.Resemble(actualRewriterNoCallSort))
 		})
 
-		Convey("Matching rule to nil FunctionArgSort, return rewriter without callsort rewrite", func() {
+		t.Run("Matching rule to nil FunctionArgSort, return rewriter without callsort rewrite", func(t *ftt.Test) {
 			rewriterFactoryNoCallSort, _ := getPostProcessedRewriterFactory(
 				filepath.Join(root, ".lucicfgfmtrc"),
 				&buildifier.LucicfgFmtConfig{
@@ -327,10 +329,10 @@ func TestGetRewriter(t *testing.T) {
 			)
 			rewriterNoCallSort, _ := rewriterFactoryNoCallSort.GetRewriter(abs("a/b/c/test.star"))
 			var actualRewriterNoCallSort = rewriterFromConfig(nil)
-			So(rewriterNoCallSort, ShouldResemble, actualRewriterNoCallSort)
+			assert.Loosely(t, rewriterNoCallSort, should.Resemble(actualRewriterNoCallSort))
 		})
 
-		Convey("Matching rule to non-nil FunctionArgSort, has callsort + ordering", func() {
+		t.Run("Matching rule to non-nil FunctionArgSort, has callsort + ordering", func(t *ftt.Test) {
 			var sampleCallSortArgs = []string{
 				"name1",
 				"name2",
@@ -352,10 +354,10 @@ func TestGetRewriter(t *testing.T) {
 			)
 			rewriterManualAlphanumeric, _ := rewriterFactoryManualAlphanumeric.GetRewriter(abs("a/test.star"))
 			var actualRewriterManualAlphanumeric = rewriterFromConfig(convertOrderingToTable(sampleCallSortArgs))
-			So(rewriterManualAlphanumeric, ShouldResemble, actualRewriterManualAlphanumeric)
+			assert.Loosely(t, rewriterManualAlphanumeric, should.Resemble(actualRewriterManualAlphanumeric))
 		})
 
-		Convey("Matching to multiple rules, accepts the longest match", func() {
+		t.Run("Matching to multiple rules, accepts the longest match", func(t *ftt.Test) {
 			var sampleCallSortArgs = []string{
 				"name1",
 				"name2",
@@ -383,7 +385,7 @@ func TestGetRewriter(t *testing.T) {
 			)
 			rewriterAlphanumeric, _ := rewriterFactoryAlphanumeric.GetRewriter(abs("a/b/test.star"))
 			var actualRewriterAlphanumeric = rewriterFromConfig(convertOrderingToTable([]string{}))
-			So(rewriterAlphanumeric, ShouldResemble, actualRewriterAlphanumeric)
+			assert.Loosely(t, rewriterAlphanumeric, should.Resemble(actualRewriterAlphanumeric))
 		})
 	})
 }

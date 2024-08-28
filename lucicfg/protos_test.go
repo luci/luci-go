@@ -19,14 +19,14 @@ import (
 	"testing"
 
 	"go.starlark.net/starlark"
-
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 
 	"go.chromium.org/luci/common/proto/textpb"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/starlark/starlarkproto"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 // testMessageType represents testproto.Msg from misc/support/test.proto as
@@ -94,28 +94,28 @@ func TestProtos(t *testing.T) {
 
 	// Note: testMessage() is used by other tests. This test verifies it works
 	// at all.
-	Convey("testMessage works", t, func() {
+	ftt.Run("testMessage works", t, func(t *ftt.Test) {
 		i, err := testMessage(123, 0).Attr("i")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		asInt, err := starlark.AsInt32(i)
-		So(err, ShouldBeNil)
-		So(asInt, ShouldEqual, 123)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, asInt, should.Equal(123))
 	})
 
-	Convey("testMessageProto works", t, func() {
+	ftt.Run("testMessageProto works", t, func(t *ftt.Test) {
 		msg := testMessageProto("i: 456")
 		blob, err := textpb.Marshal(msg)
-		So(err, ShouldBeNil)
-		So(string(blob), ShouldEqual, "i: 456\n")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, string(blob), should.Equal("i: 456\n"))
 	})
 
-	Convey("Doc URL works", t, func() {
+	ftt.Run("Doc URL works", t, func(t *ftt.Test) {
 		name, doc := protoMessageDoc(testMessage(123, 0))
-		So(name, ShouldEqual, "Msg")
-		So(doc, ShouldEqual, "https://example.com/proto-doc") // see misc/support/test.proto
+		assert.Loosely(t, name, should.Equal("Msg"))
+		assert.Loosely(t, doc, should.Equal("https://example.com/proto-doc")) // see misc/support/test.proto
 	})
 
-	Convey("semanticallyEqual: true", t, func() {
+	ftt.Run("semanticallyEqual: true", t, func(t *ftt.Test) {
 		msg1 := testMessageProto(`
 			i: 123
 			nested: {
@@ -142,10 +142,10 @@ func TestProtos(t *testing.T) {
 				s: "ignore 2"
 			}
 		`)
-		So(semanticallyEqual(msg1, msg2), ShouldBeTrue)
+		assert.Loosely(t, semanticallyEqual(msg1, msg2), should.BeTrue)
 	})
 
-	Convey("semanticallyEqual: false", t, func() {
+	ftt.Run("semanticallyEqual: false", t, func(t *ftt.Test) {
 		msg1 := testMessageProto(`
 			i: 123
 			nested: {
@@ -172,6 +172,6 @@ func TestProtos(t *testing.T) {
 				s: "ignore 2"
 			}
 		`)
-		So(semanticallyEqual(msg1, msg2), ShouldBeFalse)
+		assert.Loosely(t, semanticallyEqual(msg1, msg2), should.BeFalse)
 	})
 }

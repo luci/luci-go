@@ -27,7 +27,6 @@ import (
 	"sync"
 
 	"go.starlark.net/starlark"
-
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/dynamicpb"

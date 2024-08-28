@@ -21,72 +21,73 @@ import (
 
 	"go.starlark.net/starlark"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestMeta(t *testing.T) {
 	t.Parallel()
 
-	Convey("Starlark setters", t, func() {
+	ftt.Run("Starlark setters", t, func(t *ftt.Test) {
 		m := Meta{}
 
-		Convey("Success", func() {
+		t.Run("Success", func(t *ftt.Test) {
 			// String.
-			So(m.setField("config_service_host", starlark.String("boo")), ShouldBeNil)
-			So(m.ConfigServiceHost, ShouldEqual, "boo")
+			assert.Loosely(t, m.setField("config_service_host", starlark.String("boo")), should.BeNil)
+			assert.Loosely(t, m.ConfigServiceHost, should.Equal("boo"))
 
 			// Bool.
-			So(m.setField("fail_on_warnings", starlark.Bool(true)), ShouldBeNil)
-			So(m.FailOnWarnings, ShouldBeTrue)
+			assert.Loosely(t, m.setField("fail_on_warnings", starlark.Bool(true)), should.BeNil)
+			assert.Loosely(t, m.FailOnWarnings, should.BeTrue)
 
 			// []string.
-			So(m.setField("tracked_files", starlark.NewList([]starlark.Value{
+			assert.Loosely(t, m.setField("tracked_files", starlark.NewList([]starlark.Value{
 				starlark.String("t1"), starlark.String("t2"),
-			})), ShouldBeNil)
-			So(m.TrackedFiles, ShouldResemble, []string{"t1", "t2"})
+			})), should.BeNil)
+			assert.Loosely(t, m.TrackedFiles, should.Resemble([]string{"t1", "t2"}))
 
 			// List of touched fields was updated.
-			So(touched(&m), ShouldResemble, []string{
+			assert.Loosely(t, touched(&m), should.Resemble([]string{
 				"config_service_host",
 				"fail_on_warnings",
 				"tracked_files",
-			})
+			}))
 		})
 
-		Convey("Errors", func() {
-			So(m.setField("unknown", starlark.None), ShouldErrLike, `set_meta: no such meta key "unknown"`)
-			So(m.setField("config_service_host", starlark.None), ShouldErrLike, `set_meta: got NoneType, expecting string`)
-			So(m.setField("fail_on_warnings", starlark.None), ShouldErrLike, `set_meta: got NoneType, expecting bool`)
-			So(m.setField("tracked_files", starlark.None), ShouldErrLike, `set_meta: got NoneType, expecting an iterable`)
-			So(m.setField("tracked_files", starlark.NewList([]starlark.Value{starlark.None})), ShouldErrLike, `set_meta: got NoneType, expecting string`)
+		t.Run("Errors", func(t *ftt.Test) {
+			assert.Loosely(t, m.setField("unknown", starlark.None), should.ErrLike(`set_meta: no such meta key "unknown"`))
+			assert.Loosely(t, m.setField("config_service_host", starlark.None), should.ErrLike(`set_meta: got NoneType, expecting string`))
+			assert.Loosely(t, m.setField("fail_on_warnings", starlark.None), should.ErrLike(`set_meta: got NoneType, expecting bool`))
+			assert.Loosely(t, m.setField("tracked_files", starlark.None), should.ErrLike(`set_meta: got NoneType, expecting an iterable`))
+			assert.Loosely(t, m.setField("tracked_files", starlark.NewList([]starlark.Value{starlark.None})), should.ErrLike(`set_meta: got NoneType, expecting string`))
 		})
 	})
 
-	Convey("Flag setters", t, func() {
+	ftt.Run("Flag setters", t, func(t *ftt.Test) {
 		fs := flag.FlagSet{}
 		m := Meta{}
 
 		m.AddFlags(&fs)
 
-		So(fs.Parse([]string{
+		assert.Loosely(t, fs.Parse([]string{
 			"-config-service-host", "boo",
 			"-tracked-files", "a,b,c",
 			"-fail-on-warnings",
-		}), ShouldBeNil)
+		}), should.BeNil)
 
-		So(m.ConfigServiceHost, ShouldEqual, "boo")
-		So(m.TrackedFiles, ShouldResemble, []string{"a", "b", "c"})
-		So(m.FailOnWarnings, ShouldBeTrue)
+		assert.Loosely(t, m.ConfigServiceHost, should.Equal("boo"))
+		assert.Loosely(t, m.TrackedFiles, should.Resemble([]string{"a", "b", "c"}))
+		assert.Loosely(t, m.FailOnWarnings, should.BeTrue)
 
-		So(touched(&m), ShouldResemble, []string{
+		assert.Loosely(t, touched(&m), should.Resemble([]string{
 			"config_service_host",
 			"fail_on_warnings",
 			"tracked_files",
-		})
+		}))
 	})
 
-	Convey("Merging", t, func() {
+	ftt.Run("Merging", t, func(t *ftt.Test) {
 		l := Meta{
 			ConfigServiceHost: "l1",
 			FailOnWarnings:    true,
@@ -103,11 +104,11 @@ func TestMeta(t *testing.T) {
 
 		l.PopulateFromTouchedIn(&r)
 
-		So(l, ShouldResemble, Meta{
+		assert.Loosely(t, l, should.Resemble(Meta{
 			ConfigServiceHost: "l1", // wasn't touched in r
 			FailOnWarnings:    false,
 			TrackedFiles:      []string{"r3"},
-		})
+		}))
 	})
 }
 

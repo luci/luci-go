@@ -20,22 +20,23 @@ import (
 	"path/filepath"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestFindTrackedFiles(t *testing.T) {
 	t.Parallel()
 
-	Convey("With a bunch of files", t, func() {
+	ftt.Run("With a bunch of files", t, func(t *ftt.Test) {
 		tmp, err := ioutil.TempDir("", "lucicfg")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		defer os.RemoveAll(tmp)
 
 		touch := func(p string) {
 			p = filepath.Join(tmp, filepath.FromSlash(p))
-			So(os.MkdirAll(filepath.Dir(p), 0700), ShouldBeNil)
-			So(os.WriteFile(p, nil, 0600), ShouldBeNil)
+			assert.Loosely(t, os.MkdirAll(filepath.Dir(p), 0700), should.BeNil)
+			assert.Loosely(t, os.WriteFile(p, nil, 0600), should.BeNil)
 		}
 
 		files := []string{
@@ -48,58 +49,58 @@ func TestFindTrackedFiles(t *testing.T) {
 			touch(f)
 		}
 
-		Convey("Works", func() {
+		t.Run("Works", func(t *ftt.Test) {
 			files, err := FindTrackedFiles(tmp, []string{"*.cfg", "sub/*", "!**/*-dev.cfg"})
-			So(err, ShouldBeNil)
-			So(files, ShouldResemble, []string{"a.cfg", "sub/a.cfg"})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, files, should.Resemble([]string{"a.cfg", "sub/a.cfg"}))
 		})
 
-		Convey("No negative", func() {
+		t.Run("No negative", func(t *ftt.Test) {
 			files, err := FindTrackedFiles(tmp, []string{"**/*.cfg"})
-			So(err, ShouldBeNil)
-			So(files, ShouldResemble, []string{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, files, should.Resemble([]string{
 				"a-dev.cfg",
 				"a.cfg",
 				"sub/a-dev.cfg",
 				"sub/a.cfg",
-			})
+			}))
 		})
 
-		Convey("No positive", func() {
+		t.Run("No positive", func(t *ftt.Test) {
 			files, err := FindTrackedFiles(tmp, []string{"!**/*.cfg"})
-			So(err, ShouldBeNil)
-			So(files, ShouldHaveLength, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, files, should.HaveLength(0))
 		})
 
-		Convey("Implied **/*", func() {
+		t.Run("Implied **/*", func(t *ftt.Test) {
 			files, err := FindTrackedFiles(tmp, []string{"!**/*-dev.cfg"})
-			So(err, ShouldBeNil)
-			So(files, ShouldResemble, []string{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, files, should.Resemble([]string{
 				"a.cfg",
 				"sub/a.cfg",
-			})
+			}))
 		})
 
-		Convey("Missing directory", func() {
+		t.Run("Missing directory", func(t *ftt.Test) {
 			files, err := FindTrackedFiles(filepath.Join(tmp, "missing"), []string{"*.cfg"})
-			So(err, ShouldBeNil)
-			So(files, ShouldHaveLength, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, files, should.HaveLength(0))
 		})
 
-		Convey("Empty patterns", func() {
+		t.Run("Empty patterns", func(t *ftt.Test) {
 			files, err := FindTrackedFiles(tmp, nil)
-			So(err, ShouldBeNil)
-			So(files, ShouldHaveLength, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, files, should.HaveLength(0))
 		})
 
-		Convey("Bad positive pattern", func() {
+		t.Run("Bad positive pattern", func(t *ftt.Test) {
 			_, err := FindTrackedFiles(tmp, []string{"["})
-			So(err, ShouldErrLike, `bad pattern "["`)
+			assert.Loosely(t, err, should.ErrLike(`bad pattern "["`))
 		})
 
-		Convey("Bad negative pattern", func() {
+		t.Run("Bad negative pattern", func(t *ftt.Test) {
 			_, err := FindTrackedFiles(tmp, []string{"*", "!["})
-			So(err, ShouldErrLike, `bad pattern "["`)
+			assert.Loosely(t, err, should.ErrLike(`bad pattern "["`))
 		})
 	})
 }
