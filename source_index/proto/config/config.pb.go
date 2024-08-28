@@ -150,8 +150,13 @@ type Config_Host_Repository struct {
 	// or "v8/v8".
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// Required. A list of refs to be indexed, specified as a list of ref
-	// regexes.
-	// The regexes are automatically wrapped in ^ and $.
+	// regexes. The regexes are automatically wrapped in ^ and $.
+	//
+	// Additionally, only refs that begin with
+	//   - refs/branch-heads/
+	//   - refs/heads/
+	//
+	// will be indexed.
 	IncludeRefRegexes []string `protobuf:"bytes,2,rep,name=include_ref_regexes,json=includeRefRegexes,proto3" json:"include_ref_regexes,omitempty"`
 }
 

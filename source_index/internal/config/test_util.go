@@ -30,8 +30,15 @@ var TestCfg = &configpb.Config{
 			Host: "chromium.googlesource.com",
 			Repositories: []*configpb.Config_Host_Repository{
 				{
-					Name:              "chromium/src",
-					IncludeRefRegexes: []string{"^refs/branch-heads/.+$", "^refs/heads/main$"},
+					Name: "chromium/src",
+					IncludeRefRegexes: []string{
+						"^refs/branch-heads/.+$",
+						// Should be wrapped in "^...$" even when not specified.
+						"refs/heads/main",
+						// This regex is accepted. But we won't ingest commits from these
+						// refs.
+						"^refs/arbitrary/.+$",
+					},
 				},
 				{
 					Name:              "chromiumos/manifest",

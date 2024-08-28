@@ -43,8 +43,14 @@ func TestConfig(t *testing.T) {
 			// Match regex.
 			assert.That(t, cfg.ShouldIndexRef("chromium.googlesource.com", "chromium/src", "refs/branch-heads/release-101"), should.BeTrue)
 
+			// Match regex but not an indexable ref.
+			assert.That(t, cfg.ShouldIndexRef("chromium.googlesource.com", "chromium/src", "refs/arbitrary/release-101"), should.BeFalse)
+
 			// Match another regex.
 			assert.That(t, cfg.ShouldIndexRef("chromium.googlesource.com", "chromium/src", "refs/heads/main"), should.BeTrue)
+
+			// Do not match regex after the regex is wrapped in "^...$".
+			assert.That(t, cfg.ShouldIndexRef("chromium.googlesource.com", "chromium/src", "refs/heads/mainsuffix"), should.BeFalse)
 
 			// Don't match any regex.
 			assert.That(t, cfg.ShouldIndexRef("chromium.googlesource.com", "chromium/src", "refs/heads/another-branch"), should.BeFalse)
