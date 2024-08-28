@@ -15,7 +15,7 @@
 import validator from 'validator';
 
 export const nameRe = /^([a-z\-]+\/)?[0-9a-z_\-\.@]{1,100}$/;
-export const membersRe = /^((user|bot|service|anonymous):)?[\w+%.@*\[\]-]+$/;
+export const membersRe = /^((user|bot|project|service|anonymous):)?[\w+%.@*\[\]-]+$/;
 
 // Appends '<prefix>:' to a string if it doesn't have a prefix.
 const addPrefix = (prefix: string, str: string) => {
