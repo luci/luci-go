@@ -19,7 +19,7 @@ import { AuthGroup } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/g
 export function createMockGroupIndividual(name: string, callerCanModify: boolean) {
   return AuthGroup.fromPartial({
     name: name,
-    description: 'testDescrition',
+    description: 'testDescription',
     members: ['member1', 'member2'],
     nested: ['subgroup1', 'subgroup2'],
     owners: 'testOwners',

@@ -28,7 +28,7 @@ import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableRow from '@mui/material/TableRow';
-import { TextareaAutosize } from '@mui/base/TextareaAutosize';
+import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { FormControl } from '@mui/material';
 import { useAuthServiceClient } from '@/authdb/hooks/prpc_clients';
@@ -200,9 +200,16 @@ export function GroupsForm({ name, onDelete = () => { } }: GroupsFormProps) {
   const resetForm = () => {
     setDescriptionMode(false);
     setOwnersMode(false);
+    setChangedState(false);
     membersRef.current?.setReadonly();
     globsRef.current?.setReadonly();
     subgroupsRef.current?.setReadonly();
+  }
+
+  const resetFormValues = () => {
+    setDescription(initialDescription);
+    setOwners(initialOwners);
+    resetForm();
   }
 
   const submitForm = () => {
@@ -273,13 +280,13 @@ export function GroupsForm({ name, onDelete = () => { } }: GroupsFormProps) {
           <Typography variant="h5" sx={{ pl: 1.5 }}> {name} </Typography>
           {!isExternal &&
             <TableContainer sx={{ p: 0, width: '100%' }} >
-              <Table onMouseEnter={() => setShowDescriptionEdit(true)} onMouseLeave={() => setShowDescriptionEdit(false)}>
+              <Table onMouseEnter={() => setShowDescriptionEdit(true)} onMouseLeave={() => setShowDescriptionEdit(false)} data-testid='description-table'>
                 <TableBody>
                   <TableRow>
                     <TableCell sx={{ pb: 0 }} style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', minHeight: '45px' }}>
                       <Typography variant="h6"> Description</Typography>
                       {(showDescriptionEdit || descriptionMode) && callerCanModify &&
-                        <IconButton color='primary' onClick={changeDescriptionMode} sx={{ p: 0, ml: 1.5 }}>
+                        <IconButton color='primary' onClick={changeDescriptionMode} sx={{ p: 0, ml: 1.5 }} data-testid='edit-description-icon'>
                           {descriptionMode
                             ? <DoneIcon />
                             : <EditIcon />
@@ -291,7 +298,7 @@ export function GroupsForm({ name, onDelete = () => { } }: GroupsFormProps) {
                   <TableRow>
                     <TableCell align='left' style={{ width: '95%' }} sx={{ pt: 0 }}>
                       {descriptionMode
-                        ? <TextareaAutosize value={description} style={{ width: '100%', whiteSpace: 'pre-wrap' }} onChange={(e) => setDescription(e.target.value)} id='descriptionTextfield'></TextareaAutosize>
+                        ? <TextField value={description} style={{ width: '100%', whiteSpace: 'pre-wrap' }} onChange={(e) => setDescription(e.target.value)} id='descriptionTextfield' data-testid='description-textfield'></TextField>
                         : <Typography variant="body2" style={{ width: '100%' }}> {description} </Typography>
                       }
                     </TableCell>
@@ -316,7 +323,7 @@ export function GroupsForm({ name, onDelete = () => { } }: GroupsFormProps) {
                   <TableRow>
                     <TableCell align='left' style={{ width: '95%' }} sx={{ pt: 0 }}>
                       {ownersMode
-                        ? <TextareaAutosize value={owners} style={{ width: '100%' }} onChange={(e) => setOwners(e.target.value)} id='ownersTextfield'></TextareaAutosize>
+                        ? <TextField value={owners} style={{ width: '100%' }} onChange={(e) => setOwners(e.target.value)} id='ownersTextfield'></TextField>
                         : <Typography variant="body2" style={{ width: '100%' }}> {owners} </Typography>
                       }
                     </TableCell>
@@ -335,7 +342,12 @@ export function GroupsForm({ name, onDelete = () => { } }: GroupsFormProps) {
                   <GroupsFormList name='Globs' initialItems={globs} ref={globsRef} />
                   <GroupsFormList name='Subgroups' initialItems={subgroups} ref={subgroupsRef} />
                   {changedState &&
-                    <Typography variant="subtitle1" sx={{pl: 1.5}}> You have unsaved changes! </Typography>
+                    <>
+                      <Typography variant="subtitle1" sx={{ pl: 1.5 }}> You have unsaved changes! </Typography>
+                      <Button variant="contained" color="error" disableElevation style={{ width: '15%' }} sx={{ mt: 1.5, ml: 1.5 }} onClick={resetFormValues} data-testid='reset-button'>
+                        Reset Form
+                      </Button>
+                    </>
                   }
                   <div style={{ display: 'flex', flexDirection: 'row' }}>
                     <Button variant="contained" disableElevation style={{ width: '15%' }} sx={{ mt: 1.5, ml: 1.5 }} onClick={submitForm} data-testid='submit-button' disabled={disableSubmit}>

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { render, screen } from '@testing-library/react';
-
+import { render, screen, fireEvent } from '@testing-library/react';
+//
 import { createMockGroupIndividual, mockFetchGetGroup, mockErrorFetchingGetGroup } from '@/authdb/testing_tools/mocks/group_individual_mock';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 import List from '@mui/material/List';
@@ -31,7 +31,7 @@ describe('<GroupsForm />', () => {
     render(
       <FakeContextProvider>
         <List>
-            <GroupsForm name='123'/>
+          <GroupsForm name='123' />
         </List>
       </FakeContextProvider>,
     );
@@ -51,9 +51,9 @@ describe('<GroupsForm />', () => {
     mockErrorFetchingGetGroup();
 
     render(
-        <FakeContextProvider>
-            <GroupsForm name='123'/>
-        </FakeContextProvider>,
+      <FakeContextProvider>
+        <GroupsForm name='123' />
+      </FakeContextProvider>,
     );
     await screen.findByTestId('groups-form-error');
 
@@ -68,7 +68,7 @@ describe('<GroupsForm />', () => {
     render(
       <FakeContextProvider>
         <List>
-            <GroupsForm name='external/123'/>
+          <GroupsForm name='external/123' />
         </List>
       </FakeContextProvider>,
     );
@@ -93,7 +93,7 @@ describe('<GroupsForm />', () => {
     render(
       <FakeContextProvider>
         <List>
-            <GroupsForm name='123'/>
+          <GroupsForm name='123' />
         </List>
       </FakeContextProvider>,
     );
@@ -112,9 +112,9 @@ describe('<GroupsForm />', () => {
     mockErrorUpdateGroup();
 
     render(
-        <FakeContextProvider>
-            <GroupsForm name='123'/>
-        </FakeContextProvider>,
+      <FakeContextProvider>
+        <GroupsForm name='123' />
+      </FakeContextProvider>,
     );
     await screen.findByTestId('groups-form');
 
@@ -134,7 +134,7 @@ describe('<GroupsForm />', () => {
     render(
       <FakeContextProvider>
         <List>
-            <GroupsForm name='123'/>
+          <GroupsForm name='123' />
         </List>
       </FakeContextProvider>,
     );
@@ -152,9 +152,9 @@ describe('<GroupsForm />', () => {
     mockErrorDeleteGroup();
 
     render(
-        <FakeContextProvider>
-            <GroupsForm name='123'/>
-        </FakeContextProvider>,
+      <FakeContextProvider>
+        <GroupsForm name='123' />
+      </FakeContextProvider>,
     );
     await screen.findByTestId('groups-form');
 
@@ -172,9 +172,9 @@ describe('<GroupsForm />', () => {
     mockFetchGetGroup(mockGroup);
 
     render(
-        <FakeContextProvider>
-            <GroupsForm name='123'/>
-        </FakeContextProvider>,
+      <FakeContextProvider>
+        <GroupsForm name='123' />
+      </FakeContextProvider>,
     );
     await screen.findByTestId('groups-form');
 
@@ -183,5 +183,41 @@ describe('<GroupsForm />', () => {
     const submitButton = screen.queryByTestId('submit-button')
     expect(submitButton).toBeNull();
     expect(screen.getByText('You do not have sufficient permissions to modify this group.')).toBeInTheDocument();
+  });
+
+  test('reset button resets form values', async () => {
+    const mockGroup = createMockGroupIndividual('123', true);
+    mockFetchGetGroup(mockGroup);
+
+    render(
+      <FakeContextProvider>
+        <GroupsForm name='123' />
+      </FakeContextProvider>,
+    );
+    await screen.findByTestId('groups-form');
+
+    // Put the Description in edit mode.
+    fireEvent.mouseEnter(screen.getByTestId('description-table'));
+    await screen.findByTestId('edit-description-icon');
+    const editButtton = screen.getByTestId('edit-description-icon');
+    act(() => editButtton.click());
+
+    // Change the group's description.
+    const descriptionTextfield = screen.getByTestId('description-textfield').querySelector('input');
+    act(() => {
+
+      fireEvent.change(descriptionTextfield!, { target: { value: 'new description' } });
+    });
+    expect(descriptionTextfield!.value).toBe('new description');
+
+    // Turn off edit mode for the Description.
+    act(() => editButtton.click());
+
+    // The reset button should be displayed now that there are unsaved changes.
+    expect(screen.getByTestId('reset-button')).toBeInTheDocument();
+
+    // Resetting the form should restore the original description.
+    act(() => screen.getByTestId('reset-button').click());
+    expect(screen.getByText('testDescription')).toBeInTheDocument();
   });
 });
