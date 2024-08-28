@@ -12,17 +12,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# DO NOT ADD TO THIS FILE. Declare new cron jobs in terraform instead.
 cron:
-- description: "Clear user columns in TreeStatus table."
-  url: /internal/cron/clear-status-users
-  schedule: every 1 hours synchronized
-- description: "Export status data to BigQuery."
-  url: /internal/cron/export-status
-  schedule: every 5 minutes from 00:07 to 23:59
-- description: "Update or create views in datasets."
-  url: /internal/cron/ensure-views
-  schedule: every 10 minutes synchronized
-- description: "Update the service-wide configuration"
-  url: /internal/cron/update-config
-  schedule: every 10 minutes
-
