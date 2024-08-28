@@ -83,6 +83,8 @@ export interface Artifact {
    * Having the test status here allows setting the correct status of artifact in BigQuery.
    */
   readonly testStatus: TestStatus;
+  /** Indicates whether ListArtifactLines RPC can be used with this artifact. */
+  readonly hasLines: boolean;
 }
 
 export interface ArtifactLine {
@@ -193,6 +195,7 @@ function createBaseArtifact(): Artifact {
     contents: new Uint8Array(0),
     gcsUri: "",
     testStatus: 0,
+    hasLines: false,
   };
 }
 
@@ -224,6 +227,9 @@ export const Artifact = {
     }
     if (message.testStatus !== 0) {
       writer.uint32(72).int32(message.testStatus);
+    }
+    if (message.hasLines !== false) {
+      writer.uint32(88).bool(message.hasLines);
     }
     return writer;
   },
@@ -298,6 +304,13 @@ export const Artifact = {
 
           message.testStatus = reader.int32() as any;
           continue;
+        case 11:
+          if (tag !== 88) {
+            break;
+          }
+
+          message.hasLines = reader.bool();
+          continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -318,6 +331,7 @@ export const Artifact = {
       contents: isSet(object.contents) ? bytesFromBase64(object.contents) : new Uint8Array(0),
       gcsUri: isSet(object.gcsUri) ? globalThis.String(object.gcsUri) : "",
       testStatus: isSet(object.testStatus) ? testStatusFromJSON(object.testStatus) : 0,
+      hasLines: isSet(object.hasLines) ? globalThis.Boolean(object.hasLines) : false,
     };
   },
 
@@ -350,6 +364,9 @@ export const Artifact = {
     if (message.testStatus !== 0) {
       obj.testStatus = testStatusToJSON(message.testStatus);
     }
+    if (message.hasLines !== false) {
+      obj.hasLines = message.hasLines;
+    }
     return obj;
   },
 
@@ -367,6 +384,7 @@ export const Artifact = {
     message.contents = object.contents ?? new Uint8Array(0);
     message.gcsUri = object.gcsUri ?? "";
     message.testStatus = object.testStatus ?? 0;
+    message.hasLines = object.hasLines ?? false;
     return message;
   },
 };
