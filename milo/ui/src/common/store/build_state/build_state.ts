@@ -118,12 +118,16 @@ export class StepExt {
     return bodyContainer;
   }
 
-  @computed get filteredLogs() {
+  @computed get nonDebugLogs() {
     const logs = this.logs || [];
 
-    return this.userConfig?.build.steps.showDebugLogs ?? true
-      ? logs
-      : logs.filter((log) => !log.name.startsWith('$'));
+    return logs.filter((log) => !log.name.startsWith('$'));
+  }
+
+  @computed get debugLogs() {
+    const logs = this.logs || [];
+
+    return logs.filter((log) => log.name.startsWith('$'));
   }
 
   @computed get isPinned() {

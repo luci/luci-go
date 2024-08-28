@@ -97,12 +97,6 @@ export const StepDisplayConfig = observer(() => {
         onChange={(checked) => stepsConfig.setElideSucceededSteps(checked)}
         sx={{ mr: 1 }}
       />
-      <LabeledCheckBox
-        label="Debug Logs"
-        checked={stepsConfig.showDebugLogs}
-        onChange={(checked) => stepsConfig.setShowDebugLogs(checked)}
-        sx={{ mx: 1 }}
-      />
       <Box
         sx={{
           display: 'inline-grid',

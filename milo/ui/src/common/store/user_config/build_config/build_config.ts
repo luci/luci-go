@@ -26,7 +26,6 @@ export const enum ExpandStepOption {
 export const BuildStepsConfig = types
   .model('BuildStepsConfig', {
     elideSucceededSteps: true,
-    showDebugLogs: false,
     expandByDefault: ExpandStepOption.WithNonSuccessful,
     /**
      * SHOULD NOT BE ACCESSED DIRECTLY. Use the methods instead.
@@ -42,9 +41,6 @@ export const BuildStepsConfig = types
   .actions((self) => ({
     setElideSucceededSteps(elide: boolean) {
       self.elideSucceededSteps = elide;
-    },
-    setShowDebugLogs(show: boolean) {
-      self.showDebugLogs = show;
     },
     setExpandByDefault(opt: ExpandStepOption) {
       self.expandByDefault = opt;

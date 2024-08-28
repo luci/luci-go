@@ -111,12 +111,12 @@ export class BuildPageStepEntryElement
         ${this.step.summary?.cloneNode(true)}
       </div>
       <ul
-        id="log-links"
+        class="log-links"
         style=${styleMap({
-          display: this.step.filteredLogs.length ? '' : 'none',
+          display: this.step.nonDebugLogs.length ? '' : 'none',
         })}
       >
-        ${this.step.filteredLogs.map(
+        ${this.step.nonDebugLogs.map(
           (log) =>
             html`<li>
               <milo-buildbucket-log-link
@@ -125,6 +125,24 @@ export class BuildPageStepEntryElement
             </li>`,
         )}
       </ul>
+      <div
+        id="debug-log-links"
+        style=${styleMap({
+          display: this.step.debugLogs.length ? '' : 'none',
+        })}
+      >
+        <div id="debug-logs-header">Debug logs:</div>
+        <ul class="log-links">
+          ${this.step.debugLogs.map(
+            (log) =>
+              html`<li>
+                <milo-buildbucket-log-link
+                  .log=${log}
+                ></milo-buildbucket-log-link>
+              </li>`,
+          )}
+        </ul>
+      </div>
       ${this.step.tags.length
         ? html`<milo-tags-entry .tags=${this.step.tags}></milo-tags-entry>`
         : ''}
@@ -400,15 +418,19 @@ export class BuildPageStepEntryElement
         color: var(--default-text-color);
       }
 
-      #log-links {
+      .log-links {
         margin: 3px 0;
         padding-inline-start: 28px;
         clear: both;
         overflow-wrap: break-word;
       }
 
-      #log-links > li {
+      .log-links > li {
         list-style-type: circle;
+      }
+
+      #debug-logs-header {
+        margin-top: 12px;
       }
     `,
   ];
