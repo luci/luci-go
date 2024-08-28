@@ -42,10 +42,10 @@ func update(ctx context.Context) error {
 }
 
 // Get returns the config stored in the context.
-func Get(ctx context.Context) (Config, error) {
+func Get(ctx context.Context) (config, error) {
 	cfg, err := cachedCfg.Get(ctx, nil)
 	if err != nil {
-		return nil, err
+		return config{}, err
 	}
-	return &config{cfg.(*configpb.Config)}, nil
+	return config{cfg.(*configpb.Config)}, nil
 }

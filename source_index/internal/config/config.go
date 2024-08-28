@@ -37,54 +37,43 @@ var IndexableRefPrefixes = []string{
 	"refs/heads/",
 }
 
-// Config provides some methods for interacting with the config.
-type Config interface {
-	// HasHost returns whether the host is configured.
-	HasHost(host string) bool
-	// ShouldIndexRepo returns whether the specified repository should be indexed.
-	ShouldIndexRepo(host, repo string) bool
-	// ShouldIndexRef returns whether the specified ref should be indexed.
-	ShouldIndexRef(host, repo, ref string) bool
-	// HostConfigs returns a list of host configs.
-	HostConfigs() []HostConfig
-}
-
-// config is a wrapper around `*configpb.Config` that implements `Config`.
+// config is a wrapper around `*configpb.Config` that  provides some methods for
+// interacting with the config.
 type config struct {
-	*configpb.Config
+	cfg *configpb.Config
 }
 
-// HasHost implements Config.
+// HasHost returns whether the host is configured.
 func (c *config) HasHost(host string) bool {
-	return slices.ContainsFunc(c.Hosts, func(hostConfig *configpb.Config_Host) bool {
+	return slices.ContainsFunc(c.cfg.Hosts, func(hostConfig *configpb.Config_Host) bool {
 		return hostConfig.Host == host
 	})
 }
 
-// ShouldIndexRepo implements Config.
+// ShouldIndexRepo returns whether the specified repository should be indexed.
 func (c config) ShouldIndexRepo(host, repo string) bool {
-	hostIndex := slices.IndexFunc(c.Hosts, func(hostConfig *configpb.Config_Host) bool {
+	hostIndex := slices.IndexFunc(c.cfg.Hosts, func(hostConfig *configpb.Config_Host) bool {
 		return hostConfig.Host == host
 	})
 	if hostIndex < 0 {
 		return false
 	}
-	hostConfig := c.Hosts[hostIndex]
+	hostConfig := c.cfg.Hosts[hostIndex]
 
 	return slices.ContainsFunc(hostConfig.Repositories, func(repoConfig *configpb.Config_Host_Repository) bool {
 		return repoConfig.Name == repo
 	})
 }
 
-// ShouldIndexRef implements Config.
+// ShouldIndexRef returns whether the specified ref should be indexed.
 func (c config) ShouldIndexRef(host, repo, ref string) bool {
-	hostIndex := slices.IndexFunc(c.Hosts, func(hostConfig *configpb.Config_Host) bool {
+	hostIndex := slices.IndexFunc(c.cfg.Hosts, func(hostConfig *configpb.Config_Host) bool {
 		return hostConfig.Host == host
 	})
 	if hostIndex < 0 {
 		return false
 	}
-	hostConfig := c.Hosts[hostIndex]
+	hostConfig := c.cfg.Hosts[hostIndex]
 
 	repoIndex := slices.IndexFunc(hostConfig.Repositories, func(repoConfig *configpb.Config_Host_Repository) bool {
 		return repoConfig.Name == repo
@@ -97,64 +86,47 @@ func (c config) ShouldIndexRef(host, repo, ref string) bool {
 	return repositoryConfig{repoConfig}.ShouldIndexRef(ref)
 }
 
-// HostConfigs implements Config.
-func (c config) HostConfigs() []HostConfig {
-	hostConfigs := make([]HostConfig, 0, len(c.Hosts))
-	for _, host := range c.Hosts {
+// HostConfigs returns a list of host configs.
+func (c config) HostConfigs() []hostConfig {
+	hostConfigs := make([]hostConfig, 0, len(c.cfg.Hosts))
+	for _, host := range c.cfg.Hosts {
 		hostConfigs = append(hostConfigs, hostConfig{host})
 	}
 	return hostConfigs
 }
 
-// HostConfig provides some methods for interacting with the host config.
-type HostConfig interface {
-	// Host returns the host name.
-	Host() string
-	// RepoConfigs returns a list of repository configs.
-	RepoConfigs() []RepositoryConfig
-}
-
-// hostConfig is a wrapper around `*configpb.Config_Host` that implements
-// `HostConfig`.
+// hostConfig is a wrapper around `*configpb.Config_Host` that provides some
+// methods for interacting with the host config.
 type hostConfig struct {
-	*configpb.Config_Host
+	cfg *configpb.Config_Host
 }
 
-// Host implements HostConfig.
+// Host returns the host name.
 func (hc hostConfig) Host() string {
-	return hc.GetHost()
+	return hc.cfg.GetHost()
 }
 
-// RepoConfigs implements HostConfig.
-func (hc hostConfig) RepoConfigs() []RepositoryConfig {
-	repoConfigs := make([]RepositoryConfig, 0, len(hc.Repositories))
-	for _, repo := range hc.Repositories {
+// RepoConfigs returns a list of repository configs.
+func (hc hostConfig) RepoConfigs() []repositoryConfig {
+	repoConfigs := make([]repositoryConfig, 0, len(hc.cfg.Repositories))
+	for _, repo := range hc.cfg.Repositories {
 		repoConfigs = append(repoConfigs, repositoryConfig{repo})
 	}
 	return repoConfigs
 }
 
-// RepositoryConfig provides some methods for interacting with the repository
-// config.
-type RepositoryConfig interface {
-	// Name returns the name of the repository.
-	Name() string
-	// ShouldIndexRef returns whether the specified ref should be indexed.
-	ShouldIndexRef(ref string) bool
-}
-
-// hostConfig is a wrapper around `*configpb.Config_Host_Repository` that
-// implements `RepositoryConfig`.
+// repositoryConfig is a wrapper around `*configpb.Config_Host_Repository` that
+// provides some methods for interacting with the repository config.
 type repositoryConfig struct {
-	*configpb.Config_Host_Repository
+	cfg *configpb.Config_Host_Repository
 }
 
-// Name implements Config.
+// Name returns the name of the repository.
 func (rc repositoryConfig) Name() string {
-	return rc.GetName()
+	return rc.cfg.GetName()
 }
 
-// ShouldIndexRef implements Config.
+// ShouldIndexRef returns whether the specified ref should be indexed.
 func (rc repositoryConfig) ShouldIndexRef(ref string) bool {
 	matchAnyPrefix := slices.ContainsFunc(IndexableRefPrefixes, func(prefix string) bool {
 		return strings.HasPrefix(ref, prefix)
@@ -163,7 +135,7 @@ func (rc repositoryConfig) ShouldIndexRef(ref string) bool {
 		return false
 	}
 
-	return slices.ContainsFunc(rc.IncludeRefRegexes, func(regexStr string) bool {
+	return slices.ContainsFunc(rc.cfg.IncludeRefRegexes, func(regexStr string) bool {
 		regex := regexp.MustCompile("^" + regexStr + "$")
 		return regex.MatchString(ref)
 	})
