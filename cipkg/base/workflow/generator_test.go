@@ -18,16 +18,17 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
+
 	"go.chromium.org/luci/cipkg/base/generators"
 	"go.chromium.org/luci/cipkg/core"
 	"go.chromium.org/luci/cipkg/internal/testutils"
-	"go.chromium.org/luci/common/testing/assertions"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestGenerator(t *testing.T) {
-	Convey("Test Generator", t, func() {
+	ftt.Run("Test Generator", t, func(t *ftt.Test) {
 		ctx := context.Background()
 
 		g := &Generator{
@@ -38,15 +39,15 @@ func TestGenerator(t *testing.T) {
 		}
 
 		a, err := g.Generate(ctx, generators.Platforms{})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		So(a.Name, ShouldEqual, "first")
-		So(a.Deps, ShouldHaveLength, 1)
-		So(a.Deps[0].Name, ShouldEqual, "second")
-		So(a.Metadata.RuntimeDeps, ShouldHaveLength, 1)
-		So(a.Metadata.RuntimeDeps[0], assertions.ShouldResembleProto, a.Deps[0])
+		assert.Loosely(t, a.Name, should.Equal("first"))
+		assert.Loosely(t, a.Deps, should.HaveLength(1))
+		assert.Loosely(t, a.Deps[0].Name, should.Equal("second"))
+		assert.Loosely(t, a.Metadata.RuntimeDeps, should.HaveLength(1))
+		assert.Loosely(t, a.Metadata.RuntimeDeps[0], should.Match(a.Deps[0]))
 		cmd := testutils.Assert[*core.Action_Command](t, a.Spec)
-		So(cmd.Command.Env, ShouldEqual, []string{"depsBuildHost={{.second}}", "second={{.second}}"})
+		assert.Loosely(t, cmd.Command.Env, should.Match([]string{"depsBuildHost={{.second}}", "second={{.second}}"}))
 	})
 
 }

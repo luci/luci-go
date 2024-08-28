@@ -17,12 +17,13 @@ package testutils
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func Assert[T any](tb testing.TB, x any) T {
 	tb.Helper()
 	ret, ok := x.(T)
-	So(ok, ShouldBeTrue)
+	assert.Loosely(tb, ok, should.BeTrue)
 	return ret
 }

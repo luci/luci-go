@@ -21,12 +21,13 @@ import (
 	"go.chromium.org/luci/cipd/client/cipd/ensure"
 	"go.chromium.org/luci/cipkg/core"
 	"go.chromium.org/luci/cipkg/internal/testutils"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestCIPDExport(t *testing.T) {
-	Convey("Test cipd export", t, func() {
+	ftt.Run("Test cipd export", t, func(t *ftt.Test) {
 		ctx := context.Background()
 		plats := Platforms{}
 
@@ -41,12 +42,12 @@ func TestCIPDExport(t *testing.T) {
 			ServiceURL: "http://something",
 		}
 		a, err := g.Generate(ctx, plats)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		cipd := testutils.Assert[*core.Action_Cipd](t, a.Spec)
-		So(cipd.Cipd.EnsureFile, ShouldEqual, "infra/3pp/tools/git  version:2@2.36.1.chromium.8\n")
-		So(cipd.Cipd.Env, ShouldResemble, []string{
+		assert.Loosely(t, cipd.Cipd.EnsureFile, should.Equal("infra/3pp/tools/git  version:2@2.36.1.chromium.8\n"))
+		assert.Loosely(t, cipd.Cipd.Env, should.Match([]string{
 			"CIPD_SERVICE_URL=http://something",
-		})
+		}))
 	})
 }

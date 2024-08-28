@@ -25,19 +25,21 @@ import (
 	"runtime"
 	"testing"
 
+	"go.chromium.org/luci/common/system/environ"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
+
 	"go.chromium.org/luci/cipkg/core"
 	"go.chromium.org/luci/cipkg/internal/testutils"
-	"go.chromium.org/luci/common/system/environ"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestProcessCopy(t *testing.T) {
-	Convey("Test action processor for copy", t, func() {
+	ftt.Run("Test action processor for copy", t, func(t *ftt.Test) {
 		ap := NewActionProcessor()
 		pm := testutils.NewMockPackageManage("")
 
-		Convey("ok", func() {
+		t.Run("ok", func(t *ftt.Test) {
 			copy := &core.ActionFilesCopy{
 				Files: map[string]*core.ActionFilesCopy_Source{
 					"test/file": {
@@ -56,14 +58,14 @@ func TestProcessCopy(t *testing.T) {
 				},
 				Spec: &core.Action_Copy{Copy: copy},
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			checkReexecArg(pkg.Derivation.Args, copy)
-			So(environ.New(pkg.Derivation.Env).Get("something"), ShouldEqual, pkg.BuildDependencies[0].Handler.OutputDirectory())
+			checkReexecArg(t, pkg.Derivation.Args, copy)
+			assert.Loosely(t, environ.New(pkg.Derivation.Env).Get("something"), should.Equal(pkg.BuildDependencies[0].Handler.OutputDirectory()))
 		})
 
 		// DerivationID shouldn't depend on path if version is set.
-		Convey("version", func() {
+		t.Run("version", func(t *ftt.Test) {
 			copy1 := &core.ActionFilesCopy{
 				Files: map[string]*core.ActionFilesCopy_Source{
 					"test/file": {
@@ -83,7 +85,7 @@ func TestProcessCopy(t *testing.T) {
 				},
 				Spec: &core.Action_Copy{Copy: copy1},
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			copy2 := &core.ActionFilesCopy{
 				Files: map[string]*core.ActionFilesCopy_Source{
@@ -104,10 +106,10 @@ func TestProcessCopy(t *testing.T) {
 				},
 				Spec: &core.Action_Copy{Copy: copy2},
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(pkg1.Derivation.Args, ShouldNotEqual, pkg2.Derivation.Args)
-			So(pkg1.DerivationID, ShouldEqual, pkg2.DerivationID)
+			assert.Loosely(t, pkg1.Derivation.Args, should.NotMatch(pkg2.Derivation.Args))
+			assert.Loosely(t, pkg1.DerivationID, should.Equal(pkg2.DerivationID))
 		})
 	})
 }
@@ -116,42 +118,42 @@ func TestProcessCopy(t *testing.T) {
 var actionCopyTestEmbed embed.FS
 
 func TestEmbedFSRegistration(t *testing.T) {
-	Convey("Test embedFS registration", t, func() {
+	ftt.Run("Test embedFS registration", t, func(t *ftt.Test) {
 		e := newFilesCopyExecutor()
 
-		Convey("ok", func() {
-			So(func() { e.StoreEmbed("ref1", actionCopyTestEmbed) }, ShouldNotPanic)
+		t.Run("ok", func(t *ftt.Test) {
+			assert.Loosely(t, func() { e.StoreEmbed("ref1", actionCopyTestEmbed) }, should.NotPanic)
 			_, ok := e.LoadEmbed("ref1")
-			So(ok, ShouldBeTrue)
+			assert.Loosely(t, ok, should.BeTrue)
 			_, ok = e.LoadEmbed("ref2")
-			So(ok, ShouldBeFalse)
+			assert.Loosely(t, ok, should.BeFalse)
 		})
-		Convey("same ref", func() {
-			So(func() { e.StoreEmbed("ref1", actionCopyTestEmbed) }, ShouldNotPanic)
-			So(func() { e.StoreEmbed("ref2", actionCopyTestEmbed) }, ShouldNotPanic)
-			So(func() { e.StoreEmbed("ref1", actionCopyTestEmbed) }, ShouldPanic)
+		t.Run("same ref", func(t *ftt.Test) {
+			assert.Loosely(t, func() { e.StoreEmbed("ref1", actionCopyTestEmbed) }, should.NotPanic)
+			assert.Loosely(t, func() { e.StoreEmbed("ref2", actionCopyTestEmbed) }, should.NotPanic)
+			assert.Loosely(t, func() { e.StoreEmbed("ref1", actionCopyTestEmbed) }, should.Panic)
 		})
-		Convey("sealed", func() {
-			So(func() { e.StoreEmbed("ref1", actionCopyTestEmbed) }, ShouldNotPanic)
+		t.Run("sealed", func(t *ftt.Test) {
+			assert.Loosely(t, func() { e.StoreEmbed("ref1", actionCopyTestEmbed) }, should.NotPanic)
 			e.LoadEmbed("ref1")
-			So(func() { e.StoreEmbed("ref2", actionCopyTestEmbed) }, ShouldPanic)
+			assert.Loosely(t, func() { e.StoreEmbed("ref2", actionCopyTestEmbed) }, should.Panic)
 		})
 
-		Convey("global", func() {
+		t.Run("global", func(t *ftt.Test) {
 			RegisterEmbed("ref1", actionCopyTestEmbed)
 			_, ok := defaultFilesCopyExecutor.LoadEmbed("ref1")
-			So(ok, ShouldBeTrue)
+			assert.Loosely(t, ok, should.BeTrue)
 		})
 	})
 }
 
 func TestExecuteCopy(t *testing.T) {
-	Convey("Test execute action copy", t, func() {
+	ftt.Run("Test execute action copy", t, func(t *ftt.Test) {
 		ctx := context.Background()
 		e := newFilesCopyExecutor()
 		out := t.TempDir()
 
-		Convey("output", func() {
+		t.Run("output", func(t *ftt.Test) {
 			ctx = environ.New([]string{"somedrv=/abc/efg"}).SetInCtx(ctx)
 			a := &core.ActionFilesCopy{
 				Files: map[string]*core.ActionFilesCopy_Source{
@@ -165,25 +167,25 @@ func TestExecuteCopy(t *testing.T) {
 			}
 
 			err := e.Execute(ctx, a, out)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			{
 				l, err := os.Readlink(filepath.Join(out, "test/file"))
-				So(err, ShouldBeNil)
-				So(l, ShouldEqual, filepath.FromSlash("/abc/efg/something"))
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, l, should.Equal(filepath.FromSlash("/abc/efg/something")))
 			}
 		})
 
-		Convey("local", func() {
+		t.Run("local", func(t *ftt.Test) {
 			src := t.TempDir()
 			f, err := os.Create(filepath.Join(src, "file"))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			_, err = f.WriteString("content")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			err = f.Close()
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			Convey("dir", func() {
+			t.Run("dir", func(t *ftt.Test) {
 				a := &core.ActionFilesCopy{
 					Files: map[string]*core.ActionFilesCopy_Source{
 						filepath.FromSlash("test/dir"): {
@@ -196,19 +198,19 @@ func TestExecuteCopy(t *testing.T) {
 				}
 
 				err := e.Execute(ctx, a, out)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				{
 					f, err := os.Open(filepath.Join(out, filepath.FromSlash("test/dir/file")))
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					defer f.Close()
 					b, err := io.ReadAll(f)
-					So(err, ShouldBeNil)
-					So(string(b), ShouldEqual, "content")
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, string(b), should.Equal("content"))
 				}
 			})
 
-			Convey("file", func() {
+			t.Run("file", func(t *ftt.Test) {
 				a := &core.ActionFilesCopy{
 					Files: map[string]*core.ActionFilesCopy_Source{
 						filepath.FromSlash("test/file"): {
@@ -221,19 +223,19 @@ func TestExecuteCopy(t *testing.T) {
 				}
 
 				err := e.Execute(ctx, a, out)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				{
 					f, err := os.Open(filepath.Join(out, filepath.FromSlash("test/file")))
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					defer f.Close()
 					b, err := io.ReadAll(f)
-					So(err, ShouldBeNil)
-					So(string(b), ShouldEqual, "content")
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, string(b), should.Equal("content"))
 				}
 			})
 
-			Convey("symlink", func() {
+			t.Run("symlink", func(t *ftt.Test) {
 				a := &core.ActionFilesCopy{
 					Files: map[string]*core.ActionFilesCopy_Source{
 						filepath.FromSlash("test/file"): {
@@ -246,17 +248,17 @@ func TestExecuteCopy(t *testing.T) {
 				}
 
 				err := e.Execute(ctx, a, out)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				{
 					l, err := os.Readlink(filepath.Join(out, "test/file"))
-					So(err, ShouldBeNil)
-					So(l, ShouldEqual, filepath.FromSlash("something"))
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, l, should.Equal(filepath.FromSlash("something")))
 				}
 			})
 		})
 
-		Convey("embed", func() {
+		t.Run("embed", func(t *ftt.Test) {
 			e.StoreEmbed("something", actionCopyTestEmbed)
 
 			a := &core.ActionFilesCopy{
@@ -277,28 +279,28 @@ func TestExecuteCopy(t *testing.T) {
 			}
 
 			err := e.Execute(ctx, a, out)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			{
 				f, err := os.Open(filepath.Join(out, filepath.FromSlash("test/files/copy_test.go")))
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				defer f.Close()
 				b, err := io.ReadAll(f)
-				So(err, ShouldBeNil)
-				So(string(b), ShouldContainSubstring, "Test copy ref embed")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, string(b), should.ContainSubstring("Test copy ref embed"))
 			}
 			{
 				f, err := os.Open(filepath.Join(out, filepath.FromSlash("test/file")))
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				defer f.Close()
 				b, err := io.ReadAll(f)
-				So(err, ShouldBeNil)
-				So(string(b), ShouldContainSubstring, "Test copy ref embed")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, string(b), should.ContainSubstring("Test copy ref embed"))
 			}
 		})
 
-		Convey("raw", func() {
-			Convey("symlink", func() {
+		t.Run("raw", func(t *ftt.Test) {
+			t.Run("symlink", func(t *ftt.Test) {
 				a := &core.ActionFilesCopy{
 					Files: map[string]*core.ActionFilesCopy_Source{
 						filepath.FromSlash("test/file"): {
@@ -310,11 +312,11 @@ func TestExecuteCopy(t *testing.T) {
 
 				e := newFilesCopyExecutor()
 				err := e.Execute(ctx, a, out)
-				So(err, ShouldNotBeNil)
-				So(err.Error(), ShouldContainSubstring, "symlink is not supported")
+				assert.Loosely(t, err, should.NotBeNil)
+				assert.Loosely(t, err.Error(), should.ContainSubstring("symlink is not supported"))
 			})
 
-			Convey("dir", func() {
+			t.Run("dir", func(t *ftt.Test) {
 				a := &core.ActionFilesCopy{
 					Files: map[string]*core.ActionFilesCopy_Source{
 						filepath.FromSlash("test/file"): {
@@ -326,16 +328,16 @@ func TestExecuteCopy(t *testing.T) {
 
 				e := newFilesCopyExecutor()
 				err := e.Execute(ctx, a, out)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				{
 					info, err := os.Stat(filepath.Join(out, filepath.FromSlash("test/file")))
-					So(err, ShouldBeNil)
-					So(info.IsDir(), ShouldBeTrue)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, info.IsDir(), should.BeTrue)
 				}
 			})
 
-			Convey("file", func() {
+			t.Run("file", func(t *ftt.Test) {
 				a := &core.ActionFilesCopy{
 					Files: map[string]*core.ActionFilesCopy_Source{
 						filepath.FromSlash("test/file"): {
@@ -347,27 +349,27 @@ func TestExecuteCopy(t *testing.T) {
 
 				e := newFilesCopyExecutor()
 				err := e.Execute(ctx, a, out)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				{
 					f, err := os.Open(filepath.Join(out, filepath.FromSlash("test/file")))
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					defer f.Close()
 					b, err := io.ReadAll(f)
-					So(err, ShouldBeNil)
-					So(string(b), ShouldEqual, "something")
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, string(b), should.Equal("something"))
 
 					// Windows will ignore mode bits
 					if runtime.GOOS != "windows" {
 						info, err := f.Stat()
-						So(err, ShouldBeNil)
-						So(info.Mode().Perm(), ShouldEqual, 0o777)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, info.Mode().Perm(), should.Equal(0o777))
 					}
 				}
 			})
 		})
 
-		Convey("mode/attrs", func() {
+		t.Run("mode/attrs", func(t *ftt.Test) {
 			a := &core.ActionFilesCopy{
 				Files: map[string]*core.ActionFilesCopy_Source{
 					filepath.FromSlash("test/file"): {
@@ -380,23 +382,23 @@ func TestExecuteCopy(t *testing.T) {
 
 			e := newFilesCopyExecutor()
 			err := e.Execute(ctx, a, out)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			{
 				f, err := os.Open(filepath.Join(out, filepath.FromSlash("test/file")))
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				defer f.Close()
 				b, err := io.ReadAll(f)
-				So(err, ShouldBeNil)
-				So(string(b), ShouldEqual, "something")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, string(b), should.Equal("something"))
 
 				info, err := f.Stat()
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				if runtime.GOOS == "windows" {
 					// *syscall.Win32FileAttributeData
-					So(reflect.ValueOf(info.Sys()).Elem().FieldByName("FileAttributes").Uint()&0x4, ShouldNotBeZeroValue)
+					assert.Loosely(t, reflect.ValueOf(info.Sys()).Elem().FieldByName("FileAttributes").Uint()&0x4, should.NotBeZero)
 				} else {
-					So(info.Mode().Perm(), ShouldEqual, 0o777)
+					assert.Loosely(t, info.Mode().Perm(), should.Equal(0o777))
 				}
 			}
 		})
@@ -404,7 +406,7 @@ func TestExecuteCopy(t *testing.T) {
 }
 
 func TestReexecExecuteCopy(t *testing.T) {
-	Convey("Test re-execute action copy", t, func() {
+	ftt.Run("Test re-execute action copy", t, func(t *ftt.Test) {
 		ap := NewActionProcessor()
 		pm := testutils.NewMockPackageManage("")
 		ctx := context.Background()
@@ -421,22 +423,22 @@ func TestReexecExecuteCopy(t *testing.T) {
 				},
 			}},
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		runWithDrv(ctx, pkg.Derivation, out)
+		runWithDrv(t, ctx, pkg.Derivation, out)
 
 		{
 			f, err := os.Open(filepath.Join(out, "test", "file"))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			defer f.Close()
 			b, err := io.ReadAll(f)
-			So(err, ShouldBeNil)
-			So(string(b), ShouldEqual, "something")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, string(b), should.Equal("something"))
 			// Windows will ignore mode bits
 			if runtime.GOOS != "windows" {
 				info, err := f.Stat()
-				So(err, ShouldBeNil)
-				So(info.Mode().Perm(), ShouldEqual, 0o777)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, info.Mode().Perm(), should.Equal(0o777))
 			}
 		}
 	})

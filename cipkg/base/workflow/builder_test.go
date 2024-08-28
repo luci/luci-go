@@ -21,21 +21,23 @@ import (
 	"os"
 	"testing"
 
+	"go.chromium.org/luci/common/exec/execmock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
+
 	"go.chromium.org/luci/cipkg/base/actions"
 	"go.chromium.org/luci/cipkg/base/generators"
 	"go.chromium.org/luci/cipkg/core"
-	"go.chromium.org/luci/common/exec/execmock"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestExecutor(t *testing.T) {
-	Convey("Test executor", t, func() {
+	ftt.Run("Test executor", t, func(t *ftt.Test) {
 		ctx := execmock.Init(context.Background())
 		uses := execmock.Simple.Mock(ctx, execmock.SimpleInput{})
 		out := t.TempDir()
 
-		Convey("ok", func() {
+		t.Run("ok", func(t *ftt.Test) {
 			err := Execute(ctx, &ExecutionConfig{
 				OutputDir:  out,
 				WorkingDir: out,
@@ -46,13 +48,13 @@ func TestExecutor(t *testing.T) {
 				Args: []string{"bin", "-args", "1"},
 				Env:  []string{"env1=1", "env2=2"},
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			usage := uses.Snapshot()
-			So(usage[0].Args, ShouldEqual, []string{"bin", "-args", "1"})
-			So(usage[0].Env.Sorted(), ShouldEqual, []string{"env1=1", "env2=2", fmt.Sprintf("out=%s", out)})
+			assert.Loosely(t, usage[0].Args, should.Match([]string{"bin", "-args", "1"}))
+			assert.Loosely(t, usage[0].Env.Sorted(), should.Match([]string{"env1=1", "env2=2", fmt.Sprintf("out=%s", out)}))
 		})
 
-		Convey("env - override out", func() {
+		t.Run("env - override out", func(t *ftt.Test) {
 			err := Execute(ctx, &ExecutionConfig{
 				OutputDir:  out,
 				WorkingDir: out,
@@ -63,40 +65,40 @@ func TestExecutor(t *testing.T) {
 				Args: []string{"bin", "-args", "1"},
 				Env:  []string{"env1=1", "env2=2", "out=something"},
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			usage := uses.Snapshot()
-			So(usage[0].Args, ShouldEqual, []string{"bin", "-args", "1"})
-			So(usage[0].Env.Sorted(), ShouldEqual, []string{"env1=1", "env2=2", fmt.Sprintf("out=%s", out)})
+			assert.Loosely(t, usage[0].Args, should.Match([]string{"bin", "-args", "1"}))
+			assert.Loosely(t, usage[0].Env.Sorted(), should.Match([]string{"env1=1", "env2=2", fmt.Sprintf("out=%s", out)}))
 		})
 	})
 }
 
 func TestBuilder(t *testing.T) {
-	Convey("Test Builder", t, func() {
+	ftt.Run("Test Builder", t, func(t *ftt.Test) {
 		ctx := context.Background()
 
 		pm, err := NewLocalPackageManager(t.TempDir())
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		b := NewBuilder(generators.Platforms{}, pm, actions.NewActionProcessor())
 		pe := NewPackageExecutor("", nil, nil, nil, func(context.Context, *ExecutionConfig, *core.Derivation) error { return nil })
 
-		Convey("ok", func() {
+		t.Run("ok", func(t *ftt.Test) {
 			pkg, err := b.Build(ctx, pe, &Generator{
 				Name: "first",
 				Dependencies: []generators.Dependency{
 					{Generator: &Generator{Name: "second"}, Type: generators.DepsBuildHost, Runtime: true},
 				},
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// all packages are available
-			So(func() { MustIncRefRecursiveRuntime(pkg) }, ShouldNotPanic)
-			So(func() { MustDecRefRecursiveRuntime(pkg) }, ShouldNotPanic)
-			So(pkg.Action.Name, ShouldEqual, "first")
+			assert.Loosely(t, func() { MustIncRefRecursiveRuntime(pkg) }, should.NotPanic)
+			assert.Loosely(t, func() { MustDecRefRecursiveRuntime(pkg) }, should.NotPanic)
+			assert.Loosely(t, pkg.Action.Name, should.Equal("first"))
 		})
 
-		Convey("prePrepare", func() {
+		t.Run("prePrepare", func(t *ftt.Test) {
 			var res string
 			pe = NewPackageExecutor("",
 				func(ctx context.Context, pkg actions.Package) error {
@@ -108,12 +110,12 @@ func TestBuilder(t *testing.T) {
 			)
 
 			_, err := b.Build(ctx, pe, &Generator{Name: "first"})
-			So(err, ShouldBeNil)
-			So(res, ShouldEqual, "PrePost")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Equal("PrePost"))
 		})
 
-		Convey("exec hooks", func() {
-			Convey("ok", func() {
+		t.Run("exec hooks", func(t *ftt.Test) {
+			t.Run("ok", func(t *ftt.Test) {
 				var res string
 				pe = NewPackageExecutor("",
 					nil,
@@ -123,11 +125,11 @@ func TestBuilder(t *testing.T) {
 				)
 
 				_, err := b.Build(ctx, pe, &Generator{Name: "first"})
-				So(err, ShouldBeNil)
-				So(res, ShouldEqual, "PreExecPost")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res, should.Equal("PreExecPost"))
 			})
 
-			Convey("err - pre", func() {
+			t.Run("err - pre", func(t *ftt.Test) {
 				var res string
 				e := errors.New("err")
 				pe = NewPackageExecutor("",
@@ -137,7 +139,7 @@ func TestBuilder(t *testing.T) {
 						return ctx, e
 					},
 					func(ctx context.Context, pkg actions.Package, execErr error) error {
-						So(errors.Is(execErr, e), ShouldBeTrue)
+						assert.Loosely(t, errors.Is(execErr, e), should.BeTrue)
 						res += "Post"
 						return nil
 					},
@@ -145,18 +147,18 @@ func TestBuilder(t *testing.T) {
 				)
 
 				_, err := b.Build(ctx, pe, &Generator{Name: "first"})
-				So(errors.Is(err, e), ShouldBeTrue)
-				So(res, ShouldEqual, "PrePost")
+				assert.Loosely(t, errors.Is(err, e), should.BeTrue)
+				assert.Loosely(t, res, should.Equal("PrePost"))
 			})
 
-			Convey("err - exec", func() {
+			t.Run("err - exec", func(t *ftt.Test) {
 				var res string
 				e := errors.New("err")
 				pe = NewPackageExecutor("",
 					nil,
 					func(ctx context.Context, pkg actions.Package) (context.Context, error) { res += "Pre"; return ctx, nil },
 					func(ctx context.Context, pkg actions.Package, execErr error) error {
-						So(errors.Is(execErr, e), ShouldBeTrue)
+						assert.Loosely(t, errors.Is(execErr, e), should.BeTrue)
 						res += "Post"
 						return nil
 					},
@@ -164,11 +166,11 @@ func TestBuilder(t *testing.T) {
 				)
 
 				_, err := b.Build(ctx, pe, &Generator{Name: "first"})
-				So(errors.Is(err, e), ShouldBeTrue)
-				So(res, ShouldEqual, "PreExecPost")
+				assert.Loosely(t, errors.Is(err, e), should.BeTrue)
+				assert.Loosely(t, res, should.Equal("PreExecPost"))
 			})
 
-			Convey("err - post", func() {
+			t.Run("err - post", func(t *ftt.Test) {
 				var res string
 				e := errors.New("err")
 				pe = NewPackageExecutor("",
@@ -179,12 +181,12 @@ func TestBuilder(t *testing.T) {
 				)
 
 				_, err := b.Build(ctx, pe, &Generator{Name: "first"})
-				So(errors.Is(err, e), ShouldBeTrue)
-				So(res, ShouldEqual, "PreExecPost")
+				assert.Loosely(t, errors.Is(err, e), should.BeTrue)
+				assert.Loosely(t, res, should.Equal("PreExecPost"))
 			})
 		})
 
-		Convey("dependency not available", func() {
+		t.Run("dependency not available", func(t *ftt.Test) {
 			pe = NewPackageExecutor("", nil, nil, nil,
 				func(ctx context.Context, cfg *ExecutionConfig, drv *core.Derivation) error {
 					if drv.Name == "second" {
@@ -200,11 +202,11 @@ func TestBuilder(t *testing.T) {
 					{Generator: &Generator{Name: "second"}, Type: generators.DepsBuildHost, Runtime: true},
 				},
 			}})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			err = b.BuildPackages(ctx, pe, pkgs, true)
-			So(err, ShouldNotBeNil)
-			So(err.Error(), ShouldContainSubstring, "dependency not available: second-")
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, err.Error(), should.ContainSubstring("dependency not available: second-"))
 		})
 	})
 }

@@ -23,12 +23,13 @@ import (
 	"path/filepath"
 	"time"
 
-	"go.chromium.org/luci/cipkg/base/actions"
-	"go.chromium.org/luci/cipkg/core"
+	"github.com/danjacques/gofslock/fslock"
+
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/filesystem"
 
-	"github.com/danjacques/gofslock/fslock"
+	"go.chromium.org/luci/cipkg/base/actions"
+	"go.chromium.org/luci/cipkg/core"
 )
 
 // LocalPackageManager implements core.PackageManager.

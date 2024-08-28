@@ -24,8 +24,9 @@ import (
 
 	"go.chromium.org/luci/cipkg/core"
 	"go.chromium.org/luci/cipkg/internal/testutils"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 //go:embed embed.go embed_test.go testdata
@@ -40,16 +41,16 @@ var embeddedFilesTestGen = InitEmbeddedFS(
 })
 
 func TestEmbeddedFiles(t *testing.T) {
-	Convey("Test embedded files", t, func() {
+	ftt.Run("Test embedded files", t, func(t *ftt.Test) {
 		ctx := context.Background()
 		plats := Platforms{}
 
-		Convey("Test normal", func() {
+		t.Run("Test normal", func(t *ftt.Test) {
 			a, err := embeddedFilesTestGen.Generate(ctx, plats)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			embedFiles := testutils.Assert[*core.Action_Copy](t, a.Spec)
-			So(embedFiles.Copy.Files, ShouldResemble, map[string]*core.ActionFilesCopy_Source{
+			assert.Loosely(t, embedFiles.Copy.Files, should.Match(map[string]*core.ActionFilesCopy_Source{
 				"embed.go": {
 					Content: &core.ActionFilesCopy_Source_Embed_{
 						Embed: &core.ActionFilesCopy_Source_Embed{Ref: embeddedFilesTestGen.ref, Path: "embed.go"},
@@ -68,21 +69,21 @@ func TestEmbeddedFiles(t *testing.T) {
 					},
 					Mode: 0o777,
 				},
-			})
+			}))
 		})
-		Convey("Test subdir", func() {
+		t.Run("Test subdir", func(t *ftt.Test) {
 			a, err := embeddedFilesTestGen.SubDir("testdata").Generate(ctx, plats)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			embedFiles := testutils.Assert[*core.Action_Copy](t, a.Spec)
-			So(embedFiles.Copy.Files, ShouldResemble, map[string]*core.ActionFilesCopy_Source{
+			assert.Loosely(t, embedFiles.Copy.Files, should.Match(map[string]*core.ActionFilesCopy_Source{
 				"embed": {
 					Content: &core.ActionFilesCopy_Source_Embed_{
 						Embed: &core.ActionFilesCopy_Source_Embed{Ref: embeddedFilesTestGen.ref, Path: "testdata/embed"},
 					},
 					Mode: 0o444,
 				},
-			})
+			}))
 		})
 	})
 }

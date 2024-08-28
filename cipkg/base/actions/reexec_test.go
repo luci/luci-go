@@ -23,55 +23,58 @@ import (
 	"runtime"
 	"testing"
 
-	"go.chromium.org/luci/cipkg/core"
-	"go.chromium.org/luci/common/system/environ"
-
-	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
+
+	"go.chromium.org/luci/common/system/environ"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
+
+	"go.chromium.org/luci/cipkg/core"
 )
 
 func TestSetExecutor(t *testing.T) {
-	Convey("Test set executor", t, func() {
+	ftt.Run("Test set executor", t, func(t *ftt.Test) {
 		reg := NewReexecRegistry()
 
-		Convey("ok", func() {
+		t.Run("ok", func(t *ftt.Test) {
 			err := SetExecutor[*anypb.Any](reg, func(ctx context.Context, msg *anypb.Any, out string) error { return nil })
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey("duplicated", func() {
+		t.Run("duplicated", func(t *ftt.Test) {
 			err := SetExecutor[*anypb.Any](reg, func(ctx context.Context, msg *anypb.Any, out string) error { return nil })
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			err = SetExecutor[*anypb.Any](reg, func(ctx context.Context, msg *anypb.Any, out string) error { return nil })
-			So(errors.Is(err, ErrExecutorExisted), ShouldBeTrue)
+			assert.Loosely(t, errors.Is(err, ErrExecutorExisted), should.BeTrue)
 		})
 
-		Convey("sealed", func() {
+		t.Run("sealed", func(t *ftt.Test) {
 			reg.interceptWithArgs(context.Background(), environ.New(nil), []string{}, func(i int) {})
 			err := SetExecutor[*anypb.Any](reg, func(ctx context.Context, msg *anypb.Any, out string) error { return nil })
-			So(errors.Is(err, ErrReexecRegistrySealed), ShouldBeTrue)
+			assert.Loosely(t, errors.Is(err, ErrReexecRegistrySealed), should.BeTrue)
 		})
 	})
 }
 
-func runWithDrv(ctx context.Context, drv *core.Derivation, out string) {
+func runWithDrv(tb testing.TB, ctx context.Context, drv *core.Derivation, out string) {
 	env := environ.New(drv.Env)
 	env.Set("out", out)
 	code := -1
 	NewReexecRegistry().interceptWithArgs(ctx, env, drv.Args, func(i int) {
 		code = i
 	})
-	So(code, ShouldEqual, 0)
+	assert.Loosely(tb, code, should.BeZero)
 }
 
-func checkReexecArg(args []string, m proto.Message) {
+func checkReexecArg(tb testing.TB, args []string, m proto.Message) {
 	m, err := anypb.New(m)
-	So(err, ShouldBeNil)
+	assert.Loosely(tb, err, should.BeNil)
 	b, err := protojson.Marshal(m)
-	So(err, ShouldBeNil)
-	So(args, ShouldContain, string(b))
+	assert.Loosely(tb, err, should.BeNil)
+	assert.Loosely(tb, args, should.Contain(string(b)))
 }
 
 // This test is for windows's default binary searching behaviour, which lookup
@@ -83,18 +86,18 @@ func TestBinLookup(t *testing.T) {
 		t.SkipNow()
 	}
 
-	Convey("lookup from cwd", t, func() {
+	ftt.Run("lookup from cwd", t, func(t *ftt.Test) {
 		bin := t.TempDir()
 
 		f, err := os.CreateTemp(bin, "something*.exe")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		err = f.Close()
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		olddir, err := os.Getwd()
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		err = os.Chdir(bin)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		t.Cleanup(func() {
 			if err := os.Chdir(olddir); err != nil {
 				t.Fatal(err)
@@ -104,15 +107,15 @@ func TestBinLookup(t *testing.T) {
 		fname := filepath.Base(f.Name())
 
 		err = os.Unsetenv("NoDefaultCurrentDirectoryInExePath")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		_, err = exec.LookPath(fname)
-		So(errors.Is(err, exec.ErrDot), ShouldBeTrue)
+		assert.Loosely(t, errors.Is(err, exec.ErrDot), should.BeTrue)
 
 		err = os.Setenv("NoDefaultCurrentDirectoryInExePath", "1")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		_, err = exec.LookPath(fname)
-		So(errors.Is(err, exec.ErrNotFound), ShouldBeTrue)
+		assert.Loosely(t, errors.Is(err, exec.ErrNotFound), should.BeTrue)
 	})
 }

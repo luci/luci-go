@@ -24,15 +24,16 @@ import (
 	"slices"
 	"strings"
 
-	"go.chromium.org/luci/cipkg/base/actions"
-	"go.chromium.org/luci/cipkg/base/generators"
-	"go.chromium.org/luci/cipkg/core"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/reflect/protoreflect"
+
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/exec"
 	"go.chromium.org/luci/common/logging"
 
-	"google.golang.org/protobuf/encoding/protojson"
-	"google.golang.org/protobuf/reflect/protoreflect"
+	"go.chromium.org/luci/cipkg/base/actions"
+	"go.chromium.org/luci/cipkg/base/generators"
+	"go.chromium.org/luci/cipkg/core"
 )
 
 type PreExpandHook func(ctx context.Context, pkg actions.Package) error

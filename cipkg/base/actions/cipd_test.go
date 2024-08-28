@@ -18,15 +18,17 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/common/exec/execmock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
+
 	"go.chromium.org/luci/cipkg/core"
 	"go.chromium.org/luci/cipkg/internal/testutils"
-	"go.chromium.org/luci/common/exec/execmock"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestProcessCIPD(t *testing.T) {
-	Convey("Test action processor for cipd", t, func() {
+	ftt.Run("Test action processor for cipd", t, func(t *ftt.Test) {
 		ap := NewActionProcessor()
 		pm := testutils.NewMockPackageManage("")
 
@@ -38,37 +40,37 @@ func TestProcessCIPD(t *testing.T) {
 			Name: "url",
 			Spec: &core.Action_Cipd{Cipd: cipd},
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		checkReexecArg(pkg.Derivation.Args, cipd)
+		checkReexecArg(t, pkg.Derivation.Args, cipd)
 	})
 }
 
 func TestExecuteCIPD(t *testing.T) {
-	Convey("Test execute action cipd", t, func() {
+	ftt.Run("Test execute action cipd", t, func(t *ftt.Test) {
 		ctx := execmock.Init(context.Background())
 		uses := execmock.Simple.Mock(ctx, execmock.SimpleInput{})
 		out := t.TempDir()
 
-		Convey("Test cipd export", func() {
+		t.Run("Test cipd export", func(t *ftt.Test) {
 			a := &core.ActionCIPDExport{
 				EnsureFile: "",
 			}
 
 			err := ActionCIPDExportExecutor(ctx, a, out)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			{
 				usage := uses.Snapshot()
-				So(usage, ShouldHaveLength, 1)
-				So(usage[0].Args[1:], ShouldEqual, []string{"export", "--root", out, "--ensure-file", "-"})
+				assert.Loosely(t, usage, should.HaveLength(1))
+				assert.Loosely(t, usage[0].Args[1:], should.Match([]string{"export", "--root", out, "--ensure-file", "-"}))
 			}
 		})
 	})
 }
 
 func TestReexecCIPD(t *testing.T) {
-	Convey("Test re-execute action processor for cipd", t, func() {
+	ftt.Run("Test re-execute action processor for cipd", t, func(t *ftt.Test) {
 		ctx := execmock.Init(context.Background())
 		uses := execmock.Simple.Mock(ctx, execmock.SimpleInput{})
 		ap := NewActionProcessor()
@@ -81,14 +83,14 @@ func TestReexecCIPD(t *testing.T) {
 				EnsureFile: "",
 			}},
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		runWithDrv(ctx, pkg.Derivation, out)
+		runWithDrv(t, ctx, pkg.Derivation, out)
 
 		{
 			usage := uses.Snapshot()
-			So(usage, ShouldHaveLength, 1)
-			So(usage[0].Args[1:], ShouldEqual, []string{"export", "--root", out, "--ensure-file", "-"})
+			assert.Loosely(t, usage, should.HaveLength(1))
+			assert.Loosely(t, usage[0].Args[1:], should.Match([]string{"export", "--root", out, "--ensure-file", "-"}))
 		}
 	})
 }

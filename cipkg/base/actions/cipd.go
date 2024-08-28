@@ -20,9 +20,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"go.chromium.org/luci/cipkg/core"
 	"go.chromium.org/luci/common/exec"
 	"go.chromium.org/luci/common/system/environ"
+
+	"go.chromium.org/luci/cipkg/core"
 )
 
 // ActionCIPDExportTransformer is the default transformer for

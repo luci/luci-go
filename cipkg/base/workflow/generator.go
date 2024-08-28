@@ -20,11 +20,12 @@ import (
 	"os"
 	"strings"
 
-	"go.chromium.org/luci/cipkg/base/generators"
-	"go.chromium.org/luci/cipkg/core"
+	"google.golang.org/protobuf/proto"
+
 	"go.chromium.org/luci/common/system/environ"
 
-	"google.golang.org/protobuf/proto"
+	"go.chromium.org/luci/cipkg/base/generators"
+	"go.chromium.org/luci/cipkg/core"
 )
 
 // Generator is a general purpose generator which generates dependencies and

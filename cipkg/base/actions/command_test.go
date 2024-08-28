@@ -17,18 +17,20 @@ package actions
 import (
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
+
 	"go.chromium.org/luci/cipkg/core"
 	"go.chromium.org/luci/cipkg/internal/testutils"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestProcessCommand(t *testing.T) {
-	Convey("Test action processor for cipd", t, func() {
+	ftt.Run("Test action processor for cipd", t, func(t *ftt.Test) {
 		ap := NewActionProcessor()
 		pm := testutils.NewMockPackageManage("")
 
-		Convey("ok", func() {
+		t.Run("ok", func(t *ftt.Test) {
 			cmd := &core.ActionCommand{
 				Args: []string{"bin", "arg1", "arg2", "{{.something}}/{{.something}}"},
 				Env:  []string{"env1=var1", "env2=var2", "env3={{.something}}"},
@@ -46,19 +48,19 @@ func TestProcessCommand(t *testing.T) {
 				},
 				Spec: &core.Action_Command{Command: cmd},
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(pkg.BuildDependencies, ShouldHaveLength, 1)
-			So(pkg.BuildDependencies[0].Action.Name, ShouldEqual, "something")
+			assert.Loosely(t, pkg.BuildDependencies, should.HaveLength(1))
+			assert.Loosely(t, pkg.BuildDependencies[0].Action.Name, should.Equal("something"))
 			depOut := pkg.BuildDependencies[0].Handler.OutputDirectory()
-			So(pkg.Derivation.Inputs, ShouldHaveLength, 1)
-			So(pkg.Derivation.Args, ShouldEqual, []string{"bin", "arg1", "arg2", depOut + "/" + depOut})
-			So(pkg.Derivation.Env, ShouldEqual, []string{"env1=var1", "env2=var2", "env3=" + depOut})
-			So(pkg.RuntimeDependencies, ShouldHaveLength, 1)
-			So(pkg.RuntimeDependencies[0].Action.Name, ShouldEqual, "else")
+			assert.Loosely(t, pkg.Derivation.Inputs, should.HaveLength(1))
+			assert.Loosely(t, pkg.Derivation.Args, should.Match([]string{"bin", "arg1", "arg2", depOut + "/" + depOut}))
+			assert.Loosely(t, pkg.Derivation.Env, should.Match([]string{"env1=var1", "env2=var2", "env3=" + depOut}))
+			assert.Loosely(t, pkg.RuntimeDependencies, should.HaveLength(1))
+			assert.Loosely(t, pkg.RuntimeDependencies[0].Action.Name, should.Equal("else"))
 		})
 
-		Convey("invalid template", func() {
+		t.Run("invalid template", func(t *ftt.Test) {
 			cmd := &core.ActionCommand{
 				Args: []string{"bin", "arg1", "arg2", "{{something}}"},
 			}
@@ -70,10 +72,10 @@ func TestProcessCommand(t *testing.T) {
 				},
 				Spec: &core.Action_Command{Command: cmd},
 			})
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 		})
 
-		Convey("unknown key", func() {
+		t.Run("unknown key", func(t *ftt.Test) {
 			cmd := &core.ActionCommand{
 				Env: []string{"{{.else}}"},
 			}
@@ -85,7 +87,7 @@ func TestProcessCommand(t *testing.T) {
 				},
 				Spec: &core.Action_Command{Command: cmd},
 			})
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 		})
 	})
 }

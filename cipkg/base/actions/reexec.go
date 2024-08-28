@@ -24,14 +24,15 @@ import (
 	"runtime"
 	"sync"
 
-	"go.chromium.org/luci/cipkg/core"
-	luciproto "go.chromium.org/luci/common/proto"
-	"go.chromium.org/luci/common/system/environ"
-
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/known/anypb"
+
+	luciproto "go.chromium.org/luci/common/proto"
+	"go.chromium.org/luci/common/system/environ"
+
+	"go.chromium.org/luci/cipkg/core"
 )
 
 // Executor is the type of the Executor for action spec M. When the function is

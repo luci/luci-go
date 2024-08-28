@@ -24,21 +24,22 @@ import (
 
 	"go.chromium.org/luci/cipkg/core"
 	"go.chromium.org/luci/cipkg/internal/testutils"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"golang.org/x/text/encoding/unicode"
 	"golang.org/x/text/transform"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestImport(t *testing.T) {
-	Convey("Test import", t, func() {
+	ftt.Run("Test import", t, func(t *ftt.Test) {
 		ctx := context.Background()
 		plats := Platforms{}
 
-		Convey("symlink", func() {
+		t.Run("symlink", func(t *ftt.Test) {
 			test1 := ImportTarget{Source: "//path/to/host1", Mode: fs.ModeSymlink}
 
-			Convey("normal", func() {
+			t.Run("normal", func(t *ftt.Test) {
 				g := ImportTargets{
 					Targets: map[string]ImportTarget{
 						"test1":     test1,
@@ -46,10 +47,10 @@ func TestImport(t *testing.T) {
 					},
 				}
 				a, err := g.Generate(ctx, plats)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				imports := testutils.Assert[*core.Action_Copy](t, a.Spec)
-				So(imports.Copy.Files, ShouldResemble, map[string]*core.ActionFilesCopy_Source{
+				assert.Loosely(t, imports.Copy.Files, should.Match(map[string]*core.ActionFilesCopy_Source{
 					"test1": {
 						Content: &core.ActionFilesCopy_Source_Local_{
 							Local: &core.ActionFilesCopy_Source_Local{Path: filepath.FromSlash("//path/to/host1")},
@@ -67,41 +68,41 @@ func TestImport(t *testing.T) {
 						Content: &core.ActionFilesCopy_Source_Raw{},
 						Mode:    0o666,
 					},
-				})
+				}))
 			})
-			Convey("bat shim", func() {
+			t.Run("bat shim", func(t *ftt.Test) {
 				test1.GenerateBatShim = true
 				g := ImportTargets{
 					Targets: map[string]ImportTarget{"test1": test1},
 				}
 				a, err := g.Generate(ctx, plats)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				imports := testutils.Assert[*core.Action_Copy](t, a.Spec)
-				So(imports.Copy.Files, ShouldResemble, map[string]*core.ActionFilesCopy_Source{
+				assert.Loosely(t, imports.Copy.Files, should.Match(map[string]*core.ActionFilesCopy_Source{
 					"test1.bat": {
 						Content: &core.ActionFilesCopy_Source_Raw{
 							Raw: []byte("@" + filepath.FromSlash("//path/to/host1") + " %*"),
 						},
 						Mode: 0o666,
 					},
-				})
+				}))
 			})
-			Convey("mingw", func() {
+			t.Run("mingw", func(t *ftt.Test) {
 				test1.MinGWSymlink = true
 				g := ImportTargets{
 					Targets: map[string]ImportTarget{"test1": test1},
 				}
 				a, err := g.Generate(ctx, plats)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				buf := bytes.NewBufferString("!<symlink>")
 				enc := unicode.UTF16(unicode.LittleEndian, unicode.UseBOM).NewEncoder()
 				_, err = transform.NewWriter(buf, enc).Write([]byte(filepath.FromSlash("//path/to/host1") + "\x00"))
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				imports := testutils.Assert[*core.Action_Copy](t, a.Spec)
-				So(imports.Copy.Files, ShouldResemble, map[string]*core.ActionFilesCopy_Source{
+				assert.Loosely(t, imports.Copy.Files, should.Match(map[string]*core.ActionFilesCopy_Source{
 					"test1": {
 						Content: &core.ActionFilesCopy_Source_Raw{
 							Raw: buf.Bytes(),
@@ -109,20 +110,20 @@ func TestImport(t *testing.T) {
 						Mode:     0o666,
 						WinAttrs: 0x4,
 					},
-				})
+				}))
 			})
 		})
-		Convey("copy", func() {
+		t.Run("copy", func(t *ftt.Test) {
 			dir := t.TempDir()
 			file := filepath.Join(dir, "file")
 			f, err := os.Create(file)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			_, err = f.WriteString("something")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			err = f.Close()
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			Convey("ok", func() {
+			t.Run("ok", func(t *ftt.Test) {
 				g := ImportTargets{
 					Targets: map[string]ImportTarget{
 						"dir":  {Source: dir, Mode: fs.ModeDir},
@@ -131,58 +132,58 @@ func TestImport(t *testing.T) {
 				}
 
 				a, err := g.Generate(ctx, plats)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				imports := testutils.Assert[*core.Action_Copy](t, a.Spec)
-				So(imports.Copy.Files["dir"].Version, ShouldNotBeEmpty)
-				So(fs.FileMode(imports.Copy.Files["dir"].Mode).IsDir(), ShouldBeTrue)
-				So(imports.Copy.Files["file"].Version, ShouldNotBeEmpty)
-				So(fs.FileMode(imports.Copy.Files["file"].Mode).IsRegular(), ShouldBeTrue)
+				assert.Loosely(t, imports.Copy.Files["dir"].Version, should.NotBeEmpty)
+				assert.Loosely(t, fs.FileMode(imports.Copy.Files["dir"].Mode).IsDir(), should.BeTrue)
+				assert.Loosely(t, imports.Copy.Files["file"].Version, should.NotBeEmpty)
+				assert.Loosely(t, fs.FileMode(imports.Copy.Files["file"].Mode).IsRegular(), should.BeTrue)
 			})
-			Convey("source path independent", func() {
+			t.Run("source path independent", func(t *ftt.Test) {
 				g := ImportTargets{
 					Targets: map[string]ImportTarget{
 						"dir": {Source: dir, Mode: fs.ModeDir, Version: "123"},
 					},
 				}
 				a, err := g.Generate(ctx, plats)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				imports1 := testutils.Assert[*core.Action_Copy](t, a.Spec)
 
 				err = os.Rename(dir, dir+".else")
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				g = ImportTargets{
 					Targets: map[string]ImportTarget{
 						"dir": {Source: dir + ".else", Mode: fs.ModeDir, Version: "123"},
 					},
 				}
 				a, err = g.Generate(ctx, plats)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				imports2 := testutils.Assert[*core.Action_Copy](t, a.Spec)
 
-				So(imports1.Copy.Files["dir"].Version, ShouldEqual, imports2.Copy.Files["dir"].Version)
+				assert.Loosely(t, imports1.Copy.Files["dir"].Version, should.Equal(imports2.Copy.Files["dir"].Version))
 			})
-			Convey("source path dependent", func() {
+			t.Run("source path dependent", func(t *ftt.Test) {
 				g := ImportTargets{
 					Targets: map[string]ImportTarget{
 						"dir": {Source: dir, Mode: fs.ModeDir, Version: "123", SourcePathDependent: true},
 					},
 				}
 				a, err := g.Generate(ctx, plats)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				imports1 := testutils.Assert[*core.Action_Copy](t, a.Spec)
 
 				err = os.Rename(dir, dir+".else")
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				g = ImportTargets{
 					Targets: map[string]ImportTarget{
 						"dir": {Source: dir + ".else", Mode: fs.ModeDir, Version: "123", SourcePathDependent: true},
 					},
 				}
 				a, err = g.Generate(ctx, plats)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				imports2 := testutils.Assert[*core.Action_Copy](t, a.Spec)
 
-				So(imports1.Copy.Files["dir"].Version, ShouldNotEqual, imports2.Copy.Files["dir"].Version)
+				assert.Loosely(t, imports1.Copy.Files["dir"].Version, should.NotEqual(imports2.Copy.Files["dir"].Version))
 			})
 		})
 	})

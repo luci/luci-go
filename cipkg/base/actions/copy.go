@@ -26,10 +26,11 @@ import (
 	"path"
 	"path/filepath"
 
-	"go.chromium.org/luci/cipkg/core"
+	"google.golang.org/protobuf/proto"
+
 	"go.chromium.org/luci/common/system/environ"
 
-	"google.golang.org/protobuf/proto"
+	"go.chromium.org/luci/cipkg/core"
 )
 
 // ActionFilesCopyTransformer is the default transformer for

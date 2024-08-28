@@ -16,7 +16,6 @@ package actions
 
 import (
 	"context"
-	_ "embed"
 	"fmt"
 	"io"
 	"net/http"
@@ -26,14 +25,18 @@ import (
 	"strconv"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
+
 	"go.chromium.org/luci/cipkg/core"
 	"go.chromium.org/luci/cipkg/internal/testutils"
 
-	. "github.com/smartystreets/goconvey/convey"
+	_ "embed"
 )
 
 func TestProcessURL(t *testing.T) {
-	Convey("Test action processor for url", t, func() {
+	ftt.Run("Test action processor for url", t, func(t *ftt.Test) {
 		ap := NewActionProcessor()
 		pm := testutils.NewMockPackageManage("")
 
@@ -47,14 +50,14 @@ func TestProcessURL(t *testing.T) {
 			Name: "url",
 			Spec: &core.Action_Url{Url: url},
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		checkReexecArg(pkg.Derivation.Args, url)
+		checkReexecArg(t, pkg.Derivation.Args, url)
 	})
 }
 
 func TestExecuteURL(t *testing.T) {
-	Convey("Test execute action url", t, func() {
+	ftt.Run("Test execute action url", t, func(t *ftt.Test) {
 		ctx := context.Background()
 		out := t.TempDir()
 
@@ -70,35 +73,35 @@ func TestExecuteURL(t *testing.T) {
 		}))
 		defer s.Close()
 
-		Convey("Test download file", func() {
+		t.Run("Test download file", func(t *ftt.Test) {
 			a := &core.ActionURLFetch{
 				Url: s.URL,
 			}
 
 			err := ActionURLFetchExecutor(ctx, a, out)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			{
 				f, err := os.Open(filepath.Join(out, "file"))
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				defer f.Close()
 				b, err := io.ReadAll(f)
-				So(err, ShouldBeNil)
-				So(string(b), ShouldEqual, "something")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, string(b), should.Equal("something"))
 			}
 		})
 
-		Convey("Test download file failed", func() {
+		t.Run("Test download file failed", func(t *ftt.Test) {
 			a := &core.ActionURLFetch{
 				Url: s.URL + "?status=404",
 			}
 
 			err := ActionURLFetchExecutor(ctx, a, out)
-			So(err, ShouldNotBeNil)
-			So(err.Error(), ShouldContainSubstring, "404")
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, err.Error(), should.ContainSubstring("404"))
 		})
 
-		Convey("Test download file with hash verify", func() {
+		t.Run("Test download file with hash verify", func(t *ftt.Test) {
 			a := &core.ActionURLFetch{
 				Url:           s.URL,
 				HashAlgorithm: core.HashAlgorithm_HASH_SHA256,
@@ -106,19 +109,19 @@ func TestExecuteURL(t *testing.T) {
 			}
 
 			err := ActionURLFetchExecutor(ctx, a, out)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			{
 				f, err := os.Open(filepath.Join(out, "file"))
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				defer f.Close()
 				b, err := io.ReadAll(f)
-				So(err, ShouldBeNil)
-				So(string(b), ShouldEqual, "something")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, string(b), should.Equal("something"))
 			}
 		})
 
-		Convey("Test download file with hash verify failed", func() {
+		t.Run("Test download file with hash verify failed", func(t *ftt.Test) {
 			a := &core.ActionURLFetch{
 				Url:           s.URL,
 				HashAlgorithm: core.HashAlgorithm_HASH_SHA256,
@@ -126,14 +129,14 @@ func TestExecuteURL(t *testing.T) {
 			}
 
 			err := ActionURLFetchExecutor(ctx, a, out)
-			So(err, ShouldNotBeNil)
-			So(err.Error(), ShouldContainSubstring, "hash mismatch")
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, err.Error(), should.ContainSubstring("hash mismatch"))
 		})
 	})
 }
 
 func TestReexecURL(t *testing.T) {
-	Convey("Test re-execute action processor for url", t, func() {
+	ftt.Run("Test re-execute action processor for url", t, func(t *ftt.Test) {
 		ap := NewActionProcessor()
 		pm := testutils.NewMockPackageManage("")
 		ctx := context.Background()
@@ -152,17 +155,17 @@ func TestReexecURL(t *testing.T) {
 				HashValue:     "3fc9b689459d738f8c88a3a48aa9e33542016b7a4052e001aaa536fca74813cb",
 			}},
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		runWithDrv(ctx, pkg.Derivation, out)
+		runWithDrv(t, ctx, pkg.Derivation, out)
 
 		{
 			f, err := os.Open(filepath.Join(out, "file"))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			defer f.Close()
 			b, err := io.ReadAll(f)
-			So(err, ShouldBeNil)
-			So(string(b), ShouldEqual, "something")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, string(b), should.Equal("something"))
 		}
 	})
 }

@@ -20,10 +20,10 @@ import (
 	"regexp"
 	"sync"
 
-	"go.chromium.org/luci/cipkg/core"
-
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
+
+	"go.chromium.org/luci/cipkg/core"
 )
 
 // Package represents a high-level package including:

@@ -22,53 +22,55 @@ import (
 	"sync/atomic"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
+
 	"go.chromium.org/luci/cipkg/base/actions"
 	"go.chromium.org/luci/cipkg/base/generators"
 	"go.chromium.org/luci/cipkg/core"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestLocalPackageManager(t *testing.T) {
-	Convey("Test LocalPackageManager", t, func() {
+	ftt.Run("Test LocalPackageManager", t, func(t *ftt.Test) {
 		pm, err := NewLocalPackageManager(t.TempDir())
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		Convey("new package - ok", func() {
+		t.Run("new package - ok", func(t *ftt.Test) {
 			h := pm.Get("something")
-			So(h, ShouldNotBeNil)
+			assert.Loosely(t, h, should.NotBeNil)
 			err = h.IncRef()
-			So(errors.Is(err, core.ErrPackageNotExist), ShouldBeTrue)
+			assert.Loosely(t, errors.Is(err, core.ErrPackageNotExist), should.BeTrue)
 
 			built := false
 			err = h.Build(func() error {
 				built = true
 				return nil
 			})
-			So(built, ShouldBeTrue)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, built, should.BeTrue)
+			assert.Loosely(t, err, should.BeNil)
 
 			err = h.IncRef()
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			ok, err := h.TryRemove() // We can't remove a package in use.
-			So(err, ShouldBeNil)
-			So(ok, ShouldBeFalse)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ok, should.BeFalse)
 
 			err = h.DecRef()
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			ok, err = h.TryRemove()
-			So(err, ShouldBeNil)
-			So(ok, ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ok, should.BeTrue)
 
 			err = h.IncRef()
-			So(errors.Is(err, core.ErrPackageNotExist), ShouldBeTrue)
+			assert.Loosely(t, errors.Is(err, core.ErrPackageNotExist), should.BeTrue)
 		})
 
-		Convey("new package - build error", func() {
+		t.Run("new package - build error", func(t *ftt.Test) {
 			h := pm.Get("something")
-			So(h, ShouldNotBeNil)
+			assert.Loosely(t, h, should.NotBeNil)
 			err = h.IncRef()
-			So(errors.Is(err, core.ErrPackageNotExist), ShouldBeTrue)
+			assert.Loosely(t, errors.Is(err, core.ErrPackageNotExist), should.BeTrue)
 
 			someErr := errors.New("some err")
 			built := false
@@ -76,11 +78,11 @@ func TestLocalPackageManager(t *testing.T) {
 				built = true
 				return someErr
 			})
-			So(built, ShouldBeTrue)
-			So(errors.Is(err, someErr), ShouldBeTrue)
+			assert.Loosely(t, built, should.BeTrue)
+			assert.Loosely(t, errors.Is(err, someErr), should.BeTrue)
 		})
 
-		Convey("lock", func(c C) {
+		t.Run("lock", func(c *ftt.Test) {
 			var wg sync.WaitGroup
 			wg.Add(2)
 
@@ -93,7 +95,7 @@ func TestLocalPackageManager(t *testing.T) {
 					<-signal             // waiting signal to release
 					return nil
 				})
-				c.So(err, ShouldBeNil)
+				assert.Loosely(c, err, should.BeNil)
 				wg.Done()
 			}()
 
@@ -103,10 +105,10 @@ func TestLocalPackageManager(t *testing.T) {
 				h := pm.Get("something")
 				err := h.IncRef() // blocked by build
 				// exclusive lock released
-				c.So(err, ShouldBeNil)
-				c.So(built.Load(), ShouldBeTrue)
+				assert.Loosely(c, err, should.BeNil)
+				assert.Loosely(c, built.Load(), should.BeTrue)
 				err = h.DecRef()
-				c.So(err, ShouldBeNil)
+				assert.Loosely(c, err, should.BeNil)
 				wg.Done()
 			}()
 
@@ -118,42 +120,42 @@ func TestLocalPackageManager(t *testing.T) {
 			wg.Wait()
 		})
 
-		Convey("prune", func() {
+		t.Run("prune", func(c *ftt.Test) {
 			h := pm.Get("something")
-			So(h, ShouldNotBeNil)
+			assert.Loosely(c, h, should.NotBeNil)
 			err = h.IncRef()
-			So(errors.Is(err, core.ErrPackageNotExist), ShouldBeTrue)
+			assert.Loosely(c, errors.Is(err, core.ErrPackageNotExist), should.BeTrue)
 
 			built := false
 			err = h.Build(func() error {
 				built = true
 				return nil
 			})
-			So(built, ShouldBeTrue)
-			So(err, ShouldBeNil)
+			assert.Loosely(c, built, should.BeTrue)
+			assert.Loosely(c, err, should.BeNil)
 
 			ctx := context.Background()
 			err = h.IncRef()
 			pm.Prune(ctx, 0, -1)
 			ok, err := h.TryRemove() // We can't remove a package in use.
-			So(err, ShouldBeNil)
-			So(ok, ShouldBeFalse)
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, ok, should.BeFalse)
 
 			err = h.DecRef()
-			So(err, ShouldBeNil)
+			assert.Loosely(c, err, should.BeNil)
 			pm.Prune(ctx, 0, -1) // Pruned
 			err = h.IncRef()
-			So(errors.Is(err, core.ErrPackageNotExist), ShouldBeTrue)
+			assert.Loosely(c, errors.Is(err, core.ErrPackageNotExist), should.BeTrue)
 		})
 	})
 }
 
 func TestRefRecursiveRuntime(t *testing.T) {
-	Convey("Test RefRecursiveRuntime", t, func() {
+	ftt.Run("Test RefRecursiveRuntime", t, func(t *ftt.Test) {
 		ctx := context.Background()
 
 		pm, err := NewLocalPackageManager(t.TempDir())
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		b := NewBuilder(generators.Platforms{}, pm, actions.NewActionProcessor())
 		pe := NewPackageExecutor("", nil, nil, nil, func(context.Context, *ExecutionConfig, *core.Derivation) error { return nil })
@@ -163,16 +165,16 @@ func TestRefRecursiveRuntime(t *testing.T) {
 				{Generator: &Generator{Name: "second"}, Type: generators.DepsBuildHost, Runtime: true},
 			},
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		Convey("ok", func() {
-			So(func() { MustIncRefRecursiveRuntime(first) }, ShouldNotPanic)
-			So(func() { MustDecRefRecursiveRuntime(first) }, ShouldNotPanic)
+		t.Run("ok", func(t *ftt.Test) {
+			assert.Loosely(t, func() { MustIncRefRecursiveRuntime(first) }, should.NotPanic)
+			assert.Loosely(t, func() { MustDecRefRecursiveRuntime(first) }, should.NotPanic)
 		})
-		Convey("panic inc", func() {
-			So(func() { MustIncRefRecursiveRuntime(first) }, ShouldNotPanic)
-			So(func() { MustIncRefRecursiveRuntime(first) }, ShouldPanic)
-			So(func() { MustDecRefRecursiveRuntime(first) }, ShouldNotPanic)
+		t.Run("panic inc", func(t *ftt.Test) {
+			assert.Loosely(t, func() { MustIncRefRecursiveRuntime(first) }, should.NotPanic)
+			assert.Loosely(t, func() { MustIncRefRecursiveRuntime(first) }, should.Panic)
+			assert.Loosely(t, func() { MustDecRefRecursiveRuntime(first) }, should.NotPanic)
 		})
 	})
 
