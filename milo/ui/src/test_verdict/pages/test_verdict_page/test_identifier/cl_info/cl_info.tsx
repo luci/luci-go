@@ -42,7 +42,6 @@ export function CLInfo() {
             CL: <ChangelistLink changelist={sources.changelists[0]} />
             {sources.changelists.length > 1 && (
               <HtmlTooltip
-                arrow
                 placement="bottom"
                 sx={{
                   textDecoration: 'underline',

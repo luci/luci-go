@@ -149,7 +149,7 @@ export function AncestorBuild({ buildId }: AncestorBuildProps) {
   }
 
   return (
-    <HtmlTooltip arrow title={data && <Tooltip build={data} />}>
+    <HtmlTooltip title={data && <Tooltip build={data} />}>
       <ChipContainer>
         {data ? (
           <BuildStatusIcon status={data.status} fontSize="small" />

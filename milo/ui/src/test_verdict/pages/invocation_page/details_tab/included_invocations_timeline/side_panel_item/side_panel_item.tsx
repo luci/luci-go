@@ -70,7 +70,6 @@ export function SidePanelItem({
         height={TEXT_FONT_SIZE}
       >
         <HtmlTooltip
-          arrow
           disableInteractive
           title={
             <InvocationTooltip

@@ -64,7 +64,6 @@ export function SidePanelItem({
         height={TEXT_FONT_SIZE + 2}
       >
         <HtmlTooltip
-          arrow
           disableInteractive
           title={<StepTooltip step={step} buildStartTime={buildStartTime} />}
         >

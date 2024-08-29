@@ -74,11 +74,7 @@ export function SegmentSpan({ position }: SegmentSpanProps) {
   }
 
   return (
-    <HtmlTooltip
-      arrow
-      disableInteractive
-      title={<SegmentInfo segment={segment} />}
-    >
+    <HtmlTooltip disableInteractive title={<SegmentInfo segment={segment} />}>
       <Span
         className={classNames.join(' ')}
         sx={{

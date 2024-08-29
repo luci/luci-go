@@ -40,7 +40,6 @@ export function CompactClList({ changes }: CompactClListProps) {
     // add more details to the tooltip (e.g. CL status) and those details should
     // be displayed for the first CL as well.
     <HtmlTooltip
-      arrow
       title={
         <ListContainer>
           {changes.map((cl, i) => (

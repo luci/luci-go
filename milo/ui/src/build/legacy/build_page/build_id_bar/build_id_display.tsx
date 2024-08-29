@@ -50,7 +50,6 @@ export function BuildIdDisplay({
       <span>{builderId.bucket}</span>
       <Divider />
       <HtmlTooltip
-        arrow
         title={
           builderDescription && (
             <div>

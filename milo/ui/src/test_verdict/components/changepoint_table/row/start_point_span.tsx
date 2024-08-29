@@ -164,7 +164,6 @@ export function StartPointSpan({
       height={START_POINT_SPAN_HEIGHT}
     >
       <HtmlTooltip
-        arrow
         disableInteractive
         title={
           <StartPointInfo

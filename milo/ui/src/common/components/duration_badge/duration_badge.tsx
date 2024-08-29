@@ -172,7 +172,6 @@ export function DurationBadge({
           to={to}
         />
       }
-      arrow
     >
       <Badge
         sx={{

@@ -29,7 +29,7 @@ export interface CommitLinkProps {
 
 export function CommitLink({ commit }: CommitLinkProps) {
   return (
-    <HtmlTooltip arrow title={<CommitLinkTooltip commit={commit} />}>
+    <HtmlTooltip title={<CommitLinkTooltip commit={commit} />}>
       <Link href={getGitilesCommitURL(commit)}>
         {getGitilesCommitLabel(commit)}
       </Link>

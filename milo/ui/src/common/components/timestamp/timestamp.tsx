@@ -55,7 +55,6 @@ export function Timestamp({
 
   return (
     <HtmlTooltip
-      arrow
       title={
         <Tooltip datetime={datetime} format={extraFormat} zones={extraZones} />
       }

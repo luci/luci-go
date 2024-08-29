@@ -173,7 +173,6 @@ export function LogSearch() {
             endAdornment={
               <InputAdornment position="end">
                 <HtmlTooltip
-                  arrow
                   title={
                     <>
                       <strong>Contain</strong> - case insensitive find for exact

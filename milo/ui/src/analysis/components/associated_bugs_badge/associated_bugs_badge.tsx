@@ -56,7 +56,6 @@ export function AssociatedBugsBadge({
 
   return (
     <HtmlTooltip
-      arrow
       title={
         <AssociatedBugsBadgeTooltip project={project} clusters={clusters} />
       }

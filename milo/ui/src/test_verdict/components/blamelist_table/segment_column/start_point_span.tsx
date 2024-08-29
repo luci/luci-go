@@ -101,7 +101,6 @@ export function StartPointSpan({ position }: StartPointSpanProps) {
         return (
           <HtmlTooltip
             key={i}
-            arrow
             disableInteractive
             title={<StartPointInfo segment={sp} />}
           >

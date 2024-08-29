@@ -110,7 +110,6 @@ export function SegmentSpan({ testVariantBranch, segment }: SegmentSpanProps) {
       }
     >
       <HtmlTooltip
-        arrow
         disableInteractive
         title={
           <SegmentInfo

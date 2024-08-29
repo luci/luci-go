@@ -70,7 +70,6 @@ export function FailureRatePieChart({
 
   return (
     <HtmlTooltip
-      arrow
       title={
         <Box sx={{ width: '300px' }}>
           <b>{label}:</b>

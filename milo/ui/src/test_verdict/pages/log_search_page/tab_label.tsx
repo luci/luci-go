@@ -26,7 +26,7 @@ export function TabLabel({ label, tooltipText }: TabLabelProps) {
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
       <span> {label}</span>
-      <HtmlTooltip arrow title={tooltipText}>
+      <HtmlTooltip title={tooltipText}>
         <HelpOutline fontSize="small" />
       </HtmlTooltip>
     </Box>
