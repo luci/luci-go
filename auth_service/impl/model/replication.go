@@ -19,6 +19,7 @@ import (
 	"crypto/sha512"
 	"encoding/base64"
 	"fmt"
+	"time"
 
 	"google.golang.org/protobuf/proto"
 
@@ -168,6 +169,14 @@ func packAuthDB(ctx context.Context, useV1Perms bool) (*AuthReplicationState, *p
 	}
 
 	authDBProto, err := snapshot.ToAuthDBProto(ctx, useV1Perms)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	// Validate the AuthDB and log how long it took.
+	start := time.Now()
+	err = validateAuthDB(ctx, authDBProto)
+	logging.Debugf(ctx, "validating AuthDB took %.2f seconds", time.Since(start).Seconds())
 	if err != nil {
 		return nil, nil, nil, err
 	}

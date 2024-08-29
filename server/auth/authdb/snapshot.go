@@ -98,7 +98,7 @@ func SnapshotDBFromTextProto(r io.Reader) (*SnapshotDB, error) {
 // were performed before, when AuthDB was initially received.
 func NewSnapshotDB(authDB *protocol.AuthDB, authServiceURL string, rev int64, validate bool) (*SnapshotDB, error) {
 	if validate {
-		if err := validateAuthDB(authDB); err != nil {
+		if err := ValidateAuthDB(authDB); err != nil {
 			return nil, err
 		}
 	}

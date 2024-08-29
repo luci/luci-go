@@ -23,8 +23,8 @@ import (
 	"go.chromium.org/luci/server/auth/service/protocol"
 )
 
-// validateAuthDB returns nil if AuthDB looks correct.
-func validateAuthDB(db *protocol.AuthDB) error {
+// ValidateAuthDB returns nil if AuthDB looks correct.
+func ValidateAuthDB(db *protocol.AuthDB) error {
 	groups := make(map[string]*protocol.AuthGroup, len(db.Groups))
 	for _, g := range db.Groups {
 		groups[g.Name] = g
