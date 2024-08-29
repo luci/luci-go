@@ -14,4 +14,5 @@
 
 //go:generate cproto -disable-grpc components/auth/proto
 
+// Package protocol defines the data structures used in AuthDB replication.
 package protocol
