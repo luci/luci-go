@@ -20,11 +20,13 @@ import {
   getLastReadVersion,
 } from '../common';
 
-export const ReleaseNotesCtx = createContext<ReleaseNotes | null>(null);
-export const HasNewReleaseCtx = createContext<boolean | null>(null);
-export const MarkReleaseNotesAsReadCtx = createContext<(() => void) | null>(
-  null,
+export const ReleaseNotesCtx = createContext<ReleaseNotes | undefined>(
+  undefined,
 );
+export const HasNewReleaseCtx = createContext<boolean | undefined>(undefined);
+export const MarkReleaseNotesAsReadCtx = createContext<
+  (() => void) | undefined
+>(undefined);
 
 export interface ReleaseNotesProviderProps {
   readonly initReleaseNotes: ReleaseNotes;

@@ -18,7 +18,7 @@ import { BuildCtx } from './context';
 
 export function useBuild() {
   const ctx = useContext(BuildCtx);
-  if (ctx === null) {
+  if (ctx === undefined) {
     throw new Error('useBuild can only be used in a BuildContextProvider');
   }
   return ctx;

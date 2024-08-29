@@ -22,7 +22,7 @@ import { ActiveTabContext, ActiveTabUpdaterContext } from './context';
 export function useActiveTabId() {
   const ctx = useContext(ActiveTabContext);
 
-  if (!ctx) {
+  if (ctx === undefined) {
     throw new Error('useActiveTabId can only be used in a RoutedTabs');
   }
 
@@ -38,7 +38,7 @@ export function useActiveTabId() {
 export function useTabId(id: string) {
   const hookRef = useRef();
   const dispatch = useContext(ActiveTabUpdaterContext);
-  if (!dispatch) {
+  if (dispatch === undefined) {
     throw new Error('useTabId can only be used in a RoutedTabs');
   }
 

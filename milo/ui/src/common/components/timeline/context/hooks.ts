@@ -18,7 +18,7 @@ import { ConfigCtx, RulerStateCtx, RulerStateSettersCtx } from './context';
 
 export function useTimelineConfig() {
   const ctx = useContext(ConfigCtx);
-  if (ctx === null) {
+  if (ctx === undefined) {
     throw new Error('useTimelineConfig can only be used in a Timeline');
   }
 
@@ -27,7 +27,7 @@ export function useTimelineConfig() {
 
 export function useRulerStateSetters() {
   const ctx = useContext(RulerStateSettersCtx);
-  if (ctx === null) {
+  if (ctx === undefined) {
     throw new Error('useRulerStateSetters can only be used in a Timeline');
   }
 
@@ -35,5 +35,10 @@ export function useRulerStateSetters() {
 }
 
 export function useRulerState() {
-  return useContext(RulerStateCtx);
+  const ctx = useContext(RulerStateCtx);
+  if (ctx === undefined) {
+    throw new Error('useRulerState can only be used in a Timeline');
+  }
+
+  return ctx;
 }

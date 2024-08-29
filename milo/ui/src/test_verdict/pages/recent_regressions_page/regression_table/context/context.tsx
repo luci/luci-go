@@ -16,7 +16,9 @@ import { ReactNode, createContext } from 'react';
 
 import { GetDetailsUrlPath } from '../types';
 
-export const RegressionTableCtx = createContext<GetDetailsUrlPath | null>(null);
+export const RegressionTableCtx = createContext<GetDetailsUrlPath | undefined>(
+  undefined,
+);
 
 export interface RegressionTableContextProviderProps {
   readonly getDetailsUrlPath: GetDetailsUrlPath;

@@ -20,7 +20,7 @@ import { RegressionTableCtx } from './context';
 
 export function useDetailsUrlPath(regression: OutputChangepointGroupSummary) {
   const ctx = useContext(RegressionTableCtx);
-  if (ctx === null) {
+  if (ctx === undefined) {
     throw new Error('useDetailsUrlPath can only be used in a RegressionTable');
   }
   return ctx(regression);

@@ -30,7 +30,7 @@ import { SyncedSearchParamsContext } from './synced_search_params';
  */
 export function useSyncedSearchParams() {
   const ctx = useContext(SyncedSearchParamsContext);
-  if (!ctx) {
+  if (ctx === undefined) {
     throw new Error(
       'useSyncedSearchParams can only be used in a SyncedSearchParamsProvider',
     );

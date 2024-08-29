@@ -22,7 +22,7 @@ import {
 
 export function useReleaseNotes() {
   const ctx = useContext(ReleaseNotesCtx);
-  if (ctx === null) {
+  if (ctx === undefined) {
     throw new Error(
       'useReleaseNotes can only be used in a ReleaseNotesProvider',
     );
@@ -31,7 +31,7 @@ export function useReleaseNotes() {
 }
 export function useHasNewRelease() {
   const ctx = useContext(HasNewReleaseCtx);
-  if (ctx === null) {
+  if (ctx === undefined) {
     throw new Error(
       'useHasNewRelease can only be used in a ReleaseNotesProvider',
     );
@@ -41,7 +41,7 @@ export function useHasNewRelease() {
 
 export function useMarkReleaseNotesRead() {
   const ctx = useContext(MarkReleaseNotesAsReadCtx);
-  if (ctx === null) {
+  if (ctx === undefined) {
     throw new Error(
       'useMarkReleaseNotesRead can only be used in a ReleaseNotesProvider',
     );

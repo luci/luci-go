@@ -19,7 +19,7 @@ import { ResultDataCtx } from './context';
 export function useResultArtifacts() {
   const ctx = useContext(ResultDataCtx);
 
-  if (!ctx) {
+  if (ctx === undefined) {
     throw new Error(
       'useResultArtifacts can only be used in a ResultDataProvider',
     );
@@ -31,7 +31,7 @@ export function useResultArtifacts() {
 export function useInvArtifacts() {
   const ctx = useContext(ResultDataCtx);
 
-  if (!ctx) {
+  if (ctx === undefined) {
     throw new Error('useInvArtifacts can only be used in a ResultDataProvider');
   }
 
@@ -41,7 +41,7 @@ export function useInvArtifacts() {
 export function useCombinedArtifacts() {
   const ctx = useContext(ResultDataCtx);
 
-  if (!ctx) {
+  if (ctx === undefined) {
     throw new Error(
       'useCombinedArtifacts can only be used in a ResultDataProvider',
     );
@@ -53,7 +53,7 @@ export function useCombinedArtifacts() {
 export function useArtifactsLoading() {
   const ctx = useContext(ResultDataCtx);
 
-  if (!ctx) {
+  if (ctx === undefined) {
     throw new Error(
       'useArtifactsLoading can only be used in a ResultDataProvider',
     );
@@ -65,7 +65,7 @@ export function useArtifactsLoading() {
 export function useResult() {
   const ctx = useContext(ResultDataCtx);
 
-  if (!ctx) {
+  if (ctx === undefined) {
     throw new Error('useResult can only be used in a ResultDataProvider');
   }
 
@@ -75,7 +75,7 @@ export function useResult() {
 export function useTopPanelExpanded() {
   const ctx = useContext(ResultDataCtx);
 
-  if (!ctx) {
+  if (ctx === undefined) {
     throw new Error(
       'useTopPanelExpanded can only be used in a ResultDataProvider',
     );
@@ -87,7 +87,7 @@ export function useTopPanelExpanded() {
 export function useSetTopPanelExpanded() {
   const ctx = useContext(ResultDataCtx);
 
-  if (!ctx) {
+  if (ctx === undefined) {
     throw new Error(
       'useSetTopPanelExpanded can only be used in a ResultDataProvider',
     );

@@ -20,8 +20,9 @@ import {
 } from '@/common/hooks/prpc_query';
 import { BatchedBuildsClientImpl } from '@/proto_utils/batched_builds_client';
 
-export const BuildsClientCtx =
-  createContext<DecoratedClient<BatchedBuildsClientImpl> | null>(null);
+export const BuildsClientCtx = createContext<
+  DecoratedClient<BatchedBuildsClientImpl> | undefined
+>(undefined);
 
 export interface BuildPathContextProviderProps {
   readonly maxBatchSize: number;

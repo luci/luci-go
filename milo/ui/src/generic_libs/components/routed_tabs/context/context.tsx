@@ -20,17 +20,17 @@ export interface ActiveTabContextValue {
   readonly activeTabId: string | null;
 }
 
-export const ActiveTabContext = createContext<ActiveTabContextValue | null>(
-  null,
-);
+export const ActiveTabContext = createContext<
+  ActiveTabContextValue | undefined
+>(undefined);
 
 export const ActiveTabContextProvider = ActiveTabContext.Provider;
 
 // Keep the dispatch in a separate context so updating the active tab doesn't
 // trigger refresh on components that only consume the dispatch action (which
 // is rarely updated if at all).
-export const ActiveTabUpdaterContext = createContext<Dispatch<Action> | null>(
-  null,
-);
+export const ActiveTabUpdaterContext = createContext<
+  Dispatch<Action> | undefined
+>(undefined);
 
 export const ActiveTabUpdaterContextProvider = ActiveTabUpdaterContext.Provider;

@@ -18,7 +18,7 @@ import { BuildsClientCtx } from './context';
 
 export function useBuildsClient() {
   const ctx = useContext(BuildsClientCtx);
-  if (ctx === null) {
+  if (ctx === undefined) {
     throw new Error('useBuildsClient can only be used in a AncestorBuildPath');
   }
   return ctx;

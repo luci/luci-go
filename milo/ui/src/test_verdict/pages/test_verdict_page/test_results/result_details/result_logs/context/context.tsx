@@ -32,7 +32,9 @@ export interface ResultLogsContext {
   ) => void;
 }
 
-export const ResultLogsCtx = createContext<ResultLogsContext | null>(null);
+export const ResultLogsCtx = createContext<ResultLogsContext | undefined>(
+  undefined,
+);
 
 interface ResultLogsProps {
   children: ReactNode;

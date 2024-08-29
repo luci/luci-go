@@ -18,7 +18,7 @@ import { BuildsClientCtx, NumOfBuildsCtx } from './context';
 
 export function useBuildsClient() {
   const ctx = useContext(BuildsClientCtx);
-  if (ctx === null) {
+  if (ctx === undefined) {
     throw new Error(
       'useBuildsClient can only be used in a BuilderTableContextProvider',
     );
@@ -28,7 +28,7 @@ export function useBuildsClient() {
 
 export function useNumOfBuilds() {
   const ctx = useContext(NumOfBuildsCtx);
-  if (ctx === null) {
+  if (ctx === undefined) {
     throw new Error(
       'useNumOfBuilds can only be used in a BuilderTableContextProvider',
     );

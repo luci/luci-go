@@ -19,7 +19,7 @@ import { ResultLogsCtx } from './context';
 export function useSelectedArtifact() {
   const ctx = useContext(ResultLogsCtx);
 
-  if (!ctx) {
+  if (ctx === undefined) {
     throw new Error('useSelectedArtifact can only be used in a ResultLogsCtx');
   }
 
@@ -29,7 +29,7 @@ export function useSelectedArtifact() {
 export function useUpdateSelectedArtifact() {
   const ctx = useContext(ResultLogsCtx);
 
-  if (!ctx) {
+  if (ctx === undefined) {
     throw new Error(
       'useUpdateSelectedArtifact can only be used in a ResultLogsCtx',
     );

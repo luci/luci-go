@@ -33,7 +33,7 @@ export interface BuildBugButtonProps
    */
   // Making this optional allows the `GetProjectCfg` request to be sent without
   // waiting for the build query to resolve.
-  readonly build?: DeepNonNullable<Pick<Build, 'id' | 'builder'>>;
+  readonly build?: DeepNonNullable<Pick<Build, 'id' | 'builder'>> | null;
 }
 
 export function BuildBugButton({

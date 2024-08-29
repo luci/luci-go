@@ -21,7 +21,7 @@ interface ContextValue {
   readonly setShowConfigDialog: Dispatch<SetStateAction<boolean>>;
 }
 
-export const PageConfigCtx = createContext<ContextValue | null>(null);
+export const PageConfigCtx = createContext<ContextValue | undefined>(undefined);
 
 export interface PageConfigStateProviderProps {
   readonly children: React.ReactNode;

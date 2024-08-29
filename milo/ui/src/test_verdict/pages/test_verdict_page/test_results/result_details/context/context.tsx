@@ -41,7 +41,9 @@ interface ResultDataContext {
   readonly setTopPanelExpanded: Dispatch<SetStateAction<boolean>>;
 }
 
-export const ResultDataCtx = createContext<ResultDataContext | null>(null);
+export const ResultDataCtx = createContext<ResultDataContext | undefined>(
+  undefined,
+);
 
 interface ResultDataProviderProps {
   readonly result: TestResult;

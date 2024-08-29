@@ -54,7 +54,9 @@ export interface LogPaginationState {
   readonly invocationLogPagerCtx: PagerContext;
 }
 
-export const PaginationCtx = createContext<LogPaginationState | null>(null);
+export const PaginationCtx = createContext<LogPaginationState | undefined>(
+  undefined,
+);
 
 export interface PaginationProviderProps {
   readonly state: LogPaginationState;

@@ -20,9 +20,10 @@ import {
 } from '@/common/hooks/prpc_query';
 import { BatchedBuildsClientImpl } from '@/proto_utils/batched_builds_client';
 
-export const BuildsClientCtx =
-  createContext<DecoratedClient<BatchedBuildsClientImpl> | null>(null);
-export const NumOfBuildsCtx = createContext<number | null>(null);
+export const BuildsClientCtx = createContext<
+  DecoratedClient<BatchedBuildsClientImpl> | undefined
+>(undefined);
+export const NumOfBuildsCtx = createContext<number | undefined>(undefined);
 
 export interface BuilderTableContextProviderProps {
   readonly numOfBuilds: number;

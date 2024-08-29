@@ -16,9 +16,13 @@ import { ReactNode, createContext } from 'react';
 
 import { OutputBuild } from '@/build/types';
 
-// Use `null` to denote missing context provider.
-// `undefined` means there's no build.
-export const BuildCtx = createContext<OutputBuild | undefined | null>(null);
+/**
+ * `null` means there's no build.
+ * `undefined` means the context provider is missing.
+ */
+export const BuildCtx = createContext<OutputBuild | null | undefined>(
+  undefined,
+);
 
 export interface BuildProviderProps {
   readonly build?: OutputBuild;
@@ -26,5 +30,7 @@ export interface BuildProviderProps {
 }
 
 export function BuildContextProvider({ build, children }: BuildProviderProps) {
-  return <BuildCtx.Provider value={build}>{children}</BuildCtx.Provider>;
+  return (
+    <BuildCtx.Provider value={build || null}>{children}</BuildCtx.Provider>
+  );
 }

@@ -22,7 +22,7 @@ import { PageConfigCtx } from './page_config_state_provider';
  */
 export function useSetShowPageConfig() {
   const ctx = useContext(PageConfigCtx);
-  if (ctx === null) {
+  if (ctx === undefined) {
     throw new Error(
       'useSetShowPageConfig can only be used in a PageConfigProvider',
     );
@@ -42,7 +42,7 @@ export function useSetShowPageConfig() {
  */
 export function usePageSpecificConfig() {
   const ctx = useContext(PageConfigCtx);
-  if (ctx === null) {
+  if (ctx === undefined) {
     throw new Error(
       'usePageSpecificConfig can only be used in a PageConfigProvider',
     );

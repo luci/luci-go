@@ -43,7 +43,7 @@ export function useLogGroupListState() {
 
 export function useTestLogPagerCtx() {
   const ctx = useContext(PaginationCtx);
-  if (!ctx) {
+  if (ctx === undefined) {
     throw new Error(
       'useTestLogPagerCtx can only be used in a PaginationProvider',
     );
@@ -53,7 +53,7 @@ export function useTestLogPagerCtx() {
 
 export function useInvocationLogPagerCtx() {
   const ctx = useContext(PaginationCtx);
-  if (!ctx) {
+  if (ctx === undefined) {
     throw new Error(
       'useInvocationLogPagerCtx can only be used in a PaginationProvider',
     );

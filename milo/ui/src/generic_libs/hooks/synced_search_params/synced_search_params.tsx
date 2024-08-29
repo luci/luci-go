@@ -28,8 +28,8 @@ type SetURLSearchParams = (
 ) => void;
 
 export const SyncedSearchParamsContext = createContext<
-  readonly [URLSearchParams, SetURLSearchParams] | null
->(null);
+  readonly [URLSearchParams, SetURLSearchParams] | undefined
+>(undefined);
 
 export interface ContextProviderProps {
   readonly children: ReactNode;

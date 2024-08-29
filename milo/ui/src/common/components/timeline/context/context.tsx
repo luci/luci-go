@@ -32,17 +32,24 @@ export interface TimelineConfig {
   readonly yScale: ScaleLinear<number, number, never>;
   readonly timeInterval: TimeInterval;
 }
-export const ConfigCtx = createContext<TimelineConfig | null>(null);
+export const ConfigCtx = createContext<TimelineConfig | undefined>(undefined);
 
 export interface RulerStateSetters {
   readonly setDisplay: Dispatch<SetStateAction<boolean>>;
   readonly setX: Dispatch<SetStateAction<number>>;
 }
 
-export const RulerStateSettersCtx = createContext<RulerStateSetters | null>(
-  null,
+export const RulerStateSettersCtx = createContext<
+  RulerStateSetters | undefined
+>(undefined);
+
+/**
+ * `null` means there's no ruler.
+ * `undefined` means the context provider is missing.
+ */
+export const RulerStateCtx = createContext<number | null | undefined>(
+  undefined,
 );
-export const RulerStateCtx = createContext<number | null>(null);
 
 export interface TimelineContextProviderProps {
   readonly config: TimelineConfig;
