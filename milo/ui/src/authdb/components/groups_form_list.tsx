@@ -30,8 +30,12 @@ import { isGlob, isMember, isSubgroup } from '@/authdb/common/helpers';
 import './groups_list.css';
 
 interface GroupsFormListProps {
+    // Sets the starting items array. Used on initial GetGroup call from groups_form.
     initialItems: string[];
+    // This will be either members, subgroups or globs. Used for header in form and to check validity of added items.
     name: string;
+    // groups_form function called when items are added or removed in this array. Allows groups_form component to know of edited state.
+    itemsChanged: () => void;
 }
 
 export interface FormListElement {
@@ -42,7 +46,7 @@ export interface FormListElement {
 
 export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
   (
-  {initialItems, name}, ref
+  {initialItems, name, itemsChanged}, ref
   ) => {
     const [items, setItems] = useState<string[]>(initialItems);
     const [addingItem, setAddingItem] = useState<boolean>();
@@ -87,11 +91,13 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
       }
       if (currentItem) {
         setItems([...items, currentItem]);
+        itemsChanged();
         resetTextfield()
       }
     }
 
     const removeFromItems = (index: number) => {
+        itemsChanged();
         setItems(items.filter((_, i) => i != index));
     }
 

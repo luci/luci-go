@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { render, screen, fireEvent } from '@testing-library/react';
-//
+import userEvent from '@testing-library/user-event'
 import { createMockGroupIndividual, mockFetchGetGroup, mockErrorFetchingGetGroup } from '@/authdb/testing_tools/mocks/group_individual_mock';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 import List from '@mui/material/List';
@@ -199,8 +199,8 @@ describe('<GroupsForm />', () => {
     // Put the Description in edit mode.
     fireEvent.mouseEnter(screen.getByTestId('description-table'));
     await screen.findByTestId('edit-description-icon');
-    const editButtton = screen.getByTestId('edit-description-icon');
-    act(() => editButtton.click());
+    const editButton = screen.getByTestId('edit-description-icon');
+    act(() => editButton.click());
 
     // Change the group's description.
     const descriptionTextfield = screen.getByTestId('description-textfield').querySelector('input');
@@ -211,7 +211,7 @@ describe('<GroupsForm />', () => {
     expect(descriptionTextfield!.value).toBe('new description');
 
     // Turn off edit mode for the Description.
-    act(() => editButtton.click());
+    act(() => editButton.click());
 
     // The reset button should be displayed now that there are unsaved changes.
     expect(screen.getByTestId('reset-button')).toBeInTheDocument();
@@ -219,5 +219,91 @@ describe('<GroupsForm />', () => {
     // Resetting the form should restore the original description.
     act(() => screen.getByTestId('reset-button').click());
     expect(screen.getByText('testDescription')).toBeInTheDocument();
+  });
+
+  test('message shown for edited state for description', async () => {
+    const mockGroup = createMockGroupIndividual('123', true);
+    mockFetchGetGroup(mockGroup);
+
+    render(
+      <FakeContextProvider>
+        <GroupsForm name='123' />
+      </FakeContextProvider>,
+    );
+    await screen.findByTestId('groups-form');
+
+    // Put the Description in edit mode.
+    fireEvent.mouseEnter(screen.getByTestId('description-table'));
+    await screen.findByTestId('edit-description-icon');
+    const editButton = screen.getByTestId('edit-description-icon');
+    act(() => editButton.click());
+
+    // Change the group's description.
+    const descriptionTextfield = screen.getByTestId('description-textfield').querySelector('input');
+    act(() => {
+      fireEvent.change(descriptionTextfield!, { target: { value: 'new description' } });
+    });
+    expect(descriptionTextfield!.value).toBe('new description');
+
+    // Confirm changed Description and check message is shown.
+    act(() => editButton.click());
+    expect(screen.getByText('You have unsaved changes!')).toBeInTheDocument();
+  });
+
+  test('message shown for edited state for owners', async () => {
+    const mockGroup = createMockGroupIndividual('123', true);
+    mockFetchGetGroup(mockGroup);
+
+    render(
+      <FakeContextProvider>
+        <GroupsForm name='123' />
+      </FakeContextProvider>,
+    );
+    await screen.findByTestId('groups-form');
+
+    // Put the owners table in edit mode.
+    fireEvent.mouseEnter(screen.getByTestId('owners-table'));
+    await screen.findByTestId('edit-owners-icon');
+    const editButton = screen.getByTestId('edit-owners-icon');
+    act(() => editButton.click());
+
+    // Change the group's owners.
+    const ownersTextfield = screen.getByTestId('owners-textfield').querySelector('input');
+    act(() => {
+      fireEvent.change(ownersTextfield!, { target: { value: 'new owners' } });
+    });
+    expect(ownersTextfield!.value).toBe('new owners');
+
+    // Confirm changed owners and check message is shown.
+    act(() => editButton.click());
+    expect(screen.getByText('You have unsaved changes!')).toBeInTheDocument();
+  });
+
+  test('message shown for edited state in groups form list item', async () => {
+    const mockGroup = createMockGroupIndividual('123', true);
+    mockFetchGetGroup(mockGroup);
+
+    render(
+      <FakeContextProvider>
+        <GroupsForm name='123' />
+      </FakeContextProvider>,
+    );
+    await screen.findByTestId('groups-form');
+
+    // Click add button for first list (members).
+    const addButton = screen.queryAllByTestId('add-button')[0];
+    act(() => addButton!.click());
+    // Type in textfield.
+    const textfield = screen.getByTestId('add-textfield').querySelector('input');
+    expect(textfield).toBeInTheDocument();
+    await userEvent.type(textfield!, 'newMember@email.com');
+    expect(textfield!.value).toBe('newMember@email.com');
+    // Click confirm button.
+    const confirmButton = screen.queryByTestId('confirm-button');
+    expect(confirmButton).not.toBeNull();
+    act(() => confirmButton!.click());
+    // Check new member shown in list & message is shown.
+    expect(screen.getByText('newMember@email.com')).toBeInTheDocument();
+    expect(screen.getByText('You have unsaved changes!')).toBeInTheDocument();
   });
 });

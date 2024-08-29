@@ -172,6 +172,10 @@ export function GroupsForm({ name, onDelete = () => { } }: GroupsFormProps) {
     setOwnersMode(!ownersMode);
   }
 
+  const itemsChanged = () => {
+    setChangedState(true);
+  }
+
   useEffect(() => {
   }, [description]);
 
@@ -209,6 +213,9 @@ export function GroupsForm({ name, onDelete = () => { } }: GroupsFormProps) {
   const resetFormValues = () => {
     setDescription(initialDescription);
     setOwners(initialOwners);
+    membersRef.current?.changeItems(members);
+    globsRef.current?.changeItems(response?.globs as string[]);
+    subgroupsRef.current?.changeItems(response?.nested as string[]);
     resetForm();
   }
 
@@ -267,6 +274,8 @@ export function GroupsForm({ name, onDelete = () => { } }: GroupsFormProps) {
   if (owners == null) {
     setOwners(initialOwners || '');
   }
+
+
   const members: string[] = (response?.members)?.map((member => stripPrefix('user', member))) || [] as string[];
   const subgroups: string[] = (response?.nested || []) as string[];
   const globs: string[] = (response?.globs || []) as string[];
@@ -305,13 +314,13 @@ export function GroupsForm({ name, onDelete = () => { } }: GroupsFormProps) {
                   </TableRow>
                 </TableBody>
               </Table>
-              <Table onMouseEnter={() => setShowOwnersEdit(true)} onMouseLeave={() => setShowOwnersEdit(false)}>
+              <Table onMouseEnter={() => setShowOwnersEdit(true)} onMouseLeave={() => setShowOwnersEdit(false)} data-testid='owners-table'>
                 <TableBody>
                   <TableRow >
                     <TableCell sx={{ pb: 0 }} style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', minHeight: '45px' }}>
                       <Typography variant="h6"> Owners</Typography>
                       {(showOwnersEdit || ownersMode) && callerCanModify &&
-                        <IconButton color='primary' onClick={changeOwnersMode} sx={{ p: 0, ml: 1.5 }}>
+                        <IconButton color='primary' onClick={changeOwnersMode} sx={{ p: 0, ml: 1.5 }} data-testid='edit-owners-icon'>
                           {ownersMode
                             ? <DoneIcon />
                             : <EditIcon />
@@ -323,7 +332,7 @@ export function GroupsForm({ name, onDelete = () => { } }: GroupsFormProps) {
                   <TableRow>
                     <TableCell align='left' style={{ width: '95%' }} sx={{ pt: 0 }}>
                       {ownersMode
-                        ? <TextField value={owners} style={{ width: '100%' }} onChange={(e) => setOwners(e.target.value)} id='ownersTextfield'></TextField>
+                        ? <TextField value={owners} style={{ width: '100%' }} onChange={(e) => setOwners(e.target.value)} id='ownersTextfield' data-testid='owners-textfield'></TextField>
                         : <Typography variant="body2" style={{ width: '100%' }}> {owners} </Typography>
                       }
                     </TableCell>
@@ -338,9 +347,9 @@ export function GroupsForm({ name, onDelete = () => { } }: GroupsFormProps) {
             <>
               {callerCanModify ?
                 <>
-                  <GroupsFormList name='Members' initialItems={members} ref={membersRef} />
-                  <GroupsFormList name='Globs' initialItems={globs} ref={globsRef} />
-                  <GroupsFormList name='Subgroups' initialItems={subgroups} ref={subgroupsRef} />
+                  <GroupsFormList name='Members' initialItems={members} ref={membersRef} itemsChanged={itemsChanged}/>
+                  <GroupsFormList name='Globs' initialItems={globs} ref={globsRef} itemsChanged={itemsChanged}/>
+                  <GroupsFormList name='Subgroups' initialItems={subgroups} ref={subgroupsRef} itemsChanged={itemsChanged}/>
                   {changedState &&
                     <>
                       <Typography variant="subtitle1" sx={{ pl: 1.5 }}> You have unsaved changes! </Typography>
