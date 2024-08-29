@@ -88,6 +88,8 @@ export function MonitoringProvider({ children, treeName, tree }: Props) {
       }),
     ),
     refetchInterval: 60000,
+    // Do not keep previous data otherwise we might be rendering alerts from a
+    // different tree when user change the selected tree.
     enabled: !!(treeName && tree),
   });
 
@@ -106,15 +108,21 @@ export function MonitoringProvider({ children, treeName, tree }: Props) {
         }),
       ),
       refetchInterval: 60000,
+      keepPreviousData: true,
       enabled: !!(treeName && tree && alertsQuery.data),
     })),
   });
 
-  const extendedAlertsData = extendedAlertsQuery.flatMap(
-    (result) => result?.data?.alerts,
+  const extendedAlertsData = Object.fromEntries(
+    extendedAlertsQuery
+      .flatMap((result) => result?.data?.alerts || [])
+      .map((a) => [a.name, a]),
   );
+
   const linkedBugs = uniq(
-    (extendedAlertsData || []).map((a) => a?.bug).filter((b) => b && b !== '0'),
+    Object.values(extendedAlertsData)
+      .map((a) => a?.bug)
+      .filter((b) => b && b !== '0'),
   );
 
   const bugsQuery = useIssueListQuery(
@@ -140,9 +148,8 @@ export function MonitoringProvider({ children, treeName, tree }: Props) {
 
   const bugs = bugsQuery.data?.issues?.map((i) => bugFromJson(i));
 
-  const alerts = alertsQuery.data?.alerts.map((a, i) => {
-    const extended =
-      extendedAlertsQuery[Math.floor(i / 100)].data?.alerts[i % 100];
+  const alerts = alertsQuery.data?.alerts.map((a) => {
+    const extended = extendedAlertsData[`alerts/${encodeURIComponent(a.key)}`];
     const bug = extended?.bug;
     return {
       ...(JSON.parse(a.alertJson) as AlertJson),
