@@ -17,7 +17,6 @@ luci_gae_vars:
     CONFIG_SERVICE_HOST: config.luci.app
     OAUTH_CLIENT_ID: 713057630411-eqah8ap1ptgnf4nnepk10sutqg0msiv1.apps.googleusercontent.com
     SPANNER_DB: projects/luci-tree-status-dev/instances/dev/databases/luci-tree-status-dev
-    TQ_TARGET_HOST: staging.treestatus.api.luci.app
 
 handlers:
 - url: /.*
@@ -37,5 +36,4 @@ entrypoint: >
   -gerrit-auth-signer-account git-gerrit@system.gserviceaccount.com
   -gerrit-auth-audience https://api.cr.dev
   -spanner-database ${SPANNER_DB}
-  -tq-default-target-host ${TQ_TARGET_HOST}
   -tq-sweep-initiation-launcher ${CRON_AUTHORIZED_CALLER}

@@ -37,7 +37,6 @@ luci_gae_vars:
     CRON_AUTHORIZED_CALLER: cloud-scheduler-jobs@luci-source-index-dev.iam.gserviceaccount.com
     PUBSUB_AUTHORIZED_CALLER: cloud-pubsub-pusher@luci-source-index-dev.iam.gserviceaccount.com
     SPANNER_DB: projects/luci-source-index-dev/instances/dev/databases/luci-source-index-dev
-    TQ_TARGET_HOST: staging.sourceindex.api.luci.app
     TS_MON_ACCOUNT: app-engine-metric-publishers@prodx-mon-chrome-infra.google.com.iam.gserviceaccount.com
 
 handlers:
@@ -52,6 +51,5 @@ entrypoint: >
   -cron-authorized-caller ${CRON_AUTHORIZED_CALLER}
   -pubsub-authorized-caller ${PUBSUB_AUTHORIZED_CALLER}
   -spanner-database ${SPANNER_DB}
-  -tq-default-target-host ${TQ_TARGET_HOST}
-  -tq-sweep-initiation-launcher ${CRON_AUTHORIZED_CALLER}
   -ts-mon-account ${TS_MON_ACCOUNT}
+  -tq-sweep-initiation-launcher ${CRON_AUTHORIZED_CALLER}

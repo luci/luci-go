@@ -10,9 +10,8 @@ luci_gae_vars:
     CONFIG_SERVICE_HOST: config.luci.app
     CRON_AUTHORIZED_CALLER: cloud-scheduler-jobs@luci-notify-dev.iam.gserviceaccount.com
     PUBSUB_AUTHORIZED_CALLER: cloud-pubsub-pusher@luci-notify-dev.iam.gserviceaccount.com
-    SPANNER_DB: projects/luci-notify-dev/instances/dev/databases/luci-notify-dev
-    TQ_TARGET_HOST: staging.notify.api.luci.app
     TS_MON_ACCOUNT: app-engine-metric-publishers@prodx-mon-chrome-infra.google.com.iam.gserviceaccount.com
+    SPANNER_DB: projects/luci-notify-dev/instances/dev/databases/luci-notify-dev
 
 handlers:
 # Pubsub Handler.  This is strictly necessary because the default module
@@ -33,8 +32,7 @@ entrypoint: >
   -auth-service-host ${AUTH_SERVICE_HOST}
   -config-service-host ${CONFIG_SERVICE_HOST}
   -cron-authorized-caller ${CRON_AUTHORIZED_CALLER}
+  -ts-mon-account ${TS_MON_ACCOUNT}
   -pubsub-authorized-caller ${PUBSUB_AUTHORIZED_CALLER}
   -spanner-database ${SPANNER_DB}
-  -tq-default-target-host ${TQ_TARGET_HOST}
   -tq-sweep-initiation-launcher ${CRON_AUTHORIZED_CALLER}
-  -ts-mon-account ${TS_MON_ACCOUNT}
