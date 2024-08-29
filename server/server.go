@@ -379,6 +379,8 @@ type Options struct {
 
 	CloudErrorReporting bool // set to true to enable Cloud Error Reporting
 
+	startTime time.Time // when the server (including options) started initialization
+
 	testSeed           int64                   // used to seed rng in tests
 	testStdout         sdlogger.LogEntryWriter // mocks stdout in tests
 	testStderr         sdlogger.LogEntryWriter // mocks stderr in tests
@@ -398,6 +400,10 @@ func OptionsFromEnv(opts *Options) (*Options, error) {
 	if opts == nil {
 		opts = &Options{}
 	}
+
+	// Start tracking startup time ASAP, since FromCloudRunEnv etc below actually
+	// make requests to metadata server which can take some time.
+	opts.ensureStartTime(time.Now())
 
 	// Populate unset ClientAuth fields with hardcoded defaults.
 	authDefaults := chromeinfra.DefaultAuthOptions()
@@ -432,6 +438,7 @@ func OptionsFromEnv(opts *Options) (*Options, error) {
 
 // Register registers the command line flags.
 func (o *Options) Register(f *flag.FlagSet) {
+	o.ensureStartTime(time.Now())
 	if o.HTTPAddr == "" {
 		o.HTTPAddr = "localhost:8800"
 	}
@@ -788,6 +795,13 @@ func (o *Options) ImageName() string {
 	return o.ContainerImageID[:idx]
 }
 
+// ensureStartTime populates `startTime` if still unset.
+func (o *Options) ensureStartTime(now time.Time) {
+	if o.startTime.IsZero() {
+		o.startTime = now.UTC()
+	}
+}
+
 // userAgent derives a user-agent like string identifying the server.
 func (o *Options) userAgent() string {
 	return fmt.Sprintf("LUCI-Server (service: %s; job: %s; ver: %s);", o.TsMonServiceName, o.TsMonJobName, o.ImageVersion())
@@ -874,7 +888,6 @@ type Server struct {
 	// Options is a copy of options passed to New.
 	Options Options
 
-	startTime   time.Time    // for calculating uptime for /healthz
 	lastReqTime atomic.Value // time.Time when the last request started
 
 	stdout       sdlogger.LogEntryWriter                   // for logging to stdout, nil in dev mode
@@ -882,9 +895,10 @@ type Server struct {
 	errRptClient *errorreporting.Client                    // for reporting to the cloud Error Reporting
 	logRequestCB func(context.Context, *sdlogger.LogEntry) // if non-nil, need to emit request log entries via it
 
-	mainPort *Port        // pre-registered main HTTP port, see initMainPort
-	grpcPort *grpcPort    // non-nil when exposing a gRPC port
-	prpc     *prpc.Server // pRPC server implementation exposed on the main port
+	mainPort  *Port        // pre-registered main HTTP port, see bindMainPort
+	adminPort *Port        // pre-registered admin HTTP port, if any, see bindAdminPort
+	grpcPort  *grpcPort    // non-nil when exposing a gRPC port
+	prpc      *prpc.Server // pRPC server implementation exposed on the main port
 
 	mu      sync.Mutex    // protects fields below
 	ports   []servingPort // all non-dummy ports (each one bound to a TCP socket)
@@ -1014,6 +1028,8 @@ func (h *moduleHostImpl) RegisterCookieAuth(method auth.Method) {
 // to use such partially initialized server for anything else is undefined
 // behavior.
 func New(ctx context.Context, opts Options, mods []module.Module) (srv *Server, err error) {
+	opts.ensureStartTime(clock.Now(ctx))
+
 	seed := opts.testSeed
 	if seed == 0 {
 		if err := binary.Read(cryptorand.Reader, binary.BigEndian, &seed); err != nil {
@@ -1022,13 +1038,12 @@ func New(ctx context.Context, opts Options, mods []module.Module) (srv *Server, 
 	}
 
 	srv = &Server{
-		Context:   ctx,
-		Options:   opts,
-		startTime: clock.Now(ctx).UTC(),
-		ready:     make(chan struct{}),
-		done:      make(chan struct{}),
-		rnd:       rand.New(rand.NewSource(seed)),
-		bgrDone:   make(chan struct{}),
+		Context: ctx,
+		Options: opts,
+		ready:   make(chan struct{}),
+		done:    make(chan struct{}),
+		rnd:     rand.New(rand.NewSource(seed)),
+		bgrDone: make(chan struct{}),
 	}
 
 	// Cleanup what we can on failures.
@@ -1090,6 +1105,28 @@ func New(ctx context.Context, opts Options, mods []module.Module) (srv *Server, 
 	}
 	srv.Context = experiments.Enable(srv.Context, exps...)
 
+	// Warn if it takes too long to get here. If this warning is emitted, startup
+	// probe's initial delay may need an adjustment.
+	if dur := time.Since(opts.startTime); dur > time.Second {
+		logging.Warningf(srv.Context, "Server early initialization is too slow: %s", dur)
+	}
+
+	// Bind listening sockets ASAP to allow startup probes to queue up on them.
+	// That way the startup probe will succeed as soon as the server run loop
+	// starts. Without this, the probe will quickly discover there's no listening
+	// socket yet and will retry after some (usually pretty large) constant
+	// timeout.
+	logging.Infof(srv.Context, "Binding listening ports (%s since init)", clock.Since(ctx, opts.startTime))
+	if err := srv.bindMainPort(); err != nil {
+		return srv, errors.Annotate(err, "failed to bind the main port").Err()
+	}
+	if err := srv.bindAdminPort(); err != nil {
+		return srv, errors.Annotate(err, "failed to bind the admin port").Err()
+	}
+	if err := srv.bindGrpcPort(); err != nil {
+		return srv, errors.Annotate(err, "failed to bind the gRPC port").Err()
+	}
+
 	// Configure base server subsystems by injecting them into the root context
 	// inherited later by all requests.
 	srv.Context = caching.WithProcessCacheData(srv.Context, caching.NewProcessCacheData())
@@ -1111,14 +1148,11 @@ func New(ctx context.Context, opts Options, mods []module.Module) (srv *Server, 
 	if err := srv.initProfiling(); err != nil {
 		return srv, errors.Annotate(err, "failed to initialize profiling").Err()
 	}
-	if err := srv.initMainPort(); err != nil {
-		return srv, errors.Annotate(err, "failed to initialize the main port").Err()
+	if err := srv.initMainRouter(); err != nil {
+		return srv, errors.Annotate(err, "failed to initialize the main router").Err()
 	}
-	if err := srv.initGrpcPort(); err != nil {
-		return srv, errors.Annotate(err, "failed to initialize the gRPC port").Err()
-	}
-	if err := srv.initAdminPort(); err != nil {
-		return srv, errors.Annotate(err, "failed to initialize the admin port").Err()
+	if err := srv.initAdminRouter(); err != nil {
+		return srv, errors.Annotate(err, "failed to initialize the admin router").Err()
 	}
 	if err := srv.initWarmup(); err != nil {
 		return srv, errors.Annotate(err, "failed to initialize warmup callbacks").Err()
@@ -1561,7 +1595,7 @@ func (s *Server) Serve() error {
 	defer stop()
 
 	// Log how long it took from 'New' to the serving loop.
-	logging.Infof(s.Context, "Startup done in %s", clock.Now(s.Context).Sub(s.startTime))
+	logging.Infof(s.Context, "Startup done in %s", clock.Now(s.Context).Sub(s.Options.startTime))
 
 	// Unblock all pending RunInBackground goroutines, so they can start.
 	close(s.ready)
@@ -1658,7 +1692,7 @@ func (s *Server) healthResponse(c context.Context) string {
 	return strings.Join([]string{
 		"OK",
 		"",
-		"uptime:  " + clock.Now(c).Sub(s.startTime).String(),
+		"uptime:  " + clock.Now(c).Sub(s.Options.startTime).String(),
 		"image:   " + maybeEmpty(s.Options.ContainerImageID),
 		"",
 		"service: " + maybeEmpty(s.Options.TsMonServiceName),
@@ -2860,16 +2894,46 @@ func (s *Server) getServiceID() string {
 	return serviceID
 }
 
-// initMainPort initializes the server on options.HTTPAddr port.
-func (s *Server) initMainPort() error {
+// bindMainPort binds the port listening on options.HTTPAddr.
+func (s *Server) bindMainPort() error {
 	var err error
 	s.mainPort, err = s.AddPort(PortOptions{
 		Name:       "main",
 		ListenAddr: s.Options.HTTPAddr,
 	})
-	if err != nil {
-		return err
+	return err
+}
+
+// bindAdminPort binds the port listening on options.AdminAddr.
+func (s *Server) bindAdminPort() error {
+	if s.Options.AdminAddr == "-" {
+		return nil // the admin port is disabled
 	}
+	var err error
+	s.adminPort, err = s.AddPort(PortOptions{
+		Name:           "admin",
+		ListenAddr:     s.Options.AdminAddr,
+		DisableMetrics: true, // do not pollute HTTP metrics with admin-only routes
+	})
+	return err
+}
+
+// bindGrpcPort binds the port listening on Options.GRPCAddr.
+func (s *Server) bindGrpcPort() error {
+	if s.Options.GRPCAddr == "" || s.Options.GRPCAddr == "-" {
+		return nil // the gRPC port is disabled
+	}
+	listener, err := s.createListener(s.Options.GRPCAddr)
+	if err != nil {
+		return errors.Annotate(err, `failed to bind the listening port for "grpc" at %q`, s.Options.GRPCAddr).Err()
+	}
+	s.grpcPort = &grpcPort{listener: listener}
+	s.ports = append(s.ports, s.grpcPort)
+	return nil
+}
+
+// initMainRouter initializes main port HTTP routes.
+func (s *Server) initMainRouter() error {
 	s.Routes = s.mainPort.Routes
 
 	// Install auth info handlers (under "/auth/api/v1/server/").
@@ -2889,25 +2953,13 @@ func (s *Server) initMainPort() error {
 	return nil
 }
 
-// initGrpcPort initializes the listening gRPC port.
-func (s *Server) initGrpcPort() error {
-	if s.Options.GRPCAddr == "" || s.Options.GRPCAddr == "-" {
-		return nil // the gRPC port is disabled
-	}
-	listener, err := s.createListener(s.Options.GRPCAddr)
-	if err != nil {
-		return errors.Annotate(err, `failed to bind the listening port for "grpc" at %q`, s.Options.GRPCAddr).Err()
-	}
-	s.grpcPort = &grpcPort{listener: listener}
-	s.ports = append(s.ports, s.grpcPort)
-	return nil
-}
-
-// initAdminPort initializes the server on options.AdminAddr port.
-func (s *Server) initAdminPort() error {
+// initAdminRouter initializes the admin port HTTP routes.
+func (s *Server) initAdminRouter() error {
 	if s.Options.AdminAddr == "-" {
 		return nil // the admin port is disabled
 	}
+
+	routes := s.adminPort.Routes
 
 	// Admin portal uses XSRF tokens that require a secret key. We generate this
 	// key randomly during process startup (i.e. now). It means XSRF tokens in
@@ -2923,17 +2975,6 @@ func (s *Server) initAdminPort() error {
 		c.Request = c.Request.WithContext(secrets.Use(c.Request.Context(), store))
 		next(c)
 	})
-
-	// Install endpoints accessible through the admin port only.
-	adminPort, err := s.AddPort(PortOptions{
-		Name:           "admin",
-		ListenAddr:     s.Options.AdminAddr,
-		DisableMetrics: true, // do not pollute HTTP metrics with admin-only routes
-	})
-	if err != nil {
-		return err
-	}
-	routes := adminPort.Routes
 
 	routes.GET("/", nil, func(c *router.Context) {
 		http.Redirect(c.Writer, c.Request, "/admin/portal", http.StatusFound)
