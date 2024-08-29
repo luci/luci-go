@@ -13,7 +13,7 @@ install-spanner-emulator:
 	gcloud components install cloud-spanner-emulator -q
 
 test:
-	INTEGRATION_TESTS=1 go test ./...
+	INTEGRATION_TESTS=1 go test -race ./...
 
 deploy:
 	$(GAE_PY) upload -A luci-source-index-dev -f

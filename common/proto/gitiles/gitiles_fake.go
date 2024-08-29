@@ -19,6 +19,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math/rand"
+	sync "sync"
 
 	"google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
@@ -41,6 +42,7 @@ type fakeRepository struct {
 type Fake struct {
 	// key: repository name, value fakeRepository
 	m        map[string]fakeRepository
+	mu       sync.Mutex
 	callLogs []any
 }
 
@@ -227,6 +229,8 @@ func (f *Fake) GetCallLogs() []any {
 }
 
 func (f *Fake) addCallLog(in any) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	f.callLogs = append(f.callLogs, in)
 }
 

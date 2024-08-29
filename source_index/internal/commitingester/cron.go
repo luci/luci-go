@@ -1,0 +1,177 @@
+// Copyright 2024 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package commitingester
+
+import (
+	"context"
+	"net/http"
+
+	"go.chromium.org/luci/common/api/gitiles"
+	"go.chromium.org/luci/common/errors"
+	gitilespb "go.chromium.org/luci/common/proto/gitiles"
+	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/cron"
+	"go.chromium.org/luci/server/span"
+
+	"go.chromium.org/luci/source_index/internal/commitingester/taskspb"
+	"go.chromium.org/luci/source_index/internal/config"
+)
+
+// RegisterCronHandlers registers the cron handlers for Source Index's commit
+// ingestion.
+func RegisterCronHandlers(srv *server.Server) error {
+	handler := syncCommitsHandler{
+		GetGitilesClient: func(ctx context.Context, host string, as auth.RPCAuthorityKind, opts ...auth.RPCOption) (gitilespb.GitilesClient, error) {
+			t, err := auth.GetRPCTransport(ctx, auth.AsSelf, opts...)
+			if err != nil {
+				return nil, err
+			}
+			return gitiles.NewRESTClient(&http.Client{Transport: t}, host, false)
+		},
+	}
+
+	cron.RegisterHandler("sync-commits", handler.handle)
+	return nil
+}
+
+// syncCommitsHandler is a cron handler that ensure commits on inactive refs are
+// ingested.
+type syncCommitsHandler struct {
+	GetGitilesClient func(ctx context.Context, host string, as auth.RPCAuthorityKind, opts ...auth.RPCOption) (gitilespb.GitilesClient, error)
+}
+
+const workerCount = 8
+
+// handle reads the config, scans gitiles for refs on all the configured
+// repositories, and create commit-ingestion tasks to ensure commits on inactive
+// refs are ingested.
+//
+// It scans the repositories in parallel. Failing to scan a repository will
+// make it return an error, but does not cause it to skip unprocessed
+// repositories.
+func (h syncCommitsHandler) handle(ctx context.Context) (err error) {
+	cfg, err := config.Get(ctx)
+	if err != nil {
+		return errors.Annotate(err, "get the config").Err()
+	}
+
+	taskC := make(chan *taskspb.IngestCommits)
+
+	// Use parallel.RunMulti so that
+	// 1. the repos can be processed in parallel, and
+	// 2. more importantly, the error emerged when processing one repo does not
+	//    block other repos from being processed.
+	return parallel.RunMulti(ctx, workerCount, func(mr parallel.MultiRunner) error {
+		return mr.RunMulti(func(c chan<- func() error) {
+			c <- func() error {
+				err := scheduleTasks(ctx, taskC)
+				return errors.Annotate(err, "schedule tasks").Err()
+			}
+
+			c <- func() error {
+				defer close(taskC)
+				return mr.RunMulti(func(c chan<- func() error) {
+					for _, hostConfig := range cfg.HostConfigs() {
+						c <- func() error {
+							err := h.scanHostForTasks(ctx, mr, hostConfig, taskC)
+							return errors.Annotate(err, "scan host %q for tasks", hostConfig.Host()).Err()
+						}
+					}
+				})
+			}
+		})
+	})
+}
+
+// scanHostForTasks scans a gitiles host and create necessary commit ingestion
+// tasks.
+func (h syncCommitsHandler) scanHostForTasks(
+	ctx context.Context,
+	mr parallel.MultiRunner,
+	hostCfg config.HostConfig,
+	taskC chan<- *taskspb.IngestCommits,
+) error {
+	client, err := h.GetGitilesClient(ctx, hostCfg.Host(), auth.AsSelf, auth.WithScopes(gitiles.OAuthScope))
+	if err != nil {
+		return errors.Annotate(err, "initialize a Gitiles client").Err()
+	}
+
+	return mr.RunMulti(func(c chan<- func() error) {
+		for _, repoConfig := range hostCfg.RepoConfigs() {
+			for _, refPrefix := range config.IndexableRefPrefixes {
+				c <- func() error {
+					headsRes, err := client.Refs(ctx, &gitilespb.RefsRequest{Project: repoConfig.Name(), RefsPath: refPrefix})
+					if err != nil {
+						return errors.Annotate(err, "query refs %q from repository %q", refPrefix, repoConfig.Name()).Err()
+					}
+
+					for ref := range headsRes.Revisions {
+						if !repoConfig.ShouldIndexRef(ref) {
+							continue
+						}
+						taskC <- &taskspb.IngestCommits{
+							Host:       hostCfg.Host(),
+							Repository: repoConfig.Name(),
+							Commitish:  ref,
+							PageToken:  "",
+							TaskIndex:  0,
+						}
+					}
+					return nil
+				}
+			}
+		}
+	})
+}
+
+const taskBatchSize = 1000
+
+// scheduleTasks schedule commit-ingestion tasks in batches.
+func scheduleTasks(
+	ctx context.Context,
+	taskC <-chan *taskspb.IngestCommits,
+) error {
+	processBatch := func(currentBatch []*taskspb.IngestCommits) error {
+		_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+			for _, task := range currentBatch {
+				scheduleCommitIngestion(ctx, task)
+			}
+			return nil
+		})
+		return err
+	}
+
+	merr := make(errors.MultiError, 0)
+	batch := make([]*taskspb.IngestCommits, 0, taskBatchSize)
+	for task := range taskC {
+		batch = append(batch, task)
+		if len(batch) == taskBatchSize {
+			currentBatch := batch
+			batch = make([]*taskspb.IngestCommits, 0, taskBatchSize)
+			if err := processBatch(currentBatch); err != nil {
+				merr = append(merr, err)
+			}
+		}
+	}
+
+	// Process the remaining items.
+	if err := processBatch(batch); err != nil {
+		merr = append(merr, err)
+	}
+
+	return merr.AsError()
+}

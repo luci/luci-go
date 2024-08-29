@@ -51,6 +51,9 @@ type IngestCommits struct {
 	// In practice, the ingestion will stop
 	//  1. when it reaches a commit that is already ingested, or
 	//  2. when it reaches the first commit (the commit with no ancestors).
+	//
+	// See documentation on proto message `gitiles.Gitiles.LogRequest.commitish`
+	// for the list of acceptable values.
 	Commitish string `protobuf:"bytes,3,opt,name=commitish,proto3" json:"commitish,omitempty"`
 	// The page token value to use when calling Gitiles.Log.
 	//   - For the first task, this should be "".

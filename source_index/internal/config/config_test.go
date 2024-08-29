@@ -26,7 +26,7 @@ func TestConfig(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("Config", t, func(t *ftt.Test) {
-		var cfg = &config{TestCfg}
+		var cfg = &Config{TestCfg}
 
 		t.Run("HasHost", func(t *ftt.Test) {
 			// Match one host.

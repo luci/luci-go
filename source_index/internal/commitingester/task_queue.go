@@ -48,7 +48,11 @@ var commitIngestion = tq.RegisterTaskClass(tq.TaskClass{
 	ID:        commitIngestionTaskClass,
 	Prototype: &taskspb.IngestCommits{},
 	Queue:     commitIngestionQueue,
-	Kind:      tq.Transactional,
+	// Use `tq.Transactional` instead of `tq.FollowsContext` so `tq.MustAddTask`
+	// either always panics when not in a transaction context, or never panics
+	// when in a transaction context (instead of occasionally panic when it failed
+	// to schedule a task when not used in a transaction context).
+	Kind: tq.Transactional,
 })
 
 // RegisterTaskQueueHandlers registers the task queue handlers for Source
