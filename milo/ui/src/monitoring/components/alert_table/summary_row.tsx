@@ -29,6 +29,7 @@ import {
   AlertJson,
   TreeJson,
   Bug,
+  buildIdFromUrl,
 } from '@/monitoring/util/server_json';
 import {
   AlertsClientImpl,
@@ -47,6 +48,7 @@ interface AlertSummaryRowProps {
   tree: TreeJson;
   bugs: Bug[];
 }
+
 // An expandable row in the AlertTable containing a summary of a single alert.
 export const AlertSummaryRow = ({
   alert,
@@ -64,7 +66,7 @@ export const AlertSummaryRow = ({
     ClientImpl: AlertsClientImpl,
   });
   const silenceMutation = useMutation({
-    mutationFn: (build: string) => {
+    mutationFn: (builder: AlertBuilderJson | null) => {
       // eslint-disable-next-line new-cap
       return client.BatchUpdateAlerts(
         BatchUpdateAlertsRequest.fromPartial({
@@ -73,7 +75,9 @@ export const AlertSummaryRow = ({
               alert: {
                 name: `alerts/${encodeURIComponent(alert.key)}`,
                 bug: alert.bug || '0',
-                silenceUntil: build,
+                silenceUntil: builder
+                  ? buildIdFromUrl(builder.latest_failure_url)
+                  : '0',
               },
             }),
           ],
@@ -83,14 +87,8 @@ export const AlertSummaryRow = ({
     onSuccess: () => queryClient.invalidateQueries(),
   });
   const step = stepRe.exec(alert.title)?.[1];
-  // TODO: snoozing.
-  let silenceUntil = 0;
-  try {
-    silenceUntil = parseInt(alert.silenceUntil || '0');
-  } catch {
-    // ignore
-  }
-  const silenced = builder.latest_failure_build_number <= silenceUntil;
+  const silenced =
+    buildIdFromUrl(builder.latest_failure_url) === alert.silenceUntil;
   const numTestFailures = alert.extension?.reason?.num_failing_tests || 0;
   const firstTestFailureName = shortTestName(
     alert.extension?.reason?.tests?.[0].test_name,
@@ -218,9 +216,7 @@ export const AlertSummaryRow = ({
             <IconButton
               onClick={(e) => {
                 e.stopPropagation();
-                silenceMutation.mutate(
-                  silenced ? '0' : `${builder.latest_failure_build_number}`,
-                );
+                silenceMutation.mutate(silenced ? null : builder);
               }}
             >
               {silenced ? <NotificationsIcon /> : <NotificationsPausedIcon />}

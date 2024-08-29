@@ -30,8 +30,12 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Fragment, useState } from 'react';
 
 import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
-import { unwrapOrElse } from '@/generic_libs/tools/utils';
-import { AlertJson, TreeJson, Bug } from '@/monitoring/util/server_json';
+import {
+  AlertJson,
+  TreeJson,
+  Bug,
+  buildIdFromUrl,
+} from '@/monitoring/util/server_json';
 import {
   AlertsClientImpl,
   BatchUpdateAlertsRequest,
@@ -57,8 +61,9 @@ export const AlertTable = ({ tree, alerts, bug, bugs }: AlertTableProps) => {
   const [sortColumn, setSortColumn] = useState<string | undefined>(undefined);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
-  const latestBuild = (alert: AlertJson): number | undefined => {
-    return alert.extension.builders?.[0].latest_failure_build_number;
+  const latestBuild = (alert: AlertJson): string | undefined => {
+    // We have to use the URL instead of the 'latest_failure', because the int64 is rounded by JS.
+    return buildIdFromUrl(alert.extension.builders?.[0].latest_failure_url);
   };
   const queryClient = useQueryClient();
   const client = usePrpcServiceClient({
@@ -92,11 +97,7 @@ export const AlertTable = ({ tree, alerts, bug, bugs }: AlertTableProps) => {
     setExpandAll(!expandAll);
   };
   const isSilenced = (alert: AlertJson): boolean => {
-    const silenceUntil = unwrapOrElse(
-      () => parseInt(alert.silenceUntil || '0'),
-      () => 0,
-    );
-    return (latestBuild(alert) || 1) <= silenceUntil;
+    return (latestBuild(alert) || '') === alert.silenceUntil;
   };
   const sortAlerts = (alerts: AlertJson[]): AlertJson[] => {
     if (!sortColumn) {

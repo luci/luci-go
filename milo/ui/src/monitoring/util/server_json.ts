@@ -81,11 +81,13 @@ export interface AlertBuilderJson {
   count: number;
   failing_tests_trunc: string;
   first_failing_rev: RevisionJson;
-  first_failure: number;
+  // Do not use - instead, use buildIdFromUrl(first_failure_url)
+  // first_failure: number;
   first_failure_build_number: number;
   first_failure_url: string;
   last_passing_rev: RevisionJson;
-  latest_failure: number;
+  // Do not use - instead, use buildIdFromUrl(latest_failure_url)
+  // latest_failure: number;
   latest_failure_build_number: number;
   latest_failure_url: string;
   latest_passing: number;
@@ -237,4 +239,9 @@ export const bugFromId = (bug: string): Bug => {
     status: undefined,
     summary: undefined,
   };
+};
+
+// Extract a build ID from a URL, because the int64 build IDs are rounded by JS floating point conversion.
+export const buildIdFromUrl = (url: string | undefined): string | undefined => {
+  return url ? /b([0-9]+)$/.exec(url)?.[1] : undefined;
 };

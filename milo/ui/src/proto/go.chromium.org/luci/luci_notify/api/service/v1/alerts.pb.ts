@@ -36,8 +36,8 @@ export interface Alert {
    */
   readonly bug: string;
   /**
-   * The build number of the builder corresponding to the alert that this alert should be ignored until.
-   * In other words, if the latest_failing_build_number (currently in SOM alerts) <= silence_until, this alert should be considered 'silenced'.
+   * The build id of the builder corresponding to the alert that this alert should be ignored until after completion.
+   * In other words, if the latest_failing_build_id (currently in SOM alerts) == silence_until, this alert should be considered 'silenced'.
    */
   readonly silenceUntil: string;
   /**

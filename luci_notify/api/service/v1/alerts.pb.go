@@ -107,8 +107,8 @@ type Alert struct {
 	// The buganizer bug ID of the bug associated with this alert.
 	// 0 means the alert is not associated with any bug.
 	Bug int64 `protobuf:"varint,3,opt,name=bug,proto3" json:"bug,omitempty"`
-	// The build number of the builder corresponding to the alert that this alert should be ignored until.
-	// In other words, if the latest_failing_build_number (currently in SOM alerts) <= silence_until, this alert should be considered 'silenced'.
+	// The build id of the builder corresponding to the alert that this alert should be ignored until after completion.
+	// In other words, if the latest_failing_build_id (currently in SOM alerts) == silence_until, this alert should be considered 'silenced'.
 	SilenceUntil int64 `protobuf:"varint,4,opt,name=silence_until,json=silenceUntil,proto3" json:"silence_until,omitempty"`
 	// The Gerrit CL number associated with this alert.
 	// 0 means the alert is not associated with any CL.

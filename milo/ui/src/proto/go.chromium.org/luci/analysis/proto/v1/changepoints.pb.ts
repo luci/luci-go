@@ -20,7 +20,18 @@ export interface QueryChangepointGroupSummariesRequest {
    * A filter to be applied to each changepoint in the groups.
    * If all changepoints in a group are filtered out, this group will not be returned.
    */
-  readonly predicate: ChangepointPredicate | undefined;
+  readonly predicate:
+    | ChangepointPredicate
+    | undefined;
+  /**
+   * A timestamp that select a particular week.
+   * The response will contain changepoints starting from this week (i.e. The nominal start time of changepints is within this week).
+   *
+   * A week is defined as Sunday midnight (inclusive) to next Saturday midnight (exclusive) in UTC.
+   * Therefore, begin_of_week MUST be a timestamp at Sunday midnight (00:00 AM) UTC, otherwise an invalid request error will be returned.
+   * If begin_of_week is nil, the current week will be used.
+   */
+  readonly beginOfWeek: string | undefined;
 }
 
 /** Represent a function Changepoint -> bool */
@@ -29,7 +40,8 @@ export interface ChangepointPredicate {
   readonly testIdPrefix: string;
   /**
    * Specify a range. The unexpected verdict rate change on this changepoint needs to fall into this range.
-   * Unexpected verdict rate change is calculated by (unexpected verdict rate after changepoint - unexpected verdict rate before changepoint). Negative number means unexpected verdict rate decreases, positive number means increases.
+   * Unexpected verdict rate change is calculated by (unexpected verdict rate after changepoint - unexpected verdict rate before changepoint).
+   * Negative number means unexpected verdict rate decreases, positive number means increases.
    * eg. {lower_bound:0.1, upper_bound:0.9} means keep changepoint which has a unexpected verdict rate increase >= 10% and <= 90%.
    */
   readonly unexpectedVerdictRateChangeRange: NumericRange | undefined;
@@ -190,7 +202,7 @@ export interface Changepoint {
 }
 
 function createBaseQueryChangepointGroupSummariesRequest(): QueryChangepointGroupSummariesRequest {
-  return { project: "", predicate: undefined };
+  return { project: "", predicate: undefined, beginOfWeek: undefined };
 }
 
 export const QueryChangepointGroupSummariesRequest = {
@@ -200,6 +212,9 @@ export const QueryChangepointGroupSummariesRequest = {
     }
     if (message.predicate !== undefined) {
       ChangepointPredicate.encode(message.predicate, writer.uint32(18).fork()).ldelim();
+    }
+    if (message.beginOfWeek !== undefined) {
+      Timestamp.encode(toTimestamp(message.beginOfWeek), writer.uint32(26).fork()).ldelim();
     }
     return writer;
   },
@@ -225,6 +240,13 @@ export const QueryChangepointGroupSummariesRequest = {
 
           message.predicate = ChangepointPredicate.decode(reader, reader.uint32());
           continue;
+        case 3:
+          if (tag !== 26) {
+            break;
+          }
+
+          message.beginOfWeek = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -238,6 +260,7 @@ export const QueryChangepointGroupSummariesRequest = {
     return {
       project: isSet(object.project) ? globalThis.String(object.project) : "",
       predicate: isSet(object.predicate) ? ChangepointPredicate.fromJSON(object.predicate) : undefined,
+      beginOfWeek: isSet(object.beginOfWeek) ? globalThis.String(object.beginOfWeek) : undefined,
     };
   },
 
@@ -248,6 +271,9 @@ export const QueryChangepointGroupSummariesRequest = {
     }
     if (message.predicate !== undefined) {
       obj.predicate = ChangepointPredicate.toJSON(message.predicate);
+    }
+    if (message.beginOfWeek !== undefined) {
+      obj.beginOfWeek = message.beginOfWeek;
     }
     return obj;
   },
@@ -261,6 +287,7 @@ export const QueryChangepointGroupSummariesRequest = {
     message.predicate = (object.predicate !== undefined && object.predicate !== null)
       ? ChangepointPredicate.fromPartial(object.predicate)
       : undefined;
+    message.beginOfWeek = object.beginOfWeek ?? undefined;
     return message;
   },
 };
