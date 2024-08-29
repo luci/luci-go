@@ -59,7 +59,8 @@ func IdentityKindCountingInterceptor() grpc.UnaryServerInterceptor {
 // RequestTimeoutInterceptor returns a gRPC interceptor that set context timeout based on the RPC name.
 func RequestTimeoutInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
-		if info.FullMethod == "/luci.resultdb.v1.ResultDB/QueryTestVariantArtifactGroups" {
+		if info.FullMethod == "/luci.resultdb.v1.ResultDB/QueryTestVariantArtifactGroups" ||
+			info.FullMethod == "/luci.resultdb.v1.ResultDB/QueryInvocationVariantArtifactGroups" {
 			return handler(ctx, req)
 		}
 		// All other RPCs should have a timeout limit of 1 minute.
