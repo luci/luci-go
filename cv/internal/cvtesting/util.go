@@ -131,7 +131,7 @@ func IsTestingContext(ctx context.Context) bool {
 	return ctx.Value(testingContextKeyType{}) != nil
 }
 
-func (t *Test) SetUp(testingT *testing.T) context.Context {
+func (t *Test) SetUp(testingT testing.TB) context.Context {
 	if t.Env == nil {
 		t.Env = &common.Env{
 			LogicalHostname: "luci-change-verifier" + gaeTopLevelDomain,
@@ -286,7 +286,7 @@ func (t *Test) DisableProjectInGerritListener(ctx context.Context, projectRE str
 	}
 }
 
-func (t *Test) installDS(ctx context.Context, testingT *testing.T) context.Context {
+func (t *Test) installDS(ctx context.Context, testingT testing.TB) context.Context {
 	assert.That(testingT, strings.HasSuffix(t.Env.LogicalHostname, gaeTopLevelDomain), should.BeTrue)
 	appID := t.Env.LogicalHostname[:len(t.Env.LogicalHostname)-len(gaeTopLevelDomain)]
 
@@ -319,7 +319,7 @@ func (t *Test) installDS(ctx context.Context, testingT *testing.T) context.Conte
 // and then run go tests the usual way, e.g.:
 //
 //	$ go test ./...
-func (t *Test) installDSReal(ctx context.Context, testingT *testing.T) (context.Context, bool) {
+func (t *Test) installDSReal(ctx context.Context, testingT testing.TB) (context.Context, bool) {
 	project := os.Getenv("DATASTORE_PROJECT")
 	if project == "" {
 		return ctx, false
@@ -355,7 +355,7 @@ func (t *Test) installDSReal(ctx context.Context, testingT *testing.T) (context.
 //
 // NOTE: as of Feb 2021, emulator runs in legacy Datastore mode,
 // not Firestore.
-func (t *Test) installDSEmulator(ctx context.Context, testingT *testing.T) (context.Context, bool) {
+func (t *Test) installDSEmulator(ctx context.Context, testingT testing.TB) (context.Context, bool) {
 	emulatorHost := os.Getenv("DATASTORE_EMULATOR_HOST")
 	if emulatorHost == "" {
 		return ctx, false
@@ -367,7 +367,7 @@ func (t *Test) installDSEmulator(ctx context.Context, testingT *testing.T) (cont
 	return t.installDSshared(ctx, testingT, "luci-gae-emulator-test", client), true
 }
 
-func (t *Test) installDSshared(ctx context.Context, testingT *testing.T, cloudProject string, client *nativeDatastore.Client) context.Context {
+func (t *Test) installDSshared(ctx context.Context, testingT testing.TB, cloudProject string, client *nativeDatastore.Client) context.Context {
 	testingT.Cleanup(func() { _ = client.Close() })
 	ctx = (&cloud.ConfigLite{ProjectID: cloudProject, DS: client}).Use(ctx)
 	maybeCleanupOldDSNamespaces(ctx)
@@ -450,7 +450,7 @@ func maybeCleanupOldDSNamespaces(ctx context.Context) {
 }
 
 // setUpTestClock simulates passage of time w/o idling CPU.
-func (t *Test) setUpTestClock(ctx context.Context, testingT *testing.T) context.Context {
+func (t *Test) setUpTestClock(ctx context.Context, testingT testing.TB) context.Context {
 	if t.Clock != nil {
 		return clock.Set(ctx, t.Clock)
 	}

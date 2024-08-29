@@ -61,7 +61,7 @@ type ctest struct {
 	clUpdater *changelist.Updater
 }
 
-func (ct *ctest) SetUp(testingT *testing.T) context.Context {
+func (ct *ctest) SetUp(testingT testing.TB) context.Context {
 	ctx := ct.Test.SetUp(testingT)
 	ct.pm = prjmanager.NewNotifier(ct.TQDispatcher)
 	ct.clUpdater = changelist.NewUpdater(ct.TQDispatcher, changelist.NewMutator(ct.TQDispatcher, ct.pm, nil, tryjob.NewNotifier(ct.TQDispatcher)))
