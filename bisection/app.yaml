@@ -17,6 +17,7 @@ luci_gae_vars:
     LUCI_BISECTION_HOST: staging.bisection.api.luci.app
     PUBSUB_AUTHORIZED_CALLER: cloud-pubsub-pusher@luci-bisection-dev.iam.gserviceaccount.com
     TINK_AEAD_KEY: sm://tink-aead-primary
+    TQ_TARGET_HOST: staging.bisection.api.luci.app
     TS_MON_ACCOUNT: app-engine-metric-publishers@prodx-mon-chrome-infra.google.com.iam.gserviceaccount.com
     UI_REDIRECT_URL: luci-milo-dev.appspot.com/ui/bisection
 
@@ -40,6 +41,7 @@ entrypoint: >
   -luci-bisection-host ${LUCI_BISECTION_HOST}
   -primary-tink-aead-key ${TINK_AEAD_KEY}
   -pubsub-authorized-caller ${PUBSUB_AUTHORIZED_CALLER}
-  -ts-mon-account ${TS_MON_ACCOUNT}
+  -tq-default-target-host ${TQ_TARGET_HOST}
   -tq-sweep-initiation-launcher ${CRON_AUTHORIZED_CALLER}
+  -ts-mon-account ${TS_MON_ACCOUNT}
   -ui-redirect-url ${UI_REDIRECT_URL}
