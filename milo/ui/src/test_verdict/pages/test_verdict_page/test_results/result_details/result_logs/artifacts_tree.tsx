@@ -32,7 +32,6 @@ import {
   useUpdateSelectedArtifact,
   SelectedArtifactSource,
 } from './context';
-import { isLogSupportedArtifact } from './utils';
 
 interface ArtifactTreeNode extends ObjectNode {
   artifact?: Artifact;
@@ -62,10 +61,7 @@ function addArtifactsToTree(
         currentNode = childNode as ArtifactTreeNode;
       }
     }
-    currentNode.viewingsupported = isLogSupportedArtifact(
-      artifact.artifactId,
-      artifact.contentType,
-    );
+    currentNode.viewingsupported = artifact.hasLines;
     currentNode.size = Number(artifact.sizeBytes);
     currentNode.url = getRawArtifactURLPath(artifact.name);
     currentNode.artifact = artifact;
