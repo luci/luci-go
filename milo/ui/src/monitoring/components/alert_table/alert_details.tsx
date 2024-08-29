@@ -31,7 +31,7 @@ export const AlertDetailsRow = ({ alert, tree, bug }: AlertDetailsRowProps) => {
     <TableRow sx={{ backgroundColor: 'var(--block-background-color)' }}>
       <TableCell></TableCell>
       <TableCell colSpan={100}>
-        <div style={{ marginBottom: '10px', backgroundColor: '#fff' }}>
+        <div css={{ marginBottom: '10px', backgroundColor: '#fff' }}>
           <ReasonSection
             tree={tree}
             reason={alert.extension.reason}

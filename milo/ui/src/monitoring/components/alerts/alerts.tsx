@@ -87,7 +87,7 @@ export const Alerts = () => {
       >
         <SearchAlertInput />
       </Box>
-      <div style={{ margin: '16px 0', padding: '0 16px' }}>
+      <div css={{ margin: '16px 0', padding: '0 16px' }}>
         <TreeStatusCard tree={tree} />
         <AlertGroup
           groupName={'Untriaged Consistent Failures'}

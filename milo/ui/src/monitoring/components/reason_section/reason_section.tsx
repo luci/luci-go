@@ -123,7 +123,7 @@ const SimilarFailuresLink = ({ test }: SimilarFailuresLinkProps) => {
   if (algorithm.startsWith('rules')) {
     return (
       <a
-        style={{ display: 'inline-flex', alignItems: 'center' }}
+        css={{ display: 'inline-flex', alignItems: 'center' }}
         href={`https://luci-analysis.appspot.com/p/${project}/rules/${id}`}
         target="_blank"
         rel="noreferrer"

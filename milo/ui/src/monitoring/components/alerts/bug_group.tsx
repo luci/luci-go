@@ -42,7 +42,7 @@ export const BugGroup = ({ bug, alerts, tree, bugs }: BugGroupProps) => {
       <Accordion defaultExpanded={false}>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
           <div
-            style={{
+            css={{
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
@@ -65,7 +65,7 @@ export const BugGroup = ({ bug, alerts, tree, bugs }: BugGroupProps) => {
               {/* TODO: copy button because can't highlight the text here. */}{' '}
               <a
                 href={bug.link}
-                style={{ textDecoration: 'none' }}
+                css={{ textDecoration: 'none' }}
                 target="_blank"
                 rel="noreferrer"
               >
@@ -74,19 +74,19 @@ export const BugGroup = ({ bug, alerts, tree, bugs }: BugGroupProps) => {
               {bug.summary !== undefined ? (
                 bug.summary
               ) : (
-                <span style={{ opacity: '50%' }}>
+                <span css={{ opacity: '50%' }}>
                   Unable to read bug information, please add the &quot;
                   {tree.bug_queue_label}&quot; label to the bug.
                 </span>
               )}{' '}
               {bug.labels.map((l) => (
-                <small key={l} style={{ opacity: '50%' }}>
+                <small key={l} css={{ opacity: '50%' }}>
                   {' '}
                   {l}{' '}
                 </small>
               ))}
             </Typography>
-            <div style={{ flexShrink: '0' }}>
+            <div css={{ flexShrink: '0' }}>
               {bug.status !== undefined ? (
                 <Chip label={<small>{bug.status}</small>} variant="outlined" />
               ) : null}

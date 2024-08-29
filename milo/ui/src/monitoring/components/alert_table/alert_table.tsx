@@ -173,7 +173,7 @@ export const AlertTable = ({ tree, alerts, bug, bugs }: AlertTableProps) => {
             </TableSortLabel>
           </TableCell>
           <TableCell>
-            <div style={{ display: 'flex' }}>
+            <div css={{ display: 'flex' }}>
               <Tooltip title="Link bug to all displayed alerts">
                 <IconButton onClick={(e) => setMenuAnchorEl(e.currentTarget)}>
                   <BugReportIcon />

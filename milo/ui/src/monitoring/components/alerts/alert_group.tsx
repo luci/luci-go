@@ -66,7 +66,7 @@ export const AlertGroup = ({
         </Tooltip>
         <Typography>
           {` ${groupName} `}
-          <small style={{ opacity: '50%' }}>{groupDescription}</small>
+          <small css={{ opacity: '50%' }}>{groupDescription}</small>
         </Typography>
       </AccordionSummary>
       <AccordionDetails>

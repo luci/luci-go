@@ -84,7 +84,7 @@ export const HeuristicResult = ({ heuristicResult }: HeuristicResultProps) => {
                 {confidenceText(s.confidence_level)}
               </TableCell>
               <TableCell align="left">
-                <pre style={{ whiteSpace: 'pre-wrap' }}>
+                <pre css={{ whiteSpace: 'pre-wrap' }}>
                   {shortenJustification(s.justification)}
                 </pre>
               </TableCell>

@@ -127,7 +127,7 @@ export const AlertSummaryRow = ({
       <TableCell>
         {step}
         {numTestFailures > 0 && (
-          <span style={{ opacity: '0.7', marginLeft: '5px' }}>
+          <span css={{ opacity: '0.7', marginLeft: '5px' }}>
             {firstTestFailureName}
             {numTestFailures > 1 && <> + {numTestFailures - 1} more</>}
           </span>
@@ -193,7 +193,7 @@ export const AlertSummaryRow = ({
         )}
       </TableCell>
       <TableCell>
-        <div style={{ display: 'flex' }}>
+        <div css={{ display: 'flex' }}>
           <Tooltip title="Link bug">
             <IconButton
               onClick={(e) => {

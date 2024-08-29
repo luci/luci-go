@@ -97,7 +97,7 @@ export const TreeStatusCard = ({ tree }: AlertGroupProps) => {
         />
         <Typography>
           {tree.treeStatusName} Tree Status{' '}
-          <small style={{ opacity: '50%' }}>
+          <small css={{ opacity: '50%' }}>
             <LinkifiedText text={latest?.message} />
           </small>
         </Typography>
