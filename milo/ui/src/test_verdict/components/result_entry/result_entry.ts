@@ -13,10 +13,13 @@
 // limitations under the License.
 
 import '@material/mwc-icon';
-import '@/common/components/tags_entry';
+
 import '@/analysis/components/lit_associated_bugs_badge';
+import '@/common/components/sanitized_html';
+import '@/common/components/tags_entry';
 import '@/generic_libs/components/expandable_entry';
 import '@/test_verdict/components/artifact_tags';
+
 import './image_diff_artifact';
 import './link_artifact';
 import './text_diff_artifact';
@@ -25,7 +28,6 @@ import { MobxLitElement } from '@adobe/lit-mobx';
 import { GrpcError, RpcCode } from '@chopsui/prpc-client';
 import { css, html } from 'lit';
 import { customElement } from 'lit/decorators.js';
-import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import { computed, makeObservable, observable } from 'mobx';
 import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 
@@ -273,7 +275,9 @@ ${errMsg}</pre
             result-name=${this.testResult.name}
           >
             <div id="summary-html" class="info-block">
-              ${unsafeHTML(this.testResult.summaryHtml)}
+              <milo-sanitized-html
+                html=${this.testResult.summaryHtml}
+              ></milo-sanitized-html>
             </div>
           </milo-artifact-tag-context-provider>
           ${this.renderLogLinkArtifacts()}

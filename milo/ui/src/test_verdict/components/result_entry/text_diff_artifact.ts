@@ -13,15 +13,17 @@
 // limitations under the License.
 
 import '@material/mwc-icon';
+
+import '@/common/components/sanitized_html';
+import '@/generic_libs/components/expandable_entry';
+
 import { MobxLitElement } from '@adobe/lit-mobx';
 import * as Diff2Html from 'diff2html';
 import { css, html } from 'lit';
 import { customElement } from 'lit/decorators.js';
-import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import { computed, makeObservable, observable } from 'mobx';
 import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 
-import '@/generic_libs/components/expandable_entry';
 import { ARTIFACT_LENGTH_LIMIT } from '@/common/constants/test';
 import { Artifact } from '@/common/services/resultdb';
 import { commonStyles } from '@/common/styles/stylesheets';
@@ -85,9 +87,10 @@ export class TextDiffArtifactElement extends MobxLitElement {
           >)
         </span>
         <div id="content" slot="content">
-          ${unsafeHTML(
-            Diff2Html.html(this.content || '', { drawFileList: false }),
-          )}
+          <milo-sanitized-html
+            html=${Diff2Html.html(this.content || '', { drawFileList: false })}
+          >
+          </milo-sanitized-html>
         </div>
       </milo-expandable-entry>
     `;

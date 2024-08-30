@@ -13,17 +13,19 @@
 // limitations under the License.
 
 import '@material/mwc-icon';
+
+import '@/common/components/buildbucket_log_link';
+import '@/common/components/instruction_hint';
+import '@/generic_libs/components/copy_to_clipboard';
+import '@/generic_libs/components/expandable_entry';
+import '@/generic_libs/components/pin_toggle';
+
+import './step_cluster';
+
 import { css, html, render } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { styleMap } from 'lit/directives/style-map.js';
 import { computed, makeObservable, observable, reaction } from 'mobx';
-
-import '@/generic_libs/components/copy_to_clipboard';
-import '@/generic_libs/components/expandable_entry';
-import '@/common/components/buildbucket_log_link';
-import '@/common/components/instruction_hint';
-import '@/generic_libs/components/pin_toggle';
-import './step_cluster';
 
 import {
   HideTooltipEventDetail,

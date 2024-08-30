@@ -160,6 +160,11 @@ module.exports = {
             importNames: ['useSearchParams'],
             message: 'use `useSyncedSearchParams` instead',
           },
+          {
+            group: ['lit/directives/unsafe-html.js'],
+            importNames: ['unsafeHTML'],
+            message: 'use `@/common/components/sanitized_html` instead',
+          },
         ],
       },
     ],

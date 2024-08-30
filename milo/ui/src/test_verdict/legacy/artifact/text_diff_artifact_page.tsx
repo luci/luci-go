@@ -12,16 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import '@/common/components/status_bar';
+import '@/common/components/sanitized_html';
+import '@/generic_libs/components/dot_spinner';
+
 import { MobxLitElement } from '@adobe/lit-mobx';
 import * as Diff2Html from 'diff2html';
 import { css, html } from 'lit';
 import { customElement } from 'lit/decorators.js';
-import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import { computed, makeObservable, observable } from 'mobx';
 import { fromPromise } from 'mobx-utils';
 
-import '@/generic_libs/components/dot_spinner';
-import '@/common/components/status_bar';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { ARTIFACT_LENGTH_LIMIT } from '@/common/constants/test';
 import {
@@ -31,6 +32,7 @@ import {
 import { consumeStore, StoreInstance } from '@/common/store';
 import { commonStyles } from '@/common/styles/stylesheets';
 import { getRawArtifactURLPath } from '@/common/tools/url_utils';
+import { ReactLitBridge } from '@/generic_libs/components/react_lit_element';
 import { reportRenderError } from '@/generic_libs/tools/error_handler';
 import { consumer } from '@/generic_libs/tools/lit_context';
 import { unwrapObservable } from '@/generic_libs/tools/mobx_utils';
@@ -111,12 +113,13 @@ export class TextDiffArtifactPageElement extends MobxLitElement {
           type="text/css"
           href="https://cdn.jsdelivr.net/npm/diff2html/bundles/css/diff2html.min.css"
         />
-        ${unsafeHTML(
-          Diff2Html.html(this.content || '', {
+        <milo-sanitized-html
+          html=${Diff2Html.html(this.content || '', {
             drawFileList: false,
             outputFormat: 'side-by-side',
-          }),
-        )}
+          })}
+        >
+        </milo-sanitized-html>
       </div>
     `;
   });
@@ -152,7 +155,11 @@ declare global {
 }
 
 export function TextDiffArtifactPage() {
-  return <milo-text-diff-artifact-page></milo-text-diff-artifact-page>;
+  return (
+    <ReactLitBridge>
+      <milo-text-diff-artifact-page></milo-text-diff-artifact-page>
+    </ReactLitBridge>
+  );
 }
 
 export function Component() {

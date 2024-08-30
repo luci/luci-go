@@ -13,6 +13,10 @@
 // limitations under the License.
 
 import { render } from 'lit';
+// We have to use `unsafeHTML` here because we are rendering into a detached
+// HTML node to extract some HTML snippet. There's no `<LitReactBridge />` to
+// support `<milo-sanitized-html />`.
+// eslint-disable-next-line no-restricted-imports
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import { DateTime, Duration } from 'luxon';
 import { action, computed, makeObservable, untracked } from 'mobx';
@@ -28,6 +32,7 @@ import { StringPair } from '@/common/services/common';
 import { Timestamp, TimestampInstance } from '@/common/store/timestamp';
 import { UserConfig, UserConfigInstance } from '@/common/store/user_config';
 import { renderMarkdown } from '@/common/tools/markdown/utils';
+import { sanitizeHTML } from '@/common/tools/sanitize_html';
 import { keepAliveComputed } from '@/generic_libs/tools/mobx_utils';
 
 export interface StepInit {
@@ -101,7 +106,13 @@ export class StepExt {
   @computed get summary() {
     const bodyContainer = document.createElement('div');
     render(
-      unsafeHTML(renderMarkdown(this.summaryMarkdown || '')),
+      // We have to use `unsafeHTML` here because we are rendering into a
+      // detached HTML node to extract some HTML snippet. There's no
+      // `<ReactLitBridge />` to support `<milo-sanitized-html />`.
+      // Sanitize manually. Note that it should've been sanitized automatically
+      // by the trusted type policy in prod. But `sanitizeHTML` adds another
+      // layer of protection in case CSP is not configured properly.
+      unsafeHTML(sanitizeHTML(renderMarkdown(this.summaryMarkdown || ''))),
       bodyContainer,
     );
     // The body has no content.

@@ -28,6 +28,15 @@ export interface SanitizedHtmlProps {
 
 /**
  * Sanitize & render the HTML into a <Box />.
+ *
+ * Note that this should be used even when a trusted type policy is used. This
+ * adds another layer of defense in case the trusted type policy is not active.
+ * This may happen when
+ * 1. The trusted type policy is misconfigured.
+ * 2. A proper CSP context is not set via the HTTP header or HTML meta tag.
+ *
+ * It also makes components under unit test behave closer production. As trusted
+ * type policy and CSP are not typically used in unit tests.
  */
 export function SanitizedHtml({ html, sx, className }: SanitizedHtmlProps) {
   // `sanitizedHtml` must be a `TrustedHTML` not a `string` to ensure the HTML

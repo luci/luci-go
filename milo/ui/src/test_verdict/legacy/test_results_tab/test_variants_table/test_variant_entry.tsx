@@ -13,20 +13,22 @@
 // limitations under the License.
 
 import '@material/mwc-icon';
+
+import '@/analysis/components/lit_associated_bugs_badge';
+import '@/common/components/instruction_hint';
+import '@/common/components/sanitized_html';
+import '@/generic_libs/components/expandable_entry';
+import '@/generic_libs/components/copy_to_clipboard';
+import '@/test_verdict/components/result_entry';
+
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, html, render } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { repeat } from 'lit/directives/repeat.js';
-import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import { computed, makeObservable, observable } from 'mobx';
 import { fromPromise } from 'mobx-utils';
 import { useEffect, useRef } from 'react';
 
-import '@/analysis/components/lit_associated_bugs_badge';
-import '@/generic_libs/components/expandable_entry';
-import '@/generic_libs/components/copy_to_clipboard';
-import '@/test_verdict/components/result_entry';
-import '@/common/components/instruction_hint';
 import { MAY_REQUIRE_SIGNIN, OPTIONAL_RESOURCE } from '@/common/common_tags';
 import {
   VARIANT_STATUS_CLASS_MAP,
@@ -333,10 +335,11 @@ export class TestVariantEntryElement
         (e) => e.exonerationId,
         (e) => html`
           <div class="explanation-html">
-            ${unsafeHTML(
-              e.explanationHtml ||
-                'This test variant had unexpected results, but was exonerated (reason not provided).',
-            )}
+            <milo-sanitized-html
+              html=${e.explanationHtml ||
+              'This test variant had unexpected results, but was exonerated (reason not provided).'}
+            >
+            </milo-sanitized-html>
           </div>
         `,
       )}

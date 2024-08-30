@@ -13,18 +13,20 @@
 // limitations under the License.
 
 import '@material/mwc-icon';
+
+import '@/common/components/changelists_badge';
+import '@/common/components/sanitized_html';
+import '@/generic_libs/components/expandable_entry';
+import '@/test_verdict/components/result_entry';
+
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, html } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { repeat } from 'lit/directives/repeat.js';
-import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import { DateTime } from 'luxon';
 import { computed, makeObservable, observable } from 'mobx';
 import { fromPromise } from 'mobx-utils';
 
-import '@/generic_libs/components/expandable_entry';
-import '@/test_verdict/components/result_entry';
-import '@/common/components/changelists_badge';
 import {
   VARIANT_STATUS_CLASS_MAP,
   VARIANT_STATUS_ICON_MAP,
@@ -217,10 +219,11 @@ export class TestHistoryDetailsEntryElement
         (e) => e.exonerationId,
         (e) => html`
           <div class="explanation-html">
-            ${unsafeHTML(
-              e.explanationHtml ||
-                'This test variant had unexpected results, but was exonerated (reason not provided).',
-            )}
+            <milo-sanitized-html
+              html=${e.explanationHtml ||
+              'This test variant had unexpected results, but was exonerated (reason not provided).'}
+            >
+            </milo-sanitized-html>
           </div>
         `,
       )}

@@ -19,6 +19,7 @@ import { destroy } from 'mobx-state-tree';
 
 import { Build, BuildbucketStatus, Step } from '@/common/services/buildbucket';
 import { renderMarkdown } from '@/common/tools/markdown/utils';
+import { sanitizeHTML } from '@/common/tools/sanitize_html';
 import { Mutable } from '@/generic_libs/types';
 
 import {
@@ -54,31 +55,31 @@ describe('StepExt', () => {
   }
 
   describe('succeededRecursively/failed', () => {
-    test('succeeded step with no children', async () => {
+    it('succeeded step with no children', async () => {
       const step = createStep(0, 'parent', BuildbucketStatus.Success);
       expect(step.succeededRecursively).toBeTruthy();
       expect(step.failed).toBeFalsy();
     });
 
-    test('failed step with no children', async () => {
+    it('failed step with no children', async () => {
       const step = createStep(0, 'parent', BuildbucketStatus.Failure);
       expect(step.succeededRecursively).toBeFalsy();
       expect(step.failed).toBeTruthy();
     });
 
-    test('infra-failed step with no children', async () => {
+    it('infra-failed step with no children', async () => {
       const step = createStep(0, 'parent', BuildbucketStatus.InfraFailure);
       expect(step.succeededRecursively).toBeFalsy();
       expect(step.failed).toBeTruthy();
     });
 
-    test('non-(infra-)failed step with no children', async () => {
+    it('non-(infra-)failed step with no children', async () => {
       const step = createStep(0, 'parent', BuildbucketStatus.Canceled);
       expect(step.succeededRecursively).toBeFalsy();
       expect(step.failed).toBeFalsy();
     });
 
-    test('succeeded step with only succeeded children', async () => {
+    it('succeeded step with only succeeded children', async () => {
       const step = createStep(0, 'parent', BuildbucketStatus.Success, '', [
         createStep(0, 'parent|child1', BuildbucketStatus.Success),
         createStep(1, 'parent|child2', BuildbucketStatus.Success),
@@ -87,7 +88,7 @@ describe('StepExt', () => {
       expect(step.failed).toBeFalsy();
     });
 
-    test('succeeded step with failed child', async () => {
+    it('succeeded step with failed child', async () => {
       const step = createStep(0, 'parent', BuildbucketStatus.Success, '', [
         createStep(0, 'parent|child1', BuildbucketStatus.Success),
         createStep(1, 'parent|child2', BuildbucketStatus.Failure),
@@ -96,7 +97,7 @@ describe('StepExt', () => {
       expect(step.failed).toBeTruthy();
     });
 
-    test('succeeded step with non-succeeded child', async () => {
+    it('succeeded step with non-succeeded child', async () => {
       const step = createStep(0, 'parent', BuildbucketStatus.Success, '', [
         createStep(0, 'parent|child1', BuildbucketStatus.Success),
         createStep(1, 'parent|child2', BuildbucketStatus.Started),
@@ -105,7 +106,7 @@ describe('StepExt', () => {
       expect(step.failed).toBeFalsy();
     });
 
-    test('failed step with succeeded children', async () => {
+    it('failed step with succeeded children', async () => {
       const step = createStep(0, 'parent', BuildbucketStatus.Failure, '', [
         createStep(0, 'parent|child1', BuildbucketStatus.Success),
         createStep(1, 'parent|child2', BuildbucketStatus.Success),
@@ -114,7 +115,7 @@ describe('StepExt', () => {
       expect(step.failed).toBeTruthy();
     });
 
-    test('infra-failed step with succeeded children', async () => {
+    it('infra-failed step with succeeded children', async () => {
       const step = createStep(0, 'parent', BuildbucketStatus.InfraFailure, '', [
         createStep(0, 'parent|child1', BuildbucketStatus.Success),
         createStep(1, 'parent|child2', BuildbucketStatus.Success),
@@ -127,21 +128,21 @@ describe('StepExt', () => {
   describe('summary should be rendered properly', () => {
     function getExpectedHTML(markdownBody: string): string {
       const container = document.createElement('div');
-      render(unsafeHTML(renderMarkdown(markdownBody)), container);
+      render(unsafeHTML(sanitizeHTML(renderMarkdown(markdownBody))), container);
       return container.innerHTML;
     }
 
-    test('for no summary', async () => {
+    it('for no summary', async () => {
       const step = createStep(0, 'step', BuildbucketStatus.Success, undefined);
       expect(step.summary).toBeNull();
     });
 
-    test('for empty summary', async () => {
+    it('for empty summary', async () => {
       const step = createStep(0, 'step', BuildbucketStatus.Success, '');
       expect(step.summary).toBeNull();
     });
 
-    test('for text summary', async () => {
+    it('for text summary', async () => {
       const step = createStep(
         0,
         'step',
@@ -153,7 +154,7 @@ describe('StepExt', () => {
       );
     });
 
-    test('for summary with a link', async () => {
+    it('for summary with a link', async () => {
       const step = createStep(
         0,
         'step',
@@ -175,7 +176,7 @@ describe('clusterBuildSteps', () => {
     } as Partial<StepExt> as StepExt;
   }
 
-  test('should cluster build steps correctly', () => {
+  it('should cluster build steps correctly', () => {
     const clusteredSteps = clusterBuildSteps([
       createStep(1, false),
       createStep(2, false),
@@ -199,17 +200,17 @@ describe('clusterBuildSteps', () => {
     ]);
   });
 
-  test("should cluster build steps correctly when there're no steps", () => {
+  it("should cluster build steps correctly when there're no steps", () => {
     const clusteredSteps = clusterBuildSteps([]);
     expect(clusteredSteps).toEqual([]);
   });
 
-  test("should cluster build steps correctly when there's a single step", () => {
+  it("should cluster build steps correctly when there's a single step", () => {
     const clusteredSteps = clusterBuildSteps([createStep(1, false)]);
     expect(clusteredSteps).toEqual([[createStep(1, false)]]);
   });
 
-  test('should not re-cluster steps when the criticality is updated', () => {
+  it('should not re-cluster steps when the criticality is updated', () => {
     const step1 = makeAutoObservable(createStep(1, false));
     const step2 = makeAutoObservable(createStep(2, false));
     const step3 = makeAutoObservable(createStep(3, false));
@@ -237,7 +238,7 @@ describe('BuildState', () => {
     destroy(build);
   });
 
-  test('should build step-tree correctly', async () => {
+  it('should build step-tree correctly', async () => {
     const time = '2020-11-01T21:43:03.351951Z';
     build = BuildState.create({
       data: {

@@ -16,6 +16,8 @@ import { fixture, html } from '@open-wc/testing-helpers';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import markdownIt from 'markdown-it';
 
+import { sanitizeHTML } from '../../sanitize_html';
+
 import { defaultTarget } from './default_target';
 
 const links = `
@@ -42,11 +44,13 @@ const md = markdownIt('zero', { linkify: true, html: true })
 describe('default_target', () => {
   let anchors: NodeListOf<HTMLAnchorElement>;
   beforeAll(async () => {
-    const ele = await fixture(html`<div>${unsafeHTML(md.render(links))}</div>`);
+    const ele = await fixture(
+      html`<div>${unsafeHTML(sanitizeHTML(md.render(links)))}</div>`,
+    );
     anchors = ele.querySelectorAll('a');
   });
 
-  test('can set default target', () => {
+  it('can set default target', () => {
     const anchor1 = anchors.item(0);
     expect(anchor1.target).toStrictEqual('_blank');
     expect(anchor1.href).toStrictEqual('http://www.a.com/');
