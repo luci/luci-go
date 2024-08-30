@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import './lit_bindings';
+import './lit_binding';
 
 export * from './instruction_hint';
-export * from './lit_bindings';
+export * from './lit_binding';

@@ -92,7 +92,6 @@ export class InstructionHintElement extends ReactLitElement {
     }
     return (
       <CacheProvider value={this.cache}>
-        {' '}
         <InstructionHint
           instructionName={this.instructionName}
           title={this.title}
