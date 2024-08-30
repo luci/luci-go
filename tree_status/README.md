@@ -44,4 +44,32 @@ Tree status is automatically deployed to staging by LUCI CD every time a CL is s
 
 ## Deploy to prod
 
-The prod instance of LUCI Tree Status has not yet been created.
+1. Make sure that you have an `infra_internal` checkout.
+2. Navigate to `data/gae` directory under your base checkout directory.
+3. Pull the latest with `git rebase-update` or `git checkout main && git pull`.
+4. Create a new branch `git new-branch <NAME>` or `git -b <NAME>`.
+5. run `./scripts/promote.py luci-tree-status --canary --stable --commit`.
+6. Upload the CL `git cl upload`.
+7. Request approval from space: LUCI Test War Room.
+
+## Add a new tree
+
+To add a new tree, you need to add an entry into LUCI Tree Status config.
+
+Example CL: https://chrome-internal-review.googlesource.com/c/infradata/config/+/7631947
+
+If you set `use_default_acls: true`, the tree will use the default ACL policy:
+
+-   Googlers have full read access to the tree, including the PII (emails of the
+    creators of the statuses).
+
+-   Googlers have write access to the tree. This means they can create a new
+    status.
+
+-   Other authenticated users, but not Googlers, have read access to the tree,
+    but they don't see PII.
+
+There is a
+[work-in-progress](https://buganizer.corp.google.com/issues/349178432) to allow
+setting up customized ACL policy for your tree. This section will be updated
+with detailed instructions after the work is completed.
