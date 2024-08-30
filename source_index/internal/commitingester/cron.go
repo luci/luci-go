@@ -39,6 +39,7 @@ func RegisterCronHandlers(srv *server.Server) error {
 }
 
 const workerCount = 8
+const taskBatchSize = 1000
 
 // syncCommitsHandler reads the config, scans gitiles for refs on all the
 // configured repositories, and create commit-ingestion tasks to ensure commits
@@ -53,7 +54,7 @@ func syncCommitsHandler(ctx context.Context) (err error) {
 		return errors.Annotate(err, "get the config").Err()
 	}
 
-	taskC := make(chan *taskspb.IngestCommits)
+	taskC := make(chan *taskspb.IngestCommits, taskBatchSize)
 
 	// Use parallel.RunMulti so that
 	// 1. the repos can be processed in parallel, and
@@ -121,8 +122,6 @@ func scanHostForTasks(
 		}
 	})
 }
-
-const taskBatchSize = 1000
 
 // scheduleTasks schedule commit-ingestion tasks in batches.
 func scheduleTasks(
