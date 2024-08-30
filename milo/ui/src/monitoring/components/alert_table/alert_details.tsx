@@ -33,6 +33,7 @@ export const AlertDetailsRow = ({ alert, tree, bug }: AlertDetailsRowProps) => {
       <TableCell colSpan={100}>
         <div css={{ marginBottom: '10px', backgroundColor: '#fff' }}>
           <ReasonSection
+            builder={alert.extension.builders[0]}
             tree={tree}
             reason={alert.extension.reason}
             failureBuildUrl={alert.extension.builders[0].latest_failure_url}

@@ -18,6 +18,7 @@ import { configuredTrees } from '@/monitoring/util/config';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { ReasonSection } from './reason_section';
+import { testAlert } from '../testing_tools/test_utils';
 
 describe('<ReasonSection />', () => {
   it('displays message when no test results', async () => {
@@ -26,6 +27,7 @@ describe('<ReasonSection />', () => {
         <ReasonSection
           failureBuildUrl="https://ci.chromium.org/p/chromium/b/1234"
           tree={configuredTrees[0]}
+          builder={testAlert.extension.builders[0]}
           reason={{
             num_failing_tests: 0,
             step: 'test step',
@@ -45,6 +47,7 @@ describe('<ReasonSection />', () => {
         <ReasonSection
           failureBuildUrl="https://ci.chromium.org/p/chromium/b/1234"
           tree={configuredTrees[0]}
+          builder={testAlert.extension.builders[0]}
           reason={{
             num_failing_tests: 0,
             step: 'test step',

@@ -37,6 +37,8 @@ import {
   UpdateAlertRequest,
 } from '@/proto/go.chromium.org/luci/luci_notify/api/service/v1/alerts.pb';
 
+import { BuilderHistorySparkline } from '../builder_history_sparkline';
+
 import { BugMenu } from './bug_menu';
 import { PrefillFilterIcon } from './prefill_filter_icon';
 
@@ -123,6 +125,15 @@ export const AlertSummaryRow = ({
           </Link>
           <PrefillFilterIcon filter={builder.name} />
         </Stack>
+      </TableCell>
+      <TableCell>
+        <BuilderHistorySparkline
+          builderId={{
+            project: builder.project,
+            bucket: builder.bucket,
+            builder: builder.name,
+          }}
+        />
       </TableCell>
       <TableCell>
         {step}

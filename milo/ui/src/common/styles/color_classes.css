@@ -16,18 +16,23 @@
 .unexpected {
   color: var(--failure-color);
 }
+
 .unexpectedly-skipped {
   color: var(--critical-failure-color);
 }
+
 .flaky {
   color: var(--warning-color);
 }
+
 span.flaky {
   color: var(--warning-text-color);
 }
+
 .exonerated {
   color: var(--exonerated-color);
 }
+
 .expected {
   color: var(--success-color);
 }
@@ -35,18 +40,23 @@ span.flaky {
 .scheduled {
   color: var(--scheduled-color);
 }
+
 .started {
   color: var(--started-color);
 }
+
 .success {
   color: var(--success-color);
 }
+
 .failure {
   color: var(--failure-color);
 }
+
 .infra-failure {
   color: var(--critical-failure-color);
 }
+
 .canceled {
   color: var(--canceled-color);
 }
@@ -55,23 +65,68 @@ span.flaky {
   border: 1px solid var(--scheduled-color);
   background-color: var(--scheduled-bg-color);
 }
+
 .started-bg {
   border: 1px solid var(--started-color);
   background-color: var(--started-bg-color);
 }
+
 .success-bg {
   border: 1px solid var(--success-color);
   background-color: var(--success-bg-color);
 }
+
 .failure-bg {
   border: 1px solid var(--failure-color);
   background-color: var(--failure-bg-color);
 }
+
 .infra-failure-bg {
   border: 1px solid var(--critical-failure-color);
   background-color: var(--critical-failure-bg-color);
 }
+
 .canceled-bg {
   border: 1px solid var(--canceled-color);
   background-color: var(--canceled-bg-color);
+}
+
+.scheduled-bg-pattern {
+  border: 1px solid var(--scheduled-color);
+  background-color: var(--scheduled-bg-color);
+}
+
+.started-bg-pattern {
+  border: 1px solid var(--started-color);
+  background-color: var(--started-bg-color);
+  background-image: linear-gradient(135deg, var(--started-color) 5%, transparent 25%), linear-gradient(225deg, var(--started-color) 5%, transparent 25%), linear-gradient(45deg, var(--started-color) 5%, transparent 25%), linear-gradient(315deg, var(--started-color) 5%, var(--started-bg-color) 25%);
+  background-position: 3px 0, 3px 0, 0 0, 0 0;
+  background-size: 6px 6px;
+  background-repeat: repeat;
+}
+
+.success-bg-pattern {
+  border: 1px solid var(--success-color);
+  background-color: var(--success-bg-color);
+}
+
+.failure-bg-pattern {
+  border: 1px solid var(--failure-color);
+  background-color: var(--failure-bg-color);
+  background-size: 8px 8px;
+  background-image: repeating-linear-gradient(45deg, var(--failure-color) 0, var(--failure-color) 1px, var(--failure-bg-color) 0, var(--failure-bg-color) 50%);
+}
+
+.infra-failure-bg-pattern {
+  border: 1px solid var(--critical-failure-color);
+  background-color: var(--critical-failure-bg-color);
+  background-size: 8px 8px;
+  background-image: repeating-linear-gradient(135deg, var(--critical-failure-color) 0, var(--critical-failure-color) 1px, var(--critical-failure-bg-color) 0, var(--critical-failure-bg-color) 50%);
+}
+
+.canceled-bg-pattern {
+  border: 1px solid var(--canceled-color);
+  background-color: var(--canceled-bg-color);
+  background-image: linear-gradient(0deg, var(--canceled-bg-color) 60%, var(--light-background-color-4) 40%);
+  background-size: 4px 4px;
 }

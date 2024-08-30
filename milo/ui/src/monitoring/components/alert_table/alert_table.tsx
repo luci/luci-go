@@ -145,6 +145,7 @@ export const AlertTable = ({ tree, alerts, bug, bugs }: AlertTableProps) => {
               Failed Builder
             </TableSortLabel>
           </TableCell>
+          <TableCell>Builder History</TableCell>
           <TableCell>
             <TableSortLabel
               active={sortColumn === 'failed_step'}

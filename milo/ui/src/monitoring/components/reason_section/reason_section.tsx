@@ -26,6 +26,7 @@ import { Stack } from '@mui/material';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { DisableTestButton } from '@/monitoring/components/disable_button';
 import {
+  AlertBuilderJson,
   AlertReasonJson,
   AlertReasonTestJson,
   Bug,
@@ -33,10 +34,12 @@ import {
 } from '@/monitoring/util/server_json';
 
 import { PrefillFilterIcon } from '../alert_table/prefill_filter_icon';
+import { TestHistorySparkline } from '../test_history_sparkline';
 
 import { AIAnalysis } from './ai_analysis';
 
 interface ReasonSectionProps {
+  builder: AlertBuilderJson;
   failureBuildUrl: string;
   tree: TreeJson;
   reason?: AlertReasonJson;
@@ -44,6 +47,7 @@ interface ReasonSectionProps {
 }
 
 export const ReasonSection = ({
+  builder,
   tree,
   failureBuildUrl,
   reason,
@@ -62,6 +66,7 @@ export const ReasonSection = ({
         <TableHead>
           <TableRow>
             <TableCell>Failed Test</TableCell>
+            <TableCell width={125}>Test History</TableCell>
             <TableCell width={125}>Current Pass Rate</TableCell>
             <TableCell width={96}>Test Blamelist</TableCell>
             <TableCell width={125}>Previous Pass Rate</TableCell>
@@ -73,6 +78,7 @@ export const ReasonSection = ({
         <TableBody>
           {reason.tests.map((t) => (
             <TestFailureRow
+              builder={builder}
               key={t.test_id}
               test={t}
               tree={tree}
@@ -106,13 +112,6 @@ const codeSearchLink = (t: AlertReasonTestJson): string => {
     }
   }
   return `https://cs.chromium.org/search/?q=${encodeURIComponent(query)}`;
-};
-
-const historyLink = (t: AlertReasonTestJson): string => {
-  const project = encodeURIComponent(t.realm.split(':', 2)[0]);
-  const testId = encodeURIComponent(t.test_id);
-  const query = encodeURIComponent('VHASH:' + t.variant_hash);
-  return `https://ci.chromium.org/ui/test/${project}/${testId}?q=${query}`;
 };
 
 interface SimilarFailuresLinkProps {
@@ -153,6 +152,7 @@ const testBisectionLink = (t: AlertReasonTestJson): string => {
 };
 
 interface TestFailureRowProps {
+  builder: AlertBuilderJson;
   test: AlertReasonTestJson;
   tree: TreeJson;
   bug?: Bug;
@@ -160,6 +160,7 @@ interface TestFailureRowProps {
 }
 
 const TestFailureRow = ({
+  builder,
   test,
   tree,
   bug,
@@ -204,6 +205,14 @@ const TestFailureRow = ({
           <PrefillFilterIcon filter={test.test_name} />
         </Stack>
       </TableCell>
+      <TableCell>
+        <TestHistorySparkline
+          project={builder.project}
+          subRealm={builder.bucket}
+          testId={test.test_id}
+          variantHash={test.variant_hash}
+        />
+      </TableCell>
       <TableCell sx={{ backgroundColor: cellColor(currentRate) }}>
         {currentRate === undefined
           ? 'No longer running'
@@ -239,10 +248,6 @@ const TestFailureRow = ({
             Code Search
           </Link>
         ) : null}
-        {' | '}
-        <Link href={historyLink(test)} target="_blank" rel="noreferrer">
-          History
-        </Link>
         {testBisectionLink(test) && (
           <>
             {' | '}
