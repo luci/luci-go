@@ -19,8 +19,8 @@ import { useState } from 'react';
 import { BatchedClustersClientProvider } from '@/analysis/hooks/bached_clusters_client/context';
 import { useTestVariantBranchesClient } from '@/analysis/hooks/prpc_clients';
 import {
-  OutputQuerySourcePositionsResponse,
   OutputTestVariantBranch,
+  ParsedTestVariantBranchName,
 } from '@/analysis/types';
 import { ExtendedLogRequest } from '@/gitiles/api/fused_gitiles_client';
 import {
@@ -41,8 +41,8 @@ import { useGitilesClient } from '@/gitiles/hooks/prpc_client';
 import { getGitilesRepoURL } from '@/gitiles/tools/utils';
 import { OutputLogResponse } from '@/gitiles/types';
 import {
-  QuerySourcePositionsRequest,
-  QuerySourcePositionsResponse,
+  QuerySourceVerdictsRequest,
+  QuerySourceVerdictsResponse,
 } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
 import { LogResponse } from '@/proto/go.chromium.org/luci/common/proto/gitiles/gitiles.pb';
 
@@ -50,9 +50,9 @@ import { BlamelistContextProvider } from './context';
 import { EntryContent } from './entry_content';
 import { SegmentContentCell, SegmentHeadCell } from './segment_column';
 import {
-  VerdictsStatusHeadCell,
-  VerdictStatusesContentCell,
-} from './verdicts_status_column';
+  SourceVerdictStatusHeadCell,
+  SourceVerdictStatusContentCell,
+} from './source_verdict_status_column';
 
 const PAGE_SIZE = 1000;
 
@@ -119,35 +119,27 @@ export function BlamelistTable({
   }
 
   const tvbClient = useTestVariantBranchesClient();
-  type QueryOpts = UseQueryOptions<
-    QuerySourcePositionsResponse,
-    unknown,
-    OutputQuerySourcePositionsResponse
-  >;
-  const queries = useQueries({
+  type VerdictsQueryOpts = UseQueryOptions<QuerySourceVerdictsResponse>;
+  const verdictQueries = useQueries({
     queries: Array(pageEnd - pageStart)
       .fill(undefined)
-      .map<QueryOpts>((_, i) => ({
-        ...tvbClient.QuerySourcePositions.query(
-          QuerySourcePositionsRequest.fromPartial({
-            project: testVariantBranch.project,
-            testId: testVariantBranch.testId,
-            variantHash: testVariantBranch.variantHash,
-            refHash: testVariantBranch.refHash,
+      .map<VerdictsQueryOpts>((_, i) => ({
+        ...tvbClient.QuerySourceVerdicts.query(
+          QuerySourceVerdictsRequest.fromPartial({
+            parent: ParsedTestVariantBranchName.toString(testVariantBranch),
             startSourcePosition: getPosition(
               lastPosition,
               (pageStart + i) * PAGE_SIZE,
             ),
-            pageSize: PAGE_SIZE,
+            endSourcePosition: getPosition(
+              lastPosition,
+              (pageStart + i + 1) * PAGE_SIZE,
+            ),
           }),
         ),
-        select: (data) => data as OutputQuerySourcePositionsResponse,
-        // The query is expensive and the blamelist should be stable anyway.
-        refetchOnWindowFocus: false,
-        staleTime: Infinity,
       })),
   });
-  for (const { isError, error } of queries) {
+  for (const { isError, error } of verdictQueries) {
     if (isError) {
       throw error;
     }
@@ -171,7 +163,7 @@ export function BlamelistTable({
             <>
               <SegmentHeadCell />
               <ToggleHeadCell hotkey="x" />
-              <VerdictsStatusHeadCell />
+              <SourceVerdictStatusHeadCell />
               <PositionHeadCell />
               <TimeHeadCell />
               <AuthorHeadCell />
@@ -183,17 +175,28 @@ export function BlamelistTable({
             const pageIndex = Math.floor(i / PAGE_SIZE) - pageStart;
             const pageOffset = i % PAGE_SIZE;
             const commit = gitilesQueries[pageIndex]?.data?.log[pageOffset];
-            const sp = queries[pageIndex]?.data?.sourcePositions[i % PAGE_SIZE];
+            const verdictPage = verdictQueries[pageIndex]?.data;
+            const sourceVerdict = verdictPage?.sourceVerdicts.find(
+              (sv) => sv.position === position,
+            );
 
             return (
               <CommitTableRow
                 commit={commit || null}
-                content={<EntryContent verdicts={sp?.verdicts || null} />}
+                content={
+                  <EntryContent
+                    testId={testVariantBranch.testId}
+                    variantHash={testVariantBranch.variantHash}
+                    sourceVerdict={sourceVerdict || null}
+                    isSvLoading={!verdictPage}
+                  />
+                }
               >
                 <SegmentContentCell position={position} />
                 <ToggleContentCell />
-                <VerdictStatusesContentCell
-                  testVerdicts={sp?.verdicts || null}
+                <SourceVerdictStatusContentCell
+                  status={sourceVerdict?.status || null}
+                  isLoading={!verdictPage}
                 />
                 <PositionContentCell position={position} />
                 <TimeContentCell />

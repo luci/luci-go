@@ -15,39 +15,53 @@
 import { Skeleton } from '@mui/material';
 import { useState } from 'react';
 
-import { OutputTestVerdict } from '@/analysis/types';
 import {
   ExpandableEntry,
   ExpandableEntryBody,
   ExpandableEntryHeader,
 } from '@/generic_libs/components/expandable_entry';
 import { CommitContent } from '@/gitiles/components/commit_table';
+import { QuerySourceVerdictsResponse_SourceVerdict } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
 import { TestVerdictEntry } from '@/test_verdict/components/test_verdict_entry';
 
 import { useProject } from '../context';
 
 export interface EntryContentProps {
-  readonly verdicts: readonly OutputTestVerdict[] | null;
+  readonly testId: string;
+  readonly variantHash: string;
+  readonly sourceVerdict: QuerySourceVerdictsResponse_SourceVerdict | null;
+  /**
+   * When `isSvLoading` is false and `sourceVerdict` is `null`, this entry does
+   * not have an associated source verdict.
+   */
+  readonly isSvLoading: boolean;
 }
 
-export function EntryContent({ verdicts }: EntryContentProps) {
+export function EntryContent({
+  testId,
+  variantHash,
+  sourceVerdict,
+  isSvLoading,
+}: EntryContentProps) {
   const project = useProject();
   const [expanded, setExpanded] = useState(true);
 
   return (
     <>
-      {verdicts ? (
-        verdicts.map((v) => (
+      {sourceVerdict ? (
+        sourceVerdict.verdicts.map((v) => (
           <TestVerdictEntry
             key={v.invocationId}
             project={project}
-            testId={v.testId}
-            variantHash={v.variantHash}
+            testId={testId}
+            variantHash={variantHash}
             invocationId={v.invocationId}
           />
         ))
-      ) : (
+      ) : isSvLoading ? (
         <Skeleton />
+      ) : (
+        <></>
       )}
       <ExpandableEntry expanded={expanded}>
         <ExpandableEntryHeader onToggle={(expand) => setExpanded(expand)}>
