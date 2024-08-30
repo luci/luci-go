@@ -22,6 +22,7 @@ import {
   OutputQuerySourcePositionsResponse,
   OutputTestVariantBranch,
 } from '@/analysis/types';
+import { ExtendedLogRequest } from '@/gitiles/api/fused_gitiles_client';
 import {
   AuthorContentCell,
   AuthorHeadCell,
@@ -36,11 +37,14 @@ import {
   ToggleHeadCell,
   VirtualizedCommitTable,
 } from '@/gitiles/components/commit_table';
+import { useGitilesClient } from '@/gitiles/hooks/prpc_client';
 import { getGitilesRepoURL } from '@/gitiles/tools/utils';
+import { OutputLogResponse } from '@/gitiles/types';
 import {
   QuerySourcePositionsRequest,
   QuerySourcePositionsResponse,
 } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
+import { LogResponse } from '@/proto/go.chromium.org/luci/common/proto/gitiles/gitiles.pb';
 
 import { BlamelistContextProvider } from './context';
 import { EntryContent } from './entry_content';
@@ -84,7 +88,37 @@ export function BlamelistTable({
   const lastPosition = segments[0].endPosition;
   const firstPosition = segments[segments.length - 1].startPosition;
 
-  const client = useTestVariantBranchesClient();
+  const gitilesClient = useGitilesClient(testVariantBranch.ref.gitiles.host);
+  type GitilesQueryOpts = UseQueryOptions<
+    LogResponse,
+    unknown,
+    OutputLogResponse
+  >;
+  const gitilesQueries = useQueries({
+    queries: Array(pageEnd - pageStart)
+      .fill(undefined)
+      .map<GitilesQueryOpts>((_, i) => ({
+        ...gitilesClient.ExtendedLog.query(
+          ExtendedLogRequest.fromPartial({
+            project: testVariantBranch.ref.gitiles.project,
+            ref: testVariantBranch.ref.gitiles.ref,
+            position: getPosition(lastPosition, (pageStart + i) * PAGE_SIZE),
+            treeDiff: true,
+            pageSize: PAGE_SIZE,
+          }),
+        ),
+        // Commits are immutable.
+        staleTime: Infinity,
+        select: (data) => data as OutputLogResponse,
+      })),
+  });
+  for (const { isError, error } of gitilesQueries) {
+    if (isError) {
+      throw error;
+    }
+  }
+
+  const tvbClient = useTestVariantBranchesClient();
   type QueryOpts = UseQueryOptions<
     QuerySourcePositionsResponse,
     unknown,
@@ -94,7 +128,7 @@ export function BlamelistTable({
     queries: Array(pageEnd - pageStart)
       .fill(undefined)
       .map<QueryOpts>((_, i) => ({
-        ...client.QuerySourcePositions.query(
+        ...tvbClient.QuerySourcePositions.query(
           QuerySourcePositionsRequest.fromPartial({
             project: testVariantBranch.project,
             testId: testVariantBranch.testId,
@@ -146,12 +180,14 @@ export function BlamelistTable({
           )}
           itemContent={(i) => {
             const position = getPosition(lastPosition, i);
-            const page = queries[Math.floor(i / PAGE_SIZE) - pageStart]?.data;
-            const sp = page?.sourcePositions[i % PAGE_SIZE];
+            const pageIndex = Math.floor(i / PAGE_SIZE) - pageStart;
+            const pageOffset = i % PAGE_SIZE;
+            const commit = gitilesQueries[pageIndex]?.data?.log[pageOffset];
+            const sp = queries[pageIndex]?.data?.sourcePositions[i % PAGE_SIZE];
 
             return (
               <CommitTableRow
-                commit={sp?.commit || null}
+                commit={commit || null}
                 content={<EntryContent verdicts={sp?.verdicts || null} />}
               >
                 <SegmentContentCell position={position} />
