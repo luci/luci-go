@@ -37,6 +37,7 @@ import { FormData } from '../form_data';
 import { VariantLine } from '../variant_line';
 
 import { LogGroup } from './log_group';
+import { NoMatchLog } from './no_match_log';
 
 export const SlowQueryTextBox = styled(Box)`
   background: #e0f0ff;
@@ -106,11 +107,10 @@ export function TestLogsTable({ project, filter }: TestLogsTableProps) {
               </SlowQueryTextBox>
             )}
           </>
+        ) : data.groups.length === 0 ? (
+          <NoMatchLog />
         ) : (
           <>
-            {data.groups.length === 0 && (
-              <Box sx={{ padding: '0px 15px' }}>no matching logs</Box>
-            )}
             {data.groups.map((g) => (
               <LogGroup
                 key={g.testId + g.variantHash + g.artifactId}
@@ -151,12 +151,14 @@ export function TestLogsTable({ project, filter }: TestLogsTableProps) {
                 }
               />
             ))}
+            <Box sx={{ padding: '10px' }}>
+              <ParamsPager
+                pagerCtx={pagerCtx}
+                nextPageToken={data?.nextPageToken || ''}
+              />
+            </Box>
           </>
         )}
-        <ParamsPager
-          pagerCtx={pagerCtx}
-          nextPageToken={data?.nextPageToken || ''}
-        />
       </Box>
     </>
   );

@@ -69,7 +69,12 @@ export function LogGroup({ groupHeader, group, dialogAction }: LogGroupProps) {
       {matchingCount - artifacts.length > 0 && (
         <Button
           onClick={() => dispatch(dialogAction)}
-          sx={{ width: '100%', textTransform: 'none', fontSize: 'inherit' }}
+          sx={{
+            width: '100%',
+            textTransform: 'none',
+            fontSize: 'inherit',
+            borderBottom: '1px solid #dadce0',
+          }}
         >
           <ExpandableRowDiv>
             <AspectRatio sx={{ fontSize: '15px' }} />

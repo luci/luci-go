@@ -14,3 +14,4 @@
 
 export * from './invocation_logs_table';
 export * from './test_logs_table';
+export * from './no_match_log';

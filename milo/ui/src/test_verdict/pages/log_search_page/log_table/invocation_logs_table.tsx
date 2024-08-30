@@ -33,6 +33,7 @@ import { FormData } from '../form_data';
 import { VariantLine } from '../variant_line';
 
 import { LogGroup } from './log_group';
+import { NoMatchLog } from './no_match_log';
 import { SlowQueryTextBox } from './test_logs_table';
 
 export interface InvocationLogsTableProps {
@@ -97,11 +98,10 @@ export function InvocationLogsTable({
               </SlowQueryTextBox>
             )}
           </>
+        ) : data.groups.length === 0 ? (
+          <NoMatchLog />
         ) : (
           <>
-            {data.groups.length === 0 && (
-              <Box sx={{ padding: '0px 15px' }}>no matching logs</Box>
-            )}
             {data.groups.map((g) => (
               <LogGroup
                 key={g.variantUnionHash + g.artifactId}
@@ -127,12 +127,14 @@ export function InvocationLogsTable({
                 }
               />
             ))}
+            <Box sx={{ padding: '10px' }}>
+              <ParamsPager
+                pagerCtx={pagerCtx}
+                nextPageToken={data?.nextPageToken || ''}
+              />
+            </Box>
           </>
         )}
-        <ParamsPager
-          pagerCtx={pagerCtx}
-          nextPageToken={data?.nextPageToken || ''}
-        />
       </Box>
     </>
   );

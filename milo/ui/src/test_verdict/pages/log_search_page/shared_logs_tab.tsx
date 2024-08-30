@@ -19,6 +19,7 @@ import { useTabId } from '@/generic_libs/components/routed_tabs';
 
 import { useSearchFilter } from './context';
 import { InvocationLogDialog } from './log_list_dialog';
+import { NoMatchLog } from './log_table';
 import { InvocationLogsTable } from './log_table';
 
 // TODO (beining@):
@@ -32,7 +33,11 @@ export function SharedLogsTab() {
 
   // Do NOT search for invocation level logs when a non-empty test id is provided.
   if (filter && filter.form.testIDStr !== '') {
-    return <>No shared logs when search with test ID filter</>;
+    return (
+      <NoMatchLog
+        secondaryText={'No shared logs when search with test ID filter'}
+      />
+    );
   }
   return (
     <>
