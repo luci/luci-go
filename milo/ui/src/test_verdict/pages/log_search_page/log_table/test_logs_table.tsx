@@ -100,10 +100,7 @@ export function TestLogsTable({ project, filter }: TestLogsTableProps) {
             <LinearProgress />
             {form.testIDStr === '' && (
               <SlowQueryTextBox>
-                Searching for test result logs... <br /> If the query is slow,
-                we highly recommend you to scope down the search by providing a
-                <strong> test id or test id prefix.</strong> This can make the
-                query 10-100x faster!
+                <SlowQueryText />
               </SlowQueryTextBox>
             )}
           </>
@@ -160,6 +157,32 @@ export function TestLogsTable({ project, filter }: TestLogsTableProps) {
           </>
         )}
       </Box>
+    </>
+  );
+}
+
+function SlowQueryText() {
+  return (
+    <>
+      <p>Searching for logs...</p>
+      <p>
+        It looks like you haven&apos;t added a <strong>test ID filter</strong>{' '}
+        to your log search query. Without this filter, your query might take
+        over 1 minute to run or could even time out.
+      </p>
+      <p>
+        <strong>For better performance:</strong>
+      </p>
+      <ul>
+        <li>
+          <strong>Add a test ID or test ID prefix</strong> to make the query
+          10-100x faster.
+        </li>
+        <li>
+          <strong>Select a shorter time window</strong> (preferably less than 1
+          day) to avoid potential timeouts.
+        </li>
+      </ul>
     </>
   );
 }
