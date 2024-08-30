@@ -735,10 +735,10 @@ func TestUpdaterAvoidsFetchWhenPossible(t *testing.T) {
 			})
 
 			Convey("special path: changed ApplicableConfig is saved", func() {
-				Convey("CL is not watched by any project", func(c C) {
+				Convey("CL is not watched by any project", func() {
 					b.lookupACfgResult = &ApplicableConfig{}
 				})
-				Convey("CL is watched by another project", func(c C) {
+				Convey("CL is watched by another project", func() {
 					b.lookupACfgResult = &ApplicableConfig{Projects: []*ApplicableConfig_Project{
 						{
 							Name:           "other-project",
@@ -746,7 +746,7 @@ func TestUpdaterAvoidsFetchWhenPossible(t *testing.T) {
 						},
 					}}
 				})
-				Convey("CL is additionally watched by another project", func(c C) {
+				Convey("CL is additionally watched by another project", func() {
 					b.lookupACfgResult.Projects = append(b.lookupACfgResult.Projects, &ApplicableConfig_Project{
 						Name:           "other-project",
 						ConfigGroupIds: []string{"ohter-hash/other-name"},
@@ -762,7 +762,7 @@ func TestUpdaterAvoidsFetchWhenPossible(t *testing.T) {
 			})
 
 			Convey("meta_rev_id is the same", func() {
-				Convey("even if the CL entity is really old", func(c C) {
+				Convey("even if the CL entity is really old", func() {
 					ct.Clock.Add(autoRefreshAfter + time.Minute)
 				})
 
@@ -782,42 +782,42 @@ func TestUpdaterAvoidsFetchWhenPossible(t *testing.T) {
 				So(datastore.Put(ctx, cl), ShouldBeNil)
 				So(u.handleCL(ctx, task), ShouldBeNil)
 			}
-			Convey("no snapshot", func(c C) {
+			Convey("no snapshot", func() {
 				cl.Snapshot = nil
 				saveCLAndRun()
 				So(b.wasFetchCalled(), ShouldBeTrue)
 			})
-			Convey("snapshot marked outdated", func(c C) {
+			Convey("snapshot marked outdated", func() {
 				cl.Snapshot.Outdated = &Snapshot_Outdated{}
 				saveCLAndRun()
 				So(b.wasFetchCalled(), ShouldBeTrue)
 			})
-			Convey("snapshot is definitely old", func(c C) {
+			Convey("snapshot is definitely old", func() {
 				cl.Snapshot.ExternalUpdateTime.Seconds -= 3600
 				saveCLAndRun()
 				So(b.wasFetchCalled(), ShouldBeTrue)
 			})
-			Convey("snapshot might be old", func(c C) {
+			Convey("snapshot might be old", func() {
 				task.Hint = nil
 				saveCLAndRun()
 				So(b.wasFetchCalled(), ShouldBeTrue)
 			})
-			Convey("CL entity is really old", func(c C) {
+			Convey("CL entity is really old", func() {
 				ct.Clock.Add(autoRefreshAfter + time.Minute)
 				saveCLAndRun()
 				So(b.wasFetchCalled(), ShouldBeTrue)
 			})
-			Convey("snapshot is for a different project", func(c C) {
+			Convey("snapshot is for a different project", func() {
 				cl.Snapshot.LuciProject = "other"
 				saveCLAndRun()
 				So(b.wasFetchCalled(), ShouldBeTrue)
 			})
-			Convey("backend isn't sure about applicable config", func(c C) {
+			Convey("backend isn't sure about applicable config", func() {
 				b.lookupACfgResult = nil
 				saveCLAndRun()
 				So(b.wasFetchCalled(), ShouldBeTrue)
 			})
-			Convey("CL entity has record of prior access restriction", func(c C) {
+			Convey("CL entity has record of prior access restriction", func() {
 				cl.Access = &Access{
 					ByProject: map[string]*Access_Project{
 						"luci-project": {
