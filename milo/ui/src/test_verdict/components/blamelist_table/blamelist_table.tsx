@@ -12,9 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { UseQueryOptions, useQueries } from '@tanstack/react-query';
-import { debounce } from 'lodash-es';
-import { useState } from 'react';
+import { ListRange } from 'react-virtuoso';
 
 import { BatchedClustersClientProvider } from '@/analysis/hooks/bached_clusters_client/context';
 import { useTestVariantBranchesClient } from '@/analysis/hooks/prpc_clients';
@@ -22,6 +20,10 @@ import {
   OutputTestVariantBranch,
   ParsedTestVariantBranchName,
 } from '@/analysis/types';
+import {
+  UseVirtualizedQueryOption,
+  useVirtualizedQuery,
+} from '@/generic_libs/hooks/virtualized_query';
 import { ExtendedLogRequest } from '@/gitiles/api/fused_gitiles_client';
 import {
   AuthorContentCell,
@@ -39,10 +41,11 @@ import {
 } from '@/gitiles/components/commit_table';
 import { useGitilesClient } from '@/gitiles/hooks/prpc_client';
 import { getGitilesRepoURL } from '@/gitiles/tools/utils';
-import { OutputLogResponse } from '@/gitiles/types';
+import { OutputCommit } from '@/gitiles/types';
 import {
   QuerySourceVerdictsRequest,
   QuerySourceVerdictsResponse,
+  QuerySourceVerdictsResponse_SourceVerdict,
 } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
 import { LogResponse } from '@/proto/go.chromium.org/luci/common/proto/gitiles/gitiles.pb';
 
@@ -54,7 +57,8 @@ import {
   SourceVerdictStatusContentCell,
 } from './source_verdict_status_column';
 
-const PAGE_SIZE = 1000;
+const PAGE_SIZE = 200;
+const DELAY_MS = 500;
 
 function getOffset(lastPosition: string, position: string) {
   return parseInt(lastPosition) - parseInt(position);
@@ -68,7 +72,7 @@ export interface BlamelistTable {
   readonly lastCommitPosition: string;
   readonly firstCommitPosition: string;
   readonly testVariantBranch: OutputTestVariantBranch;
-  readonly focusCommitPosition?: string | null;
+  readonly focusCommitPosition?: string;
   readonly customScrollParent?: HTMLElement;
 }
 
@@ -77,75 +81,80 @@ export function BlamelistTable({
   firstCommitPosition,
   testVariantBranch,
   customScrollParent,
-  focusCommitPosition,
+  focusCommitPosition = lastCommitPosition,
 }: BlamelistTable) {
-  const [pageStart, setPageStart] = useState(0);
-  const [pageEnd, setPageEnd] = useState(0);
-  const [handleRangeChanged] = useState(() =>
-    debounce((itemStart: number, itemEnd: number) => {
-      setPageStart(Math.floor(itemStart / PAGE_SIZE));
-      setPageEnd(Math.ceil(itemEnd / PAGE_SIZE));
-    }, 500),
-  );
-
+  // Note that we use a negative index so commits are sorted by their commit
+  // position in descending order.
+  const queryOptsBase: Omit<
+    UseVirtualizedQueryOption<unknown, unknown>,
+    'genQuery'
+  > = {
+    rangeBoundary: [
+      -parseInt(lastCommitPosition),
+      -parseInt(firstCommitPosition) + 1,
+    ],
+    interval: PAGE_SIZE,
+    initRange: [
+      -parseInt(focusCommitPosition),
+      -parseInt(focusCommitPosition) + 1,
+    ],
+    delayMs: DELAY_MS,
+  };
   const gitilesClient = useGitilesClient(testVariantBranch.ref.gitiles.host);
-  type GitilesQueryOpts = UseQueryOptions<
-    LogResponse,
-    unknown,
-    OutputLogResponse
-  >;
-  const gitilesQueries = useQueries({
-    queries: Array(pageEnd - pageStart)
-      .fill(undefined)
-      .map<GitilesQueryOpts>((_, i) => ({
-        ...gitilesClient.ExtendedLog.query(
-          ExtendedLogRequest.fromPartial({
-            project: testVariantBranch.ref.gitiles.project,
-            ref: testVariantBranch.ref.gitiles.ref,
-            position: getPosition(
-              lastCommitPosition,
-              (pageStart + i) * PAGE_SIZE,
-            ),
-            treeDiff: true,
-            pageSize: PAGE_SIZE,
-          }),
-        ),
-        // Commits are immutable.
-        staleTime: Infinity,
-        select: (data) => data as OutputLogResponse,
-      })),
+  const gitilesQueries = useVirtualizedQuery({
+    ...queryOptsBase,
+    genQuery: (start, end) => ({
+      ...gitilesClient.ExtendedLog.query(
+        ExtendedLogRequest.fromPartial({
+          project: testVariantBranch.ref.gitiles.project,
+          ref: testVariantBranch.ref.gitiles.ref,
+          position: (-start).toString(),
+          treeDiff: true,
+          pageSize: end - start,
+        }),
+      ),
+      // Commits are immutable.
+      staleTime: Infinity,
+      select: (data: LogResponse) => data.log as OutputCommit[],
+    }),
   });
-  for (const { isError, error } of gitilesQueries) {
-    if (isError) {
-      throw error;
-    }
-  }
 
   const tvbClient = useTestVariantBranchesClient();
-  type VerdictsQueryOpts = UseQueryOptions<QuerySourceVerdictsResponse>;
-  const verdictQueries = useQueries({
-    queries: Array(pageEnd - pageStart)
-      .fill(undefined)
-      .map<VerdictsQueryOpts>((_, i) => ({
-        ...tvbClient.QuerySourceVerdicts.query(
-          QuerySourceVerdictsRequest.fromPartial({
-            parent: ParsedTestVariantBranchName.toString(testVariantBranch),
-            startSourcePosition: getPosition(
-              lastCommitPosition,
-              (pageStart + i) * PAGE_SIZE,
-            ),
-            endSourcePosition: getPosition(
-              lastCommitPosition,
-              (pageStart + i + 1) * PAGE_SIZE,
-            ),
-          }),
-        ),
-      })),
+  const verdictQueries = useVirtualizedQuery({
+    ...queryOptsBase,
+    genQuery: (start, end) => ({
+      ...tvbClient.QuerySourceVerdicts.query(
+        QuerySourceVerdictsRequest.fromPartial({
+          parent: ParsedTestVariantBranchName.toString(testVariantBranch),
+          startSourcePosition: (-start).toString(),
+          endSourcePosition: (-end).toString(),
+        }),
+      ),
+      // QuerySourceVerdicts is somewhat expensive.
+      // Do not refresh SVs associated with commits older than 1000 commits.
+      // For SVs associated with newer commits, do not refresh if the SVs are
+      // queried less than 5 mins ago.
+      staleTime:
+        start - queryOptsBase.rangeBoundary[0] > 1000 ? Infinity : 300_000,
+      select: (data: QuerySourceVerdictsResponse) => {
+        const svs: Array<
+          QuerySourceVerdictsResponse_SourceVerdict | undefined
+        > = [];
+        for (const sv of data.sourceVerdicts) {
+          svs[-start - parseInt(sv.position)] = sv;
+        }
+        return svs;
+      },
+    }),
   });
-  for (const { isError, error } of verdictQueries) {
-    if (isError) {
-      throw error;
-    }
+
+  function handleRangeChanged(range: ListRange) {
+    const mappedRange = [
+      -parseInt(getPosition(lastCommitPosition, range.startIndex)),
+      -parseInt(getPosition(lastCommitPosition, range.endIndex)) + 1,
+    ] as const;
+    gitilesQueries.setRange(mappedRange);
+    verdictQueries.setRange(mappedRange);
   }
 
   return (
@@ -154,13 +163,12 @@ export function BlamelistTable({
         <VirtualizedCommitTable
           repoUrl={getGitilesRepoURL(testVariantBranch.ref.gitiles)}
           customScrollParent={customScrollParent}
-          rangeChanged={(r) => handleRangeChanged(r.startIndex, r.endIndex + 1)}
+          rangeChanged={handleRangeChanged}
           increaseViewportBy={1000}
-          initialTopMostItemIndex={
-            focusCommitPosition
-              ? getOffset(lastCommitPosition, focusCommitPosition)
-              : 0
-          }
+          initialTopMostItemIndex={getOffset(
+            lastCommitPosition,
+            focusCommitPosition,
+          )}
           totalCount={getOffset(lastCommitPosition, firstCommitPosition) + 1}
           fixedHeaderContent={() => (
             <>
@@ -175,31 +183,34 @@ export function BlamelistTable({
           )}
           itemContent={(i) => {
             const position = getPosition(lastCommitPosition, i);
-            const pageIndex = Math.floor(i / PAGE_SIZE) - pageStart;
-            const pageOffset = i % PAGE_SIZE;
-            const commit = gitilesQueries[pageIndex]?.data?.log[pageOffset];
-            const verdictPage = verdictQueries[pageIndex]?.data;
-            const sourceVerdict = verdictPage?.sourceVerdicts.find(
-              (sv) => sv.position === position,
-            );
+            const cpIndex = -parseInt(position);
+            const commitQuery = gitilesQueries.get(cpIndex);
+            if (commitQuery.isError) {
+              throw commitQuery.error;
+            }
+
+            const sourceVerdictQuery = verdictQueries.get(cpIndex);
+            if (sourceVerdictQuery.isError) {
+              throw sourceVerdictQuery.error;
+            }
 
             return (
               <CommitTableRow
-                commit={commit || null}
+                commit={commitQuery.data || null}
                 content={
                   <EntryContent
                     testId={testVariantBranch.testId}
                     variantHash={testVariantBranch.variantHash}
-                    sourceVerdict={sourceVerdict || null}
-                    isSvLoading={!verdictPage}
+                    sourceVerdict={sourceVerdictQuery.data || null}
+                    isSvLoading={sourceVerdictQuery.isLoading}
                   />
                 }
               >
                 <SegmentContentCell position={position} />
                 <ToggleContentCell />
                 <SourceVerdictStatusContentCell
-                  status={sourceVerdict?.status || null}
-                  isLoading={!verdictPage}
+                  status={sourceVerdictQuery.data?.status || null}
+                  isLoading={sourceVerdictQuery.isLoading}
                 />
                 <PositionContentCell position={position} />
                 <TimeContentCell />
