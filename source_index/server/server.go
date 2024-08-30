@@ -69,6 +69,10 @@ func RegisterCronHandlers(srv *luciserver.Server) error {
 	if err := config.RegisterCronHandlers(srv); err != nil {
 		return errors.Annotate(err, "register config cron handlers").Err()
 	}
+	if err := commitingester.RegisterCronHandlers(srv); err != nil {
+		return errors.Annotate(err, "register commit ingester cron handlers").Err()
+	}
+
 	return nil
 }
 
