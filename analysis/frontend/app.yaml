@@ -48,6 +48,8 @@ luci_gae_vars:
     CRON_AUTHORIZED_CALLER: cloud-scheduler-jobs@luci-analysis-dev.iam.gserviceaccount.com
     LUCI_ANALYSIS_HOST: VERSION.staging.analysis.api.luci.app
     PUBSUB_AUTHORIZED_CALLER: cloud-pubsub-pusher@luci-analysis-dev.iam.gserviceaccount.com
+    TQ_PUSH_AS: cloud-tasks-pusher@luci-analysis-dev.iam.gserviceaccount.com
+    TQ_TARGET_HOST: staging.analysis.api.luci.app
     TS_MON_ACCOUNT: app-engine-metric-publishers@prodx-mon-chrome-infra.google.com.iam.gserviceaccount.com
     OAUTH_CLIENT_ID: 171536942974-su83vlacqnbccpm2h32ki6gs5a2hi7eo.apps.googleusercontent.com
     OAUTH_CLIENT_SECRET: sm://oauth-client-secret
@@ -90,6 +92,8 @@ entrypoint: >
   -auth-service-host ${AUTH_SERVICE_HOST}
   -config-service-host ${CONFIG_SERVICE_HOST}
   -cron-authorized-caller ${CRON_AUTHORIZED_CALLER}
+  -tq-default-target-host ${TQ_TARGET_HOST}
+  -tq-push-as ${TQ_PUSH_AS}
   -tq-sweep-initiation-launcher ${CRON_AUTHORIZED_CALLER}
   -luci-analysis-host ${LUCI_ANALYSIS_HOST}
   -pubsub-authorized-caller ${PUBSUB_AUTHORIZED_CALLER}
