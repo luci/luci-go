@@ -240,6 +240,8 @@ type ReadArtifactGroupsOpts struct {
 	PageToken         string
 }
 
+var BQQueryTimeOutErr = errors.New("query can't finish within the deadline: please try different filters or tighter time range")
+
 // ReadArtifactGroups reads either test result level artifacts or invocation level artifacts depending on opts.IsInvocationLevel.
 func (c *Client) ReadArtifactGroups(ctx context.Context, opts ReadArtifactGroupsOpts) (groups []*ArtifactGroup, nextPageToken string, err error) {
 	var afterMaxPartitionTimeUnix int
@@ -282,9 +284,25 @@ func (c *Client) ReadArtifactGroups(ctx context.Context, opts ReadArtifactGroups
 		{Name: "maxInsertTimeUnix", Value: maxInsertTimeUnix},
 	}
 
-	it, err := q.Read(ctx)
+	job, err := q.Run(ctx)
 	if err != nil {
-		return nil, "", errors.Annotate(err, "running query").Err()
+		return nil, "", errors.Annotate(err, "starting query").Err()
+	}
+	// WaitForJob cancels the job with best-effort when context deadline is reached.
+	js, err := bq.WaitForJob(ctx, job)
+	if err != nil {
+		if errors.Contains(err, context.DeadlineExceeded) {
+			return nil, "", BQQueryTimeOutErr
+		}
+		return nil, "", err
+	}
+
+	if js.Err() != nil {
+		return nil, "", js.Err()
+	}
+	it, err := job.Read(ctx)
+	if err != nil {
+		return nil, "", errors.Annotate(js.Err(), "read artifact groups").Err()
 	}
 	results := []*ArtifactGroup{}
 	for {

@@ -159,7 +159,14 @@ func TestQueryTestVariantArtifactGroups(t *testing.T) {
 				NextPageToken: "next_page_token",
 			})
 		})
-
+		Convey("query time out", func() {
+			mockBQClient.ReadArtifactGroupsFunc = func(ctx context.Context, opts artifacts.ReadArtifactGroupsOpts) (groups []*artifacts.ArtifactGroup, nextPageToken string, err error) {
+				return nil, "", artifacts.BQQueryTimeOutErr
+			}
+			rsp, err := rdbSvr.QueryTestVariantArtifactGroups(ctx, req)
+			So(err, ShouldBeRPCInvalidArgument, `query can't finish within the deadline`)
+			So(rsp, ShouldBeNil)
+		})
 	})
 }
 

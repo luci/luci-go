@@ -66,6 +66,10 @@ func (s *resultDBServer) QueryInvocationVariantArtifactGroups(ctx context.Contex
 	}
 	rows, nextPageToken, err := s.artifactBQClient.ReadArtifactGroups(ctx, opts)
 	if err != nil {
+		if errors.Is(err, artifacts.BQQueryTimeOutErr) {
+			// Returns bad_request error code to avoid automatic retries.
+			return nil, appstatus.BadRequest(err)
+		}
 		return nil, errors.Annotate(err, "read invocation artifacts groups").Err()
 	}
 	pbGroups, err := toInvocationArtifactGroupsProto(rows, req.SearchString)

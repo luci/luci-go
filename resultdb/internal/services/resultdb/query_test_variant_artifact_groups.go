@@ -85,6 +85,10 @@ func (s *resultDBServer) QueryTestVariantArtifactGroups(ctx context.Context, req
 	}
 	rows, nextPageToken, err := s.artifactBQClient.ReadArtifactGroups(ctx, opts)
 	if err != nil {
+		if errors.Is(err, artifacts.BQQueryTimeOutErr) {
+			// Returns bad_request error code to avoid automatic retries.
+			return nil, appstatus.BadRequest(err)
+		}
 		return nil, errors.Annotate(err, "read test artifacts groups").Err()
 	}
 	pbGroups, err := toTestArtifactGroupsProto(rows, req.SearchString)
