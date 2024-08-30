@@ -99,6 +99,18 @@ describe('<GroupsForm />', () => {
     );
     await screen.findByTestId('groups-form');
 
+    // Change something so updated button is not disabled.
+    fireEvent.mouseEnter(screen.getByTestId('description-table'));
+    await screen.findByTestId('edit-description-icon');
+    const editButton = screen.getByTestId('edit-description-icon');
+    act(() => editButton.click());
+    const descriptionTextfield = screen.getByTestId('description-textfield').querySelector('input');
+    act(() => {
+      fireEvent.change(descriptionTextfield!, { target: { value: 'new description' } });
+    });
+    expect(descriptionTextfield!.value).toBe('new description');
+    act(() => editButton.click());
+
     const submitButton = screen.getByTestId('submit-button')
     act(() => submitButton.click());
     await screen.findByRole('alert');
@@ -117,6 +129,18 @@ describe('<GroupsForm />', () => {
       </FakeContextProvider>,
     );
     await screen.findByTestId('groups-form');
+
+    // Change something so updated button is not disabled.
+    fireEvent.mouseEnter(screen.getByTestId('description-table'));
+    await screen.findByTestId('edit-description-icon');
+    const editButton = screen.getByTestId('edit-description-icon');
+    act(() => editButton.click());
+    const descriptionTextfield = screen.getByTestId('description-textfield').querySelector('input');
+    act(() => {
+      fireEvent.change(descriptionTextfield!, { target: { value: 'new description' } });
+    });
+    expect(descriptionTextfield!.value).toBe('new description');
+    act(() => editButton.click());
 
     const submitButton = screen.getByTestId('submit-button')
     act(() => submitButton.click());
@@ -306,4 +330,60 @@ describe('<GroupsForm />', () => {
     expect(screen.getByText('newMember@email.com')).toBeInTheDocument();
     expect(screen.getByText('You have unsaved changes!')).toBeInTheDocument();
   });
+
+  test('Removed members message shown for groups form list item', async () => {
+    const mockGroup = createMockGroupIndividual('123', true);
+    mockFetchGetGroup(mockGroup);
+
+    render(
+      <FakeContextProvider>
+        <GroupsForm name='123' />
+      </FakeContextProvider>,
+    );
+    await screen.findByTestId('groups-form');
+    const row = screen.getByTestId(`item-row-member1`);
+    fireEvent.mouseEnter(row);
+    const removeButton = screen.getByTestId(`remove-button-member1`)
+    act(() => removeButton.click());
+
+    // Check new member shown in list & message is shown.
+    expect(screen.getByText('Removed: member1')).toBeInTheDocument();
+    expect(screen.getByText('You have unsaved changes!')).toBeInTheDocument();
+  });
+
+  test('no message shown for edited state when item added then deleted', async () => {
+    const mockGroup = createMockGroupIndividual('123', true);
+    mockFetchGetGroup(mockGroup);
+
+    render(
+      <FakeContextProvider>
+        <GroupsForm name='123' />
+      </FakeContextProvider>,
+    );
+    await screen.findByTestId('groups-form');
+
+    // Click add button for first list (members).
+    const addButton = screen.queryAllByTestId('add-button')[0];
+    act(() => addButton!.click());
+    // Type in textfield.
+    const textfield = screen.getByTestId('add-textfield').querySelector('input');
+    expect(textfield).toBeInTheDocument();
+    await userEvent.type(textfield!, 'newMember@email.com');
+    expect(textfield!.value).toBe('newMember@email.com');
+    // Click confirm button.
+    const confirmButton = screen.queryByTestId('confirm-button');
+    expect(confirmButton).not.toBeNull();
+    act(() => confirmButton!.click());
+    // Remove added member.
+    const row = screen.getByTestId(`item-row-newMember@email.com`);
+    fireEvent.mouseEnter(row);
+    const removeButton = screen.getByTestId(`remove-button-newMember@email.com`)
+    act(() => removeButton.click());
+
+    // Check new member shown in list & message is no longer shown.
+    expect(screen.queryByText('You have unsaved changes!')).toBeNull();
+    // Removing an added item should not show removed message.
+    expect(screen.queryByText('Removed: newMember@email.com')).toBeNull();
+  });
+
 });

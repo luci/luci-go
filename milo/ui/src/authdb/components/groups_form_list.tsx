@@ -24,7 +24,7 @@ import TableContainer from '@mui/material/TableContainer';
 import TableRow from '@mui/material/TableRow';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import {useState, forwardRef, useImperativeHandle} from 'react';
+import {useState, forwardRef, useImperativeHandle, useEffect} from 'react';
 import { isGlob, isMember, isSubgroup } from '@/authdb/common/helpers';
 
 import './groups_list.css';
@@ -34,7 +34,9 @@ interface GroupsFormListProps {
     initialItems: string[];
     // This will be either members, subgroups or globs. Used for header in form and to check validity of added items.
     name: string;
-    // groups_form function called when items are added or removed in this array. Allows groups_form component to know of edited state.
+    // groups_form function called when items are added or removed in this array.
+    // Also called when items are 'reset' (same as initial).
+    // This allows groups_form component to know of edited state.
     itemsChanged: () => void;
 }
 
@@ -42,6 +44,7 @@ export interface FormListElement {
   getItems: () => string[];
   setReadonly: () => void;
   changeItems: (items: string[]) => void;
+  isChanged: () => boolean;
 }
 
 export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
@@ -52,6 +55,8 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
     const [addingItem, setAddingItem] = useState<boolean>();
     const [currentItem, setCurrentItem] = useState<string>();
     const [errorMessage, setErrorMessage] = useState<string>('');
+    const [removedItems, setRemovedItems] = useState<string[]>();
+    const [removedMessage, setRemovedMessage] = useState<string>('');
 
     useImperativeHandle(ref, () => ({
       getItems: () => items,
@@ -61,6 +66,10 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
       },
       changeItems: (items: string[]) => {
         setItems(items);
+        setRemovedItems([]);
+      },
+      isChanged: () => {
+        return !(items.length === initialItems.length && items.every((val, index) => val === initialItems[index]));
       }
     }));
 
@@ -90,14 +99,47 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
         }
       }
       if (currentItem) {
+        // If we re-add a previously removed member, delete it from removed items array.
+        if (removedItems) {
+          let newRemovedItems = removedItems.filter(item => item !== currentItem);
+          setRemovedItems(newRemovedItems);
+        }
         setItems([...items, currentItem]);
-        itemsChanged();
         resetTextfield()
       }
     }
 
+    useEffect(() => {
+      // Every time removed items array is updated, also update message shown.
+      updateRemovedMessage();
+    }, [removedItems])
+
+    useEffect(() => {
+      itemsChanged();
+    }, [items])
+
+    const isNewItem = (item: string) => {
+      if (initialItems.includes(item)) {
+        return false;
+      }
+      return true;
+    }
+
+    const updateRemovedMessage = () => {
+      if (removedItems && removedItems.length > 0) {
+        let newRemovedMessage = 'Removed: ' + removedItems.join(', ');
+        setRemovedMessage(newRemovedMessage);
+      } else {
+        setRemovedMessage('');
+      }
+    }
+
     const removeFromItems = (index: number) => {
-        itemsChanged();
+        // We only consider if initial items are removed.
+        if (!isNewItem(items[index])) {
+          setRemovedItems([...removedItems || [], items[index]]);
+          updateRemovedMessage();
+        }
         setItems(items.filter((_, i) => i != index));
     }
 
@@ -122,7 +164,10 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
               <IconButton className='remove-icon' color='error' sx={{p: 0, ml: 0.5, mr: 0.5}} onClick={() => removeFromItems(index as number)} data-testid={`remove-button-${item}`}>
                 <CancelIcon/>
               </IconButton>
-            <Typography variant="body2">{item}</Typography>
+            {isNewItem(item)
+            ? <Typography variant="body2" color="green">{item}</Typography>
+            : <Typography variant="body2">{item}</Typography>
+            }
           </TableCell>
         </TableRow>
       )}
@@ -151,6 +196,13 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
           </Button>
           </TableCell>
       </TableRow>
+      }
+      {(removedItems && removedItems.length > 0) &&
+        <TableRow>
+          <TableCell sx={{pt: 0, pb: 0}}>
+            <Typography variant="subtitle1" sx={{p: 0}}>{removedMessage}</Typography>
+          </TableCell>
+        </TableRow>
       }
       </TableBody>
     </Table>

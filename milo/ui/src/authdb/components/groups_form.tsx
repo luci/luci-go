@@ -172,8 +172,10 @@ export function GroupsForm({ name, onDelete = () => { } }: GroupsFormProps) {
     setOwnersMode(!ownersMode);
   }
 
+  // Each time a list (members, subgroups, globs) is changed, we need to check if they are all same as initial items.
   const itemsChanged = () => {
-    setChangedState(true);
+    setChangedState(description != initialDescription || owners != initialOwners ||
+      membersRef.current?.isChanged() || subgroupsRef.current?.isChanged() || globsRef.current?.isChanged());
   }
 
   useEffect(() => {
@@ -359,7 +361,7 @@ export function GroupsForm({ name, onDelete = () => { } }: GroupsFormProps) {
                     </>
                   }
                   <div style={{ display: 'flex', flexDirection: 'row' }}>
-                    <Button variant="contained" disableElevation style={{ width: '15%' }} sx={{ mt: 1.5, ml: 1.5 }} onClick={submitForm} data-testid='submit-button' disabled={disableSubmit}>
+                    <Button variant="contained" disableElevation style={{ width: '15%' }} sx={{ mt: 1.5, ml: 1.5 }} onClick={submitForm} data-testid='submit-button' disabled={disableSubmit || !changedState}>
                       Update Group
                     </Button>
                     <Button variant="contained" color="error" disableElevation style={{ width: '15%' }} sx={{ mt: 1.5, ml: 1.5 }} onClick={() => setOpenDeleteDialog(true)} data-testid='delete-button'>
