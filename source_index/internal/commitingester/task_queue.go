@@ -17,7 +17,6 @@ package commitingester
 import (
 	"context"
 	"fmt"
-	"net/http"
 
 	"cloud.google.com/go/spanner"
 	"google.golang.org/protobuf/proto"
@@ -34,6 +33,7 @@ import (
 
 	"go.chromium.org/luci/source_index/internal/commit"
 	"go.chromium.org/luci/source_index/internal/commitingester/taskspb"
+	"go.chromium.org/luci/source_index/internal/gitilesutil"
 
 	// Add support for Spanner transactions in TQ.
 	_ "go.chromium.org/luci/server/tq/txn/spanner"
@@ -82,19 +82,14 @@ func handleCommitIngestion(ctx context.Context, payload proto.Message) error {
 
 	logging.Infof(ctx, "received commit ingestion task with page token: %q", task.PageToken)
 
-	t, err := auth.GetRPCTransport(ctx, auth.AsSelf, auth.WithScopes(gitiles.OAuthScope))
-	if err != nil {
-		return err
-	}
-	client, err := gitiles.NewRESTClient(&http.Client{Transport: t}, task.Host, false)
-	if err != nil {
-		return errors.Annotate(err, "initialize a Gitiles REST client").Err()
-	}
-
-	return processCommitIngestionTask(ctx, client, task)
+	return processCommitIngestionTask(ctx, task)
 }
 
-func processCommitIngestionTask(ctx context.Context, client gitilespb.GitilesClient, task *taskspb.IngestCommits) error {
+func processCommitIngestionTask(ctx context.Context, task *taskspb.IngestCommits) error {
+	client, err := gitilesutil.NewClient(ctx, task.Host, auth.AsSelf, auth.WithScopes(gitiles.OAuthScope))
+	if err != nil {
+		return errors.Annotate(err, "initialize a Gitiles client").Err()
+	}
 	req := &gitilespb.LogRequest{
 		Project:    task.Repository,
 		Committish: task.Commitish,

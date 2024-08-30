@@ -22,7 +22,7 @@ import (
 
 	"google.golang.org/grpc/codes"
 
-	"go.chromium.org/luci/common/proto/gitiles"
+	gitilespb "go.chromium.org/luci/common/proto/gitiles"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -32,6 +32,7 @@ import (
 
 	"go.chromium.org/luci/source_index/internal/commit"
 	"go.chromium.org/luci/source_index/internal/config"
+	"go.chromium.org/luci/source_index/internal/gitilesutil"
 	"go.chromium.org/luci/source_index/internal/testutil"
 	pb "go.chromium.org/luci/source_index/proto/v1"
 )
@@ -45,21 +46,21 @@ func TestSourceIndexServer(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 
 		rng := rand.New(rand.NewSource(7671861294544766002))
-		publicCommits := gitiles.MakeFakeCommits(rng, 5, nil)
+		publicCommits := gitilespb.MakeFakeCommits(rng, 5, nil)
 		publicCommits[0].Message = "title\n\nCr-Commit-Position: refs/heads/main@{#1}\n"
 		publicCommits[1].Message = "title\n\nCr-Commit-Position: refs/heads/main@{#2}\n"
 		publicCommits[2].Message = "title\n\nCr-Commit-Position: refs/heads/main@{#3}\n"
 		publicCommits[3].Message = "title\n\nCr-Commit-Position: refs/heads/main@{#4}\n"
 		publicCommits[4].Message = "title\n\nCr-Commit-Position: refs/heads/main@{#5}\n"
 
-		unindexedCommits := gitiles.MakeFakeCommits(rng, 5, nil)
+		unindexedCommits := gitilespb.MakeFakeCommits(rng, 5, nil)
 		unindexedCommits[0].Message = "title\n\nCr-Commit-Position: refs/heads/main@{#1}\n"
 		unindexedCommits[1].Message = "title\n\nCr-Commit-Position: refs/heads/main@{#2}\n"
 		unindexedCommits[2].Message = "title\n\nCr-Commit-Position: refs/heads/main@{#3}\n"
 		unindexedCommits[3].Message = "title\n\nCr-Commit-Position: refs/heads/main@{#4}\n"
 		unindexedCommits[4].Message = "title\n\nCr-Commit-Position: refs/heads/main@{#5}\n"
 
-		confidentialCommits := gitiles.MakeFakeCommits(rng, 5, nil)
+		confidentialCommits := gitilespb.MakeFakeCommits(rng, 5, nil)
 		confidentialCommits[0].Message = "title\n\nCr-Commit-Position: refs/heads/main@{#1}\n"
 		confidentialCommits[1].Message = "title\n\nCr-Commit-Position: refs/heads/main@{#2}\n"
 		confidentialCommits[2].Message = "title\n\nCr-Commit-Position: refs/heads/main@{#3}\n"
@@ -71,10 +72,20 @@ func TestSourceIndexServer(t *testing.T) {
 		unindexedRepository := "chromium/unindexed"
 		confidentialRepository := "chromium/confidential"
 
-		fakeGitilesClient := &gitiles.Fake{}
+		fakeGitilesClient := &gitilespb.Fake{}
 		// Confidential commits are not returned from Gitiles.
 		fakeGitilesClient.SetRepository(publicRepository, nil, publicCommits)
 		fakeGitilesClient.SetRepository(unindexedRepository, nil, unindexedCommits)
+		ctx = gitilesutil.UseFakeClientFactory(ctx, func(
+			ctx context.Context,
+			requestedHost string,
+			kind auth.RPCAuthorityKind,
+			opts ...auth.RPCOption,
+		) (gitilespb.GitilesClient, error) {
+			assert.That(t, requestedHost, should.Equal(host))
+			assert.That(t, kind, should.Equal(auth.AsCredentialsForwarder))
+			return fakeGitilesClient, nil
+		})
 
 		// Unindexed commits are not indexed.
 		indexedCommits := make([]commit.Commit, 0, len(publicCommits)+len(confidentialCommits))
@@ -94,13 +105,7 @@ func TestSourceIndexServer(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 
 		s := &pb.DecoratedSourceIndex{
-			Service: &sourceIndexServer{
-				getGitilesClient: func(ctx context.Context, requestedHost string, kind auth.RPCAuthorityKind) (gitiles.GitilesClient, error) {
-					assert.That(t, requestedHost, should.Equal(host))
-					assert.That(t, kind, should.Equal(auth.AsCredentialsForwarder))
-					return fakeGitilesClient, nil
-				},
-			},
+			Service:  &sourceIndexServer{},
 			Postlude: gRPCifyAndLogPostlude,
 		}
 

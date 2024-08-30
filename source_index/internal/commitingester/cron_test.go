@@ -31,6 +31,7 @@ import (
 
 	"go.chromium.org/luci/source_index/internal/commitingester/taskspb"
 	"go.chromium.org/luci/source_index/internal/config"
+	"go.chromium.org/luci/source_index/internal/gitilesutil"
 	"go.chromium.org/luci/source_index/internal/testutil"
 )
 
@@ -60,18 +61,16 @@ func TestSyncCommitsHandler(t *testing.T) {
 		fakeChromiumGitilesClient := &gitilespb.Fake{}
 		fakeWebRTCGitilesClient := &gitilespb.Fake{}
 
-		handler := syncCommitsHandler{
-			GetGitilesClient: func(ctx context.Context, host string, as auth.RPCAuthorityKind, opts ...auth.RPCOption) (gitilespb.GitilesClient, error) {
-				switch host {
-				case "chromium.googlesource.com":
-					return fakeChromiumGitilesClient, nil
-				case "webrtc.googlesource.com":
-					return fakeWebRTCGitilesClient, nil
-				default:
-					return nil, errors.Reason("unexpected host %q", host).Err()
-				}
-			},
-		}
+		ctx = gitilesutil.UseFakeClientFactory(ctx, func(ctx context.Context, host string, as auth.RPCAuthorityKind, opts ...auth.RPCOption) (gitilespb.GitilesClient, error) {
+			switch host {
+			case "chromium.googlesource.com":
+				return fakeChromiumGitilesClient, nil
+			case "webrtc.googlesource.com":
+				return fakeWebRTCGitilesClient, nil
+			default:
+				return nil, errors.Reason("unexpected host %q", host).Err()
+			}
+		})
 
 		type taskKey struct {
 			host      string
@@ -139,7 +138,7 @@ func TestSyncCommitsHandler(t *testing.T) {
 			fakeChromiumGitilesClient.SetRepository("v8/v8", refs, commits)
 			fakeWebRTCGitilesClient.SetRepository("src", refs, commits)
 
-			err := handler.handle(ctx)
+			err := syncCommitsHandler(ctx)
 
 			assert.Loosely(t, err, should.BeNil)
 			assert.That(t, getOutputTasks(), should.Match(expectedTasks))
@@ -151,7 +150,7 @@ func TestSyncCommitsHandler(t *testing.T) {
 			delete(expectedTasks, taskKey{host: "chromium.googlesource.com", repo: "chromiumos/manifest", commitish: "refs/heads/staging-snapshot"})
 			delete(expectedTasks, taskKey{host: "webrtc.googlesource.com", repo: "src", commitish: "refs/heads/main"})
 
-			err := handler.handle(ctx)
+			err := syncCommitsHandler(ctx)
 
 			assert.Loosely(t, err, should.NotBeNil)
 			assert.That(t, getOutputTasks(), should.Match(expectedTasks))
@@ -174,7 +173,7 @@ func TestSyncCommitsHandler(t *testing.T) {
 			}
 			fakeChromiumGitilesClient.SetRepository("chromium/src", refs, commits)
 
-			err := handler.handle(ctx)
+			err := syncCommitsHandler(ctx)
 
 			assert.Loosely(t, err, should.NotBeNil)
 			assert.That(t, getOutputTasks(), should.Match(expectedTasks))

@@ -15,20 +15,23 @@
 package commitingester
 
 import (
+	"context"
 	"math/rand"
 	"testing"
 
-	"go.chromium.org/luci/common/proto/gitiles"
+	gitilespb "go.chromium.org/luci/common/proto/gitiles"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/source_index/internal/commit"
 	"go.chromium.org/luci/source_index/internal/commitingester/taskspb"
 	"go.chromium.org/luci/source_index/internal/config"
+	"go.chromium.org/luci/source_index/internal/gitilesutil"
 	"go.chromium.org/luci/source_index/internal/testutil"
 )
 
@@ -42,7 +45,7 @@ func TestProcessCommitIngestionTask(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 
 		rng := rand.New(rand.NewSource(7671861294544766002))
-		commits := gitiles.MakeFakeCommits(rng, 1001, nil)
+		commits := gitilespb.MakeFakeCommits(rng, 1001, nil)
 		commits[100].Message = "no-position-2\n"
 		commits[200].Message = "no-position-1\n"
 		commits[300].Message = "with-position-2\nCr-Commit-Position: refs/heads/main@{#2}\n"
@@ -51,7 +54,15 @@ func TestProcessCommitIngestionTask(t *testing.T) {
 		commits[600].Message = "with-invalid-1\nCr-Commit-Position: invalid 1\n"
 		commitsInPage := commits[:1000]
 
-		fakeGitilesClient := &gitiles.Fake{}
+		fakeGitilesClient := &gitilespb.Fake{}
+		ctx = gitilesutil.UseFakeClientFactory(ctx, func(
+			ctx context.Context,
+			host string,
+			as auth.RPCAuthorityKind,
+			opts ...auth.RPCOption,
+		) (gitilespb.GitilesClient, error) {
+			return fakeGitilesClient, nil
+		})
 
 		host := "chromium.googlesource.com"
 		repository := "chromium/src"
@@ -92,7 +103,7 @@ func TestProcessCommitIngestionTask(t *testing.T) {
 		t.Run(`with next page`, func(t *ftt.Test) {
 			fakeGitilesClient.SetRepository(repository, nil, commits)
 
-			err := processCommitIngestionTask(ctx, fakeGitilesClient, inputTask)
+			err := processCommitIngestionTask(ctx, inputTask)
 
 			assert.Loosely(t, err, should.BeNil)
 			assert.That(t, commit.MustReadAllForTesting(span.Single(ctx)), commit.ShouldMatchCommits(expectedSavedCommits))
@@ -107,7 +118,7 @@ func TestProcessCommitIngestionTask(t *testing.T) {
 			expectedSavedCommits = expectedSavedCommits[:800]
 			expectedTasks = []*taskspb.IngestCommits{}
 
-			err := processCommitIngestionTask(ctx, fakeGitilesClient, inputTask)
+			err := processCommitIngestionTask(ctx, inputTask)
 
 			assert.Loosely(t, err, should.BeNil)
 			assert.That(t, commit.MustReadAllForTesting(span.Single(ctx)), commit.ShouldMatchCommits(expectedSavedCommits))
@@ -123,7 +134,7 @@ func TestProcessCommitIngestionTask(t *testing.T) {
 			expectedSavedCommits = []commit.Commit{alreadySavedCommit}
 			expectedTasks = []*taskspb.IngestCommits{}
 
-			err = processCommitIngestionTask(ctx, fakeGitilesClient, inputTask)
+			err = processCommitIngestionTask(ctx, inputTask)
 
 			assert.Loosely(t, err, should.BeNil)
 			assert.That(t, commit.MustReadAllForTesting(span.Single(ctx)), commit.ShouldMatchCommits(expectedSavedCommits))

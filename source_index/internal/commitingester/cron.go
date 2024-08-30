@@ -16,7 +16,6 @@ package commitingester
 
 import (
 	"context"
-	"net/http"
 
 	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/errors"
@@ -29,41 +28,26 @@ import (
 
 	"go.chromium.org/luci/source_index/internal/commitingester/taskspb"
 	"go.chromium.org/luci/source_index/internal/config"
+	"go.chromium.org/luci/source_index/internal/gitilesutil"
 )
 
 // RegisterCronHandlers registers the cron handlers for Source Index's commit
 // ingestion.
 func RegisterCronHandlers(srv *server.Server) error {
-	handler := syncCommitsHandler{
-		GetGitilesClient: func(ctx context.Context, host string, as auth.RPCAuthorityKind, opts ...auth.RPCOption) (gitilespb.GitilesClient, error) {
-			t, err := auth.GetRPCTransport(ctx, auth.AsSelf, opts...)
-			if err != nil {
-				return nil, err
-			}
-			return gitiles.NewRESTClient(&http.Client{Transport: t}, host, false)
-		},
-	}
-
-	cron.RegisterHandler("sync-commits", handler.handle)
+	cron.RegisterHandler("sync-commits", syncCommitsHandler)
 	return nil
-}
-
-// syncCommitsHandler is a cron handler that ensure commits on inactive refs are
-// ingested.
-type syncCommitsHandler struct {
-	GetGitilesClient func(ctx context.Context, host string, as auth.RPCAuthorityKind, opts ...auth.RPCOption) (gitilespb.GitilesClient, error)
 }
 
 const workerCount = 8
 
-// handle reads the config, scans gitiles for refs on all the configured
-// repositories, and create commit-ingestion tasks to ensure commits on inactive
-// refs are ingested.
+// syncCommitsHandler reads the config, scans gitiles for refs on all the
+// configured repositories, and create commit-ingestion tasks to ensure commits
+// on inactive refs are ingested.
 //
 // It scans the repositories in parallel. Failing to scan a repository will
 // make it return an error, but does not cause it to skip unprocessed
 // repositories.
-func (h syncCommitsHandler) handle(ctx context.Context) (err error) {
+func syncCommitsHandler(ctx context.Context) (err error) {
 	cfg, err := config.Get(ctx)
 	if err != nil {
 		return errors.Annotate(err, "get the config").Err()
@@ -87,7 +71,7 @@ func (h syncCommitsHandler) handle(ctx context.Context) (err error) {
 				return mr.RunMulti(func(c chan<- func() error) {
 					for _, hostConfig := range cfg.HostConfigs() {
 						c <- func() error {
-							err := h.scanHostForTasks(ctx, mr, hostConfig, taskC)
+							err := scanHostForTasks(ctx, mr, hostConfig, taskC)
 							return errors.Annotate(err, "scan host %q for tasks", hostConfig.Host()).Err()
 						}
 					}
@@ -99,13 +83,13 @@ func (h syncCommitsHandler) handle(ctx context.Context) (err error) {
 
 // scanHostForTasks scans a gitiles host and create necessary commit ingestion
 // tasks.
-func (h syncCommitsHandler) scanHostForTasks(
+func scanHostForTasks(
 	ctx context.Context,
 	mr parallel.MultiRunner,
 	hostCfg config.HostConfig,
 	taskC chan<- *taskspb.IngestCommits,
 ) error {
-	client, err := h.GetGitilesClient(ctx, hostCfg.Host(), auth.AsSelf, auth.WithScopes(gitiles.OAuthScope))
+	client, err := gitilesutil.NewClient(ctx, hostCfg.Host(), auth.AsSelf, auth.WithScopes(gitiles.OAuthScope))
 	if err != nil {
 		return errors.Annotate(err, "initialize a Gitiles client").Err()
 	}

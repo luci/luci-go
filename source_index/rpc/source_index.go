@@ -16,7 +16,6 @@ package rpc
 
 import (
 	"context"
-	"net/http"
 
 	"google.golang.org/grpc/codes"
 
@@ -30,28 +29,19 @@ import (
 
 	"go.chromium.org/luci/source_index/internal/commit"
 	"go.chromium.org/luci/source_index/internal/config"
+	"go.chromium.org/luci/source_index/internal/gitilesutil"
 	"go.chromium.org/luci/source_index/internal/spanutil"
 	"go.chromium.org/luci/source_index/internal/validationutil"
 	pb "go.chromium.org/luci/source_index/proto/v1"
 )
 
 // sourceIndexServer implements pb.SourceIndexServer.
-type sourceIndexServer struct {
-	getGitilesClient func(ctx context.Context, host string, kind auth.RPCAuthorityKind) (gitilespb.GitilesClient, error)
-}
+type sourceIndexServer struct{}
 
 // NewSourceIndexServer returns a new pb.SourceIndexServer.
 func NewSourceIndexServer() pb.SourceIndexServer {
 	return &pb.DecoratedSourceIndex{
-		Service: &sourceIndexServer{
-			getGitilesClient: func(ctx context.Context, host string, kind auth.RPCAuthorityKind) (gitilespb.GitilesClient, error) {
-				t, err := auth.GetRPCTransport(ctx, kind)
-				if err != nil {
-					return nil, err
-				}
-				return gitiles.NewRESTClient(&http.Client{Transport: t}, host, false)
-			},
-		},
+		Service:  &sourceIndexServer{},
 		Postlude: gRPCifyAndLogPostlude,
 	}
 }
@@ -82,7 +72,7 @@ func (si *sourceIndexServer) QueryCommitHash(ctx context.Context, req *pb.QueryC
 	//
 	// Future improvements:
 	// - Cache the (successful) response for each user to improve RPC latency.
-	client, err := si.getGitilesClient(ctx, req.Host, auth.AsCredentialsForwarder)
+	client, err := gitilesutil.NewClient(ctx, req.Host, auth.AsCredentialsForwarder)
 	if err != nil {
 		return nil, errors.Annotate(err, "initialize Gitiles client").Err()
 	}
