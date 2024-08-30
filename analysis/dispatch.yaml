@@ -12,14 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Note this file is only used to route requests going to an appspot.com
+# domain. Requests to api.luci.app domain use request routing as per
+# terraform. Please keep these two configurations in sync.
+
 dispatch:
 # Note that the glob syntax here has a particular interpretation:
 # https://cloud.google.com/appengine/docs/legacy/standard/python/reference/dispatch-yaml#syntax
-- url: "*/internal/tasks/t/result-ingestion/*"
-  service: result-ingestion
-- url: "*/internal/tasks/t/verdict-ingestion/*"
-  service: result-ingestion
-- url: "*/internal/tasks/t/reclustering/*"
+- url: "*/internal/tasks/*"
   service: result-ingestion
 
 # All other requests are routed to service 'default' (frontend) by default.

@@ -89,9 +89,6 @@ func main() {
 		if err := analysisserver.RegisterPRPCHandlers(srv); err != nil {
 			return errors.Annotate(err, "register pRPC handlers").Err()
 		}
-		if err := analysisserver.RegisterTaskQueueHandlers(srv); err != nil {
-			return errors.Annotate(err, "register task queue handlers").Err()
-		}
 
 		// Only the frontend service serves frontend UI. This is because
 		// the frontend relies upon other assets (javascript, files) and
