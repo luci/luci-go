@@ -698,8 +698,8 @@ func TestTriage(t *testing.T) {
 					rc := res.RunsToCreate[0]
 					So(rc.ConfigGroupID.Name(), ShouldResemble, "combinable")
 					So(rc.Mode, ShouldResemble, run.FullRun)
-					t := pcl33.GetTriggers().GetCqVoteTrigger()
-					So(rc.CreateTime, ShouldEqual, t.GetTime().AsTime())
+					trig := pcl33.GetTriggers().GetCqVoteTrigger()
+					So(rc.CreateTime, ShouldEqual, trig.GetTime().AsTime())
 					So(rc.InputCLs, ShouldHaveLength, 3)
 				})
 

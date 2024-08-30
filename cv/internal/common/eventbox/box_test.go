@@ -118,20 +118,20 @@ func (p *processor) PrepareMutation(ctx context.Context, events Events, s State)
 		})
 	}
 	if len(minus) > 0 {
-		t := Transition{
+		tsn := Transition{
 			Events: minus, // Always consume all advertisements to emigrate.
 		}
 		if *population <= 1 {
 			logging.Debugf(ctx, "consuming %d ads", len(minus))
 		} else {
 			population = add(-1)
-			t.SideEffectFn = func(ctx context.Context) error {
+			tsn.SideEffectFn = func(ctx context.Context) error {
 				logging.Debugf(ctx, "emigrated to %d", p.index-1)
 				return Emit(ctx, []byte{'+'}, mkRecipient(ctx, p.index-1))
 			}
 		}
-		t.TransitionTo = population
-		ts = append(ts, t)
+		tsn.TransitionTo = population
+		ts = append(ts, tsn)
 	}
 	return
 }
@@ -435,20 +435,20 @@ func TestEventboxNoopTransitions(t *testing.T) {
 	t.Parallel()
 
 	Convey("Noop Transitions are detected", t, func() {
-		t := Transition{}
-		So(t.isNoop(nil), ShouldBeTrue)
+		tsn := Transition{}
+		So(tsn.isNoop(nil), ShouldBeTrue)
 		initState := int(99)
-		t.TransitionTo = initState
-		So(t.isNoop(nil), ShouldBeFalse)
-		So(t.isNoop(initState), ShouldBeTrue)
-		t.Events = Events{Event{}}
-		So(t.isNoop(initState), ShouldBeFalse)
-		t.Events = nil
-		t.SideEffectFn = func(context.Context) error { return nil }
-		So(t.isNoop(initState), ShouldBeFalse)
-		t.SideEffectFn = nil
-		t.PostProcessFn = func(context.Context) error { return nil }
-		So(t.isNoop(initState), ShouldBeFalse)
+		tsn.TransitionTo = initState
+		So(tsn.isNoop(nil), ShouldBeFalse)
+		So(tsn.isNoop(initState), ShouldBeTrue)
+		tsn.Events = Events{Event{}}
+		So(tsn.isNoop(initState), ShouldBeFalse)
+		tsn.Events = nil
+		tsn.SideEffectFn = func(context.Context) error { return nil }
+		So(tsn.isNoop(initState), ShouldBeFalse)
+		tsn.SideEffectFn = nil
+		tsn.PostProcessFn = func(context.Context) error { return nil }
+		So(tsn.isNoop(initState), ShouldBeFalse)
 	})
 
 	Convey("eventbox doesn't transact on nil transitions", t, func() {

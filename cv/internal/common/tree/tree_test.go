@@ -42,13 +42,13 @@ func TestTreeStatesClient(t *testing.T) {
 			client: mc,
 		}
 		Convey("Works", func() {
-			t := time.Date(2000, 01, 02, 03, 04, 05, 678910111, time.UTC)
+			now := time.Date(2000, 01, 02, 03, 04, 05, 678910111, time.UTC)
 			req := &tspb.GetStatusRequest{Name: "trees/mock/status/latest"}
 			res := &tspb.Status{
 				GeneralState: tspb.GeneralState_OPEN,
 				Message:      "tree is open",
 				CreateUser:   "abc@example.com",
-				CreateTime:   timestamppb.New(t),
+				CreateTime:   timestamppb.New(now),
 			}
 			mc.EXPECT().GetStatus(gomock.Any(), proto.MatcherEqual(req),
 				gomock.Any()).Return(res, nil)
@@ -57,7 +57,7 @@ func TestTreeStatesClient(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(ts, ShouldResemble, Status{
 				State: Open,
-				Since: t,
+				Since: now,
 			})
 		})
 		Convey("Error if rpc call fails", func() {

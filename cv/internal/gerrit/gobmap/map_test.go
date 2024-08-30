@@ -386,7 +386,7 @@ func TestGobMapConcurrentUpdates(t *testing.T) {
 				if task.cgs, err = task.meta.GetConfigGroups(ctx); err != nil {
 					panic(err)
 				}
-				for t := 1; t <= taskRedundancy; t++ {
+				for i := 1; i <= taskRedundancy; i++ {
 					tasks = append(tasks, task)
 				}
 			}

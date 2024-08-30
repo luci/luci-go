@@ -184,8 +184,8 @@ func TestEndRun(t *testing.T) {
 
 		Convey("publish RunEnded event", func() {
 			var task *pubsub.PublishRunEndedTask
-			for _, t := range ct.TQ.Tasks() {
-				if p, ok := t.Payload.(*pubsub.PublishRunEndedTask); ok {
+			for _, tsk := range ct.TQ.Tasks() {
+				if p, ok := tsk.Payload.(*pubsub.PublishRunEndedTask); ok {
 					task = p
 					break
 				}

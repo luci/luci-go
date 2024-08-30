@@ -120,8 +120,8 @@ func TestFindCQTrigger(t *testing.T) {
 				Value: dryRunVote,
 				Date:  timestamppb.New(now.Add(-15 * time.Minute)),
 			}}
-			t := findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg})
-			c.So(t, la.ShouldResembleProto, &run.Trigger{
+			trig := findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg})
+			c.So(trig, la.ShouldResembleProto, &run.Trigger{
 				Time:            timestamppb.New(now.Add(-15 * time.Minute)),
 				Mode:            string(run.DryRun),
 				GerritAccountId: user1.GetAccountId(),
@@ -134,8 +134,8 @@ func TestFindCQTrigger(t *testing.T) {
 				Value: 3,
 				Date:  timestamppb.New(now.Add(-15 * time.Minute)),
 			}}
-			t := findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg})
-			c.So(t, la.ShouldResembleProto, &run.Trigger{
+			trig := findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg})
+			c.So(trig, la.ShouldResembleProto, &run.Trigger{
 				Time:            timestamppb.New(now.Add(-15 * time.Minute)),
 				Mode:            string(run.FullRun),
 				GerritAccountId: user1.GetAccountId(),
@@ -155,8 +155,8 @@ func TestFindCQTrigger(t *testing.T) {
 					Date:  timestamppb.New(now.Add(-5 * time.Minute)),
 				},
 			}
-			t := findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg})
-			c.So(t, la.ShouldResembleProto, &run.Trigger{
+			trig := findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg})
+			c.So(trig, la.ShouldResembleProto, &run.Trigger{
 				Time:            timestamppb.New(now.Add(-15 * time.Minute)),
 				Mode:            string(run.DryRun),
 				GerritAccountId: user1.GetAccountId(),
@@ -170,8 +170,8 @@ func TestFindCQTrigger(t *testing.T) {
 				})
 				c.So(err, c.ShouldBeNil)
 				ci.Messages = append(ci.Messages, &gerritpb.ChangeMessageInfo{Message: cancelMsg})
-				t := findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg})
-				c.So(t, la.ShouldResembleProto, &run.Trigger{
+				trig := findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg})
+				c.So(trig, la.ShouldResembleProto, &run.Trigger{
 					Time:            timestamppb.New(now.Add(-5 * time.Minute)),
 					Mode:            string(run.DryRun),
 					GerritAccountId: user2.GetAccountId(),
@@ -202,8 +202,8 @@ func TestFindCQTrigger(t *testing.T) {
 					Date:  timestamppb.New(now.Add(-1 * time.Minute)),
 				},
 			}
-			t := findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg})
-			c.So(t, la.ShouldResembleProto, &run.Trigger{
+			trig := findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg})
+			c.So(trig, la.ShouldResembleProto, &run.Trigger{
 				Time:            timestamppb.New(now.Add(-10 * time.Minute)),
 				Mode:            string(run.FullRun),
 				GerritAccountId: user2.GetAccountId(),
@@ -221,8 +221,8 @@ func TestFindCQTrigger(t *testing.T) {
 				Number:  3,
 				Created: timestamppb.New(now.Add(-10 * time.Minute)),
 			}
-			t := findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg})
-			c.So(t, la.ShouldResembleProto, &run.Trigger{
+			trig := findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg})
+			c.So(trig, la.ShouldResembleProto, &run.Trigger{
 				Time:            timestamppb.New(now.Add(-10 * time.Minute)),
 				Mode:            string(run.FullRun),
 				GerritAccountId: user1.GetAccountId(),
@@ -255,8 +255,8 @@ func TestFindCQTrigger(t *testing.T) {
 				},
 			}}
 			c.Convey("Simplest possible custom run", func() {
-				t := findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg})
-				c.So(t, la.ShouldResembleProto, &run.Trigger{
+				trig := findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg})
+				c.So(trig, la.ShouldResembleProto, &run.Trigger{
 					Time:            timestamppb.New(now.Add(-15 * time.Minute)),
 					Mode:            customRunMode,
 					ModeDefinition:  cg.AdditionalModes[0],
@@ -289,42 +289,42 @@ func TestFindCQTrigger(t *testing.T) {
 						Date:  timestamppb.New(now.Add(-15 * time.Minute)),
 					},
 				}}
-				t := findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg})
-				c.So(t.GetMode(), c.ShouldEqual, customRunMode)
+				trig := findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg})
+				c.So(trig.GetMode(), c.ShouldEqual, customRunMode)
 			})
 			c.Convey("Not applicable cases", func() {
 				c.Convey("Additional vote must have the same timestamp", func() {
 					c.Convey("before", func() {
 						ci.Labels[customLabel].GetAll()[0].Date.Seconds++
-						t := findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg})
-						c.So(t.GetMode(), c.ShouldEqual, string(run.DryRun))
+						trig := findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg})
+						c.So(trig.GetMode(), c.ShouldEqual, string(run.DryRun))
 					})
 					c.Convey("after", func() {
 						ci.Labels[customLabel].GetAll()[0].Date.Seconds--
-						t := findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg})
-						c.So(t.GetMode(), c.ShouldEqual, string(run.DryRun))
+						trig := findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg})
+						c.So(trig.GetMode(), c.ShouldEqual, string(run.DryRun))
 					})
 				})
 				c.Convey("Additional vote be from the same account", func() {
 					ci.Labels[customLabel].GetAll()[0].User = user2
-					t := findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg})
-					c.So(t.GetMode(), c.ShouldEqual, string(run.DryRun))
+					trig := findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg})
+					c.So(trig.GetMode(), c.ShouldEqual, string(run.DryRun))
 				})
 				c.Convey("Additional vote must have expected value", func() {
 					ci.Labels[customLabel].GetAll()[0].Value = 100
-					t := findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg})
-					c.So(t.GetMode(), c.ShouldEqual, string(run.DryRun))
+					trig := findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg})
+					c.So(trig.GetMode(), c.ShouldEqual, string(run.DryRun))
 				})
 				c.Convey("Additional vote must be for the correct label", func() {
 					ci.Labels[customLabel+"-Other"] = ci.Labels[customLabel]
 					delete(ci.Labels, customLabel)
-					t := findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg})
-					c.So(t.GetMode(), c.ShouldEqual, string(run.DryRun))
+					trig := findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg})
+					c.So(trig.GetMode(), c.ShouldEqual, string(run.DryRun))
 				})
 				c.Convey("CQ vote must have correct value", func() {
 					ci.Labels[CQLabelName].GetAll()[0].Value = fullRunVote
-					t := findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg})
-					c.So(t.GetMode(), c.ShouldEqual, string(run.FullRun))
+					trig := findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg})
+					c.So(trig.GetMode(), c.ShouldEqual, string(run.FullRun))
 				})
 			})
 		})

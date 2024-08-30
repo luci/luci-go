@@ -441,8 +441,8 @@ func (c *clUpdaterMock) peekETAs() []time.Time {
 	defer c.m.Unlock()
 	c.sortTasksByETAlocked()
 	out := make([]time.Time, len(c.tasks))
-	for i, t := range c.tasks {
-		out[i] = t.eta
+	for i, tsk := range c.tasks {
+		out[i] = tsk.eta
 	}
 	return out
 }
@@ -455,8 +455,8 @@ func (c *clUpdaterMock) popPayloadsByETA() []*changelist.UpdateCLTask {
 	c.m.Unlock()
 
 	out := make([]*changelist.UpdateCLTask, len(tasks))
-	for i, t := range tasks {
-		out[i] = t.payload
+	for i, tsk := range tasks {
+		out[i] = tsk.payload
 	}
 	return out
 }
@@ -465,8 +465,8 @@ func (c *clUpdaterMock) peekScheduledChanges() []int {
 	c.m.Lock()
 	defer c.m.Unlock()
 	out := make([]int, len(c.tasks))
-	for i, t := range c.tasks {
-		_, change, err := changelist.ExternalID(t.payload.GetExternalId()).ParseGobID()
+	for i, tsk := range c.tasks {
+		_, change, err := changelist.ExternalID(tsk.payload.GetExternalId()).ParseGobID()
 		if err != nil {
 			panic(err)
 		}

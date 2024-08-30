@@ -53,19 +53,19 @@ func TestUpdaterSchedule(t *testing.T) {
 
 		Convey("Correctly generate dedup keys for Updater TQ tasks", func() {
 			Convey("Diff CLIDs have diff dedup keys", func() {
-				t := &UpdateCLTask{LuciProject: "proj", Id: 7}
-				k1 := makeTaskDeduplicationKey(ctx, t, 0)
-				t.Id = 8
-				k2 := makeTaskDeduplicationKey(ctx, t, 0)
+				task := &UpdateCLTask{LuciProject: "proj", Id: 7}
+				k1 := makeTaskDeduplicationKey(ctx, task, 0)
+				task.Id = 8
+				k2 := makeTaskDeduplicationKey(ctx, task, 0)
 				So(k1, ShouldNotResemble, k2)
 			})
 
 			Convey("Diff ExternalID have diff dedup keys", func() {
-				t := &UpdateCLTask{LuciProject: "proj"}
-				t.ExternalId = "kind1/foo/23"
-				k1 := makeTaskDeduplicationKey(ctx, t, 0)
-				t.ExternalId = "kind4/foo/56"
-				k2 := makeTaskDeduplicationKey(ctx, t, 0)
+				task := &UpdateCLTask{LuciProject: "proj"}
+				task.ExternalId = "kind1/foo/23"
+				k1 := makeTaskDeduplicationKey(ctx, task, 0)
+				task.ExternalId = "kind4/foo/56"
+				k2 := makeTaskDeduplicationKey(ctx, task, 0)
 				So(k1, ShouldNotResemble, k2)
 			})
 
@@ -78,74 +78,74 @@ func TestUpdaterSchedule(t *testing.T) {
 			})
 
 			Convey("Diff updatedHint have diff dedup keys", func() {
-				t := &UpdateCLTask{LuciProject: "proj", ExternalId: "kind1/foo/23"}
-				t.Hint = externalTime(ct.Clock.Now())
-				k1 := makeTaskDeduplicationKey(ctx, t, 0)
-				t.Hint = externalTime(ct.Clock.Now().Add(time.Second))
-				k2 := makeTaskDeduplicationKey(ctx, t, 0)
+				task := &UpdateCLTask{LuciProject: "proj", ExternalId: "kind1/foo/23"}
+				task.Hint = externalTime(ct.Clock.Now())
+				k1 := makeTaskDeduplicationKey(ctx, task, 0)
+				task.Hint = externalTime(ct.Clock.Now().Add(time.Second))
+				k2 := makeTaskDeduplicationKey(ctx, task, 0)
 				So(k1, ShouldNotResemble, k2)
 			})
 
 			Convey("Same CLs but diff LUCI projects have diff dedup keys", func() {
-				t := &UpdateCLTask{LuciProject: "proj", ExternalId: "kind1/foo/23"}
-				k1 := makeTaskDeduplicationKey(ctx, t, 0)
-				t.LuciProject += "-diff"
-				k2 := makeTaskDeduplicationKey(ctx, t, 0)
+				task := &UpdateCLTask{LuciProject: "proj", ExternalId: "kind1/foo/23"}
+				k1 := makeTaskDeduplicationKey(ctx, task, 0)
+				task.LuciProject += "-diff"
+				k2 := makeTaskDeduplicationKey(ctx, task, 0)
 				So(k1, ShouldNotResemble, k2)
 			})
 
 			Convey("Same CL at the same time is de-duped", func() {
-				t := &UpdateCLTask{LuciProject: "proj", ExternalId: "kind1/foo/23"}
-				k1 := makeTaskDeduplicationKey(ctx, t, 0)
-				k2 := makeTaskDeduplicationKey(ctx, t, 0)
+				task := &UpdateCLTask{LuciProject: "proj", ExternalId: "kind1/foo/23"}
+				k1 := makeTaskDeduplicationKey(ctx, task, 0)
+				k2 := makeTaskDeduplicationKey(ctx, task, 0)
 				So(k1, ShouldResemble, k2)
 
 				Convey("Internal ID doesn't affect dedup based on ExternalID", func() {
-					t.Id = 123
-					k3 := makeTaskDeduplicationKey(ctx, t, 0)
+					task.Id = 123
+					k3 := makeTaskDeduplicationKey(ctx, task, 0)
 					So(k3, ShouldResemble, k1)
 				})
 			})
 
 			Convey("Same CL with a delay or after the same delay is de-duped", func() {
-				t := &UpdateCLTask{LuciProject: "proj", Id: 123}
-				k1 := makeTaskDeduplicationKey(ctx, t, time.Second)
+				task := &UpdateCLTask{LuciProject: "proj", Id: 123}
+				k1 := makeTaskDeduplicationKey(ctx, task, time.Second)
 				ct.Clock.Add(time.Second)
-				k2 := makeTaskDeduplicationKey(ctx, t, 0)
+				k2 := makeTaskDeduplicationKey(ctx, task, 0)
 				So(k1, ShouldResemble, k2)
 			})
 
 			Convey("Same CL at mostly same time is also de-duped", func() {
-				t := &UpdateCLTask{LuciProject: "proj", ExternalId: "kind1/foo/23"}
-				k1 := makeTaskDeduplicationKey(ctx, t, 0)
+				task := &UpdateCLTask{LuciProject: "proj", ExternalId: "kind1/foo/23"}
+				k1 := makeTaskDeduplicationKey(ctx, task, 0)
 				// NOTE: this check may fail if common.DistributeOffset is changed,
 				// making new timestamp in the next epoch. If so, adjust the increment.
 				ct.Clock.Add(time.Second)
-				k2 := makeTaskDeduplicationKey(ctx, t, 0)
+				k2 := makeTaskDeduplicationKey(ctx, task, 0)
 				So(k1, ShouldResemble, k2)
 			})
 
 			Convey("Same CL after sufficient time is no longer de-duped", func() {
-				t := &UpdateCLTask{LuciProject: "proj", ExternalId: "kind1/foo/23"}
-				k1 := makeTaskDeduplicationKey(ctx, t, 0)
-				k2 := makeTaskDeduplicationKey(ctx, t, blindRefreshInterval)
+				task := &UpdateCLTask{LuciProject: "proj", ExternalId: "kind1/foo/23"}
+				k1 := makeTaskDeduplicationKey(ctx, task, 0)
+				k2 := makeTaskDeduplicationKey(ctx, task, blindRefreshInterval)
 				So(k1, ShouldNotResemble, k2)
 			})
 
 			Convey("Same CL with the same MetaRevId is de-duped", func() {
-				t := &UpdateCLTask{LuciProject: "proj", ExternalId: "kind1/foo/23"}
-				t.Hint = &UpdateCLTask_Hint{MetaRevId: "foo"}
-				k1 := makeTaskDeduplicationKey(ctx, t, 0)
-				k2 := makeTaskDeduplicationKey(ctx, t, 0)
+				task := &UpdateCLTask{LuciProject: "proj", ExternalId: "kind1/foo/23"}
+				task.Hint = &UpdateCLTask_Hint{MetaRevId: "foo"}
+				k1 := makeTaskDeduplicationKey(ctx, task, 0)
+				k2 := makeTaskDeduplicationKey(ctx, task, 0)
 				So(k1, ShouldResemble, k2)
 			})
 
 			Convey("Same CL with the different MetaRevId is not de-duped", func() {
-				t := &UpdateCLTask{LuciProject: "proj", ExternalId: "kind1/foo/23"}
-				t.Hint = &UpdateCLTask_Hint{MetaRevId: "foo"}
-				k1 := makeTaskDeduplicationKey(ctx, t, 0)
-				t.Hint = &UpdateCLTask_Hint{MetaRevId: "bar"}
-				k2 := makeTaskDeduplicationKey(ctx, t, 0)
+				task := &UpdateCLTask{LuciProject: "proj", ExternalId: "kind1/foo/23"}
+				task.Hint = &UpdateCLTask_Hint{MetaRevId: "foo"}
+				k1 := makeTaskDeduplicationKey(ctx, task, 0)
+				task.Hint = &UpdateCLTask_Hint{MetaRevId: "bar"}
+				k2 := makeTaskDeduplicationKey(ctx, task, 0)
 				So(k1, ShouldNotResemble, k2)
 			})
 		})
@@ -174,32 +174,32 @@ func TestUpdaterSchedule(t *testing.T) {
 
 		Convey("Works overall", func() {
 			u := NewUpdater(ct.TQDispatcher, nil)
-			t := &UpdateCLTask{
+			task := &UpdateCLTask{
 				LuciProject: "proj",
 				Id:          123,
 				Hint:        externalTime(ct.Clock.Now().Add(-time.Second)),
 				Requester:   UpdateCLTask_RUN_POKE,
 			}
 			delay := time.Minute
-			So(u.ScheduleDelayed(ctx, t, delay), ShouldBeNil)
-			So(ct.TQ.Tasks().Payloads(), ShouldResembleProto, []proto.Message{t})
+			So(u.ScheduleDelayed(ctx, task, delay), ShouldBeNil)
+			So(ct.TQ.Tasks().Payloads(), ShouldResembleProto, []proto.Message{task})
 
 			_, _ = Println("Dedup works")
 			ct.Clock.Add(delay)
-			So(u.Schedule(ctx, t), ShouldBeNil)
+			So(u.Schedule(ctx, task), ShouldBeNil)
 			So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, 1)
 
 			_, _ = Println("But not within the transaction")
 			err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-				return u.Schedule(ctx, t)
+				return u.Schedule(ctx, task)
 			}, nil)
 			So(err, ShouldBeNil)
-			So(ct.TQ.Tasks().Payloads(), ShouldResembleProto, []proto.Message{t, t})
+			So(ct.TQ.Tasks().Payloads(), ShouldResembleProto, []proto.Message{task, task})
 
 			_, _ = Println("Once out of dedup window, schedules a new task")
 			ct.Clock.Add(knownRefreshInterval)
-			So(u.Schedule(ctx, t), ShouldBeNil)
-			So(ct.TQ.Tasks().Payloads(), ShouldResembleProto, []proto.Message{t, t, t})
+			So(u.Schedule(ctx, task), ShouldBeNil)
+			So(ct.TQ.Tasks().Payloads(), ShouldResembleProto, []proto.Message{task, task, task})
 		})
 	})
 }

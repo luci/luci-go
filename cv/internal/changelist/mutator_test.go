@@ -477,8 +477,8 @@ func TestMutatorBatch(t *testing.T) {
 
 				tasks := ct.TQ.Tasks()
 				So(tasks, ShouldHaveLength, N)
-				for _, t := range tasks {
-					So(t.Class, ShouldResemble, BatchOnCLUpdatedTaskClass)
+				for _, tsk := range tasks {
+					So(tsk.Class, ShouldResemble, BatchOnCLUpdatedTaskClass)
 					ct.TQ.Run(ctx, tqtesting.StopAfterTask(BatchOnCLUpdatedTaskClass))
 				}
 
@@ -558,11 +558,11 @@ func TestMutatorConcurrent(t *testing.T) {
 					}
 					_, err = m.Upsert(ctx, lProject, eid, func(cl *CL) error {
 						ret := ErrStopMutation
-						if t := cl.Snapshot.GetExternalUpdateTime(); t == nil || t.AsTime().Before(snapTS) {
+						if upTime := cl.Snapshot.GetExternalUpdateTime(); upTime == nil || upTime.AsTime().Before(snapTS) {
 							cl.Snapshot = snap
 							ret = nil
 						}
-						if t := cl.Access.GetByProject()[lProject].GetUpdateTime(); t == nil || t.AsTime().Before(accTS) {
+						if upTime := cl.Access.GetByProject()[lProject].GetUpdateTime(); upTime == nil || upTime.AsTime().Before(accTS) {
 							cl.Access = acc
 							ret = nil
 						}

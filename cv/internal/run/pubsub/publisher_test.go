@@ -62,10 +62,10 @@ func TestExportRunToBQ(t *testing.T) {
 				}, nil)
 			}
 			So(runEnded(), ShouldBeNil)
-			t := ct.TQ.Tasks()[0]
+			tsk := ct.TQ.Tasks()[0]
 
 			Convey("with attributes", func() {
-				attrs := t.Message.GetAttributes()
+				attrs := tsk.Message.GetAttributes()
 				So(attrs, ShouldContainKey, "luci_project")
 				So(attrs["luci_project"], ShouldEqual, r.ID.LUCIProject())
 				So(attrs, ShouldContainKey, "status")
@@ -74,7 +74,7 @@ func TestExportRunToBQ(t *testing.T) {
 
 			Convey("with JSONPB encoded message", func() {
 				var msg cvpb.PubSubRun
-				So(protojson.Unmarshal(t.Message.GetData(), &msg), ShouldBeNil)
+				So(protojson.Unmarshal(tsk.Message.GetData(), &msg), ShouldBeNil)
 				So(&msg, ShouldResembleProto, &cvpb.PubSubRun{
 					Id:       r.ID.PublicID(),
 					Status:   cvpb.Run_SUCCEEDED,

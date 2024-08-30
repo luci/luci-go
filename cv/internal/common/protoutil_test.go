@@ -30,11 +30,11 @@ func TestPB2Time(t *testing.T) {
 
 	Convey("RoundTrip", t, func() {
 		Convey("Specified", func() {
-			t := testclock.TestRecentTimeUTC
-			pb := Time2PBNillable(t)
-			So(pb, ShouldResembleProto, Time2PBNillable(t))
-			So(pb, ShouldResembleProto, timestamppb.New(t))
-			So(PB2TimeNillable(pb), ShouldEqual, t)
+			ts := testclock.TestRecentTimeUTC
+			pb := Time2PBNillable(ts)
+			So(pb, ShouldResembleProto, Time2PBNillable(ts))
+			So(pb, ShouldResembleProto, timestamppb.New(ts))
+			So(PB2TimeNillable(pb), ShouldEqual, ts)
 		})
 		Convey("Zero / nil", func() {
 			So(PB2TimeNillable(nil), ShouldEqual, time.Time{})
