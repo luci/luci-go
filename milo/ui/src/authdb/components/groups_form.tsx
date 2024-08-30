@@ -277,12 +277,13 @@ export function GroupsForm({ name, onDelete = () => { } }: GroupsFormProps) {
     setOwners(initialOwners || '');
   }
 
-
   const members: string[] = (response?.members)?.map((member => stripPrefix('user', member))) || [] as string[];
   const subgroups: string[] = (response?.nested || []) as string[];
   const globs: string[] = (response?.globs || []) as string[];
   const etag = response?.etag;
   const callerCanModify: boolean = response?.callerCanModify || false;
+  const callerCanViewMembers: boolean = response?.callerCanViewMembers || false;
+  const numRedacted: number = response?.numRedacted || 0;
 
   return (
     <Box sx={{ minHeight: '500px', p: '20px', ml: '5px' }}>
@@ -344,7 +345,12 @@ export function GroupsForm({ name, onDelete = () => { } }: GroupsFormProps) {
             </TableContainer>}
           {isExternal
             ?
-            <GroupsFormListReadonly name='Members' initialItems={members} />
+            <>
+              {callerCanViewMembers
+                ? <GroupsFormListReadonly name='Members' initialItems={members} />
+                : <Typography variant="h6" sx={{p: 1.5}}> {numRedacted} members redacted</Typography>
+              }
+            </>
             :
             <>
               {callerCanModify ?

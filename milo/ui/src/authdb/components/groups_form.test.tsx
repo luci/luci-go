@@ -25,7 +25,7 @@ import { act } from 'react';
 
 describe('<GroupsForm />', () => {
   test('if group name, desciption, owners, members, subgroups are displayed', async () => {
-    const mockGroup = createMockGroupIndividual('123', true);
+    const mockGroup = createMockGroupIndividual('123', true, true);
     mockFetchGetGroup(mockGroup);
 
     render(
@@ -62,7 +62,7 @@ describe('<GroupsForm />', () => {
   });
 
   test('if external group shows only members', async () => {
-    const mockGroup = createMockGroupIndividual('external/123', false);
+    const mockGroup = createMockGroupIndividual('external/123', false, true);
     mockFetchGetGroup(mockGroup);
 
     render(
@@ -84,7 +84,7 @@ describe('<GroupsForm />', () => {
   });
 
   test('if group is updated with success message', async () => {
-    const mockGroup = createMockGroupIndividual('123', true);
+    const mockGroup = createMockGroupIndividual('123', true, true);
     mockFetchGetGroup(mockGroup);
 
     const mockUpdatedGroup = createMockUpdatedGroup('123');
@@ -118,7 +118,7 @@ describe('<GroupsForm />', () => {
   });
 
   test('if appropriate message is displayed for an error updating group', async () => {
-    const mockGroup = createMockGroupIndividual('123', true);
+    const mockGroup = createMockGroupIndividual('123', true, true);
     mockFetchGetGroup(mockGroup);
 
     mockErrorUpdateGroup();
@@ -149,7 +149,7 @@ describe('<GroupsForm />', () => {
   });
 
   test('delete button opens confirm dialog', async () => {
-    const mockGroup = createMockGroupIndividual('123', true);
+    const mockGroup = createMockGroupIndividual('123', true, true);
     mockFetchGetGroup(mockGroup);
 
     const mockUpdatedGroup = createMockUpdatedGroup('123');
@@ -170,7 +170,7 @@ describe('<GroupsForm />', () => {
   });
 
   test('if appropriate message is displayed for an error deleting group', async () => {
-    const mockGroup = createMockGroupIndividual('123', true);
+    const mockGroup = createMockGroupIndividual('123', true, true);
     mockFetchGetGroup(mockGroup);
 
     mockErrorDeleteGroup();
@@ -192,7 +192,7 @@ describe('<GroupsForm />', () => {
   });
 
   test('if edit and delete buttons are hidden if caller does not have edit permissions', async () => {
-    const mockGroup = createMockGroupIndividual('123', false);
+    const mockGroup = createMockGroupIndividual('123', false, true);
     mockFetchGetGroup(mockGroup);
 
     render(
@@ -210,7 +210,7 @@ describe('<GroupsForm />', () => {
   });
 
   test('reset button resets form values', async () => {
-    const mockGroup = createMockGroupIndividual('123', true);
+    const mockGroup = createMockGroupIndividual('123', true, true);
     mockFetchGetGroup(mockGroup);
 
     render(
@@ -246,7 +246,7 @@ describe('<GroupsForm />', () => {
   });
 
   test('message shown for edited state for description', async () => {
-    const mockGroup = createMockGroupIndividual('123', true);
+    const mockGroup = createMockGroupIndividual('123', true, true);
     mockFetchGetGroup(mockGroup);
 
     render(
@@ -275,7 +275,7 @@ describe('<GroupsForm />', () => {
   });
 
   test('message shown for edited state for owners', async () => {
-    const mockGroup = createMockGroupIndividual('123', true);
+    const mockGroup = createMockGroupIndividual('123', true, true);
     mockFetchGetGroup(mockGroup);
 
     render(
@@ -304,7 +304,7 @@ describe('<GroupsForm />', () => {
   });
 
   test('message shown for edited state in groups form list item', async () => {
-    const mockGroup = createMockGroupIndividual('123', true);
+    const mockGroup = createMockGroupIndividual('123', true, true);
     mockFetchGetGroup(mockGroup);
 
     render(
@@ -332,7 +332,7 @@ describe('<GroupsForm />', () => {
   });
 
   test('Removed members message shown for groups form list item', async () => {
-    const mockGroup = createMockGroupIndividual('123', true);
+    const mockGroup = createMockGroupIndividual('123', true, true);
     mockFetchGetGroup(mockGroup);
 
     render(
@@ -352,7 +352,7 @@ describe('<GroupsForm />', () => {
   });
 
   test('no message shown for edited state when item added then deleted', async () => {
-    const mockGroup = createMockGroupIndividual('123', true);
+    const mockGroup = createMockGroupIndividual('123', true, true);
     mockFetchGetGroup(mockGroup);
 
     render(
@@ -386,4 +386,17 @@ describe('<GroupsForm />', () => {
     expect(screen.queryByText('Removed: newMember@email.com')).toBeNull();
   });
 
+  test('members redacted if caller cannot view', async () => {
+    const mockGroup = createMockGroupIndividual('google/testGoogleGroup', true, false);
+    mockFetchGetGroup(mockGroup);
+
+    render(
+      <FakeContextProvider>
+        <GroupsForm name='google/testGoogleGroup' />
+      </FakeContextProvider>,
+    );
+    await screen.findByTestId('groups-form');
+
+    expect(screen.getByText('2 members redacted')).toBeInTheDocument();
+  });
 });
