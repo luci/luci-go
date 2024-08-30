@@ -31,7 +31,7 @@ export function RegressionDetailsDialog() {
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  if (!testVariantBranch) {
+  if (!testVariantBranch || !state.commitPositionRange) {
     return <></>;
   }
 
@@ -107,6 +107,8 @@ export function RegressionDetailsDialog() {
         ref={scrollRef}
       >
         <BlamelistTable
+          lastCommitPosition={state.commitPositionRange.last}
+          firstCommitPosition={state.commitPositionRange.first}
           testVariantBranch={testVariantBranch}
           focusCommitPosition={state.focusCommitPosition}
           customScrollParent={scrollRef.current || undefined}

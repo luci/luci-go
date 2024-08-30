@@ -33,6 +33,7 @@ export function BlamelistStateProvider({
   children,
 }: BlamelistStateProviderProps) {
   const [state, dispatch] = useReducer(reducer, {
+    commitPositionRange: null,
     testVariantBranch: null,
     focusCommitPosition: null,
   });

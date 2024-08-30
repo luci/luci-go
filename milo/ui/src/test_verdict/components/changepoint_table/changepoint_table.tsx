@@ -15,6 +15,7 @@
 import { Box, CircularProgress, SxProps, Theme, styled } from '@mui/material';
 import { UseQueryOptions, useQueries } from '@tanstack/react-query';
 import { chunk } from 'lodash-es';
+import { useEffect } from 'react';
 
 import { useTestVariantBranchesClient } from '@/analysis/hooks/prpc_clients';
 import {
@@ -30,6 +31,7 @@ import { getCriticalVariantKeys } from '@/test_verdict/tools/variant_utils';
 
 import { Body } from './body';
 import { ChangepointTableContextProvider } from './context';
+import { useBlamelistDispatch } from './context';
 import { SidePanel } from './side_panel';
 import { TopAxis } from './top_axis';
 import { TopLabel } from './top_label';
@@ -93,6 +95,21 @@ export function ChangepointTable({
   const criticalCommits = [...new Set(commits).values()].sort(
     (c1, c2) => parseInt(c2) - parseInt(c1),
   );
+
+  const lastCommitPosition = criticalCommits[0];
+  const firstCommitPosition = criticalCommits[criticalCommits.length - 1];
+  const dispatch = useBlamelistDispatch();
+  useEffect(() => {
+    if (!lastCommitPosition || !firstCommitPosition) {
+      return;
+    }
+
+    dispatch({
+      type: 'setBlamelistRange',
+      lastCommitPosition,
+      firstCommitPosition,
+    });
+  }, [dispatch, lastCommitPosition, firstCommitPosition]);
 
   const criticalVariantKeys = getCriticalVariantKeys(
     testVariantBranchDefs

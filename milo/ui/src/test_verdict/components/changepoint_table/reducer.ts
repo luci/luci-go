@@ -15,11 +15,24 @@
 import { OutputTestVariantBranch } from '@/analysis/types';
 
 export interface BlamelistState {
+  readonly commitPositionRange: {
+    readonly last: string;
+    readonly first: string;
+  } | null;
   readonly testVariantBranch: OutputTestVariantBranch | null;
   readonly focusCommitPosition: string | null;
 }
 
-export type Action = ShowBlamelistAction | DismissAction;
+export type Action =
+  | SetBlamelistRangeAction
+  | ShowBlamelistAction
+  | DismissAction;
+
+export interface SetBlamelistRangeAction {
+  readonly type: 'setBlamelistRange';
+  readonly lastCommitPosition: string;
+  readonly firstCommitPosition: string;
+}
 
 export interface ShowBlamelistAction {
   readonly type: 'showBlamelist';
@@ -31,17 +44,30 @@ export interface DismissAction {
   readonly type: 'dismiss';
 }
 
-export function reducer(
-  _state: BlamelistState,
-  action: Action,
-): BlamelistState {
+export function reducer(state: BlamelistState, action: Action): BlamelistState {
   switch (action.type) {
+    case 'setBlamelistRange': {
+      const unchanged =
+        state.commitPositionRange?.last === action.lastCommitPosition &&
+        state.commitPositionRange?.first === action.firstCommitPosition;
+      if (unchanged) {
+        return state;
+      }
+      return {
+        ...state,
+        commitPositionRange: {
+          last: action.lastCommitPosition,
+          first: action.firstCommitPosition,
+        },
+      };
+    }
     case 'showBlamelist':
       return {
+        ...state,
         testVariantBranch: action.testVariantBranch,
         focusCommitPosition: action.focusCommitPosition,
       };
     case 'dismiss':
-      return { testVariantBranch: null, focusCommitPosition: null };
+      return { ...state, testVariantBranch: null, focusCommitPosition: null };
   }
 }

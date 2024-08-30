@@ -65,12 +65,16 @@ function getPosition(lastPosition: string, offset: number) {
 }
 
 export interface BlamelistTable {
+  readonly lastCommitPosition: string;
+  readonly firstCommitPosition: string;
   readonly testVariantBranch: OutputTestVariantBranch;
   readonly focusCommitPosition?: string | null;
   readonly customScrollParent?: HTMLElement;
 }
 
 export function BlamelistTable({
+  lastCommitPosition,
+  firstCommitPosition,
   testVariantBranch,
   customScrollParent,
   focusCommitPosition,
@@ -83,10 +87,6 @@ export function BlamelistTable({
       setPageEnd(Math.ceil(itemEnd / PAGE_SIZE));
     }, 500),
   );
-
-  const segments = testVariantBranch.segments;
-  const lastPosition = segments[0].endPosition;
-  const firstPosition = segments[segments.length - 1].startPosition;
 
   const gitilesClient = useGitilesClient(testVariantBranch.ref.gitiles.host);
   type GitilesQueryOpts = UseQueryOptions<
@@ -102,7 +102,10 @@ export function BlamelistTable({
           ExtendedLogRequest.fromPartial({
             project: testVariantBranch.ref.gitiles.project,
             ref: testVariantBranch.ref.gitiles.ref,
-            position: getPosition(lastPosition, (pageStart + i) * PAGE_SIZE),
+            position: getPosition(
+              lastCommitPosition,
+              (pageStart + i) * PAGE_SIZE,
+            ),
             treeDiff: true,
             pageSize: PAGE_SIZE,
           }),
@@ -128,11 +131,11 @@ export function BlamelistTable({
           QuerySourceVerdictsRequest.fromPartial({
             parent: ParsedTestVariantBranchName.toString(testVariantBranch),
             startSourcePosition: getPosition(
-              lastPosition,
+              lastCommitPosition,
               (pageStart + i) * PAGE_SIZE,
             ),
             endSourcePosition: getPosition(
-              lastPosition,
+              lastCommitPosition,
               (pageStart + i + 1) * PAGE_SIZE,
             ),
           }),
@@ -155,10 +158,10 @@ export function BlamelistTable({
           increaseViewportBy={1000}
           initialTopMostItemIndex={
             focusCommitPosition
-              ? getOffset(lastPosition, focusCommitPosition)
+              ? getOffset(lastCommitPosition, focusCommitPosition)
               : 0
           }
-          totalCount={getOffset(lastPosition, firstPosition) + 1}
+          totalCount={getOffset(lastCommitPosition, firstCommitPosition) + 1}
           fixedHeaderContent={() => (
             <>
               <SegmentHeadCell />
@@ -171,7 +174,7 @@ export function BlamelistTable({
             </>
           )}
           itemContent={(i) => {
-            const position = getPosition(lastPosition, i);
+            const position = getPosition(lastCommitPosition, i);
             const pageIndex = Math.floor(i / PAGE_SIZE) - pageStart;
             const pageOffset = i % PAGE_SIZE;
             const commit = gitilesQueries[pageIndex]?.data?.log[pageOffset];
