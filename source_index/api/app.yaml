@@ -16,6 +16,11 @@ runtime: go122
 instance_class: F4
 service: default
 
+automatic_scaling:
+  # Always keep some instances running to avoid latency spikes from needing
+  # to spin up new instances.
+  min_instances: 2
+
 # Note: this is interpreted by gae.py, it maps the app ID being deployed to
 # values of ${...} vars.
 # Reference: https://chromium.googlesource.com/infra/luci/luci-go/+/HEAD/examples/appengine/helloworld_v2/app.yaml
