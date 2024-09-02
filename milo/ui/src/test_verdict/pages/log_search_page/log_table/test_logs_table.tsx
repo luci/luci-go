@@ -72,6 +72,7 @@ export function TestLogsTable({ project, filter }: TestLogsTableProps) {
         pageToken: pageToken,
       }),
     ),
+    retryOnMount: false,
     select: (data) => data as OutputQueryTestVariantArtifactGroupsResponse,
   });
   if (isError) {

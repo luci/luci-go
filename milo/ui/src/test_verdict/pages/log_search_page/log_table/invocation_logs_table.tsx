@@ -63,6 +63,7 @@ export function InvocationLogsTable({
         pageToken: pageToken,
       }),
     ),
+    retryOnMount: false,
     select: (data) =>
       data as OutputQueryInvocationVariantArtifactGroupsResponse,
   });
