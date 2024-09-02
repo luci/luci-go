@@ -85,6 +85,7 @@ entrypoint: >
   -tq-sweep-initiation-launcher ${CRON_AUTHORIZED_CALLER}
   -luci-analysis-host ${LUCI_ANALYSIS_HOST}
   -pubsub-authorized-caller ${PUBSUB_AUTHORIZED_CALLER}
+  -ts-mon-account ${TS_MON_ACCOUNT}
   -encrypted-cookies-client-id ${OAUTH_CLIENT_ID}
   -frontend-client-id ${OAUTH_CLIENT_ID}
   -encrypted-cookies-client-secret ${OAUTH_CLIENT_SECRET}
