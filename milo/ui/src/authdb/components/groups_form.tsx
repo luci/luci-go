@@ -355,7 +355,10 @@ export function GroupsForm({ name, onDelete = () => { } }: GroupsFormProps) {
             <>
               {callerCanModify ?
                 <>
-                  <GroupsFormList name='Members' initialItems={members} ref={membersRef} itemsChanged={itemsChanged}/>
+                  {callerCanViewMembers
+                    ? <GroupsFormList name='Members' initialItems={members} ref={membersRef} itemsChanged={itemsChanged}/>
+                    : <Typography variant="h6" sx={{p: '16px'}}> {numRedacted} members redacted</Typography>
+                  }
                   <GroupsFormList name='Globs' initialItems={globs} ref={globsRef} itemsChanged={itemsChanged}/>
                   <GroupsFormList name='Subgroups' initialItems={subgroups} ref={subgroupsRef} itemsChanged={itemsChanged}/>
                   {changedState &&
@@ -385,7 +388,10 @@ export function GroupsForm({ name, onDelete = () => { } }: GroupsFormProps) {
                 </>
                 :
                 <>
-                  <GroupsFormListReadonly name='Members' initialItems={members} />
+                  {callerCanViewMembers
+                    ? <GroupsFormListReadonly name='Members' initialItems={members} />
+                    : <Typography variant="h6" sx={{p: '16px'}}> {numRedacted} members redacted</Typography>
+                  }
                   <GroupsFormListReadonly name='Globs' initialItems={globs} />
                   <GroupsFormListReadonly name='Subgroups' initialItems={subgroups} />
                   <Typography variant="caption" sx={{ p: '16px' }} style={{ fontStyle: 'italic' }}>You do not have sufficient permissions to modify this group.</Typography>

@@ -386,13 +386,41 @@ describe('<GroupsForm />', () => {
     expect(screen.queryByText('Removed: newMember@email.com')).toBeNull();
   });
 
-  test('members redacted if caller cannot view', async () => {
+  test('members redacted if caller cannot view external group', async () => {
     const mockGroup = createMockGroupIndividual('google/testGoogleGroup', true, false);
     mockFetchGetGroup(mockGroup);
 
     render(
       <FakeContextProvider>
         <GroupsForm name='google/testGoogleGroup' />
+      </FakeContextProvider>,
+    );
+    await screen.findByTestId('groups-form');
+
+    expect(screen.getByText('2 members redacted')).toBeInTheDocument();
+  });
+
+  test('members redacted if caller cannot view non-external group', async () => {
+    const mockGroup = createMockGroupIndividual('test-group', true, false);
+    mockFetchGetGroup(mockGroup);
+
+    render(
+      <FakeContextProvider>
+        <GroupsForm name='test-group' />
+      </FakeContextProvider>,
+    );
+    await screen.findByTestId('groups-form');
+
+    expect(screen.getByText('2 members redacted')).toBeInTheDocument();
+  });
+
+  test('members redacted if caller cannot view or modify non-external group', async () => {
+    const mockGroup = createMockGroupIndividual('test-group', false, false);
+    mockFetchGetGroup(mockGroup);
+
+    render(
+      <FakeContextProvider>
+        <GroupsForm name='test-group' />
       </FakeContextProvider>,
     );
     await screen.findByTestId('groups-form');
