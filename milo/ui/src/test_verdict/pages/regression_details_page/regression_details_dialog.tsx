@@ -110,7 +110,7 @@ export function RegressionDetailsDialog() {
           lastCommitPosition={state.commitPositionRange.last}
           firstCommitPosition={state.commitPositionRange.first}
           testVariantBranch={testVariantBranch}
-          focusCommitPosition={state.focusCommitPosition}
+          focusCommitPosition={state.focusCommitPosition || undefined}
           customScrollParent={scrollRef.current || undefined}
         />
       </QueuedStickyScrollingBase>
