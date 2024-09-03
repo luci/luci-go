@@ -19,7 +19,8 @@ import { getRawArtifactURLPath } from '@/common/tools/url_utils';
 export function mockFetchTextArtifact(
   artifactName: string,
   content: string,
-  contentLength: number = content.length,
+  contentType = 'text/plain',
+  contentLength = content.length,
 ) {
   fetchMock.get(
     (urlStr) => {
@@ -32,6 +33,7 @@ export function mockFetchTextArtifact(
     {
       headers: {
         'X-Prpc-Grpc-Code': '0',
+        'Content-Type': contentType,
         'Content-Length': contentLength,
       },
       body: content,

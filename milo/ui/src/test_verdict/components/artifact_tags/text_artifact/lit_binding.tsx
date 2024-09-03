@@ -40,6 +40,10 @@ export class TextArtifactElement extends ReactLitElement {
         attribute: 'inv-level',
         type: Boolean,
       },
+      experimentalANSISupport: {
+        attribute: 'experimental-ansi-support',
+        type: Boolean,
+      },
       resultName: {
         state: true,
       },
@@ -70,6 +74,19 @@ export class TextArtifactElement extends ReactLitElement {
     const oldVal = this._invLevel;
     this._invLevel = newVal;
     this.requestUpdate('invLevel', oldVal);
+  }
+
+  private _experimentalANSISupport = false;
+  get experimentalANSISupport() {
+    return this._experimentalANSISupport;
+  }
+  set experimentalANSISupport(newVal: boolean) {
+    if (newVal === this._experimentalANSISupport) {
+      return;
+    }
+    const oldVal = this._experimentalANSISupport;
+    this._experimentalANSISupport = newVal;
+    this.requestUpdate('experimentalANSISupport', oldVal);
   }
 
   private _resultName: string | null = null;
@@ -118,6 +135,7 @@ export class TextArtifactElement extends ReactLitElement {
             <TextArtifact
               artifactId={this.artifactId}
               invLevel={this.invLevel}
+              experimentalANSISupport={this.experimentalANSISupport}
             />
           </ArtifactContextProvider>
         </CacheProvider>
@@ -125,7 +143,11 @@ export class TextArtifactElement extends ReactLitElement {
     }
 
     return (
-      <TextArtifact artifactId={this.artifactId} invLevel={this.invLevel} />
+      <TextArtifact
+        artifactId={this.artifactId}
+        invLevel={this.invLevel}
+        experimentalANSISupport={this.experimentalANSISupport}
+      />
     );
   }
 }

@@ -16,6 +16,7 @@ import { Alert, AlertTitle, Link } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
+import { ANSIText } from '@/common/components/ansi_text';
 import { useAuthState } from '@/common/components/auth_state_provider';
 import { ARTIFACT_LENGTH_LIMIT } from '@/common/constants/test';
 import { getRawArtifactURLPath } from '@/common/tools/url_utils';
@@ -29,11 +30,13 @@ const EXTRA_BYTES = 8;
 export interface TextArtifactProps {
   readonly artifactId: string;
   readonly invLevel?: boolean;
+  readonly experimentalANSISupport?: boolean;
 }
 
 export function TextArtifact({
   artifactId,
   invLevel = false,
+  experimentalANSISupport = false,
 }: TextArtifactProps) {
   const { identity } = useAuthState();
   const resultName = useResultName();
@@ -69,15 +72,16 @@ export function TextArtifact({
         ? parseInt(contentLengthHeader)
         : 0;
       const hasMore = contentLength > ARTIFACT_LENGTH_LIMIT;
-      if (hasMore) {
+      return {
+        contentType: response.headers.get('Content-Type'),
         // When the content is longer than `ARTIFACT_LENGTH_LIMIT`, we will
         // append `'...'` and a raw link at the end.
         // Remove the last character so we don't ends up showing `'...'` with
         // the full content when the content has exactly
         // `ARTIFACT_LENGTH_LIMIT + EXTRA_BYTES` bytes.
-        return [content.slice(0, content.length - 1), hasMore] as const;
-      }
-      return [content, false] as const;
+        content: hasMore ? content.slice(0, content.length - 1) : content,
+        hasMore,
+      };
     },
   });
   if (isError) {
@@ -97,7 +101,8 @@ export function TextArtifact({
       </>
     );
   }
-  const [content, hasMore] = data;
+
+  const { contentType, content, hasMore } = data;
   if (content === '') {
     const label = invLevel ? 'Inv-level artifact' : 'Artifact';
     return (
@@ -113,7 +118,11 @@ export function TextArtifact({
 
   return (
     <pre data-testid="text-artifact-content">
-      {content}
+      {experimentalANSISupport && contentType === 'text/x-ansi' ? (
+        <ANSIText content={content} />
+      ) : (
+        content
+      )}
       {hasMore ? (
         <>
           ... (truncated, view the full content{' '}

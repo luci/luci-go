@@ -62,6 +62,36 @@ describe('<TextArtifact />', () => {
     );
   });
 
+  it('shows ANSI artifact', async () => {
+    mockFetchTextArtifact(
+      'invocations/inv-1/tests/test-1/results/result-1/artifacts/artifact-1',
+      'magic-string:\u001b[36m<div data-testid="should-be-escaped">\u001b[39m\n\u001b[36m</div>\u001b[39m',
+      'text/x-ansi',
+    );
+    render(
+      <FakeContextProvider>
+        <ArtifactContextProvider resultName="invocations/inv-1/tests/test-1/results/result-1">
+          <TextArtifact artifactId="artifact-1" experimentalANSISupport />
+        </ArtifactContextProvider>
+      </FakeContextProvider>,
+    );
+
+    await act(() => jest.runAllTimersAsync());
+
+    const url = new URL(fetchMock.lastCall()![0]);
+    expect(parseInt(url.searchParams.get('n')!)).toBeGreaterThanOrEqual(
+      ARTIFACT_LENGTH_LIMIT,
+    );
+
+    // The ANSI sequence following the magic string should be converted to an
+    // HTML tag (beginning with a `<`).
+    expect(screen.getByTestId('text-artifact-content').innerHTML).toContain(
+      'magic-string:<span',
+    );
+    // The HTML in the content should've been escaped.
+    expect(screen.queryByTestId('should-be-escaped')).not.toBeInTheDocument();
+  });
+
   it('shows invocation-level artifact', async () => {
     mockFetchTextArtifact(
       'invocations/inv-1/artifacts/artifact-1',
@@ -91,6 +121,7 @@ describe('<TextArtifact />', () => {
     mockFetchTextArtifact(
       'invocations/inv-1/tests/test-1/results/result-1/artifacts/artifact-1',
       'looooooooong content',
+      'text/plain',
       ARTIFACT_LENGTH_LIMIT + 4,
     );
     render(

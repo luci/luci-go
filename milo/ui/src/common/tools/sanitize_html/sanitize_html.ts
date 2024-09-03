@@ -50,7 +50,12 @@ export function sanitizeHTML(
   opts?: { RETURN_TRUSTED_TYPE: true },
 ): string | TrustedHTML {
   return domPurify.sanitize(html, {
-    ADD_ATTR: ['target', 'artifact-id', 'inv-level'],
+    ADD_ATTR: [
+      'target',
+      'artifact-id',
+      'inv-level',
+      'experimental-ansi-support',
+    ],
     ADD_TAGS: ['text-artifact'],
     RETURN_TRUSTED_TYPE: opts?.RETURN_TRUSTED_TYPE,
   });
