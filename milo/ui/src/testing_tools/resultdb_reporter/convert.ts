@@ -15,9 +15,7 @@
 import * as path from 'node:path';
 
 import { Test, TestCaseResult } from '@jest/reporters';
-import ANSIConverter from 'ansi-to-html';
 import chalk from 'chalk';
-import { minify, Options } from 'html-minifier-terser';
 import {
   StackTraceOptions,
   formatStackTrace,
@@ -48,38 +46,6 @@ const STATUS_MAP = Object.freeze({
   focused: TestStatus.SKIP,
 });
 
-const ansiConverter = new ANSIConverter({
-  bg: '#FFF',
-  fg: '#000',
-  newline: true,
-  escapeXML: true,
-});
-
-/**
- * The maximum message length.
- *
- * Pick a number such that the generated HTML after the stack trace is added
- * will not exceed the `TestResult.summary_html`'s size limit (4096 bytes as of
- * 2024-07-17).
- */
-const MAX_MESSAGE_LENGTH = 1024;
-
-const MINIFY_OPTIONS = Object.freeze<Options>({
-  collapseBooleanAttributes: true,
-  collapseWhitespace: true,
-  conservativeCollapse: true,
-  preserveLineBreaks: true,
-  minifyCSS: true,
-  minifyURLs: true,
-  removeComments: true,
-  removeEmptyAttributes: true,
-  removeEmptyElements: true,
-  removeOptionalTags: true,
-  removeRedundantAttributes: true,
-  removeStyleLinkTypeAttributes: true,
-  useShortDoctype: true,
-});
-
 export interface ToSinkResultContext {
   readonly repo: string;
   readonly directory: string;
@@ -106,22 +72,10 @@ export async function toSinkResult(
     test.path.slice(test.context.config.rootDir.length + 1),
   );
   const testId = ctx.repo + ctx.delimiter + repoPath + ctx.delimiter + testName;
-  const summaryHtml = testCaseResult.failureMessages
+  const failureMessages = testCaseResult.failureMessages
     .map((msg) => {
       const msgAndStack = separateMessageFromStack(msg);
-      let message = indentAllLines(msgAndStack.message);
-
-      // Truncate the message if it's too long.
-      if (message.length > MAX_MESSAGE_LENGTH) {
-        message = message.slice(0, MAX_MESSAGE_LENGTH);
-        const lastEscapeIndex = message.lastIndexOf('\u001B');
-        // Truncate to the nearest escape sequence if possible.
-        // This is to prevent partial inclusion of ANSI codes.
-        if (lastEscapeIndex > 0) {
-          message = message.slice(0, lastEscapeIndex);
-        }
-        message += '\n    \u001B[39;103m... [message truncated]';
-      }
+      const message = indentAllLines(msgAndStack.message);
 
       const stack = chalk.dim(
         formatStackTrace(
@@ -132,12 +86,7 @@ export async function toSinkResult(
         ),
       );
 
-      // Convert each line individually to prevent `ansi-to-html`'s excessive
-      // `<span>` wrapping.
-      const lines = [...message.split('\n'), ...stack.split('\n')]
-        .map((line) => ansiConverter.toHtml(line))
-        .join('\n');
-      return `<pre>${lines}</pre>`;
+      return `${message}\n\n${stack}`;
     })
     .join('\n');
 
@@ -148,7 +97,9 @@ export async function toSinkResult(
     // Minify the HTML. This helps but not by a lot. If we want better
     // minification, we need to make the ANSI to HTML converter generate simpler
     // HTML.
-    summaryHtml: await minify(summaryHtml, MINIFY_OPTIONS),
+    summaryHtml: failureMessages
+      ? '<text-artifact artifact-id="failure-messages" experimental-ansi-support></text-artifact>'
+      : '',
     duration:
       typeof testCaseResult.duration === 'number'
         ? {
@@ -171,17 +122,21 @@ export async function toSinkResult(
           }
         : undefined,
     },
-    artifacts:
-      testCaseResult.failureDetails.length > 0
-        ? {
-            failureDetails: {
-              contents: Buffer.from(
-                JSON.stringify(testCaseResult.failureDetails),
-              ),
-              contentType: 'application/json',
-            },
-          }
-        : undefined,
+    artifacts: {
+      ...(testCaseResult.failureDetails.length > 0 && {
+        ['failure-details']: {
+          contentType: 'application/json',
+          contents: Buffer.from(JSON.stringify(testCaseResult.failureDetails)),
+        },
+      }),
+      ...(failureMessages !== '' && {
+        'failure-messages': {
+          contentType: 'text/x-ansi',
+          contents: Buffer.from(failureMessages),
+        },
+      }),
+    },
+
     // TODO: generate failure reason.
     failureReason: undefined,
   });
