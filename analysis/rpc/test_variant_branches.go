@@ -665,8 +665,10 @@ func validateQuerySourceVerdictsRequest(req *pb.QuerySourceVerdictsRequest) erro
 	if req.StartSourcePosition <= 0 {
 		return errors.Reason("start_source_position: must be a positive number").Err()
 	}
-	if req.EndSourcePosition <= 0 {
-		return errors.Reason("end_source_position: must be a positive number").Err()
+	// EndSourcePosition is an exclusive bound.
+	// We should accept `0` otherwise source verdicts at CP#1 cannot be queried.
+	if req.EndSourcePosition < 0 {
+		return errors.Reason("end_source_position: must be a non-negative number").Err()
 	}
 	if req.EndSourcePosition >= req.StartSourcePosition {
 		return errors.Reason("end_source_position: must be less than start_source_position").Err()

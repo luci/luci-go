@@ -907,9 +907,9 @@ func TestTestVariantBranchesServer(t *testing.T) {
 					So(res, ShouldBeNil)
 				})
 				Convey("invalid end position", func() {
-					req.EndSourcePosition = 0
+					req.EndSourcePosition = -1
 					res, err := server.QuerySourceVerdicts(ctx, req)
-					So(err, ShouldBeRPCInvalidArgument, `end_source_position: must be a positive number`)
+					So(err, ShouldBeRPCInvalidArgument, `end_source_position: must be a non-negative number`)
 					So(res, ShouldBeNil)
 				})
 				Convey("end position not before start", func() {
@@ -930,6 +930,13 @@ func TestTestVariantBranchesServer(t *testing.T) {
 			})
 			Convey("valid request", func() {
 				Convey("no test verdicts", func() {
+					res, err := server.QuerySourceVerdicts(ctx, req)
+					So(err, ShouldBeNil)
+					So(res, ShouldResembleProto, &pb.QuerySourceVerdictsResponse{})
+				})
+				Convey("end source position is zero", func() {
+					req.StartSourcePosition = 1000
+					req.EndSourcePosition = 0
 					res, err := server.QuerySourceVerdicts(ctx, req)
 					So(err, ShouldBeNil)
 					So(res, ShouldResembleProto, &pb.QuerySourceVerdictsResponse{})
