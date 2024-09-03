@@ -45,7 +45,7 @@ var luciProjectViewQueries = map[string]makeTableMetadata{
 			panic(err)
 		}
 		return &bigquery.TableMetadata{
-			ViewQuery: `SELECT * FROM internal.invocations WHERE project = "` + luciProject + `"`,
+			ViewQuery: `SELECT * FROM internal.invocations WHERE ` + projectWhereClause(luciProject),
 			Labels:    map[string]string{bq.MetadataVersionKey: "1"},
 		}
 	},
@@ -63,6 +63,25 @@ func CronHandler(ctx context.Context, gcpProject string) error {
 		return errors.Annotate(err, "ensure view").Err()
 	}
 	return nil
+}
+
+func projectWhereClause(luciProject string) string {
+	// Special treatment for chromium/chrome project views.
+	if luciProject == "chromium" {
+		// Enclose in brackets to ensure expression is evaluated to
+		// a boolean wherever it is injected. I.E. So that
+		// `WHERE something = a AND ` + projectWhereClause(luciProject) is safe.
+		return `(project = "chromium" OR STARTS_WITH(project, "chromium-m"))`
+	} else if luciProject == "chrome" {
+		return `(project IN ("chromium", "chrome") OR STARTS_WITH(project, "chromium-m") OR STARTS_WITH(project, "chrome-m"))`
+	}
+
+	// Other LUCI Projects.
+	// Revalidate project as safeguard against SQL-Injection.
+	if err := pbutil.ValidateProject(luciProject); err != nil {
+		panic(err)
+	}
+	return `(project = "` + luciProject + `")`
 }
 
 func ensureViews(ctx context.Context, bqClient *bigquery.Client) error {
