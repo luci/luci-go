@@ -19,6 +19,6 @@ import (
 )
 
 // RegisterRoutes registers routes explicitly handled by the handler.
-func (h *Handlers) RegisterRoutes(r *router.Router, mw router.MiddlewareChain) {
-	r.GET("/", mw, h.IndexPage)
+func RegisterRoutes(r *router.Router, mw router.MiddlewareChain) {
+	r.GET("/", mw, IndexPage)
 }

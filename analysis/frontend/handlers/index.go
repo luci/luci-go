@@ -20,6 +20,6 @@ import (
 )
 
 // IndexPage serves a GET request for the index page.
-func (h *Handlers) IndexPage(ctx *router.Context) {
+func IndexPage(ctx *router.Context) {
 	templates.MustRender(ctx.Request.Context(), ctx.Writer, "pages/index.html", templates.Args{})
 }

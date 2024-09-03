@@ -94,7 +94,6 @@ func main() {
 		// the frontend relies upon other assets (javascript, files) and
 		// it is annoying to deploy them with every backend service.
 		mw := pageBase(srv)
-		handlers := handlers.NewHandlers()
 		handlers.RegisterRoutes(srv.Routes, mw)
 		srv.Routes.Static("/static/", mw, http.Dir("./ui/dist"))
 		// Anything that is not found, serve app html and let the client side router handle it.
