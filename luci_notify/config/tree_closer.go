@@ -55,6 +55,11 @@ type TreeCloser struct {
 	// when setting the tree status message.
 	Timestamp time.Time
 
+	// Creation timestamp of the build which caused us to set the current
+	// status. This is used to ignore builds which started before the last
+	// time the tree was manually opened.
+	BuildCreateTime time.Time
+
 	// Message contains the status message to use if this TreeCloser is the
 	// one that updates the status of the tree. Only valid if Status is
 	// Closed.

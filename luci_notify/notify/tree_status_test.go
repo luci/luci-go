@@ -140,6 +140,8 @@ func TestUpdateTrees(t *testing.T) {
 				TreeCloser: notifypb.TreeCloser{},
 				Status:     builder1Status,
 				Timestamp:  time.Now().UTC(),
+				// In fully automatic operation, this should not be considered.
+				BuildCreateTime: evenEarlierTime,
 			}), ShouldBeNil)
 			So(datastore.Put(c, &config.TreeCloser{
 				BuilderKey: datastore.KeyForObj(c, builder2),
@@ -147,6 +149,8 @@ func TestUpdateTrees(t *testing.T) {
 				TreeCloser: notifypb.TreeCloser{},
 				Status:     builder2Status,
 				Timestamp:  time.Now().UTC(),
+				// In fully automatic operation, this should not be considered.
+				BuildCreateTime: evenEarlierTime,
 			}), ShouldBeNil)
 			defer cleanup()
 
@@ -194,11 +198,12 @@ func TestUpdateTrees(t *testing.T) {
 			}
 
 			So(datastore.Put(c, &config.TreeCloser{
-				BuilderKey: datastore.KeyForObj(c, builder1),
-				TreeName:   "chromium",
-				TreeCloser: notifypb.TreeCloser{},
-				Status:     config.Open,
-				Timestamp:  time.Now().UTC(),
+				BuilderKey:      datastore.KeyForObj(c, builder1),
+				TreeName:        "chromium",
+				TreeCloser:      notifypb.TreeCloser{},
+				Status:          config.Open,
+				Timestamp:       time.Now().UTC(),
+				BuildCreateTime: time.Now().UTC(),
 			}), ShouldBeNil)
 			defer cleanup()
 
@@ -222,11 +227,42 @@ func TestUpdateTrees(t *testing.T) {
 			}
 
 			So(datastore.Put(c, &config.TreeCloser{
-				BuilderKey: datastore.KeyForObj(c, builder1),
-				TreeName:   "chromium",
-				TreeCloser: notifypb.TreeCloser{},
-				Status:     config.Closed,
-				Timestamp:  evenEarlierTime,
+				BuilderKey:      datastore.KeyForObj(c, builder1),
+				TreeName:        "chromium",
+				TreeCloser:      notifypb.TreeCloser{},
+				Status:          config.Closed,
+				Timestamp:       evenEarlierTime,
+				BuildCreateTime: evenEarlierTime,
+			}), ShouldBeNil)
+			defer cleanup()
+
+			So(updateTrees(c, &ts), ShouldBeNil)
+
+			status, err := ts.getStatus(c, "chromium")
+			So(err, ShouldBeNil)
+			So(status.status, ShouldEqual, config.Open)
+			So(status.message, ShouldEqual, "Opened, because I feel like it")
+		})
+
+		Convey("Opened manually, stays open with new failures on previously started builds", func() {
+			ts := fakeTreeStatusClient{
+				statusForHosts: map[string]treeStatus{
+					"chromium": {
+						username:  "somedev@chromium.org",
+						message:   "Opened, because I feel like it",
+						status:    config.Open,
+						timestamp: earlierTime,
+					},
+				},
+			}
+
+			So(datastore.Put(c, &config.TreeCloser{
+				BuilderKey:      datastore.KeyForObj(c, builder1),
+				TreeName:        "chromium",
+				TreeCloser:      notifypb.TreeCloser{},
+				Status:          config.Closed,
+				Timestamp:       time.Now().UTC(),
+				BuildCreateTime: evenEarlierTime,
 			}), ShouldBeNil)
 			defer cleanup()
 
@@ -251,11 +287,12 @@ func TestUpdateTrees(t *testing.T) {
 			}
 
 			So(datastore.Put(c, &config.TreeCloser{
-				BuilderKey: datastore.KeyForObj(c, builder1),
-				TreeName:   "chromium",
-				TreeCloser: notifypb.TreeCloser{},
-				Status:     config.Closed,
-				Timestamp:  time.Now().UTC(),
+				BuilderKey:      datastore.KeyForObj(c, builder1),
+				TreeName:        "chromium",
+				TreeCloser:      notifypb.TreeCloser{},
+				Status:          config.Closed,
+				Timestamp:       time.Now().UTC(),
+				BuildCreateTime: time.Now().UTC(),
 			}), ShouldBeNil)
 			defer cleanup()
 
@@ -280,11 +317,12 @@ func TestUpdateTrees(t *testing.T) {
 			}
 
 			So(datastore.Put(c, &config.TreeCloser{
-				BuilderKey: datastore.KeyForObj(c, builder7),
-				TreeName:   "chromium",
-				TreeCloser: notifypb.TreeCloser{},
-				Status:     config.Closed,
-				Timestamp:  time.Now().UTC(),
+				BuilderKey:      datastore.KeyForObj(c, builder7),
+				TreeName:        "chromium",
+				TreeCloser:      notifypb.TreeCloser{},
+				Status:          config.Closed,
+				Timestamp:       time.Now().UTC(),
+				BuildCreateTime: time.Now().UTC(),
 			}), ShouldBeNil)
 			defer cleanup()
 
@@ -375,35 +413,6 @@ func TestUpdateTrees(t *testing.T) {
 			So(status.closingBuilderName, ShouldEqual, "projects/chromium/buckets/ci/builders/builder4")
 		})
 
-		Convey("Doesn't close when build is older than last status update", func() {
-			ts := fakeTreeStatusClient{
-				statusForHosts: map[string]treeStatus{
-					"chromium": {
-						username:  "somedev@chromium.org",
-						message:   "Opened, because I feel like it",
-						status:    config.Open,
-						timestamp: earlierTime,
-					},
-				},
-			}
-
-			So(datastore.Put(c, &config.TreeCloser{
-				BuilderKey: datastore.KeyForObj(c, builder1),
-				TreeName:   "chromium",
-				TreeCloser: notifypb.TreeCloser{},
-				Status:     config.Closed,
-				Timestamp:  evenEarlierTime,
-			}), ShouldBeNil)
-			defer cleanup()
-
-			So(updateTrees(c, &ts), ShouldBeNil)
-
-			status, err := ts.getStatus(c, "chromium")
-			So(err, ShouldBeNil)
-			So(status.status, ShouldEqual, config.Open)
-			So(status.message, ShouldEqual, "Opened, because I feel like it")
-		})
-
 		Convey("Doesn't open when build is older than last status update", func() {
 			// This test replicates the likely state just after we've
 			// automatically closed the tree: the tree is closed with
@@ -421,17 +430,19 @@ func TestUpdateTrees(t *testing.T) {
 			}
 
 			So(datastore.Put(c, &config.TreeCloser{
-				BuilderKey: datastore.KeyForObj(c, builder1),
-				TreeName:   "chromium",
-				TreeCloser: notifypb.TreeCloser{},
-				Status:     config.Open,
-				Timestamp:  evenEarlierTime,
+				BuilderKey:      datastore.KeyForObj(c, builder1),
+				TreeName:        "chromium",
+				TreeCloser:      notifypb.TreeCloser{},
+				Status:          config.Open,
+				Timestamp:       evenEarlierTime,
+				BuildCreateTime: evenEarlierTime,
 			}, &config.TreeCloser{
-				BuilderKey: datastore.KeyForObj(c, builder2),
-				TreeName:   "chromium",
-				TreeCloser: notifypb.TreeCloser{},
-				Status:     config.Closed,
-				Timestamp:  evenEarlierTime,
+				BuilderKey:      datastore.KeyForObj(c, builder2),
+				TreeName:        "chromium",
+				TreeCloser:      notifypb.TreeCloser{},
+				Status:          config.Closed,
+				Timestamp:       evenEarlierTime,
+				BuildCreateTime: evenEarlierTime,
 			}), ShouldBeNil)
 			defer cleanup()
 
@@ -459,17 +470,19 @@ func TestUpdateTrees(t *testing.T) {
 			}
 
 			So(datastore.Put(c, &config.TreeCloser{
-				BuilderKey: datastore.KeyForObj(c, builder1),
-				TreeName:   "chromium",
-				TreeCloser: notifypb.TreeCloser{},
-				Status:     config.Open,
-				Timestamp:  time.Now().UTC(),
+				BuilderKey:      datastore.KeyForObj(c, builder1),
+				TreeName:        "chromium",
+				TreeCloser:      notifypb.TreeCloser{},
+				Status:          config.Open,
+				Timestamp:       time.Now().UTC(),
+				BuildCreateTime: evenEarlierTime,
 			}, &config.TreeCloser{
-				BuilderKey: datastore.KeyForObj(c, builder2),
-				TreeName:   "chromium",
-				TreeCloser: notifypb.TreeCloser{},
-				Status:     config.Closed,
-				Timestamp:  evenEarlierTime,
+				BuilderKey:      datastore.KeyForObj(c, builder2),
+				TreeName:        "chromium",
+				TreeCloser:      notifypb.TreeCloser{},
+				Status:          config.Closed,
+				Timestamp:       evenEarlierTime,
+				BuildCreateTime: evenEarlierTime,
 			}), ShouldBeNil)
 			defer cleanup()
 

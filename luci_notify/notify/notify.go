@@ -27,7 +27,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 
@@ -421,7 +420,7 @@ func UpdateTreeClosers(c context.Context, build *Build, oldStatus buildbucketpb.
 		newStatus := config.Open
 		var steps []*buildbucketpb.Step
 		if build.Status == buildbucketpb.Status_FAILURE {
-			t := tc.TreeCloser
+			t := &tc.TreeCloser
 			var match bool
 			if match, steps = matchingSteps(findFailingSteps(&build.Build), t.FailedStepRegexp, t.FailedStepRegexpExclude); match {
 				newStatus = config.Closed
@@ -429,11 +428,14 @@ func UpdateTreeClosers(c context.Context, build *Build, oldStatus buildbucketpb.
 		}
 
 		tc.Status = newStatus
-		var err error
-		if tc.Timestamp, err = ptypes.Timestamp(build.EndTime); err != nil {
+		if err := build.EndTime.CheckValid(); err != nil {
 			logging.Warningf(c, "Build EndTime is invalid (%s), defaulting to time.Now()", err)
 			tc.Timestamp = time.Now().UTC()
+		} else {
+			tc.Timestamp = build.EndTime.AsTime()
 		}
+
+		tc.BuildCreateTime = build.CreateTime.AsTime()
 
 		if newStatus == config.Closed {
 			bundle, err := getBundle(c, project.Name)

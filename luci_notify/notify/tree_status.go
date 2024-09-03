@@ -242,7 +242,22 @@ func updateTree(c context.Context, ts treeStatusClient, treeClosers []*config.Tr
 		return err
 	}
 
-	if treeStatus.status == config.Closed && treeStatus.username != botUsername && treeStatus.username != legacyBotUsername {
+	// The state machine we want to implement:
+	//
+	// State                | Transitions
+	// ==================== | ========================
+	// Manually Closed      | Always leave unchanged.
+	// Manually Opened      | Transition to automatically closed only if a (tree-closer)
+	//                      | build which started after the manual re-opening fails.
+	// Automatically Closed | Transition to automatically opened if all (tree-closer) builds pass.
+	// Automatically Opened | Transition to automatically closed if a (tree-closer) build is failing.
+	//
+	// Note: Open and Closed above are an abstraction over the true tree state,
+	// which can also be in 'throttled' or 'maintenance' state.
+	// The special 'throttled' and 'maintenance' states are interpreted as 'closed'
+	// by getStatus above and only ever set manually, so they are never modified.
+	isLastUpdateManual := treeStatus.username != botUsername && treeStatus.username != legacyBotUsername
+	if treeStatus.status == config.Closed && isLastUpdateManual {
 		// Don't do anything if the tree was manually closed.
 		logging.Debugf(c, "Tree is closed and last update was from non-bot user %s; not doing anything", treeStatus.username)
 		return nil
@@ -259,8 +274,22 @@ func updateTree(c context.Context, ts treeStatusClient, treeClosers []*config.Tr
 	}
 	logging.Debugf(c, "anyEnabled = %v", anyEnabled)
 
+	// Whether any build is failing.
+	//
+	// A failing build is necessary and sufficient information to close an
+	// automatically opened tree.
+	// However, while it is a necessary condition to close a manually opened
+	// tree, it is not sufficient. Sufficient is only if one of the failing builds
+	// started since the last manual open, see `oldestClosed`.
+	//
+	// If no builds are failing, this is sufficient information to re-open an
+	// automatically closed tree. (But not a manually closed tree, that is never
+	// automatically re-opened.)
 	anyFailingBuild := false
-	anyNewBuild := false
+
+	// The oldest failing build. This is used to justify any tree closure.
+	// If the last tree status update was a manual open, this is constrained to
+	// the oldest failing build that the started after the manual open.
 	var oldestClosed *config.TreeCloser
 	for _, tc := range treeClosers {
 		// If any TreeClosers are from projects with tree closing enabled,
@@ -278,48 +307,56 @@ func updateTree(c context.Context, ts treeStatusClient, treeClosers []*config.Tr
 		if tc.Status == config.Closed {
 			logging.Debugf(c, "Found failing builder with message: %s", tc.Message)
 			anyFailingBuild = true
-		}
 
-		// Only pay attention to failing builds from after the last update to
-		// the tree. Otherwise we'll close the tree even after people manually
-		// open it.
-		if tc.Timestamp.Before(treeStatus.timestamp) {
-			continue
-		}
-
-		anyNewBuild = true
-
-		if tc.Status == config.Closed && (oldestClosed == nil || tc.Timestamp.Before(oldestClosed.Timestamp)) {
-			logging.Debugf(c, "Updating oldest failing builder")
-			oldestClosed = tc
+			justifiesTreeClosure := false
+			if isLastUpdateManual {
+				// Only pay attention to failing builds from after the last update to
+				// the tree. Otherwise we'll close the tree even after people manually
+				// open it.
+				//
+				// We use the build start time instead of the finish time to only include
+				// builds which included all code changes that were present in the tree
+				// when it was manually opened.
+				if tc.BuildCreateTime.After(treeStatus.timestamp) {
+					justifiesTreeClosure = true
+				}
+			} else {
+				// Last state update was automatic. When the tree is under automatic
+				// control, all failing builds can justify closure.
+				justifiesTreeClosure = true
+			}
+			if justifiesTreeClosure {
+				// Keep track of the oldest failing build (by finish time) that can
+				// justify tree closure. We use the oldest for determinism and to
+				// assist explainability.
+				if oldestClosed == nil || tc.Timestamp.Before(oldestClosed.Timestamp) {
+					logging.Debugf(c, "Updating oldest failing builder")
+					oldestClosed = tc
+				}
+			}
 		}
 	}
 
 	var newStatus config.TreeCloserStatus
-	if !anyNewBuild {
-		// Don't do anything if all the builds are older than the last update
-		// to the tree - nothing has changed, so there's no reason to take any
-		// action.
-		logging.Debugf(c, "No builds newer than last tree update (%s); not doing anything",
-			treeStatus.timestamp.Format(time.RFC1123Z))
-		return nil
-	}
 	if !anyFailingBuild {
 		// We can open the tree, as no builders are failing, including builders
 		// that haven't run since the last update to the tree.
 		logging.Debugf(c, "No failing builders; new status is Open")
 		newStatus = config.Open
-	} else if oldestClosed != nil {
-		// We can close the tree, as at least one builder has failed since the
-		// last update to the tree.
-		logging.Debugf(c, "At least one failing builder; new status is Closed")
-		newStatus = config.Closed
 	} else {
-		// Some builders are failing, but they were already failing before the
-		// last update. Don't do anything, so as not to close the tree after a
-		// sheriff has manually opened it.
-		logging.Debugf(c, "At least one failing builder, but there's a more recent update; not doing anything")
-		return nil
+		// There is a failing build.
+		if oldestClosed != nil {
+			// We can close the tree, as at least one builder is able to justify
+			// the closure. (E.g. has started since the tree was manually opened.)
+			logging.Debugf(c, "At least one failing builder; new status is Closed")
+			newStatus = config.Closed
+		} else {
+			// Some builders are failing, but they were already failing before the
+			// last update. Don't do anything, so as not to close the tree after a
+			// sheriff has manually opened it.
+			logging.Debugf(c, "At least one failing builder, but there's a more recent status update; not doing anything")
+			return nil
+		}
 	}
 
 	if treeStatus.status == newStatus {
