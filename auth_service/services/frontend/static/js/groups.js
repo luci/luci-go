@@ -785,10 +785,21 @@ class EditGroupForm extends GroupForm {
     const changeLogLink = this.element.querySelector('#group-change-log-link');
     const lookupLink = this.element.querySelector('#group-lookup-link');
     const listingLink = this.element.querySelector('#group-listing-link');
+    const membersCol = this.element.querySelector('#membersAndGlobsCol');
 
     // Modify group name and members.
     heading.textContent = group.name;
-    membersAndGlobs.textContent = group.membersAndGlobs
+    // Check for privacy filter.
+    if (!group.callerCanViewMembers) {
+      let numRedacted = group.numRedacted || 0;
+      const redactedSpan = document.createElement('label');
+      redactedSpan.textContent = numRedacted + ' members redacted';
+      redactedSpan.classList.add('col-form-label');
+      membersCol.appendChild(redactedSpan);
+      membersAndGlobs.style.display = 'none';
+    } else {
+      membersAndGlobs.textContent = group.membersAndGlobs;
+    }
 
     // Modify the links for group-specific information.
     changeLogLink.setAttribute('href',
