@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/caching"
 
 	"go.chromium.org/luci/source_index/internal/commit"
 	"go.chromium.org/luci/source_index/internal/config"
@@ -40,7 +41,7 @@ import (
 func TestSourceIndexServer(t *testing.T) {
 	ftt.Run(`TestSourceIndexServer`, t, func(t *ftt.Test) {
 		ctx := testutil.IntegrationTestContext(t)
-
+		ctx = caching.WithEmptyProcessCache(ctx)
 		ctx = memory.Use(ctx)
 		err := config.SetTestConfig(ctx, config.TestCfg)
 		assert.Loosely(t, err, should.BeNil)

@@ -16,6 +16,8 @@ package rpc
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	"google.golang.org/grpc/codes"
 
@@ -25,6 +27,7 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/caching/layered"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/source_index/internal/commit"
@@ -46,6 +49,68 @@ func NewSourceIndexServer() pb.SourceIndexServer {
 	}
 }
 
+// canKnowRepoExistsCacheDuration is the cache duration for whether
+// the user should be able to know the existence of a Gitiles repository.
+//
+// We don't return any confidential data in the RPC. Note that commit hashes
+// from confidential repositories are not considered confidential (see
+// b/352641557). Even if the user's access to a repository was revoked while the
+// result is cached, they already knew that the repository existed. As a result,
+// this can be cached for a long time.
+var canKnowRepoExistsCacheDuration = time.Hour * 24 * 7 * 4
+var canKnowRepoExistsCache = layered.RegisterCache(layered.Parameters[bool]{
+	GlobalNamespace: "can-know-repository-exists-v1",
+	Marshal: func(item bool) ([]byte, error) {
+		if item {
+			return []byte{0}, nil
+		}
+		return nil, nil
+	},
+	Unmarshal: func(blob []byte) (bool, error) {
+		return len(blob) > 0, nil
+	},
+})
+
+// ensureCanKnowRepoExists checks whether the user has access to the repository
+// by calling Gitiles with the user's credential.
+//
+// This is to prevent unauthorized users using this RPC to verify the
+// existence of private repositories.
+//
+// Note that we do not check position_ref here because position_ref does not
+// necessarily need to match an actual branch. It can be an arbitrary string
+// in the commit message.
+//
+// Do not check whether the user has access to the commit either because
+//  1. commit hashes are not considered to be confidential (see b/352641557);
+//     and
+//  2. we must check ACL before reading the database otherwise unauthorized
+//     users can still verify the existence of a repository by observing the
+//     query latency.
+func ensureCanKnowRepoExists(ctx context.Context, host, repository string) error {
+	client, err := gitilesutil.NewClient(ctx, host, auth.AsCredentialsForwarder)
+	if err != nil {
+		return errors.Annotate(err, "initialize Gitiles client").Err()
+	}
+	cacheKey := fmt.Sprintf("user/%q/gitiles/%q/repository/%q", string(auth.CurrentUser(ctx).Identity), host, repository)
+	canAccessRepo, err := canKnowRepoExistsCache.GetOrCreate(ctx, cacheKey, func() (v bool, exp time.Duration, err error) {
+		_, err = client.GetProject(ctx, &gitilespb.GetProjectRequest{Name: repository})
+		if err != nil {
+			// Do not cache failed responses. Always return an error.
+			return false, 0, err
+		}
+		return true, canKnowRepoExistsCacheDuration, nil
+	})
+	if err != nil {
+		return appstatus.Attachf(err, grpcutil.Code(err), "cannot access repository https://%s/%s", host, repository)
+	}
+	if !canAccessRepo {
+		// This branch should never been hit.
+		return appstatus.Errorf(codes.Internal, "invariant violated: the user must be have access to the repository")
+	}
+	return nil
+}
+
 // QueryCommitHash returns commit that matches desired position of commit,
 // based on QueryCommitHashRequest parameters
 func (si *sourceIndexServer) QueryCommitHash(ctx context.Context, req *pb.QueryCommitHashRequest) (*pb.QueryCommitHashResponse, error) {
@@ -53,32 +118,8 @@ func (si *sourceIndexServer) QueryCommitHash(ctx context.Context, req *pb.QueryC
 		return nil, appstatus.Attachf(err, codes.InvalidArgument, "invalid QueryCommitHashRequest %s", err)
 	}
 
-	// Check whether the user has access to the repository by calling Gitiles with
-	// the user's credential.
-	//
-	// This is to prevent unauthorized users using this RPC to verify the
-	// existence of private repositories.
-	//
-	// Note that we do not check position_ref here because position_ref does not
-	// necessarily need to match an actual branch. It can be an arbitrary string
-	// in the commit message.
-	//
-	// Do not check whether the user has access to the commit either because
-	// 1. commit hashes are not considered to be confidential (see b/352641557);
-	//    and
-	// 2. we must check ACL before reading the database otherwise unauthorized
-	//    users can still verify the existence of a repository by observing the
-	//    query latency.
-	//
-	// Future improvements:
-	// - Cache the (successful) response for each user to improve RPC latency.
-	client, err := gitilesutil.NewClient(ctx, req.Host, auth.AsCredentialsForwarder)
-	if err != nil {
-		return nil, errors.Annotate(err, "initialize Gitiles client").Err()
-	}
-	_, err = client.GetProject(ctx, &gitilespb.GetProjectRequest{Name: req.Repository})
-	if err != nil {
-		return nil, appstatus.Attachf(err, grpcutil.Code(err), "cannot access repository https://%s/%s", req.Host, req.Repository)
+	if err := ensureCanKnowRepoExists(ctx, req.Host, req.Repository); err != nil {
+		return nil, err
 	}
 
 	cfg, err := config.Get(ctx)
