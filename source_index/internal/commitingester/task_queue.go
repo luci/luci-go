@@ -32,7 +32,7 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/source_index/internal/commit"
-	"go.chromium.org/luci/source_index/internal/commitingester/taskspb"
+	"go.chromium.org/luci/source_index/internal/commitingester/internal/taskspb"
 	"go.chromium.org/luci/source_index/internal/gitilesutil"
 
 	// Add support for Spanner transactions in TQ.
@@ -42,6 +42,9 @@ import (
 const (
 	commitIngestionTaskClass = "commit-ingestion"
 	commitIngestionQueue     = "commit-ingestion"
+
+	commitIngestionBackfillTaskClass = "commit-ingestion-backfill"
+	commitIngestionBackfillQueue     = "commit-ingestion-backfill"
 )
 
 var commitIngestion = tq.RegisterTaskClass(tq.TaskClass{
@@ -55,26 +58,72 @@ var commitIngestion = tq.RegisterTaskClass(tq.TaskClass{
 	Kind: tq.Transactional,
 })
 
+// commitIngestionBackfill is the same as commitIngestion, except that the task
+// will be dispatched to the commit-ingestion-backfill task queue, which has
+// lower rate limits and SLO target.
+//
+// This helps us ensure the normal commit-ingestion are prioritized and have a
+// tighter SLO. Therefore the downstream services are less likely to run into
+// data latency issue.
+var commitIngestionBackfill = tq.RegisterTaskClass(tq.TaskClass{
+	ID:        commitIngestionBackfillTaskClass,
+	Prototype: &taskspb.IngestCommitsBackfill{},
+	Queue:     commitIngestionBackfillQueue,
+	Kind:      tq.Transactional,
+})
+
 // RegisterTaskQueueHandlers registers the task queue handlers for Source
 // Index's commit ingestion.
 func RegisterTaskQueueHandlers(srv *server.Server) error {
 	commitIngestion.AttachHandler(handleCommitIngestion)
+	commitIngestionBackfill.AttachHandler(handleCommitIngestionBackfill)
 
 	return nil
 }
 
 // scheduleCommitIngestion enqueues a task to ingest commits from a Gitiles
 // repository starting from the specified commitish.
-func scheduleCommitIngestion(ctx context.Context, task *taskspb.IngestCommits) {
+func scheduleCommitIngestion(ctx context.Context, task *taskspb.IngestCommits, isBackfill bool) {
+	var payload proto.Message = task
+	if isBackfill {
+		// Re-create the task using `taskspb.IngestCommitsBackfill` here so the
+		// caller doesn't need to know the difference between
+		// `taskspb.IngestCommitsBackfill` and `taskspb.IngestCommits`.
+		//
+		// TODO: make the tq package support dispatching tasks with an explicit
+		// task queue name so we don't need to have multiple payload types.
+		payload = &taskspb.IngestCommitsBackfill{
+			Host:       task.Host,
+			Repository: task.Repository,
+			Commitish:  task.Commitish,
+			PageToken:  task.PageToken,
+			TaskIndex:  task.TaskIndex,
+		}
+	}
+
 	tq.MustAddTask(ctx, &tq.Task{
 		Title:   fmt.Sprintf("%s-%s-%s-page-%d", task.Host, task.Repository, task.Commitish, task.TaskIndex),
-		Payload: task,
+		Payload: payload,
 	})
 }
 
 func handleCommitIngestion(ctx context.Context, payload proto.Message) error {
 	task := payload.(*taskspb.IngestCommits)
+	return processCommitIngestionTask(ctx, task, false)
+}
 
+func handleCommitIngestionBackfill(ctx context.Context, payload proto.Message) error {
+	task := payload.(*taskspb.IngestCommitsBackfill)
+	return processCommitIngestionTask(ctx, &taskspb.IngestCommits{
+		Host:       task.Host,
+		Repository: task.Repository,
+		Commitish:  task.Commitish,
+		PageToken:  task.PageToken,
+		TaskIndex:  task.TaskIndex,
+	}, true)
+}
+
+func processCommitIngestionTask(ctx context.Context, task *taskspb.IngestCommits, isBackfill bool) error {
 	ctx = logging.SetField(ctx, "host", task.Host)
 	ctx = logging.SetField(ctx, "repository", task.Repository)
 	ctx = logging.SetField(ctx, "commitish", task.Commitish)
@@ -82,10 +131,6 @@ func handleCommitIngestion(ctx context.Context, payload proto.Message) error {
 
 	logging.Infof(ctx, "received commit ingestion task with page token: %q", task.PageToken)
 
-	return processCommitIngestionTask(ctx, task)
-}
-
-func processCommitIngestionTask(ctx context.Context, task *taskspb.IngestCommits) error {
 	client, err := gitilesutil.NewClient(ctx, task.Host, auth.AsSelf, auth.WithScopes(gitiles.OAuthScope))
 	if err != nil {
 		return errors.Annotate(err, "initialize a Gitiles client").Err()
@@ -153,13 +198,21 @@ func processCommitIngestionTask(ctx context.Context, task *taskspb.IngestCommits
 	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 		span.BufferWrite(ctx, commitsToSave...)
 		if res.NextPageToken != "" {
-			scheduleCommitIngestion(ctx, &taskspb.IngestCommits{
-				Host:       task.Host,
-				Repository: task.Repository,
-				Commitish:  task.Commitish,
-				TaskIndex:  task.TaskIndex + 1,
-				PageToken:  res.NextPageToken,
-			})
+			scheduleCommitIngestion(
+				ctx,
+				&taskspb.IngestCommits{
+					Host:       task.Host,
+					Repository: task.Repository,
+					Commitish:  task.Commitish,
+					TaskIndex:  task.TaskIndex + 1,
+					PageToken:  res.NextPageToken,
+				},
+				// Schedule the continuation task to the same task queue.
+				// In case a pubsub created task needs a continuation task (e.g. fast
+				// forward merge from a feature branch), we don't want the continuation
+				// task to be blocked by cron-created backfill tasks.
+				isBackfill,
+			)
 		}
 		return nil
 	})

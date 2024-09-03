@@ -29,7 +29,7 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/source_index/internal/commit"
-	"go.chromium.org/luci/source_index/internal/commitingester/taskspb"
+	"go.chromium.org/luci/source_index/internal/commitingester/internal/taskspb"
 	"go.chromium.org/luci/source_index/internal/config"
 	"go.chromium.org/luci/source_index/internal/gitilesutil"
 	"go.chromium.org/luci/source_index/internal/testutil"
@@ -82,63 +82,95 @@ func TestProcessCommitIngestionTask(t *testing.T) {
 			expectedSavedCommits = append(expectedSavedCommits, commit.NewFromGitCommit(gitCommit))
 		}
 
-		expectedTasks := []*taskspb.IngestCommits{
-			{
-				Host:       host,
-				Repository: repository,
-				Commitish:  commits[0].Id,
-				PageToken:  commits[999].Id,
-				TaskIndex:  1,
-			},
-		}
-		getOutputTasks := func() []*taskspb.IngestCommits {
-			actualTasks := make([]*taskspb.IngestCommits, 0, len(skdr.Tasks().Payloads()))
-			for _, payload := range skdr.Tasks().Payloads() {
-				actualTasks = append(actualTasks, payload.(*taskspb.IngestCommits))
+		t.Run("with normal queue", func(t *ftt.Test) {
+			expectedTasks := []*taskspb.IngestCommits{
+				{
+					Host:       host,
+					Repository: repository,
+					Commitish:  commits[0].Id,
+					PageToken:  commits[999].Id,
+					TaskIndex:  1,
+				},
+			}
+			getOutputTasks := func() []*taskspb.IngestCommits {
+				actualTasks := make([]*taskspb.IngestCommits, 0, len(skdr.Tasks().Payloads()))
+				for _, payload := range skdr.Tasks().Payloads() {
+					actualTasks = append(actualTasks, payload.(*taskspb.IngestCommits))
+				}
+
+				return actualTasks
 			}
 
-			return actualTasks
-		}
+			t.Run(`with next page`, func(t *ftt.Test) {
+				fakeGitilesClient.SetRepository(repository, nil, commits)
 
-		t.Run(`with next page`, func(t *ftt.Test) {
-			fakeGitilesClient.SetRepository(repository, nil, commits)
+				err := processCommitIngestionTask(ctx, inputTask, false)
 
-			err := processCommitIngestionTask(ctx, inputTask)
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, commit.MustReadAllForTesting(span.Single(ctx)), commit.ShouldMatchCommits(expectedSavedCommits))
+				assert.That(t, getOutputTasks(), should.Match(expectedTasks))
+			})
 
-			assert.Loosely(t, err, should.BeNil)
-			assert.That(t, commit.MustReadAllForTesting(span.Single(ctx)), commit.ShouldMatchCommits(expectedSavedCommits))
-			assert.That(t, getOutputTasks(), should.Match(expectedTasks))
+			t.Run(`without next page`, func(t *ftt.Test) {
+				commits = commits[:800]
+				commits[len(commits)-1].Parents = nil
+				commitsInPage = commits[:1000]
+				fakeGitilesClient.SetRepository(repository, nil, commits)
+				expectedSavedCommits = expectedSavedCommits[:800]
+				expectedTasks = []*taskspb.IngestCommits{}
+
+				err := processCommitIngestionTask(ctx, inputTask, false)
+
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, commit.MustReadAllForTesting(span.Single(ctx)), commit.ShouldMatchCommits(expectedSavedCommits))
+				assert.That(t, getOutputTasks(), should.Match(expectedTasks))
+			})
+
+			t.Run(`with already ingested first commit`, func(t *ftt.Test) {
+				firstGitCommit, err := commit.NewGitCommit(host, repository, commits[0])
+				assert.Loosely(t, err, should.BeNil)
+				alreadySavedCommit := commit.NewFromGitCommit(firstGitCommit)
+				commit.MustSetForTesting(ctx, alreadySavedCommit)
+				fakeGitilesClient.SetRepository(repository, nil, commits)
+				expectedSavedCommits = []commit.Commit{alreadySavedCommit}
+				expectedTasks = []*taskspb.IngestCommits{}
+
+				err = processCommitIngestionTask(ctx, inputTask, false)
+
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, commit.MustReadAllForTesting(span.Single(ctx)), commit.ShouldMatchCommits(expectedSavedCommits))
+				assert.That(t, getOutputTasks(), should.Match(expectedTasks))
+			})
 		})
 
-		t.Run(`without next page`, func(t *ftt.Test) {
-			commits = commits[:800]
-			commits[len(commits)-1].Parents = nil
-			commitsInPage = commits[:1000]
-			fakeGitilesClient.SetRepository(repository, nil, commits)
-			expectedSavedCommits = expectedSavedCommits[:800]
-			expectedTasks = []*taskspb.IngestCommits{}
+		t.Run("with backfill queue", func(t *ftt.Test) {
+			expectedTasks := []*taskspb.IngestCommitsBackfill{
+				{
+					Host:       host,
+					Repository: repository,
+					Commitish:  commits[0].Id,
+					PageToken:  commits[999].Id,
+					TaskIndex:  1,
+				},
+			}
+			getOutputTasks := func() []*taskspb.IngestCommitsBackfill {
+				actualTasks := make([]*taskspb.IngestCommitsBackfill, 0, len(skdr.Tasks().Payloads()))
+				for _, payload := range skdr.Tasks().Payloads() {
+					actualTasks = append(actualTasks, payload.(*taskspb.IngestCommitsBackfill))
+				}
 
-			err := processCommitIngestionTask(ctx, inputTask)
+				return actualTasks
+			}
 
-			assert.Loosely(t, err, should.BeNil)
-			assert.That(t, commit.MustReadAllForTesting(span.Single(ctx)), commit.ShouldMatchCommits(expectedSavedCommits))
-			assert.That(t, getOutputTasks(), should.Match(expectedTasks))
-		})
+			t.Run(`with next page`, func(t *ftt.Test) {
+				fakeGitilesClient.SetRepository(repository, nil, commits)
 
-		t.Run(`with already ingested first commit`, func(t *ftt.Test) {
-			firstGitCommit, err := commit.NewGitCommit(host, repository, commits[0])
-			assert.Loosely(t, err, should.BeNil)
-			alreadySavedCommit := commit.NewFromGitCommit(firstGitCommit)
-			commit.MustSetForTesting(ctx, alreadySavedCommit)
-			fakeGitilesClient.SetRepository(repository, nil, commits)
-			expectedSavedCommits = []commit.Commit{alreadySavedCommit}
-			expectedTasks = []*taskspb.IngestCommits{}
+				err := processCommitIngestionTask(ctx, inputTask, true)
 
-			err = processCommitIngestionTask(ctx, inputTask)
-
-			assert.Loosely(t, err, should.BeNil)
-			assert.That(t, commit.MustReadAllForTesting(span.Single(ctx)), commit.ShouldMatchCommits(expectedSavedCommits))
-			assert.That(t, getOutputTasks(), should.Match(expectedTasks))
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, commit.MustReadAllForTesting(span.Single(ctx)), commit.ShouldMatchCommits(expectedSavedCommits))
+				assert.That(t, getOutputTasks(), should.Match(expectedTasks))
+			})
 		})
 	})
 }

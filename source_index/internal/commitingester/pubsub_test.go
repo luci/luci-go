@@ -24,7 +24,7 @@ import (
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/server/tq"
 
-	"go.chromium.org/luci/source_index/internal/commitingester/taskspb"
+	"go.chromium.org/luci/source_index/internal/commitingester/internal/taskspb"
 	"go.chromium.org/luci/source_index/internal/config"
 	"go.chromium.org/luci/source_index/internal/testutil"
 )

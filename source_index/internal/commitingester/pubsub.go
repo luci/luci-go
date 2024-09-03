@@ -30,7 +30,7 @@ import (
 	"go.chromium.org/luci/server/pubsub"
 	"go.chromium.org/luci/server/span"
 
-	"go.chromium.org/luci/source_index/internal/commitingester/taskspb"
+	"go.chromium.org/luci/source_index/internal/commitingester/internal/taskspb"
 	"go.chromium.org/luci/source_index/internal/config"
 	"go.chromium.org/luci/source_index/internal/pubsubutil"
 )
@@ -133,7 +133,7 @@ func processSourceRepoEvent(ctx context.Context, gitilesHost string, event *gerr
 				Commitish:  update.NewId,
 				PageToken:  "",
 				TaskIndex:  0,
-			})
+			}, false)
 			return nil
 		}
 		if _, err := span.ReadWriteTransaction(ctx, f); err != nil {

@@ -26,7 +26,7 @@ import (
 	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/span"
 
-	"go.chromium.org/luci/source_index/internal/commitingester/taskspb"
+	"go.chromium.org/luci/source_index/internal/commitingester/internal/taskspb"
 	"go.chromium.org/luci/source_index/internal/config"
 	"go.chromium.org/luci/source_index/internal/gitilesutil"
 )
@@ -131,7 +131,10 @@ func scheduleTasks(
 	processBatch := func(currentBatch []*taskspb.IngestCommits) error {
 		_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 			for _, task := range currentBatch {
-				scheduleCommitIngestion(ctx, task)
+				// Schedule a commit ingestion task to the backfill queue so creating a
+				// large amount of tasks in a short period of time won't trigger SLO
+				// alerts. Note that most tasks are expected to be NOOP tasks.
+				scheduleCommitIngestion(ctx, task, true)
 			}
 			return nil
 		})

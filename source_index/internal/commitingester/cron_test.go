@@ -29,7 +29,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/tq"
 
-	"go.chromium.org/luci/source_index/internal/commitingester/taskspb"
+	"go.chromium.org/luci/source_index/internal/commitingester/internal/taskspb"
 	"go.chromium.org/luci/source_index/internal/config"
 	"go.chromium.org/luci/source_index/internal/gitilesutil"
 	"go.chromium.org/luci/source_index/internal/testutil"
@@ -77,7 +77,7 @@ func TestSyncCommitsHandler(t *testing.T) {
 			repo      string
 			commitish string
 		}
-		expectedTasks := map[taskKey]*taskspb.IngestCommits{
+		expectedTasks := map[taskKey]*taskspb.IngestCommitsBackfill{
 			{host: "chromium.googlesource.com", repo: "chromium/src", commitish: "refs/branch-heads/release-101"}: {
 				Host:       "chromium.googlesource.com",
 				Repository: "chromium/src",
@@ -122,10 +122,10 @@ func TestSyncCommitsHandler(t *testing.T) {
 			},
 		}
 
-		getOutputTasks := func() map[taskKey]*taskspb.IngestCommits {
-			actualTasks := make(map[taskKey]*taskspb.IngestCommits, len(skdr.Tasks().Payloads()))
+		getOutputTasks := func() map[taskKey]*taskspb.IngestCommitsBackfill {
+			actualTasks := make(map[taskKey]*taskspb.IngestCommitsBackfill, len(skdr.Tasks().Payloads()))
 			for _, payload := range skdr.Tasks().Payloads() {
-				t := payload.(*taskspb.IngestCommits)
+				t := payload.(*taskspb.IngestCommitsBackfill)
 				actualTasks[taskKey{host: t.Host, repo: t.Repository, commitish: t.Commitish}] = t
 			}
 
@@ -159,11 +159,11 @@ func TestSyncCommitsHandler(t *testing.T) {
 		t.Run(`when there are many tasks to be scheduled`, func(t *ftt.Test) {
 			assert.That(t, len(commits), should.BeGreaterThan(2000))
 			refs = make(map[string]string, len(commits))
-			expectedTasks = make(map[taskKey]*taskspb.IngestCommits, len(commits))
+			expectedTasks = make(map[taskKey]*taskspb.IngestCommitsBackfill, len(commits))
 			for i, commit := range commits {
 				ref := fmt.Sprintf("refs/branch-heads/release-%d", i)
 				refs[ref] = commit.Id
-				expectedTasks[taskKey{host: "chromium.googlesource.com", repo: "chromium/src", commitish: ref}] = &taskspb.IngestCommits{
+				expectedTasks[taskKey{host: "chromium.googlesource.com", repo: "chromium/src", commitish: ref}] = &taskspb.IngestCommitsBackfill{
 					Host:       "chromium.googlesource.com",
 					Repository: "chromium/src",
 					Commitish:  ref,
