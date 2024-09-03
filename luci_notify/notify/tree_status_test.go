@@ -126,7 +126,7 @@ func TestUpdateTrees(t *testing.T) {
 			ts := fakeTreeStatusClient{
 				statusForHosts: map[string]treeStatus{
 					"chromium": {
-						username:  botUsername,
+						username:  botUsernames[0],
 						message:   statusMessage,
 						status:    initialTreeStatus,
 						timestamp: earlierTime,
@@ -338,13 +338,13 @@ func TestUpdateTrees(t *testing.T) {
 			ts := fakeTreeStatusClient{
 				statusForHosts: map[string]treeStatus{
 					"chromium": {
-						username:  botUsername,
+						username:  botUsernames[0],
 						message:   "Closed up",
 						status:    config.Closed,
 						timestamp: evenEarlierTime,
 					},
 					"v8": {
-						username:  botUsername,
+						username:  botUsernames[0],
 						message:   "Open for business",
 						status:    config.Open,
 						timestamp: evenEarlierTime,
@@ -421,7 +421,7 @@ func TestUpdateTrees(t *testing.T) {
 			ts := fakeTreeStatusClient{
 				statusForHosts: map[string]treeStatus{
 					"chromium": {
-						username:  botUsername,
+						username:  botUsernames[0],
 						message:   "Tree is closed (Automatic: some builder failed)",
 						status:    config.Closed,
 						timestamp: earlierTime,
@@ -461,7 +461,7 @@ func TestUpdateTrees(t *testing.T) {
 			ts := fakeTreeStatusClient{
 				statusForHosts: map[string]treeStatus{
 					"chromium": {
-						username:  botUsername,
+						username:  botUsernames[0],
 						message:   "Tree is closed (Automatic: some builder failed)",
 						status:    config.Closed,
 						timestamp: earlierTime,
@@ -498,13 +498,13 @@ func TestUpdateTrees(t *testing.T) {
 			ts := fakeTreeStatusClient{
 				statusForHosts: map[string]treeStatus{
 					"chromium": {
-						username:  botUsername,
+						username:  botUsernames[0],
 						message:   "Tree is closed (Automatic: some builder failed)",
 						status:    config.Closed,
 						timestamp: earlierTime,
 					},
 					"infra": {
-						username:  botUsername,
+						username:  botUsernames[0],
 						message:   "Tree is open (Automatic: Yes!)",
 						status:    config.Open,
 						timestamp: earlierTime,
@@ -555,13 +555,13 @@ func TestUpdateTrees(t *testing.T) {
 			ts := fakeTreeStatusClient{
 				statusForHosts: map[string]treeStatus{
 					"chromium": {
-						username:  botUsername,
+						username:  botUsernames[0],
 						message:   "Tree is open (Flake)",
 						status:    config.Open,
 						timestamp: earlierTime,
 					},
 					"infra": {
-						username:  botUsername,
+						username:  botUsernames[0],
 						message:   "Tree is closed (Automatic: Some builder failed)",
 						status:    config.Closed,
 						timestamp: earlierTime,

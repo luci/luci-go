@@ -22,6 +22,8 @@ import (
 	"sync"
 	"time"
 
+	"golang.org/x/exp/slices"
+
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
@@ -37,8 +39,11 @@ import (
 	"go.chromium.org/luci/luci_notify/config"
 )
 
-const botUsername = "luci-notify@appspot.gserviceaccount.com"
-const legacyBotUsername = "buildbot@chromium.org"
+var botUsernames = []string{
+	"luci-notify@appspot.gserviceaccount.com",
+	"luci-notify-dev@appspot.gserviceaccount.com",
+	"buildbot@chromium.org", // Legacy bot.
+}
 
 type treeStatus struct {
 	username           string
@@ -247,7 +252,7 @@ func updateTree(c context.Context, ts treeStatusClient, treeClosers []*config.Tr
 	// State                | Transitions
 	// ==================== | ========================
 	// Manually Closed      | Always leave unchanged.
-	// Manually Opened      | Transition to automatically closed only if a (tree-closer)
+	// Manually Opened      | Transition to automatically closed if a (tree-closer)
 	//                      | build which started after the manual re-opening fails.
 	// Automatically Closed | Transition to automatically opened if all (tree-closer) builds pass.
 	// Automatically Opened | Transition to automatically closed if a (tree-closer) build is failing.
@@ -256,7 +261,7 @@ func updateTree(c context.Context, ts treeStatusClient, treeClosers []*config.Tr
 	// which can also be in 'throttled' or 'maintenance' state.
 	// The special 'throttled' and 'maintenance' states are interpreted as 'closed'
 	// by getStatus above and only ever set manually, so they are never modified.
-	isLastUpdateManual := treeStatus.username != botUsername && treeStatus.username != legacyBotUsername
+	isLastUpdateManual := !slices.Contains(botUsernames, treeStatus.username)
 	if treeStatus.status == config.Closed && isLastUpdateManual {
 		// Don't do anything if the tree was manually closed.
 		logging.Debugf(c, "Tree is closed and last update was from non-bot user %s; not doing anything", treeStatus.username)
