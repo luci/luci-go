@@ -39,7 +39,6 @@ luci_gae_vars:
     BACKEND_SERVICE_ACCOUNT: backend-service@luci-source-index-dev.iam.gserviceaccount.com
     CONFIG_SERVICE_HOST: config.luci.app
     CRON_AUTHORIZED_CALLER: cloud-scheduler-jobs@luci-source-index-dev.iam.gserviceaccount.com
-    OAUTH_CLIENT_ID: 665810229987-43iorv6c99shvmsfq6se9s7d47lomql2.apps.googleusercontent.com
     PUBSUB_AUTHORIZED_CALLER: cloud-pubsub-pusher@luci-source-index-dev.iam.gserviceaccount.com
     SPANNER_DB: projects/luci-source-index-dev/instances/dev/databases/luci-source-index-dev
     TQ_PUSH_AS: cloud-tasks-pusher@luci-source-index-dev.iam.gserviceaccount.com
@@ -56,7 +55,6 @@ entrypoint: >
   -auth-service-host ${AUTH_SERVICE_HOST}
   -config-service-host ${CONFIG_SERVICE_HOST}
   -cron-authorized-caller ${CRON_AUTHORIZED_CALLER}
-  -frontend-client-id ${OAUTH_CLIENT_ID}
   -pubsub-authorized-caller ${PUBSUB_AUTHORIZED_CALLER}
   -spanner-database ${SPANNER_DB}
   -tq-default-target-host ${TQ_TARGET_HOST}
