@@ -34,12 +34,6 @@ func main() {
 		}
 		server.RegisterPubSubHandlers()
 		server.RegisterCrons(srv)
-		// To resolve legacy tasks for b/363129294.
-		if srv.Options.CloudProject == "chops-weetbix-dev" {
-			if err := server.RegisterTaskQueueHandlers(srv); err != nil {
-				return err
-			}
-		}
 
 		// Redirect the frontend to RPC explorer.
 		srv.Routes.GET("/", nil, func(ctx *router.Context) {
