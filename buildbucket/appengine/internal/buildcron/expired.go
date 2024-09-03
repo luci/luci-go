@@ -23,10 +23,10 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 
+	"go.chromium.org/luci/buildbucket/appengine/internal/buildstatus"
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	"go.chromium.org/luci/buildbucket/appengine/tasks"
-	taskdefs "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 )
@@ -37,60 +37,57 @@ func expireBuilds(ctx context.Context, bs []*model.Build, mr parallel.MultiRunne
 		return nil
 	}
 
-	toUpdate := make([]*model.Build, 0, len(bs))
+	buildsToUpdate := make([]*model.Build, 0, len(bs))
 	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		// Clear the slice since it may contains value from the previous
 		// failed transaction.
-		toUpdate = toUpdate[:0]
+		buildsToUpdate = buildsToUpdate[:0]
 		if err := datastore.Get(ctx, bs); err != nil {
 			return err
 		}
 
 		now := clock.Now(ctx)
 		for _, b := range bs {
-			// skip updating, if it's no longer in a non-terminal status.
-			if protoutil.IsEnded(b.Proto.Status) {
-				continue
+			// Update only builds in non-terminal status.
+			if !protoutil.IsEnded(b.Proto.Status) {
+				buildsToUpdate = append(buildsToUpdate, b)
 			}
-
-			protoutil.SetStatus(now, b.Proto, pb.Status_INFRA_FAILURE)
-			if b.Proto.StatusDetails == nil {
-				b.Proto.StatusDetails = &pb.StatusDetails{}
-			}
-			b.Proto.StatusDetails.Timeout = &pb.StatusDetails_Timeout{}
-			b.ClearLease()
-			// TODO(crbug.com/1414540): A temporary code to mitigate the issue. Should
-			// delete it after the cron job is executed.
-			if b.Proto.Input.GetProperties() != nil {
-				b.Proto.Input.Properties = nil
-			}
-			toUpdate = append(toUpdate, b)
 		}
-
-		if len(toUpdate) == 0 {
+		if len(buildsToUpdate) == 0 {
 			return nil
 		}
-		return mr.RunMulti(func(workC chan<- func() error) {
-			for _, b := range toUpdate {
+
+		buildStatusToUpdate := make([]*model.BuildStatus, len(buildsToUpdate))
+		err := mr.RunMulti(func(workC chan<- func() error) {
+			for i, b := range buildsToUpdate {
+				i := i
 				b := b
-				workC <- func() error { return tasks.NotifyPubSub(ctx, b) }
 				workC <- func() error {
-					return tasks.ExportBigQuery(ctx, b.ID)
+					statusUpdater := buildstatus.Updater{
+						Build:       b,
+						Infra:       nil,
+						BuildStatus: &buildstatus.StatusWithDetails{Status: pb.Status_INFRA_FAILURE, Details: &pb.StatusDetails{Timeout: &pb.StatusDetails_Timeout{}}},
+						UpdateTime:  now,
+						PostProcess: tasks.SendOnBuildStatusChange,
+					}
+					bs, err := statusUpdater.Do(ctx)
+					if err != nil {
+						return errors.Annotate(err, "updating build status for build %d", b.ID).Err()
+					}
+					buildStatusToUpdate[i] = bs
+					return nil
 				}
-				workC <- func() error {
-					return tasks.FinalizeResultDB(ctx, &taskdefs.FinalizeResultDBGo{BuildId: b.ID})
-				}
-			}
-			workC <- func() error { return datastore.Put(ctx, toUpdate) }
-			workC <- func() error {
-				return updateBuildStatuses(ctx, toUpdate, pb.Status_INFRA_FAILURE)
 			}
 		})
+		if err != nil {
+			return err
+		}
+		return datastore.Put(ctx, buildsToUpdate, buildStatusToUpdate)
 	}, nil)
 
 	if err == nil {
-		logging.Infof(ctx, "Processed %d/%d expired builds", len(toUpdate), nOrig)
-		for _, b := range toUpdate {
+		logging.Infof(ctx, "Processed %d/%d expired builds", len(buildsToUpdate), nOrig)
+		for _, b := range buildsToUpdate {
 			logging.Infof(ctx, "Build %d: completed by cron(expire_builds) with status %q.",
 				b.ID, b.Status)
 			metrics.BuildCompleted(ctx, b)

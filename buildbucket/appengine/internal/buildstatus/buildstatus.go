@@ -176,7 +176,7 @@ func (u *Updater) Do(ctx context.Context) (*model.BuildStatus, error) {
 
 	// post process after build status change.
 	if err := u.PostProcess(ctx, u.Build, u.Infra); err != nil {
-		return nil, err
+		return nil, errors.Annotate(err, "failed to run post process when updating build %d to %s", u.Build.ID, newBuildStatus.Status).Err()
 	}
 
 	return bs, nil

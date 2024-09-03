@@ -80,6 +80,18 @@ func newBuildAndStatus(ctx context.Context, st pb.Status, t time.Time) (*model.B
 	return b, bs
 }
 
+func newInfraFromBuild(ctx context.Context, b *model.Build) *model.BuildInfra {
+	return &model.BuildInfra{
+		Build: datastore.KeyForObj(ctx, b),
+		Proto: &pb.BuildInfra{
+			Resultdb: &pb.BuildInfra_ResultDB{
+				Hostname:   "rdbhost",
+				Invocation: "inv",
+			},
+		},
+	}
+}
+
 func TestResetExpiredLeases(t *testing.T) {
 	t.Parallel()
 
@@ -237,12 +249,15 @@ func TestTimeoutExpiredBuilds(t *testing.T) {
 		Convey("works w/ a large number of expired builds", func() {
 			bs := make([]*model.Build, 128)
 			bss := make([]*model.BuildStatus, len(bs))
+			infs := make([]*model.BuildInfra, len(bs))
 			createTime := now.Add(-model.BuildMaxCompletionTime - time.Minute)
 			for i := 0; i < len(bs); i++ {
 				bs[i], bss[i] = newBuildAndStatus(ctx, pb.Status_SCHEDULED, createTime)
+				infs[i] = newInfraFromBuild(ctx, bs[i])
 			}
 			So(datastore.Put(ctx, bs), ShouldBeNil)
 			So(datastore.Put(ctx, bss), ShouldBeNil)
+			So(datastore.Put(ctx, infs), ShouldBeNil)
 			So(TimeoutExpiredBuilds(ctx), ShouldBeNil)
 		})
 
@@ -263,11 +278,13 @@ func TestTimeoutExpiredBuilds(t *testing.T) {
 				},
 			}
 			b1, bs1 := newBuildAndStatus(ctx, pb.Status_SCHEDULED, now.Add(-model.BuildMaxCompletionTime-time.Minute))
+			inf1 := newInfraFromBuild(ctx, b1)
 			b1.LegacyProperties.LeaseProperties.IsLeased = true
 			b1.CustomMetrics = cms
 			b2, bs2 := newBuildAndStatus(ctx, pb.Status_STARTED, now.Add(-model.BuildMaxCompletionTime-time.Minute))
+			inf2 := newInfraFromBuild(ctx, b2)
 			b2.CustomMetrics = cms
-			So(datastore.Put(ctx, b1, b2, bs1, bs2), ShouldBeNil)
+			So(datastore.Put(ctx, b1, b2, bs1, bs2, inf1, inf2), ShouldBeNil)
 
 			globalCfg := &pb.SettingsCfg{
 				CustomMetrics: []*pb.CustomMetric{
