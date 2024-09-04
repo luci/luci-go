@@ -895,8 +895,8 @@ type Server struct {
 	errRptClient *errorreporting.Client                    // for reporting to the cloud Error Reporting
 	logRequestCB func(context.Context, *sdlogger.LogEntry) // if non-nil, need to emit request log entries via it
 
-	mainPort  *Port        // pre-registered main HTTP port, see bindMainPort
-	adminPort *Port        // pre-registered admin HTTP port, if any, see bindAdminPort
+	mainPort  *Port        // pre-registered main HTTP port, see initMainPort
+	adminPort *Port        // pre-registered admin HTTP port, if any, see initAdminPort
 	grpcPort  *grpcPort    // non-nil when exposing a gRPC port
 	prpc      *prpc.Server // pRPC server implementation exposed on the main port
 
@@ -1117,14 +1117,20 @@ func New(ctx context.Context, opts Options, mods []module.Module) (srv *Server, 
 	// socket yet and will retry after some (usually pretty large) constant
 	// timeout.
 	logging.Infof(srv.Context, "Binding listening ports (%s since init)", clock.Since(ctx, opts.startTime))
-	if err := srv.bindMainPort(); err != nil {
-		return srv, errors.Annotate(err, "failed to bind the main port").Err()
+	listeners := make(map[string]net.Listener, 3)
+	for _, spec := range []struct{ name, addr string }{
+		{"main", srv.Options.HTTPAddr},
+		{"admin", srv.Options.AdminAddr},
+		{"grpc", srv.Options.GRPCAddr},
+	} {
+		if spec.addr != "" && spec.addr != "-" {
+			if listeners[spec.name], err = srv.createListener(spec.name, spec.addr); err != nil {
+				return srv, err
+			}
+		}
 	}
-	if err := srv.bindAdminPort(); err != nil {
-		return srv, errors.Annotate(err, "failed to bind the admin port").Err()
-	}
-	if err := srv.bindGrpcPort(); err != nil {
-		return srv, errors.Annotate(err, "failed to bind the gRPC port").Err()
+	if len(listeners) == 0 {
+		return srv, errors.Reason("at least one listening port should be exposed").Err()
 	}
 
 	// Configure base server subsystems by injecting them into the root context
@@ -1148,12 +1154,17 @@ func New(ctx context.Context, opts Options, mods []module.Module) (srv *Server, 
 	if err := srv.initProfiling(); err != nil {
 		return srv, errors.Annotate(err, "failed to initialize profiling").Err()
 	}
-	if err := srv.initMainRouter(); err != nil {
-		return srv, errors.Annotate(err, "failed to initialize the main router").Err()
+	// Ports depend on tsmon already initialized.
+	if err := srv.initMainPort(listeners["main"]); err != nil {
+		return srv, errors.Annotate(err, "failed to initialize the main port").Err()
 	}
-	if err := srv.initAdminRouter(); err != nil {
-		return srv, errors.Annotate(err, "failed to initialize the admin router").Err()
+	if err := srv.initAdminPort(listeners["admin"]); err != nil {
+		return srv, errors.Annotate(err, "failed to initialize the admin port").Err()
 	}
+	if err := srv.initGrpcPort(listeners["grpc"]); err != nil {
+		return srv, errors.Annotate(err, "failed to initialize the grpc port").Err()
+	}
+	// Warmup depends on ports already initialized.
 	if err := srv.initWarmup(); err != nil {
 		return srv, errors.Annotate(err, "failed to initialize warmup callbacks").Err()
 	}
@@ -1207,9 +1218,14 @@ func New(ctx context.Context, opts Options, mods []module.Module) (srv *Server, 
 // and opts.AdminAddr). The returned Port object can be used to populate the
 // router that serves requests hitting the added port.
 //
-// If opts.ListenAddr is '-', a dummy port will be added: it is a valid *Port
-// object, but it is not actually exposed as a listening TCP socket. This is
-// useful to disable listening ports without changing any code.
+// If opts.ListenAddr is empty or literal '-', a dummy port will be added: it is
+// a valid *Port object, but it is not actually exposed as a listening TCP
+// socket. This is useful to disable listening ports without changing any other
+// code (like the code that populates routes).
+//
+// If opts.Listener is not nil, it will be used instead of a new TCP listener.
+// In that case opts.ListenAddr is completely ignored (even if it is '-' or
+// empty).
 //
 // Must be called before Serve (panics otherwise).
 func (s *Server) AddPort(opts PortOptions) (*Port, error) {
@@ -1226,12 +1242,18 @@ func (s *Server) AddPort(opts PortOptions) (*Port, error) {
 		s.Fatal(errors.Reason("the server has already been started").Err())
 	}
 
-	if opts.ListenAddr != "-" {
+	switch {
+	case opts.Listener != nil:
+		port.listener = opts.Listener
+	case opts.ListenAddr != "" && opts.ListenAddr != "-":
 		var err error
-		if port.listener, err = s.createListener(opts.ListenAddr); err != nil {
-			return nil, errors.Annotate(err, "failed to bind the listening port for %q at %q", opts.Name, opts.ListenAddr).Err()
+		if port.listener, err = s.createListener(opts.Name, opts.ListenAddr); err != nil {
+			return nil, err
 		}
-		// Add to the list of ports that actually have sockets listening.
+	}
+
+	// Add to the list of ports that actually have sockets listening.
+	if port.listener != nil {
 		s.ports = append(s.ports, port)
 	}
 
@@ -1265,10 +1287,14 @@ func (s *Server) VirtualHost(host string) *router.Router {
 }
 
 // createListener creates a TCP listener on the given address.
-func (s *Server) createListener(addr string) (net.Listener, error) {
+func (s *Server) createListener(name, addr string) (net.Listener, error) {
 	// If not running tests, bind the socket as usual.
 	if s.Options.testListeners == nil {
-		return net.Listen("tcp", addr)
+		listener, err := net.Listen("tcp", addr)
+		if err != nil {
+			return nil, errors.Annotate(err, `failed to bind the listening port for %q at %q`, name, addr).Err()
+		}
+		return listener, nil
 	}
 	// In test mode the listener MUST be prepared already.
 	l := s.Options.testListeners[addr]
@@ -2894,46 +2920,16 @@ func (s *Server) getServiceID() string {
 	return serviceID
 }
 
-// bindMainPort binds the port listening on options.HTTPAddr.
-func (s *Server) bindMainPort() error {
+// initMainPort initializes the main port HTTP routes.
+func (s *Server) initMainPort(listener net.Listener) error {
 	var err error
 	s.mainPort, err = s.AddPort(PortOptions{
-		Name:       "main",
-		ListenAddr: s.Options.HTTPAddr,
+		Name:     "main",
+		Listener: listener,
 	})
-	return err
-}
-
-// bindAdminPort binds the port listening on options.AdminAddr.
-func (s *Server) bindAdminPort() error {
-	if s.Options.AdminAddr == "-" {
-		return nil // the admin port is disabled
-	}
-	var err error
-	s.adminPort, err = s.AddPort(PortOptions{
-		Name:           "admin",
-		ListenAddr:     s.Options.AdminAddr,
-		DisableMetrics: true, // do not pollute HTTP metrics with admin-only routes
-	})
-	return err
-}
-
-// bindGrpcPort binds the port listening on Options.GRPCAddr.
-func (s *Server) bindGrpcPort() error {
-	if s.Options.GRPCAddr == "" || s.Options.GRPCAddr == "-" {
-		return nil // the gRPC port is disabled
-	}
-	listener, err := s.createListener(s.Options.GRPCAddr)
 	if err != nil {
-		return errors.Annotate(err, `failed to bind the listening port for "grpc" at %q`, s.Options.GRPCAddr).Err()
+		return err
 	}
-	s.grpcPort = &grpcPort{listener: listener}
-	s.ports = append(s.ports, s.grpcPort)
-	return nil
-}
-
-// initMainRouter initializes main port HTTP routes.
-func (s *Server) initMainRouter() error {
 	s.Routes = s.mainPort.Routes
 
 	// Install auth info handlers (under "/auth/api/v1/server/").
@@ -2953,10 +2949,16 @@ func (s *Server) initMainRouter() error {
 	return nil
 }
 
-// initAdminRouter initializes the admin port HTTP routes.
-func (s *Server) initAdminRouter() error {
-	if s.Options.AdminAddr == "-" {
-		return nil // the admin port is disabled
+// initAdminPort initializes the admin port HTTP routes.
+func (s *Server) initAdminPort(listener net.Listener) error {
+	var err error
+	s.adminPort, err = s.AddPort(PortOptions{
+		Name:           "admin",
+		Listener:       listener,
+		DisableMetrics: true, // do not pollute HTTP metrics with admin-only routes
+	})
+	if err != nil {
+		return err
 	}
 
 	routes := s.adminPort.Routes
@@ -3003,6 +3005,16 @@ func (s *Server) initAdminRouter() error {
 			pprof.Index(c.Writer, c.Request)
 		}
 	})
+	return nil
+}
+
+// initGrpcPort initializes the port listening on Options.GRPCAddr.
+func (s *Server) initGrpcPort(listener net.Listener) error {
+	if listener == nil {
+		return nil // the gRPC port is disabled
+	}
+	s.grpcPort = &grpcPort{listener: listener}
+	s.ports = append(s.ports, s.grpcPort)
 	return nil
 }
 

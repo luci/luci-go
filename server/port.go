@@ -33,9 +33,10 @@ import (
 //
 // See Server's AddPort.
 type PortOptions struct {
-	Name           string // optional logical name of the port for logs
-	ListenAddr     string // local address to bind to or "-" for a dummy port
-	DisableMetrics bool   // do not collect HTTP metrics for requests on this port
+	Name           string       // optional logical name of the port for logs
+	ListenAddr     string       // local address to bind to or "-" for a dummy port
+	Listener       net.Listener // already bound listener to use instead of ListenAddr (optional)
+	DisableMetrics bool         // do not collect HTTP metrics for requests on this port
 }
 
 // Port is returned by Server's AddPort and used to setup the request routing.
