@@ -303,6 +303,42 @@ func TestHasAccess(t *testing.T) {
 				assert.That(t, allowed, should.BeTrue)
 			})
 		})
+
+		t.Run("has query trees permission", func(t *ftt.Test) {
+			t.Run("default acls, denied", func(t *ftt.Test) {
+				allowed, message, err := HasQueryTreesPermission(ctx, "chromium")
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, allowed, should.BeFalse)
+				assert.That(t, message, should.Equal("user is not a member of group \"luci-tree-status-access\""))
+			})
+
+			t.Run("default acls, allowed", func(t *ftt.Test) {
+				ctx = FakeAuth().WithReadAccess().SetInContext(ctx)
+				allowed, _, err := HasQueryTreesPermission(ctx, "chromium")
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, allowed, should.BeTrue)
+			})
+
+			t.Run("realm-based acls, denied", func(t *ftt.Test) {
+				testConfig.Trees[0].UseDefaultAcls = false
+				err := config.SetConfig(ctx, testConfig)
+				assert.Loosely(t, err, should.BeNil)
+				allowed, message, err := HasQueryTreesPermission(ctx, "chromium")
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, allowed, should.BeFalse)
+				assert.That(t, message, should.Equal("user does not have permission to perform this action"))
+			})
+
+			t.Run("realm-based acls, allowed", func(t *ftt.Test) {
+				testConfig.Trees[0].UseDefaultAcls = false
+				err := config.SetConfig(ctx, testConfig)
+				assert.Loosely(t, err, should.BeNil)
+				ctx = FakeAuth().WithPermissionInRealm(PermListTree, "chromium:@project").SetInContext(ctx)
+				allowed, _, err := HasQueryTreesPermission(ctx, "chromium")
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, allowed, should.BeTrue)
+			})
+		})
 	})
 
 }

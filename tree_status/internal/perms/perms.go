@@ -39,4 +39,7 @@ var (
 
 	// PermCreateStatus allows users to create status.
 	PermCreateStatus = realms.RegisterPermission("treestatus.status.create")
+
+	// PermListTree allows users to list trees.
+	PermListTree = realms.RegisterPermission("treestatus.trees.list")
 )

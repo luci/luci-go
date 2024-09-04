@@ -114,15 +114,15 @@ type GetStatusRequest struct {
 	// The status value to get.
 	//
 	// You can use 'latest' as the id to get the latest status for a tree,
-	// i.e. set the name to 'trees/{tree}/status/latest'.
+	// i.e. set the name to 'trees/{tree_id}/status/latest'.
 	//
 	// If you request the 'latest' status and no status updates are in the
 	// database (possibly due to the 140 day TTL), a fallback status will
 	// be returned with general_state OPEN.  You can tell that the fallback
 	// status was returned by checking the name which will be
-	// 'trees/{tree}/status/fallback', which is otherwise not a valid name.
+	// 'trees/{tree_id}/status/fallback', which is otherwise not a valid name.
 	//
-	// Format: trees/{tree}/status/{id}
+	// Format: trees/{tree_id}/status/{status_id}
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 }
 
@@ -172,7 +172,7 @@ type Status struct {
 	unknownFields protoimpl.UnknownFields
 
 	// The name of this status.
-	// Format: trees/{tree}/status/{id}
+	// Format: trees/{tree_id}/status/{status_id}
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// The general state of the tree.  Possible values are open, closed, throttled
 	// and maintenance.
@@ -281,7 +281,7 @@ type ListStatusRequest struct {
 	unknownFields protoimpl.UnknownFields
 
 	// The parent tree which the status values belongs to.
-	// Format: trees/{tree}/status
+	// Format: trees/{tree_id}/status
 	Parent string `protobuf:"bytes,1,opt,name=parent,proto3" json:"parent,omitempty"`
 	// The maximum number of status values to return. The service may return fewer
 	// than this value. If unspecified, at most 50 status values will be returned.
@@ -412,7 +412,7 @@ type CreateStatusRequest struct {
 	unknownFields protoimpl.UnknownFields
 
 	// The parent tree which the status values belongs to.
-	// Format: trees/{tree}/status
+	// Format: trees/{tree_id}/status
 	Parent string `protobuf:"bytes,1,opt,name=parent,proto3" json:"parent,omitempty"`
 	// The status to create.
 	// Only the general state and message fields can be provided, the current date

@@ -70,6 +70,13 @@ func HasCreateStatusPermission(ctx context.Context, treeName string) (allowed bo
 	return hasAccess(ctx, treeName, treeStatusWriteAccessGroup, PermCreateStatus)
 }
 
+// HasQueryTreesPermission returns if the user can query trees.
+// If the user has no permission, an error message will also be returned.
+// err will be returned if there is some error during the ACL check.
+func HasQueryTreesPermission(ctx context.Context, treeName string) (allowed bool, message string, err error) {
+	return hasAccess(ctx, treeName, treeStatusAccessGroup, PermListTree)
+}
+
 // hasAccess checks if the user has access to a tree.
 // If the tree uses default ACLs, the access will be checked against the go/cria group.
 // Otherwise, the permission will be check against the @project realm of the primary project.

@@ -706,85 +706,87 @@ func TestStatus(t *testing.T) {
 				assert.Loosely(t, response1.Status[0], should.Match(toStatusProto(latest, true)))
 				assert.Loosely(t, response2.Status[0], should.Match(toStatusProto(earliest, true)))
 			})
-		})
-		t.Run("Realm-based ACLs list", func(t *ftt.Test) {
-			testConfig.Trees[0].UseDefaultAcls = false
-			err := config.SetConfig(ctx, testConfig)
-			assert.Loosely(t, err, should.BeNil)
 
-			ctx = perms.FakeAuth().WithPermissionInRealm(perms.PermListStatusLimited, "chromium:@project").WithPermissionInRealm(perms.PermListStatus, "chromium:@project").WithAuditAccess().SetInContext(ctx)
-			earliest := NewStatusBuilder().WithMessage("earliest").CreateInDB(ctx)
-			latest := NewStatusBuilder().WithMessage("latest").CreateInDB(ctx)
+			t.Run("Realm-based ACLs list", func(t *ftt.Test) {
+				testConfig.Trees[0].UseDefaultAcls = false
+				err := config.SetConfig(ctx, testConfig)
+				assert.Loosely(t, err, should.BeNil)
 
-			request := &pb.ListStatusRequest{
-				Parent:   "trees/chromium/status",
-				PageSize: 2,
-			}
-			response, err := server.ListStatus(ctx, request)
+				ctx = perms.FakeAuth().WithPermissionInRealm(perms.PermListStatusLimited, "chromium:@project").WithPermissionInRealm(perms.PermListStatus, "chromium:@project").WithAuditAccess().SetInContext(ctx)
+				earliest := NewStatusBuilder().WithMessage("earliest").CreateInDB(ctx)
+				latest := NewStatusBuilder().WithMessage("latest").CreateInDB(ctx)
 
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, response.NextPageToken, should.BeEmpty)
-			assert.Loosely(t, response, should.Match(&pb.ListStatusResponse{
-				Status: []*pb.Status{
-					toStatusProto(latest, true),
-					toStatusProto(earliest, true),
-				},
-			}))
-		})
-		t.Run("Default ACLs list with no audit access hides usernames", func(t *ftt.Test) {
-			ctx = perms.FakeAuth().WithReadAccess().SetInContext(ctx)
-			expected := toStatusProto(NewStatusBuilder().CreateInDB(ctx), true)
-			expected.CreateUser = ""
+				request := &pb.ListStatusRequest{
+					Parent:   "trees/chromium/status",
+					PageSize: 2,
+				}
+				response, err := server.ListStatus(ctx, request)
 
-			request := &pb.ListStatusRequest{
-				Parent: "trees/chromium/status",
-			}
-			response, err := server.ListStatus(ctx, request)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, response.NextPageToken, should.BeEmpty)
+				assert.Loosely(t, response, should.Match(&pb.ListStatusResponse{
+					Status: []*pb.Status{
+						toStatusProto(latest, true),
+						toStatusProto(earliest, true),
+					},
+				}))
+			})
 
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, response, should.Match(&pb.ListStatusResponse{
-				Status: []*pb.Status{expected},
-			}))
-		})
+			t.Run("Default ACLs list with no audit access hides usernames", func(t *ftt.Test) {
+				ctx = perms.FakeAuth().WithReadAccess().SetInContext(ctx)
+				expected := toStatusProto(NewStatusBuilder().CreateInDB(ctx), true)
+				expected.CreateUser = ""
 
-		t.Run("Realm-based ACLs list with PermListStatusLimited hides usernames", func(t *ftt.Test) {
-			testConfig.Trees[0].UseDefaultAcls = false
-			err := config.SetConfig(ctx, testConfig)
-			assert.Loosely(t, err, should.BeNil)
+				request := &pb.ListStatusRequest{
+					Parent: "trees/chromium/status",
+				}
+				response, err := server.ListStatus(ctx, request)
 
-			ctx = perms.FakeAuth().WithPermissionInRealm(perms.PermListStatusLimited, "chromium:@project").SetInContext(ctx)
-			expected := toStatusProto(NewStatusBuilder().CreateInDB(ctx), true)
-			expected.CreateUser = ""
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, response, should.Match(&pb.ListStatusResponse{
+					Status: []*pb.Status{expected},
+				}))
+			})
 
-			request := &pb.ListStatusRequest{
-				Parent: "trees/chromium/status",
-			}
-			response, err := server.ListStatus(ctx, request)
+			t.Run("Realm-based ACLs list with PermListStatusLimited hides usernames", func(t *ftt.Test) {
+				testConfig.Trees[0].UseDefaultAcls = false
+				err := config.SetConfig(ctx, testConfig)
+				assert.Loosely(t, err, should.BeNil)
 
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, response, should.Match(&pb.ListStatusResponse{
-				Status: []*pb.Status{expected},
-			}))
-		})
+				ctx = perms.FakeAuth().WithPermissionInRealm(perms.PermListStatusLimited, "chromium:@project").SetInContext(ctx)
+				expected := toStatusProto(NewStatusBuilder().CreateInDB(ctx), true)
+				expected.CreateUser = ""
 
-		t.Run("Realm-based ACLs list with no audit access hides usernames", func(t *ftt.Test) {
-			testConfig.Trees[0].UseDefaultAcls = false
-			err := config.SetConfig(ctx, testConfig)
-			assert.Loosely(t, err, should.BeNil)
+				request := &pb.ListStatusRequest{
+					Parent: "trees/chromium/status",
+				}
+				response, err := server.ListStatus(ctx, request)
 
-			ctx = perms.FakeAuth().WithPermissionInRealm(perms.PermListStatusLimited, "chromium:@project").WithPermissionInRealm(perms.PermListStatus, "chromium:@project").SetInContext(ctx)
-			expected := toStatusProto(NewStatusBuilder().CreateInDB(ctx), true)
-			expected.CreateUser = ""
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, response, should.Match(&pb.ListStatusResponse{
+					Status: []*pb.Status{expected},
+				}))
+			})
 
-			request := &pb.ListStatusRequest{
-				Parent: "trees/chromium/status",
-			}
-			response, err := server.ListStatus(ctx, request)
+			t.Run("Realm-based ACLs list with no audit access hides usernames", func(t *ftt.Test) {
+				testConfig.Trees[0].UseDefaultAcls = false
+				err := config.SetConfig(ctx, testConfig)
+				assert.Loosely(t, err, should.BeNil)
 
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, response, should.Match(&pb.ListStatusResponse{
-				Status: []*pb.Status{expected},
-			}))
+				ctx = perms.FakeAuth().WithPermissionInRealm(perms.PermListStatusLimited, "chromium:@project").WithPermissionInRealm(perms.PermListStatus, "chromium:@project").SetInContext(ctx)
+				expected := toStatusProto(NewStatusBuilder().CreateInDB(ctx), true)
+				expected.CreateUser = ""
+
+				request := &pb.ListStatusRequest{
+					Parent: "trees/chromium/status",
+				}
+				response, err := server.ListStatus(ctx, request)
+
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, response, should.Match(&pb.ListStatusResponse{
+					Status: []*pb.Status{expected},
+				}))
+			})
 		})
 	})
 

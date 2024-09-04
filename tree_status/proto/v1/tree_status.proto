@@ -37,15 +37,15 @@ message GetStatusRequest {
   // The status value to get.
   //
   // You can use 'latest' as the id to get the latest status for a tree,
-  // i.e. set the name to 'trees/{tree}/status/latest'.
+  // i.e. set the name to 'trees/{tree_id}/status/latest'.
   //
   // If you request the 'latest' status and no status updates are in the
   // database (possibly due to the 140 day TTL), a fallback status will
   // be returned with general_state OPEN.  You can tell that the fallback
   // status was returned by checking the name which will be
-  // 'trees/{tree}/status/fallback', which is otherwise not a valid name.
+  // 'trees/{tree_id}/status/fallback', which is otherwise not a valid name.
   //
-  // Format: trees/{tree}/status/{id}
+  // Format: trees/{tree_id}/status/{status_id}
   string name = 1;
 }
 
@@ -70,7 +70,7 @@ enum GeneralState {
 // The Status of a tree for an interval of time.
 message Status {
   // The name of this status.
-  // Format: trees/{tree}/status/{id}
+  // Format: trees/{tree_id}/status/{status_id}
   string name = 1 [
     (google.api.field_behavior) = OUTPUT_ONLY,
     (google.api.field_behavior) = IMMUTABLE
@@ -106,7 +106,7 @@ message Status {
 
 message ListStatusRequest {
   // The parent tree which the status values belongs to.
-  // Format: trees/{tree}/status
+  // Format: trees/{tree_id}/status
   string parent = 1;
 
   // The maximum number of status values to return. The service may return fewer
@@ -133,7 +133,7 @@ message ListStatusResponse {
 
 message CreateStatusRequest {
   // The parent tree which the status values belongs to.
-  // Format: trees/{tree}/status
+  // Format: trees/{tree_id}/status
   string parent = 1;
 
   // The status to create.

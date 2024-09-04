@@ -17,4 +17,5 @@ package v1
 
 //go:generate cproto
 //go:generate svcdec -type TreeStatusServer
+//go:generate svcdec -type TreesServer
 //go:generate mockgen -source tree_status.pb.go -destination tree_status.mock.pb.go -package v1 -write_package_comment=false
