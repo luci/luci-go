@@ -15,5 +15,5 @@ install-spanner-emulator:
 test:
 	INTEGRATION_TESTS=1 go test -race ./...
 
-deploy:
-	$(GAE_PY) upload -A luci-source-index-dev -f
+up-dev:
+	$(GAE_PY) upload -A luci-source-index-dev -f --host-scheme=VERSION.staging.sourceindex.api.luci.app
