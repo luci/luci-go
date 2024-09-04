@@ -76,10 +76,10 @@ export function AlertTabs() {
   }
 
   return (
-    <TabContext value={selectedTab}>
+    <TabContext value={selectedTab || DEFAULT_ALERT_TAB}>
       <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
         <Tabs
-          value={selectedTab}
+          value={selectedTab || DEFAULT_ALERT_TAB}
           onChange={handleTabChange}
           aria-label="Alerts tabs"
         >
