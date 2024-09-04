@@ -123,6 +123,20 @@ func handleCommitIngestionBackfill(ctx context.Context, payload proto.Message) e
 	}, true)
 }
 
+const (
+	// firstTaskPageSize is the page size used for the first commit ingestion task
+	// (a commit ingestion task with empty page token).
+	//
+	// Use a smaller page size for the first page to reduce the amount of
+	// commits we need to query from Gitiles. Typically,
+	// * only a few commits need to be ingested if the task was scheduled by
+	//   the gitiles pubsub handler.
+	// * on most refs, no commit need to be ingested if the task was scheduled
+	//   by the sync-commits cron job.
+	firstTaskPageSize   = 100
+	regularTaskPageSize = 1000
+)
+
 func processCommitIngestionTask(ctx context.Context, task *taskspb.IngestCommits, isBackfill bool) error {
 	ctx = logging.SetField(ctx, "host", task.Host)
 	ctx = logging.SetField(ctx, "repository", task.Repository)
@@ -135,19 +149,27 @@ func processCommitIngestionTask(ctx context.Context, task *taskspb.IngestCommits
 	if err != nil {
 		return errors.Annotate(err, "initialize a Gitiles client").Err()
 	}
+
+	var pageSize int32 = regularTaskPageSize
+	if task.PageToken == "" {
+		pageSize = firstTaskPageSize
+	}
 	req := &gitilespb.LogRequest{
 		Project:    task.Repository,
 		Committish: task.Commitish,
 		PageToken:  task.PageToken,
-		PageSize:   1000,
+		PageSize:   pageSize,
 	}
 	res, err := client.Log(ctx, req)
 	if err != nil {
 		return errors.Annotate(grpcutil.WrapIfTransient(err), "query Gitiles logs").Err()
 	}
 
+	shouldIngestNextPage := res.NextPageToken != ""
+
 	// If the first commit has already been ingested, all of its ancestor commits
-	// should've been (or scheduled to be) ingested. Stop ingesting.
+	// should've been (or scheduled to be) ingested. Stop ingesting.  This is
+	// likely to happen when we are syncing the start of a ref.
 	//
 	// N.B. we cannot use `task.Commitish` to check the existence of the commit.
 	// `task.Commitish` may not be a hash. And the first commit may not be the
@@ -159,22 +181,34 @@ func processCommitIngestionTask(ctx context.Context, task *taskspb.IngestCommits
 		}
 
 		// Keep the Exists check outside of the transaction to write the commits so
-		// 1. the transaction to write commits are blind writes; and
-		// 2. checking the existence of a commit only requires a read transaction.
-		//    After the initial ingestion, we expect half of the tasks to be
-		//	  ignored. Only the first ingestion task kicked of by a pubsub event
-		//    result in an update. All the subsequent tasks will likely be ignored;
-		//    and
-		// 3. the Commits table only contain derived data (other than update
-		//    timestamp). It's OK to overwrite the rows.
+		// the transaction to write commits are blind writes.
+		// The Commits table only contain derived data (other than the update
+		// timestamp). It's OK to overwrite the rows.
 		exists, err := commit.Exists(span.Single(ctx), key)
 		if err != nil {
-			return errors.Annotate(err, "check whether the commit was already ingested").Err()
+			return errors.Annotate(err, "check whether the first commit in the page was already ingested").Err()
 		}
 		if exists {
 			logging.Infof(ctx, "commit %q is already ingested; stop ingesting", res.Log[0].Id)
 			return nil
 		}
+	}
+
+	// If the last commit has already been ingested, all of its ancestor commits
+	// should've been (or scheduled to be) ingested. We do not need to schedule
+	// a continuation task.
+	if len(res.Log) > 0 && shouldIngestNextPage {
+		key, err := commit.NewKey(task.Host, task.Repository, res.Log[len(res.Log)-1].Id)
+		if err != nil {
+			return errors.Annotate(err, "construct commit key for the last commit in the page").Err()
+		}
+		// Keep the Exists check outside of the transaction to write the commits so
+		// the transaction to write commits are blind writes.
+		exists, err := commit.Exists(span.Single(ctx), key)
+		if err != nil {
+			return errors.Annotate(err, "check whether the last commit in the page was already ingested").Err()
+		}
+		shouldIngestNextPage = !exists
 	}
 
 	// Prepare commits to write to the database.
@@ -197,7 +231,7 @@ func processCommitIngestionTask(ctx context.Context, task *taskspb.IngestCommits
 
 	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 		span.BufferWrite(ctx, commitsToSave...)
-		if res.NextPageToken != "" {
+		if shouldIngestNextPage {
 			scheduleCommitIngestion(
 				ctx,
 				&taskspb.IngestCommits{
