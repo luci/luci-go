@@ -60,6 +60,10 @@ export function RegressionDetails({
       }),
     ),
     select: (data) => data.changepoints as readonly OutputChangepoint[],
+    // Refetching causes the group to be updated and the page to flash.
+    // Given that the grouping is not precise in the first place. Disable
+    // refetch on window focus.
+    refetchOnWindowFocus: false,
   });
 
   if (isError) {
