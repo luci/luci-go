@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/pubsub"
+	"go.chromium.org/luci/server/redisconn"
 	spanmodule "go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
 
@@ -46,6 +47,7 @@ func Main(init func(srv *luciserver.Server) error) {
 		cron.NewModuleFromFlags(),
 		gaeemulation.NewModuleFromFlags(), // Needed by cfgmodule.
 		pubsub.NewModuleFromFlags(),
+		redisconn.NewModuleFromFlags(), // Enables global cache.
 		spanmodule.NewModuleFromFlags(nil),
 		tq.NewModuleFromFlags(),
 	}
