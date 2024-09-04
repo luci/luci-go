@@ -16,6 +16,7 @@ package internal
 
 import (
 	"context"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -66,8 +67,16 @@ func Submit(ctx context.Context, s Submitter, payload *reminder.Payload, path Tx
 	code := status.Code(err)
 	dur := clock.Now(ctx).Sub(start)
 
-	metrics.SubmitCount.Add(ctx, 1, payload.TaskClass, string(path), code.String())
-	metrics.SubmitDurationMS.Add(ctx, float64(dur.Milliseconds()), payload.TaskClass, string(path), code.String())
+	// Get the short queue name (omit the project and the region).
+	var queue string
+	if tr := payload.CreateTaskRequest; tr != nil && tr.Parent != "" {
+		queue = tr.Parent[strings.LastIndex(tr.Parent, "/")+1:]
+	}
+
+	metrics.SubmitCount.Add(ctx, 1,
+		payload.TaskClass, queue, string(path), code.String())
+	metrics.SubmitDurationMS.Add(ctx, float64(dur.Milliseconds()),
+		payload.TaskClass, queue, string(path), code.String())
 
 	switch code {
 	case codes.OK, codes.AlreadyExists:

@@ -221,7 +221,7 @@ type TaskClass struct {
 	// It is used to decide how to deserialize and route the task. Changing IDs of
 	// existing task classes is a disruptive operation, make sure the queue is
 	// drained first. The dispatcher will reject Cloud Tasks with unrecognized
-	// class IDs with HTTP 404 error (casing Cloud Tasks to retry them later).
+	// class IDs with HTTP 404 error (causing Cloud Tasks to retry them later).
 	//
 	// Required.
 	ID string
@@ -462,6 +462,11 @@ type ExecutionInfo struct {
 	// For Cloud Task, it is `X-CloudTasks-TaskName`.
 	// For PubSub, it is `messageID`.
 	TaskID string
+
+	// Queue is the name of the Cloud Tasks queue that delivered the task.
+	//
+	// Empty for PubSub tasks.
+	Queue string
 
 	taskRetryReason       string    // X-CloudTasks-TaskRetryReason
 	taskPreviousResponse  string    // X-CloudTasks-TaskPreviousResponse
@@ -736,7 +741,7 @@ func (d *Dispatcher) InstallTasksRoutes(r *router.Router, prefix string) {
 			header = "X-Appengine-Queuename"
 		}
 		mw = srvinternal.CloudAuthMiddleware(pushers, header, func(c *router.Context) {
-			metrics.ServerRejectedCount.Add(c.Request.Context(), 1, "auth")
+			metrics.ServerRejectedCount.Add(c.Request.Context(), 1, "", "auth")
 		})
 	}
 
@@ -1157,7 +1162,7 @@ func (d *Dispatcher) handlePush(ctx context.Context, body []byte, info Execution
 	// See taskClassImpl.serialize().
 	env := envelope{}
 	if err := json.Unmarshal(body, &env); err != nil {
-		metrics.ServerRejectedCount.Add(ctx, 1, "bad_request")
+		metrics.ServerRejectedCount.Add(ctx, 1, info.Queue, "bad_request")
 		return errors.Annotate(err, "not a valid JSON body").Tag(httpStatus400).Err()
 	}
 
@@ -1175,7 +1180,7 @@ func (d *Dispatcher) handlePush(ctx context.Context, body []byte, info Execution
 	}
 	if err != nil {
 		logging.Debugf(ctx, "TQ: %s", body)
-		metrics.ServerRejectedCount.Add(ctx, 1, "unknown_class")
+		metrics.ServerRejectedCount.Add(ctx, 1, info.Queue, "unknown_class")
 		return err
 	}
 
@@ -1193,13 +1198,13 @@ func (d *Dispatcher) handlePush(ctx context.Context, body []byte, info Execution
 	}
 
 	if h == nil {
-		metrics.ServerRejectedCount.Add(ctx, 1, "no_handler")
+		metrics.ServerRejectedCount.Add(ctx, 1, info.Queue, "no_handler")
 		return errors.Reason("task class %q exists, but has no handler attached", cls.ID).Tag(httpStatus404).Err()
 	}
 
 	msg, err := cls.deserialize(&env)
 	if err != nil {
-		metrics.ServerRejectedCount.Add(ctx, 1, "bad_payload")
+		metrics.ServerRejectedCount.Add(ctx, 1, info.Queue, "bad_payload")
 		return errors.Annotate(err, "malformed body of task class %q", cls.ID).Tag(httpStatus400).Err()
 	}
 
@@ -1229,14 +1234,14 @@ func (d *Dispatcher) handlePush(ctx context.Context, body []byte, info Execution
 		retry = metrics.MaxRetryFieldValue
 	}
 
-	metrics.ServerHandledCount.Add(ctx, 1, cls.ID, result, retry)
-	metrics.ServerDurationMS.Add(ctx, float64(dur.Milliseconds()), cls.ID, result)
+	metrics.ServerHandledCount.Add(ctx, 1, cls.ID, info.Queue, result, retry)
+	metrics.ServerDurationMS.Add(ctx, float64(dur.Milliseconds()), cls.ID, info.Queue, result)
 	if !info.expectedETA.IsZero() {
 		latency := clock.Since(ctx, info.expectedETA).Milliseconds()
 		if latency < 0 {
 			latency = 0
 		}
-		metrics.ServerTaskLatency.Add(ctx, float64(latency), cls.ID, result, retry)
+		metrics.ServerTaskLatency.Add(ctx, float64(latency), cls.ID, info.Queue, result, retry)
 	}
 
 	if err != nil && cls.QuietOnError {
@@ -1423,6 +1428,7 @@ func parseHeaders(h http.Header) ExecutionInfo {
 	return ExecutionInfo{
 		ExecutionCount:        int(execCount),
 		TaskID:                magicHeader("TaskName"),
+		Queue:                 magicHeader("QueueName"),
 		taskRetryReason:       magicHeader("TaskRetryReason"),
 		taskPreviousResponse:  magicHeader("TaskPreviousResponse"),
 		submitterTraceContext: h.Get(TraceContextHeader),

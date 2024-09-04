@@ -414,18 +414,19 @@ func TestPushHandler(t *testing.T) {
 				}
 
 				callWithHeaders(map[string]string{
+					"X-CloudTasks-QueueName":          "some-q",
 					"X-CloudTasks-TaskExecutionCount": "500",
 					"X-CloudTasks-TaskName":           "task-without-eta",
 					TraceContextHeader:                "zzz",
 				})
 
-				So(metric(metrics.ServerHandledCount, "test-1", "OK", metrics.MaxRetryFieldValue), ShouldEqual, 1)
+				So(metric(metrics.ServerHandledCount, "test-1", "some-q", "OK", metrics.MaxRetryFieldValue), ShouldEqual, 1)
 
-				durCount, durSum := metricDist(metrics.ServerDurationMS, "test-1", "OK")
+				durCount, durSum := metricDist(metrics.ServerDurationMS, "test-1", "some-q", "OK")
 				So(durCount, ShouldEqual, 1)
 				So(durSum, ShouldEqual, float64(fakeDelayMS))
 
-				latCount, _ := metricDist(metrics.ServerTaskLatency, "test-1", "OK", metrics.MaxRetryFieldValue)
+				latCount, _ := metricDist(metrics.ServerTaskLatency, "test-1", "some-q", "OK", metrics.MaxRetryFieldValue)
 				So(latCount, ShouldEqual, 0)
 			})
 
@@ -442,12 +443,13 @@ func TestPushHandler(t *testing.T) {
 				}
 
 				callWithHeaders(map[string]string{
+					"X-CloudTasks-QueueName":          "some-q",
 					"X-CloudTasks-TaskExecutionCount": "5",
 					"X-CloudTasks-TaskName":           "task-with-eta",
 					ExpectedETAHeader:                 "1442540050.000001",
 				})
 
-				latCount, latSum := metricDist(metrics.ServerTaskLatency, "test-1", "OK", 5)
+				latCount, latSum := metricDist(metrics.ServerTaskLatency, "test-1", "some-q", "OK", 5)
 				So(latCount, ShouldEqual, 1)
 				So(latSum, ShouldEqual, float64(now.Sub(etaValue).Milliseconds()+fakeDelayMS))
 			})

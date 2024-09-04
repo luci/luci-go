@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package metrics contains definition of metrics exposed by server/tq.
 package metrics
 
 import (
@@ -105,6 +106,7 @@ var (
 		"Count of submitted tasks",
 		nil,
 		field.String("task_class"), // matches TaskClass.ID
+		field.String("queue"),      // the task queue submitted into (short form)
 		field.String("txn_path"),   // none | happy | sweep
 		field.String("grpc_code"),  // gRPC canonical code
 	)
@@ -115,6 +117,7 @@ var (
 		&types.MetricMetadata{Units: types.Milliseconds},
 		distribution.DefaultBucketer,
 		field.String("task_class"), // matches TaskClass.ID
+		field.String("queue"),      // the task queue submitted into (short form)
 		field.String("txn_path"),   // none | happy | sweep
 		field.String("grpc_code"),  // gRPC canonical code
 	)
@@ -123,6 +126,7 @@ var (
 		"tq/server/rejected",
 		"Count of rejected (e.g. malformed) task pushes",
 		nil,
+		field.String("queue"),  // the task queue that delivered the task or "" if unknown
 		field.String("reason"), // auth | bad_request | unknown_class | no_handler | bad_payload
 	)
 
@@ -131,6 +135,7 @@ var (
 		"Count of handled non-rejected tasks",
 		nil,
 		field.String("task_class"), // matches TaskClass.ID
+		field.String("queue"),      // the task queue that delivered the task
 		field.String("result"),     // OK | retry | transient | fatal
 		field.Int("retry"),         // 0 for first try, incrementing until cap.
 	)
@@ -141,6 +146,7 @@ var (
 		&types.MetricMetadata{Units: types.Milliseconds},
 		distribution.DefaultBucketer,
 		field.String("task_class"), // matches TaskClass.ID
+		field.String("queue"),      // the task queue that delivered the task
 		field.String("result"),     // OK | retry | transient | fatal
 	)
 
@@ -150,6 +156,7 @@ var (
 		&types.MetricMetadata{Units: types.Milliseconds},
 		distribution.DefaultBucketer,
 		field.String("task_class"), // matches TaskClass.ID
+		field.String("queue"),      // the task queue that delivered the task
 		field.String("result"),     // OK | retry | transient | fatal
 		field.Int("retry"),         // 0 for first try, incrementing until cap.
 	)
