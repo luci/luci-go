@@ -13,5 +13,5 @@
 // limitations under the License.
 
 export function generateAnalysisUrl(bbid: string) {
-  return `https://${SETTINGS.luciBisection.host}/analysis/b/${bbid}`;
+  return `/ui/p/chromium/bisection/compile-analysis/b/${bbid}`;
 }
