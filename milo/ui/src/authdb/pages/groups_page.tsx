@@ -17,9 +17,11 @@ import Grid from '@mui/material/Grid';
 import { GroupsList } from '@/authdb/components/groups_list';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 
+import { drawerWidth } from '@/common/layouts/constants';
+
 export function GroupsPage() {
   return (
-    <Grid container sx={{p: 0}}>
+    <Grid container sx={{p: 0}} style={{maxWidth: `calc(100vw - ${drawerWidth}px - 20px)`}}>
       <Grid item xs={12}>
         <GroupsList />
       </Grid>
