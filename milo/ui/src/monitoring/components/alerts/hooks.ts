@@ -18,6 +18,8 @@ import {
 } from '@/generic_libs/hooks/synced_search_params';
 
 const ALERT_FILTER_PARAM = 'q';
+const SELECTED_TAB_PARAM = 'alerts_tab';
+export const DEFAULT_ALERT_TAB = 'untriaged';
 
 export function useFilterQuery(defaultValue?: string) {
   const [searchParams, setURLSearchParams] = useSyncedSearchParams();
@@ -30,6 +32,16 @@ export function useFilterQuery(defaultValue?: string) {
       } else {
         setURLSearchParams(searchParamUpdater(ALERT_FILTER_PARAM, value));
       }
+    },
+  ] as [string, (val: string) => void];
+}
+
+export function useSelectedTab() {
+  const [searchParams, setURLSearchParams] = useSyncedSearchParams();
+  return [
+    searchParams.get(SELECTED_TAB_PARAM),
+    (value: string) => {
+      setURLSearchParams(searchParamUpdater(SELECTED_TAB_PARAM, value));
     },
   ] as [string, (val: string) => void];
 }

@@ -21,10 +21,23 @@ import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider
 
 import { Alerts } from './alerts';
 
+const hotlistBug: Bug = {
+  summary: 'Hotlist Bug',
+  labels: [],
+  link: 'https://b/1234',
+  number: '1234',
+  priority: 1,
+  status: 'Fixed',
+};
+
 describe('<Alerts />', () => {
   it('displays filter and alert groups', async () => {
     render(
-      <FakeContextProvider>
+      <FakeContextProvider
+        routerOptions={{
+          initialEntries: ['/?alerts_tab=untriaged'],
+        }}
+      >
         <MonitoringCtxForTest.Provider
           value={{
             alerts: [],
@@ -45,7 +58,11 @@ describe('<Alerts />', () => {
 
   it('displays no bugs mesage', async () => {
     render(
-      <FakeContextProvider>
+      <FakeContextProvider
+        routerOptions={{
+          initialEntries: ['/?alerts_tab=bugs'],
+        }}
+      >
         <MonitoringCtxForTest.Provider
           value={{
             alerts: [],
@@ -64,7 +81,11 @@ describe('<Alerts />', () => {
 
   it('displays a group for a bug in the hotlist when there are no alerts', async () => {
     render(
-      <FakeContextProvider>
+      <FakeContextProvider
+        routerOptions={{
+          initialEntries: ['/?alerts_tab=bugs'],
+        }}
+      >
         <MonitoringCtxForTest.Provider
           value={{
             alerts: [],
@@ -83,7 +104,7 @@ describe('<Alerts />', () => {
     render(
       <FakeContextProvider
         routerOptions={{
-          initialEntries: ['/?q=linux-rel'],
+          initialEntries: ['/?q=linux-rel&alerts_tab=untriaged'],
         }}
         mountedPath="/"
       >
@@ -101,12 +122,3 @@ describe('<Alerts />', () => {
     expect(screen.getByRole('searchbox')).toHaveValue('linux-rel');
   });
 });
-
-const hotlistBug: Bug = {
-  summary: 'Hotlist Bug',
-  labels: [],
-  link: 'https://b/1234',
-  number: '1234',
-  priority: 1,
-  status: 'Fixed',
-};
