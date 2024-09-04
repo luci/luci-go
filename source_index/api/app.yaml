@@ -40,6 +40,7 @@ luci_gae_vars:
     CONFIG_SERVICE_HOST: config.luci.app
     CRON_AUTHORIZED_CALLER: cloud-scheduler-jobs@luci-source-index-dev.iam.gserviceaccount.com
     PUBSUB_AUTHORIZED_CALLER: cloud-pubsub-pusher@luci-source-index-dev.iam.gserviceaccount.com
+    REDIS_ADDR: 10.110.196.196:6379
     SPANNER_DB: projects/luci-source-index-dev/instances/dev/databases/luci-source-index-dev
     TQ_PUSH_AS: cloud-tasks-pusher@luci-source-index-dev.iam.gserviceaccount.com
     TQ_TARGET_HOST: staging.sourceindex.api.luci.app
@@ -56,6 +57,7 @@ entrypoint: >
   -config-service-host ${CONFIG_SERVICE_HOST}
   -cron-authorized-caller ${CRON_AUTHORIZED_CALLER}
   -pubsub-authorized-caller ${PUBSUB_AUTHORIZED_CALLER}
+  -redis-addr ${REDIS_ADDR}
   -spanner-database ${SPANNER_DB}
   -tq-default-target-host ${TQ_TARGET_HOST}
   -tq-push-as ${TQ_PUSH_AS}
