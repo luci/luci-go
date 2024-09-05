@@ -38,7 +38,6 @@ import (
 	"go.chromium.org/luci/swarming/server/botsrv"
 	"go.chromium.org/luci/swarming/server/cfg"
 	"go.chromium.org/luci/swarming/server/hmactoken"
-	"go.chromium.org/luci/swarming/server/internals"
 	"go.chromium.org/luci/swarming/server/model"
 	"go.chromium.org/luci/swarming/server/notifications"
 	"go.chromium.org/luci/swarming/server/pubsub"
@@ -117,12 +116,6 @@ func main() {
 		}
 		sessionsConns, reservationsConn := rbeConns[:*connPoolSize], rbeConns[*connPoolSize]
 
-		// A client to talk back to Python Swarming.
-		internals, err := internals.Client(srv.Context, srv.Options.CloudProject)
-		if err != nil {
-			return err
-		}
-
 		// Endpoints hit by bots.
 		rbeSessions := rbe.NewSessionServer(srv.Context, sessionsConns, tokenSecret)
 		botSrv := botsrv.New(srv.Context, srv.Routes, srv.Options.CloudProject, tokenSecret)
@@ -131,6 +124,10 @@ func main() {
 		botsrv.InstallHandler(botSrv, "/swarming/api/v1/bot/rbe/session/update", rbeSessions.UpdateBotSession)
 
 		// Handlers for TQ tasks submitted by Python Swarming.
+		internals, err := rbe.NewInternalsClient(srv.Context, srv.Options.CloudProject)
+		if err != nil {
+			return err
+		}
 		rbeReservations := rbe.NewReservationServer(srv.Context, reservationsConn, internals, srv.Options.ImageVersion())
 		rbeReservations.RegisterTQTasks(&tq.Default)
 

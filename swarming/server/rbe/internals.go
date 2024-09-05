@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package internals provides the RPC client for Internals RPC service.
-package internals
+package rbe
 
 import (
 	"context"
@@ -26,8 +25,8 @@ import (
 	internalspb "go.chromium.org/luci/swarming/proto/internals"
 )
 
-// Client constructs an RPC client to call Swarming internals service.
-func Client(ctx context.Context, projectID string) (internalspb.InternalsClient, error) {
+// NewInternalsClient constructs an RPC client to call Swarming internals service.
+func NewInternalsClient(ctx context.Context, projectID string) (internalspb.InternalsClient, error) {
 	t, err := auth.GetRPCTransport(ctx, auth.AsSelf)
 	if err != nil {
 		return nil, err
