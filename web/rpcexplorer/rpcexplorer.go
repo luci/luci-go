@@ -137,5 +137,11 @@ func getConfigResponse(ctx context.Context, m AuthMethod) (*configResponse, erro
 	if out.ClientID == "" {
 		out.ClientID = chromeinfra.RPCExplorerClientID
 	}
+
+	out.Scopes, err = auth.GetFrontendOAuthScope(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	return &out, nil
 }
