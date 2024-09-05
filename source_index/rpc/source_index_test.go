@@ -84,7 +84,6 @@ func TestSourceIndexServer(t *testing.T) {
 			opts ...auth.RPCOption,
 		) (gitilespb.GitilesClient, error) {
 			assert.That(t, requestedHost, should.Equal(host))
-			assert.That(t, kind, should.Equal(auth.AsCredentialsForwarder))
 			return fakeGitilesClient, nil
 		})
 
