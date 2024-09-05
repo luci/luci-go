@@ -52,7 +52,7 @@ message Acl {
 // a user that has permissions to schedule a build to the bucket, can override
 // this config.
 //
-// Next tag: 41.
+// Next tag: 42.
 message BuilderConfig {
   reserved 8;  // cipd_packages
   reserved 11; // build_numbers of the old format.
@@ -498,6 +498,11 @@ message BuilderConfig {
 
   // Custom metrics for the builds.
   repeated CustomMetricDefinition custom_metric_definitions = 40;
+
+  // Maximum number of concurrent builds BuildBucket sends to Task backend.
+  // This number does not impact the build scheduling process.
+  // Only the number of builds sent is throttled by this field.
+  uint32 max_concurrent_builds = 41;
 }
 
 // Configuration of buildbucket-swarming integration for one bucket.
