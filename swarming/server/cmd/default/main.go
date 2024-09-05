@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/server/encryptedcookies"
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/module"
+	"go.chromium.org/luci/server/pubsub"
 	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/tq"
 
@@ -40,7 +41,7 @@ import (
 	"go.chromium.org/luci/swarming/server/hmactoken"
 	"go.chromium.org/luci/swarming/server/model"
 	"go.chromium.org/luci/swarming/server/notifications"
-	"go.chromium.org/luci/swarming/server/pubsub"
+	oldpubsub "go.chromium.org/luci/swarming/server/pubsub"
 	"go.chromium.org/luci/swarming/server/rbe"
 	"go.chromium.org/luci/swarming/server/rpcs"
 	"go.chromium.org/luci/swarming/server/testing/integrationmocks"
@@ -61,6 +62,7 @@ func main() {
 		cron.NewModuleFromFlags(),
 		encryptedcookies.NewModuleFromFlags(),
 		gaeemulation.NewModuleFromFlags(),
+		pubsub.NewModuleFromFlags(),
 		secrets.NewModuleFromFlags(),
 		tq.NewModuleFromFlags(),
 	}
@@ -130,6 +132,7 @@ func main() {
 		}
 		rbeReservations := rbe.NewReservationServer(srv.Context, reservationsConn, internals, srv.Options.ImageVersion())
 		rbeReservations.RegisterTQTasks(&tq.Default)
+		rbeReservations.RegisterPSHandlers(&pubsub.Default)
 
 		// Handlers for TQ tasks for sending PubSub messages.
 		pubSubNotifier, err := notifications.NewPubSubNotifier(srv.Context, srv.Options.CloudProject)
@@ -141,14 +144,14 @@ func main() {
 			pubSubNotifier.Stop()
 		})
 
-		// PubSub push handler for notifications from the RBE scheduler.
-		pubsub.InstallHandler(
+		// TODO: Remove once switched the subscription to use the new URL.
+		oldpubsub.InstallHandler(
 			srv.Routes,
-			pubsub.HandlerOptions{
+			oldpubsub.HandlerOptions{
 				Route:              "/pubsub/rbe/scheduler",
 				PushServiceAccount: fmt.Sprintf("rbe-pubsub@%s.iam.gserviceaccount.com", srv.Options.CloudProject),
 			},
-			func(ctx context.Context, m *notificationspb.SchedulerNotification, md *pubsub.Metadata) error {
+			func(ctx context.Context, m *notificationspb.SchedulerNotification, md *oldpubsub.Metadata) error {
 				projectID := md.Attributes["project_id"]
 				if projectID == "" {
 					return errors.New("no project_id message attribute")

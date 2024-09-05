@@ -20,6 +20,7 @@ luci_gae_vars:
     OAUTH_CLIENT_ID: 20770472288-t5smpbpjptka4nd888fv0ctd23ftba2o.apps.googleusercontent.com
     OAUTH_CLIENT_SECRET: sm://oauth-client-secret
     OAUTH_REDIRECT_URL: https://chromium-swarm-dev.appspot.com/auth/openid/callback
+    PUBSUB_AUTHORIZED_CALLER: rbe-pubsub@chromium-swarm-dev.iam.gserviceaccount.com
     TINK_AEAD_KEY: sm://tink-aead-primary
     TS_MON_ACCOUNT: app-engine-metric-publishers@prodx-mon-chrome-infra.google.com.iam.gserviceaccount.com
 
@@ -36,4 +37,5 @@ entrypoint: >
   -encrypted-cookies-expose-state-endpoint
   -frontend-client-id ${OAUTH_CLIENT_ID}
   -ts-mon-account ${TS_MON_ACCOUNT}
+  -pubsub-authorized-caller ${PUBSUB_AUTHORIZED_CALLER}
   -cloud-error-reporting

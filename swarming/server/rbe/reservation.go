@@ -33,8 +33,10 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/server/pubsub"
 	"go.chromium.org/luci/server/tq"
 
+	notificationspb "go.chromium.org/luci/swarming/internal/notifications"
 	"go.chromium.org/luci/swarming/internal/remoteworkers"
 	internalspb "go.chromium.org/luci/swarming/proto/internals"
 	"go.chromium.org/luci/swarming/server/model"
@@ -80,6 +82,43 @@ func (s *ReservationServer) RegisterTQTasks(disp *tq.Dispatcher) {
 			return s.handleCancelRBETask(ctx, payload.(*internalspb.CancelRBETask))
 		},
 	})
+}
+
+// RegisterPSHandlers registers PubSub handlers.
+func (s *ReservationServer) RegisterPSHandlers(disp *pubsub.Dispatcher) {
+	disp.RegisterHandler("rbe-scheduler", pubsub.WirePB(
+		func(ctx context.Context, md pubsub.Message, m *notificationspb.SchedulerNotification) (err error) {
+			// Log details of the message that caused the error.
+			defer func() {
+				if err != nil {
+					logging.Infof(ctx, "MessageID: %s", md.MessageID)
+					logging.Infof(ctx, "Subscription: %s", md.Subscription)
+					logging.Infof(ctx, "PublishTime: %s", md.PublishTime)
+					logging.Infof(ctx, "Attributes: %v", md.Attributes)
+					logging.Infof(ctx, "Query: %s", md.Query)
+					bodyPB, _ := prototext.Marshal(m)
+					logging.Infof(ctx, "Message body:\n%s", bodyPB)
+				}
+			}()
+			projectID := md.Attributes["project_id"]
+			if projectID == "" {
+				return errors.New("no project_id message attribute")
+			}
+			instanceID := md.Attributes["instance_id"]
+			if instanceID == "" {
+				return errors.New("no instance_id message attribute")
+			}
+			if m.ReservationId == "" {
+				return errors.New("reservation_id is unexpectedly empty")
+			}
+			reservationName := fmt.Sprintf("projects/%s/instances/%s/reservations/%s",
+				projectID,
+				instanceID,
+				m.ReservationId,
+			)
+			return s.ExpireSliceBasedOnReservation(ctx, reservationName)
+		},
+	))
 }
 
 // handleEnqueueRBETask is responsible for creating a reservation.
@@ -246,6 +285,8 @@ func (s *ReservationServer) reservationDenied(ctx context.Context, task *interna
 //
 // `reservationName` is a full reservation name, including the project and
 // RBE instance IDs: `projects/.../instances/.../reservations/...`.
+//
+// TODO: Make private once old PubSub handler is gone.
 func (s *ReservationServer) ExpireSliceBasedOnReservation(ctx context.Context, reservationName string) error {
 	// Get the up-to-date state of the reservation.
 	reservation, err := s.rbe.GetReservation(ctx, &remoteworkers.GetReservationRequest{
