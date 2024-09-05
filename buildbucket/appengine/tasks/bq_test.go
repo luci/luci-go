@@ -16,12 +16,17 @@ package tasks
 
 import (
 	"context"
+	"net/http"
+	"strings"
+	"sync"
 	"testing"
 
 	"cloud.google.com/go/bigquery"
+	"google.golang.org/api/googleapi"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/structpb"
 
+	lucibq "go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
@@ -50,7 +55,7 @@ func TestBQ(t *testing.T) {
 		datastore.GetTestable(ctx).Consistent(true)
 		now := testclock.TestRecentTimeLocal
 		ctx, _ = testclock.UseTime(ctx, now)
-		fakeBq := &clients.FakeBqClient{}
+		fakeBq := &fakeBqClient{}
 		ctx = clients.WithBqClient(ctx, fakeBq)
 		b := &model.Build{
 			ID: 123,
@@ -107,14 +112,14 @@ func TestBQ(t *testing.T) {
 		})
 
 		Convey("bad row", func() {
-			ctx1 := context.WithValue(ctx, &clients.FakeBqErrCtxKey, bigquery.PutMultiError{bigquery.RowInsertionError{}})
+			ctx1 := context.WithValue(ctx, &fakeBqErrCtxKey, bigquery.PutMultiError{bigquery.RowInsertionError{}})
 			err := ExportBuild(ctx1, 123)
 			So(err, ShouldErrLike, "bad row for build 123")
 			So(tq.Fatal.In(err), ShouldBeTrue)
 		})
 
 		Convey("transient BQ err", func() {
-			ctx1 := context.WithValue(ctx, &clients.FakeBqErrCtxKey, errors.New("transient"))
+			ctx1 := context.WithValue(ctx, &fakeBqErrCtxKey, errors.New("transient"))
 			err := ExportBuild(ctx1, 123)
 			So(err, ShouldErrLike, "transient error when inserting BQ for build 123")
 			So(transient.Tag.In(err), ShouldBeTrue)
@@ -122,7 +127,7 @@ func TestBQ(t *testing.T) {
 
 		Convey("output properties too large", func() {
 			originLimit := maxBuildSizeInBQ
-			maxBuildSizeInBQ = 10
+			maxBuildSizeInBQ = 600
 			defer func() {
 				maxBuildSizeInBQ = originLimit
 			}()
@@ -132,7 +137,7 @@ func TestBQ(t *testing.T) {
 					Fields: map[string]*structpb.Value{
 						"output": {
 							Kind: &structpb.Value_StringValue{
-								StringValue: "output value",
+								StringValue: strings.Repeat("output value", 50),
 							},
 						},
 					},
@@ -186,6 +191,96 @@ func TestBQ(t *testing.T) {
 					},
 				},
 			})
+		})
+
+		Convey("strip step log as well if build is still too big", func() {
+			originLimit := maxBuildSizeInBQ
+			maxBuildSizeInBQ = 500
+			defer func() {
+				maxBuildSizeInBQ = originLimit
+			}()
+			bo := &model.BuildOutputProperties{
+				Build: bk,
+				Proto: &structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"output": {
+							Kind: &structpb.Value_StringValue{
+								StringValue: strings.Repeat("output value", 50),
+							},
+						},
+					},
+				},
+			}
+			So(datastore.Put(ctx, bo), ShouldBeNil)
+
+			So(ExportBuild(ctx, 123), ShouldBeNil)
+			rows := fakeBq.GetRows("raw", "completed_builds")
+			So(len(rows), ShouldEqual, 1)
+			So(rows[0].InsertID, ShouldEqual, "123")
+			p, _ := rows[0].Message.(*pb.Build)
+			So(p, ShouldResembleProto, &pb.Build{
+				Id: 123,
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
+				Status: pb.Status_CANCELED,
+				Steps: []*pb.Step{{
+					Name: "step",
+				}},
+				Infra: &pb.BuildInfra{
+					Backend: &pb.BuildInfra_Backend{
+						Task: &pb.Task{
+							Id: &pb.TaskID{
+								Id:     "s93k0402js90",
+								Target: "swarming://chromium-swarm",
+							},
+							Status: pb.Status_CANCELED,
+							Link:   "www.google.com/404",
+						},
+					},
+					Buildbucket: &pb.BuildInfra_Buildbucket{},
+					Swarming: &pb.BuildInfra_Swarming{
+						TaskId: "s93k0402js90",
+					},
+				},
+				Input: &pb.Build_Input{},
+				Output: &pb.Build_Output{
+					Properties: &structpb.Struct{
+						Fields: map[string]*structpb.Value{
+							"strip_reason": {
+								Kind: &structpb.Value_StringValue{
+									StringValue: "output properties is stripped because it's too large which makes the whole build larger than BQ limit(10MB)",
+								},
+							},
+						},
+					},
+				},
+			})
+		})
+
+		Convey("fail export if build is still too big", func() {
+			originLimit := maxBuildSizeInBQ
+			maxBuildSizeInBQ = 50
+			defer func() {
+				maxBuildSizeInBQ = originLimit
+			}()
+			bo := &model.BuildOutputProperties{
+				Build: bk,
+				Proto: &structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"output": {
+							Kind: &structpb.Value_StringValue{
+								StringValue: "output value",
+							},
+						},
+					},
+				},
+			}
+			So(datastore.Put(ctx, bo), ShouldBeNil)
+
+			So(ExportBuild(ctx, 123), ShouldErrLike, errRowTooBig)
 		})
 
 		Convey("summary markdown and cancelation reason are concatenated", func() {
@@ -564,4 +659,38 @@ func TestTryBackfillBackend(t *testing.T) {
 			So(b.Infra.Backend, ShouldResembleProto, expected)
 		})
 	})
+}
+
+type fakeBqClient struct {
+	mu sync.RWMutex
+	// data persists all inserted rows.
+	data map[string][]*lucibq.Row
+}
+
+var fakeBqErrCtxKey = "used only in tests to make BQ return a fake error"
+
+func (f *fakeBqClient) Insert(ctx context.Context, dataset, table string, row *lucibq.Row) error {
+	if err, ok := ctx.Value(&fakeBqErrCtxKey).(error); ok {
+		return err
+	}
+	if !buildIsSmallEnough(row.Message) {
+		return &googleapi.Error{
+			Code: http.StatusRequestEntityTooLarge,
+		}
+	}
+
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	key := dataset + "." + table
+	if f.data == nil {
+		f.data = make(map[string][]*lucibq.Row)
+	}
+	f.data[key] = append(f.data[key], row)
+	return nil
+}
+
+func (f *fakeBqClient) GetRows(dataset, table string) []*lucibq.Row {
+	f.mu.RLock()
+	defer f.mu.RUnlock()
+	return f.data[dataset+"."+table]
 }

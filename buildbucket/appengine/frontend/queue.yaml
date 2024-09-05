@@ -30,6 +30,8 @@ queue:
 - name: export-bigquery-go
   target: default-go
   rate: 500/s
+  retry_parameters:
+    task_age_limit: 7d
 - name: check-build-liveness
   target: default-go
   rate: 500/s

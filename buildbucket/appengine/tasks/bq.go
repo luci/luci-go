@@ -17,13 +17,16 @@ package tasks
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
 	"cloud.google.com/go/bigquery"
+	"google.golang.org/api/googleapi"
 	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
 
 	lucibq "go.chromium.org/luci/common/bq"
@@ -45,6 +48,8 @@ import (
 // Note: make it to var so that it can be tested in unit tests without taking up
 // too much memory.
 var maxBuildSizeInBQ = 10*1000*1000 - 5*1000
+
+var errRowTooBig = errors.Reason("row too big").Tag(tq.Fatal).Err()
 
 // ExportBuild saves the build into BiqQuery.
 // The returned error has transient.Tag or tq.Fatal in order to tell tq to drop
@@ -100,17 +105,62 @@ func ExportBuild(ctx context.Context, buildID int64) error {
 		}
 	}
 
-	// Check if the cleaned Build too large.
-	pj, err := protojson.Marshal(p)
-	if err != nil {
-		logging.Errorf(ctx, "failed to calculate Build size for %d: %s, continue to try to insert the build...", buildID, err)
+	// Try upload the build before striping any info.
+	// TODO(b/364947089): Add a metric to monitor the builds are being stripped or
+	// given up.
+	if err = tryUpload(ctx, buildID, p); err != errRowTooBig {
+		return err
 	}
-	// We only strip out the outputProperties here.
-	// Usually,large build size is caused by large outputProperties size since we
-	// only expanded the 1MB Datastore limit per field for BuildOutputProperties.
-	// If there are failures for any other fields, we'd like this job to continue
-	// to try so that we can be alerted.
-	if len(pj) > maxBuildSizeInBQ && p.Output.GetProperties() != nil {
+
+	// Reduce Build size and try upload again.
+	if buildIsSmallEnough := tryReduceBuildSize(ctx, buildID, p); !buildIsSmallEnough {
+		return errRowTooBig
+	}
+
+	return tryUpload(ctx, buildID, p)
+}
+
+func tryUpload(ctx context.Context, buildID int64, p *pb.Build) error {
+	// Set timeout to avoid a hanging call.
+	// Cloud task default timeout is 10 min, worst case we need to call Insert
+	// twice, so set a shorter timeout for each call.
+	ctx, cancel := context.WithTimeout(ctx, 4*time.Minute)
+	defer cancel()
+
+	row := &lucibq.Row{
+		InsertID: strconv.FormatInt(p.Id, 10),
+		Message:  p,
+	}
+
+	err := clients.GetBqClient(ctx).Insert(ctx, "raw", "completed_builds", row)
+	if err == nil {
+		return nil
+	}
+
+	if pme, _ := err.(bigquery.PutMultiError); len(pme) != 0 {
+		return errors.Annotate(err, "bad row for build %d", buildID).Tag(tq.Fatal).Err()
+	}
+
+	gerr, _ := err.(*googleapi.Error)
+	if gerr != nil && gerr.Code == http.StatusRequestEntityTooLarge {
+		return errRowTooBig
+	}
+	return errors.Annotate(err, "transient error when inserting BQ for build %d", buildID).Tag(transient.Tag).Err()
+}
+
+func buildIsSmallEnough(p proto.Message) bool {
+	pj, _ := protojson.Marshal(p)
+	return len(pj) <= maxBuildSizeInBQ
+}
+
+// tryReduceBuildSize strip out info from p to make it fit in maxBuildSizeInBQ.
+//
+// Return a bool for whether the build is successfully reduced to under maxBuildSizeInBQ.
+//
+// Update p in place.
+func tryReduceBuildSize(ctx context.Context, buildID int64, p *pb.Build) bool {
+	// Strip out the outputProperties first.
+	if p.Output.GetProperties() != nil {
 		logging.Warningf(ctx, "striping out outputProperties for build %d in BQ exporting", buildID)
 		p.Output.Properties = &structpb.Struct{
 			Fields: map[string]*structpb.Value{
@@ -122,21 +172,16 @@ func ExportBuild(ctx context.Context, buildID int64) error {
 			},
 		}
 	}
-	// Set timeout to avoid a hanging call.
-	ctx, cancel := context.WithTimeout(ctx, 10*time.Minute)
-	defer cancel()
+	if buildIsSmallEnough(p) {
+		return true
+	}
 
-	row := &lucibq.Row{
-		InsertID: strconv.FormatInt(p.Id, 10),
-		Message:  p,
+	logging.Warningf(ctx, "striping out step logs for build %d in BQ exporting", buildID)
+	for _, step := range p.GetSteps() {
+		step.Logs = nil
 	}
-	if err := clients.GetBqClient(ctx).Insert(ctx, "raw", "completed_builds", row); err != nil {
-		if pme, _ := err.(bigquery.PutMultiError); len(pme) != 0 {
-			return errors.Annotate(err, "bad row for build %d", buildID).Tag(tq.Fatal).Err()
-		}
-		return errors.Annotate(err, "transient error when inserting BQ for build %d", buildID).Tag(transient.Tag).Err()
-	}
-	return nil
+
+	return buildIsSmallEnough(p)
 }
 
 // tryBackfillSwarming does a best effort backfill on Infra.Swarming for builds
