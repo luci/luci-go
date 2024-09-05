@@ -41,6 +41,10 @@ luci_gae_vars:
     TQ_PUSH_AS: cloud-tasks-pusher@luci-source-index-dev.iam.gserviceaccount.com
     TQ_TARGET_HOST: staging.sourceindex.api.luci.app
     TS_MON_ACCOUNT: app-engine-metric-publishers@prodx-mon-chrome-infra.google.com.iam.gserviceaccount.com
+    VPC_CONNECTOR: projects/luci-source-index-dev/locations/us-central1/connectors/connector
+
+vpc_access_connector:
+  name: ${VPC_CONNECTOR}
 
 handlers:
 - url: /.*
