@@ -254,6 +254,6 @@ func processCommitIngestionTask(ctx context.Context, task *taskspb.IngestCommits
 		return errors.Annotate(err, "saving commits").Err()
 	}
 
-	logging.Infof(ctx, "finished commit ingestion task")
+	logging.Infof(ctx, "finished the commit ingestion task")
 	return nil
 }
