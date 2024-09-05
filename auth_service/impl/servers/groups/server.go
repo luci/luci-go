@@ -18,6 +18,7 @@ package groups
 import (
 	"context"
 	"encoding/json"
+	"strings"
 	"time"
 
 	"google.golang.org/grpc/codes"
@@ -281,7 +282,10 @@ func (srv *Server) GetSubgraph(ctx context.Context, request *rpcpb.GetSubgraphRe
 
 func (s *Server) GetLegacyAuthGroup(ctx *router.Context) error {
 	c, _, w := ctx.Request.Context(), ctx.Request, ctx.Writer
-	name := ctx.Params.ByName("groupName")
+
+	// Catch-all params match includes the directory index (the leading "/"), so
+	// trim it to get the group name.
+	name := strings.TrimPrefix(ctx.Params.ByName("groupName"), "/")
 
 	group, err := model.GetAuthGroup(c, name)
 	if err != nil {
