@@ -130,6 +130,14 @@ type Config struct {
 	// Should be fast. Will be called each time a token needs to be authenticated.
 	FrontendClientID func(context.Context) (string, error)
 
+	// FrontendOAuthScopes returns the OAuth scopes to use from the frontend.
+	//
+	// May return an empty slice if the OAuth scopes are not configured. All
+	// errors are treated as transient.
+	//
+	// Should be fast. Will be called each time a token needs to be authenticated.
+	FrontendOAuthScopes func(context.Context) ([]string, error)
+
 	// IsDevMode is true when running the server locally during development.
 	//
 	// Setting this to true changes default deadlines. For instance, GAE dev
@@ -237,4 +245,15 @@ func GetFrontendClientID(ctx context.Context) (string, error) {
 		return cfg.FrontendClientID(ctx)
 	}
 	return "", nil
+}
+
+// GetFrontendOAuthScope returns the OAuth 2.0 scope to use from the frontend.
+//
+// If it is not configured returns an empty string. May return an error if
+// it could not be fetched. Such error should be treated as transient.
+func GetFrontendOAuthScope(ctx context.Context) ([]string, error) {
+	if cfg := getConfig(ctx); cfg != nil && cfg.FrontendOAuthScopes != nil {
+		return cfg.FrontendOAuthScopes(ctx)
+	}
+	return nil, nil
 }

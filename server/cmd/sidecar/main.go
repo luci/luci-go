@@ -164,8 +164,9 @@ func (s *authServerImpl) Authenticate(ctx context.Context, req *sidecar.Authenti
 		auth.ModifyConfig(ctx, func(cfg auth.Config) auth.Config {
 			// This tells the auth library to use req.RemoteAddr().
 			cfg.EndUserIP = nil
-			// Do not expose frontend client ID of the side car server itself.
+			// Do not expose frontend OAuth configuration of the side car server itself.
 			cfg.FrontendClientID = nil
+			cfg.FrontendOAuthScopes = nil
 			return cfg
 		}), reqMeta,
 	)

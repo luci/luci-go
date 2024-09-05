@@ -96,10 +96,11 @@ func Install(r *router.Router, auth AuthMethod) {
 }
 
 type configResponse struct {
-	LoginURL     string `json:"loginUrl,omitempty"`
-	LogoutURL    string `json:"logoutUrl,omitempty"`
-	AuthStateURL string `json:"authStateUrl,omitempty"`
-	ClientID     string `json:"clientId,omitempty"`
+	LoginURL     string   `json:"loginUrl,omitempty"`
+	LogoutURL    string   `json:"logoutUrl,omitempty"`
+	AuthStateURL string   `json:"authStateUrl,omitempty"`
+	ClientID     string   `json:"clientId,omitempty"`
+	Scopes       []string `json:"scopes,omitempty"`
 }
 
 func getConfigResponse(ctx context.Context, m AuthMethod) (*configResponse, error) {

@@ -62,10 +62,10 @@ export class OAuthClient {
     reject: (error: Error) => void,
   }[] = [];
 
-  constructor(clientId: string) {
+  constructor(clientId: string, scopes?: string[]) {
     this.tokenClient = google.accounts.oauth2.initTokenClient({
       client_id: clientId,
-      scope: 'https://www.googleapis.com/auth/userinfo.email',
+      scope: scopes?.join(' ') || 'https://www.googleapis.com/auth/userinfo.email',
       callback: (response) => this.onTokenResponse(response),
       error_callback: (error) => this.onTokenError(error),
       // This field is unknown to @types/google.accounts 0.0.4, but we need it
@@ -237,6 +237,7 @@ export const loadTokenClient = async (): Promise<TokenClient> => {
     logoutUrl?: string;
     authStateUrl?: string;
     clientId?: string;
+    scopes?: string[];
   }
   const cfg = await response.json() as Config;
 
@@ -261,5 +262,5 @@ export const loadTokenClient = async (): Promise<TokenClient> => {
   if (!cfg.clientId) {
     throw new Error('clientId in the config is empty');
   }
-  return new OAuthClient(cfg.clientId);
+  return new OAuthClient(cfg.clientId, cfg.scopes);
 };
