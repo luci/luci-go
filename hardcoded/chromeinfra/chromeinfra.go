@@ -89,8 +89,9 @@ const (
 	// TokenServerDevHost is the host of the LUCI Token Server dev instance.
 	TokenServerDevHost = "luci-token-server-dev.appspot.com"
 
-	// LoginSessionsHost is the host to use for CLI login UI by default.
-	LoginSessionsHost = "ci.chromium.org"
+	// LoginSessionsHost is the host to use for CLI login UI by default. This
+	// host must implement the LoginSessions pRPC service.
+	LoginSessionsHost = "milo.api.luci.app"
 
 	// RPCExplorerClientID is the default client ID used by RPC Explorer.
 	RPCExplorerClientID = "446450136466-e77v49thuh5dculh78gumq3oncqe28m3.apps.googleusercontent.com"
