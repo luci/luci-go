@@ -56,6 +56,8 @@ entrypoint: >
   -auth-service-host ${AUTH_SERVICE_HOST}
   -config-service-host ${CONFIG_SERVICE_HOST}
   -cron-authorized-caller ${CRON_AUTHORIZED_CALLER}
+  -frontend-oauth-scopes https://www.googleapis.com/auth/gerritcodereview
+  -frontend-oauth-scopes https://www.googleapis.com/auth/userinfo.email
   -pubsub-authorized-caller ${PUBSUB_AUTHORIZED_CALLER}
   -redis-addr ${REDIS_ADDR}
   -spanner-database ${SPANNER_DB}
