@@ -52,6 +52,12 @@ export const ChangeTableCtx = createContext<ChangepointTableConfig | undefined>(
 );
 
 interface ChangepointTableConfig {
+  readonly gitilesHost: string;
+  readonly gitilesRepository: string;
+  readonly gitilesRef: string;
+  /**
+   * Sorted in descending order.
+   */
   readonly criticalCommits: readonly string[];
   readonly commitMap: { [key: string]: number };
   readonly criticalVariantKeys: readonly string[];
@@ -62,6 +68,12 @@ interface ChangepointTableConfig {
 }
 
 export interface ChangepointTableContextProviderProps {
+  readonly gitilesHost: string;
+  readonly gitilesRepository: string;
+  readonly gitilesRef: string;
+  /**
+   * Sorted in descending order.
+   */
   readonly criticalCommits: readonly string[];
   readonly criticalVariantKeys: readonly string[];
   readonly testVariantBranchCount: number;
@@ -69,12 +81,15 @@ export interface ChangepointTableContextProviderProps {
 }
 
 export function ChangepointTableContextProvider({
+  gitilesHost,
+  gitilesRepository,
+  gitilesRef,
   criticalCommits,
   criticalVariantKeys,
   testVariantBranchCount,
   children,
 }: ChangepointTableContextProviderProps) {
-  const ctx = useMemo(() => {
+  const ctx = useMemo<ChangepointTableConfig>(() => {
     const commitMap = Object.fromEntries(criticalCommits.map((c, i) => [c, i]));
 
     const rowHeight = Math.max(
@@ -89,6 +104,9 @@ export function ChangepointTableContextProvider({
       .range([0, criticalCommits.length * CELL_WIDTH]);
 
     return {
+      gitilesHost,
+      gitilesRepository,
+      gitilesRef,
       criticalCommits,
       commitMap,
       criticalVariantKeys,
@@ -97,7 +115,14 @@ export function ChangepointTableContextProvider({
       xScale,
       yScale,
     };
-  }, [criticalCommits, criticalVariantKeys, testVariantBranchCount]);
+  }, [
+    gitilesHost,
+    gitilesRepository,
+    gitilesRef,
+    criticalCommits,
+    criticalVariantKeys,
+    testVariantBranchCount,
+  ]);
 
   return (
     <ChangeTableCtx.Provider value={ctx}>{children}</ChangeTableCtx.Provider>

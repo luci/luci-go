@@ -85,6 +85,10 @@ export function BlamelistTable({
 }: BlamelistTable) {
   // Note that we use a negative index so commits are sorted by their commit
   // position in descending order.
+  //
+  // When the gitiles query is updated, also ensure that
+  // `@/test_verdict/components/changepoint_table/top_axis/commit_cell` can hits
+  // the same cache.
   const queryOptsBase: Omit<
     UseVirtualizedQueryOption<unknown, unknown>,
     'genQuery'

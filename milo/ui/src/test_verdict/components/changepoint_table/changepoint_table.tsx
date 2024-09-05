@@ -82,6 +82,7 @@ export function ChangepointTable({
   const testVariantBranches = queryResults.some((q) => !q.data)
     ? []
     : queryResults.flatMap((q) => q.data!.testVariantBranches);
+  const gitilesRef = testVariantBranches.at(0)?.ref.gitiles;
 
   const commits = testVariantBranches.flatMap((tvb) =>
     tvb.segments.flatMap((seg) => [
@@ -128,8 +129,21 @@ export function ChangepointTable({
     );
   }
 
+  // Ideally, this should never happen.
+  // The parent should ensure there's at least one test variant branch.
+  if (!gitilesRef) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center">
+        No test variant branch provided.
+      </Box>
+    );
+  }
+
   return (
     <ChangepointTableContextProvider
+      gitilesHost={gitilesRef.host}
+      gitilesRepository={gitilesRef.project}
+      gitilesRef={gitilesRef.ref}
       criticalCommits={criticalCommits}
       criticalVariantKeys={criticalVariantKeys}
       testVariantBranchCount={testVariantBranchDefs.length}

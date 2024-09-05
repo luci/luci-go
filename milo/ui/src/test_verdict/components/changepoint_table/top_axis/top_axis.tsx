@@ -15,9 +15,10 @@
 import { axisTop, select } from 'd3';
 import { useEffect, useRef } from 'react';
 
-import { LabelBox } from './common';
-import { CELL_WIDTH } from './constants';
-import { useConfig } from './context';
+import { CELL_WIDTH } from '../constants';
+import { useConfig } from '../context';
+
+import { CommitCell } from './commit_cell';
 
 export function TopAxis() {
   const { criticalCommits, rowHeight, xScale } = useConfig();
@@ -54,9 +55,7 @@ export function TopAxis() {
       {criticalCommits.map((c, i) => (
         <g key={c} transform={`translate(${xScale(i)}, 0)`}>
           <foreignObject width={CELL_WIDTH} height={rowHeight}>
-            <LabelBox sx={{ textAlign: 'center', fontWeight: 'bold' }}>
-              {c}
-            </LabelBox>
+            <CommitCell position={c} />
           </foreignObject>
         </g>
       ))}

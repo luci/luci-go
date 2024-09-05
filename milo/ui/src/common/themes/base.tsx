@@ -14,7 +14,21 @@
 
 import { createTheme } from '@mui/material';
 
+const defaultTheme = createTheme();
+
 export const theme = createTheme({
+  components: {
+    MuiLink: {
+      styleOverrides: {
+        root: {
+          '&[disabled]': {
+            color: defaultTheme.palette.text.disabled,
+            pointerEvents: 'none',
+          },
+        },
+      },
+    },
+  },
   palette: {
     scheduled: {
       main: '#73808c',
@@ -72,5 +86,13 @@ declare module '@mui/material' {
     criticalFailure: true;
     canceled: true;
     dividerLine: true;
+  }
+  interface LinkOwnProps {
+    /**
+     * Disables the link. Make the text grey and disable pointer events.
+     *
+     * Remember to also set `aria-disabled `to true and `tabIndex` to `-1`.
+     */
+    disabled?: boolean;
   }
 }
