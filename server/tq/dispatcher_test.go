@@ -235,6 +235,54 @@ func TestAddTask(t *testing.T) {
 			So(submitter.reqs, ShouldHaveLength, 0)
 		})
 
+		Convey("QueuePicker", func() {
+			var queuePickerCB func(pb *timestamppb.Timestamp) (string, error)
+
+			d.RegisterTaskClass(TaskClass{
+				ID:        "test-ts",
+				Prototype: &timestamppb.Timestamp{}, // just some proto type
+				Kind:      NonTransactional,
+				QueuePicker: func(ctx context.Context, task *Task) (string, error) {
+					return queuePickerCB(task.Payload.(*timestamppb.Timestamp))
+				},
+			})
+
+			Convey("OK short", func() {
+				queuePickerCB = func(pb *timestamppb.Timestamp) (string, error) {
+					So(pb.Seconds, ShouldEqual, 1)
+					return "short", nil
+				}
+				So(d.AddTask(ctx, &Task{Payload: &timestamppb.Timestamp{Seconds: 1}}), ShouldBeNil)
+				So(submitter.reqs, ShouldHaveLength, 1)
+				So(submitter.reqs[0].CreateTaskRequest.Parent, ShouldEqual, "projects/proj/locations/reg/queues/short")
+			})
+
+			Convey("OK long", func() {
+				queuePickerCB = func(*timestamppb.Timestamp) (string, error) {
+					return "projects/zzz/locations/yyy/queues/long", nil
+				}
+				So(d.AddTask(ctx, &Task{Payload: &timestamppb.Timestamp{Seconds: 1}}), ShouldBeNil)
+				So(submitter.reqs, ShouldHaveLength, 1)
+				So(submitter.reqs[0].CreateTaskRequest.Parent, ShouldEqual, "projects/zzz/locations/yyy/queues/long")
+			})
+
+			Convey("Bad queue name", func() {
+				queuePickerCB = func(*timestamppb.Timestamp) (string, error) {
+					return "", nil
+				}
+				err := d.AddTask(ctx, &Task{Payload: &timestamppb.Timestamp{Seconds: 1}})
+				So(err, ShouldErrLike, "not a valid queue name")
+			})
+
+			Convey("Err", func() {
+				queuePickerCB = func(*timestamppb.Timestamp) (string, error) {
+					return "zzz", errors.New("boom")
+				}
+				err := d.AddTask(ctx, &Task{Payload: &timestamppb.Timestamp{Seconds: 1}})
+				So(err, ShouldErrLike, "boom")
+			})
+		})
+
 		Convey("Custom task payload on GAE", func() {
 			d.GAE = true
 			d.DefaultTargetHost = ""

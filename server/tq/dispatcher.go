@@ -252,26 +252,42 @@ type TaskClass struct {
 	// Queue is a name of Cloud Tasks queue to use for the tasks.
 	//
 	// If set, indicates the task should be submitted through Cloud Tasks API.
-	// The queue must exist already in this case. Can't be set together with
-	// Topic.
+	// The queue must exist already. It can either be a short name like "default"
+	// or a full name like "projects/<project>/locations/<region>/queues/<name>".
+	// If it is a full name, it must have the above format or RegisterTaskClass
+	// would panic. If it is a short queue name, the full queue name will be
+	// constructed using dispatcher's CloudProject and CloudRegion if they are
+	// set.
 	//
-	// It can either be a short name like "default" or a full name like
-	// "projects/<project>/locations/<region>/queues/<name>". If it is a full
-	// name, it must have the above format or RegisterTaskClass would panic.
-	//
-	// If it is a short queue name, the full queue name will be constructed using
-	// dispatcher's CloudProject and CloudRegion if they are set.
+	// Can't be set together with QueuePicker or Topic.
 	Queue string
+
+	// QueuePicker is a callback that picks a queue for each individual task.
+	//
+	// It is an alternative to specifying a single queue via Queue. It can be used
+	// to distribute tasks across multiple queues, for example to spread the load
+	// or to use different queues for tasks with different priorities.
+	//
+	// Receives Task with Payload proto.Message having the same underlying type as
+	// Prototype. It can be type cast to a concrete type and examined, if
+	// necessary.
+	//
+	// Must be lightweight, will be called from within AddTask implementation for
+	// each added task, receiving the context passed to AddTask. The returned
+	// queue name should be in the same format as Queue, i.e. either be a short
+	// queue name or a full queue name. See Queue for details.
+	//
+	// Can't be set together with Queue or Topic.
+	QueuePicker func(context.Context, *Task) (string, error)
 
 	// Topic is a name of PubSub topic to use for the tasks.
 	//
 	// If set, indicates the task should be submitted through Cloud PubSub API.
-	// The topic must exist already in this case. Can't be set together with
-	// Queue.
+	// The topic must exist already. It can either be a short name like "tasks" or
+	// a full name like "projects/<project>/topics/<name>". If it is a full name,
+	// it must have the above format or RegisterTaskClass would panic.
 	//
-	// It can either be a short name like "tasks" or a full name like
-	// "projects/<project>/topics/<name>". If it is a full name, it must have the
-	// above format or RegisterTaskClass would panic.
+	// Can't be set together with Queue or QueuePicker.
 	Topic string
 
 	// RoutingPrefix is a URL prefix for produced Cloud Tasks.
@@ -515,16 +531,23 @@ func (d *Dispatcher) RegisterTaskClass(cls TaskClass) TaskClassRef {
 		panic("TaskClass Kind is required")
 	}
 
+	usesQueues := cls.Queue != "" || cls.QueuePicker != nil
+	if cls.Queue != "" && cls.QueuePicker != nil {
+		panic("TaskClass must have either Queue or QueuePicker set, not both")
+	}
+
 	var backend taskBackend
 	switch {
-	case cls.Queue == "" && cls.Topic == "":
-		panic("TaskClass must have either Queue or Topic set")
-	case cls.Queue != "" && cls.Topic != "":
-		panic("TaskClass must have either Queue or Topic set, not both")
-	case cls.Queue != "":
+	case !usesQueues && cls.Topic == "":
+		panic("TaskClass must have either Queue, QueuePicker or Topic set")
+	case usesQueues && cls.Topic != "":
+		panic("TaskClass must have either Queue/QueuePicker or Topic set, not both")
+	case usesQueues:
 		backend = backendCloudTasks
-		if strings.ContainsRune(cls.Queue, '/') && !isValidQueue(cls.Queue) {
-			panic(fmt.Sprintf("not a valid full queue name %q", cls.Queue))
+		if cls.Queue != "" {
+			if !isShortQueueName(cls.Queue) && !isValidFullQueueName(cls.Queue) {
+				panic(fmt.Sprintf("not a valid queue name %q", cls.Queue))
+			}
 		}
 	case cls.Topic != "":
 		backend = backendPubSub
@@ -858,7 +881,19 @@ func (d *Dispatcher) prepPayload(ctx context.Context, cls *taskClassImpl, t *Tas
 
 // prepCloudTasksRequest prepares Cloud Tasks request based on a *Task.
 func (d *Dispatcher) prepCloudTasksRequest(ctx context.Context, cls *taskClassImpl, t *Task) (*taskspb.CreateTaskRequest, error) {
-	queueID, err := d.queueID(cls.Queue)
+	var queue string
+	switch {
+	case cls.Queue != "":
+		queue = cls.Queue
+	case cls.QueuePicker != nil:
+		var err error
+		if queue, err = cls.QueuePicker(ctx, t); err != nil {
+			return nil, err
+		}
+	default:
+		panic("impossible, backendCloudTasks tasks have either Queue or QueuePicker set")
+	}
+	queueID, err := d.queueID(queue)
 	if err != nil {
 		return nil, err
 	}
@@ -989,19 +1024,24 @@ func makeETAHeader(t time.Time) string {
 }
 
 // queueID expands `id` into a full queue name if necessary.
+//
+// Validates `id` as a full queue name if it looks like it.
 func (d *Dispatcher) queueID(id string) (string, error) {
-	if strings.HasPrefix(id, "projects/") {
-		return id, nil // already full name
+	if isShortQueueName(id) {
+		project := d.CloudProject
+		if project == "" {
+			project = "default"
+		}
+		region := d.CloudRegion
+		if region == "" {
+			region = "default"
+		}
+		return fmt.Sprintf("projects/%s/locations/%s/queues/%s", project, region, id), nil
 	}
-	project := d.CloudProject
-	if project == "" {
-		project = "default"
+	if !isValidFullQueueName(id) {
+		return "", errors.Reason("not a valid queue name: %q", id).Err()
 	}
-	region := d.CloudRegion
-	if region == "" {
-		region = "default"
-	}
-	return fmt.Sprintf("projects/%s/locations/%s/queues/%s", project, region, id), nil
+	return id, nil
 }
 
 // taskTarget constructs a target URL for a task.
@@ -1132,8 +1172,13 @@ func (d *Dispatcher) attachToReminder(ctx context.Context, payload *reminder.Pay
 	return r, r.AttachPayload(payload)
 }
 
-// isValidQueue is true if q looks like "projects/.../locations/.../queues/...".
-func isValidQueue(q string) bool {
+// isShortQueueName is true if q looks like a short queue name.
+func isShortQueueName(q string) bool {
+	return q != "" && !strings.ContainsRune(q, '/')
+}
+
+// isValidFullQueueName is true if q is "projects/.../locations/.../queues/...".
+func isValidFullQueueName(q string) bool {
 	chunks := strings.Split(q, "/")
 	return len(chunks) == 6 &&
 		chunks[0] == "projects" &&
