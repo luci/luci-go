@@ -77,13 +77,14 @@ func TestSyncCommitsHandler(t *testing.T) {
 			repo      string
 			commitish string
 		}
-		expectedTasks := map[taskKey]*taskspb.IngestCommitsBackfill{
+		expectedTasks := map[taskKey]*taskspb.IngestCommits{
 			{host: "chromium.googlesource.com", repo: "chromium/src", commitish: "refs/branch-heads/release-101"}: {
 				Host:       "chromium.googlesource.com",
 				Repository: "chromium/src",
 				Commitish:  "refs/branch-heads/release-101",
 				PageToken:  "",
 				TaskIndex:  0,
+				Backfill:   true,
 			},
 			{host: "chromium.googlesource.com", repo: "chromium/src", commitish: "refs/branch-heads/release-102"}: {
 				Host:       "chromium.googlesource.com",
@@ -91,6 +92,7 @@ func TestSyncCommitsHandler(t *testing.T) {
 				Commitish:  "refs/branch-heads/release-102",
 				PageToken:  "",
 				TaskIndex:  0,
+				Backfill:   true,
 			},
 			{host: "chromium.googlesource.com", repo: "chromium/src", commitish: "refs/heads/main"}: {
 				Host:       "chromium.googlesource.com",
@@ -98,6 +100,7 @@ func TestSyncCommitsHandler(t *testing.T) {
 				Commitish:  "refs/heads/main",
 				PageToken:  "",
 				TaskIndex:  0,
+				Backfill:   true,
 			},
 			{host: "chromium.googlesource.com", repo: "chromiumos/manifest", commitish: "refs/heads/staging-snapshot"}: {
 				Host:       "chromium.googlesource.com",
@@ -105,6 +108,7 @@ func TestSyncCommitsHandler(t *testing.T) {
 				Commitish:  "refs/heads/staging-snapshot",
 				PageToken:  "",
 				TaskIndex:  0,
+				Backfill:   true,
 			},
 			{host: "chromium.googlesource.com", repo: "v8/v8", commitish: "refs/heads/main"}: {
 				Host:       "chromium.googlesource.com",
@@ -112,6 +116,7 @@ func TestSyncCommitsHandler(t *testing.T) {
 				Commitish:  "refs/heads/main",
 				PageToken:  "",
 				TaskIndex:  0,
+				Backfill:   true,
 			},
 			{host: "webrtc.googlesource.com", repo: "src", commitish: "refs/heads/main"}: {
 				Host:       "webrtc.googlesource.com",
@@ -119,13 +124,14 @@ func TestSyncCommitsHandler(t *testing.T) {
 				Commitish:  "refs/heads/main",
 				PageToken:  "",
 				TaskIndex:  0,
+				Backfill:   true,
 			},
 		}
 
-		getOutputTasks := func() map[taskKey]*taskspb.IngestCommitsBackfill {
-			actualTasks := make(map[taskKey]*taskspb.IngestCommitsBackfill, len(skdr.Tasks().Payloads()))
+		getOutputTasks := func() map[taskKey]*taskspb.IngestCommits {
+			actualTasks := make(map[taskKey]*taskspb.IngestCommits, len(skdr.Tasks().Payloads()))
 			for _, payload := range skdr.Tasks().Payloads() {
-				t := payload.(*taskspb.IngestCommitsBackfill)
+				t := payload.(*taskspb.IngestCommits)
 				actualTasks[taskKey{host: t.Host, repo: t.Repository, commitish: t.Commitish}] = t
 			}
 
@@ -159,16 +165,17 @@ func TestSyncCommitsHandler(t *testing.T) {
 		t.Run(`when there are many tasks to be scheduled`, func(t *ftt.Test) {
 			assert.That(t, len(commits), should.BeGreaterThan(2000))
 			refs = make(map[string]string, len(commits))
-			expectedTasks = make(map[taskKey]*taskspb.IngestCommitsBackfill, len(commits))
+			expectedTasks = make(map[taskKey]*taskspb.IngestCommits, len(commits))
 			for i, commit := range commits {
 				ref := fmt.Sprintf("refs/branch-heads/release-%d", i)
 				refs[ref] = commit.Id
-				expectedTasks[taskKey{host: "chromium.googlesource.com", repo: "chromium/src", commitish: ref}] = &taskspb.IngestCommitsBackfill{
+				expectedTasks[taskKey{host: "chromium.googlesource.com", repo: "chromium/src", commitish: ref}] = &taskspb.IngestCommits{
 					Host:       "chromium.googlesource.com",
 					Repository: "chromium/src",
 					Commitish:  ref,
 					PageToken:  "",
 					TaskIndex:  0,
+					Backfill:   true,
 				}
 			}
 			fakeChromiumGitilesClient.SetRepository("chromium/src", refs, commits)

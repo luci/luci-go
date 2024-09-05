@@ -73,6 +73,7 @@ func TestProcessCommitIngestionTask(t *testing.T) {
 			Commitish:  commits[0].Id,
 			PageToken:  "",
 			TaskIndex:  0,
+			Backfill:   false,
 		}
 
 		expectedSavedCommits := make([]commit.Commit, 0, firstTaskPageSize)
@@ -104,7 +105,7 @@ func TestProcessCommitIngestionTask(t *testing.T) {
 			t.Run(`with next page`, func(t *ftt.Test) {
 				fakeGitilesClient.SetRepository(repository, nil, commits)
 
-				err := processCommitIngestionTask(ctx, inputTask, false)
+				err := processCommitIngestionTask(ctx, inputTask)
 
 				assert.Loosely(t, err, should.BeNil)
 				assert.That(t, commit.MustReadAllForTesting(span.Single(ctx)), commit.ShouldMatchCommits(expectedSavedCommits))
@@ -118,7 +119,7 @@ func TestProcessCommitIngestionTask(t *testing.T) {
 				expectedSavedCommits = expectedSavedCommits[:(firstTaskPageSize * 0.8)]
 				expectedTasks = []*taskspb.IngestCommits{}
 
-				err := processCommitIngestionTask(ctx, inputTask, false)
+				err := processCommitIngestionTask(ctx, inputTask)
 
 				assert.Loosely(t, err, should.BeNil)
 				assert.That(t, commit.MustReadAllForTesting(span.Single(ctx)), commit.ShouldMatchCommits(expectedSavedCommits))
@@ -134,7 +135,7 @@ func TestProcessCommitIngestionTask(t *testing.T) {
 				expectedSavedCommits = []commit.Commit{alreadySavedCommit}
 				expectedTasks = []*taskspb.IngestCommits{}
 
-				err = processCommitIngestionTask(ctx, inputTask, false)
+				err = processCommitIngestionTask(ctx, inputTask)
 
 				assert.Loosely(t, err, should.BeNil)
 				assert.That(t, commit.MustReadAllForTesting(span.Single(ctx)), commit.ShouldMatchCommits(expectedSavedCommits))
@@ -149,7 +150,7 @@ func TestProcessCommitIngestionTask(t *testing.T) {
 				fakeGitilesClient.SetRepository(repository, nil, commits)
 				expectedTasks = []*taskspb.IngestCommits{}
 
-				err = processCommitIngestionTask(ctx, inputTask, false)
+				err = processCommitIngestionTask(ctx, inputTask)
 
 				assert.Loosely(t, err, should.BeNil)
 				assert.That(t, commit.MustReadAllForTesting(span.Single(ctx)), commit.ShouldMatchCommits(expectedSavedCommits))
@@ -158,19 +159,20 @@ func TestProcessCommitIngestionTask(t *testing.T) {
 		})
 
 		t.Run("with backfill queue", func(t *ftt.Test) {
-			expectedTasks := []*taskspb.IngestCommitsBackfill{
+			expectedTasks := []*taskspb.IngestCommits{
 				{
 					Host:       host,
 					Repository: repository,
 					Commitish:  commits[0].Id,
 					PageToken:  commits[firstTaskPageSize-1].Id,
 					TaskIndex:  1,
+					Backfill:   true,
 				},
 			}
-			getOutputTasks := func() []*taskspb.IngestCommitsBackfill {
-				actualTasks := make([]*taskspb.IngestCommitsBackfill, 0, len(skdr.Tasks().Payloads()))
+			getOutputTasks := func() []*taskspb.IngestCommits {
+				actualTasks := make([]*taskspb.IngestCommits, 0, len(skdr.Tasks().Payloads()))
 				for _, payload := range skdr.Tasks().Payloads() {
-					actualTasks = append(actualTasks, payload.(*taskspb.IngestCommitsBackfill))
+					actualTasks = append(actualTasks, payload.(*taskspb.IngestCommits))
 				}
 
 				return actualTasks
@@ -178,8 +180,9 @@ func TestProcessCommitIngestionTask(t *testing.T) {
 
 			t.Run(`with next page`, func(t *ftt.Test) {
 				fakeGitilesClient.SetRepository(repository, nil, commits)
+				inputTask.Backfill = true
 
-				err := processCommitIngestionTask(ctx, inputTask, true)
+				err := processCommitIngestionTask(ctx, inputTask)
 
 				assert.Loosely(t, err, should.BeNil)
 				assert.That(t, commit.MustReadAllForTesting(span.Single(ctx)), commit.ShouldMatchCommits(expectedSavedCommits))

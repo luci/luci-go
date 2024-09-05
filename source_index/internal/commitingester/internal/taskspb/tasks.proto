@@ -50,39 +50,10 @@ message IngestCommits {
   //
   // This is only used for logging/monitoring purpose.
   int64 task_index = 5;
-}
 
-// The same as IngestCommits. This is needed so that the tq package can
-// dispatch the task to a different task queue.
-//
-// Must be kept in sync with IngestCommits.
-message IngestCommitsBackfill {
-  // Required. The gitiles host. Must be a subdomain of `.googlesource.com`
-  // (e.g. chromium.googlesource.com).
-  string host = 1;
-
-  // Required. The Git project (e.g. chromium/src).
-  string repository = 2;
-
-  // Required. The commit to start the ingestion from. This commit and all of
-  // its ancestors will all be ingested.
+  // Optional. Whether the task should be sent to the backfill task queue, which
+  // has lower rate limits and lower SLO target.
   //
-  // In practice, the ingestion will stop
-  //  1. when it reaches a commit that is already ingested, or
-  //  2. when it reaches the first commit (the commit with no ancestors).
-  //
-  // See documentation on proto message `gitiles.Gitiles.LogRequest.commitish`
-  // for the list of acceptable values.
-  string commitish = 3;
-
-  // The page token value to use when calling Gitiles.Log.
-  //  - For the first task, this should be "".
-  //  - For subsequent tasks, this is the next_page_token value returned by the
-  //   last call.
-  string page_token = 4;
-
-  // Optional. The task number of IngestCommits task.
-  //
-  // This is only used for logging/monitoring purpose.
-  int64 task_index = 5;
+  // Defaults to false.
+  bool backfill = 6;
 }

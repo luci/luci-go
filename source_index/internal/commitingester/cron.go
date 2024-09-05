@@ -114,6 +114,11 @@ func scanHostForTasks(
 							Commitish:  ref,
 							PageToken:  "",
 							TaskIndex:  0,
+							// Schedule a commit ingestion task to the backfill queue so
+							// creating a large amount of tasks in a short period of time
+							// won't block the regular queue and trigger SLO alerts. Note that
+							// most tasks are expected to be NOOP tasks.
+							Backfill: true,
 						}
 					}
 					return nil
@@ -131,10 +136,7 @@ func scheduleTasks(
 	processBatch := func(currentBatch []*taskspb.IngestCommits) error {
 		_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 			for _, task := range currentBatch {
-				// Schedule a commit ingestion task to the backfill queue so creating a
-				// large amount of tasks in a short period of time won't trigger SLO
-				// alerts. Note that most tasks are expected to be NOOP tasks.
-				scheduleCommitIngestion(ctx, task, true)
+				scheduleCommitIngestion(ctx, task)
 			}
 			return nil
 		})

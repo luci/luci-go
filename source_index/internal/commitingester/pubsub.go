@@ -133,7 +133,8 @@ func processSourceRepoEvent(ctx context.Context, gitilesHost string, event *gerr
 				Commitish:  update.NewId,
 				PageToken:  "",
 				TaskIndex:  0,
-			}, false)
+				Backfill:   false,
+			})
 			return nil
 		}
 		if _, err := span.ReadWriteTransaction(ctx, f); err != nil {
