@@ -17,11 +17,6 @@ dispatch:
   - url: "*/internal/pubsub/*"
     service: default-go
 
-  # Serve RBE PubSub push subscription handler using Go.
-  # TODO: Remove once the handler is gone.
-  - url: "*/pubsub/rbe/*"
-    service: default-go
-
   # Serve web UI authentication endpoints using Go.
   - url: "*/auth/openid/*"
     service: default-go

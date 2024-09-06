@@ -34,14 +34,12 @@ import (
 	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/tq"
 
-	notificationspb "go.chromium.org/luci/swarming/internal/notifications"
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	"go.chromium.org/luci/swarming/server/botsrv"
 	"go.chromium.org/luci/swarming/server/cfg"
 	"go.chromium.org/luci/swarming/server/hmactoken"
 	"go.chromium.org/luci/swarming/server/model"
 	"go.chromium.org/luci/swarming/server/notifications"
-	oldpubsub "go.chromium.org/luci/swarming/server/pubsub"
 	"go.chromium.org/luci/swarming/server/rbe"
 	"go.chromium.org/luci/swarming/server/rpcs"
 	"go.chromium.org/luci/swarming/server/testing/integrationmocks"
@@ -143,34 +141,6 @@ func main() {
 		srv.RegisterCleanup(func(context.Context) {
 			pubSubNotifier.Stop()
 		})
-
-		// TODO: Remove once switched the subscription to use the new URL.
-		oldpubsub.InstallHandler(
-			srv.Routes,
-			oldpubsub.HandlerOptions{
-				Route:              "/pubsub/rbe/scheduler",
-				PushServiceAccount: fmt.Sprintf("rbe-pubsub@%s.iam.gserviceaccount.com", srv.Options.CloudProject),
-			},
-			func(ctx context.Context, m *notificationspb.SchedulerNotification, md *oldpubsub.Metadata) error {
-				projectID := md.Attributes["project_id"]
-				if projectID == "" {
-					return errors.New("no project_id message attribute")
-				}
-				instanceID := md.Attributes["instance_id"]
-				if instanceID == "" {
-					return errors.New("no instance_id message attribute")
-				}
-				if m.ReservationId == "" {
-					return errors.New("reservation_id is unexpectedly empty")
-				}
-				reservationName := fmt.Sprintf("projects/%s/instances/%s/reservations/%s",
-					projectID,
-					instanceID,
-					m.ReservationId,
-				)
-				return rbeReservations.ExpireSliceBasedOnReservation(ctx, reservationName)
-			},
-		)
 
 		// Helpers for running local integration tests. They fake some of Swarming
 		// Python server behavior.
