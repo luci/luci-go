@@ -211,7 +211,6 @@ func main() {
 		cron.RegisterHandler("sync_backend_tasks", buildcron.TriggerSyncBackendTasks)
 		cron.RegisterHandler("update_config", config.UpdateSettingsCfg)
 		cron.RegisterHandler("update_project_config", config.UpdateProjectCfg)
-		cron.RegisterHandler("reset_expired_leases", buildcron.ResetExpiredLeases)
 		cron.RegisterHandler("remove_inactive_builder_stats", buildercron.RemoveInactiveBuilderStats)
 		redirect.InstallHandlers(srv.Routes, router.NewMiddlewareChain(auth.Authenticate(srv.CookieAuth)))
 

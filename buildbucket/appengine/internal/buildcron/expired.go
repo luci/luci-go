@@ -209,51 +209,6 @@ func resetLeases(ctx context.Context, bs []*model.Build, mr parallel.MultiRunner
 	return err
 }
 
-// ResetExpiredLeases resets expired leases.
-func ResetExpiredLeases(ctx context.Context) error {
-	// resetLeases() updates 3 entities for each of the given builds within
-	// a single transaction, and a ds transaction can update at most
-	// 25 entities.
-	//
-	// Hence, this batchSize must be 8 or lower.
-	const batchSize = 25 / 3
-	const nWorkers = 12
-	q := datastore.NewQuery(model.BuildKind).
-		Eq("is_leased", true).
-		Lte("lease_expiration_date", clock.Now(ctx).UTC()).
-		KeysOnly(true)
-
-	return parallel.RunMulti(ctx, nWorkers, func(mr parallel.MultiRunner) error {
-		return mr.RunMulti(func(workC chan<- func() error) {
-			ch := make(chan []*model.Build, nWorkers)
-			workC <- func() error {
-				defer close(ch)
-				bs := make([]*model.Build, 0, batchSize)
-				err := datastore.RunBatch(ctx, int32(batchSize), q, func(b *model.Build) error {
-					bs = append(bs, b)
-					if len(bs) == batchSize {
-						ch <- bs
-						bs = make([]*model.Build, 0, batchSize)
-					}
-					return nil
-				})
-				if len(bs) > 0 {
-					ch <- bs
-				}
-				return errors.Annotate(err, "querying expired, leased builds").Err()
-			}
-
-			for bs := range ch {
-				bs := bs
-				workC <- func() error {
-					return errors.Annotate(resetLeases(ctx, bs, mr),
-						"resetting %d expired leases", len(bs)).Err()
-				}
-			}
-		})
-	})
-}
-
 func updateBuildStatuses(ctx context.Context, builds []*model.Build, status pb.Status) error {
 	buildStatuses := make([]*model.BuildStatus, 0, len(builds))
 	for _, b := range builds {

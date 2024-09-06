@@ -10,11 +10,6 @@ cron:
   url: /internal/cron/update_config
   schedule: every 10 minutes
 
-- description: expire build leases
-  target: default-go
-  url: /internal/cron/reset_expired_leases
-  schedule: every 1 minutes
-
 - description: expire builds
   target: default-go
   url: /internal/cron/expire_builds
