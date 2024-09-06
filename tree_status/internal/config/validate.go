@@ -16,6 +16,7 @@ package config
 
 import (
 	"go.chromium.org/luci/config/validation"
+	"go.chromium.org/luci/server/auth/realms"
 
 	"go.chromium.org/luci/tree_status/pbutil"
 	configpb "go.chromium.org/luci/tree_status/proto/config"
@@ -27,28 +28,17 @@ func validateConfig(ctx *validation.Context, cfg *configpb.Config) {
 
 	// Make sure each tree name is unique.
 	treeMap := map[string][]int{}
-	// Make sure each project is mapped to at most 1 tree.
-	projectMap := map[string][]string{}
 
 	for i, tree := range cfg.Trees {
 		ctx.Enter("[%d]", i)
 		validateTree(ctx, tree)
 		ctx.Exit()
 		treeMap[tree.Name] = append(treeMap[tree.Name], i)
-		for _, project := range tree.Projects {
-			projectMap[project] = append(projectMap[project], tree.Name)
-		}
 	}
 
 	for treeName, treeIndices := range treeMap {
 		if len(treeIndices) > 1 {
 			ctx.Errorf("tree name %q is reused at indices %v", treeName, treeIndices)
-		}
-	}
-
-	for project, treeNames := range projectMap {
-		if len(treeNames) > 1 {
-			ctx.Errorf("project %q is in more than one tree: %v", project, treeNames)
 		}
 	}
 }
@@ -72,7 +62,18 @@ func validateTree(ctx *validation.Context, tree *configpb.Tree) {
 
 	ctx.Enter("use_default_acls")
 	if !tree.UseDefaultAcls && len(tree.Projects) == 0 {
-		ctx.Errorf("projects must not be empty when not using default ACL")
+		ctx.Errorf("projects must not be empty when use_default_acls is not set")
+	}
+	ctx.Exit()
+
+	ctx.Enter("subrealm")
+	if tree.Subrealm != "" && tree.UseDefaultAcls {
+		ctx.Errorf("should be empty when use_default_acls is set")
+	}
+	if tree.Subrealm != "" {
+		if err := realms.ValidateRealmName(tree.Subrealm, realms.ProjectScope); err != nil {
+			ctx.Error(err)
+		}
 	}
 	ctx.Exit()
 }

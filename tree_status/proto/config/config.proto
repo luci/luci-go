@@ -30,6 +30,7 @@ message Config {
 }
 
 // This represent a mapping between a tree name and its data.
+// Next ID: 5.
 message Tree {
   // LUCI Tree Status tree name, e.g. "chromium", "devtools", "fuchsia-stem"
   string name = 1;
@@ -37,19 +38,26 @@ message Tree {
   // Names of the LUCI projects that the tree name applies to.
   // For example, "v8" tree can be applied to both "v8" and "v8-internal" projects.
   // This mapping will be used to display tree status in LUCI UI side bar.
-  // The first project in this list is the primary project, in the sense that:
-  //   1. Its "<project>:@project" realm will be used to check for ACL for the tree,
-  //      if the flag "use_default_acls" is unset.
+  // The first project in this list is the primary project. This means:
+  //   1. Its "<project>:<subrealm>" realm will be used to check
+  //      for ACL for the tree, if the flag "use_default_acls" is unset.
   //   2. If the tree is access without a LUCI project context, the primary project
   //      will be displayed at the top left of LUCI UI.
-  // Note: A project can have at most 1 tree attached to it.
   repeated string projects = 2;
+
+  // Optional.
+  // Determines the realm in the primary project (i.e. projects[0]) that
+  // the tree is deemed to reside in for ACLing purposes.
+  // If unset, defaults to `@project` (project-scoped) realm.
+  // This is to support multiple trees per project.
+  // Only applies if use_default_acls is not in use.
+  string subrealm = 4;
 
   // If this flag is set, it will use the default ACLs:
   //   - Read permission without PII: Authenticated users.
   //   - Read permission with PII: Googlers.
   //   - Write permission: Googlers.
-  // If this flag is set, the ACLs will be checked against the "<primary_project>:@project" realm.
+  // If this flag is set, the ACLs will be checked against the "<primary_project>:<subrealm>" realm.
   // If this flag is unset, and the projects fields it empty, this will result in PERMISSION_DENIED
   // error when accessing the tree.
   // Please see the "projects" field for more information.

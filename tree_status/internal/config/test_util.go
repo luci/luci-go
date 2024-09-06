@@ -37,6 +37,23 @@ func TestConfig() *configpb.Config {
 				Projects:       []string{"v8", "v8-internal"},
 				UseDefaultAcls: true,
 			},
+			{
+				Name:           "pigweed",
+				Projects:       []string{"pigweed"},
+				UseDefaultAcls: false,
+				Subrealm:       "subrealm",
+			},
+			{
+				Name:           "another-tree",
+				Projects:       []string{"another-project"},
+				UseDefaultAcls: false,
+			},
+			{
+				Name:           "pigweed2",
+				Projects:       []string{"pigweed"},
+				UseDefaultAcls: false,
+				Subrealm:       "subrealm2",
+			},
 		},
 	}
 }

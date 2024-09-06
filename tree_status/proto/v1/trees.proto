@@ -30,9 +30,8 @@ message QueryTreesRequest {
 
 message QueryTreesResponse {
   // List of trees attached to the project.
-  // Currently we only return at most one tree, as each project is attached to at most one tree.
-  // We make this a repeated field for future compatibility, where we may want
-  // to support more than one tree for a project.
+  // If there are more than 1 tree attached to a project, the results
+  // will be sorted ascendingly based on tree name.
   repeated Tree trees = 1;
 }
 

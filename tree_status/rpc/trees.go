@@ -18,11 +18,9 @@ package rpc
 import (
 	"context"
 	"fmt"
-
-	"google.golang.org/grpc/codes"
+	"sort"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/grpc/appstatus"
 
 	"go.chromium.org/luci/tree_status/internal/config"
 	"go.chromium.org/luci/tree_status/internal/perms"
@@ -43,39 +41,40 @@ func NewTreesServer() *pb.DecoratedTrees {
 }
 
 // QueryTrees returns trees attached to a given LUCI project.
-// Currently we only support at most one tree per project.
+// If the user does not have access to a tree, that tree will not be returned.
 func (*treeServer) QueryTrees(ctx context.Context, request *pb.QueryTreesRequest) (*pb.QueryTreesResponse, error) {
 	config, err := config.Get(ctx)
 	if err != nil {
 		return nil, errors.Annotate(err, "get config").Err()
 	}
-	treeName := treeNameForProject(config, request.Project)
-	if treeName != "" {
-		hasAccess, msg, err := perms.HasQueryTreesPermission(ctx, treeName)
+	treeNames := treeNamesForProject(config, request.Project)
+	trees := []*pb.Tree{}
+	for _, treeName := range treeNames {
+		hasAccess, _, err := perms.HasQueryTreesPermission(ctx, treeName)
 		if err != nil {
 			return nil, errors.Annotate(err, "checking query tree name permission").Err()
 		}
-		if !hasAccess {
-			return nil, appstatus.Errorf(codes.PermissionDenied, msg)
+		if hasAccess {
+			trees = append(trees, &pb.Tree{
+				Name: fmt.Sprintf("trees/%s", treeName),
+			})
 		}
-		return &pb.QueryTreesResponse{
-			Trees: []*pb.Tree{
-				{
-					Name: fmt.Sprintf("trees/%s", treeName),
-				},
-			},
-		}, nil
 	}
-	return &pb.QueryTreesResponse{}, nil
+	return &pb.QueryTreesResponse{
+		Trees: trees,
+	}, nil
 }
 
-func treeNameForProject(config *configpb.Config, project string) string {
+func treeNamesForProject(config *configpb.Config, project string) []string {
+	results := []string{}
 	for _, tree := range config.Trees {
 		for _, p := range tree.Projects {
 			if p == project {
-				return tree.Name
+				results = append(results, tree.Name)
+				break
 			}
 		}
 	}
-	return ""
+	sort.Strings(results)
+	return results
 }

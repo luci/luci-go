@@ -100,6 +100,29 @@ func TestHasAccess(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 				assert.That(t, allowed, should.BeTrue)
 			})
+
+			t.Run("realm-based permission explicit subrealm denied", func(t *ftt.Test) {
+				ctx = FakeAuth().WithPermissionInRealm(PermGetStatusLimited, "chromium:@project").SetInContext(ctx)
+				testConfig.Trees[0].UseDefaultAcls = false
+				testConfig.Trees[0].Subrealm = "subrealm"
+				err := config.SetConfig(ctx, testConfig)
+				assert.Loosely(t, err, should.BeNil)
+				allowed, message, err := hasAccess(ctx, "chromium", "luci-tree-status-access", PermGetStatusLimited)
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, allowed, should.BeFalse)
+				assert.That(t, message, should.Equal("user does not have permission to perform this action"))
+			})
+
+			t.Run("realm-based permission explicit subrealm allowed", func(t *ftt.Test) {
+				ctx = FakeAuth().WithPermissionInRealm(PermGetStatusLimited, "chromium:subrealm").SetInContext(ctx)
+				testConfig.Trees[0].UseDefaultAcls = false
+				testConfig.Trees[0].Subrealm = "subrealm"
+				err := config.SetConfig(ctx, testConfig)
+				assert.Loosely(t, err, should.BeNil)
+				allowed, _, err := hasAccess(ctx, "chromium", "luci-tree-status-access", PermGetStatusLimited)
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, allowed, should.BeTrue)
+			})
 		})
 
 		t.Run("has get status limited permission", func(t *ftt.Test) {

@@ -79,7 +79,7 @@ func HasQueryTreesPermission(ctx context.Context, treeName string) (allowed bool
 
 // hasAccess checks if the user has access to a tree.
 // If the tree uses default ACLs, the access will be checked against the go/cria group.
-// Otherwise, the permission will be check against the @project realm of the primary project.
+// Otherwise, the permission will be check against the subrealm of the primary project.
 //
 // In case of GetStatus and ListStatus, then the user needs to be in treeStatusAuditAccessGroup, even
 // if the tree uses realm-based ACL. This is a safe-guard mechanism in case realm permission
@@ -113,7 +113,11 @@ func hasAccess(ctx context.Context, treeName string, criaGroup string, permissio
 		return false, "projects in tree has not been configured", nil
 	}
 	primaryProject := treeCfg.Projects[0]
-	allowed, err = HasProjectPermission(ctx, primaryProject, permission)
+	subrealm := treeCfg.Subrealm
+	if subrealm == "" {
+		subrealm = realms.ProjectRealm
+	}
+	allowed, err = HasProjectPermission(ctx, primaryProject, subrealm, permission)
 	if err != nil {
 		return false, "", err
 	}
@@ -144,10 +148,10 @@ func checkCriaGroup(ctx context.Context, criaGroup string) (bool, string, error)
 }
 
 // HasProjectPermission returns if the caller has the given permission in
-// the @project realm of the given project. This method only returns an error
+// the subrealm of the given project. This method only returns an error
 // if there is some AuthDB issue.
-func HasProjectPermission(ctx context.Context, project string, permission realms.Permission) (bool, error) {
-	realm := realms.Join(project, realms.ProjectRealm)
+func HasProjectPermission(ctx context.Context, project string, subrealm string, permission realms.Permission) (bool, error) {
+	realm := realms.Join(project, subrealm)
 	switch allowed, err := auth.HasPermission(ctx, permission, realm, nil); {
 	case err != nil:
 		return false, err

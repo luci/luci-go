@@ -58,7 +58,21 @@ func TestValidateConfig(t *testing.T) {
 			cfg.Trees[0].Projects = []string{}
 			cfg.Trees[0].UseDefaultAcls = false
 			err := validateCfg(cfg)
-			assert.That(t, err, should.ErrLike("(trees / [0] / use_default_acls): projects must not be empty when not using default ACL"))
+			assert.That(t, err, should.ErrLike("(trees / [0] / use_default_acls): projects must not be empty when use_default_acls is not set"))
+		})
+
+		t.Run("reject default acls with non-empty subrealm", func(t *ftt.Test) {
+			cfg.Trees[0].UseDefaultAcls = true
+			cfg.Trees[0].Subrealm = "subrealm"
+			err := validateCfg(cfg)
+			assert.That(t, err, should.ErrLike("(trees / [0] / subrealm): should be empty when use_default_acls is set"))
+		})
+
+		t.Run("reject invalid subrealms", func(t *ftt.Test) {
+			cfg.Trees[0].UseDefaultAcls = false
+			cfg.Trees[0].Subrealm = "subRealm"
+			err := validateCfg(cfg)
+			assert.That(t, err, should.ErrLike("(trees / [0] / subrealm): bad project-scoped realm name"))
 		})
 
 		t.Run("reject multiple trees with same name", func(t *ftt.Test) {
@@ -67,10 +81,10 @@ func TestValidateConfig(t *testing.T) {
 			assert.That(t, err, should.ErrLike("(trees): tree name \"chromium\" is reused at indices [0 1]"))
 		})
 
-		t.Run("reject project in multiple trees", func(t *ftt.Test) {
+		t.Run("accept project in multiple trees", func(t *ftt.Test) {
 			cfg.Trees[1].Projects = []string{"chromium"}
 			err := validateCfg(cfg)
-			assert.That(t, err, should.ErrLike("(trees): project \"chromium\" is in more than one tree: [chromium v8]"))
+			assert.Loosely(t, err, should.BeNil)
 		})
 
 	})

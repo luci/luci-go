@@ -20,8 +20,9 @@ import (
 	"go.chromium.org/luci/server/auth/realms"
 )
 
-// All permissions in this file are checked against "<luciproject>:@project"
-// realm, where the <luciproject> refers to the primary project of the tree status.
+// All permissions in this file are checked against "<luciproject>:<subrealm>"
+// realm, where the <luciproject> refers to the primary project of the tree.
+// If subrealm is not specified, default to be "@project".
 var (
 	// PermGetStatusLimited allows users to get status, but does not allow seeing PII (username).
 	PermGetStatusLimited = realms.RegisterPermission("treestatus.status.getLimited")
