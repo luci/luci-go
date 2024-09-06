@@ -36,6 +36,10 @@ export class InstructionHintElement extends ReactLitElement {
         attribute: 'placeholder-data',
         type: Object,
       },
+      litLink: {
+        attribute: 'lit-link',
+        type: Boolean,
+      },
     };
   }
 
@@ -78,6 +82,18 @@ export class InstructionHintElement extends ReactLitElement {
     this.requestUpdate('placeholderData', oldVal);
   }
 
+  private _litLink = false;
+  get litLink() {
+    return this._litLink;
+  }
+  set litLink(newVal: boolean) {
+    if (newVal === this._litLink) {
+      return;
+    }
+    const oldVal = this._litLink;
+    this._litLink = newVal;
+    this.requestUpdate('litLink', oldVal);
+  }
   private cache: EmotionCache | undefined = undefined;
 
   renderReact() {
@@ -96,6 +112,7 @@ export class InstructionHintElement extends ReactLitElement {
           instructionName={this.instructionName}
           title={this.title}
           placeholderData={this.placeholderData}
+          litLink={this.litLink}
         />
       </CacheProvider>
     );

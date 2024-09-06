@@ -291,12 +291,6 @@ export class TestVariantEntryElement
     }
     return html`
       <div id="basic-info">
-        ${this.historyUrl
-          ? html`<a href=${this.historyUrl} target="_blank">history</a> |`
-          : ''}
-        ${this.sourceUrl
-          ? html`<a href=${this.sourceUrl} target="_blank">source</a> |`
-          : ''}
         <div id="test-id">
           <span class="greyed-out" title=${this.variant.testId}
             >ID: ${this.variant.testId}</span
@@ -317,13 +311,29 @@ export class TestVariantEntryElement
               </span>`,
           )}
         </span>
+      </div>
+      <div>
+        ${this.variant.instruction?.instruction
+          ? html`<milo-instruction-hint
+                lit-link
+                instruction-name=${this.variant.instruction?.instruction}
+                title="rerun instructions"
+                .placeholderData=${this.instructionPlaceHolderData}
+              ></milo-instruction-hint>
+              | `
+          : null}
+        ${this.historyUrl
+          ? html`<a href=${this.historyUrl} target="_blank">history</a> |`
+          : ''}
+        ${this.sourceUrl
+          ? html`<a href=${this.sourceUrl} target="_blank">source</a>`
+          : ''}
         ${this.testVerdictPageUrl
           ? html` |
               <a href=${this.testVerdictPageUrl} target="_blank">
                 view in new test verdict page</a
               >`
           : ''}
-        <span></span>
       </div>
       ${this.variant.results?.length === RESULT_LIMIT
         ? html`<div id="result-limit-warning">
