@@ -24,6 +24,7 @@ import (
 	"github.com/klauspost/compress/zlib"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/packedintset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/testing/ftt"
@@ -1009,5 +1010,55 @@ func TestTaskResultSummaryQueries(t *testing.T) {
 				"`tags` IN ARRAY(\"os:ubuntu1\", \"os:ubuntu2\") "+
 				"ORDER BY `__key__`",
 		))
+	})
+}
+
+func TestPendingNow(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	now := testclock.TestRecentTimeUTC
+
+	ftt.Run("normal", t, func(t *ftt.Test) {
+		trs := &TaskResultSummary{
+			TaskResultCommon: TaskResultCommon{
+				Started: datastore.NewIndexedNullable(now.Add(-1 * time.Hour)),
+			},
+			Created: now.Add(-2 * time.Hour),
+		}
+		diff, deduped := trs.PendingNow(ctx, now)
+		assert.Loosely(t, diff, should.Equal(time.Hour))
+		assert.Loosely(t, deduped, should.BeFalse)
+	})
+
+	ftt.Run("not started", t, func(t *ftt.Test) {
+		trs := &TaskResultSummary{
+			Created: now.Add(-2 * time.Hour),
+		}
+		diff, deduped := trs.PendingNow(ctx, now)
+		assert.Loosely(t, diff, should.Equal(2*time.Hour))
+		assert.Loosely(t, deduped, should.BeFalse)
+	})
+
+	ftt.Run("deduped", t, func(t *ftt.Test) {
+		trs := &TaskResultSummary{
+			TaskResultCommon: TaskResultCommon{
+				Started: datastore.NewIndexedNullable(now.Add(-1 * time.Hour)),
+			},
+			Created:     now.Add(-2 * time.Hour),
+			DedupedFrom: "deduped",
+		}
+		diff, deduped := trs.PendingNow(ctx, now)
+		assert.Loosely(t, diff, should.Equal(0))
+		assert.Loosely(t, deduped, should.BeTrue)
+	})
+
+	ftt.Run("invalid diff", t, func(t *ftt.Test) {
+		trs := &TaskResultSummary{
+			Created: now.Add(-2 * time.Hour),
+		}
+		diff, deduped := trs.PendingNow(ctx, now.Add(-3*time.Hour))
+		assert.Loosely(t, diff, should.Equal(0))
+		assert.Loosely(t, deduped, should.BeFalse)
 	})
 }

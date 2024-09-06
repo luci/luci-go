@@ -24,10 +24,13 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/common/tsmon"
+	"go.chromium.org/luci/common/tsmon/distribution"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
+	"go.chromium.org/luci/swarming/server/metrics"
 	"go.chromium.org/luci/swarming/server/model"
 )
 
@@ -38,6 +41,8 @@ func TestCancel(t *testing.T) {
 		ctx := memory.Use(context.Background())
 		now := time.Date(2024, time.January, 1, 2, 3, 4, 0, time.UTC)
 		ctx, _ = testclock.UseTime(ctx, now)
+		ctx, _ = tsmon.WithDummyInMemory(ctx)
+		globalStore := tsmon.Store(ctx)
 
 		tID := "65aba3a3e6b99310"
 		reqKey, err := model.TaskIDToRequestKey(ctx, tID)
@@ -62,6 +67,8 @@ func TestCancel(t *testing.T) {
 			TaskResultCommon: model.TaskResultCommon{
 				Modified: now.Add(-time.Minute),
 			},
+			Created: now.Add(-2 * time.Hour),
+			Tags:    []string{"spec_name:spec_name", "pool:test_pool", "device_type:wobblyeye"},
 		}
 		assert.Loosely(t, datastore.Put(ctx, tr), should.BeNil)
 
@@ -137,6 +144,8 @@ func TestCancel(t *testing.T) {
 				"rbe-cancel:rbe-instance/reservation",
 				"pubsub-go:65aba3a3e6b99310",
 			}))
+			val := globalStore.Get(ctx, metrics.TaskStatusChangeSchedulerLatency, time.Time{}, []any{"test_pool", "spec_name", "CANCELED", "wobblyeye"})
+			assert.Loosely(t, val.(*distribution.Distribution).Sum(), should.Equal(float64(2*time.Hour.Milliseconds())))
 		})
 
 		t.Run("cancel running task", func(t *ftt.Test) {

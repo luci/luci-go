@@ -105,7 +105,7 @@ func (c *Cancellation) Run(ctx context.Context) (bool, error) {
 	}
 
 	if stateChanged {
-		// TODO(b/355013314): report to task_status_change_scheduler_latency metric if state changed.
+		onTaskStatusChangeSchedulerLatency(ctx, c.TaskResultSummary)
 	}
 
 	return wasRunning, nil

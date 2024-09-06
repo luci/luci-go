@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"strings"
 	"time"
 
 	"github.com/klauspost/compress/zlib"
@@ -592,6 +593,26 @@ func (p *TaskResultSummary) TaskRunID() string {
 	}
 }
 
+// PendingNow returns the duration the task spent pending to be scheduled as of now.
+//
+// If the duration is less than 0, return 0.
+// If the task is deduped, return 0 and deduped as true.
+func (p *TaskResultSummary) PendingNow(ctx context.Context, now time.Time) (diff time.Duration, deduped bool) {
+	if p.DedupedFrom != "" {
+		return 0, true
+	}
+	if started := p.Started.Get(); !started.IsZero() {
+		now = started
+	}
+
+	diff = now.Sub(p.Created)
+	if diff < 0 {
+		logging.Warningf(ctx, "Pending time %s (%s - %s) should not be negative", diff, now, p.Created)
+		diff = 0
+	}
+	return diff, false
+}
+
 // TaskResultSummaryKey construct a summary key given a task request key.
 func TaskResultSummaryKey(ctx context.Context, taskReq *datastore.Key) *datastore.Key {
 	return datastore.NewKey(ctx, "TaskResultSummary", "", 1, taskReq)
@@ -1147,4 +1168,31 @@ func FilterTasksByState(q *datastore.Query, state apipb.StateQuery, splitMode Sp
 		panic(fmt.Sprintf("unexpected StateQuery %q", state))
 	}
 	return []*datastore.Query{q}, splitMode
+}
+
+// TagListToMap converts tags in []string format to a string map.
+func TagListToMap(tags []string) (tagsMap map[string]string) {
+	tagsMap = make(map[string]string, len(tags))
+	for _, tag := range tags {
+		key, val, _ := strings.Cut(tag, ":")
+		tagsMap[key] = val
+	}
+	return tagsMap
+}
+
+// SpecName extracts the spec name from the tags map.
+func SpecName(tagsMap map[string]string) string {
+	if s := tagsMap["spec_name"]; s != "" {
+		return s
+	}
+	b := tagsMap["buildername"]
+	if tagsMap["build_is_experimental"] == "true" {
+		b += ":experimental"
+	}
+	if b == "" {
+		if tagsMap["terminate"] == "1" || tagsMap["swarming.terminate"] == "1" {
+			return "swarming:terminate"
+		}
+	}
+	return b
 }

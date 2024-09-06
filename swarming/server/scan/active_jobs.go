@@ -16,7 +16,6 @@ package scan
 
 import (
 	"context"
-	"strings"
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/tsmon"
@@ -53,9 +52,14 @@ func (r *ActiveJobsReporter) Prepare(ctx context.Context) {
 //
 // Part of TaskVisitor interface.
 func (r *ActiveJobsReporter) Visit(ctx context.Context, trs *model.TaskResultSummary) {
-	tagsMap := tagListToMap(trs.Tags)
+	// TODO(vadimsh): Stop allocating a map each time. We know exactly what keys we
+	// are going to read. We can just pick them out one by one in O(N) scan without
+	// allocating a map. This matters because this function is called O(1M) times in
+	// a tight loop and optimizing it may potentially noticeably reduce the overall
+	// loop duration.
+	tagsMap := model.TagListToMap(trs.Tags)
 	key := taskCounterKey{
-		specName:     specName(tagsMap),
+		specName:     model.SpecName(tagsMap),
 		projectID:    tagsMap["project"],
 		subprojectID: tagsMap["subproject"],
 		pool:         tagsMap["pool"],
@@ -93,36 +97,6 @@ type taskCounterKey struct {
 	pool         string // e.g. "Chrome".
 	rbe          string // RBE instance of the task or literal "none".
 	status       string // "pending", or "running".
-}
-
-// TODO(vadimsh): Stop allocating a map each time. We know exactly what keys we
-// are going to read. We can just pick them out one by one in O(N) scan without
-// allocating a map. This matters because this function is called O(1M) times in
-// a tight loop and optimizing it may potentially noticeably reduce the overall
-// loop duration.
-func tagListToMap(tags []string) (tagsMap map[string]string) {
-	tagsMap = make(map[string]string, len(tags))
-	for _, tag := range tags {
-		key, val, _ := strings.Cut(tag, ":")
-		tagsMap[key] = val
-	}
-	return tagsMap
-}
-
-func specName(tagsMap map[string]string) string {
-	if s := tagsMap["spec_name"]; s != "" {
-		return s
-	}
-	b := tagsMap["buildername"]
-	if tagsMap["build_is_experimental"] == "true" {
-		b += ":experimental"
-	}
-	if b == "" {
-		if tagsMap["terminate"] == "1" || tagsMap["swarming.terminate"] == "1" {
-			return "swarming:terminate"
-		}
-	}
-	return b
 }
 
 func taskResultSummaryStatus(s apipb.TaskState) string {
