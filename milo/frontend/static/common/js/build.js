@@ -209,7 +209,7 @@ $(document).ready(function() {
   $('#feedback-link').click(e => {
     const feedbackComment = encodeURIComponent(
 `From Link: ${document.location.href}
-Please enter a description of the problem, with repro steps if applicable.
+Please enter a description of the problem, with steps to reproduce if applicable.
 `);
     const url = `https://issuetracker.google.com/issues/new?component=1456503&type=BUG&priority=P2&severity=S2&inProd=true&description=${feedbackComment}`;
     window.open(url);

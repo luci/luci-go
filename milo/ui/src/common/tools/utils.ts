@@ -21,7 +21,7 @@ export function genFeedbackUrl(errMsg?: string, stacktrace?: string) {
     `From Link: ${self.location.href}\n` +
     (errMsg ? `Error Message:\n${errMsg}\n` : '') +
     (stacktrace ? `Stacktrace:\n${stacktrace}\n` : '') +
-    'Please enter a description of the problem, with repro steps if applicable.';
+    'Please enter a description of the problem, with steps to reproduce if applicable.';
 
   const searchParams = new URLSearchParams({
     // Public Trackers > Chromium Public Trackers > Chromium > Infra > LUCI > UserInterface
