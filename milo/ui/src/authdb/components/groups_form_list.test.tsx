@@ -133,6 +133,23 @@ describe('<GroupsFormList editable/>', () => {
     expect(screen.getByText('Each member should be an email address.')).toBeInTheDocument();
   })
 
+  test('shows error message on duplicate item added', async () => {
+    // Click add button.
+    const addButton = screen.queryByTestId('add-button');
+    expect(addButton).not.toBeNull();
+    act(() => addButton!.click());
+    // Type in textfield.
+    const textfield = screen.getByTestId('add-textfield').querySelector('input');
+    expect(textfield).toBeInTheDocument();
+    await userEvent.type(textfield!, 'member1@email.com');
+    // Add member that already exists.
+    const confirmButton = screen.queryByTestId('confirm-button');
+    expect(confirmButton).not.toBeNull();
+    act(() => confirmButton!.click());
+    // Check correct error message is shown.
+    expect(screen.getByText('Duplicate item.')).toBeInTheDocument();
+  })
+
   test('hides textfield with clear button', async() => {
     // Click add button.
     const addButton = screen.queryByTestId('add-button');

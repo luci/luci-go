@@ -341,13 +341,13 @@ describe('<GroupsForm />', () => {
       </FakeContextProvider>,
     );
     await screen.findByTestId('groups-form');
-    const row = screen.getByTestId(`item-row-member1`);
+    const row = screen.getByTestId(`item-row-member1@email.com`);
     fireEvent.mouseEnter(row);
-    const removeButton = screen.getByTestId(`remove-button-member1`)
+    const removeButton = screen.getByTestId(`remove-button-member1@email.com`)
     act(() => removeButton.click());
 
     // Check new member shown in list & message is shown.
-    expect(screen.getByText('Removed: member1')).toBeInTheDocument();
+    expect(screen.getByText('Removed: member1@email.com')).toBeInTheDocument();
     expect(screen.getByText('You have unsaved changes!')).toBeInTheDocument();
   });
 

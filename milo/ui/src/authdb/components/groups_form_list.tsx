@@ -80,6 +80,11 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
       }
 
     const addToItems = () => {
+      // Make sure item added is not a duplicate.
+      if (items.includes(currentItem!)) {
+        setErrorMessage('Duplicate item.');
+        return;
+      }
       // If this is members or globs, verify accordingly before adding.
       // If it doesn't meet the requirements, show error message.
       if (name == 'Members') {
