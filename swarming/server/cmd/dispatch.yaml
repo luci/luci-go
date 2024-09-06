@@ -9,13 +9,16 @@ dispatch:
   - url: "*/swarming/api/v1/bot/rbe/*"
     service: default-go
 
-  # Serve TQ tasks using Go.
+  # Serve TQ tasks and PubSub handlers using Go.
   - url: "*/internal/tasks/t/bq-*"
     service: exporter
   - url: "*/internal/tasks/t/*"
     service: default-go
+  - url: "*/internal/pubsub/*"
+    service: default-go
 
   # Serve RBE PubSub push subscription handler using Go.
+  # TODO: Remove once the handler is gone.
   - url: "*/pubsub/rbe/*"
     service: default-go
 
