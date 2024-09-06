@@ -569,6 +569,11 @@ func (p *TaskResultSummary) TaskRequestKey() *datastore.Key {
 	return key
 }
 
+// IsActive returns whether the task is either PENDING or RUNNING.
+func (p *TaskResultSummary) IsActive() bool {
+	return p.State == apipb.TaskState_PENDING || p.State == apipb.TaskState_RUNNING
+}
+
 // TaskRunID returns the packed TaskRunResult key of the actual execution.
 //
 // If the task was dedupped, it will be the key of the run that actually

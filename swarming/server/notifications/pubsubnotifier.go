@@ -109,8 +109,6 @@ func (ps *PubSubNotifier) Stop() {
 }
 
 // RegisterTQTasks registers task queue handlers.
-//
-// Tasks are actually submitted from the Python side.
 func (ps *PubSubNotifier) RegisterTQTasks(disp *tq.Dispatcher) {
 	disp.RegisterTaskClass(tq.TaskClass{
 		ID:        "pubsub-go",
