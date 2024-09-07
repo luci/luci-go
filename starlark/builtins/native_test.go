@@ -17,35 +17,32 @@ package builtins
 import (
 	"testing"
 
-	"go.starlark.net/resolve"
 	"go.starlark.net/starlark"
+	"go.starlark.net/syntax"
 
 	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/option"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
-
-func init() {
-	resolve.AllowFloat = true
-	resolve.AllowSet = true
-}
 
 func TestToGoNative(t *testing.T) {
 	t.Parallel()
 
 	runScript := func(code string) (starlark.StringDict, error) {
-		return starlark.ExecFile(&starlark.Thread{}, "main", code, nil)
+		return starlark.ExecFileOptions(&syntax.FileOptions{
+			Set: true,
+		}, &starlark.Thread{}, "main", code, nil)
 	}
 
 	run := func(t testing.TB, code string, expected any) {
 		t.Helper()
 
 		out, err := runScript(code)
-		assert.That(t, err, should.ErrLike(nil), option.LineContext())
+		assert.That(t, err, should.ErrLike(nil), truth.LineContext())
 		result, err := ToGoNative(out["val"])
-		assert.That(t, err, should.ErrLike(nil), option.LineContext())
-		assert.Loosely(t, result, should.Resemble(expected), option.LineContext())
+		assert.That(t, err, should.ErrLike(nil), truth.LineContext())
+		assert.Loosely(t, result, should.Resemble(expected), truth.LineContext())
 	}
 
 	mustFail := func(code string, expectErr string) {

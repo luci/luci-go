@@ -24,7 +24,7 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/convey"
-	"go.chromium.org/luci/common/testing/truth/option"
+	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -238,7 +238,7 @@ func createFakeTask(ctx context.Context, t testing.TB, taskID, realm, pool strin
 	t.Helper()
 
 	key, err := model.TaskIDToRequestKey(ctx, taskID)
-	assert.Loosely(t, err, should.BeNil, option.LineContext())
+	assert.Loosely(t, err, should.BeNil, truth.LineContext())
 	assert.Loosely(t, datastore.Put(ctx, &model.TaskRequest{
 		Key:           key,
 		Realm:         realm,
@@ -252,5 +252,5 @@ func createFakeTask(ctx context.Context, t testing.TB, taskID, realm, pool strin
 				},
 			},
 		},
-	}), should.BeNil, option.LineContext())
+	}), should.BeNil, truth.LineContext())
 }

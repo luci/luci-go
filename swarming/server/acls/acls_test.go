@@ -29,9 +29,9 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/convey"
-	"go.chromium.org/luci/common/testing/truth/option"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
@@ -536,7 +536,7 @@ func assertSame(t testing.TB, got, want []realms.Permission) {
 		}
 		return s.ToSortedSlice()
 	}
-	assert.Loosely(t, asSet(got), should.Resemble(asSet(want)), option.LineContext())
+	assert.Loosely(t, asSet(got), should.Resemble(asSet(want)), truth.LineContext())
 }
 
 // mockedConfig prepares a queryable config.

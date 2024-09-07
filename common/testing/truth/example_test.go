@@ -17,8 +17,8 @@ package truth_test
 import (
 	"strings"
 
+	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/check"
-	"go.chromium.org/luci/common/testing/truth/option"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -95,7 +95,7 @@ func Example_helpers_with_line_context() {
 		// the filename.go:NN value to print next to the error message.
 		t.Helper()
 
-		check.That(t, 10, should.Equal(expect), option.LineContext()) // line 98
+		check.That(t, 10, should.Equal(expect), truth.LineContext()) // line 98
 	}
 
 	helper(10) // line 100

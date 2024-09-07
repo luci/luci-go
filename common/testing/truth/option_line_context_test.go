@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package option
+package truth
 
 import (
 	"path/filepath"
@@ -31,7 +31,7 @@ func TestLineContext(t *testing.T) {
 	}
 
 	t.Run("non-nil", func(t *testing.T) {
-		opt := LineContext(0).(SummaryModifier) // Gets .../line_context_test.go:34
+		opt := LineContext(0).(summaryModifier) // Gets .../option_line_context_test.go:34
 		failure := mkFailure()
 		opt(failure)
 		ctx := failure.SourceContext
@@ -50,7 +50,7 @@ func TestLineContext(t *testing.T) {
 		// call at the top of this function. If you edit this test file, the line
 		// number will change, which is expected.
 		frame := atCtx.Frames[0]
-		if diff := typed.Diff(filepath.Base(frame.Filename), "line_context_test.go"); diff != "" {
+		if diff := typed.Diff(filepath.Base(frame.Filename), "option_line_context_test.go"); diff != "" {
 			t.Fatalf("unexpected filename: %s", diff)
 		}
 		if diff := typed.Diff(frame.Lineno, 34); diff != "" {
@@ -59,9 +59,9 @@ func TestLineContext(t *testing.T) {
 	})
 
 	t.Run("helper", func(t *testing.T) {
-		opt := func() SummaryModifier {
-			return LineContext(1).(SummaryModifier)
-		}() // Gets .../line_context_test.go:64
+		opt := func() summaryModifier {
+			return LineContext(1).(summaryModifier)
+		}() // Gets .../option_line_context_test.go:64
 		failure := mkFailure()
 		opt(failure)
 		ctx := failure.SourceContext
@@ -80,7 +80,7 @@ func TestLineContext(t *testing.T) {
 		// call at the top of this function. If you edit this test file, the line
 		// number will change, which is expected.
 		frame := atCtx.Frames[0]
-		if diff := typed.Diff(filepath.Base(frame.Filename), "line_context_test.go"); diff != "" {
+		if diff := typed.Diff(filepath.Base(frame.Filename), "option_line_context_test.go"); diff != "" {
 			t.Fatalf("unexpected filename: %s", diff)
 		}
 		if diff := typed.Diff(frame.Lineno, 64); diff != "" {

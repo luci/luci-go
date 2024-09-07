@@ -37,7 +37,6 @@ package check
 import (
 	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/comparison"
-	"go.chromium.org/luci/common/testing/truth/option"
 )
 
 // That will compare `actual` using `compare(actual)`.
@@ -48,8 +47,8 @@ import (
 // Example: `check.That(t, 10, should.Equal(20))`
 //
 // Returns `true` iff `compare(actual)` returned no failure (i.e. nil)
-func That[T any](t truth.TestingTB, actual T, compare comparison.Func[T], opts ...option.Option) (ok bool) {
-	summary := option.ApplyAll(compare(actual), opts)
+func That[T any](t truth.TestingTB, actual T, compare comparison.Func[T], opts ...truth.Option) (ok bool) {
+	summary := truth.ApplyAllOptions(compare(actual), opts)
 	if summary == nil {
 		return true
 	}
@@ -68,8 +67,8 @@ func That[T any](t truth.TestingTB, actual T, compare comparison.Func[T], opts .
 // Example: `check.Loosely(t, 10, should.Equal(20))`
 //
 // Returns `true` iff `compare.CastCompare(actual)` returned no failure (i.e. nil)
-func Loosely[T any](t truth.TestingTB, actual any, compare comparison.Func[T], opts ...option.Option) (ok bool) {
-	summary := option.ApplyAll(compare.CastCompare(actual), opts)
+func Loosely[T any](t truth.TestingTB, actual any, compare comparison.Func[T], opts ...truth.Option) (ok bool) {
+	summary := truth.ApplyAllOptions(compare.CastCompare(actual), opts)
 	if summary == nil {
 		return true
 	}

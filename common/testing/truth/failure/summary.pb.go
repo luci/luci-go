@@ -313,7 +313,7 @@ func (x *Comparison) GetArguments() []string {
 //
 // Conventional names:
 //   - "at" - The single filename/lineno of where the assertion took place. This
-//     can be added by using `option.LineContext()` on a returned
+//     can be added by using `truth.LineContext()` on a returned
 //     *Failure from a comparison.Func, or by using `assert.WithContext...` or
 //     `check.WithContext...`. This is useful when writing assertion helper
 //     functions - Go will report the filename:NN of the 'top most' stack frame,

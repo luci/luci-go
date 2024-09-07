@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package option
+package truth
 
 import (
 	"fmt"
@@ -27,7 +27,7 @@ import (
 //
 // Example:
 //
-//	check.That(t, something, should.Equal(100), option.LineContext())
+//	check.That(t, something, should.Equal(100), truth.LineContext())
 //
 // You usually will not need this, but it's very useful when writing a helper
 // function for tests (e.g. using t.Helper()) to let you add the location of the
@@ -62,7 +62,7 @@ import (
 func LineContext(skipFrames ...int) Option {
 	if len(skipFrames) > 1 {
 		panic(fmt.Errorf(
-			"option.LineContext: skipFrames has more than one value: %v", skipFrames))
+			"truth.LineContext: skipFrames has more than one value: %v", skipFrames))
 	}
 
 	skip := 1
@@ -74,7 +74,7 @@ func LineContext(skipFrames ...int) Option {
 		return nil
 	}
 
-	return SummaryModifier(func(s *failure.Summary) {
+	return ModifySummary(func(s *failure.Summary) {
 		s.SourceContext = append(s.SourceContext, &failure.Stack{
 			Name:   "at",
 			Frames: []*failure.Stack_Frame{{Filename: filename, Lineno: int64(lineno)}},
