@@ -19,7 +19,6 @@ import (
 	"strconv"
 
 	"cloud.google.com/go/pubsub"
-	"go.chromium.org/luci/common/data/stringset"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 
@@ -35,13 +34,6 @@ import (
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	taskdefs "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
 	"go.chromium.org/luci/buildbucket/protoutil"
-)
-
-// TODO(crbug.com/1410912): Remove the it once flutter-dashboard is able to
-// handle the new format.
-var pyPusbubCallbackAllowlist = stringset.NewFromSlice(
-	"projects/flutter-dashboard/topics/luci-builds",
-	"projects/flutter-dashboard/topics/luci-builds-prod",
 )
 
 // notifyPubSub enqueues tasks to Python side.
@@ -75,14 +67,6 @@ func NotifyPubSub(ctx context.Context, b *model.Build) error {
 
 	if b.PubSubCallback.Topic == "" {
 		return nil
-	}
-
-	// TODO(crbug.com/1410912): Remove the it once flutter-dashboard is able to
-	// handle the new format.
-	if pyPusbubCallbackAllowlist.Has(b.PubSubCallback.Topic) {
-		logging.Warningf(ctx, "Routing to Python side to handle pubsub callback for build %d", b.ID)
-		err := notifyPubSub(ctx, &taskdefs.NotifyPubSub{BuildId: b.ID, Callback: true})
-		return errors.Annotate(err, "failed to enqueue pubsub callback task to Python side for build: %d", b.ID).Err()
 	}
 
 	if err := tq.AddTask(ctx, &tq.Task{

@@ -113,39 +113,6 @@ func TestNotification(t *testing.T) {
 			So(tasks[2].Payload.(*taskdefs.NotifyPubSubGoProxy).GetBuildId(), ShouldEqual, 123)
 			So(tasks[2].Payload.(*taskdefs.NotifyPubSubGoProxy).GetProject(), ShouldEqual, "project")
 		})
-
-		Convey("w/ callback (Python)", func() {
-			txErr := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-				cb := model.PubSubCallback{
-					AuthToken: "token",
-					Topic:     "projects/flutter-dashboard/topics/luci-builds",
-					UserData:  []byte("user_data"),
-				}
-				return NotifyPubSub(ctx, &model.Build{
-					ID:             123,
-					PubSubCallback: cb,
-					Proto: &pb.Build{
-						Builder: &pb.BuilderID{
-							Project: "project",
-						},
-					},
-				})
-			}, nil)
-			So(txErr, ShouldBeNil)
-			tasks := sch.Tasks()
-			sortTasksByClassName(tasks)
-			So(tasks, ShouldHaveLength, 3)
-
-			n1 := tasks[0].Payload.(*taskdefs.NotifyPubSub)
-			n2 := tasks[1].Payload.(*taskdefs.NotifyPubSub)
-			So(n1.GetBuildId(), ShouldEqual, 123)
-			So(n2.GetBuildId(), ShouldEqual, 123)
-			// One w/ callback and one w/o callback.
-			So(n1.GetCallback() != n2.GetCallback(), ShouldBeTrue)
-
-			So(tasks[2].Payload.(*taskdefs.NotifyPubSubGoProxy).GetBuildId(), ShouldEqual, 123)
-			So(tasks[2].Payload.(*taskdefs.NotifyPubSubGoProxy).GetProject(), ShouldEqual, "project")
-		})
 	})
 
 	Convey("EnqueueNotifyPubSubGo", t, func() {
