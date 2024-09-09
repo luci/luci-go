@@ -181,3 +181,28 @@ type CustomBuilderMetrics struct {
 func CustomBuilderMetricsKey(ctx context.Context) *datastore.Key {
 	return datastore.NewKey(ctx, "CustomBuilderMetrics", "", 1, nil)
 }
+
+// BuilderQueue is a Datastore entity that stores the builder's current workload.
+// It is used in conjunction with the max_concurrent_builds field defined
+// in lucicfg builder definition.
+// This entity only exists for builders with the max_concurrent_builds
+// feature enabled.
+type BuilderQueue struct {
+	_     datastore.PropertyMap `gae:"-,extra"`
+	_kind string                `gae:"$kind,BuilderQueue"`
+
+	// ID is a string representation of the Bucket.Builder entity key,
+	// e.g. "angle/ci/linux-test".
+	// Only one BuilderQueue exists per Builder.
+	ID string `gae:"$id"`
+
+	// TriggeredBuilds represents the set of builds dispatched to task Backend
+	// but not yet terminated (i.e. builds in Cloud Task queue
+	// + builds with created Backend tasks
+	// + the builds actually running).
+	TriggeredBuilds []int64 `gae:"triggered_builds,noindex"`
+
+	// PendingBuilds represents the queue of builds not yet triggered.
+	// (i.e. builds that were scheduled but not yet dispatched)
+	PendingBuilds []int64 `gae:"pending_builds,noindex"`
+}
