@@ -225,6 +225,17 @@ func init() {
 			return CheckLiveness(ctx, t.BuildId, t.HeartbeatTimeout)
 		},
 	})
+
+	tq.RegisterTaskClass(tq.TaskClass{
+		ID:        "push-pending-builds",
+		Kind:      tq.Transactional,
+		Prototype: (*taskdefs.PushPendingBuildTask)(nil),
+		Queue:     "push-pending-builds",
+		Handler: func(ctx context.Context, payload proto.Message) error {
+			t := payload.(*taskdefs.PushPendingBuildTask)
+			return PushPendingBuildTask(ctx, t.BuildId, t.BuilderId)
+		},
+	})
 }
 
 // CancelBackendTask enqueues a task queue task to cancel the given Backend

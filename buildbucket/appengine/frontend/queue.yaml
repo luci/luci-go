@@ -44,3 +44,6 @@ queue:
 - name: cancel-backend-task
   target: default-go
   rate: 500/s
+- name: push-pending-builds
+  target: default-go
+  rate: 500/s

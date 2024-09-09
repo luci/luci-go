@@ -9,7 +9,7 @@ package taskdefs;
 option go_package = "go.chromium.org/luci/buildbucket/appengine/tasks/defs;taskdefs";
 
 import "go.chromium.org/luci/buildbucket/proto/project_config.proto";
-
+import "go.chromium.org/luci/buildbucket/proto/builder_common.proto";
 
 // A task to cancel a Swarming task in Go.
 message CancelSwarmingTaskGo {
@@ -129,4 +129,15 @@ message CheckBuildLiveness {
   // The maximum amount of seconds for not hearing any build heartbeats before
   // failing the build.
   uint32 heartbeat_timeout = 2;
+}
+
+// PushPendingBuildTask checks if the build should be pushed to
+// the builder's pending_build queue or
+// if the build should be immediately triggered.
+message PushPendingBuildTask {
+  // ID of the build just being created.
+  int64 build_id = 1;
+
+  // ID of the builder the build belongs to.
+  buildbucket.v2.BuilderID builder_id = 2;
 }
