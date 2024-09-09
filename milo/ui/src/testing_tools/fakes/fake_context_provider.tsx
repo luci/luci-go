@@ -25,6 +25,7 @@ import { PermCheckProvider } from '@/common/components/perm_check_provider';
 import { UiPage } from '@/common/constants/view';
 import { theme } from '@/common/themes/base';
 import { ReleaseNotesProvider } from '@/core/components/release_notes';
+import { SingletonStoreProvider } from '@/generic_libs/hooks/singleton';
 import { SyncedSearchParamsProvider } from '@/generic_libs/hooks/synced_search_params';
 
 import { FakeAuthStateProvider } from './fake_auth_state_provider';
@@ -112,18 +113,20 @@ export function FakeContextProvider({
     <ThemeProvider theme={theme}>
       <LocalizationProvider dateAdapter={AdapterLuxon}>
         <QueryClientProvider client={client}>
-          <PageMetaProvider
-            initPage={pageMeta?.selectedPage}
-            initProject={pageMeta?.project}
-          >
-            <ReleaseNotesProvider
-              initReleaseNotes={{ latest: '', latestVersion: -1, past: '' }}
+          <SingletonStoreProvider>
+            <PageMetaProvider
+              initPage={pageMeta?.selectedPage}
+              initProject={pageMeta?.project}
             >
-              <PageConfigStateProvider>
-                <RouterProvider router={router} />
-              </PageConfigStateProvider>
-            </ReleaseNotesProvider>
-          </PageMetaProvider>
+              <ReleaseNotesProvider
+                initReleaseNotes={{ latest: '', latestVersion: -1, past: '' }}
+              >
+                <PageConfigStateProvider>
+                  <RouterProvider router={router} />
+                </PageConfigStateProvider>
+              </ReleaseNotesProvider>
+            </PageMetaProvider>
+          </SingletonStoreProvider>
         </QueryClientProvider>
       </LocalizationProvider>
     </ThemeProvider>

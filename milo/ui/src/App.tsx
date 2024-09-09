@@ -52,6 +52,7 @@ import { routes } from '@/routes';
 import { PermCheckProvider } from './common/components/perm_check_provider';
 import { parseReleaseNotes } from './core/components/release_notes/common';
 import { useIsDevEnv } from './generic_libs/hooks/is_dev_env';
+import { SingletonStoreProvider } from './generic_libs/hooks/singleton';
 
 const isNonTransientError = (error: unknown) =>
   error instanceof GrpcError && NON_TRANSIENT_ERROR_CODES.includes(error.code);
@@ -185,20 +186,22 @@ export function App() {
     <LocalizationProvider dateAdapter={AdapterLuxon}>
       <ThemeProvider theme={theme}>
         <QueryClientProvider client={queryClient}>
-          <StoreProvider value={store}>
-            <LitEnvProvider>
-              <PageMetaProvider>
-                <ReleaseNotesProvider
-                  initReleaseNotes={parseReleaseNotes(releaseNotes)}
-                >
-                  <PageConfigStateProvider>
-                    <milo-tooltip />
-                    <RouterProvider router={router} />
-                  </PageConfigStateProvider>
-                </ReleaseNotesProvider>
-              </PageMetaProvider>
-            </LitEnvProvider>
-          </StoreProvider>
+          <SingletonStoreProvider>
+            <StoreProvider value={store}>
+              <LitEnvProvider>
+                <PageMetaProvider>
+                  <ReleaseNotesProvider
+                    initReleaseNotes={parseReleaseNotes(releaseNotes)}
+                  >
+                    <PageConfigStateProvider>
+                      <milo-tooltip />
+                      <RouterProvider router={router} />
+                    </PageConfigStateProvider>
+                  </ReleaseNotesProvider>
+                </PageMetaProvider>
+              </LitEnvProvider>
+            </StoreProvider>
+          </SingletonStoreProvider>
         </QueryClientProvider>
       </ThemeProvider>
     </LocalizationProvider>
