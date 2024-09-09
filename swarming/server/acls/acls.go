@@ -171,6 +171,16 @@ func (chk *Checker) CheckServerPerm(ctx context.Context, perm realms.Permission)
 	var err error
 
 	switch perm {
+	case PermServersPeek:
+		yes, err = chk.db.IsMember(ctx, chk.caller, []string{
+			serverGroups.UsersGroup,
+			serverGroups.PrivilegedUsersGroup,
+			serverGroups.AdminsGroup,
+			serverGroups.BotBootstrapGroup,
+			serverGroups.ViewAllTasksGroup,
+			serverGroups.ViewAllBotsGroup,
+		})
+
 	case PermTasksGet, PermPoolsListTasks:
 		yes, err = chk.db.IsMember(ctx, chk.caller, []string{
 			serverGroups.ViewAllTasksGroup,

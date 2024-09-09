@@ -58,6 +58,9 @@ const (
 // RPCs are implemented in swarming_*.go files.
 type SwarmingServer struct {
 	apipb.UnimplementedSwarmingServer
+
+	// ServerVersion is the version of the executing binary.
+	ServerVersion string
 }
 
 // BotsServer implements Bots gRPC service.

@@ -19,6 +19,8 @@ import (
 )
 
 var (
+	// PermServersPeek controls who can see information about the server.
+	PermServersPeek = realms.RegisterPermission("swarming.servers.peek")
 	// PermTasksGet controls who can see the task known by its ID.
 	PermTasksGet = realms.RegisterPermission("swarming.tasks.get")
 	// PermTasksCancel controls who can cancel the task known by its ID.

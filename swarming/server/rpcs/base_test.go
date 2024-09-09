@@ -17,13 +17,18 @@ package rpcs
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/cipd/client/cipd/fs"
+	"go.chromium.org/luci/cipd/client/cipd/pkg"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -50,6 +55,15 @@ const (
 	AdminFakeCaller identity.Identity = "user:admin@example.com"
 )
 
+const (
+	// MockedSwarmingServer is URL of the Swarming server used in tests.
+	MockedSwarmingServer = "https://mocked.swarming.example.com"
+	// MockedCIPDServer is the CIPD server URL used in tests.
+	MockedCIPDServer = "https://mocked.cipd.example.com"
+	// MockedBotPackage is bot CIPD package used in tests.
+	MockedBotPackage = "mocked/bot/package"
+)
+
 // TestTime is used in mocked entities in RPC tests.
 var TestTime = time.Date(2023, time.January, 1, 2, 3, 4, 0, time.UTC)
 
@@ -59,7 +73,76 @@ type MockedConfigs struct {
 	Pools    *configpb.PoolsCfg
 	Bots     *configpb.BotsCfg
 	Scripts  map[string]string
+	CIPD     MockedCIPD
 }
+
+// MockBotPackage mocks existence of a bot package in the CIPD and configs.
+func (cfg *MockedConfigs) MockBotPackage(cipdVersion string, files map[string]string) {
+	cfg.CIPD.MockPackage(MockedBotPackage, cipdVersion, files)
+	pkg := &configpb.BotDeployment_BotPackage{
+		Server:  MockedCIPDServer,
+		Pkg:     MockedBotPackage,
+		Version: cipdVersion,
+	}
+	cfg.Settings.BotDeployment = &configpb.BotDeployment{
+		Stable:        pkg,
+		Canary:        pkg,
+		CanaryPercent: 20,
+	}
+}
+
+// MockedCIPD mocks state in CIPD.
+//
+// Implements cfg.CIPD.
+type MockedCIPD struct {
+	pkgs map[string]pkg.Instance
+}
+
+// MockPackage puts a mocked package into the CIPD storage.
+func (c *MockedCIPD) MockPackage(cipdpkg, version string, files map[string]string) {
+	pkgFiles := make([]fs.File, 0, len(files))
+	for key, val := range files {
+		pkgFiles = append(pkgFiles, fs.NewTestFile(key, val, fs.TestFileOpts{}))
+	}
+	if c.pkgs == nil {
+		c.pkgs = make(map[string]pkg.Instance, 1)
+	}
+	c.pkgs[fmt.Sprintf("%s:%s", cipdpkg, version)] = fakeInstance{files: pkgFiles}
+}
+
+// ResolveVersion resolves a version label into a CIPD instance ID.
+func (c *MockedCIPD) ResolveVersion(ctx context.Context, server, cipdpkg, version string) (string, error) {
+	if server != MockedCIPDServer {
+		return "", status.Errorf(codes.NotFound, "unexpected CIPD server %s", server)
+	}
+	key := fmt.Sprintf("%s:%s", cipdpkg, version)
+	if _, ok := c.pkgs[key]; ok {
+		return "iid-" + key, nil
+	}
+	return "", status.Errorf(codes.NotFound, "no such package: %s %s", cipdpkg, version)
+}
+
+// FetchInstance fetches contents of a package given via its instance ID.
+func (c *MockedCIPD) FetchInstance(ctx context.Context, server, cipdpkg, iid string) (pkg.Instance, error) {
+	if server != MockedCIPDServer {
+		return nil, status.Errorf(codes.NotFound, "unexpected CIPD server %s", server)
+	}
+	if key, ok := strings.CutPrefix(iid, "iid-"); ok {
+		if pkg := c.pkgs[key]; pkg != nil {
+			return pkg, nil
+		}
+	}
+	return nil, status.Errorf(codes.NotFound, "no such package: %s %s", cipdpkg, iid)
+}
+
+// fakeInstance implements subset of pkg.Instance used by MockedCIPD.
+type fakeInstance struct {
+	pkg.Instance // embedded nil, to panic if any other method is called
+	files        []fs.File
+}
+
+func (f fakeInstance) Files() []fs.File                              { return f.files }
+func (f fakeInstance) Close(ctx context.Context, corrupt bool) error { return nil }
 
 // MockedRequestState is all per-RPC state that can be mocked.
 type MockedRequestState struct {
@@ -154,9 +237,12 @@ func MockConfigs(ctx context.Context, configs MockedConfigs) *cfg.Provider {
 	}
 
 	// Put new configs into the datastore.
-	err := cfg.UpdateConfigs(cfgclient.Use(ctx, cfgmem.New(map[config.Set]cfgmem.Files{
+	mockedCfg := cfgclient.Use(ctx, cfgmem.New(map[config.Set]cfgmem.Files{
 		"services/${appid}": files,
-	})), nil)
+	}))
+	err := cfg.UpdateConfigs(mockedCfg, &cfg.EmbeddedBotSettings{
+		ServerURL: MockedSwarmingServer,
+	}, &configs.CIPD)
 	if err != nil {
 		panic(err)
 	}

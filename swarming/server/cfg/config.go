@@ -26,6 +26,7 @@ import (
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/cipd/client/cipd/pkg"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -60,6 +61,16 @@ const (
 	// A digest of a default *.cfg configs (calculated in the test).
 	emptyCfgDigest = "0NpkIis/WMci8PDKkLD3PB/t8B86nbBVjyD59iosjOM"
 )
+
+// CIPD is used to communicate with the CIPD server.
+//
+// Usually it is *cipd.Client.
+type CIPD interface {
+	// ResolveVersion resolves a version label into a CIPD instance ID.
+	ResolveVersion(ctx context.Context, server, cipdpkg, version string) (string, error)
+	// FetchInstance fetches contents of a package given via its instance ID.
+	FetchInstance(ctx context.Context, server, cipdpkg, iid string) (pkg.Instance, error)
+}
 
 // EmbeddedBotSettings is configuration data that eventually ends up in the
 // bot zip archive inside config.json.
@@ -240,8 +251,11 @@ func (cfg *Config) RouteToGoPercent(route string) int {
 // UpdateConfigs fetches the most recent server configs and bot code and stores
 // them in the local datastore if they appear to be valid.
 //
+// If `cipdClient` is not nil, uses it to communicate with CIPD. Otherwise
+// constructs a default client.
+//
 // Called from a cron job once a minute.
-func UpdateConfigs(ctx context.Context, ebs *EmbeddedBotSettings) error {
+func UpdateConfigs(ctx context.Context, ebs *EmbeddedBotSettings, cipdClient CIPD) error {
 	// Fetch known config files and everything that looks like a hooks script.
 	files, err := cfgclient.Client(ctx).GetConfigs(ctx, "services/${appid}",
 		func(path string) bool {
@@ -297,13 +311,15 @@ func UpdateConfigs(ctx context.Context, ebs *EmbeddedBotSettings) error {
 		// to the same thing and the second call will just quickly discover
 		// everything is already done. Also we are in no rush in this background
 		// cron job.
-		var cipdClient cipd.Client
-		fresh.StableBot, err = ensureBotArchiveBuilt(ctx, &cipdClient, stable,
+		if cipdClient == nil {
+			cipdClient = &cipd.Client{}
+		}
+		fresh.StableBot, err = ensureBotArchiveBuilt(ctx, cipdClient, stable,
 			botConfigBody, fresh.Revision, ebs, botArchiveChunkSize)
 		if err != nil {
 			return errors.Annotate(err, "failed build the stable bot archive").Err()
 		}
-		fresh.CanaryBot, err = ensureBotArchiveBuilt(ctx, &cipdClient, canary,
+		fresh.CanaryBot, err = ensureBotArchiveBuilt(ctx, cipdClient, canary,
 			botConfigBody, fresh.Revision, ebs, botArchiveChunkSize)
 		if err != nil {
 			return errors.Annotate(err, "failed build the canary bot archive").Err()

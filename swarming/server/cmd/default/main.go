@@ -37,6 +37,7 @@ import (
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	"go.chromium.org/luci/swarming/server/botsrv"
 	"go.chromium.org/luci/swarming/server/cfg"
+	"go.chromium.org/luci/swarming/server/cipd"
 	"go.chromium.org/luci/swarming/server/hmactoken"
 	"go.chromium.org/luci/swarming/server/model"
 	"go.chromium.org/luci/swarming/server/notifications"
@@ -93,10 +94,11 @@ func main() {
 
 		// A cron job that fetches most recent configs from LUCI Config and puts
 		// them into the datastore.
+		var cipdClient cipd.Client
 		cron.RegisterHandler("update-config", func(ctx context.Context) error {
 			return cfg.UpdateConfigs(ctx, &cfg.EmbeddedBotSettings{
 				ServerURL: fmt.Sprintf("https://%s.appspot.com", srv.Options.CloudProject),
-			})
+			}, &cipdClient)
 		})
 
 		// A config loader for the current process which reads configs from the
@@ -164,7 +166,6 @@ func main() {
 			"/swarming.v2.Tasks/CancelTask":           devAPIAccessGroup,
 			"/swarming.v2.Tasks/NewTask":              devAPIAccessGroup,
 			"/swarming.v2.Tasks/CancelTasks":          devAPIAccessGroup,
-			"/swarming.v2.Swarming/GetDetails":        devAPIAccessGroup,
 			"/swarming.v2.Swarming/GetToken":          devAPIAccessGroup,
 			"/buildbucket.v2.TaskBackend/RunTask":     devAPIAccessGroup,
 			"/buildbucket.v2.TaskBackend/CancelTasks": devAPIAccessGroup,
@@ -184,6 +185,7 @@ func main() {
 			"/swarming.v2.Tasks/CountTasks":               rpcacl.All,
 			"/swarming.v2.Tasks/ListTasks":                rpcacl.All,
 			"/swarming.v2.Tasks/ListTaskRequests":         rpcacl.All,
+			"/swarming.v2.Swarming/GetDetails":            rpcacl.All,
 			"/swarming.v2.Swarming/GetPermissions":        rpcacl.All,
 			"/buildbucket.v2.TaskBackend/FetchTasks":      rpcacl.All,
 			"/buildbucket.v2.TaskBackend/ValidateConfigs": rpcacl.All,
@@ -207,7 +209,9 @@ func main() {
 		// Register gRPC server implementations.
 		apipb.RegisterBotsServer(srv, &rpcs.BotsServer{BotQuerySplitMode: model.SplitOptimally})
 		apipb.RegisterTasksServer(srv, &rpcs.TasksServer{TaskQuerySplitMode: model.SplitOptimally})
-		apipb.RegisterSwarmingServer(srv, &rpcs.SwarmingServer{})
+		apipb.RegisterSwarmingServer(srv, &rpcs.SwarmingServer{
+			ServerVersion: srv.Options.ImageVersion(),
+		})
 		bbpb.RegisterTaskBackendServer(srv, &rpcs.TaskBackend{
 			BuildbucketTarget:       fmt.Sprintf("swarming://%s", srv.Options.CloudProject),
 			BuildbucketAccount:      *buildbucketServiceAccount,

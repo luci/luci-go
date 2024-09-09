@@ -86,6 +86,7 @@ func TestServerLevel(t *testing.T) {
 
 	ftt.Run("Admin", t, func(t *ftt.Test) {
 		assertSame(t, permittedPerms("user:admin@example.com"), []realms.Permission{
+			PermServersPeek,
 			PermTasksGet,
 			PermTasksCancel,
 			PermPoolsListBots,
@@ -99,12 +100,14 @@ func TestServerLevel(t *testing.T) {
 
 	ftt.Run("Bootstrap", t, func(t *ftt.Test) {
 		assertSame(t, permittedPerms("user:bootstrap@example.com"), []realms.Permission{
+			PermServersPeek,
 			PermPoolsCreateBot,
 		})
 	})
 
 	ftt.Run("Privileged", t, func(t *ftt.Test) {
 		assertSame(t, permittedPerms("user:privileged@example.com"), []realms.Permission{
+			PermServersPeek,
 			PermTasksGet,
 			PermPoolsListBots,
 			PermPoolsListTasks,
@@ -113,12 +116,14 @@ func TestServerLevel(t *testing.T) {
 
 	ftt.Run("View all bots", t, func(t *ftt.Test) {
 		assertSame(t, permittedPerms("user:view-all-bots@example.com"), []realms.Permission{
+			PermServersPeek,
 			PermPoolsListBots,
 		})
 	})
 
 	ftt.Run("View all tasks", t, func(t *ftt.Test) {
 		assertSame(t, permittedPerms("user:view-all-tasks@example.com"), []realms.Permission{
+			PermServersPeek,
 			PermTasksGet,
 			PermPoolsListTasks,
 		})
@@ -599,7 +604,7 @@ func mockedConfig(settings *configpb.AuthSettings, pools map[string]string, bots
 	ctx := memory.Use(context.Background())
 	err := cfg.UpdateConfigs(cfgclient.Use(ctx, cfgmem.New(map[config.Set]cfgmem.Files{
 		"services/${appid}": files,
-	})), nil)
+	})), nil, nil)
 	if err != nil {
 		panic(err)
 	}

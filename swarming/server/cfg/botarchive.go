@@ -162,17 +162,11 @@ type botArchiveConfig struct {
 	EnableTSMonitoring bool `json:"enable_ts_monitoring"`
 }
 
-// cipdClient is used to mock the real cipd.Client in tests.
-type cipdClient interface {
-	ResolveVersion(ctx context.Context, server, cipdpkg, version string) (string, error)
-	FetchInstance(ctx context.Context, server, cipdpkg, iid string) (pkg.Instance, error)
-}
-
 // ensureBotArchiveBuilt does everything to build a bot archive and store it
 // in the datastore if it wasn't built before.
 func ensureBotArchiveBuilt(
 	ctx context.Context,
-	cipd cipdClient,
+	cipd CIPD,
 	desc *configpb.BotDeployment_BotPackage,
 	botConfigPy []byte,
 	botConfigPyRev string,

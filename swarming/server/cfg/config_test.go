@@ -44,7 +44,7 @@ func TestUpdateConfigs(t *testing.T) {
 		call := func(files cfgmem.Files) error {
 			return UpdateConfigs(cfgclient.Use(ctx, cfgmem.New(map[config.Set]cfgmem.Files{
 				"services/${appid}": files,
-			})), nil)
+			})), nil, nil)
 		}
 
 		fetchDS := func() *configBundle {
@@ -251,7 +251,7 @@ func TestFetchFromDatastore(t *testing.T) {
 		update := func(files cfgmem.Files) error {
 			return UpdateConfigs(cfgclient.Use(ctx, cfgmem.New(map[config.Set]cfgmem.Files{
 				"services/${appid}": files,
-			})), nil)
+			})), nil, nil)
 		}
 
 		fetch := func(cur *Config) (*Config, error) {
