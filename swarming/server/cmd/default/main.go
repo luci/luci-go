@@ -166,7 +166,6 @@ func main() {
 			"/swarming.v2.Tasks/CancelTask":           devAPIAccessGroup,
 			"/swarming.v2.Tasks/NewTask":              devAPIAccessGroup,
 			"/swarming.v2.Tasks/CancelTasks":          devAPIAccessGroup,
-			"/swarming.v2.Swarming/GetToken":          devAPIAccessGroup,
 			"/buildbucket.v2.TaskBackend/RunTask":     devAPIAccessGroup,
 			"/buildbucket.v2.TaskBackend/CancelTasks": devAPIAccessGroup,
 
@@ -187,6 +186,7 @@ func main() {
 			"/swarming.v2.Tasks/ListTaskRequests":         rpcacl.All,
 			"/swarming.v2.Swarming/GetDetails":            rpcacl.All,
 			"/swarming.v2.Swarming/GetPermissions":        rpcacl.All,
+			"/swarming.v2.Swarming/GetToken":              rpcacl.All,
 			"/buildbucket.v2.TaskBackend/FetchTasks":      rpcacl.All,
 			"/buildbucket.v2.TaskBackend/ValidateConfigs": rpcacl.All,
 
