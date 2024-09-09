@@ -263,7 +263,7 @@ func MockRequestState(ctx context.Context, state *MockedRequestState) context.Co
 		Identity: state.Caller,
 		FakeDB:   state.AuthDB,
 	})
-	cfg := MockConfigs(ctx, state.Configs).Config(ctx)
+	cfg := MockConfigs(ctx, state.Configs).Cached(ctx)
 	return context.WithValue(ctx, &requestStateCtxKey, &RequestState{
 		Config: cfg,
 		ACL:    acls.NewChecker(ctx, cfg),

@@ -233,7 +233,7 @@ func (m *migration) randomizedOverride(ctx context.Context, route string, rw htt
 	// less fragile. Only code paths that test really random routes will hit and
 	// mutated the mocked rng. That way the rest of tests do not interfere with
 	// tests that check randomness.
-	percent := m.cfg.Config(ctx).RouteToGoPercent(route)
+	percent := m.cfg.Cached(ctx).RouteToGoPercent(route)
 	if percent != 0 && (percent == 100 || mathrand.Intn(ctx, 100) < percent) {
 		logging.Infof(ctx, "Routing to Go (configured to route %d%% to Go)", percent)
 		return false, nil

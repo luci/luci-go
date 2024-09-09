@@ -157,7 +157,7 @@ func ServerInterceptor(cfg *cfg.Provider, services []string) grpcutil.UnifiedSer
 			return handler(ctx)
 		}
 
-		cfg := cfg.Config(ctx)
+		cfg := cfg.Cached(ctx)
 		return handler(context.WithValue(ctx, &requestStateCtxKey, &RequestState{
 			Config: cfg,
 			ACL:    acls.NewChecker(ctx, cfg),

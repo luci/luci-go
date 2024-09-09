@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/validation"
@@ -100,7 +101,7 @@ type VersionInfo struct {
 	// Fetched is when this config content was fetched for the first time.
 	//
 	// This is the first time this specific config digest was seen. Always
-	// monotonically increases.
+	// monotonically increases. Has milliseconds precision.
 	Fetched time.Time `gae:",noindex"`
 
 	// Revision is the config repo git commit processed most recently.
@@ -115,7 +116,7 @@ type VersionInfo struct {
 	// Touched is when this config was last touched by the UpdateConfig cron.
 	//
 	// This is FYI mostly. It is updated whenever a new revision is seen, even if
-	// it doesn't change the digest.
+	// it doesn't change the digest. Has milliseconds precision.
 	Touched time.Time `gae:",noindex"`
 
 	// StableBot is information about the current stable bot archive version.
@@ -345,25 +346,25 @@ func UpdateConfigs(ctx context.Context, ebs *EmbeddedBotSettings, cipdClient CIP
 				return errors.Annotate(err, "failed to fetch the latest processed revision from datastore").Err()
 			}
 			logging.Infof(ctx, "First config import ever at rev %s", fresh.Revision)
-			fresh.Touched = clock.Now(ctx).UTC()
+			fresh.Touched = clock.Now(ctx).UTC().Truncate(time.Millisecond)
 			fresh.Fetched = fresh.Touched
 
 		case lastRev.Digest == fresh.Digest && lastRev.Revision == fresh.Revision:
 			logging.Infof(ctx, "Configs are already up-to-date at rev %s (processed %s ago, content first seen %s ago)",
 				lastRev.Revision,
-				clock.Since(ctx, lastRev.Touched).Round(time.Second),
-				clock.Since(ctx, lastRev.Fetched).Round(time.Second),
+				clock.Since(ctx, lastRev.Touched).Truncate(time.Second),
+				clock.Since(ctx, lastRev.Fetched).Truncate(time.Second),
 			)
 			return nil
 
 		case lastRev.Digest == fresh.Digest:
 			// We've got a new git revision, but it didn't actually change any configs
 			// since the digest is the same. Bump only Touched, but not Fetched.
-			fresh.Touched = clock.Now(ctx).UTC()
+			fresh.Touched = clock.Now(ctx).UTC().Truncate(time.Millisecond)
 			fresh.Fetched = lastRev.Fetched
 			logging.Infof(ctx, "Revision %s didn't change configs in a significant way (last change was %s ago)",
 				fresh.Revision,
-				clock.Since(ctx, lastRev.Fetched).Round(time.Second),
+				clock.Since(ctx, lastRev.Fetched).Truncate(time.Second),
 			)
 
 		default:
@@ -377,7 +378,7 @@ func UpdateConfigs(ctx context.Context, ebs *EmbeddedBotSettings, cipdClient CIP
 			// Bump both timestamps. Guarantee monotonic increase of Fetched even in
 			// presence of clock skew, since the config cache mechanism relies on
 			// this property.
-			fresh.Touched = clock.Now(ctx).UTC()
+			fresh.Touched = clock.Now(ctx).UTC().Truncate(time.Millisecond)
 			fresh.Fetched = fresh.Touched
 			if !fresh.Fetched.After(lastRev.Fetched) {
 				fresh.Fetched = lastRev.Fetched.Add(time.Millisecond)
@@ -552,6 +553,7 @@ func configBundleRevKey(ctx context.Context) *datastore.Key {
 func emptyVersionInfo() VersionInfo {
 	return VersionInfo{
 		Revision: emptyRev,
+		Fetched:  time.Date(2000, time.January, 1, 0, 0, 0, 0, time.UTC), // "distant" past
 		Digest: digest(map[string]string{
 			"configs": emptyCfgDigest,
 			"stable":  "",
@@ -560,31 +562,24 @@ func emptyVersionInfo() VersionInfo {
 	}
 }
 
-// fetchFromDatastore fetches the config from the datastore.
+// fetchConfigBundleRev fetches the most recent configBundleRev.
 //
-// If there's no config in the datastore, returns some default empty config.
+// If there's no config in the datastore, returns some default value.
 //
-// If `cur` is not nil its (immutable) parts may be used to construct the
-// new Config in case they didn't change.
-func fetchFromDatastore(ctx context.Context, cur *Config) (*Config, error) {
-	// If already have a config, check if we really need to reload it.
-	if cur != nil {
-		rev := &configBundleRev{Key: configBundleRevKey(ctx)}
-		switch err := datastore.Get(ctx, rev); {
-		case errors.Is(err, datastore.ErrNoSuchEntity):
-			rev.VersionInfo = emptyVersionInfo()
-		case err != nil:
-			return nil, errors.Annotate(err, "fetching configBundleRev").Err()
-		}
-		if cur.VersionInfo.Digest == rev.Digest {
-			clone := *cur
-			clone.VersionInfo = rev.VersionInfo
-			clone.Refreshed = clock.Now(ctx).UTC()
-			return &clone, nil
-		}
+// It is a small entity with the information about the latest ingested config.
+func fetchConfigBundleRev(ctx context.Context) (*configBundleRev, error) {
+	rev := &configBundleRev{Key: configBundleRevKey(ctx)}
+	switch err := datastore.Get(ctx, rev); {
+	case errors.Is(err, datastore.ErrNoSuchEntity):
+		rev.VersionInfo = emptyVersionInfo()
+	case err != nil:
+		return nil, errors.Annotate(err, "fetching configBundleRev").Tag(transient.Tag).Err()
 	}
+	return rev, nil
+}
 
-	// Either have no config or the one in the datastore is different. Get it.
+// fetchFromDatastore fetches the latest config from the datastore.
+func fetchFromDatastore(ctx context.Context) (*Config, error) {
 	bundle := &configBundle{Key: configBundleKey(ctx)}
 	switch err := datastore.Get(ctx, bundle); {
 	case errors.Is(err, datastore.ErrNoSuchEntity):

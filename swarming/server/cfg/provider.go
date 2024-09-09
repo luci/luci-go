@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"math/rand"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -32,6 +33,13 @@ import (
 // config, periodically reloading it from the datastore.
 type Provider struct {
 	cur atomic.Value
+	m   sync.Mutex
+
+	// These define how often VersionInfo field of a semantically unchanging
+	// config is updated (see Latest implementation). Replaced with smaller values
+	// in tests.
+	versionInfoRefreshMinAge time.Duration
+	versionInfoRefreshMaxAge time.Duration
 }
 
 // NewProvider initializes a Provider by fetching the initial copy of configs.
@@ -39,49 +47,133 @@ type Provider struct {
 // If there are no configs stored in the datastore (happens when bootstrapping
 // a new service), uses some default empty config.
 func NewProvider(ctx context.Context) (*Provider, error) {
-	cur, err := fetchFromDatastore(ctx, nil)
+	cur, err := fetchFromDatastore(ctx)
 	if err != nil {
 		return nil, err
 	}
-	p := &Provider{}
+	p := &Provider{
+		versionInfoRefreshMinAge: 5 * time.Second,
+		versionInfoRefreshMaxAge: 10 * time.Second,
+	}
 	p.cur.Store(cur)
 	return p, nil
 }
 
-// Config returns an immutable snapshot of the most recent config.
+// Cached returns an immutable snapshot of the currently cached config.
 //
-// Note that multiple sequential calls to Config() may return different
+// Returns the config cached in the local process memory. It may be slightly
+// behind the most recently ingested config. Use Latest() to bypass the cache
+// and get the most recently ingested config instead.
+//
+// Note that multiple sequential calls to Cached() may return different
 // snapshots if the config changes between them. For that reason it is better to
 // get the snapshot once at the beginning of an RPC handler, and use it
 // throughout.
-func (p *Provider) Config(ctx context.Context) *Config {
+func (p *Provider) Cached(ctx context.Context) *Config {
 	return p.cur.Load().(*Config)
 }
 
+// Latest returns an immutable snapshot of the most recently ingested config by
+// fetching it from the datastore.
+//
+// Can be used in places where staleness of the cached config is unacceptable.
+//
+// Updates the local cache as a side effect.
+func (p *Provider) Latest(ctx context.Context) (*Config, error) {
+	// Get the most recent config digest in the datastore right now.
+	latest, err := fetchConfigBundleRev(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check if we actually already loaded this config (or even something newer,
+	// in case some other goroutine called Latest concurrently).
+	cur := p.cur.Load().(*Config)
+	switch {
+	case cur.VersionInfo.Fetched.After(latest.Fetched):
+		// Some other goroutine already fetched some newer config, use it.
+		return cur, nil
+	case cur.VersionInfo.Fetched.Equal(latest.Fetched):
+		// Already have the exact same config (semantically). We still need to
+		// update not semantically meaningful fields in it (like the git revision:
+		// they all are in VersionInfo). Do it only occasionally to avoid contention
+		// on concurrently updating `p.cur` atomic all the time (use random jitter
+		// to desynchronize requests). Note that staleness of these fields should
+		// not matter. They are FYI only, and not involved when calculating the
+		// config digest. They mostly show up in logs.
+		age := clock.Since(ctx, cur.Refreshed)
+		jitter := time.Duration(rand.Int63n(int64(p.versionInfoRefreshMaxAge - p.versionInfoRefreshMinAge)))
+		if age > p.versionInfoRefreshMinAge+jitter {
+			clone := *cur
+			clone.VersionInfo = latest.VersionInfo
+			clone.Refreshed = clock.Now(ctx).UTC()
+			p.cur.CompareAndSwap(cur, &clone)
+			return p.cur.Load().(*Config), nil
+		}
+		return cur, nil
+	}
+
+	// Avoid hitting the expensive code path concurrently. There is a stampede
+	// of concurrent requests here when the config actually changes. Let them all
+	// wait for the first request that grabs the lock to do the expensive fetch.
+	// Once the fetch is done, other requests will grab the lock one by one and
+	// quickly realize there's nothing to do.
+	p.m.Lock()
+	defer p.m.Unlock()
+
+	// Recheck the current config under the lock. Maybe some other goroutine
+	// already loaded a newer one.
+	cur = p.cur.Load().(*Config)
+	if !latest.Fetched.After(cur.VersionInfo.Fetched) {
+		return cur, nil
+	}
+
+	// Load the latest config from the datastore (it may be more recent that
+	// `latest` at that point).
+	logging.Infof(ctx, "Reloading config...")
+	new, err := fetchFromDatastore(ctx)
+	if err != nil {
+		return nil, err
+	}
+	p.cur.Store(new)
+	return new, nil
+}
+
+// FreshEnough returns an immutable snapshot of a config either by using the
+// local process cache (if it is fresh enough) or by fetching the latest
+// config from the datastore.
+//
+// `seen` should be a VersionInfo.Fetched value from some previously seen
+// config version.
+//
+// If the VersionInfo.Fetched of the currently cached config is equal or
+// larger than `seen`, returns the cached config. Otherwise fetches the latest
+// config (its VersionInfo.Fetched will be larger or equal than `seen`).
+//
+// This is used to avoid going back to a previous config version once a process
+// seen a newer config version at least once.
+func (p *Provider) FreshEnough(ctx context.Context, seen time.Time) (*Config, error) {
+	cur := p.cur.Load().(*Config)
+	if seen.After(cur.VersionInfo.Fetched) {
+		// There's a newer config out there, since some process seen it already.
+		return p.Latest(ctx)
+	}
+	return cur, nil
+}
+
 // RefreshPeriodically runs a loop that periodically refetches the config from
-// the datastore.
+// the datastore to update the local cache.
 func (p *Provider) RefreshPeriodically(ctx context.Context) {
 	for {
 		jitter := time.Duration(rand.Int63n(int64(10 * time.Second)))
 		if r := <-clock.After(ctx, 30*time.Second+jitter); r.Err != nil {
 			return // the context is canceled
 		}
-		if err := p.refresh(ctx); err != nil {
+		if _, err := p.Latest(ctx); err != nil {
 			// Don't log the error if the server is shutting down.
 			if !errors.Is(err, context.Canceled) {
 				logging.Warningf(ctx, "Failed to refresh local copy of the config: %s", err)
 			}
 		}
 	}
-}
-
-// refresh fetches the new config from the datastore if it is available.
-func (p *Provider) refresh(ctx context.Context) error {
-	cur := p.cur.Load().(*Config)
-	new, err := fetchFromDatastore(ctx, cur)
-	if err != nil {
-		return err
-	}
-	p.cur.Store(new)
-	return nil
 }

@@ -254,12 +254,8 @@ func TestFetchFromDatastore(t *testing.T) {
 			})), nil, nil)
 		}
 
-		fetch := func(cur *Config) (*Config, error) {
-			return fetchFromDatastore(ctx, cur)
-		}
-
 		t.Run("Empty datastore", func(t *ftt.Test) {
-			cfg, err := fetch(nil)
+			cfg, err := fetchFromDatastore(ctx)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, cfg.VersionInfo.Revision, should.Equal(emptyRev))
 			assert.Loosely(t, cfg.VersionInfo.Digest, should.Equal(emptyDigest))
@@ -271,14 +267,7 @@ func TestFetchFromDatastore(t *testing.T) {
 			assert.Loosely(t, update(nil), should.BeNil)
 
 			// Fetches initial copy of default config.
-			cfg, err := fetch(nil)
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, cfg.VersionInfo.Revision, should.Equal(emptyRev))
-			assert.Loosely(t, cfg.VersionInfo.Digest, should.Equal(emptyDigest))
-			assert.Loosely(t, cfg.settings, should.Resemble(defaultConfigs().Settings))
-
-			// Does nothing, there's still no real config.
-			cfg, err = fetch(cfg)
+			cfg, err := fetchFromDatastore(ctx)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, cfg.VersionInfo.Revision, should.Equal(emptyRev))
 			assert.Loosely(t, cfg.VersionInfo.Digest, should.Equal(emptyDigest))
@@ -288,7 +277,7 @@ func TestFetchFromDatastore(t *testing.T) {
 			assert.Loosely(t, update(cfgmem.Files{"settings.cfg": `google_analytics: "boo"`}), should.BeNil)
 
 			// It replaces the empty config when fetched (with defaults filled in).
-			cfg, err = fetch(cfg)
+			cfg, err = fetchFromDatastore(ctx)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, cfg.VersionInfo.Revision, should.Equal("bcf7460a098890cc7efc8eda1c8279658ec25eb3"))
 			assert.Loosely(t, cfg.VersionInfo.Digest, should.Equal("qGYmlgeHI+w+f9q08A5MDAt/eTXeK2uXNqyvCH5MoIg"))
@@ -305,65 +294,6 @@ func TestFetchFromDatastore(t *testing.T) {
 				BotDeathTimeoutSecs: 600,
 				ReusableTaskAgeSecs: 604800,
 			}))
-
-			// Suddenly the config is completely gone.
-			assert.Loosely(t, datastore.Delete(ctx, configBundleKey(ctx), configBundleRevKey(ctx)), should.BeNil)
-
-			// The default config is used again.
-			cfg, err = fetch(cfg)
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, cfg.VersionInfo.Revision, should.Equal(emptyRev))
-			assert.Loosely(t, cfg.VersionInfo.Digest, should.Equal(emptyDigest))
-			assert.Loosely(t, cfg.settings, should.Resemble(defaultConfigs().Settings))
-		})
-
-		t.Run("Some configs in datastore", func(t *ftt.Test) {
-			// Some initial config.
-			assert.Loosely(t, update(cfgmem.Files{"settings.cfg": `google_analytics: "boo"`}), should.BeNil)
-
-			// Fetches initial copy of this config.
-			cfg, err := fetch(nil)
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, cfg.VersionInfo.Revision, should.Equal("bcf7460a098890cc7efc8eda1c8279658ec25eb3"))
-			assert.Loosely(t, cfg.VersionInfo.Digest, should.Equal("qGYmlgeHI+w+f9q08A5MDAt/eTXeK2uXNqyvCH5MoIg"))
-			assert.Loosely(t, cfg.settings, should.Resemble(withDefaultSettings(&configpb.SettingsCfg{
-				GoogleAnalytics: "boo",
-			})))
-
-			// Nothing change. The same config is returned.
-			cfg, err = fetch(cfg)
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, cfg.VersionInfo.Revision, should.Equal("bcf7460a098890cc7efc8eda1c8279658ec25eb3"))
-			assert.Loosely(t, cfg.VersionInfo.Digest, should.Equal("qGYmlgeHI+w+f9q08A5MDAt/eTXeK2uXNqyvCH5MoIg"))
-			assert.Loosely(t, cfg.settings, should.Resemble(withDefaultSettings(&configpb.SettingsCfg{
-				GoogleAnalytics: "boo",
-			})))
-
-			// A noop config change happens.
-			assert.Loosely(t, update(cfgmem.Files{
-				"settings.cfg": `google_analytics: "boo"`,
-				"unrelated":    "change",
-			}), should.BeNil)
-
-			// Has the new revision, but the same digest and the exact same body.
-			prev := cfg.settings
-			cfg, err = fetch(cfg)
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, cfg.VersionInfo.Revision, should.Equal("725455c37c09b5dfa3dc31b47c9f787d555cbfb3"))
-			assert.Loosely(t, cfg.VersionInfo.Digest, should.Equal("qGYmlgeHI+w+f9q08A5MDAt/eTXeK2uXNqyvCH5MoIg"))
-			assert.Loosely(t, cfg.settings == prev, should.BeTrue) // equal as pointers
-
-			// A real config change happens.
-			assert.Loosely(t, update(cfgmem.Files{"settings.cfg": `google_analytics: "blah"`}), should.BeNil)
-
-			// Causes the config update.
-			cfg, err = fetch(cfg)
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, cfg.VersionInfo.Revision, should.Equal("3a7123badfd5426f2a75932433f99b0aee8baf9b"))
-			assert.Loosely(t, cfg.VersionInfo.Digest, should.Equal("H46KUNW/yNxJCzDJ8gtjeGbFHoy71njqeL5MN8HaksY"))
-			assert.Loosely(t, cfg.settings, should.Resemble(withDefaultSettings(&configpb.SettingsCfg{
-				GoogleAnalytics: "blah",
-			})))
 		})
 	})
 }

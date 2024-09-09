@@ -614,7 +614,7 @@ func mockedConfig(settings *configpb.AuthSettings, pools map[string]string, bots
 	if err != nil {
 		panic(err)
 	}
-	return p.Config(ctx)
+	return p.Cached(ctx)
 }
 
 type mockedTask struct {
