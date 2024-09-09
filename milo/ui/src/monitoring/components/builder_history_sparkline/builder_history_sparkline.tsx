@@ -18,17 +18,14 @@ import { DateTime } from 'luxon';
 import { useMemo } from 'react';
 
 import { BUILD_STATUS_CLASS_MAP } from '@/build/constants';
+import { useBuildsClient } from '@/build/hooks/prpc_clients';
 import { SpecifiedStatus } from '@/build/types';
 import { HtmlTooltip } from '@/common/components/html_tooltip';
 import { RelativeTimestamp } from '@/common/components/relative_timestamp';
 import { SanitizedHtml } from '@/common/components/sanitized_html';
-import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
 import { renderMarkdown } from '@/common/tools/markdown/utils';
 import { BuilderID } from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_common.pb';
-import {
-  BuildsClientImpl,
-  SearchBuildsRequest,
-} from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
+import { SearchBuildsRequest } from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
 import {
   Status,
   statusToJSON,
@@ -48,10 +45,7 @@ export interface BuilderHistorySparklineProps {
 export const BuilderHistorySparkline = ({
   builderId,
 }: BuilderHistorySparklineProps) => {
-  const client = usePrpcServiceClient({
-    host: SETTINGS.buildbucket.host,
-    ClientImpl: BuildsClientImpl,
-  });
+  const client = useBuildsClient();
   const req = SearchBuildsRequest.fromPartial({
     predicate: {
       builder: builderId,

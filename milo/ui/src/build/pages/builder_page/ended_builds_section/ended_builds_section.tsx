@@ -18,6 +18,7 @@ import { useQuery } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
 import { useRef } from 'react';
 
+import { useBuildsClient } from '@/build/hooks/prpc_clients';
 import { OutputBuild } from '@/build/types';
 import {
   ParamsPager,
@@ -26,14 +27,10 @@ import {
   getPageToken,
   usePagerContext,
 } from '@/common/components/params_pager';
-import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
 import { SHORT_TIME_FORMAT } from '@/common/tools/time_utils';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { BuilderID } from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_common.pb';
-import {
-  BuildsClientImpl,
-  SearchBuildsRequest,
-} from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
+import { SearchBuildsRequest } from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
 import { Status } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 
 import { EndedBuildTable } from './ended_build_table';
@@ -69,10 +66,7 @@ export function EndedBuildsSection({ builderId }: EndedBuildsSectionProps) {
   const pageToken = getPageToken(pagerCtx, searchParams);
   const createdBefore = getCreatedBefore(searchParams);
 
-  const client = usePrpcServiceClient({
-    host: SETTINGS.buildbucket.host,
-    ClientImpl: BuildsClientImpl,
-  });
+  const client = useBuildsClient();
   const req = SearchBuildsRequest.fromPartial({
     predicate: {
       builder: builderId,

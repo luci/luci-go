@@ -24,13 +24,11 @@ import {
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 
-import { useGetAccessToken } from '@/common/components/auth_state_provider';
-import { PrpcClient } from '@/generic_libs/tools/prpc_client';
 import {
   CreateStatusRequest,
   GeneralState,
-  TreeStatusClientImpl,
 } from '@/proto/go.chromium.org/luci/tree_status/proto/v1/tree_status.pb';
+import { useTreeStatusClient } from '@/tree_status/hooks/prpc_clients';
 
 interface TreeStatusUpdaterProps {
   tree: string;
@@ -41,17 +39,9 @@ export const TreeStatusUpdater = ({ tree }: TreeStatusUpdaterProps) => {
   const [state, setState] = useState(GeneralState.OPEN);
   const [message, setMessage] = useState('');
   const queryClient = useQueryClient();
-  const getAuthToken = useGetAccessToken();
+  const client = useTreeStatusClient();
   const updateMutation = useMutation({
     mutationFn: (request: CreateStatusRequest) => {
-      const client = new TreeStatusClientImpl(
-        new PrpcClient({
-          host: SETTINGS.luciTreeStatus.host,
-          insecure: false,
-          getAuthToken,
-        }),
-      );
-      // eslint-disable-next-line new-cap
       return client.CreateStatus(request);
     },
     onSuccess: () => {

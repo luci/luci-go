@@ -13,11 +13,30 @@
 // limitations under the License.
 
 import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
+import { BuildersClientImpl } from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_service.pb';
 import { BuildsClientImpl } from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
+import { BatchedBuildsClientImpl } from '@/proto_utils/batched_builds_client';
 
 export function useBuildsClient() {
   return usePrpcServiceClient({
     host: SETTINGS.buildbucket.host,
     ClientImpl: BuildsClientImpl,
+  });
+}
+
+export function useBatchedBuildsClient(maxBatchSize = 200) {
+  return usePrpcServiceClient(
+    {
+      host: SETTINGS.buildbucket.host,
+      ClientImpl: BatchedBuildsClientImpl,
+    },
+    { maxBatchSize },
+  );
+}
+
+export function useBuildersClient() {
+  return usePrpcServiceClient({
+    host: SETTINGS.buildbucket.host,
+    ClientImpl: BuildersClientImpl,
   });
 }

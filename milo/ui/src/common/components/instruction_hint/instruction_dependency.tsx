@@ -17,8 +17,8 @@ import Alert from '@mui/material/Alert';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 
+import { useBuildsClient } from '@/build/hooks/prpc_clients';
 import { SanitizedHtml } from '@/common/components/sanitized_html';
-import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
 import {
   pairsToPlaceholderDict,
   renderMustacheMarkdown,
@@ -31,10 +31,7 @@ import {
   ExpandableEntryHeader,
 } from '@/generic_libs/components/expandable_entry';
 import { Build } from '@/proto/go.chromium.org/luci/buildbucket/proto/build.pb';
-import {
-  BuildsClientImpl,
-  GetBuildRequest,
-} from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
+import { GetBuildRequest } from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
 import { InstructionDependencyChain_Node } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 
 import { codeBlockStyles } from './style';
@@ -63,10 +60,7 @@ export function InstructionDependency({
   const buildID = buildIDFromInvocationID(invocationID);
   const displayName = dependencyNode.descriptiveName || instructionID;
 
-  const client = usePrpcServiceClient({
-    host: SETTINGS.buildbucket.host,
-    ClientImpl: BuildsClientImpl,
-  });
+  const client = useBuildsClient();
   const { data } = useQuery({
     ...client.GetBuild.query(
       GetBuildRequest.fromPartial({

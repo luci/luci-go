@@ -18,7 +18,6 @@ import { Breadcrumbs, Stack, SxProps, Theme, Typography } from '@mui/material';
 import { OutputBuild } from '@/build/types';
 
 import { AncestorBuild } from './ancestor_build';
-import { BuildPathContextProvider } from './context';
 
 export interface AncestorBuildPathProps {
   readonly build: OutputBuild;
@@ -27,15 +26,13 @@ export interface AncestorBuildPathProps {
 
 export function AncestorBuildPath({ build, sx }: AncestorBuildPathProps) {
   return (
-    <BuildPathContextProvider maxBatchSize={100}>
-      <Stack spacing={2} sx={sx}>
-        <Breadcrumbs separator={<NavigateNext fontSize="small" />}>
-          {build.ancestorIds.map((bid, i) => (
-            <AncestorBuild key={i} buildId={bid} />
-          ))}
-          <Typography sx={{ opacity: 0.8 }}>This Build</Typography>
-        </Breadcrumbs>
-      </Stack>
-    </BuildPathContextProvider>
+    <Stack spacing={2} sx={sx}>
+      <Breadcrumbs separator={<NavigateNext fontSize="small" />}>
+        {build.ancestorIds.map((bid, i) => (
+          <AncestorBuild key={i} buildId={bid} />
+        ))}
+        <Typography sx={{ opacity: 0.8 }}>This Build</Typography>
+      </Breadcrumbs>
+    </Stack>
   );
 }

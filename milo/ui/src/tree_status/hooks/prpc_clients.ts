@@ -12,6 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export * from './hooks';
-export type { BuildPathContextProviderProps } from './context';
-export { BuildPathContextProvider } from './context';
+import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
+import { TreeStatusClientImpl } from '@/proto/go.chromium.org/luci/tree_status/proto/v1/tree_status.pb';
+
+export function useTreeStatusClient() {
+  return usePrpcServiceClient({
+    host: SETTINGS.luciTreeStatus.host,
+    ClientImpl: TreeStatusClientImpl,
+  });
+}

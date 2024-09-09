@@ -18,13 +18,14 @@ import { useQuery } from '@tanstack/react-query';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { BUILD_STATUS_CLASS_MAP } from '@/build/constants';
+import { useBatchedBuildsClient } from '@/build/hooks/prpc_clients';
 import { SpecifiedStatus } from '@/build/types';
 import { getBuildURLPathFromBuildId } from '@/common/tools/url_utils';
 import { BuilderID } from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_common.pb';
 import { SearchBuildsRequest } from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
 import { Status } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 
-import { useBuildsClient, useNumOfBuilds } from './context';
+import { useMaxBatchSize, useNumOfBuilds } from './context';
 
 const SEARCH_BUILD_FIELD_MASK = Object.freeze(['status', 'id']);
 
@@ -77,7 +78,8 @@ export interface RecentBuildsProps {
 
 export function RecentBuilds({ builder }: RecentBuildsProps) {
   const numOfBuilds = useNumOfBuilds();
-  const client = useBuildsClient();
+  const maxBatchSize = useMaxBatchSize();
+  const client = useBatchedBuildsClient(maxBatchSize);
   const { data, isLoading, error, isError } = useQuery(
     client.SearchBuilds.query(
       SearchBuildsRequest.fromPartial({

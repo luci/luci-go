@@ -154,3 +154,22 @@ export function createStaticTrustedURL<T extends string>(
       .createScriptURL('') || staticUrl
   );
 }
+
+let nextObjId = 0;
+const objectRegistry = new WeakMap<Record<never, never>, number>();
+
+/**
+ * Assign a (serial) ID to an object and returns it.
+ *
+ * Calling the function with the same object (referentially the same) will
+ * always return the same ID.
+ */
+export function getObjectId(obj: Record<never, never>): number {
+  let objId = objectRegistry.get(obj);
+  if (objId === undefined) {
+    objId = nextObjId;
+    objectRegistry.set(obj, objId);
+    nextObjId += 1;
+  }
+  return objId;
+}

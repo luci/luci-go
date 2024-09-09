@@ -16,11 +16,10 @@ import { Alert, Divider, Menu, MenuItem, Snackbar } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 
-import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
 import { FileBugDialog } from '@/monitoring/components/file_bug_dialog/file_bug_dialog';
+import { useNotifyAlertsClient } from '@/monitoring/hooks/prpc_clients';
 import { AlertJson, Bug, TreeJson } from '@/monitoring/util/server_json';
 import {
-  AlertsClientImpl,
   BatchUpdateAlertsRequest,
   UpdateAlertRequest,
 } from '@/proto/go.chromium.org/luci/luci_notify/api/service/v1/alerts.pb';
@@ -47,10 +46,7 @@ export const BugMenu = ({
 
   const isLinkedToBugs = alerts.filter((a) => !!a.bug).length > 0;
 
-  const client = usePrpcServiceClient({
-    host: SETTINGS.luciNotify.host,
-    ClientImpl: AlertsClientImpl,
-  });
+  const client = useNotifyAlertsClient();
   const linkBugMutation = useMutation({
     mutationFn: (bug: string) => {
       // eslint-disable-next-line new-cap

@@ -14,15 +14,7 @@
 
 import { createContext, ReactNode } from 'react';
 
-import {
-  DecoratedClient,
-  usePrpcServiceClient,
-} from '@/common/hooks/prpc_query';
-import { BatchedBuildsClientImpl } from '@/proto_utils/batched_builds_client';
-
-export const BuildsClientCtx = createContext<
-  DecoratedClient<BatchedBuildsClientImpl> | undefined
->(undefined);
+export const MaxBatchSizeCtx = createContext<number | undefined>(undefined);
 export const NumOfBuildsCtx = createContext<number | undefined>(undefined);
 
 export interface BuilderTableContextProviderProps {
@@ -36,21 +28,11 @@ export function BuilderTableContextProvider({
   maxBatchSize,
   children,
 }: BuilderTableContextProviderProps) {
-  // Use a single client instance so all requests in the same rendering cycle
-  // can be batched together.
-  const buildsClient = usePrpcServiceClient(
-    {
-      host: SETTINGS.buildbucket.host,
-      ClientImpl: BatchedBuildsClientImpl,
-    },
-    { maxBatchSize },
-  );
-
   return (
-    <BuildsClientCtx.Provider value={buildsClient}>
+    <MaxBatchSizeCtx.Provider value={maxBatchSize}>
       <NumOfBuildsCtx.Provider value={numOfBuilds}>
         {children}
       </NumOfBuildsCtx.Provider>
-    </BuildsClientCtx.Provider>
+    </MaxBatchSizeCtx.Provider>
   );
 }

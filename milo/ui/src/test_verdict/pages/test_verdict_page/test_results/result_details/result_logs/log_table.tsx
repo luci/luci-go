@@ -24,16 +24,13 @@ import { useQuery } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
 
 import { Timestamp } from '@/common/components/timestamp';
-import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
 import { NUMERIC_TIME_FORMAT_WITH_MS } from '@/common/tools/time_utils';
 import {
   ArtifactLine,
   artifactLine_SeverityToJSON,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
-import {
-  ListArtifactLinesRequest,
-  ResultDBClientImpl,
-} from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
+import { ListArtifactLinesRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
+import { useResultDbClient } from '@/test_verdict/hooks/prpc_clients';
 
 import { useSelectedArtifact } from './context';
 
@@ -101,10 +98,7 @@ function processLines(lines: readonly ArtifactLine[]) {
 
 export function LogTable() {
   const selectedArtifact = useSelectedArtifact();
-  const client = usePrpcServiceClient({
-    host: SETTINGS.resultdb.host,
-    ClientImpl: ResultDBClientImpl,
-  });
+  const client = useResultDbClient();
 
   const { data, isLoading, isError, error } = useQuery({
     ...client.ListArtifactLines.query(

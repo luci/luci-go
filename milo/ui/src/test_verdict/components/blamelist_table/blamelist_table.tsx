@@ -14,7 +14,6 @@
 
 import { ListRange } from 'react-virtuoso';
 
-import { BatchedClustersClientProvider } from '@/analysis/hooks/bached_clusters_client/context';
 import { useTestVariantBranchesClient } from '@/analysis/hooks/prpc_clients';
 import {
   OutputTestVariantBranch,
@@ -163,69 +162,67 @@ export function BlamelistTable({
 
   return (
     <BlamelistContextProvider testVariantBranch={testVariantBranch}>
-      <BatchedClustersClientProvider>
-        <VirtualizedCommitTable
-          repoUrl={getGitilesRepoURL(testVariantBranch.ref.gitiles)}
-          customScrollParent={customScrollParent}
-          rangeChanged={handleRangeChanged}
-          increaseViewportBy={1000}
-          initialTopMostItemIndex={getOffset(
-            lastCommitPosition,
-            focusCommitPosition,
-          )}
-          totalCount={getOffset(lastCommitPosition, firstCommitPosition) + 1}
-          fixedHeaderContent={() => (
-            <>
-              <SegmentHeadCell />
-              <ToggleHeadCell hotkey="x" />
-              <SourceVerdictStatusHeadCell />
-              <PositionHeadCell />
-              <TimeHeadCell />
-              <AuthorHeadCell />
-              <TitleHeadCell />
-            </>
-          )}
-          itemContent={(i) => {
-            const position = getPosition(lastCommitPosition, i);
-            const cpIndex = -parseInt(position);
-            const commitQuery = gitilesQueries.get(cpIndex);
-            if (commitQuery.isError) {
-              throw commitQuery.error;
-            }
+      <VirtualizedCommitTable
+        repoUrl={getGitilesRepoURL(testVariantBranch.ref.gitiles)}
+        customScrollParent={customScrollParent}
+        rangeChanged={handleRangeChanged}
+        increaseViewportBy={1000}
+        initialTopMostItemIndex={getOffset(
+          lastCommitPosition,
+          focusCommitPosition,
+        )}
+        totalCount={getOffset(lastCommitPosition, firstCommitPosition) + 1}
+        fixedHeaderContent={() => (
+          <>
+            <SegmentHeadCell />
+            <ToggleHeadCell hotkey="x" />
+            <SourceVerdictStatusHeadCell />
+            <PositionHeadCell />
+            <TimeHeadCell />
+            <AuthorHeadCell />
+            <TitleHeadCell />
+          </>
+        )}
+        itemContent={(i) => {
+          const position = getPosition(lastCommitPosition, i);
+          const cpIndex = -parseInt(position);
+          const commitQuery = gitilesQueries.get(cpIndex);
+          if (commitQuery.isError) {
+            throw commitQuery.error;
+          }
 
-            const sourceVerdictQuery = verdictQueries.get(cpIndex);
-            if (sourceVerdictQuery.isError) {
-              throw sourceVerdictQuery.error;
-            }
+          const sourceVerdictQuery = verdictQueries.get(cpIndex);
+          if (sourceVerdictQuery.isError) {
+            throw sourceVerdictQuery.error;
+          }
 
-            return (
-              <CommitTableRow
-                commit={commitQuery.data || null}
-                content={
-                  <EntryContent
-                    testId={testVariantBranch.testId}
-                    variantHash={testVariantBranch.variantHash}
-                    sourceVerdict={sourceVerdictQuery.data || null}
-                    isSvLoading={sourceVerdictQuery.isLoading}
-                  />
-                }
-              >
-                <SegmentContentCell position={position} />
-                <ToggleContentCell />
-                <SourceVerdictStatusContentCell
-                  status={sourceVerdictQuery.data?.status || null}
-                  isLoading={sourceVerdictQuery.isLoading}
+          return (
+            <CommitTableRow
+              commit={commitQuery.data || null}
+              content={
+                <EntryContent
+                  testId={testVariantBranch.testId}
+                  variantHash={testVariantBranch.variantHash}
+                  sourceVerdict={sourceVerdictQuery.data || null}
+                  isSvLoading={sourceVerdictQuery.isLoading}
                 />
-                <PositionContentCell position={position} />
-                <TimeContentCell />
-                <AuthorContentCell />
-                <TitleContentCell />
-              </CommitTableRow>
-            );
-          }}
-          sx={{ '& td:last-of-type': { flexGrow: 0 } }}
-        />
-      </BatchedClustersClientProvider>
+              }
+            >
+              <SegmentContentCell position={position} />
+              <ToggleContentCell />
+              <SourceVerdictStatusContentCell
+                status={sourceVerdictQuery.data?.status || null}
+                isLoading={sourceVerdictQuery.isLoading}
+              />
+              <PositionContentCell position={position} />
+              <TimeContentCell />
+              <AuthorContentCell />
+              <TitleContentCell />
+            </CommitTableRow>
+          );
+        }}
+        sx={{ '& td:last-of-type': { flexGrow: 0 } }}
+      />
     </BlamelistContextProvider>
   );
 }

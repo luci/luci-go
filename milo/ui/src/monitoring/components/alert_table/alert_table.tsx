@@ -29,7 +29,7 @@ import {
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Fragment, useState } from 'react';
 
-import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
+import { useNotifyAlertsClient } from '@/monitoring/hooks/prpc_clients';
 import {
   AlertJson,
   TreeJson,
@@ -37,7 +37,6 @@ import {
   buildIdFromUrl,
 } from '@/monitoring/util/server_json';
 import {
-  AlertsClientImpl,
   BatchUpdateAlertsRequest,
   UpdateAlertRequest,
 } from '@/proto/go.chromium.org/luci/luci_notify/api/service/v1/alerts.pb';
@@ -66,10 +65,7 @@ export const AlertTable = ({ tree, alerts, bug, bugs }: AlertTableProps) => {
     return buildIdFromUrl(alert.extension.builders?.[0].latest_failure_url);
   };
   const queryClient = useQueryClient();
-  const client = usePrpcServiceClient({
-    host: SETTINGS.luciNotify.host,
-    ClientImpl: AlertsClientImpl,
-  });
+  const client = useNotifyAlertsClient();
   const silenceAllMutation = useMutation({
     mutationFn: (alerts: AlertJson[]) => {
       // eslint-disable-next-line new-cap

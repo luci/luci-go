@@ -25,14 +25,11 @@ import {
   usePagerContext,
 } from '@/common/components/params_pager';
 import { UiPage } from '@/common/constants/view';
-import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
-import {
-  ListStatusRequest,
-  TreeStatusClientImpl,
-} from '@/proto/go.chromium.org/luci/tree_status/proto/v1/tree_status.pb';
+import { ListStatusRequest } from '@/proto/go.chromium.org/luci/tree_status/proto/v1/tree_status.pb';
 import { TreeStatusTable } from '@/tree_status/components/tree_status_table';
 import { TreeStatusUpdater } from '@/tree_status/components/tree_status_updater';
+import { useTreeStatusClient } from '@/tree_status/hooks/prpc_clients';
 
 export const TreeStatusListPage = () => {
   const { tree: treeName } = useParams();
@@ -44,10 +41,7 @@ export const TreeStatusListPage = () => {
   const pageSize = getPageSize(pagerCtx, searchParams);
   const pageToken = getPageToken(pagerCtx, searchParams);
 
-  const treeStatusClient = usePrpcServiceClient({
-    host: SETTINGS.luciTreeStatus.host,
-    ClientImpl: TreeStatusClientImpl,
-  });
+  const treeStatusClient = useTreeStatusClient();
   const status = useQuery({
     // eslint-disable-next-line new-cap
     ...treeStatusClient.ListStatus.query(

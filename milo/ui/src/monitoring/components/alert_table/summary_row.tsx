@@ -23,7 +23,7 @@ import { Stack } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 
-import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
+import { useNotifyAlertsClient } from '@/monitoring/hooks/prpc_clients';
 import {
   AlertBuilderJson,
   AlertJson,
@@ -32,7 +32,6 @@ import {
   buildIdFromUrl,
 } from '@/monitoring/util/server_json';
 import {
-  AlertsClientImpl,
   BatchUpdateAlertsRequest,
   UpdateAlertRequest,
 } from '@/proto/go.chromium.org/luci/luci_notify/api/service/v1/alerts.pb';
@@ -63,10 +62,7 @@ export const AlertSummaryRow = ({
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
 
   const queryClient = useQueryClient();
-  const client = usePrpcServiceClient({
-    host: SETTINGS.luciNotify.host,
-    ClientImpl: AlertsClientImpl,
-  });
+  const client = useNotifyAlertsClient();
   const silenceMutation = useMutation({
     mutationFn: (builder: AlertBuilderJson | null) => {
       // eslint-disable-next-line new-cap

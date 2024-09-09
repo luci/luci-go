@@ -12,16 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useContext } from 'react';
+import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
+import { GroupsClientImpl } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/groups.pb';
 
-import { BatchedClustersClientCtx } from './context';
-
-export function useBatchedClustersClient() {
-  const ctx = useContext(BatchedClustersClientCtx);
-  if (ctx === undefined) {
-    throw new Error(
-      'useBatchedClustersClient can only be used in a BatchedClustersClientProvider',
-    );
-  }
-  return ctx;
+export function useAuthServiceClient() {
+  return usePrpcServiceClient({
+    host: SETTINGS.authService.host,
+    ClientImpl: GroupsClientImpl,
+  });
 }

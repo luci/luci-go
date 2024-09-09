@@ -23,6 +23,7 @@ import {
   BUILD_STATUS_DISPLAY_MAP,
   PARTIAL_BUILD_FIELD_MASK,
 } from '@/build/constants';
+import { useBatchedBuildsClient } from '@/build/hooks/prpc_clients';
 import { PartialBuild } from '@/build/types';
 import { DurationBadge } from '@/common/components/duration_badge';
 import { HtmlTooltip } from '@/common/components/html_tooltip';
@@ -34,8 +35,6 @@ import {
   getProjectURLPath,
 } from '@/common/tools/url_utils';
 import { GetBuildRequest } from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
-
-import { useBuildsClient } from './context';
 
 const ChipContainer = styled(Box)`
   display: grid;
@@ -134,7 +133,7 @@ export interface AncestorBuildProps {
 }
 
 export function AncestorBuild({ buildId }: AncestorBuildProps) {
-  const client = useBuildsClient();
+  const client = useBatchedBuildsClient();
   const { data, isError, error } = useQuery({
     ...client.GetBuild.query(
       GetBuildRequest.fromPartial({

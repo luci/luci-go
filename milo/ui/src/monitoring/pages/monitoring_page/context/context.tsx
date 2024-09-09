@@ -17,7 +17,10 @@ import { uniq, chunk } from 'lodash-es';
 import { createContext, ReactNode } from 'react';
 
 import { useIssueListQuery } from '@/common/hooks/gapi_query/corp_issuetracker';
-import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
+import {
+  useNotifyAlertsClient,
+  useSoMAlertsClient,
+} from '@/monitoring/hooks/prpc_clients';
 import {
   AlertExtensionJson,
   AlertJson,
@@ -25,14 +28,8 @@ import {
   bugFromJson,
   TreeJson,
 } from '@/monitoring/util/server_json';
-import {
-  BatchGetAlertsRequest,
-  AlertsClientImpl as NotifyAlertsClientImpl,
-} from '@/proto/go.chromium.org/luci/luci_notify/api/service/v1/alerts.pb';
-import {
-  AlertsClientImpl,
-  ListAlertsRequest,
-} from '@/proto/infra/appengine/sheriff-o-matic/proto/v1/alerts.pb';
+import { BatchGetAlertsRequest } from '@/proto/go.chromium.org/luci/luci_notify/api/service/v1/alerts.pb';
+import { ListAlertsRequest } from '@/proto/infra/appengine/sheriff-o-matic/proto/v1/alerts.pb';
 
 export interface ExtendedAlert {
   readonly bug: string;
@@ -77,10 +74,7 @@ interface Props {
 }
 
 export function MonitoringProvider({ children, treeName, tree }: Props) {
-  const client = usePrpcServiceClient({
-    host: SETTINGS.sheriffOMatic.host,
-    ClientImpl: AlertsClientImpl,
-  });
+  const client = useSoMAlertsClient();
   const alertsQuery = useQuery({
     ...client.ListAlerts.query(
       ListAlertsRequest.fromPartial({
@@ -93,10 +87,7 @@ export function MonitoringProvider({ children, treeName, tree }: Props) {
     enabled: !!(treeName && tree),
   });
 
-  const notifyClient = usePrpcServiceClient({
-    host: SETTINGS.luciNotify.host,
-    ClientImpl: NotifyAlertsClientImpl,
-  });
+  const notifyClient = useNotifyAlertsClient();
   // Eventually all of the data will come from LUCI Notify, but for now we just extend the
   // SOM alerts with the LUCI Notify alerts.
   const batches = chunk(alertsQuery.data?.alerts || [], 100);

@@ -17,13 +17,10 @@ import Link from '@mui/material/Link';
 import { useQuery } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
 
+import { useTestHistoryClient } from '@/analysis/hooks/prpc_clients';
 import { HtmlTooltip } from '@/common/components/html_tooltip';
 import { RelativeTimestamp } from '@/common/components/relative_timestamp';
-import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
-import {
-  QueryTestHistoryRequest,
-  TestHistoryClientImpl,
-} from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_history.pb';
+import { QueryTestHistoryRequest } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_history.pb';
 import {
   TestVerdict,
   TestVerdictStatus,
@@ -53,10 +50,7 @@ export const TestHistorySparkline = ({
   testId,
   variantHash,
 }: TestHistorySparklineProps) => {
-  const client = usePrpcServiceClient({
-    host: SETTINGS.luciAnalysis.host,
-    ClientImpl: TestHistoryClientImpl,
-  });
+  const client = useTestHistoryClient();
   const req = QueryTestHistoryRequest.fromPartial({
     predicate: {
       subRealm,

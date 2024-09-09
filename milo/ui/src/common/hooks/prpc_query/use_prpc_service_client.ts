@@ -18,7 +18,9 @@ import {
   useAuthState,
   useGetAccessToken,
 } from '@/common/components/auth_state_provider';
+import { useSingleton } from '@/generic_libs/hooks/singleton';
 import { PrpcClient } from '@/generic_libs/tools/prpc_client';
+import { getObjectId } from '@/generic_libs/tools/utils';
 import { Constructor } from '@/generic_libs/types';
 
 export interface PrpcServiceClientOptions<S, Params extends unknown[] = []> {
@@ -147,11 +149,6 @@ export type DecoratedClient<S> = {
     : S[MK];
 };
 
-export interface CallOpt<MK, Request> {
-  readonly method: MK;
-  readonly request: Request;
-}
-
 /**
  * Construct a decorated pRPC client with the users credentials. Add helper
  * functions to each pRPC method to help generating ReactQuery options.
@@ -204,23 +201,39 @@ export interface CallOpt<MK, Request> {
 export function usePrpcServiceClient<
   S extends object,
   Params extends unknown[],
->(opts: PrpcServiceClientOptions<S, Params>, ...params: Params) {
-  const { host, additionalHeaders, insecure, ClientImpl, initUseGetAuthToken } =
-    opts;
+>(opts: PrpcServiceClientOptions<S, Params>, ...serializableParams: Params) {
+  const {
+    host,
+    insecure = false,
+    additionalHeaders,
+    ClientImpl,
+    initUseGetAuthToken,
+  } = opts;
 
   const { current: useGetAuthToken } = useRef(
     initUseGetAuthToken || useGetAccessToken,
   );
-
   const { identity } = useAuthState();
   const getAuthToken = useGetAuthToken();
-  const client = new ClientImpl(
-    new PrpcClient({ host, insecure, getAuthToken, additionalHeaders }),
-    ...params,
-  );
   const additionalHeadersObj = Object.fromEntries(
     new Headers(additionalHeaders).entries(),
   );
+
+  const client = useSingleton({
+    key: [
+      getObjectId(ClientImpl),
+      host,
+      insecure,
+      getObjectId(getAuthToken),
+      additionalHeaders,
+      serializableParams,
+    ],
+    fn: () =>
+      new ClientImpl(
+        new PrpcClient({ host, insecure, getAuthToken, additionalHeaders }),
+        ...serializableParams,
+      ),
+  });
 
   return new Proxy(client, {
     get(target, p, receiver) {

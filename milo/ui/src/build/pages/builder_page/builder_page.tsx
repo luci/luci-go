@@ -18,14 +18,13 @@ import { Alert, AlertTitle, Grid, LinearProgress } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { useParams } from 'react-router-dom';
 
+import { useBuildersClient } from '@/build/hooks/prpc_clients';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { PageMeta } from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants/view';
-import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
 import { parseLegacyBucketId } from '@/common/tools/build_utils';
 import {
   BuilderMask_BuilderMaskType,
-  BuildersClientImpl,
   GetBuilderRequest,
 } from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_service.pb';
 
@@ -60,10 +59,7 @@ export function BuilderPage() {
     builder,
   };
 
-  const client = usePrpcServiceClient({
-    host: SETTINGS.buildbucket.host,
-    ClientImpl: BuildersClientImpl,
-  });
+  const client = useBuildersClient();
   const { data, error, isLoading } = useQuery({
     ...client.GetBuilder.query(
       GetBuilderRequest.fromPartial({

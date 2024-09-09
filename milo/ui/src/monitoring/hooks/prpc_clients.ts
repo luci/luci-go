@@ -13,11 +13,19 @@
 // limitations under the License.
 
 import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
-import { GroupsClientImpl } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/groups.pb';
+import { AlertsClientImpl as NotifyAlertsClientImpl } from '@/proto/go.chromium.org/luci/luci_notify/api/service/v1/alerts.pb';
+import { AlertsClientImpl as SoMAlertsClientImpl } from '@/proto/infra/appengine/sheriff-o-matic/proto/v1/alerts.pb';
 
-export function useAuthServiceClient() {
+export function useSoMAlertsClient() {
   return usePrpcServiceClient({
-    host: SETTINGS.authService.host,
-    ClientImpl: GroupsClientImpl,
+    host: SETTINGS.sheriffOMatic.host,
+    ClientImpl: SoMAlertsClientImpl,
+  });
+}
+
+export function useNotifyAlertsClient() {
+  return usePrpcServiceClient({
+    host: SETTINGS.luciNotify.host,
+    ClientImpl: NotifyAlertsClientImpl,
   });
 }

@@ -17,14 +17,13 @@ import { UseQueryOptions, useQueries } from '@tanstack/react-query';
 import { useState } from 'react';
 
 import { PARTIAL_BUILD_FIELD_MASK } from '@/build/constants';
+import { useBuildsClient } from '@/build/hooks/prpc_clients';
 import { OutputBuild } from '@/build/types';
-import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
 import {
   CategoryTree,
   CategoryTreeEntry,
 } from '@/generic_libs/tools/category_tree';
 import {
-  BuildsClientImpl,
   SearchBuildsRequest,
   SearchBuildsResponse,
 } from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
@@ -57,10 +56,7 @@ export function RelatedBuildsDisplay({ build }: RelatedBuildsDisplayProps) {
     new Set<string>(),
   );
 
-  const client = usePrpcServiceClient({
-    host: SETTINGS.buildbucket.host,
-    ClientImpl: BuildsClientImpl,
-  });
+  const client = useBuildsClient();
   type QueryOpts = UseQueryOptions<SearchBuildsResponse>;
   const rootBuildId = build.ancestorIds.length
     ? build.ancestorIds[0]

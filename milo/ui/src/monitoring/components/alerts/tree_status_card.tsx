@@ -25,7 +25,6 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 
 import { LinkifiedText } from '@/common/components/linkified_text';
-import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
 import {
   statusColor,
   statusText,
@@ -35,9 +34,9 @@ import {
   GeneralState,
   ListStatusRequest,
   Status,
-  TreeStatusClientImpl,
 } from '@/proto/go.chromium.org/luci/tree_status/proto/v1/tree_status.pb';
 import { TreeStatusTable } from '@/tree_status/components/tree_status_table';
+import { useTreeStatusClient } from '@/tree_status/hooks/prpc_clients';
 
 interface AlertGroupProps {
   tree: TreeJson;
@@ -47,10 +46,7 @@ interface AlertGroupProps {
  * Similar to BugGroup, but is never associated with a bug.
  */
 export const TreeStatusCard = ({ tree }: AlertGroupProps) => {
-  const treeStatusClient = usePrpcServiceClient({
-    host: SETTINGS.luciTreeStatus.host,
-    ClientImpl: TreeStatusClientImpl,
-  });
+  const treeStatusClient = useTreeStatusClient();
   const statusQuery = useQuery({
     // eslint-disable-next-line new-cap
     ...treeStatusClient.ListStatus.query(

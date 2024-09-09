@@ -17,12 +17,9 @@ import Alert from '@mui/material/Alert';
 import AlertTitle from '@mui/material/AlertTitle';
 import { useQuery } from '@tanstack/react-query';
 
+import { useBatchedClustersClient } from '@/analysis/hooks/prpc_clients';
 import { OutputClusterEntry } from '@/analysis/types';
-import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
-import {
-  ClusterRequest_TestResult,
-  ClustersClientImpl,
-} from '@/proto/go.chromium.org/luci/analysis/proto/v1/clusters.pb';
+import { ClusterRequest_TestResult } from '@/proto/go.chromium.org/luci/analysis/proto/v1/clusters.pb';
 import { TestStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
 import { OutputTestResultBundle } from '@/test_verdict/types';
 
@@ -47,10 +44,7 @@ export function TestResults({ results }: Props) {
       ![TestStatus.PASS, TestStatus.SKIP].includes(r.result.status),
   );
 
-  const client = usePrpcServiceClient({
-    ClientImpl: ClustersClientImpl,
-    host: SETTINGS.luciAnalysis.host,
-  });
+  const client = useBatchedClustersClient();
   const {
     data: clustersResponse,
     error,

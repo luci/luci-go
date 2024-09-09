@@ -17,12 +17,13 @@ import { CircularProgress, Link } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { Link as RouterLink } from 'react-router-dom';
 
+import { useBatchedBuildsClient } from '@/build/hooks/prpc_clients';
 import { getBuilderURLPath } from '@/common/tools/url_utils';
 import { BuilderID } from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_common.pb';
 import { SearchBuildsRequest } from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
 import { Status } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 
-import { useBuildsClient } from './context';
+import { useMaxBatchSize } from './context';
 
 const SEARCH_BUILD_FIELD_MASK = Object.freeze(['status']);
 
@@ -59,7 +60,8 @@ export interface BuilderStatsProps {
 export function BuilderStats({ builder }: BuilderStatsProps) {
   const builderLink = getBuilderURLPath(builder);
 
-  const client = useBuildsClient();
+  const maxBatchSize = useMaxBatchSize();
+  const client = useBatchedBuildsClient(maxBatchSize);
   const { data, isLoading, isError, error } = useQuery({
     ...client.Batch.query({
       requests: [

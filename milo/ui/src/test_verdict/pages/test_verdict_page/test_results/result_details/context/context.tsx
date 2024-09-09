@@ -23,13 +23,10 @@ import {
   useState,
 } from 'react';
 
-import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
 import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
-import {
-  ListArtifactsRequest,
-  ResultDBClientImpl,
-} from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
+import { ListArtifactsRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 import { TestResult } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
+import { useResultDbClient } from '@/test_verdict/hooks/prpc_clients';
 import { parseTestResultName } from '@/test_verdict/tools/utils';
 
 interface ResultDataContext {
@@ -55,10 +52,7 @@ export function ResultDataProvider({
   children,
 }: ResultDataProviderProps) {
   const [topPanelExpanded, setTopPanelExpanded] = useState(true);
-  const client = usePrpcServiceClient({
-    host: SETTINGS.resultdb.host,
-    ClientImpl: ResultDBClientImpl,
-  });
+  const client = useResultDbClient();
 
   const {
     data: resultArtifactsData,

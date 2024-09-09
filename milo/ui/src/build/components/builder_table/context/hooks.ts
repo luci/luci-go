@@ -14,13 +14,13 @@
 
 import { useContext } from 'react';
 
-import { BuildsClientCtx, NumOfBuildsCtx } from './context';
+import { MaxBatchSizeCtx, NumOfBuildsCtx } from './context';
 
-export function useBuildsClient() {
-  const ctx = useContext(BuildsClientCtx);
+export function useMaxBatchSize() {
+  const ctx = useContext(MaxBatchSizeCtx);
   if (ctx === undefined) {
     throw new Error(
-      'useBuildsClient can only be used in a BuilderTableContextProvider',
+      'useMaxBatchSize can only be used in a BuilderTableContextProvider',
     );
   }
   return ctx;

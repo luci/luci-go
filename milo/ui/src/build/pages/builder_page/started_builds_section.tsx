@@ -16,14 +16,11 @@ import { CircularProgress, Link } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
 
+import { useBuildsClient } from '@/build/hooks/prpc_clients';
 import { DurationBadge } from '@/common/components/duration_badge';
-import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
 import { getBuildURLPathFromBuildId } from '@/common/tools/url_utils';
 import { BuilderID } from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_common.pb';
-import {
-  BuildsClientImpl,
-  SearchBuildsRequest,
-} from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
+import { SearchBuildsRequest } from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
 import { Status } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 
 const PAGE_SIZE = 100;
@@ -38,10 +35,7 @@ export interface StartedBuildsSectionProps {
 }
 
 export function StartedBuildsSection({ builderId }: StartedBuildsSectionProps) {
-  const client = usePrpcServiceClient({
-    host: SETTINGS.buildbucket.host,
-    ClientImpl: BuildsClientImpl,
-  });
+  const client = useBuildsClient();
   const { data, error, isError, isLoading } = useQuery(
     client.SearchBuilds.query(
       SearchBuildsRequest.fromPartial({
