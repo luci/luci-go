@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	taskdef "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
+	pb "go.chromium.org/luci/buildbucket/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -280,6 +281,34 @@ func TestTasks(t *testing.T) {
 			Convey("valid", func() {
 				So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 					return CheckBuildLiveness(ctx, 123, 60, time.Duration(1))
+				}, nil), ShouldBeNil)
+				So(sch.Tasks(), ShouldHaveLength, 1)
+			})
+		})
+
+		Convey("CreatePushPendingTask", func() {
+			Convey("invalid", func() {
+				Convey("empty build_id", func() {
+					So(CreatePushPendingBuildTask(ctx, &taskdef.PushPendingBuildTask{
+						BuilderId: &pb.BuilderID{Builder: "builder", Bucket: "bucket", Project: "project"},
+					}), ShouldErrLike, "build_id is required")
+					So(sch.Tasks(), ShouldBeEmpty)
+				})
+
+				Convey("empty builder_id", func() {
+					So(CreatePushPendingBuildTask(ctx, &taskdef.PushPendingBuildTask{
+						BuildId: 123,
+					}), ShouldErrLike, "builder_id is required")
+					So(sch.Tasks(), ShouldBeEmpty)
+				})
+			})
+
+			Convey("valid", func() {
+				So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+					return CreatePushPendingBuildTask(ctx, &taskdef.PushPendingBuildTask{
+						BuildId:   123,
+						BuilderId: &pb.BuilderID{Builder: "builder", Bucket: "bucket", Project: "project"},
+					})
 				}, nil), ShouldBeNil)
 				So(sch.Tasks(), ShouldHaveLength, 1)
 			})

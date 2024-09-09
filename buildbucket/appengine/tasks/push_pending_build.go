@@ -17,15 +17,67 @@ package tasks
 import (
 	"context"
 
-	"go.chromium.org/luci/common/errors"
+	"github.com/google/uuid"
 
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/gae/service/datastore"
+
+	"go.chromium.org/luci/buildbucket/appengine/model"
+	taskdefs "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
 	pb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/buildbucket/protoutil"
 )
 
 // PushPendingBuildTask is responsible for updating the BuilderQueue entity.
 // It is triggered at the build creation for builder with Config.MaxConcurrentBuilds > 0.
 // A new build can either be pushed to triggered_builds and sent to task Backend, or
 // pushed to pending_builds where it will wait to be popped when the builder gets some capacity.
-func PushPendingBuildTask(ctx context.Context, build int64, builder *pb.BuilderID) error {
-	return errors.New("NotImplemented")
+func PushPendingBuildTask(ctx context.Context, bID int64, bldrID *pb.BuilderID) error {
+	bldrQID := protoutil.FormatBuilderID(bldrID)
+	bldr := &model.Builder{
+		ID:     bldrID.Builder,
+		Parent: model.BucketKey(ctx, bldrID.Project, bldrID.Bucket),
+	}
+	if err := datastore.Get(ctx, bldr); err != nil {
+		return errors.Annotate(err, "failed to get builder: %s", bldrQID).Err()
+	}
+
+	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		mcb := bldr.Config.GetMaxConcurrentBuilds()
+		// max_concurrent_builds has been reset (set to 0) after the task was created.
+		// Send the build to task Backend without updating the BuilderQueue.
+		if mcb == 0 {
+			return CreateBackendBuildTask(ctx, &taskdefs.CreateBackendBuildTask{
+				BuildId:   bID,
+				RequestId: uuid.New().String(),
+			})
+		}
+
+		bldrQ := &model.BuilderQueue{ID: bldrQID}
+		if err := model.GetIgnoreMissing(ctx, bldrQ); err != nil {
+			return err
+		}
+
+		if len(bldrQ.PendingBuilds) == 0 && len(bldrQ.TriggeredBuilds) < int(mcb) {
+			err := CreateBackendBuildTask(ctx, &taskdefs.CreateBackendBuildTask{
+				BuildId:   bID,
+				RequestId: uuid.New().String(),
+			})
+			if err != nil {
+				return err
+			}
+			bldrQ.TriggeredBuilds = append(bldrQ.TriggeredBuilds, bID)
+		} else {
+			bldrQ.PendingBuilds = append(bldrQ.PendingBuilds, bID)
+		}
+		if err := datastore.Put(ctx, bldrQ); err != nil {
+			return errors.Annotate(err, "failed to update the BuilderQueue: %s", bldrQID).Err()
+		}
+
+		return nil
+	}, nil)
+	if err != nil {
+		return errors.Annotate(err, "error updating BuilderQueue for builder: %s and build: %d", bldrQID, bID).Err()
+	}
+	return nil
 }

@@ -360,3 +360,17 @@ func CheckBuildLiveness(ctx context.Context, buildID int64, heartbeatTimeout uin
 		Delay: delay,
 	})
 }
+
+// CreatePushPendingBuildTask enqueues a task queue task to push a pending build.
+func CreatePushPendingBuildTask(ctx context.Context, task *taskdefs.PushPendingBuildTask) error {
+	switch {
+	case task.GetBuildId() == 0:
+		return errors.Reason("build_id is required").Err()
+	case task.GetBuilderId() == nil:
+		return errors.Reason("builder_id is required").Err()
+	}
+	return tq.AddTask(ctx, &tq.Task{
+		Title:   fmt.Sprintf("push-pending-build-%d", task.BuildId),
+		Payload: task,
+	})
+}
