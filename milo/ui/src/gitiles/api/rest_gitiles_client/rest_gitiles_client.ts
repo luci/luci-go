@@ -98,6 +98,8 @@ export class RestGitilesClientImpl implements Gitiles {
         return JSON.parse(res.slice(")]}'\n".length)) as Res;
       case 400:
         throw new GrpcError(RpcCode.INVALID_ARGUMENT, res);
+      case 401:
+        throw new GrpcError(RpcCode.UNAUTHENTICATED, 'unauthenticated');
       case 403:
         throw new GrpcError(RpcCode.PERMISSION_DENIED, 'permission denied');
       case 404:

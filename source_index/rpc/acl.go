@@ -23,6 +23,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	gitilespb "go.chromium.org/luci/common/proto/gitiles"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -131,9 +132,11 @@ func ensureCanKnowRepoExists(ctx context.Context, host, repository string) error
 	// share the same cache.
 	wasPublic, err := wasPublicRepo(ctx, host, repository)
 	if err != nil {
-		return errors.Annotate(err, "check whether the repo was public").Err()
-	}
-	if wasPublic {
+		// Log the error only. We have another chance to check the access with the
+		// user's credential. This matters when Gitiles returns an unexpected
+		// status.
+		logging.WithError(err).Errorf(ctx, "check whether the repo was public")
+	} else if wasPublic {
 		return nil
 	}
 

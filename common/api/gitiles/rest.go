@@ -363,6 +363,9 @@ func (c *client) getRaw(ctx context.Context, urlPath string, query url.Values) (
 	case http.StatusBadRequest:
 		return r.Header, body, status.Errorf(codes.InvalidArgument, "%s", string(body))
 
+	case http.StatusUnauthorized:
+		return r.Header, body, status.Errorf(codes.Unauthenticated, "unauthenticated")
+
 	case http.StatusForbidden:
 		return r.Header, body, status.Errorf(codes.PermissionDenied, "permission denied")
 
