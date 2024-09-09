@@ -17,7 +17,7 @@ import {
   Alert,
   Box,
   CircularProgress,
-  LinearProgress,
+  Link,
   Tab,
   Tabs,
   Typography,
@@ -114,7 +114,7 @@ export function AlertTabs() {
         />
       </TabPanel>
       <TabPanel value="bugs">
-        {bugsLoading ? <LinearProgress /> : null}
+        {bugsLoading ? <CircularProgress sx={{ margin: '10px 0' }} /> : null}
         {isBugsError ? (
           <Alert severity="error">
             Failed to fetch bugs: {`${bugsErrorMessage}`}
@@ -122,7 +122,23 @@ export function AlertTabs() {
         ) : null}
         {/* TODO: Get hotlist name */}
         {bugs?.length === 0 ? (
-          <Typography>There are currently no bugs in the hotlist.</Typography>
+          <Typography>
+            {tree.hotlistId ? (
+              <>
+                There are currently no alerts associated with bugs and the{' '}
+                <Link
+                  href={`https://b.corp.google.com/hotlists/${tree.hotlistId}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  hotlist
+                </Link>
+                associated with this tree is empty.
+              </>
+            ) : (
+              'There are no alerts associated with bugs and there is no hotlist associated with this tree.'
+            )}
+          </Typography>
         ) : null}
         {bugsWithAlerts.map((bug) => {
           const numAlerts = categories.bugAlerts[bug.number]?.length || 0;
@@ -160,6 +176,24 @@ export function AlertTabs() {
             changing or removing the search filter.
           </Typography>
         )}
+        <Typography sx={{ opacity: '70%', marginTop: '40px' }}>
+          {tree.hotlistId ? (
+            <>
+              This view displays both bugs associated with current alerts and
+              the bugs in the{' '}
+              <Link
+                href={`https://b.corp.google.com/hotlists/${tree.hotlistId}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                hotlist
+              </Link>{' '}
+              associated with this tree.
+            </>
+          ) : (
+            'This view displays bugs associated with current alerts. There is no hotlist associated with this tree.'
+          )}
+        </Typography>
       </TabPanel>
     </TabContext>
   );

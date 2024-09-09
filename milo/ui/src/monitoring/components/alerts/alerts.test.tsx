@@ -75,7 +75,10 @@ describe('<Alerts />', () => {
       </FakeContextProvider>,
     );
     expect(
-      screen.getByText('There are currently no bugs in the hotlist.'),
+      screen.getByText(
+        'There are currently no alerts associated with bugs',
+        { exact: false },
+      ),
     ).toBeInTheDocument();
   });
 
