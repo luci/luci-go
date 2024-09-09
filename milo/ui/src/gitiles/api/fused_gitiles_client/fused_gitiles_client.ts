@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import { PrpcClient } from '@/generic_libs/tools/prpc_client';
+import { RestGitilesClientImpl } from '@/gitiles/api/rest_gitiles_client';
 import {
   ArchiveRequest,
   ArchiveResponse,
@@ -39,7 +40,7 @@ import {
   SourceIndexClientImpl,
 } from '@/proto/go.chromium.org/luci/source_index/proto/v1/source_index.pb';
 
-import { RestGitilesClientImpl } from './rest_gitiles_client';
+import { PositionHashMapper } from './position_hash_mapper';
 
 /**
  * The same as `gitiles.LogRequest` but also support querying by commit
@@ -157,6 +158,8 @@ export class FusedGitilesClientImpl implements Gitiles {
   private readonly miloClient: MiloInternalClientImpl | undefined;
   private readonly sourceIndexClient: SourceIndexClientImpl;
 
+  private readonly positionHashMappers = new Map<string, PositionHashMapper>();
+
   constructor(
     private readonly rpc: PrpcClient,
     opts: FusedGitilesClientOpts,
@@ -221,20 +224,39 @@ export class FusedGitilesClientImpl implements Gitiles {
       // `ExtendedLogRequest`.
       return this.Log(LogRequest.fromPartial(request));
     }
-    const res = await this.sourceIndexClient.QueryCommitHash(
-      QueryCommitHashRequest.fromPartial({
-        host: this.rpc.host,
-        repository: request.project,
-        positionRef: request.ref,
-        positionNumber: request.position,
-      }),
-    );
+
+    // Use a PositionHashMapper to resolve the commit position to a commitish.
+    // This
+    // * avoids sending a query to Source Index in most cases, which saves
+    //   ~300ms query latency, and
+    // * allows the query to work even when the ref is renamed as long as a
+    //   commit position after the rename is queried first.
+    const key = `${request.project} ${request.ref}`;
+    let posHashMapper = this.positionHashMappers.get(key);
+    if (!posHashMapper) {
+      posHashMapper = new PositionHashMapper((pos) =>
+        this.sourceIndexClient
+          .QueryCommitHash(
+            QueryCommitHashRequest.fromPartial({
+              host: this.rpc.host,
+              repository: request.project,
+              positionRef: request.ref,
+              positionNumber: pos.toString(),
+            }),
+          )
+          .then((res) => res.hash),
+      );
+      this.positionHashMappers.set(key, posHashMapper);
+    }
+
     return this.Log(
       // Use `LogRequest.fromPartial` to strip away additional properties in a
       // `ExtendedLogRequest`.
       LogRequest.fromPartial({
         ...request,
-        committish: res.hash,
+        committish: await posHashMapper.getCommitish(
+          parseInt(request.position),
+        ),
       }),
     );
   }

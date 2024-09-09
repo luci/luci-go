@@ -27,11 +27,12 @@ import {
   SourceIndexClientImpl,
 } from '@/proto/go.chromium.org/luci/source_index/proto/v1/source_index.pb';
 
+import { RestGitilesClientImpl } from '../rest_gitiles_client';
+
 import {
   FusedGitilesClientImpl,
   ExtendedLogRequest,
 } from './fused_gitiles_client';
-import { RestGitilesClientImpl } from './rest_gitiles_client';
 
 describe('FusedGitilesClientImpl', () => {
   describe('Log', () => {
@@ -216,7 +217,7 @@ describe('FusedGitilesClientImpl', () => {
         ProxyGitilesLogRequest.fromPartial({
           host: 'gitiles_host.googlesource.com',
           request: {
-            committish: 'hash_for_1234',
+            committish: 'hash_for_1234~0',
             pageSize: 10,
             project: 'the_project',
           },
