@@ -184,7 +184,7 @@ func (old *BotArchiveInfo) logDiff(ctx context.Context, channel string, new BotA
 type Config struct {
 	// VersionInfo contains versions of the fetched configs.
 	VersionInfo VersionInfo
-	// Refreshed is when the process config was fetched from the datastore.
+	// Refreshed is the local time when the config was fetched from the datastore.
 	Refreshed time.Time
 
 	settings  *configpb.SettingsCfg
@@ -649,7 +649,7 @@ func buildQueriableConfig(ctx context.Context, ent *configBundle) (*Config, erro
 
 	return &Config{
 		VersionInfo: ent.VersionInfo,
-		Refreshed:   clock.Now(ctx).UTC(),
+		Refreshed:   clock.Now(ctx),
 		settings:    settings,
 		traffic:     traffic,
 		poolMap:     pools,

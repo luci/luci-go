@@ -104,9 +104,32 @@ func (p *Provider) Latest(ctx context.Context) (*Config, error) {
 		age := clock.Since(ctx, cur.Refreshed)
 		jitter := time.Duration(rand.Int63n(int64(p.versionInfoRefreshMaxAge - p.versionInfoRefreshMinAge)))
 		if age > p.versionInfoRefreshMinAge+jitter {
+			// The lock is needed to avoid messing with the config reload that might
+			// already be happening concurrently (see its code below).
+			//
+			// In particular without the lock, it is possible this code section is
+			// executing in between clock.Now(...) in fetchFromDatastore and
+			// p.cur.Store(...). As a result Refreshed can briefly be seen going
+			// backwards in time:
+			//  1. clock.Now(...) in fetchFromDatastore reads T1.
+			//  2. This block runs and updates Refreshed to some T2 (T2 > T1).
+			//  3. This is observed by someone, they see Refreshed == T2.
+			//  4. p.cur.Store(...) in the config reload updates Refreshed to T1.
+			//  5. The observer sees T1 now, after already seeing T2 => violation.
+			//
+			// Note that we don't need to do any more checks beyond just getting the
+			// lock: if `p.cur` changed by the config reloader after we've got the
+			// lock, the CompareAndSwap will just do nothing.
+			//
+			// An alternative is to always use CompareAndSwap instead of Store when
+			// updating the atomic value (including in the config reloader code path)
+			// to guarantee Refreshed never goes back, but it ends up being more
+			// complicated.
+			p.m.Lock()
+			defer p.m.Unlock()
 			clone := *cur
 			clone.VersionInfo = latest.VersionInfo
-			clone.Refreshed = clock.Now(ctx).UTC()
+			clone.Refreshed = clock.Now(ctx)
 			p.cur.CompareAndSwap(cur, &clone)
 			return p.cur.Load().(*Config), nil
 		}
