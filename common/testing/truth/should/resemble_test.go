@@ -18,11 +18,10 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"google.golang.org/protobuf/types/known/structpb"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
-	"go.chromium.org/luci/common/testing/ftt"
-	"go.chromium.org/luci/common/testing/truth/assert"
 )
 
 func TestMatch(t *testing.T) {
@@ -105,89 +104,118 @@ func TestResembleTypeWalking(t *testing.T) {
 	// in this package.
 	defer resetOptionCache()
 
-	ftt.Run("with clean state", t, func(t *ftt.Test) {
-		// Always start with an empty cache
-		resetOptionCache()
+	type tcase struct {
+		typ               reflect.Type
+		expectOptsLen     int
+		expectCachedTypes map[reflect.Type]int
+	}
 
-		t.Run("simple types leave no entries", func(t *ftt.Test) {
-			assert.Loosely(t, extractAllowUnexportedFrom(reflect.TypeOf("hello")), BeNil)
-			assert.Loosely(t, resembleOptionCache, BeEmpty)
-		})
+	fabType := reflect.TypeFor[struct {
+		fieldA string
+		fieldB string
+	}]()
 
-		t.Run("struct types with no unexported fields leaves nil entry", func(t *ftt.Test) {
-			type myStruct struct {
-				Field string
+	type fabRecursive struct {
+		fieldA string
+		fieldB string
+
+		sub *fabRecursive
+	}
+	fabRecursiveType := reflect.TypeFor[fabRecursive]()
+
+	runIt := func(tc *tcase, extra ...func(t *testing.T)) func(t *testing.T) {
+		return func(t *testing.T) {
+			t.Helper()
+
+			resetOptionCache()
+
+			opts := extractAllowUnexportedFrom(tc.typ)
+			if len(opts) != tc.expectOptsLen {
+				t.Fatalf("expected %d opts, got %d: %q", tc.expectOptsLen, len(opts), opts)
 			}
-			typ := reflect.TypeFor[myStruct]()
-			assert.Loosely(t, extractAllowUnexportedFrom(typ), BeNil)
-			assert.Loosely(t, resembleOptionCache, HaveLength(1))
-			assert.Loosely(t, resembleOptionCache[typ], BeNil)
-		})
-
-		t.Run("struct types with no exported fields leaves single entry", func(t *ftt.Test) {
-			type myStruct struct {
-				fieldA string
-				fieldB string
+			extraEntries := make(map[reflect.Type][]cmp.Option, len(resembleOptionCache))
+			for k, v := range resembleOptionCache {
+				extraEntries[k] = v
 			}
-			typ := reflect.TypeFor[myStruct]()
-			assert.Loosely(t, extractAllowUnexportedFrom(typ), HaveLength(1))
-			assert.Loosely(t, resembleOptionCache, HaveLength(1))
-			assert.Loosely(t, resembleOptionCache[typ], HaveLength(1))
+			for typ, count := range tc.expectCachedTypes {
+				delete(extraEntries, typ)
 
-			t.Run("and we can see the cache hit in code coverage", func(t *ftt.Test) {
-				// note that extractAllowUnexportedFrom(typ) is already cached in this
-				// subtest.
-				assert.Loosely(t, extractAllowUnexportedFrom(typ), HaveLength(1))
-			})
-		})
-
-		t.Run("*struct types with no exported fields leaves single entry", func(t *ftt.Test) {
-			type myStruct struct {
-				fieldA string
-				fieldB string
+				actual, ok := resembleOptionCache[typ]
+				if !ok {
+					t.Fatalf("missing cached type %s", typ)
+				}
+				if len(actual) != count {
+					t.Fatalf("expected %d cached opts for %s, got %d: %q", count, typ, len(actual), actual)
+				}
 			}
-			typ := reflect.TypeFor[*myStruct]()
-			assert.Loosely(t, extractAllowUnexportedFrom(typ), HaveLength(1))
-			assert.Loosely(t, resembleOptionCache, HaveLength(1))
-			// note that myStruct is in cache, not *myStruct
-			assert.Loosely(t, resembleOptionCache[typ.Elem()], HaveLength(1))
-		})
-
-		t.Run("recursive struct types with no exported fields leaves single entry", func(t *ftt.Test) {
-			type myStruct struct {
-				fieldA string
-				fieldB string
-
-				sub *myStruct
+			if len(extraEntries) > 0 {
+				t.Fatalf("got extra resembleOptionCache entries: %q", extraEntries)
 			}
-			typ := reflect.TypeFor[*myStruct]()
-			assert.Loosely(t, extractAllowUnexportedFrom(typ), HaveLength(1))
-			assert.Loosely(t, resembleOptionCache, HaveLength(1))
-			// note that myStruct is in cache, not *myStruct
-			assert.Loosely(t, resembleOptionCache[typ.Elem()], HaveLength(1))
-		})
 
-		t.Run("maps with struct keys work", func(t *ftt.Test) {
-			type myKey struct {
-				field string
+			for _, ex := range extra {
+				ex(t)
 			}
-			type myValue struct {
-				thing int
-			}
-			assert.Loosely(t, extractAllowUnexportedFrom(reflect.TypeFor[map[myKey]*myValue]()), HaveLength(2))
-			assert.Loosely(t, resembleOptionCache, HaveLength(2))
-			assert.Loosely(t, resembleOptionCache[reflect.TypeFor[myKey]()], HaveLength(1))
-			assert.Loosely(t, resembleOptionCache[reflect.TypeFor[myValue]()], HaveLength(1))
-		})
+		}
+	}
 
-		t.Run("proto fields are ignored", func(t *ftt.Test) {
-			type myStruct struct {
-				Struct *structpb.Struct
-			}
-			assert.Loosely(t, extractAllowUnexportedFrom(reflect.TypeFor[myStruct]()), BeEmpty)
-			assert.Loosely(t, resembleOptionCache, HaveLength(1))
-			assert.Loosely(t, resembleOptionCache[reflect.TypeFor[myStruct]()], BeNil)
-		})
+	t.Run("simple types leave no entries", runIt(&tcase{
+		reflect.TypeFor[string](),
+		0,
+		nil,
+	}))
 
-	})
+	t.Run("struct types with no unexported fields leaves nil entry", runIt(&tcase{
+		reflect.TypeFor[struct{ Field string }](),
+		0,
+		map[reflect.Type]int{
+			reflect.TypeFor[struct{ Field string }](): 0,
+		},
+	}))
+
+	t.Run("struct types with no exported fields leaves single entry", runIt(&tcase{
+		fabType,
+		1,
+		map[reflect.Type]int{
+			fabType: 1,
+		},
+	}, func(t *testing.T) {
+		// "and we can see the cache hit in code coverage"
+		// note that extractAllowUnexportedFrom(typ) is already cached in this
+		// subtest.
+		if opts := extractAllowUnexportedFrom(fabType); len(opts) != 1 {
+			t.Fatalf("expected %d opts, got %d: %q", 1, len(opts), opts)
+		}
+	}))
+
+	t.Run("*struct types with no exported fields leaves single entry", runIt(&tcase{
+		reflect.PointerTo(fabType),
+		1,
+		map[reflect.Type]int{
+			fabType: 1,
+		},
+	}))
+
+	t.Run("recursive struct types with no exported fields leaves single entry", runIt(&tcase{
+		reflect.PointerTo(fabRecursiveType),
+		1,
+		map[reflect.Type]int{fabRecursiveType: 1},
+	}))
+
+	t.Run("maps with struct keys work", runIt(&tcase{
+		reflect.TypeFor[map[struct{ a string }]struct{ b int }](),
+		2,
+		map[reflect.Type]int{
+			reflect.TypeFor[struct{ a string }](): 1,
+			reflect.TypeFor[struct{ b int }]():    1,
+		},
+	}))
+
+	t.Run("proto fields are ignored", runIt(&tcase{
+		reflect.TypeFor[struct{ Struct *structpb.Struct }](),
+		0,
+		map[reflect.Type]int{
+			reflect.TypeFor[struct{ Struct *structpb.Struct }](): 0,
+		},
+	}))
+
 }
