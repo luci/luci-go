@@ -2163,7 +2163,10 @@ func TestProtoConversion(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("AuthGroup FromProto and ToProto round trip equivalence", t, func(t *ftt.Test) {
-		ctx := memory.Use(context.Background())
+		ctx := auth.WithState(memory.Use(context.Background()), &authtest.FakeState{
+			Identity:       "user:someone@example.com",
+			IdentityGroups: []string{"testers"},
+		})
 
 		empty := &AuthGroup{
 			Kind:   "AuthGroup",

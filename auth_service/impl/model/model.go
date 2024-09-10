@@ -489,12 +489,6 @@ func IsExternalAuthGroupName(name string) bool {
 	return strings.Contains(name, "/") && auth.IsValidGroupName(name)
 }
 
-// IsExternalGoogleGroup checks if the given name is an external google group name.
-// It implies that the auth group members list is redacted.
-func isExternalGoogleGroupName(name string) bool {
-	return strings.HasPrefix(name, "google/") && IsExternalAuthGroupName(name)
-}
-
 // makeAuthGroup is a convenience function for creating an AuthGroup with the given ID.
 func makeAuthGroup(ctx context.Context, id string) *AuthGroup {
 	return &AuthGroup{
@@ -1956,14 +1950,16 @@ func unshardAuthDB(ctx context.Context, shardIDs []string, dryRun bool) ([]byte,
 // Set includeMemberships to true if we also want to include the group members, or false
 // if we only want the metadata (e.g. if we're just listing groups).
 func (group *AuthGroup) ToProto(ctx context.Context, includeMemberships bool) (*rpcpb.AuthGroup, error) {
-	canViewMembers := true
-	var err error
-	if isExternalGoogleGroupName(group.ID) {
-		canViewMembers, err = auth.IsMember(ctx, AdminGroup)
-		if err != nil {
-			return nil, err
-		}
+	isModifier, err := canCallerModify(ctx, group)
+	if err != nil {
+		return nil, err
 	}
+
+	membersVisible, err := canCallerViewMembers(ctx, group)
+	if err != nil {
+		return nil, err
+	}
+
 	authGroup := &rpcpb.AuthGroup{
 		Name:                 group.ID,
 		Description:          group.Description,
@@ -1971,10 +1967,12 @@ func (group *AuthGroup) ToProto(ctx context.Context, includeMemberships bool) (*
 		CreatedTs:            timestamppb.New(group.CreatedTS),
 		CreatedBy:            group.CreatedBy,
 		Etag:                 group.etag(),
-		CallerCanViewMembers: canViewMembers,
+		CallerCanModify:      isModifier,
+		CallerCanViewMembers: membersVisible,
 	}
+
 	if includeMemberships {
-		if canViewMembers {
+		if membersVisible {
 			authGroup.Members = group.Members
 		} else {
 			authGroup.NumRedacted = int32(len(group.Members))

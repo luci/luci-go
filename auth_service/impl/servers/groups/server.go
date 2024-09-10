@@ -108,7 +108,6 @@ func (srv *Server) ListGroups(ctx context.Context, _ *emptypb.Empty) (*rpcpb.Lis
 		if err != nil {
 			return nil, err
 		}
-		g.CallerCanModify = canCallerModify(ctx, entity)
 		groupList[idx] = g
 	}
 
@@ -125,7 +124,6 @@ func (*Server) GetGroup(ctx context.Context, request *rpcpb.GetGroupRequest) (*r
 		if err != nil {
 			return nil, err
 		}
-		g.CallerCanModify = canCallerModify(ctx, group)
 		return g, nil
 	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return nil, status.Errorf(codes.NotFound, "no such group %q", request.Name)
@@ -297,22 +295,31 @@ func (s *Server) GetLegacyAuthGroup(ctx *router.Context) error {
 		return status.Errorf(codes.Internal, "failed to fetch group %q", name)
 	}
 
+	// Leverage existing conversion/filtering defined in AuthGroup's ToProto.
+	g, err := group.ToProto(c, true)
+	if err != nil {
+		err = errors.Annotate(err, "error calling ToProto").Err()
+		logging.Errorf(c, err.Error())
+		return status.Errorf(codes.Internal, "failed to fetch group %q", name)
+	}
+
 	// Set the Last-Modified header.
 	w.Header().Set("Last-Modified", group.ModifiedTS.Format(time.RFC1123Z))
 
 	blob, err := json.Marshal(map[string]AuthGroupJSON{
 		"group": {
-			Name:            group.ID,
-			Description:     group.Description,
-			Owners:          group.Owners,
-			Members:         group.Members,
-			Globs:           group.Globs,
-			Nested:          group.Nested,
-			CreatedBy:       group.CreatedBy,
-			CreatedTS:       group.CreatedTS.UnixMicro(),
-			ModifiedBy:      group.ModifiedBy,
-			ModifiedTS:      group.ModifiedTS.UnixMicro(),
-			CallerCanModify: canCallerModify(c, group),
+			Name:            g.Name,
+			Description:     g.Description,
+			Owners:          g.Owners,
+			Members:         g.Members,
+			Globs:           g.Globs,
+			Nested:          g.Nested,
+			CreatedBy:       g.CreatedBy,
+			CallerCanModify: g.CallerCanModify,
+			// Add remaining fields expected in the legacy response.
+			CreatedTS:  group.CreatedTS.UnixMicro(),
+			ModifiedBy: group.ModifiedBy,
+			ModifiedTS: group.ModifiedTS.UnixMicro(),
 		},
 	})
 	if err != nil {
@@ -338,19 +345,4 @@ func convertPrincipal(p *rpcpb.Principal) (graph.NodeKey, error) {
 	default:
 		return graph.NodeKey{}, status.Errorf(codes.InvalidArgument, "invalid principal kind")
 	}
-}
-
-// canCallerModify returns whether the current identity can modify the
-// given group.
-func canCallerModify(ctx context.Context, g *model.AuthGroup) bool {
-	if model.IsExternalAuthGroupName(g.ID) {
-		return false
-	}
-
-	isOwner, err := auth.IsMember(ctx, model.AdminGroup, g.Owners)
-	if err != nil {
-		logging.Errorf(ctx, "error checking group owner status: %w", err)
-		return false
-	}
-	return isOwner
 }
