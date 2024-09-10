@@ -21,7 +21,7 @@ import {
   TestVariantBranchesClientImpl,
 } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
 
-import { BatchedTestVariantBranchesClientImpl } from './batched_test_variant_branches_client';
+import { BatchedTestVariantBranchesClientImpl } from './test_variant_branches_client';
 
 describe('BatchedTestVariantBranchesClientImpl', () => {
   let batchGetSpy: jest.SpiedFunction<

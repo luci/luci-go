@@ -18,8 +18,7 @@ import {
   BatchCheckPermissionsResponse,
   MiloInternalClientImpl,
 } from '@/proto/go.chromium.org/luci/milo/proto/v1/rpc.pb';
-
-import { Rpc } from './types';
+import { Rpc } from '@/proto_utils/types';
 
 const MAX_BATCH_SIZE = 100;
 

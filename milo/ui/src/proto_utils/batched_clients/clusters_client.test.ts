@@ -18,7 +18,7 @@ import {
   ClustersClientImpl,
 } from '@/proto/go.chromium.org/luci/analysis/proto/v1/clusters.pb';
 
-import { BatchedClustersClientImpl } from './batched_clusters_client';
+import { BatchedClustersClientImpl } from './clusters_client';
 
 describe('BatchedClustersClientImpl', () => {
   let clusterSpy: jest.SpiedFunction<BatchedClustersClientImpl['Cluster']>;

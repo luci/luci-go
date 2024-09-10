@@ -20,7 +20,7 @@ import {
   MiloInternalClientImpl,
 } from '@/proto/go.chromium.org/luci/milo/proto/v1/rpc.pb';
 
-import { BatchedMiloInternalClientImpl } from './batched_milo_internal_client';
+import { BatchedMiloInternalClientImpl } from './milo_internal_client';
 
 describe('BatchedMiloInternalClientImpl', () => {
   let batchCheckPermsSpy: jest.SpiedFunction<

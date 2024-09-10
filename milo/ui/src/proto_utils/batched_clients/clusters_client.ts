@@ -18,8 +18,7 @@ import {
   ClusterResponse,
   ClustersClientImpl,
 } from '@/proto/go.chromium.org/luci/analysis/proto/v1/clusters.pb';
-
-import { Rpc } from './types';
+import { Rpc } from '@/proto_utils/types';
 
 const MAX_BATCH_SIZE = 1000;
 

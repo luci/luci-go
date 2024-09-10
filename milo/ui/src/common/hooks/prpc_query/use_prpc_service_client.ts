@@ -48,7 +48,7 @@ export interface PrpcServiceClientOptions<S, Params extends unknown[] = []> {
    *
    * Only the initial value is used. Updating this value has no effect.
    *
-   * Defaults to `{ getAccessToken } from '@/common/components/auth_state_provider'`.
+   * Defaults to `{ useGetAccessToken } from '@/common/components/auth_state_provider'`.
    */
   readonly initUseGetAuthToken?: () => () => string | Promise<string>;
   /**

@@ -27,7 +27,7 @@ import {
   SearchBuildsResponse,
 } from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
 
-import { BatchedBuildsClientImpl } from './batched_builds_client';
+import { BatchedBuildsClientImpl } from './builds_client';
 
 const getBuildReq = GetBuildRequest.fromPartial({
   id: '1234',

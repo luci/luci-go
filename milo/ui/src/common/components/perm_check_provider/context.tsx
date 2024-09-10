@@ -16,7 +16,7 @@ import { createContext, ReactNode } from 'react';
 
 import { useBatchedMiloInternalClient } from '@/common/hooks/prpc_clients';
 import { DecoratedClient } from '@/common/hooks/prpc_query';
-import { BatchedMiloInternalClientImpl } from '@/proto_utils/batched_milo_internal_client';
+import { BatchedMiloInternalClientImpl } from '@/proto_utils/batched_clients/milo_internal_client';
 
 export const ClientCtx =
   createContext<DecoratedClient<BatchedMiloInternalClientImpl> | null>(null);

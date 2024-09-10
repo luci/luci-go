@@ -24,4 +24,4 @@ location not known to the code generator.
 For instance, the proto files in
 [chromiumos/config](https://source.chromium.org/chromium/infra/infra_superproject/+/main:infra/go/src/go.chromium.org/chromiumos/config/proto/;drc=0caf1814ce046e09e14889aa86e16f1505e0962c) imports files with [chromiumos/config](https://source.chromium.org/chromium/infra/infra_superproject/+/main:infra/go/src/go.chromium.org/chromiumos/config/proto/;drc=0caf1814ce046e09e14889aa86e16f1505e0962c) as the base directory.
 `-I=./go.chromium.org/chromiumos/config/proto` needs to be passed to `protoc`.
-Otherwise, `protoc` will not be able to the files in [chromiumos/config](https://source.chromium.org/chromium/infra/infra_superproject/+/main:infra/go/src/go.chromium.org/chromiumos/config/proto/;drc=0caf1814ce046e09e14889aa86e16f1505e0962c).
+Otherwise, `protoc` will not be able to locate the files in [chromiumos/config](https://source.chromium.org/chromium/infra/infra_superproject/+/main:infra/go/src/go.chromium.org/chromiumos/config/proto/;drc=0caf1814ce046e09e14889aa86e16f1505e0962c).

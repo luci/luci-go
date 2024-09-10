@@ -19,8 +19,7 @@ import {
   BatchGetTestVariantsResponse,
   ResultDBClientImpl,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
-
-import { Rpc } from './types';
+import { Rpc } from '@/proto_utils/types';
 
 const MAX_BATCH_SIZE = 100;
 

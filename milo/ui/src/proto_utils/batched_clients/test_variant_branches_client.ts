@@ -18,8 +18,7 @@ import {
   BatchGetTestVariantBranchResponse,
   TestVariantBranchesClientImpl,
 } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
-
-import { Rpc } from './types';
+import { Rpc } from '@/proto_utils/types';
 
 const MAX_BATCH_SIZE = 100;
 

@@ -16,7 +16,7 @@ import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
 import { ChangepointsClientImpl } from '@/proto/go.chromium.org/luci/analysis/proto/v1/changepoints.pb';
 import { TestHistoryClientImpl } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_history.pb';
 import { TestVariantBranchesClientImpl } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
-import { BatchedClustersClientImpl } from '@/proto_utils/batched_clusters_client';
+import { BatchedClustersClientImpl } from '@/proto_utils/batched_clients/clusters_client';
 
 export function useChangepointsClient() {
   return usePrpcServiceClient({

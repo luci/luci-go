@@ -18,7 +18,7 @@ import {
   ResultDBClientImpl,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 
-import { BatchedResultDBClientImpl } from './batched_resultdb_client';
+import { BatchedResultDBClientImpl } from './resultdb_client';
 
 describe('BatchedResultDBClientImpl', () => {
   let batchGetTestVariants: jest.SpiedFunction<
