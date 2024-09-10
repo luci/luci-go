@@ -286,7 +286,7 @@ export function GroupsForm({ name, onDelete = () => { } }: GroupsFormProps) {
   const numRedacted: number = response?.numRedacted || 0;
 
   return (
-    <Box sx={{ minHeight: '500px', p: '20px', ml: '5px' }}>
+    <Box sx={{ p: '20px', ml: '5px' }}>
       <ThemeProvider theme={theme}>
         <FormControl data-testid="groups-form" style={{ width: '100%' }}>
           <Typography variant="h5" sx={{ pl: 1.5 }}> {name} </Typography>

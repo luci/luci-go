@@ -85,42 +85,44 @@ export function GroupsList() {
 
   const groups = (filteredGroups) ? filteredGroups : allGroups;
   return (
-    <Paper>
+    <Paper className='groups-container-paper'>
       <Grid container className="groups-container">
-        <Grid item xs={4}>
-          <Box sx={{ p: 2 }}>
-            <TextField
-              id="outlined-basic"
-              label="Search for an existing group"
-              variant="outlined"
-              style={{ width: '100%' }}
-              onChange={e => changeSearchQuery(e.target.value)} />
-          </Box>
-          <Box>
-            <Button variant="contained" disableElevation sx={{ m: '16px', mt: 0 }} data-testid='create-button' onClick={() => setShowCreateForm(true)}>
-              Create Group
-            </Button>
-          </Box>
-          <Box className="groups-list-container">
-            <List data-testid="groups-list" disablePadding>
-              {groups && groups.map((group) => (
-                <GroupsListItem
-                  key={group.name}
-                  group={group}
-                  setSelected={() => { setSelected(group.name) }}
-                  selected={group.name === selectedGroup}
-                />
-              ))}
-            </List>
-          </Box>
+        <Grid item xs={4} className="container-left" sx={{ display: 'flex', flexDirection: 'column' }}>
+            <Box sx={{ p: 2 }}>
+              <TextField
+                id="outlined-basic"
+                label="Search for an existing group"
+                variant="outlined"
+                style={{ width: '100%' }}
+                onChange={e => changeSearchQuery(e.target.value)} />
+            </Box>
+            <Box>
+              <Button variant="contained" disableElevation sx={{ m: '16px', mt: 0 }} data-testid='create-button' onClick={() => setShowCreateForm(true)}>
+                Create Group
+              </Button>
+            </Box>
+            <Box className="groups-list-container">
+              <List data-testid="groups-list" disablePadding>
+                {groups && groups.map((group) => (
+                  <GroupsListItem
+                    key={group.name}
+                    group={group}
+                    setSelected={() => { setSelected(group.name) }}
+                    selected={group.name === selectedGroup}
+                  />
+                ))}
+              </List>
+            </Box>
         </Grid>
-        <Grid item xs={8}>
+        <Grid item xs={8} className="container-right" sx={{ display: 'flex', flexDirection: 'column' }}>
+          <Box className='groups-details-container'>
           {showCreateForm
             ? <GroupsFormNew />
             : <>
-              {selectedGroup && <GroupsForm key={selectedGroup} name={selectedGroup} onDelete={onDeletedGroup} />}
+              {selectedGroup && <GroupsForm key={selectedGroup} name={selectedGroup} onDelete={onDeletedGroup}/>}
             </>
           }
+          </Box>
         </Grid>
       </Grid>
     </Paper>

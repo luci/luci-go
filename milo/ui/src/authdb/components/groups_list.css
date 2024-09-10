@@ -13,16 +13,20 @@
 ** limitations under the License.
 */
 
-.groups-list-container {
-    height: 100vh;
-    overflow:hidden;
-    overflow-y:auto;
-}
 
 .groups-container {
-    height: 100%;
     display: flex;
     flex-direction: row;
+}
+
+/* Need to minus 175px to accounnt for approx. height of headers and footers so groups page doesn't overflow. */
+.container-left, .container-right {
+    height: calc(100vh - 175px);
+}
+
+.groups-list-container, .groups-details-container {
+    overflow:hidden;
+    overflow-y:auto;
 }
 
 .item-row .remove-icon {
