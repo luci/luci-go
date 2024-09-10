@@ -18,19 +18,20 @@ import (
 	"fmt"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/run"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestGerritCLDeleted(t *testing.T) {
 	t.Parallel()
 
-	Convey("CV cancels a Run with some grace period after Gerrit CL is deleted", t, func() {
+	ftt.Run("CV cancels a Run with some grace period after Gerrit CL is deleted", t, func(t *ftt.Test) {
 		ct := Test{}
 		ctx := ct.SetUp(t)
 
@@ -46,7 +47,7 @@ func TestGerritCLDeleted(t *testing.T) {
 		})
 		ct.BuildbucketFake.EnsureBuilders(cfg)
 		prjcfgtest.Create(ctx, lProject, cfg)
-		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
+		assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
 
 		ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), gf.CI(
 			gChange, gf.Project(gRepo), gf.Ref(gRef),
@@ -81,6 +82,6 @@ func TestGerritCLDeleted(t *testing.T) {
 		})
 
 		r = ct.LoadRun(ctx, r.ID)
-		So(r.Status, ShouldEqual, run.Status_RUNNING)
+		assert.Loosely(t, r.Status, should.Equal(run.Status_RUNNING))
 	})
 }

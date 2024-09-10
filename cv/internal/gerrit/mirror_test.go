@@ -23,37 +23,36 @@ import (
 	"google.golang.org/grpc"
 
 	"go.chromium.org/luci/common/errors"
-
-	. "github.com/smartystreets/goconvey/convey"
-
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestMirrorIterator(t *testing.T) {
 	t.Parallel()
 
-	Convey("MirrorIterator and its factory work", t, func() {
+	ftt.Run("MirrorIterator and its factory work", t, func(t *ftt.Test) {
 		ctx := context.Background()
 		const baseHost = "a.example.com"
-		Convey("No mirrors", func() {
+		t.Run("No mirrors", func(t *ftt.Test) {
 			it := newMirrorIterator(ctx)
-			So(it.Empty(), ShouldBeFalse)
-			So(it.next()(baseHost), ShouldResemble, baseHost)
-			So(it.Empty(), ShouldBeTrue)
-			So(it.next()(baseHost), ShouldResemble, baseHost)
-			So(it.Empty(), ShouldBeTrue)
-			So(it.next()(baseHost), ShouldResemble, baseHost)
+			assert.Loosely(t, it.Empty(), should.BeFalse)
+			assert.Loosely(t, it.next()(baseHost), should.Resemble(baseHost))
+			assert.Loosely(t, it.Empty(), should.BeTrue)
+			assert.Loosely(t, it.next()(baseHost), should.Resemble(baseHost))
+			assert.Loosely(t, it.Empty(), should.BeTrue)
+			assert.Loosely(t, it.next()(baseHost), should.Resemble(baseHost))
 		})
-		Convey("One mirrors", func() {
+		t.Run("One mirrors", func(t *ftt.Test) {
 			it := newMirrorIterator(ctx, "m1-")
-			So(it.Empty(), ShouldBeFalse)
-			So(it.next()(baseHost), ShouldResemble, baseHost)
-			So(it.Empty(), ShouldBeFalse)
-			So(it.next()(baseHost), ShouldResemble, "m1-"+baseHost)
-			So(it.Empty(), ShouldBeTrue)
-			So(it.next()(baseHost), ShouldResemble, baseHost)
+			assert.Loosely(t, it.Empty(), should.BeFalse)
+			assert.Loosely(t, it.next()(baseHost), should.Resemble(baseHost))
+			assert.Loosely(t, it.Empty(), should.BeFalse)
+			assert.Loosely(t, it.next()(baseHost), should.Resemble("m1-"+baseHost))
+			assert.Loosely(t, it.Empty(), should.BeTrue)
+			assert.Loosely(t, it.next()(baseHost), should.Resemble(baseHost))
 		})
-		Convey("Shuffles mirrors", func() {
+		t.Run("Shuffles mirrors", func(t *ftt.Test) {
 			prefixes := make([]string, 10)
 			expectedHosts := make([]string, len(prefixes)+1)
 			expectedHosts[0] = baseHost
@@ -72,30 +71,30 @@ func TestMirrorIterator(t *testing.T) {
 				return actual
 			}
 			act1 := iterate()
-			So(act1, ShouldNotResemble, expectedHosts)
+			assert.Loosely(t, act1, should.NotResemble(expectedHosts))
 			act2 := iterate()
-			So(act2, ShouldNotResemble, expectedHosts)
-			So(act1, ShouldNotResemble, act2)
+			assert.Loosely(t, act2, should.NotResemble(expectedHosts))
+			assert.Loosely(t, act1, should.NotResemble(act2))
 
 			sort.Strings(act1)
-			So(act1, ShouldResemble, expectedHosts)
+			assert.Loosely(t, act1, should.Resemble(expectedHosts))
 			sort.Strings(act2)
-			So(act2, ShouldResemble, expectedHosts)
+			assert.Loosely(t, act2, should.Resemble(expectedHosts))
 		})
-		Convey("RetryIfStale works", func() {
+		t.Run("RetryIfStale works", func(t *ftt.Test) {
 			it := &MirrorIterator{"", "m1", "m2"}
 
-			Convey("stops when mirrors are exhausted", func() {
+			t.Run("stops when mirrors are exhausted", func(t *ftt.Test) {
 				tried := 0
 				err := it.RetryIfStale(func(grpc.CallOption) error {
 					tried += 1
 					return ErrStaleData
 				})
-				So(err, ShouldEqual, ErrStaleData)
-				So(tried, ShouldEqual, 3)
+				assert.Loosely(t, err, should.Equal(ErrStaleData))
+				assert.Loosely(t, tried, should.Equal(3))
 			})
 
-			Convey("respects returned value, unwrapping if needed", func() {
+			t.Run("respects returned value, unwrapping if needed", func(t *ftt.Test) {
 				tried := 0
 				err := it.RetryIfStale(func(grpc.CallOption) error {
 					tried += 1
@@ -104,23 +103,23 @@ func TestMirrorIterator(t *testing.T) {
 					}
 					return errors.New("something else")
 				})
-				So(err, ShouldErrLike, "something else")
-				So(tried, ShouldEqual, 2)
-				So((*it)[0], ShouldResemble, "m2")
+				assert.Loosely(t, err, should.ErrLike("something else"))
+				assert.Loosely(t, tried, should.Equal(2))
+				assert.Loosely(t, (*it)[0], should.Match("m2"))
 			})
 
-			Convey("calls at least once even if empty", func() {
+			t.Run("calls at least once even if empty", func(t *ftt.Test) {
 				it.Next()
 				it.Next()
 				it.Next()
-				So(it.Empty(), ShouldBeTrue)
+				assert.Loosely(t, it.Empty(), should.BeTrue)
 				called := false
 				err := it.RetryIfStale(func(grpc.CallOption) error {
 					called = true
 					return nil
 				})
-				So(err, ShouldBeNil)
-				So(called, ShouldBeTrue)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, called, should.BeTrue)
 			})
 		})
 	})

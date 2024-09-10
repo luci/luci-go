@@ -17,24 +17,25 @@ package run
 import (
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestShouldSubmit(t *testing.T) {
 	t.Parallel()
 
-	Convey("ShouldSubmit works", t, func() {
-		Convey("Returns true for full run", func() {
+	ftt.Run("ShouldSubmit works", t, func(t *ftt.Test) {
+		t.Run("Returns true for full run", func(t *ftt.Test) {
 			r := &Run{Mode: FullRun}
-			So(ShouldSubmit(r), ShouldBeTrue)
+			assert.Loosely(t, ShouldSubmit(r), should.BeTrue)
 		})
-		Convey("Returns false for dry run", func() {
+		t.Run("Returns false for dry run", func(t *ftt.Test) {
 			r := &Run{Mode: DryRun}
-			So(ShouldSubmit(r), ShouldBeFalse)
+			assert.Loosely(t, ShouldSubmit(r), should.BeFalse)
 		})
-		Convey("Returns true for user defined mode with +2 cq vote", func() {
+		t.Run("Returns true for user defined mode with +2 cq vote", func(t *ftt.Test) {
 			r := &Run{
 				Mode: "CUSTOM_RUN",
 				ModeDefinition: &cfgpb.Mode{
@@ -43,9 +44,9 @@ func TestShouldSubmit(t *testing.T) {
 					TriggeringLabel: "CUSTOM",
 					TriggeringValue: 1,
 				}}
-			So(ShouldSubmit(r), ShouldBeTrue)
+			assert.Loosely(t, ShouldSubmit(r), should.BeTrue)
 		})
-		Convey("Returns false for user defined mode without +2 cq vote", func() {
+		t.Run("Returns false for user defined mode without +2 cq vote", func(t *ftt.Test) {
 			r := &Run{
 				Mode: "CUSTOM_RUN",
 				ModeDefinition: &cfgpb.Mode{
@@ -54,7 +55,7 @@ func TestShouldSubmit(t *testing.T) {
 					TriggeringLabel: "CUSTOM",
 					TriggeringValue: 1,
 				}}
-			So(ShouldSubmit(r), ShouldBeFalse)
+			assert.Loosely(t, ShouldSubmit(r), should.BeFalse)
 		})
 	})
 }

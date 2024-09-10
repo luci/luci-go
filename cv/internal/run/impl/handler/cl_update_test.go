@@ -24,6 +24,9 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
@@ -36,13 +39,10 @@ import (
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestOnCLsUpdated(t *testing.T) {
-	Convey("OnCLsUpdated", t, func() {
+	ftt.Run("OnCLsUpdated", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
@@ -99,7 +99,7 @@ func TestOnCLsUpdated(t *testing.T) {
 				Access:           acc,
 			}
 
-			So(datastore.Put(ctx, &cl), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, &cl), should.BeNil)
 			return cl
 		}
 
@@ -107,21 +107,21 @@ func TestOnCLsUpdated(t *testing.T) {
 			// The status should be still RUNNING,
 			// because it has not been cancelled yet.
 			// It's scheduled to be cancelled.
-			So(res.State.Status, ShouldEqual, run.Status_RUNNING)
-			So(res.SideEffectFn, ShouldBeNil)
-			So(res.PreserveEvents, ShouldBeFalse)
+			assert.Loosely(t, res.State.Status, should.Equal(run.Status_RUNNING))
+			assert.Loosely(t, res.SideEffectFn, should.BeNil)
+			assert.Loosely(t, res.PreserveEvents, should.BeFalse)
 
 			longOp := res.State.OngoingLongOps.GetOps()[res.State.NewLongOpIDs[0]]
 			cancelOp := longOp.GetResetTriggers()
-			So(cancelOp.Requests, ShouldHaveLength, len(expect))
+			assert.Loosely(t, cancelOp.Requests, should.HaveLength(len(expect)))
 			for _, req := range cancelOp.Requests {
 				clid := common.CLID(req.Clid)
-				So(expect, ShouldContainKey, clid)
-				So(req.Message, ShouldContainSubstring, expect[clid])
+				assert.Loosely(t, expect, should.ContainKey(clid))
+				assert.Loosely(t, req.Message, should.ContainSubstring(expect[clid]))
 				delete(expect, clid)
 			}
-			So(expect, ShouldBeEmpty)
-			So(cancelOp.RunStatusIfSucceeded, ShouldEqual, endStatus)
+			assert.Loosely(t, expect, should.BeEmpty)
+			assert.Loosely(t, cancelOp.RunStatusIfSucceeded, should.Equal(endStatus))
 		}
 
 		aplConfigOK := &changelist.ApplicableConfig{Projects: []*changelist.ApplicableConfig_Project{
@@ -141,12 +141,12 @@ func TestOnCLsUpdated(t *testing.T) {
 		ct.AddMember("foo", committers)
 		cl1 := updateCL(1, ci1, aplConfigOK, accessOK)
 		triggers1 := trigger.Find(&trigger.FindInput{ChangeInfo: ci1, ConfigGroup: cfg.GetConfigGroups()[0]})
-		So(triggers1.GetCqVoteTrigger(), ShouldResembleProto, &run.Trigger{
+		assert.Loosely(t, triggers1.GetCqVoteTrigger(), should.Resemble(&run.Trigger{
 			Time:            timestamppb.New(triggerTime),
 			Mode:            string(run.FullRun),
 			Email:           "foo@example.com",
 			GerritAccountId: 1,
-		})
+		}))
 		runCLs := []*run.RunCL{
 			{
 				ID:      1,
@@ -155,32 +155,32 @@ func TestOnCLsUpdated(t *testing.T) {
 				Trigger: triggers1.GetCqVoteTrigger(),
 			},
 		}
-		So(runCLs[0].Trigger, ShouldNotBeNil) // ensure trigger find is working fine.
-		So(datastore.Put(ctx, runCLs), ShouldBeNil)
+		assert.Loosely(t, runCLs[0].Trigger, should.NotBeNil) // ensure trigger find is working fine.
+		assert.Loosely(t, datastore.Put(ctx, runCLs), should.BeNil)
 
-		Convey("Single CL Run", func() {
+		t.Run("Single CL Run", func(t *ftt.Test) {
 			ensureNoop := func() {
 				res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1})
-				So(err, ShouldBeNil)
-				So(res.State, ShouldResemble, rs)
-				So(res.SideEffectFn, ShouldBeNil)
-				So(res.PreserveEvents, ShouldBeFalse)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res.State, should.Resemble(rs))
+				assert.Loosely(t, res.SideEffectFn, should.BeNil)
+				assert.Loosely(t, res.PreserveEvents, should.BeFalse)
 			}
-			Convey("Noop", func() {
+			t.Run("Noop", func(t *ftt.Test) {
 				statuses := []run.Status{
 					run.Status_SUCCEEDED,
 					run.Status_FAILED,
 					run.Status_CANCELLED,
 				}
 				for _, status := range statuses {
-					Convey(fmt.Sprintf("When Run is %s", status), func() {
+					t.Run(fmt.Sprintf("When Run is %s", status), func(t *ftt.Test) {
 						rs.Status = status
 						ensureNoop()
 					})
 				}
 
-				Convey("When new CL Version", func() {
-					Convey("is a message update", func() {
+				t.Run("When new CL Version", func(t *ftt.Test) {
+					t.Run("is a message update", func(t *ftt.Test) {
 						newCI1 := proto.Clone(ci1).(*gerritpb.ChangeInfo)
 						gf.Messages(&gerritpb.ChangeMessageInfo{
 							Message: "This is a message",
@@ -189,7 +189,7 @@ func TestOnCLsUpdated(t *testing.T) {
 						ensureNoop()
 					})
 
-					Convey("is triggered by different user at the exact same time", func() {
+					t.Run("is triggered by different user at the exact same time", func(t *ftt.Test) {
 						updateCL(1, gf.CI(
 							gChange1, gf.PS(gPatchSet1),
 							gf.CQ(+2, triggerTime, gf.U("bar")),
@@ -199,16 +199,16 @@ func TestOnCLsUpdated(t *testing.T) {
 					})
 				})
 			})
-			Convey("Preserve events for SUBMITTING Run", func() {
+			t.Run("Preserve events for SUBMITTING Run", func(t *ftt.Test) {
 				rs.Status = run.Status_SUBMITTING
 				res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1})
-				So(err, ShouldBeNil)
-				So(res.State, ShouldResemble, rs)
-				So(res.SideEffectFn, ShouldBeNil)
-				So(res.PreserveEvents, ShouldBeTrue)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res.State, should.Resemble(rs))
+				assert.Loosely(t, res.SideEffectFn, should.BeNil)
+				assert.Loosely(t, res.PreserveEvents, should.BeTrue)
 			})
 
-			Convey("Preserve events for if trigger reset is ongoing", func() {
+			t.Run("Preserve events for if trigger reset is ongoing", func(t *ftt.Test) {
 				rs.OngoingLongOps = &run.OngoingLongOps{
 					Ops: map[string]*run.OngoingLongOps_Op{
 						"op_id": {
@@ -226,46 +226,46 @@ func TestOnCLsUpdated(t *testing.T) {
 					},
 				}
 				res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1})
-				So(err, ShouldBeNil)
-				So(res.State, ShouldResemble, rs)
-				So(res.SideEffectFn, ShouldBeNil)
-				So(res.PreserveEvents, ShouldBeTrue)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res.State, should.Resemble(rs))
+				assert.Loosely(t, res.SideEffectFn, should.BeNil)
+				assert.Loosely(t, res.PreserveEvents, should.BeTrue)
 			})
 
 			runAndVerifyCancelled := func(reason string) {
 				res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1})
-				So(err, ShouldBeNil)
-				So(res.State.Status, ShouldEqual, run.Status_CANCELLED)
-				So(res.State.CancellationReasons, ShouldResemble, []string{reason})
-				So(res.SideEffectFn, ShouldNotBeNil)
-				So(res.PreserveEvents, ShouldBeFalse)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res.State.Status, should.Equal(run.Status_CANCELLED))
+				assert.Loosely(t, res.State.CancellationReasons, should.Resemble([]string{reason}))
+				assert.Loosely(t, res.SideEffectFn, should.NotBeNil)
+				assert.Loosely(t, res.PreserveEvents, should.BeFalse)
 			}
 
-			Convey("Cancels Run on new Patchset", func() {
+			t.Run("Cancels Run on new Patchset", func(t *ftt.Test) {
 				updateCL(1, gf.CI(gChange1, gf.PS(gPatchSet1+1), gf.CQ(+2, triggerTime, gf.U("foo"))), aplConfigOK, accessOK)
 				runAndVerifyCancelled("the patchset of https://x-review.example.com/c/1 has changed from 5 to 6")
 			})
-			Convey("Cancels Run on moved Ref", func() {
+			t.Run("Cancels Run on moved Ref", func(t *ftt.Test) {
 				updateCL(1, gf.CI(gChange1, gf.PS(gPatchSet1), gf.CQ(+2, triggerTime, gf.U("foo")), gf.Ref("refs/heads/new")), aplConfigOK, accessOK)
 				runAndVerifyCancelled("the ref of https://x-review.example.com/c/1 has moved from refs/heads/main to refs/heads/new")
 			})
-			Convey("Cancels Run on removed trigger", func() {
+			t.Run("Cancels Run on removed trigger", func(t *ftt.Test) {
 				newCI1 := gf.CI(gChange1, gf.PS(gPatchSet1), gf.CQ(0, triggerTime.Add(1*time.Minute), gf.U("foo")))
-				So(trigger.Find(&trigger.FindInput{ChangeInfo: newCI1, ConfigGroup: cfg.GetConfigGroups()[0]}), ShouldBeNil)
+				assert.Loosely(t, trigger.Find(&trigger.FindInput{ChangeInfo: newCI1, ConfigGroup: cfg.GetConfigGroups()[0]}), should.BeNil)
 				updateCL(1, newCI1, aplConfigOK, accessOK)
 				runAndVerifyCancelled("the FULL_RUN trigger on https://x-review.example.com/c/1 has been removed")
 			})
-			Convey("Cancels Run on changed mode", func() {
+			t.Run("Cancels Run on changed mode", func(t *ftt.Test) {
 				updateCL(1, gf.CI(gChange1, gf.PS(gPatchSet1), gf.CQ(+1, triggerTime.Add(1*time.Minute), gf.U("foo"))), aplConfigOK, accessOK)
 				runAndVerifyCancelled("the triggering vote on https://x-review.example.com/c/1 has requested a different run mode: DRY_RUN")
 			})
-			Convey("Cancels Run on change of triggering time", func() {
+			t.Run("Cancels Run on change of triggering time", func(t *ftt.Test) {
 				updateCL(1, gf.CI(gChange1, gf.PS(gPatchSet1), gf.CQ(+2, triggerTime.Add(2*time.Minute), gf.U("foo"))), aplConfigOK, accessOK)
 				runAndVerifyCancelled(fmt.Sprintf("the timestamp of the triggering vote on https://x-review.example.com/c/1 has changed from %s to %s", triggerTime, triggerTime.Add(2*time.Minute)))
 			})
 
-			Convey("Change of access level to the CL", func() {
-				Convey("cancel if another project started watching the same CL", func() {
+			t.Run("Change of access level to the CL", func(t *ftt.Test) {
+				t.Run("cancel if another project started watching the same CL", func(t *ftt.Test) {
 					ac := proto.Clone(aplConfigOK).(*changelist.ApplicableConfig)
 					ac.Projects = append(ac.Projects, &changelist.ApplicableConfig_Project{
 						Name: "other-project", ConfigGroupIds: []string{"other-group"},
@@ -273,7 +273,7 @@ func TestOnCLsUpdated(t *testing.T) {
 					updateCL(1, ci1, ac, accessOK)
 					runAndVerifyCancelled(fmt.Sprintf("no longer have access to https://x-review.example.com/c/1: watched not only by LUCI Project %q", lProject))
 				})
-				Convey("wait if code review access was just lost, potentially due to eventual consistency", func() {
+				t.Run("wait if code review access was just lost, potentially due to eventual consistency", func(t *ftt.Test) {
 					noAccessAt := ct.Clock.Now().Add(42 * time.Second)
 					acc := &changelist.Access{ByProject: map[string]*changelist.Access_Project{
 						// Set NoAccessTime to the future, providing some grace period to
@@ -282,45 +282,45 @@ func TestOnCLsUpdated(t *testing.T) {
 					}}
 					updateCL(1, ci1, aplConfigOK, acc)
 					res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1})
-					So(err, ShouldBeNil)
-					So(res.State, ShouldResemble, rs)
-					So(res.SideEffectFn, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, res.State, should.Resemble(rs))
+					assert.Loosely(t, res.SideEffectFn, should.BeNil)
 					// Event must be preserved, s.t. the same CL is re-visited later.
-					So(res.PreserveEvents, ShouldBeTrue)
+					assert.Loosely(t, res.PreserveEvents, should.BeTrue)
 					// And Run Manager must have a task to re-check itself at around
 					// NoAccessTime.
-					So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, 1)
-					So(ct.TQ.Tasks().Payloads()[0].(*eventpb.ManageRunTask).GetRunId(), ShouldResemble, string(rs.ID))
-					So(ct.TQ.Tasks()[0].ETA, ShouldHappenOnOrBetween, noAccessAt, noAccessAt.Add(time.Second))
+					assert.Loosely(t, ct.TQ.Tasks().Payloads(), should.HaveLength(1))
+					assert.Loosely(t, ct.TQ.Tasks().Payloads()[0].(*eventpb.ManageRunTask).GetRunId(), should.Resemble(string(rs.ID)))
+					assert.Loosely(t, ct.TQ.Tasks()[0].ETA, should.HappenOnOrBetween(noAccessAt, noAccessAt.Add(time.Second)))
 				})
-				Convey("cancel if code review access was lost a while ago", func() {
+				t.Run("cancel if code review access was lost a while ago", func(t *ftt.Test) {
 					acc := &changelist.Access{ByProject: map[string]*changelist.Access_Project{
 						lProject: {NoAccessTime: timestamppb.New(ct.Clock.Now())},
 					}}
 					updateCL(1, ci1, aplConfigOK, acc)
 					runAndVerifyCancelled("no longer have access to https://x-review.example.com/c/1: code review site denied access")
 				})
-				Convey("wait if access level is unknown", func() {
+				t.Run("wait if access level is unknown", func(t *ftt.Test) {
 					cl1.Snapshot = nil
 					cl1.EVersion++
-					So(datastore.Put(ctx, &cl1), ShouldBeNil)
+					assert.Loosely(t, datastore.Put(ctx, &cl1), should.BeNil)
 					ensureNoop()
 				})
 			})
 
-			Convey("Schedules a ResetTrigger long op if the approval was revoked", func() {
+			t.Run("Schedules a ResetTrigger long op if the approval was revoked", func(t *ftt.Test) {
 				updateCL(1, gf.CI(
 					gChange1, gf.PS(gPatchSet1), gf.CQ(+2, triggerTime, gf.U("foo")), gf.Disapprove(),
 				), aplConfigOK, accessOK)
 				res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				verifyHasResetTriggerLongOpScheduled(res, map[common.CLID]string{
 					1: "CV cannot start a Run because this CL is not submittable.",
 				}, run.Status_FAILED)
 			})
 		})
 
-		Convey("Multi CL Run", func() {
+		t.Run("Multi CL Run", func(t *ftt.Test) {
 			const gChange2 = 2
 			const gPatchSet2 = 7
 			ci2 := gf.CI(
@@ -331,12 +331,12 @@ func TestOnCLsUpdated(t *testing.T) {
 			)
 			cl2 := updateCL(2, ci2, aplConfigOK, accessOK)
 			triggers2 := trigger.Find(&trigger.FindInput{ChangeInfo: ci2, ConfigGroup: cfg.GetConfigGroups()[0]})
-			So(triggers2.GetCqVoteTrigger(), ShouldResembleProto, &run.Trigger{
+			assert.Loosely(t, triggers2.GetCqVoteTrigger(), should.Resemble(&run.Trigger{
 				Time:            timestamppb.New(triggerTime),
 				Mode:            string(run.FullRun),
 				Email:           "foo@example.com",
 				GerritAccountId: 1,
-			})
+			}))
 			rs.CLs = append(rs.CLs, 2)
 			runCLs = append(runCLs, &run.RunCL{
 				ID:      2,
@@ -344,48 +344,48 @@ func TestOnCLsUpdated(t *testing.T) {
 				Detail:  cl2.Snapshot,
 				Trigger: triggers2.GetCqVoteTrigger(),
 			})
-			So(runCLs[1].Trigger, ShouldNotBeNil) // ensure trigger find is working fine.
-			So(datastore.Put(ctx, runCLs), ShouldBeNil)
+			assert.Loosely(t, runCLs[1].Trigger, should.NotBeNil) // ensure trigger find is working fine.
+			assert.Loosely(t, datastore.Put(ctx, runCLs), should.BeNil)
 
-			Convey("Schedules a ResetTrigger long op", func() {
-				Convey("Part of the CLs cause cancellation", func() {
+			t.Run("Schedules a ResetTrigger long op", func(t *ftt.Test) {
+				t.Run("Part of the CLs cause cancellation", func(t *ftt.Test) {
 					updateCL(1, gf.CI(gChange1, gf.PS(gPatchSet1+1), gf.CQ(+2, triggerTime, gf.U("foo"))), aplConfigOK, accessOK)
 					res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1})
-					So(err, ShouldBeNil)
-					So(res.State.CancellationReasons, ShouldResemble, []string{"the patchset of https://x-review.example.com/c/1 has changed from 5 to 6"})
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, res.State.CancellationReasons, should.Resemble([]string{"the patchset of https://x-review.example.com/c/1 has changed from 5 to 6"}))
 					verifyHasResetTriggerLongOpScheduled(res, map[common.CLID]string{
 						2: "Reset the trigger of this CL because the patchset of https://x-review.example.com/c/1 has changed from 5 to 6",
 					}, run.Status_CANCELLED)
-					Convey("Cancel directly if it is root CL causing cancellation", func() {
+					t.Run("Cancel directly if it is root CL causing cancellation", func(t *ftt.Test) {
 						rs.RootCL = common.CLID(1)
 						res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1})
-						So(err, ShouldBeNil)
-						So(res.State.Status, ShouldEqual, run.Status_CANCELLED)
-						So(isCurrentlyResettingTriggers(rs), ShouldBeFalse)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, res.State.Status, should.Equal(run.Status_CANCELLED))
+						assert.Loosely(t, isCurrentlyResettingTriggers(rs), should.BeFalse)
 					})
 				})
 
-				Convey("Approval was revoked", func() {
-					Convey("Partial", func() {
+				t.Run("Approval was revoked", func(t *ftt.Test) {
+					t.Run("Partial", func(t *ftt.Test) {
 						updateCL(1, gf.CI(
 							gChange1, gf.PS(gPatchSet1), gf.CQ(+2, triggerTime, gf.U("foo")), gf.Disapprove(),
 						), aplConfigOK, accessOK)
 						res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1})
-						So(err, ShouldBeNil)
+						assert.Loosely(t, err, should.BeNil)
 						verifyHasResetTriggerLongOpScheduled(res, map[common.CLID]string{
 							1: "CV cannot start a Run because this CL is not submittable.",
 							2: "CV cannot start a Run due to errors in the following CL(s).",
 						}, run.Status_FAILED)
-						Convey("Only reset trigger on root Cl", func() {
+						t.Run("Only reset trigger on root Cl", func(t *ftt.Test) {
 							rs.RootCL = common.CLID(1)
 							res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1})
-							So(err, ShouldBeNil)
+							assert.Loosely(t, err, should.BeNil)
 							verifyHasResetTriggerLongOpScheduled(res, map[common.CLID]string{
 								1: "CV cannot start a Run because this CL is not submittable.",
 							}, run.Status_FAILED)
 						})
 					})
-					Convey("Both", func() {
+					t.Run("Both", func(t *ftt.Test) {
 						updateCL(1, gf.CI(
 							gChange1, gf.PS(gPatchSet1), gf.CQ(+2, triggerTime, gf.U("foo")), gf.Disapprove(),
 						), aplConfigOK, accessOK)
@@ -393,7 +393,7 @@ func TestOnCLsUpdated(t *testing.T) {
 							gChange2, gf.PS(gPatchSet2), gf.CQ(+2, triggerTime, gf.U("foo")), gf.Disapprove(),
 						), aplConfigOK, accessOK)
 						res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1, 2})
-						So(err, ShouldBeNil)
+						assert.Loosely(t, err, should.BeNil)
 						verifyHasResetTriggerLongOpScheduled(res, map[common.CLID]string{
 							1: "CV cannot start a Run because this CL is not submittable.",
 							2: "CV cannot start a Run because this CL is not submittable.",
@@ -402,19 +402,19 @@ func TestOnCLsUpdated(t *testing.T) {
 				})
 			})
 
-			Convey("All CLs causes cancellation", func() {
+			t.Run("All CLs causes cancellation", func(t *ftt.Test) {
 				updateCL(1, gf.CI(gChange1, gf.PS(gPatchSet1+1), gf.CQ(+2, triggerTime, gf.U("foo"))), aplConfigOK, accessOK)
 				updateCL(2, gf.CI(gChange2, gf.PS(gPatchSet2+1), gf.CQ(+2, triggerTime, gf.U("foo"))), aplConfigOK, accessOK)
 				res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1, 2})
-				So(err, ShouldBeNil)
-				So(res.State.Status, ShouldEqual, run.Status_CANCELLED)
-				So(res.State.CancellationReasons, ShouldResemble, []string{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res.State.Status, should.Equal(run.Status_CANCELLED))
+				assert.Loosely(t, res.State.CancellationReasons, should.Resemble([]string{
 					"the patchset of https://x-review.example.com/c/1 has changed from 5 to 6",
 					"the patchset of https://x-review.example.com/c/2 has changed from 7 to 8",
-				})
-				So(res.SideEffectFn, ShouldNotBeNil)
-				So(res.PreserveEvents, ShouldBeFalse)
-				So(isCurrentlyResettingTriggers(rs), ShouldBeFalse)
+				}))
+				assert.Loosely(t, res.SideEffectFn, should.NotBeNil)
+				assert.Loosely(t, res.PreserveEvents, should.BeFalse)
+				assert.Loosely(t, isCurrentlyResettingTriggers(rs), should.BeFalse)
 			})
 		})
 	})

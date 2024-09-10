@@ -23,6 +23,9 @@ import (
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	bbfacade "go.chromium.org/luci/cv/internal/buildbucket/facade"
@@ -31,15 +34,12 @@ import (
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/tryjob"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestLaunch(t *testing.T) {
 	t.Parallel()
 
-	Convey("Launch", t, func() {
+	ftt.Run("Launch", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
@@ -110,27 +110,27 @@ func TestLaunch(t *testing.T) {
 			},
 		}
 		ct.BuildbucketFake.AddBuilder(bbHost, builder, nil)
-		Convey("Works", func() {
+		t.Run("Works", func(t *ftt.Test) {
 			tj := w.makePendingTryjob(ctx, defFoo)
-			So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+			assert.Loosely(t, datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 				return tryjob.SaveTryjobs(ctx, []*tryjob.Tryjob{tj}, nil)
-			}, nil), ShouldBeNil)
+			}, nil), should.BeNil)
 			tryjobs, err := w.launchTryjobs(ctx, []*tryjob.Tryjob{tj})
-			So(err, ShouldBeNil)
-			So(tryjobs, ShouldHaveLength, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tryjobs, should.HaveLength(1))
 			eid := tryjobs[0].ExternalID
-			So(eid, ShouldNotBeEmpty)
-			So(eid.MustLoad(ctx), ShouldNotBeNil)
-			So(tryjobs[0].Status, ShouldEqual, tryjob.Status_TRIGGERED)
+			assert.Loosely(t, eid, should.NotBeEmpty)
+			assert.Loosely(t, eid.MustLoad(ctx), should.NotBeNil)
+			assert.Loosely(t, tryjobs[0].Status, should.Equal(tryjob.Status_TRIGGERED))
 			host, buildID, err := eid.ParseBuildbucketID()
-			So(err, ShouldBeNil)
-			So(host, ShouldEqual, bbHost)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, host, should.Equal(bbHost))
 			bbClient, err := ct.BuildbucketFake.NewClientFactory().MakeClient(ctx, bbHost, lProject)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			build, err := bbClient.GetBuild(ctx, &bbpb.GetBuildRequest{Id: buildID})
-			So(err, ShouldBeNil)
-			So(build, ShouldNotBeNil)
-			So(w.logEntries, ShouldResembleProto, []*tryjob.ExecutionLogEntry{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, build, should.NotBeNil)
+			assert.Loosely(t, w.logEntries, should.Resemble([]*tryjob.ExecutionLogEntry{
 				{
 					Time: timestamppb.New(ct.Clock.Now().UTC()),
 					Kind: &tryjob.ExecutionLogEntry_TryjobsLaunched_{
@@ -141,10 +141,10 @@ func TestLaunch(t *testing.T) {
 						},
 					},
 				},
-			})
+			}))
 		})
 
-		Convey("Failed to trigger", func() {
+		t.Run("Failed to trigger", func(t *ftt.Test) {
 			def := &tryjob.Definition{
 				Backend: &tryjob.Definition_Buildbucket_{
 					Buildbucket: &tryjob.Definition_Buildbucket{
@@ -158,16 +158,16 @@ func TestLaunch(t *testing.T) {
 				},
 			}
 			tj := w.makePendingTryjob(ctx, def)
-			So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+			assert.Loosely(t, datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 				return tryjob.SaveTryjobs(ctx, []*tryjob.Tryjob{tj}, nil)
-			}, nil), ShouldBeNil)
+			}, nil), should.BeNil)
 			tryjobs, err := w.launchTryjobs(ctx, []*tryjob.Tryjob{tj})
-			So(err, ShouldBeNil)
-			So(tryjobs, ShouldHaveLength, 1)
-			So(tryjobs[0].ExternalID, ShouldBeEmpty)
-			So(tryjobs[0].Status, ShouldEqual, tryjob.Status_UNTRIGGERED)
-			So(tryjobs[0].UntriggeredReason, ShouldEqual, "received NotFound from buildbucket. message: builder testProj/BucketFoo/non-existent-builder not found")
-			So(w.logEntries, ShouldResembleProto, []*tryjob.ExecutionLogEntry{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tryjobs, should.HaveLength(1))
+			assert.Loosely(t, tryjobs[0].ExternalID, should.BeEmpty)
+			assert.Loosely(t, tryjobs[0].Status, should.Equal(tryjob.Status_UNTRIGGERED))
+			assert.Loosely(t, tryjobs[0].UntriggeredReason, should.Equal("received NotFound from buildbucket. message: builder testProj/BucketFoo/non-existent-builder not found"))
+			assert.Loosely(t, w.logEntries, should.Resemble([]*tryjob.ExecutionLogEntry{
 				{
 					Time: timestamppb.New(ct.Clock.Now().UTC()),
 					Kind: &tryjob.ExecutionLogEntry_TryjobsLaunchFailed_{
@@ -181,44 +181,44 @@ func TestLaunch(t *testing.T) {
 						},
 					},
 				},
-			})
+			}))
 		})
 
-		Convey("Reconcile with existing", func() {
+		t.Run("Reconcile with existing", func(t *ftt.Test) {
 			tj := w.makePendingTryjob(ctx, defFoo)
 			tj.LaunchedBy = runID
 			reuseRun := common.MakeRunID(lProject, ct.Clock.Now().Add(-30*time.Minute), 1, []byte("beef"))
 			tj.ReusedBy = append(tj.ReusedBy, reuseRun)
-			So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+			assert.Loosely(t, datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 				return tryjob.SaveTryjobs(ctx, []*tryjob.Tryjob{tj}, nil)
-			}, nil), ShouldBeNil)
+			}, nil), should.BeNil)
 			existingTryjobID := tj.ID + 59
 			w.backend = &decoratedBackend{
 				TryjobBackend: w.backend,
 				launchedTryjobsHook: func(tryjobs []*tryjob.Tryjob) {
-					So(tryjobs, ShouldHaveLength, 1)
+					assert.Loosely(t, tryjobs, should.HaveLength(1))
 					// Save a tryjob that has the same external ID but different internal
 					// ID from the input tryjob.
 					originalID := tj.ID
 					tryjobs[0].ID = existingTryjobID
-					So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+					assert.Loosely(t, datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 						return tryjob.SaveTryjobs(ctx, []*tryjob.Tryjob{tj}, nil)
-					}, nil), ShouldBeNil)
+					}, nil), should.BeNil)
 					tryjobs[0].ID = originalID
 				},
 			}
 
 			tryjobs, err := w.launchTryjobs(ctx, []*tryjob.Tryjob{tj})
-			So(err, ShouldBeNil)
-			So(tryjobs, ShouldHaveLength, 1)
-			So(tryjobs[0].ID, ShouldEqual, existingTryjobID)
-			So(tryjobs[0].ExternalID.MustLoad(ctx).ID, ShouldEqual, existingTryjobID)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tryjobs, should.HaveLength(1))
+			assert.Loosely(t, tryjobs[0].ID, should.Equal(existingTryjobID))
+			assert.Loosely(t, tryjobs[0].ExternalID.MustLoad(ctx).ID, should.Equal(existingTryjobID))
 			// Check the dropped tryjob
 			tj = &tryjob.Tryjob{ID: tj.ID}
-			So(datastore.Get(ctx, tj), ShouldBeNil)
-			So(tj.Status, ShouldEqual, tryjob.Status_UNTRIGGERED)
+			assert.Loosely(t, datastore.Get(ctx, tj), should.BeNil)
+			assert.Loosely(t, tj.Status, should.Equal(tryjob.Status_UNTRIGGERED))
 		})
-		Convey("Launched Tryjob has CL in submission order", func() {
+		t.Run("Launched Tryjob has CL in submission order", func(t *ftt.Test) {
 			depCL := &run.RunCL{
 				ID: clid + 1,
 				Detail: &changelist.Snapshot{
@@ -250,29 +250,29 @@ func TestLaunch(t *testing.T) {
 			}
 			w.cls = append(w.cls, depCL)
 			tj := w.makePendingTryjob(ctx, defFoo)
-			So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+			assert.Loosely(t, datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 				return tryjob.SaveTryjobs(ctx, []*tryjob.Tryjob{tj}, nil)
-			}, nil), ShouldBeNil)
+			}, nil), should.BeNil)
 			tryjobs, err := w.launchTryjobs(ctx, []*tryjob.Tryjob{tj})
-			So(err, ShouldBeNil)
-			So(tryjobs, ShouldHaveLength, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tryjobs, should.HaveLength(1))
 			eid := tryjobs[0].ExternalID
-			So(eid, ShouldNotBeEmpty)
-			So(eid.MustLoad(ctx), ShouldNotBeNil)
-			So(tryjobs[0].Status, ShouldEqual, tryjob.Status_TRIGGERED)
+			assert.Loosely(t, eid, should.NotBeEmpty)
+			assert.Loosely(t, eid.MustLoad(ctx), should.NotBeNil)
+			assert.Loosely(t, tryjobs[0].Status, should.Equal(tryjob.Status_TRIGGERED))
 			host, buildID, err := eid.ParseBuildbucketID()
-			So(err, ShouldBeNil)
-			So(host, ShouldEqual, bbHost)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, host, should.Equal(bbHost))
 			bbClient, err := ct.BuildbucketFake.NewClientFactory().MakeClient(ctx, bbHost, lProject)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			build, err := bbClient.GetBuild(ctx, &bbpb.GetBuildRequest{Id: buildID})
-			So(err, ShouldBeNil)
-			So(build.Input.GetGerritChanges(), ShouldResembleProto, []*bbpb.GerritChange{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, build.Input.GetGerritChanges(), should.Resemble([]*bbpb.GerritChange{
 				// Dep CL is listed first even though in the worker it is after the
 				// dependent CL.
 				{Host: gHost, Project: gRepo, Change: depCL.Detail.GetGerrit().GetInfo().GetNumber(), Patchset: gPatchset},
 				{Host: gHost, Project: gRepo, Change: w.cls[0].Detail.GetGerrit().GetInfo().GetNumber(), Patchset: gPatchset},
-			})
+			}))
 		})
 	})
 }

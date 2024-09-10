@@ -17,19 +17,20 @@ package prjcfg
 import (
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestGerritHost(t *testing.T) {
 	t.Parallel()
 
-	Convey("GerritHost", t, func() {
-		So(GerritHost(&cfgpb.ConfigGroup_Gerrit{Url: "https://o.k"}), ShouldEqual, "o.k")
-		So(GerritHost(&cfgpb.ConfigGroup_Gerrit{Url: "https://strip.sla.shes/"}), ShouldEqual, "strip.sla.shes")
+	ftt.Run("GerritHost", t, func(t *ftt.Test) {
+		assert.Loosely(t, GerritHost(&cfgpb.ConfigGroup_Gerrit{Url: "https://o.k"}), should.Equal("o.k"))
+		assert.Loosely(t, GerritHost(&cfgpb.ConfigGroup_Gerrit{Url: "https://strip.sla.shes/"}), should.Equal("strip.sla.shes"))
 
-		So(func() { GerritHost(&cfgpb.ConfigGroup_Gerrit{}) }, ShouldPanic)
-		So(func() { GerritHost(&cfgpb.ConfigGroup_Gerrit{Url: "no.scheme"}) }, ShouldPanic)
+		assert.Loosely(t, func() { GerritHost(&cfgpb.ConfigGroup_Gerrit{}) }, should.Panic)
+		assert.Loosely(t, func() { GerritHost(&cfgpb.ConfigGroup_Gerrit{Url: "no.scheme"}) }, should.Panic)
 	})
 }

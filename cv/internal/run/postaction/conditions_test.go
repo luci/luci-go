@@ -17,17 +17,18 @@ package postaction
 import (
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	apipb "go.chromium.org/luci/cv/api/v1"
 	"go.chromium.org/luci/cv/internal/run"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestIsTriggeringConditionMet(t *testing.T) {
 	t.Parallel()
 
-	Convey("IsTriggeringConditionMet", t, func() {
+	ftt.Run("IsTriggeringConditionMet", t, func(t *ftt.Test) {
 		pa := &cfgpb.ConfigGroup_PostAction{Name: "action q"}
 		addCond := func(m string, sts ...apipb.Run_Status) {
 			pa.Conditions = append(pa.Conditions, &cfgpb.ConfigGroup_PostAction_TriggeringCondition{
@@ -38,33 +39,33 @@ func TestIsTriggeringConditionMet(t *testing.T) {
 		r := &run.Run{}
 		shouldMeet := func(m run.Mode, st run.Status) {
 			r.Mode, r.Status = m, st
-			So(IsTriggeringConditionMet(pa, r), ShouldBeTrue)
+			assert.Loosely(t, IsTriggeringConditionMet(pa, r), should.BeTrue)
 		}
 		shouldNotMeet := func(m run.Mode, st run.Status) {
 			r.Mode, r.Status = m, st
-			So(IsTriggeringConditionMet(pa, r), ShouldBeFalse)
+			assert.Loosely(t, IsTriggeringConditionMet(pa, r), should.BeFalse)
 		}
 		addCond("DRY_RUN", apipb.Run_SUCCEEDED, apipb.Run_CANCELLED)
 		addCond("FULL_RUN", apipb.Run_SUCCEEDED, apipb.Run_FAILED)
 		addCond("CUSTOM_RUN", apipb.Run_SUCCEEDED)
 
-		Convey("dry_run mode", func() {
+		t.Run("dry_run mode", func(t *ftt.Test) {
 			shouldMeet(run.DryRun, run.Status_SUCCEEDED)
 			shouldMeet(run.DryRun, run.Status_CANCELLED)
 			shouldNotMeet(run.DryRun, run.Status_FAILED)
 		})
-		Convey("full_run mode", func() {
+		t.Run("full_run mode", func(t *ftt.Test) {
 			shouldMeet(run.FullRun, run.Status_SUCCEEDED)
 			shouldNotMeet(run.FullRun, run.Status_CANCELLED)
 			shouldMeet(run.FullRun, run.Status_FAILED)
 		})
-		Convey("custom_run mode", func() {
+		t.Run("custom_run mode", func(t *ftt.Test) {
 			CustomRun := run.Mode("CUSTOM_RUN")
 			shouldMeet(CustomRun, run.Status_SUCCEEDED)
 			shouldNotMeet(CustomRun, run.Status_CANCELLED)
 			shouldNotMeet(CustomRun, run.Status_FAILED)
 		})
-		Convey("a not matched run mode", func() {
+		t.Run("a not matched run mode", func(t *ftt.Test) {
 			MyRun := run.Mode("MY_RUN")
 			shouldNotMeet(MyRun, run.Status_SUCCEEDED)
 			shouldNotMeet(MyRun, run.Status_CANCELLED)

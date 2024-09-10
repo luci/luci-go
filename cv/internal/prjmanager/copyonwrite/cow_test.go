@@ -15,10 +15,10 @@
 package copyonwrite
 
 import (
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"testing"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 type el struct {
@@ -44,86 +44,86 @@ func TestUpdate(t *testing.T) {
 
 	mustNoop := func(in Slice, m Modifier, add Slice) {
 		out, u := Update(in, m, add)
-		So(u, ShouldBeFalse)
-		So(out, ShouldResemble, in)
+		assert.Loosely(t, u, should.BeFalse)
+		assert.Loosely(t, out, should.Resemble(in))
 	}
 
-	Convey("Update noops", t, func() {
-		Convey("empty", func() {
+	ftt.Run("Update noops", t, func(t *ftt.Test) {
+		t.Run("empty", func(t *ftt.Test) {
 			mustNoop(nil, nil, nil)
 			mustNoop(elSlice{}, nil, nil)
 			mustNoop(nil, evenCubedOddDeleted, nil)
 			mustNoop(nil, evenCubedOddDeleted, elSlice{})
 		})
-		Convey("no changes", func() {
+		t.Run("no changes", func(t *ftt.Test) {
 			mustNoop(elSlice{{0, 0}, {2, 8}, {4, 64}}, nil, nil)
 			mustNoop(elSlice{{0, 0}, {2, 8}, {4, 64}}, evenCubedOddDeleted, nil)
 			mustNoop(elSlice{{0, 0}, {2, 8}, {4, 64}}, evenCubedOddDeleted, elSlice{})
 		})
 	})
 
-	Convey("Update works on Slice", t, func() {
-		Convey("deletes", func() {
+	ftt.Run("Update works on Slice", t, func(t *ftt.Test) {
+		t.Run("deletes", func(t *ftt.Test) {
 			res, u := Update(elSlice{{1, 0}, {4, 64}, {3, 0}, {0, 0}}, evenCubedOddDeleted, nil)
-			So(u, ShouldBeTrue)
-			So(res, ShouldResemble, elSlice{{4, 64}, {0, 0}})
+			assert.Loosely(t, u, should.BeTrue)
+			assert.Loosely(t, res, should.Resemble(elSlice{{4, 64}, {0, 0}}))
 		})
-		Convey("modifies", func() {
+		t.Run("modifies", func(t *ftt.Test) {
 			res, u := Update(elSlice{{2, 8}, {4, 0}}, evenCubedOddDeleted, nil)
-			So(u, ShouldBeTrue)
-			So(res, ShouldResemble, elSlice{{2, 8}, {4, 64}})
+			assert.Loosely(t, u, should.BeTrue)
+			assert.Loosely(t, res, should.Resemble(elSlice{{2, 8}, {4, 64}}))
 		})
-		Convey("modifies and deletes", func() {
+		t.Run("modifies and deletes", func(t *ftt.Test) {
 			res, u := Update(elSlice{{1, 0}, {2, 8}, {3, 0}, {4, 0}}, evenCubedOddDeleted, nil)
-			So(u, ShouldBeTrue)
-			So(res, ShouldResemble, elSlice{{2, 8}, {4, 64}})
+			assert.Loosely(t, u, should.BeTrue)
+			assert.Loosely(t, res, should.Resemble(elSlice{{2, 8}, {4, 64}}))
 		})
-		Convey("creates on empty", func() {
+		t.Run("creates on empty", func(t *ftt.Test) {
 			res, u := Update(nil, nil, elSlice{{6, 0}, {5, 0}})
-			So(u, ShouldBeTrue)
-			So(res, ShouldResemble, elSlice{{6, 0}, {5, 0}})
+			assert.Loosely(t, u, should.BeTrue)
+			assert.Loosely(t, res, should.Resemble(elSlice{{6, 0}, {5, 0}}))
 		})
-		Convey("creates", func() {
+		t.Run("creates", func(t *ftt.Test) {
 			res, u := Update(elSlice{{1, 0}}, nil, elSlice{{6, 0}, {5, 0}})
-			So(u, ShouldBeTrue)
-			So(res, ShouldResemble, elSlice{{6, 0}, {5, 0}, {1, 0}})
+			assert.Loosely(t, u, should.BeTrue)
+			assert.Loosely(t, res, should.Resemble(elSlice{{6, 0}, {5, 0}, {1, 0}}))
 		})
-		Convey("creates, modifies and deletes", func() {
+		t.Run("creates, modifies and deletes", func(t *ftt.Test) {
 			res, u := Update(elSlice{{1, 0}, {2, 8}, {3, 0}, {4, 0}}, evenCubedOddDeleted, elSlice{{5, 25}, {0, 0}})
-			So(u, ShouldBeTrue)
-			So(res, ShouldResemble, elSlice{{5, 25}, {0, 0}, {2, 8}, {4, 64}})
+			assert.Loosely(t, u, should.BeTrue)
+			assert.Loosely(t, res, should.Resemble(elSlice{{5, 25}, {0, 0}, {2, 8}, {4, 64}}))
 		})
 	})
 
-	Convey("Update works on SortedSlice", t, func() {
-		Convey("panics if toAdd is not sorted", func() {
-			So(func() { Update(elSortedSlice{}, nil, elSlice{{3, 8}}) },
-				ShouldPanicLike, "Different types for in and toAdd slices")
+	ftt.Run("Update works on SortedSlice", t, func(t *ftt.Test) {
+		t.Run("panics if toAdd is not sorted", func(t *ftt.Test) {
+			assert.Loosely(t, func() { Update(elSortedSlice{}, nil, elSlice{{3, 8}}) },
+				should.PanicLike("Different types for in and toAdd slices"))
 		})
-		Convey("creates sorted", func() {
+		t.Run("creates sorted", func(t *ftt.Test) {
 			res, u := Update(elSortedSlice{}, nil, elSortedSlice{{3, 8}, {1, 8}, {4, 1}, {2, 0}})
-			So(u, ShouldBeTrue)
-			So(res, ShouldResemble, elSortedSlice{{1, 8}, {2, 0}, {3, 8}, {4, 1}})
+			assert.Loosely(t, u, should.BeTrue)
+			assert.Loosely(t, res, should.Resemble(elSortedSlice{{1, 8}, {2, 0}, {3, 8}, {4, 1}}))
 		})
-		Convey("modifies and deletes", func() {
+		t.Run("modifies and deletes", func(t *ftt.Test) {
 			res, u := Update(elSortedSlice{{1, 0}, {2, 8}, {3, 0}, {4, 0}}, evenCubedOddDeleted, nil)
-			So(u, ShouldBeTrue)
-			So(res, ShouldResemble, elSortedSlice{{2, 8}, {4, 64}})
+			assert.Loosely(t, u, should.BeTrue)
+			assert.Loosely(t, res, should.Resemble(elSortedSlice{{2, 8}, {4, 64}}))
 		})
-		Convey("deletes everything", func() {
+		t.Run("deletes everything", func(t *ftt.Test) {
 			res, u := Update(elSortedSlice{{1, 0}, {3, 0}}, evenCubedOddDeleted, nil)
-			So(u, ShouldBeTrue)
-			So(res, ShouldResemble, elSortedSlice{})
+			assert.Loosely(t, u, should.BeTrue)
+			assert.Loosely(t, res, should.Resemble(elSortedSlice{}))
 		})
-		Convey("creates, modifies and deletes", func() {
+		t.Run("creates, modifies and deletes", func(t *ftt.Test) {
 			in := elSortedSlice{{1, 0}, {2, 8}, {3, 0}, {4, 0}, {6, 1}, {7, 3}}
 			res, u := Update(in, evenCubedOddDeleted, elSortedSlice{{10, 100}, {0, 0}, {5, 25}})
-			So(u, ShouldBeTrue)
-			So(res, ShouldResemble, elSortedSlice{{0, 0}, {2, 8}, {4, 64}, {5, 25}, {6, 216}, {10, 100}})
+			assert.Loosely(t, u, should.BeTrue)
+			assert.Loosely(t, res, should.Resemble(elSortedSlice{{0, 0}, {2, 8}, {4, 64}, {5, 25}, {6, 216}, {10, 100}}))
 
 			res, u = Update(in, evenCubedOddDeleted, elSortedSlice{{3, 3}})
-			So(u, ShouldBeTrue)
-			So(res, ShouldResemble, elSortedSlice{{2, 8}, {3, 3}, {4, 64}, {6, 216}})
+			assert.Loosely(t, u, should.BeTrue)
+			assert.Loosely(t, res, should.Resemble(elSortedSlice{{2, 8}, {3, 3}, {4, 64}, {6, 216}}))
 		})
 	})
 }

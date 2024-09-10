@@ -18,18 +18,19 @@ import (
 	"testing"
 
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/run"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestHandleLargeCLStack(t *testing.T) {
 	t.Parallel()
 
-	Convey("CV full runs and submits a large CL stack.", t, func() {
+	ftt.Run("CV full runs and submits a large CL stack.", t, func(t *ftt.Test) {
 		ct := Test{}
 		ctx := ct.SetUp(t)
 
@@ -47,7 +48,7 @@ func TestHandleLargeCLStack(t *testing.T) {
 
 		cfg := MakeCfgCombinable("cg0", gHost, gRepo, gRef)
 		prjcfgtest.Create(ctx, lProject, cfg)
-		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
+		assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
 
 		cis := make([]*gerritpb.ChangeInfo, N)
 		for i := range cis {
@@ -76,7 +77,7 @@ func TestHandleLargeCLStack(t *testing.T) {
 			return len(ct.LoadRunsOf(ctx, lProject)) > 0
 		})
 		r := ct.EarliestCreatedRunOf(ctx, lProject)
-		So(r.CLs, ShouldHaveLength, N)
+		assert.Loosely(t, r.CLs, should.HaveLength(N))
 
 		ct.LogPhase(ctx, "CV submits all CLs and finishes the Run")
 		ct.RunUntil(ctx, func() bool {
@@ -84,9 +85,9 @@ func TestHandleLargeCLStack(t *testing.T) {
 			return run.IsEnded(r.Status)
 		})
 
-		So(r.Status, ShouldEqual, run.Status_SUCCEEDED)
-		So(r.Submission.GetCls(), ShouldHaveLength, N)
-		So(r.Submission.GetSubmittedCls(), ShouldHaveLength, N)
+		assert.Loosely(t, r.Status, should.Equal(run.Status_SUCCEEDED))
+		assert.Loosely(t, r.Submission.GetCls(), should.HaveLength(N))
+		assert.Loosely(t, r.Submission.GetSubmittedCls(), should.HaveLength(N))
 		var actual, expected []int
 		for i := range cis {
 			gChange := gChangeFirst + i
@@ -95,6 +96,6 @@ func TestHandleLargeCLStack(t *testing.T) {
 				actual = append(actual, gChange)
 			}
 		}
-		So(actual, ShouldResemble, expected)
+		assert.Loosely(t, actual, should.Resemble(expected))
 	})
 }

@@ -19,18 +19,19 @@ import (
 
 	"google.golang.org/protobuf/encoding/prototext"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/cvtesting"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestPartitionConfig(t *testing.T) {
 	t.Parallel()
 
-	Convey("Matcher works", t, func() {
+	ftt.Run("Matcher works", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
@@ -81,7 +82,7 @@ func TestPartitionConfig(t *testing.T) {
 				}
 			}`
 		cfg := &cfgpb.Config{}
-		So(prototext.Unmarshal([]byte(cfgText), cfg), ShouldBeNil)
+		assert.Loosely(t, prototext.Unmarshal([]byte(cfgText), cfg), should.BeNil)
 
 		const luciProject = "luci"
 		const gHost1 = "1.example.com"
@@ -100,42 +101,42 @@ func TestPartitionConfig(t *testing.T) {
 		}
 
 		testMatches := func(m *Matcher) {
-			Convey("matching works", func() {
-				So(m.Match("random.host", "luci/go", "refs/heads/main"), ShouldBeEmpty)
-				So(m.Match(gHost1, "random/repo", "refs/heads/main"), ShouldBeEmpty)
-				So(m.Match(gHost1, "luci/go", "refs/nei/ther"), ShouldBeEmpty)
+			t.Run("matching works", func(t *ftt.Test) {
+				assert.Loosely(t, m.Match("random.host", "luci/go", "refs/heads/main"), should.BeEmpty)
+				assert.Loosely(t, m.Match(gHost1, "random/repo", "refs/heads/main"), should.BeEmpty)
+				assert.Loosely(t, m.Match(gHost1, "luci/go", "refs/nei/ther"), should.BeEmpty)
 
-				So(m.Match(gHost1, "luci/go", "refs/heads/main"), ShouldResemble, ids("g1"))
-				So(m.Match(gHost1, "luci/go", "refs/heads/exclud-not-really"), ShouldResemble, ids("g1"))
-				So(m.Match(gHost1, "luci/go", "refs/heads/excluded"), ShouldResemble, ids("fallback"))
+				assert.Loosely(t, m.Match(gHost1, "luci/go", "refs/heads/main"), should.Resemble(ids("g1")))
+				assert.Loosely(t, m.Match(gHost1, "luci/go", "refs/heads/exclud-not-really"), should.Resemble(ids("g1")))
+				assert.Loosely(t, m.Match(gHost1, "luci/go", "refs/heads/excluded"), should.Resemble(ids("fallback")))
 
-				So(m.Match(gHost1, "luci/go", "refs/branch-heads/12"), ShouldBeEmpty)
-				So(m.Match(gHost1, "luci/go", "refs/branch-heads/123"), ShouldResemble, ids("fallback"))
-				So(m.Match(gHost1, "luci/go", "refs/branch-heads/1234"), ShouldResemble, ids("fallback"))
-				So(m.Match(gHost1, "luci/go", "refs/branch-heads/12345"), ShouldBeEmpty)
+				assert.Loosely(t, m.Match(gHost1, "luci/go", "refs/branch-heads/12"), should.BeEmpty)
+				assert.Loosely(t, m.Match(gHost1, "luci/go", "refs/branch-heads/123"), should.Resemble(ids("fallback")))
+				assert.Loosely(t, m.Match(gHost1, "luci/go", "refs/branch-heads/1234"), should.Resemble(ids("fallback")))
+				assert.Loosely(t, m.Match(gHost1, "luci/go", "refs/branch-heads/12345"), should.BeEmpty)
 
-				So(m.Match(gHost1, "luci/go", "refs/heads/g2"), ShouldResemble, ids("g1", "g2"))
-				So(m.Match(gHost1, "luci/go", "refs/heads/g2-not-any-more"), ShouldResemble, ids("g1"))
+				assert.Loosely(t, m.Match(gHost1, "luci/go", "refs/heads/g2"), should.Resemble(ids("g1", "g2")))
+				assert.Loosely(t, m.Match(gHost1, "luci/go", "refs/heads/g2-not-any-more"), should.Resemble(ids("g1")))
 				// Test default.
-				So(m.Match(gHost1, "default", "refs/heads/stuff"), ShouldBeEmpty)
-				So(m.Match(gHost1, "default", "refs/heads/main"), ShouldBeEmpty)
-				So(m.Match(gHost1, "default", "refs/heads/master"), ShouldResemble, ids("g1"))
+				assert.Loosely(t, m.Match(gHost1, "default", "refs/heads/stuff"), should.BeEmpty)
+				assert.Loosely(t, m.Match(gHost1, "default", "refs/heads/main"), should.BeEmpty)
+				assert.Loosely(t, m.Match(gHost1, "default", "refs/heads/master"), should.Resemble(ids("g1")))
 
 				// 2nd host with 2 hosts in the same config group.
-				So(m.Match(gHost2, "fo/rk", "refs/heads/main"), ShouldResemble, ids("g2"))
+				assert.Loosely(t, m.Match(gHost2, "fo/rk", "refs/heads/main"), should.Resemble(ids("g2")))
 			})
 		}
 
-		Convey("load from Datstore", func() {
+		t.Run("load from Datstore", func(t *ftt.Test) {
 			m, err := LoadMatcher(ctx, luciProject, hash)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			testMatches(m)
 
-			Convey("Serialize/Deserialize", func() {
+			t.Run("Serialize/Deserialize", func(t *ftt.Test) {
 				bytes, err := m.Serialize()
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				m, err := Deserialize(bytes)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				testMatches(m)
 			})
 		})

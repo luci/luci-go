@@ -26,6 +26,9 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
@@ -43,20 +46,17 @@ import (
 	"go.chromium.org/luci/cv/internal/run"
 
 	_ "go.chromium.org/luci/server/quota/quotatestmonkeypatch"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestManager(t *testing.T) {
 	t.Parallel()
 
-	Convey("Manager", t, func() {
+	ftt.Run("Manager", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
 		s, err := miniredis.Run()
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		defer s.Close()
 		s.SetTime(clock.Now(ctx))
 
@@ -68,7 +68,7 @@ func TestManager(t *testing.T) {
 
 		makeIdentity := func(email string) identity.Identity {
 			id, err := identity.MakeIdentity(fmt.Sprintf("%s:%s", identity.User, email))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			return id
 		}
 
@@ -95,7 +95,7 @@ func TestManager(t *testing.T) {
 				},
 			},
 		}
-		So(datastore.Put(ctx, rcls), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, rcls), should.BeNil)
 
 		ct.GFake.AddLinkedAccountMapping([]*gerritpb.EmailInfo{
 			&gerritpb.EmailInfo{Email: tEmail},
@@ -125,13 +125,13 @@ func TestManager(t *testing.T) {
 
 		qm := NewManager(ct.GFactory())
 
-		Convey("WritePolicy() with config groups but no run limit", func() {
+		t.Run("WritePolicy() with config groups but no run limit", func(t *ftt.Test) {
 			pid, err := qm.WritePolicy(ctx, lProject)
-			So(err, ShouldBeNil)
-			So(pid, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, pid, should.BeNil)
 		})
 
-		Convey("WritePolicy() with run limit values", func() {
+		t.Run("WritePolicy() with run limit values", func(t *ftt.Test) {
 			cg.UserLimits = append(cg.UserLimits,
 				genUserLimit("chromies-limit", 10, []string{"group:chromies", "group:chrome-infra"}),
 				genUserLimit("googlers-limit", 5, []string{"group:googlers"}),
@@ -140,15 +140,15 @@ func TestManager(t *testing.T) {
 			prjcfgtest.Update(ctx, lProject, cfg)
 			pid, err := qm.WritePolicy(ctx, lProject)
 
-			So(err, ShouldBeNil)
-			So(pid, ShouldResembleProto, &quotapb.PolicyConfigID{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, pid, should.Resemble(&quotapb.PolicyConfigID{
 				AppId:   "cv",
 				Realm:   "chromium",
 				Version: pid.Version,
-			})
+			}))
 		})
 
-		Convey("WritePolicy() with run limit defaults", func() {
+		t.Run("WritePolicy() with run limit defaults", func(t *ftt.Test) {
 			cg.UserLimits = append(cg.UserLimits,
 				genUserLimit("chromies-limit", 10, []string{"group:chromies", "group:chrome-infra"}),
 			)
@@ -156,15 +156,15 @@ func TestManager(t *testing.T) {
 			prjcfgtest.Update(ctx, lProject, cfg)
 			pid, err := qm.WritePolicy(ctx, lProject)
 
-			So(err, ShouldBeNil)
-			So(pid, ShouldResembleProto, &quotapb.PolicyConfigID{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, pid, should.Resemble(&quotapb.PolicyConfigID{
 				AppId:   "cv",
 				Realm:   "chromium",
 				Version: pid.Version,
-			})
+			}))
 		})
 
-		Convey("WritePolicy() with run limit set to unlimited", func() {
+		t.Run("WritePolicy() with run limit set to unlimited", func(t *ftt.Test) {
 			cg.UserLimits = append(cg.UserLimits,
 				genUserLimit("chromies-limit", 10, []string{"group:chromies", "group:chrome-infra"}),
 				genUserLimit("googlers-limit", 0, []string{"group:googlers"}),
@@ -172,15 +172,15 @@ func TestManager(t *testing.T) {
 			prjcfgtest.Update(ctx, lProject, cfg)
 			pid, err := qm.WritePolicy(ctx, lProject)
 
-			So(err, ShouldBeNil)
-			So(pid, ShouldResembleProto, &quotapb.PolicyConfigID{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, pid, should.Resemble(&quotapb.PolicyConfigID{
 				AppId:   "cv",
 				Realm:   "chromium",
 				Version: pid.Version,
-			})
+			}))
 		})
 
-		Convey("findRunLimit() returns first valid user_limit", func() {
+		t.Run("findRunLimit() returns first valid user_limit", func(t *ftt.Test) {
 			googlerLimit := genUserLimit("googlers-limit", 5, []string{"group:googlers"})
 			cg.UserLimits = append(cg.UserLimits,
 				genUserLimit("chromies-limit", 10, []string{"group:chromies", "group:chrome-infra"}),
@@ -197,11 +197,11 @@ func TestManager(t *testing.T) {
 			}
 
 			res, err := qm.findRunLimit(ctx, r)
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, googlerLimit)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(googlerLimit))
 		})
 
-		Convey("findRunLimit() works with user entry in principals", func() {
+		t.Run("findRunLimit() works with user entry in principals", func(t *ftt.Test) {
 			exampleLimit := genUserLimit("example-limit", 10, []string{"group:chromies", "user:t@example.org"})
 			cg.UserLimits = append(cg.UserLimits,
 				genUserLimit("chromies-limit", 10, []string{"group:chromies", "group:chrome-infra"}),
@@ -218,11 +218,11 @@ func TestManager(t *testing.T) {
 				CLs:           clIDs,
 			}
 			res, err := qm.findRunLimit(ctx, r)
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, exampleLimit)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(exampleLimit))
 		})
 
-		Convey("findRunLimit() returns default user_limit if no valid user_limit is found", func() {
+		t.Run("findRunLimit() returns default user_limit if no valid user_limit is found", func(t *ftt.Test) {
 			cg.UserLimits = append(cg.UserLimits,
 				genUserLimit("chromies-limit", 10, []string{"group:chromies", "group:chrome-infra"}),
 				genUserLimit("googlers-limit", 5, []string{"group:invalid"}),
@@ -239,11 +239,11 @@ func TestManager(t *testing.T) {
 			}
 
 			res, err := qm.findRunLimit(ctx, r)
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, genUserLimit("default", 5, nil)) // default name is overriden.
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(genUserLimit("default", 5, nil))) // default name is overriden.
 		})
 
-		Convey("findRunLimit() returns nil when no valid policy is found", func() {
+		t.Run("findRunLimit() returns nil when no valid policy is found", func(t *ftt.Test) {
 			cg.UserLimits = append(cg.UserLimits,
 				genUserLimit("chromies-limit", 10, []string{"group:chromies", "group:chrome-infra"}),
 				genUserLimit("googlers-limit", 5, []string{"group:invalid"}),
@@ -259,11 +259,11 @@ func TestManager(t *testing.T) {
 			}
 
 			res, err := qm.findRunLimit(ctx, r)
-			So(err, ShouldBeNil)
-			So(res, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.BeNil)
 		})
 
-		Convey("DebitRunQuota() debits quota for a given run state", func() {
+		t.Run("DebitRunQuota() debits quota for a given run state", func(t *ftt.Test) {
 			googlerLimit := genUserLimit("googlers-limit", 5, []string{"group:googlers"})
 			cg.UserLimits = append(cg.UserLimits,
 				genUserLimit("chromies-limit", 10, []string{"group:chromies", "group:chrome-infra"}),
@@ -280,13 +280,13 @@ func TestManager(t *testing.T) {
 			}
 
 			res, userLimit, err := qm.DebitRunQuota(ctx, r)
-			So(err, ShouldBeNil)
-			So(userLimit, ShouldResembleProto, googlerLimit)
-			So(res, ShouldResembleProto, &quotapb.OpResult{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, userLimit, should.Resemble(googlerLimit))
+			assert.Loosely(t, res, should.Resemble(&quotapb.OpResult{
 				NewBalance:    4,
 				AccountStatus: quotapb.OpResult_CREATED,
-			})
-			So(ct.TSMonSentValue(
+			}))
+			assert.Loosely(t, ct.TSMonSentValue(
 				ctx,
 				metrics.Internal.QuotaOp,
 				lProject,
@@ -295,10 +295,10 @@ func TestManager(t *testing.T) {
 				"runs",
 				"debit",
 				"SUCCESS",
-			), ShouldEqual, 1)
+			), should.Equal(1))
 		})
 
-		Convey("CreditRunQuota() credits quota for a given run state", func() {
+		t.Run("CreditRunQuota() credits quota for a given run state", func(t *ftt.Test) {
 			googlerLimit := genUserLimit("googlers-limit", 5, []string{"group:googlers"})
 			cg.UserLimits = append(cg.UserLimits,
 				genUserLimit("chromies-limit", 10, []string{"group:chromies", "group:chrome-infra"}),
@@ -315,13 +315,13 @@ func TestManager(t *testing.T) {
 			}
 
 			res, userLimit, err := qm.CreditRunQuota(ctx, r)
-			So(err, ShouldBeNil)
-			So(userLimit, ShouldResembleProto, googlerLimit)
-			So(res, ShouldResembleProto, &quotapb.OpResult{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, userLimit, should.Resemble(googlerLimit))
+			assert.Loosely(t, res, should.Resemble(&quotapb.OpResult{
 				NewBalance:    5,
 				AccountStatus: quotapb.OpResult_CREATED,
-			})
-			So(ct.TSMonSentValue(
+			}))
+			assert.Loosely(t, ct.TSMonSentValue(
 				ctx,
 				metrics.Internal.QuotaOp,
 				lProject,
@@ -330,10 +330,10 @@ func TestManager(t *testing.T) {
 				"runs",
 				"credit",
 				"SUCCESS",
-			), ShouldEqual, 1)
+			), should.Equal(1))
 		})
 
-		Convey("runQuotaOp() updates the same account on multiple ops", func() {
+		t.Run("runQuotaOp() updates the same account on multiple ops", func(t *ftt.Test) {
 			googlerLimit := genUserLimit("googlers-limit", 5, []string{"group:googlers"})
 			cg.UserLimits = append(cg.UserLimits,
 				genUserLimit("chromies-limit", 10, []string{"group:chromies", "group:chrome-infra"}),
@@ -350,13 +350,13 @@ func TestManager(t *testing.T) {
 			}
 
 			res, userLimit, err := qm.runQuotaOp(ctx, r, "foo1", -1)
-			So(err, ShouldBeNil)
-			So(userLimit, ShouldResembleProto, googlerLimit)
-			So(res, ShouldResembleProto, &quotapb.OpResult{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, userLimit, should.Resemble(googlerLimit))
+			assert.Loosely(t, res, should.Resemble(&quotapb.OpResult{
 				NewBalance:    4,
 				AccountStatus: quotapb.OpResult_CREATED,
-			})
-			So(ct.TSMonSentValue(
+			}))
+			assert.Loosely(t, ct.TSMonSentValue(
 				ctx,
 				metrics.Internal.QuotaOp,
 				lProject,
@@ -365,18 +365,18 @@ func TestManager(t *testing.T) {
 				"runs",
 				"foo1",
 				"SUCCESS",
-			), ShouldEqual, 1)
+			), should.Equal(1))
 
 			res, userLimit, err = qm.runQuotaOp(ctx, r, "foo2", -2)
-			So(err, ShouldBeNil)
-			So(userLimit, ShouldResembleProto, googlerLimit)
-			So(res, ShouldResembleProto, &quotapb.OpResult{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, userLimit, should.Resemble(googlerLimit))
+			assert.Loosely(t, res, should.Resemble(&quotapb.OpResult{
 				NewBalance:              2,
 				PreviousBalance:         4,
 				PreviousBalanceAdjusted: 4,
 				AccountStatus:           quotapb.OpResult_ALREADY_EXISTS,
-			})
-			So(ct.TSMonSentValue(
+			}))
+			assert.Loosely(t, ct.TSMonSentValue(
 				ctx,
 				metrics.Internal.QuotaOp,
 				lProject,
@@ -385,10 +385,10 @@ func TestManager(t *testing.T) {
 				"runs",
 				"foo2",
 				"SUCCESS",
-			), ShouldEqual, 1)
+			), should.Equal(1))
 		})
 
-		Convey("runQuotaOp() respects unlimited policy", func() {
+		t.Run("runQuotaOp() respects unlimited policy", func(t *ftt.Test) {
 			googlerLimit := genUserLimit("googlers-limit", 0, []string{"group:googlers"})
 			cg.UserLimits = append(cg.UserLimits, googlerLimit)
 			prjcfgtest.Update(ctx, lProject, cfg)
@@ -401,15 +401,15 @@ func TestManager(t *testing.T) {
 			}
 
 			res, userLimit, err := qm.runQuotaOp(ctx, r, "", -1)
-			So(err, ShouldBeNil)
-			So(userLimit, ShouldResembleProto, googlerLimit)
-			So(res, ShouldResembleProto, &quotapb.OpResult{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, userLimit, should.Resemble(googlerLimit))
+			assert.Loosely(t, res, should.Resemble(&quotapb.OpResult{
 				NewBalance:    -1,
 				AccountStatus: quotapb.OpResult_CREATED,
-			})
+			}))
 		})
 
-		Convey("runQuotaOp() bound checks", func() {
+		t.Run("runQuotaOp() bound checks", func(t *ftt.Test) {
 			googlerLimit := genUserLimit("googlers-limit", 1, []string{"group:googlers"})
 			cg.UserLimits = append(cg.UserLimits, googlerLimit)
 			prjcfgtest.Update(ctx, lProject, cfg)
@@ -421,15 +421,15 @@ func TestManager(t *testing.T) {
 				CLs:           clIDs,
 			}
 
-			Convey("quota underflow", func() {
+			t.Run("quota underflow", func(t *ftt.Test) {
 				res, userLimit, err := qm.runQuotaOp(ctx, r, "debit", -2)
-				So(err, ShouldEqual, quota.ErrQuotaApply)
-				So(userLimit, ShouldResembleProto, googlerLimit)
-				So(res, ShouldResembleProto, &quotapb.OpResult{
+				assert.Loosely(t, err, should.Equal(quota.ErrQuotaApply))
+				assert.Loosely(t, userLimit, should.Resemble(googlerLimit))
+				assert.Loosely(t, res, should.Resemble(&quotapb.OpResult{
 					AccountStatus: quotapb.OpResult_CREATED,
 					Status:        quotapb.OpResult_ERR_UNDERFLOW,
-				})
-				So(ct.TSMonSentValue(
+				}))
+				assert.Loosely(t, ct.TSMonSentValue(
 					ctx,
 					metrics.Internal.QuotaOp,
 					lProject,
@@ -438,19 +438,19 @@ func TestManager(t *testing.T) {
 					"runs",
 					"debit",
 					"ERR_UNDERFLOW",
-				), ShouldEqual, 1)
+				), should.Equal(1))
 			})
 
-			Convey("quota overflow", func() {
+			t.Run("quota overflow", func(t *ftt.Test) {
 				// overflow doesn't err but gets capped.
 				res, userLimit, err := qm.runQuotaOp(ctx, r, "credit", 10)
-				So(err, ShouldBeNil)
-				So(userLimit, ShouldResembleProto, googlerLimit)
-				So(res, ShouldResembleProto, &quotapb.OpResult{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, userLimit, should.Resemble(googlerLimit))
+				assert.Loosely(t, res, should.Resemble(&quotapb.OpResult{
 					AccountStatus: quotapb.OpResult_CREATED,
 					NewBalance:    1,
-				})
-				So(ct.TSMonSentValue(
+				}))
+				assert.Loosely(t, ct.TSMonSentValue(
 					ctx,
 					metrics.Internal.QuotaOp,
 					lProject,
@@ -459,11 +459,11 @@ func TestManager(t *testing.T) {
 					"runs",
 					"credit",
 					"SUCCESS",
-				), ShouldEqual, 1)
+				), should.Equal(1))
 			})
 		})
 
-		Convey("runQuotaOp() on policy change", func() {
+		t.Run("runQuotaOp() on policy change", func(t *ftt.Test) {
 			chromiesLimit := genUserLimit("chromies-limit", 10, []string{"group:chromies", "group:chrome-infra"})
 			googlerLimit := genUserLimit("googlers-limit", 5, []string{"group:googlers"})
 			partnerLimit := genUserLimit("partners-limit", 2, []string{"group:partners"})
@@ -478,14 +478,14 @@ func TestManager(t *testing.T) {
 			}
 
 			res, userLimit, err := qm.runQuotaOp(ctx, r, "", -1)
-			So(err, ShouldBeNil)
-			So(userLimit, ShouldResembleProto, googlerLimit)
-			So(res, ShouldResembleProto, &quotapb.OpResult{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, userLimit, should.Resemble(googlerLimit))
+			assert.Loosely(t, res, should.Resemble(&quotapb.OpResult{
 				NewBalance:    4,
 				AccountStatus: quotapb.OpResult_CREATED,
-			})
+			}))
 
-			Convey("decrease in quota allowance results in underflow", func() {
+			t.Run("decrease in quota allowance results in underflow", func(t *ftt.Test) {
 				// Update policy
 				ctx = auth.WithState(ctx, &authtest.FakeState{
 					Identity:       makeIdentity(tEmail),
@@ -495,16 +495,16 @@ func TestManager(t *testing.T) {
 				// This is not a real scenario within CV but just checks
 				// extreme examples.
 				res, userLimit, err = qm.runQuotaOp(ctx, r, "", -2)
-				So(err, ShouldEqual, quota.ErrQuotaApply)
-				So(userLimit, ShouldResembleProto, partnerLimit)
-				So(res, ShouldResembleProto, &quotapb.OpResult{
+				assert.Loosely(t, err, should.Equal(quota.ErrQuotaApply))
+				assert.Loosely(t, userLimit, should.Resemble(partnerLimit))
+				assert.Loosely(t, res, should.Resemble(&quotapb.OpResult{
 					PreviousBalance:         4,
 					PreviousBalanceAdjusted: 1,
 					Status:                  quotapb.OpResult_ERR_UNDERFLOW,
-				})
+				}))
 			})
 
-			Convey("decrease in quota allowance within bounds", func() {
+			t.Run("decrease in quota allowance within bounds", func(t *ftt.Test) {
 				// Update policy
 				ctx = auth.WithState(ctx, &authtest.FakeState{
 					Identity:       makeIdentity(tEmail),
@@ -512,17 +512,17 @@ func TestManager(t *testing.T) {
 				})
 
 				res, userLimit, err = qm.runQuotaOp(ctx, r, "", -1)
-				So(err, ShouldBeNil)
-				So(userLimit, ShouldResembleProto, partnerLimit)
-				So(res, ShouldResembleProto, &quotapb.OpResult{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, userLimit, should.Resemble(partnerLimit))
+				assert.Loosely(t, res, should.Resemble(&quotapb.OpResult{
 					NewBalance:              0,
 					PreviousBalance:         4,
 					PreviousBalanceAdjusted: 1,
 					AccountStatus:           quotapb.OpResult_ALREADY_EXISTS,
-				})
+				}))
 			})
 
-			Convey("increase in quota allowance", func() {
+			t.Run("increase in quota allowance", func(t *ftt.Test) {
 				// Update policy
 				ctx = auth.WithState(ctx, &authtest.FakeState{
 					Identity:       makeIdentity(tEmail),
@@ -530,17 +530,17 @@ func TestManager(t *testing.T) {
 				})
 
 				res, userLimit, err = qm.runQuotaOp(ctx, r, "", -1)
-				So(err, ShouldBeNil)
-				So(userLimit, ShouldResembleProto, chromiesLimit)
-				So(res, ShouldResembleProto, &quotapb.OpResult{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, userLimit, should.Resemble(chromiesLimit))
+				assert.Loosely(t, res, should.Resemble(&quotapb.OpResult{
 					NewBalance:              8,
 					PreviousBalance:         4,
 					PreviousBalanceAdjusted: 9,
 					AccountStatus:           quotapb.OpResult_ALREADY_EXISTS,
-				})
+				}))
 			})
 
-			Convey("increase in quota allowance in the overflow case is bounded by the new limit", func() {
+			t.Run("increase in quota allowance in the overflow case is bounded by the new limit", func(t *ftt.Test) {
 				// Update policy
 				ctx = auth.WithState(ctx, &authtest.FakeState{
 					Identity:       makeIdentity(tEmail),
@@ -550,18 +550,18 @@ func TestManager(t *testing.T) {
 				// This is not a real scenario within CV but just checks
 				// extreme examples.
 				res, userLimit, err = qm.runQuotaOp(ctx, r, "", 2)
-				So(err, ShouldBeNil)
-				So(userLimit, ShouldResembleProto, chromiesLimit)
-				So(res, ShouldResembleProto, &quotapb.OpResult{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, userLimit, should.Resemble(chromiesLimit))
+				assert.Loosely(t, res, should.Resemble(&quotapb.OpResult{
 					NewBalance:              10,
 					PreviousBalance:         4,
 					PreviousBalanceAdjusted: 9,
 					AccountStatus:           quotapb.OpResult_ALREADY_EXISTS,
-				})
+				}))
 			})
 		})
 
-		Convey("runQuotaOp() is idempotent", func() {
+		t.Run("runQuotaOp() is idempotent", func(t *ftt.Test) {
 			googlerLimit := genUserLimit("googlers-limit", 5, []string{"group:googlers"})
 			cg.UserLimits = append(cg.UserLimits,
 				genUserLimit("chromies-limit", 10, []string{"group:chromies", "group:chrome-infra"}),
@@ -578,43 +578,43 @@ func TestManager(t *testing.T) {
 			}
 
 			res, userLimit, err := qm.runQuotaOp(ctx, r, "foo", -1)
-			So(err, ShouldBeNil)
-			So(userLimit, ShouldResembleProto, googlerLimit)
-			So(res, ShouldResembleProto, &quotapb.OpResult{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, userLimit, should.Resemble(googlerLimit))
+			assert.Loosely(t, res, should.Resemble(&quotapb.OpResult{
 				NewBalance:    4,
 				AccountStatus: quotapb.OpResult_CREATED,
-			})
+			}))
 
 			res, userLimit, err = qm.runQuotaOp(ctx, r, "foo", -1)
-			So(err, ShouldBeNil)
-			So(userLimit, ShouldResembleProto, googlerLimit)
-			So(res, ShouldResembleProto, &quotapb.OpResult{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, userLimit, should.Resemble(googlerLimit))
+			assert.Loosely(t, res, should.Resemble(&quotapb.OpResult{
 				NewBalance:    4,
 				AccountStatus: quotapb.OpResult_CREATED,
-			})
+			}))
 
 			res, userLimit, err = qm.runQuotaOp(ctx, r, "foo2", -2)
-			So(err, ShouldBeNil)
-			So(userLimit, ShouldResembleProto, googlerLimit)
-			So(res, ShouldResembleProto, &quotapb.OpResult{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, userLimit, should.Resemble(googlerLimit))
+			assert.Loosely(t, res, should.Resemble(&quotapb.OpResult{
 				NewBalance:              2,
 				PreviousBalance:         4,
 				PreviousBalanceAdjusted: 4,
 				AccountStatus:           quotapb.OpResult_ALREADY_EXISTS,
-			})
+			}))
 
 			res, userLimit, err = qm.runQuotaOp(ctx, r, "foo2", -2)
-			So(err, ShouldBeNil)
-			So(userLimit, ShouldResembleProto, googlerLimit)
-			So(res, ShouldResembleProto, &quotapb.OpResult{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, userLimit, should.Resemble(googlerLimit))
+			assert.Loosely(t, res, should.Resemble(&quotapb.OpResult{
 				NewBalance:              2,
 				PreviousBalance:         4,
 				PreviousBalanceAdjusted: 4,
 				AccountStatus:           quotapb.OpResult_ALREADY_EXISTS,
-			})
+			}))
 		})
 
-		Convey("RunQuotaAccountID() hashes emailID", func() {
+		t.Run("RunQuotaAccountID() hashes emailID", func(t *ftt.Test) {
 			r := &run.Run{
 				ID:            rid,
 				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
@@ -624,13 +624,13 @@ func TestManager(t *testing.T) {
 
 			emailHash := md5.Sum([]byte(tEmail))
 
-			So(qm.RunQuotaAccountID(r), ShouldResembleProto, &quotapb.AccountID{
+			assert.Loosely(t, qm.RunQuotaAccountID(r), should.Resemble(&quotapb.AccountID{
 				AppId:        "cv",
 				Realm:        "chromium",
 				Namespace:    "infra",
 				Name:         hex.EncodeToString(emailHash[:]),
 				ResourceType: "runs",
-			})
+			}))
 		})
 	})
 }

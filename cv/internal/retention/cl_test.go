@@ -19,21 +19,21 @@ import (
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/run"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestScheduleWipeoutCLs(t *testing.T) {
 	t.Parallel()
 
-	Convey("Schedule wipeout cls tasks", t, func() {
+	ftt.Run("Schedule wipeout cls tasks", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 		registerWipeoutCLsTask(ct.TQDispatcher)
@@ -48,7 +48,7 @@ func TestScheduleWipeoutCLs(t *testing.T) {
 		// Make half of the CLs eligible for wipeout
 		ct.Clock.Set(cls[len(cls)/2].UpdateTime.Add(retentionPeriod))
 
-		So(scheduleWipeoutCLTasks(ctx, ct.TQDispatcher), ShouldBeNil)
+		assert.Loosely(t, scheduleWipeoutCLTasks(ctx, ct.TQDispatcher), should.BeNil)
 		var expectedCLIDs common.CLIDs
 		for _, cl := range cls[:len(cls)/2] {
 			expectedCLIDs = append(expectedCLIDs, cl.ID)
@@ -56,35 +56,35 @@ func TestScheduleWipeoutCLs(t *testing.T) {
 
 		var actualCLIDs common.CLIDs
 		for _, task := range ct.TQ.Tasks() {
-			So(task.ETA, ShouldHappenWithin, wipeoutTasksDistInterval, ct.Clock.Now())
+			assert.Loosely(t, task.ETA, should.HappenWithin(wipeoutTasksDistInterval, ct.Clock.Now()))
 			ids := task.Payload.(*WipeoutCLsTask).GetIds()
-			So(len(ids), ShouldBeLessThanOrEqualTo, clsPerTask)
+			assert.Loosely(t, len(ids), should.BeLessThanOrEqual(clsPerTask))
 			for _, id := range ids {
 				actualCLIDs = append(actualCLIDs, common.CLID(id))
 			}
 		}
 		sort.Sort(expectedCLIDs)
 		sort.Sort(actualCLIDs)
-		So(actualCLIDs, ShouldResemble, expectedCLIDs)
+		assert.Loosely(t, actualCLIDs, should.Resemble(expectedCLIDs))
 	})
 }
 func TestWipeoutCLs(t *testing.T) {
 	t.Parallel()
 
-	Convey("Wipeout CLs", t, func() {
+	ftt.Run("Wipeout CLs", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
 		cl := changelist.MustGobID("example.com", 1111).MustCreateIfNotExists(ctx)
 		ct.Clock.Add(2 * retentionPeriod) // make cl eligible for wipeout
 
-		Convey("Can wipeout CL", func() {
-			So(wipeoutCLs(ctx, common.CLIDs{cl.ID}), ShouldBeNil)
-			So(datastore.Get(ctx, &changelist.CL{ID: cl.ID}), ShouldErrLike, datastore.ErrNoSuchEntity)
+		t.Run("Can wipeout CL", func(t *ftt.Test) {
+			assert.Loosely(t, wipeoutCLs(ctx, common.CLIDs{cl.ID}), should.BeNil)
+			assert.Loosely(t, datastore.Get(ctx, &changelist.CL{ID: cl.ID}), should.ErrLike(datastore.ErrNoSuchEntity))
 		})
 
-		Convey("Don't wipeout CL", func() {
-			Convey("When a run is referencing this CL", func() {
+		t.Run("Don't wipeout CL", func(t *ftt.Test) {
+			t.Run("When a run is referencing this CL", func(t *ftt.Test) {
 				r := &run.Run{
 					ID:  common.MakeRunID("infra", ct.Clock.Now(), 1, []byte("deadbeef")),
 					CLs: common.CLIDs{cl.ID},
@@ -95,13 +95,13 @@ func TestWipeoutCLs(t *testing.T) {
 					IndexedID:  cl.ID,
 					ExternalID: cl.ExternalID,
 				}
-				So(datastore.Put(ctx, r, rcl), ShouldBeNil)
-				So(wipeoutCLs(ctx, common.CLIDs{cl.ID}), ShouldBeNil)
-				So(datastore.Get(ctx, &changelist.CL{ID: cl.ID}), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, r, rcl), should.BeNil)
+				assert.Loosely(t, wipeoutCLs(ctx, common.CLIDs{cl.ID}), should.BeNil)
+				assert.Loosely(t, datastore.Get(ctx, &changelist.CL{ID: cl.ID}), should.BeNil)
 			})
 
-			Convey("When CL doesn't exist", func() {
-				So(wipeoutCLs(ctx, common.CLIDs{cl.ID + 1}), ShouldBeNil)
+			t.Run("When CL doesn't exist", func(t *ftt.Test) {
+				assert.Loosely(t, wipeoutCLs(ctx, common.CLIDs{cl.ID + 1}), should.BeNil)
 			})
 		})
 	})

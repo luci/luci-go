@@ -24,16 +24,16 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	tspb "go.chromium.org/luci/tree_status/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestTreeStatesClient(t *testing.T) {
 	t.Parallel()
 
-	Convey("FetchLatest", t, func() {
+	ftt.Run("FetchLatest", t, func(t *ftt.Test) {
 		ctx := context.Background()
 		ctl := gomock.NewController(t)
 		defer ctl.Finish()
@@ -41,7 +41,7 @@ func TestTreeStatesClient(t *testing.T) {
 		client := &treeStatusClientImpl{
 			client: mc,
 		}
-		Convey("Works", func() {
+		t.Run("Works", func(t *ftt.Test) {
 			now := time.Date(2000, 01, 02, 03, 04, 05, 678910111, time.UTC)
 			req := &tspb.GetStatusRequest{Name: "trees/mock/status/latest"}
 			res := &tspb.Status{
@@ -54,16 +54,16 @@ func TestTreeStatesClient(t *testing.T) {
 				gomock.Any()).Return(res, nil)
 
 			ts, err := client.FetchLatest(ctx, "mock")
-			So(err, ShouldBeNil)
-			So(ts, ShouldResemble, Status{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ts, should.Resemble(Status{
 				State: Open,
 				Since: now,
-			})
+			}))
 		})
-		Convey("Error if rpc call fails", func() {
+		t.Run("Error if rpc call fails", func(t *ftt.Test) {
 			mc.EXPECT().GetStatus(gomock.Any(), gomock.Any()).Return(nil, errors.New("rpc error"))
 			_, err := client.FetchLatest(ctx, "mock")
-			So(err, ShouldErrLike, "rpc error")
+			assert.Loosely(t, err, should.ErrLike("rpc error"))
 		})
 	})
 }

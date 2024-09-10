@@ -21,20 +21,21 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/runtest"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestConfigChangeStartsAndStopsRuns(t *testing.T) {
 	t.Parallel()
 
-	Convey("CV starts new and stops old Runs on config change as needed", t, func() {
+	ftt.Run("CV starts new and stops old Runs on config change as needed", t, func(t *ftt.Test) {
 		ct := Test{}
 		ctx := ct.SetUp(t)
 
@@ -102,7 +103,7 @@ func TestConfigChangeStartsAndStopsRuns(t *testing.T) {
 
 		ct.LogPhase(ctx, "CV starts 2 runs while watching first repo only")
 		prjcfgtest.Create(ctx, lProject, cfgFirst)
-		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
+		assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
 
 		var runFirstSingle, runFirstCombo *run.Run
 		ct.RunUntil(ctx, func() bool {
@@ -111,9 +112,9 @@ func TestConfigChangeStartsAndStopsRuns(t *testing.T) {
 			return runtest.AreRunning(runFirstSingle, runFirstCombo)
 		})
 		// Project must have no other runs.
-		So(ct.LoadRunsOf(ctx, lProject), ShouldHaveLength, 2)
+		assert.Loosely(t, ct.LoadRunsOf(ctx, lProject), should.HaveLength(2))
 		// And combo Run must have just 1 CL.
-		So(runFirstCombo.CLs, ShouldHaveLength, 1)
+		assert.Loosely(t, runFirstCombo.CLs, should.HaveLength(1))
 
 		ct.LogPhase(ctx, "CV watches both repos")
 		cfgBoth := proto.Clone(cfgFirst).(*cfgpb.Config)
@@ -123,7 +124,7 @@ func TestConfigChangeStartsAndStopsRuns(t *testing.T) {
 			RefRegexp: []string{"refs/heads/.+"},
 		})
 		prjcfgtest.Update(ctx, lProject, cfgBoth)
-		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
+		assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
 
 		var runSecondSingle *run.Run
 		ct.RunUntil(ctx, func() bool {
@@ -133,21 +134,21 @@ func TestConfigChangeStartsAndStopsRuns(t *testing.T) {
 		// TODO(crbug/1221535): CV should not ignore gChangeSecondCombo while
 		// runFirstCombo is running. It should either stop runFirstCombo or start a
 		// new Run.
-		So(ct.LatestRunWithGerritCL(ctx, gHost, gChangeSecondCombo), ShouldBeNil)
+		assert.Loosely(t, ct.LatestRunWithGerritCL(ctx, gHost, gChangeSecondCombo), should.BeNil)
 		runFirstSingle = ct.LoadRun(ctx, runFirstSingle.ID)
 		runFirstCombo = ct.LoadRun(ctx, runFirstCombo.ID)
-		So(runtest.AreRunning(runFirstSingle, runFirstCombo, runSecondSingle), ShouldBeTrue)
+		assert.Loosely(t, runtest.AreRunning(runFirstSingle, runFirstCombo, runSecondSingle), should.BeTrue)
 
 		ct.LogPhase(ctx, "CV watches only the second repo, stops Runs on CLs from the first repo, and purges second combo CL")
 		cfgSecond := MakeCfgCombinable("main", gHost, gRepoSecond, "refs/heads/.+", builder)
 		prjcfgtest.Update(ctx, lProject, cfgSecond)
-		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
+		assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
 		ct.RunUntil(ctx, func() bool {
 			runFirstSingle = ct.LoadRun(ctx, runFirstSingle.ID)
 			runFirstCombo = ct.LoadRun(ctx, runFirstCombo.ID)
 			return runtest.AreEnded(runFirstSingle, runFirstCombo) && ct.MaxCQVote(ctx, gHost, gChangeSecondCombo) == 0
 		})
-		So(ct.LastMessage(gHost, gChangeSecondCombo).GetMessage(), ShouldContainSubstring,
-			"CQ can't process the CL because its deps are not watched by the same LUCI project")
+		assert.Loosely(t, ct.LastMessage(gHost, gChangeSecondCombo).GetMessage(), should.ContainSubstring(
+			"CQ can't process the CL because its deps are not watched by the same LUCI project"))
 	})
 }

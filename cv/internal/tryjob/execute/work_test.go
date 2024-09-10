@@ -26,6 +26,9 @@ import (
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	bbfacade "go.chromium.org/luci/cv/internal/buildbucket/facade"
@@ -34,15 +37,12 @@ import (
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/tryjob"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestWorker(t *testing.T) {
 	t.Parallel()
 
-	Convey("Start", t, func() {
+	ftt.Run("Start", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
@@ -129,26 +129,26 @@ func TestWorker(t *testing.T) {
 				},
 				Status: tryjob.Result_SUCCEEDED,
 			}
-			So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+			assert.Loosely(t, datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 				return tryjob.SaveTryjobs(ctx, []*tryjob.Tryjob{tj}, nil)
-			}, nil), ShouldBeNil)
+			}, nil), should.BeNil)
 			return tj
 		}
-		Convey("Reuse", func() {
+		t.Run("Reuse", func(t *ftt.Test) {
 			eid := tryjob.MustBuildbucketID(bbHost, mathrand.Int63(ctx))
 			w.findReuseFns = []findReuseFn{
 				func(ctx context.Context, definitions []*tryjob.Definition) (map[*tryjob.Definition]*tryjob.Tryjob, error) {
-					So(definitions, ShouldHaveLength, 1)
+					assert.Loosely(t, definitions, should.HaveLength(1))
 					return map[*tryjob.Definition]*tryjob.Tryjob{
 						definitions[0]: makeReuseTryjob(ctx, def, eid),
 					}, nil
 				},
 			}
 			tryjobs, err := w.start(ctx, []*tryjob.Definition{def})
-			So(err, ShouldBeNil)
-			So(tryjobs, ShouldHaveLength, 1)
-			So(tryjobs[0].ExternalID, ShouldEqual, eid)
-			So(w.logEntries, ShouldResembleProto, []*tryjob.ExecutionLogEntry{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tryjobs, should.HaveLength(1))
+			assert.Loosely(t, tryjobs[0].ExternalID, should.Equal(eid))
+			assert.Loosely(t, w.logEntries, should.Resemble([]*tryjob.ExecutionLogEntry{
 				{
 					Time: timestamppb.New(ct.Clock.Now().UTC()),
 					Kind: &tryjob.ExecutionLogEntry_TryjobsReused_{
@@ -159,31 +159,31 @@ func TestWorker(t *testing.T) {
 						},
 					},
 				},
-			})
+			}))
 		})
 
-		Convey("No reuse, launch new tryjob", func() {
+		t.Run("No reuse, launch new tryjob", func(t *ftt.Test) {
 			w.findReuseFns = []findReuseFn{
 				func(context.Context, []*tryjob.Definition) (map[*tryjob.Definition]*tryjob.Tryjob, error) {
 					return nil, nil
 				},
 			}
 			tryjobs, err := w.start(ctx, []*tryjob.Definition{def})
-			So(err, ShouldBeNil)
-			So(tryjobs, ShouldHaveLength, 1)
-			So(tryjobs[0].ExternalID, ShouldNotBeEmpty)
-			So(tryjobs[0].Status, ShouldEqual, tryjob.Status_TRIGGERED)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tryjobs, should.HaveLength(1))
+			assert.Loosely(t, tryjobs[0].ExternalID, should.NotBeEmpty)
+			assert.Loosely(t, tryjobs[0].Status, should.Equal(tryjob.Status_TRIGGERED))
 		})
 
-		Convey("Reuse find previous PENDING tryjob", func() {
+		t.Run("Reuse find previous PENDING tryjob", func(t *ftt.Test) {
 			var reuseID common.TryjobID
 			w.findReuseFns = []findReuseFn{
 				func(ctx context.Context, definitions []*tryjob.Definition) (map[*tryjob.Definition]*tryjob.Tryjob, error) {
-					So(definitions, ShouldHaveLength, 1)
+					assert.Loosely(t, definitions, should.HaveLength(1))
 					tj := w.makePendingTryjob(ctx, definitions[0])
-					So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+					assert.Loosely(t, datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 						return tryjob.SaveTryjobs(ctx, []*tryjob.Tryjob{tj}, nil)
-					}, nil), ShouldBeNil)
+					}, nil), should.BeNil)
 					reuseID = tj.ID
 					return map[*tryjob.Definition]*tryjob.Tryjob{
 						definitions[0]: tj,
@@ -191,14 +191,14 @@ func TestWorker(t *testing.T) {
 				},
 			}
 			tryjobs, err := w.start(ctx, []*tryjob.Definition{def})
-			So(err, ShouldBeNil)
-			So(tryjobs, ShouldHaveLength, 1)
-			So(tryjobs[0].ID, ShouldEqual, reuseID)
-			So(tryjobs[0].ExternalID, ShouldNotBeEmpty)
-			So(tryjobs[0].Status, ShouldEqual, tryjob.Status_TRIGGERED)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tryjobs, should.HaveLength(1))
+			assert.Loosely(t, tryjobs[0].ID, should.Equal(reuseID))
+			assert.Loosely(t, tryjobs[0].ExternalID, should.NotBeEmpty)
+			assert.Loosely(t, tryjobs[0].Status, should.Equal(tryjob.Status_TRIGGERED))
 		})
 
-		Convey("Mix", func() {
+		t.Run("Mix", func(t *ftt.Test) {
 			baseDef := &tryjob.Definition{
 				Backend: &tryjob.Definition_Buildbucket_{
 					Buildbucket: &tryjob.Definition_Buildbucket{
@@ -227,28 +227,28 @@ func TestWorker(t *testing.T) {
 			eidForBuilder2 := tryjob.MustBuildbucketID(bbHost, mathrand.Int63(ctx))
 			w.findReuseFns = []findReuseFn{
 				func(ctx context.Context, defs []*tryjob.Definition) (map[*tryjob.Definition]*tryjob.Tryjob, error) {
-					So(defs, ShouldResembleProto, definitions)
+					assert.Loosely(t, defs, should.Resemble(definitions))
 					return map[*tryjob.Definition]*tryjob.Tryjob{
 						definitions[0]: makeReuseTryjob(ctx, def, eidForBuilder0),
 					}, nil
 				},
 				func(ctx context.Context, defs []*tryjob.Definition) (map[*tryjob.Definition]*tryjob.Tryjob, error) {
 					// reuse Tryjob already found for definitions[0]
-					So(defs, ShouldResembleProto, definitions[1:])
+					assert.Loosely(t, defs, should.Resemble(definitions[1:]))
 					return map[*tryjob.Definition]*tryjob.Tryjob{
 						definitions[2]: makeReuseTryjob(ctx, def, eidForBuilder2),
 					}, nil
 				},
 			}
 			tryjobs, err := w.start(ctx, definitions)
-			So(err, ShouldBeNil)
-			So(tryjobs, ShouldHaveLength, 3)
-			So(tryjobs[0].ExternalID, ShouldEqual, eidForBuilder0)
-			So(tryjobs[0].Status, ShouldEqual, tryjob.Status_ENDED)
-			So(tryjobs[1].ExternalID, ShouldNotBeEmpty)
-			So(tryjobs[1].Status, ShouldEqual, tryjob.Status_TRIGGERED)
-			So(tryjobs[2].ExternalID, ShouldEqual, eidForBuilder2)
-			So(tryjobs[2].Status, ShouldEqual, tryjob.Status_ENDED)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tryjobs, should.HaveLength(3))
+			assert.Loosely(t, tryjobs[0].ExternalID, should.Equal(eidForBuilder0))
+			assert.Loosely(t, tryjobs[0].Status, should.Equal(tryjob.Status_ENDED))
+			assert.Loosely(t, tryjobs[1].ExternalID, should.NotBeEmpty)
+			assert.Loosely(t, tryjobs[1].Status, should.Equal(tryjob.Status_TRIGGERED))
+			assert.Loosely(t, tryjobs[2].ExternalID, should.Equal(eidForBuilder2))
+			assert.Loosely(t, tryjobs[2].Status, should.Equal(tryjob.Status_ENDED))
 		})
 	})
 }

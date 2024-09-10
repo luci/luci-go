@@ -20,6 +20,9 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
@@ -30,14 +33,12 @@ import (
 	"go.chromium.org/luci/cv/internal/prjmanager/pmtest"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestCancel(t *testing.T) {
 	t.Parallel()
 
-	Convey("Cancel", t, func() {
+	ftt.Run("Cancel", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 		ctx, _ = pmtest.MockDispatch(ctx)
@@ -47,7 +48,7 @@ func TestCancel(t *testing.T) {
 			ConfigGroups: []*cfgpb.ConfigGroup{{Name: "main"}},
 		})
 		cgs, err := prjcfgtest.MustExist(ctx, lProject).GetConfigGroups(ctx)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		cg := cgs[0]
 		runID := common.MakeRunID(lProject, ct.Clock.Now(), 1, []byte("deadbeef"))
 		clid := common.CLID(11)
@@ -59,44 +60,44 @@ func TestCancel(t *testing.T) {
 				CLs:           common.CLIDs{clid},
 			},
 		}
-		So(datastore.Put(ctx, &changelist.CL{
+		assert.Loosely(t, datastore.Put(ctx, &changelist.CL{
 			ID: clid,
 			IncompleteRuns: common.RunIDs{
 				runID,
 				common.MakeRunID(lProject, ct.Clock.Now().Add(1*time.Minute), 1, []byte("cafecafe")),
 			},
-		}), ShouldBeNil)
+		}), should.BeNil)
 		h, _ := makeTestHandler(&ct)
 
 		now := ct.Clock.Now().UTC()
-		Convey("Cancel works", func() {
+		t.Run("Cancel works", func(t *ftt.Test) {
 			rs.Status = run.Status_RUNNING
 			rs.StartTime = now.Add(-1 * time.Minute)
 			res, err := h.Cancel(ctx, rs, []string{"user request"})
-			So(err, ShouldBeNil)
-			So(res.State.Status, ShouldEqual, run.Status_CANCELLED)
-			So(res.State.StartTime, ShouldResemble, now.Add(-1*time.Minute))
-			So(res.State.EndTime, ShouldResemble, now)
-			So(res.State.CancellationReasons, ShouldResemble, []string{"user request"})
-			So(res.SideEffectFn, ShouldNotBeNil)
-			So(res.PreserveEvents, ShouldBeFalse)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.State.Status, should.Equal(run.Status_CANCELLED))
+			assert.Loosely(t, res.State.StartTime, should.Resemble(now.Add(-1*time.Minute)))
+			assert.Loosely(t, res.State.EndTime, should.Resemble(now))
+			assert.Loosely(t, res.State.CancellationReasons, should.Resemble([]string{"user request"}))
+			assert.Loosely(t, res.SideEffectFn, should.NotBeNil)
+			assert.Loosely(t, res.PreserveEvents, should.BeFalse)
 		})
 
-		Convey("Filter cancellation reasons", func() {
+		t.Run("Filter cancellation reasons", func(t *ftt.Test) {
 			rs.Status = run.Status_RUNNING
 			rs.StartTime = now.Add(-1 * time.Minute)
 			res, err := h.Cancel(ctx, rs, []string{"user request", "", "user request"})
-			So(err, ShouldBeNil)
-			So(res.State.CancellationReasons, ShouldResemble, []string{"user request"})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.State.CancellationReasons, should.Resemble([]string{"user request"}))
 		})
 
-		Convey("Cancels SUBMITTING Run", func() {
+		t.Run("Cancels SUBMITTING Run", func(t *ftt.Test) {
 			rs.Status = run.Status_SUBMITTING
 			res, err := h.Cancel(ctx, rs, []string{"user request"})
-			So(err, ShouldBeNil)
-			So(res.State, ShouldEqual, rs)
-			So(res.SideEffectFn, ShouldBeNil)
-			So(res.PreserveEvents, ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.State, should.Equal(rs))
+			assert.Loosely(t, res.SideEffectFn, should.BeNil)
+			assert.Loosely(t, res.PreserveEvents, should.BeTrue)
 		})
 
 		statuses := []run.Status{
@@ -105,15 +106,15 @@ func TestCancel(t *testing.T) {
 			run.Status_CANCELLED,
 		}
 		for _, status := range statuses {
-			Convey(fmt.Sprintf("Noop when Run is %s", status), func() {
+			t.Run(fmt.Sprintf("Noop when Run is %s", status), func(t *ftt.Test) {
 				rs.Status = status
 				rs.StartTime = clock.Now(ctx).UTC().Add(-1 * time.Minute)
 				rs.EndTime = clock.Now(ctx).UTC().Add(-30 * time.Second)
 				res, err := h.Cancel(ctx, rs, []string{"user request"})
-				So(err, ShouldBeNil)
-				So(res.State, ShouldEqual, rs)
-				So(res.SideEffectFn, ShouldBeNil)
-				So(res.PreserveEvents, ShouldBeFalse)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res.State, should.Equal(rs))
+				assert.Loosely(t, res.SideEffectFn, should.BeNil)
+				assert.Loosely(t, res.PreserveEvents, should.BeFalse)
 			})
 		}
 	})

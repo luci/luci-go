@@ -18,10 +18,11 @@ import (
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 // simplePMState implements itriager.PMState and is used in tests of this
@@ -65,20 +66,20 @@ func (s *simplePMState) ConfigGroup(index int32) *prjcfg.ConfigGroup {
 func TestEarliest(t *testing.T) {
 	t.Parallel()
 
-	Convey("earliest of two works", t, func() {
+	ftt.Run("earliest of two works", t, func(t *ftt.Test) {
 		zero := time.Time{}
 		epoch := time.Date(2021, time.February, 6, 15, 0, 0, 0, time.UTC)
 		after := epoch.Add(time.Hour)
 		before := epoch.Add(-time.Hour)
 
-		So(earliest(), ShouldResemble, zero)
-		So(earliest(zero), ShouldResemble, zero)
-		So(earliest(epoch), ShouldResemble, epoch)
+		assert.Loosely(t, earliest(), should.Resemble(zero))
+		assert.Loosely(t, earliest(zero), should.Resemble(zero))
+		assert.Loosely(t, earliest(epoch), should.Resemble(epoch))
 
-		So(earliest(zero, epoch), ShouldResemble, epoch)
-		So(earliest(epoch, zero), ShouldResemble, epoch)
+		assert.Loosely(t, earliest(zero, epoch), should.Resemble(epoch))
+		assert.Loosely(t, earliest(epoch, zero), should.Resemble(epoch))
 
-		So(earliest(after, zero, epoch), ShouldResemble, epoch)
-		So(earliest(epoch, before, zero, after), ShouldResemble, before)
+		assert.Loosely(t, earliest(after, zero, epoch), should.Resemble(epoch))
+		assert.Loosely(t, earliest(epoch, before, zero, after), should.Resemble(before))
 	})
 }

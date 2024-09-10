@@ -15,39 +15,40 @@
 package poller
 
 import (
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"testing"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestGerritQueryString(t *testing.T) {
 	t.Parallel()
 
-	Convey("gerritString works", t, func() {
+	ftt.Run("gerritString works", t, func(t *ftt.Test) {
 		qs := &QueryState{}
 
-		Convey("single project", func() {
+		t.Run("single project", func(t *ftt.Test) {
 			qs.OrProjects = []string{"inf/ra"}
-			So(qs.gerritString(queryLimited), ShouldEqual,
-				`status:NEW label:Commit-Queue>0 project:"inf/ra"`)
+			assert.Loosely(t, qs.gerritString(queryLimited), should.Equal(
+				`status:NEW label:Commit-Queue>0 project:"inf/ra"`))
 		})
 
-		Convey("many projects", func() {
+		t.Run("many projects", func(t *ftt.Test) {
 			qs.OrProjects = []string{"inf/ra", "second"}
-			So(qs.gerritString(queryLimited), ShouldEqual,
-				`status:NEW label:Commit-Queue>0 (project:"inf/ra" OR project:"second")`)
+			assert.Loosely(t, qs.gerritString(queryLimited), should.Equal(
+				`status:NEW label:Commit-Queue>0 (project:"inf/ra" OR project:"second")`))
 		})
 
-		Convey("shared prefix", func() {
+		t.Run("shared prefix", func(t *ftt.Test) {
 			qs.CommonProjectPrefix = "shared"
-			So(qs.gerritString(queryLimited), ShouldEqual,
-				`status:NEW label:Commit-Queue>0 projects:"shared"`)
+			assert.Loosely(t, qs.gerritString(queryLimited), should.Equal(
+				`status:NEW label:Commit-Queue>0 projects:"shared"`))
 		})
 
-		Convey("unlimited", func() {
+		t.Run("unlimited", func(t *ftt.Test) {
 			qs.CommonProjectPrefix = "shared"
-			So(qs.gerritString(queryAll), ShouldEqual,
-				`projects:"shared"`)
+			assert.Loosely(t, qs.gerritString(queryAll), should.Equal(
+				`projects:"shared"`))
 		})
 	})
 }

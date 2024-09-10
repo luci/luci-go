@@ -19,40 +19,40 @@ import (
 	"testing"
 
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestEquivalentPatchsetRange(t *testing.T) {
 	t.Parallel()
 
-	Convey("EquivalentPatchsetRange", t, func() {
+	ftt.Run("EquivalentPatchsetRange", t, func(t *ftt.Test) {
 
-		Convey("No revisions", func() {
+		t.Run("No revisions", func(t *ftt.Test) {
 			_, _, err := EquivalentPatchsetRange(makeCI())
-			So(err, ShouldErrLike, "must have all revisions populated")
+			assert.Loosely(t, err, should.ErrLike("must have all revisions populated"))
 		})
 
-		Convey("Wrong CurrentRevision", func() {
+		t.Run("Wrong CurrentRevision", func(t *ftt.Test) {
 			ci := makeCI(gerritpb.RevisionInfo_REWORK)
 			ci.CurrentRevision = ""
 			_, _, err := EquivalentPatchsetRange(ci)
-			So(err, ShouldErrLike, "must have current_revision populated")
+			assert.Loosely(t, err, should.ErrLike("must have current_revision populated"))
 		})
 
-		Convey("Wrong Kind", func() {
+		t.Run("Wrong Kind", func(t *ftt.Test) {
 			_, _, err := EquivalentPatchsetRange(makeCI(
 				gerritpb.RevisionInfo_TRIVIAL_REBASE,
 				gerritpb.RevisionInfo_Kind(199)))
-			So(err, ShouldErrLike, "Unknown revision kind 199")
+			assert.Loosely(t, err, should.ErrLike("Unknown revision kind 199"))
 		})
 
-		Convey("works", func() {
+		t.Run("works", func(t *ftt.Test) {
 			m, p, err := EquivalentPatchsetRange(makeCI(gerritpb.RevisionInfo_REWORK))
-			So(err, ShouldBeNil)
-			So(m, ShouldEqual, 1)
-			So(p, ShouldEqual, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, m, should.Equal(1))
+			assert.Loosely(t, p, should.Equal(1))
 
 			m, p, err = EquivalentPatchsetRange(makeCI(
 				gerritpb.RevisionInfo_REWORK,
@@ -64,9 +64,9 @@ func TestEquivalentPatchsetRange(t *testing.T) {
 				gerritpb.RevisionInfo_TRIVIAL_REBASE,
 				gerritpb.RevisionInfo_TRIVIAL_REBASE_WITH_MESSAGE_UPDATE,
 			))
-			So(err, ShouldBeNil)
-			So(m, ShouldEqual, 3)
-			So(p, ShouldEqual, 8)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, m, should.Equal(3))
+			assert.Loosely(t, p, should.Equal(8))
 		})
 	})
 }

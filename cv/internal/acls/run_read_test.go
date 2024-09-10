@@ -32,14 +32,17 @@ import (
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/run"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestRunReadChecker(t *testing.T) {
 	t.Parallel()
 
-	Convey("NewRunReadChecker works", t, func() {
+	ftt.Run("NewRunReadChecker works", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
@@ -73,66 +76,66 @@ func TestRunReadChecker(t *testing.T) {
 			EVersion:      5,
 			ConfigGroupID: prjcfgtest.MustExist(ctx, projectInternal).ConfigGroupIDs[0],
 		}
-		So(datastore.Put(ctx, publicRun, internalRun), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, publicRun, internalRun), should.BeNil)
 
 		ctx = auth.WithState(ctx, &authtest.FakeState{
 			Identity: identity.AnonymousIdentity,
 		})
 
-		Convey("Loading individual Runs", func() {
-			Convey("Run doesn't exist", func() {
+		t.Run("Loading individual Runs", func(t *ftt.Test) {
+			t.Run("Run doesn't exist", func(t *ftt.Test) {
 				_, err1 := run.LoadRun(ctx, common.RunID("foo/bar"), NewRunReadChecker())
-				So(err1, ShouldHaveAppStatus, codes.NotFound)
+				assert.Loosely(t, err1, convey.Adapt(ShouldHaveAppStatus)(codes.NotFound))
 
-				Convey("No access must be indistinguishable from not existing Run", func() {
+				t.Run("No access must be indistinguishable from not existing Run", func(t *ftt.Test) {
 					_, err2 := run.LoadRun(ctx, internalRun.ID, NewRunReadChecker())
-					So(err2, ShouldHaveAppStatus, codes.NotFound)
+					assert.Loosely(t, err2, convey.Adapt(ShouldHaveAppStatus)(codes.NotFound))
 
 					st1, _ := appstatus.Get(err1)
 					st2, _ := appstatus.Get(err2)
-					So(st1.Message(), ShouldResemble, st2.Message())
-					So(st1.Details(), ShouldBeEmpty)
-					So(st2.Details(), ShouldBeEmpty)
+					assert.Loosely(t, st1.Message(), should.Resemble(st2.Message()))
+					assert.Loosely(t, st1.Details(), should.BeEmpty)
+					assert.Loosely(t, st2.Details(), should.BeEmpty)
 				})
 			})
 
-			Convey("OK public", func() {
+			t.Run("OK public", func(t *ftt.Test) {
 				r, err := run.LoadRun(ctx, publicRun.ID, NewRunReadChecker())
-				So(err, ShouldBeNil)
-				So(r, cvtesting.SafeShouldResemble, publicRun)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, r, convey.Adapt(cvtesting.SafeShouldResemble)(publicRun))
 			})
 
-			Convey("OK internal", func() {
+			t.Run("OK internal", func(t *ftt.Test) {
 				// TODO(crbug/1233963): add a test once non-legacy ACLs are working.
 				ctx = auth.WithState(ctx, &authtest.FakeState{
 					Identity:       "user:googler@example.com",
 					IdentityGroups: []string{"googlers"},
 				})
 				r, err := run.LoadRun(ctx, internalRun.ID, NewRunReadChecker())
-				So(err, ShouldBeNil)
-				So(r, cvtesting.SafeShouldResemble, internalRun)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, r, convey.Adapt(cvtesting.SafeShouldResemble)(internalRun))
 			})
 
-			Convey("OK v0 API users", func() {
+			t.Run("OK v0 API users", func(t *ftt.Test) {
 				ctx = auth.WithState(ctx, &authtest.FakeState{
 					Identity:       "user:v0-api-users@example.com",
 					IdentityGroups: []string{V0APIAllowGroup},
 				})
 				r, err := run.LoadRun(ctx, publicRun.ID, NewRunReadChecker())
-				So(err, ShouldBeNil)
-				So(r, cvtesting.SafeShouldResemble, publicRun)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, r, convey.Adapt(cvtesting.SafeShouldResemble)(publicRun))
 				r, err = run.LoadRun(ctx, internalRun.ID, NewRunReadChecker())
-				So(err, ShouldBeNil)
-				So(r, cvtesting.SafeShouldResemble, internalRun)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, r, convey.Adapt(cvtesting.SafeShouldResemble)(internalRun))
 			})
 
-			Convey("PermissionDenied", func() {
+			t.Run("PermissionDenied", func(t *ftt.Test) {
 				ctx = auth.WithState(ctx, &authtest.FakeState{
 					Identity:       "user:public-user@example.com",
 					IdentityGroups: []string{"insufficient"},
 				})
 				_, err := run.LoadRun(ctx, internalRun.ID, NewRunReadChecker())
-				So(err, ShouldHaveAppStatus, codes.NotFound)
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.NotFound))
 			})
 		})
 	})

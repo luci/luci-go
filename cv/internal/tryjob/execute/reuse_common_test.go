@@ -20,24 +20,25 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	recipe "go.chromium.org/luci/cv/api/recipe/v1"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/tryjob"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestCanReuse(t *testing.T) {
 	t.Parallel()
 
-	Convey("canReuseTryjob works", t, func() {
+	ftt.Run("canReuseTryjob works", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
-		Convey("reuse allowed", func() {
-			Convey("empty mode allowlist", func() {
+		t.Run("reuse allowed", func(t *ftt.Test) {
+			t.Run("empty mode allowlist", func(t *ftt.Test) {
 				tj := &tryjob.Tryjob{
 					Status: tryjob.Status_ENDED,
 					Result: &tryjob.Result{
@@ -45,10 +46,10 @@ func TestCanReuse(t *testing.T) {
 						Status:     tryjob.Result_SUCCEEDED,
 					},
 				}
-				So(canReuseTryjob(ctx, tj, run.FullRun), ShouldEqual, reuseAllowed)
+				assert.Loosely(t, canReuseTryjob(ctx, tj, run.FullRun), should.Equal(reuseAllowed))
 			})
 
-			Convey("explicitly allowed in mode allowlist", func() {
+			t.Run("explicitly allowed in mode allowlist", func(t *ftt.Test) {
 				tj := &tryjob.Tryjob{
 					Status: tryjob.Status_ENDED,
 					Result: &tryjob.Result{
@@ -61,41 +62,41 @@ func TestCanReuse(t *testing.T) {
 						},
 					},
 				}
-				So(canReuseTryjob(ctx, tj, run.FullRun), ShouldEqual, reuseAllowed)
+				assert.Loosely(t, canReuseTryjob(ctx, tj, run.FullRun), should.Equal(reuseAllowed))
 			})
 		})
 
-		Convey("reuse maybe", func() {
-			Convey("triggered fresh tryjob", func() {
+		t.Run("reuse maybe", func(t *ftt.Test) {
+			t.Run("triggered fresh tryjob", func(t *ftt.Test) {
 				tj := &tryjob.Tryjob{
 					Status: tryjob.Status_TRIGGERED,
 					Result: &tryjob.Result{
 						CreateTime: timestamppb.New(ct.Clock.Now().Add(-staleTryjobAge / 2)),
 					},
 				}
-				So(canReuseTryjob(ctx, tj, run.FullRun), ShouldEqual, reuseMaybe)
+				assert.Loosely(t, canReuseTryjob(ctx, tj, run.FullRun), should.Equal(reuseMaybe))
 			})
 
-			Convey("pending tryjob", func() {
+			t.Run("pending tryjob", func(t *ftt.Test) {
 				tj := &tryjob.Tryjob{
 					Status: tryjob.Status_PENDING,
 				}
-				So(canReuseTryjob(ctx, tj, run.FullRun), ShouldEqual, reuseMaybe)
+				assert.Loosely(t, canReuseTryjob(ctx, tj, run.FullRun), should.Equal(reuseMaybe))
 			})
 		})
 
-		Convey("reuse denied", func() {
-			Convey("triggered stale tryjob", func() {
+		t.Run("reuse denied", func(t *ftt.Test) {
+			t.Run("triggered stale tryjob", func(t *ftt.Test) {
 				tj := &tryjob.Tryjob{
 					Status: tryjob.Status_TRIGGERED,
 					Result: &tryjob.Result{
 						CreateTime: timestamppb.New(ct.Clock.Now().Add(-staleTryjobAge * 2)),
 					},
 				}
-				So(canReuseTryjob(ctx, tj, run.FullRun), ShouldEqual, reuseDenied)
+				assert.Loosely(t, canReuseTryjob(ctx, tj, run.FullRun), should.Equal(reuseDenied))
 			})
 
-			Convey("successfully ended tryjob but stale", func() {
+			t.Run("successfully ended tryjob but stale", func(t *ftt.Test) {
 				tj := &tryjob.Tryjob{
 					Status: tryjob.Status_ENDED,
 					Result: &tryjob.Result{
@@ -103,10 +104,10 @@ func TestCanReuse(t *testing.T) {
 						Status:     tryjob.Result_SUCCEEDED,
 					},
 				}
-				So(canReuseTryjob(ctx, tj, run.FullRun), ShouldEqual, reuseDenied)
+				assert.Loosely(t, canReuseTryjob(ctx, tj, run.FullRun), should.Equal(reuseDenied))
 			})
 
-			Convey("failed tryjob", func() {
+			t.Run("failed tryjob", func(t *ftt.Test) {
 				tj := &tryjob.Tryjob{
 					Status: tryjob.Status_ENDED,
 					Result: &tryjob.Result{
@@ -114,10 +115,10 @@ func TestCanReuse(t *testing.T) {
 						Status:     tryjob.Result_FAILED_PERMANENTLY,
 					},
 				}
-				So(canReuseTryjob(ctx, tj, run.FullRun), ShouldEqual, reuseDenied)
+				assert.Loosely(t, canReuseTryjob(ctx, tj, run.FullRun), should.Equal(reuseDenied))
 			})
 
-			Convey("not in the mode allowlist", func() {
+			t.Run("not in the mode allowlist", func(t *ftt.Test) {
 				tj := &tryjob.Tryjob{
 					Status: tryjob.Status_ENDED,
 					Result: &tryjob.Result{
@@ -130,13 +131,13 @@ func TestCanReuse(t *testing.T) {
 						},
 					},
 				}
-				So(canReuseTryjob(ctx, tj, run.FullRun), ShouldEqual, reuseDenied)
+				assert.Loosely(t, canReuseTryjob(ctx, tj, run.FullRun), should.Equal(reuseDenied))
 			})
 
 			for _, st := range []tryjob.Status{tryjob.Status_CANCELLED, tryjob.Status_UNTRIGGERED} {
-				Convey(fmt.Sprintf("status is %s", st), func() {
+				t.Run(fmt.Sprintf("status is %s", st), func(t *ftt.Test) {
 					tj := &tryjob.Tryjob{Status: st}
-					So(canReuseTryjob(ctx, tj, run.FullRun), ShouldEqual, reuseDenied)
+					assert.Loosely(t, canReuseTryjob(ctx, tj, run.FullRun), should.Equal(reuseDenied))
 				})
 			}
 		})
@@ -146,7 +147,7 @@ func TestCanReuse(t *testing.T) {
 func TestComputeReuseKey(t *testing.T) {
 	t.Parallel()
 
-	Convey("computeReuseKey works", t, func() {
+	ftt.Run("computeReuseKey works", t, func(t *ftt.Test) {
 		cls := []*run.RunCL{
 			{
 				ID: 22222,
@@ -163,6 +164,6 @@ func TestComputeReuseKey(t *testing.T) {
 		}
 		// Should yield the same result as
 		// > python3 -c 'import base64;from hashlib import sha256;print(base64.b64encode(sha256(b"\0".join(sorted(b"%d/%d"%(x[0], x[1]) for x in [[22222,22],[11111,11]]))).digest()))'
-		So(computeReuseKey(cls), ShouldEqual, "2Yh+hI8zJZFe8ac1TrrFjATWGjhiV9aXsKjNJIhzATk=")
+		assert.Loosely(t, computeReuseKey(cls), should.Equal("2Yh+hI8zJZFe8ac1TrrFjATWGjhiV9aXsKjNJIhzATk="))
 	})
 }

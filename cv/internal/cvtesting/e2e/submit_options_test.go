@@ -22,20 +22,21 @@ import (
 
 	"google.golang.org/protobuf/types/known/durationpb"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/runtest"
 	"go.chromium.org/luci/gae/service/datastore"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestSubmissionObeySubmitOptions(t *testing.T) {
 	t.Parallel()
 
-	Convey("Burst requests to submit", t, func() {
+	ftt.Run("Burst requests to submit", t, func(t *ftt.Test) {
 		ct := Test{}
 		ctx := ct.SetUp(t)
 
@@ -53,7 +54,7 @@ func TestSubmissionObeySubmitOptions(t *testing.T) {
 			BurstDelay: durationpb.New(burstDelay),
 		}
 		prjcfgtest.Create(ctx, lProject, cfg)
-		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
+		assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
 
 		// burstN CLs request FULL_RUN at the same time.
 		for gChange := 1; gChange <= burstN; gChange++ {
@@ -95,7 +96,7 @@ func TestSubmissionObeySubmitOptions(t *testing.T) {
 			return submittedTimes[i].Before(submittedTimes[j])
 		})
 		for i := 0; i < burstN-maxBurst; i++ {
-			So(submittedTimes[i+maxBurst], ShouldHappenOnOrAfter, submittedTimes[i].Add(burstDelay))
+			assert.Loosely(t, submittedTimes[i+maxBurst], should.HappenOnOrAfter(submittedTimes[i].Add(burstDelay)))
 		}
 	})
 }

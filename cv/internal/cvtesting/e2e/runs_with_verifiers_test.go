@@ -26,6 +26,9 @@ import (
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/common"
@@ -36,15 +39,12 @@ import (
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/pubsub"
 	"go.chromium.org/luci/cv/internal/tryjob"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestCreatesSingularRun(t *testing.T) {
 	t.Parallel()
 
-	Convey("CV creates 1 CL Run, which gets canceled by the user", t, func() {
+	ftt.Run("CV creates 1 CL Run, which gets canceled by the user", t, func(t *ftt.Test) {
 		/////////////////////////    Setup   ////////////////////////////////
 		ct := Test{}
 		ctx := ct.SetUp(t)
@@ -77,13 +77,13 @@ func TestCreatesSingularRun(t *testing.T) {
 
 		/////////////////////////    Run CV   ////////////////////////////////
 		ct.LogPhase(ctx, "CV notices CL and starts the Run")
-		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
+		assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
 		var r *run.Run
 		ct.RunUntil(ctx, func() bool {
 			r = ct.EarliestCreatedRunOf(ctx, lProject)
 			return r != nil && r.Status == run.Status_RUNNING
 		})
-		So(ct.LoadGerritCL(ctx, gHost, gChange).IncompleteRuns.ContainsSorted(r.ID), ShouldBeTrue)
+		assert.Loosely(t, ct.LoadGerritCL(ctx, gHost, gChange).IncompleteRuns.ContainsSorted(r.ID), should.BeTrue)
 
 		// Under normal conditions, this would be done by the same TQ handler that
 		// creates the Run, but with flaky Datastore this may come late.
@@ -92,14 +92,14 @@ func TestCreatesSingularRun(t *testing.T) {
 			cs := ct.LoadProject(ctx, lProject).State.GetComponents()
 			return len(cs) == 1 && len(cs[0].GetPruns()) == 1
 		})
-		So(ct.LoadProject(ctx, lProject).State.GetComponents()[0].GetPruns()[0].GetId(), ShouldResemble, string(r.ID))
+		assert.Loosely(t, ct.LoadProject(ctx, lProject).State.GetComponents()[0].GetPruns()[0].GetId(), should.Resemble(string(r.ID)))
 
 		ct.LogPhase(ctx, "CV posts starting message")
 		ct.RunUntil(ctx, func() bool {
 			return ct.LastMessage(gHost, gChange) != nil
 		})
-		So(ct.LastMessage(gHost, gChange).GetMessage(), ShouldContainSubstring,
-			fmt.Sprintf("CV is trying the patch.\n\nFollow status at: https://luci-change-verifier.appspot.com/ui/run/%s\n\nBot data: {", r.ID))
+		assert.Loosely(t, ct.LastMessage(gHost, gChange).GetMessage(), should.ContainSubstring(
+			fmt.Sprintf("CV is trying the patch.\n\nFollow status at: https://luci-change-verifier.appspot.com/ui/run/%s\n\nBot data: {", r.ID)))
 
 		ct.LogPhase(ctx, "User cancels the Run")
 		ct.GFake.MutateChange(gHost, gChange, func(c *gf.Change) {
@@ -115,16 +115,16 @@ func TestCreatesSingularRun(t *testing.T) {
 		})
 
 		/////////////////////////    Verify    ////////////////////////////////
-		So(ct.LoadGerritCL(ctx, gHost, gChange).IncompleteRuns.ContainsSorted(r.ID), ShouldBeFalse)
-		So(ct.LoadProject(ctx, lProject).State.GetPcls(), ShouldBeEmpty)
-		So(ct.LoadProject(ctx, lProject).State.GetComponents(), ShouldBeEmpty)
+		assert.Loosely(t, ct.LoadGerritCL(ctx, gHost, gChange).IncompleteRuns.ContainsSorted(r.ID), should.BeFalse)
+		assert.Loosely(t, ct.LoadProject(ctx, lProject).State.GetPcls(), should.BeEmpty)
+		assert.Loosely(t, ct.LoadProject(ctx, lProject).State.GetComponents(), should.BeEmpty)
 	})
 }
 
 func TestCreatesSingularCustomRunSuccess(t *testing.T) {
 	t.Parallel()
 
-	Convey("CV creates 1 CL Custom Run, which succeeds", t, func() {
+	ftt.Run("CV creates 1 CL Custom Run, which succeeds", t, func(t *ftt.Test) {
 		/////////////////////////    Setup   ////////////////////////////////
 		ct := Test{}
 		ctx := ct.SetUp(t)
@@ -167,13 +167,13 @@ func TestCreatesSingularCustomRunSuccess(t *testing.T) {
 
 		/////////////////////////    Run CV   ////////////////////////////////
 		ct.LogPhase(ctx, "CV notices CL and starts the Run")
-		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
+		assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
 		var r *run.Run
 		ct.RunUntil(ctx, func() bool {
 			r = ct.EarliestCreatedRunOf(ctx, lProject)
 			return r != nil && r.Status == run.Status_RUNNING
 		})
-		So(r.Mode, ShouldEqual, run.Mode(customRunMode))
+		assert.Loosely(t, r.Mode, should.Equal(run.Mode(customRunMode)))
 
 		ct.LogPhase(ctx, "All Tryjobs complete successfully")
 		var buildID int64
@@ -208,24 +208,24 @@ func TestCreatesSingularCustomRunSuccess(t *testing.T) {
 		})
 
 		// Fail quickly iff PM created a new Run on stale CL data.
-		So(ct.LoadRunsOf(ctx, lProject), ShouldHaveLength, 1)
-		So(finalRun.Status, ShouldEqual, run.Status_SUCCEEDED)
-		So(ct.MaxCQVote(ctx, gHost, gChange), ShouldEqual, 0)
-		So(ct.MaxVote(ctx, gHost, gChange, customLabel), ShouldEqual, 0)
-		So(ct.LastMessage(gHost, gChange).GetMessage(), ShouldContainSubstring, "This CL has passed the run")
+		assert.Loosely(t, ct.LoadRunsOf(ctx, lProject), should.HaveLength(1))
+		assert.Loosely(t, finalRun.Status, should.Equal(run.Status_SUCCEEDED))
+		assert.Loosely(t, ct.MaxCQVote(ctx, gHost, gChange), should.BeZero)
+		assert.Loosely(t, ct.MaxVote(ctx, gHost, gChange, customLabel), should.BeZero)
+		assert.Loosely(t, ct.LastMessage(gHost, gChange).GetMessage(), should.ContainSubstring("This CL has passed the run"))
 
 		ct.LogPhase(ctx, "RunEnded pubsub message must be sent")
 		ct.RunUntil(ctx, func() bool { return len(ct.RunEndedPubSubTasks()) == 1 })
 		pubsubTask := ct.RunEndedPubSubTasks()[0].Payload.(*pubsub.PublishRunEndedTask)
-		So(pubsubTask.PublicId, ShouldEqual, r.ID.PublicID())
-		So(pubsubTask.Status, ShouldEqual, run.Status_SUCCEEDED)
+		assert.Loosely(t, pubsubTask.PublicId, should.Equal(r.ID.PublicID()))
+		assert.Loosely(t, pubsubTask.Status, should.Equal(run.Status_SUCCEEDED))
 	})
 }
 
 func TestCreatesSingularDryRunThenUpgradeToFullRunFailed(t *testing.T) {
 	t.Parallel()
 
-	Convey("CV creates 1 CL Dry Run first and then upgrades to Full Run", t, func() {
+	ftt.Run("CV creates 1 CL Dry Run first and then upgrades to Full Run", t, func(t *ftt.Test) {
 		/////////////////////////    Setup   ////////////////////////////////
 		ct := Test{}
 		ctx := ct.SetUp(t)
@@ -256,13 +256,13 @@ func TestCreatesSingularDryRunThenUpgradeToFullRunFailed(t *testing.T) {
 
 		/////////////////////////    Run CV   ////////////////////////////////
 		ct.LogPhase(ctx, "CV notices CL and starts the Run")
-		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
+		assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
 		var qdr *run.Run
 		ct.RunUntil(ctx, func() bool {
 			qdr = ct.EarliestCreatedRunOf(ctx, lProject)
 			return qdr != nil && qdr.Status == run.Status_RUNNING
 		})
-		So(qdr.Mode, ShouldEqual, run.DryRun)
+		assert.Loosely(t, qdr.Mode, should.Equal(run.DryRun))
 
 		ct.LogPhase(ctx, "User upgrades to Full Run")
 		tStart2 := ct.Clock.Now()
@@ -286,7 +286,7 @@ func TestCreatesSingularDryRunThenUpgradeToFullRunFailed(t *testing.T) {
 			}
 			return qdr.Status == run.Status_CANCELLED && (fr != nil && fr.Status == run.Status_RUNNING)
 		})
-		So(fr.Mode, ShouldEqual, run.FullRun)
+		assert.Loosely(t, fr.Mode, should.Equal(run.FullRun))
 
 		ct.LogPhase(ctx, "Tryjob of the Full Run has failed")
 		var buildID int64
@@ -316,10 +316,10 @@ func TestCreatesSingularDryRunThenUpgradeToFullRunFailed(t *testing.T) {
 			return finalRun != nil && run.IsEnded(finalRun.Status)
 		})
 
-		So(ct.LoadRunsOf(ctx, lProject), ShouldHaveLength, 2)
-		So(finalRun.Status, ShouldEqual, run.Status_FAILED)
-		So(ct.MaxCQVote(ctx, gHost, gChange), ShouldEqual, 0)
-		So(ct.LastMessage(gHost, gChange).GetMessage(), ShouldContainSubstring, "This CL has failed the run")
+		assert.Loosely(t, ct.LoadRunsOf(ctx, lProject), should.HaveLength(2))
+		assert.Loosely(t, finalRun.Status, should.Equal(run.Status_FAILED))
+		assert.Loosely(t, ct.MaxCQVote(ctx, gHost, gChange), should.BeZero)
+		assert.Loosely(t, ct.LastMessage(gHost, gChange).GetMessage(), should.ContainSubstring("This CL has failed the run"))
 
 		ct.LogPhase(ctx, "BQ export must complete")
 		ct.RunUntil(ctx, func() bool { return ct.ExportedBQAttemptsCount() == 2 })
@@ -328,19 +328,19 @@ func TestCreatesSingularDryRunThenUpgradeToFullRunFailed(t *testing.T) {
 		ct.RunUntil(ctx, func() bool { return len(ct.RunEndedPubSubTasks()) == 2 })
 		// 1st message is for the dry-run cancelled.
 		pubsubTask := ct.RunEndedPubSubTasks()[0].Payload.(*pubsub.PublishRunEndedTask)
-		So(pubsubTask.PublicId, ShouldEqual, qdr.ID.PublicID())
-		So(pubsubTask.Status, ShouldEqual, run.Status_CANCELLED)
+		assert.Loosely(t, pubsubTask.PublicId, should.Equal(qdr.ID.PublicID()))
+		assert.Loosely(t, pubsubTask.Status, should.Equal(run.Status_CANCELLED))
 		// 2nd message is for the full-run failed.
 		pubsubTask = ct.RunEndedPubSubTasks()[1].Payload.(*pubsub.PublishRunEndedTask)
-		So(pubsubTask.PublicId, ShouldEqual, fr.ID.PublicID())
-		So(pubsubTask.Status, ShouldEqual, run.Status_FAILED)
+		assert.Loosely(t, pubsubTask.PublicId, should.Equal(fr.ID.PublicID()))
+		assert.Loosely(t, pubsubTask.Status, should.Equal(run.Status_FAILED))
 	})
 }
 
 func TestCreatesSingularFullRunSuccess(t *testing.T) {
 	t.Parallel()
 
-	Convey("CV creates 1 CL Full Run, which succeeds", t, func() {
+	ftt.Run("CV creates 1 CL Full Run, which succeeds", t, func(t *ftt.Test) {
 		/////////////////////////    Setup   ////////////////////////////////
 		ct := Test{}
 		ctx := ct.SetUp(t)
@@ -374,13 +374,13 @@ func TestCreatesSingularFullRunSuccess(t *testing.T) {
 
 		/////////////////////////    Run CV   ////////////////////////////////
 		ct.LogPhase(ctx, "CV notices CL and starts the Run")
-		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
+		assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
 		var r *run.Run
 		ct.RunUntil(ctx, func() bool {
 			r = ct.EarliestCreatedRunOf(ctx, lProject)
 			return r != nil && r.Status == run.Status_RUNNING
 		})
-		So(r.Mode, ShouldEqual, run.FullRun)
+		assert.Loosely(t, r.Mode, should.Equal(run.FullRun))
 
 		ct.LogPhase(ctx, "Tryjob has passed and CV should start submitting")
 		var buildID int64
@@ -414,10 +414,10 @@ func TestCreatesSingularFullRunSuccess(t *testing.T) {
 				!cl.IncompleteRuns.ContainsSorted(r.ID)
 		})
 
-		So(finalRun.Status, ShouldEqual, run.Status_SUCCEEDED)
+		assert.Loosely(t, finalRun.Status, should.Equal(run.Status_SUCCEEDED))
 		ci := ct.GFake.GetChange(gHost, gChange).Info
-		So(ci.GetStatus(), ShouldEqual, gerritpb.ChangeStatus_MERGED)
-		So(ci.GetRevisions()[ci.GetCurrentRevision()].GetNumber(), ShouldEqual, int32(gPatchSet+1))
+		assert.Loosely(t, ci.GetStatus(), should.Equal(gerritpb.ChangeStatus_MERGED))
+		assert.Loosely(t, ci.GetRevisions()[ci.GetCurrentRevision()].GetNumber(), should.Equal(int32(gPatchSet+1)))
 
 		ct.LogPhase(ctx, "BQ export must complete")
 		ct.RunUntil(ctx, func() bool { return ct.ExportedBQAttemptsCount() == 1 })
@@ -425,15 +425,15 @@ func TestCreatesSingularFullRunSuccess(t *testing.T) {
 		ct.LogPhase(ctx, "RunEnded pubsub message must be sent")
 		ct.RunUntil(ctx, func() bool { return len(ct.RunEndedPubSubTasks()) == 1 })
 		pubsubTask := ct.RunEndedPubSubTasks()[0].Payload.(*pubsub.PublishRunEndedTask)
-		So(pubsubTask.PublicId, ShouldEqual, r.ID.PublicID())
-		So(pubsubTask.Status, ShouldEqual, run.Status_SUCCEEDED)
+		assert.Loosely(t, pubsubTask.PublicId, should.Equal(r.ID.PublicID()))
+		assert.Loosely(t, pubsubTask.Status, should.Equal(run.Status_SUCCEEDED))
 	})
 }
 
 func TestCreatesSingularDryRunAborted(t *testing.T) {
 	t.Parallel()
 
-	Convey("CV creates 1 CL Run, which gets canceled by the user", t, func() {
+	ftt.Run("CV creates 1 CL Run, which gets canceled by the user", t, func(t *ftt.Test) {
 		/////////////////////////    Setup   ////////////////////////////////
 		ct := Test{}
 		ctx := ct.SetUp(t)
@@ -464,13 +464,13 @@ func TestCreatesSingularDryRunAborted(t *testing.T) {
 
 		/////////////////////////    Run CV   ////////////////////////////////
 		ct.LogPhase(ctx, "CV notices CL and starts the Run")
-		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
+		assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
 		var r *run.Run
 		ct.RunUntil(ctx, func() bool {
 			r = ct.EarliestCreatedRunOf(ctx, lProject)
 			return r != nil && r.Status == run.Status_RUNNING
 		})
-		So(r.Mode, ShouldEqual, run.DryRun)
+		assert.Loosely(t, r.Mode, should.Equal(run.DryRun))
 
 		ct.LogPhase(ctx, "User aborts the run by removing a vote")
 		ct.Clock.Add(time.Minute)
@@ -484,7 +484,7 @@ func TestCreatesSingularDryRunAborted(t *testing.T) {
 			r = ct.LoadRun(ctx, r.ID)
 			return run.IsEnded(r.Status)
 		})
-		So(r.Status, ShouldEqual, run.Status_CANCELLED)
+		assert.Loosely(t, r.Status, should.Equal(run.Status_CANCELLED))
 
 		ct.LogPhase(ctx, "BQ export must complete")
 		ct.RunUntil(ctx, func() bool { return ct.ExportedBQAttemptsCount() == 1 })
@@ -492,13 +492,13 @@ func TestCreatesSingularDryRunAborted(t *testing.T) {
 		ct.LogPhase(ctx, "RunEnded pubsub message must be sent")
 		ct.RunUntil(ctx, func() bool { return len(ct.RunEndedPubSubTasks()) == 1 })
 		pubsubTask := ct.RunEndedPubSubTasks()[0].Payload.(*pubsub.PublishRunEndedTask)
-		So(pubsubTask.PublicId, ShouldEqual, r.ID.PublicID())
-		So(pubsubTask.Status, ShouldEqual, run.Status_CANCELLED)
+		assert.Loosely(t, pubsubTask.PublicId, should.Equal(r.ID.PublicID()))
+		assert.Loosely(t, pubsubTask.Status, should.Equal(run.Status_CANCELLED))
 	})
 }
 
 func TestCreatesSingularRunWithDeps(t *testing.T) {
-	Convey("CV creates Run in singular config in presence of Git dependencies.", t, func() {
+	ftt.Run("CV creates Run in singular config in presence of Git dependencies.", t, func(t *ftt.Test) {
 		/////////////////////////    Setup   ////////////////////////////////
 		ct := Test{}
 		ctx := ct.SetUp(t)
@@ -534,14 +534,14 @@ func TestCreatesSingularRunWithDeps(t *testing.T) {
 		ct.GFake.SetDependsOn(gHost, "13_3", "12_2")
 
 		ct.LogPhase(ctx, "CV starts dry Run on just the 13")
-		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
+		assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
 		var r13 *run.Run
 		ct.RunUntil(ctx, func() bool {
 			r13 = ct.EarliestCreatedRunOf(ctx, lProject)
 			return r13 != nil && r13.Status == run.Status_RUNNING
 		})
-		So(r13.Mode, ShouldResemble, run.DryRun)
-		So(r13.CLs, ShouldResemble, common.CLIDs{ct.LoadGerritCL(ctx, gHost, 13).ID})
+		assert.Loosely(t, r13.Mode, should.Resemble(run.DryRun))
+		assert.Loosely(t, r13.CLs, should.Resemble(common.CLIDs{ct.LoadGerritCL(ctx, gHost, 13).ID}))
 
 		ct.LogPhase(ctx, "User votes CQ+2 on 12, CV starts Run on just 12 and doesn't touch 13")
 		ct.Clock.Add(time.Minute)
@@ -555,10 +555,10 @@ func TestCreatesSingularRunWithDeps(t *testing.T) {
 			return len(ct.LoadGerritCL(ctx, gHost, 12).IncompleteRuns) > 0
 		})
 		r12 := ct.LoadRun(ctx, ct.LoadGerritCL(ctx, gHost, 12).IncompleteRuns[0])
-		So(r12.Mode, ShouldResemble, run.FullRun)
-		So(r12.CLs, ShouldResemble, common.CLIDs{ct.LoadGerritCL(ctx, gHost, 12).ID})
-		So(ct.LoadRun(ctx, r13.ID).Status, ShouldEqual, run.Status_RUNNING)
-		So(r12.CreateTime, ShouldHappenAfter, r13.CreateTime)
+		assert.Loosely(t, r12.Mode, should.Resemble(run.FullRun))
+		assert.Loosely(t, r12.CLs, should.Resemble(common.CLIDs{ct.LoadGerritCL(ctx, gHost, 12).ID}))
+		assert.Loosely(t, ct.LoadRun(ctx, r13.ID).Status, should.Equal(run.Status_RUNNING))
+		assert.Loosely(t, r12.CreateTime, should.HappenAfter(r13.CreateTime))
 
 		ct.LogPhase(ctx, "User upgrades to CQ+2 on 13, which terminates old Run.\n"+
 			"Due to 13 depending on not yet submitted 12, CV purges 13 by removing CQ+2 vote")
@@ -576,7 +576,7 @@ func TestCreatesSingularRunWithDeps(t *testing.T) {
 func TestCreatesMultiCLsFullRunSuccess(t *testing.T) {
 	t.Parallel()
 
-	Convey("CV creates 3 CLs Full Run, which succeeds", t, func() {
+	ftt.Run("CV creates 3 CLs Full Run, which succeeds", t, func(t *ftt.Test) {
 		/////////////////////////    Setup   ////////////////////////////////
 		ct := Test{}
 		ctx := ct.SetUp(t)
@@ -634,7 +634,7 @@ func TestCreatesMultiCLsFullRunSuccess(t *testing.T) {
 
 		/////////////////////////    Run CV   ////////////////////////////////
 		ct.LogPhase(ctx, "CV discovers all CLs")
-		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
+		assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
 		clids := make(common.CLIDs, 3)
 		ct.RunUntil(ctx, func() bool {
 			for i, change := range []int64{gChange1, gChange2, gChange3} {
@@ -654,10 +654,10 @@ func TestCreatesMultiCLsFullRunSuccess(t *testing.T) {
 			r = ct.EarliestCreatedRunOf(ctx, lProject)
 			return r != nil && r.Status == run.Status_RUNNING
 		})
-		So(r.Mode, ShouldEqual, run.FullRun)
+		assert.Loosely(t, r.Mode, should.Equal(run.FullRun))
 		runCLIDs := r.CLs
 		sort.Sort(runCLIDs)
-		So(r.CLs, ShouldResemble, clids)
+		assert.Loosely(t, r.CLs, should.Resemble(clids))
 
 		ct.LogPhase(ctx, "Tryjob includes all CLs")
 		var buildID int64
@@ -677,12 +677,12 @@ func TestCreatesMultiCLsFullRunSuccess(t *testing.T) {
 		b, err := client.GetBuild(ctx, &buildbucketpb.GetBuildRequest{
 			Id: buildID,
 		})
-		So(err, ShouldBeNil)
-		So(b.GetInput().GetGerritChanges(), ShouldResembleProto, []*buildbucketpb.GerritChange{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, b.GetInput().GetGerritChanges(), should.Resemble([]*buildbucketpb.GerritChange{
 			{Host: gHost, Project: gRepo, Change: gChange2, Patchset: gPatchSet},
 			{Host: gHost, Project: gRepo, Change: gChange3, Patchset: gPatchSet},
 			{Host: gHost, Project: gRepo, Change: gChange1, Patchset: gPatchSet},
-		})
+		}))
 
 		ct.LogPhase(ctx, "Tryjob has passed")
 		ct.Clock.Add(time.Minute)
@@ -711,17 +711,17 @@ func TestCreatesMultiCLsFullRunSuccess(t *testing.T) {
 			return true
 		})
 
-		So(finalRun.Status, ShouldEqual, run.Status_SUCCEEDED)
+		assert.Loosely(t, finalRun.Status, should.Equal(run.Status_SUCCEEDED))
 		ci1 = ct.GFake.GetChange(gHost, gChange1).Info
 		ci2 = ct.GFake.GetChange(gHost, gChange2).Info
 		ci3 = ct.GFake.GetChange(gHost, gChange3).Info
 		for _, ci := range []*gerritpb.ChangeInfo{ci1, ci2, ci3} {
-			So(ci.GetStatus(), ShouldEqual, gerritpb.ChangeStatus_MERGED)
-			So(ci.GetRevisions()[ci.GetCurrentRevision()].GetNumber(), ShouldEqual, int32(gPatchSet+1))
+			assert.Loosely(t, ci.GetStatus(), should.Equal(gerritpb.ChangeStatus_MERGED))
+			assert.Loosely(t, ci.GetRevisions()[ci.GetCurrentRevision()].GetNumber(), should.Equal(int32(gPatchSet+1)))
 		}
 		// verify submission order: [ci2, ci3, ci1]
-		So(ci2.GetUpdated().AsTime(), ShouldHappenBefore, ci3.GetUpdated().AsTime())
-		So(ci3.GetUpdated().AsTime(), ShouldHappenBefore, ci1.GetUpdated().AsTime())
+		assert.Loosely(t, ci2.GetUpdated().AsTime(), should.HappenBefore(ci3.GetUpdated().AsTime()))
+		assert.Loosely(t, ci3.GetUpdated().AsTime(), should.HappenBefore(ci1.GetUpdated().AsTime()))
 
 		ct.LogPhase(ctx, "BQ export must complete")
 		ct.RunUntil(ctx, func() bool { return ct.ExportedBQAttemptsCount() == 1 })
@@ -729,15 +729,15 @@ func TestCreatesMultiCLsFullRunSuccess(t *testing.T) {
 		ct.LogPhase(ctx, "RunEnded pubsub message must be sent")
 		ct.RunUntil(ctx, func() bool { return len(ct.RunEndedPubSubTasks()) == 1 })
 		pubsubTask := ct.RunEndedPubSubTasks()[0].Payload.(*pubsub.PublishRunEndedTask)
-		So(pubsubTask.PublicId, ShouldEqual, r.ID.PublicID())
-		So(pubsubTask.Status, ShouldEqual, run.Status_SUCCEEDED)
+		assert.Loosely(t, pubsubTask.PublicId, should.Equal(r.ID.PublicID()))
+		assert.Loosely(t, pubsubTask.Status, should.Equal(run.Status_SUCCEEDED))
 	})
 }
 
 func TestCreatesSingularFullRunWithAllowOpenDeps(t *testing.T) {
 	t.Parallel()
 
-	Convey("CV submits stack of 3 CLs in singular mode with allow_submit_with_open_deps=true", t, func() {
+	ftt.Run("CV submits stack of 3 CLs in singular mode with allow_submit_with_open_deps=true", t, func(t *ftt.Test) {
 		ct := Test{}
 		ctx := ct.SetUp(t)
 
@@ -801,7 +801,7 @@ func TestCreatesSingularFullRunWithAllowOpenDeps(t *testing.T) {
 
 		/////////////////////////    Run CV   ////////////////////////////////
 		ct.LogPhase(ctx, "CV discovers the CQ-ed CL")
-		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
+		assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
 		ct.RunUntil(ctx, func() bool { return ct.LoadGerritCL(ctx, gHost, gChange3) != nil })
 		ct.LogPhase(ctx, "CV loads deps of the CQ-ed CL")
 		ct.RunUntil(ctx, func() bool { return ct.LoadGerritCL(ctx, gHost, gChange2) != nil })
@@ -813,8 +813,8 @@ func TestCreatesSingularFullRunWithAllowOpenDeps(t *testing.T) {
 			r = ct.EarliestCreatedRunOf(ctx, lProject)
 			return r != nil && r.Status == run.Status_RUNNING
 		})
-		So(r.Mode, ShouldEqual, run.FullRun)
-		So(r.CLs, ShouldResemble, common.CLIDs{ct.LoadGerritCL(ctx, gHost, gChange3).ID})
+		assert.Loosely(t, r.Mode, should.Equal(run.FullRun))
+		assert.Loosely(t, r.CLs, should.Resemble(common.CLIDs{ct.LoadGerritCL(ctx, gHost, gChange3).ID}))
 
 		ct.LogPhase(ctx, "Tryjob only includes the CQ-ed CL")
 		var buildID int64
@@ -834,10 +834,10 @@ func TestCreatesSingularFullRunWithAllowOpenDeps(t *testing.T) {
 		b, err := client.GetBuild(ctx, &buildbucketpb.GetBuildRequest{
 			Id: buildID,
 		})
-		So(err, ShouldBeNil)
-		So(b.GetInput().GetGerritChanges(), ShouldResembleProto, []*buildbucketpb.GerritChange{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, b.GetInput().GetGerritChanges(), should.Resemble([]*buildbucketpb.GerritChange{
 			{Host: gHost, Project: gRepo, Change: gChange3, Patchset: gPatchSet},
-		})
+		}))
 
 		ct.LogPhase(ctx, "Tryjob has passed")
 		ct.Clock.Add(time.Minute)
@@ -853,10 +853,10 @@ func TestCreatesSingularFullRunWithAllowOpenDeps(t *testing.T) {
 			return run.IsEnded(r.Status)
 		})
 		// CQ-ed was submitted directly.
-		So(ct.GFake.GetChange(gHost, gChange3).Info.GetStatus(), ShouldEqual, gerritpb.ChangeStatus_MERGED)
+		assert.Loosely(t, ct.GFake.GetChange(gHost, gChange3).Info.GetStatus(), should.Equal(gerritpb.ChangeStatus_MERGED))
 		// Its deps were submitted implicitly.
-		So(ct.GFake.GetChange(gHost, gChange1).Info.GetStatus(), ShouldEqual, gerritpb.ChangeStatus_MERGED)
-		So(ct.GFake.GetChange(gHost, gChange2).Info.GetStatus(), ShouldEqual, gerritpb.ChangeStatus_MERGED)
+		assert.Loosely(t, ct.GFake.GetChange(gHost, gChange1).Info.GetStatus(), should.Equal(gerritpb.ChangeStatus_MERGED))
+		assert.Loosely(t, ct.GFake.GetChange(gHost, gChange2).Info.GetStatus(), should.Equal(gerritpb.ChangeStatus_MERGED))
 
 		ct.LogPhase(ctx, "BQ export must complete")
 		ct.RunUntil(ctx, func() bool { return ct.ExportedBQAttemptsCount() == 1 })
@@ -864,15 +864,15 @@ func TestCreatesSingularFullRunWithAllowOpenDeps(t *testing.T) {
 		ct.LogPhase(ctx, "RunEnded pubsub message must be sent")
 		ct.RunUntil(ctx, func() bool { return len(ct.RunEndedPubSubTasks()) == 1 })
 		pubsubTask := ct.RunEndedPubSubTasks()[0].Payload.(*pubsub.PublishRunEndedTask)
-		So(pubsubTask.PublicId, ShouldEqual, r.ID.PublicID())
-		So(pubsubTask.Status, ShouldEqual, run.Status_SUCCEEDED)
+		assert.Loosely(t, pubsubTask.PublicId, should.Equal(r.ID.PublicID()))
+		assert.Loosely(t, pubsubTask.Status, should.Equal(run.Status_SUCCEEDED))
 	})
 }
 
 func TestCreatesMultiCLsFailPostStartMessage(t *testing.T) {
 	t.Parallel()
 
-	Convey("CV creates 2 CLs Full Run, but fails to post start message on one of the CLs", t, func() {
+	ftt.Run("CV creates 2 CLs Full Run, but fails to post start message on one of the CLs", t, func(t *ftt.Test) {
 		ct := Test{}
 		ctx := ct.SetUp(t)
 
@@ -934,7 +934,7 @@ func TestCreatesMultiCLsFailPostStartMessage(t *testing.T) {
 		})
 
 		ct.LogPhase(ctx, "CV discovers all CLs")
-		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
+		assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
 		ct.RunUntil(ctx, func() bool {
 			b1 := ct.LoadGerritCL(ctx, gHost, gChange1) != nil
 			b2 := ct.LoadGerritCL(ctx, gHost, gChange2) != nil
@@ -947,8 +947,8 @@ func TestCreatesMultiCLsFailPostStartMessage(t *testing.T) {
 			r = ct.EarliestCreatedRunOf(ctx, lProject)
 			return r != nil
 		})
-		So(r.Mode, ShouldEqual, run.DryRun)
-		So(r.CLs, ShouldHaveLength, 2)
+		assert.Loosely(t, r.Mode, should.Equal(run.DryRun))
+		assert.Loosely(t, r.CLs, should.HaveLength(2))
 
 		ct.LogPhase(ctx, "CV posts a message on the first CL, but fails on another CL")
 		ct.RunUntil(ctx, func() bool {
@@ -987,6 +987,6 @@ func TestCreatesMultiCLsFailPostStartMessage(t *testing.T) {
 				!cl2.IncompleteRuns.ContainsSorted(r.ID)
 		})
 
-		So(r.Status, ShouldEqual, run.Status_SUCCEEDED)
+		assert.Loosely(t, r.Status, should.Equal(run.Status_SUCCEEDED))
 	})
 }

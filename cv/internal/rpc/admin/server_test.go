@@ -40,39 +40,41 @@ import (
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 
-	. "github.com/smartystreets/goconvey/convey"
-
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/stringset"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestGetProject(t *testing.T) {
 	t.Parallel()
 
-	Convey("GetProject works", t, func() {
+	ftt.Run("GetProject works", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
 		const lProject = "luci"
 		a := AdminServer{}
 
-		Convey("without access", func() {
+		t.Run("without access", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "anonymous:anonymous",
 			})
 			_, err := a.GetProject(ctx, &adminpb.GetProjectRequest{Project: lProject})
-			So(err, ShouldBeRPCPermissionDenied)
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)())
 		})
 
-		Convey("with access", func() {
+		t.Run("with access", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity:       "user:admin@example.com",
 				IdentityGroups: []string{allowGroup},
 			})
-			Convey("not exists", func() {
+			t.Run("not exists", func(t *ftt.Test) {
 				_, err := a.GetProject(ctx, &adminpb.GetProjectRequest{Project: lProject})
-				So(err, ShouldBeRPCNotFound)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)())
 			})
 		})
 	})
@@ -81,30 +83,30 @@ func TestGetProject(t *testing.T) {
 func TestGetProjectLogs(t *testing.T) {
 	t.Parallel()
 
-	Convey("GetProjectLogs works", t, func() {
+	ftt.Run("GetProjectLogs works", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
 		const lProject = "luci"
 		a := AdminServer{}
 
-		Convey("without access", func() {
+		t.Run("without access", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "anonymous:anonymous",
 			})
 			_, err := a.GetProjectLogs(ctx, &adminpb.GetProjectLogsRequest{Project: lProject})
-			So(err, ShouldBeRPCPermissionDenied)
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)())
 		})
 
-		Convey("with access", func() {
+		t.Run("with access", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity:       "user:admin@example.com",
 				IdentityGroups: []string{allowGroup},
 			})
-			Convey("nothing", func() {
+			t.Run("nothing", func(t *ftt.Test) {
 				resp, err := a.GetProjectLogs(ctx, &adminpb.GetProjectLogsRequest{Project: lProject})
-				So(err, ShouldBeNil)
-				So(resp.GetLogs(), ShouldHaveLength, 0)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, resp.GetLogs(), should.HaveLength(0))
 			})
 		})
 	})
@@ -113,35 +115,35 @@ func TestGetProjectLogs(t *testing.T) {
 func TestGetRun(t *testing.T) {
 	t.Parallel()
 
-	Convey("GetRun works", t, func() {
+	ftt.Run("GetRun works", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
 		const rid = "proj/123-deadbeef"
-		So(datastore.Put(ctx, &run.Run{ID: rid}), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, &run.Run{ID: rid}), should.BeNil)
 
 		a := AdminServer{}
 
-		Convey("without access", func() {
+		t.Run("without access", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "anonymous:anonymous",
 			})
 			_, err := a.GetRun(ctx, &adminpb.GetRunRequest{Run: rid})
-			So(err, ShouldBeRPCPermissionDenied)
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)())
 		})
 
-		Convey("with access", func() {
+		t.Run("with access", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity:       "user:admin@example.com",
 				IdentityGroups: []string{allowGroup},
 			})
-			Convey("not exists", func() {
+			t.Run("not exists", func(t *ftt.Test) {
 				_, err := a.GetRun(ctx, &adminpb.GetRunRequest{Run: rid + "cafe"})
-				So(err, ShouldBeRPCNotFound)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)())
 			})
-			Convey("exists", func() {
+			t.Run("exists", func(t *ftt.Test) {
 				_, err := a.GetRun(ctx, &adminpb.GetRunRequest{Run: rid})
-				So(err, ShouldBeRPCOK)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
 			})
 		})
 	})
@@ -150,29 +152,29 @@ func TestGetRun(t *testing.T) {
 func TestGetCL(t *testing.T) {
 	t.Parallel()
 
-	Convey("GetCL works", t, func() {
+	ftt.Run("GetCL works", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
 		a := AdminServer{}
 
-		Convey("without access", func() {
+		t.Run("without access", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "anonymous:anonymous",
 			})
 			_, err := a.GetCL(ctx, &adminpb.GetCLRequest{Id: 123})
-			So(err, ShouldBeRPCPermissionDenied)
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)())
 		})
 
-		Convey("with access", func() {
+		t.Run("with access", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity:       "user:admin@example.com",
 				IdentityGroups: []string{allowGroup},
 			})
-			So(datastore.Put(ctx, &changelist.CL{ID: 123, ExternalID: changelist.MustGobID("x-review", 44)}), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, &changelist.CL{ID: 123, ExternalID: changelist.MustGobID("x-review", 44)}), should.BeNil)
 			resp, err := a.GetCL(ctx, &adminpb.GetCLRequest{Id: 123})
-			So(err, ShouldBeNil)
-			So(resp.GetExternalId(), ShouldEqual, "gerrit/x-review/44")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp.GetExternalId(), should.Equal("gerrit/x-review/44"))
 		})
 	})
 }
@@ -180,34 +182,34 @@ func TestGetCL(t *testing.T) {
 func TestGetPoller(t *testing.T) {
 	t.Parallel()
 
-	Convey("GetPoller works", t, func() {
+	ftt.Run("GetPoller works", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
 		const lProject = "luci"
 		a := AdminServer{}
 
-		Convey("without access", func() {
+		t.Run("without access", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "anonymous:anonymous",
 			})
 			_, err := a.GetPoller(ctx, &adminpb.GetPollerRequest{Project: lProject})
-			So(err, ShouldBeRPCPermissionDenied)
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)())
 		})
 
-		Convey("with access", func() {
+		t.Run("with access", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity:       "user:admin@example.com",
 				IdentityGroups: []string{allowGroup},
 			})
 			now := ct.Clock.Now().UTC().Truncate(time.Second)
-			So(datastore.Put(ctx, &poller.State{
+			assert.Loosely(t, datastore.Put(ctx, &poller.State{
 				LuciProject: lProject,
 				UpdateTime:  now,
-			}), ShouldBeNil)
+			}), should.BeNil)
 			resp, err := a.GetPoller(ctx, &adminpb.GetPollerRequest{Project: lProject})
-			So(err, ShouldBeNil)
-			So(resp.GetUpdateTime().AsTime(), ShouldResemble, now)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp.GetUpdateTime().AsTime(), should.Resemble(now))
 		})
 	})
 }
@@ -215,7 +217,7 @@ func TestGetPoller(t *testing.T) {
 func TestSearchRuns(t *testing.T) {
 	t.Parallel()
 
-	Convey("SearchRuns works", t, func() {
+	ftt.Run("SearchRuns works", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
@@ -239,22 +241,22 @@ func TestSearchRuns(t *testing.T) {
 
 				currID := common.RunID(curr.GetId())
 				prevID := common.RunID(prev.GetId())
-				So(prevID, ShouldNotResemble, currID)
+				assert.Loosely(t, prevID, should.NotResemble(currID))
 
 				currTS := curr.GetCreateTime().AsTime()
 				prevTS := prev.GetCreateTime().AsTime()
 				if !prevTS.Equal(currTS) {
-					So(prevTS, ShouldHappenAfter, currTS)
+					assert.Loosely(t, prevTS, should.HappenAfter(currTS))
 					continue
 				}
 				// Same TS.
 
 				if prevID.LUCIProject() != currID.LUCIProject() {
-					So(prevID.LUCIProject(), ShouldBeLessThan, currID.LUCIProject())
+					assert.Loosely(t, prevID.LUCIProject(), should.BeLessThan(currID.LUCIProject()))
 					continue
 				}
 				// Same LUCI project.
-				So(prevID, ShouldBeLessThan, currID)
+				assert.Loosely(t, prevID, should.BeLessThan(currID))
 			}
 		}
 
@@ -268,7 +270,7 @@ func TestSearchRuns(t *testing.T) {
 				req := proto.Clone(origReq).(*adminpb.SearchRunsRequest)
 				req.PageToken = nextPageToken
 				resp, err := a.SearchRuns(ctx, req)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				assertOrdered(resp)
 				if out == nil {
 					out = resp
@@ -280,67 +282,67 @@ func TestSearchRuns(t *testing.T) {
 			return out
 		}
 
-		Convey("without access", func() {
+		t.Run("without access", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "anonymous:anonymous",
 			})
 			_, err := a.SearchRuns(ctx, &adminpb.SearchRunsRequest{Project: lProject})
-			So(err, ShouldBeRPCPermissionDenied)
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)())
 		})
 
-		Convey("with access", func() {
+		t.Run("with access", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity:       "user:admin@example.com",
 				IdentityGroups: []string{allowGroup},
 			})
-			Convey("no runs exist", func() {
+			t.Run("no runs exist", func(t *ftt.Test) {
 				resp, err := a.SearchRuns(ctx, &adminpb.SearchRunsRequest{Project: lProject})
-				So(err, ShouldBeNil)
-				So(resp.GetRuns(), ShouldHaveLength, 0)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, resp.GetRuns(), should.HaveLength(0))
 			})
-			Convey("two runs of the same project", func() {
-				So(datastore.Put(ctx, &run.Run{ID: earlierID}, &run.Run{ID: laterID}), ShouldBeNil)
+			t.Run("two runs of the same project", func(t *ftt.Test) {
+				assert.Loosely(t, datastore.Put(ctx, &run.Run{ID: earlierID}, &run.Run{ID: laterID}), should.BeNil)
 				resp, err := a.SearchRuns(ctx, &adminpb.SearchRunsRequest{Project: lProject})
-				So(err, ShouldBeNil)
-				So(idsOf(resp), ShouldResemble, []string{laterID, earlierID})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, idsOf(resp), should.Resemble([]string{laterID, earlierID}))
 
-				Convey("with page size exactly 2", func() {
+				t.Run("with page size exactly 2", func(t *ftt.Test) {
 					req := &adminpb.SearchRunsRequest{Project: lProject, PageSize: 2}
 					resp1, err := a.SearchRuns(ctx, req)
-					So(err, ShouldBeNil)
-					So(idsOf(resp1), ShouldResemble, []string{laterID, earlierID})
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, idsOf(resp1), should.Resemble([]string{laterID, earlierID}))
 
 					req.PageToken = resp1.GetNextPageToken()
 					resp2, err := a.SearchRuns(ctx, req)
-					So(err, ShouldBeNil)
-					So(idsOf(resp2), ShouldBeEmpty)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, idsOf(resp2), should.BeEmpty)
 				})
 
-				Convey("with page size of 1", func() {
+				t.Run("with page size of 1", func(t *ftt.Test) {
 					req := &adminpb.SearchRunsRequest{Project: lProject, PageSize: 1}
 					resp1, err := a.SearchRuns(ctx, req)
-					So(err, ShouldBeNil)
-					So(idsOf(resp1), ShouldResemble, []string{laterID})
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, idsOf(resp1), should.Resemble([]string{laterID}))
 
 					req.PageToken = resp1.GetNextPageToken()
 					resp2, err := a.SearchRuns(ctx, req)
-					So(err, ShouldBeNil)
-					So(idsOf(resp2), ShouldResemble, []string{earlierID})
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, idsOf(resp2), should.Resemble([]string{earlierID}))
 
 					req.PageToken = resp2.GetNextPageToken()
 					resp3, err := a.SearchRuns(ctx, req)
-					So(err, ShouldBeNil)
-					So(idsOf(resp3), ShouldBeEmpty)
-					So(resp3.GetNextPageToken(), ShouldBeEmpty)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, idsOf(resp3), should.BeEmpty)
+					assert.Loosely(t, resp3.GetNextPageToken(), should.BeEmpty)
 				})
 			})
 
-			Convey("filtering", func() {
+			t.Run("filtering", func(t *ftt.Test) {
 				const gHost = "r-review.example.com"
 				cl1 := changelist.MustGobID(gHost, 1).MustCreateIfNotExists(ctx)
 				cl2 := changelist.MustGobID(gHost, 2).MustCreateIfNotExists(ctx)
 
-				So(datastore.Put(ctx,
+				assert.Loosely(t, datastore.Put(ctx,
 					&run.Run{
 						ID:     earlierID,
 						Status: run.Status_CANCELLED,
@@ -355,81 +357,81 @@ func TestSearchRuns(t *testing.T) {
 						CLs:    common.MakeCLIDs(1),
 					},
 					&run.RunCL{Run: datastore.MakeKey(ctx, common.RunKind, laterID), ID: cl1.ID, IndexedID: cl1.ID},
-				), ShouldBeNil)
+				), should.BeNil)
 
-				Convey("exact", func() {
+				t.Run("exact", func(t *ftt.Test) {
 					resp, err := a.SearchRuns(ctx, &adminpb.SearchRunsRequest{
 						Project: lProject,
 						Status:  run.Status_CANCELLED,
 					})
-					So(err, ShouldBeNil)
-					So(idsOf(resp), ShouldResemble, []string{earlierID})
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, idsOf(resp), should.Resemble([]string{earlierID}))
 				})
 
-				Convey("ended", func() {
+				t.Run("ended", func(t *ftt.Test) {
 					resp, err := a.SearchRuns(ctx, &adminpb.SearchRunsRequest{
 						Project: lProject,
 						Status:  run.Status_ENDED_MASK,
 					})
-					So(err, ShouldBeNil)
-					So(idsOf(resp), ShouldResemble, []string{earlierID})
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, idsOf(resp), should.Resemble([]string{earlierID}))
 				})
 
-				Convey("with CL", func() {
+				t.Run("with CL", func(t *ftt.Test) {
 					resp, err := a.SearchRuns(ctx, &adminpb.SearchRunsRequest{
 						Cl: &adminpb.GetCLRequest{ExternalId: string(cl2.ExternalID)},
 					})
-					So(err, ShouldBeNil)
-					So(idsOf(resp), ShouldResemble, []string{earlierID})
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, idsOf(resp), should.Resemble([]string{earlierID}))
 				})
 
-				Convey("with CL and run status", func() {
+				t.Run("with CL and run status", func(t *ftt.Test) {
 					resp, err := a.SearchRuns(ctx, &adminpb.SearchRunsRequest{
 						Cl:     &adminpb.GetCLRequest{ExternalId: string(cl1.ExternalID)},
 						Status: run.Status_ENDED_MASK,
 					})
-					So(err, ShouldBeNil)
-					So(idsOf(resp), ShouldResemble, []string{earlierID})
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, idsOf(resp), should.Resemble([]string{earlierID}))
 				})
 
-				Convey("with CL + paging", func() {
+				t.Run("with CL + paging", func(t *ftt.Test) {
 					req := &adminpb.SearchRunsRequest{
 						Cl:       &adminpb.GetCLRequest{ExternalId: string(cl1.ExternalID)},
 						PageSize: 1,
 					}
 					total := fetchAll(ctx, req)
-					So(idsOf(total), ShouldResemble, []string{laterID, earlierID})
+					assert.Loosely(t, idsOf(total), should.Resemble([]string{laterID, earlierID}))
 				})
 
-				Convey("with CL across projects and paging", func() {
+				t.Run("with CL across projects and paging", func(t *ftt.Test) {
 					// Make CL1 included in 3 runs: diffProjectID, laterID, earlierID.
-					So(datastore.Put(ctx,
+					assert.Loosely(t, datastore.Put(ctx,
 						&run.Run{
 							ID:     diffProjectID,
 							Status: run.Status_RUNNING,
 							CLs:    common.MakeCLIDs(1),
 						},
 						&run.RunCL{Run: datastore.MakeKey(ctx, common.RunKind, diffProjectID), ID: cl1.ID, IndexedID: cl1.ID},
-					), ShouldBeNil)
+					), should.BeNil)
 
 					req := &adminpb.SearchRunsRequest{
 						Cl:       &adminpb.GetCLRequest{ExternalId: string(cl1.ExternalID)},
 						PageSize: 2,
 					}
 					total := fetchAll(ctx, req)
-					So(idsOf(total), ShouldResemble, []string{diffProjectID, laterID, earlierID})
+					assert.Loosely(t, idsOf(total), should.Resemble([]string{diffProjectID, laterID, earlierID}))
 				})
 
-				Convey("with CL and project and paging", func() {
+				t.Run("with CL and project and paging", func(t *ftt.Test) {
 					// Make CL1 included in 3 runs: diffProjectID, laterID, earlierID.
-					So(datastore.Put(ctx,
+					assert.Loosely(t, datastore.Put(ctx,
 						&run.Run{
 							ID:     diffProjectID,
 							Status: run.Status_RUNNING,
 							CLs:    common.MakeCLIDs(1),
 						},
 						&run.RunCL{Run: datastore.MakeKey(ctx, common.RunKind, diffProjectID), ID: cl1.ID, IndexedID: cl1.ID},
-					), ShouldBeNil)
+					), should.BeNil)
 
 					req := &adminpb.SearchRunsRequest{
 						Cl:       &adminpb.GetCLRequest{ExternalId: string(cl1.ExternalID)},
@@ -437,11 +439,11 @@ func TestSearchRuns(t *testing.T) {
 						PageSize: 1,
 					}
 					total := fetchAll(ctx, req)
-					So(idsOf(total), ShouldResemble, []string{laterID, earlierID})
+					assert.Loosely(t, idsOf(total), should.Resemble([]string{laterID, earlierID}))
 				})
 			})
 
-			Convey("runs aross all projects", func() {
+			t.Run("runs aross all projects", func(t *ftt.Test) {
 				// Choose epoch such that inverseTS of Run ID has zeros at the end for
 				// ease of debugging.
 				epoch := testclock.TestRecentTimeUTC.Truncate(time.Millisecond).Add(498490844 * time.Millisecond)
@@ -463,7 +465,7 @@ func TestSearchRuns(t *testing.T) {
 
 				placeRuns := func(runs ...*run.Run) []string {
 					ids := make([]string, len(runs))
-					So(datastore.Put(ctx, runs), ShouldBeNil)
+					assert.Loosely(t, datastore.Put(ctx, runs), should.BeNil)
 					projects := stringset.New(10)
 					for i, r := range runs {
 						projects.Add(r.ID.LUCIProject())
@@ -475,7 +477,7 @@ func TestSearchRuns(t *testing.T) {
 					return ids
 				}
 
-				Convey("just one project", func() {
+				t.Run("just one project", func(t *ftt.Test) {
 					expIDs := placeRuns(
 						// project, creationDelay, hash.
 						makeRun(1, 90, 11),
@@ -486,20 +488,20 @@ func TestSearchRuns(t *testing.T) {
 						makeRun(1, 60, 11),
 						makeRun(1, 60, 12),
 					)
-					Convey("without paging", func() {
+					t.Run("without paging", func(t *ftt.Test) {
 						resp, err := a.SearchRuns(ctx, &adminpb.SearchRunsRequest{PageSize: 128})
-						So(err, ShouldBeNil)
+						assert.Loosely(t, err, should.BeNil)
 						assertOrdered(resp)
-						So(idsOf(resp), ShouldResemble, expIDs)
+						assert.Loosely(t, idsOf(resp), should.Resemble(expIDs))
 					})
-					Convey("with paging", func() {
+					t.Run("with paging", func(t *ftt.Test) {
 						total := fetchAll(ctx, &adminpb.SearchRunsRequest{PageSize: 2})
 						assertOrdered(total)
-						So(idsOf(total), ShouldResemble, expIDs)
+						assert.Loosely(t, idsOf(total), should.Resemble(expIDs))
 					})
 				})
 
-				Convey("two projects with overlapping timestaps", func() {
+				t.Run("two projects with overlapping timestaps", func(t *ftt.Test) {
 					expIDs := placeRuns(
 						// project, creationDelay, hash.
 						makeRun(1, 90, 11),
@@ -509,20 +511,20 @@ func TestSearchRuns(t *testing.T) {
 						makeRun(2, 70, 13),
 						makeRun(1, 60, 12),
 					)
-					Convey("without paging", func() {
+					t.Run("without paging", func(t *ftt.Test) {
 						resp, err := a.SearchRuns(ctx, &adminpb.SearchRunsRequest{PageSize: 128})
-						So(err, ShouldBeNil)
+						assert.Loosely(t, err, should.BeNil)
 						assertOrdered(resp)
-						So(idsOf(resp), ShouldResemble, expIDs)
+						assert.Loosely(t, idsOf(resp), should.Resemble(expIDs))
 					})
-					Convey("with paging", func() {
+					t.Run("with paging", func(t *ftt.Test) {
 						total := fetchAll(ctx, &adminpb.SearchRunsRequest{PageSize: 1})
 						assertOrdered(total)
-						So(idsOf(total), ShouldResemble, expIDs)
+						assert.Loosely(t, idsOf(total), should.Resemble(expIDs))
 					})
 				})
 
-				Convey("large scale", func() {
+				t.Run("large scale", func(t *ftt.Test) {
 					var runs []*run.Run
 					for p := 50; p < 60; p++ {
 						// Distribute # of Runs unevenly across projects.
@@ -535,17 +537,17 @@ func TestSearchRuns(t *testing.T) {
 					}
 					placeRuns(runs...)
 
-					Convey("without paging", func() {
-						So(len(runs), ShouldBeLessThan, 128)
+					t.Run("without paging", func(t *ftt.Test) {
+						assert.Loosely(t, len(runs), should.BeLessThan(128))
 						resp, err := a.SearchRuns(ctx, &adminpb.SearchRunsRequest{PageSize: 128})
-						So(err, ShouldBeNil)
+						assert.Loosely(t, err, should.BeNil)
 						assertOrdered(resp)
-						So(resp.GetRuns(), ShouldHaveLength, len(runs))
+						assert.Loosely(t, resp.GetRuns(), should.HaveLength(len(runs)))
 					})
-					Convey("with paging", func() {
+					t.Run("with paging", func(t *ftt.Test) {
 						total := fetchAll(ctx, &adminpb.SearchRunsRequest{PageSize: 8})
 						assertOrdered(total)
-						So(total.GetRuns(), ShouldHaveLength, len(runs))
+						assert.Loosely(t, total.GetRuns(), should.HaveLength(len(runs)))
 					})
 				})
 			})
@@ -556,46 +558,46 @@ func TestSearchRuns(t *testing.T) {
 func TestDeleteProjectEvents(t *testing.T) {
 	t.Parallel()
 
-	Convey("DeleteProjectEvents works", t, func() {
+	ftt.Run("DeleteProjectEvents works", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
 		const lProject = "luci"
 		a := AdminServer{}
 
-		Convey("without access", func() {
+		t.Run("without access", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "anonymous:anonymous",
 			})
 			_, err := a.DeleteProjectEvents(ctx, &adminpb.DeleteProjectEventsRequest{Project: lProject, Limit: 10})
-			So(err, ShouldBeRPCPermissionDenied)
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)())
 		})
 
-		Convey("with access", func() {
+		t.Run("with access", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity:       "user:admin@example.com",
 				IdentityGroups: []string{allowGroup},
 			})
 			pm := prjmanager.NewNotifier(ct.TQDispatcher)
 
-			So(pm.Poke(ctx, lProject), ShouldBeNil)
-			So(pm.UpdateConfig(ctx, lProject), ShouldBeNil)
-			So(pm.Poke(ctx, lProject), ShouldBeNil)
+			assert.Loosely(t, pm.Poke(ctx, lProject), should.BeNil)
+			assert.Loosely(t, pm.UpdateConfig(ctx, lProject), should.BeNil)
+			assert.Loosely(t, pm.Poke(ctx, lProject), should.BeNil)
 
-			Convey("All", func() {
+			t.Run("All", func(t *ftt.Test) {
 				resp, err := a.DeleteProjectEvents(ctx, &adminpb.DeleteProjectEventsRequest{Project: lProject, Limit: 10})
-				So(err, ShouldBeNil)
-				So(resp.GetEvents(), ShouldResemble, map[string]int64{"*prjpb.Event_Poke": 2, "*prjpb.Event_NewConfig": 1})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, resp.GetEvents(), should.Resemble(map[string]int64{"*prjpb.Event_Poke": 2, "*prjpb.Event_NewConfig": 1}))
 			})
 
-			Convey("Limited", func() {
+			t.Run("Limited", func(t *ftt.Test) {
 				resp, err := a.DeleteProjectEvents(ctx, &adminpb.DeleteProjectEventsRequest{Project: lProject, Limit: 2})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				sum := int64(0)
 				for _, v := range resp.GetEvents() {
 					sum += v
 				}
-				So(sum, ShouldEqual, 2)
+				assert.Loosely(t, sum, should.Equal(2))
 			})
 		})
 	})
@@ -604,7 +606,7 @@ func TestDeleteProjectEvents(t *testing.T) {
 func TestRefreshProjectCLs(t *testing.T) {
 	t.Parallel()
 
-	Convey("RefreshProjectCLs works", t, func() {
+	ftt.Run("RefreshProjectCLs works", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
@@ -614,45 +616,45 @@ func TestRefreshProjectCLs(t *testing.T) {
 			pmNotifier: prjmanager.NewNotifier(ct.TQDispatcher),
 		}
 
-		Convey("without access", func() {
+		t.Run("without access", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "anonymous:anonymous",
 			})
 			_, err := a.RefreshProjectCLs(ctx, &adminpb.RefreshProjectCLsRequest{Project: lProject})
-			So(err, ShouldBeRPCPermissionDenied)
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)())
 		})
 
-		Convey("with access", func() {
+		t.Run("with access", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity:       "user:admin@example.com",
 				IdentityGroups: []string{allowGroup},
 			})
 
-			So(datastore.Put(ctx, &prjmanager.Project{
+			assert.Loosely(t, datastore.Put(ctx, &prjmanager.Project{
 				ID: lProject,
 				State: &prjpb.PState{
 					Pcls: []*prjpb.PCL{
 						{Clid: 1},
 					},
 				},
-			}), ShouldBeNil)
+			}), should.BeNil)
 			cl := changelist.CL{
 				ID:         1,
 				EVersion:   4,
 				ExternalID: changelist.MustGobID("x-review.example.com", 55),
 			}
-			So(datastore.Put(ctx, &cl), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, &cl), should.BeNil)
 
 			resp, err := a.RefreshProjectCLs(ctx, &adminpb.RefreshProjectCLsRequest{Project: lProject})
-			So(err, ShouldBeNil)
-			So(resp.GetClVersions(), ShouldResemble, map[int64]int64{1: 4})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp.GetClVersions(), should.Resemble(map[int64]int64{1: 4}))
 			scheduledIDs := stringset.New(1)
 			for _, p := range ct.TQ.Tasks().Payloads() {
 				if tsk, ok := p.(*changelist.UpdateCLTask); ok {
 					scheduledIDs.Add(tsk.GetExternalId())
 				}
 			}
-			So(scheduledIDs.ToSortedSlice(), ShouldResemble, []string{string(cl.ExternalID)})
+			assert.Loosely(t, scheduledIDs.ToSortedSlice(), should.Resemble([]string{string(cl.ExternalID)}))
 		})
 	})
 }
@@ -660,7 +662,7 @@ func TestRefreshProjectCLs(t *testing.T) {
 func TestSendProjectEvent(t *testing.T) {
 	t.Parallel()
 
-	Convey("SendProjectEvent works", t, func() {
+	ftt.Run("SendProjectEvent works", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
@@ -669,25 +671,25 @@ func TestSendProjectEvent(t *testing.T) {
 			pmNotifier: prjmanager.NewNotifier(ct.TQDispatcher),
 		}
 
-		Convey("without access", func() {
+		t.Run("without access", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "anonymous:anonymous",
 			})
 			_, err := a.SendProjectEvent(ctx, &adminpb.SendProjectEventRequest{Project: lProject})
-			So(err, ShouldBeRPCPermissionDenied)
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)())
 		})
 
-		Convey("with access", func() {
+		t.Run("with access", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity:       "user:admin@example.com",
 				IdentityGroups: []string{allowGroup},
 			})
-			Convey("not exists", func() {
+			t.Run("not exists", func(t *ftt.Test) {
 				_, err := a.SendProjectEvent(ctx, &adminpb.SendProjectEventRequest{
 					Project: lProject,
 					Event:   &prjpb.Event{Event: &prjpb.Event_Poke{Poke: &prjpb.Poke{}}},
 				})
-				So(err, ShouldBeRPCNotFound)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)())
 			})
 		})
 	})
@@ -696,7 +698,7 @@ func TestSendProjectEvent(t *testing.T) {
 func TestSendRunEvent(t *testing.T) {
 	t.Parallel()
 
-	Convey("SendRunEvent works", t, func() {
+	ftt.Run("SendRunEvent works", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
@@ -705,25 +707,25 @@ func TestSendRunEvent(t *testing.T) {
 			runNotifier: run.NewNotifier(ct.TQDispatcher),
 		}
 
-		Convey("without access", func() {
+		t.Run("without access", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "anonymous:anonymous",
 			})
 			_, err := a.SendRunEvent(ctx, &adminpb.SendRunEventRequest{Run: rid})
-			So(err, ShouldBeRPCPermissionDenied)
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)())
 		})
 
-		Convey("with access", func() {
+		t.Run("with access", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity:       "user:admin@example.com",
 				IdentityGroups: []string{allowGroup},
 			})
-			Convey("not exists", func() {
+			t.Run("not exists", func(t *ftt.Test) {
 				_, err := a.SendRunEvent(ctx, &adminpb.SendRunEventRequest{
 					Run:   rid,
 					Event: &eventpb.Event{Event: &eventpb.Event_Poke{Poke: &eventpb.Poke{}}},
 				})
-				So(err, ShouldBeRPCNotFound)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)())
 			})
 		})
 	})
@@ -732,7 +734,7 @@ func TestSendRunEvent(t *testing.T) {
 func TestScheduleTask(t *testing.T) {
 	t.Parallel()
 
-	Convey("ScheduleTask works", t, func() {
+	ftt.Run("ScheduleTask works", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
@@ -755,50 +757,50 @@ func TestScheduleTask(t *testing.T) {
 			},
 		}
 
-		Convey("without access", func() {
+		t.Run("without access", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "anonymous:anonymous",
 			})
 			_, err := a.ScheduleTask(ctx, req)
-			So(err, ShouldBeRPCPermissionDenied)
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)())
 		})
 
-		Convey("with access", func() {
+		t.Run("with access", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity:       "user:admin@example.com",
 				IdentityGroups: []string{allowGroup},
 			})
-			Convey("OK", func() {
-				Convey("Non-Transactional", func() {
+			t.Run("OK", func(t *ftt.Test) {
+				t.Run("Non-Transactional", func(t *ftt.Test) {
 					_, err := a.ScheduleTask(ctx, req)
-					So(err, ShouldBeNil)
-					So(ct.TQ.Tasks().Payloads(), ShouldResembleProto, []proto.Message{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, ct.TQ.Tasks().Payloads(), should.Resemble([]proto.Message{
 						req.GetManageProject(),
-					})
+					}))
 				})
-				Convey("Transactional", func() {
+				t.Run("Transactional", func(t *ftt.Test) {
 					_, err := a.ScheduleTask(ctx, reqTrans)
-					So(err, ShouldBeNil)
-					So(ct.TQ.Tasks().Payloads(), ShouldResembleProto, []proto.Message{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, ct.TQ.Tasks().Payloads(), should.Resemble([]proto.Message{
 						reqTrans.GetKickManageProject(),
-					})
+					}))
 				})
 			})
-			Convey("InvalidArgument", func() {
-				Convey("Missing payload", func() {
+			t.Run("InvalidArgument", func(t *ftt.Test) {
+				t.Run("Missing payload", func(t *ftt.Test) {
 					req.ManageProject = nil
 					_, err := a.ScheduleTask(ctx, req)
-					So(err, ShouldBeRPCInvalidArgument, "none given")
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("none given"))
 				})
-				Convey("Two payloads", func() {
+				t.Run("Two payloads", func(t *ftt.Test) {
 					req.KickManageProject = reqTrans.GetKickManageProject()
 					_, err := a.ScheduleTask(ctx, req)
-					So(err, ShouldBeRPCInvalidArgument, "but 2+ given")
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("but 2+ given"))
 				})
-				Convey("Trans + DeduplicationKey is not allwoed", func() {
+				t.Run("Trans + DeduplicationKey is not allwoed", func(t *ftt.Test) {
 					reqTrans.DeduplicationKey = "beef"
 					_, err := a.ScheduleTask(ctx, reqTrans)
-					So(err, ShouldBeRPCInvalidArgument, `"KickManageProjectTask" is transactional`)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`"KickManageProjectTask" is transactional`))
 				})
 			})
 		})

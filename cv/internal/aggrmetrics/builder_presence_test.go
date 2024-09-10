@@ -21,6 +21,9 @@ import (
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	bbutil "go.chromium.org/luci/buildbucket/protoutil"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
@@ -28,14 +31,12 @@ import (
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/metrics"
 	"go.chromium.org/luci/cv/internal/tryjob"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestBuilderPresenceAggregator(t *testing.T) {
 	t.Parallel()
 
-	Convey("builderPresenceAggregator works", t, func() {
+	ftt.Run("builderPresenceAggregator works", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
@@ -83,52 +84,52 @@ func TestBuilderPresenceAggregator(t *testing.T) {
 		mustReport := func(active ...string) {
 			bpa := builderPresenceAggregator{env: ct.Env}
 			err := bpa.report(ctx, active)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		}
 
-		Convey("Skip disabled project", func() {
+		t.Run("Skip disabled project", func(t *ftt.Test) {
 			prjcfgtest.Disable(ctx, lProject)
 			mustReport(lProject)
-			So(ct.TSMonStore.GetAll(ctx), ShouldBeEmpty)
+			assert.Loosely(t, ct.TSMonStore.GetAll(ctx), should.BeEmpty)
 		})
 
-		Convey("Plain builder", func() {
+		t.Run("Plain builder", func(t *ftt.Test) {
 			mustReport(lProject)
 			tryjob.RunWithBuilderMetricsTarget(ctx, ct.Env, tryjobDef, func(ctx context.Context) {
-				So(ct.TSMonSentValue(ctx, metrics.Public.TryjobBuilderPresence, lProject, configGroupName, false, false, false), ShouldBeTrue)
+				assert.Loosely(t, ct.TSMonSentValue(ctx, metrics.Public.TryjobBuilderPresence, lProject, configGroupName, false, false, false), should.BeTrue)
 			})
 		})
 
-		Convey("Includable only builder", func() {
+		t.Run("Includable only builder", func(t *ftt.Test) {
 			builder.IncludableOnly = true
 			prjcfgtest.Update(ctx, lProject, config)
 			mustReport(lProject)
 			tryjob.RunWithBuilderMetricsTarget(ctx, ct.Env, tryjobDef, func(ctx context.Context) {
-				So(ct.TSMonSentValue(ctx, metrics.Public.TryjobBuilderPresence, lProject, configGroupName, true, false, false), ShouldBeTrue)
+				assert.Loosely(t, ct.TSMonSentValue(ctx, metrics.Public.TryjobBuilderPresence, lProject, configGroupName, true, false, false), should.BeTrue)
 			})
 		})
 
-		Convey("With Location filter", func() {
+		t.Run("With Location filter", func(t *ftt.Test) {
 			builder.LocationFilters = append(builder.LocationFilters, &cfgpb.Verifiers_Tryjob_Builder_LocationFilter{
 				PathRegexp: `.*\.md`,
 			})
 			prjcfgtest.Update(ctx, lProject, config)
 			mustReport(lProject)
 			tryjob.RunWithBuilderMetricsTarget(ctx, ct.Env, tryjobDef, func(ctx context.Context) {
-				So(ct.TSMonSentValue(ctx, metrics.Public.TryjobBuilderPresence, lProject, configGroupName, false, true, false), ShouldBeTrue)
+				assert.Loosely(t, ct.TSMonSentValue(ctx, metrics.Public.TryjobBuilderPresence, lProject, configGroupName, false, true, false), should.BeTrue)
 			})
 		})
 
-		Convey("Experimental", func() {
+		t.Run("Experimental", func(t *ftt.Test) {
 			builder.ExperimentPercentage = 99.9
 			prjcfgtest.Update(ctx, lProject, config)
 			mustReport(lProject)
 			tryjob.RunWithBuilderMetricsTarget(ctx, ct.Env, tryjobDef, func(ctx context.Context) {
-				So(ct.TSMonSentValue(ctx, metrics.Public.TryjobBuilderPresence, lProject, configGroupName, false, false, true), ShouldBeTrue)
+				assert.Loosely(t, ct.TSMonSentValue(ctx, metrics.Public.TryjobBuilderPresence, lProject, configGroupName, false, false, true), should.BeTrue)
 			})
 		})
 
-		Convey("Multiple projects, config groups, builders", func() {
+		t.Run("Multiple projects, config groups, builders", func(t *ftt.Test) {
 			var builderCount int
 			genBuilders := func(count int) []*cfgpb.Verifiers_Tryjob_Builder {
 				ret := make([]*cfgpb.Verifiers_Tryjob_Builder, count)
@@ -186,10 +187,10 @@ func TestBuilderPresenceAggregator(t *testing.T) {
 				},
 			})
 			mustReport("prj-0", "prj-1", "prj-2")
-			So(ct.TSMonStore.GetAll(ctx), ShouldHaveLength, builderCount)
+			assert.Loosely(t, ct.TSMonStore.GetAll(ctx), should.HaveLength(builderCount))
 		})
 
-		Convey("With EquivalentTo", func() {
+		t.Run("With EquivalentTo", func(t *ftt.Test) {
 			const eqBuilderName = "eq_test_builder"
 			eqb := &tryjob.Definition{
 				Backend: &tryjob.Definition_Buildbucket_{
@@ -211,10 +212,10 @@ func TestBuilderPresenceAggregator(t *testing.T) {
 
 			// both tryjobs should be reported.
 			tryjob.RunWithBuilderMetricsTarget(ctx, ct.Env, tryjobDef, func(ctx context.Context) {
-				So(ct.TSMonSentValue(ctx, metrics.Public.TryjobBuilderPresence, lProject, configGroupName, false, false, false), ShouldBeTrue)
+				assert.Loosely(t, ct.TSMonSentValue(ctx, metrics.Public.TryjobBuilderPresence, lProject, configGroupName, false, false, false), should.BeTrue)
 			})
 			tryjob.RunWithBuilderMetricsTarget(ctx, ct.Env, eqb, func(ctx context.Context) {
-				So(ct.TSMonSentValue(ctx, metrics.Public.TryjobBuilderPresence, lProject, configGroupName, false, false, false), ShouldBeTrue)
+				assert.Loosely(t, ct.TSMonSentValue(ctx, metrics.Public.TryjobBuilderPresence, lProject, configGroupName, false, false, false), should.BeTrue)
 			})
 		})
 	})

@@ -19,26 +19,26 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"google.golang.org/protobuf/types/known/timestamppb"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestPB2Time(t *testing.T) {
 	t.Parallel()
 
-	Convey("RoundTrip", t, func() {
-		Convey("Specified", func() {
+	ftt.Run("RoundTrip", t, func(t *ftt.Test) {
+		t.Run("Specified", func(t *ftt.Test) {
 			ts := testclock.TestRecentTimeUTC
 			pb := Time2PBNillable(ts)
-			So(pb, ShouldResembleProto, Time2PBNillable(ts))
-			So(pb, ShouldResembleProto, timestamppb.New(ts))
-			So(PB2TimeNillable(pb), ShouldEqual, ts)
+			assert.Loosely(t, pb, should.Resemble(Time2PBNillable(ts)))
+			assert.Loosely(t, pb, should.Resemble(timestamppb.New(ts)))
+			assert.Loosely(t, PB2TimeNillable(pb), should.Equal(ts))
 		})
-		Convey("Zero / nil", func() {
-			So(PB2TimeNillable(nil), ShouldEqual, time.Time{})
-			So(Time2PBNillable(time.Time{}), ShouldBeNil)
+		t.Run("Zero / nil", func(t *ftt.Test) {
+			assert.Loosely(t, PB2TimeNillable(nil), should.Equal(time.Time{}))
+			assert.Loosely(t, Time2PBNillable(time.Time{}), should.BeNil)
 		})
 	})
 }

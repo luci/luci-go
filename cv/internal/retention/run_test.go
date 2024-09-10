@@ -21,6 +21,9 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/data/rand/mathrand"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
@@ -28,15 +31,12 @@ import (
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/run"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestScheduleWipeoutRuns(t *testing.T) {
 	t.Parallel()
 
-	Convey("Schedule wipeout runs tasks", t, func() {
+	ftt.Run("Schedule wipeout runs tasks", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 		registerWipeoutRunsTask(ct.TQDispatcher, &mockRM{})
@@ -57,8 +57,8 @@ func TestScheduleWipeoutRuns(t *testing.T) {
 		prjcfgtest.Disable(ctx, projDisabled)
 
 		createNRunsBetween := func(proj string, n int, start, end time.Time) []*run.Run {
-			So(n, ShouldBeGreaterThan, 0)
-			So(end, ShouldHappenAfter, start)
+			assert.Loosely(t, n, should.BeGreaterThan(0))
+			assert.Loosely(t, end, should.HappenAfter(start))
 			runs := make([]*run.Run, n)
 			for i := range runs {
 				createTime := start.Add(time.Duration(mathrand.Int63n(ctx, int64(end.Sub(start))))).Truncate(time.Millisecond)
@@ -67,7 +67,7 @@ func TestScheduleWipeoutRuns(t *testing.T) {
 					CreateTime: createTime,
 				}
 			}
-			So(datastore.Put(ctx, runs), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, runs), should.BeNil)
 			return runs
 		}
 
@@ -84,24 +84,24 @@ func TestScheduleWipeoutRuns(t *testing.T) {
 		}
 
 		err := scheduleWipeoutRuns(ctx, ct.TQDispatcher)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		var actualRuns common.RunIDs
 		for _, task := range ct.TQ.Tasks() {
-			So(task.ETA, ShouldHappenWithin, wipeoutTasksDistInterval, ct.Clock.Now())
+			assert.Loosely(t, task.ETA, should.HappenWithin(wipeoutTasksDistInterval, ct.Clock.Now()))
 			ids := task.Payload.(*WipeoutRunsTask).GetIds()
-			So(len(ids), ShouldBeLessThanOrEqualTo, runsPerTask)
+			assert.Loosely(t, len(ids), should.BeLessThanOrEqual(runsPerTask))
 			for _, id := range ids {
 				actualRuns.InsertSorted(common.RunID(id))
 			}
 		}
-		So(actualRuns, ShouldResemble, expectedRuns)
+		assert.Loosely(t, actualRuns, should.Resemble(expectedRuns))
 	})
 }
 
 func TestWipeoutRuns(t *testing.T) {
 	t.Parallel()
 
-	Convey("Wipeout", t, func() {
+	ftt.Run("Wipeout", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
@@ -113,11 +113,11 @@ func TestWipeoutRuns(t *testing.T) {
 				CreateTime: createTime,
 				Status:     run.Status_SUCCEEDED,
 			}
-			So(datastore.Put(ctx, r), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, r), should.BeNil)
 			return r
 		}
 
-		Convey("wipeout Run and children", func() {
+		t.Run("wipeout Run and children", func(t *ftt.Test) {
 			r := makeRun(ct.Clock.Now().Add(-2 * retentionPeriod).UTC())
 			cl1 := &run.RunCL{
 				ID:  1,
@@ -127,15 +127,15 @@ func TestWipeoutRuns(t *testing.T) {
 				ID:  2,
 				Run: datastore.KeyForObj(ctx, r),
 			}
-			Convey("run and run cls", func() {
-				So(datastore.Put(ctx, cl1, cl2), ShouldBeNil)
-				So(wipeoutRuns(ctx, common.RunIDs{r.ID}, mockRM), ShouldBeNil)
-				So(datastore.Get(ctx, r), ShouldErrLike, datastore.ErrNoSuchEntity)
-				So(datastore.Get(ctx, cl1), ShouldErrLike, datastore.ErrNoSuchEntity)
-				So(datastore.Get(ctx, cl2), ShouldErrLike, datastore.ErrNoSuchEntity)
+			t.Run("run and run cls", func(t *ftt.Test) {
+				assert.Loosely(t, datastore.Put(ctx, cl1, cl2), should.BeNil)
+				assert.Loosely(t, wipeoutRuns(ctx, common.RunIDs{r.ID}, mockRM), should.BeNil)
+				assert.Loosely(t, datastore.Get(ctx, r), should.ErrLike(datastore.ErrNoSuchEntity))
+				assert.Loosely(t, datastore.Get(ctx, cl1), should.ErrLike(datastore.ErrNoSuchEntity))
+				assert.Loosely(t, datastore.Get(ctx, cl2), should.ErrLike(datastore.ErrNoSuchEntity))
 			})
 
-			Convey("with a lot of log", func() {
+			t.Run("with a lot of log", func(t *ftt.Test) {
 				logs := make([]*run.RunLog, 5000)
 				for i := range logs {
 					logs[i] = &run.RunLog{
@@ -143,36 +143,36 @@ func TestWipeoutRuns(t *testing.T) {
 						Run: datastore.KeyForObj(ctx, r),
 					}
 				}
-				So(datastore.Put(ctx, cl1, cl2, logs), ShouldBeNil)
-				So(wipeoutRuns(ctx, common.RunIDs{r.ID}, mockRM), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, cl1, cl2, logs), should.BeNil)
+				assert.Loosely(t, wipeoutRuns(ctx, common.RunIDs{r.ID}, mockRM), should.BeNil)
 				for _, log := range logs {
-					So(datastore.Get(ctx, log), ShouldErrLike, datastore.ErrNoSuchEntity)
+					assert.Loosely(t, datastore.Get(ctx, log), should.ErrLike(datastore.ErrNoSuchEntity))
 				}
-				So(datastore.Get(ctx, r), ShouldErrLike, datastore.ErrNoSuchEntity)
-				So(datastore.Get(ctx, cl1), ShouldErrLike, datastore.ErrNoSuchEntity)
-				So(datastore.Get(ctx, cl2), ShouldErrLike, datastore.ErrNoSuchEntity)
+				assert.Loosely(t, datastore.Get(ctx, r), should.ErrLike(datastore.ErrNoSuchEntity))
+				assert.Loosely(t, datastore.Get(ctx, cl1), should.ErrLike(datastore.ErrNoSuchEntity))
+				assert.Loosely(t, datastore.Get(ctx, cl2), should.ErrLike(datastore.ErrNoSuchEntity))
 			})
 		})
 
-		Convey("handle run doesn't exist", func() {
+		t.Run("handle run doesn't exist", func(t *ftt.Test) {
 			createTime := ct.Clock.Now().Add(-2 * retentionPeriod).UTC()
 			rid := common.MakeRunID(lProject, createTime, 1, []byte("deadbeef"))
-			So(wipeoutRuns(ctx, common.RunIDs{rid}, mockRM), ShouldBeNil)
+			assert.Loosely(t, wipeoutRuns(ctx, common.RunIDs{rid}, mockRM), should.BeNil)
 		})
 
-		Convey("handle run should still be retained", func() {
+		t.Run("handle run should still be retained", func(t *ftt.Test) {
 			r := makeRun(ct.Clock.Now().Add(-retentionPeriod / 2).UTC())
-			So(wipeoutRuns(ctx, common.RunIDs{r.ID}, mockRM), ShouldBeNil)
-			So(datastore.Get(ctx, r), ShouldBeNil)
+			assert.Loosely(t, wipeoutRuns(ctx, common.RunIDs{r.ID}, mockRM), should.BeNil)
+			assert.Loosely(t, datastore.Get(ctx, r), should.BeNil)
 		})
 
-		Convey("Poke run if it is not ended", func() {
+		t.Run("Poke run if it is not ended", func(t *ftt.Test) {
 			r := makeRun(ct.Clock.Now().Add(-2 * retentionPeriod).UTC())
 			r.Status = run.Status_PENDING
-			So(datastore.Put(ctx, r), ShouldBeNil)
-			So(wipeoutRuns(ctx, common.RunIDs{r.ID}, mockRM), ShouldBeNil)
-			So(datastore.Get(ctx, r), ShouldBeNil)
-			So(mockRM.called, ShouldResemble, common.RunIDs{r.ID})
+			assert.Loosely(t, datastore.Put(ctx, r), should.BeNil)
+			assert.Loosely(t, wipeoutRuns(ctx, common.RunIDs{r.ID}, mockRM), should.BeNil)
+			assert.Loosely(t, datastore.Get(ctx, r), should.BeNil)
+			assert.Loosely(t, mockRM.called, should.Resemble(common.RunIDs{r.ID}))
 		})
 	})
 }

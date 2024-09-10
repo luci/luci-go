@@ -27,18 +27,18 @@ import (
 	gerritutil "go.chromium.org/luci/common/api/gerrit"
 	"go.chromium.org/luci/common/clock/testclock"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/grpc/grpcutil"
 
 	"go.chromium.org/luci/cv/internal/gerrit"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestRelationship(t *testing.T) {
 	t.Parallel()
 
-	Convey("Relationship works", t, func() {
+	ftt.Run("Relationship works", t, func(t *ftt.Test) {
 		ci1 := CI(1, PS(1), AllRevs())
 		ci2 := CI(2, PS(2), AllRevs())
 		ci3 := CI(3, PS(3), AllRevs())
@@ -60,29 +60,29 @@ func TestRelationship(t *testing.T) {
 		f.SetDependsOn("host", "3_2", "2_1")
 		ctx := context.Background()
 
-		Convey("with allowed project", func() {
+		t.Run("with allowed project", func(t *ftt.Test) {
 			gc, err := f.MakeClient(ctx, "host", "infra")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			Convey("No relations", func() {
+			t.Run("No relations", func(t *ftt.Test) {
 				resp, err := gc.GetRelatedChanges(ctx, &gerritpb.GetRelatedChangesRequest{
 					Number:     4,
 					Project:    "infra/infra",
 					RevisionId: "1",
 				})
-				So(err, ShouldBeNil)
-				So(resp, ShouldResembleProto, &gerritpb.GetRelatedChangesResponse{})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, resp, should.Resemble(&gerritpb.GetRelatedChangesResponse{}))
 			})
 
-			Convey("Descendants only", func() {
+			t.Run("Descendants only", func(t *ftt.Test) {
 				resp, err := gc.GetRelatedChanges(ctx, &gerritpb.GetRelatedChangesRequest{
 					Number:     2,
 					Project:    "infra/infra",
 					RevisionId: "1",
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				sortRelated(resp)
-				So(resp, ShouldResembleProto, &gerritpb.GetRelatedChangesResponse{
+				assert.Loosely(t, resp, should.Resemble(&gerritpb.GetRelatedChangesResponse{
 					Changes: []*gerritpb.GetRelatedChangesResponse_ChangeAndCommit{
 						{
 							Project: "infra/infra",
@@ -115,17 +115,17 @@ func TestRelationship(t *testing.T) {
 							CurrentPatchset: 4,
 						},
 					},
-				})
+				}))
 			})
 
-			Convey("Diamond", func() {
+			t.Run("Diamond", func(t *ftt.Test) {
 				resp, err := gc.GetRelatedChanges(ctx, &gerritpb.GetRelatedChangesRequest{
 					Number:     4,
 					RevisionId: "4",
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				sortRelated(resp)
-				So(resp, ShouldResembleProto, &gerritpb.GetRelatedChangesResponse{
+				assert.Loosely(t, resp, should.Resemble(&gerritpb.GetRelatedChangesResponse{
 					Changes: []*gerritpb.GetRelatedChangesResponse_ChangeAndCommit{
 						{
 							Project: "infra/infra",
@@ -171,17 +171,17 @@ func TestRelationship(t *testing.T) {
 							CurrentPatchset: 4,
 						},
 					},
-				})
+				}))
 			})
 
-			Convey("Part of Diamond", func() {
+			t.Run("Part of Diamond", func(t *ftt.Test) {
 				resp, err := gc.GetRelatedChanges(ctx, &gerritpb.GetRelatedChangesRequest{
 					Number:     3,
 					RevisionId: "3",
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				sortRelated(resp)
-				So(resp, ShouldResembleProto, &gerritpb.GetRelatedChangesResponse{
+				assert.Loosely(t, resp, should.Resemble(&gerritpb.GetRelatedChangesResponse{
 					Changes: []*gerritpb.GetRelatedChangesResponse_ChangeAndCommit{
 						{
 							Project: "infra/infra",
@@ -217,19 +217,19 @@ func TestRelationship(t *testing.T) {
 							CurrentPatchset: 4,
 						},
 					},
-				})
+				}))
 			})
 		})
 
-		Convey("with disallowed project", func() {
+		t.Run("with disallowed project", func(t *ftt.Test) {
 			gc, err := f.MakeClient(ctx, "host", "spying-luci-project")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			_, err = gc.GetRelatedChanges(ctx, &gerritpb.GetRelatedChangesRequest{
 				Number:     4,
 				RevisionId: "1",
 			})
-			So(err, ShouldNotBeNil)
-			So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.NotFound))
 		})
 	})
 }
@@ -246,7 +246,7 @@ func sortRelated(r *gerritpb.GetRelatedChangesResponse) {
 func TestFiles(t *testing.T) {
 	t.Parallel()
 
-	Convey("Files' handling works", t, func() {
+	ftt.Run("Files' handling works", t, func(t *ftt.Test) {
 		sortedFiles := func(r *gerritpb.ListFilesResponse) []string {
 			fs := make([]string, 0, len(r.GetFiles()))
 			for f := range r.GetFiles() {
@@ -262,49 +262,49 @@ func TestFiles(t *testing.T) {
 
 		ctx := context.Background()
 		gc, err := f.MakeClient(ctx, "host", "infra")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		Convey("change or revision NotFound", func() {
+		t.Run("change or revision NotFound", func(t *ftt.Test) {
 			_, err := gc.ListFiles(ctx, &gerritpb.ListFilesRequest{Number: 123213, RevisionId: "1"})
-			So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
+			assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.NotFound))
 			_, err = gc.ListFiles(ctx, &gerritpb.ListFilesRequest{
 				Number:     ciDefault.GetNumber(),
 				RevisionId: "not existing",
 			})
-			So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
+			assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.NotFound))
 		})
 
-		Convey("Default", func() {
+		t.Run("Default", func(t *ftt.Test) {
 			resp, err := gc.ListFiles(ctx, &gerritpb.ListFilesRequest{
 				Number:     ciDefault.GetNumber(),
 				RevisionId: ciDefault.GetCurrentRevision(),
 			})
-			So(err, ShouldBeNil)
-			So(sortedFiles(resp), ShouldResemble, []string{"ps001/c.cpp", "shared/s.py"})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, sortedFiles(resp), should.Resemble([]string{"ps001/c.cpp", "shared/s.py"}))
 		})
 
-		Convey("Custom", func() {
+		t.Run("Custom", func(t *ftt.Test) {
 			resp, err := gc.ListFiles(ctx, &gerritpb.ListFilesRequest{
 				Number:     ciCustom.GetNumber(),
 				RevisionId: "1",
 			})
-			So(err, ShouldBeNil)
-			So(sortedFiles(resp), ShouldResemble, []string{"bl.ah", "ps1/cus.tom"})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, sortedFiles(resp), should.Resemble([]string{"bl.ah", "ps1/cus.tom"}))
 			resp, err = gc.ListFiles(ctx, &gerritpb.ListFilesRequest{
 				Number:     ciCustom.GetNumber(),
 				RevisionId: "2",
 			})
-			So(err, ShouldBeNil)
-			So(sortedFiles(resp), ShouldResemble, []string{"still/custom"})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, sortedFiles(resp), should.Resemble([]string{"still/custom"}))
 		})
 
-		Convey("NoFiles", func() {
+		t.Run("NoFiles", func(t *ftt.Test) {
 			resp, err := gc.ListFiles(ctx, &gerritpb.ListFilesRequest{
 				Number:     ciNoFiles.GetNumber(),
 				RevisionId: ciNoFiles.GetCurrentRevision(),
 			})
-			So(err, ShouldBeNil)
-			So(resp.GetFiles(), ShouldHaveLength, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp.GetFiles(), should.HaveLength(0))
 		})
 	})
 }
@@ -312,38 +312,38 @@ func TestFiles(t *testing.T) {
 func TestGetChange(t *testing.T) {
 	t.Parallel()
 
-	Convey("GetChange handling works", t, func() {
+	ftt.Run("GetChange handling works", t, func(t *ftt.Test) {
 		ci := CI(100100, PS(4), AllRevs())
-		So(ci.GetRevisions(), ShouldHaveLength, 4)
+		assert.Loosely(t, ci.GetRevisions(), should.HaveLength(4))
 		f := WithCIs("host", ACLRestricted("infra"), ci)
 
 		ctx := context.Background()
 		gc, err := f.MakeClient(ctx, "host", "infra")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		Convey("NotFound", func() {
+		t.Run("NotFound", func(t *ftt.Test) {
 			_, err := gc.GetChange(ctx, &gerritpb.GetChangeRequest{Number: 12321})
-			So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
+			assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.NotFound))
 		})
 
-		Convey("Default", func() {
+		t.Run("Default", func(t *ftt.Test) {
 			resp, err := gc.GetChange(ctx, &gerritpb.GetChangeRequest{Number: 100100})
-			So(err, ShouldBeNil)
-			So(resp.GetCurrentRevision(), ShouldEqual, "")
-			So(resp.GetRevisions(), ShouldHaveLength, 0)
-			So(resp.GetLabels(), ShouldHaveLength, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp.GetCurrentRevision(), should.BeEmpty)
+			assert.Loosely(t, resp.GetRevisions(), should.HaveLength(0))
+			assert.Loosely(t, resp.GetLabels(), should.HaveLength(0))
 		})
 
-		Convey("CURRENT_REVISION", func() {
+		t.Run("CURRENT_REVISION", func(t *ftt.Test) {
 			resp, err := gc.GetChange(ctx, &gerritpb.GetChangeRequest{
 				Number:  100100,
 				Options: []gerritpb.QueryOption{gerritpb.QueryOption_CURRENT_REVISION}})
-			So(err, ShouldBeNil)
-			So(resp.GetRevisions(), ShouldHaveLength, 1)
-			So(resp.GetRevisions()[resp.GetCurrentRevision()], ShouldNotBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp.GetRevisions(), should.HaveLength(1))
+			assert.Loosely(t, resp.GetRevisions()[resp.GetCurrentRevision()], should.NotBeNil)
 		})
 
-		Convey("Full", func() {
+		t.Run("Full", func(t *ftt.Test) {
 			resp, err := gc.GetChange(ctx, &gerritpb.GetChangeRequest{
 				Number: 100100,
 				Options: []gerritpb.QueryOption{
@@ -354,8 +354,8 @@ func TestGetChange(t *testing.T) {
 					gerritpb.QueryOption_MESSAGES,
 					gerritpb.QueryOption_SUBMITTABLE,
 				}})
-			So(err, ShouldBeNil)
-			So(resp, ShouldResembleProto, ci)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.Resemble(ci))
 		})
 	})
 }
@@ -363,7 +363,7 @@ func TestGetChange(t *testing.T) {
 func TestListAccountEmails(t *testing.T) {
 	t.Parallel()
 
-	Convey("ListAccountEmails works", t, func() {
+	ftt.Run("ListAccountEmails works", t, func(t *ftt.Test) {
 
 		ctx := context.Background()
 		f := Fake{}
@@ -373,27 +373,27 @@ func TestListAccountEmails(t *testing.T) {
 		})
 
 		client, err := f.MakeClient(ctx, "foo", "bar")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		Convey("returns linked email for the given email address", func() {
+		t.Run("returns linked email for the given email address", func(t *ftt.Test) {
 			res, err := client.ListAccountEmails(ctx, &gerritpb.ListAccountEmailsRequest{
 				Email: "foo@google.com",
 			})
 
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, &gerritpb.ListAccountEmailsResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(&gerritpb.ListAccountEmailsResponse{
 				Emails: []*gerritpb.EmailInfo{
 					&gerritpb.EmailInfo{Email: "foo@google.com"},
 					&gerritpb.EmailInfo{Email: "foo@chromium.org"},
 				},
-			})
+			}))
 		})
 
-		Convey("returns error when the account doesn't exist", func() {
+		t.Run("returns error when the account doesn't exist", func(t *ftt.Test) {
 			_, err := client.ListAccountEmails(ctx, &gerritpb.ListAccountEmailsRequest{
 				Email: "bar@google.com",
 			})
-			So(err, ShouldErrLike, "Account 'bar@google.com' not found")
+			assert.Loosely(t, err, should.ErrLike("Account 'bar@google.com' not found"))
 		})
 	})
 }
@@ -401,27 +401,27 @@ func TestListAccountEmails(t *testing.T) {
 func TestListChanges(t *testing.T) {
 	t.Parallel()
 
-	Convey("ListChanges works", t, func() {
+	ftt.Run("ListChanges works", t, func(t *ftt.Test) {
 		f := WithCIs("empty", ACLRestricted("empty"))
 		ctx := context.Background()
 
 		mustCurrentClient := func(host, luciProject string) gerrit.Client {
 			cl, err := f.MakeClient(ctx, host, luciProject)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			return cl
 		}
 
 		listChangeIDs := func(client gerrit.Client, req *gerritpb.ListChangesRequest) []int {
 			out, err := client.ListChanges(ctx, req)
-			So(err, ShouldBeNil)
-			So(out.GetMoreChanges(), ShouldBeFalse)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, out.GetMoreChanges(), should.BeFalse)
 			ids := make([]int, len(out.GetChanges()))
 			for i, ch := range out.GetChanges() {
 				ids[i] = int(ch.GetNumber())
 				if i > 0 {
 					// Ensure monotonically non-decreasing update timestamps.
 					prior := out.GetChanges()[i-1]
-					So(prior.GetUpdated().AsTime().Before(ch.GetUpdated().AsTime()), ShouldBeFalse)
+					assert.Loosely(t, prior.GetUpdated().AsTime().Before(ch.GetUpdated().AsTime()), should.BeFalse)
 				}
 			}
 			return ids
@@ -432,11 +432,11 @@ func TestListChanges(t *testing.T) {
 			CI(9002, Project("infra/infra-internal")),
 		))
 
-		Convey("ACLs enforced", func() {
-			So(listChangeIDs(mustCurrentClient("chrome-internal", "spy"),
-				&gerritpb.ListChangesRequest{}), ShouldResemble, []int{})
-			So(listChangeIDs(mustCurrentClient("chrome-internal", "infra-internal"),
-				&gerritpb.ListChangesRequest{}), ShouldResemble, []int{9002, 9001})
+		t.Run("ACLs enforced", func(t *ftt.Test) {
+			assert.Loosely(t, listChangeIDs(mustCurrentClient("chrome-internal", "spy"),
+				&gerritpb.ListChangesRequest{}), should.Resemble([]int{}))
+			assert.Loosely(t, listChangeIDs(mustCurrentClient("chrome-internal", "infra-internal"),
+				&gerritpb.ListChangesRequest{}), should.Resemble([]int{9002, 9001}))
 		})
 
 		var epoch = time.Date(2011, time.February, 3, 4, 5, 6, 7, time.UTC)
@@ -449,103 +449,103 @@ func TestListChanges(t *testing.T) {
 			CI(8003, u0, Project("infra/luci/luci-go"), Status("MERGED"), Vote("Code-Review", +1)),
 		))
 
-		Convey("Order and limit", func() {
+		t.Run("Order and limit", func(t *ftt.Test) {
 			g := mustCurrentClient("chromium", "anyone")
-			So(listChangeIDs(g, &gerritpb.ListChangesRequest{}), ShouldResemble, []int{8002, 8001, 8003})
+			assert.Loosely(t, listChangeIDs(g, &gerritpb.ListChangesRequest{}), should.Resemble([]int{8002, 8001, 8003}))
 
 			out, err := g.ListChanges(ctx, &gerritpb.ListChangesRequest{Limit: 2})
-			So(err, ShouldBeNil)
-			So(out.GetMoreChanges(), ShouldBeTrue)
-			So(out.GetChanges()[0].GetNumber(), ShouldEqual, 8002)
-			So(out.GetChanges()[1].GetNumber(), ShouldEqual, 8001)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, out.GetMoreChanges(), should.BeTrue)
+			assert.Loosely(t, out.GetChanges()[0].GetNumber(), should.Equal(8002))
+			assert.Loosely(t, out.GetChanges()[1].GetNumber(), should.Equal(8001))
 		})
 
-		Convey("Filtering works", func() {
+		t.Run("Filtering works", func(t *ftt.Test) {
 			query := func(q string) []int {
 				return listChangeIDs(mustCurrentClient("chromium", "anyone"),
 					&gerritpb.ListChangesRequest{Query: q})
 			}
-			Convey("before/after", func() {
-				So(gerritutil.FormatTime(epoch), ShouldResemble, `"2011-02-03 04:05:06.000000007"`)
-				So(query(`before:"2011-02-03 04:05:06.000000006"`), ShouldResemble, []int{})
+			t.Run("before/after", func(t *ftt.Test) {
+				assert.Loosely(t, gerritutil.FormatTime(epoch), should.Match(`"2011-02-03 04:05:06.000000007"`))
+				assert.Loosely(t, query(`before:"2011-02-03 04:05:06.000000006"`), should.Resemble([]int{}))
 				// 1 ns later
-				So(query(`before:"2011-02-03 04:05:06.000000007"`), ShouldResemble, []int{8003})
-				So(query(` after:"2011-02-03 04:05:06.000000007"`), ShouldResemble, []int{8002, 8001, 8003})
+				assert.Loosely(t, query(`before:"2011-02-03 04:05:06.000000007"`), should.Resemble([]int{8003}))
+				assert.Loosely(t, query(` after:"2011-02-03 04:05:06.000000007"`), should.Resemble([]int{8002, 8001, 8003}))
 				// 1 minute later
-				So(query(` after:"2011-02-03 04:06:06.000000007"`), ShouldResemble, []int{8002, 8001})
+				assert.Loosely(t, query(` after:"2011-02-03 04:06:06.000000007"`), should.Resemble([]int{8002, 8001}))
 				// 1 minute later
-				So(query(` after:"2011-02-03 04:07:06.000000007"`), ShouldResemble, []int{8002})
+				assert.Loosely(t, query(` after:"2011-02-03 04:07:06.000000007"`), should.Resemble([]int{8002}))
 				// Surround middle CL:
-				So(query(``+
+				assert.Loosely(t, query(``+
 					` after:"2011-02-03 04:05:30.000000000" `+
-					`before:"2011-02-03 04:06:30.000000000"`), ShouldResemble, []int{8001})
+					`before:"2011-02-03 04:06:30.000000000"`), should.Resemble([]int{8001}))
 			})
-			Convey("Project prefix", func() {
-				So(query(`projects:"inf"`), ShouldResemble, []int{8002, 8001, 8003})
-				So(query(`projects:"infra/"`), ShouldResemble, []int{8002, 8001, 8003})
-				So(query(`projects:"infra/luci"`), ShouldResemble, []int{8002, 8003})
-				So(query(`projects:"typo"`), ShouldResemble, []int{})
+			t.Run("Project prefix", func(t *ftt.Test) {
+				assert.Loosely(t, query(`projects:"inf"`), should.Resemble([]int{8002, 8001, 8003}))
+				assert.Loosely(t, query(`projects:"infra/"`), should.Resemble([]int{8002, 8001, 8003}))
+				assert.Loosely(t, query(`projects:"infra/luci"`), should.Resemble([]int{8002, 8003}))
+				assert.Loosely(t, query(`projects:"typo"`), should.Resemble([]int{}))
 			})
-			Convey("Project exact", func() {
-				So(query(`project:"infra/infra"`), ShouldResemble, []int{8001})
-				So(query(`project:"infra"`), ShouldResemble, []int{})
-				So(query(`(project:"infra/infra" OR project:"infra/luci/luci-go")`), ShouldResemble,
-					[]int{8002, 8001, 8003})
+			t.Run("Project exact", func(t *ftt.Test) {
+				assert.Loosely(t, query(`project:"infra/infra"`), should.Resemble([]int{8001}))
+				assert.Loosely(t, query(`project:"infra"`), should.Resemble([]int{}))
+				assert.Loosely(t, query(`(project:"infra/infra" OR project:"infra/luci/luci-go")`), should.Resemble(
+					[]int{8002, 8001, 8003}))
 			})
-			Convey("Status", func() {
-				So(query(`status:new`), ShouldResemble, []int{8002, 8001})
-				So(query(`status:abandoned`), ShouldResemble, []int{})
-				So(query(`status:merged`), ShouldResemble, []int{8003})
+			t.Run("Status", func(t *ftt.Test) {
+				assert.Loosely(t, query(`status:new`), should.Resemble([]int{8002, 8001}))
+				assert.Loosely(t, query(`status:abandoned`), should.Resemble([]int{}))
+				assert.Loosely(t, query(`status:merged`), should.Resemble([]int{8003}))
 			})
-			Convey("label", func() {
-				So(query(`label:Commit-Queue>0`), ShouldResemble, []int{8002, 8001})
-				So(query(`label:Commit-Queue>1`), ShouldResemble, []int{8001})
-				So(query(`label:Code-Review>-1`), ShouldResemble, []int{8003})
+			t.Run("label", func(t *ftt.Test) {
+				assert.Loosely(t, query(`label:Commit-Queue>0`), should.Resemble([]int{8002, 8001}))
+				assert.Loosely(t, query(`label:Commit-Queue>1`), should.Resemble([]int{8001}))
+				assert.Loosely(t, query(`label:Code-Review>-1`), should.Resemble([]int{8003}))
 			})
-			Convey("Typical CV query", func() {
-				So(query(`label:Commit-Queue>0 status:NEW project:"infra/infra"`),
-					ShouldResemble, []int{8001})
-				So(query(`label:Commit-Queue>0 status:NEW projects:"infra"`),
-					ShouldResemble, []int{8002, 8001})
-				So(query(`label:Commit-Queue>0 status:NEW projects:"infra"`+
+			t.Run("Typical CV query", func(t *ftt.Test) {
+				assert.Loosely(t, query(`label:Commit-Queue>0 status:NEW project:"infra/infra"`),
+					should.Resemble([]int{8001}))
+				assert.Loosely(t, query(`label:Commit-Queue>0 status:NEW projects:"infra"`),
+					should.Resemble([]int{8002, 8001}))
+				assert.Loosely(t, query(`label:Commit-Queue>0 status:NEW projects:"infra"`+
 					` after:"2011-02-03 04:06:30.000000000" `+
-					`before:"2011-02-03 04:08:30.000000000"`), ShouldResemble, []int{8002})
-				So(query(`label:Commit-Queue>0 status:NEW `+
+					`before:"2011-02-03 04:08:30.000000000"`), should.Resemble([]int{8002}))
+				assert.Loosely(t, query(`label:Commit-Queue>0 status:NEW `+
 					`(project:"infra" OR project:"infra/luci/luci-go")`+
 					` after:"2011-02-03 04:06:30.000000000" `+
-					`before:"2011-02-03 04:08:30.000000000"`), ShouldResemble, []int{8002})
+					`before:"2011-02-03 04:08:30.000000000"`), should.Resemble([]int{8002}))
 			})
 		})
 
-		Convey("Bad queries", func() {
+		t.Run("Bad queries", func(t *ftt.Test) {
 			test := func(query string) error {
 				client, err := f.MakeClient(ctx, "infra", "chromium")
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				_, err = client.ListChanges(ctx, &gerritpb.ListChangesRequest{Query: query})
-				So(grpcutil.Code(err), ShouldEqual, codes.InvalidArgument)
-				So(err, ShouldErrLike, `invalid query argument`)
+				assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike(`invalid query argument`))
 				return err
 			}
 
-			So(test(`"unmatched quote`), ShouldErrLike, `invalid query argument "\"unmatched quote"`)
-			So(test(`status:new "unmatched`), ShouldErrLike, `unrecognized token "\"unmatched`)
-			So(test(`project:"unmatched`), ShouldErrLike, `"project:\"unmatched": expected quoted string`)
-			So(test(`project:raw/not/supported`), ShouldErrLike, `expected quoted string`)
-			So(test(`project:"one" OR project:"two"`), ShouldErrLike, `"OR" must be inside ()`)
-			So(test(`project:"one" project:"two")`), ShouldErrLike, `"project:" must be inside ()`)
+			assert.Loosely(t, test(`"unmatched quote`), should.ErrLike(`invalid query argument "\"unmatched quote"`))
+			assert.Loosely(t, test(`status:new "unmatched`), should.ErrLike(`unrecognized token "\"unmatched`))
+			assert.Loosely(t, test(`project:"unmatched`), should.ErrLike(`"project:\"unmatched": expected quoted string`))
+			assert.Loosely(t, test(`project:raw/not/supported`), should.ErrLike(`expected quoted string`))
+			assert.Loosely(t, test(`project:"one" OR project:"two"`), should.ErrLike(`"OR" must be inside ()`))
+			assert.Loosely(t, test(`project:"one" project:"two")`), should.ErrLike(`"project:" must be inside ()`))
 			// This error can be better, but UX isn't essential for a fake.
-			So(test(`(project:"one" OR`), ShouldErrLike, `"" must be outside of ()`)
+			assert.Loosely(t, test(`(project:"one" OR`), should.ErrLike(`"" must be outside of ()`))
 
-			So(test(`status:rand-om`), ShouldErrLike, `unrecognized status "rand-om"`)
-			So(test(`status:0`), ShouldErrLike, `unrecognized status "0"`)
-			So(test(`label:0`), ShouldErrLike, `invalid label: 0`)
-			So(test(`label:Commit-Queue`), ShouldErrLike, `invalid label: Commit-Queue`)
+			assert.Loosely(t, test(`status:rand-om`), should.ErrLike(`unrecognized status "rand-om"`))
+			assert.Loosely(t, test(`status:0`), should.ErrLike(`unrecognized status "0"`))
+			assert.Loosely(t, test(`label:0`), should.ErrLike(`invalid label: 0`))
+			assert.Loosely(t, test(`label:Commit-Queue`), should.ErrLike(`invalid label: Commit-Queue`))
 
 			// Note these are actually allowed in Gerrit.
-			So(test(`label:Commit-Queue<1`), ShouldErrLike, `invalid label: Commit-Queue<1`)
-			So(test(`before:2019-20-01`), ShouldErrLike, `failed to parse Gerrit timestamp "2019-20-01"`)
-			So(test(` after:2019-20-01`), ShouldErrLike, `failed to parse Gerrit timestamp "2019-20-01"`)
-			So(test(`before:"2019-20-01"`), ShouldErrLike, `failed to parse Gerrit timestamp "\"2019-20-01\""`)
+			assert.Loosely(t, test(`label:Commit-Queue<1`), should.ErrLike(`invalid label: Commit-Queue<1`))
+			assert.Loosely(t, test(`before:2019-20-01`), should.ErrLike(`failed to parse Gerrit timestamp "2019-20-01"`))
+			assert.Loosely(t, test(` after:2019-20-01`), should.ErrLike(`failed to parse Gerrit timestamp "2019-20-01"`))
+			assert.Loosely(t, test(`before:"2019-20-01"`), should.ErrLike(`failed to parse Gerrit timestamp "\"2019-20-01\""`))
 		})
 	})
 }
@@ -553,7 +553,7 @@ func TestListChanges(t *testing.T) {
 func TestSetReview(t *testing.T) {
 	t.Parallel()
 
-	Convey("SetReview", t, func() {
+	ftt.Run("SetReview", t, func(t *ftt.Test) {
 		ctx, tc := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
 		user := U("user-123")
 		accountID := user.AccountId
@@ -568,27 +568,27 @@ func TestSetReview(t *testing.T) {
 
 		mustWriterClient := func(host, luciProject string) gerrit.Client {
 			cl, err := f.MakeClient(ctx, host, luciProject)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			return cl
 		}
 
 		latestCI := func() *gerritpb.ChangeInfo {
 			return f.GetChange("example", 10001).Info
 		}
-		Convey("ACLs enforced", func() {
+		t.Run("ACLs enforced", func(t *ftt.Test) {
 			client := mustWriterClient("example", "not-chromium")
 			res, err := client.SetReview(ctx, &gerritpb.SetReviewRequest{
 				Number: 11111,
 			})
-			So(res, ShouldBeNil)
-			So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
+			assert.Loosely(t, res, should.BeNil)
+			assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.NotFound))
 
 			res, err = client.SetReview(ctx, &gerritpb.SetReviewRequest{
 				Number:  10001,
 				Message: "this is a message",
 			})
-			So(res, ShouldBeNil)
-			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
+			assert.Loosely(t, res, should.BeNil)
+			assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.PermissionDenied))
 
 			res, err = client.SetReview(ctx, &gerritpb.SetReviewRequest{
 				Number: 10001,
@@ -596,8 +596,8 @@ func TestSetReview(t *testing.T) {
 					"Commit-Queue": 0,
 				},
 			})
-			So(res, ShouldBeNil)
-			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
+			assert.Loosely(t, res, should.BeNil)
+			assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.PermissionDenied))
 
 			res, err = client.SetReview(ctx, &gerritpb.SetReviewRequest{
 				Number: 10001,
@@ -606,30 +606,30 @@ func TestSetReview(t *testing.T) {
 				},
 				OnBehalfOf: accountID,
 			})
-			So(res, ShouldBeNil)
-			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
+			assert.Loosely(t, res, should.BeNil)
+			assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.PermissionDenied))
 		})
 
-		Convey("Post message", func() {
+		t.Run("Post message", func(t *ftt.Test) {
 			client := mustWriterClient("example", "chromium")
 			res, err := client.SetReview(ctx, &gerritpb.SetReviewRequest{
 				Number:  10001,
 				Message: "this is a message",
 			})
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, &gerritpb.ReviewResult{})
-			So(latestCI().GetUpdated().AsTime(), ShouldHappenAfter, ciBefore.GetUpdated().AsTime())
-			So(latestCI().GetMessages(), ShouldResembleProto, []*gerritpb.ChangeMessageInfo{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(&gerritpb.ReviewResult{}))
+			assert.Loosely(t, latestCI().GetUpdated().AsTime(), should.HappenAfter(ciBefore.GetUpdated().AsTime()))
+			assert.Loosely(t, latestCI().GetMessages(), should.Resemble([]*gerritpb.ChangeMessageInfo{
 				{
 					Id:      "0",
 					Author:  U("chromium"),
 					Date:    timestamppb.New(tc.Now()),
 					Message: "this is a message",
 				},
-			})
+			}))
 		})
 
-		Convey("Set vote", func() {
+		t.Run("Set vote", func(t *ftt.Test) {
 			client := mustWriterClient("example", "chromium")
 			res, err := client.SetReview(ctx, &gerritpb.SetReviewRequest{
 				Number: 10001,
@@ -637,14 +637,14 @@ func TestSetReview(t *testing.T) {
 					"Commit-Queue": 2,
 				},
 			})
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, &gerritpb.ReviewResult{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(&gerritpb.ReviewResult{
 				Labels: map[string]int32{
 					"Commit-Queue": 2,
 				},
-			})
-			So(latestCI().GetUpdated().AsTime(), ShouldHappenAfter, ciBefore.GetUpdated().AsTime())
-			So(latestCI().GetLabels()["Commit-Queue"].GetAll(), ShouldResembleProto, []*gerritpb.ApprovalInfo{
+			}))
+			assert.Loosely(t, latestCI().GetUpdated().AsTime(), should.HappenAfter(ciBefore.GetUpdated().AsTime()))
+			assert.Loosely(t, latestCI().GetLabels()["Commit-Queue"].GetAll(), should.Resemble([]*gerritpb.ApprovalInfo{
 				{
 					User:  user,
 					Value: 1,
@@ -655,12 +655,12 @@ func TestSetReview(t *testing.T) {
 					Value: 2,
 					Date:  timestamppb.New(tc.Now()),
 				},
-			})
+			}))
 		})
 
-		Convey("Set vote on behalf of", func() {
+		t.Run("Set vote on behalf of", func(t *ftt.Test) {
 			client := mustWriterClient("example", "chromium")
-			Convey("existing voter", func() {
+			t.Run("existing voter", func(t *ftt.Test) {
 				res, err := client.SetReview(ctx, &gerritpb.SetReviewRequest{
 					Number: 10001,
 					Labels: map[string]int32{
@@ -668,17 +668,17 @@ func TestSetReview(t *testing.T) {
 					},
 					OnBehalfOf: 123,
 				})
-				So(err, ShouldBeNil)
-				So(res, ShouldResembleProto, &gerritpb.ReviewResult{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res, should.Resemble(&gerritpb.ReviewResult{
 					Labels: map[string]int32{
 						"Commit-Queue": 0,
 					},
-				})
-				So(latestCI().GetUpdated().AsTime(), ShouldHappenAfter, ciBefore.GetUpdated().AsTime())
-				So(NonZeroVotes(latestCI(), "Commit-Queue"), ShouldBeEmpty)
+				}))
+				assert.Loosely(t, latestCI().GetUpdated().AsTime(), should.HappenAfter(ciBefore.GetUpdated().AsTime()))
+				assert.Loosely(t, NonZeroVotes(latestCI(), "Commit-Queue"), should.BeEmpty)
 			})
 
-			Convey("new voter", func() {
+			t.Run("new voter", func(t *ftt.Test) {
 				res, err := client.SetReview(ctx, &gerritpb.SetReviewRequest{
 					Number: 10001,
 					Labels: map[string]int32{
@@ -686,14 +686,14 @@ func TestSetReview(t *testing.T) {
 					},
 					OnBehalfOf: 789,
 				})
-				So(err, ShouldBeNil)
-				So(res, ShouldResembleProto, &gerritpb.ReviewResult{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res, should.Resemble(&gerritpb.ReviewResult{
 					Labels: map[string]int32{
 						"Commit-Queue": 1,
 					},
-				})
-				So(latestCI().GetUpdated().AsTime(), ShouldHappenAfter, ciBefore.GetUpdated().AsTime())
-				So(latestCI().GetLabels()["Commit-Queue"].GetAll(), ShouldResembleProto, []*gerritpb.ApprovalInfo{
+				}))
+				assert.Loosely(t, latestCI().GetUpdated().AsTime(), should.HappenAfter(ciBefore.GetUpdated().AsTime()))
+				assert.Loosely(t, latestCI().GetLabels()["Commit-Queue"].GetAll(), should.Resemble([]*gerritpb.ApprovalInfo{
 					{
 						User:  user,
 						Value: 1,
@@ -704,7 +704,7 @@ func TestSetReview(t *testing.T) {
 						Value: 1,
 						Date:  timestamppb.New(tc.Now()),
 					},
-				})
+				}))
 			})
 		})
 	})
@@ -713,7 +713,7 @@ func TestSetReview(t *testing.T) {
 func TestSubmitRevision(t *testing.T) {
 	t.Parallel()
 
-	Convey("SubmitRevision", t, func() {
+	ftt.Run("SubmitRevision", t, func(t *ftt.Test) {
 		const gHost = "example.com"
 		ctx, tc := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
 		var (
@@ -735,27 +735,27 @@ func TestSubmitRevision(t *testing.T) {
 		assertStatus := func(s gerritpb.ChangeStatus, cis ...*gerritpb.ChangeInfo) {
 			for _, ci := range cis {
 				latestCI := f.GetChange(gHost, int(ci.GetNumber())).Info
-				So(latestCI.GetStatus(), ShouldEqual, s)
+				assert.Loosely(t, latestCI.GetStatus(), should.Equal(s))
 			}
 		}
 
 		mustWriterClient := func(host, luciProject string) gerrit.Client {
 			cl, err := f.MakeClient(ctx, host, luciProject)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			return cl
 		}
 
-		Convey("ACLs enforced", func() {
+		t.Run("ACLs enforced", func(t *ftt.Test) {
 			client := mustWriterClient(gHost, "not-chromium")
 			_, err := client.SubmitRevision(ctx, &gerritpb.SubmitRevisionRequest{
 				Number:     ciSingular.GetNumber(),
 				RevisionId: ciSingular.GetCurrentRevision(),
 			})
-			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
+			assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.PermissionDenied))
 			assertStatus(gerritpb.ChangeStatus_NEW, ciSingular)
 		})
 
-		Convey("ACLs enforced with CL stack", func() {
+		t.Run("ACLs enforced with CL stack", func(t *ftt.Test) {
 			f.MutateChange(gHost, int(ciStackBase.GetNumber()), func(c *Change) {
 				c.ACLs = ACLGrant(OpSubmit, codes.PermissionDenied, "pretty-much-denied-to-everyone")
 			})
@@ -764,21 +764,21 @@ func TestSubmitRevision(t *testing.T) {
 				Number:     ciStackTop.GetNumber(),
 				RevisionId: ciStackTop.GetCurrentRevision(),
 			})
-			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
+			assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.PermissionDenied))
 			assertStatus(gerritpb.ChangeStatus_NEW, ciStackBase, ciStackMid, ciStackTop)
 		})
 
-		Convey("Non-existent revision", func() {
+		t.Run("Non-existent revision", func(t *ftt.Test) {
 			client := mustWriterClient(gHost, "chromium")
 			_, err := client.SubmitRevision(ctx, &gerritpb.SubmitRevisionRequest{
 				Number:     ciSingular.GetNumber(),
 				RevisionId: "non-existent",
 			})
-			So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
+			assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.NotFound))
 			assertStatus(gerritpb.ChangeStatus_NEW, ciSingular)
 		})
 
-		Convey("Old revision", func() {
+		t.Run("Old revision", func(t *ftt.Test) {
 			client := mustWriterClient(gHost, "chromium")
 			var oldRev string
 			for rev := range ciSingular.GetRevisions() {
@@ -787,42 +787,42 @@ func TestSubmitRevision(t *testing.T) {
 					break
 				}
 			}
-			So(oldRev, ShouldNotBeEmpty)
+			assert.Loosely(t, oldRev, should.NotBeEmpty)
 			_, err := client.SubmitRevision(ctx, &gerritpb.SubmitRevisionRequest{
 				Number:     ciSingular.GetNumber(),
 				RevisionId: oldRev,
 			})
-			So(grpcutil.Code(err), ShouldEqual, codes.FailedPrecondition)
-			So(err, ShouldErrLike, "is not current")
+			assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.FailedPrecondition))
+			assert.Loosely(t, err, should.ErrLike("is not current"))
 		})
 
-		Convey("Works", func() {
+		t.Run("Works", func(t *ftt.Test) {
 			client := mustWriterClient(gHost, "chromium")
 			res, err := client.SubmitRevision(ctx, &gerritpb.SubmitRevisionRequest{
 				Number:     ciSingular.GetNumber(),
 				RevisionId: ciSingular.GetCurrentRevision(),
 			})
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, &gerritpb.SubmitInfo{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(&gerritpb.SubmitInfo{
 				Status: gerritpb.ChangeStatus_MERGED,
-			})
+			}))
 			assertStatus(gerritpb.ChangeStatus_MERGED, ciSingular)
 		})
 
-		Convey("Works with CL stack", func() {
+		t.Run("Works with CL stack", func(t *ftt.Test) {
 			client := mustWriterClient(gHost, "chromium")
 			res, err := client.SubmitRevision(ctx, &gerritpb.SubmitRevisionRequest{
 				Number:     ciStackTop.GetNumber(),
 				RevisionId: ciStackTop.GetCurrentRevision(),
 			})
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, &gerritpb.SubmitInfo{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(&gerritpb.SubmitInfo{
 				Status: gerritpb.ChangeStatus_MERGED,
-			})
+			}))
 			assertStatus(gerritpb.ChangeStatus_MERGED, ciStackBase, ciStackMid, ciStackTop)
 		})
 
-		Convey("Already Merged", func() {
+		t.Run("Already Merged", func(t *ftt.Test) {
 			f.MutateChange(gHost, int(ciSingular.GetNumber()), func(c *Change) {
 				c.Info.Status = gerritpb.ChangeStatus_MERGED
 			})
@@ -831,30 +831,30 @@ func TestSubmitRevision(t *testing.T) {
 				Number:     ciSingular.GetNumber(),
 				RevisionId: ciSingular.GetCurrentRevision(),
 			})
-			So(grpcutil.Code(err), ShouldEqual, codes.FailedPrecondition)
-			So(err, ShouldErrLike, "change is merged")
+			assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.FailedPrecondition))
+			assert.Loosely(t, err, should.ErrLike("change is merged"))
 		})
 
-		Convey("already merged ones are skipped inside a CL Stack", func() {
+		t.Run("already merged ones are skipped inside a CL Stack", func(t *ftt.Test) {
 			verify := func() {
 				client := mustWriterClient(gHost, "chromium")
 				res, err := client.SubmitRevision(ctx, &gerritpb.SubmitRevisionRequest{
 					Number:     ciStackTop.GetNumber(),
 					RevisionId: ciStackTop.GetCurrentRevision(),
 				})
-				So(err, ShouldBeNil)
-				So(res, ShouldResembleProto, &gerritpb.SubmitInfo{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res, should.Resemble(&gerritpb.SubmitInfo{
 					Status: gerritpb.ChangeStatus_MERGED,
-				})
+				}))
 			}
-			Convey("base of stack", func() {
+			t.Run("base of stack", func(t *ftt.Test) {
 				f.MutateChange(gHost, int(ciStackBase.GetNumber()), func(c *Change) {
 					c.Info.Status = gerritpb.ChangeStatus_MERGED
 				})
 				verify()
 				assertStatus(gerritpb.ChangeStatus_MERGED, ciStackBase, ciStackMid, ciStackTop)
 			})
-			Convey("mid-stack", func() {
+			t.Run("mid-stack", func(t *ftt.Test) {
 				// May happen if the mid-CL was at some point re-based on top of
 				// something other than ciStackBase and then submitted.
 				f.MutateChange(gHost, int(ciStackMid.GetNumber()), func(c *Change) {
@@ -867,7 +867,7 @@ func TestSubmitRevision(t *testing.T) {
 			})
 		})
 
-		Convey("Abandoned", func() {
+		t.Run("Abandoned", func(t *ftt.Test) {
 			f.MutateChange(gHost, int(ciSingular.GetNumber()), func(c *Change) {
 				c.Info.Status = gerritpb.ChangeStatus_ABANDONED
 			})
@@ -876,10 +876,10 @@ func TestSubmitRevision(t *testing.T) {
 				Number:     ciSingular.GetNumber(),
 				RevisionId: ciSingular.GetCurrentRevision(),
 			})
-			So(grpcutil.Code(err), ShouldEqual, codes.FailedPrecondition)
-			So(err, ShouldErrLike, "change is abandoned")
+			assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.FailedPrecondition))
+			assert.Loosely(t, err, should.ErrLike("change is abandoned"))
 		})
-		Convey("Abandoned inside CL stack", func() {
+		t.Run("Abandoned inside CL stack", func(t *ftt.Test) {
 			f.MutateChange(gHost, int(ciStackMid.GetNumber()), func(c *Change) {
 				c.Info.Status = gerritpb.ChangeStatus_ABANDONED
 			})
@@ -888,8 +888,8 @@ func TestSubmitRevision(t *testing.T) {
 				Number:     ciStackTop.GetNumber(),
 				RevisionId: ciStackTop.GetCurrentRevision(),
 			})
-			So(grpcutil.Code(err), ShouldEqual, codes.FailedPrecondition)
-			So(err, ShouldErrLike, "change is abandoned")
+			assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.FailedPrecondition))
+			assert.Loosely(t, err, should.ErrLike("change is abandoned"))
 		})
 	})
 }

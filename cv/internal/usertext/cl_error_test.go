@@ -22,20 +22,21 @@ import (
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/text"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/run"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestFormatCLError(t *testing.T) {
 	t.Parallel()
 
-	Convey("CLError formatting works", t, func() {
+	ftt.Run("CLError formatting works", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		const gHost = "x-review.googlesource.com"
 		ci := gf.CI(
@@ -54,68 +55,68 @@ func TestFormatCLError(t *testing.T) {
 			},
 		}
 
-		Convey("Single CLError", func() {
+		t.Run("Single CLError", func(t *ftt.Test) {
 			// reason.Kind and mode are set in tests below as needed.
 			reason := &changelist.CLError{Kind: nil}
 			var mode run.Mode
 			mustFormat := func() string {
 				s, err := SFormatCLError(ctx, reason, cl, mode)
-				So(err, ShouldBeNil)
-				So(s, ShouldNotContainSubstring, "<no value>")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, s, should.NotContainSubstring("<no value>"))
 				return s
 			}
-			Convey("Lacks owner email", func() {
+			t.Run("Lacks owner email", func(t *ftt.Test) {
 				reason.Kind = &changelist.CLError_OwnerLacksEmail{
 					OwnerLacksEmail: true,
 				}
-				So(mustFormat(), ShouldContainSubstring, "set preferred email at https://x-review.googlesource.com/settings/#EmailAddresses")
+				assert.Loosely(t, mustFormat(), should.ContainSubstring("set preferred email at https://x-review.googlesource.com/settings/#EmailAddresses"))
 			})
-			Convey("Not yet supported mode", func() {
+			t.Run("Not yet supported mode", func(t *ftt.Test) {
 				reason.Kind = &changelist.CLError_UnsupportedMode{
 					UnsupportedMode: "CUSTOM_RUN",
 				}
-				So(mustFormat(), ShouldContainSubstring, `its mode "CUSTOM_RUN" is not supported`)
+				assert.Loosely(t, mustFormat(), should.ContainSubstring(`its mode "CUSTOM_RUN" is not supported`))
 			})
-			Convey("Depends on itself", func() {
+			t.Run("Depends on itself", func(t *ftt.Test) {
 				reason.Kind = &changelist.CLError_SelfCqDepend{SelfCqDepend: true}
-				So(mustFormat(), ShouldContainSubstring, `because it depends on itself`)
+				assert.Loosely(t, mustFormat(), should.ContainSubstring(`because it depends on itself`))
 			})
-			Convey("CorruptGerrit", func() {
+			t.Run("CorruptGerrit", func(t *ftt.Test) {
 				reason.Kind = &changelist.CLError_CorruptGerritMetadata{CorruptGerritMetadata: "foo is not bar"}
-				So(mustFormat(), ShouldContainSubstring, `foo is not bar`)
+				assert.Loosely(t, mustFormat(), should.ContainSubstring(`foo is not bar`))
 			})
-			Convey("Watched by many config groups", func() {
+			t.Run("Watched by many config groups", func(t *ftt.Test) {
 				reason.Kind = &changelist.CLError_WatchedByManyConfigGroups_{
 					WatchedByManyConfigGroups: &changelist.CLError_WatchedByManyConfigGroups{
 						ConfigGroups: []string{"first", "second"},
 					},
 				}
 				s := mustFormat()
-				So(s, ShouldContainSubstring, text.Doc(`
+				assert.Loosely(t, s, should.ContainSubstring(text.Doc(`
 				it is watched by more than 1 config group:
 				  * first
 				  * second
 
 				Please
-			`))
-				So(s, ShouldContainSubstring, `current CL target ref is "refs/heads/main"`)
+			`)))
+				assert.Loosely(t, s, should.ContainSubstring(`current CL target ref is "refs/heads/main"`))
 			})
-			Convey("Watched by many LUCI projects", func() {
+			t.Run("Watched by many LUCI projects", func(t *ftt.Test) {
 				reason.Kind = &changelist.CLError_WatchedByManyProjects_{
 					WatchedByManyProjects: &changelist.CLError_WatchedByManyProjects{
 						Projects: []string{"first", "second"},
 					},
 				}
 				s := mustFormat()
-				So(s, ShouldContainSubstring, text.Doc(`
+				assert.Loosely(t, s, should.ContainSubstring(text.Doc(`
 				it is watched by more than 1 LUCI project:
 				  * first
 				  * second
 
 				Please
-			`))
+			`)))
 			})
-			Convey("Invalid deps", func() {
+			t.Run("Invalid deps", func(t *ftt.Test) {
 				// Save a CL snapshot for each dep.
 				deps := make(map[int]*changelist.Dep, 3)
 				for i := 101; i <= 102; i++ {
@@ -132,73 +133,73 @@ func TestFormatCLError(t *testing.T) {
 							},
 						},
 					}
-					So(datastore.Put(ctx, depCL), ShouldBeNil)
+					assert.Loosely(t, datastore.Put(ctx, depCL), should.BeNil)
 					deps[i] = &changelist.Dep{Clid: int64(depCL.ID)}
 				}
 				invalidDeps := &changelist.CLError_InvalidDeps{ /*set below*/ }
 				reason.Kind = &changelist.CLError_InvalidDeps_{InvalidDeps: invalidDeps}
 
-				Convey("Unwatched", func() {
+				t.Run("Unwatched", func(t *ftt.Test) {
 					invalidDeps.Unwatched = []*changelist.Dep{deps[101]}
 					s := mustFormat()
-					So(s, ShouldContainSubstring, text.Doc(`
+					assert.Loosely(t, s, should.ContainSubstring(text.Doc(`
 				are not watched by the same LUCI project:
 				  * https://x-review.googlesource.com/c/101
 
 				Please check Cq-Depend
-			`))
+			`)))
 				})
-				Convey("WrongConfigGroup", func() {
+				t.Run("WrongConfigGroup", func(t *ftt.Test) {
 					invalidDeps.WrongConfigGroup = []*changelist.Dep{deps[101], deps[102]}
 					s := mustFormat()
-					So(s, ShouldContainSubstring, text.Doc(`
+					assert.Loosely(t, s, should.ContainSubstring(text.Doc(`
 				its deps do not belong to the same config group:
 				  * https://x-review.googlesource.com/c/101
 				  * https://x-review.googlesource.com/c/102
-			`))
+			`)))
 				})
-				Convey("Singular Full Run with open dependencies", func() {
+				t.Run("Singular Full Run with open dependencies", func(t *ftt.Test) {
 					mode = run.FullRun
 					invalidDeps.SingleFullDeps = []*changelist.Dep{deps[102], deps[101]}
 					s := mustFormat()
-					So(s, ShouldContainSubstring, text.Doc(`
+					assert.Loosely(t, s, should.ContainSubstring(text.Doc(`
 				in "FULL_RUN" mode because it has not yet submitted dependencies:
 				  * https://x-review.googlesource.com/c/101
 				  * https://x-review.googlesource.com/c/102
-			`))
+			`)))
 				})
-				Convey("Combinable not triggered deps", func() {
+				t.Run("Combinable not triggered deps", func(t *ftt.Test) {
 					invalidDeps.CombinableUntriggered = []*changelist.Dep{deps[102], deps[101]}
 					s := mustFormat()
-					So(s, ShouldContainSubstring, text.Doc(`
+					assert.Loosely(t, s, should.ContainSubstring(text.Doc(`
 				its dependencies weren't CQ-ed at all:
 				  * https://x-review.googlesource.com/c/101
 				  * https://x-review.googlesource.com/c/102
-			`))
+			`)))
 				})
-				Convey("Combinable mode mismatch", func() {
+				t.Run("Combinable mode mismatch", func(t *ftt.Test) {
 					mode = run.FullRun
 					invalidDeps.CombinableMismatchedMode = []*changelist.Dep{deps[102], deps[101]}
 					s := mustFormat()
-					So(s, ShouldContainSubstring, text.Doc(`
+					assert.Loosely(t, s, should.ContainSubstring(text.Doc(`
 				its mode "FULL_RUN" does not match mode on its dependencies:
 				  * https://x-review.googlesource.com/c/101
 				  * https://x-review.googlesource.com/c/102
-			`))
+			`)))
 				})
-				Convey("Too many", func() {
+				t.Run("Too many", func(t *ftt.Test) {
 					invalidDeps.TooMany = &changelist.CLError_InvalidDeps_TooMany{Actual: 5, MaxAllowed: 4}
 					s := mustFormat()
-					So(s, ShouldContainSubstring, "has too many deps: 5 (max supported: 4)")
+					assert.Loosely(t, s, should.ContainSubstring("has too many deps: 5 (max supported: 4)"))
 				})
 			})
-			Convey("Reuse of triggers", func() {
+			t.Run("Reuse of triggers", func(t *ftt.Test) {
 				reason.Kind = &changelist.CLError_ReusedTrigger_{
 					ReusedTrigger: &changelist.CLError_ReusedTrigger{Run: "some/123-1-run"},
 				}
-				So(mustFormat(), ShouldContainSubstring, `previously completed a Run ("some/123-1-run") triggered by the same vote(s)`)
+				assert.Loosely(t, mustFormat(), should.ContainSubstring(`previously completed a Run ("some/123-1-run") triggered by the same vote(s)`))
 			})
-			Convey("TrighgerDeps", func() {
+			t.Run("TrighgerDeps", func(t *ftt.Test) {
 				tdeps := &changelist.CLError_TriggerDeps{
 					PermissionDenied: []*changelist.CLError_TriggerDeps_PermissionDenied{
 						{Clid: 1, Email: "voter@example.org"},
@@ -223,11 +224,11 @@ func TestFormatCLError(t *testing.T) {
 							},
 						},
 					}
-					So(datastore.Put(ctx, depCL), ShouldBeNil)
+					assert.Loosely(t, datastore.Put(ctx, depCL), should.BeNil)
 					deps[i] = &changelist.Dep{Clid: int64(depCL.ID)}
 				}
 				reason.Kind = &changelist.CLError_TriggerDeps_{TriggerDeps: tdeps}
-				So(mustFormat(), ShouldContainSubstring, text.Doc(`
+				assert.Loosely(t, mustFormat(), should.ContainSubstring(text.Doc(`
 					failed to vote the CQ label on the following dependencies.
 					  * https://x-review.googlesource.com/c/1 - no permission to vote on behalf of voter@example.org
 					  * https://x-review.googlesource.com/c/2 - no permission to vote
@@ -235,10 +236,10 @@ func TestFormatCLError(t *testing.T) {
 					  * https://x-review.googlesource.com/c/4 - the CL no longer exists in Gerrit
 					  * https://x-review.googlesource.com/c/5 - the CL no longer exists in Gerrit
 					  * https://x-review.googlesource.com/c/6 - internal Gerrit error
-				`))
+				`)))
 			})
 
-			Convey("DepRunFailed", func() {
+			t.Run("DepRunFailed", func(t *ftt.Test) {
 				// Save a CL snapshot for each dep.
 				deps := make(map[int]*changelist.Dep, 2)
 				for i := 1; i <= 6; i++ {
@@ -255,15 +256,15 @@ func TestFormatCLError(t *testing.T) {
 							},
 						},
 					}
-					So(datastore.Put(ctx, depCL), ShouldBeNil)
+					assert.Loosely(t, datastore.Put(ctx, depCL), should.BeNil)
 					deps[i] = &changelist.Dep{Clid: int64(depCL.ID)}
 				}
 				reason.Kind = &changelist.CLError_DepRunFailed{
 					DepRunFailed: 2,
 				}
-				So(mustFormat(), ShouldContainSubstring, text.Doc(`
+				assert.Loosely(t, mustFormat(), should.ContainSubstring(text.Doc(`
 					a Run failed on [CL](https://x-review.googlesource.com/c/2) that this CL depends on.
-				`))
+				`)))
 			})
 		})
 	})

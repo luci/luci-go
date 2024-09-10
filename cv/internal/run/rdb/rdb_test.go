@@ -19,7 +19,6 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"google.golang.org/grpc/codes"
@@ -28,55 +27,59 @@ import (
 	"go.chromium.org/luci/common/proto"
 	"go.chromium.org/luci/common/retry/transient"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/grpc/appstatus"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 func TestRecorderClient(t *testing.T) {
-	Convey(`MarkInvocationSubmitted`, t, func() {
+	ftt.Run(`MarkInvocationSubmitted`, t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
 		mcf := NewMockRecorderClientFactory(ct.GoMockCtl)
 		rc, err := mcf.MakeClient(ctx, "rdbhost")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		Convey(`OK`, func() {
+		t.Run(`OK`, func(t *ftt.Test) {
 			inv := "invocations/build-100001"
 			mcf.mc.EXPECT().MarkInvocationSubmitted(gomock.Any(), proto.MatcherEqual(&rdbpb.MarkInvocationSubmittedRequest{
 				Invocation: inv,
 			})).Return(&emptypb.Empty{}, nil)
 
 			err := rc.MarkInvocationSubmitted(ctx, inv)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey(`Permission Denied`, func() {
+		t.Run(`Permission Denied`, func(t *ftt.Test) {
 			inv := "invocations/build-100001"
 			mcf.mc.EXPECT().MarkInvocationSubmitted(gomock.Any(), proto.MatcherEqual(&rdbpb.MarkInvocationSubmittedRequest{
 				Invocation: inv,
 			})).Return(&emptypb.Empty{}, appstatus.Error(codes.PermissionDenied, "permission denied"))
 
 			err := rc.MarkInvocationSubmitted(ctx, inv)
-			So(err, ShouldHaveAppStatus, codes.PermissionDenied)
-			So(err, ShouldErrLike, fmt.Sprintf("failed to mark %s submitted", inv))
-			So(transient.Tag.In(err), ShouldBeFalse)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.PermissionDenied))
+			assert.Loosely(t, err, should.ErrLike(fmt.Sprintf("failed to mark %s submitted", inv)))
+			assert.Loosely(t, transient.Tag.In(err), should.BeFalse)
 		})
 
-		Convey(`Invalid Argument`, func() {
+		t.Run(`Invalid Argument`, func(t *ftt.Test) {
 			inv := "invocations/build-100001"
 			mcf.mc.EXPECT().MarkInvocationSubmitted(gomock.Any(), proto.MatcherEqual(&rdbpb.MarkInvocationSubmittedRequest{
 				Invocation: inv,
 			})).Return(&emptypb.Empty{}, appstatus.Error(codes.InvalidArgument, "invalid argument"))
 
 			err := rc.MarkInvocationSubmitted(ctx, inv)
-			So(err, ShouldHaveAppStatus, codes.InvalidArgument)
-			So(transient.Tag.In(err), ShouldBeFalse)
-			So(err, ShouldErrLike, fmt.Sprintf("failed to mark %s submitted", inv))
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.InvalidArgument))
+			assert.Loosely(t, transient.Tag.In(err), should.BeFalse)
+			assert.Loosely(t, err, should.ErrLike(fmt.Sprintf("failed to mark %s submitted", inv)))
 		})
 
-		Convey(`No Code`, func() {
+		t.Run(`No Code`, func(t *ftt.Test) {
 			inv := "invocations/build-100001"
 			mcf.mc.EXPECT().MarkInvocationSubmitted(gomock.Any(), proto.MatcherEqual(&rdbpb.MarkInvocationSubmittedRequest{
 				Invocation: inv,
@@ -84,21 +87,21 @@ func TestRecorderClient(t *testing.T) {
 
 			err := rc.MarkInvocationSubmitted(ctx, inv)
 			_, ok := appstatus.Get(err)
-			So(ok, ShouldBeFalse)
-			So(transient.Tag.In(err), ShouldBeFalse)
-			So(err, ShouldErrLike, "random error")
+			assert.Loosely(t, ok, should.BeFalse)
+			assert.Loosely(t, transient.Tag.In(err), should.BeFalse)
+			assert.Loosely(t, err, should.ErrLike("random error"))
 		})
 
-		Convey(`Transient Error`, func() {
+		t.Run(`Transient Error`, func(t *ftt.Test) {
 			inv := "invocations/build-100001"
 			mcf.mc.EXPECT().MarkInvocationSubmitted(gomock.Any(), proto.MatcherEqual(&rdbpb.MarkInvocationSubmittedRequest{
 				Invocation: inv,
 			})).Return(&emptypb.Empty{}, appstatus.Error(codes.Unknown, "???"))
 
 			err := rc.MarkInvocationSubmitted(ctx, inv)
-			So(err, ShouldHaveAppStatus, codes.Unknown)
-			So(transient.Tag.In(err), ShouldBeTrue)
-			So(err, ShouldErrLike, "???")
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.Unknown))
+			assert.Loosely(t, transient.Tag.In(err), should.BeTrue)
+			assert.Loosely(t, err, should.ErrLike("???"))
 		})
 	})
 }

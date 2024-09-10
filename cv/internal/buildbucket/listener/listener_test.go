@@ -36,82 +36,82 @@ import (
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/cv/internal/buildbucket"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/tryjob"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestParseData(t *testing.T) {
 	t.Parallel()
-	Convey("parseV1Data", t, func() {
-		Convey("handles valid expected input", func() {
+	ftt.Run("parseV1Data", t, func(t *ftt.Test) {
+		t.Run("handles valid expected input", func(t *ftt.Test) {
 			json := `{"hostname": "buildbucket.example.com", ` +
 				`"build": {"id": "123456789", "other": "ignored"}}`
 			extracted, err := parseV1Data(context.Background(), []byte(json))
-			So(err, ShouldBeNil)
-			So(extracted, ShouldResemble, buildbucket.PubsubMessage{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, extracted, should.Resemble(buildbucket.PubsubMessage{
 				Hostname: "buildbucket.example.com",
 				Build:    buildbucket.PubsubBuildMessage{ID: 123456789},
-			})
+			}))
 		})
-		Convey("with no build ID gives error", func() {
+		t.Run("with no build ID gives error", func(t *ftt.Test) {
 			json := `{"hostname": "buildbucket.example.com", "build": {"other": "ignored"}}`
 			data, err := parseV1Data(context.Background(), []byte(json))
-			So(err, ShouldErrLike, "missing build details")
-			So(data, ShouldResemble, buildbucket.PubsubMessage{})
+			assert.Loosely(t, err, should.ErrLike("missing build details"))
+			assert.Loosely(t, data, should.Resemble(buildbucket.PubsubMessage{}))
 		})
-		Convey("with no build details gives error", func() {
+		t.Run("with no build details gives error", func(t *ftt.Test) {
 			json := `{"hostname": "buildbucket.example.com"}`
 			data, err := parseV1Data(context.Background(), []byte(json))
-			So(err, ShouldErrLike, "missing build details")
-			So(data, ShouldResemble, buildbucket.PubsubMessage{})
+			assert.Loosely(t, err, should.ErrLike("missing build details"))
+			assert.Loosely(t, data, should.Resemble(buildbucket.PubsubMessage{}))
 		})
 	})
 }
 
 func TestExtractTopicProject(t *testing.T) {
 	t.Parallel()
-	Convey("bad", t, func() {
+	ftt.Run("bad", t, func(t *ftt.Test) {
 		_, err := extractTopicProject("bad-topic")
-		So(err, ShouldErrLike, `topic bad-topic doesn't match "^projects/(.*)/topics/(.*)$"`)
+		assert.Loosely(t, err, should.ErrLike(`topic bad-topic doesn't match "^projects/(.*)/topics/(.*)$"`))
 	})
 
-	Convey("success", t, func() {
+	ftt.Run("success", t, func(t *ftt.Test) {
 		prj, err := extractTopicProject("projects/my-project/topics/topic")
-		So(err, ShouldBeNil)
-		So(prj, ShouldEqual, "my-project")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, prj, should.Equal("my-project"))
 	})
 }
 
 func TestListener(t *testing.T) {
 	t.Parallel()
 	const bbHost = "buildbucket.example.com"
-	Convey("Listener", t, func() {
+	ftt.Run("Listener", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
 		srv := pstest.NewServer()
 		defer srv.Close()
 		conn, err := grpc.Dial(srv.Addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		defer conn.Close()
 		client, err := pubsub.NewClient(ctx, "testProj", option.WithGRPCConn(conn))
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		defer client.Close()
 		topic, err := client.CreateTopic(ctx, "build-update")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		subConfig := pubsub.SubscriptionConfig{
 			Topic: topic,
 		}
 		sub, err := client.CreateSubscription(ctx, SubscriptionID, subConfig)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		tProj, err := extractTopicProject(subConfig.Topic.String())
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		tjNotifier := &testTryjobNotifier{}
 		tjUpdater := &testTryjobUpdater{}
 		l := &listener{
@@ -121,7 +121,7 @@ func TestListener(t *testing.T) {
 			tjUpdater:    tjUpdater,
 			processedCh:  make(chan string, 10),
 		}
-		So(l.bbHost, ShouldEqual, "testProj.appspot.com")
+		assert.Loosely(t, l.bbHost, should.Equal("testProj.appspot.com"))
 
 		cctx, cancel := context.WithCancel(ctx)
 		listenerDoneCh := make(chan struct{})
@@ -151,8 +151,8 @@ func TestListener(t *testing.T) {
 			}
 		}
 
-		Convey("Successful", func() {
-			Convey("Relevant", func() {
+		t.Run("Successful", func(t *ftt.Test) {
+			t.Run("Relevant", func(t *ftt.Test) {
 				eid := tryjob.MustBuildbucketID(bbHost, 1)
 				eid.MustCreateIfNotExists(ctx)
 				msgID := srv.Publish(topic.String(), toPubsubMessageData(eid), nil)
@@ -160,13 +160,13 @@ func TestListener(t *testing.T) {
 				case <-time.After(15 * time.Second):
 					panic("took too long to process message")
 				case processedMsgID := <-l.processedCh:
-					So(processedMsgID, ShouldEqual, msgID)
+					assert.Loosely(t, processedMsgID, should.Equal(msgID))
 				}
-				So(tjNotifier.notified, ShouldResemble, []tryjob.ExternalID{eid})
+				assert.Loosely(t, tjNotifier.notified, should.Resemble([]tryjob.ExternalID{eid}))
 				ensureAcked(msgID)
 			})
 
-			Convey("Relevant v2", func() {
+			t.Run("Relevant v2", func(t *ftt.Test) {
 				eid := tryjob.MustBuildbucketID(bbHost, 123)
 				eid.MustCreateIfNotExists(ctx)
 				b := &buildbucketpb.Build{
@@ -188,13 +188,13 @@ func TestListener(t *testing.T) {
 				case <-time.After(15 * time.Second):
 					panic("took too long to process message")
 				case processedMsgID := <-l.processedCh:
-					So(processedMsgID, ShouldEqual, msgID)
+					assert.Loosely(t, processedMsgID, should.Equal(msgID))
 				}
-				So(tjUpdater.updated, ShouldResemble, []tryjob.ExternalID{eid})
+				assert.Loosely(t, tjUpdater.updated, should.Resemble([]tryjob.ExternalID{eid}))
 				ensureAcked(msgID)
 			})
 
-			Convey("Relevant v2 - empty hostname in pubsub msg", func() {
+			t.Run("Relevant v2 - empty hostname in pubsub msg", func(t *ftt.Test) {
 				b := &buildbucketpb.Build{
 					Id: 123,
 					Builder: &buildbucketpb.BuilderID{
@@ -213,26 +213,26 @@ func TestListener(t *testing.T) {
 				case <-time.After(15 * time.Second):
 					panic("took too long to process message")
 				case processedMsgID := <-l.processedCh:
-					So(processedMsgID, ShouldEqual, msgID)
+					assert.Loosely(t, processedMsgID, should.Equal(msgID))
 				}
-				So(tjUpdater.updated, ShouldResemble, []tryjob.ExternalID{eid})
+				assert.Loosely(t, tjUpdater.updated, should.Resemble([]tryjob.ExternalID{eid}))
 				ensureAcked(msgID)
 			})
 
-			Convey("Irrelevant", func() {
+			t.Run("Irrelevant", func(t *ftt.Test) {
 				eid := tryjob.MustBuildbucketID(bbHost, 404)
 				msgID := srv.Publish(topic.String(), toPubsubMessageData(eid), nil)
 				select {
 				case <-time.After(15 * time.Second):
 					panic("took too long to process message")
 				case processedMsgID := <-l.processedCh:
-					So(processedMsgID, ShouldEqual, msgID)
+					assert.Loosely(t, processedMsgID, should.Equal(msgID))
 				}
-				So(tjNotifier.notified, ShouldBeEmpty)
+				assert.Loosely(t, tjNotifier.notified, should.BeEmpty)
 				ensureAcked(msgID)
 			})
 
-			Convey("Irrelevant v2", func() {
+			t.Run("Irrelevant v2", func(t *ftt.Test) {
 				b := &buildbucketpb.Build{
 					Id: 404,
 					Builder: &buildbucketpb.BuilderID{
@@ -252,15 +252,15 @@ func TestListener(t *testing.T) {
 				case <-time.After(15 * time.Second):
 					panic("took too long to process message")
 				case processedMsgID := <-l.processedCh:
-					So(processedMsgID, ShouldEqual, msgID)
+					assert.Loosely(t, processedMsgID, should.Equal(msgID))
 				}
-				So(tjUpdater.updated, ShouldBeEmpty)
+				assert.Loosely(t, tjUpdater.updated, should.BeEmpty)
 				ensureAcked(msgID)
 			})
 		})
 
-		Convey("Transient failure", func() {
-			Convey("Schedule call fails transiently", func() {
+		t.Run("Transient failure", func(t *ftt.Test) {
+			t.Run("Schedule call fails transiently", func(t *ftt.Test) {
 				eid := tryjob.MustBuildbucketID(bbHost, 1)
 				eid.MustCreateIfNotExists(ctx)
 				tjNotifier.response = map[tryjob.ExternalID]error{
@@ -273,42 +273,42 @@ func TestListener(t *testing.T) {
 					case <-timer:
 						panic(errors.New("took too long for pub/sub to redeliver messages"))
 					case processedMsgID := <-l.processedCh:
-						So(processedMsgID, ShouldEqual, msgID)
+						assert.Loosely(t, processedMsgID, should.Equal(msgID))
 					}
 				}
-				So(tjNotifier.notified, ShouldBeEmpty)
-				So(srv.Message(msgID).Acks, ShouldEqual, 0)
+				assert.Loosely(t, tjNotifier.notified, should.BeEmpty)
+				assert.Loosely(t, srv.Message(msgID).Acks, should.BeZero)
 			})
 		})
 
-		Convey("Permanent failure", func() {
-			Convey("Unparseable v1 msg", func() {
+		t.Run("Permanent failure", func(t *ftt.Test) {
+			t.Run("Unparseable v1 msg", func(t *ftt.Test) {
 				msgID := srv.Publish(topic.String(), []byte("Unparseable hot garbage.'}]\""), nil)
 				select {
 				case <-time.After(15 * time.Second):
 					panic("took too long to process message")
 				case processedMsgID := <-l.processedCh:
-					So(processedMsgID, ShouldEqual, msgID)
+					assert.Loosely(t, processedMsgID, should.Equal(msgID))
 				}
-				So(tjNotifier.notified, ShouldBeEmpty)
-				So(l.stats.permanentErrCount, ShouldEqual, 1)
+				assert.Loosely(t, tjNotifier.notified, should.BeEmpty)
+				assert.Loosely(t, l.stats.permanentErrCount, should.Equal(1))
 				ensureAcked(msgID)
 			})
 
-			Convey("Unparseable v2 msg", func() {
+			t.Run("Unparseable v2 msg", func(t *ftt.Test) {
 				msgID := srv.Publish(topic.String(), []byte("Unparseable hot garbage.'}]\""), makeBuildsV2PubsubAttrs(&buildbucketpb.Build{}))
 				select {
 				case <-time.After(15 * time.Second):
 					panic("took too long to process message")
 				case processedMsgID := <-l.processedCh:
-					So(processedMsgID, ShouldEqual, msgID)
+					assert.Loosely(t, processedMsgID, should.Equal(msgID))
 				}
-				So(tjUpdater.updated, ShouldBeEmpty)
-				So(l.stats.permanentErrCount, ShouldEqual, 1)
+				assert.Loosely(t, tjUpdater.updated, should.BeEmpty)
+				assert.Loosely(t, l.stats.permanentErrCount, should.Equal(1))
 				ensureAcked(msgID)
 			})
 
-			Convey("tjUpdater failure", func() {
+			t.Run("tjUpdater failure", func(t *ftt.Test) {
 				eid := tryjob.MustBuildbucketID(bbHost, 123)
 				eid.MustCreateIfNotExists(ctx)
 				tjUpdater.response = map[tryjob.ExternalID]error{
@@ -333,14 +333,14 @@ func TestListener(t *testing.T) {
 				case <-time.After(15 * time.Second):
 					panic("took too long to process message")
 				case processedMsgID := <-l.processedCh:
-					So(processedMsgID, ShouldEqual, msgID)
+					assert.Loosely(t, processedMsgID, should.Equal(msgID))
 				}
-				So(tjUpdater.updated, ShouldBeEmpty)
-				So(l.stats.permanentErrCount, ShouldEqual, 1)
+				assert.Loosely(t, tjUpdater.updated, should.BeEmpty)
+				assert.Loosely(t, l.stats.permanentErrCount, should.Equal(1))
 				ensureAcked(msgID)
 			})
 
-			Convey("Schedule call fails permanently", func() {
+			t.Run("Schedule call fails permanently", func(t *ftt.Test) {
 				eid := tryjob.MustBuildbucketID(bbHost, 1)
 				eid.MustCreateIfNotExists(ctx)
 				tjNotifier.response = map[tryjob.ExternalID]error{
@@ -351,10 +351,10 @@ func TestListener(t *testing.T) {
 				case <-time.After(15 * time.Second):
 					panic("took too long to process message")
 				case processedMsgID := <-l.processedCh:
-					So(processedMsgID, ShouldEqual, msgID)
+					assert.Loosely(t, processedMsgID, should.Equal(msgID))
 				}
-				So(tjNotifier.notified, ShouldBeEmpty)
-				So(l.stats.permanentErrCount, ShouldEqual, 1)
+				assert.Loosely(t, tjNotifier.notified, should.BeEmpty)
+				assert.Loosely(t, l.stats.permanentErrCount, should.Equal(1))
 				ensureAcked(msgID)
 			})
 		})

@@ -19,6 +19,9 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/cv/internal/changelist"
@@ -26,18 +29,16 @@ import (
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestPMReporter(t *testing.T) {
 	t.Parallel()
 
-	Convey("pmReporter works", t, func() {
+	ftt.Run("pmReporter works", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
-		So(datastore.Put(ctx,
+		assert.Loosely(t, datastore.Put(ctx,
 			&prjmanager.Project{
 				ID:         "small",
 				EVersion:   1,
@@ -60,11 +61,11 @@ func TestPMReporter(t *testing.T) {
 					Status: prjpb.Status_STARTED,
 				},
 			},
-		), ShouldBeNil)
+		), should.BeNil)
 
 		r := pmReporter{}
-		So(r.report(ctx, []string{"small", "empty"}), ShouldBeNil)
-		So(ct.TSMonSentValue(ctx, metricPMEntitySize, "small"), ShouldBeBetween, 80, 90)
-		So(ct.TSMonSentValue(ctx, metricPMEntitySize, "empty"), ShouldBeBetween, 40, 50)
+		assert.Loosely(t, r.report(ctx, []string{"small", "empty"}), should.BeNil)
+		assert.Loosely(t, ct.TSMonSentValue(ctx, metricPMEntitySize, "small"), should.BeBetween(80, 90))
+		assert.Loosely(t, ct.TSMonSentValue(ctx, metricPMEntitySize, "empty"), should.BeBetween(40, 50))
 	})
 }

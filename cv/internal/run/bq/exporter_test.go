@@ -23,6 +23,9 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
@@ -31,15 +34,12 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/run"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestExportRunToBQ(t *testing.T) {
 	t.Parallel()
 
-	Convey("Exporting a Run to BQ works", t, func() {
+	ftt.Run("Exporting a Run to BQ works", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
@@ -59,8 +59,8 @@ func TestExportRunToBQ(t *testing.T) {
 			Submission:    nil,
 			Mode:          run.DryRun,
 		}
-		So(datastore.Put(ctx, &r), ShouldBeNil)
-		So(datastore.Put(ctx, &run.RunCL{
+		assert.Loosely(t, datastore.Put(ctx, &r), should.BeNil)
+		assert.Loosely(t, datastore.Put(ctx, &run.RunCL{
 			ID:         1,
 			Run:        datastore.MakeKey(ctx, common.RunKind, string(runID)),
 			ExternalID: "gerrit/foo-review.googlesource.com/111",
@@ -80,8 +80,8 @@ func TestExportRunToBQ(t *testing.T) {
 				},
 			},
 			Trigger: &run.Trigger{Time: timestamppb.New(epoch)},
-		}), ShouldBeNil)
-		So(nil, ShouldBeNil)
+		}), should.BeNil)
+		assert.Loosely(t, nil, should.BeNil)
 
 		// BQ Export tasks must be scheduled in a transaction.
 		schedule := func() error {
@@ -90,12 +90,12 @@ func TestExportRunToBQ(t *testing.T) {
 			}, nil)
 		}
 
-		Convey("A row is sent", func() {
-			Convey("in prod", func() {
-				So(schedule(), ShouldBeNil)
+		t.Run("A row is sent", func(t *ftt.Test) {
+			t.Run("in prod", func(t *ftt.Test) {
+				assert.Loosely(t, schedule(), should.BeNil)
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(exportRunToBQTaskClass))
 				rows := ct.BQFake.Rows("", CVDataset, CVTable)
-				So(rows, ShouldResembleProto, []protoreflect.ProtoMessage{&cvbqpb.Attempt{
+				assert.Loosely(t, rows, should.Resemble([]protoreflect.ProtoMessage{&cvbqpb.Attempt{
 					Key:                  runID.AttemptKey(),
 					LuciProject:          runID.LUCIProject(),
 					RunId:                string(runID),
@@ -119,23 +119,23 @@ func TestExportRunToBQ(t *testing.T) {
 					},
 					Status:    cvbqpb.AttemptStatus_SUCCESS,
 					Substatus: cvbqpb.AttemptSubstatus_NO_SUBSTATUS,
-				}})
+				}}))
 
 				// The same rows must be sent to legacy CQ table.
 				cqRows := ct.BQFake.Rows(legacyProject, legacyDataset, legacyTable)
-				So(cqRows, ShouldResembleProto, rows)
+				assert.Loosely(t, cqRows, should.Resemble(rows))
 				// And only these 2 rows have been sent.
-				So(ct.BQFake.TotalSent(), ShouldEqual, 2)
+				assert.Loosely(t, ct.BQFake.TotalSent(), should.Equal(2))
 			})
 
-			Convey("in dev", func() {
-				So(schedule(), ShouldBeNil)
+			t.Run("in dev", func(t *ftt.Test) {
+				assert.Loosely(t, schedule(), should.BeNil)
 				ct.Env.IsGAEDev = true
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(exportRunToBQTaskClass))
-				So(ct.BQFake.Rows("", CVDataset, CVTable), ShouldHaveLength, 1)
+				assert.Loosely(t, ct.BQFake.Rows("", CVDataset, CVTable), should.HaveLength(1))
 				// Must not send to production legacy.
-				So(ct.BQFake.Rows(legacyProject, legacyDataset, legacyTable), ShouldHaveLength, 0)
-				So(ct.BQFake.Rows(legacyProjectDev, legacyDataset, legacyTable), ShouldHaveLength, 1)
+				assert.Loosely(t, ct.BQFake.Rows(legacyProject, legacyDataset, legacyTable), should.HaveLength(0))
+				assert.Loosely(t, ct.BQFake.Rows(legacyProjectDev, legacyDataset, legacyTable), should.HaveLength(1))
 			})
 		})
 	})

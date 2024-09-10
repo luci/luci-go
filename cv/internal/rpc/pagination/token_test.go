@@ -24,48 +24,51 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/server/secrets"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestPageTokens(t *testing.T) {
 	t.Parallel()
 	ctx := secrets.GeneratePrimaryTinkAEADForTest(context.Background())
 
-	Convey("Page token round trip", t, func() {
-		Convey("not empty", func() {
+	ftt.Run("Page token round trip", t, func(t *ftt.Test) {
+		t.Run("not empty", func(t *ftt.Test) {
 			// Any proto type should work.
 			in := timestamppb.New(testclock.TestRecentTimeUTC)
 			token, err := EncryptPageToken(ctx, in)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			out := &timestamppb.Timestamp{}
-			So(DecryptPageToken(ctx, token, out), ShouldBeNil)
-			So(out, ShouldResembleProto, in)
+			assert.Loosely(t, DecryptPageToken(ctx, token, out), should.BeNil)
+			assert.Loosely(t, out, should.Resemble(in))
 		})
-		Convey("empty page token", func() {
+		t.Run("empty page token", func(t *ftt.Test) {
 			token, err := EncryptPageToken(ctx, nil)
-			So(err, ShouldBeNil)
-			So(token, ShouldResemble, "")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, token, should.BeBlank)
 			out := &timestamppb.Timestamp{}
-			So(DecryptPageToken(ctx, token, out), ShouldBeNil)
-			So(out, ShouldResembleProto, &timestamppb.Timestamp{})
+			assert.Loosely(t, DecryptPageToken(ctx, token, out), should.BeNil)
+			assert.Loosely(t, out, should.Resemble(&timestamppb.Timestamp{}))
 		})
-		Convey("empty page token with typed nil", func() {
+		t.Run("empty page token with typed nil", func(t *ftt.Test) {
 			var typedNil *timestamppb.Timestamp
 			token, err := EncryptPageToken(ctx, typedNil)
-			So(err, ShouldBeNil)
-			So(token, ShouldResemble, "")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, token, should.BeBlank)
 		})
 	})
 
-	Convey("Bad page token", t, func() {
+	ftt.Run("Bad page token", t, func(t *ftt.Test) {
 		dst := &timestamppb.Timestamp{Seconds: 1, Nanos: 2}
 		goodToken, err := EncryptPageToken(ctx, timestamppb.New(testclock.TestRecentTimeUTC))
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		tokenBytes := []byte(goodToken)
 		tokenBytes[10] = '\\'
 		err = DecryptPageToken(ctx, string(tokenBytes), dst)
-		So(err, ShouldErrLike, "illegal base64")
-		So(err, ShouldHaveAppStatus, codes.InvalidArgument, "invalid page token")
+		assert.Loosely(t, err, should.ErrLike("illegal base64"))
+		assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.InvalidArgument, "invalid page token"))
 	})
 }

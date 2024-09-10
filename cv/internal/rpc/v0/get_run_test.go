@@ -24,6 +24,9 @@ import (
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
@@ -38,15 +41,12 @@ import (
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/tryjob"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestGetRun(t *testing.T) {
 	t.Parallel()
 
-	Convey("GetRun", t, func() {
+	ftt.Run("GetRun", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
@@ -84,31 +84,31 @@ func TestGetRun(t *testing.T) {
 		})
 
 		saveAndGet := func(r *run.Run) *apiv0pb.Run {
-			So(datastore.Put(ctx, r), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, r), should.BeNil)
 			resp, err := rs.GetRun(ctx, &apiv0pb.GetRunRequest{Id: rid.PublicID()})
-			So(grpcutil.Code(err), ShouldEqual, codes.OK)
+			assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.OK))
 			return resp
 		}
 
-		Convey("w/o access", func() {
+		t.Run("w/o access", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "anonymous:anonymous",
 			})
 			_, err := rs.GetRun(ctx, &apiv0pb.GetRunRequest{Id: rid.PublicID()})
-			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
+			assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.PermissionDenied))
 		})
 
-		Convey("w/ an invalid public ID", func() {
+		t.Run("w/ an invalid public ID", func(t *ftt.Test) {
 			_, err := rs.GetRun(ctx, &apiv0pb.GetRunRequest{Id: "something valid"})
-			So(grpcutil.Code(err), ShouldEqual, codes.InvalidArgument)
+			assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.InvalidArgument))
 		})
 
-		Convey("w/ an non-existing Run ID", func() {
+		t.Run("w/ an non-existing Run ID", func(t *ftt.Test) {
 			_, err := rs.GetRun(ctx, &apiv0pb.GetRunRequest{Id: rid.PublicID()})
-			So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
+			assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.NotFound))
 		})
 
-		Convey("w/ an existing RunID", func() {
+		t.Run("w/ an existing RunID", func(t *ftt.Test) {
 			const gHost = "r-review.example.com"
 			cl1 := changelist.MustGobID(gHost, 1).MustCreateIfNotExists(ctx)
 			cl2 := changelist.MustGobID(gHost, 2).MustCreateIfNotExists(ctx)
@@ -127,7 +127,7 @@ func TestGetRun(t *testing.T) {
 				BilledTo:      "user:bar@example.org",
 				CLs:           common.MakeCLIDs(int64(cl1.ID), int64(cl2.ID), int64(cl3.ID)),
 			}
-			So(datastore.Put(
+			assert.Loosely(t, datastore.Put(
 				ctx,
 				&run.RunCL{
 					Run: datastore.MakeKey(ctx, common.RunKind, string(rid)),
@@ -153,9 +153,9 @@ func TestGetRun(t *testing.T) {
 						Patchset: 41,
 					},
 				},
-			), ShouldBeNil)
+			), should.BeNil)
 
-			So(saveAndGet(r), ShouldResembleProto, &apiv0pb.Run{
+			assert.Loosely(t, saveAndGet(r), should.Resemble(&apiv0pb.Run{
 				Id:         rid.PublicID(),
 				Status:     apiv0pb.Run_SUCCEEDED,
 				CreateTime: timestamppb.New(epoch),
@@ -170,9 +170,9 @@ func TestGetRun(t *testing.T) {
 					{Host: gHost, Change: int64(cl2.ID), Patchset: 40},
 					{Host: gHost, Change: int64(cl3.ID), Patchset: 41},
 				},
-			})
+			}))
 
-			Convey("w/ tryjobs", func() {
+			t.Run("w/ tryjobs", func(t *ftt.Test) {
 				r.Tryjobs = &run.Tryjobs{
 					State: &tryjob.ExecutionState{
 						Requirement: &tryjob.Requirement{
@@ -212,7 +212,7 @@ func TestGetRun(t *testing.T) {
 						},
 					},
 				}
-				So(saveAndGet(r).TryjobInvocations, ShouldResembleProto, []*apiv0pb.TryjobInvocation{
+				assert.Loosely(t, saveAndGet(r).TryjobInvocations, should.Resemble([]*apiv0pb.TryjobInvocation{
 					{
 						BuilderConfig: &cfgpb.Verifiers_Tryjob_Builder{
 							Name: protoutil.FormatBuilderID(builderFoo),
@@ -235,18 +235,18 @@ func TestGetRun(t *testing.T) {
 							},
 						},
 					},
-				})
+				}))
 			})
 
-			Convey("w/ submission", func() {
+			t.Run("w/ submission", func(t *ftt.Test) {
 				r.Submission = &run.Submission{
 					SubmittedCls: []int64{int64(cl1.ID)},
 					FailedCls:    []int64{int64(cl3.ID)},
 				}
-				So(saveAndGet(r).Submission, ShouldResembleProto, &apiv0pb.Run_Submission{
+				assert.Loosely(t, saveAndGet(r).Submission, should.Resemble(&apiv0pb.Run_Submission{
 					SubmittedClIndexes: []int32{0},
 					FailedClIndexes:    []int32{2},
-				})
+				}))
 			})
 		})
 	})

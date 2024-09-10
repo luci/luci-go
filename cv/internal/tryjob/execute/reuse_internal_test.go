@@ -21,20 +21,21 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/tryjob"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestFindReuseInCV(t *testing.T) {
 	t.Parallel()
 
-	Convey("FindReuseInCV", t, func() {
+	ftt.Run("FindReuseInCV", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
@@ -87,24 +88,24 @@ func TestFindReuseInCV(t *testing.T) {
 			},
 		}
 
-		Convey("No tryjob to reuse", func() {
+		t.Run("No tryjob to reuse", func(t *ftt.Test) {
 			result, err := w.findReuseInCV(ctx, []*tryjob.Definition{defFoo})
-			So(err, ShouldBeNil)
-			So(result, ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, result, should.BeEmpty)
 		})
 
-		Convey("Found Reuse", func() {
-			So(datastore.Put(ctx, tj), ShouldBeNil)
+		t.Run("Found Reuse", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(ctx, tj), should.BeNil)
 			result, err := w.findReuseInCV(ctx, []*tryjob.Definition{defFoo})
-			So(err, ShouldBeNil)
-			So(result, ShouldHaveLength, 1)
-			So(result, ShouldContainKey, defFoo)
-			So(result[defFoo].EVersion, ShouldEqual, tj.EVersion+1)
-			So(result[defFoo].EntityUpdateTime, ShouldEqual, now)
-			So(result[defFoo].ReusedBy, ShouldResemble, common.RunIDs{runID})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, result, should.HaveLength(1))
+			assert.Loosely(t, result, should.ContainKey(defFoo))
+			assert.Loosely(t, result[defFoo].EVersion, should.Equal(tj.EVersion+1))
+			assert.Loosely(t, result[defFoo].EntityUpdateTime, should.Equal(now))
+			assert.Loosely(t, result[defFoo].ReusedBy, should.Resemble(common.RunIDs{runID}))
 		})
 
-		Convey("Definition doesn't match but builder matches", func() {
+		t.Run("Definition doesn't match but builder matches", func(t *ftt.Test) {
 			tj.Definition = &tryjob.Definition{
 				Backend: &tryjob.Definition_Buildbucket_{
 					Buildbucket: &tryjob.Definition_Buildbucket{
@@ -118,14 +119,14 @@ func TestFindReuseInCV(t *testing.T) {
 				},
 				EquivalentTo: defFoo,
 			}
-			So(datastore.Put(ctx, tj), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, tj), should.BeNil)
 			result, err := w.findReuseInCV(ctx, []*tryjob.Definition{defFoo})
-			So(err, ShouldBeNil)
-			So(result, ShouldHaveLength, 1)
-			So(result, ShouldContainKey, defFoo)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, result, should.HaveLength(1))
+			assert.Loosely(t, result, should.ContainKey(defFoo))
 		})
 
-		Convey("None of definition and builder matches", func() {
+		t.Run("None of definition and builder matches", func(t *ftt.Test) {
 			tj.Definition = &tryjob.Definition{
 				Backend: &tryjob.Definition_Buildbucket_{
 					Buildbucket: &tryjob.Definition_Buildbucket{
@@ -143,62 +144,62 @@ func TestFindReuseInCV(t *testing.T) {
 				Bucket:  "BucketBar",
 				Builder: "BuilderBar",
 			}
-			So(datastore.Put(ctx, tj), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, tj), should.BeNil)
 			result, err := w.findReuseInCV(ctx, []*tryjob.Definition{defFoo})
-			So(err, ShouldBeNil)
-			So(result, ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, result, should.BeEmpty)
 		})
 
-		Convey("Tryjob already known", func() {
+		t.Run("Tryjob already known", func(t *ftt.Test) {
 			w.knownTryjobIDs.Add(tjID)
-			So(datastore.Put(ctx, tj), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, tj), should.BeNil)
 			result, err := w.findReuseInCV(ctx, []*tryjob.Definition{defFoo})
-			So(err, ShouldBeNil)
-			So(result, ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, result, should.BeEmpty)
 		})
 
-		Convey("Tryjob is from different project", func() {
+		t.Run("Tryjob is from different project", func(t *ftt.Test) {
 			tj.LaunchedBy = common.MakeRunID("anotherProj", now.Add(-2*time.Hour), 1, []byte("cool"))
-			So(datastore.Put(ctx, tj), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, tj), should.BeNil)
 			result, err := w.findReuseInCV(ctx, []*tryjob.Definition{defFoo})
-			So(err, ShouldBeNil)
-			So(result, ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, result, should.BeEmpty)
 		})
 
-		Convey("Tryjob is not reusable", func() {
+		t.Run("Tryjob is not reusable", func(t *ftt.Test) {
 			tj.Result.CreateTime = timestamppb.New(now.Add(-2 * staleTryjobAge))
-			So(datastore.Put(ctx, tj), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, tj), should.BeNil)
 			result, err := w.findReuseInCV(ctx, []*tryjob.Definition{defFoo})
-			So(err, ShouldBeNil)
-			So(result, ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, result, should.BeEmpty)
 		})
 
-		Convey("Pick the latest one", func() {
+		t.Run("Pick the latest one", func(t *ftt.Test) {
 			newerTryjob := *tj // shallow copy
 			newerTryjob.ID = tjID - 1
 			newerTryjob.EntityCreateTime = tj.EntityCreateTime.Add(1 * time.Minute)
-			So(datastore.Put(ctx, tj, &newerTryjob), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, tj, &newerTryjob), should.BeNil)
 			result, err := w.findReuseInCV(ctx, []*tryjob.Definition{defFoo})
-			So(err, ShouldBeNil)
-			So(result, ShouldHaveLength, 1)
-			So(result, ShouldContainKey, defFoo)
-			So(result[defFoo].ID, ShouldEqual, newerTryjob.ID)
-			So(result[defFoo].ReusedBy, ShouldResemble, common.RunIDs{runID})
-			So(datastore.Get(ctx, tj), ShouldBeNil)
-			So(tj.ReusedBy.Index(runID), ShouldBeLessThan, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, result, should.HaveLength(1))
+			assert.Loosely(t, result, should.ContainKey(defFoo))
+			assert.Loosely(t, result[defFoo].ID, should.Equal(newerTryjob.ID))
+			assert.Loosely(t, result[defFoo].ReusedBy, should.Resemble(common.RunIDs{runID}))
+			assert.Loosely(t, datastore.Get(ctx, tj), should.BeNil)
+			assert.Loosely(t, tj.ReusedBy.Index(runID), should.BeLessThan(0))
 		})
 
-		Convey("Run already in Tryjob", func() {
+		t.Run("Run already in Tryjob", func(t *ftt.Test) {
 			tj.ReusedBy = common.RunIDs{runID}
-			So(datastore.Put(ctx, tj), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, tj), should.BeNil)
 			result, err := w.findReuseInCV(ctx, []*tryjob.Definition{defFoo})
-			So(err, ShouldBeNil)
-			So(result, ShouldHaveLength, 1)
-			So(result, ShouldContainKey, defFoo)
-			So(result[defFoo].ID, ShouldEqual, tj.ID)
-			So(result[defFoo].EVersion, ShouldEqual, tj.EVersion)
-			So(result[defFoo].EntityUpdateTime, ShouldEqual, tj.EntityUpdateTime)
-			So(result[defFoo].ReusedBy, ShouldResemble, common.RunIDs{runID})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, result, should.HaveLength(1))
+			assert.Loosely(t, result, should.ContainKey(defFoo))
+			assert.Loosely(t, result[defFoo].ID, should.Equal(tj.ID))
+			assert.Loosely(t, result[defFoo].EVersion, should.Equal(tj.EVersion))
+			assert.Loosely(t, result[defFoo].EntityUpdateTime, should.Equal(tj.EntityUpdateTime))
+			assert.Loosely(t, result[defFoo].ReusedBy, should.Resemble(common.RunIDs{runID}))
 		})
 	})
 }

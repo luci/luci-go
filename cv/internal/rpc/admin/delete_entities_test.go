@@ -17,6 +17,9 @@ package admin
 import (
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
@@ -26,21 +29,19 @@ import (
 
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	adminpb "go.chromium.org/luci/cv/internal/rpc/admin/api"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestDeleteEntities(t *testing.T) {
 	t.Parallel()
 
-	Convey("Delete entities", t, func() {
+	ftt.Run("Delete entities", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
 		ent := &MockEntity{
 			ID: "foo",
 		}
-		So(datastore.Put(ctx, ent), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, ent), should.BeNil)
 
 		runJobAndEnsureSuccess := func() {
 			ctrl := &dsmapper.Controller{}
@@ -52,37 +53,37 @@ func TestDeleteEntities(t *testing.T) {
 			})
 
 			jobID, err := a.DSMLaunchJob(ctx, &adminpb.DSMLaunchJobRequest{Name: "delete-entities"})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			ct.TQ.Run(ctx, tqtesting.StopWhenDrained())
 			jobInfo, err := a.DSMGetJob(ctx, jobID)
-			So(err, ShouldBeNil)
-			So(jobInfo.GetInfo().GetState(), ShouldEqual, dsmapperpb.State_SUCCESS)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, jobInfo.GetInfo().GetState(), should.Equal(dsmapperpb.State_SUCCESS))
 		}
 
-		Convey("can delete target entities", func() {
+		t.Run("can delete target entities", func(t *ftt.Test) {
 			entities := []*MockEntity{
 				{ID: "foo"},
 				{ID: "bar"},
 				{ID: "baz"},
 			}
-			So(datastore.Put(ctx, entities), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, entities), should.BeNil)
 			runJobAndEnsureSuccess()
 			res, err := datastore.Exists(ctx, entities)
-			So(err, ShouldBeNil)
-			So(res.List(0).Any(), ShouldBeFalse)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.List(0).Any(), should.BeFalse)
 		})
 
-		Convey("can handle missing entity", func() {
+		t.Run("can handle missing entity", func(t *ftt.Test) {
 			entities := []*MockEntity{
 				{ID: "foo"},
 				{ID: "bar"},
 				{ID: "baz"},
 			}
-			So(datastore.Put(ctx, entities[0], entities[2]), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, entities[0], entities[2]), should.BeNil)
 			runJobAndEnsureSuccess()
 			res, err := datastore.Exists(ctx, entities)
-			So(err, ShouldBeNil)
-			So(res.List(0).Any(), ShouldBeFalse)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.List(0).Any(), should.BeFalse)
 		})
 	})
 }

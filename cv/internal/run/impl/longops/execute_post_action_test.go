@@ -22,18 +22,19 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestExecutePostActionOp(t *testing.T) {
 	t.Parallel()
 
-	Convey("report", t, func() {
+	ftt.Run("report", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
@@ -62,26 +63,26 @@ func TestExecutePostActionOp(t *testing.T) {
 			GFactory: ct.GFactory(),
 		}
 
-		Convey("returns status", func() {
+		t.Run("returns status", func(t *ftt.Test) {
 			exeErr := errors.New("this is a successful error")
 
-			Convey("CANCELLED", func() {
+			t.Run("CANCELLED", func(t *ftt.Test) {
 				op.IsCancelRequested = func() bool { return true }
 				res := op.report(ctx, exeErr, "votes cancelled")
-				So(res.GetStatus(), ShouldEqual, eventpb.LongOpCompleted_CANCELLED)
-				So(res.GetExecutePostAction().GetSummary(), ShouldEqual, "votes cancelled")
+				assert.Loosely(t, res.GetStatus(), should.Equal(eventpb.LongOpCompleted_CANCELLED))
+				assert.Loosely(t, res.GetExecutePostAction().GetSummary(), should.Equal("votes cancelled"))
 			})
-			Convey("EXPIRED", func() {
+			t.Run("EXPIRED", func(t *ftt.Test) {
 				nctx, cancel := context.WithCancel(ctx)
 				cancel()
 				res := op.report(nctx, exeErr, "votes expired")
-				So(res.GetStatus(), ShouldEqual, eventpb.LongOpCompleted_EXPIRED)
-				So(res.GetExecutePostAction().GetSummary(), ShouldEqual, "votes expired")
+				assert.Loosely(t, res.GetStatus(), should.Equal(eventpb.LongOpCompleted_EXPIRED))
+				assert.Loosely(t, res.GetExecutePostAction().GetSummary(), should.Equal("votes expired"))
 			})
-			Convey("FAILED", func() {
+			t.Run("FAILED", func(t *ftt.Test) {
 				res := op.report(ctx, exeErr, "votes failed")
-				So(res.GetStatus(), ShouldEqual, eventpb.LongOpCompleted_FAILED)
-				So(res.GetExecutePostAction().GetSummary(), ShouldEqual, "votes failed")
+				assert.Loosely(t, res.GetStatus(), should.Equal(eventpb.LongOpCompleted_FAILED))
+				assert.Loosely(t, res.GetExecutePostAction().GetSummary(), should.Equal("votes failed"))
 			})
 		})
 	})

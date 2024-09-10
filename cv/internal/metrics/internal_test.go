@@ -19,20 +19,21 @@ import (
 	"reflect"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon/types"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestInternalMetrics(t *testing.T) {
 	t.Parallel()
 
 	const internalPrefix = "cv/internal"
-	Convey(fmt.Sprintf("Internal metrics should start with %s", internalPrefix), t, func() {
+	ftt.Run(fmt.Sprintf("Internal metrics should start with %s", internalPrefix), t, func(t *ftt.Test) {
 		v := reflect.ValueOf(Internal)
 		for i := 0; i < v.NumField(); i++ {
 			m := v.Field(i).Interface().(types.Metric)
-			So(m.Info().Name, ShouldStartWith, internalPrefix)
+			assert.Loosely(t, m.Info().Name, should.HavePrefix(internalPrefix))
 		}
 	})
 }

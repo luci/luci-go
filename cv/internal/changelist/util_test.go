@@ -20,22 +20,22 @@ import (
 	"time"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/gerrit/gerritfake"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestOwnerIdentity(t *testing.T) {
 	t.Parallel()
 
-	Convey("Snapshot.OwnerIdentity works", t, func() {
+	ftt.Run("Snapshot.OwnerIdentity works", t, func(t *ftt.Test) {
 		s := &Snapshot{}
 		_, err := s.OwnerIdentity()
-		So(err, ShouldErrLike, "non-Gerrit CL")
+		assert.Loosely(t, err, should.ErrLike("non-Gerrit CL"))
 
 		ci := gerritfake.CI(101, gerritfake.Owner("owner-1"))
 		s.Kind = &Snapshot_Gerrit{Gerrit: &Gerrit{
@@ -43,14 +43,14 @@ func TestOwnerIdentity(t *testing.T) {
 			Info: ci,
 		}}
 		i, err := s.OwnerIdentity()
-		So(err, ShouldBeNil)
-		So(i, ShouldEqual, identity.Identity("user:owner-1@example.com"))
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, i, should.Equal(identity.Identity("user:owner-1@example.com")))
 
-		Convey("no preferred email set", func() {
+		t.Run("no preferred email set", func(t *ftt.Test) {
 			// Yes, this happens if no preferred email is set. See crbug/1175771.
 			ci.Owner.Email = ""
 			_, err = s.OwnerIdentity()
-			So(err, ShouldErrLike, "CL x-review.example.com/101 owner email of account 1 is unknown")
+			assert.Loosely(t, err, should.ErrLike("CL x-review.example.com/101 owner email of account 1 is unknown"))
 		})
 	})
 }
@@ -58,7 +58,7 @@ func TestOwnerIdentity(t *testing.T) {
 func TestQueryCLIDsUpdatedBefore(t *testing.T) {
 	t.Parallel()
 
-	Convey("QueryCLIDsUpdatedBefore", t, func() {
+	ftt.Run("QueryCLIDsUpdatedBefore", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
@@ -90,7 +90,7 @@ func TestQueryCLIDsUpdatedBefore(t *testing.T) {
 		sort.Sort(expected)
 
 		actual, err := QueryCLIDsUpdatedBefore(ctx, before)
-		So(err, ShouldBeNil)
-		So(actual, ShouldResemble, expected)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, actual, should.Resemble(expected))
 	})
 }

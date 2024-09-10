@@ -20,12 +20,13 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"go.chromium.org/luci/common/proto"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/run"
@@ -40,7 +41,7 @@ import (
 
 func TestNotifier(t *testing.T) {
 
-	Convey(`MarkInvocationSubmitted`, t, func() {
+	ftt.Run(`MarkInvocationSubmitted`, t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
@@ -102,9 +103,9 @@ func TestNotifier(t *testing.T) {
 				},
 			},
 		}
-		So(datastore.Put(ctx, r), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, r), should.BeNil)
 
-		Convey(`Permission Denied`, func() {
+		t.Run(`Permission Denied`, func(t *ftt.Test) {
 			mcf.mc.EXPECT().MarkInvocationSubmitted(gomock.Any(), proto.MatcherEqual(&rdbpb.MarkInvocationSubmittedRequest{
 				Invocation: "invocations/build:12345",
 			})).Return(&emptypb.Empty{}, appstatus.Error(codes.PermissionDenied, "permission denied"))
@@ -113,10 +114,10 @@ func TestNotifier(t *testing.T) {
 			})).Return(&emptypb.Empty{}, appstatus.Error(codes.PermissionDenied, "permission denied"))
 
 			err := MarkInvocationSubmitted(ctx, mcf, runID)
-			So(err, ShouldErrLike, "failed to mark invocation submitted")
+			assert.Loosely(t, err, should.ErrLike("failed to mark invocation submitted"))
 		})
 
-		Convey(`Valid`, func() {
+		t.Run(`Valid`, func(t *ftt.Test) {
 			mcf.mc.EXPECT().MarkInvocationSubmitted(gomock.Any(), proto.MatcherEqual(&rdbpb.MarkInvocationSubmittedRequest{
 				Invocation: "invocations/build:12345",
 			})).Return(&emptypb.Empty{}, nil)
@@ -127,9 +128,9 @@ func TestNotifier(t *testing.T) {
 			err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 				return notifier.Schedule(ctx, runID)
 			}, nil)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(ct.TQ.Tasks(), ShouldHaveLength, 1)
+			assert.Loosely(t, ct.TQ.Tasks(), should.HaveLength(1))
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(notifierTaskClass))
 		})
 	})

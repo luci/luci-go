@@ -30,8 +30,9 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/data/stringset"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func testingContext() context.Context {
@@ -63,7 +64,7 @@ func pop(c context.Context, s *Set, listing *Listing, ids []string) (popped []st
 func TestSet(t *testing.T) {
 	t.Parallel()
 
-	Convey("item one lifecycle", t, func() {
+	ftt.Run("item one lifecycle", t, func(t *ftt.Test) {
 		c := testingContext()
 
 		set := Set{
@@ -73,119 +74,119 @@ func TestSet(t *testing.T) {
 		const limit = 10
 
 		// Add one item.
-		So(set.Add(c, []Item{{ID: "abc"}}), ShouldBeNil)
+		assert.Loosely(t, set.Add(c, []Item{{ID: "abc"}}), should.BeNil)
 
 		// The item is returned by the listing.
 		listing, err := set.List(c, limit)
-		So(err, ShouldBeNil)
-		So(listing.Items, ShouldResemble, []Item{{ID: "abc"}})
-		So(listing.Garbage, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, listing.Items, should.Resemble([]Item{{ID: "abc"}}))
+		assert.Loosely(t, listing.Garbage, should.BeNil)
 
 		// Pop it!
 		err = datastore.RunInTransaction(c, func(c context.Context) error {
 			popped, err := pop(c, &set, listing, []string{"abc"})
-			So(err, ShouldBeNil)
-			So(popped, ShouldResemble, []string{"abc"})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, popped, should.Resemble([]string{"abc"}))
 			return nil
 		}, nil)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		// The listing no longer returns it.
 		listing, err = set.List(c, limit)
-		So(err, ShouldBeNil)
-		So(listing.Items, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, listing.Items, should.BeNil)
 
 		// The listing no longer returns the item, and there's no tombstones to
 		// cleanup.
 		listing, err = set.List(c, limit)
-		So(err, ShouldBeNil)
-		So(listing.Items, ShouldBeNil)
-		So(listing.Garbage, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, listing.Items, should.BeNil)
+		assert.Loosely(t, listing.Garbage, should.BeNil)
 
 		// Attempt to add it back (should be ignored).
-		So(set.Add(c, []Item{{ID: "abc"}}), ShouldBeNil)
+		assert.Loosely(t, set.Add(c, []Item{{ID: "abc"}}), should.BeNil)
 
 		// The listing still doesn't return it, but we now have a tombstone to
 		// cleanup (again).
 		listing, err = set.List(c, limit)
-		So(err, ShouldBeNil)
-		So(listing.Items, ShouldBeNil)
-		So(len(listing.Garbage), ShouldEqual, 1)
-		So(listing.Garbage[0].old, ShouldBeFalse)
-		So(listing.Garbage[0].storage, ShouldNotBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, listing.Items, should.BeNil)
+		assert.Loosely(t, len(listing.Garbage), should.Equal(1))
+		assert.Loosely(t, listing.Garbage[0].old, should.BeFalse)
+		assert.Loosely(t, listing.Garbage[0].storage, should.NotBeNil)
 
 		// Popping it again doesn't work either.
 		err = datastore.RunInTransaction(c, func(c context.Context) error {
 			popped, err := pop(c, &set, listing, []string{"abc"})
-			So(err, ShouldBeNil)
-			So(popped, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, popped, should.BeNil)
 			return nil
 		}, nil)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		// Cleaning up the storage, again. This should make List stop returning
 		// the tombstone (since it has no storage items associated with it and it's
 		// not ready to be evicted yet).
-		So(CleanupGarbage(c, listing.Garbage), ShouldBeNil)
+		assert.Loosely(t, CleanupGarbage(c, listing.Garbage), should.BeNil)
 		listing, err = set.List(c, limit)
-		So(err, ShouldBeNil)
-		So(listing.Items, ShouldBeNil)
-		So(listing.Garbage, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, listing.Items, should.BeNil)
+		assert.Loosely(t, listing.Garbage, should.BeNil)
 
 		// Time passes, tombstone expires.
 		clock.Get(c).(testclock.TestClock).Add(2 * time.Minute)
 
 		// Listing now returns expired tombstone.
 		listing, err = set.List(c, limit)
-		So(err, ShouldBeNil)
-		So(listing.Items, ShouldBeNil)
-		So(len(listing.Garbage), ShouldEqual, 1)
-		So(listing.Garbage[0].storage, ShouldBeNil) // cleaned already
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, listing.Items, should.BeNil)
+		assert.Loosely(t, len(listing.Garbage), should.Equal(1))
+		assert.Loosely(t, listing.Garbage[0].storage, should.BeNil) // cleaned already
 
 		// Cleanup storage keys.
-		So(CleanupGarbage(c, listing.Garbage), ShouldBeNil)
+		assert.Loosely(t, CleanupGarbage(c, listing.Garbage), should.BeNil)
 
 		// Cleanup the tombstones themselves.
 		err = datastore.RunInTransaction(c, func(c context.Context) error {
 			popped, err := pop(c, &set, listing, nil)
-			So(err, ShouldBeNil)
-			So(popped, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, popped, should.BeNil)
 			return nil
 		}, nil)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		// No tombstones returned any longer.
 		listing, err = set.List(c, limit)
-		So(err, ShouldBeNil)
-		So(listing.Items, ShouldBeNil)
-		So(listing.Garbage, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, listing.Items, should.BeNil)
+		assert.Loosely(t, listing.Garbage, should.BeNil)
 
 		// And the item can be added back now, since no trace of it is left.
-		So(set.Add(c, []Item{{ID: "abc"}}), ShouldBeNil)
+		assert.Loosely(t, set.Add(c, []Item{{ID: "abc"}}), should.BeNil)
 
 		// Yep, it is there.
 		listing, err = set.List(c, limit)
-		So(err, ShouldBeNil)
-		So(listing.Items, ShouldResemble, []Item{{ID: "abc"}})
-		So(listing.Garbage, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, listing.Items, should.Resemble([]Item{{ID: "abc"}}))
+		assert.Loosely(t, listing.Garbage, should.BeNil)
 	})
 
-	Convey("List obeys limit", t, func() {
+	ftt.Run("List obeys limit", t, func(t *ftt.Test) {
 		c := testingContext()
 		set := Set{
 			Parent:          datastore.MakeKey(c, "Parent", "parent"),
 			TombstonesDelay: time.Minute,
 		}
-		So(set.Add(c, []Item{{ID: "abc"}}), ShouldBeNil)
-		So(set.Add(c, []Item{{ID: "def"}}), ShouldBeNil)
-		So(set.Add(c, []Item{{ID: "ghi"}}), ShouldBeNil)
+		assert.Loosely(t, set.Add(c, []Item{{ID: "abc"}}), should.BeNil)
+		assert.Loosely(t, set.Add(c, []Item{{ID: "def"}}), should.BeNil)
+		assert.Loosely(t, set.Add(c, []Item{{ID: "ghi"}}), should.BeNil)
 
 		l, err := set.List(c, 2)
-		So(err, ShouldBeNil)
-		So(l.Items, ShouldHaveLength, 2)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, l.Items, should.HaveLength(2))
 	})
 
-	Convey("delete items non-transactionally", t, func() {
+	ftt.Run("delete items non-transactionally", t, func(t *ftt.Test) {
 		c := testingContext()
 
 		set := Set{
@@ -194,13 +195,13 @@ func TestSet(t *testing.T) {
 		}
 
 		// Add 3 items.
-		So(set.Add(c, []Item{{ID: "abc"}}), ShouldBeNil)
-		So(set.Add(c, []Item{{ID: "def"}}), ShouldBeNil)
-		So(set.Add(c, []Item{{ID: "ghi"}}), ShouldBeNil)
+		assert.Loosely(t, set.Add(c, []Item{{ID: "abc"}}), should.BeNil)
+		assert.Loosely(t, set.Add(c, []Item{{ID: "def"}}), should.BeNil)
+		assert.Loosely(t, set.Add(c, []Item{{ID: "ghi"}}), should.BeNil)
 
 		l, err := set.List(c, 10)
-		So(err, ShouldBeNil)
-		So(l.Items, ShouldHaveLength, 3)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, l.Items, should.HaveLength(3))
 
 		// Delete 2 items before transacting.
 		i := 0
@@ -214,18 +215,18 @@ func TestSet(t *testing.T) {
 				return ""
 			}
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		l2, err := set.List(c, 10)
-		So(err, ShouldBeNil)
-		So(l2.Items, ShouldResemble, []Item{{ID: "ghi"}})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, l2.Items, should.Resemble([]Item{{ID: "ghi"}}))
 	})
 }
 
 func TestStress(t *testing.T) {
 	t.Parallel()
 
-	Convey("stress", t, func() {
+	ftt.Run("stress", t, func(t *ftt.Test) {
 		// Add 1000 items in parallel from N goroutines, and (also in parallel),
 		// run N instances of "List and pop all", collecting the result in single
 		// list. There should be no duplicates in the final list!
@@ -307,7 +308,7 @@ func TestStress(t *testing.T) {
 		for _, itm := range consumed {
 			dedup.Add(itm)
 		}
-		So(dedup.Len(), ShouldEqual, len(consumed)) // no dups
-		So(len(consumed), ShouldEqual, items)       // all are accounted for
+		assert.Loosely(t, dedup.Len(), should.Equal(len(consumed))) // no dups
+		assert.Loosely(t, len(consumed), should.Equal(items))       // all are accounted for
 	})
 }

@@ -17,6 +17,9 @@ package acls
 import (
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
@@ -24,14 +27,12 @@ import (
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/configs/validation"
 	"go.chromium.org/luci/cv/internal/cvtesting"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestCheckLegacy(t *testing.T) {
 	t.Parallel()
 
-	Convey("CheckLegacyCQStatusAccess works", t, func() {
+	ftt.Run("CheckLegacyCQStatusAccess works", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
@@ -42,68 +43,68 @@ func TestCheckLegacy(t *testing.T) {
 			}},
 		}
 
-		Convey("not existing project", func() {
+		t.Run("not existing project", func(t *ftt.Test) {
 			allowed, err := checkLegacyCQStatusAccess(ctx, "non-existing")
-			So(err, ShouldBeNil)
-			So(allowed, ShouldBeFalse)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, allowed, should.BeFalse)
 		})
 
-		Convey("existing but disabled project", func() {
+		t.Run("existing but disabled project", func(t *ftt.Test) {
 			// Even if the previously configured CqStatusHost is public.
 			cfg.CqStatusHost = validation.CQStatusHostPublic
 			prjcfgtest.Create(ctx, "disabled", cfg)
 			prjcfgtest.Disable(ctx, "disabled")
 			allowed, err := checkLegacyCQStatusAccess(ctx, "disabled")
-			So(err, ShouldBeNil)
-			So(allowed, ShouldBeFalse)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, allowed, should.BeFalse)
 		})
 
-		Convey("without configured CQ Status", func() {
+		t.Run("without configured CQ Status", func(t *ftt.Test) {
 			cfg.CqStatusHost = ""
 			prjcfgtest.Create(ctx, "no-legacy", cfg)
 			allowed, err := checkLegacyCQStatusAccess(ctx, "no-legacy")
-			So(err, ShouldBeNil)
-			So(allowed, ShouldBeFalse)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, allowed, should.BeFalse)
 		})
 
-		Convey("with misconfigured CQ Status", func() {
+		t.Run("with misconfigured CQ Status", func(t *ftt.Test) {
 			cfg.CqStatusHost = "misconfigured.example.com"
 			prjcfgtest.Create(ctx, "misconfigured", cfg)
 			allowed, err := checkLegacyCQStatusAccess(ctx, "misconfigured")
-			So(err, ShouldBeNil)
-			So(allowed, ShouldBeFalse)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, allowed, should.BeFalse)
 		})
 
-		Convey("public access", func() {
+		t.Run("public access", func(t *ftt.Test) {
 			cfg.CqStatusHost = validation.CQStatusHostPublic
 			prjcfgtest.Create(ctx, "public", cfg)
 			allowed, err := checkLegacyCQStatusAccess(ctx, "public")
-			So(err, ShouldBeNil)
-			So(allowed, ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, allowed, should.BeTrue)
 		})
 
-		Convey("internal CQ Status", func() {
+		t.Run("internal CQ Status", func(t *ftt.Test) {
 			cfg.CqStatusHost = validation.CQStatusHostInternal
 			prjcfgtest.Create(ctx, "internal", cfg)
 
-			Convey("request by Googler is allowed", func() {
+			t.Run("request by Googler is allowed", func(t *ftt.Test) {
 				ctx = auth.WithState(ctx, &authtest.FakeState{
 					Identity:       "user:googler@example.com",
 					IdentityGroups: []string{cqStatusInternalCrIAGroup},
 				})
 				allowed, err := checkLegacyCQStatusAccess(ctx, "internal")
-				So(err, ShouldBeNil)
-				So(allowed, ShouldBeTrue)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, allowed, should.BeTrue)
 			})
 
-			Convey("request by non-Googler is not allowed", func() {
+			t.Run("request by non-Googler is not allowed", func(t *ftt.Test) {
 				ctx = auth.WithState(ctx, &authtest.FakeState{
 					Identity:       "user:hacker@example.com",
 					IdentityGroups: []string{},
 				})
 				allowed, err := checkLegacyCQStatusAccess(ctx, "internal")
-				So(err, ShouldBeNil)
-				So(allowed, ShouldBeFalse)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, allowed, should.BeFalse)
 			})
 		})
 	})

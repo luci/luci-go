@@ -32,14 +32,17 @@ import (
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/run"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestSearchRuns(t *testing.T) {
 	t.Parallel()
 
-	Convey("SearchRuns", t, func() {
+	ftt.Run("SearchRuns", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
@@ -58,52 +61,52 @@ func TestSearchRuns(t *testing.T) {
 			IdentityGroups: []string{acls.V0APIAllowGroup},
 		})
 
-		Convey("without access", func() {
+		t.Run("without access", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "anonymous:anonymous",
 			})
 			_, err := srv.SearchRuns(ctx, &apiv0pb.SearchRunsRequest{
 				Predicate: &apiv0pb.RunPredicate{Project: projectName},
 			})
-			So(err, ShouldBeRPCPermissionDenied)
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)())
 		})
 
-		Convey("with no predicate", func() {
+		t.Run("with no predicate", func(t *ftt.Test) {
 			_, err := srv.SearchRuns(ctx, &apiv0pb.SearchRunsRequest{})
-			So(err, ShouldBeRPCInvalidArgument)
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)())
 
 			_, err = srv.SearchRuns(ctx, &apiv0pb.SearchRunsRequest{PageSize: 50})
-			So(err, ShouldBeRPCInvalidArgument)
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)())
 		})
 
-		Convey("with a page size that is too large", func() {
+		t.Run("with a page size that is too large", func(t *ftt.Test) {
 			_, err := srv.SearchRuns(ctx, &apiv0pb.SearchRunsRequest{PageSize: maxPageSize + 1})
-			So(err, ShouldBeRPCInvalidArgument)
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)())
 		})
 
-		Convey("with no project", func() {
+		t.Run("with no project", func(t *ftt.Test) {
 			_, err := srv.SearchRuns(ctx, &apiv0pb.SearchRunsRequest{
 				Predicate: &apiv0pb.RunPredicate{},
 			})
-			So(err, ShouldBeRPCInvalidArgument)
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)())
 		})
 
-		Convey("with nonexistent project", func() {
+		t.Run("with nonexistent project", func(t *ftt.Test) {
 			resp, err := srv.SearchRuns(ctx, &apiv0pb.SearchRunsRequest{
 				Predicate: &apiv0pb.RunPredicate{Project: "bogus"},
 			})
-			So(err, ShouldBeNil)
-			So(resp.Runs, ShouldBeEmpty)
-			So(resp.NextPageToken, ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp.Runs, should.BeEmpty)
+			assert.Loosely(t, resp.NextPageToken, should.BeEmpty)
 		})
 
-		Convey("with no runs", func() {
+		t.Run("with no runs", func(t *ftt.Test) {
 			resp, err := srv.SearchRuns(ctx, &apiv0pb.SearchRunsRequest{
 				Predicate: &apiv0pb.RunPredicate{Project: projectName},
 			})
-			So(err, ShouldBeNil)
-			So(resp.Runs, ShouldBeEmpty)
-			So(resp.NextPageToken, ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp.Runs, should.BeEmpty)
+			assert.Loosely(t, resp.NextPageToken, should.BeEmpty)
 		})
 
 		// Add example data for tests below.
@@ -135,20 +138,20 @@ func TestSearchRuns(t *testing.T) {
 				EndTime:    createdAt.Add(time.Hour),
 				Owner:      "user:foo@example.org",
 			}
-			So(datastore.Put(ctx, r), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, r), should.BeNil)
 			for _, cl := range cls {
-				So(datastore.Put(ctx, &run.RunCL{
+				assert.Loosely(t, datastore.Put(ctx, &run.RunCL{
 					Run:        datastore.MakeKey(ctx, common.RunKind, string(runID)),
 					ID:         cl.ID,
 					IndexedID:  cl.ID,
 					ExternalID: cl.ExternalID,
 					Detail:     &changelist.Snapshot{Patchset: 1},
-				}), ShouldBeNil)
+				}), should.BeNil)
 			}
 			return r
 		}
 
-		Convey("with matching Runs, project-only predicate", func() {
+		t.Run("with matching Runs, project-only predicate", func(t *ftt.Test) {
 			cl1 := changelist.MustGobID(gHost, 1).MustCreateIfNotExists(ctx)
 			cl2 := changelist.MustGobID(gHost, 2).MustCreateIfNotExists(ctx)
 			r1 := putRun(projectName, 1*time.Millisecond, cl1)
@@ -156,14 +159,14 @@ func TestSearchRuns(t *testing.T) {
 			resp, err := srv.SearchRuns(ctx, &apiv0pb.SearchRunsRequest{
 				Predicate: &apiv0pb.RunPredicate{Project: projectName},
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// Most recent Run comes first.
-			So(respIDs(resp.Runs), ShouldResemble, runIDs(r2, r1))
-			So(resp.NextPageToken, ShouldBeEmpty)
+			assert.Loosely(t, respIDs(resp.Runs), should.Resemble(runIDs(r2, r1)))
+			assert.Loosely(t, resp.NextPageToken, should.BeEmpty)
 		})
 
-		Convey("paging, project-only predicate", func() {
+		t.Run("paging, project-only predicate", func(t *ftt.Test) {
 			cl1 := changelist.MustGobID(gHost, 1).MustCreateIfNotExists(ctx)
 			cl2 := changelist.MustGobID(gHost, 2).MustCreateIfNotExists(ctx)
 			r1 := putRun(projectName, 1*time.Millisecond, cl1)
@@ -174,9 +177,9 @@ func TestSearchRuns(t *testing.T) {
 				Predicate: &apiv0pb.RunPredicate{Project: projectName},
 				PageSize:  1,
 			})
-			So(err, ShouldBeNil)
-			So(respIDs(resp.Runs), ShouldResemble, runIDs(r2))
-			So(resp.NextPageToken, ShouldNotBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, respIDs(resp.Runs), should.Resemble(runIDs(r2)))
+			assert.Loosely(t, resp.NextPageToken, should.NotBeEmpty)
 
 			// Second request, second page.
 			resp, err = srv.SearchRuns(ctx, &apiv0pb.SearchRunsRequest{
@@ -184,9 +187,9 @@ func TestSearchRuns(t *testing.T) {
 				PageSize:  1,
 				PageToken: resp.NextPageToken,
 			})
-			So(err, ShouldBeNil)
-			So(respIDs(resp.Runs), ShouldResemble, runIDs(r1))
-			So(resp.NextPageToken, ShouldNotBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, respIDs(resp.Runs), should.Resemble(runIDs(r1)))
+			assert.Loosely(t, resp.NextPageToken, should.NotBeEmpty)
 
 			// Third request, no more results.
 			resp, err = srv.SearchRuns(ctx, &apiv0pb.SearchRunsRequest{
@@ -194,12 +197,12 @@ func TestSearchRuns(t *testing.T) {
 				PageSize:  1,
 				PageToken: resp.NextPageToken,
 			})
-			So(err, ShouldBeNil)
-			So(resp.Runs, ShouldBeEmpty)
-			So(resp.NextPageToken, ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp.Runs, should.BeEmpty)
+			assert.Loosely(t, resp.NextPageToken, should.BeEmpty)
 		})
 
-		Convey("with matching Run, single CL predicate", func() {
+		t.Run("with matching Run, single CL predicate", func(t *ftt.Test) {
 			cl1 := changelist.MustGobID(gHost, 1).MustCreateIfNotExists(ctx)
 			r1 := putRun(projectName, 1*time.Millisecond, cl1)
 			resp, err := srv.SearchRuns(ctx, &apiv0pb.SearchRunsRequest{
@@ -210,11 +213,11 @@ func TestSearchRuns(t *testing.T) {
 					},
 				},
 			})
-			So(err, ShouldBeNil)
-			So(respIDs(resp.Runs), ShouldResemble, runIDs(r1))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, respIDs(resp.Runs), should.Resemble(runIDs(r1)))
 		})
 
-		Convey("with CL predicate that includes patchset", func() {
+		t.Run("with CL predicate that includes patchset", func(t *ftt.Test) {
 			cl1 := changelist.MustGobID(gHost, 1).MustCreateIfNotExists(ctx)
 			putRun(projectName, 1*time.Millisecond, cl1)
 			_, err := srv.SearchRuns(ctx, &apiv0pb.SearchRunsRequest{
@@ -225,10 +228,10 @@ func TestSearchRuns(t *testing.T) {
 					},
 				},
 			})
-			So(err, ShouldBeRPCInvalidArgument)
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)())
 		})
 
-		Convey("with CL predicate and no project given", func() {
+		t.Run("with CL predicate and no project given", func(t *ftt.Test) {
 			cl1 := changelist.MustGobID(gHost, 1).MustCreateIfNotExists(ctx)
 			putRun(projectName, 1*time.Millisecond, cl1)
 			_, err := srv.SearchRuns(ctx, &apiv0pb.SearchRunsRequest{
@@ -238,10 +241,10 @@ func TestSearchRuns(t *testing.T) {
 					},
 				},
 			})
-			So(err, ShouldBeRPCInvalidArgument)
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)())
 		})
 
-		Convey("with no matching Run, CL predicate", func() {
+		t.Run("with no matching Run, CL predicate", func(t *ftt.Test) {
 			// No Runs put.
 			resp, err := srv.SearchRuns(ctx, &apiv0pb.SearchRunsRequest{
 				Predicate: &apiv0pb.RunPredicate{
@@ -251,11 +254,11 @@ func TestSearchRuns(t *testing.T) {
 					},
 				},
 			})
-			So(err, ShouldBeNil)
-			So(resp.Runs, ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp.Runs, should.BeEmpty)
 		})
 
-		Convey("query with multiple CLs returns Run that contains all CLs", func() {
+		t.Run("query with multiple CLs returns Run that contains all CLs", func(t *ftt.Test) {
 			cl1 := changelist.MustGobID(gHost, 2).MustCreateIfNotExists(ctx)
 			cl2 := changelist.MustGobID(gHost, 3).MustCreateIfNotExists(ctx)
 			r1 := putRun(projectName, 1*time.Millisecond, cl1, cl2)
@@ -274,11 +277,11 @@ func TestSearchRuns(t *testing.T) {
 					},
 				},
 			})
-			So(err, ShouldBeNil)
-			So(respIDs(resp.Runs), ShouldResemble, runIDs(r1))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, respIDs(resp.Runs), should.Resemble(runIDs(r1)))
 		})
 
-		Convey("query with multiple CLs returns nothing if no single CL contains all CLs", func() {
+		t.Run("query with multiple CLs returns nothing if no single CL contains all CLs", func(t *ftt.Test) {
 			cl1 := changelist.MustGobID(gHost, 1).MustCreateIfNotExists(ctx)
 			cl2 := changelist.MustGobID(gHost, 2).MustCreateIfNotExists(ctx)
 			putRun(projectName, 1*time.Millisecond, cl1)
@@ -298,8 +301,8 @@ func TestSearchRuns(t *testing.T) {
 					},
 				},
 			})
-			So(err, ShouldBeNil)
-			So(resp.Runs, ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp.Runs, should.BeEmpty)
 		})
 	})
 }

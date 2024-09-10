@@ -26,18 +26,18 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestMakeClient(t *testing.T) {
 	t.Parallel()
 
-	Convey("With mocked token server", t, func() {
+	ftt.Run("With mocked token server", t, func(t *ftt.Test) {
 		epoch := datastore.RoundTime(testclock.TestRecentTimeUTC)
 		ctx, tclock := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
 		ctx = authtest.MockAuthConfig(ctx)
@@ -45,35 +45,35 @@ func TestMakeClient(t *testing.T) {
 		const gHost = "first.example.com"
 
 		f, err := newProd(ctx)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		Convey("factory.token", func() {
-			Convey("works", func() {
+		t.Run("factory.token", func(t *ftt.Test) {
+			t.Run("works", func(t *ftt.Test) {
 				f.mockMintProjectToken = func(context.Context, auth.ProjectTokenParams) (*auth.Token, error) {
 					return &auth.Token{Token: "tok-1", Expiry: epoch.Add(2 * time.Minute)}, nil
 				}
 				tok, err := f.token(ctx, gHost, "lProject")
-				So(err, ShouldBeNil)
-				So(tok.AccessToken, ShouldEqual, "tok-1")
-				So(tok.TokenType, ShouldEqual, "Bearer")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, tok.AccessToken, should.Equal("tok-1"))
+				assert.Loosely(t, tok.TokenType, should.Equal("Bearer"))
 			})
-			Convey("return errEmptyProjectToken when minted token is nil", func() {
+			t.Run("return errEmptyProjectToken when minted token is nil", func(t *ftt.Test) {
 				f.mockMintProjectToken = func(context.Context, auth.ProjectTokenParams) (*auth.Token, error) {
 					return nil, nil
 				}
 				_, err := f.token(ctx, gHost, "lProject-1")
-				So(err, ShouldErrLike, errEmptyProjectToken)
+				assert.Loosely(t, err, should.ErrLike(errEmptyProjectToken))
 			})
-			Convey("error", func() {
+			t.Run("error", func(t *ftt.Test) {
 				f.mockMintProjectToken = func(context.Context, auth.ProjectTokenParams) (*auth.Token, error) {
 					return nil, errors.New("flake")
 				}
 				_, err := f.token(ctx, gHost, "lProject")
-				So(err, ShouldErrLike, "flake")
+				assert.Loosely(t, err, should.ErrLike("flake"))
 			})
 		})
 
-		Convey("factory.makeClient", func() {
+		t.Run("factory.makeClient", func(t *ftt.Test) {
 			// This test calls ListChanges RPC because it is the easiest to mock empty
 			// response for.
 			var requests []*http.Request
@@ -85,15 +85,15 @@ func TestMakeClient(t *testing.T) {
 			f.baseTransport = srv.Client().Transport
 
 			u, err := url.Parse(srv.URL)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			limitedCtx, limitedCancel := context.WithTimeout(ctx, time.Minute)
 			defer limitedCancel()
 
-			Convey("project-scoped account", func() {
+			t.Run("project-scoped account", func(t *ftt.Test) {
 				tokenCnt := 0
 				f.mockMintProjectToken = func(ctx context.Context, _ auth.ProjectTokenParams) (*auth.Token, error) {
-					So(ctx.Err(), ShouldBeNil) // must not be expired.
+					assert.Loosely(t, ctx.Err(), should.BeNil) // must not be expired.
 					tokenCnt++
 					return &auth.Token{
 						Token:  fmt.Sprintf("tok-%d", tokenCnt),
@@ -102,21 +102,21 @@ func TestMakeClient(t *testing.T) {
 				}
 
 				c, err := f.MakeClient(limitedCtx, u.Host, "lProject")
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				_, err = c.ListChanges(limitedCtx, &gerritpb.ListChangesRequest{})
-				So(err, ShouldBeNil)
-				So(requests, ShouldHaveLength, 1)
-				So(requests[0].Header["Authorization"], ShouldResemble, []string{"Bearer tok-1"})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, requests, should.HaveLength(1))
+				assert.Loosely(t, requests[0].Header["Authorization"], should.Resemble([]string{"Bearer tok-1"}))
 
 				// Ensure client can be used even if context of its creation expires.
 				limitedCancel()
-				So(limitedCtx.Err(), ShouldNotBeNil)
+				assert.Loosely(t, limitedCtx.Err(), should.NotBeNil)
 				// force token refresh
 				tclock.Add(3 * time.Minute)
 				_, err = c.ListChanges(ctx, &gerritpb.ListChangesRequest{})
-				So(err, ShouldBeNil)
-				So(requests, ShouldHaveLength, 2)
-				So(requests[1].Header["Authorization"], ShouldResemble, []string{"Bearer tok-2"})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, requests, should.HaveLength(2))
+				assert.Loosely(t, requests[1].Header["Authorization"], should.Resemble([]string{"Bearer tok-2"}))
 			})
 		})
 	})

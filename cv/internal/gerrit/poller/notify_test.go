@@ -18,17 +18,18 @@ import (
 	"sort"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestNotifyOnUnmatchedCLs(t *testing.T) {
 	t.Parallel()
 
-	Convey("notifyOnUnmatchedCLs works", t, func() {
+	ftt.Run("notifyOnUnmatchedCLs works", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
@@ -56,20 +57,20 @@ func TestNotifyOnUnmatchedCLs(t *testing.T) {
 		sort.Sort(knownIDs)
 
 		err := p.notifyOnUnmatchedCLs(ctx, lProject, gHost, changes, changelist.UpdateCLTask_RUN_POKE)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		// PM must be notified immediately on CLs already saved.
 		ids := pm.projects[lProject]
 		sort.Sort(ids)
-		So(ids, ShouldResemble, knownIDs)
+		assert.Loosely(t, ids, should.Resemble(knownIDs))
 
 		// CL Updater must have scheduled tasks.
 		etas := clUpdater.peekETAs()
 		payloads := clUpdater.popPayloadsByETA()
-		So(payloads, ShouldHaveLength, len(changes))
+		assert.Loosely(t, payloads, should.HaveLength(len(changes)))
 		// Tasks must be somewhat distributed in time.
 		mid := ct.Clock.Now().Add(fullPollInterval / 2)
-		So(etas[1], ShouldHappenBefore, mid)
-		So(etas[3], ShouldHappenAfter, mid)
+		assert.Loosely(t, etas[1], should.HappenBefore(mid))
+		assert.Loosely(t, etas[3], should.HappenAfter(mid))
 	})
 }

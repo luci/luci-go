@@ -28,14 +28,17 @@ import (
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	adminpb "go.chromium.org/luci/cv/internal/rpc/admin/api"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestDSMapperServer(t *testing.T) {
 	t.Parallel()
 
-	Convey("dsmapper job lifecycle", t, func() {
+	ftt.Run("dsmapper job lifecycle", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
@@ -64,43 +67,43 @@ func TestDSMapperServer(t *testing.T) {
 		)
 		a := AdminServer{dsmapper: &d}
 
-		Convey("without access", func() {
+		t.Run("without access", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "anonymous:anonymous",
 			})
 			_, err := a.DSMLaunchJob(ctx, &adminpb.DSMLaunchJobRequest{Name: "upgrade-something"})
-			So(err, ShouldBeRPCPermissionDenied)
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)())
 			_, err = a.DSMGetJob(ctx, &adminpb.DSMJobID{Id: 1})
-			So(err, ShouldBeRPCPermissionDenied)
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)())
 			_, err = a.DSMAbortJob(ctx, &adminpb.DSMJobID{Id: 1})
-			So(err, ShouldBeRPCPermissionDenied)
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)())
 		})
 
-		Convey("with access", func() {
+		t.Run("with access", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity:       "user:admin@example.com",
 				IdentityGroups: []string{allowGroup},
 			})
 
 			jobID, err := a.DSMLaunchJob(ctx, &adminpb.DSMLaunchJobRequest{Name: "upgrade-something"})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			job, err := a.DSMGetJob(ctx, jobID)
-			So(err, ShouldBeNil)
-			So(job.GetName(), ShouldResemble, "upgrade-something")
-			So(job.GetInfo().GetState(), ShouldEqual, dsmapperpb.State_STARTING)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, job.GetName(), should.Match("upgrade-something"))
+			assert.Loosely(t, job.GetInfo().GetState(), should.Equal(dsmapperpb.State_STARTING))
 
-			Convey("SUCCESS", func() {
+			t.Run("SUCCESS", func(t *ftt.Test) {
 				ct.TQ.Run(ctx, tqtesting.StopWhenDrained())
 
 				job, err = a.DSMGetJob(ctx, jobID)
-				So(err, ShouldBeNil)
-				So(job.GetName(), ShouldResemble, "upgrade-something")
-				So(job.GetInfo().GetState(), ShouldEqual, dsmapperpb.State_SUCCESS)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, job.GetName(), should.Match("upgrade-something"))
+				assert.Loosely(t, job.GetInfo().GetState(), should.Equal(dsmapperpb.State_SUCCESS))
 			})
-			Convey("Abort", func() {
+			t.Run("Abort", func(t *ftt.Test) {
 				_, err = a.DSMAbortJob(ctx, jobID)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				ct.TQ.Run(ctx, tqtesting.StopWhenDrained())
 				// This fails with:
 				//   "broken state, no ShardList entity for job 1"

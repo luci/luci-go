@@ -18,13 +18,13 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/cvtesting"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func mockUpdateProjectConfig(ctx context.Context, project string, cgs []*cfgpb.ConfigGroup) error {
@@ -75,7 +75,7 @@ func mockDisableProjectConfig(ctx context.Context, project string, cgs []*cfgpb.
 
 func TestLoadingConfigs(t *testing.T) {
 	t.Parallel()
-	Convey("Load project config works", t, func() {
+	ftt.Run("Load project config works", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
@@ -111,37 +111,37 @@ func TestLoadingConfigs(t *testing.T) {
 			},
 		}
 
-		So(mockUpdateProjectConfig(ctx, project, cfgGroups), ShouldBeNil)
+		assert.Loosely(t, mockUpdateProjectConfig(ctx, project, cfgGroups), should.BeNil)
 
-		Convey("Not existing project", func() {
+		t.Run("Not existing project", func(t *ftt.Test) {
 			m, err := GetLatestMeta(ctx, "not_chromium")
-			So(err, ShouldBeNil)
-			So(m.Exists(), ShouldBeFalse)
-			So(func() { m.Hash() }, ShouldPanic)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, m.Exists(), should.BeFalse)
+			assert.Loosely(t, func() { m.Hash() }, should.Panic)
 		})
 
-		Convey("Enabled project", func() {
+		t.Run("Enabled project", func(t *ftt.Test) {
 			m, err := GetLatestMeta(ctx, project)
-			So(err, ShouldBeNil)
-			So(m.Exists(), ShouldBeTrue)
-			So(m.Status, ShouldEqual, StatusEnabled)
-			So(m.ConfigGroupNames, ShouldResemble, []string{cfgGroups[0].Name, cfgGroups[1].Name})
-			So(m.ConfigGroupIDs, ShouldResemble, []ConfigGroupID{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, m.Exists(), should.BeTrue)
+			assert.Loosely(t, m.Status, should.Equal(StatusEnabled))
+			assert.Loosely(t, m.ConfigGroupNames, should.Resemble([]string{cfgGroups[0].Name, cfgGroups[1].Name}))
+			assert.Loosely(t, m.ConfigGroupIDs, should.Resemble([]ConfigGroupID{
 				ConfigGroupID(m.Hash() + "/" + cfgGroups[0].Name),
 				ConfigGroupID(m.Hash() + "/" + cfgGroups[1].Name),
-			})
+			}))
 
 			m2, err := GetHashMeta(ctx, project, m.Hash())
-			So(err, ShouldBeNil)
-			So(m2, ShouldResemble, m)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, m2, should.Resemble(m))
 
 			cgs, err := m.GetConfigGroups(ctx)
-			So(err, ShouldBeNil)
-			So(len(cgs), ShouldEqual, 2)
-			So(cgs[0].Project.StringID(), ShouldEqual, project)
-			So(cgs[0].Content, ShouldResembleProto, cfgGroups[0])
-			So(cgs[1].Project.StringID(), ShouldEqual, project)
-			So(cgs[1].Content, ShouldResembleProto, cfgGroups[1])
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(cgs), should.Equal(2))
+			assert.Loosely(t, cgs[0].Project.StringID(), should.Equal(project))
+			assert.Loosely(t, cgs[0].Content, should.Resemble(cfgGroups[0]))
+			assert.Loosely(t, cgs[1].Project.StringID(), should.Equal(project))
+			assert.Loosely(t, cgs[1].Content, should.Resemble(cfgGroups[1]))
 		})
 
 		cfgGroups = append(cfgGroups, &cfgpb.ConfigGroup{
@@ -158,84 +158,84 @@ func TestLoadingConfigs(t *testing.T) {
 				},
 			},
 		})
-		So(mockUpdateProjectConfig(ctx, project, cfgGroups), ShouldBeNil)
+		assert.Loosely(t, mockUpdateProjectConfig(ctx, project, cfgGroups), should.BeNil)
 
-		Convey("Updated project", func() {
+		t.Run("Updated project", func(t *ftt.Test) {
 			m, err := GetLatestMeta(ctx, project)
-			So(err, ShouldBeNil)
-			So(m.Exists(), ShouldBeTrue)
-			So(m.Status, ShouldEqual, StatusEnabled)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, m.Exists(), should.BeTrue)
+			assert.Loosely(t, m.Status, should.Equal(StatusEnabled))
 			h := m.Hash()
-			So(h, ShouldStartWith, "sha256:")
-			So(m.ConfigGroupIDs, ShouldResemble, []ConfigGroupID{
+			assert.Loosely(t, h, should.HavePrefix("sha256:"))
+			assert.Loosely(t, m.ConfigGroupIDs, should.Resemble([]ConfigGroupID{
 				ConfigGroupID(h + "/" + cfgGroups[0].Name),
 				ConfigGroupID(h + "/" + cfgGroups[1].Name),
 				ConfigGroupID(h + "/" + cfgGroups[2].Name),
-			})
+			}))
 			cgs, err := m.GetConfigGroups(ctx)
-			So(err, ShouldBeNil)
-			So(len(cgs), ShouldEqual, 3)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(cgs), should.Equal(3))
 
-			Convey("reading ConfigGroup directly works", func() {
+			t.Run("reading ConfigGroup directly works", func(t *ftt.Test) {
 				cg, err := GetConfigGroup(ctx, project, m.ConfigGroupIDs[2])
-				So(err, ShouldBeNil)
-				So(cg.Content, ShouldResembleProto, cfgGroups[2])
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, cg.Content, should.Resemble(cfgGroups[2]))
 			})
 		})
 
-		So(mockDisableProjectConfig(ctx, project, cfgGroups), ShouldBeNil)
+		assert.Loosely(t, mockDisableProjectConfig(ctx, project, cfgGroups), should.BeNil)
 
-		Convey("Disabled project", func() {
+		t.Run("Disabled project", func(t *ftt.Test) {
 			m, err := GetLatestMeta(ctx, project)
-			So(err, ShouldBeNil)
-			So(m.Exists(), ShouldBeTrue)
-			So(m.Status, ShouldEqual, StatusDisabled)
-			So(len(m.ConfigGroupIDs), ShouldEqual, 3)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, m.Exists(), should.BeTrue)
+			assert.Loosely(t, m.Status, should.Equal(StatusDisabled))
+			assert.Loosely(t, len(m.ConfigGroupIDs), should.Equal(3))
 			cgs, err := m.GetConfigGroups(ctx)
-			So(err, ShouldBeNil)
-			So(len(cgs), ShouldEqual, 3)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(cgs), should.Equal(3))
 		})
 
 		// Re-enable the project.
-		So(mockUpdateProjectConfig(ctx, project, cfgGroups), ShouldBeNil)
+		assert.Loosely(t, mockUpdateProjectConfig(ctx, project, cfgGroups), should.BeNil)
 
-		Convey("Re-enabled project", func() {
+		t.Run("Re-enabled project", func(t *ftt.Test) {
 			m, err := GetLatestMeta(ctx, project)
-			So(err, ShouldBeNil)
-			So(m.Exists(), ShouldBeTrue)
-			So(m.Status, ShouldEqual, StatusEnabled)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, m.Exists(), should.BeTrue)
+			assert.Loosely(t, m.Status, should.Equal(StatusEnabled))
 		})
 
 		m, err := GetLatestMeta(ctx, project)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		cgs, err := m.GetConfigGroups(ctx)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		Convey("Deleted project", func() {
-			So(datastore.Delete(ctx, &ProjectConfig{Project: project}, cgs), ShouldBeNil)
+		t.Run("Deleted project", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Delete(ctx, &ProjectConfig{Project: project}, cgs), should.BeNil)
 
 			m, err = GetLatestMeta(ctx, project)
-			So(err, ShouldBeNil)
-			So(m.Exists(), ShouldBeFalse)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, m.Exists(), should.BeFalse)
 		})
 
-		Convey("reading partially deleted project", func() {
-			So(datastore.Delete(ctx, cgs[1]), ShouldBeNil)
+		t.Run("reading partially deleted project", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Delete(ctx, cgs[1]), should.BeNil)
 			_, err = m.GetConfigGroups(ctx)
-			So(err, ShouldErrLike, "ConfigGroups for")
-			So(err, ShouldErrLike, "not found")
-			So(datastore.IsErrNoSuchEntity(err), ShouldBeTrue)
+			assert.Loosely(t, err, should.ErrLike("ConfigGroups for"))
+			assert.Loosely(t, err, should.ErrLike("not found"))
+			assert.Loosely(t, datastore.IsErrNoSuchEntity(err), should.BeTrue)
 
 			// Can still read individual ConfigGroups.
 			cg, err := GetConfigGroup(ctx, project, m.ConfigGroupIDs[0])
-			So(err, ShouldBeNil)
-			So(cg.Content, ShouldResembleProto, cfgGroups[0])
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cg.Content, should.Resemble(cfgGroups[0]))
 			cg, err = GetConfigGroup(ctx, project, m.ConfigGroupIDs[2])
-			So(err, ShouldBeNil)
-			So(cg.Content, ShouldResembleProto, cfgGroups[2])
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cg.Content, should.Resemble(cfgGroups[2]))
 			// ... except the deleted one.
 			_, err = GetConfigGroup(ctx, project, m.ConfigGroupIDs[1])
-			So(datastore.IsErrNoSuchEntity(err), ShouldBeTrue)
+			assert.Loosely(t, datastore.IsErrNoSuchEntity(err), should.BeTrue)
 		})
 	})
 }

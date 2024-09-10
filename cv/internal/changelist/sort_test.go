@@ -15,17 +15,18 @@
 package changelist
 
 import (
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"testing"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestSort(t *testing.T) {
 	t.Parallel()
 
-	Convey("Sort sorts by CL ID asc", t, func() {
+	ftt.Run("Sort sorts by CL ID asc", t, func(t *ftt.Test) {
 		cls := []*CL{{ID: 3}, {ID: 1}, {ID: 2}}
 		Sort(cls)
-		So(cls, ShouldResemble, []*CL{{ID: 1}, {ID: 2}, {ID: 3}})
+		assert.Loosely(t, cls, should.Resemble([]*CL{{ID: 1}, {ID: 2}, {ID: 3}}))
 	})
 }

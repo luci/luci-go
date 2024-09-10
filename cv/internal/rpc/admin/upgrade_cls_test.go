@@ -20,6 +20,9 @@ import (
 	"time"
 
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
@@ -33,14 +36,12 @@ import (
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	adminpb "go.chromium.org/luci/cv/internal/rpc/admin/api"
 	"go.chromium.org/luci/cv/internal/run"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestUpgradeCLs(t *testing.T) {
 	t.Parallel()
 
-	Convey("Upgrade all RunCLs to not contain CL description", t, func() {
+	ftt.Run("Upgrade all RunCLs to not contain CL description", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
@@ -54,7 +55,7 @@ func TestUpgradeCLs(t *testing.T) {
 					}},
 				},
 			}
-			So(datastore.Put(ctx, cl), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, cl), should.BeNil)
 			return cl
 		}
 
@@ -72,18 +73,18 @@ func TestUpgradeCLs(t *testing.T) {
 		cl2 := mkCL(2, gf.CI(2, gf.PS(1), gf.Desc("PS#1 blah"), gf.PS(2), gf.Desc("PS#2 foo")))
 
 		// Check test setup.
-		So(clDesc(cl1, 1), ShouldResemble, "First")
-		So(clDesc(cl2, 1), ShouldResemble, "PS#1 blah")
-		So(clDesc(cl2, 2), ShouldResemble, "PS#2 foo")
+		assert.Loosely(t, clDesc(cl1, 1), should.Match("First"))
+		assert.Loosely(t, clDesc(cl2, 1), should.Match("PS#1 blah"))
+		assert.Loosely(t, clDesc(cl2, 2), should.Match("PS#2 foo"))
 
 		verify := func() {
-			So(datastore.Get(ctx, cl1, cl2), ShouldBeNil)
+			assert.Loosely(t, datastore.Get(ctx, cl1, cl2), should.BeNil)
 
-			So(clDesc(cl1, 1), ShouldBeEmpty)
+			assert.Loosely(t, clDesc(cl1, 1), should.BeEmpty)
 
-			So(cl2.Detail.GetGerrit().GetInfo().GetRevisions(), ShouldHaveLength, 2)
-			So(clDesc(cl2, 1), ShouldBeEmpty)
-			So(clDesc(cl2, 2), ShouldBeEmpty)
+			assert.Loosely(t, cl2.Detail.GetGerrit().GetInfo().GetRevisions(), should.HaveLength(2))
+			assert.Loosely(t, clDesc(cl2, 1), should.BeEmpty)
+			assert.Loosely(t, clDesc(cl2, 2), should.BeEmpty)
 		}
 
 		// Run the migration.
@@ -96,11 +97,11 @@ func TestUpgradeCLs(t *testing.T) {
 			IdentityGroups: []string{allowGroup},
 		})
 		jobID, err := a.DSMLaunchJob(ctx, &adminpb.DSMLaunchJobRequest{Name: "runcl-description"})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		ct.TQ.Run(ctx, tqtesting.StopWhenDrained())
 		jobInfo, err := a.DSMGetJob(ctx, jobID)
-		So(err, ShouldBeNil)
-		So(jobInfo.GetInfo().GetState(), ShouldEqual, dsmapperpb.State_SUCCESS)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, jobInfo.GetInfo().GetState(), should.Equal(dsmapperpb.State_SUCCESS))
 
 		verify()
 	})

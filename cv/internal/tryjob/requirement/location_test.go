@@ -18,18 +18,19 @@ import (
 	"testing"
 
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/run"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestLocationFilterMatch(t *testing.T) {
-	Convey("locationFilterMatch works", t, func() {
+	ftt.Run("locationFilterMatch works", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
@@ -66,7 +67,7 @@ func TestLocationFilterMatch(t *testing.T) {
 			}
 		}
 
-		Convey("with includes and excludes", func() {
+		t.Run("with includes and excludes", func(t *ftt.Test) {
 			lfs := []*cfgpb.Verifiers_Tryjob_Builder_LocationFilter{
 				{
 					GerritHostRegexp:    "x-review.googlesource.com",
@@ -84,42 +85,42 @@ func TestLocationFilterMatch(t *testing.T) {
 				},
 			}
 
-			Convey("in included dir", func() {
+			t.Run("in included dir", func(t *ftt.Test) {
 				included, err := locationFilterMatch(ctx, lfs,
 					[]*run.RunCL{makeCL("x-review.googlesource.com", "gp", refMain, []string{"included/readme.md"})})
-				So(err, ShouldBeNil)
-				So(included, ShouldBeTrue)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, included, should.BeTrue)
 			})
 
-			Convey("in excluded dir", func() {
+			t.Run("in excluded dir", func(t *ftt.Test) {
 				included, err := locationFilterMatch(ctx, lfs,
 					[]*run.RunCL{makeCL("x-review.googlesource.com", "gp", refMain, []string{"included/excluded/foo"})})
-				So(err, ShouldBeNil)
-				So(included, ShouldBeFalse)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, included, should.BeFalse)
 			})
 
-			Convey("host doesn't match", func() {
+			t.Run("host doesn't match", func(t *ftt.Test) {
 				included, err := locationFilterMatch(ctx, lfs,
 					[]*run.RunCL{makeCL("other-review.googlesource.com", "gp", refMain, []string{"included/foo"})})
-				So(err, ShouldBeNil)
-				So(included, ShouldBeFalse)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, included, should.BeFalse)
 			})
 
-			Convey("project doesn't match", func() {
+			t.Run("project doesn't match", func(t *ftt.Test) {
 				included, err := locationFilterMatch(ctx, lfs,
 					[]*run.RunCL{makeCL("x-review.googlesource.com", "xyz", refMain, []string{"included/foo"})})
-				So(err, ShouldBeNil)
-				So(included, ShouldBeFalse)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, included, should.BeFalse)
 			})
 
-			Convey("ref doesn't match", func() {
+			t.Run("ref doesn't match", func(t *ftt.Test) {
 				included, err := locationFilterMatch(ctx, lfs,
 					[]*run.RunCL{makeCL("x-review.googlesource.com", "gp", "refs/heads/experimental", []string{"included/foo"})})
-				So(err, ShouldBeNil)
-				So(included, ShouldBeFalse)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, included, should.BeFalse)
 			})
 
-			Convey("merge commit", func() {
+			t.Run("merge commit", func(t *ftt.Test) {
 				mergeCL := makeCL("x-review.googlesource.com", "gp", refMain, []string{})
 				info := mergeCL.Detail.GetGerrit().GetInfo()
 				commit := info.GetRevisions()[info.GetCurrentRevision()].GetCommit()
@@ -127,43 +128,43 @@ func TestLocationFilterMatch(t *testing.T) {
 					Id: "anotherParentSha",
 				})
 
-				Convey("matches host, project, ref", func() {
+				t.Run("matches host, project, ref", func(t *ftt.Test) {
 					included, err := locationFilterMatch(ctx, lfs, []*run.RunCL{mergeCL})
-					So(err, ShouldBeNil)
-					So(included, ShouldBeTrue)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, included, should.BeTrue)
 				})
-				Convey("doesn't match host", func() {
+				t.Run("doesn't match host", func(t *ftt.Test) {
 					mergeCL.Detail.GetGerrit().Host = "other-review.googlesource.com"
 					included, err := locationFilterMatch(ctx, lfs, []*run.RunCL{mergeCL})
-					So(err, ShouldBeNil)
-					So(included, ShouldBeFalse)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, included, should.BeFalse)
 				})
-				Convey("doesn't match project", func() {
+				t.Run("doesn't match project", func(t *ftt.Test) {
 					mergeCL.Detail.GetGerrit().GetInfo().Project = "other_proj"
 					included, err := locationFilterMatch(ctx, lfs, []*run.RunCL{mergeCL})
-					So(err, ShouldBeNil)
-					So(included, ShouldBeFalse)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, included, should.BeFalse)
 				})
-				Convey("doesn't match ref", func() {
+				t.Run("doesn't match ref", func(t *ftt.Test) {
 					mergeCL.Detail.GetGerrit().GetInfo().Project = "other_ref"
 					included, err := locationFilterMatch(ctx, lfs, []*run.RunCL{mergeCL})
-					So(err, ShouldBeNil)
-					So(included, ShouldBeFalse)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, included, should.BeFalse)
 				})
 			})
 
-			Convey("with multiple CLs and multiple files", func() {
+			t.Run("with multiple CLs and multiple files", func(t *ftt.Test) {
 				included, err := locationFilterMatch(ctx, lfs,
 					[]*run.RunCL{
 						makeCL("x-review.googlesource.com", "gp", refMain, []string{"included/readme.md", "included/excluded/foo.txt"}),
 						makeCL("x-review.googlesource.com", "foo", refMain, []string{"readme.md"}),
 					})
-				So(err, ShouldBeNil)
-				So(included, ShouldBeTrue)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, included, should.BeTrue)
 			})
 		})
 
-		Convey("with initial exclude", func() {
+		t.Run("with initial exclude", func(t *ftt.Test) {
 			lfs := []*cfgpb.Verifiers_Tryjob_Builder_LocationFilter{
 				{
 					GerritHostRegexp:    "x-review.googlesource.com",
@@ -176,16 +177,16 @@ func TestLocationFilterMatch(t *testing.T) {
 
 			included, err := locationFilterMatch(ctx, lfs,
 				[]*run.RunCL{makeCL("x-review.googlesource.com", "gp", refMain, []string{"excluded/readme.md"})})
-			So(err, ShouldBeNil)
-			So(included, ShouldBeFalse)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, included, should.BeFalse)
 
 			included, err = locationFilterMatch(ctx, lfs,
 				[]*run.RunCL{makeCL("x-review.googlesource.com", "gp", refMain, []string{"somewhere/else"})})
-			So(err, ShouldBeNil)
-			So(included, ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, included, should.BeTrue)
 		})
 
-		Convey("with some patterns empty", func() {
+		t.Run("with some patterns empty", func(t *ftt.Test) {
 			lfs := []*cfgpb.Verifiers_Tryjob_Builder_LocationFilter{
 				{
 					PathRegexp: "included/.*",
@@ -195,21 +196,21 @@ func TestLocationFilterMatch(t *testing.T) {
 
 			included, err := locationFilterMatch(ctx, lfs,
 				[]*run.RunCL{makeCL("x-review.googlesource.com", "gp", refMain, []string{"included/readme.md"})})
-			So(err, ShouldBeNil)
-			So(included, ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, included, should.BeTrue)
 
 			included, err = locationFilterMatch(ctx, lfs,
 				[]*run.RunCL{makeCL("example.com", "blah", refMain, []string{"included/readme.md"})})
-			So(err, ShouldBeNil)
-			So(included, ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, included, should.BeTrue)
 
 			included, err = locationFilterMatch(ctx, lfs,
 				[]*run.RunCL{makeCL("example.com", "blah", refMain, []string{"somewhere/else"})})
-			So(err, ShouldBeNil)
-			So(included, ShouldBeFalse)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, included, should.BeFalse)
 		})
 
-		Convey("returns error given invalid regex", func() {
+		t.Run("returns error given invalid regex", func(t *ftt.Test) {
 			lfs := []*cfgpb.Verifiers_Tryjob_Builder_LocationFilter{
 				{
 					PathRegexp: "([i*",
@@ -217,11 +218,11 @@ func TestLocationFilterMatch(t *testing.T) {
 			}
 			included, err := locationFilterMatch(ctx, lfs,
 				[]*run.RunCL{makeCL("x-review.googlesource.com", "gp", refMain, []string{"included/readme.md"})})
-			So(err, ShouldNotBeNil)
-			So(included, ShouldBeFalse)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, included, should.BeFalse)
 		})
 
-		Convey("with nested include exclude include", func() {
+		t.Run("with nested include exclude include", func(t *ftt.Test) {
 			lfs := []*cfgpb.Verifiers_Tryjob_Builder_LocationFilter{
 				{
 					PathRegexp: "included/.*",
@@ -239,20 +240,20 @@ func TestLocationFilterMatch(t *testing.T) {
 
 			included, err := locationFilterMatch(ctx, lfs,
 				[]*run.RunCL{makeCL("x-review.googlesource.com", "gp", refMain, []string{"included/readme.md"})})
-			So(err, ShouldBeNil)
-			So(included, ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, included, should.BeTrue)
 
 			// In excluded dir.
 			included, err = locationFilterMatch(ctx, lfs,
 				[]*run.RunCL{makeCL("x-review.googlesource.com", "gp", refMain, []string{"included/excluded/foo"})})
-			So(err, ShouldBeNil)
-			So(included, ShouldBeFalse)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, included, should.BeFalse)
 
 			// In excluded dir, but an exception.
 			included, err = locationFilterMatch(ctx, lfs,
 				[]*run.RunCL{makeCL("x-review.googlesource.com", "gp", refMain, []string{"included/excluded/included.txt"})})
-			So(err, ShouldBeNil)
-			So(included, ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, included, should.BeTrue)
 		})
 	})
 }

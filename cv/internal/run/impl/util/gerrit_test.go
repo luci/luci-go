@@ -20,6 +20,9 @@ import (
 	"time"
 
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -29,14 +32,12 @@ import (
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/run"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestIsActionTakenOnGerritCL(t *testing.T) {
 	t.Parallel()
 
-	Convey("IsActionTakenOnGerritCL works", t, func() {
+	ftt.Run("IsActionTakenOnGerritCL works", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
@@ -66,27 +67,27 @@ func TestIsActionTakenOnGerritCL(t *testing.T) {
 			Run:        datastore.MakeKey(ctx, common.RunKind, string(runID)),
 			Detail:     cl.Snapshot,
 		}
-		So(datastore.Put(ctx, cl, rcl), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, cl, rcl), should.BeNil)
 
 		ciInGerrit := proto.Clone(ciInCV).(*gerritpb.ChangeInfo)
 		gf.PS(2)(ciInGerrit)
 		revisionInGerrit := ciInGerrit.GetCurrentRevision()
 		ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), ciInGerrit))
 
-		Convey("Action already taken for CL in CV", func() {
+		t.Run("Action already taken for CL in CV", func(t *ftt.Test) {
 			expectedActionTime := ct.Clock.Now().Add(-3 * time.Minute)
 
 			actionTime, err := IsActionTakenOnGerritCL(ctx, ct.GFake, rcl,
 				[]gerritpb.QueryOption{gerritpb.QueryOption_CURRENT_REVISION},
 				func(rcl *run.RunCL, ci *gerritpb.ChangeInfo) time.Time {
-					So(ci.GetCurrentRevision(), ShouldEqual, revisionInCV)
+					assert.Loosely(t, ci.GetCurrentRevision(), should.Equal(revisionInCV))
 					return expectedActionTime
 				})
-			So(err, ShouldBeNil)
-			So(actionTime, ShouldEqual, expectedActionTime)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actionTime, should.Equal(expectedActionTime))
 		})
 
-		Convey("Action taken for CL in Gerrit", func() {
+		t.Run("Action taken for CL in Gerrit", func(t *ftt.Test) {
 			expectedActionTime := ct.Clock.Now().Add(-1 * time.Minute)
 
 			actionTime, err := IsActionTakenOnGerritCL(ctx, ct.GFake, rcl,
@@ -101,11 +102,11 @@ func TestIsActionTakenOnGerritCL(t *testing.T) {
 						panic(fmt.Errorf("impossible revision %s", ci.GetCurrentRevision()))
 					}
 				})
-			So(err, ShouldBeNil)
-			So(actionTime, ShouldEqual, expectedActionTime)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actionTime, should.Equal(expectedActionTime))
 		})
 
-		Convey("Action not even taken for CL in Gerrit", func() {
+		t.Run("Action not even taken for CL in Gerrit", func(t *ftt.Test) {
 			actionTime, err := IsActionTakenOnGerritCL(ctx, ct.GFake, rcl,
 				[]gerritpb.QueryOption{gerritpb.QueryOption_CURRENT_REVISION},
 				func(rcl *run.RunCL, ci *gerritpb.ChangeInfo) time.Time {
@@ -118,22 +119,22 @@ func TestIsActionTakenOnGerritCL(t *testing.T) {
 						panic(fmt.Errorf("impossible revision %s", ci.GetCurrentRevision()))
 					}
 				})
-			So(err, ShouldBeNil)
-			So(actionTime.IsZero(), ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actionTime.IsZero(), should.BeTrue)
 		})
 
-		Convey("Don't go to Gerrit if CL is refreshed recently", func() {
+		t.Run("Don't go to Gerrit if CL is refreshed recently", func(t *ftt.Test) {
 			cl.Snapshot.ExternalUpdateTime = timestamppb.New(ct.Clock.Now().Add(-StaleCLAgeThreshold / 2))
-			So(datastore.Put(ctx, cl), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, cl), should.BeNil)
 
 			actionTime, err := IsActionTakenOnGerritCL(ctx, ct.GFake, rcl,
 				[]gerritpb.QueryOption{gerritpb.QueryOption_CURRENT_REVISION},
 				func(rcl *run.RunCL, ci *gerritpb.ChangeInfo) time.Time {
-					So(ci.GetCurrentRevision(), ShouldEqual, revisionInCV)
+					assert.Loosely(t, ci.GetCurrentRevision(), should.Equal(revisionInCV))
 					return time.Time{}
 				})
-			So(err, ShouldBeNil)
-			So(actionTime.IsZero(), ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actionTime.IsZero(), should.BeTrue)
 		})
 
 	})

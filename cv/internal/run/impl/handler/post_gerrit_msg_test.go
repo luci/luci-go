@@ -20,20 +20,21 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestOnCompletedPostGerritMessage(t *testing.T) {
 	t.Parallel()
 
-	Convey("onCompletedPostGerritMessage works", t, func() {
+	ftt.Run("onCompletedPostGerritMessage works", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
@@ -68,17 +69,17 @@ func TestOnCompletedPostGerritMessage(t *testing.T) {
 		}
 		h, _ := makeTestHandler(&ct)
 
-		Convey("on cancellation, cleans up Run's state", func() {
+		t.Run("on cancellation, cleans up Run's state", func(t *ftt.Test) {
 			result.Status = eventpb.LongOpCompleted_CANCELLED
 			res, err := h.OnLongOpCompleted(ctx, rs, result)
-			So(err, ShouldBeNil)
-			So(res.State.Status, ShouldEqual, run.Status_PENDING)
-			So(res.State.OngoingLongOps, ShouldBeNil)
-			So(res.SideEffectFn, ShouldBeNil)
-			So(res.PreserveEvents, ShouldBeFalse)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.State.Status, should.Equal(run.Status_PENDING))
+			assert.Loosely(t, res.State.OngoingLongOps, should.BeNil)
+			assert.Loosely(t, res.SideEffectFn, should.BeNil)
+			assert.Loosely(t, res.PreserveEvents, should.BeFalse)
 		})
 
-		Convey("on success, cleans Run's state", func() {
+		t.Run("on success, cleans Run's state", func(t *ftt.Test) {
 			result.Status = eventpb.LongOpCompleted_SUCCEEDED
 			postedAt := ct.Clock.Now().Add(-time.Second)
 			result.Result = &eventpb.LongOpCompleted_PostGerritMessage_{
@@ -87,34 +88,34 @@ func TestOnCompletedPostGerritMessage(t *testing.T) {
 				},
 			}
 			res, err := h.OnLongOpCompleted(ctx, rs, result)
-			So(err, ShouldBeNil)
-			So(res.State.Status, ShouldEqual, run.Status_PENDING)
-			So(res.State.OngoingLongOps, ShouldBeNil)
-			So(res.SideEffectFn, ShouldBeNil)
-			So(res.PreserveEvents, ShouldBeFalse)
-			So(res.State.LogEntries[0].GetTime().AsTime(), ShouldResemble, postedAt.UTC())
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.State.Status, should.Equal(run.Status_PENDING))
+			assert.Loosely(t, res.State.OngoingLongOps, should.BeNil)
+			assert.Loosely(t, res.SideEffectFn, should.BeNil)
+			assert.Loosely(t, res.PreserveEvents, should.BeFalse)
+			assert.Loosely(t, res.State.LogEntries[0].GetTime().AsTime(), should.Resemble(postedAt.UTC()))
 		})
 
-		Convey("on failure, cleans Run's state and record reasons", func() {
+		t.Run("on failure, cleans Run's state and record reasons", func(t *ftt.Test) {
 			result.Status = eventpb.LongOpCompleted_FAILED
 			res, err := h.OnLongOpCompleted(ctx, rs, result)
-			So(err, ShouldBeNil)
-			So(res.State.Status, ShouldEqual, run.Status_PENDING)
-			So(res.State.OngoingLongOps, ShouldBeNil)
-			So(res.SideEffectFn, ShouldBeNil)
-			So(res.PreserveEvents, ShouldBeFalse)
-			So(res.State.LogEntries[0].GetInfo().GetMessage(), ShouldContainSubstring, "Failed to post gerrit message")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.State.Status, should.Equal(run.Status_PENDING))
+			assert.Loosely(t, res.State.OngoingLongOps, should.BeNil)
+			assert.Loosely(t, res.SideEffectFn, should.BeNil)
+			assert.Loosely(t, res.PreserveEvents, should.BeFalse)
+			assert.Loosely(t, res.State.LogEntries[0].GetInfo().GetMessage(), should.ContainSubstring("Failed to post gerrit message"))
 		})
 
-		Convey("on expiration,cleans Run's state and record reasons", func() {
+		t.Run("on expiration,cleans Run's state and record reasons", func(t *ftt.Test) {
 			result.Status = eventpb.LongOpCompleted_EXPIRED
 			res, err := h.OnLongOpCompleted(ctx, rs, result)
-			So(err, ShouldBeNil)
-			So(res.State.Status, ShouldEqual, run.Status_PENDING)
-			So(res.State.OngoingLongOps, ShouldBeNil)
-			So(res.SideEffectFn, ShouldBeNil)
-			So(res.PreserveEvents, ShouldBeFalse)
-			So(res.State.LogEntries[0].GetInfo().GetMessage(), ShouldContainSubstring, "Failed to post the message to gerrit")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.State.Status, should.Equal(run.Status_PENDING))
+			assert.Loosely(t, res.State.OngoingLongOps, should.BeNil)
+			assert.Loosely(t, res.SideEffectFn, should.BeNil)
+			assert.Loosely(t, res.PreserveEvents, should.BeFalse)
+			assert.Loosely(t, res.State.LogEntries[0].GetInfo().GetMessage(), should.ContainSubstring("Failed to post the message to gerrit"))
 		})
 	})
 }

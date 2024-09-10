@@ -26,6 +26,9 @@ import (
 	bbutil "go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/clock"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
@@ -38,12 +41,10 @@ import (
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 	"go.chromium.org/luci/cv/internal/tryjob/requirement"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestUpdateConfig(t *testing.T) {
-	Convey("OnCLUpdated", t, func() {
+	ftt.Run("OnCLUpdated", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
@@ -63,7 +64,7 @@ func TestUpdateConfig(t *testing.T) {
 
 		putRunCL := func(ci *gerritpb.ChangeInfo, cg *cfgpb.ConfigGroup) {
 			triggers := trigger.Find(&trigger.FindInput{ChangeInfo: ci, ConfigGroup: cg})
-			So(triggers.GetCqVoteTrigger(), ShouldNotBeNil)
+			assert.Loosely(t, triggers.GetCqVoteTrigger(), should.NotBeNil)
 			rcl := run.RunCL{
 				Run:        datastore.MakeKey(ctx, common.RunKind, string(runID)),
 				ID:         common.CLID(ci.GetNumber()),
@@ -79,13 +80,13 @@ func TestUpdateConfig(t *testing.T) {
 					},
 				},
 			}
-			So(datastore.Put(ctx, &rcl), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, &rcl), should.BeNil)
 		}
 
 		// Seed project with one version of prior config.
 		prjcfgtest.Create(ctx, lProject, &cfgpb.Config{ConfigGroups: []*cfgpb.ConfigGroup{{Name: "ev1"}}})
 		metaBefore := prjcfgtest.MustExist(ctx, lProject)
-		So(metaBefore.EVersion, ShouldEqual, 1)
+		assert.Loosely(t, metaBefore.EVersion, should.Equal(1))
 		// Set up initial Run state.
 		cfgCurrent := &cfgpb.Config{
 			ConfigGroups: []*cfgpb.ConfigGroup{
@@ -151,7 +152,7 @@ func TestUpdateConfig(t *testing.T) {
 			},
 		}
 		runCLs, err := run.LoadRunCLs(ctx, rs.ID, rs.CLs)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		initialReqmt, err := requirement.Compute(ctx, requirement.Input{
 			GFactory:    ct.GFactory(),
 			ConfigGroup: cgMain,
@@ -160,8 +161,8 @@ func TestUpdateConfig(t *testing.T) {
 			RunOptions:  rs.Options,
 			RunMode:     rs.Mode,
 		})
-		So(err, ShouldBeNil)
-		So(initialReqmt.OK(), ShouldBeTrue)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, initialReqmt.OK(), should.BeTrue)
 		rs.Tryjobs.Requirement = initialReqmt.Requirement
 		// Prepare new config as a copy of existing one. Add extra ConfigGroup to it
 		// to ensure its hash will always differ.
@@ -174,15 +175,15 @@ func TestUpdateConfig(t *testing.T) {
 			prjcfgtest.Update(ctx, lProject, cfgNew)
 			metaNew := prjcfgtest.MustExist(ctx, lProject)
 			res, err := h.UpdateConfig(ctx, rs, metaNew.Hash())
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			return res
 		}
 
-		Convey("Noop", func() {
+		t.Run("Noop", func(t *ftt.Test) {
 			ensureNoop := func(res *Result) {
-				So(res.State, ShouldEqual, rs)
-				So(res.SideEffectFn, ShouldBeNil)
-				So(res.PreserveEvents, ShouldBeFalse)
+				assert.Loosely(t, res.State, should.Equal(rs))
+				assert.Loosely(t, res.SideEffectFn, should.BeNil)
+				assert.Loosely(t, res.PreserveEvents, should.BeFalse)
 			}
 
 			for _, status := range []run.Status{
@@ -190,102 +191,102 @@ func TestUpdateConfig(t *testing.T) {
 				run.Status_FAILED,
 				run.Status_CANCELLED,
 			} {
-				Convey(fmt.Sprintf("When Run is %s", status), func() {
+				t.Run(fmt.Sprintf("When Run is %s", status), func(t *ftt.Test) {
 					rs.Status = status
 					ensureNoop(updateConfig())
 				})
 			}
-			Convey("When given config hash isn't new", func() {
-				Convey("but is the same as current", func() {
+			t.Run("When given config hash isn't new", func(t *ftt.Test) {
+				t.Run("but is the same as current", func(t *ftt.Test) {
 					res, err := h.UpdateConfig(ctx, rs, metaCurrent.Hash())
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					ensureNoop(res)
 				})
-				Convey("but is older than current", func() {
+				t.Run("but is older than current", func(t *ftt.Test) {
 					res, err := h.UpdateConfig(ctx, rs, metaBefore.Hash())
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					ensureNoop(res)
 				})
 			})
 		})
 
-		Convey("Preserve events for SUBMITTING Run", func() {
+		t.Run("Preserve events for SUBMITTING Run", func(t *ftt.Test) {
 			rs.Status = run.Status_SUBMITTING
 			res := updateConfig()
-			So(res.State, ShouldEqual, rs)
-			So(res.SideEffectFn, ShouldBeNil)
-			So(res.PreserveEvents, ShouldBeTrue)
+			assert.Loosely(t, res.State, should.Equal(rs))
+			assert.Loosely(t, res.SideEffectFn, should.BeNil)
+			assert.Loosely(t, res.PreserveEvents, should.BeTrue)
 		})
 
-		Convey("Upgrades to newer config version when", func() {
+		t.Run("Upgrades to newer config version when", func(t *ftt.Test) {
 			ensureUpdated := func(expectedGroupName string) *Result {
 				res := updateConfig()
-				So(res.State.ConfigGroupID.Hash(), ShouldNotEqual, metaCurrent.Hash())
-				So(res.State.ConfigGroupID.Name(), ShouldEqual, expectedGroupName)
-				So(res.State.Status, ShouldEqual, run.Status_RUNNING)
-				So(res.State.LogEntries, ShouldHaveLength, 1)
-				So(res.State.LogEntries[0].GetConfigChanged(), ShouldNotBeNil)
-				So(res.SideEffectFn, ShouldBeNil)
-				So(res.PreserveEvents, ShouldBeFalse)
+				assert.Loosely(t, res.State.ConfigGroupID.Hash(), should.NotEqual(metaCurrent.Hash()))
+				assert.Loosely(t, res.State.ConfigGroupID.Name(), should.Equal(expectedGroupName))
+				assert.Loosely(t, res.State.Status, should.Equal(run.Status_RUNNING))
+				assert.Loosely(t, res.State.LogEntries, should.HaveLength(1))
+				assert.Loosely(t, res.State.LogEntries[0].GetConfigChanged(), should.NotBeNil)
+				assert.Loosely(t, res.SideEffectFn, should.BeNil)
+				assert.Loosely(t, res.PreserveEvents, should.BeFalse)
 				return res
 			}
-			Convey("ConfigGroup is same", func() {
+			t.Run("ConfigGroup is same", func(t *ftt.Test) {
 				ensureUpdated("main")
 			})
-			Convey("ConfigGroup renamed", func() {
+			t.Run("ConfigGroup renamed", func(t *ftt.Test) {
 				cfgNew.ConfigGroups[0].Name = "blah"
 				ensureUpdated("blah")
 			})
-			Convey("ConfigGroup re-ordered and renamed", func() {
+			t.Run("ConfigGroup re-ordered and renamed", func(t *ftt.Test) {
 				cfgNew.ConfigGroups[0].Name = "blah"
 				cfgNew.ConfigGroups[0], cfgNew.ConfigGroups[1] = cfgNew.ConfigGroups[1], cfgNew.ConfigGroups[0]
 				ensureUpdated("blah")
 			})
-			Convey("Verifier config changed", func() {
+			t.Run("Verifier config changed", func(t *ftt.Test) {
 				cfgNew.ConfigGroups[0].Verifiers.TreeStatus = &cfgpb.Verifiers_TreeStatus{Url: "https://whatever.example.com"}
 				res := ensureUpdated("main")
-				So(res.State.Tryjobs.GetRequirementVersion(), ShouldEqual, rs.Tryjobs.GetRequirementVersion())
+				assert.Loosely(t, res.State.Tryjobs.GetRequirementVersion(), should.Equal(rs.Tryjobs.GetRequirementVersion()))
 			})
-			Convey("Watched refs changed", func() {
+			t.Run("Watched refs changed", func(t *ftt.Test) {
 				cfgNew.ConfigGroups[0].Gerrit[0].Projects[0].RefRegexpExclude = []string{"refs/heads/exclude"}
 				ensureUpdated("main")
 			})
-			Convey("Tryjob requirement changed", func() {
+			t.Run("Tryjob requirement changed", func(t *ftt.Test) {
 				tryjobVerifier := cfgNew.ConfigGroups[0].Verifiers.Tryjob
 				tryjobVerifier.Builders = append(tryjobVerifier.Builders,
 					&cfgpb.Verifiers_Tryjob_Builder{
 						Name: fmt.Sprintf("%s/another-bucket/another-builder", lProject),
 					})
 				res := ensureUpdated("main")
-				So(proto.Equal(res.State.Tryjobs.GetRequirement(), rs.Tryjobs.GetRequirement()), ShouldBeFalse)
-				So(res.State.Tryjobs.GetRequirementVersion(), ShouldEqual, rs.Tryjobs.GetRequirementVersion()+1)
-				So(res.State.Tryjobs.GetRequirementComputedAt().AsTime(), ShouldEqual, ct.Clock.Now().UTC())
+				assert.Loosely(t, proto.Equal(res.State.Tryjobs.GetRequirement(), rs.Tryjobs.GetRequirement()), should.BeFalse)
+				assert.Loosely(t, res.State.Tryjobs.GetRequirementVersion(), should.Equal(rs.Tryjobs.GetRequirementVersion()+1))
+				assert.Loosely(t, res.State.Tryjobs.GetRequirementComputedAt().AsTime(), should.Equal(ct.Clock.Now().UTC()))
 			})
 		})
 
-		Convey("Cancel Run when", func() {
+		t.Run("Cancel Run when", func(t *ftt.Test) {
 			ensureCancelled := func() {
 				res := updateConfig()
 				// Applicable ConfigGroupID should remain the same.
-				So(res.State.ConfigGroupID, ShouldEqual, rs.ConfigGroupID)
-				So(res.State.Status, ShouldEqual, run.Status_CANCELLED)
-				So(res.SideEffectFn, ShouldNotBeNil)
-				So(res.PreserveEvents, ShouldBeFalse)
+				assert.Loosely(t, res.State.ConfigGroupID, should.Equal(rs.ConfigGroupID))
+				assert.Loosely(t, res.State.Status, should.Equal(run.Status_CANCELLED))
+				assert.Loosely(t, res.SideEffectFn, should.NotBeNil)
+				assert.Loosely(t, res.PreserveEvents, should.BeFalse)
 			}
-			Convey("a CL is no longer watched", func() {
+			t.Run("a CL is no longer watched", func(t *ftt.Test) {
 				cfgNew.ConfigGroups[0].Gerrit[0].Projects[1].Name = "repo/different"
 				ensureCancelled()
 			})
-			Convey("a CL is watched by >1 ConfigGroup", func() {
+			t.Run("a CL is watched by >1 ConfigGroup", func(t *ftt.Test) {
 				cfgNew.ConfigGroups[1].Gerrit[0].Projects[0].Name = gRepoFirst
 				ensureCancelled()
 			})
-			Convey("CLs are watched by different ConfigGroups", func() {
+			t.Run("CLs are watched by different ConfigGroups", func(t *ftt.Test) {
 				cfgNew.ConfigGroups[0].Gerrit[0].Projects[0].Name = "repo/different"
 				cfgNew.ConfigGroups[1].Gerrit[0].Projects[0].Name = gRepoFirst
 				ensureCancelled()
 			})
-			Convey("CLs trigger has changed", func() {
+			t.Run("CLs trigger has changed", func(t *ftt.Test) {
 				cfgNew.ConfigGroups[0].AdditionalModes[0].TriggeringLabel = "Custom"
 				ensureCancelled()
 			})

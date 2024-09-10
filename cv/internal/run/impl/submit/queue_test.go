@@ -22,19 +22,21 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestQueue(t *testing.T) {
 	t.Parallel()
 
-	Convey("Queue", t, func() {
+	ftt.Run("Queue", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
@@ -45,7 +47,7 @@ func TestQueue(t *testing.T) {
 		run3 := common.MakeRunID(lProject, clock.Now(ctx), 1, []byte("cafecafe"))
 		mustLoadQueue := func() *queue {
 			q, err := loadQueue(ctx, lProject)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			return q
 		}
 		mustTryAcquire := func(ctx context.Context, runID common.RunID, opts *cfgpb.SubmitOptions) bool {
@@ -55,129 +57,129 @@ func TestQueue(t *testing.T) {
 				waitlisted, innerErr = TryAcquire(ctx, notifier.notify, runID, opts)
 				return innerErr
 			}, nil)
-			So(innerErr, ShouldBeNil)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, innerErr, should.BeNil)
+			assert.Loosely(t, err, should.BeNil)
 			return waitlisted
 		}
 
-		Convey("TryAcquire", func() {
-			Convey("When queue is empty", func() {
+		t.Run("TryAcquire", func(t *ftt.Test) {
+			t.Run("When queue is empty", func(t *ftt.Test) {
 				waitlisted := mustTryAcquire(ctx, run1, nil)
-				So(waitlisted, ShouldBeFalse)
-				So(mustLoadQueue(), cvtesting.SafeShouldResemble, &queue{
+				assert.Loosely(t, waitlisted, should.BeFalse)
+				assert.Loosely(t, mustLoadQueue(), convey.Adapt(cvtesting.SafeShouldResemble)(&queue{
 					ID:      lProject,
 					Current: run1,
-				})
+				}))
 
-				Convey("And acquire same Run again", func() {
+				t.Run("And acquire same Run again", func(t *ftt.Test) {
 					waitlisted := mustTryAcquire(ctx, run1, nil)
-					So(waitlisted, ShouldBeFalse)
-					So(mustLoadQueue(), cvtesting.SafeShouldResemble, &queue{
+					assert.Loosely(t, waitlisted, should.BeFalse)
+					assert.Loosely(t, mustLoadQueue(), convey.Adapt(cvtesting.SafeShouldResemble)(&queue{
 						ID:      lProject,
 						Current: run1,
-					})
+					}))
 				})
 			})
 
-			Convey("Waitlisted", func() {
-				So(datastore.Put(ctx, &queue{
+			t.Run("Waitlisted", func(t *ftt.Test) {
+				assert.Loosely(t, datastore.Put(ctx, &queue{
 					ID:      lProject,
 					Current: run1,
 					Opts:    nil,
-				}), ShouldBeNil)
+				}), should.BeNil)
 				waitlisted := mustTryAcquire(ctx, run2, nil)
-				So(waitlisted, ShouldBeTrue)
-				So(mustLoadQueue(), cvtesting.SafeShouldResemble, &queue{
+				assert.Loosely(t, waitlisted, should.BeTrue)
+				assert.Loosely(t, mustLoadQueue(), convey.Adapt(cvtesting.SafeShouldResemble)(&queue{
 					ID:       lProject,
 					Current:  run1,
 					Waitlist: common.RunIDs{run2},
-				})
+				}))
 				waitlisted = mustTryAcquire(ctx, run3, nil)
-				So(waitlisted, ShouldBeTrue)
-				So(mustLoadQueue(), cvtesting.SafeShouldResemble, &queue{
+				assert.Loosely(t, waitlisted, should.BeTrue)
+				assert.Loosely(t, mustLoadQueue(), convey.Adapt(cvtesting.SafeShouldResemble)(&queue{
 					ID:       lProject,
 					Current:  run1,
 					Waitlist: common.RunIDs{run2, run3},
-				})
+				}))
 
-				Convey("And acquire same Run in waitlist again", func() {
+				t.Run("And acquire same Run in waitlist again", func(t *ftt.Test) {
 					for _, r := range []common.RunID{run2, run3} {
 						waitlisted := mustTryAcquire(ctx, r, nil)
-						So(waitlisted, ShouldBeTrue)
-						So(mustLoadQueue(), cvtesting.SafeShouldResemble, &queue{
+						assert.Loosely(t, waitlisted, should.BeTrue)
+						assert.Loosely(t, mustLoadQueue(), convey.Adapt(cvtesting.SafeShouldResemble)(&queue{
 							ID:       lProject,
 							Current:  run1,
 							Waitlist: common.RunIDs{run2, run3},
-						})
+						}))
 					}
 				})
 			})
 
-			Convey("Promote the first in the Waitlist if Current is empty", func() {
-				So(datastore.Put(ctx, &queue{
+			t.Run("Promote the first in the Waitlist if Current is empty", func(t *ftt.Test) {
+				assert.Loosely(t, datastore.Put(ctx, &queue{
 					ID:       lProject,
 					Waitlist: common.RunIDs{run2, run3},
 					Opts:     nil,
-				}), ShouldBeNil)
+				}), should.BeNil)
 				waitlisted := mustTryAcquire(ctx, run2, nil)
-				So(waitlisted, ShouldBeFalse)
-				So(mustLoadQueue(), cvtesting.SafeShouldResemble, &queue{
+				assert.Loosely(t, waitlisted, should.BeFalse)
+				assert.Loosely(t, mustLoadQueue(), convey.Adapt(cvtesting.SafeShouldResemble)(&queue{
 					ID:       lProject,
 					Current:  run2,
 					Waitlist: common.RunIDs{run3},
-				})
+				}))
 			})
 		})
 
-		Convey("Release", func() {
+		t.Run("Release", func(t *ftt.Test) {
 			mustRelease := func(ctx context.Context, runID common.RunID) {
 				var innerErr error
 				err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 					innerErr = Release(ctx, notifier.notify, runID)
 					return innerErr
 				}, nil)
-				So(innerErr, ShouldBeNil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, innerErr, should.BeNil)
+				assert.Loosely(t, err, should.BeNil)
 			}
-			So(datastore.Put(ctx, &queue{
+			assert.Loosely(t, datastore.Put(ctx, &queue{
 				ID:       lProject,
 				Current:  run1,
 				Waitlist: common.RunIDs{run2, run3},
-			}), ShouldBeNil)
-			Convey("Current slot", func() {
+			}), should.BeNil)
+			t.Run("Current slot", func(t *ftt.Test) {
 				mustRelease(ctx, run1)
-				So(mustLoadQueue(), cvtesting.SafeShouldResemble, &queue{
+				assert.Loosely(t, mustLoadQueue(), convey.Adapt(cvtesting.SafeShouldResemble)(&queue{
 					ID:       lProject,
 					Waitlist: common.RunIDs{run2, run3},
-				})
-				So(notifier.notifyETAs(ctx, run2), ShouldResemble, []time.Time{ct.Clock.Now()})
+				}))
+				assert.Loosely(t, notifier.notifyETAs(ctx, run2), should.Resemble([]time.Time{ct.Clock.Now()}))
 				for _, r := range []common.RunID{run1, run3} {
-					So(notifier.notifyETAs(ctx, r), ShouldBeEmpty)
+					assert.Loosely(t, notifier.notifyETAs(ctx, r), should.BeEmpty)
 				}
 			})
 
-			Convey("Run in waitlist", func() {
+			t.Run("Run in waitlist", func(t *ftt.Test) {
 				mustRelease(ctx, run2)
-				So(mustLoadQueue(), cvtesting.SafeShouldResemble, &queue{
+				assert.Loosely(t, mustLoadQueue(), convey.Adapt(cvtesting.SafeShouldResemble)(&queue{
 					ID:       lProject,
 					Current:  run1,
 					Waitlist: common.RunIDs{run3},
-				})
+				}))
 				for _, r := range []common.RunID{run1, run2, run3} {
-					So(notifier.notifyETAs(ctx, r), ShouldBeEmpty)
+					assert.Loosely(t, notifier.notifyETAs(ctx, r), should.BeEmpty)
 				}
 			})
 
-			Convey("Non-existing run", func() {
+			t.Run("Non-existing run", func(t *ftt.Test) {
 				nonExisting := common.MakeRunID(lProject, clock.Now(ctx), 1, []byte("badbadbad"))
 				mustRelease(ctx, nonExisting)
-				So(mustLoadQueue(), cvtesting.SafeShouldResemble, &queue{
+				assert.Loosely(t, mustLoadQueue(), convey.Adapt(cvtesting.SafeShouldResemble)(&queue{
 					ID:       lProject,
 					Current:  run1,
 					Waitlist: common.RunIDs{run2, run3},
-				})
+				}))
 				for _, r := range []common.RunID{run1, run2, run3} {
-					So(notifier.notifyETAs(ctx, r), ShouldBeEmpty)
+					assert.Loosely(t, notifier.notifyETAs(ctx, r), should.BeEmpty)
 				}
 			})
 		})
@@ -187,16 +189,16 @@ func TestQueue(t *testing.T) {
 			BurstDelay: durationpb.New(1 * time.Minute),
 		}
 		now := datastore.RoundTime(ct.Clock.Now()).UTC()
-		Convey("With SubmitOpts", func() {
-			Convey("ReleaseOnSuccess", func() {
+		t.Run("With SubmitOpts", func(t *ftt.Test) {
+			t.Run("ReleaseOnSuccess", func(t *ftt.Test) {
 				mustReleaseOnSuccess := func(ctx context.Context, runID common.RunID, submittedAt time.Time) {
 					var innerErr error
 					err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 						innerErr = ReleaseOnSuccess(ctx, notifier.notify, runID, submittedAt)
 						return innerErr
 					}, nil)
-					So(innerErr, ShouldBeNil)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, innerErr, should.BeNil)
+					assert.Loosely(t, err, should.BeNil)
 				}
 				q := &queue{
 					ID:       lProject,
@@ -204,82 +206,82 @@ func TestQueue(t *testing.T) {
 					Waitlist: common.RunIDs{run2},
 					Opts:     submitOpts,
 				}
-				So(datastore.Put(ctx, q), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, q), should.BeNil)
 
-				Convey("Records submitted timestamp", func() {
+				t.Run("Records submitted timestamp", func(t *ftt.Test) {
 					mustReleaseOnSuccess(ctx, run1, now.Add(-1*time.Second))
-					So(mustLoadQueue().History, ShouldResemble, []time.Time{now.Add(-1 * time.Second)})
+					assert.Loosely(t, mustLoadQueue().History, should.Resemble([]time.Time{now.Add(-1 * time.Second)}))
 				})
 
-				Convey("Cleanup old history", func() {
+				t.Run("Cleanup old history", func(t *ftt.Test) {
 					q.History = []time.Time{
 						now.Add(-1 * time.Hour),   // removed
 						now.Add(-1 * time.Minute), // kept
 					}
-					So(datastore.Put(ctx, q), ShouldBeNil)
+					assert.Loosely(t, datastore.Put(ctx, q), should.BeNil)
 					mustReleaseOnSuccess(ctx, run1, now.Add(-1*time.Second))
-					So(mustLoadQueue().History, ShouldResemble, []time.Time{
+					assert.Loosely(t, mustLoadQueue().History, should.Resemble([]time.Time{
 						now.Add(-1 * time.Minute),
 						now.Add(-1 * time.Second),
-					})
+					}))
 				})
 
-				Convey("Ensure order", func() {
+				t.Run("Ensure order", func(t *ftt.Test) {
 					q.History = []time.Time{now.Add(-100 * time.Millisecond)}
-					So(datastore.Put(ctx, q), ShouldBeNil)
+					assert.Loosely(t, datastore.Put(ctx, q), should.BeNil)
 					mustReleaseOnSuccess(ctx, run1, now.Add(-200*time.Millisecond))
-					So(mustLoadQueue().History, ShouldResemble, []time.Time{
+					assert.Loosely(t, mustLoadQueue().History, should.Resemble([]time.Time{
 						now.Add(-200 * time.Millisecond),
 						now.Add(-100 * time.Millisecond),
-					})
+					}))
 				})
 
-				Convey("Notify the next Run immediately if below max burst", func() {
+				t.Run("Notify the next Run immediately if below max burst", func(t *ftt.Test) {
 					q.History = []time.Time{now.Add(-2 * time.Minute)}
-					So(datastore.Put(ctx, q), ShouldBeNil)
+					assert.Loosely(t, datastore.Put(ctx, q), should.BeNil)
 					mustReleaseOnSuccess(ctx, run1, now.Add(-1*time.Second))
-					So(notifier.notifyETAs(ctx, run2), ShouldResemble, []time.Time{ct.Clock.Now()})
+					assert.Loosely(t, notifier.notifyETAs(ctx, run2), should.Resemble([]time.Time{ct.Clock.Now()}))
 				})
 
-				Convey("Notify the next Run with later ETA if quota has been exhausted", func() {
+				t.Run("Notify the next Run with later ETA if quota has been exhausted", func(t *ftt.Test) {
 					q.History = []time.Time{
 						now.Add(-45 * time.Second),
 						now.Add(-30 * time.Second),
 						// next submit should happen on (now - 30s) + 1min = now + 30s
 					}
-					So(datastore.Put(ctx, q), ShouldBeNil)
+					assert.Loosely(t, datastore.Put(ctx, q), should.BeNil)
 					mustReleaseOnSuccess(ctx, run1, now.Add(-1*time.Second))
-					So(notifier.notifyETAs(ctx, run2), ShouldResemble, []time.Time{now.Add(30 * time.Second)})
+					assert.Loosely(t, notifier.notifyETAs(ctx, run2), should.Resemble([]time.Time{now.Add(30 * time.Second)}))
 				})
 			})
 
-			Convey("TryAcquire", func() {
+			t.Run("TryAcquire", func(t *ftt.Test) {
 				q := &queue{
 					ID:   lProject,
 					Opts: submitOpts,
 				}
-				So(datastore.Put(ctx, q), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, q), should.BeNil)
 
-				Convey("Succeeds if below max burst", func() {
+				t.Run("Succeeds if below max burst", func(t *ftt.Test) {
 					q.History = []time.Time{
 						now.Add(-2 * time.Minute),
 						now.Add(-30 * time.Second),
 					}
-					So(datastore.Put(ctx, q), ShouldBeNil)
-					So(mustTryAcquire(ctx, run1, submitOpts), ShouldBeFalse)
-					So(notifier.notifyETAs(ctx, run1), ShouldBeNil)
+					assert.Loosely(t, datastore.Put(ctx, q), should.BeNil)
+					assert.Loosely(t, mustTryAcquire(ctx, run1, submitOpts), should.BeFalse)
+					assert.Loosely(t, notifier.notifyETAs(ctx, run1), should.BeNil)
 				})
 
-				Convey("Waitlist the Run and notify it with later ETA if quota has been exhausted", func() {
+				t.Run("Waitlist the Run and notify it with later ETA if quota has been exhausted", func(t *ftt.Test) {
 					q.History = []time.Time{
 						now.Add(-2 * time.Minute),
 						now.Add(-45 * time.Second),
 						now.Add(-30 * time.Second),
 						// next submit should happen on (now - 45s) + 1min = now + 15s
 					}
-					So(datastore.Put(ctx, q), ShouldBeNil)
-					So(mustTryAcquire(ctx, run1, submitOpts), ShouldBeTrue)
-					So(notifier.notifyETAs(ctx, run1), ShouldResemble, []time.Time{now.Add(15 * time.Second)})
+					assert.Loosely(t, datastore.Put(ctx, q), should.BeNil)
+					assert.Loosely(t, mustTryAcquire(ctx, run1, submitOpts), should.BeTrue)
+					assert.Loosely(t, notifier.notifyETAs(ctx, run1), should.Resemble([]time.Time{now.Add(15 * time.Second)}))
 				})
 			})
 		})

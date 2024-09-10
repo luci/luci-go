@@ -18,17 +18,17 @@ import (
 	"strings"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/gerrit/metadata"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestExtractOptions(t *testing.T) {
 	t.Parallel()
 
-	Convey("ExtractOptions works", t, func() {
+	ftt.Run("ExtractOptions works", t, func(t *ftt.Test) {
 		extract := func(msg string) *Options {
 			lines := strings.Split(strings.TrimSpace(msg), "\n")
 			for i, l := range lines {
@@ -37,8 +37,8 @@ func TestExtractOptions(t *testing.T) {
 			msg = strings.Join(lines, "\n")
 			return ExtractOptions(&changelist.Snapshot{Metadata: metadata.Extract(msg)})
 		}
-		Convey("Default", func() {
-			So(extract(`
+		t.Run("Default", func(t *ftt.Test) {
+			assert.Loosely(t, extract(`
 				CL title.
 
 				SOME_COMMIT_TAG=ignored-by-CV
@@ -49,133 +49,133 @@ func TestExtractOptions(t *testing.T) {
 				Change-Id: Ideadbeef
 				Bug: 1
 				Yes-Bug-Above: is a Git/Gerrit footer
-      `), ShouldResembleProto, &Options{})
+      `), should.Resemble(&Options{}))
 		})
 
-		Convey("No-Tree-Checks", func() {
-			So(extract(`
+		t.Run("No-Tree-Checks", func(t *ftt.Test) {
+			assert.Loosely(t, extract(`
 				CL title.
 
 				No-Tree-Checks: true
-      `), ShouldResembleProto, &Options{
+      `), should.Resemble(&Options{
 				SkipTreeChecks: true,
-			})
-			So(extract(`
+			}))
+			assert.Loosely(t, extract(`
 				CL title.
 
 				NOTREECHECKS=true
-      `), ShouldResembleProto, &Options{
+      `), should.Resemble(&Options{
 				SkipTreeChecks: true,
-			})
+			}))
 		})
 
-		Convey("No-Try / No-Presubmit", func() {
-			So(extract(`
+		t.Run("No-Try / No-Presubmit", func(t *ftt.Test) {
+			assert.Loosely(t, extract(`
 				CL title.
 
 				NOPRESUBMIT=true
 
 				No-Try: true
-      `), ShouldResembleProto, &Options{
+      `), should.Resemble(&Options{
 				SkipTryjobs:   true,
 				SkipPresubmit: true,
-			})
-			So(extract(`
+			}))
+			assert.Loosely(t, extract(`
 				CL title.
 
 				NOTRY=true
 
 				No-Presubmit: true
-      `), ShouldResembleProto, &Options{
+      `), should.Resemble(&Options{
 				SkipTryjobs:   true,
 				SkipPresubmit: true,
-			})
+			}))
 		})
 
-		Convey("Cq-Do-Not-Cancel-Tryjobs", func() {
-			So(extract(`
+		t.Run("Cq-Do-Not-Cancel-Tryjobs", func(t *ftt.Test) {
+			assert.Loosely(t, extract(`
 				CL title.
 
 				Cq-Do-Not-Cancel-Tryjobs: true
-      `), ShouldResembleProto, &Options{
+      `), should.Resemble(&Options{
 				AvoidCancellingTryjobs: true,
-			})
+			}))
 		})
 
-		Convey("No-Equivalent-Builders", func() {
-			So(extract(`
+		t.Run("No-Equivalent-Builders", func(t *ftt.Test) {
+			assert.Loosely(t, extract(`
 				CL title.
 
 				No-Equivalent-Builders: true
-      `), ShouldResembleProto, &Options{
+      `), should.Resemble(&Options{
 				SkipEquivalentBuilders: true,
-			})
+			}))
 		})
 
-		Convey("Cq-Include-Trybots/CQ_INCLUDE_TRYBOTS", func() {
-			So(extract(`
+		t.Run("Cq-Include-Trybots/CQ_INCLUDE_TRYBOTS", func(t *ftt.Test) {
+			assert.Loosely(t, extract(`
 				CL title.
 
 				Cq-Include-Trybots: project/bucket:builder1,builder2;project2/bucket:builder3
 				CQ_INCLUDE_TRYBOTS=project/bucket:builder4
-			`), ShouldResembleProto,
+			`), should.Resemble(
 				&Options{
 					IncludedTryjobs: []string{
 						"project/bucket:builder1,builder2;project2/bucket:builder3",
 						"project/bucket:builder4",
 					},
-				})
+				}))
 		})
 
-		Convey("Override-Tryjobs-For-Automation", func() {
-			So(extract(`
+		t.Run("Override-Tryjobs-For-Automation", func(t *ftt.Test) {
+			assert.Loosely(t, extract(`
 				CL title.
 
 				Override-Tryjobs-For-Automation: project/bucket:builder1,builder2;project2/bucket:builder3
 				Override-Tryjobs-For-Automation: project/bucket:builder4
-			`), ShouldResembleProto,
+			`), should.Resemble(
 				&Options{
 					OverriddenTryjobs: []string{
 						"project/bucket:builder4",
 						"project/bucket:builder1,builder2;project2/bucket:builder3",
 					},
-				})
+				}))
 		})
 
-		Convey("Cq-Cl-Tag", func() {
+		t.Run("Cq-Cl-Tag", func(t *ftt.Test) {
 			// legacy format (i.e. CQ_CL_TAG=XXX) is not supported.
-			So(extract(`
+			assert.Loosely(t, extract(`
 				CL title.
 
 				Cq-Cl-Tag: foo:bar
 				Cq-Cl-Tag: foo:baz
 				CQ_CL_TAG=another_foo:another_bar
-			`), ShouldResembleProto,
+			`), should.Resemble(
 				&Options{
 					CustomTryjobTags: []string{
 						"foo:baz",
 						"foo:bar",
 					},
-				})
+				}))
 		})
 
-		Convey("If keys are repeated, any true value means true", func() {
-			So(extract(`
+		t.Run("If keys are repeated, any true value means true", func(t *ftt.Test) {
+			assert.Loosely(t, extract(`
 				CL title.
 
 				NOTRY=true
 				No-Try: false
-      `), ShouldResembleProto, &Options{
+      `), should.Resemble(&Options{
 				SkipTryjobs: true,
-			})
-			So(extract(`
+			}))
+			assert.Loosely(t, extract(`
 				CL title.
 
 				NOTRY=false
 				No-Try: true
-      `), ShouldResembleProto, &Options{
+      `), should.Resemble(&Options{
 				SkipTryjobs: true,
-			})
+			}))
 		})
 
 	})
@@ -184,24 +184,24 @@ func TestExtractOptions(t *testing.T) {
 func TestMergeOptions(t *testing.T) {
 	t.Parallel()
 
-	Convey("MergeOptions works", t, func() {
+	ftt.Run("MergeOptions works", t, func(t *ftt.Test) {
 		o := &Options{}
-		So(MergeOptions(o, nil), ShouldResembleProto, o)
+		assert.Loosely(t, MergeOptions(o, nil), should.Resemble(o))
 
 		a := &Options{
 			SkipTreeChecks:         true,
 			AvoidCancellingTryjobs: true,
 		}
-		So(MergeOptions(a, o), ShouldResembleProto, a)
+		assert.Loosely(t, MergeOptions(a, o), should.Resemble(a))
 
 		b := &Options{
 			SkipTreeChecks:         true,
 			SkipEquivalentBuilders: true,
 		}
-		So(MergeOptions(a, b), ShouldResembleProto, &Options{
+		assert.Loosely(t, MergeOptions(a, b), should.Resemble(&Options{
 			SkipTreeChecks:         true,
 			SkipEquivalentBuilders: true,
 			AvoidCancellingTryjobs: true,
-		})
+		}))
 	})
 }

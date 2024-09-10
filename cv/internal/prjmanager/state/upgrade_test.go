@@ -17,16 +17,16 @@ package state
 import (
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestUpgradeIfNecessary(t *testing.T) {
 	t.Parallel()
 
-	Convey("UpgradeIfNecessary works", t, func() {
+	ftt.Run("UpgradeIfNecessary works", t, func(t *ftt.Test) {
 		s0 := &State{PB: &prjpb.PState{
 			Pcls: []*prjpb.PCL{
 				{Clid: 1},
@@ -34,14 +34,14 @@ func TestUpgradeIfNecessary(t *testing.T) {
 			},
 		}}
 
-		Convey("not necessary", func() {
+		t.Run("not necessary", func(t *ftt.Test) {
 			pb := backupPB(s0)
 			s1 := s0.UpgradeIfNecessary()
-			So(s1, ShouldEqual, s0)
-			So(s0.PB, ShouldResembleProto, pb)
+			assert.Loosely(t, s1, should.Equal(s0))
+			assert.Loosely(t, s0.PB, should.Resemble(pb))
 		})
 
-		Convey("necessary", func() {
+		t.Run("necessary", func(t *ftt.Test) {
 			// Add test when needed.
 		})
 	})

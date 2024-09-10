@@ -21,19 +21,20 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/caching"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/cvtesting"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestMembership(t *testing.T) {
 	t.Parallel()
 
-	Convey("Membership", t, func() {
+	ftt.Run("Membership", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 		const lProject = "test-proj"
@@ -46,51 +47,51 @@ func TestMembership(t *testing.T) {
 
 		makeIdentity := func(email string) identity.Identity {
 			id, err := identity.MakeIdentity(fmt.Sprintf("%s:%s", identity.User, email))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			return id
 		}
 
 		groups := []string{"nooglers", "googlers", "xooglers"}
 		ctx = caching.WithEmptyProcessCache(ctx)
 
-		Convey("no linked accounts", func() {
+		t.Run("no linked accounts", func(t *ftt.Test) {
 			const unlinkedEmail = "bar@google.com"
 			ct.GFake.AddLinkedAccountMapping([]*gerritpb.EmailInfo{
 				{Email: unlinkedEmail},
 			})
 
-			Convey("IsMember returns true when the given identity is authorized", func() {
+			t.Run("IsMember returns true when the given identity is authorized", func(t *ftt.Test) {
 				ct.AddMember(unlinkedEmail, "googlers")
 				ok, err := IsMember(ctx, ct.GFake, "foo", lProject, makeIdentity(unlinkedEmail), groups)
-				So(err, ShouldBeNil)
-				So(ok, ShouldBeTrue)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, ok, should.BeTrue)
 			})
 
-			Convey("IsMember returns false when the given identity is unauthorized", func() {
+			t.Run("IsMember returns false when the given identity is unauthorized", func(t *ftt.Test) {
 				ok, err := IsMember(ctx, ct.GFake, "foo", lProject, makeIdentity(unlinkedEmail), groups)
-				So(err, ShouldBeNil)
-				So(ok, ShouldBeFalse)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, ok, should.BeFalse)
 			})
 		})
 
-		Convey("gerrit returns error", func() {
+		t.Run("gerrit returns error", func(t *ftt.Test) {
 			const email = "foo@google.com"
 
-			Convey("IsMember returns true when the given identity is authorized", func() {
+			t.Run("IsMember returns true when the given identity is authorized", func(t *ftt.Test) {
 				ct.AddMember(email, "googlers")
 				ok, err := IsMember(ctx, ct.GFake, "foo", lProject, makeIdentity(email), groups)
-				So(err, ShouldBeNil)
-				So(ok, ShouldBeTrue)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, ok, should.BeTrue)
 			})
 
-			Convey("IsMember returns false when the given identity is unauthorized", func() {
+			t.Run("IsMember returns false when the given identity is unauthorized", func(t *ftt.Test) {
 				ok, err := IsMember(ctx, ct.GFake, "foo", lProject, makeIdentity(email), groups)
-				So(err, ShouldBeNil)
-				So(ok, ShouldBeFalse)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, ok, should.BeFalse)
 			})
 		})
 
-		Convey("linked accounts", func() {
+		t.Run("linked accounts", func(t *ftt.Test) {
 			const linkedEmail1 = "foo@google.com"
 			const linkedEmail2 = "foo@chromium.org"
 
@@ -99,21 +100,21 @@ func TestMembership(t *testing.T) {
 				{Email: linkedEmail2},
 			})
 
-			Convey("IsMember returns true when the given linked identity is authorized", func() {
+			t.Run("IsMember returns true when the given linked identity is authorized", func(t *ftt.Test) {
 				ct.AddMember(linkedEmail1, "googlers")
 				ok, err := IsMember(ctx, ct.GFake, "foo", lProject, makeIdentity(linkedEmail1), groups)
-				So(err, ShouldBeNil)
-				So(ok, ShouldBeTrue)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, ok, should.BeTrue)
 			})
 
-			Convey("IsMember returns true when the given identity's linked account is authorized", func() {
+			t.Run("IsMember returns true when the given identity's linked account is authorized", func(t *ftt.Test) {
 				ct.AddMember(linkedEmail1, "googlers")
 				ok, err := IsMember(ctx, ct.GFake, "foo", lProject, makeIdentity(linkedEmail2), groups)
-				So(err, ShouldBeNil)
-				So(ok, ShouldBeTrue)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, ok, should.BeTrue)
 			})
 
-			Convey("IsMember returns false if project doesn't honor linked account even if the given identity's linked account is authorized", func() {
+			t.Run("IsMember returns false if project doesn't honor linked account even if the given identity's linked account is authorized", func(t *ftt.Test) {
 				ct.AddMember(linkedEmail1, "googlers")
 				prjcfgtest.Update(ctx, lProject, &cfgpb.Config{
 					ConfigGroups: []*cfgpb.ConfigGroup{{
@@ -122,44 +123,44 @@ func TestMembership(t *testing.T) {
 					HonorGerritLinkedAccounts: false,
 				})
 				ok, err := IsMember(ctx, ct.GFake, "foo", lProject, makeIdentity(linkedEmail2), groups)
-				So(err, ShouldBeNil)
-				So(ok, ShouldBeFalse)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, ok, should.BeFalse)
 			})
 
-			Convey("IsMember returns false when all linked accounts are unauthorized", func() {
+			t.Run("IsMember returns false when all linked accounts are unauthorized", func(t *ftt.Test) {
 				ok, err := IsMember(ctx, ct.GFake, "foo", lProject, makeIdentity(linkedEmail2), groups)
-				So(err, ShouldBeNil)
-				So(ok, ShouldBeFalse)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, ok, should.BeFalse)
 			})
 
-			Convey("listActiveAccountEmails returns all non-pending linked email addresses", func() {
+			t.Run("listActiveAccountEmails returns all non-pending linked email addresses", func(t *ftt.Test) {
 				emails, err := listActiveAccountEmails(ctx, ct.GFake, "foo", lProject, linkedEmail1)
-				So(err, ShouldBeNil)
-				So(emails, ShouldEqual, []string{linkedEmail1, linkedEmail2})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, emails, should.Resemble([]string{linkedEmail1, linkedEmail2}))
 			})
 
-			Convey("IsMember looks up cache on second hit", func() {
+			t.Run("IsMember looks up cache on second hit", func(t *ftt.Test) {
 				ct.AddMember(linkedEmail1, "googlers")
 				ok, err := IsMember(ctx, ct.GFake, "foo", lProject, makeIdentity(linkedEmail2), groups)
-				So(err, ShouldBeNil)
-				So(ok, ShouldBeTrue)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, ok, should.BeTrue)
 
 				ok, err = IsMember(ctx, ct.GFake, "foo", lProject, makeIdentity(linkedEmail2), groups)
-				So(err, ShouldBeNil)
-				So(ok, ShouldBeTrue)
-				So(ct.GFake.Requests(), ShouldHaveLength, 1)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, ok, should.BeTrue)
+				assert.Loosely(t, ct.GFake.Requests(), should.HaveLength(1))
 
-				Convey("IsMember calls gerrit after cache expires", func() {
+				t.Run("IsMember calls gerrit after cache expires", func(t *ftt.Test) {
 					ct.Clock.Add(cacheTTL + time.Second)
 					ok, err = IsMember(ctx, ct.GFake, "foo", lProject, makeIdentity(linkedEmail2), groups)
-					So(err, ShouldBeNil)
-					So(ok, ShouldBeTrue)
-					So(ct.GFake.Requests(), ShouldHaveLength, 2)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, ok, should.BeTrue)
+					assert.Loosely(t, ct.GFake.Requests(), should.HaveLength(2))
 				})
 			})
 		})
 
-		Convey("linked accounts pending confirmation", func() {
+		t.Run("linked accounts pending confirmation", func(t *ftt.Test) {
 			const linkedEmail1 = "foo@google.com"
 			const linkedEmail2 = "foo@chromium.org"
 
@@ -168,24 +169,24 @@ func TestMembership(t *testing.T) {
 				{Email: linkedEmail2, PendingConfirmation: true},
 			})
 
-			Convey("IsMember returns true when the given linked identity is authorized", func() {
+			t.Run("IsMember returns true when the given linked identity is authorized", func(t *ftt.Test) {
 				ct.AddMember(linkedEmail1, "googlers")
 				ok, err := IsMember(ctx, ct.GFake, "foo", lProject, makeIdentity(linkedEmail1), groups)
-				So(err, ShouldBeNil)
-				So(ok, ShouldBeTrue)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, ok, should.BeTrue)
 			})
 
-			Convey("IsMember returns false when the linked authorized email is pending_confirmation", func() {
+			t.Run("IsMember returns false when the linked authorized email is pending_confirmation", func(t *ftt.Test) {
 				ct.AddMember(linkedEmail2, "googlers")
 				ok, err := IsMember(ctx, ct.GFake, "foo", lProject, makeIdentity(linkedEmail1), groups)
-				So(err, ShouldBeNil)
-				So(ok, ShouldBeFalse)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, ok, should.BeFalse)
 			})
 
-			Convey("listActiveAccountEmails skips pending email addresses", func() {
+			t.Run("listActiveAccountEmails skips pending email addresses", func(t *ftt.Test) {
 				emails, err := listActiveAccountEmails(ctx, ct.GFake, "foo", lProject, linkedEmail1)
-				So(err, ShouldBeNil)
-				So(emails, ShouldEqual, []string{linkedEmail1})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, emails, should.Resemble([]string{linkedEmail1}))
 			})
 		})
 	})

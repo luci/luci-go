@@ -21,6 +21,9 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/data/rand/mathrand"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	cfgmemory "go.chromium.org/luci/config/impl/memory"
@@ -31,15 +34,12 @@ import (
 
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/cvtesting"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestConfigRefreshCron(t *testing.T) {
 	t.Parallel()
 
-	Convey("Config refresh cron works", t, func() {
+	ftt.Run("Config refresh cron works", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
@@ -47,100 +47,100 @@ func TestConfigRefreshCron(t *testing.T) {
 		qm := mockQM{}
 		pcr := NewRefresher(ct.TQDispatcher, &pm, &qm, ct.Env)
 
-		Convey("for a new project", func() {
+		t.Run("for a new project", func(t *ftt.Test) {
 			ctx = cfgclient.Use(ctx, cfgmemory.New(map[config.Set]cfgmemory.Files{
 				config.MustProjectSet("chromium"): {ConfigFileName: ""},
 			}))
 			// Project chromium doesn't exist in datastore.
 			err := pcr.SubmitRefreshTasks(ctx)
-			So(err, ShouldBeNil)
-			So(ct.TQ.Tasks().Payloads(), ShouldResembleProto, []protoreflect.ProtoMessage{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ct.TQ.Tasks().Payloads(), should.Resemble([]protoreflect.ProtoMessage{
 				&RefreshProjectConfigTask{Project: "chromium"},
-			})
+			}))
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask("refresh-project-config"))
-			So(pm.updates, ShouldResemble, []string{"chromium"})
-			So(qm.writes, ShouldResemble, []string{"chromium"})
+			assert.Loosely(t, pm.updates, should.Resemble([]string{"chromium"}))
+			assert.Loosely(t, qm.writes, should.Resemble([]string{"chromium"}))
 		})
 
-		Convey("for an existing project", func() {
+		t.Run("for an existing project", func(t *ftt.Test) {
 			ctx = cfgclient.Use(ctx, cfgmemory.New(map[config.Set]cfgmemory.Files{
 				config.MustProjectSet("chromium"): {ConfigFileName: ""},
 			}))
-			So(datastore.Put(ctx, &prjcfg.ProjectConfig{
+			assert.Loosely(t, datastore.Put(ctx, &prjcfg.ProjectConfig{
 				Project: "chromium",
 				Enabled: true,
-			}), ShouldBeNil)
-			So(pcr.SubmitRefreshTasks(ctx), ShouldBeNil)
-			So(ct.TQ.Tasks().Payloads(), ShouldResembleProto, []protoreflect.ProtoMessage{
+			}), should.BeNil)
+			assert.Loosely(t, pcr.SubmitRefreshTasks(ctx), should.BeNil)
+			assert.Loosely(t, ct.TQ.Tasks().Payloads(), should.Resemble([]protoreflect.ProtoMessage{
 				&RefreshProjectConfigTask{Project: "chromium"},
-			})
+			}))
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask("refresh-project-config"))
-			So(pm.updates, ShouldResemble, []string{"chromium"})
-			So(qm.writes, ShouldResemble, []string{"chromium"})
+			assert.Loosely(t, pm.updates, should.Resemble([]string{"chromium"}))
+			assert.Loosely(t, qm.writes, should.Resemble([]string{"chromium"}))
 			pm.updates = nil
 			qm.writes = nil
 
-			Convey("randomly pokes existing projects even if there are no updates", func() {
+			t.Run("randomly pokes existing projects even if there are no updates", func(t *ftt.Test) {
 				// Simulate cron runs every 1 minute and expect PM to be poked at least
 				// once per pokePMInterval.
 				ctx = mathrand.Set(ctx, rand.New(rand.NewSource(1234)))
 				pokeBefore := ct.Clock.Now().Add(pokePMInterval)
 				for ct.Clock.Now().Before(pokeBefore) {
 					ct.Clock.Add(time.Minute)
-					So(pcr.SubmitRefreshTasks(ctx), ShouldBeNil)
+					assert.Loosely(t, pcr.SubmitRefreshTasks(ctx), should.BeNil)
 					ct.TQ.Run(ctx, tqtesting.StopAfterTask("refresh-project-config"))
-					So(pm.updates, ShouldBeEmpty)
-					So(qm.writes, ShouldResemble, []string{"chromium"})
+					assert.Loosely(t, pm.updates, should.BeEmpty)
+					assert.Loosely(t, qm.writes, should.Resemble([]string{"chromium"}))
 					if len(pm.pokes) > 0 {
 						break
 					}
 				}
-				So(pm.pokes, ShouldResemble, []string{"chromium"})
+				assert.Loosely(t, pm.pokes, should.Resemble([]string{"chromium"}))
 			})
 		})
 
-		Convey("Disable project", func() {
-			Convey("that doesn't have CV config", func() {
+		t.Run("Disable project", func(t *ftt.Test) {
+			t.Run("that doesn't have CV config", func(t *ftt.Test) {
 				ctx = cfgclient.Use(ctx, cfgmemory.New(map[config.Set]cfgmemory.Files{
 					config.MustProjectSet("chromium"): {"other.cfg": ""},
 				}))
-				So(datastore.Put(ctx, &prjcfg.ProjectConfig{
+				assert.Loosely(t, datastore.Put(ctx, &prjcfg.ProjectConfig{
 					Project: "chromium",
 					Enabled: true,
-				}), ShouldBeNil)
+				}), should.BeNil)
 				err := pcr.SubmitRefreshTasks(ctx)
-				So(err, ShouldBeNil)
-				So(ct.TQ.Tasks().Payloads(), ShouldResembleProto, []protoreflect.ProtoMessage{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, ct.TQ.Tasks().Payloads(), should.Resemble([]protoreflect.ProtoMessage{
 					&RefreshProjectConfigTask{Project: "chromium", Disable: true},
-				})
+				}))
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask("refresh-project-config"))
-				So(pm.updates, ShouldResemble, []string{"chromium"})
-				So(qm.writes, ShouldResemble, []string{"chromium"})
+				assert.Loosely(t, pm.updates, should.Resemble([]string{"chromium"}))
+				assert.Loosely(t, qm.writes, should.Resemble([]string{"chromium"}))
 			})
-			Convey("that doesn't exist in LUCI Config", func() {
+			t.Run("that doesn't exist in LUCI Config", func(t *ftt.Test) {
 				ctx = cfgclient.Use(ctx, cfgmemory.New(map[config.Set]cfgmemory.Files{}))
-				So(datastore.Put(ctx, &prjcfg.ProjectConfig{
+				assert.Loosely(t, datastore.Put(ctx, &prjcfg.ProjectConfig{
 					Project: "chromium",
 					Enabled: true,
-				}), ShouldBeNil)
+				}), should.BeNil)
 				err := pcr.SubmitRefreshTasks(ctx)
-				So(err, ShouldBeNil)
-				So(ct.TQ.Tasks().Payloads(), ShouldResembleProto, []protoreflect.ProtoMessage{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, ct.TQ.Tasks().Payloads(), should.Resemble([]protoreflect.ProtoMessage{
 					&RefreshProjectConfigTask{Project: "chromium", Disable: true},
-				})
+				}))
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask("refresh-project-config"))
-				So(pm.updates, ShouldResemble, []string{"chromium"})
-				So(qm.writes, ShouldResemble, []string{"chromium"})
+				assert.Loosely(t, pm.updates, should.Resemble([]string{"chromium"}))
+				assert.Loosely(t, qm.writes, should.Resemble([]string{"chromium"}))
 			})
-			Convey("Skip already disabled Project", func() {
+			t.Run("Skip already disabled Project", func(t *ftt.Test) {
 				ctx = cfgclient.Use(ctx, cfgmemory.New(map[config.Set]cfgmemory.Files{}))
-				So(datastore.Put(ctx, &prjcfg.ProjectConfig{
+				assert.Loosely(t, datastore.Put(ctx, &prjcfg.ProjectConfig{
 					Project: "foo",
 					Enabled: false,
-				}), ShouldBeNil)
+				}), should.BeNil)
 				err := pcr.SubmitRefreshTasks(ctx)
-				So(err, ShouldBeNil)
-				So(ct.TQ.Tasks(), ShouldBeEmpty)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, ct.TQ.Tasks(), should.BeEmpty)
 			})
 		})
 	})

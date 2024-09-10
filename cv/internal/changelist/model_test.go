@@ -24,74 +24,74 @@ import (
 
 	"go.chromium.org/luci/common/clock/testclock"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/cv/internal/common"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestCL(t *testing.T) {
 	t.Parallel()
 
-	Convey("CL", t, func() {
+	ftt.Run("CL", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		epoch := datastore.RoundTime(testclock.TestRecentTimeUTC)
 		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 
 		eid, err := GobID("x-review.example.com", 12)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		Convey("ExternalID.Get returns nil if CL doesn't exist", func() {
+		t.Run("ExternalID.Get returns nil if CL doesn't exist", func(t *ftt.Test) {
 			cl, err := eid.Load(ctx)
-			So(err, ShouldBeNil)
-			So(cl, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cl, should.BeNil)
 		})
 
-		Convey("ExternalID.MustCreateIfNotExists creates a CL", func() {
+		t.Run("ExternalID.MustCreateIfNotExists creates a CL", func(t *ftt.Test) {
 			cl := eid.MustCreateIfNotExists(ctx)
-			So(cl, ShouldNotBeNil)
-			So(cl.ExternalID, ShouldResemble, eid)
+			assert.Loosely(t, cl, should.NotBeNil)
+			assert.Loosely(t, cl.ExternalID, should.Resemble(eid))
 			// ID must be autoset to non-0 value.
-			So(cl.ID, ShouldNotEqual, 0)
-			So(cl.EVersion, ShouldEqual, 1)
-			So(cl.UpdateTime, ShouldEqual, epoch)
-			So(cl.RetentionKey, ShouldEqual, fmt.Sprintf("%02d/%010d", cl.ID%retentionKeyShards, epoch.Unix()))
+			assert.Loosely(t, cl.ID, should.NotEqual(0))
+			assert.Loosely(t, cl.EVersion, should.Equal(1))
+			assert.Loosely(t, cl.UpdateTime, should.Equal(epoch))
+			assert.Loosely(t, cl.RetentionKey, should.Equal(fmt.Sprintf("%02d/%010d", cl.ID%retentionKeyShards, epoch.Unix())))
 
-			Convey("ExternalID.Get loads existing CL", func() {
+			t.Run("ExternalID.Get loads existing CL", func(t *ftt.Test) {
 				cl2, err := eid.Load(ctx)
-				So(err, ShouldBeNil)
-				So(cl2.ID, ShouldEqual, cl.ID)
-				So(cl2.ExternalID, ShouldEqual, eid)
-				So(cl2.EVersion, ShouldEqual, 1)
-				So(cl2.UpdateTime, ShouldEqual, cl.UpdateTime)
-				So(cl2.Snapshot, ShouldResembleProto, cl.Snapshot)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, cl2.ID, should.Equal(cl.ID))
+				assert.Loosely(t, cl2.ExternalID, should.Equal(eid))
+				assert.Loosely(t, cl2.EVersion, should.Equal(1))
+				assert.Loosely(t, cl2.UpdateTime, should.Equal(cl.UpdateTime))
+				assert.Loosely(t, cl2.Snapshot, should.Resemble(cl.Snapshot))
 			})
 
-			Convey("ExternalID.MustCreateIfNotExists loads existing CL", func() {
+			t.Run("ExternalID.MustCreateIfNotExists loads existing CL", func(t *ftt.Test) {
 				cl3 := eid.MustCreateIfNotExists(ctx)
-				So(cl3, ShouldNotBeNil)
-				So(cl3.ID, ShouldEqual, cl.ID)
-				So(cl3.ExternalID, ShouldResemble, eid)
-				So(cl3.EVersion, ShouldEqual, 1)
-				So(cl3.UpdateTime, ShouldEqual, cl.UpdateTime)
-				So(cl3.Snapshot, ShouldResembleProto, cl.Snapshot)
+				assert.Loosely(t, cl3, should.NotBeNil)
+				assert.Loosely(t, cl3.ID, should.Equal(cl.ID))
+				assert.Loosely(t, cl3.ExternalID, should.Resemble(eid))
+				assert.Loosely(t, cl3.EVersion, should.Equal(1))
+				assert.Loosely(t, cl3.UpdateTime, should.Equal(cl.UpdateTime))
+				assert.Loosely(t, cl3.Snapshot, should.Resemble(cl.Snapshot))
 			})
 
-			Convey("Delete works", func() {
+			t.Run("Delete works", func(t *ftt.Test) {
 				err := Delete(ctx, cl.ID)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				// Verify.
-				So(datastore.Get(ctx, cl), ShouldResemble, datastore.ErrNoSuchEntity)
+				assert.Loosely(t, datastore.Get(ctx, cl), should.Resemble(datastore.ErrNoSuchEntity))
 				cl2, err2 := eid.Load(ctx)
-				So(err2, ShouldBeNil)
-				So(cl2, ShouldBeNil)
+				assert.Loosely(t, err2, should.BeNil)
+				assert.Loosely(t, cl2, should.BeNil)
 
-				Convey("delete is now a noop", func() {
+				t.Run("delete is now a noop", func(t *ftt.Test) {
 					err := Delete(ctx, cl.ID)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 				})
 			})
 		})
@@ -101,7 +101,7 @@ func TestCL(t *testing.T) {
 func TestLookup(t *testing.T) {
 	t.Parallel()
 
-	Convey("Lookup works", t, func() {
+	ftt.Run("Lookup works", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 
 		const n = 10
@@ -115,8 +115,8 @@ func TestLookup(t *testing.T) {
 		}
 
 		actual, err := Lookup(ctx, eids)
-		So(err, ShouldBeNil)
-		So(actual, ShouldResemble, ids)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, actual, should.Resemble(ids))
 	})
 }
 

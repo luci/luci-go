@@ -15,23 +15,24 @@
 package common
 
 import (
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"testing"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestCLIDs(t *testing.T) {
 	t.Parallel()
 
-	Convey("CLIDs", t, func() {
-		Convey("Dedupe", func() {
+	ftt.Run("CLIDs", t, func(t *ftt.Test) {
+		t.Run("Dedupe", func(t *ftt.Test) {
 			ids := CLIDs{7, 6, 3, 1, 3, 4, 9, 2, 1, 5, 8, 8, 8, 4, 9}
 			ids.Dedupe()
-			So(ids, ShouldResemble, CLIDs{1, 2, 3, 4, 5, 6, 7, 8, 9})
+			assert.Loosely(t, ids, should.Resemble(CLIDs{1, 2, 3, 4, 5, 6, 7, 8, 9}))
 
 			ids = CLIDs{6, 1, 2, 2, 3, 4}
 			ids.Dedupe()
-			So(ids, ShouldResemble, CLIDs{1, 2, 3, 4, 6})
+			assert.Loosely(t, ids, should.Resemble(CLIDs{1, 2, 3, 4, 6}))
 		})
 	})
 }

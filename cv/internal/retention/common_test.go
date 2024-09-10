@@ -15,30 +15,31 @@
 package retention
 
 import (
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"testing"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestChunk(t *testing.T) {
 	t.Parallel()
 
-	Convey("Chunk", t, func() {
-		So(chunk([]int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, 3), ShouldResemble, [][]int{
+	ftt.Run("Chunk", t, func(t *ftt.Test) {
+		assert.Loosely(t, chunk([]int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, 3), should.Resemble([][]int{
 			{1, 2, 3},
 			{4, 5, 6},
 			{7, 8, 9},
 			{10},
-		})
-		So(chunk([]int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, 2), ShouldResemble, [][]int{
+		}))
+		assert.Loosely(t, chunk([]int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, 2), should.Resemble([][]int{
 			{1, 2},
 			{3, 4},
 			{5, 6},
 			{7, 8},
 			{9, 10},
-		})
-		So(chunk([]int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, 11), ShouldResemble, [][]int{
+		}))
+		assert.Loosely(t, chunk([]int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, 11), should.Resemble([][]int{
 			{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
-		})
+		}))
 	})
 }

@@ -20,30 +20,31 @@ import (
 
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestLoadExecutionLogs(t *testing.T) {
 	t.Parallel()
 
-	Convey("LoadExecutionLogs works", t, func() {
+	ftt.Run("LoadExecutionLogs works", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
 		ev := int64(1)
 		put := func(runID common.RunID, entries ...*ExecutionLogEntry) {
-			So(datastore.Put(ctx, &executionLog{
+			assert.Loosely(t, datastore.Put(ctx, &executionLog{
 				ID:  ev,
 				Run: datastore.MakeKey(ctx, common.RunKind, string(runID)),
 				Entries: &ExecutionLogEntries{
 					Entries: entries,
 				},
-			}), ShouldBeNil)
+			}), should.BeNil)
 			ev += 1
 		}
 
@@ -102,11 +103,11 @@ func TestLoadExecutionLogs(t *testing.T) {
 		)
 
 		ret, err := LoadExecutionLogs(ctx, runID)
-		So(err, ShouldBeNil)
-		So(ret, ShouldHaveLength, 4)
-		So(ret[0].GetTryjobsLaunched().GetTryjobs()[0].GetId(), ShouldEqual, 1)
-		So(ret[1].GetTryjobsLaunched().GetTryjobs()[0].GetId(), ShouldEqual, 2)
-		So(ret[2].GetTryjobsEnded().GetTryjobs()[0].GetId(), ShouldEqual, 1)
-		So(ret[3].GetTryjobsEnded().GetTryjobs()[0].GetId(), ShouldEqual, 2)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, ret, should.HaveLength(4))
+		assert.Loosely(t, ret[0].GetTryjobsLaunched().GetTryjobs()[0].GetId(), should.Equal(1))
+		assert.Loosely(t, ret[1].GetTryjobsLaunched().GetTryjobs()[0].GetId(), should.Equal(2))
+		assert.Loosely(t, ret[2].GetTryjobsEnded().GetTryjobs()[0].GetId(), should.Equal(1))
+		assert.Loosely(t, ret[3].GetTryjobsEnded().GetTryjobs()[0].GetId(), should.Equal(2))
 	})
 }

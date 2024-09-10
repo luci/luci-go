@@ -24,6 +24,9 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
@@ -31,8 +34,6 @@ import (
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/run"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestCheckRunCLs(t *testing.T) {
@@ -46,7 +47,7 @@ func TestCheckRunCLs(t *testing.T) {
 		npRunners  = "new-patchset-runner-group"
 	)
 
-	Convey("CheckRunCreate", t, func() {
+	ftt.Run("CheckRunCreate", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 		cg := prjcfg.ConfigGroup{
@@ -65,7 +66,7 @@ func TestCheckRunCLs(t *testing.T) {
 		ctx = auth.WithState(ctx, authState)
 		addMember := func(email, grp string) {
 			id, err := identity.MakeIdentity(fmt.Sprintf("%s:%s", identity.User, email))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			authState.FakeDB.(*authtest.FakeDB).AddMocks(authtest.MockMembership(id, grp))
 		}
 		addCommitter := func(email string) {
@@ -108,7 +109,7 @@ func TestCheckRunCLs(t *testing.T) {
 					},
 				},
 			}
-			So(datastore.Put(ctx, cl), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, cl), should.BeNil)
 			cls = append(cls, cl)
 			tr := &run.Trigger{
 				Email: triggerer,
@@ -139,31 +140,31 @@ func TestCheckRunCLs(t *testing.T) {
 					},
 				},
 			}
-			So(datastore.Put(ctx, dep), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, dep), should.BeNil)
 			base.Snapshot.Deps = append(base.Snapshot.Deps, &changelist.Dep{Clid: clid})
 			return dep
 		}
 
 		mustOK := func() {
 			res, err := CheckRunCreate(ctx, ct.GFake, &cg, trs, cls)
-			So(err, ShouldBeNil)
-			So(res.FailuresSummary(), ShouldBeEmpty)
-			So(res.OK(), ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.FailuresSummary(), should.BeEmpty)
+			assert.Loosely(t, res.OK(), should.BeTrue)
 		}
 		mustFailWith := func(cl *changelist.CL, format string, args ...any) CheckResult {
 			res, err := CheckRunCreate(ctx, ct.GFake, &cg, trs, cls)
-			So(err, ShouldBeNil)
-			So(res.OK(), ShouldBeFalse)
-			So(res.Failure(cl), ShouldContainSubstring, fmt.Sprintf(format, args...))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.OK(), should.BeFalse)
+			assert.Loosely(t, res.Failure(cl), should.ContainSubstring(fmt.Sprintf(format, args...)))
 			return res
 		}
 		markCLSubmittable := func(cl *changelist.CL) {
 			cl.Snapshot.GetGerrit().GetInfo().Submittable = true
-			So(datastore.Put(ctx, cl), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, cl), should.BeNil)
 		}
 		submitCL := func(cl *changelist.CL) {
 			cl.Snapshot.GetGerrit().GetInfo().Status = gerritpb.ChangeStatus_MERGED
-			So(datastore.Put(ctx, cl), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, cl), should.BeNil)
 		}
 		setAllowOwner := func(action cfgpb.Verifiers_GerritCQAbility_CQAction) {
 			cg.Content.Verifiers.GerritCqAbility.AllowOwnerIfSubmittable = action
@@ -179,7 +180,7 @@ func TestCheckRunCLs(t *testing.T) {
 			ci := cl.Snapshot.Kind.(*changelist.Snapshot_Gerrit).Gerrit.Info
 			ci.SubmitRequirements = append(ci.SubmitRequirements,
 				&gerritpb.SubmitRequirementResultInfo{Name: name, Status: st})
-			So(datastore.Put(ctx, cl), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, cl), should.BeNil)
 		}
 		satisfiedReq := func(cl *changelist.CL, name string) {
 			addSubmitReq(cl, name, gerritpb.SubmitRequirementResultInfo_SATISFIED)
@@ -191,14 +192,14 @@ func TestCheckRunCLs(t *testing.T) {
 			addSubmitReq(cl, name, gerritpb.SubmitRequirementResultInfo_NOT_APPLICABLE)
 		}
 
-		Convey("mode == FullRun", func() {
+		t.Run("mode == FullRun", func(t *ftt.Test) {
 			m := run.FullRun
 
-			Convey("triggerer == owner", func() {
+			t.Run("triggerer == owner", func(t *ftt.Test) {
 				tr, owner := "t@example.org", "t@example.org"
 				cl, _ := addCL(tr, owner, m)
 
-				Convey("triggerer is a committer", func() {
+				t.Run("triggerer is a committer", func(t *ftt.Test) {
 					addCommitter(tr)
 
 					// Should succeed when CL becomes submittable.
@@ -206,7 +207,7 @@ func TestCheckRunCLs(t *testing.T) {
 					markCLSubmittable(cl)
 					mustOK()
 				})
-				Convey("triggerer is a dry-runner", func() {
+				t.Run("triggerer is a dry-runner", func(t *ftt.Test) {
 					addDryRunner(tr)
 
 					// Dry-runner can trigger a full-run for own submittable CL.
@@ -216,8 +217,8 @@ func TestCheckRunCLs(t *testing.T) {
 					markCLSubmittable(cl)
 					mustOK()
 				})
-				Convey("triggerer is neither dry-runner nor committer", func() {
-					Convey("CL submittable", func() {
+				t.Run("triggerer is neither dry-runner nor committer", func(t *ftt.Test) {
+					t.Run("CL submittable", func(t *ftt.Test) {
 						// Should fail, even if it was submittable.
 						markCLSubmittable(cl)
 						mustFailWith(cl, "CV cannot start a Run for `%s` because the user is not a committer", tr)
@@ -225,25 +226,25 @@ func TestCheckRunCLs(t *testing.T) {
 						setAllowOwner(cfgpb.Verifiers_GerritCQAbility_COMMIT)
 						mustOK()
 					})
-					Convey("CL not submittable", func() {
+					t.Run("CL not submittable", func(t *ftt.Test) {
 						// Should fail always.
 						mustFailWith(cl, "CV cannot start a Run for `%s` because the user is not a committer", tr)
 						setAllowOwner(cfgpb.Verifiers_GerritCQAbility_COMMIT)
 						mustFailWith(cl, notSubmittable)
 					})
 				})
-				Convey("suspiciously not submittable", func() {
+				t.Run("suspiciously not submittable", func(t *ftt.Test) {
 					addDryRunner(tr)
 					addSubmitReq(cl, "Code-Review", gerritpb.SubmitRequirementResultInfo_SATISFIED)
 					mustFailWith(cl, notSubmittableSuspicious)
 				})
 			})
 
-			Convey("triggerer != owner", func() {
+			t.Run("triggerer != owner", func(t *ftt.Test) {
 				tr, owner := "t@example.org", "o@example.org"
 				cl, _ := addCL(tr, owner, m)
 
-				Convey("triggerer is a committer", func() {
+				t.Run("triggerer is a committer", func(t *ftt.Test) {
 					addCommitter(tr)
 
 					// Should succeed when CL becomes submittable.
@@ -251,7 +252,7 @@ func TestCheckRunCLs(t *testing.T) {
 					markCLSubmittable(cl)
 					mustOK()
 				})
-				Convey("triggerer is a dry-runner", func() {
+				t.Run("triggerer is a dry-runner", func(t *ftt.Test) {
 					addDryRunner(tr)
 
 					// Dry-runner cannot trigger a full-run for someone else' CL,
@@ -272,14 +273,14 @@ func TestCheckRunCLs(t *testing.T) {
 					setAllowNonOwnerDryRunner(true)
 					mustFailWith(cl, "neither the CL owner nor a committer")
 				})
-				Convey("triggerer is neither dry-runner nor committer", func() {
+				t.Run("triggerer is neither dry-runner nor committer", func(t *ftt.Test) {
 					// Should fail always.
 					mustFailWith(cl, "neither the CL owner nor a committer")
 					markCLSubmittable(cl)
 					setAllowOwner(cfgpb.Verifiers_GerritCQAbility_COMMIT)
 					mustFailWith(cl, "neither the CL owner nor a committer")
 				})
-				Convey("suspiciously not submittable", func() {
+				t.Run("suspiciously not submittable", func(t *ftt.Test) {
 					addCommitter(tr)
 					addSubmitReq(cl, "Code-Review", gerritpb.SubmitRequirementResultInfo_SATISFIED)
 					mustFailWith(cl, notSubmittableSuspicious)
@@ -287,26 +288,26 @@ func TestCheckRunCLs(t *testing.T) {
 			})
 		})
 
-		Convey("mode == DryRun", func() {
+		t.Run("mode == DryRun", func(t *ftt.Test) {
 			m := run.DryRun
 
-			Convey("triggerer == owner", func() {
+			t.Run("triggerer == owner", func(t *ftt.Test) {
 				tr, owner := "t@example.org", "t@example.org"
 				cl, _ := addCL(tr, owner, m)
 
-				Convey("triggerer is a committer", func() {
+				t.Run("triggerer is a committer", func(t *ftt.Test) {
 					// Committers can trigger a dry-run for someone else' CL
 					// even if the CL is not submittable
 					addCommitter(tr)
 					mustOK()
 				})
-				Convey("triggerer is a dry-runner", func() {
+				t.Run("triggerer is a dry-runner", func(t *ftt.Test) {
 					// Should succeed even if the CL is not submittable.
 					addDryRunner(tr)
 					mustOK()
 				})
-				Convey("triggerer is neither dry-runner nor committer", func() {
-					Convey("CL submittable", func() {
+				t.Run("triggerer is neither dry-runner nor committer", func(t *ftt.Test) {
+					t.Run("CL submittable", func(t *ftt.Test) {
 						// Should fail, even if the CL is submittable.
 						markCLSubmittable(cl)
 						mustFailWith(cl, "CV cannot start a Run for `%s` because the user is not a dry-runner", owner)
@@ -317,7 +318,7 @@ func TestCheckRunCLs(t *testing.T) {
 						setAllowOwner(cfgpb.Verifiers_GerritCQAbility_COMMIT)
 						mustOK()
 					})
-					Convey("CL not submittable", func() {
+					t.Run("CL not submittable", func(t *ftt.Test) {
 						// Should fail always.
 						mustFailWith(cl, "CV cannot start a Run for `%s` because the user is not a dry-runner", owner)
 						setAllowOwner(cfgpb.Verifiers_GerritCQAbility_COMMIT)
@@ -326,18 +327,18 @@ func TestCheckRunCLs(t *testing.T) {
 				})
 			})
 
-			Convey("triggerer != owner", func() {
+			t.Run("triggerer != owner", func(t *ftt.Test) {
 				tr, owner := "t@example.org", "o@example.org"
 				cl, _ := addCL(tr, owner, m)
 
-				Convey("triggerer is a committer", func() {
+				t.Run("triggerer is a committer", func(t *ftt.Test) {
 					// Should succeed whether CL is submittable or not.
 					addCommitter(tr)
 					mustOK()
 					markCLSubmittable(cl)
 					mustOK()
 				})
-				Convey("triggerer is a dry-runner", func() {
+				t.Run("triggerer is a dry-runner", func(t *ftt.Test) {
 					// Only committers can trigger a dry-run for someone else's CL.
 					addDryRunner(tr)
 					mustFailWith(cl, "neither the CL owner nor a committer")
@@ -352,7 +353,7 @@ func TestCheckRunCLs(t *testing.T) {
 					setTrustDryRunnerDeps(true)
 					mustFailWith(cl, "neither the CL owner nor a committer")
 				})
-				Convey("triggerer is a dry-runner (with allow_non_owner_dry_runner)", func() {
+				t.Run("triggerer is a dry-runner (with allow_non_owner_dry_runner)", func(t *ftt.Test) {
 					// With allow_non_owner_dry_runner, dry-runners can trigger a dry-run for someone else's CL.
 					addDryRunner(tr)
 					setAllowNonOwnerDryRunner(true)
@@ -360,7 +361,7 @@ func TestCheckRunCLs(t *testing.T) {
 					markCLSubmittable(cl)
 					mustOK()
 				})
-				Convey("triggerer is neither dry-runner nor committer", func() {
+				t.Run("triggerer is neither dry-runner nor committer", func(t *ftt.Test) {
 					// Only committers can trigger a dry-run for someone else' CL.
 					mustFailWith(cl, "neither the CL owner nor a committer")
 					markCLSubmittable(cl)
@@ -373,7 +374,7 @@ func TestCheckRunCLs(t *testing.T) {
 				})
 			})
 
-			Convey("w/ dependencies", func() {
+			t.Run("w/ dependencies", func(t *ftt.Test) {
 				// if triggerer is not the owner, but a
 				// committer/dry-runner, then untrusted deps
 				// should be checked.
@@ -386,33 +387,33 @@ func TestCheckRunCLs(t *testing.T) {
 				dep2URL := dep2.ExternalID.MustURL()
 
 				testCases := func() {
-					Convey("untrusted", func() {
+					t.Run("untrusted", func(t *ftt.Test) {
 						res := mustFailWith(cl, untrustedDeps)
-						So(res.Failure(cl), ShouldContainSubstring, dep1URL)
-						So(res.Failure(cl), ShouldContainSubstring, dep2URL)
+						assert.Loosely(t, res.Failure(cl), should.ContainSubstring(dep1URL))
+						assert.Loosely(t, res.Failure(cl), should.ContainSubstring(dep2URL))
 						// if the deps have no submit requirements, the rejection message
 						// shouldn't contain a warning for suspicious CLs.
-						So(res.Failure(cl), ShouldNotContainSubstring, untrustedDepsSuspicious)
+						assert.Loosely(t, res.Failure(cl), should.NotContainSubstring(untrustedDepsSuspicious))
 
-						Convey("with TrustDryRunnerDeps", func() {
+						t.Run("with TrustDryRunnerDeps", func(t *ftt.Test) {
 							setTrustDryRunnerDeps(true)
 							mustFailWith(cl, untrustedDepsTrustDryRunnerDeps)
 						})
 
-						Convey("but dep2 satisfies all the SubmitRequirements", func() {
+						t.Run("but dep2 satisfies all the SubmitRequirements", func(t *ftt.Test) {
 							naReq(dep1, "Code-Review")
 							unsatisfiedReq(dep1, "Code-Owner")
 							satisfiedReq(dep2, "Code-Review")
 							satisfiedReq(dep2, "Code-Owner")
 							res := mustFailWith(cl, untrustedDeps)
-							So(res.Failure(cl), ShouldContainSubstring, fmt.Sprintf(""+
+							assert.Loosely(t, res.Failure(cl), should.ContainSubstring(fmt.Sprintf(""+
 								"- %s: not submittable, although submit requirements `Code-Review` and `Code-Owner` are satisfied",
 								dep2URL,
-							))
-							So(res.Failure(cl), ShouldContainSubstring, untrustedDepsSuspicious)
+							)))
+							assert.Loosely(t, res.Failure(cl), should.ContainSubstring(untrustedDepsSuspicious))
 						})
 
-						Convey("because all the deps have unsatisfied requirements", func() {
+						t.Run("because all the deps have unsatisfied requirements", func(t *ftt.Test) {
 							dep3 := addDep(cl, "dep_owner3@example.org")
 							dep3URL := dep3.ExternalID.MustURL()
 
@@ -424,62 +425,62 @@ func TestCheckRunCLs(t *testing.T) {
 							unsatisfiedReq(dep3, "Code-Quiz")
 
 							res := mustFailWith(cl, untrustedDeps)
-							So(res.Failure(cl), ShouldNotContainSubstring, untrustedDepsSuspicious)
-							So(res.Failure(cl), ShouldContainSubstring,
-								dep1URL+": not satisfying the `Code-Review` submit requirement")
-							So(res.Failure(cl), ShouldContainSubstring,
-								dep2URL+": not satisfying the `Code-Review` and `Code-Owner` submit requirement")
-							So(res.Failure(cl), ShouldContainSubstring,
-								dep3URL+": not satisfying the `Code-Review`, `Code-Owner`, and `Code-Quiz` submit requirement")
+							assert.Loosely(t, res.Failure(cl), should.NotContainSubstring(untrustedDepsSuspicious))
+							assert.Loosely(t, res.Failure(cl), should.ContainSubstring(
+								dep1URL+": not satisfying the `Code-Review` submit requirement"))
+							assert.Loosely(t, res.Failure(cl), should.ContainSubstring(
+								dep2URL+": not satisfying the `Code-Review` and `Code-Owner` submit requirement"))
+							assert.Loosely(t, res.Failure(cl), should.ContainSubstring(
+								dep3URL+": not satisfying the `Code-Review`, `Code-Owner`, and `Code-Quiz` submit requirement"))
 						})
 					})
-					Convey("trusted because it's apart of the Run", func() {
+					t.Run("trusted because it's apart of the Run", func(t *ftt.Test) {
 						cls = append(cls, dep1, dep2)
 						trs = append(trs, &run.Trigger{Email: tr, Mode: string(m)})
 						trs = append(trs, &run.Trigger{Email: tr, Mode: string(m)})
 						mustOK()
 					})
-					Convey("trusted because of submittable", func() {
+					t.Run("trusted because of submittable", func(t *ftt.Test) {
 						markCLSubmittable(dep1)
 						markCLSubmittable(dep2)
 						mustOK()
 					})
-					Convey("trusterd because they have been merged already", func() {
+					t.Run("trusterd because they have been merged already", func(t *ftt.Test) {
 						submitCL(dep1)
 						submitCL(dep2)
 						mustOK()
 					})
-					Convey("trusted because the owner is a committer", func() {
+					t.Run("trusted because the owner is a committer", func(t *ftt.Test) {
 						addCommitter("dep_owner1@example.org")
 						addCommitter("dep_owner2@example.org")
 						mustOK()
 					})
-					Convey("trusted because the owner is a dry-runner", func() {
+					t.Run("trusted because the owner is a dry-runner", func(t *ftt.Test) {
 						addDryRunner("dep_owner1@example.org")
 						addDryRunner("dep_owner2@example.org")
 
 						// Not allowed without TrustDryRunnerDeps.
 						res := mustFailWith(cl, untrustedDeps)
-						So(res.Failure(cl), ShouldContainSubstring, dep1URL)
-						So(res.Failure(cl), ShouldContainSubstring, dep2URL)
+						assert.Loosely(t, res.Failure(cl), should.ContainSubstring(dep1URL))
+						assert.Loosely(t, res.Failure(cl), should.ContainSubstring(dep2URL))
 
 						setTrustDryRunnerDeps(true)
 						mustOK()
 					})
-					Convey("a mix of untrusted and trusted deps", func() {
+					t.Run("a mix of untrusted and trusted deps", func(t *ftt.Test) {
 						addCommitter("dep_owner1@example.org")
 						res := mustFailWith(cl, untrustedDeps)
-						So(res.Failure(cl), ShouldNotContainSubstring, dep1URL)
-						So(res.Failure(cl), ShouldContainSubstring, dep2URL)
+						assert.Loosely(t, res.Failure(cl), should.NotContainSubstring(dep1URL))
+						assert.Loosely(t, res.Failure(cl), should.ContainSubstring(dep2URL))
 					})
 				}
 
-				Convey("committer", func() {
+				t.Run("committer", func(t *ftt.Test) {
 					addCommitter(tr)
 					testCases()
 				})
 
-				Convey("dry-runner (with allow_non_owner_dry_runner)", func() {
+				t.Run("dry-runner (with allow_non_owner_dry_runner)", func(t *ftt.Test) {
 					addDryRunner(tr)
 					setAllowNonOwnerDryRunner(true)
 					testCases()
@@ -487,19 +488,19 @@ func TestCheckRunCLs(t *testing.T) {
 			})
 		})
 
-		Convey("mode == NewPatchsetRun", func() {
+		t.Run("mode == NewPatchsetRun", func(t *ftt.Test) {
 			tr, owner := "t@example.org", "t@example.org"
 			cl, _ := addCL(tr, owner, run.NewPatchsetRun)
-			Convey("owner is disallowed", func() {
+			t.Run("owner is disallowed", func(t *ftt.Test) {
 				mustFailWith(cl, "CL owner is not in the allowlist.")
 			})
-			Convey("owner is allowed", func() {
+			t.Run("owner is allowed", func(t *ftt.Test) {
 				addNPRunner(owner)
 				mustOK()
 			})
 		})
 
-		Convey("mode is non standard mode", func() {
+		t.Run("mode is non standard mode", func(t *ftt.Test) {
 			tr, owner := "t@example.org", "t@example.org"
 			cl, trigger := addCL(tr, owner, "CUSTOM_RUN")
 			trigger.ModeDefinition = &cfgpb.Mode{
@@ -507,46 +508,46 @@ func TestCheckRunCLs(t *testing.T) {
 				TriggeringLabel: "CUSTOM",
 				TriggeringValue: 1,
 			}
-			Convey("dry", func() {
+			t.Run("dry", func(t *ftt.Test) {
 				trigger.ModeDefinition.CqLabelValue = 1
-				Convey("disallowed", func() {
+				t.Run("disallowed", func(t *ftt.Test) {
 					mustFailWith(cl, "CV cannot start a Run for `%s` because the user is not a dry-runner", owner)
 				})
-				Convey("allowed", func() {
+				t.Run("allowed", func(t *ftt.Test) {
 					addDryRunner(owner)
 					mustOK()
 				})
 			})
-			Convey("full", func() {
+			t.Run("full", func(t *ftt.Test) {
 				trigger.ModeDefinition.CqLabelValue = 2
 				markCLSubmittable(cl)
-				Convey("disallowed", func() {
+				t.Run("disallowed", func(t *ftt.Test) {
 					mustFailWith(cl, "CV cannot start a Run for `%s` because the user is not a committer", owner)
 				})
-				Convey("allowed", func() {
+				t.Run("allowed", func(t *ftt.Test) {
 					addCommitter(owner)
 					mustOK()
 				})
 			})
 		})
 
-		Convey("multiple CLs", func() {
+		t.Run("multiple CLs", func(t *ftt.Test) {
 			m := run.DryRun
 			tr, owner := "t@example.org", "t@example.org"
 			cl1, _ := addCL(tr, owner, m)
 			cl2, _ := addCL(tr, owner, m)
 			setAllowOwner(cfgpb.Verifiers_GerritCQAbility_DRY_RUN)
 
-			Convey("all CLs passed", func() {
+			t.Run("all CLs passed", func(t *ftt.Test) {
 				markCLSubmittable(cl1)
 				markCLSubmittable(cl2)
 				mustOK()
 			})
-			Convey("all CLs failed", func() {
+			t.Run("all CLs failed", func(t *ftt.Test) {
 				mustFailWith(cl1, notSubmittable)
 				mustFailWith(cl2, notSubmittable)
 			})
-			Convey("Some CLs failed", func() {
+			t.Run("Some CLs failed", func(t *ftt.Test) {
 				markCLSubmittable(cl1)
 				mustFailWith(cl1, "CV cannot start a Run due to errors in the following CL(s)")
 				mustFailWith(cl2, notSubmittable)

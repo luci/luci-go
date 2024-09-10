@@ -18,53 +18,53 @@ import (
 	"strings"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/cv/internal/changelist"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestExtract(t *testing.T) {
 	t.Parallel()
 
-	Convey("Extract works", t, func() {
+	ftt.Run("Extract works", t, func(t *ftt.Test) {
 
-		Convey("Empty", func() {
-			So(Extract(`Title.`), ShouldResembleProto, []*changelist.StringPair{})
+		t.Run("Empty", func(t *ftt.Test) {
+			assert.Loosely(t, Extract(`Title.`), should.Resemble([]*changelist.StringPair{}))
 		})
 
-		Convey("Git-style", func() {
-			So(Extract(strings.TrimSpace(`
+		t.Run("Git-style", func(t *ftt.Test) {
+			assert.Loosely(t, Extract(strings.TrimSpace(`
 Title.
 
 Footer: value
 No-rma-lIzes: but Only key.
-`)), ShouldResembleProto, []*changelist.StringPair{
+`)), should.Resemble([]*changelist.StringPair{
 				{Key: "Footer", Value: "value"},
 				{Key: "No-Rma-Lizes", Value: "but Only key."},
-			})
+			}))
 		})
 
-		Convey("TAGS=sTyLe", func() {
-			So(Extract(strings.TrimSpace(`
+		t.Run("TAGS=sTyLe", func(t *ftt.Test) {
+			assert.Loosely(t, Extract(strings.TrimSpace(`
 TAG=can BE anywhere
-`)), ShouldResembleProto, []*changelist.StringPair{
+`)), should.Resemble([]*changelist.StringPair{
 				{Key: "TAG", Value: "can BE anywhere"},
-			})
+			}))
 		})
 
-		Convey("Ignores incorrect tags and footers", func() {
-			So(Extract(strings.TrimSpace(`
+		t.Run("Ignores incorrect tags and footers", func(t *ftt.Test) {
+			assert.Loosely(t, Extract(strings.TrimSpace(`
 Tag=must have UPPEPCASE_KEY.
 
 Footers: must reside in the last paragraph, not above it.
 
 Footer-key must-have-not-spaces: but this one does.
-`)), ShouldResembleProto, []*changelist.StringPair{})
+`)), should.Resemble([]*changelist.StringPair{}))
 		})
 
-		Convey("Sorts by keys only, keeps values ordered from last to first", func() {
-			So(Extract(strings.TrimSpace(`
+		t.Run("Sorts by keys only, keeps values ordered from last to first", func(t *ftt.Test) {
+			assert.Loosely(t, Extract(strings.TrimSpace(`
 TAG=first
 TAG=second
 
@@ -73,7 +73,7 @@ TAG=third
 Footer: D
 TAG=fourth
 Footer: B
-`)), ShouldResembleProto, []*changelist.StringPair{
+`)), should.Resemble([]*changelist.StringPair{
 				{Key: "Footer", Value: "B"},
 				{Key: "Footer", Value: "D"},
 				{Key: "Footer", Value: "A"},
@@ -81,7 +81,7 @@ Footer: B
 				{Key: "TAG", Value: "third"},
 				{Key: "TAG", Value: "second"},
 				{Key: "TAG", Value: "first"},
-			})
+			}))
 		})
 	})
 }

@@ -24,6 +24,9 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
@@ -31,14 +34,12 @@ import (
 	"go.chromium.org/luci/cv/internal/gerrit/gobmap"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/runtest"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestPurgesCLWithoutOwner(t *testing.T) {
 	t.Parallel()
 
-	Convey("PM purges CLs without owner's email", t, func() {
+	ftt.Run("PM purges CLs without owner's email", t, func(t *ftt.Test) {
 		/////////////////////////    Setup   ////////////////////////////////
 		ct := Test{}
 		ctx := ct.SetUp(t)
@@ -60,14 +61,14 @@ func TestPurgesCLWithoutOwner(t *testing.T) {
 		)
 		ci.GetOwner().Email = ""
 		ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), ci))
-		So(ct.MaxCQVote(ctx, gHost, gChange), ShouldEqual, 2)
+		assert.Loosely(t, ct.MaxCQVote(ctx, gHost, gChange), should.Equal(2))
 
 		ct.LogPhase(ctx, "Run CV until CQ+2 vote is removed")
-		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
+		assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
 		ct.RunUntil(ctx, func() bool {
 			return ct.MaxCQVote(ctx, gHost, gChange) == 0
 		})
-		So(ct.LastMessage(gHost, gChange).GetMessage(), ShouldContainSubstring, "doesn't have a preferred email")
+		assert.Loosely(t, ct.LastMessage(gHost, gChange).GetMessage(), should.ContainSubstring("doesn't have a preferred email"))
 
 		ct.LogPhase(ctx, "Ensure PM had a chance to react to CLUpdated event")
 		ct.RunUntil(ctx, func() bool {
@@ -79,7 +80,7 @@ func TestPurgesCLWithoutOwner(t *testing.T) {
 func TestPurgesCLWatchedByTwoConfigGroups(t *testing.T) {
 	t.Parallel()
 
-	Convey("PM purges CLs watched by more than 1 Config Group of the same project", t, func() {
+	ftt.Run("PM purges CLs watched by more than 1 Config Group of the same project", t, func(t *ftt.Test) {
 		/////////////////////////    Setup   ////////////////////////////////
 		ct := Test{}
 		ctx := ct.SetUp(t)
@@ -102,17 +103,17 @@ func TestPurgesCLWatchedByTwoConfigGroups(t *testing.T) {
 			gf.Owner("user-1"),
 		)
 		ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), ci))
-		So(ct.MaxCQVote(ctx, gHost, gChange), ShouldEqual, 1)
+		assert.Loosely(t, ct.MaxCQVote(ctx, gHost, gChange), should.Equal(1))
 
 		ct.LogPhase(ctx, "Run CV until CQ+1 vote is removed")
-		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
+		assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
 		ct.RunUntil(ctx, func() bool {
 			return ct.MaxCQVote(ctx, gHost, gChange) == 0
 		})
 		msg := ct.LastMessage(gHost, gChange).GetMessage()
-		So(msg, ShouldContainSubstring, "it is watched by more than 1 config group")
-		So(msg, ShouldContainSubstring, "cg-ok")
-		So(msg, ShouldContainSubstring, "cg-dup")
+		assert.Loosely(t, msg, should.ContainSubstring("it is watched by more than 1 config group"))
+		assert.Loosely(t, msg, should.ContainSubstring("cg-ok"))
+		assert.Loosely(t, msg, should.ContainSubstring("cg-dup"))
 
 		ct.LogPhase(ctx, "Ensure PM had a chance to react to CLUpdated event")
 		ct.RunUntil(ctx, func() bool {
@@ -124,7 +125,7 @@ func TestPurgesCLWatchedByTwoConfigGroups(t *testing.T) {
 func TestPurgesCLWatchedByTwoProjects(t *testing.T) {
 	t.Parallel()
 
-	Convey("PM purges CLs watched by more than 1 LUCI Projects", t, func() {
+	ftt.Run("PM purges CLs watched by more than 1 LUCI Projects", t, func(t *ftt.Test) {
 		/////////////////////////    Setup   ////////////////////////////////
 		ct := Test{}
 		ctx := ct.SetUp(t)
@@ -141,8 +142,8 @@ func TestPurgesCLWatchedByTwoProjects(t *testing.T) {
 		ct.LogPhase(ctx, "Fully ingest overlapping configs")
 		prjcfgtest.Create(ctx, lProject1, MakeCfgSingular("cg1", gHost, gRepo, gRef))
 		prjcfgtest.Create(ctx, lProject2, MakeCfgSingular("cg2", gHost, gRepo, gRef))
-		So(ct.PMNotifier.UpdateConfig(ctx, lProject1), ShouldBeNil)
-		So(ct.PMNotifier.UpdateConfig(ctx, lProject2), ShouldBeNil)
+		assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject1), should.BeNil)
+		assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject2), should.BeNil)
 		ct.RunUntil(ctx, func() bool {
 			res, err := gobmap.Lookup(ctx, gHost, gRepo, gRef)
 			if err != nil {
@@ -158,7 +159,7 @@ func TestPurgesCLWatchedByTwoProjects(t *testing.T) {
 			gf.Owner("user-1"),
 		)
 		ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject1, lProject2), ci))
-		So(ct.MaxCQVote(ctx, gHost, gChange), ShouldEqual, 1)
+		assert.Loosely(t, ct.MaxCQVote(ctx, gHost, gChange), should.Equal(1))
 
 		ct.LogPhase(ctx, "Run CV until CQ+1 vote is removed")
 		ct.RunUntil(ctx, func() bool {
@@ -167,9 +168,9 @@ func TestPurgesCLWatchedByTwoProjects(t *testing.T) {
 		// There is a race between projects, but due to CL leases, only one should
 		// succeed in posting a message.
 		msg := ct.LastMessage(gHost, gChange).GetMessage()
-		So(msg, ShouldContainSubstring, "is watched by more than 1 LUCI project")
-		So(msg, ShouldContainSubstring, "project-1")
-		So(msg, ShouldContainSubstring, "project-2")
+		assert.Loosely(t, msg, should.ContainSubstring("is watched by more than 1 LUCI project"))
+		assert.Loosely(t, msg, should.ContainSubstring("project-1"))
+		assert.Loosely(t, msg, should.ContainSubstring("project-2"))
 
 		ct.LogPhase(ctx, "Ensure both PMs no longer track the CL")
 		ct.RunUntil(ctx, func() bool {
@@ -227,7 +228,7 @@ func testPurgesCLWithUnwatchedDeps(
 	name string,
 	setupDep func(ctx context.Context, ct *Test) (depSubHost string, depChange int64),
 ) {
-	Convey("PM purges CL with dep outside the project after waiting stabilization_delay: "+name, t, func() {
+	ftt.Run("PM purges CL with dep outside the project after waiting stabilization_delay: "+name, t, func(t *ftt.Test) {
 		ct := Test{}
 		ctx := ct.SetUp(t)
 
@@ -256,15 +257,15 @@ func testPurgesCLWithUnwatchedDeps(
 		)))
 
 		ct.LogPhase(ctx, "Run CV until CQ+2 vote is removed")
-		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
+		assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
 		ct.RunUntil(ctx, func() bool {
 			return ct.MaxCQVote(ctx, gHost, gChange) == 0
 		})
 		m := ct.LastMessage(gHost, gChange)
-		So(m, ShouldNotBeNil)
-		So(m.GetDate().AsTime(), ShouldHappenAfter, tStart.Add(stabilizationDelay))
-		So(m.GetMessage(), ShouldContainSubstring, "its deps are not watched by the same LUCI project")
-		So(m.GetMessage(), ShouldContainSubstring, fmt.Sprintf("https://%s-review.example.com/c/%d", depSubHost, depChange))
+		assert.Loosely(t, m, should.NotBeNil)
+		assert.Loosely(t, m.GetDate().AsTime(), should.HappenAfter(tStart.Add(stabilizationDelay)))
+		assert.Loosely(t, m.GetMessage(), should.ContainSubstring("its deps are not watched by the same LUCI project"))
+		assert.Loosely(t, m.GetMessage(), should.ContainSubstring(fmt.Sprintf("https://%s-review.example.com/c/%d", depSubHost, depChange)))
 
 		ct.LogPhase(ctx, "Ensure PM had a chance to react to CLUpdated event")
 		ct.RunUntil(ctx, func() bool {
@@ -276,7 +277,7 @@ func testPurgesCLWithUnwatchedDeps(
 func TestPurgesCLWithMismatchedDepsMode(t *testing.T) {
 	t.Parallel()
 
-	Convey("PM purges CL with dep outside the project after waiting stabilization_delay", t, func() {
+	ftt.Run("PM purges CL with dep outside the project after waiting stabilization_delay", t, func(t *ftt.Test) {
 		/////////////////////////    Setup   ////////////////////////////////
 		ct := Test{}
 		ctx := ct.SetUp(t)
@@ -329,7 +330,7 @@ func TestPurgesCLWithMismatchedDepsMode(t *testing.T) {
 		// Now, ci45 and ci44 must be tested only together.
 
 		ct.LogPhase(ctx, "Run CV until both CLs are purged")
-		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
+		assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
 		ct.RunUntil(ctx, func() bool {
 			return (ct.MaxCQVote(ctx, gHost, gChange44) == 0 &&
 				ct.MaxCQVote(ctx, gHost, gChange45) == 0 &&
@@ -337,8 +338,8 @@ func TestPurgesCLWithMismatchedDepsMode(t *testing.T) {
 		})
 
 		ct.LogPhase(ctx, "Ensure purging happened only after stabilizationDelay")
-		So(ct.LastMessage(gHost, gChange44).GetDate().AsTime(), ShouldHappenAfter, tStart.Add(stabilizationDelay))
-		So(ct.LastMessage(gHost, gChange45).GetDate().AsTime(), ShouldHappenAfter, tStart.Add(stabilizationDelay))
+		assert.Loosely(t, ct.LastMessage(gHost, gChange44).GetDate().AsTime(), should.HappenAfter(tStart.Add(stabilizationDelay)))
+		assert.Loosely(t, ct.LastMessage(gHost, gChange45).GetDate().AsTime(), should.HappenAfter(tStart.Add(stabilizationDelay)))
 
 		ct.LogPhase(ctx, "Ensure CL is no longer active in CV")
 		ct.RunUntil(ctx, func() bool {
@@ -350,7 +351,7 @@ func TestPurgesCLWithMismatchedDepsMode(t *testing.T) {
 func TestPurgesCLCQDependingOnItself(t *testing.T) {
 	t.Parallel()
 
-	Convey("PM purges CL which CQ-Depends on itself", t, func() {
+	ftt.Run("PM purges CL which CQ-Depends on itself", t, func(t *ftt.Test) {
 		/////////////////////////    Setup   ////////////////////////////////
 		ct := Test{}
 		ctx := ct.SetUp(t)
@@ -375,11 +376,11 @@ func TestPurgesCLCQDependingOnItself(t *testing.T) {
 		)))
 
 		ct.LogPhase(ctx, "Run CV until CL is purged")
-		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
+		assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
 		ct.RunUntil(ctx, func() bool {
 			return ct.MaxCQVote(ctx, gHost, gChange44) == 0
 		})
-		So(ct.LastMessage(gHost, gChange44).GetMessage(), ShouldContainSubstring, "because it depends on itself")
+		assert.Loosely(t, ct.LastMessage(gHost, gChange44).GetMessage(), should.ContainSubstring("because it depends on itself"))
 
 		ct.LogPhase(ctx, "Ensure CL is no longer active in CV")
 		ct.RunUntil(ctx, func() bool {
@@ -391,7 +392,7 @@ func TestPurgesCLCQDependingOnItself(t *testing.T) {
 func TestPurgesOnTriggerReuse(t *testing.T) {
 	t.Parallel()
 
-	Convey("PM purges CL which CQ-Depends on itself", t, func() {
+	ftt.Run("PM purges CL which CQ-Depends on itself", t, func(t *ftt.Test) {
 		/////////////////////////    Setup   ////////////////////////////////
 		ct := Test{}
 		ctx := ct.SetUp(t)
@@ -411,7 +412,7 @@ func TestPurgesOnTriggerReuse(t *testing.T) {
 		})
 		ct.BuildbucketFake.EnsureBuilders(cfg)
 		prjcfgtest.Create(ctx, lProject, cfg)
-		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
+		assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
 
 		ct.GFake.AddLinkedAccountMapping([]*gerritpb.EmailInfo{
 			&gerritpb.EmailInfo{Email: "user-1@example.com"},
@@ -445,15 +446,15 @@ func TestPurgesOnTriggerReuse(t *testing.T) {
 			c.Info.Updated = timestamppb.New(ct.Clock.Now())
 		})
 		ct.RunUntil(ctx, func() bool { return ct.MaxCQVote(ctx, gHost, gChange) == 0 })
-		So(ct.LastMessage(gHost, gChange).GetMessage(), ShouldContainSubstring, "triggered by the same vote")
-		So(ct.LastMessage(gHost, gChange).GetMessage(), ShouldContainSubstring, string(first.ID))
+		assert.Loosely(t, ct.LastMessage(gHost, gChange).GetMessage(), should.ContainSubstring("triggered by the same vote"))
+		assert.Loosely(t, ct.LastMessage(gHost, gChange).GetMessage(), should.ContainSubstring(string(first.ID)))
 	})
 }
 
 func TestPurgesOnCommitFalseFooter(t *testing.T) {
 	t.Parallel()
 
-	Convey("PM purges a CL with a 'Commit: false' footer", t, func() {
+	ftt.Run("PM purges a CL with a 'Commit: false' footer", t, func(t *ftt.Test) {
 		ct := Test{}
 		ctx := ct.SetUp(t)
 
@@ -475,14 +476,14 @@ func TestPurgesOnCommitFalseFooter(t *testing.T) {
 		)
 
 		ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), ci))
-		So(ct.MaxCQVote(ctx, gHost, gChange), ShouldEqual, 2)
+		assert.Loosely(t, ct.MaxCQVote(ctx, gHost, gChange), should.Equal(2))
 
 		ct.LogPhase(ctx, "Run CV until CQ+2 vote is removed")
-		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
+		assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
 		ct.RunUntil(ctx, func() bool {
 			return ct.MaxCQVote(ctx, gHost, gChange) == 0
 		})
-		So(ct.LastMessage(gHost, gChange).GetMessage(), ShouldContainSubstring, "\"Commit: false\" footer")
+		assert.Loosely(t, ct.LastMessage(gHost, gChange).GetMessage(), should.ContainSubstring("\"Commit: false\" footer"))
 
 		ct.LogPhase(ctx, "Ensure PM had a chance to react to CLUpdated event")
 		ct.RunUntil(ctx, func() bool {

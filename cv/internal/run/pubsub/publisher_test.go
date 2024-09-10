@@ -21,21 +21,21 @@ import (
 
 	"google.golang.org/protobuf/encoding/protojson"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	cvpb "go.chromium.org/luci/cv/api/v1"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/run"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestExportRunToBQ(t *testing.T) {
 	t.Parallel()
 
-	Convey("Publisher", t, func() {
+	ftt.Run("Publisher", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
@@ -54,33 +54,33 @@ func TestExportRunToBQ(t *testing.T) {
 			EVersion:      123456,
 		}
 
-		Convey("RunEnded enqueues a task", func() {
+		t.Run("RunEnded enqueues a task", func(t *ftt.Test) {
 			// A RunEnded task must be scheduled in a transaction.
 			runEnded := func() error {
 				return datastore.RunInTransaction(ctx, func(tCtx context.Context) error {
 					return publisher.RunEnded(tCtx, r.ID, r.Status, r.EVersion)
 				}, nil)
 			}
-			So(runEnded(), ShouldBeNil)
+			assert.Loosely(t, runEnded(), should.BeNil)
 			tsk := ct.TQ.Tasks()[0]
 
-			Convey("with attributes", func() {
+			t.Run("with attributes", func(t *ftt.Test) {
 				attrs := tsk.Message.GetAttributes()
-				So(attrs, ShouldContainKey, "luci_project")
-				So(attrs["luci_project"], ShouldEqual, r.ID.LUCIProject())
-				So(attrs, ShouldContainKey, "status")
-				So(attrs["status"], ShouldEqual, r.Status.String())
+				assert.Loosely(t, attrs, should.ContainKey("luci_project"))
+				assert.Loosely(t, attrs["luci_project"], should.Equal(r.ID.LUCIProject()))
+				assert.Loosely(t, attrs, should.ContainKey("status"))
+				assert.Loosely(t, attrs["status"], should.Equal(r.Status.String()))
 			})
 
-			Convey("with JSONPB encoded message", func() {
+			t.Run("with JSONPB encoded message", func(t *ftt.Test) {
 				var msg cvpb.PubSubRun
-				So(protojson.Unmarshal(tsk.Message.GetData(), &msg), ShouldBeNil)
-				So(&msg, ShouldResembleProto, &cvpb.PubSubRun{
+				assert.Loosely(t, protojson.Unmarshal(tsk.Message.GetData(), &msg), should.BeNil)
+				assert.Loosely(t, &msg, should.Resemble(&cvpb.PubSubRun{
 					Id:       r.ID.PublicID(),
 					Status:   cvpb.Run_SUCCEEDED,
 					Eversion: int64(r.EVersion),
 					Hostname: ct.Env.LogicalHostname,
-				})
+				}))
 			})
 		})
 	})

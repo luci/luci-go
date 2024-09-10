@@ -15,36 +15,36 @@
 package changelist
 
 import (
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"testing"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestExternalID(t *testing.T) {
 	t.Parallel()
 
-	Convey("ExternalID works", t, func() {
+	ftt.Run("ExternalID works", t, func(t *ftt.Test) {
 
-		Convey("GobID", func() {
+		t.Run("GobID", func(t *ftt.Test) {
 			eid, err := GobID("x-review.example.com", 12)
-			So(err, ShouldBeNil)
-			So(eid, ShouldResemble, ExternalID("gerrit/x-review.example.com/12"))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, eid, should.Resemble(ExternalID("gerrit/x-review.example.com/12")))
 
 			host, change, err := eid.ParseGobID()
-			So(err, ShouldBeNil)
-			So(host, ShouldResemble, "x-review.example.com")
-			So(change, ShouldEqual, 12)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, host, should.Match("x-review.example.com"))
+			assert.Loosely(t, change, should.Equal(12))
 
-			So(eid.MustURL(), ShouldResemble, "https://x-review.example.com/c/12")
+			assert.Loosely(t, eid.MustURL(), should.Match("https://x-review.example.com/c/12"))
 		})
 
-		Convey("Invalid GobID", func() {
+		t.Run("Invalid GobID", func(t *ftt.Test) {
 			_, _, err := ExternalID("meh").ParseGobID()
-			So(err, ShouldErrLike, "is not a valid GobID")
+			assert.Loosely(t, err, should.ErrLike("is not a valid GobID"))
 
 			_, _, err = ExternalID("gerrit/x/y").ParseGobID()
-			So(err, ShouldErrLike, "is not a valid GobID")
+			assert.Loosely(t, err, should.ErrLike("is not a valid GobID"))
 		})
 
 	})
@@ -53,24 +53,24 @@ func TestExternalID(t *testing.T) {
 func TestJoinExternalURLs(t *testing.T) {
 	t.Parallel()
 
-	Convey("JoinExternalURLs works", t, func() {
+	ftt.Run("JoinExternalURLs works", t, func(t *ftt.Test) {
 		gob := func(num int64) ExternalID {
 			eid, err := GobID("example.com", num)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			return eid
 		}
 		var eids []ExternalID
-		Convey("with empty input", func() {
-			So(JoinExternalURLs(eids, ", "), ShouldEqual, "")
+		t.Run("with empty input", func(t *ftt.Test) {
+			assert.Loosely(t, JoinExternalURLs(eids, ", "), should.BeEmpty)
 		})
-		Convey("with single input", func() {
+		t.Run("with single input", func(t *ftt.Test) {
 			eids = append(eids, gob(1))
-			So(JoinExternalURLs(eids, ", "), ShouldEqual, "https://example.com/c/1")
+			assert.Loosely(t, JoinExternalURLs(eids, ", "), should.Equal("https://example.com/c/1"))
 		})
-		Convey("with > 1 inputs", func() {
+		t.Run("with > 1 inputs", func(t *ftt.Test) {
 			eids = append(eids, gob(1), gob(2))
-			So(JoinExternalURLs(eids, ", "), ShouldEqual,
-				"https://example.com/c/1, https://example.com/c/2")
+			assert.Loosely(t, JoinExternalURLs(eids, ", "), should.Equal(
+				"https://example.com/c/1, https://example.com/c/2"))
 		})
 	})
 }

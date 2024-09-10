@@ -23,6 +23,9 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/common/tsmon/types"
@@ -30,21 +33,18 @@ import (
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/cvtesting"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestDriver(t *testing.T) {
 	t.Parallel()
 
-	Convey("Driver smoke test", t, func() {
+	ftt.Run("Driver smoke test", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		_ = ct.SetUp(t)
 		_ = New(ct.Env)
 	})
 
-	Convey("Driver works", t, func() {
+	ftt.Run("Driver works", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
@@ -58,31 +58,31 @@ func TestDriver(t *testing.T) {
 			},
 		}
 
-		Convey("No projects", func() {
-			So(d.Cron(ctx), ShouldBeNil)
-			So(ct.TSMonStore.GetAll(ctx), ShouldBeEmpty)
+		t.Run("No projects", func(t *ftt.Test) {
+			assert.Loosely(t, d.Cron(ctx), should.BeNil)
+			assert.Loosely(t, ct.TSMonStore.GetAll(ctx), should.BeEmpty)
 		})
 
-		Convey("With one active project", func() {
+		t.Run("With one active project", func(t *ftt.Test) {
 			prjcfgtest.Create(ctx, "first", &cfgpb.Config{})
-			So(d.Cron(ctx), ShouldBeNil)
+			assert.Loosely(t, d.Cron(ctx), should.BeNil)
 
-			Convey("Reports new data", func() {
-				So(ct.TSMonStore.GetAll(ctx), ShouldHaveLength, 1)
-				So(mSent("first", "agg"), ShouldEqual, 1001)
+			t.Run("Reports new data", func(t *ftt.Test) {
+				assert.Loosely(t, ct.TSMonStore.GetAll(ctx), should.HaveLength(1))
+				assert.Loosely(t, mSent("first", "agg"), should.Equal(1001))
 			})
 
-			Convey("Calling again won't report old data", func() {
+			t.Run("Calling again won't report old data", func(t *ftt.Test) {
 				prjcfgtest.Disable(ctx, "first")
 				prjcfgtest.Create(ctx, "second", &cfgpb.Config{})
 				ct.Clock.Add(1 * time.Hour)
-				So(d.Cron(ctx), ShouldBeNil)
-				So(ct.TSMonStore.GetAll(ctx), ShouldHaveLength, 1)
-				So(mSent("second", "agg"), ShouldEqual, 1001)
+				assert.Loosely(t, d.Cron(ctx), should.BeNil)
+				assert.Loosely(t, ct.TSMonStore.GetAll(ctx), should.HaveLength(1))
+				assert.Loosely(t, mSent("second", "agg"), should.Equal(1001))
 			})
 		})
 
-		Convey("Multiple aggregators", func() {
+		t.Run("Multiple aggregators", func(t *ftt.Test) {
 			aggregatorFoo := &testAggregator{name: "foo"}
 			aggregatorBar := &testAggregator{name: "bar"}
 			d.aggregators = []aggregator{
@@ -92,25 +92,25 @@ func TestDriver(t *testing.T) {
 
 			prjcfgtest.Create(ctx, "first", &cfgpb.Config{})
 
-			Convey("All succeeds", func() {
-				So(d.Cron(ctx), ShouldBeNil)
-				So(ct.TSMonStore.GetAll(ctx), ShouldHaveLength, 2)
-				So(mSent("first", "foo"), ShouldEqual, 1001)
-				So(mSent("first", "bar"), ShouldEqual, 1001)
+			t.Run("All succeeds", func(t *ftt.Test) {
+				assert.Loosely(t, d.Cron(ctx), should.BeNil)
+				assert.Loosely(t, ct.TSMonStore.GetAll(ctx), should.HaveLength(2))
+				assert.Loosely(t, mSent("first", "foo"), should.Equal(1001))
+				assert.Loosely(t, mSent("first", "bar"), should.Equal(1001))
 			})
 
-			Convey("Fails but report partially", func() {
+			t.Run("Fails but report partially", func(t *ftt.Test) {
 				aggregatorBar.err = errors.New("something wrong")
-				So(d.Cron(ctx), ShouldErrLike, "something wrong")
-				So(ct.TSMonStore.GetAll(ctx), ShouldHaveLength, 1)
-				So(mSent("first", "foo"), ShouldEqual, 1001)
+				assert.Loosely(t, d.Cron(ctx), should.ErrLike("something wrong"))
+				assert.Loosely(t, ct.TSMonStore.GetAll(ctx), should.HaveLength(1))
+				assert.Loosely(t, mSent("first", "foo"), should.Equal(1001))
 			})
 
-			Convey("All failed", func() {
+			t.Run("All failed", func(t *ftt.Test) {
 				aggregatorFoo.err = transient.Tag.Apply(errors.New("foo went wrong"))
 				aggregatorBar.err = errors.New("bar went wrong")
-				So(d.Cron(ctx), ShouldErrLike, "bar went wrong") // use most serve error
-				So(ct.TSMonStore.GetAll(ctx), ShouldBeEmpty)
+				assert.Loosely(t, d.Cron(ctx), should.ErrLike("bar went wrong")) // use most serve error
+				assert.Loosely(t, ct.TSMonStore.GetAll(ctx), should.BeEmpty)
 			})
 		})
 	})

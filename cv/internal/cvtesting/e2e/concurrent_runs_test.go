@@ -26,14 +26,15 @@ import (
 	bbutil "go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/clock"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/run"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 // TODO(tandrii): this is a slow test (~0.6s on my laptop),
@@ -41,7 +42,7 @@ import (
 func TestConcurrentRunsSingular(t *testing.T) {
 	t.Parallel()
 
-	Convey("CV juggles a bunch of concurrent Runs", t, func() {
+	ftt.Run("CV juggles a bunch of concurrent Runs", t, func(t *ftt.Test) {
 		ct := Test{}
 		ctx := ct.SetUp(t)
 
@@ -58,7 +59,7 @@ func TestConcurrentRunsSingular(t *testing.T) {
 		})
 		ct.BuildbucketFake.EnsureBuilders(cfg)
 		prjcfgtest.Create(ctx, lProject, cfg)
-		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
+		assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
 
 		// Prepare a bunch of actions to play out over time.
 		actions := make([]struct {
@@ -187,7 +188,7 @@ func TestConcurrentRunsSingular(t *testing.T) {
 				runs = ct.LoadGerritRuns(ctx, gHost, int64(a.gChange))
 				return len(runs) > 0
 			})
-			So(runs, ShouldHaveLength, 1)
+			assert.Loosely(t, runs, should.HaveLength(1))
 			r := runs[0]
 			ct.RunUntil(ctx, func() bool {
 				r = ct.LoadRun(ctx, runs[0].ID)
@@ -196,29 +197,29 @@ func TestConcurrentRunsSingular(t *testing.T) {
 			switch {
 			case r.Status == run.Status_FAILED:
 				actualFailed = append(actualFailed, a.gChange)
-				So(ct.MaxCQVote(ctx, gHost, int64(a.gChange)), ShouldEqual, 0)
+				assert.Loosely(t, ct.MaxCQVote(ctx, gHost, int64(a.gChange)), should.BeZero)
 			case r.Status == run.Status_SUCCEEDED && a.mode == run.DryRun:
 				actualFinished = append(actualFinished, a.gChange)
-				So(ct.MaxCQVote(ctx, gHost, int64(a.gChange)), ShouldEqual, 0)
+				assert.Loosely(t, ct.MaxCQVote(ctx, gHost, int64(a.gChange)), should.BeZero)
 			case r.Status == run.Status_SUCCEEDED && a.mode == run.FullRun:
 				actualSubmitted = append(actualSubmitted, a.gChange)
-				So(ct.GFake.GetChange(gHost, a.gChange).Info.GetStatus(), ShouldEqual, gerritpb.ChangeStatus_MERGED)
+				assert.Loosely(t, ct.GFake.GetChange(gHost, a.gChange).Info.GetStatus(), should.Equal(gerritpb.ChangeStatus_MERGED))
 			default:
 				actualWeird = append(actualWeird, a.gChange)
 			}
-			So(r.CreateTime, ShouldEqual, datastore.RoundTime(a.triggerTime.UTC()))
-			So(r.EndTime, ShouldHappenAfter, a.finishTime)
+			assert.Loosely(t, r.CreateTime, should.Equal(datastore.RoundTime(a.triggerTime.UTC())))
+			assert.Loosely(t, r.EndTime, should.HappenAfter(a.finishTime))
 		}
 
 		sort.Ints(actualSubmitted)
 		sort.Ints(actualFailed)
 		sort.Ints(actualFinished)
-		So(actualSubmitted, ShouldResemble, expectSubmitted)
-		So(actualFailed, ShouldResemble, expectFailed)
-		So(actualFinished, ShouldResemble, expectFinished)
-		So(actualWeird, ShouldBeEmpty)
+		assert.Loosely(t, actualSubmitted, should.Resemble(expectSubmitted))
+		assert.Loosely(t, actualFailed, should.Resemble(expectFailed))
+		assert.Loosely(t, actualFinished, should.Resemble(expectFinished))
+		assert.Loosely(t, actualWeird, should.BeEmpty)
 
-		So(ct.LoadRunsOf(ctx, lProject), ShouldHaveLength, len(actions))
+		assert.Loosely(t, ct.LoadRunsOf(ctx, lProject), should.HaveLength(len(actions)))
 
 		ct.LogPhase(ctx, "Wait for all BQ exports to complete")
 		ct.RunUntil(ctx, func() bool { return ct.ExportedBQAttemptsCount() == len(actions) })

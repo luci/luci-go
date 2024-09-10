@@ -19,21 +19,21 @@ import (
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/tryjob"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestScheduleWipeoutTryjobs(t *testing.T) {
 	t.Parallel()
 
-	Convey("Schedule wipeout tryjobs tasks", t, func() {
+	ftt.Run("Schedule wipeout tryjobs tasks", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 		registerWipeoutTryjobsTask(ct.TQDispatcher)
@@ -49,7 +49,7 @@ func TestScheduleWipeoutTryjobs(t *testing.T) {
 		// Make half of the tryjobs eligible for wipeout
 		ct.Clock.Set(tryjobs[len(tryjobs)/2].EntityUpdateTime.Add(retentionPeriod))
 
-		So(scheduleWipeoutTryjobsTasks(ctx, ct.TQDispatcher), ShouldBeNil)
+		assert.Loosely(t, scheduleWipeoutTryjobsTasks(ctx, ct.TQDispatcher), should.BeNil)
 		var expectedTryjobIDs common.TryjobIDs
 		for _, tj := range tryjobs[:len(tryjobs)/2] {
 			expectedTryjobIDs = append(expectedTryjobIDs, tj.ID)
@@ -57,22 +57,22 @@ func TestScheduleWipeoutTryjobs(t *testing.T) {
 
 		var actualTryjobIDs common.TryjobIDs
 		for _, task := range ct.TQ.Tasks() {
-			So(task.ETA, ShouldHappenWithin, wipeoutTasksDistInterval, ct.Clock.Now())
+			assert.Loosely(t, task.ETA, should.HappenWithin(wipeoutTasksDistInterval, ct.Clock.Now()))
 			ids := task.Payload.(*WipeoutTryjobsTask).GetIds()
-			So(len(ids), ShouldBeLessThanOrEqualTo, tryjobsPerTask)
+			assert.Loosely(t, len(ids), should.BeLessThanOrEqual(tryjobsPerTask))
 			for _, id := range ids {
 				actualTryjobIDs = append(actualTryjobIDs, common.TryjobID(id))
 			}
 		}
 		slices.Sort(expectedTryjobIDs)
 		slices.Sort(actualTryjobIDs)
-		So(actualTryjobIDs, ShouldResemble, expectedTryjobIDs)
+		assert.Loosely(t, actualTryjobIDs, should.Resemble(expectedTryjobIDs))
 	})
 }
 func TestWipeoutTryjobs(t *testing.T) {
 	t.Parallel()
 
-	Convey("Wipeout Tryjobs", t, func() {
+	ftt.Run("Wipeout Tryjobs", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
@@ -80,33 +80,33 @@ func TestWipeoutTryjobs(t *testing.T) {
 			MustCreateIfNotExists(ctx)
 		ct.Clock.Add(2 * retentionPeriod) // make tryjob eligible for wipeout
 
-		Convey("Can wipeout tryjob", func() {
-			Convey("when there's no watching run", func() {
-				So(wipeoutTryjobs(ctx, common.TryjobIDs{tj.ID}), ShouldBeNil)
-				So(datastore.Get(ctx, &tryjob.Tryjob{ID: tj.ID}), ShouldErrLike, datastore.ErrNoSuchEntity)
+		t.Run("Can wipeout tryjob", func(t *ftt.Test) {
+			t.Run("when there's no watching run", func(t *ftt.Test) {
+				assert.Loosely(t, wipeoutTryjobs(ctx, common.TryjobIDs{tj.ID}), should.BeNil)
+				assert.Loosely(t, datastore.Get(ctx, &tryjob.Tryjob{ID: tj.ID}), should.ErrLike(datastore.ErrNoSuchEntity))
 			})
-			Convey("when all watching run no longer exists", func() {
+			t.Run("when all watching run no longer exists", func(t *ftt.Test) {
 				tj.LaunchedBy = common.MakeRunID("infra", tj.EntityCreateTime, 1, []byte("deadbeef"))
 				tj.ReusedBy = append(tj.ReusedBy, common.MakeRunID("infra", tj.EntityCreateTime.Add(1*time.Minute), 1, []byte("deadbeef")))
-				So(wipeoutTryjobs(ctx, common.TryjobIDs{tj.ID}), ShouldBeNil)
-				So(datastore.Get(ctx, &tryjob.Tryjob{ID: tj.ID}), ShouldErrLike, datastore.ErrNoSuchEntity)
+				assert.Loosely(t, wipeoutTryjobs(ctx, common.TryjobIDs{tj.ID}), should.BeNil)
+				assert.Loosely(t, datastore.Get(ctx, &tryjob.Tryjob{ID: tj.ID}), should.ErrLike(datastore.ErrNoSuchEntity))
 			})
 		})
 
-		Convey("Don't wipeout tryjob", func() {
-			Convey("When a run that use this tryjob still exists", func() {
+		t.Run("Don't wipeout tryjob", func(t *ftt.Test) {
+			t.Run("When a run that use this tryjob still exists", func(t *ftt.Test) {
 				r := &run.Run{
 					ID: common.MakeRunID("infra", tj.EntityCreateTime, 1, []byte("deadbeef")),
 				}
 				tj.LaunchedBy = r.ID
 				tj.ReusedBy = append(tj.ReusedBy, common.MakeRunID("infra", tj.EntityCreateTime.Add(-1*time.Minute), 1, []byte("deadbeef")))
-				So(datastore.Put(ctx, r, tj), ShouldBeNil)
-				So(wipeoutTryjobs(ctx, common.TryjobIDs{tj.ID}), ShouldBeNil)
-				So(datastore.Get(ctx, &tryjob.Tryjob{ID: tj.ID}), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, r, tj), should.BeNil)
+				assert.Loosely(t, wipeoutTryjobs(ctx, common.TryjobIDs{tj.ID}), should.BeNil)
+				assert.Loosely(t, datastore.Get(ctx, &tryjob.Tryjob{ID: tj.ID}), should.BeNil)
 			})
 
-			Convey("When Tryjob doesn't exist", func() {
-				So(wipeoutTryjobs(ctx, common.TryjobIDs{tj.ID + 1}), ShouldBeNil)
+			t.Run("When Tryjob doesn't exist", func(t *ftt.Test) {
+				assert.Loosely(t, wipeoutTryjobs(ctx, common.TryjobIDs{tj.ID + 1}), should.BeNil)
 			})
 		})
 	})

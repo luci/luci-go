@@ -24,6 +24,9 @@ import (
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	bbutil "go.chromium.org/luci/buildbucket/protoutil"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	cvbqpb "go.chromium.org/luci/cv/api/bigquery/v1"
@@ -34,13 +37,10 @@ import (
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/tryjob"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestMakeAttempt(t *testing.T) {
-	Convey("makeAttempt", t, func() {
+	ftt.Run("makeAttempt", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 		epoch := ct.Clock.Now().UTC()
@@ -216,10 +216,10 @@ func TestMakeAttempt(t *testing.T) {
 			},
 		}
 
-		Convey("All fields", func() {
+		t.Run("All fields", func(t *ftt.Test) {
 			a, err := makeAttempt(ctx, r, []*run.RunCL{cl})
-			So(err, ShouldBeNil)
-			So(a, ShouldResembleProto, &cvbqpb.Attempt{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, a, should.Resemble(&cvbqpb.Attempt{
 				Key:                  runID.AttemptKey(),
 				LuciProject:          lProject,
 				RunId:                string(runID),
@@ -270,10 +270,10 @@ func TestMakeAttempt(t *testing.T) {
 						Critical: true,
 					},
 				},
-			})
+			}))
 		})
 
-		Convey("Partial submission", func() {
+		t.Run("Partial submission", func(t *ftt.Test) {
 			clSubmitted := &run.RunCL{
 				ID:         1,
 				Run:        datastore.MakeKey(ctx, common.RunKind, string(runID)),
@@ -352,8 +352,8 @@ func TestMakeAttempt(t *testing.T) {
 			a, err := makeAttempt(ctx, r, []*run.RunCL{
 				clSubmitted, clFailedToSubmit, clPendingToSubmit,
 			})
-			So(err, ShouldBeNil)
-			So(a.GetGerritChanges(), ShouldResembleProto, []*cvbqpb.GerritChange{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, a.GetGerritChanges(), should.Resemble([]*cvbqpb.GerritChange{
 				{
 					Host:                       gHost,
 					Project:                    gRepo,
@@ -384,79 +384,79 @@ func TestMakeAttempt(t *testing.T) {
 					Mode:                       cvbqpb.Mode_FULL_RUN,
 					SubmitStatus:               cvbqpb.GerritChange_PENDING,
 				},
-			})
+			}))
 			// In the case of submit failure for one or more CLs,
 			// the Attempt value is still SUCCESS, for backwards
 			// compatibility.
-			So(a.Status, ShouldEqual, cvbqpb.AttemptStatus_SUCCESS)
-			So(a.Substatus, ShouldEqual, cvbqpb.AttemptSubstatus_NO_SUBSTATUS)
+			assert.Loosely(t, a.Status, should.Equal(cvbqpb.AttemptStatus_SUCCESS))
+			assert.Loosely(t, a.Substatus, should.Equal(cvbqpb.AttemptSubstatus_NO_SUBSTATUS))
 		})
 
-		Convey("Failed Tryjob", func() {
+		t.Run("Failed Tryjob", func(t *ftt.Test) {
 			r.Tryjobs.GetState().Status = tryjob.ExecutionState_FAILED
 			r.Status = run.Status_FAILED
 			a, err := makeAttempt(ctx, r, []*run.RunCL{cl})
-			So(err, ShouldBeNil)
-			So(a.Status, ShouldEqual, cvbqpb.AttemptStatus_FAILURE)
-			So(a.Substatus, ShouldEqual, cvbqpb.AttemptSubstatus_FAILED_TRYJOBS)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, a.Status, should.Equal(cvbqpb.AttemptStatus_FAILURE))
+			assert.Loosely(t, a.Substatus, should.Equal(cvbqpb.AttemptSubstatus_FAILED_TRYJOBS))
 		})
 
-		Convey("Failed due to missing approval", func() {
+		t.Run("Failed due to missing approval", func(t *ftt.Test) {
 			// TODO(crbug/1342810): Populate run failure reason
 			r.Status = run.Status_FAILED
 			a, err := makeAttempt(ctx, r, []*run.RunCL{cl})
-			So(err, ShouldBeNil)
-			So(a.Status, ShouldEqual, cvbqpb.AttemptStatus_FAILURE)
-			So(a.Substatus, ShouldEqual, cvbqpb.AttemptSubstatus_UNAPPROVED)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, a.Status, should.Equal(cvbqpb.AttemptStatus_FAILURE))
+			assert.Loosely(t, a.Substatus, should.Equal(cvbqpb.AttemptSubstatus_UNAPPROVED))
 		})
 
-		Convey("Cancelled", func() {
+		t.Run("Cancelled", func(t *ftt.Test) {
 			// TODO(crbug/1342810): Populate run failure reason
 			r.Status = run.Status_CANCELLED
 			a, err := makeAttempt(ctx, r, []*run.RunCL{cl})
-			So(err, ShouldBeNil)
-			So(a.Status, ShouldEqual, cvbqpb.AttemptStatus_ABORTED)
-			So(a.Substatus, ShouldEqual, cvbqpb.AttemptSubstatus_MANUAL_CANCEL)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, a.Status, should.Equal(cvbqpb.AttemptStatus_ABORTED))
+			assert.Loosely(t, a.Substatus, should.Equal(cvbqpb.AttemptSubstatus_MANUAL_CANCEL))
 		})
 
-		Convey("Empty actual start time", func() {
+		t.Run("Empty actual start time", func(t *ftt.Test) {
 			r.StartTime = time.Time{}
 			a, err := makeAttempt(ctx, r, []*run.RunCL{cl})
-			So(err, ShouldBeNil)
-			So(a.GetActualStartTime(), ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, a.GetActualStartTime(), should.BeNil)
 		})
 
-		Convey("HasCustomRequirement", func() {
+		t.Run("HasCustomRequirement", func(t *ftt.Test) {
 			r.Options = &run.Options{
 				IncludedTryjobs: []string{fmt.Sprintf("%s/try: cool-builder", lProject)},
 			}
 			a, err := makeAttempt(ctx, r, []*run.RunCL{cl})
-			So(err, ShouldBeNil)
-			So(a.GetHasCustomRequirement(), ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, a.GetHasCustomRequirement(), should.BeTrue)
 		})
 
-		Convey("Owner is bot", func() {
-			Convey("tagged with service user", func() {
+		t.Run("Owner is bot", func(t *ftt.Test) {
+			t.Run("tagged with service user", func(t *ftt.Test) {
 				cl.Detail.GetGerrit().GetInfo().GetOwner().Tags = []string{"SERVICE_USER"}
 				a, err := makeAttempt(ctx, r, []*run.RunCL{cl})
-				So(err, ShouldBeNil)
-				So(a.GerritChanges[0].IsOwnerBot, ShouldBeTrue)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, a.GerritChanges[0].IsOwnerBot, should.BeTrue)
 			})
-			Convey("domain is prod.google.com", func() {
+			t.Run("domain is prod.google.com", func(t *ftt.Test) {
 				cl.Detail.GetGerrit().GetInfo().GetOwner().Email = "abc@prod.google.com"
 				a, err := makeAttempt(ctx, r, []*run.RunCL{cl})
-				So(err, ShouldBeNil)
-				So(a.GerritChanges[0].IsOwnerBot, ShouldBeTrue)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, a.GerritChanges[0].IsOwnerBot, should.BeTrue)
 			})
-			Convey("domain is gserviceaccount.com", func() {
+			t.Run("domain is gserviceaccount.com", func(t *ftt.Test) {
 				cl.Detail.GetGerrit().GetInfo().GetOwner().Email = "xyz@proj-foo.iam.gserviceaccount.com"
 				a, err := makeAttempt(ctx, r, []*run.RunCL{cl})
-				So(err, ShouldBeNil)
-				So(a.GerritChanges[0].IsOwnerBot, ShouldBeTrue)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, a.GerritChanges[0].IsOwnerBot, should.BeTrue)
 			})
 		})
 
-		Convey("Multi CL Run with root CL", func() {
+		t.Run("Multi CL Run with root CL", func(t *ftt.Test) {
 			anotherCL := &run.RunCL{
 				ID:         cl.ID + 1,
 				Run:        datastore.MakeKey(ctx, common.RunKind, string(runID)),
@@ -486,10 +486,10 @@ func TestMakeAttempt(t *testing.T) {
 			r.RootCL = cl.ID
 			r.Submission.Cls = append(r.Submission.Cls, int64(anotherCL.ID))
 			r.Submission.SubmittedCls = append(r.Submission.SubmittedCls, int64(anotherCL.ID))
-			So(datastore.Put(ctx, anotherCL, r), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, anotherCL, r), should.BeNil)
 			a, err := makeAttempt(ctx, r, []*run.RunCL{cl, anotherCL})
-			So(err, ShouldBeNil)
-			So(a.GetGerritChanges(), ShouldResembleProto, []*cvbqpb.GerritChange{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, a.GetGerritChanges(), should.Resemble([]*cvbqpb.GerritChange{
 				{
 					Host:                       gHost,
 					Project:                    gRepo,
@@ -510,7 +510,7 @@ func TestMakeAttempt(t *testing.T) {
 					Mode:                       cvbqpb.Mode_FULL_RUN,
 					SubmitStatus:               cvbqpb.GerritChange_SUCCESS,
 				},
-			})
+			}))
 		})
 	})
 }

@@ -25,6 +25,9 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
@@ -39,15 +42,12 @@ import (
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 	"go.chromium.org/luci/cv/internal/run/impl/submit"
 	"go.chromium.org/luci/cv/internal/tryjob"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestOnTryjobsUpdated(t *testing.T) {
 	t.Parallel()
 
-	Convey("OnTryjobsUpdated", t, func() {
+	ftt.Run("OnTryjobsUpdated", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
@@ -66,30 +66,30 @@ func TestOnTryjobsUpdated(t *testing.T) {
 		}
 		h, _ := makeTestHandler(&ct)
 
-		Convey("Enqueue longop", func() {
+		t.Run("Enqueue longop", func(t *ftt.Test) {
 			res, err := h.OnTryjobsUpdated(ctx, rs, common.MakeTryjobIDs(456, 789, 456))
-			So(err, ShouldBeNil)
-			So(res.SideEffectFn, ShouldBeNil)
-			So(res.PreserveEvents, ShouldBeFalse)
-			So(res.State.OngoingLongOps.GetOps(), ShouldHaveLength, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.SideEffectFn, should.BeNil)
+			assert.Loosely(t, res.PreserveEvents, should.BeFalse)
+			assert.Loosely(t, res.State.OngoingLongOps.GetOps(), should.HaveLength(1))
 			for _, op := range res.State.OngoingLongOps.GetOps() {
-				So(op, ShouldResembleProto, &run.OngoingLongOps_Op{
+				assert.Loosely(t, op, should.Resemble(&run.OngoingLongOps_Op{
 					Deadline: timestamppb.New(ct.Clock.Now().UTC().Add(maxTryjobExecutorDuration)),
 					Work: &run.OngoingLongOps_Op_ExecuteTryjobs{
 						ExecuteTryjobs: &tryjob.ExecuteTryjobsPayload{
 							TryjobsUpdated: []int64{456, 789}, // Also deduped 456
 						},
 					},
-				})
+				}))
 			}
 		})
 
-		Convey("Defer if an tryjob execute task is ongoing", func() {
+		t.Run("Defer if an tryjob execute task is ongoing", func(t *ftt.Test) {
 			enqueueTryjobsUpdatedTask(ctx, rs, common.TryjobIDs{123})
 			res, err := h.OnTryjobsUpdated(ctx, rs, common.MakeTryjobIDs(456, 789, 456))
-			So(err, ShouldBeNil)
-			So(res.SideEffectFn, ShouldBeNil)
-			So(res.PreserveEvents, ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.SideEffectFn, should.BeNil)
+			assert.Loosely(t, res.PreserveEvents, should.BeTrue)
 		})
 
 		statuses := []run.Status{
@@ -100,13 +100,13 @@ func TestOnTryjobsUpdated(t *testing.T) {
 			run.Status_SUBMITTING,
 		}
 		for _, status := range statuses {
-			Convey(fmt.Sprintf("Noop when Run is %s", status), func() {
+			t.Run(fmt.Sprintf("Noop when Run is %s", status), func(t *ftt.Test) {
 				rs.Status = status
 				res, err := h.OnTryjobsUpdated(ctx, rs, common.TryjobIDs{123})
-				So(err, ShouldBeNil)
-				So(res.State, ShouldEqual, rs)
-				So(res.SideEffectFn, ShouldBeNil)
-				So(res.PreserveEvents, ShouldBeFalse)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res.State, should.Equal(rs))
+				assert.Loosely(t, res.SideEffectFn, should.BeNil)
+				assert.Loosely(t, res.PreserveEvents, should.BeFalse)
 			})
 		}
 	})
@@ -115,7 +115,7 @@ func TestOnTryjobsUpdated(t *testing.T) {
 func TestOnCompletedExecuteTryjobs(t *testing.T) {
 	t.Parallel()
 
-	Convey("OnCompletedExecuteTryjobs works", t, func() {
+	ftt.Run("OnCompletedExecuteTryjobs works", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
@@ -152,7 +152,7 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 
 		for _, clid := range rs.CLs {
 			ci := gf.CI(100 + int(clid))
-			So(datastore.Put(ctx,
+			assert.Loosely(t, datastore.Put(ctx,
 				&run.RunCL{
 					ID:         clid,
 					Run:        datastore.MakeKey(ctx, common.RunKind, string(rs.ID)),
@@ -168,7 +168,7 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 						Patchset: 2,
 					},
 				},
-			), ShouldBeNil)
+			), should.BeNil)
 		}
 
 		result := &eventpb.LongOpCompleted{
@@ -180,82 +180,82 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 			eventpb.LongOpCompleted_EXPIRED,
 			eventpb.LongOpCompleted_FAILED,
 		} {
-			Convey(fmt.Sprintf("on long op %s", longOpStatus), func() {
+			t.Run(fmt.Sprintf("on long op %s", longOpStatus), func(t *ftt.Test) {
 				result.Status = longOpStatus
 				res, err := h.OnLongOpCompleted(ctx, rs, result)
-				So(err, ShouldBeNil)
-				So(res.State.Status, ShouldEqual, run.Status_RUNNING)
-				So(res.State.OngoingLongOps.GetOps(), ShouldHaveLength, 1)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res.State.Status, should.Equal(run.Status_RUNNING))
+				assert.Loosely(t, res.State.OngoingLongOps.GetOps(), should.HaveLength(1))
 				for _, op := range res.State.OngoingLongOps.GetOps() {
-					So(op.GetResetTriggers(), ShouldNotBeNil)
-					So(op.GetResetTriggers().GetRunStatusIfSucceeded(), ShouldEqual, run.Status_FAILED)
+					assert.Loosely(t, op.GetResetTriggers(), should.NotBeNil)
+					assert.Loosely(t, op.GetResetTriggers().GetRunStatusIfSucceeded(), should.Equal(run.Status_FAILED))
 				}
-				So(res.SideEffectFn, ShouldBeNil)
-				So(res.PreserveEvents, ShouldBeFalse)
+				assert.Loosely(t, res.SideEffectFn, should.BeNil)
+				assert.Loosely(t, res.PreserveEvents, should.BeFalse)
 			})
 		}
 
-		Convey("on long op success", func() {
+		t.Run("on long op success", func(t *ftt.Test) {
 			result.Status = eventpb.LongOpCompleted_SUCCEEDED
 
-			Convey("Tryjob execution still running", func() {
+			t.Run("Tryjob execution still running", func(t *ftt.Test) {
 				err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 					return tryjob.SaveExecutionState(ctx, rs.ID, &tryjob.ExecutionState{
 						Status: tryjob.ExecutionState_RUNNING,
 					}, 0, nil)
 				}, nil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				res, err := h.OnLongOpCompleted(ctx, rs, result)
-				So(err, ShouldBeNil)
-				So(res.State.Status, ShouldEqual, run.Status_RUNNING)
-				So(res.State.Tryjobs, ShouldResembleProto, &run.Tryjobs{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res.State.Status, should.Equal(run.Status_RUNNING))
+				assert.Loosely(t, res.State.Tryjobs, should.Resemble(&run.Tryjobs{
 					State: &tryjob.ExecutionState{
 						Status: tryjob.ExecutionState_RUNNING,
 					},
-				})
-				So(res.State.OngoingLongOps, ShouldBeNil)
-				So(res.SideEffectFn, ShouldBeNil)
-				So(res.PreserveEvents, ShouldBeFalse)
+				}))
+				assert.Loosely(t, res.State.OngoingLongOps, should.BeNil)
+				assert.Loosely(t, res.SideEffectFn, should.BeNil)
+				assert.Loosely(t, res.PreserveEvents, should.BeFalse)
 			})
 
-			Convey("Tryjob execution succeeds", func() {
+			t.Run("Tryjob execution succeeds", func(t *ftt.Test) {
 				err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 					return tryjob.SaveExecutionState(ctx, rs.ID, &tryjob.ExecutionState{
 						Status: tryjob.ExecutionState_SUCCEEDED,
 					}, 0, nil)
 				}, nil)
-				So(err, ShouldBeNil)
-				Convey("Full Run", func() {
+				assert.Loosely(t, err, should.BeNil)
+				t.Run("Full Run", func(t *ftt.Test) {
 					rs.Mode = run.FullRun
 					ctx = context.WithValue(ctx, &fakeTaskIDKey, "task-foo")
 					res, err := h.OnLongOpCompleted(ctx, rs, result)
-					So(err, ShouldBeNil)
-					So(res.State.Status, ShouldEqual, run.Status_SUBMITTING)
-					So(res.State.Tryjobs, ShouldResembleProto, &run.Tryjobs{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, res.State.Status, should.Equal(run.Status_SUBMITTING))
+					assert.Loosely(t, res.State.Tryjobs, should.Resemble(&run.Tryjobs{
 						State: &tryjob.ExecutionState{
 							Status: tryjob.ExecutionState_SUCCEEDED,
 						},
-					})
-					So(res.State.OngoingLongOps, ShouldBeNil)
-					So(res.State.Submission, ShouldNotBeNil)
-					So(submit.MustCurrentRun(ctx, lProject), ShouldEqual, rs.ID)
-					So(res.SideEffectFn, ShouldBeNil)
-					So(res.PreserveEvents, ShouldBeFalse)
+					}))
+					assert.Loosely(t, res.State.OngoingLongOps, should.BeNil)
+					assert.Loosely(t, res.State.Submission, should.NotBeNil)
+					assert.Loosely(t, submit.MustCurrentRun(ctx, lProject), should.Equal(rs.ID))
+					assert.Loosely(t, res.SideEffectFn, should.BeNil)
+					assert.Loosely(t, res.PreserveEvents, should.BeFalse)
 				})
-				Convey("Dry Run", func() {
+				t.Run("Dry Run", func(t *ftt.Test) {
 					rs.Mode = run.DryRun
 					res, err := h.OnLongOpCompleted(ctx, rs, result)
-					So(err, ShouldBeNil)
-					So(res.State.Status, ShouldEqual, run.Status_RUNNING)
-					So(res.State.Tryjobs, ShouldResembleProto, &run.Tryjobs{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, res.State.Status, should.Equal(run.Status_RUNNING))
+					assert.Loosely(t, res.State.Tryjobs, should.Resemble(&run.Tryjobs{
 						State: &tryjob.ExecutionState{
 							Status: tryjob.ExecutionState_SUCCEEDED,
 						},
-					})
-					So(res.State.OngoingLongOps.GetOps(), ShouldHaveLength, 1)
+					}))
+					assert.Loosely(t, res.State.OngoingLongOps.GetOps(), should.HaveLength(1))
 					for _, op := range res.State.OngoingLongOps.GetOps() {
-						So(op.GetResetTriggers(), ShouldNotBeNil)
-						So(op.GetResetTriggers().GetRequests(), ShouldResembleProto, []*run.OngoingLongOps_Op_ResetTriggers_Request{
+						assert.Loosely(t, op.GetResetTriggers(), should.NotBeNil)
+						assert.Loosely(t, op.GetResetTriggers().GetRequests(), should.Resemble([]*run.OngoingLongOps_Op_ResetTriggers_Request{
 							{
 								Clid:    int64(rs.CLs[0]),
 								Message: "This CL has passed the run",
@@ -264,37 +264,37 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 									gerrit.Whom_CQ_VOTERS,
 								},
 							},
-						})
-						So(op.GetResetTriggers().GetRunStatusIfSucceeded(), ShouldEqual, run.Status_SUCCEEDED)
+						}))
+						assert.Loosely(t, op.GetResetTriggers().GetRunStatusIfSucceeded(), should.Equal(run.Status_SUCCEEDED))
 					}
-					So(res.SideEffectFn, ShouldBeNil)
-					So(res.PreserveEvents, ShouldBeFalse)
+					assert.Loosely(t, res.SideEffectFn, should.BeNil)
+					assert.Loosely(t, res.PreserveEvents, should.BeFalse)
 				})
-				Convey("New Patchset Run, no message is posted", func() {
+				t.Run("New Patchset Run, no message is posted", func(t *ftt.Test) {
 					rs.Mode = run.NewPatchsetRun
 					res, err := h.OnLongOpCompleted(ctx, rs, result)
-					So(err, ShouldBeNil)
-					So(res.State.Status, ShouldEqual, run.Status_RUNNING)
-					So(res.State.Tryjobs, ShouldResembleProto, &run.Tryjobs{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, res.State.Status, should.Equal(run.Status_RUNNING))
+					assert.Loosely(t, res.State.Tryjobs, should.Resemble(&run.Tryjobs{
 						State: &tryjob.ExecutionState{
 							Status: tryjob.ExecutionState_SUCCEEDED,
 						},
-					})
-					So(res.State.OngoingLongOps.GetOps(), ShouldHaveLength, 1)
+					}))
+					assert.Loosely(t, res.State.OngoingLongOps.GetOps(), should.HaveLength(1))
 					for _, op := range res.State.OngoingLongOps.GetOps() {
-						So(op.GetResetTriggers(), ShouldNotBeNil)
-						So(op.GetResetTriggers().GetRequests(), ShouldResembleProto, []*run.OngoingLongOps_Op_ResetTriggers_Request{
+						assert.Loosely(t, op.GetResetTriggers(), should.NotBeNil)
+						assert.Loosely(t, op.GetResetTriggers().GetRequests(), should.Resemble([]*run.OngoingLongOps_Op_ResetTriggers_Request{
 							{Clid: int64(rs.CLs[0])},
-						})
-						So(op.GetResetTriggers().GetRunStatusIfSucceeded(), ShouldEqual, run.Status_SUCCEEDED)
+						}))
+						assert.Loosely(t, op.GetResetTriggers().GetRunStatusIfSucceeded(), should.Equal(run.Status_SUCCEEDED))
 					}
-					So(res.SideEffectFn, ShouldBeNil)
-					So(res.PreserveEvents, ShouldBeFalse)
+					assert.Loosely(t, res.SideEffectFn, should.BeNil)
+					assert.Loosely(t, res.PreserveEvents, should.BeFalse)
 				})
 			})
 
-			Convey("Tryjob execution failed", func() {
-				Convey("tryjobs result failure", func() {
+			t.Run("Tryjob execution failed", func(t *ftt.Test) {
+				t.Run("tryjobs result failure", func(t *ftt.Test) {
 					tj := tryjob.MustBuildbucketID("example.com", 12345).MustCreateIfNotExists(ctx)
 					tj.Result = &tryjob.Result{
 						Backend: &tryjob.Result_Buildbucket_{
@@ -308,7 +308,7 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 							},
 						},
 					}
-					So(datastore.Put(ctx, tj), ShouldBeNil)
+					assert.Loosely(t, datastore.Put(ctx, tj), should.BeNil)
 
 					err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 						return tryjob.SaveExecutionState(ctx, rs.ID, &tryjob.ExecutionState{
@@ -320,11 +320,11 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 							},
 						}, 0, nil)
 					}, nil)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					res, err := h.OnLongOpCompleted(ctx, rs, result)
-					So(err, ShouldBeNil)
-					So(res.State.Status, ShouldEqual, run.Status_RUNNING)
-					So(res.State.Tryjobs, ShouldResembleProto, &run.Tryjobs{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, res.State.Status, should.Equal(run.Status_RUNNING))
+					assert.Loosely(t, res.State.Tryjobs, should.Resemble(&run.Tryjobs{
 						State: &tryjob.ExecutionState{
 							Status: tryjob.ExecutionState_FAILED,
 							Failures: &tryjob.ExecutionState_Failures{
@@ -333,11 +333,11 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 								},
 							},
 						},
-					})
-					So(res.State.OngoingLongOps.GetOps(), ShouldHaveLength, 1)
+					}))
+					assert.Loosely(t, res.State.OngoingLongOps.GetOps(), should.HaveLength(1))
 					for _, op := range res.State.OngoingLongOps.GetOps() {
-						So(op.GetResetTriggers(), ShouldNotBeNil)
-						So(op.GetResetTriggers().GetRequests(), ShouldResembleProto, []*run.OngoingLongOps_Op_ResetTriggers_Request{
+						assert.Loosely(t, op.GetResetTriggers(), should.NotBeNil)
+						assert.Loosely(t, op.GetResetTriggers().GetRequests(), should.Resemble([]*run.OngoingLongOps_Op_ResetTriggers_Request{
 							{
 								Clid:    int64(rs.CLs[0]),
 								Message: "This CL has failed the run. Reason:\n\nTryjob [chromium/test/foo](https://example.com/build/12345) has failed with summary ([view all results](https://example-review.googlesource.com/c/101?checksPatchset=2&tab=checks)):\n\n---\nthis is the summary",
@@ -351,14 +351,14 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 								},
 								AddToAttentionReason: "Tryjobs failed",
 							},
-						})
-						So(op.GetResetTriggers().GetRunStatusIfSucceeded(), ShouldEqual, run.Status_FAILED)
+						}))
+						assert.Loosely(t, op.GetResetTriggers().GetRunStatusIfSucceeded(), should.Equal(run.Status_FAILED))
 					}
-					So(res.SideEffectFn, ShouldBeNil)
-					So(res.PreserveEvents, ShouldBeFalse)
+					assert.Loosely(t, res.SideEffectFn, should.BeNil)
+					assert.Loosely(t, res.PreserveEvents, should.BeFalse)
 				})
 
-				Convey("failed to launch tryjobs", func() {
+				t.Run("failed to launch tryjobs", func(t *ftt.Test) {
 					def := &tryjob.Definition{
 						Backend: &tryjob.Definition_Buildbucket_{
 							Buildbucket: &tryjob.Definition_Buildbucket{
@@ -384,11 +384,11 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 							},
 						}, 0, nil)
 					}, nil)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					res, err := h.OnLongOpCompleted(ctx, rs, result)
-					So(err, ShouldBeNil)
-					So(res.State.Status, ShouldEqual, run.Status_RUNNING)
-					So(res.State.Tryjobs, ShouldResembleProto, &run.Tryjobs{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, res.State.Status, should.Equal(run.Status_RUNNING))
+					assert.Loosely(t, res.State.Tryjobs, should.Resemble(&run.Tryjobs{
 						State: &tryjob.ExecutionState{
 							Status: tryjob.ExecutionState_FAILED,
 							Failures: &tryjob.ExecutionState_Failures{
@@ -400,11 +400,11 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 								},
 							},
 						},
-					})
-					So(res.State.OngoingLongOps.GetOps(), ShouldHaveLength, 1)
+					}))
+					assert.Loosely(t, res.State.OngoingLongOps.GetOps(), should.HaveLength(1))
 					for _, op := range res.State.OngoingLongOps.GetOps() {
-						So(op.GetResetTriggers(), ShouldNotBeNil)
-						So(op.GetResetTriggers().GetRequests(), ShouldResembleProto, []*run.OngoingLongOps_Op_ResetTriggers_Request{
+						assert.Loosely(t, op.GetResetTriggers(), should.NotBeNil)
+						assert.Loosely(t, op.GetResetTriggers().GetRequests(), should.Resemble([]*run.OngoingLongOps_Op_ResetTriggers_Request{
 							{
 								Clid:    int64(rs.CLs[0]),
 								Message: "Failed to launch tryjob `chromium/test/foo`. Reason: permission denied",
@@ -418,32 +418,32 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 								},
 								AddToAttentionReason: "Tryjobs failed",
 							},
-						})
-						So(op.GetResetTriggers().GetRunStatusIfSucceeded(), ShouldEqual, run.Status_FAILED)
+						}))
+						assert.Loosely(t, op.GetResetTriggers().GetRunStatusIfSucceeded(), should.Equal(run.Status_FAILED))
 					}
-					So(res.SideEffectFn, ShouldBeNil)
-					So(res.PreserveEvents, ShouldBeFalse)
+					assert.Loosely(t, res.SideEffectFn, should.BeNil)
+					assert.Loosely(t, res.PreserveEvents, should.BeFalse)
 				})
 
-				Convey("Unknown error", func() {
+				t.Run("Unknown error", func(t *ftt.Test) {
 					err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 						return tryjob.SaveExecutionState(ctx, rs.ID, &tryjob.ExecutionState{
 							Status: tryjob.ExecutionState_FAILED,
 						}, 0, nil)
 					}, nil)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					res, err := h.OnLongOpCompleted(ctx, rs, result)
-					So(err, ShouldBeNil)
-					So(res.State.Status, ShouldEqual, run.Status_RUNNING)
-					So(res.State.Tryjobs, ShouldResembleProto, &run.Tryjobs{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, res.State.Status, should.Equal(run.Status_RUNNING))
+					assert.Loosely(t, res.State.Tryjobs, should.Resemble(&run.Tryjobs{
 						State: &tryjob.ExecutionState{
 							Status: tryjob.ExecutionState_FAILED,
 						},
-					})
-					So(res.State.OngoingLongOps.GetOps(), ShouldHaveLength, 1)
+					}))
+					assert.Loosely(t, res.State.OngoingLongOps.GetOps(), should.HaveLength(1))
 					for _, op := range res.State.OngoingLongOps.GetOps() {
-						So(op.GetResetTriggers(), ShouldNotBeNil)
-						So(op.GetResetTriggers().GetRequests(), ShouldResembleProto, []*run.OngoingLongOps_Op_ResetTriggers_Request{
+						assert.Loosely(t, op.GetResetTriggers(), should.NotBeNil)
+						assert.Loosely(t, op.GetResetTriggers().GetRequests(), should.Resemble([]*run.OngoingLongOps_Op_ResetTriggers_Request{
 							{
 								Clid:    int64(rs.CLs[0]),
 								Message: "Unexpected error when processing Tryjobs. Please retry. If retry continues to fail, please contact LUCI team.\n\n" + cvBugLink,
@@ -457,20 +457,20 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 								},
 								AddToAttentionReason: "Run failed",
 							},
-						})
-						So(op.GetResetTriggers().GetRunStatusIfSucceeded(), ShouldEqual, run.Status_FAILED)
+						}))
+						assert.Loosely(t, op.GetResetTriggers().GetRunStatusIfSucceeded(), should.Equal(run.Status_FAILED))
 					}
-					So(res.SideEffectFn, ShouldBeNil)
-					So(res.PreserveEvents, ShouldBeFalse)
+					assert.Loosely(t, res.SideEffectFn, should.BeNil)
+					assert.Loosely(t, res.PreserveEvents, should.BeFalse)
 				})
 
-				Convey("Only reset trigger on root CL", func() {
+				t.Run("Only reset trigger on root CL", func(t *ftt.Test) {
 					err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 						return tryjob.SaveExecutionState(ctx, rs.ID, &tryjob.ExecutionState{
 							Status: tryjob.ExecutionState_FAILED,
 						}, 0, nil)
 					}, nil)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					anotherCL := &run.RunCL{
 						ID:         1002,
 						Run:        datastore.MakeKey(ctx, common.RunKind, string(rs.ID)),
@@ -486,16 +486,16 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 							Patchset: 2,
 						},
 					}
-					So(datastore.Put(ctx, anotherCL), ShouldBeNil)
+					assert.Loosely(t, datastore.Put(ctx, anotherCL), should.BeNil)
 					rs.CLs = append(rs.CLs, anotherCL.ID)
 
 					rs.RootCL = anotherCL.ID
 					res, err := h.OnLongOpCompleted(ctx, rs, result)
-					So(err, ShouldBeNil)
-					So(res.State.OngoingLongOps.GetOps(), ShouldHaveLength, 1)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, res.State.OngoingLongOps.GetOps(), should.HaveLength(1))
 					for _, op := range res.State.OngoingLongOps.GetOps() {
-						So(op.GetResetTriggers(), ShouldNotBeNil)
-						So(op.GetResetTriggers().GetRequests(), ShouldResembleProto, []*run.OngoingLongOps_Op_ResetTriggers_Request{
+						assert.Loosely(t, op.GetResetTriggers(), should.NotBeNil)
+						assert.Loosely(t, op.GetResetTriggers().GetRequests(), should.Resemble([]*run.OngoingLongOps_Op_ResetTriggers_Request{
 							{
 								Clid:    int64(anotherCL.ID),
 								Message: "Unexpected error when processing Tryjobs. Please retry. If retry continues to fail, please contact LUCI team.\n\n" + cvBugLink,
@@ -509,8 +509,8 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 								},
 								AddToAttentionReason: "Run failed",
 							},
-						})
-						So(op.GetResetTriggers().GetRunStatusIfSucceeded(), ShouldEqual, run.Status_FAILED)
+						}))
+						assert.Loosely(t, op.GetResetTriggers().GetRunStatusIfSucceeded(), should.Equal(run.Status_FAILED))
 					}
 				})
 			})
@@ -519,7 +519,7 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 }
 
 func TestComposeTryjobsFailureReason(t *testing.T) {
-	Convey("ComposeTryjobsFailureReason", t, func() {
+	ftt.Run("ComposeTryjobsFailureReason", t, func(t *ftt.Test) {
 		cl := &run.RunCL{
 			ID:         1111,
 			ExternalID: changelist.MustGobID("example.review.com", 123),
@@ -533,10 +533,10 @@ func TestComposeTryjobsFailureReason(t *testing.T) {
 				Patchset: 2,
 			},
 		}
-		Convey("panics", func() {
-			So(func() {
+		t.Run("panics", func(t *ftt.Test) {
+			assert.Loosely(t, func() {
 				_ = composeTryjobsResultFailureReason(cl, nil)
-			}, ShouldPanicLike, "called without tryjobs")
+			}, should.PanicLike("called without tryjobs"))
 		})
 		const bbHost = "test.com"
 		builder := &bbpb.BuilderID{
@@ -544,9 +544,9 @@ func TestComposeTryjobsFailureReason(t *testing.T) {
 			Bucket:  "test_bucket",
 			Builder: "test_builder",
 		}
-		Convey("works", func() {
-			Convey("single", func() {
-				Convey("restricted", func() {
+		t.Run("works", func(t *ftt.Test) {
+			t.Run("single", func(t *ftt.Test) {
+				t.Run("restricted", func(t *ftt.Test) {
 					r := composeTryjobsResultFailureReason(cl, []*tryjob.Tryjob{
 						{
 							ExternalID: tryjob.MustBuildbucketID(bbHost, 123456790),
@@ -569,9 +569,9 @@ func TestComposeTryjobsFailureReason(t *testing.T) {
 							},
 						},
 					})
-					So(r, ShouldEqual, "[Tryjob](https://test.com/build/123456790) has failed")
+					assert.Loosely(t, r, should.Equal("[Tryjob](https://test.com/build/123456790) has failed"))
 				})
-				Convey("not restricted", func() {
+				t.Run("not restricted", func(t *ftt.Test) {
 					r := composeTryjobsResultFailureReason(cl, []*tryjob.Tryjob{
 						{
 							ExternalID: tryjob.MustBuildbucketID(bbHost, 123456790),
@@ -594,11 +594,11 @@ func TestComposeTryjobsFailureReason(t *testing.T) {
 							},
 						},
 					})
-					So(r, ShouldEqual, "Tryjob [test_proj/test_bucket/test_builder](https://test.com/build/123456790) has failed with summary ([view all results](https://example.review.com/c/123?checksPatchset=2&tab=checks)):\n\n---\nA couple\nof lines\nwith public details")
+					assert.Loosely(t, r, should.Equal("Tryjob [test_proj/test_bucket/test_builder](https://test.com/build/123456790) has failed with summary ([view all results](https://example.review.com/c/123?checksPatchset=2&tab=checks)):\n\n---\nA couple\nof lines\nwith public details"))
 				})
 			})
 
-			Convey("multiple tryjobs", func() {
+			t.Run("multiple tryjobs", func(t *ftt.Test) {
 				tjs := []*tryjob.Tryjob{
 					// restricted.
 					{
@@ -663,14 +663,14 @@ func TestComposeTryjobsFailureReason(t *testing.T) {
 					},
 				}
 
-				Convey("all public visibility", func() {
+				t.Run("all public visibility", func(t *ftt.Test) {
 					r := composeTryjobsResultFailureReason(cl, tjs[1:])
-					So(r, ShouldEqual, "Failed Tryjobs:\n* [test_proj/test_bucket/test_builder](https://test.com/build/123456791)\n* [test_proj/test_bucket/test_builder](https://test.com/build/123456792). Summary ([view all results](https://example.review.com/c/123?checksPatchset=2&tab=checks)):\n\n---\nA couple\nof lines\nwith public details\n\n---")
+					assert.Loosely(t, r, should.Equal("Failed Tryjobs:\n* [test_proj/test_bucket/test_builder](https://test.com/build/123456791)\n* [test_proj/test_bucket/test_builder](https://test.com/build/123456792). Summary ([view all results](https://example.review.com/c/123?checksPatchset=2&tab=checks)):\n\n---\nA couple\nof lines\nwith public details\n\n---"))
 				})
 
-				Convey("with one restricted visibility", func() {
+				t.Run("with one restricted visibility", func(t *ftt.Test) {
 					r := composeTryjobsResultFailureReason(cl, tjs)
-					So(r, ShouldEqual, "Failed Tryjobs:\n* https://test.com/build/123456790\n* https://test.com/build/123456791\n* https://test.com/build/123456792")
+					assert.Loosely(t, r, should.Equal("Failed Tryjobs:\n* https://test.com/build/123456790\n* https://test.com/build/123456791\n* https://test.com/build/123456792"))
 				})
 			})
 		})
@@ -678,7 +678,7 @@ func TestComposeTryjobsFailureReason(t *testing.T) {
 }
 
 func TestComposeLaunchFailureReason(t *testing.T) {
-	Convey("Compose Launch Failure Reason", t, func() {
+	ftt.Run("Compose Launch Failure Reason", t, func(t *ftt.Test) {
 		defFoo := &tryjob.Definition{
 			Backend: &tryjob.Definition_Buildbucket_{
 				Buildbucket: &tryjob.Definition_Buildbucket{
@@ -691,21 +691,21 @@ func TestComposeLaunchFailureReason(t *testing.T) {
 				},
 			},
 		}
-		Convey("Single", func() {
-			Convey("restricted", func() {
+		t.Run("Single", func(t *ftt.Test) {
+			t.Run("restricted", func(t *ftt.Test) {
 				defFoo.ResultVisibility = cfgpb.CommentLevel_COMMENT_LEVEL_RESTRICTED
 				reason := composeLaunchFailureReason(
 					[]*tryjob.ExecutionState_Failures_LaunchFailure{
 						{Definition: defFoo, Reason: "permission denied"},
 					})
-				So(reason, ShouldEqual, "Failed to launch one tryjob. The tryjob name can't be shown due to configuration. Please contact your Project admin for help.")
+				assert.Loosely(t, reason, should.Equal("Failed to launch one tryjob. The tryjob name can't be shown due to configuration. Please contact your Project admin for help."))
 			})
-			Convey("public", func() {
+			t.Run("public", func(t *ftt.Test) {
 				reason := composeLaunchFailureReason(
 					[]*tryjob.ExecutionState_Failures_LaunchFailure{
 						{Definition: defFoo, Reason: "permission denied"},
 					})
-				So(reason, ShouldEqual, "Failed to launch tryjob `ProjectFoo/BucketFoo/BuilderFoo`. Reason: permission denied")
+				assert.Loosely(t, reason, should.Equal("Failed to launch tryjob `ProjectFoo/BucketFoo/BuilderFoo`. Reason: permission denied"))
 			})
 		})
 		defBar := &tryjob.Definition{
@@ -720,8 +720,8 @@ func TestComposeLaunchFailureReason(t *testing.T) {
 				},
 			},
 		}
-		Convey("Multiple", func() {
-			Convey("All restricted", func() {
+		t.Run("Multiple", func(t *ftt.Test) {
+			t.Run("All restricted", func(t *ftt.Test) {
 				defFoo.ResultVisibility = cfgpb.CommentLevel_COMMENT_LEVEL_RESTRICTED
 				defBar.ResultVisibility = cfgpb.CommentLevel_COMMENT_LEVEL_RESTRICTED
 				reason := composeLaunchFailureReason(
@@ -729,24 +729,24 @@ func TestComposeLaunchFailureReason(t *testing.T) {
 						{Definition: defFoo, Reason: "permission denied"},
 						{Definition: defBar, Reason: "builder not found"},
 					})
-				So(reason, ShouldEqual, "Failed to launch 2 tryjobs. The tryjob names can't be shown due to configuration. Please contact your Project admin for help.")
+				assert.Loosely(t, reason, should.Equal("Failed to launch 2 tryjobs. The tryjob names can't be shown due to configuration. Please contact your Project admin for help."))
 			})
-			Convey("Partial restricted", func() {
+			t.Run("Partial restricted", func(t *ftt.Test) {
 				defBar.ResultVisibility = cfgpb.CommentLevel_COMMENT_LEVEL_RESTRICTED
 				reason := composeLaunchFailureReason(
 					[]*tryjob.ExecutionState_Failures_LaunchFailure{
 						{Definition: defFoo, Reason: "permission denied"},
 						{Definition: defBar, Reason: "builder not found"},
 					})
-				So(reason, ShouldEqual, "Failed to launch the following tryjobs:\n* `ProjectFoo/BucketFoo/BuilderFoo`; Failure reason: permission denied\n\nIn addition to the tryjobs above, failed to launch 1 tryjob. But the tryjob names can't be shown due to configuration. Please contact your Project admin for help.")
+				assert.Loosely(t, reason, should.Equal("Failed to launch the following tryjobs:\n* `ProjectFoo/BucketFoo/BuilderFoo`; Failure reason: permission denied\n\nIn addition to the tryjobs above, failed to launch 1 tryjob. But the tryjob names can't be shown due to configuration. Please contact your Project admin for help."))
 			})
-			Convey("All public", func() {
+			t.Run("All public", func(t *ftt.Test) {
 				reason := composeLaunchFailureReason(
 					[]*tryjob.ExecutionState_Failures_LaunchFailure{
 						{Definition: defFoo, Reason: "permission denied"},
 						{Definition: defBar, Reason: "builder not found"},
 					})
-				So(reason, ShouldEqual, "Failed to launch the following tryjobs:\n* `ProjectBar/BucketBar/BuilderBar`; Failure reason: builder not found\n* `ProjectFoo/BucketFoo/BuilderFoo`; Failure reason: permission denied")
+				assert.Loosely(t, reason, should.Equal("Failed to launch the following tryjobs:\n* `ProjectBar/BucketBar/BuilderBar`; Failure reason: builder not found\n* `ProjectFoo/BucketFoo/BuilderFoo`; Failure reason: permission denied"))
 			})
 		})
 	})

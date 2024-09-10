@@ -22,6 +22,9 @@ import (
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -32,13 +35,11 @@ import (
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/tryjob"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestNewPatchsetUploadRun(t *testing.T) {
 	t.Parallel()
-	Convey("Non-combinable", t, func() {
+	ftt.Run("Non-combinable", t, func(t *ftt.Test) {
 		ct := Test{}
 		ctx := ct.SetUp(t)
 
@@ -56,8 +57,8 @@ func TestNewPatchsetUploadRun(t *testing.T) {
 		ct.BuildbucketFake.EnsureBuilders(cfg)
 		prjcfgtest.Create(ctx, lProject, cfg)
 
-		Convey("A single patchset is uploaded", func() {
-			So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
+		t.Run("A single patchset is uploaded", func(t *ftt.Test) {
+			assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
 			updated := ct.Clock.Now().Add(time.Minute)
 			ct.AddCommitter("uploader-99")
 			ct.AddNewPatchsetRunner("uploader-99")
@@ -73,16 +74,16 @@ func TestNewPatchsetUploadRun(t *testing.T) {
 				rs = ct.LoadRunsOf(ctx, lProject)
 				return len(rs) > 0
 			})
-			So(rs, ShouldHaveLength, 1)
-			So(rs[0].Mode, ShouldEqual, run.NewPatchsetRun)
+			assert.Loosely(t, rs, should.HaveLength(1))
+			assert.Loosely(t, rs[0].Mode, should.Equal(run.NewPatchsetRun))
 			ct.Clock.Add(5 * time.Minute)
-			Convey("And then commit-queued", func() {
+			t.Run("And then commit-queued", func(t *ftt.Test) {
 				ct.GFake.MutateChange(gHost, gChangeFirst, func(c *gf.Change) {
 					gf.CQ(2, ct.Clock.Now(), "uploader-99")(c.Info)
 
 					gf.Updated(ct.Clock.Now())(c.Info)
 				})
-				So(ct.GFake.GetChange(gHost, gChangeFirst).Info.Labels["Commit-Queue"].All[0].Value, ShouldEqual, 2)
+				assert.Loosely(t, ct.GFake.GetChange(gHost, gChangeFirst).Info.Labels["Commit-Queue"].All[0].Value, should.Equal(2))
 
 				// The new run should be created.
 				ct.RunUntil(ctx, func() bool {
@@ -94,15 +95,15 @@ func TestNewPatchsetUploadRun(t *testing.T) {
 				})
 
 				// We should now have one run in each mode.
-				So(rs, ShouldHaveLength, 2)
+				assert.Loosely(t, rs, should.HaveLength(2))
 				modes := make(map[run.Mode]bool)
 				for _, r := range rs {
 					modes[r.Mode] = true
 				}
-				So(modes[run.NewPatchsetRun], ShouldBeTrue)
-				So(modes[run.FullRun], ShouldBeTrue)
+				assert.Loosely(t, modes[run.NewPatchsetRun], should.BeTrue)
+				assert.Loosely(t, modes[run.FullRun], should.BeTrue)
 			})
-			Convey("And then a new patchset is uploaded", func() {
+			t.Run("And then a new patchset is uploaded", func(t *ftt.Test) {
 				originalRun := rs[0]
 				originalID := rs[0].ID
 				now := ct.Clock.Now()
@@ -124,15 +125,15 @@ func TestNewPatchsetUploadRun(t *testing.T) {
 					return newRun != nil
 				})
 
-				So(newRun, ShouldNotBeNil)
-				So(newRun.Mode, ShouldEqual, run.NewPatchsetRun)
-				So(newRun.Status, ShouldEqual, run.Status_PENDING)
-				So(originalRun.Status, ShouldEqual, run.Status_CANCELLED)
+				assert.Loosely(t, newRun, should.NotBeNil)
+				assert.Loosely(t, newRun.Mode, should.Equal(run.NewPatchsetRun))
+				assert.Loosely(t, newRun.Status, should.Equal(run.Status_PENDING))
+				assert.Loosely(t, originalRun.Status, should.Equal(run.Status_CANCELLED))
 			})
 		})
 
-		Convey("A single patchset is uploaded, and commit-queued at the same time", func() {
-			So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
+		t.Run("A single patchset is uploaded, and commit-queued at the same time", func(t *ftt.Test) {
+			assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
 			updated := ct.Clock.Now().Add(time.Minute)
 			ct.AddCommitter("uploader-99")
 			ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), gf.CI(
@@ -150,17 +151,17 @@ func TestNewPatchsetUploadRun(t *testing.T) {
 				return len(rs) > 1
 			})
 
-			So(rs, ShouldHaveLength, 2)
+			assert.Loosely(t, rs, should.HaveLength(2))
 			modes := make(map[run.Mode]bool, 2)
 			for _, r := range rs {
 				modes[r.Mode] = true
 			}
-			So(modes[run.NewPatchsetRun], ShouldBeTrue)
-			So(modes[run.FullRun], ShouldBeTrue)
+			assert.Loosely(t, modes[run.NewPatchsetRun], should.BeTrue)
+			assert.Loosely(t, modes[run.FullRun], should.BeTrue)
 		})
 
-		Convey("A patchset is uploaded after a previous patchset upload run is complete", func() {
-			So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
+		t.Run("A patchset is uploaded after a previous patchset upload run is complete", func(t *ftt.Test) {
+			assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
 			updated := ct.Clock.Now().Add(time.Minute)
 			ct.AddCommitter("uploader-99")
 			ct.AddNewPatchsetRunner("uploader-99")
@@ -177,13 +178,13 @@ func TestNewPatchsetUploadRun(t *testing.T) {
 			ct.RunUntil(ctx, func() bool {
 				rs := ct.LoadRunsOf(ctx, lProject)
 				if len(rs) > 0 {
-					So(rs, ShouldHaveLength, 1)
+					assert.Loosely(t, rs, should.HaveLength(1))
 					originalRun = rs[0]
 					return true
 				}
 				return false
 			})
-			So(originalRun.Mode, ShouldEqual, run.NewPatchsetRun)
+			assert.Loosely(t, originalRun.Mode, should.Equal(run.NewPatchsetRun))
 
 			// Make the first Run succeed.
 			ct.LogPhase(ctx, "Tryjob for the first Run has passed")
@@ -210,7 +211,7 @@ func TestNewPatchsetUploadRun(t *testing.T) {
 				originalRun = ct.LoadRun(ctx, originalRun.ID)
 				return run.IsEnded(originalRun.Status)
 			})
-			So(originalRun.Status, ShouldEqual, run.Status_SUCCEEDED)
+			assert.Loosely(t, originalRun.Status, should.Equal(run.Status_SUCCEEDED))
 
 			// Upload a new patch, wait for it to create a new run.
 			now := ct.Clock.Now()
@@ -229,15 +230,15 @@ func TestNewPatchsetUploadRun(t *testing.T) {
 				return false
 			})
 
-			So(newRun.Mode, ShouldEqual, run.NewPatchsetRun)
-			So(ct.LoadCL(ctx, newRun.CLs[0]).Snapshot.Patchset, ShouldEqual, 2)
+			assert.Loosely(t, newRun.Mode, should.Equal(run.NewPatchsetRun))
+			assert.Loosely(t, ct.LoadCL(ctx, newRun.CLs[0]).Snapshot.Patchset, should.Equal(2))
 		})
 
-		Convey("An untriggered dependent CL is uploaded, this should create an NP Run and not a CQ Run", func() {
+		t.Run("An untriggered dependent CL is uploaded, this should create an NP Run and not a CQ Run", func(t *ftt.Test) {
 			// CL A depends on CL B, CL A is CQ+2 but CL B is not.
 			// This should create two NPR Runs and no CQ Run.
 			gChangeA, gChangeB := 1002, 1003
-			So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
+			assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
 			updated := ct.Clock.Now().Add(time.Minute)
 			ct.AddDryRunner("user-1")
 			ct.AddNewPatchsetRunner("user-1")
@@ -261,7 +262,7 @@ func TestNewPatchsetUploadRun(t *testing.T) {
 				rs = ct.LoadRunsOf(ctx, lProject)
 				return len(rs) >= 3
 			})
-			So(len(rs), ShouldEqual, 3)
+			assert.Loosely(t, len(rs), should.Equal(3))
 			// Sort them by mode, then external ID.
 			sort.Slice(rs, func(i, j int) bool {
 				if rs[i].Mode != rs[j].Mode {
@@ -269,30 +270,30 @@ func TestNewPatchsetUploadRun(t *testing.T) {
 				}
 				clI := &changelist.CL{ID: rs[i].CLs[0]}
 				clJ := &changelist.CL{ID: rs[j].CLs[0]}
-				So(datastore.Get(ctx, clI, clJ), ShouldBeNil)
+				assert.Loosely(t, datastore.Get(ctx, clI, clJ), should.BeNil)
 				return clI.ExternalID < clJ.ExternalID
 			})
 
 			cla, err := changelist.MustGobID(gHost, int64(gChangeA)).Load(ctx)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			clb, err := changelist.MustGobID(gHost, int64(gChangeB)).Load(ctx)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(rs[0].Mode, ShouldEqual, run.DryRun)
-			So(rs[0].CLs, ShouldHaveLength, 1)
-			So(rs[0].CLs[0], ShouldEqual, cla.ID)
+			assert.Loosely(t, rs[0].Mode, should.Equal(run.DryRun))
+			assert.Loosely(t, rs[0].CLs, should.HaveLength(1))
+			assert.Loosely(t, rs[0].CLs[0], should.Equal(cla.ID))
 
-			So(rs[1].Mode, ShouldEqual, run.NewPatchsetRun)
-			So(rs[1].CLs, ShouldHaveLength, 1)
-			So(rs[1].CLs[0], ShouldEqual, cla.ID)
+			assert.Loosely(t, rs[1].Mode, should.Equal(run.NewPatchsetRun))
+			assert.Loosely(t, rs[1].CLs, should.HaveLength(1))
+			assert.Loosely(t, rs[1].CLs[0], should.Equal(cla.ID))
 
-			So(rs[2].Mode, ShouldEqual, run.NewPatchsetRun)
-			So(rs[2].CLs, ShouldHaveLength, 1)
-			So(rs[2].CLs[0], ShouldEqual, clb.ID)
+			assert.Loosely(t, rs[2].Mode, should.Equal(run.NewPatchsetRun))
+			assert.Loosely(t, rs[2].CLs, should.HaveLength(1))
+			assert.Loosely(t, rs[2].CLs[0], should.Equal(clb.ID))
 		})
 
-		Convey("If user is not authorized then the new patchset run is immediately cancelled", func() {
-			So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
+		t.Run("If user is not authorized then the new patchset run is immediately cancelled", func(t *ftt.Test) {
+			assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
 			updated := ct.Clock.Now().Add(time.Minute)
 			ct.GFake.AddLinkedAccountMapping([]*gerritpb.EmailInfo{
 				&gerritpb.EmailInfo{Email: "uploader-99@example.com"},
@@ -315,11 +316,11 @@ func TestNewPatchsetUploadRun(t *testing.T) {
 				}
 				return false
 			})
-			So(ct.GFake.GetChange(gHost, gChangeFirst).Info.Messages, ShouldHaveLength, 0)
+			assert.Loosely(t, ct.GFake.GetChange(gHost, gChangeFirst).Info.Messages, should.HaveLength(0))
 		})
 	})
 
-	Convey("Combinable", t, func() {
+	ftt.Run("Combinable", t, func(t *ftt.Test) {
 		ct := Test{}
 		ctx := ct.SetUp(t)
 
@@ -337,7 +338,7 @@ func TestNewPatchsetUploadRun(t *testing.T) {
 		prjcfgtest.Create(ctx, lProject, cfg)
 		// A depends on B, both are ready. We should get three runs. Two NPR and one CQ
 		gChangeA, gChangeB := 1002, 1003
-		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
+		assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
 		updated := ct.Clock.Now().Add(time.Minute)
 		ct.AddDryRunner("user-1")
 		ct.AddNewPatchsetRunner("user-1")
@@ -362,7 +363,7 @@ func TestNewPatchsetUploadRun(t *testing.T) {
 			rs = ct.LoadRunsOf(ctx, lProject)
 			return len(rs) >= 3
 		})
-		So(len(rs), ShouldEqual, 3)
+		assert.Loosely(t, len(rs), should.Equal(3))
 
 		// Sort by mode then by external ID of the first CL in the Run.
 		sort.Slice(rs, func(i, j int) bool {
@@ -371,30 +372,30 @@ func TestNewPatchsetUploadRun(t *testing.T) {
 			}
 			clI := &changelist.CL{ID: rs[i].CLs[0]}
 			clJ := &changelist.CL{ID: rs[j].CLs[0]}
-			So(datastore.Get(ctx, clI, clJ), ShouldBeNil)
+			assert.Loosely(t, datastore.Get(ctx, clI, clJ), should.BeNil)
 			return clI.ExternalID < clJ.ExternalID
 		})
 
 		cla, err := changelist.MustGobID(gHost, int64(gChangeA)).Load(ctx)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		clb, err := changelist.MustGobID(gHost, int64(gChangeB)).Load(ctx)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		// The full run includes both CLs.
-		So(rs[0].Mode, ShouldEqual, run.FullRun)
-		So(rs[0].CLs, ShouldHaveLength, 2)
+		assert.Loosely(t, rs[0].Mode, should.Equal(run.FullRun))
+		assert.Loosely(t, rs[0].CLs, should.HaveLength(2))
 		actual := rs[0].CLs
 		actual.Dedupe() // Sort.
 		expected := common.CLIDs{cla.ID, clb.ID}
 		expected.Dedupe() // Sort.
-		So(actual, ShouldResemble, expected)
+		assert.Loosely(t, actual, should.Resemble(expected))
 
 		// The new patchset runs each include one CL.
-		So(rs[1].Mode, ShouldEqual, run.NewPatchsetRun)
-		So(rs[1].CLs, ShouldHaveLength, 1)
-		So(rs[1].CLs[0], ShouldEqual, cla.ID)
+		assert.Loosely(t, rs[1].Mode, should.Equal(run.NewPatchsetRun))
+		assert.Loosely(t, rs[1].CLs, should.HaveLength(1))
+		assert.Loosely(t, rs[1].CLs[0], should.Equal(cla.ID))
 
-		So(rs[2].Mode, ShouldEqual, run.NewPatchsetRun)
-		So(rs[2].CLs, ShouldHaveLength, 1)
-		So(rs[2].CLs[0], ShouldEqual, clb.ID)
+		assert.Loosely(t, rs[2].Mode, should.Equal(run.NewPatchsetRun))
+		assert.Loosely(t, rs[2].CLs, should.HaveLength(1))
+		assert.Loosely(t, rs[2].CLs[0], should.Equal(clb.ID))
 	})
 }

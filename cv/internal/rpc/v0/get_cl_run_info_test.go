@@ -24,6 +24,9 @@ import (
 
 	"go.chromium.org/luci/common/clock/testclock"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
@@ -36,14 +39,12 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/run"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestGetCLRunInfo(t *testing.T) {
 	t.Parallel()
 
-	Convey("GetCLRunInfo", t, func() {
+	ftt.Run("GetCLRunInfo", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
@@ -72,15 +73,15 @@ func TestGetCLRunInfo(t *testing.T) {
 			},
 		})
 
-		Convey("w/o access", func() {
+		t.Run("w/o access", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "anonymous:anonymous",
 			})
 			_, err := gis.GetCLRunInfo(ctx, &apiv0pb.GetCLRunInfoRequest{GerritChange: gc})
-			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
+			assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.PermissionDenied))
 		})
 
-		Convey("w/o access but with JWT", func() {
+		t.Run("w/o access but with JWT", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "anonymous:anonymous",
 				UserExtra: &gerritauth.AssertedInfo{
@@ -98,35 +99,35 @@ func TestGetCLRunInfo(t *testing.T) {
 			ct.AddMember("admin@example.com", common.InstantTriggerDogfooderGroup)
 			_, err := gis.GetCLRunInfo(ctx, &apiv0pb.GetCLRunInfoRequest{GerritChange: gc})
 			// NotFound because we haven't put anything in the datastore yet.
-			So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
+			assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.NotFound))
 		})
 
-		Convey("w/ access but no JWT", func() {
+		t.Run("w/ access but no JWT", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity:       "user:admin@example.com",
 				IdentityGroups: []string{acls.V0APIAllowGroup},
 			})
 			_, err := gis.GetCLRunInfo(ctx, &apiv0pb.GetCLRunInfoRequest{GerritChange: gc})
 			// NotFound because we haven't put anything in the datastore yet.
-			So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
+			assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.NotFound))
 		})
 
-		Convey("w/ an invalid Gerrit Change", func() {
+		t.Run("w/ an invalid Gerrit Change", func(t *ftt.Test) {
 			invalidGc := &apiv0pb.GerritChange{
 				Host:     "bad/host.example.com",
 				Change:   1,
 				Patchset: 39,
 			}
 			_, err := gis.GetCLRunInfo(ctx, &apiv0pb.GetCLRunInfoRequest{GerritChange: invalidGc})
-			So(grpcutil.Code(err), ShouldEqual, codes.InvalidArgument)
+			assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.InvalidArgument))
 		})
 
-		Convey("w/ a Valid but missing Gerrit Change", func() {
+		t.Run("w/ a Valid but missing Gerrit Change", func(t *ftt.Test) {
 			_, err := gis.GetCLRunInfo(ctx, &apiv0pb.GetCLRunInfoRequest{GerritChange: gc})
-			So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
+			assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.NotFound))
 		})
 
-		Convey("w/ JWT change differing from Gerrit Change", func() {
+		t.Run("w/ JWT change differing from Gerrit Change", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity:       "user:admin@example.com",
 				IdentityGroups: []string{acls.V0APIAllowGroup},
@@ -138,7 +139,7 @@ func TestGetCLRunInfo(t *testing.T) {
 				},
 			})
 			_, err := gis.GetCLRunInfo(ctx, &apiv0pb.GetCLRunInfoRequest{GerritChange: gc})
-			So(grpcutil.Code(err), ShouldEqual, codes.InvalidArgument)
+			assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.InvalidArgument))
 		})
 
 		// Add example data for tests below.
@@ -171,8 +172,8 @@ func TestGetCLRunInfo(t *testing.T) {
 					Patchset: 39,
 				},
 			}
-			So(datastore.Put(ctx, rcl), ShouldBeNil)
-			So(datastore.Put(ctx, r), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, rcl), should.BeNil)
+			assert.Loosely(t, datastore.Put(ctx, r), should.BeNil)
 			return &apiv0pb.GetCLRunInfoResponse_RunInfo{
 				Id:           fmt.Sprintf("projects/%s/runs/%s", rid.LUCIProject(), rid.Inner()),
 				CreateTime:   timestamppb.New(r.CreateTime),
@@ -210,7 +211,7 @@ func TestGetCLRunInfo(t *testing.T) {
 				eid := changelist.MustGobID(dc.Host, dc.Change)
 				depCl := eid.MustCreateIfNotExists(ctx)
 				setSnapshot(depCl, dc, nil)
-				So(datastore.Put(ctx, depCl), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, depCl), should.BeNil)
 				deps[i] = &changelist.Dep{
 					Clid: int64(depCl.ID),
 				}
@@ -220,18 +221,18 @@ func TestGetCLRunInfo(t *testing.T) {
 			eid := changelist.MustGobID(change.Host, change.Change)
 			cl := eid.MustCreateIfNotExists(ctx)
 			setSnapshot(cl, change, deps)
-			So(datastore.Put(ctx, cl), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, cl), should.BeNil)
 		}
 
-		Convey("DepChangeInfos w/ valid Gerrit Change and no deps", func() {
+		t.Run("DepChangeInfos w/ valid Gerrit Change and no deps", func(t *ftt.Test) {
 			putWithDeps(gc, nil)
 
 			resp, err := gis.GetCLRunInfo(ctx, &apiv0pb.GetCLRunInfoRequest{GerritChange: gc})
-			So(err, ShouldBeNil)
-			So(resp.DepChangeInfos, ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp.DepChangeInfos, should.BeEmpty)
 		})
 
-		Convey("DepChangeInfos w/ valid Gerrit Change and deps", func() {
+		t.Run("DepChangeInfos w/ valid Gerrit Change and deps", func(t *ftt.Test) {
 			deps := []*apiv0pb.GerritChange{
 				{
 					Host:     hostReview,
@@ -249,8 +250,8 @@ func TestGetCLRunInfo(t *testing.T) {
 			runInfo := addRunAndGetRunInfo(deps[0])
 
 			resp, err := gis.GetCLRunInfo(ctx, &apiv0pb.GetCLRunInfoRequest{GerritChange: gc})
-			So(err, ShouldBeNil)
-			So(resp.DepChangeInfos, ShouldResemble, []*apiv0pb.GetCLRunInfoResponse_DepChangeInfo{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp.DepChangeInfos, should.Resemble([]*apiv0pb.GetCLRunInfoResponse_DepChangeInfo{
 				{
 					GerritChange: deps[0],
 					ChangeOwner:  owner,
@@ -261,32 +262,32 @@ func TestGetCLRunInfo(t *testing.T) {
 					ChangeOwner:  owner,
 					Runs:         []*apiv0pb.GetCLRunInfoResponse_RunInfo{},
 				},
-			})
+			}))
 
-			Convey("skip submitted dep", func() {
+			t.Run("skip submitted dep", func(t *ftt.Test) {
 				cl, err := changelist.MustGobID(deps[0].GetHost(), deps[0].GetChange()).Load(ctx)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				cl.Snapshot.GetGerrit().GetInfo().Status = gerritpb.ChangeStatus_MERGED
-				So(datastore.Put(ctx, cl), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, cl), should.BeNil)
 				resp, err := gis.GetCLRunInfo(ctx, &apiv0pb.GetCLRunInfoRequest{GerritChange: gc})
-				So(err, ShouldBeNil)
-				So(resp.DepChangeInfos, ShouldResemble, []*apiv0pb.GetCLRunInfoResponse_DepChangeInfo{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, resp.DepChangeInfos, should.Resemble([]*apiv0pb.GetCLRunInfoResponse_DepChangeInfo{
 					{
 						GerritChange: deps[1],
 						ChangeOwner:  owner,
 						Runs:         []*apiv0pb.GetCLRunInfoResponse_RunInfo{},
 					},
-				})
+				}))
 			})
-			Convey("return empty response for non-dogfooder", func() {
+			t.Run("return empty response for non-dogfooder", func(t *ftt.Test) {
 				ct.ResetMockedAuthDB(ctx)
 				resp, err := gis.GetCLRunInfo(ctx, &apiv0pb.GetCLRunInfoRequest{GerritChange: gc})
-				So(err, ShouldBeNil)
-				So(resp.GetRunsAsOrigin(), ShouldBeEmpty)
-				So(resp.GetRunsAsDep(), ShouldBeEmpty)
-				So(resp.GetDepChangeInfos(), ShouldBeEmpty)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, resp.GetRunsAsOrigin(), should.BeEmpty)
+				assert.Loosely(t, resp.GetRunsAsDep(), should.BeEmpty)
+				assert.Loosely(t, resp.GetDepChangeInfos(), should.BeEmpty)
 			})
-			Convey("return empty response if user email is missing in jwt", func() {
+			t.Run("return empty response if user email is missing in jwt", func(t *ftt.Test) {
 				ctx = auth.WithState(ctx, &authtest.FakeState{
 					Identity:       "user:admin@example.com",
 					IdentityGroups: []string{acls.V0APIAllowGroup, common.InstantTriggerDogfooderGroup},
@@ -298,10 +299,10 @@ func TestGetCLRunInfo(t *testing.T) {
 					},
 				})
 				resp, err := gis.GetCLRunInfo(ctx, &apiv0pb.GetCLRunInfoRequest{GerritChange: gc})
-				So(err, ShouldBeNil)
-				So(resp.GetRunsAsOrigin(), ShouldBeEmpty)
-				So(resp.GetRunsAsDep(), ShouldBeEmpty)
-				So(resp.GetDepChangeInfos(), ShouldBeEmpty)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, resp.GetRunsAsOrigin(), should.BeEmpty)
+				assert.Loosely(t, resp.GetRunsAsDep(), should.BeEmpty)
+				assert.Loosely(t, resp.GetDepChangeInfos(), should.BeEmpty)
 			})
 		})
 	})

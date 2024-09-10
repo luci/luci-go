@@ -17,45 +17,45 @@ package tryjob
 import (
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/cv/internal/cvtesting"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestExternalID(t *testing.T) {
 	t.Parallel()
 
-	Convey("ExternalID works", t, func() {
+	ftt.Run("ExternalID works", t, func(t *ftt.Test) {
 
-		Convey("BuildbucketID", func() {
+		t.Run("BuildbucketID", func(t *ftt.Test) {
 			eid, err := BuildbucketID("cr-buildbucket.appspot.com", 12)
-			So(err, ShouldBeNil)
-			So(eid, ShouldResemble, ExternalID("buildbucket/cr-buildbucket.appspot.com/12"))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, eid, should.Resemble(ExternalID("buildbucket/cr-buildbucket.appspot.com/12")))
 
 			host, build, err := eid.ParseBuildbucketID()
-			So(err, ShouldBeNil)
-			So(host, ShouldResemble, "cr-buildbucket.appspot.com")
-			So(build, ShouldEqual, 12)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, host, should.Match("cr-buildbucket.appspot.com"))
+			assert.Loosely(t, build, should.Equal(12))
 
-			So(eid.MustURL(), ShouldResemble, "https://cr-buildbucket.appspot.com/build/12")
+			assert.Loosely(t, eid.MustURL(), should.Match("https://cr-buildbucket.appspot.com/build/12"))
 		})
-		Convey("Bad ID", func() {
+		t.Run("Bad ID", func(t *ftt.Test) {
 			e := ExternalID("blah")
 			_, _, err := e.ParseBuildbucketID()
-			So(err, ShouldErrLike, "not a valid BuildbucketID")
+			assert.Loosely(t, err, should.ErrLike("not a valid BuildbucketID"))
 
 			_, err = e.URL()
-			So(err, ShouldErrLike, "invalid ExternalID")
+			assert.Loosely(t, err, should.ErrLike("invalid ExternalID"))
 		})
 	})
 
-	Convey("Resolve works", t, func() {
+	ftt.Run("Resolve works", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 		host := "example.com"
 
-		Convey("None exist", func() {
+		t.Run("None exist", func(t *ftt.Test) {
 			ids := []ExternalID{
 				MustBuildbucketID(host, 101),
 				MustBuildbucketID(host, 102),
@@ -64,19 +64,19 @@ func TestExternalID(t *testing.T) {
 			// None of ids[:] are created.
 
 			tjIDs, err := Resolve(ctx, ids...)
-			So(err, ShouldBeNil)
-			So(tjIDs, ShouldHaveLength, len(ids))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tjIDs, should.HaveLength(len(ids)))
 			for _, tjID := range tjIDs {
-				So(tjID, ShouldEqual, 0)
+				assert.Loosely(t, tjID, should.BeZero)
 			}
 			tjs, err := ResolveToTryjobs(ctx, ids...)
-			So(err, ShouldBeNil)
-			So(tjs, ShouldHaveLength, len(ids))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tjs, should.HaveLength(len(ids)))
 			for _, tj := range tjs {
-				So(tj, ShouldBeNil)
+				assert.Loosely(t, tj, should.BeNil)
 			}
 		})
-		Convey("Some exist", func() {
+		t.Run("Some exist", func(t *ftt.Test) {
 			ids := []ExternalID{
 				MustBuildbucketID(host, 201),
 				MustBuildbucketID(host, 202),
@@ -87,30 +87,30 @@ func TestExternalID(t *testing.T) {
 			ids[2].MustCreateIfNotExists(ctx)
 
 			tjIDs, err := Resolve(ctx, ids...)
-			So(err, ShouldBeNil)
-			So(tjIDs, ShouldHaveLength, len(ids))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tjIDs, should.HaveLength(len(ids)))
 			for i, tjID := range tjIDs {
 				if i == 0 {
-					So(tjID, ShouldEqual, 0)
+					assert.Loosely(t, tjID, should.BeZero)
 				} else {
-					So(tjID, ShouldNotEqual, 0)
+					assert.Loosely(t, tjID, should.NotEqual(0))
 				}
 			}
 
 			tjs, err := ResolveToTryjobs(ctx, ids...)
-			So(err, ShouldBeNil)
-			So(tjs, ShouldHaveLength, len(ids))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tjs, should.HaveLength(len(ids)))
 			for i, tj := range tjs {
 				if i == 0 {
-					So(tj, ShouldBeNil)
+					assert.Loosely(t, tj, should.BeNil)
 				} else {
-					So(tj, ShouldNotBeNil)
-					So(tj.ExternalID, ShouldEqual, ids[i])
+					assert.Loosely(t, tj, should.NotBeNil)
+					assert.Loosely(t, tj.ExternalID, should.Equal(ids[i]))
 				}
 			}
 		})
 
-		Convey("All exist", func() {
+		t.Run("All exist", func(t *ftt.Test) {
 			ids := []ExternalID{
 				MustBuildbucketID(host, 301),
 				MustBuildbucketID(host, 302),
@@ -121,18 +121,18 @@ func TestExternalID(t *testing.T) {
 			ids[2].MustCreateIfNotExists(ctx)
 
 			tjIDs, err := Resolve(ctx, ids...)
-			So(err, ShouldBeNil)
-			So(tjIDs, ShouldHaveLength, len(ids))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tjIDs, should.HaveLength(len(ids)))
 			for _, tjID := range tjIDs {
-				So(tjID, ShouldNotEqual, 0)
+				assert.Loosely(t, tjID, should.NotEqual(0))
 			}
 
 			tjs, err := ResolveToTryjobs(ctx, ids...)
-			So(err, ShouldBeNil)
-			So(tjs, ShouldHaveLength, len(ids))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tjs, should.HaveLength(len(ids)))
 			for i, tj := range tjs {
-				So(tj, ShouldNotBeNil)
-				So(tj.ExternalID, ShouldEqual, ids[i])
+				assert.Loosely(t, tj, should.NotBeNil)
+				assert.Loosely(t, tj.ExternalID, should.Equal(ids[i]))
 			}
 		})
 	})

@@ -18,18 +18,18 @@ import (
 	"fmt"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/run"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestComputeOrder(t *testing.T) {
 	t.Parallel()
 
-	Convey("ComputeOrder", t, func() {
+	ftt.Run("ComputeOrder", t, func(t *ftt.Test) {
 		mustComputeOrder := func(input []*run.RunCL) []*run.RunCL {
 			res, err := ComputeOrder(input)
 			if err != nil {
@@ -37,14 +37,14 @@ func TestComputeOrder(t *testing.T) {
 			}
 			return res
 		}
-		Convey("Single CL", func() {
-			So(mustComputeOrder([]*run.RunCL{{ID: 1}}),
-				ShouldResembleProto,
-				[]*run.RunCL{{ID: 1}},
-			)
+		t.Run("Single CL", func(t *ftt.Test) {
+			assert.Loosely(t, mustComputeOrder([]*run.RunCL{{ID: 1}}),
+				should.Resemble(
+					[]*run.RunCL{{ID: 1}},
+				))
 		})
 
-		Convey("Ignore non-existing Deps", func() {
+		t.Run("Ignore non-existing Deps", func(t *ftt.Test) {
 			clHard := &run.RunCL{
 				ID: 1,
 				Detail: &changelist.Snapshot{
@@ -61,26 +61,26 @@ func TestComputeOrder(t *testing.T) {
 					},
 				},
 			}
-			So(mustComputeOrder([]*run.RunCL{clHard, clSoft}),
-				ShouldResembleProto,
-				[]*run.RunCL{clHard, clSoft},
-			)
+			assert.Loosely(t, mustComputeOrder([]*run.RunCL{clHard, clSoft}),
+				should.Resemble(
+					[]*run.RunCL{clHard, clSoft},
+				))
 		})
 
-		Convey("Error when duplicated CLs provided", func() {
+		t.Run("Error when duplicated CLs provided", func(t *ftt.Test) {
 			res, err := ComputeOrder([]*run.RunCL{{ID: 1}, {ID: 1}})
-			So(res, ShouldBeNil)
-			So(err, ShouldErrLike, "duplicate cl: 1")
+			assert.Loosely(t, res, should.BeNil)
+			assert.Loosely(t, err, should.ErrLike("duplicate cl: 1"))
 		})
 
-		Convey("Disjoint CLs", func() {
-			So(mustComputeOrder([]*run.RunCL{{ID: 2}, {ID: 1}}),
-				ShouldResembleProto,
-				[]*run.RunCL{{ID: 1}, {ID: 2}},
-			)
+		t.Run("Disjoint CLs", func(t *ftt.Test) {
+			assert.Loosely(t, mustComputeOrder([]*run.RunCL{{ID: 2}, {ID: 1}}),
+				should.Resemble(
+					[]*run.RunCL{{ID: 1}, {ID: 2}},
+				))
 		})
 
-		Convey("Simple deps", func() {
+		t.Run("Simple deps", func(t *ftt.Test) {
 			cl1 := &run.RunCL{
 				ID: common.CLID(1),
 				Detail: &changelist.Snapshot{
@@ -90,27 +90,27 @@ func TestComputeOrder(t *testing.T) {
 				},
 			}
 			cl2 := &run.RunCL{ID: 2}
-			So(
+			assert.Loosely(t,
 				mustComputeOrder([]*run.RunCL{cl1, cl2}),
-				ShouldResembleProto,
-				[]*run.RunCL{cl2, cl1},
-			)
+				should.Resemble(
+					[]*run.RunCL{cl2, cl1},
+				))
 
-			Convey("With one hard dep", func() {
+			t.Run("With one hard dep", func(t *ftt.Test) {
 				cl1.Detail = &changelist.Snapshot{
 					Deps: []*changelist.Dep{
 						{Clid: 2, Kind: changelist.DepKind_HARD},
 					},
 				}
-				So(
+				assert.Loosely(t,
 					mustComputeOrder([]*run.RunCL{cl1, cl2}),
-					ShouldResembleProto,
-					[]*run.RunCL{cl2, cl1},
-				)
+					should.Resemble(
+						[]*run.RunCL{cl2, cl1},
+					))
 			})
 		})
 
-		Convey("Break soft dependencies if there's a cycle", func() {
+		t.Run("Break soft dependencies if there's a cycle", func(t *ftt.Test) {
 			cl1 := &run.RunCL{
 				ID: common.CLID(1),
 				Detail: &changelist.Snapshot{
@@ -127,14 +127,14 @@ func TestComputeOrder(t *testing.T) {
 					},
 				},
 			}
-			So(
+			assert.Loosely(t,
 				mustComputeOrder([]*run.RunCL{cl1, cl2}),
-				ShouldResembleProto,
-				[]*run.RunCL{cl2, cl1},
-			)
+				should.Resemble(
+					[]*run.RunCL{cl2, cl1},
+				))
 		})
 
-		Convey("Return error if hard dependencies form a cycle", func() {
+		t.Run("Return error if hard dependencies form a cycle", func(t *ftt.Test) {
 			cl1 := &run.RunCL{
 				ID: common.CLID(1),
 				Detail: &changelist.Snapshot{
@@ -152,11 +152,11 @@ func TestComputeOrder(t *testing.T) {
 				},
 			}
 			res, err := ComputeOrder([]*run.RunCL{cl1, cl2})
-			So(res, ShouldBeNil)
-			So(err, ShouldErrLike, "cycle detected for cl: 1")
+			assert.Loosely(t, res, should.BeNil)
+			assert.Loosely(t, err, should.ErrLike("cycle detected for cl: 1"))
 		})
 
-		Convey("Chain of 3", func() {
+		t.Run("Chain of 3", func(t *ftt.Test) {
 			cl1 := &run.RunCL{
 				ID: common.CLID(1),
 				Detail: &changelist.Snapshot{
@@ -175,13 +175,13 @@ func TestComputeOrder(t *testing.T) {
 				},
 			}
 			cl3 := &run.RunCL{ID: 3}
-			So(
+			assert.Loosely(t,
 				mustComputeOrder([]*run.RunCL{cl1, cl2, cl3}),
-				ShouldResembleProto,
-				[]*run.RunCL{cl3, cl2, cl1},
-			)
+				should.Resemble(
+					[]*run.RunCL{cl3, cl2, cl1},
+				))
 
-			Convey("Satisfy soft dep", func() {
+			t.Run("Satisfy soft dep", func(t *ftt.Test) {
 				cl1.Detail = &changelist.Snapshot{
 					Deps: []*changelist.Dep{
 						{Clid: 2, Kind: changelist.DepKind_SOFT},
@@ -193,46 +193,46 @@ func TestComputeOrder(t *testing.T) {
 						{Clid: 3, Kind: changelist.DepKind_SOFT},
 					},
 				}
-				So(
+				assert.Loosely(t,
 					mustComputeOrder([]*run.RunCL{cl1, cl2, cl3}),
-					ShouldResembleProto,
-					[]*run.RunCL{cl3, cl2, cl1},
-				)
+					should.Resemble(
+						[]*run.RunCL{cl3, cl2, cl1},
+					))
 			})
 
-			Convey("Ignore soft dep when cycle is present", func() {
+			t.Run("Ignore soft dep when cycle is present", func(t *ftt.Test) {
 				cl3.Detail = &changelist.Snapshot{
 					Deps: []*changelist.Dep{
 						{Clid: 1, Kind: changelist.DepKind_SOFT},
 					},
 				}
-				So(
+				assert.Loosely(t,
 					mustComputeOrder([]*run.RunCL{cl1, cl2, cl3}),
-					ShouldResembleProto,
-					[]*run.RunCL{cl3, cl2, cl1},
-				)
-				Convey("Input order doesn't matter", func() {
-					So(
+					should.Resemble(
+						[]*run.RunCL{cl3, cl2, cl1},
+					))
+				t.Run("Input order doesn't matter", func(t *ftt.Test) {
+					assert.Loosely(t,
 						mustComputeOrder([]*run.RunCL{cl3, cl2, cl1}),
-						ShouldResembleProto,
-						[]*run.RunCL{cl3, cl2, cl1},
-					)
-					So(
+						should.Resemble(
+							[]*run.RunCL{cl3, cl2, cl1},
+						))
+					assert.Loosely(t,
 						mustComputeOrder([]*run.RunCL{cl2, cl1, cl3}),
-						ShouldResembleProto,
-						[]*run.RunCL{cl3, cl2, cl1},
-					)
+						should.Resemble(
+							[]*run.RunCL{cl3, cl2, cl1},
+						))
 				})
 			})
 		})
 
-		Convey("Pathologic", func() {
+		t.Run("Pathologic", func(t *ftt.Test) {
 			N := 30
 			cls := genFullGraph(N)
 			actual, numBrokenDeps, err := compute(cls)
-			So(err, ShouldBeNil)
-			So(actual, ShouldResembleProto, cls)
-			So(numBrokenDeps, ShouldEqual, (N-1)*(N-1))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actual, should.Resemble(cls))
+			assert.Loosely(t, numBrokenDeps, should.Equal((N-1)*(N-1)))
 		})
 	})
 }

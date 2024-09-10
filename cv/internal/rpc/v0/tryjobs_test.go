@@ -19,6 +19,9 @@ import (
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	bbutil "go.chromium.org/luci/buildbucket/protoutil"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	apiv0pb "go.chromium.org/luci/cv/api/v0"
@@ -27,15 +30,12 @@ import (
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/tryjob"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestMakeTryjobInvocations(t *testing.T) {
 	t.Parallel()
 
-	Convey("MakeTryjobInvocations", t, func() {
+	ftt.Run("MakeTryjobInvocations", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 		const lProject = "infra"
@@ -83,7 +83,7 @@ func TestMakeTryjobInvocations(t *testing.T) {
 		})
 		r.ConfigGroupID = prjcfgtest.MustExist(ctx, lProject).ConfigGroupIDs[0]
 
-		Convey("comprehensive", func() {
+		t.Run("comprehensive", func(t *ftt.Test) {
 			r.Tryjobs = &run.Tryjobs{
 				State: &tryjob.ExecutionState{
 					Requirement: &tryjob.Requirement{
@@ -160,8 +160,8 @@ func TestMakeTryjobInvocations(t *testing.T) {
 				},
 			}
 			ti, err := makeTryjobInvocations(ctx, r)
-			So(err, ShouldBeNil)
-			So(ti, ShouldResembleProto, []*apiv0pb.TryjobInvocation{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ti, should.Resemble([]*apiv0pb.TryjobInvocation{
 				{
 					BuilderConfig: cg.GetVerifiers().GetTryjob().GetBuilders()[0],
 					Status:        apiv0pb.TryjobStatus_SUCCEEDED,
@@ -214,10 +214,10 @@ func TestMakeTryjobInvocations(t *testing.T) {
 						},
 					},
 				},
-			})
+			}))
 		})
 
-		Convey("Skip if builder is not seen in the config", func() {
+		t.Run("Skip if builder is not seen in the config", func(t *ftt.Test) {
 			r.Tryjobs = &run.Tryjobs{
 				State: &tryjob.ExecutionState{
 					Requirement: &tryjob.Requirement{
@@ -252,11 +252,11 @@ func TestMakeTryjobInvocations(t *testing.T) {
 				},
 			}
 			ti, err := makeTryjobInvocations(ctx, r)
-			So(err, ShouldBeNil)
-			So(ti, ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ti, should.BeEmpty)
 		})
 
-		Convey("Omit empty attempt", func() {
+		t.Run("Omit empty attempt", func(t *ftt.Test) {
 			r.Tryjobs = &run.Tryjobs{
 				State: &tryjob.ExecutionState{
 					Requirement: &tryjob.Requirement{
@@ -280,8 +280,8 @@ func TestMakeTryjobInvocations(t *testing.T) {
 				},
 			}
 			ti, err := makeTryjobInvocations(ctx, r)
-			So(err, ShouldBeNil)
-			So(ti, ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ti, should.BeEmpty)
 		})
 	})
 }

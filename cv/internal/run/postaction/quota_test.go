@@ -23,6 +23,9 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/quota/quotapb"
 
@@ -33,14 +36,12 @@ import (
 	"go.chromium.org/luci/cv/internal/configs/validation"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/run"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestCreditQuotaOp(t *testing.T) {
 	t.Parallel()
 
-	Convey("Do", t, func() {
+	ftt.Run("Do", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
@@ -97,7 +98,7 @@ func TestCreditQuotaOp(t *testing.T) {
 			},
 		}
 		runCreateTime := clock.Now(ctx).UTC().Add(-1 * time.Minute)
-		Convey("credit quota and notify single pending run", func() {
+		t.Run("credit quota and notify single pending run", func(t *ftt.Test) {
 			r := &run.Run{
 				ID:            common.MakeRunID(lProject, runCreateTime, 1, []byte("deadbeef")),
 				Status:        run.Status_PENDING,
@@ -106,14 +107,14 @@ func TestCreditQuotaOp(t *testing.T) {
 				CreateTime:    runCreateTime,
 				ConfigGroupID: configGroupID,
 			}
-			So(datastore.Put(ctx, r), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, r), should.BeNil)
 			summary, err := executor.Do(ctx)
-			So(err, ShouldBeNil)
-			So(summary, ShouldEqual, fmt.Sprintf("notified next Run %q to start", r.ID))
-			So(qm.creditQuotaCalledWith, ShouldResemble, common.RunIDs{executor.Run.ID})
-			So(rm.notifyStarted, ShouldResemble, common.RunIDs{r.ID})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, summary, should.Equal(fmt.Sprintf("notified next Run %q to start", r.ID)))
+			assert.Loosely(t, qm.creditQuotaCalledWith, should.Resemble(common.RunIDs{executor.Run.ID}))
+			assert.Loosely(t, rm.notifyStarted, should.Resemble(common.RunIDs{r.ID}))
 		})
-		Convey("do not notify if quota is not specified", func() {
+		t.Run("do not notify if quota is not specified", func(t *ftt.Test) {
 			r := &run.Run{
 				ID:            common.MakeRunID(lProject, runCreateTime, 1, []byte("deadbeef")),
 				Status:        run.Status_PENDING,
@@ -122,15 +123,15 @@ func TestCreditQuotaOp(t *testing.T) {
 				CreateTime:    runCreateTime,
 				ConfigGroupID: configGroupID,
 			}
-			So(datastore.Put(ctx, r), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, r), should.BeNil)
 			qm.quotaSpecified = false
 			summary, err := executor.Do(ctx)
-			So(err, ShouldBeNil)
-			So(summary, ShouldEqual, fmt.Sprintf("run quota limit is not specified for user %q", r.BilledTo.Email()))
-			So(qm.creditQuotaCalledWith, ShouldResemble, common.RunIDs{executor.Run.ID})
-			So(rm.notifyStarted, ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, summary, should.Equal(fmt.Sprintf("run quota limit is not specified for user %q", r.BilledTo.Email())))
+			assert.Loosely(t, qm.creditQuotaCalledWith, should.Resemble(common.RunIDs{executor.Run.ID}))
+			assert.Loosely(t, rm.notifyStarted, should.BeEmpty)
 		})
-		Convey("do not notify pending run from different project", func() {
+		t.Run("do not notify pending run from different project", func(t *ftt.Test) {
 			r := &run.Run{
 				ID:            common.MakeRunID("another-proj", runCreateTime, 1, []byte("deadbeef")),
 				Status:        run.Status_PENDING,
@@ -139,13 +140,13 @@ func TestCreditQuotaOp(t *testing.T) {
 				CreateTime:    runCreateTime,
 				ConfigGroupID: configGroupID,
 			}
-			So(datastore.Put(ctx, r), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, r), should.BeNil)
 			summary, err := executor.Do(ctx)
-			So(err, ShouldBeNil)
-			So(summary, ShouldBeEmpty)
-			So(rm.notifyStarted, ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, summary, should.BeEmpty)
+			assert.Loosely(t, rm.notifyStarted, should.BeEmpty)
 		})
-		Convey("do not notify pending run from different config group", func() {
+		t.Run("do not notify pending run from different config group", func(t *ftt.Test) {
 			r := &run.Run{
 				ID:            common.MakeRunID(lProject, runCreateTime, 1, []byte("deadbeef")),
 				Status:        run.Status_PENDING,
@@ -154,13 +155,13 @@ func TestCreditQuotaOp(t *testing.T) {
 				CreateTime:    runCreateTime,
 				ConfigGroupID: prjcfg.MakeConfigGroupID("another-config-group", "hash"),
 			}
-			So(datastore.Put(ctx, r), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, r), should.BeNil)
 			summary, err := executor.Do(ctx)
-			So(err, ShouldBeNil)
-			So(summary, ShouldBeEmpty)
-			So(rm.notifyStarted, ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, summary, should.BeEmpty)
+			assert.Loosely(t, rm.notifyStarted, should.BeEmpty)
 		})
-		Convey("do not notify pending run from different triggerer", func() {
+		t.Run("do not notify pending run from different triggerer", func(t *ftt.Test) {
 			r := &run.Run{
 				ID:            common.MakeRunID(lProject, runCreateTime, 1, []byte("deadbeef")),
 				Status:        run.Status_PENDING,
@@ -169,13 +170,13 @@ func TestCreditQuotaOp(t *testing.T) {
 				CreateTime:    runCreateTime,
 				ConfigGroupID: configGroupID,
 			}
-			So(datastore.Put(ctx, r), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, r), should.BeNil)
 			summary, err := executor.Do(ctx)
-			So(err, ShouldBeNil)
-			So(summary, ShouldBeEmpty)
-			So(rm.notifyStarted, ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, summary, should.BeEmpty)
+			assert.Loosely(t, rm.notifyStarted, should.BeEmpty)
 		})
-		Convey("do not notify pending run that has pending Dep Run", func() {
+		t.Run("do not notify pending run that has pending Dep Run", func(t *ftt.Test) {
 			depRun := &run.Run{
 				ID:            common.MakeRunID(lProject, runCreateTime.Add(-1*time.Minute), 1, []byte("deadbeef")),
 				Status:        run.Status_PENDING,
@@ -193,13 +194,13 @@ func TestCreditQuotaOp(t *testing.T) {
 				ConfigGroupID: configGroupID,
 				DepRuns:       common.RunIDs{depRun.ID},
 			}
-			So(datastore.Put(ctx, depRun, r), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, depRun, r), should.BeNil)
 			summary, err := executor.Do(ctx)
-			So(err, ShouldBeNil)
-			So(summary, ShouldBeEmpty)
-			So(rm.notifyStarted, ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, summary, should.BeEmpty)
+			assert.Loosely(t, rm.notifyStarted, should.BeEmpty)
 		})
-		Convey("pick the earliest Run to notify", func() {
+		t.Run("pick the earliest Run to notify", func(t *ftt.Test) {
 			seededRand := rand.New(rand.NewSource(12345))
 			// Randomly create 100 Runs that are created in the past hour
 			runs := make([]*run.Run, 100)
@@ -214,7 +215,7 @@ func TestCreditQuotaOp(t *testing.T) {
 					ConfigGroupID: configGroupID,
 				}
 			}
-			So(datastore.Put(ctx, runs), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, runs), should.BeNil)
 			var earliestRun *run.Run
 			for _, r := range runs {
 				if earliestRun == nil || r.CreateTime.Before(earliestRun.CreateTime) {
@@ -222,9 +223,9 @@ func TestCreditQuotaOp(t *testing.T) {
 				}
 			}
 			summary, err := executor.Do(ctx)
-			So(err, ShouldBeNil)
-			So(summary, ShouldEqual, fmt.Sprintf("notified next Run %q to start", earliestRun.ID))
-			So(rm.notifyStarted, ShouldResemble, common.RunIDs{earliestRun.ID})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, summary, should.Equal(fmt.Sprintf("notified next Run %q to start", earliestRun.ID)))
+			assert.Loosely(t, rm.notifyStarted, should.Resemble(common.RunIDs{earliestRun.ID}))
 		})
 	})
 }
