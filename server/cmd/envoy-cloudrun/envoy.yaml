@@ -51,14 +51,14 @@ static_resources:
                   grpc: {}
                 route:
                   cluster: grpc-service # route all grpc traffic to grpc-service cluster.
-                  timeout: 0 # Do not time out.
-                  idle_timeout: 0 # Do not time out.
+                  timeout: 0s # Do not time out.
+                  idle_timeout: 0s # Do not time out.
               - match:
                   prefix: "/"
                 route:
                   cluster: http-service # route the rest traffic to http-service cluster.
-                  timeout: 0 # Do not time out.
-                  idle_timeout: 0 # Do not time out.
+                  timeout: 0s # Do not time out.
+                  idle_timeout: 0s # Do not time out.
   clusters:
   - name: http-service
     type: STATIC
