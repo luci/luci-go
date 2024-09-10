@@ -91,8 +91,8 @@ func TestTriage(t *testing.T) {
 		pm.cgs, err = prjcfgtest.MustExist(ctx, lProject).GetConfigGroups(ctx)
 		So(err, ShouldBeNil)
 
-		dryRun := func(t time.Time) *run.Triggers {
-			return &run.Triggers{CqVoteTrigger: &run.Trigger{Mode: string(run.DryRun), Time: timestamppb.New(t)}}
+		dryRun := func(ts time.Time) *run.Triggers {
+			return &run.Triggers{CqVoteTrigger: &run.Trigger{Mode: string(run.DryRun), Time: timestamppb.New(ts)}}
 		}
 
 		triage := func(c *prjpb.Component) (itriager.Result, error) {

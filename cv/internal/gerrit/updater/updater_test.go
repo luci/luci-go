@@ -194,8 +194,8 @@ func TestUpdaterBackendFetch(t *testing.T) {
 		assertUpdateCLScheduledFor := func(expectedChanges ...int) {
 			var actual []int
 			for _, p := range ct.TQ.Tasks().Payloads() {
-				if t, ok := p.(*changelist.UpdateCLTask); ok {
-					_, changeNumber, err := changelist.ExternalID(t.GetExternalId()).ParseGobID()
+				if ts, ok := p.(*changelist.UpdateCLTask); ok {
+					_, changeNumber, err := changelist.ExternalID(ts.GetExternalId()).ParseGobID()
 					So(err, ShouldBeNil)
 					actual = append(actual, int(changeNumber))
 				}

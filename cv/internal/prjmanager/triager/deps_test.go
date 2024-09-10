@@ -44,11 +44,11 @@ func TestDepsTriage(t *testing.T) {
 
 		// Truncate start time point s.t. easy to see diff in test failures.
 		epoch := testclock.TestRecentTimeUTC.Truncate(10000 * time.Second)
-		dryRun := func(t time.Time) *run.Triggers {
-			return &run.Triggers{CqVoteTrigger: &run.Trigger{Mode: string(run.DryRun), Time: timestamppb.New(t)}}
+		dryRun := func(ts time.Time) *run.Triggers {
+			return &run.Triggers{CqVoteTrigger: &run.Trigger{Mode: string(run.DryRun), Time: timestamppb.New(ts)}}
 		}
-		fullRun := func(t time.Time) *run.Triggers {
-			return &run.Triggers{CqVoteTrigger: &run.Trigger{Mode: string(run.FullRun), Time: timestamppb.New(t)}}
+		fullRun := func(ts time.Time) *run.Triggers {
+			return &run.Triggers{CqVoteTrigger: &run.Trigger{Mode: string(run.FullRun), Time: timestamppb.New(ts)}}
 		}
 
 		sup := &simplePMState{

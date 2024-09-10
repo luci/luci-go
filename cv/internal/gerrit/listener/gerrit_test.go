@@ -37,8 +37,8 @@ type testScheduler struct {
 	tasks []*changelist.UpdateCLTask
 }
 
-func (sch *testScheduler) Schedule(_ context.Context, t *changelist.UpdateCLTask) error {
-	sch.tasks = append(sch.tasks, t)
+func (sch *testScheduler) Schedule(_ context.Context, tsk *changelist.UpdateCLTask) error {
+	sch.tasks = append(sch.tasks, tsk)
 	return nil
 }
 

@@ -117,8 +117,8 @@ func TestSearch(t *testing.T) {
 		Convey("Single Buildbucket host", func() {
 			searchAll := func() []*tryjob.Tryjob {
 				var ret []*tryjob.Tryjob
-				err := f.Search(ctx, []*run.RunCL{cl}, []*tryjob.Definition{definition}, lProject, func(t *tryjob.Tryjob) bool {
-					ret = append(ret, t)
+				err := f.Search(ctx, []*run.RunCL{cl}, []*tryjob.Definition{definition}, lProject, func(job *tryjob.Tryjob) bool {
+					ret = append(ret, job)
 					return true
 				})
 				So(err, ShouldBeNil)
@@ -280,8 +280,8 @@ func TestSearch(t *testing.T) {
 							},
 						}
 						var tryjobs []*tryjob.Tryjob
-						err = f.Search(ctx, []*run.RunCL{cl, anotherCL}, []*tryjob.Definition{definition}, lProject, func(t *tryjob.Tryjob) bool {
-							tryjobs = append(tryjobs, t)
+						err = f.Search(ctx, []*run.RunCL{cl, anotherCL}, []*tryjob.Definition{definition}, lProject, func(job *tryjob.Tryjob) bool {
+							tryjobs = append(tryjobs, job)
 							return true
 						})
 						So(err, ShouldBeNil)
@@ -353,9 +353,9 @@ func TestSearch(t *testing.T) {
 					})
 				}
 				got := stringset.New(numBuildsPerHost / 2 * len(bbHosts))
-				err := f.Search(ctx, []*run.RunCL{cl}, definitions, lProject, func(t *tryjob.Tryjob) bool {
-					So(got.Has(string(t.ExternalID)), ShouldBeFalse)
-					got.Add(string(t.ExternalID))
+				err := f.Search(ctx, []*run.RunCL{cl}, definitions, lProject, func(job *tryjob.Tryjob) bool {
+					So(got.Has(string(job.ExternalID)), ShouldBeFalse)
+					got.Add(string(job.ExternalID))
 					return true
 				})
 				So(err, ShouldBeNil)
@@ -388,7 +388,7 @@ func TestSearch(t *testing.T) {
 				stopAfter := numBuildsPerHost * len(bbHosts) / 2
 				count := 0
 
-				err := f.Search(ctx, []*run.RunCL{cl}, definitions, lProject, func(t *tryjob.Tryjob) bool {
+				err := f.Search(ctx, []*run.RunCL{cl}, definitions, lProject, func(job *tryjob.Tryjob) bool {
 					count++
 					switch {
 					case count < stopAfter:

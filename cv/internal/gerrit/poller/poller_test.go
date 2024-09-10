@@ -418,17 +418,17 @@ type clUpdaterMock struct {
 	}
 }
 
-func (c *clUpdaterMock) Schedule(ctx context.Context, t *changelist.UpdateCLTask) error {
-	return c.ScheduleDelayed(ctx, t, 0)
+func (c *clUpdaterMock) Schedule(ctx context.Context, tsk *changelist.UpdateCLTask) error {
+	return c.ScheduleDelayed(ctx, tsk, 0)
 }
 
-func (c *clUpdaterMock) ScheduleDelayed(ctx context.Context, t *changelist.UpdateCLTask, d time.Duration) error {
+func (c *clUpdaterMock) ScheduleDelayed(ctx context.Context, tsk *changelist.UpdateCLTask, d time.Duration) error {
 	c.m.Lock()
 	defer c.m.Unlock()
 	c.tasks = append(c.tasks, struct {
 		payload *changelist.UpdateCLTask
 		eta     time.Time
-	}{t, clock.Now(ctx).Add(d)})
+	}{tsk, clock.Now(ctx).Add(d)})
 	return nil
 }
 

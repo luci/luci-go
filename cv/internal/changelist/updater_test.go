@@ -40,8 +40,8 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func externalTime(t time.Time) *UpdateCLTask_Hint {
-	return &UpdateCLTask_Hint{ExternalUpdateTime: timestamppb.New(t)}
+func externalTime(ts time.Time) *UpdateCLTask_Hint {
+	return &UpdateCLTask_Hint{ExternalUpdateTime: timestamppb.New(ts)}
 }
 
 func TestUpdaterSchedule(t *testing.T) {

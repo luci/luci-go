@@ -41,12 +41,12 @@ func TestSafeShouldResemble(t *testing.T) {
 	// This exists to test the case on which the original Go Convey's
 	// ShouldResemble (and its friends) hang, e.g. the following hangs:
 	//   ShouldResemble(t, pbShuffle(t))
-	pbShuffle := func(t proto.Message) proto.Message {
-		out, err := proto.Marshal(t)
+	pbShuffle := func(msg proto.Message) proto.Message {
+		out, err := proto.Marshal(msg)
 		if err != nil {
 			panic(err)
 		}
-		ret := reflect.New(reflect.TypeOf(t).Elem()).Interface().(proto.Message)
+		ret := reflect.New(reflect.TypeOf(msg).Elem()).Interface().(proto.Message)
 		if err = proto.Unmarshal(out, ret); err != nil {
 			panic(err)
 		}

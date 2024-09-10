@@ -56,16 +56,16 @@ func TestEarliestDecisionTime(t *testing.T) {
 		t0 := now.Add(time.Hour)
 
 		earliest := func(cs []*prjpb.Component) time.Time {
-			t, tPB, asap := earliestDecisionTime(cs)
+			ts, tsPB, asap := earliestDecisionTime(cs)
 			if asap {
 				return now
 			}
-			if t.IsZero() {
-				So(tPB, ShouldBeNil)
+			if ts.IsZero() {
+				So(tsPB, ShouldBeNil)
 			} else {
-				So(tPB.AsTime(), ShouldResemble, t)
+				So(tsPB.AsTime(), ShouldResemble, ts)
 			}
-			return t
+			return ts
 		}
 
 		cs := []*prjpb.Component{

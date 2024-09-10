@@ -52,10 +52,10 @@ func TestMakeClient(t *testing.T) {
 				f.mockMintProjectToken = func(context.Context, auth.ProjectTokenParams) (*auth.Token, error) {
 					return &auth.Token{Token: "tok-1", Expiry: epoch.Add(2 * time.Minute)}, nil
 				}
-				t, err := f.token(ctx, gHost, "lProject")
+				tok, err := f.token(ctx, gHost, "lProject")
 				So(err, ShouldBeNil)
-				So(t.AccessToken, ShouldEqual, "tok-1")
-				So(t.TokenType, ShouldEqual, "Bearer")
+				So(tok.AccessToken, ShouldEqual, "tok-1")
+				So(tok.TokenType, ShouldEqual, "Bearer")
 			})
 			Convey("return errEmptyProjectToken when minted token is nil", func() {
 				f.mockMintProjectToken = func(context.Context, auth.ProjectTokenParams) (*auth.Token, error) {

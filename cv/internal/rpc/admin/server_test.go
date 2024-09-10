@@ -648,8 +648,8 @@ func TestRefreshProjectCLs(t *testing.T) {
 			So(resp.GetClVersions(), ShouldResemble, map[int64]int64{1: 4})
 			scheduledIDs := stringset.New(1)
 			for _, p := range ct.TQ.Tasks().Payloads() {
-				if t, ok := p.(*changelist.UpdateCLTask); ok {
-					scheduledIDs.Add(t.GetExternalId())
+				if tsk, ok := p.(*changelist.UpdateCLTask); ok {
+					scheduledIDs.Add(tsk.GetExternalId())
 				}
 			}
 			So(scheduledIDs.ToSortedSlice(), ShouldResemble, []string{string(cl.ExternalID)})
