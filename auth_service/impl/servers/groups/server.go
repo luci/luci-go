@@ -303,6 +303,18 @@ func (s *Server) GetLegacyAuthGroup(ctx *router.Context) error {
 		return status.Errorf(codes.Internal, "failed to fetch group %q", name)
 	}
 
+	// Define Members, Globs and Nested if they are not set so the fields are
+	// marshalled to empty arrays instead of null.
+	if g.Members == nil {
+		g.Members = make([]string, 0)
+	}
+	if g.Globs == nil {
+		g.Globs = make([]string, 0)
+	}
+	if g.Nested == nil {
+		g.Nested = make([]string, 0)
+	}
+
 	// Set the Last-Modified header.
 	w.Header().Set("Last-Modified", group.ModifiedTS.Format(time.RFC1123Z))
 
