@@ -554,7 +554,7 @@ func (m *mockProc) SaveState(ctx context.Context, s State, e EVersion) error {
 	return m.saveState(ctx, s, e)
 }
 
-func PrepareMutation(t *testing.T) {
+func TestPrepareMutation(t *testing.T) {
 	t.Parallel()
 
 	Convey("Chain of SideEffectFn works", t, func() {

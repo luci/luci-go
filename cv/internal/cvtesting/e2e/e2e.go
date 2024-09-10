@@ -130,7 +130,7 @@ type Test struct {
 // SetUp sets up the end to end test.
 //
 // Must be called exactly once.
-func (t *Test) SetUp(testingT *testing.T) context.Context {
+func (t *Test) SetUp(testingT testing.TB) context.Context {
 	if t.Test == nil {
 		t.Test = &cvtesting.Test{}
 	}
