@@ -201,8 +201,8 @@ function MyComponent() {
 ### Make pRPC query with additional headers.
 Sometimes it's useful to pass additional gRPC metadata through headers.
 
-Note that critical headers (accept, content-type, authorization) will not be
-overwritten even when specified.
+Note that critical headers (`accept`, `content-type`, `authorization`) will not
+be overwritten even when specified.
 
 ```typescript
 function useBuildsClient(additionalHeaders: HeadersInit) {
@@ -338,7 +338,7 @@ function MyComponent() {
 }
 ```
 
-##### The RPC requests and sent to different batch `ClientImpl` object instances.
+##### The RPC requests were sent to different batch `ClientImpl` object instances.
 The batch `ClientImpl` usually needs to use an internal state to keep track of
 the list of queries made by the caller. Therefore, it usually can only batch
 calls made to the same `ClientImpl` object instance.
@@ -454,7 +454,7 @@ active partition selection. The actual query is entirely managed by
 primitives can be used.
 
 Here's a code snippet to illustrate how you can use the
-`@/generic_libs/hooks/virtualized_query` See
+`@/generic_libs/hooks/virtualized_query`. See
 `@/test_verdict/components/blamelist_table` if you want a more concert example.
 
 ```tsx
