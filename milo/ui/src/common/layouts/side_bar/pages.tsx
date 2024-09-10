@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { UTurnLeft } from '@mui/icons-material';
+import { PlagiarismOutlined, UTurnLeft } from '@mui/icons-material';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import BuildIcon from '@mui/icons-material/Build';
 import EngineeringIcon from '@mui/icons-material/Engineering';
@@ -110,7 +110,7 @@ function generateTestsSection(project: string | undefined): SidebarSection {
       },
       {
         page: UiPage.FailureClusters,
-        url: `https://${SETTINGS.luciAnalysis.uiHost||SETTINGS.luciAnalysis.host}/p/${project}/clusters`,
+        url: `https://${SETTINGS.luciAnalysis.uiHost || SETTINGS.luciAnalysis.host}/p/${project}/clusters`,
         icon: <SpokeIcon />,
         external: true,
       },
@@ -118,6 +118,11 @@ function generateTestsSection(project: string | undefined): SidebarSection {
         page: UiPage.RecentRegressions,
         url: `/ui/labs/p/${project}/regressions`,
         icon: <UTurnLeft />,
+      },
+      {
+        page: UiPage.LogSearch,
+        url: `/ui/labs/p/${project}/log-search`,
+        icon: <PlagiarismOutlined />,
       },
     );
   }

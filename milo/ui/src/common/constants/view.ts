@@ -36,7 +36,7 @@ export enum UiPage {
   Monitoring = 'monitoring',
   RecentRegressions = 'recent-regressions',
   RegressionDetails = 'regression-details',
-  LogSearch = "log-search"
+  LogSearch = 'log-search',
 }
 
 export enum CommonColors {

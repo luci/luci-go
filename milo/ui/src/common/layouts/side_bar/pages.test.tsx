@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { UTurnLeft } from '@mui/icons-material';
+import { PlagiarismOutlined, UTurnLeft } from '@mui/icons-material';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import BuildIcon from '@mui/icons-material/Build';
 import EngineeringIcon from '@mui/icons-material/Engineering';
@@ -91,7 +91,7 @@ describe('generateSidebarSections', () => {
           },
           {
             page: UiPage.FailureClusters,
-            url: `https://${SETTINGS.luciAnalysis.uiHost||SETTINGS.luciAnalysis.host}/p/projecttest/clusters`,
+            url: `https://${SETTINGS.luciAnalysis.uiHost || SETTINGS.luciAnalysis.host}/p/projecttest/clusters`,
             icon: <SpokeIcon />,
             external: true,
           },
@@ -99,6 +99,11 @@ describe('generateSidebarSections', () => {
             page: UiPage.RecentRegressions,
             url: `/ui/labs/p/projecttest/regressions`,
             icon: <UTurnLeft />,
+          },
+          {
+            page: UiPage.LogSearch,
+            url: `/ui/labs/p/projecttest/log-search`,
+            icon: <PlagiarismOutlined />,
           },
         ],
       },
@@ -149,7 +154,7 @@ describe('generateSidebarSections', () => {
           },
           {
             page: UiPage.FailureClusters,
-            url: `https://${SETTINGS.luciAnalysis.uiHost||SETTINGS.luciAnalysis.host}/p/chromium/clusters`,
+            url: `https://${SETTINGS.luciAnalysis.uiHost || SETTINGS.luciAnalysis.host}/p/chromium/clusters`,
             icon: <SpokeIcon />,
             external: true,
           },
@@ -157,6 +162,11 @@ describe('generateSidebarSections', () => {
             page: UiPage.RecentRegressions,
             url: `/ui/labs/p/chromium/regressions`,
             icon: <UTurnLeft />,
+          },
+          {
+            page: UiPage.LogSearch,
+            url: `/ui/labs/p/chromium/log-search`,
+            icon: <PlagiarismOutlined />,
           },
         ],
       },
@@ -224,7 +234,7 @@ describe('generateSidebarSections', () => {
           },
           {
             page: UiPage.FailureClusters,
-            url: `https://${SETTINGS.luciAnalysis.uiHost||SETTINGS.luciAnalysis.host}/p/chromeos/clusters`,
+            url: `https://${SETTINGS.luciAnalysis.uiHost || SETTINGS.luciAnalysis.host}/p/chromeos/clusters`,
             icon: <SpokeIcon />,
             external: true,
           },
@@ -232,6 +242,11 @@ describe('generateSidebarSections', () => {
             page: UiPage.RecentRegressions,
             url: `/ui/labs/p/chromeos/regressions`,
             icon: <UTurnLeft />,
+          },
+          {
+            page: UiPage.LogSearch,
+            url: `/ui/labs/p/chromeos/log-search`,
+            icon: <PlagiarismOutlined />,
           },
           {
             page: UiPage.Testhaus,
