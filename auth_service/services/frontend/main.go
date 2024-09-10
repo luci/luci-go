@@ -164,6 +164,19 @@ func main() {
 		srv.Routes.GET("/lookup", mw, servePage("pages/lookup.html"))
 		srv.Routes.GET("/services", mw, servePage("pages/services.html"))
 
+		// Redirect legacy UI paths to their corresponding v2 UI paths.
+		toV2UI := func(ctx *router.Context) {
+			target := strings.TrimPrefix(ctx.Request.URL.RequestURI(), "/auth")
+			http.Redirect(ctx.Writer, ctx.Request, target, http.StatusMovedPermanently)
+		}
+		srv.Routes.GET("/auth/groups", mw, toV2UI)
+		srv.Routes.GET("/auth/groups/*groupName", mw, toV2UI)
+		srv.Routes.GET("/auth/listing", mw, toV2UI)
+		srv.Routes.GET("/auth/change_log", mw, toV2UI)
+		srv.Routes.GET("/auth/ip_allowlists", mw, toV2UI)
+		srv.Routes.GET("/auth/lookup", mw, toV2UI)
+		srv.Routes.GET("/auth/services", mw, toV2UI)
+
 		// For PubSub subscriber and AuthDB Google Storage reader authorization.
 		//
 		// Note: the endpoint path is unchanged as there are no API changes,
