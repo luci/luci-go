@@ -1,5 +1,7 @@
 # Make pRPC Queries
 
+Self link: [go/luci-ui-rpc-tutorial](http://go/luci-ui-rpc-tutorial)
+
 `usePrpcServiceClient` from `@/common/hooks/prpc_query` provides an integration
 solution for making pRPC queries.
 
@@ -489,16 +491,9 @@ function MyComponent() {
     // Defines how to generated a react-query option to query items from `start`
     // (inclusive) to `end` (exclusive).
     genQuery: (start, end) => ({
-      ...gitilesClient.ExtendedLog.query(
-        ExtendedLogRequest.fromPartial({
-          project: testVariantBranch.ref.gitiles.project,
-          ref: testVariantBranch.ref.gitiles.ref,
-          position: (-start).toString(),
-          treeDiff: true,
-          pageSize: end - start,
-        }),
-      ),
       // Regular react-query primitives can be used.
+      queryKey: [/* ... */],
+      queryFn: () => { /* ... */ },
       staleTime: Infinity,
       // IMPORTANT:
       // The query must return an array of items. The `i`th item
