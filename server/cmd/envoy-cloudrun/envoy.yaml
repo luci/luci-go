@@ -1,3 +1,4 @@
+# https://www.envoyproxy.io/docs/envoy/latest/configuration/overview/examples
 static_resources:
   listeners:
   - name: listener_0
@@ -50,12 +51,14 @@ static_resources:
                   grpc: {}
                 route:
                   cluster: grpc-service # route all grpc traffic to grpc-service cluster.
-                  timeout: 300s
+                  timeout: 0 # Do not time out.
+                  idle_timeout: 0 # Do not time out.
               - match:
                   prefix: "/"
                 route:
                   cluster: http-service # route the rest traffic to http-service cluster.
-                  timeout: 300s
+                  timeout: 0 # Do not time out.
+                  idle_timeout: 0 # Do not time out.
   clusters:
   - name: http-service
     type: STATIC
