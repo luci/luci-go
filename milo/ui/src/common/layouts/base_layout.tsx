@@ -23,6 +23,7 @@ import {
 } from '@/generic_libs/components/queued_sticky';
 
 import { AppBar } from './app_bar';
+import { CookieConsentBar } from './cookie_consent_bar';
 import { PrivacyFooter } from './privacy_footer';
 import { Sidebar } from './side_bar';
 
@@ -69,6 +70,7 @@ export const BaseLayout = () => {
          ** search param is updated when the component is mounted. */}
         <Outlet />
       </StickyOffset>
+      <CookieConsentBar />
     </ScrollingBase>
   );
 };
