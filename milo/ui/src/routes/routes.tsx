@@ -246,6 +246,16 @@ export const routes: RouteObject[] = [
         lazy: () => import('@/test_verdict/pages/recent_regressions_page'),
       },
       {
+        // TODO(b/321110247): once we have a stable regression group ID, replace
+        // "details" with the regression group ID.
+        path: 'p/:project/regressions/details',
+        lazy: () => import('@/test_verdict/pages/regression_details_page'),
+      },
+      {
+        path: 'p/:project/tests/:testId/variants/:variantHash/refs/:refHash/blamelist',
+        lazy: () => import('@/test_verdict/pages/blamelist_page'),
+      },
+      {
         path: 'p/:project/log-search',
         lazy: () => import('@/test_verdict/pages/log_search_page'),
         children: [
@@ -265,12 +275,6 @@ export const routes: RouteObject[] = [
               import('@/test_verdict/pages/log_search_page/shared_logs_tab'),
           },
         ],
-      },
-      {
-        // TODO(b/321110247): once we have a stable regression group ID, replace
-        // "details" with the regression group ID.
-        path: 'p/:project/regressions/details',
-        lazy: () => import('@/test_verdict/pages/regression_details_page'),
       },
       {
         path: 'inv/:invId',

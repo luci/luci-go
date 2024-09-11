@@ -37,6 +37,7 @@ export enum UiPage {
   RecentRegressions = 'recent-regressions',
   RegressionDetails = 'regression-details',
   LogSearch = 'log-search',
+  Blamelist = 'blamelist',
 }
 
 export enum CommonColors {

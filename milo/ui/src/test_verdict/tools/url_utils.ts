@@ -39,3 +39,18 @@ export function getRegressionDetailsURLPath({
 
   return `/ui/labs/p/${project}/regressions/details?${searchParams}`;
 }
+
+export function getBlamelistUrl(
+  tvb: ParsedTestVariantBranchName,
+  commitPosition?: string,
+) {
+  const urlBase =
+    `/ui/labs/p/${encodeURIComponent(tvb.project)}` +
+    `/tests/${encodeURIComponent(tvb.testId)}` +
+    `/variants/${tvb.variantHash}` +
+    `/refs/${tvb.refHash}` +
+    `/blamelist`;
+  const hash = commitPosition ? `#CP-${commitPosition}` : '';
+
+  return urlBase + hash;
+}

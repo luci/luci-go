@@ -32,6 +32,7 @@ import {
   Bug,
   TreeJson,
 } from '@/monitoring/util/server_json';
+import { getBlamelistUrl } from '@/test_verdict/tools/url_utils';
 
 import { PrefillFilterIcon } from '../alert_table/prefill_filter_icon';
 import { TestHistorySparkline } from '../test_history_sparkline';
@@ -67,9 +68,7 @@ export const ReasonSection = ({
           <TableRow>
             <TableCell>Failed Test</TableCell>
             <TableCell width={125}>Test History</TableCell>
-            <TableCell width={125}>Current Pass Rate</TableCell>
             <TableCell width={96}>Test Blamelist</TableCell>
-            <TableCell width={125}>Previous Pass Rate</TableCell>
             <TableCell width={250}>Links</TableCell>
             <TableCell width={80}>Actions</TableCell>
             {useAIAnalysis && <TableCell width={80}></TableCell>}
@@ -169,28 +168,18 @@ const TestFailureRow = ({
   const [searchParams] = useSyncedSearchParams();
   const useAIAnalysis = searchParams.get('aia');
 
-  const currentRate =
-    test.cur_counts.total_results === 0
-      ? undefined
-      : 1 - test.cur_counts.unexpected_results / test.cur_counts.total_results;
-  const previousRate =
-    test.prev_counts.total_results === 0
-      ? undefined
-      : 1 -
-        test.prev_counts.unexpected_results / test.prev_counts.total_results;
-  const cellColor = (rate: number | undefined) => {
-    if (rate === undefined) {
-      return undefined;
-    }
-    if (rate > 0.98) {
-      return 'var(--success-bg-color)';
-    }
-    if (rate < 0.02) {
-      return 'var(--failure-bg-color)';
-    }
-    return 'var(--started-bg-color)';
-  };
   const failureBuildId = /[0-9]+$/.exec(failureBuildUrl)?.[0];
+  const blamelistUrl = getBlamelistUrl(
+    {
+      project: builder.project,
+      refHash: test.ref_hash,
+      testId: test.test_id,
+      variantHash: test.variant_hash,
+    },
+    test.regression_end_position === test.regression_start_position
+      ? undefined
+      : test.regression_end_position.toString(),
+  );
   return (
     <TableRow hover>
       <TableCell>
@@ -213,34 +202,15 @@ const TestFailureRow = ({
           variantHash={test.variant_hash}
         />
       </TableCell>
-      <TableCell sx={{ backgroundColor: cellColor(currentRate) }}>
-        {currentRate === undefined
-          ? 'No longer running'
-          : `${Math.round(currentRate * 100)}% Passing (${
-              test.cur_counts.total_results - test.cur_counts.unexpected_results
-            }/${test.cur_counts.total_results})`}
-      </TableCell>
       <TableCell>
         {test.regression_end_position === test.regression_start_position ? (
           'Unknown'
         ) : (
-          <Link
-            href={`https://crrev.com/${test.regression_start_position}..${test.regression_end_position}`}
-            target="_blank"
-            rel="noreferrer"
-          >
+          <Link href={blamelistUrl} target="_blank" rel="noreferrer">
             {test.regression_end_position - test.regression_start_position}{' '}
             commits
           </Link>
         )}
-      </TableCell>
-      <TableCell sx={{ backgroundColor: cellColor(previousRate) }}>
-        {previousRate === undefined
-          ? 'New test'
-          : `${Math.round(previousRate * 100)}% Passing (${
-              test.prev_counts.total_results -
-              test.prev_counts.unexpected_results
-            }/${test.prev_counts.total_results})`}
       </TableCell>
       <TableCell>
         {isChromiumSrc(tree.name) ? (

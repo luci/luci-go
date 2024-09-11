@@ -15,10 +15,12 @@
 import { render, screen } from '@testing-library/react';
 
 import { configuredTrees } from '@/monitoring/util/config';
+import { getBlamelistUrl } from '@/test_verdict/tools/url_utils';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
-import { ReasonSection } from './reason_section';
 import { testAlert } from '../testing_tools/test_utils';
+
+import { ReasonSection } from './reason_section';
 
 describe('<ReasonSection />', () => {
   it('displays message when no test results', async () => {
@@ -78,8 +80,17 @@ describe('<ReasonSection />', () => {
       </FakeContextProvider>,
     );
     expect(screen.getByText('test.Example')).toBeInTheDocument();
-    expect(screen.getByText('0% Passing (0/10)')).toBeInTheDocument();
-    expect(screen.getByText('6 commits')).toBeInTheDocument();
-    expect(screen.getByText('99% Passing (99/100)')).toBeInTheDocument();
+    expect(screen.getByText('6 commits')).toHaveAttribute(
+      'href',
+      getBlamelistUrl(
+        {
+          project: testAlert.extension.builders[0].project,
+          testId: 'ninja://test.Example',
+          variantHash: '1234',
+          refHash: '5678',
+        },
+        '123456',
+      ),
+    );
   });
 });
