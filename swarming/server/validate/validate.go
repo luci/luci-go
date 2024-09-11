@@ -16,6 +16,9 @@
 package validate
 
 import (
+	"regexp"
+	"strings"
+
 	"go.chromium.org/luci/cipd/client/cipd/template"
 	"go.chromium.org/luci/cipd/common"
 	"go.chromium.org/luci/common/errors"
@@ -23,21 +26,40 @@ import (
 
 var cipdExpander = template.DefaultExpander()
 
+const (
+	maxDimensionKeyLen = 64
+	maxDimensionValLen = 256
+)
+
+var (
+	dimensionKeyRe = regexp.MustCompile(`^[a-zA-Z\-\_\.][0-9a-zA-Z\-\_\.]*$`)
+)
+
 // DimensionKey checks if `key` can be a dimension key.
 func DimensionKey(key string) error {
 	if key == "" {
 		return errors.Reason("the key cannot be empty").Err()
 	}
-	// TODO(vadimsh): Implement.
+	if len(key) > maxDimensionKeyLen {
+		return errors.Reason("the key should be no longer than %d (got %d)", maxDimensionKeyLen, len(key)).Err()
+	}
+	if !dimensionKeyRe.MatchString(key) {
+		return errors.Reason("the key should match %s", dimensionKeyRe).Err()
+	}
 	return nil
 }
 
-// DimensionValue checks if `val` can be a dimensions value
+// DimensionValue checks if `val` can be a dimension value.
 func DimensionValue(val string) error {
 	if val == "" {
 		return errors.Reason("the value cannot be empty").Err()
 	}
-	// TODO(vadimsh): Implement.
+	if len(val) > maxDimensionValLen {
+		return errors.Reason("the value should be no longer than %d (got %d)", maxDimensionValLen, len(val)).Err()
+	}
+	if strings.TrimSpace(val) != val {
+		return errors.Reason("the value should have no leading or trailing spaces").Err()
+	}
 	return nil
 }
 

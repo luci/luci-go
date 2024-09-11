@@ -60,6 +60,13 @@ var goodBotsCfg = &configpb.BotsCfg{
 			SystemServiceAccount: "system@accounts.example.com",
 		},
 		{
+			BotId: []string{"bot-2"},
+			Auth: []*configpb.BotAuth{
+				{RequireServiceAccount: []string{"some@example.com"}},
+			},
+			SystemServiceAccount: "bot",
+		},
+		{
 			Dimensions: []string{"pool:unassigned", "extra:1"},
 			Auth: []*configpb.BotAuth{
 				{
@@ -94,6 +101,10 @@ func TestNewBotGroups(t *testing.T) {
 			"pool": {"b"},
 		}))
 
+		group2 := bg.directMatches["bot-2"]
+		assert.Loosely(t, group2, should.NotBeNil)
+		assert.That(t, group2.SystemServiceAccount, should.Equal("bot"))
+
 		assert.Loosely(t, bg.directMatches, should.Resemble(map[string]*BotGroup{
 			"bot-0":         group0,
 			"vm0-m4":        group0,
@@ -104,6 +115,7 @@ func TestNewBotGroups(t *testing.T) {
 			"vm0-m5":        group1,
 			"vm1-m5":        group1,
 			"vm2-m5":        group1,
+			"bot-2":         group2,
 		}))
 
 		prefixes := map[string]*BotGroup{}
@@ -288,6 +300,70 @@ func TestValidateBotsCfg(t *testing.T) {
 					Auth:       defaultAuth,
 				}),
 				err: `(bot_group #0 / dimensions #0 ("key:")): bad dimension value "": the value cannot be empty`,
+			},
+			{
+				cfg: groups(&configpb.BotGroup{
+					Auth: []*configpb.BotAuth{
+						{
+							RequireLuciMachineToken: true,
+							RequireServiceAccount:   []string{"some@example.com"},
+							RequireGceVmToken:       &configpb.BotAuth_GCE{Project: "some-project"},
+						},
+					},
+				}),
+				err: `(bot_group #0 / auth #0): require_luci_machine_token and require_service_account and require_gce_vm_token can't be used at the same time`,
+			},
+			{
+				cfg: groups(&configpb.BotGroup{
+					Auth: []*configpb.BotAuth{
+						{},
+					},
+				}),
+				err: `(bot_group #0 / auth #0): if all auth requirements are unset, ip_whitelist must be set`,
+			},
+			{
+				cfg: groups(&configpb.BotGroup{
+					Auth: []*configpb.BotAuth{
+						{RequireServiceAccount: []string{"not-email"}},
+					},
+				}),
+				err: `(bot_group #0 / auth #0): bad service account email "not-email"`,
+			},
+			{
+				cfg: groups(&configpb.BotGroup{
+					Auth: []*configpb.BotAuth{
+						{RequireGceVmToken: &configpb.BotAuth_GCE{}},
+					},
+				}),
+				err: `(bot_group #0 / auth #0): missing project in require_gce_vm_token`,
+			},
+			{
+				cfg: groups(&configpb.BotGroup{
+					SystemServiceAccount: "zzz",
+					Auth:                 defaultAuth,
+				}),
+				err: `(bot_group #0 / system_service_account): bad system_service_account email "zzz"`,
+			},
+			{
+				cfg: groups(&configpb.BotGroup{
+					SystemServiceAccount: "bot",
+					Auth:                 defaultAuth,
+				}),
+				err: `(bot_group #0 / system_service_account): system_service_account "bot" requires auth.require_service_account to be used`,
+			},
+			{
+				cfg: groups(&configpb.BotGroup{
+					BotConfigScript: "not-python.xyz",
+					Auth:            defaultAuth,
+				}),
+				err: `(bot_group #0 / bot_config_script ("not-python.xyz")): invalid bot_config_script: must end with .py`,
+			},
+			{
+				cfg: groups(&configpb.BotGroup{
+					BotConfigScript: "some/path.py",
+					Auth:            defaultAuth,
+				}),
+				err: `(bot_group #0 / bot_config_script ("some/path.py")): invalid bot_config_script: must be a filename, not a path`,
 			},
 		}
 		for _, cs := range testCases {

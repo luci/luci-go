@@ -19,6 +19,7 @@ import (
 
 	"github.com/armon/go-radix"
 
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/data/text/intsetexpr"
 	"go.chromium.org/luci/common/errors"
@@ -40,7 +41,23 @@ type BotGroup struct {
 	// Includes as least "pool" dimension, but potentially more.
 	Dimensions map[string][]string
 
-	// TODO(vadimsh): Add the rest.
+	// Auth defines how to authenticate bot API calls.
+	//
+	// There's always at least one element (but can be more if multiple auth
+	// methods are allowed).
+	Auth []*configpb.BotAuth
+
+	// SystemServiceAccount is what account to use on bots when authenticating
+	// calls to various system-level services (like CAS and CIPD) required for
+	// correct operation of the bot.
+	//
+	// Either an empty string, a literal string "bot" or a service account email.
+	SystemServiceAccount string
+
+	// BotConfigScript is an optional name of a custom hooks script.
+	//
+	// Its existence is validated when ingesting the config.
+	BotConfigScript string
 }
 
 // Pools returns pools assigned to the bot or ["unassigned"] if not set.
@@ -122,7 +139,7 @@ func newBotGroups(cfg *configpb.BotsCfg) (*botGroups, error) {
 	return bg, nil
 }
 
-// newBotGroup constructs BotGroup from its proto representation.
+// newBotGroup constructs BotGroup from its validated proto representation.
 func newBotGroup(gr *configpb.BotGroup) (*BotGroup, error) {
 	dims := map[string][]string{}
 	for _, dim := range gr.Dimensions {
@@ -136,9 +153,11 @@ func newBotGroup(gr *configpb.BotGroup) (*BotGroup, error) {
 		dims[key] = stringset.NewFromSlice(val...).ToSortedSlice()
 	}
 
-	// TODO(vadimsh): Add the rest.
 	return &BotGroup{
-		Dimensions: dims,
+		Dimensions:           dims,
+		Auth:                 gr.Auth,
+		SystemServiceAccount: gr.SystemServiceAccount,
+		BotConfigScript:      gr.BotConfigScript,
 	}, nil
 }
 
@@ -220,19 +239,57 @@ func validateBotsCfg(ctx *validation.Context, cfg *configpb.BotsCfg) {
 		botIDPrefixes[botIDPfx] = idx
 	}
 
-	// Validates auth entry.
-	validateAuth := func(cfg *configpb.BotAuth) {
-		// TODO(vadimsh): Implement.
-	}
-
 	// Validates the string looks like an email.
 	validateEmail := func(val, what string) {
-		// TODO(vadimsh): Implement.
+		if _, err := identity.MakeIdentity("user:" + val); err != nil {
+			ctx.Errorf("bad %s email %q", what, val)
+		}
+	}
+
+	// Validates auth entry.
+	validateAuth := func(cfg *configpb.BotAuth) {
+		var fields []string
+		if cfg.RequireLuciMachineToken {
+			fields = append(fields, "require_luci_machine_token")
+		}
+		if len(cfg.RequireServiceAccount) != 0 {
+			fields = append(fields, "require_service_account")
+		}
+		if cfg.RequireGceVmToken != nil {
+			fields = append(fields, "require_gce_vm_token")
+		}
+
+		if len(fields) > 1 {
+			ctx.Errorf("%s can't be used at the same time", strings.Join(fields, " and "))
+		}
+		if len(fields) == 0 && cfg.IpWhitelist == "" {
+			ctx.Errorf("if all auth requirements are unset, ip_whitelist must be set")
+		}
+
+		for _, sa := range cfg.RequireServiceAccount {
+			validateEmail(sa, "service account")
+		}
+
+		if cfg.RequireGceVmToken != nil && cfg.RequireGceVmToken.Project == "" {
+			ctx.Errorf("missing project in require_gce_vm_token")
+		}
 	}
 
 	// Validates system_service_account field.
-	validateSystemServiceAccount := func(val string) {
-		// TODO(vadimsh): Implement.
+	validateSystemServiceAccount := func(gr *configpb.BotGroup) {
+		switch {
+		case gr.SystemServiceAccount == "bot":
+			// If it is 'bot', the bot auth must be configured to use OAuth, since we
+			// need to get a bot token somewhere.
+			for _, auth := range gr.Auth {
+				if len(auth.RequireServiceAccount) != 0 {
+					return // the config is good
+				}
+			}
+			ctx.Errorf("system_service_account \"bot\" requires auth.require_service_account to be used")
+		case gr.SystemServiceAccount != "":
+			validateEmail(gr.SystemServiceAccount, "system_service_account")
+		}
 	}
 
 	// Validates a "key:val" dimension string.
@@ -252,7 +309,12 @@ func validateBotsCfg(ctx *validation.Context, cfg *configpb.BotsCfg) {
 
 	// Validates a path looks like a python file name.
 	validateBotConfigScript := func(val string) {
-		// TODO(vadimsh): Implement.
+		if !strings.HasSuffix(val, ".py") {
+			ctx.Errorf("invalid bot_config_script: must end with .py")
+		}
+		if strings.ContainsAny(val, "\\/") {
+			ctx.Errorf("invalid bot_config_script: must be a filename, not a path")
+		}
 	}
 
 	for idx, gr := range cfg.BotGroup {
@@ -293,8 +355,8 @@ func validateBotsCfg(ctx *validation.Context, cfg *configpb.BotsCfg) {
 			}
 		}
 		if gr.SystemServiceAccount != "" {
-			ctx.Enter("system_service_account (%q)", gr.SystemServiceAccount)
-			validateSystemServiceAccount(gr.SystemServiceAccount)
+			ctx.Enter("system_service_account")
+			validateSystemServiceAccount(gr)
 			ctx.Exit()
 		}
 
