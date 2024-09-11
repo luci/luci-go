@@ -43,15 +43,15 @@ func TestGetBot(t *testing.T) {
 	state := NewMockedRequestState()
 
 	// Bots that should be visible.
-	state.MockBot("alive-bot", "visible-pool")
-	state.MockBot("deleted-bot", "visible-pool")
-	state.MockBot("unconnected-bot", "visible-pool")
-	state.MockPool("visible-pool", "project:visible-realm")
+	state.Configs.MockBot("alive-bot", "visible-pool")
+	state.Configs.MockBot("deleted-bot", "visible-pool")
+	state.Configs.MockBot("unconnected-bot", "visible-pool")
+	state.Configs.MockPool("visible-pool", "project:visible-realm")
 	state.MockPerm("project:visible-realm", acls.PermPoolsListBots)
 
 	// A bot the caller has no permissions over.
-	state.MockBot("hidden-bot", "hidden-pool")
-	state.MockPool("hidden-pool", "project:hidden-realm")
+	state.Configs.MockBot("hidden-bot", "hidden-pool")
+	state.Configs.MockPool("hidden-pool", "project:hidden-realm")
 
 	ctx := memory.Use(context.Background())
 	datastore.GetTestable(ctx).AutoIndex(true)

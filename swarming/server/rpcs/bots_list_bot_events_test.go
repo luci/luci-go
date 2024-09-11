@@ -45,13 +45,13 @@ func TestListBotEvents(t *testing.T) {
 	state := NewMockedRequestState()
 
 	// A bot that should be visible.
-	state.MockBot("visible-bot", "visible-pool")
-	state.MockPool("visible-pool", "project:visible-realm")
+	state.Configs.MockBot("visible-bot", "visible-pool")
+	state.Configs.MockPool("visible-pool", "project:visible-realm")
 	state.MockPerm("project:visible-realm", acls.PermPoolsListBots)
 
 	// A bot the caller has no permissions over.
-	state.MockBot("hidden-bot", "hidden-pool")
-	state.MockPool("hidden-pool", "project:hidden-realm")
+	state.Configs.MockBot("hidden-bot", "hidden-pool")
+	state.Configs.MockPool("hidden-pool", "project:hidden-realm")
 
 	ctx := memory.Use(context.Background())
 	datastore.GetTestable(ctx).AutoIndex(true)

@@ -33,6 +33,7 @@ import (
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	configpb "go.chromium.org/luci/swarming/proto/config"
+	"go.chromium.org/luci/swarming/server/cfg/cfgtest"
 	"go.chromium.org/luci/swarming/server/cursor"
 	"go.chromium.org/luci/swarming/server/cursor/cursorpb"
 )
@@ -44,7 +45,7 @@ func TestConfigureMigration(t *testing.T) {
 	ctx = secrets.GeneratePrimaryTinkAEADForTest(ctx)
 	ctx = mathrand.Set(ctx, rand.New(rand.NewSource(123)))
 
-	cfg := MockConfigs(ctx, MockedConfigs{
+	cfg := cfgtest.MockConfigs(ctx, &cfgtest.MockedConfigs{
 		Settings: &configpb.SettingsCfg{
 			TrafficMigration: &configpb.TrafficMigration{
 				Routes: []*configpb.TrafficMigration_Route{

@@ -17,24 +17,13 @@ package rpcs
 import (
 	"context"
 	"fmt"
-	"strings"
 	"testing"
 	"time"
 
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/encoding/prototext"
-	"google.golang.org/protobuf/proto"
-
 	"go.chromium.org/luci/auth/identity"
-	"go.chromium.org/luci/cipd/client/cipd/fs"
-	"go.chromium.org/luci/cipd/client/cipd/pkg"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
-	"go.chromium.org/luci/config"
-	"go.chromium.org/luci/config/cfgclient"
-	cfgmem "go.chromium.org/luci/config/impl/memory"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
@@ -42,9 +31,8 @@ import (
 	"go.chromium.org/luci/server/auth/realms"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
-	configpb "go.chromium.org/luci/swarming/proto/config"
 	"go.chromium.org/luci/swarming/server/acls"
-	"go.chromium.org/luci/swarming/server/cfg"
+	"go.chromium.org/luci/swarming/server/cfg/cfgtest"
 	"go.chromium.org/luci/swarming/server/model"
 )
 
@@ -55,100 +43,14 @@ const (
 	AdminFakeCaller identity.Identity = "user:admin@example.com"
 )
 
-const (
-	// MockedSwarmingServer is URL of the Swarming server used in tests.
-	MockedSwarmingServer = "https://mocked.swarming.example.com"
-	// MockedCIPDServer is the CIPD server URL used in tests.
-	MockedCIPDServer = "https://mocked.cipd.example.com"
-	// MockedBotPackage is bot CIPD package used in tests.
-	MockedBotPackage = "mocked/bot/package"
-)
-
 // TestTime is used in mocked entities in RPC tests.
 var TestTime = time.Date(2023, time.January, 1, 2, 3, 4, 0, time.UTC)
-
-// MockedConfig is a bundle of configs to use in tests.
-type MockedConfigs struct {
-	Settings *configpb.SettingsCfg
-	Pools    *configpb.PoolsCfg
-	Bots     *configpb.BotsCfg
-	Scripts  map[string]string
-	CIPD     MockedCIPD
-}
-
-// MockBotPackage mocks existence of a bot package in the CIPD and configs.
-func (cfg *MockedConfigs) MockBotPackage(cipdVersion string, files map[string]string) {
-	cfg.CIPD.MockPackage(MockedBotPackage, cipdVersion, files)
-	pkg := &configpb.BotDeployment_BotPackage{
-		Server:  MockedCIPDServer,
-		Pkg:     MockedBotPackage,
-		Version: cipdVersion,
-	}
-	cfg.Settings.BotDeployment = &configpb.BotDeployment{
-		Stable:        pkg,
-		Canary:        pkg,
-		CanaryPercent: 20,
-	}
-}
-
-// MockedCIPD mocks state in CIPD.
-//
-// Implements cfg.CIPD.
-type MockedCIPD struct {
-	pkgs map[string]pkg.Instance
-}
-
-// MockPackage puts a mocked package into the CIPD storage.
-func (c *MockedCIPD) MockPackage(cipdpkg, version string, files map[string]string) {
-	pkgFiles := make([]fs.File, 0, len(files))
-	for key, val := range files {
-		pkgFiles = append(pkgFiles, fs.NewTestFile(key, val, fs.TestFileOpts{}))
-	}
-	if c.pkgs == nil {
-		c.pkgs = make(map[string]pkg.Instance, 1)
-	}
-	c.pkgs[fmt.Sprintf("%s:%s", cipdpkg, version)] = fakeInstance{files: pkgFiles}
-}
-
-// ResolveVersion resolves a version label into a CIPD instance ID.
-func (c *MockedCIPD) ResolveVersion(ctx context.Context, server, cipdpkg, version string) (string, error) {
-	if server != MockedCIPDServer {
-		return "", status.Errorf(codes.NotFound, "unexpected CIPD server %s", server)
-	}
-	key := fmt.Sprintf("%s:%s", cipdpkg, version)
-	if _, ok := c.pkgs[key]; ok {
-		return "iid-" + key, nil
-	}
-	return "", status.Errorf(codes.NotFound, "no such package: %s %s", cipdpkg, version)
-}
-
-// FetchInstance fetches contents of a package given via its instance ID.
-func (c *MockedCIPD) FetchInstance(ctx context.Context, server, cipdpkg, iid string) (pkg.Instance, error) {
-	if server != MockedCIPDServer {
-		return nil, status.Errorf(codes.NotFound, "unexpected CIPD server %s", server)
-	}
-	if key, ok := strings.CutPrefix(iid, "iid-"); ok {
-		if pkg := c.pkgs[key]; pkg != nil {
-			return pkg, nil
-		}
-	}
-	return nil, status.Errorf(codes.NotFound, "no such package: %s %s", cipdpkg, iid)
-}
-
-// fakeInstance implements subset of pkg.Instance used by MockedCIPD.
-type fakeInstance struct {
-	pkg.Instance // embedded nil, to panic if any other method is called
-	files        []fs.File
-}
-
-func (f fakeInstance) Files() []fs.File                              { return f.files }
-func (f fakeInstance) Close(ctx context.Context, corrupt bool) error { return nil }
 
 // MockedRequestState is all per-RPC state that can be mocked.
 type MockedRequestState struct {
 	Caller  identity.Identity
 	AuthDB  *authtest.FakeDB
-	Configs MockedConfigs
+	Configs *cfgtest.MockedConfigs
 }
 
 // NewMockedRequestState creates a new empty request state that can be mutated
@@ -157,46 +59,10 @@ func NewMockedRequestState() *MockedRequestState {
 	return &MockedRequestState{
 		Caller: DefaultFakeCaller,
 		AuthDB: authtest.NewFakeDB(
-			authtest.MockMembership(AdminFakeCaller, "tests-admin-group"),
+			authtest.MockMembership(AdminFakeCaller, cfgtest.MockedAdminGroup),
 		),
-		Configs: MockedConfigs{
-			Settings: &configpb.SettingsCfg{
-				Auth: &configpb.AuthSettings{
-					AdminsGroup: "tests-admin-group",
-				},
-			},
-			Pools: &configpb.PoolsCfg{},
-			Bots: &configpb.BotsCfg{
-				TrustedDimensions: []string{"pool"},
-			},
-			Scripts: map[string]string{},
-		},
+		Configs: cfgtest.NewMockedConfigs(),
 	}
-}
-
-// MockPool adds a new pool to the mocked request state.
-func (s *MockedRequestState) MockPool(name, realm string) *configpb.Pool {
-	pb := &configpb.Pool{
-		Name:  []string{name},
-		Realm: realm,
-	}
-	s.Configs.Pools.Pool = append(s.Configs.Pools.Pool, pb)
-	return pb
-}
-
-// MockBot adds a bot in some pool.
-func (s *MockedRequestState) MockBot(botID, pool string) *configpb.BotGroup {
-	pb := &configpb.BotGroup{
-		BotId:      []string{botID},
-		Dimensions: []string{"pool:" + pool},
-		Auth: []*configpb.BotAuth{
-			{
-				RequireLuciMachineToken: true,
-			},
-		},
-	}
-	s.Configs.Bots.BotGroup = append(s.Configs.Bots.BotGroup, pb)
-	return pb
 }
 
 // MockPerm mocks a permission the caller will have in some realm.
@@ -213,48 +79,6 @@ func (s *MockedRequestState) SetCaller(id identity.Identity) *MockedRequestState
 	return &cpy
 }
 
-// MockConfig puts configs in datastore and loads then into cfg.Provider.
-//
-// Configs must be valid, panics if they are not.
-func MockConfigs(ctx context.Context, configs MockedConfigs) *cfg.Provider {
-	files := make(cfgmem.Files)
-
-	putPb := func(path string, msg proto.Message) {
-		if msg != nil {
-			blob, err := prototext.Marshal(msg)
-			if err != nil {
-				panic(err)
-			}
-			files[path] = string(blob)
-		}
-	}
-
-	putPb("settings.cfg", configs.Settings)
-	putPb("pools.cfg", configs.Pools)
-	putPb("bots.cfg", configs.Bots)
-	for path, body := range configs.Scripts {
-		files[path] = body
-	}
-
-	// Put new configs into the datastore.
-	mockedCfg := cfgclient.Use(ctx, cfgmem.New(map[config.Set]cfgmem.Files{
-		"services/${appid}": files,
-	}))
-	err := cfg.UpdateConfigs(mockedCfg, &cfg.EmbeddedBotSettings{
-		ServerURL: MockedSwarmingServer,
-	}, &configs.CIPD)
-	if err != nil {
-		panic(err)
-	}
-
-	// Load them back in a queriable form.
-	p, err := cfg.NewProvider(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return p
-}
-
 // MockRequestState prepares a full mock of a per-RPC request state.
 //
 // Panics if it is invalid.
@@ -263,7 +87,7 @@ func MockRequestState(ctx context.Context, state *MockedRequestState) context.Co
 		Identity: state.Caller,
 		FakeDB:   state.AuthDB,
 	})
-	cfg := MockConfigs(ctx, state.Configs).Cached(ctx)
+	cfg := cfgtest.MockConfigs(ctx, state.Configs).Cached(ctx)
 	return context.WithValue(ctx, &requestStateCtxKey, &RequestState{
 		Config: cfg,
 		ACL:    acls.NewChecker(ctx, cfg),
@@ -275,10 +99,10 @@ func SetupTestBots(ctx context.Context) *MockedRequestState {
 	state := NewMockedRequestState()
 	state.Configs.Settings.BotDeathTimeoutSecs = 1234
 
-	state.MockPool("visible-pool1", "project:visible-realm")
-	state.MockPool("visible-pool2", "project:visible-realm")
-	state.MockPool("hidden-pool1", "project:hidden-realm")
-	state.MockPool("hidden-pool2", "project:hidden-realm")
+	state.Configs.MockPool("visible-pool1", "project:visible-realm")
+	state.Configs.MockPool("visible-pool2", "project:visible-realm")
+	state.Configs.MockPool("hidden-pool1", "project:hidden-realm")
+	state.Configs.MockPool("hidden-pool2", "project:hidden-realm")
 
 	state.MockPerm("project:visible-realm", acls.PermPoolsListBots)
 
@@ -346,7 +170,7 @@ func SetupTestBots(ctx context.Context) *MockedRequestState {
 			}
 			return no
 		}
-		state.MockBot(bot.id, bot.pool) // add it to ACLs
+		state.Configs.MockBot(bot.id, bot.pool) // add it to ACLs
 		err := datastore.Put(ctx, &model.BotInfo{
 			Key:        model.BotInfoKey(ctx, bot.id),
 			Dimensions: append(bot.dims, "pool:"+bot.pool),
@@ -371,10 +195,10 @@ func SetupTestBots(ctx context.Context) *MockedRequestState {
 func SetupTestTasks(ctx context.Context) (*MockedRequestState, map[string]string) {
 	state := NewMockedRequestState()
 
-	state.MockPool("visible-pool1", "project:visible-realm")
-	state.MockPool("visible-pool2", "project:visible-realm")
-	state.MockPool("hidden-pool1", "project:hidden-realm")
-	state.MockPool("hidden-pool2", "project:hidden-realm")
+	state.Configs.MockPool("visible-pool1", "project:visible-realm")
+	state.Configs.MockPool("visible-pool2", "project:visible-realm")
+	state.Configs.MockPool("hidden-pool1", "project:hidden-realm")
+	state.Configs.MockPool("hidden-pool2", "project:hidden-realm")
 
 	state.MockPerm("project:visible-realm", acls.PermPoolsListTasks, acls.PermTasksGet)
 
@@ -512,7 +336,7 @@ func TestServerInterceptor(t *testing.T) {
 		ctx = auth.WithState(ctx, &authtest.FakeState{
 			Identity: identity.AnonymousIdentity,
 		})
-		cfg := MockConfigs(ctx, MockedConfigs{})
+		cfg := cfgtest.MockConfigs(ctx, cfgtest.NewMockedConfigs())
 
 		interceptor := ServerInterceptor(cfg, []string{
 			"swarming.v2.Swarming",

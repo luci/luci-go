@@ -42,9 +42,9 @@ func TestGetBotDimensions(t *testing.T) {
 	ctx := memory.Use(context.Background())
 
 	state := NewMockedRequestState()
-	state.MockPool("visible-pool1", "project:visible-realm")
-	state.MockPool("visible-pool2", "project:visible-realm")
-	state.MockPool("hidden-pool", "project:hidden-realm")
+	state.Configs.MockPool("visible-pool1", "project:visible-realm")
+	state.Configs.MockPool("visible-pool2", "project:visible-realm")
+	state.Configs.MockPool("hidden-pool", "project:hidden-realm")
 	state.MockPerm("project:visible-realm", acls.PermPoolsListBots)
 
 	err := datastore.Put(ctx,

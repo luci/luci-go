@@ -22,9 +22,9 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/convey"
-	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -34,6 +34,7 @@ import (
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	configpb "go.chromium.org/luci/swarming/proto/config"
 	"go.chromium.org/luci/swarming/server/acls"
+	"go.chromium.org/luci/swarming/server/cfg/cfgtest"
 	"go.chromium.org/luci/swarming/server/model"
 
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -54,7 +55,7 @@ func TestSwarmingServer(t *testing.T) {
 			unknownTaskID   = "65aba3a3e6b99510"
 		)
 
-		configs := MockedConfigs{
+		configs := &cfgtest.MockedConfigs{
 			Settings: &configpb.SettingsCfg{
 				Auth: &configpb.AuthSettings{
 					AdminsGroup: "admins",
