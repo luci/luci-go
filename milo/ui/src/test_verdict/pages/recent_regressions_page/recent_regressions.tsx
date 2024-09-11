@@ -14,7 +14,8 @@
 
 import { Box, CircularProgress } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
-import { useCallback } from 'react';
+import { DateTime } from 'luxon';
+import { useCallback, useRef } from 'react';
 
 import { useChangepointsClient } from '@/analysis/hooks/prpc_clients';
 import { OutputChangepointGroupSummary } from '@/analysis/types';
@@ -26,6 +27,7 @@ import {
 import { getRegressionDetailsURLPath } from '@/test_verdict/tools/url_utils';
 
 import { RegressionFilters } from './regression_filters';
+import { getWeek, RegressionPager } from './regression_pager';
 import { RegressionTable } from './regression_table';
 
 function getPredicate(searchParams: URLSearchParams) {
@@ -55,13 +57,15 @@ export interface RecentRegressionsProps {
 export function RecentRegressions({ project }: RecentRegressionsProps) {
   const [searchParams, setSearchParams] = useSyncedSearchParams();
   const predicate = getPredicate(searchParams);
-
+  const now = useRef(DateTime.now());
+  const week = getWeek(searchParams, now.current);
   const client = useChangepointsClient();
   const { data, isLoading, isError, error } = useQuery(
     client.QueryChangepointGroupSummaries.query(
       QueryChangepointGroupSummariesRequest.fromPartial({
         project,
         predicate,
+        beginOfWeek: week.toISO(),
       }),
     ),
   );
@@ -92,6 +96,7 @@ export function RecentRegressions({ project }: RecentRegressionsProps) {
           onPredicateUpdate={(p) => setSearchParams(predicateUpdater(p))}
         />
       </Box>
+      <RegressionPager now={now.current} />
       {isLoading ? (
         <Box display="flex" justifyContent="center" alignItems="center">
           <CircularProgress />
