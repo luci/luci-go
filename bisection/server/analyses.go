@@ -21,6 +21,7 @@ import (
 	"net/url"
 	"sort"
 	"strconv"
+	"time"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -264,6 +265,12 @@ func (server *AnalysesServer) GetTestAnalysis(ctx context.Context, req *pb.GetTe
 }
 
 func (server *AnalysesServer) BatchGetTestAnalyses(ctx context.Context, req *pb.BatchGetTestAnalysesRequest) (*pb.BatchGetTestAnalysesResponse, error) {
+	// Adding a time value to the context when we are logging, so we know
+	// what request we are logging, because we may process many requests at the same time.
+	// We can also add hash of the request, or other information about the requests,
+	// but it is not neccessary for now.
+	ctx = logging.SetField(ctx, "request_time_unix_millis", time.Now().UnixMilli())
+
 	// Validate request.
 	if err := validateBatchGetTestAnalysesRequest(req); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
@@ -280,6 +287,7 @@ func (server *AnalysesServer) BatchGetTestAnalyses(ctx context.Context, req *pb.
 	}
 
 	// Query Changepoint analysis.
+	logging.Infof(ctx, "Start querying changepoint analysis")
 	client, err := analysis.NewTestVariantBranchesClient(ctx, server.LUCIAnalysisHost, req.Project)
 	if err != nil {
 		return nil, errors.Annotate(err, "create LUCI Analysis client").Err()
@@ -306,6 +314,7 @@ func (server *AnalysesServer) BatchGetTestAnalyses(ctx context.Context, req *pb.
 			return nil, status.Errorf(codes.Internal, "read changepoint analysis: %s", err)
 		}
 	}
+	logging.Infof(ctx, "Changepoint analysis returns %d results", len(changePointResults.TestVariantBranches))
 
 	result := make([]*pb.TestAnalysis, len(req.TestFailures))
 	err = parallel.FanOutIn(func(workC chan<- func() error) {
@@ -314,6 +323,7 @@ func (server *AnalysesServer) BatchGetTestAnalyses(ctx context.Context, req *pb.
 			i := i
 			tf := tf
 			workC <- func() error {
+				logging.Infof(ctx, "Start getting test failures for test_id = %q refHash = %q variantHash = %q", tf.TestId, tf.RefHash, tf.VariantHash)
 				tfs, err := datastoreutil.GetTestFailures(ctx, req.Project, tf.TestId, tf.RefHash, tf.VariantHash)
 				if err != nil {
 					return errors.Annotate(err, "get test failures").Err()
@@ -347,6 +357,7 @@ func (server *AnalysesServer) BatchGetTestAnalyses(ctx context.Context, req *pb.
 					return errors.Annotate(err, "convert test failure analysis to protobuf").Err()
 				}
 				result[i] = tfaProto
+				logging.Infof(ctx, "Finished getting test failures for test_id = %q refHash = %q variantHash = %q", tf.TestId, tf.RefHash, tf.VariantHash)
 				return nil
 			}
 		}
