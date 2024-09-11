@@ -356,7 +356,7 @@ export function hardwareStateToJSON(object: HardwareState): string {
 
 /**
  * This proto defines status labels in lab config of a DUT.
- * Next Tag: 32
+ * Next Tag: 34
  */
 export interface DutState {
   readonly id: ChromeOSDeviceID | undefined;
@@ -422,6 +422,10 @@ export interface DutState {
   readonly amtManagerState: PeripheralState;
   /** The type of Audio Beamforming on the DUT. */
   readonly audioBeamforming: string;
+  /** State for camera on the DUT. */
+  readonly cameraState: HardwareState;
+  /** The type of Fingerprint MCU on the DUT. */
+  readonly fingerprintMcu: string;
 }
 
 /**
@@ -594,6 +598,8 @@ function createBaseDutState(): DutState {
     gpuId: "",
     amtManagerState: 0,
     audioBeamforming: "",
+    cameraState: 0,
+    fingerprintMcu: "",
   };
 }
 
@@ -693,6 +699,12 @@ export const DutState = {
     }
     if (message.audioBeamforming !== "") {
       writer.uint32(250).string(message.audioBeamforming);
+    }
+    if (message.cameraState !== 0) {
+      writer.uint32(256).int32(message.cameraState);
+    }
+    if (message.fingerprintMcu !== "") {
+      writer.uint32(266).string(message.fingerprintMcu);
     }
     return writer;
   },
@@ -931,6 +943,20 @@ export const DutState = {
 
           message.audioBeamforming = reader.string();
           continue;
+        case 32:
+          if (tag !== 256) {
+            break;
+          }
+
+          message.cameraState = reader.int32() as any;
+          continue;
+        case 33:
+          if (tag !== 266) {
+            break;
+          }
+
+          message.fingerprintMcu = reader.string();
+          continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -981,6 +1007,8 @@ export const DutState = {
       gpuId: isSet(object.gpuId) ? globalThis.String(object.gpuId) : "",
       amtManagerState: isSet(object.amtManagerState) ? peripheralStateFromJSON(object.amtManagerState) : 0,
       audioBeamforming: isSet(object.audioBeamforming) ? globalThis.String(object.audioBeamforming) : "",
+      cameraState: isSet(object.cameraState) ? hardwareStateFromJSON(object.cameraState) : 0,
+      fingerprintMcu: isSet(object.fingerprintMcu) ? globalThis.String(object.fingerprintMcu) : "",
     };
   },
 
@@ -1079,6 +1107,12 @@ export const DutState = {
     if (message.audioBeamforming !== "") {
       obj.audioBeamforming = message.audioBeamforming;
     }
+    if (message.cameraState !== 0) {
+      obj.cameraState = hardwareStateToJSON(message.cameraState);
+    }
+    if (message.fingerprintMcu !== "") {
+      obj.fingerprintMcu = message.fingerprintMcu;
+    }
     return obj;
   },
 
@@ -1120,6 +1154,8 @@ export const DutState = {
     message.gpuId = object.gpuId ?? "";
     message.amtManagerState = object.amtManagerState ?? 0;
     message.audioBeamforming = object.audioBeamforming ?? "";
+    message.cameraState = object.cameraState ?? 0;
+    message.fingerprintMcu = object.fingerprintMcu ?? "";
     return message;
   },
 };

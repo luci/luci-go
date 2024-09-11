@@ -9,7 +9,7 @@ import _m0 from "protobufjs/minimal";
 
 export const protobufPackage = "unifiedfleet.api.v1.models.chromeos.lab";
 
-/** Next Tag: 18 */
+/** Next Tag: 22 */
 export enum NetworkProvider {
   NETWORK_OTHER = 0,
   NETWORK_UNSUPPORTED = 5,
@@ -29,6 +29,10 @@ export enum NetworkProvider {
   NETWORK_BELL = 15,
   NETWORK_TELUS = 16,
   NETWORK_FI = 17,
+  NETWORK_CBRS = 18,
+  NETWORK_LINEMO = 19,
+  NETWORK_POVO = 20,
+  NETWORK_HANSHIN = 21,
 }
 
 export function networkProviderFromJSON(object: any): NetworkProvider {
@@ -87,6 +91,18 @@ export function networkProviderFromJSON(object: any): NetworkProvider {
     case 17:
     case "NETWORK_FI":
       return NetworkProvider.NETWORK_FI;
+    case 18:
+    case "NETWORK_CBRS":
+      return NetworkProvider.NETWORK_CBRS;
+    case 19:
+    case "NETWORK_LINEMO":
+      return NetworkProvider.NETWORK_LINEMO;
+    case 20:
+    case "NETWORK_POVO":
+      return NetworkProvider.NETWORK_POVO;
+    case 21:
+    case "NETWORK_HANSHIN":
+      return NetworkProvider.NETWORK_HANSHIN;
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum NetworkProvider");
   }
@@ -130,6 +146,14 @@ export function networkProviderToJSON(object: NetworkProvider): string {
       return "NETWORK_TELUS";
     case NetworkProvider.NETWORK_FI:
       return "NETWORK_FI";
+    case NetworkProvider.NETWORK_CBRS:
+      return "NETWORK_CBRS";
+    case NetworkProvider.NETWORK_LINEMO:
+      return "NETWORK_LINEMO";
+    case NetworkProvider.NETWORK_POVO:
+      return "NETWORK_POVO";
+    case NetworkProvider.NETWORK_HANSHIN:
+      return "NETWORK_HANSHIN";
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum NetworkProvider");
   }

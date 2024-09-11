@@ -496,7 +496,7 @@ export function modemTypeToJSON(object: ModemType): string {
   }
 }
 
-/** Next Tag: 18 */
+/** Next Tag: 22 */
 export enum NetworkProvider {
   NETWORK_OTHER = 0,
   NETWORK_UNSUPPORTED = 5,
@@ -516,6 +516,10 @@ export enum NetworkProvider {
   NETWORK_BELL = 15,
   NETWORK_TELUS = 16,
   NETWORK_FI = 17,
+  NETWORK_CBRS = 18,
+  NETWORK_LINEMO = 19,
+  NETWORK_POVO = 20,
+  NETWORK_HANSHIN = 21,
 }
 
 export function networkProviderFromJSON(object: any): NetworkProvider {
@@ -574,6 +578,18 @@ export function networkProviderFromJSON(object: any): NetworkProvider {
     case 17:
     case "NETWORK_FI":
       return NetworkProvider.NETWORK_FI;
+    case 18:
+    case "NETWORK_CBRS":
+      return NetworkProvider.NETWORK_CBRS;
+    case 19:
+    case "NETWORK_LINEMO":
+      return NetworkProvider.NETWORK_LINEMO;
+    case 20:
+    case "NETWORK_POVO":
+      return NetworkProvider.NETWORK_POVO;
+    case 21:
+    case "NETWORK_HANSHIN":
+      return NetworkProvider.NETWORK_HANSHIN;
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum NetworkProvider");
   }
@@ -617,6 +633,14 @@ export function networkProviderToJSON(object: NetworkProvider): string {
       return "NETWORK_TELUS";
     case NetworkProvider.NETWORK_FI:
       return "NETWORK_FI";
+    case NetworkProvider.NETWORK_CBRS:
+      return "NETWORK_CBRS";
+    case NetworkProvider.NETWORK_LINEMO:
+      return "NETWORK_LINEMO";
+    case NetworkProvider.NETWORK_POVO:
+      return "NETWORK_POVO";
+    case NetworkProvider.NETWORK_HANSHIN:
+      return "NETWORK_HANSHIN";
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum NetworkProvider");
   }
@@ -1401,7 +1425,7 @@ export interface HardwareCapabilities {
   readonly videoAcceleration: readonly HardwareCapabilities_VideoAcceleration[];
 }
 
-/** NEXT TAG: 26 */
+/** NEXT TAG: 30 */
 export enum HardwareCapabilities_Carrier {
   CARRIER_INVALID = 0,
   CARRIER_ATT = 1,
@@ -1430,6 +1454,9 @@ export enum HardwareCapabilities_Carrier {
   CARRIER_CMX500 = 24,
   CARRIER_RAK = 25,
   CARRIER_CBRS = 26,
+  CARRIER_LINEMO = 27,
+  CARRIER_POVO = 28,
+  CARRIER_HANSHIN = 29,
 }
 
 export function hardwareCapabilities_CarrierFromJSON(object: any): HardwareCapabilities_Carrier {
@@ -1515,6 +1542,15 @@ export function hardwareCapabilities_CarrierFromJSON(object: any): HardwareCapab
     case 26:
     case "CARRIER_CBRS":
       return HardwareCapabilities_Carrier.CARRIER_CBRS;
+    case 27:
+    case "CARRIER_LINEMO":
+      return HardwareCapabilities_Carrier.CARRIER_LINEMO;
+    case 28:
+    case "CARRIER_POVO":
+      return HardwareCapabilities_Carrier.CARRIER_POVO;
+    case 29:
+    case "CARRIER_HANSHIN":
+      return HardwareCapabilities_Carrier.CARRIER_HANSHIN;
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum HardwareCapabilities_Carrier");
   }
@@ -1576,6 +1612,12 @@ export function hardwareCapabilities_CarrierToJSON(object: HardwareCapabilities_
       return "CARRIER_RAK";
     case HardwareCapabilities_Carrier.CARRIER_CBRS:
       return "CARRIER_CBRS";
+    case HardwareCapabilities_Carrier.CARRIER_LINEMO:
+      return "CARRIER_LINEMO";
+    case HardwareCapabilities_Carrier.CARRIER_POVO:
+      return "CARRIER_POVO";
+    case HardwareCapabilities_Carrier.CARRIER_HANSHIN:
+      return "CARRIER_HANSHIN";
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum HardwareCapabilities_Carrier");
   }
@@ -1832,7 +1874,7 @@ export function hardwareCapabilities_VideoAccelerationToJSON(object: HardwareCap
  *
  * Keep sorted by field names.
  *
- * NEXT TAG: 52
+ * NEXT TAG: 53
  */
 export interface Peripherals {
   readonly audioBoard?:
@@ -1980,7 +2022,11 @@ export interface Peripherals {
     | PeripheralState
     | undefined;
   /** The type of Audio Beamforming on the DUT. */
-  readonly audioBeamforming?: string | undefined;
+  readonly audioBeamforming?:
+    | string
+    | undefined;
+  /** The state of camera on the DUT. */
+  readonly cameraState?: HardwareState | undefined;
 }
 
 /** NEXT TAG: 12 */
@@ -4793,6 +4839,7 @@ function createBasePeripherals(): Peripherals {
     pasitComponents: [],
     amtManagerState: 0,
     audioBeamforming: "",
+    cameraState: 0,
   };
 }
 
@@ -4944,6 +4991,9 @@ export const Peripherals = {
     }
     if (message.audioBeamforming !== undefined && message.audioBeamforming !== "") {
       writer.uint32(410).string(message.audioBeamforming);
+    }
+    if (message.cameraState !== undefined && message.cameraState !== 0) {
+      writer.uint32(416).int32(message.cameraState);
     }
     return writer;
   },
@@ -5314,6 +5364,13 @@ export const Peripherals = {
 
           message.audioBeamforming = reader.string();
           continue;
+        case 52:
+          if (tag !== 416) {
+            break;
+          }
+
+          message.cameraState = reader.int32() as any;
+          continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -5392,6 +5449,7 @@ export const Peripherals = {
         : [],
       amtManagerState: isSet(object.amtManagerState) ? peripheralStateFromJSON(object.amtManagerState) : 0,
       audioBeamforming: isSet(object.audioBeamforming) ? globalThis.String(object.audioBeamforming) : "",
+      cameraState: isSet(object.cameraState) ? hardwareStateFromJSON(object.cameraState) : 0,
     };
   },
 
@@ -5540,6 +5598,9 @@ export const Peripherals = {
     if (message.audioBeamforming !== undefined && message.audioBeamforming !== "") {
       obj.audioBeamforming = message.audioBeamforming;
     }
+    if (message.cameraState !== undefined && message.cameraState !== 0) {
+      obj.cameraState = hardwareStateToJSON(message.cameraState);
+    }
     return obj;
   },
 
@@ -5597,6 +5658,7 @@ export const Peripherals = {
     message.pasitComponents = object.pasitComponents?.map((e) => e) || [];
     message.amtManagerState = object.amtManagerState ?? 0;
     message.audioBeamforming = object.audioBeamforming ?? "";
+    message.cameraState = object.cameraState ?? 0;
     return message;
   },
 };

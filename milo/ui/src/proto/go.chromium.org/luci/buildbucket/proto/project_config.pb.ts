@@ -119,7 +119,7 @@ export function acl_RoleToJSON(object: Acl_Role): string {
  * a user that has permissions to schedule a build to the bucket, can override
  * this config.
  *
- * Next tag: 41.
+ * Next tag: 42.
  */
 export interface BuilderConfig {
   /**
@@ -423,6 +423,12 @@ export interface BuilderConfig {
   readonly contactTeamEmail: string;
   /** Custom metrics for the builds. */
   readonly customMetricDefinitions: readonly CustomMetricDefinition[];
+  /**
+   * Maximum number of concurrent builds BuildBucket sends to Task backend.
+   * This number does not impact the build scheduling process.
+   * Only the number of builds sent is throttled by this field.
+   */
+  readonly maxConcurrentBuilds: number;
 }
 
 /**
@@ -987,6 +993,7 @@ function createBaseBuilderConfig(): BuilderConfig {
     builderHealthMetricsLinks: undefined,
     contactTeamEmail: "",
     customMetricDefinitions: [],
+    maxConcurrentBuilds: 0,
   };
 }
 
@@ -1088,6 +1095,9 @@ export const BuilderConfig = {
     }
     for (const v of message.customMetricDefinitions) {
       CustomMetricDefinition.encode(v!, writer.uint32(322).fork()).ldelim();
+    }
+    if (message.maxConcurrentBuilds !== 0) {
+      writer.uint32(328).uint32(message.maxConcurrentBuilds);
     }
     return writer;
   },
@@ -1326,6 +1336,13 @@ export const BuilderConfig = {
 
           message.customMetricDefinitions.push(CustomMetricDefinition.decode(reader, reader.uint32()));
           continue;
+        case 41:
+          if (tag !== 328) {
+            break;
+          }
+
+          message.maxConcurrentBuilds = reader.uint32();
+          continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1390,6 +1407,7 @@ export const BuilderConfig = {
       customMetricDefinitions: globalThis.Array.isArray(object?.customMetricDefinitions)
         ? object.customMetricDefinitions.map((e: any) => CustomMetricDefinition.fromJSON(e))
         : [],
+      maxConcurrentBuilds: isSet(object.maxConcurrentBuilds) ? globalThis.Number(object.maxConcurrentBuilds) : 0,
     };
   },
 
@@ -1497,6 +1515,9 @@ export const BuilderConfig = {
     if (message.customMetricDefinitions?.length) {
       obj.customMetricDefinitions = message.customMetricDefinitions.map((e) => CustomMetricDefinition.toJSON(e));
     }
+    if (message.maxConcurrentBuilds !== 0) {
+      obj.maxConcurrentBuilds = Math.round(message.maxConcurrentBuilds);
+    }
     return obj;
   },
 
@@ -1562,6 +1583,7 @@ export const BuilderConfig = {
     message.contactTeamEmail = object.contactTeamEmail ?? "";
     message.customMetricDefinitions =
       object.customMetricDefinitions?.map((e) => CustomMetricDefinition.fromPartial(e)) || [];
+    message.maxConcurrentBuilds = object.maxConcurrentBuilds ?? 0;
     return message;
   },
 };

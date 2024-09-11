@@ -216,6 +216,10 @@ export const routes: RouteObject[] = [
     lazy: () => import('@/core/pages/release_notes_page'),
   },
   {
+    path: 'tree-status/:tree',
+    lazy: () => import('@/tree_status/pages/list_page'),
+  },
+  {
     path: 'labs',
     lazy: () => import('@/core/pages/labs_page'),
     children: [
@@ -233,8 +237,9 @@ export const routes: RouteObject[] = [
         lazy: () => import('@/monitoring/pages/monitoring_page'),
       },
       {
+        // TODO: Remove this endpoint after we remove all client.
         path: 'tree-status/:tree',
-        lazy: () => import('@/tree_status/pages/list_page'),
+        lazy: () => import('@/tree_status/pages/redirection_loader'),
       },
       {
         path: 'p/:project/regressions',
