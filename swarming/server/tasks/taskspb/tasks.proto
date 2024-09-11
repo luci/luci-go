@@ -1,0 +1,23 @@
+// Copyright 2024 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package swarming.tasks.tasks;
+
+option go_package = "go.chromium.org/luci/swarming/server/tasks/taskspb;taskspb";
+
+
+// A Cloud task for canceling a task's children.
+message CancelChildrenTask {
+  // Swarming Task ID of the parent task.
+  string task_id = 1;
+}
+
+// A Cloud task for cancelling tasks in batches.
+message BatchCancelTask {
+  repeated string tasks = 1;
+
+  bool kill_running = 2;
+}

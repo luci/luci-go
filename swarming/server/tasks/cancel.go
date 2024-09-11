@@ -21,11 +21,13 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/tq"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	"go.chromium.org/luci/swarming/server/model"
 	"go.chromium.org/luci/swarming/server/notifications"
 	"go.chromium.org/luci/swarming/server/rbe"
+	"go.chromium.org/luci/swarming/server/tasks/taskspb"
 )
 
 // Cancellation contains information to cancel a task.
@@ -43,8 +45,9 @@ type Cancellation struct {
 	BotID string
 
 	// test functions for tq tasks. Should only be used in tests.
-	testEnqueueRBECancel func(context.Context, *model.TaskRequest, *model.TaskToRun) error
-	testSendOnTaskUpdate func(context.Context, *model.TaskRequest, *model.TaskResultSummary) error
+	testEnqueueRBECancel         func(context.Context, *model.TaskRequest, *model.TaskToRun) error
+	testSendOnTaskUpdate         func(context.Context, *model.TaskRequest, *model.TaskResultSummary) error
+	testEnqueueChildCancellation func(context.Context, string) error
 }
 
 func (c *Cancellation) validate() error {
@@ -181,13 +184,17 @@ func (c *Cancellation) RunInTxn(ctx context.Context) error {
 		if err := datastore.Get(ctx, trr); err != nil {
 			return errors.Annotate(err, "datastore error fetching TaskRunResult for task %s", c.TaskID).Err()
 		}
+		if trr.Killing {
+			// The task has started cancelation. Skip.
+			toPut = nil
+			return nil
+		}
 		trr.Killing = true
 		trr.Abandoned = datastore.NewIndexedNullable(now)
 		trr.Modified = now
 		toPut = append(toPut, trr)
 
-		// TODO(b/355013314): Cancel children tasks.
-		return nil
+		return c.enqueueChildCancellation(ctx)
 	}
 
 	if wasRunning {
@@ -200,6 +207,9 @@ func (c *Cancellation) RunInTxn(ctx context.Context) error {
 		}
 	}
 
+	if len(toPut) == 0 {
+		return nil
+	}
 	if putErr := datastore.Put(ctx, toPut...); putErr != nil {
 		return errors.Annotate(putErr, "datastore error saving entities for canceling task %s", c.TaskID).Err()
 	}
@@ -219,4 +229,106 @@ func (c *Cancellation) sendOnTaskUpdate(ctx context.Context) error {
 		return c.testSendOnTaskUpdate(ctx, c.TaskRequest, c.TaskResultSummary)
 	}
 	return notifications.SendOnTaskUpdate(ctx, c.TaskRequest, c.TaskResultSummary)
+}
+
+func (c *Cancellation) enqueueChildCancellation(ctx context.Context) error {
+	if c.testEnqueueChildCancellation != nil {
+		return c.testEnqueueChildCancellation(ctx, c.TaskID)
+	}
+	return tq.AddTask(ctx, &tq.Task{Payload: &taskspb.CancelChildrenTask{TaskId: c.TaskID}})
+}
+
+type childCancellation struct {
+	parentID string
+
+	// How many child tasks to fetch before sending them to a BatchCancelTask to
+	// cancel.
+	batchSize int
+
+	// test functions for tq tasks. Should only be used in tests.
+	testEnqueueBatchCancel func(context.Context, []string) error
+}
+
+func (cc *childCancellation) validate() error {
+	if cc.parentID == "" {
+		return errors.New("parent_id is required")
+	}
+	if cc.batchSize == 0 {
+		return errors.New("batch size is required")
+	}
+	return nil
+}
+
+// queryToCancel handles CancelChildrenTask.
+// It queries the active children of a task then enqueue one or more BatchCancelTask
+// tasks to cancel the active children.
+func (cc *childCancellation) queryToCancel(ctx context.Context) error {
+	if err := cc.validate(); err != nil {
+		return err
+	}
+	return cc.getChildTaskResultSummaries(ctx, func(children []*model.TaskResultSummary) error {
+		toCancel := make([]string, 0, len(children))
+		for _, child := range children {
+			if !child.IsActive() {
+				continue
+			}
+			toCancel = append(toCancel, model.RequestKeyToTaskID(child.TaskRequestKey(), model.AsRequest))
+		}
+		if len(toCancel) == 0 {
+			return nil
+		}
+
+		return cc.enqueueBatchCancel(ctx, toCancel)
+	})
+}
+
+func (cc *childCancellation) getChildTaskResultSummaries(ctx context.Context, sendToCancel func([]*model.TaskResultSummary) error) error {
+	childReqKeys, err := cc.getChildTaskRequestKeys(ctx)
+	if err != nil {
+		return errors.Annotate(err, "failed to get child request keys for parent %s", cc.parentID).Err()
+	}
+	if len(childReqKeys) == 0 {
+		return nil
+	}
+
+	toGet := make([]*model.TaskResultSummary, len(childReqKeys))
+	for i, key := range childReqKeys {
+		toGet[i] = &model.TaskResultSummary{
+			Key: model.TaskResultSummaryKey(ctx, key),
+		}
+	}
+
+	for len(toGet) != 0 {
+		var batch []*model.TaskResultSummary
+		size := min(cc.batchSize, len(toGet))
+		batch, toGet = toGet[:size], toGet[size:]
+		if err := datastore.Get(ctx, batch); err != nil {
+			return errors.Annotate(err, "failed to get child result summary for parent %s", cc.parentID).Err()
+		}
+		if err := sendToCancel(batch); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (cc *childCancellation) getChildTaskRequestKeys(ctx context.Context) ([]*datastore.Key, error) {
+	parentReqKey, err := model.TaskIDToRequestKey(ctx, cc.parentID)
+	if err != nil {
+		return nil, err
+	}
+	parentRunID := model.RequestKeyToTaskID(parentReqKey, model.AsRunResult)
+	// TODO(b/355013314): We should put parent_task_id into TaskResultSummary and use a normal query.
+	q := datastore.NewQuery("TaskRequest").Eq("parent_task_id", parentRunID).KeysOnly(true)
+	var children []*datastore.Key
+	err = datastore.GetAll(ctx, q, &children)
+	return children, err
+}
+
+func (cc *childCancellation) enqueueBatchCancel(ctx context.Context, toCancel []string) error {
+	if cc.testEnqueueBatchCancel != nil {
+		return cc.testEnqueueBatchCancel(ctx, toCancel)
+	}
+	return tq.AddTask(ctx, &tq.Task{Payload: &taskspb.BatchCancelTask{Tasks: toCancel, KillRunning: true}})
 }

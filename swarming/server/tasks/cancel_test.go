@@ -17,6 +17,7 @@ package tasks
 import (
 	"context"
 	"fmt"
+	"sort"
 	"testing"
 	"time"
 
@@ -82,21 +83,26 @@ func TestCancel(t *testing.T) {
 			TaskID:      tID,
 			KillRunning: true,
 		}
-		var fakeTaskQueue []string
+		fakeTaskQueue := make(map[string][]string, 4)
 		c.testEnqueueRBECancel = func(_ context.Context, tr *model.TaskRequest, ttr *model.TaskToRun) error {
-			fakeTaskQueue = append(fakeTaskQueue, fmt.Sprintf("rbe-cancel:%s/%s", tr.RBEInstance, ttr.RBEReservation))
+			fakeTaskQueue["rbe-cancel"] = append(fakeTaskQueue["rbe-cancel"], fmt.Sprintf("%s/%s", tr.RBEInstance, ttr.RBEReservation))
 			return nil
 		}
 
 		c.testSendOnTaskUpdate = func(_ context.Context, tr *model.TaskRequest, trs *model.TaskResultSummary) error {
 			taskID := model.RequestKeyToTaskID(tr.Key, model.AsRequest)
 			if tr.PubSubTopic != "" {
-				fakeTaskQueue = append(fakeTaskQueue, fmt.Sprintf("pubsub-go:%s", taskID))
+				fakeTaskQueue["pubsub-go"] = append(fakeTaskQueue["pubsub-go"], taskID)
 			}
 			if tr.HasBuildTask {
-				fakeTaskQueue = append(fakeTaskQueue, fmt.Sprintf("buildbucket-notify-go:%s", taskID))
+				fakeTaskQueue["buildbucket-notify-go"] = append(fakeTaskQueue["buildbucket-notify-go"], taskID)
 			}
 
+			return nil
+		}
+
+		c.testEnqueueChildCancellation = func(_ context.Context, taskID string) error {
+			fakeTaskQueue["cancel-children-tasks-go"] = append(fakeTaskQueue["cancel-children-tasks-go"], taskID)
 			return nil
 		}
 
@@ -140,9 +146,11 @@ func TestCancel(t *testing.T) {
 			assert.Loosely(t, trs.Modified, should.Equal(now))
 			assert.Loosely(t, trs.State, should.Equal(apipb.TaskState_CANCELED))
 			assert.Loosely(t, tr.IsReapable(), should.BeFalse)
-			assert.Loosely(t, fakeTaskQueue, should.Match([]string{
-				"rbe-cancel:rbe-instance/reservation",
-				"pubsub-go:65aba3a3e6b99310",
+			assert.Loosely(t, fakeTaskQueue["rbe-cancel"], should.Match([]string{
+				"rbe-instance/reservation",
+			}))
+			assert.Loosely(t, fakeTaskQueue["pubsub-go"], should.Match([]string{
+				"65aba3a3e6b99310",
 			}))
 			val := globalStore.Get(ctx, metrics.TaskStatusChangeSchedulerLatency, time.Time{}, []any{"test_pool", "spec_name", "CANCELED", "wobblyeye"})
 			assert.Loosely(t, val.(*distribution.Distribution).Sum(), should.Equal(float64(2*time.Hour.Milliseconds())))
@@ -185,6 +193,112 @@ func TestCancel(t *testing.T) {
 				assert.Loosely(t, trs.Modified, should.Equal(now))
 				assert.Loosely(t, trr.Killing, should.Equal(true))
 				assert.Loosely(t, trs.State, should.Equal(apipb.TaskState_RUNNING))
+				assert.Loosely(t, fakeTaskQueue["cancel-children-tasks-go"], should.Match([]string{tID}))
+			})
+
+			t.Run("kill running does nothing if the task has started cancellation", func(t *ftt.Test) {
+				previousModified := now.Add(-time.Minute)
+				trr := &model.TaskRunResult{
+					TaskResultCommon: model.TaskResultCommon{
+						State:    apipb.TaskState_RUNNING,
+						Modified: previousModified,
+					},
+					Key:     model.TaskRunResultKey(ctx, reqKey),
+					Killing: true,
+				}
+				trs.Modified = previousModified
+				assert.Loosely(t, datastore.Put(ctx, trr, trs), should.BeNil)
+				wasRunning, err := c.Run(ctx)
+				assert.Loosely(t, wasRunning, should.Equal(true))
+				assert.Loosely(t, err, should.BeNil)
+
+				assert.Loosely(t, datastore.Get(ctx, trr, trs), should.BeNil)
+				assert.Loosely(t, trs.Modified, should.Equal(trr.Modified))
+				assert.Loosely(t, trs.Modified, should.Equal(previousModified))
+			})
+		})
+	})
+}
+
+func TestCancelChildren(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run("TestCancelChildren", t, func(t *ftt.Test) {
+		ctx := memory.Use(context.Background())
+		datastore.GetTestable(ctx).AutoIndex(true)
+		datastore.GetTestable(ctx).Consistent(true)
+
+		pID := "65aba3a3e6b99310"
+		pReqKey, err := model.TaskIDToRequestKey(ctx, pID)
+		assert.Loosely(t, err, should.BeNil)
+
+		var fakeTaskQueue []string
+		cc := &childCancellation{
+			parentID:  pID,
+			batchSize: 300,
+			testEnqueueBatchCancel: func(_ context.Context, tasks []string) error {
+				sort.Strings(tasks)
+				fakeTaskQueue = append(fakeTaskQueue, fmt.Sprintf("cancel-tasks-go:%q", tasks))
+				return nil
+			},
+		}
+
+		t.Run("task has no children", func(t *ftt.Test) {
+			assert.Loosely(t, cc.queryToCancel(ctx), should.BeNil)
+			assert.Loosely(t, fakeTaskQueue, should.HaveLength(0))
+		})
+
+		t.Run("task has no active children to cancel", func(t *ftt.Test) {
+			cID := "65aba3a3e6b99100"
+			cReqKey, err := model.TaskIDToRequestKey(ctx, cID)
+			assert.Loosely(t, err, should.BeNil)
+			childReq := &model.TaskRequest{
+				Key:          cReqKey,
+				ParentTaskID: datastore.NewIndexedNullable(model.RequestKeyToTaskID(pReqKey, model.AsRunResult)),
+			}
+			childRes := &model.TaskResultSummary{
+				Key: model.TaskResultSummaryKey(ctx, cReqKey),
+				TaskResultCommon: model.TaskResultCommon{
+					State: apipb.TaskState_COMPLETED,
+				},
+			}
+			assert.Loosely(t, datastore.Put(ctx, childReq, childRes), should.BeNil)
+			assert.Loosely(t, cc.queryToCancel(ctx), should.BeNil)
+			assert.Loosely(t, fakeTaskQueue, should.HaveLength(0))
+		})
+
+		t.Run("task has active children to cancel", func(t *ftt.Test) {
+			cIDs := []string{"65aba3a3e6b99100", "65aba3a3e6b99200", "65aba3a3e6b99300", "65aba3a3e6b99400"}
+			for i, cID := range cIDs {
+				cReqKey, _ := model.TaskIDToRequestKey(ctx, cID)
+				childReq := &model.TaskRequest{
+					Key:          cReqKey,
+					ParentTaskID: datastore.NewIndexedNullable(model.RequestKeyToTaskID(pReqKey, model.AsRunResult)),
+				}
+				childRes := &model.TaskResultSummary{
+					Key: model.TaskResultSummaryKey(ctx, cReqKey),
+					TaskResultCommon: model.TaskResultCommon{
+						State: apipb.TaskState_RUNNING,
+					},
+				}
+				if i == 1 {
+					childRes.State = apipb.TaskState_COMPLETED
+				}
+				assert.Loosely(t, datastore.Put(ctx, childReq, childRes), should.BeNil)
+			}
+
+			t.Run("one task for all children", func(t *ftt.Test) {
+				assert.Loosely(t, cc.queryToCancel(ctx), should.BeNil)
+				assert.Loosely(t, fakeTaskQueue, should.HaveLength(1))
+				assert.Loosely(t, fakeTaskQueue[0], should.Equal(`cancel-tasks-go:["65aba3a3e6b99100" "65aba3a3e6b99300" "65aba3a3e6b99400"]`))
+			})
+
+			t.Run("multiple tasks", func(t *ftt.Test) {
+				cc.batchSize = 2
+				assert.Loosely(t, cc.queryToCancel(ctx), should.BeNil)
+				assert.Loosely(t, fakeTaskQueue, should.HaveLength(2))
+				assert.Loosely(t, fakeTaskQueue[0], should.Equal(`cancel-tasks-go:["65aba3a3e6b99300" "65aba3a3e6b99400"]`))
+				assert.Loosely(t, fakeTaskQueue[1], should.Equal(`cancel-tasks-go:["65aba3a3e6b99100"]`))
 			})
 		})
 	})
