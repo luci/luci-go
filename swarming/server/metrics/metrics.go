@@ -105,4 +105,12 @@ var (
 		"Version of a job executor.",
 		nil,
 	)
+
+	BotAuthSuccesses = metric.NewCounter(
+		"swarming/bot_auth/success",
+		"Number of successful bot authentication events",
+		nil,
+		field.String("auth_method"), // e.g. "luci_token", "service_account", ...
+		field.String("condition"),   // depends on auth_method, e.g. service account email
+	)
 )
