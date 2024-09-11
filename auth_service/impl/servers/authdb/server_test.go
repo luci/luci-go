@@ -29,18 +29,22 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authdb"
+	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/auth/service/protocol"
 	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/auth_service/api/rpcpb"
 	"go.chromium.org/luci/auth_service/impl/model"
 
 	. "go.chromium.org/luci/common/testing/assertions"
-	"go.chromium.org/luci/common/testing/ftt"
-	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
-	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestAuthDBServing(t *testing.T) {
@@ -281,6 +285,121 @@ func TestAuthDBServing(t *testing.T) {
 			expectedBlob, err := expectedJSON(rid, skipBody)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, actualBlob, should.Resemble(expectedBlob))
+		})
+	})
+}
+
+func TestMembershipsServing(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run("Legacy membership check call", t, func(t *ftt.Test) {
+		srv := Server{}
+
+		testDB, err := authdb.NewSnapshotDB(&protocol.AuthDB{
+			Groups: []*protocol.AuthGroup{
+				{
+					Name:    "group-a",
+					Members: []string{"user:somebody@example.com"},
+					Globs:   []string{"user:tester-*@test.com"},
+				},
+				{
+					Name:   "group-b",
+					Nested: []string{"group-a"},
+				},
+			},
+		}, "", 1, false)
+		assert.Loosely(t, err, should.BeNil)
+
+		ctx := auth.WithState(context.Background(), &authtest.FakeState{
+			FakeDB: testDB,
+		})
+
+		t.Run("validates identity", func(t *ftt.Test) {
+			rw := httptest.NewRecorder()
+			rctx := &router.Context{
+				Request: (&http.Request{
+					URL: &url.URL{
+						RawQuery: "identity=somebody@example.com&groups=group-a",
+					},
+				}).WithContext(ctx),
+				Writer: rw,
+			}
+			err := srv.CheckLegacyMembership(rctx)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+		})
+
+		t.Run("validates groups", func(t *ftt.Test) {
+			rw := httptest.NewRecorder()
+			rctx := &router.Context{
+				Request: (&http.Request{
+					URL: &url.URL{
+						RawQuery: "identity=user:foo@bar.com&groups=",
+					},
+				}).WithContext(ctx),
+				Writer: rw,
+			}
+			err := srv.CheckLegacyMembership(rctx)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+		})
+
+		t.Run("not a member for unknown group", func(t *ftt.Test) {
+			rw := httptest.NewRecorder()
+			rctx := &router.Context{
+				Request: (&http.Request{
+					URL: &url.URL{
+						RawQuery: "identity=user:somebody@example.com&groups=c",
+					},
+				}).WithContext(ctx),
+				Writer: rw,
+			}
+			err := srv.CheckLegacyMembership(rctx)
+			assert.Loosely(t, err, should.BeNil)
+
+			actual := map[string]any{}
+			assert.Loosely(t, json.NewDecoder(rw.Body).Decode(&actual), should.BeNil)
+			assert.Loosely(t, actual, should.Match(map[string]any{
+				"is_member": false,
+			}))
+		})
+
+		t.Run("nested works", func(t *ftt.Test) {
+			rw := httptest.NewRecorder()
+			rctx := &router.Context{
+				Request: (&http.Request{
+					URL: &url.URL{
+						RawQuery: "identity=user:somebody@example.com&groups=group-b",
+					},
+				}).WithContext(ctx),
+				Writer: rw,
+			}
+			err := srv.CheckLegacyMembership(rctx)
+			assert.Loosely(t, err, should.BeNil)
+
+			actual := map[string]any{}
+			assert.Loosely(t, json.NewDecoder(rw.Body).Decode(&actual), should.BeNil)
+			assert.Loosely(t, actual, should.Match(map[string]any{
+				"is_member": true,
+			}))
+		})
+
+		t.Run("glob works", func(t *ftt.Test) {
+			rw := httptest.NewRecorder()
+			rctx := &router.Context{
+				Request: (&http.Request{
+					URL: &url.URL{
+						RawQuery: "identity=user:tester-a@test.com&groups=group-a",
+					},
+				}).WithContext(ctx),
+				Writer: rw,
+			}
+			err := srv.CheckLegacyMembership(rctx)
+			assert.Loosely(t, err, should.BeNil)
+
+			actual := map[string]any{}
+			assert.Loosely(t, json.NewDecoder(rw.Body).Decode(&actual), should.BeNil)
+			assert.Loosely(t, actual, should.Match(map[string]any{
+				"is_member": true,
+			}))
 		})
 	})
 }

@@ -188,6 +188,8 @@ func main() {
 
 		// Support legacy endpoint to get an AuthGroup.
 		srv.Routes.GET("/auth/api/v1/groups/*groupName", apiMw, adaptGrpcErr(groupsServer.GetLegacyAuthGroup))
+		// Support legacy endpoint to check group membership.
+		srv.Routes.GET("/auth/api/v1/memberships/check", apiMw, adaptGrpcErr(authdbServer.CheckLegacyMembership))
 
 		// Legacy authdbrevision serving.
 		// TODO(cjacomet): Add smoke test for this endpoint

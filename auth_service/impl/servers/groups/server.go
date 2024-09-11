@@ -278,7 +278,8 @@ func (srv *Server) GetSubgraph(ctx context.Context, request *rpcpb.GetSubgraphRe
 	return subgraphProto, nil
 }
 
-func (s *Server) GetLegacyAuthGroup(ctx *router.Context) error {
+// GetLegacyAuthGroup serves the legacy REST API GET request for an AuthGroup.
+func (srv *Server) GetLegacyAuthGroup(ctx *router.Context) error {
 	c, _, w := ctx.Request.Context(), ctx.Request, ctx.Writer
 
 	// Catch-all params match includes the directory index (the leading "/"), so

@@ -23,9 +23,12 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/auth_service/api/rpcpb"
@@ -45,7 +48,7 @@ type SnapshotJSON struct {
 }
 
 // GetSnapshot implements the corresponding RPC method.
-func (*Server) GetSnapshot(ctx context.Context, request *rpcpb.GetSnapshotRequest) (*rpcpb.Snapshot, error) {
+func (srv *Server) GetSnapshot(ctx context.Context, request *rpcpb.GetSnapshotRequest) (*rpcpb.Snapshot, error) {
 	if request.Revision < 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "Negative revision numbers are not valid")
 	} else if request.Revision == 0 {
@@ -84,7 +87,7 @@ func getLatestRevision(ctx context.Context, dryRun bool) (int64, error) {
 
 // getLegacyAuthDBSnapshot is a helper function to serve an AuthDBSnapshot or a
 // V2AuthDBSnapshot.
-func (s *Server) getLegacyAuthDBSnapshot(ctx *router.Context, dryRun bool) error {
+func (srv *Server) getLegacyAuthDBSnapshot(ctx *router.Context, dryRun bool) error {
 	c, r, w := ctx.Request.Context(), ctx.Request, ctx.Writer
 
 	// Parse the `revID`  param for the requested AuthDB revision.
@@ -148,8 +151,8 @@ func (s *Server) getLegacyAuthDBSnapshot(ctx *router.Context, dryRun bool) error
 // HandleLegacyAuthDBServing handles the AuthDBSnapshot serving for legacy
 // services. Writes the AuthDBSnapshot JSON to the router.Writer. gRPC Error is returned
 // and adapted to HTTP format if operation is unsuccesful.
-func (s *Server) HandleLegacyAuthDBServing(ctx *router.Context) error {
-	return s.getLegacyAuthDBSnapshot(ctx, false)
+func (srv *Server) HandleLegacyAuthDBServing(ctx *router.Context) error {
+	return srv.getLegacyAuthDBSnapshot(ctx, false)
 }
 
 // HandleV2AuthDBServing handles the V2AuthDBSnapshot serving for
@@ -159,6 +162,71 @@ func (s *Server) HandleLegacyAuthDBServing(ctx *router.Context) error {
 //
 // TODO: Remove this once we have fully rolled out Auth Service v2
 // (b/321019030).
-func (s *Server) HandleV2AuthDBServing(ctx *router.Context) error {
-	return s.getLegacyAuthDBSnapshot(ctx, true)
+func (srv *Server) HandleV2AuthDBServing(ctx *router.Context) error {
+	return srv.getLegacyAuthDBSnapshot(ctx, true)
+}
+
+// CheckLegacyMembership serves the legacy REST API GET request to check whether
+// a given identity is a member of any of the given groups.
+//
+// Example query:
+//
+//	"identity=user:someone@example.com&groups=group-a&groups=group-b"
+//
+// Example response:
+//
+//	{
+//	   "is_member": true
+//	}
+func (srv *Server) CheckLegacyMembership(ctx *router.Context) error {
+	c, r, w := ctx.Request.Context(), ctx.Request, ctx.Writer
+	params := r.URL.Query()
+
+	// Validate the identity param.
+	rawID := params.Get("identity")
+	if rawID == "" {
+		return status.Error(codes.InvalidArgument,
+			"\"identity\" query parameter is required")
+	}
+	id, err := identity.MakeIdentity(rawID)
+	if err != nil {
+		return status.Errorf(codes.InvalidArgument,
+			"Invalid \"identity\" - %s", err)
+	}
+
+	// Get all groups params (there may be multiple).
+	rawNames, ok := params["groups"]
+	if !ok {
+		return status.Error(codes.InvalidArgument,
+			"\"groups\" query parameter is required")
+	}
+	toCheck := stringset.New(len(rawNames))
+	for _, name := range rawNames {
+		if name != "" {
+			toCheck.Add(name)
+		}
+	}
+	if len(toCheck) == 0 {
+		return status.Error(codes.InvalidArgument,
+			"must specify at least one group to check membership")
+	}
+
+	s := auth.GetState(c)
+	if s == nil {
+		return status.Error(codes.Internal, "no auth state")
+	}
+	isMember, err := s.DB().IsMember(c, id, toCheck.ToSlice())
+	if err != nil {
+		return status.Errorf(codes.Internal, "error checking membership for %q",
+			id)
+	}
+
+	err = json.NewEncoder(w).Encode(map[string]bool{
+		"is_member": isMember,
+	})
+	if err != nil {
+		return errors.Annotate(err, "error encoding JSON").Err()
+	}
+
+	return nil
 }
