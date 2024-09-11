@@ -13,16 +13,16 @@
 // limitations under the License.
 
 import { Close } from '@mui/icons-material';
-import { Box, Dialog, DialogContent, DialogTitle, Link } from '@mui/material';
+import { Box, Dialog, DialogContent, DialogTitle } from '@mui/material';
 import { useRef } from 'react';
 
 import { QueuedStickyScrollingBase } from '@/generic_libs/components/queued_sticky';
-import { getGitilesCommitURL } from '@/gitiles/tools/utils';
 import { BlamelistTable } from '@/test_verdict/components/blamelist_table';
 import {
   useBlamelistDispatch,
   useBlamelistState,
 } from '@/test_verdict/components/changepoint_table';
+import { TestVariantBranchId } from '@/test_verdict/components/test_variant_branch_id';
 
 export function RegressionDetailsDialog() {
   const dispatch = useBlamelistDispatch();
@@ -65,28 +65,11 @@ export function RegressionDetailsDialog() {
           fontSize: '16px',
         }}
       >
-        <table>
-          <tbody>
-            <tr>
-              <td width="1px">Branch:</td>
-              <td css={{ fontWeight: 400 }}>
-                <Link href={getGitilesCommitURL(testVariantBranch.ref.gitiles)}>
-                  {testVariantBranch.ref.gitiles.ref}
-                </Link>
-              </td>
-            </tr>
-            <tr>
-              <td width="1px">Test ID:</td>
-              <td css={{ fontWeight: 400 }}>{testVariantBranch.testId}</td>
-            </tr>
-            <tr>
-              <td width="1px">Variant:</td>
-              <td css={{ fontWeight: 400 }}>
-                {JSON.stringify(testVariantBranch.variant?.def || {})}
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <TestVariantBranchId
+          gitilesRef={testVariantBranch.ref.gitiles}
+          testId={testVariantBranch.testId}
+          variant={testVariantBranch.variant}
+        />
         <Box
           title="press esc to close the blamelist overlay"
           onClick={() => dispatch({ type: 'dismiss' })}

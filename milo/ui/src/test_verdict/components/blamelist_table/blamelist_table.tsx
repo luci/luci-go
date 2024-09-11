@@ -37,6 +37,7 @@ import {
   ToggleContentCell,
   ToggleHeadCell,
   VirtualizedCommitTable,
+  VirtualizedCommitTableProps,
 } from '@/gitiles/components/commit_table';
 import { useGitilesClient } from '@/gitiles/hooks/prpc_client';
 import { getGitilesRepoURL } from '@/gitiles/tools/utils';
@@ -67,21 +68,30 @@ function getPosition(lastPosition: string, offset: number) {
   return (parseInt(lastPosition) - offset).toString();
 }
 
-export interface BlamelistTable {
+export interface BlamelistTableProps
+  extends Omit<
+    VirtualizedCommitTableProps,
+    | 'repoUrl'
+    | 'rangeChanged'
+    | 'initialTopMostItemIndex'
+    | 'totalCount'
+    | 'fixedHeaderContent'
+    | 'itemContent'
+    | 'sx'
+  > {
   readonly lastCommitPosition: string;
   readonly firstCommitPosition: string;
   readonly testVariantBranch: OutputTestVariantBranch;
   readonly focusCommitPosition?: string;
-  readonly customScrollParent?: HTMLElement;
 }
 
 export function BlamelistTable({
   lastCommitPosition,
   firstCommitPosition,
   testVariantBranch,
-  customScrollParent,
   focusCommitPosition = lastCommitPosition,
-}: BlamelistTable) {
+  ...props
+}: BlamelistTableProps) {
   // Note that we use a negative index so commits are sorted by their commit
   // position in descending order.
   //
@@ -163,10 +173,10 @@ export function BlamelistTable({
   return (
     <BlamelistContextProvider testVariantBranch={testVariantBranch}>
       <VirtualizedCommitTable
-        repoUrl={getGitilesRepoURL(testVariantBranch.ref.gitiles)}
-        customScrollParent={customScrollParent}
-        rangeChanged={handleRangeChanged}
         increaseViewportBy={1000}
+        {...props}
+        repoUrl={getGitilesRepoURL(testVariantBranch.ref.gitiles)}
+        rangeChanged={handleRangeChanged}
         initialTopMostItemIndex={getOffset(
           lastCommitPosition,
           focusCommitPosition,
