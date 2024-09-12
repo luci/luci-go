@@ -110,9 +110,11 @@ func Bundle(ctx context.Context, repoPath string, dest string, overrides map[str
 			return exportRepo(ectx, repo, dest, copyCh)
 		})
 	}
-	if err := exportProtos(mainRepo, dest); err != nil {
-		return err
-	}
+	wg.Add(1)
+	eg.Go(func() error {
+		defer wg.Done()
+		return exportProtos(ctx, mainRepo, dest, copyCh)
+	})
 	// Close the channel after sending all copy items to the channel
 	wg.Wait()
 	close(copyCh)
@@ -339,9 +341,37 @@ func readAttrFile(fileSys fs.FS, file string, pathPrefix []string) ([]gitattribu
 	return ret, nil
 }
 
-// exportProtos copies the proto files of the given repo to the provided dest.
-func exportProtos(repo *Repo, dest string) error {
-	return errors.New("implement")
+// exportProtos sends all the proto files to copy to copyCh.
+func exportProtos(ctx context.Context, repo *Repo, dest string, copyCh chan<- copyItem) error {
+	depsPath := repo.RecipeDepsPath()
+	createdDir := stringset.New(20)
+	return fs.WalkDir(os.DirFS(depsPath), path.Join("_pb3", "PB"), func(p string, d fs.DirEntry, err error) error {
+		switch {
+		case err != nil:
+			return err
+		case ctx.Err() != nil:
+			return ctx.Err() // stop walking if the context is cancelled.
+		case d.IsDir():
+		case path.Ext(p) == ".pyc":
+		default:
+			ci := copyItem{
+				src:  filepath.Join(depsPath, filepath.FromSlash(p)),
+				dest: filepath.Join(dest, filepath.FromSlash(p)),
+			}
+			if dir := filepath.Dir(ci.dest); !createdDir.Has(dir) {
+				if err := os.MkdirAll(dir, 0755); err != nil {
+					return fmt.Errorf("failed to create dir: %w", err)
+				}
+				createdDir.Add(dir)
+			}
+			select {
+			case copyCh <- ci:
+			case <-ctx.Done():
+				return ctx.Err()
+			}
+		}
+		return nil
+	})
 }
 
 // prepareScripts creates entrypoint scripts for various platforms.
