@@ -25,6 +25,10 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/filter/featureBreaker"
 	"go.chromium.org/luci/gae/filter/featureBreaker/flaky"
 	"go.chromium.org/luci/gae/impl/memory"
@@ -37,8 +41,6 @@ import (
 	"go.chromium.org/luci/cv/internal/configs/srvcfg"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	listenerpb "go.chromium.org/luci/cv/settings/listener"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestGobMapUpdateAndLookup(t *testing.T) {
@@ -106,83 +108,83 @@ func TestGobMapUpdateAndLookup(t *testing.T) {
 		return Update(ctx, &meta, cgs)
 	}
 
-	Convey("Update with nonexistent project stores nothing", t, func() {
-		So(Update(ctx, &prjcfg.Meta{Project: "bogus", Status: prjcfg.StatusNotExists}, nil), ShouldBeNil)
+	ftt.Run("Update with nonexistent project stores nothing", t, func(t *ftt.Test) {
+		assert.Loosely(t, Update(ctx, &prjcfg.Meta{Project: "bogus", Status: prjcfg.StatusNotExists}, nil), should.BeNil)
 		mps := []*mapPart{}
 		q := datastore.NewQuery(mapKind)
-		So(datastore.GetAll(ctx, q, &mps), ShouldBeNil)
-		So(mps, ShouldBeEmpty)
+		assert.Loosely(t, datastore.GetAll(ctx, q, &mps), should.BeNil)
+		assert.Loosely(t, mps, should.BeEmpty)
 	})
 
-	Convey("Lookup nonexistent project returns empty result", t, func() {
-		So(
-			lookup(ctx, "foo-review.gs.com", "repo", "refs/heads/main"),
-			ShouldBeEmpty)
+	ftt.Run("Lookup nonexistent project returns empty result", t, func(t *ftt.Test) {
+		assert.Loosely(t,
+			lookup(t, ctx, "foo-review.gs.com", "repo", "refs/heads/main"),
+			should.BeEmpty)
 	})
 
-	Convey("Basic behavior with one project", t, func() {
-		So(update("chromium"), ShouldBeNil)
+	ftt.Run("Basic behavior with one project", t, func(t *ftt.Test) {
+		assert.Loosely(t, update("chromium"), should.BeNil)
 
-		Convey("Lookup with main ref returns main group", func() {
+		t.Run("Lookup with main ref returns main group", func(t *ftt.Test) {
 			// Note that even though the other config group also matches,
 			// only the main config group is applicable since the other one
 			// is the fallback config group.
-			So(
-				lookup(ctx, "cr-review.gs.com", "cr/src", "refs/heads/main"),
-				ShouldResemble,
-				map[string][]string{
-					"chromium": {"group_main"},
-				})
+			assert.Loosely(t,
+				lookup(t, ctx, "cr-review.gs.com", "cr/src", "refs/heads/main"),
+				should.Resemble(
+					map[string][]string{
+						"chromium": {"group_main"},
+					}))
 		})
 
-		Convey("Lookup with other ref returns other group", func() {
+		t.Run("Lookup with other ref returns other group", func(t *ftt.Test) {
 			// refs/heads/something matches other group, but not main group.
-			So(
-				lookup(ctx, "cr-review.gs.com", "cr/src", "refs/heads/something"),
-				ShouldResemble,
-				map[string][]string{
-					"chromium": {"group_other"},
-				})
+			assert.Loosely(t,
+				lookup(t, ctx, "cr-review.gs.com", "cr/src", "refs/heads/something"),
+				should.Resemble(
+					map[string][]string{
+						"chromium": {"group_other"},
+					}))
 		})
 
-		Convey("Lookup excluded ref returns nothing", func() {
+		t.Run("Lookup excluded ref returns nothing", func(t *ftt.Test) {
 			// refs/heads/123 is specifically excluded from the "other" group,
 			// and also not included in main group.
-			So(
-				lookup(ctx, "cr-review.gs.com", "cr/src", "refs/heads/123"),
-				ShouldBeEmpty)
+			assert.Loosely(t,
+				lookup(t, ctx, "cr-review.gs.com", "cr/src", "refs/heads/123"),
+				should.BeEmpty)
 		})
 
-		Convey("For a ref with no matching groups the result is empty", func() {
+		t.Run("For a ref with no matching groups the result is empty", func(t *ftt.Test) {
 			// If a ref doesn't match any include patterns then no groups
 			// match.
-			So(
-				lookup(ctx, "cr-review.gs.com", "cr/src", "refs/branch-heads/beta"),
-				ShouldBeEmpty)
+			assert.Loosely(t,
+				lookup(t, ctx, "cr-review.gs.com", "cr/src", "refs/branch-heads/beta"),
+				should.BeEmpty)
 		})
 
-		Convey("LookupProjects with the matched repo", func() {
+		t.Run("LookupProjects with the matched repo", func(t *ftt.Test) {
 			prjs, err := LookupProjects(ctx, "cr-review.gs.com", "cr/src")
-			So(err, ShouldBeNil)
-			So(prjs, ShouldResemble, []string{"chromium"})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, prjs, should.Resemble([]string{"chromium"}))
 		})
 
-		Convey("LookupProjects with an unmated repo", func() {
+		t.Run("LookupProjects with an unmated repo", func(t *ftt.Test) {
 			prjs, err := LookupProjects(ctx, "cr-review.gs.com", "cr2/src")
-			So(err, ShouldBeNil)
-			So(prjs, ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, prjs, should.BeEmpty)
 		})
 	})
 
-	Convey("Lookup again returns nothing for disabled project", t, func() {
+	ftt.Run("Lookup again returns nothing for disabled project", t, func(t *ftt.Test) {
 		// Simulate deleting project. Projects that are deleted are first disabled
 		// in practice.
 		prjcfgtest.Disable(ctx, "chromium")
-		So(update("chromium"), ShouldBeNil)
-		So(lookup(ctx, "cr-review.gs.com", "cr/src", "refs/heads/main"), ShouldBeEmpty)
+		assert.Loosely(t, update("chromium"), should.BeNil)
+		assert.Loosely(t, lookup(t, ctx, "cr-review.gs.com", "cr/src", "refs/heads/main"), should.BeEmpty)
 	})
 
-	Convey("With two matches and no fallback...", t, func() {
+	ftt.Run("With two matches and no fallback...", t, func(t *ftt.Test) {
 		// Simulate the project being updated so that the "other" group is no
 		// longer a fallback group. Now some refs will match both groups.
 		prjcfgtest.Enable(ctx, "chromium")
@@ -221,17 +223,17 @@ func TestGobMapUpdateAndLookup(t *testing.T) {
 			},
 		})
 
-		Convey("Lookup main ref matching two refs", func() {
+		t.Run("Lookup main ref matching two refs", func(t *ftt.Test) {
 			// This adds coverage for matching two groups.
-			So(update("chromium"), ShouldBeNil)
-			So(
-				lookup(ctx, "cr-review.gs.com", "cr/src", "refs/heads/main"),
-				ShouldResemble,
-				map[string][]string{"chromium": {"group_main", "group_other"}})
+			assert.Loosely(t, update("chromium"), should.BeNil)
+			assert.Loosely(t,
+				lookup(t, ctx, "cr-review.gs.com", "cr/src", "refs/heads/main"),
+				should.Resemble(
+					map[string][]string{"chromium": {"group_main", "group_other"}}))
 		})
 	})
 
-	Convey("With two repos in main group and no other group...", t, func() {
+	ftt.Run("With two repos in main group and no other group...", t, func(t *ftt.Test) {
 		// This update includes both additions and removals,
 		// and also tests multiple hosts.
 		prjcfgtest.Update(ctx, "chromium", &cfgpb.Config{
@@ -261,28 +263,28 @@ func TestGobMapUpdateAndLookup(t *testing.T) {
 				},
 			},
 		})
-		So(update("chromium"), ShouldBeNil)
+		assert.Loosely(t, update("chromium"), should.BeNil)
 
-		Convey("main group matches two different hosts", func() {
+		t.Run("main group matches two different hosts", func(t *ftt.Test) {
 
-			So(
-				lookup(ctx, "cr-review.gs.com", "cr/src", "refs/heads/main"),
-				ShouldResemble,
-				map[string][]string{"chromium": {"group_main"}})
-			So(
-				lookup(ctx, "cr2-review.gs.com", "cr2/src", "refs/heads/main"),
-				ShouldResemble,
-				map[string][]string{"chromium": {"group_main"}})
+			assert.Loosely(t,
+				lookup(t, ctx, "cr-review.gs.com", "cr/src", "refs/heads/main"),
+				should.Resemble(
+					map[string][]string{"chromium": {"group_main"}}))
+			assert.Loosely(t,
+				lookup(t, ctx, "cr2-review.gs.com", "cr2/src", "refs/heads/main"),
+				should.Resemble(
+					map[string][]string{"chromium": {"group_main"}}))
 		})
 
-		Convey("other group no longer exists", func() {
-			So(
-				lookup(ctx, "cr-review.gs.com", "cr/src", "refs/heads/something"),
-				ShouldBeEmpty)
+		t.Run("other group no longer exists", func(t *ftt.Test) {
+			assert.Loosely(t,
+				lookup(t, ctx, "cr-review.gs.com", "cr/src", "refs/heads/something"),
+				should.BeEmpty)
 		})
 	})
 
-	Convey("With another project matching the same ref...", t, func() {
+	ftt.Run("With another project matching the same ref...", t, func(t *ftt.Test) {
 		// Below another project is created that watches the same repo and ref.
 		// This tests multiple projects matching for one Lookup.
 		prjcfgtest.Create(ctx, "foo", &cfgpb.Config{
@@ -303,37 +305,35 @@ func TestGobMapUpdateAndLookup(t *testing.T) {
 				},
 			},
 		})
-		So(update("foo"), ShouldBeNil)
 
-		Convey("main group matches two different projects", func() {
-			So(
-				lookup(ctx, "cr-review.gs.com", "cr/src", "refs/heads/main"),
-				ShouldResemble,
+		assert.Loosely(t, update("foo"), should.BeNil)
+		assert.Loosely(t,
+			lookup(t, ctx, "cr-review.gs.com", "cr/src", "refs/heads/main"),
+			should.Resemble(
 				map[string][]string{
 					"chromium": {"group_main"},
 					"foo":      {"group_foo"},
-				})
-		})
+				}))
 	})
 
-	Convey("Lookup again after correcting the config mistake by deleting the second project", t, func() {
+	ftt.Run("Lookup again after correcting the config mistake by deleting the second project", t, func(t *ftt.Test) {
 		prjcfgtest.Delete(ctx, "foo")
 		meta, err := prjcfg.GetLatestMeta(ctx, "foo")
-		So(err, ShouldBeNil)
-		So(Update(ctx, &meta, nil), ShouldBeNil)
-		So(
-			lookup(ctx, "cr-review.gs.com", "cr/src", "refs/heads/main"),
-			ShouldResemble,
-			map[string][]string{
-				"chromium": {"group_main"},
-			})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, Update(ctx, &meta, nil), should.BeNil)
+		assert.Loosely(t,
+			lookup(t, ctx, "cr-review.gs.com", "cr/src", "refs/heads/main"),
+			should.Resemble(
+				map[string][]string{
+					"chromium": {"group_main"},
+				}))
 	})
 }
 
 func TestGobMapConcurrentUpdates(t *testing.T) {
 	t.Parallel()
 
-	Convey("Update() works under flaky Datastore and lots of concurrent tries", t, func() {
+	ftt.Run("Update() works under flaky Datastore and lots of concurrent tries", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
@@ -434,7 +434,7 @@ func TestGobMapConcurrentUpdates(t *testing.T) {
 				return nil
 			})
 		}
-		So(eg.Wait(), ShouldBeNil)
+		assert.Loosely(t, eg.Wait(), should.BeNil)
 
 		// If individual retries exceed 1K, it's probably a good idea to tweak
 		// parameters s.t. test runs faster.
@@ -452,39 +452,41 @@ func TestGobMapConcurrentUpdates(t *testing.T) {
 			expectedRepos := stringset.Set{}
 			meta := prjcfgtest.MustExist(ctx, project)
 			cgs, err := meta.GetConfigGroups(ctx)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			for _, pr := range cgs[0].Content.GetGerrit()[0].GetProjects() {
 				expectedRepos.Add(pr.GetName())
 			}
 
 			// Ensure the map contains these repos and only them.
 			// NOTE: this test reproducibly fails because gobmap.Update is not really
-			// safe to call concurrently, so asserted are marked with SkipSo.
+			// safe to call concurrently, so asserts are commented out.
 			// TODO(crbug/1179286): fix the code and the test.
 			var mps []*mapPart
-			So(datastore.GetAll(ctx, datastore.NewQuery(mapKind).Eq("Project", project), &mps), ShouldBeNil)
+			assert.Loosely(t, datastore.GetAll(ctx, datastore.NewQuery(mapKind).Eq("Project", project), &mps), should.BeNil)
 			for _, mp := range mps {
-				SkipSo(mp.ConfigHash, ShouldResemble, meta.Hash())
+				// assert.That(t, mp.ConfigHash, should.Resemble(meta.Hash()))
 				hostAndRepo := strings.SplitN(mp.Parent.StringID(), "/", 2)
-				So(hostAndRepo[0], ShouldResemble, gHost)
-				SkipSo(expectedRepos.Del(hostAndRepo[1]), ShouldBeTrue)
+				assert.Loosely(t, hostAndRepo[0], should.Resemble(gHost))
+				// assert.That(t, expectedRepos.Del(hostAndRepo[1]), should.BeTrue)
 			}
-			SkipSo(expectedRepos, ShouldBeEmpty)
+			// assert.Loosely(t, expectedRepos, should.BeEmpty)
 		}
 	})
 }
 
 // lookup is a test helper function to return just the projects and config
 // group names returned by Lookup.
-func lookup(ctx context.Context, host, repo, ref string) map[string][]string {
+func lookup(t testing.TB, ctx context.Context, host, repo, ref string) map[string][]string {
+	t.Helper()
+
 	ret := map[string][]string{}
 	ac, err := Lookup(ctx, host, repo, ref)
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil, truth.LineContext())
 	for _, p := range ac.Projects {
 		var names []string
 		for _, id := range p.ConfigGroupIds {
 			parts := strings.Split(id, "/")
-			So(len(parts), ShouldEqual, 2)
+			assert.Loosely(t, len(parts), should.Equal(2), truth.LineContext())
 			names = append(names, parts[1])
 		}
 		ret[p.Name] = names

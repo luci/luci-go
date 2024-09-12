@@ -26,10 +26,11 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	listenerpb "go.chromium.org/luci/cv/settings/listener"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 type testProcessor struct {
@@ -40,36 +41,40 @@ func (p *testProcessor) process(ctx context.Context, m *pubsub.Message) error {
 	return p.handler(ctx, m)
 }
 
-func mockPubSub(ctx context.Context) (*pubsub.Client, func()) {
+func mockPubSub(t testing.TB, ctx context.Context) (*pubsub.Client, func()) {
+	t.Helper()
+
 	srv := pstest.NewServer()
 	client, err := pubsub.NewClient(ctx, "luci-change-verifier",
 		option.WithEndpoint(srv.Addr),
 		option.WithoutAuthentication(),
 		option.WithGRPCDialOption(grpc.WithTransportCredentials(insecure.NewCredentials())),
 	)
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil, truth.LineContext())
 	return client, func() {
 		_ = client.Close()
 		_ = srv.Close()
 	}
 }
 
-func mockTopicSub(ctx context.Context, client *pubsub.Client, topicID, subID string) *pubsub.Topic {
+func mockTopicSub(t testing.TB, ctx context.Context, client *pubsub.Client, topicID, subID string) *pubsub.Topic {
+	t.Helper()
+
 	topic, err := client.CreateTopic(ctx, topicID)
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil, truth.LineContext())
 	_, err = client.CreateSubscription(ctx, subID, pubsub.SubscriptionConfig{Topic: topic})
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil, truth.LineContext())
 	return topic
 }
 
 func TestSubscriber(t *testing.T) {
 	t.Parallel()
 
-	Convey("Subscriber", t, func() {
+	ftt.Run("Subscriber", t, func(t *ftt.Test) {
 		ctx := context.Background()
-		client, closeFn := mockPubSub(ctx)
+		client, closeFn := mockPubSub(t, ctx)
 		defer closeFn()
-		topic := mockTopicSub(ctx, client, "topic_1", "sub_id_1")
+		topic := mockTopicSub(t, ctx, client, "topic_1", "sub_id_1")
 		ch := make(chan struct{})
 		sber := &subscriber{
 			sub: client.Subscription("sub_id_1"),
@@ -79,14 +84,14 @@ func TestSubscriber(t *testing.T) {
 			}},
 		}
 
-		Convey("starts", func() {
-			So(sber.isStopped(), ShouldBeTrue)
-			So(sber.start(ctx), ShouldBeNil)
-			So(sber.isStopped(), ShouldBeFalse)
+		t.Run("starts", func(t *ftt.Test) {
+			assert.Loosely(t, sber.isStopped(), should.BeTrue)
+			assert.Loosely(t, sber.start(ctx), should.BeNil)
+			assert.Loosely(t, sber.isStopped(), should.BeFalse)
 
 			// publish a sample message and wait until it gets processed.
 			_, err := topic.Publish(ctx, &pubsub.Message{}).Get(ctx)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			select {
 			case <-ch:
 			case <-time.After(10 * time.Second):
@@ -94,27 +99,27 @@ func TestSubscriber(t *testing.T) {
 			}
 		})
 
-		Convey("fails", func() {
-			Convey("if subscription doesn't exist", func() {
+		t.Run("fails", func(t *ftt.Test) {
+			t.Run("if subscription doesn't exist", func(t *ftt.Test) {
 				sber.sub = client.Subscription("sub_does_not_exist")
-				So(sber.start(ctx), ShouldErrLike, "doesn't exist")
-				So(sber.isStopped(), ShouldBeTrue)
+				assert.Loosely(t, sber.start(ctx), should.ErrLike("doesn't exist"))
+				assert.Loosely(t, sber.isStopped(), should.BeTrue)
 			})
 
-			Convey("if called multiple times simultaneously", func() {
-				So(sber.start(ctx), ShouldBeNil)
-				So(sber.start(ctx), ShouldErrLike,
-					"cannot start again, while the subscriber is running")
+			t.Run("if called multiple times simultaneously", func(t *ftt.Test) {
+				assert.Loosely(t, sber.start(ctx), should.BeNil)
+				assert.Loosely(t, sber.start(ctx), should.ErrLike(
+					"cannot start again, while the subscriber is running"))
 			})
 		})
 
-		Convey("stops", func() {
-			So(sber.isStopped(), ShouldBeTrue)
+		t.Run("stops", func(t *ftt.Test) {
+			assert.Loosely(t, sber.isStopped(), should.BeTrue)
 			sber.stop(ctx)
-			So(sber.start(ctx), ShouldBeNil)
-			So(sber.isStopped(), ShouldBeFalse)
+			assert.Loosely(t, sber.start(ctx), should.BeNil)
+			assert.Loosely(t, sber.isStopped(), should.BeFalse)
 			sber.stop(ctx)
-			So(sber.isStopped(), ShouldBeTrue)
+			assert.Loosely(t, sber.isStopped(), should.BeTrue)
 		})
 	})
 }
@@ -122,35 +127,35 @@ func TestSubscriber(t *testing.T) {
 func TestSameReceiveSettings(t *testing.T) {
 	t.Parallel()
 
-	Convey("sameReceiveSettings", t, func() {
+	ftt.Run("sameReceiveSettings", t, func(t *ftt.Test) {
 		ctx := context.Background()
-		client, closeFn := mockPubSub(ctx)
+		client, closeFn := mockPubSub(t, ctx)
 		defer closeFn()
 		cfgs := &listenerpb.Settings_ReceiveSettings{}
 		sber := &subscriber{sub: client.Subscription("sub_id_1")}
 		sber.sub.ReceiveSettings.NumGoroutines = defaultNumGoroutines
 		sber.sub.ReceiveSettings.MaxOutstandingMessages = defaultMaxOutstandingMessages
 
-		Convey("NumGoroutines", func() {
-			Convey("if 0, should be the default", func() {
+		t.Run("NumGoroutines", func(t *ftt.Test) {
+			t.Run("if 0, should be the default", func(t *ftt.Test) {
 				cfgs.NumGoroutines = 0
-				So(sber.sameReceiveSettings(ctx, cfgs), ShouldBeTrue)
+				assert.Loosely(t, sber.sameReceiveSettings(ctx, cfgs), should.BeTrue)
 
 			})
-			Convey("if != 0, should be different", func() {
+			t.Run("if != 0, should be different", func(t *ftt.Test) {
 				cfgs.NumGoroutines = 1
-				So(sber.sameReceiveSettings(ctx, cfgs), ShouldBeFalse)
+				assert.Loosely(t, sber.sameReceiveSettings(ctx, cfgs), should.BeFalse)
 			})
 		})
-		Convey("MaxOutstandingMessages", func() {
-			Convey("if 0, should be the default", func() {
+		t.Run("MaxOutstandingMessages", func(t *ftt.Test) {
+			t.Run("if 0, should be the default", func(t *ftt.Test) {
 				cfgs.MaxOutstandingMessages = 0
-				So(sber.sameReceiveSettings(ctx, cfgs), ShouldBeTrue)
+				assert.Loosely(t, sber.sameReceiveSettings(ctx, cfgs), should.BeTrue)
 
 			})
-			Convey("if != 0, should be different", func() {
+			t.Run("if != 0, should be different", func(t *ftt.Test) {
 				cfgs.MaxOutstandingMessages = 1
-				So(sber.sameReceiveSettings(ctx, cfgs), ShouldBeFalse)
+				assert.Loosely(t, sber.sameReceiveSettings(ctx, cfgs), should.BeFalse)
 			})
 		})
 	})

@@ -30,6 +30,9 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/distribution"
 	"go.chromium.org/luci/common/tsmon/store"
@@ -39,14 +42,12 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestInstrumentedFactory(t *testing.T) {
 	t.Parallel()
 
-	Convey("InstrumentedFactory works", t, func() {
+	ftt.Run("InstrumentedFactory works", t, func(t *ftt.Test) {
 		ctx := context.Background()
 		if testing.Verbose() {
 			ctx = logging.SetLevel(gologger.StdConfig.Use(ctx), logging.Debug)
@@ -70,11 +71,11 @@ func TestInstrumentedFactory(t *testing.T) {
 		}))
 		defer srv.Close()
 		u, err := url.Parse(srv.URL)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		gHost := u.Host
 
 		prod, err := newProd(ctx)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		prod.baseTransport = srv.Client().Transport
 		prod.mockMintProjectToken = func(context.Context, auth.ProjectTokenParams) (*auth.Token, error) {
 			return &auth.Token{
@@ -85,24 +86,24 @@ func TestInstrumentedFactory(t *testing.T) {
 
 		f := InstrumentedFactory(prod)
 		c1, err := f.MakeClient(ctx, gHost, "prj1")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		c2, err := f.MakeClient(ctx, gHost, "prj2")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		mockDelay, mockHTTPCode, mockResp = time.Second, http.StatusOK, ")]}'\n[]" // no changes.
 		r1, err := c1.ListChanges(ctx, &gerritpb.ListChangesRequest{})
-		So(err, ShouldBeNil)
-		So(r1.GetChanges(), ShouldBeEmpty)
-		So(tsmonSentCounter(ctx, metricCount, "prj1", gHost, "ListChanges", "OK"), ShouldEqual, 1)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, r1.GetChanges(), should.BeEmpty)
+		assert.Loosely(t, tsmonSentCounter(ctx, metricCount, "prj1", gHost, "ListChanges", "OK"), should.Equal(1))
 		d1 := tsmonSentDistr(ctx, metricDurationMS, "prj1", gHost, "ListChanges", "OK")
-		So(d1.Sum(), ShouldEqual, mockDelay.Milliseconds())
+		assert.That(t, d1.Sum(), should.Equal(float64(mockDelay.Milliseconds())))
 
 		mockDelay, mockHTTPCode, mockResp = time.Millisecond, http.StatusNotFound, ""
 		_, err = c2.GetChange(ctx, &gerritpb.GetChangeRequest{Number: 1})
-		So(status.Code(err), ShouldEqual, codes.NotFound)
-		So(tsmonSentCounter(ctx, metricCount, "prj2", gHost, "GetChange", "NOT_FOUND"), ShouldEqual, 1)
+		assert.Loosely(t, status.Code(err), should.Equal(codes.NotFound))
+		assert.Loosely(t, tsmonSentCounter(ctx, metricCount, "prj2", gHost, "GetChange", "NOT_FOUND"), should.Equal(1))
 		d2 := tsmonSentDistr(ctx, metricDurationMS, "prj2", gHost, "GetChange", "NOT_FOUND")
-		So(d2.Sum(), ShouldEqual, mockDelay.Milliseconds())
+		assert.That(t, d2.Sum(), should.Equal(float64(mockDelay.Milliseconds())))
 	})
 }
 

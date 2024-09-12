@@ -24,24 +24,25 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/cv/internal/configs/srvcfg"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	listenerpb "go.chromium.org/luci/cv/settings/listener"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestListener(t *testing.T) {
 	t.Parallel()
 
-	Convey("Listener", t, func() {
+	ftt.Run("Listener", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
-		client, closeFn := mockPubSub(ctx)
+		client, closeFn := mockPubSub(t, ctx)
 		defer closeFn()
-		_ = mockTopicSub(ctx, client, "a.example.org", "a.example.org")
-		_ = mockTopicSub(ctx, client, "b.example.org", "b.example.org")
+		_ = mockTopicSub(t, ctx, client, "a.example.org", "a.example.org")
+		_ = mockTopicSub(t, ctx, client, "b.example.org", "b.example.org")
 		sch := &testScheduler{}
 		l := NewListener(client, sch)
 
@@ -56,7 +57,7 @@ func TestListener(t *testing.T) {
 			return srvcfg.SetTestListenerConfig(ctx, s, m)
 		}
 
-		Convey("Run stops if context cancelled", func() {
+		t.Run("Run stops if context cancelled", func(t *ftt.Test) {
 			ctx, cancel := context.WithCancel(ctx)
 			defer cancel()
 			lCfg := &listenerpb.Settings{
@@ -64,7 +65,7 @@ func TestListener(t *testing.T) {
 					{Host: "a.example.org"},
 				},
 			}
-			So(updateCfg(lCfg), ShouldBeNil)
+			assert.Loosely(t, updateCfg(lCfg), should.BeNil)
 
 			// launch and wait until the subscriber is up.
 			endC := make(chan struct{})
@@ -80,8 +81,8 @@ func TestListener(t *testing.T) {
 				}
 				time.Sleep(100 * time.Millisecond)
 			}
-			So(sber, ShouldNotBeNil)
-			So(sber.isStopped(), ShouldBeFalse)
+			assert.Loosely(t, sber, should.NotBeNil)
+			assert.Loosely(t, sber.isStopped(), should.BeFalse)
 
 			// cancel the context and wait until it terminates.
 			cancel()
@@ -93,45 +94,45 @@ func TestListener(t *testing.T) {
 			// It's all good.
 		})
 
-		Convey("reload", func() {
+		t.Run("reload", func(t *ftt.Test) {
 			subCfgs := []*listenerpb.Settings_GerritSubscription{
 				{Host: "a.example.org"},
 				{Host: "b.example.org"},
 			}
-			So(l.sbers, ShouldHaveLength, 0)
-			So(l.reload(ctx, &listenerpb.Settings{GerritSubscriptions: subCfgs}), ShouldBeNil)
+			assert.Loosely(t, l.sbers, should.HaveLength(0))
+			assert.Loosely(t, l.reload(ctx, &listenerpb.Settings{GerritSubscriptions: subCfgs}), should.BeNil)
 			aSub, bSub := l.getSubscriber("a.example.org"), l.getSubscriber("b.example.org")
-			So(aSub, ShouldNotBeNil)
-			So(aSub.sub.ID(), ShouldEqual, "a.example.org")
-			So(bSub, ShouldNotBeNil)
-			So(bSub.sub.ID(), ShouldEqual, "b.example.org")
+			assert.Loosely(t, aSub, should.NotBeNil)
+			assert.Loosely(t, aSub.sub.ID(), should.Equal("a.example.org"))
+			assert.Loosely(t, bSub, should.NotBeNil)
+			assert.Loosely(t, bSub.sub.ID(), should.Equal("b.example.org"))
 
-			Convey("adds subscribers for new subscriptions", func() {
-				mockTopicSub(ctx, client, "c.example.org", "c.example.org")
+			t.Run("adds subscribers for new subscriptions", func(t *ftt.Test) {
+				mockTopicSub(t, ctx, client, "c.example.org", "c.example.org")
 				subCfgs = append(subCfgs, &listenerpb.Settings_GerritSubscription{
 					Host: "c.example.org",
 				})
-				So(l.reload(ctx, &listenerpb.Settings{GerritSubscriptions: subCfgs}), ShouldBeNil)
-				So(l.sbers, ShouldHaveLength, 3)
-				So(l.getSubscriber("c.example.org").sub.ID(), ShouldEqual, "c.example.org")
+				assert.Loosely(t, l.reload(ctx, &listenerpb.Settings{GerritSubscriptions: subCfgs}), should.BeNil)
+				assert.Loosely(t, l.sbers, should.HaveLength(3))
+				assert.Loosely(t, l.getSubscriber("c.example.org").sub.ID(), should.Equal("c.example.org"))
 			})
 
-			Convey("removes subscribers for removed subscriptions", func() {
+			t.Run("removes subscribers for removed subscriptions", func(t *ftt.Test) {
 				subCfgs = subCfgs[0 : len(subCfgs)-1]
-				So(l.reload(ctx, &listenerpb.Settings{GerritSubscriptions: subCfgs}), ShouldBeNil)
-				So(l.sbers, ShouldHaveLength, 1)
-				So(l.getSubscriber("b.example.org"), ShouldBeNil)
+				assert.Loosely(t, l.reload(ctx, &listenerpb.Settings{GerritSubscriptions: subCfgs}), should.BeNil)
+				assert.Loosely(t, l.sbers, should.HaveLength(1))
+				assert.Loosely(t, l.getSubscriber("b.example.org"), should.BeNil)
 			})
 
-			Convey("reload subscribers with new settings", func() {
+			t.Run("reload subscribers with new settings", func(t *ftt.Test) {
 				want := defaultNumGoroutines + 1
 				subCfgs[1].ReceiveSettings = &listenerpb.Settings_ReceiveSettings{
 					NumGoroutines: uint64(want),
 				}
-				So(l.reload(ctx, &listenerpb.Settings{GerritSubscriptions: subCfgs}), ShouldBeNil)
+				assert.Loosely(t, l.reload(ctx, &listenerpb.Settings{GerritSubscriptions: subCfgs}), should.BeNil)
 				bSub := l.getSubscriber("b.example.org")
-				So(bSub, ShouldNotBeNil)
-				So(bSub.sub.ReceiveSettings.NumGoroutines, ShouldEqual, want)
+				assert.Loosely(t, bSub, should.NotBeNil)
+				assert.Loosely(t, bSub.sub.ReceiveSettings.NumGoroutines, should.Equal(want))
 			})
 		})
 

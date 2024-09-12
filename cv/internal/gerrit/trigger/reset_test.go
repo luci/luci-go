@@ -39,21 +39,15 @@ import (
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/usertext"
 
-	// Convey package also exports `Reset` method that conflicts with the function
-	// in this package. This is a workaround since we can not dot import the convey
-	// package.
-	//
-	// WARNING: importing the below packages as "." will make So() and
-	// assertions, like ShouldErrLike, silently ignore the assertion results.
-	// e.g., So(1, ShouldBeNil) will pass.
-	c "github.com/smartystreets/goconvey/convey"
-	la "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestReset(t *testing.T) {
 	t.Parallel()
 
-	c.Convey("Reset", t, func() {
+	ftt.Run("Reset", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
@@ -73,13 +67,13 @@ func TestReset(t *testing.T) {
 			gf.Reviewer(gf.U(fmt.Sprintf("user-%d", reviewerID))),
 		)
 		triggers := Find(&FindInput{ChangeInfo: ci, ConfigGroup: &cfgpb.ConfigGroup{}})
-		c.So(triggers.GetCqVoteTrigger(), la.ShouldResembleProto, &run.Trigger{
+		assert.Loosely(t, triggers.GetCqVoteTrigger(), should.Resemble(&run.Trigger{
 			Time:            timestamppb.New(triggerTime),
 			Mode:            string(run.FullRun),
 			Email:           fmt.Sprintf("user-%d@example.com", triggererID),
 			GerritAccountId: triggererID,
-		})
-		c.So(triggers.GetCqVoteTrigger().GerritAccountId, c.ShouldEqual, 100)
+		}))
+		assert.Loosely(t, triggers.GetCqVoteTrigger().GerritAccountId, should.Equal(100))
 		cl := &changelist.CL{
 			ID:         99999,
 			ExternalID: changelist.MustGobID(gHost, int64(changeNum)),
@@ -98,7 +92,7 @@ func TestReset(t *testing.T) {
 			},
 			TriggerNewPatchsetRunAfterPS: 1,
 		}
-		c.So(datastore.Put(ctx, cl), c.ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, cl), should.BeNil)
 		ct.GFake.CreateChange(&gf.Change{
 			Host: gHost,
 			Info: proto.Clone(ci).(*gerritpb.ChangeInfo),
@@ -143,33 +137,40 @@ func TestReset(t *testing.T) {
 		nprTrigger := ts.GetNewPatchsetRunTrigger()
 		input.Triggers = &run.Triggers{}
 
-		c.Convey("Fails PreCondition if CL is AccessDenied from code review site", func() {
-			c.Convey("For CQ-Label trigger", func() {
-				input.Triggers.CqVoteTrigger = cqTrigger
-			})
-			c.Convey("For NewPatchset trigger", func() {
-				input.Triggers.NewPatchsetRunTrigger = nprTrigger
-			})
-			noAccessTime := ct.Clock.Now().UTC().Add(1 * time.Minute)
-			cl.Access = &changelist.Access{
-				ByProject: map[string]*changelist.Access_Project{
-					lProject: {
-						UpdateTime:   timestamppb.New(noAccessTime),
-						NoAccessTime: timestamppb.New(noAccessTime),
+		t.Run("Fails PreCondition if CL is AccessDenied from code review site", func(t *ftt.Test) {
+			check := func(t testing.TB) {
+
+				noAccessTime := ct.Clock.Now().UTC().Add(1 * time.Minute)
+				cl.Access = &changelist.Access{
+					ByProject: map[string]*changelist.Access_Project{
+						lProject: {
+							UpdateTime:   timestamppb.New(noAccessTime),
+							NoAccessTime: timestamppb.New(noAccessTime),
+						},
 					},
-				},
+				}
+				err := Reset(ctx, input)
+				assert.Loosely(t, err, should.ErrLike("failed to reset trigger because CV lost access to this CL"))
+				assert.Loosely(t, ErrResetPreconditionFailedTag.In(err), should.BeTrue)
 			}
-			err := Reset(ctx, input)
-			c.So(err, la.ShouldErrLike, "failed to reset trigger because CV lost access to this CL")
-			c.So(ErrResetPreconditionFailedTag.In(err), c.ShouldBeTrue)
+
+			t.Run("For CQ-Label trigger", func(t *ftt.Test) {
+				input.Triggers.CqVoteTrigger = cqTrigger
+				check(t)
+			})
+
+			t.Run("For NewPatchset trigger", func(t *ftt.Test) {
+				input.Triggers.NewPatchsetRunTrigger = nprTrigger
+				check(t)
+			})
 		})
 		isOutdated := func(cl *changelist.CL) bool {
 			e := &changelist.CL{ID: cl.ID}
-			c.So(datastore.Get(ctx, e), c.ShouldBeNil)
+			assert.Loosely(t, datastore.Get(ctx, e), should.BeNil)
 			return e.Snapshot.GetOutdated() != nil
 		}
 
-		c.Convey("Fails PreCondition if CL has newer PS in datastore", func() {
+		t.Run("Fails PreCondition if CL has newer PS in datastore", func(t *ftt.Test) {
 			input.Triggers.CqVoteTrigger = cqTrigger
 			newCI := proto.Clone(ci).(*gerritpb.ChangeInfo)
 			gf.PS(3)(newCI)
@@ -190,54 +191,54 @@ func TestReset(t *testing.T) {
 					},
 				},
 			}
-			c.So(datastore.Put(ctx, newCL), c.ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, newCL), should.BeNil)
 			err := Reset(ctx, input)
-			c.So(err, la.ShouldErrLike, "failed to reset because ps 2 is not current for cl(99999)")
-			c.So(ErrResetPreconditionFailedTag.In(err), c.ShouldBeTrue)
-			c.So(isOutdated(cl), c.ShouldBeFalse)
+			assert.Loosely(t, err, should.ErrLike("failed to reset because ps 2 is not current for cl(99999)"))
+			assert.Loosely(t, ErrResetPreconditionFailedTag.In(err), should.BeTrue)
+			assert.Loosely(t, isOutdated(cl), should.BeFalse)
 		})
 
-		c.Convey("Fails PreCondition if CL has newer PS in Gerrit", func() {
+		t.Run("Fails PreCondition if CL has newer PS in Gerrit", func(t *ftt.Test) {
 			input.Triggers.CqVoteTrigger = cqTrigger
 			ct.GFake.MutateChange(gHost, int(ci.GetNumber()), func(c *gf.Change) {
 				gf.PS(3)(c.Info)
 			})
 			err := Reset(ctx, input)
-			c.So(err, la.ShouldErrLike, "failed to reset because ps 2 is not current for x-review.example.com/10001")
-			c.So(ErrResetPreconditionFailedTag.In(err), c.ShouldBeTrue)
-			c.So(isOutdated(cl), c.ShouldBeFalse)
+			assert.Loosely(t, err, should.ErrLike("failed to reset because ps 2 is not current for x-review.example.com/10001"))
+			assert.Loosely(t, ErrResetPreconditionFailedTag.In(err), should.BeTrue)
+			assert.Loosely(t, isOutdated(cl), should.BeFalse)
 		})
 
-		c.Convey("Cancelling CQ Vote fails if receive stale data from gerrit", func() {
+		t.Run("Cancelling CQ Vote fails if receive stale data from gerrit", func(t *ftt.Test) {
 			input.Triggers.CqVoteTrigger = cqTrigger
 			ct.GFake.MutateChange(gHost, int(ci.GetNumber()), func(c *gf.Change) {
 				gf.Updated(clock.Now(ctx).Add(-3 * time.Minute))(c.Info)
 			})
 			err := Reset(ctx, input)
-			c.So(err, la.ShouldErrLike, gerrit.ErrStaleData)
-			c.So(transient.Tag.In(err), c.ShouldBeTrue)
-			c.So(isOutdated(cl), c.ShouldBeFalse)
+			assert.Loosely(t, err, should.ErrLike(gerrit.ErrStaleData))
+			assert.Loosely(t, transient.Tag.In(err), should.BeTrue)
+			assert.Loosely(t, isOutdated(cl), should.BeFalse)
 		})
 
-		c.Convey("Cancelling NewPatchsetRun", func() {
+		t.Run("Cancelling NewPatchsetRun", func(t *ftt.Test) {
 			input.Triggers.NewPatchsetRunTrigger = nprTrigger
 			input.Message = "reset new patchset run trigger"
 
 			cl := &changelist.CL{ID: input.CL.ID}
-			c.So(datastore.Get(ctx, cl), c.ShouldBeNil)
+			assert.Loosely(t, datastore.Get(ctx, cl), should.BeNil)
 			originalValue := cl.TriggerNewPatchsetRunAfterPS
 
-			c.So(Reset(ctx, input), c.ShouldBeNil)
+			assert.Loosely(t, Reset(ctx, input), should.BeNil)
 			// cancelling a new patchset run doesn't mark the snapshot
 			// as outdated.
-			c.So(isOutdated(cl), c.ShouldBeFalse)
+			assert.Loosely(t, isOutdated(cl), should.BeFalse)
 
 			cl = &changelist.CL{ID: input.CL.ID}
-			c.So(datastore.Get(ctx, cl), c.ShouldBeNil)
-			c.So(cl.TriggerNewPatchsetRunAfterPS, c.ShouldNotEqual, originalValue)
-			c.So(cl.TriggerNewPatchsetRunAfterPS, c.ShouldEqual, input.CL.Snapshot.Patchset)
+			assert.Loosely(t, datastore.Get(ctx, cl), should.BeNil)
+			assert.Loosely(t, cl.TriggerNewPatchsetRunAfterPS, should.NotEqual(originalValue))
+			assert.Loosely(t, cl.TriggerNewPatchsetRunAfterPS, should.Equal(input.CL.Snapshot.Patchset))
 			change := ct.GFake.GetChange(input.CL.Snapshot.GetGerrit().GetHost(), int(input.CL.Snapshot.GetGerrit().GetInfo().GetNumber()))
-			c.So(change.Info.GetMessages()[len(change.Info.GetMessages())-1].Message, c.ShouldEqual, input.Message)
+			assert.Loosely(t, change.Info.GetMessages()[len(change.Info.GetMessages())-1].Message, should.Equal(input.Message))
 		})
 
 		splitSetReviewRequests := func() (onBehalf, asSelf []*gerritpb.SetReviewRequest) {
@@ -246,7 +247,7 @@ func TestReset(t *testing.T) {
 				case !ok:
 				case r.GetOnBehalfOf() != 0:
 					// OnBehalfOf removes votes and must happen before any asSelf.
-					c.So(asSelf, c.ShouldBeEmpty)
+					assert.Loosely(t, asSelf, should.BeEmpty)
 					onBehalf = append(onBehalf, r)
 				default:
 					asSelf = append(asSelf, r)
@@ -254,28 +255,28 @@ func TestReset(t *testing.T) {
 			}
 			return onBehalf, asSelf
 		}
-		c.Convey("cancel new patchset run and cq vote run at the same time", func() {
+		t.Run("cancel new patchset run and cq vote run at the same time", func(t *ftt.Test) {
 			input.Triggers.CqVoteTrigger = cqTrigger
 			input.Triggers.NewPatchsetRunTrigger = nprTrigger
 			cl := &changelist.CL{ID: input.CL.ID}
-			c.So(datastore.Get(ctx, cl), c.ShouldBeNil)
+			assert.Loosely(t, datastore.Get(ctx, cl), should.BeNil)
 			originalValue := cl.TriggerNewPatchsetRunAfterPS
 
 			err := Reset(ctx, input)
-			c.So(err, c.ShouldBeNil)
-			c.So(isOutdated(cl), c.ShouldBeTrue) // snapshot is outdated
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, isOutdated(cl), should.BeTrue) // snapshot is outdated
 			resultCI := ct.GFake.GetChange(gHost, int(ci.GetNumber()))
-			c.So(resultCI.Info.GetMessages(), c.ShouldHaveLength, 1)
-			c.So(resultCI.Info.GetMessages()[0].GetMessage(), c.ShouldEqual, input.Message)
-			c.So(gf.NonZeroVotes(resultCI.Info, CQLabelName), c.ShouldBeEmpty)
+			assert.Loosely(t, resultCI.Info.GetMessages(), should.HaveLength(1))
+			assert.Loosely(t, resultCI.Info.GetMessages()[0].GetMessage(), should.Equal(input.Message))
+			assert.Loosely(t, gf.NonZeroVotes(resultCI.Info, CQLabelName), should.BeEmpty)
 
 			onBehalfs, asSelf := splitSetReviewRequests()
-			c.So(onBehalfs, c.ShouldHaveLength, 1)
-			c.So(onBehalfs[0].GetOnBehalfOf(), c.ShouldEqual, triggererID)
-			c.So(onBehalfs[0].GetNotifyDetails(), c.ShouldBeNil)
-			c.So(asSelf, c.ShouldHaveLength, 1)
-			c.So(asSelf[0].GetNotify(), c.ShouldEqual, gerritpb.Notify_NOTIFY_NONE)
-			c.So(asSelf[0].GetNotifyDetails(), la.ShouldResembleProto,
+			assert.Loosely(t, onBehalfs, should.HaveLength(1))
+			assert.Loosely(t, onBehalfs[0].GetOnBehalfOf(), should.Equal(triggererID))
+			assert.Loosely(t, onBehalfs[0].GetNotifyDetails(), should.BeNil)
+			assert.Loosely(t, asSelf, should.HaveLength(1))
+			assert.Loosely(t, asSelf[0].GetNotify(), should.Equal(gerritpb.Notify_NOTIFY_NONE))
+			assert.Loosely(t, asSelf[0].GetNotifyDetails(), should.Resemble(
 				&gerritpb.NotifyDetails{
 					Recipients: []*gerritpb.NotifyDetails_Recipient{
 						{
@@ -285,32 +286,32 @@ func TestReset(t *testing.T) {
 							},
 						},
 					},
-				})
-			c.So(asSelf[0].GetAddToAttentionSet(), la.ShouldResembleProto, []*gerritpb.AttentionSetInput{
+				}))
+			assert.Loosely(t, asSelf[0].GetAddToAttentionSet(), should.Resemble([]*gerritpb.AttentionSetInput{
 				{User: strconv.FormatInt(reviewerID, 10), Reason: "ps#2: " + usertext.StoppedRun},
-			})
+			}))
 			cl = &changelist.CL{ID: input.CL.ID}
-			c.So(datastore.Get(ctx, cl), c.ShouldBeNil)
-			c.So(cl.TriggerNewPatchsetRunAfterPS, c.ShouldNotEqual, originalValue)
-			c.So(cl.TriggerNewPatchsetRunAfterPS, c.ShouldEqual, input.CL.Snapshot.Patchset)
+			assert.Loosely(t, datastore.Get(ctx, cl), should.BeNil)
+			assert.Loosely(t, cl.TriggerNewPatchsetRunAfterPS, should.NotEqual(originalValue))
+			assert.Loosely(t, cl.TriggerNewPatchsetRunAfterPS, should.Equal(input.CL.Snapshot.Patchset))
 		})
-		c.Convey("Remove single vote", func() {
+		t.Run("Remove single vote", func(t *ftt.Test) {
 			input.Triggers.CqVoteTrigger = cqTrigger
 			err := Reset(ctx, input)
-			c.So(err, c.ShouldBeNil)
-			c.So(isOutdated(cl), c.ShouldBeTrue) // snapshot is outdated
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, isOutdated(cl), should.BeTrue) // snapshot is outdated
 			resultCI := ct.GFake.GetChange(gHost, int(ci.GetNumber()))
-			c.So(resultCI.Info.GetMessages(), c.ShouldHaveLength, 1)
-			c.So(resultCI.Info.GetMessages()[0].GetMessage(), c.ShouldEqual, input.Message)
-			c.So(gf.NonZeroVotes(resultCI.Info, CQLabelName), c.ShouldBeEmpty)
+			assert.Loosely(t, resultCI.Info.GetMessages(), should.HaveLength(1))
+			assert.Loosely(t, resultCI.Info.GetMessages()[0].GetMessage(), should.Equal(input.Message))
+			assert.Loosely(t, gf.NonZeroVotes(resultCI.Info, CQLabelName), should.BeEmpty)
 
 			onBehalfs, asSelf := splitSetReviewRequests()
-			c.So(onBehalfs, c.ShouldHaveLength, 1)
-			c.So(onBehalfs[0].GetOnBehalfOf(), c.ShouldEqual, triggererID)
-			c.So(onBehalfs[0].GetNotifyDetails(), c.ShouldBeNil)
-			c.So(asSelf, c.ShouldHaveLength, 1)
-			c.So(asSelf[0].GetNotify(), c.ShouldEqual, gerritpb.Notify_NOTIFY_NONE)
-			c.So(asSelf[0].GetNotifyDetails(), la.ShouldResembleProto,
+			assert.Loosely(t, onBehalfs, should.HaveLength(1))
+			assert.Loosely(t, onBehalfs[0].GetOnBehalfOf(), should.Equal(triggererID))
+			assert.Loosely(t, onBehalfs[0].GetNotifyDetails(), should.BeNil)
+			assert.Loosely(t, asSelf, should.HaveLength(1))
+			assert.Loosely(t, asSelf[0].GetNotify(), should.Equal(gerritpb.Notify_NOTIFY_NONE))
+			assert.Loosely(t, asSelf[0].GetNotifyDetails(), should.Resemble(
 				&gerritpb.NotifyDetails{
 					Recipients: []*gerritpb.NotifyDetails_Recipient{
 						{
@@ -320,14 +321,14 @@ func TestReset(t *testing.T) {
 							},
 						},
 					},
-				})
-			c.So(asSelf[0].GetAddToAttentionSet(), la.ShouldResembleProto, []*gerritpb.AttentionSetInput{
+				}))
+			assert.Loosely(t, asSelf[0].GetAddToAttentionSet(), should.Resemble([]*gerritpb.AttentionSetInput{
 				{User: strconv.FormatInt(reviewerID, 10), Reason: "ps#2: " + usertext.StoppedRun},
-			})
-			c.So(asSelf[0].GetTag(), c.ShouldResemble, fmt.Sprintf("autogenerated:cq:full-run:%d", triggerTime.Unix()))
+			}))
+			assert.Loosely(t, asSelf[0].GetTag(), should.Resemble(fmt.Sprintf("autogenerated:cq:full-run:%d", triggerTime.Unix())))
 		})
 
-		c.Convey("Remove multiple votes", func() {
+		t.Run("Remove multiple votes", func(t *ftt.Test) {
 			input.Triggers.CqVoteTrigger = cqTrigger
 			ct.GFake.MutateChange(gHost, int(ci.GetNumber()), func(c *gf.Change) {
 				gf.CQ(1, clock.Now(ctx).Add(-130*time.Second), gf.U("user-1"))(c.Info)
@@ -335,26 +336,26 @@ func TestReset(t *testing.T) {
 				gf.CQ(1, clock.Now(ctx).Add(-100*time.Second), gf.U("user-1000"))(c.Info)
 			})
 
-			c.Convey("Success", func() {
+			t.Run("Success", func(t *ftt.Test) {
 				err := Reset(ctx, input)
-				c.So(err, c.ShouldBeNil)
-				c.So(isOutdated(cl), c.ShouldBeTrue) // snapshot is outdated
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, isOutdated(cl), should.BeTrue) // snapshot is outdated
 				resultCI := ct.GFake.GetChange(gHost, int(ci.GetNumber()))
-				c.So(resultCI.Info.GetMessages(), c.ShouldHaveLength, 1)
-				c.So(resultCI.Info.GetMessages()[0].GetMessage(), c.ShouldEqual, input.Message)
-				c.So(gf.NonZeroVotes(resultCI.Info, CQLabelName), c.ShouldBeEmpty)
+				assert.Loosely(t, resultCI.Info.GetMessages(), should.HaveLength(1))
+				assert.Loosely(t, resultCI.Info.GetMessages()[0].GetMessage(), should.Equal(input.Message))
+				assert.Loosely(t, gf.NonZeroVotes(resultCI.Info, CQLabelName), should.BeEmpty)
 
 				onBehalfs, asSelf := splitSetReviewRequests()
 				for _, r := range onBehalfs {
-					c.So(r.GetNotify(), c.ShouldEqual, gerritpb.Notify_NOTIFY_NONE)
-					c.So(r.GetNotifyDetails(), c.ShouldBeNil)
+					assert.Loosely(t, r.GetNotify(), should.Equal(gerritpb.Notify_NOTIFY_NONE))
+					assert.Loosely(t, r.GetNotifyDetails(), should.BeNil)
 				}
 				// The triggering vote(s) must have been removed last, the order of
 				// removals for the rest doesn't matter so long as it does the job.
-				c.So(onBehalfs[len(onBehalfs)-1].GetOnBehalfOf(), c.ShouldEqual, 100)
-				c.So(asSelf, c.ShouldHaveLength, 1)
-				c.So(asSelf[0].GetNotify(), c.ShouldEqual, gerritpb.Notify_NOTIFY_NONE)
-				c.So(asSelf[0].GetNotifyDetails(), la.ShouldResembleProto,
+				assert.Loosely(t, onBehalfs[len(onBehalfs)-1].GetOnBehalfOf(), should.Equal(100))
+				assert.Loosely(t, asSelf, should.HaveLength(1))
+				assert.Loosely(t, asSelf[0].GetNotify(), should.Equal(gerritpb.Notify_NOTIFY_NONE))
+				assert.Loosely(t, asSelf[0].GetNotifyDetails(), should.Resemble(
 					&gerritpb.NotifyDetails{
 						Recipients: []*gerritpb.NotifyDetails_Recipient{
 							{
@@ -364,29 +365,29 @@ func TestReset(t *testing.T) {
 								},
 							},
 						},
-					})
-				c.So(asSelf[0].GetAddToAttentionSet(), la.ShouldResembleProto, []*gerritpb.AttentionSetInput{
+					}))
+				assert.Loosely(t, asSelf[0].GetAddToAttentionSet(), should.Resemble([]*gerritpb.AttentionSetInput{
 					{User: strconv.FormatInt(reviewerID, 10), Reason: "ps#2: " + usertext.StoppedRun},
-				})
+				}))
 			})
 
-			c.Convey("Removing non-triggering votes fails", func() {
+			t.Run("Removing non-triggering votes fails", func(t *ftt.Test) {
 				ct.GFake.MutateChange(gHost, int(ci.GetNumber()), func(c *gf.Change) {
 					c.ACLs = gf.ACLGrant(gf.OpRead, codes.PermissionDenied, lProject).Or(
 						gf.ACLGrant(gf.OpReview, codes.PermissionDenied, lProject),
 					) // no permission to vote on behalf of others
 				})
 				err := Reset(ctx, input)
-				c.So(err, c.ShouldBeNil)
-				c.So(isOutdated(cl), c.ShouldBeFalse)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, isOutdated(cl), should.BeFalse)
 				onBehalfs, _ := splitSetReviewRequests()
-				c.So(onBehalfs, c.ShouldHaveLength, 3) // all non-triggering votes
+				assert.Loosely(t, onBehalfs, should.HaveLength(3)) // all non-triggering votes
 				for _, r := range onBehalfs {
 					switch r.GetOnBehalfOf() {
 					case triggererID:
 						// CV shouldn't remove triggering votes if removal of non-triggering
 						// votes fails.
-						c.So(r.GetOnBehalfOf(), c.ShouldNotEqual, triggererID)
+						assert.Loosely(t, r.GetOnBehalfOf(), should.NotEqual(triggererID))
 					case 1, 70, 1000:
 					default:
 						panic(fmt.Errorf("unknown on_behalf_of %d", r.GetOnBehalfOf()))
@@ -395,7 +396,7 @@ func TestReset(t *testing.T) {
 			})
 		})
 
-		c.Convey("Removing votes from non-CQ labels used in additional modes", func() {
+		t.Run("Removing votes from non-CQ labels used in additional modes", func(t *ftt.Test) {
 			const uLabel = "Ultra-Quick-Label"
 			const qLabel = "Quick-Label"
 			input.Triggers.CqVoteTrigger = cqTrigger
@@ -453,25 +454,25 @@ func TestReset(t *testing.T) {
 				ultraQuick(0, clock.Now(ctx).Add(-90*time.Second), gf.U("user-104"))(c.Info)
 			})
 			err := Reset(ctx, input)
-			c.So(err, c.ShouldBeNil)
-			c.So(isOutdated(cl), c.ShouldBeTrue) // snapshot is outdated
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, isOutdated(cl), should.BeTrue) // snapshot is outdated
 
 			resultCI := ct.GFake.GetChange(gHost, int(ci.GetNumber()))
-			c.So(gf.NonZeroVotes(resultCI.Info, CQLabelName), c.ShouldBeEmpty)
-			c.So(gf.NonZeroVotes(resultCI.Info, qLabel), c.ShouldBeEmpty)
-			c.So(gf.NonZeroVotes(resultCI.Info, uLabel), c.ShouldBeEmpty)
+			assert.Loosely(t, gf.NonZeroVotes(resultCI.Info, CQLabelName), should.BeEmpty)
+			assert.Loosely(t, gf.NonZeroVotes(resultCI.Info, qLabel), should.BeEmpty)
+			assert.Loosely(t, gf.NonZeroVotes(resultCI.Info, uLabel), should.BeEmpty)
 
 			onBehalfs, _ := splitSetReviewRequests()
 			// The last request must be for account 100.
-			c.So(onBehalfs[len(onBehalfs)-1].GetOnBehalfOf(), c.ShouldEqual, 100)
-			c.So(onBehalfs[len(onBehalfs)-1].GetLabels(), c.ShouldResemble, map[string]int32{
+			assert.Loosely(t, onBehalfs[len(onBehalfs)-1].GetOnBehalfOf(), should.Equal(100))
+			assert.Loosely(t, onBehalfs[len(onBehalfs)-1].GetLabels(), should.Resemble(map[string]int32{
 				CQLabelName: 0,
 				qLabel:      0,
 				uLabel:      0,
-			})
+			}))
 		})
 
-		c.Convey("Skips zero votes", func() {
+		t.Run("Skips zero votes", func(t *ftt.Test) {
 			input.Triggers.CqVoteTrigger = cqTrigger
 			ct.GFake.MutateChange(gHost, int(ci.GetNumber()), func(c *gf.Change) {
 				gf.CQ(0, clock.Now(ctx).Add(-90*time.Second), gf.U("user-101"))(c.Info)
@@ -480,31 +481,31 @@ func TestReset(t *testing.T) {
 			})
 
 			err := Reset(ctx, input)
-			c.So(err, c.ShouldBeNil)
-			c.So(isOutdated(cl), c.ShouldBeTrue) // snapshot is outdated
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, isOutdated(cl), should.BeTrue) // snapshot is outdated
 			resultCI := ct.GFake.GetChange(gHost, int(ci.GetNumber()))
-			c.So(resultCI.Info.GetMessages(), c.ShouldHaveLength, 1)
-			c.So(resultCI.Info.GetMessages()[0].GetMessage(), c.ShouldEqual, input.Message)
-			c.So(gf.NonZeroVotes(resultCI.Info, CQLabelName), c.ShouldBeEmpty)
+			assert.Loosely(t, resultCI.Info.GetMessages(), should.HaveLength(1))
+			assert.Loosely(t, resultCI.Info.GetMessages()[0].GetMessage(), should.Equal(input.Message))
+			assert.Loosely(t, gf.NonZeroVotes(resultCI.Info, CQLabelName), should.BeEmpty)
 			onBehalfs, _ := splitSetReviewRequests()
-			c.So(onBehalfs, c.ShouldHaveLength, 1)
-			c.So(onBehalfs[0].GetOnBehalfOf(), c.ShouldEqual, triggererID)
+			assert.Loosely(t, onBehalfs, should.HaveLength(1))
+			assert.Loosely(t, onBehalfs[0].GetOnBehalfOf(), should.Equal(triggererID))
 		})
 
-		c.Convey("Post Message even if triggering votes has been removed already", func() {
+		t.Run("Post Message even if triggering votes has been removed already", func(t *ftt.Test) {
 			input.Triggers.CqVoteTrigger = cqTrigger
 			ct.GFake.MutateChange(gHost, int(ci.GetNumber()), func(c *gf.Change) {
 				gf.CQ(0, clock.Now(ctx), triggerer)(c.Info)
 			})
 			err := Reset(ctx, input)
-			c.So(err, c.ShouldBeNil)
-			c.So(isOutdated(cl), c.ShouldBeTrue) // snapshot is outdated
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, isOutdated(cl), should.BeTrue) // snapshot is outdated
 			resultCI := ct.GFake.GetChange(gHost, int(ci.GetNumber()))
-			c.So(resultCI.Info.GetMessages(), c.ShouldHaveLength, 1)
-			c.So(resultCI.Info.GetMessages()[0].GetMessage(), c.ShouldEqual, input.Message)
+			assert.Loosely(t, resultCI.Info.GetMessages(), should.HaveLength(1))
+			assert.Loosely(t, resultCI.Info.GetMessages()[0].GetMessage(), should.Equal(input.Message))
 		})
 
-		c.Convey("Post Message if CV has no permission to vote", func() {
+		t.Run("Post Message if CV has no permission to vote", func(t *ftt.Test) {
 			input.Triggers.CqVoteTrigger = cqTrigger
 			ct.GFake.MutateChange(gHost, int(ci.GetNumber()), func(c *gf.Change) {
 				c.ACLs = gf.ACLGrant(gf.OpRead, codes.PermissionDenied, lProject).Or(
@@ -512,29 +513,29 @@ func TestReset(t *testing.T) {
 					gf.ACLGrant(gf.OpReview, codes.PermissionDenied, lProject),
 				)
 			})
-			c.So(Reset(ctx, input), c.ShouldBeNil)
-			c.So(isOutdated(cl), c.ShouldBeFalse)
+			assert.Loosely(t, Reset(ctx, input), should.BeNil)
+			assert.Loosely(t, isOutdated(cl), should.BeFalse)
 			resultCI := ct.GFake.GetChange(gHost, int(ci.GetNumber())).Info
 			// CQ+2 vote remains.
-			c.So(gf.NonZeroVotes(resultCI, CQLabelName), la.ShouldResembleProto, []*gerritpb.ApprovalInfo{
+			assert.Loosely(t, gf.NonZeroVotes(resultCI, CQLabelName), should.Resemble([]*gerritpb.ApprovalInfo{
 				{
 					User:  triggerer,
 					Value: 2,
 					Date:  timestamppb.New(triggerTime),
 				},
-			})
+			}))
 			// But CL is no longer triggered.
-			c.So(findTriggers(resultCI).GetCqVoteTrigger(), c.ShouldBeNil)
+			assert.Loosely(t, findTriggers(resultCI).GetCqVoteTrigger(), should.BeNil)
 			// Still, user should know what happened.
 			expectedMsg := input.Message + `
 
 CV failed to unset the Commit-Queue label on your behalf. Please unvote and revote on the Commit-Queue label to retry.
 
 Bot data: {"action":"cancel","triggered_at":"2020-02-02T10:28:00Z","revision":"rev-010001-002"}`
-			c.So(resultCI.GetMessages()[0].GetMessage(), c.ShouldEqual, expectedMsg)
+			assert.Loosely(t, resultCI.GetMessages()[0].GetMessage(), should.Equal(expectedMsg))
 		})
 
-		c.Convey("Post Message if change is in bad state", func() {
+		t.Run("Post Message if change is in bad state", func(t *ftt.Test) {
 			input.Triggers.CqVoteTrigger = cqTrigger
 			ct.GFake.MutateChange(gHost, int(ci.GetNumber()), func(c *gf.Change) {
 				gf.Status(gerritpb.ChangeStatus_ABANDONED)(c.Info)
@@ -546,42 +547,42 @@ Bot data: {"action":"cancel","triggered_at":"2020-02-02T10:28:00Z","revision":"r
 				}
 			})
 			err := Reset(ctx, input)
-			c.So(err, c.ShouldBeNil)
-			c.So(isOutdated(cl), c.ShouldBeFalse)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, isOutdated(cl), should.BeFalse)
 			resultCI := ct.GFake.GetChange(gHost, int(ci.GetNumber())).Info
 			// CQ+2 vote remains.
-			c.So(gf.NonZeroVotes(resultCI, CQLabelName), la.ShouldResembleProto, []*gerritpb.ApprovalInfo{
+			assert.Loosely(t, gf.NonZeroVotes(resultCI, CQLabelName), should.Resemble([]*gerritpb.ApprovalInfo{
 				{
 					User:  triggerer,
 					Value: 2,
 					Date:  timestamppb.New(triggerTime),
 				},
-			})
+			}))
 			// But CL is no longer triggered.
-			c.So(findTriggers(resultCI).GetCqVoteTrigger(), c.ShouldBeNil)
+			assert.Loosely(t, findTriggers(resultCI).GetCqVoteTrigger(), should.BeNil)
 			// Still, user should know what happened.
-			c.So(resultCI.GetMessages(), c.ShouldHaveLength, 1)
-			c.So(resultCI.GetMessages()[0].GetMessage(), c.ShouldContainSubstring, "CV failed to unset the Commit-Queue label on your behalf")
+			assert.Loosely(t, resultCI.GetMessages(), should.HaveLength(1))
+			assert.Loosely(t, resultCI.GetMessages()[0].GetMessage(), should.ContainSubstring("CV failed to unset the Commit-Queue label on your behalf"))
 		})
 
-		c.Convey("Post Message also fails", func() {
+		t.Run("Post Message also fails", func(t *ftt.Test) {
 			input.Triggers.CqVoteTrigger = cqTrigger
 			ct.GFake.MutateChange(gHost, int(ci.GetNumber()), func(c *gf.Change) {
 				c.ACLs = gf.ACLGrant(gf.OpRead, codes.PermissionDenied, lProject)
 			})
 			err := Reset(ctx, input)
-			c.So(err, la.ShouldErrLike, "no permission to remove vote x-review.example.com/10001")
-			c.So(isOutdated(cl), c.ShouldBeFalse)
-			c.So(ErrResetPermanentTag.In(err), c.ShouldBeTrue)
+			assert.Loosely(t, err, should.ErrLike("no permission to remove vote x-review.example.com/10001"))
+			assert.Loosely(t, isOutdated(cl), should.BeFalse)
+			assert.Loosely(t, ErrResetPermanentTag.In(err), should.BeTrue)
 			resultCI := ct.GFake.GetChange(gHost, int(ci.GetNumber())).Info
-			c.So(gf.NonZeroVotes(resultCI, CQLabelName), la.ShouldResembleProto, []*gerritpb.ApprovalInfo{
+			assert.Loosely(t, gf.NonZeroVotes(resultCI, CQLabelName), should.Resemble([]*gerritpb.ApprovalInfo{
 				{
 					User:  triggerer,
 					Value: 2,
 					Date:  timestamppb.New(triggerTime),
 				},
-			})
-			c.So(resultCI.GetMessages(), c.ShouldBeEmpty)
+			}))
+			assert.Loosely(t, resultCI.GetMessages(), should.BeEmpty)
 		})
 	})
 }

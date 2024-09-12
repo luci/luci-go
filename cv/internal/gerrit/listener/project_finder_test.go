@@ -18,16 +18,20 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/gerrit/gobmap"
 	listenerpb "go.chromium.org/luci/cv/settings/listener"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
-func createTestLUCIProject(ctx context.Context, prj, url, repo string) {
+func createTestLUCIProject(t testing.TB, ctx context.Context, prj, url, repo string) {
+	t.Helper()
+
 	prjcfgtest.Create(ctx, prj, &cfgpb.Config{
 		ConfigGroups: []*cfgpb.ConfigGroup{
 			{
@@ -48,14 +52,14 @@ func createTestLUCIProject(ctx context.Context, prj, url, repo string) {
 	})
 	meta := prjcfgtest.MustExist(ctx, prj)
 	cgs, err := meta.GetConfigGroups(ctx)
-	So(err, ShouldBeNil)
-	So(gobmap.Update(ctx, &meta, cgs), ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil, truth.LineContext())
+	assert.Loosely(t, gobmap.Update(ctx, &meta, cgs), should.BeNil, truth.LineContext())
 }
 
 func TestProjectFinder(t *testing.T) {
 	t.Parallel()
 
-	Convey("ProjectFinder", t, func() {
+	ftt.Run("ProjectFinder", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 		finder := &projectFinder{
@@ -63,11 +67,11 @@ func TestProjectFinder(t *testing.T) {
 		}
 		check := func(host, repo string) []string {
 			prjs, err := finder.lookup(ctx, host, repo)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			return prjs
 		}
-		createTestLUCIProject(ctx, "chromium", "https://cr-review.gs.com/", "cr/src")
-		createTestLUCIProject(ctx, "chromium-m123", "https://cr-review.gs.com", "cr/src")
+		createTestLUCIProject(t, ctx, "chromium", "https://cr-review.gs.com/", "cr/src")
+		createTestLUCIProject(t, ctx, "chromium-m123", "https://cr-review.gs.com", "cr/src")
 
 		lCfg := &listenerpb.Settings{
 			GerritSubscriptions: []*listenerpb.Settings_GerritSubscription{
@@ -75,15 +79,15 @@ func TestProjectFinder(t *testing.T) {
 			},
 		}
 
-		Convey("with no disabled projects", func() {
-			So(finder.reload(lCfg), ShouldBeNil)
-			So(check("cr-review.gs.com", "cr/src"), ShouldResemble, []string{"chromium", "chromium-m123"})
+		t.Run("with no disabled projects", func(t *ftt.Test) {
+			assert.Loosely(t, finder.reload(lCfg), should.BeNil)
+			assert.Loosely(t, check("cr-review.gs.com", "cr/src"), should.Resemble([]string{"chromium", "chromium-m123"}))
 		})
 
-		Convey("with a disabled project", func() {
+		t.Run("with a disabled project", func(t *ftt.Test) {
 			lCfg.DisabledProjectRegexps = []string{"chromium"}
-			So(finder.reload(lCfg), ShouldBeNil)
-			So(check("cr-review.gs.com", "cr/src"), ShouldResemble, []string{"chromium-m123"})
+			assert.Loosely(t, finder.reload(lCfg), should.BeNil)
+			assert.Loosely(t, check("cr-review.gs.com", "cr/src"), should.Resemble([]string{"chromium-m123"}))
 		})
 	})
 }

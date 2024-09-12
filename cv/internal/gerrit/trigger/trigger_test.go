@@ -29,14 +29,15 @@ import (
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/run"
 
-	c "github.com/smartystreets/goconvey/convey"
-	la "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestHasAutoSubmit(t *testing.T) {
 	t.Parallel()
 
-	c.Convey("HasAutoSubmit", t, func() {
+	ftt.Run("HasAutoSubmit", t, func(t *ftt.Test) {
 		now := testclock.TestRecentTimeUTC
 		ci := &gerritpb.ChangeInfo{
 			Status:          gerritpb.ChangeStatus_NEW,
@@ -57,13 +58,13 @@ func TestHasAutoSubmit(t *testing.T) {
 				},
 			},
 		}
-		c.So(HasAutoSubmit(ci), c.ShouldBeFalse)
+		assert.Loosely(t, HasAutoSubmit(ci), should.BeFalse)
 		ci.Labels[AutoSubmitLabelName].All = []*gerritpb.ApprovalInfo{{
 			User:  gf.U("u-1"),
 			Value: modeToVote[run.FullRun],
 			Date:  timestamppb.New(now.Add(-15 * time.Minute)),
 		}}
-		c.So(HasAutoSubmit(ci), c.ShouldBeTrue)
+		assert.Loosely(t, HasAutoSubmit(ci), should.BeTrue)
 	})
 }
 
@@ -77,7 +78,7 @@ func TestFindCQTrigger(t *testing.T) {
 	const dryRunVote = 1
 	const fullRunVote = 2
 	cg := &cfgpb.ConfigGroup{}
-	c.Convey("findCQTrigger", t, func() {
+	ftt.Run("findCQTrigger", t, func(t *ftt.Test) {
 		now := testclock.TestRecentTimeUTC
 		ci := &gerritpb.ChangeInfo{
 			Status:          gerritpb.ChangeStatus_NEW,
@@ -99,50 +100,50 @@ func TestFindCQTrigger(t *testing.T) {
 			},
 		}
 
-		c.Convey("Abandoned CL", func() {
+		t.Run("Abandoned CL", func(t *ftt.Test) {
 			ci.Status = gerritpb.ChangeStatus_ABANDONED
-			c.So(findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg}), c.ShouldBeNil)
+			assert.Loosely(t, findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg}), should.BeNil)
 		})
-		c.Convey("Merged CL", func() {
+		t.Run("Merged CL", func(t *ftt.Test) {
 			ci.Status = gerritpb.ChangeStatus_MERGED
-			c.So(findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg}), c.ShouldBeNil)
+			assert.Loosely(t, findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg}), should.BeNil)
 		})
-		c.Convey("No votes", func() {
-			c.So(findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg}), c.ShouldBeNil)
+		t.Run("No votes", func(t *ftt.Test) {
+			assert.Loosely(t, findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg}), should.BeNil)
 		})
-		c.Convey("No Commit-Queue label info", func() {
+		t.Run("No Commit-Queue label info", func(t *ftt.Test) {
 			ci.Labels = nil
-			c.So(findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg}), c.ShouldBeNil)
+			assert.Loosely(t, findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg}), should.BeNil)
 		})
-		c.Convey("Single vote", func() {
+		t.Run("Single vote", func(t *ftt.Test) {
 			ci.Labels[CQLabelName].All = []*gerritpb.ApprovalInfo{{
 				User:  user1,
 				Value: dryRunVote,
 				Date:  timestamppb.New(now.Add(-15 * time.Minute)),
 			}}
 			trig := findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg})
-			c.So(trig, la.ShouldResembleProto, &run.Trigger{
+			assert.Loosely(t, trig, should.Resemble(&run.Trigger{
 				Time:            timestamppb.New(now.Add(-15 * time.Minute)),
 				Mode:            string(run.DryRun),
 				GerritAccountId: user1.GetAccountId(),
 				Email:           user1.GetEmail(),
-			})
+			}))
 		})
-		c.Convey(">CQ+2 is clamped to CQ+2", func() {
+		t.Run(">CQ+2 is clamped to CQ+2", func(t *ftt.Test) {
 			ci.Labels[CQLabelName].All = []*gerritpb.ApprovalInfo{{
 				User:  user1,
 				Value: 3,
 				Date:  timestamppb.New(now.Add(-15 * time.Minute)),
 			}}
 			trig := findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg})
-			c.So(trig, la.ShouldResembleProto, &run.Trigger{
+			assert.Loosely(t, trig, should.Resemble(&run.Trigger{
 				Time:            timestamppb.New(now.Add(-15 * time.Minute)),
 				Mode:            string(run.FullRun),
 				GerritAccountId: user1.GetAccountId(),
 				Email:           user1.GetEmail(),
-			})
+			}))
 		})
-		c.Convey("Earliest votes wins", func() {
+		t.Run("Earliest votes wins", func(t *ftt.Test) {
 			ci.Labels[CQLabelName].All = []*gerritpb.ApprovalInfo{
 				{
 					User:  user1,
@@ -156,30 +157,30 @@ func TestFindCQTrigger(t *testing.T) {
 				},
 			}
 			trig := findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg})
-			c.So(trig, la.ShouldResembleProto, &run.Trigger{
+			assert.Loosely(t, trig, should.Resemble(&run.Trigger{
 				Time:            timestamppb.New(now.Add(-15 * time.Minute)),
 				Mode:            string(run.DryRun),
 				GerritAccountId: user1.GetAccountId(),
 				Email:           user1.GetEmail(),
-			})
-			c.Convey("except when some later run was canceled via botdata message", func() {
+			}))
+			t.Run("except when some later run was canceled via botdata message", func(t *ftt.Test) {
 				cancelMsg, err := botdata.Append("", botdata.BotData{
 					Action:      botdata.Cancel,
 					TriggeredAt: now.Add(-15 * time.Minute),
 					Revision:    ci.GetCurrentRevision(),
 				})
-				c.So(err, c.ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				ci.Messages = append(ci.Messages, &gerritpb.ChangeMessageInfo{Message: cancelMsg})
 				trig := findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg})
-				c.So(trig, la.ShouldResembleProto, &run.Trigger{
+				assert.Loosely(t, trig, should.Resemble(&run.Trigger{
 					Time:            timestamppb.New(now.Add(-5 * time.Minute)),
 					Mode:            string(run.DryRun),
 					GerritAccountId: user2.GetAccountId(),
 					Email:           user2.GetEmail(),
-				})
+				}))
 			})
 		})
-		c.Convey("Earliest CQ+2 vote wins against even earlier CQ+1", func() {
+		t.Run("Earliest CQ+2 vote wins against even earlier CQ+1", func(t *ftt.Test) {
 			ci.Labels[CQLabelName].All = []*gerritpb.ApprovalInfo{
 				{
 					User:  user1,
@@ -203,14 +204,14 @@ func TestFindCQTrigger(t *testing.T) {
 				},
 			}
 			trig := findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg})
-			c.So(trig, la.ShouldResembleProto, &run.Trigger{
+			assert.Loosely(t, trig, should.Resemble(&run.Trigger{
 				Time:            timestamppb.New(now.Add(-10 * time.Minute)),
 				Mode:            string(run.FullRun),
 				GerritAccountId: user2.GetAccountId(),
 				Email:           user2.GetEmail(),
-			})
+			}))
 		})
-		c.Convey("Sticky Vote bumps trigger time to cur revision creation time", func() {
+		t.Run("Sticky Vote bumps trigger time to cur revision creation time", func(t *ftt.Test) {
 			ci.Labels[CQLabelName].All = []*gerritpb.ApprovalInfo{{
 				User:  user1,
 				Value: fullRunVote,
@@ -222,14 +223,14 @@ func TestFindCQTrigger(t *testing.T) {
 				Created: timestamppb.New(now.Add(-10 * time.Minute)),
 			}
 			trig := findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg})
-			c.So(trig, la.ShouldResembleProto, &run.Trigger{
+			assert.Loosely(t, trig, should.Resemble(&run.Trigger{
 				Time:            timestamppb.New(now.Add(-10 * time.Minute)),
 				Mode:            string(run.FullRun),
 				GerritAccountId: user1.GetAccountId(),
 				Email:           user1.GetEmail(),
-			})
+			}))
 		})
-		c.Convey("Additional modes", func() {
+		t.Run("Additional modes", func(t *ftt.Test) {
 			const customLabel = "Custom"
 			const customRunMode = "CUSTOM_RUN"
 			cg.AdditionalModes = []*cfgpb.Mode{
@@ -254,17 +255,17 @@ func TestFindCQTrigger(t *testing.T) {
 					Date:  timestamppb.New(now.Add(-15 * time.Minute)),
 				},
 			}}
-			c.Convey("Simplest possible custom run", func() {
+			t.Run("Simplest possible custom run", func(t *ftt.Test) {
 				trig := findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg})
-				c.So(trig, la.ShouldResembleProto, &run.Trigger{
+				assert.Loosely(t, trig, should.Resemble(&run.Trigger{
 					Time:            timestamppb.New(now.Add(-15 * time.Minute)),
 					Mode:            customRunMode,
 					ModeDefinition:  cg.AdditionalModes[0],
 					GerritAccountId: user1.GetAccountId(),
 					Email:           user1.GetEmail(),
-				})
+				}))
 			})
-			c.Convey("Custom run despite other users' votes", func() {
+			t.Run("Custom run despite other users' votes", func(t *ftt.Test) {
 				ci.Labels[CQLabelName].All = []*gerritpb.ApprovalInfo{
 					{
 						User:  user1,
@@ -290,41 +291,41 @@ func TestFindCQTrigger(t *testing.T) {
 					},
 				}}
 				trig := findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg})
-				c.So(trig.GetMode(), c.ShouldEqual, customRunMode)
+				assert.Loosely(t, trig.GetMode(), should.Equal(customRunMode))
 			})
-			c.Convey("Not applicable cases", func() {
-				c.Convey("Additional vote must have the same timestamp", func() {
-					c.Convey("before", func() {
+			t.Run("Not applicable cases", func(t *ftt.Test) {
+				t.Run("Additional vote must have the same timestamp", func(t *ftt.Test) {
+					t.Run("before", func(t *ftt.Test) {
 						ci.Labels[customLabel].GetAll()[0].Date.Seconds++
 						trig := findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg})
-						c.So(trig.GetMode(), c.ShouldEqual, string(run.DryRun))
+						assert.Loosely(t, trig.GetMode(), should.Equal(string(run.DryRun)))
 					})
-					c.Convey("after", func() {
+					t.Run("after", func(t *ftt.Test) {
 						ci.Labels[customLabel].GetAll()[0].Date.Seconds--
 						trig := findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg})
-						c.So(trig.GetMode(), c.ShouldEqual, string(run.DryRun))
+						assert.Loosely(t, trig.GetMode(), should.Equal(string(run.DryRun)))
 					})
 				})
-				c.Convey("Additional vote be from the same account", func() {
+				t.Run("Additional vote be from the same account", func(t *ftt.Test) {
 					ci.Labels[customLabel].GetAll()[0].User = user2
 					trig := findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg})
-					c.So(trig.GetMode(), c.ShouldEqual, string(run.DryRun))
+					assert.Loosely(t, trig.GetMode(), should.Equal(string(run.DryRun)))
 				})
-				c.Convey("Additional vote must have expected value", func() {
+				t.Run("Additional vote must have expected value", func(t *ftt.Test) {
 					ci.Labels[customLabel].GetAll()[0].Value = 100
 					trig := findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg})
-					c.So(trig.GetMode(), c.ShouldEqual, string(run.DryRun))
+					assert.Loosely(t, trig.GetMode(), should.Equal(string(run.DryRun)))
 				})
-				c.Convey("Additional vote must be for the correct label", func() {
+				t.Run("Additional vote must be for the correct label", func(t *ftt.Test) {
 					ci.Labels[customLabel+"-Other"] = ci.Labels[customLabel]
 					delete(ci.Labels, customLabel)
 					trig := findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg})
-					c.So(trig.GetMode(), c.ShouldEqual, string(run.DryRun))
+					assert.Loosely(t, trig.GetMode(), should.Equal(string(run.DryRun)))
 				})
-				c.Convey("CQ vote must have correct value", func() {
+				t.Run("CQ vote must have correct value", func(t *ftt.Test) {
 					ci.Labels[CQLabelName].GetAll()[0].Value = fullRunVote
 					trig := findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg})
-					c.So(trig.GetMode(), c.ShouldEqual, string(run.FullRun))
+					assert.Loosely(t, trig.GetMode(), should.Equal(string(run.FullRun)))
 				})
 			})
 		})
@@ -365,14 +366,13 @@ func TestFindNewPatchsetRunTrigger(t *testing.T) {
 		TriggerNewPatchsetRunAfterPS: 1,
 	}
 
-	c.Convey("findNewPatchsetRun", t, func() {
-		c.Convey("Not configured to trigger new patchset runs", func() {
-			c.So(
+	ftt.Run("findNewPatchsetRun", t, func(t *ftt.Test) {
+		t.Run("Not configured to trigger new patchset runs", func(t *ftt.Test) {
+			assert.Loosely(t,
 				findNewPatchsetRunTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg, TriggerNewPatchsetRunAfterPS: cle.TriggerNewPatchsetRunAfterPS}),
-				c.ShouldBeNil,
-			)
+				should.BeNil)
 		})
-		c.Convey("Configured", func() {
+		t.Run("Configured", func(t *ftt.Test) {
 			// Add npr builder to config.
 			cg.Verifiers = &cfgpb.Verifiers{
 				Tryjob: &cfgpb.Verifiers_Tryjob{
@@ -384,25 +384,24 @@ func TestFindNewPatchsetRunTrigger(t *testing.T) {
 					},
 				},
 			}
-			c.Convey("Current patchset not ended", func() {
-				c.So(
+			t.Run("Current patchset not ended", func(t *ftt.Test) {
+				assert.Loosely(t,
 					findNewPatchsetRunTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg, TriggerNewPatchsetRunAfterPS: cle.TriggerNewPatchsetRunAfterPS}),
-					la.ShouldResembleProto,
-					&run.Trigger{
-						Mode:            string(run.NewPatchsetRun),
-						Time:            timestamppb.New(ts2),
-						Email:           owner.GetEmail(),
-						GerritAccountId: owner.GetAccountId(),
-					},
-				)
+					should.Resemble(
+						&run.Trigger{
+							Mode:            string(run.NewPatchsetRun),
+							Time:            timestamppb.New(ts2),
+							Email:           owner.GetEmail(),
+							GerritAccountId: owner.GetAccountId(),
+						},
+					))
 			})
-			c.Convey("Current patchset already ended", func() {
+			t.Run("Current patchset already ended", func(t *ftt.Test) {
 				// Set CLEntity NewPatchsetUploaded
 				cle.TriggerNewPatchsetRunAfterPS = 2
-				c.So(
+				assert.Loosely(t,
 					findNewPatchsetRunTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg, TriggerNewPatchsetRunAfterPS: cle.TriggerNewPatchsetRunAfterPS}),
-					c.ShouldBeNil,
-				)
+					should.BeNil)
 			})
 		})
 	})

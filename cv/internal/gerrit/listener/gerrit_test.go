@@ -24,13 +24,13 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	listenerpb "go.chromium.org/luci/cv/settings/listener"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 type testScheduler struct {
@@ -45,10 +45,10 @@ func (sch *testScheduler) Schedule(_ context.Context, tsk *changelist.UpdateCLTa
 func TestGerrit(t *testing.T) {
 	t.Parallel()
 
-	Convey("gerritSubscriber", t, func() {
+	ftt.Run("gerritSubscriber", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
-		client, closeFn := mockPubSub(ctx)
+		client, closeFn := mockPubSub(t, ctx)
 		defer closeFn()
 		finder := &projectFinder{
 			isListenerEnabled: func(string) bool { return true },
@@ -58,24 +58,24 @@ func TestGerrit(t *testing.T) {
 			MessageFormat: listenerpb.Settings_GerritSubscription_JSON,
 		}
 
-		Convey("create a reference to subscription", func() {
+		t.Run("create a reference to subscription", func(t *ftt.Test) {
 			sber := newGerritSubscriber(client, &testScheduler{}, finder, settings)
-			So(sber.sub.ID(), ShouldEqual, "example.org")
+			assert.Loosely(t, sber.sub.ID(), should.Equal("example.org"))
 			settings.SubscriptionId = "my-sub"
 			sber = newGerritSubscriber(client, &testScheduler{}, finder, settings)
-			So(sber.sub.ID(), ShouldEqual, "my-sub")
+			assert.Loosely(t, sber.sub.ID(), should.Equal("my-sub"))
 
-			Convey("with receive settings", func() {
+			t.Run("with receive settings", func(t *ftt.Test) {
 				settings.ReceiveSettings = &listenerpb.Settings_ReceiveSettings{
 					NumGoroutines:          defaultNumGoroutines + 1,
 					MaxOutstandingMessages: defaultMaxOutstandingMessages + 1,
 				}
 				sber = newGerritSubscriber(client, &testScheduler{}, finder, settings)
-				So(sber.sameReceiveSettings(ctx, settings.ReceiveSettings), ShouldBeTrue)
+				assert.Loosely(t, sber.sameReceiveSettings(ctx, settings.ReceiveSettings), should.BeTrue)
 			})
 		})
 
-		Convey("sameGerritSubscriberSettings", func() {
+		t.Run("sameGerritSubscriberSettings", func(t *ftt.Test) {
 			settings.ReceiveSettings = &listenerpb.Settings_ReceiveSettings{
 				NumGoroutines:          1,
 				MaxOutstandingMessages: 2,
@@ -84,36 +84,36 @@ func TestGerrit(t *testing.T) {
 			check := func() bool {
 				return sameGerritSubscriberSettings(ctx, sber, settings)
 			}
-			So(check(), ShouldBeTrue)
+			assert.Loosely(t, check(), should.BeTrue)
 
-			Convey("with different receiver settings", func() {
+			t.Run("with different receiver settings", func(t *ftt.Test) {
 				settings.ReceiveSettings.NumGoroutines++
-				So(check(), ShouldBeFalse)
+				assert.Loosely(t, check(), should.BeFalse)
 				settings.ReceiveSettings.NumGoroutines--
 				settings.ReceiveSettings.MaxOutstandingMessages++
-				So(check(), ShouldBeFalse)
+				assert.Loosely(t, check(), should.BeFalse)
 				settings.ReceiveSettings.MaxOutstandingMessages--
-				So(check(), ShouldBeTrue)
+				assert.Loosely(t, check(), should.BeTrue)
 			})
-			Convey("with different subscription ID", func() {
+			t.Run("with different subscription ID", func(t *ftt.Test) {
 				settings.SubscriptionId = "new-sub"
-				So(check(), ShouldBeFalse)
+				assert.Loosely(t, check(), should.BeFalse)
 			})
-			Convey("with different host", func() {
+			t.Run("with different host", func(t *ftt.Test) {
 				settings.Host = "example.org"
 				settings.SubscriptionId = "example-sub"
 				sber := newGerritSubscriber(client, &testScheduler{}, finder, settings)
 
 				// same subscription ID, but different host.
 				settings.Host = "example-2.org"
-				So(sameGerritSubscriberSettings(ctx, sber, settings), ShouldBeFalse)
+				assert.Loosely(t, sameGerritSubscriberSettings(ctx, sber, settings), should.BeFalse)
 			})
 		})
 
-		Convey("processes", func() {
+		t.Run("processes", func(t *ftt.Test) {
 			sch := &testScheduler{}
 			msg := &pubsub.Message{}
-			createTestLUCIProject(ctx, "chromium", "https://example.org/", "abc/foo")
+			createTestLUCIProject(t, ctx, "chromium", "https://example.org/", "abc/foo")
 			payload := []byte(`{
 				"name": "projects/project/repos/abc/foo",
 				"url": "https://example.org/p/project/r/abc/foo",
@@ -132,48 +132,53 @@ func TestGerrit(t *testing.T) {
 			}`)
 			process := func() *subscriber {
 				sber := newGerritSubscriber(client, sch, finder, settings)
-				So(sber.proc.process(ctx, msg), ShouldBeNil)
+				assert.Loosely(t, sber.proc.process(ctx, msg), should.BeNil)
 				return sber
 			}
 
-			Convey("empty", func() {
+			t.Run("empty", func(t *ftt.Test) {
 				process()
-				So(sch.tasks, ShouldHaveLength, 0)
+				assert.Loosely(t, sch.tasks, should.HaveLength(0))
 			})
-			Convey("message from an unwatched repo", func() {
+			t.Run("message from an unwatched repo", func(t *ftt.Test) {
 				cfg := &listenerpb.Settings{
 					DisabledProjectRegexps: []string{"chromium"},
 					GerritSubscriptions:    []*listenerpb.Settings_GerritSubscription{settings},
 				}
-				So(finder.reload(cfg), ShouldBeNil)
+				assert.Loosely(t, finder.reload(cfg), should.BeNil)
 				msg.Data = payload
 				process()
-				So(sch.tasks, ShouldHaveLength, 0)
+				assert.Loosely(t, sch.tasks, should.HaveLength(0))
 			})
-			Convey("message from a watched repo", func() {
-				Convey("in json", func() {
+			t.Run("message from a watched repo", func(t *ftt.Test) {
+				check := func(t testing.TB) {
+					process()
+					assert.Loosely(t, sch.tasks, should.Resemble([]*changelist.UpdateCLTask{
+						{
+							LuciProject: "chromium",
+							ExternalId:  "gerrit/example.org/123",
+							Requester:   changelist.UpdateCLTask_PUBSUB_POLL,
+							Hint:        &changelist.UpdateCLTask_Hint{MetaRevId: "feas"},
+						},
+					}))
+				}
+
+				t.Run("in json", func(t *ftt.Test) {
 					msg.Data = payload
+					check(t)
 				})
-				Convey("in binary", func() {
+				t.Run("in binary", func(t *ftt.Test) {
 					event := &gerritpb.SourceRepoEvent{}
-					So(protojson.Unmarshal(payload, event), ShouldBeNil)
+					assert.Loosely(t, protojson.Unmarshal(payload, event), should.BeNil)
 					bin, err := proto.Marshal(event)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					msg.Data = bin
 					settings.MessageFormat = listenerpb.Settings_GerritSubscription_PROTO_BINARY
-				})
-				process()
-				So(sch.tasks, ShouldResembleProto, []*changelist.UpdateCLTask{
-					{
-						LuciProject: "chromium",
-						ExternalId:  "gerrit/example.org/123",
-						Requester:   changelist.UpdateCLTask_PUBSUB_POLL,
-						Hint:        &changelist.UpdateCLTask_Hint{MetaRevId: "feas"},
-					},
+					check(t)
 				})
 			})
 
-			Convey("panic for an unknown enum", func() {
+			t.Run("panic for an unknown enum", func(t *ftt.Test) {
 				// This test is to ensure that gerritProcessor.process() handles
 				// all the enums defined for gerrit_subscription.message_format.
 				//
