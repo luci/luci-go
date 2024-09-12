@@ -10,3 +10,16 @@ dispatch:
 # groups is handled only by the Go version.
 - url: "*/auth_service/api/v1/importer/ingest_tarball/*"
   service: defaultv2
+# Add override of routing for UI pages available in Auth Service v2.
+- url: "*/auth/groups*"
+  service: defaultv2
+- url: "*/auth/listing"
+  service: defaultv2
+- url: "*/auth/change_log"
+  service: defaultv2
+- url: "*/auth/ip_allowlists"
+  service: defaultv2
+- url: "*/auth/lookup"
+  service: defaultv2
+- url: "*/auth/services"
+  service: defaultv2
