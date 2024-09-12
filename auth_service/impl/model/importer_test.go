@@ -133,7 +133,7 @@ func TestGroupImporterConfigModel(t *testing.T) {
 
 						stored, err := GetGroupImporterConfig(ctx)
 						assert.Loosely(t, err, should.BeNil)
-						assert.Loosely(t, stored.ModifiedTS, should.Equal(testCreatedTS))
+						assert.Loosely(t, stored.ModifiedTS, should.Match(testCreatedTS))
 						actual, err := stored.ToProto()
 						assert.Loosely(t, err, should.BeNil)
 						assert.Loosely(t, actual, should.Match(testConfig))
@@ -160,7 +160,7 @@ func TestGroupImporterConfigModel(t *testing.T) {
 
 						stored, err := GetGroupImporterConfig(ctx)
 						assert.Loosely(t, err, should.BeNil)
-						assert.Loosely(t, stored.ModifiedTS, should.Equal(testModifiedTS))
+						assert.Loosely(t, stored.ModifiedTS, should.Match(testModifiedTS))
 						actual, err := stored.ToProto()
 						assert.Loosely(t, err, should.BeNil)
 						assert.Loosely(t, actual, should.Match(otherConfig))
@@ -187,7 +187,7 @@ func TestGroupImporterConfigModel(t *testing.T) {
 
 						stored, err := GetGroupImporterConfig(ctx)
 						assert.Loosely(t, err, should.BeNil)
-						assert.Loosely(t, stored.ModifiedTS, should.Equal(testCreatedTS))
+						assert.Loosely(t, stored.ModifiedTS, should.Match(testCreatedTS))
 						actual, err := stored.ToProto()
 						assert.Loosely(t, err, should.BeNil)
 						assert.Loosely(t, actual, should.Match(testConfig))

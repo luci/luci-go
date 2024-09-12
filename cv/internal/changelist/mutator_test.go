@@ -128,7 +128,7 @@ func TestMutatorSingleCL(t *testing.T) {
 				assert.Loosely(t, priorSnapshot, should.Resemble(s1))
 				assert.That(t, cl.ExternalID, should.Equal(eid))
 				assert.Loosely(t, cl.EVersion, should.Equal(2))
-				assert.That(t, cl.UpdateTime, should.Equal(ct.Clock.Now().UTC()))
+				assert.That(t, cl.UpdateTime, should.Match(ct.Clock.Now().UTC()))
 				assert.Loosely(t, cl.RetentionKey, should.NotBeEmpty)
 				assert.Loosely(t, cl.Snapshot, should.Resemble(s2))
 				assert.Loosely(t, tj.clsNotified, should.HaveLength(1))
@@ -158,7 +158,7 @@ func TestMutatorSingleCL(t *testing.T) {
 
 				assert.That(t, cl.ExternalID, should.Equal(eid))
 				assert.That(t, cl.EVersion, should.Equal(priorCL.EVersion))
-				assert.That(t, cl.UpdateTime, should.Equal(priorCL.UpdateTime))
+				assert.That(t, cl.UpdateTime, should.Match(priorCL.UpdateTime))
 				assert.That(t, cl.RetentionKey, should.Equal(priorCL.RetentionKey))
 
 				assert.Loosely(t, pm.byProject, should.BeEmpty)
@@ -194,7 +194,7 @@ func TestMutatorSingleCL(t *testing.T) {
 				assert.Loosely(t, cl.ID, should.Resemble(priorCL.ID))
 				assert.That(t, cl.ExternalID, should.Equal(eid))
 				assert.Loosely(t, cl.EVersion, should.Equal(2))
-				assert.That(t, cl.UpdateTime, should.Equal(ct.Clock.Now().UTC()))
+				assert.That(t, cl.UpdateTime, should.Match(ct.Clock.Now().UTC()))
 				assert.Loosely(t, cl.RetentionKey, should.NotBeEmpty)
 				assert.Loosely(t, cl.Snapshot, should.Resemble(s2))
 
@@ -248,7 +248,7 @@ func TestMutatorSingleCL(t *testing.T) {
 				assert.Loosely(t, cl.ID, should.Resemble(priorCL.ID))
 				assert.That(t, cl.ExternalID, should.Equal(eid))
 				assert.That(t, cl.EVersion, should.Equal(priorCL.EVersion))
-				assert.That(t, cl.UpdateTime, should.Equal(priorCL.UpdateTime))
+				assert.That(t, cl.UpdateTime, should.Match(priorCL.UpdateTime))
 				assert.That(t, cl.RetentionKey, should.Equal(priorCL.RetentionKey))
 
 				expectNoNotifications()
@@ -368,7 +368,7 @@ func TestMutatorBatch(t *testing.T) {
 					assert.Loosely(t, dsCLs[i].IncompleteRuns.ContainsSorted(run3), should.BeTrue)
 					assert.That(t, dsCLs[i].ID, should.Equal(resCLs[i].ID))
 					assert.That(t, dsCLs[i].EVersion, should.Equal(resCLs[i].EVersion))
-					assert.That(t, dsCLs[i].UpdateTime, should.Equal(resCLs[i].UpdateTime))
+					assert.That(t, dsCLs[i].UpdateTime, should.Match(resCLs[i].UpdateTime))
 					assert.That(t, dsCLs[i].RetentionKey, should.Equal(resCLs[i].RetentionKey))
 					assert.Loosely(t, dsCLs[i].IncompleteRuns, should.Resemble(resCLs[i].IncompleteRuns))
 					eversions[dsCLs[i].ID] = dsCLs[i].EVersion
@@ -588,7 +588,7 @@ func TestMutatorConcurrent(t *testing.T) {
 		// Since all workers have succeeded, the latest snapshot
 		// (by ExternalUpdateTime) must be the current snapshot in datastore.
 		latestTS := epoch.Add((N - 1) * time.Second)
-		assert.That(t, cl.Snapshot.GetExternalUpdateTime().AsTime(), should.Equal(latestTS))
+		assert.That(t, cl.Snapshot.GetExternalUpdateTime().AsTime(), should.Match(latestTS))
 		assert.Loosely(t, cl.Access.GetByProject()[lProject].GetUpdateTime().AsTime(), should.Resemble(latestTS))
 		// Furthermore, there must have been at most N non-noop UpdateSnapshot calls
 		// (one per worker, iff they did it exactly in the increasing order of

@@ -207,7 +207,7 @@ func TestConcurrentRunsSingular(t *testing.T) {
 			default:
 				actualWeird = append(actualWeird, a.gChange)
 			}
-			assert.Loosely(t, r.CreateTime, should.Equal(datastore.RoundTime(a.triggerTime.UTC())))
+			assert.Loosely(t, r.CreateTime, should.Match(datastore.RoundTime(a.triggerTime.UTC())))
 			assert.Loosely(t, r.EndTime, should.HappenAfter(a.finishTime))
 		}
 

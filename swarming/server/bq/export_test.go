@@ -107,7 +107,7 @@ func TestScheduleExportTasks(t *testing.T) {
 			assert.Loosely(t, payloads, should.Resemble(expected))
 			err = datastore.Get(ctx, &schedule)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, schedule.NextExport, should.Equal(start.Add(4*exportDuration)))
+			assert.Loosely(t, schedule.NextExport, should.Match(start.Add(4*exportDuration)))
 		})
 
 		t.Run("Creates 0 export tasks if ExportSchedule doesn't exist", func(t *ftt.Test) {
@@ -117,7 +117,7 @@ func TestScheduleExportTasks(t *testing.T) {
 			schedule := ExportSchedule{ID: TaskRequests}
 			err = datastore.Get(ctx, &schedule)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, schedule.NextExport, should.Equal(testTime.Add(-minEventAge).Truncate(time.Minute)))
+			assert.Loosely(t, schedule.NextExport, should.Match(testTime.Add(-minEventAge).Truncate(time.Minute)))
 		})
 
 		t.Run("We cannot create more than 20 tasks at a time", func(t *ftt.Test) {

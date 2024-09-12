@@ -101,7 +101,7 @@ func TestFindReuseInCV(t *testing.T) {
 			assert.Loosely(t, result, should.HaveLength(1))
 			assert.Loosely(t, result, should.ContainKey(defFoo))
 			assert.Loosely(t, result[defFoo].EVersion, should.Equal(tj.EVersion+1))
-			assert.Loosely(t, result[defFoo].EntityUpdateTime, should.Equal(now))
+			assert.Loosely(t, result[defFoo].EntityUpdateTime, should.Match(now))
 			assert.Loosely(t, result[defFoo].ReusedBy, should.Resemble(common.RunIDs{runID}))
 		})
 
@@ -198,7 +198,7 @@ func TestFindReuseInCV(t *testing.T) {
 			assert.Loosely(t, result, should.ContainKey(defFoo))
 			assert.Loosely(t, result[defFoo].ID, should.Equal(tj.ID))
 			assert.Loosely(t, result[defFoo].EVersion, should.Equal(tj.EVersion))
-			assert.Loosely(t, result[defFoo].EntityUpdateTime, should.Equal(tj.EntityUpdateTime))
+			assert.Loosely(t, result[defFoo].EntityUpdateTime, should.Match(tj.EntityUpdateTime))
 			assert.Loosely(t, result[defFoo].ReusedBy, should.Resemble(common.RunIDs{runID}))
 		})
 	})

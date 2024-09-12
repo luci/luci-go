@@ -301,7 +301,7 @@ func TestPackageReading(t *testing.T) {
 		assert.Loosely(t, dest.fileByName("abc").writable, should.BeFalse)
 		assert.Loosely(t, dest.fileByName("writable").writable, should.BeTrue)
 		assert.Loosely(t, dest.fileByName("writable").modtime.IsZero(), should.BeTrue)
-		assert.Loosely(t, dest.fileByName("timestamped").modtime, should.Equal(testMTime))
+		assert.Loosely(t, dest.fileByName("timestamped").modtime, should.Match(testMTime))
 		assert.Loosely(t, dest.fileByName("rel_symlink").symlinkTarget, should.Equal("abc"))
 		assert.Loosely(t, dest.fileByName("abs_symlink").symlinkTarget, should.Equal("/abc/def"))
 

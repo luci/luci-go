@@ -57,7 +57,7 @@ func TestCL(t *testing.T) {
 			// ID must be autoset to non-0 value.
 			assert.Loosely(t, cl.ID, should.NotEqual(0))
 			assert.Loosely(t, cl.EVersion, should.Equal(1))
-			assert.Loosely(t, cl.UpdateTime, should.Equal(epoch))
+			assert.Loosely(t, cl.UpdateTime, should.Match(epoch))
 			assert.Loosely(t, cl.RetentionKey, should.Equal(fmt.Sprintf("%02d/%010d", cl.ID%retentionKeyShards, epoch.Unix())))
 
 			t.Run("ExternalID.Get loads existing CL", func(t *ftt.Test) {
@@ -66,7 +66,7 @@ func TestCL(t *testing.T) {
 				assert.Loosely(t, cl2.ID, should.Equal(cl.ID))
 				assert.Loosely(t, cl2.ExternalID, should.Equal(eid))
 				assert.Loosely(t, cl2.EVersion, should.Equal(1))
-				assert.Loosely(t, cl2.UpdateTime, should.Equal(cl.UpdateTime))
+				assert.Loosely(t, cl2.UpdateTime, should.Match(cl.UpdateTime))
 				assert.Loosely(t, cl2.Snapshot, should.Resemble(cl.Snapshot))
 			})
 
@@ -76,7 +76,7 @@ func TestCL(t *testing.T) {
 				assert.Loosely(t, cl3.ID, should.Equal(cl.ID))
 				assert.Loosely(t, cl3.ExternalID, should.Resemble(eid))
 				assert.Loosely(t, cl3.EVersion, should.Equal(1))
-				assert.Loosely(t, cl3.UpdateTime, should.Equal(cl.UpdateTime))
+				assert.Loosely(t, cl3.UpdateTime, should.Match(cl.UpdateTime))
 				assert.Loosely(t, cl3.Snapshot, should.Resemble(cl.Snapshot))
 			})
 

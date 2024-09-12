@@ -84,7 +84,7 @@ func TestIsActionTakenOnGerritCL(t *testing.T) {
 					return expectedActionTime
 				})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actionTime, should.Equal(expectedActionTime))
+			assert.Loosely(t, actionTime, should.Match(expectedActionTime))
 		})
 
 		t.Run("Action taken for CL in Gerrit", func(t *ftt.Test) {
@@ -103,7 +103,7 @@ func TestIsActionTakenOnGerritCL(t *testing.T) {
 					}
 				})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actionTime, should.Equal(expectedActionTime))
+			assert.Loosely(t, actionTime, should.Match(expectedActionTime))
 		})
 
 		t.Run("Action not even taken for CL in Gerrit", func(t *ftt.Test) {

@@ -142,8 +142,8 @@ func TestCancel(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 
 			assert.Loosely(t, datastore.Get(ctx, trs, tr), should.BeNil)
-			assert.Loosely(t, trs.Abandoned.Get(), should.Equal(now))
-			assert.Loosely(t, trs.Modified, should.Equal(now))
+			assert.Loosely(t, trs.Abandoned.Get(), should.Match(now))
+			assert.Loosely(t, trs.Modified, should.Match(now))
 			assert.Loosely(t, trs.State, should.Equal(apipb.TaskState_CANCELED))
 			assert.Loosely(t, tr.IsReapable(), should.BeFalse)
 			assert.Loosely(t, fakeTaskQueue["rbe-cancel"], should.Match([]string{
@@ -171,7 +171,7 @@ func TestCancel(t *testing.T) {
 				_, err := c.Run(ctx)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, datastore.Get(ctx, trs), should.BeNil)
-				assert.Loosely(t, trs.Modified, should.Equal(now.Add(-time.Minute)))
+				assert.Loosely(t, trs.Modified, should.Match(now.Add(-time.Minute)))
 			})
 
 			t.Run("kill running", func(t *ftt.Test) {
@@ -187,10 +187,10 @@ func TestCancel(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 
 				assert.Loosely(t, datastore.Get(ctx, trr, trs), should.BeNil)
-				assert.Loosely(t, trs.Abandoned.Get(), should.Equal(trr.Abandoned.Get()))
-				assert.Loosely(t, trs.Abandoned.Get(), should.Equal(now))
-				assert.Loosely(t, trs.Modified, should.Equal(trr.Modified))
-				assert.Loosely(t, trs.Modified, should.Equal(now))
+				assert.Loosely(t, trs.Abandoned.Get(), should.Match(trr.Abandoned.Get()))
+				assert.Loosely(t, trs.Abandoned.Get(), should.Match(now))
+				assert.Loosely(t, trs.Modified, should.Match(trr.Modified))
+				assert.Loosely(t, trs.Modified, should.Match(now))
 				assert.Loosely(t, trr.Killing, should.Equal(true))
 				assert.Loosely(t, trs.State, should.Equal(apipb.TaskState_RUNNING))
 				assert.Loosely(t, fakeTaskQueue["cancel-children-tasks-go"], should.Match([]string{tID}))
@@ -213,8 +213,8 @@ func TestCancel(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 
 				assert.Loosely(t, datastore.Get(ctx, trr, trs), should.BeNil)
-				assert.Loosely(t, trs.Modified, should.Equal(trr.Modified))
-				assert.Loosely(t, trs.Modified, should.Equal(previousModified))
+				assert.Loosely(t, trs.Modified, should.Match(trr.Modified))
+				assert.Loosely(t, trs.Modified, should.Match(previousModified))
 			})
 		})
 	})

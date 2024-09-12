@@ -17,6 +17,8 @@ package should
 import (
 	"math"
 	"reflect"
+	"strings"
+	"time"
 
 	"go.chromium.org/luci/common/testing/truth/comparison"
 	"go.chromium.org/luci/common/testing/truth/failure"
@@ -37,6 +39,21 @@ func checkIsNaN[T comparable](cmpName string, expected T) comparison.Func[T] {
 	return nil
 }
 
+var timeType = reflect.TypeFor[time.Time]()
+
+func timeEqual[T any](cmpName string) comparison.Func[T] {
+	return func(actual T) *failure.Summary {
+		return comparison.NewSummaryBuilder(cmpName, actual).
+			AddFindingf("Error", "should.Equal[time.Time] is always incorrect. Use should.Match instead.").
+			Because(strings.Join([]string{
+				"time.Time has internal fields due to support for monotonic time.",
+				"Comparing time.Time with struct equivalence leads to baffling results where ",
+				"two time.Time objects with the same wallclock time end up being unequal.",
+			}, "\n")).
+			Summary
+	}
+}
+
 // Equal checks whether two objects are equal, as determined by Go's `==`
 // operator.
 //
@@ -45,6 +62,10 @@ func checkIsNaN[T comparable](cmpName string, expected T) comparison.Func[T] {
 // `actual` are NaN.
 func Equal[T comparable](expected T) comparison.Func[T] {
 	cmpName := "should.Equal"
+
+	if reflect.TypeFor[T]() == timeType {
+		return timeEqual[T](cmpName)
+	}
 
 	if fn := checkIsNaN(cmpName, expected); fn != nil {
 		return fn
@@ -73,6 +94,10 @@ func Equal[T comparable](expected T) comparison.Func[T] {
 // `actual` are NaN.
 func NotEqual[T comparable](expected T) comparison.Func[T] {
 	cmpName := "should.NotEqual"
+
+	if reflect.TypeFor[T]() == timeType {
+		return timeEqual[T](cmpName)
+	}
 
 	if fn := checkIsNaN(cmpName, expected); fn != nil {
 		return fn

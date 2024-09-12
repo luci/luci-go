@@ -699,7 +699,7 @@ func TestTriage(t *testing.T) {
 					assert.Loosely(t, rc.ConfigGroupID.Name(), should.Match("combinable"))
 					assert.Loosely(t, rc.Mode, should.Resemble(run.FullRun))
 					trig := pcl33.GetTriggers().GetCqVoteTrigger()
-					assert.Loosely(t, rc.CreateTime, should.Equal(trig.GetTime().AsTime()))
+					assert.Loosely(t, rc.CreateTime, should.Match(trig.GetTime().AsTime()))
 					assert.Loosely(t, rc.InputCLs, should.HaveLength(3))
 				})
 

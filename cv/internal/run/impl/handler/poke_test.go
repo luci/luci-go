@@ -386,7 +386,7 @@ func TestPoke(t *testing.T) {
 					assert.Loosely(t, res.PreserveEvents, should.BeFalse)
 					assert.Loosely(t, res.PostProcessFn, should.BeNil)
 					assert.Loosely(t, res.State, should.NotEqual(rs))
-					assert.Loosely(t, res.State.LatestTryjobsRefresh, should.Equal(datastore.RoundTime(ct.Clock.Now().UTC())))
+					assert.Loosely(t, res.State.LatestTryjobsRefresh, should.Match(datastore.RoundTime(ct.Clock.Now().UTC())))
 					assert.Loosely(t, deps.tjNotifier.updateScheduled, should.Resemble(common.TryjobIDs{2}))
 				}
 				t.Run("For the first time", func(t *ftt.Test) {

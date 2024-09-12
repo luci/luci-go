@@ -172,7 +172,7 @@ func TestStart(t *testing.T) {
 			assert.Loosely(t, deps.qm.debitRunQuotaCalls, should.Equal(1))
 
 			assert.Loosely(t, res.State.Status, should.Equal(run.Status_RUNNING))
-			assert.Loosely(t, res.State.StartTime, should.Equal(ct.Clock.Now().UTC()))
+			assert.Loosely(t, res.State.StartTime, should.Match(ct.Clock.Now().UTC()))
 			assert.Loosely(t, res.State.Tryjobs, should.Resemble(&run.Tryjobs{
 				Requirement: &tryjob.Requirement{
 					Definitions: []*tryjob.Definition{

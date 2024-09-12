@@ -17,6 +17,7 @@ package should
 import (
 	"math"
 	"testing"
+	"time"
 )
 
 func TestEqual(t *testing.T) {
@@ -30,6 +31,8 @@ func TestEqual(t *testing.T) {
 	a := 100
 	b := 100
 	t.Run("pointer inequal", shouldFail(Equal(&a)(&b), "did you want should.Match"))
+
+	t.Run("time", shouldFail(Equal(time.Time{})(time.Time{}), "always incorrect"))
 }
 
 func TestNotEqual(t *testing.T) {
@@ -39,4 +42,6 @@ func TestNotEqual(t *testing.T) {
 
 	t.Run("int equal", shouldFail(NotEqual(10)(10), "Actual"))
 	t.Run("int NaN", shouldFail(NotEqual(math.NaN())(10.1), "should.BeNaN"))
+
+	t.Run("time", shouldFail(NotEqual(time.Time{})(time.Time{}), "always incorrect"))
 }

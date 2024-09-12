@@ -77,14 +77,14 @@ func TestSchedule(t *testing.T) {
 			assert.Loosely(t, p.schedule(ctx, project, firstETA), should.BeNil)
 			payloads := FilterPayloads(ct.TQ.Tasks().SortByETA().Payloads())
 			assert.Loosely(t, payloads, should.HaveLength(2))
-			assert.Loosely(t, payloads[1].GetEta().AsTime(), should.Equal(firstETA.Add(pollInterval)))
+			assert.Loosely(t, payloads[1].GetEta().AsTime(), should.Match(firstETA.Add(pollInterval)))
 
 			t.Run("from a delayed prior poll", func(t *ftt.Test) {
 				ct.Clock.Set(firstETA.Add(pollInterval).Add(pollInterval / 2))
 				assert.Loosely(t, p.schedule(ctx, project, firstETA), should.BeNil)
 				payloads := FilterPayloads(ct.TQ.Tasks().SortByETA().Payloads())
 				assert.Loosely(t, payloads, should.HaveLength(3))
-				assert.Loosely(t, payloads[2].GetEta().AsTime(), should.Equal(firstETA.Add(2*pollInterval)))
+				assert.Loosely(t, payloads[2].GetEta().AsTime(), should.Match(firstETA.Add(2*pollInterval)))
 			})
 		})
 	})
