@@ -36,6 +36,7 @@ import (
 	"go.chromium.org/luci/swarming/server/cfg/cfgtest"
 	"go.chromium.org/luci/swarming/server/cursor"
 	"go.chromium.org/luci/swarming/server/cursor/cursorpb"
+	"go.chromium.org/luci/swarming/server/pyproxy"
 )
 
 func TestConfigureMigration(t *testing.T) {
@@ -95,7 +96,7 @@ func TestConfigureMigration(t *testing.T) {
 	pyPrpcSrv.Start(ctx) // to get pyPrpcSrv.HTTP.URL
 	defer pyPrpcSrv.Close()
 
-	ConfigureMigration(&goPrpcSrv.Server, cfg, pyPrpcSrv.HTTP.URL)
+	ConfigureMigration(&goPrpcSrv.Server, pyproxy.NewProxy(cfg, pyPrpcSrv.HTTP.URL))
 
 	goPrpcSrv.Start(ctx)
 	defer goPrpcSrv.Close()

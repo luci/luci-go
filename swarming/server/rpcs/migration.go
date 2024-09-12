@@ -15,28 +15,23 @@
 package rpcs
 
 import (
-	"context"
 	"fmt"
 	"net/http"
-	"net/http/httputil"
-	"net/url"
-	"strings"
 
 	protov1 "github.com/golang/protobuf/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/proto"
 
-	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/prpc"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
-	"go.chromium.org/luci/swarming/server/cfg"
 	"go.chromium.org/luci/swarming/server/cursor"
+	"go.chromium.org/luci/swarming/server/pyproxy"
 )
 
-// ConfigureMigration sets up proxy rules that send a portion of traffic to
+// ConfigureMigration sets up proxy rules that send a portion of pRPC traffic to
 // the Python host.
 //
 // Requests that hit the Go server are either handled by it or get proxied to
@@ -45,25 +40,11 @@ import (
 // Additionally all listing RPCs that use cursors are routed based on the cursor
 // format. The Go server doesn't understand the Python cursor and vice-versa,
 // so a listing started on e.g. Python server should be resumed there.
-func ConfigureMigration(srv *prpc.Server, cfg *cfg.Provider, pythonURL string) {
-	pyURL, err := url.Parse(pythonURL)
-	if err != nil {
-		panic(fmt.Sprintf("bad python URL: %s", err))
-	}
-	pyURL.Path = strings.TrimSuffix(pyURL.Path, "/")
-
+func ConfigureMigration(srv *prpc.Server, prx *pyproxy.Proxy) {
 	m := &migration{
 		srv:        srv,
-		cfg:        cfg,
+		prx:        prx,
 		registered: stringset.New(0),
-		prx: &httputil.ReverseProxy{
-			Director: func(req *http.Request) {
-				req.Host = pyURL.Host
-				req.URL.Scheme = pyURL.Scheme
-				req.URL.Host = pyURL.Host
-				req.URL.Path = pyURL.Path + req.URL.Path
-			},
-		},
 	}
 
 	// Bots RPCs.
@@ -118,9 +99,8 @@ func ConfigureMigration(srv *prpc.Server, cfg *cfg.Provider, pythonURL string) {
 
 type migration struct {
 	srv        *prpc.Server
-	cfg        *cfg.Provider
+	prx        *pyproxy.Proxy
 	registered stringset.Set
-	prx        *httputil.ReverseProxy
 }
 
 // simpleRule registers an override rule that doesn't look at the request body.
@@ -133,15 +113,7 @@ func simpleRule(m *migration, svc, method string) {
 
 	m.srv.RegisterOverride(svc, method,
 		func(rw http.ResponseWriter, req *http.Request, _ func(protov1.Message) error) (bool, error) {
-			ctx := req.Context()
-			switch m.pickRouteBasedOnHeaders(ctx, req) {
-			case "go":
-				return false, nil // i.e. don't override, let the Go handle it
-			case "py":
-				m.routeToPython(rw, req)
-				return true, nil
-			}
-			return m.randomizedOverride(ctx, route, rw, req)
+			return m.prx.DefaultOverride(route, rw, req), nil
 		},
 	)
 }
@@ -165,11 +137,11 @@ func cursorCheckingRule[T any, TP interface {
 			ctx := req.Context()
 
 			// Decide based on request headers before doing anything else.
-			switch m.pickRouteBasedOnHeaders(ctx, req) {
+			switch m.prx.PickRouteBasedOnHeaders(ctx, req) {
 			case "go":
 				return false, nil // i.e. don't override, let the Go handle it
 			case "py":
-				m.routeToPython(rw, req)
+				m.prx.RouteToPython(rw, req)
 				return true, nil
 			}
 
@@ -185,68 +157,16 @@ func cursorCheckingRule[T any, TP interface {
 					return false, nil // i.e. don't override, let the Go handle it
 				}
 				logging.Infof(ctx, "Python cursor => routing to py")
-				m.routeToPython(rw, req)
+				m.prx.RouteToPython(rw, req)
 				return true, nil
 			}
 
 			// If could not deserialize the request or the cursor is empty, pick the
 			// backend randomly. This would initiate a chain of paginated requests
 			// that will all hit the same implementation.
-			return m.randomizedOverride(ctx, route, rw, req)
+			return m.prx.RandomizedOverride(ctx, route, rw, req), nil
 		},
 	)
-}
-
-// pickRouteBasedOnHeaders picks a backend based on the request headers.
-//
-// Returns either "go", "py" or "" (if headers indicate no preference). Logs
-// the choice.
-func (m *migration) pickRouteBasedOnHeaders(ctx context.Context, req *http.Request) string {
-	// Just a precaution against malformed dispatch.yaml configuration. If the
-	// request came from the Go proxy already somehow, do not proxy it again, i.e.
-	// handle it in this Go server. Better than an infinite proxy loop.
-	if req.Header.Get("X-Routed-From-Go") == "1" {
-		logging.Errorf(ctx, "Proxy loop detected, refusing to proxy")
-		return "go"
-	}
-
-	// Allow clients to ask for a specific backend. Useful in manual testing.
-	if val := req.Header.Get("X-Route-To"); val == "py" || val == "go" {
-		logging.Infof(ctx, "X-Route-To: %s => routing accordingly", val)
-		return val
-	}
-
-	// If requests are hitting the Go hostname specifically (not the default GAE
-	// app hostname routed via dispatch.yaml) let the Go server handle them.
-	if strings.HasPrefix(req.Host, "default-go") {
-		return "go"
-	}
-
-	// Decide based on the request body or randomly.
-	return ""
-}
-
-// randomizedOverride routes the request either to Python or Go based only on
-// a random number generator.
-func (m *migration) randomizedOverride(ctx context.Context, route string, rw http.ResponseWriter, req *http.Request) (bool, error) {
-	// Avoid hitting the rng when percent is 0% or 100% to make tests a little bit
-	// less fragile. Only code paths that test really random routes will hit and
-	// mutated the mocked rng. That way the rest of tests do not interfere with
-	// tests that check randomness.
-	percent := m.cfg.Cached(ctx).RouteToGoPercent(route)
-	if percent != 0 && (percent == 100 || mathrand.Intn(ctx, 100) < percent) {
-		logging.Infof(ctx, "Routing to Go (configured to route %d%% to Go)", percent)
-		return false, nil
-	}
-	logging.Infof(ctx, "Routing to Python (configured to route %d%% to Go)", percent)
-	m.routeToPython(rw, req)
-	return true, nil
-}
-
-// routeToPython sends the request to the Python server for handling.
-func (m *migration) routeToPython(rw http.ResponseWriter, req *http.Request) {
-	req.Header.Set("X-Routed-From-Go", "1")
-	m.prx.ServeHTTP(rw, req)
 }
 
 // assertVisited panics if some of the routes were not registered.

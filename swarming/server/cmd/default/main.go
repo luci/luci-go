@@ -41,6 +41,7 @@ import (
 	"go.chromium.org/luci/swarming/server/hmactoken"
 	"go.chromium.org/luci/swarming/server/model"
 	"go.chromium.org/luci/swarming/server/notifications"
+	"go.chromium.org/luci/swarming/server/pyproxy"
 	"go.chromium.org/luci/swarming/server/rbe"
 	"go.chromium.org/luci/swarming/server/rpcs"
 	"go.chromium.org/luci/swarming/server/testing/integrationmocks"
@@ -109,6 +110,18 @@ func main() {
 			return err
 		}
 		srv.RunInBackground("swarming.config", cfg.RefreshPeriodically)
+
+		// A reverse proxy that sends a portion of requests to the Python server.
+		// Proxied requests have "/python/..." prepended in the URL to make them
+		// correctly pass dispatch.yaml rules and not get routed back to the Go
+		// server.
+		//
+		// To simplify testing code locally without any migration configs, enable
+		// the proxy only when running in prod.
+		var proxy *pyproxy.Proxy
+		if srv.Options.Prod {
+			proxy = pyproxy.NewProxy(cfg, fmt.Sprintf("https://%s.appspot.com/python", srv.Options.CloudProject))
+		}
 
 		// Open *connPoolSize connections for SessionServer and one dedicated
 		// connection for ReservationServer.
@@ -221,15 +234,9 @@ func main() {
 		srv.ConfigurePRPC(func(prpcSrv *prpc.Server) {
 			// Allow cross-origin calls (e.g. for Milo to call ListBots).
 			prpcSrv.AccessControl = prpc.AllowOriginAll
-			// A reverse proxy that sends a portion of requests to the Python server.
-			// Proxied requests have "/python/..." prepended in the URL to make them
-			// correctly pass dispatch.yaml rules and not get routed back to the Go
-			// server.
-			//
-			// To simplify testing code locally without any migration configs, enable
-			// the proxy only when running in prod.
-			if srv.Options.Prod {
-				rpcs.ConfigureMigration(prpcSrv, cfg, fmt.Sprintf("https://%s.appspot.com/python", srv.Options.CloudProject))
+			// Enable redirection to Python if running in prod where it is set.
+			if proxy != nil {
+				rpcs.ConfigureMigration(prpcSrv, proxy)
 			}
 		})
 
