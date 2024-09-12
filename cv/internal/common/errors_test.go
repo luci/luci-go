@@ -27,15 +27,16 @@ import (
 	"go.chromium.org/luci/common/logging/memlogger"
 	"go.chromium.org/luci/common/logging/teelogger"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/tq"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestTQifyError(t *testing.T) {
 	t.Parallel()
 
-	Convey("TQify works", t, func() {
+	ftt.Run("TQify works", t, func(t *ftt.Test) {
 		ctx := memlogger.Use(context.Background())
 		ml := logging.Get(ctx).(*memlogger.MemLogger)
 		if testing.Verbose() {
@@ -45,17 +46,17 @@ func TestTQifyError(t *testing.T) {
 		ctx = logging.SetLevel(ctx, logging.Debug)
 
 		assertLoggedStack := func() {
-			So(ml.Messages(), ShouldHaveLength, 1)
+			assert.Loosely(t, ml.Messages(), should.HaveLength(1))
 			m := ml.Messages()[0]
-			So(m.Level, ShouldEqual, logging.Error)
-			So(m.Msg, ShouldContainSubstring, "common.TestTQifyError()")
-			So(m.Msg, ShouldContainSubstring, "errors_test.go")
+			assert.Loosely(t, m.Level, should.Equal(logging.Error))
+			assert.Loosely(t, m.Msg, should.ContainSubstring("common.TestTQifyError"))
+			assert.Loosely(t, m.Msg, should.ContainSubstring("errors_test.go"))
 		}
 		assertLoggedAt := func(level logging.Level) {
-			So(ml.Messages(), ShouldHaveLength, 1)
+			assert.Loosely(t, ml.Messages(), should.HaveLength(1))
 			m := ml.Messages()[0]
-			So(m.Level, ShouldEqual, level)
-			So(m.Msg, ShouldNotContainSubstring, "errors_test.go")
+			assert.Loosely(t, m.Level, should.Equal(level))
+			assert.Loosely(t, m.Msg, should.NotContainSubstring("errors_test.go"))
 		}
 
 		errOops := errors.New("oops")
@@ -66,54 +67,54 @@ func TestTQifyError(t *testing.T) {
 		errRare := errors.New("an oppressed invertebrate lacking emoji unlike 🐞 or 🐛")
 		errTransRare := transient.Tag.Apply(errRare)
 
-		Convey("matchesErrors is true if it matches ANY leaf errors", func() {
-			So(matchesErrors(errWrapOops, errOops), ShouldBeTrue)
-			So(matchesErrors(errMulti, errOops), ShouldBeTrue)
+		t.Run("matchesErrors is true if it matches ANY leaf errors", func(t *ftt.Test) {
+			assert.Loosely(t, matchesErrors(errWrapOops, errOops), should.BeTrue)
+			assert.Loosely(t, matchesErrors(errMulti, errOops), should.BeTrue)
 
-			So(matchesErrors(errTransRare, errOops, errBoo, errRare), ShouldBeTrue)
-			So(matchesErrors(errTransRare, errOops, errBoo), ShouldBeFalse)
+			assert.Loosely(t, matchesErrors(errTransRare, errOops, errBoo, errRare), should.BeTrue)
+			assert.Loosely(t, matchesErrors(errTransRare, errOops, errBoo), should.BeFalse)
 		})
 
-		Convey("matchesErrors panics for invalid knownErrs", func() {
-			So(func() { matchesErrors(errOops, errMulti) }, ShouldPanic)
-			So(func() { matchesErrors(errOops, errWrapOops) }, ShouldPanic)
+		t.Run("matchesErrors panics for invalid knownErrs", func(t *ftt.Test) {
+			assert.Loosely(t, func() { matchesErrors(errOops, errMulti) }, should.Panic)
+			assert.Loosely(t, func() { matchesErrors(errOops, errWrapOops) }, should.Panic)
 		})
 
-		Convey("Simple", func() {
-			Convey("noop", func() {
+		t.Run("Simple", func(t *ftt.Test) {
+			t.Run("noop", func(t *ftt.Test) {
 				err := TQifyError(ctx, nil)
-				So(err, ShouldBeNil)
-				So(ml.Messages(), ShouldHaveLength, 0)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, ml.Messages(), should.HaveLength(0))
 			})
-			Convey("non-transient becomes Fatal and is logged", func() {
+			t.Run("non-transient becomes Fatal and is logged", func(t *ftt.Test) {
 				err := TQifyError(ctx, errOops)
-				So(tq.Fatal.In(err), ShouldBeTrue)
-				So(tq.Ignore.In(err), ShouldBeFalse)
+				assert.Loosely(t, tq.Fatal.In(err), should.BeTrue)
+				assert.Loosely(t, tq.Ignore.In(err), should.BeFalse)
 				assertLoggedStack()
 			})
-			Convey("transient is retried and logged", func() {
+			t.Run("transient is retried and logged", func(t *ftt.Test) {
 				err := TQifyError(ctx, errTransBoo)
-				So(tq.Fatal.In(err), ShouldBeFalse)
-				So(tq.Ignore.In(err), ShouldBeFalse)
+				assert.Loosely(t, tq.Fatal.In(err), should.BeFalse)
+				assert.Loosely(t, tq.Ignore.In(err), should.BeFalse)
 				assertLoggedStack()
 			})
-			Convey("with NeverRetry set", func() {
-				Convey("non-transient is still Fatal and logged", func() {
+			t.Run("with NeverRetry set", func(t *ftt.Test) {
+				t.Run("non-transient is still Fatal and logged", func(t *ftt.Test) {
 					err := TQIfy{NeverRetry: true}.Error(ctx, errOops)
-					So(tq.Fatal.In(err), ShouldBeTrue)
-					So(tq.Ignore.In(err), ShouldBeFalse)
+					assert.Loosely(t, tq.Fatal.In(err), should.BeTrue)
+					assert.Loosely(t, tq.Ignore.In(err), should.BeFalse)
 					assertLoggedStack()
 				})
-				Convey("transient is not retried but logged", func() {
+				t.Run("transient is not retried but logged", func(t *ftt.Test) {
 					err := TQIfy{NeverRetry: true}.Error(ctx, errTransBoo)
-					So(tq.Ignore.In(err), ShouldBeTrue)
-					So(tq.Fatal.In(err), ShouldBeFalse)
+					assert.Loosely(t, tq.Ignore.In(err), should.BeTrue)
+					assert.Loosely(t, tq.Fatal.In(err), should.BeFalse)
 					assertLoggedStack()
 				})
 			})
 		})
 
-		Convey("With Known errors", func() {
+		t.Run("With Known errors", func(t *ftt.Test) {
 			errRetryTag := errors.BoolTag{
 				Key: errors.NewTagKey("this error should be retried"),
 			}
@@ -126,67 +127,67 @@ func TestTQifyError(t *testing.T) {
 				KnownIgnore:     []error{errOops},
 				KnownIgnoreTags: []errors.BoolTag{errIgnoreTag},
 			}
-			Convey("on unknown error", func() {
-				Convey("transient -> retry and log entire stack", func() {
+			t.Run("on unknown error", func(t *ftt.Test) {
+				t.Run("transient -> retry and log entire stack", func(t *ftt.Test) {
 					err := tqify.Error(ctx, errTransRare)
-					So(tq.Fatal.In(err), ShouldBeFalse)
+					assert.Loosely(t, tq.Fatal.In(err), should.BeFalse)
 					assertLoggedStack()
 				})
-				Convey("non-transient -> tq.Fatal", func() {
+				t.Run("non-transient -> tq.Fatal", func(t *ftt.Test) {
 					err := tqify.Error(ctx, errRare)
-					So(tq.Fatal.In(err), ShouldBeTrue)
+					assert.Loosely(t, tq.Fatal.In(err), should.BeTrue)
 					assertLoggedStack()
 				})
 			})
 
-			Convey("KnownIgnore => tq.Ignore, log as warning", func() {
+			t.Run("KnownIgnore => tq.Ignore, log as warning", func(t *ftt.Test) {
 				err := tqify.Error(ctx, errWrapOops)
-				So(tq.Ignore.In(err), ShouldBeTrue)
-				So(tq.Fatal.In(err), ShouldBeFalse)
+				assert.Loosely(t, tq.Ignore.In(err), should.BeTrue)
+				assert.Loosely(t, tq.Fatal.In(err), should.BeFalse)
 				assertLoggedAt(logging.Warning)
 			})
-			Convey("KnownIgnoreTags => tq.Ignore, log as warning", func() {
+			t.Run("KnownIgnoreTags => tq.Ignore, log as warning", func(t *ftt.Test) {
 				err := tqify.Error(ctx, errIgnoreTag.Apply(errRare))
-				So(tq.Ignore.In(err), ShouldBeTrue)
-				So(tq.Fatal.In(err), ShouldBeFalse)
+				assert.Loosely(t, tq.Ignore.In(err), should.BeTrue)
+				assert.Loosely(t, tq.Fatal.In(err), should.BeFalse)
 				assertLoggedAt(logging.Warning)
 			})
-			Convey("KnownRetry => non-transient, non-Fatal, log as warning", func() {
+			t.Run("KnownRetry => non-transient, non-Fatal, log as warning", func(t *ftt.Test) {
 				err := tqify.Error(ctx, errTransBoo)
-				So(tq.Fatal.In(err), ShouldBeFalse)
-				So(transient.Tag.In(err), ShouldBeFalse)
+				assert.Loosely(t, tq.Fatal.In(err), should.BeFalse)
+				assert.Loosely(t, transient.Tag.In(err), should.BeFalse)
 				assertLoggedAt(logging.Warning)
 			})
-			Convey("KnownRetryTags => non-transient, non-Fatal, log as warning", func() {
+			t.Run("KnownRetryTags => non-transient, non-Fatal, log as warning", func(t *ftt.Test) {
 				err := tqify.Error(ctx, errRetryTag.Apply(errRare))
-				So(tq.Fatal.In(err), ShouldBeFalse)
-				So(transient.Tag.In(err), ShouldBeFalse)
+				assert.Loosely(t, tq.Fatal.In(err), should.BeFalse)
+				assert.Loosely(t, transient.Tag.In(err), should.BeFalse)
 				assertLoggedAt(logging.Warning)
 			})
-			Convey("KnownRetry & KnownIgnore => KnownRetry wins, log about a BUG", func() {
+			t.Run("KnownRetry & KnownIgnore => KnownRetry wins, log about a BUG", func(t *ftt.Test) {
 				err := tqify.Error(ctx, errMulti)
-				So(tq.Fatal.In(err), ShouldBeFalse)
-				So(transient.Tag.In(err), ShouldBeFalse)
-				So(ml.Messages(), ShouldHaveLength, 2)
-				So(ml.Messages()[0].Level, ShouldEqual, logging.Error)
-				So(ml.Messages()[0].Msg, ShouldContainSubstring, "BUG: invalid TQIfy config")
-				So(ml.Messages()[1].Level, ShouldEqual, logging.Warning)
-				So(ml.Messages()[1].Msg, ShouldContainSubstring, errMulti.Error())
+				assert.Loosely(t, tq.Fatal.In(err), should.BeFalse)
+				assert.Loosely(t, transient.Tag.In(err), should.BeFalse)
+				assert.Loosely(t, ml.Messages(), should.HaveLength(2))
+				assert.Loosely(t, ml.Messages()[0].Level, should.Equal(logging.Error))
+				assert.Loosely(t, ml.Messages()[0].Msg, should.ContainSubstring("BUG: invalid TQIfy config"))
+				assert.Loosely(t, ml.Messages()[1].Level, should.Equal(logging.Warning))
+				assert.Loosely(t, ml.Messages()[1].Msg, should.ContainSubstring(errMulti.Error()))
 			})
 
-			Convey("Panic if KnownRetry is used with with NeverRetry", func() {
+			t.Run("Panic if KnownRetry is used with with NeverRetry", func(t *ftt.Test) {
 				tqify = TQIfy{
 					KnownRetry: []error{errBoo},
 					NeverRetry: true,
 				}
-				So(func() { tqify.Error(ctx, errBoo) }, ShouldPanic)
+				assert.Loosely(t, func() { tqify.Error(ctx, errBoo) }, should.Panic)
 			})
-			Convey("Panic if KnownRetryTag is used with with NeverRetry", func() {
+			t.Run("Panic if KnownRetryTag is used with with NeverRetry", func(t *ftt.Test) {
 				tqify = TQIfy{
 					KnownRetryTags: []errors.BoolTag{errRetryTag},
 					NeverRetry:     true,
 				}
-				So(func() { tqify.Error(ctx, errRetryTag.Apply(errRare)) }, ShouldPanic)
+				assert.Loosely(t, func() { tqify.Error(ctx, errRetryTag.Apply(errRare)) }, should.Panic)
 			})
 		})
 	})
@@ -195,7 +196,7 @@ func TestTQifyError(t *testing.T) {
 func TestMostSevereError(t *testing.T) {
 	t.Parallel()
 
-	Convey("MostSevereError works", t, func() {
+	ftt.Run("MostSevereError works", t, func(t *ftt.Test) {
 		// fatal means non-transient here.
 		fatal1 := errors.New("fatal1")
 		fatal2 := errors.New("fatal2")
@@ -205,25 +206,25 @@ func TestMostSevereError(t *testing.T) {
 		multTrans := errors.NewMultiError(nil, trans1, nil, trans2, nil)
 		tensor := errors.NewMultiError(nil, errors.NewMultiError(nil, multTrans, multFatal))
 
-		So(MostSevereError(nil), ShouldBeNil)
-		So(MostSevereError(fatal1), ShouldEqual, fatal1)
-		So(MostSevereError(trans1), ShouldEqual, trans1)
+		assert.Loosely(t, MostSevereError(nil), should.BeNil)
+		assert.Loosely(t, MostSevereError(fatal1), should.Equal(fatal1))
+		assert.Loosely(t, MostSevereError(trans1), should.Equal(trans1))
 
-		So(MostSevereError(multFatal), ShouldEqual, fatal1)
-		So(MostSevereError(multTrans), ShouldEqual, trans1)
-		So(MostSevereError(tensor), ShouldEqual, fatal1)
+		assert.Loosely(t, MostSevereError(multFatal), should.Equal(fatal1))
+		assert.Loosely(t, MostSevereError(multTrans), should.Equal(trans1))
+		assert.Loosely(t, MostSevereError(tensor), should.Equal(fatal1))
 	})
 }
 
 func TestIsDatastoreContention(t *testing.T) {
 	t.Parallel()
 
-	Convey("IsDatastoreContention works", t, func() {
+	ftt.Run("IsDatastoreContention works", t, func(t *ftt.Test) {
 		// fatal means non-transient here.
-		So(IsDatastoreContention(errors.New("fatal1")), ShouldBeFalse)
+		assert.Loosely(t, IsDatastoreContention(errors.New("fatal1")), should.BeFalse)
 		// This is copied from what was actually observed in prod as of 2021-07-22.
 		err := status.Errorf(codes.Aborted, "Aborted due to cross-transaction contention. This occurs when multiple transactions attempt to access the same data, requiring Firestore to abort at least one in order to enforce serializability")
-		So(IsDatastoreContention(err), ShouldBeTrue)
-		So(IsDatastoreContention(errors.Annotate(err, "wrapped").Err()), ShouldBeTrue)
+		assert.Loosely(t, IsDatastoreContention(err), should.BeTrue)
+		assert.Loosely(t, IsDatastoreContention(errors.Annotate(err, "wrapped").Err()), should.BeTrue)
 	})
 }

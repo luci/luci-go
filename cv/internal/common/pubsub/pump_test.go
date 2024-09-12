@@ -21,23 +21,26 @@ import (
 	"time"
 
 	"cloud.google.com/go/pubsub"
+	"github.com/google/go-cmp/cmp"
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/comparison"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/cv/internal/cvtesting"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestPullingBatchProcessor(t *testing.T) {
 	t.Parallel()
-	Convey("PBP works ", t, func() {
+	ftt.Run("PBP works ", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{MaxDuration: time.Minute}
 		ctx := ct.SetUp(t)
 
 		psSrv, err := NewTestPSServer(ctx)
 		defer func() { _ = psSrv.Close() }()
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		processed := make(chan string, 100)
 		defer close(processed)
@@ -52,18 +55,18 @@ func TestPullingBatchProcessor(t *testing.T) {
 			SubID:        psSrv.SubID,
 		}
 
-		Convey("non-erroring payload", func() {
-			Convey("with concurrent batches", func() {
+		t.Run("non-erroring payload", func(t *ftt.Test) {
+			t.Run("with concurrent batches", func(t *ftt.Test) {
 				pump.Options.ConcurrentBatches = 5
 			})
-			Convey("without concurrent batches", func() {
+			t.Run("without concurrent batches", func(t *ftt.Test) {
 				pump.Options.ConcurrentBatches = 1
 			})
-			So(pump.Validate(), ShouldBeNil)
+			assert.Loosely(t, pump.Validate(), should.BeNil)
 			nMessages := pump.Options.MaxBatchSize + 1
 
 			sent := psSrv.PublishTestMessages(nMessages)
-			So(sent, ShouldHaveLength, nMessages)
+			assert.Loosely(t, sent, should.HaveLength(nMessages))
 			expected := len(sent)
 			received := make(stringset.Set, len(sent))
 
@@ -85,80 +88,81 @@ func TestPullingBatchProcessor(t *testing.T) {
 			default:
 			}
 			cancelProcess()
-			So(<-done, ShouldBeNil)
-			So(received, ShouldResemble, sent)
+			assert.Loosely(t, <-done, should.BeNil)
+			assert.Loosely(t, received, should.Resemble(sent))
 		})
 
-		Convey("With error", func() {
+		t.Run("With error", func(t *ftt.Test) {
 			// Configure the pump to handle one message at a time s.t. a single
 			// batch results in the injected error.
 			pump.Options.MaxBatchSize = 1
 			pump.Options.ConcurrentBatches = 1
-			So(pump.Validate(), ShouldBeNil)
+			assert.Loosely(t, pump.Validate(), should.BeNil)
 
-			var processingError error
-			var deliveriesExpected, processedMessagesExpected int
-			var processErrorAssertion, sentVSReceivedAssertion func(actual any, expected ...any) string
-			Convey("permanent", func() {
-				processingError = fmt.Errorf("non-transient error")
-				// Each of the messages should be delivered at least once.
-				deliveriesExpected = 2
-				// The error should be surfaced by .Process()
-				processErrorAssertion = ShouldBeError
+			doCheck := func(t testing.TB, processingError error, deliveriesExpected, processedMessagesExpected int, processErrorAssertion comparison.Func[error], sentVSReceivedAssertion func(stringset.Set, ...cmp.Option) comparison.Func[stringset.Set]) {
+				// Publish two messages.
+				sent := psSrv.PublishTestMessages(2)
+				// Inject error to be returned by the processing of the first
+				// batch-of-one-message.
+				batchErrChan <- processingError
 
-				processedMessagesExpected = 1
+				// Run the pump.
+				processCtx, cancelProcess := context.WithCancel(ctx)
+				done := runProcessAsync(processCtx, psSrv.Client, pump.process)
 
-				sentVSReceivedAssertion = ShouldNotResemble
-			})
-			Convey("transient", func() {
-				processingError = transient.Tag.Apply(fmt.Errorf("transient error"))
-				// The message that failed transiently should be re-delivered at least once.
-				deliveriesExpected = 3
-				// The error should not be surfaced by .Process()
-				processErrorAssertion = ShouldBeNil
-
-				processedMessagesExpected = 2
-
-				sentVSReceivedAssertion = ShouldResemble
-			})
-
-			// Publish two messages.
-			sent := psSrv.PublishTestMessages(2)
-			// Inject error to be returned by the processing of the first
-			// batch-of-one-message.
-			batchErrChan <- processingError
-
-			// Run the pump.
-			processCtx, cancelProcess := context.WithCancel(ctx)
-			done := runProcessAsync(processCtx, psSrv.Client, pump.process)
-
-			// Receive exactly as many distinct messages as expected.
-			received := make(stringset.Set, processedMessagesExpected)
-			for len(received) < processedMessagesExpected {
-				select {
-				case <-ctx.Done():
-					panic(fmt.Errorf("expected %d messages, only received %d after too long", processedMessagesExpected, len(received)))
-				case msg := <-processed:
-					received.Add(msg)
+				// Receive exactly as many distinct messages as expected.
+				received := make(stringset.Set, processedMessagesExpected)
+				for len(received) < processedMessagesExpected {
+					select {
+					case <-ctx.Done():
+						panic(fmt.Errorf("expected %d messages, only received %d after too long", processedMessagesExpected, len(received)))
+					case msg := <-processed:
+						received.Add(msg)
+					}
 				}
+				cancelProcess()
+
+				// Ensure there were at least as many message deliveries as expected.
+				actualDeliveries := 0
+				for _, m := range psSrv.Messages() {
+					actualDeliveries += m.Deliveries
+				}
+				assert.Loosely(t, actualDeliveries, should.BeGreaterThanOrEqual(deliveriesExpected))
+
+				// Compare sent and received messages.
+				assert.Loosely(t, sent, sentVSReceivedAssertion(received))
+
+				// Check that the pump surfaced (or not) the error, as appropriate.
+				assert.Loosely(t, <-done, processErrorAssertion)
 			}
-			cancelProcess()
 
-			// Ensure there were at least as many message deliveries as expected.
-			actualDeliveries := 0
-			for _, m := range psSrv.Messages() {
-				actualDeliveries += m.Deliveries
-			}
-			So(actualDeliveries, ShouldBeGreaterThanOrEqualTo, deliveriesExpected)
+			t.Run("permanent", func(t *ftt.Test) {
+				doCheck(
+					t, fmt.Errorf("non-transient error"),
+					// Each of the messages should be delivered at least once.
+					2, // deliveriesExpected
+					1, // processedMessagesExpected
+					// The error should be surfaced by .Process()
+					should.ErrLike("non-transient error"),
+					should.NotMatch[stringset.Set],
+				)
+			})
 
-			// Compare sent and received messages.
-			So(sent, sentVSReceivedAssertion, received)
+			t.Run("transient", func(t *ftt.Test) {
+				doCheck(
+					t, transient.Tag.Apply(fmt.Errorf("transient error")),
+					// The message that failed transiently should be re-delivered at least once.
+					3, // deliveriesExpected
+					2, // processedMessagesExpected
+					// The error should be surfaced by .Process()
+					should.ErrLike(nil),
+					should.Match[stringset.Set],
+				)
+			})
 
-			// Check that the pump surfaced (or not) the error, as appropriate.
-			So(<-done, processErrorAssertion)
 		})
 
-		Convey("Can enforce runTime", func() {
+		t.Run("Can enforce runTime", func(t *ftt.Test) {
 			// Publish a lot of messages
 			sent := psSrv.PublishTestMessages(100)
 			received := make(stringset.Set, len(sent))
@@ -174,7 +178,7 @@ func TestPullingBatchProcessor(t *testing.T) {
 				}
 				return nil
 			}
-			So(pump.Validate(), ShouldBeNil)
+			assert.Loosely(t, pump.Validate(), should.BeNil)
 
 			done := runProcessAsync(ctx, psSrv.Client, pump.process)
 
@@ -182,9 +186,9 @@ func TestPullingBatchProcessor(t *testing.T) {
 			case <-ctx.Done():
 				panic("This test failed because .Process() did not respect .runTime")
 			case err := <-done:
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			}
-			So(len(received), ShouldBeLessThan, len(sent))
+			assert.Loosely(t, len(received), should.BeLessThan(len(sent)))
 		})
 	})
 }

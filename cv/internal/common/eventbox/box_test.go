@@ -22,13 +22,14 @@ import (
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 // processor simulates a variant of game of life on one cell in an array of
@@ -146,92 +147,92 @@ func mkRecipient(ctx context.Context, id int) Recipient {
 func TestEventboxWorks(t *testing.T) {
 	t.Parallel()
 
-	Convey("eventbox works", t, func() {
+	ftt.Run("eventbox works", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
 		const limit = 10000
 
 		// Seed the first cell.
-		So(Emit(ctx, []byte{'+'}, mkRecipient(ctx, 65)), ShouldBeNil)
+		assert.Loosely(t, Emit(ctx, []byte{'+'}, mkRecipient(ctx, 65)), should.BeNil)
 		l, err := List(ctx, mkRecipient(ctx, 65))
-		So(err, ShouldBeNil)
-		So(l, ShouldHaveLength, 1)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, l, should.HaveLength(1))
 
 		ppfns, err := ProcessBatch(ctx, mkRecipient(ctx, 65), &processor{65}, limit)
-		So(err, ShouldBeNil)
-		So(ppfns, ShouldBeEmpty)
-		So(mustGet(ctx, 65).EVersion, ShouldEqual, 1)
-		So(mustGet(ctx, 65).Population, ShouldEqual, 1)
-		So(mustList(ctx, 65), ShouldHaveLength, 0)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, ppfns, should.BeEmpty)
+		assert.Loosely(t, mustGet(t, ctx, 65).EVersion, should.Equal(1))
+		assert.Loosely(t, mustGet(t, ctx, 65).Population, should.Equal(1))
+		assert.Loosely(t, mustList(t, ctx, 65), should.HaveLength(0))
 
 		// Let the cell grow without incoming events.
 		ppfns, err = ProcessBatch(ctx, mkRecipient(ctx, 65), &processor{65}, limit)
-		So(err, ShouldBeNil)
-		So(ppfns, ShouldBeEmpty)
-		So(mustGet(ctx, 65).EVersion, ShouldEqual, 2)
-		So(mustGet(ctx, 65).Population, ShouldEqual, 1+3)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, ppfns, should.BeEmpty)
+		assert.Loosely(t, mustGet(t, ctx, 65).EVersion, should.Equal(2))
+		assert.Loosely(t, mustGet(t, ctx, 65).Population, should.Equal(1+3))
 		// Can't grow any more, no change to anything.
 		ppfns, err = ProcessBatch(ctx, mkRecipient(ctx, 65), &processor{65}, limit)
-		So(err, ShouldBeNil)
-		So(ppfns, ShouldBeEmpty)
-		So(mustGet(ctx, 65).EVersion, ShouldEqual, 2)
-		So(mustGet(ctx, 65).Population, ShouldEqual, 1+3)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, ppfns, should.BeEmpty)
+		assert.Loosely(t, mustGet(t, ctx, 65).EVersion, should.Equal(2))
+		assert.Loosely(t, mustGet(t, ctx, 65).Population, should.Equal(1+3))
 
 		// Advertise from nearby cell, twice.
 		ppfns, err = ProcessBatch(ctx, mkRecipient(ctx, 64), &processor{64}, limit)
-		So(err, ShouldBeNil)
-		So(ppfns, ShouldBeEmpty)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, ppfns, should.BeEmpty)
 		ppfns, err = ProcessBatch(ctx, mkRecipient(ctx, 64), &processor{64}, limit)
-		So(err, ShouldBeNil)
-		So(ppfns, ShouldBeEmpty)
-		So(mustList(ctx, 65), ShouldHaveLength, 2)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, ppfns, should.BeEmpty)
+		assert.Loosely(t, mustList(t, ctx, 65), should.HaveLength(2))
 		// Emigrate, at most once.
 		ppfns, err = ProcessBatch(ctx, mkRecipient(ctx, 65), &processor{65}, limit)
-		So(err, ShouldBeNil)
-		So(ppfns, ShouldBeEmpty)
-		So(mustGet(ctx, 65).EVersion, ShouldEqual, 3)
-		So(mustGet(ctx, 65).Population, ShouldEqual, 4-1)
-		So(mustList(ctx, 65), ShouldHaveLength, 0)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, ppfns, should.BeEmpty)
+		assert.Loosely(t, mustGet(t, ctx, 65).EVersion, should.Equal(3))
+		assert.Loosely(t, mustGet(t, ctx, 65).Population, should.Equal(4-1))
+		assert.Loosely(t, mustList(t, ctx, 65), should.HaveLength(0))
 
 		// Accept immigrants.
 		ppfns, err = ProcessBatch(ctx, mkRecipient(ctx, 64), &processor{64}, limit)
-		So(err, ShouldBeNil)
-		So(ppfns, ShouldBeEmpty)
-		So(mustGet(ctx, 64).Population, ShouldEqual, +1)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, ppfns, should.BeEmpty)
+		assert.Loosely(t, mustGet(t, ctx, 64).Population, should.Equal(+1))
 
 		// Advertise to a cell with population = 1 is a noop.
 		ppfns, err = ProcessBatch(ctx, mkRecipient(ctx, 63), &processor{63}, limit)
-		So(err, ShouldBeNil)
-		So(ppfns, ShouldBeEmpty)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, ppfns, should.BeEmpty)
 		ppfns, err = ProcessBatch(ctx, mkRecipient(ctx, 64), &processor{64}, limit)
-		So(err, ShouldBeNil)
-		So(ppfns, ShouldBeEmpty)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, ppfns, should.BeEmpty)
 
 		// Lots of events at once.
-		So(Emit(ctx, []byte{'+'}, mkRecipient(ctx, 49)), ShouldBeNil)
-		So(Emit(ctx, []byte{'+'}, mkRecipient(ctx, 49)), ShouldBeNil) // will have to wait
-		So(Emit(ctx, []byte{'+'}, mkRecipient(ctx, 49)), ShouldBeNil) // will have to wait
-		So(Emit(ctx, []byte{'-'}, mkRecipient(ctx, 49)), ShouldBeNil) // not enough people, ignored.
-		So(Emit(ctx, []byte{'-'}, mkRecipient(ctx, 49)), ShouldBeNil) // not enough people, ignored.
-		So(mustList(ctx, 49), ShouldHaveLength, 5)
+		assert.Loosely(t, Emit(ctx, []byte{'+'}, mkRecipient(ctx, 49)), should.BeNil)
+		assert.Loosely(t, Emit(ctx, []byte{'+'}, mkRecipient(ctx, 49)), should.BeNil) // will have to wait
+		assert.Loosely(t, Emit(ctx, []byte{'+'}, mkRecipient(ctx, 49)), should.BeNil) // will have to wait
+		assert.Loosely(t, Emit(ctx, []byte{'-'}, mkRecipient(ctx, 49)), should.BeNil) // not enough people, ignored.
+		assert.Loosely(t, Emit(ctx, []byte{'-'}, mkRecipient(ctx, 49)), should.BeNil) // not enough people, ignored.
+		assert.Loosely(t, mustList(t, ctx, 49), should.HaveLength(5))
 		ppfns, err = ProcessBatch(ctx, mkRecipient(ctx, 49), &processor{49}, limit)
-		So(err, ShouldBeNil)
-		So(ppfns, ShouldBeEmpty)
-		So(mustGet(ctx, 49).EVersion, ShouldEqual, 1)
-		So(mustGet(ctx, 49).Population, ShouldEqual, 1)
-		So(mustList(ctx, 49), ShouldHaveLength, 2) // 2x'+' are waiting
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, ppfns, should.BeEmpty)
+		assert.Loosely(t, mustGet(t, ctx, 49).EVersion, should.Equal(1))
+		assert.Loosely(t, mustGet(t, ctx, 49).Population, should.Equal(1))
+		assert.Loosely(t, mustList(t, ctx, 49), should.HaveLength(2)) // 2x'+' are waiting
 		// Slowly welcome remaining newcomers.
 		ppfns, err = ProcessBatch(ctx, mkRecipient(ctx, 49), &processor{49}, limit)
-		So(err, ShouldBeNil)
-		So(ppfns, ShouldBeEmpty)
-		So(mustGet(ctx, 49).Population, ShouldEqual, 2)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, ppfns, should.BeEmpty)
+		assert.Loosely(t, mustGet(t, ctx, 49).Population, should.Equal(2))
 		ppfns, err = ProcessBatch(ctx, mkRecipient(ctx, 49), &processor{49}, limit)
-		So(err, ShouldBeNil)
-		So(ppfns, ShouldBeEmpty)
-		So(mustGet(ctx, 49).Population, ShouldEqual, 3)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, ppfns, should.BeEmpty)
+		assert.Loosely(t, mustGet(t, ctx, 49).Population, should.Equal(3))
 		// Finally, must be done.
-		So(mustList(ctx, 49), ShouldHaveLength, 0)
+		assert.Loosely(t, mustList(t, ctx, 49), should.HaveLength(0))
 	})
 }
 
@@ -245,22 +246,26 @@ func get(ctx context.Context, index int) (*cell, error) {
 	}
 }
 
-func mustGet(ctx context.Context, index int) *cell {
+func mustGet(t testing.TB, ctx context.Context, index int) *cell {
+	t.Helper()
+
 	c, err := get(ctx, index)
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil, truth.LineContext())
 	return c
 }
 
-func mustList(ctx context.Context, index int) Events {
+func mustList(t testing.TB, ctx context.Context, index int) Events {
+	t.Helper()
+
 	l, err := List(ctx, mkRecipient(ctx, index))
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil, truth.LineContext())
 	return l
 }
 
 func TestEventboxPostProcessFn(t *testing.T) {
 	t.Parallel()
 
-	Convey("eventbox", t, func() {
+	ftt.Run("eventbox", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
@@ -279,7 +284,7 @@ func TestEventboxPostProcessFn(t *testing.T) {
 				return nil
 			},
 		}
-		Convey("Returns PostProcessFns for successful state transitions", func() {
+		t.Run("Returns PostProcessFns for successful state transitions", func(t *ftt.Test) {
 			var calledForStates []int
 			p.prepareMutation = func(ctx context.Context, es Events, s State) ([]Transition, Events, error) {
 				gotState := *(s.(*int))
@@ -304,12 +309,12 @@ func TestEventboxPostProcessFn(t *testing.T) {
 				}, nil, nil
 			}
 			ppfns, err := ProcessBatch(ctx, recipient, p, limit)
-			So(err, ShouldBeNil)
-			So(ppfns, ShouldHaveLength, 2)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ppfns, should.HaveLength(2))
 			for _, ppfn := range ppfns {
-				So(ppfn(ctx), ShouldBeNil)
+				assert.Loosely(t, ppfn(ctx), should.BeNil)
 			}
-			So(calledForStates, ShouldResemble, []int{150, 152})
+			assert.Loosely(t, calledForStates, should.Resemble([]int{150, 152}))
 		})
 	})
 }
@@ -317,15 +322,15 @@ func TestEventboxPostProcessFn(t *testing.T) {
 func TestEventboxFails(t *testing.T) {
 	t.Parallel()
 
-	Convey("eventbox fails as intended in failure cases", t, func() {
+	ftt.Run("eventbox fails as intended in failure cases", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
 		const limit = 100000
 		recipient := mkRecipient(ctx, 77)
 
-		So(Emit(ctx, []byte{'+'}, recipient), ShouldBeNil)
-		So(Emit(ctx, []byte{'-'}, recipient), ShouldBeNil)
+		assert.Loosely(t, Emit(ctx, []byte{'+'}, recipient), should.BeNil)
+		assert.Loosely(t, Emit(ctx, []byte{'-'}, recipient), should.BeNil)
 
 		initState := int(99)
 		p := &mockProc{
@@ -335,13 +340,13 @@ func TestEventboxFails(t *testing.T) {
 			// since 3 other funcs are nil, calling their Upper-case counterparts will
 			// panic (see mockProc implementation below).
 		}
-		Convey("Mutate() failure aborts", func() {
+		t.Run("Mutate() failure aborts", func(t *ftt.Test) {
 			p.prepareMutation = func(_ context.Context, es Events, s State) ([]Transition, Events, error) {
 				return nil, nil, errors.New("oops")
 			}
 			ppfns, err := ProcessBatch(ctx, recipient, p, limit)
-			So(err, ShouldErrLike, "oops")
-			So(ppfns, ShouldBeEmpty)
+			assert.Loosely(t, err, should.ErrLike("oops"))
+			assert.Loosely(t, ppfns, should.BeEmpty)
 		})
 
 		firstSideEffectCalled := false
@@ -366,92 +371,92 @@ func TestEventboxFails(t *testing.T) {
 			}, nil, nil
 		}
 
-		Convey("Eversion must be checked", func() {
+		t.Run("Eversion must be checked", func(t *ftt.Test) {
 			p.fetchEVersion = func(_ context.Context) (EVersion, error) {
 				return 0, errors.New("ev error")
 			}
 			ppfns, err := ProcessBatch(ctx, recipient, p, limit)
-			So(err, ShouldErrLike, "ev error")
-			So(ppfns, ShouldBeEmpty)
+			assert.Loosely(t, err, should.ErrLike("ev error"))
+			assert.Loosely(t, ppfns, should.BeEmpty)
 			p.fetchEVersion = func(_ context.Context) (EVersion, error) {
 				return 1, nil
 			}
 			ppfns, err = ProcessBatch(ctx, recipient, p, limit)
-			So(common.DSContentionTag.In(err), ShouldBeTrue)
-			So(ppfns, ShouldBeEmpty)
-			So(firstSideEffectCalled, ShouldBeFalse)
+			assert.Loosely(t, common.DSContentionTag.In(err), should.BeTrue)
+			assert.Loosely(t, ppfns, should.BeEmpty)
+			assert.Loosely(t, firstSideEffectCalled, should.BeFalse)
 		})
 
 		p.fetchEVersion = func(_ context.Context) (EVersion, error) {
 			return 0, nil
 		}
 
-		Convey("No call to save if any Transition fails", func() {
+		t.Run("No call to save if any Transition fails", func(t *ftt.Test) {
 			second = func(_ context.Context) error {
 				return transient.Tag.Apply(errors.New("2nd failed"))
 			}
 			ppfns, err := ProcessBatch(ctx, recipient, p, limit)
-			So(err, ShouldErrLike, "2nd failed")
-			So(ppfns, ShouldBeEmpty)
-			So(firstSideEffectCalled, ShouldBeTrue)
+			assert.Loosely(t, err, should.ErrLike("2nd failed"))
+			assert.Loosely(t, ppfns, should.BeEmpty)
+			assert.Loosely(t, firstSideEffectCalled, should.BeTrue)
 			// ... but w/o any effect since transaction should have been aborted
-			So(datastore.Get(ctx, &cell{Index: firstIndex}),
-				ShouldEqual, datastore.ErrNoSuchEntity)
+			assert.Loosely(t, datastore.Get(ctx, &cell{Index: firstIndex}),
+				should.Equal(datastore.ErrNoSuchEntity))
 		})
 
 		second = func(_ context.Context) error { return nil }
-		Convey("Failed Save aborts any side effects, too", func() {
+		t.Run("Failed Save aborts any side effects, too", func(t *ftt.Test) {
 			p.saveState = func(ctx context.Context, st State, ev EVersion) error {
 				s := *(st.(*int))
-				So(ev, ShouldEqual, 1)
-				So(s, ShouldNotEqual, initState)
-				So(s, ShouldEqual, secondState)
+				assert.Loosely(t, ev, should.Equal(1))
+				assert.Loosely(t, s, should.NotEqual(initState))
+				assert.Loosely(t, s, should.Equal(secondState))
 				return transient.Tag.Apply(errors.New("savvvvvvvvvvvvvvvvvvvvvvvvvv hung"))
 			}
 			ppfns, err := ProcessBatch(ctx, recipient, p, limit)
-			So(err, ShouldErrLike, "savvvvvvvvvvvvvvvv")
-			So(ppfns, ShouldBeEmpty)
+			assert.Loosely(t, err, should.ErrLike("savvvvvvvvvvvvvvvv"))
+			assert.Loosely(t, ppfns, should.BeEmpty)
 			// ... still no side effect.
-			So(datastore.Get(ctx, &cell{Index: firstIndex}),
-				ShouldEqual, datastore.ErrNoSuchEntity)
+			assert.Loosely(t, datastore.Get(ctx, &cell{Index: firstIndex}),
+				should.Equal(datastore.ErrNoSuchEntity))
 		})
 
 		// In all cases, there must still be 2 unconsumed events.
 		l, err := List(ctx, recipient)
-		So(err, ShouldBeNil)
-		So(l, ShouldHaveLength, 2)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, l, should.HaveLength(2))
 
 		// Finally, check that first side effect is real, otherwise assertions above
 		// might be giving false sense of correctness.
 		p.saveState = func(context.Context, State, EVersion) error { return nil }
 		ppfns, err := ProcessBatch(ctx, recipient, p, limit)
-		So(err, ShouldBeNil)
-		So(ppfns, ShouldBeEmpty)
-		So(mustGet(ctx, firstIndex), ShouldNotBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, ppfns, should.BeEmpty)
+		assert.Loosely(t, mustGet(t, ctx, firstIndex), should.NotBeNil)
 	})
 }
 
 func TestEventboxNoopTransitions(t *testing.T) {
 	t.Parallel()
 
-	Convey("Noop Transitions are detected", t, func() {
+	ftt.Run("Noop Transitions are detected", t, func(t *ftt.Test) {
 		tsn := Transition{}
-		So(tsn.isNoop(nil), ShouldBeTrue)
+		assert.Loosely(t, tsn.isNoop(nil), should.BeTrue)
 		initState := int(99)
 		tsn.TransitionTo = initState
-		So(tsn.isNoop(nil), ShouldBeFalse)
-		So(tsn.isNoop(initState), ShouldBeTrue)
+		assert.Loosely(t, tsn.isNoop(nil), should.BeFalse)
+		assert.Loosely(t, tsn.isNoop(initState), should.BeTrue)
 		tsn.Events = Events{Event{}}
-		So(tsn.isNoop(initState), ShouldBeFalse)
+		assert.Loosely(t, tsn.isNoop(initState), should.BeFalse)
 		tsn.Events = nil
 		tsn.SideEffectFn = func(context.Context) error { return nil }
-		So(tsn.isNoop(initState), ShouldBeFalse)
+		assert.Loosely(t, tsn.isNoop(initState), should.BeFalse)
 		tsn.SideEffectFn = nil
 		tsn.PostProcessFn = func(context.Context) error { return nil }
-		So(tsn.isNoop(initState), ShouldBeFalse)
+		assert.Loosely(t, tsn.isNoop(initState), should.BeFalse)
 	})
 
-	Convey("eventbox doesn't transact on nil transitions", t, func() {
+	ftt.Run("eventbox doesn't transact on nil transitions", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
@@ -469,67 +474,67 @@ func TestEventboxNoopTransitions(t *testing.T) {
 			},
 		}
 
-		Convey("Mutate returns no transitions", func() {
+		t.Run("Mutate returns no transitions", func(t *ftt.Test) {
 			p.prepareMutation = func(_ context.Context, es Events, s State) ([]Transition, Events, error) {
 				return nil, nil, nil
 			}
 			ppfns, err := ProcessBatch(ctx, recipient, p, limit)
-			So(err, ShouldBeNil)
-			So(ppfns, ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ppfns, should.BeEmpty)
 		})
-		Convey("Mutate returns no transitions, but some semantic garbage is still cleaned up", func() {
-			So(Emit(ctx, []byte("msg"), recipient), ShouldBeNil)
-			So(Emit(ctx, []byte("msg"), recipient), ShouldBeNil)
+		t.Run("Mutate returns no transitions, but some semantic garbage is still cleaned up", func(t *ftt.Test) {
+			assert.Loosely(t, Emit(ctx, []byte("msg"), recipient), should.BeNil)
+			assert.Loosely(t, Emit(ctx, []byte("msg"), recipient), should.BeNil)
 			p.prepareMutation = func(_ context.Context, es Events, s State) ([]Transition, Events, error) {
 				return nil, es[:1], nil
 			}
 			ppfns, err := ProcessBatch(ctx, recipient, p, limit)
-			So(err, ShouldBeNil)
-			So(ppfns, ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ppfns, should.BeEmpty)
 			l, err := List(ctx, recipient)
-			So(err, ShouldBeNil)
-			So(l, ShouldHaveLength, 1)
-			So(l[0].Value, ShouldResemble, []byte("msg"))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, l, should.HaveLength(1))
+			assert.Loosely(t, l[0].Value, should.Resemble([]byte("msg")))
 		})
-		Convey("Garbage is cleaned up even if Mutate also returns error", func() {
-			So(Emit(ctx, []byte("msg"), recipient), ShouldBeNil)
-			So(Emit(ctx, []byte("msg"), recipient), ShouldBeNil)
+		t.Run("Garbage is cleaned up even if Mutate also returns error", func(t *ftt.Test) {
+			assert.Loosely(t, Emit(ctx, []byte("msg"), recipient), should.BeNil)
+			assert.Loosely(t, Emit(ctx, []byte("msg"), recipient), should.BeNil)
 			p.prepareMutation = func(_ context.Context, es Events, s State) ([]Transition, Events, error) {
 				return nil, es[:1], errors.New("boom")
 			}
 			_, err := ProcessBatch(ctx, recipient, p, limit)
-			So(err, ShouldErrLike, "boom")
+			assert.Loosely(t, err, should.ErrLike("boom"))
 			l, err := List(ctx, recipient)
-			So(err, ShouldBeNil)
-			So(l, ShouldHaveLength, 1)
-			So(l[0].Value, ShouldResemble, []byte("msg"))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, l, should.HaveLength(1))
+			assert.Loosely(t, l[0].Value, should.Resemble([]byte("msg")))
 		})
-		Convey("Mutate returns empty slice of transitions", func() {
+		t.Run("Mutate returns empty slice of transitions", func(t *ftt.Test) {
 			p.prepareMutation = func(_ context.Context, es Events, s State) ([]Transition, Events, error) {
 				return []Transition{}, nil, nil
 			}
 			ppfns, err := ProcessBatch(ctx, recipient, p, limit)
-			So(err, ShouldBeNil)
-			So(ppfns, ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ppfns, should.BeEmpty)
 		})
-		Convey("Mutate returns noop transitions only", func() {
+		t.Run("Mutate returns noop transitions only", func(t *ftt.Test) {
 			p.prepareMutation = func(_ context.Context, es Events, s State) ([]Transition, Events, error) {
 				return []Transition{
 					{TransitionTo: s},
 				}, nil, nil
 			}
 			ppfns, err := ProcessBatch(ctx, recipient, p, limit)
-			So(err, ShouldBeNil)
-			So(ppfns, ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ppfns, should.BeEmpty)
 		})
 
-		Convey("Test's own sanity check that fetchEVersion is called and panics", func() {
+		t.Run("Test's own sanity check that fetchEVersion is called and panics", func(t *ftt.Test) {
 			p.prepareMutation = func(_ context.Context, es Events, s State) ([]Transition, Events, error) {
 				return []Transition{
 					{TransitionTo: new(int)},
 				}, nil, nil
 			}
-			So(func() { ProcessBatch(ctx, recipient, p, limit) }, ShouldPanicLike, panicErr)
+			assert.Loosely(t, func() { ProcessBatch(ctx, recipient, p, limit) }, should.PanicLike(panicErr))
 		})
 	})
 }
@@ -557,7 +562,7 @@ func (m *mockProc) SaveState(ctx context.Context, s State, e EVersion) error {
 func TestPrepareMutation(t *testing.T) {
 	t.Parallel()
 
-	Convey("Chain of SideEffectFn works", t, func() {
+	ftt.Run("Chain of SideEffectFn works", t, func(t *ftt.Test) {
 		ctx := context.Background()
 		var ops []string
 		f1 := func(context.Context) error {
@@ -573,18 +578,18 @@ func TestPrepareMutation(t *testing.T) {
 			ops = append(ops, "ferr")
 			return breakChain
 		}
-		Convey("all nils chain to nil", func() {
-			So(Chain(), ShouldBeNil)
-			So(Chain(nil), ShouldBeNil)
-			So(Chain(nil, nil), ShouldBeNil)
+		t.Run("all nils chain to nil", func(t *ftt.Test) {
+			assert.Loosely(t, Chain(), should.BeNil)
+			assert.Loosely(t, Chain(nil), should.BeNil)
+			assert.Loosely(t, Chain(nil, nil), should.BeNil)
 		})
-		Convey("order is respected", func() {
-			So(Chain(nil, f2, nil, f1, f2, f1, nil)(ctx), ShouldBeNil)
-			So(ops, ShouldResemble, []string{"f2", "f1", "f2", "f1"})
+		t.Run("order is respected", func(t *ftt.Test) {
+			assert.Loosely(t, Chain(nil, f2, nil, f1, f2, f1, nil)(ctx), should.BeNil)
+			assert.Loosely(t, ops, should.Resemble([]string{"f2", "f1", "f2", "f1"}))
 		})
-		Convey("error aborts", func() {
-			So(Chain(f1, nil, ferr, f2)(ctx), ShouldErrLike, breakChain)
-			So(ops, ShouldResemble, []string{"f1", "ferr"})
+		t.Run("error aborts", func(t *ftt.Test) {
+			assert.Loosely(t, Chain(f1, nil, ferr, f2)(ctx), should.ErrLike(breakChain))
+			assert.Loosely(t, ops, should.Resemble([]string{"f1", "ferr"}))
 		})
 	})
 }
