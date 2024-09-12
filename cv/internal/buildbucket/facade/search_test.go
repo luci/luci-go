@@ -18,6 +18,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -25,18 +26,25 @@ import (
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/data/stringset"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/registry"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/tryjob"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
+func init() {
+	registry.RegisterCmpOption(cmp.AllowUnexported(tryjob.Tryjob{}))
+}
+
 func TestSearch(t *testing.T) {
-	Convey("Search", t, func() {
+	ftt.Run("Search", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 		f := &Facade{
@@ -114,94 +122,106 @@ func TestSearch(t *testing.T) {
 			build.EndTime = timestamppb.New(epoch.Add(2 * time.Minute))
 		}
 
-		Convey("Single Buildbucket host", func() {
+		t.Run("Single Buildbucket host", func(t *ftt.Test) {
 			searchAll := func() []*tryjob.Tryjob {
 				var ret []*tryjob.Tryjob
 				err := f.Search(ctx, []*run.RunCL{cl}, []*tryjob.Definition{definition}, lProject, func(job *tryjob.Tryjob) bool {
 					ret = append(ret, job)
 					return true
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				return ret
 			}
-			Convey("Match", func() {
+			t.Run("Match", func(t *ftt.Test) {
 				var build *bbpb.Build
-				Convey("Simple", func() {
+
+				checkResult := func(t testing.TB) {
+					t.Helper()
+
+					results := searchAll()
+					assert.Loosely(t, results, should.HaveLength(1), truth.LineContext())
+					tj := results[0]
+					assert.Loosely(t, tj.Result, should.NotBeNil, truth.LineContext())
+					tj.Result = nil
+					assert.Loosely(t, tj, should.Match(&tryjob.Tryjob{
+						ExternalID: tryjob.MustBuildbucketID(bbHost, build.GetId()),
+						Definition: definition,
+						Status:     tryjob.Status_ENDED,
+					}), truth.LineContext())
+				}
+
+				t.Run("Simple", func(t *ftt.Test) {
 					var err error
 					build, err = bbClient.ScheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
 						Builder:       builderID,
 						GerritChanges: []*bbpb.GerritChange{gc},
 					})
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					build = ct.BuildbucketFake.MutateBuild(ctx, bbHost, build.GetId(), commonMutateFn)
+					checkResult(t)
 				})
-				Convey("With permitted additional properties", func() {
+
+				t.Run("With permitted additional properties", func(t *ftt.Test) {
 					prop, err := structpb.NewStruct(map[string]any{
 						"$recipe_engine/cq": map[string]any{
 							"active":   true,
 							"run_mode": "FULL_RUN",
 						},
 					})
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					build, err = bbClient.ScheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
 						Builder:       builderID,
 						Properties:    prop,
 						GerritChanges: []*bbpb.GerritChange{gc},
 					})
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					build = ct.BuildbucketFake.MutateBuild(ctx, bbHost, build.GetId(), commonMutateFn)
+					checkResult(t)
 				})
-				Convey("Match equivalent tryjob", func() {
+
+				t.Run("Match equivalent tryjob", func(t *ftt.Test) {
 					var err error
 					build, err = bbClient.ScheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
 						Builder:       equiBuilderID,
 						GerritChanges: []*bbpb.GerritChange{gc},
 					})
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					build = ct.BuildbucketFake.MutateBuild(ctx, bbHost, build.GetId(), commonMutateFn)
+					checkResult(t)
 				})
-				results := searchAll()
-				So(results, ShouldHaveLength, 1)
-				tj := results[0]
-				So(tj.Result, ShouldNotBeNil)
-				tj.Result = nil
-				So(tj, cvtesting.SafeShouldResemble, &tryjob.Tryjob{
-					ExternalID: tryjob.MustBuildbucketID(bbHost, build.GetId()),
-					Definition: definition,
-					Status:     tryjob.Status_ENDED,
-				})
+
 			})
 
-			Convey("No match", func() {
-				Convey("Patchset out of range ", func() {
+			t.Run("No match", func(t *ftt.Test) {
+				t.Run("Patchset out of range ", func(t *ftt.Test) {
 					for _, ps := range []int{3, 11, 20} {
-						So(ps < gMinEquiPatchset || ps > gPatchset, ShouldBeTrue)
+						assert.Loosely(t, ps < gMinEquiPatchset || ps > gPatchset, should.BeTrue)
 						gc.Patchset = int64(ps)
 						build, err := bbClient.ScheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
 							Builder:       builderID,
 							GerritChanges: []*bbpb.GerritChange{gc},
 						})
-						So(err, ShouldBeNil)
+						assert.Loosely(t, err, should.BeNil)
 						ct.BuildbucketFake.MutateBuild(ctx, bbHost, build.GetId(), commonMutateFn)
 						results := searchAll()
-						So(results, ShouldBeEmpty)
+						assert.Loosely(t, results, should.BeEmpty)
 					}
 				})
 
-				Convey("Mismatch CL", func() {
+				t.Run("Mismatch CL", func(t *ftt.Test) {
 					anotherChange := proto.Clone(gc).(*bbpb.GerritChange)
 					anotherChange.Change = anotherChange.Change + 50
 					build, err := bbClient.ScheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
 						Builder:       builderID,
 						GerritChanges: []*bbpb.GerritChange{anotherChange},
 					})
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					ct.BuildbucketFake.MutateBuild(ctx, bbHost, build.GetId(), commonMutateFn)
 					results := searchAll()
-					So(results, ShouldBeEmpty)
+					assert.Loosely(t, results, should.BeEmpty)
 				})
 
-				Convey("Mismatch Builder", func() {
+				t.Run("Mismatch Builder", func(t *ftt.Test) {
 					anotherBuilder := &bbpb.BuilderID{
 						Project: lProject,
 						Bucket:  "anotherBucket",
@@ -212,13 +232,13 @@ func TestSearch(t *testing.T) {
 						Builder:       anotherBuilder,
 						GerritChanges: []*bbpb.GerritChange{gc},
 					})
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					ct.BuildbucketFake.MutateBuild(ctx, bbHost, build.GetId(), commonMutateFn)
 					results := searchAll()
-					So(results, ShouldBeEmpty)
+					assert.Loosely(t, results, should.BeEmpty)
 				})
 
-				Convey("Not permitted additional properties", func() {
+				t.Run("Not permitted additional properties", func(t *ftt.Test) {
 					prop, err := structpb.NewStruct(map[string]any{
 						"$recipe_engine/cq": map[string]any{
 							"active":   true,
@@ -226,38 +246,38 @@ func TestSearch(t *testing.T) {
 						}, // permitted
 						"foo": "bar", // not permitted
 					})
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					build, err := bbClient.ScheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
 						Builder:       builderID,
 						Properties:    prop,
 						GerritChanges: []*bbpb.GerritChange{gc},
 					})
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					ct.BuildbucketFake.MutateBuild(ctx, bbHost, build.GetId(), commonMutateFn)
 					results := searchAll()
-					So(results, ShouldBeEmpty)
+					assert.Loosely(t, results, should.BeEmpty)
 				})
 
-				Convey("Multiple CLs", func() {
-					Convey("Build involves extra Gerrit change", func() {
+				t.Run("Multiple CLs", func(t *ftt.Test) {
+					t.Run("Build involves extra Gerrit change", func(t *ftt.Test) {
 						anotherChange := proto.Clone(gc).(*bbpb.GerritChange)
 						anotherChange.Change = anotherChange.Change + 1
 						build, err := bbClient.ScheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
 							Builder:       builderID,
 							GerritChanges: []*bbpb.GerritChange{gc, anotherChange},
 						})
-						So(err, ShouldBeNil)
+						assert.Loosely(t, err, should.BeNil)
 						ct.BuildbucketFake.MutateBuild(ctx, bbHost, build.GetId(), commonMutateFn)
 						results := searchAll()
-						So(results, ShouldBeEmpty)
+						assert.Loosely(t, results, should.BeEmpty)
 					})
 
-					Convey("Expecting extra Gerrit change", func() {
+					t.Run("Expecting extra Gerrit change", func(t *ftt.Test) {
 						build, err := bbClient.ScheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
 							Builder:       builderID,
 							GerritChanges: []*bbpb.GerritChange{gc},
 						})
-						So(err, ShouldBeNil)
+						assert.Loosely(t, err, should.BeNil)
 						ct.BuildbucketFake.MutateBuild(ctx, bbHost, build.GetId(), commonMutateFn)
 
 						anotherChange := proto.Clone(gc).(*bbpb.GerritChange)
@@ -284,14 +304,14 @@ func TestSearch(t *testing.T) {
 							tryjobs = append(tryjobs, job)
 							return true
 						})
-						So(err, ShouldBeNil)
-						So(tryjobs, ShouldBeEmpty)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, tryjobs, should.BeEmpty)
 					})
 				})
 			})
 		})
 
-		Convey("Paging builds", func() {
+		t.Run("Paging builds", func(t *ftt.Test) {
 			// Scenario:
 			//  Buildbucket hosts defined in `bbHosts`. Each Buildbucket host has
 			//  `numBuildsPerHost` of builds with build ID 1..numBuildsPerHost.
@@ -324,7 +344,7 @@ func TestSearch(t *testing.T) {
 						Builder:       builder,
 						GerritChanges: []*bbpb.GerritChange{gc},
 					})
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					build = ct.BuildbucketFake.MutateBuild(ctx, bbHost, build.GetId(), func(build *bbpb.Build) {
 						build.Status = bbpb.Status_SUCCESS
 						build.StartTime = timestamppb.New(epoch.Add(1 * time.Minute))
@@ -334,7 +354,7 @@ func TestSearch(t *testing.T) {
 					ct.Clock.Add(1 * time.Minute)
 				}
 			}
-			Convey("Search for builds from builderFoo", func() {
+			t.Run("Search for builds from builderFoo", func(t *ftt.Test) {
 				var definitions []*tryjob.Definition
 				expected := stringset.New(numBuildsPerHost / 2 * len(bbHosts))
 				for _, build := range allBuilds {
@@ -354,15 +374,15 @@ func TestSearch(t *testing.T) {
 				}
 				got := stringset.New(numBuildsPerHost / 2 * len(bbHosts))
 				err := f.Search(ctx, []*run.RunCL{cl}, definitions, lProject, func(job *tryjob.Tryjob) bool {
-					So(got.Has(string(job.ExternalID)), ShouldBeFalse)
+					assert.Loosely(t, got.Has(string(job.ExternalID)), should.BeFalse)
 					got.Add(string(job.ExternalID))
 					return true
 				})
-				So(err, ShouldBeNil)
-				So(got, ShouldResemble, expected)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, got, should.Resemble(expected))
 			})
 
-			Convey("Can stop paging", func() {
+			t.Run("Can stop paging", func(t *ftt.Test) {
 				var definitions []*tryjob.Definition
 				for _, bbHost := range bbHosts {
 					// matching all
@@ -396,11 +416,11 @@ func TestSearch(t *testing.T) {
 					case count == stopAfter:
 						return false
 					default:
-						So("Callback is called after it indicates to stop", ShouldBeEmpty)
+						assert.Loosely(t, "Callback is called after it indicates to stop", should.BeEmpty)
 						return true // never reached
 					}
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 		})
 	})

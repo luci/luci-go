@@ -32,12 +32,15 @@ import (
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/tryjob"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestLaunch(t *testing.T) {
-	Convey("Launch", t, func() {
+	ftt.Run("Launch", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 		f := &Facade{
@@ -59,7 +62,7 @@ func TestLaunch(t *testing.T) {
 			triggerEmail = "triggerer@example.com"
 		)
 		ownerIdentity, err := identity.MakeIdentity(fmt.Sprintf("user:%s", owner1Email))
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		ct.AddMember(ownerIdentity.Email(), "googlers") // Run owner is a googler
 		builderID := &bbpb.BuilderID{
 			Project: lProject,
@@ -70,7 +73,7 @@ func TestLaunch(t *testing.T) {
 			"foo": "bar",
 		})
 		bbClient, err := ct.BuildbucketFake.NewClientFactory().MakeClient(ctx, bbHost, lProject)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		epoch := ct.Clock.Now().UTC()
 		cl1 := &run.RunCL{
@@ -130,7 +133,7 @@ func TestLaunch(t *testing.T) {
 			},
 		}
 
-		Convey("Single Tryjob", func() {
+		t.Run("Single Tryjob", func(t *ftt.Test) {
 			definition := &tryjob.Definition{
 				Backend: &tryjob.Definition_Buildbucket_{
 					Buildbucket: &tryjob.Definition_Buildbucket{
@@ -140,22 +143,22 @@ func TestLaunch(t *testing.T) {
 				},
 				Experiments: []string{"infra.experiment.foo", "infra.experiment.bar"},
 			}
-			Convey("Not Optional", func() {
+			t.Run("Not Optional", func(t *ftt.Test) {
 				tj := &tryjob.Tryjob{
 					ID:         65535,
 					Definition: definition,
 					Status:     tryjob.Status_PENDING,
 				}
 				launchResults := f.Launch(ctx, []*tryjob.Tryjob{tj}, r, cls)
-				So(launchResults, ShouldHaveLength, 1)
+				assert.Loosely(t, launchResults, should.HaveLength(1))
 				launchResult := launchResults[0]
-				So(launchResult.Err, ShouldBeNil)
-				So(launchResult.ExternalID, ShouldNotBeEmpty)
+				assert.Loosely(t, launchResult.Err, should.BeNil)
+				assert.Loosely(t, launchResult.ExternalID, should.NotBeEmpty)
 				host, id, err := launchResult.ExternalID.ParseBuildbucketID()
-				So(err, ShouldBeNil)
-				So(host, ShouldEqual, bbHost)
-				So(launchResult.Status, ShouldEqual, tryjob.Status_TRIGGERED)
-				So(launchResult.Result, ShouldResembleProto, &tryjob.Result{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, host, should.Equal(bbHost))
+				assert.Loosely(t, launchResult.Status, should.Equal(tryjob.Status_TRIGGERED))
+				assert.Loosely(t, launchResult.Result, should.Resemble(&tryjob.Result{
 					Status:     tryjob.Result_UNKNOWN,
 					CreateTime: timestamppb.New(ct.Clock.Now()),
 					UpdateTime: timestamppb.New(ct.Clock.Now()),
@@ -166,16 +169,16 @@ func TestLaunch(t *testing.T) {
 							Builder: builderID,
 						},
 					},
-				})
+				}))
 				build, err := bbClient.GetBuild(ctx, &bbpb.GetBuildRequest{
 					Id: id,
 					Mask: &bbpb.BuildMask{
 						AllFields: true,
 					},
 				})
-				So(err, ShouldBeNil)
-				So(build.GetBuilder(), ShouldResembleProto, builderID)
-				So(build.GetInput().GetProperties(), ShouldResembleProto, &structpb.Struct{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, build.GetBuilder(), should.Resemble(builderID))
+				assert.Loosely(t, build.GetInput().GetProperties(), should.Resemble(&structpb.Struct{
 					Fields: map[string]*structpb.Value{
 						"foo": structpb.NewStringValue("bar"),
 						propertyKey: structpb.NewStructValue(&structpb.Struct{
@@ -197,12 +200,12 @@ func TestLaunch(t *testing.T) {
 							},
 						}),
 					},
-				})
-				So(build.GetInput().GetGerritChanges(), ShouldResembleProto, []*bbpb.GerritChange{
+				}))
+				assert.Loosely(t, build.GetInput().GetGerritChanges(), should.Resemble([]*bbpb.GerritChange{
 					{Host: gHost, Project: gRepo, Change: gChange1, Patchset: 4},
 					{Host: gHost, Project: gRepo, Change: gChange2, Patchset: 10},
-				})
-				So(build.GetTags(), ShouldResembleProto, []*bbpb.StringPair{
+				}))
+				assert.Loosely(t, build.GetTags(), should.Resemble([]*bbpb.StringPair{
 					{Key: "cq_attempt_key", Value: "63616665"},
 					{Key: "cq_cl_group_key", Value: "42497728aa4b5097"},
 					{Key: "cq_cl_owner", Value: owner1Email},
@@ -212,11 +215,11 @@ func TestLaunch(t *testing.T) {
 					{Key: "cq_experimental", Value: "false"},
 					{Key: "cq_triggerer", Value: triggerEmail},
 					{Key: "user_agent", Value: "cq"},
-				})
-				So(build.GetInput().GetExperiments(), ShouldResemble, []string{"infra.experiment.bar", "infra.experiment.foo"})
+				}))
+				assert.Loosely(t, build.GetInput().GetExperiments(), should.Resemble([]string{"infra.experiment.bar", "infra.experiment.foo"}))
 			})
 
-			Convey("Optional Tryjob", func() {
+			t.Run("Optional Tryjob", func(t *ftt.Test) {
 				definition.Optional = true
 				tj := &tryjob.Tryjob{
 					ID:         65535,
@@ -224,20 +227,20 @@ func TestLaunch(t *testing.T) {
 					Status:     tryjob.Status_PENDING,
 				}
 				launchResults := f.Launch(ctx, []*tryjob.Tryjob{tj}, r, cls)
-				So(launchResults, ShouldHaveLength, 1)
+				assert.Loosely(t, launchResults, should.HaveLength(1))
 				launchResult := launchResults[0]
-				So(launchResult.Err, ShouldBeNil)
-				So(launchResult.ExternalID, ShouldNotBeEmpty)
+				assert.Loosely(t, launchResult.Err, should.BeNil)
+				assert.Loosely(t, launchResult.ExternalID, should.NotBeEmpty)
 				_, id, err := launchResult.ExternalID.ParseBuildbucketID()
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				build, err := bbClient.GetBuild(ctx, &bbpb.GetBuildRequest{
 					Id: id,
 					Mask: &bbpb.BuildMask{
 						AllFields: true,
 					},
 				})
-				So(err, ShouldBeNil)
-				So(build.GetInput().GetProperties().GetFields()[propertyKey].GetStructValue().GetFields()["experimental"].GetBoolValue(), ShouldBeTrue)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, build.GetInput().GetProperties().GetFields()[propertyKey].GetStructValue().GetFields()["experimental"].GetBoolValue(), should.BeTrue)
 				var experimentalTag *bbpb.StringPair
 				for _, tag := range build.GetTags() {
 					if tag.GetKey() == "cq_experimental" {
@@ -245,12 +248,12 @@ func TestLaunch(t *testing.T) {
 						break
 					}
 				}
-				So(experimentalTag, ShouldNotBeNil)
-				So(experimentalTag.GetValue(), ShouldEqual, "true")
+				assert.Loosely(t, experimentalTag, should.NotBeNil)
+				assert.Loosely(t, experimentalTag.GetValue(), should.Equal("true"))
 			})
 		})
 
-		Convey("Multiple across hosts", func() {
+		t.Run("Multiple across hosts", func(t *ftt.Test) {
 			tryjobs := []*tryjob.Tryjob{
 				{
 					ID: 65533,
@@ -307,30 +310,30 @@ func TestLaunch(t *testing.T) {
 			ct.BuildbucketFake.AddBuilder(bbHost2, tryjobs[2].Definition.GetBuildbucket().GetBuilder(), nil)
 			launchResults := f.Launch(ctx, tryjobs, r, cls)
 			for i, launchResult := range launchResults {
-				So(launchResult.Err, ShouldBeNil)
-				So(launchResult.ExternalID, ShouldNotBeEmpty)
+				assert.Loosely(t, launchResult.Err, should.BeNil)
+				assert.Loosely(t, launchResult.ExternalID, should.NotBeEmpty)
 				host, id, err := launchResult.ExternalID.ParseBuildbucketID()
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				switch i {
 				case 0, 1:
-					So(host, ShouldEqual, bbHost)
+					assert.Loosely(t, host, should.Equal(bbHost))
 				default:
-					So(host, ShouldEqual, bbHost2)
+					assert.Loosely(t, host, should.Equal(bbHost2))
 				}
 				bbClient, err := ct.BuildbucketFake.NewClientFactory().MakeClient(ctx, host, lProject)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				build, err := bbClient.GetBuild(ctx, &bbpb.GetBuildRequest{
 					Id: id,
 					Mask: &bbpb.BuildMask{
 						AllFields: true,
 					},
 				})
-				So(err, ShouldBeNil)
-				So(build, ShouldNotBeNil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, build, should.NotBeNil)
 			}
 		})
 
-		Convey("Large number of tryjobs", func() {
+		t.Run("Large number of tryjobs", func(t *ftt.Test) {
 			tryjobs := make([]*tryjob.Tryjob, 2000)
 			for i := range tryjobs {
 				tryjobs[i] = &tryjob.Tryjob{
@@ -352,26 +355,26 @@ func TestLaunch(t *testing.T) {
 				ct.BuildbucketFake.AddBuilder(bbHost, tryjobs[i].Definition.GetBuildbucket().GetBuilder(), nil)
 			}
 			launchResults := f.Launch(ctx, tryjobs, r, cls)
-			So(launchResults, ShouldHaveLength, len(tryjobs))
+			assert.Loosely(t, launchResults, should.HaveLength(len(tryjobs)))
 			for i, launchResult := range launchResults {
-				So(launchResult.Err, ShouldBeNil)
-				So(launchResult.ExternalID, ShouldNotBeEmpty)
+				assert.Loosely(t, launchResult.Err, should.BeNil)
+				assert.Loosely(t, launchResult.ExternalID, should.NotBeEmpty)
 				host, id, err := launchResult.ExternalID.ParseBuildbucketID()
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				bbClient, err := ct.BuildbucketFake.NewClientFactory().MakeClient(ctx, host, lProject)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				build, err := bbClient.GetBuild(ctx, &bbpb.GetBuildRequest{
 					Id: id,
 					Mask: &bbpb.BuildMask{
 						AllFields: true,
 					},
 				})
-				So(err, ShouldBeNil)
-				So(build.GetBuilder(), ShouldResembleProto, tryjobs[i].Definition.GetBuildbucket().GetBuilder())
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, build.GetBuilder(), should.Resemble(tryjobs[i].Definition.GetBuildbucket().GetBuilder()))
 			}
 		})
 
-		Convey("Failure", func() {
+		t.Run("Failure", func(t *ftt.Test) {
 			tryjobs := []*tryjob.Tryjob{
 				{
 					ID: 65534,
@@ -403,16 +406,16 @@ func TestLaunch(t *testing.T) {
 				},
 			}
 			launchResults := f.Launch(ctx, tryjobs, r, cls)
-			So(launchResults, ShouldHaveLength, 2)
-			So(launchResults[0].Err, ShouldBeNil) // First Tryjob launched successfully
-			So(launchResults[0].ExternalID, ShouldNotBeEmpty)
-			So(launchResults[1].Err, ShouldBeRPCNotFound)
-			So(launchResults[1].ExternalID, ShouldBeEmpty)
-			So(launchResults[1].Status, ShouldEqual, tryjob.Status_STATUS_UNSPECIFIED)
-			So(launchResults[1].Result, ShouldBeNil)
+			assert.Loosely(t, launchResults, should.HaveLength(2))
+			assert.Loosely(t, launchResults[0].Err, should.BeNil) // First Tryjob launched successfully
+			assert.Loosely(t, launchResults[0].ExternalID, should.NotBeEmpty)
+			assert.Loosely(t, launchResults[1].Err, convey.Adapt(ShouldBeRPCNotFound)())
+			assert.Loosely(t, launchResults[1].ExternalID, should.BeEmpty)
+			assert.Loosely(t, launchResults[1].Status, should.Equal(tryjob.Status_STATUS_UNSPECIFIED))
+			assert.Loosely(t, launchResults[1].Result, should.BeNil)
 		})
 
-		Convey("Deduplicate", func() {
+		t.Run("Deduplicate", func(t *ftt.Test) {
 			tj := &tryjob.Tryjob{
 				ID: 655365,
 				Definition: &tryjob.Definition{
@@ -426,15 +429,15 @@ func TestLaunch(t *testing.T) {
 				Status: tryjob.Status_PENDING,
 			}
 			launchResults := f.Launch(ctx, []*tryjob.Tryjob{tj}, r, cls)
-			So(launchResults, ShouldHaveLength, 1)
-			So(launchResults[0].Err, ShouldBeNil)
+			assert.Loosely(t, launchResults, should.HaveLength(1))
+			assert.Loosely(t, launchResults[0].Err, should.BeNil)
 			firstExternalID := launchResults[0].ExternalID
 			ct.Clock.Add(10 * time.Second)
 			launchResults = f.Launch(ctx, []*tryjob.Tryjob{tj}, r, cls)
-			So(launchResults, ShouldHaveLength, 1)
-			So(launchResults[0].Err, ShouldBeNil)
+			assert.Loosely(t, launchResults, should.HaveLength(1))
+			assert.Loosely(t, launchResults[0].Err, should.BeNil)
 			secondExternalID := launchResults[0].ExternalID
-			So(secondExternalID, ShouldEqual, firstExternalID)
+			assert.Loosely(t, secondExternalID, should.Equal(firstExternalID))
 		})
 	})
 }

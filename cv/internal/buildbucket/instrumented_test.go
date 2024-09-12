@@ -29,6 +29,9 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/distribution"
 	"go.chromium.org/luci/common/tsmon/store"
@@ -38,14 +41,12 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/cv/internal/metrics"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestInstrumentedFactory(t *testing.T) {
 	t.Parallel()
 
-	Convey("InstrumentedFactory works", t, func() {
+	ftt.Run("InstrumentedFactory works", t, func(t *ftt.Test) {
 		ctx := context.Background()
 		if testing.Verbose() {
 			ctx = logging.SetLevel(gologger.StdConfig.Use(ctx), logging.Debug)
@@ -68,17 +69,17 @@ func TestInstrumentedFactory(t *testing.T) {
 			client: mockBBClient,
 		})
 		instrumentedClient, err := f.MakeClient(ctx, bbHost, lProject)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		Convey("OK response", func() {
+		t.Run("OK response", func(t *ftt.Test) {
 			_, err := instrumentedClient.GetBuild(ctx, &bbpb.GetBuildRequest{
 				Id: 123,
 			})
-			So(err, ShouldBeNil)
-			So(tsmonSentCounter(ctx, metrics.Internal.BuildbucketRPCCount, lProject, bbHost, "GetBuild", "OK"), ShouldEqual, 1)
-			So(tsmonSentDistr(ctx, metrics.Internal.BuildbucketRPCDurations, lProject, bbHost, "GetBuild", "OK").Sum(), ShouldAlmostEqual, 100)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tsmonSentCounter(ctx, metrics.Internal.BuildbucketRPCCount, lProject, bbHost, "GetBuild", "OK"), should.Equal(1))
+			assert.Loosely(t, tsmonSentDistr(ctx, metrics.Internal.BuildbucketRPCDurations, lProject, bbHost, "GetBuild", "OK").Sum(), should.AlmostEqual(100.0))
 
-			Convey("Aware of Batch operation", func() {
+			t.Run("Aware of Batch operation", func(t *ftt.Test) {
 				_, err := instrumentedClient.Batch(ctx, &bbpb.BatchRequest{
 					Requests: []*bbpb.BatchRequest_Request{
 						{
@@ -90,21 +91,21 @@ func TestInstrumentedFactory(t *testing.T) {
 						},
 					},
 				})
-				So(err, ShouldBeNil)
-				So(tsmonSentCounter(ctx, metrics.Internal.BuildbucketRPCCount, lProject, bbHost, "Batch.GetBuild", "OK"), ShouldEqual, 1)
-				So(tsmonSentDistr(ctx, metrics.Internal.BuildbucketRPCDurations, lProject, bbHost, "Batch.GetBuild", "OK").Sum(), ShouldAlmostEqual, 100)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, tsmonSentCounter(ctx, metrics.Internal.BuildbucketRPCCount, lProject, bbHost, "Batch.GetBuild", "OK"), should.Equal(1))
+				assert.Loosely(t, tsmonSentDistr(ctx, metrics.Internal.BuildbucketRPCDurations, lProject, bbHost, "Batch.GetBuild", "OK").Sum(), should.AlmostEqual(100.0))
 			})
 		})
 
-		Convey("Error response", func() {
+		t.Run("Error response", func(t *ftt.Test) {
 			mockBBClient.grpcCode = codes.NotFound
 			mockBBClient.latency = 10 * time.Millisecond
 			_, err := instrumentedClient.GetBuild(ctx, &bbpb.GetBuildRequest{
 				Id: 123,
 			})
-			So(err, ShouldNotBeNil)
-			So(tsmonSentCounter(ctx, metrics.Internal.BuildbucketRPCCount, lProject, bbHost, "GetBuild", "NOT_FOUND"), ShouldEqual, 1)
-			So(tsmonSentDistr(ctx, metrics.Internal.BuildbucketRPCDurations, lProject, bbHost, "GetBuild", "NOT_FOUND").Sum(), ShouldAlmostEqual, 10)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, tsmonSentCounter(ctx, metrics.Internal.BuildbucketRPCCount, lProject, bbHost, "GetBuild", "NOT_FOUND"), should.Equal(1))
+			assert.Loosely(t, tsmonSentDistr(ctx, metrics.Internal.BuildbucketRPCDurations, lProject, bbHost, "GetBuild", "NOT_FOUND").Sum(), should.AlmostEqual(10.0))
 
 		})
 	})

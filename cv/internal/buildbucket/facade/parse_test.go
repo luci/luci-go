@@ -25,18 +25,20 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/config/validation"
 
 	"go.chromium.org/luci/cv/api/recipe/v1"
 	bbfake "go.chromium.org/luci/cv/internal/buildbucket/fake"
 	"go.chromium.org/luci/cv/internal/tryjob"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/common/clock/testclock"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestParseStatusAndResult(t *testing.T) {
-	Convey("Parse Status and Result", t, func() {
+	ftt.Run("Parse Status and Result", t, func(t *ftt.Test) {
 		const buildID = 12345
 		const buildSummary = "foo"
 		builder := &bbpb.BuilderID{
@@ -57,15 +59,15 @@ func TestParseStatusAndResult(t *testing.T) {
 			Construct()
 		ctx := context.Background()
 
-		Convey("Returns an error", func() {
-			Convey("On an invalid build status", func() {
+		t.Run("Returns an error", func(t *ftt.Test) {
+			t.Run("On an invalid build status", func(t *ftt.Test) {
 				b.Status = bbpb.Status_ENDED_MASK
 				_, _, err := parseStatusAndResult(ctx, b)
-				So(err, ShouldErrLike, "unexpected buildbucket status")
+				assert.Loosely(t, err, should.ErrLike("unexpected buildbucket status"))
 			})
 		})
-		Convey("Parses a valid build proto", func() {
-			Convey("For an ended build", func() {
+		t.Run("Parses a valid build proto", func(t *ftt.Test) {
+			t.Run("For an ended build", func(t *ftt.Test) {
 				startTime := createTime.Add(1 * time.Minute)
 				endTime := createTime.Add(2 * time.Minute)
 				b = bbfake.NewConstructorFromBuild(b).
@@ -73,13 +75,13 @@ func TestParseStatusAndResult(t *testing.T) {
 					WithEndTime(endTime).
 					WithUpdateTime(endTime).
 					Construct()
-				Convey("That succeeded", func() {
+				t.Run("That succeeded", func(t *ftt.Test) {
 					b = bbfake.NewConstructorFromBuild(b).WithStatus(bbpb.Status_SUCCESS).Construct()
 					status, result, err := parseStatusAndResult(ctx, b)
-					So(err, ShouldBeNil)
-					So(status, ShouldEqual, tryjob.Status_ENDED)
-					So(result.Status, ShouldEqual, tryjob.Result_SUCCEEDED)
-					So(result, ShouldResembleProto, &tryjob.Result{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, status, should.Equal(tryjob.Status_ENDED))
+					assert.Loosely(t, result.Status, should.Equal(tryjob.Result_SUCCEEDED))
+					assert.Loosely(t, result, should.Resemble(&tryjob.Result{
 						Status:     tryjob.Result_SUCCEEDED,
 						CreateTime: timestamppb.New(createTime),
 						UpdateTime: timestamppb.New(endTime),
@@ -97,58 +99,58 @@ func TestParseStatusAndResult(t *testing.T) {
 								},
 							},
 						},
-					})
+					}))
 				})
-				Convey("That timed out", func() {
+				t.Run("That timed out", func(t *ftt.Test) {
 					b = bbfake.NewConstructorFromBuild(b).
 						WithStatus(bbpb.Status_FAILURE).
 						WithTimeout(true).
 						Construct()
 					status, result, err := parseStatusAndResult(ctx, b)
-					So(err, ShouldBeNil)
-					So(status, ShouldEqual, tryjob.Status_ENDED)
-					So(result.GetStatus(), ShouldEqual, tryjob.Result_TIMEOUT)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, status, should.Equal(tryjob.Status_ENDED))
+					assert.Loosely(t, result.GetStatus(), should.Equal(tryjob.Result_TIMEOUT))
 				})
-				Convey("That failed", func() {
-					Convey("Transiently", func() {
+				t.Run("That failed", func(t *ftt.Test) {
+					t.Run("Transiently", func(t *ftt.Test) {
 						b = bbfake.NewConstructorFromBuild(b).WithStatus(bbpb.Status_INFRA_FAILURE).Construct()
 						status, result, err := parseStatusAndResult(ctx, b)
-						So(err, ShouldBeNil)
-						So(status, ShouldEqual, tryjob.Status_ENDED)
-						So(result.GetStatus(), ShouldEqual, tryjob.Result_FAILED_TRANSIENTLY)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, status, should.Equal(tryjob.Status_ENDED))
+						assert.Loosely(t, result.GetStatus(), should.Equal(tryjob.Result_FAILED_TRANSIENTLY))
 					})
-					Convey("Permanently", func() {
+					t.Run("Permanently", func(t *ftt.Test) {
 						b.Status = bbpb.Status_FAILURE
 						status, result, err := parseStatusAndResult(ctx, b)
-						So(status, ShouldEqual, tryjob.Status_ENDED)
-						So(err, ShouldBeNil)
-						So(result.GetStatus(), ShouldEqual, tryjob.Result_FAILED_PERMANENTLY)
+						assert.Loosely(t, status, should.Equal(tryjob.Status_ENDED))
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, result.GetStatus(), should.Equal(tryjob.Result_FAILED_PERMANENTLY))
 					})
 				})
-				Convey("That cancelled", func() {
+				t.Run("That cancelled", func(t *ftt.Test) {
 					b = bbfake.NewConstructorFromBuild(b).WithStatus(bbpb.Status_INFRA_FAILURE).Construct()
 					status, result, err := parseStatusAndResult(ctx, b)
-					So(err, ShouldBeNil)
-					So(status, ShouldEqual, tryjob.Status_ENDED)
-					So(result.GetStatus(), ShouldEqual, tryjob.Result_FAILED_TRANSIENTLY)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, status, should.Equal(tryjob.Status_ENDED))
+					assert.Loosely(t, result.GetStatus(), should.Equal(tryjob.Result_FAILED_TRANSIENTLY))
 				})
 			})
-			Convey("For a pending build", func() {
-				Convey("That is still scheduled", func() {
+			t.Run("For a pending build", func(t *ftt.Test) {
+				t.Run("That is still scheduled", func(t *ftt.Test) {
 					status, result, err := parseStatusAndResult(ctx, b)
-					So(err, ShouldBeNil)
-					So(status, ShouldEqual, tryjob.Status_TRIGGERED)
-					So(result.Status, ShouldEqual, tryjob.Result_UNKNOWN)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, status, should.Equal(tryjob.Status_TRIGGERED))
+					assert.Loosely(t, result.Status, should.Equal(tryjob.Result_UNKNOWN))
 				})
-				Convey("That is already running", func() {
+				t.Run("That is already running", func(t *ftt.Test) {
 					b = bbfake.NewConstructorFromBuild(b).
 						WithStatus(bbpb.Status_STARTED).
 						WithStartTime(createTime.Add(1 * time.Minute)).
 						Construct()
 					status, result, err := parseStatusAndResult(ctx, b)
-					So(err, ShouldBeNil)
-					So(status, ShouldEqual, tryjob.Status_TRIGGERED)
-					So(result.Status, ShouldEqual, tryjob.Result_UNKNOWN)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, status, should.Equal(tryjob.Status_TRIGGERED))
+					assert.Loosely(t, result.Status, should.Equal(tryjob.Result_UNKNOWN))
 				})
 			})
 		})
@@ -157,65 +159,65 @@ func TestParseStatusAndResult(t *testing.T) {
 
 func TestParseOutput(t *testing.T) {
 	ctx := context.Background()
-	Convey("parseOutput", t, func() {
-		Convey("Allow reuse", func() {
-			Convey("For full runs", func() {
+	ftt.Run("parseOutput", t, func(t *ftt.Test) {
+		t.Run("Allow reuse", func(t *ftt.Test) {
+			t.Run("For full runs", func(t *ftt.Test) {
 				result := parseBuildResult(ctx, loadTestBuild("reuse_full"))
-				So(result.output, ShouldResembleProto, &recipe.Output{
+				assert.Loosely(t, result.output, should.Resemble(&recipe.Output{
 					Reuse: []*recipe.Output_Reuse{{ModeRegexp: "FULL_RUN"}},
-				})
-				So(result.isTransFailure, ShouldBeFalse)
-				So(result.err, ShouldBeNil)
+				}))
+				assert.Loosely(t, result.isTransFailure, should.BeFalse)
+				assert.That(t, result.err, should.Equal[*validation.Error](nil))
 			})
-			Convey("For dry runs", func() {
+			t.Run("For dry runs", func(t *ftt.Test) {
 				result := parseBuildResult(ctx, loadTestBuild("reuse_dry"))
-				So(result.output, ShouldResembleProto, &recipe.Output{
+				assert.Loosely(t, result.output, should.Resemble(&recipe.Output{
 					Reuse: []*recipe.Output_Reuse{{ModeRegexp: "DRY_RUN"}},
-				})
-				So(result.isTransFailure, ShouldBeFalse)
-				So(result.err, ShouldBeNil)
+				}))
+				assert.Loosely(t, result.isTransFailure, should.BeFalse)
+				assert.That(t, result.err, should.Equal[*validation.Error](nil))
 			})
 		})
-		Convey("Do not retry", func() {
-			Convey("Legacy property only", func() {
+		t.Run("Do not retry", func(t *ftt.Test) {
+			t.Run("Legacy property only", func(t *ftt.Test) {
 				result := parseBuildResult(ctx, loadTestBuild("retry_denied_legacy"))
-				So(result.output, ShouldResembleProto, &recipe.Output{Retry: recipe.Output_OUTPUT_RETRY_DENIED})
-				So(result.isTransFailure, ShouldBeFalse)
-				So(result.err, ShouldBeNil)
+				assert.Loosely(t, result.output, should.Resemble(&recipe.Output{Retry: recipe.Output_OUTPUT_RETRY_DENIED}))
+				assert.Loosely(t, result.isTransFailure, should.BeFalse)
+				assert.That(t, result.err, should.Equal[*validation.Error](nil))
 			})
-			Convey("Proto property only", func() {
+			t.Run("Proto property only", func(t *ftt.Test) {
 				result := parseBuildResult(ctx, loadTestBuild("retry_denied_new"))
-				So(result.output, ShouldResembleProto, &recipe.Output{Retry: recipe.Output_OUTPUT_RETRY_DENIED})
-				So(result.isTransFailure, ShouldBeFalse)
-				So(result.err, ShouldBeNil)
+				assert.Loosely(t, result.output, should.Resemble(&recipe.Output{Retry: recipe.Output_OUTPUT_RETRY_DENIED}))
+				assert.Loosely(t, result.isTransFailure, should.BeFalse)
+				assert.That(t, result.err, should.Equal[*validation.Error](nil))
 			})
-			Convey("Proto overrides legacy", func() {
+			t.Run("Proto overrides legacy", func(t *ftt.Test) {
 				// In this test, the protobuf-based property allows retry and
 				// the legacy property denies it.
 				// Test that the protobuf property overrides the legacy one.
 				result := parseBuildResult(ctx, loadTestBuild("retry_denied_conflict"))
-				So(result.output, ShouldResembleProto, &recipe.Output{Retry: recipe.Output_OUTPUT_RETRY_ALLOWED})
-				So(result.isTransFailure, ShouldBeFalse)
-				So(result.err, ShouldBeNil)
+				assert.Loosely(t, result.output, should.Resemble(&recipe.Output{Retry: recipe.Output_OUTPUT_RETRY_ALLOWED}))
+				assert.Loosely(t, result.isTransFailure, should.BeFalse)
+				assert.That(t, result.err, should.Equal[*validation.Error](nil))
 			})
 		})
-		Convey("Transient failure", func() {
+		t.Run("Transient failure", func(t *ftt.Test) {
 			result := parseBuildResult(ctx, loadTestBuild("transient_failure"))
-			So(result.output, ShouldResembleProto, &recipe.Output{})
-			So(result.isTransFailure, ShouldBeTrue)
-			So(result.err, ShouldBeNil)
+			assert.Loosely(t, result.output, should.Resemble(&recipe.Output{}))
+			assert.Loosely(t, result.isTransFailure, should.BeTrue)
+			assert.That(t, result.err, should.Equal[*validation.Error](nil))
 		})
-		Convey("No properties", func() {
+		t.Run("No properties", func(t *ftt.Test) {
 			result := parseBuildResult(ctx, loadTestBuild("no_props"))
-			So(result.output, ShouldBeNil)
-			So(result.isTransFailure, ShouldBeFalse)
-			So(result.err, ShouldBeNil)
+			assert.Loosely(t, result.output, should.BeNil)
+			assert.Loosely(t, result.isTransFailure, should.BeFalse)
+			assert.That(t, result.err, should.Equal[*validation.Error](nil))
 		})
-		Convey("Bad data", func() {
+		t.Run("Bad data", func(t *ftt.Test) {
 			result := parseBuildResult(ctx, loadTestBuild("bad_data"))
-			So(result.output, ShouldResembleProto, &recipe.Output{})
-			So(result.isTransFailure, ShouldBeFalse)
-			So(result.err.Errors, ShouldHaveLength, 2)
+			assert.Loosely(t, result.output, should.Resemble(&recipe.Output{}))
+			assert.Loosely(t, result.isTransFailure, should.BeFalse)
+			assert.Loosely(t, result.err.Errors, should.HaveLength(2))
 		})
 	})
 }
