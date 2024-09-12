@@ -66,6 +66,8 @@ func TestSettingsValidation(t *testing.T) {
 					{Name: "/prpc/service/method1", RouteToGoPercent: 0},
 					{Name: "/prpc/service/method2", RouteToGoPercent: 50},
 					{Name: "/prpc/service/method3", RouteToGoPercent: 100},
+					{Name: "/bot_code", RouteToGoPercent: 100},
+					{Name: "/swarming/api/v1/bot/something", RouteToGoPercent: 100},
 				},
 			},
 		})), should.BeNil)
@@ -183,11 +185,11 @@ func TestSettingsValidation(t *testing.T) {
 				cfg: &configpb.SettingsCfg{
 					TrafficMigration: &configpb.TrafficMigration{
 						Routes: []*configpb.TrafficMigration_Route{
-							{Name: "/zzz/service/method1", RouteToGoPercent: 0},
+							{Name: "zzz/service/method1", RouteToGoPercent: 0},
 						},
 					},
 				},
-				err: `(traffic_migration / "/zzz/service/method1"): route name should start with /prpc/`,
+				err: `(traffic_migration / "zzz/service/method1"): route name should start with /`,
 			},
 			{
 				cfg: &configpb.SettingsCfg{

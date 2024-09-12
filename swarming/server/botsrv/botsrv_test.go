@@ -19,9 +19,12 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"math/rand"
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -30,6 +33,7 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -41,9 +45,11 @@ import (
 	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/tokenserver/auth/machine"
 
+	configpb "go.chromium.org/luci/swarming/proto/config"
 	internalspb "go.chromium.org/luci/swarming/proto/internals"
 	"go.chromium.org/luci/swarming/server/cfg/cfgtest"
 	"go.chromium.org/luci/swarming/server/hmactoken"
+	"go.chromium.org/luci/swarming/server/pyproxy"
 )
 
 type testRequest struct {
@@ -606,6 +612,132 @@ func TestCheckCredentials(t *testing.T) {
 			IpAllowlist: "bad",
 		})
 		assert.Loosely(t, err, should.ErrLike("bot IP 127.1.1.1 is not in the allowlist"))
+	})
+}
+
+func TestPythonProxying(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run("With server", t, func(t *ftt.Test) {
+		ctx := memory.Use(context.Background())
+		ctx = mathrand.Set(ctx, rand.New(rand.NewSource(123)))
+
+		var m sync.Mutex
+		var calls []string
+
+		recordCall := func(call string) {
+			m.Lock()
+			defer m.Unlock()
+			calls = append(calls, call)
+		}
+
+		collectCalls := func() []string {
+			m.Lock()
+			defer m.Unlock()
+			out := calls
+			calls = nil
+			return out
+		}
+
+		// A server representing Python.
+		pySrv := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+			recordCall("py:" + req.URL.RequestURI())
+		}))
+		defer pySrv.Close()
+
+		cfg := cfgtest.MockConfigs(ctx, &cfgtest.MockedConfigs{
+			Settings: &configpb.SettingsCfg{
+				TrafficMigration: &configpb.TrafficMigration{
+					Routes: []*configpb.TrafficMigration_Route{
+						// Should be ignore: Go only route.
+						{Name: "/swarming/api/v1/bot/rbe/something", RouteToGoPercent: 0},
+						// Always routed to Py.
+						{Name: "/swarming/api/v1/bot/python", RouteToGoPercent: 0},
+						// Always routed to Go.
+						{Name: "/swarming/api/v1/bot/go", RouteToGoPercent: 100},
+						// Random chance.
+						{Name: "/swarming/api/v1/bot/rand", RouteToGoPercent: 20},
+					},
+				},
+			},
+		})
+
+		goSrv := router.New()
+		middlewares := []router.Middleware{
+			pythonProxyMiddleware(pyproxy.NewProxy(cfg, pySrv.URL)),
+		}
+
+		routes := []string{
+			"/swarming/api/v1/bot/rbe/something",
+			"/swarming/api/v1/bot/rbe/something-else",
+			"/swarming/api/v1/bot/unconfigured",
+			"/swarming/api/v1/bot/python",
+			"/swarming/api/v1/bot/python/:Param",
+			"/swarming/api/v1/bot/go",
+			"/swarming/api/v1/bot/go/:Param",
+			"/swarming/api/v1/bot/rand",
+			"/swarming/api/v1/bot/rand/:Param",
+		}
+		for _, route := range routes {
+			goSrv.POST(route, middlewares, func(ctx *router.Context) {
+				recordCall("go:" + ctx.Request.URL.RequestURI())
+			})
+		}
+
+		post := func(uri string) {
+			req := httptest.NewRequest("POST", uri, strings.NewReader("{}"))
+			rr := httptest.NewRecorder()
+			goSrv.ServeHTTP(rr, req.WithContext(ctx))
+			assert.That(t, rr.Code, should.Equal(200))
+		}
+
+		// Routes unconditionally routed to Go.
+		post("/swarming/api/v1/bot/rbe/something")
+		post("/swarming/api/v1/bot/rbe/something-else")
+		assert.Loosely(t, collectCalls(), should.Match([]string{
+			"go:/swarming/api/v1/bot/rbe/something",
+			"go:/swarming/api/v1/bot/rbe/something-else",
+		}))
+
+		// Routes not in the config are routed to Py.
+		post("/swarming/api/v1/bot/unconfigured")
+		assert.Loosely(t, collectCalls(), should.Match([]string{
+			"py:/swarming/api/v1/bot/unconfigured",
+		}))
+
+		// Routes configured to always route to Py.
+		post("/swarming/api/v1/bot/python")
+		post("/swarming/api/v1/bot/python/arg")
+		assert.Loosely(t, collectCalls(), should.Match([]string{
+			"py:/swarming/api/v1/bot/python",
+			"py:/swarming/api/v1/bot/python/arg",
+		}))
+
+		// Routes configured to always route to Go.
+		post("/swarming/api/v1/bot/go")
+		post("/swarming/api/v1/bot/go/arg")
+		assert.Loosely(t, collectCalls(), should.Match([]string{
+			"go:/swarming/api/v1/bot/go",
+			"go:/swarming/api/v1/bot/go/arg",
+		}))
+
+		// Routes with random splitting.
+		for i := 0; i < 5; i++ {
+			post("/swarming/api/v1/bot/rand")
+			post("/swarming/api/v1/bot/rand/arg")
+		}
+		assert.Loosely(t, collectCalls(), should.Match([]string{
+			"py:/swarming/api/v1/bot/rand",
+			"py:/swarming/api/v1/bot/rand/arg",
+			"go:/swarming/api/v1/bot/rand",
+			"py:/swarming/api/v1/bot/rand/arg",
+			"py:/swarming/api/v1/bot/rand",
+			"py:/swarming/api/v1/bot/rand/arg",
+			"py:/swarming/api/v1/bot/rand",
+			"go:/swarming/api/v1/bot/rand/arg",
+			"py:/swarming/api/v1/bot/rand",
+			"go:/swarming/api/v1/bot/rand/arg",
+		}))
 	})
 }
 

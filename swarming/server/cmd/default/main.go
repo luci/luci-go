@@ -133,7 +133,7 @@ func main() {
 
 		// Endpoints hit by bots.
 		rbeSessions := rbe.NewSessionServer(srv.Context, sessionsConns, tokenSecret)
-		botSrv := botsrv.New(srv.Context, cfg, srv.Routes, srv.Options.CloudProject, tokenSecret)
+		botSrv := botsrv.New(srv.Context, cfg, srv.Routes, proxy, srv.Options.CloudProject, tokenSecret)
 		botsrv.InstallHandler(botSrv, "/swarming/api/v1/bot/rbe/ping", pingHandler)
 		botsrv.InstallHandler(botSrv, "/swarming/api/v1/bot/rbe/session/create", rbeSessions.CreateBotSession)
 		botsrv.InstallHandler(botSrv, "/swarming/api/v1/bot/rbe/session/update", rbeSessions.UpdateBotSession)

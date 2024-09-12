@@ -158,8 +158,8 @@ func validateTrafficMigration(ctx *validation.Context, cfg *configpb.TrafficMigr
 		if !seen.Add(r.Name) {
 			ctx.Errorf("duplicate route")
 		} else {
-			if !strings.HasPrefix(r.Name, "/prpc/") {
-				ctx.Errorf("route name should start with /prpc/")
+			if !strings.HasPrefix(r.Name, "/") {
+				ctx.Errorf("route name should start with /")
 			}
 			if r.RouteToGoPercent < 0 || r.RouteToGoPercent > 100 {
 				ctx.Errorf("route_to_go_percent should be in range [0, 100]")
