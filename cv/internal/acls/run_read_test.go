@@ -17,6 +17,7 @@ package acls
 import (
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/auth/identity"
@@ -34,10 +35,15 @@ import (
 
 	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/registry"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
+
+func init() {
+	registry.RegisterCmpOption(cmp.AllowUnexported(run.Run{}))
+}
 
 func TestRunReadChecker(t *testing.T) {
 	t.Parallel()
@@ -102,7 +108,7 @@ func TestRunReadChecker(t *testing.T) {
 			t.Run("OK public", func(t *ftt.Test) {
 				r, err := run.LoadRun(ctx, publicRun.ID, NewRunReadChecker())
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, r, convey.Adapt(cvtesting.SafeShouldResemble)(publicRun))
+				assert.Loosely(t, r, should.Match(publicRun))
 			})
 
 			t.Run("OK internal", func(t *ftt.Test) {
@@ -113,7 +119,7 @@ func TestRunReadChecker(t *testing.T) {
 				})
 				r, err := run.LoadRun(ctx, internalRun.ID, NewRunReadChecker())
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, r, convey.Adapt(cvtesting.SafeShouldResemble)(internalRun))
+				assert.Loosely(t, r, should.Match(internalRun))
 			})
 
 			t.Run("OK v0 API users", func(t *ftt.Test) {
@@ -123,10 +129,10 @@ func TestRunReadChecker(t *testing.T) {
 				})
 				r, err := run.LoadRun(ctx, publicRun.ID, NewRunReadChecker())
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, r, convey.Adapt(cvtesting.SafeShouldResemble)(publicRun))
+				assert.Loosely(t, r, should.Match(publicRun))
 				r, err = run.LoadRun(ctx, internalRun.ID, NewRunReadChecker())
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, r, convey.Adapt(cvtesting.SafeShouldResemble)(internalRun))
+				assert.Loosely(t, r, should.Match(internalRun))
 			})
 
 			t.Run("PermissionDenied", func(t *ftt.Test) {

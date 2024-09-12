@@ -19,12 +19,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"google.golang.org/protobuf/types/known/durationpb"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/registry"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -32,6 +33,10 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 )
+
+func init() {
+	registry.RegisterCmpOption(cmp.AllowUnexported(queue{}))
+}
 
 func TestQueue(t *testing.T) {
 	t.Parallel()
@@ -66,7 +71,7 @@ func TestQueue(t *testing.T) {
 			t.Run("When queue is empty", func(t *ftt.Test) {
 				waitlisted := mustTryAcquire(ctx, run1, nil)
 				assert.Loosely(t, waitlisted, should.BeFalse)
-				assert.Loosely(t, mustLoadQueue(), convey.Adapt(cvtesting.SafeShouldResemble)(&queue{
+				assert.Loosely(t, mustLoadQueue(), should.Match(&queue{
 					ID:      lProject,
 					Current: run1,
 				}))
@@ -74,7 +79,7 @@ func TestQueue(t *testing.T) {
 				t.Run("And acquire same Run again", func(t *ftt.Test) {
 					waitlisted := mustTryAcquire(ctx, run1, nil)
 					assert.Loosely(t, waitlisted, should.BeFalse)
-					assert.Loosely(t, mustLoadQueue(), convey.Adapt(cvtesting.SafeShouldResemble)(&queue{
+					assert.Loosely(t, mustLoadQueue(), should.Match(&queue{
 						ID:      lProject,
 						Current: run1,
 					}))
@@ -89,14 +94,14 @@ func TestQueue(t *testing.T) {
 				}), should.BeNil)
 				waitlisted := mustTryAcquire(ctx, run2, nil)
 				assert.Loosely(t, waitlisted, should.BeTrue)
-				assert.Loosely(t, mustLoadQueue(), convey.Adapt(cvtesting.SafeShouldResemble)(&queue{
+				assert.Loosely(t, mustLoadQueue(), should.Match(&queue{
 					ID:       lProject,
 					Current:  run1,
 					Waitlist: common.RunIDs{run2},
 				}))
 				waitlisted = mustTryAcquire(ctx, run3, nil)
 				assert.Loosely(t, waitlisted, should.BeTrue)
-				assert.Loosely(t, mustLoadQueue(), convey.Adapt(cvtesting.SafeShouldResemble)(&queue{
+				assert.Loosely(t, mustLoadQueue(), should.Match(&queue{
 					ID:       lProject,
 					Current:  run1,
 					Waitlist: common.RunIDs{run2, run3},
@@ -106,7 +111,7 @@ func TestQueue(t *testing.T) {
 					for _, r := range []common.RunID{run2, run3} {
 						waitlisted := mustTryAcquire(ctx, r, nil)
 						assert.Loosely(t, waitlisted, should.BeTrue)
-						assert.Loosely(t, mustLoadQueue(), convey.Adapt(cvtesting.SafeShouldResemble)(&queue{
+						assert.Loosely(t, mustLoadQueue(), should.Match(&queue{
 							ID:       lProject,
 							Current:  run1,
 							Waitlist: common.RunIDs{run2, run3},
@@ -123,7 +128,7 @@ func TestQueue(t *testing.T) {
 				}), should.BeNil)
 				waitlisted := mustTryAcquire(ctx, run2, nil)
 				assert.Loosely(t, waitlisted, should.BeFalse)
-				assert.Loosely(t, mustLoadQueue(), convey.Adapt(cvtesting.SafeShouldResemble)(&queue{
+				assert.Loosely(t, mustLoadQueue(), should.Match(&queue{
 					ID:       lProject,
 					Current:  run2,
 					Waitlist: common.RunIDs{run3},
@@ -148,7 +153,7 @@ func TestQueue(t *testing.T) {
 			}), should.BeNil)
 			t.Run("Current slot", func(t *ftt.Test) {
 				mustRelease(ctx, run1)
-				assert.Loosely(t, mustLoadQueue(), convey.Adapt(cvtesting.SafeShouldResemble)(&queue{
+				assert.Loosely(t, mustLoadQueue(), should.Match(&queue{
 					ID:       lProject,
 					Waitlist: common.RunIDs{run2, run3},
 				}))
@@ -160,7 +165,7 @@ func TestQueue(t *testing.T) {
 
 			t.Run("Run in waitlist", func(t *ftt.Test) {
 				mustRelease(ctx, run2)
-				assert.Loosely(t, mustLoadQueue(), convey.Adapt(cvtesting.SafeShouldResemble)(&queue{
+				assert.Loosely(t, mustLoadQueue(), should.Match(&queue{
 					ID:       lProject,
 					Current:  run1,
 					Waitlist: common.RunIDs{run3},
@@ -173,7 +178,7 @@ func TestQueue(t *testing.T) {
 			t.Run("Non-existing run", func(t *ftt.Test) {
 				nonExisting := common.MakeRunID(lProject, clock.Now(ctx), 1, []byte("badbadbad"))
 				mustRelease(ctx, nonExisting)
-				assert.Loosely(t, mustLoadQueue(), convey.Adapt(cvtesting.SafeShouldResemble)(&queue{
+				assert.Loosely(t, mustLoadQueue(), should.Match(&queue{
 					ID:       lProject,
 					Current:  run1,
 					Waitlist: common.RunIDs{run2, run3},

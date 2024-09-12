@@ -18,12 +18,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/data/stringset"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/registry"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -35,6 +36,10 @@ import (
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/tryjob"
 )
+
+func init() {
+	registry.RegisterCmpOption(cmp.AllowUnexported(tryjob.Tryjob{}))
+}
 
 func TestFindReuseInBackend(t *testing.T) {
 	t.Parallel()
@@ -129,7 +134,7 @@ func TestFindReuseInBackend(t *testing.T) {
 			assert.Loosely(t, result, should.ContainKey(defFoo))
 			eid := tryjob.MustBuildbucketID(bbHost, build.GetId())
 			result[defFoo].RetentionKey = "" // clear the retention key before comparison
-			assert.Loosely(t, result[defFoo], convey.Adapt(cvtesting.SafeShouldResemble)(&tryjob.Tryjob{
+			assert.Loosely(t, result[defFoo], should.Match(&tryjob.Tryjob{
 				ID:               tryjob.MustResolve(ctx, eid)[0],
 				ExternalID:       eid,
 				EVersion:         1,
@@ -213,7 +218,7 @@ func TestFindReuseInBackend(t *testing.T) {
 			latest := &tryjob.Tryjob{ID: common.TryjobID(tj.ID)}
 			assert.Loosely(t, datastore.Get(ctx, latest), should.BeNil)
 			latest.RetentionKey = "" // clear the retention key before comparison
-			assert.Loosely(t, latest, convey.Adapt(cvtesting.SafeShouldResemble)(&tryjob.Tryjob{
+			assert.Loosely(t, latest, should.Match(&tryjob.Tryjob{
 				ID:               tj.ID,
 				ExternalID:       eid,
 				EVersion:         tj.EVersion + 1,

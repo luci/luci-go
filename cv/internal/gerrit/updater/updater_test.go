@@ -30,7 +30,6 @@ import (
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/tq"
 
@@ -488,7 +487,7 @@ func TestUpdaterBackendFetch(t *testing.T) {
 				assert.Loosely(t, res2.AddDependentMeta.GetByProject()[lProject].UpdateTime, should.Resemble(timestamppb.New(ct.Clock.Now())))
 				res.AddDependentMeta.GetByProject()[lProject].UpdateTime = nil
 				res2.AddDependentMeta.GetByProject()[lProject].UpdateTime = nil
-				assert.Loosely(t, res2, convey.Adapt(cvtesting.SafeShouldResemble)(res))
+				assert.Loosely(t, res2, should.Match(res))
 				// And thus, lack of access is still uncertain.
 				assert.Loosely(t, cl.AccessKind(ctx, lProject), should.Equal(changelist.AccessDeniedProbably))
 			})
@@ -501,7 +500,7 @@ func TestUpdaterBackendFetch(t *testing.T) {
 				assert.Loosely(t, res2.AddDependentMeta.GetByProject()[lProject].UpdateTime, should.Resemble(timestamppb.New(ct.Clock.Now())))
 				res.AddDependentMeta.GetByProject()[lProject].UpdateTime = nil
 				res2.AddDependentMeta.GetByProject()[lProject].UpdateTime = nil
-				assert.Loosely(t, res2, convey.Adapt(cvtesting.SafeShouldResemble)(res))
+				assert.Loosely(t, res2, should.Match(res))
 				// Nothing new should be scheduled (on top of the existing task).
 				assertUpdateCLScheduledFor(gChange)
 				// Finally, certainty is reached.
