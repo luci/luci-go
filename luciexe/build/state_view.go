@@ -15,8 +15,9 @@
 package build
 
 import (
-	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"google.golang.org/protobuf/proto"
+
+	bbpb "go.chromium.org/luci/buildbucket/proto"
 )
 
 // View is a window into the build State.

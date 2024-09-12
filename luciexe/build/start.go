@@ -23,7 +23,6 @@ import (
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 )
 
@@ -33,8 +32,8 @@ import (
 // `MainWithOutput`.
 //
 // This function clones `initial` as the basis of all state updates (see
-// OptSend) and MakePropertyReader declarations. This also initializes the build
-// State in `ctx` and returns the manipulable State object.
+// OptSend) and RegisterProperty declarations. This also initializes the build
+// State and properties.State in `ctx` and returns the manipulable State object.
 //
 // You must End the returned State. To automatically map errors and panics to
 // their correct visual representation, End the State like:
@@ -59,15 +58,9 @@ func Start(ctx context.Context, initial *bbpb.Build, opts ...StartOption) (*Stat
 		Input:  &bbpb.Build_Input{},
 	})
 
-	outputReservationKeys := propModifierReservations.locs.snap()
-
 	logClosers := map[string]func() error{}
-	outputProps := make(map[string]*outputPropertyState, len(outputReservationKeys))
-	ret := newState(initial, logClosers, outputProps)
+	ret := newState(initial, logClosers)
 
-	for ns := range outputReservationKeys {
-		ret.outputProperties[ns] = &outputPropertyState{}
-	}
 	ret.ctx, ret.ctxCloser = context.WithCancel(ctx)
 
 	for _, opt := range opts {
@@ -89,39 +82,28 @@ func Start(ctx context.Context, initial *bbpb.Build, opts ...StartOption) (*Stat
 	}
 
 	err := func() (err error) {
-		ret.reservedInputProperties, err = parseReservedInputProperties(initial.Input.Properties, ret.strictParse)
+		var notifyFn func(version int64)
+		if ret.sendCh.C != nil {
+			notifyFn = ret.notifyPropertyChange
+		}
+
+		pstate, err := Properties.Instantiate(
+			initial.GetInput().GetProperties(),
+			notifyFn)
+
 		if err != nil {
-			return
+			return errors.Annotate(err, "build.Start").Err()
 		}
-		if ret.topLevelInputProperties != nil {
-			if err := parseTopLevelProperties(ret.buildPb.Input.Properties, ret.strictParse, ret.topLevelInputProperties); err != nil {
-				return errors.Annotate(err, "parsing top-level properties").Err()
-			}
-		}
-		if tlo := ret.topLevelOutput; tlo != nil {
-			fields := tlo.msg.ProtoReflect().Descriptor().Fields()
-			topLevelOutputKeys := stringset.New(fields.Len())
-			for i := 0; i < fields.Len(); i++ {
-				f := fields.Get(i)
-				topLevelOutputKeys.Add(f.TextName())
-				topLevelOutputKeys.Add(f.JSONName())
-			}
-			for reserved := range ret.outputProperties {
-				if topLevelOutputKeys.Has(reserved) {
-					return errors.Reason(
-						"output property %q conflicts with field in top-level output properties: reserved at %s",
-						reserved, propModifierReservations.locs.get(reserved)).Err()
-				}
-			}
-		}
+		ret.propertyState = pstate
+		ret.ctx, err = pstate.SetInContext(ctx)
 		return
 	}()
 	if err != nil {
 		err = AttachStatus(err, bbpb.Status_INFRA_FAILURE, nil)
 		ret.SetSummaryMarkdown(fmt.Sprintf("fatal error starting build: %s", err))
 		ret.End(err)
-		return nil, ctx, err
+		return nil, ret.ctx, err
 	}
 
-	return ret, setState(ctx, ret), nil
+	return ret, setState(ret.ctx, ret), nil
 }

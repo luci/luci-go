@@ -18,31 +18,14 @@ package cv
 import (
 	"context"
 	"errors"
-	"sync"
 
 	cv "go.chromium.org/luci/cv/api/recipe/v1"
 	"go.chromium.org/luci/luciexe/build"
 )
 
-var reader func(context.Context) *cv.Input
-
-func init() {
-	// TODO(yiwzhang): This should probably have it's own namespace rather than
-	// taking $recipe_engine/cq, but we'd need to plumb in that information.
-	build.MakePropertyReader("$recipe_engine/cq", &reader)
-}
-
-var (
-	cacheOnce   sync.Once
-	cachedInput *cv.Input
-)
-
-func getInput(ctx context.Context) *cv.Input {
-	cacheOnce.Do(func() {
-		cachedInput = reader(ctx)
-	})
-	return cachedInput
-}
+// TODO(yiwzhang): This should probably have it's own namespace rather than
+// taking $recipe_engine/cq, but we'd need to plumb in that information.
+var inProps = build.RegisterInputProperty[*cv.Input]("$recipe_engine/cq")
 
 var ErrNotActive = errors.New("LUCI CV is not active for this build")
 
@@ -50,7 +33,7 @@ var ErrNotActive = errors.New("LUCI CV is not active for this build")
 //
 // If CV is not active for this build, returns ErrNotActive.
 func RunMode(ctx context.Context) (string, error) {
-	i := getInput(ctx)
+	i := inProps.GetInput(ctx)
 	if i == nil || !i.Active {
 		return "", ErrNotActive
 	}

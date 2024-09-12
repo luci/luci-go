@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
@@ -29,9 +28,12 @@ import (
 	"go.chromium.org/luci/common/logging/memlogger"
 	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/common/testing/assertions"
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
+
 	"go.chromium.org/luci/luciexe"
+
+	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestStepNoop(t *testing.T) {
