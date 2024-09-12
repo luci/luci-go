@@ -31,10 +31,12 @@ import (
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/pubsub"
+	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/tq"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
+	"go.chromium.org/luci/swarming/server/botapi"
 	"go.chromium.org/luci/swarming/server/botsrv"
 	"go.chromium.org/luci/swarming/server/cfg"
 	"go.chromium.org/luci/swarming/server/cipd"
@@ -131,12 +133,44 @@ func main() {
 		}
 		sessionsConns, reservationsConn := rbeConns[:*connPoolSize], rbeConns[*connPoolSize]
 
-		// Endpoints hit by bots.
-		rbeSessions := rbe.NewSessionServer(srv.Context, sessionsConns, tokenSecret)
+		// A server that can authenticate bot API calls and route them to Python.
 		botSrv := botsrv.New(srv.Context, cfg, srv.Routes, proxy, srv.Options.CloudProject, tokenSecret)
-		botsrv.InstallHandler(botSrv, "/swarming/api/v1/bot/rbe/ping", pingHandler)
-		botsrv.InstallHandler(botSrv, "/swarming/api/v1/bot/rbe/session/create", rbeSessions.CreateBotSession)
-		botsrv.InstallHandler(botSrv, "/swarming/api/v1/bot/rbe/session/update", rbeSessions.UpdateBotSession)
+		// A server that actually handles core Bot API calls.
+		botAPI := &botapi.BotAPIServer{Config: cfg}
+
+		// A minimal handler used by bots to test network connectivity. Install it
+		// directly into the root router because we purposefully do not want to do
+		// any authentication or any other non-trivial handling that botsrv does.
+		srv.Routes.GET("/swarming/api/v1/bot/server_ping", nil, func(ctx *router.Context) {
+			ctx.Writer.Header().Add("Content-Type", "text/plain; charset=utf-8")
+			_, _ = ctx.Writer.Write([]byte("Server up"))
+		})
+
+		// Endpoints that return bot code. Used by bots and bootstrap scripts.
+		botsrv.GET(botSrv, "/bot_code", botAPI.BotCode)
+		botsrv.GET(botSrv, "/swarming/api/v1/bot/bot_code/:Version", botAPI.BotCode)
+
+		// Bot API session management endpoints.
+		botsrv.JSON(botSrv, "/swarming/api/v1/bot/handshake", botAPI.Handshake)
+		botsrv.JSON(botSrv, "/swarming/api/v1/bot/poll", botAPI.Poll)
+		botsrv.JSON(botSrv, "/swarming/api/v1/bot/claim", botAPI.Claim)
+		botsrv.JSON(botSrv, "/swarming/api/v1/bot/event", botAPI.Event)
+
+		// Bot API service account tokens minting endpoints.
+		botsrv.JSON(botSrv, "/swarming/api/v1/bot/oauth_token", botAPI.OAuthToken)
+		botsrv.JSON(botSrv, "/swarming/api/v1/bot/id_token", botAPI.IDToken)
+
+		// Bot API task status update endpoints.
+		botsrv.JSON(botSrv, "/swarming/api/v1/bot/task_update", botAPI.TaskUpdate)
+		botsrv.JSON(botSrv, "/swarming/api/v1/bot/task_update/:TaskID", botAPI.TaskUpdate)
+		botsrv.JSON(botSrv, "/swarming/api/v1/bot/task_error", botAPI.TaskError)
+		botsrv.JSON(botSrv, "/swarming/api/v1/bot/task_error/:TaskID", botAPI.TaskError)
+
+		// Bot API endpoints to control RBE session.
+		rbeSessions := rbe.NewSessionServer(srv.Context, sessionsConns, tokenSecret)
+		botsrv.JSON(botSrv, "/swarming/api/v1/bot/rbe/ping", pingHandler)
+		botsrv.JSON(botSrv, "/swarming/api/v1/bot/rbe/session/create", rbeSessions.CreateBotSession)
+		botsrv.JSON(botSrv, "/swarming/api/v1/bot/rbe/session/update", rbeSessions.UpdateBotSession)
 
 		// Handlers for TQ tasks submitted by Python Swarming.
 		internals, err := rbe.NewInternalsClient(srv.Context, srv.Options.CloudProject)

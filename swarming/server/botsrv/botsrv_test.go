@@ -91,7 +91,7 @@ func TestBotHandler(t *testing.T) {
 		var lastRequest *Request
 		var nextResponse Response
 		var nextError error
-		InstallHandler(srv, "/test", func(_ context.Context, body *testRequest, r *Request) (Response, error) {
+		JSON(srv, "/test", func(_ context.Context, body *testRequest, r *Request) (Response, error) {
 			lastBody = body
 			lastRequest = r
 			return nextResponse, nextError

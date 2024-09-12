@@ -151,11 +151,24 @@ type RequestBodyConstraint[B any] interface {
 	*B
 }
 
-// InstallHandler installs a bot API request handler at the given route.
+// GET installs a GET request handler.
+//
+// It authenticates the bot or user credentials (if any), but doesn't itself
+// check bots.cfg authorization rules. Call AuthorizeBot to do that.
+//
+// It additionally applies traffic routing rules to send a portion of requests
+// to the Python server.
+func GET(s *Server, route string, handler router.Handler) {
+	s.router.GET(route, s.middlewares, handler)
+}
+
+// JSON installs a bot API request handler at the given route.
 //
 // This is a POST handler that receives JSON-serialized B and replies with
 // some JSON-serialized response.
-func InstallHandler[B any, RB RequestBodyConstraint[B]](s *Server, route string, h Handler[B]) {
+//
+// It performs bot authentication and authorization based on bots.cfg config.
+func JSON[B any, RB RequestBodyConstraint[B]](s *Server, route string, h Handler[B]) {
 	s.router.POST(route, s.middlewares, func(c *router.Context) {
 		ctx := c.Request.Context()
 		req := c.Request
