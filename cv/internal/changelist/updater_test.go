@@ -21,6 +21,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -28,6 +29,11 @@ import (
 	"go.chromium.org/luci/common/errors"
 	gerrit "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/registry"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
 	"go.chromium.org/luci/server/tq/tqtesting"
@@ -35,10 +41,11 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/metrics"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
+
+func init() {
+	registry.RegisterCmpOption(cmp.AllowUnexported(CL{}))
+}
 
 func externalTime(ts time.Time) *UpdateCLTask_Hint {
 	return &UpdateCLTask_Hint{ExternalUpdateTime: timestamppb.New(ts)}
@@ -47,132 +54,132 @@ func externalTime(ts time.Time) *UpdateCLTask_Hint {
 func TestUpdaterSchedule(t *testing.T) {
 	t.Parallel()
 
-	Convey("Correctly generate dedup keys for Updater TQ tasks", t, func() {
+	ftt.Run("Correctly generate dedup keys for Updater TQ tasks", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
-		Convey("Correctly generate dedup keys for Updater TQ tasks", func() {
-			Convey("Diff CLIDs have diff dedup keys", func() {
+		t.Run("Correctly generate dedup keys for Updater TQ tasks", func(t *ftt.Test) {
+			t.Run("Diff CLIDs have diff dedup keys", func(t *ftt.Test) {
 				task := &UpdateCLTask{LuciProject: "proj", Id: 7}
 				k1 := makeTaskDeduplicationKey(ctx, task, 0)
 				task.Id = 8
 				k2 := makeTaskDeduplicationKey(ctx, task, 0)
-				So(k1, ShouldNotResemble, k2)
+				assert.Loosely(t, k1, should.NotResemble(k2))
 			})
 
-			Convey("Diff ExternalID have diff dedup keys", func() {
+			t.Run("Diff ExternalID have diff dedup keys", func(t *ftt.Test) {
 				task := &UpdateCLTask{LuciProject: "proj"}
 				task.ExternalId = "kind1/foo/23"
 				k1 := makeTaskDeduplicationKey(ctx, task, 0)
 				task.ExternalId = "kind4/foo/56"
 				k2 := makeTaskDeduplicationKey(ctx, task, 0)
-				So(k1, ShouldNotResemble, k2)
+				assert.Loosely(t, k1, should.NotResemble(k2))
 			})
 
-			Convey("Even if ExternalID and internal ID refer to the same CL, they have diff dedup keys", func() {
+			t.Run("Even if ExternalID and internal ID refer to the same CL, they have diff dedup keys", func(t *ftt.Test) {
 				t1 := &UpdateCLTask{LuciProject: "proj", ExternalId: "kind1/foo/23"}
 				t2 := &UpdateCLTask{LuciProject: "proj", Id: 2}
 				k1 := makeTaskDeduplicationKey(ctx, t1, 0)
 				k2 := makeTaskDeduplicationKey(ctx, t2, 0)
-				So(k1, ShouldNotResemble, k2)
+				assert.Loosely(t, k1, should.NotResemble(k2))
 			})
 
-			Convey("Diff updatedHint have diff dedup keys", func() {
+			t.Run("Diff updatedHint have diff dedup keys", func(t *ftt.Test) {
 				task := &UpdateCLTask{LuciProject: "proj", ExternalId: "kind1/foo/23"}
 				task.Hint = externalTime(ct.Clock.Now())
 				k1 := makeTaskDeduplicationKey(ctx, task, 0)
 				task.Hint = externalTime(ct.Clock.Now().Add(time.Second))
 				k2 := makeTaskDeduplicationKey(ctx, task, 0)
-				So(k1, ShouldNotResemble, k2)
+				assert.Loosely(t, k1, should.NotResemble(k2))
 			})
 
-			Convey("Same CLs but diff LUCI projects have diff dedup keys", func() {
+			t.Run("Same CLs but diff LUCI projects have diff dedup keys", func(t *ftt.Test) {
 				task := &UpdateCLTask{LuciProject: "proj", ExternalId: "kind1/foo/23"}
 				k1 := makeTaskDeduplicationKey(ctx, task, 0)
 				task.LuciProject += "-diff"
 				k2 := makeTaskDeduplicationKey(ctx, task, 0)
-				So(k1, ShouldNotResemble, k2)
+				assert.Loosely(t, k1, should.NotResemble(k2))
 			})
 
-			Convey("Same CL at the same time is de-duped", func() {
+			t.Run("Same CL at the same time is de-duped", func(t *ftt.Test) {
 				task := &UpdateCLTask{LuciProject: "proj", ExternalId: "kind1/foo/23"}
 				k1 := makeTaskDeduplicationKey(ctx, task, 0)
 				k2 := makeTaskDeduplicationKey(ctx, task, 0)
-				So(k1, ShouldResemble, k2)
+				assert.Loosely(t, k1, should.Resemble(k2))
 
-				Convey("Internal ID doesn't affect dedup based on ExternalID", func() {
+				t.Run("Internal ID doesn't affect dedup based on ExternalID", func(t *ftt.Test) {
 					task.Id = 123
 					k3 := makeTaskDeduplicationKey(ctx, task, 0)
-					So(k3, ShouldResemble, k1)
+					assert.Loosely(t, k3, should.Resemble(k1))
 				})
 			})
 
-			Convey("Same CL with a delay or after the same delay is de-duped", func() {
+			t.Run("Same CL with a delay or after the same delay is de-duped", func(t *ftt.Test) {
 				task := &UpdateCLTask{LuciProject: "proj", Id: 123}
 				k1 := makeTaskDeduplicationKey(ctx, task, time.Second)
 				ct.Clock.Add(time.Second)
 				k2 := makeTaskDeduplicationKey(ctx, task, 0)
-				So(k1, ShouldResemble, k2)
+				assert.Loosely(t, k1, should.Resemble(k2))
 			})
 
-			Convey("Same CL at mostly same time is also de-duped", func() {
+			t.Run("Same CL at mostly same time is also de-duped", func(t *ftt.Test) {
 				task := &UpdateCLTask{LuciProject: "proj", ExternalId: "kind1/foo/23"}
 				k1 := makeTaskDeduplicationKey(ctx, task, 0)
 				// NOTE: this check may fail if common.DistributeOffset is changed,
 				// making new timestamp in the next epoch. If so, adjust the increment.
 				ct.Clock.Add(time.Second)
 				k2 := makeTaskDeduplicationKey(ctx, task, 0)
-				So(k1, ShouldResemble, k2)
+				assert.Loosely(t, k1, should.Resemble(k2))
 			})
 
-			Convey("Same CL after sufficient time is no longer de-duped", func() {
+			t.Run("Same CL after sufficient time is no longer de-duped", func(t *ftt.Test) {
 				task := &UpdateCLTask{LuciProject: "proj", ExternalId: "kind1/foo/23"}
 				k1 := makeTaskDeduplicationKey(ctx, task, 0)
 				k2 := makeTaskDeduplicationKey(ctx, task, blindRefreshInterval)
-				So(k1, ShouldNotResemble, k2)
+				assert.Loosely(t, k1, should.NotResemble(k2))
 			})
 
-			Convey("Same CL with the same MetaRevId is de-duped", func() {
+			t.Run("Same CL with the same MetaRevId is de-duped", func(t *ftt.Test) {
 				task := &UpdateCLTask{LuciProject: "proj", ExternalId: "kind1/foo/23"}
 				task.Hint = &UpdateCLTask_Hint{MetaRevId: "foo"}
 				k1 := makeTaskDeduplicationKey(ctx, task, 0)
 				k2 := makeTaskDeduplicationKey(ctx, task, 0)
-				So(k1, ShouldResemble, k2)
+				assert.Loosely(t, k1, should.Resemble(k2))
 			})
 
-			Convey("Same CL with the different MetaRevId is not de-duped", func() {
+			t.Run("Same CL with the different MetaRevId is not de-duped", func(t *ftt.Test) {
 				task := &UpdateCLTask{LuciProject: "proj", ExternalId: "kind1/foo/23"}
 				task.Hint = &UpdateCLTask_Hint{MetaRevId: "foo"}
 				k1 := makeTaskDeduplicationKey(ctx, task, 0)
 				task.Hint = &UpdateCLTask_Hint{MetaRevId: "bar"}
 				k2 := makeTaskDeduplicationKey(ctx, task, 0)
-				So(k1, ShouldNotResemble, k2)
+				assert.Loosely(t, k1, should.NotResemble(k2))
 			})
 		})
 
-		Convey("makeTQTitleForHumans works", func() {
-			So(makeTQTitleForHumans(&UpdateCLTask{
+		t.Run("makeTQTitleForHumans works", func(t *ftt.Test) {
+			assert.Loosely(t, makeTQTitleForHumans(&UpdateCLTask{
 				LuciProject: "proj",
 				Id:          123,
-			}), ShouldResemble, "proj/123")
-			So(makeTQTitleForHumans(&UpdateCLTask{
+			}), should.Match("proj/123"))
+			assert.Loosely(t, makeTQTitleForHumans(&UpdateCLTask{
 				LuciProject: "proj",
 				ExternalId:  "kind/xyz/44",
 				Id:          123,
-			}), ShouldResemble, "proj/123/kind/xyz/44")
-			So(makeTQTitleForHumans(&UpdateCLTask{
+			}), should.Match("proj/123/kind/xyz/44"))
+			assert.Loosely(t, makeTQTitleForHumans(&UpdateCLTask{
 				LuciProject: "proj",
 				ExternalId:  "gerrit/chromium-review.googlesource.com/1111111",
 				Id:          123,
-			}), ShouldResemble, "proj/123/gerrit/chromium/1111111")
-			So(makeTQTitleForHumans(&UpdateCLTask{
+			}), should.Match("proj/123/gerrit/chromium/1111111"))
+			assert.Loosely(t, makeTQTitleForHumans(&UpdateCLTask{
 				LuciProject: "proj",
 				ExternalId:  "gerrit/chromium-review.googlesource.com/1111111",
 				Hint:        externalTime(testclock.TestRecentTimeUTC),
-			}), ShouldResemble, "proj/gerrit/chromium/1111111/u2016-02-03T04:05:06Z")
+			}), should.Match("proj/gerrit/chromium/1111111/u2016-02-03T04:05:06Z"))
 		})
 
-		Convey("Works overall", func() {
+		t.Run("Works overall", func(t *ftt.Test) {
 			u := NewUpdater(ct.TQDispatcher, nil)
 			task := &UpdateCLTask{
 				LuciProject: "proj",
@@ -181,25 +188,25 @@ func TestUpdaterSchedule(t *testing.T) {
 				Requester:   UpdateCLTask_RUN_POKE,
 			}
 			delay := time.Minute
-			So(u.ScheduleDelayed(ctx, task, delay), ShouldBeNil)
-			So(ct.TQ.Tasks().Payloads(), ShouldResembleProto, []proto.Message{task})
+			assert.Loosely(t, u.ScheduleDelayed(ctx, task, delay), should.BeNil)
+			assert.Loosely(t, ct.TQ.Tasks().Payloads(), should.Resemble([]proto.Message{task}))
 
-			_, _ = Println("Dedup works")
+			t.Log("Dedup works")
 			ct.Clock.Add(delay)
-			So(u.Schedule(ctx, task), ShouldBeNil)
-			So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, 1)
+			assert.Loosely(t, u.Schedule(ctx, task), should.BeNil)
+			assert.Loosely(t, ct.TQ.Tasks().Payloads(), should.HaveLength(1))
 
-			_, _ = Println("But not within the transaction")
+			t.Log("But not within the transaction")
 			err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 				return u.Schedule(ctx, task)
 			}, nil)
-			So(err, ShouldBeNil)
-			So(ct.TQ.Tasks().Payloads(), ShouldResembleProto, []proto.Message{task, task})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ct.TQ.Tasks().Payloads(), should.Resemble([]proto.Message{task, task}))
 
-			_, _ = Println("Once out of dedup window, schedules a new task")
+			t.Log("Once out of dedup window, schedules a new task")
 			ct.Clock.Add(knownRefreshInterval)
-			So(u.Schedule(ctx, task), ShouldBeNil)
-			So(ct.TQ.Tasks().Payloads(), ShouldResembleProto, []proto.Message{task, task, task})
+			assert.Loosely(t, u.Schedule(ctx, task), should.BeNil)
+			assert.Loosely(t, ct.TQ.Tasks().Payloads(), should.Resemble([]proto.Message{task, task, task}))
 		})
 	})
 }
@@ -207,7 +214,7 @@ func TestUpdaterSchedule(t *testing.T) {
 func TestUpdaterBatch(t *testing.T) {
 	t.Parallel()
 
-	Convey("Correctly handle batches", t, func() {
+	ftt.Run("Correctly handle batches", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
@@ -238,28 +245,28 @@ func TestUpdaterBatch(t *testing.T) {
 			},
 		}
 
-		Convey("outside of a transaction, enqueues individual tasks", func() {
-			Convey("special case of just one task", func() {
+		t.Run("outside of a transaction, enqueues individual tasks", func(t *ftt.Test) {
+			t.Run("special case of just one task", func(t *ftt.Test) {
 				err := u.ScheduleBatch(ctx, "proj", []*CL{clA}, UpdateCLTask_RUN_POKE)
-				So(err, ShouldBeNil)
-				So(sortedTQPayloads(), ShouldResembleProto, expectedPayloads[:1])
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, sortedTQPayloads(), should.Resemble(expectedPayloads[:1]))
 			})
-			Convey("multiple", func() {
+			t.Run("multiple", func(t *ftt.Test) {
 				err := u.ScheduleBatch(ctx, "proj", []*CL{clA, clB}, UpdateCLTask_RUN_POKE)
-				So(err, ShouldBeNil)
-				So(sortedTQPayloads(), ShouldResembleProto, expectedPayloads)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, sortedTQPayloads(), should.Resemble(expectedPayloads))
 			})
 		})
 
-		Convey("inside of a transaction, enqueues just one task", func() {
+		t.Run("inside of a transaction, enqueues just one task", func(t *ftt.Test) {
 			err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 				return u.ScheduleBatch(ctx, "proj", []*CL{clA, clB}, UpdateCLTask_RUN_POKE)
 			}, nil)
-			So(err, ShouldBeNil)
-			So(ct.TQ.Tasks(), ShouldHaveLength, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ct.TQ.Tasks(), should.HaveLength(1))
 			// Run just the batch task.
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(BatchUpdateCLTaskClass))
-			So(sortedTQPayloads(), ShouldResembleProto, expectedPayloads)
+			assert.Loosely(t, sortedTQPayloads(), should.Resemble(expectedPayloads))
 		})
 	})
 }
@@ -269,13 +276,13 @@ func TestUpdaterBatch(t *testing.T) {
 func TestUpdaterHappyPath(t *testing.T) {
 	t.Parallel()
 
-	Convey("Updater's happy path with simplest possible backend", t, func() {
+	ftt.Run("Updater's happy path with simplest possible backend", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
 		pm, rm, tj := pmMock{}, rmMock{}, tjMock{}
 		u := NewUpdater(ct.TQDispatcher, NewMutator(ct.TQDispatcher, &pm, &rm, &tj))
-		b := &fakeUpdaterBackend{}
+		b := &fakeUpdaterBackend{t: t}
 		u.RegisterBackend(b)
 
 		////////////////////////////////////////////
@@ -300,52 +307,52 @@ func TestUpdaterHappyPath(t *testing.T) {
 			},
 		}
 		// Actually run the Updater.
-		So(u.handleCL(ctx, &UpdateCLTask{
+		assert.Loosely(t, u.handleCL(ctx, &UpdateCLTask{
 			LuciProject: "luci-project",
 			ExternalId:  "fake/123",
 			Requester:   UpdateCLTask_PUBSUB_POLL,
-		}), ShouldBeNil)
+		}), should.BeNil)
 
 		// Ensure that it reported metrics for the CL fetch events.
-		So(ct.TSMonSentValue(ctx, metrics.Internal.CLIngestionAttempted,
+		assert.Loosely(t, ct.TSMonSentValue(ctx, metrics.Internal.CLIngestionAttempted,
 			UpdateCLTask_PUBSUB_POLL.String(), // metric:requester,
 			true,                              // metric:changed == true
 			false,                             // metric:dep
 			"luci-project",                    // metric:project,
 			true,                              // metric:changed_snapshot == true
-		), ShouldEqual, 1)
-		So(ct.TSMonSentDistr(ctx, metrics.Internal.CLIngestionLatency,
+		), should.Equal(1))
+		assert.Loosely(t, ct.TSMonSentDistr(ctx, metrics.Internal.CLIngestionLatency,
 			UpdateCLTask_PUBSUB_POLL.String(), // metric:requester,
 			false,                             // metric:dep
 			"luci-project",                    // metric:project,
 			true,                              // metric:changed_snapshot == true
-		).Sum(), ShouldAlmostEqual, 1)
-		So(ct.TSMonSentDistr(ctx, metrics.Internal.CLIngestionLatencyWithoutFetch,
+		).Sum(), should.AlmostEqual(1.0))
+		assert.Loosely(t, ct.TSMonSentDistr(ctx, metrics.Internal.CLIngestionLatencyWithoutFetch,
 			UpdateCLTask_PUBSUB_POLL.String(), // metric:requester,
 			false,                             // metric:dep
 			"luci-project",                    // metric:project,
 			true,                              // metric:changed_snapshot == true
-		).Sum(), ShouldNotBeNil)
+		).Sum(), should.BeGreaterThan(0.0))
 
 		// Ensure CL is created with correct data.
 		cl, err := ExternalID("fake/123").Load(ctx)
-		So(err, ShouldBeNil)
-		So(cl.Snapshot, ShouldResembleProto, b.fetchResult.Snapshot)
-		So(cl.ApplicableConfig, ShouldResembleProto, b.fetchResult.ApplicableConfig)
-		So(cl.UpdateTime, ShouldHappenWithin, time.Microsecond /*see DS.RoundTime()*/, ct.Clock.Now())
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, cl.Snapshot, should.Resemble(b.fetchResult.Snapshot))
+		assert.Loosely(t, cl.ApplicableConfig, should.Resemble(b.fetchResult.ApplicableConfig))
+		assert.Loosely(t, cl.UpdateTime, should.HappenWithin(time.Microsecond /*see DS.RoundTime()*/, ct.Clock.Now()))
 
 		// Since there are no Runs associated with the CL, the outstanding TQ task
 		// should ultimately notify the Project Manager.
 		ct.TQ.Run(ctx, tqtesting.StopWhenDrained())
-		So(pm.byProject, ShouldResemble, map[string]map[common.CLID]int64{
+		assert.Loosely(t, pm.byProject, should.Resemble(map[string]map[common.CLID]int64{
 			"luci-project": {cl.ID: cl.EVersion},
-		})
+		}))
 
 		// Later, a Run will start on this CL.
 		const runID = "luci-project/123-1-beef"
 		cl.IncompleteRuns = common.RunIDs{runID}
 		cl.EVersion++
-		So(datastore.Put(ctx, cl), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, cl), should.BeNil)
 
 		///////////////////////////////////////////////////
 		// Phase 2: update the CL with the new patchset. //
@@ -359,21 +366,21 @@ func TestUpdaterHappyPath(t *testing.T) {
 		b.lookupACfgResult = cl.ApplicableConfig // unchanged
 
 		// Actually run the Updater.
-		So(u.handleCL(ctx, &UpdateCLTask{
+		assert.Loosely(t, u.handleCL(ctx, &UpdateCLTask{
 			LuciProject: "luci-project",
 			ExternalId:  "fake/123",
-		}), ShouldBeNil)
+		}), should.BeNil)
 		cl2 := reloadCL(ctx, cl)
 
 		// The CL entity should have a new patchset and PM/RM should be notified.
-		So(cl2.Snapshot.GetPatchset(), ShouldEqual, 3)
+		assert.Loosely(t, cl2.Snapshot.GetPatchset(), should.Equal(3))
 		ct.TQ.Run(ctx, tqtesting.StopWhenDrained())
-		So(pm.byProject, ShouldResemble, map[string]map[common.CLID]int64{
+		assert.Loosely(t, pm.byProject, should.Resemble(map[string]map[common.CLID]int64{
 			"luci-project": {cl.ID: cl2.EVersion},
-		})
-		So(rm.byRun, ShouldResemble, map[common.RunID]map[common.CLID]int64{
+		}))
+		assert.Loosely(t, rm.byRun, should.Resemble(map[common.RunID]map[common.CLID]int64{
 			runID: {cl.ID: cl2.EVersion},
-		})
+		}))
 
 		///////////////////////////////////////////////////
 		// Phase 3: update if backend detect a change    //
@@ -384,34 +391,34 @@ func TestUpdaterHappyPath(t *testing.T) {
 		b.backendSnapshotUpdated = true
 
 		// Actually run the Updater.
-		So(u.handleCL(ctx, &UpdateCLTask{
+		assert.Loosely(t, u.handleCL(ctx, &UpdateCLTask{
 			LuciProject: "luci-project",
 			ExternalId:  "fake/123",
-		}), ShouldBeNil)
+		}), should.BeNil)
 		cl3 := reloadCL(ctx, cl)
 
 		// The CL entity have been updated
-		So(cl3.EVersion, ShouldBeGreaterThan, cl2.EVersion)
+		assert.Loosely(t, cl3.EVersion, should.BeGreaterThan(cl2.EVersion))
 		ct.TQ.Run(ctx, tqtesting.StopWhenDrained())
-		So(pm.byProject, ShouldResemble, map[string]map[common.CLID]int64{
+		assert.Loosely(t, pm.byProject, should.Resemble(map[string]map[common.CLID]int64{
 			"luci-project": {cl.ID: cl3.EVersion},
-		})
-		So(rm.byRun, ShouldResemble, map[common.RunID]map[common.CLID]int64{
+		}))
+		assert.Loosely(t, rm.byRun, should.Resemble(map[common.RunID]map[common.CLID]int64{
 			runID: {cl.ID: cl3.EVersion},
-		})
+		}))
 	})
 }
 
 func TestUpdaterFetchedNoNewData(t *testing.T) {
 	t.Parallel()
 
-	Convey("Updater skips updating the CL when no new data is fetched", t, func() {
+	ftt.Run("Updater skips updating the CL when no new data is fetched", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
 		pm, rm, tj := pmMock{}, rmMock{}, tjMock{}
 		u := NewUpdater(ct.TQDispatcher, NewMutator(ct.TQDispatcher, &pm, &rm, &tj))
-		b := &fakeUpdaterBackend{}
+		b := &fakeUpdaterBackend{t: t}
 		u.RegisterBackend(b)
 
 		snap := &Snapshot{
@@ -432,12 +439,12 @@ func TestUpdaterFetchedNoNewData(t *testing.T) {
 		cl.ApplicableConfig = acfg
 		cl.Snapshot = snap
 		cl.EVersion++
-		So(datastore.Put(ctx, cl), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, cl), should.BeNil)
 
-		Convey("updaterBackend is aware that there is no new data", func() {
+		t.Run("updaterBackend is aware that there is no new data", func(t *ftt.Test) {
 			b.fetchResult = UpdateFields{}
 		})
-		Convey("updaterBackend is not aware that it fetched the exact same data", func() {
+		t.Run("updaterBackend is not aware that it fetched the exact same data", func(t *ftt.Test) {
 			b.fetchResult = UpdateFields{
 				Snapshot:         snap,
 				ApplicableConfig: acfg,
@@ -449,52 +456,52 @@ func TestUpdaterFetchedNoNewData(t *testing.T) {
 			ExternalId:  "fake/1",
 			Requester:   UpdateCLTask_PUBSUB_POLL})
 
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		// Check the monitoring data
 		if b.fetchResult.IsEmpty() {
 			// Empty fetched result implies that it didn't even perform
 			// a fetch. Hence, no metrics should have been reported.
-			So(ct.TSMonStore.GetAll(ctx), ShouldBeNil)
+			assert.Loosely(t, ct.TSMonStore.GetAll(ctx), should.BeNil)
 		} else {
 			// This is the case where a fetch was performed but
 			// the data was actually the same as the existing snapshot.
-			So(ct.TSMonSentValue(ctx, metrics.Internal.CLIngestionAttempted,
+			assert.Loosely(t, ct.TSMonSentValue(ctx, metrics.Internal.CLIngestionAttempted,
 				UpdateCLTask_PUBSUB_POLL.String(), // metric:requester,
 				false,                             // metric:changed == false
 				false,                             // metric:dep
 				"luci-project",                    // metric:project,
 				false,                             // metric:changed_snapshot == false
-			), ShouldEqual, 1)
-			So(ct.TSMonSentDistr(ctx, metrics.Internal.CLIngestionLatency,
+			), should.Equal(1))
+			assert.Loosely(t, ct.TSMonSentDistr(ctx, metrics.Internal.CLIngestionLatency,
 				UpdateCLTask_PUBSUB_POLL.String(), // metric:requester,
 				false,                             // metric:dep
 				"luci-project",                    // metric:project,
 				false,                             // metric:changed_snapshot == false,
-			), ShouldBeNil)
-			So(ct.TSMonSentDistr(ctx, metrics.Internal.CLIngestionLatencyWithoutFetch,
+			), should.BeNil)
+			assert.Loosely(t, ct.TSMonSentDistr(ctx, metrics.Internal.CLIngestionLatencyWithoutFetch,
 				UpdateCLTask_PUBSUB_POLL.String(), // metric:requester,
 				false,                             // metric:dep
 				"luci-project",                    // metric:project,
 				false,                             // metric:changed_snapshot == false
-			), ShouldBeNil)
+			), should.BeNil)
 		}
 
 		// CL entity shouldn't change and notifications should not be emitted.
 		cl2 := reloadCL(ctx, cl)
-		So(cl2.EVersion, ShouldEqual, cl.EVersion)
+		assert.Loosely(t, cl2.EVersion, should.Equal(cl.EVersion))
 		// CL Mutator guarantees that EVersion is bumped on every write, but check
 		// the entire CL contents anyway in case there is a buggy by-pass of
 		// Mutator somewhere.
-		So(cl2, cvtesting.SafeShouldResemble, cl)
-		So(ct.TQ.Tasks(), ShouldBeEmpty)
+		assert.Loosely(t, cl2, should.Match(cl))
+		assert.Loosely(t, ct.TQ.Tasks(), should.BeEmpty)
 	})
 }
 
 func TestUpdaterAccessRestriction(t *testing.T) {
 	t.Parallel()
 
-	Convey("Updater works correctly when backend denies access to the CL", t, func() {
+	ftt.Run("Updater works correctly when backend denies access to the CL", t, func(t *ftt.Test) {
 		// This is a long test, don't debug it first if other TestUpdater* tests are
 		// also failing.
 		ct := cvtesting.Test{}
@@ -502,7 +509,7 @@ func TestUpdaterAccessRestriction(t *testing.T) {
 
 		pm, rm, tj := pmMock{}, rmMock{}, tjMock{}
 		u := NewUpdater(ct.TQDispatcher, NewMutator(ct.TQDispatcher, &pm, &rm, &tj))
-		b := &fakeUpdaterBackend{}
+		b := &fakeUpdaterBackend{t: t}
 		u.RegisterBackend(b)
 
 		//////////////////////////////////////////////////////////////////////////
@@ -532,7 +539,7 @@ func TestUpdaterAccessRestriction(t *testing.T) {
 			"another-project-with-invalid-cl-deps": {NoAccessTime: timestamppb.New(alsoLongTimeAgo)},
 		}}
 		cl.EVersion++
-		So(datastore.Put(ctx, cl), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, cl), should.BeNil)
 
 		//////////////////////////////////////////////////////////////////////////
 		// Phase 2: simulate a Fetch which got access denied from backend.
@@ -553,24 +560,24 @@ func TestUpdaterAccessRestriction(t *testing.T) {
 		}
 
 		err := u.handleCL(ctx, &UpdateCLTask{LuciProject: "luci-project", ExternalId: "fake/1"})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		// Resulting CL entity should keep the Snapshot, rewrite ApplicableConfig,
 		// and merge Access.
 		cl2 := reloadCL(ctx, cl)
-		So(cl2.Snapshot, ShouldResembleProto, cl.Snapshot)
-		So(cl2.ApplicableConfig, ShouldResembleProto, b.fetchResult.ApplicableConfig)
-		So(cl2.Access, ShouldResembleProto, &Access{ByProject: map[string]*Access_Project{
+		assert.Loosely(t, cl2.Snapshot, should.Resemble(cl.Snapshot))
+		assert.Loosely(t, cl2.ApplicableConfig, should.Resemble(b.fetchResult.ApplicableConfig))
+		assert.Loosely(t, cl2.Access, should.Resemble(&Access{ByProject: map[string]*Access_Project{
 			"another-project-with-invalid-cl-deps": {NoAccessTime: timestamppb.New(alsoLongTimeAgo)},
 			"luci-project":                         {NoAccessTime: timestamppb.New(ct.Clock.Now())},
-		}})
+		}}))
 		// Notifications doesn't have to be sent to the project with invalid deps,
 		// as this update is irrelevant to the project.
 		ct.TQ.Run(ctx, tqtesting.StopWhenDrained())
-		So(pm.byProject, ShouldResemble, map[string]map[common.CLID]int64{
+		assert.Loosely(t, pm.byProject, should.Resemble(map[string]map[common.CLID]int64{
 			"luci-project":                {cl.ID: cl2.EVersion},
 			"previously-existing-project": {cl.ID: cl2.EVersion},
-		})
+		}))
 
 		//////////////////////////////////////////////////////////////////////////
 		// Phase 3: backend ACLs are fixed.
@@ -589,48 +596,48 @@ func TestUpdaterAccessRestriction(t *testing.T) {
 			DelAccess:        []string{"luci-project"},
 		}
 		err = u.handleCL(ctx, &UpdateCLTask{LuciProject: "luci-project", ExternalId: "fake/1"})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		cl3 := reloadCL(ctx, cl)
-		So(cl3.Snapshot, ShouldResembleProto, b.fetchResult.Snapshot)                      // replaced
-		So(cl3.ApplicableConfig, ShouldResembleProto, cl2.ApplicableConfig)                // same
-		So(cl3.Access, ShouldResembleProto, &Access{ByProject: map[string]*Access_Project{ // updated
+		assert.Loosely(t, cl3.Snapshot, should.Resemble(b.fetchResult.Snapshot))                     // replaced
+		assert.Loosely(t, cl3.ApplicableConfig, should.Resemble(cl2.ApplicableConfig))               // same
+		assert.Loosely(t, cl3.Access, should.Resemble(&Access{ByProject: map[string]*Access_Project{ // updated
 			// No more "luci-project" entry.
 			"another-project-with-invalid-cl-deps": {NoAccessTime: timestamppb.New(alsoLongTimeAgo)},
-		}})
+		}}))
 		// Notifications are still not sent to the project with invalid deps.
 		ct.TQ.Run(ctx, tqtesting.StopWhenDrained())
-		So(pm.byProject, ShouldResemble, map[string]map[common.CLID]int64{
+		assert.Loosely(t, pm.byProject, should.Resemble(map[string]map[common.CLID]int64{
 			"luci-project":                {cl.ID: cl3.EVersion},
 			"previously-existing-project": {cl.ID: cl3.EVersion},
-		})
+		}))
 	})
 }
 
 func TestUpdaterHandlesErrors(t *testing.T) {
 	t.Parallel()
 
-	Convey("Updater handles errors", t, func() {
+	ftt.Run("Updater handles errors", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
 		u := NewUpdater(ct.TQDispatcher, nil)
 
-		Convey("bails permanently in cases which should not happen", func() {
-			Convey("No ID given", func() {
+		t.Run("bails permanently in cases which should not happen", func(t *ftt.Test) {
+			t.Run("No ID given", func(t *ftt.Test) {
 				err := u.handleCL(ctx, &UpdateCLTask{
 					LuciProject: "luci-project",
 				})
-				So(err, ShouldErrLike, "invalid task input")
-				So(tq.Fatal.In(err), ShouldBeTrue)
+				assert.Loosely(t, err, should.ErrLike("invalid task input"))
+				assert.Loosely(t, tq.Fatal.In(err), should.BeTrue)
 			})
-			Convey("No LUCI project given", func() {
+			t.Run("No LUCI project given", func(t *ftt.Test) {
 				err := u.handleCL(ctx, &UpdateCLTask{
 					ExternalId: "fake/1",
 				})
-				So(err, ShouldErrLike, "invalid task input")
-				So(tq.Fatal.In(err), ShouldBeTrue)
+				assert.Loosely(t, err, should.ErrLike("invalid task input"))
+				assert.Loosely(t, tq.Fatal.In(err), should.BeTrue)
 			})
-			Convey("Contradicting external and internal IDs", func() {
+			t.Run("Contradicting external and internal IDs", func(t *ftt.Test) {
 				cl1 := ExternalID("fake/1").MustCreateIfNotExists(ctx)
 				cl2 := ExternalID("fake/2").MustCreateIfNotExists(ctx)
 				err := u.handleCL(ctx, &UpdateCLTask{
@@ -638,10 +645,10 @@ func TestUpdaterHandlesErrors(t *testing.T) {
 					Id:          int64(cl1.ID),
 					ExternalId:  string(cl2.ExternalID),
 				})
-				So(err, ShouldErrLike, "invalid task")
-				So(tq.Fatal.In(err), ShouldBeTrue)
+				assert.Loosely(t, err, should.ErrLike("invalid task"))
+				assert.Loosely(t, tq.Fatal.In(err), should.BeTrue)
 			})
-			Convey("Internal ID doesn't actually exist", func() {
+			t.Run("Internal ID doesn't actually exist", func(t *ftt.Test) {
 				// While in most cases this is a bug, it can happen in prod
 				// if an old CL is being deleted due to data retention policy at the
 				// same time as something else inside the CV is requesting a refresh of
@@ -651,22 +658,23 @@ func TestUpdaterHandlesErrors(t *testing.T) {
 					Id:          404,
 					LuciProject: "luci-project",
 				})
-				So(err, ShouldErrLike, datastore.ErrNoSuchEntity)
-				So(tq.Fatal.In(err), ShouldBeTrue)
+				assert.Loosely(t, err, should.ErrLike(datastore.ErrNoSuchEntity))
+				assert.Loosely(t, tq.Fatal.In(err), should.BeTrue)
 			})
-			Convey("CL from unregistered backend", func() {
+			t.Run("CL from unregistered backend", func(t *ftt.Test) {
 				err := u.handleCL(ctx, &UpdateCLTask{
 					ExternalId:  "unknown/404",
 					LuciProject: "luci-project",
 				})
-				So(err, ShouldErrLike, "backend is not supported")
-				So(tq.Fatal.In(err), ShouldBeTrue)
+				assert.Loosely(t, err, should.ErrLike("backend is not supported"))
+				assert.Loosely(t, tq.Fatal.In(err), should.BeTrue)
 			})
 		})
 
-		Convey("Respects TQErrorSpec", func() {
+		t.Run("Respects TQErrorSpec", func(t *ftt.Test) {
 			ignoreMe := errors.New("ignore-me")
 			b := &fakeUpdaterBackend{
+				t: t,
 				tqErrorSpec: common.TQIfy{
 					KnownIgnore: []error{ignoreMe},
 				},
@@ -674,8 +682,8 @@ func TestUpdaterHandlesErrors(t *testing.T) {
 			}
 			u.RegisterBackend(b)
 			err := u.handleCL(ctx, &UpdateCLTask{LuciProject: "lp", ExternalId: "fake/1"})
-			So(tq.Ignore.In(err), ShouldBeTrue)
-			So(err, ShouldErrLike, "ignore-me")
+			assert.Loosely(t, tq.Ignore.In(err), should.BeTrue)
+			assert.Loosely(t, err, should.ErrLike("ignore-me"))
 		})
 	})
 }
@@ -683,12 +691,12 @@ func TestUpdaterHandlesErrors(t *testing.T) {
 func TestUpdaterAvoidsFetchWhenPossible(t *testing.T) {
 	t.Parallel()
 
-	Convey("Updater skips fetching when possible", t, func() {
+	ftt.Run("Updater skips fetching when possible", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
 		u := NewUpdater(ct.TQDispatcher, NewMutator(ct.TQDispatcher, &pmMock{}, &rmMock{}, &tjMock{}))
-		b := &fakeUpdaterBackend{}
+		b := &fakeUpdaterBackend{t: t}
 		u.RegisterBackend(b)
 
 		// Simulate a perfect case for avoiding the snapshot.
@@ -709,7 +717,7 @@ func TestUpdaterAvoidsFetchWhenPossible(t *testing.T) {
 			},
 		}
 		cl.EVersion++
-		So(datastore.Put(ctx, cl), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, cl), should.BeNil)
 
 		task := &UpdateCLTask{
 			LuciProject: "luci-project",
@@ -720,25 +728,25 @@ func TestUpdaterAvoidsFetchWhenPossible(t *testing.T) {
 		// CL) doesn't change, too.
 		b.lookupACfgResult = cl.ApplicableConfig
 
-		Convey("skips Fetch", func() {
-			Convey("happy path: everything is up to date", func() {
-				So(u.handleCL(ctx, task), ShouldBeNil)
+		t.Run("skips Fetch", func(t *ftt.Test) {
+			t.Run("happy path: everything is up to date", func(t *ftt.Test) {
+				assert.Loosely(t, u.handleCL(ctx, task), should.BeNil)
 
 				cl2 := reloadCL(ctx, cl)
 				// Quick-fail if EVersion changes.
-				So(cl2.EVersion, ShouldEqual, cl.EVersion)
+				assert.Loosely(t, cl2.EVersion, should.Equal(cl.EVersion))
 				// Ensure nothing about the CL actually changed.
-				So(cl2, cvtesting.SafeShouldResemble, cl)
+				assert.Loosely(t, cl2, should.Match(cl))
 
-				So(b.wasLookupApplicableConfigCalled(), ShouldBeTrue)
-				So(b.wasFetchCalled(), ShouldBeFalse)
+				assert.Loosely(t, b.wasLookupApplicableConfigCalled(), should.BeTrue)
+				assert.Loosely(t, b.wasFetchCalled(), should.BeFalse)
 			})
 
-			Convey("special path: changed ApplicableConfig is saved", func() {
-				Convey("CL is not watched by any project", func() {
+			t.Run("special path: changed ApplicableConfig is saved", func(t *ftt.Test) {
+				t.Run("CL is not watched by any project", func(t *ftt.Test) {
 					b.lookupACfgResult = &ApplicableConfig{}
 				})
-				Convey("CL is watched by another project", func() {
+				t.Run("CL is watched by another project", func(t *ftt.Test) {
 					b.lookupACfgResult = &ApplicableConfig{Projects: []*ApplicableConfig_Project{
 						{
 							Name:           "other-project",
@@ -746,7 +754,7 @@ func TestUpdaterAvoidsFetchWhenPossible(t *testing.T) {
 						},
 					}}
 				})
-				Convey("CL is additionally watched by another project", func() {
+				t.Run("CL is additionally watched by another project", func(t *ftt.Test) {
 					b.lookupACfgResult.Projects = append(b.lookupACfgResult.Projects, &ApplicableConfig_Project{
 						Name:           "other-project",
 						ConfigGroupIds: []string{"ohter-hash/other-name"},
@@ -754,70 +762,70 @@ func TestUpdaterAvoidsFetchWhenPossible(t *testing.T) {
 				})
 				// Either way, fetch can be skipped & Snapshot can be preserved, but the
 				// ApplicableConfig must be updated.
-				So(u.handleCL(ctx, task), ShouldBeNil)
-				So(b.wasFetchCalled(), ShouldBeFalse)
+				assert.Loosely(t, u.handleCL(ctx, task), should.BeNil)
+				assert.Loosely(t, b.wasFetchCalled(), should.BeFalse)
 				cl2 := reloadCL(ctx, cl)
-				So(cl2.Snapshot, ShouldResembleProto, cl.Snapshot)
-				So(cl2.ApplicableConfig, ShouldResembleProto, b.lookupACfgResult)
+				assert.Loosely(t, cl2.Snapshot, should.Resemble(cl.Snapshot))
+				assert.Loosely(t, cl2.ApplicableConfig, should.Resemble(b.lookupACfgResult))
 			})
 
-			Convey("meta_rev_id is the same", func() {
-				Convey("even if the CL entity is really old", func() {
+			t.Run("meta_rev_id is the same", func(t *ftt.Test) {
+				t.Run("even if the CL entity is really old", func(t *ftt.Test) {
 					ct.Clock.Add(autoRefreshAfter + time.Minute)
 				})
 
 				cl.Snapshot.Kind = &Snapshot_Gerrit{Gerrit: &Gerrit{
 					Info: &gerrit.ChangeInfo{MetaRevId: "deadbeef"},
 				}}
-				So(datastore.Put(ctx, cl), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, cl), should.BeNil)
 				task.Hint.MetaRevId = "deadbeef"
-				So(u.handleCL(ctx, task), ShouldBeNil)
-				So(b.wasFetchCalled(), ShouldBeFalse)
+				assert.Loosely(t, u.handleCL(ctx, task), should.BeNil)
+				assert.Loosely(t, b.wasFetchCalled(), should.BeFalse)
 			})
 		})
 
-		Convey("doesn't skip Fetch because ...", func() {
+		t.Run("doesn't skip Fetch because ...", func(t *ftt.Test) {
 			saveCLAndRun := func() {
 				cl.EVersion++
-				So(datastore.Put(ctx, cl), ShouldBeNil)
-				So(u.handleCL(ctx, task), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, cl), should.BeNil)
+				assert.Loosely(t, u.handleCL(ctx, task), should.BeNil)
 			}
-			Convey("no snapshot", func() {
+			t.Run("no snapshot", func(t *ftt.Test) {
 				cl.Snapshot = nil
 				saveCLAndRun()
-				So(b.wasFetchCalled(), ShouldBeTrue)
+				assert.Loosely(t, b.wasFetchCalled(), should.BeTrue)
 			})
-			Convey("snapshot marked outdated", func() {
+			t.Run("snapshot marked outdated", func(t *ftt.Test) {
 				cl.Snapshot.Outdated = &Snapshot_Outdated{}
 				saveCLAndRun()
-				So(b.wasFetchCalled(), ShouldBeTrue)
+				assert.Loosely(t, b.wasFetchCalled(), should.BeTrue)
 			})
-			Convey("snapshot is definitely old", func() {
+			t.Run("snapshot is definitely old", func(t *ftt.Test) {
 				cl.Snapshot.ExternalUpdateTime.Seconds -= 3600
 				saveCLAndRun()
-				So(b.wasFetchCalled(), ShouldBeTrue)
+				assert.Loosely(t, b.wasFetchCalled(), should.BeTrue)
 			})
-			Convey("snapshot might be old", func() {
+			t.Run("snapshot might be old", func(t *ftt.Test) {
 				task.Hint = nil
 				saveCLAndRun()
-				So(b.wasFetchCalled(), ShouldBeTrue)
+				assert.Loosely(t, b.wasFetchCalled(), should.BeTrue)
 			})
-			Convey("CL entity is really old", func() {
+			t.Run("CL entity is really old", func(t *ftt.Test) {
 				ct.Clock.Add(autoRefreshAfter + time.Minute)
 				saveCLAndRun()
-				So(b.wasFetchCalled(), ShouldBeTrue)
+				assert.Loosely(t, b.wasFetchCalled(), should.BeTrue)
 			})
-			Convey("snapshot is for a different project", func() {
+			t.Run("snapshot is for a different project", func(t *ftt.Test) {
 				cl.Snapshot.LuciProject = "other"
 				saveCLAndRun()
-				So(b.wasFetchCalled(), ShouldBeTrue)
+				assert.Loosely(t, b.wasFetchCalled(), should.BeTrue)
 			})
-			Convey("backend isn't sure about applicable config", func() {
+			t.Run("backend isn't sure about applicable config", func(t *ftt.Test) {
 				b.lookupACfgResult = nil
 				saveCLAndRun()
-				So(b.wasFetchCalled(), ShouldBeTrue)
+				assert.Loosely(t, b.wasFetchCalled(), should.BeTrue)
 			})
-			Convey("CL entity has record of prior access restriction", func() {
+			t.Run("CL entity has record of prior access restriction", func(t *ftt.Test) {
 				cl.Access = &Access{
 					ByProject: map[string]*Access_Project{
 						"luci-project": {
@@ -827,24 +835,24 @@ func TestUpdaterAvoidsFetchWhenPossible(t *testing.T) {
 					},
 				}
 				saveCLAndRun()
-				So(b.wasFetchCalled(), ShouldBeTrue)
+				assert.Loosely(t, b.wasFetchCalled(), should.BeTrue)
 			})
-			Convey("meta_rev_id is different", func() {
+			t.Run("meta_rev_id is different", func(t *ftt.Test) {
 				cl.Snapshot.Kind = &Snapshot_Gerrit{Gerrit: &Gerrit{
 					Info: &gerrit.ChangeInfo{MetaRevId: "deadbeef"},
 				}}
-				So(datastore.Put(ctx, cl), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, cl), should.BeNil)
 				task.Hint.MetaRevId = "foo"
-				So(u.handleCL(ctx, task), ShouldBeNil)
-				So(b.wasFetchCalled(), ShouldBeTrue)
+				assert.Loosely(t, u.handleCL(ctx, task), should.BeNil)
+				assert.Loosely(t, b.wasFetchCalled(), should.BeTrue)
 			})
 		})
 
-		Convey("aborts before the Fetch because LookupApplicableConfig failed", func() {
+		t.Run("aborts before the Fetch because LookupApplicableConfig failed", func(t *ftt.Test) {
 			b.lookupACfgError = errors.New("boo", transient.Tag)
 			err := u.handleCL(ctx, task)
-			So(err, ShouldErrLike, b.lookupACfgError)
-			So(b.wasFetchCalled(), ShouldBeFalse)
+			assert.Loosely(t, err, should.ErrLike(b.lookupACfgError))
+			assert.Loosely(t, b.wasFetchCalled(), should.BeFalse)
 		})
 	})
 }
@@ -852,7 +860,7 @@ func TestUpdaterAvoidsFetchWhenPossible(t *testing.T) {
 func TestUpdaterResolveAndScheduleDepsUpdate(t *testing.T) {
 	t.Parallel()
 
-	Convey("ResolveAndScheduleDepsUpdate correctly resolves deps", t, func() {
+	ftt.Run("ResolveAndScheduleDepsUpdate correctly resolves deps", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
@@ -863,10 +871,10 @@ func TestUpdaterResolveAndScheduleDepsUpdate(t *testing.T) {
 				if task, ok := p.(*UpdateCLTask); ok {
 					// Each scheduled task should have ID set, as it is known,
 					// to save on future lookup.
-					So(task.GetId(), ShouldNotEqual, 0)
+					assert.Loosely(t, task.GetId(), should.NotEqual(0))
 					e := task.GetExternalId()
 					// But also ExternalID, primarily for debugging.
-					So(e, ShouldNotBeEmpty)
+					assert.Loosely(t, e, should.NotBeEmpty)
 					out = append(out, e)
 				}
 			}
@@ -899,66 +907,66 @@ func TestUpdaterResolveAndScheduleDepsUpdate(t *testing.T) {
 		}
 		clUpToDateDiffProject.Snapshot = proto.Clone(clUpToDate.Snapshot).(*Snapshot)
 		clUpToDateDiffProject.Snapshot.LuciProject = "other-project"
-		So(datastore.Put(ctx, clUpToDate, clUpToDateDiffProject), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, clUpToDate, clUpToDateDiffProject), should.BeNil)
 
-		Convey("no deps", func() {
+		t.Run("no deps", func(t *ftt.Test) {
 			deps, err := u.ResolveAndScheduleDepsUpdate(ctx, lProject, nil, UpdateCLTask_RUN_POKE)
-			So(err, ShouldBeNil)
-			So(deps, ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, deps, should.BeEmpty)
 		})
 
-		Convey("only existing CLs", func() {
+		t.Run("only existing CLs", func(t *ftt.Test) {
 			deps, err := u.ResolveAndScheduleDepsUpdate(ctx, lProject, map[ExternalID]DepKind{
 				clBareBones.ExternalID:           DepKind_SOFT,
 				clUpToDate.ExternalID:            DepKind_HARD,
 				clUpToDateDiffProject.ExternalID: DepKind_SOFT,
 			}, UpdateCLTask_RUN_POKE)
-			So(err, ShouldBeNil)
-			So(deps, ShouldResembleProto, sortDeps([]*Dep{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, deps, should.Resemble(sortDeps([]*Dep{
 				{Clid: int64(clBareBones.ID), Kind: DepKind_SOFT},
 				{Clid: int64(clUpToDate.ID), Kind: DepKind_HARD},
 				{Clid: int64(clUpToDateDiffProject.ID), Kind: DepKind_SOFT},
-			}))
+			})))
 			// Update for the `clUpToDate` is not necessary.
-			So(scheduledUpdates(), ShouldResemble, eids(clBareBones, clUpToDateDiffProject))
+			assert.Loosely(t, scheduledUpdates(), should.Resemble(eids(clBareBones, clUpToDateDiffProject)))
 		})
 
-		Convey("only new CLs", func() {
+		t.Run("only new CLs", func(t *ftt.Test) {
 			deps, err := u.ResolveAndScheduleDepsUpdate(ctx, lProject, map[ExternalID]DepKind{
 				"new/1": DepKind_SOFT,
 				"new/2": DepKind_HARD,
 			}, UpdateCLTask_RUN_POKE)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			cl1 := ExternalID("new/1").MustCreateIfNotExists(ctx)
 			cl2 := ExternalID("new/2").MustCreateIfNotExists(ctx)
-			So(deps, ShouldResembleProto, sortDeps([]*Dep{
+			assert.Loosely(t, deps, should.Resemble(sortDeps([]*Dep{
 				{Clid: int64(cl1.ID), Kind: DepKind_SOFT},
 				{Clid: int64(cl2.ID), Kind: DepKind_HARD},
-			}))
-			So(scheduledUpdates(), ShouldResemble, eids(cl1, cl2))
+			})))
+			assert.Loosely(t, scheduledUpdates(), should.Resemble(eids(cl1, cl2)))
 		})
 
-		Convey("mix old and new CLs", func() {
+		t.Run("mix old and new CLs", func(t *ftt.Test) {
 			deps, err := u.ResolveAndScheduleDepsUpdate(ctx, lProject, map[ExternalID]DepKind{
 				"new/1":                DepKind_SOFT,
 				"new/2":                DepKind_HARD,
 				clBareBones.ExternalID: DepKind_HARD,
 				clUpToDate.ExternalID:  DepKind_SOFT,
 			}, UpdateCLTask_RUN_POKE)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			cl1 := ExternalID("new/1").MustCreateIfNotExists(ctx)
 			cl2 := ExternalID("new/2").MustCreateIfNotExists(ctx)
-			So(deps, ShouldResembleProto, sortDeps([]*Dep{
+			assert.Loosely(t, deps, should.Resemble(sortDeps([]*Dep{
 				{Clid: int64(cl1.ID), Kind: DepKind_SOFT},
 				{Clid: int64(cl2.ID), Kind: DepKind_HARD},
 				{Clid: int64(clBareBones.ID), Kind: DepKind_HARD},
 				{Clid: int64(clUpToDate.ID), Kind: DepKind_SOFT},
-			}))
+			})))
 			// Update for the `clUpToDate` is not necessary.
-			So(scheduledUpdates(), ShouldResemble, eids(cl1, cl2, clBareBones))
+			assert.Loosely(t, scheduledUpdates(), should.Resemble(eids(cl1, cl2, clBareBones)))
 		})
 
-		Convey("high number of dependency CLs", func() {
+		t.Run("high number of dependency CLs", func(t *ftt.Test) {
 			const clCount = 1024
 			depCLMap := make(map[ExternalID]DepKind, clCount)
 			depCLs := make([]*CL, clCount)
@@ -968,7 +976,7 @@ func TestUpdaterResolveAndScheduleDepsUpdate(t *testing.T) {
 			}
 
 			deps, err := u.ResolveAndScheduleDepsUpdate(ctx, lProject, depCLMap, UpdateCLTask_RUN_POKE)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			expectedDeps := make([]*Dep, clCount)
 			for i, depCL := range depCLs {
 				expectedDeps[i] = &Dep{
@@ -976,8 +984,8 @@ func TestUpdaterResolveAndScheduleDepsUpdate(t *testing.T) {
 					Kind: DepKind_HARD,
 				}
 			}
-			So(deps, ShouldResembleProto, expectedDeps)
-			So(scheduledUpdates(), ShouldResemble, eids(depCLs...))
+			assert.Loosely(t, deps, should.Resemble(expectedDeps))
+			assert.Loosely(t, scheduledUpdates(), should.Resemble(eids(depCLs...)))
 		})
 	})
 }
@@ -988,6 +996,8 @@ func TestUpdaterResolveAndScheduleDepsUpdate(t *testing.T) {
 // but with additional assertions to validate the contract between Updater and
 // its backend.
 type fakeUpdaterBackend struct {
+	t testing.TB
+
 	tqErrorSpec common.TQIfy
 
 	// LookupApplicableConfig related fields:
@@ -1019,13 +1029,14 @@ func (f *fakeUpdaterBackend) wasLookupApplicableConfigCalled() bool {
 }
 
 func (f *fakeUpdaterBackend) LookupApplicableConfig(ctx context.Context, saved *CL) (*ApplicableConfig, error) {
-	So(f.wasLookupApplicableConfigCalled(), ShouldBeFalse)
+	f.t.Helper()
+	assert.Loosely(f.t, f.wasLookupApplicableConfigCalled(), should.BeFalse, truth.LineContext())
 
 	// Check contract with a backend:
-	So(saved, ShouldNotBeNil)
-	So(saved.ID, ShouldNotEqual, 0)
-	So(saved.ExternalID, ShouldNotBeEmpty)
-	So(saved.Snapshot, ShouldNotBeNil)
+	assert.Loosely(f.t, saved, should.NotBeNil, truth.LineContext())
+	assert.Loosely(f.t, saved.ID, should.NotEqual(0), truth.LineContext())
+	assert.Loosely(f.t, saved.ExternalID, should.NotBeEmpty, truth.LineContext())
+	assert.Loosely(f.t, saved.Snapshot, should.NotBeNil, truth.LineContext())
 
 	// Shallow-copy to catch some mistakes in test.
 	f.lookupACfgCL = &CL{}
@@ -1038,11 +1049,11 @@ func (f *fakeUpdaterBackend) wasFetchCalled() bool {
 }
 
 func (f *fakeUpdaterBackend) Fetch(ctx context.Context, in *FetchInput) (UpdateFields, error) {
-	So(f.wasFetchCalled(), ShouldBeFalse)
+	assert.Loosely(f.t, f.wasFetchCalled(), should.BeFalse, truth.LineContext())
 
 	// Check contract with a backend:
-	So(in.CL, ShouldNotBeNil)
-	So(in.CL.ExternalID, ShouldNotBeEmpty)
+	assert.Loosely(f.t, in.CL, should.NotBeNil, truth.LineContext())
+	assert.Loosely(f.t, in.CL.ExternalID, should.NotBeEmpty, truth.LineContext())
 
 	// Shallow-copy to catch some mistakes in test.
 	f.fetchCL = &CL{}

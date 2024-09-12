@@ -28,6 +28,9 @@ import (
 	"go.chromium.org/luci/common/errors"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/filter/featureBreaker"
 	"go.chromium.org/luci/gae/filter/featureBreaker/flaky"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -35,16 +38,12 @@ import (
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
-
-	. "github.com/smartystreets/goconvey/convey"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestMutatorSingleCL(t *testing.T) {
 	t.Parallel()
 
-	Convey("Mutator works on a single CL", t, func() {
+	ftt.Run("Mutator works on a single CL", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
@@ -61,56 +60,56 @@ func TestMutatorSingleCL(t *testing.T) {
 		m := NewMutator(ct.TQDispatcher, &pm, &rm, &tj)
 
 		execBatchOnCLUpdatedTask := func() {
-			So(ct.TQ.Tasks(), ShouldHaveLength, 1)
-			So(ct.TQ.Tasks()[0].Class, ShouldResemble, BatchOnCLUpdatedTaskClass)
+			assert.Loosely(t, ct.TQ.Tasks(), should.HaveLength(1))
+			assert.Loosely(t, ct.TQ.Tasks()[0].Class, should.Resemble(BatchOnCLUpdatedTaskClass))
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(BatchOnCLUpdatedTaskClass))
 		}
 		expectNoNotifications := func() {
-			So(ct.TQ.Tasks(), ShouldHaveLength, 0)
-			So(pm.byProject, ShouldBeEmpty)
-			So(rm.byRun, ShouldBeEmpty)
-			So(tj.clsNotified, ShouldBeEmpty)
+			assert.Loosely(t, ct.TQ.Tasks(), should.HaveLength(0))
+			assert.Loosely(t, pm.byProject, should.BeEmpty)
+			assert.Loosely(t, rm.byRun, should.BeEmpty)
+			assert.Loosely(t, tj.clsNotified, should.BeEmpty)
 		}
 
-		Convey("Upsert method", func() {
-			Convey("creates", func() {
+		t.Run("Upsert method", func(t *ftt.Test) {
+			t.Run("creates", func(t *ftt.Test) {
 				s := makeSnapshot(lProject, ct.Clock.Now())
 				cl, err := m.Upsert(ctx, lProject, eid, func(cl *CL) error {
 					cl.Snapshot = s
 					return nil
 				})
-				So(err, ShouldBeNil)
-				So(cl.ExternalID, ShouldResemble, eid)
-				So(cl.EVersion, ShouldEqual, 1)
-				So(cl.UpdateTime, ShouldEqual, ct.Clock.Now())
-				So(cl.RetentionKey, ShouldNotBeEmpty)
-				So(cl.Snapshot, ShouldResembleProto, s)
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, cl.ExternalID, should.Equal(eid))
+				assert.Loosely(t, cl.EVersion, should.Equal(1))
+				assert.Loosely(t, cl.UpdateTime, should.Match(ct.Clock.Now()))
+				assert.Loosely(t, cl.RetentionKey, should.NotBeEmpty)
+				assert.Loosely(t, cl.Snapshot, should.Resemble(s))
 
 				execBatchOnCLUpdatedTask()
-				So(pm.byProject, ShouldResemble, map[string]map[common.CLID]int64{
+				assert.Loosely(t, pm.byProject, should.Resemble(map[string]map[common.CLID]int64{
 					lProject: {cl.ID: cl.EVersion},
-				})
-				So(rm.byRun, ShouldBeEmpty)
-				So(tj.clsNotified, ShouldBeEmpty)
+				}))
+				assert.Loosely(t, rm.byRun, should.BeEmpty)
+				assert.Loosely(t, tj.clsNotified, should.BeEmpty)
 			})
 
-			Convey("skips creation", func() {
+			t.Run("skips creation", func(t *ftt.Test) {
 				// This is a special case which isn't supposed to be needed,
 				// but it's kept here for completeness.
 				cl, err := m.Upsert(ctx, lProject, eid, func(cl *CL) error {
 					return ErrStopMutation
 				})
-				So(err, ShouldBeNil)
-				So(cl, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, cl, should.BeNil)
 				expectNoNotifications()
 			})
 
-			Convey("updates", func() {
+			t.Run("updates", func(t *ftt.Test) {
 				s1 := makeSnapshot(lProject, ct.Clock.Now())
 				cl := eid.MustCreateIfNotExists(ctx)
 				cl.Snapshot = s1
 				cl.IncompleteRuns = common.MakeRunIDs(run1)
-				So(datastore.Put(ctx, cl), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, cl), should.BeNil)
 
 				ct.Clock.Add(time.Second)
 				s2 := makeSnapshot(lProject, ct.Clock.Now())
@@ -124,64 +123,64 @@ func TestMutatorSingleCL(t *testing.T) {
 					cl.IncompleteRuns.InsertSorted(run2) // idempotent
 					return nil
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
-				So(priorSnapshot, ShouldResembleProto, s1)
-				So(cl.ExternalID, ShouldResemble, eid)
-				So(cl.EVersion, ShouldEqual, 2)
-				So(cl.UpdateTime, ShouldEqual, ct.Clock.Now().UTC())
-				So(cl.RetentionKey, ShouldNotBeEmpty)
-				So(cl.Snapshot, ShouldResembleProto, s2)
-				So(tj.clsNotified, ShouldHaveLength, 1)
+				assert.Loosely(t, priorSnapshot, should.Resemble(s1))
+				assert.That(t, cl.ExternalID, should.Equal(eid))
+				assert.Loosely(t, cl.EVersion, should.Equal(2))
+				assert.That(t, cl.UpdateTime, should.Equal(ct.Clock.Now().UTC()))
+				assert.Loosely(t, cl.RetentionKey, should.NotBeEmpty)
+				assert.Loosely(t, cl.Snapshot, should.Resemble(s2))
+				assert.Loosely(t, tj.clsNotified, should.HaveLength(1))
 				for clid, content := range tj.clsNotified {
-					So(clid, ShouldEqual, cl.ID)
-					So(content.prevMinEquiPS, ShouldEqual, s1.GetMinEquivalentPatchset())
-					So(content.curMinEquiPS, ShouldEqual, s2.GetMinEquivalentPatchset())
+					assert.That(t, clid, should.Equal(cl.ID))
+					assert.That(t, content.prevMinEquiPS, should.Equal(s1.GetMinEquivalentPatchset()))
+					assert.That(t, content.curMinEquiPS, should.Equal(s2.GetMinEquivalentPatchset()))
 				}
 				execBatchOnCLUpdatedTask()
-				So(pm.byProject, ShouldResemble, map[string]map[common.CLID]int64{
+				assert.Loosely(t, pm.byProject, should.Resemble(map[string]map[common.CLID]int64{
 					lProject: {cl.ID: cl.EVersion},
-				})
-				So(rm.byRun, ShouldResemble, map[common.RunID]map[common.CLID]int64{
+				}))
+				assert.Loosely(t, rm.byRun, should.Resemble(map[common.RunID]map[common.CLID]int64{
 					run1: {cl.ID: cl.EVersion},
 					run2: {cl.ID: cl.EVersion},
-				})
+				}))
 			})
 
-			Convey("skips an update", func() {
+			t.Run("skips an update", func(t *ftt.Test) {
 				priorCL := eid.MustCreateIfNotExists(ctx)
 
 				ct.Clock.Add(time.Second)
 				cl, err := m.Upsert(ctx, lProject, eid, func(cl *CL) error {
 					return ErrStopMutation
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
-				So(cl.ExternalID, ShouldResemble, eid)
-				So(cl.EVersion, ShouldEqual, priorCL.EVersion)
-				So(cl.UpdateTime, ShouldEqual, priorCL.UpdateTime)
-				So(cl.RetentionKey, ShouldEqual, priorCL.RetentionKey)
+				assert.That(t, cl.ExternalID, should.Equal(eid))
+				assert.That(t, cl.EVersion, should.Equal(priorCL.EVersion))
+				assert.That(t, cl.UpdateTime, should.Equal(priorCL.UpdateTime))
+				assert.That(t, cl.RetentionKey, should.Equal(priorCL.RetentionKey))
 
-				So(pm.byProject, ShouldBeEmpty)
-				So(rm.byRun, ShouldBeEmpty)
-				So(tj.clsNotified, ShouldBeEmpty)
+				assert.Loosely(t, pm.byProject, should.BeEmpty)
+				assert.Loosely(t, rm.byRun, should.BeEmpty)
+				assert.Loosely(t, tj.clsNotified, should.BeEmpty)
 			})
 
-			Convey("propagates error without wrapping", func() {
+			t.Run("propagates error without wrapping", func(t *ftt.Test) {
 				myErr := errors.New("my error")
 				_, err := m.Upsert(ctx, lProject, eid, func(cl *CL) error {
 					return myErr
 				})
-				So(myErr, ShouldEqual, err)
+				assert.That(t, myErr, should.Equal(err))
 			})
 		})
 
-		Convey("Update method", func() {
-			Convey("updates", func() {
+		t.Run("Update method", func(t *ftt.Test) {
+			t.Run("updates", func(t *ftt.Test) {
 				s1 := makeSnapshot("prior-project", ct.Clock.Now())
 				priorCL := eid.MustCreateIfNotExists(ctx)
 				priorCL.Snapshot = s1
-				So(datastore.Put(ctx, priorCL), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, priorCL), should.BeNil)
 
 				ct.Clock.Add(time.Second)
 				s2 := makeSnapshot(lProject, ct.Clock.Now())
@@ -190,35 +189,35 @@ func TestMutatorSingleCL(t *testing.T) {
 					cl.Snapshot = s2
 					return nil
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
-				So(cl.ID, ShouldResemble, priorCL.ID)
-				So(cl.ExternalID, ShouldResemble, eid)
-				So(cl.EVersion, ShouldEqual, 2)
-				So(cl.UpdateTime, ShouldEqual, ct.Clock.Now().UTC())
-				So(cl.RetentionKey, ShouldNotBeEmpty)
-				So(cl.Snapshot, ShouldResembleProto, s2)
+				assert.Loosely(t, cl.ID, should.Resemble(priorCL.ID))
+				assert.That(t, cl.ExternalID, should.Equal(eid))
+				assert.Loosely(t, cl.EVersion, should.Equal(2))
+				assert.That(t, cl.UpdateTime, should.Equal(ct.Clock.Now().UTC()))
+				assert.Loosely(t, cl.RetentionKey, should.NotBeEmpty)
+				assert.Loosely(t, cl.Snapshot, should.Resemble(s2))
 
 				execBatchOnCLUpdatedTask()
-				So(pm.byProject[lProject][cl.ID], ShouldEqual, cl.EVersion)
-				So(pm.byProject, ShouldResemble, map[string]map[common.CLID]int64{
+				assert.That(t, pm.byProject[lProject][cl.ID], should.Equal(cl.EVersion))
+				assert.Loosely(t, pm.byProject, should.Resemble(map[string]map[common.CLID]int64{
 					"prior-project": {cl.ID: cl.EVersion},
 					lProject:        {cl.ID: cl.EVersion},
-				})
-				So(rm.byRun, ShouldBeEmpty)
-				So(tj.clsNotified, ShouldHaveLength, 1)
+				}))
+				assert.Loosely(t, rm.byRun, should.BeEmpty)
+				assert.Loosely(t, tj.clsNotified, should.HaveLength(1))
 				for clid, content := range tj.clsNotified {
-					So(clid, ShouldEqual, cl.ID)
-					So(content.prevMinEquiPS, ShouldEqual, s1.GetMinEquivalentPatchset())
-					So(content.curMinEquiPS, ShouldEqual, s2.GetMinEquivalentPatchset())
+					assert.That(t, clid, should.Equal(cl.ID))
+					assert.That(t, content.prevMinEquiPS, should.Equal(s1.GetMinEquivalentPatchset()))
+					assert.That(t, content.curMinEquiPS, should.Equal(s2.GetMinEquivalentPatchset()))
 				}
 			})
 
-			Convey("schedule tryjob cancel for abandoned CL", func() {
+			t.Run("schedule tryjob cancel for abandoned CL", func(t *ftt.Test) {
 				s1 := makeSnapshot(lProject, ct.Clock.Now())
 				cl := eid.MustCreateIfNotExists(ctx)
 				cl.Snapshot = s1
-				So(datastore.Put(ctx, cl), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, cl), should.BeNil)
 
 				ct.Clock.Add(time.Second)
 				s2 := makeSnapshot(lProject, ct.Clock.Now())
@@ -227,61 +226,61 @@ func TestMutatorSingleCL(t *testing.T) {
 					cl.Snapshot = s2
 					return nil
 				})
-				So(err, ShouldBeNil)
-				So(cl.Snapshot, ShouldResembleProto, s2)
-				So(tj.clsNotified, ShouldHaveLength, 1)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, cl.Snapshot, should.Resemble(s2))
+				assert.Loosely(t, tj.clsNotified, should.HaveLength(1))
 				for clid, content := range tj.clsNotified {
-					So(clid, ShouldEqual, cl.ID)
-					So(content.prevMinEquiPS, ShouldEqual, s2.GetMinEquivalentPatchset())
-					So(content.curMinEquiPS, ShouldEqual, s2.GetPatchset()+1)
+					assert.That(t, clid, should.Equal(cl.ID))
+					assert.That(t, content.prevMinEquiPS, should.Equal(s2.GetMinEquivalentPatchset()))
+					assert.That(t, content.curMinEquiPS, should.Equal(s2.GetPatchset()+1))
 				}
 			})
 
-			Convey("skips an actual update", func() {
+			t.Run("skips an actual update", func(t *ftt.Test) {
 				priorCL := eid.MustCreateIfNotExists(ctx)
 
 				ct.Clock.Add(time.Second)
 				cl, err := m.Update(ctx, lProject, priorCL.ID, func(cl *CL) error {
 					return ErrStopMutation
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
-				So(cl.ID, ShouldResemble, priorCL.ID)
-				So(cl.ExternalID, ShouldResemble, eid)
-				So(cl.EVersion, ShouldEqual, priorCL.EVersion)
-				So(cl.UpdateTime, ShouldEqual, priorCL.UpdateTime)
-				So(cl.RetentionKey, ShouldEqual, priorCL.RetentionKey)
+				assert.Loosely(t, cl.ID, should.Resemble(priorCL.ID))
+				assert.That(t, cl.ExternalID, should.Equal(eid))
+				assert.That(t, cl.EVersion, should.Equal(priorCL.EVersion))
+				assert.That(t, cl.UpdateTime, should.Equal(priorCL.UpdateTime))
+				assert.That(t, cl.RetentionKey, should.Equal(priorCL.RetentionKey))
 
 				expectNoNotifications()
 			})
 
-			Convey("propagates error without wrapping", func() {
+			t.Run("propagates error without wrapping", func(t *ftt.Test) {
 				priorCL := eid.MustCreateIfNotExists(ctx)
 
 				myErr := errors.New("my error")
 				_, err := m.Update(ctx, lProject, priorCL.ID, func(cl *CL) error {
 					return myErr
 				})
-				So(myErr, ShouldEqual, err)
+				assert.That(t, myErr, should.Equal(err))
 			})
 
-			Convey("errors out non-transiently if CL doesn't exist", func() {
+			t.Run("errors out non-transiently if CL doesn't exist", func(t *ftt.Test) {
 				_, err := m.Update(ctx, lProject, 123, func(cl *CL) error {
 					panic("must not be called")
 				})
-				So(errors.Unwrap(err), ShouldEqual, datastore.ErrNoSuchEntity)
-				So(transient.Tag.In(err), ShouldBeFalse)
+				assert.That(t, err, should.ErrLikeError(datastore.ErrNoSuchEntity))
+				assert.Loosely(t, transient.Tag.In(err), should.BeFalse)
 			})
 		})
 
-		Convey("Invalid MutationCallback", func() {
+		t.Run("Invalid MutationCallback", func(t *ftt.Test) {
 			type badCallback func(cl *CL)
 			cases := func(kind string, repro func(bad badCallback)) {
-				Convey(kind, func() {
-					So(func() { repro(func(cl *CL) { cl.EVersion = 2 }) }, ShouldPanicLike, "CL.EVersion")
-					So(func() { repro(func(cl *CL) { cl.UpdateTime = ct.Clock.Now() }) }, ShouldPanicLike, "CL.UpdateTime")
-					So(func() { repro(func(cl *CL) { cl.ID++ }) }, ShouldPanicLike, "CL.ID")
-					So(func() { repro(func(cl *CL) { cl.ExternalID = "don't do this" }) }, ShouldPanicLike, "CL.ExternalID")
+				t.Run(kind, func(t *ftt.Test) {
+					assert.Loosely(t, func() { repro(func(cl *CL) { cl.EVersion = 2 }) }, should.PanicLikeString("CL.EVersion"))
+					assert.Loosely(t, func() { repro(func(cl *CL) { cl.UpdateTime = ct.Clock.Now() }) }, should.PanicLikeString("CL.UpdateTime"))
+					assert.Loosely(t, func() { repro(func(cl *CL) { cl.ID++ }) }, should.PanicLikeString("CL.ID"))
+					assert.Loosely(t, func() { repro(func(cl *CL) { cl.ExternalID = "don't do this" }) }, should.PanicLikeString("CL.ExternalID"))
 				})
 			}
 			cases("Upsert creation", func(bad badCallback) {
@@ -313,7 +312,7 @@ func TestMutatorSingleCL(t *testing.T) {
 func TestMutatorBatch(t *testing.T) {
 	t.Parallel()
 
-	Convey("Mutator works on batch of CLs", t, func() {
+	ftt.Run("Mutator works on batch of CLs", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
@@ -331,7 +330,7 @@ func TestMutatorBatch(t *testing.T) {
 		tj := tjMock{}
 		m := NewMutator(ct.TQDispatcher, &pm, &rm, &tj)
 
-		Convey(fmt.Sprintf("with %d CLs already in Datastore", N), func() {
+		t.Run(fmt.Sprintf("with %d CLs already in Datastore", N), func(t *ftt.Test) {
 			var clids common.CLIDs
 			var expectedAltProject, expectedRun1, expectedRun2 common.CLIDs
 			for gChange := gChangeFirst; gChange < gChangeFirst+N; gChange++ {
@@ -354,7 +353,7 @@ func TestMutatorBatch(t *testing.T) {
 				}
 				// Ensure each CL has unique EVersion later on.
 				cl.EVersion = int64(10 * gChange)
-				So(datastore.Put(ctx, cl), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, cl), should.BeNil)
 			}
 			ct.Clock.Add(time.Minute)
 
@@ -363,15 +362,15 @@ func TestMutatorBatch(t *testing.T) {
 				// Ensure the returned CLs are exactly what was stored in Datastore,
 				// and compute eversion map at the same time.
 				dsCLs, err := LoadCLsByIDs(ctx, clids)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				eversions := make(map[common.CLID]int64, len(dsCLs))
 				for i := range dsCLs {
-					So(dsCLs[i].IncompleteRuns.ContainsSorted(run3), ShouldBeTrue)
-					So(dsCLs[i].ID, ShouldEqual, resCLs[i].ID)
-					So(dsCLs[i].EVersion, ShouldEqual, resCLs[i].EVersion)
-					So(dsCLs[i].UpdateTime, ShouldEqual, resCLs[i].UpdateTime)
-					So(dsCLs[i].RetentionKey, ShouldEqual, resCLs[i].RetentionKey)
-					So(dsCLs[i].IncompleteRuns, ShouldResemble, resCLs[i].IncompleteRuns)
+					assert.Loosely(t, dsCLs[i].IncompleteRuns.ContainsSorted(run3), should.BeTrue)
+					assert.That(t, dsCLs[i].ID, should.Equal(resCLs[i].ID))
+					assert.That(t, dsCLs[i].EVersion, should.Equal(resCLs[i].EVersion))
+					assert.That(t, dsCLs[i].UpdateTime, should.Equal(resCLs[i].UpdateTime))
+					assert.That(t, dsCLs[i].RetentionKey, should.Equal(resCLs[i].RetentionKey))
+					assert.Loosely(t, dsCLs[i].IncompleteRuns, should.Resemble(resCLs[i].IncompleteRuns))
 					eversions[dsCLs[i].ID] = dsCLs[i].EVersion
 				}
 
@@ -381,7 +380,7 @@ func TestMutatorBatch(t *testing.T) {
 					for _, id := range expectedIDs {
 						expected[id] = eversions[id]
 					}
-					So(actual, ShouldResemble, expected)
+					assert.Loosely(t, actual, should.Resemble(expected))
 				}
 				// The project in the context of which CLs were mutated must be notified
 				// on all CLs.
@@ -392,15 +391,15 @@ func TestMutatorBatch(t *testing.T) {
 				assertNotified(pm.byProject[lProjectAlt], expectedAltProject)
 				assertNotified(rm.byRun[run1], expectedRun1)
 				assertNotified(rm.byRun[run2], expectedRun2)
-				So(tj.clsNotified, ShouldBeEmpty)
+				assert.Loosely(t, tj.clsNotified, should.BeEmpty)
 			}
 
-			Convey("BeginBatch + FinalizeBatch", func() {
+			t.Run("BeginBatch + FinalizeBatch", func(t *ftt.Test) {
 				var resCLs []*CL
 				transErr := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 					resCLs = nil // reset in case of retries
 					muts, err := m.BeginBatch(ctx, lProject, clids)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					eg, _ := errgroup.WithContext(ctx)
 					for i := range muts {
 						mut := muts[i]
@@ -409,20 +408,20 @@ func TestMutatorBatch(t *testing.T) {
 							return nil
 						})
 					}
-					So(eg.Wait(), ShouldBeNil)
+					assert.Loosely(t, eg.Wait(), should.BeNil)
 					resCLs, err = m.FinalizeBatch(ctx, muts)
 					return err
 				}, nil)
-				So(transErr, ShouldBeNil)
+				assert.Loosely(t, transErr, should.BeNil)
 
 				// Execute the expected BatchOnCLUpdatedTask.
-				So(ct.TQ.Tasks(), ShouldHaveLength, 1)
+				assert.Loosely(t, ct.TQ.Tasks(), should.HaveLength(1))
 				ct.TQ.Run(ctx, tqtesting.StopWhenDrained())
 
 				verify(resCLs)
 			})
 
-			Convey("Manual Adopt + FinalizeBatch", func() {
+			t.Run("Manual Adopt + FinalizeBatch", func(t *ftt.Test) {
 				var resCLs []*CL
 				transErr := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 					resCLs = nil // reset in case of retries
@@ -440,27 +439,27 @@ func TestMutatorBatch(t *testing.T) {
 							return nil
 						})
 					}
-					So(eg.Wait(), ShouldBeNil)
+					assert.Loosely(t, eg.Wait(), should.BeNil)
 					var err error
 					resCLs, err = m.FinalizeBatch(ctx, muts)
 					return err
 				}, nil)
-				So(transErr, ShouldBeNil)
+				assert.Loosely(t, transErr, should.BeNil)
 
 				// Execute the expected BatchOnCLUpdatedTask.
-				So(ct.TQ.Tasks(), ShouldHaveLength, 1)
+				assert.Loosely(t, ct.TQ.Tasks(), should.HaveLength(1))
 				ct.TQ.Run(ctx, tqtesting.StopWhenDrained())
 
 				verify(resCLs)
 			})
 
-			Convey("BeginBatch + manual finalization", func() {
+			t.Run("BeginBatch + manual finalization", func(t *ftt.Test) {
 				// This is inefficient and really shouldn't be done in production.
 				var resCLs []*CL
 				transErr := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 					resCLs = make([]*CL, len(clids)) // reset in case of retries
 					muts, err := m.BeginBatch(ctx, lProject, clids)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					eg, egCtx := errgroup.WithContext(ctx)
 					for i, mut := range muts {
 						i, mut := i, mut
@@ -473,12 +472,12 @@ func TestMutatorBatch(t *testing.T) {
 					}
 					return eg.Wait()
 				}, nil)
-				So(transErr, ShouldBeNil)
+				assert.Loosely(t, transErr, should.BeNil)
 
 				tasks := ct.TQ.Tasks()
-				So(tasks, ShouldHaveLength, N)
+				assert.Loosely(t, tasks, should.HaveLength(N))
 				for _, tsk := range tasks {
-					So(tsk.Class, ShouldResemble, BatchOnCLUpdatedTaskClass)
+					assert.Loosely(t, tsk.Class, should.Resemble(BatchOnCLUpdatedTaskClass))
 					ct.TQ.Run(ctx, tqtesting.StopAfterTask(BatchOnCLUpdatedTaskClass))
 				}
 
@@ -491,7 +490,7 @@ func TestMutatorBatch(t *testing.T) {
 func TestMutatorConcurrent(t *testing.T) {
 	t.Parallel()
 
-	Convey("Mutator works on single CL when called concurrently with flaky datastore", t, func() {
+	ftt.Run("Mutator works on single CL when called concurrently with flaky datastore", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 		// Truncate to seconds to reduce noise in diffs of proto timestamps.
@@ -584,18 +583,18 @@ func TestMutatorConcurrent(t *testing.T) {
 			featureBreaker.DatastoreFeatures...,
 		)
 		cl, err := eid.Load(ctx)
-		So(err, ShouldBeNil)
-		So(cl, ShouldNotBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, cl, should.NotBeNil)
 		// Since all workers have succeeded, the latest snapshot
 		// (by ExternalUpdateTime) must be the current snapshot in datastore.
 		latestTS := epoch.Add((N - 1) * time.Second)
-		So(cl.Snapshot.GetExternalUpdateTime().AsTime(), ShouldEqual, latestTS)
-		So(cl.Access.GetByProject()[lProject].GetUpdateTime().AsTime(), ShouldResemble, latestTS)
+		assert.That(t, cl.Snapshot.GetExternalUpdateTime().AsTime(), should.Equal(latestTS))
+		assert.Loosely(t, cl.Access.GetByProject()[lProject].GetUpdateTime().AsTime(), should.Resemble(latestTS))
 		// Furthermore, there must have been at most N non-noop UpdateSnapshot calls
 		// (one per worker, iff they did it exactly in the increasing order of
 		// timestamps.
 		t.Logf("%d updates done", cl.EVersion)
-		So(cl.EVersion, ShouldBeLessThan, N+1)
+		assert.Loosely(t, cl.EVersion, should.BeLessThan(N+1))
 	})
 }
 
