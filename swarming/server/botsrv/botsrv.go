@@ -12,9 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package botsrv knows how to authenticate calls from Swarming RBE bots.
-//
-// It checks PollState/BotSession tokens and bot credentials.
+// Package botsrv knows how to handle calls from Swarming bots.
 package botsrv
 
 import (
@@ -23,6 +21,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"slices"
+	"sort"
 	"strings"
 
 	"google.golang.org/grpc/codes"
@@ -42,7 +42,9 @@ import (
 	"go.chromium.org/luci/tokenserver/auth/machine"
 
 	internalspb "go.chromium.org/luci/swarming/proto/internals"
+	"go.chromium.org/luci/swarming/server/cfg"
 	"go.chromium.org/luci/swarming/server/hmactoken"
+	"go.chromium.org/luci/swarming/server/validate"
 )
 
 // RequestBody should be implemented by a JSON-serializable struct representing
@@ -80,10 +82,11 @@ type Server struct {
 	router      *router.Router
 	middlewares router.MiddlewareChain
 	hmacSecret  *hmactoken.Secret
+	cfg         *cfg.Provider
 }
 
 // New constructs new Server.
-func New(ctx context.Context, r *router.Router, projectID string, hmacSecret *hmactoken.Secret) *Server {
+func New(ctx context.Context, cfg *cfg.Provider, r *router.Router, projectID string, hmacSecret *hmactoken.Secret) *Server {
 	gaeAppDomain := fmt.Sprintf("%s.appspot.com", projectID)
 	return &Server{
 		router: r,
@@ -108,6 +111,7 @@ func New(ctx context.Context, r *router.Router, projectID string, hmacSecret *hm
 			),
 		},
 		hmacSecret: hmacSecret,
+		cfg:        cfg,
 	}
 }
 
@@ -117,7 +121,10 @@ type RequestBodyConstraint[B any] interface {
 	*B
 }
 
-// InstallHandler installs a bot request handler at the given route.
+// InstallHandler installs a bot API request handler at the given route.
+//
+// This is a POST handler that receives JSON-serialized B and replies with
+// some JSON-serialized response.
 func InstallHandler[B any, RB RequestBodyConstraint[B]](s *Server, route string, h Handler[B]) {
 	s.router.POST(route, s.middlewares, func(c *router.Context) {
 		ctx := c.Request.Context()
@@ -253,8 +260,36 @@ func InstallHandler[B any, RB RequestBodyConstraint[B]](s *Server, route string,
 			}
 		}
 
+		// Authenticate the bot based on the config. Do it in a dry run mode for now
+		// to compare with the authentication based on the poll state token. Check
+		// various other bits of the poll state token as well (like enforced
+		// dimensions). Once it's confirmed there are no differences, the poll state
+		// token mechanism can be retired.
+		var dryRunAuthErr error
+		var ignoreDryRunAuthErr bool
+		dims := RB(body).ExtractDimensions()
+		botID, err := botIDFromDimensions(dims)
+		if err != nil {
+			logging.Errorf(ctx, "bot_auth: bad bot ID in dims: %s", err)
+			dryRunAuthErr = err
+		} else {
+			if fromPollState := extractBotID(pollState); fromPollState != botID {
+				logging.Errorf(ctx, "bot_auth: mismatch in bot ID from poll state (%q) and dims (%q)", fromPollState, botID)
+			}
+			botGroup := s.cfg.Cached(ctx).BotGroup(botID)
+			if !sameEnforcedDims(botID, botGroup.Dimensions, pollState.EnforcedDimensions) {
+				logging.Errorf(ctx, "bot_auth: mismatch in enforced dimensions (%v vs %v)", botGroup.Dimensions, pollState.EnforcedDimensions)
+			}
+			dryRunAuthErr = authenticateBot(ctx, botID, botGroup.Auth)
+			if transient.Tag.In(dryRunAuthErr) {
+				logging.Errorf(ctx, "bot_auth: ignoring transient error when checking bot creds: %s", dryRunAuthErr)
+				dryRunAuthErr = nil
+				ignoreDryRunAuthErr = true
+			}
+		}
+
 		// Extract bot ID from the validated PollToken.
-		botID := extractBotID(pollState)
+		botID = extractBotID(pollState)
 		if botID == "" {
 			writeErr(status.Errorf(codes.InvalidArgument, "no bot ID"))
 			return
@@ -270,18 +305,24 @@ func InstallHandler[B any, RB RequestBodyConstraint[B]](s *Server, route string,
 			if transient.Tag.In(err) {
 				writeErr(status.Errorf(codes.Internal, "transient error checking bot credentials: %s", err))
 			} else {
+				if !ignoreDryRunAuthErr && dryRunAuthErr == nil {
+					logging.Errorf(ctx, "bot_auth: bot auth mismatch: bots.cfg method succeeded, but poll token method failed")
+				}
 				writeErr(status.Errorf(codes.Unauthenticated, "bad bot credentials: %s", err))
 			}
 			return
 		}
 
+		if !ignoreDryRunAuthErr && dryRunAuthErr != nil {
+			logging.Errorf(ctx, "bot_auth: bot auth mismatch: bots.cfg method failed, but poll token method succeeded; poll token:\n%s", prettyProto(pollState))
+		}
+
 		// Apply verified state stored in PollState on top of whatever was reported
 		// by the bot. Normally functioning bots should report the same values as
 		// stored in the token.
-		dims := RB(body).ExtractDimensions()
 		for _, dim := range pollState.EnforcedDimensions {
 			reported := dims[dim.Key]
-			if !strSliceEq(reported, dim.Values) {
+			if !slices.Equal(reported, dim.Values) {
 				logging.Errorf(ctx, "Dimension %q mismatch: reported %v, expecting %v",
 					dim.Key, reported, dim.Values,
 				)
@@ -334,12 +375,57 @@ func prettyProto(msg proto.Message) string {
 	return string(blob)
 }
 
+// botIDFromDimensions extracts the bot ID from the dimensions dictionary.
+func botIDFromDimensions(dims map[string][]string) (string, error) {
+	var botID string
+	switch vals := dims["id"]; {
+	case len(vals) == 0:
+		return "", errors.Reason("bad dimensions: no bot ID").Err()
+	case len(vals) != 1:
+		return "", errors.Reason("bad dimensions: multiple bot IDs").Err()
+	default:
+		botID = vals[0]
+		if err := validate.DimensionValue(botID); err != nil {
+			return "", errors.Reason("bad bot ID %q: %s", botID, err).Err()
+		}
+		return botID, nil
+	}
+}
+
+// sameEnforcedDims compares enforced dimensions in bots.cfg to ones in the
+// poll state.
+//
+// This is temporary until the poll state token is removed.
+func sameEnforcedDims(botID string, cfgDims map[string][]string, tokDims []*internalspb.PollState_Dimension) bool {
+	var fromCfg []string
+	fromCfg = append(fromCfg, "id:"+botID)
+	for key, vals := range cfgDims {
+		for _, val := range vals {
+			fromCfg = append(fromCfg, fmt.Sprintf("%s:%s", key, val))
+		}
+	}
+	sort.Strings(fromCfg)
+
+	var fromTok []string
+	for _, d := range tokDims {
+		for _, val := range d.Values {
+			fromTok = append(fromTok, fmt.Sprintf("%s:%s", d.Key, val))
+		}
+	}
+	sort.Strings(fromTok)
+
+	return slices.Equal(fromCfg, fromTok)
+}
+
 // checkCredentials checks the bot credentials in the context match what is
 // required by the PollState.
 //
 // It ensures the Go portion of the Swarming server authenticates the bot in
 // the exact same way the Python portion did (since the Python portion produced
 // the PollState after it authenticated the bot).
+//
+// TODO(vadimsh): Get rid of this after switching to using bots.cfg config
+// instead of the poll token.
 func checkCredentials(ctx context.Context, pollState *internalspb.PollState) error {
 	switch m := pollState.AuthMethod.(type) {
 	case *internalspb.PollState_GceAuth:
@@ -418,17 +504,4 @@ func extractBotID(s *internalspb.PollState) string {
 		}
 	}
 	return ""
-}
-
-// strSliceEq is true if two string slices are equal.
-func strSliceEq(a, b []string) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	for i := range a {
-		if a[i] != b[i] {
-			return false
-		}
-	}
-	return true
 }

@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/auth/openid"
@@ -41,6 +42,7 @@ import (
 	"go.chromium.org/luci/tokenserver/auth/machine"
 
 	internalspb "go.chromium.org/luci/swarming/proto/internals"
+	"go.chromium.org/luci/swarming/server/cfg/cfgtest"
 	"go.chromium.org/luci/swarming/server/hmactoken"
 )
 
@@ -60,7 +62,7 @@ func TestBotHandler(t *testing.T) {
 
 	ftt.Run("With server", t, func(t *ftt.Test) {
 		now := time.Date(2044, time.April, 4, 4, 4, 4, 4, time.UTC)
-		ctx := context.Background()
+		ctx := memory.Use(context.Background())
 		ctx, _ = testclock.UseTime(ctx, now)
 
 		ctx = auth.WithState(ctx, &authtest.FakeState{
@@ -76,6 +78,7 @@ func TestBotHandler(t *testing.T) {
 				Active:  []byte("secret"),
 				Passive: [][]byte{[]byte("also-secret")},
 			}),
+			cfg: cfgtest.MockConfigs(ctx, cfgtest.NewMockedConfigs()),
 		}
 
 		var lastBody *testRequest
