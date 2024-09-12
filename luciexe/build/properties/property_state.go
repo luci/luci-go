@@ -63,32 +63,26 @@ func (pstate *outputPropertyState) toStruct() *structpb.Struct {
 }
 
 func (pstate *outputPropertyState) interact(s *State, cb func(dat any) bool) {
-	mutated, vers := func() (mutated bool, vers int64) {
+	mutated := func() (mutated bool) {
 		pstate.mu.Lock()
 		defer pstate.mu.Unlock()
 		if mutated = cb(pstate.data); mutated {
 			pstate.cached = nil
-			vers = s.version.Add(1)
 		}
 		return
 	}()
-
-	if mutated && s.notifyFunc != nil {
-		s.notifyFunc(vers)
+	if mutated {
+		s.incrementVersion()
 	}
 }
 
 func (pstate *outputPropertyState) set(s *State, dat any) {
-	vers := func() int64 {
+	func() {
 		pstate.mu.Lock()
 		defer pstate.mu.Unlock()
 
 		pstate.cached = nil
 		pstate.data = dat
-
-		return s.version.Add(1)
 	}()
-	if s.notifyFunc != nil {
-		s.notifyFunc(vers)
-	}
+	s.incrementVersion()
 }

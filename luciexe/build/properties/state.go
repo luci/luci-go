@@ -16,7 +16,7 @@ package properties
 
 import (
 	"context"
-	"sync/atomic"
+	"sync"
 
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -44,19 +44,22 @@ import (
 // separate from the build library itself.
 type State struct {
 	registry *Registry
-	version  atomic.Int64
 
 	// initialData values hold either a *struct or a map
 	initialData map[string]any
 	outputState map[string]*outputPropertyState
 
 	notifyFunc func(version int64)
+
+	cacheMu sync.Mutex
+	version int64
+	cached  *structpb.Struct
 }
 
 var ctxKey = "holds a *State"
 
-// SetInContext installs the State into context, returning an error if `ctx` already
-// includes a State.
+// SetInContext installs the State into context, returning an unmodified context
+// and an error if `ctx` already includes a State.
 func (s *State) SetInContext(ctx context.Context) (context.Context, error) {
 	if s == nil {
 		return ctx, nil
@@ -100,21 +103,32 @@ func GetState(ctx context.Context) *State {
 // (consistent==true) if the version observed after the construction of `ret` is
 // the same as startVers. If consistent is false, you can choose to continue
 // with the possibly inconsistent `ret`, and just call Serialize again later, or
-// you can discard `ret` and try again.
+// you can discard `ret` and try again. If the various RegisteredProperties
+// mutating this State very rapidly, it's possible that `consistent` will always
+// be false. If you require a consistent serialization and rapid property
+// updates, you may need to introduce some additional form of synchronization
+// between the property mutators to ensure that Serialize can complete with
+// a consistent serialization.
 //
 // There is NO synchronization other than bumping the version number up between
 // different properties in this state - multiple goroutines can mutate
 // RegisteredPropertyOuts simultaneously. Manipulation of a single
-// RegisteredPropertyOut is fully synchronized, however.
+// RegisteredPropertyOut is fully synchronized with itself, however.
 //
-// To get this into JSON form, just use protojson.Marshal.
+// To get this into JSON form, just use protojson.Marshal on the returned
+// *Struct.
 func (s *State) Serialize() (ret *structpb.Struct, startVers int64, consistent bool, err error) {
-	// Load the version - if any mutations happen between now and when we finish
-	// Serialize, it's possible that the caller will have to call Serialize again.
-	//
-	// However, this allows us to make all property updates independent of each
-	// other, and Serialize be non-blocking.
-	startVers = s.version.Load()
+	ret, startVers = func() (*structpb.Struct, int64) {
+		s.cacheMu.Lock()
+		defer s.cacheMu.Unlock()
+		if s.cached != nil {
+			return s.cached, s.version
+		}
+		return nil, s.version
+	}()
+	if ret != nil {
+		return ret, startVers, true, nil
+	}
 
 	if pstate := s.outputState[""]; pstate != nil {
 		ret = proto.Clone(pstate.toStruct()).(*structpb.Struct)
@@ -144,6 +158,35 @@ func (s *State) Serialize() (ret *structpb.Struct, startVers int64, consistent b
 	if len(ret.Fields) == 0 {
 		ret = nil
 	}
-	consistent = s.version.Load() == startVers
+
+	// Do compare(version) and swap for cache value.
+	//
+	// This will succeed in the swap if no property mutation happened between the
+	// top of this function and now.
+	consistent = func() bool {
+		s.cacheMu.Lock()
+		defer s.cacheMu.Unlock()
+		if s.version == startVers {
+			s.cached = ret
+			return true
+		}
+		return false
+	}()
+
 	return
+}
+
+// increments State.version by one and calls notifyFunc (if any) with the
+// incremented value.
+func (s *State) incrementVersion() {
+	vers := func() int64 {
+		s.cacheMu.Lock()
+		defer s.cacheMu.Unlock()
+		s.version += 1
+		s.cached = nil
+		return s.version
+	}()
+	if s.notifyFunc != nil {
+		s.notifyFunc(vers)
+	}
 }

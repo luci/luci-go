@@ -15,11 +15,14 @@
 package properties
 
 import (
+	"strconv"
+	"sync"
 	"testing"
 
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/check"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -229,4 +232,109 @@ func TestStateNotify(t *testing.T) {
 	})
 
 	assert.Loosely(t, vers, should.Equal(2))
+}
+
+func TestConcurrentManipulation(t *testing.T) {
+	t.Parallel()
+
+	const N = 200
+	const M = 3000
+
+	type OneNumber struct {
+		Num int32
+	}
+
+	manipulators := make([]RegisteredPropertyOut[*OneNumber], N)
+
+	r := &Registry{}
+	for i := range N {
+		manipulators[i] = MustRegisterOut[*OneNumber](r, strconv.Itoa(i))
+	}
+
+	ch := make(chan int64, 100)
+
+	state, err := r.Instantiate(nil, func(version int64) {
+		ch <- version
+	})
+	assert.That(t, err, should.ErrLike(nil))
+
+	// We use this pattern instead of assert.That to ensure that all the
+	// goroutines drain correctly.
+	hadErrors := false
+	defer func() {
+		if hadErrors {
+			t.Fail()
+		}
+	}()
+	handleErr := func(err error) {
+		if err != nil {
+			t.Log(err)
+			hadErrors = true
+		}
+	}
+
+	observed := make([]int32, N)
+	serialize := func() (int64, bool) {
+		ser, version, consistent, err := state.Serialize()
+		handleErr(err)
+		for ns, val := range ser.Fields {
+			i, err := strconv.Atoi(ns)
+			handleErr(err)
+			observed[i] = int32(val.GetStructValue().Fields["Num"].GetNumberValue())
+			handleErr(err)
+		}
+		return version, consistent
+	}
+
+	var wg sync.WaitGroup
+
+	for i := range N {
+		wg.Add(1)
+		manip := manipulators[i]
+		go func() {
+			defer wg.Done()
+
+			for j := range M {
+				manip.SetOutputFromState(state, &OneNumber{int32(j)})
+			}
+		}()
+	}
+
+	go func() {
+		wg.Wait()
+		close(ch)
+	}()
+
+	numInconsistent := 0
+	gotVersion := int64(0)
+	for version := range ch {
+		if version > int64(gotVersion) {
+			var consistent bool
+			gotVersion, consistent = serialize()
+			if !consistent {
+				numInconsistent++
+			}
+		}
+	}
+
+	// ok, all goroutines should be drained now, we should be able to observe
+	// a consistent state.
+
+	// We should have observed at least one out-of-order delivery
+	assert.That(t, numInconsistent, should.BeGreaterThan(1))
+
+	// Every observed value after serialize() should be M-1 - this shows that even
+	// though we got inconsistent updates, after processing all version pings we
+	// actually did achieve consistency.
+	for i, val := range observed {
+		if !check.That(t, val, should.Equal[int32](M-1)) {
+			t.Logf(">> in observed[%d]", i)
+		}
+	}
+
+	// When we serialize again, we should get a consistent snapshot, and we should
+	// have a version of M*N.
+	version, consistent := serialize()
+	assert.That(t, consistent, should.BeTrue)
+	assert.That(t, version, should.Equal[int64](M*N))
 }

@@ -33,7 +33,12 @@ import (
 // the version returned by [State.Serialize], which is intended to allow
 // implementations to not process stale notifications.
 //
-// The callback is invoked outside of a mutex, but should still execute
+// The callback is invoked OUTSIDE of a mutex, but synchronously with
+// RegisteredProperty.{Set,Mutate}Output. That is, code which calls
+// RegisteredProperty.{Set,Mutate} will block until notify finishes, but if
+// notify itself blocks, this will not block State.Serialize(), nor will it
+// block other calls to RegisteredProperty.{Set,Mutate} of the same
+// RegisteredProperty. Because of this, `notify` should still execute
 // quickly (e.g. pushing something to a non-blocking channel, such as
 // a [go.chromium.org/luci/common/sync/dispatcher.Channel]). Because it is
 // called outside of a mutex, you may see many notifications with out-of-order
