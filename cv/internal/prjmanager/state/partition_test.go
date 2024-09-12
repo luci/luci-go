@@ -18,21 +18,28 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/registry"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run"
 	"google.golang.org/protobuf/types/known/timestamppb"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
+
+func init() {
+	registry.RegisterCmpOption(cmp.AllowUnexported(State{}))
+}
 
 func TestRepartition(t *testing.T) {
 	t.Parallel()
 
-	Convey("repartition works", t, func() {
+	ftt.Run("repartition works", t, func(t *ftt.Test) {
 		state := &State{PB: &prjpb.PState{
 			RepartitionRequired: true,
 		}}
@@ -43,22 +50,25 @@ func TestRepartition(t *testing.T) {
 			unloaded: common.CLIDsSet{},
 		}
 
-		defer func() {
+		check := func(t testing.TB) {
+			t.Helper()
+
 			// Assert guarantees of repartition()
-			So(state.PB.GetRepartitionRequired(), ShouldBeFalse)
-			So(state.PB.GetCreatedPruns(), ShouldBeNil)
+			assert.Loosely(t, state.PB.GetRepartitionRequired(), should.BeFalse, truth.LineContext())
+			assert.Loosely(t, state.PB.GetCreatedPruns(), should.BeNil, truth.LineContext())
 			actual := state.pclIndex
 			state.pclIndex = nil
 			state.ensurePCLIndex()
-			So(actual, ShouldResemble, state.pclIndex)
-		}()
+			assert.Loosely(t, actual, should.Resemble(state.pclIndex), truth.LineContext())
+		}
 
-		Convey("nothing to do, except resetting RepartitionRequired", func() {
-			Convey("totally empty", func() {
+		t.Run("nothing to do, except resetting RepartitionRequired", func(t *ftt.Test) {
+			t.Run("totally empty", func(t *ftt.Test) {
 				state.repartition(cat)
-				So(state.PB, ShouldResembleProto, &prjpb.PState{})
+				assert.Loosely(t, state.PB, should.Resemble(&prjpb.PState{}))
+				check(t)
 			})
-			Convey("1 active CL in 1 component", func() {
+			t.Run("1 active CL in 1 component", func(t *ftt.Test) {
 				cat.active.ResetI64(1)
 				state.PB.Components = []*prjpb.Component{{Clids: []int64{1}}}
 				state.PB.Pcls = []*prjpb.PCL{{Clid: 1}}
@@ -66,9 +76,10 @@ func TestRepartition(t *testing.T) {
 
 				state.repartition(cat)
 				pb.RepartitionRequired = false
-				So(state.PB, ShouldResembleProto, pb)
+				assert.Loosely(t, state.PB, should.Resemble(pb))
+				check(t)
 			})
-			Convey("1 active CL in 1 component needing triage with 1 Run", func() {
+			t.Run("1 active CL in 1 component needing triage with 1 Run", func(t *ftt.Test) {
 				cat.active.ResetI64(1)
 				state.PB.Components = []*prjpb.Component{{
 					Clids:          []int64{1},
@@ -80,12 +91,13 @@ func TestRepartition(t *testing.T) {
 
 				state.repartition(cat)
 				pb.RepartitionRequired = false
-				So(state.PB, ShouldResembleProto, pb)
+				assert.Loosely(t, state.PB, should.Resemble(pb))
+				check(t)
 			})
 		})
 
-		Convey("Compacts out unused PCLs", func() {
-			Convey("no existing components", func() {
+		t.Run("Compacts out unused PCLs", func(t *ftt.Test) {
+			t.Run("no existing components", func(t *ftt.Test) {
 				cat.active.ResetI64(1, 3)
 				cat.unused.ResetI64(2)
 				state.PB.Pcls = []*prjpb.PCL{
@@ -95,7 +107,7 @@ func TestRepartition(t *testing.T) {
 				}
 
 				state.repartition(cat)
-				So(state.PB, ShouldResembleProto, &prjpb.PState{
+				assert.Loosely(t, state.PB, should.Resemble(&prjpb.PState{
 					Pcls: []*prjpb.PCL{
 						{Clid: 1},
 						{Clid: 3, Deps: []*changelist.Dep{{Clid: 1}}},
@@ -104,9 +116,10 @@ func TestRepartition(t *testing.T) {
 						Clids:          []int64{1, 3},
 						TriageRequired: true,
 					}},
-				})
+				}))
+				check(t)
 			})
-			Convey("wipes out existing component, too", func() {
+			t.Run("wipes out existing component, too", func(t *ftt.Test) {
 				cat.unused.ResetI64(1, 2, 3)
 				state.PB.Pcls = []*prjpb.PCL{
 					{Clid: 1},
@@ -118,12 +131,13 @@ func TestRepartition(t *testing.T) {
 					{Clids: []int64{2, 3}},
 				}
 				state.repartition(cat)
-				So(state.PB, ShouldResembleProto, &prjpb.PState{
+				assert.Loosely(t, state.PB, should.Resemble(&prjpb.PState{
 					Pcls:       nil,
 					Components: nil,
-				})
+				}))
+				check(t)
 			})
-			Convey("shrinks existing component, too", func() {
+			t.Run("shrinks existing component, too", func(t *ftt.Test) {
 				cat.active.ResetI64(1)
 				cat.unused.ResetI64(2)
 				state.PB.Pcls = []*prjpb.PCL{
@@ -134,7 +148,7 @@ func TestRepartition(t *testing.T) {
 					Clids: []int64{1, 2},
 				}}
 				state.repartition(cat)
-				So(state.PB, ShouldResembleProto, &prjpb.PState{
+				assert.Loosely(t, state.PB, should.Resemble(&prjpb.PState{
 					Pcls: []*prjpb.PCL{
 						{Clid: 1},
 					},
@@ -142,25 +156,27 @@ func TestRepartition(t *testing.T) {
 						Clids:          []int64{1},
 						TriageRequired: true,
 					}},
-				})
+				}))
+				check(t)
 			})
 		})
 
-		Convey("Creates new components", func() {
-			Convey("1 active CL converted into 1 new component needing triage", func() {
+		t.Run("Creates new components", func(t *ftt.Test) {
+			t.Run("1 active CL converted into 1 new component needing triage", func(t *ftt.Test) {
 				cat.active.ResetI64(1)
 				state.PB.Pcls = []*prjpb.PCL{{Clid: 1}}
 
 				state.repartition(cat)
-				So(state.PB, ShouldResembleProto, &prjpb.PState{
+				assert.Loosely(t, state.PB, should.Resemble(&prjpb.PState{
 					Pcls: []*prjpb.PCL{{Clid: 1}},
 					Components: []*prjpb.Component{{
 						Clids:          []int64{1},
 						TriageRequired: true,
 					}},
-				})
+				}))
+				check(t)
 			})
-			Convey("Deps respected during conversion", func() {
+			t.Run("Deps respected during conversion", func(t *ftt.Test) {
 				cat.active.ResetI64(1, 2, 3)
 				state.PB.Pcls = []*prjpb.PCL{
 					{Clid: 1},
@@ -171,7 +187,7 @@ func TestRepartition(t *testing.T) {
 
 				state.repartition(cat)
 				sortByFirstCL(state.PB.Components)
-				So(state.PB, ShouldResembleProto, &prjpb.PState{
+				assert.Loosely(t, state.PB, should.Resemble(&prjpb.PState{
 					Pcls: orig.Pcls,
 					Components: []*prjpb.Component{
 						{
@@ -183,12 +199,13 @@ func TestRepartition(t *testing.T) {
 							TriageRequired: true,
 						},
 					},
-				})
+				}))
+				check(t)
 			})
 		})
 
-		Convey("Components splitting works", func() {
-			Convey("Crossing-over 12, 34 => 13, 24", func() {
+		t.Run("Components splitting works", func(t *ftt.Test) {
+			t.Run("Crossing-over 12, 34 => 13, 24", func(t *ftt.Test) {
 				cat.active.ResetI64(1, 2, 3, 4)
 				state.PB.Pcls = []*prjpb.PCL{
 					{Clid: 1},
@@ -204,15 +221,16 @@ func TestRepartition(t *testing.T) {
 
 				state.repartition(cat)
 				sortByFirstCL(state.PB.Components)
-				So(state.PB, ShouldResembleProto, &prjpb.PState{
+				assert.Loosely(t, state.PB, should.Resemble(&prjpb.PState{
 					Pcls: orig.Pcls,
 					Components: []*prjpb.Component{
 						{Clids: []int64{1, 3}, TriageRequired: true},
 						{Clids: []int64{2, 4}, TriageRequired: true},
 					},
-				})
+				}))
+				check(t)
 			})
-			Convey("Loaded and unloaded deps can be shared by several components", func() {
+			t.Run("Loaded and unloaded deps can be shared by several components", func(t *ftt.Test) {
 				cat.active.ResetI64(1, 2, 3)
 				cat.deps.ResetI64(4, 5)
 				cat.unloaded.ResetI64(5)
@@ -226,18 +244,19 @@ func TestRepartition(t *testing.T) {
 
 				state.repartition(cat)
 				sortByFirstCL(state.PB.Components)
-				So(state.PB, ShouldResembleProto, &prjpb.PState{
+				assert.Loosely(t, state.PB, should.Resemble(&prjpb.PState{
 					Pcls: orig.Pcls,
 					Components: []*prjpb.Component{
 						{Clids: []int64{1, 3}, TriageRequired: true},
 						{Clids: []int64{2}, TriageRequired: true},
 					},
-				})
+				}))
+				check(t)
 			})
 		})
 
-		Convey("CreatedRuns are moved into components", func() {
-			Convey("Simple", func() {
+		t.Run("CreatedRuns are moved into components", func(t *ftt.Test) {
+			t.Run("Simple", func(t *ftt.Test) {
 				cat.active.ResetI64(1, 2)
 				state.PB.Pcls = []*prjpb.PCL{
 					{Clid: 1},
@@ -247,7 +266,7 @@ func TestRepartition(t *testing.T) {
 				orig := backupPB(state)
 
 				state.repartition(cat)
-				So(state.PB, ShouldResembleProto, &prjpb.PState{
+				assert.Loosely(t, state.PB, should.Resemble(&prjpb.PState{
 					CreatedPruns: nil,
 					Pcls:         orig.Pcls,
 					Components: []*prjpb.Component{
@@ -257,9 +276,10 @@ func TestRepartition(t *testing.T) {
 							TriageRequired: true,
 						},
 					},
-				})
+				}))
+				check(t)
 			})
-			Convey("Force-merge 2 existing components", func() {
+			t.Run("Force-merge 2 existing components", func(t *ftt.Test) {
 				cat.active.ResetI64(1, 2)
 				state.PB.Pcls = []*prjpb.PCL{
 					{Clid: 1},
@@ -274,7 +294,7 @@ func TestRepartition(t *testing.T) {
 
 				state.repartition(cat)
 				sortByFirstCL(state.PB.Components)
-				So(state.PB, ShouldResembleProto, &prjpb.PState{
+				assert.Loosely(t, state.PB, should.Resemble(&prjpb.PState{
 					CreatedPruns: nil,
 					Pcls:         orig.Pcls,
 					Components: []*prjpb.Component{
@@ -288,11 +308,12 @@ func TestRepartition(t *testing.T) {
 							TriageRequired: true,
 						},
 					},
-				})
+				}))
+				check(t)
 			})
 		})
 
-		Convey("Does all at once", func() {
+		t.Run("Does all at once", func(t *ftt.Test) {
 			// This test adds more test coverage for a busy project where components
 			// are created, split, merged, and CreatedRuns are incorporated during
 			// repartition(), especially likely after a config update.
@@ -320,7 +341,7 @@ func TestRepartition(t *testing.T) {
 
 			state.repartition(cat)
 			sortByFirstCL(state.PB.Components)
-			So(state.PB, ShouldResembleProto, &prjpb.PState{
+			assert.Loosely(t, state.PB, should.Resemble(&prjpb.PState{
 				Pcls: []*prjpb.PCL{
 					{Clid: 1},
 					{Clid: 2, Deps: []*changelist.Dep{{Clid: 1}}},
@@ -338,7 +359,8 @@ func TestRepartition(t *testing.T) {
 					}},
 					{Clids: []int64{6}, TriageRequired: true, Pruns: []*prjpb.PRun{{Clids: []int64{6}, Id: "6"}}},
 				},
-			})
+			}))
+			check(t)
 		})
 	})
 }
@@ -346,12 +368,12 @@ func TestRepartition(t *testing.T) {
 func TestPartitionSpecialCases(t *testing.T) {
 	t.Parallel()
 
-	Convey("Special cases of partitioning", t, func() {
+	ftt.Run("Special cases of partitioning", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 		epoch := ct.Clock.Now().Truncate(time.Hour)
 
-		Convey("crbug/1217775", func() {
+		t.Run("crbug/1217775", func(t *ftt.Test) {
 			s0 := &State{PB: &prjpb.PState{
 				// PCLs form a stack 11 <- 12 <- 13.
 				Pcls: []*prjpb.PCL{
@@ -404,21 +426,21 @@ func TestPartitionSpecialCases(t *testing.T) {
 			}}
 
 			cat := s0.categorizeCLs(ctx)
-			So(cat.active, ShouldResemble, common.CLIDsSet{10: {}, 12: {}})
-			So(cat.deps, ShouldResemble, common.CLIDsSet{11: {}})
-			So(cat.unused, ShouldBeEmpty)
-			So(cat.unloaded, ShouldBeEmpty)
+			assert.Loosely(t, cat.active, should.Resemble(common.CLIDsSet{10: {}, 12: {}}))
+			assert.Loosely(t, cat.deps, should.Resemble(common.CLIDsSet{11: {}}))
+			assert.Loosely(t, cat.unused, should.BeEmpty)
+			assert.Loosely(t, cat.unloaded, should.BeEmpty)
 
 			s1 := s0.cloneShallow()
 			s1.repartition(cat)
 
 			// All PCLs are still used.
-			So(s1.PB.GetPcls(), ShouldResembleProto, s0.PB.GetPcls())
+			assert.Loosely(t, s1.PB.GetPcls(), should.Resemble(s0.PB.GetPcls()))
 			// But CreatedPruns must be moved into components.
-			So(s1.PB.GetCreatedPruns(), ShouldBeEmpty)
+			assert.Loosely(t, s1.PB.GetCreatedPruns(), should.BeEmpty)
 			// Because CLs are related, there should be just 1 component remaining with
 			// both Runs.
-			So(s1.PB.GetComponents(), ShouldResembleProto, []*prjpb.Component{
+			assert.Loosely(t, s1.PB.GetComponents(), should.Resemble([]*prjpb.Component{
 				{
 					Clids: []int64{10, 12},
 					Pruns: []*prjpb.PRun{
@@ -427,7 +449,7 @@ func TestPartitionSpecialCases(t *testing.T) {
 					},
 					TriageRequired: true,
 				},
-			})
+			}))
 		})
 	})
 }

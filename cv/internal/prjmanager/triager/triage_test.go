@@ -24,6 +24,9 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
@@ -37,15 +40,12 @@ import (
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/runcreator"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestTriage(t *testing.T) {
 	t.Parallel()
 
-	Convey("Triage works", t, func() {
+	ftt.Run("Triage works", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
@@ -89,7 +89,7 @@ func TestTriage(t *testing.T) {
 		pm := &simplePMState{pb: &prjpb.PState{}}
 		var err error
 		pm.cgs, err = prjcfgtest.MustExist(ctx, lProject).GetConfigGroups(ctx)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		dryRun := func(ts time.Time) *run.Triggers {
 			return &run.Triggers{CqVoteTrigger: &run.Trigger{Mode: string(run.DryRun), Time: timestamppb.New(ts)}}
@@ -100,17 +100,17 @@ func TestTriage(t *testing.T) {
 			proto.Merge(&backup, pm.pb)
 			res, err := Triage(ctx, c, pm)
 			// Regardless of result, PM's state must be not be modified.
-			So(pm.pb, ShouldResembleProto, &backup)
+			assert.Loosely(t, pm.pb, should.Resemble(&backup))
 			return res, err
 		}
 		mustTriage := func(c *prjpb.Component) itriager.Result {
 			res, err := triage(c)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			return res
 		}
 		failTriage := func(c *prjpb.Component) error {
 			_, err := triage(c)
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 			return err
 		}
 
@@ -139,13 +139,13 @@ func TestTriage(t *testing.T) {
 			trs := trigger.Find(&trigger.FindInput{ChangeInfo: ci, ConfigGroup: cfg.GetConfigGroups()[grpIndex]})
 			switch mode {
 			case run.NewPatchsetRun:
-				So(grpIndex, ShouldBeGreaterThanOrEqualTo, nprIdx)
-				So(trs.GetNewPatchsetRunTrigger(), ShouldNotBeNil)
+				assert.Loosely(t, grpIndex, should.BeGreaterThanOrEqual(nprIdx))
+				assert.Loosely(t, trs.GetNewPatchsetRunTrigger(), should.NotBeNil)
 			case "":
 				// skip
 			default:
-				So(trs.GetCqVoteTrigger(), ShouldNotBeNil)
-				So(trs.GetCqVoteTrigger().GetMode(), ShouldResemble, string(mode))
+				assert.Loosely(t, trs.GetCqVoteTrigger(), should.NotBeNil)
+				assert.Loosely(t, trs.GetCqVoteTrigger().GetMode(), should.Resemble(string(mode)))
 			}
 			cl := &changelist.CL{
 				ID:         common.CLID(clid),
@@ -162,7 +162,7 @@ func TestTriage(t *testing.T) {
 					Kind: depKind,
 				})
 			}
-			So(datastore.Put(ctx, cl), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, cl), should.BeNil)
 			pclTriggers := proto.Clone(trs).(*run.Triggers)
 			if pclTriggers.GetNewPatchsetRunTrigger() != nil {
 				pclTriggers.NewPatchsetRunTrigger.Email = owner.GetEmail()
@@ -182,7 +182,7 @@ func TestTriage(t *testing.T) {
 			}
 		}
 
-		Convey("Noops", func() {
+		t.Run("Noops", func(t *ftt.Test) {
 			pcl := &prjpb.PCL{Clid: 33, ConfigGroupIndexes: []int32{singIdx}, Triggers: dryRun(ct.Clock.Now())}
 			pm.pb.Pcls = []*prjpb.PCL{pcl}
 			oldC := &prjpb.Component{
@@ -192,37 +192,37 @@ func TestTriage(t *testing.T) {
 				TriageRequired: true,
 			}
 			res := mustTriage(oldC)
-			So(res.NewValue, ShouldResembleProto, markTriaged(oldC))
-			So(res.RunsToCreate, ShouldBeEmpty)
-			So(res.CLsToPurge, ShouldBeEmpty)
+			assert.Loosely(t, res.NewValue, should.Resemble(markTriaged(oldC)))
+			assert.Loosely(t, res.RunsToCreate, should.BeEmpty)
+			assert.Loosely(t, res.CLsToPurge, should.BeEmpty)
 		})
 
-		Convey("Chained CQ votes", func() {
+		t.Run("Chained CQ votes", func(t *ftt.Test) {
 			now := ct.Clock.Now()
 			depKind = changelist.DepKind_HARD
 			const cl31, cl32, cl33, cl34 = 31, 32, 33, 34
 
-			Convey("with CQ vote on a child CL", func() {
+			t.Run("with CQ vote on a child CL", func(t *ftt.Test) {
 				_, pcl31 := putPCL(cl31, singIdx, "", now.Add(-time.Minute))
 				_, pcl32 := putPCL(cl32, singIdx, "", now.Add(-time.Second), cl31)
 				_, pcl33 := putPCL(cl33, singIdx, run.FullRun, now, cl31, cl32)
 				pm.pb.Pcls = []*prjpb.PCL{pcl31, pcl32, pcl33}
 				var res itriager.Result
 
-				Convey("no deps have CQ+2", func() {
+				t.Run("no deps have CQ+2", func(t *ftt.Test) {
 					oldC := &prjpb.Component{Clids: []int64{cl31, cl32, cl33}, TriageRequired: true}
 					res = mustTriage(oldC)
-					So(res.CLsToTriggerDeps, ShouldResembleProto, []*prjpb.TriggeringCLDeps{
+					assert.Loosely(t, res.CLsToTriggerDeps, should.Resemble([]*prjpb.TriggeringCLDeps{
 						&prjpb.TriggeringCLDeps{
 							OriginClid:      cl33,
 							DepClids:        []int64{cl31, cl32},
 							Trigger:         pcl33.Triggers.GetCqVoteTrigger(),
 							ConfigGroupName: "singular",
 						},
-					})
+					}))
 				})
 
-				Convey("a dep has TriggeringCLDeps already", func() {
+				t.Run("a dep has TriggeringCLDeps already", func(t *ftt.Test) {
 					pm.pb.TriggeringClDeps, _ = pm.pb.COWTriggeringCLDeps(nil, []*prjpb.TriggeringCLDeps{
 						&prjpb.TriggeringCLDeps{
 							OriginClid: cl32,
@@ -234,19 +234,19 @@ func TestTriage(t *testing.T) {
 					res = mustTriage(oldC)
 					// should skip triaging cl33, because its dep already has
 					// an inflight TriggeringCLDeps.
-					So(res.CLsToTriggerDeps, ShouldBeNil)
+					assert.Loosely(t, res.CLsToTriggerDeps, should.BeNil)
 				})
 				// No triage required, as the Component will be waken up
 				// by the vote completion event.
-				So(res.NewValue.GetTriageRequired(), ShouldBeFalse)
-				So(res.NewValue.GetDecisionTime(), ShouldBeNil)
+				assert.Loosely(t, res.NewValue.GetTriageRequired(), should.BeFalse)
+				assert.Loosely(t, res.NewValue.GetDecisionTime(), should.BeNil)
 				// No runs should be created.
 				// No CLs should be purged.
 				// CL31 and CL32 should be in CLsToTriggerDeps.
-				So(res.RunsToCreate, ShouldBeEmpty)
-				So(res.CLsToPurge, ShouldBeEmpty)
+				assert.Loosely(t, res.RunsToCreate, should.BeEmpty)
+				assert.Loosely(t, res.CLsToPurge, should.BeEmpty)
 			})
-			Convey("with CQ vote on some dep CLs, but not all", func() {
+			t.Run("with CQ vote on some dep CLs, but not all", func(t *ftt.Test) {
 				_, pcl31 := putPCL(cl31, singIdx, run.FullRun, now.Add(-time.Second))
 				_, pcl32 := putPCL(cl32, singIdx, "", now.Add(-time.Second), cl31)
 				_, pcl33 := putPCL(cl33, singIdx, run.FullRun, now.Add(-time.Minute), cl31, cl32)
@@ -258,29 +258,29 @@ func TestTriage(t *testing.T) {
 
 				// No triage required, as the Component will be waken up
 				// by the vote completion event.
-				So(res.NewValue.GetTriageRequired(), ShouldBeFalse)
-				So(res.NewValue.GetDecisionTime(), ShouldBeNil)
+				assert.Loosely(t, res.NewValue.GetTriageRequired(), should.BeFalse)
+				assert.Loosely(t, res.NewValue.GetDecisionTime(), should.BeNil)
 
 				// run for CL31 should be created, as it meets all the run
 				// creation requirements.
-				So(res.RunsToCreate, ShouldHaveLength, 1)
-				So(res.RunsToCreate[0].InputCLs, ShouldHaveLength, 1)
-				So(res.RunsToCreate[0].InputCLs[0].ID, ShouldEqual, cl31)
-				So(res.RunsToCreate[0].DepRuns, ShouldBeNil)
+				assert.Loosely(t, res.RunsToCreate, should.HaveLength(1))
+				assert.Loosely(t, res.RunsToCreate[0].InputCLs, should.HaveLength(1))
+				assert.Loosely(t, res.RunsToCreate[0].InputCLs[0].ID, should.Equal(cl31))
+				assert.Loosely(t, res.RunsToCreate[0].DepRuns, should.BeNil)
 
 				// a single TriggeringCLDeps{} should be created for CL34 to
 				// trigger CL32.
-				So(res.CLsToPurge, ShouldBeEmpty)
-				So(res.CLsToTriggerDeps, ShouldResembleProto, []*prjpb.TriggeringCLDeps{
+				assert.Loosely(t, res.CLsToPurge, should.BeEmpty)
+				assert.Loosely(t, res.CLsToTriggerDeps, should.Resemble([]*prjpb.TriggeringCLDeps{
 					&prjpb.TriggeringCLDeps{
 						OriginClid:      cl34,
 						DepClids:        []int64{cl32},
 						Trigger:         pcl34.Triggers.GetCqVoteTrigger(),
 						ConfigGroupName: "singular",
 					},
-				})
+				}))
 			})
-			Convey("with CQ votes on all CLs", func() {
+			t.Run("with CQ votes on all CLs", func(t *ftt.Test) {
 				_, pcl31 := putPCL(cl31, singIdx, run.FullRun, now.Add(-time.Second))
 				_, pcl32 := putPCL(cl32, singIdx, run.FullRun, now.Add(-time.Second), cl31)
 				pm.pb.Pcls = []*prjpb.PCL{pcl31, pcl32}
@@ -288,41 +288,41 @@ func TestTriage(t *testing.T) {
 				mockRunCreation := func(rc *runcreator.Creator) common.RunID {
 					component.Pruns = makePrunsWithMode(
 						run.FullRun, rc.ExpectedRunID(), rc.InputCLs[0].ID)
-					So(datastore.Put(ctx, &run.Run{
+					assert.Loosely(t, datastore.Put(ctx, &run.Run{
 						ID:     rc.ExpectedRunID(),
-						Status: run.Status_RUNNING}), ShouldBeNil)
+						Status: run.Status_RUNNING}), should.BeNil)
 					return rc.ExpectedRunID()
 				}
 
 				// The first triage should create runcreator for pcl31 only.
 				res := mustTriage(component)
-				So(res.RunsToCreate, ShouldHaveLength, 1)
-				So(res.RunsToCreate[0].InputCLs, ShouldHaveLength, 1)
-				So(res.RunsToCreate[0].InputCLs[0].ID, ShouldEqual, cl31)
-				So(res.RunsToCreate[0].DepRuns, ShouldBeNil)
-				So(res.CLsToPurge, ShouldBeEmpty)
-				So(res.CLsToTriggerDeps, ShouldBeEmpty)
+				assert.Loosely(t, res.RunsToCreate, should.HaveLength(1))
+				assert.Loosely(t, res.RunsToCreate[0].InputCLs, should.HaveLength(1))
+				assert.Loosely(t, res.RunsToCreate[0].InputCLs[0].ID, should.Equal(cl31))
+				assert.Loosely(t, res.RunsToCreate[0].DepRuns, should.BeNil)
+				assert.Loosely(t, res.CLsToPurge, should.BeEmpty)
+				assert.Loosely(t, res.CLsToTriggerDeps, should.BeEmpty)
 				rid31 := mockRunCreation(res.RunsToCreate[0])
 
-				Convey("with a dep that has an incomplete Run", func() {
+				t.Run("with a dep that has an incomplete Run", func(t *ftt.Test) {
 					// pcl32, next, but with DepRuns this time.
 					res = mustTriage(component)
-					So(res.RunsToCreate, ShouldHaveLength, 1)
-					So(res.RunsToCreate[0].InputCLs, ShouldHaveLength, 1)
-					So(res.RunsToCreate[0].InputCLs[0].ID, ShouldEqual, cl32)
-					So(res.RunsToCreate[0].DepRuns, ShouldEqual, common.RunIDs{rid31})
-					So(res.CLsToPurge, ShouldBeEmpty)
-					So(res.CLsToTriggerDeps, ShouldBeEmpty)
+					assert.Loosely(t, res.RunsToCreate, should.HaveLength(1))
+					assert.Loosely(t, res.RunsToCreate[0].InputCLs, should.HaveLength(1))
+					assert.Loosely(t, res.RunsToCreate[0].InputCLs[0].ID, should.Equal(cl32))
+					assert.Loosely(t, res.RunsToCreate[0].DepRuns, should.Match(common.RunIDs{rid31}))
+					assert.Loosely(t, res.CLsToPurge, should.BeEmpty)
+					assert.Loosely(t, res.CLsToTriggerDeps, should.BeEmpty)
 					mockRunCreation(res.RunsToCreate[0])
 
 					// the next triage should produce nothing.
 					res = mustTriage(component)
-					So(res.RunsToCreate, ShouldHaveLength, 0)
-					So(res.CLsToPurge, ShouldBeEmpty)
-					So(res.CLsToTriggerDeps, ShouldBeEmpty)
+					assert.Loosely(t, res.RunsToCreate, should.HaveLength(0))
+					assert.Loosely(t, res.CLsToPurge, should.BeEmpty)
+					assert.Loosely(t, res.CLsToTriggerDeps, should.BeEmpty)
 				})
 
-				Convey("with a dep of which run has been submitted", func() {
+				t.Run("with a dep of which run has been submitted", func(t *ftt.Test) {
 					pcl31.Submitted = true
 					// Actually, run submitter doesn't remove the CQ vote,
 					// but State.makePCL() skips setting the trigger in
@@ -331,31 +331,31 @@ func TestTriage(t *testing.T) {
 					// triageNewTriggers() panics, if the assumption is
 					// wrong.
 					pcl31.Triggers = nil
-					So(datastore.Put(ctx, &run.Run{
+					assert.Loosely(t, datastore.Put(ctx, &run.Run{
 						ID:     rid31,
-						Status: run.Status_SUCCEEDED}), ShouldBeNil)
+						Status: run.Status_SUCCEEDED}), should.BeNil)
 					component.Pruns = nil
 
 					res = mustTriage(component)
-					So(res.RunsToCreate, ShouldHaveLength, 1)
-					So(res.RunsToCreate[0].InputCLs, ShouldHaveLength, 1)
-					So(res.RunsToCreate[0].InputCLs[0].ID, ShouldEqual, cl32)
+					assert.Loosely(t, res.RunsToCreate, should.HaveLength(1))
+					assert.Loosely(t, res.RunsToCreate[0].InputCLs, should.HaveLength(1))
+					assert.Loosely(t, res.RunsToCreate[0].InputCLs[0].ID, should.Equal(cl32))
 					// DepRuns should be nil, as pcl31 has been submitted.
-					So(res.RunsToCreate[0].DepRuns, ShouldBeNil)
-					So(res.CLsToPurge, ShouldBeEmpty)
-					So(res.CLsToTriggerDeps, ShouldBeEmpty)
+					assert.Loosely(t, res.RunsToCreate[0].DepRuns, should.BeNil)
+					assert.Loosely(t, res.CLsToPurge, should.BeEmpty)
+					assert.Loosely(t, res.CLsToTriggerDeps, should.BeEmpty)
 					mockRunCreation(res.RunsToCreate[0])
 
 					// the next triage should produce nothing.
 					res = mustTriage(component)
-					So(res.RunsToCreate, ShouldHaveLength, 0)
-					So(res.CLsToPurge, ShouldBeEmpty)
-					So(res.CLsToTriggerDeps, ShouldBeEmpty)
+					assert.Loosely(t, res.RunsToCreate, should.HaveLength(0))
+					assert.Loosely(t, res.CLsToPurge, should.BeEmpty)
+					assert.Loosely(t, res.CLsToTriggerDeps, should.BeEmpty)
 				})
 			})
 		})
 
-		Convey("Purges CLs", func() {
+		t.Run("Purges CLs", func(t *ftt.Test) {
 			pm.pb.Pcls = []*prjpb.PCL{{
 				Clid:               33,
 				ConfigGroupIndexes: nil, // modified below.
@@ -369,14 +369,14 @@ func TestTriage(t *testing.T) {
 			}}
 			oldC := &prjpb.Component{Clids: []int64{33}}
 
-			Convey("singular group -- no delay", func() {
+			t.Run("singular group -- no delay", func(t *ftt.Test) {
 				pm.pb.Pcls[0].ConfigGroupIndexes = []int32{singIdx}
 				res := mustTriage(oldC)
-				So(res.NewValue, ShouldResembleProto, markTriaged(oldC))
-				So(res.CLsToPurge, ShouldHaveLength, 1)
-				So(res.RunsToCreate, ShouldBeEmpty)
+				assert.Loosely(t, res.NewValue, should.Resemble(markTriaged(oldC)))
+				assert.Loosely(t, res.CLsToPurge, should.HaveLength(1))
+				assert.Loosely(t, res.RunsToCreate, should.BeEmpty)
 			})
-			Convey("singular group, does not affect NPR", func() {
+			t.Run("singular group, does not affect NPR", func(t *ftt.Test) {
 				_, pcl := putPCL(33, nprIdx, run.DryRun, ct.Clock.Now())
 				pm.pb.Pcls[0] = pcl
 				pcl.PurgeReasons = []*prjpb.PurgeReason{{
@@ -386,12 +386,12 @@ func TestTriage(t *testing.T) {
 					ApplyTo: &prjpb.PurgeReason_Triggers{Triggers: dryRun(ct.Clock.Now())},
 				}}
 				res := mustTriage(oldC)
-				So(res.NewValue, ShouldResembleProto, markTriaged(oldC))
-				So(res.CLsToPurge, ShouldHaveLength, 1)
-				So(res.RunsToCreate, ShouldHaveLength, 1)
-				So(res.RunsToCreate[0].Mode, ShouldEqual, run.NewPatchsetRun)
+				assert.Loosely(t, res.NewValue, should.Resemble(markTriaged(oldC)))
+				assert.Loosely(t, res.CLsToPurge, should.HaveLength(1))
+				assert.Loosely(t, res.RunsToCreate, should.HaveLength(1))
+				assert.Loosely(t, res.RunsToCreate[0].Mode, should.Equal(run.NewPatchsetRun))
 			})
-			Convey("NPR trigger only", func() {
+			t.Run("NPR trigger only", func(t *ftt.Test) {
 				_, pcl := putPCL(33, nprIdx, run.NewPatchsetRun, ct.Clock.Now())
 				pm.pb.Pcls[0] = pcl
 				pcl.PurgeReasons = []*prjpb.PurgeReason{{
@@ -408,11 +408,11 @@ func TestTriage(t *testing.T) {
 					},
 				}}
 				res := mustTriage(oldC)
-				So(res.NewValue, ShouldResembleProto, markTriaged(oldC))
-				So(res.CLsToPurge, ShouldHaveLength, 1)
-				So(res.RunsToCreate, ShouldHaveLength, 0)
+				assert.Loosely(t, res.NewValue, should.Resemble(markTriaged(oldC)))
+				assert.Loosely(t, res.CLsToPurge, should.HaveLength(1))
+				assert.Loosely(t, res.RunsToCreate, should.HaveLength(0))
 			})
-			Convey("singular group, purge NPR trigger and let dry run continue", func() {
+			t.Run("singular group, purge NPR trigger and let dry run continue", func(t *ftt.Test) {
 				_, pcl := putPCL(33, nprIdx, run.DryRun, ct.Clock.Now())
 				pm.pb.Pcls[0] = pcl
 				pcl.PurgeReasons = []*prjpb.PurgeReason{{
@@ -426,29 +426,29 @@ func TestTriage(t *testing.T) {
 					},
 				}}
 				res := mustTriage(oldC)
-				So(res.NewValue, ShouldResembleProto, markTriaged(oldC))
-				So(res.CLsToPurge, ShouldHaveLength, 1)
-				So(res.RunsToCreate, ShouldHaveLength, 1)
-				So(res.RunsToCreate[0].Mode, ShouldEqual, run.DryRun)
+				assert.Loosely(t, res.NewValue, should.Resemble(markTriaged(oldC)))
+				assert.Loosely(t, res.CLsToPurge, should.HaveLength(1))
+				assert.Loosely(t, res.RunsToCreate, should.HaveLength(1))
+				assert.Loosely(t, res.RunsToCreate[0].Mode, should.Equal(run.DryRun))
 			})
-			Convey("combinable group -- obey stabilization_delay", func() {
+			t.Run("combinable group -- obey stabilization_delay", func(t *ftt.Test) {
 				pm.pb.Pcls[0].ConfigGroupIndexes = []int32{combIdx}
 
 				res := mustTriage(oldC)
 				c := markTriaged(oldC)
 				c.DecisionTime = timestamppb.New(ct.Clock.Now().Add(stabilizationDelay))
-				So(res.NewValue, ShouldResembleProto, c)
-				So(res.CLsToPurge, ShouldBeEmpty)
-				So(res.RunsToCreate, ShouldBeEmpty)
+				assert.Loosely(t, res.NewValue, should.Resemble(c))
+				assert.Loosely(t, res.CLsToPurge, should.BeEmpty)
+				assert.Loosely(t, res.RunsToCreate, should.BeEmpty)
 
 				ct.Clock.Add(stabilizationDelay * 2)
 				res = mustTriage(oldC)
 				c.DecisionTime = nil
-				So(res.NewValue, ShouldResembleProto, c)
-				So(res.CLsToPurge, ShouldHaveLength, 1)
-				So(res.RunsToCreate, ShouldBeEmpty)
+				assert.Loosely(t, res.NewValue, should.Resemble(c))
+				assert.Loosely(t, res.CLsToPurge, should.HaveLength(1))
+				assert.Loosely(t, res.RunsToCreate, should.BeEmpty)
 			})
-			Convey("NewPatchsetRun combinable group -- ignore stabilization_delay", func() {
+			t.Run("NewPatchsetRun combinable group -- ignore stabilization_delay", func(t *ftt.Test) {
 				_, pcl := putPCL(33, nprCombIdx, run.NewPatchsetRun, ct.Clock.Now())
 				pm.pb.Pcls[0] = pcl
 				pcl.PurgeReasons = []*prjpb.PurgeReason{{
@@ -465,20 +465,20 @@ func TestTriage(t *testing.T) {
 					},
 				}}
 				res := mustTriage(oldC)
-				So(res.NewValue, ShouldResembleProto, markTriaged(oldC))
-				So(res.CLsToPurge, ShouldHaveLength, 1)
-				So(res.RunsToCreate, ShouldBeEmpty)
+				assert.Loosely(t, res.NewValue, should.Resemble(markTriaged(oldC)))
+				assert.Loosely(t, res.CLsToPurge, should.HaveLength(1))
+				assert.Loosely(t, res.RunsToCreate, should.BeEmpty)
 			})
-			Convey("many groups -- no delay", func() {
+			t.Run("many groups -- no delay", func(t *ftt.Test) {
 				// many groups is an error itself
 				pm.pb.Pcls[0].ConfigGroupIndexes = []int32{singIdx, combIdx, anotherIdx}
 				res := mustTriage(oldC)
-				So(res.NewValue, ShouldResembleProto, markTriaged(oldC))
-				So(res.CLsToPurge, ShouldHaveLength, 1)
-				So(res.RunsToCreate, ShouldBeEmpty)
+				assert.Loosely(t, res.NewValue, should.Resemble(markTriaged(oldC)))
+				assert.Loosely(t, res.CLsToPurge, should.HaveLength(1))
+				assert.Loosely(t, res.RunsToCreate, should.BeEmpty)
 			})
 
-			Convey("with already existing Run:", func() {
+			t.Run("with already existing Run:", func(t *ftt.Test) {
 				_, pcl32 := putPCL(32, combIdx, run.FullRun, ct.Clock.Now().Add(-time.Second))
 				_, pcl33 := putPCL(33, combIdx, run.FullRun, ct.Clock.Now(), 32)
 
@@ -487,13 +487,13 @@ func TestTriage(t *testing.T) {
 				ct.Clock.Add(stabilizationDelay)
 				const expectedRunID = "v8/9042327596854-1-42e0a59099a0f673"
 
-				Convey("wait a bit if Run is RUNNING", func() {
-					So(datastore.Put(ctx, &run.Run{ID: expectedRunID, Status: run.Status_RUNNING}), ShouldBeNil)
+				t.Run("wait a bit if Run is RUNNING", func(t *ftt.Test) {
+					assert.Loosely(t, datastore.Put(ctx, &run.Run{ID: expectedRunID, Status: run.Status_RUNNING}), should.BeNil)
 					res := mustTriage(oldC)
-					So(res.NewValue.GetTriageRequired(), ShouldBeFalse)
-					So(res.NewValue.GetDecisionTime().AsTime(), ShouldResemble, ct.Clock.Now().Add(5*time.Second).UTC())
-					So(res.RunsToCreate, ShouldBeEmpty)
-					So(res.CLsToPurge, ShouldBeEmpty)
+					assert.Loosely(t, res.NewValue.GetTriageRequired(), should.BeFalse)
+					assert.Loosely(t, res.NewValue.GetDecisionTime().AsTime(), should.Resemble(ct.Clock.Now().Add(5*time.Second).UTC()))
+					assert.Loosely(t, res.RunsToCreate, should.BeEmpty)
+					assert.Loosely(t, res.CLsToPurge, should.BeEmpty)
 				})
 
 				r := &run.Run{
@@ -501,146 +501,146 @@ func TestTriage(t *testing.T) {
 					Status:  run.Status_CANCELLED,
 					EndTime: datastore.RoundTime(ct.Clock.Now().UTC()),
 				}
-				So(datastore.Put(ctx, r), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, r), should.BeNil)
 
-				Convey("wait a bit if Run was just finalized", func() {
+				t.Run("wait a bit if Run was just finalized", func(t *ftt.Test) {
 					ct.Clock.Add(5 * time.Second)
 					res := mustTriage(oldC)
-					So(res.NewValue.GetTriageRequired(), ShouldBeFalse)
-					So(res.NewValue.GetDecisionTime().AsTime(), ShouldResemble, r.EndTime.Add(time.Minute).UTC())
-					So(res.RunsToCreate, ShouldBeEmpty)
-					So(res.CLsToPurge, ShouldBeEmpty)
+					assert.Loosely(t, res.NewValue.GetTriageRequired(), should.BeFalse)
+					assert.Loosely(t, res.NewValue.GetDecisionTime().AsTime(), should.Resemble(r.EndTime.Add(time.Minute).UTC()))
+					assert.Loosely(t, res.RunsToCreate, should.BeEmpty)
+					assert.Loosely(t, res.CLsToPurge, should.BeEmpty)
 				})
 
-				Convey("purge CLs due to trigger re-use after long-ago finished Run", func() {
+				t.Run("purge CLs due to trigger re-use after long-ago finished Run", func(t *ftt.Test) {
 					ct.Clock.Add(2 * time.Minute)
 					res := mustTriage(oldC)
-					So(res.NewValue.GetTriageRequired(), ShouldBeFalse)
-					So(res.NewValue.GetDecisionTime(), ShouldBeNil)
-					So(res.RunsToCreate, ShouldBeEmpty)
-					So(res.CLsToPurge, ShouldHaveLength, 2)
+					assert.Loosely(t, res.NewValue.GetTriageRequired(), should.BeFalse)
+					assert.Loosely(t, res.NewValue.GetDecisionTime(), should.BeNil)
+					assert.Loosely(t, res.RunsToCreate, should.BeEmpty)
+					assert.Loosely(t, res.CLsToPurge, should.HaveLength(2))
 					for _, p := range res.CLsToPurge {
-						So(p.GetPurgeReasons(), ShouldHaveLength, 1)
-						So(p.GetPurgeReasons()[0].GetClError().GetReusedTrigger().GetRun(), ShouldResemble, expectedRunID)
+						assert.Loosely(t, p.GetPurgeReasons(), should.HaveLength(1))
+						assert.Loosely(t, p.GetPurgeReasons()[0].GetClError().GetReusedTrigger().GetRun(), should.Resemble(expectedRunID))
 					}
 				})
 			})
 		})
 
-		Convey("Creates Runs", func() {
-			Convey("CQVote and NPR triggers", func() {
+		t.Run("Creates Runs", func(t *ftt.Test) {
+			t.Run("CQVote and NPR triggers", func(t *ftt.Test) {
 				_, pcl := putPCL(33, nprIdx, run.DryRun, ct.Clock.Now())
 				pm.pb.Pcls = []*prjpb.PCL{pcl}
 				oldC := &prjpb.Component{Clids: []int64{33}, TriageRequired: true}
 				res := mustTriage(oldC)
-				So(res.NewValue, ShouldResembleProto, markTriaged(oldC))
-				So(res.CLsToPurge, ShouldBeEmpty)
-				So(res.RunsToCreate, ShouldHaveLength, 2)
+				assert.Loosely(t, res.NewValue, should.Resemble(markTriaged(oldC)))
+				assert.Loosely(t, res.CLsToPurge, should.BeEmpty)
+				assert.Loosely(t, res.RunsToCreate, should.HaveLength(2))
 				rc := res.RunsToCreate[0]
-				So(rc.ConfigGroupID.Name(), ShouldResemble, "newPatchsetRun")
-				So(rc.Mode, ShouldResemble, run.DryRun)
-				So(rc.InputCLs, ShouldHaveLength, 1)
+				assert.Loosely(t, rc.ConfigGroupID.Name(), should.Match("newPatchsetRun"))
+				assert.Loosely(t, rc.Mode, should.Resemble(run.DryRun))
+				assert.Loosely(t, rc.InputCLs, should.HaveLength(1))
 				rc = res.RunsToCreate[1]
-				So(rc.InputCLs[0].ID, ShouldEqual, 33)
-				So(rc.ConfigGroupID.Name(), ShouldResemble, "newPatchsetRun")
-				So(rc.Mode, ShouldResemble, run.NewPatchsetRun)
-				So(rc.InputCLs, ShouldHaveLength, 1)
-				So(rc.InputCLs[0].ID, ShouldEqual, 33)
+				assert.Loosely(t, rc.InputCLs[0].ID, should.Equal(33))
+				assert.Loosely(t, rc.ConfigGroupID.Name(), should.Match("newPatchsetRun"))
+				assert.Loosely(t, rc.Mode, should.Resemble(run.NewPatchsetRun))
+				assert.Loosely(t, rc.InputCLs, should.HaveLength(1))
+				assert.Loosely(t, rc.InputCLs[0].ID, should.Equal(33))
 			})
-			Convey("NPR Only", func() {
-				Convey("OK", func() {
+			t.Run("NPR Only", func(t *ftt.Test) {
+				t.Run("OK", func(t *ftt.Test) {
 					var pcl *prjpb.PCL
 					_, pcl = putPCL(33, nprIdx, run.NewPatchsetRun, ct.Clock.Now())
 
 					pm.pb.Pcls = []*prjpb.PCL{pcl}
 					oldC := &prjpb.Component{Clids: []int64{33}, TriageRequired: true}
 					res := mustTriage(oldC)
-					So(res.NewValue, ShouldResembleProto, markTriaged(oldC))
-					So(res.CLsToPurge, ShouldBeEmpty)
-					So(res.RunsToCreate, ShouldHaveLength, 1)
+					assert.Loosely(t, res.NewValue, should.Resemble(markTriaged(oldC)))
+					assert.Loosely(t, res.CLsToPurge, should.BeEmpty)
+					assert.Loosely(t, res.RunsToCreate, should.HaveLength(1))
 					rc := res.RunsToCreate[0]
-					So(rc.ConfigGroupID.Name(), ShouldResemble, "newPatchsetRun")
-					So(rc.Mode, ShouldResemble, run.NewPatchsetRun)
-					So(rc.InputCLs, ShouldHaveLength, 1)
-					So(rc.InputCLs[0].ID, ShouldEqual, 33)
+					assert.Loosely(t, rc.ConfigGroupID.Name(), should.Match("newPatchsetRun"))
+					assert.Loosely(t, rc.Mode, should.Resemble(run.NewPatchsetRun))
+					assert.Loosely(t, rc.InputCLs, should.HaveLength(1))
+					assert.Loosely(t, rc.InputCLs[0].ID, should.Equal(33))
 				})
 
-				Convey("Noop when Run already exists", func() {
+				t.Run("Noop when Run already exists", func(t *ftt.Test) {
 					var pcl *prjpb.PCL
 					_, pcl = putPCL(33, nprIdx, run.NewPatchsetRun, ct.Clock.Now())
 
 					pm.pb.Pcls = []*prjpb.PCL{pcl}
 					oldC := &prjpb.Component{Clids: []int64{33}, TriageRequired: true, Pruns: makePrunsWithMode(run.NewPatchsetRun, "run-id", 33)}
 					res := mustTriage(oldC)
-					So(res.NewValue, ShouldResembleProto, markTriaged(oldC))
-					So(res.CLsToPurge, ShouldBeEmpty)
-					So(res.RunsToCreate, ShouldBeEmpty)
+					assert.Loosely(t, res.NewValue, should.Resemble(markTriaged(oldC)))
+					assert.Loosely(t, res.CLsToPurge, should.BeEmpty)
+					assert.Loosely(t, res.RunsToCreate, should.BeEmpty)
 				})
 
-				Convey("EVersion mismatch is an ErrOutdatedPMState", func() {
+				t.Run("EVersion mismatch is an ErrOutdatedPMState", func(t *ftt.Test) {
 					cl, pcl := putPCL(33, nprIdx, run.NewPatchsetRun, ct.Clock.Now())
 					cl.EVersion = 2
-					So(datastore.Put(ctx, cl), ShouldBeNil)
+					assert.Loosely(t, datastore.Put(ctx, cl), should.BeNil)
 					pm.pb.Pcls = []*prjpb.PCL{pcl}
 					err := failTriage(&prjpb.Component{Clids: []int64{33}, TriageRequired: true})
-					So(itriager.IsErrOutdatedPMState(err), ShouldBeTrue)
-					So(err, ShouldErrLike, "EVersion changed 1 => 2")
+					assert.Loosely(t, itriager.IsErrOutdatedPMState(err), should.BeTrue)
+					assert.Loosely(t, err, should.ErrLike("EVersion changed 1 => 2"))
 				})
 
 			})
-			Convey("Singular", func() {
-				Convey("OK", func() {
+			t.Run("Singular", func(t *ftt.Test) {
+				t.Run("OK", func(t *ftt.Test) {
 					_, pcl := putPCL(33, singIdx, run.DryRun, ct.Clock.Now())
 					pm.pb.Pcls = []*prjpb.PCL{pcl}
 					oldC := &prjpb.Component{Clids: []int64{33}, TriageRequired: true}
 					res := mustTriage(oldC)
-					So(res.NewValue, ShouldResembleProto, markTriaged(oldC))
-					So(res.CLsToPurge, ShouldBeEmpty)
-					So(res.RunsToCreate, ShouldHaveLength, 1)
+					assert.Loosely(t, res.NewValue, should.Resemble(markTriaged(oldC)))
+					assert.Loosely(t, res.CLsToPurge, should.BeEmpty)
+					assert.Loosely(t, res.RunsToCreate, should.HaveLength(1))
 					rc := res.RunsToCreate[0]
-					So(rc.ConfigGroupID.Name(), ShouldResemble, "singular")
-					So(rc.Mode, ShouldResemble, run.DryRun)
-					So(rc.InputCLs, ShouldHaveLength, 1)
-					So(rc.InputCLs[0].ID, ShouldEqual, 33)
+					assert.Loosely(t, rc.ConfigGroupID.Name(), should.Match("singular"))
+					assert.Loosely(t, rc.Mode, should.Resemble(run.DryRun))
+					assert.Loosely(t, rc.InputCLs, should.HaveLength(1))
+					assert.Loosely(t, rc.InputCLs[0].ID, should.Equal(33))
 				})
 
-				Convey("Noop when Run already exists", func() {
+				t.Run("Noop when Run already exists", func(t *ftt.Test) {
 					_, pcl := putPCL(33, singIdx, run.DryRun, ct.Clock.Now())
 					pm.pb.Pcls = []*prjpb.PCL{pcl}
 					oldC := &prjpb.Component{Clids: []int64{33}, TriageRequired: true, Pruns: makePruns("run-id", 33)}
 					res := mustTriage(oldC)
-					So(res.NewValue, ShouldResembleProto, markTriaged(oldC))
-					So(res.CLsToPurge, ShouldBeEmpty)
-					So(res.RunsToCreate, ShouldBeEmpty)
+					assert.Loosely(t, res.NewValue, should.Resemble(markTriaged(oldC)))
+					assert.Loosely(t, res.CLsToPurge, should.BeEmpty)
+					assert.Loosely(t, res.RunsToCreate, should.BeEmpty)
 				})
 
-				Convey("EVersion mismatch is an ErrOutdatedPMState", func() {
+				t.Run("EVersion mismatch is an ErrOutdatedPMState", func(t *ftt.Test) {
 					cl, pcl := putPCL(33, singIdx, run.DryRun, ct.Clock.Now())
 					cl.EVersion = 2
-					So(datastore.Put(ctx, cl), ShouldBeNil)
+					assert.Loosely(t, datastore.Put(ctx, cl), should.BeNil)
 					pm.pb.Pcls = []*prjpb.PCL{pcl}
 					err := failTriage(&prjpb.Component{Clids: []int64{33}, TriageRequired: true})
-					So(itriager.IsErrOutdatedPMState(err), ShouldBeTrue)
-					So(err, ShouldErrLike, "EVersion changed 1 => 2")
+					assert.Loosely(t, itriager.IsErrOutdatedPMState(err), should.BeTrue)
+					assert.Loosely(t, err, should.ErrLike("EVersion changed 1 => 2"))
 				})
 
-				Convey("OK with resolved deps", func() {
+				t.Run("OK with resolved deps", func(t *ftt.Test) {
 					_, pcl32 := putPCL(32, singIdx, run.FullRun, ct.Clock.Now())
 					_, pcl33 := putPCL(33, singIdx, run.DryRun, ct.Clock.Now(), 32)
 					pm.pb.Pcls = []*prjpb.PCL{pcl32, pcl33}
 					oldC := &prjpb.Component{Clids: []int64{32, 33}, TriageRequired: true}
 					res := mustTriage(oldC)
-					So(res.NewValue, ShouldResembleProto, markTriaged(oldC))
-					So(res.CLsToPurge, ShouldBeEmpty)
-					So(res.RunsToCreate, ShouldHaveLength, 2)
+					assert.Loosely(t, res.NewValue, should.Resemble(markTriaged(oldC)))
+					assert.Loosely(t, res.CLsToPurge, should.BeEmpty)
+					assert.Loosely(t, res.RunsToCreate, should.HaveLength(2))
 					sortRunsToCreateByFirstCL(&res)
-					So(res.RunsToCreate[0].InputCLs[0].ID, ShouldEqual, 32)
-					So(res.RunsToCreate[0].Mode, ShouldResemble, run.FullRun)
-					So(res.RunsToCreate[1].InputCLs[0].ID, ShouldEqual, 33)
-					So(res.RunsToCreate[1].Mode, ShouldResemble, run.DryRun)
+					assert.Loosely(t, res.RunsToCreate[0].InputCLs[0].ID, should.Equal(32))
+					assert.Loosely(t, res.RunsToCreate[0].Mode, should.Resemble(run.FullRun))
+					assert.Loosely(t, res.RunsToCreate[1].InputCLs[0].ID, should.Equal(33))
+					assert.Loosely(t, res.RunsToCreate[1].Mode, should.Resemble(run.DryRun))
 				})
 
-				Convey("OK with existing Runs but on different CLs", func() {
+				t.Run("OK with existing Runs but on different CLs", func(t *ftt.Test) {
 					_, pcl31 := putPCL(31, singIdx, run.FullRun, ct.Clock.Now())
 					_, pcl32 := putPCL(32, singIdx, run.DryRun, ct.Clock.Now(), 31)
 					_, pcl33 := putPCL(33, singIdx, run.DryRun, ct.Clock.Now(), 32)
@@ -651,31 +651,31 @@ func TestTriage(t *testing.T) {
 						TriageRequired: true,
 					}
 					res := mustTriage(oldC)
-					So(res.NewValue, ShouldResembleProto, markTriaged(oldC))
-					So(res.CLsToPurge, ShouldBeEmpty)
-					So(res.RunsToCreate, ShouldHaveLength, 1)
-					So(res.RunsToCreate[0].InputCLs[0].ID, ShouldEqual, 32)
-					So(res.RunsToCreate[0].Mode, ShouldResemble, run.DryRun)
+					assert.Loosely(t, res.NewValue, should.Resemble(markTriaged(oldC)))
+					assert.Loosely(t, res.CLsToPurge, should.BeEmpty)
+					assert.Loosely(t, res.RunsToCreate, should.HaveLength(1))
+					assert.Loosely(t, res.RunsToCreate[0].InputCLs[0].ID, should.Equal(32))
+					assert.Loosely(t, res.RunsToCreate[0].Mode, should.Resemble(run.DryRun))
 				})
 
-				Convey("Waits for unresolved dep without an error", func() {
+				t.Run("Waits for unresolved dep without an error", func(t *ftt.Test) {
 					pcl32 := &prjpb.PCL{Clid: 32, Eversion: 1, Status: prjpb.PCL_UNKNOWN}
 					_, pcl33 := putPCL(33, singIdx, run.DryRun, ct.Clock.Now(), 32)
 					pm.pb.Pcls = []*prjpb.PCL{pcl32, pcl33}
 					oldC := &prjpb.Component{Clids: []int64{33}, TriageRequired: true}
 					res := mustTriage(oldC)
-					So(res.NewValue, ShouldResembleProto, markTriaged(oldC))
+					assert.Loosely(t, res.NewValue, should.Resemble(markTriaged(oldC)))
 					// TODO(crbug/1211576): this waiting can last forever. Component needs
 					// to record how long it has been waiting and abort with clear message
 					// to the user.
-					So(res.NewValue.GetDecisionTime(), ShouldBeNil) // wait for external event of loading a dep
-					So(res.CLsToPurge, ShouldBeEmpty)
-					So(res.RunsToCreate, ShouldBeEmpty)
+					assert.Loosely(t, res.NewValue.GetDecisionTime(), should.BeNil) // wait for external event of loading a dep
+					assert.Loosely(t, res.CLsToPurge, should.BeEmpty)
+					assert.Loosely(t, res.RunsToCreate, should.BeEmpty)
 				})
 			})
 
-			Convey("Combinable", func() {
-				Convey("OK after obeying stabilization delay", func() {
+			t.Run("Combinable", func(t *ftt.Test) {
+				t.Run("OK after obeying stabilization delay", func(t *ftt.Test) {
 					// Simulate a CL stack <base> -> 31 -> 32 -> 33, which user wants
 					// to land at the same time by making 31 depend on 33.
 					_, pcl31 := putPCL(31, combIdx, run.FullRun, ct.Clock.Now().Add(-time.Minute), 33)
@@ -684,99 +684,99 @@ func TestTriage(t *testing.T) {
 					pm.pb.Pcls = []*prjpb.PCL{pcl31, pcl32, pcl33}
 					oldC := &prjpb.Component{Clids: []int64{31, 32, 33}, TriageRequired: true}
 					res := mustTriage(oldC)
-					So(res.NewValue.GetTriageRequired(), ShouldBeFalse)
-					So(res.NewValue.GetDecisionTime().AsTime(), ShouldResemble, ct.Clock.Now().Add(stabilizationDelay).UTC())
-					So(res.CLsToPurge, ShouldBeEmpty)
-					So(res.RunsToCreate, ShouldBeEmpty)
+					assert.Loosely(t, res.NewValue.GetTriageRequired(), should.BeFalse)
+					assert.Loosely(t, res.NewValue.GetDecisionTime().AsTime(), should.Resemble(ct.Clock.Now().Add(stabilizationDelay).UTC()))
+					assert.Loosely(t, res.CLsToPurge, should.BeEmpty)
+					assert.Loosely(t, res.RunsToCreate, should.BeEmpty)
 
 					ct.Clock.Add(stabilizationDelay)
 
 					oldC = res.NewValue
 					res = mustTriage(oldC)
-					So(res.NewValue.GetTriageRequired(), ShouldBeFalse)
-					So(res.NewValue.GetDecisionTime(), ShouldBeNil)
+					assert.Loosely(t, res.NewValue.GetTriageRequired(), should.BeFalse)
+					assert.Loosely(t, res.NewValue.GetDecisionTime(), should.BeNil)
 					rc := res.RunsToCreate[0]
-					So(rc.ConfigGroupID.Name(), ShouldResemble, "combinable")
-					So(rc.Mode, ShouldResemble, run.FullRun)
+					assert.Loosely(t, rc.ConfigGroupID.Name(), should.Match("combinable"))
+					assert.Loosely(t, rc.Mode, should.Resemble(run.FullRun))
 					trig := pcl33.GetTriggers().GetCqVoteTrigger()
-					So(rc.CreateTime, ShouldEqual, trig.GetTime().AsTime())
-					So(rc.InputCLs, ShouldHaveLength, 3)
+					assert.Loosely(t, rc.CreateTime, should.Equal(trig.GetTime().AsTime()))
+					assert.Loosely(t, rc.InputCLs, should.HaveLength(3))
 				})
 
-				Convey("Even a single CL should wait for stabilization delay", func() {
+				t.Run("Even a single CL should wait for stabilization delay", func(t *ftt.Test) {
 					_, pcl := putPCL(33, combIdx, run.FullRun, ct.Clock.Now())
 					pm.pb.Pcls = []*prjpb.PCL{pcl}
 					oldC := &prjpb.Component{Clids: []int64{33}, TriageRequired: true}
 					res := mustTriage(oldC)
-					So(res.NewValue.GetTriageRequired(), ShouldBeFalse)
-					So(res.NewValue.GetDecisionTime().AsTime(), ShouldResemble, ct.Clock.Now().Add(stabilizationDelay).UTC())
-					So(res.CLsToPurge, ShouldBeEmpty)
-					So(res.RunsToCreate, ShouldBeEmpty)
+					assert.Loosely(t, res.NewValue.GetTriageRequired(), should.BeFalse)
+					assert.Loosely(t, res.NewValue.GetDecisionTime().AsTime(), should.Resemble(ct.Clock.Now().Add(stabilizationDelay).UTC()))
+					assert.Loosely(t, res.CLsToPurge, should.BeEmpty)
+					assert.Loosely(t, res.RunsToCreate, should.BeEmpty)
 
 					ct.Clock.Add(stabilizationDelay)
 
 					oldC = res.NewValue
 					res = mustTriage(oldC)
-					So(res.NewValue.GetTriageRequired(), ShouldBeFalse)
-					So(res.NewValue.GetDecisionTime(), ShouldBeNil)
+					assert.Loosely(t, res.NewValue.GetTriageRequired(), should.BeFalse)
+					assert.Loosely(t, res.NewValue.GetDecisionTime(), should.BeNil)
 					rc := res.RunsToCreate[0]
-					So(rc.ConfigGroupID.Name(), ShouldResemble, "combinable")
-					So(rc.Mode, ShouldResemble, run.FullRun)
-					So(rc.InputCLs, ShouldHaveLength, 1)
-					So(rc.InputCLs[0].ID, ShouldEqual, 33)
+					assert.Loosely(t, rc.ConfigGroupID.Name(), should.Match("combinable"))
+					assert.Loosely(t, rc.Mode, should.Resemble(run.FullRun))
+					assert.Loosely(t, rc.InputCLs, should.HaveLength(1))
+					assert.Loosely(t, rc.InputCLs[0].ID, should.Equal(33))
 				})
 
-				Convey("Waits for unresolved dep, even after stabilization delay", func() {
+				t.Run("Waits for unresolved dep, even after stabilization delay", func(t *ftt.Test) {
 					pcl32 := &prjpb.PCL{Clid: 32, Eversion: 1, Status: prjpb.PCL_UNKNOWN}
 					_, pcl33 := putPCL(33, combIdx, run.FullRun, ct.Clock.Now(), 32)
 					pm.pb.Pcls = []*prjpb.PCL{pcl32, pcl33}
 					oldC := &prjpb.Component{Clids: []int64{33}, TriageRequired: true}
 					res := mustTriage(oldC)
-					So(res.NewValue.GetDecisionTime().AsTime(), ShouldResemble, ct.Clock.Now().Add(stabilizationDelay).UTC())
-					So(res.RunsToCreate, ShouldBeEmpty)
+					assert.Loosely(t, res.NewValue.GetDecisionTime().AsTime(), should.Resemble(ct.Clock.Now().Add(stabilizationDelay).UTC()))
+					assert.Loosely(t, res.RunsToCreate, should.BeEmpty)
 
 					ct.Clock.Add(stabilizationDelay)
 
 					oldC = res.NewValue
 					res = mustTriage(oldC)
-					So(res.NewValue.GetDecisionTime(), ShouldBeNil) // wait for external event of loading a dep
+					assert.Loosely(t, res.NewValue.GetDecisionTime(), should.BeNil) // wait for external event of loading a dep
 					// TODO(crbug/1211576): this waiting can last forever. Component needs
 					// to record how long it has been waiting and abort with clear message
 					// to the user.
-					So(res.CLsToPurge, ShouldBeEmpty)
-					So(res.RunsToCreate, ShouldBeEmpty)
+					assert.Loosely(t, res.CLsToPurge, should.BeEmpty)
+					assert.Loosely(t, res.RunsToCreate, should.BeEmpty)
 				})
 
-				Convey("Noop if there is existing Run encompassing all the CLs", func() {
+				t.Run("Noop if there is existing Run encompassing all the CLs", func(t *ftt.Test) {
 					_, pcl31 := putPCL(31, combIdx, run.FullRun, ct.Clock.Now().Add(-time.Hour), 32)
 					_, pcl32 := putPCL(32, combIdx, run.FullRun, ct.Clock.Now().Add(-time.Hour), 31)
 
 					pm.pb.Pcls = []*prjpb.PCL{pcl31, pcl32}
 					oldC := &prjpb.Component{Clids: []int64{31, 32}, TriageRequired: true, Pruns: makePruns("runID", 31, 32)}
 					res := mustTriage(oldC)
-					So(res.NewValue.GetTriageRequired(), ShouldBeFalse)
-					So(res.CLsToPurge, ShouldBeEmpty)
-					So(res.RunsToCreate, ShouldBeEmpty)
+					assert.Loosely(t, res.NewValue.GetTriageRequired(), should.BeFalse)
+					assert.Loosely(t, res.CLsToPurge, should.BeEmpty)
+					assert.Loosely(t, res.RunsToCreate, should.BeEmpty)
 
-					Convey("even if some CLs are no longer triggered", func() {
+					t.Run("even if some CLs are no longer triggered", func(t *ftt.Test) {
 						// Happens during Run abort due to, say, tryjob failure.
 						pcl31.Triggers = nil
-						So(res.NewValue.GetTriageRequired(), ShouldBeFalse)
-						So(res.CLsToPurge, ShouldBeEmpty)
-						So(res.RunsToCreate, ShouldBeEmpty)
+						assert.Loosely(t, res.NewValue.GetTriageRequired(), should.BeFalse)
+						assert.Loosely(t, res.CLsToPurge, should.BeEmpty)
+						assert.Loosely(t, res.RunsToCreate, should.BeEmpty)
 					})
 
-					Convey("even if some CLs are already submitted", func() {
+					t.Run("even if some CLs are already submitted", func(t *ftt.Test) {
 						// Happens during Run submission.
 						pcl32.Triggers = nil
 						pcl32.Submitted = true
-						So(res.NewValue.GetTriageRequired(), ShouldBeFalse)
-						So(res.CLsToPurge, ShouldBeEmpty)
-						So(res.RunsToCreate, ShouldBeEmpty)
+						assert.Loosely(t, res.NewValue.GetTriageRequired(), should.BeFalse)
+						assert.Loosely(t, res.CLsToPurge, should.BeEmpty)
+						assert.Loosely(t, res.RunsToCreate, should.BeEmpty)
 					})
 				})
 
-				Convey("Component growing to N+1 CLs that could form a Run while Run on N CLs is already running", func() {
+				t.Run("Component growing to N+1 CLs that could form a Run while Run on N CLs is already running", func(t *ftt.Test) {
 					// Simulate scenario of user first uploading 31<-41 and CQing two
 					// CLs, then much later uploading 51 depending on 31 and CQing 51
 					// while (31,41) Run is still running.
@@ -791,13 +791,13 @@ func TestTriage(t *testing.T) {
 					pm.pb.Pcls = []*prjpb.PCL{pcl31, pcl41, pcl51}
 					oldC := &prjpb.Component{Clids: []int64{31, 41, 51}, TriageRequired: true, Pruns: makePruns("41-31", 31, 41)}
 					res := mustTriage(oldC)
-					So(res.NewValue.GetTriageRequired(), ShouldBeFalse)
-					So(res.NewValue.GetDecisionTime(), ShouldBeNil)
-					So(res.CLsToPurge, ShouldBeEmpty)
-					So(res.RunsToCreate, ShouldBeEmpty)
+					assert.Loosely(t, res.NewValue.GetTriageRequired(), should.BeFalse)
+					assert.Loosely(t, res.NewValue.GetDecisionTime(), should.BeNil)
+					assert.Loosely(t, res.CLsToPurge, should.BeEmpty)
+					assert.Loosely(t, res.RunsToCreate, should.BeEmpty)
 				})
 
-				Convey("Doesn't react to updates that must be handled first by the Run Manager", func() {
+				t.Run("Doesn't react to updates that must be handled first by the Run Manager", func(t *ftt.Test) {
 					_, pcl31 := putPCL(31, combIdx, run.DryRun, ct.Clock.Now().Add(-time.Hour), 31)
 					_, pcl41 := putPCL(41, combIdx, run.DryRun, ct.Clock.Now().Add(-time.Hour), 31)
 					_, pcl51 := putPCL(51, combIdx, run.DryRun, ct.Clock.Now().Add(-time.Hour), 31, 41)
@@ -810,26 +810,26 @@ func TestTriage(t *testing.T) {
 					}
 					mustWaitForRM := func() {
 						res := mustTriage(oldC)
-						So(res.NewValue.GetTriageRequired(), ShouldBeFalse)
-						So(res.NewValue.GetDecisionTime(), ShouldBeNil)
-						So(res.CLsToPurge, ShouldBeEmpty)
-						So(res.RunsToCreate, ShouldBeEmpty)
+						assert.Loosely(t, res.NewValue.GetTriageRequired(), should.BeFalse)
+						assert.Loosely(t, res.NewValue.GetDecisionTime(), should.BeNil)
+						assert.Loosely(t, res.CLsToPurge, should.BeEmpty)
+						assert.Loosely(t, res.RunsToCreate, should.BeEmpty)
 					}
 
-					Convey("multi-CL Run is being submitted", func() {
+					t.Run("multi-CL Run is being submitted", func(t *ftt.Test) {
 						pcl31.Submitted = true
 						pcl31.Triggers = nil
 						mustWaitForRM()
 					})
-					Convey("multi-CL Run is being canceled", func() {
+					t.Run("multi-CL Run is being canceled", func(t *ftt.Test) {
 						pcl31.Triggers = nil
 						mustWaitForRM()
 					})
-					Convey("multi-CL Run is no longer in the same ConfigGroup", func() {
+					t.Run("multi-CL Run is no longer in the same ConfigGroup", func(t *ftt.Test) {
 						pcl31.ConfigGroupIndexes = []int32{anotherIdx}
 						mustWaitForRM()
 					})
-					Convey("multi-CL Run is no longer in the same LUCI project", func() {
+					t.Run("multi-CL Run is no longer in the same LUCI project", func(t *ftt.Test) {
 						pcl31.Status = prjpb.PCL_UNWATCHED
 						pcl31.ConfigGroupIndexes = nil
 						pcl31.Triggers = nil
@@ -837,7 +837,7 @@ func TestTriage(t *testing.T) {
 					})
 				})
 
-				Convey("Handles races between CL purging and Gerrit -> CLUpdater -> PM state propagation", func() {
+				t.Run("Handles races between CL purging and Gerrit -> CLUpdater -> PM state propagation", func(t *ftt.Test) {
 					// Due to delays / races between purging a CL and PM state,
 					// it's possible that CL Purger hasn't yet responded with purge end
 					// result yet PM's view of CL state has changed to look valid, and
@@ -856,10 +856,10 @@ func TestTriage(t *testing.T) {
 					}
 					oldC := &prjpb.Component{Clids: []int64{31, 32, 33}, TriageRequired: true}
 					res := mustTriage(oldC)
-					So(res.NewValue.GetTriageRequired(), ShouldBeFalse)
-					So(res.NewValue.GetDecisionTime(), ShouldBeNil)
-					So(res.CLsToPurge, ShouldBeEmpty)
-					So(res.RunsToCreate, ShouldBeEmpty)
+					assert.Loosely(t, res.NewValue.GetTriageRequired(), should.BeFalse)
+					assert.Loosely(t, res.NewValue.GetDecisionTime(), should.BeNil)
+					assert.Loosely(t, res.CLsToPurge, should.BeEmpty)
+					assert.Loosely(t, res.RunsToCreate, should.BeEmpty)
 				})
 			})
 		})

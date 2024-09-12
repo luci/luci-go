@@ -28,6 +28,10 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/memlogger"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/cv/internal/changelist"
@@ -37,13 +41,11 @@ import (
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/runtest"
-
-	. "github.com/smartystreets/goconvey/convey"
 	// . "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestSubmitter(t *testing.T) {
-	Convey("Submitter", t, func() {
+	ftt.Run("Submitter", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
@@ -65,7 +67,7 @@ func TestSubmitter(t *testing.T) {
 			rm:       run.NewNotifier(ct.TQDispatcher),
 			gFactory: ct.GFactory(),
 		}
-		So(datastore.Put(ctx,
+		assert.Loosely(t, datastore.Put(ctx,
 			&run.Run{
 				ID:         s.runID,
 				Status:     run.Status_RUNNING,
@@ -97,30 +99,30 @@ func TestSubmitter(t *testing.T) {
 					},
 				},
 			},
-		), ShouldBeNil)
-		So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		), should.BeNil)
+		assert.Loosely(t, datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 			waitlisted, err := TryAcquire(ctx, s.rm.NotifyReadyForSubmission, s.runID, nil)
-			So(err, ShouldBeNil)
-			So(waitlisted, ShouldBeFalse)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, waitlisted, should.BeFalse)
 			return err
-		}, nil), ShouldBeNil)
+		}, nil), should.BeNil)
 
 		verifyRunReleased := func(runID common.RunID) {
 			current, waitlist, err := LoadCurrentAndWaitlist(ctx, runID)
-			So(err, ShouldBeNil)
-			So(current, ShouldNotEqual, runID)
-			So(waitlist.Index(runID), ShouldBeLessThan, 0) // doesn't exist
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, current, should.NotEqual(runID))
+			assert.Loosely(t, waitlist.Index(runID), should.BeLessThan(0)) // doesn't exist
 		}
 
-		Convey("Submit successfully", func() {
-			So(s.Submit(ctx), ShouldBeNil)
+		t.Run("Submit successfully", func(t *ftt.Test) {
+			assert.Loosely(t, s.Submit(ctx), should.BeNil)
 			verifyRunReleased(s.runID)
-			runtest.AssertReceivedCLsSubmitted(ctx, s.runID, 1)
-			So(ct.GFake.GetChange(gHost1, 1).Info.GetStatus(), ShouldEqual, gerritpb.ChangeStatus_MERGED)
-			runtest.AssertReceivedCLsSubmitted(ctx, s.runID, 2)
-			So(ct.GFake.GetChange(gHost2, 2).Info.GetStatus(), ShouldEqual, gerritpb.ChangeStatus_MERGED)
-			So(ct.GFake.Requests(), ShouldHaveLength, len(s.clids)) // len(s.clids) SubmitRevision calls
-			runtest.AssertReceivedSubmissionCompleted(ctx, s.runID,
+			runtest.AssertReceivedCLsSubmitted(t, ctx, s.runID, 1)
+			assert.Loosely(t, ct.GFake.GetChange(gHost1, 1).Info.GetStatus(), should.Equal(gerritpb.ChangeStatus_MERGED))
+			runtest.AssertReceivedCLsSubmitted(t, ctx, s.runID, 2)
+			assert.Loosely(t, ct.GFake.GetChange(gHost2, 2).Info.GetStatus(), should.Equal(gerritpb.ChangeStatus_MERGED))
+			assert.Loosely(t, ct.GFake.Requests(), should.HaveLength(len(s.clids))) // len(s.clids) SubmitRevision calls
+			runtest.AssertReceivedSubmissionCompleted(t, ctx, s.runID,
 				&eventpb.SubmissionCompleted{
 					Result:                eventpb.SubmissionResult_SUCCEEDED,
 					QueueReleaseTimestamp: timestamppb.New(clock.Now(ctx)),
@@ -133,36 +135,36 @@ func TestSubmitter(t *testing.T) {
 		// for transient failure.
 		// Also test that submission has exhausted the allocated time.
 
-		Convey("Submit fails permanently when", func() {
-			Convey("Not holding Submit Queue", func() {
+		t.Run("Submit fails permanently when", func(t *ftt.Test) {
+			t.Run("Not holding Submit Queue", func(t *ftt.Test) {
 				ctx = memlogger.Use(ctx)
 				log := logging.Get(ctx).(*memlogger.MemLogger)
-				So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+				assert.Loosely(t, datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 					return Release(ctx, s.rm.NotifyReadyForSubmission, s.runID)
-				}, nil), ShouldBeNil)
-				So(s.Submit(ctx), ShouldBeNil)
-				runtest.AssertReceivedSubmissionCompleted(ctx, s.runID,
+				}, nil), should.BeNil)
+				assert.Loosely(t, s.Submit(ctx), should.BeNil)
+				runtest.AssertReceivedSubmissionCompleted(t, ctx, s.runID,
 					&eventpb.SubmissionCompleted{
 						Result:                eventpb.SubmissionResult_FAILED_PERMANENT,
 						QueueReleaseTimestamp: timestamppb.New(clock.Now(ctx)),
 					},
 				)
-				So(log, memlogger.ShouldHaveLog, logging.Error, "BUG: run no longer holds submit queue, currently held by")
+				assert.Loosely(t, log, convey.Adapt(memlogger.ShouldHaveLog)(logging.Error, "BUG: run no longer holds submit queue, currently held by"))
 			})
 
-			Convey("No submit privilege", func() {
+			t.Run("No submit privilege", func(t *ftt.Test) {
 				// Submit gHost1/1 successfully but lack of submission right to
 				// gHost2/2.
 				ct.GFake.MutateChange(gHost2, 2, func(c *gf.Change) {
 					c.ACLs = gf.ACLGrant(gf.OpSubmit, codes.PermissionDenied, "another_project")
 				})
-				So(s.Submit(ctx), ShouldBeNil)
+				assert.Loosely(t, s.Submit(ctx), should.BeNil)
 				verifyRunReleased(s.runID)
-				runtest.AssertReceivedCLsSubmitted(ctx, s.runID, 1)
-				So(ct.GFake.GetChange(gHost1, 1).Info.GetStatus(), ShouldEqual, gerritpb.ChangeStatus_MERGED)
-				runtest.AssertNotReceivedCLsSubmitted(ctx, s.runID, 2)
-				So(ct.GFake.GetChange(gHost2, 2).Info.GetStatus(), ShouldEqual, gerritpb.ChangeStatus_NEW)
-				runtest.AssertReceivedSubmissionCompleted(ctx, s.runID,
+				runtest.AssertReceivedCLsSubmitted(t, ctx, s.runID, 1)
+				assert.Loosely(t, ct.GFake.GetChange(gHost1, 1).Info.GetStatus(), should.Equal(gerritpb.ChangeStatus_MERGED))
+				runtest.AssertNotReceivedCLsSubmitted(t, ctx, s.runID, 2)
+				assert.Loosely(t, ct.GFake.GetChange(gHost2, 2).Info.GetStatus(), should.Equal(gerritpb.ChangeStatus_NEW))
+				runtest.AssertReceivedSubmissionCompleted(t, ctx, s.runID,
 					&eventpb.SubmissionCompleted{
 						Result: eventpb.SubmissionResult_FAILED_PERMANENT,
 						FailureReason: &eventpb.SubmissionCompleted_ClFailures{
@@ -177,18 +179,18 @@ func TestSubmitter(t *testing.T) {
 				)
 			})
 
-			Convey("A new revision is uploaded ", func() {
+			t.Run("A new revision is uploaded ", func(t *ftt.Test) {
 				// gHost2/2 gets a new PS.
 				ct.GFake.MutateChange(gHost2, 2, func(c *gf.Change) {
 					c.Info = proto.Clone(ci2).(*gerritpb.ChangeInfo)
 					gf.PS(6)(c.Info)
 				})
-				So(s.Submit(ctx), ShouldBeNil)
+				assert.Loosely(t, s.Submit(ctx), should.BeNil)
 				verifyRunReleased(s.runID)
-				So(ct.GFake.GetChange(gHost1, 1).Info.GetStatus(), ShouldEqual, gerritpb.ChangeStatus_MERGED)
-				runtest.AssertNotReceivedCLsSubmitted(ctx, s.runID, 2)
-				So(ct.GFake.GetChange(gHost2, 2).Info.GetStatus(), ShouldEqual, gerritpb.ChangeStatus_NEW)
-				runtest.AssertReceivedSubmissionCompleted(ctx, s.runID,
+				assert.Loosely(t, ct.GFake.GetChange(gHost1, 1).Info.GetStatus(), should.Equal(gerritpb.ChangeStatus_MERGED))
+				runtest.AssertNotReceivedCLsSubmitted(t, ctx, s.runID, 2)
+				assert.Loosely(t, ct.GFake.GetChange(gHost2, 2).Info.GetStatus(), should.Equal(gerritpb.ChangeStatus_NEW))
+				runtest.AssertReceivedSubmissionCompleted(t, ctx, s.runID,
 					&eventpb.SubmissionCompleted{
 						Result: eventpb.SubmissionResult_FAILED_PERMANENT,
 						FailureReason: &eventpb.SubmissionCompleted_ClFailures{
@@ -207,7 +209,7 @@ func TestSubmitter(t *testing.T) {
 			})
 		})
 
-		Convey("Change has already been merged", func() {
+		t.Run("Change has already been merged", func(t *ftt.Test) {
 			ct.GFake.MutateChange(gHost1, 1, func(c *gf.Change) {
 				c.Info = proto.Clone(ci1).(*gerritpb.ChangeInfo)
 				gf.Status(gerritpb.ChangeStatus_MERGED)(c.Info)
@@ -216,12 +218,12 @@ func TestSubmitter(t *testing.T) {
 			// for Submit RPC. But the subsequent GetChange will figure out that
 			// Change has been merged already and consider submission of gHost1/1
 			// as a success.
-			So(s.Submit(ctx), ShouldBeNil)
+			assert.Loosely(t, s.Submit(ctx), should.BeNil)
 			verifyRunReleased(s.runID)
-			runtest.AssertReceivedCLsSubmitted(ctx, s.runID, 1)
-			So(ct.GFake.GetChange(gHost1, 1).Info.GetStatus(), ShouldEqual, gerritpb.ChangeStatus_MERGED)
-			So(ct.GFake.Requests(), ShouldHaveLength, len(s.clids)+1) // 1 extra getChange call
-			runtest.AssertReceivedSubmissionCompleted(ctx, s.runID,
+			runtest.AssertReceivedCLsSubmitted(t, ctx, s.runID, 1)
+			assert.Loosely(t, ct.GFake.GetChange(gHost1, 1).Info.GetStatus(), should.Equal(gerritpb.ChangeStatus_MERGED))
+			assert.Loosely(t, ct.GFake.Requests(), should.HaveLength(len(s.clids)+1)) // 1 extra getChange call
+			runtest.AssertReceivedSubmissionCompleted(t, ctx, s.runID,
 				&eventpb.SubmissionCompleted{
 					Result:                eventpb.SubmissionResult_SUCCEEDED,
 					QueueReleaseTimestamp: timestamppb.New(clock.Now(ctx)),

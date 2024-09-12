@@ -24,6 +24,9 @@ import (
 
 	"go.chromium.org/luci/common/logging"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
@@ -35,15 +38,12 @@ import (
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestCategorizeAndLoadActiveIntoPCLs(t *testing.T) {
 	t.Parallel()
 
-	Convey("loadActiveIntoPCLs and categorizeCLs work", t, func() {
+	ftt.Run("loadActiveIntoPCLs and categorizeCLs work", t, func(t *ftt.Test) {
 		ct := ctest{
 			lProject: "test",
 			gHost:    "c-review.example.com",
@@ -51,7 +51,7 @@ func TestCategorizeAndLoadActiveIntoPCLs(t *testing.T) {
 		ctx := ct.SetUp(t)
 
 		cfg := &cfgpb.Config{}
-		So(prototext.Unmarshal([]byte(cfgText1), cfg), ShouldBeNil)
+		assert.Loosely(t, prototext.Unmarshal([]byte(cfgText1), cfg), should.BeNil)
 		prjcfgtest.Create(ctx, ct.lProject, cfg)
 		meta := prjcfgtest.MustExist(ctx, ct.lProject)
 		gobmaptest.Update(ctx, ct.lProject)
@@ -61,7 +61,7 @@ func TestCategorizeAndLoadActiveIntoPCLs(t *testing.T) {
 		const lProjectB = "test-b"
 		cfgTextB := strings.ReplaceAll(cfgText1, "repo/a", "repo/b")
 		cfgB := &cfgpb.Config{}
-		So(prototext.Unmarshal([]byte(cfgTextB), cfgB), ShouldBeNil)
+		assert.Loosely(t, prototext.Unmarshal([]byte(cfgTextB), cfgB), should.BeNil)
 		prjcfgtest.Create(ctx, lProjectB, cfgB)
 		gobmaptest.Update(ctx, lProjectB)
 
@@ -148,7 +148,7 @@ func TestCategorizeAndLoadActiveIntoPCLs(t *testing.T) {
 			ID:  common.RunID(ct.lProject + "/789-ccc"),
 			CLs: common.CLIDs{cls[9].ID, cls[7].ID, cls[8].ID},
 		}
-		So(datastore.Put(ctx, run4, run56, run789), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, run4, run56, run789), should.BeNil)
 
 		state := &State{PB: &prjpb.PState{
 			LuciProject:         ct.lProject,
@@ -158,7 +158,7 @@ func TestCategorizeAndLoadActiveIntoPCLs(t *testing.T) {
 			RepartitionRequired: true,
 		}}
 
-		Convey("just categorization", func() {
+		t.Run("just categorization", func(t *ftt.Test) {
 			state.PB.Pcls = sortPCLs([]*prjpb.PCL{
 				defaultPCL(cls[5]),
 				defaultPCL(cls[6]),
@@ -181,17 +181,17 @@ func TestCategorizeAndLoadActiveIntoPCLs(t *testing.T) {
 			pbBefore := backupPB(state)
 
 			cat := state.categorizeCLs(ctx)
-			So(state.loadActiveIntoPCLs(ctx, cat), ShouldBeNil)
-			So(cat, ShouldResemble, &categorizedCLs{
+			assert.Loosely(t, state.loadActiveIntoPCLs(ctx, cat), should.BeNil)
+			assert.Loosely(t, cat, should.Resemble(&categorizedCLs{
 				active:   mkClidsSet(cls, 5, 6, 7, 8, 9),
 				deps:     common.CLIDsSet{},
 				unused:   mkClidsSet(cls, 12),
 				unloaded: common.CLIDsSet{},
-			})
-			So(state.PB, ShouldResembleProto, pbBefore)
+			}))
+			assert.Loosely(t, state.PB, should.Resemble(pbBefore))
 		})
 
-		Convey("loads unloaded dependencies and active CLs without recursion", func() {
+		t.Run("loads unloaded dependencies and active CLs without recursion", func(t *ftt.Test) {
 			state.PB.Pcls = []*prjpb.PCL{
 				defaultPCL(cls[3]), // depends on 2, which in turns depends on 1.
 			}
@@ -199,29 +199,29 @@ func TestCategorizeAndLoadActiveIntoPCLs(t *testing.T) {
 			pb := backupPB(state)
 
 			cat := state.categorizeCLs(ctx)
-			So(cat, ShouldResemble, &categorizedCLs{
+			assert.Loosely(t, cat, should.Resemble(&categorizedCLs{
 				active:   mkClidsSet(cls, 3, 5, 6),
 				deps:     mkClidsSet(cls, 2),
 				unused:   common.CLIDsSet{},
 				unloaded: mkClidsSet(cls, 2, 5, 6),
-			})
-			So(state.loadActiveIntoPCLs(ctx, cat), ShouldBeNil)
-			So(cat, ShouldResemble, &categorizedCLs{
+			}))
+			assert.Loosely(t, state.loadActiveIntoPCLs(ctx, cat), should.BeNil)
+			assert.Loosely(t, cat, should.Resemble(&categorizedCLs{
 				active:   mkClidsSet(cls, 3, 2, 5, 6),
 				deps:     mkClidsSet(cls, 1),
 				unused:   common.CLIDsSet{},
 				unloaded: mkClidsSet(cls, 1),
-			})
+			}))
 			pb.Pcls = sortPCLs([]*prjpb.PCL{
 				defaultPCL(cls[2]),
 				defaultPCL(cls[3]),
 				defaultPCL(cls[5]),
 				defaultPCL(cls[6]),
 			})
-			So(state.PB, ShouldResembleProto, pb)
+			assert.Loosely(t, state.PB, should.Resemble(pb))
 		})
 
-		Convey("loads incomplete Run with unloaded deps", func() {
+		t.Run("loads incomplete Run with unloaded deps", func(t *ftt.Test) {
 			// This case shouldn't normally happen in practice. This case simulates a
 			// runStale created a while ago of just (11, 13), presumably when current
 			// project had CL #11 in scope.
@@ -231,25 +231,25 @@ func TestCategorizeAndLoadActiveIntoPCLs(t *testing.T) {
 				ID:  common.RunID(ct.lProject + "/111-s"),
 				CLs: common.CLIDs{cls[13].ID, cls[11].ID},
 			}
-			So(datastore.Put(ctx, runStale), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, runStale), should.BeNil)
 			state.PB.CreatedPruns = []*prjpb.PRun{prjpb.MakePRun(runStale)}
 			pb := backupPB(state)
 
 			cat := state.categorizeCLs(ctx)
-			So(cat, ShouldResemble, &categorizedCLs{
+			assert.Loosely(t, cat, should.Resemble(&categorizedCLs{
 				active:   mkClidsSet(cls, 11, 13),
 				deps:     common.CLIDsSet{},
 				unused:   common.CLIDsSet{},
 				unloaded: mkClidsSet(cls, 11, 13),
-			})
-			So(state.loadActiveIntoPCLs(ctx, cat), ShouldBeNil)
-			So(cat, ShouldResemble, &categorizedCLs{
+			}))
+			assert.Loosely(t, state.loadActiveIntoPCLs(ctx, cat), should.BeNil)
+			assert.Loosely(t, cat, should.Resemble(&categorizedCLs{
 				active: mkClidsSet(cls, 11, 13),
 				// 10 isn't in deps because this project has no visibility into CL 11.
 				deps:     mkClidsSet(cls, 12),
 				unused:   common.CLIDsSet{},
 				unloaded: mkClidsSet(cls, 12),
-			})
+			}))
 			pb.Pcls = sortPCLs([]*prjpb.PCL{
 				defaultPCL(cls[13]),
 				{
@@ -259,10 +259,10 @@ func TestCategorizeAndLoadActiveIntoPCLs(t *testing.T) {
 					Deps:     nil, // not visible to this project
 				},
 			})
-			So(state.PB, ShouldResembleProto, pb)
+			assert.Loosely(t, state.PB, should.Resemble(pb))
 		})
 
-		Convey("loads incomplete Run with non-existent CLs", func() {
+		t.Run("loads incomplete Run with non-existent CLs", func(t *ftt.Test) {
 			// This case shouldn't happen in practice, but it can't be ruled out.
 			// In order to incorporate just added .CreatedRun into State,
 			// Run's CLs must have PCL entries.
@@ -270,24 +270,24 @@ func TestCategorizeAndLoadActiveIntoPCLs(t *testing.T) {
 				ID:  common.RunID(ct.lProject + "/404-s"),
 				CLs: common.CLIDs{cls[4].ID, 404},
 			}
-			So(datastore.Put(ctx, runStale), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, runStale), should.BeNil)
 			state.PB.CreatedPruns = []*prjpb.PRun{prjpb.MakePRun(runStale)}
 			pb := backupPB(state)
 
 			cat := state.categorizeCLs(ctx)
-			So(cat, ShouldResemble, &categorizedCLs{
+			assert.Loosely(t, cat, should.Resemble(&categorizedCLs{
 				active:   common.CLIDsSet{cls[4].ID: struct{}{}, 404: struct{}{}},
 				deps:     common.CLIDsSet{},
 				unused:   common.CLIDsSet{},
 				unloaded: common.CLIDsSet{cls[4].ID: struct{}{}, 404: struct{}{}},
-			})
-			So(state.loadActiveIntoPCLs(ctx, cat), ShouldBeNil)
-			So(cat, ShouldResemble, &categorizedCLs{
+			}))
+			assert.Loosely(t, state.loadActiveIntoPCLs(ctx, cat), should.BeNil)
+			assert.Loosely(t, cat, should.Resemble(&categorizedCLs{
 				active:   common.CLIDsSet{cls[4].ID: struct{}{}, 404: struct{}{}},
 				deps:     common.CLIDsSet{},
 				unused:   common.CLIDsSet{},
 				unloaded: common.CLIDsSet{},
-			})
+			}))
 			pb.Pcls = sortPCLs([]*prjpb.PCL{
 				defaultPCL(cls[4]),
 				{
@@ -296,15 +296,15 @@ func TestCategorizeAndLoadActiveIntoPCLs(t *testing.T) {
 					Status:   prjpb.PCL_DELETED,
 				},
 			})
-			So(state.PB, ShouldResembleProto, pb)
+			assert.Loosely(t, state.PB, should.Resemble(pb))
 		})
 
-		Convey("identifies submitted PCLs as unused if possible", func() {
+		t.Run("identifies submitted PCLs as unused if possible", func(t *ftt.Test) {
 			// Modify 1<-2 stack to have #1 submitted.
 			ct.Clock.Add(time.Minute)
 			cls[1] = ct.submitCL(ctx, 1)
 			cis[1] = cls[1].Snapshot.GetGerrit().GetInfo()
-			So(cis[1].Status, ShouldEqual, gerritpb.ChangeStatus_MERGED)
+			assert.Loosely(t, cis[1].Status, should.Equal(gerritpb.ChangeStatus_MERGED))
 
 			state.PB.Pcls = []*prjpb.PCL{
 				{
@@ -314,7 +314,7 @@ func TestCategorizeAndLoadActiveIntoPCLs(t *testing.T) {
 					Submitted: true,
 				},
 			}
-			Convey("standalone submitted CL without a Run is unused", func() {
+			t.Run("standalone submitted CL without a Run is unused", func(t *ftt.Test) {
 				cat := state.categorizeCLs(ctx)
 				exp := &categorizedCLs{
 					active:   common.CLIDsSet{},
@@ -322,12 +322,12 @@ func TestCategorizeAndLoadActiveIntoPCLs(t *testing.T) {
 					unloaded: common.CLIDsSet{},
 					unused:   mkClidsSet(cls, 1),
 				}
-				So(cat, ShouldResemble, exp)
-				So(state.loadActiveIntoPCLs(ctx, cat), ShouldBeNil)
-				So(cat, ShouldResemble, exp)
+				assert.Loosely(t, cat, should.Resemble(exp))
+				assert.Loosely(t, state.loadActiveIntoPCLs(ctx, cat), should.BeNil)
+				assert.Loosely(t, cat, should.Resemble(exp))
 			})
 
-			Convey("standalone submitted CL with a Run is active", func() {
+			t.Run("standalone submitted CL with a Run is active", func(t *ftt.Test) {
 				state.PB.Components = []*prjpb.Component{
 					{
 						Clids: i64s(cls[1].ID),
@@ -343,14 +343,14 @@ func TestCategorizeAndLoadActiveIntoPCLs(t *testing.T) {
 					unloaded: common.CLIDsSet{},
 					unused:   common.CLIDsSet{},
 				}
-				So(cat, ShouldResemble, exp)
-				So(state.loadActiveIntoPCLs(ctx, cat), ShouldBeNil)
-				So(cat, ShouldResemble, exp)
+				assert.Loosely(t, cat, should.Resemble(exp))
+				assert.Loosely(t, state.loadActiveIntoPCLs(ctx, cat), should.BeNil)
+				assert.Loosely(t, cat, should.Resemble(exp))
 			})
 
-			Convey("submitted dependent is neither active nor unused, but a dep", func() {
+			t.Run("submitted dependent is neither active nor unused, but a dep", func(t *ftt.Test) {
 				triggers := trigger.Find(&trigger.FindInput{ChangeInfo: cis[2], ConfigGroup: cfg.ConfigGroups[0]})
-				So(triggers.GetCqVoteTrigger(), ShouldNotBeNil)
+				assert.Loosely(t, triggers.GetCqVoteTrigger(), should.NotBeNil)
 				state.PB.Pcls = sortPCLs(append(state.PB.Pcls,
 					&prjpb.PCL{
 						Clid:               int64(cls[2].ID),
@@ -368,13 +368,13 @@ func TestCategorizeAndLoadActiveIntoPCLs(t *testing.T) {
 					unloaded: common.CLIDsSet{},
 					unused:   common.CLIDsSet{},
 				}
-				So(cat, ShouldResemble, exp)
-				So(state.loadActiveIntoPCLs(ctx, cat), ShouldBeNil)
-				So(cat, ShouldResemble, exp)
+				assert.Loosely(t, cat, should.Resemble(exp))
+				assert.Loosely(t, state.loadActiveIntoPCLs(ctx, cat), should.BeNil)
+				assert.Loosely(t, cat, should.Resemble(exp))
 			})
 		})
 
-		Convey("prunes PCLs with expired triggers", func() {
+		t.Run("prunes PCLs with expired triggers", func(t *ftt.Test) {
 			makePCL := func(i int, t time.Time, deps ...*changelist.Dep) *prjpb.PCL {
 				return &prjpb.PCL{
 					Clid:     int64(cls[i].ID),
@@ -394,39 +394,39 @@ func TestCategorizeAndLoadActiveIntoPCLs(t *testing.T) {
 				makePCL(3, ct.Clock.Now().Add(-common.MaxTriggerAge)),
 			}
 			cat := state.categorizeCLs(ctx)
-			So(cat, ShouldResemble, &categorizedCLs{
+			assert.Loosely(t, cat, should.Resemble(&categorizedCLs{
 				active:   mkClidsSet(cls, 1, 2),
 				deps:     mkClidsSet(cls, 4),
 				unloaded: mkClidsSet(cls, 4),
 				unused:   mkClidsSet(cls, 3),
-			})
+			}))
 
-			Convey("and doesn't promote unloaded to active if trigger has expired", func() {
+			t.Run("and doesn't promote unloaded to active if trigger has expired", func(t *ftt.Test) {
 				// Keep CQ+2 vote, but make it timestamp really old.
 				infoRef := cls[4].Snapshot.GetGerrit().GetInfo()
 				infoRef.Labels = nil
 				gf.CQ(2, ct.Clock.Now().Add(-common.MaxTriggerAge), gf.U("user-1"))(infoRef)
-				So(datastore.Put(ctx, cls[4]), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, cls[4]), should.BeNil)
 
-				So(state.loadActiveIntoPCLs(ctx, cat), ShouldBeNil)
-				So(cat, ShouldResemble, &categorizedCLs{
+				assert.Loosely(t, state.loadActiveIntoPCLs(ctx, cat), should.BeNil)
+				assert.Loosely(t, cat, should.Resemble(&categorizedCLs{
 					active:   mkClidsSet(cls, 1, 2),
 					deps:     mkClidsSet(cls, 4),
 					unloaded: common.CLIDsSet{},
 					unused:   mkClidsSet(cls, 3),
-				})
+				}))
 			})
 		})
 
-		Convey("noop", func() {
+		t.Run("noop", func(t *ftt.Test) {
 			cat := state.categorizeCLs(ctx)
-			So(state.loadActiveIntoPCLs(ctx, cat), ShouldBeNil)
-			So(cat, ShouldResemble, &categorizedCLs{
+			assert.Loosely(t, state.loadActiveIntoPCLs(ctx, cat), should.BeNil)
+			assert.Loosely(t, cat, should.Resemble(&categorizedCLs{
 				active:   common.CLIDsSet{},
 				deps:     common.CLIDsSet{},
 				unused:   common.CLIDsSet{},
 				unloaded: common.CLIDsSet{},
-			})
+			}))
 		})
 	})
 }

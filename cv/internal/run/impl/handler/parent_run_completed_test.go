@@ -18,6 +18,9 @@ import (
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
@@ -29,14 +32,12 @@ import (
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 	"go.chromium.org/luci/cv/internal/run/runtest"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestOnParentRunCompleted(t *testing.T) {
 	t.Parallel()
 
-	Convey("OnParentRunCompleted", t, func() {
+	ftt.Run("OnParentRunCompleted", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
@@ -63,7 +64,7 @@ func TestOnParentRunCompleted(t *testing.T) {
 			},
 		})
 		cgs, err := prjcfgtest.MustExist(ctx, lProject).GetConfigGroups(ctx)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		cg := cgs[0]
 
 		rid := common.MakeRunID(lProject, ct.Clock.Now(), 1, []byte("deadbeef"))
@@ -74,7 +75,7 @@ func TestOnParentRunCompleted(t *testing.T) {
 			IncompleteRuns: common.RunIDs{rid},
 			UpdateTime:     ct.Clock.Now().UTC(),
 		}
-		So(datastore.Put(ctx, &cl), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, &cl), should.BeNil)
 
 		rs := &state.RunState{
 			Run: run.Run{
@@ -121,57 +122,57 @@ func TestOnParentRunCompleted(t *testing.T) {
 			Status: run.Status_RUNNING,
 		}
 
-		So(datastore.Put(ctx, &success1Run, &success2Run, &failedRun, &runningRun), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, &success1Run, &success2Run, &failedRun, &runningRun), should.BeNil)
 
-		Convey("All parents successful, should submit", func() {
+		t.Run("All parents successful, should submit", func(t *ftt.Test) {
 			rs.DepRuns = common.RunIDs{success1, success2}
 			rs.Status = run.Status_WAITING_FOR_SUBMISSION
 
 			res, err := h.OnParentRunCompleted(ctx, rs)
-			So(err, ShouldBeNil)
-			So(res.State, ShouldEqual, rs)
-			So(res.SideEffectFn, ShouldNotBeNil)
-			So(res.SideEffectFn(ctx), ShouldBeNil)
-			runtest.AssertReceivedReadyForSubmission(ctx, rs.ID, time.Time{})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.State, should.Equal(rs))
+			assert.Loosely(t, res.SideEffectFn, should.NotBeNil)
+			assert.Loosely(t, res.SideEffectFn(ctx), should.BeNil)
+			runtest.AssertReceivedReadyForSubmission(t, ctx, rs.ID, time.Time{})
 		})
-		Convey("All parents successful but run not ready for submission", func() {
+		t.Run("All parents successful but run not ready for submission", func(t *ftt.Test) {
 			rs.DepRuns = common.RunIDs{success1, success2}
 			rs.Status = run.Status_RUNNING
 
 			res, err := h.OnParentRunCompleted(ctx, rs)
-			So(err, ShouldBeNil)
-			So(res.State, ShouldEqual, rs)
-			So(res.SideEffectFn, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.State, should.Equal(rs))
+			assert.Loosely(t, res.SideEffectFn, should.BeNil)
 		})
-		Convey("One parent failed, should cancel", func() {
+		t.Run("One parent failed, should cancel", func(t *ftt.Test) {
 			rs.DepRuns = common.RunIDs{success1, failed}
 			rs.Status = run.Status_WAITING_FOR_SUBMISSION
 
 			res, err := h.OnParentRunCompleted(ctx, rs)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			longOp := res.State.OngoingLongOps.GetOps()[res.State.NewLongOpIDs[0]]
 			resetOp := longOp.GetResetTriggers()
-			So(resetOp.Requests, ShouldHaveLength, 1)
-			So(res.SideEffectFn, ShouldBeNil)
-			Convey("Reset trigger on root CL only", func() {
+			assert.Loosely(t, resetOp.Requests, should.HaveLength(1))
+			assert.Loosely(t, res.SideEffectFn, should.BeNil)
+			t.Run("Reset trigger on root CL only", func(t *ftt.Test) {
 				rs.CLs = append(rs.CLs, clid+1000)
 				rs.RootCL = clid
 				res, err := h.OnParentRunCompleted(ctx, rs)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				longOp := res.State.OngoingLongOps.GetOps()[res.State.NewLongOpIDs[0]]
 				resetOp := longOp.GetResetTriggers()
-				So(resetOp.Requests, ShouldHaveLength, 1)
-				So(resetOp.Requests[0].Clid, ShouldEqual, rs.RootCL)
+				assert.Loosely(t, resetOp.Requests, should.HaveLength(1))
+				assert.Loosely(t, resetOp.Requests[0].Clid, should.Equal(rs.RootCL))
 			})
 		})
-		Convey("One parent not done, should not submit", func() {
+		t.Run("One parent not done, should not submit", func(t *ftt.Test) {
 			rs.DepRuns = common.RunIDs{success1, running}
 			rs.Status = run.Status_WAITING_FOR_SUBMISSION
 
 			res, err := h.OnParentRunCompleted(ctx, rs)
-			So(err, ShouldBeNil)
-			So(res.State, ShouldEqual, rs)
-			So(res.SideEffectFn, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.State, should.Equal(rs))
+			assert.Loosely(t, res.SideEffectFn, should.BeNil)
 		})
 	})
 }

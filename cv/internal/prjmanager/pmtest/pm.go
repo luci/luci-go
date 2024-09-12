@@ -17,10 +17,14 @@ package pmtest
 import (
 	"context"
 	"sort"
+	"testing"
 	"time"
 
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
 	"go.chromium.org/luci/cv/internal/changelist"
@@ -30,8 +34,6 @@ import (
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 // Projects returns list of projects from tasks for PM.
@@ -47,12 +49,14 @@ func Projects(in tqtesting.TaskList) (projects []string) {
 	return projects
 }
 
-func iterEventBox(ctx context.Context, project string, cb func(*prjpb.Event)) {
+func iterEventBox(t testing.TB, ctx context.Context, project string, cb func(*prjpb.Event)) {
+	t.Helper()
+
 	events, err := eventbox.List(ctx, prjmanager.EventboxRecipient(ctx, project))
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil)
 	for _, item := range events {
 		evt := &prjpb.Event{}
-		So(proto.Unmarshal(item.Value, evt), ShouldBeNil)
+		assert.Loosely(t, proto.Unmarshal(item.Value, evt), should.BeNil, truth.LineContext())
 		cb(evt)
 	}
 }
@@ -102,10 +106,12 @@ func ETAsWithin(in tqtesting.TaskList, luciProject string, d time.Duration, t ti
 	return out
 }
 
-func matchEventBox(ctx context.Context, project string, targets []*prjpb.Event) (matched, remaining []*prjpb.Event) {
+func matchEventBox(t testing.TB, ctx context.Context, project string, targets []*prjpb.Event) (matched, remaining []*prjpb.Event) {
+	t.Helper()
+
 	remaining = make([]*prjpb.Event, len(targets))
 	copy(remaining, targets)
-	iterEventBox(ctx, project, func(evt *prjpb.Event) {
+	iterEventBox(t, ctx, project, func(evt *prjpb.Event) {
 		for i, r := range remaining {
 			if proto.Equal(evt, r) {
 				matched = append(matched, r)
@@ -121,21 +127,27 @@ func matchEventBox(ctx context.Context, project string, targets []*prjpb.Event) 
 
 // AssertNotInEventbox asserts none of the events exists in the project
 // Eventbox.
-func AssertNotInEventbox(ctx context.Context, project string, targets ...*prjpb.Event) {
-	matched, _ := matchEventBox(ctx, project, targets)
-	So(matched, ShouldBeEmpty)
+func AssertNotInEventbox(t testing.TB, ctx context.Context, project string, targets ...*prjpb.Event) {
+	t.Helper()
+
+	matched, _ := matchEventBox(t, ctx, project, targets)
+	assert.Loosely(t, matched, should.BeEmpty, truth.LineContext())
 }
 
 // AssertInEventbox asserts all events exist in the project Eventbox.
-func AssertInEventbox(ctx context.Context, project string, targets ...*prjpb.Event) {
-	_, remaining := matchEventBox(ctx, project, targets)
-	So(remaining, ShouldBeEmpty)
+func AssertInEventbox(t testing.TB, ctx context.Context, project string, targets ...*prjpb.Event) {
+	t.Helper()
+
+	_, remaining := matchEventBox(t, ctx, project, targets)
+	assert.Loosely(t, remaining, should.BeEmpty, truth.LineContext())
 }
 
 // AssertReceivedRunFinished asserts a RunFinished event has been delivered
 // tor project's eventbox for the given Run.
-func AssertReceivedRunFinished(ctx context.Context, runID common.RunID, status run.Status) {
-	AssertInEventbox(ctx, runID.LUCIProject(), &prjpb.Event{
+func AssertReceivedRunFinished(t testing.TB, ctx context.Context, runID common.RunID, status run.Status) {
+	t.Helper()
+
+	AssertInEventbox(t, ctx, runID.LUCIProject(), &prjpb.Event{
 		Event: &prjpb.Event_RunFinished{
 			RunFinished: &prjpb.RunFinished{
 				RunId:  string(runID),
@@ -146,8 +158,10 @@ func AssertReceivedRunFinished(ctx context.Context, runID common.RunID, status r
 }
 
 // AssertCLsUpdated asserts all events exist in the project Eventbox.
-func AssertReceivedCLsNotified(ctx context.Context, project string, cls []*changelist.CL) {
-	AssertInEventbox(ctx, project, &prjpb.Event{
+func AssertReceivedCLsNotified(t testing.TB, ctx context.Context, project string, cls []*changelist.CL) {
+	t.Helper()
+
+	AssertInEventbox(t, ctx, project, &prjpb.Event{
 		Event: &prjpb.Event_ClsUpdated{
 			ClsUpdated: changelist.ToUpdatedEvents(cls...),
 		},

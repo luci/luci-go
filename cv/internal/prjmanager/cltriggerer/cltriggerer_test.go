@@ -23,6 +23,11 @@ import (
 	"time"
 
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon/distribution"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq/tqtesting"
@@ -42,9 +47,6 @@ import (
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/tryjob"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestTriggerer(t *testing.T) {
@@ -65,7 +67,7 @@ func TestTriggerer(t *testing.T) {
 		change3 = 32158
 	)
 
-	Convey("Triggerer", t, func() {
+	ftt.Run("Triggerer", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 		now := ct.Clock.Now()
@@ -106,16 +108,16 @@ func TestTriggerer(t *testing.T) {
 		// helper functions
 		refreshCL := func() {
 			for _, change := range []int64{change1, change2, change3} {
-				So(clUpdater.TestingForceUpdate(ctx, &changelist.UpdateCLTask{
+				assert.Loosely(t, clUpdater.TestingForceUpdate(ctx, &changelist.UpdateCLTask{
 					LuciProject: project,
 					ExternalId:  string(changelist.MustGobID(gHost, change)),
-				}), ShouldBeNil)
+				}), should.BeNil)
 			}
 		}
 		loadCL := func(change int64) *changelist.CL {
 			cl, err := changelist.MustGobID(gHost, change).Load(ctx)
-			So(err, ShouldBeNil)
-			So(cl, ShouldNotBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cl, should.NotBeNil)
 			return cl
 		}
 		schedule := func(origin int64, deps ...int64) string {
@@ -138,9 +140,9 @@ func TestTriggerer(t *testing.T) {
 				task.TriggeringClDeps.DepClids = append(task.TriggeringClDeps.DepClids, int64(cl.ID))
 			}
 
-			So(datastore.RunInTransaction(ctx, func(tctx context.Context) error {
+			assert.Loosely(t, datastore.RunInTransaction(ctx, func(tctx context.Context) error {
 				return triggerer.Schedule(tctx, task)
-			}, nil), ShouldBeNil)
+			}, nil), should.BeNil)
 			return task.GetTriggeringClDeps().GetOperationId()
 		}
 		findCQVoteTrigger := func(info *gerritpb.ChangeInfo) *run.Trigger {
@@ -150,8 +152,9 @@ func TestTriggerer(t *testing.T) {
 			}
 			return trs.CqVoteTrigger
 		}
-		assertPMNotified := func(evt *prjpb.TriggeringCLDepsCompleted) {
-			pmtest.AssertInEventbox(ctx, project, &prjpb.Event{
+		assertPMNotified := func(t testing.TB, evt *prjpb.TriggeringCLDepsCompleted) {
+			t.Helper()
+			pmtest.AssertInEventbox(t, ctx, project, &prjpb.Event{
 				Event: &prjpb.Event_TriggeringClDepsCompleted{
 					TriggeringClDepsCompleted: evt,
 				},
@@ -176,11 +179,11 @@ func TestTriggerer(t *testing.T) {
 
 		opID := schedule(change3 /* origin */, change1, change2)
 
-		Convey("votes deps", func() {
+		t.Run("votes deps", func(t *ftt.Test) {
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.TriggerProjectCLDepsTaskClass))
-			So(ct.FailedTQTasks, ShouldHaveLength, 0)
+			assert.Loosely(t, ct.FailedTQTasks, should.HaveLength(0))
 
-			Convey("schedules CL update tasks for deps", func() {
+			t.Run("schedules CL update tasks for deps", func(t *ftt.Test) {
 				var tasks []*changelist.UpdateCLTask
 				tasks = append(tasks, fakeCLUpdater.scheduledTasks...)
 				sort.Slice(tasks, func(i, j int) bool {
@@ -188,19 +191,19 @@ func TestTriggerer(t *testing.T) {
 				})
 
 				cl1, cl2 := loadCL(change1), loadCL(change2)
-				So(tasks, ShouldHaveLength, 2)
-				So(tasks[0], ShouldResembleProto, &changelist.UpdateCLTask{
+				assert.Loosely(t, tasks, should.HaveLength(2))
+				assert.Loosely(t, tasks[0], should.Resemble(&changelist.UpdateCLTask{
 					LuciProject: project,
 					ExternalId:  string(cl1.ExternalID),
 					Id:          int64(cl1.ID),
 					Requester:   changelist.UpdateCLTask_DEP_CL_TRIGGERER,
-				})
-				So(tasks[1], ShouldResembleProto, &changelist.UpdateCLTask{
+				}))
+				assert.Loosely(t, tasks[1], should.Resemble(&changelist.UpdateCLTask{
 					LuciProject: project,
 					ExternalId:  string(cl2.ExternalID),
 					Id:          int64(cl2.ID),
 					Requester:   changelist.UpdateCLTask_DEP_CL_TRIGGERER,
-				})
+				}))
 			})
 
 			// Verify that change 1 and 2 now have a CQ vote.
@@ -211,32 +214,58 @@ func TestTriggerer(t *testing.T) {
 
 			ci1 := ct.GFake.GetChange(gHost, int(change1)).Info
 			v1 := findCQVoteTrigger(ci1)
-			So(v1.GetMode(), ShouldEqual, string(run.FullRun))
-			So(v1.GetGerritAccountId(), ShouldEqual, voterAccountID)
-			So(ci1, gf.ShouldLastMessageContain, expectedMsg(v1.GetMode()))
-			So(loadCL(change1).Snapshot.GetOutdated(), ShouldNotBeNil)
+			assert.Loosely(t, v1.GetMode(), should.Equal(string(run.FullRun)))
+			assert.Loosely(t, v1.GetGerritAccountId(), should.Equal(voterAccountID))
+			assert.Loosely(t, ci1, convey.Adapt(gf.ShouldLastMessageContain)(expectedMsg(v1.GetMode())))
+			assert.Loosely(t, loadCL(change1).Snapshot.GetOutdated(), should.NotBeNil)
 
 			// So change2 does.
 			ci2 := ct.GFake.GetChange(gHost, int(change2)).Info
 			v2 := findCQVoteTrigger(ci2)
-			So(v2.GetMode(), ShouldEqual, string(run.FullRun))
-			So(v2.GetGerritAccountId(), ShouldEqual, voterAccountID)
-			So(ci2, gf.ShouldLastMessageContain, expectedMsg(v2.GetMode()))
-			So(loadCL(change2).Snapshot.GetOutdated(), ShouldNotBeNil)
+			assert.Loosely(t, v2.GetMode(), should.Equal(string(run.FullRun)))
+			assert.Loosely(t, v2.GetGerritAccountId(), should.Equal(voterAccountID))
+			assert.Loosely(t, ci2, convey.Adapt(gf.ShouldLastMessageContain)(expectedMsg(v2.GetMode())))
+			assert.Loosely(t, loadCL(change2).Snapshot.GetOutdated(), should.NotBeNil)
 
 			exist := taskCounterMetric(project, cgName, 2 /* nDeps */, "SUCCEEDED")
-			So(exist, ShouldBeTrue)
+			assert.Loosely(t, exist, should.BeTrue)
 			exist = taskDurationMetric(project, cgName, 2 /* nDeps */, "SUCCEEDED")
-			So(exist, ShouldBeTrue)
+			assert.Loosely(t, exist, should.BeTrue)
 		})
 
-		Convey("skips voting", func() {
+		t.Run("skips voting", func(t *ftt.Test) {
 			var statusWant string
-			Convey("if deadline exceeded", func() {
+			check := func(t testing.TB) {
+				t.Helper()
+
+				ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.TriggerProjectCLDepsTaskClass))
+				assert.Loosely(t, ct.FailedTQTasks, should.HaveLength(0), truth.LineContext())
+				ci1 := ct.GFake.GetChange(gHost, int(change1)).Info
+				assert.Loosely(t, findCQVoteTrigger(ci1), should.BeNil, truth.LineContext())
+				assert.Loosely(t, loadCL(change1).Snapshot.GetOutdated(), should.BeNil, truth.LineContext())
+				ci2 := ct.GFake.GetChange(gHost, int(change2)).Info
+				assert.Loosely(t, findCQVoteTrigger(ci2), should.BeNil, truth.LineContext())
+				assert.Loosely(t, loadCL(change2).Snapshot.GetOutdated(), should.BeNil, truth.LineContext())
+
+				assertPMNotified(t, &prjpb.TriggeringCLDepsCompleted{
+					OperationId: opID,
+					Origin:      clid3,
+					Incompleted: []int64{clid1, clid2},
+				})
+				assert.Loosely(t, fakeCLUpdater.scheduledTasks, should.HaveLength(0), truth.LineContext())
+				exist := taskCounterMetric(project, cgName, 2 /* nDeps */, statusWant)
+				assert.Loosely(t, exist, should.BeTrue, truth.LineContext())
+				exist = taskDurationMetric(project, cgName, 2 /* nDeps */, statusWant)
+				assert.Loosely(t, exist, should.BeTrue, truth.LineContext())
+			}
+
+			t.Run("if deadline exceeded", func(t *ftt.Test) {
 				ct.Clock.Add(prjpb.MaxTriggeringCLDepsDuration + time.Minute)
 				statusWant = "TIMEDOUT"
+				check(t)
 			})
-			Convey("if origin no longer has CQ+2", func() {
+
+			t.Run("if origin no longer has CQ+2", func(t *ftt.Test) {
 				ct.GFake.MutateChange(gHost, change3, func(c *gf.Change) {
 					gf.CQ(0, ct.Clock.Now(), voter)(c.Info)
 					gf.Updated(ct.Clock.Now())(c.Info)
@@ -244,30 +273,12 @@ func TestTriggerer(t *testing.T) {
 				ct.Clock.Add(time.Minute)
 				refreshCL()
 				statusWant = "CANCELED"
+				check(t)
 			})
 
-			ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.TriggerProjectCLDepsTaskClass))
-			So(ct.FailedTQTasks, ShouldHaveLength, 0)
-			ci1 := ct.GFake.GetChange(gHost, int(change1)).Info
-			So(findCQVoteTrigger(ci1), ShouldBeNil)
-			So(loadCL(change1).Snapshot.GetOutdated(), ShouldBeNil)
-			ci2 := ct.GFake.GetChange(gHost, int(change2)).Info
-			So(findCQVoteTrigger(ci2), ShouldBeNil)
-			So(loadCL(change2).Snapshot.GetOutdated(), ShouldBeNil)
-
-			assertPMNotified(&prjpb.TriggeringCLDepsCompleted{
-				OperationId: opID,
-				Origin:      clid3,
-				Incompleted: []int64{clid1, clid2},
-			})
-			So(fakeCLUpdater.scheduledTasks, ShouldHaveLength, 0)
-			exist := taskCounterMetric(project, cgName, 2 /* nDeps */, statusWant)
-			So(exist, ShouldBeTrue)
-			exist = taskDurationMetric(project, cgName, 2 /* nDeps */, statusWant)
-			So(exist, ShouldBeTrue)
 		})
 
-		Convey("noop if already voted", func() {
+		t.Run("noop if already voted", func(t *ftt.Test) {
 			// This is the case where
 			// - the deps didn't have CQ+2 at the time of triageDeps(), but
 			// - the deps were triggered (manually?) before cltriggerer
@@ -283,36 +294,36 @@ func TestTriggerer(t *testing.T) {
 			ct.Clock.Add(time.Minute)
 			refreshCL()
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.TriggerProjectCLDepsTaskClass))
-			So(ct.FailedTQTasks, ShouldHaveLength, 0)
+			assert.Loosely(t, ct.FailedTQTasks, should.HaveLength(0))
 
 			// change1 and change2 should still have a CQ vote, but
 			// no SetReviewRequest(s) should have been sent.
 			ci1 := ct.GFake.GetChange(gHost, int(change1)).Info
-			So(findCQVoteTrigger(ci1).GetMode(), ShouldEqual, string(run.FullRun))
-			So(loadCL(change1).Snapshot.GetOutdated(), ShouldBeNil)
+			assert.Loosely(t, findCQVoteTrigger(ci1).GetMode(), should.Equal(string(run.FullRun)))
+			assert.Loosely(t, loadCL(change1).Snapshot.GetOutdated(), should.BeNil)
 			ci2 := ct.GFake.GetChange(gHost, int(change2)).Info
-			So(findCQVoteTrigger(ci2).GetMode(), ShouldEqual, string(run.FullRun))
-			So(loadCL(change2).Snapshot.GetOutdated(), ShouldBeNil)
-			assertPMNotified(&prjpb.TriggeringCLDepsCompleted{
+			assert.Loosely(t, findCQVoteTrigger(ci2).GetMode(), should.Equal(string(run.FullRun)))
+			assert.Loosely(t, loadCL(change2).Snapshot.GetOutdated(), should.BeNil)
+			assertPMNotified(t, &prjpb.TriggeringCLDepsCompleted{
 				OperationId: opID,
 				Origin:      clid3,
 				Succeeded:   []int64{clid1, clid2},
 			})
 			for _, req := range ct.GFake.Requests() {
 				_, ok := req.(*gerritpb.SetReviewRequest)
-				So(ok, ShouldBeFalse)
+				assert.Loosely(t, ok, should.BeFalse)
 			}
-			So(fakeCLUpdater.scheduledTasks, ShouldHaveLength, 0)
+			assert.Loosely(t, fakeCLUpdater.scheduledTasks, should.HaveLength(0))
 
 			// triggerDepOp{} skips SetReview(), but it'd still report itself
 			// as succeeded, and so metric does.
 			exist := taskCounterMetric(project, cgName, 2 /* nDeps */, "SUCCEEDED")
-			So(exist, ShouldBeTrue)
+			assert.Loosely(t, exist, should.BeTrue)
 			exist = taskDurationMetric(project, cgName, 2 /* nDeps */, "SUCCEEDED")
-			So(exist, ShouldBeTrue)
+			assert.Loosely(t, exist, should.BeTrue)
 		})
 
-		Convey("overrides CQ+1", func() {
+		t.Run("overrides CQ+1", func(t *ftt.Test) {
 			// if a dep has a CQ+1, overrides it.
 			ct.GFake.MutateChange(gHost, change1, func(c *gf.Change) {
 				gf.CQ(1, ct.Clock.Now(), voter)(c.Info)
@@ -321,25 +332,25 @@ func TestTriggerer(t *testing.T) {
 			ct.Clock.Add(time.Minute)
 			refreshCL()
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.TriggerProjectCLDepsTaskClass))
-			So(ct.FailedTQTasks, ShouldHaveLength, 0)
+			assert.Loosely(t, ct.FailedTQTasks, should.HaveLength(0))
 			ci1 := ct.GFake.GetChange(gHost, int(change1)).Info
-			So(findCQVoteTrigger(ci1).GetMode(), ShouldEqual, string(run.FullRun))
-			So(loadCL(change1).Snapshot.GetOutdated(), ShouldNotBeNil)
+			assert.Loosely(t, findCQVoteTrigger(ci1).GetMode(), should.Equal(string(run.FullRun)))
+			assert.Loosely(t, loadCL(change1).Snapshot.GetOutdated(), should.NotBeNil)
 			ci2 := ct.GFake.GetChange(gHost, int(change2)).Info
-			So(findCQVoteTrigger(ci2).GetMode(), ShouldEqual, string(run.FullRun))
-			So(loadCL(change2).Snapshot.GetOutdated(), ShouldNotBeNil)
-			assertPMNotified(&prjpb.TriggeringCLDepsCompleted{
+			assert.Loosely(t, findCQVoteTrigger(ci2).GetMode(), should.Equal(string(run.FullRun)))
+			assert.Loosely(t, loadCL(change2).Snapshot.GetOutdated(), should.NotBeNil)
+			assertPMNotified(t, &prjpb.TriggeringCLDepsCompleted{
 				OperationId: opID,
 				Origin:      clid3,
 				Succeeded:   []int64{clid1, clid2},
 			})
 			exist := taskCounterMetric(project, cgName, 2 /* nDeps */, "SUCCEEDED")
-			So(exist, ShouldBeTrue)
+			assert.Loosely(t, exist, should.BeTrue)
 			exist = taskDurationMetric(project, cgName, 2 /* nDeps */, "SUCCEEDED")
 
-			So(exist, ShouldBeTrue)
+			assert.Loosely(t, exist, should.BeTrue)
 
-			Convey("schedules CL update tasks for deps", func() {
+			t.Run("schedules CL update tasks for deps", func(t *ftt.Test) {
 				var tasks []*changelist.UpdateCLTask
 				tasks = append(tasks, fakeCLUpdater.scheduledTasks...)
 				sort.Slice(tasks, func(i, j int) bool {
@@ -347,22 +358,22 @@ func TestTriggerer(t *testing.T) {
 				})
 
 				cl1, cl2 := loadCL(change1), loadCL(change2)
-				So(tasks, ShouldHaveLength, 2)
-				So(tasks[0], ShouldResembleProto, &changelist.UpdateCLTask{
+				assert.Loosely(t, tasks, should.HaveLength(2))
+				assert.Loosely(t, tasks[0], should.Resemble(&changelist.UpdateCLTask{
 					LuciProject: project,
 					ExternalId:  string(cl1.ExternalID),
 					Id:          int64(cl1.ID),
 					Requester:   changelist.UpdateCLTask_DEP_CL_TRIGGERER,
-				})
-				So(tasks[1], ShouldResembleProto, &changelist.UpdateCLTask{
+				}))
+				assert.Loosely(t, tasks[1], should.Resemble(&changelist.UpdateCLTask{
 					LuciProject: project,
 					ExternalId:  string(cl2.ExternalID),
 					Id:          int64(cl2.ID),
 					Requester:   changelist.UpdateCLTask_DEP_CL_TRIGGERER,
-				})
+				}))
 			})
 		})
-		Convey("handle permanent errors", func() {
+		t.Run("handle permanent errors", func(t *ftt.Test) {
 			ct.GFake.MutateChange(gHost, change1, func(c *gf.Change) {
 				c.ACLs = gf.ACLPublic()
 			})
@@ -372,14 +383,14 @@ func TestTriggerer(t *testing.T) {
 			ct.Clock.Add(time.Minute)
 			refreshCL()
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.TriggerProjectCLDepsTaskClass))
-			So(ct.FailedTQTasks, ShouldHaveLength, 0)
+			assert.Loosely(t, ct.FailedTQTasks, should.HaveLength(0))
 			ci1 := ct.GFake.GetChange(gHost, int(change1)).Info
-			So(findCQVoteTrigger(ci1), ShouldBeNil)
-			So(loadCL(change1).Snapshot.GetOutdated(), ShouldBeNil)
+			assert.Loosely(t, findCQVoteTrigger(ci1), should.BeNil)
+			assert.Loosely(t, loadCL(change1).Snapshot.GetOutdated(), should.BeNil)
 			ci2 := ct.GFake.GetChange(gHost, int(change2)).Info
-			So(findCQVoteTrigger(ci2), ShouldBeNil)
-			So(loadCL(change2).Snapshot.GetOutdated(), ShouldBeNil)
-			assertPMNotified(&prjpb.TriggeringCLDepsCompleted{
+			assert.Loosely(t, findCQVoteTrigger(ci2), should.BeNil)
+			assert.Loosely(t, loadCL(change2).Snapshot.GetOutdated(), should.BeNil)
+			assertPMNotified(t, &prjpb.TriggeringCLDepsCompleted{
 				OperationId: opID,
 				Origin:      clid3,
 				Failed: []*changelist.CLError_TriggerDeps{
@@ -397,11 +408,11 @@ func TestTriggerer(t *testing.T) {
 					},
 				},
 			})
-			So(fakeCLUpdater.scheduledTasks, ShouldHaveLength, 0)
+			assert.Loosely(t, fakeCLUpdater.scheduledTasks, should.HaveLength(0))
 			exist := taskCounterMetric(project, cgName, 2 /* nDeps */, "FAILED")
-			So(exist, ShouldBeTrue)
+			assert.Loosely(t, exist, should.BeTrue)
 			exist = taskDurationMetric(project, cgName, 2 /* nDeps */, "FAILED")
-			So(exist, ShouldBeTrue)
+			assert.Loosely(t, exist, should.BeTrue)
 		})
 	})
 }

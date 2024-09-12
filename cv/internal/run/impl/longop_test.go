@@ -24,6 +24,9 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
@@ -35,28 +38,26 @@ import (
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 	"go.chromium.org/luci/cv/internal/run/runtest"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/common/retry/transient"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestLongOps(t *testing.T) {
 	t.Parallel()
 
-	Convey("Manager handles long ops", t, func() {
+	ftt.Run("Manager handles long ops", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 		const runID = "chromium/222-1-deadbeef"
 		const initialEVersion = 10
-		So(datastore.Put(ctx, &run.Run{
+		assert.Loosely(t, datastore.Put(ctx, &run.Run{
 			ID:       runID,
 			Status:   run.Status_RUNNING,
 			EVersion: initialEVersion,
-		}), ShouldBeNil)
+		}), should.BeNil)
 
 		loadRun := func(ctx context.Context) *run.Run {
 			ret := &run.Run{ID: runID}
-			So(datastore.Get(ctx, ret), ShouldBeNil)
+			assert.Loosely(t, datastore.Get(ctx, ret), should.BeNil)
 			return ret
 		}
 
@@ -75,73 +76,73 @@ func TestLongOps(t *testing.T) {
 				PostStartMessage: true,
 			},
 		})
-		So(rs.OngoingLongOps.GetOps(), ShouldHaveLength, 1)
+		assert.Loosely(t, rs.OngoingLongOps.GetOps(), should.HaveLength(1))
 
 		// Simulate what happens when Run state is transactionally updated.
-		So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		assert.Loosely(t, datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 			return proc.SaveState(ctx, eventbox.State(rs), eventbox.EVersion(rs.EVersion+1))
-		}, nil), ShouldBeNil)
+		}, nil), should.BeNil)
 
 		// Verify that Run's state records new Long operation.
 		r := loadRun(ctx)
-		So(r.OngoingLongOps.GetOps(), ShouldHaveLength, 1)
+		assert.Loosely(t, r.OngoingLongOps.GetOps(), should.HaveLength(1))
 		op := r.OngoingLongOps.GetOps()[opID]
-		So(op, ShouldResembleProto, &run.OngoingLongOps_Op{
+		assert.Loosely(t, op, should.Resemble(&run.OngoingLongOps_Op{
 			CancelRequested: false,
 			Deadline:        timestamppb.New(ct.Clock.Now().Add(time.Minute)),
 			Work: &run.OngoingLongOps_Op_PostStartMessage{
 				PostStartMessage: true,
 			},
-		})
+		}))
 		// Verify that long op task was enqueued.
-		So(ct.TQ.Tasks().Payloads(), ShouldResembleProto, []proto.Message{
+		assert.Loosely(t, ct.TQ.Tasks().Payloads(), should.Resemble([]proto.Message{
 			&eventpb.ManageRunLongOpTask{
 				OperationId: opID,
 				RunId:       runID,
 			},
-		})
+		}))
 
-		Convey("manager handles Long Operation TQ task", func() {
+		t.Run("manager handles Long Operation TQ task", func(t *ftt.Test) {
 			manager := New(notifier, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, ct.Env)
 
-			Convey("OK", func() {
+			t.Run("OK", func(t *ftt.Test) {
 				called := false
 				manager.testDoLongOperationWithDeadline = func(ctx context.Context, _ *longops.Base) (*eventpb.LongOpCompleted, error) {
 					called = true
 					d, ok := ctx.Deadline()
-					So(ok, ShouldBeTrue)
-					So(d.UTC(), ShouldResemble, op.GetDeadline().AsTime())
+					assert.Loosely(t, ok, should.BeTrue)
+					assert.Loosely(t, d.UTC(), should.Resemble(op.GetDeadline().AsTime()))
 					return &eventpb.LongOpCompleted{Status: eventpb.LongOpCompleted_SUCCEEDED}, nil
 				}
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunLongOpTaskClass))
-				So(called, ShouldBeTrue)
-				runtest.AssertReceivedLongOpCompleted(ctx, runID, &eventpb.LongOpCompleted{
+				assert.Loosely(t, called, should.BeTrue)
+				runtest.AssertReceivedLongOpCompleted(t, ctx, runID, &eventpb.LongOpCompleted{
 					OperationId: opID,
 					Status:      eventpb.LongOpCompleted_SUCCEEDED,
 				})
 			})
 
-			Convey("CancelRequested handling", func() {
+			t.Run("CancelRequested handling", func(t *ftt.Test) {
 				rs := &state.RunState{Run: *loadRun(ctx)}
 				rs.RequestLongOpCancellation(opID)
 				rs.EVersion++
-				So(datastore.Put(ctx, &rs.Run), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, &rs.Run), should.BeNil)
 
 				called := false
 				manager.testDoLongOperationWithDeadline = func(ctx context.Context, opBase *longops.Base) (*eventpb.LongOpCompleted, error) {
 					called = true
-					So(opBase.IsCancelRequested(), ShouldBeTrue)
+					assert.Loosely(t, opBase.IsCancelRequested(), should.BeTrue)
 					return &eventpb.LongOpCompleted{Status: eventpb.LongOpCompleted_CANCELLED}, nil
 				}
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunLongOpTaskClass))
-				So(called, ShouldBeTrue)
-				runtest.AssertReceivedLongOpCompleted(ctx, runID, &eventpb.LongOpCompleted{
+				assert.Loosely(t, called, should.BeTrue)
+				runtest.AssertReceivedLongOpCompleted(t, ctx, runID, &eventpb.LongOpCompleted{
 					OperationId: opID,
 					Status:      eventpb.LongOpCompleted_CANCELLED,
 				})
 			})
 
-			Convey("Expired long op must not be executed, but Run Manager should be notified", func() {
+			t.Run("Expired long op must not be executed, but Run Manager should be notified", func(t *ftt.Test) {
 				ct.Clock.Add(time.Hour)
 				called := false
 				manager.testDoLongOperationWithDeadline = func(ctx context.Context, _ *longops.Base) (*eventpb.LongOpCompleted, error) {
@@ -149,14 +150,14 @@ func TestLongOps(t *testing.T) {
 					return &eventpb.LongOpCompleted{}, nil
 				}
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunLongOpTaskClass))
-				So(called, ShouldBeFalse)
-				runtest.AssertReceivedLongOpCompleted(ctx, runID, &eventpb.LongOpCompleted{
+				assert.Loosely(t, called, should.BeFalse)
+				runtest.AssertReceivedLongOpCompleted(t, ctx, runID, &eventpb.LongOpCompleted{
 					OperationId: opID,
 					Status:      eventpb.LongOpCompleted_EXPIRED,
 				})
 			})
 
-			Convey("Expired while executing", func() {
+			t.Run("Expired while executing", func(t *ftt.Test) {
 				called := false
 				manager.testDoLongOperationWithDeadline = func(dctx context.Context, _ *longops.Base) (*eventpb.LongOpCompleted, error) {
 					called = true
@@ -165,18 +166,18 @@ func TestLongOps(t *testing.T) {
 					for dctx.Err() == nil {
 						clock.Sleep(dctx, time.Second)
 					}
-					So(dctx.Err(), ShouldNotBeNil)
+					assert.Loosely(t, dctx.Err(), should.ErrLike(context.DeadlineExceeded))
 					return nil, errors.Annotate(dctx.Err(), "somehow treating as permanent failure").Err()
 				}
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunLongOpTaskClass))
-				So(called, ShouldBeTrue)
-				runtest.AssertReceivedLongOpCompleted(ctx, runID, &eventpb.LongOpCompleted{
+				assert.Loosely(t, called, should.BeTrue)
+				runtest.AssertReceivedLongOpCompleted(t, ctx, runID, &eventpb.LongOpCompleted{
 					OperationId: opID,
 					Status:      eventpb.LongOpCompleted_EXPIRED,
 				})
 			})
 
-			Convey("Transient failure is retried", func() {
+			t.Run("Transient failure is retried", func(t *ftt.Test) {
 				called := 0
 				manager.testDoLongOperationWithDeadline = func(ctx context.Context, _ *longops.Base) (*eventpb.LongOpCompleted, error) {
 					called++
@@ -186,14 +187,14 @@ func TestLongOps(t *testing.T) {
 					return &eventpb.LongOpCompleted{Status: eventpb.LongOpCompleted_SUCCEEDED}, nil
 				}
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunLongOpTaskClass))
-				So(called, ShouldEqual, 2)
-				runtest.AssertReceivedLongOpCompleted(ctx, runID, &eventpb.LongOpCompleted{
+				assert.Loosely(t, called, should.Equal(2))
+				runtest.AssertReceivedLongOpCompleted(t, ctx, runID, &eventpb.LongOpCompleted{
 					OperationId: opID,
 					Status:      eventpb.LongOpCompleted_SUCCEEDED,
 				})
 			})
 
-			Convey("Non-transient failure is fatal", func() {
+			t.Run("Non-transient failure is fatal", func(t *ftt.Test) {
 				called := 0
 				manager.testDoLongOperationWithDeadline = func(ctx context.Context, _ *longops.Base) (*eventpb.LongOpCompleted, error) {
 					called++
@@ -203,37 +204,37 @@ func TestLongOps(t *testing.T) {
 					return &eventpb.LongOpCompleted{}, nil
 				}
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunLongOpTaskClass))
-				So(called, ShouldEqual, 1)
-				runtest.AssertReceivedLongOpCompleted(ctx, runID, &eventpb.LongOpCompleted{
+				assert.Loosely(t, called, should.Equal(1))
+				runtest.AssertReceivedLongOpCompleted(t, ctx, runID, &eventpb.LongOpCompleted{
 					OperationId: opID,
 					Status:      eventpb.LongOpCompleted_FAILED,
 				})
 			})
 
-			Convey("Doesn't execute in weird cases", func() {
-				Convey("Run deleted", func() {
-					So(datastore.Delete(ctx, &run.Run{ID: runID}), ShouldBeNil)
+			t.Run("Doesn't execute in weird cases", func(t *ftt.Test) {
+				t.Run("Run deleted", func(t *ftt.Test) {
+					assert.Loosely(t, datastore.Delete(ctx, &run.Run{ID: runID}), should.BeNil)
 					called := false
 					manager.testDoLongOperationWithDeadline = func(ctx context.Context, _ *longops.Base) (*eventpb.LongOpCompleted, error) {
 						called = true
 						return &eventpb.LongOpCompleted{}, nil
 					}
 					ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunLongOpTaskClass))
-					So(called, ShouldBeFalse)
-					runtest.AssertEventboxEmpty(ctx, runID)
+					assert.Loosely(t, called, should.BeFalse)
+					runtest.AssertEventboxEmpty(t, ctx, runID)
 				})
-				Convey("Long op is no longer known", func() {
+				t.Run("Long op is no longer known", func(t *ftt.Test) {
 					r := loadRun(ctx)
 					r.OngoingLongOps = nil
-					So(datastore.Put(ctx, r), ShouldBeNil)
+					assert.Loosely(t, datastore.Put(ctx, r), should.BeNil)
 					called := false
 					manager.testDoLongOperationWithDeadline = func(ctx context.Context, _ *longops.Base) (*eventpb.LongOpCompleted, error) {
 						called = true
 						return &eventpb.LongOpCompleted{}, nil
 					}
 					ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunLongOpTaskClass))
-					So(called, ShouldBeFalse)
-					runtest.AssertEventboxEmpty(ctx, runID)
+					assert.Loosely(t, called, should.BeFalse)
+					runtest.AssertEventboxEmpty(t, ctx, runID)
 				})
 			})
 		})
@@ -243,13 +244,13 @@ func TestLongOps(t *testing.T) {
 func TestLongOpCancellationChecker(t *testing.T) {
 	t.Parallel()
 
-	Convey("longOpCancellationChecker works", t, func() {
+	ftt.Run("longOpCancellationChecker works", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 		const runID = "chromium/222-1-deadbeef"
 		const opID = "op-1"
 
-		So(datastore.Put(ctx, &run.Run{
+		assert.Loosely(t, datastore.Put(ctx, &run.Run{
 			ID:       runID,
 			Status:   run.Status_RUNNING,
 			EVersion: 1,
@@ -261,11 +262,11 @@ func TestLongOpCancellationChecker(t *testing.T) {
 					},
 				},
 			},
-		}), ShouldBeNil)
+		}), should.BeNil)
 
 		loadRun := func() *run.Run {
 			ret := &run.Run{ID: runID}
-			So(datastore.Get(ctx, ret), ShouldBeNil)
+			assert.Loosely(t, datastore.Get(ctx, ret), should.BeNil)
 			return ret
 		}
 
@@ -280,13 +281,13 @@ func TestLongOpCancellationChecker(t *testing.T) {
 			select {
 			case <-done:
 			case <-ctx.Done():
-				So("context expired before background goroutine was done", ShouldBeFalse)
+				assert.Loosely(t, "context expired before background goroutine was done", should.BeFalse)
 			}
 		}
 		assertNotDone := func() {
 			select {
 			case <-done:
-				So("background goroutine is done", ShouldBeFalse)
+				assert.Loosely(t, "background goroutine is done", should.BeFalse)
 			default:
 			}
 		}
@@ -296,102 +297,102 @@ func TestLongOpCancellationChecker(t *testing.T) {
 			testChan: done,
 		}
 
-		Convey("Normal operation without long op cancellation", func() {
+		t.Run("Normal operation without long op cancellation", func(t *ftt.Test) {
 			stop := l.start(ctx, loadRun(), opID)
 			defer stop()
-			So(l.check(), ShouldBeFalse)
+			assert.Loosely(t, l.check(), should.BeFalse)
 			ct.Clock.Add(time.Minute)
-			So(l.check(), ShouldBeFalse)
+			assert.Loosely(t, l.check(), should.BeFalse)
 			assertNotDone()
 		})
 
-		Convey("Initial Run state with cancellation request is noticed immediately", func() {
+		t.Run("Initial Run state with cancellation request is noticed immediately", func(t *ftt.Test) {
 			r := loadRun()
 			r.OngoingLongOps.GetOps()[opID].CancelRequested = true
-			So(datastore.Put(ctx, r), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, r), should.BeNil)
 
 			stop := l.start(ctx, loadRun(), opID)
 			defer stop()
 
-			So(l.check(), ShouldBeTrue)
+			assert.Loosely(t, l.check(), should.BeTrue)
 			// Background goroutine shouldn't even be started, hence the `done`
 			// channel should remain open.
 			assertNotDone()
 		})
 
-		Convey("Notices cancellation request eventually", func() {
+		t.Run("Notices cancellation request eventually", func(t *ftt.Test) {
 			stop := l.start(ctx, loadRun(), opID)
 			defer stop()
 
 			// Store request to cancel.
 			r := loadRun()
 			r.OngoingLongOps.GetOps()[opID].CancelRequested = true
-			So(datastore.Put(ctx, r), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, r), should.BeNil)
 
 			ct.Clock.Add(time.Minute)
 			// Must be done soon.
 			assertDone()
 			// Now, the cancellation request must be noticed.
-			So(l.check(), ShouldBeTrue)
+			assert.Loosely(t, l.check(), should.BeTrue)
 		})
 
-		Convey("Robust in case of edge cases which should not happen in practice", func() {
-			Convey("Notices Run losing track of this long operation", func() {
+		t.Run("Robust in case of edge cases which should not happen in practice", func(t *ftt.Test) {
+			t.Run("Notices Run losing track of this long operation", func(t *ftt.Test) {
 				stop := l.start(ctx, loadRun(), opID)
 				defer stop()
 
 				r := loadRun()
 				r.OngoingLongOps = nil
-				So(datastore.Put(ctx, r), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, r), should.BeNil)
 
 				ct.Clock.Add(time.Minute)
 				// Must be done soon.
 				assertDone()
 				// Treat it as if the long op was requested to be cancelled.
-				So(l.check(), ShouldBeTrue)
+				assert.Loosely(t, l.check(), should.BeTrue)
 			})
 
-			Convey("Notices Run deletion", func() {
+			t.Run("Notices Run deletion", func(t *ftt.Test) {
 				stop := l.start(ctx, loadRun(), opID)
 				defer stop()
 
-				So(datastore.Delete(ctx, loadRun()), ShouldBeNil)
+				assert.Loosely(t, datastore.Delete(ctx, loadRun()), should.BeNil)
 
 				ct.Clock.Add(time.Minute)
 				// Must be done soon.
 				assertDone()
 				// Treat it as if the long op was requested to be cancelled.
-				So(l.check(), ShouldBeTrue)
+				assert.Loosely(t, l.check(), should.BeTrue)
 			})
 		})
 
-		Convey("Background goroutine lifetime is bounded", func() {
-			Convey("by calling stop()", func() {
+		t.Run("Background goroutine lifetime is bounded", func(t *ftt.Test) {
+			t.Run("by calling stop()", func(t *ftt.Test) {
 				stop := l.start(ctx, loadRun(), opID)
 				assertNotDone()
 				stop()
 				assertDone()
-				So(l.check(), ShouldBeFalse) // the long op is still not cancelled
+				assert.Loosely(t, l.check(), should.BeFalse) // the long op is still not cancelled
 			})
 
-			Convey("by context", func() {
-				Convey("when context expires", func() {
+			t.Run("by context", func(t *ftt.Test) {
+				t.Run("when context expires", func(t *ftt.Test) {
 					innerCtx, ctxCancel := clock.WithTimeout(ctx, time.Minute)
 					defer ctxCancel() // to cleanup test resources, not actually relevant to the test
 					stop := l.start(innerCtx, loadRun(), opID)
 					defer stop()
 					ct.Clock.Add(time.Hour) // expire the innerCtx
 					assertDone()
-					So(l.check(), ShouldBeFalse) // the long op is still not cancelled
+					assert.Loosely(t, l.check(), should.BeFalse) // the long op is still not cancelled
 				})
 
-				Convey("context is cancelled", func() {
+				t.Run("context is cancelled", func(t *ftt.Test) {
 					innerCtx, ctxCancel := clock.WithTimeout(ctx, time.Minute)
 					stop := l.start(innerCtx, loadRun(), opID)
 					defer stop()
 					ctxCancel()
 					assertDone()
-					So(l.check(), ShouldBeFalse) // the long op is still not cancelled
+					assert.Loosely(t, l.check(), should.BeFalse) // the long op is still not cancelled
 				})
 			})
 		})

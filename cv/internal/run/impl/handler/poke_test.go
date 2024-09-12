@@ -25,6 +25,9 @@ import (
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
@@ -40,15 +43,12 @@ import (
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 	"go.chromium.org/luci/cv/internal/run/runtest"
 	"go.chromium.org/luci/cv/internal/tryjob"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestPoke(t *testing.T) {
 	t.Parallel()
 
-	Convey("Poke", t, func() {
+	ftt.Run("Poke", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
@@ -115,42 +115,42 @@ func TestPoke(t *testing.T) {
 			},
 		}
 		triggers := trigger.Find(&trigger.FindInput{ChangeInfo: ci, ConfigGroup: cfg.GetConfigGroups()[0]})
-		So(triggers.GetCqVoteTrigger(), ShouldResembleProto, &run.Trigger{
+		assert.Loosely(t, triggers.GetCqVoteTrigger(), should.Resemble(&run.Trigger{
 			Time:            timestamppb.New(clock.Now(ctx).UTC()),
 			Mode:            string(run.DryRun),
 			Email:           "foo@example.com",
 			GerritAccountId: 1,
-		})
+		}))
 		rcl := &run.RunCL{
 			ID:      gChange,
 			Run:     datastore.MakeKey(ctx, common.RunKind, string(rid)),
 			Detail:  cl.Snapshot,
 			Trigger: triggers.GetCqVoteTrigger(),
 		}
-		So(datastore.Put(ctx, cl, rcl), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, cl, rcl), should.BeNil)
 
 		now := ct.Clock.Now()
 		ctx = context.WithValue(ctx, &fakeTaskIDKey, "task-foo")
 
 		verifyNoOp := func() {
 			res, err := h.Poke(ctx, rs)
-			So(err, ShouldBeNil)
-			So(res.State, cvtesting.SafeShouldResemble, rs)
-			So(res.SideEffectFn, ShouldBeNil)
-			So(res.PreserveEvents, ShouldBeFalse)
-			So(res.PostProcessFn, ShouldBeNil)
-			So(deps.clUpdater.refreshedCLs, ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.State, should.Match(rs))
+			assert.Loosely(t, res.SideEffectFn, should.BeNil)
+			assert.Loosely(t, res.PreserveEvents, should.BeFalse)
+			assert.Loosely(t, res.PostProcessFn, should.BeNil)
+			assert.Loosely(t, deps.clUpdater.refreshedCLs, should.BeEmpty)
 		}
 
-		Convey("Cancels run exceeding max duration", func() {
+		t.Run("Cancels run exceeding max duration", func(t *ftt.Test) {
 			ct.Clock.Add(2 * common.MaxRunTotalDuration)
 			res, err := h.Poke(ctx, rs)
-			So(err, ShouldBeNil)
-			So(res.State.Status, ShouldEqual, run.Status_CANCELLED)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.State.Status, should.Equal(run.Status_CANCELLED))
 		})
 
-		Convey("Tree checks", func() {
-			Convey("Check Tree if condition matches", func() {
+		t.Run("Tree checks", func(t *ftt.Test) {
+			t.Run("Check Tree if condition matches", func(t *ftt.Test) {
 				// WAITING_FOR_SUBMISSION makes sense only for FullRun.
 				// It's an error condition,
 				// if run == DryRun, but status == WAITING_FOR_SUBMISSION.
@@ -161,83 +161,83 @@ func TestPoke(t *testing.T) {
 					LastTreeCheckTime: timestamppb.New(now.Add(-1 * time.Minute)),
 				}
 
-				Convey("Open", func() {
+				t.Run("Open", func(t *ftt.Test) {
 					res, err := h.Poke(ctx, rs)
-					So(err, ShouldBeNil)
-					So(res.SideEffectFn, ShouldBeNil)
-					So(res.PreserveEvents, ShouldBeFalse)
-					So(res.PostProcessFn, ShouldNotBeNil)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, res.SideEffectFn, should.BeNil)
+					assert.Loosely(t, res.PreserveEvents, should.BeFalse)
+					assert.Loosely(t, res.PostProcessFn, should.NotBeNil)
 					// proceed to submission right away
-					So(res.State.Status, ShouldEqual, run.Status_SUBMITTING)
-					So(res.State.Submission, ShouldResembleProto, &run.Submission{
+					assert.Loosely(t, res.State.Status, should.Equal(run.Status_SUBMITTING))
+					assert.Loosely(t, res.State.Submission, should.Resemble(&run.Submission{
 						Deadline:          timestamppb.New(now.Add(defaultSubmissionDuration)),
 						Cls:               []int64{gChange},
 						TaskId:            "task-foo",
 						TreeOpen:          true,
 						LastTreeCheckTime: timestamppb.New(now),
-					})
+					}))
 				})
 
-				Convey("Close", func() {
+				t.Run("Close", func(t *ftt.Test) {
 					ct.TreeFake.ModifyState(ctx, tree.Closed)
 					res, err := h.Poke(ctx, rs)
-					So(err, ShouldBeNil)
-					So(res.SideEffectFn, ShouldBeNil)
-					So(res.PreserveEvents, ShouldBeFalse)
-					So(res.PostProcessFn, ShouldBeNil)
-					So(res.State.Status, ShouldEqual, run.Status_WAITING_FOR_SUBMISSION)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, res.SideEffectFn, should.BeNil)
+					assert.Loosely(t, res.PreserveEvents, should.BeFalse)
+					assert.Loosely(t, res.PostProcessFn, should.BeNil)
+					assert.Loosely(t, res.State.Status, should.Equal(run.Status_WAITING_FOR_SUBMISSION))
 					// record the result and check again after 1 minute.
-					So(res.State.Submission, ShouldResembleProto, &run.Submission{
+					assert.Loosely(t, res.State.Submission, should.Resemble(&run.Submission{
 						TreeOpen:          false,
 						LastTreeCheckTime: timestamppb.New(now),
-					})
-					runtest.AssertReceivedPoke(ctx, rid, now.Add(1*time.Minute))
+					}))
+					runtest.AssertReceivedPoke(t, ctx, rid, now.Add(1*time.Minute))
 				})
 
-				Convey("Failed", func() {
+				t.Run("Failed", func(t *ftt.Test) {
 					ct.TreeFake.ModifyState(ctx, tree.StateUnknown)
 					ct.TreeFake.InjectErr(fmt.Errorf("error retrieving tree status"))
-					Convey("Not too long", func() {
+					t.Run("Not too long", func(t *ftt.Test) {
 						res, err := h.Poke(ctx, rs)
-						So(err, ShouldBeNil)
-						So(res.State.Status, ShouldEqual, run.Status_WAITING_FOR_SUBMISSION)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, res.State.Status, should.Equal(run.Status_WAITING_FOR_SUBMISSION))
 					})
 
-					Convey("Too long", func() {
+					t.Run("Too long", func(t *ftt.Test) {
 						rs.Submission.TreeErrorSince = timestamppb.New(now.Add(-11 * time.Minute))
 						res, err := h.Poke(ctx, rs)
-						So(err, ShouldBeNil)
-						So(res.State, ShouldNotPointTo, rs)
-						So(res.SideEffectFn, ShouldBeNil)
-						So(res.PreserveEvents, ShouldBeFalse)
-						So(res.PostProcessFn, ShouldBeNil)
-						So(res.State.NewLongOpIDs, ShouldHaveLength, 1)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, res.State, should.NotEqual(rs))
+						assert.Loosely(t, res.SideEffectFn, should.BeNil)
+						assert.Loosely(t, res.PreserveEvents, should.BeFalse)
+						assert.Loosely(t, res.PostProcessFn, should.BeNil)
+						assert.Loosely(t, res.State.NewLongOpIDs, should.HaveLength(1))
 						ct := res.State.OngoingLongOps.Ops[res.State.NewLongOpIDs[0]].GetResetTriggers()
-						So(ct.RunStatusIfSucceeded, ShouldEqual, run.Status_FAILED)
-						So(ct.Requests, ShouldHaveLength, 1)
-						So(ct.Requests[0].Message, ShouldContainSubstring, "Could not submit this CL because the tree status app at tree.example.com repeatedly returned failures")
-						So(res.State.Status, ShouldEqual, run.Status_WAITING_FOR_SUBMISSION)
-						Convey("Reset trigger on root CL only", func() {
+						assert.Loosely(t, ct.RunStatusIfSucceeded, should.Equal(run.Status_FAILED))
+						assert.Loosely(t, ct.Requests, should.HaveLength(1))
+						assert.Loosely(t, ct.Requests[0].Message, should.ContainSubstring("Could not submit this CL because the tree status app at tree.example.com repeatedly returned failures"))
+						assert.Loosely(t, res.State.Status, should.Equal(run.Status_WAITING_FOR_SUBMISSION))
+						t.Run("Reset trigger on root CL only", func(t *ftt.Test) {
 							rs.CLs = append(rs.CLs, cl.ID+1000)
 							rs.RootCL = cl.ID
 							res, err := h.Poke(ctx, rs)
-							So(err, ShouldBeNil)
-							So(res.State.NewLongOpIDs, ShouldHaveLength, 1)
+							assert.Loosely(t, err, should.BeNil)
+							assert.Loosely(t, res.State.NewLongOpIDs, should.HaveLength(1))
 							ct := res.State.OngoingLongOps.Ops[res.State.NewLongOpIDs[0]].GetResetTriggers()
-							So(ct.Requests, ShouldHaveLength, 1)
-							So(ct.Requests[0].Clid, ShouldEqual, rs.RootCL)
+							assert.Loosely(t, ct.Requests, should.HaveLength(1))
+							assert.Loosely(t, ct.Requests[0].Clid, should.Equal(rs.RootCL))
 						})
 					})
 				})
 			})
 
-			Convey("No-op if condition doesn't match", func() {
-				Convey("Not in WAITING_FOR_SUBMISSION status", func() {
+			t.Run("No-op if condition doesn't match", func(t *ftt.Test) {
+				t.Run("Not in WAITING_FOR_SUBMISSION status", func(t *ftt.Test) {
 					rs.Status = run.Status_RUNNING
 					verifyNoOp()
 				})
 
-				Convey("Tree is open in the previous check", func() {
+				t.Run("Tree is open in the previous check", func(t *ftt.Test) {
 					rs.Status = run.Status_WAITING_FOR_SUBMISSION
 					rs.Submission = &run.Submission{
 						TreeOpen:          true,
@@ -246,7 +246,7 @@ func TestPoke(t *testing.T) {
 					verifyNoOp()
 				})
 
-				Convey("Last Tree check is too recent", func() {
+				t.Run("Last Tree check is too recent", func(t *ftt.Test) {
 					rs.Status = run.Status_WAITING_FOR_SUBMISSION
 					rs.Submission = &run.Submission{
 						TreeOpen:          false,
@@ -257,58 +257,58 @@ func TestPoke(t *testing.T) {
 			})
 		})
 
-		Convey("CLs Refresh", func() {
-			Convey("No-op if finalized", func() {
+		t.Run("CLs Refresh", func(t *ftt.Test) {
+			t.Run("No-op if finalized", func(t *ftt.Test) {
 				rs.Status = run.Status_CANCELLED
 				verifyNoOp()
 			})
-			Convey("No-op if recently created", func() {
+			t.Run("No-op if recently created", func(t *ftt.Test) {
 				rs.CreateTime = ct.Clock.Now()
 				rs.LatestCLsRefresh = time.Time{}
 				verifyNoOp()
 			})
-			Convey("No-op if recently refreshed", func() {
+			t.Run("No-op if recently refreshed", func(t *ftt.Test) {
 				rs.LatestCLsRefresh = ct.Clock.Now().Add(-clRefreshInterval / 2)
 				verifyNoOp()
 			})
-			Convey("Schedule refresh", func() {
+			t.Run("Schedule refresh", func(t *ftt.Test) {
 				verifyScheduled := func() {
 					res, err := h.Poke(ctx, rs)
-					So(err, ShouldBeNil)
-					So(res.SideEffectFn, ShouldBeNil)
-					So(res.PreserveEvents, ShouldBeFalse)
-					So(res.PostProcessFn, ShouldBeNil)
-					So(res.State, ShouldNotPointTo, rs)
-					So(res.State.LatestCLsRefresh, ShouldResemble, datastore.RoundTime(ct.Clock.Now().UTC()))
-					So(deps.clUpdater.refreshedCLs.Contains(1), ShouldBeTrue)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, res.SideEffectFn, should.BeNil)
+					assert.Loosely(t, res.PreserveEvents, should.BeFalse)
+					assert.Loosely(t, res.PostProcessFn, should.BeNil)
+					assert.Loosely(t, res.State, should.NotEqual(rs))
+					assert.Loosely(t, res.State.LatestCLsRefresh, should.Resemble(datastore.RoundTime(ct.Clock.Now().UTC())))
+					assert.Loosely(t, deps.clUpdater.refreshedCLs.Contains(1), should.BeTrue)
 				}
-				Convey("For the first time", func() {
+				t.Run("For the first time", func(t *ftt.Test) {
 					rs.CreateTime = ct.Clock.Now().Add(-clRefreshInterval - time.Second)
 					rs.LatestCLsRefresh = time.Time{}
 					verifyScheduled()
 				})
-				Convey("For the second (and later) time", func() {
+				t.Run("For the second (and later) time", func(t *ftt.Test) {
 					rs.LatestCLsRefresh = ct.Clock.Now().Add(-clRefreshInterval - time.Second)
 					verifyScheduled()
 				})
 			})
-			Convey("Run fails if no longer eligible", func() {
+			t.Run("Run fails if no longer eligible", func(t *ftt.Test) {
 				rs.LatestCLsRefresh = ct.Clock.Now().Add(-clRefreshInterval - time.Second)
 				ct.ResetMockedAuthDB(ctx)
 
 				// verify that it did not schedule refresh but reset triggers.
 				res, err := h.Poke(ctx, rs)
-				So(err, ShouldBeNil)
-				So(res.SideEffectFn, ShouldBeNil)
-				So(res.PreserveEvents, ShouldBeFalse)
-				So(res.PostProcessFn, ShouldBeNil)
-				So(res.State.Status, ShouldEqual, rs.Status)
-				So(deps.clUpdater.refreshedCLs, ShouldBeEmpty)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res.SideEffectFn, should.BeNil)
+				assert.Loosely(t, res.PreserveEvents, should.BeFalse)
+				assert.Loosely(t, res.PostProcessFn, should.BeNil)
+				assert.Loosely(t, res.State.Status, should.Equal(rs.Status))
+				assert.Loosely(t, deps.clUpdater.refreshedCLs, should.BeEmpty)
 
 				longOp := res.State.OngoingLongOps.GetOps()[res.State.NewLongOpIDs[0]]
 				resetOp := longOp.GetResetTriggers()
-				So(resetOp.Requests, ShouldHaveLength, 1)
-				So(resetOp.Requests[0], ShouldResembleProto,
+				assert.Loosely(t, resetOp.Requests, should.HaveLength(1))
+				assert.Loosely(t, resetOp.Requests[0], should.Resemble(
 					&run.OngoingLongOps_Op_ResetTriggers_Request{
 						Clid:    int64(gChange),
 						Message: "CV cannot start a Run for `foo@example.com` because the user is not a dry-runner.",
@@ -322,12 +322,12 @@ func TestPoke(t *testing.T) {
 						},
 						AddToAttentionReason: "CQ/CV Run failed",
 					},
-				)
-				So(resetOp.RunStatusIfSucceeded, ShouldEqual, run.Status_FAILED)
+				))
+				assert.Loosely(t, resetOp.RunStatusIfSucceeded, should.Equal(run.Status_FAILED))
 			})
 		})
 
-		Convey("Tryjobs Refresh", func() {
+		t.Run("Tryjobs Refresh", func(t *ftt.Test) {
 			reqmt := &tryjob.Requirement{
 				Definitions: []*tryjob.Definition{
 					{
@@ -365,54 +365,54 @@ func TestPoke(t *testing.T) {
 					},
 				},
 			}
-			Convey("No-op if finalized", func() {
+			t.Run("No-op if finalized", func(t *ftt.Test) {
 				rs.Status = run.Status_CANCELLED
 				verifyNoOp()
 			})
-			Convey("No-op if recently created", func() {
+			t.Run("No-op if recently created", func(t *ftt.Test) {
 				rs.CreateTime = ct.Clock.Now()
 				rs.LatestTryjobsRefresh = time.Time{}
 				verifyNoOp()
 			})
-			Convey("No-op if recently refreshed", func() {
+			t.Run("No-op if recently refreshed", func(t *ftt.Test) {
 				rs.LatestTryjobsRefresh = ct.Clock.Now().Add(-tryjobRefreshInterval / 2)
 				verifyNoOp()
 			})
-			Convey("Schedule refresh", func() {
+			t.Run("Schedule refresh", func(t *ftt.Test) {
 				verifyScheduled := func() {
 					res, err := h.Poke(ctx, rs)
-					So(err, ShouldBeNil)
-					So(res.SideEffectFn, ShouldBeNil)
-					So(res.PreserveEvents, ShouldBeFalse)
-					So(res.PostProcessFn, ShouldBeNil)
-					So(res.State, ShouldNotPointTo, rs)
-					So(res.State.LatestTryjobsRefresh, ShouldEqual, datastore.RoundTime(ct.Clock.Now().UTC()))
-					So(deps.tjNotifier.updateScheduled, ShouldResemble, common.TryjobIDs{2})
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, res.SideEffectFn, should.BeNil)
+					assert.Loosely(t, res.PreserveEvents, should.BeFalse)
+					assert.Loosely(t, res.PostProcessFn, should.BeNil)
+					assert.Loosely(t, res.State, should.NotEqual(rs))
+					assert.Loosely(t, res.State.LatestTryjobsRefresh, should.Equal(datastore.RoundTime(ct.Clock.Now().UTC())))
+					assert.Loosely(t, deps.tjNotifier.updateScheduled, should.Resemble(common.TryjobIDs{2}))
 				}
-				Convey("For the first time", func() {
+				t.Run("For the first time", func(t *ftt.Test) {
 					rs.CreateTime = ct.Clock.Now().Add(-tryjobRefreshInterval - time.Second)
 					rs.LatestTryjobsRefresh = time.Time{}
 					verifyScheduled()
 				})
-				Convey("For the second (and later) time", func() {
+				t.Run("For the second (and later) time", func(t *ftt.Test) {
 					rs.LatestTryjobsRefresh = ct.Clock.Now().Add(-tryjobRefreshInterval - time.Second)
 					verifyScheduled()
 				})
 
-				Convey("Skip if external id is not present", func() {
+				t.Run("Skip if external id is not present", func(t *ftt.Test) {
 					execution := rs.Tryjobs.GetState().GetExecutions()[0]
 					tryjob.LatestAttempt(execution).ExternalId = ""
 					_, err := h.Poke(ctx, rs)
-					So(err, ShouldBeNil)
-					So(deps.tjNotifier.updateScheduled, ShouldBeEmpty)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, deps.tjNotifier.updateScheduled, should.BeEmpty)
 				})
 
-				Convey("Skip if tryjob is not in Triggered status", func() {
+				t.Run("Skip if tryjob is not in Triggered status", func(t *ftt.Test) {
 					execution := rs.Tryjobs.GetState().GetExecutions()[0]
 					tryjob.LatestAttempt(execution).Status = tryjob.Status_ENDED
 					_, err := h.Poke(ctx, rs)
-					So(err, ShouldBeNil)
-					So(deps.tjNotifier.updateScheduled, ShouldBeEmpty)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, deps.tjNotifier.updateScheduled, should.BeEmpty)
 				})
 			})
 		})

@@ -26,6 +26,10 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/quota/quotapb"
 	"go.chromium.org/luci/server/tq/tqtesting"
@@ -52,15 +56,12 @@ import (
 	"go.chromium.org/luci/cv/internal/run/rdb"
 	"go.chromium.org/luci/cv/internal/run/runtest"
 	"go.chromium.org/luci/cv/internal/tryjob"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestEndRun(t *testing.T) {
 	t.Parallel()
 
-	Convey("EndRun", t, func() {
+	ftt.Run("EndRun", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
@@ -87,7 +88,7 @@ func TestEndRun(t *testing.T) {
 			},
 		})
 		cgs, err := prjcfgtest.MustExist(ctx, lProject).GetConfigGroups(ctx)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		cg := cgs[0]
 
 		// mock a CL with two onoging Runs.
@@ -102,7 +103,7 @@ func TestEndRun(t *testing.T) {
 			IncompleteRuns: rids,
 			UpdateTime:     ct.Clock.Now().UTC(),
 		}
-		So(datastore.Put(ctx, &cl), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, &cl), should.BeNil)
 
 		// mock some child runs of rids[0]
 		childRunID := common.MakeRunID(lProject, ct.Clock.Now(), 1, []byte("child"))
@@ -116,7 +117,7 @@ func TestEndRun(t *testing.T) {
 			DepRuns: common.RunIDs{rids[0]},
 			Status:  run.Status_FAILED,
 		}
-		So(datastore.Put(ctx, &childRun, &finChildRun), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, &childRun, &finChildRun), should.BeNil)
 
 		rs := &state.RunState{
 			Run: run.Run{
@@ -140,49 +141,49 @@ func TestEndRun(t *testing.T) {
 
 		impl, deps := makeImpl(&ct)
 		se := impl.endRun(ctx, rs, run.Status_FAILED, cg, []*run.Run{&childRun, &finChildRun})
-		So(rs.Status, ShouldEqual, run.Status_FAILED)
-		So(rs.EndTime, ShouldEqual, ct.Clock.Now())
-		So(datastore.RunInTransaction(ctx, se, nil), ShouldBeNil)
+		assert.Loosely(t, rs.Status, should.Equal(run.Status_FAILED))
+		assert.Loosely(t, rs.EndTime, should.Match(ct.Clock.Now()))
+		assert.Loosely(t, datastore.RunInTransaction(ctx, se, nil), should.BeNil)
 
-		Convey("removeRunFromCLs", func() {
+		t.Run("removeRunFromCLs", func(t *ftt.Test) {
 			// fetch the updated CL entity.
 			cl = changelist.CL{ID: clid}
-			So(datastore.Get(ctx, &cl), ShouldBeNil)
+			assert.Loosely(t, datastore.Get(ctx, &cl), should.BeNil)
 
 			// it should have removed the ended Run, but not the other
 			// ongoing Run from the CL entity.
-			So(cl.IncompleteRuns, ShouldResemble, common.RunIDs{rids[1]})
-			Convey("schedule CLUpdate for the removed Run", func() {
+			assert.Loosely(t, cl.IncompleteRuns, should.Resemble(common.RunIDs{rids[1]}))
+			t.Run("schedule CLUpdate for the removed Run", func(t *ftt.Test) {
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(changelist.BatchOnCLUpdatedTaskClass))
-				pmtest.AssertReceivedRunFinished(ctx, rids[0], rs.Status)
-				pmtest.AssertReceivedCLsNotified(ctx, rids[0].LUCIProject(), []*changelist.CL{&cl})
-				So(deps.clUpdater.refreshedCLs, ShouldResemble, common.MakeCLIDs(clid))
+				pmtest.AssertReceivedRunFinished(t, ctx, rids[0], rs.Status)
+				pmtest.AssertReceivedCLsNotified(t, ctx, rids[0].LUCIProject(), []*changelist.CL{&cl})
+				assert.Loosely(t, deps.clUpdater.refreshedCLs, should.Resemble(common.MakeCLIDs(clid)))
 			})
 		})
 
-		Convey("child runs get ParentRunCompleted events.", func() {
-			runtest.AssertReceivedParentRunCompleted(ctx, childRunID)
-			runtest.AssertNotReceivedParentRunCompleted(ctx, finChildRunID)
+		t.Run("child runs get ParentRunCompleted events.", func(t *ftt.Test) {
+			runtest.AssertReceivedParentRunCompleted(t, ctx, childRunID)
+			runtest.AssertNotReceivedParentRunCompleted(t, ctx, finChildRunID)
 		})
 
-		Convey("cancel ongoing LongOps", func() {
-			So(rs.OngoingLongOps.GetOps()["11-22"].GetCancelRequested(), ShouldBeTrue)
+		t.Run("cancel ongoing LongOps", func(t *ftt.Test) {
+			assert.Loosely(t, rs.OngoingLongOps.GetOps()["11-22"].GetCancelRequested(), should.BeTrue)
 		})
 
-		Convey("populate metrics for run events", func() {
+		t.Run("populate metrics for run events", func(t *ftt.Test) {
 			fset1 := []any{
 				lProject, "main", string(run.DryRun),
 				apipb.Run_FAILED.String(), true,
 			}
 			fset2 := fset1[0 : len(fset1)-1]
-			So(ct.TSMonSentValue(ctx, metrics.Public.RunEnded, fset1...), ShouldEqual, 1)
-			So(ct.TSMonSentDistr(ctx, metrics.Public.RunDuration, fset2...).Sum(),
-				ShouldAlmostEqual, (1 * time.Minute).Seconds())
-			So(ct.TSMonSentDistr(ctx, metrics.Public.RunTotalDuration, fset1...).Sum(),
-				ShouldAlmostEqual, (2 * time.Minute).Seconds())
+			assert.Loosely(t, ct.TSMonSentValue(ctx, metrics.Public.RunEnded, fset1...), should.Equal(1))
+			assert.Loosely(t, ct.TSMonSentDistr(ctx, metrics.Public.RunDuration, fset2...).Sum(),
+				should.AlmostEqual((1 * time.Minute).Seconds()))
+			assert.Loosely(t, ct.TSMonSentDistr(ctx, metrics.Public.RunTotalDuration, fset1...).Sum(),
+				should.AlmostEqual((2 * time.Minute).Seconds()))
 		})
 
-		Convey("publish RunEnded event", func() {
+		t.Run("publish RunEnded event", func(t *ftt.Test) {
 			var task *pubsub.PublishRunEndedTask
 			for _, tsk := range ct.TQ.Tasks() {
 				if p, ok := tsk.Payload.(*pubsub.PublishRunEndedTask); ok {
@@ -190,21 +191,21 @@ func TestEndRun(t *testing.T) {
 					break
 				}
 			}
-			So(task, ShouldResembleProto, &pubsub.PublishRunEndedTask{
+			assert.Loosely(t, task, should.Resemble(&pubsub.PublishRunEndedTask{
 				PublicId:    rs.ID.PublicID(),
 				LuciProject: rs.ID.LUCIProject(),
 				Status:      rs.Status,
 				Eversion:    int64(rs.EVersion + 1),
-			})
+			}))
 		})
 
-		Convey("enqueue long-ops for PostAction", func() {
+		t.Run("enqueue long-ops for PostAction", func(t *ftt.Test) {
 			postActions := make([]*run.OngoingLongOps_Op_ExecutePostActionPayload, 0, len(rs.OngoingLongOps.GetOps()))
 			for _, op := range rs.OngoingLongOps.GetOps() {
 				if act := op.GetExecutePostAction(); act != nil {
 					d := timestamppb.New(ct.Clock.Now().UTC().Add(maxPostActionExecutionDuration))
-					So(op.GetDeadline(), ShouldResembleProto, d)
-					So(op.GetCancelRequested(), ShouldBeFalse)
+					assert.Loosely(t, op.GetDeadline(), should.Resemble(d))
+					assert.Loosely(t, op.GetCancelRequested(), should.BeFalse)
 					postActions = append(postActions, act)
 				}
 			}
@@ -212,7 +213,7 @@ func TestEndRun(t *testing.T) {
 				return strings.Compare(postActions[i].GetName(), postActions[j].GetName()) < 0
 			})
 
-			So(postActions, ShouldResembleProto, []*run.OngoingLongOps_Op_ExecutePostActionPayload{
+			assert.Loosely(t, postActions, should.Resemble([]*run.OngoingLongOps_Op_ExecutePostActionPayload{
 				{
 					Name: postaction.CreditRunQuotaPostActionName,
 					Kind: &run.OngoingLongOps_Op_ExecutePostActionPayload_CreditRunQuota_{
@@ -233,14 +234,14 @@ func TestEndRun(t *testing.T) {
 						},
 					},
 				},
-			})
+			}))
 		})
 	})
 }
 
 func TestCheckRunCreate(t *testing.T) {
 	t.Parallel()
-	Convey("CheckRunCreate", t, func() {
+	ftt.Run("CheckRunCreate", t, func(t *ftt.Test) {
 		ct := &cvtesting.Test{}
 		ctx := ct.SetUp(t)
 		const clid1 = 1
@@ -270,7 +271,7 @@ func TestCheckRunCreate(t *testing.T) {
 			},
 		})
 		cgs, err := prjcfgtest.MustExist(ctx, lProject).GetConfigGroups(ctx)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		cg := cgs[0]
 
@@ -347,51 +348,51 @@ func TestCheckRunCreate(t *testing.T) {
 				}).GetCqVoteTrigger(),
 			},
 		}
-		So(datastore.Put(ctx, cls, rcls), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, cls, rcls), should.BeNil)
 		ct.GFake.AddLinkedAccountMapping([]*gerritpb.EmailInfo{
 			{Email: "user-1@example.com"},
 		})
 
-		Convey("Returns empty metas for new patchset run", func() {
+		t.Run("Returns empty metas for new patchset run", func(t *ftt.Test) {
 			rs.Mode = run.NewPatchsetRun
 			ok, err := checkRunCreate(ctx, ct.GFake, rs, cg, rcls, cls)
-			So(err, ShouldBeNil)
-			So(ok, ShouldBeFalse)
-			So(rs.OngoingLongOps.Ops, ShouldHaveLength, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ok, should.BeFalse)
+			assert.Loosely(t, rs.OngoingLongOps.Ops, should.HaveLength(1))
 			for _, op := range rs.OngoingLongOps.Ops {
 				reqs := op.GetResetTriggers().GetRequests()
-				So(reqs, ShouldHaveLength, 2)
-				So(reqs[0].Clid, ShouldEqual, clid1)
-				So(reqs[0].Message, ShouldEqual, "")
-				So(reqs[0].AddToAttention, ShouldBeEmpty)
-				So(reqs[1].Clid, ShouldEqual, clid2)
-				So(reqs[1].Message, ShouldEqual, "")
-				So(reqs[1].AddToAttention, ShouldBeEmpty)
+				assert.Loosely(t, reqs, should.HaveLength(2))
+				assert.Loosely(t, reqs[0].Clid, should.Equal(clid1))
+				assert.Loosely(t, reqs[0].Message, should.BeEmpty)
+				assert.Loosely(t, reqs[0].AddToAttention, should.BeEmpty)
+				assert.Loosely(t, reqs[1].Clid, should.Equal(clid2))
+				assert.Loosely(t, reqs[1].Message, should.BeEmpty)
+				assert.Loosely(t, reqs[1].AddToAttention, should.BeEmpty)
 			}
 		})
-		Convey("Populates metas for other modes", func() {
+		t.Run("Populates metas for other modes", func(t *ftt.Test) {
 			rs.Mode = run.FullRun
 			ok, err := checkRunCreate(ctx, ct.GFake, rs, cg, rcls, cls)
-			So(err, ShouldBeNil)
-			So(ok, ShouldBeFalse)
-			So(rs.OngoingLongOps.Ops, ShouldHaveLength, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ok, should.BeFalse)
+			assert.Loosely(t, rs.OngoingLongOps.Ops, should.HaveLength(1))
 			for _, op := range rs.OngoingLongOps.Ops {
 				reqs := op.GetResetTriggers().GetRequests()
-				So(reqs, ShouldHaveLength, 2)
-				So(reqs[0].Clid, ShouldEqual, clid1)
-				So(reqs[0].Message, ShouldEqual, "CV cannot start a Run for `user-1@example.com` because the user is not a committer.")
-				So(reqs[0].AddToAttention, ShouldResemble, []gerrit.Whom{
+				assert.Loosely(t, reqs, should.HaveLength(2))
+				assert.Loosely(t, reqs[0].Clid, should.Equal(clid1))
+				assert.Loosely(t, reqs[0].Message, should.Equal("CV cannot start a Run for `user-1@example.com` because the user is not a committer."))
+				assert.Loosely(t, reqs[0].AddToAttention, should.Resemble([]gerrit.Whom{
 					gerrit.Whom_OWNER,
-					gerrit.Whom_CQ_VOTERS})
-				So(reqs[1].Clid, ShouldEqual, clid2)
-				So(reqs[1].Message, ShouldEqual, "CV cannot start a Run for `user-1@example.com` because the user is not a committer.")
-				So(reqs[1].AddToAttention, ShouldResemble, []gerrit.Whom{
+					gerrit.Whom_CQ_VOTERS}))
+				assert.Loosely(t, reqs[1].Clid, should.Equal(clid2))
+				assert.Loosely(t, reqs[1].Message, should.Equal("CV cannot start a Run for `user-1@example.com` because the user is not a committer."))
+				assert.Loosely(t, reqs[1].AddToAttention, should.Resemble([]gerrit.Whom{
 					gerrit.Whom_OWNER,
-					gerrit.Whom_CQ_VOTERS})
+					gerrit.Whom_CQ_VOTERS}))
 			}
 		})
 
-		Convey("Populates metas if run has root CL", func() {
+		t.Run("Populates metas if run has root CL", func(t *ftt.Test) {
 			rs.Mode = run.FullRun
 			rs.RootCL = clid1
 			// make rootCL not submittable
@@ -410,38 +411,38 @@ func TestCheckRunCreate(t *testing.T) {
 			)
 			rcls[0].Detail = cls[0].Snapshot
 			rcls[1].Detail = cls[1].Snapshot
-			So(datastore.Put(ctx, cls, rcls), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, cls, rcls), should.BeNil)
 
-			Convey("Only root CL fails the ACL check", func() {
+			t.Run("Only root CL fails the ACL check", func(t *ftt.Test) {
 				ct.AddMember("user-1", "committer-group") // can create a full run on cl2 now
 				ok, err := checkRunCreate(ctx, ct.GFake, rs, cg, rcls, cls)
-				So(err, ShouldBeNil)
-				So(ok, ShouldBeFalse)
-				So(rs.OngoingLongOps.Ops, ShouldHaveLength, 1)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, ok, should.BeFalse)
+				assert.Loosely(t, rs.OngoingLongOps.Ops, should.HaveLength(1))
 				for _, op := range rs.OngoingLongOps.Ops {
 					reqs := op.GetResetTriggers().GetRequests()
-					So(reqs, ShouldHaveLength, 1)
-					So(reqs[0].Clid, ShouldEqual, clid1)
-					So(reqs[0].Message, ShouldContainSubstring, "CV cannot start a Run because this CL is not submittable")
-					So(reqs[0].AddToAttention, ShouldResemble, []gerrit.Whom{
+					assert.Loosely(t, reqs, should.HaveLength(1))
+					assert.Loosely(t, reqs[0].Clid, should.Equal(clid1))
+					assert.Loosely(t, reqs[0].Message, should.ContainSubstring("CV cannot start a Run because this CL is not submittable"))
+					assert.Loosely(t, reqs[0].AddToAttention, should.Resemble([]gerrit.Whom{
 						gerrit.Whom_OWNER,
-						gerrit.Whom_CQ_VOTERS})
+						gerrit.Whom_CQ_VOTERS}))
 				}
 			})
 
-			Convey("Non root CL also fails the ACL check", func() {
+			t.Run("Non root CL also fails the ACL check", func(t *ftt.Test) {
 				ok, err := checkRunCreate(ctx, ct.GFake, rs, cg, rcls, cls)
-				So(err, ShouldBeNil)
-				So(ok, ShouldBeFalse)
-				So(rs.OngoingLongOps.Ops, ShouldHaveLength, 1)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, ok, should.BeFalse)
+				assert.Loosely(t, rs.OngoingLongOps.Ops, should.HaveLength(1))
 				for _, op := range rs.OngoingLongOps.Ops {
 					reqs := op.GetResetTriggers().GetRequests()
-					So(reqs, ShouldHaveLength, 1)
-					So(reqs[0].Clid, ShouldEqual, clid1)
-					So(reqs[0].Message, ShouldContainSubstring, "can not start the Run due to following errors")
-					So(reqs[0].AddToAttention, ShouldResemble, []gerrit.Whom{
+					assert.Loosely(t, reqs, should.HaveLength(1))
+					assert.Loosely(t, reqs[0].Clid, should.Equal(clid1))
+					assert.Loosely(t, reqs[0].Message, should.ContainSubstring("can not start the Run due to following errors"))
+					assert.Loosely(t, reqs[0].AddToAttention, should.Resemble([]gerrit.Whom{
 						gerrit.Whom_OWNER,
-						gerrit.Whom_CQ_VOTERS})
+						gerrit.Whom_CQ_VOTERS}))
 				}
 			})
 		})
@@ -457,18 +458,21 @@ type dependencies struct {
 }
 
 type testHandler struct {
+	t     testing.TB
 	inner Handler
 }
 
-func validateStateMutation(passed, initialCopy, result *state.RunState) {
+func validateStateMutation(t testing.TB, passed, initialCopy, result *state.RunState) {
+	t.Helper()
+
 	switch {
-	case cvtesting.SafeShouldResemble(result, initialCopy) == "":
+	case should.Match(initialCopy)(result) == nil:
 		// No state change; doesn't matter whether shallow copy is created or not.
 		return
 	case passed == result:
-		So(errors.New("handler mutated the input state but doesn't create a shallow copy before mutation"), ShouldBeNil)
-	case cvtesting.SafeShouldResemble(initialCopy, passed) != "":
-		So(errors.New("handler created a shallow copy but modified addressable property in place; forgot to clone a proto?"), ShouldBeNil)
+		assert.Loosely(t, errors.New("handler mutated the input state but doesn't create a shallow copy before mutation"), should.BeNil, truth.LineContext())
+	case should.Match(passed)(initialCopy) != nil:
+		assert.Loosely(t, errors.New("handler created a shallow copy but modified addressable property in place; forgot to clone a proto?"), should.BeNil, truth.LineContext())
 	}
 }
 
@@ -478,7 +482,7 @@ func (t *testHandler) Start(ctx context.Context, rs *state.RunState) (*Result, e
 	if err != nil {
 		return nil, err
 	}
-	validateStateMutation(rs, initialCopy, res.State)
+	validateStateMutation(t.t, rs, initialCopy, res.State)
 	return res, err
 }
 
@@ -488,7 +492,7 @@ func (t *testHandler) Cancel(ctx context.Context, rs *state.RunState, reasons []
 	if err != nil {
 		return nil, err
 	}
-	validateStateMutation(rs, initialCopy, res.State)
+	validateStateMutation(t.t, rs, initialCopy, res.State)
 	return res, err
 }
 
@@ -498,7 +502,7 @@ func (t *testHandler) OnCLsUpdated(ctx context.Context, rs *state.RunState, cls 
 	if err != nil {
 		return nil, err
 	}
-	validateStateMutation(rs, initialCopy, res.State)
+	validateStateMutation(t.t, rs, initialCopy, res.State)
 	return res, err
 }
 
@@ -508,7 +512,7 @@ func (t *testHandler) UpdateConfig(ctx context.Context, rs *state.RunState, ver 
 	if err != nil {
 		return nil, err
 	}
-	validateStateMutation(rs, initialCopy, res.State)
+	validateStateMutation(t.t, rs, initialCopy, res.State)
 	return res, err
 }
 
@@ -518,7 +522,7 @@ func (t *testHandler) OnReadyForSubmission(ctx context.Context, rs *state.RunSta
 	if err != nil {
 		return nil, err
 	}
-	validateStateMutation(rs, initialCopy, res.State)
+	validateStateMutation(t.t, rs, initialCopy, res.State)
 	return res, err
 }
 
@@ -528,7 +532,7 @@ func (t *testHandler) OnCLsSubmitted(ctx context.Context, rs *state.RunState, cl
 	if err != nil {
 		return nil, err
 	}
-	validateStateMutation(rs, initialCopy, res.State)
+	validateStateMutation(t.t, rs, initialCopy, res.State)
 	return res, err
 }
 
@@ -538,7 +542,7 @@ func (t *testHandler) OnSubmissionCompleted(ctx context.Context, rs *state.RunSt
 	if err != nil {
 		return nil, err
 	}
-	validateStateMutation(rs, initialCopy, res.State)
+	validateStateMutation(t.t, rs, initialCopy, res.State)
 	return res, err
 }
 
@@ -548,7 +552,7 @@ func (t *testHandler) OnLongOpCompleted(ctx context.Context, rs *state.RunState,
 	if err != nil {
 		return nil, err
 	}
-	validateStateMutation(rs, initialCopy, res.State)
+	validateStateMutation(t.t, rs, initialCopy, res.State)
 	return res, err
 }
 
@@ -558,7 +562,7 @@ func (t *testHandler) OnTryjobsUpdated(ctx context.Context, rs *state.RunState, 
 	if err != nil {
 		return nil, err
 	}
-	validateStateMutation(rs, initialCopy, res.State)
+	validateStateMutation(t.t, rs, initialCopy, res.State)
 	return res, err
 }
 
@@ -568,7 +572,7 @@ func (t *testHandler) TryResumeSubmission(ctx context.Context, rs *state.RunStat
 	if err != nil {
 		return nil, err
 	}
-	validateStateMutation(rs, initialCopy, res.State)
+	validateStateMutation(t.t, rs, initialCopy, res.State)
 	return res, err
 }
 
@@ -578,7 +582,7 @@ func (t *testHandler) Poke(ctx context.Context, rs *state.RunState) (*Result, er
 	if err != nil {
 		return nil, err
 	}
-	validateStateMutation(rs, initialCopy, res.State)
+	validateStateMutation(t.t, rs, initialCopy, res.State)
 	return res, err
 }
 
@@ -588,13 +592,13 @@ func (t *testHandler) OnParentRunCompleted(ctx context.Context, rs *state.RunSta
 	if err != nil {
 		return nil, err
 	}
-	validateStateMutation(rs, initialCopy, res.State)
+	validateStateMutation(t.t, rs, initialCopy, res.State)
 	return res, err
 }
 
 func makeTestHandler(ct *cvtesting.Test) (Handler, dependencies) {
 	handler, dependencies := makeImpl(ct)
-	return &testHandler{inner: handler}, dependencies
+	return &testHandler{t: ct.TB, inner: handler}, dependencies
 }
 
 // makeImpl should only be used to test common functions. For testing handler,

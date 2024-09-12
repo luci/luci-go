@@ -26,6 +26,10 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/memlogger"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
@@ -44,28 +48,25 @@ import (
 	"go.chromium.org/luci/cv/internal/run/rdb"
 	"go.chromium.org/luci/cv/internal/run/runtest"
 	"go.chromium.org/luci/cv/internal/tryjob"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestRunManager(t *testing.T) {
 	t.Parallel()
 
-	Convey("RunManager", t, func() {
+	ftt.Run("RunManager", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 		const runID = "chromium/222-1-deadbeef"
 		const initialEVersion = 10
-		So(datastore.Put(ctx, &run.Run{
+		assert.Loosely(t, datastore.Put(ctx, &run.Run{
 			ID:       runID,
 			Status:   run.Status_RUNNING,
 			EVersion: initialEVersion,
-		}), ShouldBeNil)
+		}), should.BeNil)
 
 		currentRun := func(ctx context.Context) *run.Run {
 			ret := &run.Run{ID: runID}
-			So(datastore.Get(ctx, ret), ShouldBeNil)
+			assert.Loosely(t, datastore.Get(ctx, ret), should.BeNil)
 			return ret
 		}
 
@@ -270,20 +271,20 @@ func TestRunManager(t *testing.T) {
 			},
 		}
 		for _, et := range eventTestcases {
-			Convey(fmt.Sprintf("Can process Event %T", et.event.GetEvent()), func() {
+			t.Run(fmt.Sprintf("Can process Event %T", et.event.GetEvent()), func(t *ftt.Test) {
 				fh := &fakeHandler{}
 				ctx = context.WithValue(ctx, &fakeHandlerKey, fh)
-				So(et.sendFn(ctx), ShouldBeNil)
-				runtest.AssertInEventbox(ctx, runID, et.event)
-				So(runtest.Runs(ct.TQ.Tasks()), ShouldResemble, common.RunIDs{runID})
+				assert.Loosely(t, et.sendFn(ctx), should.BeNil)
+				runtest.AssertInEventbox(t, ctx, runID, et.event)
+				assert.Loosely(t, runtest.Runs(ct.TQ.Tasks()), should.Resemble(common.RunIDs{runID}))
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunTaskClass))
-				So(fh.invocations[0], ShouldEqual, et.invokedHandlerMethod)
-				So(currentRun(ctx).EVersion, ShouldEqual, initialEVersion+1)
-				runtest.AssertNotInEventbox(ctx, runID, et.event) // consumed
+				assert.Loosely(t, fh.invocations[0], should.Equal(et.invokedHandlerMethod))
+				assert.Loosely(t, currentRun(ctx).EVersion, should.Equal(initialEVersion+1))
+				runtest.AssertNotInEventbox(t, ctx, runID, et.event) // consumed
 			})
 		}
 
-		Convey("Process Events in order", func() {
+		t.Run("Process Events in order", func(t *ftt.Test) {
 			fh := &fakeHandler{}
 			ctx = context.WithValue(ctx, &fakeHandlerKey, fh)
 
@@ -300,27 +301,27 @@ func TestRunManager(t *testing.T) {
 			})
 			for _, etc := range eventTestcases {
 				if etc.event.GetCancel() == nil {
-					So(etc.sendFn(ctx), ShouldBeNil)
+					assert.Loosely(t, etc.sendFn(ctx), should.BeNil)
 				}
 			}
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunTaskClass))
 			expectInvokedMethods = append(expectInvokedMethods, "TryResumeSubmission") // always invoked
-			So(fh.invocations, ShouldResemble, expectInvokedMethods)
-			So(currentRun(ctx).EVersion, ShouldEqual, initialEVersion+1)
+			assert.Loosely(t, fh.invocations, should.Resemble(expectInvokedMethods))
+			assert.Loosely(t, currentRun(ctx).EVersion, should.Equal(initialEVersion+1))
 		})
 
-		Convey("Don't Start if received both Cancel and Start Event", func() {
+		t.Run("Don't Start if received both Cancel and Start Event", func(t *ftt.Test) {
 			fh := &fakeHandler{}
 			ctx = context.WithValue(ctx, &fakeHandlerKey, fh)
 			notifier.Start(ctx, runID)
 			notifier.Cancel(ctx, runID, "user request")
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunTaskClass))
-			So(fh.invocations[0], ShouldEqual, "Cancel")
+			assert.Loosely(t, fh.invocations[0], should.Equal("Cancel"))
 			for _, inv := range fh.invocations[1:] {
-				So(inv, ShouldNotEqual, "Start")
+				assert.Loosely(t, inv, should.NotEqual("Start"))
 			}
-			So(currentRun(ctx).EVersion, ShouldEqual, initialEVersion+1)
-			runtest.AssertNotInEventbox(ctx, runID, &eventpb.Event{
+			assert.Loosely(t, currentRun(ctx).EVersion, should.Equal(initialEVersion+1))
+			runtest.AssertNotInEventbox(t, ctx, runID, &eventpb.Event{
 				Event: &eventpb.Event_Cancel{
 					Cancel: &eventpb.Cancel{
 						Reason: "user request",
@@ -335,13 +336,13 @@ func TestRunManager(t *testing.T) {
 			)
 		})
 
-		Convey("Can Preserve events", func() {
+		t.Run("Can Preserve events", func(t *ftt.Test) {
 			fh := &fakeHandler{preserveEvents: true}
 			ctx = context.WithValue(ctx, &fakeHandlerKey, fh)
-			So(notifier.Start(ctx, runID), ShouldBeNil)
+			assert.Loosely(t, notifier.Start(ctx, runID), should.BeNil)
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunTaskClass))
-			So(currentRun(ctx).EVersion, ShouldEqual, initialEVersion+1)
-			runtest.AssertInEventbox(ctx, runID,
+			assert.Loosely(t, currentRun(ctx).EVersion, should.Equal(initialEVersion+1))
+			runtest.AssertInEventbox(t, ctx, runID,
 				&eventpb.Event{
 					Event: &eventpb.Event_Start{
 						Start: &eventpb.Start{},
@@ -350,7 +351,7 @@ func TestRunManager(t *testing.T) {
 			)
 		})
 
-		Convey("Can save RunLog", func() {
+		t.Run("Can save RunLog", func(t *ftt.Test) {
 			fh := &fakeHandler{startAddsLogEntries: []*run.LogEntry{
 				{
 					Time: timestamppb.New(clock.Now(ctx)),
@@ -360,15 +361,15 @@ func TestRunManager(t *testing.T) {
 				},
 			}}
 			ctx = context.WithValue(ctx, &fakeHandlerKey, fh)
-			So(notifier.Start(ctx, runID), ShouldBeNil)
+			assert.Loosely(t, notifier.Start(ctx, runID), should.BeNil)
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunTaskClass))
-			So(currentRun(ctx).EVersion, ShouldEqual, initialEVersion+1)
+			assert.Loosely(t, currentRun(ctx).EVersion, should.Equal(initialEVersion+1))
 			entries, err := run.LoadRunLogEntries(ctx, runID)
-			So(err, ShouldBeNil)
-			So(entries, ShouldResembleProto, fh.startAddsLogEntries)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, entries, should.Resemble(fh.startAddsLogEntries))
 		})
 
-		Convey("Can run PostProcessFn", func() {
+		t.Run("Can run PostProcessFn", func(t *ftt.Test) {
 			var postProcessFnExecuted bool
 			fh := &fakeHandler{
 				postProcessFn: func(c context.Context) error {
@@ -377,13 +378,13 @@ func TestRunManager(t *testing.T) {
 				},
 			}
 			ctx = context.WithValue(ctx, &fakeHandlerKey, fh)
-			So(notifier.Start(ctx, runID), ShouldBeNil)
+			assert.Loosely(t, notifier.Start(ctx, runID), should.BeNil)
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunTaskClass))
-			So(postProcessFnExecuted, ShouldBeTrue)
+			assert.Loosely(t, postProcessFnExecuted, should.BeTrue)
 		})
 	})
 
-	Convey("Poke", t, func() {
+	ftt.Run("Poke", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 		const (
@@ -406,14 +407,14 @@ func TestRunManager(t *testing.T) {
 		prjcfgtest.Create(ctx, lProject, cfg)
 
 		tCreate := ct.Clock.Now().UTC().Add(-2 * time.Minute)
-		So(datastore.Put(ctx, &run.Run{
+		assert.Loosely(t, datastore.Put(ctx, &run.Run{
 			ID:            runID,
 			Status:        run.Status_RUNNING,
 			CreateTime:    tCreate,
 			StartTime:     tCreate.Add(1 * time.Minute),
 			EVersion:      10,
 			ConfigGroupID: prjcfgtest.MustExist(ctx, lProject).ConfigGroupIDs[0],
-		}), ShouldBeNil)
+		}), should.BeNil)
 
 		notifier := run.NewNotifier(ct.TQDispatcher)
 		pm := prjmanager.NewNotifier(ct.TQDispatcher)
@@ -424,13 +425,13 @@ func TestRunManager(t *testing.T) {
 		qm := quota.NewManager(ct.GFactory())
 		_ = New(notifier, pm, tjNotifier, clMutator, clUpdater, ct.GFactory(), ct.BuildbucketFake.NewClientFactory(), ct.TreeFake.Client(), ct.BQFake, cf, qm, ct.Env)
 
-		Convey("Recursive", func() {
-			So(notifier.PokeNow(ctx, runID), ShouldBeNil)
-			So(runtest.Runs(ct.TQ.Tasks()), ShouldResemble, common.RunIDs{runID})
+		t.Run("Recursive", func(t *ftt.Test) {
+			assert.Loosely(t, notifier.PokeNow(ctx, runID), should.BeNil)
+			assert.Loosely(t, runtest.Runs(ct.TQ.Tasks()), should.Resemble(common.RunIDs{runID}))
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunTaskClass))
 			for i := 0; i < 10; i++ {
 				now := clock.Now(ctx)
-				runtest.AssertInEventbox(ctx, runID, &eventpb.Event{
+				runtest.AssertInEventbox(t, ctx, runID, &eventpb.Event{
 					Event: &eventpb.Event_Poke{
 						Poke: &eventpb.Poke{},
 					},
@@ -439,44 +440,44 @@ func TestRunManager(t *testing.T) {
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunTaskClass))
 			}
 
-			Convey("Stops after Run is finalized", func() {
-				So(datastore.Put(ctx, &run.Run{
+			t.Run("Stops after Run is finalized", func(t *ftt.Test) {
+				assert.Loosely(t, datastore.Put(ctx, &run.Run{
 					ID:         runID,
 					Status:     run.Status_CANCELLED,
 					CreateTime: tCreate,
 					StartTime:  tCreate.Add(1 * time.Minute),
 					EndTime:    ct.Clock.Now().UTC(),
 					EVersion:   11,
-				}), ShouldBeNil)
+				}), should.BeNil)
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunTaskClass))
-				runtest.AssertEventboxEmpty(ctx, runID)
+				runtest.AssertEventboxEmpty(t, ctx, runID)
 			})
 		})
 
-		Convey("Existing event due during the interval", func() {
-			So(notifier.PokeNow(ctx, runID), ShouldBeNil)
-			So(notifier.PokeAfter(ctx, runID, 30*time.Second), ShouldBeNil)
+		t.Run("Existing event due during the interval", func(t *ftt.Test) {
+			assert.Loosely(t, notifier.PokeNow(ctx, runID), should.BeNil)
+			assert.Loosely(t, notifier.PokeAfter(ctx, runID, 30*time.Second), should.BeNil)
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunTaskClass))
 
-			runtest.AssertNotInEventbox(ctx, runID, &eventpb.Event{
+			runtest.AssertNotInEventbox(t, ctx, runID, &eventpb.Event{
 				Event: &eventpb.Event_Poke{
 					Poke: &eventpb.Poke{},
 				},
 				ProcessAfter: timestamppb.New(clock.Now(ctx).Add(pokeInterval)),
 			})
-			So(runtest.Tasks(ct.TQ.Tasks()), ShouldHaveLength, 1)
+			assert.Loosely(t, runtest.Tasks(ct.TQ.Tasks()), should.HaveLength(1))
 			task := runtest.Tasks(ct.TQ.Tasks())[0]
-			So(task.ETA, ShouldResemble, clock.Now(ctx).UTC().Add(30*time.Second))
-			So(task.Payload, ShouldResembleProto, &eventpb.ManageRunTask{RunId: string(runID)})
+			assert.Loosely(t, task.ETA, should.Resemble(clock.Now(ctx).UTC().Add(30*time.Second)))
+			assert.Loosely(t, task.Payload, should.Resemble(&eventpb.ManageRunTask{RunId: string(runID)}))
 		})
 
-		Convey("Run is missing", func() {
-			So(datastore.Delete(ctx, &run.Run{ID: runID}), ShouldBeNil)
-			So(notifier.PokeNow(ctx, runID), ShouldBeNil)
+		t.Run("Run is missing", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Delete(ctx, &run.Run{ID: runID}), should.BeNil)
+			assert.Loosely(t, notifier.PokeNow(ctx, runID), should.BeNil)
 			ctx = memlogger.Use(ctx)
 			log := logging.Get(ctx).(*memlogger.MemLogger)
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunTaskClass))
-			So(log, memlogger.ShouldHaveLog, logging.Error, fmt.Sprintf("run %s is missing from datastore but got manage-run task", runID))
+			assert.Loosely(t, log, convey.Adapt(memlogger.ShouldHaveLog)(logging.Error, fmt.Sprintf("run %s is missing from datastore but got manage-run task", runID)))
 		})
 	})
 }

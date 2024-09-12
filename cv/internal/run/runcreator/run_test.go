@@ -20,11 +20,16 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/auth/identity"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/registry"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
@@ -43,15 +48,16 @@ import (
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/runtest"
 	"go.chromium.org/luci/cv/internal/tryjob"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
+
+func init() {
+	registry.RegisterCmpOption(cmp.AllowUnexported(run.Run{}))
+}
 
 func TestComputeCLsDigest(t *testing.T) {
 	t.Parallel()
 
-	Convey("RunBuilder.computeCLsDigest works", t, func() {
+	ftt.Run("RunBuilder.computeCLsDigest works", t, func(t *ftt.Test) {
 		// This test mirrors the `test_attempt_key_hash` in CQDaemon's
 		// pending_manager/test/gerrit_test.py file.
 		snapshotOf := func(host string, num int64, rev string) *changelist.Snapshot {
@@ -84,20 +90,20 @@ func TestComputeCLsDigest(t *testing.T) {
 			},
 		}
 		rb.computeCLsDigest()
-		So(rb.runIDBuilder.version, ShouldEqual, 1)
-		So(hex.EncodeToString(rb.runIDBuilder.digest), ShouldEqual, "bc86ed248de55fb0")
+		assert.Loosely(t, rb.runIDBuilder.version, should.Equal(1))
+		assert.Loosely(t, hex.EncodeToString(rb.runIDBuilder.digest), should.Equal("bc86ed248de55fb0"))
 
 		// The CLsDigest must be agnostic of input CLs order.
 		rb2 := Creator{InputCLs: []CL{rb.InputCLs[1], rb.InputCLs[0]}}
 		rb2.computeCLsDigest()
-		So(hex.EncodeToString(rb2.runIDBuilder.digest), ShouldEqual, "bc86ed248de55fb0")
+		assert.Loosely(t, hex.EncodeToString(rb2.runIDBuilder.digest), should.Equal("bc86ed248de55fb0"))
 	})
 }
 
 func TestRunBuilder(t *testing.T) {
 	t.Parallel()
 
-	Convey("RunBuilder works", t, func() {
+	ftt.Run("RunBuilder works", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 		pmNotifier := prjmanager.NewNotifier(ct.TQDispatcher)
@@ -120,7 +126,7 @@ func TestRunBuilder(t *testing.T) {
 		}
 		makeSnapshot := func(ci *gerritpb.ChangeInfo) *changelist.Snapshot {
 			min, cur, err := gerrit.EquivalentPatchsetRange(ci)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			return &changelist.Snapshot{
 				Kind: &changelist.Snapshot_Gerrit{Gerrit: &changelist.Gerrit{
 					Host: gHost,
@@ -136,7 +142,7 @@ func TestRunBuilder(t *testing.T) {
 			eid := changelist.MustGobID(snapshot.GetGerrit().GetHost(), snapshot.GetGerrit().GetInfo().GetNumber())
 			cl := eid.MustCreateIfNotExists(ctx)
 			cl.Snapshot = snapshot
-			So(datastore.Put(ctx, cl), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, cl), should.BeNil)
 			return cl
 		}
 		cqVoteTriggerOf := func(cl *changelist.CL) *run.Trigger {
@@ -144,7 +150,7 @@ func TestRunBuilder(t *testing.T) {
 				ChangeInfo:  cl.Snapshot.GetGerrit().GetInfo(),
 				ConfigGroup: &cfgpb.ConfigGroup{},
 			}).GetCqVoteTrigger()
-			So(trigger, ShouldNotBeNil)
+			assert.Loosely(t, trigger, should.NotBeNil)
 			return trigger
 		}
 
@@ -153,10 +159,10 @@ func TestRunBuilder(t *testing.T) {
 		ct.Clock.Add(time.Minute)
 		cl2 := writeCL(makeSnapshot(makeCI(2)))
 		cl2.IncompleteRuns = common.MakeRunIDs("expected/000-run")
-		So(datastore.Put(ctx, cl2), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, cl2), should.BeNil)
 
 		owner, err := identity.MakeIdentity("user:owner@example.com")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		trIdentity := identity.Identity(fmt.Sprintf("%s:%s", identity.User, triggerer.Email))
 		cls := []CL{
 			{
@@ -192,119 +198,119 @@ func TestRunBuilder(t *testing.T) {
 			Status:     prjpb.Status_STARTED,
 			UpdateTime: ct.Clock.Now().UTC(),
 		}
-		So(datastore.Put(ctx, projectStateOffload), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, projectStateOffload), should.BeNil)
 
-		Convey("Checks preconditions", func() {
-			Convey("No ProjectStateOffload", func() {
-				So(datastore.Delete(ctx, projectStateOffload), ShouldBeNil)
+		t.Run("Checks preconditions", func(t *ftt.Test) {
+			t.Run("No ProjectStateOffload", func(t *ftt.Test) {
+				assert.Loosely(t, datastore.Delete(ctx, projectStateOffload), should.BeNil)
 				_, err := rb.Create(ctx, clMutator, pmNotifier, runNotifier)
-				So(err, ShouldErrLike, "failed to load ProjectStateOffload")
-				So(StateChangedTag.In(err), ShouldBeFalse)
-				So(transient.Tag.In(err), ShouldBeFalse)
+				assert.Loosely(t, err, should.ErrLike("failed to load ProjectStateOffload"))
+				assert.Loosely(t, StateChangedTag.In(err), should.BeFalse)
+				assert.Loosely(t, transient.Tag.In(err), should.BeFalse)
 			})
 
-			Convey("Mismatched project status", func() {
+			t.Run("Mismatched project status", func(t *ftt.Test) {
 				projectStateOffload.Status = prjpb.Status_STOPPING
-				So(datastore.Put(ctx, projectStateOffload), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, projectStateOffload), should.BeNil)
 				_, err := rb.Create(ctx, clMutator, pmNotifier, runNotifier)
-				So(err, ShouldErrLike, "status is STOPPING, expected STARTED")
-				So(StateChangedTag.In(err), ShouldBeTrue)
-				So(transient.Tag.In(err), ShouldBeFalse)
+				assert.Loosely(t, err, should.ErrLike("status is STOPPING, expected STARTED"))
+				assert.Loosely(t, StateChangedTag.In(err), should.BeTrue)
+				assert.Loosely(t, transient.Tag.In(err), should.BeFalse)
 			})
 
-			Convey("Mismatched project config", func() {
+			t.Run("Mismatched project config", func(t *ftt.Test) {
 				projectStateOffload.ConfigHash = "wrong-hash"
-				So(datastore.Put(ctx, projectStateOffload), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, projectStateOffload), should.BeNil)
 				_, err := rb.Create(ctx, clMutator, pmNotifier, runNotifier)
-				So(err, ShouldErrLike, "expected sha256:cafe")
-				So(StateChangedTag.In(err), ShouldBeTrue)
-				So(transient.Tag.In(err), ShouldBeFalse)
+				assert.Loosely(t, err, should.ErrLike("expected sha256:cafe"))
+				assert.Loosely(t, StateChangedTag.In(err), should.BeTrue)
+				assert.Loosely(t, transient.Tag.In(err), should.BeFalse)
 			})
 
-			Convey("Updated project config", func() {
+			t.Run("Updated project config", func(t *ftt.Test) {
 				projectStateOffload.ConfigHash = "stale-hash"
 				projectStateOffload.UpdateTime = ct.Clock.Now().UTC().Add(-1 * time.Hour)
-				So(datastore.Put(ctx, projectStateOffload), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, projectStateOffload), should.BeNil)
 				_, err := rb.Create(ctx, clMutator, pmNotifier, runNotifier)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 
-			Convey("CL not exists", func() {
-				So(datastore.Delete(ctx, cl2), ShouldBeNil)
+			t.Run("CL not exists", func(t *ftt.Test) {
+				assert.Loosely(t, datastore.Delete(ctx, cl2), should.BeNil)
 				_, err := rb.Create(ctx, clMutator, pmNotifier, runNotifier)
-				So(err, ShouldErrLike, fmt.Sprintf("CL %d doesn't exist", cl2.ID))
-				So(StateChangedTag.In(err), ShouldBeFalse)
-				So(transient.Tag.In(err), ShouldBeFalse)
+				assert.Loosely(t, err, should.ErrLike(fmt.Sprintf("CL %d doesn't exist", cl2.ID)))
+				assert.Loosely(t, StateChangedTag.In(err), should.BeFalse)
+				assert.Loosely(t, transient.Tag.In(err), should.BeFalse)
 			})
 
-			Convey("Mismatched CL version", func() {
+			t.Run("Mismatched CL version", func(t *ftt.Test) {
 				rb.InputCLs[0].ExpectedEVersion = 11
 				_, err := rb.Create(ctx, clMutator, pmNotifier, runNotifier)
-				So(err, ShouldErrLike, fmt.Sprintf("CL %d changed since EVersion 11", cl1.ID))
-				So(StateChangedTag.In(err), ShouldBeTrue)
-				So(transient.Tag.In(err), ShouldBeFalse)
+				assert.Loosely(t, err, should.ErrLike(fmt.Sprintf("CL %d changed since EVersion 11", cl1.ID)))
+				assert.Loosely(t, StateChangedTag.In(err), should.BeTrue)
+				assert.Loosely(t, transient.Tag.In(err), should.BeFalse)
 			})
 
-			Convey("Unexpected IncompleteRun in a CL", func() {
+			t.Run("Unexpected IncompleteRun in a CL", func(t *ftt.Test) {
 				cl2.IncompleteRuns = common.MakeRunIDs("unexpected/111-run")
-				So(datastore.Put(ctx, cl2), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, cl2), should.BeNil)
 				_, err := rb.Create(ctx, clMutator, pmNotifier, runNotifier)
-				So(err, ShouldErrLike, fmt.Sprintf(`CL %d has unexpected incomplete runs: [unexpected/111-run]`, cl2.ID))
-				So(StateChangedTag.In(err), ShouldBeTrue)
-				So(transient.Tag.In(err), ShouldBeFalse)
+				assert.Loosely(t, err, should.ErrLike(fmt.Sprintf(`CL %d has unexpected incomplete runs: [unexpected/111-run]`, cl2.ID)))
+				assert.Loosely(t, StateChangedTag.In(err), should.BeTrue)
+				assert.Loosely(t, transient.Tag.In(err), should.BeFalse)
 			})
 		})
 
 		const expectedRunID = "infra/9042331276854-1-13661a806e98be7e"
 
-		Convey("First test to fail: check ID assumption", func() {
+		t.Run("First test to fail: check ID assumption", func(t *ftt.Test) {
 			// If this test fails due to change of runID scheme, update the constant
 			// above.
 			rb.prepare(ct.Clock.Now())
-			So(rb.runID, ShouldEqual, common.RunID(expectedRunID))
+			assert.Loosely(t, rb.runID, should.Equal(common.RunID(expectedRunID)))
 		})
 
-		Convey("Run already created", func() {
-			Convey("by someone else", func() {
+		t.Run("Run already created", func(t *ftt.Test) {
+			t.Run("by someone else", func(t *ftt.Test) {
 				err := datastore.Put(ctx, &run.Run{
 					ID:                  expectedRunID,
 					CreationOperationID: "concurrent runner",
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				_, err = rb.Create(ctx, clMutator, pmNotifier, runNotifier)
-				So(err, ShouldErrLike, `already created with OperationID "concurrent runner"`)
-				So(StateChangedTag.In(err), ShouldBeFalse)
-				So(transient.Tag.In(err), ShouldBeFalse)
+				assert.Loosely(t, err, should.ErrLike(`already created with OperationID "concurrent runner"`))
+				assert.Loosely(t, StateChangedTag.In(err), should.BeFalse)
+				assert.Loosely(t, transient.Tag.In(err), should.BeFalse)
 			})
 
-			Convey("by us", func() {
+			t.Run("by us", func(t *ftt.Test) {
 				err := datastore.Put(ctx, &run.Run{
 					ID:                  expectedRunID,
 					CreationOperationID: rb.OperationID,
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				r, err := rb.Create(ctx, clMutator, pmNotifier, runNotifier)
-				So(err, ShouldBeNil)
-				So(r, ShouldNotBeNil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, r, should.NotBeNil)
 			})
 		})
 
-		Convey("ExpectedRunID works if CreateTime is given", func() {
+		t.Run("ExpectedRunID works if CreateTime is given", func(t *ftt.Test) {
 			rb.CreateTime = ct.Clock.Now()
 			// For realism and to prevent non-determinism in production,
 			// make CreateTime in the past.
 			ct.Clock.Add(time.Second)
-			So(rb.ExpectedRunID(), ShouldResemble, common.RunID(expectedRunID))
+			assert.Loosely(t, rb.ExpectedRunID(), should.Resemble(common.RunID(expectedRunID)))
 		})
 
-		Convey("ExpectedRunID panics if CreateTime is not given", func() {
+		t.Run("ExpectedRunID panics if CreateTime is not given", func(t *ftt.Test) {
 			rb.CreateTime = time.Time{}
-			So(func() { rb.ExpectedRunID() }, ShouldPanic)
+			assert.Loosely(t, func() { rb.ExpectedRunID() }, should.Panic)
 		})
 
-		Convey("New Run is created", func() {
+		t.Run("New Run is created", func(t *ftt.Test) {
 			r, err := rb.Create(ctx, clMutator, pmNotifier, runNotifier)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			expectedRun := &run.Run{
 				ID:         expectedRunID,
@@ -324,61 +330,61 @@ func TestRunBuilder(t *testing.T) {
 				Options:             &run.Options{},
 				DepRuns:             common.RunIDs{"dead-beef"},
 			}
-			So(r, runtest.ShouldResembleRun, expectedRun)
+			assert.Loosely(t, r, should.Match(expectedRun))
 
 			for i, cl := range rb.cls {
-				So(cl.EVersion, ShouldEqual, rb.InputCLs[i].ExpectedEVersion+1)
-				So(cl.UpdateTime, ShouldResemble, r.CreateTime)
+				assert.Loosely(t, cl.EVersion, should.Equal(rb.InputCLs[i].ExpectedEVersion+1))
+				assert.Loosely(t, cl.UpdateTime, should.Resemble(r.CreateTime))
 			}
 
 			// Run is properly saved
 			saved := &run.Run{ID: expectedRun.ID}
-			So(datastore.Get(ctx, saved), ShouldBeNil)
-			So(saved, runtest.ShouldResembleRun, expectedRun)
+			assert.Loosely(t, datastore.Get(ctx, saved), should.BeNil)
+			assert.Loosely(t, saved, should.Match(expectedRun))
 
 			for i := range rb.InputCLs {
 				i := i
-				Convey(fmt.Sprintf("RunCL %d-th is properly saved", i), func() {
+				t.Run(fmt.Sprintf("RunCL %d-th is properly saved", i), func(t *ftt.Test) {
 					saved := &run.RunCL{
 						ID:  rb.InputCLs[i].ID,
 						Run: datastore.MakeKey(ctx, common.RunKind, expectedRunID),
 					}
-					So(datastore.Get(ctx, saved), ShouldBeNil)
-					So(saved.ExternalID, ShouldEqual, rb.cls[i].ExternalID)
-					So(saved.Trigger, ShouldResembleProto, rb.InputCLs[i].TriggerInfo)
-					So(saved.Detail, ShouldResembleProto, rb.cls[i].Snapshot)
+					assert.Loosely(t, datastore.Get(ctx, saved), should.BeNil)
+					assert.Loosely(t, saved.ExternalID, should.Equal(rb.cls[i].ExternalID))
+					assert.Loosely(t, saved.Trigger, should.Resemble(rb.InputCLs[i].TriggerInfo))
+					assert.Loosely(t, saved.Detail, should.Resemble(rb.cls[i].Snapshot))
 				})
-				Convey(fmt.Sprintf("CL %d-th is properly updated", i), func() {
+				t.Run(fmt.Sprintf("CL %d-th is properly updated", i), func(t *ftt.Test) {
 					saved := &changelist.CL{ID: rb.InputCLs[i].ID}
-					So(datastore.Get(ctx, saved), ShouldBeNil)
-					So(saved.IncompleteRuns.ContainsSorted(expectedRunID), ShouldBeTrue)
-					So(saved.UpdateTime, ShouldResemble, expectedRun.UpdateTime)
-					So(saved.EVersion, ShouldEqual, rb.InputCLs[i].ExpectedEVersion+1)
+					assert.Loosely(t, datastore.Get(ctx, saved), should.BeNil)
+					assert.Loosely(t, saved.IncompleteRuns.ContainsSorted(expectedRunID), should.BeTrue)
+					assert.Loosely(t, saved.UpdateTime, should.Resemble(expectedRun.UpdateTime))
+					assert.Loosely(t, saved.EVersion, should.Equal(rb.InputCLs[i].ExpectedEVersion+1))
 				})
 			}
 
 			// RunLog must contain the first entry for Creation.
 			entries, err := run.LoadRunLogEntries(ctx, expectedRun.ID)
-			So(err, ShouldBeNil)
-			So(entries, ShouldHaveLength, 1)
-			So(entries[0].GetCreated().GetConfigGroupId(), ShouldResemble, string(expectedRun.ConfigGroupID))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, entries, should.HaveLength(1))
+			assert.Loosely(t, entries[0].GetCreated().GetConfigGroupId(), should.Resemble(string(expectedRun.ConfigGroupID)))
 
 			// Created metric is sent.
-			So(ct.TSMonSentValue(ctx, metrics.Public.RunCreated, lProject, "cq-group", string(run.DryRun)), ShouldEqual, 1)
+			assert.Loosely(t, ct.TSMonSentValue(ctx, metrics.Public.RunCreated, lProject, "cq-group", string(run.DryRun)), should.Equal(1))
 
 			// Both PM and RM must be notified about new Run.
-			pmtest.AssertInEventbox(ctx, lProject, &prjpb.Event{Event: &prjpb.Event_RunCreated{RunCreated: &prjpb.RunCreated{
+			pmtest.AssertInEventbox(t, ctx, lProject, &prjpb.Event{Event: &prjpb.Event_RunCreated{RunCreated: &prjpb.RunCreated{
 				RunId: string(r.ID),
 			}}})
-			runtest.AssertInEventbox(ctx, r.ID, &eventpb.Event{Event: &eventpb.Event_Start{Start: &eventpb.Start{}}})
+			runtest.AssertInEventbox(t, ctx, r.ID, &eventpb.Event{Event: &eventpb.Event_Start{Start: &eventpb.Start{}}})
 			// RM must have an immediate task to start working on a new Run.
-			So(runtest.Runs(ct.TQ.Tasks()), ShouldResemble, common.RunIDs{r.ID})
+			assert.Loosely(t, runtest.Runs(ct.TQ.Tasks()), should.Resemble(common.RunIDs{r.ID}))
 		})
 
-		Convey("Non standard run", func() {
+		t.Run("Non standard run", func(t *ftt.Test) {
 			rb.Mode = "CUSTOM_RUN"
-			Convey("Panic if mode definition is not provided", func() {
-				So(func() { rb.Create(ctx, clMutator, pmNotifier, runNotifier) }, ShouldPanic)
+			t.Run("Panic if mode definition is not provided", func(t *ftt.Test) {
+				assert.Loosely(t, func() { rb.Create(ctx, clMutator, pmNotifier, runNotifier) }, should.Panic)
 			})
 			rb.ModeDefinition = &cfgpb.Mode{
 				Name:            string(rb.Mode),
@@ -387,9 +393,9 @@ func TestRunBuilder(t *testing.T) {
 				TriggeringValue: 1,
 			}
 			r, err := rb.Create(ctx, clMutator, pmNotifier, runNotifier)
-			So(err, ShouldBeNil)
-			So(r.Mode, ShouldEqual, run.Mode("CUSTOM_RUN"))
-			So(r.ModeDefinition, ShouldResembleProto, rb.ModeDefinition)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, r.Mode, should.Equal(run.Mode("CUSTOM_RUN")))
+			assert.Loosely(t, r.ModeDefinition, should.Resemble(rb.ModeDefinition))
 		})
 	})
 }

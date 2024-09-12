@@ -18,15 +18,16 @@ import (
 	"fmt"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 type testCLInfo clInfo
@@ -142,7 +143,7 @@ func (ci *testCLInfo) Outdated() *testCLInfo {
 func TestStageTriggerCLDeps(t *testing.T) {
 	t.Parallel()
 
-	Convey("stargeTriggerCLDeps", t, func() {
+	ftt.Run("stargeTriggerCLDeps", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
@@ -177,46 +178,51 @@ func TestStageTriggerCLDeps(t *testing.T) {
 		}
 		pm := pmState{sup}
 
-		Convey("CLs without deps", func() {
+		t.Run("CLs without deps", func(t *ftt.Test) {
 			cl1 := newCL().CQ(0)
 			cl2 := newCL().CQ(+2)
 			triageDeps(cl1, cl2)
-			So(cl1.NeedToTrigger(), ShouldBeNil)
-			So(cl2.NeedToTrigger(), ShouldBeNil)
-			So(stageTriggerCLDeps(ctx, cls, pm), ShouldHaveLength, 0)
+			assert.Loosely(t, cl1.NeedToTrigger(), should.BeNil)
+			assert.Loosely(t, cl2.NeedToTrigger(), should.BeNil)
+			assert.Loosely(t, stageTriggerCLDeps(ctx, cls, pm), should.HaveLength(0))
 		})
 
-		Convey("CL with deps", func() {
+		t.Run("CL with deps", func(t *ftt.Test) {
 			cl1 := newCL()
 			cl2 := newCL().Deps(cl1)
 			cl3 := newCL().Deps(cl1, cl2)
 
-			Convey("no deps have CQ vote", func() {
+			t.Run("no deps have CQ vote", func(t *ftt.Test) {
 				cl3 = cl3.CQ(+2)
 				triageDeps(cl1, cl2, cl3)
-				So(cl3.NeedToTrigger(), ShouldEqual, []int64{cl1.Clid(), cl2.Clid()})
-				So(stageTriggerCLDeps(ctx, cls, pm), ShouldResembleProto, []*prjpb.TriggeringCLDeps{
+				assert.Loosely(t, cl3.NeedToTrigger(), should.Resemble([]int64{cl1.Clid(), cl2.Clid()}))
+				assert.Loosely(t, stageTriggerCLDeps(ctx, cls, pm), should.Resemble([]*prjpb.TriggeringCLDeps{
 					{
 						OriginClid:      cl3.Clid(),
 						DepClids:        []int64{cl1.Clid(), cl2.Clid()},
 						Trigger:         cq2,
 						ConfigGroupName: "cg1",
 					},
-				})
+				}))
 
-				Convey("unless outdated", func() {
-					Convey("the origin CL", func() {
+				t.Run("unless outdated", func(t *ftt.Test) {
+					check := func(t testing.TB) {
+						t.Helper()
+						triageDeps(cl1, cl2, cl3)
+						assert.Loosely(t, cl3.NeedToTrigger(), should.Resemble([]int64{cl1.Clid(), cl2.Clid()}), truth.LineContext())
+						assert.Loosely(t, stageTriggerCLDeps(ctx, cls, pm), should.BeNil, truth.LineContext())
+					}
+					t.Run("the origin CL", func(t *ftt.Test) {
 						cl3 = cl3.Outdated()
+						check(t)
 					})
-					Convey("a dep CL", func() {
+					t.Run("a dep CL", func(t *ftt.Test) {
 						cl2 = cl2.Outdated()
+						check(t)
 					})
-					triageDeps(cl1, cl2, cl3)
-					So(cl3.NeedToTrigger(), ShouldEqual, []int64{cl1.Clid(), cl2.Clid()})
-					So(stageTriggerCLDeps(ctx, cls, pm), ShouldBeNil)
 				})
 
-				Convey("retriaging it should be noop", func() {
+				t.Run("retriaging it should be noop", func(t *ftt.Test) {
 					// Now, cl3 has TriggeringCLDeps, created by the previous
 					// stageTriggerCLDeps(), and let's say that cl2 has voted.
 					cl2 = cl2.CQ(+2)
@@ -226,132 +232,132 @@ func TestStageTriggerCLDeps(t *testing.T) {
 					// Now, triageDeps declares that both cl2 and cl3 have
 					// unvoted deps, but none of them should schedule a new
 					// task.
-					So(cl2.NeedToTrigger(), ShouldEqual, []int64{cl1.Clid()})
-					So(cl3.NeedToTrigger(), ShouldEqual, []int64{cl1.Clid()})
-					So(stageTriggerCLDeps(ctx, cls, pm), ShouldBeNil)
+					assert.Loosely(t, cl2.NeedToTrigger(), should.Resemble([]int64{cl1.Clid()}))
+					assert.Loosely(t, cl3.NeedToTrigger(), should.Resemble([]int64{cl1.Clid()}))
+					assert.Loosely(t, stageTriggerCLDeps(ctx, cls, pm), should.BeNil)
 				})
 
-				Convey("unless a dep was not loaded yet", func() {
+				t.Run("unless a dep was not loaded yet", func(t *ftt.Test) {
 					delete(cls, cl1.pcl.GetClid())
 					triageDeps(cl1, cl2, cl3)
-					So(stageTriggerCLDeps(ctx, cls, pm), ShouldHaveLength, 0)
+					assert.Loosely(t, stageTriggerCLDeps(ctx, cls, pm), should.HaveLength(0))
 				})
 			})
-			Convey("all deps have CQ vote", func() {
+			t.Run("all deps have CQ vote", func(t *ftt.Test) {
 				cl1 = cl1.CQ(+2)
 				cl2 = cl2.CQ(+2)
 				cl3 = cl3.CQ(+2)
 				triageDeps(cl1, cl2, cl3)
-				So(cl3.NeedToTrigger(), ShouldBeNil)
-				So(stageTriggerCLDeps(ctx, cls, pm), ShouldHaveLength, 0)
+				assert.Loosely(t, cl3.NeedToTrigger(), should.BeNil)
+				assert.Loosely(t, stageTriggerCLDeps(ctx, cls, pm), should.HaveLength(0))
 			})
-			Convey("some deps have and some others don't have CQ votes", func() {
+			t.Run("some deps have and some others don't have CQ votes", func(t *ftt.Test) {
 				cl2 = cl2.CQ(+2)
 				cl3 = cl3.CQ(+2)
 				triageDeps(cl1, cl2, cl3)
 				// Both cl2.deps and cl3.deps have cl1 in needToTrigger, but
 				// TriggerCLDeps{} should be created for cl3 only.
-				So(cl2.NeedToTrigger(), ShouldEqual, []int64{cl1.Clid()})
-				So(cl3.NeedToTrigger(), ShouldEqual, []int64{cl1.Clid()})
-				So(stageTriggerCLDeps(ctx, cls, pm), ShouldResembleProto, []*prjpb.TriggeringCLDeps{
+				assert.Loosely(t, cl2.NeedToTrigger(), should.Resemble([]int64{cl1.Clid()}))
+				assert.Loosely(t, cl3.NeedToTrigger(), should.Resemble([]int64{cl1.Clid()}))
+				assert.Loosely(t, stageTriggerCLDeps(ctx, cls, pm), should.Resemble([]*prjpb.TriggeringCLDeps{
 					{
 						OriginClid:      cl3.Clid(),
 						DepClids:        []int64{cl1.Clid()},
 						Trigger:         cq2,
 						ConfigGroupName: "cg1",
 					},
-				})
+				}))
 			})
 		})
 
-		Convey("with inflight purges", func() {
+		t.Run("with inflight purges", func(t *ftt.Test) {
 			cl1 := newCL()
 			cl2 := newCL().Deps(cl1)
 			cl3 := newCL().Deps(cl1, cl2)
 
-			Convey("PurgingCL on the originating CL", func() {
+			t.Run("PurgingCL on the originating CL", func(t *ftt.Test) {
 				cl3 = cl3.CQ(+2).SetPurgingCL()
 				triageDeps(cl1, cl2, cl3)
-				So(cl2.NeedToTrigger(), ShouldBeNil)
-				So(cl3.NeedToTrigger(), ShouldEqual, []int64{cl1.Clid(), cl2.Clid()})
+				assert.Loosely(t, cl2.NeedToTrigger(), should.BeNil)
+				assert.Loosely(t, cl3.NeedToTrigger(), should.Resemble([]int64{cl1.Clid(), cl2.Clid()}))
 			})
-			Convey("PurgingCL on a parent CL", func() {
+			t.Run("PurgingCL on a parent CL", func(t *ftt.Test) {
 				cl2 = cl2.CQ(+2).SetPurgingCL()
 				cl3 = cl3.CQ(+2)
 				triageDeps(cl1, cl2, cl3)
-				So(cl2.NeedToTrigger(), ShouldEqual, []int64{cl1.Clid()})
-				So(cl3.NeedToTrigger(), ShouldEqual, []int64{cl1.Clid()})
+				assert.Loosely(t, cl2.NeedToTrigger(), should.Resemble([]int64{cl1.Clid()}))
+				assert.Loosely(t, cl3.NeedToTrigger(), should.Resemble([]int64{cl1.Clid()}))
 			})
-			Convey("purgeReasons on the originating CL", func() {
+			t.Run("purgeReasons on the originating CL", func(t *ftt.Test) {
 				cl3 = cl3.CQ(+2).SetPurgeReasons()
 				triageDeps(cl1, cl2, cl3)
-				So(cl2.NeedToTrigger(), ShouldBeNil)
-				So(cl3.NeedToTrigger(), ShouldEqual, []int64{cl1.Clid(), cl2.Clid()})
+				assert.Loosely(t, cl2.NeedToTrigger(), should.BeNil)
+				assert.Loosely(t, cl3.NeedToTrigger(), should.Resemble([]int64{cl1.Clid(), cl2.Clid()}))
 			})
-			Convey("purgeReasons on a parent CL", func() {
+			t.Run("purgeReasons on a parent CL", func(t *ftt.Test) {
 				cl2 = cl2.CQ(+2).SetPurgeReasons()
 				cl3 = cl3.CQ(+2)
 				triageDeps(cl1, cl2, cl3)
-				So(cl2.NeedToTrigger(), ShouldEqual, []int64{cl1.Clid()})
-				So(cl3.NeedToTrigger(), ShouldEqual, []int64{cl1.Clid()})
+				assert.Loosely(t, cl2.NeedToTrigger(), should.Resemble([]int64{cl1.Clid()}))
+				assert.Loosely(t, cl3.NeedToTrigger(), should.Resemble([]int64{cl1.Clid()}))
 			})
-			So(stageTriggerCLDeps(ctx, cls, pm), ShouldHaveLength, 0)
+			assert.Loosely(t, stageTriggerCLDeps(ctx, cls, pm), should.HaveLength(0))
 		})
 
-		Convey("with inflight TriggeringCLDeps", func() {
+		t.Run("with inflight TriggeringCLDeps", func(t *ftt.Test) {
 			cl1 := newCL()
 			cl2 := newCL().Deps(cl1)
 			cl3 := newCL().Deps(cl1, cl2)
 
-			Convey("TriggeringCLDeps on the originating CL", func() {
+			t.Run("TriggeringCLDeps on the originating CL", func(t *ftt.Test) {
 				cl3 = cl3.CQ(+2).SetTriggeringCLDeps()
 				triageDeps(cl1, cl2, cl3)
-				So(cl2.NeedToTrigger(), ShouldBeNil)
-				So(cl3.NeedToTrigger(), ShouldEqual, []int64{cl1.Clid(), cl2.Clid()})
+				assert.Loosely(t, cl2.NeedToTrigger(), should.BeNil)
+				assert.Loosely(t, cl3.NeedToTrigger(), should.Resemble([]int64{cl1.Clid(), cl2.Clid()}))
 			})
-			Convey("TriggeringCLDeps on a parent CL", func() {
+			t.Run("TriggeringCLDeps on a parent CL", func(t *ftt.Test) {
 				cl2 = cl2.CQ(+2).SetTriggeringCLDeps()
 				cl3 = cl3.CQ(+2)
 				triageDeps(cl1, cl2, cl3)
-				So(cl2.NeedToTrigger(), ShouldEqual, []int64{cl1.Clid()})
-				So(cl3.NeedToTrigger(), ShouldEqual, []int64{cl1.Clid()})
+				assert.Loosely(t, cl2.NeedToTrigger(), should.Resemble([]int64{cl1.Clid()}))
+				assert.Loosely(t, cl3.NeedToTrigger(), should.Resemble([]int64{cl1.Clid()}))
 			})
-			So(stageTriggerCLDeps(ctx, cls, pm), ShouldHaveLength, 0)
+			assert.Loosely(t, stageTriggerCLDeps(ctx, cls, pm), should.HaveLength(0))
 		})
 
-		Convey("with incomplete run", func() {
+		t.Run("with incomplete run", func(t *ftt.Test) {
 			cl1 := newCL()
 			cl2 := newCL().Deps(cl1)
 			cl3 := newCL().Deps(cl1, cl2)
 			cl4 := newCL().Deps(cl1, cl2, cl3)
 
-			Convey("incomplete run with the same CQ vote in all the CLs", func() {
+			t.Run("incomplete run with the same CQ vote in all the CLs", func(t *ftt.Test) {
 				cl1 = cl1.CQ(+2).SetIncompleteRun(run.FullRun)
 				cl2 = cl2.CQ(+2).SetIncompleteRun(run.FullRun)
 				cl3 = cl3.CQ(+2).SetIncompleteRun(run.FullRun)
 
 				triageDeps(cl1, cl2, cl3, cl4)
-				So(cl1.NeedToTrigger(), ShouldBeNil)
-				So(cl2.NeedToTrigger(), ShouldBeNil)
-				So(cl3.NeedToTrigger(), ShouldBeNil)
-				So(cl4.NeedToTrigger(), ShouldBeNil)
-				So(stageTriggerCLDeps(ctx, cls, pm), ShouldHaveLength, 0)
+				assert.Loosely(t, cl1.NeedToTrigger(), should.BeNil)
+				assert.Loosely(t, cl2.NeedToTrigger(), should.BeNil)
+				assert.Loosely(t, cl3.NeedToTrigger(), should.BeNil)
+				assert.Loosely(t, cl4.NeedToTrigger(), should.BeNil)
+				assert.Loosely(t, stageTriggerCLDeps(ctx, cls, pm), should.HaveLength(0))
 			})
 
-			Convey("incomplete run with different CQVotes in deps", func() {
+			t.Run("incomplete run with different CQVotes in deps", func(t *ftt.Test) {
 				cl1 = cl1.CQ(+0).SetIncompleteRun(run.NewPatchsetRun)
 				cl2 = cl2.CQ(+1).SetIncompleteRun(run.DryRun)
 				cl3 = cl3.CQ(+2).SetIncompleteRun(run.FullRun)
 
 				triageDeps(cl1, cl2, cl3, cl4)
-				So(cl1.NeedToTrigger(), ShouldBeNil)
-				So(cl2.NeedToTrigger(), ShouldBeNil)
-				So(cl3.NeedToTrigger(), ShouldEqual, []int64{cl1.pcl.GetClid(), cl2.pcl.GetClid()})
-				So(cl4.NeedToTrigger(), ShouldBeNil)
-				So(stageTriggerCLDeps(ctx, cls, pm), ShouldHaveLength, 0)
+				assert.Loosely(t, cl1.NeedToTrigger(), should.BeNil)
+				assert.Loosely(t, cl2.NeedToTrigger(), should.BeNil)
+				assert.Loosely(t, cl3.NeedToTrigger(), should.Resemble([]int64{cl1.pcl.GetClid(), cl2.pcl.GetClid()}))
+				assert.Loosely(t, cl4.NeedToTrigger(), should.BeNil)
+				assert.Loosely(t, stageTriggerCLDeps(ctx, cls, pm), should.HaveLength(0))
 			})
 
-			Convey("incomplete run on parent CLs", func() {
+			t.Run("incomplete run on parent CLs", func(t *ftt.Test) {
 				// This happen, where a child CL receives CQ+2, while its
 				// parents are running.
 				cl1 = cl1.CQ(+2).SetIncompleteRun(run.FullRun)
@@ -360,14 +366,14 @@ func TestStageTriggerCLDeps(t *testing.T) {
 				cl4 = cl3.CQ(0)
 
 				triageDeps(cl1, cl2, cl3, cl4)
-				So(cl1.NeedToTrigger(), ShouldBeNil)
-				So(cl2.NeedToTrigger(), ShouldBeNil)
-				So(cl3.NeedToTrigger(), ShouldBeNil)
-				So(cl4.NeedToTrigger(), ShouldBeNil)
-				So(stageTriggerCLDeps(ctx, cls, pm), ShouldHaveLength, 0)
+				assert.Loosely(t, cl1.NeedToTrigger(), should.BeNil)
+				assert.Loosely(t, cl2.NeedToTrigger(), should.BeNil)
+				assert.Loosely(t, cl3.NeedToTrigger(), should.BeNil)
+				assert.Loosely(t, cl4.NeedToTrigger(), should.BeNil)
+				assert.Loosely(t, stageTriggerCLDeps(ctx, cls, pm), should.HaveLength(0))
 			})
 
-			Convey("MCE over MCE", func() {
+			t.Run("MCE over MCE", func(t *ftt.Test) {
 				// Similar to "incomplete run on parent CLs", but with another
 				// CL between.
 				cl1 = cl1.CQ(+2).SetIncompleteRun(run.FullRun)
@@ -376,21 +382,21 @@ func TestStageTriggerCLDeps(t *testing.T) {
 				cl4 = cl4.CQ(+2)
 
 				triageDeps(cl1, cl2, cl3, cl4)
-				So(cl1.NeedToTrigger(), ShouldBeNil)
-				So(cl2.NeedToTrigger(), ShouldBeNil)
-				So(cl3.NeedToTrigger(), ShouldBeNil)
-				So(cl4.NeedToTrigger(), ShouldEqual, []int64{cl3.Clid()})
-				So(stageTriggerCLDeps(ctx, cls, pm), ShouldResembleProto, []*prjpb.TriggeringCLDeps{
+				assert.Loosely(t, cl1.NeedToTrigger(), should.BeNil)
+				assert.Loosely(t, cl2.NeedToTrigger(), should.BeNil)
+				assert.Loosely(t, cl3.NeedToTrigger(), should.BeNil)
+				assert.Loosely(t, cl4.NeedToTrigger(), should.Resemble([]int64{cl3.Clid()}))
+				assert.Loosely(t, stageTriggerCLDeps(ctx, cls, pm), should.Resemble([]*prjpb.TriggeringCLDeps{
 					{
 						OriginClid:      cl4.Clid(),
 						DepClids:        []int64{cl3.Clid()},
 						Trigger:         cq2,
 						ConfigGroupName: "cg1",
 					},
-				})
+				}))
 			})
 
-			Convey("MCE over MCE with a mix of incomplete and complete runs", func() {
+			t.Run("MCE over MCE with a mix of incomplete and complete runs", func(t *ftt.Test) {
 				// Similar to "incomplete run on parent CLs", but with another
 				// CL between.
 				cl1 = cl1.CQ(+2)
@@ -399,18 +405,18 @@ func TestStageTriggerCLDeps(t *testing.T) {
 				cl4 = cl4.CQ(+2)
 
 				triageDeps(cl1, cl2, cl3, cl4)
-				So(cl1.NeedToTrigger(), ShouldBeNil)
-				So(cl2.NeedToTrigger(), ShouldBeNil)
-				So(cl3.NeedToTrigger(), ShouldBeNil)
-				So(cl4.NeedToTrigger(), ShouldEqual, []int64{cl3.Clid()})
-				So(stageTriggerCLDeps(ctx, cls, pm), ShouldResembleProto, []*prjpb.TriggeringCLDeps{
+				assert.Loosely(t, cl1.NeedToTrigger(), should.BeNil)
+				assert.Loosely(t, cl2.NeedToTrigger(), should.BeNil)
+				assert.Loosely(t, cl3.NeedToTrigger(), should.BeNil)
+				assert.Loosely(t, cl4.NeedToTrigger(), should.Resemble([]int64{cl3.Clid()}))
+				assert.Loosely(t, stageTriggerCLDeps(ctx, cls, pm), should.Resemble([]*prjpb.TriggeringCLDeps{
 					{
 						OriginClid:      cl4.Clid(),
 						DepClids:        []int64{cl3.Clid()},
 						Trigger:         cq2,
 						ConfigGroupName: "cg1",
 					},
-				})
+				}))
 			})
 		})
 	})

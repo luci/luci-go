@@ -28,6 +28,10 @@ import (
 
 	"go.chromium.org/luci/common/clock/testclock"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
@@ -47,9 +51,6 @@ import (
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/tryjob"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 type ctest struct {
@@ -74,16 +75,16 @@ func (ct ctest) runCLUpdater(ctx context.Context, change int64) *changelist.CL {
 }
 
 func (ct ctest) runCLUpdaterAs(ctx context.Context, change int64, lProject string) *changelist.CL {
-	So(ct.clUpdater.TestingForceUpdate(ctx, &changelist.UpdateCLTask{
+	assert.Loosely(ct.TB, ct.clUpdater.TestingForceUpdate(ctx, &changelist.UpdateCLTask{
 		LuciProject: lProject,
 		ExternalId:  string(changelist.MustGobID(ct.gHost, change)),
 		Requester:   changelist.UpdateCLTask_RUN_POKE,
-	}), ShouldBeNil)
+	}), should.BeNil)
 	eid, err := changelist.GobID(ct.gHost, change)
-	So(err, ShouldBeNil)
+	assert.Loosely(ct.TB, err, should.BeNil)
 	cl, err := eid.Load(ctx)
-	So(err, ShouldBeNil)
-	So(cl, ShouldNotBeNil)
+	assert.Loosely(ct.TB, err, should.BeNil)
+	assert.Loosely(ct.TB, cl, should.NotBeNil)
 	return cl
 }
 
@@ -95,7 +96,7 @@ func (ct ctest) submitCL(ctx context.Context, change int64) *changelist.CL {
 	cl := ct.runCLUpdater(ctx, change)
 
 	// If this fails, you forgot to change fake time.
-	So(cl.Snapshot.GetGerrit().GetInfo().GetStatus(), ShouldEqual, gerritpb.ChangeStatus_MERGED)
+	assert.Loosely(ct.TB, cl.Snapshot.GetGerrit().GetInfo().GetStatus(), should.Equal(gerritpb.ChangeStatus_MERGED))
 	return cl
 }
 
@@ -124,18 +125,20 @@ const cfgText1 = `
 `
 
 func updateConfigToNoFallabck(ctx context.Context, ct *ctest) prjcfg.Meta {
+	ct.TB.Helper()
 	cfgText2 := strings.ReplaceAll(cfgText1, "fallback: YES", "fallback: NO")
 	cfg2 := &cfgpb.Config{}
-	So(prototext.Unmarshal([]byte(cfgText2), cfg2), ShouldBeNil)
+	assert.Loosely(ct.TB, prototext.Unmarshal([]byte(cfgText2), cfg2), should.BeNil, truth.LineContext())
 	prjcfgtest.Update(ctx, ct.lProject, cfg2)
 	gobmaptest.Update(ctx, ct.lProject)
 	return prjcfgtest.MustExist(ctx, ct.lProject)
 }
 
 func updateConfigRenameG1toG11(ctx context.Context, ct *ctest) prjcfg.Meta {
+	ct.TB.Helper()
 	cfgText2 := strings.ReplaceAll(cfgText1, `"g1"`, `"g11"`)
 	cfg2 := &cfgpb.Config{}
-	So(prototext.Unmarshal([]byte(cfgText2), cfg2), ShouldBeNil)
+	assert.Loosely(ct.TB, prototext.Unmarshal([]byte(cfgText2), cfg2), should.BeNil, truth.LineContext())
 	prjcfgtest.Update(ctx, ct.lProject, cfg2)
 	gobmaptest.Update(ctx, ct.lProject)
 	return prjcfgtest.MustExist(ctx, ct.lProject)
@@ -144,7 +147,7 @@ func updateConfigRenameG1toG11(ctx context.Context, ct *ctest) prjcfg.Meta {
 func TestUpdateConfig(t *testing.T) {
 	t.Parallel()
 
-	Convey("updateConfig works", t, func() {
+	ftt.Run("updateConfig works", t, func(t *ftt.Test) {
 		ct := ctest{
 			lProject: "test",
 			gHost:    "c-review.example.com",
@@ -153,7 +156,7 @@ func TestUpdateConfig(t *testing.T) {
 		ctx := ct.SetUp(t)
 
 		cfg1 := &cfgpb.Config{}
-		So(prototext.Unmarshal([]byte(cfgText1), cfg1), ShouldBeNil)
+		assert.Loosely(t, prototext.Unmarshal([]byte(cfgText1), cfg1), should.BeNil)
 
 		prjcfgtest.Create(ctx, ct.lProject, cfg1)
 		meta := prjcfgtest.MustExist(ctx, ct.lProject)
@@ -162,20 +165,20 @@ func TestUpdateConfig(t *testing.T) {
 		clPoller := poller.New(ct.TQDispatcher, nil, nil, nil)
 		h := Handler{CLPoller: clPoller}
 
-		Convey("initializes newly started project", func() {
+		t.Run("initializes newly started project", func(t *ftt.Test) {
 			// Newly started project doesn't have any CLs, yet, regardless of what CL
 			// snapshots are stored in Datastore.
 			s0 := &State{PB: &prjpb.PState{LuciProject: ct.lProject}}
 			pb0 := backupPB(s0)
 			s1, sideEffect, err := h.UpdateConfig(ctx, s0)
-			So(err, ShouldBeNil)
-			So(s0.PB, ShouldResembleProto, pb0) // s0 must not change.
-			So(sideEffect, ShouldResemble, &UpdateIncompleteRunsConfig{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, s0.PB, should.Resemble(pb0)) // s0 must not change.
+			assert.Loosely(t, sideEffect, should.Resemble(&UpdateIncompleteRunsConfig{
 				Hash:     meta.Hash(),
 				EVersion: meta.EVersion,
 				RunIDs:   nil,
-			})
-			So(s1.PB, ShouldResembleProto, &prjpb.PState{
+			}))
+			assert.Loosely(t, s1.PB, should.Resemble(&prjpb.PState{
 				LuciProject:         ct.lProject,
 				Status:              prjpb.Status_STARTED,
 				ConfigHash:          meta.Hash(),
@@ -183,8 +186,8 @@ func TestUpdateConfig(t *testing.T) {
 				Components:          nil,
 				Pcls:                nil,
 				RepartitionRequired: false,
-			})
-			So(s1.LogReasons, ShouldResemble, []prjpb.LogReason{prjpb.LogReason_CONFIG_CHANGED, prjpb.LogReason_STATUS_CHANGED})
+			}))
+			assert.Loosely(t, s1.LogReasons, should.Resemble([]prjpb.LogReason{prjpb.LogReason_CONFIG_CHANGED, prjpb.LogReason_STATUS_CHANGED}))
 		})
 
 		// Add 3 CLs: 101 standalone and 202<-203 as a stack.
@@ -272,25 +275,25 @@ func TestUpdateConfig(t *testing.T) {
 		}
 		pb1 := backupPB(s1)
 
-		Convey("noop update is quick", func() {
+		t.Run("noop update is quick", func(t *ftt.Test) {
 			s2, sideEffect, err := h.UpdateConfig(ctx, s1)
-			So(err, ShouldBeNil)
-			So(s2, ShouldEqual, s1) // pointer comparison only.
-			So(sideEffect, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, s2, should.Equal(s1)) // pointer comparison only.
+			assert.Loosely(t, sideEffect, should.BeNil)
 		})
 
-		Convey("existing project", func() {
-			Convey("updated without touching components", func() {
+		t.Run("existing project", func(t *ftt.Test) {
+			t.Run("updated without touching components", func(t *ftt.Test) {
 				meta2 := updateConfigToNoFallabck(ctx, &ct)
 				s2, sideEffect, err := h.UpdateConfig(ctx, s1)
-				So(err, ShouldBeNil)
-				So(s1.PB, ShouldResembleProto, pb1) // s1 must not change.
-				So(sideEffect, ShouldResemble, &UpdateIncompleteRunsConfig{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, s1.PB, should.Resemble(pb1)) // s1 must not change.
+				assert.Loosely(t, sideEffect, should.Resemble(&UpdateIncompleteRunsConfig{
 					Hash:     meta2.Hash(),
 					EVersion: meta2.EVersion,
 					RunIDs:   common.MakeRunIDs(ct.lProject + "/" + "1111-v1-beef"),
-				})
-				So(s2.PB, ShouldResembleProto, &prjpb.PState{
+				}))
+				assert.Loosely(t, s2.PB, should.Resemble(&prjpb.PState{
 					LuciProject:      ct.lProject,
 					Status:           prjpb.Status_STARTED,
 					ConfigHash:       meta2.Hash(), // changed
@@ -313,21 +316,21 @@ func TestUpdateConfig(t *testing.T) {
 					},
 					Components:          markForTriage(pb1.Components),
 					RepartitionRequired: true,
-				})
-				So(s2.LogReasons, ShouldResemble, []prjpb.LogReason{prjpb.LogReason_CONFIG_CHANGED})
+				}))
+				assert.Loosely(t, s2.LogReasons, should.Resemble([]prjpb.LogReason{prjpb.LogReason_CONFIG_CHANGED}))
 			})
 
-			Convey("If PCLs stay same, RepartitionRequired must be false", func() {
+			t.Run("If PCLs stay same, RepartitionRequired must be false", func(t *ftt.Test) {
 				meta2 := updateConfigRenameG1toG11(ctx, &ct)
 				s2, sideEffect, err := h.UpdateConfig(ctx, s1)
-				So(err, ShouldBeNil)
-				So(s1.PB, ShouldResembleProto, pb1) // s1 must not change.
-				So(sideEffect, ShouldResemble, &UpdateIncompleteRunsConfig{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, s1.PB, should.Resemble(pb1)) // s1 must not change.
+				assert.Loosely(t, sideEffect, should.Resemble(&UpdateIncompleteRunsConfig{
 					Hash:     meta2.Hash(),
 					EVersion: meta2.EVersion,
 					RunIDs:   common.MakeRunIDs(ct.lProject + "/" + "1111-v1-beef"),
-				})
-				So(s2.PB, ShouldResembleProto, &prjpb.PState{
+				}))
+				assert.Loosely(t, s2.PB, should.Resemble(&prjpb.PState{
 					LuciProject:         ct.lProject,
 					Status:              prjpb.Status_STARTED,
 					ConfigHash:          meta2.Hash(),
@@ -335,11 +338,11 @@ func TestUpdateConfig(t *testing.T) {
 					Pcls:                pb1.GetPcls(),
 					Components:          markForTriage(pb1.Components),
 					RepartitionRequired: false,
-				})
+				}))
 			})
 		})
 
-		Convey("disabled project updated with long ago deleted CL", func() {
+		t.Run("disabled project updated with long ago deleted CL", func(t *ftt.Test) {
 			s1.PB.Status = prjpb.Status_STOPPED
 			for _, c := range s1.PB.GetComponents() {
 				c.Pruns = nil // disabled projects don't have incomplete runs.
@@ -349,14 +352,14 @@ func TestUpdateConfig(t *testing.T) {
 
 			meta2 := updateConfigToNoFallabck(ctx, &ct)
 			s2, sideEffect, err := h.UpdateConfig(ctx, s1)
-			So(err, ShouldBeNil)
-			So(s1.PB, ShouldResembleProto, pb1) // s1 must not change.
-			So(sideEffect, ShouldResemble, &UpdateIncompleteRunsConfig{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, s1.PB, should.Resemble(pb1)) // s1 must not change.
+			assert.Loosely(t, sideEffect, should.Resemble(&UpdateIncompleteRunsConfig{
 				Hash:     meta2.Hash(),
 				EVersion: meta2.EVersion,
 				// No runs to notify.
-			})
-			So(s2.PB, ShouldResembleProto, &prjpb.PState{
+			}))
+			assert.Loosely(t, s2.PB, should.Resemble(&prjpb.PState{
 				LuciProject:      ct.lProject,
 				Status:           prjpb.Status_STARTED,
 				ConfigHash:       meta2.Hash(), // changed
@@ -372,47 +375,47 @@ func TestUpdateConfig(t *testing.T) {
 				},
 				Components:          markForTriage(pb1.Components),
 				RepartitionRequired: true,
-			})
-			So(s2.LogReasons, ShouldResemble, []prjpb.LogReason{prjpb.LogReason_CONFIG_CHANGED, prjpb.LogReason_STATUS_CHANGED})
+			}))
+			assert.Loosely(t, s2.LogReasons, should.Resemble([]prjpb.LogReason{prjpb.LogReason_CONFIG_CHANGED, prjpb.LogReason_STATUS_CHANGED}))
 		})
 
-		Convey("disabled project waits for incomplete Runs", func() {
+		t.Run("disabled project waits for incomplete Runs", func(t *ftt.Test) {
 			prjcfgtest.Disable(ctx, ct.lProject)
 			s2, sideEffect, err := h.UpdateConfig(ctx, s1)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			pb := backupPB(s1)
 			pb.Status = prjpb.Status_STOPPING
-			So(s2.PB, ShouldResembleProto, pb)
-			So(sideEffect, ShouldResemble, &CancelIncompleteRuns{
+			assert.Loosely(t, s2.PB, should.Resemble(pb))
+			assert.Loosely(t, sideEffect, should.Resemble(&CancelIncompleteRuns{
 				RunIDs: common.MakeRunIDs(ct.lProject + "/" + "1111-v1-beef"),
-			})
-			So(s2.LogReasons, ShouldResemble, []prjpb.LogReason{prjpb.LogReason_STATUS_CHANGED})
+			}))
+			assert.Loosely(t, s2.LogReasons, should.Resemble([]prjpb.LogReason{prjpb.LogReason_STATUS_CHANGED}))
 		})
 
-		Convey("disabled project stops iff there are no incomplete Runs", func() {
+		t.Run("disabled project stops iff there are no incomplete Runs", func(t *ftt.Test) {
 			for _, c := range s1.PB.GetComponents() {
 				c.Pruns = nil
 			}
 			prjcfgtest.Disable(ctx, ct.lProject)
 			s2, sideEffect, err := h.UpdateConfig(ctx, s1)
-			So(err, ShouldBeNil)
-			So(sideEffect, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, sideEffect, should.BeNil)
 			pb := backupPB(s1)
 			pb.Status = prjpb.Status_STOPPED
-			So(s2.PB, ShouldResembleProto, pb)
-			So(prjpb.SortAndDedupeLogReasons(s2.LogReasons), ShouldResemble, []prjpb.LogReason{prjpb.LogReason_STATUS_CHANGED})
+			assert.Loosely(t, s2.PB, should.Resemble(pb))
+			assert.Loosely(t, prjpb.SortAndDedupeLogReasons(s2.LogReasons), should.Resemble([]prjpb.LogReason{prjpb.LogReason_STATUS_CHANGED}))
 		})
 
 		// The rest of the test coverage of UpdateConfig is achieved by testing code
 		// of makePCL.
 
-		Convey("makePCL with full snapshot works", func() {
+		t.Run("makePCL with full snapshot works", func(t *ftt.Test) {
 			var err error
 			s1.configGroups, err = meta.GetConfigGroups(ctx)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			s1.cfgMatcher = cfgmatcher.LoadMatcherFromConfigGroups(ctx, s1.configGroups, &meta)
 
-			Convey("Status == OK", func() {
+			t.Run("Status == OK", func(t *ftt.Test) {
 				expected := &prjpb.PCL{
 					Clid:               int64(cl101.ID),
 					Eversion:           cl101.EVersion,
@@ -424,72 +427,72 @@ func TestUpdateConfig(t *testing.T) {
 						GerritAccountId: gf.U("user-1").GetAccountId(),
 					}},
 				}
-				Convey("CL snapshotted with current config", func() {
-					So(s1.makePCL(ctx, cl101), ShouldResembleProto, expected)
+				t.Run("CL snapshotted with current config", func(t *ftt.Test) {
+					assert.Loosely(t, s1.makePCL(ctx, cl101), should.Resemble(expected))
 				})
-				Convey("CL snapshotted with an older config", func() {
+				t.Run("CL snapshotted with an older config", func(t *ftt.Test) {
 					cl101.ApplicableConfig.GetProjects()[0].ConfigGroupIds = []string{"oldhash/g0"}
-					So(s1.makePCL(ctx, cl101), ShouldResembleProto, expected)
+					assert.Loosely(t, s1.makePCL(ctx, cl101), should.Resemble(expected))
 				})
-				Convey("not triggered CL", func() {
+				t.Run("not triggered CL", func(t *ftt.Test) {
 					delete(cl101.Snapshot.GetGerrit().GetInfo().GetLabels(), trigger.CQLabelName)
 					expected.Triggers = nil
-					So(s1.makePCL(ctx, cl101), ShouldResembleProto, expected)
+					assert.Loosely(t, s1.makePCL(ctx, cl101), should.Resemble(expected))
 				})
-				Convey("abandoned CL is not triggered even if it has CQ vote", func() {
+				t.Run("abandoned CL is not triggered even if it has CQ vote", func(t *ftt.Test) {
 					cl101.Snapshot.GetGerrit().GetInfo().Status = gerritpb.ChangeStatus_ABANDONED
 					expected.Triggers = nil
-					So(s1.makePCL(ctx, cl101), ShouldResembleProto, expected)
+					assert.Loosely(t, s1.makePCL(ctx, cl101), should.Resemble(expected))
 				})
-				Convey("Submitted CL is also not triggered even if it has CQ vote", func() {
+				t.Run("Submitted CL is also not triggered even if it has CQ vote", func(t *ftt.Test) {
 					cl101.Snapshot.GetGerrit().GetInfo().Status = gerritpb.ChangeStatus_MERGED
 					expected.Triggers = nil
 					expected.Submitted = true
-					So(s1.makePCL(ctx, cl101), ShouldResembleProto, expected)
+					assert.Loosely(t, s1.makePCL(ctx, cl101), should.Resemble(expected))
 				})
-				Convey("Submittable if the snapshot is", func() {
+				t.Run("Submittable if the snapshot is", func(t *ftt.Test) {
 					cl101.Snapshot.GetGerrit().GetInfo().Submittable = true
 					expected.Submittable = true
-					So(s1.makePCL(ctx, cl101), ShouldResembleProto, expected)
+					assert.Loosely(t, s1.makePCL(ctx, cl101), should.Resemble(expected))
 				})
 			})
 
-			Convey("outdated snapshot requires waiting", func() {
+			t.Run("outdated snapshot requires waiting", func(t *ftt.Test) {
 				cl101.Snapshot.Outdated = &changelist.Snapshot_Outdated{}
-				So(s1.makePCL(ctx, cl101), ShouldResembleProto, &prjpb.PCL{
+				assert.Loosely(t, s1.makePCL(ctx, cl101), should.Resemble(&prjpb.PCL{
 					Clid:     int64(cl101.ID),
 					Eversion: cl101.EVersion,
 					Status:   prjpb.PCL_UNKNOWN,
 					Outdated: &changelist.Snapshot_Outdated{},
-				})
+				}))
 			})
 
-			Convey("snapshot from diff project requires waiting", func() {
+			t.Run("snapshot from diff project requires waiting", func(t *ftt.Test) {
 				cl101.Snapshot.LuciProject = "another"
-				So(s1.makePCL(ctx, cl101), ShouldResembleProto, &prjpb.PCL{
+				assert.Loosely(t, s1.makePCL(ctx, cl101), should.Resemble(&prjpb.PCL{
 					Clid:     int64(cl101.ID),
 					Eversion: cl101.EVersion,
 					Status:   prjpb.PCL_UNKNOWN,
-				})
+				}))
 			})
 
-			Convey("CL from diff project is unwatched", func() {
+			t.Run("CL from diff project is unwatched", func(t *ftt.Test) {
 				s1.PB.LuciProject = "another"
-				So(s1.makePCL(ctx, cl101), ShouldResembleProto, &prjpb.PCL{
+				assert.Loosely(t, s1.makePCL(ctx, cl101), should.Resemble(&prjpb.PCL{
 					Clid:     int64(cl101.ID),
 					Eversion: cl101.EVersion,
 					Status:   prjpb.PCL_UNWATCHED,
-				})
+				}))
 			})
 
-			Convey("CL watched by several projects is unwatched but with an error", func() {
+			t.Run("CL watched by several projects is unwatched but with an error", func(t *ftt.Test) {
 				cl101.ApplicableConfig.Projects = append(
 					cl101.ApplicableConfig.GetProjects(),
 					&changelist.ApplicableConfig_Project{
 						ConfigGroupIds: []string{"g"},
 						Name:           "another",
 					})
-				So(s1.makePCL(ctx, cl101), ShouldResembleProto, &prjpb.PCL{
+				assert.Loosely(t, s1.makePCL(ctx, cl101), should.Resemble(&prjpb.PCL{
 					Clid:               int64(cl101.ID),
 					Eversion:           cl101.EVersion,
 					Status:             prjpb.PCL_OK,
@@ -515,12 +518,12 @@ func TestUpdateConfig(t *testing.T) {
 							Projects: []string{s1.PB.GetLuciProject(), "another"},
 						},
 					}}},
-				})
+				}))
 			})
 
-			Convey("CL with Commit: false footer has an error", func() {
+			t.Run("CL with Commit: false footer has an error", func(t *ftt.Test) {
 				cl101.Snapshot.Metadata = []*changelist.StringPair{{Key: "Commit", Value: "false"}}
-				So(s1.makePCL(ctx, cl101).GetPurgeReasons(), ShouldResembleProto, []*prjpb.PurgeReason{
+				assert.Loosely(t, s1.makePCL(ctx, cl101).GetPurgeReasons(), should.Resemble([]*prjpb.PurgeReason{
 					{
 						ClError: &changelist.CLError{
 							Kind: &changelist.CLError_CommitBlocked{CommitBlocked: true},
@@ -534,12 +537,12 @@ func TestUpdateConfig(t *testing.T) {
 							},
 						}},
 					},
-				})
+				}))
 			})
 
-			Convey("'Commit: false' footer works with different capitalization", func() {
+			t.Run("'Commit: false' footer works with different capitalization", func(t *ftt.Test) {
 				cl101.Snapshot.Metadata = []*changelist.StringPair{{Key: "COMMIT", Value: "FALSE"}}
-				So(s1.makePCL(ctx, cl101).GetPurgeReasons(), ShouldResembleProto, []*prjpb.PurgeReason{{
+				assert.Loosely(t, s1.makePCL(ctx, cl101).GetPurgeReasons(), should.Resemble([]*prjpb.PurgeReason{{
 					ClError: &changelist.CLError{
 						Kind: &changelist.CLError_CommitBlocked{CommitBlocked: true},
 					},
@@ -551,13 +554,13 @@ func TestUpdateConfig(t *testing.T) {
 							GerritAccountId: gf.U("user-1").GetAccountId(),
 						},
 					}},
-				}})
+				}}))
 			})
 
-			Convey("'Commit: false' has no effect for dry run CL", func() {
+			t.Run("'Commit: false' has no effect for dry run CL", func(t *ftt.Test) {
 				// cl202 is set up for dry run, unlike cl101.
 				cl202.Snapshot.Metadata = []*changelist.StringPair{{Key: "Commit", Value: "false"}}
-				So(s1.makePCL(ctx, cl202).GetPurgeReasons(), ShouldBeEmpty)
+				assert.Loosely(t, s1.makePCL(ctx, cl202).GetPurgeReasons(), should.BeEmpty)
 			})
 		})
 	})
@@ -566,7 +569,7 @@ func TestUpdateConfig(t *testing.T) {
 func TestOnCLsUpdated(t *testing.T) {
 	t.Parallel()
 
-	Convey("OnCLsUpdated works", t, func() {
+	ftt.Run("OnCLsUpdated works", t, func(t *ftt.Test) {
 		ct := ctest{
 			lProject: "test",
 			gHost:    "c-review.example.com",
@@ -574,7 +577,7 @@ func TestOnCLsUpdated(t *testing.T) {
 		ctx := ct.SetUp(t)
 
 		cfg1 := &cfgpb.Config{}
-		So(prototext.Unmarshal([]byte(cfgText1), cfg1), ShouldBeNil)
+		assert.Loosely(t, prototext.Unmarshal([]byte(cfgText1), cfg1), should.BeNil)
 
 		prjcfgtest.Create(ctx, ct.lProject, cfg1)
 		meta := prjcfgtest.MustExist(ctx, ct.lProject)
@@ -613,14 +616,14 @@ func TestOnCLsUpdated(t *testing.T) {
 
 		// NOTE: conversion of individual CL to PCL is in TestUpdateConfig.
 
-		Convey("One simple CL", func() {
+		t.Run("One simple CL", func(t *ftt.Test) {
 			s1, sideEffect, err := h.OnCLsUpdated(ctx, s0, map[int64]int64{
 				int64(cl101.ID): cl101.EVersion,
 			})
-			So(err, ShouldBeNil)
-			So(s0.PB, ShouldResembleProto, pb0)
-			So(sideEffect, ShouldBeNil)
-			So(s1.PB.Pcls, ShouldResembleProto, []*prjpb.PCL{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, s0.PB, should.Resemble(pb0))
+			assert.Loosely(t, sideEffect, should.BeNil)
+			assert.Loosely(t, s1.PB.Pcls, should.Resemble([]*prjpb.PCL{
 				{
 					Clid:               int64(cl101.ID),
 					Eversion:           1,
@@ -633,21 +636,21 @@ func TestOnCLsUpdated(t *testing.T) {
 						GerritAccountId: gf.U("user-1").GetAccountId(),
 					}},
 				},
-			})
-			So(s1.PB.RepartitionRequired, ShouldBeTrue)
+			}))
+			assert.Loosely(t, s1.PB.RepartitionRequired, should.BeTrue)
 
-			Convey("Noop based on EVersion", func() {
+			t.Run("Noop based on EVersion", func(t *ftt.Test) {
 				s2, sideEffect, err := h.OnCLsUpdated(ctx, s1, map[int64]int64{
 					int64(cl101.ID): 1, // already known
 				})
-				So(err, ShouldBeNil)
-				So(sideEffect, ShouldBeNil)
-				So(s1.PB.GetPcls(), ShouldEqual, s2.PB.GetPcls()) // pointer comparison only.
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, sideEffect, should.BeNil)
+				assert.Loosely(t, s1.PB.GetPcls(), should.Match(s2.PB.GetPcls())) // pointer comparison only.
 			})
 
-			Convey("Marks affected components for triage", func() {
+			t.Run("Marks affected components for triage", func(t *ftt.Test) {
 				cl101.EVersion++
-				So(datastore.Put(ctx, cl101), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, cl101), should.BeNil)
 				// Add 2 components, one of which references cl101.
 				s1.PB.Components = []*prjpb.Component{
 					{Clids: []int64{int64(cl101.ID)}},
@@ -657,24 +660,24 @@ func TestOnCLsUpdated(t *testing.T) {
 				s2, sideEffect, err := h.OnCLsUpdated(ctx, s1, map[int64]int64{
 					int64(cl101.ID): cl101.EVersion,
 				})
-				So(s1.PB, ShouldResembleProto, pb)
-				So(err, ShouldBeNil)
-				So(sideEffect, ShouldBeNil)
+				assert.Loosely(t, s1.PB, should.Resemble(pb))
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, sideEffect, should.BeNil)
 				// The only expected changes are:
 				pb.Components[0].TriageRequired = true
 				pb.Pcls[0].Eversion = cl101.EVersion
-				So(s2.PB, ShouldResembleProto, pb)
+				assert.Loosely(t, s2.PB, should.Resemble(pb))
 			})
 		})
 
-		Convey("One CL with a yet unknown dep", func() {
+		t.Run("One CL with a yet unknown dep", func(t *ftt.Test) {
 			s1, sideEffect, err := h.OnCLsUpdated(ctx, s0, map[int64]int64{
 				int64(cl203.ID): 1,
 			})
-			So(err, ShouldBeNil)
-			So(s0.PB, ShouldResembleProto, pb0)
-			So(sideEffect, ShouldBeNil)
-			So(s1.PB, ShouldResembleProto, &prjpb.PState{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, s0.PB, should.Resemble(pb0))
+			assert.Loosely(t, sideEffect, should.BeNil)
+			assert.Loosely(t, s1.PB, should.Resemble(&prjpb.PState{
 				LuciProject:      ct.lProject,
 				Status:           prjpb.Status_STARTED,
 				ConfigHash:       meta.Hash(),
@@ -695,8 +698,8 @@ func TestOnCLsUpdated(t *testing.T) {
 					},
 				},
 				RepartitionRequired: true,
-			})
-			Convey("unknown dep becomes known and marks a component for triage", func() {
+			}))
+			t.Run("unknown dep becomes known and marks a component for triage", func(t *ftt.Test) {
 				// Add a component which has only 203.
 				s1.PB.Components = []*prjpb.Component{
 					{Clids: []int64{int64(cl203.ID)}},
@@ -705,14 +708,14 @@ func TestOnCLsUpdated(t *testing.T) {
 				s2, sideEffect, err := h.OnCLsUpdated(ctx, s1, map[int64]int64{
 					int64(cl202.ID): cl202.EVersion,
 				})
-				So(s1.PB, ShouldResembleProto, pb)
-				So(err, ShouldBeNil)
-				So(sideEffect, ShouldBeNil)
-				So(s2.PB.Components[0].TriageRequired, ShouldBeTrue)
+				assert.Loosely(t, s1.PB, should.Resemble(pb))
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, sideEffect, should.BeNil)
+				assert.Loosely(t, s2.PB.Components[0].TriageRequired, should.BeTrue)
 			})
 		})
 
-		Convey("PCLs must remain sorted", func() {
+		t.Run("PCLs must remain sorted", func(t *ftt.Test) {
 			pcl101 := &prjpb.PCL{
 				Clid:               int64(cl101.ID),
 				Eversion:           1,
@@ -744,17 +747,17 @@ func TestOnCLsUpdated(t *testing.T) {
 				}),
 			}}
 			pb1 := backupPB(s1)
-			bumpEVersion(ctx, cl203, 3)
+			bumpEVersion(t, ctx, cl203, 3)
 			s2, sideEffect, err := h.OnCLsUpdated(ctx, s1, map[int64]int64{
 				404:             404,            // doesn't even exist
 				int64(cl202.ID): cl202.EVersion, // new
 				int64(cl101.ID): cl101.EVersion, // unchanged
 				int64(cl203.ID): 3,              // updated
 			})
-			So(err, ShouldBeNil)
-			So(s1.PB, ShouldResembleProto, pb1)
-			So(sideEffect, ShouldBeNil)
-			So(s2.PB, ShouldResembleProto, &prjpb.PState{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, s1.PB, should.Resemble(pb1))
+			assert.Loosely(t, sideEffect, should.BeNil)
+			assert.Loosely(t, s2.PB, should.Resemble(&prjpb.PState{
 				LuciProject:      ct.lProject,
 				Status:           prjpb.Status_STARTED,
 				ConfigHash:       meta.Hash(),
@@ -793,10 +796,10 @@ func TestOnCLsUpdated(t *testing.T) {
 					},
 				}),
 				RepartitionRequired: true,
-			})
+			}))
 		})
 
-		Convey("Invalid dep of some other CL must be marked as unwatched", func() {
+		t.Run("Invalid dep of some other CL must be marked as unwatched", func(t *ftt.Test) {
 			// For example, if user made a typo in `CQ-Depend`, e.g.:
 			//    `CQ-Depend: chromiAm:123`
 			// then CL Updater will create an entity for such CL anyway,
@@ -805,15 +808,15 @@ func TestOnCLsUpdated(t *testing.T) {
 			// Note that such typos may be malicious, so PM must treat such CLs as not
 			// found regardless of whether they actually exist in Gerrit.
 			cl404 := ct.runCLUpdater(ctx, 404)
-			So(cl404.Snapshot, ShouldBeNil)
-			So(cl404.ApplicableConfig, ShouldBeNil)
-			So(cl404.Access.GetByProject(), ShouldContainKey, ct.lProject)
+			assert.Loosely(t, cl404.Snapshot, should.BeNil)
+			assert.Loosely(t, cl404.ApplicableConfig, should.BeNil)
+			assert.Loosely(t, cl404.Access.GetByProject(), should.ContainKey(ct.lProject))
 			s1, sideEffect, err := h.OnCLsUpdated(ctx, s0, map[int64]int64{
 				int64(cl404.ID): 1,
 			})
-			So(err, ShouldBeNil)
-			So(s0.PB, ShouldResembleProto, pb0)
-			So(sideEffect, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, s0.PB, should.Resemble(pb0))
+			assert.Loosely(t, sideEffect, should.BeNil)
 			pb1 := proto.Clone(pb0).(*prjpb.PState)
 			pb1.Pcls = append(pb0.Pcls, &prjpb.PCL{
 				Clid:               int64(cl404.ID),
@@ -822,17 +825,17 @@ func TestOnCLsUpdated(t *testing.T) {
 				Status:             prjpb.PCL_UNWATCHED,
 			})
 			pb1.RepartitionRequired = true
-			So(s1.PB, ShouldResembleProto, pb1)
+			assert.Loosely(t, s1.PB, should.Resemble(pb1))
 		})
 
-		Convey("non-STARTED project ignores all CL events", func() {
+		t.Run("non-STARTED project ignores all CL events", func(t *ftt.Test) {
 			s0.PB.Status = prjpb.Status_STOPPING
 			s1, sideEffect, err := h.OnCLsUpdated(ctx, s0, map[int64]int64{
 				int64(cl101.ID): cl101.EVersion,
 			})
-			So(err, ShouldBeNil)
-			So(sideEffect, ShouldBeNil)
-			So(s0, ShouldEqual, s1) // pointer comparison only.
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, sideEffect, should.BeNil)
+			assert.Loosely(t, s0, should.Equal(s1)) // pointer comparison only.
 		})
 	})
 }
@@ -840,7 +843,7 @@ func TestOnCLsUpdated(t *testing.T) {
 func TestRunsCreatedAndFinished(t *testing.T) {
 	t.Parallel()
 
-	Convey("OnRunsCreated and OnRunsFinished works", t, func() {
+	ftt.Run("OnRunsCreated and OnRunsFinished works", t, func(t *ftt.Test) {
 		ct := ctest{
 			lProject: "test",
 			gHost:    "c-review.example.com",
@@ -848,15 +851,15 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 		ctx := ct.SetUp(t)
 
 		cfg1 := &cfgpb.Config{}
-		So(prototext.Unmarshal([]byte(cfgText1), cfg1), ShouldBeNil)
+		assert.Loosely(t, prototext.Unmarshal([]byte(cfgText1), cfg1), should.BeNil)
 		prjcfgtest.Create(ctx, ct.lProject, cfg1)
 		meta := prjcfgtest.MustExist(ctx, ct.lProject)
 
 		run1 := &run.Run{ID: common.RunID(ct.lProject + "/101-new"), CLs: common.CLIDs{101}}
 		run789 := &run.Run{ID: common.RunID(ct.lProject + "/789-efg"), CLs: common.CLIDs{709, 707, 708}}
 		run1finished := &run.Run{ID: common.RunID(ct.lProject + "/101-done"), CLs: common.CLIDs{101}, Status: run.Status_FAILED}
-		So(datastore.Put(ctx, run1finished, run1, run789), ShouldBeNil)
-		So(run.IsEnded(run1finished.Status), ShouldBeTrue)
+		assert.Loosely(t, datastore.Put(ctx, run1finished, run1, run789), should.BeNil)
+		assert.Loosely(t, run.IsEnded(run1finished.Status), should.BeTrue)
 
 		h := Handler{}
 		s1 := &State{PB: &prjpb.PState{
@@ -883,44 +886,44 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 		}}
 		var err error
 		s1.configGroups, err = meta.GetConfigGroups(ctx)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		pb1 := backupPB(s1)
 
-		Convey("Noops", func() {
+		t.Run("Noops", func(t *ftt.Test) {
 			finished := make(map[common.RunID]run.Status)
-			Convey("OnRunsFinished on not tracked Run", func() {
+			t.Run("OnRunsFinished on not tracked Run", func(t *ftt.Test) {
 				finished[run1finished.ID] = run.Status_SUCCEEDED
 				s2, sideEffect, err := h.OnRunsFinished(ctx, s1, finished)
-				So(err, ShouldBeNil)
-				So(sideEffect, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, sideEffect, should.BeNil)
 				// although s2 is cloned, it must be exact same as s1.
-				So(s2.PB, ShouldResembleProto, pb1)
+				assert.Loosely(t, s2.PB, should.Resemble(pb1))
 			})
-			Convey("OnRunsCreated on already finished run", func() {
+			t.Run("OnRunsCreated on already finished run", func(t *ftt.Test) {
 				s2, sideEffect, err := h.OnRunsCreated(ctx, s1, common.RunIDs{run1finished.ID})
-				So(err, ShouldBeNil)
-				So(sideEffect, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, sideEffect, should.BeNil)
 				// although s2 is cloned, it must be exact same as s1.
-				So(s2.PB, ShouldResembleProto, pb1)
+				assert.Loosely(t, s2.PB, should.Resemble(pb1))
 			})
-			Convey("OnRunsCreated on already tracked Run", func() {
+			t.Run("OnRunsCreated on already tracked Run", func(t *ftt.Test) {
 				s2, sideEffect, err := h.OnRunsCreated(ctx, s1, common.MakeRunIDs(ct.lProject+"/101-aaa"))
-				So(err, ShouldBeNil)
-				So(sideEffect, ShouldBeNil)
-				So(s2, ShouldEqual, s1)
-				So(pb1, ShouldResembleProto, s1.PB)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, sideEffect, should.BeNil)
+				assert.Loosely(t, s2, should.Equal(s1))
+				assert.Loosely(t, pb1, should.Resemble(s1.PB))
 			})
-			Convey("OnRunsCreated on somehow already deleted run", func() {
+			t.Run("OnRunsCreated on somehow already deleted run", func(t *ftt.Test) {
 				s2, sideEffect, err := h.OnRunsCreated(ctx, s1, common.MakeRunIDs(ct.lProject+"/404-nnn"))
-				So(err, ShouldBeNil)
-				So(sideEffect, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, sideEffect, should.BeNil)
 				// although s2 is cloned, it must be exact same as s1.
-				So(s2.PB, ShouldResembleProto, pb1)
+				assert.Loosely(t, s2.PB, should.Resemble(pb1))
 			})
 		})
 
-		Convey("OnRunsCreated", func() {
-			Convey("when PM is started", func() {
+		t.Run("OnRunsCreated", func(t *ftt.Test) {
+			t.Run("when PM is started", func(t *ftt.Test) {
 				runX := &run.Run{ // Run involving all of CLs and more.
 					ID: common.RunID(ct.lProject + "/000-xxx"),
 					// The order doesn't have to and is intentionally not sorted here.
@@ -930,17 +933,17 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 				run3 := &run.Run{ID: common.RunID(ct.lProject + "/203-ccc"), CLs: common.CLIDs{203}}
 				run23 := &run.Run{ID: common.RunID(ct.lProject + "/232-bcb"), CLs: common.CLIDs{203, 202}}
 				run234 := &run.Run{ID: common.RunID(ct.lProject + "/234-bcd"), CLs: common.CLIDs{203, 204, 202}}
-				So(datastore.Put(ctx, run2, run3, run23, run234, runX), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, run2, run3, run23, run234, runX), should.BeNil)
 
 				s2, sideEffect, err := h.OnRunsCreated(ctx, s1, common.RunIDs{
 					run2.ID, run3.ID, run23.ID, run234.ID, runX.ID,
 					// non-existing Run shouldn't derail others.
 					common.RunID(ct.lProject + "/404-nnn"),
 				})
-				So(err, ShouldBeNil)
-				So(pb1, ShouldResembleProto, s1.PB)
-				So(sideEffect, ShouldBeNil)
-				So(s2.PB, ShouldResembleProto, &prjpb.PState{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, pb1, should.Resemble(s1.PB))
+				assert.Loosely(t, sideEffect, should.BeNil)
+				assert.Loosely(t, s2.PB, should.Resemble(&prjpb.PState{
 					LuciProject:      ct.lProject,
 					Status:           prjpb.Status_STARTED,
 					ConfigHash:       meta.Hash(),
@@ -964,37 +967,37 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 						{Id: string(runX.ID), Clids: []int64{101, 202, 203, 204, 404}},
 						{Id: ct.lProject + "/789-efg", Clids: []int64{707, 708, 709}}, // unchanged
 					},
-				})
+				}))
 			})
-			Convey("when PM is stopping", func() {
+			t.Run("when PM is stopping", func(t *ftt.Test) {
 				s1.PB.Status = prjpb.Status_STOPPING
 				pb1 := backupPB(s1)
-				Convey("cancels incomplete Runs", func() {
+				t.Run("cancels incomplete Runs", func(t *ftt.Test) {
 					s2, sideEffect, err := h.OnRunsCreated(ctx, s1, common.RunIDs{run1.ID, run1finished.ID})
-					So(err, ShouldBeNil)
-					So(pb1, ShouldResembleProto, s1.PB)
-					So(sideEffect, ShouldResemble, &CancelIncompleteRuns{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, pb1, should.Resemble(s1.PB))
+					assert.Loosely(t, sideEffect, should.Resemble(&CancelIncompleteRuns{
 						RunIDs: common.RunIDs{run1.ID},
-					})
-					So(s2, ShouldEqual, s1)
+					}))
+					assert.Loosely(t, s2, should.Equal(s1))
 				})
 			})
 		})
 
-		Convey("OnRunsFinished", func() {
+		t.Run("OnRunsFinished", func(t *ftt.Test) {
 			s1.PB.Status = prjpb.Status_STOPPING
 			pb1 := backupPB(s1)
 			finished := make(map[common.RunID]run.Status)
 
-			Convey("deletes from Components", func() {
+			t.Run("deletes from Components", func(t *ftt.Test) {
 				pb1 := backupPB(s1)
 				runIDs := common.MakeRunIDs(ct.lProject + "/101-aaa")
 				finished[runIDs[0]] = run.Status_CANCELLED
 				s2, sideEffect, err := h.OnRunsFinished(ctx, s1, finished)
-				So(err, ShouldBeNil)
-				So(pb1, ShouldResembleProto, s1.PB)
-				So(sideEffect, ShouldBeNil)
-				So(s2.PB, ShouldResembleProto, &prjpb.PState{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, pb1, should.Resemble(s1.PB))
+				assert.Loosely(t, sideEffect, should.BeNil)
+				assert.Loosely(t, s2.PB, should.Resemble(&prjpb.PState{
 					LuciProject:      ct.lProject,
 					Status:           prjpb.Status_STOPPING,
 					ConfigHash:       meta.Hash(),
@@ -1009,27 +1012,27 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 					},
 					CreatedPruns:        s1.PB.GetCreatedPruns(), // unchanged
 					RepartitionRequired: true,
-				})
+				}))
 			})
 
-			Convey("deletes from CreatedPruns", func() {
+			t.Run("deletes from CreatedPruns", func(t *ftt.Test) {
 				runIDs := common.MakeRunIDs(ct.lProject + "/789-efg")
 				finished[runIDs[0]] = run.Status_CANCELLED
 				s2, sideEffect, err := h.OnRunsFinished(ctx, s1, finished)
-				So(err, ShouldBeNil)
-				So(pb1, ShouldResembleProto, s1.PB)
-				So(sideEffect, ShouldBeNil)
-				So(s2.PB, ShouldResembleProto, &prjpb.PState{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, pb1, should.Resemble(s1.PB))
+				assert.Loosely(t, sideEffect, should.BeNil)
+				assert.Loosely(t, s2.PB, should.Resemble(&prjpb.PState{
 					LuciProject:      ct.lProject,
 					Status:           prjpb.Status_STOPPING,
 					ConfigHash:       meta.Hash(),
 					ConfigGroupNames: []string{"g0", "g1"},
 					Components:       s1.PB.Components, // unchanged
 					CreatedPruns:     nil,              // removed
-				})
+				}))
 			})
 
-			Convey("stops PM iff all runs finished", func() {
+			t.Run("stops PM iff all runs finished", func(t *ftt.Test) {
 				runIDs := common.MakeRunIDs(
 					ct.lProject+"/101-aaa",
 					ct.lProject+"/789-efg",
@@ -1037,10 +1040,10 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 				finished[runIDs[0]] = run.Status_SUCCEEDED
 				finished[runIDs[1]] = run.Status_SUCCEEDED
 				s2, sideEffect, err := h.OnRunsFinished(ctx, s1, finished)
-				So(err, ShouldBeNil)
-				So(pb1, ShouldResembleProto, s1.PB)
-				So(sideEffect, ShouldBeNil)
-				So(s2.PB, ShouldResembleProto, &prjpb.PState{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, pb1, should.Resemble(s1.PB))
+				assert.Loosely(t, sideEffect, should.BeNil)
+				assert.Loosely(t, s2.PB, should.Resemble(&prjpb.PState{
 					LuciProject:      ct.lProject,
 					Status:           prjpb.Status_STOPPED,
 					ConfigHash:       meta.Hash(),
@@ -1052,11 +1055,11 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 					},
 					CreatedPruns:        nil, // removed
 					RepartitionRequired: true,
-				})
-				So(s2.LogReasons, ShouldResemble, []prjpb.LogReason{prjpb.LogReason_STATUS_CHANGED})
+				}))
+				assert.Loosely(t, s2.LogReasons, should.Resemble([]prjpb.LogReason{prjpb.LogReason_STATUS_CHANGED}))
 			})
 
-			Convey("purges triggers of the child CLs", func() {
+			t.Run("purges triggers of the child CLs", func(t *ftt.Test) {
 				// Emulate an MCE run.
 				now := testclock.TestRecentTimeUTC
 				mceRun := &prjpb.PRun{
@@ -1106,8 +1109,8 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 					},
 				}
 				checkPurgeTask := func(task *prjpb.PurgeCLTask, clToPurge, depRunCL int64) {
-					So(task.PurgingCl.Clid, ShouldEqual, clToPurge)
-					So(task.PurgeReasons, ShouldResembleProto, []*prjpb.PurgeReason{
+					assert.Loosely(t, task.PurgingCl.Clid, should.Equal(clToPurge))
+					assert.Loosely(t, task.PurgeReasons, should.Resemble([]*prjpb.PurgeReason{
 						{
 							ClError: &changelist.CLError{
 								Kind: &changelist.CLError_DepRunFailed{
@@ -1123,32 +1126,32 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 								},
 							},
 						},
-					})
+					}))
 				}
 
-				Convey("if they have CQ votes", func() {
+				t.Run("if they have CQ votes", func(t *ftt.Test) {
 					finished[common.RunID(mceRun.Id)] = run.Status_FAILED
 					_, sideEffect, err := h.OnRunsFinished(ctx, s1, finished)
-					So(err, ShouldBeNil)
-					So(sideEffect, ShouldNotBeNil)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, sideEffect, should.NotBeNil)
 					tasks := sideEffect.(*TriggerPurgeCLTasks)
 
 					// Should purge the vote on both 203 and 204.
-					So(tasks.payloads, ShouldHaveLength, 2)
+					assert.Loosely(t, tasks.payloads, should.HaveLength(2))
 					checkPurgeTask(tasks.payloads[0], 203, 202)
 					checkPurgeTask(tasks.payloads[1], 204, 202)
 
 					// Only the top CL should be configured to send an email.
-					So(tasks.payloads[0].PurgingCl.Notification, ShouldResembleProto, clpurger.NoNotification)
-					So(tasks.payloads[1].PurgingCl.Notification, ShouldBeNil)
+					assert.Loosely(t, tasks.payloads[0].PurgingCl.Notification, should.Resemble(clpurger.NoNotification))
+					assert.Loosely(t, tasks.payloads[1].PurgingCl.Notification, should.BeNil)
 				})
-				Convey("unless the finished Run is failed", func() {
+				t.Run("unless the finished Run is failed", func(t *ftt.Test) {
 					finished[common.RunID(mceRun.Id)] = run.Status_SUCCEEDED
 					_, sideEffect, err := h.OnRunsFinished(ctx, s1, finished)
-					So(err, ShouldBeNil)
-					So(sideEffect, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, sideEffect, should.BeNil)
 				})
-				Convey("unless they have ongoing Runs", func() {
+				t.Run("unless they have ongoing Runs", func(t *ftt.Test) {
 					finished[common.RunID(mceRun.Id)] = run.Status_FAILED
 					// create a run for the middle CL, not the top CL.
 					middleRun := &prjpb.PRun{
@@ -1158,14 +1161,14 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 					}
 					s1.PB.Components[0].Pruns = append(s1.PB.Components[0].Pruns, middleRun)
 					_, sideEffect, err := h.OnRunsFinished(ctx, s1, finished)
-					So(err, ShouldBeNil)
-					So(sideEffect, ShouldNotBeNil)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, sideEffect, should.NotBeNil)
 					tasks := sideEffect.(*TriggerPurgeCLTasks)
 
 					// Should purge the vote on 204 only
-					So(tasks.payloads, ShouldHaveLength, 1)
+					assert.Loosely(t, tasks.payloads, should.HaveLength(1))
 					checkPurgeTask(tasks.payloads[0], 204, 202)
-					So(tasks.payloads[0].PurgingCl.Notification, ShouldBeNil)
+					assert.Loosely(t, tasks.payloads[0].PurgingCl.Notification, should.BeNil)
 				})
 			})
 		})
@@ -1175,7 +1178,7 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 func TestOnPurgesCompleted(t *testing.T) {
 	t.Parallel()
 
-	Convey("OnPurgesCompleted works", t, func() {
+	ftt.Run("OnPurgesCompleted works", t, func(t *ftt.Test) {
 		ct := ctest{
 			lProject: "test",
 			gHost:    "c-review.example.com",
@@ -1184,7 +1187,7 @@ func TestOnPurgesCompleted(t *testing.T) {
 		ctx := ct.SetUp(t)
 
 		cfg1 := &cfgpb.Config{}
-		So(prototext.Unmarshal([]byte(cfgText1), cfg1), ShouldBeNil)
+		assert.Loosely(t, prototext.Unmarshal([]byte(cfgText1), cfg1), should.BeNil)
 
 		prjcfgtest.Create(ctx, ct.lProject, cfg1)
 		meta := prjcfgtest.MustExist(ctx, ct.lProject)
@@ -1218,16 +1221,16 @@ func TestOnPurgesCompleted(t *testing.T) {
 		cl203 := ct.runCLUpdater(ctx, 203)
 		cl209 := ct.runCLUpdater(ctx, 209)
 
-		Convey("Empty", func() {
+		t.Run("Empty", func(t *ftt.Test) {
 			s1 := &State{PB: &prjpb.PState{}}
 			s2, sideEffect, evsToConsume, err := h.OnPurgesCompleted(ctx, s1, nil)
-			So(err, ShouldBeNil)
-			So(sideEffect, ShouldBeNil)
-			So(s1, ShouldEqual, s2)
-			So(evsToConsume, ShouldHaveLength, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, sideEffect, should.BeNil)
+			assert.Loosely(t, s1, should.Equal(s2))
+			assert.Loosely(t, evsToConsume, should.HaveLength(0))
 		})
 
-		Convey("With existing", func() {
+		t.Run("With existing", func(t *ftt.Test) {
 			now := testclock.TestRecentTimeUTC
 			ctx, _ := testclock.UseTime(ctx, now)
 			s1 := &State{PB: &prjpb.PState{
@@ -1318,12 +1321,12 @@ func TestOnPurgesCompleted(t *testing.T) {
 			}}
 			pb := backupPB(s1)
 
-			Convey("Expires and removed", func() {
+			t.Run("Expires and removed", func(t *ftt.Test) {
 				s2, sideEffect, evsToConsume, err := h.OnPurgesCompleted(ctx, s1, []*prjpb.PurgeCompleted{{OperationId: "1", Clid: int64(cl101.ID)}})
-				So(err, ShouldBeNil)
-				So(sideEffect, ShouldBeNil)
-				So(s1.PB, ShouldResembleProto, pb)
-				So(evsToConsume, ShouldEqual, []int{0})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, sideEffect, should.BeNil)
+				assert.Loosely(t, s1.PB, should.Resemble(pb))
+				assert.Loosely(t, evsToConsume, should.Resemble([]int{0}))
 
 				pb.PurgingCls = []*prjpb.PurgingCL{
 					{
@@ -1337,20 +1340,20 @@ func TestOnPurgesCompleted(t *testing.T) {
 					pb.Components[2],
 					{Clids: []int64{int64(cl203.ID)}, TriageRequired: true},
 				}
-				So(s2.PB, ShouldResembleProto, pb)
+				assert.Loosely(t, s2.PB, should.Resemble(pb))
 			})
 
-			Convey("All removed", func() {
+			t.Run("All removed", func(t *ftt.Test) {
 				s2, sideEffect, evsToConsume, err := h.OnPurgesCompleted(ctx, s1, []*prjpb.PurgeCompleted{
 					{OperationId: "3", Clid: int64(cl203.ID)},
 					{OperationId: "1", Clid: int64(cl101.ID)},
 					{OperationId: "5", Clid: int64(cl209.ID)},
 					{OperationId: "2", Clid: int64(cl202.ID)},
 				})
-				So(err, ShouldBeNil)
-				So(sideEffect, ShouldBeNil)
-				So(s1.PB, ShouldResembleProto, pb)
-				So(evsToConsume, ShouldEqual, []int{0, 1, 2, 3})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, sideEffect, should.BeNil)
+				assert.Loosely(t, s1.PB, should.Resemble(pb))
+				assert.Loosely(t, evsToConsume, should.Resemble([]int{0, 1, 2, 3}))
 				pb.PurgingCls = nil
 				pb.Components = []*prjpb.Component{
 					pb.Components[0],
@@ -1358,22 +1361,22 @@ func TestOnPurgesCompleted(t *testing.T) {
 					pb.Components[2], // it was waiting for triage already
 					{Clids: []int64{int64(cl203.ID)}, TriageRequired: true},
 				}
-				So(s2.PB, ShouldResembleProto, pb)
+				assert.Loosely(t, s2.PB, should.Resemble(pb))
 			})
 
-			Convey("Outdated", func() {
+			t.Run("Outdated", func(t *ftt.Test) {
 				cl101.Snapshot.Outdated = &changelist.Snapshot_Outdated{}
-				So(datastore.Put(ctx, cl101), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, cl101), should.BeNil)
 				s2, sideEffect, evsToConsume, err := h.OnPurgesCompleted(ctx, s1, []*prjpb.PurgeCompleted{
 					{OperationId: "1", Clid: int64(cl101.ID)},
 				})
-				So(err, ShouldBeNil)
-				So(sideEffect, ShouldBeNil)
-				So(s2.PB.GetPurgingCL(int64(cl101.ID)), ShouldNotBeNil)
-				So(evsToConsume, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, sideEffect, should.BeNil)
+				assert.Loosely(t, s2.PB.GetPurgingCL(int64(cl101.ID)), should.NotBeNil)
+				assert.Loosely(t, evsToConsume, should.BeNil)
 			})
 
-			Convey("Doesn't modify components if they are due re-repartition anyway", func() {
+			t.Run("Doesn't modify components if they are due re-repartition anyway", func(t *ftt.Test) {
 				s1.PB.RepartitionRequired = true
 				pb := backupPB(s1)
 				s2, sideEffect, evsToConsume, err := h.OnPurgesCompleted(ctx, s1, []*prjpb.PurgeCompleted{
@@ -1381,13 +1384,13 @@ func TestOnPurgesCompleted(t *testing.T) {
 					{OperationId: "2", Clid: int64(cl202.ID)},
 					{OperationId: "3", Clid: int64(cl203.ID)},
 				})
-				So(err, ShouldBeNil)
-				So(sideEffect, ShouldBeNil)
-				So(s1.PB, ShouldResembleProto, pb)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, sideEffect, should.BeNil)
+				assert.Loosely(t, s1.PB, should.Resemble(pb))
 
 				pb.PurgingCls = nil
-				So(s2.PB, ShouldResembleProto, pb)
-				So(evsToConsume, ShouldEqual, []int{0, 1, 2})
+				assert.Loosely(t, s2.PB, should.Resemble(pb))
+				assert.Loosely(t, evsToConsume, should.Resemble([]int{0, 1, 2}))
 			})
 		})
 	})
@@ -1396,7 +1399,7 @@ func TestOnPurgesCompleted(t *testing.T) {
 func TestOnTriggeringCLDepsCompleted(t *testing.T) {
 	t.Parallel()
 
-	Convey("OnTriggeringCLDepsCompleted", t, func() {
+	ftt.Run("OnTriggeringCLDepsCompleted", t, func(t *ftt.Test) {
 		ct := ctest{
 			lProject: "test",
 			gHost:    "c-review.example.com",
@@ -1405,7 +1408,7 @@ func TestOnTriggeringCLDepsCompleted(t *testing.T) {
 		ctx := ct.SetUp(t)
 
 		cfg1 := &cfgpb.Config{}
-		So(prototext.Unmarshal([]byte(cfgText1), cfg1), ShouldBeNil)
+		assert.Loosely(t, prototext.Unmarshal([]byte(cfgText1), cfg1), should.BeNil)
 
 		prjcfgtest.Create(ctx, ct.lProject, cfg1)
 		meta := prjcfgtest.MustExist(ctx, ct.lProject)
@@ -1494,25 +1497,25 @@ func TestOnTriggeringCLDepsCompleted(t *testing.T) {
 			return s.PB.GetTriggeringCLDeps(int64(cl.ID))
 		}
 
-		Convey("effectively noop if empty", func() {
+		t.Run("effectively noop if empty", func(t *ftt.Test) {
 			s2, se, evIndexes, err := h.OnTriggeringCLDepsCompleted(ctx, s1, nil)
-			So(err, ShouldBeNil)
-			So(se, ShouldBeNil)
-			So(evIndexes, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, se, should.BeNil)
+			assert.Loosely(t, evIndexes, should.BeNil)
 			// OnTriggeringCLDepsCompleted() always makes a shallow clone for
 			// PCL evaluations. There shouldn't be any changes other than that.
 			s2.alreadyCloned = true
-			So(s1, ShouldEqual, s2)
+			assert.Loosely(t, s1, should.Match(s2))
 		})
-		Convey("removes an expired op", func() {
+		t.Run("removes an expired op", func(t *ftt.Test) {
 			addTriggeringCLDeps(s1, now.Add(-time.Hour), cl103, cl101, cl102)
 			s2, se, evIndexes, err := h.OnTriggeringCLDepsCompleted(ctx, s1, nil)
-			So(err, ShouldBeNil)
-			So(TriggeringCLDeps(s2, cl103), ShouldBeNil)
-			So(se, ShouldBeNil)
-			So(evIndexes, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, TriggeringCLDeps(s2, cl103), should.BeNil)
+			assert.Loosely(t, se, should.BeNil)
+			assert.Loosely(t, evIndexes, should.BeNil)
 		})
-		Convey("with succeeeded ops", func() {
+		t.Run("with succeeeded ops", func(t *ftt.Test) {
 			op := addTriggeringCLDeps(s1, now.Add(time.Minute), cl103, cl101, cl102)
 			events := []*prjpb.TriggeringCLDepsCompleted{
 				{
@@ -1521,24 +1524,24 @@ func TestOnTriggeringCLDepsCompleted(t *testing.T) {
 					Succeeded:   []int64{int64(cl101.ID), int64(cl102.ID)},
 				},
 			}
-			Convey("removes the op", func() {
+			t.Run("removes the op", func(t *ftt.Test) {
 				s2, se, evIndexes, err := h.OnTriggeringCLDepsCompleted(ctx, s1, events)
-				So(err, ShouldBeNil)
-				So(TriggeringCLDeps(s2, cl103), ShouldBeNil)
-				So(se, ShouldBeNil)
-				So(evIndexes, ShouldEqual, []int{0})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, TriggeringCLDeps(s2, cl103), should.BeNil)
+				assert.Loosely(t, se, should.BeNil)
+				assert.Loosely(t, evIndexes, should.Resemble([]int{0}))
 			})
-			Convey("keeps the op, if any dep PCL is outdated", func() {
+			t.Run("keeps the op, if any dep PCL is outdated", func(t *ftt.Test) {
 				cl102.Snapshot.Outdated = &changelist.Snapshot_Outdated{}
-				So(datastore.Put(ctx, cl102 /* dep */), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, cl102 /* dep */), should.BeNil)
 				s2, se, evIndexes, err := h.OnTriggeringCLDepsCompleted(ctx, s1, events)
-				So(err, ShouldBeNil)
-				So(TriggeringCLDeps(s2, cl103 /* origin */), ShouldNotBeNil)
-				So(se, ShouldBeNil)
-				So(evIndexes, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, TriggeringCLDeps(s2, cl103 /* origin */), should.NotBeNil)
+				assert.Loosely(t, se, should.BeNil)
+				assert.Loosely(t, evIndexes, should.BeNil)
 			})
 		})
-		Convey("enqueues PurgeCLTasks for the origin and dep CLs, if an Op has fails", func() {
+		t.Run("enqueues PurgeCLTasks for the origin and dep CLs, if an Op has fails", func(t *ftt.Test) {
 			op := addTriggeringCLDeps(s1, now.Add(time.Minute), cl103, cl101, cl102)
 			events := []*prjpb.TriggeringCLDepsCompleted{
 				{
@@ -1554,19 +1557,19 @@ func TestOnTriggeringCLDepsCompleted(t *testing.T) {
 				},
 			}
 			s2, se, evIndexes, err := h.OnTriggeringCLDepsCompleted(ctx, s1, events)
-			So(err, ShouldBeNil)
-			So(evIndexes, ShouldEqual, []int{0})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, evIndexes, should.Resemble([]int{0}))
 
 			// remove the TriggeringCLDeps, but schedule PurgingCL(s).
-			So(TriggeringCLDeps(s2, cl103), ShouldBeNil)
-			So(s2.PB.GetPurgingCL(int64(cl101.ID)), ShouldNotBeNil)
-			So(s2.PB.GetPurgingCL(int64(cl102.ID)), ShouldBeNil)
+			assert.Loosely(t, TriggeringCLDeps(s2, cl103), should.BeNil)
+			assert.Loosely(t, s2.PB.GetPurgingCL(int64(cl101.ID)), should.NotBeNil)
+			assert.Loosely(t, s2.PB.GetPurgingCL(int64(cl102.ID)), should.BeNil)
 
 			// verify the PurginCL payload.
 			tasks := se.(*TriggerPurgeCLTasks)
 			dl := timestamppb.New(now.Add(maxPurgingCLDuration))
 			opID := dl.AsTime().Unix()
-			So(tasks.payloads, ShouldHaveLength, 2)
+			assert.Loosely(t, tasks.payloads, should.HaveLength(2))
 			tr := &run.Triggers{
 				CqVoteTrigger: &run.Trigger{
 					Mode: string(run.FullRun),
@@ -1591,23 +1594,23 @@ func TestOnTriggeringCLDepsCompleted(t *testing.T) {
 					ApplyTo: &prjpb.PurgeReason_Triggers{Triggers: tr},
 				},
 			}
-			So(oriPT.GetPurgeReasons(), ShouldResembleProto, expectedPurgeReasons)
-			So(oriPT.GetPurgingCl(), ShouldResembleProto, &prjpb.PurgingCL{
+			assert.Loosely(t, oriPT.GetPurgeReasons(), should.Resemble(expectedPurgeReasons))
+			assert.Loosely(t, oriPT.GetPurgingCl(), should.Resemble(&prjpb.PurgingCL{
 				Clid:     int64(cl103.ID),
 				Deadline: dl,
 				// Must be nil for the default notifications.
 				Notification: nil,
 				OperationId:  fmt.Sprintf("%d-%d", opID, cl103.ID),
 				ApplyTo:      &prjpb.PurgingCL_Triggers{Triggers: tr},
-			})
-			So(depPT.GetPurgeReasons(), ShouldResembleProto, expectedPurgeReasons)
-			So(depPT.GetPurgingCl(), ShouldResembleProto, &prjpb.PurgingCL{
+			}))
+			assert.Loosely(t, depPT.GetPurgeReasons(), should.Resemble(expectedPurgeReasons))
+			assert.Loosely(t, depPT.GetPurgingCl(), should.Resemble(&prjpb.PurgingCL{
 				Clid:         int64(cl101.ID),
 				Deadline:     dl,
 				Notification: clpurger.NoNotification,
 				OperationId:  fmt.Sprintf("%d-%d", opID, cl101.ID),
 				ApplyTo:      &prjpb.PurgingCL_Triggers{Triggers: tr},
-			})
+			}))
 		})
 	})
 }
@@ -1620,12 +1623,13 @@ func backupPB(s *State) *prjpb.PState {
 	return ret
 }
 
-func bumpEVersion(ctx context.Context, cl *changelist.CL, desired int64) {
+func bumpEVersion(t testing.TB, ctx context.Context, cl *changelist.CL, desired int64) {
+	t.Helper()
 	if cl.EVersion >= desired {
 		panic(fmt.Errorf("can't go %d to %d", cl.EVersion, desired))
 	}
 	cl.EVersion = desired
-	So(datastore.Put(ctx, cl), ShouldBeNil)
+	assert.Loosely(t, datastore.Put(ctx, cl), should.BeNil, truth.LineContext())
 }
 
 func defaultPCL(cl *changelist.CL) *prjpb.PCL {

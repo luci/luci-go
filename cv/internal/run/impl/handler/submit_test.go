@@ -22,6 +22,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"go.chromium.org/luci/common/clock"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -44,14 +45,22 @@ import (
 	"go.chromium.org/luci/cv/internal/run/impl/submit"
 	"go.chromium.org/luci/cv/internal/run/runtest"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/registry"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/check"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
+
+func init() {
+	registry.RegisterCmpOption(cmp.AllowUnexported(state.RunState{}))
+	registry.RegisterCmpOption(cmp.AllowUnexported(run.Run{}))
+}
 
 func TestOnReadyForSubmission(t *testing.T) {
 	t.Parallel()
 
-	Convey("OnReadyForSubmission", t, func() {
+	ftt.Run("OnReadyForSubmission", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
@@ -81,8 +90,8 @@ func TestOnReadyForSubmission(t *testing.T) {
 		}
 		prjcfgtest.Create(ctx, rid.LUCIProject(), cg)
 		meta, err := prjcfg.GetLatestMeta(ctx, rid.LUCIProject())
-		So(err, ShouldBeNil)
-		So(meta.ConfigGroupIDs, ShouldHaveLength, 1)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, meta.ConfigGroupIDs, should.HaveLength(1))
 		r.ConfigGroupID = meta.ConfigGroupIDs[0]
 
 		// 1 depends on 2
@@ -94,7 +103,7 @@ func TestOnReadyForSubmission(t *testing.T) {
 			2222, gf.PS(3),
 			gf.CQ(2, ct.Clock.Now().Add(-2*time.Minute), gf.U("user-100")),
 			gf.Updated(clock.Now(ctx).Add(-1*time.Minute)))
-		So(datastore.Put(ctx,
+		assert.Loosely(t, datastore.Put(ctx,
 			&run.RunCL{
 				ID:         1,
 				Run:        datastore.MakeKey(ctx, common.RunKind, string(rid)),
@@ -124,7 +133,7 @@ func TestOnReadyForSubmission(t *testing.T) {
 					},
 				},
 			},
-		), ShouldBeNil)
+		), should.BeNil)
 
 		rs := &state.RunState{Run: r}
 
@@ -136,15 +145,15 @@ func TestOnReadyForSubmission(t *testing.T) {
 			run.Status_CANCELLED,
 		}
 		for _, status := range statuses {
-			Convey(fmt.Sprintf("Release submit queue when Run is %s", status), func() {
-				So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+			t.Run(fmt.Sprintf("Release submit queue when Run is %s", status), func(t *ftt.Test) {
+				assert.Loosely(t, datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 					waitlisted, err := submit.TryAcquire(ctx, deps.rm.NotifyReadyForSubmission, rs.ID, nil)
-					So(waitlisted, ShouldBeFalse)
+					assert.Loosely(t, waitlisted, should.BeFalse)
 					return err
-				}, nil), ShouldBeNil)
+				}, nil), should.BeNil)
 				rs.Status = status
 				res, err := h.OnReadyForSubmission(ctx, rs)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				expectedState := &state.RunState{
 					Run: rs.Run,
 					LogEntries: []*run.LogEntry{
@@ -156,30 +165,30 @@ func TestOnReadyForSubmission(t *testing.T) {
 						},
 					},
 				}
-				So(res.State, cvtesting.SafeShouldResemble, expectedState)
-				So(res.SideEffectFn, ShouldBeNil)
-				So(res.PreserveEvents, ShouldBeFalse)
-				So(res.PostProcessFn, ShouldBeNil)
+				assert.Loosely(t, res.State, should.Match(expectedState))
+				assert.Loosely(t, res.SideEffectFn, should.BeNil)
+				assert.Loosely(t, res.PreserveEvents, should.BeFalse)
+				assert.Loosely(t, res.PostProcessFn, should.BeNil)
 				current, waitlist, err := submit.LoadCurrentAndWaitlist(ctx, rs.ID)
-				So(err, ShouldBeNil)
-				So(current, ShouldBeEmpty)
-				So(waitlist, ShouldBeEmpty)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, current, should.BeEmpty)
+				assert.Loosely(t, waitlist, should.BeEmpty)
 			})
 		}
 
-		Convey("No-Op when status is SUBMITTING", func() {
+		t.Run("No-Op when status is SUBMITTING", func(t *ftt.Test) {
 			rs.Status = run.Status_SUBMITTING
 			res, err := h.OnReadyForSubmission(ctx, rs)
-			So(err, ShouldBeNil)
-			So(res.State, ShouldEqual, rs)
-			So(res.SideEffectFn, ShouldBeNil)
-			So(res.PreserveEvents, ShouldBeFalse)
-			So(res.PostProcessFn, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.State, should.Equal(rs))
+			assert.Loosely(t, res.SideEffectFn, should.BeNil)
+			assert.Loosely(t, res.PreserveEvents, should.BeFalse)
+			assert.Loosely(t, res.PostProcessFn, should.BeNil)
 		})
 
-		Convey("Do not submit if parent Run is not done yet.", func() {
+		t.Run("Do not submit if parent Run is not done yet.", func(t *ftt.Test) {
 			const parentRun = common.RunID("parent/1-cow")
-			So(datastore.Put(ctx,
+			assert.Loosely(t, datastore.Put(ctx,
 				&run.Run{
 					ID:     parentRun,
 					Status: run.Status_RUNNING,
@@ -190,109 +199,109 @@ func TestOnReadyForSubmission(t *testing.T) {
 					Run:        datastore.MakeKey(ctx, common.RunKind, string(parentRun)),
 					ExternalID: "gerrit/foo-review.googlesource.com/111",
 				},
-			), ShouldBeNil)
+			), should.BeNil)
 			rs.Status = run.Status_WAITING_FOR_SUBMISSION
 			rs.DepRuns = common.RunIDs{parentRun}
 			res, err := h.OnReadyForSubmission(ctx, rs)
-			So(err, ShouldBeNil)
-			So(res.State.LogEntries, ShouldHaveLength, 1)
-			So(res.SideEffectFn, ShouldBeNil)
-			So(res.PreserveEvents, ShouldBeFalse)
-			So(res.PostProcessFn, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.State.LogEntries, should.HaveLength(1))
+			assert.Loosely(t, res.SideEffectFn, should.BeNil)
+			assert.Loosely(t, res.PreserveEvents, should.BeFalse)
+			assert.Loosely(t, res.PostProcessFn, should.BeNil)
 		})
 
 		for _, status := range []run.Status{run.Status_RUNNING, run.Status_WAITING_FOR_SUBMISSION} {
 			now := ct.Clock.Now().UTC()
 			ctx = context.WithValue(ctx, &fakeTaskIDKey, "task-foo")
-			Convey(fmt.Sprintf("When status is %s", status), func() {
+			t.Run(fmt.Sprintf("When status is %s", status), func(t *ftt.Test) {
 				rs.Status = status
-				Convey("Mark submitting if Submit Queue is acquired and tree is open", func() {
+				t.Run("Mark submitting if Submit Queue is acquired and tree is open", func(t *ftt.Test) {
 					res, err := h.OnReadyForSubmission(ctx, rs)
-					So(err, ShouldBeNil)
-					So(res.State.Status, ShouldEqual, run.Status_SUBMITTING)
-					So(res.State.Submission, ShouldResembleProto, &run.Submission{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, res.State.Status, should.Equal(run.Status_SUBMITTING))
+					assert.Loosely(t, res.State.Submission, should.Resemble(&run.Submission{
 						Deadline:          timestamppb.New(now.Add(defaultSubmissionDuration)),
 						Cls:               []int64{2, 1}, // in submission order
 						TaskId:            "task-foo",
 						TreeOpen:          true,
 						LastTreeCheckTime: timestamppb.New(now),
-					})
-					So(res.State.SubmissionScheduled, ShouldBeTrue)
-					So(res.SideEffectFn, ShouldBeNil)
-					So(res.PreserveEvents, ShouldBeFalse)
-					So(res.PostProcessFn, ShouldNotBeNil)
-					So(submit.MustCurrentRun(ctx, lProject), ShouldEqual, rid)
-					runtest.AssertReceivedReadyForSubmission(ctx, rid, now.Add(10*time.Second))
-					So(res.State.LogEntries, ShouldHaveLength, 2)
-					So(res.State.LogEntries[0].Kind, ShouldHaveSameTypeAs, &run.LogEntry_AcquiredSubmitQueue_{})
-					So(res.State.LogEntries[1].Kind.(*run.LogEntry_TreeChecked_).TreeChecked.Open, ShouldBeTrue)
+					}))
+					assert.Loosely(t, res.State.SubmissionScheduled, should.BeTrue)
+					assert.Loosely(t, res.SideEffectFn, should.BeNil)
+					assert.Loosely(t, res.PreserveEvents, should.BeFalse)
+					assert.Loosely(t, res.PostProcessFn, should.NotBeNil)
+					assert.Loosely(t, submit.MustCurrentRun(ctx, lProject), should.Equal(rid))
+					runtest.AssertReceivedReadyForSubmission(t, ctx, rid, now.Add(10*time.Second))
+					assert.Loosely(t, res.State.LogEntries, should.HaveLength(2))
+					assert.Loosely(t, res.State.LogEntries[0].Kind, should.HaveType[*run.LogEntry_AcquiredSubmitQueue_])
+					assert.Loosely(t, res.State.LogEntries[1].Kind.(*run.LogEntry_TreeChecked_).TreeChecked.Open, should.BeTrue)
 					// SubmitQueue not yet released.
 				})
 
-				Convey("Add Run to waitlist when Submit Queue is occupied", func() {
+				t.Run("Add Run to waitlist when Submit Queue is occupied", func(t *ftt.Test) {
 					// another run has taken the current slot
 					anotherRunID := common.MakeRunID(lProject, now, 1, []byte("cafecafe"))
-					So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+					assert.Loosely(t, datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 						_, err := submit.TryAcquire(ctx, deps.rm.NotifyReadyForSubmission, anotherRunID, nil)
-						So(err, ShouldBeNil)
+						assert.Loosely(t, err, should.BeNil)
 						return nil
-					}, nil), ShouldBeNil)
-					So(submit.MustCurrentRun(ctx, lProject), ShouldEqual, anotherRunID)
+					}, nil), should.BeNil)
+					assert.Loosely(t, submit.MustCurrentRun(ctx, lProject), should.Equal(anotherRunID))
 					res, err := h.OnReadyForSubmission(ctx, rs)
-					So(err, ShouldBeNil)
-					So(res.State.Status, ShouldEqual, run.Status_WAITING_FOR_SUBMISSION)
-					So(res.SideEffectFn, ShouldBeNil)
-					So(res.PreserveEvents, ShouldBeFalse)
-					So(res.PostProcessFn, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, res.State.Status, should.Equal(run.Status_WAITING_FOR_SUBMISSION))
+					assert.Loosely(t, res.SideEffectFn, should.BeNil)
+					assert.Loosely(t, res.PreserveEvents, should.BeFalse)
+					assert.Loosely(t, res.PostProcessFn, should.BeNil)
 					_, waitlist, err := submit.LoadCurrentAndWaitlist(ctx, rid)
-					So(err, ShouldBeNil)
-					So(waitlist.Index(rid), ShouldEqual, 0)
-					So(res.State.LogEntries, ShouldHaveLength, 1)
-					So(res.State.LogEntries[0].Kind, ShouldHaveSameTypeAs, &run.LogEntry_Waitlisted_{})
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, waitlist.Index(rid), should.BeZero)
+					assert.Loosely(t, res.State.LogEntries, should.HaveLength(1))
+					assert.Loosely(t, res.State.LogEntries[0].Kind, should.HaveType[*run.LogEntry_Waitlisted_])
 				})
 
-				Convey("Revisit after 1 mintues if tree is closed", func() {
+				t.Run("Revisit after 1 mintues if tree is closed", func(t *ftt.Test) {
 					ct.TreeFake.ModifyState(ctx, tree.Closed)
 					res, err := h.OnReadyForSubmission(ctx, rs)
-					So(err, ShouldBeNil)
-					So(res.State.Status, ShouldEqual, run.Status_WAITING_FOR_SUBMISSION)
-					So(res.State.Submission, ShouldResembleProto, &run.Submission{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, res.State.Status, should.Equal(run.Status_WAITING_FOR_SUBMISSION))
+					assert.Loosely(t, res.State.Submission, should.Resemble(&run.Submission{
 						TreeOpen:          false,
 						LastTreeCheckTime: timestamppb.New(now),
-					})
-					So(res.SideEffectFn, ShouldBeNil)
-					So(res.PreserveEvents, ShouldBeFalse)
-					So(res.PostProcessFn, ShouldBeNil)
-					runtest.AssertReceivedPoke(ctx, rid, now.Add(1*time.Minute))
+					}))
+					assert.Loosely(t, res.SideEffectFn, should.BeNil)
+					assert.Loosely(t, res.PreserveEvents, should.BeFalse)
+					assert.Loosely(t, res.PostProcessFn, should.BeNil)
+					runtest.AssertReceivedPoke(t, ctx, rid, now.Add(1*time.Minute))
 					// The Run must not occupy the Submit Queue
-					So(submit.MustCurrentRun(ctx, lProject), ShouldNotEqual, rid)
-					So(res.State.LogEntries, ShouldHaveLength, 3)
-					So(res.State.LogEntries[0].Kind, ShouldHaveSameTypeAs, &run.LogEntry_AcquiredSubmitQueue_{})
-					So(res.State.LogEntries[1].Kind, ShouldHaveSameTypeAs, &run.LogEntry_TreeChecked_{})
-					So(res.State.LogEntries[2].Kind, ShouldHaveSameTypeAs, &run.LogEntry_ReleasedSubmitQueue_{})
-					So(res.State.LogEntries[1].Kind.(*run.LogEntry_TreeChecked_).TreeChecked.Open, ShouldBeFalse)
+					assert.Loosely(t, submit.MustCurrentRun(ctx, lProject), should.NotEqual(rid))
+					assert.Loosely(t, res.State.LogEntries, should.HaveLength(3))
+					assert.Loosely(t, res.State.LogEntries[0].Kind, should.HaveType[*run.LogEntry_AcquiredSubmitQueue_])
+					assert.Loosely(t, res.State.LogEntries[1].Kind, should.HaveType[*run.LogEntry_TreeChecked_])
+					assert.Loosely(t, res.State.LogEntries[2].Kind, should.HaveType[*run.LogEntry_ReleasedSubmitQueue_])
+					assert.Loosely(t, res.State.LogEntries[1].Kind.(*run.LogEntry_TreeChecked_).TreeChecked.Open, should.BeFalse)
 				})
 
-				Convey("Set TreeErrorSince on first failure", func() {
+				t.Run("Set TreeErrorSince on first failure", func(t *ftt.Test) {
 					ct.TreeFake.ModifyState(ctx, tree.StateUnknown)
 					ct.TreeFake.InjectErr(fmt.Errorf("error while fetching tree status"))
 					res, err := h.OnReadyForSubmission(ctx, rs)
-					So(err, ShouldBeNil)
-					So(res.State.Status, ShouldEqual, run.Status_WAITING_FOR_SUBMISSION)
-					So(res.State.Submission, ShouldResembleProto, &run.Submission{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, res.State.Status, should.Equal(run.Status_WAITING_FOR_SUBMISSION))
+					assert.Loosely(t, res.State.Submission, should.Resemble(&run.Submission{
 						TreeOpen:          false,
 						LastTreeCheckTime: timestamppb.New(now),
 						TreeErrorSince:    timestamppb.New(now),
-					})
-					So(res.SideEffectFn, ShouldBeNil)
-					So(res.PreserveEvents, ShouldBeFalse)
-					So(res.PostProcessFn, ShouldBeNil)
-					runtest.AssertReceivedPoke(ctx, rid, now.Add(1*time.Minute))
+					}))
+					assert.Loosely(t, res.SideEffectFn, should.BeNil)
+					assert.Loosely(t, res.PreserveEvents, should.BeFalse)
+					assert.Loosely(t, res.PostProcessFn, should.BeNil)
+					runtest.AssertReceivedPoke(t, ctx, rid, now.Add(1*time.Minute))
 					// The Run must not occupy the Submit Queue
-					So(submit.MustCurrentRun(ctx, lProject), ShouldNotEqual, rid)
-					So(res.State.LogEntries, ShouldHaveLength, 2)
-					So(res.State.LogEntries[0].Kind, ShouldHaveSameTypeAs, &run.LogEntry_AcquiredSubmitQueue_{})
-					So(res.State.LogEntries[1].Kind, ShouldHaveSameTypeAs, &run.LogEntry_ReleasedSubmitQueue_{})
+					assert.Loosely(t, submit.MustCurrentRun(ctx, lProject), should.NotEqual(rid))
+					assert.Loosely(t, res.State.LogEntries, should.HaveLength(2))
+					assert.Loosely(t, res.State.LogEntries[0].Kind, should.HaveType[*run.LogEntry_AcquiredSubmitQueue_])
+					assert.Loosely(t, res.State.LogEntries[1].Kind, should.HaveType[*run.LogEntry_ReleasedSubmitQueue_])
 				})
 			})
 		}
@@ -302,7 +311,7 @@ func TestOnReadyForSubmission(t *testing.T) {
 func TestOnSubmissionCompleted(t *testing.T) {
 	t.Parallel()
 
-	Convey("OnSubmissionCompleted", t, func() {
+	ftt.Run("OnSubmissionCompleted", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
@@ -318,7 +327,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 			StartTime:  ct.Clock.Now().UTC().Add(-1 * time.Minute),
 			CLs:        runCLs,
 		}
-		So(datastore.Put(ctx, &r), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, &r), should.BeNil)
 		cg := &cfgpb.Config{
 			ConfigGroups: []*cfgpb.ConfigGroup{
 				{Name: "main"},
@@ -326,8 +335,8 @@ func TestOnSubmissionCompleted(t *testing.T) {
 		}
 		prjcfgtest.Create(ctx, rid.LUCIProject(), cg)
 		meta, err := prjcfg.GetLatestMeta(ctx, rid.LUCIProject())
-		So(err, ShouldBeNil)
-		So(meta.ConfigGroupIDs, ShouldHaveLength, 1)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, meta.ConfigGroupIDs, should.HaveLength(1))
 		r.ConfigGroupID = meta.ConfigGroupIDs[0]
 
 		genCL := func(clid common.CLID, change int, deps ...common.CLID) (*gerritpb.ChangeInfo, *changelist.CL, *run.RunCL) {
@@ -338,12 +347,12 @@ func TestOnSubmissionCompleted(t *testing.T) {
 				gf.CQ(2, ct.Clock.Now().Add(-2*time.Minute), gf.U("user-100")),
 				gf.Updated(clock.Now(ctx).Add(-1*time.Minute)))
 			triggers := trigger.Find(&trigger.FindInput{ChangeInfo: ci, ConfigGroup: cg.ConfigGroups[0]})
-			So(triggers.GetCqVoteTrigger(), ShouldResembleProto, &run.Trigger{
+			assert.Loosely(t, triggers.GetCqVoteTrigger(), should.Resemble(&run.Trigger{
 				Time:            timestamppb.New(ct.Clock.Now().Add(-2 * time.Minute)),
 				Mode:            string(run.FullRun),
 				Email:           "user-100@example.com",
 				GerritAccountId: 100,
-			})
+			}))
 			cl := &changelist.CL{
 				ID:         clid,
 				ExternalID: changelist.MustGobID(gHost, ci.GetNumber()),
@@ -394,7 +403,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 
 		ci1, cl1, runCL1 := genCL(1, 1111, 2)
 		ci2, cl2, runCL2 := genCL(2, 2222)
-		So(datastore.Put(ctx, cl1, cl2, runCL1, runCL2), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, cl1, cl2, runCL1, runCL2), should.BeNil)
 
 		ct.GFake.CreateChange(&gf.Change{
 			Host: gHost,
@@ -417,15 +426,15 @@ func TestOnSubmissionCompleted(t *testing.T) {
 			run.Status_CANCELLED,
 		}
 		for _, status := range statuses {
-			Convey(fmt.Sprintf("Release submit queue when Run is %s", status), func() {
-				So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+			t.Run(fmt.Sprintf("Release submit queue when Run is %s", status), func(t *ftt.Test) {
+				assert.Loosely(t, datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 					waitlisted, err := submit.TryAcquire(ctx, deps.rm.NotifyReadyForSubmission, rs.ID, nil)
-					So(waitlisted, ShouldBeFalse)
+					assert.Loosely(t, waitlisted, should.BeFalse)
 					return err
-				}, nil), ShouldBeNil)
+				}, nil), should.BeNil)
 				rs.Status = status
 				res, err := h.OnSubmissionCompleted(ctx, rs, nil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				expectedState := &state.RunState{
 					Run: rs.Run,
 					LogEntries: []*run.LogEntry{
@@ -437,29 +446,29 @@ func TestOnSubmissionCompleted(t *testing.T) {
 						},
 					},
 				}
-				So(res.State, cvtesting.SafeShouldResemble, expectedState)
-				So(res.SideEffectFn, ShouldBeNil)
-				So(res.PreserveEvents, ShouldBeFalse)
-				So(res.PostProcessFn, ShouldBeNil)
+				assert.Loosely(t, res.State, should.Match(expectedState))
+				assert.Loosely(t, res.SideEffectFn, should.BeNil)
+				assert.Loosely(t, res.PreserveEvents, should.BeFalse)
+				assert.Loosely(t, res.PostProcessFn, should.BeNil)
 				current, waitlist, err := submit.LoadCurrentAndWaitlist(ctx, rs.ID)
-				So(err, ShouldBeNil)
-				So(current, ShouldBeEmpty)
-				So(waitlist, ShouldBeEmpty)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, current, should.BeEmpty)
+				assert.Loosely(t, waitlist, should.BeEmpty)
 			})
 		}
 
 		ctx = context.WithValue(ctx, &fakeTaskIDKey, "task-foo")
-		Convey("Succeeded", func() {
+		t.Run("Succeeded", func(t *ftt.Test) {
 			sc := &eventpb.SubmissionCompleted{
 				Result: eventpb.SubmissionResult_SUCCEEDED,
 			}
 			res, err := h.OnSubmissionCompleted(ctx, rs, sc)
-			So(err, ShouldBeNil)
-			So(res.State.Status, ShouldEqual, run.Status_SUCCEEDED)
-			So(res.State.EndTime, ShouldEqual, ct.Clock.Now().UTC())
-			So(res.SideEffectFn, ShouldNotBeNil)
-			So(res.PreserveEvents, ShouldBeFalse)
-			So(res.PostProcessFn, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.State.Status, should.Equal(run.Status_SUCCEEDED))
+			assert.Loosely(t, res.State.EndTime, should.Match(ct.Clock.Now().UTC()))
+			assert.Loosely(t, res.SideEffectFn, should.NotBeNil)
+			assert.Loosely(t, res.PreserveEvents, should.BeFalse)
+			assert.Loosely(t, res.PostProcessFn, should.BeNil)
 		})
 
 		selfSetReviewRequests := func() (ret []*gerritpb.SetReviewRequest) {
@@ -477,9 +486,9 @@ func TestOnSubmissionCompleted(t *testing.T) {
 			return
 		}
 		assertNotify := func(req *gerritpb.SetReviewRequest, accts ...int64) {
-			So(req, ShouldNotBeNil)
-			So(req.GetNotify(), ShouldEqual, gerritpb.Notify_NOTIFY_NONE)
-			So(req.GetNotifyDetails(), ShouldResembleProto, &gerritpb.NotifyDetails{
+			assert.Loosely(t, req, should.NotBeNil)
+			assert.Loosely(t, req.GetNotify(), should.Equal(gerritpb.Notify_NOTIFY_NONE))
+			assert.Loosely(t, req.GetNotifyDetails(), should.Resemble(&gerritpb.NotifyDetails{
 				Recipients: []*gerritpb.NotifyDetails_Recipient{
 					{
 						RecipientType: gerritpb.NotifyDetails_RECIPIENT_TYPE_TO,
@@ -488,10 +497,10 @@ func TestOnSubmissionCompleted(t *testing.T) {
 						},
 					},
 				},
-			})
+			}))
 		}
 		assertAttentionSet := func(req *gerritpb.SetReviewRequest, reason string, accs ...int64) {
-			So(req, ShouldNotBeNil)
+			assert.Loosely(t, req, should.NotBeNil)
 			expected := []*gerritpb.AttentionSetInput{}
 			for _, a := range accs {
 				expected = append(
@@ -508,38 +517,38 @@ func TestOnSubmissionCompleted(t *testing.T) {
 				rhs, _ := strconv.Atoi(actual[j].User)
 				return lhs < rhs
 			})
-			So(actual, ShouldResembleProto, expected)
+			assert.Loosely(t, actual, should.Resemble(expected))
 		}
 
-		Convey("Transient failure", func() {
+		t.Run("Transient failure", func(t *ftt.Test) {
 			sc := &eventpb.SubmissionCompleted{
 				Result: eventpb.SubmissionResult_FAILED_TRANSIENT,
 			}
-			Convey("When deadline is not exceeded", func() {
+			t.Run("When deadline is not exceeded", func(t *ftt.Test) {
 				rs.Submission = &run.Submission{
 					Deadline: timestamppb.New(ct.Clock.Now().UTC().Add(10 * time.Minute)),
 				}
 
-				Convey("Resume submission if TaskID matches", func() {
+				t.Run("Resume submission if TaskID matches", func(t *ftt.Test) {
 					rs.Submission.TaskId = "task-foo" // same task ID as the current task
 					res, err := h.OnSubmissionCompleted(ctx, rs, sc)
-					So(err, ShouldBeNil)
-					So(res.State.Status, ShouldEqual, run.Status_SUBMITTING)
-					So(res.State.Submission, ShouldResembleProto, &run.Submission{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, res.State.Status, should.Equal(run.Status_SUBMITTING))
+					assert.Loosely(t, res.State.Submission, should.Resemble(&run.Submission{
 						Deadline: timestamppb.New(ct.Clock.Now().UTC().Add(10 * time.Minute)),
 						TaskId:   "task-foo",
-					}) // unchanged
-					So(res.State.SubmissionScheduled, ShouldBeTrue)
-					So(res.SideEffectFn, ShouldBeNil)
-					So(res.PreserveEvents, ShouldBeFalse)
-					So(res.PostProcessFn, ShouldNotBeNil)
+					})) // unchanged
+					assert.Loosely(t, res.State.SubmissionScheduled, should.BeTrue)
+					assert.Loosely(t, res.SideEffectFn, should.BeNil)
+					assert.Loosely(t, res.PreserveEvents, should.BeFalse)
+					assert.Loosely(t, res.PostProcessFn, should.NotBeNil)
 				})
 
-				Convey("Invoke RM at deadline if TaskID doesn't match", func() {
+				t.Run("Invoke RM at deadline if TaskID doesn't match", func(t *ftt.Test) {
 					ctx, rmDispatcher := runtest.MockDispatch(ctx)
 					rs.Submission.TaskId = "another-task"
 					res, err := h.OnSubmissionCompleted(ctx, rs, sc)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					expectedState := &state.RunState{
 						Run: rs.Run,
 						LogEntries: []*run.LogEntry{
@@ -553,43 +562,43 @@ func TestOnSubmissionCompleted(t *testing.T) {
 							},
 						},
 					}
-					So(res.State, cvtesting.SafeShouldResemble, expectedState)
-					So(res.SideEffectFn, ShouldBeNil)
-					So(res.PreserveEvents, ShouldBeTrue)
-					So(res.PostProcessFn, ShouldBeNil)
-					So(rmDispatcher.LatestETAof(string(rid)), ShouldHappenOnOrAfter, rs.Submission.Deadline.AsTime())
+					assert.Loosely(t, res.State, should.Match(expectedState))
+					assert.Loosely(t, res.SideEffectFn, should.BeNil)
+					assert.Loosely(t, res.PreserveEvents, should.BeTrue)
+					assert.Loosely(t, res.PostProcessFn, should.BeNil)
+					assert.Loosely(t, rmDispatcher.LatestETAof(string(rid)), should.HappenOnOrAfter(rs.Submission.Deadline.AsTime()))
 				})
 			})
 
-			Convey("When deadline is exceeded", func() {
+			t.Run("When deadline is exceeded", func(t *ftt.Test) {
 				rs.Submission = &run.Submission{
 					Deadline: timestamppb.New(ct.Clock.Now().UTC().Add(-10 * time.Minute)),
 					TaskId:   "task-foo",
 				}
-				So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+				assert.Loosely(t, datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 					waitlisted, err := submit.TryAcquire(ctx, deps.rm.NotifyReadyForSubmission, rid, nil)
-					So(waitlisted, ShouldBeFalse)
+					assert.Loosely(t, waitlisted, should.BeFalse)
 					return err
-				}, nil), ShouldBeNil)
+				}, nil), should.BeNil)
 				runAndVerify := func(expectedMsgs []struct {
 					clid int64
 					msg  string
 				}) {
 					res, err := h.OnSubmissionCompleted(ctx, rs, sc)
-					So(err, ShouldBeNil)
-					So(res.State.Status, ShouldEqual, run.Status_SUBMITTING)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, res.State.Status, should.Equal(run.Status_SUBMITTING))
 					for i, f := range sc.GetClFailures().GetFailures() {
-						So(res.State.Submission.GetFailedCls()[i], ShouldEqual, f.GetClid())
+						assert.Loosely(t, res.State.Submission.GetFailedCls()[i], should.Equal(f.GetClid()))
 					}
-					So(res.SideEffectFn, ShouldBeNil)
-					So(res.PreserveEvents, ShouldBeFalse)
-					So(res.PostProcessFn, ShouldBeNil)
-					So(res.State.OngoingLongOps.GetOps(), ShouldHaveLength, 1)
+					assert.Loosely(t, res.SideEffectFn, should.BeNil)
+					assert.Loosely(t, res.PreserveEvents, should.BeFalse)
+					assert.Loosely(t, res.PostProcessFn, should.BeNil)
+					assert.Loosely(t, res.State.OngoingLongOps.GetOps(), should.HaveLength(1))
 					for i, f := range sc.GetClFailures().GetFailures() {
-						So(res.State.Submission.GetFailedCls()[i], ShouldEqual, f.GetClid())
+						assert.Loosely(t, res.State.Submission.GetFailedCls()[i], should.Equal(f.GetClid()))
 					}
 					for _, op := range res.State.OngoingLongOps.GetOps() {
-						So(op.GetResetTriggers(), ShouldNotBeNil)
+						assert.Loosely(t, op.GetResetTriggers(), should.NotBeNil)
 						expectedRequests := make([]*run.OngoingLongOps_Op_ResetTriggers_Request, len(expectedMsgs))
 						for i, expectedMsg := range expectedMsgs {
 							expectedRequests[i] = &run.OngoingLongOps_Op_ResetTriggers_Request{
@@ -606,16 +615,16 @@ func TestOnSubmissionCompleted(t *testing.T) {
 								AddToAttentionReason: submissionFailureAttentionReason,
 							}
 						}
-						So(op.GetResetTriggers().GetRequests(), ShouldResembleProto, expectedRequests)
-						So(op.GetResetTriggers().GetRunStatusIfSucceeded(), ShouldEqual, run.Status_FAILED)
+						assert.Loosely(t, op.GetResetTriggers().GetRequests(), should.Resemble(expectedRequests))
+						assert.Loosely(t, op.GetResetTriggers().GetRunStatusIfSucceeded(), should.Equal(run.Status_FAILED))
 					}
-					So(submit.MustCurrentRun(ctx, lProject), ShouldNotEqual, rs.ID)
+					assert.Loosely(t, submit.MustCurrentRun(ctx, lProject), should.NotEqual(rs.ID))
 				}
 
-				Convey("Single CL Run", func() {
+				t.Run("Single CL Run", func(t *ftt.Test) {
 					rs.Submission.Cls = []int64{2}
-					Convey("Not submitted", func() {
-						Convey("CL failure", func() {
+					t.Run("Not submitted", func(t *ftt.Test) {
+						t.Run("CL failure", func(t *ftt.Test) {
 							sc.FailureReason = &eventpb.SubmissionCompleted_ClFailures{
 								ClFailures: &eventpb.SubmissionCompleted_CLSubmissionFailures{
 									Failures: []*eventpb.SubmissionCompleted_CLSubmissionFailure{
@@ -633,7 +642,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 								},
 							})
 						})
-						Convey("Unclassified failure", func() {
+						t.Run("Unclassified failure", func(t *ftt.Test) {
 							runAndVerify([]struct {
 								clid int64
 								msg  string
@@ -645,29 +654,31 @@ func TestOnSubmissionCompleted(t *testing.T) {
 							})
 						})
 					})
-					Convey("Submitted", func() {
+					t.Run("Submitted", func(t *ftt.Test) {
 						rs.Submission.SubmittedCls = []int64{2}
 						res, err := h.OnSubmissionCompleted(ctx, rs, sc)
-						So(err, ShouldBeNil)
-						So(res.State.Status, ShouldEqual, run.Status_SUCCEEDED)
-						So(res.State.EndTime, ShouldEqual, ct.Clock.Now())
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, res.State.Status, should.Equal(run.Status_SUCCEEDED))
+						assert.Loosely(t, res.State.EndTime, should.Match(ct.Clock.Now()))
 						for _, op := range res.State.OngoingLongOps.GetOps() {
 							if op.GetExecutePostAction() == nil {
-								SoMsg("should not contain any long op other than post action", op.GetWork(), ShouldBeNil)
+								if !check.Loosely(t, op.GetWork(), should.BeNil) {
+									t.Fatal("should not contain any long op other than post action")
+								}
 							}
 						}
-						So(res.SideEffectFn, ShouldNotBeNil)
-						So(res.PreserveEvents, ShouldBeFalse)
-						So(res.PostProcessFn, ShouldBeNil)
-						So(ct.GFake.GetChange(gHost, int(ci2.GetNumber())).Info, ShouldResembleProto, ci2) // unchanged
-						So(submit.MustCurrentRun(ctx, lProject), ShouldNotEqual, rs.ID)
+						assert.Loosely(t, res.SideEffectFn, should.NotBeNil)
+						assert.Loosely(t, res.PreserveEvents, should.BeFalse)
+						assert.Loosely(t, res.PostProcessFn, should.BeNil)
+						assert.Loosely(t, ct.GFake.GetChange(gHost, int(ci2.GetNumber())).Info, should.Resemble(ci2)) // unchanged
+						assert.Loosely(t, submit.MustCurrentRun(ctx, lProject), should.NotEqual(rs.ID))
 					})
 				})
 
-				Convey("Multi CLs Run", func() {
+				t.Run("Multi CLs Run", func(t *ftt.Test) {
 					rs.Submission.Cls = []int64{2, 1}
-					Convey("None of the CLs are submitted", func() {
-						Convey("CL failure", func() {
+					t.Run("None of the CLs are submitted", func(t *ftt.Test) {
+						t.Run("CL failure", func(t *ftt.Test) {
 							sc.FailureReason = &eventpb.SubmissionCompleted_ClFailures{
 								ClFailures: &eventpb.SubmissionCompleted_CLSubmissionFailures{
 									Failures: []*eventpb.SubmissionCompleted_CLSubmissionFailure{
@@ -675,7 +686,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 									},
 								},
 							}
-							Convey("With root CL", func() {
+							t.Run("With root CL", func(t *ftt.Test) {
 								rs.RootCL = 1
 								runAndVerify([]struct {
 									clid int64
@@ -687,7 +698,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 									},
 								})
 							})
-							Convey("Without root CL", func() {
+							t.Run("Without root CL", func(t *ftt.Test) {
 								runAndVerify([]struct {
 									clid int64
 									msg  string
@@ -703,8 +714,8 @@ func TestOnSubmissionCompleted(t *testing.T) {
 								})
 							})
 						})
-						Convey("Unclassified failure", func() {
-							Convey("With root CL", func() {
+						t.Run("Unclassified failure", func(t *ftt.Test) {
+							t.Run("With root CL", func(t *ftt.Test) {
 								rs.RootCL = 1
 								runAndVerify([]struct {
 									clid int64
@@ -716,7 +727,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 									},
 								})
 							})
-							Convey("Without root CL", func() {
+							t.Run("Without root CL", func(t *ftt.Test) {
 								runAndVerify([]struct {
 									clid int64
 									msg  string
@@ -734,14 +745,14 @@ func TestOnSubmissionCompleted(t *testing.T) {
 						})
 					})
 
-					Convey("CLs partially submitted", func() {
+					t.Run("CLs partially submitted", func(t *ftt.Test) {
 						rs.Submission.SubmittedCls = []int64{2}
 						ct.GFake.MutateChange(gHost, int(ci2.GetNumber()), func(c *gf.Change) {
 							gf.PS(int(ci2.GetRevisions()[ci2.GetCurrentRevision()].GetNumber()) + 1)(c.Info)
 							gf.Status(gerritpb.ChangeStatus_MERGED)(c.Info)
 						})
 
-						Convey("CL failure", func() {
+						t.Run("CL failure", func(t *ftt.Test) {
 							sc.FailureReason = &eventpb.SubmissionCompleted_ClFailures{
 								ClFailures: &eventpb.SubmissionCompleted_CLSubmissionFailures{
 									Failures: []*eventpb.SubmissionCompleted_CLSubmissionFailure{
@@ -749,7 +760,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 									},
 								},
 							}
-							Convey("With root CL", func() {
+							t.Run("With root CL", func(t *ftt.Test) {
 								rs.RootCL = 1
 								runAndVerify([]struct {
 									clid int64
@@ -762,9 +773,9 @@ func TestOnSubmissionCompleted(t *testing.T) {
 								})
 								// Not posting message to any other CLs at all.
 								reqs := selfSetReviewRequests()
-								So(reqs, ShouldBeEmpty)
+								assert.Loosely(t, reqs, should.BeEmpty)
 							})
-							Convey("Without root CL", func() {
+							t.Run("Without root CL", func(t *ftt.Test) {
 								runAndVerify([]struct {
 									clid int64
 									msg  string
@@ -777,15 +788,15 @@ func TestOnSubmissionCompleted(t *testing.T) {
 								// Verify posting message to the submitted CL about the failure
 								// on the dependent CLs
 								reqs := selfSetReviewRequests()
-								So(reqs, ShouldHaveLength, 1)
-								So(reqs[0].GetNumber(), ShouldEqual, ci2.GetNumber())
+								assert.Loosely(t, reqs, should.HaveLength(1))
+								assert.Loosely(t, reqs[0].GetNumber(), should.Equal(ci2.GetNumber()))
 								assertNotify(reqs[0], 99, 100, 101)
 								assertAttentionSet(reqs[0], "failed to submit dependent CLs", 99, 100, 101)
-								So(reqs[0].Message, ShouldContainSubstring, "This CL is submitted. However, submission has failed for the following CL(s) which depend on this CL.")
+								assert.Loosely(t, reqs[0].Message, should.ContainSubstring("This CL is submitted. However, submission has failed for the following CL(s) which depend on this CL."))
 							})
 						})
-						Convey("Unclassified failure", func() {
-							Convey("With root CL", func() {
+						t.Run("Unclassified failure", func(t *ftt.Test) {
+							t.Run("With root CL", func(t *ftt.Test) {
 								rs.RootCL = 1
 								runAndVerify([]struct {
 									clid int64
@@ -797,7 +808,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 									},
 								})
 							})
-							Convey("Without root CL", func() {
+							t.Run("Without root CL", func(t *ftt.Test) {
 								runAndVerify([]struct {
 									clid int64
 									msg  string
@@ -812,22 +823,22 @@ func TestOnSubmissionCompleted(t *testing.T) {
 						})
 					})
 
-					Convey("CLs fully submitted", func() {
+					t.Run("CLs fully submitted", func(t *ftt.Test) {
 						rs.Submission.SubmittedCls = []int64{2, 1}
 						res, err := h.OnSubmissionCompleted(ctx, rs, sc)
-						So(err, ShouldBeNil)
-						So(res.State.Status, ShouldEqual, run.Status_SUCCEEDED)
-						So(res.State.EndTime, ShouldEqual, ct.Clock.Now())
-						So(res.SideEffectFn, ShouldNotBeNil)
-						So(res.PreserveEvents, ShouldBeFalse)
-						So(res.PostProcessFn, ShouldBeNil)
-						So(submit.MustCurrentRun(ctx, lProject), ShouldNotEqual, rs.ID)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, res.State.Status, should.Equal(run.Status_SUCCEEDED))
+						assert.Loosely(t, res.State.EndTime, should.Match(ct.Clock.Now()))
+						assert.Loosely(t, res.SideEffectFn, should.NotBeNil)
+						assert.Loosely(t, res.PreserveEvents, should.BeFalse)
+						assert.Loosely(t, res.PostProcessFn, should.BeNil)
+						assert.Loosely(t, submit.MustCurrentRun(ctx, lProject), should.NotEqual(rs.ID))
 					})
 				})
 			})
 		})
 
-		Convey("Permanent failure", func() {
+		t.Run("Permanent failure", func(t *ftt.Test) {
 			sc := &eventpb.SubmissionCompleted{
 				Result: eventpb.SubmissionResult_FAILED_PERMANENT,
 			}
@@ -840,20 +851,20 @@ func TestOnSubmissionCompleted(t *testing.T) {
 				msg  string
 			}) {
 				res, err := h.OnSubmissionCompleted(ctx, rs, sc)
-				So(err, ShouldBeNil)
-				So(res.State.Status, ShouldEqual, run.Status_SUBMITTING)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res.State.Status, should.Equal(run.Status_SUBMITTING))
 				for i, f := range sc.GetClFailures().GetFailures() {
-					So(res.State.Submission.GetFailedCls()[i], ShouldEqual, f.GetClid())
+					assert.Loosely(t, res.State.Submission.GetFailedCls()[i], should.Equal(f.GetClid()))
 				}
-				So(res.SideEffectFn, ShouldBeNil)
-				So(res.PreserveEvents, ShouldBeFalse)
-				So(res.PostProcessFn, ShouldBeNil)
-				So(res.State.OngoingLongOps.GetOps(), ShouldHaveLength, 1)
+				assert.Loosely(t, res.SideEffectFn, should.BeNil)
+				assert.Loosely(t, res.PreserveEvents, should.BeFalse)
+				assert.Loosely(t, res.PostProcessFn, should.BeNil)
+				assert.Loosely(t, res.State.OngoingLongOps.GetOps(), should.HaveLength(1))
 				for i, f := range sc.GetClFailures().GetFailures() {
-					So(res.State.Submission.GetFailedCls()[i], ShouldEqual, f.GetClid())
+					assert.Loosely(t, res.State.Submission.GetFailedCls()[i], should.Equal(f.GetClid()))
 				}
 				for _, op := range res.State.OngoingLongOps.GetOps() {
-					So(op.GetResetTriggers(), ShouldNotBeNil)
+					assert.Loosely(t, op.GetResetTriggers(), should.NotBeNil)
 					expectedRequests := make([]*run.OngoingLongOps_Op_ResetTriggers_Request, len(expectedMsgs))
 					for i, expectedMsg := range expectedMsgs {
 						expectedRequests[i] = &run.OngoingLongOps_Op_ResetTriggers_Request{
@@ -870,14 +881,14 @@ func TestOnSubmissionCompleted(t *testing.T) {
 							AddToAttentionReason: submissionFailureAttentionReason,
 						}
 					}
-					So(op.GetResetTriggers().GetRequests(), ShouldResembleProto, expectedRequests)
-					So(op.GetResetTriggers().GetRunStatusIfSucceeded(), ShouldEqual, run.Status_FAILED)
+					assert.Loosely(t, op.GetResetTriggers().GetRequests(), should.Resemble(expectedRequests))
+					assert.Loosely(t, op.GetResetTriggers().GetRunStatusIfSucceeded(), should.Equal(run.Status_FAILED))
 				}
 			}
 
-			Convey("Single CL Run", func() {
+			t.Run("Single CL Run", func(t *ftt.Test) {
 				rs.Submission.Cls = []int64{2}
-				Convey("CL Submission failure", func() {
+				t.Run("CL Submission failure", func(t *ftt.Test) {
 					sc.FailureReason = &eventpb.SubmissionCompleted_ClFailures{
 						ClFailures: &eventpb.SubmissionCompleted_CLSubmissionFailures{
 							Failures: []*eventpb.SubmissionCompleted_CLSubmissionFailure{
@@ -899,7 +910,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 					})
 				})
 
-				Convey("Unclassified failure", func() {
+				t.Run("Unclassified failure", func(t *ftt.Test) {
 					runAndVerify([]struct {
 						clid int64
 						msg  string
@@ -912,10 +923,10 @@ func TestOnSubmissionCompleted(t *testing.T) {
 				})
 			})
 
-			Convey("Multi CLs Run", func() {
+			t.Run("Multi CLs Run", func(t *ftt.Test) {
 				rs.Submission.Cls = []int64{2, 1}
-				Convey("None of the CLs are submitted", func() {
-					Convey("CL Submission failure", func() {
+				t.Run("None of the CLs are submitted", func(t *ftt.Test) {
+					t.Run("CL Submission failure", func(t *ftt.Test) {
 						sc.FailureReason = &eventpb.SubmissionCompleted_ClFailures{
 							ClFailures: &eventpb.SubmissionCompleted_CLSubmissionFailures{
 								Failures: []*eventpb.SubmissionCompleted_CLSubmissionFailure{
@@ -926,7 +937,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 								},
 							},
 						}
-						Convey("With root CL", func() {
+						t.Run("With root CL", func(t *ftt.Test) {
 							rs.RootCL = 1
 							runAndVerify([]struct {
 								clid int64
@@ -938,7 +949,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 								},
 							})
 						})
-						Convey("Without root CL", func() {
+						t.Run("Without root CL", func(t *ftt.Test) {
 							runAndVerify([]struct {
 								clid int64
 								msg  string
@@ -955,8 +966,8 @@ func TestOnSubmissionCompleted(t *testing.T) {
 						})
 					})
 
-					Convey("Unclassified failure", func() {
-						Convey("With root CL", func() {
+					t.Run("Unclassified failure", func(t *ftt.Test) {
+						t.Run("With root CL", func(t *ftt.Test) {
 							rs.RootCL = 1
 							runAndVerify([]struct {
 								clid int64
@@ -968,7 +979,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 								},
 							})
 						})
-						Convey("Without root CL", func() {
+						t.Run("Without root CL", func(t *ftt.Test) {
 							runAndVerify([]struct {
 								clid int64
 								msg  string
@@ -986,14 +997,14 @@ func TestOnSubmissionCompleted(t *testing.T) {
 					})
 				})
 
-				Convey("CLs partially submitted", func() {
+				t.Run("CLs partially submitted", func(t *ftt.Test) {
 					rs.Submission.SubmittedCls = []int64{2}
 					ct.GFake.MutateChange(gHost, int(ci2.GetNumber()), func(c *gf.Change) {
 						gf.PS(int(ci2.GetRevisions()[ci2.GetCurrentRevision()].GetNumber()) + 1)(c.Info)
 						gf.Status(gerritpb.ChangeStatus_MERGED)(c.Info)
 					})
 
-					Convey("CL Submission failure", func() {
+					t.Run("CL Submission failure", func(t *ftt.Test) {
 						sc.FailureReason = &eventpb.SubmissionCompleted_ClFailures{
 							ClFailures: &eventpb.SubmissionCompleted_CLSubmissionFailures{
 								Failures: []*eventpb.SubmissionCompleted_CLSubmissionFailure{
@@ -1017,14 +1028,14 @@ func TestOnSubmissionCompleted(t *testing.T) {
 						// Verify posting message to the submitted CL about the failure
 						// on the dependent CLs
 						reqs := selfSetReviewRequests()
-						So(reqs, ShouldHaveLength, 1)
-						So(reqs[0].GetNumber(), ShouldEqual, ci2.GetNumber())
+						assert.Loosely(t, reqs, should.HaveLength(1))
+						assert.Loosely(t, reqs[0].GetNumber(), should.Equal(ci2.GetNumber()))
 						assertNotify(reqs[0], 99, 100, 101)
 						assertAttentionSet(reqs[0], "failed to submit dependent CLs", 99, 100, 101)
-						So(reqs[0].Message, ShouldContainSubstring, "This CL is submitted. However, submission has failed for the following CL(s) which depend on this CL.")
+						assert.Loosely(t, reqs[0].Message, should.ContainSubstring("This CL is submitted. However, submission has failed for the following CL(s) which depend on this CL."))
 					})
 
-					Convey("don't attempt posting dependent failure message if posted already", func() {
+					t.Run("don't attempt posting dependent failure message if posted already", func(t *ftt.Test) {
 						ct.GFake.MutateChange(gHost, int(ci2.GetNumber()), func(c *gf.Change) {
 							msgs := c.Info.GetMessages()
 							msgs = append(msgs, &gerritpb.ChangeMessageInfo{
@@ -1042,10 +1053,10 @@ func TestOnSubmissionCompleted(t *testing.T) {
 							},
 						})
 						reqs := selfSetReviewRequests()
-						So(reqs, ShouldBeEmpty) // no request to ci2
+						assert.Loosely(t, reqs, should.BeEmpty) // no request to ci2
 					})
 
-					Convey("Unclassified failure", func() {
+					t.Run("Unclassified failure", func(t *ftt.Test) {
 						runAndVerify([]struct {
 							clid int64
 							msg  string
@@ -1065,7 +1076,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 func TestOnCLsSubmitted(t *testing.T) {
 	t.Parallel()
 
-	Convey("OnCLsSubmitted", t, func() {
+	ftt.Run("OnCLsSubmitted", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 		rid := common.MakeRunID("infra", ct.Clock.Now(), 1, []byte("deadbeef"))
@@ -1081,46 +1092,46 @@ func TestOnCLsSubmitted(t *testing.T) {
 		}}
 
 		h, _ := makeTestHandler(&ct)
-		Convey("Single", func() {
+		t.Run("Single", func(t *ftt.Test) {
 			res, err := h.OnCLsSubmitted(ctx, rs, common.CLIDs{3})
-			So(err, ShouldBeNil)
-			So(res.State.Submission.SubmittedCls, ShouldResemble, []int64{3})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.State.Submission.SubmittedCls, should.Resemble([]int64{3}))
 
 		})
-		Convey("Duplicate", func() {
+		t.Run("Duplicate", func(t *ftt.Test) {
 			res, err := h.OnCLsSubmitted(ctx, rs, common.CLIDs{3, 3, 3, 3, 1, 1, 1})
-			So(err, ShouldBeNil)
-			So(res.State.Submission.SubmittedCls, ShouldResemble, []int64{3, 1})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.State.Submission.SubmittedCls, should.Resemble([]int64{3, 1}))
 		})
-		Convey("Obey Submission order", func() {
+		t.Run("Obey Submission order", func(t *ftt.Test) {
 			res, err := h.OnCLsSubmitted(ctx, rs, common.CLIDs{1, 3, 5, 7})
-			So(err, ShouldBeNil)
-			So(res.State.Submission.SubmittedCls, ShouldResemble, []int64{3, 1, 7, 5})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.State.Submission.SubmittedCls, should.Resemble([]int64{3, 1, 7, 5}))
 		})
-		Convey("Merge to existing", func() {
+		t.Run("Merge to existing", func(t *ftt.Test) {
 			rs.Submission.SubmittedCls = []int64{3, 1}
 			// 1 should be deduped
 			res, err := h.OnCLsSubmitted(ctx, rs, common.CLIDs{1, 7})
-			So(err, ShouldBeNil)
-			So(res.State.Submission.SubmittedCls, ShouldResemble, []int64{3, 1, 7})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.State.Submission.SubmittedCls, should.Resemble([]int64{3, 1, 7}))
 		})
-		Convey("Last cl arrives first", func() {
+		t.Run("Last cl arrives first", func(t *ftt.Test) {
 			res, err := h.OnCLsSubmitted(ctx, rs, common.CLIDs{5})
-			So(err, ShouldBeNil)
-			So(res.State.Submission.SubmittedCls, ShouldResemble, []int64{5})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.State.Submission.SubmittedCls, should.Resemble([]int64{5}))
 			rs = res.State
 			res, err = h.OnCLsSubmitted(ctx, rs, common.CLIDs{1, 3})
-			So(err, ShouldBeNil)
-			So(res.State.Submission.SubmittedCls, ShouldResemble, []int64{3, 1, 5})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.State.Submission.SubmittedCls, should.Resemble([]int64{3, 1, 5}))
 			rs = res.State
 			res, err = h.OnCLsSubmitted(ctx, rs, common.CLIDs{7})
-			So(err, ShouldBeNil)
-			So(res.State.Submission.SubmittedCls, ShouldResemble, []int64{3, 1, 7, 5})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.State.Submission.SubmittedCls, should.Resemble([]int64{3, 1, 7, 5}))
 		})
-		Convey("Error for unknown CLs", func() {
+		t.Run("Error for unknown CLs", func(t *ftt.Test) {
 			res, err := h.OnCLsSubmitted(ctx, rs, common.CLIDs{1, 3, 5, 7, 9, 11})
-			So(err, ShouldErrLike, "received CLsSubmitted event for cls not belonging to this Run: [9 11]")
-			So(res, ShouldBeNil)
+			assert.Loosely(t, err, should.ErrLike("received CLsSubmitted event for cls not belonging to this Run: [9 11]"))
+			assert.Loosely(t, res, should.BeNil)
 		})
 	})
 }

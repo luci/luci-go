@@ -15,11 +15,10 @@
 package triager
 
 import (
-	"fmt"
-	"strings"
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -32,55 +31,23 @@ import (
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/registry"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
-func shouldResembleTriagedCL(actual any, expected ...any) string {
-	if len(expected) != 1 {
-		return fmt.Sprintf("expected 1 value, got %d", len(expected))
-	}
-	exp := expected[0] // this may be nil
-	a, ok := actual.(*clInfo)
-	if !ok {
-		return fmt.Sprintf("Wrong actual type %T, must be %T", actual, a)
-	}
-	if err := ShouldHaveSameTypeAs(actual, exp); err != "" {
-		return err
-	}
-	b := exp.(*clInfo)
-	switch {
-	case a == b:
-		return ""
-	case a == nil:
-		return "actual is nil, but non-nil was expected"
-	case b == nil:
-		return "actual is not-nil, but nil was expected"
-	}
-
-	buf := strings.Builder{}
-	for _, err := range []string{
-		ShouldResemble(a.cqReady, b.cqReady),
-		ShouldResemble(a.nprReady, b.nprReady),
-		ShouldResemble(a.runIndexes, b.runIndexes),
-		cvtesting.SafeShouldResemble(a.deps, b.deps),
-		ShouldResembleProto(a.pcl, b.pcl),
-		ShouldResembleProto(a.purgingCL, b.purgingCL),
-		ShouldResembleProto(a.purgeReasons, b.purgeReasons),
-		ShouldResembleProto(a.triggeringCLDeps, b.triggeringCLDeps),
-	} {
-		if err != "" {
-			buf.WriteRune(' ')
-			buf.WriteString(err)
-		}
-	}
-	return strings.TrimSpace(buf.String())
+func init() {
+	// Allow should.Match to look inside clInfo
+	registry.RegisterCmpOption(cmp.AllowUnexported(clInfo{}))
+	registry.RegisterCmpOption(cmp.AllowUnexported(triagedCL{}))
+	registry.RegisterCmpOption(cmp.AllowUnexported(triagedDeps{}))
 }
 
 func TestCLsTriage(t *testing.T) {
 	t.Parallel()
 
-	Convey("Component's PCL deps triage", t, func() {
+	ftt.Run("Component's PCL deps triage", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
@@ -122,11 +89,11 @@ func TestCLsTriage(t *testing.T) {
 			proto.Merge(&backup, sup.pb)
 
 			cls := triageCLs(ctx, c, pm)
-			So(sup.pb, ShouldResembleProto, &backup) // must not be modified
+			assert.Loosely(t, sup.pb, should.Resemble(&backup)) // must not be modified
 			return cls
 		}
 
-		Convey("Typical 1 CL component without deps", func() {
+		t.Run("Typical 1 CL component without deps", func(t *ftt.Test) {
 			sup.pb.Pcls = []*prjpb.PCL{{
 				Clid:               1,
 				ConfigGroupIndexes: []int32{singIdx},
@@ -136,13 +103,14 @@ func TestCLsTriage(t *testing.T) {
 				Deps:               nil,
 			}}
 
-			Convey("Ready without runs", func() {
+			t.Run("Ready without runs", func(t *ftt.Test) {
 				cls := do(&prjpb.Component{Clids: []int64{1}})
-				So(cls, ShouldHaveLength, 1)
+				assert.Loosely(t, cls, should.HaveLength(1))
 				expected := &clInfo{
-					pcl:        pm.MustPCL(1),
-					runIndexes: nil,
-					purgingCL:  nil,
+					pcl:            pm.MustPCL(1),
+					runIndexes:     nil,
+					purgingCL:      nil,
+					runCountByMode: map[run.Mode]int{},
 
 					triagedCL: triagedCL{
 						purgeReasons: nil,
@@ -150,20 +118,21 @@ func TestCLsTriage(t *testing.T) {
 						deps:         &triagedDeps{},
 					},
 				}
-				So(cls[1], shouldResembleTriagedCL, expected)
+				assert.Loosely(t, cls[1], should.Match(expected))
 
-				Convey("ready may also be in 1+ Runs", func() {
+				t.Run("ready may also be in 1+ Runs", func(t *ftt.Test) {
 					cls := do(&prjpb.Component{
 						Clids: []int64{1},
 						Pruns: []*prjpb.PRun{{Id: "r1", Clids: []int64{1}, Mode: string(run.DryRun)}},
 					})
-					So(cls, ShouldHaveLength, 1)
+					assert.Loosely(t, cls, should.HaveLength(1))
 					expected.runIndexes = []int32{0}
-					So(cls[1], shouldResembleTriagedCL, expected)
+					expected.runCountByMode["DRY_RUN"] = 1
+					assert.Loosely(t, cls[1], should.Match(expected))
 				})
 			})
 
-			Convey("CL already with Errors is not ready", func() {
+			t.Run("CL already with Errors is not ready", func(t *ftt.Test) {
 				sup.pb.Pcls[0].PurgeReasons = []*prjpb.PurgeReason{
 					{
 						ClError: &changelist.CLError{
@@ -179,30 +148,32 @@ func TestCLsTriage(t *testing.T) {
 					},
 				}
 				cls := do(&prjpb.Component{Clids: []int64{1}})
-				So(cls, ShouldHaveLength, 1)
+				assert.Loosely(t, cls, should.HaveLength(1))
 				expected := &clInfo{
-					pcl:        pm.MustPCL(1),
-					runIndexes: nil,
-					purgingCL:  nil,
+					pcl:            pm.MustPCL(1),
+					runIndexes:     nil,
+					purgingCL:      nil,
+					runCountByMode: map[run.Mode]int{},
 
 					triagedCL: triagedCL{
 						purgeReasons: sup.pb.Pcls[0].GetPurgeReasons(),
 					},
 				}
-				So(cls[1], shouldResembleTriagedCL, expected)
+				assert.Loosely(t, cls[1], should.Match(expected))
 			})
 
-			Convey("Already purged is never ready", func() {
+			t.Run("Already purged is never ready", func(t *ftt.Test) {
 				sup.pb.PurgingCls = []*prjpb.PurgingCL{{
 					Clid:    1,
 					ApplyTo: &prjpb.PurgingCL_AllActiveTriggers{AllActiveTriggers: true},
 				}}
 				cls := do(&prjpb.Component{Clids: []int64{1}})
-				So(cls, ShouldHaveLength, 1)
+				assert.Loosely(t, cls, should.HaveLength(1))
 				expected := &clInfo{
-					pcl:        pm.MustPCL(1),
-					runIndexes: nil,
-					purgingCL:  pm.PurgingCL(1),
+					pcl:            pm.MustPCL(1),
+					runIndexes:     nil,
+					purgingCL:      pm.PurgingCL(1),
+					runCountByMode: map[run.Mode]int{},
 
 					triagedCL: triagedCL{
 						purgeReasons: nil,
@@ -210,27 +181,29 @@ func TestCLsTriage(t *testing.T) {
 						deps:         &triagedDeps{},
 					},
 				}
-				So(cls[1], shouldResembleTriagedCL, expected)
+				assert.Loosely(t, cls[1], should.Match(expected))
 
-				Convey("not even if inside 1+ Runs", func() {
+				t.Run("not even if inside 1+ Runs", func(t *ftt.Test) {
 					cls := do(&prjpb.Component{
 						Clids: []int64{1},
 						Pruns: []*prjpb.PRun{{Id: "r1", Clids: []int64{1}, Mode: string(run.DryRun)}},
 					})
-					So(cls, ShouldHaveLength, 1)
+					assert.Loosely(t, cls, should.HaveLength(1))
 					expected.runIndexes = []int32{0}
-					So(cls[1], shouldResembleTriagedCL, expected)
+					expected.runCountByMode["DRY_RUN"] = 1
+					assert.Loosely(t, cls[1], should.Match(expected))
 				})
 			})
 
-			Convey("CL matching several config groups is never ready", func() {
+			t.Run("CL matching several config groups is never ready", func(t *ftt.Test) {
 				sup.PCL(1).ConfigGroupIndexes = []int32{singIdx, anotherIdx}
 				cls := do(&prjpb.Component{Clids: []int64{1}})
-				So(cls, ShouldHaveLength, 1)
+				assert.Loosely(t, cls, should.HaveLength(1))
 				expected := &clInfo{
-					pcl:        pm.MustPCL(1),
-					runIndexes: nil,
-					purgingCL:  nil,
+					pcl:            pm.MustPCL(1),
+					runIndexes:     nil,
+					purgingCL:      nil,
+					runCountByMode: map[run.Mode]int{},
 
 					triagedCL: triagedCL{
 						purgeReasons: []*prjpb.PurgeReason{{
@@ -247,22 +220,23 @@ func TestCLsTriage(t *testing.T) {
 						deps:    nil, // not checked.
 					},
 				}
-				So(cls[1], shouldResembleTriagedCL, expected)
+				assert.Loosely(t, cls[1], should.Match(expected))
 
-				Convey("not even if inside 1+ Runs, but Run protects from purging", func() {
+				t.Run("not even if inside 1+ Runs, but Run protects from purging", func(t *ftt.Test) {
 					cls := do(&prjpb.Component{
 						Clids: []int64{1},
 						Pruns: []*prjpb.PRun{{Id: "r1", Clids: []int64{1}, Mode: string(run.DryRun)}},
 					})
-					So(cls, ShouldHaveLength, 1)
+					assert.Loosely(t, cls, should.HaveLength(1))
 					expected.runIndexes = []int32{0}
 					expected.purgeReasons = nil
-					So(cls[1], shouldResembleTriagedCL, expected)
+					expected.runCountByMode["DRY_RUN"] = 1
+					assert.Loosely(t, cls[1], should.Match(expected))
 				})
 			})
 		})
 
-		Convey("Typical 1 CL component with new patchset run enabled", func() {
+		t.Run("Typical 1 CL component with new patchset run enabled", func(t *ftt.Test) {
 			sup.pb.Pcls = []*prjpb.PCL{{
 				Clid:               1,
 				ConfigGroupIndexes: []int32{nprIdx},
@@ -274,7 +248,7 @@ func TestCLsTriage(t *testing.T) {
 				Submitted: false,
 				Deps:      nil,
 			}}
-			Convey("new patchset upload on CL with CQ vote run being purged", func() {
+			t.Run("new patchset upload on CL with CQ vote run being purged", func(t *ftt.Test) {
 				sup.pb.PurgingCls = append(sup.pb.PurgingCls, &prjpb.PurgingCL{
 					Clid: 1,
 					ApplyTo: &prjpb.PurgingCL_Triggers{
@@ -294,6 +268,7 @@ func TestCLsTriage(t *testing.T) {
 							},
 						},
 					},
+					runCountByMode: map[run.Mode]int{},
 
 					triagedCL: triagedCL{
 						purgeReasons: nil,
@@ -304,11 +279,11 @@ func TestCLsTriage(t *testing.T) {
 				}
 
 				cls := do(&prjpb.Component{Clids: []int64{1}})
-				So(cls, ShouldHaveLength, 1)
-				So(cls[1], shouldResembleTriagedCL, expected)
+				assert.Loosely(t, cls, should.HaveLength(1))
+				assert.Loosely(t, cls[1], should.Match(expected))
 			})
 
-			Convey("new patch upload on CL with NPR being purged", func() {
+			t.Run("new patch upload on CL with NPR being purged", func(t *ftt.Test) {
 				sup.pb.PurgingCls = append(sup.pb.PurgingCls, &prjpb.PurgingCL{
 					Clid: 1,
 					ApplyTo: &prjpb.PurgingCL_Triggers{
@@ -328,6 +303,8 @@ func TestCLsTriage(t *testing.T) {
 							},
 						},
 					},
+					runCountByMode: map[run.Mode]int{},
+
 					triagedCL: triagedCL{
 						purgeReasons: nil,
 						cqReady:      true,
@@ -336,12 +313,12 @@ func TestCLsTriage(t *testing.T) {
 					},
 				}
 				cls := do(&prjpb.Component{Clids: []int64{1}})
-				So(cls, ShouldHaveLength, 1)
-				So(cls[1], shouldResembleTriagedCL, expected)
+				assert.Loosely(t, cls, should.HaveLength(1))
+				assert.Loosely(t, cls[1], should.Match(expected))
 
 			})
 		})
-		Convey("Triage with ongoing New Pachset Run", func() {
+		t.Run("Triage with ongoing New Pachset Run", func(t *ftt.Test) {
 			sup.pb.Pcls = []*prjpb.PCL{{
 				Clid:               1,
 				ConfigGroupIndexes: []int32{nprIdx},
@@ -353,8 +330,9 @@ func TestCLsTriage(t *testing.T) {
 				Deps:      nil,
 			}}
 			expected := &clInfo{
-				pcl:        pm.MustPCL(1),
-				runIndexes: []int32{0},
+				pcl:            pm.MustPCL(1),
+				runIndexes:     []int32{0},
+				runCountByMode: map[run.Mode]int{"NEW_PATCHSET_RUN": 1},
 				triagedCL: triagedCL{
 					purgeReasons: nil,
 					nprReady:     true,
@@ -364,10 +342,10 @@ func TestCLsTriage(t *testing.T) {
 				Clids: []int64{1},
 				Pruns: []*prjpb.PRun{{Id: "r1", Clids: []int64{1}, Mode: string(run.NewPatchsetRun)}},
 			})
-			So(cls, ShouldHaveLength, 1)
-			So(cls[1], shouldResembleTriagedCL, expected)
+			assert.Loosely(t, cls, should.HaveLength(1))
+			assert.Loosely(t, cls[1], should.Match(expected))
 		})
-		Convey("Single CL Runs: typical CL stack", func() {
+		t.Run("Single CL Runs: typical CL stack", func(t *ftt.Test) {
 			// CL 3 depends on 2, which in turn depends 1.
 			// Start configuration is each one is Dry-run triggered.
 			sup.pb.Pcls = []*prjpb.PCL{
@@ -397,38 +375,39 @@ func TestCLsTriage(t *testing.T) {
 				},
 			}
 
-			Convey("Dry run everywhere is OK", func() {
+			t.Run("Dry run everywhere is OK", func(t *ftt.Test) {
 				cls := do(&prjpb.Component{Clids: []int64{1, 2, 3}})
-				So(cls, ShouldHaveLength, 3)
+				assert.Loosely(t, cls, should.HaveLength(3))
 				for _, info := range cls {
-					So(info.cqReady, ShouldBeTrue)
-					So(info.deps.OK(), ShouldBeTrue)
-					So(info.lastCQVoteTriggered(), ShouldResemble, epoch)
+					assert.Loosely(t, info.cqReady, should.BeTrue)
+					assert.Loosely(t, info.deps.OK(), should.BeTrue)
+					assert.Loosely(t, info.lastCQVoteTriggered(), should.Resemble(epoch))
 				}
 			})
 
-			Convey("Full run at the bottom (CL1) and dry run elsewhere is also OK", func() {
+			t.Run("Full run at the bottom (CL1) and dry run elsewhere is also OK", func(t *ftt.Test) {
 				sup.PCL(1).Triggers = &run.Triggers{CqVoteTrigger: fullRun(epoch)}
 				cls := do(&prjpb.Component{Clids: []int64{1, 2, 3}})
-				So(cls, ShouldHaveLength, 3)
+				assert.Loosely(t, cls, should.HaveLength(3))
 				for _, info := range cls {
-					So(info.cqReady, ShouldBeTrue)
-					So(info.deps.OK(), ShouldBeTrue)
+					assert.Loosely(t, info.cqReady, should.BeTrue)
+					assert.Loosely(t, info.deps.OK(), should.BeTrue)
 				}
 			})
 
-			Convey("Full Run on #3 is purged if its deps aren't submitted, but NPR is not affected", func() {
+			t.Run("Full Run on #3 is purged if its deps aren't submitted, but NPR is not affected", func(t *ftt.Test) {
 				sup.PCL(1).Triggers = &run.Triggers{CqVoteTrigger: dryRun(epoch), NewPatchsetRunTrigger: newPatchsetTrigger(epoch)}
 				sup.PCL(2).Triggers = &run.Triggers{CqVoteTrigger: dryRun(epoch), NewPatchsetRunTrigger: newPatchsetTrigger(epoch)}
 				sup.PCL(3).Triggers = &run.Triggers{CqVoteTrigger: fullRun(epoch), NewPatchsetRunTrigger: newPatchsetTrigger(epoch)}
 				cls := do(&prjpb.Component{Clids: []int64{1, 2, 3}})
-				So(cls[1].cqReady, ShouldBeTrue)
-				So(cls[2].cqReady, ShouldBeTrue)
-				So(cls[1].nprReady, ShouldBeTrue)
-				So(cls[2].nprReady, ShouldBeTrue)
-				So(cls[3].nprReady, ShouldBeTrue)
-				So(cls[3], shouldResembleTriagedCL, &clInfo{
-					pcl: sup.PCL(3),
+				assert.Loosely(t, cls[1].cqReady, should.BeTrue)
+				assert.Loosely(t, cls[2].cqReady, should.BeTrue)
+				assert.Loosely(t, cls[1].nprReady, should.BeTrue)
+				assert.Loosely(t, cls[2].nprReady, should.BeTrue)
+				assert.Loosely(t, cls[3].nprReady, should.BeTrue)
+				assert.Loosely(t, cls[3], should.Match(&clInfo{
+					pcl:            sup.PCL(3),
+					runCountByMode: map[run.Mode]int{},
 					triagedCL: triagedCL{
 						cqReady:  false,
 						nprReady: true,
@@ -460,11 +439,11 @@ func TestCLsTriage(t *testing.T) {
 							},
 						},
 					},
-				})
+				}))
 			})
 		})
 
-		Convey("Multiple CL Runs: 1<->2 and 3 depending on both", func() {
+		t.Run("Multiple CL Runs: 1<->2 and 3 depending on both", func(t *ftt.Test) {
 			// CL 3 depends on 1 and 2, while 1 and 2 depend on each other (e.g. via
 			// CQ-Depend).  Start configuration is each one is Dry-run triggered.
 			sup.pb.Pcls = []*prjpb.PCL{
@@ -494,25 +473,26 @@ func TestCLsTriage(t *testing.T) {
 				},
 			}
 
-			Convey("Happy case: all are ready", func() {
+			t.Run("Happy case: all are ready", func(t *ftt.Test) {
 				cls := do(&prjpb.Component{Clids: []int64{1, 2, 3}})
-				So(cls, ShouldHaveLength, 3)
+				assert.Loosely(t, cls, should.HaveLength(3))
 				for _, info := range cls {
-					So(info.cqReady, ShouldBeTrue)
-					So(info.deps.OK(), ShouldBeTrue)
+					assert.Loosely(t, info.cqReady, should.BeTrue)
+					assert.Loosely(t, info.deps.OK(), should.BeTrue)
 				}
 			})
 
-			Convey("Full Run on #1 and #2 can co-exist, but Dry run on #3 is purged", func() {
+			t.Run("Full Run on #1 and #2 can co-exist, but Dry run on #3 is purged", func(t *ftt.Test) {
 				// This scenario documents current CQDaemon behavior. This isn't desired
 				// long term though.
 				sup.PCL(1).Triggers = &run.Triggers{CqVoteTrigger: fullRun(epoch)}
 				sup.PCL(2).Triggers = &run.Triggers{CqVoteTrigger: fullRun(epoch)}
 				cls := do(&prjpb.Component{Clids: []int64{1, 2, 3}})
-				So(cls[1].cqReady, ShouldBeTrue)
-				So(cls[2].cqReady, ShouldBeTrue)
-				So(cls[3], shouldResembleTriagedCL, &clInfo{
-					pcl: sup.PCL(3),
+				assert.Loosely(t, cls[1].cqReady, should.BeTrue)
+				assert.Loosely(t, cls[2].cqReady, should.BeTrue)
+				assert.Loosely(t, cls[3], should.Match(&clInfo{
+					pcl:            sup.PCL(3),
+					runCountByMode: map[run.Mode]int{},
 					triagedCL: triagedCL{
 						cqReady: false,
 						purgeReasons: []*prjpb.PurgeReason{{
@@ -536,17 +516,17 @@ func TestCLsTriage(t *testing.T) {
 							},
 						},
 					},
-				})
+				}))
 			})
 
-			Convey("Dependencies in diff config groups are not allowed", func() {
+			t.Run("Dependencies in diff config groups are not allowed", func(t *ftt.Test) {
 				sup.PCL(1).ConfigGroupIndexes = []int32{combIdx}    // depends on 2
 				sup.PCL(2).ConfigGroupIndexes = []int32{anotherIdx} // depends on 1
 				sup.PCL(3).ConfigGroupIndexes = []int32{combIdx}    // depends on 1(OK) and 2.
 				cls := do(&prjpb.Component{Clids: []int64{1, 2, 3}})
 				for _, info := range cls {
-					So(info.cqReady, ShouldBeFalse)
-					So(info.purgeReasons, ShouldResembleProto, []*prjpb.PurgeReason{{
+					assert.Loosely(t, info.cqReady, should.BeFalse)
+					assert.Loosely(t, info.purgeReasons, should.Resemble([]*prjpb.PurgeReason{{
 						ClError: &changelist.CLError{
 							Kind: &changelist.CLError_InvalidDeps_{
 								InvalidDeps: info.triagedCL.deps.invalidDeps,
@@ -557,24 +537,24 @@ func TestCLsTriage(t *testing.T) {
 								CqVoteTrigger: dryRun(epoch),
 							},
 						},
-					}})
+					}}))
 				}
 
-				Convey("unless dependency is already submitted", func() {
+				t.Run("unless dependency is already submitted", func(t *ftt.Test) {
 					sup.PCL(2).Triggers = nil
 					sup.PCL(2).Submitted = true
 
 					cls := do(&prjpb.Component{Clids: []int64{1, 3}})
 					for _, info := range cls {
-						So(info.cqReady, ShouldBeTrue)
-						So(info.purgeReasons, ShouldBeNil)
-						So(info.deps.submitted, ShouldResembleProto, []*changelist.Dep{{Clid: 2, Kind: changelist.DepKind_SOFT}})
+						assert.Loosely(t, info.cqReady, should.BeTrue)
+						assert.Loosely(t, info.purgeReasons, should.BeNil)
+						assert.Loosely(t, info.deps.submitted, should.Resemble([]*changelist.Dep{{Clid: 2, Kind: changelist.DepKind_SOFT}}))
 					}
 				})
 			})
 		})
 
-		Convey("Ready CLs can have not yet loaded dependencies", func() {
+		t.Run("Ready CLs can have not yet loaded dependencies", func(t *ftt.Test) {
 			sup.pb.Pcls = []*prjpb.PCL{
 				{
 					Clid:   1,
@@ -589,16 +569,17 @@ func TestCLsTriage(t *testing.T) {
 				},
 			}
 			cls := do(&prjpb.Component{Clids: []int64{2}})
-			So(cls[2], shouldResembleTriagedCL, &clInfo{
-				pcl: sup.PCL(2),
+			assert.Loosely(t, cls[2], should.Match(&clInfo{
+				pcl:            sup.PCL(2),
+				runCountByMode: map[run.Mode]int{},
 				triagedCL: triagedCL{
 					cqReady: true,
 					deps:    &triagedDeps{notYetLoaded: sup.PCL(2).GetDeps()},
 				},
-			})
+			}))
 		})
 
-		Convey("Multiple CL Runs with chained CQ votes", func() {
+		t.Run("Multiple CL Runs with chained CQ votes", func(t *ftt.Test) {
 			const clid1, clid2, clid3, clid4 = 1, 2, 3, 4
 
 			newCL := func(clid int64, deps ...*changelist.Dep) *prjpb.PCL {
@@ -621,87 +602,87 @@ func TestCLsTriage(t *testing.T) {
 				newCL(clid4, Dep(clid1), Dep(clid2), Dep(clid3)),
 			}
 
-			Convey("CQ vote on a child CL", func() {
+			t.Run("CQ vote on a child CL", func(t *ftt.Test) {
 				// Trigger CQ on the CL 3 only.
 				sup.pb.Pcls[2].Triggers = &run.Triggers{CqVoteTrigger: fullRun(epoch)}
 				sup.pb.Pcls[2].Triggers.CqVoteTrigger.Email = voter
 				cls := do(&prjpb.Component{Clids: []int64{clid1, clid2, clid3, clid4}})
-				So(cls, ShouldHaveLength, 4)
+				assert.Loosely(t, cls, should.HaveLength(4))
 
 				// - all CLs should be not-cq-ready.
-				So(cls[clid1].cqReady, ShouldBeFalse)
-				So(cls[clid2].cqReady, ShouldBeFalse)
-				So(cls[clid3].cqReady, ShouldBeFalse)
-				So(cls[clid4].cqReady, ShouldBeFalse)
+				assert.Loosely(t, cls[clid1].cqReady, should.BeFalse)
+				assert.Loosely(t, cls[clid2].cqReady, should.BeFalse)
+				assert.Loosely(t, cls[clid3].cqReady, should.BeFalse)
+				assert.Loosely(t, cls[clid4].cqReady, should.BeFalse)
 				// - CL3 should have CL1, and CL2 in needToTrigger, whereas
 				// the others shouldn't have any, because only CL3 has
 				// the CQ vote. Deps are not triaged, unless a given CL has
 				// a CQ vote.
-				So(cls[clid1].deps, ShouldBeNil)
-				So(cls[clid2].deps, ShouldBeNil)
-				So(cls[clid3].deps.needToTrigger, ShouldResembleProto, []*changelist.Dep{
+				assert.Loosely(t, cls[clid1].deps, should.BeNil)
+				assert.Loosely(t, cls[clid2].deps, should.BeNil)
+				assert.Loosely(t, cls[clid3].deps.needToTrigger, should.Resemble([]*changelist.Dep{
 					Dep(clid1), Dep(clid2),
-				})
-				So(cls[clid4].deps, ShouldBeNil)
+				}))
+				assert.Loosely(t, cls[clid4].deps, should.BeNil)
 			})
 
-			Convey("CQ vote on multi CLs", func() {
+			t.Run("CQ vote on multi CLs", func(t *ftt.Test) {
 				// Trigger CQ on the CL 2 and 4.
 				sup.pb.Pcls[1].Triggers = &run.Triggers{CqVoteTrigger: fullRun(epoch)}
 				sup.pb.Pcls[1].Triggers.CqVoteTrigger.Email = voter
 				sup.pb.Pcls[3].Triggers = &run.Triggers{CqVoteTrigger: fullRun(epoch)}
 				sup.pb.Pcls[3].Triggers.CqVoteTrigger.Email = voter
 				cls := do(&prjpb.Component{Clids: []int64{clid1, clid2, clid3, clid4}})
-				So(cls, ShouldHaveLength, 4)
+				assert.Loosely(t, cls, should.HaveLength(4))
 
 				// - all CLs should not be cq-ready.
-				So(cls[clid1].cqReady, ShouldBeFalse)
-				So(cls[clid2].cqReady, ShouldBeFalse)
-				So(cls[clid3].cqReady, ShouldBeFalse)
-				So(cls[clid4].cqReady, ShouldBeFalse)
+				assert.Loosely(t, cls[clid1].cqReady, should.BeFalse)
+				assert.Loosely(t, cls[clid2].cqReady, should.BeFalse)
+				assert.Loosely(t, cls[clid3].cqReady, should.BeFalse)
+				assert.Loosely(t, cls[clid4].cqReady, should.BeFalse)
 				// - CL3 should have CL1, and CL2 in needToTrigger, whereas
 				// the others shouldn't have any, because only CL3 has
 				// the CQ vote. Deps are not triaged, unless a given CL has
 				// a CQ vote.
-				So(cls[clid1].deps, ShouldBeNil)
-				So(cls[clid2].deps.needToTrigger, ShouldResembleProto, []*changelist.Dep{
+				assert.Loosely(t, cls[clid1].deps, should.BeNil)
+				assert.Loosely(t, cls[clid2].deps.needToTrigger, should.Resemble([]*changelist.Dep{
 					Dep(clid1),
-				})
-				So(cls[clid3].deps, ShouldBeNil)
-				So(cls[clid4].deps.needToTrigger, ShouldResembleProto, []*changelist.Dep{
+				}))
+				assert.Loosely(t, cls[clid3].deps, should.BeNil)
+				assert.Loosely(t, cls[clid4].deps.needToTrigger, should.Resemble([]*changelist.Dep{
 					// Should NOT have clid4 in needToTrigger, as it is already
 					// voted.
 					Dep(clid1), Dep(clid3),
-				})
+				}))
 			})
 
-			Convey("CqReady if all voted", func() {
+			t.Run("CqReady if all voted", func(t *ftt.Test) {
 				// Vote on all the CLs.
 				for i := 0; i < 4; i++ {
 					sup.pb.Pcls[i].Triggers = &run.Triggers{CqVoteTrigger: fullRun(epoch)}
 					sup.pb.Pcls[i].Triggers.CqVoteTrigger.Email = voter
 				}
 				cls := do(&prjpb.Component{Clids: []int64{clid1, clid2, clid3, clid4}})
-				So(cls, ShouldHaveLength, 4)
+				assert.Loosely(t, cls, should.HaveLength(4))
 
 				// They all should be cq-ready.
-				So(cls[clid1].cqReady, ShouldBeTrue)
-				So(cls[clid2].cqReady, ShouldBeTrue)
-				So(cls[clid3].cqReady, ShouldBeTrue)
-				So(cls[clid4].cqReady, ShouldBeTrue)
+				assert.Loosely(t, cls[clid1].cqReady, should.BeTrue)
+				assert.Loosely(t, cls[clid2].cqReady, should.BeTrue)
+				assert.Loosely(t, cls[clid3].cqReady, should.BeTrue)
+				assert.Loosely(t, cls[clid4].cqReady, should.BeTrue)
 
-				Convey("unless there is an inflight TriggeringCLDeps{}", func() {
+				t.Run("unless there is an inflight TriggeringCLDeps{}", func(t *ftt.Test) {
 					sup.pb.TriggeringClDeps, _ = sup.pb.COWTriggeringCLDeps(nil, []*prjpb.TriggeringCLDeps{
 						{OperationId: "op-1", OriginClid: clid4, DepClids: []int64{1, 2, 3}},
 					})
 					cls := do(&prjpb.Component{Clids: []int64{clid1, clid2, clid3, clid4}})
-					So(cls, ShouldHaveLength, 4)
+					assert.Loosely(t, cls, should.HaveLength(4))
 
 					// They all should not be cq-ready.
-					So(cls[clid1].cqReady, ShouldBeFalse)
-					So(cls[clid2].cqReady, ShouldBeFalse)
-					So(cls[clid3].cqReady, ShouldBeFalse)
-					So(cls[clid4].cqReady, ShouldBeFalse)
+					assert.Loosely(t, cls[clid1].cqReady, should.BeFalse)
+					assert.Loosely(t, cls[clid2].cqReady, should.BeFalse)
+					assert.Loosely(t, cls[clid3].cqReady, should.BeFalse)
+					assert.Loosely(t, cls[clid4].cqReady, should.BeFalse)
 				})
 			})
 		})

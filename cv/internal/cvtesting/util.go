@@ -40,6 +40,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon"
@@ -83,6 +84,8 @@ const gaeTopLevelDomain = ".appspot.com"
 //	ct := cvtesting.Test{}
 //	ctx := ct.SetUp(t)
 type Test struct {
+	TB testing.TB
+
 	// Env simulates CV environment.
 	Env *common.Env
 	// GFake is a Gerrit fake. Defaults to an empty one.
@@ -132,6 +135,8 @@ func IsTestingContext(ctx context.Context) bool {
 }
 
 func (t *Test) SetUp(testingT testing.TB) context.Context {
+	t.TB = testingT
+
 	if t.Env == nil {
 		t.Env = &common.Env{
 			LogicalHostname: "luci-change-verifier" + gaeTopLevelDomain,
@@ -147,6 +152,7 @@ func (t *Test) SetUp(testingT testing.TB) context.Context {
 			},
 		}
 	}
+	t.TB.Helper()
 
 	// TODO - go.dev/issue/48157: use per-test case timeout once Golang provides
 	// native support
@@ -156,9 +162,9 @@ func (t *Test) SetUp(testingT testing.TB) context.Context {
 	// as it may interfere with test clock.
 	ctx, cancel := context.WithCancel(ctxShared)
 	ctxTimed, cancelTimed := context.WithTimeout(ctxShared, t.MaxDuration)
-	testingT.Cleanup(func() {
+	t.TB.Cleanup(func() {
 		// Fail the test if the test has timed out.
-		assert.That(testingT, ctxTimed.Err(), should.ErrLike(nil))
+		assert.That(t.TB, ctxTimed.Err(), should.ErrLike(nil), truth.LineContext())
 		cancelTimed()
 		cancel()
 	})
@@ -173,7 +179,7 @@ func (t *Test) SetUp(testingT testing.TB) context.Context {
 		}
 	}(ctx)
 	// setup the test clock first so that logger can use test clock timestamp.
-	ctx = t.setUpTestClock(ctx, testingT)
+	ctx = t.setUpTestClock(ctx, t.TB)
 	if testing.Verbose() {
 		// TODO(crbug/1282023): make this logger emit testclock-based timestamps.
 		ctx = logging.SetLevel(gologger.StdConfig.Use(ctx), logging.Debug)
@@ -185,7 +191,7 @@ func (t *Test) SetUp(testingT testing.TB) context.Context {
 	ctx = secrets.GeneratePrimaryTinkAEADForTest(ctx)
 
 	// TQDispatcher must not be set
-	assert.Loosely(testingT, t.TQDispatcher, should.BeNil)
+	assert.Loosely(t.TB, t.TQDispatcher, should.BeNil, truth.LineContext())
 	t.TQDispatcher = &tq.Dispatcher{}
 	ctx, t.TQ = tq.TestingContext(ctx, t.TQDispatcher)
 	t.TQ.TaskSucceeded = tqtesting.TasksCollector(&t.SucceededTQTasks)
@@ -204,7 +210,7 @@ func (t *Test) SetUp(testingT testing.TB) context.Context {
 		t.BQFake = &bq.Fake{}
 	}
 
-	ctx = t.installDS(ctx, testingT)
+	ctx = t.installDS(ctx, t.TB)
 	ctx = txndefer.FilterRDS(ctx)
 	t.authDB = authtest.NewFakeDB()
 	ctx = serverauth.WithState(ctx, &authtest.FakeState{FakeDB: t.authDB})
@@ -213,8 +219,8 @@ func (t *Test) SetUp(testingT testing.TB) context.Context {
 	t.TSMonStore = store.NewInMemory(&target.Task{})
 	tsmon.GetState(ctx).SetStore(t.TSMonStore)
 
-	t.GoMockCtl = gomock.NewController(testingT)
-	assert.That(testingT, srvcfg.SetTestListenerConfig(ctx, &listenerpb.Settings{}, nil), should.ErrLike(nil))
+	t.GoMockCtl = gomock.NewController(t.TB)
+	assert.That(t.TB, srvcfg.SetTestListenerConfig(ctx, &listenerpb.Settings{}, nil), should.ErrLike(nil), truth.LineContext())
 
 	return ctx
 }

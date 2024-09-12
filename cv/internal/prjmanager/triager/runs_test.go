@@ -19,6 +19,9 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
@@ -27,15 +30,12 @@ import (
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestFindImmediateHardDeps(t *testing.T) {
 	t.Parallel()
 
-	Convey("findImmediateHardDeps", t, func() {
+	ftt.Run("findImmediateHardDeps", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		_ = ct.SetUp(t)
 
@@ -67,64 +67,64 @@ func TestFindImmediateHardDeps(t *testing.T) {
 			return ret
 		}
 
-		Convey("without deps", func() {
+		t.Run("without deps", func(t *ftt.Test) {
 			cl1 := newCL()
 			cl2 := newCL()
-			So(rs.findImmediateHardDeps(cl1.pcl), ShouldEqual, CLIDs())
-			So(rs.findImmediateHardDeps(cl2.pcl), ShouldEqual, CLIDs())
+			assert.Loosely(t, rs.findImmediateHardDeps(cl1.pcl), should.Match(CLIDs()))
+			assert.Loosely(t, rs.findImmediateHardDeps(cl2.pcl), should.Match(CLIDs()))
 		})
 
-		Convey("with HARD deps", func() {
-			Convey("one immediate parent", func() {
+		t.Run("with HARD deps", func(t *ftt.Test) {
+			t.Run("one immediate parent", func(t *ftt.Test) {
 				cl1 := newCL()
 				cl2 := newCL().Deps(cl1)
 				cl3 := newCL().Deps(cl1, cl2)
 
-				So(rs.findImmediateHardDeps(cl1.pcl), ShouldEqual, CLIDs())
-				So(rs.findImmediateHardDeps(cl2.pcl), ShouldEqual, CLIDs(cl1.pcl))
-				So(rs.findImmediateHardDeps(cl3.pcl), ShouldEqual, CLIDs(cl2.pcl))
+				assert.Loosely(t, rs.findImmediateHardDeps(cl1.pcl), should.Match(CLIDs()))
+				assert.Loosely(t, rs.findImmediateHardDeps(cl2.pcl), should.Match(CLIDs(cl1.pcl)))
+				assert.Loosely(t, rs.findImmediateHardDeps(cl3.pcl), should.Match(CLIDs(cl2.pcl)))
 			})
 
-			Convey("more than one immediate parents", func() {
+			t.Run("more than one immediate parents", func(t *ftt.Test) {
 				// stack 1
 				s1cl1 := newCL()
 				s1cl2 := newCL().Deps(s1cl1)
-				So(rs.findImmediateHardDeps(s1cl1.pcl), ShouldEqual, CLIDs())
-				So(rs.findImmediateHardDeps(s1cl2.pcl), ShouldEqual, CLIDs(s1cl1.pcl))
+				assert.Loosely(t, rs.findImmediateHardDeps(s1cl1.pcl), should.Match(CLIDs()))
+				assert.Loosely(t, rs.findImmediateHardDeps(s1cl2.pcl), should.Match(CLIDs(s1cl1.pcl)))
 				// stack 2
 				s2cl1 := newCL()
 				s2cl2 := newCL().Deps(s2cl1)
-				So(rs.findImmediateHardDeps(s2cl1.pcl), ShouldEqual, CLIDs())
-				So(rs.findImmediateHardDeps(s2cl2.pcl), ShouldEqual, CLIDs(s2cl1.pcl))
+				assert.Loosely(t, rs.findImmediateHardDeps(s2cl1.pcl), should.Match(CLIDs()))
+				assert.Loosely(t, rs.findImmediateHardDeps(s2cl2.pcl), should.Match(CLIDs(s2cl1.pcl)))
 
 				// cl3 belongs to both stack 1 and 2.
 				// both s1cl2 and s2cl2 should be its immediate parents.
 				cl3 := newCL().Deps(s1cl1, s1cl2, s2cl1, s2cl2)
-				So(rs.findImmediateHardDeps(cl3.pcl), ShouldEqual, CLIDs(s1cl2.pcl, s2cl2.pcl))
+				assert.Loosely(t, rs.findImmediateHardDeps(cl3.pcl), should.Match(CLIDs(s1cl2.pcl, s2cl2.pcl)))
 			})
 		})
 
-		Convey("with SOFT deps", func() {
+		t.Run("with SOFT deps", func(t *ftt.Test) {
 			cl1 := newCL()
 			cl2 := newCL().SoftDeps(cl1)
 			cl3 := newCL().SoftDeps(cl1, cl2)
 
-			So(rs.findImmediateHardDeps(cl1.pcl), ShouldEqual, CLIDs())
-			So(rs.findImmediateHardDeps(cl2.pcl), ShouldEqual, CLIDs())
-			So(rs.findImmediateHardDeps(cl3.pcl), ShouldEqual, CLIDs())
+			assert.Loosely(t, rs.findImmediateHardDeps(cl1.pcl), should.Match(CLIDs()))
+			assert.Loosely(t, rs.findImmediateHardDeps(cl2.pcl), should.Match(CLIDs()))
+			assert.Loosely(t, rs.findImmediateHardDeps(cl3.pcl), should.Match(CLIDs()))
 		})
 
-		Convey("with a mix of HARD and SOFT deps", func() {
+		t.Run("with a mix of HARD and SOFT deps", func(t *ftt.Test) {
 			cl1 := newCL()
 			clA := newCL()
 			cl2 := newCL().Deps(cl1)
 			cl3 := newCL().Deps(cl1, cl2).SoftDeps(clA)
 			cl4 := newCL().Deps(cl1, cl2, cl3)
 
-			So(rs.findImmediateHardDeps(cl1.pcl), ShouldEqual, CLIDs())
-			So(rs.findImmediateHardDeps(cl2.pcl), ShouldEqual, CLIDs(cl1.pcl))
-			So(rs.findImmediateHardDeps(cl3.pcl), ShouldEqual, CLIDs(cl2.pcl))
-			So(rs.findImmediateHardDeps(cl4.pcl), ShouldEqual, CLIDs(cl3.pcl))
+			assert.Loosely(t, rs.findImmediateHardDeps(cl1.pcl), should.Match(CLIDs()))
+			assert.Loosely(t, rs.findImmediateHardDeps(cl2.pcl), should.Match(CLIDs(cl1.pcl)))
+			assert.Loosely(t, rs.findImmediateHardDeps(cl3.pcl), should.Match(CLIDs(cl2.pcl)))
+			assert.Loosely(t, rs.findImmediateHardDeps(cl4.pcl), should.Match(CLIDs(cl3.pcl)))
 		})
 	})
 }
@@ -132,7 +132,7 @@ func TestFindImmediateHardDeps(t *testing.T) {
 func TestQuotaPayer(t *testing.T) {
 	t.Parallel()
 
-	Convey("quotaPayer", t, func() {
+	ftt.Run("quotaPayer", t, func(t *ftt.Test) {
 		cl := &changelist.CL{
 			ID: 1234,
 			Snapshot: &changelist.Snapshot{
@@ -163,41 +163,41 @@ func TestQuotaPayer(t *testing.T) {
 			}
 		}
 
-		Convey("panics", func() {
-			var expected string
-			Convey("if owner is empty", func() {
-				owner = ""
-				expected = "empty owner"
+		t.Run("panics", func(t *ftt.Test) {
+			t.Run("if owner is empty", func(t *ftt.Test) {
+				assert.Loosely(t, func() {
+					quotaPayer(cl, "", trigg, tr)
+				}, should.PanicLike("empty owner"))
 			})
-			Convey("if owner is annoymous", func() {
-				owner = identity.AnonymousIdentity
-				expected = "the CL owner is anonymous"
+			t.Run("if owner is annoymous", func(t *ftt.Test) {
+				assert.Loosely(t, func() {
+					quotaPayer(cl, identity.AnonymousIdentity, trigg, tr)
+				}, should.PanicLike("the CL owner is anonymous"))
 			})
-			So(func() { quotaPayer(cl, owner, trigg, tr) }, ShouldPanicLike, expected)
 		})
 
-		Convey("with NewPatchsetRun", func() {
+		t.Run("with NewPatchsetRun", func(t *ftt.Test) {
 			// must be the owner always.
 			tr.Mode = string(run.NewPatchsetRun)
 			// the owner is the triggerer in NPR.
 			trigg = owner
 
 			setAutoSubmit(cl, true)
-			So(quotaPayer(cl, owner, trigg, tr), ShouldEqual, trigg)
+			assert.Loosely(t, quotaPayer(cl, owner, trigg, tr), should.Equal(trigg))
 			setAutoSubmit(cl, false)
-			So(quotaPayer(cl, owner, trigg, tr), ShouldEqual, trigg)
+			assert.Loosely(t, quotaPayer(cl, owner, trigg, tr), should.Equal(trigg))
 		})
 
-		Convey("with Dry-Run", func() {
-			Convey("by the StandardMode with AS", func() {
+		t.Run("with Dry-Run", func(t *ftt.Test) {
+			t.Run("by the StandardMode with AS", func(t *ftt.Test) {
 				tr.Mode = string(run.DryRun)
 				setAutoSubmit(cl, true)
 			})
-			Convey("by the StandardMode without AS", func() {
+			t.Run("by the StandardMode without AS", func(t *ftt.Test) {
 				tr.Mode = string(run.DryRun)
 				setAutoSubmit(cl, false)
 			})
-			Convey("by the CustomMode with AS", func() {
+			t.Run("by the CustomMode with AS", func(t *ftt.Test) {
 				tr.Mode = "custom-mode"
 				tr.ModeDefinition = &cfgpb.Mode{
 					Name:            "custom-mode",
@@ -206,7 +206,7 @@ func TestQuotaPayer(t *testing.T) {
 				}
 				setAutoSubmit(cl, true)
 			})
-			Convey("by the CustomMode without AS", func() {
+			t.Run("by the CustomMode without AS", func(t *ftt.Test) {
 				tr.Mode = "custom-mode"
 				tr.ModeDefinition = &cfgpb.Mode{
 					Name:            "custom-mode",
@@ -216,21 +216,28 @@ func TestQuotaPayer(t *testing.T) {
 				setAutoSubmit(cl, false)
 			})
 			// Must be the triggerer always.
-			So(quotaPayer(cl, owner, trigg, tr), ShouldEqual, trigg)
+			assert.Loosely(t, quotaPayer(cl, owner, trigg, tr), should.Equal(trigg))
 		})
-		Convey("with Full-Run", func() {
+		t.Run("with Full-Run", func(t *ftt.Test) {
 			var expected identity.Identity
-			Convey("by the StandardMode with AS", func() {
+			check := func(t testing.TB) {
+				t.Helper()
+				assert.Loosely(t, quotaPayer(cl, owner, trigg, tr), should.Equal(expected))
+			}
+
+			t.Run("by the StandardMode with AS", func(t *ftt.Test) {
 				tr.Mode = string(run.FullRun)
 				setAutoSubmit(cl, true)
 				expected = owner
+				check(t)
 			})
-			Convey("by the StandardMode without AS", func() {
+			t.Run("by the StandardMode without AS", func(t *ftt.Test) {
 				tr.Mode = string(run.FullRun)
 				setAutoSubmit(cl, false)
 				expected = trigg
+				check(t)
 			})
-			Convey("by the CustomMode with AS", func() {
+			t.Run("by the CustomMode with AS", func(t *ftt.Test) {
 				tr.Mode = "custom-mode"
 				tr.ModeDefinition = &cfgpb.Mode{
 					Name:            "custom-mode",
@@ -239,8 +246,9 @@ func TestQuotaPayer(t *testing.T) {
 				}
 				setAutoSubmit(cl, true)
 				expected = owner
+				check(t)
 			})
-			Convey("by the CustomMode without AS", func() {
+			t.Run("by the CustomMode without AS", func(t *ftt.Test) {
 				tr.Mode = "custom-mode"
 				tr.ModeDefinition = &cfgpb.Mode{
 					Name:            "custom-mode",
@@ -249,8 +257,8 @@ func TestQuotaPayer(t *testing.T) {
 				}
 				setAutoSubmit(cl, false)
 				expected = trigg
+				check(t)
 			})
-			So(quotaPayer(cl, owner, trigg, tr), ShouldEqual, expected)
 		})
 	})
 }

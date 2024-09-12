@@ -22,6 +22,10 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
@@ -39,15 +43,12 @@ import (
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/tryjob"
 	"go.chromium.org/luci/cv/internal/tryjob/tjcancel"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestPurgeCL(t *testing.T) {
 	t.Parallel()
 
-	Convey("PurgeCL works", t, func() {
+	ftt.Run("PurgeCL works", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 		ctx, pmDispatcher := pmtest.MockDispatch(ctx)
@@ -81,23 +82,24 @@ func TestPurgeCL(t *testing.T) {
 		clUpdater := changelist.NewUpdater(ct.TQDispatcher, clMutator)
 		gerritupdater.RegisterUpdater(clUpdater, ct.GFactory())
 		refreshCL := func() {
-			So(clUpdater.TestingForceUpdate(ctx, &changelist.UpdateCLTask{
+			assert.Loosely(t, clUpdater.TestingForceUpdate(ctx, &changelist.UpdateCLTask{
 				LuciProject: lProject,
 				ExternalId:  string(changelist.MustGobID(gHost, change)),
-			}), ShouldBeNil)
+			}), should.BeNil)
 		}
 		refreshCL()
 
 		loadCL := func() *changelist.CL {
 			cl, err := changelist.MustGobID(gHost, change).Load(ctx)
-			So(err, ShouldBeNil)
-			So(cl, ShouldNotBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cl, should.NotBeNil)
 			return cl
 		}
 		clBefore := loadCL()
 
-		assertPMNotified := func(purgingCL *prjpb.PurgingCL) {
-			pmtest.AssertInEventbox(ctx, lProject, &prjpb.Event{Event: &prjpb.Event_PurgeCompleted{
+		assertPMNotified := func(t testing.TB, purgingCL *prjpb.PurgingCL) {
+			t.Helper()
+			pmtest.AssertInEventbox(t, ctx, lProject, &prjpb.Event{Event: &prjpb.Event_PurgeCompleted{
 				PurgeCompleted: &prjpb.PurgeCompleted{
 					OperationId: purgingCL.GetOperationId(),
 					Clid:        purgingCL.GetClid(),
@@ -131,7 +133,7 @@ func TestPurgeCL(t *testing.T) {
 
 		ct.Clock.Add(time.Minute)
 
-		Convey("Purge one trigger, then the other", func() {
+		t.Run("Purge one trigger, then the other", func(t *ftt.Test) {
 			task.PurgeReasons = []*prjpb.PurgeReason{
 				{
 					ClError: &changelist.CLError{
@@ -148,7 +150,7 @@ func TestPurgeCL(t *testing.T) {
 					},
 				},
 			}
-			So(schedule(), ShouldBeNil)
+			assert.Loosely(t, schedule(), should.BeNil)
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.PurgeProjectCLTaskClass))
 
 			ciAfter := ct.GFake.GetChange(gHost, change).Info
@@ -157,12 +159,12 @@ func TestPurgeCL(t *testing.T) {
 				ConfigGroup:                  cfg.GetConfigGroups()[0],
 				TriggerNewPatchsetRunAfterPS: loadCL().TriggerNewPatchsetRunAfterPS,
 			})
-			So(triggersAfter, ShouldNotBeNil)
-			So(triggersAfter.CqVoteTrigger, ShouldBeNil)
-			So(triggersAfter.NewPatchsetRunTrigger, ShouldNotBeNil)
-			So(ciAfter, gf.ShouldLastMessageContain, "its deps are not watched")
-			So(fakeCLUpdater.scheduledTasks, ShouldHaveLength, 1)
-			assertPMNotified(task.PurgingCl)
+			assert.Loosely(t, triggersAfter, should.NotBeNil)
+			assert.Loosely(t, triggersAfter.CqVoteTrigger, should.BeNil)
+			assert.Loosely(t, triggersAfter.NewPatchsetRunTrigger, should.NotBeNil)
+			assert.Loosely(t, ciAfter, convey.Adapt(gf.ShouldLastMessageContain)("its deps are not watched"))
+			assert.Loosely(t, fakeCLUpdater.scheduledTasks, should.HaveLength(1))
+			assertPMNotified(t, task.PurgingCl)
 
 			task.PurgeReasons = []*prjpb.PurgeReason{
 				{
@@ -177,7 +179,7 @@ func TestPurgeCL(t *testing.T) {
 					},
 				},
 			}
-			So(schedule(), ShouldBeNil)
+			assert.Loosely(t, schedule(), should.BeNil)
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.PurgeProjectCLTaskClass))
 
 			ciAfter = ct.GFake.GetChange(gHost, change).Info
@@ -186,87 +188,87 @@ func TestPurgeCL(t *testing.T) {
 				ConfigGroup:                  cfg.GetConfigGroups()[0],
 				TriggerNewPatchsetRunAfterPS: loadCL().TriggerNewPatchsetRunAfterPS,
 			})
-			So(triggersAfter, ShouldBeNil)
-			So(ciAfter, gf.ShouldLastMessageContain, "is not supported")
-			So(fakeCLUpdater.scheduledTasks, ShouldHaveLength, 2)
-			assertPMNotified(task.PurgingCl)
+			assert.Loosely(t, triggersAfter, should.BeNil)
+			assert.Loosely(t, ciAfter, convey.Adapt(gf.ShouldLastMessageContain)("is not supported"))
+			assert.Loosely(t, fakeCLUpdater.scheduledTasks, should.HaveLength(2))
+			assertPMNotified(t, task.PurgingCl)
 		})
-		Convey("Happy path: reset both triggers, schedule CL refresh, and notify PM", func() {
-			So(schedule(), ShouldBeNil)
+		t.Run("Happy path: reset both triggers, schedule CL refresh, and notify PM", func(t *ftt.Test) {
+			assert.Loosely(t, schedule(), should.BeNil)
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.PurgeProjectCLTaskClass))
 
 			ciAfter := ct.GFake.GetChange(gHost, change).Info
-			So(trigger.Find(&trigger.FindInput{
+			assert.Loosely(t, trigger.Find(&trigger.FindInput{
 				ChangeInfo:                   ciAfter,
 				ConfigGroup:                  cfg.GetConfigGroups()[0],
 				TriggerNewPatchsetRunAfterPS: loadCL().TriggerNewPatchsetRunAfterPS,
-			}), ShouldBeNil)
-			So(ciAfter, gf.ShouldLastMessageContain, "owner doesn't have a preferred email")
+			}), should.BeNil)
+			assert.Loosely(t, ciAfter, convey.Adapt(gf.ShouldLastMessageContain)("owner doesn't have a preferred email"))
 
-			So(fakeCLUpdater.scheduledTasks, ShouldHaveLength, 1)
-			assertPMNotified(task.PurgingCl)
-			So(loadCL().Snapshot.GetOutdated(), ShouldNotBeNil)
+			assert.Loosely(t, fakeCLUpdater.scheduledTasks, should.HaveLength(1))
+			assertPMNotified(t, task.PurgingCl)
+			assert.Loosely(t, loadCL().Snapshot.GetOutdated(), should.NotBeNil)
 
-			Convey("Idempotent: if TQ task is retried, just notify PM", func() {
+			t.Run("Idempotent: if TQ task is retried, just notify PM", func(t *ftt.Test) {
 				verifyIdempotency := func() {
 					// Use different Operation ID s.t. we can easily assert PM was notified
 					// the 2nd time.
 					task.PurgingCl.OperationId = "op-2"
-					So(schedule(), ShouldBeNil)
+					assert.Loosely(t, schedule(), should.BeNil)
 					ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.PurgeProjectCLTaskClass))
 					// CL in Gerrit shouldn't be changed.
 					ciAfter2 := ct.GFake.GetChange(gHost, change).Info
-					So(ciAfter2, ShouldResembleProto, ciAfter)
+					assert.Loosely(t, ciAfter2, should.Resemble(ciAfter))
 					// But PM must be notified.
-					assertPMNotified(task.PurgingCl)
-					So(pmDispatcher.LatestETAof(lProject), ShouldHappenBefore, ct.Clock.Now().Add(2*time.Second))
+					assertPMNotified(t, task.PurgingCl)
+					assert.Loosely(t, pmDispatcher.LatestETAof(lProject), should.HappenBefore(ct.Clock.Now().Add(2*time.Second)))
 				}
 				// Idempotency must not rely on CL being updated between retries.
-				Convey("CL updated between retries", func() {
+				t.Run("CL updated between retries", func(t *ftt.Test) {
 					verifyIdempotency()
 					// should remain with the same value in Outdated.
-					So(loadCL().Snapshot.GetOutdated(), ShouldNotBeNil)
+					assert.Loosely(t, loadCL().Snapshot.GetOutdated(), should.NotBeNil)
 				})
-				Convey("CL not updated between retries", func() {
+				t.Run("CL not updated between retries", func(t *ftt.Test) {
 					refreshCL()
 					// Outdated should be nil after refresh().
-					So(loadCL().Snapshot.GetOutdated(), ShouldBeNil)
+					assert.Loosely(t, loadCL().Snapshot.GetOutdated(), should.BeNil)
 					verifyIdempotency()
 					// Idempotency should not make it outdated, because
 					// no purge is performed actually.
-					So(loadCL().Snapshot.GetOutdated(), ShouldBeNil)
+					assert.Loosely(t, loadCL().Snapshot.GetOutdated(), should.BeNil)
 				})
 			})
 		})
 
-		Convey("Even if no purging is done, PM is always notified", func() {
-			Convey("Task arrives after the deadline", func() {
+		t.Run("Even if no purging is done, PM is always notified", func(t *ftt.Test) {
+			t.Run("Task arrives after the deadline", func(t *ftt.Test) {
 				task.PurgingCl.Deadline = timestamppb.New(ct.Clock.Now().Add(-time.Minute))
-				So(schedule(), ShouldBeNil)
+				assert.Loosely(t, schedule(), should.BeNil)
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.PurgeProjectCLTaskClass))
-				So(loadCL().EVersion, ShouldEqual, clBefore.EVersion) // no changes.
-				assertPMNotified(task.PurgingCl)
-				So(pmDispatcher.LatestETAof(lProject), ShouldHappenBefore, ct.Clock.Now().Add(2*time.Second))
+				assert.Loosely(t, loadCL().EVersion, should.Equal(clBefore.EVersion)) // no changes.
+				assertPMNotified(t, task.PurgingCl)
+				assert.Loosely(t, pmDispatcher.LatestETAof(lProject), should.HappenBefore(ct.Clock.Now().Add(2*time.Second)))
 			})
 
-			Convey("Trigger is no longer matching latest CL Snapshot", func() {
+			t.Run("Trigger is no longer matching latest CL Snapshot", func(t *ftt.Test) {
 				// Simulate old trigger for CQ+1, while snapshot contains CQ+2.
 				gf.CQ(+1, ct.Clock.Now().Add(-time.Hour), gf.U("user-1"))(ci)
 				// Simulate NPR finished earlier.
 				cl := loadCL()
 				cl.TriggerNewPatchsetRunAfterPS = 2
-				So(datastore.Put(ctx, cl), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, cl), should.BeNil)
 
-				So(schedule(), ShouldBeNil)
+				assert.Loosely(t, schedule(), should.BeNil)
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.PurgeProjectCLTaskClass))
-				So(loadCL().EVersion, ShouldEqual, clBefore.EVersion+1) // +1 for setting Outdated{}
-				assertPMNotified(task.PurgingCl)
+				assert.Loosely(t, loadCL().EVersion, should.Equal(clBefore.EVersion+1)) // +1 for setting Outdated{}
+				assertPMNotified(t, task.PurgingCl)
 				// The PM task should be ASAP.
-				So(pmDispatcher.LatestETAof(lProject), ShouldHappenBefore, ct.Clock.Now().Add(2*time.Second))
+				assert.Loosely(t, pmDispatcher.LatestETAof(lProject), should.HappenBefore(ct.Clock.Now().Add(2*time.Second)))
 			})
 		})
 
-		Convey("Sets Notify and AddToAttentionSet", func() {
+		t.Run("Sets Notify and AddToAttentionSet", func(t *ftt.Test) {
 			var reqs []*gerritpb.SetReviewRequest
 			findSetReviewReqs := func() {
 				for _, req := range ct.GFake.Requests() {
@@ -276,42 +278,42 @@ func TestPurgeCL(t *testing.T) {
 				}
 			}
 
-			Convey("with the default NotifyTarget", func() {
+			t.Run("with the default NotifyTarget", func(t *ftt.Test) {
 				task.PurgingCl.Notification = nil
-				So(schedule(), ShouldBeNil)
+				assert.Loosely(t, schedule(), should.BeNil)
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.PurgeProjectCLTaskClass))
 				findSetReviewReqs()
-				So(reqs, ShouldHaveLength, 2)
+				assert.Loosely(t, reqs, should.HaveLength(2))
 				postReq := reqs[0]
 				voteReq := reqs[1]
 				if reqs[1].GetMessage() != "" {
 					postReq, voteReq = reqs[1], reqs[0]
 				}
-				So(postReq.Notify, ShouldEqual, gerritpb.Notify_NOTIFY_NONE)
-				So(voteReq.Notify, ShouldEqual, gerritpb.Notify_NOTIFY_NONE)
-				So(postReq.GetNotifyDetails(), ShouldNotBeNil)
-				So(voteReq.GetNotifyDetails(), ShouldBeNil)
-				So(postReq.GetAddToAttentionSet(), ShouldNotBeNil)
-				So(voteReq.GetAddToAttentionSet(), ShouldBeNil)
+				assert.Loosely(t, postReq.Notify, should.Equal(gerritpb.Notify_NOTIFY_NONE))
+				assert.Loosely(t, voteReq.Notify, should.Equal(gerritpb.Notify_NOTIFY_NONE))
+				assert.Loosely(t, postReq.GetNotifyDetails(), should.NotBeNil)
+				assert.Loosely(t, voteReq.GetNotifyDetails(), should.BeNil)
+				assert.Loosely(t, postReq.GetAddToAttentionSet(), should.NotBeNil)
+				assert.Loosely(t, voteReq.GetAddToAttentionSet(), should.BeNil)
 			})
-			Convey("with a custom Notification target", func() {
+			t.Run("with a custom Notification target", func(t *ftt.Test) {
 				// 0 implies nobody
 				task.PurgingCl.Notification = NoNotification
-				So(schedule(), ShouldBeNil)
+				assert.Loosely(t, schedule(), should.BeNil)
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.PurgeProjectCLTaskClass))
 				findSetReviewReqs()
-				So(reqs, ShouldHaveLength, 2)
+				assert.Loosely(t, reqs, should.HaveLength(2))
 				postReq := reqs[0]
 				voteReq := reqs[1]
 				if reqs[1].GetMessage() != "" {
 					postReq, voteReq = reqs[1], reqs[0]
 				}
-				So(postReq.Notify, ShouldEqual, gerritpb.Notify_NOTIFY_NONE)
-				So(voteReq.Notify, ShouldEqual, gerritpb.Notify_NOTIFY_NONE)
-				So(postReq.GetNotifyDetails(), ShouldBeNil)
-				So(voteReq.GetNotifyDetails(), ShouldBeNil)
-				So(postReq.GetAddToAttentionSet(), ShouldBeNil)
-				So(voteReq.GetAddToAttentionSet(), ShouldBeNil)
+				assert.Loosely(t, postReq.Notify, should.Equal(gerritpb.Notify_NOTIFY_NONE))
+				assert.Loosely(t, voteReq.Notify, should.Equal(gerritpb.Notify_NOTIFY_NONE))
+				assert.Loosely(t, postReq.GetNotifyDetails(), should.BeNil)
+				assert.Loosely(t, voteReq.GetNotifyDetails(), should.BeNil)
+				assert.Loosely(t, postReq.GetAddToAttentionSet(), should.BeNil)
+				assert.Loosely(t, voteReq.GetAddToAttentionSet(), should.BeNil)
 			})
 		})
 	})

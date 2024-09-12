@@ -18,12 +18,16 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"testing"
 	"time"
 
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
 	"go.chromium.org/luci/cv/internal/common"
@@ -31,8 +35,6 @@ import (
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 // Runs returns list of runs from tasks for Run Manager.
@@ -67,20 +69,24 @@ func Tasks(in tqtesting.TaskList) tqtesting.TaskList {
 	return ret
 }
 
-func iterEventBox(ctx context.Context, runID common.RunID, cb func(*eventpb.Event)) {
+func iterEventBox(t testing.TB, ctx context.Context, runID common.RunID, cb func(*eventpb.Event)) {
+	t.Helper()
+
 	events, err := eventbox.List(ctx, run.EventboxRecipient(ctx, runID))
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil, truth.LineContext())
 	for _, item := range events {
 		evt := &eventpb.Event{}
-		So(proto.Unmarshal(item.Value, evt), ShouldBeNil)
+		assert.Loosely(t, proto.Unmarshal(item.Value, evt), should.BeNil, truth.LineContext())
 		cb(evt)
 	}
 }
 
-func matchEventBox(ctx context.Context, runID common.RunID, targets []*eventpb.Event) (matched, remaining []*eventpb.Event) {
+func matchEventBox(t testing.TB, ctx context.Context, runID common.RunID, targets []*eventpb.Event) (matched, remaining []*eventpb.Event) {
+	t.Helper()
+
 	remaining = make([]*eventpb.Event, len(targets))
 	copy(remaining, targets)
-	iterEventBox(ctx, runID, func(evt *eventpb.Event) {
+	iterEventBox(t, ctx, runID, func(evt *eventpb.Event) {
 		for i, r := range remaining {
 			if proto.Equal(evt, r) {
 				matched = append(matched, r)
@@ -95,32 +101,39 @@ func matchEventBox(ctx context.Context, runID common.RunID, targets []*eventpb.E
 }
 
 // AssertEventboxEmpty asserts the eventbox of the provided Run is empty.
-func AssertEventboxEmpty(ctx context.Context, runID common.RunID) {
-	iterEventBox(ctx, runID, func(evt *eventpb.Event) {
-		So(fmt.Sprintf("%s eventbox received event %s", runID, evt), ShouldBeEmpty)
+func AssertEventboxEmpty(t testing.TB, ctx context.Context, runID common.RunID) {
+	t.Helper()
+
+	iterEventBox(t, ctx, runID, func(evt *eventpb.Event) {
+		assert.Loosely(t, fmt.Sprintf("%s eventbox received event %s", runID, evt), should.BeEmpty, truth.LineContext())
 	})
 }
 
 // AssertNotInEventbox asserts none of the target events exists in the Eventbox.
-func AssertNotInEventbox(ctx context.Context, runID common.RunID, targets ...*eventpb.Event) {
-	matched, _ := matchEventBox(ctx, runID, targets)
-	So(matched, ShouldBeEmpty)
+func AssertNotInEventbox(t testing.TB, ctx context.Context, runID common.RunID, targets ...*eventpb.Event) {
+	t.Helper()
+
+	matched, _ := matchEventBox(t, ctx, runID, targets)
+	assert.Loosely(t, matched, should.BeEmpty, truth.LineContext())
 }
 
 // AssertInEventbox asserts all target events exist in the Eventbox.
-func AssertInEventbox(ctx context.Context, runID common.RunID, targets ...*eventpb.Event) {
-	_, remaining := matchEventBox(ctx, runID, targets)
-	So(remaining, ShouldBeEmpty)
+func AssertInEventbox(t testing.TB, ctx context.Context, runID common.RunID, targets ...*eventpb.Event) {
+	t.Helper()
+
+	_, remaining := matchEventBox(t, ctx, runID, targets)
+	assert.Loosely(t, remaining, should.BeEmpty, truth.LineContext())
 }
 
 // AssertReceivedStart asserts Run has received Start event.
-func AssertReceivedStart(ctx context.Context, runID common.RunID) {
+func AssertReceivedStart(t testing.TB, ctx context.Context, runID common.RunID) {
+	t.Helper()
 	target := &eventpb.Event{
 		Event: &eventpb.Event_Start{
 			Start: &eventpb.Start{},
 		},
 	}
-	AssertInEventbox(ctx, runID, target)
+	AssertInEventbox(t, ctx, runID, target)
 }
 
 // AssertReceivedPoke asserts Run has received Poke event that should be
@@ -128,7 +141,7 @@ func AssertReceivedStart(ctx context.Context, runID common.RunID) {
 //
 // If `eta` is not later than now, assert that Poke event should be processed
 // immediately.
-func AssertReceivedPoke(ctx context.Context, runID common.RunID, eta time.Time) {
+func AssertReceivedPoke(t testing.TB, ctx context.Context, runID common.RunID, eta time.Time) {
 	expect := &eventpb.Event{
 		Event: &eventpb.Event_Poke{
 			Poke: &eventpb.Poke{},
@@ -137,12 +150,12 @@ func AssertReceivedPoke(ctx context.Context, runID common.RunID, eta time.Time) 
 	if eta.After(clock.Now(ctx)) {
 		expect.ProcessAfter = timestamppb.New(eta)
 	}
-	AssertInEventbox(ctx, runID, expect)
+	AssertInEventbox(t, ctx, runID, expect)
 }
 
 // AssertReceivedReadyForSubmission asserts Run has received ReadyForSubmission
 // event.
-func AssertReceivedReadyForSubmission(ctx context.Context, runID common.RunID, eta time.Time) {
+func AssertReceivedReadyForSubmission(t testing.TB, ctx context.Context, runID common.RunID, eta time.Time) {
 	target := &eventpb.Event{
 		Event: &eventpb.Event_ReadyForSubmission{
 			ReadyForSubmission: &eventpb.ReadyForSubmission{},
@@ -151,12 +164,13 @@ func AssertReceivedReadyForSubmission(ctx context.Context, runID common.RunID, e
 	if !eta.IsZero() {
 		target.ProcessAfter = timestamppb.New(eta)
 	}
-	AssertInEventbox(ctx, runID, target)
+	AssertInEventbox(t, ctx, runID, target)
 }
 
 // AssertReceivedCLsSubmitted asserts Run has received CLsSubmitted event for
 // the provided CL.
-func AssertReceivedCLsSubmitted(ctx context.Context, runID common.RunID, clids ...common.CLID) {
+func AssertReceivedCLsSubmitted(t testing.TB, ctx context.Context, runID common.RunID, clids ...common.CLID) {
+	t.Helper()
 	target := &eventpb.Event{
 		Event: &eventpb.Event_ClsSubmitted{
 			ClsSubmitted: &eventpb.CLsSubmitted{
@@ -164,12 +178,13 @@ func AssertReceivedCLsSubmitted(ctx context.Context, runID common.RunID, clids .
 			},
 		},
 	}
-	AssertInEventbox(ctx, runID, target)
+	AssertInEventbox(t, ctx, runID, target)
 }
 
 // AssertNotReceivedCLsSubmitted asserts Run has NOT received CLsSubmitted event
 // for the provided CL.
-func AssertNotReceivedCLsSubmitted(ctx context.Context, runID common.RunID, clids ...common.CLID) {
+func AssertNotReceivedCLsSubmitted(t testing.TB, ctx context.Context, runID common.RunID, clids ...common.CLID) {
+	t.Helper()
 	target := &eventpb.Event{
 		Event: &eventpb.Event_ClsSubmitted{
 			ClsSubmitted: &eventpb.CLsSubmitted{
@@ -177,48 +192,52 @@ func AssertNotReceivedCLsSubmitted(ctx context.Context, runID common.RunID, clid
 			},
 		},
 	}
-	AssertNotInEventbox(ctx, runID, target)
+	AssertNotInEventbox(t, ctx, runID, target)
 }
 
 // AssertReceivedSubmissionCompleted asserts Run has received the provided
 // SubmissionCompleted event.
-func AssertReceivedSubmissionCompleted(ctx context.Context, runID common.RunID, sc *eventpb.SubmissionCompleted) {
+func AssertReceivedSubmissionCompleted(t testing.TB, ctx context.Context, runID common.RunID, sc *eventpb.SubmissionCompleted) {
+	t.Helper()
 	target := &eventpb.Event{
 		Event: &eventpb.Event_SubmissionCompleted{
 			SubmissionCompleted: sc,
 		},
 	}
-	AssertInEventbox(ctx, runID, target)
+	AssertInEventbox(t, ctx, runID, target)
 }
 
 // AssertReceivedLongOpCompleted asserts Run has received LongOpCompleted event.
-func AssertReceivedLongOpCompleted(ctx context.Context, runID common.RunID, result *eventpb.LongOpCompleted) {
+func AssertReceivedLongOpCompleted(t testing.TB, ctx context.Context, runID common.RunID, result *eventpb.LongOpCompleted) {
+	t.Helper()
 	target := &eventpb.Event{
 		Event: &eventpb.Event_LongOpCompleted{
 			LongOpCompleted: result,
 		},
 	}
-	AssertInEventbox(ctx, runID, target)
+	AssertInEventbox(t, ctx, runID, target)
 }
 
 // AssertReceivedParentRunCompleted asserts Run has received ParentRunCompleted event.
-func AssertReceivedParentRunCompleted(ctx context.Context, runID common.RunID) {
+func AssertReceivedParentRunCompleted(t testing.TB, ctx context.Context, runID common.RunID) {
+	t.Helper()
 	target := &eventpb.Event{
 		Event: &eventpb.Event_ParentRunCompleted{
 			ParentRunCompleted: &eventpb.ParentRunCompleted{},
 		},
 	}
-	AssertInEventbox(ctx, runID, target)
+	AssertInEventbox(t, ctx, runID, target)
 }
 
 // AssertNotReceivedParentRunCompleted asserts Run has not received ParentRunCompleted event.
-func AssertNotReceivedParentRunCompleted(ctx context.Context, runID common.RunID) {
+func AssertNotReceivedParentRunCompleted(t testing.TB, ctx context.Context, runID common.RunID) {
+	t.Helper()
 	target := &eventpb.Event{
 		Event: &eventpb.Event_ParentRunCompleted{
 			ParentRunCompleted: &eventpb.ParentRunCompleted{},
 		},
 	}
-	AssertNotInEventbox(ctx, runID, target)
+	AssertNotInEventbox(t, ctx, runID, target)
 }
 
 // MockDispatch installs and returns MockDispatcher for Run Manager.

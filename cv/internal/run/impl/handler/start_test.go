@@ -27,6 +27,9 @@ import (
 	bbutil "go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/clock"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 	"go.chromium.org/luci/server/quota"
@@ -45,15 +48,12 @@ import (
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 	"go.chromium.org/luci/cv/internal/run/runtest"
 	"go.chromium.org/luci/cv/internal/tryjob"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestStart(t *testing.T) {
 	t.Parallel()
 
-	Convey("StartRun", t, func() {
+	ftt.Run("StartRun", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
@@ -94,7 +94,7 @@ func TestStart(t *testing.T) {
 
 		makeIdentity := func(email string) identity.Identity {
 			id, err := identity.MakeIdentity(fmt.Sprintf("%s:%s", identity.User, email))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			return id
 		}
 
@@ -144,7 +144,7 @@ func TestStart(t *testing.T) {
 					GerritAccountId: accountID,
 				},
 			}
-			So(datastore.Put(ctx, cl, rCL), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, cl, rCL), should.BeNil)
 			return cl
 		}
 
@@ -159,7 +159,7 @@ func TestStart(t *testing.T) {
 			&gerritpb.EmailInfo{Email: fmt.Sprintf("%s@example.com", owner)},
 		})
 
-		Convey("Starts when Run is PENDING", func() {
+		t.Run("Starts when Run is PENDING", func(t *ftt.Test) {
 			deps.qm.runQuotaOp = &quotapb.OpResult{
 				Status:          quotapb.OpResult_SUCCESS,
 				NewBalance:      5,
@@ -167,13 +167,13 @@ func TestStart(t *testing.T) {
 			}
 
 			res, err := h.Start(ctx, rs)
-			So(err, ShouldBeNil)
-			So(res.PreserveEvents, ShouldBeFalse)
-			So(deps.qm.debitRunQuotaCalls, ShouldEqual, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.PreserveEvents, should.BeFalse)
+			assert.Loosely(t, deps.qm.debitRunQuotaCalls, should.Equal(1))
 
-			So(res.State.Status, ShouldEqual, run.Status_RUNNING)
-			So(res.State.StartTime, ShouldEqual, ct.Clock.Now().UTC())
-			So(res.State.Tryjobs, ShouldResembleProto, &run.Tryjobs{
+			assert.Loosely(t, res.State.Status, should.Equal(run.Status_RUNNING))
+			assert.Loosely(t, res.State.StartTime, should.Equal(ct.Clock.Now().UTC()))
+			assert.Loosely(t, res.State.Tryjobs, should.Resemble(&run.Tryjobs{
 				Requirement: &tryjob.Requirement{
 					Definitions: []*tryjob.Definition{
 						{
@@ -189,25 +189,25 @@ func TestStart(t *testing.T) {
 				},
 				RequirementVersion:    1,
 				RequirementComputedAt: timestamppb.New(ct.Clock.Now().UTC()),
-			})
-			So(res.State.LogEntries, ShouldHaveLength, 2)
-			So(res.State.LogEntries[0].GetInfo().GetMessage(), ShouldEqual, "Run quota debited from t@example.org; balance: 5")
-			So(res.State.LogEntries[1].GetStarted(), ShouldNotBeNil)
+			}))
+			assert.Loosely(t, res.State.LogEntries, should.HaveLength(2))
+			assert.Loosely(t, res.State.LogEntries[0].GetInfo().GetMessage(), should.Equal("Run quota debited from t@example.org; balance: 5"))
+			assert.Loosely(t, res.State.LogEntries[1].GetStarted(), should.NotBeNil)
 
-			So(res.State.NewLongOpIDs, ShouldHaveLength, 2)
-			So(res.State.OngoingLongOps.GetOps()[res.State.NewLongOpIDs[0]].GetExecuteTryjobs(), ShouldNotBeNil)
-			So(res.State.OngoingLongOps.GetOps()[res.State.NewLongOpIDs[1]].GetPostStartMessage(), ShouldBeTrue)
+			assert.Loosely(t, res.State.NewLongOpIDs, should.HaveLength(2))
+			assert.Loosely(t, res.State.OngoingLongOps.GetOps()[res.State.NewLongOpIDs[0]].GetExecuteTryjobs(), should.NotBeNil)
+			assert.Loosely(t, res.State.OngoingLongOps.GetOps()[res.State.NewLongOpIDs[1]].GetPostStartMessage(), should.BeTrue)
 
-			So(res.SideEffectFn, ShouldNotBeNil)
-			So(datastore.RunInTransaction(ctx, res.SideEffectFn, nil), ShouldBeNil)
-			So(ct.TSMonSentValue(ctx, metrics.Public.RunStarted, lProject, configGroupName, string(run.DryRun)), ShouldEqual, 1)
-			So(ct.TSMonSentDistr(ctx, metricPickupLatencyS, lProject).Sum(),
-				ShouldAlmostEqual, startLatency.Seconds())
-			So(ct.TSMonSentDistr(ctx, metricPickupLatencyAdjustedS, lProject).Sum(),
-				ShouldAlmostEqual, (startLatency - stabilizationDelay).Seconds())
+			assert.Loosely(t, res.SideEffectFn, should.NotBeNil)
+			assert.Loosely(t, datastore.RunInTransaction(ctx, res.SideEffectFn, nil), should.BeNil)
+			assert.Loosely(t, ct.TSMonSentValue(ctx, metrics.Public.RunStarted, lProject, configGroupName, string(run.DryRun)), should.Equal(1))
+			assert.Loosely(t, ct.TSMonSentDistr(ctx, metricPickupLatencyS, lProject).Sum(),
+				should.AlmostEqual(startLatency.Seconds()))
+			assert.Loosely(t, ct.TSMonSentDistr(ctx, metricPickupLatencyAdjustedS, lProject).Sum(),
+				should.AlmostEqual((startLatency - stabilizationDelay).Seconds()))
 		})
 
-		Convey("Does not proceed if run quota is not available", func() {
+		t.Run("Does not proceed if run quota is not available", func(t *ftt.Test) {
 			deps.qm.runQuotaErr = quota.ErrQuotaApply
 			deps.qm.runQuotaOp = &quotapb.OpResult{
 				Status: quotapb.OpResult_ERR_UNDERFLOW,
@@ -219,96 +219,96 @@ func TestStart(t *testing.T) {
 			}
 
 			res, err := h.Start(ctx, rs)
-			So(err, ShouldBeNil)
-			So(res.PreserveEvents, ShouldBeTrue)
-			So(res.SideEffectFn, ShouldBeNil)
-			So(res.State.Status, ShouldEqual, run.Status_PENDING)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.PreserveEvents, should.BeTrue)
+			assert.Loosely(t, res.SideEffectFn, should.BeNil)
+			assert.Loosely(t, res.State.Status, should.Equal(run.Status_PENDING))
 			ops := res.State.OngoingLongOps.GetOps()
-			So(len(ops), ShouldEqual, 1)
-			So(ops, ShouldContainKey, "1-1")
-			So(ops["1-1"].GetPostGerritMessage(), ShouldResembleProto, &run.OngoingLongOps_Op_PostGerritMessage{
+			assert.Loosely(t, len(ops), should.Equal(1))
+			assert.Loosely(t, ops, should.ContainKey("1-1"))
+			assert.Loosely(t, ops["1-1"].GetPostGerritMessage(), should.Resemble(&run.OngoingLongOps_Op_PostGerritMessage{
 				Message: fmt.Sprintf("User %s has exhausted their run quota. This run will start once the quota balance has recovered.\n\nfoo bar.", rs.Run.BilledTo.Email()),
-			})
-			So(ct.TSMonSentValue(
+			}))
+			assert.Loosely(t, ct.TSMonSentValue(
 				ctx,
 				metrics.Public.RunQuotaRejection,
 				lProject,
 				"combinable",
 				"chromium/1",
-			), ShouldEqual, 1)
+			), should.Equal(1))
 
-			Convey("Enqueue pending message only once when quota is exhausted", func() {
+			t.Run("Enqueue pending message only once when quota is exhausted", func(t *ftt.Test) {
 				res, err := h.Start(ctx, rs)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				ops := res.State.OngoingLongOps.GetOps()
-				So(ops, ShouldContainKey, "1-1")
-				So(ops["1-1"].GetPostGerritMessage(), ShouldResembleProto, &run.OngoingLongOps_Op_PostGerritMessage{
+				assert.Loosely(t, ops, should.ContainKey("1-1"))
+				assert.Loosely(t, ops["1-1"].GetPostGerritMessage(), should.Resemble(&run.OngoingLongOps_Op_PostGerritMessage{
 					Message: fmt.Sprintf("User %s has exhausted their run quota. This run will start once the quota balance has recovered.\n\nfoo bar.", rs.Run.BilledTo.Email()),
-				})
+				}))
 			})
 		})
 
-		Convey("Throws error when quota manager fails with an unexpected error", func() {
+		t.Run("Throws error when quota manager fails with an unexpected error", func(t *ftt.Test) {
 			deps.qm.runQuotaErr = quota.ErrQuotaApply
 			deps.qm.runQuotaOp = &quotapb.OpResult{
 				Status: quotapb.OpResult_ERR_UNKNOWN,
 			}
 
 			res, err := h.Start(ctx, rs)
-			So(res, ShouldBeNil)
-			So(err, ShouldErrLike, "QM.DebitRunQuota: unexpected quotaOp Status ERR_UNKNOWN")
+			assert.Loosely(t, res, should.BeNil)
+			assert.Loosely(t, err, should.ErrLike("QM.DebitRunQuota: unexpected quotaOp Status ERR_UNKNOWN"))
 		})
 
-		Convey("Does not proceed if any parent RUN is still PENDING", func() {
+		t.Run("Does not proceed if any parent RUN is still PENDING", func(t *ftt.Test) {
 			const parentRun = common.RunID("parent/1-cow")
-			So(datastore.Put(ctx,
+			assert.Loosely(t, datastore.Put(ctx,
 				&run.Run{
 					ID:     parentRun,
 					Status: run.Status_PENDING,
 				},
-			), ShouldBeNil)
+			), should.BeNil)
 			rs.DepRuns = common.RunIDs{parentRun}
 			res, err := h.Start(ctx, rs)
-			So(err, ShouldBeNil)
-			So(res.SideEffectFn, ShouldBeNil)
-			So(res.State.Status, ShouldEqual, run.Status_PENDING)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.SideEffectFn, should.BeNil)
+			assert.Loosely(t, res.State.Status, should.Equal(run.Status_PENDING))
 			ops := res.State.OngoingLongOps.GetOps()
-			So(len(ops), ShouldEqual, 0)
+			assert.Loosely(t, len(ops), should.BeZero)
 		})
 
-		Convey("Does not proceed if parent RUN is CANCELLED/FAILED", func() {
+		t.Run("Does not proceed if parent RUN is CANCELLED/FAILED", func(t *ftt.Test) {
 			const parentRun = common.RunID("parent/1-cow")
-			So(datastore.Put(ctx,
+			assert.Loosely(t, datastore.Put(ctx,
 				&run.Run{
 					ID:     parentRun,
 					Status: run.Status_CANCELLED,
 				},
-			), ShouldBeNil)
+			), should.BeNil)
 			rs.DepRuns = common.RunIDs{parentRun}
 			res, err := h.Start(ctx, rs)
-			So(err, ShouldBeNil)
-			So(res.SideEffectFn, ShouldBeNil)
-			So(res.State.Status, ShouldEqual, run.Status_PENDING)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.SideEffectFn, should.BeNil)
+			assert.Loosely(t, res.State.Status, should.Equal(run.Status_PENDING))
 		})
 
-		Convey("Emits Start events for PENDING children", func() {
+		t.Run("Emits Start events for PENDING children", func(t *ftt.Test) {
 			const child1 = common.RunID("child/1-cow")
-			So(datastore.Put(
+			assert.Loosely(t, datastore.Put(
 				ctx,
 				&run.Run{
 					ID:      child1,
 					Status:  run.Status_PENDING,
 					DepRuns: common.RunIDs{rs.ID},
 				},
-			), ShouldBeNil)
+			), should.BeNil)
 			res, err := h.Start(ctx, rs)
-			So(err, ShouldBeNil)
-			So(res.SideEffectFn, ShouldNotBeNil)
-			So(datastore.RunInTransaction(ctx, res.SideEffectFn, nil), ShouldBeNil)
-			runtest.AssertReceivedStart(ctx, child1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.SideEffectFn, should.NotBeNil)
+			assert.Loosely(t, datastore.RunInTransaction(ctx, res.SideEffectFn, nil), should.BeNil)
+			runtest.AssertReceivedStart(t, ctx, child1)
 		})
 
-		Convey("Fail the Run if tryjob computation fails", func() {
+		t.Run("Fail the Run if tryjob computation fails", func(t *ftt.Test) {
 			if rs.Options == nil {
 				rs.Options = &run.Options{}
 			}
@@ -316,66 +316,66 @@ func TestStart(t *testing.T) {
 			rs.Options.IncludedTryjobs = append(rs.Options.IncludedTryjobs, "fooproj/ci:bar_builder")
 			anotherCL := addCL(triggerer, owner)
 			rs.CLs = common.CLIDs{cl.ID, anotherCL.ID}
-			Convey("Reset triggers on all CLs", func() {
+			t.Run("Reset triggers on all CLs", func(t *ftt.Test) {
 				res, err := h.Start(ctx, rs)
-				So(err, ShouldBeNil)
-				So(res.SideEffectFn, ShouldBeNil)
-				So(res.PreserveEvents, ShouldBeFalse)
-				So(res.State.Status, ShouldEqual, run.Status_PENDING)
-				So(res.State.Tryjobs, ShouldBeNil)
-				So(res.State.NewLongOpIDs, ShouldHaveLength, 1)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res.SideEffectFn, should.BeNil)
+				assert.Loosely(t, res.PreserveEvents, should.BeFalse)
+				assert.Loosely(t, res.State.Status, should.Equal(run.Status_PENDING))
+				assert.Loosely(t, res.State.Tryjobs, should.BeNil)
+				assert.Loosely(t, res.State.NewLongOpIDs, should.HaveLength(1))
 				op := res.State.OngoingLongOps.GetOps()[res.State.NewLongOpIDs[0]]
-				So(op.GetResetTriggers(), ShouldNotBeNil)
-				So(op.GetResetTriggers().GetRunStatusIfSucceeded(), ShouldEqual, run.Status_FAILED)
+				assert.Loosely(t, op.GetResetTriggers(), should.NotBeNil)
+				assert.Loosely(t, op.GetResetTriggers().GetRunStatusIfSucceeded(), should.Equal(run.Status_FAILED))
 				resetCLs := common.CLIDs{}
 				for _, req := range op.GetResetTriggers().GetRequests() {
 					resetCLs = append(resetCLs, common.CLID(req.Clid))
 				}
-				So(resetCLs, ShouldResemble, res.State.CLs)
-				So(res.State.LogEntries, ShouldHaveLength, 1)
-				So(res.State.LogEntries[0].GetInfo(), ShouldResembleProto, &run.LogEntry_Info{
+				assert.Loosely(t, resetCLs, should.Resemble(res.State.CLs))
+				assert.Loosely(t, res.State.LogEntries, should.HaveLength(1))
+				assert.Loosely(t, res.State.LogEntries[0].GetInfo(), should.Resemble(&run.LogEntry_Info{
 					Label:   "Tryjob Requirement Computation",
 					Message: "Failed to compute tryjob requirement. Reason: builder \"fooproj/ci/bar_builder\" is included but not defined in the LUCI project",
-				})
+				}))
 			})
-			Convey("Only reset trigger on root CL", func() {
+			t.Run("Only reset trigger on root CL", func(t *ftt.Test) {
 				rs.RootCL = cl.ID
 				res, err := h.Start(ctx, rs)
-				So(err, ShouldBeNil)
-				So(res.SideEffectFn, ShouldBeNil)
-				So(res.State.NewLongOpIDs, ShouldHaveLength, 1)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res.SideEffectFn, should.BeNil)
+				assert.Loosely(t, res.State.NewLongOpIDs, should.HaveLength(1))
 				op := res.State.OngoingLongOps.GetOps()[res.State.NewLongOpIDs[0]]
-				So(op.GetResetTriggers(), ShouldNotBeNil)
-				So(op.GetResetTriggers().GetRunStatusIfSucceeded(), ShouldEqual, run.Status_FAILED)
+				assert.Loosely(t, op.GetResetTriggers(), should.NotBeNil)
+				assert.Loosely(t, op.GetResetTriggers().GetRunStatusIfSucceeded(), should.Equal(run.Status_FAILED))
 				resetCLs := common.CLIDs{}
 				for _, req := range op.GetResetTriggers().GetRequests() {
 					resetCLs = append(resetCLs, common.CLID(req.Clid))
 				}
-				So(resetCLs, ShouldResemble, common.CLIDs{rs.RootCL})
+				assert.Loosely(t, resetCLs, should.Resemble(common.CLIDs{rs.RootCL}))
 			})
 		})
 
-		Convey("Fail the Run if acls.CheckRunCreate fails", func() {
+		t.Run("Fail the Run if acls.CheckRunCreate fails", func(t *ftt.Test) {
 			ct.ResetMockedAuthDB(ctx)
 			res, err := h.Start(ctx, rs)
-			So(err, ShouldBeNil)
-			So(res.SideEffectFn, ShouldBeNil)
-			So(res.PreserveEvents, ShouldBeFalse)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.SideEffectFn, should.BeNil)
+			assert.Loosely(t, res.PreserveEvents, should.BeFalse)
 
-			So(res.State.Status, ShouldEqual, run.Status_PENDING)
-			So(res.State.LogEntries, ShouldHaveLength, 1)
-			So(res.State.LogEntries[0].GetInfo(), ShouldResembleProto, &run.LogEntry_Info{
+			assert.Loosely(t, res.State.Status, should.Equal(run.Status_PENDING))
+			assert.Loosely(t, res.State.LogEntries, should.HaveLength(1))
+			assert.Loosely(t, res.State.LogEntries[0].GetInfo(), should.Resemble(&run.LogEntry_Info{
 				Label: "Run failed",
 				Message: "" +
 					"the Run does not pass eligibility checks. See reasons at:" +
 					"\n  * " + cl.ExternalID.MustURL(),
-			})
+			}))
 
-			So(res.State.NewLongOpIDs, ShouldHaveLength, 1)
+			assert.Loosely(t, res.State.NewLongOpIDs, should.HaveLength(1))
 			longOp := res.State.OngoingLongOps.GetOps()[res.State.NewLongOpIDs[0]]
 			resetOp := longOp.GetResetTriggers()
-			So(resetOp.Requests, ShouldHaveLength, 1)
-			So(resetOp.Requests[0], ShouldResembleProto,
+			assert.Loosely(t, resetOp.Requests, should.HaveLength(1))
+			assert.Loosely(t, resetOp.Requests[0], should.Resemble(
 				&run.OngoingLongOps_Op_ResetTriggers_Request{
 					Clid: int64(cl.ID),
 					Message: fmt.Sprintf(
@@ -391,25 +391,25 @@ func TestStart(t *testing.T) {
 					},
 					AddToAttentionReason: "CQ/CV Run failed",
 				},
-			)
-			So(resetOp.RunStatusIfSucceeded, ShouldEqual, run.Status_FAILED)
+			))
+			assert.Loosely(t, resetOp.RunStatusIfSucceeded, should.Equal(run.Status_FAILED))
 
-			Convey("Only reset trigger on root CL", func() {
+			t.Run("Only reset trigger on root CL", func(t *ftt.Test) {
 				anotherCL := addCL(triggerer, owner)
 				rs.CLs = common.CLIDs{cl.ID, anotherCL.ID}
 				rs.RootCL = cl.ID
 				res, err := h.Start(ctx, rs)
-				So(err, ShouldBeNil)
-				So(res.SideEffectFn, ShouldBeNil)
-				So(res.State.NewLongOpIDs, ShouldHaveLength, 1)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res.SideEffectFn, should.BeNil)
+				assert.Loosely(t, res.State.NewLongOpIDs, should.HaveLength(1))
 				op := res.State.OngoingLongOps.GetOps()[res.State.NewLongOpIDs[0]]
-				So(op.GetResetTriggers(), ShouldNotBeNil)
-				So(op.GetResetTriggers().GetRunStatusIfSucceeded(), ShouldEqual, run.Status_FAILED)
+				assert.Loosely(t, op.GetResetTriggers(), should.NotBeNil)
+				assert.Loosely(t, op.GetResetTriggers().GetRunStatusIfSucceeded(), should.Equal(run.Status_FAILED))
 				resetCLs := common.CLIDs{}
 				for _, req := range op.GetResetTriggers().GetRequests() {
 					resetCLs = append(resetCLs, common.CLID(req.Clid))
 				}
-				So(resetCLs, ShouldResemble, common.CLIDs{rs.RootCL})
+				assert.Loosely(t, resetCLs, should.Resemble(common.CLIDs{rs.RootCL}))
 			})
 		})
 
@@ -422,13 +422,13 @@ func TestStart(t *testing.T) {
 			run.Status_CANCELLED,
 		}
 		for _, status := range statuses {
-			Convey(fmt.Sprintf("Noop when Run is %s", status), func() {
+			t.Run(fmt.Sprintf("Noop when Run is %s", status), func(t *ftt.Test) {
 				rs.Status = status
 				res, err := h.Start(ctx, rs)
-				So(err, ShouldBeNil)
-				So(res.State, ShouldEqual, rs)
-				So(res.SideEffectFn, ShouldBeNil)
-				So(res.PreserveEvents, ShouldBeFalse)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res.State, should.Equal(rs))
+				assert.Loosely(t, res.SideEffectFn, should.BeNil)
+				assert.Loosely(t, res.PreserveEvents, should.BeFalse)
 			})
 		}
 	})
@@ -437,7 +437,7 @@ func TestStart(t *testing.T) {
 func TestOnCompletedPostStartMessage(t *testing.T) {
 	t.Parallel()
 
-	Convey("onCompletedPostStartMessage works", t, func() {
+	ftt.Run("onCompletedPostStartMessage works", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
@@ -470,35 +470,35 @@ func TestOnCompletedPostStartMessage(t *testing.T) {
 		}
 		h, _ := makeTestHandler(&ct)
 
-		Convey("if Run isn't RUNNING, just cleans up the operation", func() {
+		t.Run("if Run isn't RUNNING, just cleans up the operation", func(t *ftt.Test) {
 			// NOTE: This should be rare. And since posting the starting message isn't
 			// a critical operation, it's OK to ignore its failures if the Run is
 			// already submitting the CL.
 			rs.Run.Status = run.Status_SUBMITTING
 			result.Status = eventpb.LongOpCompleted_FAILED
 			res, err := h.OnLongOpCompleted(ctx, rs, result)
-			So(err, ShouldBeNil)
-			So(res.State.Status, ShouldEqual, run.Status_SUBMITTING)
-			So(res.State.OngoingLongOps, ShouldBeNil)
-			So(res.SideEffectFn, ShouldBeNil)
-			So(res.PreserveEvents, ShouldBeFalse)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.State.Status, should.Equal(run.Status_SUBMITTING))
+			assert.Loosely(t, res.State.OngoingLongOps, should.BeNil)
+			assert.Loosely(t, res.SideEffectFn, should.BeNil)
+			assert.Loosely(t, res.PreserveEvents, should.BeFalse)
 		})
 
-		Convey("on cancellation, cleans up Run's state", func() {
+		t.Run("on cancellation, cleans up Run's state", func(t *ftt.Test) {
 			// NOTE: as of this writing (Oct 2021), the only time posting start
 			// message is cancelled is if the Run was already finalized. Therefore,
 			// Run can't be in RUNNING state any more.
 			// However, this test aims to cover possible future logic change in CV.
 			result.Status = eventpb.LongOpCompleted_CANCELLED
 			res, err := h.OnLongOpCompleted(ctx, rs, result)
-			So(err, ShouldBeNil)
-			So(res.State.Status, ShouldEqual, run.Status_RUNNING)
-			So(res.State.OngoingLongOps, ShouldBeNil)
-			So(res.SideEffectFn, ShouldBeNil)
-			So(res.PreserveEvents, ShouldBeFalse)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.State.Status, should.Equal(run.Status_RUNNING))
+			assert.Loosely(t, res.State.OngoingLongOps, should.BeNil)
+			assert.Loosely(t, res.SideEffectFn, should.BeNil)
+			assert.Loosely(t, res.PreserveEvents, should.BeFalse)
 		})
 
-		Convey("on success, cleans Run's state", func() {
+		t.Run("on success, cleans Run's state", func(t *ftt.Test) {
 			result.Status = eventpb.LongOpCompleted_SUCCEEDED
 			postedAt := ct.Clock.Now().Add(-time.Second)
 			result.Result = &eventpb.LongOpCompleted_PostStartMessage_{
@@ -507,34 +507,34 @@ func TestOnCompletedPostStartMessage(t *testing.T) {
 				},
 			}
 			res, err := h.OnLongOpCompleted(ctx, rs, result)
-			So(err, ShouldBeNil)
-			So(res.State.Status, ShouldEqual, run.Status_RUNNING)
-			So(res.State.OngoingLongOps, ShouldBeNil)
-			So(res.SideEffectFn, ShouldBeNil)
-			So(res.PreserveEvents, ShouldBeFalse)
-			So(res.State.LogEntries[0].GetTime().AsTime(), ShouldResemble, postedAt.UTC())
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.State.Status, should.Equal(run.Status_RUNNING))
+			assert.Loosely(t, res.State.OngoingLongOps, should.BeNil)
+			assert.Loosely(t, res.SideEffectFn, should.BeNil)
+			assert.Loosely(t, res.PreserveEvents, should.BeFalse)
+			assert.Loosely(t, res.State.LogEntries[0].GetTime().AsTime(), should.Resemble(postedAt.UTC()))
 		})
 
-		Convey("on failure, cleans Run's state and record reasons", func() {
+		t.Run("on failure, cleans Run's state and record reasons", func(t *ftt.Test) {
 			result.Status = eventpb.LongOpCompleted_FAILED
 			res, err := h.OnLongOpCompleted(ctx, rs, result)
-			So(err, ShouldBeNil)
-			So(res.State.Status, ShouldEqual, run.Status_RUNNING)
-			So(res.State.OngoingLongOps, ShouldBeNil)
-			So(res.SideEffectFn, ShouldBeNil)
-			So(res.PreserveEvents, ShouldBeFalse)
-			So(res.State.LogEntries[0].GetInfo().GetMessage(), ShouldContainSubstring, "Failed to post the starting message")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.State.Status, should.Equal(run.Status_RUNNING))
+			assert.Loosely(t, res.State.OngoingLongOps, should.BeNil)
+			assert.Loosely(t, res.SideEffectFn, should.BeNil)
+			assert.Loosely(t, res.PreserveEvents, should.BeFalse)
+			assert.Loosely(t, res.State.LogEntries[0].GetInfo().GetMessage(), should.ContainSubstring("Failed to post the starting message"))
 		})
 
-		Convey("on expiration,cleans Run's state and record reasons", func() {
+		t.Run("on expiration,cleans Run's state and record reasons", func(t *ftt.Test) {
 			result.Status = eventpb.LongOpCompleted_EXPIRED
 			res, err := h.OnLongOpCompleted(ctx, rs, result)
-			So(err, ShouldBeNil)
-			So(res.State.Status, ShouldEqual, run.Status_RUNNING)
-			So(res.State.OngoingLongOps, ShouldBeNil)
-			So(res.SideEffectFn, ShouldBeNil)
-			So(res.PreserveEvents, ShouldBeFalse)
-			So(res.State.LogEntries[0].GetInfo().GetMessage(), ShouldContainSubstring, "Failed to post the starting message")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.State.Status, should.Equal(run.Status_RUNNING))
+			assert.Loosely(t, res.State.OngoingLongOps, should.BeNil)
+			assert.Loosely(t, res.SideEffectFn, should.BeNil)
+			assert.Loosely(t, res.PreserveEvents, should.BeFalse)
+			assert.Loosely(t, res.State.LogEntries[0].GetInfo().GetMessage(), should.ContainSubstring("Failed to post the starting message"))
 		})
 	})
 }
