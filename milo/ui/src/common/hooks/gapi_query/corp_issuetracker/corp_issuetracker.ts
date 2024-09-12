@@ -12,9 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
+import {
+  UseQueryOptions,
+  UseQueryResult,
+  UseInfiniteQueryOptions,
+} from '@tanstack/react-query';
 
-import { useGapiQuery } from '../gapi_query';
+import { useGapiQuery, useInfiniteGapiQuery } from '../gapi_query';
 
 const API_BASE_PATH = 'https://content-issuetracker.corp.googleapis.com/';
 
@@ -39,6 +43,23 @@ export const useIssueListQuery = (
     queryOptions,
   );
 };
+
+/**
+ * Similar to useIssueListQuery but allows for infnite loading of issues.
+ */
+export function useInfiniteIssueListQuery(
+  params: IssueListParams,
+  queryOptions: UseInfiniteQueryOptions<IssueListResponse>,
+) {
+  return useInfiniteGapiQuery<IssueListResponse>(
+    {
+      method: 'GET',
+      path: API_BASE_PATH + 'v1/issues',
+      params,
+    },
+    queryOptions,
+  );
+}
 
 export interface IssueListParams {
   /**

@@ -13,8 +13,10 @@
 // limitations under the License.
 
 import {
+  UseInfiniteQueryOptions,
   UseQueryOptions,
   UseQueryResult,
+  useInfiniteQuery,
   useQuery,
 } from '@tanstack/react-query';
 
@@ -37,3 +39,37 @@ export const useGapiQuery = <Response>(
   };
   return useQuery(options);
 };
+
+interface InfiniteGapiQueryResponse {
+  nextPageToken: string;
+}
+
+export function useInfiniteGapiQuery<
+  Response extends InfiniteGapiQueryResponse,
+>(
+  args: gapi.client.RequestOptions,
+  queryOptions?: UseInfiniteQueryOptions<Response>,
+) {
+  const getAccessToken = useGetAccessToken();
+  const options: UseInfiniteQueryOptions<Response> = {
+    ...queryOptions,
+    queryKey: ['gapi', args.method, args.path, args.params, args.body],
+    queryFn: async ({ pageParam }): Promise<Response> => {
+      const accessToken = await getAccessToken();
+      gapi.client.setToken({ access_token: accessToken });
+      if (pageParam) {
+        args.body = {
+          ...args.body,
+          pageToken: pageParam,
+        };
+      }
+      const response = await gapi.client.request(args);
+      return JSON.parse(response.body);
+    },
+    getNextPageParam: (response) => {
+      return response.nextPageToken;
+    },
+  };
+
+  return useInfiniteQuery(options);
+}

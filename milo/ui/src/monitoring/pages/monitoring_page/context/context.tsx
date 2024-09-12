@@ -14,9 +14,9 @@
 
 import { useQuery, useQueries } from '@tanstack/react-query';
 import { uniq, chunk } from 'lodash-es';
-import { createContext, ReactNode } from 'react';
+import { createContext, ReactNode, useEffect, useMemo } from 'react';
 
-import { useIssueListQuery } from '@/common/hooks/gapi_query/corp_issuetracker';
+import { useInfiniteIssueListQuery } from '@/common/hooks/gapi_query/corp_issuetracker';
 import {
   useNotifyAlertsClient,
   useSoMAlertsClient,
@@ -116,12 +116,21 @@ export function MonitoringProvider({ children, treeName, tree }: Props) {
       .filter((b) => b && b !== '0'),
   );
 
-  const bugsQuery = useIssueListQuery(
+  const {
+    hasNextPage: bugHasNextPage,
+    fetchNextPage: bugFetchNextPage,
+    data: bugData,
+    error: bugQueryError,
+    isError: isBugQueryError,
+    isRefetchError: bugIsRefetchError,
+    isLoading: bugIsLoading,
+  } = useInfiniteIssueListQuery(
     {
       query: `(status:open AND hotlistid:${tree?.hotlistId})${
         linkedBugs.length > 0 ? ' OR ' : ''
       }${linkedBugs.map((b) => 'id:' + b).join(' OR ')}`,
       orderBy: 'priority',
+      pageSize: 50,
     },
     {
       refetchInterval: 60000,
@@ -130,6 +139,12 @@ export function MonitoringProvider({ children, treeName, tree }: Props) {
     },
   );
 
+  useEffect(() => {
+    if (bugHasNextPage) {
+      bugFetchNextPage();
+    }
+  }, [bugFetchNextPage, bugHasNextPage]);
+
   if (alertsQuery.isError) {
     throw alertsQuery.error;
   }
@@ -137,7 +152,10 @@ export function MonitoringProvider({ children, treeName, tree }: Props) {
     throw extendedAlertsQuery.find((q) => q.isError && q.error);
   }
 
-  const bugs = bugsQuery.data?.issues?.map((i) => bugFromJson(i));
+  const bugs = useMemo(
+    () => bugData?.pages.flatMap((p) => p.issues).map((i) => bugFromJson(i)),
+    [bugData],
+  );
 
   const alerts = alertsQuery.data?.alerts.map((a) => {
     const extended = extendedAlertsData[`alerts/${encodeURIComponent(a.key)}`];
@@ -148,7 +166,7 @@ export function MonitoringProvider({ children, treeName, tree }: Props) {
       silenceUntil: extended?.silenceUntil,
     };
   });
-  const bugsQueryError = bugsQuery.error as BugsQueryError;
+  const bugsQueryError = bugQueryError as BugsQueryError;
   return (
     <MonitoringCtx.Provider
       value={{
@@ -161,8 +179,8 @@ export function MonitoringProvider({ children, treeName, tree }: Props) {
           bugsQueryError !== null
             ? new Error(bugsQueryError.result.error.message)
             : null,
-        isBugsError: bugsQuery.isError || bugsQuery.isRefetchError,
-        bugsLoading: bugsQuery.isLoading,
+        isBugsError: isBugQueryError || bugIsRefetchError,
+        bugsLoading: bugIsLoading,
       }}
     >
       {children}
