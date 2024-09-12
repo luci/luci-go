@@ -40,11 +40,13 @@ require (
 	github.com/bazelbuild/buildtools v0.0.0-20221004120235-7186f635531b
 	github.com/bazelbuild/remote-apis v0.0.0-20240703191324-0d21f29acdb9
 	github.com/bazelbuild/remote-apis-sdks v0.0.0-20240806195620-e9017eaf5982
+	github.com/bmatcuk/doublestar v1.3.4
 	github.com/danjacques/gofslock v0.0.0-20240212154529-d899e02bfe22
 	github.com/dave/dst v0.27.3
 	github.com/dgraph-io/badger/v3 v3.2103.2
 	github.com/dustin/go-humanize v1.0.1
 	github.com/envoyproxy/protoc-gen-validate v1.1.0
+	github.com/go-git/go-git/v5 v5.12.0
 	github.com/golang/mock v1.6.0
 	github.com/golang/protobuf v1.5.4
 	github.com/gomodule/redigo v1.9.2
@@ -68,7 +70,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.0
 	github.com/protocolbuffers/txtpbfmt v0.0.0-20240611101534-dedd929c1c22
 	github.com/russross/blackfriday/v2 v2.1.0
-	github.com/sergi/go-diff v1.3.1
+	github.com/sergi/go-diff v1.3.2-0.20230802210424-5b0b94c5c0d3
 	github.com/smarty/assertions v1.16.0
 	github.com/smartystreets/goconvey v1.8.1
 	github.com/vmihailenco/msgpack/v5 v5.3.5
@@ -103,6 +105,13 @@ require (
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.5.1
 	google.golang.org/protobuf v1.34.2
 	gopkg.in/yaml.v2 v2.4.0
+)
+
+require (
+	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
+	github.com/go-git/go-billy/v5 v5.5.0 // indirect
+	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
+	gopkg.in/warnings.v0 v0.1.2 // indirect
 )
 
 require (

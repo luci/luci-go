@@ -15,14 +15,23 @@
 package recipespy
 
 import (
+	"bufio"
 	"context"
 	"errors"
 	"fmt"
 	"io/fs"
 	"os"
+	"path"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"strings"
+	"sync"
+
+	"github.com/bmatcuk/doublestar"
+	"github.com/go-git/go-git/v5/plumbing/format/gitattributes"
+	"github.com/go-git/go-git/v5/plumbing/format/gitignore"
+	"golang.org/x/sync/errgroup"
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/logging"
@@ -90,18 +99,28 @@ func Bundle(ctx context.Context, repoPath string, dest string, overrides map[str
 	if dest, err = prepareDestDir(ctx, dest); err != nil {
 		return err
 	}
+	copyCh := make(chan copyItem, 100)
+	eg, ectx := errgroup.WithContext(ctx)
+	startCopyWorkers(ectx, copyCh, eg)
+	var wg sync.WaitGroup
 	for _, repo := range append([]*Repo{mainRepo}, depRepos...) {
-		if err := exportRepo(ctx, repo, dest); err != nil {
-			return err
-		}
+		wg.Add(1)
+		eg.Go(func() error {
+			defer wg.Done()
+			return exportRepo(ectx, repo, dest, copyCh)
+		})
 	}
 	if err := exportProtos(mainRepo, dest); err != nil {
-		return nil
-	}
-	if err := prepareScripts(mainRepo, depRepos, dest); err != nil {
 		return err
 	}
-	return nil
+	// Close the channel after sending all copy items to the channel
+	wg.Wait()
+	close(copyCh)
+	// Now wait for completion of all copy workers.
+	if err := eg.Wait(); err != nil {
+		return err
+	}
+	return prepareScripts(mainRepo, depRepos, dest)
 }
 
 // calculateDepRepos creates the dep Repos from .recipe_deps directory or
@@ -165,9 +184,159 @@ func prepareDestDir(ctx context.Context, dest string) (string, error) {
 	return ret, nil
 }
 
-// exportRepo packages the repo to the provided dest.
-func exportRepo(ctx context.Context, repo *Repo, dest string) error {
-	return errors.New("implement")
+// copyItem specifies the file to copy from and to.
+type copyItem struct {
+	src, dest string
+}
+
+// startCopyWorkers starts N goroutines that listens to the channels and perform
+// copy operation once a copy item is received.
+//
+// N is equal to the number of cores.
+func startCopyWorkers(ctx context.Context, copyCh <-chan copyItem, eg *errgroup.Group) {
+	for range runtime.NumCPU() {
+		eg.Go(func() error {
+			for {
+				select {
+				case item, ok := <-copyCh:
+					if !ok {
+						return nil
+					}
+					info, err := os.Stat(item.src)
+					if err != nil {
+						return fmt.Errorf("failed to stat file %q", item.src)
+					}
+					if err := filesystem.Copy(item.dest, item.src, info.Mode().Perm()); err != nil {
+						return fmt.Errorf("failed to copy the file %q to %q: %w", item.src, item.dest, err)
+					}
+				case <-ctx.Done():
+					return ctx.Err()
+				}
+			}
+		})
+	}
+}
+
+// exportRepo sends all files to copy for the given repo to copyCh.
+func exportRepo(ctx context.Context, repo *Repo, dest string, copyCh chan<- copyItem) error {
+	bundleDest := filepath.Join(dest, repo.Name())
+	logging.Infof(ctx, "bundling repo %q to %s", repo.Name(), bundleDest)
+	createdDir := stringset.New(20)
+	var ignorePatterns []gitignore.Pattern
+	bi := mkBundleInclusion(repo)
+	repoFS := os.DirFS(repo.Path)
+
+	// Perform a filesystem walk from the root of the repo and do
+	// 1. Constantly updating gitignores and gitattributes as we come across them.
+	// 2. Skip walking the whole directory if the directory is ignored
+	// 3. Skip bundling a file if the file is marked ignored in gitignore.
+	// 4. Consult `BundleInclusion` on whether a file should be bundled
+	// 5. If yes, prepare the directory in the bundle destination and send
+	//    the files to bundle to the `copyCh`.
+	return fs.WalkDir(repoFS, ".", func(p string, d fs.DirEntry, err error) error {
+		switch {
+		case err != nil:
+			return err
+		case ctx.Err() != nil:
+			return ctx.Err() // stop walking if the context is cancelled.
+		}
+		var pathSegs []string
+		if p != "." {
+			pathSegs = strings.Split(p, "/")
+		}
+		if d.IsDir() {
+			switch ps, err := readIgnoreFile(repoFS, path.Join(p, ".gitignore"), pathSegs); {
+			case err != nil:
+				return err
+			default:
+				ignorePatterns = append(ignorePatterns, ps...)
+			}
+			switch attrs, err := readAttrFile(repoFS, path.Join(p, ".gitattributes"), pathSegs); {
+			case err != nil:
+				return err
+			default:
+				bi.gitAttrs = append(bi.gitAttrs, attrs...)
+			}
+		}
+		switch ignored := gitignore.NewMatcher(ignorePatterns).Match(pathSegs, d.IsDir()); {
+		case ignored && d.IsDir():
+			return fs.SkipDir // not bundling anything in this dir
+		case ignored:
+			return nil
+		case d.IsDir():
+			return nil
+		}
+
+		switch shouldInclude, err := bi.shouldInclude(p); {
+		case err != nil:
+			return err
+		case shouldInclude:
+			logging.Debugf(ctx, "will bundle file %q in repo %q", p, repo.Name())
+			fp := filepath.FromSlash(p)
+			ci := copyItem{
+				src:  filepath.Join(repo.Path, fp),
+				dest: filepath.Join(bundleDest, fp),
+			}
+			if destDir := filepath.Dir(ci.dest); !createdDir.Has(destDir) {
+				if err := os.MkdirAll(destDir, 0755); err != nil {
+					return fmt.Errorf("failed to create dir: %w", err)
+				}
+				createdDir.Add(destDir)
+			}
+			select {
+			case copyCh <- ci:
+			case <-ctx.Done():
+				return ctx.Err()
+			}
+		}
+		return nil
+	})
+}
+
+func readIgnoreFile(fileSys fs.FS, file string, pathPrefix []string) ([]gitignore.Pattern, error) {
+	f, err := fileSys.Open(file)
+	switch {
+	case errors.Is(err, fs.ErrNotExist): // okay
+		return nil, nil
+	case err != nil:
+		return nil, err
+	}
+	defer f.Close()
+	var ret []gitignore.Pattern
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		if s := scanner.Text(); !strings.HasPrefix(s, "#") && len(strings.TrimSpace(s)) > 0 {
+			ret = append(ret, gitignore.ParsePattern(s, pathPrefix))
+		}
+	}
+	return ret, nil
+}
+
+const recipesAttrName = "recipes"
+
+func readAttrFile(fileSys fs.FS, file string, pathPrefix []string) ([]gitattributes.MatchAttribute, error) {
+	f, err := fileSys.Open(file)
+	switch {
+	case errors.Is(err, fs.ErrNotExist): // okay
+		return nil, nil
+	case err != nil:
+		return nil, err
+	}
+	defer f.Close()
+	gitAttrs, err := gitattributes.ReadAttributes(f, pathPrefix, true)
+	if err != nil {
+		return nil, err
+	}
+	// only keep gitattributes for recipe.
+	var ret []gitattributes.MatchAttribute
+	for _, ma := range gitAttrs {
+		for _, attr := range ma.Attributes {
+			if attr.Name() == recipesAttrName {
+				ret = append(ret, ma)
+			}
+		}
+	}
+	return ret, nil
 }
 
 // exportProtos copies the proto files of the given repo to the provided dest.
@@ -178,4 +347,56 @@ func exportProtos(repo *Repo, dest string) error {
 // prepareScripts creates entrypoint scripts for various platforms.
 func prepareScripts(main *Repo, deps []*Repo, dest string) error {
 	return errors.New("implement")
+}
+
+// bundleInclusion helps decide whether a file in recipe should be included in
+// in the final bundle.
+type bundleInclusion struct {
+	gitAttrs []gitattributes.MatchAttribute
+	cfgPath  string
+	patterns []string
+}
+
+func mkBundleInclusion(repo *Repo) *bundleInclusion {
+	recipeRootPath := repo.RecipesRootPathRel()
+	return &bundleInclusion{
+		cfgPath: filepath.ToSlash(repo.CfgPathRel()),
+		patterns: []string{
+			// all the recipes stuff
+			path.Join(recipeRootPath, "recipes", "**", "*"),
+			// all the recipe_modules stuff
+			path.Join(recipeRootPath, "recipe_modules", "**", "*"),
+			// all the protos in recipe_proto
+			path.Join(recipeRootPath, "recipe_proto", "**", "*.proto"),
+		},
+	}
+}
+
+// p is expected to be slash path.
+func (bi *bundleInclusion) shouldInclude(p string) (bool, error) {
+	// exclude all the json expectations
+	if path.Ext(p) == ".json" && strings.HasSuffix(path.Dir(p), ".expected") {
+		return false, nil
+	}
+	if p == bi.cfgPath {
+		return true, nil // always keep recipes.cfg
+	}
+	match, _ := gitattributes.NewMatcher(bi.gitAttrs).Match(strings.Split(p, "/"), []string{recipesAttrName})
+	switch attr, ok := match[recipesAttrName]; {
+	case !ok:
+	case attr.IsSet():
+		return true, nil
+	case attr.IsUnset():
+		return false, nil
+	}
+
+	for _, pat := range bi.patterns {
+		switch matched, err := doublestar.Match(pat, p); {
+		case err != nil:
+			return false, err
+		case matched:
+			return true, nil
+		}
+	}
+	return false, nil
 }
