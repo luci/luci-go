@@ -18,12 +18,18 @@ import (
 	"context"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/buildbucket/bbperms"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/registry"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/auth/realms"
@@ -35,24 +41,25 @@ import (
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/tryjob"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
+func init() {
+	registry.RegisterCmpOption(cmp.AllowUnexported(incompatibleTryjobOptions{}))
+}
+
 func TestIsModeAllowed(t *testing.T) {
-	Convey("isModeAllowed works", t, func() {
-		Convey("when the mode is allowed", func() {
-			So(isModeAllowed(run.DryRun, []string{string(run.FullRun), string(run.DryRun)}), ShouldBeTrue)
+	ftt.Run("isModeAllowed works", t, func(t *ftt.Test) {
+		t.Run("when the mode is allowed", func(t *ftt.Test) {
+			assert.Loosely(t, isModeAllowed(run.DryRun, []string{string(run.FullRun), string(run.DryRun)}), should.BeTrue)
 		})
-		Convey("when the mode is not allowed", func() {
-			So(isModeAllowed(run.DryRun, []string{string(run.FullRun)}), ShouldBeFalse)
+		t.Run("when the mode is not allowed", func(t *ftt.Test) {
+			assert.Loosely(t, isModeAllowed(run.DryRun, []string{string(run.FullRun)}), should.BeFalse)
 		})
 	})
 }
 
 func TestDefinitionMaker(t *testing.T) {
-	Convey("definition maker works", t, func() {
+	ftt.Run("definition maker works", t, func(t *ftt.Test) {
 		valid := "a/b/c"
 		alternateValid := "a/b/x"
 		invalidShort := "d/e"
@@ -66,14 +73,14 @@ func TestDefinitionMaker(t *testing.T) {
 			ResultVisibility: cfgpb.CommentLevel_COMMENT_LEVEL_UNSET,
 		}
 
-		Convey("main only", func() {
-			Convey("flags off", func() {
+		t.Run("main only", func(t *ftt.Test) {
+			t.Run("flags off", func(t *ftt.Test) {
 				def := (&definitionMaker{
 					builder:     b,
 					equivalence: mainOnly,
 					criticality: nonCritical,
 				}).make()
-				So(def, ShouldResembleProto, &tryjob.Definition{
+				assert.Loosely(t, def, should.Resemble(&tryjob.Definition{
 					Backend: &tryjob.Definition_Buildbucket_{
 						Buildbucket: &tryjob.Definition_Buildbucket{
 							Host: "cr-buildbucket.appspot.com",
@@ -84,9 +91,9 @@ func TestDefinitionMaker(t *testing.T) {
 							},
 						},
 					},
-				})
+				}))
 			})
-			Convey("flags on", func() {
+			t.Run("flags on", func(t *ftt.Test) {
 				b.ResultVisibility = cfgpb.CommentLevel_COMMENT_LEVEL_RESTRICTED
 				b.ExperimentPercentage = 49.9
 				b.DisableReuse = true
@@ -95,7 +102,7 @@ func TestDefinitionMaker(t *testing.T) {
 					equivalence: mainOnly,
 					criticality: critical,
 				}).make()
-				So(def, ShouldResembleProto, &tryjob.Definition{
+				assert.Loosely(t, def, should.Resemble(&tryjob.Definition{
 					DisableReuse:     true,
 					Critical:         true,
 					Optional:         true,
@@ -110,16 +117,16 @@ func TestDefinitionMaker(t *testing.T) {
 							},
 						},
 					},
-				})
+				}))
 			})
 		})
-		Convey("equivalent only", func() {
+		t.Run("equivalent only", func(t *ftt.Test) {
 			def := (&definitionMaker{
 				builder:     b,
 				equivalence: equivalentOnly,
 				criticality: nonCritical,
 			}).make()
-			So(def, ShouldResembleProto, &tryjob.Definition{
+			assert.Loosely(t, def, should.Resemble(&tryjob.Definition{
 				Backend: &tryjob.Definition_Buildbucket_{
 					Buildbucket: &tryjob.Definition_Buildbucket{
 						Host: "cr-buildbucket.appspot.com",
@@ -130,15 +137,15 @@ func TestDefinitionMaker(t *testing.T) {
 						},
 					},
 				},
-			})
+			}))
 		})
-		Convey("both", func() {
+		t.Run("both", func(t *ftt.Test) {
 			def := (&definitionMaker{
 				builder:     b,
 				equivalence: bothMainAndEquivalent,
 				criticality: nonCritical,
 			}).make()
-			So(def, ShouldResembleProto, &tryjob.Definition{
+			assert.Loosely(t, def, should.Resemble(&tryjob.Definition{
 				Backend: &tryjob.Definition_Buildbucket_{
 					Buildbucket: &tryjob.Definition_Buildbucket{
 						Host: "cr-buildbucket.appspot.com",
@@ -161,15 +168,15 @@ func TestDefinitionMaker(t *testing.T) {
 						},
 					},
 				},
-			})
+			}))
 		})
-		Convey("flipped", func() {
+		t.Run("flipped", func(t *ftt.Test) {
 			def := (&definitionMaker{
 				builder:     b,
 				equivalence: flipMainAndEquivalent,
 				criticality: nonCritical,
 			}).make()
-			So(def, ShouldResembleProto, &tryjob.Definition{
+			assert.Loosely(t, def, should.Resemble(&tryjob.Definition{
 				Backend: &tryjob.Definition_Buildbucket_{
 					Buildbucket: &tryjob.Definition_Buildbucket{
 						Host: "cr-buildbucket.appspot.com",
@@ -192,31 +199,31 @@ func TestDefinitionMaker(t *testing.T) {
 						},
 					},
 				},
-			})
+			}))
 		})
-		Convey("empty buildername in main", func() {
+		t.Run("empty buildername in main", func(t *ftt.Test) {
 			b.Name = ""
 			dm := &definitionMaker{
 				builder:     b,
 				equivalence: mainOnly,
 				criticality: critical,
 			}
-			So(func() { dm.make() }, ShouldPanicLike, "unexpectedly empty")
+			assert.Loosely(t, func() { dm.make() }, should.PanicLike("unexpectedly empty"))
 		})
-		Convey("empty buildername in equivalent", func() {
+		t.Run("empty buildername in equivalent", func(t *ftt.Test) {
 			b.EquivalentTo.Name = ""
 			dm := &definitionMaker{
 				builder:     b,
 				equivalence: equivalentOnly,
 				criticality: critical,
 			}
-			So(func() { dm.make() }, ShouldPanicLike, "unexpectedly empty")
+			assert.Loosely(t, func() { dm.make() }, should.PanicLike("unexpectedly empty"))
 		})
-		Convey("short buildername", func() {
-			So(func() { makeBuildbucketDefinition(invalidShort) }, ShouldPanicLike, "unexpected format")
+		t.Run("short buildername", func(t *ftt.Test) {
+			assert.Loosely(t, func() { makeBuildbucketDefinition(invalidShort) }, should.PanicLike("unexpected format"))
 		})
-		Convey("long buildername", func() {
-			So(func() { makeBuildbucketDefinition(invalidLong) }, ShouldPanicLike, "unexpected format")
+		t.Run("long buildername", func(t *ftt.Test) {
+			assert.Loosely(t, func() { makeBuildbucketDefinition(invalidLong) }, should.PanicLike("unexpected format"))
 		})
 	})
 }
@@ -230,7 +237,7 @@ var (
 )
 
 func TestGetDisallowedOwners(t *testing.T) {
-	Convey("getDisallowedOwners", t, func() {
+	ftt.Run("getDisallowedOwners", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 		ctx = auth.WithState(ctx, &authtest.FakeState{
@@ -257,26 +264,26 @@ func TestGetDisallowedOwners(t *testing.T) {
 			&gerritpb.EmailInfo{Email: userA.Email()},
 		})
 
-		Convey("works", func() {
-			Convey("with no allowlists", func() {
+		t.Run("works", func(t *ftt.Test) {
+			t.Run("with no allowlists", func(t *ftt.Test) {
 				disallowed, err := getDisallowedOwners(ctx, input, []string{userA.Email()})
-				So(err, ShouldBeNil)
-				So(disallowed, ShouldHaveLength, 0)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, disallowed, should.HaveLength(0))
 			})
 		})
-		Convey("panics", func() {
-			Convey("with nil users", func() {
-				So(func() { _, _ = getDisallowedOwners(ctx, input, nil, group1) }, ShouldPanicLike, "nil user")
+		t.Run("panics", func(t *ftt.Test) {
+			t.Run("with nil users", func(t *ftt.Test) {
+				assert.Loosely(t, func() { _, _ = getDisallowedOwners(ctx, input, nil, group1) }, should.PanicLike("nil user"))
 			})
-			Convey("with zero users", func() {
-				So(func() { _, _ = getDisallowedOwners(ctx, input, []string{}, group1) }, ShouldPanicLike, "nil user")
+			t.Run("with zero users", func(t *ftt.Test) {
+				assert.Loosely(t, func() { _, _ = getDisallowedOwners(ctx, input, []string{}, group1) }, should.PanicLike("nil user"))
 			})
 		})
 	})
 }
 
 func TestCompute(t *testing.T) {
-	Convey("Compute works", t, func() {
+	ftt.Run("Compute works", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 		ct.AddMember(userA.Email(), group1)
@@ -295,31 +302,31 @@ func TestCompute(t *testing.T) {
 			&gerritpb.EmailInfo{Email: userD.Email()},
 		})
 
-		Convey("fail if IncludedTryjobs and OverriddenTryjobs are both provided", func() {
+		t.Run("fail if IncludedTryjobs and OverriddenTryjobs are both provided", func(t *ftt.Test) {
 			in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{Name: "test-proj/test/builder1"}.generate()})
 			in.RunOptions.IncludedTryjobs = append(in.RunOptions.IncludedTryjobs, "test-proj/test:builder1")
 			in.RunOptions.OverriddenTryjobs = append(in.RunOptions.IncludedTryjobs, "test-proj/test:builder1")
 
 			res, err := Compute(ctx, *in)
-			So(err, ShouldBeNil)
-			So(res.OK(), ShouldBeFalse)
-			So(res, ShouldResemble, &ComputationResult{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.OK(), should.BeFalse)
+			assert.Loosely(t, res, should.Resemble(&ComputationResult{
 				ComputationFailure: &incompatibleTryjobOptions{
 					hasIncludedTryjobs:   true,
 					hasOverriddenTryjobs: true,
 				},
-			})
+			}))
 		})
 
-		Convey("with a minimal test case", func() {
+		t.Run("with a minimal test case", func(t *ftt.Test) {
 			in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{Name: "test-proj/test/builder1"}.generate()})
-			Convey("with a single CL", func() {})
-			Convey("with multiple CLs", func() { in.addCL(userB.Email()) })
+			t.Run("with a single CL", func(t *ftt.Test) {})
+			t.Run("with multiple CLs", func(t *ftt.Test) { in.addCL(userB.Email()) })
 			res, err := Compute(ctx, *in)
 
-			So(err, ShouldBeNil)
-			So(res.ComputationFailure, ShouldBeNil)
-			So(res.Requirement, ShouldResembleProto, &tryjob.Requirement{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.ComputationFailure, should.BeNil)
+			assert.Loosely(t, res.Requirement, should.Resemble(&tryjob.Requirement{
 				RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
 					SingleQuota: 2,
 					GlobalQuota: 8,
@@ -337,23 +344,23 @@ func TestCompute(t *testing.T) {
 					},
 					Critical: true,
 				}},
-			})
+			}))
 		})
-		Convey("includes undefined builder", func() {
+		t.Run("includes undefined builder", func(t *ftt.Test) {
 			in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{Name: "test-proj/test/builder1"}.generate()})
 			in.RunOptions.IncludedTryjobs = append(in.RunOptions.IncludedTryjobs, "test-proj/test:unlisted")
 
 			res, err := Compute(ctx, *in)
-			So(err, ShouldBeNil)
-			So(res.OK(), ShouldBeFalse)
-			So(res, ShouldResemble, &ComputationResult{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.OK(), should.BeFalse)
+			assert.Loosely(t, res, should.Resemble(&ComputationResult{
 				ComputationFailure: &buildersNotDefined{
 					Builders: []string{"test-proj/test/unlisted"},
 				},
-			})
+			}))
 		})
-		Convey("includes unauthorized builder", func() {
-			Convey("with single unauthorized user", func() {
+		t.Run("includes unauthorized builder", func(t *ftt.Test) {
+			t.Run("with single unauthorized user", func(t *ftt.Test) {
 				in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{
 					builderConfigGenerator{
 						Name:      "test-proj/test/builder1",
@@ -362,16 +369,16 @@ func TestCompute(t *testing.T) {
 				in.RunOptions.IncludedTryjobs = append(in.RunOptions.IncludedTryjobs, "test-proj/test:builder1")
 
 				res, err := Compute(ctx, *in)
-				So(err, ShouldBeNil)
-				So(res.OK(), ShouldBeFalse)
-				So(res, ShouldResemble, &ComputationResult{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res.OK(), should.BeFalse)
+				assert.Loosely(t, res, should.Resemble(&ComputationResult{
 					ComputationFailure: &unauthorizedIncludedTryjob{
 						Users:   []string{userA.Email()},
 						Builder: "test-proj/test/builder1",
 					},
-				})
+				}))
 			})
-			Convey("with multiple users, one of which is unauthorized", func() {
+			t.Run("with multiple users, one of which is unauthorized", func(t *ftt.Test) {
 				in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{
 					builderConfigGenerator{
 						Name:      "test-proj/test/builder1",
@@ -382,16 +389,16 @@ func TestCompute(t *testing.T) {
 				in.addCL(userD.Email())
 
 				res, err := Compute(ctx, *in)
-				So(err, ShouldBeNil)
-				So(res.OK(), ShouldBeFalse)
-				So(res, ShouldResemble, &ComputationResult{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res.OK(), should.BeFalse)
+				assert.Loosely(t, res, should.Resemble(&ComputationResult{
 					ComputationFailure: &unauthorizedIncludedTryjob{
 						Users:   []string{userD.Email()},
 						Builder: "test-proj/test/builder1",
 					},
-				})
+				}))
 			})
-			Convey("but can trigger if owners have bb schedule permission", func() {
+			t.Run("but can trigger if owners have bb schedule permission", func(t *ftt.Test) {
 				in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{
 					builderConfigGenerator{
 						Name:      "test-proj/test/builder1",
@@ -406,21 +413,21 @@ func TestCompute(t *testing.T) {
 				}
 
 				res, err := Compute(ctx, *in)
-				So(err, ShouldBeNil)
-				So(res.OK(), ShouldBeTrue)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res.OK(), should.BeTrue)
 			})
 		})
-		Convey("with includable-only builder", func() {
+		t.Run("with includable-only builder", func(t *ftt.Test) {
 			in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{
 				builderConfigGenerator{Name: "test-proj/test/builder1"}.generate(),
 				builderConfigGenerator{Name: "test-proj/test.bucket/builder2", IncludableOnly: true}.generate(),
 			})
 
-			Convey("skips by default", func() {
+			t.Run("skips by default", func(t *ftt.Test) {
 				res, err := Compute(ctx, *in)
-				So(err, ShouldBeNil)
-				So(res.ComputationFailure, ShouldBeNil)
-				So(res.Requirement, ShouldResembleProto, &tryjob.Requirement{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res.ComputationFailure, should.BeNil)
+				assert.Loosely(t, res.Requirement, should.Resemble(&tryjob.Requirement{
 					RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
 						SingleQuota: 2,
 						GlobalQuota: 8,
@@ -438,57 +445,67 @@ func TestCompute(t *testing.T) {
 						},
 						Critical: true,
 					}},
-				})
+				}))
 			})
 
-			Convey("included", func() {
-				Convey("modern style", func() {
+			t.Run("included", func(t *ftt.Test) {
+				check := func(t testing.TB) {
+					t.Helper()
+
+					res, err := Compute(ctx, *in)
+					assert.Loosely(t, err, should.BeNil, truth.LineContext())
+					assert.Loosely(t, res.ComputationFailure, should.BeNil, truth.LineContext())
+					assert.Loosely(t, res.Requirement, should.Resemble(&tryjob.Requirement{
+						RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
+							SingleQuota: 2,
+							GlobalQuota: 8,
+						},
+						Definitions: []*tryjob.Definition{
+							{
+								Backend: &tryjob.Definition_Buildbucket_{
+									Buildbucket: &tryjob.Definition_Buildbucket{
+										Host: "cr-buildbucket.appspot.com",
+										Builder: &buildbucketpb.BuilderID{
+											Project: "test-proj",
+											Bucket:  "test",
+											Builder: "builder1",
+										},
+									},
+								},
+								Critical: true,
+							},
+							{
+								Backend: &tryjob.Definition_Buildbucket_{
+									Buildbucket: &tryjob.Definition_Buildbucket{
+										Host: "cr-buildbucket.appspot.com",
+										Builder: &buildbucketpb.BuilderID{
+											Project: "test-proj",
+											Bucket:  "test.bucket",
+											Builder: "builder2",
+										},
+									},
+								},
+								Critical: true,
+							},
+						},
+					}), truth.LineContext())
+				}
+
+				t.Run("modern style", func(t *ftt.Test) {
 					in.RunOptions.IncludedTryjobs = append(in.RunOptions.IncludedTryjobs, "test-proj/test.bucket:builder2")
+					check(t)
 				})
-				Convey("legacy style", func() {
+
+				t.Run("legacy style", func(t *ftt.Test) {
 					in.RunOptions.IncludedTryjobs = append(in.RunOptions.IncludedTryjobs, "luci.test-proj.test.bucket:builder2")
+					check(t)
 				})
-				res, err := Compute(ctx, *in)
-				So(err, ShouldBeNil)
-				So(res.ComputationFailure, ShouldBeNil)
-				So(res.Requirement, ShouldResembleProto, &tryjob.Requirement{
-					RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
-						SingleQuota: 2,
-						GlobalQuota: 8,
-					},
-					Definitions: []*tryjob.Definition{
-						{
-							Backend: &tryjob.Definition_Buildbucket_{
-								Buildbucket: &tryjob.Definition_Buildbucket{
-									Host: "cr-buildbucket.appspot.com",
-									Builder: &buildbucketpb.BuilderID{
-										Project: "test-proj",
-										Bucket:  "test",
-										Builder: "builder1",
-									},
-								},
-							},
-							Critical: true,
-						},
-						{
-							Backend: &tryjob.Definition_Buildbucket_{
-								Buildbucket: &tryjob.Definition_Buildbucket{
-									Host: "cr-buildbucket.appspot.com",
-									Builder: &buildbucketpb.BuilderID{
-										Project: "test-proj",
-										Bucket:  "test.bucket",
-										Builder: "builder2",
-									},
-								},
-							},
-							Critical: true,
-						},
-					},
-				})
+
 			})
 		})
-		Convey("includes equivalent builder explicitly", func() {
-			Convey("unauthorized", func() {
+
+		t.Run("includes equivalent builder explicitly", func(t *ftt.Test) {
+			t.Run("unauthorized", func(t *ftt.Test) {
 				in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{
 					Name:          "test-proj/test/builder1",
 					Allowlist:     "secret-group",
@@ -498,27 +515,60 @@ func TestCompute(t *testing.T) {
 				in.RunOptions.IncludedTryjobs = append(in.RunOptions.IncludedTryjobs, "test-proj/test:equibuilder")
 
 				res, err := Compute(ctx, *in)
-				So(err, ShouldBeNil)
-				So(res.OK(), ShouldBeFalse)
-				So(res, ShouldResemble, &ComputationResult{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res.OK(), should.BeFalse)
+				assert.Loosely(t, res, should.Resemble(&ComputationResult{
 					ComputationFailure: &unauthorizedIncludedTryjob{
 						Users:   []string{userA.Email()},
 						Builder: "test-proj/test/equibuilder",
 					},
-				})
+				}))
 			})
 
-			Convey("authorized", func() {
+			t.Run("authorized", func(t *ftt.Test) {
 				var in *Input
-				Convey("through allowlist group", func() {
+
+				check := func(t testing.TB) {
+					t.Helper()
+
+					in.RunOptions.IncludedTryjobs = append(in.RunOptions.IncludedTryjobs, "test-proj/test:equibuilder")
+
+					res, err := Compute(ctx, *in)
+					assert.Loosely(t, err, should.BeNil, truth.LineContext())
+					assert.Loosely(t, res.ComputationFailure, should.BeNil, truth.LineContext())
+					assert.Loosely(t, res.Requirement, should.Resemble(&tryjob.Requirement{
+						RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
+							SingleQuota: 2,
+							GlobalQuota: 8,
+						},
+						Definitions: []*tryjob.Definition{{
+							Backend: &tryjob.Definition_Buildbucket_{
+								Buildbucket: &tryjob.Definition_Buildbucket{
+									Host: "cr-buildbucket.appspot.com",
+									Builder: &buildbucketpb.BuilderID{
+										Project: "test-proj",
+										Bucket:  "test",
+										Builder: "equibuilder",
+									},
+								},
+							},
+							Critical: true,
+						}},
+					}), truth.LineContext())
+				}
+
+				t.Run("through allowlist group", func(t *ftt.Test) {
 					in = makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{
 						Name:          "test-proj/test/builder1",
 						Allowlist:     "secret-group",
 						EquiName:      "test-proj/test/equibuilder",
 						EquiAllowlist: "", // Allow everyone
 					}.generate()})
+
+					check(t)
 				})
-				Convey("through buildbucket schedule permission", func() {
+
+				t.Run("through buildbucket schedule permission", func(t *ftt.Test) {
 					in = makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{
 						Name:          "test-proj/test/builder1",
 						Allowlist:     "secret-group",
@@ -528,49 +578,27 @@ func TestCompute(t *testing.T) {
 					for _, owner := range in.allCLOwnersSorted() {
 						ct.AddPermission(owner, bbperms.BuildsAdd, realms.Join("test-proj", "test"))
 					}
+					check(t)
 				})
 
-				in.RunOptions.IncludedTryjobs = append(in.RunOptions.IncludedTryjobs, "test-proj/test:equibuilder")
-
-				res, err := Compute(ctx, *in)
-				So(err, ShouldBeNil)
-				So(res.ComputationFailure, ShouldBeNil)
-				So(res.Requirement, ShouldResembleProto, &tryjob.Requirement{
-					RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
-						SingleQuota: 2,
-						GlobalQuota: 8,
-					},
-					Definitions: []*tryjob.Definition{{
-						Backend: &tryjob.Definition_Buildbucket_{
-							Buildbucket: &tryjob.Definition_Buildbucket{
-								Host: "cr-buildbucket.appspot.com",
-								Builder: &buildbucketpb.BuilderID{
-									Project: "test-proj",
-									Bucket:  "test",
-									Builder: "equibuilder",
-								},
-							},
-						},
-						Critical: true,
-					}},
-				})
 			})
 		})
-		Convey("owner allowlist denied", func() {
-			Convey("without equivalent builder", func() {
+
+		t.Run("owner allowlist denied", func(t *ftt.Test) {
+			t.Run("without equivalent builder", func(t *ftt.Test) {
 				in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{
 					Name:      "test-proj/test/builder1",
 					Allowlist: "secret-group",
 				}.generate()})
 
 				res, err := Compute(ctx, *in)
-				So(err, ShouldBeNil)
-				So(res.OK(), ShouldBeTrue)
-				So(res.Requirement.GetDefinitions(), ShouldBeEmpty)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res.OK(), should.BeTrue)
+				assert.Loosely(t, res.Requirement.GetDefinitions(), should.BeEmpty)
 			})
 
-			Convey("with equivalent builder", func() {
-				Convey("equivalent builder allowed", func() {
+			t.Run("with equivalent builder", func(t *ftt.Test) {
+				t.Run("equivalent builder allowed", func(t *ftt.Test) {
 					in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{
 						Name:          "test-proj/test/builder1",
 						Allowlist:     "secret-group",
@@ -578,9 +606,9 @@ func TestCompute(t *testing.T) {
 						EquiAllowlist: "", // allow everyone
 					}.generate()})
 					res, err := Compute(ctx, *in)
-					So(err, ShouldBeNil)
-					So(res.OK(), ShouldBeTrue)
-					So(res.Requirement.Definitions, ShouldResembleProto, []*tryjob.Definition{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, res.OK(), should.BeTrue)
+					assert.Loosely(t, res.Requirement.Definitions, should.Resemble([]*tryjob.Definition{
 						{
 							Backend: &tryjob.Definition_Buildbucket_{
 								Buildbucket: &tryjob.Definition_Buildbucket{
@@ -594,10 +622,10 @@ func TestCompute(t *testing.T) {
 							},
 							Critical: true,
 						},
-					})
+					}))
 				})
 
-				Convey("equivalent builder denied", func() {
+				t.Run("equivalent builder denied", func(t *ftt.Test) {
 					in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{
 						Name:          "test-proj/test/builder1",
 						Allowlist:     "secret-group",
@@ -605,14 +633,14 @@ func TestCompute(t *testing.T) {
 						EquiAllowlist: "another-secret-group",
 					}.generate()})
 					res, err := Compute(ctx, *in)
-					So(err, ShouldBeNil)
-					So(res.OK(), ShouldBeTrue)
-					So(res.Requirement.GetDefinitions(), ShouldBeEmpty)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, res.OK(), should.BeTrue)
+					assert.Loosely(t, res.Requirement.GetDefinitions(), should.BeEmpty)
 				})
 
 			})
 		})
-		Convey("optional", func() {
+		t.Run("optional", func(t *ftt.Test) {
 			in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{
 				builderConfigGenerator{Name: "test-proj/test/optional-builder", ExperimentPercentage: 20}.generate(),
 			})
@@ -623,19 +651,19 @@ func TestCompute(t *testing.T) {
 			for i := 0; i < 1000; i++ {
 				in.CLs[0].ID = common.CLID(baseCLID + i)
 				res, err := Compute(ctx, *in)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				if len(res.Requirement.GetDefinitions()) > 0 {
-					So(res.Requirement.GetDefinitions(), ShouldHaveLength, 1)
+					assert.Loosely(t, res.Requirement.GetDefinitions(), should.HaveLength(1))
 					def := res.Requirement.GetDefinitions()[0]
-					So(def.GetCritical(), ShouldBeFalse)
-					So(def.GetOptional(), ShouldBeTrue)
+					assert.Loosely(t, def.GetCritical(), should.BeFalse)
+					assert.Loosely(t, def.GetOptional(), should.BeTrue)
 					selected++
 				}
 			}
-			So(selected, ShouldBeBetween, 150, 250) // expecting 1000*20%=200
+			assert.Loosely(t, selected, should.BeBetween(150, 250)) // expecting 1000*20%=200
 		})
 
-		Convey("optional but explicitly included ", func() {
+		t.Run("optional but explicitly included ", func(t *ftt.Test) {
 			in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{
 				builderConfigGenerator{Name: "test-proj/test/optional-builder", ExperimentPercentage: 0.001}.generate(),
 			})
@@ -645,16 +673,16 @@ func TestCompute(t *testing.T) {
 			for i := 0; i < 10; i++ { // should include the definition all the time.
 				in.CLs[0].ID = common.CLID(baseCLID + i)
 				res, err := Compute(ctx, *in)
-				So(err, ShouldBeNil)
-				So(res.Requirement.GetDefinitions(), ShouldHaveLength, 1)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res.Requirement.GetDefinitions(), should.HaveLength(1))
 				def := res.Requirement.GetDefinitions()[0]
-				So(def.GetCritical(), ShouldBeTrue)
-				So(def.GetOptional(), ShouldBeTrue)
+				assert.Loosely(t, def.GetCritical(), should.BeTrue)
+				assert.Loosely(t, def.GetOptional(), should.BeTrue)
 			}
 		})
 
-		Convey("with location matching", func() {
-			Convey("empty change after location exclusions skips builder", func() {
+		t.Run("with location matching", func(t *ftt.Test) {
+			t.Run("empty change after location exclusions skips builder", func(t *ftt.Test) {
 				in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{
 					Name: "test-proj/test/builder1",
 					LocationFilters: []*cfgpb.Verifiers_Tryjob_Builder_LocationFilter{
@@ -671,16 +699,16 @@ func TestCompute(t *testing.T) {
 					"some/directory/contains/some/file",
 				}
 				res, err := Compute(ctx, *in)
-				So(err, ShouldBeNil)
-				So(res.ComputationFailure, ShouldBeNil)
-				So(res.Requirement, ShouldResembleProto, &tryjob.Requirement{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res.ComputationFailure, should.BeNil)
+				assert.Loosely(t, res.Requirement, should.Resemble(&tryjob.Requirement{
 					RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
 						SingleQuota: 2,
 						GlobalQuota: 8,
 					},
-				})
+				}))
 			})
-			Convey("with location filters", func() {
+			t.Run("with location filters", func(t *ftt.Test) {
 				in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{
 					Name: "test-proj/test/builder1",
 					LocationFilters: []*cfgpb.Verifiers_Tryjob_Builder_LocationFilter{
@@ -692,16 +720,16 @@ func TestCompute(t *testing.T) {
 					},
 				}.generate()})
 
-				Convey("matching CL", func() {
+				t.Run("matching CL", func(t *ftt.Test) {
 					in.CLs[0].Detail.GetGerrit().Files = []string{
 						"some/directory/contains/some/file",
 					}
 					res, err := Compute(ctx, *in)
-					So(err, ShouldBeNil)
-					So(res.ComputationFailure, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, res.ComputationFailure, should.BeNil)
 					// If the builder is not skipped, it will be in
 					// res.Requirement.Definitions.
-					So(res.Requirement, ShouldResembleProto, &tryjob.Requirement{
+					assert.Loosely(t, res.Requirement, should.Resemble(&tryjob.Requirement{
 						RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
 							SingleQuota: 2,
 							GlobalQuota: 8,
@@ -718,31 +746,31 @@ func TestCompute(t *testing.T) {
 								},
 							}, Critical: true,
 						}},
-					})
+					}))
 				})
-				Convey("non-matching CL", func() {
+				t.Run("non-matching CL", func(t *ftt.Test) {
 					in.CLs[0].Detail.GetGerrit().Files = []string{
 						"other/directory/contains/some/file",
 					}
 					res, err := Compute(ctx, *in)
-					So(err, ShouldBeNil)
-					So(res.ComputationFailure, ShouldBeNil)
-					So(res.Requirement, ShouldResembleProto, &tryjob.Requirement{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, res.ComputationFailure, should.BeNil)
+					assert.Loosely(t, res.Requirement, should.Resemble(&tryjob.Requirement{
 						RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
 							SingleQuota: 2,
 							GlobalQuota: 8,
 						},
-					})
+					}))
 				})
-				Convey("CL with merge commit", func() {
+				t.Run("CL with merge commit", func(t *ftt.Test) {
 					// No files changed, and two parents of the commit of the current revision.
 					// This simulates a merge commit. See crbug/1006534.
 					in.CLs[0].Detail.GetGerrit().Files = []string{}
 					in.CLs[0].Detail.GetGerrit().Info = gf.CI(10, gf.ParentCommits([]string{"one", "two"}), gf.Project("repo"))
 					res, err := Compute(ctx, *in)
-					So(err, ShouldBeNil)
-					So(res.ComputationFailure, ShouldBeNil)
-					So(res.Requirement, ShouldResembleProto, &tryjob.Requirement{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, res.ComputationFailure, should.BeNil)
+					assert.Loosely(t, res.Requirement, should.Resemble(&tryjob.Requirement{
 						RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
 							SingleQuota: 2,
 							GlobalQuota: 8,
@@ -760,10 +788,10 @@ func TestCompute(t *testing.T) {
 							},
 							Critical: true,
 						}},
-					})
+					}))
 				})
 			})
-			Convey("multi-CL, one CL with empty filediff, with location_filters", func() {
+			t.Run("multi-CL, one CL with empty filediff, with location_filters", func(t *ftt.Test) {
 				// This test case is the same as the above, but using
 				// location_filters, to test that the behavior is the same for
 				// both.
@@ -785,10 +813,10 @@ func TestCompute(t *testing.T) {
 				multiCLIn.CLs[1].Detail.GetGerrit().Host = "example.com"
 				multiCLIn.CLs[1].Detail.GetGerrit().Info = gf.CI(10, gf.ParentCommits([]string{"one", "two"}), gf.Project("repo"))
 				res, err := Compute(ctx, *multiCLIn)
-				So(err, ShouldBeNil)
-				So(res.ComputationFailure, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res.ComputationFailure, should.BeNil)
 				// Builder is triggered because there is a merge commit.
-				So(res.Requirement, ShouldResembleProto, &tryjob.Requirement{
+				assert.Loosely(t, res.Requirement, should.Resemble(&tryjob.Requirement{
 					RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
 						SingleQuota: 2,
 						GlobalQuota: 8,
@@ -806,9 +834,9 @@ func TestCompute(t *testing.T) {
 						},
 						Critical: true,
 					}},
-				})
+				}))
 			})
-			Convey("with location filters and exclusion", func() {
+			t.Run("with location filters and exclusion", func(t *ftt.Test) {
 				in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{
 					builderConfigGenerator{
 						Name: "test-proj/test/builder1",
@@ -828,48 +856,48 @@ func TestCompute(t *testing.T) {
 						},
 					}.generate()},
 				)
-				Convey("matching CL skipping builder", func() {
+				t.Run("matching CL skipping builder", func(t *ftt.Test) {
 					in.CLs[0].Detail.GetGerrit().Files = []string{
 						"some/excluded/file",
 					}
 					res, err := Compute(ctx, *in)
 
-					So(err, ShouldBeNil)
-					So(res.ComputationFailure, ShouldBeNil)
-					So(res.Requirement, ShouldResembleProto, &tryjob.Requirement{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, res.ComputationFailure, should.BeNil)
+					assert.Loosely(t, res.Requirement, should.Resemble(&tryjob.Requirement{
 						RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
 							SingleQuota: 2,
 							GlobalQuota: 8,
 						},
-					})
+					}))
 				})
-				Convey("partially matching CL skipping builder", func() {
+				t.Run("partially matching CL skipping builder", func(t *ftt.Test) {
 					in.CLs[0].Detail.GetGerrit().Files = []string{
 						"some/excluded/file",
 						"unknown/path",
 					}
 					res, err := Compute(ctx, *in)
 
-					So(err, ShouldBeNil)
-					So(res.ComputationFailure, ShouldBeNil)
-					So(res.Requirement, ShouldResembleProto, &tryjob.Requirement{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, res.ComputationFailure, should.BeNil)
+					assert.Loosely(t, res.Requirement, should.Resemble(&tryjob.Requirement{
 						RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
 							SingleQuota: 2,
 							GlobalQuota: 8,
 						},
-					})
+					}))
 				})
-				Convey("matching CL not skipping builder", func() {
+				t.Run("matching CL not skipping builder", func(t *ftt.Test) {
 					in.CLs[0].Detail.GetGerrit().Files = []string{
 						"some/excluded/file",
 						"some/readme.md",
 					}
 					res, err := Compute(ctx, *in)
-					So(err, ShouldBeNil)
-					So(res.ComputationFailure, ShouldBeNil)
-					So(err, ShouldBeNil)
-					So(res.ComputationFailure, ShouldBeNil)
-					So(res.Requirement, ShouldResembleProto, &tryjob.Requirement{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, res.ComputationFailure, should.BeNil)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, res.ComputationFailure, should.BeNil)
+					assert.Loosely(t, res.Requirement, should.Resemble(&tryjob.Requirement{
 						RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
 							SingleQuota: 2,
 							GlobalQuota: 8,
@@ -887,13 +915,13 @@ func TestCompute(t *testing.T) {
 							},
 							Critical: true,
 						}},
-					})
+					}))
 				})
 			})
 		})
 
-		Convey("stale check", func() {
-			Convey("from config", func() {
+		t.Run("stale check", func(t *ftt.Test) {
+			t.Run("from config", func(t *ftt.Test) {
 				in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{
 					builderConfigGenerator{
 						Name: "test-proj/test/stale-default",
@@ -909,15 +937,15 @@ func TestCompute(t *testing.T) {
 				})
 
 				res, err := Compute(ctx, *in)
-				So(err, ShouldBeNil)
-				So(res.ComputationFailure, ShouldBeNil)
-				So(res.Requirement.GetDefinitions(), ShouldHaveLength, 3)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res.ComputationFailure, should.BeNil)
+				assert.Loosely(t, res.Requirement.GetDefinitions(), should.HaveLength(3))
 				expectedSkipStaleCheck := []bool{false, true, false}
 				for i, def := range res.Requirement.GetDefinitions() {
-					So(def.GetSkipStaleCheck(), ShouldEqual, expectedSkipStaleCheck[i])
+					assert.Loosely(t, def.GetSkipStaleCheck(), should.Equal(expectedSkipStaleCheck[i]))
 				}
 			})
-			Convey("overridden by run option", func() {
+			t.Run("overridden by run option", func(t *ftt.Test) {
 				in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{
 					builderConfigGenerator{
 						Name:        "test-proj/test/stale-no",
@@ -933,14 +961,14 @@ func TestCompute(t *testing.T) {
 				}
 
 				res, err := Compute(ctx, *in)
-				So(err, ShouldBeNil)
-				So(res.ComputationFailure, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res.ComputationFailure, should.BeNil)
 				for _, def := range res.Requirement.GetDefinitions() {
-					So(def.GetSkipStaleCheck(), ShouldBeTrue)
+					assert.Loosely(t, def.GetSkipStaleCheck(), should.BeTrue)
 				}
 			})
 		})
-		Convey("ignores included builders if in NPR mode", func() {
+		t.Run("ignores included builders if in NPR mode", func(t *ftt.Test) {
 			in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{
 				builderConfigGenerator{
 					Name:  "test-proj/test/builder1",
@@ -955,9 +983,9 @@ func TestCompute(t *testing.T) {
 			in.RunMode = run.NewPatchsetRun
 			in.RunOptions.IncludedTryjobs = append(in.RunOptions.IncludedTryjobs, "test-proj/test.bucket:builder2")
 			res, err := Compute(ctx, *in)
-			So(err, ShouldBeNil)
-			So(res.ComputationFailure, ShouldBeNil)
-			So(res.Requirement, ShouldResembleProto, &tryjob.Requirement{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.ComputationFailure, should.BeNil)
+			assert.Loosely(t, res.Requirement, should.Resemble(&tryjob.Requirement{
 				RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
 					SingleQuota: 2,
 					GlobalQuota: 8,
@@ -975,10 +1003,10 @@ func TestCompute(t *testing.T) {
 					},
 					Critical: true,
 				}},
-			})
+			}))
 		})
 
-		Convey("Experiments", func() {
+		t.Run("Experiments", func(t *ftt.Test) {
 			in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{Name: "test-proj/test/builder1"}.generate()})
 			in.ConfigGroup.TryjobExperiments = []*cfgpb.ConfigGroup_TryjobExperiment{
 				{Name: "experiment.a"}, // unconditional
@@ -1003,9 +1031,9 @@ func TestCompute(t *testing.T) {
 			}
 			res, err := Compute(ctx, *in)
 
-			So(err, ShouldBeNil)
-			So(res.ComputationFailure, ShouldBeNil)
-			So(res.Requirement, ShouldResembleProto, &tryjob.Requirement{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.ComputationFailure, should.BeNil)
+			assert.Loosely(t, res.Requirement, should.Resemble(&tryjob.Requirement{
 				RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
 					SingleQuota: 2,
 					GlobalQuota: 8,
@@ -1024,35 +1052,35 @@ func TestCompute(t *testing.T) {
 					Critical:    true,
 					Experiments: []string{"experiment.a", "experiment.b", "experiment.c"},
 				}},
-			})
+			}))
 		})
 
-		Convey("override has undefined builder", func() {
+		t.Run("override has undefined builder", func(t *ftt.Test) {
 			in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{Name: "test-proj/test/builder1"}.generate()})
 			in.RunOptions.OverriddenTryjobs = append(in.RunOptions.OverriddenTryjobs, "test-proj/test:unlisted")
 
 			res, err := Compute(ctx, *in)
-			So(err, ShouldBeNil)
-			So(res.OK(), ShouldBeFalse)
-			So(res, ShouldResemble, &ComputationResult{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.OK(), should.BeFalse)
+			assert.Loosely(t, res, should.Resemble(&ComputationResult{
 				ComputationFailure: &buildersNotDefined{
 					Builders: []string{"test-proj/test/unlisted"},
 				},
-			})
+			}))
 		})
 
-		Convey("override honors SkipTryjobs option", func() {
+		t.Run("override honors SkipTryjobs option", func(t *ftt.Test) {
 			in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{Name: "test-proj/test/builder1"}.generate()})
 			in.RunOptions.OverriddenTryjobs = append(in.RunOptions.OverriddenTryjobs, "test-proj/test:builder1")
 			in.RunOptions.SkipTryjobs = true
 
 			res, err := Compute(ctx, *in)
-			So(err, ShouldBeNil)
-			So(res.OK(), ShouldBeTrue)
-			So(res.Requirement.GetDefinitions(), ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.OK(), should.BeTrue)
+			assert.Loosely(t, res.Requirement.GetDefinitions(), should.BeEmpty)
 		})
 
-		Convey("override has unauthorized Tryjob", func() {
+		t.Run("override has unauthorized Tryjob", func(t *ftt.Test) {
 			in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{
 				Name:      "test-proj/test/builder1",
 				Allowlist: "secret-group",
@@ -1060,17 +1088,17 @@ func TestCompute(t *testing.T) {
 			in.RunOptions.OverriddenTryjobs = append(in.RunOptions.OverriddenTryjobs, "test-proj/test:builder1")
 
 			res, err := Compute(ctx, *in)
-			So(err, ShouldBeNil)
-			So(res.OK(), ShouldBeFalse)
-			So(res, ShouldResemble, &ComputationResult{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.OK(), should.BeFalse)
+			assert.Loosely(t, res, should.Resemble(&ComputationResult{
 				ComputationFailure: &unauthorizedIncludedTryjob{
 					Users:   []string{userA.Email()},
 					Builder: "test-proj/test/builder1",
 				},
-			})
+			}))
 		})
 
-		Convey("override works", func() {
+		t.Run("override works", func(t *ftt.Test) {
 			in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{
 				builderConfigGenerator{
 					Name: "test-proj/test/builder1",
@@ -1082,9 +1110,9 @@ func TestCompute(t *testing.T) {
 			in.RunOptions.OverriddenTryjobs = append(in.RunOptions.OverriddenTryjobs, "test-proj/test:builder1")
 
 			res, err := Compute(ctx, *in)
-			So(err, ShouldBeNil)
-			So(res.OK(), ShouldBeTrue)
-			So(res.Requirement.Definitions, ShouldResembleProto, []*tryjob.Definition{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.OK(), should.BeTrue)
+			assert.Loosely(t, res.Requirement.Definitions, should.Resemble([]*tryjob.Definition{
 				{
 					Backend: &tryjob.Definition_Buildbucket_{
 						Buildbucket: &tryjob.Definition_Buildbucket{
@@ -1098,10 +1126,10 @@ func TestCompute(t *testing.T) {
 					},
 					Critical: true,
 				},
-			})
+			}))
 		})
 
-		Convey("override works for equivalent builder", func() {
+		t.Run("override works for equivalent builder", func(t *ftt.Test) {
 			in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{
 				builderConfigGenerator{
 					Name:     "test-proj/test/builder1",
@@ -1114,10 +1142,10 @@ func TestCompute(t *testing.T) {
 			in.RunOptions.OverriddenTryjobs = append(in.RunOptions.OverriddenTryjobs, "test-proj/test:builder2")
 
 			res, err := Compute(ctx, *in)
-			So(err, ShouldBeNil)
-			So(res.OK(), ShouldBeTrue)
-			So(res.Requirement.Definitions, ShouldHaveLength, 1)
-			So(res.Requirement.Definitions[0].GetBuildbucket().GetBuilder().GetBuilder(), ShouldEqual, "builder2")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.OK(), should.BeTrue)
+			assert.Loosely(t, res.Requirement.Definitions, should.HaveLength(1))
+			assert.Loosely(t, res.Requirement.Definitions[0].GetBuildbucket().GetBuilder().GetBuilder(), should.Equal("builder2"))
 		})
 	})
 }

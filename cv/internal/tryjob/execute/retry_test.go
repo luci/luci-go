@@ -23,17 +23,17 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/api/recipe/v1"
 	"go.chromium.org/luci/cv/internal/tryjob"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestCanRetryAll(t *testing.T) {
-	Convey("CanRetryAll", t, func() {
+	ftt.Run("CanRetryAll", t, func(t *ftt.Test) {
 		ctx, _ := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
 		const builderZero = "builder-zero"
 		const builderOne = "builder-one"
@@ -50,61 +50,68 @@ func TestCanRetryAll(t *testing.T) {
 			build()
 		executor := &Executor{}
 
-		Convey("With no retry config", func() {
-			Convey("Nil config", func() {
+		t.Run("With no retry config", func(t *ftt.Test) {
+			check := func(t testing.TB) {
+				t.Helper()
+				ok := executor.canRetryAll(ctx, execState, []int{0})
+				assert.Loosely(t, ok, should.BeFalse)
+				assert.Loosely(t, executor.logEntries, should.Resemble([]*tryjob.ExecutionLogEntry{
+					{
+						Time: timestamppb.New(clock.Now(ctx).UTC()),
+						Kind: &tryjob.ExecutionLogEntry_RetryDenied_{
+							RetryDenied: &tryjob.ExecutionLogEntry_RetryDenied{
+								Tryjobs: []*tryjob.ExecutionLogEntry_TryjobSnapshot{
+									{
+										Definition: makeDefinition(builderZero, true),
+										Id:         1,
+										ExternalId: string(tryjob.MustBuildbucketID("buildbucket.example.com", math.MaxInt64-1)),
+										Status:     tryjob.Status_ENDED,
+										Result: &tryjob.Result{
+											Status: tryjob.Result_FAILED_TRANSIENTLY,
+										},
+									},
+								},
+								Reason: "retry is not enabled in the config",
+							},
+						},
+					},
+				}))
+
+			}
+
+			t.Run("Nil config", func(t *ftt.Test) {
 				execState = newExecStateBuilder(execState).
 					withRetryConfig(nil).
 					appendAttempt(builderZero, makeAttempt(1, tryjob.Status_ENDED, tryjob.Result_FAILED_TRANSIENTLY)).
 					build()
+				check(t)
 			})
-			Convey("Empty config", func() {
+			t.Run("Empty config", func(t *ftt.Test) {
 				execState = newExecStateBuilder(execState).
 					withRetryConfig(&cfgpb.Verifiers_Tryjob_RetryConfig{}).
 					appendAttempt(builderZero, makeAttempt(1, tryjob.Status_ENDED, tryjob.Result_FAILED_TRANSIENTLY)).
 					build()
-			})
-			ok := executor.canRetryAll(ctx, execState, []int{0})
-			So(ok, ShouldBeFalse)
-			So(executor.logEntries, ShouldResembleProto, []*tryjob.ExecutionLogEntry{
-				{
-					Time: timestamppb.New(clock.Now(ctx).UTC()),
-					Kind: &tryjob.ExecutionLogEntry_RetryDenied_{
-						RetryDenied: &tryjob.ExecutionLogEntry_RetryDenied{
-							Tryjobs: []*tryjob.ExecutionLogEntry_TryjobSnapshot{
-								{
-									Definition: makeDefinition(builderZero, true),
-									Id:         1,
-									ExternalId: string(tryjob.MustBuildbucketID("buildbucket.example.com", math.MaxInt64-1)),
-									Status:     tryjob.Status_ENDED,
-									Result: &tryjob.Result{
-										Status: tryjob.Result_FAILED_TRANSIENTLY,
-									},
-								},
-							},
-							Reason: "retry is not enabled in the config",
-						},
-					},
-				},
+				check(t)
 			})
 		})
-		Convey("With retry config", func() {
-			Convey("quota", func() {
-				Convey("allows retry", func() {
+		t.Run("With retry config", func(t *ftt.Test) {
+			t.Run("quota", func(t *ftt.Test) {
+				t.Run("allows retry", func(t *ftt.Test) {
 					execState = newExecStateBuilder(execState).
 						appendAttempt(builderZero, makeAttempt(345, tryjob.Status_ENDED, tryjob.Result_FAILED_TRANSIENTLY)).
 						build()
 					ok := executor.canRetryAll(ctx, execState, []int{0})
-					So(ok, ShouldBeTrue)
-					So(executor.logEntries, ShouldBeEmpty)
+					assert.Loosely(t, ok, should.BeTrue)
+					assert.Loosely(t, executor.logEntries, should.BeEmpty)
 				})
-				Convey("for single execution exceeded", func() {
+				t.Run("for single execution exceeded", func(t *ftt.Test) {
 					execState = newExecStateBuilder(execState).
 						appendAttempt(builderZero, makeAttempt(345, tryjob.Status_ENDED, tryjob.Result_FAILED_PERMANENTLY)).
 						build()
 					ok := executor.canRetryAll(ctx, execState, []int{0})
-					So(ok, ShouldBeFalse)
-					So(execState.GetExecutions()[0].GetUsedQuota(), ShouldEqual, 3)
-					So(executor.logEntries, ShouldResembleProto, []*tryjob.ExecutionLogEntry{
+					assert.Loosely(t, ok, should.BeFalse)
+					assert.Loosely(t, execState.GetExecutions()[0].GetUsedQuota(), should.Equal(3))
+					assert.Loosely(t, executor.logEntries, should.Resemble([]*tryjob.ExecutionLogEntry{
 						{
 							Time: timestamppb.New(clock.Now(ctx).UTC()),
 							Kind: &tryjob.ExecutionLogEntry_RetryDenied_{
@@ -124,18 +131,18 @@ func TestCanRetryAll(t *testing.T) {
 								},
 							},
 						},
-					})
+					}))
 				})
-				Convey("for whole run exceeded", func() {
+				t.Run("for whole run exceeded", func(t *ftt.Test) {
 					execState = newExecStateBuilder(execState).
 						appendAttempt(builderZero, makeAttempt(345, tryjob.Status_ENDED, tryjob.Result_TIMEOUT)).
 						appendAttempt(builderOne, makeAttempt(567, tryjob.Status_ENDED, tryjob.Result_TIMEOUT)).
 						build()
 					ok := executor.canRetryAll(ctx, execState, []int{0, 1})
-					So(ok, ShouldBeFalse)
-					So(execState.GetExecutions()[0].GetUsedQuota(), ShouldEqual, 2)
-					So(execState.GetExecutions()[1].GetUsedQuota(), ShouldEqual, 2)
-					So(executor.logEntries, ShouldResembleProto, []*tryjob.ExecutionLogEntry{
+					assert.Loosely(t, ok, should.BeFalse)
+					assert.Loosely(t, execState.GetExecutions()[0].GetUsedQuota(), should.Equal(2))
+					assert.Loosely(t, execState.GetExecutions()[1].GetUsedQuota(), should.Equal(2))
+					assert.Loosely(t, executor.logEntries, should.Resemble([]*tryjob.ExecutionLogEntry{
 						{
 							Time: timestamppb.New(clock.Now(ctx).UTC()),
 							Kind: &tryjob.ExecutionLogEntry_RetryDenied_{
@@ -164,26 +171,26 @@ func TestCanRetryAll(t *testing.T) {
 								},
 							},
 						},
-					})
+					}))
 				})
-				Convey("reused run does not cause exceeding", func() {
+				t.Run("reused run does not cause exceeding", func(t *ftt.Test) {
 					execState = newExecStateBuilder(execState).
 						appendAttempt(builderZero, makeAttempt(345, tryjob.Status_ENDED, tryjob.Result_FAILED_PERMANENTLY)).
 						build()
 					execState.GetExecutions()[0].Attempts[0].Reused = true
 					ok := executor.canRetryAll(ctx, execState, []int{0})
-					So(ok, ShouldBeTrue)
-					So(execState.GetExecutions()[0].GetUsedQuota(), ShouldEqual, 0)
-					So(executor.logEntries, ShouldBeEmpty)
+					assert.Loosely(t, ok, should.BeTrue)
+					assert.Loosely(t, execState.GetExecutions()[0].GetUsedQuota(), should.BeZero)
+					assert.Loosely(t, executor.logEntries, should.BeEmpty)
 				})
-				Convey("with retry-denied property output", func() {
+				t.Run("with retry-denied property output", func(t *ftt.Test) {
 					execState = newExecStateBuilder(execState).
 						appendAttempt(builderZero, makeAttempt(345, tryjob.Status_ENDED, tryjob.Result_FAILED_TRANSIENTLY)).
 						build()
 					execState.GetExecutions()[0].Attempts[0].Result.Output = &recipe.Output{Retry: recipe.Output_OUTPUT_RETRY_DENIED}
 					ok := executor.canRetryAll(ctx, execState, []int{0})
-					So(ok, ShouldBeFalse)
-					So(executor.logEntries, ShouldResembleProto, []*tryjob.ExecutionLogEntry{
+					assert.Loosely(t, ok, should.BeFalse)
+					assert.Loosely(t, executor.logEntries, should.Resemble([]*tryjob.ExecutionLogEntry{
 						{
 							Time: timestamppb.New(clock.Now(ctx).UTC()),
 							Kind: &tryjob.ExecutionLogEntry_RetryDenied_{
@@ -206,7 +213,7 @@ func TestCanRetryAll(t *testing.T) {
 								},
 							},
 						},
-					})
+					}))
 				})
 			})
 		})

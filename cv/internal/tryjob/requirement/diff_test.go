@@ -22,18 +22,19 @@ import (
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/tryjob"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestDiff(t *testing.T) {
 	t.Parallel()
 
-	Convey("Diff works", t, func() {
+	ftt.Run("Diff works", t, func(t *ftt.Test) {
 		makeBBTryjobDefinition := func(host, project, bucket, builder string) *tryjob.Definition {
 			return &tryjob.Definition{
 				Backend: &tryjob.Definition_Buildbucket_{
@@ -49,38 +50,38 @@ func TestDiff(t *testing.T) {
 			}
 		}
 
-		Convey("Compare definitions", func() {
-			Convey("Empty base and empty target", func() {
+		t.Run("Compare definitions", func(t *ftt.Test) {
+			t.Run("Empty base and empty target", func(t *ftt.Test) {
 				res := Diff(&tryjob.Requirement{}, &tryjob.Requirement{})
-				So(res.AddedDefs, ShouldBeEmpty)
-				So(res.ChangedDefs, ShouldBeEmpty)
-				So(res.RemovedDefs, ShouldBeEmpty)
+				assert.Loosely(t, res.AddedDefs, should.BeEmpty)
+				assert.Loosely(t, res.ChangedDefs, should.BeEmpty)
+				assert.Loosely(t, res.RemovedDefs, should.BeEmpty)
 			})
-			Convey("Empty base", func() {
+			t.Run("Empty base", func(t *ftt.Test) {
 				def := makeBBTryjobDefinition("a.example.com", "infra", "try", "someBuilder")
 				res := Diff(
 					&tryjob.Requirement{},
 					&tryjob.Requirement{
 						Definitions: []*tryjob.Definition{def},
 					})
-				So(res.AddedDefs, ShouldHaveLength, 1)
-				So(res.AddedDefs, ShouldContainKey, def)
-				So(res.ChangedDefs, ShouldBeEmpty)
-				So(res.RemovedDefs, ShouldBeEmpty)
+				assert.Loosely(t, res.AddedDefs, should.HaveLength(1))
+				assert.Loosely(t, res.AddedDefs, should.ContainKey(def))
+				assert.Loosely(t, res.ChangedDefs, should.BeEmpty)
+				assert.Loosely(t, res.RemovedDefs, should.BeEmpty)
 			})
-			Convey("Empty target", func() {
+			t.Run("Empty target", func(t *ftt.Test) {
 				def := makeBBTryjobDefinition("a.example.com", "infra", "try", "someBuilder")
 				res := Diff(
 					&tryjob.Requirement{
 						Definitions: []*tryjob.Definition{def},
 					},
 					&tryjob.Requirement{})
-				So(res.AddedDefs, ShouldBeEmpty)
-				So(res.ChangedDefs, ShouldBeEmpty)
-				So(res.RemovedDefs, ShouldHaveLength, 1)
-				So(res.RemovedDefs, ShouldContainKey, def)
+				assert.Loosely(t, res.AddedDefs, should.BeEmpty)
+				assert.Loosely(t, res.ChangedDefs, should.BeEmpty)
+				assert.Loosely(t, res.RemovedDefs, should.HaveLength(1))
+				assert.Loosely(t, res.RemovedDefs, should.ContainKey(def))
 			})
-			Convey("Target has one extra", func() {
+			t.Run("Target has one extra", func(t *ftt.Test) {
 				shared := makeBBTryjobDefinition("a.example.com", "infra", "try", "someBuilder")
 				extra := makeBBTryjobDefinition("a.example.com", "infra", "ci", "someBuilder")
 				res := Diff(
@@ -90,14 +91,14 @@ func TestDiff(t *testing.T) {
 					&tryjob.Requirement{
 						Definitions: []*tryjob.Definition{proto.Clone(shared).(*tryjob.Definition), extra},
 					})
-				So(res.AddedDefs, ShouldHaveLength, 1)
-				So(res.AddedDefs, ShouldContainKey, extra)
-				So(res.ChangedDefs, ShouldBeEmpty)
-				So(res.UnchangedDefs, ShouldHaveLength, 1)
-				So(res.UnchangedDefs[shared], ShouldResembleProto, shared)
-				So(res.RemovedDefs, ShouldBeEmpty)
+				assert.Loosely(t, res.AddedDefs, should.HaveLength(1))
+				assert.Loosely(t, res.AddedDefs, should.ContainKey(extra))
+				assert.Loosely(t, res.ChangedDefs, should.BeEmpty)
+				assert.Loosely(t, res.UnchangedDefs, should.HaveLength(1))
+				assert.Loosely(t, res.UnchangedDefs[shared], should.Resemble(shared))
+				assert.Loosely(t, res.RemovedDefs, should.BeEmpty)
 			})
-			Convey("Target has one removed", func() {
+			t.Run("Target has one removed", func(t *ftt.Test) {
 				shared := makeBBTryjobDefinition("a.example.com", "infra", "try", "someBuilder")
 				removed := makeBBTryjobDefinition("a.example.com", "infra", "ci", "someBuilder")
 				res := Diff(
@@ -107,37 +108,46 @@ func TestDiff(t *testing.T) {
 					&tryjob.Requirement{
 						Definitions: []*tryjob.Definition{proto.Clone(shared).(*tryjob.Definition)},
 					})
-				So(res.AddedDefs, ShouldBeEmpty)
-				So(res.ChangedDefs, ShouldBeEmpty)
-				So(res.UnchangedDefs, ShouldHaveLength, 1)
-				So(res.UnchangedDefs[shared], ShouldResembleProto, shared)
-				So(res.RemovedDefs, ShouldHaveLength, 1)
-				So(res.RemovedDefs, ShouldContainKey, removed)
+				assert.Loosely(t, res.AddedDefs, should.BeEmpty)
+				assert.Loosely(t, res.ChangedDefs, should.BeEmpty)
+				assert.Loosely(t, res.UnchangedDefs, should.HaveLength(1))
+				assert.Loosely(t, res.UnchangedDefs[shared], should.Resemble(shared))
+				assert.Loosely(t, res.RemovedDefs, should.HaveLength(1))
+				assert.Loosely(t, res.RemovedDefs, should.ContainKey(removed))
 			})
-			Convey("Target has one changed", func() {
+			t.Run("Target has one changed", func(t *ftt.Test) {
 				baseDef := makeBBTryjobDefinition("a.example.com", "infra", "try", "someBuilder")
 				targetDef := proto.Clone(baseDef).(*tryjob.Definition)
-				Convey("Change in equivalent", func() {
+
+				check := func(t testing.TB) {
+					t.Helper()
+
+					res := Diff(
+						&tryjob.Requirement{
+							Definitions: []*tryjob.Definition{baseDef},
+						},
+						&tryjob.Requirement{
+							Definitions: []*tryjob.Definition{targetDef},
+						})
+					assert.Loosely(t, res.AddedDefs, should.BeEmpty, truth.LineContext())
+					assert.Loosely(t, res.ChangedDefs, should.HaveLength(1), truth.LineContext())
+					assert.Loosely(t, res.ChangedDefs[baseDef], should.Resemble(targetDef), truth.LineContext())
+					assert.Loosely(t, res.ChangedDefsReverse, should.HaveLength(1), truth.LineContext())
+					assert.Loosely(t, res.ChangedDefsReverse[targetDef], should.Resemble(baseDef), truth.LineContext())
+					assert.Loosely(t, res.RemovedDefs, should.BeEmpty, truth.LineContext())
+				}
+
+				t.Run("Change in equivalent", func(t *ftt.Test) {
 					targetDef.EquivalentTo = makeBBTryjobDefinition("a.example.com", "infra", "try", "equiBuilder")
+					check(t)
 				})
-				Convey("Change in disable_reuse", func() {
+
+				t.Run("Change in disable_reuse", func(t *ftt.Test) {
 					targetDef.DisableReuse = !baseDef.GetDisableReuse()
+					check(t)
 				})
-				res := Diff(
-					&tryjob.Requirement{
-						Definitions: []*tryjob.Definition{baseDef},
-					},
-					&tryjob.Requirement{
-						Definitions: []*tryjob.Definition{targetDef},
-					})
-				So(res.AddedDefs, ShouldBeEmpty)
-				So(res.ChangedDefs, ShouldHaveLength, 1)
-				So(res.ChangedDefs[baseDef], ShouldResembleProto, targetDef)
-				So(res.ChangedDefsReverse, ShouldHaveLength, 1)
-				So(res.ChangedDefsReverse[targetDef], ShouldResembleProto, baseDef)
-				So(res.RemovedDefs, ShouldBeEmpty)
 			})
-			Convey("Multiple Definitions", func() {
+			t.Run("Multiple Definitions", func(t *ftt.Test) {
 				builder1 := makeBBTryjobDefinition("a.example.com", "infra", "try", "builder1")
 				builder2 := makeBBTryjobDefinition("a.example.com", "infra", "try", "builder2")
 				builder3 := makeBBTryjobDefinition("a.example.com", "infra", "try", "builder3")
@@ -162,27 +172,27 @@ func TestDiff(t *testing.T) {
 					target.Definitions[i], target.Definitions[j] = target.Definitions[j], target.Definitions[i]
 				})
 				res := Diff(base, target)
-				So(res.AddedDefs, ShouldHaveLength, 1)
-				So(res.AddedDefs, ShouldContainKey, builder4)
-				So(res.RemovedDefs, ShouldHaveLength, 1)
-				So(res.RemovedDefs, ShouldContainKey, builder2)
-				So(res.ChangedDefs, ShouldHaveLength, 2)
-				So(res.ChangedDefs[builder3], ShouldResembleProto, builder3Changed)
-				So(res.ChangedDefs[builderDiffProj], ShouldResembleProto, builderDiffProjChanged)
-				So(res.ChangedDefsReverse, ShouldHaveLength, 2)
-				So(res.ChangedDefsReverse[builder3Changed], ShouldResembleProto, builder3)
-				So(res.ChangedDefsReverse[builderDiffProjChanged], ShouldResembleProto, builderDiffProj)
-				So(res.UnchangedDefs, ShouldHaveLength, 1)
-				So(res.UnchangedDefs[builder1], ShouldResembleProto, builder1)
+				assert.Loosely(t, res.AddedDefs, should.HaveLength(1))
+				assert.Loosely(t, res.AddedDefs, should.ContainKey(builder4))
+				assert.Loosely(t, res.RemovedDefs, should.HaveLength(1))
+				assert.Loosely(t, res.RemovedDefs, should.ContainKey(builder2))
+				assert.Loosely(t, res.ChangedDefs, should.HaveLength(2))
+				assert.Loosely(t, res.ChangedDefs[builder3], should.Resemble(builder3Changed))
+				assert.Loosely(t, res.ChangedDefs[builderDiffProj], should.Resemble(builderDiffProjChanged))
+				assert.Loosely(t, res.ChangedDefsReverse, should.HaveLength(2))
+				assert.Loosely(t, res.ChangedDefsReverse[builder3Changed], should.Resemble(builder3))
+				assert.Loosely(t, res.ChangedDefsReverse[builderDiffProjChanged], should.Resemble(builderDiffProj))
+				assert.Loosely(t, res.UnchangedDefs, should.HaveLength(1))
+				assert.Loosely(t, res.UnchangedDefs[builder1], should.Resemble(builder1))
 			})
 		})
 
-		Convey("Compare retry configuration", func() {
-			Convey("Both empty", func() {
+		t.Run("Compare retry configuration", func(t *ftt.Test) {
+			t.Run("Both empty", func(t *ftt.Test) {
 				res := Diff(&tryjob.Requirement{}, &tryjob.Requirement{})
-				So(res.RetryConfigChanged, ShouldBeFalse)
+				assert.Loosely(t, res.RetryConfigChanged, should.BeFalse)
 			})
-			Convey("Base nil, target non nil", func() {
+			t.Run("Base nil, target non nil", func(t *ftt.Test) {
 				res := Diff(
 					&tryjob.Requirement{},
 					&tryjob.Requirement{
@@ -190,9 +200,9 @@ func TestDiff(t *testing.T) {
 							SingleQuota: 1,
 						},
 					})
-				So(res.RetryConfigChanged, ShouldBeTrue)
+				assert.Loosely(t, res.RetryConfigChanged, should.BeTrue)
 			})
-			Convey("Base non nil, target nil", func() {
+			t.Run("Base non nil, target nil", func(t *ftt.Test) {
 				res := Diff(
 					&tryjob.Requirement{
 						RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
@@ -200,9 +210,9 @@ func TestDiff(t *testing.T) {
 						},
 					},
 					&tryjob.Requirement{})
-				So(res.RetryConfigChanged, ShouldBeTrue)
+				assert.Loosely(t, res.RetryConfigChanged, should.BeTrue)
 			})
-			Convey("Retry config changed", func() {
+			t.Run("Retry config changed", func(t *ftt.Test) {
 				res := Diff(
 					&tryjob.Requirement{
 						RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
@@ -214,7 +224,7 @@ func TestDiff(t *testing.T) {
 							SingleQuota: 2,
 						},
 					})
-				So(res.RetryConfigChanged, ShouldBeTrue)
+				assert.Loosely(t, res.RetryConfigChanged, should.BeTrue)
 			})
 		})
 	})

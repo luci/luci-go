@@ -21,19 +21,19 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestSaveTryjobs(t *testing.T) {
 	t.Parallel()
 
-	Convey("SaveTryjobs works", t, func() {
+	ftt.Run("SaveTryjobs works", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 		const bbHost = "buildbucket.example.com"
@@ -50,24 +50,24 @@ func TestSaveTryjobs(t *testing.T) {
 			return nil
 		}
 
-		Convey("No internal ID", func() {
-			Convey("No external ID", func() {
+		t.Run("No internal ID", func(t *ftt.Test) {
+			t.Run("No external ID", func(t *ftt.Test) {
 				tj := &Tryjob{
 					EVersion:         1,
 					EntityCreateTime: now,
 					EntityUpdateTime: now,
 					LaunchedBy:       runID,
 				}
-				So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+				assert.Loosely(t, datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 					return SaveTryjobs(ctx, []*Tryjob{tj}, notifyFn)
-				}, nil), ShouldBeNil)
-				So(tj.ID, ShouldNotBeEmpty)
-				So(notified, ShouldResemble, map[common.RunID]common.TryjobIDs{
+				}, nil), should.BeNil)
+				assert.Loosely(t, tj.ID, should.NotEqual(0))
+				assert.Loosely(t, notified, should.Resemble(map[common.RunID]common.TryjobIDs{
 					runID: {tj.ID},
-				})
+				}))
 			})
-			Convey("External ID provided", func() {
-				Convey("Does not map to any existing tryjob", func() {
+			t.Run("External ID provided", func(t *ftt.Test) {
+				t.Run("Does not map to any existing tryjob", func(t *ftt.Test) {
 					eid := MustBuildbucketID(bbHost, 10)
 					tj := &Tryjob{
 						ExternalID:       eid,
@@ -76,17 +76,17 @@ func TestSaveTryjobs(t *testing.T) {
 						EntityUpdateTime: now,
 						LaunchedBy:       runID,
 					}
-					So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+					assert.Loosely(t, datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 						return SaveTryjobs(ctx, []*Tryjob{tj}, notifyFn)
-					}, nil), ShouldBeNil)
+					}, nil), should.BeNil)
 					tj, err := eid.Load(ctx)
-					So(err, ShouldBeNil)
-					So(tj, ShouldNotBeNil)
-					So(notified, ShouldResemble, map[common.RunID]common.TryjobIDs{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, tj, should.NotBeNil)
+					assert.Loosely(t, notified, should.Resemble(map[common.RunID]common.TryjobIDs{
 						runID: {tj.ID},
-					})
+					}))
 				})
-				Convey("Map to an existing tryjob", func() {
+				t.Run("Map to an existing tryjob", func(t *ftt.Test) {
 					eid := MustBuildbucketID(bbHost, 10)
 					eid.MustCreateIfNotExists(ctx)
 					tj := &Tryjob{
@@ -96,17 +96,17 @@ func TestSaveTryjobs(t *testing.T) {
 						EntityUpdateTime: now,
 						LaunchedBy:       runID,
 					}
-					So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+					assert.Loosely(t, datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 						return SaveTryjobs(ctx, []*Tryjob{tj}, notifyFn)
-					}, nil), ShouldErrLike, "has already mapped to internal id")
-					So(notified, ShouldBeEmpty)
+					}, nil), should.ErrLike("has already mapped to internal id"))
+					assert.Loosely(t, notified, should.BeEmpty)
 				})
 			})
 		})
 
-		Convey("Internal ID provided", func() {
+		t.Run("Internal ID provided", func(t *ftt.Test) {
 			const tjID = common.TryjobID(45366)
-			Convey("No external ID", func() {
+			t.Run("No external ID", func(t *ftt.Test) {
 				tj := &Tryjob{
 					ID:               tjID,
 					EVersion:         1,
@@ -114,15 +114,15 @@ func TestSaveTryjobs(t *testing.T) {
 					EntityUpdateTime: now,
 					ReusedBy:         common.RunIDs{runID},
 				}
-				So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+				assert.Loosely(t, datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 					return SaveTryjobs(ctx, []*Tryjob{tj}, notifyFn)
-				}, nil), ShouldBeNil)
-				So(notified, ShouldResemble, map[common.RunID]common.TryjobIDs{
+				}, nil), should.BeNil)
+				assert.Loosely(t, notified, should.Resemble(map[common.RunID]common.TryjobIDs{
 					runID: {tjID},
-				})
+				}))
 			})
-			Convey("External ID provided", func() {
-				Convey("Does not map to any existing tryjob", func() {
+			t.Run("External ID provided", func(t *ftt.Test) {
+				t.Run("Does not map to any existing tryjob", func(t *ftt.Test) {
 					eid := MustBuildbucketID(bbHost, 10)
 					tj := &Tryjob{
 						ID:               tjID,
@@ -132,17 +132,17 @@ func TestSaveTryjobs(t *testing.T) {
 						EntityUpdateTime: now,
 						ReusedBy:         common.RunIDs{runID},
 					}
-					So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+					assert.Loosely(t, datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 						return SaveTryjobs(ctx, []*Tryjob{tj}, notifyFn)
-					}, nil), ShouldBeNil)
-					So(eid.MustLoad(ctx).ID, ShouldEqual, tjID)
-					So(notified, ShouldResemble, map[common.RunID]common.TryjobIDs{
+					}, nil), should.BeNil)
+					assert.Loosely(t, eid.MustLoad(ctx).ID, should.Equal(tjID))
+					assert.Loosely(t, notified, should.Resemble(map[common.RunID]common.TryjobIDs{
 						runID: {tjID},
-					})
+					}))
 				})
 
-				Convey("Map to an existing tryjob", func() {
-					Convey("existing tryjob has the same ID", func() {
+				t.Run("Map to an existing tryjob", func(t *ftt.Test) {
+					t.Run("existing tryjob has the same ID", func(t *ftt.Test) {
 						eid := MustBuildbucketID(bbHost, 10)
 						existing := eid.MustCreateIfNotExists(ctx)
 						ct.Clock.Add(10 * time.Minute)
@@ -153,15 +153,15 @@ func TestSaveTryjobs(t *testing.T) {
 							EntityUpdateTime: datastore.RoundTime(clock.Now(ctx).UTC()),
 							ReusedBy:         common.RunIDs{runID},
 						}
-						So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+						assert.Loosely(t, datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 							return SaveTryjobs(ctx, []*Tryjob{tj}, notifyFn)
-						}, nil), ShouldBeNil)
-						So(eid.MustLoad(ctx).EVersion, ShouldEqual, existing.EVersion+1)
-						So(notified, ShouldResemble, map[common.RunID]common.TryjobIDs{
+						}, nil), should.BeNil)
+						assert.Loosely(t, eid.MustLoad(ctx).EVersion, should.Equal(existing.EVersion+1))
+						assert.Loosely(t, notified, should.Resemble(map[common.RunID]common.TryjobIDs{
 							runID: {tj.ID},
-						})
+						}))
 					})
-					Convey("existing tryjob has a different ID", func() {
+					t.Run("existing tryjob has a different ID", func(t *ftt.Test) {
 						eid := MustBuildbucketID(bbHost, 10)
 						existing := eid.MustCreateIfNotExists(ctx)
 						ct.Clock.Add(10 * time.Minute)
@@ -172,10 +172,10 @@ func TestSaveTryjobs(t *testing.T) {
 							EntityUpdateTime: datastore.RoundTime(clock.Now(ctx).UTC()),
 							ReusedBy:         common.RunIDs{runID},
 						}
-						So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+						assert.Loosely(t, datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 							return SaveTryjobs(ctx, []*Tryjob{tj}, notifyFn)
-						}, nil), ShouldErrLike, "has already mapped to")
-						So(notified, ShouldBeEmpty)
+						}, nil), should.ErrLike("has already mapped to"))
+						assert.Loosely(t, notified, should.BeEmpty)
 					})
 				})
 			})
@@ -186,7 +186,7 @@ func TestSaveTryjobs(t *testing.T) {
 func TestQueryTryjobIDsUpdatedBefore(t *testing.T) {
 	t.Parallel()
 
-	Convey("QueryTryjobIDsUpdatedBefore", t, func() {
+	ftt.Run("QueryTryjobIDsUpdatedBefore", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
@@ -218,7 +218,7 @@ func TestQueryTryjobIDsUpdatedBefore(t *testing.T) {
 		slices.Sort(expected)
 
 		actual, err := QueryTryjobIDsUpdatedBefore(ctx, before)
-		So(err, ShouldBeNil)
-		So(actual, ShouldResemble, expected)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, actual, should.Resemble(expected))
 	})
 }

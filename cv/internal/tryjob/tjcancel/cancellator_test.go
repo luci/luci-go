@@ -20,6 +20,10 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/cv/internal/changelist"
@@ -27,14 +31,11 @@ import (
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/tryjob"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestTaskHandler(t *testing.T) {
-	Convey("handleTask", t, func() {
-		Convey("panics", func() {
+	ftt.Run("handleTask", t, func(t *ftt.Test) {
+		t.Run("panics", func(t *ftt.Test) {
 			c := &Cancellator{}
 			ctx := context.Background()
 
@@ -45,9 +46,9 @@ func TestTaskHandler(t *testing.T) {
 					CurrentMinEquivPatchset:  2,
 				})
 			}
-			So(panicker, ShouldPanicLike, "patchset numbers expected to increase")
+			assert.Loosely(t, panicker, should.PanicLike("patchset numbers expected to increase"))
 		})
-		Convey("works with", func() {
+		t.Run("works with", func(t *ftt.Test) {
 			ct := &cvtesting.Test{}
 			ctx := ct.SetUp(t)
 			n := tryjob.NewNotifier(ct.TQDispatcher)
@@ -56,74 +57,74 @@ func TestTaskHandler(t *testing.T) {
 			c.RegisterBackend(mb)
 			const clid = common.CLID(100)
 			cl := &changelist.CL{ID: clid}
-			So(datastore.Put(ctx, cl), ShouldBeNil)
-			Convey("no tryjobs", func() {
+			assert.Loosely(t, datastore.Put(ctx, cl), should.BeNil)
+			t.Run("no tryjobs", func(t *ftt.Test) {
 				err := c.handleTask(ctx, &tryjob.CancelStaleTryjobsTask{
 					Clid:                     int64(clid),
 					PreviousMinEquivPatchset: 2,
 					CurrentMinEquivPatchset:  5,
 				})
-				So(err, ShouldBeNil)
-				So(mb.calledWith, ShouldHaveLength, 0)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, mb.calledWith, should.HaveLength(0))
 			})
-			Convey("all tryjobs ended", func() {
-				tj1 := putTryjob(ctx, clid, 2, tryjob.Status_ENDED, 1, run.Status_FAILED, nil)
-				tj2 := putTryjob(ctx, clid, 2, tryjob.Status_ENDED, 2, run.Status_CANCELLED, nil)
+			t.Run("all tryjobs ended", func(t *ftt.Test) {
+				tj1 := putTryjob(t, ctx, clid, 2, tryjob.Status_ENDED, 1, run.Status_FAILED, nil)
+				tj2 := putTryjob(t, ctx, clid, 2, tryjob.Status_ENDED, 2, run.Status_CANCELLED, nil)
 				err := c.handleTask(ctx, &tryjob.CancelStaleTryjobsTask{
 					Clid:                     int64(clid),
 					PreviousMinEquivPatchset: 2,
 					CurrentMinEquivPatchset:  5,
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				// Should not call backend.
-				So(mb.calledWith, ShouldHaveLength, 0)
+				assert.Loosely(t, mb.calledWith, should.HaveLength(0))
 
-				So(datastore.Get(ctx, tj1, tj2), ShouldBeNil)
+				assert.Loosely(t, datastore.Get(ctx, tj1, tj2), should.BeNil)
 				// Should not modify entities.
-				So(tj1.EVersion, ShouldEqual, 1)
-				So(tj2.EVersion, ShouldEqual, 1)
+				assert.Loosely(t, tj1.EVersion, should.Equal(1))
+				assert.Loosely(t, tj2.EVersion, should.Equal(1))
 			})
-			Convey("some tryjobs ended, others cancellable", func() {
-				tj11 := putTryjob(ctx, clid, 2, tryjob.Status_ENDED, 11, run.Status_FAILED, nil)
-				tj12 := putTryjob(ctx, clid, 2, tryjob.Status_TRIGGERED, 12, run.Status_CANCELLED, nil)
+			t.Run("some tryjobs ended, others cancellable", func(t *ftt.Test) {
+				tj11 := putTryjob(t, ctx, clid, 2, tryjob.Status_ENDED, 11, run.Status_FAILED, nil)
+				tj12 := putTryjob(t, ctx, clid, 2, tryjob.Status_TRIGGERED, 12, run.Status_CANCELLED, nil)
 				err := c.handleTask(ctx, &tryjob.CancelStaleTryjobsTask{
 					Clid:                     int64(clid),
 					PreviousMinEquivPatchset: 2,
 					CurrentMinEquivPatchset:  5,
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				// Should call backend once, with tj12.
-				So(mb.calledWith, ShouldHaveLength, 1)
-				So(mb.calledWith[0].ExternalID, ShouldEqual, tj12.ExternalID)
+				assert.Loosely(t, mb.calledWith, should.HaveLength(1))
+				assert.Loosely(t, mb.calledWith[0].ExternalID, should.Equal(tj12.ExternalID))
 
-				So(datastore.Get(ctx, tj11, tj12), ShouldBeNil)
+				assert.Loosely(t, datastore.Get(ctx, tj11, tj12), should.BeNil)
 				// Should modify only tj12.
-				So(tj11.EVersion, ShouldEqual, 1)
-				So(tj12.EVersion, ShouldEqual, 2)
-				So(tj12.Status, ShouldEqual, tryjob.Status_CANCELLED)
+				assert.Loosely(t, tj11.EVersion, should.Equal(1))
+				assert.Loosely(t, tj12.EVersion, should.Equal(2))
+				assert.Loosely(t, tj12.Status, should.Equal(tryjob.Status_CANCELLED))
 			})
-			Convey("tryjob still watched", func() {
-				tj21 := putTryjob(ctx, clid, 2, tryjob.Status_TRIGGERED, 21, run.Status_RUNNING, nil)
+			t.Run("tryjob still watched", func(t *ftt.Test) {
+				tj21 := putTryjob(t, ctx, clid, 2, tryjob.Status_TRIGGERED, 21, run.Status_RUNNING, nil)
 				task := &tryjob.CancelStaleTryjobsTask{
 					Clid:                     int64(clid),
 					PreviousMinEquivPatchset: 2,
 					CurrentMinEquivPatchset:  5,
 				}
 				err := c.handleTask(ctx, task)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				// Should not call backend.
-				So(mb.calledWith, ShouldHaveLength, 0)
+				assert.Loosely(t, mb.calledWith, should.HaveLength(0))
 
-				So(datastore.Get(ctx, tj21), ShouldBeNil)
+				assert.Loosely(t, datastore.Get(ctx, tj21), should.BeNil)
 				// Should not modify the entity.
-				So(tj21.EVersion, ShouldEqual, 1)
-				So(tj21.Status, ShouldEqual, tryjob.Status_TRIGGERED)
-				So(ct.TQ.Tasks(), ShouldHaveLength, 1)
-				So(ct.TQ.Tasks()[0].Payload, ShouldResembleProto, task)
-				So(ct.TQ.Tasks()[0].ETA, ShouldEqual, ct.Clock.Now().Add(cancelLaterDuration))
+				assert.Loosely(t, tj21.EVersion, should.Equal(1))
+				assert.Loosely(t, tj21.Status, should.Equal(tryjob.Status_TRIGGERED))
+				assert.Loosely(t, ct.TQ.Tasks(), should.HaveLength(1))
+				assert.Loosely(t, ct.TQ.Tasks()[0].Payload, should.Resemble(task))
+				assert.Loosely(t, ct.TQ.Tasks()[0].ETA, should.Match(ct.Clock.Now().Add(cancelLaterDuration)))
 			})
-			Convey("tryjob not triggered by cv", func() {
-				tj31 := putTryjob(ctx, clid, 2, tryjob.Status_TRIGGERED, 31, run.Status_CANCELLED, func(tj *tryjob.Tryjob) {
+			t.Run("tryjob not triggered by cv", func(t *ftt.Test) {
+				tj31 := putTryjob(t, ctx, clid, 2, tryjob.Status_TRIGGERED, 31, run.Status_CANCELLED, func(tj *tryjob.Tryjob) {
 					tj.LaunchedBy = ""
 				})
 				err := c.handleTask(ctx, &tryjob.CancelStaleTryjobsTask{
@@ -131,16 +132,16 @@ func TestTaskHandler(t *testing.T) {
 					PreviousMinEquivPatchset: 2,
 					CurrentMinEquivPatchset:  5,
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				// Should not call backend.
-				So(mb.calledWith, ShouldHaveLength, 0)
-				So(datastore.Get(ctx, tj31), ShouldBeNil)
+				assert.Loosely(t, mb.calledWith, should.HaveLength(0))
+				assert.Loosely(t, datastore.Get(ctx, tj31), should.BeNil)
 				// Should not modify the entity.
-				So(tj31.EVersion, ShouldEqual, 1)
-				So(tj31.Status, ShouldNotEqual, tryjob.Status_CANCELLED)
+				assert.Loosely(t, tj31.EVersion, should.Equal(1))
+				assert.Loosely(t, tj31.Status, should.NotEqual(tryjob.Status_CANCELLED))
 			})
-			Convey("tryjob configured to skip stale check", func() {
-				tj41 := putTryjob(ctx, clid, 2, tryjob.Status_TRIGGERED, 41, run.Status_CANCELLED, func(tj *tryjob.Tryjob) {
+			t.Run("tryjob configured to skip stale check", func(t *ftt.Test) {
+				tj41 := putTryjob(t, ctx, clid, 2, tryjob.Status_TRIGGERED, 41, run.Status_CANCELLED, func(tj *tryjob.Tryjob) {
 					tj.Definition.SkipStaleCheck = true
 				})
 				err := c.handleTask(ctx, &tryjob.CancelStaleTryjobsTask{
@@ -148,16 +149,16 @@ func TestTaskHandler(t *testing.T) {
 					PreviousMinEquivPatchset: 2,
 					CurrentMinEquivPatchset:  5,
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				// Should not call backend.
-				So(mb.calledWith, ShouldHaveLength, 0)
-				So(datastore.Get(ctx, tj41), ShouldBeNil)
+				assert.Loosely(t, mb.calledWith, should.HaveLength(0))
+				assert.Loosely(t, datastore.Get(ctx, tj41), should.BeNil)
 				// Should not modify the entity.
-				So(tj41.EVersion, ShouldEqual, 1)
-				So(tj41.Status, ShouldNotEqual, tryjob.Status_CANCELLED)
+				assert.Loosely(t, tj41.EVersion, should.Equal(1))
+				assert.Loosely(t, tj41.Status, should.NotEqual(tryjob.Status_CANCELLED))
 			})
-			Convey("CL has Cq-Do-Not-Cancel-Tryjobs footer", func() {
-				tj51 := putTryjob(ctx, clid, 2, tryjob.Status_TRIGGERED, 12, run.Status_CANCELLED, nil)
+			t.Run("CL has Cq-Do-Not-Cancel-Tryjobs footer", func(t *ftt.Test) {
+				tj51 := putTryjob(t, ctx, clid, 2, tryjob.Status_TRIGGERED, 12, run.Status_CANCELLED, nil)
 				cl.Snapshot = &changelist.Snapshot{
 					Metadata: []*changelist.StringPair{
 						{
@@ -166,19 +167,19 @@ func TestTaskHandler(t *testing.T) {
 						},
 					},
 				}
-				So(datastore.Put(ctx, cl), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, cl), should.BeNil)
 				err := c.handleTask(ctx, &tryjob.CancelStaleTryjobsTask{
 					Clid:                     int64(clid),
 					PreviousMinEquivPatchset: 2,
 					CurrentMinEquivPatchset:  5,
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				// Should not call backend.
-				So(mb.calledWith, ShouldHaveLength, 0)
-				So(datastore.Get(ctx, tj51), ShouldBeNil)
+				assert.Loosely(t, mb.calledWith, should.HaveLength(0))
+				assert.Loosely(t, datastore.Get(ctx, tj51), should.BeNil)
 				// Should not modify the entity.
-				So(tj51.EVersion, ShouldEqual, 1)
-				So(tj51.Status, ShouldNotEqual, tryjob.Status_CANCELLED)
+				assert.Loosely(t, tj51.EVersion, should.Equal(1))
+				assert.Loosely(t, tj51.Status, should.NotEqual(tryjob.Status_CANCELLED))
 			})
 		})
 	})
@@ -188,7 +189,9 @@ func TestTaskHandler(t *testing.T) {
 //
 // It must be called inside a Convey() context as it contains
 // assertions.
-func putTryjob(ctx context.Context, clid common.CLID, patchset int32, tjStatus tryjob.Status, buildNumber int64, runStatus run.Status, modify func(*tryjob.Tryjob)) *tryjob.Tryjob {
+func putTryjob(t testing.TB, ctx context.Context, clid common.CLID, patchset int32, tjStatus tryjob.Status, buildNumber int64, runStatus run.Status, modify func(*tryjob.Tryjob)) *tryjob.Tryjob {
+	t.Helper()
+
 	now := datastore.RoundTime(clock.Now(ctx).UTC())
 	tjID := tryjob.MustBuildbucketID("test.com", buildNumber)
 	digest := mockDigest(string(tjID))
@@ -196,7 +199,7 @@ func putTryjob(ctx context.Context, clid common.CLID, patchset int32, tjStatus t
 		ID:     common.MakeRunID("test", now, 1, digest),
 		Status: runStatus,
 	}
-	So(datastore.Put(ctx, r), ShouldBeNil)
+	assert.Loosely(t, datastore.Put(ctx, r), should.BeNil, truth.LineContext())
 	tj := &tryjob.Tryjob{
 		ExternalID:       tjID,
 		CLPatchsets:      []tryjob.CLPatchset{tryjob.MakeCLPatchset(clid, patchset)},
@@ -210,7 +213,7 @@ func putTryjob(ctx context.Context, clid common.CLID, patchset int32, tjStatus t
 	if modify != nil {
 		modify(tj)
 	}
-	So(datastore.Put(ctx, tj), ShouldBeNil)
+	assert.Loosely(t, datastore.Put(ctx, tj), should.BeNil, truth.LineContext())
 	return tj
 }
 
