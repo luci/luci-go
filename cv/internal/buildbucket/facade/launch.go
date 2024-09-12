@@ -32,12 +32,11 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/cv/api/recipe/v1"
 	"go.chromium.org/luci/cv/internal/buildbucket"
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/tryjob"
 )
@@ -51,52 +50,36 @@ const propertyKey = "$recipe_engine/cv"
 // The Tryjobs will include relevant info from the Run (e.g. Run mode) and
 // involves all provided CLs.
 //
-// Updates the Tryjobs that are scheduled successfully in Buildbucket in place.
-// The following fields will be updated:
-//   - ExternalID
-//   - Status
-//   - Result
-//
-// Returns nil if all tryjobs have been successfully launched. Otherwise,
-// returns `errors.MultiError` where each element is the launch error of
-// the corresponding Tryjob.
+// Return LaunchResults that has the same length as the provided Tryjobs.
+// LaunchResult.Err is populated if the Buildbucket returns non-successful
+// response or any error occurred even before sending the schedule request to
+// buildbucket (e.g. invalid input).
 //
 // Uses Tryjob ID as the request key for deduplication. This ensures only one
 // Buildbucket build will be scheduled for one Tryjob within the deduplication
 // window (currently 1 min. in Buildbucket).
-func (f *Facade) Launch(ctx context.Context, tryjobs []*tryjob.Tryjob, r *run.Run, cls []*run.RunCL) error {
+func (f *Facade) Launch(ctx context.Context, tryjobs []*tryjob.Tryjob, r *run.Run, cls []*run.RunCL) []*tryjob.LaunchResult {
+	resultByTryjobID := make(map[common.TryjobID]*tryjob.LaunchResult, len(tryjobs))
+	for _, tj := range tryjobs {
+		resultByTryjobID[tj.ID] = &tryjob.LaunchResult{}
+	}
 	tryjobsByHost := splitTryjobsByHost(tryjobs)
-	tryjobToIndex := make(map[*tryjob.Tryjob]int, len(tryjobs))
+
+	var wg sync.WaitGroup
+	wg.Add(len(tryjobsByHost))
+	for host, tryjobs := range tryjobsByHost {
+		go func() {
+			defer wg.Done()
+			f.schedule(ctx, host, r, cls, tryjobs, resultByTryjobID)
+		}()
+	}
+	wg.Wait()
+
+	results := make([]*tryjob.LaunchResult, len(tryjobs))
 	for i, tj := range tryjobs {
-		tryjobToIndex[tj] = i
+		results[i] = resultByTryjobID[tj.ID]
 	}
-	launchErrs := errors.NewLazyMultiError(len(tryjobs))
-	poolErr := parallel.WorkPool(min(len(tryjobsByHost), 8), func(work chan<- func() error) {
-		for host, tryjobs := range tryjobsByHost {
-			host, tryjobs := host, tryjobs
-			work <- func() error {
-				err := f.schedule(ctx, host, r, cls, tryjobs)
-				var merrs errors.MultiError
-				switch ok := errors.As(err, &merrs); {
-				case err == nil:
-				case !ok:
-					// assign singular error to all tryjobs.
-					for _, tj := range tryjobs {
-						launchErrs.Assign(tryjobToIndex[tj], err)
-					}
-				default:
-					for i, tj := range tryjobs {
-						launchErrs.Assign(tryjobToIndex[tj], merrs[i])
-					}
-				}
-				return nil
-			}
-		}
-	})
-	if poolErr != nil {
-		panic(fmt.Errorf("impossible"))
-	}
-	return launchErrs.Get()
+	return results
 }
 
 func splitTryjobsByHost(tryjobs []*tryjob.Tryjob) map[string][]*tryjob.Tryjob {
@@ -111,72 +94,64 @@ func splitTryjobsByHost(tryjobs []*tryjob.Tryjob) map[string][]*tryjob.Tryjob {
 	return ret
 }
 
-func (f *Facade) schedule(ctx context.Context, host string, r *run.Run, cls []*run.RunCL, tryjobs []*tryjob.Tryjob) error {
+func (f *Facade) schedule(ctx context.Context, host string, r *run.Run, cls []*run.RunCL, tryjobs []*tryjob.Tryjob, results map[common.TryjobID]*tryjob.LaunchResult) {
 	bbClient, err := f.ClientFactory.MakeClient(ctx, host, r.ID.LUCIProject())
 	if err != nil {
-		return errors.Annotate(err, "failed to create Buildbucket client").Err()
+		// assign the error to the launchResult.Err for each Tryjob
+		for _, tj := range tryjobs {
+			results[tj.ID].Err = fmt.Errorf("failed to create Buildbucket client: %w", err)
+		}
+		return
 	}
 	batches, err := prepareBatches(ctx, tryjobs, r, cls)
 	if err != nil {
-		return errors.Annotate(err, "failed to create batch schedule build requests").Err()
+		// error could only occur when computing input parameters for all Tryjobs.
+		// Hence, assign the err to the launchResult.Err for each Tryjob.
+		for _, tj := range tryjobs {
+			results[tj.ID].Err = fmt.Errorf("failed to create batch schedule build requests: %w", err)
+		}
+		return
 	}
 
-	scheduleErrs := errors.NewLazyMultiError(len(tryjobs))
 	var wg sync.WaitGroup
+	wg.Add(len(batches))
 	for _, batch := range batches {
-		batch := batch
-		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			err := makeRequestAndUpdateTryjobs(ctx, bbClient, batch, host)
-			var merrs errors.MultiError
-			switch ok := errors.As(err, &merrs); {
-			case err == nil:
-			case !ok:
-				// assign singular error to all tryjobs.
-				for i := 0; i < len(batch.tryjobs); i++ {
-					scheduleErrs.Assign(batch.offset+i, err)
-				}
-			default:
-				for i, merr := range merrs {
-					scheduleErrs.Assign(batch.offset+i, merr)
-				}
-			}
+			makeBatchRequest(ctx, bbClient, batch, host, results)
 		}()
 	}
 	wg.Wait()
-	return scheduleErrs.Get()
 }
 
-func makeRequestAndUpdateTryjobs(ctx context.Context, bbClient buildbucket.Client, batch batch, host string) error {
+func makeBatchRequest(ctx context.Context, bbClient buildbucket.Client, batch batch, host string, results map[common.TryjobID]*tryjob.LaunchResult) {
 	logging.Debugf(ctx, "scheduling a batch of %d builds against buildbucket", len(batch.req.GetRequests()))
 	res, err := bbClient.Batch(ctx, batch.req)
 	if err != nil {
-		return err
+		for _, tj := range batch.tryjobs {
+			results[tj.ID].Err = err
+		}
+		return
 	}
-	ret := errors.NewLazyMultiError(len(res.GetResponses()))
 	for i, res := range res.GetResponses() {
+		launchResult := results[batch.tryjobs[i].ID]
 		switch res.GetResponse().(type) {
 		case *bbpb.BatchResponse_Response_ScheduleBuild:
 			build := res.GetScheduleBuild()
 			status, result, err := parseStatusAndResult(ctx, build)
 			if err != nil {
-				ret.Assign(i, err)
+				launchResult.Err = err
+			} else {
+				launchResult.ExternalID = tryjob.MustBuildbucketID(host, build.Id)
+				launchResult.Status = status
+				launchResult.Result = result
 			}
-			tj := batch.tryjobs[i]
-			tj.ExternalID = tryjob.MustBuildbucketID(host, build.Id)
-			tj.Status = status
-			tj.Result = result
 		case *bbpb.BatchResponse_Response_Error:
-			ret.Assign(i, status.ErrorProto(res.GetError()))
-		case nil:
-			logging.Errorf(ctx, "FIXME(crbug/1359509): received nil response at index %d for batch request:\n%s", i, batch.req)
-			ret.Assign(i, transient.Tag.Apply(errors.New("unexpected nil response from Buildbucket")))
+			launchResult.Err = status.ErrorProto(res.GetError())
 		default:
-			panic(fmt.Errorf("unexpected response type: %T", res.GetResponse()))
+			launchResult.Err = fmt.Errorf("unexpected response type: %T", res.GetResponse())
 		}
 	}
-	return ret.Get()
 }
 
 // limit comes from buildbucket:
@@ -188,7 +163,6 @@ const maxBatchSize = 200
 type batch struct {
 	req     *bbpb.BatchRequest
 	tryjobs []*tryjob.Tryjob // the tryjobs to launch in batch request
-	offset  int              // offset of the tryjobs in the overall tryjob slice
 }
 
 func prepareBatches(ctx context.Context, tryjobs []*tryjob.Tryjob, r *run.Run, cls []*run.RunCL) ([]batch, error) {
@@ -241,7 +215,6 @@ func prepareBatches(ctx context.Context, tryjobs []*tryjob.Tryjob, r *run.Run, c
 		ret = append(ret, batch{
 			req:     req,
 			tryjobs: tryjobs[offset:min(offset+batchSize, len(requests))],
-			offset:  offset,
 		})
 		offset += len(req.GetRequests())
 	}

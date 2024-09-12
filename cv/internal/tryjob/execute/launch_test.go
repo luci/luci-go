@@ -195,16 +195,21 @@ func TestLaunch(t *testing.T) {
 			existingTryjobID := tj.ID + 59
 			w.backend = &decoratedBackend{
 				TryjobBackend: w.backend,
-				launchedTryjobsHook: func(tryjobs []*tryjob.Tryjob) {
+				launchedTryjobsHook: func(tryjobs []*tryjob.Tryjob, launchResults []*tryjob.LaunchResult) {
 					assert.Loosely(t, tryjobs, should.HaveLength(1))
+					assert.Loosely(t, launchResults, should.HaveLength(1))
 					// Save a tryjob that has the same external ID but different internal
 					// ID from the input tryjob.
-					originalID := tj.ID
-					tryjobs[0].ID = existingTryjobID
+					existingTryjob := &tryjob.Tryjob{
+						ID:         existingTryjobID,
+						ExternalID: launchResults[0].ExternalID,
+						Definition: tryjobs[0].Definition,
+						Status:     launchResults[0].Status,
+						Result:     launchResults[0].Result,
+					}
 					assert.Loosely(t, datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-						return tryjob.SaveTryjobs(ctx, []*tryjob.Tryjob{tj}, nil)
+						return tryjob.SaveTryjobs(ctx, []*tryjob.Tryjob{existingTryjob}, nil)
 					}, nil), should.BeNil)
-					tryjobs[0].ID = originalID
 				},
 			}
 
@@ -280,15 +285,13 @@ func TestLaunch(t *testing.T) {
 // decoratedBackend allows test to instrument TryjobBackend interface.
 type decoratedBackend struct {
 	TryjobBackend
-	launchedTryjobsHook func([]*tryjob.Tryjob)
+	launchedTryjobsHook func([]*tryjob.Tryjob, []*tryjob.LaunchResult)
 }
 
-func (db *decoratedBackend) Launch(ctx context.Context, tryjobs []*tryjob.Tryjob, r *run.Run, cls []*run.RunCL) error {
-	if err := db.TryjobBackend.Launch(ctx, tryjobs, r, cls); err != nil {
-		return err
-	}
+func (db *decoratedBackend) Launch(ctx context.Context, tryjobs []*tryjob.Tryjob, r *run.Run, cls []*run.RunCL) []*tryjob.LaunchResult {
+	launchResults := db.TryjobBackend.Launch(ctx, tryjobs, r, cls)
 	if db.launchedTryjobsHook != nil {
-		db.launchedTryjobsHook(tryjobs)
+		db.launchedTryjobsHook(tryjobs, launchResults)
 	}
-	return nil
+	return launchResults
 }

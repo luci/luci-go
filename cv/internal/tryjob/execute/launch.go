@@ -33,7 +33,6 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/impl/submit"
 	"go.chromium.org/luci/cv/internal/tryjob"
 )
@@ -65,94 +64,60 @@ func (w *worker) launchTryjobs(ctx context.Context, tryjobs []*tryjob.Tryjob) ([
 	if err != nil {
 		return nil, err
 	}
-	launchFailures := make(map[*tryjob.Tryjob]error)
-	_ = retry.Retry(clock.Tag(ctx, common.LaunchRetryClockTag), retryFactory, func() error {
-		var hasFatal bool
-		launchFailures, hasFatal = w.tryLaunchTryjobsOnce(ctx, toBeLaunched, clsInOrder)
-		switch {
-		case len(launchFailures) == 0:
-			return nil
-		case hasFatal: // stop the retry
-			return nil
-		default: // all failures can be retried
-			toBeLaunched = toBeLaunched[:0] // reuse existing slice
-			for tj := range launchFailures {
-				toBeLaunched = append(toBeLaunched, tj)
+	launchResultByTryjobID := make(map[common.TryjobID]*tryjob.LaunchResult, len(toBeLaunched))
+	errRetry := errors.New("please retry")
+	err = retry.Retry(clock.Tag(ctx, common.LaunchRetryClockTag), retryFactory,
+		func() error {
+			launchResults := w.backend.Launch(ctx, toBeLaunched, w.run, clsInOrder)
+			for i, result := range launchResults {
+				launchResultByTryjobID[toBeLaunched[i].ID] = result
 			}
-			return errors.New("please retry") // returns an arbitrary error to retry
-		}
-	}, func(error, time.Duration) {
-		var sb strings.Builder
-		sb.WriteString("retrying following tryjobs:")
-		for tj, err := range launchFailures {
-			sb.WriteString("\n  * ")
-			sb.WriteString(strconv.FormatInt(int64(tj.ID), 10))
-			sb.WriteString(": ")
-			sb.WriteString(err.Error())
-		}
-		logging.Warningf(ctx, sb.String())
-	})
-
-	launchFailureLogs := make([]*tryjob.ExecutionLogEntry_TryjobLaunchFailed, 0, len(launchFailures))
-	for _, tj := range tryjobs {
-		if err, ok := launchFailures[tj]; ok {
-			tj.Status = tryjob.Status_UNTRIGGERED
-			switch grpcStatus, ok := status.FromError(errors.Unwrap(err)); {
-			case !ok:
-				// Log the error detail but don't leak the internal error.
-				logging.Errorf(ctx, "unexpected internal error when launching tryjob: %s", err)
-				tj.UntriggeredReason = "unexpected internal error"
-			default:
-				tj.UntriggeredReason = fmt.Sprintf("received %s from %s", grpcStatus.Code(), w.backend.Kind())
-				if msg := grpcStatus.Message(); msg != "" {
-					tj.UntriggeredReason += ". message: " + msg
-				}
+			toBeLaunched = w.findRetriableTryjobs(ctx, toBeLaunched, launchResults)
+			if len(toBeLaunched) == 0 {
+				return nil
 			}
-			launchFailureLogs = append(launchFailureLogs, &tryjob.ExecutionLogEntry_TryjobLaunchFailed{
-				Definition: tj.Definition,
-				Reason:     tj.UntriggeredReason,
-			})
-		}
-	}
-	if len(launchFailureLogs) > 0 {
-		w.logEntries = append(w.logEntries, &tryjob.ExecutionLogEntry{
-			Time: timestamppb.New(clock.Now(ctx).UTC()),
-			Kind: &tryjob.ExecutionLogEntry_TryjobsLaunchFailed_{
-				TryjobsLaunchFailed: &tryjob.ExecutionLogEntry_TryjobsLaunchFailed{
-					Tryjobs: launchFailureLogs,
-				},
-			},
+			return errRetry
+		}, func(error, time.Duration) {
+			var sb strings.Builder
+			sb.WriteString("retrying following tryjobs:")
+			for _, tj := range toBeLaunched {
+				sb.WriteString("\n  * ")
+				sb.WriteString(strconv.FormatInt(int64(tj.ID), 10))
+				sb.WriteString(": ")
+				sb.WriteString(launchResultByTryjobID[tj.ID].Err.Error())
+			}
+			logging.Warningf(ctx, sb.String())
 		})
+	if err != nil && !errors.Is(err, errRetry) {
+		// Returns the error if it is not the error to indicate retry.
+		return nil, err
 	}
-	return w.saveLaunchedTryjobs(ctx, tryjobs)
+
+	if tryjobs, err = w.saveLaunchedTryjobs(ctx, tryjobs, launchResultByTryjobID); err != nil {
+		return nil, err
+	}
+	w.logLaunchFailures(ctx, tryjobs)
+	return tryjobs, nil
 }
 
-// tryLaunchTryjobsOnce attempts to launch Tryjobs once using the backend, and
-// returns failures.
-func (w *worker) tryLaunchTryjobsOnce(ctx context.Context, tryjobs []*tryjob.Tryjob, cls []*run.RunCL) (failures map[*tryjob.Tryjob]error, hasFatal bool) {
+// also log successfully launched tryjobs
+func (w *worker) findRetriableTryjobs(ctx context.Context, tryjobs []*tryjob.Tryjob, launchResults []*tryjob.LaunchResult) (toRetry []*tryjob.Tryjob) {
 	launchLogs := make([]*tryjob.ExecutionLogEntry_TryjobSnapshot, 0, len(tryjobs))
-	err := w.backend.Launch(ctx, tryjobs, w.run, cls)
-	switch merrs, ok := err.(errors.MultiError); {
-	case err == nil:
-		for _, tj := range tryjobs {
-			launchLogs = append(launchLogs, makeLogTryjobSnapshot(tj.Definition, tj, false))
+	for i, result := range launchResults {
+		switch tj := tryjobs[i]; {
+		case result.Err == nil:
+			launchLogs = append(launchLogs, &tryjob.ExecutionLogEntry_TryjobSnapshot{
+				Definition: tj.Definition,
+				Id:         int64(tj.ID),
+				ExternalId: string(result.ExternalID),
+				Status:     result.Status,
+				Result:     result.Result,
+			})
+		case canRetryBackendError(result.Err):
+			toRetry = append(toRetry, tj)
 		}
-	case !ok:
-		panic(fmt.Errorf("impossible; backend.Launch must return multi errors, got %s", err))
-	default:
-		for i, err := range merrs {
-			if err != nil {
-				if failures == nil {
-					failures = make(map[*tryjob.Tryjob]error, 1)
-				}
-				failures[tryjobs[i]] = err
-				hasFatal = hasFatal || !canRetryBackendError(err)
-			} else {
-				launchLogs = append(launchLogs, makeLogTryjobSnapshot(tryjobs[i].Definition, tryjobs[i], false))
-			}
-		}
-	}
 
+	}
 	if len(launchLogs) > 0 {
 		w.logEntries = append(w.logEntries, &tryjob.ExecutionLogEntry{
 			Time: timestamppb.New(clock.Now(ctx).UTC()),
@@ -163,7 +128,7 @@ func (w *worker) tryLaunchTryjobsOnce(ctx context.Context, tryjobs []*tryjob.Try
 			},
 		})
 	}
-	return failures, hasFatal
+	return toRetry
 }
 
 func canRetryBackendError(err error) bool {
@@ -199,7 +164,32 @@ func retryFactory() retry.Iterator {
 }
 
 // saveLaunchedTryjobs saves launched Tryjobs to Datastore.
-func (w *worker) saveLaunchedTryjobs(ctx context.Context, tryjobs []*tryjob.Tryjob) ([]*tryjob.Tryjob, error) {
+func (w *worker) saveLaunchedTryjobs(ctx context.Context, tryjobs []*tryjob.Tryjob, launchResultByTryjobID map[common.TryjobID]*tryjob.LaunchResult) ([]*tryjob.Tryjob, error) {
+	for _, tj := range tryjobs {
+		launchResult, ok := launchResultByTryjobID[tj.ID]
+		switch {
+		case !ok:
+			return nil, fmt.Errorf("impossible; can not find launch result for tryjob ID %d", tj.ID)
+		case launchResult.Err != nil:
+			tj.Status = tryjob.Status_UNTRIGGERED
+			switch grpcStatus, ok := status.FromError(errors.Unwrap(launchResult.Err)); {
+			case !ok:
+				// Log the error detail but don't leak the internal error.
+				logging.Errorf(ctx, "unexpected internal error when launching tryjob: %s", launchResult.Err)
+				tj.UntriggeredReason = "unexpected internal error"
+			default:
+				tj.UntriggeredReason = fmt.Sprintf("received %s from %s", grpcStatus.Code(), w.backend.Kind())
+				if msg := grpcStatus.Message(); msg != "" {
+					tj.UntriggeredReason += ". message: " + msg
+				}
+			}
+		default:
+			tj.ExternalID = launchResult.ExternalID
+			tj.Status = launchResult.Status
+			tj.Result = launchResult.Result
+		}
+	}
+
 	var innerErr error
 	var reconciled []*tryjob.Tryjob
 	err := datastore.RunInTransaction(ctx, func(ctx context.Context) (err error) {
@@ -310,4 +300,26 @@ func reconcileWithExisting(ctx context.Context, tryjobs []*tryjob.Tryjob, rid co
 		}
 	}
 	return reconciled, dropped, nil
+}
+
+func (w *worker) logLaunchFailures(ctx context.Context, tryjobs []*tryjob.Tryjob) {
+	var launchFailureLogs []*tryjob.ExecutionLogEntry_TryjobLaunchFailed
+	for _, tj := range tryjobs {
+		if tj.Status == tryjob.Status_UNTRIGGERED {
+			launchFailureLogs = append(launchFailureLogs, &tryjob.ExecutionLogEntry_TryjobLaunchFailed{
+				Definition: tj.Definition,
+				Reason:     tj.UntriggeredReason,
+			})
+		}
+	}
+	if len(launchFailureLogs) > 0 {
+		w.logEntries = append(w.logEntries, &tryjob.ExecutionLogEntry{
+			Time: timestamppb.New(clock.Now(ctx).UTC()),
+			Kind: &tryjob.ExecutionLogEntry_TryjobsLaunchFailed_{
+				TryjobsLaunchFailed: &tryjob.ExecutionLogEntry_TryjobsLaunchFailed{
+					Tryjobs: launchFailureLogs,
+				},
+			},
+		})
+	}
 }

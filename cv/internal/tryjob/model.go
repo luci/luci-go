@@ -310,3 +310,24 @@ func (cp CLPatchset) Parse() (common.CLID, int32, error) {
 		return 0, 0, errors.Reason("unsupported version %d", ver).Err()
 	}
 }
+
+// LaunchResult contains the result of launching a Tryjob.
+type LaunchResult struct {
+	// Err is the error encountered when launching a Tryjob.
+	//
+	// The rest of the fields in this struct should NOT be populated when
+	// Err is set.
+	Err error
+
+	// ExternalID is the ID of the Tryjob launched in the external system.
+	ExternalID ExternalID
+	// Status is the launched Tryjob status.
+	//
+	// Typically, it would be Status_TRIGGERED.
+	Status Status
+	// Result is the Tryjob result when the Tryjob is successfully launched.
+	//
+	// Note that only a small portion of fields would be populated in the Result
+	// when the Tryjob is just launched.
+	Result *Result
+}

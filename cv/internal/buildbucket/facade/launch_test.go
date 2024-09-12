@@ -24,7 +24,6 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
-	"go.chromium.org/luci/common/errors"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 
 	"go.chromium.org/luci/cv/internal/changelist"
@@ -147,14 +146,16 @@ func TestLaunch(t *testing.T) {
 					Definition: definition,
 					Status:     tryjob.Status_PENDING,
 				}
-				err := f.Launch(ctx, []*tryjob.Tryjob{tj}, r, cls)
-				So(err, ShouldBeNil)
-				So(tj.ExternalID, ShouldNotBeEmpty)
-				host, id, err := tj.ExternalID.ParseBuildbucketID()
+				launchResults := f.Launch(ctx, []*tryjob.Tryjob{tj}, r, cls)
+				So(launchResults, ShouldHaveLength, 1)
+				launchResult := launchResults[0]
+				So(launchResult.Err, ShouldBeNil)
+				So(launchResult.ExternalID, ShouldNotBeEmpty)
+				host, id, err := launchResult.ExternalID.ParseBuildbucketID()
 				So(err, ShouldBeNil)
 				So(host, ShouldEqual, bbHost)
-				So(tj.Status, ShouldEqual, tryjob.Status_TRIGGERED)
-				So(tj.Result, ShouldResembleProto, &tryjob.Result{
+				So(launchResult.Status, ShouldEqual, tryjob.Status_TRIGGERED)
+				So(launchResult.Result, ShouldResembleProto, &tryjob.Result{
 					Status:     tryjob.Result_UNKNOWN,
 					CreateTime: timestamppb.New(ct.Clock.Now()),
 					UpdateTime: timestamppb.New(ct.Clock.Now()),
@@ -222,10 +223,12 @@ func TestLaunch(t *testing.T) {
 					Definition: definition,
 					Status:     tryjob.Status_PENDING,
 				}
-				err := f.Launch(ctx, []*tryjob.Tryjob{tj}, r, cls)
-				So(err, ShouldBeNil)
-				So(tj.ExternalID, ShouldNotBeEmpty)
-				_, id, err := tj.ExternalID.ParseBuildbucketID()
+				launchResults := f.Launch(ctx, []*tryjob.Tryjob{tj}, r, cls)
+				So(launchResults, ShouldHaveLength, 1)
+				launchResult := launchResults[0]
+				So(launchResult.Err, ShouldBeNil)
+				So(launchResult.ExternalID, ShouldNotBeEmpty)
+				_, id, err := launchResult.ExternalID.ParseBuildbucketID()
 				So(err, ShouldBeNil)
 				build, err := bbClient.GetBuild(ctx, &bbpb.GetBuildRequest{
 					Id: id,
@@ -302,11 +305,11 @@ func TestLaunch(t *testing.T) {
 			ct.BuildbucketFake.AddBuilder(bbHost, tryjobs[0].Definition.GetBuildbucket().GetBuilder(), nil)
 			ct.BuildbucketFake.AddBuilder(bbHost, tryjobs[1].Definition.GetBuildbucket().GetBuilder(), nil)
 			ct.BuildbucketFake.AddBuilder(bbHost2, tryjobs[2].Definition.GetBuildbucket().GetBuilder(), nil)
-			err := f.Launch(ctx, tryjobs, r, cls)
-			So(err, ShouldBeNil)
-			for i, tj := range tryjobs {
-				So(tj.ExternalID, ShouldNotBeEmpty)
-				host, id, err := tj.ExternalID.ParseBuildbucketID()
+			launchResults := f.Launch(ctx, tryjobs, r, cls)
+			for i, launchResult := range launchResults {
+				So(launchResult.Err, ShouldBeNil)
+				So(launchResult.ExternalID, ShouldNotBeEmpty)
+				host, id, err := launchResult.ExternalID.ParseBuildbucketID()
 				So(err, ShouldBeNil)
 				switch i {
 				case 0, 1:
@@ -348,12 +351,12 @@ func TestLaunch(t *testing.T) {
 				}
 				ct.BuildbucketFake.AddBuilder(bbHost, tryjobs[i].Definition.GetBuildbucket().GetBuilder(), nil)
 			}
-			err := f.Launch(ctx, tryjobs, r, cls)
-			So(err, ShouldBeNil)
-			for i, tj := range tryjobs {
-				So(tj.ID, ShouldEqual, common.TryjobID(10000+i))
-				So(tj.ExternalID, ShouldNotBeEmpty)
-				host, id, err := tj.ExternalID.ParseBuildbucketID()
+			launchResults := f.Launch(ctx, tryjobs, r, cls)
+			So(launchResults, ShouldHaveLength, len(tryjobs))
+			for i, launchResult := range launchResults {
+				So(launchResult.Err, ShouldBeNil)
+				So(launchResult.ExternalID, ShouldNotBeEmpty)
+				host, id, err := launchResult.ExternalID.ParseBuildbucketID()
 				So(err, ShouldBeNil)
 				bbClient, err := ct.BuildbucketFake.NewClientFactory().MakeClient(ctx, host, lProject)
 				So(err, ShouldBeNil)
@@ -364,7 +367,7 @@ func TestLaunch(t *testing.T) {
 					},
 				})
 				So(err, ShouldBeNil)
-				So(build.GetBuilder(), ShouldResembleProto, tj.Definition.GetBuildbucket().GetBuilder())
+				So(build.GetBuilder(), ShouldResembleProto, tryjobs[i].Definition.GetBuildbucket().GetBuilder())
 			}
 		})
 
@@ -399,18 +402,18 @@ func TestLaunch(t *testing.T) {
 					Status: tryjob.Status_PENDING,
 				},
 			}
-			err := f.Launch(ctx, tryjobs, r, cls)
-			So(err, ShouldNotBeNil)
-			So(err, ShouldHaveSameTypeAs, errors.MultiError{})
-			merrs := err.(errors.MultiError)
-			So(merrs[0], ShouldBeNil) // First Tryjob launched successfully
-			So(tryjobs[0].ExternalID, ShouldNotBeEmpty)
-			So(merrs[1], ShouldBeRPCNotFound)
-			So(tryjobs[1].ExternalID, ShouldBeEmpty)
+			launchResults := f.Launch(ctx, tryjobs, r, cls)
+			So(launchResults, ShouldHaveLength, 2)
+			So(launchResults[0].Err, ShouldBeNil) // First Tryjob launched successfully
+			So(launchResults[0].ExternalID, ShouldNotBeEmpty)
+			So(launchResults[1].Err, ShouldBeRPCNotFound)
+			So(launchResults[1].ExternalID, ShouldBeEmpty)
+			So(launchResults[1].Status, ShouldEqual, tryjob.Status_STATUS_UNSPECIFIED)
+			So(launchResults[1].Result, ShouldBeNil)
 		})
 
 		Convey("Deduplicate", func() {
-			first := &tryjob.Tryjob{
+			tj := &tryjob.Tryjob{
 				ID: 655365,
 				Definition: &tryjob.Definition{
 					Backend: &tryjob.Definition_Buildbucket_{
@@ -422,13 +425,16 @@ func TestLaunch(t *testing.T) {
 				},
 				Status: tryjob.Status_PENDING,
 			}
-			second := *first // make a copy
-			err := f.Launch(ctx, []*tryjob.Tryjob{first}, r, cls)
-			So(err, ShouldBeNil)
+			launchResults := f.Launch(ctx, []*tryjob.Tryjob{tj}, r, cls)
+			So(launchResults, ShouldHaveLength, 1)
+			So(launchResults[0].Err, ShouldBeNil)
+			firstExternalID := launchResults[0].ExternalID
 			ct.Clock.Add(10 * time.Second)
-			err = f.Launch(ctx, []*tryjob.Tryjob{&second}, r, cls)
-			So(err, ShouldBeNil)
-			So(second.ExternalID, ShouldEqual, first.ExternalID)
+			launchResults = f.Launch(ctx, []*tryjob.Tryjob{tj}, r, cls)
+			So(launchResults, ShouldHaveLength, 1)
+			So(launchResults[0].Err, ShouldBeNil)
+			secondExternalID := launchResults[0].ExternalID
+			So(secondExternalID, ShouldEqual, firstExternalID)
 		})
 	})
 }

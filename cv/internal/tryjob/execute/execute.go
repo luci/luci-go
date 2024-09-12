@@ -61,7 +61,7 @@ type Executor struct {
 type TryjobBackend interface {
 	Kind() string
 	Search(ctx context.Context, cls []*run.RunCL, definitions []*tryjob.Definition, luciProject string, cb func(*tryjob.Tryjob) bool) error
-	Launch(ctx context.Context, tryjobs []*tryjob.Tryjob, r *run.Run, cls []*run.RunCL) error
+	Launch(ctx context.Context, tryjobs []*tryjob.Tryjob, r *run.Run, cls []*run.RunCL) []*tryjob.LaunchResult
 }
 
 // TryjobBackend encapsulates the interactions with Run Manager.
