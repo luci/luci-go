@@ -27,6 +27,7 @@ import (
 	"slices"
 	"strings"
 	"sync"
+	"text/template"
 
 	"github.com/bmatcuk/doublestar"
 	"github.com/go-git/go-git/v5/plumbing/format/gitattributes"
@@ -374,9 +375,60 @@ func exportProtos(ctx context.Context, repo *Repo, dest string, copyCh chan<- co
 	})
 }
 
+var shellScriptTemplate = template.Must(template.New("shell").
+	Funcs(template.FuncMap{
+		"toSlash": filepath.ToSlash,
+	}).
+	Parse(`#!/usr/bin/env bash
+export PYTHONPATH=${BASH_SOURCE[0]%/*}/recipe_engine
+exec vpython3 -u ${BASH_SOURCE[0]%/*}/recipe_engine/recipe_engine/main.py \
+ --package ${BASH_SOURCE[0]%/*}/{{.MainRepo.Name}}/{{toSlash .MainRepo.CfgPathRel}} \
+ --proto-override ${BASH_SOURCE[0]%/*}/_pb3 \{{range .DepRepos}}
+ -O {{.Name}}=${BASH_SOURCE[0]%/*}/{{.Name}} \{{end}}
+ {{.Command}}
+`))
+
+var batScriptTemplate = template.Must(template.New("bat").
+	Funcs(template.FuncMap{
+		"toBackwardSlash": func(path string) string {
+			return strings.ReplaceAll(path, string(filepath.Separator), `\`)
+		},
+	}).
+	Parse(`@echo off
+set PYTHONPATH="%~dp0\recipe_engine"
+call vpython3.bat -u "%~dp0\recipe_engine\recipe_engine\main.py" ^
+ --package "%~dp0\{{.MainRepo.Name}}\{{toBackwardSlash .MainRepo.CfgPathRel}}" ^
+ --proto-override "%~dp0\_pb3" ^{{range .DepRepos}}
+ -O {{.Name}}=%~dp0\{{.Name}} ^{{end}}
+ {{.Command}}
+`))
+
 // prepareScripts creates entrypoint scripts for various platforms.
 func prepareScripts(main *Repo, deps []*Repo, dest string) error {
-	return errors.New("implement")
+	type Script struct {
+		Name     string
+		tmpl     *template.Template
+		Command  string
+		MainRepo *Repo
+		DepRepos []*Repo
+		perm     fs.FileMode
+	}
+	for _, script := range []Script{
+		{"recipes", shellScriptTemplate, `"$@"`, main, deps, 0744},
+		{"recipes.bat", batScriptTemplate, `%*`, main, deps, 0644},
+		{"luciexe", shellScriptTemplate, `luciexe "$@"`, main, deps, 0744},
+		{"luciexe.bat", batScriptTemplate, `luciexe %*`, main, deps, 0644},
+	} {
+		f, err := os.OpenFile(filepath.Join(dest, script.Name), os.O_RDWR|os.O_CREATE, script.perm)
+		if err != nil {
+			return fmt.Errorf("failed to create script %q: %w", script.Name, err)
+		}
+		defer func() { _ = f.Close() }()
+		if err := script.tmpl.Execute(f, script); err != nil {
+			return fmt.Errorf("failed to write script %q: %w", script.Name, err)
+		}
+	}
+	return nil
 }
 
 // bundleInclusion helps decide whether a file in recipe should be included in
