@@ -36,7 +36,7 @@ import (
 	"go.chromium.org/luci/swarming/server/metrics"
 )
 
-func TestAuthenticateBot(t *testing.T) {
+func TestAuthorizeBot(t *testing.T) {
 	t.Parallel()
 
 	var (
@@ -82,7 +82,7 @@ func TestAuthenticateBot(t *testing.T) {
 				Identity:       identity.AnonymousIdentity,
 				PeerIPOverride: badTestIP,
 			})
-			err := authenticateBot(ctx, "bot-id", []*configpb.BotAuth{
+			err := AuthorizeBot(ctx, "bot-id", []*configpb.BotAuth{
 				{RequireLuciMachineToken: true},
 				{RequireGceVmToken: &configpb.BotAuth_GCE{Project: "gce-proj"}},
 				{RequireServiceAccount: []string{"some@example.com"}},
@@ -112,7 +112,7 @@ func TestAuthenticateBot(t *testing.T) {
 				FakeDB:   authDB,
 				Identity: "user:good@example.com",
 			})
-			err := authenticateBot(ctx, "bot-id", []*configpb.BotAuth{
+			err := AuthorizeBot(ctx, "bot-id", []*configpb.BotAuth{
 				{RequireServiceAccount: []string{"bad@example.com"}},
 				{RequireServiceAccount: []string{"good@example.com"}},
 			})
@@ -125,7 +125,7 @@ func TestAuthenticateBot(t *testing.T) {
 				FakeDB:   authDB,
 				Identity: "user:good@example.com",
 			})
-			err := authenticateBot(ctx, "bot-id", []*configpb.BotAuth{
+			err := AuthorizeBot(ctx, "bot-id", []*configpb.BotAuth{
 				{RequireServiceAccount: []string{"bad@example.com"}, LogIfFailed: true},
 				{RequireServiceAccount: []string{"good@example.com"}},
 			})
@@ -144,7 +144,7 @@ func TestAuthenticateBot(t *testing.T) {
 					Identity:       "user:some@example.com",
 					PeerIPOverride: goodTestIP,
 				})
-				err := authenticateBot(ctx, "bot-id", []*configpb.BotAuth{
+				err := AuthorizeBot(ctx, "bot-id", []*configpb.BotAuth{
 					{
 						RequireServiceAccount: []string{"some@example.com"},
 						IpWhitelist:           ipAllowlist,
@@ -161,7 +161,7 @@ func TestAuthenticateBot(t *testing.T) {
 					Identity:       "user:some@example.com",
 					PeerIPOverride: badTestIP,
 				})
-				err := authenticateBot(ctx, "bot-id", []*configpb.BotAuth{
+				err := AuthorizeBot(ctx, "bot-id", []*configpb.BotAuth{
 					{
 						RequireServiceAccount: []string{"some@example.com"},
 						IpWhitelist:           ipAllowlist,
@@ -198,7 +198,7 @@ func TestAuthenticateBot(t *testing.T) {
 					Identity:  "bot:unused",
 					UserExtra: &machine.MachineTokenInfo{FQDN: cs.fqdn},
 				})
-				err := authenticateBot(ctx, cs.botID, []*configpb.BotAuth{
+				err := AuthorizeBot(ctx, cs.botID, []*configpb.BotAuth{
 					{RequireLuciMachineToken: true},
 				})
 				assert.Loosely(t, err, should.ErrLike(cs.err))
@@ -228,7 +228,7 @@ func TestAuthenticateBot(t *testing.T) {
 						Project:  cs.project,
 					},
 				})
-				err := authenticateBot(ctx, cs.botID, []*configpb.BotAuth{
+				err := AuthorizeBot(ctx, cs.botID, []*configpb.BotAuth{
 					{RequireGceVmToken: &configpb.BotAuth_GCE{Project: cs.expectedProj}},
 				})
 				assert.Loosely(t, err, should.ErrLike(cs.err))
@@ -257,7 +257,7 @@ func TestAuthenticateBot(t *testing.T) {
 					FakeDB:   authDB,
 					Identity: cs.authenticateAs,
 				})
-				err := authenticateBot(ctx, cs.botID, []*configpb.BotAuth{
+				err := AuthorizeBot(ctx, cs.botID, []*configpb.BotAuth{
 					{RequireServiceAccount: cs.expectedEmails},
 				})
 				assert.Loosely(t, err, should.ErrLike(cs.err))
@@ -271,7 +271,7 @@ func TestAuthenticateBot(t *testing.T) {
 				Identity:       "user:some@example.com",
 				PeerIPOverride: goodTestIP,
 			})
-			err := authenticateBot(ctx, "bot-id", []*configpb.BotAuth{
+			err := AuthorizeBot(ctx, "bot-id", []*configpb.BotAuth{
 				{IpWhitelist: ipAllowlist},
 			})
 			assert.Loosely(t, err, should.ErrLike(nil))

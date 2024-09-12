@@ -280,7 +280,7 @@ func InstallHandler[B any, RB RequestBodyConstraint[B]](s *Server, route string,
 			if !sameEnforcedDims(botID, botGroup.Dimensions, pollState.EnforcedDimensions) {
 				logging.Errorf(ctx, "bot_auth: mismatch in enforced dimensions (%v vs %v)", botGroup.Dimensions, pollState.EnforcedDimensions)
 			}
-			dryRunAuthErr = authenticateBot(ctx, botID, botGroup.Auth)
+			dryRunAuthErr = AuthorizeBot(ctx, botID, botGroup.Auth)
 			if transient.Tag.In(dryRunAuthErr) {
 				logging.Errorf(ctx, "bot_auth: ignoring transient error when checking bot creds: %s", dryRunAuthErr)
 				dryRunAuthErr = nil

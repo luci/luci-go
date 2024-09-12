@@ -38,16 +38,16 @@ import (
 	"go.chromium.org/luci/swarming/server/metrics"
 )
 
-// authenticateBot checks the bot credentials in the context match requirements
+// AuthorizeBot checks the bot credentials in the context match requirements
 // from bots.cfg for this bot based on its ID.
 //
-// Returns no error if the bot is successfully authenticated, a fatal error
+// Returns no error if the bot is successfully authorized, a fatal error
 // if not, and a transient-tagged error if there was some unexpected error.
 // A fatal error message will be returned to the caller as is and should not
 // contain any internal details not already available to the caller.
 //
 // Logs errors inside.
-func authenticateBot(ctx context.Context, botID string, methods []*configpb.BotAuth) error {
+func AuthorizeBot(ctx context.Context, botID string, methods []*configpb.BotAuth) error {
 	if len(methods) == 0 {
 		// This should not really be possible for validated configs.
 		return errors.Reason("no authentication requirements in bots.cfg").Err()
