@@ -21,6 +21,9 @@ import (
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon/distribution"
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -31,15 +34,12 @@ import (
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/metrics"
 	"go.chromium.org/luci/cv/internal/run"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestRunAggregator(t *testing.T) {
 	t.Parallel()
 
-	Convey("runAggregator works", t, func() {
+	ftt.Run("runAggregator works", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 		// Truncate current time to seconds to deal with integer delays.
@@ -90,32 +90,32 @@ func TestRunAggregator(t *testing.T) {
 		mustReport := func(active ...string) {
 			ra := runsAggregator{}
 			err := ra.report(ctx, active)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		}
 
-		Convey("Skip reporting for disabled project", func() {
+		t.Run("Skip reporting for disabled project", func(t *ftt.Test) {
 			prjcfgtest.Disable(ctx, lProject)
 			mustReport(lProject)
-			So(ct.TSMonStore.GetAll(ctx), ShouldBeEmpty)
+			assert.Loosely(t, ct.TSMonStore.GetAll(ctx), should.BeEmpty)
 		})
 
-		Convey("Enabled projects get zero data reported when no interested Runs", func() {
+		t.Run("Enabled projects get zero data reported when no interested Runs", func(t *ftt.Test) {
 			mustReport(lProject)
-			So(pendingRunCountSent(lProject, configGroupName, run.DryRun), ShouldEqual, 0)
-			So(pendingRunCountSent(lProject, configGroupName, run.FullRun), ShouldEqual, 0)
-			So(pendingRunDurationSent(lProject, configGroupName, run.DryRun).Count(), ShouldEqual, 0)
-			So(pendingRunDurationSent(lProject, configGroupName, run.FullRun).Count(), ShouldEqual, 0)
-			So(maxPendingRunAgeSent(lProject, configGroupName, run.DryRun), ShouldEqual, 0)
-			So(maxPendingRunAgeSent(lProject, configGroupName, run.FullRun), ShouldEqual, 0)
-			So(activeRunCountSent(lProject, configGroupName, run.DryRun), ShouldEqual, 0)
-			So(activeRunCountSent(lProject, configGroupName, run.FullRun), ShouldEqual, 0)
-			So(activeRunDurationSent(lProject, configGroupName, run.DryRun).Count(), ShouldEqual, 0)
-			So(activeRunDurationSent(lProject, configGroupName, run.FullRun).Count(), ShouldEqual, 0)
+			assert.Loosely(t, pendingRunCountSent(lProject, configGroupName, run.DryRun), should.BeZero)
+			assert.Loosely(t, pendingRunCountSent(lProject, configGroupName, run.FullRun), should.BeZero)
+			assert.Loosely(t, pendingRunDurationSent(lProject, configGroupName, run.DryRun).Count(), should.BeZero)
+			assert.Loosely(t, pendingRunDurationSent(lProject, configGroupName, run.FullRun).Count(), should.BeZero)
+			assert.Loosely(t, maxPendingRunAgeSent(lProject, configGroupName, run.DryRun), should.BeZero)
+			assert.Loosely(t, maxPendingRunAgeSent(lProject, configGroupName, run.FullRun), should.BeZero)
+			assert.Loosely(t, activeRunCountSent(lProject, configGroupName, run.DryRun), should.BeZero)
+			assert.Loosely(t, activeRunCountSent(lProject, configGroupName, run.FullRun), should.BeZero)
+			assert.Loosely(t, activeRunDurationSent(lProject, configGroupName, run.DryRun).Count(), should.BeZero)
+			assert.Loosely(t, activeRunDurationSent(lProject, configGroupName, run.FullRun).Count(), should.BeZero)
 
-			So(ct.TSMonStore.GetAll(ctx), ShouldHaveLength, 10)
+			assert.Loosely(t, ct.TSMonStore.GetAll(ctx), should.HaveLength(10))
 		})
 
-		Convey("Report pending Runs", func() {
+		t.Run("Report pending Runs", func(t *ftt.Test) {
 			now := ct.Clock.Now()
 			// Dry Run
 			putRun(lProject, configGroupName, run.DryRun, run.Status_PENDING, now.Add(-time.Second), time.Time{})
@@ -131,23 +131,23 @@ func TestRunAggregator(t *testing.T) {
 			putRun(lProject, configGroupName, run.FullRun, run.Status_SUCCEEDED, now.Add(-time.Hour), now.Add(-time.Hour)) // ended run won't be reported
 
 			mustReport(lProject)
-			So(pendingRunCountSent(lProject, configGroupName, run.DryRun), ShouldEqual, 2)
-			So(pendingRunDurationSent(lProject, configGroupName, run.DryRun).Count(), ShouldEqual, 2)
-			So(pendingRunDurationSent(lProject, configGroupName, run.DryRun).Sum(), ShouldEqual, float64((time.Second + time.Minute).Milliseconds()))
-			So(maxPendingRunAgeSent(lProject, configGroupName, run.DryRun), ShouldEqual, time.Minute.Milliseconds())
+			assert.Loosely(t, pendingRunCountSent(lProject, configGroupName, run.DryRun), should.Equal(2))
+			assert.Loosely(t, pendingRunDurationSent(lProject, configGroupName, run.DryRun).Count(), should.Equal(2))
+			assert.Loosely(t, pendingRunDurationSent(lProject, configGroupName, run.DryRun).Sum(), should.Equal(float64((time.Second + time.Minute).Milliseconds())))
+			assert.Loosely(t, maxPendingRunAgeSent(lProject, configGroupName, run.DryRun), should.Equal(time.Minute.Milliseconds()))
 
-			So(pendingRunCountSent(lProject, configGroupName, run.NewPatchsetRun), ShouldEqual, 1)
-			So(pendingRunDurationSent(lProject, configGroupName, run.NewPatchsetRun).Count(), ShouldEqual, 1)
-			So(pendingRunDurationSent(lProject, configGroupName, run.NewPatchsetRun).Sum(), ShouldEqual, float64((2 * time.Second).Milliseconds()))
-			So(maxPendingRunAgeSent(lProject, configGroupName, run.NewPatchsetRun), ShouldEqual, (2 * time.Second).Milliseconds())
+			assert.Loosely(t, pendingRunCountSent(lProject, configGroupName, run.NewPatchsetRun), should.Equal(1))
+			assert.Loosely(t, pendingRunDurationSent(lProject, configGroupName, run.NewPatchsetRun).Count(), should.Equal(1))
+			assert.Loosely(t, pendingRunDurationSent(lProject, configGroupName, run.NewPatchsetRun).Sum(), should.Equal(float64((2 * time.Second).Milliseconds())))
+			assert.Loosely(t, maxPendingRunAgeSent(lProject, configGroupName, run.NewPatchsetRun), should.Equal((2 * time.Second).Milliseconds()))
 
-			So(pendingRunCountSent(lProject, configGroupName, run.FullRun), ShouldEqual, 2)
-			So(pendingRunDurationSent(lProject, configGroupName, run.FullRun).Count(), ShouldEqual, 2)
-			So(pendingRunDurationSent(lProject, configGroupName, run.FullRun).Sum(), ShouldEqual, float64((time.Hour + time.Minute).Milliseconds()))
-			So(maxPendingRunAgeSent(lProject, configGroupName, run.FullRun), ShouldEqual, time.Hour.Milliseconds())
+			assert.Loosely(t, pendingRunCountSent(lProject, configGroupName, run.FullRun), should.Equal(2))
+			assert.Loosely(t, pendingRunDurationSent(lProject, configGroupName, run.FullRun).Count(), should.Equal(2))
+			assert.Loosely(t, pendingRunDurationSent(lProject, configGroupName, run.FullRun).Sum(), should.Equal(float64((time.Hour + time.Minute).Milliseconds())))
+			assert.Loosely(t, maxPendingRunAgeSent(lProject, configGroupName, run.FullRun), should.Equal(time.Hour.Milliseconds()))
 		})
 
-		Convey("Report active Runs", func() {
+		t.Run("Report active Runs", func(t *ftt.Test) {
 			now := ct.Clock.Now()
 			// Dry Run
 			putRun(lProject, configGroupName, run.DryRun, run.Status_PENDING, now.Add(-time.Second), time.Time{}) // pending runs won't be reported
@@ -163,17 +163,17 @@ func TestRunAggregator(t *testing.T) {
 			putRun(lProject, configGroupName, run.FullRun, run.Status_CANCELLED, now.Add(-time.Hour), now.Add(-time.Hour)) // ended run won't be reported
 
 			mustReport(lProject)
-			So(activeRunCountSent(lProject, configGroupName, run.DryRun), ShouldEqual, 1)
-			So(activeRunDurationSent(lProject, configGroupName, run.DryRun).Count(), ShouldEqual, 1)
-			So(activeRunDurationSent(lProject, configGroupName, run.DryRun).Sum(), ShouldEqual, (time.Minute).Seconds())
+			assert.Loosely(t, activeRunCountSent(lProject, configGroupName, run.DryRun), should.Equal(1))
+			assert.Loosely(t, activeRunDurationSent(lProject, configGroupName, run.DryRun).Count(), should.Equal(1))
+			assert.Loosely(t, activeRunDurationSent(lProject, configGroupName, run.DryRun).Sum(), should.Equal((time.Minute).Seconds()))
 
-			So(activeRunCountSent(lProject, configGroupName, run.NewPatchsetRun), ShouldEqual, 1)
-			So(activeRunDurationSent(lProject, configGroupName, run.NewPatchsetRun).Count(), ShouldEqual, 1)
-			So(activeRunDurationSent(lProject, configGroupName, run.NewPatchsetRun).Sum(), ShouldEqual, (time.Second).Seconds())
+			assert.Loosely(t, activeRunCountSent(lProject, configGroupName, run.NewPatchsetRun), should.Equal(1))
+			assert.Loosely(t, activeRunDurationSent(lProject, configGroupName, run.NewPatchsetRun).Count(), should.Equal(1))
+			assert.Loosely(t, activeRunDurationSent(lProject, configGroupName, run.NewPatchsetRun).Sum(), should.Equal((time.Second).Seconds()))
 
-			So(activeRunCountSent(lProject, configGroupName, run.FullRun), ShouldEqual, 2)
-			So(activeRunDurationSent(lProject, configGroupName, run.FullRun).Count(), ShouldEqual, 2)
-			So(activeRunDurationSent(lProject, configGroupName, run.FullRun).Sum(), ShouldEqual, (time.Hour + time.Minute).Seconds())
+			assert.Loosely(t, activeRunCountSent(lProject, configGroupName, run.FullRun), should.Equal(2))
+			assert.Loosely(t, activeRunDurationSent(lProject, configGroupName, run.FullRun).Count(), should.Equal(2))
+			assert.Loosely(t, activeRunDurationSent(lProject, configGroupName, run.FullRun).Sum(), should.Equal((time.Hour + time.Minute).Seconds()))
 		})
 
 		putManyRuns := func(n, numProject, numConfigGroup int) {
@@ -198,10 +198,10 @@ func TestRunAggregator(t *testing.T) {
 			}
 		}
 
-		Convey("Can handle a lot of Runs and projects", func() {
+		t.Run("Can handle a lot of Runs and projects", func(t *ftt.Test) {
 			numProject := 16
 			numConfigGroup := 8
-			So(numProject*numConfigGroup, ShouldBeLessThan, maxRuns)
+			assert.Loosely(t, numProject*numConfigGroup, should.BeLessThan(maxRuns))
 			putManyRuns(maxRuns, numProject, numConfigGroup)
 			mustReport()
 
@@ -210,20 +210,20 @@ func TestRunAggregator(t *testing.T) {
 				for cgID := 0; cgID < numConfigGroup; cgID++ {
 					project := fmt.Sprintf("p-%03d", projectID)
 					configGroup := fmt.Sprintf("cg-%03d", cgID)
-					So(activeRunCountSent(project, configGroup, run.DryRun), ShouldBeGreaterThan, 0)
+					assert.Loosely(t, activeRunCountSent(project, configGroup, run.DryRun), should.BeGreaterThan(0))
 					reportedCnt += int(activeRunCountSent(project, configGroup, run.DryRun).(int64))
-					So(activeRunDurationSent(project, configGroup, run.DryRun).Sum(), ShouldBeGreaterThan, 0)
-					So(activeRunDurationSent(project, configGroup, run.DryRun).Count(), ShouldBeGreaterThan, 0)
+					assert.That(t, activeRunDurationSent(project, configGroup, run.DryRun).Sum(), should.BeGreaterThan(0.0))
+					assert.That(t, activeRunDurationSent(project, configGroup, run.DryRun).Count(), should.BeGreaterThan[int64](0))
 				}
 			}
-			So(reportedCnt, ShouldEqual, maxRuns)
+			assert.Loosely(t, reportedCnt, should.Equal(maxRuns))
 		})
 
-		Convey("Refuses to report anything if there are too many active Runs", func() {
+		t.Run("Refuses to report anything if there are too many active Runs", func(t *ftt.Test) {
 			putManyRuns(maxRuns+1, 16, 8)
 			ra := runsAggregator{}
-			So(ra.report(ctx, []string{lProject}), ShouldErrLike, "too many active Runs")
-			So(ct.TSMonStore.GetAll(ctx), ShouldBeEmpty)
+			assert.Loosely(t, ra.report(ctx, []string{lProject}), should.ErrLike("too many active Runs"))
+			assert.Loosely(t, ct.TSMonStore.GetAll(ctx), should.BeEmpty)
 		})
 	})
 }
