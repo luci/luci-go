@@ -199,16 +199,12 @@ with the following rules:
      implement encapsulation and enforce invariants.
  * Modules can themselves have different internal structures to implement
    different layers of encapsulation.
- * Contexts, providers and hooks are defined as such:
-   * `context.[ts/tsx]` file that contains the context declaration and the provider.
-   * `hooks.ts` file that contains the hooks that are used to access
-     or perform actions on the context.
-   * In case where the provider depends on hooks from the same context,
-     then the provider and the context need to be further split
-     into `providers.tsx` and `context.ts` files.
-   * If the directory only represents a context, such as to describe a global context,
-     then there is no need to create a separate directory to host the context and the hooks,
-     check `synced_search_params` as an example.
+ * Anything related to a set of contexts (e.g. contexts, context-related hooks,
+   providers) should be placed under a single directory (e.g.
+   `my-module/context/`). Providers and hooks should be placed in different
+   files under that directory so
+   [React fast refresh](https://reactnative.dev/docs/fast-refresh#how-it-works)
+   works.
 
 Note: At the moment (2023-09-14), some packages are in an inconsistent state.
 Some modules should be moved to other packages. Notable items include but not
