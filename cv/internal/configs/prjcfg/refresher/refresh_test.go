@@ -26,6 +26,9 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	cfgmemory "go.chromium.org/luci/config/impl/memory"
@@ -39,9 +42,6 @@ import (
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/configs/srvcfg"
 	listenerpb "go.chromium.org/luci/cv/settings/listener"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 var testNow = testclock.TestTimeLocal.Round(1 * time.Millisecond)
@@ -72,7 +72,7 @@ var testCfg = &cfgpb.Config{
 }
 
 func TestUpdateProject(t *testing.T) {
-	Convey("Update Project", t, func() {
+	ftt.Run("Update Project", t, func(t *ftt.Test) {
 		ctx, testClock, _ := mkTestingCtx()
 		chromiumConfig := &cfgpb.Config{
 			DrainingStartTime: "2017-12-23T15:47:58Z",
@@ -116,7 +116,7 @@ func TestUpdateProject(t *testing.T) {
 		verifyEntitiesInDatastore := func(ctx context.Context, expectedEVersion int64) {
 			cfg, meta := &cfgpb.Config{}, &config.Meta{}
 			err := cfgclient.Get(ctx, config.MustProjectSet("chromium"), ConfigFileName, cfgclient.ProtoText(cfg), meta)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			localHash := prjcfg.ComputeHash(cfg)
 			projKey := prjcfg.ProjectConfigKey(ctx, "chromium")
 			cgNames := make([]string, len(cfg.GetConfigGroups()))
@@ -128,18 +128,18 @@ func TestUpdateProject(t *testing.T) {
 					Project: projKey,
 				}
 				err := datastore.Get(ctx, &cg)
-				So(err, ShouldBeNil)
-				So(cg.DrainingStartTime, ShouldEqual, cfg.GetDrainingStartTime())
-				So(cg.SubmitOptions, ShouldResembleProto, cfg.GetSubmitOptions())
-				So(cg.Content, ShouldResembleProto, cfg.GetConfigGroups()[i])
-				So(cg.CQStatusHost, ShouldResemble, cfg.GetCqStatusHost())
-				So(cg.HonorGerritLinkedAccounts, ShouldEqual, cfg.GetHonorGerritLinkedAccounts())
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, cg.DrainingStartTime, should.Equal(cfg.GetDrainingStartTime()))
+				assert.Loosely(t, cg.SubmitOptions, should.Resemble(cfg.GetSubmitOptions()))
+				assert.Loosely(t, cg.Content, should.Resemble(cfg.GetConfigGroups()[i]))
+				assert.Loosely(t, cg.CQStatusHost, should.Resemble(cfg.GetCqStatusHost()))
+				assert.Loosely(t, cg.HonorGerritLinkedAccounts, should.Equal(cfg.GetHonorGerritLinkedAccounts()))
 			}
 			// Verify ProjectConfig.
 			pc := prjcfg.ProjectConfig{Project: "chromium"}
 			err = datastore.Get(ctx, &pc)
-			So(err, ShouldBeNil)
-			So(pc, ShouldResemble, prjcfg.ProjectConfig{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, pc, should.Resemble(prjcfg.ProjectConfig{
 				Project:          "chromium",
 				SchemaVersion:    prjcfg.SchemaVersion,
 				Enabled:          true,
@@ -148,7 +148,7 @@ func TestUpdateProject(t *testing.T) {
 				ExternalHash:     meta.ContentHash,
 				UpdateTime:       datastore.RoundTime(testClock.Now()).UTC(),
 				ConfigGroupNames: cgNames,
-			})
+			}))
 			// The revision in the memory-based config fake is a fake
 			// 40-character sha256 hash digest. The particular value is
 			// internally determined by the memory-based implementation
@@ -156,18 +156,18 @@ func TestUpdateProject(t *testing.T) {
 			// that looks like a hash digest is filled in.
 			hashInfo := prjcfg.ConfigHashInfo{Hash: localHash, Project: projKey}
 			err = datastore.Get(ctx, &hashInfo)
-			So(err, ShouldBeNil)
-			So(len(hashInfo.GitRevision), ShouldEqual, 40)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(hashInfo.GitRevision), should.Equal(40))
 			hashInfo.GitRevision = ""
 			// Verify the rest of ConfigHashInfo.
-			So(hashInfo, ShouldResemble, prjcfg.ConfigHashInfo{
+			assert.Loosely(t, hashInfo, should.Resemble(prjcfg.ConfigHashInfo{
 				Hash:             localHash,
 				Project:          projKey,
 				SchemaVersion:    prjcfg.SchemaVersion,
 				ProjectEVersion:  expectedEVersion,
 				UpdateTime:       datastore.RoundTime(testClock.Now()).UTC(),
 				ConfigGroupNames: cgNames,
-			})
+			}))
 		}
 
 		notifyCalled := false
@@ -176,45 +176,45 @@ func TestUpdateProject(t *testing.T) {
 			return nil
 		}
 
-		Convey("Creates new ProjectConfig", func() {
+		t.Run("Creates new ProjectConfig", func(t *ftt.Test) {
 			ctx = cfgclient.Use(ctx, cfgmemory.New(map[config.Set]cfgmemory.Files{
 				config.MustProjectSet("chromium"): {
-					ConfigFileName: toProtoText(chromiumConfig),
+					ConfigFileName: toProtoText(t, chromiumConfig),
 				},
 			}))
 			err := UpdateProject(ctx, "chromium", notify)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			verifyEntitiesInDatastore(ctx, 1)
-			So(notifyCalled, ShouldBeTrue)
+			assert.Loosely(t, notifyCalled, should.BeTrue)
 
 			notifyCalled = false
 			testClock.Add(10 * time.Minute)
 
-			Convey("Noop if config is up-to-date", func() {
+			t.Run("Noop if config is up-to-date", func(t *ftt.Test) {
 				err := UpdateProject(ctx, "chromium", notify)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				pc := prjcfg.ProjectConfig{Project: "chromium"}
-				So(datastore.Get(ctx, &pc), ShouldBeNil)
-				So(pc.EVersion, ShouldEqual, 1)
+				assert.Loosely(t, datastore.Get(ctx, &pc), should.BeNil)
+				assert.Loosely(t, pc.EVersion, should.Equal(1))
 				prevUpdatedTime := testClock.Now().Add(-10 * time.Minute)
-				So(pc.UpdateTime, ShouldResemble, prevUpdatedTime.UTC())
-				So(notifyCalled, ShouldBeFalse)
+				assert.Loosely(t, pc.UpdateTime, should.Resemble(prevUpdatedTime.UTC()))
+				assert.Loosely(t, notifyCalled, should.BeFalse)
 
-				Convey("But not noop if SchemaVersion changed", func() {
+				t.Run("But not noop if SchemaVersion changed", func(t *ftt.Test) {
 					old := pc // copy
 					old.SchemaVersion--
-					So(datastore.Put(ctx, &old), ShouldBeNil)
+					assert.Loosely(t, datastore.Put(ctx, &old), should.BeNil)
 
 					err := UpdateProject(ctx, "chromium", notify)
-					So(err, ShouldBeNil)
-					So(notifyCalled, ShouldBeTrue)
-					So(datastore.Get(ctx, &pc), ShouldBeNil)
-					So(pc.EVersion, ShouldEqual, 2)
-					So(pc.SchemaVersion, ShouldEqual, prjcfg.SchemaVersion)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, notifyCalled, should.BeTrue)
+					assert.Loosely(t, datastore.Get(ctx, &pc), should.BeNil)
+					assert.Loosely(t, pc.EVersion, should.Equal(2))
+					assert.Loosely(t, pc.SchemaVersion, should.Equal(prjcfg.SchemaVersion))
 				})
 			})
 
-			Convey("Update existing ProjectConfig", func() {
+			t.Run("Update existing ProjectConfig", func(t *ftt.Test) {
 				updatedConfig := proto.Clone(chromiumConfig).(*cfgpb.Config)
 				updatedConfig.ConfigGroups = append(updatedConfig.ConfigGroups, &cfgpb.ConfigGroup{
 					Name: "experimental",
@@ -232,35 +232,35 @@ func TestUpdateProject(t *testing.T) {
 				})
 				ctx = cfgclient.Use(ctx, cfgmemory.New(map[config.Set]cfgmemory.Files{
 					config.MustProjectSet("chromium"): {
-						ConfigFileName: toProtoText(updatedConfig),
+						ConfigFileName: toProtoText(t, updatedConfig),
 					},
 				}))
 				err := UpdateProject(ctx, "chromium", notify)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				verifyEntitiesInDatastore(ctx, 2)
-				So(notifyCalled, ShouldBeTrue)
+				assert.Loosely(t, notifyCalled, should.BeTrue)
 
 				notifyCalled = false
 				testClock.Add(10 * time.Minute)
 
-				Convey("Roll back to previous version", func() {
+				t.Run("Roll back to previous version", func(t *ftt.Test) {
 					ctx = cfgclient.Use(ctx, cfgmemory.New(map[config.Set]cfgmemory.Files{
 						config.MustProjectSet("chromium"): {
-							ConfigFileName: toProtoText(chromiumConfig),
+							ConfigFileName: toProtoText(t, chromiumConfig),
 						},
 					}))
 
 					err := UpdateProject(ctx, "chromium", notify)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					verifyEntitiesInDatastore(ctx, 3)
-					So(notifyCalled, ShouldBeTrue)
+					assert.Loosely(t, notifyCalled, should.BeTrue)
 				})
 
-				Convey("Re-enables project even if config hash is the same", func() {
+				t.Run("Re-enables project even if config hash is the same", func(t *ftt.Test) {
 					testClock.Add(10 * time.Minute)
-					So(DisableProject(ctx, "chromium", notify), ShouldBeNil)
+					assert.Loosely(t, DisableProject(ctx, "chromium", notify), should.BeNil)
 					before := prjcfg.ProjectConfig{Project: "chromium"}
-					So(datastore.Get(ctx, &before), ShouldBeNil)
+					assert.Loosely(t, datastore.Get(ctx, &before), should.BeNil)
 					// Delete config entities.
 					projKey := prjcfg.ProjectConfigKey(ctx, "chromium")
 					err := datastore.Delete(ctx,
@@ -270,19 +270,19 @@ func TestUpdateProject(t *testing.T) {
 							Project: projKey,
 						},
 					)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 
 					testClock.Add(10 * time.Minute)
-					So(UpdateProject(ctx, "chromium", notify), ShouldBeNil)
+					assert.Loosely(t, UpdateProject(ctx, "chromium", notify), should.BeNil)
 					after := prjcfg.ProjectConfig{Project: "chromium"}
-					So(datastore.Get(ctx, &after), ShouldBeNil)
+					assert.Loosely(t, datastore.Get(ctx, &after), should.BeNil)
 
-					So(after.Enabled, ShouldBeTrue)
-					So(after.EVersion, ShouldEqual, before.EVersion+1)
-					So(after.Hash, ShouldResemble, before.Hash)
+					assert.Loosely(t, after.Enabled, should.BeTrue)
+					assert.Loosely(t, after.EVersion, should.Equal(before.EVersion+1))
+					assert.Loosely(t, after.Hash, should.Resemble(before.Hash))
 					// Ensure deleted entities are re-created.
 					verifyEntitiesInDatastore(ctx, 4)
-					So(notifyCalled, ShouldBeTrue)
+					assert.Loosely(t, notifyCalled, should.BeTrue)
 				})
 			})
 		})
@@ -290,7 +290,7 @@ func TestUpdateProject(t *testing.T) {
 }
 
 func TestDisableProject(t *testing.T) {
-	Convey("Disable", t, func() {
+	ftt.Run("Disable", t, func(t *ftt.Test) {
 		ctx, testClock, _ := mkTestingCtx()
 		writeProjectConfig := func(enabled bool) {
 			pc := prjcfg.ProjectConfig{
@@ -302,7 +302,7 @@ func TestDisableProject(t *testing.T) {
 				UpdateTime:       datastore.RoundTime(testClock.Now()).UTC(),
 				ConfigGroupNames: []string{"default"},
 			}
-			So(datastore.Put(ctx, &pc), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, &pc), should.BeNil)
 			testClock.Add(10 * time.Minute)
 		}
 
@@ -312,34 +312,34 @@ func TestDisableProject(t *testing.T) {
 			return nil
 		}
 
-		Convey("currently enabled Project", func() {
+		t.Run("currently enabled Project", func(t *ftt.Test) {
 			writeProjectConfig(true)
 			err := DisableProject(ctx, "chromium", notify)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			actual := prjcfg.ProjectConfig{Project: "chromium"}
-			So(datastore.Get(ctx, &actual), ShouldBeNil)
-			So(actual.Enabled, ShouldBeFalse)
-			So(actual.EVersion, ShouldEqual, 101)
-			So(actual.UpdateTime, ShouldResemble, datastore.RoundTime(testClock.Now()).UTC())
-			So(notifyCalled, ShouldBeTrue)
+			assert.Loosely(t, datastore.Get(ctx, &actual), should.BeNil)
+			assert.Loosely(t, actual.Enabled, should.BeFalse)
+			assert.Loosely(t, actual.EVersion, should.Equal(101))
+			assert.Loosely(t, actual.UpdateTime, should.Resemble(datastore.RoundTime(testClock.Now()).UTC()))
+			assert.Loosely(t, notifyCalled, should.BeTrue)
 		})
 
-		Convey("currently disabled Project", func() {
+		t.Run("currently disabled Project", func(t *ftt.Test) {
 			writeProjectConfig(false)
 			err := DisableProject(ctx, "chromium", notify)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			actual := prjcfg.ProjectConfig{Project: "chromium"}
-			So(datastore.Get(ctx, &actual), ShouldBeNil)
-			So(actual.Enabled, ShouldBeFalse)
-			So(actual.EVersion, ShouldEqual, 100)
-			So(notifyCalled, ShouldBeFalse)
+			assert.Loosely(t, datastore.Get(ctx, &actual), should.BeNil)
+			assert.Loosely(t, actual.Enabled, should.BeFalse)
+			assert.Loosely(t, actual.EVersion, should.Equal(100))
+			assert.Loosely(t, notifyCalled, should.BeFalse)
 		})
 
-		Convey("non-existing Project", func() {
+		t.Run("non-existing Project", func(t *ftt.Test) {
 			err := DisableProject(ctx, "non-existing", notify)
-			So(err, ShouldBeNil)
-			So(datastore.Get(ctx, &prjcfg.ProjectConfig{Project: "non-existing"}), ShouldErrLike, datastore.ErrNoSuchEntity)
-			So(notifyCalled, ShouldBeFalse)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, datastore.Get(ctx, &prjcfg.ProjectConfig{Project: "non-existing"}), should.ErrLike(datastore.ErrNoSuchEntity))
+			assert.Loosely(t, notifyCalled, should.BeFalse)
 		})
 	})
 }
@@ -357,54 +357,54 @@ func mkTestingCtx() (context.Context, testclock.TestClock, *tqtesting.Scheduler)
 	return ctx, clock, scheduler
 }
 
-func toProtoText(msg proto.Message) string {
+func toProtoText(t testing.TB, msg proto.Message) string {
 	bs, err := prototext.Marshal(msg)
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil)
 	return string(bs)
 }
 
 func TestPutConfigGroups(t *testing.T) {
 	t.Parallel()
 
-	Convey("PutConfigGroups", t, func() {
+	ftt.Run("PutConfigGroups", t, func(t *ftt.Test) {
 		ctx := gaememory.Use(context.Background())
 		if testing.Verbose() {
 			ctx = logging.SetLevel(gologger.StdConfig.Use(ctx), logging.Debug)
 		}
 
-		Convey("New Configs", func() {
+		t.Run("New Configs", func(t *ftt.Test) {
 			hash := prjcfg.ComputeHash(testCfg)
 			err := putConfigGroups(ctx, testCfg, "chromium", hash)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			stored := prjcfg.ConfigGroup{
 				ID:      prjcfg.MakeConfigGroupID(hash, "group_foo"),
 				Project: prjcfg.ProjectConfigKey(ctx, "chromium"),
 			}
-			So(datastore.Get(ctx, &stored), ShouldBeNil)
-			So(stored.DrainingStartTime, ShouldEqual, testCfg.GetDrainingStartTime())
-			So(stored.SubmitOptions, ShouldResembleProto, testCfg.GetSubmitOptions())
-			So(stored.Content, ShouldResembleProto, testCfg.GetConfigGroups()[0])
-			So(stored.HonorGerritLinkedAccounts, ShouldEqual, testCfg.GetHonorGerritLinkedAccounts())
-			So(stored.SchemaVersion, ShouldEqual, prjcfg.SchemaVersion)
+			assert.Loosely(t, datastore.Get(ctx, &stored), should.BeNil)
+			assert.Loosely(t, stored.DrainingStartTime, should.Equal(testCfg.GetDrainingStartTime()))
+			assert.Loosely(t, stored.SubmitOptions, should.Resemble(testCfg.GetSubmitOptions()))
+			assert.Loosely(t, stored.Content, should.Resemble(testCfg.GetConfigGroups()[0]))
+			assert.Loosely(t, stored.HonorGerritLinkedAccounts, should.Equal(testCfg.GetHonorGerritLinkedAccounts()))
+			assert.Loosely(t, stored.SchemaVersion, should.Equal(prjcfg.SchemaVersion))
 
-			Convey("Skip if already exists", func() {
+			t.Run("Skip if already exists", func(t *ftt.Test) {
 				ctx := datastore.AddRawFilters(ctx, func(_ context.Context, rds datastore.RawInterface) datastore.RawInterface {
 					return readOnlyFilter{rds}
 				})
 				err := putConfigGroups(ctx, testCfg, "chromium", prjcfg.ComputeHash(testCfg))
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 
-			Convey("Update existing due to SchemaVersion", func() {
+			t.Run("Update existing due to SchemaVersion", func(t *ftt.Test) {
 				old := stored // copy
 				old.SchemaVersion = prjcfg.SchemaVersion - 1
-				So(datastore.Put(ctx, &old), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, &old), should.BeNil)
 
 				err := putConfigGroups(ctx, testCfg, "chromium", prjcfg.ComputeHash(testCfg))
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
-				So(datastore.Get(ctx, &stored), ShouldBeNil)
-				So(stored.SchemaVersion, ShouldEqual, prjcfg.SchemaVersion)
+				assert.Loosely(t, datastore.Get(ctx, &stored), should.BeNil)
+				assert.Loosely(t, stored.SchemaVersion, should.Equal(prjcfg.SchemaVersion))
 			})
 		})
 	})

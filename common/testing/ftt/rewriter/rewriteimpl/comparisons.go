@@ -171,6 +171,7 @@ var assertionMap = map[assertionKey]*mappedComp{
 	{originalConveyPkg, "ShouldBeTrue"}:              {name: "BeTrue", argState: noArgs},
 	{originalConveyPkg, "ShouldContain"}:             {name: "Contain", argState: hasArgs},
 	{originalConveyPkg, "ShouldContainKey"}:          {name: "ContainKey", argState: hasArgs},
+	{originalConveyPkg, "ShouldNotContainKey"}:       {name: "NotContainKey", argState: hasArgs},
 	{originalConveyPkg, "ShouldContainSubstring"}:    {name: "ContainSubstring", argState: hasArgs},
 	{originalConveyPkg, "ShouldNotContainSubstring"}: {name: "NotContainSubstring", argState: hasArgs},
 	{originalConveyPkg, "ShouldEqual"}: {

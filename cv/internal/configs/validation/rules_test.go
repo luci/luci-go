@@ -18,16 +18,17 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/gae/impl/memory"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestValidationRules(t *testing.T) {
 	t.Parallel()
 
-	Convey("Validation Rules", t, func() {
+	ftt.Run("Validation Rules", t, func(t *ftt.Test) {
 		ctx := memory.UseWithAppID(context.Background(), "luci-change-verifier")
 		r := validation.NewRuleSet()
 		r.Vars.Register("appid", func(context.Context) (string, error) { return "luci-change-verifier", nil })
@@ -35,41 +36,41 @@ func TestValidationRules(t *testing.T) {
 		addRules(r)
 
 		patterns, err := r.ConfigPatterns(ctx)
-		So(err, ShouldBeNil)
-		So(len(patterns), ShouldEqual, 2)
-		Convey("project-scope cq.cfg", func() {
-			So(patterns[0].ConfigSet.Match("projects/xyz"), ShouldBeTrue)
-			So(patterns[0].ConfigSet.Match("projects/xyz/refs/heads/master"), ShouldBeFalse)
-			So(patterns[0].Path.Match("commit-queue.cfg"), ShouldBeTrue)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, len(patterns), should.Equal(2))
+		t.Run("project-scope cq.cfg", func(t *ftt.Test) {
+			assert.Loosely(t, patterns[0].ConfigSet.Match("projects/xyz"), should.BeTrue)
+			assert.Loosely(t, patterns[0].ConfigSet.Match("projects/xyz/refs/heads/master"), should.BeFalse)
+			assert.Loosely(t, patterns[0].Path.Match("commit-queue.cfg"), should.BeTrue)
 		})
-		Convey("service-scope listener-settings.cfg", func() {
-			So(patterns[1].ConfigSet.Match("services/luci-change-verifier"), ShouldBeTrue)
-			So(patterns[1].ConfigSet.Match("projects/xyz/refs/heads/master"), ShouldBeFalse)
-			So(patterns[1].Path.Match("listener-settings.cfg"), ShouldBeTrue)
+		t.Run("service-scope listener-settings.cfg", func(t *ftt.Test) {
+			assert.Loosely(t, patterns[1].ConfigSet.Match("services/luci-change-verifier"), should.BeTrue)
+			assert.Loosely(t, patterns[1].ConfigSet.Match("projects/xyz/refs/heads/master"), should.BeFalse)
+			assert.Loosely(t, patterns[1].Path.Match("listener-settings.cfg"), should.BeTrue)
 		})
-		Convey("Dev", func() {
+		t.Run("Dev", func(t *ftt.Test) {
 			ctx = memory.UseWithAppID(context.Background(), "luci-change-verifier-dev")
 			patterns, err := r.ConfigPatterns(ctx)
-			So(err, ShouldBeNil)
-			So(patterns[0].Path.Match("commit-queue-dev.cfg"), ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, patterns[0].Path.Match("commit-queue-dev.cfg"), should.BeTrue)
 		})
 	})
 }
 
-func mustHaveOnlySeverity(err error, severity validation.Severity) error {
-	So(err, ShouldNotBeNil)
+func mustHaveOnlySeverity(t testing.TB, err error, severity validation.Severity) error {
+	assert.Loosely(t, err, should.NotBeNil)
 	for _, e := range err.(*validation.Error).Errors {
 		s, ok := validation.SeverityTag.In(e)
-		So(ok, ShouldBeTrue)
-		So(s, ShouldEqual, severity)
+		assert.Loosely(t, ok, should.BeTrue)
+		assert.Loosely(t, s, should.Equal(severity))
 	}
 	return err
 }
 
-func mustWarn(err error) error {
-	return mustHaveOnlySeverity(err, validation.Warning)
+func mustWarn(t testing.TB, err error) error {
+	return mustHaveOnlySeverity(t, err, validation.Warning)
 }
 
-func mustError(err error) error {
-	return mustHaveOnlySeverity(err, validation.Blocking)
+func mustError(t testing.TB, err error) error {
+	return mustHaveOnlySeverity(t, err, validation.Blocking)
 }

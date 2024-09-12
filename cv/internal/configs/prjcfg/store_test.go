@@ -19,12 +19,13 @@ import (
 	"strings"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	gaememory "go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestComputeHash(t *testing.T) {
@@ -49,17 +50,17 @@ func TestComputeHash(t *testing.T) {
 		},
 	}
 
-	Convey("Compute Hash", t, func() {
+	ftt.Run("Compute Hash", t, func(t *ftt.Test) {
 		tokens := strings.Split(ComputeHash(testCfg), ":")
-		So(tokens, ShouldHaveLength, 2)
-		So(tokens[0], ShouldEqual, "sha256")
-		So(tokens[1], ShouldHaveLength, 16)
+		assert.Loosely(t, tokens, should.HaveLength(2))
+		assert.Loosely(t, tokens[0], should.Equal("sha256"))
+		assert.Loosely(t, tokens[1], should.HaveLength(16))
 	})
 }
 
 func TestGetAllProjectIDs(t *testing.T) {
 	t.Parallel()
-	Convey("Get Project IDs", t, func() {
+	ftt.Run("Get Project IDs", t, func(t *ftt.Test) {
 		ctx := gaememory.Use(context.Background())
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
@@ -72,46 +73,46 @@ func TestGetAllProjectIDs(t *testing.T) {
 			Enabled: false,
 		}
 		err := datastore.Put(ctx, &enabledPC, &disabledPC)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		Convey("All", func() {
+		t.Run("All", func(t *ftt.Test) {
 			ret, err := GetAllProjectIDs(ctx, false)
-			So(err, ShouldBeNil)
-			So(ret, ShouldResemble, []string{"disabledProject", "enabledProject"})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ret, should.Resemble([]string{"disabledProject", "enabledProject"}))
 		})
 
-		Convey("Enabled", func() {
+		t.Run("Enabled", func(t *ftt.Test) {
 			ret, err := GetAllProjectIDs(ctx, true)
-			So(err, ShouldBeNil)
-			So(ret, ShouldResemble, []string{"enabledProject"})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ret, should.Resemble([]string{"enabledProject"}))
 		})
 	})
 }
 
 func TestMakeConfigGroupID(t *testing.T) {
 	t.Parallel()
-	Convey("Make ConfigGroupID", t, func() {
+	ftt.Run("Make ConfigGroupID", t, func(t *ftt.Test) {
 		id := MakeConfigGroupID("sha256:deadbeefdeadbeef", "foo")
-		So(id, ShouldEqual, ConfigGroupID("sha256:deadbeefdeadbeef/foo"))
+		assert.Loosely(t, id, should.Equal(ConfigGroupID("sha256:deadbeefdeadbeef/foo")))
 	})
 }
 
 func TestConfigGroupProjectString(t *testing.T) {
 	t.Parallel()
 
-	Convey("ConfigGroup.ProjectString works", t, func() {
+	ftt.Run("ConfigGroup.ProjectString works", t, func(t *ftt.Test) {
 		ctx := gaememory.Use(context.Background())
 		c := ConfigGroup{
 			Project: ProjectConfigKey(ctx, "chromium"),
 		}
-		So(c.ProjectString(), ShouldEqual, "chromium")
+		assert.Loosely(t, c.ProjectString(), should.Equal("chromium"))
 	})
 }
 
 func TestGetAllGerritHosts(t *testing.T) {
 	t.Parallel()
 
-	Convey("GetAllGerritHosts", t, func() {
+	ftt.Run("GetAllGerritHosts", t, func(t *ftt.Test) {
 		ctx := gaememory.Use(context.Background())
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
@@ -126,7 +127,7 @@ func TestGetAllGerritHosts(t *testing.T) {
 			Hash:    "sha256:dddeadbbbbef",
 			Enabled: true,
 		}
-		So(datastore.Put(ctx, pc1, pc2), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, pc1, pc2), should.BeNil)
 
 		addCG := func(pc *ProjectConfig, cgName string, hosts ...string) error {
 			cpb := &cfgpb.ConfigGroup{Name: cgName}
@@ -148,24 +149,24 @@ func TestGetAllGerritHosts(t *testing.T) {
 			return datastore.Put(ctx, pc, cg)
 		}
 
-		Convey("works", func() {
-			So(addCG(pc1, "main", "example.com", "example.org"), ShouldBeNil)
-			So(addCG(pc2, "main", "example.edu", "example.net"), ShouldBeNil)
+		t.Run("works", func(t *ftt.Test) {
+			assert.Loosely(t, addCG(pc1, "main", "example.com", "example.org"), should.BeNil)
+			assert.Loosely(t, addCG(pc2, "main", "example.edu", "example.net"), should.BeNil)
 
 			hosts, err := GetAllGerritHosts(ctx)
-			So(err, ShouldBeNil)
-			So(hosts[pc1.Project].ToSortedSlice(), ShouldResemble,
-				[]string{"example.com", "example.org"})
-			So(hosts[pc2.Project].ToSortedSlice(), ShouldResemble,
-				[]string{"example.edu", "example.net"})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, hosts[pc1.Project].ToSortedSlice(), should.Resemble(
+				[]string{"example.com", "example.org"}))
+			assert.Loosely(t, hosts[pc2.Project].ToSortedSlice(), should.Resemble(
+				[]string{"example.edu", "example.net"}))
 		})
 
-		Convey("doesn't include disabled projects", func() {
+		t.Run("doesn't include disabled projects", func(t *ftt.Test) {
 			pc2.Enabled = false
-			So(datastore.Put(ctx, pc2), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, pc2), should.BeNil)
 			hosts, err := GetAllGerritHosts(ctx)
-			So(err, ShouldBeNil)
-			So(hosts, ShouldNotContainKey, pc2.Project)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, hosts, should.NotContainKey(pc2.Project))
 		})
 	})
 }
