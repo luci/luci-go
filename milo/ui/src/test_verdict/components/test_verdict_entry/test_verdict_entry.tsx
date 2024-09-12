@@ -14,7 +14,7 @@
 
 import { Box, Skeleton } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 import { DotSpinner } from '@/generic_libs/components/dot_spinner';
 import {
@@ -36,6 +36,7 @@ export interface TestVerdictEntryProps {
   readonly testId: string;
   readonly variantHash: string;
   readonly invocationId: string;
+  readonly defaultExpanded?: boolean;
 }
 
 export function TestVerdictEntry({
@@ -43,8 +44,17 @@ export function TestVerdictEntry({
   testId,
   variantHash,
   invocationId,
+  defaultExpanded = false,
 }: TestVerdictEntryProps) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(defaultExpanded);
+
+  // Whenever the default expanded state changes, update the expanded state to
+  // match.
+  const lastDefaultExpanded = useRef(defaultExpanded);
+  if (lastDefaultExpanded.current !== defaultExpanded) {
+    lastDefaultExpanded.current = defaultExpanded;
+    setExpanded(defaultExpanded);
+  }
 
   const client = useResultDbClient();
   const { data, isLoading, isError, error } = useQuery({

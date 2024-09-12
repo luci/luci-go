@@ -14,13 +14,23 @@
 
 export * from './commit_table';
 export * from './virtualized_commit_table';
-export * from './commit_table_head';
-export * from './commit_table_row';
+
+export {
+  // Allow other package to build columns that can expand a row with special
+  // logic. e.g. Clicking on a test verdict status icon expands the row content
+  // body as well as the test verdict entry within the row content body.
+  useSetExpanded,
+} from './context';
+
 export * from './commit_content';
-export * from './toggle_column';
+export * from './commit_table_head';
+export * from './commit_table_body';
+export * from './commit_table_row';
+
+export * from './author_column';
+export * from './id_column';
 export * from './num_column';
 export * from './position_column';
-export * from './id_column';
-export * from './author_column';
 export * from './time_column';
 export * from './title_column';
+export * from './toggle_column';

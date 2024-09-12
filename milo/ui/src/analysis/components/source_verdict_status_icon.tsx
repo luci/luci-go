@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Icon, SxProps, Theme } from '@mui/material';
+import { Icon, IconProps } from '@mui/material';
 
 import { SpecifiedSourceVerdictStatus } from '@/analysis/types';
 import { QuerySourceVerdictsResponse_VerdictStatus } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
@@ -33,17 +33,17 @@ const VERDICT_STATUS_COLOR_MAP = Object.freeze({
     'var(--exonerated-color)',
 });
 
-export interface SourceVerdictStatusIconProps {
+export interface SourceVerdictStatusIconProps extends IconProps {
   readonly status: SpecifiedSourceVerdictStatus;
-  readonly sx?: SxProps<Theme>;
 }
 
 export function SourceVerdictStatusIcon({
   status,
   sx,
+  ...props
 }: SourceVerdictStatusIconProps) {
   return (
-    <Icon sx={{ color: VERDICT_STATUS_COLOR_MAP[status], ...sx }}>
+    <Icon {...props} sx={{ color: VERDICT_STATUS_COLOR_MAP[status], ...sx }}>
       {VERDICT_STATUS_ICON_FONT_MAP[status]}
     </Icon>
   );

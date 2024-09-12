@@ -25,9 +25,10 @@ import {
 
 export interface ToggleHeadCellProps {
   readonly hotkey?: string;
+  readonly onToggle?: (expand: boolean) => void;
 }
 
-export function ToggleHeadCell({ hotkey }: ToggleHeadCellProps) {
+export function ToggleHeadCell({ hotkey, onToggle }: ToggleHeadCellProps) {
   const defaultExpanded = useDefaultExpanded();
   const setDefaultExpanded = useSetDefaultExpanded();
   useHotkeys(
@@ -41,7 +42,10 @@ export function ToggleHeadCell({ hotkey }: ToggleHeadCellProps) {
       <IconButton
         aria-label="toggle-all-rows"
         size="small"
-        onClick={() => setDefaultExpanded(!defaultExpanded)}
+        onClick={() => {
+          setDefaultExpanded(!defaultExpanded);
+          onToggle?.(!defaultExpanded);
+        }}
         title={hotkey ? `Press "${hotkey}" to toggle all entries.` : ''}
       >
         {defaultExpanded ? <ExpandMore /> : <ChevronRight />}
@@ -50,7 +54,11 @@ export function ToggleHeadCell({ hotkey }: ToggleHeadCellProps) {
   );
 }
 
-export function ToggleContentCell() {
+export interface ToggleContentCellProps {
+  readonly onToggle?: (expand: boolean) => void;
+}
+
+export function ToggleContentCell({ onToggle }: ToggleContentCellProps) {
   const expanded = useExpanded();
   const setExpanded = useSetExpanded();
 
@@ -77,7 +85,10 @@ export function ToggleContentCell() {
           <IconButton
             aria-label="toggle-row"
             size="small"
-            onClick={() => setExpanded(!expanded)}
+            onClick={() => {
+              setExpanded(!expanded);
+              onToggle?.(!expanded);
+            }}
           >
             {expanded ? <ExpandMore /> : <ChevronRight />}
           </IconButton>

@@ -43,6 +43,7 @@ const Dot = styled(Box)<BoxProps>(() => ({
 export function DotSpinner() {
   return (
     <Box
+      role="progressbar"
       sx={{
         display: 'inline-block',
         textAlign: 'center',

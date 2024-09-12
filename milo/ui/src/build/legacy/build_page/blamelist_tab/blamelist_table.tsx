@@ -19,6 +19,7 @@ import {
   AuthorContentCell,
   AuthorHeadCell,
   CommitTable,
+  CommitTableBody,
   CommitTableHead,
   CommitTableRow,
   IdContentCell,
@@ -32,7 +33,6 @@ import {
   ToggleContentCell,
   ToggleHeadCell,
 } from '@/gitiles/components/commit_table';
-import { CommitTableBody } from '@/gitiles/components/commit_table/commit_table_body';
 
 import { OutputQueryBlamelistResponse } from './types';
 
