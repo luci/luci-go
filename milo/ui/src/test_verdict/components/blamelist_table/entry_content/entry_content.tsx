@@ -25,6 +25,7 @@ import { QuerySourceVerdictsResponse_SourceVerdict } from '@/proto/go.chromium.o
 import { TestVerdictEntry } from '@/test_verdict/components/test_verdict_entry';
 
 import { useProject } from '../context';
+import { FocusTarget, useFocusTarget } from '../row_state_provider';
 
 export interface EntryContentProps {
   readonly testId: string;
@@ -45,17 +46,22 @@ export function EntryContent({
 }: EntryContentProps) {
   const project = useProject();
   const [expanded, setExpanded] = useState(true);
+  const focusTarget = useFocusTarget();
 
   return (
     <>
       {sourceVerdict ? (
-        sourceVerdict.verdicts.map((v) => (
+        sourceVerdict.verdicts.map((v, i) => (
           <TestVerdictEntry
             key={v.invocationId}
             project={project}
             testId={testId}
             variantHash={variantHash}
             invocationId={v.invocationId}
+            // If the user clicks on the verdict status icon to expand the
+            // blamelist table row, they likely want to see the verdicts. Expand
+            // the first verdict entry.
+            defaultExpanded={i === 0 && focusTarget === FocusTarget.TestVerdict}
           />
         ))
       ) : isSvLoading ? (

@@ -25,17 +25,6 @@ import {
 } from '@/generic_libs/hooks/virtualized_query';
 import { ExtendedLogRequest } from '@/gitiles/api/fused_gitiles_client';
 import {
-  AuthorContentCell,
-  AuthorHeadCell,
-  CommitTableRow,
-  PositionContentCell,
-  PositionHeadCell,
-  TimeContentCell,
-  TimeHeadCell,
-  TitleContentCell,
-  TitleHeadCell,
-  ToggleContentCell,
-  ToggleHeadCell,
   VirtualizedCommitTable,
   VirtualizedCommitTableProps,
 } from '@/gitiles/components/commit_table';
@@ -50,12 +39,7 @@ import {
 import { LogResponse } from '@/proto/go.chromium.org/luci/common/proto/gitiles/gitiles.pb';
 
 import { BlamelistContextProvider } from './context';
-import { EntryContent } from './entry_content';
-import { SegmentContentCell, SegmentHeadCell } from './segment_column';
-import {
-  SourceVerdictStatusHeadCell,
-  SourceVerdictStatusContentCell,
-} from './source_verdict_status_column';
+import { BlamelistTableRow, BlamelistTableHeaderContent } from './row';
 
 const PAGE_SIZE = 200;
 const DELAY_MS = 500;
@@ -182,17 +166,7 @@ export function BlamelistTable({
           focusCommitPosition,
         )}
         totalCount={getOffset(lastCommitPosition, firstCommitPosition) + 1}
-        fixedHeaderContent={() => (
-          <>
-            <SegmentHeadCell />
-            <ToggleHeadCell hotkey="x" />
-            <SourceVerdictStatusHeadCell />
-            <PositionHeadCell />
-            <TimeHeadCell />
-            <AuthorHeadCell />
-            <TitleHeadCell />
-          </>
-        )}
+        fixedHeaderContent={() => <BlamelistTableHeaderContent />}
         itemContent={(i) => {
           const position = getPosition(lastCommitPosition, i);
           const cpIndex = -parseInt(position);
@@ -207,28 +181,13 @@ export function BlamelistTable({
           }
 
           return (
-            <CommitTableRow
+            <BlamelistTableRow
               commit={commitQuery.data || null}
-              content={
-                <EntryContent
-                  testId={testVariantBranch.testId}
-                  variantHash={testVariantBranch.variantHash}
-                  sourceVerdict={sourceVerdictQuery.data || null}
-                  isSvLoading={sourceVerdictQuery.isLoading}
-                />
-              }
-            >
-              <SegmentContentCell position={position} />
-              <ToggleContentCell />
-              <SourceVerdictStatusContentCell
-                status={sourceVerdictQuery.data?.status || null}
-                isLoading={sourceVerdictQuery.isLoading}
-              />
-              <PositionContentCell position={position} />
-              <TimeContentCell />
-              <AuthorContentCell />
-              <TitleContentCell />
-            </CommitTableRow>
+              position={position}
+              testVariantBranch={testVariantBranch}
+              sourceVerdict={sourceVerdictQuery.data || null}
+              isSvLoading={sourceVerdictQuery.isLoading}
+            />
           );
         }}
         sx={{ '& td:last-of-type': { flexGrow: 0 } }}

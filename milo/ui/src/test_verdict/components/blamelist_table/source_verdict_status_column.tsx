@@ -16,6 +16,9 @@ import { Skeleton, TableCell } from '@mui/material';
 
 import { SourceVerdictStatusIcon } from '@/analysis/components/source_verdict_status_icon';
 import { SpecifiedSourceVerdictStatus } from '@/analysis/types';
+import { useSetExpanded } from '@/gitiles/components/commit_table';
+
+import { FocusTarget, useSetFocusTarget } from './row_state_provider';
 
 export function SourceVerdictStatusHeadCell() {
   return (
@@ -41,12 +44,19 @@ export function SourceVerdictStatusContentCell({
   status,
   isLoading,
 }: SourceVerdictStatusContentCellProps) {
+  const setExpanded = useSetExpanded();
+  const setFocusTarget = useSetFocusTarget();
+
   return (
     <TableCell sx={{ minWidth: '30px' }}>
       {status ? (
         <SourceVerdictStatusIcon
           status={status}
-          sx={{ verticalAlign: 'middle' }}
+          sx={{ verticalAlign: 'middle', cursor: 'pointer' }}
+          onClick={() => {
+            setExpanded((expanded) => !expanded);
+            setFocusTarget(FocusTarget.TestVerdict);
+          }}
         />
       ) : isLoading ? (
         <Skeleton variant="circular" height={24} width={24} />
