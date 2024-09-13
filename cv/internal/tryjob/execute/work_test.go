@@ -60,6 +60,7 @@ func TestWorker(t *testing.T) {
 		)
 		var runID = common.MakeRunID(lProject, ct.Clock.Now().Add(-1*time.Hour), 1, []byte("abcd"))
 
+		rm := run.NewNotifier(ct.TQDispatcher)
 		w := &worker{
 			run: &run.Run{
 				ID:   runID,
@@ -97,7 +98,8 @@ func TestWorker(t *testing.T) {
 			backend: &bbfacade.Facade{
 				ClientFactory: ct.BuildbucketFake.NewClientFactory(),
 			},
-			rm: run.NewNotifier(ct.TQDispatcher),
+			mutator: tryjob.NewMutator(rm),
+			rm:      rm,
 		}
 		builder := &bbpb.BuilderID{
 			Project: lProject,

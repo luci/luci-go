@@ -20,7 +20,6 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -114,29 +113,27 @@ func matchDefinitions(tj *tryjob.Tryjob, definitions []*tryjob.Definition) *tryj
 }
 
 func (w *worker) addCurrentRunToReuse(ctx context.Context, tjIDs common.TryjobIDs) ([]*tryjob.Tryjob, error) {
-	var tryjobs []*tryjob.Tryjob
+	tryjobs := make([]*tryjob.Tryjob, len(tjIDs))
 	var innerErr error
 	err := datastore.RunInTransaction(ctx, func(ctx context.Context) (err error) {
 		defer func() { innerErr = err }()
-		tryjobs = make([]*tryjob.Tryjob, len(tjIDs))
-		for i, id := range tjIDs {
-			tryjobs[i] = &tryjob.Tryjob{ID: id}
+		mutations, err := w.mutator.BeginBatch(ctx, tjIDs)
+		if err != nil {
+			return err
 		}
-		if err := datastore.Get(ctx, tryjobs); err != nil {
-			return errors.Annotate(err, "failed to load Tryjob entities").Tag(transient.Tag).Err()
-		}
-		var toSave []*tryjob.Tryjob
-		for _, tj := range tryjobs {
+		for i, mut := range mutations {
+			tj := mut.Tryjob
 			// Be defensive. Tryjob may already include this Run if previous request
 			// failed in the middle.
 			if tj.ReusedBy.Index(w.run.ID) < 0 {
 				tj.ReusedBy = append(tj.ReusedBy, w.run.ID)
-				tj.EVersion++
-				tj.EntityUpdateTime = clock.Now(ctx).UTC()
-				toSave = append(toSave, tj)
+				if tj, err = mut.Finalize(ctx); err != nil {
+					return err
+				}
 			}
+			tryjobs[i] = tj
 		}
-		return tryjob.SaveTryjobs(ctx, toSave, w.rm.NotifyTryjobsUpdated)
+		return nil
 	}, nil)
 	switch {
 	case innerErr != nil:

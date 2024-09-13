@@ -50,7 +50,7 @@ func TestFindReuseInCV(t *testing.T) {
 			},
 			knownTryjobIDs: make(common.TryjobIDSet),
 			reuseKey:       reuseKey,
-			rm:             run.NewNotifier(ct.TQDispatcher),
+			mutator:        tryjob.NewMutator(run.NewNotifier(ct.TQDispatcher)),
 		}
 		builder := &bbpb.BuilderID{
 			Project: "ProjectFoo",
