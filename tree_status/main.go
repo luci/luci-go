@@ -77,6 +77,7 @@ func main() {
 		})
 		srv.RegisterUnaryServerInterceptors(span.SpannerDefaultsInterceptor())
 		pb.RegisterTreeStatusServer(srv, rpc.NewTreeStatusServer())
+		pb.RegisterTreesServer(srv, rpc.NewTreesServer())
 
 		// Redirect the frontend to rpcexplorer.
 		srv.Routes.GET("/", nil, func(ctx *router.Context) {
