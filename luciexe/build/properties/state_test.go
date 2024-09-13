@@ -33,7 +33,7 @@ func TestStateSerialize(t *testing.T) {
 		t.Parallel()
 
 		r := Registry{}
-		p := MustRegister[*struct{ ID int }](&r, "sub")
+		p := MustRegister[*struct{ ID int }](&r, "$sub")
 		state, err := r.Instantiate(nil, nil)
 
 		assert.That(t, err, should.ErrLike(nil))
@@ -45,7 +45,7 @@ func TestStateSerialize(t *testing.T) {
 		out, _, _, err := state.Serialize()
 		assert.That(t, err, should.ErrLike(nil))
 		assert.That(t, out, should.Match(mustStruct(map[string]any{
-			"sub": map[string]any{
+			"$sub": map[string]any{
 				"ID": 200,
 			},
 		})))
@@ -57,7 +57,7 @@ func TestStateSerialize(t *testing.T) {
 
 		sub := MustRegister[*struct {
 			ID int `json:",omitempty"`
-		}](&r, "sub")
+		}](&r, "$sub")
 		state, err := r.Instantiate(nil, nil)
 
 		assert.That(t, err, should.ErrLike(nil))
@@ -84,7 +84,7 @@ func TestStateSerialize(t *testing.T) {
 		assert.That(t, err, should.ErrLike(nil))
 		assert.That(t, out, should.Match(mustStruct(map[string]any{
 			"ID": 200,
-			"sub": map[string]any{
+			"$sub": map[string]any{
 				"ID": 1234,
 			},
 		})))
@@ -138,7 +138,7 @@ func TestStateSerialize(t *testing.T) {
 		r := Registry{}
 
 		top := MustRegister[map[string]any](&r, "")
-		mid := MustRegister[map[string]any](&r, "mid")
+		mid := MustRegister[map[string]any](&r, "$mid")
 
 		state, err := r.Instantiate(nil, nil)
 		assert.That(t, err, should.ErrLike(nil))
@@ -157,24 +157,24 @@ func TestStateSerialize(t *testing.T) {
 		assert.That(t, err, should.ErrLike(nil))
 		assert.That(t, out, should.Match(mustStruct(map[string]any{
 			"hello": "world",
-			"mid": map[string]any{
+			"$mid": map[string]any{
 				"inner": "peace",
 			},
 		})))
 
 		top.MutateOutputFromState(state, func(m map[string]any) (mutated bool) {
-			m["mid"] = "oops"
+			m["$mid"] = "oops"
 			return true
 		})
 		_, _, _, err = state.Serialize()
 		assert.That(t, err, should.ErrLike(
-			`top-level namespace property "mid" overlaps with registered namespace`))
+			`top-level namespace property "$mid" overlaps with registered namespace`))
 	})
 
 	t.Run(`no namespace content`, func(t *testing.T) {
 		r := Registry{}
 		top := MustRegisterOut[map[string]string](&r, "")
-		sub := MustRegisterOut[map[string]string](&r, "sub")
+		sub := MustRegisterOut[map[string]string](&r, "$sub")
 		state, err := r.Instantiate(nil, nil)
 		assert.That(t, err, should.ErrLike(nil))
 
@@ -188,7 +188,7 @@ func TestStateSerialize(t *testing.T) {
 		out, _, _, err = state.Serialize()
 		assert.That(t, err, should.ErrLike(nil))
 		assert.That(t, out, should.Match(mustStruct(map[string]any{
-			"sub": map[string]any{"heylo": "world"},
+			"$sub": map[string]any{"heylo": "world"},
 		})))
 
 		top.SetOutputFromState(state, map[string]string{
@@ -198,7 +198,7 @@ func TestStateSerialize(t *testing.T) {
 		assert.That(t, err, should.ErrLike(nil))
 		assert.That(t, out, should.Match(mustStruct(map[string]any{
 			"cool": "beans",
-			"sub": map[string]any{
+			"$sub": map[string]any{
 				"heylo": "world",
 			},
 		})))
@@ -248,7 +248,7 @@ func TestConcurrentManipulation(t *testing.T) {
 
 	r := &Registry{}
 	for i := range N {
-		manipulators[i] = MustRegisterOut[*OneNumber](r, strconv.Itoa(i))
+		manipulators[i] = MustRegisterOut[*OneNumber](r, "$"+strconv.Itoa(i))
 	}
 
 	ch := make(chan int64, 100)
@@ -278,7 +278,7 @@ func TestConcurrentManipulation(t *testing.T) {
 		ser, version, consistent, err := state.Serialize()
 		handleErr(err)
 		for ns, val := range ser.Fields {
-			i, err := strconv.Atoi(ns)
+			i, err := strconv.Atoi(ns[1:])
 			handleErr(err)
 			observed[i] = int32(val.GetStructValue().Fields["Num"].GetNumberValue())
 			handleErr(err)

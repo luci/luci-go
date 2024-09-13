@@ -14,11 +14,18 @@
 
 package properties
 
+import (
+	"reflect"
+
+	"go.chromium.org/luci/common/errors"
+)
+
 type registerOptions struct {
 	skipFrames        int
 	unknownFields     unknownFieldSetting
 	jsonUseNumber     bool
 	protoUseJSONNames bool
+	strictTopLevel    bool
 }
 
 // unknownFieldSetting allows you to select the behavior of registered
@@ -53,7 +60,7 @@ const (
 
 // A RegisterOption is the way to specify extra behavior when calling any of the
 // (Must)?Register(In)?(Out)? functions.
-type RegisterOption func(*registerOptions)
+type RegisterOption func(opts *registerOptions, namespace string, inT, outT reflect.Type) error
 
 // OptSkipFrames returns a RegisterOption which allows you to skip additional
 // frames when Register{Proto,Struct} walk the stack looking for the
@@ -62,13 +69,14 @@ type RegisterOption func(*registerOptions)
 // If supplied multiple times, the number of frames skipped accumulates (i.e.
 // `OptSkipFrames(1), OptSkipFrames(1)` is the same as `OptSkipFrames(2)`
 func OptSkipFrames(frames int) RegisterOption {
-	return func(ro *registerOptions) {
-		ro.skipFrames += frames
+	return func(opts *registerOptions, namespace string, inT, outT reflect.Type) error {
+		opts.skipFrames += frames
+		return nil
 	}
 }
 
-// OptIgnoreUnknownFields is a RegisterOption which allows your registered proto
-// or struct to ignore unknown fields when parsing the input value.
+// OptIgnoreUnknownFields returns a RegisterOption which allows your registered
+// proto or struct to ignore unknown fields when parsing the input value.
 //
 // By default this library will reject unknown fields when parsing the input,
 // which prevents accidental typos, etc. from being undetected.
@@ -92,13 +100,59 @@ func OptSkipFrames(frames int) RegisterOption {
 //
 //	// with OptIgnoreUnknownFields()
 //	{ "somefield": "hello" } => parses, but Msg.some_field will be ""
+//
+// Error if used in conjunction with OptStrictTopLevelFields.
+// Error for output-only properties.
 func OptIgnoreUnknownFields() RegisterOption {
-	return func(ro *registerOptions) {
-		ro.unknownFields = ignoreUnknownFields
+	return func(opts *registerOptions, namespace string, inT, outT reflect.Type) error {
+		if opts.strictTopLevel {
+			return errors.New(`OptStrictTopLevelFields is not compatible with OptIgnoreUnknownFields`)
+		}
+		if inT == nil {
+			return errors.New(`OptIgnoreUnknownFields is not compatible with output-only properties`)
+		}
+		opts.unknownFields = ignoreUnknownFields
+		return nil
 	}
 }
 
-// OptProtoUseJSONNames is a RegisterOption, which will make Register use the
+// OptStrictTopLevelFields returns a RegisterOption which changes the way that
+// top level fields are handled.
+//
+// By default, any top-level fields not parsed by the top-level namespace are
+// ignored if they start with "$". All (Must)?Register(In)?(Out)? functions
+// enforce that registered namespaces are either "", or begin with a "$". This
+// default is a compromise between completely ignoring typo inputs and also
+// causing builds to fail when passed configuration for a Go module that they
+// happen to not use.
+//
+// By specifying OptStrictTopLevelFields, ALL extra top-level fields not parsed
+// by the top-level namespace will be errors.
+//
+// Error if used in conjunction with OptIgnoreUnknownFields.
+// Error if used on non-top-level registrations.
+// Error if top-level input type is a map type.
+// Error for output-only properties.
+func OptStrictTopLevelFields() RegisterOption {
+	return func(opts *registerOptions, namespace string, inT, outT reflect.Type) error {
+		if namespace != "" {
+			return errors.Reason(`OptStrictTopLevelFields is not compatible with namespace %q`, namespace).Err()
+		}
+		if opts.unknownFields == ignoreUnknownFields {
+			return errors.New(`OptStrictTopLevelFields is not compatible with OptIgnoreUnknownFields`)
+		}
+		if inT == nil {
+			return errors.New(`OptStrictTopLevelFields is not compatible with output-only properties`)
+		}
+		if inT.Kind() == reflect.Map {
+			return errors.Reason(`OptStrictTopLevelFields is not compatible with type %s`, inT).Err()
+		}
+		opts.strictTopLevel = true
+		return nil
+	}
+}
+
+// OptProtoUseJSONNames returns a RegisterOption, which will make Register use the
 // protobuf default names when serializing proto.Message types. These names are:
 //   - some_thing -> someThing
 //   - some_thing [json_name = "wow"] -> wow
@@ -113,29 +167,47 @@ func OptIgnoreUnknownFields() RegisterOption {
 // names are allowed (so, lowerCamelCase, lower_camel_case and json_name
 // annotation).
 //
-// Ignored for non-proto messages.
+// Error for input-only properties.
+// Error for non-proto messages.
 func OptProtoUseJSONNames() RegisterOption {
-	return func(ro *registerOptions) {
-		ro.protoUseJSONNames = true
+	return func(opts *registerOptions, namespace string, inT, outT reflect.Type) error {
+		if outT == nil {
+			return errors.New("OptProtoUseJSONNames is not compatible with input-only properties")
+		}
+		if !outT.Implements(protoMessageType) {
+			return errors.Reason("OptProtoUseJSONNames is not compatible with non-proto type %s", outT).Err()
+		}
+		opts.protoUseJSONNames = true
+		return nil
 	}
 }
 
 // OptJSONUseNumber is a RegisterOption, which will make Register use the
 // json.Number when decoding a number to an `any` as part of a Go struct or map.
 //
-// Ignored for non-json messages.
+// Error for non-JSON messages.
+// Error for output-only properties.
 func OptJSONUseNumber() RegisterOption {
-	return func(ro *registerOptions) {
-		ro.jsonUseNumber = true
+	return func(opts *registerOptions, namespace string, inT, outT reflect.Type) error {
+		if inT == nil {
+			return errors.New("OptJSONUseNumber is not compatible with output-only properties")
+		}
+		if inT.Implements(protoMessageType) {
+			return errors.Reason("OptJSONUseNumber is not compatible with proto %s", inT).Err()
+		}
+		opts.jsonUseNumber = true
+		return nil
 	}
 }
 
-func loadRegOpts(opts []RegisterOption) registerOptions {
+func loadRegOpts(namespace string, opts []RegisterOption, inT, outT reflect.Type) (registerOptions, error) {
 	var ret registerOptions
 	for _, opt := range opts {
 		if opt != nil {
-			opt(&ret)
+			if err := opt(&ret, namespace, inT, outT); err != nil {
+				return ret, err
+			}
 		}
 	}
-	return ret
+	return ret, nil
 }

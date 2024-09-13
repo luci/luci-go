@@ -55,18 +55,18 @@ var InOutProp = properties.MustRegister[*MyTopLevelStruct](MyRegistry, "")
 //
 // Typically these non top-level namespaces would be registered in different Go
 // packages, similar to using the go "flag" package.
-var BuildLikeProp = properties.MustRegister[*buildbucketpb.Build](MyRegistry, "buildLike")
+var BuildLikeProp = properties.MustRegister[*buildbucketpb.Build](MyRegistry, "$buildLike")
 
 // PerfCounters is an example of using a raw Go map to have a schema-less
 // namespace.
-var PerfCounters = properties.MustRegisterOut[map[string]int](MyRegistry, "perf_out")
+var PerfCounters = properties.MustRegisterOut[map[string]int](MyRegistry, "$perf_out")
 
 func ExampleRegistry() {
 	rawInputProperties, err := structpb.NewStruct(map[string]any{
 		"key":  "hello",
 		"okey": "more top level",
 
-		"buildLike": map[string]any{
+		"$buildLike": map[string]any{
 			"id": "12345",
 		},
 	})
@@ -102,10 +102,9 @@ func ExampleRegistry() {
 		return true
 	})
 
-	PerfCounters.MutateOutput(ctx, func(m map[string]int) (mutated bool) {
-		m["alpha"] = 20
-		m["yeet"] = -1
-		return true
+	PerfCounters.SetOutput(ctx, map[string]int{
+		"alpha": 20,
+		"yeet":  -1,
 	})
 
 	// At any point the program can serialize the state out to a proto Struct.
@@ -149,17 +148,17 @@ func ExampleRegistry() {
 	// --------
 	//
 	// {
-	//   "buildLike": {
+	//   "$buildLike": {
 	//     "builder": {
 	//       "bucket": "buck",
 	//       "builder": "bld"
 	//     }
 	//   },
-	//   "key": "",
-	//   "okey": "",
-	//   "perf_out": {
+	//   "$perf_out": {
 	//     "alpha": 20,
 	//     "yeet": -1
-	//   }
+	//   },
+	//   "key": "",
+	//   "okey": ""
 	// }
 }

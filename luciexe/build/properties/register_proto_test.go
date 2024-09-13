@@ -68,11 +68,11 @@ func TestStructPBPassthrough(t *testing.T) {
 
 	r := Registry{}
 	outer := MustRegister[*structpb.Struct](&r, "")
-	sub := MustRegister[*structpb.Struct](&r, "sub")
+	sub := MustRegister[*structpb.Struct](&r, "$sub")
 
 	rawStruct := mustStruct(map[string]any{
 		"random": 100,
-		"sub": map[string]any{
+		"$sub": map[string]any{
 			"some":    []any{"value"},
 			"another": "key",
 		},
@@ -85,7 +85,7 @@ func TestStructPBPassthrough(t *testing.T) {
 	assert.That(t, outer.GetInputFromState(state).Fields["random"].GetNumberValue(),
 		should.Equal(rawStruct.Fields["random"].GetNumberValue()))
 	assert.That(t, sub.GetInputFromState(state),
-		should.Equal(rawStruct.Fields["sub"].GetStructValue()))
+		should.Equal(rawStruct.Fields["$sub"].GetStructValue()))
 
 	// Output values start empty but non-nil.
 	outer.MutateOutputFromState(state, func(s *structpb.Struct) (mutated bool) {
@@ -104,7 +104,7 @@ func TestStructPBPassthrough(t *testing.T) {
 		return true
 	})
 	sub.MutateOutputFromState(state, func(s *structpb.Struct) (mutated bool) {
-		s.Fields = rawStruct.Fields["sub"].GetStructValue().Fields
+		s.Fields = rawStruct.Fields["$sub"].GetStructValue().Fields
 		return true
 	})
 
@@ -114,8 +114,8 @@ func TestStructPBPassthrough(t *testing.T) {
 
 	// Serialize always returns a NEW Struct - ensure that these values do NOT
 	// equal each other, even though they Match.
-	assert.That(t, out.Fields["sub"].GetStructValue().Fields["some"],
-		should.NotEqual(rawStruct.Fields["sub"].GetStructValue().Fields["some"]))
-	assert.That(t, out.Fields["sub"].GetStructValue().Fields["another"],
-		should.NotEqual(rawStruct.Fields["sub"].GetStructValue().Fields["another"]))
+	assert.That(t, out.Fields["$sub"].GetStructValue().Fields["some"],
+		should.NotEqual(rawStruct.Fields["$sub"].GetStructValue().Fields["some"]))
+	assert.That(t, out.Fields["$sub"].GetStructValue().Fields["another"],
+		should.NotEqual(rawStruct.Fields["$sub"].GetStructValue().Fields["another"]))
 }

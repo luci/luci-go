@@ -16,16 +16,24 @@ package properties
 
 import (
 	"reflect"
+
+	"go.chromium.org/luci/common/errors"
 )
 
 // RegisterIn returns a RegisteredPropertyIn[InT].
 //
 // Refer to package documentation for the acceptable types for T.
 func RegisterIn[InT any](r *Registry, namespace string, opts ...RegisterOption) (ret RegisteredPropertyIn[InT], err error) {
-	o := loadRegOpts(opts)
+	defer func() { err = errors.Annotate(err, "RegisterIn[%T]", *new(InT)).Err() }()
+	inTyp := reflect.TypeFor[InT]()
+
+	o, err := loadRegOpts(namespace, opts, inTyp, nil)
+	if err != nil {
+		return
+	}
 
 	var reg registration
-	if err = registerInImpl(o, reflect.TypeFor[InT](), namespace, r, &reg, &ret.registeredProperty); err != nil {
+	if err = registerInImpl(o, inTyp, namespace, r, &reg, &ret.registeredProperty); err != nil {
 		return
 	}
 
@@ -37,10 +45,16 @@ func RegisterIn[InT any](r *Registry, namespace string, opts ...RegisterOption) 
 //
 // Refer to package documentation for the acceptable types for T.
 func RegisterOut[OutT any](r *Registry, namespace string, opts ...RegisterOption) (ret RegisteredPropertyOut[OutT], err error) {
-	o := loadRegOpts(opts)
+	defer func() { err = errors.Annotate(err, "RegisterOut[%T]", *new(OutT)).Err() }()
+	outTyp := reflect.TypeFor[OutT]()
+
+	o, err := loadRegOpts(namespace, opts, nil, outTyp)
+	if err != nil {
+		return
+	}
 
 	var reg registration
-	if err = registerOutImpl(o, reflect.TypeFor[OutT](), namespace, r, &reg, &ret.registeredProperty); err != nil {
+	if err = registerOutImpl(o, outTyp, namespace, r, &reg, &ret.registeredProperty); err != nil {
 		return
 	}
 
@@ -53,13 +67,19 @@ func RegisterOut[OutT any](r *Registry, namespace string, opts ...RegisterOption
 //
 // Refer to package documentation for the acceptable types for T.
 func RegisterInOut[InT, OutT any](r *Registry, namespace string, opts ...RegisterOption) (ret RegisteredProperty[InT, OutT], err error) {
-	o := loadRegOpts(opts)
+	defer func() { err = errors.Annotate(err, "RegisterInOut[%T, %T]", *new(InT), *new(OutT)).Err() }()
+	inTyp, outTyp := reflect.TypeFor[InT](), reflect.TypeFor[OutT]()
 
-	var reg registration
-	if err = registerInImpl(o, reflect.TypeFor[InT](), namespace, r, &reg, &ret.RegisteredPropertyIn.registeredProperty); err != nil {
+	o, err := loadRegOpts(namespace, opts, inTyp, outTyp)
+	if err != nil {
 		return
 	}
-	if err = registerOutImpl(o, reflect.TypeFor[OutT](), namespace, r, &reg, &ret.RegisteredPropertyOut.registeredProperty); err != nil {
+
+	var reg registration
+	if err = registerInImpl(o, inTyp, namespace, r, &reg, &ret.RegisteredPropertyIn.registeredProperty); err != nil {
+		return
+	}
+	if err = registerOutImpl(o, outTyp, namespace, r, &reg, &ret.RegisteredPropertyOut.registeredProperty); err != nil {
 		return
 	}
 
@@ -71,13 +91,19 @@ func RegisterInOut[InT, OutT any](r *Registry, namespace string, opts ...Registe
 //
 // Refer to package documentation for the acceptable types for T.
 func Register[T any](r *Registry, namespace string, opts ...RegisterOption) (ret RegisteredProperty[T, T], err error) {
-	o := loadRegOpts(opts)
+	defer func() { err = errors.Annotate(err, "Register[%T]", *new(T)).Err() }()
+	typ := reflect.TypeFor[T]()
 
-	var reg registration
-	if err = registerInImpl(o, reflect.TypeFor[T](), namespace, r, &reg, &ret.RegisteredPropertyIn.registeredProperty); err != nil {
+	o, err := loadRegOpts(namespace, opts, typ, typ)
+	if err != nil {
 		return
 	}
-	if err = registerOutImpl(o, reflect.TypeFor[T](), namespace, r, &reg, &ret.RegisteredPropertyOut.registeredProperty); err != nil {
+
+	var reg registration
+	if err = registerInImpl(o, typ, namespace, r, &reg, &ret.RegisteredPropertyIn.registeredProperty); err != nil {
+		return
+	}
+	if err = registerOutImpl(o, typ, namespace, r, &reg, &ret.RegisteredPropertyOut.registeredProperty); err != nil {
 		return
 	}
 

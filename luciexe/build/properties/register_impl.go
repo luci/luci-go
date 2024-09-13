@@ -64,12 +64,12 @@ func checkTypOk(typ reflect.Type) error {
 		ktyp := typ.Key()
 		kknd := ktyp.Kind()
 		if !(kknd == reflect.String || kknd == reflect.Int || ktyp.Implements(textUnmarshalTyp)) {
-			return errors.Reason("properties.Register[%s] used with map with non-string, non-int keys.", typ).Err()
+			return errors.New("used with map with non-string, non-int keys.")
 		}
 	} else {
 		// struct pointer types
 		if typ.Kind() != reflect.Pointer || typ.Elem().Kind() != reflect.Struct {
-			return errors.Reason("properties.Register[%s] used with non-struct-pointer type.", typ).Err()
+			return errors.New("used with non-struct-pointer type.")
 		}
 	}
 
@@ -78,7 +78,7 @@ func checkTypOk(typ reflect.Type) error {
 
 func registerInImpl(o registerOptions, typIn reflect.Type, namespace string, r *Registry, reg *registration, rprop *registeredProperty) error {
 	if err := checkTypOk(typIn); err != nil {
-		return errors.Annotate(err, "RegisterIn[%s]", typIn).Err()
+		return err
 	}
 
 	reg.typIn = typIn
@@ -99,7 +99,7 @@ func registerInImpl(o registerOptions, typIn reflect.Type, namespace string, r *
 
 func registerOutImpl(o registerOptions, typOut reflect.Type, namespace string, r *Registry, reg *registration, rprop *registeredProperty) error {
 	if err := checkTypOk(typOut); err != nil {
-		return errors.Annotate(err, "RegisterOut[%s]", typOut).Err()
+		return err
 	}
 
 	reg.typOut = typOut
@@ -146,6 +146,7 @@ func (r *Registry) register(o registerOptions, namespace string, reg registratio
 	// registration.
 	if namespace == "" {
 		r.topLevelFields = getVisibleFields(reg.typIn, reg.typOut)
+		r.topLevelStrict = o.strictTopLevel
 		// Registering top-level namespace? Check all other registrations.
 		for ns, otherReg := range r.regs {
 			if r.topLevelFields.Has(ns) {

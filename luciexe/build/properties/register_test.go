@@ -34,30 +34,30 @@ import (
 func TestRegisterOptions(t *testing.T) {
 	t.Parallel()
 
-	t.Run(`SkipFrames`, func(t *testing.T) {
+	t.Run(`OptSkipFrames`, func(t *testing.T) {
 		t.Parallel()
 
 		r := Registry{}
 
-		MustRegister[*struct{}](&r, "a")
-		MustRegister[*struct{}](&r, "b", OptSkipFrames(1))
+		MustRegister[*struct{}](&r, "$a")
+		MustRegister[*struct{}](&r, "$b", OptSkipFrames(1))
 
 		regs := r.listRegistrations()
-		assert.That(t, regs["a"].InputLocation, should.ContainSubstring("register_test.go"))
+		assert.That(t, regs["$a"].InputLocation, should.ContainSubstring("register_test.go"))
 		// parent of "b" will be in go testing guts, likely testing.go
-		assert.That(t, regs["b"].InputLocation, should.NotContainSubstring("register_test.go"))
+		assert.That(t, regs["$b"].InputLocation, should.NotContainSubstring("register_test.go"))
 	})
 
-	t.Run(`IgnoreUnknownFields`, func(t *testing.T) {
+	t.Run(`OptIgnoreUnknownFields`, func(t *testing.T) {
 		t.Parallel()
 
 		r := Registry{}
 		s := MustRegister[*struct {
 			Field int
-		}](&r, "ns", OptIgnoreUnknownFields())
+		}](&r, "$ns", OptIgnoreUnknownFields())
 
 		state, err := r.Instantiate(mustStruct(map[string]any{
-			"ns": map[string]any{
+			"$ns": map[string]any{
 				"Field": 100,
 				"other": "hi",
 			},
@@ -69,7 +69,21 @@ func TestRegisterOptions(t *testing.T) {
 		}{Field: 100}))
 	})
 
-	t.Run(`UseJSONNames`, func(t *testing.T) {
+	t.Run(`OptStrictTopLevelFields`, func(t *testing.T) {
+		t.Parallel()
+
+		r := Registry{}
+		MustRegister[*struct{}](&r, "", OptStrictTopLevelFields())
+
+		_, err := r.Instantiate(mustStruct(map[string]any{
+			"$ns": map[string]any{
+				"stuff": 100,
+			},
+		}), nil)
+		assert.That(t, err, should.ErrLike(`unknown field "$ns"`))
+	})
+
+	t.Run(`OptUseJSONNames`, func(t *testing.T) {
 		t.Parallel()
 
 		r := Registry{}
@@ -83,6 +97,8 @@ func TestRegisterOptions(t *testing.T) {
 			return true
 		})
 
+		s.SetOutputFromState(state, nil) // will set to &buildbucketpb.Build{}
+
 		s.MutateOutputFromState(state, func(b *buildbucketpb.Build) (mutated bool) {
 			b.CreatedBy += "else"
 			return true
@@ -91,9 +107,9 @@ func TestRegisterOptions(t *testing.T) {
 		out, vers, consistent, err := state.Serialize()
 		assert.That(t, err, should.ErrLike(nil))
 		assert.That(t, consistent, should.BeTrue)
-		assert.That(t, vers, should.Equal[int64](2))
+		assert.That(t, vers, should.Equal[int64](3))
 		assert.That(t, out, should.Match(mustStruct(map[string]any{
-			"createdBy": "someoneelse",
+			"createdBy": "else",
 		})))
 	})
 
@@ -135,7 +151,7 @@ func TestRegister(t *testing.T) {
 
 		r := Registry{}
 		top := MustRegister[*buildbucketpb.Build](&r, "")
-		sub := MustRegister[*buildbucketpb.Build](&r, "sub")
+		sub := MustRegister[*buildbucketpb.Build](&r, "$sub")
 
 		state, err := r.Instantiate(nil, nil)
 		assert.That(t, err, should.ErrLike(nil))
@@ -157,7 +173,7 @@ func TestRegister(t *testing.T) {
 		assert.That(t, err, should.ErrLike(nil))
 		assert.That(t, combined, should.Match(mustStruct(map[string]any{
 			"id": "12345",
-			"sub": map[string]any{
+			"$sub": map[string]any{
 				"create_time": "2016-02-03T04:05:06.000000007Z",
 			},
 		})))
@@ -172,7 +188,7 @@ func TestRegister(t *testing.T) {
 		}](&r, "")
 		sub := MustRegister[*struct {
 			ID int
-		}](&r, "sub")
+		}](&r, "$sub")
 
 		state, err := r.Instantiate(nil, nil)
 		assert.That(t, err, should.ErrLike(nil))
@@ -191,10 +207,36 @@ func TestRegister(t *testing.T) {
 		assert.That(t, err, should.ErrLike(nil))
 		assert.That(t, combined, should.Match(mustStruct(map[string]any{
 			"ID": 12345,
-			"sub": map[string]any{
+			"$sub": map[string]any{
 				"ID": 54321,
 			},
 		})))
+	})
+
+	t.Run(`split`, func(t *testing.T) {
+		t.Parallel()
+
+		r := Registry{}
+		top := MustRegisterInOut[*struct{ In int }, *struct{ Out int }](&r, "")
+
+		state, err := r.Instantiate(mustStruct(map[string]any{
+			"In": 100,
+		}), nil)
+		assert.That(t, err, should.ErrLike(nil))
+
+		assert.That(t, top.GetInputFromState(state).In, should.Equal(100))
+
+		top.MutateOutputFromState(state, func(s *struct{ Out int }) (mutated bool) {
+			s.Out = 200
+			return true
+		})
+
+		output, _, _, err := state.Serialize()
+		assert.That(t, err, should.ErrLike(nil))
+		assert.That(t, output, should.Match(mustStruct(map[string]any{
+			"Out": 200.0,
+		})))
+
 	})
 }
 
@@ -227,23 +269,27 @@ func TestRegister_Errors(t *testing.T) {
 	t.Run(`overlapping registration`, func(t *testing.T) {
 		t.Parallel()
 
+		type problematicField struct {
+			F int `json:"$f"`
+		}
+
 		t.Run(`top-level -> sub`, func(t *testing.T) {
 			t.Parallel()
 
 			r := Registry{}
-			MustRegister[*buildbucketpb.Build](&r, "")
+			MustRegister[*problematicField](&r, "")
 			assert.That(t, func() {
-				MustRegister[*buildbucketpb.Build](&r, "id")
-			}, should.PanicLikeString(`cannot register namespace "id"`))
+				MustRegister[*problematicField](&r, "$f")
+			}, should.PanicLikeString(`cannot register namespace "$f"`))
 		})
 
 		t.Run(`sub -> top-level`, func(t *testing.T) {
 			t.Parallel()
 
 			r := Registry{}
-			MustRegister[*buildbucketpb.Build](&r, "id")
+			MustRegister[*problematicField](&r, "$f")
 			assert.That(t, func() {
-				MustRegister[*buildbucketpb.Build](&r, "")
+				MustRegister[*problematicField](&r, "")
 			}, should.PanicLikeString(`cannot register top-level property namespace`))
 		})
 	})
@@ -267,11 +313,11 @@ func TestTopLevelGeneric(t *testing.T) {
 		r := Registry{}
 
 		top := MustRegister[*structpb.Struct](&r, "")
-		mid := MustRegister[*structpb.Struct](&r, "something")
+		mid := MustRegister[*structpb.Struct](&r, "$something")
 
 		state, err := r.Instantiate(mustStruct(map[string]any{
 			"random": "junk",
-			"something": map[string]any{
+			"$something": map[string]any{
 				"a":    100,
 				"cool": "stuff",
 			},
@@ -295,11 +341,11 @@ func TestTopLevelGeneric(t *testing.T) {
 		r := Registry{}
 
 		top := MustRegister[map[string]any](&r, "")
-		mid := MustRegister[map[string]any](&r, "something", OptJSONUseNumber())
+		mid := MustRegister[map[string]any](&r, "$something", OptJSONUseNumber())
 
 		state, err := r.Instantiate(mustStruct(map[string]any{
 			"random": "junk",
-			"something": map[string]any{
+			"$something": map[string]any{
 				"a":    100,
 				"cool": "stuff",
 			},
@@ -452,5 +498,95 @@ func TestGetVisibleFields(t *testing.T) {
 			"secret_bytes",
 			"task",
 		},
+	}))
+}
+
+func TestRegisterOptionsErrors(t *testing.T) {
+	t.Parallel()
+
+	type ro []RegisterOption
+	type tcase struct {
+		namespace string
+		opts      ro
+		in        any
+		out       any
+
+		err any
+	}
+
+	run := func(tc tcase) func(t *testing.T) {
+		return func(t *testing.T) {
+			t.Helper()
+			t.Parallel()
+
+			_, err := loadRegOpts(tc.namespace, tc.opts, reflect.TypeOf(tc.in), reflect.TypeOf(tc.out))
+			assert.That(t, err, should.ErrLike(tc.err), truth.LineContext())
+		}
+	}
+
+	t.Run(`OptIgnoreUnknownFields + OptStrictTopLevelFields`, run(tcase{
+		"", ro{OptIgnoreUnknownFields(), OptStrictTopLevelFields()},
+		&struct{}{}, nil,
+		"not compatible",
+	}))
+
+	t.Run(`OptStrictTopLevelFields + OptIgnoreUnknownFields`, run(tcase{
+		"", ro{OptStrictTopLevelFields(), OptIgnoreUnknownFields()},
+		&struct{}{}, nil,
+		"not compatible",
+	}))
+
+	t.Run(`OptIgnoreUnknownFields for output-only`, run(tcase{
+		"", ro{OptIgnoreUnknownFields()},
+		nil, &struct{}{},
+		"not compatible with output-only",
+	}))
+
+	t.Run(`OptStrictTopLevelFields for sub namespace`, run(tcase{
+		"$hi", ro{OptStrictTopLevelFields()},
+		&struct{}{}, &struct{}{},
+		`not compatible with namespace "$hi"`,
+	}))
+
+	t.Run(`OptStrictTopLevelFields for output-only`, run(tcase{
+		"", ro{OptStrictTopLevelFields()},
+		nil, &struct{}{},
+		`not compatible with output-only`,
+	}))
+
+	t.Run(`OptStrictTopLevelFields for map types`, run(tcase{
+		"", ro{OptStrictTopLevelFields()},
+		map[string]string{}, &struct{}{},
+		`not compatible with type map[string]string`,
+	}))
+
+	t.Run(`OptProtoUseJSONNames for input-only`, run(tcase{
+		"", ro{OptProtoUseJSONNames()},
+		map[string]string{}, nil,
+		`not compatible with input-only`,
+	}))
+
+	t.Run(`OptProtoUseJSONNames for struct`, run(tcase{
+		"", ro{OptProtoUseJSONNames()},
+		nil, &struct{}{},
+		`not compatible with non-proto type *struct {}`,
+	}))
+
+	t.Run(`OptProtoUseJSONNames for struct`, run(tcase{
+		"", ro{OptProtoUseJSONNames()},
+		nil, map[string]any{},
+		`not compatible with non-proto type map[string]interface {}`,
+	}))
+
+	t.Run(`OptJSONUseNumber for output-only`, run(tcase{
+		"", ro{OptJSONUseNumber()},
+		nil, map[string]any{},
+		`not compatible with output-only`,
+	}))
+
+	t.Run(`OptJSONUseNumber for proto`, run(tcase{
+		"", ro{OptJSONUseNumber()},
+		&buildbucketpb.Build{}, nil,
+		`not compatible with proto *buildbucketpb.Build`,
 	}))
 }

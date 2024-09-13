@@ -161,15 +161,29 @@ func (r *Registry) parseInitialState(input *structpb.Struct) (map[string]any, er
 		}
 	}
 
-	if leftover := len(myStruct.Fields); leftover > 0 {
+	if !r.topLevelStrict {
+		for k := range myStruct.Fields {
+			// if the top-level schema directly describes this key, that's fine
+			// - leave it alone.
+			if k[0] == '$' && !r.topLevelFields.Has(k) {
+				delete(myStruct.Fields, k)
+			}
+		}
+	}
+
+	if len(myStruct.Fields) > 0 {
 		if topLevelReg != nil {
 			if err := decode(*topLevelReg, "", myStruct); err != nil {
 				return nil, err
 			}
 		} else {
+			leftovers := make([]string, 0, len(myStruct.Fields))
+			for k := range myStruct.Fields {
+				leftovers = append(leftovers, k)
+			}
 			return nil, errors.Reason(
-				"properties.Registry.Instantiate - %d leftover top-level properties and no top-level property registered.",
-				leftover).Err()
+				"properties.Registry.Instantiate - leftover top-level properties and no top-level property registered: %q.",
+				leftovers).Err()
 		}
 	}
 

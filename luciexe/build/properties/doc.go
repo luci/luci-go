@@ -42,15 +42,16 @@
 //
 // The singular Input or Output struct in a LUCI Build are allowed a schema to
 // describe the 'top-level', minus any keys described by a registered namespace.
+// Namespaces other than the top level MUST begin with "$".
 //
 // For example:
 //
 //	{
 //	  "some_key": 100,
-//	  "other key": {
+//	  "$other key": {
 //	     "sub": "hello"
 //	  },
-//	  "another": { "lst": [1, 2, 3] }
+//	  "$another": { "lst": [1, 2, 3] }
 //	}
 //
 // Could be broken into 3 schemas:
@@ -59,11 +60,11 @@
 //		int some_key = 1;
 //	}
 //
-//	type OtherStruct struct {  // registered to "other key"
+//	type OtherStruct struct {  // registered to "$other key"
 //	  Sub string `json:"sub"`
 //	}
 //
-//	message Another {  // registered to "another"
+//	message Another {  // registered to "$another"
 //	  repeated int lst = 1;
 //	}
 //
@@ -104,7 +105,39 @@
 //
 // If namespace is "", this will be the property namespace for the 'top level'
 // property message, otherwise this is a namespace inside the top level
-// properties.
+// properties and MUST begin with "$".
+//
+// By default, any incoming top-level properties beginning with "$" will be
+// ignored when parsing the input properties, if they don't have an associated
+// schema. This allows callers to pass data in for Go modules which a given
+// build MAY consume, without having this be an error, and still checking that
+// other top-level properties are not misspelled.
+//
+// Example:
+//
+//	// the program registered
+//	var topLevel = properties.MustRegister[*struct{
+//	  Specific string `json:"specific"`
+//	  Spelling string `json:"spelling"`
+//	}](..., "")
+//
+//	// but the unaware caller passes
+//	{
+//	  "specific": "property",
+//	  "speling": "oops",
+//	  "$common/module": {
+//	     "somefield": 100
+//	  }
+//	}
+//
+//	This will just result in an error for "speling" - "$common/module" will be
+//	ignored. If the program eventually evolves and imports the Go module which
+//	registers the "$common/module" namespace, the caller's settings will take
+//	effect.
+//
+// However, if you absolutely want to stamp out these ignored namespaces, you
+// can pass the OptStrictTopLevelFields() option when registering the top level
+// namespace.
 //
 // # Proto vs JSON tradeoffs
 //
@@ -124,4 +157,26 @@
 // Think carefully about how your property messages will be used, how migrating
 // from one format to another could be painful, etc. before picking one. If you
 // are unsure, I would recommend to just use a Proto message.
+//
+// # Known Gotcha - Protos in the main package
+//
+// If you generate protobuf stubs in the same package that you register _at init
+// time_ properties with those protobufs, you MAY see a cryptic panic about some
+// of the protobuf reflection guts being nil/uninitialized. This is because the
+// current protobuf stub code populates its reflection data at init-time, and
+// the order of execution between different init stanzas within the same package
+// is *completely arbitrary*.
+//
+// To solve this:
+//   - Move your protos to a sub-package which is imported. This guarantees that
+//     the imported package's init will run before any of the importer's init
+//     actions.
+//   - OR: If your package is the `main` package, you can move the property
+//     registration inside the `main()` module, before the property registry is
+//     Initialized. If your package is not the main module, then please move the
+//     protos to a subpackage.
+//   - OR: You can use a Go struct type instead of a proto - this is less
+//     recommended, however, if you need the uniformity of protos to interoperate
+//     with other programs (e.g. that will syntheize inputs or parse outputs from
+//     your program).
 package properties

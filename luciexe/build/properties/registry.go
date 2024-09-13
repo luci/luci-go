@@ -57,6 +57,10 @@ type Registry struct {
 	// topLevelFields retains the visible fields for the top-level inupt and
 	// output registration (i.e. namespace == "") to check for conflicts.
 	topLevelFields stringset.Set
+
+	// topLevelStrict is true if OptStrictTopLevelFields was passed when
+	// registering "".
+	topLevelStrict bool
 }
 
 // registrationInfo is currently just for testing, but this will be expanded
