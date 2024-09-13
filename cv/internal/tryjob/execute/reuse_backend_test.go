@@ -91,7 +91,7 @@ func TestFindReuseInBackend(t *testing.T) {
 			backend: &bbfacade.Facade{
 				ClientFactory: ct.BuildbucketFake.NewClientFactory(),
 			},
-			rm: run.NewNotifier(ct.TQDispatcher),
+			mutator: tryjob.NewMutator(run.NewNotifier(ct.TQDispatcher)),
 		}
 		builder := &bbpb.BuilderID{
 			Project: lProject,
@@ -225,6 +225,8 @@ func TestFindReuseInBackend(t *testing.T) {
 				EntityCreateTime: tj.EntityCreateTime,
 				EntityUpdateTime: datastore.RoundTime(ct.Clock.Now().UTC()),
 				Definition:       defFoo,
+				ReuseKey:         w.reuseKey,
+				CLPatchsets:      w.clPatchsets,
 				Status:           tryjob.Status_ENDED,
 				ReusedBy:         common.RunIDs{runID},
 				Result: &tryjob.Result{

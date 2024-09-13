@@ -18,10 +18,7 @@ import (
 	"context"
 
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/cv/internal/tryjob"
 )
@@ -60,52 +57,25 @@ func (w *worker) findReuseInBackend(ctx context.Context, definitions []*tryjob.D
 		return nil, nil
 	}
 
-	var innerErr error
-	var tryjobs []*tryjob.Tryjob
-	err = datastore.RunInTransaction(ctx, func(ctx context.Context) (err error) {
-		defer func() { innerErr = err }()
-		eids := make([]tryjob.ExternalID, 0, len(candidates))
-		definitions = make([]*tryjob.Definition, 0, len(candidates))
-		for def, tj := range candidates {
-			eids = append(eids, tj.ExternalID)
-			definitions = append(definitions, def)
-		}
-		tryjobs, err = tryjob.ResolveToTryjobs(ctx, eids...)
-		if err != nil {
-			return err
-		}
-		for i, tj := range tryjobs {
-			if tj == nil {
-				tj = w.makeBaseTryjob(ctx)
-				tryjobs[i] = tj
-			} else {
-				// The Tryjob already in datastore. This shouldn't normally
-				// happen but be defensive here when it actually happens.
-				tj.EVersion++
-				tj.EntityUpdateTime = clock.Now(ctx).UTC()
-				logging.Warningf(ctx, "tryjob %q was found reusable in backend, but "+
-					"it already has a corresponding Tryjob entity (ID: %d). Ideally, "+
-					"this Tryjob should be surfaced at the first attempt to search for "+
-					"reusable Tryjob in datastore", tj.ExternalID, tj.ID)
-			}
-			tj.Definition = definitions[i]
-			candidate := candidates[tj.Definition]
+	ret := make(map[*tryjob.Definition]*tryjob.Tryjob)
+	for def, candidate := range candidates {
+		tj, err := w.mutator.Upsert(ctx, candidate.ExternalID, func(tj *tryjob.Tryjob) error {
+			tj.ReuseKey = w.reuseKey
+			tj.CLPatchsets = w.clPatchsets
+			tj.Definition = def
 			tj.ExternalID = candidate.ExternalID
 			tj.Status = candidate.Status
 			tj.Result = candidate.Result
 			if runID := w.run.ID; tj.AllWatchingRuns().Index(runID) < 0 {
 				tj.ReusedBy = append(tj.ReusedBy, runID)
 			}
-			candidates[tj.Definition] = tj
+			return nil
+		})
+		if err != nil {
+			return nil, err
 		}
-		return tryjob.SaveTryjobs(ctx, tryjobs, w.rm.NotifyTryjobsUpdated)
-	}, nil)
-	switch {
-	case innerErr != nil:
-		return nil, innerErr
-	case err != nil:
-		return nil, errors.Annotate(err, "failed to commit transaction").Tag(transient.Tag).Err()
+		ret[def] = tj
 	}
 
-	return candidates, nil
+	return ret, nil
 }
