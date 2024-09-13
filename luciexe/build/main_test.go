@@ -22,6 +22,7 @@ import (
 	"strings"
 	"testing"
 
+	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/time/rate"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
@@ -34,14 +35,10 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/memlogger"
 	"go.chromium.org/luci/common/system/environ"
+	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/logdog/client/butlerlib/bootstrap"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
-
 	"go.chromium.org/luci/luciexe/build/internal/testpb"
-	"go.chromium.org/luci/luciexe/build/properties"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func init() {
@@ -53,10 +50,6 @@ func TestMain(t *testing.T) {
 	// avoid t.Parallel() because this registers property handlers.
 
 	Convey(`Main`, t, func() {
-		// reset the property registry
-		Properties = &properties.Registry{}
-		topLevel := RegisterProperty[*testpb.TopLevel]("")
-
 		ctx := memlogger.Use(context.Background())
 		logs := logging.Get(ctx).(*memlogger.MemLogger)
 
@@ -70,6 +63,9 @@ func TestMain(t *testing.T) {
 		env.Set(bootstrap.EnvStreamServerPath, scFake.StreamServerPath())
 		env.Set(bootstrap.EnvNamespace, "u")
 		ctx = env.SetInCtx(ctx)
+
+		imsg := &testpb.TopLevel{}
+		var setOut func(*testpb.TopLevel)
 
 		tdir := t.TempDir()
 
@@ -113,7 +109,7 @@ func TestMain(t *testing.T) {
 
 		Convey(`good`, func() {
 			Convey(`simple`, func() {
-				err := main(ctx, args, stdin, func(ctx context.Context, args []string, st *State) error {
+				err := main(ctx, args, stdin, imsg, nil, nil, func(ctx context.Context, args []string, st *State) error {
 					So(args, ShouldBeNil)
 					return nil
 				})
@@ -131,7 +127,7 @@ func TestMain(t *testing.T) {
 
 			Convey(`user args`, func() {
 				args = append(args, "--", "custom", "stuff")
-				err := main(ctx, args, stdin, func(ctx context.Context, args []string, st *State) error {
+				err := main(ctx, args, stdin, imsg, &setOut, nil, func(ctx context.Context, args []string, st *State) error {
 					So(args, ShouldResemble, []string{"custom", "stuff"})
 					return nil
 				})
@@ -153,8 +149,8 @@ func TestMain(t *testing.T) {
 					"$cool": "blah",
 				})
 
-				err := main(ctx, args, stdin, func(ctx context.Context, args []string, st *State) error {
-					So(topLevel.GetInput(ctx), ShouldResembleProto, &testpb.TopLevel{
+				err := main(ctx, args, stdin, imsg, &setOut, nil, func(ctx context.Context, args []string, st *State) error {
+					So(imsg, ShouldResembleProto, &testpb.TopLevel{
 						Field:         "something",
 						JsonNameField: "blah",
 					})
@@ -165,7 +161,7 @@ func TestMain(t *testing.T) {
 
 			Convey(`help`, func() {
 				args = append(args, "--help")
-				err := main(ctx, args, stdin, func(ctx context.Context, args []string, st *State) error {
+				err := main(ctx, args, stdin, imsg, &setOut, nil, func(ctx context.Context, args []string, st *State) error {
 					return nil
 				})
 				So(err, ShouldBeNil)
@@ -177,7 +173,7 @@ func TestMain(t *testing.T) {
 
 		Convey(`errors`, func() {
 			Convey(`returned`, func() {
-				err := main(ctx, args, stdin, func(ctx context.Context, args []string, st *State) error {
+				err := main(ctx, args, stdin, imsg, &setOut, nil, func(ctx context.Context, args []string, st *State) error {
 					So(args, ShouldBeNil)
 					return errors.New("bad stuff")
 				})
@@ -195,7 +191,7 @@ func TestMain(t *testing.T) {
 			})
 
 			Convey(`panic`, func() {
-				err := main(ctx, args, stdin, func(ctx context.Context, args []string, st *State) error {
+				err := main(ctx, args, stdin, imsg, &setOut, nil, func(ctx context.Context, args []string, st *State) error {
 					So(args, ShouldBeNil)
 					panic("BAD THINGS")
 				})
@@ -217,12 +213,13 @@ func TestMain(t *testing.T) {
 				writeStdinProps(map[string]any{
 					"bogus": "something",
 				})
+				args = append(args, "--strict-input")
 
-				err := main(ctx, args, stdin, func(ctx context.Context, args []string, st *State) error {
+				err := main(ctx, args, stdin, imsg, &setOut, nil, func(ctx context.Context, args []string, st *State) error {
 					return nil
 				})
-				So(err, ShouldErrLike, `unknown field "bogus"`)
-				summary := "fatal error starting build: build.Start: Registry.Initialize[top-level]: protoFromStruct[*testpb.TopLevel]: proto: (line 1:2): unknown field \"bogus\""
+				So(err, ShouldErrLike, "parsing top-level properties")
+				summary := "fatal error starting build: parsing top-level properties: proto: (line 1:2): unknown field \"bogus\""
 				final := getFinal()
 				// protobuf package deliberately introduce random prefix:
 				// https://github.com/protocolbuffers/protobuf-go/blob/master/internal/errors/errors.go#L26

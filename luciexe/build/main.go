@@ -38,7 +38,6 @@ import (
 	"go.chromium.org/luci/logdog/client/butlerlib/bootstrap"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
 	"go.chromium.org/luci/lucictx"
-
 	"go.chromium.org/luci/luciexe"
 )
 
@@ -55,12 +54,15 @@ var errNonSuccess = errors.New("build state != SUCCESS")
 //   - Start'ing the build in this process.
 //   - End'ing the build with the returned error from your function
 //
-// Input and Output properties can be manipulated by registering property
-// schemas with the package-level Properties object.
+// If `inputMsg` is nil, the top-level properties will be ignored.
+//
+// If `writeFnptr` and `mergeFnptr` are nil, they're ignored. Otherwise
+// they work as they would for MakePropertyModifier.
 //
 // CLI Arguments parsed:
 //   - -h / --help : Print help for this binary (including input/output
 //     property type info)
+//   - --strict-input : Enable strict property parsing (see OptStrictInputProperties)
 //   - --output : luciexe "output" flag; See
 //     https://pkg.go.dev/go.chromium.org/luci/luciexe#hdr-Recursive_Invocation
 //   - --working-dir : The working directory to run from; Default is $PWD unless
@@ -70,23 +72,15 @@ var errNonSuccess = errors.New("build state != SUCCESS")
 //
 // Example:
 //
-//	// MyProps will serve as both the input and output properties schema. If you
-//	// want to have differing schemas, you can use RegisterSplitProperty. If you
-//	// want to have Input-only or Output-only properties, see the
-//	// Register{Input,Output}Property variants.
-//	//
-//	// See docs on RegisterProperty for more info.
-//	var topLevelProps = build.RegisterProperty[*MyProps]("")
-//
 //	func main() {
-//	  build.Main(func(ctx context.Context, args []string, st *build.State) error {
-//	    // actual build code here, build is already Start'differing
-//	    parsedInput := topLevelProps.GetInput(ctx) // returns *MyProps
-//	    topLevelProps.MutateOutput(ctx, func(val *MyProps) (mutated bool) {
-//	      // modify `val` however you like - if you need to copy some value from
-//	      // it, use e.g. proto.Clone to copy it.
-//	      return true
-//	    })
+//	  input := *MyInputProps{}
+//	  var writeOutputProps func(*MyOutputProps)
+//	  var mergeOutputProps func(*MyOutputProps)
+//
+//	  Main(input, &writeOutputProps, &mergeOutputProps, func(ctx context.Context, args []string, st *build.State) error {
+//	    // actual build code here, build is already Start'd
+//	    // input was parsed from build.Input.Properties
+//	    writeOutputProps(&MyOutputProps{...})
 //	    return nil // will mark the Build as SUCCESS
 //	  })
 //	}
@@ -97,10 +91,13 @@ var errNonSuccess = errors.New("build state != SUCCESS")
 //
 // TODO(iannucci): LUCIEXE_FAKEBUILD does not support nested invocations.
 // It should set up bbagent and butler in order to aggregate logs.
-func Main(cb func(context.Context, []string, *State) error) {
+//
+// NOTE: These types are pretty bad; There's significant opportunity to improve
+// them with Go2 generics.
+func Main(inputMsg proto.Message, writeFnptr, mergeFnptr any, cb func(context.Context, []string, *State) error) {
 	ctx := gologger.StdConfig.Use(context.Background())
 
-	switch err := main(ctx, os.Args, os.Stdin, cb); err {
+	switch err := main(ctx, os.Args, os.Stdin, inputMsg, writeFnptr, mergeFnptr, cb); err {
 	case nil:
 		os.Exit(0)
 
@@ -112,7 +109,7 @@ func Main(cb func(context.Context, []string, *State) error) {
 	}
 }
 
-func main(ctx context.Context, args []string, stdin io.Reader, cb func(context.Context, []string, *State) error) (err error) {
+func main(ctx context.Context, args []string, stdin io.Reader, inputMsg proto.Message, writeFnptr, mergeFnptr any, cb func(context.Context, []string, *State) error) (err error) {
 	args = append([]string(nil), args...)
 	var userArgs []string
 	for i, a := range args {
@@ -123,9 +120,17 @@ func main(ctx context.Context, args []string, stdin io.Reader, cb func(context.C
 		}
 	}
 
-	opts := []StartOption{}
+	opts := []StartOption{
+		OptParseProperties(inputMsg),
+	}
+	if writeFnptr != nil || mergeFnptr != nil {
+		opts = append(opts, OptOutputProperties(writeFnptr, mergeFnptr))
+	}
 
-	outputFile, wd, help := parseArgs(args)
+	outputFile, wd, strict, help := parseArgs(args)
+	if strict {
+		opts = append(opts, OptStrictInputProperties())
+	}
 	if wd != "" {
 		if err := os.Chdir(wd); err != nil {
 			return err
@@ -329,8 +334,9 @@ func readLuciexeFakeBuild(filename string) (*bbpb.Build, error) {
 	return ret, errors.Annotate(err, "decoding *Build from %s=%s", luciexeFakeVar, filename).Err()
 }
 
-func parseArgs(args []string) (output, wd string, help bool) {
+func parseArgs(args []string) (output, wd string, strict, help bool) {
 	fs := flag.FlagSet{}
+	fs.BoolVar(&strict, "strict-input", false, "Strict input parsing; Input properties supplied which aren't understood by this program will print an error and quit.")
 	fs.StringVar(&wd, "working-dir", "", "The working directory to run from; Default is $PWD unless LUCIEXE_FAKEBUILD is set, in which case a temp dir is used and cleaned up after.")
 	fs.StringVar(&output, "output", "", "Output final Build message to this path. Must end with {.json,.pb,.textpb}")
 	fs.BoolVar(&help, "help", false, "Print help for this executable")

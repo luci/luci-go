@@ -45,13 +45,9 @@
 // This should enable libraries to add `build` features which gracefully degrade
 // into pure terminal output via logging.
 //
-//   - Registered Properties functions will return when using GetInput, and will
-//     panic when using SetOutput/MutateOutput. However, you may explicitly use
-//     `build.Properties.Instantiate().SetInContext(ctx)` to initialize
-//     a property state in `ctx`. If desired, you can also provide an input
-//     value and/or notification callback to build.Properties.Instantiate. The
-//     notification callback could log manipulated output properties, or save
-//     them to a file, etc.
+//   - MakePropertyReader functions will return empty messages. Well-behaved
+//     libraries should handle having no configuration in the context if this is
+//     possible.
 //   - There will be no *State object, because there is no Start call.
 //   - StartStep/ScheduleStep will return a *Step which is detached. Step
 //     namespacing will still work in context (but name deduplication will not).
@@ -64,6 +60,9 @@
 //     log names start with "$") will be logged at DEBUG level.
 //   - Non-text logs will be dropped with a WARNING indicating that they're
 //     being dropped.
+//   - MakePropertyReader property readers will return empty message objects.
+//   - MakePropertyModifier property manipulators will log their emitted
+//     properties at INFO.
 package build
 
 // BUG(iannucci): When OptLogsink is used and `logging` output is redirected to

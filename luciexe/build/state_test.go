@@ -20,15 +20,14 @@ import (
 	"testing"
 	"time"
 
+	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/time/rate"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
-
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
 )
 
 func TestState(t *testing.T) {
@@ -86,18 +85,17 @@ func TestState(t *testing.T) {
 			build.GetInfra().Buildbucket.ServiceConfigRevision = "narf"
 			So(origInfra.Buildbucket.ServiceConfigRevision, ShouldResemble, "I am a string")
 
+			Convey(`nil build`, func() {
+				st, _, err := Start(ctx, nil)
+				So(err, ShouldBeNil)
+				defer func() {
+					if st != nil {
+						st.End(nil)
+					}
+				}()
+				So(st.Build().GetInfra(), ShouldBeNil)
+			})
 		})
-	})
-
-	Convey(`nil build`, t, func() {
-		st, _, err := Start(context.Background(), nil)
-		So(err, ShouldBeNil)
-		defer func() {
-			if st != nil {
-				st.End(nil)
-			}
-		}()
-		So(st.Build().GetInfra(), ShouldBeNil)
 	})
 }
 

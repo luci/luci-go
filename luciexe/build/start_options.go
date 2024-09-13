@@ -15,12 +15,13 @@
 package build
 
 import (
+	"reflect"
+
 	"golang.org/x/time/rate"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/dispatcher"
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
@@ -73,7 +74,7 @@ func OptLogsink(c *streamclient.Client) StartOption {
 func OptSend(lim rate.Limit, callback func(int64, *bbpb.Build)) StartOption {
 	return func(s *State) {
 		var err error
-		s.sendCh, err = dispatcher.NewChannel(s.ctx, &dispatcher.Options[int64]{
+		s.sendCh, err = dispatcher.NewChannel[int64](s.ctx, &dispatcher.Options[int64]{
 			QPSLimit: rate.NewLimiter(lim, 1),
 			Buffer: buffer.Options{
 				MaxLeases:     1,
@@ -98,23 +99,18 @@ func OptSend(lim rate.Limit, callback func(int64, *bbpb.Build)) StartOption {
 
 				build := proto.Clone(s.buildPb).(*bbpb.Build)
 
-				if s.propertyState != nil {
-					// Now we populate Output.Properties - this is very cheap if the output
-					// properties didn't change.
-					//
-					// TODO: check `consistent`? We currently rely on getting new notifications so
-					// we should produce an eventually consistent output.
-					outProps, vers, _, err := s.propertyState.Serialize()
-					if err != nil {
-						// TODO - Do we need a better way to report this?
-						// Should this halt the build?
-						logging.Errorf(s.ctx, "Failed to serialize output properties:\n-----")
-						errors.Log(s.ctx, err)
-						logging.Errorf(s.ctx, "----- (continuing)")
-					}
-					build.Output.Properties = outProps
-					if vers > s.sentPropertyVersion {
-						s.sentPropertyVersion = vers
+				// now we populate Output.Properties
+				if s.topLevelOutput != nil || len(s.outputProperties) != 0 {
+					build.Output.Properties = s.topLevelOutput.getStructClone()
+					for ns, child := range s.outputProperties {
+						st := child.getStructClone()
+						if st == nil {
+							continue
+						}
+						if build.Output.Properties == nil {
+							build.Output.Properties, _ = structpb.NewStruct(nil)
+						}
+						build.Output.Properties.Fields[ns] = structpb.NewStructValue(st)
 					}
 				}
 
@@ -133,6 +129,84 @@ func OptSend(lim rate.Limit, callback func(int64, *bbpb.Build)) StartOption {
 			// Since it's statically computed above, that's not possible (or the tests
 			// are also panicing).
 			panic(err)
+		}
+	}
+}
+
+// OptParseProperties allows you to parse the build's Input.Properties field as
+// JSONPB into the given protobuf message.
+//
+// Message fields which overlap with property namespaces reserved by
+// MakePropertyReader will not be populated (i.e. all property namespaces
+// reserved with MakePropertyReader will be removed before parsing into this
+// message).
+//
+// Type mismatches (i.e. parsing a non-numeric string into an int field) will
+// report an error and quit the build.
+//
+// Example:
+//
+//	msg := &MyOutputMessage{}
+//	state, ctx := Start(ctx, inputBuild, OptParseProperties(msg))
+//	# `msg` has been populated from inputBuild.InputProperties
+func OptParseProperties(msg proto.Message) StartOption {
+	return func(s *State) {
+		s.topLevelInputProperties = msg
+	}
+}
+
+// OptStrictInputProperties will cause the build to report an error if data is
+// passed via Input.Properties which wasn't parsed into OptParseProperties or
+// MakePropertyReader.
+func OptStrictInputProperties() StartOption {
+	return func(s *State) {
+		s.strictParse = true
+	}
+}
+
+// OptOutputProperties allows you to register a property writer for the
+// top-level output properties of the build.
+//
+// The registered message must not have any fields which conflict with
+// a namespace reserved with MakePropertyModifier, or this panics.
+//
+// This works like MakePropertyModifier, except that it works at the top level
+// (i.e. no namespace) and the functions operate directly on the State (i.e.
+// they do not take a context).
+//
+// Usage
+//
+//	var writer func(*MyMessage)
+//	var merger func(*MyMessage)
+//
+//	// one function may be nil and will be skipped
+//	... = Start(, ..., OptOutputProperties(&writer, &merger))
+//
+// in go2 this can be improved (possibly by making State a generic type):
+func OptOutputProperties(writeFnptr, mergeFnptr any) StartOption {
+	writer, merger, msgT := getWriteMergerFnValues(false, writeFnptr, mergeFnptr)
+
+	return func(s *State) {
+		s.topLevelOutput = &outputPropertyState{msg: msgT.New().Interface()}
+
+		if writer.Kind() == reflect.Func {
+			writer.Set(reflect.MakeFunc(writer.Type(), func(args []reflect.Value) []reflect.Value {
+				s.excludeCopy(func() bool {
+					s.topLevelOutput.set(args[0].Interface().(proto.Message))
+					return true
+				})
+				return nil
+			}))
+		}
+
+		if merger.Kind() == reflect.Func {
+			merger.Set(reflect.MakeFunc(merger.Type(), func(args []reflect.Value) []reflect.Value {
+				s.excludeCopy(func() bool {
+					s.topLevelOutput.merge(args[0].Interface().(proto.Message))
+					return true
+				})
+				return nil
+			}))
 		}
 	}
 }
