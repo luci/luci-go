@@ -1,28 +1,12 @@
 dispatch:
-  # Add override of routing rules so that TQ tasks enqueued to the
-  # auth-db-replication and changelog-generation queues by either the
-  # Python or Go version of Auth Service are served by the Go version.
-  - url: "*/internal/tasks/t/auth-db-replication/*"
-    service: backendv2
-  - url: "*/internal/tasks/t/changelog-generation/*"
-    service: backendv2
-  # Add override of routing for tarball ingestion so importing of
-  # groups is handled only by the Go version.
-  - url: "*/auth_service/api/v1/importer/ingest_tarball/*"
-    service: defaultv2
-  # Serve web UI authentication endpoints using Go.
-  - url: "*/auth/openid/*"
-    service: defaultv2
-  # Add override of routing for UI pages available in Auth Service v2.
-  - url: "*/auth/groups*"
-    service: defaultv2
-  - url: "*/auth/listing"
-    service: defaultv2
-  - url: "*/auth/change_log"
-    service: defaultv2
-  - url: "*/auth/ip_allowlists"
-    service: defaultv2
-  - url: "*/auth/lookup"
-    service: defaultv2
-  - url: "*/auth/services"
-    service: defaultv2
+# Add override of routing rules so that TQ tasks enqueued to the
+# auth-db-replication and changelog-generation queues by either the
+# Python or Go version of Auth Service are served by the Go version.
+- url: "*/internal/tasks/t/auth-db-replication/*"
+  service: backendv2
+- url: "*/internal/tasks/t/changelog-generation/*"
+  service: backendv2
+# Add override of routing for tarball ingestion so importing of
+# groups is handled only by the Go version.
+- url: "*/auth_service/api/v1/importer/ingest_tarball/*"
+  service: defaultv2
