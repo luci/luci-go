@@ -160,21 +160,26 @@ type BotArchiveInfo struct {
 }
 
 // logDiff logs changes in the struct (if any).
-func (old *BotArchiveInfo) logDiff(ctx context.Context, channel string, new BotArchiveInfo) {
-	if old.Digest != new.Digest {
-		logging.Infof(ctx, "%s bot digest: %s => %s", channel, old.Digest, new.Digest)
+func (ba *BotArchiveInfo) logDiff(ctx context.Context, channel string, new BotArchiveInfo) {
+	if ba.Digest != new.Digest {
+		logging.Infof(ctx, "%s bot digest: %s => %s", channel, ba.Digest, new.Digest)
 	}
-	if old.PackageVersion != new.PackageVersion {
-		logging.Infof(ctx, "%s version: %s => %s", channel, old.PackageVersion, new.PackageVersion)
+	if ba.PackageVersion != new.PackageVersion {
+		logging.Infof(ctx, "%s version: %s => %s", channel, ba.PackageVersion, new.PackageVersion)
 	}
-	if old.PackageInstanceID != new.PackageInstanceID {
-		logging.Infof(ctx, "%s instance: %s => %s", channel, old.PackageInstanceID, new.PackageInstanceID)
+	if ba.PackageInstanceID != new.PackageInstanceID {
+		logging.Infof(ctx, "%s instance: %s => %s", channel, ba.PackageInstanceID, new.PackageInstanceID)
 	}
 	// Log revisions only when the content actually changes. Don't log the hash
 	// itself, no one really cares.
-	if old.BotConfigHash != new.BotConfigHash {
-		logging.Infof(ctx, "%s bot_config.py: %s => %s", channel, old.BotConfigRev, new.BotConfigRev)
+	if ba.BotConfigHash != new.BotConfigHash {
+		logging.Infof(ctx, "%s bot_config.py: %s => %s", channel, ba.BotConfigRev, new.BotConfigRev)
 	}
+}
+
+// FetchBotArchive fetches the bot archive blob from the datastore.
+func (ba *BotArchiveInfo) FetchBotArchive(ctx context.Context) ([]byte, error) {
+	return fetchBotArchive(ctx, ba.Chunks)
 }
 
 // Config is an immutable queryable representation of Swarming server configs.

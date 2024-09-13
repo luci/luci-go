@@ -23,7 +23,9 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/realms"
@@ -116,6 +118,33 @@ func (res *CheckResult) ToGrpcErr() error {
 		panic("err is not populated")
 	default:
 		return res.err
+	}
+}
+
+// ToTaggedError converts this failure to a generic tagged error.
+//
+// If the check succeeded, returns nil. If the check failed due to an internal
+// error, returns an error tagged with Transient tag. If the check failed due
+// to lack of permissions, returns an error without Transient tag.
+//
+// To avoid accidentally leaking private information or implementation details,
+// this error should be returned to the caller as is, without any additional
+// wrapping. It is constructed to have all necessary information about the call
+// already.
+//
+// Use only from non-gRPC handlers.
+func (res *CheckResult) ToTaggedError() error {
+	switch {
+	case res.InternalError:
+		return errors.Reason("internal error when checking permissions").Tag(transient.Tag).Err()
+	case res.Permitted:
+		return nil
+	case res.err == nil:
+		panic("err is not populated")
+	default:
+		// Note: res.err is always a gRPC error with PermissionDenied status. We'll
+		// just drop the status since it looks weird in non-gRPC handlers.
+		return errors.Reason("%s", status.Convert(res.err).Message()).Err()
 	}
 }
 

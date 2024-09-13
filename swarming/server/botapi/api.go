@@ -18,6 +18,12 @@
 package botapi
 
 import (
+	"context"
+
+	"go.chromium.org/luci/common/data/caching/lru"
+
+	configpb "go.chromium.org/luci/swarming/proto/config"
+	"go.chromium.org/luci/swarming/server/botsrv"
 	"go.chromium.org/luci/swarming/server/cfg"
 )
 
@@ -26,8 +32,24 @@ import (
 // Handlers are implement in individual Go files. They are all installed into
 // the server router in main.go.
 type BotAPIServer struct {
-	// Config is the server config.
-	Config *cfg.Provider
+	// cfg is the server config.
+	cfg *cfg.Provider
+	// project is the Swarming Cloud Project name.
+	project string
+	// botCodeCache is the cache of the bot code blobs to avoid hitting datastore.
+	botCodeCache *lru.Cache[string, []byte]
+	// authorizeBot is botsrv.AuthorizeBot, but it can be mocked in tests.
+	authorizeBot func(ctx context.Context, botID string, methods []*configpb.BotAuth) error
+}
+
+// NewBotAPIServer constructs a new BotAPIServer.
+func NewBotAPIServer(cfg *cfg.Provider, project string) *BotAPIServer {
+	return &BotAPIServer{
+		cfg:          cfg,
+		project:      project,
+		botCodeCache: lru.New[string, []byte](2), // two versions: canary + stable
+		authorizeBot: botsrv.AuthorizeBot,
+	}
 }
 
 // UnimplementedRequest is used as a placeholder in unimplemented handlers.

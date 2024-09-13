@@ -30,3 +30,9 @@ dispatch:
     service: default-go
   - url: "*/prpc/buildbucket.v2.TaskBackend/*"
     service: default-go
+
+  # Bot APIs served via Go (perhaps proxying to Python).
+  - url: "*/bot_code*"
+    service: default-go
+  - url: "*/swarming/api/v1/bot/bot_code*"
+    service: default-go

@@ -136,7 +136,7 @@ func main() {
 		// A server that can authenticate bot API calls and route them to Python.
 		botSrv := botsrv.New(srv.Context, cfg, srv.Routes, proxy, srv.Options.CloudProject, tokenSecret)
 		// A server that actually handles core Bot API calls.
-		botAPI := &botapi.BotAPIServer{Config: cfg}
+		botAPI := botapi.NewBotAPIServer(cfg, srv.Options.CloudProject)
 
 		// A minimal handler used by bots to test network connectivity. Install it
 		// directly into the root router because we purposefully do not want to do

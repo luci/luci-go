@@ -28,6 +28,7 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -135,6 +136,10 @@ func TestServerLevel(t *testing.T) {
 		assert.Loosely(t, res.Permitted, should.BeFalse)
 		err := res.ToGrpcErr()
 		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
+		assert.Loosely(t, err, should.ErrLike(`the caller "user:unknown@example.com" doesn't have server-level permission "swarming.tasks.cancel"`))
+
+		err = res.ToTaggedError()
+		assert.Loosely(t, transient.Tag.In(err), should.BeFalse)
 		assert.Loosely(t, err, should.ErrLike(`the caller "user:unknown@example.com" doesn't have server-level permission "swarming.tasks.cancel"`))
 	})
 }
@@ -513,6 +518,8 @@ func TestTaskLevel(t *testing.T) {
 		chk := Checker{cfg: cfg, db: db, caller: authorizedID}
 		res := chk.CheckTaskPerm(ctx, &mockedTask{err: errors.New("BOOM")}, PermTasksCancel)
 		assert.Loosely(t, res.InternalError, should.BeTrue)
+		assert.Loosely(t, res.ToGrpcErr(), convey.Adapt(ShouldHaveGRPCStatus)(codes.Internal))
+		assert.Loosely(t, transient.Tag.In(res.ToTaggedError()), should.BeTrue)
 	})
 }
 
