@@ -16,6 +16,9 @@ package tasks
 
 import (
 	"context"
+	"fmt"
+
+	"golang.org/x/sync/errgroup"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -29,6 +32,17 @@ import (
 	"go.chromium.org/luci/swarming/server/rbe"
 	"go.chromium.org/luci/swarming/server/tasks/taskspb"
 )
+
+const maxBatchCancellationRetries = 10
+
+var taskUnknownTag = errors.BoolTag{Key: errors.NewTagKey("unknown task")}
+
+type testCancellationTQTasks struct {
+	// test functions for tq tasks. Should only be used in tests.
+	testEnqueueRBECancel         func(context.Context, *model.TaskRequest, *model.TaskToRun) error
+	testSendOnTaskUpdate         func(context.Context, *model.TaskRequest, *model.TaskResultSummary) error
+	testEnqueueChildCancellation func(context.Context, string) error
+}
 
 // Cancellation contains information to cancel a task.
 type Cancellation struct {
@@ -44,10 +58,7 @@ type Cancellation struct {
 	// KillRunning is true.
 	BotID string
 
-	// test functions for tq tasks. Should only be used in tests.
-	testEnqueueRBECancel         func(context.Context, *model.TaskRequest, *model.TaskToRun) error
-	testSendOnTaskUpdate         func(context.Context, *model.TaskRequest, *model.TaskResultSummary) error
-	testEnqueueChildCancellation func(context.Context, string) error
+	testCancellationTQTasks
 }
 
 func (c *Cancellation) validate() error {
@@ -90,6 +101,9 @@ func (c *Cancellation) Run(ctx context.Context) (bool, error) {
 	c.TaskResultSummary = &model.TaskResultSummary{Key: model.TaskResultSummaryKey(ctx, trKey)}
 	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		if err := datastore.Get(ctx, c.TaskRequest, c.TaskResultSummary); err != nil {
+			if err == datastore.ErrNoSuchEntity {
+				return errors.Annotate(err, "missing TaskRequest or TaskResultSummary for task %s", c.TaskID).Tag(taskUnknownTag).Err()
+			}
 			return errors.Annotate(err, "datastore error fetching entities for task %s", c.TaskID).Err()
 		}
 
@@ -163,6 +177,9 @@ func (c *Cancellation) RunInTxn(ctx context.Context) error {
 		}
 		toRun := &model.TaskToRun{Key: toRunKey}
 		if err = datastore.Get(ctx, toRun); err != nil {
+			if err == datastore.ErrNoSuchEntity {
+				return errors.Annotate(err, "missing TaskToRun for task %s", c.TaskID).Tag(taskUnknownTag).Err()
+			}
 			return errors.Annotate(err, "datastore error fetching TaskToRun for task %s", c.TaskID).Err()
 		}
 
@@ -182,6 +199,9 @@ func (c *Cancellation) RunInTxn(ctx context.Context) error {
 		// to KILLED.
 		trr := &model.TaskRunResult{Key: model.TaskRunResultKey(ctx, tr.Key)}
 		if err := datastore.Get(ctx, trr); err != nil {
+			if err == datastore.ErrNoSuchEntity {
+				return errors.Annotate(err, "missing TaskRunResult for task %s", c.TaskID).Tag(taskUnknownTag).Err()
+			}
 			return errors.Annotate(err, "datastore error fetching TaskRunResult for task %s", c.TaskID).Err()
 		}
 		if trr.Killing {
@@ -238,6 +258,17 @@ func (c *Cancellation) enqueueChildCancellation(ctx context.Context) error {
 	return tq.AddTask(ctx, &tq.Task{Payload: &taskspb.CancelChildrenTask{TaskId: c.TaskID}})
 }
 
+type testBatchCancelTQTasks struct {
+	testEnqueueBatchCancel func(context.Context, []string, bool, string, int32) error
+}
+
+func (e testBatchCancelTQTasks) enqueueBatchCancel(ctx context.Context, batch []string, killRunning bool, purpose string, retries int32) error {
+	if e.testEnqueueBatchCancel != nil {
+		return e.testEnqueueBatchCancel(ctx, batch, killRunning, purpose, retries)
+	}
+	return tq.AddTask(ctx, &tq.Task{Payload: &taskspb.BatchCancelTask{Tasks: batch, KillRunning: killRunning, Retries: retries, Purpose: purpose}})
+}
+
 type childCancellation struct {
 	parentID string
 
@@ -246,7 +277,7 @@ type childCancellation struct {
 	batchSize int
 
 	// test functions for tq tasks. Should only be used in tests.
-	testEnqueueBatchCancel func(context.Context, []string) error
+	testBatchCancelTQTasks
 }
 
 func (cc *childCancellation) validate() error {
@@ -266,7 +297,7 @@ func (cc *childCancellation) queryToCancel(ctx context.Context) error {
 	if err := cc.validate(); err != nil {
 		return err
 	}
-	return cc.getChildTaskResultSummaries(ctx, func(children []*model.TaskResultSummary) error {
+	return cc.getChildTaskResultSummaries(ctx, func(children []*model.TaskResultSummary, batchNum int) error {
 		toCancel := make([]string, 0, len(children))
 		for _, child := range children {
 			if !child.IsActive() {
@@ -278,11 +309,11 @@ func (cc *childCancellation) queryToCancel(ctx context.Context) error {
 			return nil
 		}
 
-		return cc.enqueueBatchCancel(ctx, toCancel)
+		return cc.enqueueBatchCancel(ctx, toCancel, true, fmt.Sprintf("cancel children for %s batch %d", cc.parentID, batchNum), 0)
 	})
 }
 
-func (cc *childCancellation) getChildTaskResultSummaries(ctx context.Context, sendToCancel func([]*model.TaskResultSummary) error) error {
+func (cc *childCancellation) getChildTaskResultSummaries(ctx context.Context, sendToCancel func([]*model.TaskResultSummary, int) error) error {
 	childReqKeys, err := cc.getChildTaskRequestKeys(ctx)
 	if err != nil {
 		return errors.Annotate(err, "failed to get child request keys for parent %s", cc.parentID).Err()
@@ -298,6 +329,7 @@ func (cc *childCancellation) getChildTaskResultSummaries(ctx context.Context, se
 		}
 	}
 
+	i := 0
 	for len(toGet) != 0 {
 		var batch []*model.TaskResultSummary
 		size := min(cc.batchSize, len(toGet))
@@ -305,9 +337,10 @@ func (cc *childCancellation) getChildTaskResultSummaries(ctx context.Context, se
 		if err := datastore.Get(ctx, batch); err != nil {
 			return errors.Annotate(err, "failed to get child result summary for parent %s", cc.parentID).Err()
 		}
-		if err := sendToCancel(batch); err != nil {
+		if err := sendToCancel(batch, i); err != nil {
 			return err
 		}
+		i++
 	}
 
 	return nil
@@ -326,9 +359,74 @@ func (cc *childCancellation) getChildTaskRequestKeys(ctx context.Context) ([]*da
 	return children, err
 }
 
-func (cc *childCancellation) enqueueBatchCancel(ctx context.Context, toCancel []string) error {
-	if cc.testEnqueueBatchCancel != nil {
-		return cc.testEnqueueBatchCancel(ctx, toCancel)
+type batchCancellation struct {
+	tasks       []string
+	killRunning bool
+	purpose     string
+	retries     int32
+
+	workers int
+
+	// test functions for tq tasks. Should only be used in tests.
+	testCancellationTQTasks
+	testBatchCancelTQTasks
+}
+
+func (bc *batchCancellation) run(ctx context.Context) error {
+	if len(bc.tasks) == 0 {
+		return errors.New("no tasks specified for cancellation")
 	}
-	return tq.AddTask(ctx, &tq.Task{Payload: &taskspb.BatchCancelTask{Tasks: toCancel, KillRunning: true}})
+	if bc.workers <= 0 {
+		return errors.New("must specify a positive number of workers")
+	}
+	if bc.retries > 0 {
+		logging.Infof(ctx, "Retry # %d for %s", bc.retries, bc.purpose)
+	}
+
+	merr := make(errors.MultiError, len(bc.tasks))
+	eg, _ := errgroup.WithContext(ctx)
+	eg.SetLimit(bc.workers)
+	for i, t := range bc.tasks {
+		i := i
+		t := t
+		eg.Go(func() error {
+			c := &Cancellation{
+				TaskID:                  t,
+				KillRunning:             bc.killRunning,
+				testCancellationTQTasks: bc.testCancellationTQTasks,
+			}
+			wasRunning, err := c.Run(ctx)
+			if err == nil {
+				logging.Infof(ctx, "Task %s canceled: was running: %v", t, wasRunning)
+			} else {
+				merr[i] = err
+				logging.Errorf(ctx, "Cancel %s failed: %s", t, err)
+			}
+			return nil
+		})
+	}
+
+	// We use merr to catch the cancellation errors.
+	_ = eg.Wait()
+
+	// Enqueue a new task to retry the failed ones.
+	toRetry := make([]string, 0, len(bc.tasks))
+	for i, err := range merr {
+		if err == nil {
+			continue
+		}
+		if taskUnknownTag.In(err) {
+			continue
+		}
+		toRetry = append(toRetry, bc.tasks[i])
+	}
+
+	if len(toRetry) == 0 {
+		return nil
+	}
+	if bc.retries >= maxBatchCancellationRetries {
+		logging.Errorf(ctx, "%s has retried %d times, give up", bc.purpose, bc.retries)
+		return nil
+	}
+	return bc.enqueueBatchCancel(ctx, toRetry, bc.killRunning, bc.purpose, bc.retries+1)
 }

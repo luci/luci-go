@@ -19,7 +19,6 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/swarming/server/tasks/taskspb"
@@ -43,7 +42,8 @@ func RegisterTQTasks(disp *tq.Dispatcher) {
 		Prototype: (*taskspb.BatchCancelTask)(nil),
 		Queue:     "cancel-tasks-go", // to replace "cancel-tasks" taskqueue in Py.
 		Handler: func(ctx context.Context, payload proto.Message) error {
-			return errors.New("NotImplemented")
+			t := payload.(*taskspb.BatchCancelTask)
+			return (&batchCancellation{tasks: t.Tasks, killRunning: t.KillRunning, workers: 64, retries: t.Retries, purpose: t.Purpose}).run(ctx)
 		},
 	})
 }

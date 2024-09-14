@@ -20,4 +20,8 @@ message BatchCancelTask {
   repeated string tasks = 1;
 
   bool kill_running = 2;
+
+  int32 retries = 3;
+
+  string purpose = 4;
 }
