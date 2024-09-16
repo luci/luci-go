@@ -12,14 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 
 import { UiPage } from '@/common/constants/view';
+import {
+  QueryTreesResponse,
+  TreesClientImpl,
+} from '@/proto/go.chromium.org/luci/tree_status/proto/v1/trees.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { Sidebar } from './sidebar';
 
 describe('Sidebar', () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
   it('given an empty project, should display builders search', async () => {
     render(
       <FakeContextProvider
@@ -53,6 +65,107 @@ describe('Sidebar', () => {
     expect(screen.getByText('Test history')).toBeInTheDocument();
     expect(screen.getByText('Failure clusters')).toBeInTheDocument();
     expect(screen.getByText('Sheriff-o-Matic')).toBeInTheDocument();
+    expect(screen.getByText('ChromiumDash')).toBeInTheDocument();
+  });
+
+  it('should display tree status if one is available for a project', async () => {
+    jest
+      .spyOn(TreesClientImpl.prototype, 'QueryTrees')
+      .mockImplementation(async (_req) => {
+        return QueryTreesResponse.fromPartial({
+          trees: [
+            {
+              name: 'trees/chromium',
+            },
+          ],
+        });
+      });
+    render(
+      <FakeContextProvider
+        pageMeta={{
+          selectedPage: UiPage.Builders,
+          project: 'chrome',
+        }}
+      >
+        <Sidebar open={true} />
+      </FakeContextProvider>,
+    );
+    await act(() => jest.runAllTimersAsync());
+    await screen.findByRole('complementary');
+    expect(screen.getByText('Builder search')).toBeInTheDocument();
+    expect(screen.getByText('Builders')).toBeInTheDocument();
+    expect(screen.getByText('Builder groups (Consoles)')).toBeInTheDocument();
+    expect(screen.getByText('Test history')).toBeInTheDocument();
+    expect(screen.getByText('Failure clusters')).toBeInTheDocument();
+    expect(screen.getByText('Sheriff-o-Matic')).toBeInTheDocument();
+    expect(screen.getByText('Tree status')).toBeInTheDocument();
+    expect(screen.getByText('ChromiumDash')).toBeInTheDocument();
+  });
+
+  it('should not display tree status if none is available for a project', async () => {
+    jest
+      .spyOn(TreesClientImpl.prototype, 'QueryTrees')
+      .mockImplementation(async (_req) => {
+        return QueryTreesResponse.fromPartial({
+          trees: [],
+        });
+      });
+    render(
+      <FakeContextProvider
+        pageMeta={{
+          selectedPage: UiPage.Builders,
+          project: 'chrome',
+        }}
+      >
+        <Sidebar open={true} />
+      </FakeContextProvider>,
+    );
+    await act(() => jest.runAllTimersAsync());
+    await screen.findByRole('complementary');
+    expect(screen.getByText('Builder search')).toBeInTheDocument();
+    expect(screen.getByText('Builders')).toBeInTheDocument();
+    expect(screen.getByText('Builder groups (Consoles)')).toBeInTheDocument();
+    expect(screen.getByText('Test history')).toBeInTheDocument();
+    expect(screen.getByText('Failure clusters')).toBeInTheDocument();
+    expect(screen.getByText('Sheriff-o-Matic')).toBeInTheDocument();
+    expect(screen.queryByText('Tree status')).toBeNull();
+    expect(screen.getByText('ChromiumDash')).toBeInTheDocument();
+  });
+
+  it('should not display tree status if more than one is available for a project', async () => {
+    jest
+      .spyOn(TreesClientImpl.prototype, 'QueryTrees')
+      .mockImplementation(async (_req) => {
+        return QueryTreesResponse.fromPartial({
+          trees: [
+            {
+              name: 'trees/chromium',
+            },
+            {
+              name: 'trees/chromium1',
+            },
+          ],
+        });
+      });
+    render(
+      <FakeContextProvider
+        pageMeta={{
+          selectedPage: UiPage.Builders,
+          project: 'chrome',
+        }}
+      >
+        <Sidebar open={true} />
+      </FakeContextProvider>,
+    );
+    await act(() => jest.runAllTimersAsync());
+    await screen.findByRole('complementary');
+    expect(screen.getByText('Builder search')).toBeInTheDocument();
+    expect(screen.getByText('Builders')).toBeInTheDocument();
+    expect(screen.getByText('Builder groups (Consoles)')).toBeInTheDocument();
+    expect(screen.getByText('Test history')).toBeInTheDocument();
+    expect(screen.getByText('Failure clusters')).toBeInTheDocument();
+    expect(screen.getByText('Sheriff-o-Matic')).toBeInTheDocument();
+    expect(screen.queryByText('Tree status')).toBeNull();
     expect(screen.getByText('ChromiumDash')).toBeInTheDocument();
   });
 });

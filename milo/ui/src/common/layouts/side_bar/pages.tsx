@@ -25,6 +25,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import SpeedIcon from '@mui/icons-material/Speed';
 import SpokeIcon from '@mui/icons-material/Spoke';
 import TableViewIcon from '@mui/icons-material/TableView';
+import TrafficIcon from '@mui/icons-material/Traffic';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import React from 'react';
 
@@ -43,12 +44,15 @@ export interface SidebarSection {
   readonly pages: SidebarPage[];
 }
 
-export function generateSidebarSections(project: string | undefined) {
+export function generateSidebarSections(
+  project: string | undefined,
+  treeNames: string[] | undefined,
+) {
   return (
     [
       generateBuildsSection(project),
       generateTestsSection(project),
-      generateMonitoringSection(project),
+      generateMonitoringSection(project, treeNames),
       generateReleasesSection(project),
     ]
       // Remove empty sections.
@@ -153,6 +157,7 @@ function generateTestsSection(project: string | undefined): SidebarSection {
 
 function generateMonitoringSection(
   project: string | undefined,
+  treeNames: string[] | undefined,
 ): SidebarSection {
   const pages: SidebarPage[] = [];
 
@@ -172,6 +177,17 @@ function generateMonitoringSection(
       url: `http://go/cros-cq-status`,
       icon: <LineAxisIcon />,
       external: true,
+    });
+  }
+
+  // We only display tree status if there is exactly one tree for the project
+  if (treeNames?.length === 1) {
+    // TreeName is in the form "trees/<tree_id>".
+    const treeId = treeNames[0].substring(6);
+    pages.push({
+      page: UiPage.TreeStatus,
+      url: `/ui/tree-status/${treeId}`,
+      icon: <TrafficIcon />,
     });
   }
 

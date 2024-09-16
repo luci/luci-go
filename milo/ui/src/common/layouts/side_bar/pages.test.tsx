@@ -37,7 +37,7 @@ import {
 
 describe('generateSidebarSections', () => {
   it('should generate list with only builders search if there is no project', () => {
-    const sidebarItems = generateSidebarSections(undefined);
+    const sidebarItems = generateSidebarSections(undefined, undefined);
     expect(sidebarItems).toEqual<SidebarSection[]>([
       {
         title: `Builds`,
@@ -53,7 +53,7 @@ describe('generateSidebarSections', () => {
   });
 
   it('should generate basic items for all projects', () => {
-    const sidebarItems = generateSidebarSections('projecttest');
+    const sidebarItems = generateSidebarSections('projecttest', undefined);
     expect(sidebarItems).toEqual<SidebarSection[]>([
       {
         title: `Builds`,
@@ -111,7 +111,7 @@ describe('generateSidebarSections', () => {
   });
 
   it('should generate correct links for chromium', () => {
-    const sidebarItems = generateSidebarSections('chromium');
+    const sidebarItems = generateSidebarSections('chromium', undefined);
     expect(sidebarItems).toEqual<SidebarSection[]>([
       {
         title: `Builds`,
@@ -196,7 +196,7 @@ describe('generateSidebarSections', () => {
   });
 
   it('should generate correct links for chromeos', () => {
-    const sidebarItems = generateSidebarSections('chromeos');
+    const sidebarItems = generateSidebarSections('chromeos', undefined);
     expect(sidebarItems).toEqual<SidebarSection[]>([
       {
         title: `Builds`,

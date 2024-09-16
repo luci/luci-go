@@ -24,11 +24,15 @@ import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import ListSubheader from '@mui/material/ListSubheader';
 import Toolbar from '@mui/material/Toolbar';
+import { useQuery } from '@tanstack/react-query';
 import { Fragment, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 
 import { useSelectedPage, useProject } from '@/common/components/page_meta';
 import { UiPage, CommonColors } from '@/common/constants/view';
+import { useTreeStatusClient } from '@/common/hooks/prpc_clients';
+import { logging } from '@/common/tools/logging';
+import { QueryTreesRequest } from '@/proto/go.chromium.org/luci/tree_status/proto/v1/trees.pb';
 
 import { PAGE_LABEL_MAP, drawerWidth } from '../constants';
 
@@ -57,9 +61,24 @@ export const Sidebar = ({ open }: Props) => {
   const project = useProject();
   const selectedPage = useSelectedPage();
 
+  const client = useTreeStatusClient();
+  const { data, error } = useQuery({
+    ...client.QueryTrees.query(
+      QueryTreesRequest.fromPartial({ project: project }),
+    ),
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+  });
+  // If there is an error, we just log it.
+  // We don't want to show an error or break the page when the query failed.
+  if (error) {
+    logging.error('failed to get tree names for project', error);
+  }
+  const treeNames = data?.trees.map((tree) => tree.name);
+
   const sidebarSections = useMemo(() => {
-    return generateSidebarSections(project);
-  }, [project]);
+    return generateSidebarSections(project, treeNames);
+  }, [project, treeNames]);
 
   return (
     <Drawer

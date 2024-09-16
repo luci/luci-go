@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import { MiloInternalClientImpl } from '@/proto/go.chromium.org/luci/milo/proto/v1/rpc.pb';
+import { TreesClientImpl } from '@/proto/go.chromium.org/luci/tree_status/proto/v1/trees.pb';
 import { BatchedMiloInternalClientImpl } from '@/proto_utils/batched_clients/milo_internal_client';
 
 import { usePrpcServiceClient } from './prpc_query';
@@ -28,5 +29,12 @@ export function useBatchedMiloInternalClient() {
   return usePrpcServiceClient({
     host: SETTINGS.milo.host,
     ClientImpl: BatchedMiloInternalClientImpl,
+  });
+}
+
+export function useTreeStatusClient() {
+  return usePrpcServiceClient({
+    host: SETTINGS.luciTreeStatus.host,
+    ClientImpl: TreesClientImpl,
   });
 }
