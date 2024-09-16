@@ -14,9 +14,9 @@
 import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
 import ClearIcon from '@mui/icons-material/Clear';
-import CancelIcon from '@mui/icons-material/Cancel';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import DoneIcon from '@mui/icons-material/Done';
+import Checkbox from '@mui/material/Checkbox';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
@@ -47,29 +47,47 @@ export interface FormListElement {
   isChanged: () => boolean;
 }
 
+type Item = {
+  value: string;
+  include: boolean;
+};
+
 export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
   (
   {initialItems, name, itemsChanged}, ref
   ) => {
-    const [items, setItems] = useState<string[]>(initialItems);
     const [addingItem, setAddingItem] = useState<boolean>();
     const [currentItem, setCurrentItem] = useState<string>();
     const [errorMessage, setErrorMessage] = useState<string>('');
-    const [removedItems, setRemovedItems] = useState<string[]>();
-    const [removedMessage, setRemovedMessage] = useState<string>('');
+    let initial:Item[] = [];
+    initialItems.forEach((item) => {
+      initial.push({
+        value: item,
+        include: true,
+      })
+    })
+    const [items, setItems] = useState<Item[]>(initial);
 
     useImperativeHandle(ref, () => ({
-      getItems: () => items,
+      getItems: () => {
+        return getCurrentItemList();
+      },
       setReadonly: () => {
         setAddingItem(false);
         setCurrentItem("");
       },
       changeItems: (items: string[]) => {
-        setItems(items);
-        setRemovedItems([]);
+        let newItems:Item[] = [];
+        items.forEach((item) => {
+          newItems.push({
+            value: item,
+            include: true,
+          })
+        })
+        setItems(newItems);
       },
       isChanged: () => {
-        return !(items.length === initialItems.length && items.every((val, index) => val === initialItems[index]));
+        return !(items.length === initialItems.length && items.every((val, index) => val.value === initialItems[index]) && items.every((item) => item.include === true));
       }
     }));
 
@@ -79,11 +97,24 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
         setErrorMessage('');
       }
 
+    // Returns item list with removed items taken away to be sent for update.
+    const getCurrentItemList = () => {
+      let updatedItems: string[] = []
+      items.forEach((item) => {
+        if (item.include) {
+          updatedItems.push(item.value);
+        }
+      })
+      return updatedItems;
+    }
+
     const addToItems = () => {
       // Make sure item added is not a duplicate.
-      if (items.includes(currentItem!)) {
-        setErrorMessage('Duplicate item.');
-        return;
+      for (const item of items) {
+        if (item.value == currentItem!) {
+          setErrorMessage('Duplicate item.');
+          return;
+        }
       }
       // If this is members or globs, verify accordingly before adding.
       // If it doesn't meet the requirements, show error message.
@@ -104,20 +135,10 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
         }
       }
       if (currentItem) {
-        // If we re-add a previously removed member, delete it from removed items array.
-        if (removedItems) {
-          let newRemovedItems = removedItems.filter(item => item !== currentItem);
-          setRemovedItems(newRemovedItems);
-        }
-        setItems([...items, currentItem]);
+        setItems([...items, {value: currentItem, include: true}]);
         resetTextfield()
       }
     }
-
-    useEffect(() => {
-      // Every time removed items array is updated, also update message shown.
-      updateRemovedMessage();
-    }, [removedItems])
 
     useEffect(() => {
       itemsChanged();
@@ -130,29 +151,22 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
       return true;
     }
 
-    const updateRemovedMessage = () => {
-      if (removedItems && removedItems.length > 0) {
-        let newRemovedMessage = 'Removed: ' + removedItems.join(', ');
-        setRemovedMessage(newRemovedMessage);
-      } else {
-        setRemovedMessage('');
-      }
-    }
-
-    const removeFromItems = (index: number) => {
-        // We only consider if initial items are removed.
-        if (!isNewItem(items[index])) {
-          setRemovedItems([...removedItems || [], items[index]]);
-          updateRemovedMessage();
-        }
-        setItems(items.filter((_, i) => i != index));
-    }
-
     const submitItem = (e: React.KeyboardEvent<HTMLDivElement>) => {
         if (e.key == 'Enter') {
           addToItems();
         }
       }
+
+    const handleChange = (index: number) => {
+      const updatedItems = [...items];
+      // This is a new item, so just remove.
+      if (index >= initialItems.length) {
+        updatedItems.splice(index, 1)
+      } else {
+        updatedItems[index].include = !updatedItems[index].include
+      }
+      setItems(updatedItems);
+    }
 
     return (
     <TableContainer data-testid='groups-form-list'>
@@ -164,14 +178,17 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
         </TableCell>
       </TableRow>
       {items && items.map((item, index) =>
-        <TableRow key={index} style={{height: '34px'}} sx={{borderBottom: '1px solid grey'}} className='item-row' data-testid={`item-row-${item}`}>
+        <TableRow key={index} style={{height: '34px'}} sx={{borderBottom: '1px solid grey'}} className='item-row' data-testid={`item-row-${item.value}`}>
           <TableCell sx={{p: 0, pt: '1px'}} style={{display: 'flex', flexDirection: 'row', alignItems:'center', minHeight: '30px'}}>
-              <IconButton className='remove-icon' color='error' sx={{p: 0, ml: 0.5, mr: 0.5}} onClick={() => removeFromItems(index as number)} data-testid={`remove-button-${item}`}>
-                <CancelIcon/>
-              </IconButton>
-            {isNewItem(item)
-            ? <Typography variant="body2" color="green">{item}</Typography>
-            : <Typography variant="body2">{item}</Typography>
+            <Checkbox sx={{pt: 0, pb: 0}} checked={item.include} data-testid={`checkbox-button-${item.value}`} id={`${index}`} onChange={() => {handleChange(index)}}/>
+            {isNewItem(item.value)
+            ? <Typography variant="body2" color="green">{item.value}</Typography>
+            : <>
+              {(!item.include)
+                ? <Typography variant="body2" color="red" style={{textDecoration:'line-through'}} data-testid={`removed-item-${item.value}`} id="removed-item">{item.value}</Typography>
+                : <Typography variant="body2">{item.value}</Typography>
+              }
+              </>
             }
           </TableCell>
         </TableRow>
@@ -201,13 +218,6 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
           </Button>
           </TableCell>
       </TableRow>
-      }
-      {(removedItems && removedItems.length > 0) &&
-        <TableRow>
-          <TableCell sx={{pt: 0, pb: 0}}>
-            <Typography variant="subtitle1" sx={{p: 0}}>{removedMessage}</Typography>
-          </TableCell>
-        </TableRow>
       }
       </TableBody>
     </Table>

@@ -343,47 +343,11 @@ describe('<GroupsForm />', () => {
     await screen.findByTestId('groups-form');
     const row = screen.getByTestId(`item-row-member1@email.com`);
     fireEvent.mouseEnter(row);
-    const removeButton = screen.getByTestId(`remove-button-member1@email.com`)
-    act(() => removeButton.click());
+    const removeCheckbox = screen.getByTestId(`checkbox-button-member1@email.com`).querySelector('input');
+    act(() => removeCheckbox!.click());
 
     // Check new member shown in list & message is shown.
-    expect(screen.getByText('Removed: member1@email.com')).toBeInTheDocument();
     expect(screen.getByText('You have unsaved changes!')).toBeInTheDocument();
-  });
-
-  test('no message shown for edited state when item added then deleted', async () => {
-    const mockGroup = createMockGroupIndividual('123', true, true);
-    mockFetchGetGroup(mockGroup);
-
-    render(
-      <FakeContextProvider>
-        <GroupsForm name='123' />
-      </FakeContextProvider>,
-    );
-    await screen.findByTestId('groups-form');
-
-    // Click add button for first list (members).
-    const addButton = screen.queryAllByTestId('add-button')[0];
-    act(() => addButton!.click());
-    // Type in textfield.
-    const textfield = screen.getByTestId('add-textfield').querySelector('input');
-    expect(textfield).toBeInTheDocument();
-    await userEvent.type(textfield!, 'newMember@email.com');
-    expect(textfield!.value).toBe('newMember@email.com');
-    // Click confirm button.
-    const confirmButton = screen.queryByTestId('confirm-button');
-    expect(confirmButton).not.toBeNull();
-    act(() => confirmButton!.click());
-    // Remove added member.
-    const row = screen.getByTestId(`item-row-newMember@email.com`);
-    fireEvent.mouseEnter(row);
-    const removeButton = screen.getByTestId(`remove-button-newMember@email.com`)
-    act(() => removeButton.click());
-
-    // Check new member shown in list & message is no longer shown.
-    expect(screen.queryByText('You have unsaved changes!')).toBeNull();
-    // Removing an added item should not show removed message.
-    expect(screen.queryByText('Removed: newMember@email.com')).toBeNull();
   });
 
   test('members redacted if caller cannot view external group', async () => {

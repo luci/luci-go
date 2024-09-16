@@ -361,7 +361,7 @@ export function GroupsForm({ name, onDelete = () => { } }: GroupsFormProps) {
                   }
                   <GroupsFormList name='Globs' initialItems={globs} ref={globsRef} itemsChanged={itemsChanged}/>
                   <GroupsFormList name='Subgroups' initialItems={subgroups} ref={subgroupsRef} itemsChanged={itemsChanged}/>
-                  {changedState &&
+                  {(changedState && !successEditedGroup) &&
                     <>
                       <Typography variant="subtitle1" sx={{ pl: 1.5 }}> You have unsaved changes! </Typography>
                       <Button variant="contained" color="error" disableElevation style={{ width: '15%' }} sx={{ mt: 1.5, ml: 1.5 }} onClick={resetFormValues} data-testid='reset-button'>
