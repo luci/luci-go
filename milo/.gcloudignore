@@ -12,3 +12,7 @@
 
 /frontend/ui/*
 !/frontend/ui/out
+
+# Experimental setup for push-on-green. See b/367097786.
+/service-ui/ui/*
+!/service-ui/ui/out

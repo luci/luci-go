@@ -10,6 +10,6 @@ build:
   - run: ['make', 'release']
     cwd: ${inputsdir}/ui
 
-  - go_gae_bundle: ${inputsdir}/ui/service-ui.yaml
+  - go_gae_bundle: ${inputsdir}/service-ui/service-ui.yaml
     go_gae_bundle_as_module: True
-    dest: ${contextdir}/ui
+    dest: ${contextdir}/service-ui
