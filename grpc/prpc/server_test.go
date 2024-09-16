@@ -156,6 +156,15 @@ func TestServer(t *testing.T) {
 				So(res.Header().Get(HeaderGRPCCode), ShouldEqual, invalidArgument)
 			})
 
+			Convey("Invalid max response size header", func() {
+				for _, bad := range []string{"not-an-int", "0", "-1", "   123"} {
+					req.Header.Set(HeaderMaxResponseSize, bad)
+					r.ServeHTTP(res, req)
+					So(res.Code, ShouldEqual, http.StatusBadRequest)
+					So(res.Header().Get(HeaderGRPCCode), ShouldEqual, invalidArgument)
+				}
+			})
+
 			Convey("Invalid header", func() {
 				req.Header.Set("X-Bin", "zzz")
 				r.ServeHTTP(res, req)
@@ -207,7 +216,7 @@ func TestServer(t *testing.T) {
 				So(res.Header().Get(HeaderGRPCCode), ShouldEqual, "0")
 				So(res.Header().Get("Access-Control-Allow-Origin"), ShouldEqual, "http://example.com")
 				So(res.Header().Get("Access-Control-Allow-Credentials"), ShouldEqual, "")
-				So(res.Header().Get("Access-Control-Expose-Headers"), ShouldEqual, HeaderGRPCCode)
+				So(res.Header().Get("Access-Control-Expose-Headers"), ShouldEqual, "X-Prpc-Grpc-Code, X-Prpc-Status-Details-Bin")
 			})
 
 			Convey(`When access control is enabled for "http://example.com"`, func() {
@@ -232,7 +241,7 @@ func TestServer(t *testing.T) {
 						So(res.Code, ShouldEqual, http.StatusOK)
 						So(res.Header().Get("Access-Control-Allow-Origin"), ShouldEqual, "http://example.com")
 						So(res.Header().Get("Access-Control-Allow-Credentials"), ShouldEqual, "true")
-						So(res.Header().Get("Access-Control-Allow-Headers"), ShouldEqual, "Origin, Content-Type, Accept, Authorization")
+						So(res.Header().Get("Access-Control-Allow-Headers"), ShouldEqual, "Origin, Content-Type, Accept, Authorization, X-Prpc-Grpc-Timeout, X-Prpc-Max-Response-Size")
 						So(res.Header().Get("Access-Control-Allow-Methods"), ShouldEqual, "OPTIONS, POST")
 						So(res.Header().Get("Access-Control-Max-Age"), ShouldEqual, "600")
 					})
@@ -255,7 +264,7 @@ func TestServer(t *testing.T) {
 						So(res.Header().Get(HeaderGRPCCode), ShouldEqual, "0")
 						So(res.Header().Get("Access-Control-Allow-Origin"), ShouldEqual, "http://example.com")
 						So(res.Header().Get("Access-Control-Allow-Credentials"), ShouldEqual, "true")
-						So(res.Header().Get("Access-Control-Expose-Headers"), ShouldEqual, HeaderGRPCCode)
+						So(res.Header().Get("Access-Control-Expose-Headers"), ShouldEqual, "X-Prpc-Grpc-Code, X-Prpc-Status-Details-Bin")
 					})
 
 					Convey(`Will not supply access-* headers to "http://foo.bar"`, func() {
@@ -278,7 +287,7 @@ func TestServer(t *testing.T) {
 					So(res.Code, ShouldEqual, http.StatusOK)
 					So(res.Header().Get("Access-Control-Allow-Origin"), ShouldEqual, "http://example.com")
 					So(res.Header().Get("Access-Control-Allow-Credentials"), ShouldEqual, "true")
-					So(res.Header().Get("Access-Control-Allow-Headers"), ShouldEqual, "Booboo, bobo, Origin, Content-Type, Accept, Authorization")
+					So(res.Header().Get("Access-Control-Allow-Headers"), ShouldEqual, "Booboo, bobo, Origin, Content-Type, Accept, Authorization, X-Prpc-Grpc-Timeout, X-Prpc-Max-Response-Size")
 					So(res.Header().Get("Access-Control-Allow-Methods"), ShouldEqual, "OPTIONS, POST")
 					So(res.Header().Get("Access-Control-Max-Age"), ShouldEqual, "600")
 				})

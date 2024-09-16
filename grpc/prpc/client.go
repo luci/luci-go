@@ -28,23 +28,22 @@ import (
 	"sync"
 	"time"
 
-	"golang.org/x/sync/semaphore"
-
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
+	"golang.org/x/sync/semaphore"
 	spb "google.golang.org/genproto/googleapis/rpc/status"
-	"google.golang.org/protobuf/types/known/anypb"
-
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/anypb"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
+
 	"go.chromium.org/luci/grpc/grpcutil"
 )
 
@@ -66,18 +65,21 @@ const (
 	// The single value should match regexp `\d+[HMSmun]`.
 	HeaderTimeout = "X-Prpc-Grpc-Timeout"
 
+	// HeaderMaxResponseSize is HTTP request header with the maximum response
+	// size the client will accept.
+	HeaderMaxResponseSize = "X-Prpc-Max-Response-Size"
+
 	// DefaultMaxContentLength is the default maximum content length (in bytes)
-	// for a Client. It is 32MiB.
-	DefaultMaxContentLength = 32 * 1024 * 1024
+	// for a Client. It is 32MiB minus 32KiB.
+	//
+	// Its value is picked to fit into Appengine response size limits (taking into
+	// account potential overhead on headers).
+	DefaultMaxContentLength = 32*1024*1024 - 32*1024
 )
 
 var (
 	// DefaultUserAgent is default User-Agent HTTP header for pRPC requests.
-	DefaultUserAgent = "pRPC Client 1.4"
-
-	// ErrResponseTooBig is returned by Call when the Response's body size exceeds
-	// the Client's MaxContentLength limit.
-	ErrResponseTooBig = status.Error(codes.Unavailable, "prpc: response too big")
+	DefaultUserAgent = "pRPC Client 1.5"
 
 	// ErrNoStreamingSupport is returned if a pRPC client is used to start a
 	// streaming RPC. They are not supported.
@@ -99,8 +101,14 @@ type Client struct {
 	ErrBodySize int
 
 	// MaxContentLength, if > 0, is the maximum content length, in bytes, that a
-	// pRPC is willing to read from the server. If a larger content length is
-	// present in the response, ErrResponseTooBig will be returned.
+	// pRPC client is willing to read from the server. If a larger content length
+	// is sent by the server, the client will return UNAVAILABLE error with some
+	// additional details attached (use ProtocolErrorDetails to extract them
+	// from a gRPC error).
+	//
+	// This value is also sent to the server in a request header. The server MAY
+	// use it to skip sending too big response. Instead the server will reply
+	// with the same sort of UNAVAILABLE error (with details attached as well).
 	//
 	// If <= 0, DefaultMaxContentLength will be used.
 	MaxContentLength int
@@ -466,8 +474,8 @@ func (c *Client) attemptCall(ctx context.Context, options *Options, req *http.Re
 		defer func() {
 			// Drain the body before closing it to enable HTTP connection reuse. This
 			// is all best effort cleanup, don't check errors.
-			io.Copy(io.Discard, res.Body)
-			res.Body.Close()
+			_, _ = io.Copy(io.Discard, res.Body)
+			_ = res.Body.Close()
 		}()
 	}
 	if c.testPostHTTP != nil {
@@ -501,27 +509,33 @@ func (c *Client) attemptCall(ctx context.Context, options *Options, req *http.Re
 	return res.Header.Get("Content-Type"), err
 }
 
+// maxResponseSize is a maximum length of the uncompressed response to read.
+func (c *Client) maxResponseSize() int64 {
+	if c.MaxContentLength <= 0 {
+		return DefaultMaxContentLength
+	}
+	return int64(c.MaxContentLength)
+}
+
 // readResponseBody copies the response body into dest.
 //
 // Returns gRPC errors. If the response body size exceeds the limits or the
-// declared size, returns ErrResponseTooBig (which is also a gRPC error).
+// declared size, returns UNAVAILABLE grpc error with ResponseTooBig error
+// in the details.
 func (c *Client) readResponseBody(ctx context.Context, dest *bytes.Buffer, r *http.Response) error {
-	limit := c.MaxContentLength
-	if limit <= 0 {
-		limit = DefaultMaxContentLength
-	}
+	limit := c.maxResponseSize()
 
 	dest.Reset()
 	if l := r.ContentLength; l > 0 {
-		if l > int64(limit) {
+		if l > limit {
 			logging.Errorf(ctx, "ContentLength header exceeds response body limit: %d > %d.", l, limit)
-			return ErrResponseTooBig
+			return errResponseTooBig(l, limit)
 		}
-		limit = int(l)
-		dest.Grow(limit)
+		limit = l
+		dest.Grow(int(limit))
 	}
 
-	limitedBody := io.LimitReader(r.Body, int64(limit))
+	limitedBody := io.LimitReader(r.Body, limit)
 	if _, err := dest.ReadFrom(limitedBody); err != nil {
 		return status.Errorf(codeForErr(err), "prpc: reading response: %s", err)
 	}
@@ -531,7 +545,7 @@ func (c *Client) readResponseBody(ctx context.Context, dest *bytes.Buffer, r *ht
 	var probeB [1]byte
 	if n, err := r.Body.Read(probeB[:]); n > 0 || err != io.EOF {
 		logging.Errorf(ctx, "Response body limit %d exceeded.", limit)
-		return ErrResponseTooBig
+		return errResponseTooBig(0, limit)
 	}
 
 	return nil
@@ -653,9 +667,9 @@ func (c *Client) readStatusDetails(r *http.Response) ([]*anypb.Any, error) {
 func (c *Client) prepareRequest(options *Options, md metadata.MD, requestMessage []byte) (*http.Request, error) {
 	// Convert metadata into HTTP headers in canonical form (i.e. Title-Case).
 	// Extract Host header, it is special and must be passed via
-	// http.Request.Host. Preallocate 5 more slots (for 4 headers below and for
+	// http.Request.Host. Preallocate 6 more slots (for 5 headers below and for
 	// the RPC deadline header).
-	headers := make(http.Header, len(md)+5)
+	headers := make(http.Header, len(md)+6)
 	if err := metaIntoHeaders(md, headers); err != nil {
 		return nil, status.Errorf(codes.Internal, "prpc: headers: %s", err)
 	}
@@ -666,6 +680,9 @@ func (c *Client) prepareRequest(options *Options, md metadata.MD, requestMessage
 	headers.Set("Content-Type", options.inFormat.MediaType())
 	headers.Set("Accept", options.outFormat.MediaType())
 	headers.Set("User-Agent", options.UserAgent)
+
+	// This tells the server to give up sending very large responses.
+	headers.Set(HeaderMaxResponseSize, strconv.FormatInt(c.maxResponseSize(), 10))
 
 	body := requestMessage
 	if c.EnableRequestCompression && len(requestMessage) > gzipThreshold {

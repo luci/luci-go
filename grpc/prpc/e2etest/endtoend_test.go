@@ -38,6 +38,7 @@ import (
 	"go.chromium.org/luci/common/testing/prpctest"
 
 	"go.chromium.org/luci/grpc/prpc"
+	"go.chromium.org/luci/grpc/prpc/prpcpb"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -89,7 +90,7 @@ func (s *service) getIncomingPeer() *peer.Peer {
 	return s.incomingPeer
 }
 
-func newTestClient(ctx context.Context, svc *service, opts *prpc.Options) (*prpctest.Server, HelloClient) {
+func newTestClient(ctx context.Context, svc *service, opts *prpc.Options) (*prpctest.Server, *prpc.Client, HelloClient) {
 	ts := prpctest.Server{}
 	RegisterHelloServer(&ts, svc)
 	ts.Start(ctx)
@@ -131,7 +132,7 @@ func newTestClient(ctx context.Context, svc *service, opts *prpc.Options) (*prpc
 	ts.EnableResponseCompression = true
 	prpcClient.EnableRequestCompression = true
 
-	return &ts, NewHelloClient(prpcClient)
+	return &ts, prpcClient, NewHelloClient(prpcClient)
 }
 
 func TestEndToEnd(t *testing.T) {
@@ -142,7 +143,7 @@ func TestEndToEnd(t *testing.T) {
 		svc := service{
 			sleep: func() time.Duration { return time.Millisecond },
 		}
-		ts, client := newTestClient(ctx, &svc, nil)
+		ts, prpcC, client := newTestClient(ctx, &svc, nil)
 		defer ts.Close()
 
 		Convey(`Can round-trip a hello message`, func() {
@@ -151,6 +152,24 @@ func TestEndToEnd(t *testing.T) {
 			resp, err := client.Greet(ctx, &HelloRequest{Name: "round-trip"})
 			So(err, ShouldBeRPCOK)
 			So(resp, ShouldResembleProto, svc.R)
+		})
+
+		Convey(`Respects response size limits`, func() {
+			prpcC.MaxContentLength = 123
+
+			svc.R = &HelloReply{Message: strings.Repeat("z", 124)}
+
+			_, err := client.Greet(ctx, &HelloRequest{Name: "round-trip"})
+			So(err, ShouldHaveGRPCStatus, codes.Unavailable)
+			So(err, ShouldErrLike, "the response size 126 exceeds the client limit 123")
+			So(prpc.ProtocolErrorDetails(err), ShouldResembleProto, &prpcpb.ErrorDetails{
+				Error: &prpcpb.ErrorDetails_ResponseTooBig{
+					ResponseTooBig: &prpcpb.ResponseTooBig{
+						ResponseSize:  126,
+						ResponseLimit: 123,
+					},
+				},
+			})
 		})
 
 		Convey(`Can send a giant message with compression`, func() {
@@ -238,7 +257,7 @@ func TestTimeouts(t *testing.T) {
 	Convey(`A client/server for the Greet service`, t, func() {
 		ctx := gologger.StdConfig.Use(context.Background())
 		svc := service{R: &HelloReply{Message: "sup"}}
-		ts, client := newTestClient(ctx, &svc, &prpc.Options{
+		ts, _, client := newTestClient(ctx, &svc, &prpc.Options{
 			Retry: func() retry.Iterator {
 				return &retry.ExponentialBackoff{
 					Limited: retry.Limited{
@@ -301,7 +320,7 @@ func TestVerySmallTimeouts(t *testing.T) {
 	Convey(`A client/server for the Greet service`, t, func() {
 		ctx := gologger.StdConfig.Use(context.Background())
 		svc := service{}
-		ts, client := newTestClient(ctx, &svc, &prpc.Options{
+		ts, _, client := newTestClient(ctx, &svc, &prpc.Options{
 			PerRPCTimeout: 10 * time.Millisecond,
 		})
 		defer ts.Close()

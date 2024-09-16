@@ -19,13 +19,18 @@
 //   - service implementation does not depend on pRPC.
 //
 // Unlike gRPC:
-//   - supports HTTP 1.x and AppEngine 1.x.
+//   - supports HTTP 1.x and AppEngine
 //   - does not support streams.
+//
+// It is similar in purpose to some other gRPC-compatible HTTP protocols, but
+// predates them or makes different design choices:
+//   - https://github.com/grpc/grpc-web: pRPC avoids a proxy.
+//   - https://connectrpc.com/: pRPC predates it by multiple years.
 //
 // # Compile service definitions
 //
-// Use cproto tool to compile .proto files to .go files with gRPC and pRPC support.
-// It runs protoc and does some additional postprocessing.
+// Use cproto tool to compile .proto files to .go files with gRPC and pRPC
+// support. It runs protoc and does some additional postprocessing.
 //
 //	//go:generate cproto
 //
@@ -35,7 +40,27 @@
 //
 // # Protocol
 //
-// ## v1.4
+// # v1.5
+//
+// v1.5 is small, backward-compatible amendment to v1.4 that allows clients to
+// advertise the maximum response size they are willing to deserialize.
+//
+// A client MAY send "X-Prpc-Max-Response-Size" request header with a positive
+// decimal number of bytes specifying the maximum uncompressed response size
+// the client is willing to deserialize. The server MAY use it to discard
+// responses larger than that size. If the server discards a response, it
+// replies with UNAVAILABLE gRPC status with luci.prpc.ErrorDetails message as
+// google.rpc.Status detail (see v1.2 section below for how it is encoded). This
+// error proto contains ResponseTooBig as the realized oneof "error"
+// alternative.
+//
+// The response size is calculated as a length of the serialized response
+// message using the negotiated response encoding (i.e. if the client asked for
+// a JSON response, the response size is the length of the JSON blob with the
+// serialized response message). Length of metadata or response compression
+// (if any) have no effect on this check.
+//
+// # v1.4
 //
 // v1.4 hides some leaking HTTP v1 transport implementation details from gRPC
 // services and clients by stopping exposing values of the following headers in
@@ -51,7 +76,7 @@
 // still exposed as metadata, since they are already used in the wild and
 // the protocol does not depend on them significantly.
 //
-// ## v1.3
+// # v1.3
 //
 // v1.3 adds request/response body compression support using GZIP (RFC-1952).
 //
@@ -67,7 +92,7 @@
 // See also https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Encoding
 // and https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Accept-Encoding
 //
-// ## v1.2
+// # v1.2
 //
 // v1.2 is small, backward-compatible amendment to v1.1 that adds support for
 // error details.
@@ -78,7 +103,7 @@
 // google.protobuf.Any, where the message encoding is the same as the response
 // message encoding, i.e. depends on Accept request header.
 //
-// ## v1.1
+// # v1.1
 //
 // v1.1 is small, backward-compatible amendment to v1.0 to address a
 // security issue. Since it is backward compatible, it does not introduce
@@ -93,10 +118,10 @@
 // sniffing.
 // For CORB, see https://chromium.googlesource.com/chromium/src/+/master/services/network/cross_origin_read_blocking_explainer.md.
 //
-// ## v1.0
+// # v1.0
 //
-// This section describes the pRPC protocol. It is based on HTTP 1.x and employs
-// gRPC codes.
+// This section describes the base pRPC protocol. It is based on HTTP 1.x and
+// employs gRPC codes.
 //
 // A pRPC server MUST handle HTTP POST requests at `/prpc/{service}/{method}`
 // where service is a full service name including full package name.

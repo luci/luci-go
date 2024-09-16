@@ -25,17 +25,19 @@ import (
 	"net/http"
 	"sort"
 	"strconv"
+	"strings"
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
-	"google.golang.org/protobuf/types/known/anypb"
-
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/anypb"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+
 	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/grpc/prpc/prpcpb"
 )
 
 const headerAccept = "Accept"
@@ -119,28 +121,35 @@ func marshalMessage(msg proto.Message, format Format, wrap bool) ([]byte, error)
 	}
 }
 
-// writeMessage writes msg to w in the specified format.
-// ctx is used to log errors.
-// panics if msg is nil.
-func writeMessage(ctx context.Context, w http.ResponseWriter, msg proto.Message, format Format, allowGZip bool) {
-	if msg == nil {
-		panic("msg is nil")
+// writeResponse serializes and writes the response (successful or not).
+//
+// The context is used to log errors.
+func writeResponse(ctx context.Context, w http.ResponseWriter, res *response) {
+	if res.err != nil {
+		writeError(ctx, w, res.err, res.fmt)
+		return
 	}
 
-	body, err := marshalMessage(msg, format, true)
+	body, err := marshalMessage(res.out, res.fmt, true)
 	if err != nil {
-		writeError(ctx, w, status.Error(codes.Internal, err.Error()), format)
+		writeError(ctx, w, status.Error(codes.Internal, err.Error()), res.fmt)
+		return
+	}
+
+	// Skip sending the response that exceeds the client's limit.
+	if res.maxResponseSize > 0 && len(body) > int(res.maxResponseSize) {
+		writeError(ctx, w, errResponseTooBig(int64(len(body)), res.maxResponseSize), res.fmt)
 		return
 	}
 
 	w.Header().Set(HeaderGRPCCode, strconv.Itoa(int(codes.OK)))
-	w.Header().Set(headerContentType, format.MediaType())
+	w.Header().Set(headerContentType, res.fmt.MediaType())
 
 	// Errors below most commonly happen if the client disconnects. The header
 	// is already written. There is nothing more we can do other than just log
 	// them.
 
-	if allowGZip && len(body) > gzipThreshold {
+	if res.acceptsGZip && len(body) > gzipThreshold {
 		w.Header().Set("Content-Encoding", "gzip")
 
 		gz := getGZipWriter(w)
@@ -161,7 +170,11 @@ func writeMessage(ctx context.Context, w http.ResponseWriter, msg proto.Message,
 	}
 }
 
-func errorStatus(err error) (st *status.Status, httpStatus int) {
+// errorStatus extracts error details from an error.
+//
+// protocolErr is true if err is either a *protocolError or a gRPC error that
+// has *prpcpb.ErrorDetails details attached.
+func errorStatus(err error) (st *status.Status, httpStatus int, protocolErr bool) {
 	if err == nil {
 		panic("err is nil")
 	}
@@ -169,6 +182,7 @@ func errorStatus(err error) (st *status.Status, httpStatus int) {
 	if perr, ok := err.(*protocolError); ok {
 		st = status.New(perr.code, perr.err)
 		httpStatus = perr.status
+		protocolErr = true
 		return
 	}
 
@@ -176,7 +190,12 @@ func errorStatus(err error) (st *status.Status, httpStatus int) {
 	st, ok := status.FromError(err)
 	switch {
 	case ok:
-	// great.
+		for _, details := range st.Details() {
+			if _, ok := details.(*prpcpb.ErrorDetails); ok {
+				protocolErr = true
+				break
+			}
+		}
 
 	case err == context.Canceled:
 		st = status.New(codes.Canceled, "canceled")
@@ -209,7 +228,7 @@ func statusDetailsToHeaderValues(details []*anypb.Any, format Format) ([]string,
 
 // writeError writes err to w and logs it.
 func writeError(ctx context.Context, w http.ResponseWriter, err error, format Format) {
-	st, httpStatus := errorStatus(err)
+	st, httpStatus, isProtocolErr := errorStatus(err)
 
 	// use st.Proto instead of st.Details to avoid unnecessary unmarshaling of
 	// google.protobuf.Any underlying messages. We need Any protos themselves.
@@ -221,12 +240,30 @@ func writeError(ctx context.Context, w http.ResponseWriter, err error, format Fo
 		w.Header()[HeaderStatusDetail] = detailHeader
 	}
 
-	body := st.Message()
 	if httpStatus < 500 {
-		logging.Warningf(ctx, "prpc: responding with %s error (HTTP %d): %s", st.Code(), httpStatus, st.Message())
+		logging.Warningf(ctx, "prpc: responding with %s error (HTTP %d): %s",
+			st.Code(),
+			httpStatus,
+			strings.TrimPrefix(st.Message(), "prpc: "),
+		)
 	} else {
-		// Hide potential implementation details from the user. Only codes that
-		// result in HTTP status >= 500 are possible here.
+		// Log all details for errors with HTTP status >= 500.
+		logging.Errorf(ctx, "prpc: responding with %s error (HTTP %d): %s",
+			st.Code(),
+			httpStatus,
+			strings.TrimPrefix(st.Message(), "prpc: "),
+		)
+		errors.Log(ctx, err)
+	}
+
+	// Use the gRPC status message as the response body.
+	body := st.Message()
+
+	// If an internal error was returned by the gRPC service implementation (i.e.
+	// it is **not** a protocol error), do not expose it to the client to avoid
+	// leaking potential private details that often show up in such errors.
+	if httpStatus >= 500 && !isProtocolErr {
+		// Only codes that result in HTTP status >= 500 are possible here.
 		// See https://cloud.google.com/apis/design/errors.
 		switch st.Code() {
 		case codes.DataLoss:
@@ -244,20 +281,17 @@ func writeError(ctx context.Context, w http.ResponseWriter, err error, format Fo
 		default:
 			body = "Server error"
 		}
-
-		// Log everything about the error.
-		logging.Errorf(ctx, "prpc: responding with %s error (HTTP %d): %s", st.Code(), httpStatus, st.Message())
-		errors.Log(ctx, err)
 	}
 
 	w.Header().Set(HeaderGRPCCode, strconv.Itoa(int(st.Code())))
 	w.Header().Set(headerContentType, "text/plain")
 	w.WriteHeader(httpStatus)
-	if _, err := io.WriteString(w, body); err != nil {
+	if _, err = io.WriteString(w, body); err == nil {
+		_, err = w.Write([]byte{'\n'})
+	}
+	if err != nil {
 		// This error most commonly happens if the client disconnects. The header is
 		// already written. There is nothing more we can do other than log it.
 		logging.Warningf(ctx, "prpc: failed to write response body: %s", err)
-		return
 	}
-	io.WriteString(w, "\n")
 }

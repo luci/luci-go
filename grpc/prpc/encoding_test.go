@@ -16,6 +16,7 @@ package prpc
 
 import (
 	"context"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -23,7 +24,6 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
-
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -82,23 +82,26 @@ func TestEncoding(t *testing.T) {
 		test("foo/bar;q=0.1,{json}", FormatJSONPB, nil)
 
 		// only unsupported types
-		const err406 = "pRPC: bad Accept header: specified media types are not not supported"
+		const err406 = "prpc: bad Accept header: specified media types are not not supported"
 		test(ContentTypePRPC+"; boo=true", 0, err406)
 		test(ContentTypePRPC+"; encoding=blah", 0, err406)
 		test("x", 0, err406)
 		test("x,y", 0, err406)
 
-		test("x//y", 0, "pRPC: bad Accept header: specified media types are not not supported")
+		test("x//y", 0, "prpc: bad Accept header: specified media types are not not supported")
 	})
 
-	Convey("writeMessage", t, func() {
+	Convey("writeResponse", t, func() {
 		msg := &HelloReply{Message: "Hi"}
 		c := context.Background()
 
 		test := func(f Format, body []byte, contentType string) {
 			Convey(contentType, func() {
 				rec := httptest.NewRecorder()
-				writeMessage(c, rec, msg, f, false)
+				writeResponse(c, rec, &response{
+					out: msg,
+					fmt: f,
+				})
 				So(rec.Code, ShouldEqual, http.StatusOK)
 				So(rec.Header().Get(HeaderGRPCCode), ShouldEqual, "0")
 				So(rec.Header().Get(headerContentType), ShouldEqual, contentType)
@@ -116,10 +119,29 @@ func TestEncoding(t *testing.T) {
 		Convey("compression", func() {
 			rec := httptest.NewRecorder()
 			msg := &HelloReply{Message: strings.Repeat("A", 1024)}
-			writeMessage(c, rec, msg, FormatText, true)
+			writeResponse(c, rec, &response{
+				out:         msg,
+				fmt:         FormatText,
+				acceptsGZip: true,
+			})
 			So(rec.Code, ShouldEqual, http.StatusOK)
 			So(rec.Header().Get("Content-Encoding"), ShouldEqual, "gzip")
 			So(rec.Body.Len(), ShouldBeLessThan, 1024)
+		})
+
+		Convey("maxResponseSize", func() {
+			rec := httptest.NewRecorder()
+			msg := &HelloReply{Message: strings.Repeat("A", 1024)}
+			writeResponse(c, rec, &response{
+				out:             msg,
+				fmt:             FormatJSONPB,
+				maxResponseSize: 123,
+			})
+			So(rec.Code, ShouldEqual, http.StatusServiceUnavailable)
+			So(rec.Header().Get(HeaderGRPCCode), ShouldEqual, "14") // codes.Unavailable
+			So(rec.Header().Get(HeaderStatusDetail), ShouldNotBeEmpty)
+			body, _ := io.ReadAll(rec.Body)
+			So(string(body), ShouldEndWith, "exceeds the client limit 123\n")
 		})
 	})
 

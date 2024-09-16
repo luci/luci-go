@@ -23,11 +23,11 @@ import (
 	"net/http"
 	"net/netip"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 
 	"github.com/golang/protobuf/proto"
-
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -42,12 +42,22 @@ var (
 	// Describes the default permitted headers for cross-origin requests.
 	//
 	// It explicitly includes a subset of the default CORS-safelisted request
-	// headers that are relevant to RPCs, as well as "Authorization" header.
+	// headers that are relevant to RPCs, as well as "Authorization" header plus
+	// some headers used in the pRPC protocol.
 	//
 	// Custom AccessControl implementations may allow more headers.
 	//
 	// See https://developer.mozilla.org/en-US/docs/Glossary/CORS-safelisted_request_header
-	allowHeaders = strings.Join([]string{"Origin", "Content-Type", "Accept", "Authorization"}, ", ")
+	allowHeaders = strings.Join([]string{
+		"Origin",
+		"Content-Type",
+		"Accept",
+		"Authorization",
+		HeaderTimeout,
+		HeaderMaxResponseSize,
+	}, ", ")
+
+	// What HTTP verbs are allowed for cross-origin requests.
 	allowMethods = strings.Join([]string{"OPTIONS", "POST"}, ", ")
 
 	// allowPreflightCacheAgeSecs is the amount of time to enable the browser to
@@ -57,8 +67,11 @@ var (
 	allowPreflightCacheAgeSecs = "600"
 
 	// exposeHeaders lists the non-standard response headers that are exposed to
-	// client that make cross-origin calls.
-	exposeHeaders = strings.Join([]string{HeaderGRPCCode}, ", ")
+	// clients that make cross-origin calls.
+	exposeHeaders = strings.Join([]string{
+		HeaderGRPCCode,
+		HeaderStatusDetail,
+	}, ", ")
 )
 
 // AccessControlDecision describes how to handle a cross-origin request.
@@ -97,8 +110,7 @@ type AccessControlDecision struct {
 	// AllowHeaders is a list of request headers that a cross-origin request is
 	// allowed to have.
 	//
-	// Extends the default list of allowed headers, which is: "Accept",
-	// "Authorization", "Content-Type", Origin".
+	// Extends the default list of allowed headers.
 	//
 	// Use this option if the authentication interceptor checks some custom
 	// headers.
@@ -319,15 +331,16 @@ func (s *Server) handlePOST(c *router.Context) {
 			"method %q in service %q is not implemented",
 			methodName, serviceName)
 	default:
-		s.call(c, service, method, &res)
+		s.parseAndCall(c, service, method, &res)
 	}
 
-	if res.err != nil {
-		writeError(c.Request.Context(), c.Writer, res.err, res.fmt)
-		return
+	// Ignore client's gzip preference if the server doesn't want to do
+	// compression.
+	if !s.EnableResponseCompression {
+		res.acceptsGZip = false
 	}
 
-	writeMessage(c.Request.Context(), c.Writer, res.out, res.fmt, s.EnableResponseCompression && res.acceptsGZip)
+	writeResponse(c.Request.Context(), c.Writer, &res)
 }
 
 func (s *Server) handleOPTIONS(c *router.Context) {
@@ -358,10 +371,11 @@ func SetHeader(ctx context.Context, md metadata.MD) error {
 }
 
 type response struct {
-	out         proto.Message
-	fmt         Format
-	acceptsGZip bool
-	err         error
+	out             proto.Message
+	fmt             Format
+	acceptsGZip     bool
+	maxResponseSize int64 // 0 => no limit
+	err             error
 }
 
 func (s *Server) lookup(serviceName, methodName string) (override Override, service *service, method grpc.MethodDesc, methodFound bool) {
@@ -378,12 +392,29 @@ func (s *Server) lookup(serviceName, methodName string) (override Override, serv
 	return
 }
 
-func (s *Server) call(c *router.Context, service *service, method grpc.MethodDesc, r *response) {
+func (s *Server) parseAndCall(c *router.Context, service *service, method grpc.MethodDesc, r *response) {
 	var perr *protocolError
 	r.fmt, perr = responseFormat(c.Request.Header.Get(headerAccept))
 	if perr != nil {
 		r.err = perr
 		return
+	}
+
+	var err error
+	if r.acceptsGZip, err = acceptsGZipResponse(c.Request.Header); err != nil {
+		r.err = protocolErr(codes.InvalidArgument, http.StatusBadRequest, "bad Accept header: %s", err)
+		return
+	}
+
+	if val := c.Request.Header.Get(HeaderMaxResponseSize); val != "" {
+		r.maxResponseSize, err = strconv.ParseInt(val, 10, 64)
+		if err == nil && r.maxResponseSize <= 0 {
+			err = fmt.Errorf("must be positive")
+		}
+		if err != nil {
+			r.err = protocolErr(codes.InvalidArgument, http.StatusBadRequest, "bad %s value %q: %s", HeaderMaxResponseSize, val, err)
+			return
+		}
 	}
 
 	methodCtx, cancelFunc, err := parseHeader(c.Request.Context(), c.Request.Header, c.Request.Host)
@@ -392,11 +423,6 @@ func (s *Server) call(c *router.Context, service *service, method grpc.MethodDes
 		return
 	}
 	defer cancelFunc()
-
-	if r.acceptsGZip, err = acceptsGZipResponse(c.Request.Header); err != nil {
-		r.err = protocolErr(codes.InvalidArgument, http.StatusBadRequest, "bad Accept headers: %s", err)
-		return
-	}
 
 	methodCtx = context.WithValue(methodCtx, &requestContextKey, &requestContext{header: c.Writer.Header()})
 

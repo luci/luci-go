@@ -16,11 +16,31 @@ package prpc
 
 import (
 	"fmt"
+	"strings"
 
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
+	"go.chromium.org/luci/grpc/prpc/prpcpb"
 )
 
-// protocolError is returned if a pRPC request is malformed.
+// ProtocolErrorDetails extracts pRPC protocol error details from a gRPC error
+// if they are there.
+//
+// If err is not a gRPC error, or it is a gRPC but with no ErrorDetails
+// attached, returns nil.
+func ProtocolErrorDetails(err error) *prpcpb.ErrorDetails {
+	if st, _ := status.FromError(err); st != nil {
+		for _, any := range st.Details() {
+			if details, ok := any.(*prpcpb.ErrorDetails); ok {
+				return details
+			}
+		}
+	}
+	return nil
+}
+
+// protocolError is returned if a pRPC request or response are malformed.
 //
 // This error exists on a boundary between gRPC and HTTP protocols and thus has
 // two codes: gRPC code (when it is interpreted by a gRPC client) and HTTP code
@@ -32,7 +52,10 @@ type protocolError struct {
 }
 
 func (e *protocolError) Error() string {
-	return fmt.Sprintf("pRPC: %s", e.err)
+	if strings.HasPrefix(e.err, "prpc:") {
+		return e.err
+	}
+	return "prpc: " + e.err
 }
 
 // protocolErr creates a new protocol error for given gRPC status code.
@@ -50,4 +73,28 @@ func protocolErr(code codes.Code, status int, format string, a ...any) *protocol
 		code:   code,
 		status: status,
 	}
+}
+
+// errResponseTooBig produces a gRPC error with "response is too big" error.
+//
+// It includes prpcpb.ErrorDetails attached to the status.
+func errResponseTooBig(actual, limit int64) error {
+	var st *status.Status
+	if actual == 0 {
+		st = status.Newf(codes.Unavailable, "prpc: the response size exceeds the client limit %d", limit)
+	} else {
+		st = status.Newf(codes.Unavailable, "prpc: the response size %d exceeds the client limit %d", actual, limit)
+	}
+	st, err := st.WithDetails(&prpcpb.ErrorDetails{
+		Error: &prpcpb.ErrorDetails_ResponseTooBig{
+			ResponseTooBig: &prpcpb.ResponseTooBig{
+				ResponseSize:  actual,
+				ResponseLimit: limit,
+			},
+		},
+	})
+	if err != nil {
+		panic(fmt.Sprintf("unexpected error attaching details %s", err))
+	}
+	return st.Err()
 }

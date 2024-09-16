@@ -30,7 +30,6 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	"github.com/klauspost/compress/gzip"
-
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -41,6 +40,8 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/memlogger"
 	"go.chromium.org/luci/common/retry"
+
+	"go.chromium.org/luci/grpc/prpc/prpcpb"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -346,7 +347,16 @@ func TestClient(t *testing.T) {
 
 				client.MaxContentLength = 8
 				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res)
-				So(err, ShouldEqual, ErrResponseTooBig)
+				So(err, ShouldHaveGRPCStatus, codes.Unavailable)
+				So(err, ShouldErrLike, "exceeds the client limit")
+				So(ProtocolErrorDetails(err), ShouldResembleProto, &prpcpb.ErrorDetails{
+					Error: &prpcpb.ErrorDetails_ResponseTooBig{
+						ResponseTooBig: &prpcpb.ResponseTooBig{
+							ResponseSize:  12,
+							ResponseLimit: 8,
+						},
+					},
+				})
 			})
 
 			Convey(`When the response returns a huge Content Length, returns "ErrResponseTooBig".`, func(c C) {
@@ -355,7 +365,16 @@ func TestClient(t *testing.T) {
 
 				req.Name = "TOO BIG"
 				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res)
-				So(err, ShouldEqual, ErrResponseTooBig)
+				So(err, ShouldHaveGRPCStatus, codes.Unavailable)
+				So(err, ShouldErrLike, "exceeds the client limit")
+				So(ProtocolErrorDetails(err), ShouldResembleProto, &prpcpb.ErrorDetails{
+					Error: &prpcpb.ErrorDetails_ResponseTooBig{
+						ResponseTooBig: &prpcpb.ResponseTooBig{
+							ResponseSize:  999999999999,
+							ResponseLimit: DefaultMaxContentLength,
+						},
+					},
+				})
 			})
 
 			Convey("Doesn't log expected codes", func(c C) {
