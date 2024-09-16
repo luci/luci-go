@@ -22,6 +22,7 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -164,6 +165,14 @@ func endToEndTest(t *testing.T, responseType string) {
 		})
 
 		Convey(`Respects response size limits`, func() {
+			var retried atomic.Bool
+
+			prpcC.Options.Retry = func() retry.Iterator {
+				return retry.NewIterator(func(context.Context, error) time.Duration {
+					retried.Store(true)
+					return retry.Stop
+				})
+			}
 			prpcC.MaxContentLength = 123
 
 			svc.R = &HelloReply{Message: strings.Repeat("z", 124)}
@@ -172,6 +181,9 @@ func endToEndTest(t *testing.T, responseType string) {
 			So(err, ShouldHaveGRPCStatus, codes.Unavailable)
 			So(err, ShouldErrLike, "exceeds the client limit 123")
 			So(prpc.ProtocolErrorDetails(err).GetResponseTooBig(), ShouldNotBeNil)
+
+			// Doesn't trigger a retry.
+			So(retried.Load(), ShouldBeFalse)
 		})
 
 		Convey(`Can send a giant message with compression`, func() {

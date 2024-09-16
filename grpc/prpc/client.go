@@ -45,6 +45,7 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 
 	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/grpc/prpc/prpcpb"
 )
 
 const (
@@ -292,6 +293,17 @@ func (c *Client) call(ctx context.Context, options *Options, in []byte) ([]byte,
 	err = retry.Retry(ctx, transient.Only(options.Retry), func() (err error) {
 		// Note: `buf` is reset inside, it is safe to reuse it across attempts.
 		contentType, err = c.attemptCall(ctx, options, req, buf)
+		if err == nil {
+			return
+		}
+		// Do not retry on some protocol errors, regardless of the status code.
+		if details := ProtocolErrorDetails(err); details != nil {
+			switch details.Error.(type) {
+			// Retying is unlikely to reduce the response size.
+			case *prpcpb.ErrorDetails_ResponseTooBig:
+				return
+			}
+		}
 		// Retry on regular transient errors and on per-RPC deadline. If this is
 		// a global deadline (i.e. `ctx` expired), the retry loop will just exit.
 		return grpcutil.WrapIfTransientOr(err, codes.DeadlineExceeded)
