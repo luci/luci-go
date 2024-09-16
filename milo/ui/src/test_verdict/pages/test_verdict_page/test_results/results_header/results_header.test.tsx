@@ -113,7 +113,7 @@ describe('<ResultsHeader />', () => {
     render(
       <FakeContextProvider
         routerOptions={{
-          initialEntries: ['/?resultIndex=1'],
+          initialEntries: ['/?resultId=87ecc8c3-00063'],
         }}
       >
         <TestResultsProvider results={sampleResults}>

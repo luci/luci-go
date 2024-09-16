@@ -20,7 +20,7 @@ import Grid from '@mui/material/Grid';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
 import { useResults } from '../context';
-import { getSelectedResultIndex } from '../utils';
+import { getSelectedResultId } from '../utils';
 
 import {
   ResultDataProvider,
@@ -77,19 +77,19 @@ function TopPanel() {
 export function ResultDetails() {
   const [searchParams] = useSyncedSearchParams();
   const results = useResults();
-  const selecteResultIndex = getSelectedResultIndex(searchParams);
+  const selecteResultId = getSelectedResultId(searchParams);
 
-  if (selecteResultIndex === null) {
+  if (selecteResultId === null) {
     // This component should not fail if there is no selected result
     // as the default result will be selected auomatically,
     // but it also should not render anything as that would increase load time.
     return <></>;
   }
 
-  const result = results[selecteResultIndex];
+  const result = results.find((r) => r.result.resultId === selecteResultId);
 
   if (!result) {
-    throw new Error('Selected result index out of bounds.');
+    throw new Error('Selected result id is required.');
   }
 
   return (

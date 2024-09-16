@@ -31,13 +31,10 @@ import {
   TestResult,
   TestStatus,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
-import { getSuggestedResultIndex } from '@/test_verdict/tools/test_result_utils';
+import { getSuggestedResultId } from '@/test_verdict/tools/test_result_utils';
 
 import { useResults } from '../context';
-import {
-  RESULT_INDEX_SEARCH_PARAM_KEY,
-  getSelectedResultIndex,
-} from '../utils';
+import { RESULT_ID_SEARCH_PARAM_KEY, getSelectedResultId } from '../utils';
 
 function getRunStatusIcon(status: TestStatus, expected: boolean) {
   const className = expected ? 'expected' : 'unexpected';
@@ -66,25 +63,28 @@ function getTitle(result: TestResult) {
 
 export function ResultsHeader() {
   const [searchParams, setSearchParams] = useSyncedSearchParams();
-  const selectedResultIndex = getSelectedResultIndex(searchParams);
+  const selectedResultId = getSelectedResultId(searchParams);
   const results = useResults();
 
   useEffectOnce(() => {
-    if (selectedResultIndex === null) {
-      updateSelectedTabIndex(getSuggestedResultIndex(results));
+    if (selectedResultId === null) {
+      updateSelectedTabIndex(getSuggestedResultId(results));
     }
   });
 
-  function updateSelectedTabIndex(index: number) {
+  function updateSelectedTabIndex(id: string) {
     setSearchParams(
       setSingleQueryParam(
         searchParams.toString(),
-        RESULT_INDEX_SEARCH_PARAM_KEY,
-        index.toString(),
+        RESULT_ID_SEARCH_PARAM_KEY,
+        id,
       ),
     );
   }
 
+  if (!selectedResultId) {
+    return <></>;
+  }
   return (
     <Grid
       item
@@ -93,27 +93,29 @@ export function ResultsHeader() {
       flexGrow="1"
     >
       <Tabs
-        value={selectedResultIndex || 0}
+        value={selectedResultId}
         aria-label="Test verdict results"
         sx={{
           minHeight: '30px',
         }}
-        onChange={(_, newValue: number) => updateSelectedTabIndex(newValue)}
+        scrollButtons="auto"
+        onChange={(_, newValue: string) => updateSelectedTabIndex(newValue)}
       >
         {results.map((result, i) => (
-          <Tooltip title={getTitle(result.result)} key={result.result.resultId}>
-            <Tab
-              sx={{
-                minHeight: 0,
-              }}
-              icon={getRunStatusIcon(
-                result.result.status,
-                result.result.expected,
-              )}
-              iconPosition="end"
-              label={`Result ${i + 1}`}
-            />
-          </Tooltip>
+          <Tab
+            key={result.result.resultId}
+            value={result.result.resultId}
+            sx={{
+              minHeight: 0,
+            }}
+            icon={
+              <Tooltip title={getTitle(result.result)}>
+                {getRunStatusIcon(result.result.status, result.result.expected)}
+              </Tooltip>
+            }
+            iconPosition="end"
+            label={`Result ${i + 1}`}
+          />
         ))}
       </Tabs>
     </Grid>

@@ -12,9 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export const RESULT_INDEX_SEARCH_PARAM_KEY = 'resultIndex';
+export const RESULT_ID_SEARCH_PARAM_KEY = 'resultId';
 
-export function getSelectedResultIndex(params: URLSearchParams) {
-  const index = params.get(RESULT_INDEX_SEARCH_PARAM_KEY);
-  return index ? parseInt(index) : null;
+export function getSelectedResultId(params: URLSearchParams) {
+  return params.get(RESULT_ID_SEARCH_PARAM_KEY);
 }

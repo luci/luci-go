@@ -21,9 +21,11 @@ import { OutputTestResultBundle } from '@/test_verdict/types';
  * Currently, this will return the index of the first unexpected result or 0
  * if all results are expected. This may change in the future.
  */
-export function getSuggestedResultIndex(
+export function getSuggestedResultId(
   results: readonly OutputTestResultBundle[],
 ) {
-  const firstFailedIndex = results.findIndex((e) => !e.result?.expected);
-  return firstFailedIndex >= 0 ? firstFailedIndex : 0;
+  const firstFailedResult = results.find((e) => !e.result?.expected);
+  return firstFailedResult
+    ? firstFailedResult.result.resultId
+    : results[0].result.resultId;
 }
