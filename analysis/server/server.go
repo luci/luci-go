@@ -55,6 +55,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/services/backfill"
 	"go.chromium.org/luci/analysis/internal/services/bugupdater"
 	"go.chromium.org/luci/analysis/internal/services/buildjoiner"
+	"go.chromium.org/luci/analysis/internal/services/changepointgrouper"
 	"go.chromium.org/luci/analysis/internal/services/reclustering"
 	"go.chromium.org/luci/analysis/internal/services/resultingester"
 	"go.chromium.org/luci/analysis/internal/services/verdictingester"
@@ -193,6 +194,9 @@ func RegisterTaskQueueHandlers(srv *luciserver.Server) error {
 	}
 	if err := bugupdater.RegisterTaskHandler(srv, uiBaseURL(srv)); err != nil {
 		return errors.Annotate(err, "register bug updater").Err()
+	}
+	if err := changepointgrouper.RegisterTaskHandler(srv); err != nil {
+		return errors.Annotate(err, "register changepoint grouper").Err()
 	}
 	buildjoiner.RegisterTaskHandler()
 	return nil

@@ -58,11 +58,11 @@ type ChangepointRow struct {
 	// Point to a branch in the source control.
 	Ref     *Ref
 	RefHash string
-	// The verdict unexpected rate before the changepoint.
+	// The source verdict unexpected rate before the changepoint.
 	UnexpectedVerdictRateBefore float64
-	// The verdict unexpected rate after the changepoint.
+	// The source verdict unexpected rate after the changepoint.
 	UnexpectedVerdictRateAfter float64
-	// The current verdict unexpected rate.
+	// The current source verdict unexpected rate.
 	UnexpectedVerdictRateCurrent float64
 	// The nominal start hour of the segment after the changepoint.
 	StartHour                  time.Time
@@ -133,4 +133,103 @@ func (c *Client) ReadChangepoints(ctx context.Context, project string, week time
 		results = append(results, row)
 	}
 	return results, nil
+}
+
+// ReadChangepointsRealtime reads changepoints of a certain week directly from BigQuery exports of changepoint analysis.
+// A week in this context refers to the period from Sunday at 00:00:00 AM UTC (inclusive)
+// to the following Sunday at 00:00:00 AM UTC (exclusive).
+// The week parameter MUST be a timestamp representing the start of a week (Sunday at 00:00:00 AM UTC) and within the last 90 days.
+func (c *Client) ReadChangepointsRealtime(ctx context.Context, week time.Time) (changepoints []*ChangepointRow, err error) {
+	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/changepoints.ReadChangepointsRealtime",
+		attribute.String("week", week.String()),
+	)
+	defer func() { tracing.End(s, err) }()
+	if !isBeginOfWeek(week) {
+		return nil, errors.New("week should be the start of week, i.e. a Sunday midnight")
+	}
+	// The table test_variant_segments_unexpected_realtime only contains test variant branches with unexpected results in the last 90 days.
+	// Changepints before 90 days might not exist in test_variant_segments_unexpected_realtime.
+	if week.Before(time.Now().Add(-90 * 24 * time.Hour)) {
+		return nil, errors.New("week should be the within the last 90 days")
+	}
+	query := `
+		WITH
+			changepoint_with_failure_rate AS (
+				SELECT
+					tv.* EXCEPT (segments, version),
+					segment.start_hour,
+					segment.start_position_lower_bound_99th,
+					segment.start_position,
+					segment.start_position_upper_bound_99th,
+					idx,
+					SAFE_DIVIDE(segment.counts.unexpected_verdicts, segment.counts.total_verdicts) AS unexpected_verdict_rate,
+					SAFE_DIVIDE(tv.segments[0].counts.unexpected_verdicts, tv.segments[0].counts.total_verdicts) AS latest_unexpected_verdict_rate,
+					SAFE_DIVIDE(tv.segments[idx+1].counts.unexpected_verdicts, tv.segments[idx+1].counts.total_verdicts) AS previous_unexpected_verdict_rate,
+					tv.segments[idx+1].end_position AS previous_nominal_end_position
+				FROM test_variant_segments_unexpected_realtime tv, UNNEST(segments) segment WITH OFFSET idx
+				-- TODO: Filter out test variant branches with more than 10 segments is a bit hacky, but it filter out oscillate test variant branches.
+				-- It would be good to find a more elegant solution, maybe explicitly expressing this as a filter on the RPC.
+				WHERE ARRAY_LENGTH(segments) >= 2 AND ARRAY_LENGTH(segments) <= 10
+				AND idx + 1 < ARRAY_LENGTH(tv.segments)
+			),
+			-- Obtain the alphabetical ranking for each test ID in each LUCI project.
+			test_id_ranking AS (
+				SELECT project, test_id, ROW_NUMBER() OVER (PARTITION BY project ORDER BY test_id) AS row_num
+				FROM test_variant_segments
+				GROUP BY project, test_id
+			)
+		SELECT
+			cp.project as Project,
+			cp.test_id as TestID,
+			cp.variant_hash as VariantHash,
+			cp.ref_hash as RefHash,
+			cp.variant as Variant,
+			cp.ref as Ref,
+			cp.start_hour AS StartHour,
+			cp.start_position_lower_bound_99th AS LowerBound99th,
+			cp.start_position AS NominalStartPosition,
+			cp.start_position_upper_bound_99th AS UpperBound99th,
+			cp.unexpected_verdict_rate AS UnexpectedVerdictRateAfter,
+			cp.previous_unexpected_verdict_rate AS UnexpectedVerdictRateBefore,
+			cp.previous_nominal_end_position as PreviousNominalEndPosition,
+			ranking.row_num AS TestIDNum
+		FROM changepoint_with_failure_rate cp
+		LEFT JOIN test_id_ranking ranking
+		ON ranking.project = cp.project and ranking.test_id = cp.test_id
+		-- Only keep regressions. A regression is a special changepoint when the later segment has a higher unexpected verdict rate than the earlier segment.
+		-- In the future, we might want to return all changepoints to show fixes in the UI.
+		WHERE cp.unexpected_verdict_rate - cp.previous_unexpected_verdict_rate > 0
+			AND TIMESTAMP_TRUNC(cp.start_hour, WEEK(SUNDAY)) = @week
+	`
+	q := c.client.Query(query)
+	q.DefaultDatasetID = "internal"
+	q.Parameters = []bigquery.QueryParameter{
+		{Name: "week", Value: week},
+	}
+	it, err := q.Read(ctx)
+	if err != nil {
+		return nil, errors.Annotate(err, "read query results").Err()
+	}
+	results := []*ChangepointRow{}
+	for {
+		row := &ChangepointRow{}
+		err := it.Next(row)
+		if errors.Is(err, iterator.Done) {
+			break
+		}
+		if err != nil {
+			return nil, errors.Annotate(err, "obtain next changepoint row").Err()
+		}
+		results = append(results, row)
+	}
+	return results, nil
+}
+
+// Return whether time is the start of a week.
+// A week is defined as Sunday midnight (inclusive) to next Saturday midnight (exclusive) in UTC.
+// Therefore, t MUST be a timestamp at Sunday midnight (00:00 AM) UTC for this to return True.
+func isBeginOfWeek(t time.Time) bool {
+	isSunday := t.Weekday() == time.Sunday
+	isMidnight := t.Truncate(24*time.Hour) == t
+	return isSunday && isMidnight
 }
