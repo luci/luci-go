@@ -44,6 +44,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/changepoints"
 	cpbq "go.chromium.org/luci/analysis/internal/changepoints/bqexporter"
 	bqupdator "go.chromium.org/luci/analysis/internal/changepoints/bqupdater"
+	"go.chromium.org/luci/analysis/internal/changepoints/groupscheduler"
 	"go.chromium.org/luci/analysis/internal/changepoints/sorbet"
 	"go.chromium.org/luci/analysis/internal/clustering/reclustering/orchestrator"
 	"go.chromium.org/luci/analysis/internal/clustering/rules"
@@ -159,6 +160,7 @@ func RegisterCrons(srv *luciserver.Server) {
 	cron.RegisterHandler("export-rules", func(ctx context.Context) error {
 		return rules.ExportRulesCron(ctx, srv.Options.CloudProject)
 	})
+	cron.RegisterHandler("schedule-group-changepoints", groupscheduler.CronHandler)
 	cron.RegisterHandler("ensure-views", func(ctx context.Context) error {
 		return views.CronHandler(ctx, srv.Options.CloudProject)
 	})

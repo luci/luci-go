@@ -22,6 +22,10 @@ import (
 
 	"cloud.google.com/go/bigquery"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
+
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -53,6 +57,34 @@ func TestGroupChangepoints(t *testing.T) {
 			{cp9},
 			{cp10},
 		})
+	})
+}
+
+func TestStartOfWeek(t *testing.T) {
+	ftt.Run("TestStartOfWeek", t, func(t *ftt.Test) {
+
+		week := StartOfWeek(time.Date(2024, 9, 14, 0, 0, 0, 0, time.UTC))
+		expected := time.Date(2024, 9, 8, 0, 0, 0, 0, time.UTC)
+		assert.That(t, week, should.Match(expected))
+
+		week = StartOfWeek(time.Date(2024, 9, 13, 0, 0, 0, 0, time.UTC))
+		assert.That(t, week, should.Match(expected))
+
+		week = StartOfWeek(time.Date(2024, 9, 12, 0, 0, 0, 0, time.UTC))
+		assert.That(t, week, should.Match(expected))
+
+		week = StartOfWeek(time.Date(2024, 9, 11, 0, 0, 0, 0, time.UTC))
+		assert.That(t, week, should.Match(expected))
+
+		week = StartOfWeek(time.Date(2024, 9, 10, 0, 0, 0, 0, time.UTC))
+		assert.That(t, week, should.Match(expected))
+
+		week = StartOfWeek(time.Date(2024, 9, 9, 0, 0, 0, 0, time.UTC))
+		assert.That(t, week, should.Match(expected))
+
+		week = StartOfWeek(time.Date(2024, 9, 8, 0, 0, 0, 0, time.UTC))
+		assert.That(t, week, should.Match(expected))
+
 	})
 }
 

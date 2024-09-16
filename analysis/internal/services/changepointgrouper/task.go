@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -79,10 +80,12 @@ func RegisterTaskHandler(srv *server.Server) error {
 }
 
 // Schedule enqueues a task to group and export changepoint for a certain week.
-func Schedule(ctx context.Context, task *taskspb.GroupChangepoints) error {
+func Schedule(ctx context.Context, week time.Time) error {
 	return tq.AddTask(ctx, &tq.Task{
-		Title:   fmt.Sprintf("week-%s", task.Week),
-		Payload: task,
+		Title: fmt.Sprintf("week-%s", week.Format(time.RFC3339)),
+		Payload: &taskspb.GroupChangepoints{
+			Week: timestamppb.New(week),
+		},
 	})
 }
 

@@ -84,7 +84,7 @@ func prepareExportRows(groups [][]*changepoints.ChangepointRow, version time.Tim
 				StartPositionLowerBound_99Th:        r.LowerBound99th,
 				StartPositionUpperBound_99Th:        r.UpperBound99th,
 				StartHour:                           timestamppb.New(r.StartHour),
-				StartHourWeek:                       timestamppb.New(startOfWeek(r.StartHour)),
+				StartHourWeek:                       timestamppb.New(changepoints.StartOfWeek(r.StartHour)),
 				TestIdNum:                           r.TestIDNum,
 				GroupId:                             groupKey,
 				Version:                             timestamppb.New(version),
@@ -109,19 +109,4 @@ func changepointGroupID(cps []*changepoints.ChangepointRow) string {
 
 func ChangepointKey(cp *changepoints.ChangepointRow) string {
 	return fmt.Sprintf("%s-%s-%s-%s-%d", cp.Project, cp.TestID, cp.VariantHash, cp.RefHash, cp.NominalStartPosition)
-}
-
-// StartOfWeek returns the start of the week for the given time.
-func startOfWeek(t time.Time) time.Time {
-	// Week starts from Sunday.
-	startDay := time.Sunday
-	// Get the current day of the week
-	weekday := t.Weekday()
-
-	// Calculate the number of days to subtract to get to the start of the week
-	daysToSubtract := (int(weekday) - int(startDay) + 7) % 7
-
-	// Subtract the days and set the time to midnight
-	startOfWeek := t.UTC().Add(-time.Duration(daysToSubtract) * 24 * time.Hour)
-	return startOfWeek.Truncate(24 * time.Hour)
 }

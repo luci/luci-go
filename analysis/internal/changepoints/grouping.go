@@ -18,6 +18,7 @@ import (
 	"context"
 	"math"
 	"sort"
+	"time"
 
 	"go.opentelemetry.io/otel/attribute"
 
@@ -178,4 +179,21 @@ func CompareTestVariantBranchChangepoint(cpi, cpj *ChangepointRow) bool {
 	default:
 		return cpi.NominalStartPosition < cpj.NominalStartPosition
 	}
+}
+
+// StartOfWeek returns the start of the week for the given time.
+// A week refers to the period from Sunday at 00:00:00 AM UTC (inclusive)
+// to the following Sunday at 00:00:00 AM UTC (exclusive).
+func StartOfWeek(t time.Time) time.Time {
+	// Week starts from Sunday.
+	startDay := time.Sunday
+	// Get the current day of the week
+	weekday := t.Weekday()
+
+	// Calculate the number of days to subtract to get to the start of the week
+	daysToSubtract := (int(weekday) - int(startDay) + 7) % 7
+
+	// Subtract the days and set the time to midnight
+	startOfWeek := t.UTC().Add(-time.Duration(daysToSubtract) * 24 * time.Hour)
+	return startOfWeek.Truncate(24 * time.Hour)
 }
