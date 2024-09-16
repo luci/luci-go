@@ -74,6 +74,19 @@ var (
 	}, ", ")
 )
 
+// ResponseCompression controls how the server compresses responses.
+//
+// See Server doc for details.
+type ResponseCompression string
+
+// Possible values for ResponseCompression.
+const (
+	CompressDefault ResponseCompression = "" // same as "never"
+	CompressNever   ResponseCompression = "never"
+	CompressAlways  ResponseCompression = "always"
+	CompressNotJSON ResponseCompression = "not JSON"
+)
+
 // AccessControlDecision describes how to handle a cross-origin request.
 //
 // It is returned by AccessControl server callback based on the origin of the
@@ -182,17 +195,37 @@ type Server struct {
 	// invoke handler to complete the RPC.
 	UnaryServerInterceptor grpc.UnaryServerInterceptor
 
-	// EnableResponseCompression allows the server to compress responses if they
-	// are larger than a certain threshold.
+	// ResponseCompression controls how the server compresses responses.
 	//
-	// If false (default), responses are never compressed.
+	// It applies only to eligible responses. A response is eligible for
+	// compression if the client sends "Accept-Encoding: gzip" request header
+	// (default for all Go clients, including the standard pRPC client) and
+	// the response size is larger than a certain threshold.
 	//
-	// If true and the client sends "Accept-Encoding: gzip" (default for all Go
-	// clients), responses larger than a certain threshold will be compressed.
+	// If ResponseCompression is CompressNever or CompressDefault, responses are
+	// never compressed. This is a conservative default (since the server
+	// generally doesn't know the trade off between CPU and network in the
+	// environment it runs in and assumes network is cheaper; in particular this
+	// situation is realized when the server is running on the localhost network).
+	//
+	// If ResponseCompression is CompressAlways, eligible responses are always
+	// compressed.
+	//
+	// If ResponseCompression is CompressNotJSON, only eligible responses that
+	// do **not** use JSON encoding will be compressed. JSON responses are left
+	// uncompressed at this layer. This is primarily added for the Appengine
+	// environment: GAE runtime compresses JSON responses on its own already,
+	// presumably using a more efficient compressor (C++ and all). Note that the
+	// client will see all eligible responses compressed (JSON ones will be
+	// compressed by the GAE, and non-JSON ones will be compressed by the pRPC
+	// server).
+	//
+	// A compressed response is accompanied by "Content-Encoding: gzip" response
+	// header, telling the client that it should decompress it.
 	//
 	// The request compression is configured independently on the client. The
 	// server always accepts compressed requests.
-	EnableResponseCompression bool
+	ResponseCompression ResponseCompression
 
 	mu        sync.RWMutex
 	services  map[string]*service
@@ -335,9 +368,16 @@ func (s *Server) handlePOST(c *router.Context) {
 	}
 
 	// Ignore client's gzip preference if the server doesn't want to do
-	// compression.
-	if !s.EnableResponseCompression {
-		res.acceptsGZip = false
+	// compression for this particular request.
+	if res.acceptsGZip {
+		switch s.ResponseCompression {
+		case CompressAlways:
+			res.acceptsGZip = true
+		case CompressNotJSON:
+			res.acceptsGZip = res.fmt != FormatJSONPB
+		default:
+			res.acceptsGZip = false
+		}
 	}
 
 	writeResponse(c.Request.Context(), c.Writer, &res)

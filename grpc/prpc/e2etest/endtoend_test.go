@@ -129,7 +129,7 @@ func newTestClient(ctx context.Context, svc *service, opts *prpc.Options) (*prpc
 		}),
 	}
 
-	ts.EnableResponseCompression = true
+	ts.ResponseCompression = prpc.CompressAlways
 	prpcClient.EnableRequestCompression = true
 
 	return &ts, prpcClient, NewHelloClient(prpcClient)

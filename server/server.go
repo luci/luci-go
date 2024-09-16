@@ -2942,13 +2942,19 @@ func (s *Server) initMainPort(listener net.Listener) error {
 	// Install auth info handlers (under "/auth/api/v1/server/").
 	auth.InstallHandlers(s.Routes, nil)
 
+	// When running on GAE compress only non-JSON responses. The GAE runtime
+	// already compresses JSON responses itself (based on the "Content-Type"
+	// response header), presumably in the most efficient way. When running
+	// anywhere else, compress all responses in the server Go code.
+	compression := prpc.CompressAlways
+	if s.Options.Serverless == module.GAE {
+		compression = prpc.CompressNotJSON
+	}
+
 	// Prepare the pRPC server. Its configuration will be finished in Serve after
 	// all interceptors and authentication methods are registered.
 	s.prpc = &prpc.Server{
-		// Allow compression when not running on GAE. On GAE compression for text
-		// responses is done by GAE itself and doing it in our code would be
-		// wasteful.
-		EnableResponseCompression: s.Options.Serverless != module.GAE,
+		ResponseCompression: compression,
 	}
 	discovery.Enable(s.prpc)
 	s.prpc.InstallHandlers(s.Routes, nil)
