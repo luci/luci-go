@@ -1,0 +1,19 @@
+# This file specifies files that are *not* uploaded to Google Cloud Platform
+# using gcloud. It follows the same syntax as .gitignore, with the addition of
+# "#!include" directives (which insert the entries of the given .gitignore-style
+# file at that point).
+#
+# For more information, run:
+#   $ gcloud topic gcloudignore
+#
+
+# Experimental setup for push-on-green. See b/367097786.
+
+# Ignore all files by default.
+*
+
+# Except the bare minimum required by the UI service.
+!/out
+!/out/**
+!/main.go
+!/service-ui.yaml
