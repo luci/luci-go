@@ -8,7 +8,7 @@ build:
   - run: ['make', 'release']
     cwd: ${inputsdir}/ui
 
-  # This packages all Go code with its dependencies into _gopath/src/... 
+  # This packages all Go code with its dependencies into _gopath/src/...
   # It picks up the built frontend code from frontend/ui/out (which
   # is symlinked to /ui/out).
   - go_gae_bundle: ${inputsdir}/frontend/app.yaml
@@ -17,3 +17,13 @@ build:
   - go_gae_bundle: ${inputsdir}/service-api/service-api.yaml
     go_gae_bundle_as_module: True
     dest: ${contextdir}/service-api
+
+  # Experimental setup for push-on-green. See b/367097786.
+  #
+  # Note that we cannot simply split this entry into a separate build manifest.
+  # Multiple build manifests are built under the same directory in parallel.
+  # This causes LUCI UI's `make release` from multiple manifests to race against
+  # each other, causing various issues.
+  - go_gae_bundle: ${inputsdir}/service-ui/service-ui.yaml
+    go_gae_bundle_as_module: True
+    dest: ${contextdir}/service-ui
