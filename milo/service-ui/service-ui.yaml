@@ -22,31 +22,9 @@ instance_class: F4_1G
 automatic_scaling:
   min_idle_instances: 2
 
-# Keep app.yaml, service-api/service-api.yaml in sync.
-
-# luci_gae_vars is interpreted by gae.py, for apps deployed manually.
-# It maps the app ID being deployed to values of vars used below.
-luci_gae_vars:
-  luci-milo-dev:
-    AUTH_SERVICE_HOST: chrome-infra-auth-dev.appspot.com
-    CONFIG_SERVICE_HOST: config.luci.app
-    CRON_AUTHORIZED_CALLER: cloud-scheduler-jobs@luci-milo-dev.iam.gserviceaccount.com
-    MILO_HOST: VERSION.staging.milo.api.luci.app
-    TS_MON_ACCOUNT: app-engine-metric-publishers@prodx-mon-chrome-infra.google.com.iam.gserviceaccount.com
-    OAUTH_CLIENT_ID: 897369734084-d3t2c39aht2aqeop0f42pp48ejpr54up.apps.googleusercontent.com
-    OAUTH_CLIENT_SECRET: sm://oauth-client-secret
-    OAUTH_REDIRECT_URL: https://luci-milo-dev.appspot.com/auth/openid/callback
-    PUBSUB_AUTHORIZED_CALLER: cloud-pubsub-pusher@luci-milo-dev.iam.gserviceaccount.com
-    ROOT_SECRET: sm://root-secret
-    TINK_AEAD_KEY: sm://tink-aead-primary
-    REDIS_ADDR: 10.82.28.60:6379
-    DS_CACHE: redis
-    VPC_CONNECTOR: projects/luci-milo-dev/locations/us-central1/connectors/connector
-    GTM_CONTAINER_ID: GTM-5SMGXGB
-    LOGIN_SESSIONS_ROOT_URL: https://luci-milo-dev.appspot.com
-
-vpc_access_connector:
-  name: ${VPC_CONNECTOR}
+# Purposefully not kept in sync with frontend/app.yaml and
+# service-api/service-api.yaml. So it's clear that the UI service is only
+# capable of serving static assets for the UI.
 
 handlers:
 # Immutable SPA static resources.
@@ -91,7 +69,8 @@ handlers:
   # content when the service worker tries to fetch a new version.
   expiration: 0s
 
-# The rest is handled by Go code.
+# The rest is handled by Go code (a bare LUCI go server).
+# We don't expect users to hit this route.
 - url: /.*
   script: auto
   secure: always
@@ -99,24 +78,4 @@ handlers:
 inbound_services:
 - warmup
 
-entrypoint: >
-  main
-  -auth-service-host ${AUTH_SERVICE_HOST}
-  -config-service-host ${CONFIG_SERVICE_HOST}
-  -cron-authorized-caller ${CRON_AUTHORIZED_CALLER}
-  -milo-host ${MILO_HOST}
-  -ts-mon-account ${TS_MON_ACCOUNT}
-  -cloud-error-reporting
-  -root-secret ${ROOT_SECRET}
-  -primary-tink-aead-key ${TINK_AEAD_KEY}
-  -pubsub-authorized-caller ${PUBSUB_AUTHORIZED_CALLER}
-  -encrypted-cookies-client-id ${OAUTH_CLIENT_ID}
-  -encrypted-cookies-client-secret ${OAUTH_CLIENT_SECRET}
-  -encrypted-cookies-redirect-url ${OAUTH_REDIRECT_URL}
-  -encrypted-cookies-required-scopes https://www.googleapis.com/auth/gerritcodereview
-  -encrypted-cookies-optional-scopes https://www.googleapis.com/auth/buganizer
-  -encrypted-cookies-expose-state-endpoint
-  -redis-addr ${REDIS_ADDR}
-  -ds-cache ${DS_CACHE}
-  -gtm-container-id ${GTM_CONTAINER_ID}
-  -login-sessions-root-url ${LOGIN_SESSIONS_ROOT_URL}
+entrypoint: main
