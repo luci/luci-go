@@ -31,6 +31,15 @@ self.addEventListener('fetch', (e) => {
 
   const url = new URL(e.request.url);
 
+  // The `/ui` route is not intercepted by the service worker registered at
+  // `/ui/`. Redirects to `/ui/` so the page load can take advantage of the
+  // optimizations offered by the service worker registered at `/ui/`.
+  if (url.pathname === '/ui') {
+    url.pathname = '/ui/';
+    e.respondWith(Response.redirect(url.toString()));
+    return;
+  }
+
   const isSPA =
     // Project selector.
     url.pathname === '/' ||
