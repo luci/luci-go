@@ -38,7 +38,6 @@ import (
 	"go.chromium.org/luci/common/testing/prpctest"
 
 	"go.chromium.org/luci/grpc/prpc"
-	"go.chromium.org/luci/grpc/prpc/prpcpb"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -135,15 +134,25 @@ func newTestClient(ctx context.Context, svc *service, opts *prpc.Options) (*prpc
 	return &ts, prpcClient, NewHelloClient(prpcClient)
 }
 
-func TestEndToEnd(t *testing.T) {
+func TestEndToEndBinary(t *testing.T) {
 	t.Parallel()
+	endToEndTest(t, "binary")
+}
 
+func TestEndToEndJSON(t *testing.T) {
+	t.Parallel()
+	endToEndTest(t, "json")
+}
+
+func endToEndTest(t *testing.T, responseType string) {
 	Convey(`A client/server for the Greet service`, t, func() {
 		ctx := gologger.StdConfig.Use(context.Background())
 		svc := service{
 			sleep: func() time.Duration { return time.Millisecond },
 		}
-		ts, prpcC, client := newTestClient(ctx, &svc, nil)
+		ts, prpcC, client := newTestClient(ctx, &svc, &prpc.Options{
+			AcceptContentSubtype: responseType,
+		})
 		defer ts.Close()
 
 		Convey(`Can round-trip a hello message`, func() {
@@ -161,15 +170,8 @@ func TestEndToEnd(t *testing.T) {
 
 			_, err := client.Greet(ctx, &HelloRequest{Name: "round-trip"})
 			So(err, ShouldHaveGRPCStatus, codes.Unavailable)
-			So(err, ShouldErrLike, "the response size 126 exceeds the client limit 123")
-			So(prpc.ProtocolErrorDetails(err), ShouldResembleProto, &prpcpb.ErrorDetails{
-				Error: &prpcpb.ErrorDetails_ResponseTooBig{
-					ResponseTooBig: &prpcpb.ResponseTooBig{
-						ResponseSize:  126,
-						ResponseLimit: 123,
-					},
-				},
-			})
+			So(err, ShouldErrLike, "exceeds the client limit 123")
+			So(prpc.ProtocolErrorDetails(err).GetResponseTooBig(), ShouldNotBeNil)
 		})
 
 		Convey(`Can send a giant message with compression`, func() {

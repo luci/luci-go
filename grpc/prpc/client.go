@@ -251,26 +251,7 @@ func (c *Client) Call(ctx context.Context, serviceName, methodName string, in, o
 	if err != nil {
 		return err
 	}
-
-	switch options.outFormat {
-	case FormatBinary:
-		err = proto.Unmarshal(resp, out)
-	case FormatJSONPB:
-		// We AllowUnknownFields because otherwise all prpc clients become tightly
-		// coupled to the server implementation and will break with codes.Internal
-		// when the server adds a new field to the response.
-		//
-		// We presume here that decoding a partial response will be easier to
-		// recover from in a deployment scenario than breaking all callers.
-		err = (&jsonpb.Unmarshaler{AllowUnknownFields: true}).Unmarshal(bytes.NewReader(resp), out)
-	default:
-		err = errors.Reason("unsupported outFormat: %s", options.outFormat).Err()
-	}
-	if err != nil {
-		return status.Errorf(codes.Internal, "prpc: failed to unmarshal the response: %s", err)
-	}
-
-	return nil
+	return unmarshalMessage(resp, out, options.outFormat, "the response")
 }
 
 // CallWithFormats is like Call, but sends and returns raw data without
@@ -503,8 +484,12 @@ func (c *Client) attemptCall(ctx context.Context, options *Options, req *http.Re
 		*options.resTrailerMetadata = md
 	}
 
-	// Read the RPC status (perhaps with details). This is nil on success.
-	err = c.readStatus(res, buf)
+	// Read the RPC status (perhaps with details). This is nil on success. Note
+	// that errors always have "text/plain" response Content-Type, so we can't
+	// rely on this header to know how to deserialize status details. Instead
+	// expect details to be encoded based on the "Accept" header in the request
+	// (which is the same as outFormat).
+	err = c.readStatus(res, buf, options.outFormat)
 
 	return res.Header.Get("Content-Type"), err
 }
@@ -569,7 +554,7 @@ func codeForErr(err error) codes.Code {
 // readStatus retrieves the detailed status from the response.
 //
 // Puts it into a status.New(...).Err() error.
-func (c *Client) readStatus(r *http.Response, bodyBuf *bytes.Buffer) error {
+func (c *Client) readStatus(r *http.Response, bodyBuf *bytes.Buffer, respFmt Format) error {
 	codeHeader := r.Header.Get(HeaderGRPCCode)
 	if codeHeader == "" {
 		if r.StatusCode >= 500 {
@@ -603,8 +588,10 @@ func (c *Client) readStatus(r *http.Response, bodyBuf *bytes.Buffer) error {
 		Code:    int32(code),
 		Message: strings.TrimSuffix(c.readErrorMessage(bodyBuf), "\n"),
 	}
-	if sp.Details, err = c.readStatusDetails(r); err != nil {
-		return err
+	if details := r.Header[HeaderStatusDetail]; len(details) != 0 {
+		if sp.Details, err = parseStatusDetails(details, respFmt); err != nil {
+			return err
+		}
 	}
 	return status.FromProto(sp).Err()
 }
@@ -628,15 +615,10 @@ func (c *Client) readErrorMessage(bodyBuf *bytes.Buffer) string {
 	return string(ret)
 }
 
-// readStatusDetails reads google.rpc.Status.details from the response headers.
+// parseStatusDetails parses headers with google.rpc.Status.details.
 //
 // Returns gRPC errors.
-func (c *Client) readStatusDetails(r *http.Response) ([]*anypb.Any, error) {
-	values := r.Header[HeaderStatusDetail]
-	if len(values) == 0 {
-		return nil, nil
-	}
-
+func parseStatusDetails(values []string, respFmt Format) ([]*anypb.Any, error) {
 	ret := make([]*anypb.Any, len(values))
 	var buf []byte
 	for i, v := range values {
@@ -651,13 +633,38 @@ func (c *Client) readStatusDetails(r *http.Response) ([]*anypb.Any, error) {
 		}
 
 		msg := &anypb.Any{}
-		if err := proto.Unmarshal(buf[:n], msg); err != nil {
-			return nil, status.Errorf(codes.Internal, "prpc: failed to unmarshal status detail: %s", err)
+		if err := unmarshalMessage(buf[:n], msg, respFmt, "the status details header"); err != nil {
+			return nil, err
 		}
 		ret[i] = msg
 	}
 
 	return ret, nil
+}
+
+// unmarshalMessage unmarshals the message encoded in the given format.
+//
+// Returns gRPC errors.
+func unmarshalMessage(blob []byte, out proto.Message, format Format, what string) error {
+	var err error
+	switch format {
+	case FormatBinary:
+		err = proto.Unmarshal(blob, out)
+	case FormatJSONPB:
+		// We AllowUnknownFields because otherwise all prpc clients become tightly
+		// coupled to the server implementation and will break with codes.Internal
+		// when the server adds a new field to the response.
+		//
+		// We presume here that decoding a partial response will be easier to
+		// recover from in a deployment scenario than breaking all callers.
+		err = (&jsonpb.Unmarshaler{AllowUnknownFields: true}).Unmarshal(bytes.NewReader(blob), out)
+	default:
+		err = errors.Reason("unsupported response format: %s", format).Err()
+	}
+	if err != nil {
+		return status.Errorf(codes.Internal, "prpc: failed to unmarshal %s: %s", what, err)
+	}
+	return nil
 }
 
 // prepareRequest creates an HTTP request for an RPC.
