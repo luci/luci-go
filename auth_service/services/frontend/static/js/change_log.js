@@ -78,11 +78,11 @@ const parseTarget = (t) => {
       targetURL = common.getGroupPageURL(name);
       break;
     case 'AuthIPWhitelist':
-      targetURL = '/ip_allowlists';
+      targetURL = '/v2/ui/ip_allowlists';
       break;
     case 'AuthIPWhitelistAssignments':
       title = 'IP allowlist assignment';
-      targetURL = '/ip_allowlists';
+      targetURL = '/v2/ui/ip_allowlists';
       break;
     case 'AuthGlobalConfig':
       title = 'Global config';

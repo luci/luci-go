@@ -74,10 +74,11 @@ func main() {
 	enableGroupImports := model.ParseEnableEnvVar(model.EnableGroupImportsEnvVar)
 
 	impl.Main(modules, func(srv *server.Server) error {
-		// On GAE '/static' is served by GAE itself (see app.yaml). When running
-		// locally in dev mode we need to do it ourselves.
+		// On GAE '/static' is served by GAE itself (see
+		// service-defaultv2.yaml). When running locally in dev mode we need to
+		// do it ourselves.
 		if !srv.Options.Prod {
-			srv.Routes.Static("/static", nil, http.Dir("./static"))
+			srv.Routes.Static("/v2/ui/static", nil, http.Dir("./static"))
 		}
 
 		// Cookie auth and pRPC have some rough edges, see prpcCookieAuth comment.
@@ -153,21 +154,32 @@ func main() {
 		}
 
 		srv.Routes.GET("/", mw, func(ctx *router.Context) {
-			http.Redirect(ctx.Writer, ctx.Request, "/groups", http.StatusFound)
+			http.Redirect(ctx.Writer, ctx.Request, "/v2/ui/groups", http.StatusFound)
 		})
-		srv.Routes.GET("/groups", mw, servePage("pages/groups.html"))
+		srv.Routes.GET("/v2", mw, func(ctx *router.Context) {
+			http.Redirect(ctx.Writer, ctx.Request, "/v2/ui/groups", http.StatusFound)
+		})
+		srv.Routes.GET("/v2/ui", mw, func(ctx *router.Context) {
+			http.Redirect(ctx.Writer, ctx.Request, "/v2/ui/groups", http.StatusFound)
+		})
+		srv.Routes.GET("/v2/ui/groups", mw, servePage("pages/groups.html"))
 		// Note that external groups have "/" in their names.
-		srv.Routes.GET("/groups/*groupName", mw, servePage("pages/groups.html"))
-		srv.Routes.GET("/listing", mw, servePage("pages/listing.html"))
-		srv.Routes.GET("/change_log", mw, servePage("pages/change_log.html"))
-		srv.Routes.GET("/ip_allowlists", mw, servePage("pages/ip_allowlists.html"))
-		srv.Routes.GET("/lookup", mw, servePage("pages/lookup.html"))
-		srv.Routes.GET("/services", mw, servePage("pages/services.html"))
+		srv.Routes.GET("/v2/ui/groups/*groupName", mw, servePage("pages/groups.html"))
+		srv.Routes.GET("/v2/ui/listing", mw, servePage("pages/listing.html"))
+		srv.Routes.GET("/v2/ui/change_log", mw, servePage("pages/change_log.html"))
+		srv.Routes.GET("/v2/ui/ip_allowlists", mw, servePage("pages/ip_allowlists.html"))
+		srv.Routes.GET("/v2/ui/lookup", mw, servePage("pages/lookup.html"))
+		srv.Routes.GET("/v2/ui/services", mw, servePage("pages/services.html"))
 
 		// Redirect legacy UI paths to their corresponding v2 UI paths.
 		toV2UI := func(ctx *router.Context) {
-			target := strings.TrimPrefix(ctx.Request.URL.RequestURI(), "/auth")
-			http.Redirect(ctx.Writer, ctx.Request, target, http.StatusMovedPermanently)
+			legacyPath := ctx.Request.URL.RequestURI()
+			resource := strings.TrimPrefix(legacyPath, "/auth")
+			target := fmt.Sprintf("/v2/ui/%s", strings.TrimPrefix(resource, "/"))
+			// TODO: b/302615590 Change to http.StatusMovedPermanently once the
+			// UI migration is complete, otherwise browsers may cache the new
+			// location and make rollbacks difficult.
+			http.Redirect(ctx.Writer, ctx.Request, target, http.StatusFound)
 		}
 		srv.Routes.GET("/auth/groups", mw, toV2UI)
 		srv.Routes.GET("/auth/groups/*groupName", mw, toV2UI)

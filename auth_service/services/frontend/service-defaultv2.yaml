@@ -29,7 +29,7 @@ inbound_services:
 - warmup
 
 handlers:
-- url: /static
+- url: /v2/ui/static
   static_dir: static
   secure: always
   http_headers:
