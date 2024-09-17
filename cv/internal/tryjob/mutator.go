@@ -84,6 +84,23 @@ type rmNotifier interface {
 // ```
 var ErrStopMutation = errors.New("stop Tryjob mutation")
 
+// ConflictTryjobsError is returned if the ExternalID of Tryjob is updated
+// to X from empty where X is already associated with another Tryjob.
+type ConflictTryjobsError struct {
+	// ExternalID is the external ID Tryjob is updating to.
+	ExternalID ExternalID
+	// Intended is the ID of the Tryjob to update.
+	Intended common.TryjobID
+	// Existing is the ID of the Tryjob that the external ID already maps to in
+	// CV.
+	Existing common.TryjobID
+}
+
+// Error implements Go error interface.
+func (e *ConflictTryjobsError) Error() string {
+	return fmt.Sprintf("intend to map ExternalID %q to %d, but it has already mapped to %d", e.ExternalID, e.Intended, e.Existing)
+}
+
 // MutateCallback is called by Mutator to mutate the Tryjob inside transactions.
 //
 // The function should be idempotent.
@@ -112,34 +129,35 @@ type MutateCallback func(tj *Tryjob) error
 // Upsert returns (nil, nil).
 func (m *Mutator) Upsert(ctx context.Context, eid ExternalID, clbk MutateCallback) (*Tryjob, error) {
 	// Quick path in case Tryjob already exists, which is a common case,
-	// and can usually be satisfied by dscache lookup.
-	mapEntity := tryjobMap{ExternalID: eid}
-	switch err := datastore.Get(ctx, &mapEntity); {
-	case errors.Is(err, datastore.ErrNoSuchEntity):
-		// OK, proceed to slow path below.
+	// and can usually be satisfied by dscache lookup. Note that the eid to
+	// internal id mapping (i.e. tryjobMap entity) should be immutable once
+	// established.
+	switch internalID, err := eid.Resolve(ctx); {
 	case err != nil:
-		return nil, errors.Annotate(err, "failed to get tryjobMap entity %q", eid).Tag(transient.Tag).Err()
-	default:
-		return m.Update(ctx, mapEntity.InternalID, clbk)
+		return nil, err
+	case internalID != 0:
+		// already exists. Update directly.
+		return m.Update(ctx, internalID, clbk)
 	}
-
+	// Tryjob with given external ID doesn't exist, proceed to slow path below.
 	var result *Tryjob
 	var innerErr error
 	err := datastore.RunInTransaction(ctx, func(ctx context.Context) (err error) {
 		defer func() { innerErr = err }()
-		// Check if Tryjob exists and prepare appropriate Tryjob mutation.
+		// Check if eid maps to a known Tryjob again prepare appropriate Tryjob
+		// mutation. The check is needed to prevent potential race condition where
+		// the mapping is established in between the first check and this datastore
+		// transaction.
 		var tjMutation *TryjobMutation
-		mapEntity := tryjobMap{ExternalID: eid}
-		switch err := datastore.Get(ctx, &mapEntity); {
-		case errors.Is(err, datastore.ErrNoSuchEntity):
-			tjMutation, err = m.beginInsert(ctx, eid)
-			if err != nil {
+		switch internalID, err := eid.Resolve(ctx); {
+		case err != nil:
+			return err
+		case internalID == 0:
+			if tjMutation, err = m.beginInsert(ctx, eid); err != nil {
 				return err
 			}
-		case err != nil:
-			return errors.Annotate(err, "failed to get tryjobMap entity %q", eid).Tag(transient.Tag).Err()
 		default:
-			if tjMutation, err = m.Begin(ctx, mapEntity.InternalID); err != nil {
+			if tjMutation, err = m.Begin(ctx, internalID); err != nil {
 				return err
 			}
 			result = tjMutation.Tryjob
@@ -163,6 +181,12 @@ func (m *Mutator) Upsert(ctx context.Context, eid ExternalID, clbk MutateCallbac
 }
 
 // Update mutates one Tryjob via a dedicated transaction.
+//
+// Update may update the ExternalID field if it was previously empty. The new
+// mapping will be saved to ensure that one External ID will only maps to one
+// Tryjob entity. However, if the external ID has already mapped to another
+// Tryjob (different from the given Tryjob to update), ConflictTryjobsError
+// will be returned.
 //
 // If the callback returns ErrStopMutation, then Update returns the read Tryjob
 // entity and nil error.
@@ -198,7 +222,7 @@ func (m *Mutator) Update(ctx context.Context, id common.TryjobID, clbk MutateCal
 type TryjobMutation struct {
 	// Tryjob can be modified except the following fields:
 	//  * ID
-	//  * ExternalID
+	//  * ExternalID (unless it's updated from empty)
 	//  * EVersion
 	//  * EntityCreateTime
 	//  * EntityUpdateTime
@@ -210,8 +234,8 @@ type TryjobMutation struct {
 	// trans is only to detect incorrect usage.
 	trans datastore.Transaction
 
-	id         common.TryjobID
-	externalID ExternalID
+	id              common.TryjobID
+	priorExternalID ExternalID
 
 	priorEversion   int64
 	priorCreateTime time.Time
@@ -257,7 +281,7 @@ func (m *Mutator) Begin(ctx context.Context, id common.TryjobID) (*TryjobMutatio
 
 func (tjm *TryjobMutation) backup() {
 	tjm.id = tjm.Tryjob.ID
-	tjm.externalID = tjm.Tryjob.ExternalID
+	tjm.priorExternalID = tjm.Tryjob.ExternalID
 	tjm.priorEversion = tjm.Tryjob.EVersion
 	tjm.priorCreateTime = tjm.Tryjob.EntityCreateTime
 	tjm.priorUpdateTime = tjm.Tryjob.EntityUpdateTime
@@ -265,12 +289,25 @@ func (tjm *TryjobMutation) backup() {
 
 // Finalize finalizes Tryjob mutation.
 //
+// The Tryjob mutation may set the ExternalID field if it was previously empty.
+// The new mapping will be saved to ensure that one External ID will only
+// maps to one Tryjob entity. However, if the external ID has already mapped
+// to another Tryjob (different from the current Tryjob to Finalize),
+// ConflictTryjobsError will be returned
+//
 // Must be called at most once.
 // Must be called in the same Datastore transaction as Begin() which began the
 // Tryjob mutation.
 func (tjm *TryjobMutation) Finalize(ctx context.Context) (*Tryjob, error) {
-	tjm.finalize(ctx)
-	if err := datastore.Put(ctx, tjm.Tryjob); err != nil {
+	newMapping, err := tjm.finalize(ctx)
+	if err != nil {
+		return nil, err
+	}
+	toSave := []any{tjm.Tryjob}
+	if newMapping != nil {
+		toSave = append(toSave, newMapping)
+	}
+	if err := datastore.Put(ctx, toSave); err != nil {
 		return nil, errors.Annotate(err, "failed to put Tryjob %d", tjm.id).Tag(transient.Tag).Err()
 	}
 	if err := tjm.m.notifyRuns(ctx, tjm); err != nil {
@@ -279,7 +316,7 @@ func (tjm *TryjobMutation) Finalize(ctx context.Context) (*Tryjob, error) {
 	return tjm.Tryjob, nil
 }
 
-func (tjm *TryjobMutation) finalize(ctx context.Context) {
+func (tjm *TryjobMutation) finalize(ctx context.Context) (newMapping *tryjobMap, err error) {
 	switch t := datastore.CurrentTransaction(ctx); {
 	case tjm.trans == nil:
 		panic(errors.New("tryjob.TryjobMutation.Finalize called the second time"))
@@ -288,26 +325,49 @@ func (tjm *TryjobMutation) finalize(ctx context.Context) {
 	case t != tjm.trans:
 		panic(errors.New("tryjob.TryjobMutation.Finalize called inside a different Datastore transaction"))
 	}
-	tjm.trans = nil
-
 	switch {
 	case tjm.id != tjm.Tryjob.ID:
 		panic(errors.New("Tryjob.ID must not be modified"))
-	case tjm.externalID != tjm.Tryjob.ExternalID:
-		panic(errors.New("Tryjob.ExternalID must not be modified"))
+	case tjm.priorExternalID != "" && tjm.priorExternalID != tjm.Tryjob.ExternalID:
+		panic(errors.New("Tryjob.ExternalID must not be modified once set"))
 	case tjm.priorEversion != tjm.Tryjob.EVersion:
 		panic(fmt.Errorf("Tryjob.EVersion must not be modified"))
 	case !tjm.priorCreateTime.Equal(tjm.Tryjob.EntityCreateTime):
 		panic(fmt.Errorf("Tryjob.EntityCreateTime must not be modified"))
 	case !tjm.priorUpdateTime.Equal(tjm.Tryjob.EntityUpdateTime):
 		panic(fmt.Errorf("Tryjob.EntityUpdateTime must not be modified"))
+	case tjm.priorExternalID == "" && tjm.Tryjob.ExternalID != "":
+		// Check wether the external ID to update to already maps to the an
+		// internal Tryjob.
+		switch existingTryjobID, err := tjm.Tryjob.ExternalID.Resolve(ctx); {
+		case err != nil:
+			return nil, err
+		case existingTryjobID == 0:
+			// Tryjob with the given external ID doesn't exist. Returns the new
+			// mapping to save.
+			newMapping = &tryjobMap{
+				ExternalID: tjm.Tryjob.ExternalID,
+				InternalID: tjm.Tryjob.ID,
+			}
+		case existingTryjobID == tjm.Tryjob.ID:
+			// mapping has already established.
+		default:
+			// The externalID has mapped to another Tryjob already.
+			return nil, &ConflictTryjobsError{
+				ExternalID: tjm.Tryjob.ExternalID,
+				Intended:   tjm.Tryjob.ID,
+				Existing:   existingTryjobID,
+			}
+		}
 	}
+	tjm.trans = nil
 	tjm.Tryjob.EVersion++
 	now := datastore.RoundTime(clock.Now(ctx).UTC())
 	if tjm.Tryjob.EntityCreateTime.IsZero() {
 		tjm.Tryjob.EntityCreateTime = now
 	}
 	tjm.Tryjob.EntityUpdateTime = now
+	return newMapping, nil
 }
 
 // BeginBatch starts a batch of Tryjob mutations within the same Datastore
@@ -341,12 +401,19 @@ func (m *Mutator) BeginBatch(ctx context.Context, ids common.TryjobIDs) ([]*Tryj
 // Datastore transaction.
 func (m *Mutator) FinalizeBatch(ctx context.Context, muts []*TryjobMutation) ([]*Tryjob, error) {
 	tjs := make([]*Tryjob, len(muts))
+	toSave := make([]any, 0, 2*len(muts))
 	for i, mut := range muts {
-		mut.finalize(ctx)
 		tjs[i] = mut.Tryjob
+		toSave = append(toSave, mut.Tryjob)
+		switch newMapping, err := mut.finalize(ctx); {
+		case err != nil:
+			return nil, err
+		case newMapping != nil:
+			toSave = append(toSave, newMapping)
+		}
 	}
-	if err := datastore.Put(ctx, tjs); err != nil {
-		return nil, errors.Annotate(err, "failed to put %d Tryjobs", len(tjs)).Tag(transient.Tag).Err()
+	if err := datastore.Put(ctx, toSave); err != nil {
+		return nil, errors.Annotate(err, "failed to save Tryjobs and new Tryjob mappings").Tag(transient.Tag).Err()
 	}
 	if err := m.notifyRuns(ctx, muts...); err != nil {
 		return nil, err

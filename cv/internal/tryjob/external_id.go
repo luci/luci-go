@@ -190,6 +190,21 @@ func (e ExternalID) MustCreateIfNotExists(ctx context.Context) *Tryjob {
 	return tryjob
 }
 
+// Resolve resolves the ExternalID to internal TryjobID.
+//
+// Returns zero TryjobID if the ExternalID is not mapped to any Tryjob.
+func (e ExternalID) Resolve(ctx context.Context) (common.TryjobID, error) {
+	tjm := &tryjobMap{ExternalID: e}
+	switch err := datastore.Get(ctx, tjm); {
+	case errors.Is(err, datastore.ErrNoSuchEntity):
+		return 0, nil
+	case err != nil:
+		return 0, errors.Annotate(err, "failed to load tryjobMap").Tag(transient.Tag).Err()
+	default:
+		return tjm.InternalID, nil
+	}
+}
+
 // Resolve converts ExternalIDs to internal TryjobIDs.
 func Resolve(ctx context.Context, eids ...ExternalID) (common.TryjobIDs, error) {
 	tjms := make([]tryjobMap, len(eids))

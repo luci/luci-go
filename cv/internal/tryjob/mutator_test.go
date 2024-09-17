@@ -159,6 +159,40 @@ func TestUpdate(t *testing.T) {
 		assert.That(t, tj.UntriggeredReason, should.Equal("bad"))
 	})
 
+	t.Run("Update External ID", func(t *testing.T) {
+		t.Run("No mapping exists", func(t *testing.T) {
+			newTryjob := &Tryjob{}
+			assert.That(t, datastore.Put(ctx, newTryjob), should.ErrLike(nil))
+			newExternalID := MustBuildbucketID("example.bb.com", 999)
+			newTryjob, err := m.Update(ctx, newTryjob.ID, func(tj *Tryjob) error {
+				tj.ExternalID = newExternalID
+				return nil
+			})
+			assert.That(t, err, should.ErrLike(nil))
+			assert.That(t, newTryjob.ExternalID, should.Equal(newExternalID))
+			resolved, err := newExternalID.Resolve(ctx)
+			assert.That(t, err, should.ErrLike(nil))
+			assert.That(t, resolved, should.Equal(newTryjob.ID))
+		})
+		t.Run("Conflicting mapping exists", func(t *testing.T) {
+			newTryjob := &Tryjob{}
+			assert.That(t, datastore.Put(ctx, newTryjob), should.ErrLike(nil))
+			eid := tj.ExternalID // already maps to another Tryjob
+			_, err := m.Update(ctx, newTryjob.ID, func(tj *Tryjob) error {
+				tj.ExternalID = eid
+				return nil
+			})
+			assert.Loosely(t, err, should.NotBeNil)
+			cErr := &ConflictTryjobsError{}
+			assert.That(t, errors.As(err, &cErr), should.BeTrue)
+			assert.That(t, cErr, should.Match(&ConflictTryjobsError{
+				ExternalID: eid,
+				Existing:   tj.ID,
+				Intended:   newTryjob.ID,
+			}))
+		})
+	})
+
 	t.Run("Skips update", func(t *testing.T) {
 		ct.Clock.Add(1 * time.Minute)
 		tj, err := m.Update(ctx, tryjobID, func(tj *Tryjob) error {
