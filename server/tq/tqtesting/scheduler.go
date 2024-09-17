@@ -355,10 +355,9 @@ func (s *Scheduler) Run(ctx context.Context, opts ...RunOption) {
 	}
 
 	for ctx.Err() == nil {
-		if s.shouldStop(opts) {
+		switch stop, task, nextETA, taskDone := s.tryDequeueTask(ctx, opts); {
+		case stop:
 			return
-		}
-		switch task, nextETA, taskDone := s.tryDequeueTask(ctx); {
 		case task != nil:
 			// Pass the task to the executor. It may either execute it right away
 			// or asynchronously later. Either way, when it is done it will call
@@ -401,20 +400,27 @@ func (s *Scheduler) wakeUpLocked() {
 
 // tryDequeueTask pops the earliest task if it is ready for execution.
 //
+// Before doing that it also checks (while holding the lock) if the run loop
+// should stop now, based on given run options.
+//
 // A task is executable if it has ETA <= now. If no tasks are ready, returns
 // ETA of the earliest task or time.Time{} if the queue is empty.
 //
 // If pops a task, returns a callback that must be called (perhaps
 // asynchronously) when the task finishes execution.
-func (s *Scheduler) tryDequeueTask(ctx context.Context) (t *Task, eta time.Time, done func(retry bool)) {
+func (s *Scheduler) tryDequeueTask(ctx context.Context, opts []RunOption) (stop bool, t *Task, eta time.Time, done func(retry bool)) {
 	s.m.Lock()
 	defer s.m.Unlock()
 
+	if s.shouldStopLocked(opts) {
+		return true, nil, time.Time{}, nil
+	}
+
 	if len(s.tasks) == 0 {
-		return nil, time.Time{}, nil
+		return false, nil, time.Time{}, nil
 	}
 	if eta := s.tasks[0].ETA; eta.After(clock.Now(ctx)) {
-		return nil, eta, nil
+		return false, nil, eta, nil
 	}
 
 	task := heap.Pop(&s.tasks).(*Task)
@@ -423,7 +429,7 @@ func (s *Scheduler) tryDequeueTask(ctx context.Context) (t *Task, eta time.Time,
 	s.executing[task] = struct{}{}
 	s.wg.Add(1)
 
-	return task, time.Time{}, func(retry bool) {
+	return false, task, time.Time{}, func(retry bool) {
 		defer s.wg.Done()
 
 		reenqueued := false
@@ -489,10 +495,7 @@ func (s *Scheduler) evalRetryLocked(t *Task) (retry bool, delay time.Duration) {
 }
 
 // shouldStop returns true if the scheduler should stop now.
-func (s *Scheduler) shouldStop(opts []RunOption) bool {
-	s.m.Lock()
-	defer s.m.Unlock()
-
+func (s *Scheduler) shouldStopLocked(opts []RunOption) bool {
 	recentlyFinished := s.recentlyFinished
 	s.recentlyFinished = s.recentlyFinished[:0]
 
