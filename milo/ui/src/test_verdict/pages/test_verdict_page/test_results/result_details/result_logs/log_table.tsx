@@ -45,7 +45,7 @@ interface LogSeverityProps {
 }
 
 function LogSeverity({ severity }: LogSeverityProps) {
-  if (!severity || severity === 'UNSPECIFIED') {
+  if (!severity || severity === 'SEVERITY_UNSPECIFIED') {
     return EMPTY_CELL_VALUE;
   }
 
