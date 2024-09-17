@@ -18,13 +18,16 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/openid"
 	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/tokenserver/auth/machine"
 
 	"go.chromium.org/luci/swarming/server/acls"
 	"go.chromium.org/luci/swarming/server/cfg"
@@ -140,10 +143,28 @@ func (srv *BotAPIServer) checkBotCodeAccess(ctx context.Context, req *http.Reque
 	}
 
 	// Check if this is some known bot. Carry on with other checks if not.
+	//
+	// Bot ID can be supplied as:
+	//   * bot_id query parameter.
+	//   * X-Luci-Swarming-Bot-ID header.
+	//   * As part of LUCI machine token.
+	//   * As part of GCE VM identity token.
 	botID := req.URL.Query().Get("bot_id")
 	if botID == "" {
 		botID = req.Header.Get("X-Luci-Swarming-Bot-ID")
 	}
+	if botID == "" {
+		if tok := machine.GetMachineTokenInfo(ctx); tok != nil {
+			botID, _, _ = strings.Cut(tok.FQDN, ".")
+		}
+	}
+	if botID == "" {
+		if tok := openid.GetGoogleComputeTokenInfo(ctx); tok != nil {
+			botID = tok.Instance
+		}
+	}
+
+	// Check the bot with this ID is using the expected credentials.
 	if botID != "" {
 		err := srv.authorizeBot(ctx, botID, conf.BotGroup(botID).Auth)
 		if err == nil || transient.Tag.In(err) {

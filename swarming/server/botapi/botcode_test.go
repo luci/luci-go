@@ -33,8 +33,10 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/auth/openid"
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/tokenserver/auth/machine"
 
 	configpb "go.chromium.org/luci/swarming/proto/config"
 	"go.chromium.org/luci/swarming/server/cfg/cfgtest"
@@ -86,20 +88,28 @@ func TestBotCode(t *testing.T) {
 			return errors.Reason("denied").Err()
 		}
 
-		call := func(callerID identity.Identity, peerIP, version string, q url.Values, botIDHeader string) *httptest.ResponseRecorder {
-			ctx := auth.WithState(ctx, &authtest.FakeState{
+		call := func(callerID identity.Identity, peerIP, version string, q url.Values, botIDAuth any) *httptest.ResponseRecorder {
+			fakeState := &authtest.FakeState{
 				Identity:       callerID,
 				PeerIPOverride: net.ParseIP(peerIP),
 				FakeDB:         authDB,
-			})
+			}
+			switch botIDAuth.(type) {
+			case *machine.MachineTokenInfo, *openid.GoogleComputeTokenInfo:
+				// Custom auth token.
+				fakeState.UserExtra = botIDAuth
+			case string, nil:
+				// The bot ID header, see below.
+			}
+			ctx := auth.WithState(ctx, fakeState)
 
 			uri := "/bot_code"
 			if len(q) != 0 {
 				uri += "?" + q.Encode()
 			}
 			req := httptest.NewRequest("GET", uri, nil).WithContext(ctx)
-			if botIDHeader != "" {
-				req.Header.Set("X-Luci-Swarming-Bot-ID", botIDHeader)
+			if botIDVal, _ := botIDAuth.(string); botIDVal != "" {
+				req.Header.Set("X-Luci-Swarming-Bot-ID", botIDVal)
 			}
 
 			var params []httprouter.Param
@@ -164,8 +174,32 @@ func TestBotCode(t *testing.T) {
 			rr = call(anonymous, unknownIP, "", nil, goodBot)
 			assert.That(t, rr.Code, should.Equal(http.StatusFound))
 
-			// Bad.
+			// Good, using LUCI machine token.
+			rr = call(anonymous, unknownIP, "", nil, &machine.MachineTokenInfo{
+				FQDN: goodBot + ".some.domain",
+			})
+			assert.That(t, rr.Code, should.Equal(http.StatusFound))
+
+			// Good, using GCE VM identity token.
+			rr = call(anonymous, unknownIP, "", nil, &openid.GoogleComputeTokenInfo{
+				Instance: goodBot,
+			})
+			assert.That(t, rr.Code, should.Equal(http.StatusFound))
+
+			// Bad, unknown bot ID.
 			rr = call(anonymous, unknownIP, "", nil, "unknown")
+			assert.That(t, rr.Code, should.Equal(http.StatusForbidden))
+
+			// Bad, LUCI machine token with unknown bot.
+			rr = call(anonymous, unknownIP, "", nil, &machine.MachineTokenInfo{
+				FQDN: "unknown",
+			})
+			assert.That(t, rr.Code, should.Equal(http.StatusForbidden))
+
+			// Bad, GCE VM identity token with unknown bot.
+			rr = call(anonymous, unknownIP, "", nil, &openid.GoogleComputeTokenInfo{
+				Instance: "unknown",
+			})
 			assert.That(t, rr.Code, should.Equal(http.StatusForbidden))
 		})
 
