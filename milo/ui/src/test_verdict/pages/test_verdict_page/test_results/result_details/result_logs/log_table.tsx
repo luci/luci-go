@@ -22,9 +22,12 @@ import {
 import { LinearProgress, TableRow, Tooltip } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
+import { useEffect, useMemo, useRef } from 'react';
+import { TableVirtuosoHandle } from 'react-virtuoso';
 
 import { Timestamp } from '@/common/components/timestamp';
 import { NUMERIC_TIME_FORMAT_WITH_MS } from '@/common/tools/time_utils';
+import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
   ArtifactLine,
   artifactLine_SeverityToJSON,
@@ -35,6 +38,7 @@ import { useResultDbClient } from '@/test_verdict/hooks/prpc_clients';
 import { useSelectedArtifact } from './context';
 
 const EMPTY_CELL_VALUE = '-';
+const LOG_SEARCH_QUERY = 'logSearchQuery';
 
 interface LogSeverityProps {
   severity: string | undefined;
@@ -99,6 +103,8 @@ function processLines(lines: readonly ArtifactLine[]) {
 export function LogTable() {
   const selectedArtifact = useSelectedArtifact();
   const client = useResultDbClient();
+  const virtuosoRef = useRef<TableVirtuosoHandle | null>(null);
+  const [urlSearchParams] = useSyncedSearchParams();
 
   const { data, isLoading, isError, error } = useQuery({
     ...client.ListArtifactLines.query(
@@ -108,6 +114,18 @@ export function LogTable() {
     ),
     enabled: !!selectedArtifact,
   });
+  const entries = useMemo(() => (data ? processLines(data.lines) : []), [data]);
+  const searchTerm = urlSearchParams.get(LOG_SEARCH_QUERY);
+
+  useEffect(() => {
+    // Updating the search term in the URL will cause the table
+    // to scroll to the first item matching that search term.
+    if (entries.length > 0 && searchTerm && virtuosoRef.current) {
+      virtuosoRef.current.scrollToIndex(
+        entries.findIndex((l) => l.summary.includes(searchTerm)),
+      );
+    }
+  }, [entries, searchTerm]);
 
   if (isError) {
     throw error;
@@ -121,9 +139,10 @@ export function LogTable() {
       ) : (
         <>
           <VirtualizedTable
+            ref={virtuosoRef}
             initialTopMostItemIndex={0}
             disableVirtualization={data && data.lines.length < 1500}
-            entries={data ? processLines(data.lines) : []}
+            entries={entries}
             fixedHeaderContent={() => (
               <TableRow>
                 <LogsHeaderCell label="#" width="10px" />
