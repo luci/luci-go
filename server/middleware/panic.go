@@ -30,12 +30,15 @@ func WithPanicCatcher(c *router.Context, next router.Handler) {
 	w := c.Writer
 	uri := c.Request.RequestURI
 	defer paniccatcher.Catch(func(p *paniccatcher.Panic) {
-		// Log the reason before the stack in case appengine cuts entire log
-		// message due to size limitations.
-		logging.Fields{
-			"panic.error": p.Reason,
-		}.Errorf(ctx, "Caught panic during handling of %q: %s\n%s", uri, p.Reason, p.Stack)
-
+		// ErrAbortHandler is explicitly used by net/http to signal that the panic
+		// is "expected" and it should not be logged.
+		if p.Reason != http.ErrAbortHandler {
+			// Log the reason before the stack in case appengine cuts entire log
+			// message due to size limitations.
+			logging.Fields{
+				"panic.error": p.Reason,
+			}.Errorf(ctx, "Caught panic during handling of %q: %s\n%s", uri, p.Reason, p.Stack)
+		}
 		// Note: it may be too late to send HTTP 500 if `next` already sent
 		// headers. But there's nothing else we can do at this point anyway.
 		http.Error(w, "Internal Server Error. See logs.", http.StatusInternalServerError)
