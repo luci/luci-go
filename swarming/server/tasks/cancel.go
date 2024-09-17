@@ -17,6 +17,8 @@ package tasks
 import (
 	"context"
 	"fmt"
+	"sort"
+	"sync"
 
 	"golang.org/x/sync/errgroup"
 
@@ -37,7 +39,7 @@ const maxBatchCancellationRetries = 10
 
 var taskUnknownTag = errors.BoolTag{Key: errors.NewTagKey("unknown task")}
 
-type testCancellationTQTasks struct {
+type TestCancellationTQTasks struct {
 	// test functions for tq tasks. Should only be used in tests.
 	testEnqueueRBECancel         func(context.Context, *model.TaskRequest, *model.TaskToRun) error
 	testSendOnTaskUpdate         func(context.Context, *model.TaskRequest, *model.TaskResultSummary) error
@@ -58,7 +60,7 @@ type Cancellation struct {
 	// KillRunning is true.
 	BotID string
 
-	testCancellationTQTasks
+	TestCancellationTQTasks
 }
 
 func (c *Cancellation) validate() error {
@@ -84,23 +86,35 @@ func (c *Cancellation) validate() error {
 //
 // Warning: ACL check must have been done before.
 //
-// Returns a bool for whether the task was running when being canceled, and
-// an err for errors to cancel the task.
-func (c *Cancellation) Run(ctx context.Context) (bool, error) {
+// Returns
+// * a bool for whether the task has started the cancellation process as requested,
+// * a bool for whether the task was running when being canceled,
+// * an err for errors to cancel the task.
+func (c *Cancellation) Run(ctx context.Context) (bool, bool, error) {
 	if err := c.validate(); err != nil {
-		return false, err
+		return false, false, err
 	}
 	trKey, err := model.TaskIDToRequestKey(ctx, c.TaskID)
 	if err != nil {
-		return false, err
+		return false, false, err
 	}
 
-	stateChanged := false
-	var wasRunning bool
-	c.TaskRequest = &model.TaskRequest{Key: trKey}
+	var stateChanged, canceled, wasRunning bool
+	var toGet []any
+	if c.TaskRequest == nil {
+		c.TaskRequest = &model.TaskRequest{Key: trKey}
+		toGet = append(toGet, c.TaskRequest)
+	} else {
+		if !c.TaskRequest.Key.Equal(trKey) {
+			return false, false, errors.Reason("mismatched TaskID %s and TaskRequest with id %s", c.TaskID, model.RequestKeyToTaskID(c.TaskRequest.Key, model.AsRequest)).Err()
+		}
+	}
+
 	c.TaskResultSummary = &model.TaskResultSummary{Key: model.TaskResultSummaryKey(ctx, trKey)}
+	toGet = append(toGet, c.TaskResultSummary)
+
 	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-		if err := datastore.Get(ctx, c.TaskRequest, c.TaskResultSummary); err != nil {
+		if err := datastore.Get(ctx, toGet); err != nil {
 			if err == datastore.ErrNoSuchEntity {
 				return errors.Annotate(err, "missing TaskRequest or TaskResultSummary for task %s", c.TaskID).Tag(taskUnknownTag).Err()
 			}
@@ -109,7 +123,8 @@ func (c *Cancellation) Run(ctx context.Context) (bool, error) {
 
 		origState := c.TaskResultSummary.State
 		wasRunning = origState == apipb.TaskState_RUNNING
-		if err = c.RunInTxn(ctx); err != nil {
+		canceled, err = c.RunInTxn(ctx)
+		if err != nil {
 			return err
 		}
 
@@ -118,14 +133,14 @@ func (c *Cancellation) Run(ctx context.Context) (bool, error) {
 	}, nil)
 
 	if err != nil {
-		return false, err
+		return false, false, err
 	}
 
 	if stateChanged {
 		onTaskStatusChangeSchedulerLatency(ctx, c.TaskResultSummary)
 	}
 
-	return wasRunning, nil
+	return canceled, wasRunning, nil
 }
 
 // RunInTxn updates entities of the task to cancel and enqueues the cloud tasks
@@ -134,16 +149,20 @@ func (c *Cancellation) Run(ctx context.Context) (bool, error) {
 // Mutates c.TaskResultSummary in place.
 //
 // Must run in a transaction.
-func (c *Cancellation) RunInTxn(ctx context.Context) error {
+//
+// Returns
+// * a bool for whether the task has started the cancellation process as requested,
+// * an err for errors to cancel the task.
+func (c *Cancellation) RunInTxn(ctx context.Context) (bool, error) {
 	if datastore.CurrentTransaction(ctx) == nil {
 		panic("cancel.RunInTxn must run in a transaction")
 	}
 
 	if err := c.validate(); err != nil {
-		return err
+		return false, err
 	}
 	if c.TaskRequest == nil || c.TaskResultSummary == nil {
-		return errors.Reason("missing entities when cancelling %s", c.TaskID).Err()
+		return false, errors.Reason("missing entities when cancelling %s", c.TaskID).Err()
 	}
 
 	tr := c.TaskRequest
@@ -152,12 +171,12 @@ func (c *Cancellation) RunInTxn(ctx context.Context) error {
 	switch {
 	case !trs.IsActive():
 		// Finished tasks can't be canceled.
-		return nil
+		return false, nil
 	case wasRunning && !c.KillRunning:
-		return nil
+		return false, nil
 	case wasRunning && c.BotID != "" && c.BotID != trs.BotID.Get():
 		logging.Debugf(ctx, "request to cancel task %s on bot %s, got bot %s instead", c.TaskID, c.BotID, trs.BotID.Get())
-		return nil
+		return false, nil
 	}
 
 	now := clock.Now(ctx).UTC()
@@ -219,22 +238,25 @@ func (c *Cancellation) RunInTxn(ctx context.Context) error {
 
 	if wasRunning {
 		if err := cancelRunning(); err != nil {
-			return err
+			return false, err
 		}
 	} else {
 		if err := cancelPending(); err != nil {
-			return err
+			return false, err
 		}
 	}
 
 	if len(toPut) == 0 {
-		return nil
+		return false, nil
 	}
 	if putErr := datastore.Put(ctx, toPut...); putErr != nil {
-		return errors.Annotate(putErr, "datastore error saving entities for canceling task %s", c.TaskID).Err()
+		return false, errors.Annotate(putErr, "datastore error saving entities for canceling task %s", c.TaskID).Err()
 	}
 
-	return errors.Annotate(c.sendOnTaskUpdate(ctx), "failed to enqueue pubsub notification cloud tasks for canceling task %s", c.TaskID).Err()
+	if err := c.sendOnTaskUpdate(ctx); err != nil {
+		return false, errors.Annotate(err, "failed to enqueue pubsub notification cloud tasks for canceling task %s", c.TaskID).Err()
+	}
+	return true, nil
 }
 
 func (c *Cancellation) enqueueRBECancel(ctx context.Context, toRun *model.TaskToRun) error {
@@ -368,7 +390,7 @@ type batchCancellation struct {
 	workers int
 
 	// test functions for tq tasks. Should only be used in tests.
-	testCancellationTQTasks
+	TestCancellationTQTasks
 	testBatchCancelTQTasks
 }
 
@@ -393,9 +415,9 @@ func (bc *batchCancellation) run(ctx context.Context) error {
 			c := &Cancellation{
 				TaskID:                  t,
 				KillRunning:             bc.killRunning,
-				testCancellationTQTasks: bc.testCancellationTQTasks,
+				TestCancellationTQTasks: bc.TestCancellationTQTasks,
 			}
-			wasRunning, err := c.Run(ctx)
+			_, wasRunning, err := c.Run(ctx)
 			if err == nil {
 				logging.Infof(ctx, "Task %s canceled: was running: %v", t, wasRunning)
 			} else {
@@ -429,4 +451,55 @@ func (bc *batchCancellation) run(ctx context.Context) error {
 		return nil
 	}
 	return bc.enqueueBatchCancel(ctx, toRetry, bc.killRunning, bc.purpose, bc.retries+1)
+}
+
+// MockTaskCancellationTQTasks returns TestCancellationTQTasks with mocked tq functions for cancelling a task.
+func MockTaskCancellationTQTasks(fakeTaskQueue map[string][]string, mu *sync.Mutex) TestCancellationTQTasks {
+	mocks := TestCancellationTQTasks{}
+	mocks.testEnqueueRBECancel = func(_ context.Context, tr *model.TaskRequest, ttr *model.TaskToRun) error {
+		mu.Lock()
+		defer mu.Unlock()
+		fakeTaskQueue["rbe-cancel"] = append(fakeTaskQueue["rbe-cancel"], fmt.Sprintf("%s/%s", tr.RBEInstance, ttr.RBEReservation))
+		return nil
+	}
+
+	mocks.testSendOnTaskUpdate = func(_ context.Context, tr *model.TaskRequest, trs *model.TaskResultSummary) error {
+		taskID := model.RequestKeyToTaskID(tr.Key, model.AsRequest)
+		if tr.PubSubTopic == "fail-the-task" {
+			return errors.New("sorry, was told to fail it")
+		}
+
+		mu.Lock()
+		defer mu.Unlock()
+		if tr.PubSubTopic != "" {
+			fakeTaskQueue["pubsub-go"] = append(fakeTaskQueue["pubsub-go"], taskID)
+		}
+		if tr.HasBuildTask {
+			fakeTaskQueue["buildbucket-notify-go"] = append(fakeTaskQueue["buildbucket-notify-go"], taskID)
+		}
+
+		return nil
+	}
+
+	mocks.testEnqueueChildCancellation = func(_ context.Context, taskID string) error {
+		mu.Lock()
+		defer mu.Unlock()
+		fakeTaskQueue["cancel-children-tasks-go"] = append(fakeTaskQueue["cancel-children-tasks-go"], taskID)
+		return nil
+	}
+	return mocks
+}
+
+// MockBatchCancelTQTasks returns testBatchCancelTQTasks with mocked tq functions for cancelling a batch of tasks.
+func MockBatchCancelTQTasks(fakeTaskQueue map[string][]string, mu *sync.Mutex) testBatchCancelTQTasks {
+	return testBatchCancelTQTasks{
+		testEnqueueBatchCancel: func(_ context.Context, tasks []string, killRunning bool, purpose string, retries int32) error {
+			sort.Strings(tasks)
+
+			mu.Lock()
+			defer mu.Unlock()
+			fakeTaskQueue["cancel-tasks-go"] = append(fakeTaskQueue["cancel-tasks-go"], fmt.Sprintf("%q, purpose: %s, retry # %d", tasks, purpose, retries))
+			return nil
+		},
+	}
 }

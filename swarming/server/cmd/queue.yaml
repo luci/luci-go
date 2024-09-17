@@ -7,6 +7,12 @@ queue:
   bucket_size: 100
   rate: 500/s
 
+# /internal/tasks/t/cancel-tasks-go served on Go.
+- name: cancel-tasks-go
+  target: default-go
+  bucket_size: 100
+  rate: 500/s
+
 # /internal/taskqueue/important/tasks/cancel-task-on-bot
 - name: cancel-task-on-bot
   bucket_size: 100
@@ -14,6 +20,12 @@ queue:
 
 # /internal/taskqueue/important/tasks/cancel-children-tasks
 - name: cancel-children-tasks
+  bucket_size: 100
+  rate: 500/s
+
+# /internal/tasks/t/cancel-children-tasks-go served on Go.
+- name: cancel-children-tasks-go
+  target: default-go
   bucket_size: 100
   rate: 500/s
 

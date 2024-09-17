@@ -41,6 +41,7 @@ import (
 	"go.chromium.org/luci/swarming/server/cursor"
 	"go.chromium.org/luci/swarming/server/cursor/cursorpb"
 	"go.chromium.org/luci/swarming/server/model"
+	"go.chromium.org/luci/swarming/server/tasks"
 )
 
 var requestStateCtxKey = "swarming.rpcs.RequestState"
@@ -85,6 +86,10 @@ type TasksServer struct {
 
 	// TaskQuerySplitMode controls how "finely" to split TaskResultSummary queries.
 	TaskQuerySplitMode model.SplitMode
+
+	// testCancellationTQTasks mocks tq tasks for canceling a task, only used for
+	// tests.
+	testCancellationTQTasks tasks.TestCancellationTQTasks
 }
 
 // TaskBackend implements bbpb.TaskBackendServer.
