@@ -32,56 +32,51 @@ class GroupListing {
     const template = document.querySelector('#group-listing-template');
     const clone = template.content.cloneNode(true);
 
-    let group = {
-      name: data.name,
-      members: [],
-      globs: [],
-      nestedGroups: [],
-    }
-    if (Object.hasOwn(data, 'members')) {
-      group.members = data.members;
-    }
-    if (Object.hasOwn(data, 'globs')) {
-      group.globs = data.globs;
-    }
-    if (Object.hasOwn(data, 'nested')) {
-      group.nestedGroups = data.nested;
-    }
+    const name = data.name;
+    const members = data.members || [];
+    const globs = data.globs || [];
+    const nestedGroups = data.nestedGroups || [];
+    const redacted = data.numRedacted || [];
 
     const title = clone.querySelector('#title');
-    title.textContent = group.name;
-    title.href = common.getGroupPageURL(group.name);
+    title.textContent = name;
+    title.href = common.getGroupPageURL(name);
 
     const totals = clone.querySelector('#summary-totals');
-    let summary = pluralized(group.members.length, 'member') + ` \u2014 `;
-    if (group.globs.length > 0) {
-      summary += pluralized(group.globs.length, 'glob') + ` \u2014 `;
+    const memberCount = members.length + redacted;
+    let summary = pluralized(memberCount, 'member') + ` \u2014 `;
+    if (globs.length > 0) {
+      summary += pluralized(globs.length, 'glob') + ` \u2014 `;
     }
-    summary += pluralized(group.nestedGroups.length, 'nested group');
+    summary += pluralized(nestedGroups.length, 'nested group');
     totals.textContent = summary;
 
-    const memberRowCount = group.members.length + group.globs.length;
+    const memberRowCount = memberCount + globs.length;
     if (memberRowCount > 0) {
       const membersTableBody = clone.querySelector('#members-table > tbody');
 
       membersTableBody.innerHTML = '';
 
-      group.globs.forEach((glob) => {
+      if (redacted > 0) {
+        const redactedRow = new RedactedMembersTableRow(redacted);
+        membersTableBody.appendChild(redactedRow.element);
+      }
+      globs.forEach((glob) => {
         const globRow = new GlobTableRow(glob);
         membersTableBody.appendChild(globRow.element);
       });
-      group.members.forEach((member) => {
+      members.forEach((member) => {
         const memberRow = new MemberTableRow(member);
         membersTableBody.appendChild(memberRow.element);
       });
     }
 
-    if (group.nestedGroups.length > 0) {
+    if (nestedGroups.length > 0) {
       const nestedGroupsTableBody = clone.querySelector('#nested-groups-table > tbody');
 
       nestedGroupsTableBody.innerHTML = '';
 
-      group.nestedGroups.forEach((nested) => {
+      nestedGroups.forEach((nested) => {
         const nestedGroupRow = new NestedGroupTableRow(nested);
         nestedGroupsTableBody.appendChild(nestedGroupRow.element);
       });
@@ -101,10 +96,22 @@ class DescendantTableRow {
     const template = document.querySelector('#descendant-item-template');
     const clone = template.content.cloneNode(true);
     this.element = clone.querySelector('tr');
-
     const linkEl = this.element.querySelector('a');
     linkEl.textContent = displayText;
-    linkEl.setAttribute('href', targetURL);
+
+    if (targetURL) {
+      linkEl.setAttribute('href', targetURL);
+    }
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+// RedactedMembersTableRow is a table row to specify the number of redacted
+// members.
+class RedactedMembersTableRow extends DescendantTableRow {
+  constructor(redacted) {
+    super(pluralized(redacted, 'member') + ' redacted', '');
   }
 }
 
