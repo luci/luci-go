@@ -178,7 +178,7 @@ func aggregateRate(group []*changepoints.ChangepointRow, f rateFunc) *pb.Changep
 func aggregateRateChange(group []*changepoints.ChangepointRow) *pb.ChangepointGroupStatistics_RateChangeBuckets {
 	bucket := pb.ChangepointGroupStatistics_RateChangeBuckets{}
 	for _, g := range group {
-		change := g.UnexpectedVerdictRateAfter - g.UnexpectedVerdictRateBefore
+		change := g.UnexpectedSourceVerdictRateAfter - g.UnexpectedSourceVerdictRateBefore
 		switch {
 		case change < 0.2:
 			bucket.CountIncreased_0To_20Percent += 1
@@ -203,7 +203,7 @@ func filterAndSortChangepointsWithPredicate(cps []*changepoints.ChangepointRow, 
 		if !strings.HasPrefix(cp.TestID, predicate.TestIdPrefix) {
 			continue
 		}
-		rateChange := cp.UnexpectedVerdictRateAfter - cp.UnexpectedVerdictRateBefore
+		rateChange := cp.UnexpectedSourceVerdictRateAfter - cp.UnexpectedSourceVerdictRateBefore
 		if predicate.UnexpectedVerdictRateChangeRange != nil &&
 			(rateChange < float64(predicate.UnexpectedVerdictRateChangeRange.LowerBound) ||
 				rateChange > float64(predicate.UnexpectedVerdictRateChangeRange.UpperBound)) {
@@ -262,9 +262,9 @@ func toChangepointGroupSummary(group []*changepoints.ChangepointRow) (summary *p
 		CanonicalChangepoint: canonicalpb,
 		Statistics: &pb.ChangepointGroupStatistics{
 			Count:                        int32(len(group)),
-			UnexpectedVerdictRateBefore:  aggregateRate(group, func(tvr *changepoints.ChangepointRow) float64 { return tvr.UnexpectedVerdictRateBefore }),
-			UnexpectedVerdictRateAfter:   aggregateRate(group, func(tvr *changepoints.ChangepointRow) float64 { return tvr.UnexpectedVerdictRateAfter }),
-			UnexpectedVerdictRateCurrent: aggregateRate(group, func(tvr *changepoints.ChangepointRow) float64 { return tvr.UnexpectedVerdictRateCurrent }),
+			UnexpectedVerdictRateBefore:  aggregateRate(group, func(tvr *changepoints.ChangepointRow) float64 { return tvr.UnexpectedSourceVerdictRateBefore }),
+			UnexpectedVerdictRateAfter:   aggregateRate(group, func(tvr *changepoints.ChangepointRow) float64 { return tvr.UnexpectedSourceVerdictRateAfter }),
+			UnexpectedVerdictRateCurrent: aggregateRate(group, func(tvr *changepoints.ChangepointRow) float64 { return tvr.UnexpectedSourceVerdictRateCurrent }),
 			UnexpectedVerdictRateChange:  aggregateRateChange(group),
 		},
 	}, nil

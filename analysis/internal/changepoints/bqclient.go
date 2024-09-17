@@ -59,11 +59,11 @@ type ChangepointRow struct {
 	Ref     *Ref
 	RefHash string
 	// The source verdict unexpected rate before the changepoint.
-	UnexpectedVerdictRateBefore float64
+	UnexpectedSourceVerdictRateBefore float64
 	// The source verdict unexpected rate after the changepoint.
-	UnexpectedVerdictRateAfter float64
+	UnexpectedSourceVerdictRateAfter float64
 	// The current source verdict unexpected rate.
-	UnexpectedVerdictRateCurrent float64
+	UnexpectedSourceVerdictRateCurrent float64
 	// The nominal start hour of the segment after the changepoint.
 	StartHour                  time.Time
 	LowerBound99th             int64
@@ -102,9 +102,9 @@ func (c *Client) ReadChangepoints(ctx context.Context, project string, week time
 			start_position_lower_bound_99th AS LowerBound99th,
 			start_position AS NominalStartPosition,
 			start_position_upper_bound_99th AS UpperBound99th,
-			unexpected_verdict_rate AS UnexpectedVerdictRateAfter,
-			previous_unexpected_verdict_rate AS UnexpectedVerdictRateBefore,
-			latest_unexpected_verdict_rate AS UnexpectedVerdictRateCurrent,
+			unexpected_verdict_rate AS UnexpectedSourceVerdictRateAfter,
+			previous_unexpected_verdict_rate AS UnexpectedSourceVerdictRateBefore,
+			latest_unexpected_verdict_rate AS UnexpectedSourceVerdictRateCurrent,
 			previous_nominal_end_position as PreviousNominalEndPosition
 		FROM test_variant_changepoints
 		WHERE project = @project
@@ -189,8 +189,9 @@ func (c *Client) ReadChangepointsRealtime(ctx context.Context, week time.Time) (
 			cp.start_position_lower_bound_99th AS LowerBound99th,
 			cp.start_position AS NominalStartPosition,
 			cp.start_position_upper_bound_99th AS UpperBound99th,
-			cp.unexpected_verdict_rate AS UnexpectedVerdictRateAfter,
-			cp.previous_unexpected_verdict_rate AS UnexpectedVerdictRateBefore,
+			cp.unexpected_verdict_rate AS UnexpectedSourceVerdictRateAfter,
+			cp.latest_unexpected_verdict_rate AS UnexpectedSourceVerdictRateCurrent,
+			cp.previous_unexpected_verdict_rate AS UnexpectedSourceVerdictRateBefore,
 			cp.previous_nominal_end_position as PreviousNominalEndPosition,
 			ranking.row_num AS TestIDNum
 		FROM changepoint_with_failure_rate cp

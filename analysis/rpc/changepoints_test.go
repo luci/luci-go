@@ -428,14 +428,14 @@ func makeChangepointRow(TestIDNum, lowerBound, upperBound int64) *changepoints.C
 				Ref:     bigquery.NullString{Valid: true, StringVal: "ref"},
 			},
 		},
-		RefHash:                      "b920ffffffffffff",
-		UnexpectedVerdictRateCurrent: 0,
-		UnexpectedVerdictRateAfter:   0.99,
-		UnexpectedVerdictRateBefore:  0.3,
-		StartHour:                    time.Unix(1000, 0),
-		LowerBound99th:               lowerBound,
-		UpperBound99th:               upperBound,
-		NominalStartPosition:         (lowerBound + upperBound) / 2,
+		RefHash:                            "b920ffffffffffff",
+		UnexpectedSourceVerdictRateCurrent: 0,
+		UnexpectedSourceVerdictRateAfter:   0.99,
+		UnexpectedSourceVerdictRateBefore:  0.3,
+		StartHour:                          time.Unix(1000, 0),
+		LowerBound99th:                     lowerBound,
+		UpperBound99th:                     upperBound,
+		NominalStartPosition:               (lowerBound + upperBound) / 2,
 	}
 }
 

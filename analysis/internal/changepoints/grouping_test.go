@@ -22,11 +22,10 @@ import (
 
 	"cloud.google.com/go/bigquery"
 
+	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestGroupChangepoints(t *testing.T) {
@@ -101,13 +100,13 @@ func makeChangepointRow(TestIDNum, lowerBound, upperBound int64, refHash string)
 				Ref:     bigquery.NullString{Valid: true, StringVal: "ref"},
 			},
 		},
-		RefHash:                      refHash,
-		UnexpectedVerdictRateCurrent: 0,
-		UnexpectedVerdictRateAfter:   0.99,
-		UnexpectedVerdictRateBefore:  0.3,
-		StartHour:                    time.Unix(1000, 0),
-		LowerBound99th:               lowerBound,
-		UpperBound99th:               upperBound,
-		NominalStartPosition:         (lowerBound + upperBound) / 2,
+		RefHash:                            refHash,
+		UnexpectedSourceVerdictRateCurrent: 0,
+		UnexpectedSourceVerdictRateAfter:   0.99,
+		UnexpectedSourceVerdictRateBefore:  0.3,
+		StartHour:                          time.Unix(1000, 0),
+		LowerBound99th:                     lowerBound,
+		UpperBound99th:                     upperBound,
+		NominalStartPosition:               (lowerBound + upperBound) / 2,
 	}
 }
