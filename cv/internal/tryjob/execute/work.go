@@ -40,7 +40,6 @@ func (e *Executor) startTryjobs(ctx context.Context, r *run.Run, definitions []*
 	w := &worker{
 		backend:          e.Backend,
 		mutator:          tryjob.NewMutator(e.RM),
-		rm:               e.RM,
 		run:              r,
 		cls:              cls,
 		knownTryjobIDs:   make(common.TryjobIDSet),
@@ -88,8 +87,6 @@ type worker struct {
 	clPatchsets tryjob.CLPatchsets
 	backend     TryjobBackend
 	mutator     *tryjob.Mutator
-	// TODO (yiwzhang): remove rm after converting everything to use mutator.
-	rm rm
 
 	findReuseFns []findReuseFn
 	logEntries   []*tryjob.ExecutionLogEntry

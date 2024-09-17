@@ -112,9 +112,7 @@ func TestLaunch(t *testing.T) {
 		ct.BuildbucketFake.AddBuilder(bbHost, builder, nil)
 		t.Run("Works", func(t *ftt.Test) {
 			tj := w.makePendingTryjob(ctx, defFoo)
-			assert.Loosely(t, datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-				return tryjob.SaveTryjobs(ctx, []*tryjob.Tryjob{tj}, nil)
-			}, nil), should.BeNil)
+			assert.That(t, datastore.Put(ctx, tj), should.ErrLike(nil))
 			tryjobs, err := w.launchTryjobs(ctx, []*tryjob.Tryjob{tj})
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, tryjobs, should.HaveLength(1))
@@ -158,9 +156,7 @@ func TestLaunch(t *testing.T) {
 				},
 			}
 			tj := w.makePendingTryjob(ctx, def)
-			assert.Loosely(t, datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-				return tryjob.SaveTryjobs(ctx, []*tryjob.Tryjob{tj}, nil)
-			}, nil), should.BeNil)
+			assert.That(t, datastore.Put(ctx, tj), should.ErrLike(nil))
 			tryjobs, err := w.launchTryjobs(ctx, []*tryjob.Tryjob{tj})
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, tryjobs, should.HaveLength(1))
@@ -189,10 +185,8 @@ func TestLaunch(t *testing.T) {
 			tj.LaunchedBy = runID
 			reuseRun := common.MakeRunID(lProject, ct.Clock.Now().Add(-30*time.Minute), 1, []byte("beef"))
 			tj.ReusedBy = append(tj.ReusedBy, reuseRun)
-			assert.Loosely(t, datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-				return tryjob.SaveTryjobs(ctx, []*tryjob.Tryjob{tj}, nil)
-			}, nil), should.BeNil)
-			existingTryjobID := tj.ID + 59
+			assert.That(t, datastore.Put(ctx, tj), should.ErrLike(nil))
+			var existingTryjobID common.TryjobID
 			w.backend = &decoratedBackend{
 				TryjobBackend: w.backend,
 				launchedTryjobsHook: func(tryjobs []*tryjob.Tryjob, launchResults []*tryjob.LaunchResult) {
@@ -200,16 +194,14 @@ func TestLaunch(t *testing.T) {
 					assert.Loosely(t, launchResults, should.HaveLength(1))
 					// Save a tryjob that has the same external ID but different internal
 					// ID from the input tryjob.
-					existingTryjob := &tryjob.Tryjob{
-						ID:         existingTryjobID,
-						ExternalID: launchResults[0].ExternalID,
-						Definition: tryjobs[0].Definition,
-						Status:     launchResults[0].Status,
-						Result:     launchResults[0].Result,
-					}
-					assert.Loosely(t, datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-						return tryjob.SaveTryjobs(ctx, []*tryjob.Tryjob{existingTryjob}, nil)
-					}, nil), should.BeNil)
+					existingTryjob, err := w.mutator.Upsert(ctx, launchResults[0].ExternalID, func(tj *tryjob.Tryjob) error {
+						tj.Definition = tryjobs[0].Definition
+						tj.Status = launchResults[0].Status
+						tj.Result = launchResults[0].Result
+						return nil
+					})
+					assert.That(t, err, should.ErrLike(nil))
+					existingTryjobID = existingTryjob.ID
 				},
 			}
 
@@ -255,9 +247,7 @@ func TestLaunch(t *testing.T) {
 			}
 			w.cls = append(w.cls, depCL)
 			tj := w.makePendingTryjob(ctx, defFoo)
-			assert.Loosely(t, datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-				return tryjob.SaveTryjobs(ctx, []*tryjob.Tryjob{tj}, nil)
-			}, nil), should.BeNil)
+			assert.That(t, datastore.Put(ctx, tj), should.ErrLike(nil))
 			tryjobs, err := w.launchTryjobs(ctx, []*tryjob.Tryjob{tj})
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, tryjobs, should.HaveLength(1))

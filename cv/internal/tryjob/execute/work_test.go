@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -60,7 +61,6 @@ func TestWorker(t *testing.T) {
 		)
 		var runID = common.MakeRunID(lProject, ct.Clock.Now().Add(-1*time.Hour), 1, []byte("abcd"))
 
-		rm := run.NewNotifier(ct.TQDispatcher)
 		w := &worker{
 			run: &run.Run{
 				ID:   runID,
@@ -98,8 +98,7 @@ func TestWorker(t *testing.T) {
 			backend: &bbfacade.Facade{
 				ClientFactory: ct.BuildbucketFake.NewClientFactory(),
 			},
-			mutator: tryjob.NewMutator(rm),
-			rm:      rm,
+			mutator: tryjob.NewMutator(run.NewNotifier(ct.TQDispatcher)),
 		}
 		builder := &bbpb.BuilderID{
 			Project: lProject,
@@ -117,23 +116,25 @@ func TestWorker(t *testing.T) {
 		ct.BuildbucketFake.AddBuilder(bbHost, builder, nil)
 
 		makeReuseTryjob := func(ctx context.Context, def *tryjob.Definition, eid tryjob.ExternalID) *tryjob.Tryjob {
-			tj := w.makeBaseTryjob(ctx)
-			tj.ExternalID = eid
-			tj.Definition = def
-			tj.Status = tryjob.Status_ENDED
-			tj.ReusedBy = append(tj.ReusedBy, w.run.ID)
-			tj.Result = &tryjob.Result{
-				CreateTime: timestamppb.New(ct.Clock.Now().UTC().Add(-staleTryjobAge / 2)),
-				Backend: &tryjob.Result_Buildbucket_{
-					Buildbucket: &tryjob.Result_Buildbucket{
-						Builder: builder,
+			t.Helper()
+			tj, err := w.mutator.Upsert(ctx, eid, func(tj *tryjob.Tryjob) error {
+				tj.Definition = def
+				tj.Status = tryjob.Status_ENDED
+				tj.ReusedBy = append(tj.ReusedBy, w.run.ID)
+				tj.Result = &tryjob.Result{
+					CreateTime: timestamppb.New(ct.Clock.Now().UTC().Add(-staleTryjobAge / 2)),
+					Backend: &tryjob.Result_Buildbucket_{
+						Buildbucket: &tryjob.Result_Buildbucket{
+							Builder: builder,
+						},
 					},
-				},
-				Status: tryjob.Result_SUCCEEDED,
-			}
-			assert.Loosely(t, datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-				return tryjob.SaveTryjobs(ctx, []*tryjob.Tryjob{tj}, nil)
-			}, nil), should.BeNil)
+					Status: tryjob.Result_SUCCEEDED,
+				}
+				tj.CLPatchsets = w.clPatchsets
+				tj.ReuseKey = w.reuseKey
+				return nil
+			})
+			assert.That(t, err, should.ErrLike(nil), truth.LineContext())
 			return tj
 		}
 		t.Run("Reuse", func(t *ftt.Test) {
@@ -183,9 +184,7 @@ func TestWorker(t *testing.T) {
 				func(ctx context.Context, definitions []*tryjob.Definition) (map[*tryjob.Definition]*tryjob.Tryjob, error) {
 					assert.Loosely(t, definitions, should.HaveLength(1))
 					tj := w.makePendingTryjob(ctx, definitions[0])
-					assert.Loosely(t, datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-						return tryjob.SaveTryjobs(ctx, []*tryjob.Tryjob{tj}, nil)
-					}, nil), should.BeNil)
+					assert.That(t, datastore.Put(ctx, tj), should.ErrLike(nil))
 					reuseID = tj.ID
 					return map[*tryjob.Definition]*tryjob.Tryjob{
 						definitions[0]: tj,

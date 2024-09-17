@@ -645,21 +645,18 @@ func TestExecutePlan(t *testing.T) {
 					},
 					Status: tryjob.Result_SUCCEEDED,
 				}
-				reuseTryjob := &tryjob.Tryjob{
-					ExternalID:       tryjob.MustBuildbucketID(bbHost, buildID),
-					EVersion:         1,
-					EntityCreateTime: now.Add(-staleTryjobAge / 2),
-					EntityUpdateTime: now.Add(-1 * time.Minute),
-					ReuseKey:         computeReuseKey([]*run.RunCL{runCL}),
-					CLPatchsets:      tryjob.CLPatchsets{tryjob.MakeCLPatchset(runCL.ID, gPatchset)},
-					Definition:       def,
-					Status:           tryjob.Status_ENDED,
-					LaunchedBy:       common.MakeRunID(lProject, now.Add(-2*time.Hour), 1, []byte("efgh")),
-					Result:           result,
-				}
-				assert.Loosely(t, datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-					return tryjob.SaveTryjobs(ctx, []*tryjob.Tryjob{reuseTryjob}, nil)
-				}, nil), should.BeNil)
+				reuseTryjob := tryjob.MustBuildbucketID(bbHost, buildID).MustCreateIfNotExists(ctx)
+				reuseTryjob.EVersion = 1
+				reuseTryjob.EntityCreateTime = now.Add(-staleTryjobAge / 2)
+				reuseTryjob.EntityUpdateTime = now.Add(-1 * time.Minute)
+				reuseTryjob.ReuseKey = computeReuseKey([]*run.RunCL{runCL})
+				reuseTryjob.CLPatchsets = tryjob.CLPatchsets{tryjob.MakeCLPatchset(runCL.ID, gPatchset)}
+				reuseTryjob.Definition = def
+				reuseTryjob.Status = tryjob.Status_ENDED
+				reuseTryjob.LaunchedBy = common.MakeRunID(lProject, now.Add(-2*time.Hour), 1, []byte("efgh"))
+				reuseTryjob.Result = result
+
+				assert.That(t, datastore.Put(ctx, reuseTryjob), should.ErrLike(nil))
 				execState, err := executor.executePlan(ctx, &plan{
 					triggerNewAttempt: []planItem{
 						{
@@ -668,9 +665,9 @@ func TestExecutePlan(t *testing.T) {
 						},
 					},
 				}, r, execState)
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, execState.GetStatus(), should.Equal(tryjob.ExecutionState_RUNNING))
-				assert.Loosely(t, execState.GetExecutions()[0].GetAttempts(), should.Resemble(
+				assert.That(t, err, should.ErrLike(nil))
+				assert.That(t, execState.GetStatus(), should.Equal(tryjob.ExecutionState_RUNNING))
+				assert.That(t, execState.GetExecutions()[0].GetAttempts(), should.Match(
 					[]*tryjob.ExecutionState_Execution_Attempt{
 						{
 							TryjobId:   int64(reuseTryjob.ID),
@@ -830,7 +827,6 @@ func makeAttempt(tjID int64, status tryjob.Status, resultStatus tryjob.Result_St
 
 func ensureTryjob(t testing.TB, ctx context.Context, id int64, def *tryjob.Definition, status tryjob.Status, resultStatus tryjob.Result_Status) *tryjob.Tryjob {
 	t.Helper()
-
 	now := datastore.RoundTime(clock.Now(ctx).UTC())
 	tj := &tryjob.Tryjob{
 		ID:               common.TryjobID(id),
