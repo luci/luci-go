@@ -16,8 +16,8 @@ dispatch:
   # Serve web UI authentication endpoints using Go.
   - url: "*/auth/openid/*"
     service: defaultv2
-  # Serve v2 UI using Go.
-  - url: "*/v2/ui/*"
+  # Serve the Go version's static resources using Go.
+  - url: "*/ui/static/*"
     service: defaultv2
   # Add override of routing for UI pages available in Auth Service v2.
   - url: "*/auth/groups*"

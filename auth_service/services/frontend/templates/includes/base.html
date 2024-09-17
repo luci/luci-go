@@ -10,15 +10,15 @@ that can be found in the LICENSE file. -->
     <title>{{ template "title" .}}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <link href="/v2/ui/static/img/favicon.ico" rel="shortcut icon">
+    <link href="/ui/static/img/favicon.ico" rel="shortcut icon">
 
-    <script src="/v2/ui/static/bootstrap/js/bootstrap.bundle.min.js" type="text/javascript"></script>
-    <link href="/v2/ui/static/bootstrap/css/bootstrap.min.css" rel="stylesheet" type="text/css"/>
-    <link href="/v2/ui/static/bootstrap-icons/bootstrap-icons.css" rel="stylesheet" type="text/css"/>
+    <script src="/ui/static/bootstrap/js/bootstrap.bundle.min.js" type="text/javascript"></script>
+    <link href="/ui/static/bootstrap/css/bootstrap.min.css" rel="stylesheet" type="text/css"/>
+    <link href="/ui/static/bootstrap-icons/bootstrap-icons.css" rel="stylesheet" type="text/css"/>
 
-    <link href="/v2/ui/static/styles/common.css" rel="stylesheet">
-    <script src="/v2/ui/static/js/api.js"></script>
-    <script src="/v2/ui/static/js/common.js"></script>
+    <link href="/ui/static/styles/common.css" rel="stylesheet">
+    <script src="/ui/static/js/api.js"></script>
+    <script src="/ui/static/js/common.js"></script>
 
     <script type="text/javascript">
       api.setXSRFToken('{{.XSRFToken}}');
@@ -47,19 +47,19 @@ that can be found in the LICENSE file. -->
           <div class="collapse navbar-collapse" id="navbarSupportedContent">
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
               <li class="nav-item">
-                <a class="nav-link" href="/v2/ui/groups">Groups</a>
+                <a class="nav-link" href="/auth/groups">Groups</a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="/v2/ui/change_log">Changes</a>
+                <a class="nav-link" href="/auth/change_log">Changes</a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="/v2/ui/lookup">Lookup</a>
+                <a class="nav-link" href="/auth/lookup">Lookup</a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="/v2/ui/ip_allowlists">IP Allowlists</a>
+                <a class="nav-link" href="/auth/ip_allowlists">IP Allowlists</a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="/v2/ui/services">Services</a>
+                <a class="nav-link" href="/auth/services">Services</a>
               </li>
             </ul>
             <form class="d-flex align-items-center" id="account-text-nav">

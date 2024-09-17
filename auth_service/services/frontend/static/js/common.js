@@ -29,8 +29,8 @@ const setMainNavbarActiveLink = () => {
   let path = window.location.pathname;
 
   // If listing a group, make the active link match the link for groups.
-  if (path === '/v2/ui/listing') {
-    path = '/v2/ui/groups';
+  if (path === '/auth/listing') {
+    path = '/auth/groups';
   }
 
   document.querySelectorAll('#main-navbar li>a').forEach((link) => {
@@ -142,33 +142,33 @@ var common = (function () {
 
   // Returns URL to a change log page for a given target.
   exports.getChangeLogTargetURL = (kind, name) => {
-    return '/v2/ui/change_log?target=' + encodeURIComponent(kind + '$' + name);
+    return '/auth/change_log?target=' + encodeURIComponent(kind + '$' + name);
   };
 
   // Returns URL to a change log page for a given revision.
   exports.getChangeLogRevisionURL = (rev) => {
-    return '/v2/ui/change_log?auth_db_rev=' + encodeURIComponent('' + rev);
+    return '/auth/change_log?auth_db_rev=' + encodeURIComponent('' + rev);
   };
 
   // Returns URL to the group page for a given group.
   exports.getGroupPageURL = (name) => {
-    return '/v2/ui/groups/' + encodeURIComponent(name);
+    return '/auth/groups/' + encodeURIComponent(name);
   };
 
   // Returns URL for the given group's full listing page.
   exports.getGroupListingURL = (name) => {
     if (name) {
-      return '/v2/ui/listing?group=' + encodeURIComponent(name);
+      return '/auth/listing?group=' + encodeURIComponent(name);
     }
-    return '/v2/ui/groups';
+    return '/auth/groups';
   };
 
   // Returns URL to a page with lookup results.
   exports.getLookupURL = (principal) => {
     if (principal) {
-      return '/v2/ui/lookup?p=' + encodeURIComponent(principal);
+      return '/auth/lookup?p=' + encodeURIComponent(principal);
     }
-    return '/v2/ui/lookup';
+    return '/auth/lookup';
   };
 
   // Returns value of URL query parameter given its name.

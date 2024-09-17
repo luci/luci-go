@@ -78,7 +78,7 @@ func main() {
 		// service-defaultv2.yaml). When running locally in dev mode we need to
 		// do it ourselves.
 		if !srv.Options.Prod {
-			srv.Routes.Static("/v2/ui/static", nil, http.Dir("./static"))
+			srv.Routes.Static("/ui/static", nil, http.Dir("./static"))
 		}
 
 		// Cookie auth and pRPC have some rough edges, see prpcCookieAuth comment.
@@ -154,40 +154,16 @@ func main() {
 		}
 
 		srv.Routes.GET("/", mw, func(ctx *router.Context) {
-			http.Redirect(ctx.Writer, ctx.Request, "/v2/ui/groups", http.StatusFound)
+			http.Redirect(ctx.Writer, ctx.Request, "/auth/groups", http.StatusFound)
 		})
-		srv.Routes.GET("/v2", mw, func(ctx *router.Context) {
-			http.Redirect(ctx.Writer, ctx.Request, "/v2/ui/groups", http.StatusFound)
-		})
-		srv.Routes.GET("/v2/ui", mw, func(ctx *router.Context) {
-			http.Redirect(ctx.Writer, ctx.Request, "/v2/ui/groups", http.StatusFound)
-		})
-		srv.Routes.GET("/v2/ui/groups", mw, servePage("pages/groups.html"))
+		srv.Routes.GET("/auth/groups", mw, servePage("pages/groups.html"))
 		// Note that external groups have "/" in their names.
-		srv.Routes.GET("/v2/ui/groups/*groupName", mw, servePage("pages/groups.html"))
-		srv.Routes.GET("/v2/ui/listing", mw, servePage("pages/listing.html"))
-		srv.Routes.GET("/v2/ui/change_log", mw, servePage("pages/change_log.html"))
-		srv.Routes.GET("/v2/ui/ip_allowlists", mw, servePage("pages/ip_allowlists.html"))
-		srv.Routes.GET("/v2/ui/lookup", mw, servePage("pages/lookup.html"))
-		srv.Routes.GET("/v2/ui/services", mw, servePage("pages/services.html"))
-
-		// Redirect legacy UI paths to their corresponding v2 UI paths.
-		toV2UI := func(ctx *router.Context) {
-			legacyPath := ctx.Request.URL.RequestURI()
-			resource := strings.TrimPrefix(legacyPath, "/auth")
-			target := fmt.Sprintf("/v2/ui/%s", strings.TrimPrefix(resource, "/"))
-			// TODO: b/302615590 Change to http.StatusMovedPermanently once the
-			// UI migration is complete, otherwise browsers may cache the new
-			// location and make rollbacks difficult.
-			http.Redirect(ctx.Writer, ctx.Request, target, http.StatusFound)
-		}
-		srv.Routes.GET("/auth/groups", mw, toV2UI)
-		srv.Routes.GET("/auth/groups/*groupName", mw, toV2UI)
-		srv.Routes.GET("/auth/listing", mw, toV2UI)
-		srv.Routes.GET("/auth/change_log", mw, toV2UI)
-		srv.Routes.GET("/auth/ip_allowlists", mw, toV2UI)
-		srv.Routes.GET("/auth/lookup", mw, toV2UI)
-		srv.Routes.GET("/auth/services", mw, toV2UI)
+		srv.Routes.GET("/auth/groups/*groupName", mw, servePage("pages/groups.html"))
+		srv.Routes.GET("/auth/listing", mw, servePage("pages/listing.html"))
+		srv.Routes.GET("/auth/change_log", mw, servePage("pages/change_log.html"))
+		srv.Routes.GET("/auth/ip_allowlists", mw, servePage("pages/ip_allowlists.html"))
+		srv.Routes.GET("/auth/lookup", mw, servePage("pages/lookup.html"))
+		srv.Routes.GET("/auth/services", mw, servePage("pages/services.html"))
 
 		// For PubSub subscriber and AuthDB Google Storage reader authorization.
 		//
