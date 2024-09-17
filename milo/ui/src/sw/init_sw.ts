@@ -40,12 +40,21 @@ export function initUiSW({ isDevEnv }: InitUiSwOptions) {
     // outdated and purged JS module.
     //
     // It's possible that the service worker clears the caches before all
-    // modules are loaded. This is not a big issue since:
+    // modules are loaded. This can happen when:
+    // 1. There are too many files to be loaded.
+    // 2. This page lives in the background and the service worker update is
+    //    triggered by another page (browser tab).
+    //
+    // This is not a big issue since:
     // 1. Users may not navigate to the page that requires the module.
     // 2. The error can be fixed by refreshing the page.
-    // 3. This should be rare since all modules should be served from the cache.
-    // 4. If this happens frequently, we can add a small delay before activating
-    //    the service worker.
+    //
+    // If this happens frequently, we can:
+    // 1. Add a small delay before activating the service worker.
+    // 2. Requesting all clients to refresh from the service worker side (may
+    //    not be possible for browser tabs unloaded from memory).
+    // 3. Use JS import maps to break cascading file updates due to hash updates
+    //    so most assets should stay the same most of the time.
     function preloadLazyRoutes() {
       preloadModules();
       r?.removeEventListener('updatefound', preloadLazyRoutes);
