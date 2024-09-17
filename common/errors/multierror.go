@@ -22,6 +22,13 @@ import (
 // `error` objects in one.
 type MultiError []error
 
+// Unwrap turns MultiError to a slices of errors.
+//
+// This will make MultiError works with errors.Is or errors.As from stdlib.
+func (m MultiError) Unwrap() []error {
+	return m
+}
+
 // MaybeAdd will add `err` to `m` if `err` is not nil.
 func (m *MultiError) MaybeAdd(err error) {
 	if err == nil {

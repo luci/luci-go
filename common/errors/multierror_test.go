@@ -19,16 +19,27 @@ import (
 	"fmt"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
+
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestMultiError(t *testing.T) {
 	t.Parallel()
+	t.Run("works", func(t *testing.T) {
+		var me error = MultiError{errors.New("hello"), errors.New("bob")}
+		assert.That(t, me, should.ErrLikeString(`hello (and 1 other error)`))
+	})
 
-	Convey("MultiError works", t, func() {
-		var me error = MultiError{fmt.Errorf("hello"), fmt.Errorf("bob")}
-
-		So(me.Error(), ShouldEqual, `hello (and 1 other error)`)
+	t.Run("compatible with errors.Is and errors.As", func(t *testing.T) {
+		inner := errors.New("hello")
+		annotated := Annotate(inner, "annotated err").Err()
+		var me error = MultiError{annotated, fmt.Errorf("bob")}
+		assert.That(t, me, should.ErrLikeError(inner))
+		var aErr *annotatedError
+		assert.That(t, errors.As(me, &aErr), should.BeTrue)
+		assert.That(t, error(aErr), should.ErrLikeString("annotated err"))
 	})
 }
 
