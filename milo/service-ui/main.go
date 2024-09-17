@@ -17,17 +17,11 @@
 package main
 
 import (
-	luciserver "go.chromium.org/luci/server"
-
-	"go.chromium.org/luci/milo/server"
-
-	_ "go.chromium.org/luci/server/encryptedcookies/session/datastore"
+	"go.chromium.org/luci/server"
 )
 
 // main implements the entrypoint for the UI service.
 // The UI service doesn't need anything. It only host the static files.
 func main() {
-	server.Main(func(srv *luciserver.Server) error {
-		return nil
-	})
+	server.Main(nil, nil, nil)
 }
