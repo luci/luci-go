@@ -17,6 +17,7 @@ package execute
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -92,8 +93,12 @@ func (w *worker) launchTryjobs(ctx context.Context, tryjobs []*tryjob.Tryjob) ([
 		// Returns the error if it is not the error to indicate retry.
 		return nil, err
 	}
+	tryjobIDs := make(common.TryjobIDs, len(tryjobs))
+	for i, tj := range tryjobs {
+		tryjobIDs[i] = tj.ID
+	}
 
-	if tryjobs, err = w.saveLaunchedTryjobs(ctx, tryjobs, launchResultByTryjobID); err != nil {
+	if tryjobs, err = w.saveLaunchedTryjobs(ctx, tryjobIDs, launchResultByTryjobID); err != nil {
 		return nil, err
 	}
 	w.logLaunchFailures(ctx, tryjobs)
@@ -164,66 +169,51 @@ func retryFactory() retry.Iterator {
 }
 
 // saveLaunchedTryjobs saves launched Tryjobs to Datastore.
-func (w *worker) saveLaunchedTryjobs(ctx context.Context, tryjobs []*tryjob.Tryjob, launchResultByTryjobID map[common.TryjobID]*tryjob.LaunchResult) ([]*tryjob.Tryjob, error) {
-	for _, tj := range tryjobs {
-		launchResult, ok := launchResultByTryjobID[tj.ID]
-		switch {
-		case !ok:
-			return nil, fmt.Errorf("impossible; can not find launch result for tryjob ID %d", tj.ID)
-		case launchResult.Err != nil:
-			tj.Status = tryjob.Status_UNTRIGGERED
-			switch grpcStatus, ok := status.FromError(errors.Unwrap(launchResult.Err)); {
-			case !ok:
-				// Log the error detail but don't leak the internal error.
-				logging.Errorf(ctx, "unexpected internal error when launching tryjob: %s", launchResult.Err)
-				tj.UntriggeredReason = "unexpected internal error"
-			default:
-				tj.UntriggeredReason = fmt.Sprintf("received %s from %s", grpcStatus.Code(), w.backend.Kind())
-				if msg := grpcStatus.Message(); msg != "" {
-					tj.UntriggeredReason += ". message: " + msg
-				}
-			}
-		default:
-			tj.ExternalID = launchResult.ExternalID
-			tj.Status = launchResult.Status
-			tj.Result = launchResult.Result
-		}
-	}
-
+//
+// Handles the edge case where the external ID already maps to another Tryjob
+// in LUCI CV. See `reconcileWithExisting`.
+func (w *worker) saveLaunchedTryjobs(ctx context.Context, tryjobIDs common.TryjobIDs, launchResultByTryjobID map[common.TryjobID]*tryjob.LaunchResult) ([]*tryjob.Tryjob, error) {
+	result := make([]*tryjob.Tryjob, len(tryjobIDs))
 	var innerErr error
-	var reconciled []*tryjob.Tryjob
 	err := datastore.RunInTransaction(ctx, func(ctx context.Context) (err error) {
 		defer func() { innerErr = err }()
-		// reload the tryjobs as the tryjobs could have been changed while LUCI CV
-		// is launching the tryjobs against backend.
-		currentTryjobs := make([]*tryjob.Tryjob, len(tryjobs))
-		for i, tj := range tryjobs {
-			currentTryjobs[i] = &tryjob.Tryjob{ID: tj.ID}
-		}
-		if err := datastore.Get(ctx, currentTryjobs); err != nil {
-			return errors.Annotate(err, "failed to load tryjobs").Tag(transient.Tag).Err()
-		}
-		// update the tryjob with the eversion, update_time and all fields that
-		// have been updated by backend.Launch(...)
-		for i, tj := range tryjobs {
-			currentTj := currentTryjobs[i]
-			currentTj.ExternalID = tj.ExternalID
-			currentTj.Status = tj.Status
-			currentTj.Result = tj.Result
-			currentTj.EVersion += 1
-			currentTj.EntityUpdateTime = datastore.RoundTime(clock.Now(ctx).UTC())
-		}
-		// It's possible (though unlikely) that the external ID of the launched
-		// Tryjob already has a record in CV. Reconcile to use the existing record
-		// and drop the record in the input by resetting the data and set the
-		// status to UNTRIGGERED.
-		var dropped []*tryjob.Tryjob
-		reconciled, dropped, err = reconcileWithExisting(ctx, tryjobs, w.run.ID)
+		muts, err := w.mutator.BeginBatch(ctx, tryjobIDs)
 		if err != nil {
 			return err
 		}
-		if err := tryjob.SaveTryjobs(ctx, append(reconciled, dropped...), w.rm.NotifyTryjobsUpdated); err != nil {
-			return err
+		for i, mut := range muts {
+			tj := mut.Tryjob
+			launchResult := launchResultByTryjobID[tj.ID]
+			if launchResult.Err != nil {
+				tj.Status = tryjob.Status_UNTRIGGERED
+				switch grpcStatus, ok := status.FromError(errors.Unwrap(launchResult.Err)); {
+				case !ok:
+					// Log the error detail but don't leak the internal error.
+					logging.Errorf(ctx, "unexpected internal error when launching tryjob: %s", launchResult.Err)
+					tj.UntriggeredReason = "unexpected internal error"
+				default:
+					tj.UntriggeredReason = fmt.Sprintf("received %s from %s", grpcStatus.Code(), w.backend.Kind())
+					if msg := grpcStatus.Message(); msg != "" {
+						tj.UntriggeredReason += ". message: " + msg
+					}
+				}
+			} else {
+				tj.ExternalID = launchResult.ExternalID
+				tj.Status = launchResult.Status
+				tj.Result = launchResult.Result
+			}
+
+			var cErr *tryjob.ConflictTryjobsError
+			switch tj, err := mut.Finalize(ctx); {
+			case err == nil:
+				result[i] = tj
+			case errors.As(err, &cErr):
+				if result[i], err = w.reconcileWithExisting(ctx, mut, cErr.Existing, launchResult); err != nil {
+					return err
+				}
+			default:
+				return err
+			}
 		}
 		return nil
 	}, nil)
@@ -233,73 +223,48 @@ func (w *worker) saveLaunchedTryjobs(ctx context.Context, tryjobs []*tryjob.Tryj
 	case err != nil:
 		return nil, errors.Annotate(err, "failed to commit transaction").Tag(transient.Tag).Err()
 	default:
-		return reconciled, nil
+		return result, nil
 	}
 }
 
 // reconcileWithExisting handles the edge cases where the external ID of the
-// launched Tryjob already has a record in CV.
-func reconcileWithExisting(ctx context.Context, tryjobs []*tryjob.Tryjob, rid common.RunID) (reconciled, dropped []*tryjob.Tryjob, err error) {
-	eids := make([]tryjob.ExternalID, 0, len(tryjobs))
-	for _, tj := range tryjobs {
-		if eid := tj.ExternalID; eid != "" {
-			eids = append(eids, eid)
-		}
+// launched Tryjob X already maps to another Tryjob Y in LUCI CV.
+//
+// Updates Tryjob X to UNTRIGGERED status. Updates Tryjob Y using the
+// launchResult. Returns the updated Tryjob Y.
+func (w *worker) reconcileWithExisting(ctx context.Context, mut *tryjob.TryjobMutation, existingTryjobID common.TryjobID, launchResult *tryjob.LaunchResult) (*tryjob.Tryjob, error) {
+	// Updates the Tryjob X
+	mut.Tryjob.Status = tryjob.Status_UNTRIGGERED
+	mut.Tryjob.UntriggeredReason = fmt.Sprintf("launched %s, but it already maps to another Tryjob %d", launchResult.ExternalID, existingTryjobID)
+	mut.Tryjob.ExternalID = ""
+	mut.Tryjob.Result = nil
+	if _, err := mut.Finalize(ctx); err != nil {
+		return nil, err
 	}
-	if len(eids) == 0 {
-		// Nothing to reconcile.
-		return tryjobs, nil, nil
-	}
-	existingTryjobs, err := tryjob.ResolveToTryjobs(ctx, eids...)
+
+	// Updates the Tryjob Y
+	mut, err := w.mutator.Begin(ctx, existingTryjobID)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	reconciled = make([]*tryjob.Tryjob, len(tryjobs))
-	for i, tj := range tryjobs {
-		if tj.ExternalID == "" {
-			reconciled[i] = tj
-			continue
-		}
-		// Since eids are resolved following the order in tryjobs, the first entry
-		// should always corresponds to this Tryjob.
-		existing := existingTryjobs[0]
-		existingTryjobs = existingTryjobs[1:]
-		switch {
-		case existing == nil:
-			// The external ID has no existing associated Tryjob. This Tryjob should
-			// be safe to create.
-			reconciled[i] = tj
-		case existing.ExternalID != tj.ExternalID:
-			panic(fmt.Errorf("impossible; expect %s, got %s", tj.ExternalID, existing.ExternalID))
-		default:
-			// Update and use the existing Tryjob instead.
-			existing.EVersion += 1
-			existing.EntityUpdateTime = datastore.RoundTime(clock.Now(ctx).UTC())
-			existing.Status = tj.Status
-			existing.Result = tj.Result
-			reconciled[i] = existing
-			if tj.ID != existing.ID {
-				switch {
-				case existing.LaunchedBy == rid:
-					// Expected.
-				case existing.ReusedBy.Index(rid) < 0:
-					existing.ReusedBy = append(existing.ReusedBy, rid)
-					fallthrough
-				default:
-					logging.Warningf(ctx, "BUG: Tryjob %s was launched but has already "+
-						"mapped to an existing Tryjob %d that are not launched by this "+
-						"Run. This Tryjob should have been found reusable in an earlier stage.",
-						eids[i], tj.ID)
-				}
-				tj.Status = tryjob.Status_UNTRIGGERED
-				tj.UntriggeredReason = fmt.Sprintf("launched %s, but it already maps to Tryjob %d ", eids[i], tj.ID)
-				tj.ExternalID = ""
-				tj.Result = nil
-				dropped = append(dropped, tj)
-			}
-		}
+	mut.Tryjob.Status = launchResult.Status
+	mut.Tryjob.Result = launchResult.Result
+	switch {
+	case mut.Tryjob.LaunchedBy == w.run.ID: // expected
+	case slices.Contains(mut.Tryjob.ReusedBy, w.run.ID):
+		mut.Tryjob.ReusedBy = append(mut.Tryjob.ReusedBy, w.run.ID)
+		fallthrough
+	default:
+		logging.Warningf(ctx, "BUG: Tryjob %s was launched but has already "+
+			"mapped to an existing Tryjob %d that are not launched by this "+
+			"Run. This Tryjob should have been found reusable in an earlier stage.",
+			mut.Tryjob.ExternalID, mut.Tryjob.ID)
 	}
-	return reconciled, dropped, nil
+	tj, err := mut.Finalize(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return tj, nil
 }
 
 func (w *worker) logLaunchFailures(ctx context.Context, tryjobs []*tryjob.Tryjob) {
