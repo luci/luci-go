@@ -118,7 +118,12 @@ func (m *Proxy) RandomizedOverride(ctx context.Context, route string, rw http.Re
 	// tests that check randomness.
 	percent := m.cfg.Cached(ctx).RouteToGoPercent(route)
 	if percent != 0 && (percent == 100 || mathrand.Intn(ctx, 100) < percent) {
-		logging.Infof(ctx, "Routing to Go (configured to route %d%% to Go)", percent)
+		// Do not log when 100% of requests are configured to be routed to Go, this
+		// is the default end state. Just absence of this logging line is good
+		// enough indicator that requests are handled by Go.
+		if percent != 100 {
+			logging.Infof(ctx, "Routing to Go (configured to route %d%% to Go)", percent)
+		}
 		return false
 	}
 	logging.Infof(ctx, "Routing to Python (configured to route %d%% to Go)", percent)
