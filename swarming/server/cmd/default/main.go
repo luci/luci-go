@@ -46,6 +46,7 @@ import (
 	"go.chromium.org/luci/swarming/server/pyproxy"
 	"go.chromium.org/luci/swarming/server/rbe"
 	"go.chromium.org/luci/swarming/server/rpcs"
+	"go.chromium.org/luci/swarming/server/tasks"
 	"go.chromium.org/luci/swarming/server/testing/integrationmocks"
 
 	// Store auth sessions in the datastore.
@@ -191,6 +192,9 @@ func main() {
 			pubSubNotifier.Stop()
 		})
 
+		// Handlers for TQ tasks involved in task lifecycle.
+		tasks.RegisterTQTasks(&tq.Default)
+
 		// Helpers for running local integration tests. They fake some of Swarming
 		// Python server behavior.
 		if *exposeIntegrationMocks {
@@ -210,7 +214,6 @@ func main() {
 			// Protect WIP or unimplemented Swarming APIs.
 			"/swarming.v2.Bots/DeleteBot":             devAPIAccessGroup,
 			"/swarming.v2.Bots/TerminateBot":          devAPIAccessGroup,
-			"/swarming.v2.Tasks/CancelTask":           devAPIAccessGroup,
 			"/swarming.v2.Tasks/NewTask":              devAPIAccessGroup,
 			"/swarming.v2.Tasks/CancelTasks":          devAPIAccessGroup,
 			"/buildbucket.v2.TaskBackend/RunTask":     devAPIAccessGroup,
@@ -223,6 +226,7 @@ func main() {
 			"/swarming.v2.Bots/ListBotEvents":             rpcacl.All,
 			"/swarming.v2.Bots/ListBots":                  rpcacl.All,
 			"/swarming.v2.Bots/ListBotTasks":              rpcacl.All,
+			"/swarming.v2.Tasks/CancelTask":               rpcacl.All,
 			"/swarming.v2.Tasks/GetResult":                rpcacl.All,
 			"/swarming.v2.Tasks/BatchGetResult":           rpcacl.All,
 			"/swarming.v2.Tasks/GetRequest":               rpcacl.All,
