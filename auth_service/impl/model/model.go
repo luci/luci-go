@@ -1955,7 +1955,7 @@ func (group *AuthGroup) ToProto(ctx context.Context, includeMemberships bool) (*
 		return nil, err
 	}
 
-	membersVisible, err := canCallerViewMembers(ctx, group)
+	membersVisible, err := CanCallerViewMembers(ctx, group)
 	if err != nil {
 		return nil, err
 	}

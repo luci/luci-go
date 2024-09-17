@@ -224,7 +224,7 @@ func (srv *Server) GetExpandedGroup(ctx context.Context, request *rpcpb.GetGroup
 
 	// Build graph from groups.
 	groupsGraph := graph.NewGraph(groups)
-	expandedGroup, err := groupsGraph.GetExpandedGroup(request.Name)
+	expandedGroup, err := groupsGraph.GetExpandedGroup(ctx, request.Name)
 	if err != nil {
 		if errors.Is(err, graph.ErrNoSuchGroup) {
 			return nil, status.Errorf(codes.NotFound,

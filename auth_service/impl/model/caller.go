@@ -31,9 +31,9 @@ func canCallerModify(ctx context.Context, group *AuthGroup) (bool, error) {
 	return auth.IsMember(ctx, AdminGroup, group.Owners)
 }
 
-// canCallerViewMembers returns whether the current identity can view the
+// CanCallerViewMembers returns whether the current identity can view the
 // members of the given group.
-func canCallerViewMembers(ctx context.Context, group *AuthGroup) (bool, error) {
+func CanCallerViewMembers(ctx context.Context, group *AuthGroup) (bool, error) {
 	// Don't filter if the group is internal.
 	if !IsExternalAuthGroupName(group.ID) {
 		return true, nil
