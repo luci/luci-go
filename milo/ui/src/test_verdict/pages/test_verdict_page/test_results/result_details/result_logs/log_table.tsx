@@ -135,7 +135,7 @@ export function LogTable() {
     <>
       {selectedArtifact && isLoading && <LinearProgress />}
       {!selectedArtifact ? (
-        "Please select an artifact from the tree to view it's log lines."
+        "Please select an artifact from the tree to view its log lines."
       ) : (
         <>
           <VirtualizedTable
