@@ -45,7 +45,7 @@ func TestHasAccess(t *testing.T) {
 				allowed, message, err := hasAccess(ctx, "some-tree", "luci-tree-status-access", PermGetStatusLimited)
 				assert.Loosely(t, err, should.BeNil)
 				assert.That(t, allowed, should.BeFalse)
-				assert.That(t, message, should.Equal("tree has not been configured"))
+				assert.That(t, message, should.Equal("tree has not been configured, see go/luci-guide-tree-status#creating-a-tree-and-setting-up-permissions for more information"))
 			})
 			t.Run("default acl anonymous should not have access", func(t *ftt.Test) {
 				ctx = FakeAuth().Anonymous().SetInContext(ctx)

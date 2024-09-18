@@ -91,8 +91,7 @@ func hasAccess(ctx context.Context, treeName string, criaGroup string, permissio
 	treeCfg, err := config.GetTreeConfig(ctx, treeName)
 	if err != nil {
 		if errors.Is(err, config.ErrNotFoundTreeConfig) {
-			// TODO (nqmtuan): Write a better error message, perhaps link to some docs of how to set up.
-			return false, "tree has not been configured", nil
+			return false, "tree has not been configured, see go/luci-guide-tree-status#creating-a-tree-and-setting-up-permissions for more information", nil
 		}
 		return false, "", err
 	}
