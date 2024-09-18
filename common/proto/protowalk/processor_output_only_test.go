@@ -19,14 +19,15 @@ import (
 
 	"google.golang.org/protobuf/types/known/structpb"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestOutputOnly(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Output-only field check`, t, func() {
+	ftt.Run(`Output-only field check`, t, func(t *ftt.Test) {
 		msg := &Outer{
 			Output: "stuff",
 			OutputInner: &Inner{
@@ -113,7 +114,7 @@ func TestOutputOnly(t *testing.T) {
 				},
 			},
 		}
-		So(Fields(msg, &OutputOnlyProcessor{}).Strings(), ShouldResemble, []string{
+		assert.Loosely(t, Fields(msg, &OutputOnlyProcessor{}).Strings(), should.Resemble([]string{
 			`.output: cleared OUTPUT_ONLY field`,
 			`.int_map_inner[1].recursive.output_only: cleared OUTPUT_ONLY field`,
 			`.int_map_inner[1].recursive.next.output_only: cleared OUTPUT_ONLY field`,
@@ -126,9 +127,9 @@ func TestOutputOnly(t *testing.T) {
 			`.b.b_value: cleared OUTPUT_ONLY field`,
 			`.b.a.b.b_value: cleared OUTPUT_ONLY field`,
 			`.b.a.b.a.b.b_value: cleared OUTPUT_ONLY field`,
-		})
+		}))
 
-		So(msg, ShouldResembleProto,
+		assert.Loosely(t, msg, should.Resemble(
 			&Outer{
 				IntMapInner: map[int32]*Inner{
 					1: {Recursive: &Inner_Recursive{
@@ -170,6 +171,6 @@ func TestOutputOnly(t *testing.T) {
 					},
 				},
 			},
-		)
+		))
 	})
 }

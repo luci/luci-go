@@ -17,9 +17,8 @@ package protowalk
 import (
 	"fmt"
 
-	"go.chromium.org/luci/common/proto/reflectutil"
-
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/proto/reflectutil"
 )
 
 // ResultData is the data produced from the FieldProcessor.

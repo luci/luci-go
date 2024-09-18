@@ -17,14 +17,15 @@ package protowalk
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestRequired(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Required field check`, t, func() {
+	ftt.Run(`Required field check`, t, func(t *ftt.Test) {
 		msg := &Outer{
 			SingleInner: &Inner{},
 			MapInner: map[string]*Inner{
@@ -42,14 +43,14 @@ func TestRequired(t *testing.T) {
 		}
 
 		res := Fields(msg, &RequiredProcessor{})
-		So(res.Strings(), ShouldResemble, []string{
+		assert.Loosely(t, res.Strings(), should.Resemble([]string{
 			`.req: required`,
 			`.single_inner.req: required`,
 			`.map_inner["schwoot"].req: required`,
 			`.map_inner["schwoot"].single_embed.req: required`,
 			`.map_inner["schwoot"].multi_embed[0].req: required`,
 			`.multi_deprecated[0].req: required`,
-		})
-		So(res.Err(), ShouldErrLike, "required")
+		}))
+		assert.Loosely(t, res.Err(), should.ErrLike("required"))
 	})
 }

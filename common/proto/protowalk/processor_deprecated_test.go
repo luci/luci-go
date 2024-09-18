@@ -17,13 +17,15 @@ package protowalk
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestDeprecated(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Deprecated field check`, t, func() {
+	ftt.Run(`Deprecated field check`, t, func(t *ftt.Test) {
 		msg := &Outer{
 			Deprecated: "hey",
 			SingleInner: &Inner{
@@ -53,7 +55,7 @@ func TestDeprecated(t *testing.T) {
 				{Deprecated: "something else"},
 			},
 		}
-		So(Fields(msg, &DeprecatedProcessor{}).Strings(), ShouldResemble, []string{
+		assert.Loosely(t, Fields(msg, &DeprecatedProcessor{}).Strings(), should.Resemble([]string{
 			`.deprecated: deprecated`,
 			`.single_inner.deprecated: deprecated`,
 			`.map_inner["schwoot"].deprecated: deprecated`,
@@ -62,6 +64,6 @@ func TestDeprecated(t *testing.T) {
 			`.map_inner["schwoot"].recursive: deprecated`,
 			`.multi_deprecated: deprecated`,
 			`.multi_deprecated[1].deprecated: deprecated`,
-		})
+		}))
 	})
 }

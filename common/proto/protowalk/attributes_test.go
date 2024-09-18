@@ -17,39 +17,41 @@ package protowalk
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestRecurseAttr(t *testing.T) {
 	t.Parallel()
 
-	Convey(`RecurseAttr`, t, func() {
-		Convey(`isMap`, func() {
-			So(recurseNone.isMap(), ShouldBeFalse)
-			So(recurseOne.isMap(), ShouldBeFalse)
-			So(recurseRepeated.isMap(), ShouldBeFalse)
+	ftt.Run(`RecurseAttr`, t, func(t *ftt.Test) {
+		t.Run(`isMap`, func(t *ftt.Test) {
+			assert.Loosely(t, recurseNone.isMap(), should.BeFalse)
+			assert.Loosely(t, recurseOne.isMap(), should.BeFalse)
+			assert.Loosely(t, recurseRepeated.isMap(), should.BeFalse)
 
-			So(recurseMapKind.isMap(), ShouldBeTrue)
-			So(recurseMapBool.isMap(), ShouldBeTrue)
-			So(recurseMapInt.isMap(), ShouldBeTrue)
-			So(recurseMapUint.isMap(), ShouldBeTrue)
-			So(recurseMapString.isMap(), ShouldBeTrue)
+			assert.Loosely(t, recurseMapKind.isMap(), should.BeTrue)
+			assert.Loosely(t, recurseMapBool.isMap(), should.BeTrue)
+			assert.Loosely(t, recurseMapInt.isMap(), should.BeTrue)
+			assert.Loosely(t, recurseMapUint.isMap(), should.BeTrue)
+			assert.Loosely(t, recurseMapString.isMap(), should.BeTrue)
 		})
 
-		Convey(`set`, func() {
+		t.Run(`set`, func(t *ftt.Test) {
 			r := recurseNone
 
-			Convey(`OK`, func() {
-				So(r.set(recurseOne), ShouldBeTrue)
-				So(r, ShouldEqual, recurseOne)
-				So(r.set(recurseOne), ShouldBeTrue)
-				So(r, ShouldEqual, recurseOne)
+			t.Run(`OK`, func(t *ftt.Test) {
+				assert.Loosely(t, r.set(recurseOne), should.BeTrue)
+				assert.Loosely(t, r, should.Equal(recurseOne))
+				assert.Loosely(t, r.set(recurseOne), should.BeTrue)
+				assert.Loosely(t, r, should.Equal(recurseOne))
 			})
 
-			Convey(`bad`, func() {
-				So(r.set(recurseOne), ShouldBeTrue)
-				So(r, ShouldEqual, recurseOne)
-				So(func() { r.set(recurseRepeated) }, ShouldPanic)
+			t.Run(`bad`, func(t *ftt.Test) {
+				assert.Loosely(t, r.set(recurseOne), should.BeTrue)
+				assert.Loosely(t, r, should.Equal(recurseOne))
+				assert.Loosely(t, func() { r.set(recurseRepeated) }, should.Panic)
 			})
 		})
 	})
@@ -59,28 +61,28 @@ func TestRecurseAttr(t *testing.T) {
 func TestProcessAttr(t *testing.T) {
 	t.Parallel()
 
-	Convey(`ProcessAttr`, t, func() {
-		Convey(`applies`, func() {
-			So(ProcessNever.applies(false), ShouldBeFalse)
-			So(ProcessNever.applies(true), ShouldBeFalse)
+	ftt.Run(`ProcessAttr`, t, func(t *ftt.Test) {
+		t.Run(`applies`, func(t *ftt.Test) {
+			assert.Loosely(t, ProcessNever.applies(false), should.BeFalse)
+			assert.Loosely(t, ProcessNever.applies(true), should.BeFalse)
 
-			So(ProcessIfSet.applies(false), ShouldBeFalse)
-			So(ProcessIfSet.applies(true), ShouldBeTrue)
+			assert.Loosely(t, ProcessIfSet.applies(false), should.BeFalse)
+			assert.Loosely(t, ProcessIfSet.applies(true), should.BeTrue)
 
-			So(ProcessIfUnset.applies(false), ShouldBeTrue)
-			So(ProcessIfUnset.applies(true), ShouldBeFalse)
+			assert.Loosely(t, ProcessIfUnset.applies(false), should.BeTrue)
+			assert.Loosely(t, ProcessIfUnset.applies(true), should.BeFalse)
 
-			So(ProcessAlways.applies(false), ShouldBeTrue)
-			So(ProcessAlways.applies(true), ShouldBeTrue)
+			assert.Loosely(t, ProcessAlways.applies(false), should.BeTrue)
+			assert.Loosely(t, ProcessAlways.applies(true), should.BeTrue)
 		})
 
-		Convey(`Valid`, func() {
-			So(ProcessNever.Valid(), ShouldBeTrue)
-			So(ProcessIfSet.Valid(), ShouldBeTrue)
-			So(ProcessIfUnset.Valid(), ShouldBeTrue)
-			So(ProcessAlways.Valid(), ShouldBeTrue)
+		t.Run(`Valid`, func(t *ftt.Test) {
+			assert.Loosely(t, ProcessNever.Valid(), should.BeTrue)
+			assert.Loosely(t, ProcessIfSet.Valid(), should.BeTrue)
+			assert.Loosely(t, ProcessIfUnset.Valid(), should.BeTrue)
+			assert.Loosely(t, ProcessAlways.Valid(), should.BeTrue)
 
-			So(ProcessAttr(217).Valid(), ShouldBeFalse)
+			assert.Loosely(t, ProcessAttr(217).Valid(), should.BeFalse)
 		})
 	})
 

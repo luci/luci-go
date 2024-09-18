@@ -24,8 +24,9 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 
 	"go.chromium.org/luci/common/data/stringset"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 type CustomChecker struct{}
@@ -56,46 +57,46 @@ func TestFields(t *testing.T) {
 	// These tests interact with globalFieldProcessorCache
 	// Hence, no t.Parallel()
 
-	Convey(`Fields`, t, func() {
+	ftt.Run(`Fields`, t, func(t *ftt.Test) {
 		// Reset the cache
 		resetGlobalFieldProcessorCache()
 
-		Convey(`works with no FieldProcessors`, func() {
+		t.Run(`works with no FieldProcessors`, func(t *ftt.Test) {
 			msg := &Outer{}
-			So(Fields(msg), ShouldBeEmpty)
-			So(globalFieldProcessorCache, ShouldBeEmpty)
+			assert.Loosely(t, Fields(msg), should.BeEmpty)
+			assert.Loosely(t, globalFieldProcessorCache, should.BeEmpty)
 		})
 
-		Convey(`works with one processor on empty message`, func() {
+		t.Run(`works with one processor on empty message`, func(t *ftt.Test) {
 			msg := &Outer{}
-			So(Fields(msg, &DeprecatedProcessor{}), ShouldResemble, Results{nil})
+			assert.Loosely(t, Fields(msg, &DeprecatedProcessor{}), should.Resemble(Results{nil}))
 			keys := make([]string, 0, len(globalFieldProcessorCache))
 			for k := range globalFieldProcessorCache {
 				keys = append(keys, fmt.Sprintf("%s+%s", k.message, k.processorT))
 			}
 			sort.Strings(keys)
-			So(keys, ShouldResemble, []string{
+			assert.Loosely(t, keys, should.Resemble([]string{
 				"protowalk.Inner+*protowalk.DeprecatedProcessor",
 				"protowalk.Inner.Embedded+*protowalk.DeprecatedProcessor",
 				"protowalk.Outer+*protowalk.DeprecatedProcessor",
-			})
+			}))
 		})
 
-		Convey(`works on populated messages`, func() {
+		t.Run(`works on populated messages`, func(t *ftt.Test) {
 			msg := &Outer{Deprecated: "extra"}
-			So(Fields(msg, &DeprecatedProcessor{}).Strings(), ShouldResemble, []string{
+			assert.Loosely(t, Fields(msg, &DeprecatedProcessor{}).Strings(), should.Resemble([]string{
 				".deprecated: deprecated",
-			})
+			}))
 		})
 
-		Convey(`works on nested populated messages`, func() {
+		t.Run(`works on nested populated messages`, func(t *ftt.Test) {
 			msg := &Outer{SingleInner: &Inner{Deprecated: "extra"}}
-			So(Fields(msg, &DeprecatedProcessor{}).Strings(), ShouldResemble, []string{
+			assert.Loosely(t, Fields(msg, &DeprecatedProcessor{}).Strings(), should.Resemble([]string{
 				".single_inner.deprecated: deprecated",
-			})
+			}))
 		})
 
-		Convey(`works on maps`, func() {
+		t.Run(`works on maps`, func(t *ftt.Test) {
 			msg := &Outer{
 				MapInner: map[string]*Inner{
 					"something": {Deprecated: "yo"},
@@ -104,13 +105,13 @@ func TestFields(t *testing.T) {
 					20: {Deprecated: "hay"},
 				},
 			}
-			So(Fields(msg, &DeprecatedProcessor{}).Strings(), ShouldResemble, []string{
+			assert.Loosely(t, Fields(msg, &DeprecatedProcessor{}).Strings(), should.Resemble([]string{
 				".map_inner[\"something\"].deprecated: deprecated",
 				".int_map_inner[20].deprecated: deprecated",
-			})
+			}))
 		})
 
-		Convey(`works on lists`, func() {
+		t.Run(`works on lists`, func(t *ftt.Test) {
 			msg := &Outer{
 				MultiInner: []*Inner{
 					{},
@@ -118,12 +119,12 @@ func TestFields(t *testing.T) {
 					{Deprecated: "hay"},
 				},
 			}
-			So(Fields(msg, &DeprecatedProcessor{}).Strings(), ShouldResemble, []string{
+			assert.Loosely(t, Fields(msg, &DeprecatedProcessor{}).Strings(), should.Resemble([]string{
 				".multi_inner[2].deprecated: deprecated",
-			})
+			}))
 		})
 
-		Convey(`works with custom check`, func() {
+		t.Run(`works with custom check`, func(t *ftt.Test) {
 			msg := &Outer{
 				MultiInner: []*Inner{
 					{Custom: "neat"},
@@ -132,13 +133,13 @@ func TestFields(t *testing.T) {
 					{},
 				},
 			}
-			So(Fields(msg, &CustomChecker{}).Strings(), ShouldResemble, []string{
+			assert.Loosely(t, Fields(msg, &CustomChecker{}).Strings(), should.Resemble([]string{
 				`.custom: "" doesn't equal "hello"`,
 				`.multi_inner[0].custom: "neat" doesn't equal "hello"`,
 				`.multi_inner[1].custom: "" doesn't equal "hello"`,
 				// 2 is OK!
 				`.multi_inner[3].custom: "" doesn't equal "hello"`,
-			})
+			}))
 
 		})
 	})
