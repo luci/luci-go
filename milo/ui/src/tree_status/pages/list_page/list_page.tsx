@@ -38,6 +38,10 @@ export const TreeStatusListPage = () => {
     defaultPageSize: 50,
   });
   const [searchParams] = useSyncedSearchParams();
+  // TODO: instead of using treeName, we should query TreeStatus
+  // for the primary project for the tree. TreeStatus does not return
+  // this information yet, so putting this as TODO.
+  const project = searchParams.get('project') || treeName;
   const pageSize = getPageSize(pagerCtx, searchParams);
   const pageToken = getPageToken(pagerCtx, searchParams);
 
@@ -65,7 +69,7 @@ export const TreeStatusListPage = () => {
       <PageMeta
         title="Tree Status"
         selectedPage={UiPage.TreeStatus}
-        project={treeName}
+        project={project}
       />
       <Alert severity="info">
         <strong>Tree status for the tree {treeName}</strong>

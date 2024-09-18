@@ -181,12 +181,12 @@ function generateMonitoringSection(
   }
 
   // We only display tree status if there is exactly one tree for the project
-  if (treeNames?.length === 1) {
+  if (treeNames?.length === 1 && project) {
     // TreeName is in the form "trees/<tree_id>".
-    const treeId = treeNames[0].substring(6);
+    const treeID = treeNames[0].substring(6);
     pages.push({
       page: UiPage.TreeStatus,
-      url: `/ui/tree-status/${treeId}`,
+      url: `/ui/tree-status/${treeID}?project=${project}`,
       icon: <TrafficIcon />,
     });
   }
