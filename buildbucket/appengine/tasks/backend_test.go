@@ -626,11 +626,6 @@ func TestCreateBackendTask(t *testing.T) {
 
 		Convey("fail", func() {
 			mockTaskCreator.EXPECT().RunTask(gomock.Any(), gomock.Any()).Return(nil, status.Errorf(codes.InvalidArgument, "bad request"))
-			bldr := &model.Builder{
-				ID:     "builder",
-				Parent: model.BucketKey(ctx, "project", "bucket"),
-			}
-			So(datastore.Put(ctx, bldr), ShouldBeNil)
 			err = CreateBackendTask(ctx, 1, "request_id")
 			expectedBuild := &model.Build{ID: 1}
 			So(datastore.Get(ctx, expectedBuild), ShouldBeNil)
@@ -652,11 +647,6 @@ func TestCreateBackendTask(t *testing.T) {
 		})
 
 		Convey("give up after backend timeout", func() {
-			bldr := &model.Builder{
-				ID:     "builder",
-				Parent: model.BucketKey(ctx, "project", "bucket"),
-			}
-			So(datastore.Put(ctx, bldr), ShouldBeNil)
 			now = now.Add(9 * time.Minute)
 			ctx, _ = testclock.UseTime(ctx, now)
 			err = CreateBackendTask(ctx, 1, "request_id")

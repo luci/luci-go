@@ -431,14 +431,7 @@ func TestUpdateTaskEntity(t *testing.T) {
 			Build: bk,
 			Proto: infraProto,
 		}
-		bldr := &model.Builder{
-			ID:     "builder",
-			Parent: model.BucketKey(ctx, "project", "bucket"),
-			Config: &pb.BuilderConfig{
-				MaxConcurrentBuilds: 2,
-			},
-		}
-		So(datastore.Put(ctx, buildModel, infraModel, bldr), ShouldBeNil)
+		So(datastore.Put(ctx, buildModel, infraModel), ShouldBeNil)
 		Convey("normal task save", func() {
 			req := &pb.BuildTaskUpdate{
 				BuildId: "1",
@@ -544,7 +537,7 @@ func TestUpdateTaskEntity(t *testing.T) {
 				},
 			})
 
-			So(sch.Tasks(), ShouldHaveLength, 4)
+			So(sch.Tasks(), ShouldHaveLength, 3)
 			So(bs.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
 			So(buildModel.Proto.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
 			stp, err := steps.ToProto(ctx)
@@ -597,7 +590,7 @@ func TestUpdateTaskEntity(t *testing.T) {
 				},
 			})
 
-			So(sch.Tasks(), ShouldHaveLength, 4)
+			So(sch.Tasks(), ShouldHaveLength, 3)
 			So(bs.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
 			So(buildModel.Proto.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
 			So(buildModel.Proto.StatusDetails, ShouldResembleProto, statusDetails)

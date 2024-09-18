@@ -715,14 +715,7 @@ func TestUpdateBuild(t *testing.T) {
 			Build:  bk,
 			Status: pb.Status_STARTED,
 		}
-		bldr := &model.Builder{
-			ID:     "builder",
-			Parent: model.BucketKey(ctx, "project", "bucket"),
-			Config: &pb.BuilderConfig{
-				MaxConcurrentBuilds: 2,
-			},
-		}
-		So(datastore.Put(ctx, build, infra, bs, bldr), ShouldBeNil)
+		So(datastore.Put(ctx, build, infra, bs), ShouldBeNil)
 
 		req := &pb.UpdateBuildRequest{
 			Build: &pb.Build{Id: 1, SummaryMarkdown: "summary"},
@@ -1162,7 +1155,7 @@ func TestUpdateBuild(t *testing.T) {
 
 				// TQ tasks for pubsub-notification, bq-export, and invocation-finalization.
 				tasks := sch.Tasks()
-				So(tasks, ShouldHaveLength, 5)
+				So(tasks, ShouldHaveLength, 4)
 				sum := 0
 				for _, task := range tasks {
 					switch v := task.Payload.(type) {
@@ -1178,14 +1171,11 @@ func TestUpdateBuild(t *testing.T) {
 					case *taskdefs.NotifyPubSubGoProxy:
 						sum += 8
 						So(v.GetBuildId(), ShouldEqual, req.Build.Id)
-					case *taskdefs.PopPendingBuildTask:
-						sum += 16
-						So(v.GetBuildId(), ShouldEqual, req.Build.Id)
 					default:
 						panic("invalid task payload")
 					}
 				}
-				So(sum, ShouldEqual, 31)
+				So(sum, ShouldEqual, 15)
 
 				// BuildCompleted metric should be set to 1 with SUCCESS.
 				fvs := fv(model.Success.String(), "", "", false)
@@ -1251,19 +1241,6 @@ func TestUpdateBuild(t *testing.T) {
 				So(buildStatus.Status, ShouldEqual, pb.Status_STARTED)
 				So(build.Proto.Status, ShouldEqual, pb.Status_STARTED)
 				So(build.Proto.Output.Status, ShouldEqual, pb.Status_STARTED)
-			})
-			Convey("Status_SUCCESSS w/ status change with max_concurrent_builds disabled", func() {
-				bldr := &model.Builder{
-					ID:     "builder",
-					Parent: model.BucketKey(ctx, "project", "bucket"),
-				}
-				So(datastore.Put(ctx, bldr), ShouldBeNil)
-				req.UpdateMask.Paths[0] = "build.status"
-				req.Build.Status = pb.Status_SUCCESS
-				So(updateBuild(ctx, req), ShouldBeRPCOK)
-				// TQ tasks for pubsub-notification, bq-export, and invocation-finalization.
-				tasks := sch.Tasks()
-				So(tasks, ShouldHaveLength, 4)
 			})
 		})
 
@@ -1383,7 +1360,7 @@ func TestUpdateBuild(t *testing.T) {
 					So(build.CancelTime, ShouldBeNil)
 
 					tasks := sch.Tasks()
-					So(tasks, ShouldHaveLength, 5)
+					So(tasks, ShouldHaveLength, 4)
 					sum := 0
 					for _, task := range tasks {
 						switch v := task.Payload.(type) {
@@ -1399,14 +1376,11 @@ func TestUpdateBuild(t *testing.T) {
 						case *taskdefs.NotifyPubSubGoProxy:
 							sum += 8
 							So(v.GetBuildId(), ShouldEqual, req.Build.Id)
-						case *taskdefs.PopPendingBuildTask:
-							sum += 16
-							So(v.GetBuildId(), ShouldEqual, req.Build.Id)
 						default:
 							panic("invalid task payload")
 						}
 					}
-					So(sum, ShouldEqual, 31)
+					So(sum, ShouldEqual, 15)
 
 					// BuildCompleted metric should be set to 1 with SUCCESS.
 					fvs := fv(model.Success.String(), "", "", false)

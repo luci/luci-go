@@ -435,14 +435,7 @@ func TestSyncBuild(t *testing.T) {
 			Build:  datastore.KeyForObj(ctx, b),
 			Status: b.Proto.Status,
 		}
-		bldr := &model.Builder{
-			ID:     "builder",
-			Parent: model.BucketKey(ctx, "proj", "bucket"),
-			Config: &pb.BuilderConfig{
-				MaxConcurrentBuilds: 2,
-			},
-		}
-		So(datastore.Put(ctx, b, inf, bs, bldr), ShouldBeNil)
+		So(datastore.Put(ctx, b, inf, bs), ShouldBeNil)
 		Convey("swarming-build-create", func() {
 
 			Convey("build not found", func() {
@@ -511,7 +504,7 @@ func TestSyncBuild(t *testing.T) {
 				So(datastore.Get(ctx, failedBuild, bldStatus), ShouldBeNil)
 				So(failedBuild.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
 				So(failedBuild.Proto.SummaryMarkdown, ShouldContainSubstring, "failed to create a swarming task: rpc error: code = PermissionDenied desc = PermissionDenied")
-				So(sch.Tasks(), ShouldHaveLength, 5)
+				So(sch.Tasks(), ShouldHaveLength, 4)
 				So(bldStatus.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
 			})
 
@@ -534,7 +527,7 @@ func TestSyncBuild(t *testing.T) {
 				So(datastore.Get(ctx, failedBuild), ShouldBeNil)
 				So(failedBuild.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
 				So(failedBuild.Proto.SummaryMarkdown, ShouldContainSubstring, "failed to create a swarming task: rpc error: code = Internal desc = Server error")
-				So(sch.Tasks(), ShouldHaveLength, 5)
+				So(sch.Tasks(), ShouldHaveLength, 4)
 			})
 
 			Convey("swarming task creation success but update build fail", func() {
@@ -996,8 +989,8 @@ func TestSyncBuild(t *testing.T) {
 						So(syncedInfra.Proto.Swarming.BotDimensions, ShouldResembleProto, tCase.expected.botDimensions)
 					}
 					if protoutil.IsEnded(syncedBuild.Status) {
-						// FinalizeResultDB, ExportBigQuery, NotifyPubSub, NotifyPubSubGoProxy, PopPendingBuilds and a continuation sync task.
-						So(sch.Tasks(), ShouldHaveLength, 6)
+						// FinalizeResultDB, ExportBigQuery, NotifyPubSub, NotifyPubSubGoProxy and a continuation sync task.
+						So(sch.Tasks(), ShouldHaveLength, 5)
 
 						v2fs := []any{pb.Status_name[int32(syncedBuild.Status)], "None"}
 						So(metricsStore.Get(ctx, metrics.V2.BuildCountCompleted, time.Time{}, v2fs), ShouldEqual, 1)
@@ -1169,14 +1162,7 @@ func TestSubNotify(t *testing.T) {
 			Build:  datastore.KeyForObj(ctx, b),
 			Status: b.Proto.Status,
 		}
-		bldr := &model.Builder{
-			ID:     "builder",
-			Parent: model.BucketKey(ctx, "proj", "bucket"),
-			Config: &pb.BuilderConfig{
-				MaxConcurrentBuilds: 2,
-			},
-		}
-		So(datastore.Put(ctx, b, inf, bs, bldr), ShouldBeNil)
+		So(datastore.Put(ctx, b, inf, bs), ShouldBeNil)
 
 		Convey("bad msg data", func() {
 			body := makeSwarmingPubsubMsg(&userdata{
@@ -1338,8 +1324,8 @@ func TestSubNotify(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(cached, ShouldResemble, []byte{1})
 
-			// ExportBigQuery, NotifyPubSub, NotifyPubSubGoProxy PopPendingBuilds tasks.
-			So(sch.Tasks(), ShouldHaveLength, 4)
+			// ExportBigQuery, NotifyPubSub, NotifyPubSubGoProxy tasks.
+			So(sch.Tasks(), ShouldHaveLength, 3)
 
 			// BuildCompleted metric should be set to 1 with SUCCESS.
 			v2fs := []any{pb.Status_name[int32(syncedBuild.Status)], "None"}

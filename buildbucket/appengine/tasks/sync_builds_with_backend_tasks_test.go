@@ -140,14 +140,7 @@ func prepEntities(ctx context.Context, bID int64, buildStatus, outputStatus, tas
 		Build:  bk,
 		Status: buildStatus,
 	}
-	bldr := &model.Builder{
-		ID:     "builder",
-		Parent: model.BucketKey(ctx, "project", "bucket"),
-		Config: &pb.BuilderConfig{
-			MaxConcurrentBuilds: 2,
-		},
-	}
-	So(datastore.Put(ctx, b, inf, bs, bldr), ShouldBeNil)
+	So(datastore.Put(ctx, b, inf, bs), ShouldBeNil)
 	return bk
 }
 
@@ -317,7 +310,7 @@ func TestSyncBuildsWithBackendTasksOneFetchBatch(t *testing.T) {
 			// TQ tasks for pubsub-notification *2, and bq-export per build.
 			// Resultdb invocation finalization is noop since the builds don't have
 			// resultdb invocations.
-			So(sch.Tasks(), ShouldHaveLength, 8)
+			So(sch.Tasks(), ShouldHaveLength, 6)
 			blds := getEntities(bIDs)
 			for _, b := range blds {
 				So(b.Proto.UpdateTime.AsTime(), ShouldEqual, now)
@@ -437,7 +430,7 @@ func TestSyncBuildsWithBackendTasks(t *testing.T) {
 			bIDs = append(bIDs, 106)
 			err = SyncBuildsWithBackendTasks(ctx, "swarming", "project")
 			So(err, ShouldBeNil)
-			So(sch.Tasks(), ShouldHaveLength, 4) // 106 completed
+			So(sch.Tasks(), ShouldHaveLength, 3) // 106 completed
 			blds := getEntities(bIDs)
 			for _, b := range blds {
 				So(b.Proto.UpdateTime.AsTime(), ShouldEqual, now)

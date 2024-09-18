@@ -80,14 +80,7 @@ func TestCancelBuild(t *testing.T) {
 				Build:  datastore.MakeKey(ctx, "Build", 1),
 				Status: pb.Status_SCHEDULED,
 			}
-			bldr := &model.Builder{
-				ID:     "builder",
-				Parent: model.BucketKey(ctx, "project", "bucket"),
-				Config: &pb.BuilderConfig{
-					MaxConcurrentBuilds: 2,
-				},
-			}
-			So(datastore.Put(ctx, bld, inf, bs, bldr), ShouldBeNil)
+			So(datastore.Put(ctx, bld, inf, bs), ShouldBeNil)
 			bld, err := Cancel(ctx, 1)
 			So(err, ShouldBeNil)
 			So(bld.Proto, ShouldResembleProto, &pb.Build{
@@ -105,8 +98,7 @@ func TestCancelBuild(t *testing.T) {
 			// finalize-resultdb-go
 			// notify-pubsub
 			// notify-pubsub-go-proxy
-			// pop-pending-builds
-			So(sch.Tasks(), ShouldHaveLength, 5)
+			So(sch.Tasks(), ShouldHaveLength, 4)
 			bs = &model.BuildStatus{
 				Build: datastore.MakeKey(ctx, "Build", 1),
 			}
@@ -168,13 +160,6 @@ func TestCancelBuild(t *testing.T) {
 				Build:  datastore.MakeKey(ctx, "Build", 1),
 				Status: pb.Status_STARTED,
 			}), ShouldBeNil)
-			So(datastore.Put(ctx, &model.Builder{
-				ID:     "builder",
-				Parent: model.BucketKey(ctx, "project", "bucket"),
-				Config: &pb.BuilderConfig{
-					MaxConcurrentBuilds: 2,
-				},
-			}), ShouldBeNil)
 			bld, err := Cancel(ctx, 1)
 			So(err, ShouldBeNil)
 			So(bld.Proto, ShouldResembleProto, &pb.Build{
@@ -192,8 +177,7 @@ func TestCancelBuild(t *testing.T) {
 			// export-bigquery
 			// notify-pubsub
 			// notify-pubsub-go-proxy
-			// pop-pending-builds
-			So(sch.Tasks(), ShouldHaveLength, 5)
+			So(sch.Tasks(), ShouldHaveLength, 4)
 			bs := &model.BuildStatus{
 				Build: datastore.MakeKey(ctx, "Build", 1),
 			}
@@ -231,13 +215,6 @@ func TestCancelBuild(t *testing.T) {
 				Build:  datastore.MakeKey(ctx, "Build", 1),
 				Status: pb.Status_STARTED,
 			}), ShouldBeNil)
-			So(datastore.Put(ctx, &model.Builder{
-				ID:     "builder",
-				Parent: model.BucketKey(ctx, "project", "bucket"),
-				Config: &pb.BuilderConfig{
-					MaxConcurrentBuilds: 2,
-				},
-			}), ShouldBeNil)
 			bld, err := Cancel(ctx, 1)
 			So(err, ShouldBeNil)
 			So(bld.Proto, ShouldResembleProto, &pb.Build{
@@ -255,8 +232,7 @@ func TestCancelBuild(t *testing.T) {
 			// export-bigquery
 			// notify-pubsub
 			// notify-pubsub-go-proxy
-			// pop-pending-builds
-			So(sch.Tasks(), ShouldHaveLength, 5)
+			So(sch.Tasks(), ShouldHaveLength, 4)
 			bs := &model.BuildStatus{
 				Build: datastore.MakeKey(ctx, "Build", 1),
 			}
@@ -288,13 +264,6 @@ func TestCancelBuild(t *testing.T) {
 				Build:  datastore.MakeKey(ctx, "Build", 1),
 				Status: pb.Status_STARTED,
 			}), ShouldBeNil)
-			So(datastore.Put(ctx, &model.Builder{
-				ID:     "builder",
-				Parent: model.BucketKey(ctx, "project", "bucket"),
-				Config: &pb.BuilderConfig{
-					MaxConcurrentBuilds: 2,
-				},
-			}), ShouldBeNil)
 			bld, err := Cancel(ctx, 1)
 			So(err, ShouldBeNil)
 			So(bld.Proto, ShouldResembleProto, &pb.Build{
@@ -308,7 +277,7 @@ func TestCancelBuild(t *testing.T) {
 				EndTime:    timestamppb.New(now),
 				Status:     pb.Status_CANCELED,
 			})
-			So(sch.Tasks(), ShouldHaveLength, 5)
+			So(sch.Tasks(), ShouldHaveLength, 4)
 			bs := &model.BuildStatus{
 				Build: datastore.MakeKey(ctx, "Build", 1),
 			}
