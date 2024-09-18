@@ -160,7 +160,9 @@ func RegisterCrons(srv *luciserver.Server) {
 	cron.RegisterHandler("export-rules", func(ctx context.Context) error {
 		return rules.ExportRulesCron(ctx, srv.Options.CloudProject)
 	})
-	cron.RegisterHandler("schedule-group-changepoints", groupscheduler.CronHandler)
+	cron.RegisterHandler("schedule-group-changepoints", func(ctx context.Context) error {
+		return groupscheduler.CronHandler(ctx, srv.Options.CloudProject)
+	})
 	cron.RegisterHandler("ensure-views", func(ctx context.Context) error {
 		return views.CronHandler(ctx, srv.Options.CloudProject)
 	})

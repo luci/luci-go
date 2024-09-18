@@ -38,7 +38,7 @@ func TestScheduleGroupChangepoints(t *testing.T) {
 	ctx, _ = testclock.UseTime(ctx, now)
 
 	ftt.Run("e2e", t, func(t *ftt.Test) {
-		err := CronHandler(ctx)
+		err := scheduleGroupingTasks(ctx)
 		assert.That(t, err, should.ErrLike(nil))
 		tasks := taskScheduler.Tasks().Payloads()
 		assert.That(t, len(tasks), should.Equal(8))
