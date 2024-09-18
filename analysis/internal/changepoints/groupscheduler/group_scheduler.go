@@ -31,7 +31,7 @@ import (
 )
 
 // The number of weeks to schedule grouping task for in each run.
-const weeksPerRun = 52
+const weeksPerRun = 8
 
 func CronHandler(ctx context.Context, gcpProject string) (retErr error) {
 	if err := scheduleGroupingTasks(ctx); err != nil {
