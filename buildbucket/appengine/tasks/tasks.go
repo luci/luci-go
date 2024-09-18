@@ -385,3 +385,14 @@ func CreatePushPendingBuildTask(ctx context.Context, task *taskdefs.PushPendingB
 		Payload: task,
 	})
 }
+
+// CreatePopPendingBuildTask enqueues a task queue task to pop a pending build.
+func CreatePopPendingBuildTask(ctx context.Context, task *taskdefs.PopPendingBuildTask) error {
+	if task.GetBuilderId() == nil {
+		return errors.Reason("builder_id is required").Err()
+	}
+	return tq.AddTask(ctx, &tq.Task{
+		Title:   fmt.Sprintf("pop-pending-build-%d", task.BuildId),
+		Payload: task,
+	})
+}

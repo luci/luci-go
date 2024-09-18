@@ -313,5 +313,22 @@ func TestTasks(t *testing.T) {
 				So(sch.Tasks(), ShouldHaveLength, 1)
 			})
 		})
+
+		Convey("CreatePopPendingTask", func() {
+			Convey("invalid", func() {
+				So(CreatePopPendingBuildTask(ctx, &taskdef.PopPendingBuildTask{
+					BuildId: 123,
+				}), ShouldErrLike, "builder_id is required")
+				So(sch.Tasks(), ShouldBeEmpty)
+			})
+
+			Convey("valid", func() {
+				So(CreatePopPendingBuildTask(ctx, &taskdef.PopPendingBuildTask{
+					BuildId:   123,
+					BuilderId: &pb.BuilderID{Builder: "builder", Bucket: "bucket", Project: "project"},
+				}), ShouldBeNil)
+				So(sch.Tasks(), ShouldHaveLength, 1)
+			})
+		})
 	})
 }
