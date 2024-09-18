@@ -49,6 +49,22 @@ func sendOnBuildCompletion(ctx context.Context, bld *model.Build, inf *model.Bui
 			return errors.Annotate(ExportBigQuery(ctx, bld.ID), "failed to enqueue bigquery export task: %d", bld.ID).Err()
 		}
 		tks <- func() error {
+			bldr := &model.Builder{
+				ID:     bld.Proto.Builder.Builder,
+				Parent: model.BucketKey(ctx, bld.Proto.Builder.Project, bld.Proto.Builder.Bucket),
+			}
+			if err := datastore.Get(ctx, bldr); err != nil {
+				return err
+			}
+			if bldr.Config.GetMaxConcurrentBuilds() > 0 {
+				return errors.Annotate(CreatePopPendingBuildTask(ctx, &taskdefs.PopPendingBuildTask{
+					BuildId:   bld.ID,
+					BuilderId: bld.Proto.Builder,
+				}), "failed to enqueue pop pending build task: %d", bld.ID).Err()
+			}
+			return nil
+		}
+		tks <- func() error {
 			if inf == nil {
 				inf = &model.BuildInfra{Build: datastore.KeyForObj(ctx, bld)}
 				if err := datastore.Get(ctx, inf); err != nil {
