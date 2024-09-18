@@ -141,3 +141,13 @@ message PushPendingBuildTask {
   // ID of the builder the build belongs to.
   buildbucket.v2.BuilderID builder_id = 2;
 }
+
+// PopPendingBuildTask pops builds from
+// the builder's pending_build queue and send them to task backend.
+message PopPendingBuildTask {
+  // ID of the build just being ended.
+  int64 build_id = 1;
+
+  // ID of the builder to trigger pending builds.
+  buildbucket.v2.BuilderID builder_id = 2;
+}

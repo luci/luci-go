@@ -47,3 +47,6 @@ queue:
 - name: push-pending-builds
   target: default-go
   rate: 500/s
+- name: pop-pending-builds
+  target: default-go
+  rate: 500/s

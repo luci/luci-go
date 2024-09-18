@@ -236,6 +236,17 @@ func init() {
 			return PushPendingBuildTask(ctx, t.BuildId, t.BuilderId)
 		},
 	})
+
+	tq.RegisterTaskClass(tq.TaskClass{
+		ID:        "pop-pending-builds",
+		Kind:      tq.FollowsContext,
+		Prototype: (*taskdefs.PopPendingBuildTask)(nil),
+		Queue:     "pop-pending-builds",
+		Handler: func(ctx context.Context, payload proto.Message) error {
+			t := payload.(*taskdefs.PopPendingBuildTask)
+			return PopPendingBuildTask(ctx, t.BuildId, t.BuilderId)
+		},
+	})
 }
 
 // CancelBackendTask enqueues a task queue task to cancel the given Backend
