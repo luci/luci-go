@@ -143,6 +143,7 @@ export function GroupsForm({ name, onDelete = () => { } }: GroupsFormProps) {
       setReadonlyMode();
       setIsExternal(isExternalGroupName(response?.name!));
     },
+    refetchOnWindowFocus: false,
   })
 
   const setReadonlyMode = () => {

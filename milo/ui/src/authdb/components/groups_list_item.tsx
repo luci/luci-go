@@ -32,7 +32,7 @@ function isExternalGroupName(name: string) {
 
 export function GroupsListItem({ group, setSelected, selected } :GroupsItemProps) {
   const isExternal = isExternalGroupName(group.name);
-  let description = isExternal ? 'External' : group.description;
+  const description = isExternal ? 'External' : group.description;
 
   return (
       <ListItem disablePadding sx={{maxWidth:'95vw'}} style={{backgroundColor: group.callerCanModify ? 'white': '#ECECEC'}}>
