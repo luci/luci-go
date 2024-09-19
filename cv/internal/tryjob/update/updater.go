@@ -26,10 +26,9 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/cv/internal/common"
@@ -59,8 +58,8 @@ type rmNotifier interface {
 
 // Updater knows how to update Tryjobs, notifying other CV parts as needed.
 type Updater struct {
-	env        *common.Env
-	rmNotifier rmNotifier
+	env     *common.Env
+	mutator *tryjob.Mutator
 
 	rwmutex  sync.RWMutex // guards `backends`
 	backends map[string]updaterBackend
@@ -71,15 +70,13 @@ type Updater struct {
 // Starts without backends, but they should be added via RegisterBackend().
 func NewUpdater(env *common.Env, tn *tryjob.Notifier, rm rmNotifier) *Updater {
 	u := &Updater{
-		env:        env,
-		rmNotifier: rm,
-		backends:   make(map[string]updaterBackend, 1),
+		env:      env,
+		mutator:  tryjob.NewMutator(rm),
+		backends: make(map[string]updaterBackend, 1),
 	}
 	tn.Bindings.Update.AttachHandler(func(ctx context.Context, payload proto.Message) error {
 		err := u.handleTask(ctx, payload.(*tryjob.UpdateTryjobTask))
-		return common.TQIfy{
-			KnownRetry: []error{errTryjobEntityHasChanged},
-		}.Error(ctx, err)
+		return common.TQifyError(ctx, err)
 	})
 	return u
 }
@@ -123,13 +120,8 @@ func (u *Updater) Update(ctx context.Context, eid tryjob.ExternalID, data any) e
 	switch status, result, err := backend.Parse(ctx, data); {
 	case err != nil:
 		return errors.Reason("failed to parse status and result for tryjob %s", eid).Err()
-	case tj.Result.GetUpdateTime() != nil && result.GetUpdateTime() != nil && tj.Result.GetUpdateTime().AsTime().After(result.GetUpdateTime().AsTime()):
-		// Tryjob data in CV is newer
-		return nil
-	case status == tj.Status && proto.Equal(tj.Result, result):
-		return nil
 	default:
-		return u.conditionallyUpdate(ctx, tj.ID, status, result, tj.EVersion)
+		return u.conditionallyUpdate(ctx, tj.ID, status, result)
 	}
 }
 
@@ -168,94 +160,75 @@ func (u *Updater) handleTask(ctx context.Context, task *tryjob.UpdateTryjobTask)
 		return errors.Annotate(err, "resolving backend for %v", tj).Err()
 	}
 
-	status, result, err := backend.Fetch(ctx, tj.LUCIProject(), tj.ExternalID)
-	switch {
+	switch status, result, err := backend.Fetch(ctx, tj.LUCIProject(), tj.ExternalID); {
 	case err != nil:
-		return errors.Annotate(err, "reading status and result from %q", tj.ExternalID).Err()
-	case status == tj.Status && proto.Equal(tj.Result, result):
-		return nil
+		return errors.Reason("failed to read status and result from %q", tj.ExternalID).Err()
+	default:
+		return u.conditionallyUpdate(ctx, tj.ID, status, result)
 	}
-	return u.conditionallyUpdate(ctx, tj.ID, status, result, tj.EVersion)
 }
 
-// errTryjobEntityHasChanged is returned if there is a race updating Tryjob
-// entity.
-var errTryjobEntityHasChanged = errors.New("Tryjob entity has changed", transient.Tag)
-
-// conditionallyUpdate updates the Tryjob entity if the EVersion of the current
-// Tryjob entity in the datastore matches the `expectedEVersion`.
+// conditionallyUpdate conditionally updates the Tryjob entity with given
+// status and result.
 //
-// Returns errTryjobEntityHasChanged if the Tryjob entity in the datastore has
-// been modified already (i.e. EVersion no longer matches `expectedEVersion`).
-func (u *Updater) conditionallyUpdate(ctx context.Context, id common.TryjobID, status tryjob.Status, result *tryjob.Result, expectedEVersion int64) error {
-	// Capture the error that may cause the transaction to commit, and any
-	// relevant tags.
-	var innerErr error
-	err := datastore.RunInTransaction(ctx, func(ctx context.Context) (err error) {
-		defer func() {
-			innerErr = err
-		}()
-		tj := &tryjob.Tryjob{ID: common.TryjobID(id)}
-		if err := datastore.Get(ctx, tj); err != nil {
-			return errors.Annotate(err, "failed to load Tryjob %d", tj.ID).Tag(transient.Tag).Err()
+// Following conditions should be met before updating the Tryjob:
+//   - the status and result are different from the stored status and result
+//   - the updateTime in the stored result must not be later than the
+//     updateTime in the result. This indicates the Tryjob stored in CV is more
+//     fresh.
+//
+// Best effort reports TryjobEnded metric if the Tryjob has transitioned to the
+// Status_ENDED.
+func (u *Updater) conditionallyUpdate(ctx context.Context, id common.TryjobID, status tryjob.Status, result *tryjob.Result) error {
+	var priorStatus tryjob.Status
+	tj, err := u.mutator.Update(ctx, id, func(tj *tryjob.Tryjob) error {
+		switch {
+		case status == tj.Status && proto.Equal(tj.Result, result):
+			return tryjob.ErrStopMutation
+		case tj.Result.GetUpdateTime() != nil && result.GetUpdateTime() != nil && tj.Result.GetUpdateTime().AsTime().After(result.GetUpdateTime().AsTime()):
+			// the stored Tryjob is newer, skip update
+			return tryjob.ErrStopMutation
 		}
-		if expectedEVersion != tj.EVersion {
-			return errTryjobEntityHasChanged
-		}
-
-		if tj.LaunchedBy != "" && status == tryjob.Status_ENDED && tj.Status != status {
-			// Tryjob launched by CV has transitioned to end status
-			r := &run.Run{ID: tj.LaunchedBy}
-			if err := datastore.Get(ctx, r); err != nil {
-				return errors.Annotate(err, "failed to load Run %s", r.ID).Tag(transient.Tag).Err()
-			}
-			project, configGroup := r.ID.LUCIProject(), r.ConfigGroupID.Name()
-			isRetry := true
-			for _, exec := range r.Tryjobs.GetState().GetExecutions() {
-				if len(exec.GetAttempts()) > 0 && exec.GetAttempts()[0].TryjobId == int64(tj.ID) {
-					isRetry = false
-					break
-				}
-			}
-			txndefer.Defer(ctx, func(ctx context.Context) {
-				tryjob.RunWithBuilderMetricsTarget(ctx, u.env, tj.Definition, func(ctx context.Context) {
-					metrics.Public.TryjobEnded.Add(ctx, 1,
-						project,
-						configGroup,
-						tj.Definition.GetCritical(),
-						isRetry,
-						versioning.TryjobStatusV0(tj.Status, tj.Result.GetStatus()).String(),
-					)
-				})
-			})
-		}
-		tj.EntityUpdateTime = datastore.RoundTime(clock.Now(ctx).UTC())
-		tj.EVersion++
+		priorStatus = tj.Status
 		tj.Status = status
 		tj.Result = result
-		if err := datastore.Put(ctx, tj); err != nil {
-			return errors.Annotate(err, "failed to save Tryjob %d", tj.ID).Tag(transient.Tag).Err()
-		}
-		for _, run := range tj.AllWatchingRuns() {
-			err := u.rmNotifier.NotifyTryjobsUpdated(
-				ctx, run, &tryjob.TryjobUpdatedEvents{
-					Events: []*tryjob.TryjobUpdatedEvent{
-						{TryjobId: int64(tj.ID)},
-					},
-				},
-			)
-			if err != nil {
-				return err
-			}
-		}
 		return nil
-	}, nil)
-	switch {
-	case innerErr != nil:
-		return innerErr
-	case err != nil:
-		return errors.Annotate(err, "failed to commit transaction updating tryjob %d", id).Tag(transient.Tag).Err()
+	})
+	if err != nil {
+		return err
 	}
+
+	if tj.LaunchedBy != "" && status == tryjob.Status_ENDED && priorStatus != status {
+		// Tryjob has transitioned to end status
+		if err := u.reportTryjobEndedStatus(ctx, tj); err != nil {
+			logging.Warningf(ctx, "failed to report tryjob_ended metric: %s", err)
+		}
+	}
+	return nil
+}
+
+func (u *Updater) reportTryjobEndedStatus(ctx context.Context, tj *tryjob.Tryjob) error {
+	r := &run.Run{ID: tj.LaunchedBy}
+	if err := datastore.Get(ctx, r); err != nil {
+		return errors.Annotate(err, "failed to load Run %s", r.ID).Tag(transient.Tag).Err()
+	}
+	project, configGroup := r.ID.LUCIProject(), r.ConfigGroupID.Name()
+	isRetry := true
+	for _, exec := range r.Tryjobs.GetState().GetExecutions() {
+		if len(exec.GetAttempts()) > 0 && exec.GetAttempts()[0].TryjobId == int64(tj.ID) {
+			isRetry = false
+			break
+		}
+	}
+	tryjob.RunWithBuilderMetricsTarget(ctx, u.env, tj.Definition, func(ctx context.Context) {
+		metrics.Public.TryjobEnded.Add(ctx, 1,
+			project,
+			configGroup,
+			tj.Definition.GetCritical(),
+			isRetry,
+			versioning.TryjobStatusV0(tj.Status, tj.Result.GetStatus()).String(),
+		)
+	})
 	return nil
 }
 

@@ -39,16 +39,6 @@ import (
 	"go.chromium.org/luci/cv/internal/tryjob"
 )
 
-// mockRMNotifier is a fake Run Manager Notifier used in Updater for tests.
-type mockRMNotifier struct {
-	notifiedRuns common.RunIDs
-}
-
-func (n *mockRMNotifier) NotifyTryjobsUpdated(ctx context.Context, run common.RunID, _ *tryjob.TryjobUpdatedEvents) error {
-	n.notifiedRuns = append(n.notifiedRuns, run)
-	return nil
-}
-
 type returnValues struct {
 	s   tryjob.Status
 	r   *tryjob.Result
@@ -106,6 +96,9 @@ func makeTryjobWithDetails(ctx context.Context, buildID int64, status tryjob.Sta
 	tj.LaunchedBy = triggerer
 	tj.ReusedBy = reusers
 	tj.Status = status
+	tj.Result = &tryjob.Result{
+		UpdateTime: timestamppb.New(clock.Now(ctx).UTC()),
+	}
 	return tj, datastore.Put(ctx, tj)
 }
 
@@ -128,29 +121,40 @@ func TestHandleTask(t *testing.T) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
-		rn := &mockRMNotifier{}
 		mb := &mockBackend{}
-		updater := NewUpdater(ct.Env, tryjob.NewNotifier(ct.TQDispatcher), rn)
+		updater := NewUpdater(ct.Env, tryjob.NewNotifier(ct.TQDispatcher), run.NewNotifier(ct.TQDispatcher))
 		updater.RegisterBackend(mb)
 
 		t.Run("noop", func(t *ftt.Test) {
 			tj, err := makeTryjob(ctx)
-			assert.Loosely(t, err, should.BeNil)
+			assert.That(t, err, should.ErrLike(nil))
+
 			eid := tj.ExternalID
 			originalEVersion := tj.EVersion
-			mb.returns = []*returnValues{{tryjob.Status_TRIGGERED, nil, nil}}
 
-			assert.Loosely(t, updater.handleTask(ctx, &tryjob.UpdateTryjobTask{ExternalId: string(eid)}), should.BeNil)
-			assert.Loosely(t, rn.notifiedRuns, should.HaveLength(0))
+			check := func(t testing.TB) {
+				t.Helper()
+				assert.That(t, updater.handleTask(ctx, &tryjob.UpdateTryjobTask{ExternalId: string(eid)}), should.ErrLike(nil), truth.LineContext())
+				// Reload to ensure no changes took place.
+				tj = eid.MustLoad(ctx)
+				assert.That(t, tj.EVersion, should.Equal(originalEVersion), truth.LineContext())
+			}
+			t.Run("if status and result is not changed", func(t *ftt.Test) {
+				mb.returns = []*returnValues{{tj.Status, tj.Result, nil}}
+				check(t)
+			})
 
-			// Reload to ensure no changes took place.
-			tj = eid.MustCreateIfNotExists(ctx)
-			assert.Loosely(t, tj.EVersion, should.Equal(originalEVersion))
+			t.Run("if CV has newer data", func(t *ftt.Test) {
+				mb.returns = []*returnValues{{tryjob.Status_PENDING, &tryjob.Result{
+					UpdateTime: timestamppb.New(ct.Clock.Now().Add(-2 * time.Minute)),
+				}, nil}}
+				check(t)
+			})
 		})
 		t.Run("succeeds updating", func(t *ftt.Test) {
 			t.Run("status and result", func(t *ftt.Test) {
 				tj, err := makeTryjob(ctx)
-				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, err, should.ErrLike(nil))
 				r := &run.Run{
 					ID:            tj.LaunchedBy,
 					ConfigGroupID: prjcfg.MakeConfigGroupID("deedbeef", "test_config_group"),
@@ -174,76 +178,61 @@ func TestHandleTask(t *testing.T) {
 						},
 					},
 				}
-				assert.Loosely(t, datastore.Put(ctx, r), should.BeNil)
-				originalEVersion := tj.EVersion
+				assert.That(t, datastore.Put(ctx, r), should.ErrLike(nil))
 				mb.returns = []*returnValues{{tryjob.Status_ENDED, &tryjob.Result{Status: tryjob.Result_SUCCEEDED}, nil}}
 
 				check := func(t testing.TB) {
 					t.Helper()
-					assert.Loosely(t, rn.notifiedRuns, should.HaveLength(1), truth.LineContext())
-					assert.Loosely(t, rn.notifiedRuns[0], should.Equal(tj.LaunchedBy), truth.LineContext())
-
 					// Ensure status updated.
 					tj = tj.ExternalID.MustCreateIfNotExists(ctx)
-					assert.Loosely(t, tj.EVersion, should.Equal(originalEVersion+1), truth.LineContext())
-					assert.Loosely(t, tj.Status, should.Equal(tryjob.Status_ENDED), truth.LineContext())
-					assert.Loosely(t, tj.Result.Status, should.Equal(tryjob.Result_SUCCEEDED), truth.LineContext())
+					assert.That(t, tj.Status, should.Equal(tryjob.Status_ENDED), truth.LineContext())
+					assert.That(t, tj.Result.Status, should.Equal(tryjob.Result_SUCCEEDED), truth.LineContext())
 					tryjob.RunWithBuilderMetricsTarget(ctx, ct.Env, tryjobDef, func(ctx context.Context) {
 						assert.Loosely(t, ct.TSMonSentValue(ctx, metrics.Public.TryjobEnded, "test", "test_config_group", true, false, apiv0pb.Tryjob_Result_SUCCEEDED.String()), should.Equal(1), truth.LineContext())
 					})
 				}
 
 				t.Run("by internal ID", func(t *ftt.Test) {
-					assert.Loosely(t, updater.handleTask(ctx, &tryjob.UpdateTryjobTask{
+					assert.That(t, updater.handleTask(ctx, &tryjob.UpdateTryjobTask{
 						Id: int64(tj.ID),
-					}), should.BeNil)
+					}), should.ErrLike(nil))
 					check(t)
 				})
 				t.Run("by external ID", func(t *ftt.Test) {
-					assert.Loosely(t, updater.handleTask(ctx, &tryjob.UpdateTryjobTask{
+					assert.That(t, updater.handleTask(ctx, &tryjob.UpdateTryjobTask{
 						ExternalId: string(tj.ExternalID),
-					}), should.BeNil)
+					}), should.ErrLike(nil))
 					check(t)
 				})
 			})
 
 			t.Run("result only", func(t *ftt.Test) {
 				tj, err := makeTryjob(ctx)
-				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, err, should.ErrLike(nil))
 
-				originalEVersion := tj.EVersion
 				mb.returns = []*returnValues{{tryjob.Status_TRIGGERED, &tryjob.Result{Status: tryjob.Result_UNKNOWN}, nil}}
-				assert.Loosely(t, updater.handleTask(ctx, &tryjob.UpdateTryjobTask{Id: int64(tj.ID)}), should.BeNil)
-				assert.Loosely(t, rn.notifiedRuns, should.HaveLength(1))
-				assert.Loosely(t, rn.notifiedRuns[0], should.Equal(tj.LaunchedBy))
+				assert.That(t, updater.handleTask(ctx, &tryjob.UpdateTryjobTask{Id: int64(tj.ID)}), should.ErrLike(nil))
 
 				tj = tj.ExternalID.MustCreateIfNotExists(ctx)
-				assert.Loosely(t, tj.EVersion, should.Equal(originalEVersion+1))
-				assert.Loosely(t, tj.Status, should.Equal(tryjob.Status_TRIGGERED))
-				assert.Loosely(t, tj.Result.Status, should.Equal(tryjob.Result_UNKNOWN))
-				assert.Loosely(t, ct.TSMonStore.GetAll(ctx), should.BeEmpty)
+				assert.That(t, tj.Status, should.Equal(tryjob.Status_TRIGGERED))
+				assert.That(t, tj.Result.Status, should.Equal(tryjob.Result_UNKNOWN))
 			})
 
 			t.Run("status only", func(t *ftt.Test) {
 				tj, err := makeTryjobWithStatus(ctx, tryjob.Status_PENDING)
-				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, err, should.ErrLike(nil))
 
-				originalEVersion := tj.EVersion
 				mb.returns = []*returnValues{{tryjob.Status_TRIGGERED, nil, nil}}
-				assert.Loosely(t, updater.handleTask(ctx, &tryjob.UpdateTryjobTask{Id: int64(tj.ID)}), should.BeNil)
-				assert.Loosely(t, rn.notifiedRuns, should.HaveLength(1))
-				assert.Loosely(t, rn.notifiedRuns[0], should.Equal(tj.LaunchedBy))
+				assert.That(t, updater.handleTask(ctx, &tryjob.UpdateTryjobTask{Id: int64(tj.ID)}), should.ErrLike(nil))
 
 				tj = tj.ExternalID.MustCreateIfNotExists(ctx)
-				assert.Loosely(t, tj.EVersion, should.Equal(originalEVersion+1))
-				assert.Loosely(t, tj.Status, should.Equal(tryjob.Status_TRIGGERED))
+				assert.That(t, tj.Status, should.Equal(tryjob.Status_TRIGGERED))
 				assert.Loosely(t, tj.Result, should.BeNil)
-				assert.Loosely(t, ct.TSMonStore.GetAll(ctx), should.BeEmpty)
 			})
 
 			t.Run("don't emit metrics if tryjob is already in end status", func(t *ftt.Test) {
 				tj, err := makeTryjobWithStatus(ctx, tryjob.Status_ENDED)
-				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, err, should.ErrLike(nil))
 
 				mb.returns = []*returnValues{{tryjob.Status_ENDED, &tryjob.Result{
 					Status: tryjob.Result_SUCCEEDED,
@@ -251,64 +240,35 @@ func TestHandleTask(t *testing.T) {
 						Retry: recipe.Output_OUTPUT_RETRY_DENIED,
 					},
 				}, nil}}
-				assert.Loosely(t, updater.handleTask(ctx, &tryjob.UpdateTryjobTask{Id: int64(tj.ID)}), should.BeNil)
-				assert.Loosely(t, ct.TSMonStore.GetAll(ctx), should.BeEmpty)
-			})
-
-			t.Run("and notifying triggerer and reuser Runs", func(t *ftt.Test) {
-				buildID := int64(rand.Int31())
-				triggerer := makeTestRunID(ctx, buildID)
-				reusers := common.RunIDs{makeTestRunID(ctx, buildID+100), makeTestRunID(ctx, buildID+200)}
-				tj, err := makeTryjobWithDetails(ctx, buildID, tryjob.Status_PENDING, triggerer, reusers)
-				assert.Loosely(t, err, should.BeNil)
-
-				mb.returns = []*returnValues{{tryjob.Status_TRIGGERED, &tryjob.Result{Status: tryjob.Result_UNKNOWN}, nil}}
-				assert.Loosely(t, updater.handleTask(ctx, &tryjob.UpdateTryjobTask{Id: int64(tj.ID)}), should.BeNil)
-				// Should have called notifier thrice.
-				assert.Loosely(t, rn.notifiedRuns, should.HaveLength(3))
-				assert.Loosely(t, rn.notifiedRuns.Equal(common.RunIDs{triggerer, reusers[0], reusers[1]}), should.BeTrue)
-				assert.Loosely(t, ct.TSMonStore.GetAll(ctx), should.BeEmpty)
-			})
-			t.Run("and notifying reuser Run with no triggerer Run", func(t *ftt.Test) {
-				buildID := int64(rand.Int31())
-				reusers := common.RunIDs{makeTestRunID(ctx, buildID+100)}
-				tj, err := makeTryjobWithDetails(ctx, buildID, tryjob.Status_TRIGGERED, "", reusers)
-				assert.Loosely(t, err, should.BeNil)
-
-				mb.returns = []*returnValues{{tryjob.Status_ENDED, &tryjob.Result{Status: tryjob.Result_SUCCEEDED}, nil}}
-				assert.Loosely(t, updater.handleTask(ctx, &tryjob.UpdateTryjobTask{Id: int64(tj.ID)}), should.BeNil)
-				assert.Loosely(t, rn.notifiedRuns, should.HaveLength(1))
-				assert.Loosely(t, rn.notifiedRuns[0], should.Equal(reusers[0]))
-				assert.Loosely(t, ct.TSMonStore.GetAll(ctx), should.BeEmpty)
+				assert.That(t, updater.handleTask(ctx, &tryjob.UpdateTryjobTask{Id: int64(tj.ID)}), should.ErrLike(nil))
+				tryjob.RunWithBuilderMetricsTarget(ctx, ct.Env, tryjobDef, func(ctx context.Context) {
+					assert.Loosely(t, ct.TSMonSentValue(ctx, metrics.Public.TryjobEnded, "test", "test_config_group", true, false, apiv0pb.Tryjob_Result_SUCCEEDED.String()), should.BeNil)
+				})
 			})
 		})
 		t.Run("fails to", func(t *ftt.Test) {
 			tj, err := makeTryjob(ctx)
-			assert.Loosely(t, err, should.BeNil)
+			assert.That(t, err, should.ErrLike(nil))
 
 			t.Run("update a tryjob with an ID that doesn't exist", func(t *ftt.Test) {
-				assert.Loosely(t, datastore.Delete(ctx, tj), should.BeNil)
-				assert.Loosely(t, updater.handleTask(ctx, &tryjob.UpdateTryjobTask{
+				assert.That(t, datastore.Delete(ctx, tj), should.ErrLike(nil))
+				assert.That(t, updater.handleTask(ctx, &tryjob.UpdateTryjobTask{
 					Id: int64(tj.ID),
 				}), should.ErrLike("unknown Tryjob with ID"))
-				assert.Loosely(t, rn.notifiedRuns, should.HaveLength(0))
 			})
 			t.Run("update a tryjob with an external ID that doesn't exist", func(t *ftt.Test) {
-				assert.Loosely(t, updater.handleTask(ctx, &tryjob.UpdateTryjobTask{
+				assert.That(t, updater.handleTask(ctx, &tryjob.UpdateTryjobTask{
 					ExternalId: string(tryjob.MustBuildbucketID("does-not-exist.example.com", 1)),
 				}), should.ErrLike("unknown Tryjob with ExternalID"))
-				assert.Loosely(t, rn.notifiedRuns, should.HaveLength(0))
 			})
 			t.Run("update a tryjob with neither internal nor external ID", func(t *ftt.Test) {
-				assert.Loosely(t, updater.handleTask(ctx, &tryjob.UpdateTryjobTask{}), should.ErrLike("expected at least one of {Id, ExternalId}"))
-				assert.Loosely(t, rn.notifiedRuns, should.HaveLength(0))
+				assert.That(t, updater.handleTask(ctx, &tryjob.UpdateTryjobTask{}), should.ErrLike("expected at least one of {Id, ExternalId}"))
 			})
 			t.Run("update a tryjob with mismatching internal and external IDs", func(t *ftt.Test) {
-				assert.Loosely(t, updater.handleTask(ctx, &tryjob.UpdateTryjobTask{
+				assert.That(t, updater.handleTask(ctx, &tryjob.UpdateTryjobTask{
 					Id:         int64(tj.ID),
 					ExternalId: string(tryjob.MustBuildbucketID("cr-buildbucket.example.com", 1)),
 				}), should.ErrLike("the given internal and external IDs for the Tryjob do not match"))
-				assert.Loosely(t, rn.notifiedRuns, should.HaveLength(0))
 			})
 		})
 	})
@@ -319,32 +279,27 @@ func TestUpdate(t *testing.T) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
-		rn := &mockRMNotifier{}
 		mb := &mockBackend{}
-		updater := NewUpdater(ct.Env, tryjob.NewNotifier(ct.TQDispatcher), rn)
+		updater := NewUpdater(ct.Env, tryjob.NewNotifier(ct.TQDispatcher), run.NewNotifier(ct.TQDispatcher))
 		updater.RegisterBackend(mb)
 
 		t.Run("noop", func(t *ftt.Test) {
 			tj, err := makeTryjob(ctx)
-			assert.Loosely(t, err, should.BeNil)
+			assert.That(t, err, should.ErrLike(nil))
 			tj.Result = &tryjob.Result{
 				UpdateTime: timestamppb.New(clock.Now(ctx)),
 			}
-			assert.Loosely(t, datastore.Put(ctx, tj), should.BeNil)
+			assert.That(t, datastore.Put(ctx, tj), should.ErrLike(nil))
 			eid := tj.ExternalID
 			originalEVersion := tj.EVersion
 			var data any
 
 			check := func(t testing.TB) {
 				t.Helper()
-
-				assert.Loosely(t, updater.Update(ctx, eid, data), should.BeNil, truth.LineContext())
-				assert.Loosely(t, rn.notifiedRuns, should.HaveLength(0), truth.LineContext())
-
+				assert.That(t, updater.Update(ctx, eid, data), should.ErrLike(nil), truth.LineContext())
 				// Reload to ensure no changes took place.
 				tj = eid.MustLoad(ctx)
-				assert.Loosely(t, tj.EVersion, should.Equal(originalEVersion), truth.LineContext())
-
+				assert.That(t, tj.EVersion, should.Equal(originalEVersion), truth.LineContext())
 			}
 
 			t.Run("if status and result is not changed", func(t *ftt.Test) {
@@ -375,7 +330,7 @@ func TestUpdate(t *testing.T) {
 		t.Run("succeeds updating", func(t *ftt.Test) {
 			t.Run("status and result", func(t *ftt.Test) {
 				tj, err := makeTryjob(ctx)
-				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, err, should.ErrLike(nil))
 				r := &run.Run{
 					ID:            tj.LaunchedBy,
 					ConfigGroupID: prjcfg.MakeConfigGroupID("deedbeef", "test_config_group"),
@@ -399,23 +354,19 @@ func TestUpdate(t *testing.T) {
 						},
 					},
 				}
-				assert.Loosely(t, datastore.Put(ctx, r), should.BeNil)
-				originalEVersion := tj.EVersion
-				assert.Loosely(t, updater.Update(ctx, tj.ExternalID, &returnValues{
+				assert.That(t, datastore.Put(ctx, r), should.ErrLike(nil))
+				assert.That(t, updater.Update(ctx, tj.ExternalID, &returnValues{
 					s: tryjob.Status_ENDED,
 					r: &tryjob.Result{
 						Status:     tryjob.Result_SUCCEEDED,
 						UpdateTime: timestamppb.New(clock.Now(ctx)),
 					},
-				}), should.BeNil)
-				assert.Loosely(t, rn.notifiedRuns, should.HaveLength(1))
-				assert.Loosely(t, rn.notifiedRuns[0], should.Equal(tj.LaunchedBy))
+				}), should.ErrLike(nil))
 
 				// Ensure status updated.
 				tj = tj.ExternalID.MustCreateIfNotExists(ctx)
-				assert.Loosely(t, tj.EVersion, should.Equal(originalEVersion+1))
-				assert.Loosely(t, tj.Status, should.Equal(tryjob.Status_ENDED))
-				assert.Loosely(t, tj.Result.Status, should.Equal(tryjob.Result_SUCCEEDED))
+				assert.That(t, tj.Status, should.Equal(tryjob.Status_ENDED))
+				assert.That(t, tj.Result.Status, should.Equal(tryjob.Result_SUCCEEDED))
 				tryjob.RunWithBuilderMetricsTarget(ctx, ct.Env, tryjobDef, func(ctx context.Context) {
 					assert.Loosely(t, ct.TSMonSentValue(ctx, metrics.Public.TryjobEnded, "test", "test_config_group", true, false, apiv0pb.Tryjob_Result_SUCCEEDED.String()), should.Equal(1))
 				})
@@ -423,48 +374,36 @@ func TestUpdate(t *testing.T) {
 
 			t.Run("result only", func(t *ftt.Test) {
 				tj, err := makeTryjob(ctx)
-				assert.Loosely(t, err, should.BeNil)
-
-				originalEVersion := tj.EVersion
-				assert.Loosely(t, updater.Update(ctx, tj.ExternalID, &returnValues{
+				assert.That(t, err, should.ErrLike(nil))
+				assert.That(t, updater.Update(ctx, tj.ExternalID, &returnValues{
 					s: tryjob.Status_TRIGGERED,
 					r: &tryjob.Result{
 						Status: tryjob.Result_UNKNOWN,
 					},
-				}), should.BeNil)
-				assert.Loosely(t, rn.notifiedRuns, should.HaveLength(1))
-				assert.Loosely(t, rn.notifiedRuns[0], should.Equal(tj.LaunchedBy))
+				}), should.ErrLike(nil))
 
 				tj = tj.ExternalID.MustCreateIfNotExists(ctx)
-				assert.Loosely(t, tj.EVersion, should.Equal(originalEVersion+1))
-				assert.Loosely(t, tj.Status, should.Equal(tryjob.Status_TRIGGERED))
-				assert.Loosely(t, tj.Result.Status, should.Equal(tryjob.Result_UNKNOWN))
-				assert.Loosely(t, ct.TSMonStore.GetAll(ctx), should.BeEmpty)
+				assert.That(t, tj.Status, should.Equal(tryjob.Status_TRIGGERED))
+				assert.That(t, tj.Result.Status, should.Equal(tryjob.Result_UNKNOWN))
 			})
 
 			t.Run("status only", func(t *ftt.Test) {
 				tj, err := makeTryjobWithStatus(ctx, tryjob.Status_PENDING)
-				assert.Loosely(t, err, should.BeNil)
-
-				originalEVersion := tj.EVersion
-				assert.Loosely(t, updater.Update(ctx, tj.ExternalID, &returnValues{
+				assert.That(t, err, should.ErrLike(nil))
+				assert.That(t, updater.Update(ctx, tj.ExternalID, &returnValues{
 					s: tryjob.Status_TRIGGERED,
-				}), should.BeNil)
-				assert.Loosely(t, rn.notifiedRuns, should.HaveLength(1))
-				assert.Loosely(t, rn.notifiedRuns[0], should.Equal(tj.LaunchedBy))
+				}), should.ErrLike(nil))
 
 				tj = tj.ExternalID.MustCreateIfNotExists(ctx)
-				assert.Loosely(t, tj.EVersion, should.Equal(originalEVersion+1))
-				assert.Loosely(t, tj.Status, should.Equal(tryjob.Status_TRIGGERED))
+				assert.That(t, tj.Status, should.Equal(tryjob.Status_TRIGGERED))
 				assert.Loosely(t, tj.Result, should.BeNil)
-				assert.Loosely(t, ct.TSMonStore.GetAll(ctx), should.BeEmpty)
 			})
 
 			t.Run("don't emit metrics if tryjob is already in end status", func(t *ftt.Test) {
 				tj, err := makeTryjobWithStatus(ctx, tryjob.Status_ENDED)
-				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, err, should.ErrLike(nil))
 
-				assert.Loosely(t, updater.Update(ctx, tj.ExternalID, &returnValues{
+				assert.That(t, updater.Update(ctx, tj.ExternalID, &returnValues{
 					s: tryjob.Status_ENDED,
 					r: &tryjob.Result{
 						Status: tryjob.Result_SUCCEEDED,
@@ -472,49 +411,16 @@ func TestUpdate(t *testing.T) {
 							Retry: recipe.Output_OUTPUT_RETRY_DENIED,
 						},
 					},
-				}), should.BeNil)
-				assert.Loosely(t, ct.TSMonStore.GetAll(ctx), should.BeEmpty)
+				}), should.ErrLike(nil))
+				tryjob.RunWithBuilderMetricsTarget(ctx, ct.Env, tryjobDef, func(ctx context.Context) {
+					assert.That(t, ct.TSMonSentValue(ctx, metrics.Public.TryjobEnded, "test", "test_config_group", true, false, apiv0pb.Tryjob_Result_SUCCEEDED.String()), should.BeNil)
+				})
 			})
 
-			t.Run("and notifying triggerer and reuser Runs", func(t *ftt.Test) {
-				buildID := int64(rand.Int31())
-				triggerer := makeTestRunID(ctx, buildID)
-				reusers := common.RunIDs{makeTestRunID(ctx, buildID+100), makeTestRunID(ctx, buildID+200)}
-				tj, err := makeTryjobWithDetails(ctx, buildID, tryjob.Status_PENDING, triggerer, reusers)
-				assert.Loosely(t, err, should.BeNil)
-
-				assert.Loosely(t, updater.Update(ctx, tj.ExternalID, &returnValues{
-					s: tryjob.Status_TRIGGERED,
-					r: &tryjob.Result{
-						Status: tryjob.Result_UNKNOWN,
-					},
-				}), should.BeNil)
-				// Should have called notifier thrice.
-				assert.Loosely(t, rn.notifiedRuns, should.HaveLength(3))
-				assert.Loosely(t, rn.notifiedRuns.Equal(common.RunIDs{triggerer, reusers[0], reusers[1]}), should.BeTrue)
-				assert.Loosely(t, ct.TSMonStore.GetAll(ctx), should.BeEmpty)
-			})
-			t.Run("and notifying reuser Run with no triggerer Run", func(t *ftt.Test) {
-				buildID := int64(rand.Int31())
-				reusers := common.RunIDs{makeTestRunID(ctx, buildID+100)}
-				tj, err := makeTryjobWithDetails(ctx, buildID, tryjob.Status_TRIGGERED, "", reusers)
-				assert.Loosely(t, err, should.BeNil)
-
-				assert.Loosely(t, updater.Update(ctx, tj.ExternalID, &returnValues{
-					s: tryjob.Status_ENDED,
-					r: &tryjob.Result{
-						Status: tryjob.Result_SUCCEEDED,
-					},
-				}), should.BeNil)
-				assert.Loosely(t, rn.notifiedRuns, should.HaveLength(1))
-				assert.Loosely(t, rn.notifiedRuns[0], should.Equal(reusers[0]))
-				assert.Loosely(t, ct.TSMonStore.GetAll(ctx), should.BeEmpty)
-			})
 		})
 
 		t.Run("fails to update a tryjob with an external ID that doesn't exist", func(t *ftt.Test) {
-			assert.Loosely(t, updater.Update(ctx, tryjob.MustBuildbucketID("does-not-exist.example.com", 1), nil), should.ErrLike("unknown Tryjob with ExternalID"))
-			assert.Loosely(t, rn.notifiedRuns, should.HaveLength(0))
+			assert.That(t, updater.Update(ctx, tryjob.MustBuildbucketID("does-not-exist.example.com", 1), nil), should.ErrLike("unknown Tryjob with ExternalID"))
 		})
 	})
 }
