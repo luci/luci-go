@@ -16,29 +16,49 @@ import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { Collapse, Divider, IconButton } from '@mui/material';
 import Grid from '@mui/material/Grid';
+import { useEffect } from 'react';
 
-import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
+import {
+  searchParamUpdater,
+  useSyncedSearchParams,
+} from '@/generic_libs/hooks/synced_search_params';
 
 import { useResults } from '../context';
 import { getSelectedResultId } from '../utils';
 
 import {
-  ResultDataProvider,
-  useSetTopPanelExpanded,
-  useTopPanelExpanded,
-} from './context';
+  TOP_PANEL_EXPANDED_OFF,
+  TOP_PANEL_EXPANDED_ON,
+  TOP_PANEL_EXPANDED_PARAM,
+} from './constants';
+import { ResultDataProvider } from './context';
 import { ResultArtifacts } from './result_artifacts';
 import { ResultBasicInfo } from './result_basic_info';
 import { ResultLogs } from './result_logs';
 import { ResultTags } from './result_tags';
 
 function TopPanel() {
-  const topPanelExpanded = useTopPanelExpanded();
-  const setTopPanelExpandendCtx = useSetTopPanelExpanded();
+  const [searchParams, setSearchParams] = useSyncedSearchParams();
+
+  const topPanelExpandedParam = searchParams.get(TOP_PANEL_EXPANDED_PARAM);
+
+  useEffect(() => {
+    if (topPanelExpandedParam === null) {
+      setSearchParams(
+        searchParamUpdater(TOP_PANEL_EXPANDED_PARAM, TOP_PANEL_EXPANDED_ON),
+      );
+    }
+  }, [setSearchParams, topPanelExpandedParam]);
 
   function handleToggleTopPanel() {
-    setTopPanelExpandendCtx(!topPanelExpanded);
+    const isOpen =
+      topPanelExpandedParam === TOP_PANEL_EXPANDED_ON
+        ? TOP_PANEL_EXPANDED_OFF
+        : TOP_PANEL_EXPANDED_ON;
+    setSearchParams(searchParamUpdater(TOP_PANEL_EXPANDED_PARAM, isOpen));
   }
+
+  const topPanelExpanded = topPanelExpandedParam === '1';
 
   return (
     <>

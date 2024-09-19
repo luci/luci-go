@@ -13,15 +13,7 @@
 // limitations under the License.
 
 import { useInfiniteQuery } from '@tanstack/react-query';
-import {
-  createContext,
-  Dispatch,
-  ReactNode,
-  SetStateAction,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
+import { createContext, ReactNode, useEffect, useMemo } from 'react';
 
 import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
 import { ListArtifactsRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
@@ -34,8 +26,6 @@ interface ResultDataContext {
   readonly resultArtifacts: readonly Artifact[];
   readonly invArtifacts: readonly Artifact[];
   readonly artifactsLoading: boolean;
-  readonly topPanelExpanded: boolean;
-  readonly setTopPanelExpanded: Dispatch<SetStateAction<boolean>>;
 }
 
 export const ResultDataCtx = createContext<ResultDataContext | undefined>(
@@ -51,7 +41,6 @@ export function ResultDataProvider({
   result,
   children,
 }: ResultDataProviderProps) {
-  const [topPanelExpanded, setTopPanelExpanded] = useState(true);
   const client = useResultDbClient();
 
   const {
@@ -132,8 +121,6 @@ export function ResultDataProvider({
         resultArtifacts,
         invArtifacts,
         artifactsLoading: invArtifactsLoading || resultArtifactsLoading,
-        topPanelExpanded,
-        setTopPanelExpanded,
       }}
     >
       {children}

@@ -17,7 +17,9 @@ import { memo, useRef, useState } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { useDebounce, useWindowSize } from 'react-use';
 
-import { useTopPanelExpanded } from '../context';
+import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
+
+import { TOP_PANEL_EXPANDED_ON, TOP_PANEL_EXPANDED_PARAM } from '../constants';
 
 import { ArtifactsTree } from './artifacts_tree';
 import { ResultLogsProvider } from './context';
@@ -25,7 +27,9 @@ import { LogTable } from './log_table';
 
 export const ResultLogs = memo(function ResultLogs() {
   const [height, setHeight] = useState('70vh');
-  const topPanelExpanded = useTopPanelExpanded();
+  const [searchParams] = useSyncedSearchParams();
+
+  const topPanelExpandedParam = searchParams.get(TOP_PANEL_EXPANDED_PARAM);
   const { height: windowHeight } = useWindowSize();
   const boxRef = useRef<HTMLDivElement>(null);
 
@@ -35,7 +39,7 @@ export const ResultLogs = memo(function ResultLogs() {
   useDebounce(
     () => {
       if (boxRef.current) {
-        if (!topPanelExpanded) {
+        if (topPanelExpandedParam === TOP_PANEL_EXPANDED_ON) {
           const topDistance = boxRef.current.getBoundingClientRect().top;
           setHeight(`${windowHeight - topDistance}px`);
         } else {
@@ -44,7 +48,7 @@ export const ResultLogs = memo(function ResultLogs() {
       }
     },
     300,
-    [windowHeight, topPanelExpanded],
+    [windowHeight, topPanelExpandedParam],
   );
   return (
     <ResultLogsProvider>

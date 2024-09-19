@@ -71,27 +71,3 @@ export function useResult() {
 
   return ctx.result;
 }
-
-export function useTopPanelExpanded() {
-  const ctx = useContext(ResultDataCtx);
-
-  if (ctx === undefined) {
-    throw new Error(
-      'useTopPanelExpanded can only be used in a ResultDataProvider',
-    );
-  }
-
-  return ctx.topPanelExpanded;
-}
-
-export function useSetTopPanelExpanded() {
-  const ctx = useContext(ResultDataCtx);
-
-  if (ctx === undefined) {
-    throw new Error(
-      'useSetTopPanelExpanded can only be used in a ResultDataProvider',
-    );
-  }
-
-  return ctx.setTopPanelExpanded;
-}
