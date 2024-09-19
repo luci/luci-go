@@ -1089,8 +1089,8 @@ then all permissions defined in `B` are also in `A`. Remembering that a
 realm is just a set of `(<principal>, <permission>)` pairs, the "extends"
 relation is just a set inclusion.
 
-There are three special realms that a project can have: "@root", "@legacy" and
-"@project".
+There are three special realms that a project can have: "@root", "@legacy"
+and "@project".
 
 The root realm is implicitly included into all other realms (including
 "@legacy"), and it is also used as a fallback when a resource points to a
@@ -1154,7 +1154,7 @@ Or separately one by one via [luci.binding(...)](#luci.binding) declarations:
 
 #### Arguments {#luci.realm-args}
 
-* **name**: name of the realm. Must match `[a-z0-9_\.\-/]{1,400}` or be `@root` or `@legacy` or `@project`. Required.
+* **name**: name of the realm. Must match `[a-z0-9_\.\-/]{1,400}` or be `@root` or `@legacy`. Required.
 * **extends**: a reference or a list of references to realms to inherit permission from. Optional. Default (and implicit) is `@root`.
 * **bindings**: a list of [luci.binding(...)](#luci.binding) to add to the realm.
 * **enforce_in**: a list of LUCI service IDs that should enforce this realm's permissions. Children realms inherit and extend this list. Used only during Realms migration to gradually roll out the enforcement realm by realm, service by service.
@@ -2112,9 +2112,10 @@ the same name.
 luci.tree_closer(
     # Required arguments.
     name,
-    tree_status_host,
+    tree_name,
 
     # Optional arguments.
+    tree_status_host = None,
     failed_step_regexp = None,
     failed_step_regexp_exclude = None,
     template = None,
@@ -2142,7 +2143,8 @@ the same name.
 #### Arguments {#luci.tree-closer-args}
 
 * **name**: name of this tree closer to reference it from other rules. Required.
-* **tree_status_host**: a hostname of the project tree status app (if any) that this rule will use to open and close the tree. Tree status affects how CQ lands CLs. See `tree_status_host` in [luci.cq_group(...)](#luci.cq-group). Required.
+* **tree_name**: the identifier of the tree that this rule will open and close. For example, 'chromium'. Tree status affects how CQ lands CLs. See `tree_status_name` in [luci.cq_group(...)](#luci.cq-group). Required.
+* **tree_status_host**: **Deprecated**. Please use tree_name instead. A hostname of the project tree status app (if any) that this rule will use to open and close the tree. Tree status affects how CQ lands CLs. See `tree_status_host` in [luci.cq_group(...)](#luci.cq-group).
 * **failed_step_regexp**: close the tree only on builds which had a failing step matching this regex, or list of regexes.
 * **failed_step_regexp_exclude**: close the tree only on builds which don't have a failing step matching this regex or list of regexes. May be combined with `failed_step_regexp`, in which case it must also have a failed step matching that regular expression.
 * **template**: a [luci.notifier_template(...)](#luci.notifier-template) to use to format tree closure notifications. If not specified, and a template `default_tree_status` is defined in the project somewhere, it is used implicitly by the tree closer.
@@ -2363,8 +2365,8 @@ pub/sub integration is enabled for the Gerrit host.
 * **cancel_stale_tryjobs**: unused anymore, but kept for backward compatibility.
 * **verifiers**: a list of [luci.cq_tryjob_verifier(...)](#luci.cq-tryjob-verifier) specifying what checks to run on a pending CL. See [luci.cq_tryjob_verifier(...)](#luci.cq-tryjob-verifier) for all details. As a shortcut, each entry can also either be a dict or a string. A dict is an alias for `luci.cq_tryjob_verifier(**entry)` and a string is an alias for `luci.cq_tryjob_verifier(builder = entry)`.
 * **additional_modes**: either a single [cq.run_mode(...)](#cq.run-mode) or a list of [cq.run_mode(...)](#cq.run-mode) defining additional run modes supported by this CQ group apart from standard DRY_RUN and FULL_RUN. If specified, CQ will create the Run with the first mode for which triggering conditions are fulfilled. If there is no such mode, CQ will fallback to standard DRY_RUN or FULL_RUN.
-* **user_limits**: a list of [cq.user_limit(...)](#cq.user-limit) or None. **WARNING**: Please contact luci-eng@ before setting this param. They specify per-user limits/quotas for given principals. At the time of a Run start, CV looks up and applies the first matching [cq.user_limit(...)](#cq.user-limit) to the Run, and postpones the start if limits were reached already. If none of the user_limit(s) were applicable, `user_limit_default` will be applied instead. Each [cq.user_limit(...)](#cq.user-limit) must specify at least one user or group.
-* **user_limit_default**: [cq.user_limit(...)](#cq.user-limit) or None. **WARNING*:: Please contact luci-eng@ before setting this param. If none of limits in `user_limits` are applicable and `user_limit_default` is not specified, the user is granted unlimited runs and tryjobs. `user_limit_default` must not specify users and groups.
+* **user_limits**: a list of [cq.user_limit(...)](#cq.user-limit) or None. They specify per-user limits/quotas for given principals. At the time of a Run start, CV looks up and applies the first matching [cq.user_limit(...)](#cq.user-limit) to the Run, and postpones the start if limits were reached already. If none of the user_limit(s) were applicable, `user_limit_default` will be applied instead. Each [cq.user_limit(...)](#cq.user-limit) must specify at least one user or group.
+* **user_limit_default**: [cq.user_limit(...)](#cq.user-limit) or None. If none of limits in `user_limits` are applicable and `user_limit_default` is not specified, the user is granted unlimited runs. `user_limit_default` must not specify users and groups.
 * **post_actions**: a list of post actions or None. Please refer to cq.post_action_* for all the available post actions. e.g., [cq.post_action_gerrit_label_votes(...)](#cq.post-action-gerrit-label-votes)
 * **tryjob_experiments**: a list of [cq.tryjob_experiment(...)](#cq.tryjob-experiment) or None. The experiments will be enabled when launching Tryjobs if condition is met.
 

@@ -117,19 +117,17 @@ def _cq_group(
         create the Run with the first mode for which triggering conditions are
         fulfilled. If there is no such mode, CQ will fallback to standard
         DRY_RUN or FULL_RUN.
-      user_limits: a list of cq.user_limit(...) or None. **WARNING**: Please
-        contact luci-eng@ before setting this param. They specify per-user
+      user_limits: a list of cq.user_limit(...) or None. They specify per-user
         limits/quotas for given principals. At the time of a Run start, CV looks
         up and applies the first matching cq.user_limit(...) to the Run, and
         postpones the start if limits were reached already. If none of the
         user_limit(s) were applicable, `user_limit_default` will be applied
         instead. Each cq.user_limit(...) must specify at least one user or
         group.
-      user_limit_default: cq.user_limit(...) or None. **WARNING*:: Please
-        contact luci-eng@ before setting this param. If none of limits in
+      user_limit_default: cq.user_limit(...) or None. If none of limits in
         `user_limits` are applicable and `user_limit_default` is not specified,
-        the user is granted unlimited runs and tryjobs. `user_limit_default`
-        must not specify users and groups.
+        the user is granted unlimited runs. `user_limit_default` must not
+        specify users and groups.
       post_actions: a list of post actions or None.
         Please refer to cq.post_action_* for all the available post actions.
         e.g., cq.post_action_gerrit_label_votes(...)
