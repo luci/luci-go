@@ -44,22 +44,26 @@ func TestScheduleGroupChangepoints(t *testing.T) {
 		assert.That(t, len(tasks), should.Equal(8))
 		assert.That(t, tasks[0].(*taskspb.GroupChangepoints), should.Match(
 			&taskspb.GroupChangepoints{
-				Week: timestamppb.New(time.Date(2024, time.September, 15, 0, 0, 0, 0, time.UTC)),
+				Week:         timestamppb.New(time.Date(2024, time.September, 15, 0, 0, 0, 0, time.UTC)),
+				ScheduleTime: timestamppb.New(now),
 			},
 		))
 		assert.That(t, tasks[1].(*taskspb.GroupChangepoints), should.Match(
 			&taskspb.GroupChangepoints{
-				Week: timestamppb.New(time.Date(2024, time.September, 8, 0, 0, 0, 0, time.UTC)),
+				Week:         timestamppb.New(time.Date(2024, time.September, 8, 0, 0, 0, 0, time.UTC)),
+				ScheduleTime: timestamppb.New(now),
 			},
 		))
 		assert.That(t, tasks[2].(*taskspb.GroupChangepoints), should.Match(
 			&taskspb.GroupChangepoints{
-				Week: timestamppb.New(time.Date(2024, time.September, 1, 0, 0, 0, 0, time.UTC)),
+				Week:         timestamppb.New(time.Date(2024, time.September, 1, 0, 0, 0, 0, time.UTC)),
+				ScheduleTime: timestamppb.New(now),
 			},
 		))
 		assert.That(t, tasks[3].(*taskspb.GroupChangepoints), should.Match(
 			&taskspb.GroupChangepoints{
-				Week: timestamppb.New(time.Date(2024, time.August, 25, 0, 0, 0, 0, time.UTC)),
+				Week:         timestamppb.New(time.Date(2024, time.August, 25, 0, 0, 0, 0, time.UTC)),
+				ScheduleTime: timestamppb.New(now),
 			},
 		))
 	})

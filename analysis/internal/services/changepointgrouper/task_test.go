@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/analysis/internal/changepoints"
 	"go.chromium.org/luci/analysis/internal/changepoints/groupexporter"
@@ -48,9 +49,17 @@ func TestGroupChangepoints(t *testing.T) {
 			exporter:          *groupexporter.NewExporter(exportClient),
 		}
 		payload := &taskspb.GroupChangepoints{
-			Week: timestamppb.New(time.Date(2024, 9, 8, 0, 0, 0, 0, time.UTC)),
+			Week:         timestamppb.New(time.Date(2024, 9, 8, 0, 0, 0, 0, time.UTC)),
+			ScheduleTime: timestamppb.New(now),
 		}
 
+		t.Run("drop old task", func(t *ftt.Test) {
+			payload.ScheduleTime = timestamppb.New(now.Add(-11 * time.Minute))
+
+			err := grouper.run(ctx, payload)
+			assert.That(t, err, should.ErrLike("drop task older than 10 minutes"))
+			assert.That(t, tq.Fatal.In(err), should.BeTrue)
+		})
 		t.Run("e2e", func(t *ftt.Test) {
 			cp1 := makeChangepointRow(1, 2, 4, "chromium")
 			cp2 := makeChangepointRow(2, 2, 3, "chromium")

@@ -207,9 +207,21 @@ func (c *Client) ReadChangepointsRealtime(ctx context.Context, week time.Time) (
 	q.Parameters = []bigquery.QueryParameter{
 		{Name: "week", Value: week},
 	}
-	it, err := q.Read(ctx)
+	job, err := q.Run(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "read query results").Err()
+		return nil, errors.Annotate(err, "starting query").Err()
+	}
+	// WaitForJob cancels the job with best-effort when context deadline is reached.
+	js, err := bq.WaitForJob(ctx, job)
+	if err != nil {
+		return nil, err
+	}
+	if js.Err() != nil {
+		return nil, js.Err()
+	}
+	it, err := job.Read(ctx)
+	if err != nil {
+		return nil, errors.Annotate(js.Err(), "read changepoint rows").Err()
 	}
 	results := []*ChangepointRow{}
 	for {

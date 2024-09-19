@@ -84,7 +84,8 @@ func Schedule(ctx context.Context, week time.Time) error {
 	return tq.AddTask(ctx, &tq.Task{
 		Title: fmt.Sprintf("week-%s", week.Format(time.RFC3339)),
 		Payload: &taskspb.GroupChangepoints{
-			Week: timestamppb.New(week),
+			Week:         timestamppb.New(week),
+			ScheduleTime: timestamppb.New(clock.Now(ctx)),
 		},
 	})
 }
@@ -98,7 +99,18 @@ type changepointGrouper struct {
 	exporter          groupexporter.Exporter
 }
 
-func (c *changepointGrouper) run(ctx context.Context, payload *taskspb.GroupChangepoints) error {
+func (c *changepointGrouper) run(ctx context.Context, payload *taskspb.GroupChangepoints) (retErr error) {
+	defer func() {
+		if retErr != nil {
+			// Add a fatal tag to all errors, so that it can show up in the tasks permanently failed SLO.
+			// TODO (@beining): remove the fatal tag and add a freshness SLO to the grouped_changepoints table.
+			retErr = tq.Fatal.Apply(retErr)
+		}
+	}()
+	if payload.ScheduleTime.AsTime().Before(clock.Now(ctx).Add(-10 * time.Minute)) {
+		return errors.New(`drop task older than 10 minutes to prevent over-growing the queue depth,
+		it means grouped changepoint rows for this week is stale.`)
+	}
 	rows, err := c.changepointClient.ReadChangepointsRealtime(ctx, payload.Week.AsTime())
 	if err != nil {
 		return errors.Annotate(err, "read BigQuery changepoints").Err()

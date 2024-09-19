@@ -192,4 +192,9 @@ message GroupChangepoints {
   // The week field MUST be a timestamp representing the start of a week (Sunday at 00:00:00 AM UTC).
   // Providing a timestamp that does not align with the start of a week will result in an error.
   google.protobuf.Timestamp week = 1;
+
+  // The time the task was scheduled.
+  // This is used to prevent the task queue from becoming overly congested
+  // when task takes unexpectedly long time to finish.
+  google.protobuf.Timestamp schedule_time = 2;
 }
