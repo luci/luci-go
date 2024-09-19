@@ -22,8 +22,6 @@ import (
 
 func main() {
 	miloserver.Main(func(srv *server.Server) error {
-		service := miloserver.CreateInternalService()
-		miloserver.RegisterPRPCHandlers(srv, service)
 		miloserver.RegisterFrontend(srv)
 		return nil
 	})
