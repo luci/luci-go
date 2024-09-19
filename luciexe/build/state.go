@@ -33,6 +33,8 @@ import (
 	"go.chromium.org/luci/common/sync/dispatcher"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
 	ldTypes "go.chromium.org/luci/logdog/common/types"
+
+	"go.chromium.org/luci/luciexe/build/properties"
 )
 
 // State is the state of the current Build.
@@ -78,25 +80,18 @@ type State struct {
 	logNames   nameTracker
 	logClosers map[string]func() error
 
-	strictParse bool
-
-	reservedInputProperties map[string]proto.Message
-	topLevelInputProperties proto.Message
-
-	// Note that outputProperties is statically allocated at Start time; No keys
-	// are added/removed for the duration of the Build.
-	outputProperties map[string]*outputPropertyState
-	topLevelOutput   *outputPropertyState
+	propertyState *properties.State
+	// this is only observed while holding buildPbMu in WRITE mode.
+	sentPropertyVersion int64
 
 	stepNames nameTracker
 }
 
 // newState creates a new state.
-func newState(inputBuildPb *bbpb.Build, logClosers map[string]func() error, outputProperties map[string]*outputPropertyState) *State {
+func newState(inputBuildPb *bbpb.Build, logClosers map[string]func() error) *State {
 	state := &State{
-		buildPb:          inputBuildPb,
-		logClosers:       logClosers,
-		outputProperties: outputProperties,
+		buildPb:    inputBuildPb,
+		logClosers: logClosers,
 	}
 
 	if inputBuildPb != nil {
@@ -330,6 +325,19 @@ func (s *State) mutate(cb func() bool) {
 	if changed && s != nil && s.sendCh.C != nil {
 		s.sendCh.C <- s.buildPbVers.Add(1)
 	}
+}
+
+// This is invoked any time any output property is updated.
+//
+// This function is ONLY called if OptSend was used.
+func (s *State) notifyPropertyChange(version int64) {
+	s.mutate(func() bool {
+		// We will update s.sentPropertyVersion in OptSend.
+		//
+		// Ignore this property notification if it's for a version older than one we
+		// already sent.
+		return s.sentPropertyVersion < version
+	})
 }
 
 func (s *State) registerStep(step *bbpb.Step) (passthrough *bbpb.Step, logNamespace, logSuffix string) {

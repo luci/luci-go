@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
@@ -28,10 +27,12 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/memlogger"
 	"go.chromium.org/luci/common/system/environ"
-	"go.chromium.org/luci/common/testing/assertions"
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
+
 	"go.chromium.org/luci/luciexe"
+
+	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestStepNoop(t *testing.T) {
@@ -244,7 +245,7 @@ func TestStepLog(t *testing.T) {
 			logging.Infof(ctx, "hi there!")
 			step.End(nil)
 
-			So(step.stepPb, assertions.ShouldResembleProto, &bbpb.Step{
+			So(step.stepPb, ShouldResembleProto, &bbpb.Step{
 				Name:      "some step",
 				StartTime: timestamppb.New(testclock.TestRecentTimeUTC),
 				EndTime:   timestamppb.New(testclock.TestRecentTimeUTC),
@@ -263,7 +264,7 @@ func TestStepLog(t *testing.T) {
 			fmt.Fprintln(log, "here's some stuff")
 			step.End(nil)
 
-			So(step.stepPb, assertions.ShouldResembleProto, &bbpb.Step{
+			So(step.stepPb, ShouldResembleProto, &bbpb.Step{
 				Name:      "some step",
 				StartTime: timestamppb.New(testclock.TestRecentTimeUTC),
 				EndTime:   timestamppb.New(testclock.TestRecentTimeUTC),
@@ -307,7 +308,7 @@ func TestStepLog(t *testing.T) {
 			log.WriteDatagram([]byte("here's some stuff"))
 			step.End(nil)
 
-			So(step.stepPb, assertions.ShouldResembleProto, &bbpb.Step{
+			So(step.stepPb, ShouldResembleProto, &bbpb.Step{
 				Name:      "some step",
 				StartTime: timestamppb.New(testclock.TestRecentTimeUTC),
 				EndTime:   timestamppb.New(testclock.TestRecentTimeUTC),
