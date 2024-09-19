@@ -27,7 +27,6 @@ import (
 
 	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/analysis/internal/analysis/metrics"
 	"go.chromium.org/luci/analysis/internal/bqutil"
@@ -283,14 +282,9 @@ func (c *Client) purgeStaleRowsForDataset(ctx context.Context, dataset *bigquery
 					-- and as a result never deleting the insert, we wait a short time.
 					cf1.last_updated < TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 20 MINUTE)
 				)
-			) AND
-			-- Don't try to delete rows in the BigQuery streaming buffer unless fastDeletion enabled.
-			(@fastDeletion OR cf1.last_updated < TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 40 MINUTE))
+			)
 	`)
 	q.DefaultDatasetID = dataset.DatasetID
-	q.Parameters = []bigquery.QueryParameter{
-		{Name: "fastDeletion", Value: c.fastDeletionEnabled},
-	}
 
 	job, err := q.Run(ctx)
 	if err != nil {
@@ -302,16 +296,6 @@ func (c *Client) purgeStaleRowsForDataset(ctx context.Context, dataset *bigquery
 
 	js, err := job.Wait(waitCtx)
 	if err != nil {
-		// BigQuery specifies that rows are kept in the streaming buffer for
-		// 30 minutes, but sometimes exceeds this SLO. We could be less
-		// aggressive at deleting rows, but that would make the average-case
-		// experience worse. These errors should only occur occasionally,
-		// so it is better to ignore them.
-		if strings.Contains(err.Error(), "would affect rows in the streaming buffer, which is not supported") {
-			logging.Warningf(ctx, "Row purge failed for %v because rows were in the streaming buffer for over 30 minutes. "+
-				"If this message occurs more than 25 percent of the time, it should be investigated.", dataset.DatasetID)
-			return nil
-		}
 		return errors.Annotate(err, "waiting for stale row purge to complete").Err()
 	}
 	if js.Err() != nil {
