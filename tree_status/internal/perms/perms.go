@@ -43,4 +43,7 @@ var (
 
 	// PermListTree allows users to list trees.
 	PermListTree = realms.RegisterPermission("treestatus.trees.list")
+
+	// PermGetTree allows users to get a tree.
+	PermGetTree = realms.RegisterPermission("treestatus.trees.get")
 )

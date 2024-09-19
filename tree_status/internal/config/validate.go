@@ -45,7 +45,7 @@ func validateConfig(ctx *validation.Context, cfg *configpb.Config) {
 
 func validateTree(ctx *validation.Context, tree *configpb.Tree) {
 	ctx.Enter("name")
-	if err := pbutil.ValidateTreeName(tree.Name); err != nil {
+	if err := pbutil.ValidateTreeID(tree.Name); err != nil {
 		ctx.Error(err)
 	}
 	ctx.Exit()

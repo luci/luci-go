@@ -19,6 +19,7 @@ import (
 
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/server/auth"
@@ -31,6 +32,8 @@ import (
 	"go.chromium.org/luci/tree_status/internal/perms"
 	"go.chromium.org/luci/tree_status/internal/testutil"
 	pb "go.chromium.org/luci/tree_status/proto/v1"
+
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestTrees(t *testing.T) {
@@ -54,6 +57,82 @@ func TestTrees(t *testing.T) {
 		ctx = secrets.Use(ctx, &testsecrets.Store{})
 
 		server := NewTreesServer()
+
+		t.Run("GetTree", func(t *ftt.Test) {
+			t.Run("Empty tree name", func(t *ftt.Test) {
+				request := &pb.GetTreeRequest{}
+				_, err := server.GetTree(ctx, request)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("name: must be specified"))
+			})
+			t.Run("Invalid tree name", func(t *ftt.Test) {
+				request := &pb.GetTreeRequest{
+					Name: "invalid",
+				}
+				_, err := server.GetTree(ctx, request)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("name: expected format"))
+			})
+			t.Run("Tree not found", func(t *ftt.Test) {
+				request := &pb.GetTreeRequest{
+					Name: "trees/random-tree",
+				}
+				_, err := server.GetTree(ctx, request)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)(`tree "random-tree" not found`))
+			})
+			t.Run("Default ACLs anonymous", func(t *ftt.Test) {
+				ctx = perms.FakeAuth().Anonymous().SetInContext(ctx)
+				request := &pb.GetTreeRequest{
+					Name: "trees/chromium",
+				}
+				_, err := server.GetTree(ctx, request)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("please log in for access"))
+			})
+			t.Run("Default ACLs no read access", func(t *ftt.Test) {
+				ctx = perms.FakeAuth().SetInContext(ctx)
+				request := &pb.GetTreeRequest{
+					Name: "trees/chromium",
+				}
+				_, err := server.GetTree(ctx, request)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)(`user is not a member of group "luci-tree-status-access"`))
+			})
+			t.Run("Realm-based ACLs no access", func(t *ftt.Test) {
+				testConfig.Trees[0].UseDefaultAcls = false
+				err := config.SetConfig(ctx, testConfig)
+				assert.Loosely(t, err, should.BeNil)
+				ctx = perms.FakeAuth().SetInContext(ctx)
+				request := &pb.GetTreeRequest{
+					Name: "trees/chromium",
+				}
+				_, err = server.GetTree(ctx, request)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("user does not have permission to perform this action"))
+			})
+			t.Run("Default ACLs get tree successfully", func(t *ftt.Test) {
+				ctx = perms.FakeAuth().WithReadAccess().SetInContext(ctx)
+				request := &pb.GetTreeRequest{
+					Name: "trees/chromium",
+				}
+				tree, err := server.GetTree(ctx, request)
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, tree, should.Match(&pb.Tree{
+					Name:     "trees/chromium",
+					Projects: []string{"chromium"},
+				}))
+			})
+			t.Run("Realm-based ACLs get tree successfully", func(t *ftt.Test) {
+				testConfig.Trees[0].UseDefaultAcls = false
+				err := config.SetConfig(ctx, testConfig)
+				assert.Loosely(t, err, should.BeNil)
+				ctx = perms.FakeAuth().WithPermissionInRealm(perms.PermGetTree, "chromium:@project").SetInContext(ctx)
+				request := &pb.GetTreeRequest{
+					Name: "trees/chromium",
+				}
+				tree, err := server.GetTree(ctx, request)
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, tree, should.Match(&pb.Tree{
+					Name:     "trees/chromium",
+					Projects: []string{"chromium"},
+				}))
+			})
+		})
 
 		t.Run("QueryTrees", func(t *ftt.Test) {
 			t.Run("No project returns empty response", func(t *ftt.Test) {
@@ -107,7 +186,8 @@ func TestTrees(t *testing.T) {
 				assert.That(t, res, should.Match(&pb.QueryTreesResponse{
 					Trees: []*pb.Tree{
 						{
-							Name: "trees/chromium",
+							Name:     "trees/chromium",
+							Projects: []string{"chromium"},
 						},
 					},
 				}))
@@ -128,10 +208,12 @@ func TestTrees(t *testing.T) {
 				assert.That(t, res, should.Match(&pb.QueryTreesResponse{
 					Trees: []*pb.Tree{
 						{
-							Name: "trees/chromium",
+							Name:     "trees/chromium",
+							Projects: []string{"chromium"},
 						},
 						{
-							Name: "trees/chromium1",
+							Name:     "trees/chromium1",
+							Projects: []string{"chromium"},
 						},
 					},
 				}))
@@ -151,7 +233,8 @@ func TestTrees(t *testing.T) {
 				assert.That(t, res, should.Match(&pb.QueryTreesResponse{
 					Trees: []*pb.Tree{
 						{
-							Name: "trees/chromium",
+							Name:     "trees/chromium",
+							Projects: []string{"chromium"},
 						},
 					},
 				}))
@@ -167,10 +250,12 @@ func TestTrees(t *testing.T) {
 				assert.That(t, res, should.Match(&pb.QueryTreesResponse{
 					Trees: []*pb.Tree{
 						{
-							Name: "trees/pigweed",
+							Name:     "trees/pigweed",
+							Projects: []string{"pigweed"},
 						},
 						{
-							Name: "trees/pigweed2",
+							Name:     "trees/pigweed2",
+							Projects: []string{"pigweed"},
 						},
 					},
 				}))
@@ -186,7 +271,8 @@ func TestTrees(t *testing.T) {
 				assert.That(t, res, should.Match(&pb.QueryTreesResponse{
 					Trees: []*pb.Tree{
 						{
-							Name: "trees/pigweed2",
+							Name:     "trees/pigweed2",
+							Projects: []string{"pigweed"},
 						},
 					},
 				}))
@@ -206,15 +292,16 @@ func TestTrees(t *testing.T) {
 				assert.That(t, res, should.Match(&pb.QueryTreesResponse{
 					Trees: []*pb.Tree{
 						{
-							Name: "trees/pigweed",
+							Name:     "trees/pigweed",
+							Projects: []string{"pigweed"},
 						},
 						{
-							Name: "trees/pigweed2",
+							Name:     "trees/pigweed2",
+							Projects: []string{"pigweed"},
 						},
 					},
 				}))
 			})
-
 		})
 	})
 }

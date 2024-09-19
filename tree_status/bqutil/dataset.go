@@ -31,7 +31,7 @@ const InternalDatasetID = "internal"
 // to the given BigQuery dataset.
 func TreeNameForDataset(dataset string) (string, error) {
 	treeName := strings.ReplaceAll(dataset, "_", "-")
-	if err := pbutil.ValidateTreeName(treeName); err != nil {
+	if err := pbutil.ValidateTreeID(treeName); err != nil {
 		return "", errors.Annotate(err, "validate tree name").Err()
 	}
 	return treeName, nil

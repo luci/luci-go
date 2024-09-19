@@ -223,8 +223,8 @@ func (*treeStatusServer) CreateStatus(ctx context.Context, request *pb.CreateSta
 	}, nil
 }
 
-var statusParentRE = regexp.MustCompile(`^trees/(` + pbutil.TreeNameExpression + `)/status$`)
-var statusNameRE = regexp.MustCompile(`^trees/(` + pbutil.TreeNameExpression + `)/status/(` + pbutil.StatusIDExpression + `|latest)$`)
+var statusParentRE = regexp.MustCompile(`^trees/(` + pbutil.TreeIDExpression + `)/status$`)
+var statusNameRE = regexp.MustCompile(`^trees/(` + pbutil.TreeIDExpression + `)/status/(` + pbutil.StatusIDExpression + `|latest)$`)
 
 // parseStatusParent parses a status resource parent into its constituent ID
 // parts.

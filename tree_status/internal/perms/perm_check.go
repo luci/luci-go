@@ -77,6 +77,13 @@ func HasQueryTreesPermission(ctx context.Context, treeName string) (allowed bool
 	return hasAccess(ctx, treeName, treeStatusAccessGroup, PermListTree)
 }
 
+// HasGetTreePermission returns if the user can get a tree.
+// If the user has no permission, an error message will also be returned.
+// err will be returned if there is some error during the ACL check.
+func HasGetTreePermission(ctx context.Context, treeName string) (allowed bool, message string, err error) {
+	return hasAccess(ctx, treeName, treeStatusAccessGroup, PermGetTree)
+}
+
 // hasAccess checks if the user has access to a tree.
 // If the tree uses default ACLs, the access will be checked against the go/cria group.
 // Otherwise, the permission will be check against the subrealm of the primary project.

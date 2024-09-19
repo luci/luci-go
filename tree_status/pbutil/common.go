@@ -29,23 +29,25 @@ import (
 )
 
 const (
-	// TreeNameExpression is a partial regular expression that validates tree identifiers.
-	TreeNameExpression = `[a-z](?:[a-z0-9-]{0,61}[a-z0-9])?`
+	// TreeIDExpression is a partial regular expression that validates tree identifiers.
+	TreeIDExpression = `[a-z](?:[a-z0-9-]{0,61}[a-z0-9])?`
 	// StatusIDExpression is a partial regular expression that validates status identifiers.
 	StatusIDExpression = `[0-9a-f]{32}`
 	// BuilderNameExpression is a partial regular expression that validates builder name.
 	BuilderNameExpression = `projects/([a-z0-9\-_]{1,40})/buckets/([a-z0-9\-_.]{1,100})/builders/([a-zA-Z0-9\-_.\(\) ]{1,128})`
 	// ProjectExpression is a partial regular expression that validates LUCI Project.
 	ProjectExpression = `[a-z0-9\-]{1,40}`
+	// TreeNameExpression is a partial regular expression that validates tree name.
+	TreeNameExpression = `trees/(` + TreeIDExpression + `)`
 )
 
-func ValidateTreeName(treeName string) error {
+func ValidateTreeID(treeName string) error {
 	if treeName == "" {
 		return errors.Reason("must be specified").Err()
 	}
-	var treeNameRE = regexp.MustCompile(`^` + TreeNameExpression + `$`)
-	if !treeNameRE.MatchString(treeName) {
-		return errors.Reason("expected format: %s", treeNameRE).Err()
+	var treeIDRE = regexp.MustCompile(`^` + TreeIDExpression + `$`)
+	if !treeIDRE.MatchString(treeName) {
+		return errors.Reason("expected format: %s", treeIDRE).Err()
 	}
 	return nil
 }
@@ -113,4 +115,16 @@ func ValidateProject(project string) error {
 		return errors.Reason("expected format: %s", projectRE).Err()
 	}
 	return nil
+}
+
+func ParseTreeName(treeName string) (treeID string, err error) {
+	if treeName == "" {
+		return "", errors.Reason("must be specified").Err()
+	}
+	var treeNameRE = regexp.MustCompile(`^` + TreeNameExpression + `$`)
+	match := treeNameRE.FindStringSubmatch(treeName)
+	if match == nil {
+		return "", errors.Reason("expected format: %s", treeNameRE).Err()
+	}
+	return match[1], nil
 }

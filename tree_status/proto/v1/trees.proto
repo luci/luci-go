@@ -19,8 +19,15 @@ package luci.tree_status.v1;
 option go_package = "go.chromium.org/luci/tree_status/proto/v1";
 
 service Trees {
+  // Get information of a tree.
+  rpc GetTree(GetTreeRequest) returns (Tree) {};
   // Query tree for a LUCI project.
   rpc QueryTrees(QueryTreesRequest) returns (QueryTreesResponse) {};
+}
+
+message GetTreeRequest {
+  // Format: "trees/{tree_id}"
+  string name = 1;
 }
 
 message QueryTreesRequest {
@@ -38,4 +45,11 @@ message QueryTreesResponse {
 message Tree {
   // Name of the tree, in format "trees/{tree_id}".
   string name = 1;
+  // The LUCI projects that the tree applies to..
+  // The first project in this list is the primary project. This means:
+  //   1. Its "<project>:<subrealm>" realm will be used to check
+  //      for ACL for the tree, if the tree uses realm-based ACL.
+  //   2. If the tree is access without a LUCI project context, the primary project
+  //      will be displayed at the top left of LUCI UI.
+  repeated string projects = 2;
 }

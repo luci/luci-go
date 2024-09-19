@@ -18,113 +18,130 @@ import (
 	"strings"
 	"testing"
 
-	pb "go.chromium.org/luci/tree_status/proto/v1"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	pb "go.chromium.org/luci/tree_status/proto/v1"
 )
 
 func TestValidation(t *testing.T) {
-	Convey("tree Name", t, func() {
-		Convey("tree Name", func() {
-			Convey("valid", func() {
-				err := ValidateTreeName("fuchsia-stem")
-				So(err, ShouldBeNil)
+	ftt.Run("tree Name", t, func(t *ftt.Test) {
+		t.Run("tree ID", func(t *ftt.Test) {
+			t.Run("valid", func(t *ftt.Test) {
+				err := ValidateTreeID("fuchsia-stem")
+				assert.Loosely(t, err, should.BeNil)
 			})
-			Convey("must be specified", func() {
-				err := ValidateTreeName("")
-				So(err, ShouldErrLike, "must be specified")
+			t.Run("must be specified", func(t *ftt.Test) {
+				err := ValidateTreeID("")
+				assert.Loosely(t, err, should.ErrLike("must be specified"))
 			})
-			Convey("must match format", func() {
-				err := ValidateTreeName("INVALID")
-				So(err, ShouldErrLike, "expected format")
+			t.Run("must match format", func(t *ftt.Test) {
+				err := ValidateTreeID("INVALID")
+				assert.Loosely(t, err, should.ErrLike("expected format"))
 			})
 		})
 
-		Convey("status ID", func() {
-			Convey("valid", func() {
+		t.Run("status ID", func(t *ftt.Test) {
+			t.Run("valid", func(t *ftt.Test) {
 				err := ValidateStatusID(strings.Repeat("0", 32))
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
-			Convey("must be specified", func() {
+			t.Run("must be specified", func(t *ftt.Test) {
 				err := ValidateStatusID("")
-				So(err, ShouldErrLike, "must be specified")
+				assert.Loosely(t, err, should.ErrLike("must be specified"))
 			})
-			Convey("must match format", func() {
+			t.Run("must match format", func(t *ftt.Test) {
 				err := ValidateStatusID("INVALID")
-				So(err, ShouldErrLike, "expected format")
+				assert.Loosely(t, err, should.ErrLike("expected format"))
 			})
 		})
 
-		Convey("general status", func() {
-			Convey("valid", func() {
+		t.Run("general status", func(t *ftt.Test) {
+			t.Run("valid", func(t *ftt.Test) {
 				err := ValidateGeneralStatus(pb.GeneralState_CLOSED)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
-			Convey("must be specified", func() {
+			t.Run("must be specified", func(t *ftt.Test) {
 				err := ValidateGeneralStatus(pb.GeneralState_GENERAL_STATE_UNSPECIFIED)
-				So(err, ShouldErrLike, "must be specified")
+				assert.Loosely(t, err, should.ErrLike("must be specified"))
 			})
-			Convey("must match format", func() {
+			t.Run("must match format", func(t *ftt.Test) {
 				err := ValidateGeneralStatus(pb.GeneralState(100))
-				So(err, ShouldErrLike, "invalid enum value")
+				assert.Loosely(t, err, should.ErrLike("invalid enum value"))
 			})
 		})
 
-		Convey("message", func() {
-			Convey("valid", func() {
+		t.Run("message", func(t *ftt.Test) {
+			t.Run("valid", func(t *ftt.Test) {
 				err := ValidateMessage("my message")
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
-			Convey("must be specified", func() {
+			t.Run("must be specified", func(t *ftt.Test) {
 				err := ValidateMessage("")
-				So(err, ShouldErrLike, "must be specified")
+				assert.Loosely(t, err, should.ErrLike("must be specified"))
 			})
-			Convey("must not exceed length", func() {
+			t.Run("must not exceed length", func(t *ftt.Test) {
 				err := ValidateMessage(strings.Repeat("a", 1025))
-				So(err, ShouldErrLike, "longer than 1024 bytes")
+				assert.Loosely(t, err, should.ErrLike("longer than 1024 bytes"))
 			})
-			Convey("invalid utf-8 string", func() {
+			t.Run("invalid utf-8 string", func(t *ftt.Test) {
 				err := ValidateMessage("\xbd")
-				So(err, ShouldErrLike, "not a valid utf8 string")
+				assert.Loosely(t, err, should.ErrLike("not a valid utf8 string"))
 			})
-			Convey("not in unicode normalized form C", func() {
+			t.Run("not in unicode normalized form C", func(t *ftt.Test) {
 				err := ValidateMessage("\u0065\u0301")
-				So(err, ShouldErrLike, "not in unicode normalized form C")
+				assert.Loosely(t, err, should.ErrLike("not in unicode normalized form C"))
 			})
-			Convey("non printable rune", func() {
+			t.Run("non printable rune", func(t *ftt.Test) {
 				err := ValidateMessage("non printable rune\u0007")
-				So(err, ShouldErrLike, "non-printable rune")
+				assert.Loosely(t, err, should.ErrLike("non-printable rune"))
 			})
 		})
 
-		Convey("closing builder name", func() {
-			Convey("valid", func() {
+		t.Run("closing builder name", func(t *ftt.Test) {
+			t.Run("valid", func(t *ftt.Test) {
 				err := ValidateClosingBuilderName("projects/chromium-m100/buckets/ci.shadow/builders/Linux 123")
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
-			Convey("empty closing builder is OK", func() {
+			t.Run("empty closing builder is OK", func(t *ftt.Test) {
 				err := ValidateClosingBuilderName("")
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
-			Convey("must match format", func() {
+			t.Run("must match format", func(t *ftt.Test) {
 				err := ValidateClosingBuilderName("some name")
-				So(err, ShouldErrLike, "expected format")
+				assert.Loosely(t, err, should.ErrLike("expected format"))
 			})
 		})
 
-		Convey("project", func() {
-			Convey("valid", func() {
+		t.Run("project", func(t *ftt.Test) {
+			t.Run("valid", func(t *ftt.Test) {
 				err := ValidateProject("chromium-m100")
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
-			Convey("must be specified", func() {
+			t.Run("must be specified", func(t *ftt.Test) {
 				err := ValidateProject("")
-				So(err, ShouldErrLike, "must be specified")
+				assert.Loosely(t, err, should.ErrLike("must be specified"))
 			})
-			Convey("must match format", func() {
+			t.Run("must match format", func(t *ftt.Test) {
 				err := ValidateProject("some name")
-				So(err, ShouldErrLike, "expected format")
+				assert.Loosely(t, err, should.ErrLike("expected format"))
+			})
+		})
+
+		t.Run("parse tree name", func(t *ftt.Test) {
+			t.Run("valid", func(t *ftt.Test) {
+				treeID, err := ParseTreeName("trees/chromium")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, treeID, should.Equal("chromium"))
+			})
+			t.Run("must be specified", func(t *ftt.Test) {
+				_, err := ParseTreeName("")
+				assert.Loosely(t, err, should.ErrLike("must be specified"))
+			})
+			t.Run("must match format", func(t *ftt.Test) {
+				_, err := ParseTreeName("INVALID")
+				assert.Loosely(t, err, should.ErrLike("expected format"))
 			})
 		})
 	})

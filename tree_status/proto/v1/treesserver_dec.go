@@ -23,6 +23,23 @@ type DecoratedTrees struct {
 	Postlude func(ctx context.Context, methodName string, rsp proto.Message, err error) error
 }
 
+func (s *DecoratedTrees) GetTree(ctx context.Context, req *GetTreeRequest) (rsp *Tree, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "GetTree", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.GetTree(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "GetTree", rsp, err)
+	}
+	return
+}
+
 func (s *DecoratedTrees) QueryTrees(ctx context.Context, req *QueryTreesRequest) (rsp *QueryTreesResponse, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context

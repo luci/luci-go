@@ -62,7 +62,7 @@ type Status struct {
 // It ignores the CreateUser and CreateTime fields.
 // Reported field names are as they appear in the RPC documentation rather than the Go struct.
 func Validate(status *Status) error {
-	if err := pbutil.ValidateTreeName(status.TreeName); err != nil {
+	if err := pbutil.ValidateTreeID(status.TreeName); err != nil {
 		return errors.Annotate(err, "tree").Err()
 	}
 	if err := pbutil.ValidateStatusID(status.StatusID); err != nil {
