@@ -16,8 +16,9 @@ package tasks
 
 import (
 	"context"
+	"fmt"
 
-	"google.golang.org/api/googleapi"
+	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
@@ -39,7 +40,7 @@ func HandleCancelBackendTask(ctx context.Context, project, target, taskID string
 	if err != nil {
 		return tq.Fatal.Apply(errors.Annotate(err, "failed to connect to backend service").Err())
 	}
-	_, err = backendClient.CancelTasks(ctx, &pb.CancelTasksRequest{
+	res, err := backendClient.CancelTasks(ctx, &pb.CancelTasksRequest{
 		TaskIds: []*pb.TaskID{
 			&pb.TaskID{
 				Id:     taskID,
@@ -47,11 +48,22 @@ func HandleCancelBackendTask(ctx context.Context, project, target, taskID string
 			},
 		},
 	})
+
+	errMsg := fmt.Sprintf("error in canceling task %s for target %s", taskID, target)
 	if err != nil {
-		if apiErr, ok := err.(*googleapi.Error); ok && apiErr.Code >= 500 {
-			return errors.Annotate(err, "transient error in canceling task %s for target %s", taskID, target).Tag(transient.Tag).Err()
+		return errors.Annotate(err, "transient %s", errMsg).Tag(transient.Tag).Err()
+	}
+
+	// TODO(b/355013317): require res.Responses after all existing TaskBackend
+	// implementations have migrated to use it.
+	if len(res.GetResponses()) == 1 && res.Responses[0].GetError() != nil {
+		s := res.Responses[0].GetError()
+		switch codes.Code(s.Code) {
+		case codes.Internal, codes.Unknown, codes.Unavailable, codes.DeadlineExceeded:
+			return errors.Reason("transient %s: %s", errMsg, s.Message).Tag(transient.Tag).Err()
+		default:
+			return errors.Reason("fatal %s: %s", errMsg, s.Message).Tag(tq.Fatal).Err()
 		}
-		return errors.Annotate(err, "fatal error in cancelling task %s for target %s", taskID, target).Tag(tq.Fatal).Err()
 	}
 	return nil
 }

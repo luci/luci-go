@@ -20,7 +20,8 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-	"google.golang.org/api/googleapi"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/durationpb"
 
 	"go.chromium.org/luci/common/clock/testclock"
@@ -78,16 +79,55 @@ func TestHandleCancelBackendTask(t *testing.T) {
 			So(HandleCancelBackendTask(ctx, "project:bucket", "swarming://chromium-swarm-dev", "a83908f94as40"), ShouldBeNil)
 		})
 
-		Convey("failed CancelTasks RPC call 400", func() {
-			mockBackend.EXPECT().CancelTasks(gomock.Any(), gomock.Any()).Return(nil, &googleapi.Error{Code: 400})
-			err := HandleCancelBackendTask(ctx, "project:bucket", "swarming://chromium-swarm-dev", "a83908f94as40")
-			So(err, ShouldErrLike, "fatal error in cancelling task a83908f94as40 for target swarming://chromium-swarm-dev: googleapi: got HTTP response code 400")
+		Convey("ok with responses", func() {
+			mockBackend.EXPECT().CancelTasks(gomock.Any(), gomock.Any()).Return(&pb.CancelTasksResponse{
+				Responses: []*pb.CancelTasksResponse_Response{
+					{
+						Response: &pb.CancelTasksResponse_Response_Task{
+							Task: &pb.Task{
+								Id:       &pb.TaskID{Id: "abc123", Target: "swarming://chromium-swarm"},
+								Link:     "this_is_a_url_link",
+								UpdateId: 1,
+							},
+						},
+					},
+				},
+			}, nil)
+			So(HandleCancelBackendTask(ctx, "project:bucket", "swarming://chromium-swarm-dev", "a83908f94as40"), ShouldBeNil)
 		})
 
-		Convey("failed CancelTasks RPC call 500", func() {
-			mockBackend.EXPECT().CancelTasks(gomock.Any(), gomock.Any()).Return(nil, &googleapi.Error{Code: 500})
+		Convey("failed CancelTasks RPC call", func() {
+			mockBackend.EXPECT().CancelTasks(gomock.Any(), gomock.Any()).Return(nil, status.Errorf(codes.Internal, "Internal"))
 			err := HandleCancelBackendTask(ctx, "project:bucket", "swarming://chromium-swarm-dev", "a83908f94as40")
-			So(err, ShouldErrLike, "transient error in canceling task a83908f94as40 for target swarming://chromium-swarm-dev: googleapi: got HTTP response code 500")
+			So(err, ShouldErrLike, "transient error in canceling task a83908f94as40 for target swarming://chromium-swarm-dev")
+		})
+
+		Convey("failure in response fatal", func() {
+			mockBackend.EXPECT().CancelTasks(gomock.Any(), gomock.Any()).Return(&pb.CancelTasksResponse{
+				Responses: []*pb.CancelTasksResponse_Response{
+					{
+						Response: &pb.CancelTasksResponse_Response_Error{
+							Error: status.New(codes.PermissionDenied, "PermissionDenied").Proto(),
+						},
+					},
+				},
+			}, nil)
+			err := HandleCancelBackendTask(ctx, "project:bucket", "swarming://chromium-swarm-dev", "a83908f94as40")
+			So(err, ShouldErrLike, "fatal error in canceling task a83908f94as40 for target swarming://chromium-swarm-dev: PermissionDenied")
+		})
+
+		Convey("failure in response transient", func() {
+			mockBackend.EXPECT().CancelTasks(gomock.Any(), gomock.Any()).Return(&pb.CancelTasksResponse{
+				Responses: []*pb.CancelTasksResponse_Response{
+					{
+						Response: &pb.CancelTasksResponse_Response_Error{
+							Error: status.New(codes.Internal, "Internal").Proto(),
+						},
+					},
+				},
+			}, nil)
+			err := HandleCancelBackendTask(ctx, "project:bucket", "swarming://chromium-swarm-dev", "a83908f94as40")
+			So(err, ShouldErrLike, "transient error in canceling task a83908f94as40 for target swarming://chromium-swarm-dev: Internal")
 		})
 	})
 }

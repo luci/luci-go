@@ -277,7 +277,21 @@ message CancelTasksResponse {
   // leaving a note for the bot to do the cancelation, ideally these Task
   // objects should only contain the canceled status once the bot has actually
   // terminated (not just when the 'please cancel' note was written).
+  // TODO(b/355013317): Deprecate tasks after all TaskBackend implementation
+  // migrate to use responses.
   repeated Task tasks = 1;
+
+  message Response {
+    oneof response {
+      // The backend task.
+      Task task = 1;
+
+      // Error code and details of the unsuccessful cancel.
+      google.rpc.Status error = 100;
+    }
+  }
+  // These should represent the current state of the requested tasks.
+  repeated Response responses = 2;
 }
 
 message ValidateConfigsRequest {
