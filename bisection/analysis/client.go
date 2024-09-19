@@ -25,6 +25,8 @@ import (
 	analysispb "go.chromium.org/luci/analysis/proto/v1"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
+
+	"go.chromium.org/luci/bisection/internal/tracing"
 )
 
 // mockTVBClientKey is the context key indicates using LUCI Analysis test variant branches client in tests.
@@ -63,6 +65,8 @@ func NewTestVariantBranchesClient(ctx context.Context, host, project string) (*T
 }
 
 // BatchGet retrieves the a list of test variant branches and their segments.
-func (c *TestVariantBranchesClient) BatchGet(ctx context.Context, req *analysispb.BatchGetTestVariantBranchRequest) (*analysispb.BatchGetTestVariantBranchResponse, error) {
+func (c *TestVariantBranchesClient) BatchGet(ctx context.Context, req *analysispb.BatchGetTestVariantBranchRequest) (res *analysispb.BatchGetTestVariantBranchResponse, err error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/bisection/analysis/client.BatchGet")
+	defer func() { tracing.End(ts, err) }()
 	return c.client.BatchGet(ctx, req)
 }

@@ -19,18 +19,18 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
-
-	"go.chromium.org/luci/bisection/model"
-	pb "go.chromium.org/luci/bisection/proto/v1"
-	"go.chromium.org/luci/bisection/util/testutil"
-
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+
+	"go.chromium.org/luci/bisection/model"
+	pb "go.chromium.org/luci/bisection/proto/v1"
+	"go.chromium.org/luci/bisection/util/testutil"
+
+	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestCountLatestRevertsCreated(t *testing.T) {

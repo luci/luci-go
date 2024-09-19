@@ -23,6 +23,7 @@ import (
 	"strconv"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
@@ -42,6 +43,7 @@ import (
 	"go.chromium.org/luci/bisection/analysis"
 	"go.chromium.org/luci/bisection/compilefailureanalysis/heuristic"
 	"go.chromium.org/luci/bisection/compilefailureanalysis/nthsection"
+	"go.chromium.org/luci/bisection/internal/tracing"
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/util"
@@ -264,7 +266,10 @@ func (server *AnalysesServer) GetTestAnalysis(ctx context.Context, req *pb.GetTe
 	return result, nil
 }
 
-func (server *AnalysesServer) BatchGetTestAnalyses(ctx context.Context, req *pb.BatchGetTestAnalysesRequest) (*pb.BatchGetTestAnalysesResponse, error) {
+func (server *AnalysesServer) BatchGetTestAnalyses(ctx context.Context, req *pb.BatchGetTestAnalysesRequest) (res *pb.BatchGetTestAnalysesResponse, err error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/bisection/server/analyses.BatchGetTestAnalyses")
+	defer func() { tracing.End(ts, err) }()
+
 	// Adding a time value to the context when we are logging, so we know
 	// what request we are logging, because we may process many requests at the same time.
 	// We can also add hash of the request, or other information about the requests,
@@ -322,42 +327,13 @@ func (server *AnalysesServer) BatchGetTestAnalyses(ctx context.Context, req *pb.
 			// Assign to local variables.
 			i := i
 			tf := tf
+			cpr := changePointResults.TestVariantBranches[i]
 			workC <- func() error {
-				logging.Infof(ctx, "Start getting test failures for test_id = %q refHash = %q variantHash = %q", tf.TestId, tf.RefHash, tf.VariantHash)
-				tfs, err := datastoreutil.GetTestFailures(ctx, req.Project, tf.TestId, tf.RefHash, tf.VariantHash)
+				tfaProto, err := retrieveTestAnalysis(ctx, req.Project, tf, cpr, tfamask)
 				if err != nil {
-					return errors.Annotate(err, "get test failures").Err()
-				}
-				if len(tfs) == 0 {
-					return nil
-				}
-				sort.Slice(tfs, func(i, j int) bool {
-					return tfs[i].RegressionStartPosition > tfs[j].RegressionStartPosition
-				})
-				latestTestFailure := tfs[0]
-				if latestTestFailure.IsDiverged {
-					// Do not return test analysis if diverged.
-					// Because diverged test failure is considered excluded from the test analyses.
-					return nil
-				}
-				changepointResult := changePointResults.TestVariantBranches[i]
-				ongoing, reason := isTestFailureDeterministicallyOngoing(latestTestFailure, changepointResult)
-				// Do not return the test analysis if the failure is not ongoing.
-				if !ongoing {
-					logging.Infof(ctx, "no bisection returned for test %s %s %s because %s", tf.TestId, tf.VariantHash, tf.RefHash, reason)
-					return nil
-				}
-				// Return the test analysis that analyze this test failure.
-				tfa, err := datastoreutil.GetTestFailureAnalysis(ctx, latestTestFailure.AnalysisKey.IntID())
-				if err != nil {
-					return errors.Annotate(err, "get test failure analysis").Err()
-				}
-				tfaProto, err := protoutil.TestFailureAnalysisToPb(ctx, tfa, tfamask)
-				if err != nil {
-					return errors.Annotate(err, "convert test failure analysis to protobuf").Err()
+					return errors.Annotate(err, "retrieve test analysis").Err()
 				}
 				result[i] = tfaProto
-				logging.Infof(ctx, "Finished getting test failures for test_id = %q refHash = %q variantHash = %q", tf.TestId, tf.RefHash, tf.VariantHash)
 				return nil
 			}
 		}
@@ -370,6 +346,45 @@ func (server *AnalysesServer) BatchGetTestAnalyses(ctx context.Context, req *pb.
 	return &pb.BatchGetTestAnalysesResponse{
 		TestAnalyses: result,
 	}, nil
+}
+
+func retrieveTestAnalysis(ctx context.Context, project string, tf *pb.BatchGetTestAnalysesRequest_TestFailureIdentifier, changepointResult *analysispb.TestVariantBranch, tfamask *mask.Mask) (analysis *pb.TestAnalysis, err error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/bisection/server/analyses.retrieveTestAnalysis", attribute.String("test_id", tf.TestId), attribute.String("ref_hash", tf.RefHash), attribute.String("variant_hash", tf.VariantHash))
+	defer func() { tracing.End(ts, err) }()
+	logging.Infof(ctx, "Start getting test failures for test_id = %q refHash = %q variantHash = %q", tf.TestId, tf.RefHash, tf.VariantHash)
+	tfs, err := datastoreutil.GetTestFailures(ctx, project, tf.TestId, tf.RefHash, tf.VariantHash)
+	if err != nil {
+		return nil, errors.Annotate(err, "get test failures").Err()
+	}
+	if len(tfs) == 0 {
+		return nil, nil
+	}
+	sort.Slice(tfs, func(i, j int) bool {
+		return tfs[i].RegressionStartPosition > tfs[j].RegressionStartPosition
+	})
+	latestTestFailure := tfs[0]
+	if latestTestFailure.IsDiverged {
+		// Do not return test analysis if diverged.
+		// Because diverged test failure is considered excluded from the test analyses.
+		return nil, nil
+	}
+	ongoing, reason := isTestFailureDeterministicallyOngoing(latestTestFailure, changepointResult)
+	// Do not return the test analysis if the failure is not ongoing.
+	if !ongoing {
+		logging.Infof(ctx, "no bisection returned for test %s %s %s because %s", tf.TestId, tf.VariantHash, tf.RefHash, reason)
+		return nil, nil
+	}
+	// Return the test analysis that analyze this test failure.
+	tfa, err := datastoreutil.GetTestFailureAnalysis(ctx, latestTestFailure.AnalysisKey.IntID())
+	if err != nil {
+		return nil, errors.Annotate(err, "get test failure analysis").Err()
+	}
+	tfaProto, err := protoutil.TestFailureAnalysisToPb(ctx, tfa, tfamask)
+	if err != nil {
+		return nil, errors.Annotate(err, "convert test failure analysis to protobuf").Err()
+	}
+	logging.Infof(ctx, "Finished getting test failures for test_id = %q refHash = %q variantHash = %q", tf.TestId, tf.RefHash, tf.VariantHash)
+	return tfaProto, nil
 }
 
 // IsTestFailureDeterministicallyOngoing returns a boolean which indicate whether

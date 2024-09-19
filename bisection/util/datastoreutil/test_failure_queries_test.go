@@ -18,11 +18,12 @@ import (
 	"context"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-
-	"go.chromium.org/luci/bisection/model"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+
+	"go.chromium.org/luci/bisection/model"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestGetTestFailures(t *testing.T) {

@@ -19,18 +19,20 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/proto/mask"
+	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/util/testutil"
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
-	"go.chromium.org/luci/common/proto/mask"
+
+	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
-	"go.chromium.org/luci/gae/impl/memory"
-	"go.chromium.org/luci/gae/service/datastore"
 )
 
 func TestConvertTestFailureAnalysisToPb(t *testing.T) {

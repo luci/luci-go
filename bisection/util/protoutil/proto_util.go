@@ -21,18 +21,23 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/proto/mask"
+
+	"go.chromium.org/luci/bisection/internal/tracing"
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/testfailureanalysis/bisection"
 	"go.chromium.org/luci/bisection/util/changelogutil"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/proto/mask"
 )
 
 // TestFailureAnalysisToPb converts model.TestFailureAnalysis to pb.TestAnalysis
-func TestFailureAnalysisToPb(ctx context.Context, tfa *model.TestFailureAnalysis, tfaMask *mask.Mask) (*pb.TestAnalysis, error) {
+func TestFailureAnalysisToPb(ctx context.Context, tfa *model.TestFailureAnalysis, tfaMask *mask.Mask) (analysis *pb.TestAnalysis, err error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/bisection/util/protoutil/proto_util.TestFailureAnalysisToPb")
+	defer func() { tracing.End(ts, err) }()
+
 	result := &pb.TestAnalysis{}
 	if tfaMask.MustIncludes("analysis_id") == mask.IncludeEntirely {
 		result.AnalysisId = tfa.ID
@@ -235,7 +240,10 @@ func NthSectionAnalysisToPb(ctx context.Context, tfa *model.TestFailureAnalysis,
 	return result, nil
 }
 
-func CulpritToPb(ctx context.Context, culprit *model.Suspect, nsa *model.TestNthSectionAnalysis, culpritMask *mask.Mask) (*pb.TestCulprit, error) {
+func CulpritToPb(ctx context.Context, culprit *model.Suspect, nsa *model.TestNthSectionAnalysis, culpritMask *mask.Mask) (c *pb.TestCulprit, err error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/bisection/util/protoutil/proto_util.CulpritToPb")
+	defer func() { tracing.End(ts, err) }()
+
 	result := &pb.TestCulprit{}
 
 	if culpritMask.MustIncludes("commit") == mask.IncludeEntirely {
@@ -318,7 +326,10 @@ func testFailureToPb(ctx context.Context, tf *model.TestFailure, tfMask *mask.Ma
 	return result
 }
 
-func testVerificationDetails(ctx context.Context, culprit *model.Suspect, nsa *model.TestNthSectionAnalysis, detailsMask *mask.Mask) (*pb.TestSuspectVerificationDetails, error) {
+func testVerificationDetails(ctx context.Context, culprit *model.Suspect, nsa *model.TestNthSectionAnalysis, detailsMask *mask.Mask) (result *pb.TestSuspectVerificationDetails, err error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/bisection/util/protoutil/proto_util.testVerificationDetails")
+	defer func() { tracing.End(ts, err) }()
+
 	verificationDetails := &pb.TestSuspectVerificationDetails{}
 	if detailsMask.MustIncludes("status") == mask.IncludeEntirely {
 		verificationDetails.Status = verificationStatusToPb(culprit.VerificationStatus)

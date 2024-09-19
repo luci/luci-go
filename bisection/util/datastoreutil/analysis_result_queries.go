@@ -19,11 +19,13 @@ import (
 	"context"
 	"fmt"
 
-	"go.chromium.org/luci/bisection/model"
-	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
+
+	"go.chromium.org/luci/bisection/internal/tracing"
+	"go.chromium.org/luci/bisection/model"
+	pb "go.chromium.org/luci/bisection/proto/v1"
 )
 
 // GetBuild returns the failed build in the datastore with the given Buildbucket ID
@@ -328,7 +330,9 @@ func GetPrimaryTestFailure(ctx context.Context, analysis *model.TestFailureAnaly
 }
 
 // GetTestFailureBundle returns a TestFailureBundle for a TestFailureAnalysis.
-func GetTestFailureBundle(ctx context.Context, tfa *model.TestFailureAnalysis) (*model.TestFailureBundle, error) {
+func GetTestFailureBundle(ctx context.Context, tfa *model.TestFailureAnalysis) (bundle *model.TestFailureBundle, err error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/bisection/util/datastoreutil/analysis_result_queries.GetTestFailureBundle")
+	defer func() { tracing.End(ts, err) }()
 	return getTestFailureBundleWithAnalysisKey(ctx, datastore.KeyForObj(ctx, tfa))
 }
 
@@ -391,10 +395,13 @@ func GetTestNthSectionAnalysis(ctx context.Context, analysisID int64) (*model.Te
 
 // GetTestNthSectionForAnalysis gets test nthsection analysis for a test failure analysis.
 // This may return nil if the nthsection analysis has not been created yet.
-func GetTestNthSectionForAnalysis(ctx context.Context, tfa *model.TestFailureAnalysis) (*model.TestNthSectionAnalysis, error) {
+func GetTestNthSectionForAnalysis(ctx context.Context, tfa *model.TestFailureAnalysis) (nsa *model.TestNthSectionAnalysis, err error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/bisection/util/datastoreutil/analysis_result_queries.GetTestNthSectionForAnalysis")
+	defer func() { tracing.End(ts, err) }()
+
 	q := datastore.NewQuery("TestNthSectionAnalysis").Eq("parent_analysis_key", datastore.KeyForObj(ctx, tfa))
 	analyses := []*model.TestNthSectionAnalysis{}
-	err := datastore.GetAll(ctx, q, &analyses)
+	err = datastore.GetAll(ctx, q, &analyses)
 	if err != nil {
 		return nil, errors.Annotate(err, "get all").Err()
 	}

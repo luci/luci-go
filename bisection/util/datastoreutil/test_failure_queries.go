@@ -17,8 +17,9 @@ package datastoreutil
 import (
 	"context"
 
-	"go.chromium.org/luci/bisection/model"
 	"go.chromium.org/luci/gae/service/datastore"
+
+	"go.chromium.org/luci/bisection/model"
 )
 
 // GetTestFailures returns all TestFailures for a test.

@@ -19,12 +19,13 @@ import (
 	"fmt"
 	"time"
 
-	"go.chromium.org/luci/bisection/model"
-	pb "go.chromium.org/luci/bisection/proto/v1"
-
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/service/datastore"
+
+	"go.chromium.org/luci/bisection/internal/tracing"
+	"go.chromium.org/luci/bisection/model"
+	pb "go.chromium.org/luci/bisection/proto/v1"
 )
 
 // CountLatestRevertsCreated returns the number of reverts created within
@@ -218,7 +219,10 @@ func getTestNthSectionAnalysisForSuspect(c context.Context, suspect *model.Suspe
 	return nsa, nil
 }
 
-func GetVerifiedCulpritForTestAnalysis(ctx context.Context, tfa *model.TestFailureAnalysis) (*model.Suspect, error) {
+func GetVerifiedCulpritForTestAnalysis(ctx context.Context, tfa *model.TestFailureAnalysis) (s *model.Suspect, err error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/bisection/util/datastoreutil/suspect_queries.GetVerifiedCulpritForTestAnalysis")
+	defer func() { tracing.End(ts, err) }()
+
 	culpritKey := tfa.VerifiedCulpritKey
 	if culpritKey == nil {
 		return nil, nil
