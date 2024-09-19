@@ -106,9 +106,3 @@ type PMState interface {
 
 // ErrOutdatedPMState signals that PMState is out dated.
 var ErrOutdatedPMState = errors.New("outdated PM state")
-
-// IsErrOutdatedPMState returns true if given error is a possibly wrapped
-// ErrOutdatedPMState.
-func IsErrOutdatedPMState(err error) bool {
-	return errors.Contains(err, ErrOutdatedPMState)
-}

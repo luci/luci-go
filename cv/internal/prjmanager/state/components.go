@@ -106,7 +106,7 @@ func (h *Handler) triageComponents(ctx context.Context, s *State) ([]*cAction, b
 			}
 			work <- func() error {
 				switch res, err := h.triageOneComponent(ctx, s, oldC, sup); {
-				case itriager.IsErrOutdatedPMState(err):
+				case errors.Is(err, itriager.ErrOutdatedPMState):
 					return nil
 				case err != nil:
 					// Log error here since only total errs count will be propagated up

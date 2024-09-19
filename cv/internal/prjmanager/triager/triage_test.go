@@ -583,8 +583,8 @@ func TestTriage(t *testing.T) {
 					assert.Loosely(t, datastore.Put(ctx, cl), should.BeNil)
 					pm.pb.Pcls = []*prjpb.PCL{pcl}
 					err := failTriage(&prjpb.Component{Clids: []int64{33}, TriageRequired: true})
-					assert.Loosely(t, itriager.IsErrOutdatedPMState(err), should.BeTrue)
-					assert.Loosely(t, err, should.ErrLike("EVersion changed 1 => 2"))
+					assert.That(t, err, should.ErrLikeError(itriager.ErrOutdatedPMState))
+					assert.That(t, err, should.ErrLikeString("EVersion changed 1 => 2"))
 				})
 
 			})
@@ -620,8 +620,8 @@ func TestTriage(t *testing.T) {
 					assert.Loosely(t, datastore.Put(ctx, cl), should.BeNil)
 					pm.pb.Pcls = []*prjpb.PCL{pcl}
 					err := failTriage(&prjpb.Component{Clids: []int64{33}, TriageRequired: true})
-					assert.Loosely(t, itriager.IsErrOutdatedPMState(err), should.BeTrue)
-					assert.Loosely(t, err, should.ErrLike("EVersion changed 1 => 2"))
+					assert.That(t, err, should.ErrLikeError(itriager.ErrOutdatedPMState))
+					assert.That(t, err, should.ErrLikeString("EVersion changed 1 => 2"))
 				})
 
 				t.Run("OK with resolved deps", func(t *ftt.Test) {
