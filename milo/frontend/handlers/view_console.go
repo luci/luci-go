@@ -290,8 +290,7 @@ var treeStatusCache = layered.RegisterCache(layered.Parameters[*ui.TreeStatus]{
 func getTreeStatus(c context.Context, host string, name string) *ui.TreeStatus {
 	if name != "" {
 		url := &url.URL{
-			// TODO (nqmtuan): Change this URL after this has moved out of lab.
-			Path: fmt.Sprintf("/ui/labs/tree-status/%s", name),
+			Path: fmt.Sprintf("/ui/tree-status/%s", name),
 		}
 		status, err := fetchLUCITreeStatus(c, name, url)
 		if err != nil {

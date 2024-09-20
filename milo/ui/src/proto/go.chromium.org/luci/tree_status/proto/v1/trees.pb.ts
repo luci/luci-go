@@ -9,6 +9,11 @@ import _m0 from "protobufjs/minimal";
 
 export const protobufPackage = "luci.tree_status.v1";
 
+export interface GetTreeRequest {
+  /** Format: "trees/{tree_id}" */
+  readonly name: string;
+}
+
 export interface QueryTreesRequest {
   /** The LUCI project to query tree name. */
   readonly project: string;
@@ -26,7 +31,73 @@ export interface QueryTreesResponse {
 export interface Tree {
   /** Name of the tree, in format "trees/{tree_id}". */
   readonly name: string;
+  /**
+   * The LUCI projects that the tree applies to..
+   * The first project in this list is the primary project. This means:
+   *   1. Its "<project>:<subrealm>" realm will be used to check
+   *      for ACL for the tree, if the tree uses realm-based ACL.
+   *   2. If the tree is access without a LUCI project context, the primary project
+   *      will be displayed at the top left of LUCI UI.
+   */
+  readonly projects: readonly string[];
 }
+
+function createBaseGetTreeRequest(): GetTreeRequest {
+  return { name: "" };
+}
+
+export const GetTreeRequest = {
+  encode(message: GetTreeRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.name !== "") {
+      writer.uint32(10).string(message.name);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): GetTreeRequest {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetTreeRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetTreeRequest {
+    return { name: isSet(object.name) ? globalThis.String(object.name) : "" };
+  },
+
+  toJSON(message: GetTreeRequest): unknown {
+    const obj: any = {};
+    if (message.name !== "") {
+      obj.name = message.name;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<GetTreeRequest>): GetTreeRequest {
+    return GetTreeRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<GetTreeRequest>): GetTreeRequest {
+    const message = createBaseGetTreeRequest() as any;
+    message.name = object.name ?? "";
+    return message;
+  },
+};
 
 function createBaseQueryTreesRequest(): QueryTreesRequest {
   return { project: "" };
@@ -143,13 +214,16 @@ export const QueryTreesResponse = {
 };
 
 function createBaseTree(): Tree {
-  return { name: "" };
+  return { name: "", projects: [] };
 }
 
 export const Tree = {
   encode(message: Tree, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.name !== "") {
       writer.uint32(10).string(message.name);
+    }
+    for (const v of message.projects) {
+      writer.uint32(18).string(v!);
     }
     return writer;
   },
@@ -168,6 +242,13 @@ export const Tree = {
 
           message.name = reader.string();
           continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.projects.push(reader.string());
+          continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -178,13 +259,19 @@ export const Tree = {
   },
 
   fromJSON(object: any): Tree {
-    return { name: isSet(object.name) ? globalThis.String(object.name) : "" };
+    return {
+      name: isSet(object.name) ? globalThis.String(object.name) : "",
+      projects: globalThis.Array.isArray(object?.projects) ? object.projects.map((e: any) => globalThis.String(e)) : [],
+    };
   },
 
   toJSON(message: Tree): unknown {
     const obj: any = {};
     if (message.name !== "") {
       obj.name = message.name;
+    }
+    if (message.projects?.length) {
+      obj.projects = message.projects;
     }
     return obj;
   },
@@ -195,11 +282,14 @@ export const Tree = {
   fromPartial(object: DeepPartial<Tree>): Tree {
     const message = createBaseTree() as any;
     message.name = object.name ?? "";
+    message.projects = object.projects?.map((e) => e) || [];
     return message;
   },
 };
 
 export interface Trees {
+  /** Get information of a tree. */
+  GetTree(request: GetTreeRequest): Promise<Tree>;
   /** Query tree for a LUCI project. */
   QueryTrees(request: QueryTreesRequest): Promise<QueryTreesResponse>;
 }
@@ -212,8 +302,15 @@ export class TreesClientImpl implements Trees {
   constructor(rpc: Rpc, opts?: { service?: string }) {
     this.service = opts?.service || TreesServiceName;
     this.rpc = rpc;
+    this.GetTree = this.GetTree.bind(this);
     this.QueryTrees = this.QueryTrees.bind(this);
   }
+  GetTree(request: GetTreeRequest): Promise<Tree> {
+    const data = GetTreeRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "GetTree", data);
+    return promise.then((data) => Tree.fromJSON(data));
+  }
+
   QueryTrees(request: QueryTreesRequest): Promise<QueryTreesResponse> {
     const data = QueryTreesRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "QueryTrees", data);

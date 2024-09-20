@@ -32,7 +32,7 @@ export function useBatchedMiloInternalClient() {
   });
 }
 
-export function useTreeStatusClient() {
+export function useTreesClient() {
   return usePrpcServiceClient({
     host: SETTINGS.luciTreeStatus.host,
     ClientImpl: TreesClientImpl,

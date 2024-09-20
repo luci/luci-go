@@ -25,8 +25,11 @@ import {
   usePagerContext,
 } from '@/common/components/params_pager';
 import { UiPage } from '@/common/constants/view';
+import { useTreesClient } from '@/common/hooks/prpc_clients';
+import { logging } from '@/common/tools/logging';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { ListStatusRequest } from '@/proto/go.chromium.org/luci/tree_status/proto/v1/tree_status.pb';
+import { GetTreeRequest } from '@/proto/go.chromium.org/luci/tree_status/proto/v1/trees.pb';
 import { TreeStatusTable } from '@/tree_status/components/tree_status_table';
 import { TreeStatusUpdater } from '@/tree_status/components/tree_status_updater';
 import { useTreeStatusClient } from '@/tree_status/hooks/prpc_clients';
@@ -38,10 +41,6 @@ export const TreeStatusListPage = () => {
     defaultPageSize: 50,
   });
   const [searchParams] = useSyncedSearchParams();
-  // TODO: instead of using treeName, we should query TreeStatus
-  // for the primary project for the tree. TreeStatus does not return
-  // this information yet, so putting this as TODO.
-  const project = searchParams.get('project') || treeName;
   const pageSize = getPageSize(pagerCtx, searchParams);
   const pageToken = getPageToken(pagerCtx, searchParams);
 
@@ -58,12 +57,42 @@ export const TreeStatusListPage = () => {
     refetchInterval: 60000,
     enabled: !!treeName,
   });
+
+  // Get tree.
+  const treesClient = useTreesClient();
+  const tree = useQuery({
+    // eslint-disable-next-line new-cap
+    ...treesClient.GetTree.query(
+      GetTreeRequest.fromPartial({
+        name: `trees/${treeName}`,
+      }),
+    ),
+    // We only need to query if project is not specified.
+    enabled: !!treeName && !searchParams.get('project'),
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+  });
+
   if (!treeName) {
     return <Alert severity="error">No tree name specified</Alert>;
   }
   if (status.isError) {
     throw status.error;
   }
+  if (tree.error) {
+    // Just log, this is only for the project name, it is not crucial for the page.
+    logging.error('failed to get tree', tree.error);
+  }
+  // project will be set based on the following:
+  // - If there is project field in search params, it will be set based on search params.
+  // - If not, it will be set based on the result from GetTree RPC.
+  // - If GetTree RPC failed, it will default to fall back to tree name.
+  const project =
+    searchParams.get('project') ||
+    (tree.data && tree.data.projects.length > 0
+      ? tree.data.projects[0]
+      : treeName);
+
   return (
     <div>
       <PageMeta

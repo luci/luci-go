@@ -104,7 +104,7 @@ export const TreeStatusCard = ({ tree }: AlertGroupProps) => {
           sx={{ marginTop: '16px' }}
           size="small"
           component={Link}
-          to={`/ui/labs/tree-status/${tree.treeStatusName}`}
+          to={`/ui/tree-status/${tree.treeStatusName}`}
           target="_blank"
           variant="outlined"
         >

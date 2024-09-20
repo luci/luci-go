@@ -30,7 +30,7 @@ import { Link } from 'react-router-dom';
 
 import { useSelectedPage, useProject } from '@/common/components/page_meta';
 import { UiPage, CommonColors } from '@/common/constants/view';
-import { useTreeStatusClient } from '@/common/hooks/prpc_clients';
+import { useTreesClient } from '@/common/hooks/prpc_clients';
 import { logging } from '@/common/tools/logging';
 import { QueryTreesRequest } from '@/proto/go.chromium.org/luci/tree_status/proto/v1/trees.pb';
 
@@ -61,7 +61,7 @@ export const Sidebar = ({ open }: Props) => {
   const project = useProject();
   const selectedPage = useSelectedPage();
 
-  const client = useTreeStatusClient();
+  const client = useTreesClient();
   const { data, error } = useQuery({
     ...client.QueryTrees.query(
       QueryTreesRequest.fromPartial({ project: project }),
