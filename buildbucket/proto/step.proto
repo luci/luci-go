@@ -73,7 +73,8 @@ message Step {
     // If set, then this stream will be merged "in line" with this step.
     //
     // Properties emitted by the merge build stream will overwrite global
-    // outputs with the same top-level key.
+    // outputs with the same top-level key. This is the same as setting
+    // `merge_output_properties_to=["."]`.
     //
     // Steps emitted by the merge build stream will NOT have their names
     // namespaced (though the log stream names are still expected to
@@ -90,7 +91,60 @@ message Step {
     // builders rely on this behavior.
     //
     // See crbug.com/1310155.
+    //
+    // If set in conjunction with merge_output_properties_to,
+    // merge_output_properties_to will take precedence for output property
+    // merging.
     bool legacy_global_namespace = 2;
+
+    // If set, this indicates that the output properties from this subbuild will
+    // be merged into the parent's output properties at this given path.
+    //
+    // If this is exactly `[""]` it means "merge the sub build's output
+    // properties directly into the top-level output properties".
+    //
+    // If this is empty (i.e. `[]` or nil), the sub build's properties will not
+    // be merged at all.
+    //
+    // Otherwise, this will be a path from the root of the parent's output
+    // properties to the place to add this build's output properties. For
+    // example, the value `["a", "b"]` would mean to merge properties like:
+    //
+    //    {
+    //      "a": {
+    //        "b": <this is where the properties will be merged>
+    //      }
+    //    }
+    //
+    // Merging works as follows:
+    //   * Start with the current Build.output.properties.
+    //   * We walk Build.Steps from the top to bottom.
+    //   * When we encounter a Step with merge_build set, we set a pointer in
+    //     the output properties to this path, possibly creating new Structs
+    //     along the way.
+    //     * If non-Struct property values are encountered, they are replaced
+    //       with Structs.
+    //     * If the leaf object is a pre-existing Struct, then this functionally
+    //       performs a python `dict.update()` of the sub-build's properties on
+    //       top of the parent's properties at that location.
+    //   * Recurse into the sub-build, possibly applying further merge_build
+    //     directives.
+    //
+    // This means that if you have:
+    //
+    //    parent
+    //      child1 (merge_output_properties_to=['a'])
+    //        child2 (merge_output_properties_to=['b'])
+    //
+    // Then the output properties of child2 will be at the parent build's
+    // ['a', 'b'] path.
+    //
+    // It is STRONGLY RECOMMENDED not to merge into [""] - This creates
+    // composability issues and increases the liklihood of unintentional
+    // overwrites. However, sometimes this is the appropriate course of action
+    // (e.g. when writing thin wrappers over the 'real' implementation as
+    // a sub-build).
+    repeated string merge_output_properties_to = 3;
   }
   // MergeBuild is used for go.chromium.org/luci/luciexe to indicate to the
   // luciexe host process if some Build stream should be merged under this step.
