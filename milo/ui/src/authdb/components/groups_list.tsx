@@ -18,13 +18,13 @@ import AlertTitle from '@mui/material/AlertTitle';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
-import List from '@mui/material/List';
 import TextField from '@mui/material/TextField';
 import { useQuery } from '@tanstack/react-query';
 import { useAuthServiceClient } from '@/authdb/hooks/prpc_clients';
 import { AuthGroup } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/groups.pb';
 import { GroupsListItem } from '@/authdb/components/groups_list_item';
 import {useState, forwardRef, useImperativeHandle} from 'react';
+import { Virtuoso } from 'react-virtuoso'
 
 interface GroupsListProps {
   selectionChanged: (name: string) => void;
@@ -114,17 +114,22 @@ export const GroupsList = forwardRef<GroupsListElement, GroupsListProps>(
         Create Group
       </Button>
     </Box>
-    <Box className="groups-list-container">
-      <List data-testid="groups-list" disablePadding>
-        {groups.map((group) => (
-          <GroupsListItem
-            key={group.name}
-            group={group}
-            setSelected={() => { handleSelection(group.name) }}
-            selected={group.name === selectedGroup}
-          />
-        ))}
-      </List>
+    <Box sx={{height: '100%'}} data-testid='groups-list'>
+      <Virtuoso
+        style={{ height: '100%'}}
+        totalCount={groups.length}
+        initialItemCount={3}
+        itemContent={(index) => {
+          return (
+            <GroupsListItem
+              group={groups[index]}
+              selected={groups[index].name == selectedGroup}
+              setSelected={() => handleSelection(groups[index].name)}
+              key={index}>
+            </GroupsListItem>
+          );
+        }}
+      />
     </Box>
     </>
   );
