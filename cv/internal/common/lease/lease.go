@@ -79,28 +79,15 @@ func (a *Application) validate(ctx context.Context) error {
 type AlreadyInLeaseErr struct {
 	// ResourceID is the ID of the target resource.
 	ResourceID ResourceID
-	// ExpireTime is the time the current lease on the target rescourse expires.
+	// ExpireTime is the time the current lease on the target resource expires.
 	ExpireTime time.Time
-	// Holder is the holder of the current lease on the target rescourse.
+	// Holder is the holder of the current lease on the target resource.
 	Holder string
 }
 
 // Error implements `error`.
 func (e *AlreadyInLeaseErr) Error() string {
 	return fmt.Sprintf("Resource %q is currently leased by %s until %s", e.ResourceID, e.Holder, e.ExpireTime)
-}
-
-// IsAlreadyInLeaseErr detects and returns `AlreadyInLeaseErr` in the given err.
-func IsAlreadyInLeaseErr(err error) (*AlreadyInLeaseErr, bool) {
-	var ret *AlreadyInLeaseErr
-	errors.WalkLeaves(err, func(leaf error) bool {
-		if e, ok := leaf.(*AlreadyInLeaseErr); ok {
-			ret = e
-			return false
-		}
-		return true
-	})
-	return ret, ret != nil
 }
 
 const tokenLen = 8
@@ -340,8 +327,9 @@ type retryIfLeasedIterator struct {
 
 // Next implements retry.Iterator
 func (c retryIfLeasedIterator) Next(ctx context.Context, err error) time.Duration {
-	if info, isLeasedErr := IsAlreadyInLeaseErr(err); isLeasedErr {
-		timeToExpire := clock.Until(ctx, info.ExpireTime)
+	var alreadyInLeaseErr *AlreadyInLeaseErr
+	if errors.As(err, &alreadyInLeaseErr) {
+		timeToExpire := clock.Until(ctx, alreadyInLeaseErr.ExpireTime)
 		if c.inner == nil {
 			return timeToExpire
 		}

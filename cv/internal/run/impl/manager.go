@@ -174,7 +174,8 @@ func (rm *RunManager) manageRun(ctx context.Context, runID common.RunID) error {
 	recipient := run.EventboxRecipient(ctx, runID)
 	postProcessFns, processErr := eventbox.ProcessBatch(ctx, recipient, proc, maxEventsPerBatch)
 	if processErr != nil {
-		if alreadyInLeaseErr, ok := lease.IsAlreadyInLeaseErr(processErr); ok {
+		var alreadyInLeaseErr *lease.AlreadyInLeaseErr
+		if errors.As(processErr, &alreadyInLeaseErr) {
 			expireTime := alreadyInLeaseErr.ExpireTime.UTC()
 			if err := rm.runNotifier.Invoke(ctx, runID, expireTime); err != nil {
 				return err

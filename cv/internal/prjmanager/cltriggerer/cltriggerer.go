@@ -96,8 +96,8 @@ func (tr *Triggerer) makeDispatcherChannel(ctx context.Context, task *prjpb.Trig
 	prj := task.GetLuciProject()
 	dc, err := dispatcher.NewChannel[*triggerDepOp](ctx, &dispatcher.Options[*triggerDepOp]{
 		ErrorFn: func(failedBatch *buffer.Batch[*triggerDepOp], err error) (retry bool) {
-			_, isLeaseErr := lease.IsAlreadyInLeaseErr(err)
-			return isLeaseErr || transient.Tag.In(err)
+			var alreadyInLeaseErr *lease.AlreadyInLeaseErr
+			return errors.As(err, &alreadyInLeaseErr) || transient.Tag.In(err)
 		},
 		DropFn: dispatcher.DropFnQuiet[*triggerDepOp],
 		Buffer: buffer.Options{

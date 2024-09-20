@@ -246,8 +246,8 @@ func (op *ResetTriggersOp) makeDispatcherChannel(ctx context.Context) dispatcher
 	concurrency = min(concurrency, len(op.inputs))
 	dc, err := dispatcher.NewChannel(ctx, &dispatcher.Options[resetItem]{
 		ErrorFn: func(failedBatch *buffer.Batch[resetItem], err error) (retry bool) {
-			_, isLeaseErr := lease.IsAlreadyInLeaseErr(err)
-			return isLeaseErr || transient.Tag.In(err)
+			var alreadyInLeaseErr *lease.AlreadyInLeaseErr
+			return errors.As(err, &alreadyInLeaseErr) || transient.Tag.In(err)
 		},
 		DropFn: dispatcher.DropFnQuiet[resetItem],
 		Buffer: buffer.Options{

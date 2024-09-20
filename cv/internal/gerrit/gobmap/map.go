@@ -141,7 +141,8 @@ func leaseExclusive(ctx context.Context, meta *prjcfg.Meta) (context.Context, fu
 		Holder:     taskID, // Used for debugging, only.
 	})
 	if err != nil {
-		if _, ok := lease.IsAlreadyInLeaseErr(err); ok {
+		var alreadyInLeaseErr *lease.AlreadyInLeaseErr
+		if errors.As(err, &alreadyInLeaseErr) {
 			return nil, nil, errors.Annotate(err, "gobmap for %s is already being updated", meta.Project).Tag(transient.Tag).Err()
 		}
 		return nil, nil, err
