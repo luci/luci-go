@@ -14,6 +14,10 @@
 
 import '@material/mwc-button';
 import '@material/mwc-icon';
+import '@/common/components/column_header';
+import '@/generic_libs/components/dot_spinner';
+import './test_variant_entry';
+
 import { css, html } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
@@ -21,9 +25,6 @@ import { repeat } from 'lit/directives/repeat.js';
 import { styleMap } from 'lit/directives/style-map.js';
 import { makeObservable, observable, reaction } from 'mobx';
 
-import '@/generic_libs/components/dot_spinner';
-import '@/common/components/column_header';
-import './test_variant_entry';
 import { VARIANT_STATUS_CLASS_MAP } from '@/common/constants/legacy';
 import {
   getPropKeyLabel,
@@ -117,40 +118,19 @@ export class TestVariantsTableElement extends MobxExtLitElement {
       <div id="variant-list-tail">
         ${this.invState.testVariantCount ===
         this.invState.unfilteredTestVariantCount
-          ? html`
-              Showing ${this.invState.testVariantCount} /
-              ${this.invState.unfilteredTestVariantCount}${this.invState
-                .loadedAllTestVariants
-                ? ''
-                : '+'}
-              tests.
-            `
+          ? html` Showing ${this.invState.testVariantCount} tests. `
           : html`
               Showing
-              <i>${this.invState.testVariantCount}</i>
+              <strong>${this.invState.testVariantCount}</strong>
               test${this.invState.testVariantCount === 1 ? '' : 's'} that
               <i
                 >match${this.invState.testVariantCount === 1 ? 'es' : ''} the
                 filter</i
               >, out of
-              <i
-                >${this.invState.unfilteredTestVariantCount}${this.invState
-                  .loadedAllTestVariants
-                  ? ''
-                  : '+'}</i
-              >
-              tests.
+              <strong>${this.invState.unfilteredTestVariantCount}</strong>
+              <i>already loaded tests</i>.
             `}
-        <span
-          class="active-text"
-          style=${styleMap({
-            display:
-              !this.invState.loadedAllTestVariants && this.invState.readyToLoad
-                ? ''
-                : 'none',
-          })}
-          >${this.renderLoadMore()}</span
-        >
+        ${this.renderLoadMore()}
       </div>
     `;
   }
@@ -231,20 +211,24 @@ export class TestVariantsTableElement extends MobxExtLitElement {
   private renderLoadMore() {
     const state = this.invState;
     return html`
-      <span
-        style=${styleMap({ display: state.isLoading ?? true ? 'none' : '' })}
+      <mwc-button
+        dense
+        unelevated
+        ?disabled=${state.isLoading ||
+        state.loadedAllTestVariants ||
+        !state.readyToLoad}
         @click=${() => this.loadMore()}
+        style=${styleMap({ verticalAlign: 'middle' })}
       >
-        [load more]
-      </span>
-      <span
-        style=${styleMap({
-          display: state.isLoading ?? true ? '' : 'none',
-          cursor: 'initial',
-        })}
-      >
-        loading <milo-dot-spinner></milo-dot-spinner>
-      </span>
+        ${state.isLoading
+          ? html`loading
+              <milo-dot-spinner
+                style=${styleMap({ color: 'unset' })}
+              ></milo-dot-spinner>`
+          : state.loadedAllTestVariants
+            ? 'all loaded'
+            : 'load more'}
+      </mwc-button>
     `;
   }
 
@@ -422,6 +406,10 @@ export class TestVariantsTableElement extends MobxExtLitElement {
 
       #variant-list-tail {
         padding: 5px 0 5px 15px;
+        color: var(--light-text-color);
+      }
+      #variant-list-tail > strong {
+        color: var(--default-text-color);
       }
       #variant-list-tail:not(:first-child) {
         border-top: 1px solid var(--divider-color);
