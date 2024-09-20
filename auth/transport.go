@@ -55,6 +55,15 @@ func (t *modifyingTransport) RoundTrip(req *http.Request) (*http.Response, error
 	return t.base.RoundTrip(&clone)
 }
 
+func (t *modifyingTransport) CloseIdleConnections() {
+	type closeIdler interface {
+		CloseIdleConnections()
+	}
+	if tr, ok := t.base.(closeIdler); ok {
+		tr.CloseIdleConnections()
+	}
+}
+
 var globalInstrumentTransport func(context.Context, http.RoundTripper, string) http.RoundTripper
 
 // SetMonitoringInstrumentation sets a global callback used by Authenticator to
