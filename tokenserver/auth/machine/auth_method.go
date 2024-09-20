@@ -18,6 +18,7 @@ package machine
 import (
 	"context"
 	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"time"
 
@@ -31,7 +32,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/signing"
 
-	tokenserver "go.chromium.org/luci/tokenserver/api"
+	tokenserverpb "go.chromium.org/luci/tokenserver/api"
 )
 
 const (
@@ -71,7 +72,7 @@ type MachineTokenAuthMethod struct {
 	// certsFetcher is mocked in unit tests.
 	//
 	// In prod it is based on signing.FetchCertificatesForServiceAccount.
-	certsFetcher func(c context.Context, email string) (*signing.PublicCertificates, error)
+	certsFetcher func(ctx context.Context, email string) (*signing.PublicCertificates, error)
 }
 
 // MachineTokenInfo contains information extracted from the LUCI machine token.
@@ -105,7 +106,7 @@ func GetMachineTokenInfo(ctx context.Context) *MachineTokenInfo {
 //
 // It logs detailed errors in log, but returns only generic "bad credential"
 // error to the caller, to avoid leaking unnecessary information.
-func (m *MachineTokenAuthMethod) Authenticate(c context.Context, r auth.RequestMetadata) (*auth.User, auth.Session, error) {
+func (m *MachineTokenAuthMethod) Authenticate(ctx context.Context, r auth.RequestMetadata) (*auth.User, auth.Session, error) {
 	token := r.Header(MachineTokenHeader)
 	if token == "" {
 		return nil, nil, nil // no token -> the auth method is not applicable
@@ -114,7 +115,7 @@ func (m *MachineTokenAuthMethod) Authenticate(c context.Context, r auth.RequestM
 	// Deserialize both envelope and the body.
 	envelope, body, err := deserialize(token)
 	if err != nil {
-		logTokenError(c, body, err, "Failed to deserialize the token")
+		logTokenError(ctx, body, "Failed to deserialize the token: %s", err)
 		return nil, nil, ErrBadToken
 	}
 
@@ -122,43 +123,43 @@ func (m *MachineTokenAuthMethod) Authenticate(c context.Context, r auth.RequestM
 	// it belongs to "auth-token-servers" group.
 	signerServiceAccount, err := identity.MakeIdentity("user:" + body.IssuedBy)
 	if err != nil {
-		logTokenError(c, body, err, "Bad issued_by field - %q", body.IssuedBy)
+		logTokenError(ctx, body, "Bad issued_by field %q: %s", body.IssuedBy, err)
 		return nil, nil, ErrBadToken
 	}
 
 	// Reject tokens from unknown token servers right away.
-	db, err := auth.GetDB(c)
+	db, err := auth.GetDB(ctx)
 	if err != nil {
 		return nil, nil, transient.Tag.Apply(err)
 	}
-	ok, err := db.IsMember(c, signerServiceAccount, []string{TokenServersGroup})
+	ok, err := db.IsMember(ctx, signerServiceAccount, []string{TokenServersGroup})
 	if err != nil {
 		return nil, nil, transient.Tag.Apply(err)
 	}
 	if !ok {
-		logTokenError(c, body, nil, "Unknown token issuer - %q", body.IssuedBy)
+		logTokenError(ctx, body, "Unknown token issuer %q", body.IssuedBy)
 		return nil, nil, ErrBadToken
 	}
 
 	// Check the expiration time before doing any heavier checks.
-	if err = checkExpiration(body, clock.Now(c)); err != nil {
-		logTokenError(c, body, err, "Token has expired or not yet valid")
+	if err = checkExpiration(body, clock.Now(ctx)); err != nil {
+		logTokenError(ctx, body, "Token has expired or not yet valid: %s", err)
 		return nil, nil, ErrBadToken
 	}
 
 	// Check the token was actually signed by the server.
-	if err = m.checkSignature(c, body.IssuedBy, envelope); err != nil {
+	if err = m.checkSignature(ctx, body.IssuedBy, envelope); err != nil {
 		if transient.Tag.In(err) {
 			return nil, nil, err
 		}
-		logTokenError(c, body, err, "Bad signature")
+		logTokenError(ctx, body, "Bad signature: %s", err)
 		return nil, nil, ErrBadToken
 	}
 
 	// The token is valid. Construct the bot identity.
 	botIdent, err := identity.MakeIdentity("bot:" + body.MachineFqdn)
 	if err != nil {
-		logTokenError(c, body, err, "Bad machine_fqdn - %q", body.MachineFqdn)
+		logTokenError(ctx, body, "Bad machine_fqdn %q: %s", body.MachineFqdn, err)
 		return nil, nil, ErrBadToken
 	}
 	return &auth.User{
@@ -172,35 +173,32 @@ func (m *MachineTokenAuthMethod) Authenticate(c context.Context, r auth.RequestM
 }
 
 // logTokenError adds a warning-level log entry with details about the request.
-func logTokenError(c context.Context, tok *tokenserver.MachineTokenBody, err error, msg string, args ...string) {
+func logTokenError(ctx context.Context, tok *tokenserverpb.MachineTokenBody, msg string, args ...any) {
 	fields := logging.Fields{}
 	if tok != nil {
 		// Note that if token wasn't properly signed, these fields may contain
 		// garbage.
 		fields["machineFqdn"] = tok.MachineFqdn
 		fields["issuedBy"] = tok.IssuedBy
-		fields["issuedAt"] = tok.IssuedAt
-		fields["lifetime"] = tok.Lifetime
-		fields["caId"] = tok.CaId
-		fields["certSn"] = tok.CertSn
+		fields["issuedAt"] = fmt.Sprintf("%d", tok.IssuedAt)
+		fields["lifetime"] = fmt.Sprintf("%d", tok.Lifetime)
+		fields["caId"] = fmt.Sprintf("%d", tok.CaId)
+		fields["certSn"] = hex.EncodeToString(tok.CertSn)
 	}
-	if err != nil {
-		fields[logging.ErrorKey] = err
-	}
-	fields.Warningf(c, msg, args)
+	fields.Warningf(ctx, msg, args...)
 }
 
 // deserialize parses MachineTokenEnvelope and MachineTokenBody.
-func deserialize(token string) (*tokenserver.MachineTokenEnvelope, *tokenserver.MachineTokenBody, error) {
+func deserialize(token string) (*tokenserverpb.MachineTokenEnvelope, *tokenserverpb.MachineTokenBody, error) {
 	tokenBinBlob, err := base64.RawStdEncoding.DecodeString(token)
 	if err != nil {
 		return nil, nil, err
 	}
-	envelope := &tokenserver.MachineTokenEnvelope{}
+	envelope := &tokenserverpb.MachineTokenEnvelope{}
 	if err := proto.Unmarshal(tokenBinBlob, envelope); err != nil {
 		return nil, nil, err
 	}
-	body := &tokenserver.MachineTokenBody{}
+	body := &tokenserverpb.MachineTokenBody{}
 	if err := proto.Unmarshal(envelope.TokenBody, body); err != nil {
 		return envelope, nil, err
 	}
@@ -210,7 +208,7 @@ func deserialize(token string) (*tokenserver.MachineTokenEnvelope, *tokenserver.
 // checkExpiration returns nil if the token is non-expired yet.
 //
 // Allows some clock drift, see allowedClockDrift.
-func checkExpiration(body *tokenserver.MachineTokenBody, now time.Time) error {
+func checkExpiration(body *tokenserverpb.MachineTokenBody, now time.Time) error {
 	notBefore := time.Unix(int64(body.IssuedAt), 0)
 	notAfter := notBefore.Add(time.Duration(body.Lifetime) * time.Second)
 	if now.Before(notBefore.Add(-allowedClockDrift)) {
@@ -225,13 +223,13 @@ func checkExpiration(body *tokenserver.MachineTokenBody, now time.Time) error {
 }
 
 // checkSignature verifies the token signature.
-func (m *MachineTokenAuthMethod) checkSignature(c context.Context, signerEmail string, envelope *tokenserver.MachineTokenEnvelope) error {
+func (m *MachineTokenAuthMethod) checkSignature(ctx context.Context, signerEmail string, envelope *tokenserverpb.MachineTokenEnvelope) error {
 	// Note that FetchCertificatesForServiceAccount implements caching inside.
 	fetcher := m.certsFetcher
 	if fetcher == nil {
 		fetcher = signing.FetchCertificatesForServiceAccount
 	}
-	certs, err := fetcher(c, signerEmail)
+	certs, err := fetcher(ctx, signerEmail)
 	if err != nil {
 		return transient.Tag.Apply(err)
 	}

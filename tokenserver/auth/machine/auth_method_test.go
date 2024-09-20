@@ -33,32 +33,34 @@ import (
 	"go.chromium.org/luci/server/auth/signing"
 	"go.chromium.org/luci/server/auth/signing/signingtest"
 
-	tokenserver "go.chromium.org/luci/tokenserver/api"
+	tokenserverpb "go.chromium.org/luci/tokenserver/api"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestMachineTokenAuthMethod(t *testing.T) {
+	t.Parallel()
+
 	Convey("with mock context", t, func() {
 		ctx := makeTestContext()
 		log := logging.Get(ctx).(*memlogger.MemLogger)
 		signer := signingtest.NewSigner(nil)
 		method := MachineTokenAuthMethod{
-			certsFetcher: func(c context.Context, email string) (*signing.PublicCertificates, error) {
+			certsFetcher: func(ctx context.Context, email string) (*signing.PublicCertificates, error) {
 				if email == "valid-signer@example.com" {
-					return signer.Certificates(c)
+					return signer.Certificates(ctx)
 				}
 				return nil, fmt.Errorf("unknown signer")
 			},
 		}
 
-		mint := func(tok *tokenserver.MachineTokenBody, sig []byte) string {
+		mint := func(tok *tokenserverpb.MachineTokenBody, sig []byte) string {
 			body, _ := proto.Marshal(tok)
 			keyID, validSig, _ := signer.SignBytes(ctx, body)
 			if sig == nil {
 				sig = validSig
 			}
-			envelope, _ := proto.Marshal(&tokenserver.MachineTokenEnvelope{
+			envelope, _ := proto.Marshal(&tokenserverpb.MachineTokenEnvelope{
 				TokenBody: body,
 				KeyId:     keyID,
 				RsaSha256: sig,
@@ -82,7 +84,7 @@ func TestMachineTokenAuthMethod(t *testing.T) {
 		}
 
 		Convey("valid token works", func() {
-			user, err := call(mint(&tokenserver.MachineTokenBody{
+			user, err := call(mint(&tokenserverpb.MachineTokenBody{
 				MachineFqdn: "some-machine.location",
 				CaId:        123,
 				CertSn:      []byte{1, 2, 3},
@@ -120,7 +122,7 @@ func TestMachineTokenAuthMethod(t *testing.T) {
 		})
 
 		Convey("broken body", func() {
-			envelope, _ := proto.Marshal(&tokenserver.MachineTokenEnvelope{
+			envelope, _ := proto.Marshal(&tokenserverpb.MachineTokenEnvelope{
 				TokenBody: []byte("bad body"),
 				KeyId:     "123",
 				RsaSha256: []byte("12345"),
@@ -132,7 +134,7 @@ func TestMachineTokenAuthMethod(t *testing.T) {
 		})
 
 		Convey("bad signer ID", func() {
-			_, err := call(mint(&tokenserver.MachineTokenBody{
+			_, err := call(mint(&tokenserverpb.MachineTokenBody{
 				MachineFqdn: "some-machine.location",
 				IssuedBy:    "not-a-email.com",
 				IssuedAt:    uint64(clock.Now(ctx).Unix()),
@@ -143,7 +145,7 @@ func TestMachineTokenAuthMethod(t *testing.T) {
 		})
 
 		Convey("unknown signer", func() {
-			_, err := call(mint(&tokenserver.MachineTokenBody{
+			_, err := call(mint(&tokenserverpb.MachineTokenBody{
 				MachineFqdn: "some-machine.location",
 				IssuedBy:    "unknown-signer@example.com",
 				IssuedAt:    uint64(clock.Now(ctx).Unix()),
@@ -154,7 +156,7 @@ func TestMachineTokenAuthMethod(t *testing.T) {
 		})
 
 		Convey("not yet valid", func() {
-			_, err := call(mint(&tokenserver.MachineTokenBody{
+			_, err := call(mint(&tokenserverpb.MachineTokenBody{
 				MachineFqdn: "some-machine.location",
 				IssuedBy:    "valid-signer@example.com",
 				IssuedAt:    uint64(clock.Now(ctx).Unix()) + 60,
@@ -165,7 +167,7 @@ func TestMachineTokenAuthMethod(t *testing.T) {
 		})
 
 		Convey("expired", func() {
-			_, err := call(mint(&tokenserver.MachineTokenBody{
+			_, err := call(mint(&tokenserverpb.MachineTokenBody{
 				MachineFqdn: "some-machine.location",
 				IssuedBy:    "valid-signer@example.com",
 				IssuedAt:    uint64(clock.Now(ctx).Unix()) - 3620,
@@ -176,7 +178,7 @@ func TestMachineTokenAuthMethod(t *testing.T) {
 		})
 
 		Convey("bad signature", func() {
-			_, err := call(mint(&tokenserver.MachineTokenBody{
+			_, err := call(mint(&tokenserverpb.MachineTokenBody{
 				MachineFqdn: "some-machine.location",
 				IssuedBy:    "valid-signer@example.com",
 				IssuedAt:    uint64(clock.Now(ctx).Unix()),
@@ -187,7 +189,7 @@ func TestMachineTokenAuthMethod(t *testing.T) {
 		})
 
 		Convey("bad machine_fqdn", func() {
-			_, err := call(mint(&tokenserver.MachineTokenBody{
+			_, err := call(mint(&tokenserverpb.MachineTokenBody{
 				MachineFqdn: "not::valid::machine::id",
 				IssuedBy:    "valid-signer@example.com",
 				IssuedAt:    uint64(clock.Now(ctx).Unix()),
