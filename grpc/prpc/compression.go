@@ -47,7 +47,7 @@ func returnGZipWriter(gw *gzip.Writer) {
 
 func getGZipReader(r io.Reader) (*gzip.Reader, error) {
 	if gr, _ := gzipReaders.Get().(*gzip.Reader); gr != nil {
-		if err := gr.Reset(gr); err != nil {
+		if err := gr.Reset(r); err != nil {
 			gzipReaders.Put(gr) // it is still good for reuse, even on errors
 			return nil, err
 		}
