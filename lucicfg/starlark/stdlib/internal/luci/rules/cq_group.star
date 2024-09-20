@@ -101,7 +101,7 @@ def _cq_group(
       tree_status_name: the name of the tree that gates CL submission. If the
         tree is closed, CL will NOT be submitted until the tree is reopened.
         The tree status UI is at
-        https://ci.chromium.org/ui/labs/tree-status/<tree_status_name>.
+        https://ci.chromium.org/ui/tree-status/<tree_status_name>.
       retry_config: a new cq.retry_config(...) struct or one of `cq.RETRY_*`
         constants that define how CQ should retry failed builds. See
         [CQ](#cq-doc) for more info. Default is `cq.RETRY_TRANSIENT_FAILURES`.
