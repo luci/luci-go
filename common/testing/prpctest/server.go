@@ -19,6 +19,7 @@ package prpctest
 import (
 	"context"
 	"errors"
+	"net"
 	"net/http/httptest"
 	"net/url"
 
@@ -30,10 +31,6 @@ import (
 type Server struct {
 	prpc.Server
 
-	// Base returns a middleware chain. It is handed the Context passed to
-	// Start. If Base is nil, setContext will be used.
-	Base func(context.Context) router.MiddlewareChain
-
 	// HTTP is the active HTTP test server. It will be valid when the Server is
 	// running.
 	HTTP *httptest.Server
@@ -42,29 +39,18 @@ type Server struct {
 	Host string
 }
 
-func setContext(ctx context.Context) router.MiddlewareChain {
-	return router.NewMiddlewareChain(
-		func(rctx *router.Context, next router.Handler) {
-			rctx.Request = rctx.Request.WithContext(ctx)
-			next(rctx)
-		},
-	)
-}
-
-// Start starts the server. Any currently-registered services will be installed
-// into the pRPC Server.
+// Start starts the server using the given context as the root server context.
+//
+// Any currently-registered services will be installed into the pRPC Server.
 func (s *Server) Start(ctx context.Context) {
 	// Clean up any active server.
 	s.Close()
 
-	base := s.Base
-	if base == nil {
-		base = setContext
-	}
-
 	r := router.New()
-	s.InstallHandlers(r, base(ctx))
-	s.HTTP = httptest.NewServer(r)
+	s.InstallHandlers(r, nil)
+	s.HTTP = httptest.NewUnstartedServer(r)
+	s.HTTP.Config.BaseContext = func(_ net.Listener) context.Context { return ctx }
+	s.HTTP.Start()
 
 	u, err := url.Parse(s.HTTP.URL)
 	if err != nil {
@@ -93,6 +79,7 @@ func (s *Server) NewClientWithOptions(opts *prpc.Options) (*prpc.Client, error) 
 	}
 
 	return &prpc.Client{
+		C:       s.HTTP.Client(),
 		Host:    s.Host,
 		Options: opts,
 	}, nil
@@ -102,7 +89,6 @@ func (s *Server) NewClientWithOptions(opts *prpc.Options) (*prpc.Client, error) 
 func (s *Server) Close() {
 	if s.HTTP != nil {
 		s.HTTP.Close()
-
 		s.HTTP = nil
 	}
 }

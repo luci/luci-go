@@ -18,8 +18,9 @@ import (
 	"context"
 	"encoding/hex"
 	"math/rand"
-	"net"
 	"net/http"
+	"net/http/cookiejar"
+	"net/url"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -33,7 +34,6 @@ import (
 	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
 
-	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/testing/prpctest"
@@ -100,33 +100,25 @@ func newTestClient(ctx context.Context, svc *service, opts *prpc.Options) (*prpc
 		panic(err)
 	}
 
-	// Use a new transport each time to reduce interference of tests with one
-	// another. Also increase transport-level timeouts from defaults since tests
-	// can be quite slow on bots.
-	transport := &http.Transport{
-		DialContext: (&net.Dialer{
-			Timeout:   300 * time.Second,
-			KeepAlive: 300 * time.Second,
-		}).DialContext,
-		ForceAttemptHTTP2:     true,
-		MaxIdleConns:          100,
-		IdleConnTimeout:       900 * time.Second,
-		TLSHandshakeTimeout:   100 * time.Second,
-		ExpectContinueTimeout: 10 * time.Second,
+	// Setup cookies to verify they are accessible as metadata.
+	jar, err := cookiejar.New(nil)
+	if err != nil {
+		panic(err)
 	}
+	jar.SetCookies(&url.URL{Scheme: "http", Host: ts.Host, Path: "/"}, []*http.Cookie{
+		{
+			Name:  "cookie_1",
+			Value: "value_1",
+		},
+		{
+			Name:  "cookie_2",
+			Value: "value_2",
+		},
+	})
 
 	prpcClient.C = &http.Client{
-		Transport: auth.NewModifyingTransport(transport, func(r *http.Request) error {
-			r.AddCookie(&http.Cookie{
-				Name:  "cookie_1",
-				Value: "value_1",
-			})
-			r.AddCookie(&http.Cookie{
-				Name:  "cookie_2",
-				Value: "value_2",
-			})
-			return nil
-		}),
+		Jar:       jar,
+		Transport: prpcClient.C.Transport, // inherit httptest transport
 	}
 
 	ts.ResponseCompression = prpc.CompressAlways
