@@ -75,6 +75,9 @@ func OptSend(lim rate.Limit, callback func(int64, *bbpb.Build)) StartOption {
 		var err error
 		s.sendCh, err = dispatcher.NewChannel(s.ctx, &dispatcher.Options[int64]{
 			QPSLimit: rate.NewLimiter(lim, 1),
+			DropFn: func(b *buffer.Batch[int64], flush bool) {
+				// No need to log anything - we expect many batches to drop.
+			},
 			Buffer: buffer.Options{
 				MaxLeases:     1,
 				BatchItemsMax: 1,
