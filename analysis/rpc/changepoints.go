@@ -93,7 +93,7 @@ func (c *changepointsServer) QueryChangepointGroupSummaries(ctx context.Context,
 	sort.Slice(groupSummaries, func(i, j int) bool {
 		ti, tj := groupSummaries[i].CanonicalChangepoint, groupSummaries[j].CanonicalChangepoint
 		switch {
-		case ti.StartHour != tj.StartHour:
+		case !ti.StartHour.AsTime().Equal(tj.StartHour.AsTime()):
 			return ti.StartHour.AsTime().After(tj.StartHour.AsTime())
 		case ti.TestId != tj.TestId:
 			return ti.TestId < tj.TestId
