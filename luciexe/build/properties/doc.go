@@ -89,8 +89,10 @@
 // custom than using protojson or encoding/json. Note that working with Struct
 // directly can be extremely annoying, so YMMV :).
 //
-// When parsing input properties, unknown fields can be ignored with
-// OptIgnoreUnknownFields().
+// When parsing input properties, unknown fields will, by default, be logged at
+// `Warning` level and ignored, but you can turn this into a hard error with
+// OptRejectUnknownFields(). This default was selected to ease migration without
+// making property typos completely silent.
 //
 // If the top level type is a *structpb.Struct or a map type, it will simply
 // collect all otherwise-unaccounted-for top-level keys. In this case, if
@@ -130,10 +132,10 @@
 //	  }
 //	}
 //
-//	This will just result in an error for "speling" - "$common/module" will be
-//	ignored. If the program eventually evolves and imports the Go module which
-//	registers the "$common/module" namespace, the caller's settings will take
-//	effect.
+// This will just result in a logged warning for "speling" - "$common/module"
+// will be ignored. If the program eventually evolves and imports the Go module
+// which registers the "$common/module" namespace, the caller's settings will
+// take effect.
 //
 // However, if you absolutely want to stamp out these ignored namespaces, you
 // can pass the OptStrictTopLevelFields() option when registering the top level

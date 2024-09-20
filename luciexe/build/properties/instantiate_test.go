@@ -15,6 +15,7 @@
 package properties
 
 import (
+	"context"
 	"testing"
 
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -28,6 +29,8 @@ func TestInstantiate(t *testing.T) {
 		Field int
 	}
 
+	ctx := context.Background()
+
 	t.Run(`no top-level`, func(t *testing.T) {
 		t.Parallel()
 
@@ -37,7 +40,7 @@ func TestInstantiate(t *testing.T) {
 		t.Run(`extra properties`, func(t *testing.T) {
 			t.Parallel()
 
-			_, err := r.Instantiate(mustStruct(map[string]any{
+			_, err := r.Instantiate(ctx, mustStruct(map[string]any{
 				"bogus": 100,
 			}), nil)
 			assert.That(t, err, should.ErrLike("leftover top-level properties"))
@@ -46,7 +49,7 @@ func TestInstantiate(t *testing.T) {
 		t.Run(`extra namespaces OK`, func(t *testing.T) {
 			t.Parallel()
 
-			_, err := r.Instantiate(mustStruct(map[string]any{
+			_, err := r.Instantiate(ctx, mustStruct(map[string]any{
 				"$bogus": 100,
 			}), nil)
 			assert.That(t, err, should.ErrLike(nil))
@@ -55,18 +58,18 @@ func TestInstantiate(t *testing.T) {
 		t.Run(`bad sub decode`, func(t *testing.T) {
 			t.Parallel()
 
-			_, err := r.Instantiate(mustStruct(map[string]any{
+			_, err := r.Instantiate(ctx, mustStruct(map[string]any{
 				"$sub": map[string]any{
-					"other": 100,
+					"Field": "hi",
 				},
 			}), nil)
-			assert.That(t, err, should.ErrLike(`unknown field "other"`))
+			assert.That(t, err, should.ErrLike(`cannot unmarshal`))
 		})
 
 		t.Run(`sub not struct`, func(t *testing.T) {
 			t.Parallel()
 
-			_, err := r.Instantiate(mustStruct(map[string]any{
+			_, err := r.Instantiate(ctx, mustStruct(map[string]any{
 				"$sub": 100,
 			}), nil)
 			assert.That(t, err, should.ErrLike(`input is not Struct`))
@@ -84,7 +87,7 @@ func TestInstantiate(t *testing.T) {
 		w := MustRegisterIn[*weirdStruct](r, "", OptStrictTopLevelFields())
 
 		t.Run(`extra namespaces`, func(t *testing.T) {
-			state, err := r.Instantiate(mustStruct(map[string]any{
+			state, err := r.Instantiate(ctx, mustStruct(map[string]any{
 				"$bogus": 100,
 			}), nil)
 			assert.That(t, err, should.ErrLike(nil))
@@ -99,10 +102,10 @@ func TestInstantiate(t *testing.T) {
 		_ = MustRegisterIn[*someStruct](r, "", OptStrictTopLevelFields())
 
 		t.Run(`extra namespaces`, func(t *testing.T) {
-			_, err := r.Instantiate(mustStruct(map[string]any{
+			_, err := r.Instantiate(ctx, mustStruct(map[string]any{
 				"$bogus": 100,
 			}), nil)
-			assert.That(t, err, should.ErrLike(`unknown field "$bogus"`))
+			assert.That(t, err, should.ErrLike(`had leftover fields`))
 		})
 	})
 }

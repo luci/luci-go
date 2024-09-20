@@ -34,12 +34,16 @@ type registerOptions struct {
 type unknownFieldSetting int
 
 const (
+	// logUnknownFields will cause the initial state parse to log WARNINGS for any
+	// fields that are unrecognized which aren't known by the Go struct or proto
+	// Message.
+	logUnknownFields unknownFieldSetting = iota
+
 	// rejectUnknownFields will cause the initial state to error out if it's asked
 	// to parse any fields which aren't known by the Go struct or proto Message.
 	//
-	// By default (i.e. 0 value UnknownFieldSetting), we will reject unknown fields.
-	//
-	// This prevents accidental typos, etc. from being undetected.
+	// Using rejectUnknownFields prevents accidental typos, etc. from being
+	// undetected.
 	//
 	// However, this means that migrations need to be handled with care:
 	//   * When adding a field, add it to the binary, and deploy the binary,
@@ -48,14 +52,7 @@ const (
 	//   or keep the old field name around in the Go struct to mark it as
 	//   deprecated. This will allow new binaries to continue to process
 	//   properties aimed at older binaries.
-	rejectUnknownFields unknownFieldSetting = iota
-
-	// ignoreUnknownFields will cause the initial state to ignore any fields which
-	// aren't known by the Go struct or proto Message.
-	//
-	// This makes migrations easier, but can also lead to typos being silently
-	// undetected.
-	ignoreUnknownFields
+	rejectUnknownFields
 )
 
 // A RegisterOption is the way to specify extra behavior when calling any of the
@@ -75,19 +72,22 @@ func OptSkipFrames(frames int) RegisterOption {
 	}
 }
 
-// OptIgnoreUnknownFields returns a RegisterOption which allows your registered
-// proto or struct to ignore unknown fields when parsing the input value.
+// OptRejectUnknownFields returns a RegisterOption which allows your registered
+// proto or struct to re'ect unknown fields when parsing the input value, rather
+// than just logging them as WARNINGS.
 //
-// By default this library will reject unknown fields when parsing the input,
-// which prevents accidental typos, etc. from being undetected.
+// By default this library will log warnings for all unknown fields when parsing
+// the input, which prevents accidental typos, etc. from being completely
+// undetected, but sometimes you need a guard which is even stricter than just
+// logging warnings.
 //
-// However, this means that migrations need to be handled with care:
-//   - When adding a field, add it to the binary, and deploy the binary,
-//     before adding the property to any configuration.
+// However, setting this option means that migrations need to be handled with care:
+//   - When adding a field, you MUST add it to the binary, and deploy ALL
+//     AFFECTED binaries, before setting the field.
 //   - When removing a field, make sure to mark the name as reserved in proto,
 //     or keep the old field name around in the Go struct to mark it as
 //     deprecated. This will allow new binaries to continue to process
-//     properties aimed at older binaries.
+//     properties set for older binaries.
 //
 // Example:
 //
@@ -96,22 +96,18 @@ func OptSkipFrames(frames int) RegisterOption {
 //	}
 //
 //	// by default
-//	{ "somefield": "hello" } => error
+//	{ "somefield": "hello" } => logs WARNING, Msg.some_field will be ""
 //
-//	// with OptIgnoreUnknownFields()
-//	{ "somefield": "hello" } => parses, but Msg.some_field will be ""
+//	// with OptRejectUnknownFields()
+//	{ "somefield": "hello" } => logs ERROR and quits
 //
-// Error if used in conjunction with OptStrictTopLevelFields.
 // Error for output-only properties.
-func OptIgnoreUnknownFields() RegisterOption {
+func OptRejectUnknownFields() RegisterOption {
 	return func(opts *registerOptions, namespace string, inT, outT reflect.Type) error {
-		if opts.strictTopLevel {
-			return errors.New(`OptStrictTopLevelFields is not compatible with OptIgnoreUnknownFields`)
-		}
 		if inT == nil {
-			return errors.New(`OptIgnoreUnknownFields is not compatible with output-only properties`)
+			return errors.New(`OptRejectUnknownFields is not compatible with output-only properties`)
 		}
-		opts.unknownFields = ignoreUnknownFields
+		opts.unknownFields = rejectUnknownFields
 		return nil
 	}
 }
@@ -127,9 +123,8 @@ func OptIgnoreUnknownFields() RegisterOption {
 // happen to not use.
 //
 // By specifying OptStrictTopLevelFields, ALL extra top-level fields not parsed
-// by the top-level namespace will be errors.
+// by the top-level namespace will be errors. Implies OptRejectUnknownFields().
 //
-// Error if used in conjunction with OptIgnoreUnknownFields.
 // Error if used on non-top-level registrations.
 // Error if top-level input type is a map type.
 // Error for output-only properties.
@@ -138,9 +133,6 @@ func OptStrictTopLevelFields() RegisterOption {
 		if namespace != "" {
 			return errors.Reason(`OptStrictTopLevelFields is not compatible with namespace %q`, namespace).Err()
 		}
-		if opts.unknownFields == ignoreUnknownFields {
-			return errors.New(`OptStrictTopLevelFields is not compatible with OptIgnoreUnknownFields`)
-		}
 		if inT == nil {
 			return errors.New(`OptStrictTopLevelFields is not compatible with output-only properties`)
 		}
@@ -148,7 +140,7 @@ func OptStrictTopLevelFields() RegisterOption {
 			return errors.Reason(`OptStrictTopLevelFields is not compatible with type %s`, inT).Err()
 		}
 		opts.strictTopLevel = true
-		return nil
+		return OptRejectUnknownFields()(opts, namespace, inT, outT)
 	}
 }
 

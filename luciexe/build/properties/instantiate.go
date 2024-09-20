@@ -15,10 +15,12 @@
 package properties
 
 import (
+	"context"
 	"reflect"
 
 	"google.golang.org/protobuf/types/known/structpb"
 
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 )
 
@@ -49,7 +51,7 @@ import (
 // independently. This characteristic is especially useful in tests, because you
 // can create a single Registry with a single set of registered properties, and
 // then generate a new State for each test case.
-func (r *Registry) Instantiate(input *structpb.Struct, notify func(version int64)) (*State, error) {
+func (r *Registry) Instantiate(ctx context.Context, input *structpb.Struct, notify func(version int64)) (*State, error) {
 	r.mu.Lock()
 	r.final = true
 	r.mu.Unlock()
@@ -61,7 +63,7 @@ func (r *Registry) Instantiate(input *structpb.Struct, notify func(version int64
 	}
 
 	var err error
-	s.initialData, err = r.parseInitialState(input)
+	s.initialData, err = r.parseInitialState(ctx, input)
 	if err != nil {
 		return nil, err
 	}
@@ -80,42 +82,44 @@ func (r *Registry) Instantiate(input *structpb.Struct, notify func(version int64
 	return s, nil
 }
 
-func (r *Registry) parseInitialState(input *structpb.Struct) (map[string]any, error) {
+func (r *Registry) parseInitialState(ctx context.Context, input *structpb.Struct) (map[string]any, error) {
 	if input == nil {
 		return nil, nil
 	}
 
 	ret := make(map[string]any, len(r.regs))
 
+	badNamespaces := stringset.New(0)
+
 	decode := func(reg registration, namespace string, sval *structpb.Struct) error {
 		if reg.parseInput != nil {
 			// We need to convert *Struct to the native type, allocate a new native
 			// type and then transform *Struct into this.
 
-			var err error
 			if reg.typIn.Kind() == reflect.Map {
 				// Map is tricky - parseInput requires *map, but we only want to retain
 				// the actual map, not a pointer to it.
 				mapPtr := reflect.New(reg.typIn)
 				mapPtr.Elem().Set(reflect.MakeMap(reg.typIn))
-				if err = reg.parseInput(sval, mapPtr.Interface()); err == nil {
-					ret[namespace] = mapPtr.Elem().Interface()
+				ret[namespace] = mapPtr.Elem().Interface()
+				badExtras, err := reg.parseInput(ctx, namespace, reg.unknown, sval, mapPtr.Interface())
+				if badExtras {
+					badNamespaces.Add(namespace)
+				}
+				if err != nil {
+					return err
 				}
 			} else {
 				// For structs we just use *struct all the way through.
 				structPtr := reflect.New(reg.typIn.Elem()).Interface()
-				if err = reg.parseInput(sval, structPtr); err == nil {
-					ret[namespace] = structPtr
+				ret[namespace] = structPtr
+				badExtras, err := reg.parseInput(ctx, namespace, reg.unknown, sval, structPtr)
+				if badExtras {
+					badNamespaces.Add(namespace)
 				}
-			}
-			if err != nil {
-				fmtBit := "[%q]"
-				name := namespace
-				if name == "" {
-					fmtBit = "[%s]"
-					name = "top-level"
+				if err != nil {
+					return err
 				}
-				return errors.Annotate(err, "Registry.Initialize"+fmtBit, name).Err()
 			}
 		} else {
 			// The native type is *structpb.Struct, so pass it through directly.
@@ -152,7 +156,8 @@ func (r *Registry) parseInitialState(input *structpb.Struct) (map[string]any, er
 			// it into ret[namespace].
 			if sval := val.GetStructValue(); sval != nil {
 				if err := decode(reg, namespace, sval); err != nil {
-					return nil, err
+					return nil, errors.Annotate(
+						err, "properties.Registry.Instantiate - input[%q]", namespace).Err()
 				}
 			} else {
 				return nil, errors.Reason(
@@ -174,7 +179,8 @@ func (r *Registry) parseInitialState(input *structpb.Struct) (map[string]any, er
 	if len(myStruct.Fields) > 0 {
 		if topLevelReg != nil {
 			if err := decode(*topLevelReg, "", myStruct); err != nil {
-				return nil, err
+				return nil, errors.Annotate(
+					err, "properties.Registry.Instantiate - input[top-level]").Err()
 			}
 		} else {
 			leftovers := make([]string, 0, len(myStruct.Fields))
@@ -185,6 +191,10 @@ func (r *Registry) parseInitialState(input *structpb.Struct) (map[string]any, er
 				"properties.Registry.Instantiate - leftover top-level properties and no top-level property registered: %q.",
 				leftovers).Err()
 		}
+	}
+
+	if badNamespaces.Len() > 0 {
+		return nil, errors.Reason("namespaces %q had leftover fields (see log)", badNamespaces.ToSlice()).Err()
 	}
 
 	return ret, nil

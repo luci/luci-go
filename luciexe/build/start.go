@@ -88,6 +88,7 @@ func Start(ctx context.Context, initial *bbpb.Build, opts ...StartOption) (*Stat
 		}
 
 		pstate, err := Properties.Instantiate(
+			ctx,
 			initial.GetInput().GetProperties(),
 			notifyFn)
 

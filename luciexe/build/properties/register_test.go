@@ -15,6 +15,7 @@
 package properties
 
 import (
+	"context"
 	"encoding/json"
 	"reflect"
 	"testing"
@@ -25,6 +26,8 @@ import (
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging/memlogger"
 	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -48,25 +51,50 @@ func TestRegisterOptions(t *testing.T) {
 		assert.That(t, regs["$b"].InputLocation, should.NotContainSubstring("register_test.go"))
 	})
 
-	t.Run(`OptIgnoreUnknownFields`, func(t *testing.T) {
+	t.Run(`OptRejectUnknownFields`, func(t *testing.T) {
 		t.Parallel()
 
 		r := Registry{}
-		s := MustRegister[*struct {
+		_ = MustRegister[*struct {
 			Field int
-		}](&r, "$ns", OptIgnoreUnknownFields())
+		}](&r, "$ns", OptRejectUnknownFields())
 
-		state, err := r.Instantiate(mustStruct(map[string]any{
+		ctx, ml := mctx()
+
+		_, err := r.Instantiate(ctx, mustStruct(map[string]any{
 			"$ns": map[string]any{
 				"Field": 100,
 				"other": "hi",
 			},
 		}), nil)
-		assert.That(t, err, should.ErrLike(nil))
+		assert.That(t, err, should.ErrLike(`had leftover fields`))
+		assert.That(t, ml.Messages(), should.Match([]memlogger.LogEntry{
+			{Level: logging.Error, Msg: `Unknown fields while parsing property namespace "$ns": {"other":"hi"}`, CallDepth: 2},
+		}))
+	})
 
-		assert.That(t, s.GetInputFromState(state), should.Match(&struct {
+	t.Run(`OptRejectUnknownFields (top level)`, func(t *testing.T) {
+		t.Parallel()
+
+		r := Registry{}
+		_ = MustRegister[*struct {
 			Field int
-		}{Field: 100}))
+		}](&r, "", OptRejectUnknownFields())
+
+		ctx, ml := mctx()
+
+		_, err := r.Instantiate(ctx, mustStruct(map[string]any{
+			"hello": 100,
+			"Field": 20,
+			"$ns": map[string]any{ // ignored
+				"Field": 100,
+				"other": "hi",
+			},
+		}), nil)
+		assert.That(t, err, should.ErrLike(`had leftover fields`))
+		assert.That(t, ml.Messages(), should.Match([]memlogger.LogEntry{
+			{Level: logging.Error, Msg: `Unknown fields while parsing property namespace "": {"hello":100}`, CallDepth: 2},
+		}))
 	})
 
 	t.Run(`OptStrictTopLevelFields`, func(t *testing.T) {
@@ -75,12 +103,17 @@ func TestRegisterOptions(t *testing.T) {
 		r := Registry{}
 		MustRegister[*struct{}](&r, "", OptStrictTopLevelFields())
 
-		_, err := r.Instantiate(mustStruct(map[string]any{
+		ctx, ml := mctx()
+
+		_, err := r.Instantiate(ctx, mustStruct(map[string]any{
 			"$ns": map[string]any{
 				"stuff": 100,
 			},
 		}), nil)
-		assert.That(t, err, should.ErrLike(`unknown field "$ns"`))
+		assert.That(t, err, should.ErrLike(`had leftover fields`))
+		assert.That(t, ml.Messages(), should.Match([]memlogger.LogEntry{
+			{Level: logging.Error, Msg: `Unknown fields while parsing property namespace "": {"$ns":{"stuff":100}}`, CallDepth: 2},
+		}))
 	})
 
 	t.Run(`OptUseJSONNames`, func(t *testing.T) {
@@ -89,7 +122,7 @@ func TestRegisterOptions(t *testing.T) {
 		r := Registry{}
 		s := MustRegister[*buildbucketpb.Build](&r, "", OptProtoUseJSONNames())
 
-		state, err := r.Instantiate(nil, nil)
+		state, err := r.Instantiate(context.Background(), nil, nil)
 		assert.That(t, err, should.ErrLike(nil))
 
 		s.MutateOutputFromState(state, func(b *buildbucketpb.Build) (mutated bool) {
@@ -118,7 +151,7 @@ func TestRegisterOptions(t *testing.T) {
 
 		r := Registry{}
 		p := MustRegisterIn[*buildbucketpb.Build](&r, "")
-		state, err := r.Instantiate(mustStruct(map[string]any{
+		state, err := r.Instantiate(context.Background(), mustStruct(map[string]any{
 			"id": 12345,
 		}), nil)
 		assert.That(t, err, should.ErrLike(nil))
@@ -133,7 +166,7 @@ func TestRegisterOptions(t *testing.T) {
 
 		r := Registry{}
 		p := MustRegisterOut[*buildbucketpb.Build](&r, "")
-		state, err := r.Instantiate(nil, nil)
+		state, err := r.Instantiate(context.Background(), nil, nil)
 		assert.That(t, err, should.ErrLike(nil))
 
 		p.MutateOutputFromState(state, func(b *buildbucketpb.Build) (mutated bool) {
@@ -153,7 +186,7 @@ func TestRegister(t *testing.T) {
 		top := MustRegister[*buildbucketpb.Build](&r, "")
 		sub := MustRegister[*buildbucketpb.Build](&r, "$sub")
 
-		state, err := r.Instantiate(nil, nil)
+		state, err := r.Instantiate(context.Background(), nil, nil)
 		assert.That(t, err, should.ErrLike(nil))
 
 		top.MutateOutputFromState(state, func(b *buildbucketpb.Build) (mutated bool) {
@@ -190,7 +223,7 @@ func TestRegister(t *testing.T) {
 			ID int
 		}](&r, "$sub")
 
-		state, err := r.Instantiate(nil, nil)
+		state, err := r.Instantiate(context.Background(), nil, nil)
 		assert.That(t, err, should.ErrLike(nil))
 
 		top.MutateOutputFromState(state, func(s *struct{ ID int }) (mutated bool) {
@@ -219,7 +252,7 @@ func TestRegister(t *testing.T) {
 		r := Registry{}
 		top := MustRegisterInOut[*struct{ In int }, *struct{ Out int }](&r, "")
 
-		state, err := r.Instantiate(mustStruct(map[string]any{
+		state, err := r.Instantiate(context.Background(), mustStruct(map[string]any{
 			"In": 100,
 		}), nil)
 		assert.That(t, err, should.ErrLike(nil))
@@ -247,7 +280,7 @@ func TestRegister_Errors(t *testing.T) {
 		t.Parallel()
 
 		r := Registry{}
-		_, err := r.Instantiate(nil, nil)
+		_, err := r.Instantiate(context.Background(), nil, nil)
 		assert.That(t, err, should.ErrLike(nil))
 
 		assert.That(t, func() {
@@ -315,7 +348,7 @@ func TestTopLevelGeneric(t *testing.T) {
 		top := MustRegister[*structpb.Struct](&r, "")
 		mid := MustRegister[*structpb.Struct](&r, "$something")
 
-		state, err := r.Instantiate(mustStruct(map[string]any{
+		state, err := r.Instantiate(context.Background(), mustStruct(map[string]any{
 			"random": "junk",
 			"$something": map[string]any{
 				"a":    100,
@@ -343,7 +376,7 @@ func TestTopLevelGeneric(t *testing.T) {
 		top := MustRegister[map[string]any](&r, "")
 		mid := MustRegister[map[string]any](&r, "$something", OptJSONUseNumber())
 
-		state, err := r.Instantiate(mustStruct(map[string]any{
+		state, err := r.Instantiate(context.Background(), mustStruct(map[string]any{
 			"random": "junk",
 			"$something": map[string]any{
 				"a":    100,
@@ -524,20 +557,8 @@ func TestRegisterOptionsErrors(t *testing.T) {
 		}
 	}
 
-	t.Run(`OptIgnoreUnknownFields + OptStrictTopLevelFields`, run(tcase{
-		"", ro{OptIgnoreUnknownFields(), OptStrictTopLevelFields()},
-		&struct{}{}, nil,
-		"not compatible",
-	}))
-
-	t.Run(`OptStrictTopLevelFields + OptIgnoreUnknownFields`, run(tcase{
-		"", ro{OptStrictTopLevelFields(), OptIgnoreUnknownFields()},
-		&struct{}{}, nil,
-		"not compatible",
-	}))
-
-	t.Run(`OptIgnoreUnknownFields for output-only`, run(tcase{
-		"", ro{OptIgnoreUnknownFields()},
+	t.Run(`OptRejectUnknownFields for output-only`, run(tcase{
+		"", ro{OptRejectUnknownFields()},
 		nil, &struct{}{},
 		"not compatible with output-only",
 	}))

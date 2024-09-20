@@ -82,13 +82,14 @@ func registerInImpl(o registerOptions, typIn reflect.Type, namespace string, r *
 	}
 
 	reg.typIn = typIn
+	reg.unknown = o.unknownFields
 
 	if typIn.Implements(protoMessageType) {
 		if typIn != structPBType {
-			reg.parseInput = protoFromStruct(o.unknownFields)
+			reg.parseInput = protoFromStruct
 		}
 	} else {
-		reg.parseInput = jsonFromStruct(o.unknownFields, o.jsonUseNumber)
+		reg.parseInput = jsonFromStruct(o.jsonUseNumber, typIn.Kind() != reflect.Map)
 	}
 
 	rprop.registry = r

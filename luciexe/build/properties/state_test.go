@@ -15,6 +15,7 @@
 package properties
 
 import (
+	"context"
 	"strconv"
 	"sync"
 	"testing"
@@ -34,7 +35,7 @@ func TestStateSerialize(t *testing.T) {
 
 		r := Registry{}
 		p := MustRegister[*struct{ ID int }](&r, "$sub")
-		state, err := r.Instantiate(nil, nil)
+		state, err := r.Instantiate(context.Background(), nil, nil)
 
 		assert.That(t, err, should.ErrLike(nil))
 		p.MutateOutputFromState(state, func(s *struct{ ID int }) (mutated bool) {
@@ -58,7 +59,7 @@ func TestStateSerialize(t *testing.T) {
 		sub := MustRegister[*struct {
 			ID int `json:",omitempty"`
 		}](&r, "$sub")
-		state, err := r.Instantiate(nil, nil)
+		state, err := r.Instantiate(context.Background(), nil, nil)
 
 		assert.That(t, err, should.ErrLike(nil))
 		top.MutateOutputFromState(state, func(s *struct{ ID int }) (mutated bool) {
@@ -97,7 +98,7 @@ func TestStateSerialize(t *testing.T) {
 			t.Parallel()
 
 			r := Registry{}
-			_, err := r.Instantiate(mustStruct(map[string]any{
+			_, err := r.Instantiate(context.Background(), mustStruct(map[string]any{
 				"extra": 100,
 			}), nil)
 			assert.That(t, err, should.ErrLike("no top-level property registered"))
@@ -108,7 +109,7 @@ func TestStateSerialize(t *testing.T) {
 
 			r := Registry{}
 			top := MustRegister[*structpb.Struct](&r, "")
-			state, err := r.Instantiate(mustStruct(map[string]any{
+			state, err := r.Instantiate(context.Background(), mustStruct(map[string]any{
 				"extra": 100,
 			}), nil)
 			assert.That(t, err, should.ErrLike(nil))
@@ -122,7 +123,7 @@ func TestStateSerialize(t *testing.T) {
 
 			r := Registry{}
 			top := MustRegister[map[string]any](&r, "")
-			state, err := r.Instantiate(mustStruct(map[string]any{
+			state, err := r.Instantiate(context.Background(), mustStruct(map[string]any{
 				"extra": 100,
 			}), nil)
 			assert.That(t, err, should.ErrLike(nil))
@@ -140,7 +141,7 @@ func TestStateSerialize(t *testing.T) {
 		top := MustRegister[map[string]any](&r, "")
 		mid := MustRegister[map[string]any](&r, "$mid")
 
-		state, err := r.Instantiate(nil, nil)
+		state, err := r.Instantiate(context.Background(), nil, nil)
 		assert.That(t, err, should.ErrLike(nil))
 
 		top.MutateOutputFromState(state, func(m map[string]any) (mutated bool) {
@@ -175,7 +176,7 @@ func TestStateSerialize(t *testing.T) {
 		r := Registry{}
 		top := MustRegisterOut[map[string]string](&r, "")
 		sub := MustRegisterOut[map[string]string](&r, "$sub")
-		state, err := r.Instantiate(nil, nil)
+		state, err := r.Instantiate(context.Background(), nil, nil)
 		assert.That(t, err, should.ErrLike(nil))
 
 		out, _, _, err := state.Serialize()
@@ -218,7 +219,7 @@ func TestStateNotify(t *testing.T) {
 
 	r := Registry{}
 	top := MustRegister[map[string]any](&r, "")
-	state, err := r.Instantiate(nil, bumpVers)
+	state, err := r.Instantiate(context.Background(), nil, bumpVers)
 	assert.That(t, err, should.ErrLike(nil))
 
 	top.MutateOutputFromState(state, func(m map[string]any) (mutated bool) {
@@ -253,7 +254,7 @@ func TestConcurrentManipulation(t *testing.T) {
 
 	ch := make(chan int64, 100)
 
-	state, err := r.Instantiate(nil, func(version int64) {
+	state, err := r.Instantiate(context.Background(), nil, func(version int64) {
 		ch <- version
 	})
 	assert.That(t, err, should.ErrLike(nil))

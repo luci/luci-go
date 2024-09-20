@@ -14,11 +14,14 @@
 package properties
 
 import (
+	"context"
 	"testing"
 
 	"google.golang.org/protobuf/types/known/structpb"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging/memlogger"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
@@ -29,34 +32,41 @@ func TestProtoFromStruct(t *testing.T) {
 	t.Run(`strict`, func(t *testing.T) {
 		t.Parallel()
 
-		fn := protoFromStruct(rejectUnknownFields)
-
 		target := &buildbucketpb.Build{}
+		ctx, ml := mctx()
 
-		assert.That(t, fn(mustStruct(map[string]any{
+		badExtras, err := protoFromStruct(ctx, "", rejectUnknownFields, mustStruct(map[string]any{
 			"id": 1234,
-		}), target), should.ErrLike(nil))
+		}), target)
+
+		assert.That(t, badExtras, should.BeFalse)
+		assert.That(t, err, should.ErrLike(nil))
 		assert.That(t, target, should.Match(&buildbucketpb.Build{
 			Id: 1234,
 		}))
 
-		assert.That(t, fn(mustStruct(map[string]any{
+		badExtras, err = protoFromStruct(ctx, "", rejectUnknownFields, mustStruct(map[string]any{
 			"morple": 100,
 			"id":     1234,
-		}), target), should.ErrLike(`unknown field "morple"`))
+		}), target)
+		assert.That(t, badExtras, should.BeTrue)
+		assert.That(t, err, should.ErrLike(nil))
+		assert.That(t, ml.Messages(), should.Match([]memlogger.LogEntry{
+			{Level: logging.Error, Msg: `Unknown fields while parsing property namespace "": {"morple":100}`, CallDepth: 2},
+		}))
 	})
 
 	t.Run(`ignore unknown`, func(t *testing.T) {
 		t.Parallel()
 
-		fn := protoFromStruct(ignoreUnknownFields)
-
 		target := &buildbucketpb.Build{}
 
-		assert.That(t, fn(mustStruct(map[string]any{
+		badExtras, err := protoFromStruct(context.Background(), "", logUnknownFields, mustStruct(map[string]any{
 			"morple": 100,
 			"id":     1234,
-		}), target), should.ErrLike(nil))
+		}), target)
+		assert.That(t, badExtras, should.BeFalse)
+		assert.That(t, err, should.ErrLike(nil))
 		assert.That(t, target, should.Match(&buildbucketpb.Build{
 			Id: 1234,
 		}))
@@ -78,7 +88,7 @@ func TestStructPBPassthrough(t *testing.T) {
 		},
 	})
 
-	state, err := r.Instantiate(rawStruct, nil)
+	state, err := r.Instantiate(context.Background(), rawStruct, nil)
 	assert.That(t, err, should.ErrLike(nil))
 
 	// should.Equal makes sure that the original object was passed through.

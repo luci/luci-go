@@ -15,6 +15,7 @@
 package properties
 
 import (
+	"context"
 	"reflect"
 	"sync"
 
@@ -26,19 +27,42 @@ import (
 	"go.chromium.org/luci/common/errors"
 )
 
-func protoFromStruct(unknownFields unknownFieldSetting) func(s *structpb.Struct, target any) error {
-	return func(s *structpb.Struct, target any) error {
-		jsonBlob, err := protojson.Marshal(s)
-		if err != nil {
-			return errors.Annotate(err, "protoFromStruct[%T]", target).Err()
-		}
-		opt := protojson.UnmarshalOptions{
-			DiscardUnknown: unknownFields == ignoreUnknownFields,
-		}
-		return errors.Annotate(
-			opt.Unmarshal(jsonBlob, target.(proto.Message)), "protoFromStruct[%T]", target).Err()
+func protoFromStruct(ctx context.Context, ns string, unknown unknownFieldSetting, s *structpb.Struct, target any) (badExtras bool, err error) {
+	jsonBlob, err := protojson.Marshal(s)
+	if err != nil {
+		return false, errors.Annotate(err, "impossible - could not marshal proto to JSONPB").Err()
 	}
+	opt := protojson.UnmarshalOptions{DiscardUnknown: true}
+	if err = opt.Unmarshal(jsonBlob, target.(proto.Message)); err != nil {
+		return false, errors.Annotate(err, "protoFromStruct[%T]", target).Err()
+	}
+
+	// serialize target out twice, once with proto names, and once with json
+	// names, and subtract BOTH from `s`. This is because when we use
+	// `opt.Unmarshal` it will accept BOTH names for a given field.
+	//
+	// TODO: It would be REALLY NICE if UnmarshalOptions had a way to return the
+	// unrecognized data.
+	//
+	// TODO: Implement a custom subtraction option for protos?
+	mo := protojson.MarshalOptions{}
+	toSubtract := make([]*structpb.Struct, 2)
+	for i, useProtoNames := range []bool{true, false} {
+		mo.UseProtoNames = useProtoNames
+		// we re-use jsonBlob to help cut down on allocations.
+		raw, err := mo.MarshalAppend(jsonBlob[:0], target.(proto.Message))
+		if err != nil {
+			return false, errors.Annotate(err, "impossible - could not marshal proto to JSONPB").Err()
+		}
+		toSubtract[i] = &structpb.Struct{}
+		if err := protojson.Unmarshal(raw, toSubtract[i]); err != nil {
+			return false, errors.Annotate(err, "impossible - could not unmarshal JSON to Struct").Err()
+		}
+	}
+	return handleInputLogging(ctx, ns, jsonBlob, unknown, s, toSubtract)
 }
+
+var _ inputParser = protoFromStruct
 
 func protoToJSON(useJSONNames bool) func(any) []byte {
 	return func(data any) []byte {

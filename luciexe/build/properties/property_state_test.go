@@ -18,9 +18,12 @@ import (
 	"context"
 	"testing"
 
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/structpb"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging/memlogger"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
@@ -31,6 +34,19 @@ func mustStruct(d map[string]any) *structpb.Struct {
 		panic(err)
 	}
 	return ret
+}
+
+func mustJSON(j string) *structpb.Struct {
+	ret := &structpb.Struct{}
+	if err := protojson.Unmarshal([]byte(j), ret); err != nil {
+		panic(err)
+	}
+	return ret
+}
+
+func mctx() (context.Context, *memlogger.MemLogger) {
+	ret := memlogger.Use(context.Background())
+	return ret, logging.Get(ret).(*memlogger.MemLogger)
 }
 
 func TestPropertyStateProto(t *testing.T) {
@@ -96,11 +112,12 @@ func TestRegisteredProto(t *testing.T) {
 
 	r := Registry{}
 	rp := MustRegister[*buildbucketpb.Build](&r, "")
+	ctx := context.Background()
 
 	t.Run(`Initial`, func(t *testing.T) {
 		t.Parallel()
 
-		s, err := r.Instantiate(mustStruct(map[string]any{
+		s, err := r.Instantiate(ctx, mustStruct(map[string]any{
 			"id": 12345,
 		}), nil)
 		assert.That(t, err, should.ErrLike(nil))
@@ -110,7 +127,7 @@ func TestRegisteredProto(t *testing.T) {
 	t.Run(`InitialCtx`, func(t *testing.T) {
 		t.Parallel()
 
-		s, err := r.Instantiate(mustStruct(map[string]any{
+		s, err := r.Instantiate(ctx, mustStruct(map[string]any{
 			"id": 12345,
 		}), nil)
 		assert.That(t, err, should.ErrLike(nil))
@@ -124,7 +141,7 @@ func TestRegisteredProto(t *testing.T) {
 	t.Run(`Interact`, func(t *testing.T) {
 		t.Parallel()
 
-		s, err := r.Instantiate(nil, nil)
+		s, err := r.Instantiate(ctx, nil, nil)
 
 		assert.That(t, err, should.ErrLike(nil))
 
@@ -147,7 +164,7 @@ func TestRegisteredProto(t *testing.T) {
 	t.Run(`InteractCtx`, func(t *testing.T) {
 		t.Parallel()
 
-		s, err := r.Instantiate(nil, nil)
+		s, err := r.Instantiate(ctx, nil, nil)
 		assert.That(t, err, should.ErrLike(nil))
 
 		ctx, err := s.SetInContext(context.Background())
@@ -174,6 +191,7 @@ func TestRegisteredStruct(t *testing.T) {
 	t.Parallel()
 
 	r := Registry{}
+	ctx := context.Background()
 
 	type myCustomStruct struct {
 		Field int
@@ -184,7 +202,7 @@ func TestRegisteredStruct(t *testing.T) {
 	t.Run(`Initial`, func(t *testing.T) {
 		t.Parallel()
 
-		s, err := r.Instantiate(mustStruct(map[string]any{
+		s, err := r.Instantiate(ctx, mustStruct(map[string]any{
 			"Field": 12345,
 		}), nil)
 		assert.That(t, err, should.ErrLike(nil))
@@ -194,7 +212,7 @@ func TestRegisteredStruct(t *testing.T) {
 	t.Run(`InitialCtx`, func(t *testing.T) {
 		t.Parallel()
 
-		s, err := r.Instantiate(mustStruct(map[string]any{
+		s, err := r.Instantiate(ctx, mustStruct(map[string]any{
 			"Field": 12345,
 		}), nil)
 		assert.That(t, err, should.ErrLike(nil))
@@ -208,7 +226,7 @@ func TestRegisteredStruct(t *testing.T) {
 	t.Run(`OutputValue`, func(t *testing.T) {
 		t.Parallel()
 
-		s, err := r.Instantiate(nil, nil)
+		s, err := r.Instantiate(ctx, nil, nil)
 
 		assert.That(t, err, should.ErrLike(nil))
 
@@ -231,7 +249,7 @@ func TestRegisteredStruct(t *testing.T) {
 	t.Run(`OutputValueCtx`, func(t *testing.T) {
 		t.Parallel()
 
-		s, err := r.Instantiate(nil, nil)
+		s, err := r.Instantiate(ctx, nil, nil)
 		assert.That(t, err, should.ErrLike(nil))
 
 		ctx, err := s.SetInContext(context.Background())

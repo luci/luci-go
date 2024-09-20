@@ -15,6 +15,7 @@
 package properties
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 	"sync"
@@ -24,12 +25,13 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 )
 
-type inputParser func(s *structpb.Struct, target any) error
+type inputParser func(ctx context.Context, ns string, unknown unknownFieldSetting, s *structpb.Struct, target any) (badExtras bool, err error)
 type outputSerializer func(source any) []byte
 
 type registration struct {
 	typIn      reflect.Type
 	parseInput inputParser // nil for no input or *structpb.Struct
+	unknown    unknownFieldSetting
 
 	typOut          reflect.Type
 	serializeOutput outputSerializer // nil for no output or *structpb.Struct

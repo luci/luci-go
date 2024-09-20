@@ -74,7 +74,7 @@ func ExampleRegistry() {
 		panic(err)
 	}
 
-	state, err := MyRegistry.Instantiate(rawInputProperties, nil)
+	state, err := MyRegistry.Instantiate(context.Background(), rawInputProperties, nil)
 	if err != nil {
 		panic(err)
 	}

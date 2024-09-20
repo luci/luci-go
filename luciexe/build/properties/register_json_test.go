@@ -15,9 +15,12 @@
 package properties
 
 import (
+	"context"
+	"encoding/json"
 	"testing"
 
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging/memlogger"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
@@ -25,39 +28,70 @@ import (
 func TestStructFromStruct(t *testing.T) {
 	t.Parallel()
 
+	type someStruct struct {
+		ID int `json:"id"`
+	}
+
 	t.Run(`strict`, func(t *testing.T) {
 		t.Parallel()
 
-		fn := protoFromStruct(rejectUnknownFields)
+		target := &someStruct{}
+		ctx, ml := mctx()
 
-		target := &buildbucketpb.Build{}
-
-		assert.That(t, fn(mustStruct(map[string]any{
+		badExtras, err := jsonFromStruct(false, true)(ctx, "", rejectUnknownFields, mustStruct(map[string]any{
 			"id": 1234,
-		}), target), should.ErrLike(nil))
-		assert.That(t, target, should.Match(&buildbucketpb.Build{
-			Id: 1234,
+		}), target)
+		assert.That(t, badExtras, should.BeFalse)
+		assert.That(t, err, should.ErrLike(nil))
+		assert.That(t, target, should.Match(&someStruct{
+			ID: 1234,
 		}))
 
-		assert.That(t, fn(mustStruct(map[string]any{
+		badExtras, err = jsonFromStruct(false, true)(ctx, "", rejectUnknownFields, mustStruct(map[string]any{
 			"morple": 100,
 			"id":     1234,
-		}), target), should.ErrLike(`unknown field "morple"`))
+		}), target)
+		assert.That(t, badExtras, should.BeTrue)
+		assert.That(t, err, should.ErrLike(nil))
+		assert.That(t, ml.Messages(), should.Match([]memlogger.LogEntry{
+			{Level: logging.Error, Msg: `Unknown fields while parsing property namespace "": {"morple":100}`, CallDepth: 2},
+		}))
 	})
 
 	t.Run(`ignore unknown`, func(t *testing.T) {
 		t.Parallel()
 
-		fn := protoFromStruct(ignoreUnknownFields)
+		target := &someStruct{}
 
-		target := &buildbucketpb.Build{}
+		ctx, ml := mctx()
 
-		assert.That(t, fn(mustStruct(map[string]any{
+		badExtras, err := jsonFromStruct(false, true)(ctx, "", logUnknownFields, mustStruct(map[string]any{
 			"morple": 100,
 			"id":     1234,
-		}), target), should.ErrLike(nil))
-		assert.That(t, target, should.Match(&buildbucketpb.Build{
-			Id: 1234,
+		}), target)
+		assert.That(t, badExtras, should.BeFalse)
+		assert.That(t, err, should.ErrLike(nil))
+		assert.That(t, target, should.Match(&someStruct{
+			ID: 1234,
+		}))
+		assert.That(t, ml.Messages(), should.Match([]memlogger.LogEntry{
+			{Level: logging.Warning, Msg: `Unknown fields while parsing property namespace "": {"morple":100}`, CallDepth: 2},
+		}))
+	})
+
+	t.Run(`maps don't check for overlap`, func(t *testing.T) {
+		t.Parallel()
+
+		target := map[string]any{}
+		badExtras, err := jsonFromStruct(true, false)(context.Background(), "", logUnknownFields, mustStruct(map[string]any{
+			"morple": 100,
+			"id":     "hi",
+		}), &target)
+		assert.That(t, badExtras, should.BeFalse)
+		assert.That(t, err, should.ErrLike(nil))
+		assert.That(t, target, should.Match(map[string]any{
+			"morple": json.Number("100"),
+			"id":     "hi",
 		}))
 	})
 }

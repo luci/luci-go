@@ -16,6 +16,7 @@ package properties
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"reflect"
 	"strings"
@@ -28,20 +29,33 @@ import (
 	"go.chromium.org/luci/common/errors"
 )
 
-func jsonFromStruct(unknownFields unknownFieldSetting, jsonUseNumber bool) func(s *structpb.Struct, target any) error {
-	return func(s *structpb.Struct, target any) error {
+func jsonFromStruct(jsonUseNumber bool, checkUnused bool) func(ctx context.Context, ns string, unknown unknownFieldSetting, s *structpb.Struct, target any) (badExtras bool, err error) {
+	return func(ctx context.Context, ns string, unknown unknownFieldSetting, s *structpb.Struct, target any) (badExtras bool, err error) {
 		jsonBlob, err := protojson.Marshal(s)
 		if err != nil {
-			return errors.Annotate(err, "jsonFromStruct[%T]", target).Err()
+			return false, errors.Annotate(err, "jsonFromStruct[%T]", target).Err()
 		}
 		dec := json.NewDecoder(bytes.NewReader(jsonBlob))
 		if jsonUseNumber {
 			dec.UseNumber()
 		}
-		if unknownFields == rejectUnknownFields {
-			dec.DisallowUnknownFields()
+		if err := dec.Decode(target); err != nil {
+			return false, errors.Annotate(err, "jsonFromStruct[%T]", target).Err()
 		}
-		return errors.Annotate(dec.Decode(target), "jsonFromStruct[%T]", target).Err()
+		if !checkUnused {
+			return false, nil
+		}
+
+		toSubtract := []*structpb.Struct{{}}
+		buf := bytes.NewBuffer(jsonBlob[:0])
+		if err := json.NewEncoder(buf).Encode(target); err != nil {
+			return false, errors.Annotate(err, "impossible - could not marshal target to JSON").Err()
+		}
+		if err := protojson.Unmarshal(buf.Bytes(), toSubtract[0]); err != nil {
+			return false, errors.Annotate(err, "impossible - could not unmarshal JSON to Struct").Err()
+		}
+
+		return handleInputLogging(ctx, ns, jsonBlob, unknown, s, toSubtract)
 	}
 }
 
