@@ -28,7 +28,7 @@ import (
 )
 
 // CancelTask implements the corresponding RPC method.
-func (t *TasksServer) CancelTask(ctx context.Context, req *apipb.TaskCancelRequest) (*apipb.CancelResponse, error) {
+func (srv *TasksServer) CancelTask(ctx context.Context, req *apipb.TaskCancelRequest) (*apipb.CancelResponse, error) {
 	taskRequest, err := FetchTaskRequest(ctx, req.TaskId)
 	if err != nil {
 		return nil, err
@@ -39,10 +39,10 @@ func (t *TasksServer) CancelTask(ctx context.Context, req *apipb.TaskCancelReque
 	}
 
 	can := &tasks.Cancellation{
-		TaskID:                  req.TaskId,
-		KillRunning:             req.KillRunning,
-		TaskRequest:             taskRequest,
-		TestCancellationTQTasks: t.testCancellationTQTasks,
+		TaskID:         req.TaskId,
+		KillRunning:    req.KillRunning,
+		TaskRequest:    taskRequest,
+		LifecycleTasks: srv.TaskLifecycleTasks,
 	}
 
 	canceled, wasRuning, err := can.Run(ctx)

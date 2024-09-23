@@ -193,7 +193,10 @@ func main() {
 		})
 
 		// Handlers for TQ tasks involved in task lifecycle.
-		tasks.RegisterTQTasks(&tq.Default)
+		taskLifeCycle := &tasks.LifecycleTasksViaTQ{
+			Dispatcher: &tq.Default,
+		}
+		taskLifeCycle.RegisterTQTasks()
 
 		// Helpers for running local integration tests. They fake some of Swarming
 		// Python server behavior.
@@ -259,7 +262,10 @@ func main() {
 
 		// Register gRPC server implementations.
 		apipb.RegisterBotsServer(srv, &rpcs.BotsServer{BotQuerySplitMode: model.SplitOptimally})
-		apipb.RegisterTasksServer(srv, &rpcs.TasksServer{TaskQuerySplitMode: model.SplitOptimally})
+		apipb.RegisterTasksServer(srv, &rpcs.TasksServer{
+			TaskQuerySplitMode: model.SplitOptimally,
+			TaskLifecycleTasks: taskLifeCycle,
+		})
 		apipb.RegisterSwarmingServer(srv, &rpcs.SwarmingServer{
 			ServerVersion: srv.Options.ImageVersion(),
 		})

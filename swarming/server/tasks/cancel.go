@@ -17,8 +17,6 @@ package tasks
 import (
 	"context"
 	"fmt"
-	"sort"
-	"sync"
 
 	"golang.org/x/sync/errgroup"
 
@@ -26,25 +24,14 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/server/tq"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	"go.chromium.org/luci/swarming/server/model"
-	"go.chromium.org/luci/swarming/server/notifications"
-	"go.chromium.org/luci/swarming/server/rbe"
-	"go.chromium.org/luci/swarming/server/tasks/taskspb"
 )
 
 const maxBatchCancellationRetries = 10
 
 var taskUnknownTag = errors.BoolTag{Key: errors.NewTagKey("unknown task")}
-
-type TestCancellationTQTasks struct {
-	// test functions for tq tasks. Should only be used in tests.
-	testEnqueueRBECancel         func(context.Context, *model.TaskRequest, *model.TaskToRun) error
-	testSendOnTaskUpdate         func(context.Context, *model.TaskRequest, *model.TaskResultSummary) error
-	testEnqueueChildCancellation func(context.Context, string) error
-}
 
 // Cancellation contains information to cancel a task.
 type Cancellation struct {
@@ -60,7 +47,8 @@ type Cancellation struct {
 	// KillRunning is true.
 	BotID string
 
-	TestCancellationTQTasks
+	// LifecycleTasks is used to emit TQ tasks related to Swarming task lifecycle.
+	LifecycleTasks LifecycleTasks
 }
 
 func (c *Cancellation) validate() error {
@@ -204,7 +192,7 @@ func (c *Cancellation) RunInTxn(ctx context.Context) (bool, error) {
 
 		toRun.Consume("")
 		toPut = append(toPut, toRun)
-		if err = c.enqueueRBECancel(ctx, toRun); err != nil {
+		if err = c.LifecycleTasks.enqueueRBECancel(ctx, tr, toRun); err != nil {
 			return errors.Annotate(err, "failed to cancel RBE resevation for task %s", c.TaskID).Err()
 		}
 		return nil
@@ -233,7 +221,7 @@ func (c *Cancellation) RunInTxn(ctx context.Context) (bool, error) {
 		trr.Modified = now
 		toPut = append(toPut, trr)
 
-		return c.enqueueChildCancellation(ctx)
+		return c.LifecycleTasks.enqueueChildCancellation(ctx, c.TaskID)
 	}
 
 	if wasRunning {
@@ -253,42 +241,10 @@ func (c *Cancellation) RunInTxn(ctx context.Context) (bool, error) {
 		return false, errors.Annotate(putErr, "datastore error saving entities for canceling task %s", c.TaskID).Err()
 	}
 
-	if err := c.sendOnTaskUpdate(ctx); err != nil {
+	if err := c.LifecycleTasks.sendOnTaskUpdate(ctx, tr, trs); err != nil {
 		return false, errors.Annotate(err, "failed to enqueue pubsub notification cloud tasks for canceling task %s", c.TaskID).Err()
 	}
 	return true, nil
-}
-
-func (c *Cancellation) enqueueRBECancel(ctx context.Context, toRun *model.TaskToRun) error {
-	if c.testEnqueueRBECancel != nil {
-		return c.testEnqueueRBECancel(ctx, c.TaskRequest, toRun)
-	}
-	return rbe.EnqueueCancel(ctx, c.TaskRequest, toRun)
-}
-
-func (c *Cancellation) sendOnTaskUpdate(ctx context.Context) error {
-	if c.testSendOnTaskUpdate != nil {
-		return c.testSendOnTaskUpdate(ctx, c.TaskRequest, c.TaskResultSummary)
-	}
-	return notifications.SendOnTaskUpdate(ctx, c.TaskRequest, c.TaskResultSummary)
-}
-
-func (c *Cancellation) enqueueChildCancellation(ctx context.Context) error {
-	if c.testEnqueueChildCancellation != nil {
-		return c.testEnqueueChildCancellation(ctx, c.TaskID)
-	}
-	return tq.AddTask(ctx, &tq.Task{Payload: &taskspb.CancelChildrenTask{TaskId: c.TaskID}})
-}
-
-type testBatchCancelTQTasks struct {
-	testEnqueueBatchCancel func(context.Context, []string, bool, string, int32) error
-}
-
-func (e testBatchCancelTQTasks) enqueueBatchCancel(ctx context.Context, batch []string, killRunning bool, purpose string, retries int32) error {
-	if e.testEnqueueBatchCancel != nil {
-		return e.testEnqueueBatchCancel(ctx, batch, killRunning, purpose, retries)
-	}
-	return tq.AddTask(ctx, &tq.Task{Payload: &taskspb.BatchCancelTask{Tasks: batch, KillRunning: killRunning, Retries: retries, Purpose: purpose}})
 }
 
 type childCancellation struct {
@@ -298,8 +254,7 @@ type childCancellation struct {
 	// cancel.
 	batchSize int
 
-	// test functions for tq tasks. Should only be used in tests.
-	testBatchCancelTQTasks
+	lifecycleTasks LifecycleTasks
 }
 
 func (cc *childCancellation) validate() error {
@@ -331,7 +286,7 @@ func (cc *childCancellation) queryToCancel(ctx context.Context) error {
 			return nil
 		}
 
-		return cc.enqueueBatchCancel(ctx, toCancel, true, fmt.Sprintf("cancel children for %s batch %d", cc.parentID, batchNum), 0)
+		return cc.lifecycleTasks.EnqueueBatchCancel(ctx, toCancel, true, fmt.Sprintf("cancel children for %s batch %d", cc.parentID, batchNum), 0)
 	})
 }
 
@@ -389,9 +344,7 @@ type batchCancellation struct {
 
 	workers int
 
-	// test functions for tq tasks. Should only be used in tests.
-	TestCancellationTQTasks
-	testBatchCancelTQTasks
+	lifecycleTasks LifecycleTasks
 }
 
 func (bc *batchCancellation) run(ctx context.Context) error {
@@ -413,9 +366,9 @@ func (bc *batchCancellation) run(ctx context.Context) error {
 		t := t
 		eg.Go(func() error {
 			c := &Cancellation{
-				TaskID:                  t,
-				KillRunning:             bc.killRunning,
-				TestCancellationTQTasks: bc.TestCancellationTQTasks,
+				TaskID:         t,
+				KillRunning:    bc.killRunning,
+				LifecycleTasks: bc.lifecycleTasks,
 			}
 			_, wasRunning, err := c.Run(ctx)
 			if err == nil {
@@ -450,56 +403,5 @@ func (bc *batchCancellation) run(ctx context.Context) error {
 		logging.Errorf(ctx, "%s has retried %d times, give up", bc.purpose, bc.retries)
 		return nil
 	}
-	return bc.enqueueBatchCancel(ctx, toRetry, bc.killRunning, bc.purpose, bc.retries+1)
-}
-
-// MockTaskCancellationTQTasks returns TestCancellationTQTasks with mocked tq functions for cancelling a task.
-func MockTaskCancellationTQTasks(fakeTaskQueue map[string][]string, mu *sync.Mutex) TestCancellationTQTasks {
-	mocks := TestCancellationTQTasks{}
-	mocks.testEnqueueRBECancel = func(_ context.Context, tr *model.TaskRequest, ttr *model.TaskToRun) error {
-		mu.Lock()
-		defer mu.Unlock()
-		fakeTaskQueue["rbe-cancel"] = append(fakeTaskQueue["rbe-cancel"], fmt.Sprintf("%s/%s", tr.RBEInstance, ttr.RBEReservation))
-		return nil
-	}
-
-	mocks.testSendOnTaskUpdate = func(_ context.Context, tr *model.TaskRequest, trs *model.TaskResultSummary) error {
-		taskID := model.RequestKeyToTaskID(tr.Key, model.AsRequest)
-		if tr.PubSubTopic == "fail-the-task" {
-			return errors.New("sorry, was told to fail it")
-		}
-
-		mu.Lock()
-		defer mu.Unlock()
-		if tr.PubSubTopic != "" {
-			fakeTaskQueue["pubsub-go"] = append(fakeTaskQueue["pubsub-go"], taskID)
-		}
-		if tr.HasBuildTask {
-			fakeTaskQueue["buildbucket-notify-go"] = append(fakeTaskQueue["buildbucket-notify-go"], taskID)
-		}
-
-		return nil
-	}
-
-	mocks.testEnqueueChildCancellation = func(_ context.Context, taskID string) error {
-		mu.Lock()
-		defer mu.Unlock()
-		fakeTaskQueue["cancel-children-tasks-go"] = append(fakeTaskQueue["cancel-children-tasks-go"], taskID)
-		return nil
-	}
-	return mocks
-}
-
-// MockBatchCancelTQTasks returns testBatchCancelTQTasks with mocked tq functions for cancelling a batch of tasks.
-func MockBatchCancelTQTasks(fakeTaskQueue map[string][]string, mu *sync.Mutex) testBatchCancelTQTasks {
-	return testBatchCancelTQTasks{
-		testEnqueueBatchCancel: func(_ context.Context, tasks []string, killRunning bool, purpose string, retries int32) error {
-			sort.Strings(tasks)
-
-			mu.Lock()
-			defer mu.Unlock()
-			fakeTaskQueue["cancel-tasks-go"] = append(fakeTaskQueue["cancel-tasks-go"], fmt.Sprintf("%q, purpose: %s, retry # %d", tasks, purpose, retries))
-			return nil
-		},
-	}
+	return bc.lifecycleTasks.EnqueueBatchCancel(ctx, toRetry, bc.killRunning, bc.purpose, bc.retries+1)
 }

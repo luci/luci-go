@@ -16,7 +16,6 @@ package rpcs
 
 import (
 	"context"
-	"sync"
 	"testing"
 	"time"
 
@@ -107,9 +106,8 @@ func TestCancelTask(t *testing.T) {
 			}
 			_ = datastore.Put(ctx, tr)
 
-			fakeTaskQueue := make(map[string][]string, 4)
-			var mu sync.Mutex
-			srv.testCancellationTQTasks = tasks.MockTaskCancellationTQTasks(fakeTaskQueue, &mu)
+			lt := tasks.MockTQTasks()
+			srv.TaskLifecycleTasks = lt
 
 			t.Run("fail", func(t *ftt.Test) {
 				// No TaskResultSummary entity.
@@ -139,10 +137,8 @@ func TestCancelTask(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, rsp.Canceled, should.BeTrue)
 				assert.Loosely(t, rsp.WasRunning, should.BeFalse)
-				assert.Loosely(t, fakeTaskQueue["rbe-cancel"], should.Match([]string{
-					"rbe-instance/reservation",
-				}))
-				assert.Loosely(t, fakeTaskQueue["pubsub-go"], should.Match([]string{taskID}))
+				assert.Loosely(t, lt.PopTask("rbe-cancel"), should.Equal("rbe-instance/reservation"))
+				assert.Loosely(t, lt.PopTask("pubsub-go"), should.Match(taskID))
 			})
 		})
 	})

@@ -17,7 +17,6 @@ package tasks
 import (
 	"context"
 	"sort"
-	"sync"
 	"testing"
 	"time"
 
@@ -85,12 +84,11 @@ func TestCancel(t *testing.T) {
 			assert.Loosely(t, err, should.ErrLike("no task id specified for cancellation"))
 		})
 
-		fakeTaskQueue := make(map[string][]string, 4)
-		var mu sync.Mutex
+		lt := MockTQTasks()
 		c := &Cancellation{
-			TaskID:                  tID,
-			KillRunning:             true,
-			TestCancellationTQTasks: MockTaskCancellationTQTasks(fakeTaskQueue, &mu),
+			TaskID:             tID,
+			KillRunning:        true,
+			LifecycleTasks: lt,
 		}
 
 		t.Run("bot id and kill runing uncompitable", func(t *ftt.Test) {
@@ -145,12 +143,8 @@ func TestCancel(t *testing.T) {
 			assert.Loosely(t, trs.Modified, should.Match(now))
 			assert.Loosely(t, trs.State, should.Equal(apipb.TaskState_CANCELED))
 			assert.Loosely(t, ttr.IsReapable(), should.BeFalse)
-			assert.Loosely(t, fakeTaskQueue["rbe-cancel"], should.Match([]string{
-				"rbe-instance/reservation",
-			}))
-			assert.Loosely(t, fakeTaskQueue["pubsub-go"], should.Match([]string{
-				"65aba3a3e6b99310",
-			}))
+			assert.Loosely(t, lt.PopTask("rbe-cancel"), should.Equal("rbe-instance/reservation"))
+			assert.Loosely(t, lt.PopTask("pubsub-go"), should.Equal("65aba3a3e6b99310"))
 			val := globalStore.Get(ctx, metrics.TaskStatusChangeSchedulerLatency, time.Time{}, []any{"test_pool", "spec_name", "CANCELED", "wobblyeye"})
 			assert.Loosely(t, val.(*distribution.Distribution).Sum(), should.Equal(float64(2*time.Hour.Milliseconds())))
 		})
@@ -196,7 +190,7 @@ func TestCancel(t *testing.T) {
 				assert.Loosely(t, trs.Modified, should.Match(now))
 				assert.Loosely(t, trr.Killing, should.BeTrue)
 				assert.Loosely(t, trs.State, should.Equal(apipb.TaskState_RUNNING))
-				assert.Loosely(t, fakeTaskQueue["cancel-children-tasks-go"], should.Match([]string{tID}))
+				assert.Loosely(t, lt.PopTask("cancel-children-tasks-go"), should.Equal(tID))
 			})
 
 			t.Run("kill running does nothing if the task has started cancellation", func(t *ftt.Test) {
@@ -236,17 +230,16 @@ func TestCancelChildren(t *testing.T) {
 		pReqKey, err := model.TaskIDToRequestKey(ctx, pID)
 		assert.Loosely(t, err, should.BeNil)
 
-		fakeTaskQueue := make(map[string][]string, 1)
-		var mu sync.Mutex
+		lt := MockTQTasks()
 		cc := &childCancellation{
-			parentID:               pID,
-			batchSize:              300,
-			testBatchCancelTQTasks: MockBatchCancelTQTasks(fakeTaskQueue, &mu),
+			parentID:           pID,
+			batchSize:          300,
+			lifecycleTasks: lt,
 		}
 
 		t.Run("task has no children", func(t *ftt.Test) {
 			assert.Loosely(t, cc.queryToCancel(ctx), should.BeNil)
-			assert.Loosely(t, fakeTaskQueue, should.HaveLength(0))
+			assert.Loosely(t, lt.PopNTasks("cancel-tasks-go", 10), should.HaveLength(0))
 		})
 
 		t.Run("task has no active children to cancel", func(t *ftt.Test) {
@@ -265,7 +258,7 @@ func TestCancelChildren(t *testing.T) {
 			}
 			assert.Loosely(t, datastore.Put(ctx, childReq, childRes), should.BeNil)
 			assert.Loosely(t, cc.queryToCancel(ctx), should.BeNil)
-			assert.Loosely(t, fakeTaskQueue["cancel-tasks-go"], should.HaveLength(0))
+			assert.Loosely(t, lt.PopNTasks("cancel-tasks-go", 10), should.HaveLength(0))
 		})
 
 		t.Run("task has active children to cancel", func(t *ftt.Test) {
@@ -290,16 +283,16 @@ func TestCancelChildren(t *testing.T) {
 
 			t.Run("one task for all children", func(t *ftt.Test) {
 				assert.Loosely(t, cc.queryToCancel(ctx), should.BeNil)
-				assert.Loosely(t, fakeTaskQueue, should.HaveLength(1))
-				assert.Loosely(t, fakeTaskQueue["cancel-tasks-go"][0], should.Equal(`["65aba3a3e6b99100" "65aba3a3e6b99300" "65aba3a3e6b99400"], purpose: cancel children for 65aba3a3e6b99310 batch 0, retry # 0`))
+				assert.Loosely(t, lt.PopTask("cancel-tasks-go"), should.Equal(`["65aba3a3e6b99100" "65aba3a3e6b99300" "65aba3a3e6b99400"], purpose: cancel children for 65aba3a3e6b99310 batch 0, retry # 0`))
 			})
 
 			t.Run("multiple tasks", func(t *ftt.Test) {
 				cc.batchSize = 2
 				assert.Loosely(t, cc.queryToCancel(ctx), should.BeNil)
-				assert.Loosely(t, fakeTaskQueue["cancel-tasks-go"], should.HaveLength(2))
-				assert.Loosely(t, fakeTaskQueue["cancel-tasks-go"][0], should.Equal(`["65aba3a3e6b99300" "65aba3a3e6b99400"], purpose: cancel children for 65aba3a3e6b99310 batch 0, retry # 0`))
-				assert.Loosely(t, fakeTaskQueue["cancel-tasks-go"][1], should.Equal(`["65aba3a3e6b99100"], purpose: cancel children for 65aba3a3e6b99310 batch 1, retry # 0`))
+				res := lt.PopNTasks("cancel-tasks-go", 2)
+				assert.Loosely(t, res, should.HaveLength(2))
+				assert.Loosely(t, res[0], should.Equal(`["65aba3a3e6b99300" "65aba3a3e6b99400"], purpose: cancel children for 65aba3a3e6b99310 batch 0, retry # 0`))
+				assert.Loosely(t, res[1], should.Equal(`["65aba3a3e6b99100"], purpose: cancel children for 65aba3a3e6b99310 batch 1, retry # 0`))
 			})
 		})
 	})
@@ -316,19 +309,17 @@ func TestBatchCancellation(t *testing.T) {
 		ctx, _ = testclock.UseTime(ctx, now)
 		ctx, _ = tsmon.WithDummyInMemory(ctx)
 
-		fakeTaskQueue := make(map[string][]string, 5)
-		var mu sync.Mutex
+		lt := MockTQTasks()
 		bc := &batchCancellation{
-			killRunning:             true,
-			TestCancellationTQTasks: MockTaskCancellationTQTasks(fakeTaskQueue, &mu),
-			testBatchCancelTQTasks:  MockBatchCancelTQTasks(fakeTaskQueue, &mu),
-			workers:                 10,
-			purpose:                 "CancelTasks request",
+			killRunning:        true,
+			lifecycleTasks: lt,
+			workers:            10,
+			purpose:            "CancelTasks request",
 		}
 
 		t.Run("no tasks to cancel", func(t *ftt.Test) {
 			assert.Loosely(t, bc.run(ctx), should.ErrLike("no tasks specified for cancellation"))
-			assert.Loosely(t, fakeTaskQueue, should.HaveLength(0))
+			assert.Loosely(t, lt.PopNTasks("pubsub-go", 10), should.HaveLength(0))
 		})
 
 		tID1, tID2 := "65aba3a3e6b99100", "65aba3a3e6b99200"
@@ -342,7 +333,7 @@ func TestBatchCancellation(t *testing.T) {
 		t.Run("all fail for unknown tasks, no retry", func(t *ftt.Test) {
 			assert.Loosely(t, bc.run(ctx), should.BeNil)
 			// No new retry is enqueued.
-			assert.Loosely(t, fakeTaskQueue["cancel-tasks-go"], should.HaveLength(0))
+			assert.Loosely(t, lt.PopNTasks("cancel-tasks-go", 10), should.HaveLength(0))
 		})
 
 		toRunKey, err := model.TaskRequestToToRunKey(ctx, tr1, 0)
@@ -367,7 +358,7 @@ func TestBatchCancellation(t *testing.T) {
 			assert.Loosely(t, datastore.Put(ctx, tr1, tr2), should.BeNil)
 			assert.Loosely(t, bc.run(ctx), should.BeNil)
 			// A new task is enqueued to retry both tasks.
-			assert.Loosely(t, fakeTaskQueue["cancel-tasks-go"][0], should.Equal(`["65aba3a3e6b99100" "65aba3a3e6b99200"], purpose: CancelTasks request, retry # 1`))
+			assert.Loosely(t, lt.PopTask("cancel-tasks-go"), should.Equal(`["65aba3a3e6b99100" "65aba3a3e6b99200"], purpose: CancelTasks request, retry # 1`))
 		})
 
 		t.Run("partial fail", func(t *ftt.Test) {
@@ -375,9 +366,9 @@ func TestBatchCancellation(t *testing.T) {
 			assert.Loosely(t, datastore.Put(ctx, tr1), should.BeNil)
 			assert.Loosely(t, bc.run(ctx), should.BeNil)
 			// A new task is enqueued to retry t1 only.
-			assert.Loosely(t, fakeTaskQueue["cancel-tasks-go"][0], should.Equal(`["65aba3a3e6b99100"], purpose: CancelTasks request, retry # 1`))
+			assert.Loosely(t, lt.PopTask("cancel-tasks-go"), should.Equal(`["65aba3a3e6b99100"], purpose: CancelTasks request, retry # 1`))
 			// t2 is fine.
-			assert.Loosely(t, fakeTaskQueue["cancel-children-tasks-go"], should.Match([]string{tID2}))
+			assert.Loosely(t, lt.PopTask("cancel-children-tasks-go"), should.Equal(tID2))
 			assert.Loosely(t, datastore.Get(ctx, trr, trs2), should.BeNil)
 			assert.Loosely(t, trs2.Modified, should.Match(trr.Modified))
 			assert.Loosely(t, trs2.Modified, should.Match(now))
@@ -391,17 +382,16 @@ func TestBatchCancellation(t *testing.T) {
 			bc.retries = maxBatchCancellationRetries
 			assert.Loosely(t, bc.run(ctx), should.BeNil)
 			// No new retry is enqueued.
-			assert.Loosely(t, fakeTaskQueue["cancel-tasks-go"], should.HaveLength(0))
+			assert.Loosely(t, lt.PopNTasks("cancel-tasks-go", 10), should.HaveLength(0))
 		})
 
 		t.Run("success", func(t *ftt.Test) {
 			assert.Loosely(t, bc.run(ctx), should.BeNil)
-			assert.Loosely(t, fakeTaskQueue["rbe-cancel"], should.Match([]string{
-				"rbe-instance/reservation",
-			}))
-			sort.Strings(fakeTaskQueue["pubsub-go"])
-			assert.Loosely(t, fakeTaskQueue["pubsub-go"], should.Match([]string{tID1, tID2}))
-			assert.Loosely(t, fakeTaskQueue["cancel-children-tasks-go"], should.Match([]string{tID2}))
+			assert.Loosely(t, lt.PopTask("rbe-cancel"), should.Equal("rbe-instance/reservation"))
+			res := lt.PopNTasks("pubsub-go", 2)
+			sort.Strings(res)
+			assert.Loosely(t, res, should.Match([]string{tID1, tID2}))
+			assert.Loosely(t, lt.PopTask("cancel-children-tasks-go"), should.Equal(tID2))
 
 			assert.Loosely(t, datastore.Get(ctx, ttr, trr, trs1, trs2), should.BeNil)
 			assert.Loosely(t, trs1.Modified, should.Match(now))

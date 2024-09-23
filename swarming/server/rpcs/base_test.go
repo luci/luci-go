@@ -200,7 +200,7 @@ func SetupTestTasks(ctx context.Context) (*MockedRequestState, map[string]string
 	state.Configs.MockPool("hidden-pool1", "project:hidden-realm")
 	state.Configs.MockPool("hidden-pool2", "project:hidden-realm")
 
-	state.MockPerm("project:visible-realm", acls.PermPoolsListTasks, acls.PermTasksGet)
+	state.MockPerm("project:visible-realm", acls.PermPoolsCancelTask, acls.PermPoolsListTasks, acls.PermTasksGet)
 
 	// This is used to make sure all task keys are unique, even if they are
 	// created at the exact same (mocked) timestamp. In the prod implementation

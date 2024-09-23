@@ -21,12 +21,27 @@ import (
 
 	"go.chromium.org/luci/server/tq"
 
+	"go.chromium.org/luci/swarming/server/model"
+	"go.chromium.org/luci/swarming/server/notifications"
+	"go.chromium.org/luci/swarming/server/rbe"
 	"go.chromium.org/luci/swarming/server/tasks/taskspb"
 )
 
-// RegisterTQTasks regusters Cloud tasks for task lifecycle management.
-func RegisterTQTasks(disp *tq.Dispatcher) {
-	disp.RegisterTaskClass(tq.TaskClass{
+// LifecycleTasks is used to emit TQ tasks related to Swarming task lifecycle.
+type LifecycleTasks interface {
+	EnqueueBatchCancel(ctx context.Context, batch []string, killRunning bool, purpose string, retries int32) error
+	enqueueChildCancellation(ctx context.Context, taskID string) error
+	enqueueRBECancel(ctx context.Context, tr *model.TaskRequest, ttr *model.TaskToRun) error
+	sendOnTaskUpdate(ctx context.Context, tr *model.TaskRequest, trs *model.TaskResultSummary) error
+}
+
+type LifecycleTasksViaTQ struct {
+	Dispatcher *tq.Dispatcher
+}
+
+// RegisterTQTasks regusters TQ tasks for task lifecycle management.
+func (l *LifecycleTasksViaTQ) RegisterTQTasks() {
+	l.Dispatcher.RegisterTaskClass(tq.TaskClass{
 		ID:        "cancel-children-tasks-go",
 		Kind:      tq.Transactional,
 		Prototype: (*taskspb.CancelChildrenTask)(nil),
@@ -36,7 +51,7 @@ func RegisterTQTasks(disp *tq.Dispatcher) {
 			return (&childCancellation{parentID: t.TaskId, batchSize: 300}).queryToCancel(ctx)
 		},
 	})
-	disp.RegisterTaskClass(tq.TaskClass{
+	l.Dispatcher.RegisterTaskClass(tq.TaskClass{
 		ID:        "cancel-tasks-go",
 		Kind:      tq.NonTransactional,
 		Prototype: (*taskspb.BatchCancelTask)(nil),
@@ -46,4 +61,21 @@ func RegisterTQTasks(disp *tq.Dispatcher) {
 			return (&batchCancellation{tasks: t.Tasks, killRunning: t.KillRunning, workers: 64, retries: t.Retries, purpose: t.Purpose}).run(ctx)
 		},
 	})
+}
+
+// EnqueueBatchCancel enqueues a tq task to cancel tasks in batch.
+func (l *LifecycleTasksViaTQ) EnqueueBatchCancel(ctx context.Context, batch []string, killRunning bool, purpose string, retries int32) error {
+	return tq.AddTask(ctx, &tq.Task{Payload: &taskspb.BatchCancelTask{Tasks: batch, KillRunning: killRunning, Retries: retries, Purpose: purpose}})
+}
+
+func (l *LifecycleTasksViaTQ) enqueueChildCancellation(ctx context.Context, taskID string) error {
+	return tq.AddTask(ctx, &tq.Task{Payload: &taskspb.CancelChildrenTask{TaskId: taskID}})
+}
+
+func (l *LifecycleTasksViaTQ) enqueueRBECancel(ctx context.Context, tr *model.TaskRequest, ttr *model.TaskToRun) error {
+	return rbe.EnqueueCancel(ctx, tr, ttr)
+}
+
+func (l *LifecycleTasksViaTQ) sendOnTaskUpdate(ctx context.Context, tr *model.TaskRequest, trs *model.TaskResultSummary) error {
+	return notifications.SendOnTaskUpdate(ctx, tr, trs)
 }

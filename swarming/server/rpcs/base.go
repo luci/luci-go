@@ -87,9 +87,8 @@ type TasksServer struct {
 	// TaskQuerySplitMode controls how "finely" to split TaskResultSummary queries.
 	TaskQuerySplitMode model.SplitMode
 
-	// testCancellationTQTasks mocks tq tasks for canceling a task, only used for
-	// tests.
-	testCancellationTQTasks tasks.TestCancellationTQTasks
+	// TaskLifecycleTasks is used to emit TQ tasks related to Swarming task lifecycle.
+	TaskLifecycleTasks tasks.LifecycleTasks
 }
 
 // TaskBackend implements bbpb.TaskBackendServer.
