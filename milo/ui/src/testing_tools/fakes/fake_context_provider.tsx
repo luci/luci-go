@@ -17,7 +17,12 @@ import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterLuxon } from '@mui/x-date-pickers/AdapterLuxon';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactNode, useState } from 'react';
-import { Outlet, RouterProvider, createMemoryRouter } from 'react-router-dom';
+import {
+  Outlet,
+  RouteObject,
+  RouterProvider,
+  createMemoryRouter,
+} from 'react-router-dom';
 
 import { PageConfigStateProvider } from '@/common/components/page_config_state_provider';
 import { PageMetaProvider } from '@/common/components/page_meta/page_meta_provider';
@@ -33,12 +38,13 @@ import { FakeAuthStateProvider } from './fake_auth_state_provider';
 interface FakeContextProviderProps {
   readonly mountedPath?: string;
   readonly routerOptions?: Parameters<typeof createMemoryRouter>[1];
+  readonly siblingRoutes?: RouteObject[];
   readonly errorElement?: ReactNode;
-  readonly children: ReactNode;
   readonly pageMeta?: {
     readonly project?: string;
     readonly selectedPage?: UiPage;
   };
+  readonly children: ReactNode;
 }
 
 /**
@@ -47,9 +53,10 @@ interface FakeContextProviderProps {
 export function FakeContextProvider({
   mountedPath,
   routerOptions,
+  siblingRoutes = [],
   errorElement,
-  children,
   pageMeta,
+  children,
 }: FakeContextProviderProps) {
   const [client] = useState(() => {
     const errorMock = jest
@@ -103,6 +110,7 @@ export function FakeContextProvider({
             element: children,
             errorElement: errorElement,
           },
+          ...siblingRoutes,
         ],
       },
     ],

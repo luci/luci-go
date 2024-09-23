@@ -12,19 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import crypto from 'crypto';
-import { TextDecoder, TextEncoder } from 'util';
-
 import '@testing-library/jest-dom';
 import 'isomorphic-fetch';
 import 'intersection-observer';
+import '@/proto_utils/duration_patch';
+
+import crypto from 'crypto';
+import { TextDecoder, TextEncoder } from 'util';
+
 import { matchers as emotionMatchers } from '@emotion/jest';
 import * as dotenv from 'dotenv';
 import * as idbKeyVal from 'idb-keyval';
 import { configure } from 'mobx';
 
 import { assertNonNullable } from '@/generic_libs/tools/utils';
-import '@/proto_utils/duration_patch';
 
 import {
   createSelectiveMockFromModule,
@@ -142,3 +143,6 @@ jest.mock('lit/decorators.js', () => ({
     };
   },
 }));
+
+// Install a noop gtag to avoid `undefined` issue during unit tests.
+self.gtag = () => {};
