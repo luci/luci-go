@@ -17,7 +17,7 @@ import { Outlet } from 'react-router-dom';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { LabsWarningAlert } from '@/common/components/labs_warning_alert';
-import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
+import { ContentGroup } from '@/generic_libs/components/google_analytics';
 
 export function Component() {
   return (
@@ -41,7 +41,7 @@ export function Component() {
           }}
         />
       </Box>
-      <TrackLeafRoutePageView contentGroup="labs">
+      <ContentGroup group="labs">
         <RecoverableErrorBoundary
           // See the documentation in `<LoginPage />` to learn why we handle
           // error this way.
@@ -49,7 +49,7 @@ export function Component() {
         >
           <Outlet />
         </RecoverableErrorBoundary>
-      </TrackLeafRoutePageView>
+      </ContentGroup>
     </>
   );
 }
