@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import './analyses_page.css';
+
 import Search from '@mui/icons-material/Search';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -24,6 +25,7 @@ import {
   SearchAnalysisTable,
 } from '@/bisection/components/analyses_tables';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
+import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useTabId } from '@/generic_libs/components/routed_tabs';
 
 export const CompileAnalysesTab = () => {
@@ -107,9 +109,14 @@ export function Component() {
   useTabId('compile-analysis');
 
   return (
-    // See the documentation for `<LoginPage />` for why we handle error this way.
-    <RecoverableErrorBoundary key="compile-failure-analyses">
-      <CompileAnalysesTab />
-    </RecoverableErrorBoundary>
+    <TrackLeafRoutePageView contentGroup="compile-analysis">
+      <RecoverableErrorBoundary
+        // See the documentation in `<LoginPage />` to learn why we handle error
+        // this way.
+        key="compile-analysis"
+      >
+        <CompileAnalysesTab />
+      </RecoverableErrorBoundary>
+    </TrackLeafRoutePageView>
   );
 }

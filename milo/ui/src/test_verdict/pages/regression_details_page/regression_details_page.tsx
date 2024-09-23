@@ -18,6 +18,7 @@ import { ParsedTestVariantBranchName } from '@/analysis/types';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { PageMeta } from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants/view';
+import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { ChangepointPredicate } from '@/proto/go.chromium.org/luci/analysis/proto/v1/changepoints.pb';
 
@@ -67,10 +68,17 @@ export function RegressionDetailsPage() {
 
 export function Component() {
   return (
-    // See the documentation for `<LoginPage />` for why we handle error this
-    // way.
-    <RecoverableErrorBoundary key="regression-details">
-      <RegressionDetailsPage />
-    </RecoverableErrorBoundary>
+    <TrackLeafRoutePageView
+      contentGroup="regression-details"
+      searchParamKeys={['tvb', 'nsp', 'sh', 'cp']}
+    >
+      <RecoverableErrorBoundary
+        // See the documentation in `<LoginPage />` to learn why we handle error
+        // this way.
+        key="regression-details"
+      >
+        <RegressionDetailsPage />
+      </RecoverableErrorBoundary>
+    </TrackLeafRoutePageView>
   );
 }

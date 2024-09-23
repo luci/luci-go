@@ -14,6 +14,7 @@
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { AppRoutedTabs, AppRoutedTab } from '@/common/components/routed_tabs';
+import { ContentGroup } from '@/generic_libs/components/google_analytics';
 
 export function AnalysesPage() {
   return (
@@ -34,10 +35,14 @@ export function AnalysesPage() {
 
 export function Component() {
   return (
-    // See the documentation for `<LoginPage />` for why we handle error this
-    // way.
-    <RecoverableErrorBoundary key="analyses-page">
-      <AnalysesPage />
-    </RecoverableErrorBoundary>
+    <ContentGroup group="analyses">
+      <RecoverableErrorBoundary
+        // See the documentation in `<LoginPage />` to learn why we handle error
+        // this way.
+        key="analyses"
+      >
+        <AnalysesPage />
+      </RecoverableErrorBoundary>
+    </ContentGroup>
   );
 }

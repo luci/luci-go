@@ -15,6 +15,7 @@
 import { useParams } from 'react-router-dom';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
+import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useTabId } from '@/generic_libs/components/routed_tabs';
 
 import { useSearchFilter } from './context';
@@ -51,10 +52,14 @@ export function Component() {
   useTabId('shared-logs');
 
   return (
-    // See the documentation for `<LoginPage />` for why we handle error this
-    // way.
-    <RecoverableErrorBoundary key="shared-logs">
-      <SharedLogsTab />
-    </RecoverableErrorBoundary>
+    <TrackLeafRoutePageView contentGroup="shared-logs">
+      <RecoverableErrorBoundary
+        // See the documentation in `<LoginPage />` to learn why we handle error
+        // this way.
+        key="shared-logs"
+      >
+        <SharedLogsTab />
+      </RecoverableErrorBoundary>
+    </TrackLeafRoutePageView>
   );
 }

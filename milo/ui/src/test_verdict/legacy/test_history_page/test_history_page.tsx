@@ -25,6 +25,7 @@ import { UiPage } from '@/common/constants/view';
 import { useStore } from '@/common/store';
 import { GraphType } from '@/common/store/test_history_page';
 import { extractProject } from '@/common/tools/utils';
+import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
 import { DateAxis } from './date_axis';
@@ -172,10 +173,14 @@ export const TestHistoryPage = observer(() => {
 
 export function Component() {
   return (
-    // See the documentation for `<LoginPage />` for why we handle error this
-    // way.
-    <RecoverableErrorBoundary key="test-history">
-      <TestHistoryPage />
-    </RecoverableErrorBoundary>
+    <TrackLeafRoutePageView contentGroup="test-history">
+      <RecoverableErrorBoundary
+        // See the documentation in `<LoginPage />` to learn why we handle error
+        // this way.
+        key="test-history"
+      >
+        <TestHistoryPage />
+      </RecoverableErrorBoundary>
+    </TrackLeafRoutePageView>
   );
 }

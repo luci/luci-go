@@ -13,11 +13,13 @@
 // limitations under the License.
 
 import './analyses_page.css';
+
 import { Search } from '@mui/icons-material';
 import { Box, Button, TextField } from '@mui/material';
 import { useState } from 'react';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
+import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useTabId } from '@/generic_libs/components/routed_tabs';
 
 import {
@@ -106,10 +108,14 @@ export function Component() {
   useTabId('test-analysis');
 
   return (
-    // See the documentation for `<LoginPage />` for why we handle error this
-    // way.
-    <RecoverableErrorBoundary key="test-failure-analyses">
-      <TestAnalysesTab />
-    </RecoverableErrorBoundary>
+    <TrackLeafRoutePageView contentGroup="test-analysis">
+      <RecoverableErrorBoundary
+        // See the documentation in `<LoginPage />` to learn why we handle error
+        // this way.
+        key="test-analysis"
+      >
+        <TestAnalysesTab />
+      </RecoverableErrorBoundary>
+    </TrackLeafRoutePageView>
   );
 }

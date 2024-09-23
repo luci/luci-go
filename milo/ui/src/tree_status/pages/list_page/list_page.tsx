@@ -27,6 +27,7 @@ import {
 import { UiPage } from '@/common/constants/view';
 import { useTreesClient } from '@/common/hooks/prpc_clients';
 import { logging } from '@/common/tools/logging';
+import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { ListStatusRequest } from '@/proto/go.chromium.org/luci/tree_status/proto/v1/tree_status.pb';
 import { GetTreeRequest } from '@/proto/go.chromium.org/luci/tree_status/proto/v1/trees.pb';
@@ -147,10 +148,14 @@ export const TreeStatusListPage = () => {
 
 export function Component() {
   return (
-    // See the documentation for `<LoginPage />` for why we handle error this
-    // way.
-    <RecoverableErrorBoundary key="tree-status-page">
-      <TreeStatusListPage />
-    </RecoverableErrorBoundary>
+    <TrackLeafRoutePageView contentGroup="tree-status-list">
+      <RecoverableErrorBoundary
+        // See the documentation in `<LoginPage />` to learn why we handle error
+        // this way.
+        key="tree-status-list"
+      >
+        <TreeStatusListPage />
+      </RecoverableErrorBoundary>
+    </TrackLeafRoutePageView>
   );
 }

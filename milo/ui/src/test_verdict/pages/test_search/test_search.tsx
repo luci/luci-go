@@ -19,6 +19,7 @@ import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { PageMeta } from '@/common/components/page_meta';
 import { SearchInput } from '@/common/components/search_input';
 import { UiPage } from '@/common/constants/view';
+import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
 import { DEFAULT_TEST_PROJECT } from '../../../routes/search_loader/search_redirection_loader';
@@ -68,10 +69,14 @@ export const TestSearch = () => {
 
 export function Component() {
   return (
-    // See the documentation for `<LoginPage />` for why we handle error this
-    // way.
-    <RecoverableErrorBoundary key="test-search">
-      <TestSearch />
-    </RecoverableErrorBoundary>
+    <TrackLeafRoutePageView contentGroup="test-search">
+      <RecoverableErrorBoundary
+        // See the documentation in `<LoginPage />` to learn why we handle error
+        // this way.
+        key="test-search"
+      >
+        <TestSearch />
+      </RecoverableErrorBoundary>
+    </TrackLeafRoutePageView>
   );
 }

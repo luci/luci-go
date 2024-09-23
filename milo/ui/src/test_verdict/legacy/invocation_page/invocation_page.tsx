@@ -27,6 +27,7 @@ import {
   getBuildURLPathFromBuildId,
   getSwarmingTaskURL,
 } from '@/common/tools/url_utils';
+import { ContentGroup } from '@/generic_libs/components/google_analytics';
 
 import { CountIndicator } from '../test_results_tab/count_indicator';
 
@@ -132,10 +133,14 @@ export const InvocationPage = observer(() => {
 
 export function Component() {
   return (
-    // See the documentation for `<LoginPage />` for why we handle error this
-    // way.
-    <RecoverableErrorBoundary key="invocation">
-      <InvocationPage />
-    </RecoverableErrorBoundary>
+    <ContentGroup group="invocation">
+      <RecoverableErrorBoundary
+        // See the documentation in `<LoginPage />` to learn why we handle error
+        // this way.
+        key="invocation"
+      >
+        <InvocationPage />
+      </RecoverableErrorBoundary>
+    </ContentGroup>
   );
 }

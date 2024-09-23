@@ -25,6 +25,7 @@ import {
 } from '@/common/components/auth_state_provider';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { CopyToClipboard } from '@/generic_libs/components/copy_to_clipboard';
+import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
 /**
@@ -104,10 +105,14 @@ export function LocalLoginInstructionPage() {
 
 export function Component() {
   return (
-    // See the documentation for `<LoginPage />` for why we handle error this
-    // way.
-    <RecoverableErrorBoundary key="local-login-instruction">
-      <LocalLoginInstructionPage />
-    </RecoverableErrorBoundary>
+    <TrackLeafRoutePageView contentGroup="local-login-instruction">
+      <RecoverableErrorBoundary
+        // See the documentation in `<LoginPage />` to learn why we handle error
+        // this way.
+        key="local-login-instruction"
+      >
+        <LocalLoginInstructionPage />
+      </RecoverableErrorBoundary>
+    </TrackLeafRoutePageView>
   );
 }

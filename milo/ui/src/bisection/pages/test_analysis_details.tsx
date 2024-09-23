@@ -37,6 +37,7 @@ import {
   GenericSuspect,
 } from '@/bisection/types';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
+import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { GetTestAnalysisRequest } from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
 
 import { TabPanel } from './analysis_details';
@@ -178,10 +179,14 @@ export function TestAnalysisDetailsPage() {
 
 export function Component() {
   return (
-    // See the documentation for `<LoginPage />` for why we handle error this
-    // way.
-    <RecoverableErrorBoundary key="test-analysis-details">
-      <TestAnalysisDetailsPage />
-    </RecoverableErrorBoundary>
+    <TrackLeafRoutePageView contentGroup="test-analysis-details">
+      <RecoverableErrorBoundary
+        // See the documentation in `<LoginPage />` to learn why we handle error
+        // this way.
+        key="test-analysis-details"
+      >
+        <TestAnalysisDetailsPage />
+      </RecoverableErrorBoundary>
+    </TrackLeafRoutePageView>
   );
 }

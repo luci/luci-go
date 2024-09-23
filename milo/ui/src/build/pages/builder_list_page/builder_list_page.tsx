@@ -22,6 +22,7 @@ import { useBuildersClient } from '@/build/hooks/prpc_clients';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { PageMeta } from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants/view';
+import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { ListBuildersRequest } from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_service.pb';
 
 import { BuilderListIdBar } from './builder_list_id_bar';
@@ -87,10 +88,14 @@ export function BuilderListPage() {
 
 export function Component() {
   return (
-    // See the documentation for `<LoginPage />` for why we handle error this
-    // way.
-    <RecoverableErrorBoundary key="builder-list">
-      <BuilderListPage />
-    </RecoverableErrorBoundary>
+    <TrackLeafRoutePageView contentGroup="builder-list">
+      <RecoverableErrorBoundary
+        // See the documentation in `<LoginPage />` to learn why we handle error this
+        // way.
+        key="builder-list"
+      >
+        <BuilderListPage />
+      </RecoverableErrorBoundary>
+    </TrackLeafRoutePageView>
   );
 }

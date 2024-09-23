@@ -23,6 +23,7 @@ import { useId, useState } from 'react';
 
 import { getBlamelistPins } from '@/build/tools/build_utils';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
+import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useTabId } from '@/generic_libs/components/routed_tabs';
 import { getGitilesRepoURL } from '@/gitiles/tools/utils';
 
@@ -86,10 +87,14 @@ export function Component() {
   useTabId('blamelist');
 
   return (
-    // See the documentation for `<LoginPage />` for why we handle error this
-    // way.
-    <RecoverableErrorBoundary key="blamelist">
-      <BlamelistTab />
-    </RecoverableErrorBoundary>
+    <TrackLeafRoutePageView contentGroup="blamelist">
+      <RecoverableErrorBoundary
+        // See the documentation in `<LoginPage />` to learn why we handle error
+        // this way.
+        key="blamelist"
+      >
+        <BlamelistTab />
+      </RecoverableErrorBoundary>
+    </TrackLeafRoutePageView>
   );
 }

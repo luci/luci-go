@@ -22,6 +22,7 @@ import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { PageMeta } from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants/view';
 import { useMiloInternalClient } from '@/common/hooks/prpc_clients';
+import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { ListBuildersRequest } from '@/proto/go.chromium.org/luci/milo/proto/v1/rpc.pb';
 
 import { BuilderGroupIdBar } from './builder_group_id_bar';
@@ -88,10 +89,14 @@ export function BuilderGroupPage() {
 
 export function Component() {
   return (
-    // See the documentation for `<LoginPage />` for why we handle error this
-    // way.
-    <RecoverableErrorBoundary key="builder-group">
-      <BuilderGroupPage />
-    </RecoverableErrorBoundary>
+    <TrackLeafRoutePageView contentGroup="builder-group">
+      <RecoverableErrorBoundary
+        // See the documentation in `<LoginPage />` to learn why we handle error
+        // this way.
+        key="builder-group"
+      >
+        <BuilderGroupPage />
+      </RecoverableErrorBoundary>
+    </TrackLeafRoutePageView>
   );
 }

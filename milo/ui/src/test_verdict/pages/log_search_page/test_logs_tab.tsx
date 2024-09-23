@@ -15,11 +15,13 @@
 import { useParams } from 'react-router-dom';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
+import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useTabId } from '@/generic_libs/components/routed_tabs';
 
 import { useSearchFilter } from './context';
 import { TestLogDialog } from './log_list_dialog';
 import { TestLogsTable } from './log_table';
+
 // TODO (beining@):
 // * link to log viewer.
 export function TestLogsTab() {
@@ -43,10 +45,14 @@ export function Component() {
   useTabId('test-logs');
 
   return (
-    // See the documentation for `<LoginPage />` for why we handle error this
-    // way.
-    <RecoverableErrorBoundary key="test-logs">
-      <TestLogsTab />
-    </RecoverableErrorBoundary>
+    <TrackLeafRoutePageView contentGroup="test-logs">
+      <RecoverableErrorBoundary
+        // See the documentation in `<LoginPage />` to learn why we handle error
+        // this way.
+        key="test-logs"
+      >
+        <TestLogsTab />
+      </RecoverableErrorBoundary>
+    </TrackLeafRoutePageView>
   );
 }

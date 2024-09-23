@@ -24,6 +24,7 @@ import {
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { PageMeta } from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants/view';
+import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { BatchGetTestVariantBranchRequest } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
 import { BlamelistTable } from '@/test_verdict/components/blamelist_table';
 import { TestVariantBranchId } from '@/test_verdict/components/test_variant_branch_id';
@@ -117,17 +118,20 @@ export function Component() {
 
   return (
     <>
-      {/* See the documentation for `<LoginPage />` for why we handle error this
-       ** way.
-       **/}
       <PageMeta
         project={project}
         title="Blamelist"
         selectedPage={UiPage.Blamelist}
       />
-      <RecoverableErrorBoundary key="blamelist">
-        <BlamelistPage />
-      </RecoverableErrorBoundary>
+      <TrackLeafRoutePageView contentGroup="blamelist">
+        <RecoverableErrorBoundary
+          // See the documentation in `<LoginPage />` to learn why we handle
+          // error this way
+          key="blamelist"
+        >
+          <BlamelistPage />
+        </RecoverableErrorBoundary>
+      </TrackLeafRoutePageView>
     </>
   );
 }

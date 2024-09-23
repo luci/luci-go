@@ -17,6 +17,7 @@ import { Outlet } from 'react-router-dom';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { LabsWarningAlert } from '@/common/components/labs_warning_alert';
+import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 
 export function Component() {
   return (
@@ -40,11 +41,15 @@ export function Component() {
           }}
         />
       </Box>
-      {/* See the documentation for `<LoginPage />` for why we handle error this
-       ** way. */}
-      <RecoverableErrorBoundary key="labs">
-        <Outlet />
-      </RecoverableErrorBoundary>
+      <TrackLeafRoutePageView contentGroup="labs">
+        <RecoverableErrorBoundary
+          // See the documentation in `<LoginPage />` to learn why we handle
+          // error this way.
+          key="labs"
+        >
+          <Outlet />
+        </RecoverableErrorBoundary>
+      </TrackLeafRoutePageView>
     </>
   );
 }

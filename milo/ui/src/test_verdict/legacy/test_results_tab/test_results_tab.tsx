@@ -30,6 +30,7 @@ import {
   InvocationStateInstance,
 } from '@/common/store/invocation_state';
 import { commonStyles } from '@/common/styles/stylesheets';
+import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { MobxExtLitElement } from '@/generic_libs/components/lit_mobx_ext';
 import { ReactLitBridge } from '@/generic_libs/components/react_lit_element';
 import { useTabId } from '@/generic_libs/components/routed_tabs';
@@ -258,10 +259,14 @@ export function Component() {
   useTabId('test-results');
 
   return (
-    // See the documentation for `<LoginPage />` for why we handle error this
-    // way.
-    <RecoverableErrorBoundary key="test-results">
-      <TestResultsTab />
-    </RecoverableErrorBoundary>
+    <TrackLeafRoutePageView contentGroup="test-results">
+      <RecoverableErrorBoundary
+        // See the documentation in `<LoginPage />` to learn why we handle error
+        // this way.
+        key="test-results"
+      >
+        <TestResultsTab />
+      </RecoverableErrorBoundary>
+    </TrackLeafRoutePageView>
   );
 }

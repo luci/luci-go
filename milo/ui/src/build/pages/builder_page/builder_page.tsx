@@ -23,6 +23,7 @@ import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { PageMeta } from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants/view';
 import { parseLegacyBucketId } from '@/common/tools/build_utils';
+import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import {
   BuilderMask_BuilderMaskType,
   GetBuilderRequest,
@@ -150,10 +151,14 @@ export function BuilderPage() {
 
 export function Component() {
   return (
-    // See the documentation for `<LoginPage />` for why we handle error this
-    // way.
-    <RecoverableErrorBoundary key="builder">
-      <BuilderPage />
-    </RecoverableErrorBoundary>
+    <TrackLeafRoutePageView contentGroup="builder">
+      <RecoverableErrorBoundary
+        // See the documentation in `<LoginPage />` to learn why we handle error
+        // this way.
+        key="builder"
+      >
+        <BuilderPage />
+      </RecoverableErrorBoundary>
+    </TrackLeafRoutePageView>
   );
 }

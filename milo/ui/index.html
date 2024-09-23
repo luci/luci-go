@@ -31,11 +31,20 @@
     firstScriptTag.parentNode.insertBefore(gtagScript, firstScriptTag);
 
     // Install gtag.
-    // Also anonymize IP to comply with http://go/ooga-config#ip-scrubbing.
     window.dataLayer = window.dataLayer || [];
     function gtag() { dataLayer.push(arguments); }
     gtag('js', new Date());
-    gtag('config', tagId, {'anonymize_ip': true});
+    gtag('config', tagId, {
+      // Anonymize IP to comply with http://go/ooga-config#ip-scrubbing.
+      anonymize_ip: true,
+      // We track page view event during route initialization. This gives us
+      // more control and allows us to attach more metadata.
+      //
+      // Disable the automatic page view measurement here to avoid double
+      // measurement. Browser history based tracking should also be disable via
+      // the Google Analytics console.
+      send_page_view: false,
+    });
   </script>
   <!-- End Google Tag -->
 

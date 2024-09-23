@@ -31,6 +31,7 @@ import {
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { PageMeta } from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants/view';
+import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { Alerts } from '@/monitoring/components/alerts';
 import { configuredTrees } from '@/monitoring/util/config';
 
@@ -92,10 +93,14 @@ const Link = forwardRef<HTMLAnchorElement, RouterLinkProps>(
 
 export function Component() {
   return (
-    // See the documentation for `<LoginPage />` for why we handle error this
-    // way.
-    <RecoverableErrorBoundary key="monitoring-page">
-      <MonitoringPage />
-    </RecoverableErrorBoundary>
+    <TrackLeafRoutePageView contentGroup="monitoring">
+      <RecoverableErrorBoundary
+        // See the documentation in `<LoginPage />` to learn why we handle error
+        // this way.
+        key="monitoring"
+      >
+        <MonitoringPage />
+      </RecoverableErrorBoundary>
+    </TrackLeafRoutePageView>
   );
 }

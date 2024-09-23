@@ -18,6 +18,7 @@ import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { PageMeta } from '@/common/components/page_meta';
 import { SearchInput } from '@/common/components/search_input';
 import { UiPage } from '@/common/constants/view';
+import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
 import { BuilderList } from './builder_list';
@@ -58,10 +59,14 @@ export function BuilderSearchPage() {
 
 export function Component() {
   return (
-    // See the documentation for `<LoginPage />` for why we handle error this
-    // way.
-    <RecoverableErrorBoundary key="builder-search">
-      <BuilderSearchPage />
-    </RecoverableErrorBoundary>
+    <TrackLeafRoutePageView contentGroup="builder-search">
+      <RecoverableErrorBoundary
+        // See the documentation in `<LoginPage />` to learn why we handle error
+        // this way.
+        key="builder-search"
+      >
+        <BuilderSearchPage />
+      </RecoverableErrorBoundary>
+    </TrackLeafRoutePageView>
   );
 }

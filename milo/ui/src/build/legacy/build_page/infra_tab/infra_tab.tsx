@@ -15,6 +15,7 @@
 import { Box, styled } from '@mui/material';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
+import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useTabId } from '@/generic_libs/components/routed_tabs';
 
 import { useBuild } from '../context';
@@ -86,10 +87,14 @@ export function Component() {
   useTabId('infra');
 
   return (
-    // See the documentation for `<LoginPage />` for why we handle error this
-    // way.
-    <RecoverableErrorBoundary key="infra">
-      <InfraTab />
-    </RecoverableErrorBoundary>
+    <TrackLeafRoutePageView contentGroup="infra">
+      <RecoverableErrorBoundary
+        // See the documentation in `<LoginPage />` to learn why we handle error
+        // this way.
+        key="infra"
+      >
+        <InfraTab />
+      </RecoverableErrorBoundary>
+    </TrackLeafRoutePageView>
   );
 }

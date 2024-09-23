@@ -23,6 +23,7 @@ import {
   PropertyViewerConfig,
   PropertyViewerConfigInstance,
 } from '@/common/store/user_config/build_config';
+import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useTabId } from '@/generic_libs/components/routed_tabs';
 import { invocation_StateToJSON } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
 import { useResultDbClient } from '@/test_verdict/hooks/prpc_clients';
@@ -148,9 +149,14 @@ export function Component() {
   useTabId('invocation-details');
 
   return (
-    // See the documentation for `<LoginPage />` for why we handle error this way.
-    <RecoverableErrorBoundary key="invocation-details">
-      <DetailsTab />
-    </RecoverableErrorBoundary>
+    <TrackLeafRoutePageView contentGroup="invocation-details">
+      <RecoverableErrorBoundary
+        // See the documentation in `<LoginPage />` to learn why we handle error
+        // this way.
+        key="invocation-details"
+      >
+        <DetailsTab />
+      </RecoverableErrorBoundary>
+    </TrackLeafRoutePageView>
   );
 }

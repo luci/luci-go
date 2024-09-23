@@ -12,18 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import '@/common/components/image_diff_viewer';
+import '@/common/components/status_bar';
+
 import { css, html, render } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { computed, makeObservable, observable, reaction } from 'mobx';
 import { useEffect, useRef } from 'react';
 import { Outlet, useParams } from 'react-router-dom';
 
-import '@/common/components/image_diff_viewer';
-import '@/common/components/status_bar';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { ArtifactIdentifier } from '@/common/services/resultdb';
 import { commonStyles } from '@/common/styles/stylesheets';
 import { getInvURLPath } from '@/common/tools/url_utils';
+import { ContentGroup } from '@/generic_libs/components/google_analytics';
 import { MobxExtLitElement } from '@/generic_libs/components/lit_mobx_ext';
 import { createContextLink, provider } from '@/generic_libs/tools/lit_context';
 
@@ -166,11 +168,14 @@ export function ArtifactPageLayout() {
 
 export function Component() {
   return (
-    // See the documentation for `<LoginPage />` for why we handle error this
-    // way.
-    // See the documentation for `<LoginPage />` for why we handle error this way.
-    <RecoverableErrorBoundary key="artifact">
-      <ArtifactPageLayout />
-    </RecoverableErrorBoundary>
+    <ContentGroup group="artifact">
+      <RecoverableErrorBoundary
+        // See the documentation in `<LoginPage />` to learn why we handle error
+        // this way.
+        key="artifact"
+      >
+        <ArtifactPageLayout />
+      </RecoverableErrorBoundary>
+    </ContentGroup>
   );
 }

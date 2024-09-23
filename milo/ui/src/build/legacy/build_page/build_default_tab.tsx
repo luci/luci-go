@@ -50,9 +50,11 @@ export function BuildDefaultTab() {
 
 export function Component() {
   return (
-    // See the documentation for `<LoginPage />` for why we handle error this
-    // way.
-    <RecoverableErrorBoundary key="default">
+    <RecoverableErrorBoundary
+      // See the documentation in `<LoginPage />` to learn why we handle error
+      // this way.
+      key="default"
+    >
       <BuildDefaultTab />
     </RecoverableErrorBoundary>
   );

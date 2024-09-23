@@ -28,6 +28,7 @@ import {
   TopLabel,
 } from '@/common/components/timeline';
 import { NUMERIC_TIME_FORMAT } from '@/common/tools/time_utils';
+import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useTabId } from '@/generic_libs/components/routed_tabs';
 import { CategoryTree } from '@/generic_libs/tools/category_tree';
 import { NonNullableProps } from '@/generic_libs/types';
@@ -147,10 +148,14 @@ export function Component() {
   useTabId('timeline');
 
   return (
-    // See the documentation for `<LoginPage />` for why we handle error this
-    // way.
-    <RecoverableErrorBoundary key="timeline">
-      <TimelineTab />
-    </RecoverableErrorBoundary>
+    <TrackLeafRoutePageView contentGroup="timeline">
+      <RecoverableErrorBoundary
+        // See the documentation in `<LoginPage />` to learn why we handle error
+        // this way.
+        key="timeline"
+      >
+        <TimelineTab />
+      </RecoverableErrorBoundary>
+    </TrackLeafRoutePageView>
   );
 }

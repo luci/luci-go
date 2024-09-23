@@ -23,6 +23,7 @@ import {
   renderReleaseNotes,
   useReleaseNotes,
 } from '@/core/components/release_notes';
+import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 
 const ReleaseNotesContainer = styled(SanitizedHtml)({
   '& *': {
@@ -78,10 +79,14 @@ export function ReleaseNotesPage() {
 
 export function Component() {
   return (
-    // See the documentation for `<LoginPage />` for why we handle error this
-    // way.
-    <RecoverableErrorBoundary key="release-notes">
-      <ReleaseNotesPage />
-    </RecoverableErrorBoundary>
+    <TrackLeafRoutePageView contentGroup="release-notes">
+      <RecoverableErrorBoundary
+        // See the documentation in `<LoginPage />` to learn why we handle error
+        // this way.
+        key="release-notes"
+      >
+        <ReleaseNotesPage />
+      </RecoverableErrorBoundary>
+    </TrackLeafRoutePageView>
   );
 }

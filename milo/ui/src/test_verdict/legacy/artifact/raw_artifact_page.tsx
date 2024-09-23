@@ -18,6 +18,7 @@ import { useParams } from 'react-router-dom';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { constructArtifactName } from '@/common/services/resultdb';
 import { getRawArtifactURLPath } from '@/common/tools/url_utils';
+import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 
 // Redirects user to the new URL for raw artifact "/raw-artifact/:artifactName".
 // Keep this around so we don't break the old URLs.
@@ -48,10 +49,14 @@ export function RawArtifactPage() {
 
 export function Component() {
   return (
-    // See the documentation for `<LoginPage />` for why we handle error this
-    // way.
-    <RecoverableErrorBoundary key="raw">
-      <RawArtifactPage />
-    </RecoverableErrorBoundary>
+    <TrackLeafRoutePageView contentGroup="raw">
+      <RecoverableErrorBoundary
+        // See the documentation in `<LoginPage />` to learn why we handle error
+        // this way.
+        key="raw"
+      >
+        <RawArtifactPage />
+      </RecoverableErrorBoundary>
+    </TrackLeafRoutePageView>
   );
 }

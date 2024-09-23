@@ -17,6 +17,7 @@ import { useParams } from 'react-router-dom';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { PageMeta } from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants/view';
+import { ContentGroup } from '@/generic_libs/components/google_analytics';
 
 import { LogSearch } from './log_search';
 
@@ -40,10 +41,14 @@ export function LogSearchPage() {
 
 export function Component() {
   return (
-    // See the documentation for `<LoginPage />` for why we handle error this
-    // way.
-    <RecoverableErrorBoundary key="log-search">
-      <LogSearchPage />
-    </RecoverableErrorBoundary>
+    <ContentGroup group="log-search">
+      <RecoverableErrorBoundary
+        // See the documentation in `<LoginPage />` to learn why we handle error
+        // this way.
+        key="log-search"
+      >
+        <LogSearchPage />
+      </RecoverableErrorBoundary>
+    </ContentGroup>
   );
 }

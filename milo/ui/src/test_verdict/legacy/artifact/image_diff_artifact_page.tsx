@@ -12,15 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import '@/common/components/image_diff_viewer';
+import '@/common/components/status_bar';
+import '@/generic_libs/components/dot_spinner';
+
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, html } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { computed, makeObservable, observable } from 'mobx';
 import { fromPromise } from 'mobx-utils';
 
-import '@/common/components/image_diff_viewer';
-import '@/common/components/status_bar';
-import '@/generic_libs/components/dot_spinner';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import {
   ArtifactIdentifier,
@@ -28,6 +29,7 @@ import {
 } from '@/common/services/resultdb';
 import { consumeStore, StoreInstance } from '@/common/store';
 import { commonStyles } from '@/common/styles/stylesheets';
+import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { reportRenderError } from '@/generic_libs/tools/error_handler';
 import { consumer } from '@/generic_libs/tools/lit_context';
@@ -214,10 +216,17 @@ export function ImageDiffArtifactPage() {
 
 export function Component() {
   return (
-    // See the documentation for `<LoginPage />` for why we handle error this
-    // way.
-    <RecoverableErrorBoundary key="image-diff">
-      <ImageDiffArtifactPage />
-    </RecoverableErrorBoundary>
+    <TrackLeafRoutePageView
+      contentGroup="image-diff"
+      searchParamKeys={['actualArtifactId', 'expectedArtifactId']}
+    >
+      <RecoverableErrorBoundary
+        // See the documentation in `<LoginPage />` to learn why we handle error
+        // this way.
+        key="image-diff"
+      >
+        <ImageDiffArtifactPage />
+      </RecoverableErrorBoundary>
+    </TrackLeafRoutePageView>
   );
 }

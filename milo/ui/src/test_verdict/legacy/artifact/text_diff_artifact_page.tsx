@@ -32,6 +32,7 @@ import {
 import { consumeStore, StoreInstance } from '@/common/store';
 import { commonStyles } from '@/common/styles/stylesheets';
 import { getRawArtifactURLPath } from '@/common/tools/url_utils';
+import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { ReactLitBridge } from '@/generic_libs/components/react_lit_element';
 import { reportRenderError } from '@/generic_libs/tools/error_handler';
 import { consumer } from '@/generic_libs/tools/lit_context';
@@ -164,10 +165,14 @@ export function TextDiffArtifactPage() {
 
 export function Component() {
   return (
-    // See the documentation for `<LoginPage />` for why we handle error this
-    // way.
-    <RecoverableErrorBoundary key="text-diff">
-      <TextDiffArtifactPage />
-    </RecoverableErrorBoundary>
+    <TrackLeafRoutePageView contentGroup="text-diff">
+      <RecoverableErrorBoundary
+        // See the documentation in `<LoginPage />` to learn why we handle error
+        // this way.
+        key="text-diff"
+      >
+        <TextDiffArtifactPage />
+      </RecoverableErrorBoundary>
+    </TrackLeafRoutePageView>
   );
 }

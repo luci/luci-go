@@ -15,6 +15,7 @@
 import { Box, styled } from '@mui/material';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
+import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useTabId } from '@/generic_libs/components/routed_tabs';
 
 import { AlertsSection } from '../infra_tab/alerts_section';
@@ -47,10 +48,14 @@ export function Component() {
   useTabId('overview');
 
   return (
-    // See the documentation for `<LoginPage />` for why we handle error this
-    // way.
-    <RecoverableErrorBoundary key="overview">
-      <OverviewTab />
-    </RecoverableErrorBoundary>
+    <TrackLeafRoutePageView contentGroup="overview">
+      <RecoverableErrorBoundary
+        // See the documentation in `<LoginPage />` to learn why we handle error
+        // this way.
+        key="overview"
+      >
+        <OverviewTab />
+      </RecoverableErrorBoundary>
+    </TrackLeafRoutePageView>
   );
 }

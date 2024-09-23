@@ -12,45 +12,68 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { GroupsList } from '@/authdb/components/groups_list';
-import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-
 import '../components/groups_list.css';
-import { useState, createRef } from 'react';
-import { GroupsForm } from '@/authdb/components/groups_form';
-import { GroupsFormNew } from '@/authdb/components/groups_form_new';
+
+import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import Paper from '@mui/material/Paper';
-import Box from '@mui/material/Box';
+import { useState, createRef } from 'react';
+
+import { GroupsForm } from '@/authdb/components/groups_form';
+import { GroupsFormNew } from '@/authdb/components/groups_form_new';
+import { GroupsList } from '@/authdb/components/groups_list';
 import { GroupsListElement } from '@/authdb/components/groups_list';
+import { RecoverableErrorBoundary } from '@/common/components/error_handling';
+import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 
 export function GroupsPage() {
-  const [selectedGroup, setSelectedGroup] = useState<string>("");
+  const [selectedGroup, setSelectedGroup] = useState<string>('');
   const [showCreateForm, setShowCreateForm] = useState<boolean>();
   const listRef = createRef<GroupsListElement>();
 
   const selectionChanged = (name: string) => {
-    setSelectedGroup(name)
-  }
+    setSelectedGroup(name);
+  };
 
   const onDeletedGroup = () => {
-    listRef.current?.selectFirstGroup()
-  }
+    listRef.current?.selectFirstGroup();
+  };
 
   return (
-    <Paper className='groups-container-paper'>
+    <Paper className="groups-container-paper">
       <Grid container className="groups-container">
-        <Grid item xs={4} className="container-left" sx={{ display: 'flex', flexDirection: 'column' }}>
-          <GroupsList ref={listRef} selectionChanged={selectionChanged} createFormSelected={(selected) => setShowCreateForm(selected)}/>
+        <Grid
+          item
+          xs={4}
+          className="container-left"
+          sx={{ display: 'flex', flexDirection: 'column' }}
+        >
+          <GroupsList
+            ref={listRef}
+            selectionChanged={selectionChanged}
+            createFormSelected={(selected) => setShowCreateForm(selected)}
+          />
         </Grid>
-        <Grid item xs={8} className="container-right" sx={{ display: 'flex', flexDirection: 'column' }}>
-          <Box className='groups-details-container'>
-          {showCreateForm
-            ? <GroupsFormNew />
-            : <>
-              {selectedGroup && <GroupsForm key={selectedGroup} name={selectedGroup} onDelete={onDeletedGroup}/>}
-            </>
-          }
+        <Grid
+          item
+          xs={8}
+          className="container-right"
+          sx={{ display: 'flex', flexDirection: 'column' }}
+        >
+          <Box className="groups-details-container">
+            {showCreateForm ? (
+              <GroupsFormNew />
+            ) : (
+              <>
+                {selectedGroup && (
+                  <GroupsForm
+                    key={selectedGroup}
+                    name={selectedGroup}
+                    onDelete={onDeletedGroup}
+                  />
+                )}
+              </>
+            )}
           </Box>
         </Grid>
       </Grid>
@@ -60,10 +83,14 @@ export function GroupsPage() {
 
 export function Component() {
   return (
-    // See the documentation for `<LoginPage />` for why we handle error this
-    // way.
-    <RecoverableErrorBoundary key="group">
-      <GroupsPage />
-    </RecoverableErrorBoundary>
+    <TrackLeafRoutePageView contentGroup="authdb-group">
+      <RecoverableErrorBoundary
+        // See the documentation in `<LoginPage />` to learn why we handle error
+        // this way.
+        key="authdb-group"
+      >
+        <GroupsPage />
+      </RecoverableErrorBoundary>
+    </TrackLeafRoutePageView>
   );
 }

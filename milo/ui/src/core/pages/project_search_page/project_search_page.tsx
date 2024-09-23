@@ -22,6 +22,7 @@ import { PageMeta } from '@/common/components/page_meta';
 import { SearchInput } from '@/common/components/search_input';
 import { UiPage } from '@/common/constants/view';
 import { getLoginUrl } from '@/common/tools/url_utils';
+import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
 import { ProjectList } from './project_list';
@@ -100,10 +101,14 @@ export function ProjectSearchPage() {
 
 export function Component() {
   return (
-    // See the documentation for `<LoginPage />` for why we handle error this
-    // way.
-    <RecoverableErrorBoundary key="project-search">
-      <ProjectSearchPage />
-    </RecoverableErrorBoundary>
+    <TrackLeafRoutePageView contentGroup="project-search">
+      <RecoverableErrorBoundary
+        // See the documentation in `<LoginPage />` to learn why we handle error
+        // this way.
+        key="project-search"
+      >
+        <ProjectSearchPage />
+      </RecoverableErrorBoundary>
+    </TrackLeafRoutePageView>
   );
 }

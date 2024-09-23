@@ -42,6 +42,7 @@ import { UiPage } from '@/common/constants/view';
 import { Build as JsonBuild } from '@/common/services/buildbucket';
 import { useStore } from '@/common/store';
 import { InvocationProvider } from '@/common/store/invocation_state';
+import { ContentGroup } from '@/generic_libs/components/google_analytics';
 import { Build } from '@/proto/go.chromium.org/luci/buildbucket/proto/build.pb';
 import { GetBuildRequest } from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
 import { Status } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
@@ -211,10 +212,14 @@ export const BuildPage = observer(() => {
 
 export function Component() {
   return (
-    // See the documentation for `<LoginPage />` for why we handle error this
-    // way.
-    <RecoverableErrorBoundary key="build-long-link">
-      <BuildPage />
-    </RecoverableErrorBoundary>
+    <ContentGroup group="build">
+      <RecoverableErrorBoundary
+        // See the documentation in the `<LoginPage />` for why we handle error
+        // this way.
+        key="build-long-link"
+      >
+        <BuildPage />
+      </RecoverableErrorBoundary>
+    </ContentGroup>
   );
 }

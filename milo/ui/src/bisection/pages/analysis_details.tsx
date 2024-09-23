@@ -37,6 +37,7 @@ import {
   GenericSuspect,
 } from '@/bisection/types';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
+import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import {
   Analysis,
   QueryAnalysisRequest,
@@ -205,10 +206,14 @@ export function AnalysisDetailsPage() {
 
 export function Component() {
   return (
-    // See the documentation for `<LoginPage />` for why we handle error this
-    // way.
-    <RecoverableErrorBoundary key="analysis-details">
-      <AnalysisDetailsPage />
-    </RecoverableErrorBoundary>
+    <TrackLeafRoutePageView contentGroup="compile-analysis-details">
+      <RecoverableErrorBoundary
+        // See the documentation in `<LoginPage />` to learn why we handle error
+        // this way.
+        key="compile-analysis-details"
+      >
+        <AnalysisDetailsPage />
+      </RecoverableErrorBoundary>
+    </TrackLeafRoutePageView>
   );
 }

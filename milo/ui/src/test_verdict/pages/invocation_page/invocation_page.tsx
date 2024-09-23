@@ -19,6 +19,7 @@ import { useParams } from 'react-router-dom';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { PageMeta } from '@/common/components/page_meta/page_meta';
 import { AppRoutedTab, AppRoutedTabs } from '@/common/components/routed_tabs';
+import { ContentGroup } from '@/generic_libs/components/google_analytics';
 import { useResultDbClient } from '@/test_verdict/hooks/prpc_clients';
 
 import { InvocationIdBar } from './invocation_id_bar';
@@ -73,10 +74,14 @@ export function InvocationPage() {
 
 export function Component() {
   return (
-    // See the documentation for `<LoginPage />` for why we handle error this
-    // way.
-    <RecoverableErrorBoundary key="invocation">
-      <InvocationPage />
-    </RecoverableErrorBoundary>
+    <ContentGroup group="invocation">
+      <RecoverableErrorBoundary
+        // See the documentation in `<LoginPage />` to learn why we handle error
+        // this way.
+        key="invocation"
+      >
+        <InvocationPage />
+      </RecoverableErrorBoundary>
+    </ContentGroup>
   );
 }

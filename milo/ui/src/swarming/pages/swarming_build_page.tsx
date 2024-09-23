@@ -18,6 +18,7 @@ import { useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
+import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { TaskIdRequest } from '@/proto/go.chromium.org/luci/swarming/proto/api_v2/swarming.pb';
 import { getBuildURLPathFromTags } from '@/swarming/tools/utils';
@@ -77,10 +78,14 @@ export function SwarmingBuildPage() {
 
 export function Component() {
   return (
-    // See the documentation for `<LoginPage />` for why we handle error this
-    // way.
-    <RecoverableErrorBoundary key="swarming-build">
-      <SwarmingBuildPage />
-    </RecoverableErrorBoundary>
+    <TrackLeafRoutePageView contentGroup="swarming-build">
+      <RecoverableErrorBoundary
+        // See the documentation in `<LoginPage />` to learn why we handle error
+        // this way.
+        key="swarming-build"
+      >
+        <SwarmingBuildPage />
+      </RecoverableErrorBoundary>
+    </TrackLeafRoutePageView>
   );
 }
