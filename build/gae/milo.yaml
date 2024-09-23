@@ -4,13 +4,15 @@ extends: ../gae.yaml
 inputsdir: ../../milo
 
 build:
-  # This builds the frontend code updating ${inputsdir}/ui/out.
+  # This builds the frontend code updating ${inputsdir}/ui.
   - run: ['make', 'release']
     cwd: ${inputsdir}/ui
 
+  - copy: ${inputsdir}/dispatch.yaml
+    dest: ${contextdir}/dispatch.yaml
   # This packages all Go code with its dependencies into _gopath/src/...
-  # It picks up the built frontend code from frontend/ui/out (which
-  # is symlinked to /ui/out).
+  # It picks up the built frontend code from frontend/ui (which is symlinked to
+  # /ui).
   - go_gae_bundle: ${inputsdir}/frontend/app.yaml
     go_gae_bundle_as_module: True
     dest: ${contextdir}/frontend
