@@ -286,7 +286,7 @@ func TestUpdateBuildFromGlobalSubBuild(t *testing.T) {
 
 		Convey(`empty parent`, func() {
 			Convey(`empty child`, func() {
-				updateBuildFromGlobalSubBuild(base, sub)
+				updateOutputProperties(base, sub, []string{""})
 				So(base, ShouldResembleProto, &bbpb.Build{})
 			})
 
@@ -297,7 +297,7 @@ func TestUpdateBuildFromGlobalSubBuild(t *testing.T) {
 				})
 				So(err, ShouldBeNil)
 				sub.Output = &bbpb.Build_Output{Properties: s}
-				updateBuildFromGlobalSubBuild(base, sub)
+				updateOutputProperties(base, sub, []string{""})
 				m := base.Output.Properties.AsMap()
 				So(m, ShouldResemble, map[string]any{
 					"hello": "world",
@@ -317,7 +317,7 @@ func TestUpdateBuildFromGlobalSubBuild(t *testing.T) {
 			}
 
 			Convey(`empty child`, func() {
-				updateBuildFromGlobalSubBuild(base, sub)
+				updateOutputProperties(base, sub, []string{""})
 				So(base, ShouldResembleProto, &bbpb.Build{
 					Output: &bbpb.Build_Output{
 						Properties: s,
@@ -332,7 +332,7 @@ func TestUpdateBuildFromGlobalSubBuild(t *testing.T) {
 				})
 				So(err, ShouldBeNil)
 				sub.Output = &bbpb.Build_Output{Properties: sSub}
-				updateBuildFromGlobalSubBuild(base, sub)
+				updateOutputProperties(base, sub, []string{""})
 
 				sNew, err := structpb.NewStruct(map[string]any{
 					"hello":  "replacement",
@@ -347,6 +347,40 @@ func TestUpdateBuildFromGlobalSubBuild(t *testing.T) {
 				})
 			})
 
+		})
+
+		Convey(`deep path`, func() {
+			s, err := structpb.NewStruct(map[string]any{
+				"hello": "world",
+				"this":  100,
+			})
+			So(err, ShouldBeNil)
+			base.Output = &bbpb.Build_Output{
+				Properties: s,
+			}
+			sub.Output = &bbpb.Build_Output{
+				Properties: proto.Clone(s).(*structpb.Struct),
+			}
+
+			sNew, err := structpb.NewStruct(map[string]any{
+				"hello": "world",
+				"this":  100,
+				"a": map[string]any{
+					"b": map[string]any{
+						"c": map[string]any{
+							"hello": "world",
+							"this":  100,
+						},
+					},
+				},
+			})
+
+			updateOutputProperties(base, sub, []string{"a", "b", "c"})
+			So(base, ShouldResembleProto, &bbpb.Build{
+				Output: &bbpb.Build_Output{
+					Properties: sNew,
+				},
+			})
 		})
 	})
 }

@@ -339,8 +339,10 @@ func (a *Agent) sendMerge(_ *buffer.Batch[struct{}]) error {
 					step.SummaryMarkdown = sb.String()
 				} else {
 					updateStepFromBuild(step, subBuild)
-					if mb.LegacyGlobalNamespace {
-						updateBuildFromGlobalSubBuild(build, subBuild)
+					if len(mb.MergeOutputPropertiesTo) > 0 {
+						updateOutputProperties(build, subBuild, mb.MergeOutputPropertiesTo)
+					} else if mb.LegacyGlobalNamespace {
+						updateOutputProperties(build, subBuild, []string{""})
 					}
 				}
 			}

@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
@@ -161,32 +162,49 @@ func updateBaseFromUserBuild(base, build *bbpb.Build) {
 	}
 }
 
-// Implements MergeBuild.legacy_global_namespace.
+func getStructIn(s *structpb.Struct, path []string) *structpb.Struct {
+	for _, tok := range path {
+		deeperS := s.Fields[tok].GetStructValue()
+		if deeperS == nil {
+			if s.Fields == nil {
+				s.Fields = map[string]*structpb.Value{}
+			}
+			deeperS = &structpb.Struct{
+				Fields: map[string]*structpb.Value{},
+			}
+			s.Fields[tok] = structpb.NewStructValue(deeperS)
+		}
+		s = deeperS
+	}
+	if s.Fields == nil {
+		s.Fields = map[string]*structpb.Value{}
+	}
+	return s
+}
+
+// Implements MergeBuild.legacy_global_namespace and
+// MergeBuild.merge_output_properties_to.
 //
-// Only used for legacy CrOS builders, see crbug.com/1310155.
-//
-// Merges:
-//   - properties will be 'merged' by replacing top-level keys. If the
-//     parent build and this sub-build both write in the same top-level keys
-//     the sub-build value wins.
-//
-// The following fields COULD be merged, but aren't, because this
-// functionality is legacy, and we're not trying to make it do
-// anything more than is necessary:
-//   - gitiles_commit will NOT be merged
-//   - the sub-build's output.logs will NOT be merged.
-//   - the sub-build's summary_markdown will NOT be merged.
-func updateBuildFromGlobalSubBuild(parent, subBuild *bbpb.Build) {
+// Path describes the path within parent.Output.Properties to merge subBuild's
+// Output.Properties.
+func updateOutputProperties(parent, subBuild *bbpb.Build, path []string) {
+	if len(path) == 1 && path[0] == "" {
+		// a.k.a. "merge to top level"
+		path = nil
+	}
+
 	subOut := subBuild.GetOutput()
 	if subP := subOut.GetProperties(); subP != nil {
 		if parent.Output == nil {
-			parent.Output = &bbpb.Build_Output{Properties: subP}
-		} else if parent.Output.Properties == nil {
-			parent.Output.Properties = subP
-		} else {
-			for key, item := range subP.GetFields() {
-				parent.Output.Properties.Fields[key] = item
-			}
+			parent.Output = &bbpb.Build_Output{}
+		}
+		if parent.Output.Properties == nil {
+			parent.Output.Properties = &structpb.Struct{}
+		}
+
+		target := getStructIn(parent.Output.Properties, path)
+		for key, item := range subP.Fields {
+			target.Fields[key] = item
 		}
 	}
 }
