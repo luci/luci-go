@@ -34,7 +34,6 @@ import (
 	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/encryptedcookies"
 	"go.chromium.org/luci/server/gaeemulation"
-	"go.chromium.org/luci/server/gtm"
 	"go.chromium.org/luci/server/loginsessions"
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/pubsub"
@@ -70,7 +69,6 @@ func Main(init func(srv *server.Server) error) {
 		hosts.NewModuleFromFlags(),
 		pubsub.NewModuleFromFlags(),
 		redisconn.NewModuleFromFlags(),
-		gtm.NewModuleFromFlags(),
 		loginsessions.NewModuleFromFlags(),
 	}
 	server.Main(nil, modules, init)

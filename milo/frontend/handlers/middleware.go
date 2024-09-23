@@ -43,7 +43,6 @@ import (
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/gtm"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
 
@@ -496,19 +495,17 @@ func getTemplateBundle(templatePath string, appVersionID string, prod bool) *tem
 			project := e.Params.ByName("project")
 			group := e.Params.ByName("group")
 			return templates.Args{
-				"AppVersion":         appVersionID,
-				"IsAnonymous":        auth.CurrentIdentity(c) == identity.AnonymousIdentity,
-				"User":               auth.CurrentUser(c),
-				"LoginURL":           loginURL,
-				"LogoutURL":          logoutURL,
-				"CurrentTime":        clock.Now(c),
-				"GTMJSSnippet":       gtm.JSSnippet(c),
-				"GTMNoScriptSnippet": gtm.NoScriptSnippet(c),
-				"RequestID":          trace.SpanContextFromContext(c).TraceID().String(),
-				"Request":            e.Request,
-				"Navi":               ProjectLinks(c, project, group),
-				"ProjectID":          project,
-				"Reload":             reload,
+				"AppVersion":  appVersionID,
+				"IsAnonymous": auth.CurrentIdentity(c) == identity.AnonymousIdentity,
+				"User":        auth.CurrentUser(c),
+				"LoginURL":    loginURL,
+				"LogoutURL":   logoutURL,
+				"CurrentTime": clock.Now(c),
+				"RequestID":   trace.SpanContextFromContext(c).TraceID().String(),
+				"Request":     e.Request,
+				"Navi":        ProjectLinks(c, project, group),
+				"ProjectID":   project,
+				"Reload":      reload,
 			}, nil
 		},
 		FuncMap: funcMap,

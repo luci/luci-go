@@ -44,7 +44,6 @@ luci_gae_vars:
     REDIS_ADDR: 10.82.28.60:6379
     DS_CACHE: redis
     VPC_CONNECTOR: projects/luci-milo-dev/locations/us-central1/connectors/connector
-    GTM_CONTAINER_ID: GTM-5SMGXGB
     LOGIN_SESSIONS_ROOT_URL: https://luci-milo-dev.appspot.com
 
 vpc_access_connector:
@@ -130,5 +129,4 @@ entrypoint: >
   -encrypted-cookies-expose-state-endpoint
   -redis-addr ${REDIS_ADDR}
   -ds-cache ${DS_CACHE}
-  -gtm-container-id ${GTM_CONTAINER_ID}
   -login-sessions-root-url ${LOGIN_SESSIONS_ROOT_URL}

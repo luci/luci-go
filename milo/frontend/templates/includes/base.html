@@ -4,7 +4,6 @@
 Use of this source code is governed under the Apache License, Version 2.0.
 that can be found in the LICENSE file. -->
 <html lang="en">
-{{ .GTMJSSnippet }}
 <meta charset="utf-8">
 <meta name="google" value="notranslate">
 {{ if .Reload }}
@@ -27,7 +26,6 @@ that can be found in the LICENSE file. -->
 {{- block "head" .}}{{ end }}
 
 <body class="interface">
-  {{ .GTMNoScriptSnippet }}
   {{ if .BannerHTML }}
     {{ .BannerHTML }}
   {{ end }}
