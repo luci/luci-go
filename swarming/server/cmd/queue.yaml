@@ -63,6 +63,7 @@ queue:
 # Each task is 1000 tasks, and takes around 3 minutes to complete. This means
 # around 10 tasks in practice should be sufficient, set it to 20 to keep a
 # safety margin.
+# TODO(vadimsh): Update the comment once only Go is submitting tasks.
 - name: delete-tasks
   max_concurrent_requests: 20
   rate: 1/s

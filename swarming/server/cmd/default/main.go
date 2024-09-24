@@ -198,6 +198,9 @@ func main() {
 		}
 		taskLifeCycle.RegisterTQTasks()
 
+		// Old task deletion cron and TQ handlers.
+		tasks.RegisterCleanupHandlers(&cron.Default, &tq.Default)
+
 		// Helpers for running local integration tests. They fake some of Swarming
 		// Python server behavior.
 		if *exposeIntegrationMocks {

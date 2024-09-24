@@ -25,3 +25,9 @@ message BatchCancelTask {
 
   string purpose = 4;
 }
+
+// Used by the cron that cleans up old entity groups with old tasks.
+message CleanupOldTasks {
+  repeated string task_ids = 1;
+  int32 retries = 2;
+}

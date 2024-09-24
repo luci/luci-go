@@ -24,6 +24,11 @@ cron:
   schedule: every 10 minutes synchronized
   target: backend
 
+- description: Triggers TQ tasks to delete old TaskRequest entity groups
+  url: /internal/cron/cleanup-old-tasks
+  schedule: every 10 minutes
+  target: default-go
+
 
 ### Bots
 
@@ -77,15 +82,14 @@ cron:
   target: backend
 
 - description: Report bot metrics from go service
-  target: monitor
   url: /internal/cron/report-bots
   schedule: every 1 minutes
-
+  target: monitor
 
 - description: Report Task running/pending metrics from go service
-  target: monitor
   url: /internal/cron/report-tasks
   schedule: every 1 minutes
+  target: monitor
 
 
 ### Configs
@@ -110,13 +114,13 @@ cron:
   target: default-go
 
 - description: Trigger task queues to send rows to to BigQuery
-  target: exporter
   url: /internal/cron/bq-export
   schedule: every 1 minutes
+  target: exporter
 
 ### TQ sweep
 
 - description: TQ sweeper
-  target: default-go
   url: /internal/tasks/c/sweep
   schedule: every 1 minutes
+  target: default-go
