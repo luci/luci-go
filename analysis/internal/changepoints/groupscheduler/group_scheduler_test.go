@@ -41,7 +41,7 @@ func TestScheduleGroupChangepoints(t *testing.T) {
 		err := scheduleGroupingTasks(ctx)
 		assert.That(t, err, should.ErrLike(nil))
 		tasks := taskScheduler.Tasks().Payloads()
-		assert.That(t, len(tasks), should.Equal(8))
+		assert.That(t, len(tasks), should.Equal(52))
 		assert.That(t, tasks[0].(*taskspb.GroupChangepoints), should.Match(
 			&taskspb.GroupChangepoints{
 				Week:         timestamppb.New(time.Date(2024, time.September, 15, 0, 0, 0, 0, time.UTC)),
