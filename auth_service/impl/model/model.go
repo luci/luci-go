@@ -650,6 +650,10 @@ func runAuthDBChange(ctx context.Context, historicalComment string, f func(conte
 // Returns datastore.ErrNoSuchEntity if the group given is not present.
 // Returns an annotated error for other errors.
 func GetAuthGroup(ctx context.Context, groupName string) (*AuthGroup, error) {
+	if groupName == "" {
+		return nil, fmt.Errorf("%w: empty group name", ErrInvalidName)
+	}
+
 	authGroup := makeAuthGroup(ctx, groupName)
 
 	switch err := datastore.Get(ctx, authGroup); {

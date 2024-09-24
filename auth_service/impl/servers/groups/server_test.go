@@ -199,11 +199,13 @@ func TestGroupsServer(t *testing.T) {
 			Identity:       "user:someone@example.com",
 			IdentityGroups: []string{"testers"},
 		})
-		request := &rpcpb.GetGroupRequest{
-			Name: "test-group",
-		}
+		request := &rpcpb.GetGroupRequest{}
 
 		_, err := srv.GetGroup(ctx, request)
+		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+
+		request.Name = "test-group"
+		_, err = srv.GetGroup(ctx, request)
 		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.NotFound))
 
 		// Groups built from model.AuthGroup definition.
@@ -347,6 +349,20 @@ func TestGroupsServer(t *testing.T) {
 		ctx := auth.WithState(memory.Use(context.Background()), &authtest.FakeState{
 			Identity:       "user:someone@example.com",
 			IdentityGroups: []string{"testers"},
+		})
+
+		t.Run("empty name", func(t *ftt.Test) {
+			rw := httptest.NewRecorder()
+			rctx := &router.Context{
+				Request: (&http.Request{}).WithContext(ctx),
+				Params: []httprouter.Param{
+					{Key: "groupName", Value: ""},
+				},
+				Writer: rw,
+			}
+			err := srv.GetLegacyAuthGroup(rctx)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, rw.Body.Bytes(), should.BeEmpty)
 		})
 
 		t.Run("not found", func(t *ftt.Test) {

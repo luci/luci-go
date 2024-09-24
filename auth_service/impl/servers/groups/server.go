@@ -125,6 +125,8 @@ func (*Server) GetGroup(ctx context.Context, request *rpcpb.GetGroupRequest) (*r
 			return nil, err
 		}
 		return g, nil
+	case errors.Is(err, model.ErrInvalidName):
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return nil, status.Errorf(codes.NotFound, "no such group %q", request.Name)
 	default:
@@ -288,6 +290,9 @@ func (srv *Server) GetLegacyAuthGroup(ctx *router.Context) error {
 
 	group, err := model.GetAuthGroup(c, name)
 	if err != nil {
+		if errors.Is(err, model.ErrInvalidName) {
+			return status.Error(codes.InvalidArgument, err.Error())
+		}
 		if errors.Is(err, datastore.ErrNoSuchEntity) {
 			return status.Errorf(codes.NotFound, "no such group %s", name)
 		}

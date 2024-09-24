@@ -306,6 +306,12 @@ func TestGetAuthGroup(t *testing.T) {
 			expected.Owners = AdminGroup
 			assert.Loosely(t, actual, should.Match(expected))
 		})
+
+		t.Run("handles empty name", func(t *ftt.Test) {
+			actual, err := GetAuthGroup(context.Background(), "")
+			assert.Loosely(t, err, should.ErrLike(ErrInvalidName))
+			assert.Loosely(t, actual, should.BeNil)
+		})
 	})
 }
 
