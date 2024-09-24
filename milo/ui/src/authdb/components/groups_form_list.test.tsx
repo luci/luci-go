@@ -24,7 +24,7 @@ describe('<GroupsFormList editable/>', () => {
     beforeEach(async () => {
       render(
         <FakeContextProvider>
-          <GroupsFormList name='Members' initialItems={mockGroup.members as string[]} itemsChanged={() => {}}/>
+          <GroupsFormList name='Members' initialValues={mockGroup.members as string[]} itemsChanged={() => {}}/>
         </FakeContextProvider>,
       );
       await screen.findByTestId('groups-form-list');
@@ -188,7 +188,7 @@ describe('<GroupsFormList editable globs/>', () => {
   beforeEach(async () => {
     render(
       <FakeContextProvider>
-        <GroupsFormList name='Globs' initialItems={mockGroup.members as string[]} itemsChanged={() => {}}/>
+        <GroupsFormList name='Globs' initialValues={mockGroup.members as string[]} itemsChanged={() => {}}/>
       </FakeContextProvider>,
     );
     await screen.findByTestId('groups-form-list');
@@ -216,7 +216,7 @@ describe('<GroupsFormList editable subgroups/>', () => {
   beforeEach(async () => {
     render(
       <FakeContextProvider>
-        <GroupsFormList name='Subgroups' initialItems={mockGroup.members as string[]} itemsChanged={() => {}}/>
+        <GroupsFormList name='Subgroups' initialValues={mockGroup.members as string[]} itemsChanged={() => {}}/>
       </FakeContextProvider>,
     );
     await screen.findByTestId('groups-form-list');

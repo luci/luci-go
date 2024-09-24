@@ -31,7 +31,7 @@ import './groups_list.css';
 
 interface GroupsFormListProps {
     // Sets the starting items array. Used on initial GetGroup call from groups_form.
-    initialItems: string[];
+    initialValues: string[];
     // This will be either members, subgroups or globs. Used for header in form and to check validity of added items.
     name: string;
     // groups_form function called when items are added or removed in this array.
@@ -52,21 +52,29 @@ type Item = {
   include: boolean;
 };
 
+// Converts string (of item names) array to Item array.
+const asItems = (values: string[]) => {
+  let items: Item[] = [];
+  values.forEach((item) => {
+    items.push({
+      value: item,
+      include: true,
+    })
+  })
+  return items;
+};
+
 export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
   (
-  {initialItems, name, itemsChanged}, ref
+  {initialValues, name, itemsChanged}, ref
   ) => {
     const [addingItem, setAddingItem] = useState<boolean>();
     const [currentItem, setCurrentItem] = useState<string>();
     const [errorMessage, setErrorMessage] = useState<string>('');
-    let initial:Item[] = [];
-    initialItems.forEach((item) => {
-      initial.push({
-        value: item,
-        include: true,
-      })
-    })
-    const [items, setItems] = useState<Item[]>(initial);
+    // The initial form items which reflect the items currently in auth service backend.
+    const [savedValues, setSavedValues] = useState<string[]>(initialValues);
+    // The current edited item list, including removed & added items.
+    const [items, setItems] = useState<Item[]>(asItems(initialValues));
 
     useImperativeHandle(ref, () => ({
       getItems: () => {
@@ -76,18 +84,12 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
         setAddingItem(false);
         setCurrentItem("");
       },
-      changeItems: (items: string[]) => {
-        let newItems:Item[] = [];
-        items.forEach((item) => {
-          newItems.push({
-            value: item,
-            include: true,
-          })
-        })
-        setItems(newItems);
+      changeItems: (newItems: string[]) => {
+        setItems(asItems(newItems));
+        setSavedValues(newItems);
       },
       isChanged: () => {
-        return !(items.length === initialItems.length && items.every((val, index) => val.value === initialItems[index]) && items.every((item) => item.include === true));
+        return !(items.length === savedValues.length && items.every((val, index) => val.value === savedValues[index]) && items.every((item) => item.include === true));
       }
     }));
 
@@ -145,7 +147,7 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
     }, [items])
 
     const isNewItem = (item: string) => {
-      if (initialItems.includes(item)) {
+      if (savedValues.includes(item)) {
         return false;
       }
       return true;
@@ -160,7 +162,7 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
     const handleChange = (index: number) => {
       const updatedItems = [...items];
       // This is a new item, so just remove.
-      if (index >= initialItems.length) {
+      if (index >= savedValues.length) {
         updatedItems.splice(index, 1)
       } else {
         updatedItems[index].include = !updatedItems[index].include

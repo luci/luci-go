@@ -87,6 +87,7 @@ export function GroupsForm({ name, onDelete = () => { } }: GroupsFormProps) {
   const [ownersMode, setOwnersMode] = useState<boolean>();
   const [description, setDescription] = useState<string>();
   const [owners, setOwners] = useState<string>();
+  const [etag, setEtag] = useState<string>();
   const [showOwnersEdit, setShowOwnersEdit] = useState<boolean>();
   const [showDescriptionEdit, setShowDescriptionEdit] = useState<boolean>();
   const [isExternal, setIsExternal] = useState<boolean>();
@@ -109,6 +110,9 @@ export function GroupsForm({ name, onDelete = () => { } }: GroupsFormProps) {
       membersRef.current?.changeItems(members);
       globsRef.current?.changeItems(response?.globs as string[]);
       subgroupsRef.current?.changeItems(response?.nested as string[]);
+      setDescription(response?.description);
+      setOwners(response?.owners);
+      setEtag(response?.etag);
     },
     onError: () => {
       setErrorMessage('Error editing group');
@@ -277,11 +281,13 @@ export function GroupsForm({ name, onDelete = () => { } }: GroupsFormProps) {
   if (owners == null) {
     setOwners(initialOwners || '');
   }
+  if (etag == null) {
+    setEtag(response?.etag);
+  }
 
   const members: string[] = (response?.members)?.map((member => stripPrefix('user', member))) || [] as string[];
   const subgroups: string[] = (response?.nested || []) as string[];
   const globs: string[] = (response?.globs || []) as string[];
-  const etag = response?.etag;
   const callerCanModify: boolean = response?.callerCanModify || false;
   const callerCanViewMembers: boolean = response?.callerCanViewMembers || false;
   const numRedacted: number = response?.numRedacted || 0;
@@ -357,11 +363,11 @@ export function GroupsForm({ name, onDelete = () => { } }: GroupsFormProps) {
               {callerCanModify ?
                 <>
                   {callerCanViewMembers
-                    ? <GroupsFormList name='Members' initialItems={members} ref={membersRef} itemsChanged={itemsChanged}/>
+                    ? <GroupsFormList name='Members' initialValues={members} ref={membersRef} itemsChanged={itemsChanged}/>
                     : <Typography variant="h6" sx={{p: '16px'}}> {numRedacted} members redacted</Typography>
                   }
-                  <GroupsFormList name='Globs' initialItems={globs} ref={globsRef} itemsChanged={itemsChanged}/>
-                  <GroupsFormList name='Subgroups' initialItems={subgroups} ref={subgroupsRef} itemsChanged={itemsChanged}/>
+                  <GroupsFormList name='Globs' initialValues={globs} ref={globsRef} itemsChanged={itemsChanged}/>
+                  <GroupsFormList name='Subgroups' initialValues={subgroups} ref={subgroupsRef} itemsChanged={itemsChanged}/>
                   {(changedState && !successEditedGroup) &&
                     <>
                       <Typography variant="subtitle1" sx={{ pl: 1.5 }}> You have unsaved changes! </Typography>
