@@ -86,8 +86,8 @@ func TestCancel(t *testing.T) {
 
 		lt := MockTQTasks()
 		c := &Cancellation{
-			TaskID:             tID,
-			KillRunning:        true,
+			TaskID:         tID,
+			KillRunning:    true,
 			LifecycleTasks: lt,
 		}
 
@@ -232,8 +232,8 @@ func TestCancelChildren(t *testing.T) {
 
 		lt := MockTQTasks()
 		cc := &childCancellation{
-			parentID:           pID,
-			batchSize:          300,
+			parentID:       pID,
+			batchSize:      300,
 			lifecycleTasks: lt,
 		}
 
@@ -311,10 +311,10 @@ func TestBatchCancellation(t *testing.T) {
 
 		lt := MockTQTasks()
 		bc := &batchCancellation{
-			killRunning:        true,
+			killRunning:    true,
 			lifecycleTasks: lt,
-			workers:            10,
-			purpose:            "CancelTasks request",
+			workers:        10,
+			purpose:        "CancelTasks request",
 		}
 
 		t.Run("no tasks to cancel", func(t *ftt.Test) {

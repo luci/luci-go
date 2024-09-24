@@ -200,7 +200,7 @@ func SetupTestTasks(ctx context.Context) (*MockedRequestState, map[string]string
 	state.Configs.MockPool("hidden-pool1", "project:hidden-realm")
 	state.Configs.MockPool("hidden-pool2", "project:hidden-realm")
 
-	state.MockPerm("project:visible-realm", acls.PermPoolsCancelTask, acls.PermPoolsListTasks, acls.PermTasksGet)
+	state.MockPerm("project:visible-realm", acls.PermPoolsCancelTask, acls.PermPoolsListTasks, acls.PermTasksCancel, acls.PermTasksGet)
 
 	// This is used to make sure all task keys are unique, even if they are
 	// created at the exact same (mocked) timestamp. In the prod implementation
@@ -234,21 +234,23 @@ func SetupTestTasks(ctx context.Context) (*MockedRequestState, map[string]string
 		} else {
 			realm, pool = "project:hidden-realm", "hidden-pool1"
 		}
-		err = datastore.Put(ctx,
-			&model.TaskRequest{
-				Key:   reqKey,
-				Name:  name,
-				Realm: realm,
-				TaskSlices: []model.TaskSlice{
-					{
-						Properties: model.TaskProperties{
-							Dimensions: model.TaskDimensions{
-								"pool": {pool},
-							},
+
+		tr := &model.TaskRequest{
+			Key:   reqKey,
+			Name:  name,
+			Realm: realm,
+			TaskSlices: []model.TaskSlice{
+				{
+					Properties: model.TaskProperties{
+						Dimensions: model.TaskDimensions{
+							"pool": {pool},
 						},
 					},
 				},
 			},
+		}
+		toPut := []any{
+			tr,
 			&model.TaskResultSummary{
 				TaskResultCommon: model.TaskResultCommon{
 					State:         state,
@@ -269,7 +271,28 @@ func SetupTestTasks(ctx context.Context) (*MockedRequestState, map[string]string
 				Key:             model.PerformanceStatsKey(ctx, reqKey),
 				BotOverheadSecs: 123.0,
 			},
-		)
+		}
+
+		switch state {
+		case apipb.TaskState_PENDING:
+			toRunKey, _ := model.TaskRequestToToRunKey(ctx, tr, 0)
+			ttr := &model.TaskToRun{
+				Key:            toRunKey,
+				Expiration:     datastore.NewIndexedOptional(TestTime.Add(time.Hour)),
+				RBEReservation: "reservation",
+			}
+			toPut = append(toPut, ttr)
+		case apipb.TaskState_RUNNING:
+			trr := &model.TaskRunResult{
+				TaskResultCommon: model.TaskResultCommon{
+					State: apipb.TaskState_RUNNING,
+				},
+				Key: model.TaskRunResultKey(ctx, reqKey),
+			}
+			toPut = append(toPut, trr)
+		}
+
+		err = datastore.Put(ctx, toPut)
 		if err != nil {
 			panic(err)
 		}

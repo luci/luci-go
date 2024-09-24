@@ -218,12 +218,10 @@ func main() {
 		// bugs in the WIP code.
 		srv.RegisterUnifiedServerInterceptors(rpcacl.Interceptor(rpcacl.Map{
 			// Protect WIP or unimplemented Swarming APIs.
-			"/swarming.v2.Bots/DeleteBot":             devAPIAccessGroup,
-			"/swarming.v2.Bots/TerminateBot":          devAPIAccessGroup,
-			"/swarming.v2.Tasks/NewTask":              devAPIAccessGroup,
-			"/swarming.v2.Tasks/CancelTasks":          devAPIAccessGroup,
-			"/buildbucket.v2.TaskBackend/RunTask":     devAPIAccessGroup,
-			"/buildbucket.v2.TaskBackend/CancelTasks": devAPIAccessGroup,
+			"/swarming.v2.Bots/DeleteBot":         devAPIAccessGroup,
+			"/swarming.v2.Bots/TerminateBot":      devAPIAccessGroup,
+			"/swarming.v2.Tasks/NewTask":          devAPIAccessGroup,
+			"/buildbucket.v2.TaskBackend/RunTask": devAPIAccessGroup,
 
 			// Fully implemented APIs allowed to receive external traffic.
 			"/swarming.v2.Bots/CountBots":                 rpcacl.All,
@@ -233,6 +231,7 @@ func main() {
 			"/swarming.v2.Bots/ListBots":                  rpcacl.All,
 			"/swarming.v2.Bots/ListBotTasks":              rpcacl.All,
 			"/swarming.v2.Tasks/CancelTask":               rpcacl.All,
+			"/swarming.v2.Tasks/CancelTasks":              rpcacl.All,
 			"/swarming.v2.Tasks/GetResult":                rpcacl.All,
 			"/swarming.v2.Tasks/BatchGetResult":           rpcacl.All,
 			"/swarming.v2.Tasks/GetRequest":               rpcacl.All,
@@ -244,6 +243,7 @@ func main() {
 			"/swarming.v2.Swarming/GetDetails":            rpcacl.All,
 			"/swarming.v2.Swarming/GetPermissions":        rpcacl.All,
 			"/swarming.v2.Swarming/GetToken":              rpcacl.All,
+			"/buildbucket.v2.TaskBackend/CancelTasks":     rpcacl.All,
 			"/buildbucket.v2.TaskBackend/FetchTasks":      rpcacl.All,
 			"/buildbucket.v2.TaskBackend/ValidateConfigs": rpcacl.All,
 
@@ -265,10 +265,12 @@ func main() {
 
 		// Register gRPC server implementations.
 		apipb.RegisterBotsServer(srv, &rpcs.BotsServer{BotQuerySplitMode: model.SplitOptimally})
-		apipb.RegisterTasksServer(srv, &rpcs.TasksServer{
+
+		tasksServer := &rpcs.TasksServer{
 			TaskQuerySplitMode: model.SplitOptimally,
 			TaskLifecycleTasks: taskLifeCycle,
-		})
+		}
+		apipb.RegisterTasksServer(srv, tasksServer)
 		apipb.RegisterSwarmingServer(srv, &rpcs.SwarmingServer{
 			ServerVersion: srv.Options.ImageVersion(),
 		})
@@ -276,6 +278,7 @@ func main() {
 			BuildbucketTarget:       fmt.Sprintf("swarming://%s", srv.Options.CloudProject),
 			BuildbucketAccount:      *buildbucketServiceAccount,
 			DisableBuildbucketCheck: !srv.Options.Prod,
+			TasksServer:             tasksServer,
 		})
 
 		srv.ConfigurePRPC(func(prpcSrv *prpc.Server) {

@@ -101,6 +101,8 @@ type TaskBackend struct {
 	BuildbucketAccount string
 	// DisableBuildbucketCheck is true when running locally.
 	DisableBuildbucketCheck bool
+
+	TasksServer *TasksServer
 }
 
 // CheckBuildbucket returns a gRPC error if the caller is not Buildbucket.

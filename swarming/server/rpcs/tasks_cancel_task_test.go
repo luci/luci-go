@@ -45,7 +45,8 @@ func TestCancelTask(t *testing.T) {
 		state := NewMockedRequestState()
 		state.MockPerm("project:visible-realm", acls.PermTasksCancel)
 		ctx = MockRequestState(ctx, state)
-		srv := TasksServer{}
+		lt := tasks.MockTQTasks()
+		srv := TasksServer{TaskLifecycleTasks: lt}
 		taskID := "65aba3a3e6b99310"
 		reqKey, err := model.TaskIDToRequestKey(ctx, taskID)
 		assert.Loosely(t, err, should.BeNil)
@@ -105,9 +106,6 @@ func TestCancelTask(t *testing.T) {
 				RBEInstance: "rbe-instance",
 			}
 			_ = datastore.Put(ctx, tr)
-
-			lt := tasks.MockTQTasks()
-			srv.TaskLifecycleTasks = lt
 
 			t.Run("fail", func(t *ftt.Test) {
 				// No TaskResultSummary entity.
