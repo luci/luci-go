@@ -81,7 +81,7 @@ export function TestLogList({
   return (
     <>
       {matchingLogs.map((a) => (
-        <LogSnippetRow artifact={a} key={a.name} />
+        <LogSnippetRow artifact={a} variantHash={variantHash} key={a.name} />
       ))}
       {hasNextPage && (
         <LoadingButton

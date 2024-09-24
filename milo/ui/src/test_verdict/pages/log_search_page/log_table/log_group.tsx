@@ -56,6 +56,7 @@ export interface LogGroupProps {
 export function LogGroup({ groupHeader, group, dialogAction }: LogGroupProps) {
   const { artifacts, matchingCount } = group;
   const dispatch = useLogGroupListDispatch();
+  const variantHash = 'variantHash' in group ? group.variantHash : null;
 
   return (
     <>
@@ -64,7 +65,7 @@ export function LogGroup({ groupHeader, group, dialogAction }: LogGroupProps) {
         {groupHeader}
       </LogGroupHeaderDiv>
       {artifacts.map((a) => (
-        <LogSnippetRow artifact={a} key={a.name} />
+        <LogSnippetRow artifact={a} variantHash={variantHash} key={a.name} />
       ))}
       {matchingCount - artifacts.length > 0 && (
         <Button

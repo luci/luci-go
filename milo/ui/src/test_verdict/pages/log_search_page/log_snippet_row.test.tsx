@@ -15,24 +15,32 @@
 import { render, screen } from '@testing-library/react';
 
 import { TestStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
+import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { LogSnippetRow } from './log_snippet_row';
 
 describe('<LogSnippetRow />', () => {
   it('can display snippet and matches', () => {
     render(
-      <LogSnippetRow
-        artifact={{
-          name: 'artifactName',
-          testStatus: TestStatus.PASS,
-          partitionTime: '2024-08-20T14:30:00Z',
-          snippet: 'abc',
-          matches: [
-            { startIndex: 0, endIndex: 1 },
-            { startIndex: 1, endIndex: 3 },
-          ],
+      <FakeContextProvider
+        mountedPath="/p/:project/log-search"
+        routerOptions={{
+          initialEntries: ['/p/testproject/log-search'],
         }}
-      />,
+      >
+        <LogSnippetRow
+          artifact={{
+            name: 'invocations/inv/tests/t/results/r/artifacts/a',
+            testStatus: TestStatus.PASS,
+            partitionTime: '2024-08-20T14:30:00Z',
+            snippet: 'abc',
+            matches: [
+              { startIndex: 0, endIndex: 1 },
+              { startIndex: 1, endIndex: 3 },
+            ],
+          }}
+        />
+      </FakeContextProvider>,
     );
     const t1 = screen.getByText('a');
     expect(t1).toHaveStyle({ backgroundColor: '#ceead6', fontWeight: '700' });
@@ -42,15 +50,22 @@ describe('<LogSnippetRow />', () => {
 
   it('can display snippet and matches with non-match part', () => {
     render(
-      <LogSnippetRow
-        artifact={{
-          name: 'artifactName',
-          testStatus: TestStatus.PASS,
-          partitionTime: '2024-08-20T14:30:00Z',
-          snippet: 'abcdef',
-          matches: [{ startIndex: 1, endIndex: 3 }],
+      <FakeContextProvider
+        mountedPath="/p/:project/log-search"
+        routerOptions={{
+          initialEntries: ['/p/testproject/log-search'],
         }}
-      />,
+      >
+        <LogSnippetRow
+          artifact={{
+            name: 'invocations/inv/tests/t/results/r/artifacts/a',
+            testStatus: TestStatus.PASS,
+            partitionTime: '2024-08-20T14:30:00Z',
+            snippet: 'abcdef',
+            matches: [{ startIndex: 1, endIndex: 3 }],
+          }}
+        />
+      </FakeContextProvider>,
     );
     const t1 = screen.getByText('a');
     expect(t1).toBeInTheDocument();
@@ -62,15 +77,22 @@ describe('<LogSnippetRow />', () => {
 
   it('can display snippet and matches with multi-bytes string', () => {
     render(
-      <LogSnippetRow
-        artifact={{
-          name: 'artifactName',
-          testStatus: TestStatus.PASS,
-          partitionTime: '2024-08-20T14:30:00Z',
-          snippet: '😊🌞',
-          matches: [{ startIndex: 4, endIndex: 8 }],
+      <FakeContextProvider
+        mountedPath="/p/:project/log-search"
+        routerOptions={{
+          initialEntries: ['/p/testproject/log-search'],
         }}
-      />,
+      >
+        <LogSnippetRow
+          artifact={{
+            name: 'invocations/inv/tests/t/results/r/artifacts/a',
+            testStatus: TestStatus.PASS,
+            partitionTime: '2024-08-20T14:30:00Z',
+            snippet: '😊🌞',
+            matches: [{ startIndex: 4, endIndex: 8 }],
+          }}
+        />
+      </FakeContextProvider>,
     );
 
     const textElement = screen.getByText('😊');
