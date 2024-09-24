@@ -27,6 +27,10 @@ type stopErr struct{}
 
 func (stopErr) Error() string { return "stop iteration" }
 
+type limitExceeded struct{}
+
+func (limitExceeded) Error() string { return "limit exceeded" }
+
 // These errors are returned by various datastore.Interface methods.
 var (
 	ErrNoSuchEntity          = datastore.ErrNoSuchEntity
@@ -35,6 +39,9 @@ var (
 	// Stop is understood by various services to stop iterative processes. Examples
 	// include datastore.Interface.Run's callback.
 	Stop = stopErr{}
+
+	// ErrLimitExceeded is used to indicate the iteration limit has been exceeded.
+	ErrLimitExceeded = limitExceeded{}
 )
 
 // MakeErrInvalidKey returns an errors.Annotator instance that wraps an invalid

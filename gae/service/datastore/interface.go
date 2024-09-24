@@ -667,6 +667,24 @@ func DecodeCursor(c context.Context, s string) (Cursor, error) {
 	return Raw(c).DecodeCursor(s)
 }
 
+type getAllOptions struct {
+	limit int
+}
+
+type getAllOption = func(*getAllOptions) error
+
+// Function limit controls the behavior of GetAll. A positive limit indicates how many results
+// to return.
+func limit(n int) getAllOption {
+	return func(o *getAllOptions) error {
+		if n < 0 {
+			return fmt.Errorf("n (%d) cannot be negative", n)
+		}
+		o.limit = n
+		return nil
+	}
+}
+
 // GetAll retrieves all of the Query results into dst.
 //
 // By default, datastore applies a short (~5s) timeout to queries. This can be
@@ -678,11 +696,51 @@ func DecodeCursor(c context.Context, s string) (Cursor, error) {
 //   - *[]P or *[]*P, where *P is a concrete type implementing
 //     PropertyLoadSaver
 //   - *[]*Key implies a keys-only query.
+//
+// Deprecated - Use GetAllWithLimit instead. If database happens to have many
+// entities which matchq, GetAll can easily exhaust the available memory before
+// returning, leading to an OOM error. If you use GetAllWithLimit you can pick
+// an 'impossible' limit, which will still be safer by default than GetAll, and
+// easier to debug, too.
 func GetAll(c context.Context, q *Query, dst any) error {
 	return getAllRaw(Raw(c), q, dst)
 }
 
-func getAllRaw(raw RawInterface, q *Query, dst any) error {
+// GetAllWithLimit retrieves all of the Query results into dst up to a limit.
+//
+// GetAllWithLimit is like GetAll, but it applies a limit.
+// If the limit is negative, we return an error.
+// Additionally, if we exceed the limit, then we return ErrLimitExceeded indicating that
+// a truncation has occurred.
+//
+// Note that GetAllWithLimit does NOT return the cursor. It is primarily intended as
+// a way to migrate calls to GetAll to a version with more predictable behavior so
+// that you get a nice failed RPC when the result set is too big rather than an a
+// hard-to-debug OOM.
+//
+// By default, datastore applies a short (~5s) timeout to queries. This can be
+// increased, usually to around several minutes, by explicitly setting a
+// deadline on the supplied Context.
+//
+// dst must be one of:
+//   - *[]S or *[]*S, where S is a struct
+//   - *[]P or *[]*P, where *P is a concrete type implementing
+//     PropertyLoadSaver
+//   - *[]*Key implies a keys-only query.
+func GetAllWithLimit(ctx context.Context, q *Query, dst any, lim int) error {
+	if lim <= 0 {
+		return fmt.Errorf("GetAllWithLimit: invalid limit %d <= 0", lim)
+	}
+	return getAllRaw(Raw(ctx), q, dst, limit(lim))
+}
+
+func getAllRaw(raw RawInterface, q *Query, dst any, o ...getAllOption) error {
+	var cfg getAllOptions
+	for _, f := range o {
+		if err := f(&cfg); err != nil {
+			return err
+		}
+	}
 	v := reflect.ValueOf(dst)
 	if v.Kind() != reflect.Ptr {
 		panic(fmt.Errorf("invalid GetAll dst: must have a ptr-to-slice: %T", dst))
@@ -716,6 +774,9 @@ func getAllRaw(raw RawInterface, q *Query, dst any) error {
 	errs := map[int]error{}
 	i := 0
 	err = filterStop(raw.Run(fq, func(k *Key, pm PropertyMap, _ CursorCB) error {
+		if cfg.limit > 0 && i >= cfg.limit {
+			return ErrLimitExceeded
+		}
 		slice.Set(reflect.Append(slice, mat.newElem()))
 		itm := slice.Index(i)
 		mat.setKey(itm, k)
@@ -726,7 +787,10 @@ func getAllRaw(raw RawInterface, q *Query, dst any) error {
 		i++
 		return nil
 	}))
-	if err == nil {
+	switch {
+	case errors.Is(err, ErrLimitExceeded):
+		return err
+	case err == nil:
 		if len(errs) > 0 {
 			me := make(errors.MultiError, slice.Len())
 			for i, e := range errs {
