@@ -196,7 +196,7 @@ type BuilderQueue struct {
 	// Only one BuilderQueue exists per Builder.
 	ID string `gae:"$id"`
 
-	// TriggeredBuilds represents the set of builds dispatched to task Backend
+	// TriggeredBuilds represents the set of builds dispatched to task backend
 	// but not yet terminated (i.e. builds in Cloud Task queue
 	// + builds with created Backend tasks
 	// + the builds actually running).

@@ -30,7 +30,7 @@ import (
 
 // PushPendingBuildTask is responsible for updating the BuilderQueue entity.
 // It is triggered at the build creation for builder with Config.MaxConcurrentBuilds > 0.
-// A new build can either be pushed to triggered_builds and sent to task Backend, or
+// A new build can either be pushed to triggered_builds and sent to task backend, or
 // pushed to pending_builds where it will wait to be popped when the builder gets some capacity.
 func PushPendingBuildTask(ctx context.Context, bID int64, bldrID *pb.BuilderID) error {
 	bldrQID := protoutil.FormatBuilderID(bldrID)
@@ -45,7 +45,7 @@ func PushPendingBuildTask(ctx context.Context, bID int64, bldrID *pb.BuilderID) 
 	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		mcb := bldr.Config.GetMaxConcurrentBuilds()
 		// max_concurrent_builds has been reset (set to 0) after the task was created.
-		// Send the build to task Backend without updating the BuilderQueue.
+		// Send the build to task backend without updating the BuilderQueue.
 		if mcb == 0 {
 			return CreateBackendBuildTask(ctx, &taskdefs.CreateBackendBuildTask{
 				BuildId:   bID,
