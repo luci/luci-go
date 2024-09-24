@@ -139,8 +139,8 @@ message Step {
     // Then the output properties of child2 will be at the parent build's
     // ['a', 'b'] path.
     //
-    // It is STRONGLY RECOMMENDED not to merge into [""] - This creates
-    // composability issues and increases the liklihood of unintentional
+    // It is STRONGLY DISCOURAGED to merge into [""] - This creates
+    // composability issues and increases the likelihood of unintentional
     // overwrites. However, sometimes this is the appropriate course of action
     // (e.g. when writing thin wrappers over the 'real' implementation as
     // a sub-build).
