@@ -20,6 +20,10 @@ import (
 	"testing"
 )
 
+type customErr struct{}
+
+func (*customErr) Error() string { return "I am an error" }
+
 func TestErrLike(t *testing.T) {
 	t.Parallel()
 
@@ -35,6 +39,9 @@ func TestErrLike(t *testing.T) {
 
 	t.Run("missing substring", shouldFail(ErrLike("wow")(err), "missing substring"))
 	t.Run("different error", shouldFail(ErrLike(err)(errors.New("else")), "does not contain"))
+
+	// So(err, ShouldBeNil) would get confused by this in goconvey.
+	t.Run("nil custom error", shouldFail(ErrLike(nil)((*customErr)(nil)), "actual.Error()", "I am an error"))
 
 	t.Run("bad type", func(t *testing.T) {
 		mustPanicLike(t, "got `int`", func() {

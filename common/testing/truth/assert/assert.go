@@ -12,25 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package assert contains two functions, which allow you to make fluent truth
-// comparisons which t.FailNow a test.
-//
-// Example:
-//
-//	assert.That(t, 10, should.Equal(20))
-//	assert.Loosely(t, myCustomInt(10), should.Equal(20))
-//
-// In the example above, the test case would halt immediately after the first
-// `assert.That`, because 10 does not equal 20, and `assert.That` will call
-// t.FailNow().
-//
-// This package has a sibling package `check` which instead does t.Fail,
-// allowing tests to make multiple checks without halting.
 package assert
 
 import (
+	"testing"
+
 	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/comparison"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 // That will compare `actual` using `compare(actual)`.
@@ -63,4 +52,31 @@ func Loosely[T any](t truth.TestingTB, actual any, compare comparison.Func[T], o
 		truth.Report(t, "assert.Loosely", summary)
 		t.FailNow()
 	}
+}
+
+// NoErr is a short helper to check that a given `err` is nil.
+//
+// This is identical to:
+//
+//	assert.That(t, err, should.ErrLike(nil))
+//
+// See [should.ErrLike].
+func NoErr(t testing.TB, err error) {
+	if err != nil {
+		t.Helper()
+		/*assert*/ That(t, err, should.ErrLike(nil))
+	}
+}
+
+// ErrIsLike is a short helper to check that a given `err` matches a string or
+// error `target`.
+//
+// This is identical to:
+//
+//	assert.That(t, err, should.ErrLike(target))
+//
+// See [should.ErrLike].
+func ErrIsLike(t testing.TB, err error, target any) {
+	t.Helper()
+	/*assert*/ That(t, err, should.ErrLike(target))
 }
