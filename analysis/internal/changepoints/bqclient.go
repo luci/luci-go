@@ -16,6 +16,8 @@ package changepoints
 
 import (
 	"context"
+	"fmt"
+	"strconv"
 	"time"
 
 	"cloud.google.com/go/bigquery"
@@ -25,6 +27,7 @@ import (
 	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/errors"
 
+	"go.chromium.org/luci/analysis/internal/pagination"
 	"go.chromium.org/luci/analysis/internal/tracing"
 )
 
@@ -262,4 +265,197 @@ func isBeginOfWeek(t time.Time) bool {
 	isSunday := t.Weekday() == time.Sunday
 	isMidnight := t.Truncate(24*time.Hour) == t
 	return isSunday && isMidnight
+}
+
+type GroupSummary struct {
+	CanonicalChangepoint               ChangepointRow
+	Total                              int64
+	UnexpectedSourceVerdictRateBefore  RateDistribution
+	UnexpectedSourceVerdictRateAfter   RateDistribution
+	UnexpectedSourceVerdictRateCurrent RateDistribution
+	UnexpectedSourveVerdictRateChange  RateChangeDistribution
+}
+
+type RateDistribution struct {
+	Mean                    float64
+	Less5Percent            int64
+	Above5LessThan95Percent int64
+	Above95Percent          int64
+}
+
+type RateChangeDistribution struct {
+	Increase0to20percent   int64
+	Increase20to50percent  int64
+	Increase50to100percent int64
+}
+
+type ReadChangepointGroupSummariesOptions struct {
+	Project       string
+	TestIDContain string
+	PageSize      int
+	PageToken     string
+}
+
+func parseReadChangepointGroupSummariesPageToken(pageToken string) (afterStartHourUnix int, afterTestID, afterVariantHash, afterRefHash string, afterNominalStartPosition int, err error) {
+	tokens, err := pagination.ParseToken(pageToken)
+	if err != nil {
+		return 0, "", "", "", 0, err
+	}
+
+	if len(tokens) != 5 {
+		return 0, "", "", "", 0, pagination.InvalidToken(errors.Reason("expected 5 components, got %d", len(tokens)).Err())
+	}
+	afterStartHourUnix, err = strconv.Atoi(tokens[0])
+	if err != nil {
+		return 0, "", "", "", 0, pagination.InvalidToken(errors.Reason("expect the first page_token component to be an integer").Err())
+	}
+	afterNominalStartPosition, err = strconv.Atoi(tokens[4])
+	if err != nil {
+		return 0, "", "", "", 0, pagination.InvalidToken(errors.Reason("expect the fifth page_token component to be an integer").Err())
+	}
+	return afterStartHourUnix, tokens[1], tokens[2], tokens[3], afterNominalStartPosition, nil
+}
+
+// ReadChangepointGroupSummaries reads summaries of changepoint groups started at a week which is within the last 90 days.
+func (c *Client) ReadChangepointGroupSummaries(ctx context.Context, opts ReadChangepointGroupSummariesOptions) (groups []*GroupSummary, nextPageToken string, err error) {
+	var afterStartHourUnix, afterNominalStartPosition int
+	var afterTestID, afterVariantHash, afterRefHash string
+	paginationFilter := "(TRUE)"
+	if opts.PageToken != "" {
+		afterStartHourUnix, afterTestID, afterVariantHash, afterRefHash, afterNominalStartPosition, err = parseReadChangepointGroupSummariesPageToken(opts.PageToken)
+		if err != nil {
+			return nil, "", err
+		}
+		paginationFilter = `(
+			UNIX_SECONDS(CanonicalChangepoint.StartHour) < @afterStartHourUnix
+				OR (UNIX_SECONDS(CanonicalChangepoint.StartHour) = @afterStartHourUnix AND CanonicalChangepoint.TestID > @afterTestID)
+				OR (UNIX_SECONDS(CanonicalChangepoint.StartHour) = @afterStartHourUnix AND CanonicalChangepoint.TestID = @afterTestID AND CanonicalChangepoint.VariantHash > @afterVariantHash)
+				OR (UNIX_SECONDS(CanonicalChangepoint.StartHour) = @afterStartHourUnix AND CanonicalChangepoint.TestID = @afterTestID
+							AND CanonicalChangepoint.VariantHash = @afterVariantHash AND CanonicalChangepoint.RefHash > @afterRefHash)
+				OR (UNIX_SECONDS(CanonicalChangepoint.StartHour) = @afterStartHourUnix AND CanonicalChangepoint.TestID = @afterTestID
+							AND CanonicalChangepoint.VariantHash = @afterVariantHash AND CanonicalChangepoint.RefHash = @afterRefHash AND CanonicalChangepoint.NominalStartPosition < @afterNominalStartPosition)
+			)`
+	}
+	testIDContainFilter := "(TRUE)"
+	if opts.TestIDContain != "" {
+		testIDContainFilter = "(CONTAINS_SUBSTR(test_id, @testIDContain ))"
+	}
+
+	aggregateRateCount := func(name string) string {
+		return `
+		STRUCT(
+				COUNTIF(` + name + ` >= 0.95) as Above95Percent,
+				COUNTIF(` + name + ` < 0.05) as Less5Percent,
+				COUNTIF(` + name + ` < 0.95 AND ` + name + ` >= 0.05) as Above5LessThan95Percent,
+				avg(` + name + `) as Mean
+			)
+		`
+	}
+	query := `
+		WITH
+		latest AS (
+			SELECT start_hour_week, MAX(version) as version
+			FROM grouped_changepoints
+			 -- Only return changepoints started at a week which is within the last 90 days.
+			 -- Because we can only efficiently get the current source verdict unexpected rate
+			 -- for test variant branches have unexpected result within the last 90 days.
+			 -- That is join with the test_variant_segments_unexpected_realtime table.
+			WHERE start_hour_week > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), interval 90 day)
+			GROUP BY start_hour_week
+		),
+		grouped_changepoint_latest AS (
+			SELECT g.*
+			FROM grouped_changepoints g
+			INNER JOIN latest l
+				ON g.start_hour_week = l.start_hour_week
+				AND g.version = l.version
+		),
+		filtered_grouped_changepoint_latest AS (
+			SELECT *
+			FROM grouped_changepoint_latest
+			WHERE project = @project AND ` + testIDContainFilter + `
+		),
+		filtered_segments AS (
+			SELECT *
+			FROM test_variant_segments_unexpected_realtime
+		WHERE project = @project AND ` + testIDContainFilter + `
+		),
+		grouped_changepoint_latest_with_current_rate as (
+			select
+				cp.*,
+				SAFE_DIVIDE(seg.segments[0].counts.unexpected_verdicts, seg.segments[0].counts.total_verdicts) as latest_unexpected_source_verdict_rate
+			FROM filtered_grouped_changepoint_latest cp
+			INNER JOIN filtered_segments seg
+        ON cp.project = seg.project
+				AND cp.test_id = seg.test_id
+				AND cp.variant_hash = seg.variant_hash
+				AND cp.ref_hash = seg.ref_hash
+		)
+		SELECT
+			ARRAY_AGG(struct(
+      project AS Project,
+			test_id_num AS TestIDNum,
+			test_id AS TestID,
+			variant_hash AS VariantHash,
+			ref_hash AS RefHash,
+			ref AS Ref,
+			variant AS Variant,
+			start_hour AS StartHour,
+			start_position_lower_bound_99th AS LowerBound99th,
+			start_position AS NominalStartPosition,
+			start_position_upper_bound_99th AS UpperBound99th,
+			unexpected_source_verdict_rate AS UnexpectedSourceVerdictRateAfter,
+			previous_unexpected_source_verdict_rate AS UnexpectedSourceVerdictRateBefore,
+			latest_unexpected_source_verdict_rate AS UnexpectedSourceVerdictRateCurrent,
+			previous_nominal_end_position as PreviousNominalEndPosition
+			) ORDER BY project, test_id, variant_hash, ref_hash, start_position LIMIT 1)[OFFSET(0)] as CanonicalChangepoint,
+			COUNT(*) as Total,
+			` + aggregateRateCount("previous_unexpected_source_verdict_rate") + ` as UnexpectedSourceVerdictRateBefore,
+			` + aggregateRateCount("unexpected_source_verdict_rate") + ` as UnexpectedSourceVerdictRateAfter,
+			` + aggregateRateCount("latest_unexpected_source_verdict_rate") + ` as UnexpectedSourceVerdictRateCurrent,
+			struct (
+				COUNTIF(unexpected_source_verdict_rate- previous_unexpected_source_verdict_rate < 0.2 ) as Increase0to20percent,
+				COUNTIF(unexpected_source_verdict_rate- previous_unexpected_source_verdict_rate >= 0.2 AND
+					unexpected_source_verdict_rate- previous_unexpected_source_verdict_rate < 0.5 ) as Increase20to50percent,
+				COUNTIF(unexpected_source_verdict_rate- previous_unexpected_source_verdict_rate >= 0.5 ) as Increase50to100percent
+			) as UnexpectedSourveVerdictRateChange
+		FROM grouped_changepoint_latest_with_current_rate
+		GROUP BY group_id
+		HAVING ` + paginationFilter + `
+		ORDER BY CanonicalChangepoint.StartHour DESC, CanonicalChangepoint.TestID, CanonicalChangepoint.VariantHash, CanonicalChangepoint.RefHash, CanonicalChangepoint.NominalStartPosition DESC
+		LIMIT @limit
+`
+	q := c.client.Query(query)
+	q.DefaultDatasetID = "internal"
+	q.Parameters = []bigquery.QueryParameter{
+		{Name: "project", Value: opts.Project},
+		{Name: "testIDContain", Value: opts.TestIDContain},
+		{Name: "afterStartHourUnix", Value: afterStartHourUnix},
+		{Name: "afterTestID", Value: afterTestID},
+		{Name: "afterVariantHash", Value: afterVariantHash},
+		{Name: "afterRefHash", Value: afterRefHash},
+		{Name: "afterNominalStartPosition", Value: afterNominalStartPosition},
+		{Name: "limit", Value: opts.PageSize},
+	}
+	it, err := q.Read(ctx)
+	if err != nil {
+		return nil, "", errors.Annotate(err, "read query results").Err()
+	}
+	results := []*GroupSummary{}
+	for {
+		row := &GroupSummary{}
+		err := it.Next(row)
+		if errors.Is(err, iterator.Done) {
+			break
+		}
+		if err != nil {
+			return nil, "", errors.Annotate(err, "obtain next changepoint group row").Err()
+		}
+		results = append(results, row)
+	}
+	if opts.PageSize != 0 && len(results) == int(opts.PageSize) {
+		lastCanonicalChangepoint := results[len(results)-1].CanonicalChangepoint
+		nextPageToken = pagination.Token(fmt.Sprint(lastCanonicalChangepoint.StartHour.Unix()), lastCanonicalChangepoint.TestID, lastCanonicalChangepoint.VariantHash, lastCanonicalChangepoint.RefHash, fmt.Sprint(lastCanonicalChangepoint.NominalStartPosition))
+	}
+	return results, nextPageToken, nil
 }

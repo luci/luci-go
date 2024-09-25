@@ -30,6 +30,7 @@ import (
 	rdbpbutil "go.chromium.org/luci/resultdb/pbutil"
 
 	"go.chromium.org/luci/analysis/internal/changepoints"
+	"go.chromium.org/luci/analysis/internal/pagination"
 	"go.chromium.org/luci/analysis/internal/perms"
 	"go.chromium.org/luci/analysis/internal/tracing"
 	"go.chromium.org/luci/analysis/pbutil"
@@ -41,6 +42,7 @@ var refHashRe = regexp.MustCompile(`^[0-9a-f]{16}$`)
 type ChangePointClient interface {
 	// ReadChangepoints read changepoints for a certain week. The week is specified by any time at that week in UTC.
 	ReadChangepoints(ctx context.Context, project string, week time.Time) ([]*changepoints.ChangepointRow, error)
+	ReadChangepointGroupSummaries(ctx context.Context, opts changepoints.ReadChangepointGroupSummariesOptions) ([]*changepoints.GroupSummary, string, error)
 }
 
 // NewChangepointsServer returns a new pb.ChangepointsServer.
@@ -58,14 +60,14 @@ type changepointsServer struct {
 }
 
 // QueryChangepointGroupSummaries groups changepoints in a LUCI project and returns a summary of each group.
-func (c *changepointsServer) QueryChangepointGroupSummaries(ctx context.Context, request *pb.QueryChangepointGroupSummariesRequest) (*pb.QueryChangepointGroupSummariesResponse, error) {
+func (c *changepointsServer) QueryChangepointGroupSummaries(ctx context.Context, request *pb.QueryChangepointGroupSummariesRequestLegacy) (*pb.QueryChangepointGroupSummariesResponseLegacy, error) {
 	if err := pbutil.ValidateProject(request.GetProject()); err != nil {
 		return nil, invalidArgumentError(errors.Annotate(err, "project").Err())
 	}
 	if err := perms.VerifyProjectPermissions(ctx, request.Project, perms.PermListChangepointGroups); err != nil {
 		return nil, err
 	}
-	if err := validateQueryChangepointGroupSummariesRequest(request); err != nil {
+	if err := validateQueryChangepointGroupSummariesRequestLegacy(request); err != nil {
 		return nil, invalidArgumentError(err)
 	}
 	week := time.Now().UTC()
@@ -81,7 +83,7 @@ func (c *changepointsServer) QueryChangepointGroupSummaries(ctx context.Context,
 	for _, g := range groups {
 		filtered := filterAndSortChangepointsWithPredicate(g, request.Predicate)
 		if len(filtered) > 0 {
-			groupSummary, err := toChangepointGroupSummary(filtered)
+			groupSummary, err := aggregateChangepoints(filtered)
 			if err != nil {
 				return nil, errors.Annotate(err, "construct changepoint group summary proto").Err()
 			}
@@ -110,7 +112,40 @@ func (c *changepointsServer) QueryChangepointGroupSummaries(ctx context.Context,
 		// TODO: remove this and implement pagination.
 		groupSummaries = groupSummaries[:1000]
 	}
-	return &pb.QueryChangepointGroupSummariesResponse{GroupSummaries: groupSummaries}, nil
+	return &pb.QueryChangepointGroupSummariesResponseLegacy{GroupSummaries: groupSummaries}, nil
+}
+
+// QueryChangepointGroupSummaries groups changepoints in a LUCI project and returns a summary of each group.
+func (c *changepointsServer) QueryGroupSummaries(ctx context.Context, request *pb.QueryChangepointGroupSummariesRequest) (*pb.QueryChangepointGroupSummariesResponse, error) {
+	if err := pbutil.ValidateProject(request.GetProject()); err != nil {
+		return nil, invalidArgumentError(errors.Annotate(err, "project").Err())
+	}
+	if err := perms.VerifyProjectPermissions(ctx, request.Project, perms.PermListChangepointGroups); err != nil {
+		return nil, err
+	}
+	if err := validateQueryChangepointGroupSummariesRequest(request); err != nil {
+		return nil, invalidArgumentError(err)
+	}
+	pageSize := int(pageSizeLimiter.Adjust(request.PageSize))
+	opts := changepoints.ReadChangepointGroupSummariesOptions{
+		Project:       request.Project,
+		TestIDContain: request.Predicate.GetTestIdContain(),
+		PageSize:      pageSize,
+		PageToken:     request.PageToken,
+	}
+	rows, nextPageToken, err := c.changePointClient.ReadChangepointGroupSummaries(ctx, opts)
+	if err != nil {
+		return nil, errors.Annotate(err, "read BigQuery changepoint groups").Err()
+	}
+	results := make([]*pb.ChangepointGroupSummary, 0, len(rows))
+	for _, row := range rows {
+		result, err := toChangepointGroupSummary(row)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, result)
+	}
+	return &pb.QueryChangepointGroupSummariesResponse{GroupSummaries: results, NextPageToken: nextPageToken}, nil
 }
 
 // QueryChangepointsInGroup finds and returns changepoints in a particular group.
@@ -193,7 +228,7 @@ func aggregateRateChange(group []*changepoints.ChangepointRow) *pb.ChangepointGr
 
 // filterAndSortChangepointsWithPredicate filters the changepoints.
 // Changepoints will be sorted in by test id, variant hash, ref hash, nominal start position.
-func filterAndSortChangepointsWithPredicate(cps []*changepoints.ChangepointRow, predicate *pb.ChangepointPredicate) []*changepoints.ChangepointRow {
+func filterAndSortChangepointsWithPredicate(cps []*changepoints.ChangepointRow, predicate *pb.ChangepointPredicateLegacy) []*changepoints.ChangepointRow {
 	filtered := []*changepoints.ChangepointRow{}
 	for _, cp := range cps {
 		if predicate == nil {
@@ -250,7 +285,7 @@ func changepointGroupWithGroupKey(ctx context.Context, groups [][]*changepoints.
 	return matchingGroup, true
 }
 
-func toChangepointGroupSummary(group []*changepoints.ChangepointRow) (summary *pb.ChangepointGroupSummary, err error) {
+func aggregateChangepoints(group []*changepoints.ChangepointRow) (summary *pb.ChangepointGroupSummary, err error) {
 	// Set the mimimum changepoint as the canonical changepoint to represent this group.
 	// Note, this canonical changepoint is different from the canonical changepoint used to create the group.
 	canonical := group[0]
@@ -268,6 +303,42 @@ func toChangepointGroupSummary(group []*changepoints.ChangepointRow) (summary *p
 			UnexpectedVerdictRateChange:  aggregateRateChange(group),
 		},
 	}, nil
+}
+
+func toChangepointGroupSummary(group *changepoints.GroupSummary) (summary *pb.ChangepointGroupSummary, err error) {
+	canonicalpb, err := toPBChangepoint(&group.CanonicalChangepoint)
+	if err != nil {
+		return nil, errors.Annotate(err, "construct changepoint proto").Err()
+	}
+	return &pb.ChangepointGroupSummary{
+		CanonicalChangepoint: canonicalpb,
+		Statistics: &pb.ChangepointGroupStatistics{
+			Count:                        int32(group.Total),
+			UnexpectedVerdictRateBefore:  toPBRateDistribution(&group.UnexpectedSourceVerdictRateBefore),
+			UnexpectedVerdictRateAfter:   toPBRateDistribution(&group.UnexpectedSourceVerdictRateAfter),
+			UnexpectedVerdictRateCurrent: toPBRateDistribution(&group.UnexpectedSourceVerdictRateCurrent),
+			UnexpectedVerdictRateChange:  toPBRateChangeBuckets(&group.UnexpectedSourveVerdictRateChange),
+		},
+	}, nil
+}
+
+func toPBRateDistribution(dist *changepoints.RateDistribution) *pb.ChangepointGroupStatistics_RateDistribution {
+	return &pb.ChangepointGroupStatistics_RateDistribution{
+		Average: float32(dist.Mean),
+		Buckets: &pb.ChangepointGroupStatistics_RateDistribution_RateBuckets{
+			CountLess_5Percent:             int32(dist.Less5Percent),
+			CountAbove_5LessThan_95Percent: int32(dist.Above5LessThan95Percent),
+			CountAbove_95Percent:           int32(dist.Above95Percent),
+		},
+	}
+}
+
+func toPBRateChangeBuckets(dist *changepoints.RateChangeDistribution) *pb.ChangepointGroupStatistics_RateChangeBuckets {
+	return &pb.ChangepointGroupStatistics_RateChangeBuckets{
+		CountIncreased_0To_20Percent:   int32(dist.Increase0to20percent),
+		CountIncreased_20To_50Percent:  int32(dist.Increase20to50percent),
+		CountIncreased_50To_100Percent: int32(dist.Increase50to100percent),
+	}
 }
 
 func toPBChangepoint(cp *changepoints.ChangepointRow) (*pb.Changepoint, error) {
@@ -298,11 +369,11 @@ func toPBChangepoint(cp *changepoints.ChangepointRow) (*pb.Changepoint, error) {
 	}, nil
 }
 
-func validateQueryChangepointGroupSummariesRequest(req *pb.QueryChangepointGroupSummariesRequest) error {
+func validateQueryChangepointGroupSummariesRequestLegacy(req *pb.QueryChangepointGroupSummariesRequestLegacy) error {
 	// Project already validated by caller.
 
 	if req.Predicate != nil {
-		if err := validateChangepointPredicate(req.Predicate); err != nil {
+		if err := validateChangepointPredicateLegacy(req.Predicate); err != nil {
 			return errors.Annotate(err, "predicate").Err()
 		}
 	}
@@ -317,11 +388,25 @@ func validateQueryChangepointGroupSummariesRequest(req *pb.QueryChangepointGroup
 	return nil
 }
 
-func validateQueryChangepointsInGroupRequest(req *pb.QueryChangepointsInGroupRequest) error {
+func validateQueryChangepointGroupSummariesRequest(req *pb.QueryChangepointGroupSummariesRequest) error {
 	// Project already validated by caller.
 
 	if req.Predicate != nil {
 		if err := validateChangepointPredicate(req.Predicate); err != nil {
+			return errors.Annotate(err, "predicate").Err()
+		}
+	}
+	if err := pagination.ValidatePageSize(req.PageSize); err != nil {
+		return errors.Annotate(err, "page_size").Err()
+	}
+	return nil
+}
+
+func validateQueryChangepointsInGroupRequest(req *pb.QueryChangepointsInGroupRequest) error {
+	// Project already validated by caller.
+
+	if req.Predicate != nil {
+		if err := validateChangepointPredicateLegacy(req.Predicate); err != nil {
 			return errors.Annotate(err, "predicate").Err()
 		}
 	}
@@ -348,6 +433,18 @@ func validateGroupKey(key *pb.QueryChangepointsInGroupRequest_ChangepointIdentif
 }
 
 func validateChangepointPredicate(predicate *pb.ChangepointPredicate) error {
+	if predicate == nil {
+		return errors.New("unspecified")
+	}
+	if predicate.TestIdContain != "" {
+		if err := validateTestIDPart(predicate.TestIdContain); err != nil {
+			return errors.Annotate(err, "test_id_prefix").Err()
+		}
+	}
+	return nil
+}
+
+func validateChangepointPredicateLegacy(predicate *pb.ChangepointPredicateLegacy) error {
 	if predicate == nil {
 		return errors.New("unspecified")
 	}

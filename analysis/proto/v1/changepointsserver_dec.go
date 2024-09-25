@@ -23,7 +23,7 @@ type DecoratedChangepoints struct {
 	Postlude func(ctx context.Context, methodName string, rsp proto.Message, err error) error
 }
 
-func (s *DecoratedChangepoints) QueryChangepointGroupSummaries(ctx context.Context, req *QueryChangepointGroupSummariesRequest) (rsp *QueryChangepointGroupSummariesResponse, err error) {
+func (s *DecoratedChangepoints) QueryChangepointGroupSummaries(ctx context.Context, req *QueryChangepointGroupSummariesRequestLegacy) (rsp *QueryChangepointGroupSummariesResponseLegacy, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
 		newCtx, err = s.Prelude(ctx, "QueryChangepointGroupSummaries", req)
@@ -36,6 +36,23 @@ func (s *DecoratedChangepoints) QueryChangepointGroupSummaries(ctx context.Conte
 	}
 	if s.Postlude != nil {
 		err = s.Postlude(ctx, "QueryChangepointGroupSummaries", rsp, err)
+	}
+	return
+}
+
+func (s *DecoratedChangepoints) QueryGroupSummaries(ctx context.Context, req *QueryChangepointGroupSummariesRequest) (rsp *QueryChangepointGroupSummariesResponse, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "QueryGroupSummaries", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.QueryGroupSummaries(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "QueryGroupSummaries", rsp, err)
 	}
 	return
 }

@@ -22,10 +22,11 @@ import (
 
 	"cloud.google.com/go/bigquery"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestGroupChangepoints(t *testing.T) {
