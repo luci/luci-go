@@ -341,11 +341,11 @@ func TestClient(t *testing.T) {
 				So(calls, ShouldEqual, 2)
 			})
 
-			Convey(`With a maximum content length smaller than the response, returns "ErrResponseTooBig".`, func(c C) {
+			Convey(`With a maximum response size smaller than the response, returns "ErrResponseTooBig".`, func(c C) {
 				client, server := setUp(sayHello(c))
 				defer server.Close()
 
-				client.MaxContentLength = 8
+				client.MaxResponseSize = 8
 				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res)
 				So(err, ShouldHaveGRPCStatus, codes.Unavailable)
 				So(err, ShouldErrLike, "exceeds the client limit")
@@ -359,7 +359,7 @@ func TestClient(t *testing.T) {
 				})
 			})
 
-			Convey(`When the response returns a huge Content Length, returns "ErrResponseTooBig".`, func(c C) {
+			Convey(`When the response returns a huge Content-Length, returns "ErrResponseTooBig".`, func(c C) {
 				client, server := setUp(sayHello(c))
 				defer server.Close()
 
@@ -371,7 +371,7 @@ func TestClient(t *testing.T) {
 					Error: &prpcpb.ErrorDetails_ResponseTooBig{
 						ResponseTooBig: &prpcpb.ResponseTooBig{
 							ResponseSize:  999999999999,
-							ResponseLimit: DefaultMaxContentLength,
+							ResponseLimit: DefaultMaxResponseSize,
 						},
 					},
 				})

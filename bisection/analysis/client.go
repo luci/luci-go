@@ -53,10 +53,10 @@ func NewTestVariantBranchesClient(ctx context.Context, host, project string) (*T
 	}
 	client := analysispb.NewTestVariantBranchesPRPCClient(
 		&prpc.Client{
-			C:                &http.Client{Transport: tr},
-			Host:             host,
-			Options:          prpc.DefaultOptions(),
-			MaxContentLength: 100 * 1000 * 1000, // 100 MiB.
+			C:               &http.Client{Transport: tr},
+			Host:            host,
+			Options:         prpc.DefaultOptions(),
+			MaxResponseSize: 100 * 1000 * 1000, // 100 MiB.
 		})
 
 	return &TestVariantBranchesClient{

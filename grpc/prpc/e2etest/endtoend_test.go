@@ -165,7 +165,7 @@ func endToEndTest(t *testing.T, responseType string) {
 					return retry.Stop
 				})
 			}
-			prpcC.MaxContentLength = 123
+			prpcC.MaxResponseSize = 123
 
 			svc.R = &HelloReply{Message: strings.Repeat("z", 124)}
 

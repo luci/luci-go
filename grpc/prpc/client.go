@@ -70,12 +70,12 @@ const (
 	// size the client will accept.
 	HeaderMaxResponseSize = "X-Prpc-Max-Response-Size"
 
-	// DefaultMaxContentLength is the default maximum content length (in bytes)
-	// for a Client. It is 32MiB minus 32KiB.
+	// DefaultMaxResponseSize is the default maximum response size (in bytes)
+	// the client is willing to read from the server.
 	//
-	// Its value is picked to fit into Appengine response size limits (taking into
-	// account potential overhead on headers).
-	DefaultMaxContentLength = 32*1024*1024 - 32*1024
+	// It is 32MiB minus 32KiB. Its value is picked to fit into Appengine response
+	//  size limits (taking into account potential overhead on headers).
+	DefaultMaxResponseSize = 32*1024*1024 - 32*1024
 )
 
 var (
@@ -101,9 +101,9 @@ type Client struct {
 	// If non-positive, defaults to 256.
 	ErrBodySize int
 
-	// MaxContentLength, if > 0, is the maximum content length, in bytes, that a
-	// pRPC client is willing to read from the server. If a larger content length
-	// is sent by the server, the client will return UNAVAILABLE error with some
+	// MaxResponseSize, if > 0, is the maximum response size, in bytes, that a
+	// pRPC client is willing to read from the server. If a larger response is
+	// sent by the server, the client will return UNAVAILABLE error with some
 	// additional details attached (use ProtocolErrorDetails to extract them
 	// from a gRPC error).
 	//
@@ -111,8 +111,8 @@ type Client struct {
 	// use it to skip sending too big response. Instead the server will reply
 	// with the same sort of UNAVAILABLE error (with details attached as well).
 	//
-	// If <= 0, DefaultMaxContentLength will be used.
-	MaxContentLength int
+	// If <= 0, DefaultMaxResponseSize will be used.
+	MaxResponseSize int
 
 	// MaxConcurrentRequests, if > 0, limits how many requests to the server can
 	// execute at the same time. If 0 (default), there's no limit.
@@ -508,10 +508,10 @@ func (c *Client) attemptCall(ctx context.Context, options *Options, req *http.Re
 
 // maxResponseSize is a maximum length of the uncompressed response to read.
 func (c *Client) maxResponseSize() int64 {
-	if c.MaxContentLength <= 0 {
-		return DefaultMaxContentLength
+	if c.MaxResponseSize <= 0 {
+		return DefaultMaxResponseSize
 	}
-	return int64(c.MaxContentLength)
+	return int64(c.MaxResponseSize)
 }
 
 // readResponseBody copies the response body into dest.

@@ -48,10 +48,10 @@ func (pcf *prodClientFactory) MakeClient(ctx context.Context, host string) (*Rec
 	return &RecorderClient{
 		client: rdbpb.NewRecorderPRPCClient(
 			&prpc.Client{
-				C:                &http.Client{Transport: transport},
-				Host:             host,
-				Options:          prpc.DefaultOptions(),
-				MaxContentLength: prpc.DefaultMaxContentLength,
+				C:               &http.Client{Transport: transport},
+				Host:            host,
+				Options:         prpc.DefaultOptions(),
+				MaxResponseSize: prpc.DefaultMaxResponseSize,
 			}),
 	}, nil
 }

@@ -41,10 +41,10 @@ func newResultDBClient(ctx context.Context, host string, createTransport func() 
 
 	return rdbpb.NewResultDBPRPCClient(
 		&prpc.Client{
-			C:                &http.Client{Transport: t},
-			Host:             host,
-			Options:          prpc.DefaultOptions(),
-			MaxContentLength: 100 * 1000 * 1000, // 100 MiB.
+			C:               &http.Client{Transport: t},
+			Host:            host,
+			Options:         prpc.DefaultOptions(),
+			MaxResponseSize: 100 * 1000 * 1000, // 100 MiB.
 		}), nil
 }
 
