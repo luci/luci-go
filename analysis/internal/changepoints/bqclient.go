@@ -141,7 +141,7 @@ func (c *Client) ReadChangepoints(ctx context.Context, project string, week time
 // ReadChangepointsRealtime reads changepoints of a certain week directly from BigQuery exports of changepoint analysis.
 // A week in this context refers to the period from Sunday at 00:00:00 AM UTC (inclusive)
 // to the following Sunday at 00:00:00 AM UTC (exclusive).
-// The week parameter MUST be a timestamp representing the start of a week (Sunday at 00:00:00 AM UTC).
+// The week parameter MUST be a timestamp representing the start of a week (Sunday at 00:00:00 AM UTC) and within the last 90 days.
 func (c *Client) ReadChangepointsRealtime(ctx context.Context, week time.Time) (changepoints []*ChangepointRow, err error) {
 	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/changepoints.ReadChangepointsRealtime",
 		attribute.String("week", week.String()),
@@ -150,33 +150,16 @@ func (c *Client) ReadChangepointsRealtime(ctx context.Context, week time.Time) (
 	if !isBeginOfWeek(week) {
 		return nil, errors.New("week should be the start of week, i.e. a Sunday midnight")
 	}
+	// The table test_variant_segments_unexpected_realtime only contains test variant branches with unexpected results in the last 90 days.
+	// Changepints before 90 days might not exist in test_variant_segments_unexpected_realtime.
+	if week.Before(time.Now().Add(-90 * 24 * time.Hour)) {
+		return nil, errors.New("week should be the within the last 90 days")
+	}
 	query := `
 		WITH
-		  merged_table AS (
-				SELECT *
-				FROM test_variant_segment_updates
-				UNION ALL
-				SELECT *
-				FROM test_variant_segments
-			),
-			merged_table_grouped AS (
-				SELECT
-					project, test_id, variant_hash, ref_hash,
-					ARRAY_AGG(m ORDER BY version DESC LIMIT 1)[OFFSET(0)] as row
-				FROM merged_table m
-				GROUP BY project, test_id, variant_hash, ref_hash
-			),
-			test_variant_segments_realtime AS (
-				SELECT
-					project, test_id, variant_hash, ref_hash,
-					row.variant AS variant,
-					row.ref AS ref,
-					row.segments AS segments
-				FROM merged_table_grouped
-			),
 			changepoint_with_failure_rate AS (
 				SELECT
-					tv.* EXCEPT (segments),
+					tv.* EXCEPT (segments, version),
 					segment.start_hour,
 					segment.start_position_lower_bound_99th,
 					segment.start_position,
@@ -186,7 +169,7 @@ func (c *Client) ReadChangepointsRealtime(ctx context.Context, week time.Time) (
 					SAFE_DIVIDE(tv.segments[0].counts.unexpected_verdicts, tv.segments[0].counts.total_verdicts) AS latest_unexpected_verdict_rate,
 					SAFE_DIVIDE(tv.segments[idx+1].counts.unexpected_verdicts, tv.segments[idx+1].counts.total_verdicts) AS previous_unexpected_verdict_rate,
 					tv.segments[idx+1].end_position AS previous_nominal_end_position
-				FROM test_variant_segments_realtime tv, UNNEST(segments) segment WITH OFFSET idx
+				FROM test_variant_segments_unexpected_realtime tv, UNNEST(segments) segment WITH OFFSET idx
 				-- TODO: Filter out test variant branches with more than 10 segments is a bit hacky, but it filter out oscillate test variant branches.
 				-- It would be good to find a more elegant solution, maybe explicitly expressing this as a filter on the RPC.
 				WHERE ARRAY_LENGTH(segments) >= 2 AND ARRAY_LENGTH(segments) <= 10
@@ -195,7 +178,7 @@ func (c *Client) ReadChangepointsRealtime(ctx context.Context, week time.Time) (
 			-- Obtain the alphabetical ranking for each test ID in each LUCI project.
 			test_id_ranking AS (
 				SELECT project, test_id, ROW_NUMBER() OVER (PARTITION BY project ORDER BY test_id) AS row_num
-				FROM test_variant_segments_realtime
+				FROM test_variant_segments
 				GROUP BY project, test_id
 			)
 		SELECT
