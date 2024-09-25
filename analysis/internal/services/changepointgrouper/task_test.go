@@ -54,10 +54,10 @@ func TestGroupChangepoints(t *testing.T) {
 		}
 
 		t.Run("drop old task", func(t *ftt.Test) {
-			payload.ScheduleTime = timestamppb.New(now.Add(-61 * time.Minute))
+			payload.ScheduleTime = timestamppb.New(now.Add(-11 * time.Minute))
 
 			err := grouper.run(ctx, payload)
-			assert.That(t, err, should.ErrLike("drop task older than 60 minutes"))
+			assert.That(t, err, should.ErrLike("drop task older than 10 minutes"))
 			assert.That(t, tq.Fatal.In(err), should.BeTrue)
 		})
 		t.Run("e2e", func(t *ftt.Test) {
