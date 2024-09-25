@@ -107,8 +107,8 @@ func (c *changepointGrouper) run(ctx context.Context, payload *taskspb.GroupChan
 			retErr = tq.Fatal.Apply(retErr)
 		}
 	}()
-	if payload.ScheduleTime.AsTime().Before(clock.Now(ctx).Add(-10 * time.Minute)) {
-		return errors.New(`drop task older than 10 minutes to prevent over-growing the queue depth,
+	if payload.ScheduleTime.AsTime().Before(clock.Now(ctx).Add(-60 * time.Minute)) {
+		return errors.New(`drop task older than 60 minutes to prevent over-growing the queue depth,
 		it means grouped changepoint rows for this week is stale.`)
 	}
 	rows, err := c.changepointClient.ReadChangepointsRealtime(ctx, payload.Week.AsTime())
