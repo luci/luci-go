@@ -2,7 +2,7 @@
 
 Usually you can use the regular npm commands (e.g. `npm i my_package`) to
 add/upgrade dependencies. However, dependencies newer than 7 days are banned by
-default (more details  can be found at go/sk-npm-audit-mirror).
+default (more details can be found at go/sk-npm-audit-mirror).
 
 This restriction also applies to transitive dependencies. If you upgrade/add a
 large dependency, there is a very high chance that at least one of the
