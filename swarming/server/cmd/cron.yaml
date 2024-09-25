@@ -19,11 +19,6 @@ cron:
   schedule: every 1 minutes
   target: backend
 
-- description: Delete old TaskRequest
-  url: /internal/cron/cleanup/tasks/delete_old
-  schedule: every 10 minutes synchronized
-  target: backend
-
 - description: Triggers TQ tasks to delete old TaskRequest entity groups
   url: /internal/cron/cleanup-old-tasks
   schedule: every 10 minutes

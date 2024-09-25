@@ -56,14 +56,12 @@ queue:
   bucket_size: 100
   rate: 500/s
 
-# /internal/taskqueue/cleanup/tasks/delete
-# An heavy workload produces 1000 tasks per minute, 10000 tasks per 10 minutes.
-# The cron job runs every 10 minutes and leaves 5 minutes for the tasks to
-# complete.
-# Each task is 1000 tasks, and takes around 3 minutes to complete. This means
-# around 10 tasks in practice should be sufficient, set it to 20 to keep a
-# safety margin.
-# TODO(vadimsh): Update the comment once only Go is submitting tasks.
+# /internal/tasks/t/cleanup-old-tasks/.*
+#
+# Each task here deletes 500 Swarming tasks and it takes ~30s to do so. With 20
+# concurrency slots the deletion throughput is 20 * (1m / 30s) * 500 = 20K tasks
+# per minute. As long as new tasks are submitted at a slower rate (on average),
+# there should be no deletion backlog.
 - name: delete-tasks
   max_concurrent_requests: 20
   rate: 1/s
