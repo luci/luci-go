@@ -237,6 +237,14 @@ export const routes: RouteObject[] = [
         lazy: () => import('@/monitoring/pages/monitoring_page'),
       },
       {
+        path: 'monitoringv2',
+        lazy: () => import('@/monitoringv2/pages/monitoring_page'),
+      },
+      {
+        path: 'monitoringv2/:tree',
+        lazy: () => import('@/monitoringv2/pages/monitoring_page'),
+      },
+      {
         // TODO: Remove this endpoint after we remove all client.
         path: 'tree-status/:tree',
         lazy: () => import('@/tree_status/pages/redirection_loader'),
