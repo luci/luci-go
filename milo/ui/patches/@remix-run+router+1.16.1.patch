@@ -11,7 +11,7 @@ index d70796d..35172ba 100644
 +
 +    // PATCH by weiweilin:
 +    // Decoding the pathname here means we may not be able to recover the raw
-+    // pathname. This is especially important for splash matcher ('*') because
++    // pathname. This is especially important for splats matcher ('*') because
 +    // otherwise we won't be able to tell whether the different between
 +    // 'prefix/a/b' and 'prefix/a%2fb' when matching against 'prefix/*'.
 +    // Also it causes '%252F' to be double decoded.
@@ -46,7 +46,7 @@ index d70796d..35172ba 100644
 +      // See https://github.com/remix-run/react-router/issues/11293.
 +      //
 +      // Also make the raw value available. This is especially important for
-+      // splash matcher ('*') because otherwise we won't be able to tell whether
++      // splats matcher ('*') because otherwise we won't be able to tell whether
 +      // the different between 'prefix/a/b' and 'prefix/a%2fb' when matching
 +      // against 'prefix/*'.
 +      memo[paramName] = value ? decodeURIComponent(value) : "";
