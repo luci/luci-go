@@ -48,7 +48,12 @@ func (l *LifecycleTasksViaTQ) RegisterTQTasks() {
 		Queue:     "cancel-children-tasks-go", // to replace "cancel-children-tasks" taskqueue in Py.
 		Handler: func(ctx context.Context, payload proto.Message) error {
 			t := payload.(*taskspb.CancelChildrenTask)
-			return (&childCancellation{parentID: t.TaskId, batchSize: 300}).queryToCancel(ctx)
+			cc := &childCancellation{
+				parentID:       t.TaskId,
+				batchSize:      300,
+				lifecycleTasks: l,
+			}
+			return cc.queryToCancel(ctx)
 		},
 	})
 	l.Dispatcher.RegisterTaskClass(tq.TaskClass{
@@ -58,7 +63,15 @@ func (l *LifecycleTasksViaTQ) RegisterTQTasks() {
 		Queue:     "cancel-tasks-go", // to replace "cancel-tasks" taskqueue in Py.
 		Handler: func(ctx context.Context, payload proto.Message) error {
 			t := payload.(*taskspb.BatchCancelTask)
-			return (&batchCancellation{tasks: t.Tasks, killRunning: t.KillRunning, workers: 64, retries: t.Retries, purpose: t.Purpose}).run(ctx)
+			bc := &batchCancellation{
+				tasks:          t.Tasks,
+				killRunning:    t.KillRunning,
+				workers:        64,
+				retries:        t.Retries,
+				purpose:        t.Purpose,
+				lifecycleTasks: l,
+			}
+			return bc.run(ctx)
 		},
 	})
 }
