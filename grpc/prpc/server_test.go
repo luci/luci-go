@@ -389,6 +389,100 @@ func TestServer(t *testing.T) {
 				So(res.Body.String(), ShouldEqual, "Override")
 				So(decodeRequest(rawBody), ShouldResembleProto, &HelloRequest{Name: "Lucy"})
 			})
+
+			Convey("Override callback: malformed request, pass through", func() {
+				req.Body = io.NopCloser(bytes.NewBufferString("not a proto"))
+
+				var callbackErr error
+				server.RegisterOverride("prpc.Greeter", "SayHello",
+					func(rw http.ResponseWriter, req *http.Request, body func(msg proto.Message) error) (bool, error) {
+						callbackErr = body(&HelloRequest{})
+						return false, nil // let the request be handled by the pRPC server
+					},
+				)
+
+				r.ServeHTTP(res, req)
+				So(callbackErr, ShouldErrLike, "could not decode body")
+				So(res.Code, ShouldEqual, http.StatusBadRequest)
+				So(res.Body.String(), ShouldStartWith, "could not decode body")
+			})
+
+			Convey("Override callback: malformed request, override", func() {
+				req.Body = io.NopCloser(bytes.NewBufferString("not a proto"))
+
+				var callbackErr error
+				var rawBody []byte
+				var rawBodyErr error
+				server.RegisterOverride("prpc.Greeter", "SayHello",
+					func(rw http.ResponseWriter, req *http.Request, body func(msg proto.Message) error) (bool, error) {
+						callbackErr = body(&HelloRequest{})
+						rawBody, rawBodyErr = io.ReadAll(req.Body)
+						_, _ = fmt.Fprintf(rw, "Override")
+						return true, nil
+					},
+				)
+
+				r.ServeHTTP(res, req)
+				So(callbackErr, ShouldErrLike, "could not decode body")
+				So(string(rawBody), ShouldEqual, "not a proto")
+				So(rawBodyErr, ShouldBeNil)
+				So(res.Code, ShouldEqual, http.StatusOK)
+				So(res.Body.String(), ShouldEqual, "Override")
+			})
+
+			Convey("Override callback: IO error when peeking, pass through", func() {
+				req.Body = io.NopCloser(io.MultiReader(
+					bytes.NewBufferString(`name: "Zzz"`),
+					&erroringReader{errors.New("BOOM")},
+				))
+
+				var callbackErr error
+				server.RegisterOverride("prpc.Greeter", "SayHello",
+					func(rw http.ResponseWriter, req *http.Request, body func(msg proto.Message) error) (bool, error) {
+						callbackErr = body(&HelloRequest{})
+						return false, nil // let the request be handled by the pRPC server
+					},
+				)
+
+				r.ServeHTTP(res, req)
+				So(callbackErr, ShouldErrLike, "BOOM")
+				So(res.Code, ShouldEqual, http.StatusBadRequest)
+				So(res.Body.String(), ShouldStartWith, "could not read request body: BOOM")
+			})
+
+			Convey("Override callback: IO error when peeking, override", func() {
+				req.Body = io.NopCloser(io.MultiReader(
+					bytes.NewBufferString(`name: "Zzz"`),
+					&erroringReader{errors.New("BOOM")},
+				))
+
+				var callbackErr error
+				var rawBody []byte
+				var rawBodyErr error
+				server.RegisterOverride("prpc.Greeter", "SayHello",
+					func(rw http.ResponseWriter, req *http.Request, body func(msg proto.Message) error) (bool, error) {
+						callbackErr = body(&HelloRequest{})
+						rawBody, rawBodyErr = io.ReadAll(req.Body)
+						_, _ = fmt.Fprintf(rw, "Override")
+						return true, nil
+					},
+				)
+
+				r.ServeHTTP(res, req)
+				So(callbackErr, ShouldErrLike, "BOOM")
+				So(string(rawBody), ShouldEqual, `name: "Zzz"`)
+				So(rawBodyErr, ShouldErrLike, "BOOM")
+				So(res.Code, ShouldEqual, http.StatusOK)
+				So(res.Body.String(), ShouldEqual, "Override")
+			})
 		})
 	})
+}
+
+type erroringReader struct {
+	err error
+}
+
+func (r *erroringReader) Read(p []byte) (n int, err error) {
+	return 0, r.err
 }

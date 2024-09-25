@@ -314,17 +314,18 @@ func (s *Server) handlePOST(c *router.Context) {
 			if originalReader != nil {
 				panic("the body callback should not be called more than once")
 			}
+			// Read as many bytes as we can (all of them if there's no IO errors).
+			body, err := io.ReadAll(c.Request.Body)
+			// Replace c.Request.Body with a reader that reproduces whatever we just
+			// read, including the final error (if any). That way this IO error will
+			// correctly be handled later (regardless if the override happens or not).
 			originalReader = c.Request.Body
-			body, err := io.ReadAll(originalReader)
+			c.Request.Body = &reproducingReader{r: bytes.NewReader(body), eofErr: err}
 			if err != nil {
 				return err
 			}
-			err = readMessage(bytes.NewReader(body), c.Request.Header, msg, s.HackFixFieldMasksForJSON)
-			if err != nil {
-				return err
-			}
-			c.Request.Body = io.NopCloser(bytes.NewReader(body))
-			return nil
+			// Try to decode the request body as an RPC message.
+			return readMessage(bytes.NewReader(body), c.Request.Header, msg, s.HackFixFieldMasksForJSON)
 		}
 
 		// This will potentially call `decode` inside.
@@ -386,6 +387,30 @@ func (s *Server) handlePOST(c *router.Context) {
 func (s *Server) handleOPTIONS(c *router.Context) {
 	s.setAccessControlHeaders(c, true)
 	c.Writer.WriteHeader(http.StatusOK)
+}
+
+// reproducingReader returns all of `r` but then fails with `eofErr` instead of
+// io.EOF.
+//
+// This makes it reproduce a potentially faulty io.Reader from the original
+// request.
+type reproducingReader struct {
+	r      *bytes.Reader
+	eofErr error
+}
+
+func (r *reproducingReader) Read(p []byte) (n int, err error) {
+	n, err = r.r.Read(p)
+	if err == io.EOF {
+		if r.eofErr != nil {
+			err = r.eofErr
+		}
+	}
+	return
+}
+
+func (r *reproducingReader) Close() error {
+	return nil
 }
 
 var requestContextKey = "context key with *requestContext"
