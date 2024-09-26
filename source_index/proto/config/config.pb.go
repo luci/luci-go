@@ -41,6 +41,9 @@ type Config struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Required. A list of gitiles host to index.
+	//
+	// See go/luci-source-index-new-repo-setup for all the steps required to set
+	// up a new host.
 	Hosts []*Config_Host `protobuf:"bytes,1,rep,name=hosts,proto3" json:"hosts,omitempty"`
 }
 
@@ -92,6 +95,9 @@ type Config_Host struct {
 	// (e.g. chromium.googlesource.com).
 	Host string `protobuf:"bytes,1,opt,name=host,proto3" json:"host,omitempty"`
 	// Required. A list of repositories to be indexed.
+	//
+	// See go/luci-source-index-new-repo-setup for all the steps required to
+	// set up a new repository.
 	Repositories []*Config_Host_Repository `protobuf:"bytes,2,rep,name=repositories,proto3" json:"repositories,omitempty"`
 }
 

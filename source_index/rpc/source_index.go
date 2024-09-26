@@ -70,7 +70,9 @@ func (si *sourceIndexServer) QueryCommitHash(ctx context.Context, req *pb.QueryC
 	// ingested from. As such, we should not check whether the position_ref is
 	// configured to be indexed.
 	if !cfg.ShouldIndexRepo(req.Host, req.Repository) {
-		return nil, appstatus.Errorf(codes.InvalidArgument, "repository https://%s/%s is not configured to be indexed", req.Host, req.Repository)
+		return nil, appstatus.Errorf(codes.InvalidArgument,
+			"repository https://%s/%s is not configured to be indexed; see go/luci-source-index-new-repo-setup for details",
+			req.Host, req.Repository)
 	}
 
 	mappedCommit, err := commit.ReadByPosition(span.Single(ctx), commit.ReadByPositionOpts{

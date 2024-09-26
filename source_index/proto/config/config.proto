@@ -41,9 +41,15 @@ message Config {
     }
 
     // Required. A list of repositories to be indexed.
+    //
+    // See go/luci-source-index-new-repo-setup for all the steps required to
+    // set up a new repository.
     repeated Repository repositories = 2;
   }
 
   // Required. A list of gitiles host to index.
+  //
+  // See go/luci-source-index-new-repo-setup for all the steps required to set
+  // up a new host.
   repeated Host hosts = 1;
 }
