@@ -175,11 +175,25 @@ export function LogSearch() {
                 <HtmlTooltip
                   title={
                     <>
-                      <strong>Contain</strong> - case insensitive find for exact
-                      match
+                      <strong>Contain</strong> - case-insensitive match
                       <br />
-                      <strong>Regex</strong> - case sensitive regex find,
-                      anchors (^ and $) are not allowed.
+                      <br />
+                      <strong>Regex</strong> - Regular expresssion support using
+                      the{' '}
+                      <a href=" https://github.com/google/re2/wiki/Syntax">
+                        re2
+                      </a>{' '}
+                      library with the following limitations.
+                      <Box sx={{ marginLeft: '1em' }}>
+                        <li>
+                          Anchors are not supported. ^ and $ are treated as
+                          literal characters
+                        </li>
+                        <li>Capture groups are not allowed.</li>
+                        <li>
+                          Flags are not supported. All flags are set to default.
+                        </li>
+                      </Box>
                     </>
                   }
                 >
