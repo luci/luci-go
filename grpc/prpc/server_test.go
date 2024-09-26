@@ -93,7 +93,7 @@ func TestServer(t *testing.T) {
 	t.Parallel()
 
 	Convey("Greeter service", t, func() {
-		server := Server{}
+		server := Server{MaxRequestSize: 100}
 
 		greeterSvc := &greeterService{}
 		RegisterGreeterServer(&server, greeterSvc)
@@ -340,7 +340,7 @@ func TestServer(t *testing.T) {
 
 				r.ServeHTTP(res, req)
 				So(res.Code, ShouldEqual, http.StatusBadRequest)
-				So(res.Body.String(), ShouldEqual, "failed to perform the override check: BOOM\n")
+				So(res.Body.String(), ShouldEqual, "the override check: BOOM\n")
 			})
 
 			Convey("Override callback: peek, pass through", func() {
@@ -447,7 +447,7 @@ func TestServer(t *testing.T) {
 				r.ServeHTTP(res, req)
 				So(callbackErr, ShouldErrLike, "BOOM")
 				So(res.Code, ShouldEqual, http.StatusBadRequest)
-				So(res.Body.String(), ShouldStartWith, "could not read request body: BOOM")
+				So(res.Body.String(), ShouldStartWith, "reading the request: BOOM")
 			})
 
 			Convey("Override callback: IO error when peeking, override", func() {
@@ -474,6 +474,23 @@ func TestServer(t *testing.T) {
 				So(rawBodyErr, ShouldErrLike, "BOOM")
 				So(res.Code, ShouldEqual, http.StatusOK)
 				So(res.Body.String(), ShouldEqual, "Override")
+			})
+
+			Convey("Override callback: request too big", func() {
+				req.Body = io.NopCloser(bytes.NewReader(make([]byte, server.MaxRequestSize+1)))
+
+				var callbackErr error
+				server.RegisterOverride("prpc.Greeter", "SayHello",
+					func(rw http.ResponseWriter, req *http.Request, body func(msg proto.Message) error) (bool, error) {
+						callbackErr = body(&HelloRequest{})
+						return false, nil // let the request be handled by the pRPC server
+					},
+				)
+
+				r.ServeHTTP(res, req)
+				So(callbackErr, ShouldErrLike, "request body too large")
+				So(res.Code, ShouldEqual, http.StatusServiceUnavailable)
+				So(res.Body.String(), ShouldStartWith, "reading the request: the request size exceeds the server limit")
 			})
 		})
 	})

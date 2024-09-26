@@ -74,6 +74,10 @@ var (
 	}, ", ")
 )
 
+// DefaultMaxRequestSize is the default maximum request size (in bytes)
+// the server is willing to read from the client.
+const DefaultMaxRequestSize = 64 * 1024 * 1024
+
 // ResponseCompression controls how the server compresses responses.
 //
 // See Server doc for details.
@@ -227,6 +231,23 @@ type Server struct {
 	// server always accepts compressed requests.
 	ResponseCompression ResponseCompression
 
+	// MaxRequestSize is how many bytes the server will read from the request body
+	// before rejecting it as too big.
+	//
+	// This is a protection against OOMing the server by big requests.
+	//
+	// When using request compression the limit is checked twice: when reading
+	// the original compressed request, and when decompressing it. Checking the
+	// decompressed request size is done to to prevent attacks like "zip bombs"
+	// where very small payloads decompress to enormous buffer sizes.
+	//
+	// Note that some environments impose their own request size limits. In
+	// particular, AppEngine and Cloud Run (but only when using HTTP/1), have
+	// a 32MiB request size limit.
+	//
+	// If <= 0, DefaultMaxRequestSize will be used.
+	MaxRequestSize int
+
 	mu        sync.RWMutex
 	services  map[string]*service
 	overrides map[string]map[string]Override
@@ -297,7 +318,32 @@ func (s *Server) InstallHandlers(r *router.Router, base router.MiddlewareChain) 
 	r.OPTIONS("/prpc/:service/:method", base, s.handleOPTIONS)
 }
 
-// handle handles RPCs.
+// maxRequestSize is a limit on the request size pre and post decompression.
+func (s *Server) maxRequestSize() int {
+	if s.MaxRequestSize > 0 {
+		return s.MaxRequestSize
+	}
+	return DefaultMaxRequestSize
+}
+
+// maxBytesReader wraps `r` with a reader that reads up to a maximum allowed
+// request size.
+//
+// When the limit is reached, it marks the request connection as "faulty" to
+// close it as soon as the response is written. Note that `w` must be an actual
+// http.Server's ResponseWriter for this to work (http.MaxBytesReader uses
+// special private API inside).
+func (s *Server) maxBytesReader(w http.ResponseWriter, r io.ReadCloser) io.ReadCloser {
+	// If `r` is a *reproducingReader, then we have applied the limit already.
+	// Applying it twice may do weird things to `w`.
+	if _, replaced := r.(*reproducingReader); replaced {
+		return r
+	}
+	return http.MaxBytesReader(w, r, int64(s.maxRequestSize()))
+}
+
+// handlePOST handles POST requests with pRPC messages.
+//
 // See https://godoc.org/go.chromium.org/luci/grpc/prpc#hdr-Protocol
 // for pRPC protocol.
 func (s *Server) handlePOST(c *router.Context) {
@@ -315,7 +361,7 @@ func (s *Server) handlePOST(c *router.Context) {
 				panic("the body callback should not be called more than once")
 			}
 			// Read as many bytes as we can (all of them if there's no IO errors).
-			body, err := io.ReadAll(c.Request.Body)
+			body, err := io.ReadAll(s.maxBytesReader(c.Writer, c.Request.Body))
 			// Replace c.Request.Body with a reader that reproduces whatever we just
 			// read, including the final error (if any). That way this IO error will
 			// correctly be handled later (regardless if the override happens or not).
@@ -325,7 +371,13 @@ func (s *Server) handlePOST(c *router.Context) {
 				return err
 			}
 			// Try to decode the request body as an RPC message.
-			return readMessage(bytes.NewReader(body), c.Request.Header, msg, s.HackFixFieldMasksForJSON)
+			return readMessage(
+				bytes.NewReader(body),
+				c.Request.Header,
+				msg,
+				s.maxRequestSize(),
+				s.HackFixFieldMasksForJSON,
+			)
 		}
 
 		// This will potentially call `decode` inside.
@@ -341,7 +393,7 @@ func (s *Server) handlePOST(c *router.Context) {
 
 		switch {
 		case err != nil:
-			writeError(c.Request.Context(), c.Writer, requestReadErr(err, "failed to perform the override check"), FormatText)
+			writeError(c.Request.Context(), c.Writer, requestReadErr(err, "the override check"), FormatText)
 			return
 		case stop:
 			return
@@ -503,7 +555,13 @@ func (s *Server) parseAndCall(c *router.Context, service *service, method grpc.M
 		if in == nil {
 			return status.Errorf(codes.Internal, "input message is nil")
 		}
-		return readMessage(c.Request.Body, c.Request.Header, in.(proto.Message), s.HackFixFieldMasksForJSON)
+		return readMessage(
+			s.maxBytesReader(c.Writer, c.Request.Body),
+			c.Request.Header,
+			in.(proto.Message),
+			s.maxRequestSize(),
+			s.HackFixFieldMasksForJSON,
+		)
 	}, s.UnaryServerInterceptor)
 
 	switch {

@@ -199,6 +199,15 @@ func ShouldBeRPCDeadlineExceeded(actual any, expected ...any) string {
 	return ShouldHaveRPCCode(actual, prepend(codes.DeadlineExceeded, expected)...)
 }
 
+// ShouldBeRPCUnavailable asserts that "actual" is an error that has a gRPC
+// code value of codes.Unavailable.
+//
+// One additional "expected" string may be optionally included. If included, the
+// gRPC error's message is asserted to contain the expected string.
+func ShouldBeRPCUnavailable(actual any, expected ...any) string {
+	return ShouldHaveRPCCode(actual, prepend(codes.Unavailable, expected)...)
+}
+
 func prepend(c codes.Code, exp []any) []any {
 	args := make([]any, len(exp)+1)
 	args[0] = c

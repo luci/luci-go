@@ -148,6 +148,8 @@ func endToEndTest(t *testing.T, responseType string) {
 		})
 		defer ts.Close()
 
+		ts.MaxRequestSize = 2 * 1024 * 1024
+
 		Convey(`Can round-trip a hello message`, func() {
 			svc.R = &HelloReply{Message: "sup"}
 
@@ -181,7 +183,7 @@ func endToEndTest(t *testing.T, responseType string) {
 		Convey(`Can send a giant message with compression`, func() {
 			svc.R = &HelloReply{Message: "sup"}
 
-			msg := make([]byte, 1024*1024)
+			msg := make([]byte, 512*1024)
 			_, err := rand.Read(msg)
 			So(err, ShouldBeNil)
 
@@ -191,7 +193,7 @@ func endToEndTest(t *testing.T, responseType string) {
 		})
 
 		Convey(`Can receive a giant message with compression`, func() {
-			msg := make([]byte, 1024*1024)
+			msg := make([]byte, 512*1024)
 			_, err := rand.Read(msg)
 			So(err, ShouldBeNil)
 
@@ -200,6 +202,23 @@ func endToEndTest(t *testing.T, responseType string) {
 			resp, err := client.Greet(ctx, &HelloRequest{Name: "hi"})
 			So(err, ShouldBeRPCOK)
 			So(resp, ShouldResembleProto, svc.R)
+		})
+
+		Convey(`Rejects mega giant uncompressed request`, func() {
+			prpcC.EnableRequestCompression = false
+			_, err := client.Greet(ctx, &HelloRequest{
+				Name: strings.Repeat("z", 2*1024*1024),
+			})
+			So(err, ShouldBeRPCUnavailable)
+			So(err, ShouldErrLike, "reading the request: the request size exceeds the server limit")
+		})
+
+		Convey(`Rejects mega-giant compressed request`, func() {
+			_, err := client.Greet(ctx, &HelloRequest{
+				Name: strings.Repeat("z", 2*1024*1024),
+			})
+			So(err, ShouldBeRPCUnavailable)
+			So(err, ShouldErrLike, "decompressing the request: the decompressed request size exceeds the server limit")
 		})
 
 		Convey(`Can round-trip status details`, func() {

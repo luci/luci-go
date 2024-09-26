@@ -74,7 +74,7 @@ const (
 	// the client is willing to read from the server.
 	//
 	// It is 32MiB minus 32KiB. Its value is picked to fit into Appengine response
-	//  size limits (taking into account potential overhead on headers).
+	// size limits (taking into account potential overhead on headers).
 	DefaultMaxResponseSize = 32*1024*1024 - 32*1024
 )
 

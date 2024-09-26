@@ -38,14 +38,20 @@ import (
 
 const headerContentType = "Content-Type"
 
+// decompressionLimitErr is returned if readMessage decompressed too much data.
+var decompressionLimitErr = errors.Reason("the decompressed request size exceeds the server limit").Err()
+
 // readMessage decodes a protobuf message from an HTTP request.
 //
 // Uses given headers to decide how to uncompress and deserialize the message.
+// When decompressing, makes sure to decompress no more than
+// `maxDecompressedBytes`. Assumes `body` is already a limited reader or
+// it doesn't exceed a limit (see Server.maxBytesReader).
 //
 // fixFieldMasksForJSON indicates whether to attempt a workaround for
 // https://github.com/golang/protobuf/issues/745 for requests with FormatJSONPB.
 // TODO(crbug/1082369): Remove this workaround once field masks can be decoded.
-func readMessage(body io.Reader, header http.Header, msg proto.Message, fixFieldMasksForJSON bool) error {
+func readMessage(body io.Reader, header http.Header, msg proto.Message, maxDecompressedBytes int, fixFieldMasksForJSON bool) error {
 	format, err := FormatFromContentType(header.Get(headerContentType))
 	if err != nil {
 		// Spec: http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.16
@@ -60,20 +66,28 @@ func readMessage(body io.Reader, header http.Header, msg proto.Message, fixField
 	if header.Get("Content-Encoding") == "gzip" {
 		reader, err := getGZipReader(body)
 		if err != nil {
-			return requestReadErr(err, "failed to start decompressing gzip request body")
+			return requestReadErr(err, "decompressing the request")
 		}
-		buf, err = io.ReadAll(reader)
+		// Read one extra byte. This is how we'll know that we read past the limit,
+		// because LimitReader uses io.EOF to indicate the limit is reached, which
+		// is indistinguishable from just truncating the original reader.
+		buf, err = io.ReadAll(io.LimitReader(reader, int64(maxDecompressedBytes+1)))
 		if err == nil {
-			err = reader.Close() // this just checks the checksum
+			if len(buf) > maxDecompressedBytes {
+				err = decompressionLimitErr
+				_ = reader.Close() // this will be a bogus error, since we abandoned the reader
+			} else {
+				err = reader.Close() // this just checks the crc32 checksum
+			}
 		}
 		returnGZipReader(reader)
 		if err != nil {
-			return requestReadErr(err, "could not read or decompress request body")
+			return requestReadErr(err, "decompressing the request")
 		}
 	} else {
 		buf, err = io.ReadAll(body)
 		if err != nil {
-			return requestReadErr(err, "could not read request body")
+			return requestReadErr(err, "reading the request")
 		}
 	}
 
@@ -113,14 +127,23 @@ func readMessage(body io.Reader, header http.Header, msg proto.Message, fixField
 
 // requestReadErr interprets an error from reading and unzipping of a request.
 func requestReadErr(err error, msg string) *protocolError {
+	var maxBytesErr *http.MaxBytesError
+
 	code := codes.InvalidArgument
-	switch errors.Unwrap(err) {
-	case io.ErrUnexpectedEOF, context.Canceled:
+	errMsg := err.Error()
+	switch {
+	case errors.Is(err, io.ErrUnexpectedEOF) || errors.Is(err, context.Canceled):
 		code = codes.Canceled
-	case context.DeadlineExceeded:
+	case errors.Is(err, context.DeadlineExceeded):
 		code = codes.DeadlineExceeded
+	case errors.Is(err, decompressionLimitErr):
+		code = codes.Unavailable
+	case errors.As(err, &maxBytesErr):
+		code = codes.Unavailable
+		errMsg = "the request size exceeds the server limit"
 	}
-	return protocolErr(code, grpcutil.CodeStatus(code), "%s: %s", msg, err)
+
+	return protocolErr(code, grpcutil.CodeStatus(code), "%s: %s", msg, errMsg)
 }
 
 // parseHeader parses HTTP headers and derives a new context.

@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/klauspost/compress/gzip"
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc/metadata"
 
@@ -36,12 +37,18 @@ func TestDecoding(t *testing.T) {
 	t.Parallel()
 
 	Convey("readMessage", t, func() {
+		const maxDecompressedSize = 100
+
 		var msg HelloRequest
-		read := func(contentType string, body []byte) *protocolError {
+		read := func(contentType, contentEncoding string, body []byte) *protocolError {
 			err := readMessage(
 				bytes.NewBuffer(body),
-				http.Header{"Content-Type": {contentType}},
+				http.Header{
+					"Content-Type":     {contentType},
+					"Content-Encoding": {contentEncoding},
+				},
 				&msg,
+				maxDecompressedSize,
 				true,
 			)
 			if err != nil {
@@ -51,7 +58,7 @@ func TestDecoding(t *testing.T) {
 		}
 
 		testLucy := func(contentType string, body []byte) {
-			err := read(contentType, body)
+			err := read(contentType, "identity", body)
 			So(err, ShouldBeNil)
 			So(&msg, ShouldResembleProto, &HelloRequest{
 				Name: "Lucy",
@@ -82,12 +89,12 @@ func TestDecoding(t *testing.T) {
 				testLucy(mtPRPCBinary, body)
 			})
 			Convey("malformed body", func() {
-				err := read(mtPRPCBinary, []byte{0})
+				err := read(mtPRPCBinary, "identity", []byte{0})
 				So(err, ShouldNotBeNil)
 				So(err.status, ShouldEqual, http.StatusBadRequest)
 			})
 			Convey("empty body", func() {
-				err := read(mtPRPCBinary, nil)
+				err := read(mtPRPCBinary, "identity", nil)
 				So(err, ShouldBeNil)
 			})
 		})
@@ -101,12 +108,12 @@ func TestDecoding(t *testing.T) {
 				testLucy(mtPRPCJSONPB, body)
 			})
 			Convey("malformed body", func() {
-				err := read(mtPRPCJSONPB, []byte{0})
+				err := read(mtPRPCJSONPB, "identity", []byte{0})
 				So(err, ShouldNotBeNil)
 				So(err.status, ShouldEqual, http.StatusBadRequest)
 			})
 			Convey("empty body", func() {
-				err := read(mtPRPCJSONPB, nil)
+				err := read(mtPRPCJSONPB, "identity", nil)
 				So(err, ShouldNotBeNil)
 				So(err.status, ShouldEqual, http.StatusBadRequest)
 			})
@@ -118,20 +125,53 @@ func TestDecoding(t *testing.T) {
 				testLucy(mtPRPCText, body)
 			})
 			Convey("malformed body", func() {
-				err := read(mtPRPCText, []byte{0})
+				err := read(mtPRPCText, "identity", []byte{0})
 				So(err, ShouldNotBeNil)
 				So(err.status, ShouldEqual, http.StatusBadRequest)
 			})
 			Convey("empty body", func() {
-				err := read(mtPRPCText, nil)
+				err := read(mtPRPCText, "identity", nil)
 				So(err, ShouldBeNil)
 			})
 		})
 
 		Convey("unsupported media type", func() {
-			err := read("blah", nil)
+			err := read("blah", "identity", nil)
 			So(err, ShouldNotBeNil)
 			So(err.status, ShouldEqual, http.StatusUnsupportedMediaType)
+		})
+
+		Convey("compressed", func() {
+			compressRaw := func(blob []byte) []byte {
+				var buf bytes.Buffer
+				w := gzip.NewWriter(&buf)
+				_, err := w.Write(blob)
+				So(err, ShouldBeNil)
+				So(w.Close(), ShouldBeNil)
+				return buf.Bytes()
+			}
+
+			Convey("OK", func() {
+				m := &HelloRequest{Name: "hi"}
+				blob, err := proto.Marshal(m)
+				So(err, ShouldBeNil)
+
+				err = read(mtPRPCBinary, "gzip", compressRaw(blob))
+				So(err, ShouldBeNil)
+				So(msg.Name, ShouldEqual, "hi")
+			})
+
+			Convey("Exactly at the limit", func() {
+				err := read(mtPRPCBinary, "gzip",
+					compressRaw(make([]byte, maxDecompressedSize)))
+				So(err, ShouldErrLike, "could not decode body") // it is full of zeros
+			})
+
+			Convey("Past the limit", func() {
+				err := read(mtPRPCBinary, "gzip",
+					compressRaw(make([]byte, maxDecompressedSize+1)))
+				So(err, ShouldErrLike, "the decompressed request size exceeds the server limit")
+			})
 		})
 	})
 
