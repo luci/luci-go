@@ -21,7 +21,7 @@ import (
 
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/check"
-	"go.chromium.org/luci/common/testing/truth/internal/test_helper"
+	"go.chromium.org/luci/common/testing/truth/internal/testtools"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -47,7 +47,7 @@ func TestCheck(t *testing.T) {
 		t.Parallel()
 
 		t.Run(`That`, func(t *testing.T) {
-			et := test_helper.NewExpectFailure(t)
+			et := testtools.NewExpectFailure(t)
 
 			assert.That(t, check.That(et, 100, should.Equal(200)), should.BeFalse)
 
@@ -55,7 +55,7 @@ func TestCheck(t *testing.T) {
 		})
 
 		t.Run(`Loosely`, func(t *testing.T) {
-			et := test_helper.NewExpectFailure(t)
+			et := testtools.NewExpectFailure(t)
 
 			assert.That(t, check.Loosely(et, 100, should.Equal(200)), should.BeFalse)
 
@@ -63,7 +63,7 @@ func TestCheck(t *testing.T) {
 		})
 
 		t.Run(`Loosely (bad type)`, func(t *testing.T) {
-			et := test_helper.NewExpectFailure(t)
+			et := testtools.NewExpectFailure(t)
 
 			assert.That(t, check.Loosely(et, 100, should.Equal("100")), should.BeFalse)
 
@@ -74,7 +74,7 @@ func TestCheck(t *testing.T) {
 		})
 
 		t.Run(`NoErr`, func(t *testing.T) {
-			et := test_helper.NewExpectFailure(t)
+			et := testtools.NewExpectFailure(t)
 
 			assert.That(t, check.NoErr(et, errors.New("morp")), should.BeFalse)
 
@@ -82,7 +82,7 @@ func TestCheck(t *testing.T) {
 		})
 
 		t.Run(`ErrIsLike string`, func(t *testing.T) {
-			et := test_helper.NewExpectFailure(t)
+			et := testtools.NewExpectFailure(t)
 
 			assert.That(t, check.ErrIsLike(et, errors.New("morp"), "dorp"), should.BeFalse)
 
@@ -90,7 +90,7 @@ func TestCheck(t *testing.T) {
 		})
 
 		t.Run(`ErrIsLike error`, func(t *testing.T) {
-			et := test_helper.NewExpectFailure(t)
+			et := testtools.NewExpectFailure(t)
 
 			assert.That(t, check.ErrIsLike(et, errors.New("morp"), errors.New("dorp")), should.BeFalse)
 
