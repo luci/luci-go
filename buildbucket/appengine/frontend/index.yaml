@@ -1,0 +1,125 @@
+indexes:
+
+# Popular, builder-based queries.
+
+# Milo builder page uses this index to load pending and running builds.
+- kind: Build
+  properties:
+    - name: builder_id
+    - name: status_v2
+
+# Milo builder page uses this index to load ended builds.
+- kind: Build
+  properties:
+    - name: builder_id
+    - name: incomplete
+
+# Keep builder+tag queries fast.
+- kind: Build
+  properties:
+    - name: builder_id
+    - name: tags
+
+# Peeking.
+- kind: Build
+  properties:
+  - name: bucket_id
+  - name: is_leased
+  - name: status
+  - name: __key__
+    direction: desc
+
+# Lease expiration.
+- kind: Build
+  properties:
+  - name: is_leased
+  - name: lease_expiration_date
+
+# Build lease/start latency monitoring w/ legacy.
+- kind: Build
+  properties:
+  - name: bucket_id
+  - name: experimental
+  - name: status
+  - name: never_leased
+  - name: create_time
+
+# Build lease/start latency monitoring.
+- kind: Build
+  properties:
+  - name: bucket_id
+  - name: experimental
+  - name: status_v2
+  - name: never_leased
+  - name: create_time
+
+# metrics.set_build_latency needs this index (legacy)
+- kind: Build
+  properties:
+  - name: bucket_id
+  - name: experimental
+  - name: never_leased
+  - name: status
+  - name: tags
+  - name: create_time
+
+# metrics.set_build_latency needs this index
+- kind: Build
+  properties:
+  - name: bucket_id
+  - name: experimental
+  - name: never_leased
+  - name: status_v2
+  - name: tags
+  - name: create_time
+
+# custom metrics.max_age needs this index
+- kind: Build
+  properties:
+  - name: bucket_id
+  - name: experimental
+  - name: status_v2
+  - name: tags
+  - name: custom_builder_max_age_metrics
+  - name: create_time
+
+# Can be used by SearchBuilds, depending on given criteria.
+- kind: Build
+  properties:
+  - name: bucket_id
+  - name: tags
+
+# Used to calculate metrics.v2.ConsecutiveFailureCount
+- kind: Build
+  properties:
+  - name: bucket_id
+  - name: status_v2
+  - name: tags
+  - name: status_changed_time
+    direction: desc
+
+# Used to calculate custom metrics.v2.ConsecutiveFailureCount
+- kind: Build
+  properties:
+  - name: bucket_id
+  - name: status_v2
+  - name: tags
+  - name: custom_builder_consecutive_failures_metrics
+  - name: status_changed_time
+    direction: desc
+
+# Used to query builds from a luci project running on a backend that have
+# reached or exceeded their next sync time.
+- kind: Build
+  properties:
+  - name: incomplete
+  - name: backend_target
+  - name: project
+  - name: next_backend_sync_time
+
+# Used to query distinct (project, backend_target) pairs for running builds.
+- kind: Build
+  properties:
+  - name: incomplete
+  - name: backend_target
+  - name: project
