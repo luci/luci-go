@@ -296,6 +296,26 @@ func TestValidateSearchString(t *testing.T) {
 			err := validateSearchString(m)
 			So(err, ShouldErrLike, `error parsing regexp`)
 		})
+		Convey("capture group is not allowed", func() {
+			m := &pb.ArtifactContentMatcher{
+				Matcher: &pb.ArtifactContentMatcher_RegexContain{
+					RegexContain: "xx([0-9]*)",
+				},
+			}
+
+			err := validateSearchString(m)
+			So(err, ShouldErrLike, `capture group is not allowed`)
+		})
+		Convey("non-capture group is allowed", func() {
+			m := &pb.ArtifactContentMatcher{
+				Matcher: &pb.ArtifactContentMatcher_RegexContain{
+					RegexContain: "xx(?:[0-9]*)",
+				},
+			}
+
+			err := validateSearchString(m)
+			So(err, ShouldBeNil)
+		})
 	})
 }
 

@@ -140,7 +140,7 @@ func validateSearchString(m *pb.ArtifactContentMatcher) error {
 		matchString = m.GetContain()
 	case *pb.ArtifactContentMatcher_RegexContain:
 		matchString = m.GetRegexContain()
-		if _, err := regexp.Compile(matchString); err != nil {
+		if err := validateRegexSearchString(matchString); err != nil {
 			return err
 		}
 	default:
@@ -149,6 +149,17 @@ func validateSearchString(m *pb.ArtifactContentMatcher) error {
 	// 2048 bytes (2kib) is an arbitrary limit for this field. It can be increased if needed.
 	if len(matchString) > 2048 {
 		return errors.Reason("longer than 2048 bytes").Err()
+	}
+	return nil
+}
+
+func validateRegexSearchString(regexPattern string) error {
+	re, err := regexp.Compile(regexPattern)
+	if err != nil {
+		return err
+	}
+	if re.NumSubexp() > 0 {
+		return errors.Reason("capture group is not allowed").Err()
 	}
 	return nil
 }
