@@ -90,7 +90,7 @@ func (a *ArchiveOptions) PostProcess(cwd string) {
 	if a.IgnoredPathFilterRe == "" {
 		// Set default ignored paths regexp
 		// .swp are vim files
-		a.IgnoredPathFilterRe = genExtensionsRegex("pyc", "swp") + "|" + genDirectoriesRegex(`\.git`, `\.hg`, `\.svn`)
+		a.IgnoredPathFilterRe = genExtensionsRegex("swp") + "|" + genDirectoriesRegex(`\.git`, `\.hg`, `\.svn`, "__pycache__", `\.wptcache`)
 	}
 	if !filepath.IsAbs(a.Isolate) {
 		a.Isolate = filepath.Join(cwd, a.Isolate)
