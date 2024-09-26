@@ -67,7 +67,11 @@ func (s *service) Greet(ctx context.Context, req *HelloRequest) (*HelloReply, er
 	}
 	s.m.Unlock()
 
-	time.Sleep(sleep)
+	select {
+	case <-ctx.Done():
+		return nil, status.FromContextError(ctx.Err()).Err()
+	case <-time.After(sleep):
+	}
 
 	if s.outgoingMD != nil {
 		if err := prpc.SetHeader(ctx, s.outgoingMD); err != nil {
@@ -287,17 +291,17 @@ func TestTimeouts(t *testing.T) {
 				return &retry.ExponentialBackoff{
 					Limited: retry.Limited{
 						Delay:   time.Millisecond,
-						Retries: 5,
+						Retries: 3,
 					},
 				}
 			},
-			PerRPCTimeout: 5 * time.Millisecond,
+			PerRPCTimeout: time.Second,
 		})
 		defer ts.Close()
 
 		Convey(`Gives up after N retries`, func() {
 			svc.sleep = func() time.Duration {
-				return 500 * time.Millisecond // much larger than the per-RPC timeout
+				return 60 * time.Second // much larger than the per-RPC timeout
 			}
 
 			_, err := client.Greet(ctx, &HelloRequest{})
@@ -308,10 +312,10 @@ func TestTimeouts(t *testing.T) {
 			attempt := 0
 			svc.sleep = func() time.Duration {
 				attempt += 1
-				if attempt > 3 {
+				if attempt > 2 {
 					return 0
 				}
-				return 500 * time.Millisecond
+				return 60 * time.Second
 			}
 
 			_, err := client.Greet(ctx, &HelloRequest{})
@@ -320,10 +324,10 @@ func TestTimeouts(t *testing.T) {
 
 		Convey(`Gives up on overall timeout`, func() {
 			svc.sleep = func() time.Duration {
-				return 500 * time.Millisecond // much larger than the per-RPC timeout
+				return 60 * time.Second // much larger than the per-RPC timeout
 			}
 
-			ctx, cancel := context.WithTimeout(ctx, 20*time.Millisecond)
+			ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 			defer cancel()
 
 			_, err := client.Greet(ctx, &HelloRequest{})
