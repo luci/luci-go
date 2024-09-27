@@ -97,41 +97,6 @@ export const ExtendedLogRequest = {
   },
 };
 
-/**
- * A list of gitiles host that are known to allow cross-origin requests from
- * LUCI UI.
- *
- * `FusedGitilesClientImpl` sends requests to the gitiles host directly if
- * LUCI UI is allowed to send cross-origin requests to them. Otherwise, the
- * requests are sent through `MiloInternal`, which adds 200~600ms overhead.
- *
- * Follow the steps below to allow LUCI UI to send cross-origin requests to more
- * gitiles hosts:
- * 1. File a security review ([example](http://b/351915276)).
- *    1. List all LUCI UI host regexes.
- *       * `"^http://localhost$"` (optional)
- *       * `"^http://localhost:8080$"` (optional)
- *       * `"^https://ci[.]chromium[.]org$"`
- *       * `"^https://(staging[.])?luci[.]app$"`
- *       * `"^https://([A-Za-z0-9-_]+-dot-)?luci-milo(-dev)?[.]appspot[.]com$"`
- *    2. List all the additional gitiles hosts we want to send cross-origin
- *       queries to.
- * 2. Filed a bug under `... > Chromium > Infra > Git > Admin` (if the gitiles
- *    hosts are managed by Chrome Ops Source) and link to the security review.
- * 3. Once the security review is approved, a git admin will process the request
- *    and add LUCI UI to the CORS allowlist.
- * 4. Add the gitiles hosts to this array so requests to them no longer need to
- *    be sent through `MiloInternal`.
- *
- * If local hosts are not added to the allowlist, we will need to add special
- * logic to handle gitiles requests during local development.
- */
-export const CORS_ENABLED_GITILES_HOSTS = Object.freeze([
-  'chromium.googlesource.com',
-  'chrome-internal.googlesource.com',
-  'webrtc.googlesource.com',
-]);
-
 export const ExtendedGitilesServiceName = 'extended.gitiles.Gitiles';
 
 export interface FusedGitilesClientOpts {
@@ -144,6 +109,19 @@ export interface FusedGitilesClientOpts {
    * service resolves it.
    */
   readonly sourceIndexHost: string;
+  /**
+   * Whether the milo Gitiles proxy should be used to proxy gitiles requests.
+   * Setting to to true slows down the RPC but allows LUCI UI to query more
+   * gitiles host.
+   *
+   * Must be true if the gitiles host is not configured to allow CORS request
+   * from LUCI UI.
+   * Should be false if the gitiles host is configured to allow CORS request.
+   *
+   * The requests are always authenticated using the user's credential
+   * regardless of this setting.
+   */
+  readonly useMiloGitilesProxy: boolean;
 }
 
 /**
@@ -165,17 +143,17 @@ export class FusedGitilesClientImpl implements Gitiles {
     opts: FusedGitilesClientOpts,
   ) {
     this.service = opts.service || ExtendedGitilesServiceName;
-    if (CORS_ENABLED_GITILES_HOSTS.includes(rpc.host)) {
-      this.gitilesClient = new RestGitilesClientImpl(
+    if (opts.useMiloGitilesProxy) {
+      this.miloClient = new MiloInternalClientImpl(
         new PrpcClient({
-          host: rpc.host,
+          host: SETTINGS.milo.host,
           getAuthToken: rpc.getAuthToken,
         }),
       );
     } else {
-      this.miloClient = new MiloInternalClientImpl(
+      this.gitilesClient = new RestGitilesClientImpl(
         new PrpcClient({
-          host: SETTINGS.milo.host,
+          host: rpc.host,
           getAuthToken: rpc.getAuthToken,
         }),
       );

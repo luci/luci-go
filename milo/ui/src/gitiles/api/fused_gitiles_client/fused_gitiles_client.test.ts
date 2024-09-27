@@ -59,14 +59,14 @@ describe('FusedGitilesClientImpl', () => {
       jest.resetAllMocks();
     });
 
-    it('should work with CORS-enabled host', async () => {
+    it('should work without milo gitiles proxy', async () => {
       const logRes = LogResponse.fromPartial({
         log: [{ author: { email: 'email@email.com', name: 'name' } }],
       });
       gitilesLogSpy.mockResolvedValueOnce(logRes);
       const client = new FusedGitilesClientImpl(
         new PrpcClient({ host: 'chromium.googlesource.com' }),
-        { sourceIndexHost: 'source-index.host' },
+        { sourceIndexHost: 'source-index.host', useMiloGitilesProxy: false },
       );
       const res = await client.Log(
         LogRequest.fromPartial({
@@ -88,14 +88,14 @@ describe('FusedGitilesClientImpl', () => {
       );
     });
 
-    it('should work with non-CORS-enabled host', async () => {
+    it('should work with milo gitiles proxy', async () => {
       const logRes = LogResponse.fromPartial({
         log: [{ author: { email: 'email@email.com', name: 'name' } }],
       });
       proxyGitilesLogSpy.mockResolvedValueOnce(logRes);
       const client = new FusedGitilesClientImpl(
         new PrpcClient({ host: 'other.googlesource.com' }),
-        { sourceIndexHost: 'source-index.host' },
+        { sourceIndexHost: 'source-index.host', useMiloGitilesProxy: true },
       );
       const res = await client.Log(
         LogRequest.fromPartial({
@@ -155,7 +155,7 @@ describe('FusedGitilesClientImpl', () => {
       proxyGitilesLogSpy.mockResolvedValueOnce(logRes);
       const client = new FusedGitilesClientImpl(
         new PrpcClient({ host: 'gitiles_host.googlesource.com' }),
-        { sourceIndexHost: 'source-index.host' },
+        { sourceIndexHost: 'source-index.host', useMiloGitilesProxy: true },
       );
       const res = await client.ExtendedLog(
         ExtendedLogRequest.fromPartial({
@@ -190,7 +190,7 @@ describe('FusedGitilesClientImpl', () => {
       proxyGitilesLogSpy.mockResolvedValueOnce(logRes);
       const client = new FusedGitilesClientImpl(
         new PrpcClient({ host: 'gitiles_host.googlesource.com' }),
-        { sourceIndexHost: 'source-index.host' },
+        { sourceIndexHost: 'source-index.host', useMiloGitilesProxy: true },
       );
       const res = await client.ExtendedLog(
         ExtendedLogRequest.fromPartial({
