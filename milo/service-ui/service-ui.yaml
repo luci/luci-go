@@ -61,7 +61,12 @@ handlers:
   expiration: 0s
 
 # SPA frontend routes.
-- url: /ui(/.*)?
+#
+# Note that we do not handle `/ui` here. The UI service worker works on `/ui/.*`
+# routes but not on the `/ui` route. Therefore the `/ui` route cannot enjoy the
+# performance benefit delivered by the UI service worker. `/ui` requests should
+# be redirected to `/ui/` by the root service worker or the golang server.
+- url: /ui/.*
   secure: always
   static_files: ui/out/index.html
   upload: ui/out/index.html

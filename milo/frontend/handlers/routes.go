@@ -53,7 +53,10 @@ func Run(srv *server.Server, templatePath string) {
 	projectMW := htmlMW.Extend(buildProjectACLMiddleware(false))
 	optionalProjectMW := htmlMW.Extend(buildProjectACLMiddleware(true))
 
-	r.GET("/", htmlMW, redirect("/ui/", http.StatusFound))
+	r.GET("/", baseMW, redirect("/ui/", http.StatusFound))
+	// Redirect `/ui` to `/ui/` so we can take advantage of the performance
+	// improvement enabled by the service worker with a `/ui/` scope.
+	r.GET("/ui", baseMW, redirect("/ui/", http.StatusFound))
 	r.GET("/p", baseMW, movedPermanently("/"))
 	r.GET("/search", htmlMW, redirect("/ui/search", http.StatusFound))
 	r.GET("/opensearch.xml", baseMW, searchXMLHandler)
