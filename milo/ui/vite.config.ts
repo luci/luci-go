@@ -257,7 +257,7 @@ export default defineConfig(({ mode }) => {
       // (typically https://luci-milo-dev.appspot.com) since we don't run the
       // milo go server on the same host.
       proxy: {
-        '^(?!/ui(/.*)?$)': {
+        '^(?!/ui/.*$)': {
           target: env['VITE_MILO_URL'],
           changeOrigin: true,
           secure: false,
