@@ -1,0 +1,87 @@
+// Copyright 2024 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.notify.v1;
+
+import "google/api/field_behavior.proto";
+import "google/protobuf/field_mask.proto";
+import "go.chromium.org/luci/luci_notify/proto/v1/gardened_builder.proto";
+import "go.chromium.org/luci/luci_notify/proto/v1/triage_state.proto";
+
+option go_package = "go.chromium.org/luci/luci_notify/proto/v1;notifypb";
+
+// Gardening provides information to help keep builders green (passing).
+service Gardening {
+   // Retrieves builders in the given gardening rotation.
+   rpc QueryGardenedBuilders(QueryGardenedBuildersRequest) returns (QueryGardenedBuildersResponse);
+
+   // Updates step and/or test triage state(s).
+   rpc BatchUpdateTriageState(BatchUpdateTriageStateRequest) returns (BatchUpdateTriageStateResponse);
+}
+
+message QueryGardenedBuildersRequest {
+  // The name of the gardening rotation to retrieve builders for.
+  // E.g. 'gardeningRotations/chromium.gpu'.
+  // Format: gardeningRotations/{GARDENING_ROTATION_ID}.
+  string gardening_rotation = 1;
+
+  // The maximum number of gardened builders to return. The service may
+  // return fewer than this value (e.g. to avoid hitting response size limits).
+  // If unspecified, at most 1000 builders will be returned.
+  // The maximum value is 1000; values above 1000 will be coerced to 1000.
+  int32 page_size = 2;
+
+  // A page token, received from a previous `QueryGardeningRotationRequest` call.
+  // Provide this to retrieve the subsequent page.
+  //
+  // When paginating, all other parameters provided to `QueryGardenedBuildersRequest`
+  // must match the call that provided the page token.
+  string page_token = 3;
+}
+
+message QueryGardenedBuildersResponse {
+  // The gardened builders which are part of the rotation.
+  repeated GardenedBuilder builders = 1;
+
+  // A token that can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+message BatchUpdateTriageStateRequest {
+  // The requests specifying the triage states to update.
+  // A maximum of 100 triage states can be modified in a batch.
+  repeated UpdateTriageStateRequest requests = 1;
+}
+
+message BatchUpdateTriageStateResponse {
+  // The updated triage states.
+  repeated TriageState triage_states = 1;
+}
+
+message UpdateTriageStateRequest {
+  // The triage state to update.
+  //
+  // The triage states's `name` field is used to identify the triage state to update.
+  // Format: project/{PROJECT}/buckets/{BUCKET}/builder/{BUILDER}/gardening/steps/{STEP_ID}/triage.
+  //
+  // Set the `etag` on the TriageState to conditionally update the resource conditioned on the
+  // resource not having been updated since it was last read.
+  TriageState triage_state = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // The list of fields to update.
+  google.protobuf.FieldMask update_mask = 2;
+}

@@ -1,0 +1,214 @@
+// Copyright 2024 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.notify.v1;
+
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "go.chromium.org/luci/luci_notify/proto/v1;notifypb";
+
+// TriageState is the user-editable triage state.
+message TriageState {
+  // The resource name of the gardened build triage state.
+  // For steps:
+  // Format: project/{PROJECT}/buckets/{BUCKET}/builder/{BUILDER}/gardening/steps/{URL_ENCODED_STEP_ID}/triage.
+  // For tests:
+  // Format: project/{PROJECT}/buckets/{BUCKET}/builder/{BUILDER}/gardening/steps/{URL_ENCODED_STEP_ID}/tests/{URL_ENCODED_TEST_ID}/variants/{VARIANT_HASH}/triage.
+  string name = 1;
+
+  message GroupAssociation {
+    // The regression ID this association was current at. Should be set
+    // to the current regression ID whenever setting bugs or freefrom_group_id.
+    //
+    // If this differs from the current regression sequence number, it indicates
+    // the bug/group may be stale and in the (keep|ignore) buttons should be
+    // displayed next to the bug/group in the UI.
+    //
+    // This is a client owned field (see https://google.aip.dev/129).
+    string regression_id = 1;
+
+    // The associated bug(s).
+    repeated Bug bugs = 2;
+
+    // The associated free-form group. This is a human-readable string.
+    // Limited to 255 bytes of printable ASCII.
+    // Either this or bugs should be set, not both.
+    string freeform_group_id = 3;
+
+    // Indicates the time the regression the bug associated with
+    // (regression_id) was resolved. Unset if regression_id is unset
+    // or the regression is not yet resolved.
+    // Useful for hiding bugs completely once they become sufficiently stale
+    // and/or showing how stale they are in the UI.
+    google.protobuf.Timestamp regression_resolved_time = 4 [(google.api.field_behavior) = OUTPUT_ONLY];
+  }
+
+  // The associated bug or free-form group.
+  GroupAssociation group_association = 2;
+
+  message Snooze {
+    // The alert snooze status.
+    enum SnoozeMode {
+      SNOOZE_MODE_UNSPECIFIED = 0;
+
+      // Snoozes until the next build result. When setting this option,
+      // also populate the snoozed_build_id option to the most recent
+      // failing build (not necessarily the most recent build, as that may
+      // be running).
+      ONCE = 1;
+
+      // Snoozes until the fix hypothesis in the fix_verification_state is
+      // either verified or falsified.
+      // When this mode is set, the alert will remain snoozed until one of:
+      // - The fix hypothesis is cleared.
+      // - The fix hypothesis is falsified.
+      FIXED_PENDING_VERIFICATION = 2;
+    }
+
+    // The requested alert snooze mode.
+    //
+    // Clients must monitor whether the snooze has expired by using the following logic:
+    // - If snooze mode is ONCE, compare snooze_build_id against
+    //   the latest_completed_build_id on the step.
+    // - If snooze mode is FIXED_PENDING_VERIFICATION, only treat
+    //   the snooze as active if fix_verification_state_regression_id matches
+    //   the current regression_id (as the snooze may have set at an earlier
+    //   regression that was fixed). The snooze shall remain active
+    //   only until the fix can be validated using the steps documented on
+    //   fix_verification_state.
+    //   If the snooze was active but was invalidated using
+    //   fix_verification_state, then the UI may consider raising an alert
+    //   (i.e. fix failed to verify).
+    SnoozeMode mode = 1;
+
+    // The identifier of the build being snoozed. Use in conjunction with the ONCE
+    // snooze mode to record the build that was snoozed.
+    int64 snoozed_buildbucket_build_id = 2;
+  }
+
+  // The snooze. Only set if snooze has been requested.
+  //
+  // This is a client-controlled field and will not be reset once the snooze
+  // expires.
+  Snooze snooze = 3;
+
+  // FixVerificationState captures the state of verifying the fix for this alert.
+  // In future, changelist-based verification may be offered in addition to
+  // timestamp-based verification.
+  message FixVerificationState {
+    // The regression ID the fix verification pertains to. Should be set
+    // whenever trying to verify a new fix.
+    //
+    // If this differs from the current regression ID, the fix verification
+    // pertains to an earlier regression and its apparent validation or
+    // invalidation (i.e. by the latest build failing) should be ignored.
+    string regression_id = 1;
+
+    // Timestamp-based verification.
+
+    // The timestamp at which the user expects the fix to have already landed.
+    // A failing build which started after this time will lead to
+    // time_falsified being set.
+    // Setting this field to zero means no expectation.
+    // Changing this field resets the corresponding _falsified field.
+    google.protobuf.Timestamp timestamp = 2;
+
+    // At present, this information is an optional context to the fix timestamp.
+    // In future, a commit-position based verification may be implemented for
+    // changelists, or the server may lookup the changelist landing time and
+    // provide this to support verification.
+    Changelist changelist = 3;
+  }
+
+  // Controls verification for hypothesised fixes.
+  // Can be used standalone or in conjunction with the
+  // FIXED_PENDING_VERIFICATION snooze mode.
+  //
+  // Verification:
+  // - Check fix_verification_state.regression_id to verify the fix
+  //   verification relates to the current regression and is not stale.
+  // - Compare fix_verification_state.timestamp against the
+  //   last_actual_result_build_start_time on the step or test. If the
+  //   fix timestamp is later than this timestamp or there is no such
+  //   timestamp, the verification is pending.
+  //   If the fix timestamp is before or equal to
+  //   last_actual_result_build_start_time, and the step or test passed
+  //   (i.e. was_last_actual_result_pass) the fix is validated.
+  //   Else the fix is invalidated.
+  //
+  // In the event the step or test is not seen again (e.g. because the step
+  // or test is only in failing builds), verification will never occur and snooze
+  // will continue indefinitely. This is by design and represents a
+  // trade-off between erronously verifying fixes (e.g. to test failures when a
+  // later compile failure occors) and leaving actual fixes in snoozed (
+  // not verified) state.
+  FixVerificationState fix_verification_state = 4;
+
+  message Note {
+    // The human-readable note. Limited to 10,000 bytes of printable ASCII.
+    string message = 1;
+
+    // The regression ID the note pertains to. Should be set
+    // whenever setting a new note.
+    //
+    // If this differs from the current regression ID, the note
+    // pertains to an earlier regression and may be treated as stale.
+    string regression_id = 2;
+
+    // The timestamp the note was last updated.
+    google.protobuf.Timestamp last_updated = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
+  }
+
+  // A human-editable note about the regression affecting this step or test.
+  Note note = 5;
+
+  // The timestamp the triage state was last updated.
+  google.protobuf.Timestamp last_updated = 6 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // This checksum is computed by the server based on the value of other
+  // fields, and may be sent on update requests to ensure the client has
+  // an up-to-date value before proceeding.
+  // See https://google.aip.dev/154.
+  string etag = 7;
+}
+
+// Represents a reference to a bug in a bug tracking system.
+message Bug {
+  oneof system {
+    // The Google Issue Tracker bug.
+    IssueTrackerBug issue_tracker = 1;
+  }
+}
+
+// A bug in Google Issue Tracker, sometimes known as Buganizer,
+// available at https://issuetracker.google.com.
+message IssueTrackerBug {
+  // The ID in the bug tracking system.
+  int64 id = 1;
+}
+
+// A gerrit changelist.
+message Changelist {
+  // Gerrit hostname, e.g. "chromium-review.googlesource.com".
+  string host = 1;
+
+  // Change number, e.g. 12345.
+  int64 change = 2;
+
+  // Patch set number, e.g. 1.
+  int32 patchset = 3;
+}
