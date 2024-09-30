@@ -58,6 +58,11 @@ export function EntryContent({
             testId={testId}
             variantHash={variantHash}
             invocationId={v.invocationId}
+            changes={v.changelists.map((c) => ({
+              host: c.host,
+              change: c.change,
+              patchset: c.patchset.toString(),
+            }))}
             // If the user clicks on the verdict status icon to expand the
             // blamelist table row, they likely want to see the verdicts. Expand
             // the first verdict entry.

@@ -74,6 +74,8 @@ export function getGitilesCommitLabel(
   return '';
 }
 
-export function getGerritChangeURL(change: GerritChange): string {
+export function getGerritChangeURL(
+  change: Omit<GerritChange, 'project'>,
+): string {
   return `https://${change.host}/c/${change.change}/${change.patchset}`;
 }

@@ -12,19 +12,4 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Link } from '@mui/material';
-
-import { getGerritChangeURL } from '@/gitiles/tools/utils';
-import { GerritChange } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
-
-export interface ChangelistLinkProps {
-  readonly changelist: Omit<GerritChange, 'project'>;
-}
-
-export function ChangelistLink({ changelist }: ChangelistLinkProps) {
-  return (
-    <Link href={getGerritChangeURL(changelist)}>
-      {changelist.change}#{changelist.patchset}
-    </Link>
-  );
-}
+export * from './compact_cl_list';

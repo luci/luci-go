@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, Skeleton } from '@mui/material';
+import { Box, Skeleton, styled } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
 
@@ -22,6 +22,8 @@ import {
   ExpandableEntryBody,
   ExpandableEntryHeader,
 } from '@/generic_libs/components/expandable_entry';
+import { CompactClList } from '@/gitiles/components/compact_cl_list';
+import { GerritChange } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 import { InvIdLink } from '@/test_verdict/components/inv_id_link';
 import { VerdictStatusIcon } from '@/test_verdict/components/verdict_status_icon';
 import { useResultDbClient } from '@/test_verdict/hooks/prpc_clients';
@@ -31,11 +33,38 @@ import { RESULT_LIMIT } from './constants';
 import { EntryContent } from './entry_content';
 import { VerdictAssociatedBugsBadge } from './verdict_associated_bugs_badge';
 
+const CompactClBadge = styled(CompactClList)`
+  margin: 0;
+  background-color: #b7b7b7;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+  padding: 0.25em 0.4em;
+  font-size: 75%;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+  white-space: nowrap;
+  border-radius: 0.25rem;
+  color: white;
+
+  & > a {
+    color: white;
+    text-decoration: none;
+    &:before {
+      content: 'cl/';
+    }
+  }
+`;
+
 export interface TestVerdictEntryProps {
   readonly project: string;
   readonly testId: string;
   readonly variantHash: string;
   readonly invocationId: string;
+  readonly changes?: readonly Omit<GerritChange, 'project'>[];
   readonly defaultExpanded?: boolean;
 }
 
@@ -44,6 +73,7 @@ export function TestVerdictEntry({
   testId,
   variantHash,
   invocationId,
+  changes = [],
   defaultExpanded = false,
 }: TestVerdictEntryProps) {
   const [expanded, setExpanded] = useState(defaultExpanded);
@@ -93,6 +123,11 @@ export function TestVerdictEntry({
               />
             </>
           )}
+          <CompactClBadge
+            changes={changes}
+            maxInlineCount={2}
+            sx={{ marginLeft: '3px' }}
+          />
         </Box>
       </ExpandableEntryHeader>
       <ExpandableEntryBody>
