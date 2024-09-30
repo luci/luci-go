@@ -228,6 +228,12 @@ export const routes: RouteObject[] = [
         path: 'p/:project/inv/:invID/test/:testID/variant/:vHash',
         lazy: () => import('@/test_verdict/pages/test_verdict_page'),
       },
+      // Prototype of a new unified UI for fleet management.
+      // See: go/streamline-fleet-UI
+      {
+        path: 'fleet',
+        lazy: () => import('@/fleet/pages/device_list_page'),
+      },
       {
         path: 'monitoring',
         lazy: () => import('@/monitoring/pages/monitoring_page'),
