@@ -17,10 +17,11 @@ import ListItemButton from '@mui/material/ListItemButton';
 import { AuthGroup } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/groups.pb';
 import LockIcon from '@mui/icons-material/Lock';
 import IconButton from '@mui/material/IconButton';
+import { Link as RouterLink } from 'react-router-dom';
+import { getURLPathFromAuthGroup } from '@/common/tools/url_utils';
 
 interface GroupsItemProps {
     readonly group: AuthGroup;
-    setSelected: () => void;
     selected: boolean;
 }
 
@@ -29,17 +30,17 @@ interface GroupsItemProps {
 function isExternalGroupName(name: string) {
     return name.indexOf('/') > 0;
 }
-
-export function GroupsListItem({ group, setSelected, selected } :GroupsItemProps) {
+export function GroupsListItem({ group, selected } :GroupsItemProps) {
   const isExternal = isExternalGroupName(group.name);
   const description = isExternal ? 'External' : group.description;
 
   return (
       <ListItem disablePadding sx={{maxWidth:'95vw'}} style={{backgroundColor: group.callerCanModify ? 'white': '#ECECEC'}}>
       <ListItemButton
-       onClick={setSelected}
        selected={selected}
-        >
+       component={RouterLink}
+       to={getURLPathFromAuthGroup(group.name)}
+      >
         <ListItemText
             primary={group.name}
             secondary={description}

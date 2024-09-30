@@ -296,7 +296,7 @@ export const routes: RouteObject[] = [
         ],
       },
       {
-        path: 'authdb',
+        path: 'auth/groups/*',
         lazy: () => import('@/authdb/pages/groups_page'),
       },
     ],

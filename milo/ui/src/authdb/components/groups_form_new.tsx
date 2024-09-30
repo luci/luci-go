@@ -90,7 +90,7 @@ export function GroupsFormNew() {
     } else {
       setDescriptionErrorMessage('');
     }
-    if (!nameRe.test(owners)) {
+    if (owners !== '' && !nameRe.test(owners)) {
       setOwnersErrorMessage('Invalid owners name. Must be a group.');
     } else {
       setOwnersErrorMessage('');

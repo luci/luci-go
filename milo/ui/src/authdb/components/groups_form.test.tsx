@@ -29,9 +29,14 @@ describe('<GroupsForm />', () => {
     mockFetchGetGroup(mockGroup);
 
     render(
-      <FakeContextProvider>
+        <FakeContextProvider
+          mountedPath="/ui/labs/auth/groups/*"
+          routerOptions={{
+            initialEntries: ['/ui/labs/auth/groups/123'],
+          }}
+        >
         <List>
-          <GroupsForm name='123' />
+          <GroupsForm name='123'/>
         </List>
       </FakeContextProvider>,
     );
@@ -52,7 +57,7 @@ describe('<GroupsForm />', () => {
 
     render(
       <FakeContextProvider>
-        <GroupsForm name='123' />
+        <GroupsForm name='123'/>
       </FakeContextProvider>,
     );
     await screen.findByTestId('groups-form-error');
@@ -66,9 +71,14 @@ describe('<GroupsForm />', () => {
     mockFetchGetGroup(mockGroup);
 
     render(
-      <FakeContextProvider>
+        <FakeContextProvider
+          mountedPath="/ui/labs/auth/groups/*"
+          routerOptions={{
+            initialEntries: ['/ui/labs/auth/groups/external/123'],
+          }}
+        >
         <List>
-          <GroupsForm name='external/123' />
+          <GroupsForm name='external/123'/>
         </List>
       </FakeContextProvider>,
     );
@@ -93,7 +103,7 @@ describe('<GroupsForm />', () => {
     render(
       <FakeContextProvider>
         <List>
-          <GroupsForm name='123' />
+          <GroupsForm name='123'/>
         </List>
       </FakeContextProvider>,
     );
@@ -125,7 +135,7 @@ describe('<GroupsForm />', () => {
 
     render(
       <FakeContextProvider>
-        <GroupsForm name='123' />
+        <GroupsForm name='123'/>
       </FakeContextProvider>,
     );
     await screen.findByTestId('groups-form');
@@ -158,7 +168,7 @@ describe('<GroupsForm />', () => {
     render(
       <FakeContextProvider>
         <List>
-          <GroupsForm name='123' />
+          <GroupsForm name='123'/>
         </List>
       </FakeContextProvider>,
     );
@@ -177,7 +187,7 @@ describe('<GroupsForm />', () => {
 
     render(
       <FakeContextProvider>
-        <GroupsForm name='123' />
+        <GroupsForm name='123'/>
       </FakeContextProvider>,
     );
     await screen.findByTestId('groups-form');
@@ -197,7 +207,7 @@ describe('<GroupsForm />', () => {
 
     render(
       <FakeContextProvider>
-        <GroupsForm name='123' />
+        <GroupsForm name='123'/>
       </FakeContextProvider>,
     );
     await screen.findByTestId('groups-form');
@@ -215,7 +225,7 @@ describe('<GroupsForm />', () => {
 
     render(
       <FakeContextProvider>
-        <GroupsForm name='123' />
+        <GroupsForm name='123'/>
       </FakeContextProvider>,
     );
     await screen.findByTestId('groups-form');
@@ -251,7 +261,7 @@ describe('<GroupsForm />', () => {
 
     render(
       <FakeContextProvider>
-        <GroupsForm name='123' />
+        <GroupsForm name='123'/>
       </FakeContextProvider>,
     );
     await screen.findByTestId('groups-form');
@@ -280,7 +290,7 @@ describe('<GroupsForm />', () => {
 
     render(
       <FakeContextProvider>
-        <GroupsForm name='123' />
+        <GroupsForm name='123'/>
       </FakeContextProvider>,
     );
     await screen.findByTestId('groups-form');
@@ -309,7 +319,7 @@ describe('<GroupsForm />', () => {
 
     render(
       <FakeContextProvider>
-        <GroupsForm name='123' />
+        <GroupsForm name='123'/>
       </FakeContextProvider>,
     );
     await screen.findByTestId('groups-form');
@@ -337,7 +347,7 @@ describe('<GroupsForm />', () => {
 
     render(
       <FakeContextProvider>
-        <GroupsForm name='123' />
+        <GroupsForm name='123'/>
       </FakeContextProvider>,
     );
     await screen.findByTestId('groups-form');
@@ -356,7 +366,7 @@ describe('<GroupsForm />', () => {
 
     render(
       <FakeContextProvider>
-        <GroupsForm name='google/testGoogleGroup' />
+        <GroupsForm name='google/testGoogleGroup'/>
       </FakeContextProvider>,
     );
     await screen.findByTestId('groups-form');
@@ -370,7 +380,7 @@ describe('<GroupsForm />', () => {
 
     render(
       <FakeContextProvider>
-        <GroupsForm name='test-group' />
+        <GroupsForm name='test-group'/>
       </FakeContextProvider>,
     );
     await screen.findByTestId('groups-form');
@@ -384,7 +394,7 @@ describe('<GroupsForm />', () => {
 
     render(
       <FakeContextProvider>
-        <GroupsForm name='test-group' />
+        <GroupsForm name='test-group'/>
       </FakeContextProvider>,
     );
     await screen.findByTestId('groups-form');

@@ -158,3 +158,8 @@ export function setSingleQueryParam(
   updatedSearchParams.set(paramKey, paramValue);
   return updatedSearchParams;
 }
+
+
+export function getURLPathFromAuthGroup(groupName: string): string {
+  return `/ui/labs/auth/groups/${groupName}`;
+}

@@ -36,7 +36,7 @@ describe('<GroupsList />', () => {
 
     render(
       <FakeContextProvider>
-            <GroupsList selectionChanged={() => {}} createFormSelected={() => {}} />
+            <GroupsList selectedGroup='123'/>
       </FakeContextProvider>,
     );
 
@@ -52,7 +52,7 @@ describe('<GroupsList />', () => {
 
     render(
         <FakeContextProvider>
-            <GroupsList selectionChanged={() => {}} createFormSelected={() => {}} />
+            <GroupsList selectedGroup='123'/>
         </FakeContextProvider>,
     );
     await screen.findByTestId('groups-list-error');

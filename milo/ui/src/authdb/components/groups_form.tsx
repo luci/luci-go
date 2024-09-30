@@ -38,11 +38,9 @@ import { GroupsFormList, FormListElement } from '@/authdb/components/groups_form
 import { GroupsFormListReadonly } from '@/authdb/components/groups_form_list_readonly';
 import { AuthGroup, UpdateGroupRequest, DeleteGroupRequest } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/groups.pb';
 import { addPrefixToItems } from '@/authdb/common/helpers';
+import { useNavigate } from 'react-router-dom';
+import { getURLPathFromAuthGroup } from '@/common/tools/url_utils';
 
-interface GroupsFormProps {
-  name: string;
-  onDelete?: () => void;
-}
 const theme = createTheme({
   typography: {
     h6: {
@@ -82,7 +80,12 @@ function isExternalGroupName(name: string) {
   return name.indexOf('/') > 0;
 }
 
-export function GroupsForm({ name, onDelete = () => { } }: GroupsFormProps) {
+interface GroupsFormProps {
+  name: string;
+}
+
+export function GroupsForm({name}: GroupsFormProps) {
+  const navigate = useNavigate();
   const [descriptionMode, setDescriptionMode] = useState<boolean>();
   const [ownersMode, setOwnersMode] = useState<boolean>();
   const [description, setDescription] = useState<string>();
@@ -127,7 +130,7 @@ export function GroupsForm({ name, onDelete = () => { } }: GroupsFormProps) {
       return client.DeleteGroup(request);
     },
     onSuccess: () => {
-      onDelete();
+      navigate(getURLPathFromAuthGroup('administrators'), { replace: true });
     },
     onError: () => {
       setErrorMessage('Error deleting group');

@@ -23,41 +23,17 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuthServiceClient } from '@/authdb/hooks/prpc_clients';
 import { AuthGroup } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/groups.pb';
 import { GroupsListItem } from '@/authdb/components/groups_list_item';
-import {useState, forwardRef, useImperativeHandle} from 'react';
+import {useState} from 'react';
 import { Virtuoso } from 'react-virtuoso'
+import { Link } from 'react-router-dom';
+import { getURLPathFromAuthGroup } from '@/common/tools/url_utils';
 
 interface GroupsListProps {
-  selectionChanged: (name: string) => void;
-  createFormSelected: (selected: boolean) => void;
+  selectedGroup: string;
 }
 
-export interface GroupsListElement {
-  selectFirstGroup: () => void;
-}
-
-export const GroupsList = forwardRef<GroupsListElement, GroupsListProps>(
-  (
-  {selectionChanged, createFormSelected }, ref
-  ) => {
+export const GroupsList = (({selectedGroup} : GroupsListProps) => {
   const [filteredGroups, setFilteredGroups] = useState<AuthGroup[]>();
-  const [selectedGroup, setSelectedGroup] = useState<string>("");
-
-  useImperativeHandle(ref, () => ({
-    selectFirstGroup: () => {
-      if (allGroups[0]) {
-        handleSelection(allGroups[0].name);
-      }
-    },
-  }));
-
-  const handleSelection = (name: string) => {
-    if (selectedGroup == name) {
-      return;
-    }
-    createFormSelected(false);
-    selectionChanged(name);
-    setSelectedGroup(name);
-  };
 
   const client = useAuthServiceClient();
   const {
@@ -67,14 +43,10 @@ export const GroupsList = forwardRef<GroupsListElement, GroupsListProps>(
     error,
   } = useQuery({
     ...client.ListGroups.query({}),
-    onSuccess: (response) => {
-      if (selectedGroup == "") {
-        handleSelection(response?.groups[0].name);
-      }
-    },
     refetchOnWindowFocus: false,
   })
   const allGroups: readonly AuthGroup[] = response?.groups || [];
+
   if (isLoading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center">
@@ -110,7 +82,14 @@ export const GroupsList = forwardRef<GroupsListElement, GroupsListProps>(
         onChange={e => changeSearchQuery(e.target.value)} />
     </Box>
     <Box>
-      <Button variant="contained" disableElevation sx={{ m: '16px', mt: 0 }} data-testid='create-button' onClick={() => createFormSelected(true)}>
+      <Button
+        variant="contained"
+        disableElevation
+        sx={{ m: '16px', mt: 0 }}
+        data-testid='create-button'
+        component={Link}
+        to={getURLPathFromAuthGroup('new!')}
+        >
         Create Group
       </Button>
     </Box>
@@ -124,7 +103,6 @@ export const GroupsList = forwardRef<GroupsListElement, GroupsListProps>(
             <GroupsListItem
               group={groups[index]}
               selected={groups[index].name == selectedGroup}
-              setSelected={() => handleSelection(groups[index].name)}
               key={index}>
             </GroupsListItem>
           );

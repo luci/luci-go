@@ -17,27 +17,29 @@ import '../components/groups_list.css';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import Paper from '@mui/material/Paper';
-import { useState, createRef } from 'react';
+import { useEffect } from 'react';
 
 import { GroupsForm } from '@/authdb/components/groups_form';
 import { GroupsFormNew } from '@/authdb/components/groups_form_new';
 import { GroupsList } from '@/authdb/components/groups_list';
-import { GroupsListElement } from '@/authdb/components/groups_list';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
+import { useNavigate, useParams } from 'react-router-dom';
+import { getURLPathFromAuthGroup } from '@/common/tools/url_utils';
 
 export function GroupsPage() {
-  const [selectedGroup, setSelectedGroup] = useState<string>('');
-  const [showCreateForm, setShowCreateForm] = useState<boolean>();
-  const listRef = createRef<GroupsListElement>();
+  const { ['__luci_ui__-raw-*']: groupName } = useParams();
+  const navigate = useNavigate();
 
-  const selectionChanged = (name: string) => {
-    setSelectedGroup(name);
-  };
+  useEffect(() => {
+    if (!groupName) {
+      navigate(getURLPathFromAuthGroup('administrators'), { replace: true });
+    }
+  }, [navigate, groupName]);
 
-  const onDeletedGroup = () => {
-    listRef.current?.selectFirstGroup();
-  };
+  if (!groupName) {
+    return <></>;
+  }
 
   return (
     <Paper className="groups-container-paper">
@@ -48,11 +50,7 @@ export function GroupsPage() {
           className="container-left"
           sx={{ display: 'flex', flexDirection: 'column' }}
         >
-          <GroupsList
-            ref={listRef}
-            selectionChanged={selectionChanged}
-            createFormSelected={(selected) => setShowCreateForm(selected)}
-          />
+          <GroupsList selectedGroup={groupName}/>
         </Grid>
         <Grid
           item
@@ -61,17 +59,14 @@ export function GroupsPage() {
           sx={{ display: 'flex', flexDirection: 'column' }}
         >
           <Box className="groups-details-container">
-            {showCreateForm ? (
+            {groupName === 'new!' ? (
               <GroupsFormNew />
             ) : (
               <>
-                {selectedGroup && (
-                  <GroupsForm
-                    key={selectedGroup}
-                    name={selectedGroup}
-                    onDelete={onDeletedGroup}
-                  />
-                )}
+                <GroupsForm
+                  key={groupName}
+                  name={groupName}
+                />
               </>
             )}
           </Box>
