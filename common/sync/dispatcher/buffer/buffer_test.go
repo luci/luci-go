@@ -112,6 +112,9 @@ func TestBuffer(t *testing.T) {
 							So(func() { b.ACK(batch) }, ShouldPanicLike, "unknown *Batch")
 							So(b.stats, ShouldResemble, Stats{})
 						})
+						Convey(`nil ACK panic`, func() {
+							So(func() { b.ACK(nil) }, ShouldPanicLike, "called with `nil`")
+						})
 					})
 
 					Convey(`Partial NACK`, func() {
@@ -165,6 +168,10 @@ func TestBuffer(t *testing.T) {
 
 						// But lease limit of 2 is hit
 						So(b.LeaseOne(clock.Now(ctx)), ShouldBeNil)
+					})
+
+					Convey(`nil NACK panic`, func() {
+						So(func() { b.NACK(ctx, nil, nil) }, ShouldPanicLike, "called with `nil`")
 					})
 				})
 

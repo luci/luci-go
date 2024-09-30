@@ -29,6 +29,10 @@ import (
 type BatchItem[T any] struct {
 	Item T
 	Size int
+
+	// Synthetic indicates that this BatchItem was 'synthesized' by an out-of-band
+	// system, like dispatcher.Channel's MinQPS item generation.
+	Synthetic bool
 }
 
 // Batch represents a collection of individual work items and associated

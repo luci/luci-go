@@ -23,6 +23,7 @@ package buffer
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"go.chromium.org/luci/common/clock"
@@ -146,6 +147,14 @@ func (buf *Buffer[T]) dropOldest() (dropped *Batch[T]) {
 	}
 }
 
+// AddSyntheticNoBlock adds a zero-Size synthetic item to the Buffer.
+//
+// Otherwise behaves the same as AddNoBlock.
+func (buf *Buffer[T]) AddSyntheticNoBlock(now time.Time) (dropped *Batch[T], err error) {
+	var zero T
+	return buf.addNoBlockImpl(now, BatchItem[T]{zero, 0, true})
+}
+
 // AddNoBlock adds the item to the Buffer with the given size.
 //
 // Possibly drops a batch according to FullBehavior.
@@ -161,6 +170,10 @@ func (buf *Buffer[T]) AddNoBlock(now time.Time, item T, itemSize int) (dropped *
 	if err = buf.opts.checkItemSize(itemSize); err != nil {
 		return
 	}
+	return buf.addNoBlockImpl(now, BatchItem[T]{item, itemSize, false})
+}
+
+func (buf *Buffer[T]) addNoBlockImpl(now time.Time, item BatchItem[T]) (dropped *Batch[T], err error) {
 	okToInsert, dropBatch := buf.opts.FullBehavior.ComputeState(buf.stats)
 	if !okToInsert {
 		return nil, ErrBufferFull
@@ -171,7 +184,7 @@ func (buf *Buffer[T]) AddNoBlock(now time.Time, item T, itemSize int) (dropped *
 		dropped = buf.dropOldest()
 	}
 
-	if !buf.currentBatch.canAccept(&buf.opts, itemSize) {
+	if !buf.currentBatch.canAccept(&buf.opts, item.Size) {
 		buf.Flush(now)
 	}
 
@@ -187,10 +200,10 @@ func (buf *Buffer[T]) AddNoBlock(now time.Time, item T, itemSize int) (dropped *
 		buf.lastBatchID++
 	}
 
-	buf.currentBatch.Data = append(buf.currentBatch.Data, BatchItem[T]{item, itemSize})
+	buf.currentBatch.Data = append(buf.currentBatch.Data, item)
 	buf.currentBatch.countedItems++
-	buf.currentBatch.countedSize += itemSize
-	buf.stats.addOneUnleased(itemSize)
+	buf.currentBatch.countedSize += item.Size
+	buf.stats.addOneUnleased(item.Size)
 
 	// If the currentBatch couldn't even accept the smallest size item, go ahead
 	// and Flush it now.
@@ -317,14 +330,14 @@ func (buf *Buffer[T]) ForceLeaseAll() []*Batch[T] {
 //
 // Calling ACK/NACK on the same Batch twice will panic.
 // Calling ACK/NACK on a Batch not returned from LeaseOne will panic.
+// Calling ACK/NACK on a nil Batch will panic.
 func (buf *Buffer[T]) ACK(leased *Batch[T]) {
 	buf.removeLease(leased)
 }
 
 func (buf *Buffer[T]) removeLease(leased *Batch[T]) (live bool) {
 	if leased == nil {
-		// Nil batch. Bail out.
-		return
+		panic(fmt.Errorf("%T.removeLease - called with `nil` batch.", buf))
 	}
 
 	if _, known := buf.unAckedLeases[leased]; !known {
@@ -353,6 +366,7 @@ func (buf *Buffer[T]) removeLease(leased *Batch[T]) (live bool) {
 //
 // Calling ACK/NACK on the same Batch twice will panic.
 // Calling ACK/NACK on a Batch not returned from LeaseOne will panic.
+// Calling ACK/NACK on a nil Batch will panic.
 func (buf *Buffer[T]) NACK(ctx context.Context, err error, leased *Batch[T]) {
 	if live := buf.removeLease(leased); !live {
 		return
@@ -366,27 +380,13 @@ func (buf *Buffer[T]) NACK(ctx context.Context, err error, leased *Batch[T]) {
 		leased.nextSend = clock.Now(ctx).Add(toWait)
 	}
 
-	leased.countedItems = intMin(len(leased.Data), leased.countedItems)
+	leased.countedItems = min(len(leased.Data), leased.countedItems)
 	var newSize int
 	for i := range leased.Data {
 		newSize += leased.Data[i].Size
 	}
-	leased.countedSize = intMin(newSize, leased.countedSize)
+	leased.countedSize = min(newSize, leased.countedSize)
 
 	buf.unleased.PushBatch(leased)
 	buf.stats.add(leased, categoryUnleased)
-}
-
-func intMin(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-func intMax(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
 }

@@ -242,5 +242,5 @@ func negOneOrMax(a, b int) int {
 	if a == -1 {
 		return -1
 	}
-	return intMax(a, b)
+	return max(a, b)
 }

@@ -741,7 +741,8 @@ func mainImpl() int {
 	if err != nil {
 		checkReport(ctx, bbclientInput, errors.Annotate(err, "could not connect to Buildbucket").Err())
 	}
-	buildsCh, err := dispatcher.NewChannel[any](cctx, dispatcherOpts, mkSendFn(cctx, bbclientForDispatcher, bbclientInput.input.Build.Id, canceledBuildCh))
+	buildsCh, err := dispatcher.NewChannel[*bbpb.Build](
+		cctx, dispatcherOpts, mkSendFn(cctx, bbclientForDispatcher, bbclientInput.input.Build.Id, canceledBuildCh))
 	checkReport(ctx, bbclientInput, errors.Annotate(err, "could not create builds dispatcher channel").Err())
 	defer buildsCh.CloseAndDrain(cctx)
 

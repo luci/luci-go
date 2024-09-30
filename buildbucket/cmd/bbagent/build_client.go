@@ -187,11 +187,11 @@ func newBuildsClientWithSecrets(ctx context.Context, hostname string, retryF ret
 }
 
 // options for the dispatcher.Channel
-func channelOpts(ctx context.Context) (*dispatcher.Options[any], <-chan error) {
-	errorFn, errCh := dispatcher.ErrorFnReport(10, func(failedBatch *buffer.Batch[any], err error) bool {
+func channelOpts(ctx context.Context) (*dispatcher.Options[*bbpb.Build], <-chan error) {
+	errorFn, errCh := dispatcher.ErrorFnReport(10, func(failedBatch *buffer.Batch[*bbpb.Build], err error) bool {
 		return transient.Tag.In(err)
 	})
-	opts := &dispatcher.Options[any]{
+	opts := &dispatcher.Options[*bbpb.Build]{
 		QPSLimit: rate.NewLimiter(rate.Every(3*time.Second), 1),
 		MinQPS:   rate.Every(buildbucket.MinUpdateBuildInterval),
 		Buffer: buffer.Options{
@@ -210,18 +210,19 @@ func channelOpts(ctx context.Context) (*dispatcher.Options[any], <-chan error) {
 				}
 			},
 		},
-		DropFn:  dispatcher.DropFnSummarized[any](ctx, rate.NewLimiter(rate.Every(10*time.Second), 1)),
+		DropFn: dispatcher.DropFnSummarized[*bbpb.Build](
+			ctx, rate.NewLimiter(rate.Every(10*time.Second), 1)),
 		ErrorFn: errorFn,
 	}
 	return opts, errCh
 }
 
-func mkSendFn(ctx context.Context, client BuildsClient, bID int64, canceledBuildCh *closeOnceCh) dispatcher.SendFn[any] {
-	return func(b *buffer.Batch[any]) error {
+func mkSendFn(ctx context.Context, client BuildsClient, bID int64, canceledBuildCh *closeOnceCh) dispatcher.SendFn[*bbpb.Build] {
+	return func(b *buffer.Batch[*bbpb.Build]) error {
 		var req *bbpb.UpdateBuildRequest
 
-		// Nil batch. Synthesize a UpdateBuild request.
-		if b == nil {
+		// Synthesized batch due to MinQPS, so synthesize a UpdateBuild request.
+		if b.Data[0].Synthetic {
 			req = &bbpb.UpdateBuildRequest{
 				Build: &bbpb.Build{
 					Id: bID,
@@ -231,7 +232,7 @@ func mkSendFn(ctx context.Context, client BuildsClient, bID int64, canceledBuild
 		} else if b.Meta != nil {
 			req = b.Meta.(*bbpb.UpdateBuildRequest)
 		} else {
-			build := b.Data[0].Item.(*bbpb.Build)
+			build := b.Data[0].Item
 			adaptedTags := buildbucket.WithoutDisallowedTagKeys(build.Tags)
 			if len(build.Tags) != len(adaptedTags) {
 				build = reflectutil.ShallowCopy(build).(*bbpb.Build)

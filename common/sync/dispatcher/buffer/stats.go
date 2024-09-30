@@ -55,10 +55,15 @@ func (s Stats) Empty() bool {
 
 // Total returns the total number of items currently referenced by the Buffer.
 func (s Stats) Total() int {
-	return s.UnleasedItemCount + s.LeasedItemCount + s.DroppedLeasedItemCount
+	return s.UnleasedItemCount + s.Leased()
 }
 
-// TotalSize returns the total number of items currently referenced by the Buffer.
+// Leased returns the total number of items currently leased by the Buffer.
+func (s Stats) Leased() int {
+	return s.LeasedItemCount + s.DroppedLeasedItemCount
+}
+
+// TotalSize returns the total size of the items currently referenced by the Buffer.
 func (s Stats) TotalSize() int {
 	return s.UnleasedItemSize + s.LeasedItemSize + s.DroppedLeasedItemSize
 }

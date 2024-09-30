@@ -17,6 +17,7 @@ package dispatcher
 import (
 	"context"
 	"fmt"
+	"math/rand/v2"
 	"sort"
 	"strings"
 	"sync"
@@ -64,7 +65,7 @@ func TestChannelConstruction(t *testing.T) {
 		Convey(`construction`, func() {
 
 			Convey(`success`, func() {
-				ch, err := NewChannel[string](ctx, &Options[string]{testingDbg: dbg}, dummySendFn)
+				ch, err := NewChannel(ctx, &Options[string]{testingDbg: dbg}, dummySendFn)
 				So(err, ShouldBeNil)
 				ch.Close()
 				<-ch.DrainC
@@ -77,14 +78,14 @@ func TestChannelConstruction(t *testing.T) {
 				})
 
 				Convey(`bad Options`, func() {
-					_, err := NewChannel[string](ctx, &Options[string]{
+					_, err := NewChannel(ctx, &Options[string]{
 						QPSLimit: rate.NewLimiter(100, 0),
 					}, dummySendFn)
 					So(err, ShouldErrLike, "normalizing dispatcher.Options")
 				})
 
 				Convey(`bad Options.Buffer`, func() {
-					_, err := NewChannel[string](ctx, &Options[string]{
+					_, err := NewChannel(ctx, &Options[string]{
 						Buffer: buffer.Options{
 							BatchItemsMax: -3,
 						},
@@ -107,7 +108,7 @@ func TestSerialSenderWithoutDrops(t *testing.T) {
 		sentBatches := []string{}
 		enableThisError := false
 
-		ch, err := NewChannel[string](ctx, &Options[string]{
+		ch, err := NewChannel(ctx, &Options[string]{
 			DropFn:   noDrop[string],
 			QPSLimit: rate.NewLimiter(rate.Inf, 0),
 			Buffer: buffer.Options{
@@ -177,7 +178,7 @@ func TestContextShutdown(t *testing.T) {
 		sentBatches := []string{}
 		droppedBatches := []string{}
 
-		ch, err := NewChannel[any](cctx, &Options[any]{
+		ch, err := NewChannel(cctx, &Options[any]{
 			QPSLimit: rate.NewLimiter(rate.Inf, 0),
 			DropFn: func(dropped *buffer.Batch[any], flush bool) {
 				if flush {
@@ -225,7 +226,7 @@ func TestQPSLimit(t *testing.T) {
 
 		sentBatches := []int{}
 
-		ch, err := NewChannel[int](ctx, &Options[int]{
+		ch, err := NewChannel(ctx, &Options[int]{
 			QPSLimit: rate.NewLimiter(rate.Every(10*time.Millisecond), 1),
 			DropFn:   noDrop[int],
 			Buffer: buffer.Options{
@@ -266,7 +267,7 @@ func TestQPSLimitParallel(t *testing.T) {
 		var lock sync.Mutex
 		sentBatches := []int{}
 
-		ch, err := NewChannel[int](ctx, &Options[int]{
+		ch, err := NewChannel(ctx, &Options[int]{
 			QPSLimit: rate.NewLimiter(rate.Every(10*time.Millisecond), 10),
 			DropFn:   noDrop[int],
 			Buffer: buffer.Options{
@@ -308,7 +309,7 @@ func TestExplicitDrops(t *testing.T) {
 		sentBatches := []int{}
 		droppedBatches := []int{}
 
-		ch, err := NewChannel[int](ctx, &Options[int]{
+		ch, err := NewChannel(ctx, &Options[int]{
 			QPSLimit: rate.NewLimiter(rate.Inf, 0),
 			DropFn: func(batch *buffer.Batch[int], flush bool) {
 				if flush {
@@ -355,7 +356,7 @@ func TestImplicitDrops(t *testing.T) {
 		sendBlocker := make(chan struct{})
 
 		limiter := rate.NewLimiter(rate.Every(100*time.Millisecond), 1)
-		ch, err := NewChannel[int](ctx, &Options[int]{
+		ch, err := NewChannel(ctx, &Options[int]{
 			QPSLimit: limiter,
 			Buffer: buffer.Options{
 				MaxLeases:     1,
@@ -397,7 +398,7 @@ func TestContextCancel(t *testing.T) {
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 
-		ch, err := NewChannel[any](ctx, &Options[any]{
+		ch, err := NewChannel(ctx, &Options[any]{
 			QPSLimit: rate.NewLimiter(rate.Inf, 0),
 			Buffer: buffer.Options{
 				MaxLeases:     1,
@@ -442,7 +443,7 @@ func TestDrainedFn(t *testing.T) {
 
 		amDrained := false
 
-		ch, err := NewChannel[any](ctx, &Options[any]{
+		ch, err := NewChannel(ctx, &Options[any]{
 			DrainedFn:  func() { amDrained = true },
 			testingDbg: dbg,
 		}, func(batch *buffer.Batch[any]) (err error) {
@@ -477,7 +478,7 @@ func TestCloseDeadlockRegression(t *testing.T) {
 			inSendFn := make(chan struct{})
 			holdSendFn := make(chan struct{})
 
-			ch, err := NewChannel[any](ctx, &Options[any]{
+			ch, err := NewChannel(ctx, &Options[any]{
 				testingDbg: dbg,
 				Buffer: buffer.Options{
 					MaxLeases:     1,
@@ -531,7 +532,7 @@ func TestCorrectTimerUsage(t *testing.T) {
 		mu := sync.Mutex{}
 		sent := []int{}
 
-		ch, err := NewChannel[int](ctx, &Options[int]{
+		ch, err := NewChannel(ctx, &Options[int]{
 			DropFn: noDrop[int],
 			Buffer: buffer.Options{
 				MaxLeases:     10,
@@ -614,7 +615,7 @@ func TestSizeBasedChannel(t *testing.T) {
 			QPSLimit: rate.NewLimiter(rate.Inf, 1),
 		}
 
-		ch, err := NewChannel[string](ctx, opts, func(batch *buffer.Batch[string]) (err error) {
+		ch, err := NewChannel(ctx, opts, func(batch *buffer.Batch[string]) (err error) {
 			mu.Lock()
 			defer mu.Unlock()
 			for _, itm := range batch.Data {
@@ -678,9 +679,9 @@ func TestMinQPS(t *testing.T) {
 			ctx := context.Background() // uses real time!
 			ctx, dbg := dbgIfVerbose(ctx)
 
-			numNilBatches := 0
+			numSyntheticBatches := 0
 
-			ch, err := NewChannel[int](ctx, &Options[int]{
+			ch, err := NewChannel(ctx, &Options[int]{
 				MinQPS: rate.Every(100 * time.Millisecond),
 				DropFn: noDrop[int],
 				Buffer: buffer.Options{
@@ -690,8 +691,8 @@ func TestMinQPS(t *testing.T) {
 				},
 				testingDbg: dbg,
 			}, func(batch *buffer.Batch[int]) (err error) {
-				if batch == nil {
-					numNilBatches++
+				if batch.Data[0].Synthetic {
+					numSyntheticBatches++
 				}
 				return
 			})
@@ -705,7 +706,7 @@ func TestMinQPS(t *testing.T) {
 				ch.C <- i
 			}
 			ch.CloseAndDrain(ctx)
-			So(numNilBatches, ShouldBeGreaterThan, 0)
+			So(numSyntheticBatches, ShouldBeGreaterThan, 0)
 		})
 
 		Convey(`send w/ minimal frequency non block`, func() {
@@ -713,11 +714,10 @@ func TestMinQPS(t *testing.T) {
 			ctx, dbg := dbgIfVerbose(ctx)
 
 			mu := sync.Mutex{}
-			numNilBatch := 0
-			minWaitDuration := 100 * time.Millisecond
+			numSyntheticBatches := 0
 
-			ch, err := NewChannel[int](ctx, &Options[int]{
-				MinQPS: rate.Every(minWaitDuration),
+			ch, err := NewChannel(ctx, &Options[int]{
+				MinQPS: rate.Every(100 * time.Millisecond),
 				DropFn: noDrop[int],
 				Buffer: buffer.Options{
 					MaxLeases:     1,
@@ -727,8 +727,8 @@ func TestMinQPS(t *testing.T) {
 				testingDbg: dbg,
 			}, func(batch *buffer.Batch[int]) (err error) {
 				mu.Lock()
-				if batch == nil {
-					numNilBatch++
+				if batch.Data[0].Synthetic {
+					numSyntheticBatches++
 				}
 				mu.Unlock()
 				time.Sleep(200 * time.Millisecond)
@@ -741,7 +741,34 @@ func TestMinQPS(t *testing.T) {
 			}
 			ch.CloseAndDrain(ctx)
 
-			So(numNilBatch, ShouldEqual, 0)
+			So(numSyntheticBatches, ShouldEqual, 0)
+		})
+
+		Convey(`regression: ensure clean shutdown`, func() {
+			// In go.dev/issue/69276 we saw that the following could occur:
+			//   * A Channel configured with MinQPS was getting MinQPS pings
+			//   * Program closed resultCh after sending the final message
+			//   * Program panic'd due to send of MinQPS batch
+
+			ctx := context.Background() // uses real time!
+			ctx, dbg := dbgIfVerbose(ctx)
+
+			for range 100 {
+				ch, err := NewChannel(ctx, &Options[int]{
+					MinQPS: rate.Every(time.Nanosecond),
+					DropFn: noDrop[int],
+					Buffer: buffer.Options{
+						MaxLeases: 1,
+					},
+					testingDbg: dbg,
+				}, func(data *buffer.Batch[int]) error {
+					time.Sleep(time.Duration(rand.N(50)) * time.Nanosecond)
+					return nil
+				})
+				So(err, ShouldBeNil)
+				time.Sleep(5 * time.Millisecond)
+				ch.CloseAndDrain(ctx)
+			}
 		})
 	})
 }
@@ -761,7 +788,7 @@ func TestProcess(t *testing.T) {
 		close(ch)
 	}()
 
-	err := Process[int](ctx, ch, nil, func(buf *buffer.Batch[int]) error {
+	err := Process(ctx, ch, nil, func(buf *buffer.Batch[int]) error {
 		for i, item := range buf.Data {
 			t.Logf("receive: %d (%d of %d in batch)\n", item.Item, i, len(buf.Data))
 		}

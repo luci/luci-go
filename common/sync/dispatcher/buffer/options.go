@@ -184,7 +184,7 @@ func (o *Options) checkItemSize(itemSize int) error {
 
 	switch {
 	case o.BatchSizeMax == -1:
-	case itemSize == 0:
+	case itemSize == 0: // reserved for synthetic items
 		return ErrItemTooSmall
 	case itemSize > o.BatchSizeMax:
 		return ErrItemTooLarge

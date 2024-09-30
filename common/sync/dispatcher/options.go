@@ -116,18 +116,29 @@ type Options[T any] struct {
 
 	// [OPTIONAL] The minimal frequency of invoking SendFn.
 	//
-	// If greater than zero, this Channel will invoke SendFn at least this often.
-	// If there's a period of time longer than this with no work items, Channel
-	// will invoke SendFn with a nil batch.
+	// If greater than zero, this Channel will invoke SendFn at least this often,
+	// as long as:
+	//   * the Channel remains open.
+	//   * the Channel Buffer has no data (no pending data and no outstanding
+	//     SendFn goroutines).
 	//
-	// Errors returned from these nil SendFn invocations are still processed
-	// normally, and nil batches still count against QPSLimit.
+	// If there's a period of time longer than this with no work items where the
+	// criteria above matches, Channel will invoke SendFn with a batch containing
+	// a single zero-size BatchItem with the `Synthetic` flag set.
+	//
+	// NOTE: Depending on the Buffer.FullBehavior setting, these synthesized items
+	// could cause existing leases to drop (so - if SendFn returns an error, and
+	// ErrorFn returns `retry == true`, the channel may end up dropping the batch
+	// because some other MinQPSBatch's were synthesized).
+	//
+	// Errors returned from these SendFn invocations are still processed
+	// normally, and synthesized batches still count against QPSLimit.
 	//
 	// It is an error to specify a MinQPS value which is
 	// * greater than QPSLimit.Limit(),
 	// * or is rate.Inf.
 	//
-	// Default: No minimum QPS, no nil batches will be sent.
+	// Default: No minimum QPS, no MinQPSBatch batches will be sent.
 	MinQPS rate.Limit
 
 	// [OPTIONAL]

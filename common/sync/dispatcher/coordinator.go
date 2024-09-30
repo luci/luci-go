@@ -16,6 +16,7 @@ package dispatcher
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"go.chromium.org/luci/common/clock"
@@ -54,20 +55,30 @@ func (state *coordinatorState[T]) dbg(msg string, args ...any) {
 	}
 }
 
-// sendBatches sends the batches in buffer, or a nil batch if the minimum frequency
-// has reached.
+func (state *coordinatorState[T]) mustSendDueToMinQPS(now, lastSend time.Time) bool {
+	mustSend := false
+	if !state.closed {
+		minInterval := durationFromLimit(state.opts.MinQPS)
+		mustSend = minInterval > 0 && now.Sub(lastSend) >= minInterval
+	}
+	return mustSend
+}
+
+// sendBatches sends the batches in buffer.
 //
-// It returns the timestamp when the last SendFn is invoked, and a delay if we
-// need to wait for the next send token.
+// This can synthesize a new one-item-batch if the item throughput has dipped
+// under MinQPS.
+//
+// It returns the timestamp when the last SendFn was invoked (so, either
+// prevLastSend or `now`, if this actually sends a batch), and the delay for how
+// long we we need to wait for the next send token due to QPSLimit.
 //
 // TODO(chanli@): Currently we assume sendBatches is very fast, so we use the same
 // now value throughout sendBatches. If it turns out the assumption is false, we
-// may have bellow issues:
-// * it prevents the QPSLimit from replenishing tokens during sendBatches;
-// * it may causes sendBatches to send an additional nil batch after sending
-//
-//	batches, while sendBatches should only try to send a nil batch if it doesn't
-//	have any batch to send.
+// may have the following issues:
+//   - it prevents the QPSLimit from replenishing tokens during sendBatches;
+//   - it may cause sendBatches to send an additional synthentic batch
+//     immediately after sending out real batches.
 func (state *coordinatorState[T]) sendBatches(ctx context.Context, now, prevLastSend time.Time, send SendFn[T]) (lastSend time.Time, delay time.Duration) {
 	lastSend = prevLastSend
 	if state.canceled {
@@ -79,7 +90,8 @@ func (state *coordinatorState[T]) sendBatches(ctx context.Context, now, prevLast
 		return
 	}
 
-	// while the context is not canceled, send stuff batches we're able to send.
+	// while the context is not canceled, send all available batches which don't
+	// hit one of our limits (QPSLimit, MaxLeases, BatchAgeMax, etc.).
 	for ctx.Err() == nil {
 		// See if we're permitted to send.
 		res := state.opts.QPSLimit.ReserveN(now, 1)
@@ -95,10 +107,52 @@ func (state *coordinatorState[T]) sendBatches(ctx context.Context, now, prevLast
 		}
 
 		// We're allowed to send, see if there's actually anything to send.
-		if batchToSend := state.buf.LeaseOne(now); batchToSend != nil {
-			// got a batch! Send it.
+
+		batchToSend := state.buf.LeaseOne(now)
+
+		// We couldn't get a lease, so check if the buffer is empty and we need to
+		// satisfy MinQPS.
+		if batchToSend == nil && state.buf.Stats().Empty() && state.mustSendDueToMinQPS(now, lastSend) {
+			state.dbg("  >synthesizing MinQPSBatch")
+			// NOTE: It is critically important that MinQPS be implemented as an
+			// actual buffer item (e.g. AddSyntheticNoBlock && LeaseOne).
+			//
+			// A previous version of this code just sent a `nil` batch instead, but it
+			// did this by launching a goroutine to call `send` and push the result to
+			// `state.resultCh`. The problem with this is that the main coordinator
+			// loop relies entirely on `state.buf.Stats()` to understand the state of
+			// in-flight work, and we need ALL invocations of `send` (even synthentic
+			// ones like the one below) to:
+			//
+			//   * respect MaxLeases (otherwise we can end up with more overlapping
+			//   SendFn invocations than intended due to MinQPS)
+			//   * prevent `run` from returning and closing resultCh until all
+			//   goroutines which may push into it have also terminated.
+			dropped, err := state.buf.AddSyntheticNoBlock(now)
+			if err != nil {
+				panic(fmt.Sprintf("impossible - adding minimum-sized item to empty buffer failed: %s", err))
+			}
+			if dropped != nil {
+				panic(fmt.Sprintf("impossible - dropped data from empty buffer: %v", dropped))
+			}
+			state.buf.Flush(now)
+			batchToSend = state.buf.LeaseOne(now)
+		}
+
+		if batchToSend != nil {
 			state.dbg("  >sending batch")
 			lastSend = now
+			// NOTE: state.resultCh is closed by run(), which will only close it after
+			// the work channel is closed AND state.buf is Empty (meaning no more
+			// buffered work, and no leased batches (like the one we got from LeaseOne
+			// above).
+			//
+			// Once this workerResult is pushed into resultCh, the run loop will
+			// unblock and consume the result, ACK/NACK'ing the batch to the buffer
+			// depending on the state of the channel.
+			//
+			// ACK/NACK'ing the batch will update the stats of the buffer, which will
+			// ultimately allow run() to close and clean up.
 			go func() {
 				state.resultCh <- workerResult[T]{
 					batch: batchToSend,
@@ -106,31 +160,9 @@ func (state *coordinatorState[T]) sendBatches(ctx context.Context, now, prevLast
 				}
 			}()
 		} else {
-			// No more batches.
-
-			// If there will be no more batches in the future, break.
-			if state.closed {
-				res.CancelAt(now)
-				break
-			}
-
-			// Otherwise, check if the minimal frequency has reached, if yes we
-			// need to send a nil batch.
-			minInterval := durationFromLimit(state.opts.MinQPS)
-			if minInterval > 0 && now.Sub(lastSend) >= minInterval {
-				// Send a nil batch.
-				state.dbg("  >sending nil batch")
-				lastSend = now
-				go func() {
-					state.resultCh <- workerResult[T]{
-						batch: nil,
-						err:   send(nil),
-					}
-				}()
-			} else {
-				// Cancel the reservation, since we can't use it.
-				res.CancelAt(now)
-			}
+			// No more batches, and no MinQPS obligation.
+			// Cancel the reservation, since we can't use it.
+			res.CancelAt(now)
 			break
 		}
 	}
@@ -249,8 +281,8 @@ loop:
 
 		now := clock.Now(ctx)
 		if lastSend.IsZero() {
-			// Initiate lastSend to now, otherwise sendBatches will immediately send
-			// a nil batch.
+			// Initiate lastSend to now, otherwise sendBatches will immediately
+			// attempt to send a synthentic batch for MinQPS.
 			lastSend = now
 		}
 
