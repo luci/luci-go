@@ -7767,8 +7767,6 @@ Object.defineProperties(createChalk.prototype, styles$1);
 const chalk$2 = createChalk();
 createChalk({level: stderrColor$1 ? stderrColor$1.level : 0});
 
-var chalk$3 = chalk$2;
-
 var build$1 = {};
 
 var lib$2 = {};
@@ -8014,6 +8012,7 @@ let createColors = (enabled = isColorSupported) => {
 		inverse: init("\x1b[7m", "\x1b[27m"),
 		hidden: init("\x1b[8m", "\x1b[28m"),
 		strikethrough: init("\x1b[9m", "\x1b[29m"),
+
 		black: init("\x1b[30m", "\x1b[39m"),
 		red: init("\x1b[31m", "\x1b[39m"),
 		green: init("\x1b[32m", "\x1b[39m"),
@@ -8023,6 +8022,7 @@ let createColors = (enabled = isColorSupported) => {
 		cyan: init("\x1b[36m", "\x1b[39m"),
 		white: init("\x1b[37m", "\x1b[39m"),
 		gray: init("\x1b[90m", "\x1b[39m"),
+
 		bgBlack: init("\x1b[40m", "\x1b[49m"),
 		bgRed: init("\x1b[41m", "\x1b[49m"),
 		bgGreen: init("\x1b[42m", "\x1b[49m"),
@@ -8031,6 +8031,24 @@ let createColors = (enabled = isColorSupported) => {
 		bgMagenta: init("\x1b[45m", "\x1b[49m"),
 		bgCyan: init("\x1b[46m", "\x1b[49m"),
 		bgWhite: init("\x1b[47m", "\x1b[49m"),
+
+		blackBright: init("\x1b[90m", "\x1b[39m"),
+		redBright: init("\x1b[91m", "\x1b[39m"),
+		greenBright: init("\x1b[92m", "\x1b[39m"),
+		yellowBright: init("\x1b[93m", "\x1b[39m"),
+		blueBright: init("\x1b[94m", "\x1b[39m"),
+		magentaBright: init("\x1b[95m", "\x1b[39m"),
+		cyanBright: init("\x1b[96m", "\x1b[39m"),
+		whiteBright: init("\x1b[97m", "\x1b[39m"),
+
+		bgBlackBright: init("\x1b[100m","\x1b[49m"),
+		bgRedBright: init("\x1b[101m","\x1b[49m"),
+		bgGreenBright: init("\x1b[102m","\x1b[49m"),
+		bgYellowBright: init("\x1b[103m","\x1b[49m"),
+		bgBlueBright: init("\x1b[104m","\x1b[49m"),
+		bgMagentaBright: init("\x1b[105m","\x1b[49m"),
+		bgCyanBright: init("\x1b[106m","\x1b[49m"),
+		bgWhiteBright: init("\x1b[107m","\x1b[49m"),
 	}
 };
 
@@ -10006,7 +10024,7 @@ var _jsTokens = jsTokens;
 var _helperValidatorIdentifier = lib;
 var _picocolors$1 = _interopRequireWildcard$3(picocolorsExports, true);
 function _getRequireWildcardCache$3(e) { if ("function" != typeof WeakMap) return null; var r = new WeakMap(), t = new WeakMap(); return (_getRequireWildcardCache$3 = function (e) { return e ? t : r; })(e); }
-function _interopRequireWildcard$3(e, r) { if (!r && e && e.__esModule) return e; if (null === e || "object" != typeof e && "function" != typeof e) return { default: e }; var t = _getRequireWildcardCache$3(r); if (t && t.has(e)) return t.get(e); var n = { __proto__: null }, a = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var u in e) if ("default" !== u && {}.hasOwnProperty.call(e, u)) { var i = a ? Object.getOwnPropertyDescriptor(e, u) : null; i && (i.get || i.set) ? Object.defineProperty(n, u, i) : n[u] = e[u]; } return n.default = e, t && t.set(e, n), n; }
+function _interopRequireWildcard$3(e, r) { if (null === e || "object" != typeof e && "function" != typeof e) return { default: e }; var t = _getRequireWildcardCache$3(r); if (t && t.has(e)) return t.get(e); var n = { __proto__: null }, a = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var u in e) if ("default" !== u && {}.hasOwnProperty.call(e, u)) { var i = a ? Object.getOwnPropertyDescriptor(e, u) : null; i && (i.get || i.set) ? Object.defineProperty(n, u, i) : n[u] = e[u]; } return n.default = e, t && t.set(e, n), n; }
 const colors$1 = typeof process === "object" && (process.env.FORCE_COLOR === "0" || process.env.FORCE_COLOR === "false") ? (0, _picocolors$1.createColors)(false) : _picocolors$1.default;
 const compose$1 = (f, g) => v => f(g(v));
 const sometimesKeywords = new Set(["as", "async", "from", "get", "of", "set"]);
@@ -10121,7 +10139,7 @@ lib$2.default = _default$7;
 var _highlight = lib$1;
 var _picocolors = _interopRequireWildcard$2(picocolorsExports, true);
 function _getRequireWildcardCache$2(e) { if ("function" != typeof WeakMap) return null; var r = new WeakMap(), t = new WeakMap(); return (_getRequireWildcardCache$2 = function (e) { return e ? t : r; })(e); }
-function _interopRequireWildcard$2(e, r) { if (!r && e && e.__esModule) return e; if (null === e || "object" != typeof e && "function" != typeof e) return { default: e }; var t = _getRequireWildcardCache$2(r); if (t && t.has(e)) return t.get(e); var n = { __proto__: null }, a = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var u in e) if ("default" !== u && {}.hasOwnProperty.call(e, u)) { var i = a ? Object.getOwnPropertyDescriptor(e, u) : null; i && (i.get || i.set) ? Object.defineProperty(n, u, i) : n[u] = e[u]; } return n.default = e, t && t.set(e, n), n; }
+function _interopRequireWildcard$2(e, r) { if (null === e || "object" != typeof e && "function" != typeof e) return { default: e }; var t = _getRequireWildcardCache$2(r); if (t && t.has(e)) return t.get(e); var n = { __proto__: null }, a = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var u in e) if ("default" !== u && {}.hasOwnProperty.call(e, u)) { var i = a ? Object.getOwnPropertyDescriptor(e, u) : null; i && (i.get || i.set) ? Object.defineProperty(n, u, i) : n[u] = e[u]; } return n.default = e, t && t.set(e, n), n; }
 const colors = typeof process === "object" && (process.env.FORCE_COLOR === "0" || process.env.FORCE_COLOR === "false") ? (0, _picocolors.createColors)(false) : _picocolors.default;
 const compose = (f, g) => v => f(g(v));
 let pcWithForcedColor = undefined;
@@ -18713,7 +18731,7 @@ function _getRequireWildcardCache$1(nodeInterop) {
   })(nodeInterop);
 }
 function _interopRequireWildcard$1(obj, nodeInterop) {
-  if (!nodeInterop && obj && obj.__esModule) {
+  if (obj && obj.__esModule) {
     return obj;
   }
   if (obj === null || (typeof obj !== 'object' && typeof obj !== 'function')) {
@@ -19418,7 +19436,7 @@ function _getRequireWildcardCache(nodeInterop) {
   })(nodeInterop);
 }
 function _interopRequireWildcard(obj, nodeInterop) {
-  if (!nodeInterop && obj && obj.__esModule) {
+  if (obj && obj.__esModule) {
     return obj;
   }
   if (obj === null || (typeof obj !== 'object' && typeof obj !== 'function')) {
@@ -19946,7 +19964,7 @@ async function toSinkResult(test, testCaseResult, ctx) {
         .map((msg) => {
         const msgAndStack = separateMessageFromStack_1(msg);
         const message = indentAllLines_1(msgAndStack.message);
-        const stack = chalk$3.dim(formatStackTrace_1(msgAndStack.stack, test.context.config, ctx.stackTraceOpts, test.path));
+        const stack = chalk$2.dim(formatStackTrace_1(msgAndStack.stack, test.context.config, ctx.stackTraceOpts, test.path));
         return `${message}\n\n${stack}`;
     })
         .join('\n');

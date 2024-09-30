@@ -17,16 +17,25 @@ import json from '@rollup/plugin-json';
 import { nodeResolve } from '@rollup/plugin-node-resolve';
 import typescript from '@rollup/plugin-typescript';
 
-export default {
-  input: 'src/testing_tools/resultdb_reporter/index.ts',
-  output: {
-    file: 'generated/resultdb_reporter.js',
-    format: 'cjs',
+/** @type {import('rollup').RollupOptions[]} */
+const options = [
+  {
+    input: 'src/testing_tools/resultdb_reporter/index.ts',
+    output: {
+      file: 'generated/resultdb_reporter.cjs',
+      // Jest's ES module support is experimental as of 2024-09-23.
+      // https://jestjs.io/docs/ecmascript-modules
+      //
+      // Use commonjs module instead.
+      format: 'commonjs',
+    },
+    plugins: [
+      json(),
+      commonjs(),
+      nodeResolve({ exportConditions: ['node'] }),
+      typescript({ outDir: 'generated', sourceMap: false }),
+    ],
   },
-  plugins: [
-    json(),
-    commonjs(),
-    nodeResolve({ exportConditions: ['node'] }),
-    typescript({ outDir: 'generated', sourceMap: false }),
-  ],
-};
+];
+
+export default options;

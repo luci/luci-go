@@ -15,14 +15,10 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "noEmitOnError": true,
-    "module": "ESNext",
-    // We cannot use `"moduleResolution": "bundler"` because jest doesn't use a
-    // bundler when building the test code. Additionally, making an separate
-    // "tsconfig.test.json" file to take advantage of the loosen import rules
-    // from `"moduleResolution": "bundler"` (e.g. using an import statement with
-    // an explicit `.ts` extension) could end up breaking the test code at the
-    // type checking step.
-    "moduleResolution": "node",
+    "module": "ES2022",
+    // We have to use `"moduleResolution": "Bundler"` as this is required by
+    // `vite@5`.
+    "moduleResolution": "Bundler",
     "resolveJsonModule": true,
     "types": [
       "@types/gapi",
@@ -55,6 +51,14 @@
     "paths": {
       "@/*": ["./src/*"],
       "@root/*": ["./*"],
+    }
+  },
+  "ts-node": {
+    "compilerOptions": {
+      // We cannot use `"moduleResolution": "bundler"` because jest doesn't use
+      // a bundler when building the test code.
+      "module": "ESNext",
+      "moduleResolution": "Node"
     }
   },
   "exclude": [

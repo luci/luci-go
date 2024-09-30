@@ -15,7 +15,7 @@
 import replace from '@rollup/plugin-replace';
 import react from '@vitejs/plugin-react';
 import { defineConfig, loadEnv } from 'vite';
-import { VitePWA as vitePWA } from 'vite-plugin-pwa';
+import { VitePWA } from 'vite-plugin-pwa';
 import tsconfigPaths from 'vite-tsconfig-paths';
 
 import {
@@ -57,6 +57,19 @@ export default defineConfig(({ mode }) => {
 
   const virtualConfigJs = getVirtualConfigsJsPlugin(mode, env);
   const overrideMiloHost = overrideMiloHostPlugin(env);
+  const defineRoutesRegex = replace({
+    preventAssignment: true,
+    include: ['./src/sw/ui_sw.ts'],
+    values: {
+      // The build pipeline gets confused when the service worker
+      // depends on a lazy-loaded assets (which are used in `routes`).
+      // Computes the defined routes at build time to avoid polluting
+      // the service worker with unwanted dependencies.
+      DEFINED_ROUTES_REGEXP: JSON.stringify(
+        regexpsForRoutes([{ path: 'ui', children: routes }]).source,
+      ),
+    },
+  });
 
   return {
     base: '/ui',
@@ -77,6 +90,10 @@ export default defineConfig(({ mode }) => {
               ? '[name].js'
               : 'immutable/[name]-[hash:8].js',
         },
+        // Silence source map generattion warning. This is a workaround for
+        // https://github.com/vitejs/vite/issues/15012.
+        onwarn: (warning, defaultHandler) =>
+          warning.code !== 'SOURCEMAP_ERROR' && defaultHandler(warning),
       },
       // Set to 8 MB to silence warnings. The files are cached by service worker
       // anyway. Large chunks won't hurt much.
@@ -97,12 +114,15 @@ export default defineConfig(({ mode }) => {
         },
       }),
       overrideMiloHost,
+      defineRoutesRegex,
+      virtualConfigJs,
       {
         name: 'inject-configs-js-in-html',
         // Vite resolves external resources with relative URLs (URLs without a
         // domain name) inconsistently.
         // Inject `<script src="/configs.js" ><script>` via a plugin to prevent
-        // Vite from conditionally prepending "/ui" prefix onto the URL.
+        // Vite from conditionally prepending "/ui" prefix onto the URL during
+        // local development.
         transformIndexHtml: (html) => ({
           html,
           tags: [
@@ -176,19 +196,6 @@ export default defineConfig(({ mode }) => {
             res.setHeader('content-type', 'application/javascript');
             res.end(getLocalDevConfigsJs(env));
           });
-
-          // When VitePWA is enabled in -dev mode, the entry files are somehow
-          // resolved to the wrong paths. We need to remap them to the correct
-          // paths.
-          server.middlewares.use((req, _res, next) => {
-            if (req.url === '/ui/src/index.tsx') {
-              req.url = '/ui/src/main.tsx';
-            }
-            if (req.url === '/ui/src/styles/style.css') {
-              req.url = '/ui/src/common/styles/style.css';
-            }
-            return next();
-          });
         },
       },
       react({
@@ -201,7 +208,7 @@ export default defineConfig(({ mode }) => {
       // Needed to add workbox powered service workers, which enables us to
       // implement some cache strategy that's not possible with regular HTTP
       // cache due to dynamic URLs.
-      vitePWA({
+      VitePWA({
         injectRegister: null,
         // We cannot use the simpler 'generateSW' mode because
         // 1. we need to inject custom scripts that import other files, and
@@ -225,26 +232,19 @@ export default defineConfig(({ mode }) => {
           type: 'module',
           navigateFallback: 'index.html',
         },
+        manifest: {
+          theme_color: '#1976d2',
+        },
         injectManifest: {
           globPatterns: ['**/*.{js,css,html,svg,png}'],
-          plugins: [
-            replace({
-              preventAssignment: true,
-              include: ['./src/sw/ui_sw.ts'],
-              values: {
-                // The build pipeline gets confused when the service worker
-                // depends on a lazy-loaded assets (which are used in `routes`).
-                // Computes the defined routes at build time to avoid polluting
-                // the service worker with unwanted dependencies.
-                DEFINED_ROUTES_REGEXP: JSON.stringify(
-                  regexpsForRoutes([{ path: 'ui', children: routes }]).source,
-                ),
-              },
-            }),
-            virtualConfigJs,
-            overrideMiloHost,
-            tsconfigPaths(),
-          ],
+          buildPlugins: {
+            vite: [
+              defineRoutesRegex,
+              virtualConfigJs,
+              overrideMiloHost,
+              tsconfigPaths(),
+            ],
+          },
           // Set to 8 MB. Some files might be larger than the default.
           maximumFileSizeToCacheInBytes: Math.pow(2, 23),
         },

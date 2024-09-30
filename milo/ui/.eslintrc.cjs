@@ -12,6 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// While `.eslintrc.cjs` is deprecated in favor of the flat eslint config[1].
+// The flat eslint config is not yet supported by many eslint plugins (e.g.
+// eslint-plugin-react-hooks[2]).
+//
+// [1]: https://eslint.org/docs/latest/use/configure/configuration-files
+// [2]: https://github.com/facebook/react/issues/28313.
+
 // eslint-disable-next-line no-undef
 module.exports = {
   env: {

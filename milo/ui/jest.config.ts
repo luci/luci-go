@@ -49,7 +49,7 @@ const config: Config = {
     // Enable ResultDB integration. This is experimental. If you want to use
     // this, please contact chops-luci-test@google.com.
     [
-      '<rootDir>/generated/resultdb_reporter.js',
+      '<rootDir>/generated/resultdb_reporter.cjs',
       {
         repo: 'chromium.googlesource.com/infra/luci/luci-go',
         directory: 'milo/ui',
