@@ -236,5 +236,14 @@ module.exports = {
         'react-refresh/only-export-components': 0,
       },
     },
+    {
+      files: ['cypress/**/*.cy.ts', 'cypress/**/*.cy.tsx'],
+      rules: {
+        // Allow the use of `/// <reference types="cypress" />`, which resolves
+        // cypress/jest type conflicts. See
+        // https://docs.cypress.io/guides/component-testing/faq#How-do-I-get-TypeScript-to-recognize-Cypress-types-and-not-Jest-types
+        'spaced-comment': ['error', 'always', { markers: ['/'] }],
+      },
+    },
   ],
 };

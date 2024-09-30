@@ -62,6 +62,9 @@
     }
   },
   "exclude": [
+    // Exclude cypress to avoid cypress/jest type conflicts.
+    "cypress",
+    "cypress.config.ts",
     // No need to validate the dependencies.
     "node_modules",
     // No need to validate the output.
