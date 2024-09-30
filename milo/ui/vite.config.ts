@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import * as path from 'node:path';
+
 import replace from '@rollup/plugin-replace';
 import react from '@vitejs/plugin-react';
 import { defineConfig, loadEnv } from 'vite';
@@ -24,6 +26,7 @@ import {
   overrideMiloHostPlugin,
 } from './dev_utils/configs_js_utils';
 import { localAuthPlugin } from './dev_utils/local_auth_plugin';
+import { previewServer } from './dev_utils/preview_server';
 import { regexpsForRoutes } from './src/generic_libs/tools/react_router_utils';
 import { routes } from './src/routes';
 
@@ -52,7 +55,14 @@ export default defineConfig(({ mode }) => {
     ...Object.fromEntries(
       Object.entries(process.env).filter(([k]) => k.startsWith('VITE_')),
     ),
-    ...loadEnv(mode, process.cwd()),
+    ...loadEnv(
+      mode,
+      process.cwd(),
+      // Our production UI build should not depend on any env vars.
+      // Still include `VITE_LOCAL_` env vars. They are used when previewing a
+      // production build locally.
+      mode === 'production' ? 'VITE_LOCAL_' : 'VITE_',
+    ),
   };
 
   const virtualConfigJs = getVirtualConfigsJsPlugin(mode, env);
@@ -191,11 +201,12 @@ export default defineConfig(({ mode }) => {
             if (req.url !== '/configs.js') {
               return next();
             }
-            res.setHeader('content-type', 'application/javascript');
+            res.setHeader('content-type', 'text/javascript');
             res.end(getLocalDevConfigsJs(env));
           });
         },
       },
+      previewServer(path.join(__dirname, 'dist')),
       react({
         babel: {
           configFile: true,
@@ -255,11 +266,14 @@ export default defineConfig(({ mode }) => {
       // milo go server on the same host.
       proxy: {
         '^(?!/ui/.*$)': {
-          target: env['VITE_MILO_URL'],
+          target: env['VITE_LOCAL_PROXY_URL'],
           changeOrigin: true,
           secure: false,
         },
       },
+    },
+    preview: {
+      port: 8000,
     },
   };
 });
