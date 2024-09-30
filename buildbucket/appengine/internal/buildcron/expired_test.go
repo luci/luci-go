@@ -141,9 +141,14 @@ func TestTimeoutExpiredBuilds(t *testing.T) {
 				bs[i], bss[i] = newBuildAndStatus(ctx, pb.Status_SCHEDULED, createTime)
 				infs[i] = newInfraFromBuild(ctx, bs[i])
 			}
+			bldr := &model.Builder{
+				ID:     "builder",
+				Parent: model.BucketKey(ctx, "project", "bucket"),
+			}
 			So(datastore.Put(ctx, bs), ShouldBeNil)
 			So(datastore.Put(ctx, bss), ShouldBeNil)
 			So(datastore.Put(ctx, infs), ShouldBeNil)
+			So(datastore.Put(ctx, bldr), ShouldBeNil)
 			So(TimeoutExpiredBuilds(ctx), ShouldBeNil)
 		})
 
@@ -170,7 +175,14 @@ func TestTimeoutExpiredBuilds(t *testing.T) {
 			b2, bs2 := newBuildAndStatus(ctx, pb.Status_STARTED, now.Add(-model.BuildMaxCompletionTime-time.Minute))
 			inf2 := newInfraFromBuild(ctx, b2)
 			b2.CustomMetrics = cms
-			So(datastore.Put(ctx, b1, b2, bs1, bs2, inf1, inf2), ShouldBeNil)
+			bldr := &model.Builder{
+				ID:     "builder",
+				Parent: model.BucketKey(ctx, "project", "bucket"),
+				Config: &pb.BuilderConfig{
+					MaxConcurrentBuilds: 2,
+				},
+			}
+			So(datastore.Put(ctx, b1, b2, bs1, bs2, inf1, inf2, bldr), ShouldBeNil)
 
 			globalCfg := &pb.SettingsCfg{
 				CustomMetrics: []*pb.CustomMetric{
@@ -223,6 +235,7 @@ func TestTimeoutExpiredBuilds(t *testing.T) {
 				rdbIDs := []int64{}
 				expected := []int64{b1.ID, b2.ID}
 				notifyGoIDs := []int64{}
+				popPendingIDs := []int64{}
 
 				for _, task := range tasks {
 					switch v := task.Payload.(type) {
@@ -234,6 +247,8 @@ func TestTimeoutExpiredBuilds(t *testing.T) {
 						rdbIDs = append(rdbIDs, v.GetBuildId())
 					case *taskdefs.NotifyPubSubGoProxy:
 						notifyGoIDs = append(notifyGoIDs, v.GetBuildId())
+					case *taskdefs.PopPendingBuildTask:
+						popPendingIDs = append(popPendingIDs, v.GetBuildId())
 
 					default:
 						panic("invalid task payload")
@@ -248,6 +263,7 @@ func TestTimeoutExpiredBuilds(t *testing.T) {
 				sortIDs(rdbIDs)
 				sortIDs(expected)
 				sortIDs(notifyGoIDs)
+				sortIDs(popPendingIDs)
 
 				So(notifyIDs, ShouldHaveLength, 2)
 				So(notifyIDs, ShouldResemble, expected)
@@ -257,6 +273,8 @@ func TestTimeoutExpiredBuilds(t *testing.T) {
 				So(rdbIDs, ShouldResemble, expected)
 				So(notifyGoIDs, ShouldHaveLength, 2)
 				So(notifyGoIDs, ShouldResemble, expected)
+				So(popPendingIDs, ShouldHaveLength, 2)
+				So(popPendingIDs, ShouldResemble, expected)
 			})
 		})
 	})

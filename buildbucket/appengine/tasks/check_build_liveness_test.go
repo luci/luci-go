@@ -83,8 +83,15 @@ func TestCheckLiveness(t *testing.T) {
 			Build:  datastore.MakeKey(ctx, "Build", 1),
 			Status: pb.Status_SCHEDULED,
 		}
+		bldr := &model.Builder{
+			ID:     "builder",
+			Parent: model.BucketKey(ctx, "project", "bucket"),
+			Config: &pb.BuilderConfig{
+				MaxConcurrentBuilds: 2,
+			},
+		}
 
-		So(datastore.Put(ctx, bld, inf, bs), ShouldBeNil)
+		So(datastore.Put(ctx, bld, inf, bs, bldr), ShouldBeNil)
 
 		Convey("build not found", func() {
 			err := CheckLiveness(ctx, 999, 10)
@@ -111,8 +118,8 @@ func TestCheckLiveness(t *testing.T) {
 			So(datastore.Get(ctx, bld, bs), ShouldBeNil)
 			So(bld.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
 			So(bs.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
-			// FinalizeResultDB, ExportBigQuery, NotifyPubSub, NotifyPubSubGoProxy tasks.
-			So(sch.Tasks(), ShouldHaveLength, 4)
+			// FinalizeResultDB, ExportBigQuery, NotifyPubSub, NotifyPubSubGoProxy, PopPendingBuilds tasks.
+			So(sch.Tasks(), ShouldHaveLength, 5)
 		})
 
 		Convey("exceeds heartbeat timeout", func() {
@@ -144,7 +151,7 @@ func TestCheckLiveness(t *testing.T) {
 					EndTime: timestamppb.New(now),
 				},
 			})
-			So(sch.Tasks(), ShouldHaveLength, 4)
+			So(sch.Tasks(), ShouldHaveLength, 5)
 		})
 
 		Convey("exceeds execution timeout", func() {
@@ -163,7 +170,7 @@ func TestCheckLiveness(t *testing.T) {
 			So(datastore.Get(ctx, bld, bs), ShouldBeNil)
 			So(bld.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
 			So(bs.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
-			So(sch.Tasks(), ShouldHaveLength, 4)
+			So(sch.Tasks(), ShouldHaveLength, 5)
 		})
 
 		Convey("not exceed scheduling timeout", func() {
