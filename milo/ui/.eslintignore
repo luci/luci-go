@@ -1,5 +1,4 @@
 **/node_modules
 generated/
-out/
-configs.template.js
+dist/
 src/proto

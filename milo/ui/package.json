@@ -10,7 +10,7 @@
     "src"
   ],
   "scripts": {
-    "build": "vite build",
+    "build": "rm -rf ./dist && rollup -c && vite build",
     "dev": "vite",
     "gen-utils": "rollup -c rollup.utils.config.mjs",
     "gen-proto": "sh ./scripts/gen_proto.sh",

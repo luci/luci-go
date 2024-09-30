@@ -74,22 +74,20 @@ export default defineConfig(({ mode }) => {
   return {
     base: '/ui',
     build: {
-      outDir: 'out',
+      // Vite doesn't like index.html to be placed anywhere other than at the
+      // root level of the input/output directory.
+      // Vite doesn't allow us to output any asset to a place outside of the
+      // defined output directory.
+      // We want to place root_sw.js in the parent directory of Vite's output
+      // directory because that closely matches how those files are served.
+      // e.g. `root_sw.js` is served at `/root_sw.js`, while other assets are
+      // served at `/ui/` or `/ui/immutable/`.
+      // As a result, we need to output Vite generated assets to `dist/ui` and
+      // split the `root_sw.js` generation to a separate built step.
+      outDir: 'dist/ui',
       assetsDir: 'immutable',
       sourcemap: true,
       rollupOptions: {
-        input: {
-          index: 'index.html',
-          root_sw: './src/sw/root_sw.ts',
-        },
-        output: {
-          // 'root_sw' needs to be referenced by URL therefore cannot have a
-          // hash in its filename.
-          entryFileNames: (chunkInfo) =>
-            chunkInfo.name === 'root_sw'
-              ? '[name].js'
-              : 'immutable/[name]-[hash:8].js',
-        },
         // Silence source map generattion warning. This is a workaround for
         // https://github.com/vitejs/vite/issues/15012.
         onwarn: (warning, defaultHandler) =>
@@ -177,7 +175,7 @@ export default defineConfig(({ mode }) => {
       {
         name: 'dev-server',
         configureServer: (server) => {
-          // Serve `/root_sw.js`
+          // Serve `/root_sw.js` in local development environment.
           server.middlewares.use((req, _res, next) => {
             if (req.url === '/root_sw.js') {
               req.url = '/ui/src/sw/root_sw.ts';
@@ -185,7 +183,7 @@ export default defineConfig(({ mode }) => {
             return next();
           });
 
-          // Serve `/configs.js` during development.
+          // Serve `/configs.js` in local development environment.
           // We don't want to define `SETTINGS` directly because that would
           // prevent us from testing the service worker's `GET '/configs.js'`
           // handler.
@@ -223,7 +221,6 @@ export default defineConfig(({ mode }) => {
         strategies: 'injectManifest',
         srcDir: 'src/sw',
         filename: 'ui_sw.ts',
-        outDir: 'out',
         devOptions: {
           enabled: true,
           // During development, the service worker script can only be a JS

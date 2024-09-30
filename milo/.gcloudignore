@@ -11,8 +11,8 @@
 .gitignore
 
 /frontend/ui/*
-!/frontend/ui/out
+!/frontend/ui/dist
 
 # Experimental setup for push-on-green. See b/367097786.
 /service-ui/ui/*
-!/service-ui/ui/out
+!/service-ui/ui/dist

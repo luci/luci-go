@@ -117,11 +117,12 @@ export function App() {
               'root-sw-js-static',
               '/root_sw.js',
             ) as string,
-            // During development, the service worker script can only be a JS
+            // During development, the service worker script can only be an ES
             // module, because it runs through the same pipeline as the rest of
             // the scripts.
-            // In production, the service worker script cannot be a JS module
-            // due to limited browser support.
+            // In production, the service worker script cannot be an ES module
+            // due to limited browser support [1].
+            // [1]: https://developer.mozilla.org/en-US/docs/Web/API/ServiceWorker#browser_compatibility
             { type: isDevEnv ? 'module' : 'classic' },
           )
           .then((registration) => {

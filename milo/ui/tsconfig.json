@@ -6,7 +6,7 @@
     "jsxImportSource": "@emotion/react",
     "target": "ESNext",
     "sourceMap": true,
-    "outDir": "out/",
+    "outDir": "dist/",
     "noEmit": true,
     "isolatedModules": true,
     "strict": true,
@@ -65,7 +65,7 @@
     // No need to validate the dependencies.
     "node_modules",
     // No need to validate the output.
-    "out",
+    "dist",
     // Exclude the generated proto bindings to make type check faster.
     "src/proto",
   ]
