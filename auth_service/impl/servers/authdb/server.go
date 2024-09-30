@@ -180,6 +180,10 @@ func (srv *Server) HandleV2AuthDBServing(ctx *router.Context) error {
 //	}
 func (srv *Server) CheckLegacyMembership(ctx *router.Context) error {
 	c, r, w := ctx.Request.Context(), ctx.Request, ctx.Writer
+
+	// Log the caller of this legacy function.
+	logging.Debugf(c, "CheckLegacyMembership call by %s", auth.CurrentIdentity(c))
+
 	params := r.URL.Query()
 
 	// Validate the identity param.
