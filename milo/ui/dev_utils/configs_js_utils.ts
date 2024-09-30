@@ -19,6 +19,32 @@ import { Plugin } from 'vite';
 import { assertNonNullable } from '../src/generic_libs/tools/utils';
 
 /**
+ * Vite resolves external resources with relative URLs (URLs without a domain
+ * name) inconsistently.
+ *
+ * Inject `<script src="/configs.js" ><script>` via a plugin to prevent Vite
+ * from conditionally prepending "/ui" prefix onto the URL during local
+ * development.
+ */
+export function stableConfigsJsLinkPlugin(): Plugin {
+  return {
+    name: 'luci-ui-stable-configs-js',
+    transformIndexHtml: (html) => ({
+      html,
+      tags: [
+        {
+          tag: 'script',
+          attrs: {
+            src: '/configs.js',
+          },
+          injectTo: 'head-prepend',
+        },
+      ],
+    }),
+  };
+}
+
+/**
  * Construct a `configs.js` file from environment variables.
  */
 export function getLocalDevConfigsJs(env: Record<string, string | undefined>) {

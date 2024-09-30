@@ -21,34 +21,17 @@ import { VitePWA } from 'vite-plugin-pwa';
 import tsconfigPaths from 'vite-tsconfig-paths';
 
 import {
-  getLocalDevConfigsJs,
   getVirtualConfigsJsPlugin,
   overrideMiloHostPlugin,
+  stableConfigsJsLinkPlugin,
 } from './dev_utils/configs_js_utils';
+import { devServer } from './dev_utils/dev_server';
 import { localAuthPlugin } from './dev_utils/local_auth_plugin';
+import { preloadModulesPlugin } from './dev_utils/preload_modules_plugin';
 import { previewServer } from './dev_utils/preview_server';
+import { getBoolEnv } from './dev_utils/utils';
 import { regexpsForRoutes } from './src/generic_libs/tools/react_router_utils';
 import { routes } from './src/routes';
-
-/**
- * Get a boolean from the envDir.
- *
- * Return true/false if the value matches 'true'/'false' (case sensitive).
- * Otherwise, return null.
- */
-function getBoolEnv(
-  envDir: Record<string, string | undefined>,
-  key: string,
-): boolean | null {
-  const value = envDir[key];
-  if (value === 'true') {
-    return true;
-  }
-  if (value === 'false') {
-    return false;
-  }
-  return null;
-}
 
 export default defineConfig(({ mode }) => {
   const env = {
@@ -121,91 +104,13 @@ export default defineConfig(({ mode }) => {
           ),
         },
       }),
+      stableConfigsJsLinkPlugin(),
+      virtualConfigJs,
       overrideMiloHost,
       defineRoutesRegex,
-      virtualConfigJs,
-      {
-        name: 'inject-configs-js-in-html',
-        // Vite resolves external resources with relative URLs (URLs without a
-        // domain name) inconsistently.
-        // Inject `<script src="/configs.js" ><script>` via a plugin to prevent
-        // Vite from conditionally prepending "/ui" prefix onto the URL during
-        // local development.
-        transformIndexHtml: (html) => ({
-          html,
-          tags: [
-            {
-              tag: 'script',
-              attrs: {
-                src: '/configs.js',
-              },
-              injectTo: 'head-prepend',
-            },
-          ],
-        }),
-      },
-      {
-        // We cannot implement this as a virtual module or a replace variable
-        // plugin because we need all the modules to be generated.
-        name: 'preload-modules-handle',
-        transformIndexHtml: (html, ctx) => {
-          const jsChunks = Object.keys(ctx.bundle || {})
-            // Prefetch all JS files so users are less likely to run into errors
-            // when navigating between views after a new LUCI UI version is
-            // deployed.
-            .filter((name) => name.match(/^immutable\/.+\.js$/))
-            // Don't need to prefetch the entry file since it's loaded as a
-            // script tag already.
-            .filter((name) => name !== ctx.chunk?.fileName)
-            .map((name) => `/ui/${name}`);
-
-          // Sort the chunks to ensure the generated prefetch tags are
-          // deterministic.
-          jsChunks.sort();
-
-          const preloadScript = `
-            function preloadModules() {
-              ${jsChunks.map((c) => `import('${c}');\n`).join('')}
-            }
-          `;
-
-          return {
-            html,
-            tags: [
-              {
-                tag: 'script',
-                children: preloadScript,
-                injectTo: 'head',
-              },
-            ],
-          };
-        },
-      },
+      preloadModulesPlugin(),
       localAuthPlugin(),
-      {
-        name: 'dev-server',
-        configureServer: (server) => {
-          // Serve `/root_sw.js` in local development environment.
-          server.middlewares.use((req, _res, next) => {
-            if (req.url === '/root_sw.js') {
-              req.url = '/ui/src/sw/root_sw.ts';
-            }
-            return next();
-          });
-
-          // Serve `/configs.js` in local development environment.
-          // We don't want to define `SETTINGS` directly because that would
-          // prevent us from testing the service worker's `GET '/configs.js'`
-          // handler.
-          server.middlewares.use((req, res, next) => {
-            if (req.url !== '/configs.js') {
-              return next();
-            }
-            res.setHeader('content-type', 'text/javascript');
-            res.end(getLocalDevConfigsJs(env));
-          });
-        },
-      },
+      devServer(env),
       previewServer(path.join(__dirname, 'dist')),
       react({
         babel: {
