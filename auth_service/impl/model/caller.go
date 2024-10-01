@@ -21,9 +21,9 @@ import (
 	"go.chromium.org/luci/server/auth"
 )
 
-// canCallerModify returns whether the current identity can modify the given
+// CanCallerModify returns whether the current identity can modify the given
 // group.
-func canCallerModify(ctx context.Context, group *AuthGroup) (bool, error) {
+func CanCallerModify(ctx context.Context, group *AuthGroup) (bool, error) {
 	if IsExternalAuthGroupName(group.ID) {
 		return false, nil
 	}

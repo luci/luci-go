@@ -284,6 +284,9 @@ func (srv *Server) GetSubgraph(ctx context.Context, request *rpcpb.GetSubgraphRe
 func (srv *Server) GetLegacyAuthGroup(ctx *router.Context) error {
 	c, _, w := ctx.Request.Context(), ctx.Request, ctx.Writer
 
+	// Log the caller of this legacy function.
+	logging.Debugf(c, "GetLegacyAuthGroup call by %s", auth.CurrentIdentity(c))
+
 	// Catch-all params match includes the directory index (the leading "/"), so
 	// trim it to get the group name.
 	name := strings.TrimPrefix(ctx.Params.ByName("groupName"), "/")
@@ -301,51 +304,44 @@ func (srv *Server) GetLegacyAuthGroup(ctx *router.Context) error {
 		return status.Errorf(codes.Internal, "failed to fetch group %q", name)
 	}
 
-	// Leverage existing conversion/filtering defined in AuthGroup's ToProto.
-	g, err := group.ToProto(c, true)
+	canModify, err := model.CanCallerModify(c, group)
 	if err != nil {
-		err = errors.Annotate(err, "error calling ToProto").Err()
-		logging.Errorf(c, err.Error())
-		return status.Errorf(codes.Internal, "failed to fetch group %q", name)
+		err = errors.Annotate(err, "failed to check if caller can modify").Err()
+		return status.Error(codes.Internal, err.Error())
 	}
 
 	// Define Members, Globs and Nested if they are not set so the fields are
 	// marshalled to empty arrays instead of null.
-	if g.Members == nil {
-		g.Members = make([]string, 0)
+	if group.Members == nil {
+		group.Members = make([]string, 0)
 	}
-	if g.Globs == nil {
-		g.Globs = make([]string, 0)
+	if group.Globs == nil {
+		group.Globs = make([]string, 0)
 	}
-	if g.Nested == nil {
-		g.Nested = make([]string, 0)
+	if group.Nested == nil {
+		group.Nested = make([]string, 0)
 	}
 
 	// Set the Last-Modified header.
 	w.Header().Set("Last-Modified", group.ModifiedTS.Format(time.RFC1123Z))
 
-	blob, err := json.Marshal(map[string]AuthGroupJSON{
+	err = json.NewEncoder(w).Encode(map[string]AuthGroupJSON{
 		"group": {
-			Name:            g.Name,
-			Description:     g.Description,
-			Owners:          g.Owners,
-			Members:         g.Members,
-			Globs:           g.Globs,
-			Nested:          g.Nested,
-			CreatedBy:       g.CreatedBy,
-			CallerCanModify: g.CallerCanModify,
-			// Add remaining fields expected in the legacy response.
-			CreatedTS:  group.CreatedTS.UnixMicro(),
-			ModifiedBy: group.ModifiedBy,
-			ModifiedTS: group.ModifiedTS.UnixMicro(),
+			Name:            group.ID,
+			Description:     group.Description,
+			Owners:          group.Owners,
+			Members:         group.Members,
+			Globs:           group.Globs,
+			Nested:          group.Nested,
+			CreatedBy:       group.CreatedBy,
+			CreatedTS:       group.CreatedTS.UnixMicro(),
+			ModifiedBy:      group.ModifiedBy,
+			ModifiedTS:      group.ModifiedTS.UnixMicro(),
+			CallerCanModify: canModify,
 		},
 	})
 	if err != nil {
-		return errors.Annotate(err, "error marshalling JSON").Err()
-	}
-
-	if _, err = w.Write(blob); err != nil {
-		return errors.Annotate(err, "error writing JSON").Err()
+		return errors.Annotate(err, "error encoding JSON").Err()
 	}
 
 	return nil

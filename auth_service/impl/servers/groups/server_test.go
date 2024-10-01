@@ -413,8 +413,10 @@ func TestGroupsServer(t *testing.T) {
 			err := srv.GetLegacyAuthGroup(rctx)
 			assert.Loosely(t, err, should.BeNil)
 
-			expectedBlob, err := json.Marshal(map[string]any{
-				"group": AuthGroupJSON{
+			actual := map[string]AuthGroupJSON{}
+			assert.Loosely(t, json.NewDecoder(rw.Body).Decode(&actual), should.BeNil)
+			assert.Loosely(t, actual, should.Match(map[string]AuthGroupJSON{
+				"group": {
 					Name:        "test-group",
 					Description: "This is a test group.",
 					Owners:      "testers",
@@ -430,9 +432,7 @@ func TestGroupsServer(t *testing.T) {
 					ModifiedTS:      modifiedTime.UnixMicro(),
 					CallerCanModify: true,
 				},
-			})
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, rw.Body.Bytes(), should.Match(expectedBlob))
+			}))
 			assert.Loosely(t, rw.Header().Get("Last-Modified"), should.Equal(lastModifiedHeader))
 		})
 	})

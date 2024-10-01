@@ -1954,7 +1954,7 @@ func unshardAuthDB(ctx context.Context, shardIDs []string, dryRun bool) ([]byte,
 // Set includeMemberships to true if we also want to include the group members, or false
 // if we only want the metadata (e.g. if we're just listing groups).
 func (group *AuthGroup) ToProto(ctx context.Context, includeMemberships bool) (*rpcpb.AuthGroup, error) {
-	isModifier, err := canCallerModify(ctx, group)
+	isModifier, err := CanCallerModify(ctx, group)
 	if err != nil {
 		return nil, err
 	}
