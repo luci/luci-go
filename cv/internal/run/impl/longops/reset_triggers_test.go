@@ -23,6 +23,9 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
@@ -37,15 +40,12 @@ import (
 	"go.chromium.org/luci/cv/internal/metrics"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestResetTriggers(t *testing.T) {
 	t.Parallel()
 
-	Convey("ResetTriggers works", t, func() {
+	ftt.Run("ResetTriggers works", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 		mutator := changelist.NewMutator(ct.TQDispatcher, nil, nil, nil)
@@ -69,10 +69,10 @@ func TestResetTriggers(t *testing.T) {
 			cls := make([]*changelist.CL, len(cis))
 			runCLs := make([]*run.RunCL, len(cis))
 			for i, ci := range cis {
-				So(ci.GetNumber(), ShouldBeGreaterThan, 0)
-				So(ci.GetNumber(), ShouldBeLessThan, 1000)
+				assert.Loosely(t, ci.GetNumber(), should.BeGreaterThan(0))
+				assert.Loosely(t, ci.GetNumber(), should.BeLessThan(1000))
 				triggers := trigger.Find(&trigger.FindInput{ChangeInfo: ci, ConfigGroup: cfg.GetConfigGroups()[0]})
-				So(ct.GFake.Has(gHost, int(ci.GetNumber())), ShouldBeFalse)
+				assert.Loosely(t, ct.GFake.Has(gHost, int(ci.GetNumber())), should.BeFalse)
 				ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), ci))
 				cl := changelist.MustGobID(gHost, ci.GetNumber()).MustCreateIfNotExists(ctx)
 				cl.Snapshot = &changelist.Snapshot{
@@ -102,7 +102,7 @@ func TestResetTriggers(t *testing.T) {
 				Mode:          run.DryRun,
 				ConfigGroupID: prjcfgtest.MustExist(ctx, lProject).ConfigGroupIDs[0],
 			}
-			So(datastore.Put(ctx, r, cls, runCLs), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, r, cls, runCLs), should.BeNil)
 			return r, clids
 		}
 
@@ -149,14 +149,14 @@ func TestResetTriggers(t *testing.T) {
 
 		assertTriggerRemoved := func(eid changelist.ExternalID) {
 			host, changeID, err := changelist.ExternalID(eid).ParseGobID()
-			So(err, ShouldBeNil)
-			So(host, ShouldEqual, gHost)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, host, should.Equal(gHost))
 			changeInfo := ct.GFake.GetChange(gHost, int(changeID)).Info
-			So(trigger.Find(&trigger.FindInput{ChangeInfo: changeInfo, ConfigGroup: cfg.GetConfigGroups()[0]}), ShouldBeNil)
+			assert.Loosely(t, trigger.Find(&trigger.FindInput{ChangeInfo: changeInfo, ConfigGroup: cfg.GetConfigGroups()[0]}), should.BeNil)
 		}
 
 		testHappyPath := func(prefix string, clCount, concurrency int) {
-			Convey(fmt.Sprintf("%s [%d CLs with concurrency %d]", prefix, clCount, concurrency), func() {
+			t.Run(fmt.Sprintf("%s [%d CLs with concurrency %d]", prefix, clCount, concurrency), func(t *ftt.Test) {
 				cis := make([]*gerritpb.ChangeInfo, clCount)
 				for i := range cis {
 					cis[i] = gf.CI(i+1, gf.CQ(+1), gf.Updated(runCreateTime.Add(-1*time.Minute)))
@@ -166,18 +166,18 @@ func TestResetTriggers(t *testing.T) {
 				op := makeOp(r)
 				op.Concurrency = concurrency
 				res, err := op.Do(ctx)
-				So(err, ShouldBeNil)
-				So(res.GetStatus(), ShouldEqual, eventpb.LongOpCompleted_SUCCEEDED)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res.GetStatus(), should.Equal(eventpb.LongOpCompleted_SUCCEEDED))
 				results := res.GetResetTriggers().GetResults()
-				So(results, ShouldHaveLength, clCount)
+				assert.Loosely(t, results, should.HaveLength(clCount))
 				processedCLIDs := make(common.CLIDsSet, clCount)
 				for _, result := range results {
-					So(processedCLIDs.HasI64(result.Id), ShouldBeFalse) // duplicate processing
+					assert.Loosely(t, processedCLIDs.HasI64(result.Id), should.BeFalse) // duplicate processing
 					processedCLIDs.AddI64(result.Id)
 					assertTriggerRemoved(changelist.ExternalID(result.ExternalId))
-					So(result.GetSuccessInfo().GetResetAt().AsTime(), ShouldHappenOnOrAfter, startTime)
+					assert.Loosely(t, result.GetSuccessInfo().GetResetAt().AsTime(), should.HappenOnOrAfter(startTime))
 				}
-				So(ct.TSMonSentValue(ctx, metrics.Internal.RunResetTriggerAttempted, lProject, "test", string(run.DryRun), true, "GERRIT_ERROR_NONE"), ShouldEqual, clCount)
+				assert.Loosely(t, ct.TSMonSentValue(ctx, metrics.Internal.RunResetTriggerAttempted, lProject, "test", string(run.DryRun), true, "GERRIT_ERROR_NONE"), should.Equal(clCount))
 			})
 		}
 
@@ -185,7 +185,7 @@ func TestResetTriggers(t *testing.T) {
 		testHappyPath("serial", 4, 1)
 		testHappyPath("concurrent", 80, 8)
 
-		Convey("works when some cl doesn't have trigger", func() {
+		t.Run("works when some cl doesn't have trigger", func(t *ftt.Test) {
 			cis := []*gerritpb.ChangeInfo{
 				gf.CI(1, gf.CQ(+1), gf.Updated(runCreateTime.Add(-1*time.Minute))),
 				// 1 is the root CL so no trigger on 2
@@ -195,26 +195,27 @@ func TestResetTriggers(t *testing.T) {
 			r.RootCL = clids[0]
 			op := makeOp(r)
 			res, err := op.Do(ctx)
-			So(err, ShouldBeNil)
-			So(res.GetStatus(), ShouldEqual, eventpb.LongOpCompleted_SUCCEEDED)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.GetStatus(), should.Equal(eventpb.LongOpCompleted_SUCCEEDED))
 			results := res.GetResetTriggers().GetResults()
-			So(results, ShouldHaveLength, 1)
+			assert.Loosely(t, results, should.HaveLength(1))
 			for _, result := range results {
-				So(result.GetId(), ShouldEqual, clids[0])
+				assert.Loosely(t, result.GetId(), should.Equal(clids[0]))
 				assertTriggerRemoved(changelist.ExternalID(result.ExternalId))
 			}
-			Convey("error if requesting to reset CL without trigger", func() {
+			t.Run("error if requesting to reset CL without trigger", func(t *ftt.Test) {
 				op := makeOp(r)
-				So(op.Op.GetResetTriggers().GetRequests(), ShouldHaveLength, 1)
+				assert.Loosely(t, op.Op.GetResetTriggers().GetRequests(), should.HaveLength(1))
 				// switch to the CL without trigger
 				op.Op.GetResetTriggers().GetRequests()[0].Clid = int64(clids[1])
 				_, err := op.Do(ctx)
-				So(err, ShouldErrLike, "requested trigger reset on CL 2 that doesn't have trigger at all")
+				assert.Loosely(t, err, should.ErrLike("requested trigger reset on CL 2 that doesn't have trigger at all"))
 			})
 		})
 
-		// TODO(crbug/1297723): re-enable this test after fixing the flake.
-		SkipConvey("Retry on alreadyInLease failure", func() {
+		t.Run("Retry on alreadyInLease failure", func(t *ftt.Test) {
+			t.Skip("TODO(crbug/1297723): re-enable this test after fixing the flake.")
+
 			// Creating changes from 1 to `clCount`, lease the CL with duration ==
 			// change number * time.Minute.
 			clCount := 6
@@ -225,7 +226,7 @@ func TestResetTriggers(t *testing.T) {
 			r, clids := initRunAndCLs(cis)
 			for i, clid := range clids {
 				_, _, err := lease.ApplyOnCL(ctx, clid, time.Duration(cis[i].GetNumber())*time.Minute, "FooBar")
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			}
 			startTime := clock.Now(ctx)
 			op := makeOp(r)
@@ -236,13 +237,13 @@ func TestResetTriggers(t *testing.T) {
 				ct.Clock.Add(1*time.Minute + 1*time.Second)
 			}
 			res, err := op.Do(ctx)
-			So(err, ShouldBeNil)
-			So(res.GetStatus(), ShouldEqual, eventpb.LongOpCompleted_SUCCEEDED)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.GetStatus(), should.Equal(eventpb.LongOpCompleted_SUCCEEDED))
 			results := res.GetResetTriggers().GetResults()
-			So(results, ShouldHaveLength, len(cis))
+			assert.Loosely(t, results, should.HaveLength(len(cis)))
 			for i, result := range results {
-				So(result.Id, ShouldEqual, clids[i])
-				So(result.GetSuccessInfo().GetResetAt().AsTime(), ShouldHappenAfter, startTime.Add(time.Duration(cis[i].GetNumber())*time.Minute))
+				assert.Loosely(t, result.Id, should.Equal(clids[i]))
+				assert.Loosely(t, result.GetSuccessInfo().GetResetAt().AsTime(), should.HappenAfter(startTime.Add(time.Duration(cis[i].GetNumber())*time.Minute)))
 				assertTriggerRemoved(changelist.ExternalID(result.ExternalId))
 			}
 		})
@@ -250,7 +251,7 @@ func TestResetTriggers(t *testing.T) {
 		// TODO(crbug/1199880): test can retry transient failure once Gerrit fake
 		// gain the flakiness mode.
 
-		Convey("Failed permanently for non-transient error", func() {
+		t.Run("Failed permanently for non-transient error", func(t *ftt.Test) {
 			cis := []*gerritpb.ChangeInfo{
 				gf.CI(1, gf.CQ(+1), gf.Updated(runCreateTime.Add(-1*time.Minute))),
 				gf.CI(2, gf.CQ(+1), gf.Updated(runCreateTime.Add(-1*time.Minute))),
@@ -262,38 +263,38 @@ func TestResetTriggers(t *testing.T) {
 			op := makeOp(r)
 			startTime := clock.Now(ctx)
 			res, err := op.Do(ctx)
-			So(err, ShouldNotBeNil)
-			So(res.GetStatus(), ShouldEqual, eventpb.LongOpCompleted_FAILED)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, res.GetStatus(), should.Equal(eventpb.LongOpCompleted_FAILED))
 			results := res.GetResetTriggers().GetResults()
-			So(results, ShouldHaveLength, len(cis))
+			assert.Loosely(t, results, should.HaveLength(len(cis)))
 			for _, result := range results {
 				switch common.CLID(result.Id) {
 				case clids[0]: // Change 1
-					So(result.GetSuccessInfo().GetResetAt().AsTime(), ShouldHappenAfter, startTime)
+					assert.Loosely(t, result.GetSuccessInfo().GetResetAt().AsTime(), should.HappenAfter(startTime))
 				case clids[1]: // Change 2
-					So(result.GetFailureInfo().GetFailureMessage(), ShouldNotBeEmpty)
+					assert.Loosely(t, result.GetFailureInfo().GetFailureMessage(), should.NotBeEmpty)
 				}
-				So(result.ExternalId, ShouldNotBeEmpty)
+				assert.Loosely(t, result.ExternalId, should.NotBeEmpty)
 			}
-			So(ct.TSMonSentValue(ctx, metrics.Internal.RunResetTriggerAttempted, lProject, "test", string(run.DryRun), true, "GERRIT_ERROR_NONE"), ShouldEqual, 1)
-			So(ct.TSMonSentValue(ctx, metrics.Internal.RunResetTriggerAttempted, lProject, "test", string(run.DryRun), false, "PERMISSION_DENIED"), ShouldEqual, 1)
+			assert.Loosely(t, ct.TSMonSentValue(ctx, metrics.Internal.RunResetTriggerAttempted, lProject, "test", string(run.DryRun), true, "GERRIT_ERROR_NONE"), should.Equal(1))
+			assert.Loosely(t, ct.TSMonSentValue(ctx, metrics.Internal.RunResetTriggerAttempted, lProject, "test", string(run.DryRun), false, "PERMISSION_DENIED"), should.Equal(1))
 		})
 
-		Convey("Doesn't obey long op cancellation", func() {
+		t.Run("Doesn't obey long op cancellation", func(t *ftt.Test) {
 			ci := gf.CI(1, gf.CQ(+1), gf.Updated(runCreateTime.Add(-1*time.Minute)))
 			cis := []*gerritpb.ChangeInfo{ci}
 			r, clids := initRunAndCLs(cis)
 			op := makeOp(r)
 			op.IsCancelRequested = func() bool { return true }
 			res, err := op.Do(ctx)
-			So(err, ShouldBeNil)
-			So(res.GetStatus(), ShouldEqual, eventpb.LongOpCompleted_SUCCEEDED)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.GetStatus(), should.Equal(eventpb.LongOpCompleted_SUCCEEDED))
 			results := res.GetResetTriggers().GetResults()
-			So(results, ShouldHaveLength, len(cis))
+			assert.Loosely(t, results, should.HaveLength(len(cis)))
 			for i, result := range results {
-				So(result.Id, ShouldEqual, clids[i])
+				assert.Loosely(t, result.Id, should.Equal(clids[i]))
 				assertTriggerRemoved(changelist.ExternalID(result.ExternalId))
-				So(result.GetSuccessInfo().GetResetAt(), ShouldNotBeNil)
+				assert.Loosely(t, result.GetSuccessInfo().GetResetAt(), should.NotBeNil)
 			}
 		})
 	})

@@ -17,21 +17,22 @@ package handler
 import (
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestOnCompletedPostAction(t *testing.T) {
 	t.Parallel()
 
-	Convey("onCompletedPostAction", t, func() {
+	ftt.Run("onCompletedPostAction", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 		const (
@@ -77,43 +78,61 @@ func TestOnCompletedPostAction(t *testing.T) {
 		h, _ := makeTestHandler(&ct)
 		var err error
 		var res *Result
-		Convey("execution summary is set", func() {
+
+		outerCheck := func(t testing.TB) {
+			t.Helper()
+			assert.Loosely(t, res.State.OngoingLongOps, should.BeNil, truth.LineContext())
+			assert.Loosely(t, res.SideEffectFn, should.BeNil, truth.LineContext())
+			assert.Loosely(t, res.PreserveEvents, should.BeFalse, truth.LineContext())
+		}
+
+		t.Run("execution summary is set", func(t *ftt.Test) {
 			opResult.Status = eventpb.LongOpCompleted_CANCELLED
 			opResult.GetExecutePostAction().Summary = "this is a summary"
 			res, err = h.OnLongOpCompleted(ctx, rs, opResult)
-			So(err, ShouldBeNil)
-			So(res.State.LogEntries[0].GetInfo(), ShouldResembleProto, &run.LogEntry_Info{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.State.LogEntries[0].GetInfo(), should.Resemble(&run.LogEntry_Info{
 				Label:   "PostAction[label-vote]",
 				Message: "this is a summary",
-			})
+			}))
+			outerCheck(t)
 		})
-		Convey("execution summary is not set", func() {
+
+		t.Run("execution summary is not set", func(t *ftt.Test) {
 			var expected string
-			Convey("the op succeeded", func() {
+
+			innerCheck := func(t testing.TB) {
+				t.Helper()
+				res, err = h.OnLongOpCompleted(ctx, rs, opResult)
+				assert.Loosely(t, err, should.BeNil, truth.LineContext())
+				assert.Loosely(t, res.State.LogEntries[0].GetInfo(), should.Resemble(&run.LogEntry_Info{
+					Label:   "PostAction[label-vote]",
+					Message: expected,
+				}), truth.LineContext())
+
+				outerCheck(t)
+			}
+
+			t.Run("the op succeeded", func(t *ftt.Test) {
 				opResult.Status = eventpb.LongOpCompleted_SUCCEEDED
 				expected = "the execution succeeded"
+				innerCheck(t)
 			})
-			Convey("the op expired", func() {
+			t.Run("the op expired", func(t *ftt.Test) {
 				opResult.Status = eventpb.LongOpCompleted_EXPIRED
 				expected = "the execution deadline was exceeded"
+				innerCheck(t)
 			})
-			Convey("the op cancelled", func() {
+			t.Run("the op cancelled", func(t *ftt.Test) {
 				opResult.Status = eventpb.LongOpCompleted_CANCELLED
 				expected = "the execution was cancelled"
+				innerCheck(t)
 			})
-			Convey("the op failed", func() {
+			t.Run("the op failed", func(t *ftt.Test) {
 				opResult.Status = eventpb.LongOpCompleted_FAILED
 				expected = "the execution failed"
-			})
-			res, err = h.OnLongOpCompleted(ctx, rs, opResult)
-			So(err, ShouldBeNil)
-			So(res.State.LogEntries[0].GetInfo(), ShouldResembleProto, &run.LogEntry_Info{
-				Label:   "PostAction[label-vote]",
-				Message: expected,
+				innerCheck(t)
 			})
 		})
-		So(res.State.OngoingLongOps, ShouldBeNil)
-		So(res.SideEffectFn, ShouldBeNil)
-		So(res.PreserveEvents, ShouldBeFalse)
 	})
 }

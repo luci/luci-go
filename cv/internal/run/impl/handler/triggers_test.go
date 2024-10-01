@@ -22,6 +22,10 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
@@ -29,14 +33,12 @@ import (
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestOnCompletedResetTriggers(t *testing.T) {
 	t.Parallel()
 
-	Convey("OnCompletedResetTriggers works", t, func() {
+	ftt.Run("OnCompletedResetTriggers works", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
@@ -82,17 +84,18 @@ func TestOnCompletedResetTriggers(t *testing.T) {
 					return
 				}
 			}
-			So(fmt.Sprintf("log entry is missing: %s", target), ShouldBeEmpty)
+			assert.Loosely(t, fmt.Sprintf("log entry is missing: %s", target), should.BeEmpty)
 		}
 
-		Convey("on expiration", func() {
+		t.Run("on expiration", func(t *ftt.Test) {
 			result.Status = eventpb.LongOpCompleted_EXPIRED
 			res, err := h.OnLongOpCompleted(ctx, rs, result)
-			So(err, ShouldBeNil)
-			So(res.State.Status, ShouldEqual, run.Status_FAILED)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.State.Status, should.Equal(run.Status_FAILED))
 			for _, op := range res.State.OngoingLongOps.GetOps() {
 				if op.GetExecutePostAction() == nil {
-					SoMsg("should not contain any long op other than post action", op.GetWork(), ShouldBeNil)
+					assert.Loosely(t, op.GetWork(), should.BeNil, truth.Explain(
+						"should not contain any long op other than post action"))
 				}
 			}
 			assertHasLogEntry(res.State, &run.LogEntry{
@@ -104,11 +107,11 @@ func TestOnCompletedResetTriggers(t *testing.T) {
 					},
 				},
 			})
-			So(res.SideEffectFn, ShouldNotBeNil)
-			So(res.PreserveEvents, ShouldBeFalse)
+			assert.Loosely(t, res.SideEffectFn, should.NotBeNil)
+			assert.Loosely(t, res.PreserveEvents, should.BeFalse)
 		})
 
-		Convey("on failure", func() {
+		t.Run("on failure", func(t *ftt.Test) {
 			result.Status = eventpb.LongOpCompleted_FAILED
 			result.Result = &eventpb.LongOpCompleted_ResetTriggers_{
 				ResetTriggers: &eventpb.LongOpCompleted_ResetTriggers{
@@ -126,11 +129,12 @@ func TestOnCompletedResetTriggers(t *testing.T) {
 				},
 			}
 			res, err := h.OnLongOpCompleted(ctx, rs, result)
-			So(err, ShouldBeNil)
-			So(res.State.Status, ShouldEqual, run.Status_FAILED)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.State.Status, should.Equal(run.Status_FAILED))
 			for _, op := range res.State.OngoingLongOps.GetOps() {
 				if op.GetExecutePostAction() == nil {
-					SoMsg("should not contain any long op other than post action", op.GetWork(), ShouldBeNil)
+					assert.Loosely(t, op.GetWork(), should.BeNil, truth.Explain(
+						"should not contain any long op other than post action"))
 				}
 			}
 			assertHasLogEntry(res.State, &run.LogEntry{
@@ -142,11 +146,11 @@ func TestOnCompletedResetTriggers(t *testing.T) {
 					},
 				},
 			})
-			So(res.SideEffectFn, ShouldNotBeNil)
-			So(res.PreserveEvents, ShouldBeFalse)
+			assert.Loosely(t, res.SideEffectFn, should.NotBeNil)
+			assert.Loosely(t, res.PreserveEvents, should.BeFalse)
 		})
 
-		Convey("on success", func() {
+		t.Run("on success", func(t *ftt.Test) {
 			result.Status = eventpb.LongOpCompleted_SUCCEEDED
 			result.Result = &eventpb.LongOpCompleted_ResetTriggers_{
 				ResetTriggers: &eventpb.LongOpCompleted_ResetTriggers{
@@ -164,11 +168,12 @@ func TestOnCompletedResetTriggers(t *testing.T) {
 				},
 			}
 			res, err := h.OnLongOpCompleted(ctx, rs, result)
-			So(err, ShouldBeNil)
-			So(res.State.Status, ShouldEqual, run.Status_SUCCEEDED)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.State.Status, should.Equal(run.Status_SUCCEEDED))
 			for _, op := range res.State.OngoingLongOps.GetOps() {
 				if op.GetExecutePostAction() == nil {
-					SoMsg("should not contain any long op other than post action", op.GetWork(), ShouldBeNil)
+					assert.Loosely(t, op.GetWork(), should.BeNil, truth.Explain(
+						"should not contain any long op other than post action"))
 				}
 			}
 			assertHasLogEntry(res.State, &run.LogEntry{
@@ -180,11 +185,11 @@ func TestOnCompletedResetTriggers(t *testing.T) {
 					},
 				},
 			})
-			So(res.SideEffectFn, ShouldNotBeNil)
-			So(res.PreserveEvents, ShouldBeFalse)
+			assert.Loosely(t, res.SideEffectFn, should.NotBeNil)
+			assert.Loosely(t, res.PreserveEvents, should.BeFalse)
 		})
 
-		Convey("on partial failure", func() {
+		t.Run("on partial failure", func(t *ftt.Test) {
 			result.Status = eventpb.LongOpCompleted_FAILED
 			rs.OngoingLongOps.GetOps()[opID].GetResetTriggers().Requests =
 				[]*run.OngoingLongOps_Op_ResetTriggers_Request{
@@ -216,11 +221,12 @@ func TestOnCompletedResetTriggers(t *testing.T) {
 				},
 			}
 			res, err := h.OnLongOpCompleted(ctx, rs, result)
-			So(err, ShouldBeNil)
-			So(res.State.Status, ShouldEqual, run.Status_FAILED)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.State.Status, should.Equal(run.Status_FAILED))
 			for _, op := range res.State.OngoingLongOps.GetOps() {
 				if op.GetExecutePostAction() == nil {
-					SoMsg("should not contain any long op other than post action", op.GetWork(), ShouldBeNil)
+					assert.Loosely(t, op.GetWork(), should.BeNil, truth.Explain(
+						"should not contain any long op other than post action"))
 				}
 			}
 			assertHasLogEntry(res.State, &run.LogEntry{
@@ -241,8 +247,8 @@ func TestOnCompletedResetTriggers(t *testing.T) {
 					},
 				},
 			})
-			So(res.SideEffectFn, ShouldNotBeNil)
-			So(res.PreserveEvents, ShouldBeFalse)
+			assert.Loosely(t, res.SideEffectFn, should.NotBeNil)
+			assert.Loosely(t, res.PreserveEvents, should.BeFalse)
 		})
 	})
 }

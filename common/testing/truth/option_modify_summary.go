@@ -14,7 +14,11 @@
 
 package truth
 
-import "go.chromium.org/luci/common/testing/truth/failure"
+import (
+	"fmt"
+
+	"go.chromium.org/luci/common/testing/truth/failure"
+)
 
 // summaryModifier is the implementation of ModifySummary - this arrangement is
 // so that ModifySummary shows up next to Option in godocs.
@@ -28,7 +32,7 @@ func (summaryModifier) truthOption() {}
 // Example:
 //
 //	truth.Assert(t, 100, should.Equal(1), truth.ModifySummary(func(s *failure.Summary) {
-//	  s = append(s.Findings, &failure.Finding{Name: "Extra finding!"})
+//	  s.Findings = append(s.Findings, &failure.Finding{Name: "Extra finding!"})
 //	})
 //
 // In this example, if 100 does not equal 1, this callback will be
@@ -37,4 +41,20 @@ func (summaryModifier) truthOption() {}
 // This will never be invoked with a nil *Summary.
 func ModifySummary(cb func(*failure.Summary)) Option {
 	return summaryModifier(cb)
+}
+
+// Explain is an Option which adds a new finding "Explaination" to the
+// *failure.Summary of the failing comparison.
+//
+// Example:
+//
+//	truth.Assert(t, wingie[i].cool(), should.BeTrue, truth.Explain(
+//	  "wingie number %d was not cool"))
+func Explain(format string, args ...any) Option {
+	return ModifySummary(func(s *failure.Summary) {
+		s.Findings = append(s.Findings, &failure.Finding{
+			Name:  "Explaination",
+			Value: []string{fmt.Sprintf(format, args...)},
+		})
+	})
 }

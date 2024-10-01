@@ -19,13 +19,17 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
@@ -43,7 +47,7 @@ import (
 func TestPostGerritMessage(t *testing.T) {
 	t.Parallel()
 
-	Convey("PostGerritMessageOp works", t, func() {
+	ftt.Run("PostGerritMessageOp works", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
@@ -65,7 +69,7 @@ func TestPostGerritMessage(t *testing.T) {
 
 		ensureCL := func(ci *gerritpb.ChangeInfo) (*changelist.CL, *run.RunCL) {
 			triggers := trigger.Find(&trigger.FindInput{ChangeInfo: ci, ConfigGroup: cfg.GetConfigGroups()[0]})
-			So(triggers.GetCqVoteTrigger(), ShouldNotBeNil)
+			assert.Loosely(t, triggers.GetCqVoteTrigger(), should.NotBeNil)
 
 			if ct.GFake.Has(gHost, int(ci.GetNumber())) {
 				ct.GFake.MutateChange(gHost, int(ci.GetNumber()), func(c *gf.Change) {
@@ -92,7 +96,7 @@ func TestPostGerritMessage(t *testing.T) {
 			}
 			cl.Snapshot = rcl.Detail
 			cl.EVersion++
-			So(datastore.Put(ctx, cl, rcl), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, cl, rcl), should.BeNil)
 			return cl, rcl
 		}
 
@@ -115,7 +119,7 @@ func TestPostGerritMessage(t *testing.T) {
 			if r.ConfigGroupID == "" {
 				r.ConfigGroupID = prjcfgtest.MustExist(ctx, lProject).ConfigGroupIDs[0]
 			}
-			So(datastore.Put(ctx, r), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, r), should.BeNil)
 			return r
 		}
 
@@ -140,38 +144,38 @@ func TestPostGerritMessage(t *testing.T) {
 			}
 		}
 
-		Convey("Happy path", func() {
+		t.Run("Happy path", func(t *ftt.Test) {
 			op := makeOp(makeRunWithCLs(nil, gf.CI(gChange1, gf.CQ(+2))), testMsg)
 			res, err := op.Do(ctx)
 
-			So(err, ShouldBeNil)
-			So(res.GetStatus(), ShouldEqual, eventpb.LongOpCompleted_SUCCEEDED)
-			So(ct.GFake.GetChange(gHost, gChange1).Info, gf.ShouldLastMessageContain, "This is a test message.")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.GetStatus(), should.Equal(eventpb.LongOpCompleted_SUCCEEDED))
+			assert.Loosely(t, ct.GFake.GetChange(gHost, gChange1).Info, convey.Adapt(gf.ShouldLastMessageContain)("This is a test message."))
 		})
 
-		Convey("Happy path with multiple CLs", func() {
+		t.Run("Happy path with multiple CLs", func(t *ftt.Test) {
 			op := makeOp(makeRunWithCLs(
 				&run.Run{Mode: run.DryRun},
 				gf.CI(gChange1, gf.CQ(+1)),
 				gf.CI(gChange2, gf.CQ(+1)),
 			), testMsg)
 			res, err := op.Do(ctx)
-			So(err, ShouldBeNil)
-			So(res.GetStatus(), ShouldEqual, eventpb.LongOpCompleted_SUCCEEDED)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.GetStatus(), should.Equal(eventpb.LongOpCompleted_SUCCEEDED))
 
 			for _, gChange := range []int{gChange1, gChange2} {
 				ci := ct.GFake.GetChange(gHost, gChange).Info
-				So(ci, gf.ShouldLastMessageContain, "This is a test message.")
+				assert.Loosely(t, ci, convey.Adapt(gf.ShouldLastMessageContain)("This is a test message."))
 				// Should post exactly one message.
-				So(ci.GetMessages(), ShouldHaveLength, 1)
+				assert.Loosely(t, ci.GetMessages(), should.HaveLength(1))
 
 				// Recorded timestamp must be approximately correct since both CLs are
 				// posted at around the same time.
-				So(res.GetPostGerritMessage().GetTime().AsTime(), ShouldHappenWithin, time.Second, ci.GetMessages()[0].GetDate().AsTime())
+				assert.Loosely(t, res.GetPostGerritMessage().GetTime().AsTime(), should.HappenWithin(time.Second, ci.GetMessages()[0].GetDate().AsTime()))
 			}
 		})
 
-		Convey("Best effort avoidance of duplicated messages", func() {
+		t.Run("Best effort avoidance of duplicated messages", func(t *ftt.Test) {
 			// Make two same PostGerritMessageOp objects, since they are single-use
 			// only.
 			opFirst := makeOp(makeRunWithCLs(nil, gf.CI(gChange1, gf.CQ(+2))), testMsg)
@@ -185,47 +189,47 @@ func TestPostGerritMessage(t *testing.T) {
 			// Simulate first try updating Gerrit, but somehow crashing before getting
 			// response from Gerrit.
 			_, err := opFirst.Do(ctx)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			ci := ct.GFake.GetChange(gHost, gChange1).Info
-			So(ci, gf.ShouldLastMessageContain, "This is a test message.")
-			So(ci.GetMessages(), ShouldHaveLength, 1)
+			assert.Loosely(t, ci, convey.Adapt(gf.ShouldLastMessageContain)("This is a test message."))
+			assert.Loosely(t, ci.GetMessages(), should.HaveLength(1))
 
-			Convey("very quick retry leads to dups", func() {
+			t.Run("very quick retry leads to dups", func(t *ftt.Test) {
 				ct.Clock.Add(time.Second)
 				res, err := opRetry.Do(ctx)
-				So(err, ShouldBeNil)
-				So(res.GetStatus(), ShouldEqual, eventpb.LongOpCompleted_SUCCEEDED)
-				So(ct.GFake.GetChange(gHost, gChange1).Info.GetMessages(), ShouldHaveLength, 2)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res.GetStatus(), should.Equal(eventpb.LongOpCompleted_SUCCEEDED))
+				assert.Loosely(t, ct.GFake.GetChange(gHost, gChange1).Info.GetMessages(), should.HaveLength(2))
 				// And the timestamp isn't entirely right, but that's fine.
-				So(res.GetPostGerritMessage().GetTime().AsTime(), ShouldResemble, ct.Clock.Now().UTC().Truncate(time.Second))
+				assert.Loosely(t, res.GetPostGerritMessage().GetTime().AsTime(), should.Resemble(ct.Clock.Now().UTC().Truncate(time.Second)))
 			})
 
-			Convey("later retry", func() {
+			t.Run("later retry", func(t *ftt.Test) {
 				ct.Clock.Add(util.StaleCLAgeThreshold)
 				res, err := opRetry.Do(ctx)
-				So(err, ShouldBeNil)
-				So(res.GetStatus(), ShouldEqual, eventpb.LongOpCompleted_SUCCEEDED)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res.GetStatus(), should.Equal(eventpb.LongOpCompleted_SUCCEEDED))
 				// There should still be exactly 1 message.
 				ci := ct.GFake.GetChange(gHost, gChange1).Info
-				So(ci.GetMessages(), ShouldHaveLength, 1)
+				assert.Loosely(t, ci.GetMessages(), should.HaveLength(1))
 				// and the timestamp must be exactly correct.
-				So(res.GetPostGerritMessage().GetTime().AsTime(), ShouldResemble, ci.GetMessages()[0].GetDate().AsTime())
+				assert.Loosely(t, res.GetPostGerritMessage().GetTime().AsTime(), should.Resemble(ci.GetMessages()[0].GetDate().AsTime()))
 			})
 
-			Convey("later retry avoids reposting msg even when gerrit appends metadata", func() {
+			t.Run("later retry avoids reposting msg even when gerrit appends metadata", func(t *ftt.Test) {
 				ct.Clock.Add(util.StaleCLAgeThreshold)
 				res, err := opRetrySubstring.Do(ctx)
-				So(err, ShouldBeNil)
-				So(res.GetStatus(), ShouldEqual, eventpb.LongOpCompleted_SUCCEEDED)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res.GetStatus(), should.Equal(eventpb.LongOpCompleted_SUCCEEDED))
 				// There should still be exactly 1 message.
 				ci := ct.GFake.GetChange(gHost, gChange1).Info
-				So(ci.GetMessages(), ShouldHaveLength, 1)
+				assert.Loosely(t, ci.GetMessages(), should.HaveLength(1))
 				// and the timestamp must be exactly correct.
-				So(res.GetPostGerritMessage().GetTime().AsTime(), ShouldResemble, ci.GetMessages()[0].GetDate().AsTime())
+				assert.Loosely(t, res.GetPostGerritMessage().GetTime().AsTime(), should.Resemble(ci.GetMessages()[0].GetDate().AsTime()))
 			})
 		})
 
-		Convey("Failures", func() {
+		t.Run("Failures", func(t *ftt.Test) {
 			op := makeOp(makeRunWithCLs(
 				&run.Run{Mode: run.DryRun},
 				gf.CI(gChange1, gf.CQ(+1)),
@@ -234,27 +238,36 @@ func TestPostGerritMessage(t *testing.T) {
 			defer cancel()
 			ct.Clock.Set(op.Op.Deadline.AsTime().Add(-8 * time.Minute))
 
-			Convey("With a non transient failure", func() {
+			check := func(t testing.TB) {
+				t.Helper()
+
+				res, err := op.Do(ctx)
+				// Given any failure, the status should be set to FAILED,
+				// but the returned error is nil to prevent the TQ retry.
+				assert.Loosely(t, err, should.BeNil, truth.LineContext())
+				assert.Loosely(t, res.GetStatus(), should.Equal(eventpb.LongOpCompleted_FAILED), truth.LineContext())
+				assert.Loosely(t, res.GetPostGerritMessage().GetTime(), should.BeNil, truth.LineContext())
+				assert.Loosely(t, ct.GFake.GetChange(gHost, gChange1).Info.GetMessages(), should.HaveLength(0), truth.LineContext())
+			}
+
+			t.Run("With a non transient failure", func(t *ftt.Test) {
 				ct.GFake.MutateChange(gHost, gChange1, func(c *gf.Change) {
 					c.ACLs = func(_ gf.Operation, _ string) *status.Status {
 						return status.New(codes.PermissionDenied, "admin-is-angry-today")
 					}
 				})
+				check(t)
 			})
-			Convey("With a transient failure", func() {
+
+			t.Run("With a transient failure", func(t *ftt.Test) {
 				ct.GFake.MutateChange(gHost, gChange1, func(c *gf.Change) {
 					c.ACLs = func(_ gf.Operation, _ string) *status.Status {
 						return status.New(codes.Internal, "oops, temp error")
 					}
 				})
+				check(t)
 			})
-			res, err := op.Do(ctx)
-			// Given any failure, the status should be set to FAILED,
-			// but the returned error is nil to prevent the TQ retry.
-			So(err, ShouldBeNil)
-			So(res.GetStatus(), ShouldEqual, eventpb.LongOpCompleted_FAILED)
-			So(res.GetPostGerritMessage().GetTime(), ShouldBeNil)
-			So(ct.GFake.GetChange(gHost, gChange1).Info.GetMessages(), ShouldHaveLength, 0)
+
 		})
 	})
 }
