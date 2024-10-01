@@ -1,5 +1,0 @@
-{
-    "baseUrl": "http://localhost:8800",
-    "includeShadowDom": true,
-    "defaultCommandTimeout": 7000
-}
