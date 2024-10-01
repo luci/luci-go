@@ -23,6 +23,10 @@ import (
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
@@ -30,14 +34,12 @@ import (
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/run"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestRecentQueryBuilder(t *testing.T) {
 	t.Parallel()
 
-	Convey("RecentQueryBuilder works", t, func() {
+	ftt.Run("RecentQueryBuilder works", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
@@ -45,34 +47,37 @@ func TestRecentQueryBuilder(t *testing.T) {
 		//  * DESC Created (== ASC InverseTS, or latest first)
 		//  * ASC  Project
 		//  * ASC  RunID (the remaining part of RunID)
-		checkOrder := func(runs []*run.Run) {
+		checkOrder := func(t testing.TB, runs []*run.Run) {
+			t.Helper()
 			for i := range runs {
 				if i == 0 {
 					continue
 				}
 				switch l, r := runs[i-1], runs[i]; {
 				case !l.CreateTime.Equal(r.CreateTime):
-					So(l.CreateTime, ShouldHappenAfter, r.CreateTime)
+					assert.Loosely(t, l.CreateTime, should.HappenAfter(r.CreateTime), truth.LineContext())
 				case l.ID.LUCIProject() != r.ID.LUCIProject():
-					So(l.ID.LUCIProject(), ShouldBeLessThan, r.ID.LUCIProject())
+					assert.Loosely(t, l.ID.LUCIProject(), should.BeLessThan(r.ID.LUCIProject()), truth.LineContext())
 				default:
 					// Same CreateTime and Project.
-					So(l.ID, ShouldBeLessThan, r.ID)
+					assert.Loosely(t, l.ID, should.BeLessThan(r.ID), truth.LineContext())
 				}
 			}
 		}
 
-		getAllWithPageToken := func(qb RecentQueryBuilder) (common.RunIDs, *PageToken) {
-			keys, runs, pt := execQueryInTest(ctx, qb)
-			checkOrder(runs)
+		getAllWithPageToken := func(t testing.TB, qb RecentQueryBuilder) (common.RunIDs, *PageToken) {
+			t.Helper()
+			keys, runs, pt := execQueryInTest(ctx, t, qb)
+			checkOrder(t, runs)
 			// Check that loading Runs returns the same values in the same order.
-			So(idsOf(runs), ShouldResemble, idsOfKeys(keys))
-			assertCorrectPageToken(qb, keys, pt)
+			assert.Loosely(t, idsOf(runs), should.Resemble(idsOfKeys(keys)), truth.LineContext())
+			assertCorrectPageToken(t, qb, keys, pt)
 			return idsOfKeys(keys), pt
 		}
 
-		getAll := func(qb RecentQueryBuilder) common.RunIDs {
-			out, _ := getAllWithPageToken(qb)
+		getAll := func(t testing.TB, qb RecentQueryBuilder) common.RunIDs {
+			t.Helper()
+			out, _ := getAllWithPageToken(t, qb)
 			return out
 		}
 
@@ -97,7 +102,7 @@ func TestRecentQueryBuilder(t *testing.T) {
 
 		placeRuns := func(runs ...*run.Run) common.RunIDs {
 			ids := make(common.RunIDs, len(runs))
-			So(datastore.Put(ctx, runs), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, runs), should.BeNil)
 			projects := stringset.New(10)
 			for i, r := range runs {
 				projects.Add(r.ID.LUCIProject())
@@ -109,7 +114,7 @@ func TestRecentQueryBuilder(t *testing.T) {
 			return ids
 		}
 
-		Convey("just one project", func() {
+		t.Run("just one project", func(t *ftt.Test) {
 			expIDs := placeRuns(
 				// project, creationDelay, hash.
 				makeRun(1, 90, 11),
@@ -120,15 +125,15 @@ func TestRecentQueryBuilder(t *testing.T) {
 				makeRun(1, 60, 11),
 				makeRun(1, 60, 12),
 			)
-			Convey("without paging", func() {
-				So(getAll(RecentQueryBuilder{Limit: 128}), ShouldResemble, expIDs)
+			t.Run("without paging", func(t *ftt.Test) {
+				assert.Loosely(t, getAll(t, RecentQueryBuilder{Limit: 128}), should.Resemble(expIDs))
 			})
-			Convey("with paging", func() {
-				page, next := getAllWithPageToken(RecentQueryBuilder{Limit: 3})
-				So(page, ShouldResemble, expIDs[:3])
-				So(getAll(RecentQueryBuilder{Limit: 3}.PageToken(next)), ShouldResemble, expIDs[3:6])
+			t.Run("with paging", func(t *ftt.Test) {
+				page, next := getAllWithPageToken(t, RecentQueryBuilder{Limit: 3})
+				assert.Loosely(t, page, should.Resemble(expIDs[:3]))
+				assert.Loosely(t, getAll(t, RecentQueryBuilder{Limit: 3}.PageToken(next)), should.Resemble(expIDs[3:6]))
 			})
-			Convey("without read access to project", func() {
+			t.Run("without read access to project", func(t *ftt.Test) {
 				runs, pageToken, err := RecentQueryBuilder{
 					CheckProjectAccess: func(ctx context.Context, proj string) (bool, error) {
 						if proj == expIDs[0].LUCIProject() {
@@ -138,13 +143,13 @@ func TestRecentQueryBuilder(t *testing.T) {
 
 					},
 				}.LoadRuns(ctx)
-				So(err, ShouldBeNil)
-				So(pageToken, ShouldBeNil)
-				So(runs, ShouldBeEmpty)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, pageToken, should.BeNil)
+				assert.Loosely(t, runs, should.BeEmpty)
 			})
 		})
 
-		Convey("two projects with overlapping timestaps", func() {
+		t.Run("two projects with overlapping timestaps", func(t *ftt.Test) {
 			expIDs := placeRuns(
 				// project, creationDelay, hash.
 				makeRun(1, 90, 11),
@@ -154,15 +159,15 @@ func TestRecentQueryBuilder(t *testing.T) {
 				makeRun(2, 70, 13),
 				makeRun(1, 60, 12),
 			)
-			Convey("without paging", func() {
-				So(getAll(RecentQueryBuilder{Limit: 128}), ShouldResemble, expIDs)
+			t.Run("without paging", func(t *ftt.Test) {
+				assert.Loosely(t, getAll(t, RecentQueryBuilder{Limit: 128}), should.Resemble(expIDs))
 			})
-			Convey("with paging", func() {
-				page, next := getAllWithPageToken(RecentQueryBuilder{Limit: 2})
-				So(page, ShouldResemble, expIDs[:2])
-				So(getAll(RecentQueryBuilder{Limit: 4}.PageToken(next)), ShouldResemble, expIDs[2:6])
+			t.Run("with paging", func(t *ftt.Test) {
+				page, next := getAllWithPageToken(t, RecentQueryBuilder{Limit: 2})
+				assert.Loosely(t, page, should.Resemble(expIDs[:2]))
+				assert.Loosely(t, getAll(t, RecentQueryBuilder{Limit: 4}.PageToken(next)), should.Resemble(expIDs[2:6]))
 			})
-			Convey("without read access to one project", func() {
+			t.Run("without read access to one project", func(t *ftt.Test) {
 				prj1 := expIDs[0].LUCIProject()
 				prj2 := expIDs[2].LUCIProject()
 				runs, pageToken, err := RecentQueryBuilder{
@@ -173,15 +178,15 @@ func TestRecentQueryBuilder(t *testing.T) {
 						return true, nil
 					},
 				}.LoadRuns(ctx)
-				So(err, ShouldBeNil)
-				So(pageToken, ShouldBeNil)
-				checkOrder(runs)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, pageToken, should.BeNil)
+				checkOrder(t, runs)
 				for _, r := range runs {
-					So(r.ID.LUCIProject(), ShouldResemble, prj2)
+					assert.Loosely(t, r.ID.LUCIProject(), should.Resemble(prj2))
 				}
-				So(idsOf(runs), ShouldResemble, expIDs[2:5])
+				assert.Loosely(t, idsOf(runs), should.Resemble(expIDs[2:5]))
 			})
-			Convey("without read access to any project", func() {
+			t.Run("without read access to any project", func(t *ftt.Test) {
 				prj1 := expIDs[0].LUCIProject()
 				prj2 := expIDs[2].LUCIProject()
 				runs, pageToken, err := RecentQueryBuilder{
@@ -194,13 +199,13 @@ func TestRecentQueryBuilder(t *testing.T) {
 						}
 					},
 				}.LoadRuns(ctx)
-				So(err, ShouldBeNil)
-				So(pageToken, ShouldBeNil)
-				So(runs, ShouldBeEmpty)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, pageToken, should.BeNil)
+				assert.Loosely(t, runs, should.BeEmpty)
 			})
 		})
 
-		Convey("large scale", func() {
+		t.Run("large scale", func(t *ftt.Test) {
 			var runs []*run.Run
 			for p := 50; p < 60; p++ {
 				// Distribute # of Runs unevenly across projects.
@@ -212,16 +217,16 @@ func TestRecentQueryBuilder(t *testing.T) {
 				}
 			}
 			placeRuns(runs...)
-			So(len(runs), ShouldBeLessThan, 128)
+			assert.Loosely(t, len(runs), should.BeLessThan(128))
 
-			_, _ = Println("without paging")
-			all := getAll(RecentQueryBuilder{Limit: 128})
-			So(len(all), ShouldEqual, len(runs))
+			t.Log("without paging")
+			all := getAll(t, RecentQueryBuilder{Limit: 128})
+			assert.Loosely(t, len(all), should.Equal(len(runs)))
 
-			_, _ = Println("with paging")
-			page, next := getAllWithPageToken(RecentQueryBuilder{Limit: 13})
-			So(page, ShouldResemble, all[:13])
-			So(getAll(RecentQueryBuilder{Limit: 7}.PageToken(next)), ShouldResemble, all[13:20])
+			t.Log("with paging")
+			page, next := getAllWithPageToken(t, RecentQueryBuilder{Limit: 13})
+			assert.Loosely(t, page, should.Resemble(all[:13]))
+			assert.Loosely(t, getAll(t, RecentQueryBuilder{Limit: 7}.PageToken(next)), should.Resemble(all[13:20]))
 		})
 	})
 }

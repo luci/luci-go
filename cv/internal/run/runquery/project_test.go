@@ -18,138 +18,142 @@ import (
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/run"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestProjectQueryBuilder(t *testing.T) {
 	t.Parallel()
 
-	Convey("ProjectQueryBuilder works", t, func() {
+	ftt.Run("ProjectQueryBuilder works", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
-		getAll := func(qb ProjectQueryBuilder) common.RunIDs {
-			return execQueryInTestSameRunsAndKeys(ctx, qb)
+		getAll := func(t testing.TB, qb ProjectQueryBuilder) common.RunIDs {
+			t.Helper()
+			return execQueryInTestSameRunsAndKeys(ctx, t, qb)
 		}
 
-		makeRun := func(proj string, delay time.Duration, s run.Status) common.RunID {
+		makeRun := func(t testing.TB, proj string, delay time.Duration, s run.Status) common.RunID {
+			t.Helper()
 			createdAt := ct.Clock.Now().Add(delay)
 			runID := common.MakeRunID(proj, createdAt, 1, []byte{0, byte(delay / time.Millisecond)})
-			So(datastore.Put(ctx, &run.Run{ID: runID, Status: s}), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, &run.Run{ID: runID, Status: s}), should.BeNil, truth.LineContext())
 			return runID
 		}
 
 		// RunID below are ordered lexicographically.
-		bond9 := makeRun("bond", 9*time.Millisecond, run.Status_RUNNING)
-		bond4 := makeRun("bond", 4*time.Millisecond, run.Status_FAILED)
-		bond2 := makeRun("bond", 2*time.Millisecond, run.Status_CANCELLED)
-		xero7 := makeRun("xero", 7*time.Millisecond, run.Status_RUNNING)
-		xero6 := makeRun("xero", 6*time.Millisecond, run.Status_RUNNING)
-		xero5 := makeRun("xero", 5*time.Millisecond, run.Status_SUCCEEDED)
+		bond9 := makeRun(t, "bond", 9*time.Millisecond, run.Status_RUNNING)
+		bond4 := makeRun(t, "bond", 4*time.Millisecond, run.Status_FAILED)
+		bond2 := makeRun(t, "bond", 2*time.Millisecond, run.Status_CANCELLED)
+		xero7 := makeRun(t, "xero", 7*time.Millisecond, run.Status_RUNNING)
+		xero6 := makeRun(t, "xero", 6*time.Millisecond, run.Status_RUNNING)
+		xero5 := makeRun(t, "xero", 5*time.Millisecond, run.Status_SUCCEEDED)
 
-		Convey("Project without Runs", func() {
+		t.Run("Project without Runs", func(t *ftt.Test) {
 			qb := ProjectQueryBuilder{Project: "missing"}
-			So(getAll(qb), ShouldBeEmpty)
+			assert.Loosely(t, getAll(t, qb), should.BeEmpty)
 		})
 
-		Convey("Project with some Runs", func() {
+		t.Run("Project with some Runs", func(t *ftt.Test) {
 			qb := ProjectQueryBuilder{Project: "bond"}
-			So(getAll(qb), ShouldResemble, common.RunIDs{bond9, bond4, bond2})
+			assert.Loosely(t, getAll(t, qb), should.Resemble(common.RunIDs{bond9, bond4, bond2}))
 		})
 
-		Convey("Obeys limit and returns correct page token", func() {
+		t.Run("Obeys limit and returns correct page token", func(t *ftt.Test) {
 			qb := ProjectQueryBuilder{Project: "bond", Limit: 2}
 			runs1, pageToken1, err := qb.LoadRuns(ctx)
-			So(err, ShouldBeNil)
-			So(idsOf(runs1), ShouldResemble, common.RunIDs{bond9, bond4})
-			So(pageToken1, ShouldNotBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, idsOf(runs1), should.Resemble(common.RunIDs{bond9, bond4}))
+			assert.Loosely(t, pageToken1, should.NotBeNil)
 
 			qb = qb.PageToken(pageToken1)
-			So(qb.MinExcl, ShouldResemble, bond4)
+			assert.Loosely(t, qb.MinExcl, should.Resemble(bond4))
 			runs2, pageToken2, err := qb.LoadRuns(ctx)
-			So(err, ShouldBeNil)
-			So(idsOf(runs2), ShouldResemble, common.RunIDs{bond2})
-			So(pageToken2, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, idsOf(runs2), should.Resemble(common.RunIDs{bond2}))
+			assert.Loosely(t, pageToken2, should.BeNil)
 		})
 
-		Convey("Filters by Status", func() {
-			Convey("Simple", func() {
+		t.Run("Filters by Status", func(t *ftt.Test) {
+			t.Run("Simple", func(t *ftt.Test) {
 				qb := ProjectQueryBuilder{Project: "xero", Status: run.Status_RUNNING}
-				So(getAll(qb), ShouldResemble, common.RunIDs{xero7, xero6})
+				assert.Loosely(t, getAll(t, qb), should.Resemble(common.RunIDs{xero7, xero6}))
 
 				qb = ProjectQueryBuilder{Project: "xero", Status: run.Status_SUCCEEDED}
-				So(getAll(qb), ShouldResemble, common.RunIDs{xero5})
+				assert.Loosely(t, getAll(t, qb), should.Resemble(common.RunIDs{xero5}))
 			})
-			Convey("Status_ENDED_MASK", func() {
+			t.Run("Status_ENDED_MASK", func(t *ftt.Test) {
 				qb := ProjectQueryBuilder{Project: "bond", Status: run.Status_ENDED_MASK}
-				So(getAll(qb), ShouldResemble, common.RunIDs{bond4, bond2})
+				assert.Loosely(t, getAll(t, qb), should.Resemble(common.RunIDs{bond4, bond2}))
 
-				Convey("Obeys limit", func() {
+				t.Run("Obeys limit", func(t *ftt.Test) {
 					qb.Limit = 1
-					So(getAll(qb), ShouldResemble, common.RunIDs{bond4})
+					assert.Loosely(t, getAll(t, qb), should.Resemble(common.RunIDs{bond4}))
 				})
 			})
 		})
 
-		Convey("Min", func() {
+		t.Run("Min", func(t *ftt.Test) {
 			qb := ProjectQueryBuilder{Project: "bond", MinExcl: bond9}
-			So(getAll(qb), ShouldResemble, common.RunIDs{bond4, bond2})
+			assert.Loosely(t, getAll(t, qb), should.Resemble(common.RunIDs{bond4, bond2}))
 
-			Convey("same as Before", func() {
+			t.Run("same as Before", func(t *ftt.Test) {
 				qb2 := ProjectQueryBuilder{}.Before(bond9)
-				So(qb, ShouldResemble, qb2)
+				assert.Loosely(t, qb, should.Resemble(qb2))
 			})
 		})
 
-		Convey("Max", func() {
+		t.Run("Max", func(t *ftt.Test) {
 			qb := ProjectQueryBuilder{Project: "bond", MaxExcl: bond2}
-			So(getAll(qb), ShouldResemble, common.RunIDs{bond9, bond4})
+			assert.Loosely(t, getAll(t, qb), should.Resemble(common.RunIDs{bond9, bond4}))
 
-			Convey("same as After", func() {
+			t.Run("same as After", func(t *ftt.Test) {
 				qb2 := ProjectQueryBuilder{}.After(bond2)
-				So(qb, ShouldResemble, qb2)
+				assert.Loosely(t, qb, should.Resemble(qb2))
 			})
 		})
 
-		Convey("After .. Before", func() {
-			Convey("Some", func() {
+		t.Run("After .. Before", func(t *ftt.Test) {
+			t.Run("Some", func(t *ftt.Test) {
 				qb := ProjectQueryBuilder{}.After(bond2).Before(bond9)
-				So(getAll(qb), ShouldResemble, common.RunIDs{bond4})
+				assert.Loosely(t, getAll(t, qb), should.Resemble(common.RunIDs{bond4}))
 			})
 
-			Convey("Empty", func() {
+			t.Run("Empty", func(t *ftt.Test) {
 				qb := ProjectQueryBuilder{Project: "bond"}.After(bond4).Before(bond9)
-				So(getAll(qb), ShouldHaveLength, 0)
+				assert.Loosely(t, getAll(t, qb), should.HaveLength(0))
 			})
 
-			Convey("Overconstrained", func() {
+			t.Run("Overconstrained", func(t *ftt.Test) {
 				qb := ProjectQueryBuilder{Project: "bond"}.After(bond9).Before(bond2)
 				_, err := qb.BuildKeysOnly(ctx).Finalize()
-				So(err, ShouldEqual, datastore.ErrNullQuery)
+				assert.Loosely(t, err, should.Equal(datastore.ErrNullQuery))
 			})
 
-			Convey("With status", func() {
+			t.Run("With status", func(t *ftt.Test) {
 				qb := ProjectQueryBuilder{Status: run.Status_FAILED}.After(bond2).Before(bond9)
-				So(getAll(qb), ShouldResemble, common.RunIDs{bond4})
+				assert.Loosely(t, getAll(t, qb), should.Resemble(common.RunIDs{bond4}))
 				qb = ProjectQueryBuilder{Status: run.Status_SUCCEEDED}.After(bond2).Before(bond9)
-				So(getAll(qb), ShouldHaveLength, 0)
+				assert.Loosely(t, getAll(t, qb), should.HaveLength(0))
 			})
 
 		})
 
-		Convey("Invalid usage panics", func() {
-			So(func() { ProjectQueryBuilder{}.BuildKeysOnly(ctx) }, ShouldPanic)
-			So(func() { ProjectQueryBuilder{Project: "not-bond", MinExcl: bond4}.BuildKeysOnly(ctx) }, ShouldPanic)
-			So(func() { ProjectQueryBuilder{Project: "not-bond", MaxExcl: bond4}.BuildKeysOnly(ctx) }, ShouldPanic)
-			So(func() { ProjectQueryBuilder{Project: "not-bond"}.Before(bond4) }, ShouldPanic)
-			So(func() { ProjectQueryBuilder{Project: "not-bond"}.After(bond4) }, ShouldPanic)
-			So(func() { ProjectQueryBuilder{}.After(bond4).Before(xero7) }, ShouldPanic)
+		t.Run("Invalid usage panics", func(t *ftt.Test) {
+			assert.Loosely(t, func() { ProjectQueryBuilder{}.BuildKeysOnly(ctx) }, should.Panic)
+			assert.Loosely(t, func() { ProjectQueryBuilder{Project: "not-bond", MinExcl: bond4}.BuildKeysOnly(ctx) }, should.Panic)
+			assert.Loosely(t, func() { ProjectQueryBuilder{Project: "not-bond", MaxExcl: bond4}.BuildKeysOnly(ctx) }, should.Panic)
+			assert.Loosely(t, func() { ProjectQueryBuilder{Project: "not-bond"}.Before(bond4) }, should.Panic)
+			assert.Loosely(t, func() { ProjectQueryBuilder{Project: "not-bond"}.After(bond4) }, should.Panic)
+			assert.Loosely(t, func() { ProjectQueryBuilder{}.After(bond4).Before(xero7) }, should.Panic)
 		})
 	})
 }

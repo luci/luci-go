@@ -23,14 +23,16 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/run"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 // TestLoadRunsFromQuery provides additional coverage to loadRunsFromQuery
@@ -39,20 +41,20 @@ import (
 func TestLoadRunsFromQuery(t *testing.T) {
 	t.Parallel()
 
-	Convey("loadRunsFromQuery", t, func() {
+	ftt.Run("loadRunsFromQuery", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
 		makeRun := func(proj string, delay time.Duration, clids ...common.CLID) common.RunID {
 			createdAt := ct.Clock.Now().Add(delay)
 			runID := common.MakeRunID(proj, createdAt, 1, []byte{0, byte(delay / time.Millisecond)})
-			So(datastore.Put(ctx, &run.Run{ID: runID, CLs: clids}), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, &run.Run{ID: runID, CLs: clids}), should.BeNil)
 			for _, clid := range clids {
-				So(datastore.Put(ctx, &run.RunCL{
+				assert.Loosely(t, datastore.Put(ctx, &run.RunCL{
 					Run:       datastore.MakeKey(ctx, common.RunKind, string(runID)),
 					ID:        clid,
 					IndexedID: clid,
-				}), ShouldBeNil)
+				}), should.BeNil)
 			}
 			return runID
 		}
@@ -80,93 +82,93 @@ func TestLoadRunsFromQuery(t *testing.T) {
 			},
 		}
 
-		Convey("If there is no limit, page token must not be returned but ACLs must be obeyed", func() {
+		t.Run("If there is no limit, page token must not be returned but ACLs must be obeyed", func(t *ftt.Test) {
 			q := CLQueryBuilder{CLID: clA}
 			runs, pt, err := loadRunsFromQuery(ctx, q, aclChecker)
-			So(err, ShouldBeNil)
-			So(idsOf(runs), ShouldResemble, common.RunIDs{bond9, bond4, dart5, rust1, xero7})
-			So(pt, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, idsOf(runs), should.Resemble(common.RunIDs{bond9, bond4, dart5, rust1, xero7}))
+			assert.Loosely(t, pt, should.BeNil)
 		})
 
-		Convey("Obeys and provides exactly the limit of Runs when available", func() {
-			Convey("without ACLs filtering", func() {
+		t.Run("Obeys and provides exactly the limit of Runs when available", func(t *ftt.Test) {
+			t.Run("without ACLs filtering", func(t *ftt.Test) {
 				q := CLQueryBuilder{CLID: clA, Limit: 3}
 				runs, pt, err := loadRunsFromQuery(ctx, q)
-				So(err, ShouldBeNil)
-				So(idsOf(runs), ShouldResemble, common.RunIDs{bond9, bond4, bond2})
-				So(pt, ShouldNotBeNil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, idsOf(runs), should.Resemble(common.RunIDs{bond9, bond4, bond2}))
+				assert.Loosely(t, pt, should.NotBeNil)
 			})
 
-			Convey("even with ACLs filtering", func() {
-				Convey("limit=3", func() {
+			t.Run("even with ACLs filtering", func(t *ftt.Test) {
+				t.Run("limit=3", func(t *ftt.Test) {
 					q := CLQueryBuilder{CLID: clA, Limit: 3}
 					runs, pt, err := loadRunsFromQuery(ctx, q, aclChecker)
-					So(err, ShouldBeNil)
-					So(idsOf(runs), ShouldResemble, common.RunIDs{bond9, bond4, dart5})
-					_, _ = Println("and chooses pagetoken to maximally avoid redundant work")
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, idsOf(runs), should.Resemble(common.RunIDs{bond9, bond4, dart5}))
+					t.Log("and chooses pagetoken to maximally avoid redundant work")
 					// NOTE: the second behind-the-scenes query should have fetched
 					// keys for {dart5,dart3,rust8}.
-					So(pt.GetRun(), ShouldResemble, string(rust8))
+					assert.Loosely(t, pt.GetRun(), should.Resemble(string(rust8)))
 
 					q = q.PageToken(pt)
 					runs, pt, err = loadRunsFromQuery(ctx, q, aclChecker)
-					So(err, ShouldBeNil)
-					So(idsOf(runs), ShouldResemble, common.RunIDs{rust1, xero7})
-					So(pt, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, idsOf(runs), should.Resemble(common.RunIDs{rust1, xero7}))
+					assert.Loosely(t, pt, should.BeNil)
 				})
-				Convey("limit=4", func() {
+				t.Run("limit=4", func(t *ftt.Test) {
 					q := CLQueryBuilder{CLID: clA, Limit: 4}
 					runs, pt, err := loadRunsFromQuery(ctx, q, aclChecker)
-					So(err, ShouldBeNil)
-					So(idsOf(runs), ShouldResemble, common.RunIDs{bond9, bond4, dart5, rust1})
-					_, _ = Println("and chooses pagetoken to maximally avoid redundant work")
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, idsOf(runs), should.Resemble(common.RunIDs{bond9, bond4, dart5, rust1}))
+					t.Log("and chooses pagetoken to maximally avoid redundant work")
 					// NOTE: the second behind-the-scenes query should have fetched
 					// keys for {dart3,rust8,rust1,xero7} but xero7 didn't fit into
 					// `runs`, thus next time it's sufficient to start with >rust1.
-					So(pt.GetRun(), ShouldResemble, string(rust1))
+					assert.Loosely(t, pt.GetRun(), should.Resemble(string(rust1)))
 
 					q = q.PageToken(pt)
 					runs, pt, err = loadRunsFromQuery(ctx, q, aclChecker)
-					So(err, ShouldBeNil)
-					So(idsOf(runs), ShouldResemble, common.RunIDs{xero7})
-					So(pt, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, idsOf(runs), should.Resemble(common.RunIDs{xero7}))
+					assert.Loosely(t, pt, should.BeNil)
 				})
-				Convey("limit=5", func() {
+				t.Run("limit=5", func(t *ftt.Test) {
 					q := CLQueryBuilder{CLID: clA, Limit: 5}
 					runs, pt, err := loadRunsFromQuery(ctx, q, aclChecker)
-					So(err, ShouldBeNil)
-					So(idsOf(runs), ShouldResemble, common.RunIDs{bond9, bond4, dart5, rust1, xero7})
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, idsOf(runs), should.Resemble(common.RunIDs{bond9, bond4, dart5, rust1, xero7}))
 					// NOTE: the second behind-the-scenes query should have fetched
 					// keys for {rust8,rust1,xero7}, and thus exhausted the search.
-					So(pt, ShouldBeNil)
+					assert.Loosely(t, pt, should.BeNil)
 				})
 			})
 		})
 
-		Convey("If there are exactly `limit` Runs, page token may be returned", func() {
+		t.Run("If there are exactly `limit` Runs, page token may be returned", func(t *ftt.Test) {
 			q := CLQueryBuilder{CLID: clB, Limit: 3}
 			runs, pt, err := loadRunsFromQuery(ctx, q, aclChecker)
-			So(err, ShouldBeNil)
-			So(idsOf(runs), ShouldResemble, common.RunIDs{bond4, rust1})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, idsOf(runs), should.Resemble(common.RunIDs{bond4, rust1}))
 			if pt != nil {
 				// If page token is returned, then next page must be empty.
 				q = q.PageToken(pt)
 				runs, pt, err = loadRunsFromQuery(ctx, q, aclChecker)
-				So(err, ShouldBeNil)
-				So(runs, ShouldBeEmpty)
-				So(pt, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, runs, should.BeEmpty)
+				assert.Loosely(t, pt, should.BeNil)
 			}
 		})
 
-		Convey("If there are no Runs, then limit is not obeyed", func() {
+		t.Run("If there are no Runs, then limit is not obeyed", func(t *ftt.Test) {
 			q := CLQueryBuilder{CLID: clZ, Limit: 1}
 			runs, pt, err := loadRunsFromQuery(ctx, q, aclChecker)
-			So(err, ShouldBeNil)
-			So(runs, ShouldBeEmpty)
-			So(pt, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, runs, should.BeEmpty)
+			assert.Loosely(t, pt, should.BeNil)
 		})
 
-		Convey("Limits looping when most Runs are filtered out, returning partial page instead", func() {
+		t.Run("Limits looping when most Runs are filtered out, returning partial page instead", func(t *ftt.Test) {
 			// Create batches Runs referencing the same CL with every batch having 1
 			// visible Run and many not visible ones.
 			// It's important that each batch has a shared project name prefix,
@@ -192,7 +194,7 @@ func TestLoadRunsFromQuery(t *testing.T) {
 			const aclCheckDuration = queryStopAfterDuration / 20
 			// Quick check test setup: the queryStopAfterDuration must be hit before
 			// queryStopAfterIterations are done.
-			So(aclCheckDuration*(invisibleN+1)*queryStopAfterIterations, ShouldBeGreaterThan, queryStopAfterDuration)
+			assert.Loosely(t, aclCheckDuration*(invisibleN+1)*queryStopAfterIterations, should.BeGreaterThan(queryStopAfterDuration))
 			aclChecker.beforeFunc = func(id common.RunID) error {
 				ct.Clock.Add(aclCheckDuration)
 				if visibleSet.Has(string(id)) {
@@ -206,18 +208,18 @@ func TestLoadRunsFromQuery(t *testing.T) {
 			q := CLQueryBuilder{CLID: clX, Limit: invisibleN + 1}
 			runs, pt, err := loadRunsFromQuery(ctx, q, aclChecker)
 			took := ct.Clock.Now().Sub(tStart)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			// Shouldn't have terminated prematurely.
-			So(took, ShouldBeGreaterThanOrEqualTo, queryStopAfterDuration)
+			assert.Loosely(t, took, should.BeGreaterThanOrEqual(queryStopAfterDuration))
 			// It should have loaded `queryStopAfterIterations` of batches, each
 			// having 1 visible Run.
-			So(idsOf(runs), ShouldResemble, visible[:queryStopAfterIterations])
+			assert.Loosely(t, idsOf(runs), should.Resemble(visible[:queryStopAfterIterations]))
 			// Which must be less than the requested limit.
-			So(len(runs), ShouldBeLessThan, q.Limit)
+			assert.That(t, len(runs), should.BeLessThan(int(q.Limit)))
 			// Quick check test assumption.
-			So(invisibleSuffix, ShouldBeGreaterThan, visibleSuffix)
+			assert.Loosely(t, invisibleSuffix, should.BeGreaterThan(visibleSuffix))
 			// Thus the page token must point to the last Run among invisible ones.
-			So(pt.GetRun(), ShouldResemble, string(invisible[(queryStopAfterIterations*invisibleN)-1]))
+			assert.Loosely(t, pt.GetRun(), should.Resemble(string(invisible[(queryStopAfterIterations*invisibleN)-1])))
 		})
 	})
 }
@@ -251,28 +253,34 @@ type projQueryInTest interface {
 
 // execQueryInTest calls GetAllRunKeys and LoadRuns and returns the Run keys,
 // Runs and page token.
-func execQueryInTest(ctx context.Context, q projQueryInTest, checkers ...run.LoadRunChecker) ([]*datastore.Key, []*run.Run, *PageToken) {
+func execQueryInTest(ctx context.Context, t testing.TB, q projQueryInTest, checkers ...run.LoadRunChecker) ([]*datastore.Key, []*run.Run, *PageToken) {
+	t.Helper()
+
 	keys, err := q.GetAllRunKeys(ctx)
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil, truth.LineContext())
 	runs, pageToken, err := q.LoadRuns(ctx, checkers...)
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil, truth.LineContext())
 	return keys, runs, pageToken
 }
 
 // execQueryInTestSameRunsAndKeysWithPageToken asserts that the Run keys and
 // Runs match; then returns the IDs and page token.
-func execQueryInTestSameRunsAndKeysWithPageToken(ctx context.Context, q projQueryInTest, checkers ...run.LoadRunChecker) (common.RunIDs, *PageToken) {
-	keys, runs, pageToken := execQueryInTest(ctx, q, checkers...)
+func execQueryInTestSameRunsAndKeysWithPageToken(ctx context.Context, t testing.TB, q projQueryInTest, checkers ...run.LoadRunChecker) (common.RunIDs, *PageToken) {
+	t.Helper()
+
+	keys, runs, pageToken := execQueryInTest(ctx, t, q, checkers...)
 	ids := idsOfKeys(keys)
-	So(ids, ShouldResemble, idsOf(runs))
-	assertCorrectPageToken(q, keys, pageToken)
+	assert.Loosely(t, ids, should.Resemble(idsOf(runs)), truth.LineContext())
+	assertCorrectPageToken(t, q, keys, pageToken)
 	return ids, pageToken
 }
 
 // execQueryInTestSameRunsAndKeys asserts that the Run keys and Runs match;
 // then returns just the IDs.
-func execQueryInTestSameRunsAndKeys(ctx context.Context, q projQueryInTest) common.RunIDs {
-	ids, _ := execQueryInTestSameRunsAndKeysWithPageToken(ctx, q)
+func execQueryInTestSameRunsAndKeys(ctx context.Context, t testing.TB, q projQueryInTest) common.RunIDs {
+	t.Helper()
+
+	ids, _ := execQueryInTestSameRunsAndKeysWithPageToken(ctx, t, q)
 	return ids
 }
 
@@ -281,11 +289,12 @@ func execQueryInTestSameRunsAndKeys(ctx context.Context, q projQueryInTest) comm
 // That is, page token should be nil if the number of keys is less than the
 // limit (or if there's no limit); and page token should have the correct value
 // when the number of keys is equal to the limit.
-func assertCorrectPageToken(q runKeysQuery, keys []*datastore.Key, pageToken *PageToken) {
+func assertCorrectPageToken(t testing.TB, q runKeysQuery, keys []*datastore.Key, pageToken *PageToken) {
+	t.Helper()
 	if l := len(keys); q.qLimit() <= 0 || l < int(q.qLimit()) {
-		So(pageToken, ShouldBeNil)
+		assert.Loosely(t, pageToken, should.BeNil, truth.LineContext())
 	} else {
-		So(pageToken.GetRun(), ShouldResemble, keys[l-1].StringID())
+		assert.Loosely(t, pageToken.GetRun(), should.Resemble(keys[l-1].StringID()), truth.LineContext())
 	}
 }
 
