@@ -37,6 +37,8 @@ var Internal = struct {
 	RunTryjobResultReportDelay     metric.CumulativeDistribution
 	RunResetTriggerAttempted       metric.Counter
 	QuotaOp                        metric.Counter
+	CreateToFirstTryjobLatency     metric.CumulativeDistribution
+	StartToFirstTryjobLatency      metric.CumulativeDistribution
 }{
 	BuildbucketRPCCount: metric.NewCounter(
 		"cv/internal/buildbucket_rpc/count",
@@ -184,5 +186,33 @@ var Internal = struct {
 		field.String("policy_resource"),
 		field.String("op"),
 		field.String("status"),
+	),
+	CreateToFirstTryjobLatency: metric.NewCumulativeDistribution(
+		"cv/internal/runs/create_to_first_tryjob_latency",
+		"Time elapsed from the Run creation to the first successful tryjob launch "+
+			"time. Runs that do not successfully launch any Tryjob are not reported. "+
+			"It's possible due to tryjob reuse, launch failure or 0 tryjob configured.",
+		&types.MetricMetadata{Units: types.Milliseconds},
+		// Bucketer for 1ms...1h range.
+		distribution.GeometricBucketer(
+			math.Pow(float64(1*time.Hour/time.Millisecond), 1.0/nBuckets), nBuckets,
+		),
+		field.String("project"),
+		field.String("config_group"),
+		field.String("mode"),
+	),
+	StartToFirstTryjobLatency: metric.NewCumulativeDistribution(
+		"cv/internal/runs/start_to_first_tryjob_latency",
+		"Time elapsed from the Run start to the first successful tryjob launch "+
+			"time. Runs that do not successfully launch any Tryjob are not reported. "+
+			"It's possible due to tryjob reuse, launch failure or 0 tryjob configured.",
+		&types.MetricMetadata{Units: types.Milliseconds},
+		// Bucketer for 1ms...1h range.
+		distribution.GeometricBucketer(
+			math.Pow(float64(1*time.Hour/time.Millisecond), 1.0/nBuckets), nBuckets,
+		),
+		field.String("project"),
+		field.String("config_group"),
+		field.String("mode"),
 	),
 }

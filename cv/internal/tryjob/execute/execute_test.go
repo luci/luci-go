@@ -577,6 +577,8 @@ func TestExecutePlan(t *testing.T) {
 				Mode:          run.DryRun,
 				CLs:           common.CLIDs{clid},
 				Status:        run.Status_RUNNING,
+				CreateTime:    now.Add(-1 * time.Hour),
+				StartTime:     now.Add(-30 * time.Minute),
 			}
 			runCL := &run.RunCL{
 				ID:  clid,
@@ -689,19 +691,22 @@ func TestExecutePlan(t *testing.T) {
 						},
 					},
 				}, r, execState)
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, execState.GetStatus(), should.Equal(tryjob.ExecutionState_RUNNING))
+				assert.That(t, err, should.ErrLike(nil))
+				assert.That(t, execState.GetStatus(), should.Equal(tryjob.ExecutionState_RUNNING))
 				assert.Loosely(t, execState.GetExecutions()[0].GetAttempts(), should.HaveLength(1))
 				attempt := execState.GetExecutions()[0].GetAttempts()[0]
-				assert.Loosely(t, attempt.GetTryjobId(), should.NotEqual(0))
+				assert.That(t, attempt.GetTryjobId(), should.NotEqual(int64(0)))
 				assert.Loosely(t, attempt.GetExternalId(), should.NotBeEmpty)
-				assert.Loosely(t, attempt.GetStatus(), should.Equal(tryjob.Status_TRIGGERED))
-				assert.Loosely(t, attempt.GetReused(), should.BeFalse)
-				assert.Loosely(t, executor.stagedMetricReportFns, should.HaveLength(1))
+				assert.That(t, attempt.GetStatus(), should.Equal(tryjob.Status_TRIGGERED))
+				assert.That(t, attempt.GetReused(), should.BeFalse)
+				assert.Loosely(t, executor.stagedMetricReportFns, should.HaveLength(2))
 				executor.stagedMetricReportFns[0](ctx)
 				tryjob.RunWithBuilderMetricsTarget(ctx, ct.Env, def, func(ctx context.Context) {
-					assert.Loosely(t, ct.TSMonSentValue(ctx, metrics.Public.TryjobLaunched, lProject, configGroupName, true, false), should.Equal(1))
+					assert.That(t, ct.TSMonSentValue(ctx, metrics.Public.TryjobLaunched, lProject, configGroupName, true, false).(int64), should.Equal(int64(1)))
 				})
+				executor.stagedMetricReportFns[1](ctx)
+				assert.That(t, ct.TSMonSentDistr(ctx, metrics.Internal.CreateToFirstTryjobLatency, lProject, configGroupName, string(r.Mode)).Sum(), should.AlmostEqual(float64(ct.Clock.Now().Sub(r.CreateTime).Milliseconds())))
+				assert.That(t, ct.TSMonSentDistr(ctx, metrics.Internal.StartToFirstTryjobLatency, lProject, configGroupName, string(r.Mode)).Sum(), should.AlmostEqual(float64(ct.Clock.Now().Sub(r.StartTime).Milliseconds())))
 			})
 
 			t.Run("Fail the execution if encounter launch failure", func(t *ftt.Test) {

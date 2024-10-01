@@ -17,6 +17,7 @@ package execute
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -462,6 +463,7 @@ func (e *Executor) executePlan(ctx context.Context, p *plan, r *run.Run, execSta
 		}
 
 		project, configGroup := r.ID.LUCIProject(), r.ConfigGroupID.Name()
+		var earliestCreated time.Time
 		for i, tj := range tryjobs {
 			def, exec := definitions[i], executions[i]
 			attempt := convertToAttempt(tj, r.ID)
@@ -473,6 +475,11 @@ func (e *Executor) executePlan(ctx context.Context, p *plan, r *run.Run, execSta
 						metrics.Public.TryjobLaunched.Add(ctx, 1, project, configGroup, def.GetCritical(), isRetry)
 					})
 				})
+				if tj.Result.GetCreateTime() != nil {
+					if createTime := tj.Result.GetCreateTime().AsTime(); earliestCreated.IsZero() || createTime.Before(earliestCreated) {
+						earliestCreated = createTime
+					}
+				}
 			}
 			if attempt.Status == tryjob.Status_UNTRIGGERED && def.GetCritical() {
 				if execState.Failures == nil {
@@ -483,6 +490,19 @@ func (e *Executor) executePlan(ctx context.Context, p *plan, r *run.Run, execSta
 					Reason:     tj.UntriggeredReason,
 				})
 			}
+		}
+
+		if !execState.FirstTryjobLatencyMetricsReported && !earliestCreated.IsZero() {
+			e.stagedMetricReportFns = append(e.stagedMetricReportFns, func(ctx context.Context) {
+				metricFields := []any{
+					r.ID.LUCIProject(),
+					r.ConfigGroupID.Name(),
+					string(r.Mode),
+				}
+				metrics.Internal.CreateToFirstTryjobLatency.Add(ctx, float64(earliestCreated.Sub(r.CreateTime).Milliseconds()), metricFields...)
+				metrics.Internal.StartToFirstTryjobLatency.Add(ctx, float64(earliestCreated.Sub(r.StartTime).Milliseconds()), metricFields...)
+			})
+			execState.FirstTryjobLatencyMetricsReported = true
 		}
 
 		if execState.Failures != nil {

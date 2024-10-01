@@ -281,6 +281,9 @@ message ExecutionState {
   Failures failures = 8;
   // The time when the executions end with a terminal status
   google.protobuf.Timestamp end_time = 6;
+  // Tells wether the metrics for Run start/create time to first Tryjob latency
+  // have been reported or not.
+  bool first_tryjob_latency_metrics_reported = 9;
 }
 
 // ExecutionLogEntries contains a list of log entries ordered by time.
