@@ -14,6 +14,7 @@
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { PageMeta } from '@/common/components/page_meta';
+import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 
 export const DeviceListPage = () => {
   return (
@@ -26,10 +27,14 @@ export const DeviceListPage = () => {
 
 export function Component() {
   return (
-    // See the documentation for `<LoginPage />` for why we handle error this
-    // way.
-    <RecoverableErrorBoundary key="fleet-device-list-page">
-      <DeviceListPage />
-    </RecoverableErrorBoundary>
+    <TrackLeafRoutePageView contentGroup="fleet-console-device-list">
+      <RecoverableErrorBoundary
+        // See the documentation for `<LoginPage />` for why we handle error
+        // this way.
+        key="fleet-device-list-page"
+      >
+        <DeviceListPage />
+      </RecoverableErrorBoundary>
+    </TrackLeafRoutePageView>
   );
 }
