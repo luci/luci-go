@@ -178,7 +178,13 @@ func (a *Application) ParseEnvs(ctx context.Context) (err error) {
 		if err != nil {
 			logging.Infof(ctx, "failed to get user cache dir: %s", err)
 		} else {
-			a.VpythonRoot = filepath.Join(cdir, ".vpython-root")
+			// crbug.com/325535679: Append uid suffix for mitigation of mismatched
+			// HOME environment variable.
+			uid := a.getuid()
+			if uid == -1 {
+				uid = 0
+			}
+			a.VpythonRoot = filepath.Join(cdir, fmt.Sprintf("vpython-root.%d", uid))
 		}
 	}
 
