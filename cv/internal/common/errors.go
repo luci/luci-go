@@ -187,9 +187,6 @@ func LogError(ctx context.Context, err error, expectedErrors ...error) {
 	errors.Log(
 		ctx,
 		err,
-		// These packages are not useful in CV tests:
-		"github.com/smartystreets/goconvey/convey",
-		"github.com/jtolds/gls",
 		// These packages are not useful in production:
 		"go.chromium.org/luci/server",
 		"go.chromium.org/luci/server/tq",
