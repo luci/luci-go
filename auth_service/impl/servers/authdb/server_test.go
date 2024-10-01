@@ -17,11 +17,9 @@ package authdb
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"strconv"
 	"testing"
 	"time"
 
@@ -73,42 +71,11 @@ func TestAuthDBServing(t *testing.T) {
 		}
 	}
 
-	legacyCall := func(server Server, ctx context.Context, rid int64, skipBody bool) []byte {
-		rw := httptest.NewRecorder()
-		var revIDStr string
-		var sb string
-		if rid == 0 {
-			revIDStr = "latest"
-		} else {
-			revIDStr = strconv.FormatInt(rid, 10)
-		}
-
-		if skipBody {
-			sb = "1"
-		} else {
-			sb = "0"
-		}
-		rctx := &router.Context{
-			Request: (&http.Request{
-				URL: &url.URL{
-					RawQuery: fmt.Sprintf("skip_body=%s", sb),
-				},
-			}).WithContext(ctx),
-			Params: []httprouter.Param{
-				{Key: "revID", Value: revIDStr},
-			},
-			Writer: rw,
-		}
-		err := server.HandleLegacyAuthDBServing(rctx)
-		assert.Loosely(t, err, should.BeNil)
-		return rw.Body.Bytes()
-	}
-
 	t.Parallel()
-	ctx := memory.Use(context.Background())
 
 	ftt.Run("Testing pRPC API", t, func(t *ftt.Test) {
 		server := Server{}
+		ctx := memory.Use(context.Background())
 		assert.Loosely(t, datastore.Put(ctx,
 			testAuthDBSnapshot(1),
 			testAuthDBSnapshot(2),
@@ -223,68 +190,104 @@ func TestAuthDBServing(t *testing.T) {
 	})
 
 	ftt.Run("Testing legacy API Server with JSON response", t, func(t *ftt.Test) {
+		ctx := memory.Use(context.Background())
+		assert.Loosely(t, datastore.Put(ctx, testAuthDBSnapshot(3)),
+			should.BeNil)
+
 		server := Server{}
-		type TestSnapshotJSON struct {
-			AuthDBRev      int64  `json:"auth_db_rev"`
-			AuthDBDeflated []byte `json:"deflated_body,omitempty"`
-			AuthDBSha256   string `json:"sha256"`
-			CreatedTS      int64  `json:"created_ts"`
-		}
-		expectedJSON := func(rid int64, sb bool) ([]byte, error) {
-			if sb {
-				testDeflated = []byte{}
-			}
-			return json.Marshal(map[string]any{
-				"snapshot": TestSnapshotJSON{
-					AuthDBRev:      rid,
-					AuthDBDeflated: testDeflated,
-					AuthDBSha256:   testHash,
-					CreatedTS:      testTSMicro,
+
+		t.Run("skip_body=1", func(t *ftt.Test) {
+			rw := httptest.NewRecorder()
+			rctx := &router.Context{
+				Request: (&http.Request{
+					URL: &url.URL{
+						RawQuery: "skip_body=1",
+					},
+				}).WithContext(ctx),
+				Params: []httprouter.Param{
+					{Key: "revID", Value: "3"},
 				},
-			})
-		}
-
-		assert.Loosely(t, datastore.Put(ctx,
-			testAuthDBSnapshot(1),
-			testAuthDBSnapshot(2),
-			testAuthDBSnapshot(3),
-			testAuthDBSnapshot(4)), should.BeNil)
-
-		t.Run("Testing GetSnapshotLegacy skipBody=true", func(t *ftt.Test) {
-			rid := int64(3)
-			skipBody := true
-			actualBlob := legacyCall(server, ctx, rid, skipBody)
-			expectedBlob, err := expectedJSON(rid, skipBody)
+				Writer: rw,
+			}
+			err := server.HandleLegacyAuthDBServing(rctx)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actualBlob, should.Resemble(expectedBlob))
+
+			actual := map[string]SnapshotJSON{}
+			assert.Loosely(t, json.NewDecoder(rw.Body).Decode(&actual), should.BeNil)
+
+			assert.Loosely(t, actual, should.Match(
+				map[string]SnapshotJSON{
+					"snapshot": {
+						AuthDBRev:    3,
+						AuthDBSha256: testHash,
+						CreatedTS:    testTSMicro,
+					},
+				}))
 		})
 
-		t.Run("Testing GetSnapshotLegacy skipBody=false", func(t *ftt.Test) {
-			rid := int64(3)
-			skipBody := false
-			actualBlob := legacyCall(server, ctx, rid, skipBody)
-			expectedBlob, err := expectedJSON(rid, skipBody)
+		t.Run("skip_body not set", func(t *ftt.Test) {
+			rw := httptest.NewRecorder()
+			rctx := &router.Context{
+				Request: (&http.Request{}).WithContext(ctx),
+				Params: []httprouter.Param{
+					{Key: "revID", Value: "3"},
+				},
+				Writer: rw,
+			}
+			err := server.HandleLegacyAuthDBServing(rctx)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actualBlob, should.Resemble(expectedBlob))
+
+			actual := map[string]SnapshotJSON{}
+			assert.Loosely(t, json.NewDecoder(rw.Body).Decode(&actual), should.BeNil)
+
+			assert.Loosely(t, actual, should.Match(
+				map[string]SnapshotJSON{
+					"snapshot": {
+						AuthDBRev:      3,
+						AuthDBDeflated: testDeflated,
+						AuthDBSha256:   testHash,
+						CreatedTS:      testTSMicro,
+					},
+				}))
 		})
 
-		t.Run("Testing GetSnapshotLatestLegacy skipBody=true", func(t *ftt.Test) {
-			rid := int64(4)
-			skipBody := true
-			actualBlob := legacyCall(server, ctx, rid, skipBody)
-			expectedBlob, err := expectedJSON(rid, skipBody)
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actualBlob, should.Resemble(expectedBlob))
-
+		t.Run("invalid revision name", func(t *ftt.Test) {
+			rw := httptest.NewRecorder()
+			rctx := &router.Context{
+				Request: (&http.Request{}).WithContext(ctx),
+				Params: []httprouter.Param{
+					{Key: "revID", Value: "test"},
+				},
+				Writer: rw,
+			}
+			err := server.HandleLegacyAuthDBServing(rctx)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
 		})
 
-		t.Run("Testing GetSnapshotLatestLegacy skipBody=false", func(t *ftt.Test) {
-			rid := int64(4)
-			skipBody := false
-			actualBlob := legacyCall(server, ctx, rid, skipBody)
-			expectedBlob, err := expectedJSON(rid, skipBody)
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actualBlob, should.Resemble(expectedBlob))
+		t.Run("invalid negative revision", func(t *ftt.Test) {
+			rw := httptest.NewRecorder()
+			rctx := &router.Context{
+				Request: (&http.Request{}).WithContext(ctx),
+				Params: []httprouter.Param{
+					{Key: "revID", Value: "-1"},
+				},
+				Writer: rw,
+			}
+			err := server.HandleLegacyAuthDBServing(rctx)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+		})
+
+		t.Run("revision not found", func(t *ftt.Test) {
+			rw := httptest.NewRecorder()
+			rctx := &router.Context{
+				Request: (&http.Request{}).WithContext(ctx),
+				Params: []httprouter.Param{
+					{Key: "revID", Value: "4"},
+				},
+				Writer: rw,
+			}
+			err := server.HandleLegacyAuthDBServing(rctx)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.NotFound))
 		})
 	})
 }

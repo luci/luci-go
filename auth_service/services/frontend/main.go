@@ -187,13 +187,6 @@ func main() {
 			srv.Routes.PUT("/auth_service/api/v1/importer/ingest_tarball/:tarballName", apiMw, adaptGrpcErr(imports.HandleTarballIngestHandler))
 		}
 
-		// Endpoint to serve the V2AuthDBSnapshot for validation of Auth
-		// Service v2.
-		//
-		// TODO: Remove this and its handler once we have fully rolled out
-		// Auth Service v2 (b/321019030).
-		srv.Routes.GET("/auth_service/api/v2/authdb/revisions/:revID", apiMw, adaptGrpcErr(authdbServer.HandleV2AuthDBServing))
-
 		return nil
 	})
 }
