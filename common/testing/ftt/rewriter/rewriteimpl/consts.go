@@ -18,6 +18,7 @@ const assertPkg = "go.chromium.org/luci/common/testing/truth/assert"
 const conveyAdapterPkg = "go.chromium.org/luci/common/testing/truth/convey"
 const fttPkg = "go.chromium.org/luci/common/testing/ftt"
 const shouldPkg = "go.chromium.org/luci/common/testing/truth/should"
+const truthPkg = "go.chromium.org/luci/common/testing/truth"
 
 const originalAssertionsPkg = "go.chromium.org/luci/common/testing/assertions"
 const originalConveyPkg = "github.com/smartystreets/goconvey/convey"

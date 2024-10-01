@@ -16,6 +16,9 @@ package testoutputs
 
 import (
 	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"testing"
 )
 
@@ -23,6 +26,6 @@ func TestSoMsg(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("something", t, func(t *ftt.Test) {
-		SoMsg("additional message", "cheese", ShouldResemble, "cheese")
+		assert.Loosely(t, "cheese", should.Match("cheese"), truth.Explain("additional message"))
 	})
 }

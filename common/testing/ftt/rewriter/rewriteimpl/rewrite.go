@@ -274,8 +274,7 @@ func rewritePrintCall(printCall *dst.CallExpr, callText string, conveyContextNam
 //
 // Returns the new file (even if no rewrite took place).
 // Rewrote will be true if the file was rewritten.
-// Warned will be true if the file contained warnings (e.g. convey suites or
-// SoMsg assertions that we couldn't translate).
+// Warned will be true if the file contained warnings (e.g. convey suites that we couldn't translate).
 func Rewrite(dec *decorator.Decorator, f *dst.File, adaptedAssertions stringset.Set) (newFile *ast.File, rewrote, warned bool, err error) {
 	res := decorator.NewRestorer()
 	res.Fset = dec.Fset
@@ -292,6 +291,7 @@ func Rewrite(dec *decorator.Decorator, f *dst.File, adaptedAssertions stringset.
 	needAssertions := false
 	needShould := false
 	needAssert := false
+	needTruth := false
 	needAdapter := false
 
 	for _, decl := range f.Decls {
@@ -376,14 +376,30 @@ func Rewrite(dec *decorator.Decorator, f *dst.File, adaptedAssertions stringset.
 				return true
 			}
 			if soMsgCall, _ := isConveyCall(c, []string{"c", conveyImportName, conveyContextName}, "SoMsg"); soMsgCall != nil {
-				// there are so few of these we'll do them by hand, so just print it out
-				// here:
-				// TODO: indicate filename/lineno - this is easy (ish) with `ast`, but
-				// difficult with `dst`.
-				log.Println("WARN: found SoMsg (needs manual fix `if check.Loosely(...) { t.Fatal(msg) }`)")
-				warned = true
+				// conveyContextName.SoMsg(msg, ...)
 
-				// See soCall above.
+				// convert soMsgCall to soCall
+				msg := soMsgCall.Args[0]
+				soMsgCall.Args = soMsgCall.Args[1:]
+
+				usedAssertionsLib, usedAdapter := rewriteSoCall(
+					soMsgCall, conveyImportName, assertionsImportName, conveyContextName,
+					adaptedAssertions)
+
+				soMsgCall.Args = append(soMsgCall.Args, &dst.CallExpr{
+					Fun: &dst.SelectorExpr{
+						X:   dst.NewIdent("truth"),
+						Sel: dst.NewIdent("Explain"),
+					},
+					Args: []dst.Expr{msg},
+				})
+
+				needAdapter = needAdapter || usedAdapter
+				needShould = needShould || !usedAdapter
+				needAssertions = needAssertions || usedAssertionsLib
+				needAssert = true
+				needTruth = true
+
 				return true
 			}
 
@@ -415,6 +431,9 @@ func Rewrite(dec *decorator.Decorator, f *dst.File, adaptedAssertions stringset.
 	}
 	if needAssert {
 		astutil.AddImport(dec.Fset, newFile, assertPkg)
+	}
+	if needTruth {
+		astutil.AddImport(dec.Fset, newFile, truthPkg)
 	}
 
 	return
