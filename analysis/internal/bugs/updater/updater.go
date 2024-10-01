@@ -1151,69 +1151,13 @@ func (b *BugUpdater) createBug(ctx context.Context, cs *analysis.Cluster) (creat
 }
 
 func (b *BugUpdater) routeToBugSystem(cs *analysis.Cluster) (string, error) {
-	hasMonorail := b.projectCfg.Config.BugManagement.GetMonorail() != nil
 	hasBuganizer := b.projectCfg.Config.BugManagement.GetBuganizer() != nil
-	defaultSystem := b.projectCfg.Config.BugManagement.GetDefaultBugSystem()
 
-	if !hasMonorail && !hasBuganizer {
+	// Check one bug filing system configured.
+	if !hasBuganizer {
 		return "", errors.New("at least one bug filing system need to be configured")
 	}
-	// If only one bug system configured, pick that system.
-	if !hasMonorail {
-		return bugs.BuganizerSystem, nil
-	}
-	if !hasBuganizer {
-		return bugs.MonorailSystem, nil
-	}
-	// When both bug systems are configured, pick the most suitable one.
-
-	// The most impactful monorail component.
-	var topMonorailComponent analysis.TopCount
-	for _, tc := range cs.TopMonorailComponents {
-		if tc.Value == "" {
-			continue
-		}
-		// Any monorail component is associated for more than 30% of the
-		// failures in the cluster should be checked for top impact.
-		if tc.Count > ((cs.MetricValues[metrics.Failures.ID].SevenDay.Nominal * 3) / 10) {
-			if tc.Count > topMonorailComponent.Count || topMonorailComponent.Value == "" {
-				topMonorailComponent = tc
-			}
-		}
-	}
-
-	// The most impactful buganizer component.
-	var topBuganizerComponent analysis.TopCount
-	for _, tc := range cs.TopBuganizerComponents {
-		if tc.Value == "" {
-			continue
-		}
-		// Any buganizer component is associated for more than 30% of the
-		// failures in the cluster should be checked for top impact.
-		if tc.Count > ((cs.MetricValues[metrics.Failures.ID].SevenDay.Nominal * 3) / 10) {
-			if tc.Count > topBuganizerComponent.Count || topBuganizerComponent.Value == "" {
-				topBuganizerComponent = tc
-			}
-		}
-	}
-
-	if topMonorailComponent.Value == "" && topBuganizerComponent.Value == "" {
-		return defaultBugSystemName(defaultSystem), nil
-	} else if topMonorailComponent.Value != "" && topBuganizerComponent.Value == "" {
-		return bugs.MonorailSystem, nil
-	} else if topMonorailComponent.Value == "" && topBuganizerComponent.Value != "" {
-		return bugs.BuganizerSystem, nil
-	} else {
-		// Return the system corresponding with the highest impact.
-		if topMonorailComponent.Count > topBuganizerComponent.Count {
-			return bugs.MonorailSystem, nil
-		} else if topMonorailComponent.Count == topBuganizerComponent.Count {
-			// If top components have equal impact, use the configured default system.
-			return defaultBugSystemName(defaultSystem), nil
-		} else {
-			return bugs.BuganizerSystem, nil
-		}
-	}
+	return bugs.BuganizerSystem, nil
 }
 
 func extractBuganizerComponent(cs *analysis.Cluster) (int64, error) {

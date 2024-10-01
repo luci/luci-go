@@ -33,10 +33,8 @@ import (
 
 	"go.chromium.org/luci/analysis/internal/analysis"
 	"go.chromium.org/luci/analysis/internal/bugs/buganizer"
-	"go.chromium.org/luci/analysis/internal/bugs/monorail"
 	"go.chromium.org/luci/analysis/internal/bugs/updater"
 	"go.chromium.org/luci/analysis/internal/clustering/runs"
-	"go.chromium.org/luci/analysis/internal/config"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 	"go.chromium.org/luci/analysis/pbutil"
 )
@@ -135,16 +133,6 @@ func (h Handler) UpdateBugs(ctx context.Context, task *taskspb.UpdateBugs) (retE
 		return errors.Annotate(err, "check deadline before start").Err()
 	}
 
-	cfg, err := config.Get(ctx)
-	if err != nil {
-		return errors.Annotate(err, "get config").Err()
-	}
-
-	monorailClient, err := monorail.NewClient(ctx, cfg.MonorailHostname)
-	if err != nil {
-		return err
-	}
-
 	buganizerClient, err := buganizer.CreateBuganizerClient(ctx)
 	if err != nil {
 		return errors.Annotate(err, "creating a buganizer client").Err()
@@ -174,7 +162,6 @@ func (h Handler) UpdateBugs(ctx context.Context, task *taskspb.UpdateBugs) (retE
 		UIBaseURL:            h.UIBaseURL,
 		Project:              task.Project,
 		AnalysisClient:       analysisClient,
-		MonorailClient:       monorailClient,
 		BuganizerClient:      buganizerClient,
 		SimulateBugUpdates:   h.Simulate,
 		MaxBugsFiledPerRun:   1,

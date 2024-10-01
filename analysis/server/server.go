@@ -39,8 +39,6 @@ import (
 	"go.chromium.org/luci/analysis/internal/analysis"
 	"go.chromium.org/luci/analysis/internal/bugs/buganizer"
 	bugscron "go.chromium.org/luci/analysis/internal/bugs/cron"
-	"go.chromium.org/luci/analysis/internal/bugs/monorail/migration"
-	migrationpb "go.chromium.org/luci/analysis/internal/bugs/monorail/migration/proto"
 	"go.chromium.org/luci/analysis/internal/changepoints"
 	cpbq "go.chromium.org/luci/analysis/internal/changepoints/bqexporter"
 	bqupdator "go.chromium.org/luci/analysis/internal/changepoints/bqupdater"
@@ -142,7 +140,6 @@ func RegisterPRPCHandlers(srv *luciserver.Server) error {
 	analysispb.RegisterTestHistoryServer(srv, rpc.NewTestHistoryServer())
 	analysispb.RegisterBuganizerTesterServer(srv, rpc.NewBuganizerTesterServer())
 	analysispb.RegisterTestVariantBranchesServer(srv, rpc.NewTestVariantBranchesServer(tvc, trc, sc))
-	migrationpb.RegisterMonorailMigrationServer(srv, migration.NewMonorailMigrationServer())
 	analysispb.RegisterChangepointsServer(srv, rpc.NewChangepointsServer(cpc))
 	return nil
 }

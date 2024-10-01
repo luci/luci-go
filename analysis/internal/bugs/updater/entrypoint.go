@@ -25,7 +25,6 @@ import (
 	"go.chromium.org/luci/analysis/internal/analysis"
 	"go.chromium.org/luci/analysis/internal/bugs"
 	"go.chromium.org/luci/analysis/internal/bugs/buganizer"
-	"go.chromium.org/luci/analysis/internal/bugs/monorail"
 	"go.chromium.org/luci/analysis/internal/clustering/runs"
 	"go.chromium.org/luci/analysis/internal/config"
 	"go.chromium.org/luci/analysis/internal/config/compiledcfg"
@@ -42,7 +41,6 @@ type UpdateOptions struct {
 	UIBaseURL            string
 	Project              string
 	AnalysisClient       AnalysisClient
-	MonorailClient       *monorail.Client
 	BuganizerClient      buganizer.Client
 	SimulateBugUpdates   bool
 	MaxBugsFiledPerRun   int
@@ -73,17 +71,6 @@ func UpdateBugsForProject(ctx context.Context, opts UpdateOptions) (retErr error
 	}
 
 	mgrs := make(map[string]BugManager)
-
-	if projectCfg.Config.BugManagement.GetMonorail() != nil {
-		// Create Monorail bug manager.
-		monorailBugManager, err := monorail.NewBugManager(opts.MonorailClient, opts.UIBaseURL, opts.Project, projectCfg.Config)
-		if err != nil {
-			return errors.Annotate(err, "create monorail bug manager").Err()
-		}
-
-		monorailBugManager.Simulate = opts.SimulateBugUpdates
-		mgrs[bugs.MonorailSystem] = monorailBugManager
-	}
 
 	if projectCfg.Config.BugManagement.GetBuganizer() != nil {
 		if opts.BuganizerClient == nil {

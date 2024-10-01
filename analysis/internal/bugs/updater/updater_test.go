@@ -26,7 +26,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
@@ -41,8 +40,6 @@ import (
 	"go.chromium.org/luci/analysis/internal/analysis/metrics"
 	"go.chromium.org/luci/analysis/internal/bugs"
 	"go.chromium.org/luci/analysis/internal/bugs/buganizer"
-	"go.chromium.org/luci/analysis/internal/bugs/monorail"
-	mpb "go.chromium.org/luci/analysis/internal/bugs/monorail/api_proto"
 	bugspb "go.chromium.org/luci/analysis/internal/bugs/proto"
 	"go.chromium.org/luci/analysis/internal/clustering/algorithms"
 	"go.chromium.org/luci/analysis/internal/clustering/rules"
@@ -95,19 +92,6 @@ func TestUpdate(t *testing.T) {
 		buganizerClient := buganizer.NewFakeClient()
 		buganizerStore := buganizerClient.FakeStore
 
-		monorailStore := &monorail.FakeIssuesStore{
-			NextID:            100,
-			PriorityFieldName: "projects/chromium/fieldDefs/11",
-			ComponentNames: []string{
-				"projects/chromium/componentDefs/Blink",
-				"projects/chromium/componentDefs/Blink>Layout",
-				"projects/chromium/componentDefs/Blink>Network",
-			},
-		}
-		user := monorail.AutomationUsers[0]
-		monorailClient, err := monorail.NewClient(monorail.UseFakeIssuesClient(ctx, monorailStore, user), "myhost")
-		So(err, ShouldBeNil)
-
 		// Unless otherwise specified, assume re-clustering has caught up to
 		// the latest version of algorithms and config.
 		err = runs.SetRunsForTesting(ctx, []*runs.ReclusteringRun{
@@ -128,7 +112,6 @@ func TestUpdate(t *testing.T) {
 			Project:              project,
 			AnalysisClient:       analysisClient,
 			BuganizerClient:      buganizerClient,
-			MonorailClient:       monorailClient,
 			MaxBugsFiledPerRun:   1,
 			ReclusteringProgress: progress,
 			RunTimestamp:         time.Date(2100, 2, 2, 2, 2, 2, 2, time.UTC),
@@ -197,7 +180,7 @@ func TestUpdate(t *testing.T) {
 			}
 
 			issueCount := func() int {
-				return len(buganizerStore.Issues) + len(monorailStore.Issues)
+				return len(buganizerStore.Issues)
 			}
 
 			// Bug-filing threshold met.
@@ -467,6 +450,9 @@ func TestUpdate(t *testing.T) {
 				})
 			})
 			Convey("bugs are routed to the correct issue tracker and component", func() {
+				// As currently only Buganizer is supported, issues should always
+				// be routed there.
+
 				suggestedClusters[1].TopBuganizerComponents = []analysis.TopCount{
 					{Value: "77777", Count: 20},
 				}
@@ -477,139 +463,19 @@ func TestUpdate(t *testing.T) {
 					{Value: "Blink>Network", Count: 31}, // >30% of failures.
 					{Value: "Blink>Other", Count: 4},
 				}
-				expectedMonorailBug := monorailBug{
-					Project: "chromium",
-					ID:      100,
-					ExpectedComponents: []string{
-						"projects/chromium/componentDefs/Blink>Layout",
-						"projects/chromium/componentDefs/Blink>Network",
-					},
-					ExpectedTitle: "Failed to connect to 100.1.1.105.",
-					// Expect the bug description to contain the top tests.
-					ExpectedContent: []string{
-						"network-test-1",
-						"network-test-2",
-					},
-					ExpectedPolicyIDsActivated: []string{
-						"exoneration-policy",
-					},
-				}
 				expectedRule.BugID = bugs.BugID{
-					System: "monorail",
-					ID:     "chromium/100",
+					System: "buganizer",
+					ID:     "1",
 				}
 
-				Convey("if Monorail component has greatest failure count, should create Monorail issue", func() {
-					suggestedClusters[1].TopBuganizerComponents = []analysis.TopCount{{
-						Value: "12345",
-						Count: 39,
-					}}
+				// Act
+				err = UpdateBugsForProject(ctx, opts)
 
-					// Act
-					err = UpdateBugsForProject(ctx, opts)
-
-					// Verify
-					So(err, ShouldBeNil)
-					So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
-					So(expectMonorailBug(monorailStore, expectedMonorailBug), ShouldBeNil)
-					So(issueCount(), ShouldEqual, 1)
-				})
-				Convey("if Buganizer component has higher failure count, should creates Buganizer issue", func() {
-					suggestedClusters[1].TopBuganizerComponents = []analysis.TopCount{{
-						// Check that null values are ignored.
-						Value: "",
-						Count: 100,
-					}, {
-						Value: "681721",
-						Count: 41,
-					}}
-					expectedBuganizerBug.Component = 681721
-
-					// Act
-					err = UpdateBugsForProject(ctx, opts)
-
-					// Verify
-					So(err, ShouldBeNil)
-					expectedRule.BugID = bugs.BugID{
-						System: "buganizer",
-						ID:     "1",
-					}
-					So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
-					So(expectBuganizerBug(buganizerStore, expectedBuganizerBug), ShouldBeNil)
-					So(issueCount(), ShouldEqual, 1)
-				})
-				Convey("with no Buganizer configuration, should use Monorail as default system", func() {
-					// Ensure Buganizer component has highest failure impact.
-					suggestedClusters[1].TopBuganizerComponents = []analysis.TopCount{{
-						Value: "88888",
-						Count: 99999,
-					}}
-
-					// But buganizer is not configured, so we should file into monorail.
-					projectCfg.BugManagement.Buganizer = nil
-					err = config.SetTestProjectConfig(ctx, projectsCfg)
-					So(err, ShouldBeNil)
-
-					// Act
-					err = UpdateBugsForProject(ctx, opts)
-
-					// Verify
-					So(err, ShouldBeNil)
-					So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
-					So(expectMonorailBug(monorailStore, expectedMonorailBug), ShouldBeNil)
-					So(issueCount(), ShouldEqual, 1)
-				})
-				Convey("with no Monorail configuration, should use Buganizer as default system", func() {
-					// Ensure Monorail component has highest failure impact.
-					suggestedClusters[1].TopMonorailComponents = []analysis.TopCount{{
-						Value: "Infra",
-						Count: 99999,
-					}}
-
-					// But monorail is not configured, so we should file into Buganizer.
-					projectCfg.BugManagement.Monorail = nil
-					err = config.SetTestProjectConfig(ctx, projectsCfg)
-					So(err, ShouldBeNil)
-
-					// Act
-					err = UpdateBugsForProject(ctx, opts)
-
-					// Verify
-					So(err, ShouldBeNil)
-					expectedRule.BugID = bugs.BugID{
-						System: "buganizer",
-						ID:     "1",
-					}
-					So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
-					So(expectBuganizerBug(buganizerStore, expectedBuganizerBug), ShouldBeNil)
-					So(issueCount(), ShouldEqual, 1)
-				})
-				Convey("in case of tied failure count between monorail/buganizer, should use default bug system", func() {
-					// The default bug system is buganizer.
-					So(projectCfg.BugManagement.DefaultBugSystem, ShouldEqual, configpb.BugSystem_BUGANIZER)
-
-					suggestedClusters[1].TopBuganizerComponents = []analysis.TopCount{{
-						Value: "",
-						Count: 55,
-					}, {
-						Value: "681721",
-						Count: 40, // Tied with monorail.
-					}}
-					expectedRule.BugID = bugs.BugID{
-						System: "buganizer",
-						ID:     "1",
-					}
-					expectedBuganizerBug.Component = 681721
-
-					// Act
-					err = UpdateBugsForProject(ctx, opts)
-
-					// Verify we filed into Buganizer.
-					So(err, ShouldBeNil)
-					So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
-					So(expectBuganizerBug(buganizerStore, expectedBuganizerBug), ShouldBeNil)
-					So(issueCount(), ShouldEqual, 1)
-				})
+				// Verify
+				So(err, ShouldBeNil)
+				So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
+				So(expectBuganizerBug(buganizerStore, expectedBuganizerBug), ShouldBeNil)
+				So(issueCount(), ShouldEqual, 1)
 			})
 			Convey("partial success creating bugs is correctly handled", func() {
 				// Inject an error updating the bug after creation.
@@ -776,7 +642,7 @@ func TestUpdate(t *testing.T) {
 				{
 					Project:                 "chromeos",
 					RuleDefinition:          `reason LIKE "want foofoo, got bar"`,
-					BugID:                   bugs.BugID{System: bugs.MonorailSystem, ID: "chromium/100"},
+					BugID:                   bugs.BugID{System: bugs.BuganizerSystem, ID: "3"},
 					SourceCluster:           suggestedClusters[2].ClusterID,
 					IsActive:                true,
 					IsManagingBug:           true,
@@ -798,7 +664,7 @@ func TestUpdate(t *testing.T) {
 				{
 					Project:                 "chromeos",
 					RuleDefinition:          `reason LIKE "want foofoofoo, got bar"`,
-					BugID:                   bugs.BugID{System: bugs.MonorailSystem, ID: "chromium/101"},
+					BugID:                   bugs.BugID{System: bugs.BuganizerSystem, ID: "4"},
 					SourceCluster:           suggestedClusters[3].ClusterID,
 					IsActive:                true,
 					IsManagingBug:           true,
@@ -1070,39 +936,6 @@ func TestUpdate(t *testing.T) {
 						So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
 						So(issue.Comments, ShouldHaveLength, originalCommentCount+1)
 					})
-					Convey("monorail", func() {
-						// Select a Monorail issue.
-						issue := monorailStore.Issues[0]
-
-						// Get the corresponding rule, and confirm we got the right one.
-						const ruleIndex = firstMonorailRuleIndex
-						rule := rs[ruleIndex]
-						So(rule.BugID.ID, ShouldEqual, "chromium/100")
-						So(issue.Issue.Name, ShouldEqual, "projects/chromium/issues/100")
-
-						// Reset RuleAssociationNotified on the rule.
-						rule.BugManagementState.RuleAssociationNotified = false
-						So(rules.SetForTesting(ctx, rs), ShouldBeNil)
-
-						originalCommentCount := len(issue.Comments)
-
-						// Act
-						err = UpdateBugsForProject(ctx, opts)
-
-						// Verify
-						So(err, ShouldBeNil)
-						So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
-						So(issue.Comments, ShouldHaveLength, originalCommentCount+1)
-						So(issue.Comments[originalCommentCount].Content, ShouldContainSubstring,
-							"This bug has been associated with failures in LUCI Analysis."+
-								" To view failure examples or update the association, go to LUCI Analysis at: https://luci-analysis-test.appspot.com/p/chromeos/rules/"+rule.RuleID)
-
-						// Further runs should not lead to repeated posting of the comment.
-						err = UpdateBugsForProject(ctx, opts)
-						So(err, ShouldBeNil)
-						So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
-						So(issue.Comments, ShouldHaveLength, originalCommentCount+1)
-					})
 				})
 				Convey("priority updates and auto-closure", func() {
 					Convey("buganizer", func() {
@@ -1345,262 +1178,6 @@ func TestUpdate(t *testing.T) {
 							So(issue.Issue.IssueState.Priority, ShouldEqual, issuetracker.Issue_P2)
 						})
 					})
-					Convey("monorail", func() {
-						// Select a Monorail issue.
-						issue := monorailStore.Issues[0]
-						originalPriority := monorail.ChromiumTestIssuePriority(issue.Issue)
-						originalStatus := issue.Issue.Status.Status
-						So(originalStatus, ShouldEqual, monorail.UntriagedStatus)
-
-						// Get the corresponding rule, and confirm we got the right one.
-						const ruleIndex = firstMonorailRuleIndex
-						rule := rs[ruleIndex]
-						So(rule.BugID.ID, ShouldEqual, "chromium/100")
-						So(issue.Issue.Name, ShouldEqual, "projects/chromium/issues/100")
-
-						// Activate the cls-rejected-policy, which should raise the priority to P1.
-						So(originalPriority, ShouldNotEqual, issuetracker.Issue_P1)
-						SetResidualMetrics(bugClusters[firstMonorailRuleIndex], bugs.ClusterMetrics{
-							metrics.CriticalFailuresExonerated.ID: bugs.MetricValues{OneDay: 100},
-							metrics.HumanClsFailedPresubmit.ID:    bugs.MetricValues{SevenDay: 10},
-						})
-
-						Convey("priority updates to reflect active policies", func() {
-							expectedRules[firstMonorailRuleIndex].BugManagementState.PolicyState["cls-rejected-policy"].IsActive = true
-							expectedRules[firstMonorailRuleIndex].BugManagementState.PolicyState["cls-rejected-policy"].LastActivationTime = timestamppb.New(opts.RunTimestamp)
-							expectedRules[firstMonorailRuleIndex].BugManagementState.PolicyState["cls-rejected-policy"].ActivationNotified = true
-							So(originalPriority, ShouldNotEqual, "1")
-
-							// Act
-							err = UpdateBugsForProject(ctx, opts)
-
-							// Verify
-							So(err, ShouldBeNil)
-							So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
-							So(issue.Issue.Status.Status, ShouldEqual, originalStatus)
-							So(monorail.ChromiumTestIssuePriority(issue.Issue), ShouldEqual, "1")
-						})
-						Convey("disabling IsManagingBugPriority prevents priority updates", func() {
-							expectedRules[firstMonorailRuleIndex].BugManagementState.PolicyState["cls-rejected-policy"].IsActive = true
-							expectedRules[firstMonorailRuleIndex].BugManagementState.PolicyState["cls-rejected-policy"].LastActivationTime = timestamppb.New(opts.RunTimestamp)
-							expectedRules[firstMonorailRuleIndex].BugManagementState.PolicyState["cls-rejected-policy"].ActivationNotified = true
-
-							// Set IsManagingBugPriority to false on the rule.
-							rule.IsManagingBugPriority = false
-							So(rules.SetForTesting(ctx, rs), ShouldBeNil)
-
-							// Act
-							err = UpdateBugsForProject(ctx, opts)
-
-							// Verify
-							So(err, ShouldBeNil)
-
-							// Check the rules have not changed except for the IsManagingBugPriority change.
-							expectedRules[firstMonorailRuleIndex].IsManagingBugPriority = false
-							So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
-
-							// Check that the bug priority and status has not changed.
-							So(issue.Issue.Status.Status, ShouldEqual, originalStatus)
-							So(monorail.ChromiumTestIssuePriority(issue.Issue), ShouldEqual, originalPriority)
-						})
-						Convey("manually setting a priority prevents bug updates", func() {
-							expectedRules[firstMonorailRuleIndex].BugManagementState.PolicyState["cls-rejected-policy"].IsActive = true
-							expectedRules[firstMonorailRuleIndex].BugManagementState.PolicyState["cls-rejected-policy"].LastActivationTime = timestamppb.New(opts.RunTimestamp)
-							expectedRules[firstMonorailRuleIndex].BugManagementState.PolicyState["cls-rejected-policy"].ActivationNotified = true
-
-							// Create a fake client to interact with monorail as a user.
-							userClient, err := monorail.NewClient(monorail.UseFakeIssuesClient(ctx, monorailStore, "user@google.com"), "myhost")
-							So(err, ShouldBeNil)
-
-							// Set priority to P0 manually.
-							updateRequest := &mpb.ModifyIssuesRequest{
-								Deltas: []*mpb.IssueDelta{
-									{
-										Issue: &mpb.Issue{
-											Name: issue.Issue.Name,
-											FieldValues: []*mpb.FieldValue{
-												{
-													Field: "projects/chromium/fieldDefs/11",
-													Value: "0",
-												},
-											},
-										},
-										UpdateMask: &fieldmaskpb.FieldMask{
-											Paths: []string{"field_values"},
-										},
-									},
-								},
-								CommentContent: "User comment.",
-							}
-							err = userClient.ModifyIssues(ctx, updateRequest)
-							So(err, ShouldBeNil)
-
-							Convey("happy path", func() {
-								// Act
-								err = UpdateBugsForProject(ctx, opts)
-
-								// Verify
-								So(err, ShouldBeNil)
-
-								// Expect IsManagingBugPriority to get set to false.
-								expectedRules[firstMonorailRuleIndex].IsManagingBugPriority = false
-								So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
-
-								// Expect a comment on the bug.
-								So(issue.Comments[len(issue.Comments)-1].Content, ShouldContainSubstring,
-									"The bug priority has been manually set.")
-								So(issue.Issue.Status.Status, ShouldEqual, originalStatus)
-								So(monorail.ChromiumTestIssuePriority(issue.Issue), ShouldEqual, "0")
-
-								Convey("further updates leave no comments", func() {
-									initialComments := len(issue.Comments)
-
-									// Act
-									err = UpdateBugsForProject(ctx, opts)
-
-									// Verify
-									So(err, ShouldBeNil)
-									So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
-									So(len(issue.Comments), ShouldEqual, initialComments)
-									So(issue.Issue.Status.Status, ShouldEqual, originalStatus)
-									So(monorail.ChromiumTestIssuePriority(issue.Issue), ShouldEqual, "0")
-								})
-							})
-							Convey("errors updating other bugs", func() {
-								// Check we handle partial success correctly:
-								// Even if there is an error updating another bug, if we comment on a bug
-								// to say the user took manual priority control, we must commit
-								// the rule update setting IsManagingBugPriority to false. Otherwise
-								// we may get stuck in a loop where we comment on the bug every
-								// time bug filing runs.
-
-								// Trigger a priority update for another monorail bug in addition to the
-								// manual priority update.
-								SetResidualMetrics(bugClusters[firstMonorailRuleIndex+1], bugs.ClusterMetrics{
-									metrics.CriticalFailuresExonerated.ID: bugs.MetricValues{OneDay: 100},
-									metrics.HumanClsFailedPresubmit.ID:    bugs.MetricValues{SevenDay: 10},
-								})
-								expectedRules[firstMonorailRuleIndex+1].BugManagementState.PolicyState["cls-rejected-policy"].IsActive = true
-								expectedRules[firstMonorailRuleIndex+1].BugManagementState.PolicyState["cls-rejected-policy"].LastActivationTime = timestamppb.New(opts.RunTimestamp)
-
-								// But prevent LUCI Analysis from applying that priority update, due to an error.
-								modifyError := errors.New("this issue may not be modified")
-								monorailStore.Issues[1].UpdateError = modifyError
-
-								// Act
-								err = UpdateBugsForProject(ctx, opts)
-
-								// Verify
-								So(err, ShouldNotBeNil)
-
-								// The error modifying the other bug is bubbled up.
-								So(errors.Is(err, modifyError), ShouldBeTrue)
-
-								// Nonetheless, our bug was commented on updated and
-								// IsManagingBugPriority was set to false.
-								expectedRules[firstMonorailRuleIndex].IsManagingBugPriority = false
-								So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
-								So(issue.Comments[len(issue.Comments)-1].Content, ShouldContainSubstring,
-									"The bug priority has been manually set.")
-								So(issue.Issue.Status.Status, ShouldEqual, originalStatus)
-								So(monorail.ChromiumTestIssuePriority(issue.Issue), ShouldEqual, "0")
-							})
-						})
-						Convey("if all policies de-activate, bug is auto-closed", func() {
-							SetResidualMetrics(bugClusters[firstMonorailRuleIndex], bugs.ClusterMetrics{
-								metrics.CriticalFailuresExonerated.ID: bugs.MetricValues{OneDay: 9},
-								metrics.HumanClsFailedPresubmit.ID:    bugs.MetricValues{},
-							})
-
-							// Act
-							err = UpdateBugsForProject(ctx, opts)
-
-							// Verify
-							So(err, ShouldBeNil)
-							expectedRules[firstMonorailRuleIndex].BugManagementState.PolicyState["exoneration-policy"].IsActive = false
-							expectedRules[firstMonorailRuleIndex].BugManagementState.PolicyState["exoneration-policy"].LastDeactivationTime = timestamppb.New(opts.RunTimestamp)
-							So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
-							So(issue.Issue.Status.Status, ShouldEqual, monorail.VerifiedStatus)
-							So(monorail.ChromiumTestIssuePriority(issue.Issue), ShouldEqual, originalPriority)
-						})
-						Convey("disabling IsManagingBug prevents bug closure", func() {
-							SetResidualMetrics(bugClusters[firstMonorailRuleIndex], bugs.ClusterMetrics{
-								metrics.CriticalFailuresExonerated.ID: bugs.MetricValues{OneDay: 9},
-								metrics.HumanClsFailedPresubmit.ID:    bugs.MetricValues{},
-							})
-							expectedRules[firstMonorailRuleIndex].BugManagementState.PolicyState["exoneration-policy"].IsActive = false
-							expectedRules[firstMonorailRuleIndex].BugManagementState.PolicyState["exoneration-policy"].LastDeactivationTime = timestamppb.New(opts.RunTimestamp)
-
-							// Set IsManagingBug to false on the rule.
-							rule.IsManagingBug = false
-							So(rules.SetForTesting(ctx, rs), ShouldBeNil)
-
-							// Act
-							err = UpdateBugsForProject(ctx, opts)
-
-							// Verify
-							So(err, ShouldBeNil)
-
-							// Check the rules have not changed except for the IsManagingBug change.
-							expectedRules[firstMonorailRuleIndex].IsManagingBug = false
-							So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
-
-							// Check that the bug priority and status has not changed.
-							So(issue.Issue.Status.Status, ShouldEqual, originalStatus)
-							So(monorail.ChromiumTestIssuePriority(issue.Issue), ShouldEqual, originalPriority)
-						})
-						Convey("cluster disappearing closes issue", func() {
-							// Drop the corresponding bug cluster. This is consistent with
-							// no more failures in the cluster occuring.
-							newBugClusters := []*analysis.Cluster{}
-							newBugClusters = append(newBugClusters, bugClusters[:firstMonorailRuleIndex]...)
-							newBugClusters = append(newBugClusters, bugClusters[firstMonorailRuleIndex+1:]...)
-							analysisClient.clusters = append(suggestedClusters, newBugClusters...)
-
-							// Act
-							err = UpdateBugsForProject(ctx, opts)
-
-							// Verify
-							So(err, ShouldBeNil)
-							expectedRules[firstMonorailRuleIndex].BugManagementState.PolicyState["exoneration-policy"].IsActive = false
-							expectedRules[firstMonorailRuleIndex].BugManagementState.PolicyState["exoneration-policy"].LastDeactivationTime = timestamppb.New(opts.RunTimestamp)
-							So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
-							So(issue.Issue.Status.Status, ShouldEqual, monorail.VerifiedStatus)
-							So(monorail.ChromiumTestIssuePriority(issue.Issue), ShouldEqual, originalPriority)
-
-							Convey("rule automatically archived after 30 days", func() {
-								tc.Add(time.Hour * 24 * 30)
-
-								// Act
-								err = UpdateBugsForProject(ctx, opts)
-
-								// Verify
-								So(err, ShouldBeNil)
-								expectedRules[firstMonorailRuleIndex].IsActive = false
-								So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
-								So(issue.Issue.Status.Status, ShouldEqual, monorail.VerifiedStatus)
-								So(monorail.ChromiumTestIssuePriority(issue.Issue), ShouldEqual, originalPriority)
-							})
-						})
-						Convey("if all policies are removed, bug is auto-closed", func() {
-							projectCfg.BugManagement.Policies = nil
-							err := config.SetTestProjectConfig(ctx, projectsCfg)
-							So(err, ShouldBeNil)
-
-							for _, expectedRule := range expectedRules {
-								expectedRule.BugManagementState.PolicyState = nil
-							}
-
-							// Act
-							err = UpdateBugsForProject(ctx, opts)
-
-							// Verify
-							So(err, ShouldBeNil)
-							So(issue.Issue.Status.Status, ShouldEqual, monorail.VerifiedStatus)
-							So(monorail.ChromiumTestIssuePriority(issue.Issue), ShouldEqual, originalPriority)
-							So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
-						})
-					})
 				})
 				Convey("duplicate handling", func() {
 					Convey("buganizer to buganizer", func() {
@@ -1820,101 +1397,6 @@ func TestUpdate(t *testing.T) {
 							})
 						})
 					})
-					Convey("monorail to monorail", func() {
-						// Note that much of the duplicate handling logic, including error
-						// handling, is shared code and not implemented in the bug system-specific
-						// bug manager. As such, we do not re-test all of the error cases above,
-						// only select cases to confirm the integration is correct.
-
-						issueOne := monorailStore.Issues[0]
-						issueTwo := monorailStore.Issues[1]
-
-						issueOne.Issue.Status.Status = monorail.DuplicateStatus
-						issueOne.Issue.MergedIntoIssueRef = &mpb.IssueRef{
-							Issue: issueTwo.Issue.Name,
-						}
-
-						issueOneRule := expectedRules[firstMonorailRuleIndex]
-						issueTwoRule := expectedRules[firstMonorailRuleIndex+1]
-
-						issueOneOriginalCommentCount := len(issueOne.Comments)
-						issueTwoOriginalCommentCount := len(issueTwo.Comments)
-
-						Convey("happy path", func() {
-							// Act
-							err = UpdateBugsForProject(ctx, opts)
-
-							// Verify
-							So(err, ShouldBeNil)
-							issueOneRule.IsActive = false
-							issueTwoRule.RuleDefinition = "reason LIKE \"want foofoo, got bar\" OR\nreason LIKE \"want foofoofoo, got bar\""
-							So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
-
-							So(issueOne.Comments, ShouldHaveLength, issueOneOriginalCommentCount+1)
-							So(issueOne.Comments[issueOneOriginalCommentCount].Content, ShouldContainSubstring, "LUCI Analysis has merged the failure association rule for this bug into the rule for the canonical bug.")
-							So(issueOne.Comments[issueOneOriginalCommentCount].Content, ShouldContainSubstring, issueOneRule.RuleID)
-
-							So(issueTwo.Comments, ShouldHaveLength, issueTwoOriginalCommentCount)
-						})
-						Convey("error case", func() {
-							// Note that this is a simple cycle with only two bugs.
-							// The implementation allows for larger cycles, however.
-							issueTwo.Issue.Status.Status = monorail.DuplicateStatus
-							issueTwo.Issue.MergedIntoIssueRef = &mpb.IssueRef{
-								Issue: issueOne.Issue.Name,
-							}
-
-							// Act
-							err = UpdateBugsForProject(ctx, opts)
-
-							// Verify
-							So(err, ShouldBeNil)
-
-							// Issue one kicked out of duplicate status.
-							So(issueOne.Issue.Status.Status, ShouldNotEqual, monorail.DuplicateStatus)
-
-							// As the cycle is now broken, issue two is merged into
-							// issue one.
-							issueOneRule.RuleDefinition = "reason LIKE \"want foofoo, got bar\" OR\nreason LIKE \"want foofoofoo, got bar\""
-							issueTwoRule.IsActive = false
-							So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
-
-							So(issueOne.Comments, ShouldHaveLength, issueOneOriginalCommentCount+1)
-							So(issueOne.Comments[issueOneOriginalCommentCount].Content, ShouldContainSubstring, "a cycle was detected in the bug merged-into graph")
-						})
-					})
-					Convey("monorail to buganizer", func() {
-						issueOne := monorailStore.Issues[0]
-						issueTwo := buganizerStore.Issues[1]
-
-						issueOne.Issue.Status.Status = monorail.DuplicateStatus
-						issueOne.Issue.MergedIntoIssueRef = &mpb.IssueRef{
-							ExtIdentifier: fmt.Sprintf("b/%v", issueTwo.Issue.IssueId),
-						}
-
-						issueOneRule := expectedRules[firstMonorailRuleIndex]
-						issueTwoRule := expectedRules[0]
-
-						issueOneOriginalCommentCount := len(issueOne.Comments)
-						issueTwoOriginalCommentCount := len(issueTwo.Comments)
-
-						Convey("happy path", func() {
-							// Act
-							err = UpdateBugsForProject(ctx, opts)
-
-							// Verify
-							So(err, ShouldBeNil)
-							issueOneRule.IsActive = false
-							issueTwoRule.RuleDefinition = "reason LIKE \"want foofoo, got bar\" OR\ntest = \"testname-0\""
-							So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
-
-							So(issueOne.Comments, ShouldHaveLength, issueOneOriginalCommentCount+1)
-							So(issueOne.Comments[issueOneOriginalCommentCount].Content, ShouldContainSubstring, "LUCI Analysis has merged the failure association rule for this bug into the rule for the canonical bug.")
-							So(issueOne.Comments[issueOneOriginalCommentCount].Content, ShouldContainSubstring, issueOneRule.RuleID)
-
-							So(issueTwo.Comments, ShouldHaveLength, issueTwoOriginalCommentCount)
-						})
-					})
 				})
 				Convey("bug marked as archived should archive rule", func() {
 					Convey("buganizer", func() {
@@ -1929,18 +1411,6 @@ func TestUpdate(t *testing.T) {
 						expectedRules[0].IsActive = false
 						So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
 					})
-					Convey("monorail", func() {
-						issue := monorailStore.Issues[0]
-						issue.Issue.Status.Status = "Archived"
-
-						// Act
-						err = UpdateBugsForProject(ctx, opts)
-						So(err, ShouldBeNil)
-
-						// Verify
-						expectedRules[2].IsActive = false
-						So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
-					})
 				})
 			})
 		})
@@ -1952,7 +1422,6 @@ func createProjectConfig() *configpb.ProjectConfig {
 		BugManagement: &configpb.BugManagement{
 			DefaultBugSystem: configpb.BugSystem_BUGANIZER,
 			Buganizer:        buganizer.ChromeOSTestConfig(),
-			Monorail:         monorail.ChromiumTestConfig(),
 			Policies: []*configpb.BugManagementPolicy{
 				createExonerationPolicy(),
 				createCLsRejectedPolicy(),
@@ -2125,66 +1594,6 @@ func expectBuganizerBug(buganizerStore *buganizer.FakeIssueStore, bug buganizerB
 		expectedContent := fmt.Sprintf("(Policy ID: %s)", activatedPolicyID)
 		if !strings.Contains(comments[1+i].Comment, expectedContent) {
 			return errors.Reason("issue comment %v: got %q, expected it to contain %q", i+1, comments[i+1].Comment, expectedContent).Err()
-		}
-	}
-	return nil
-}
-
-type monorailBug struct {
-	// The monorail project.
-	Project string
-	// The monorail bug ID.
-	ID int
-
-	ExpectedComponents []string
-	// Content that is expected to appear in the bug title.
-	ExpectedTitle string
-	// Content that is expected to appear in the bug description.
-	ExpectedContent []string
-	// The policies which were expected to have activated, in the
-	// order they should have reported activation.
-	ExpectedPolicyIDsActivated []string
-}
-
-func expectMonorailBug(monorailStore *monorail.FakeIssuesStore, bug monorailBug) error {
-	var issue *monorail.IssueData
-	name := fmt.Sprintf("projects/%s/issues/%v", bug.Project, bug.ID)
-	for _, iss := range monorailStore.Issues {
-		if iss.Issue.Name == name {
-			issue = iss
-			break
-		}
-	}
-	if issue == nil {
-		return errors.Reason("monorail issue %q not found", name).Err()
-	}
-	if !strings.Contains(issue.Issue.Summary, bug.ExpectedTitle) {
-		return errors.Reason("issue title: got %q, expected it to contain %q", issue.Issue.Summary, bug.ExpectedTitle).Err()
-	}
-	var actualComponents []string
-	for _, component := range issue.Issue.Components {
-		actualComponents = append(actualComponents, component.Component)
-	}
-	if msg := ShouldResemble(actualComponents, bug.ExpectedComponents); msg != "" {
-		return errors.Reason("components: %s", msg).Err()
-	}
-	comments := issue.Comments
-	if len(comments) != 1+len(bug.ExpectedPolicyIDsActivated) {
-		return errors.Reason("issue comments: got %v want %v", len(comments), 1+len(bug.ExpectedPolicyIDsActivated)).Err()
-	}
-	for _, expectedContent := range bug.ExpectedContent {
-		if !strings.Contains(issue.Comments[0].Content, expectedContent) {
-			return errors.Reason("issue description: got %q, expected it to contain %q", issue.Comments[0].Content, expectedContent).Err()
-		}
-	}
-	expectedLink := "https://luci-analysis-test.appspot.com/p/chromeos/rules/"
-	if !strings.Contains(comments[0].Content, expectedLink) {
-		return errors.Reason("issue comment #1: got %q, expected it to contain %q", issue.Comments[0].Content, expectedLink).Err()
-	}
-	for i, activatedPolicyID := range bug.ExpectedPolicyIDsActivated {
-		expectedContent := fmt.Sprintf("(Policy ID: %s)", activatedPolicyID)
-		if !strings.Contains(comments[i+1].Content, expectedContent) {
-			return errors.Reason("issue comment %v: got %q, expected it to contain %q", i+2, comments[i+1].Content, expectedContent).Err()
 		}
 	}
 	return nil

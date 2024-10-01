@@ -70,25 +70,25 @@ func TestRules(t *testing.T) {
 
 		ruleManagedBuilder := rules.NewRule(0).
 			WithProject(testProject).
-			WithBug(bugs.BugID{System: "monorail", ID: "monorailproject/111"})
+			WithBug(bugs.BugID{System: "buganizer", ID: "111"})
 		ruleManaged := ruleManagedBuilder.Build()
 		ruleTwoProject := rules.NewRule(1).
 			WithProject(testProject).
-			WithBug(bugs.BugID{System: "monorail", ID: "monorailproject/222"}).
+			WithBug(bugs.BugID{System: "buganizer", ID: "222"}).
 			WithBugManaged(false).
 			Build()
 		ruleTwoProjectOther := rules.NewRule(2).
 			WithProject("otherproject").
-			WithBug(bugs.BugID{System: "monorail", ID: "monorailproject/222"}).
+			WithBug(bugs.BugID{System: "buganizer", ID: "222"}).
 			Build()
 		ruleUnmanagedOther := rules.NewRule(3).
 			WithProject("otherproject").
-			WithBug(bugs.BugID{System: "monorail", ID: "monorailproject/444"}).
+			WithBug(bugs.BugID{System: "buganizer", ID: "444"}).
 			WithBugManaged(false).
 			Build()
 		ruleManagedOther := rules.NewRule(4).
 			WithProject("otherproject").
-			WithBug(bugs.BugID{System: "monorail", ID: "monorailproject/555"}).
+			WithBug(bugs.BugID{System: "buganizer", ID: "555"}).
 			WithBugManaged(true).
 			Build()
 		ruleBuganizer := rules.NewRule(5).
@@ -106,15 +106,7 @@ func TestRules(t *testing.T) {
 		})
 		So(err, ShouldBeNil)
 
-		cfg := &configpb.ProjectConfig{
-			BugManagement: &configpb.BugManagement{
-				Monorail: &configpb.MonorailProject{
-					Project:          "monorailproject",
-					DisplayPrefix:    "mybug.com",
-					MonorailHostname: "monorailhost.com",
-				},
-			},
-		}
+		cfg := &configpb.ProjectConfig{}
 		err = config.SetTestProjectConfig(ctx, map[string]*configpb.ProjectConfig{
 			"testproject": cfg,
 		})
@@ -166,49 +158,38 @@ func TestRules(t *testing.T) {
 					IncludeDefinition: true,
 					IncludeAuditUsers: true,
 				}
-				Convey("Read rule with Monorail bug", func() {
-					Convey("Baseline", func() {
-						request := &pb.GetRuleRequest{
-							Name: fmt.Sprintf("projects/%s/rules/%s", ruleManaged.Project, ruleManaged.RuleID),
-						}
-
-						rule, err := srv.Get(ctx, request)
-						So(err, ShouldBeNil)
-						So(rule, ShouldResembleProto, createRulePB(ruleManaged, cfg, mask))
-					})
-					Convey("Without get rule definition permission", func() {
-						authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetRuleDefinition)
-
-						request := &pb.GetRuleRequest{
-							Name: fmt.Sprintf("projects/%s/rules/%s", ruleManaged.Project, ruleManaged.RuleID),
-						}
-
-						rule, err := srv.Get(ctx, request)
-						So(err, ShouldBeNil)
-						mask.IncludeDefinition = false
-						So(rule, ShouldResembleProto, createRulePB(ruleManaged, cfg, mask))
-					})
-					Convey("Without get rule audit users permission", func() {
-						authState.IdentityGroups = removeGroup(authState.IdentityGroups, auditUsersAccessGroup)
-
-						request := &pb.GetRuleRequest{
-							Name: fmt.Sprintf("projects/%s/rules/%s", ruleManaged.Project, ruleManaged.RuleID),
-						}
-
-						rule, err := srv.Get(ctx, request)
-						So(err, ShouldBeNil)
-						mask.IncludeAuditUsers = false
-						So(rule, ShouldResembleProto, createRulePB(ruleManaged, cfg, mask))
-					})
-				})
-				Convey("Read rule with Buganizer bug", func() {
+				Convey("Baseline", func() {
 					request := &pb.GetRuleRequest{
-						Name: fmt.Sprintf("projects/%s/rules/%s", ruleBuganizer.Project, ruleBuganizer.RuleID),
+						Name: fmt.Sprintf("projects/%s/rules/%s", ruleManaged.Project, ruleManaged.RuleID),
 					}
 
 					rule, err := srv.Get(ctx, request)
 					So(err, ShouldBeNil)
-					So(rule, ShouldResembleProto, createRulePB(ruleBuganizer, cfg, mask))
+					So(rule, ShouldResembleProto, createRulePB(ruleManaged, cfg, mask))
+				})
+				Convey("Without get rule definition permission", func() {
+					authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetRuleDefinition)
+
+					request := &pb.GetRuleRequest{
+						Name: fmt.Sprintf("projects/%s/rules/%s", ruleManaged.Project, ruleManaged.RuleID),
+					}
+
+					rule, err := srv.Get(ctx, request)
+					So(err, ShouldBeNil)
+					mask.IncludeDefinition = false
+					So(rule, ShouldResembleProto, createRulePB(ruleManaged, cfg, mask))
+				})
+				Convey("Without get rule audit users permission", func() {
+					authState.IdentityGroups = removeGroup(authState.IdentityGroups, auditUsersAccessGroup)
+
+					request := &pb.GetRuleRequest{
+						Name: fmt.Sprintf("projects/%s/rules/%s", ruleManaged.Project, ruleManaged.RuleID),
+					}
+
+					rule, err := srv.Get(ctx, request)
+					So(err, ShouldBeNil)
+					mask.IncludeAuditUsers = false
+					So(rule, ShouldResembleProto, createRulePB(ruleManaged, cfg, mask))
 				})
 			})
 			Convey("Rule does not exist", func() {
@@ -330,8 +311,8 @@ func TestRules(t *testing.T) {
 					Name:           fmt.Sprintf("projects/%s/rules/%s", ruleManaged.Project, ruleManaged.RuleID),
 					RuleDefinition: `test = "updated"`,
 					Bug: &pb.AssociatedBug{
-						System: "monorail",
-						Id:     "monorailproject/2",
+						System: "buganizer",
+						Id:     "2",
 					},
 					IsManagingBug:         false,
 					IsManagingBugPriority: false,
@@ -380,28 +361,19 @@ func TestRules(t *testing.T) {
 					_, err := srv.Update(ctx, request)
 					So(err, ShouldBeRPCInvalidArgument, "rule: bug: invalid bug tracking system \"other\"")
 				})
+				Convey("Invalid bug system - monorail", func() {
+					request.Rule.Bug.System = "monorail"
+					request.Rule.Bug.Id = "project/2"
+
+					_, err := srv.Update(ctx, request)
+					So(err, ShouldBeRPCInvalidArgument, "rule: bug: system: monorail bug system is no longer supported")
+				})
 				Convey("Invalid buganizer bug id", func() {
 					request.Rule.Bug.System = "buganizer"
 					request.Rule.Bug.Id = "-12345"
 
 					_, err := srv.Update(ctx, request)
 					So(err, ShouldBeRPCInvalidArgument, "rule: bug: invalid buganizer bug ID \"-12345\"")
-				})
-				Convey("Invalid bug monorail project", func() {
-					request.Rule.Bug.Id = "otherproject/2"
-
-					_, err := srv.Update(ctx, request)
-					So(err, ShouldBeRPCInvalidArgument, "rule: bug: bug not in expected monorail project (monorailproject)")
-				})
-				Convey("Monorail bug on project that does not support it", func() {
-					cfg.BugManagement.Monorail = nil
-
-					err = config.SetTestProjectConfig(ctx, map[string]*configpb.ProjectConfig{
-						"testproject": cfg,
-					})
-
-					_, err := srv.Update(ctx, request)
-					So(err, ShouldBeRPCInvalidArgument, "rule: bug: monorail bug system not enabled for this LUCI project")
 				})
 				Convey("Re-use of same bug in same project", func() {
 					// Use the same bug as another rule.
@@ -450,7 +422,7 @@ func TestRules(t *testing.T) {
 					// The requested updates should be applied.
 					expectedRule := ruleManagedBuilder.Build().Clone()
 					expectedRule.RuleDefinition = `test = "updated"`
-					expectedRule.BugID = bugs.BugID{System: "monorail", ID: "monorailproject/2"}
+					expectedRule.BugID = bugs.BugID{System: "buganizer", ID: "2"}
 					expectedRule.IsActive = false
 					expectedRule.IsManagingBug = false
 					expectedRule.IsManagingBugPriority = false
@@ -660,8 +632,8 @@ func TestRules(t *testing.T) {
 				Rule: &pb.Rule{
 					RuleDefinition: `test = "create"`,
 					Bug: &pb.AssociatedBug{
-						System: "monorail",
-						Id:     "monorailproject/2",
+						System: "buganizer",
+						Id:     "2",
 					},
 					IsActive:              false,
 					IsManagingBug:         true,
@@ -710,12 +682,20 @@ func TestRules(t *testing.T) {
 					So(err, ShouldBeRPCInvalidArgument,
 						"rule: bug: invalid buganizer bug ID \"-2\"")
 				})
-				Convey("Invalid bug monorail project", func() {
+				Convey("Invalid bug system", func() {
+					request.Rule.Bug.System = "other"
+
+					_, err := srv.Create(ctx, request)
+					So(err, ShouldBeRPCInvalidArgument,
+						"rule: bug: invalid bug tracking system \"other\"")
+				})
+				Convey("Invalid bug system - monorail", func() {
+					request.Rule.Bug.System = "monorail"
 					request.Rule.Bug.Id = "otherproject/2"
 
 					_, err := srv.Create(ctx, request)
 					So(err, ShouldBeRPCInvalidArgument,
-						"rule: bug: bug not in expected monorail project (monorailproject)")
+						"rule: bug: system: monorail bug system is no longer supported")
 				})
 				Convey("Invalid source cluster", func() {
 					request.Rule.SourceCluster.Algorithm = "*invalid*"
@@ -755,7 +735,7 @@ func TestRules(t *testing.T) {
 					WithProject(testProject).
 					WithRuleDefinition(`test = "create"`).
 					WithActive(false).
-					WithBug(bugs.BugID{System: "monorail", ID: "monorailproject/2"}).
+					WithBug(bugs.BugID{System: "buganizer", ID: "2"}).
 					WithBugManaged(true).
 					WithBugPriorityManaged(true).
 					WithCreateUser("someone@example.com").
@@ -1270,8 +1250,8 @@ func TestRules(t *testing.T) {
 
 			Convey("Exists None", func() {
 				request := &pb.LookupBugRequest{
-					System: "monorail",
-					Id:     "notexists/1",
+					System: "buganizer",
+					Id:     "999999",
 				}
 
 				response, err := srv.LookupBug(ctx, request)
@@ -1424,7 +1404,7 @@ func TestRules(t *testing.T) {
 
 		rule := rules.NewRule(1).
 			WithProject(testProject).
-			WithBug(bugs.BugID{System: "monorail", ID: "monorailproject/111"}).Build()
+			WithBug(bugs.BugID{System: "buganizer", ID: "111"}).Build()
 
 		expectedRule := &pb.Rule{
 			Name:                    "projects/testproject/rules/8109e4f8d9c218e9a2e33a7a21395455",
@@ -1434,10 +1414,10 @@ func TestRules(t *testing.T) {
 			IsActive:                true,
 			PredicateLastUpdateTime: timestamppb.New(time.Date(1904, 4, 4, 4, 4, 4, 1, time.UTC)),
 			Bug: &pb.AssociatedBug{
-				System:   "monorail",
-				Id:       "monorailproject/111",
-				LinkText: "mybug.com/111",
-				Url:      "https://monorailhost.com/p/monorailproject/issues/detail?id=111",
+				System:   "buganizer",
+				Id:       "111",
+				LinkText: "b/111",
+				Url:      "https://issuetracker.google.com/issues/111",
 			},
 			IsManagingBug:                       true,
 			IsManagingBugPriority:               true,
@@ -1462,15 +1442,7 @@ func TestRules(t *testing.T) {
 			LastUpdateTime:          timestamppb.New(time.Date(1909, 9, 9, 9, 9, 9, 1, time.UTC)),
 			Etag:                    `W/"+d+u/1909-09-09T09:09:09.000000001Z"`,
 		}
-		cfg := &configpb.ProjectConfig{
-			BugManagement: &configpb.BugManagement{
-				Monorail: &configpb.MonorailProject{
-					Project:          "monorailproject",
-					DisplayPrefix:    "mybug.com",
-					MonorailHostname: "monorailhost.com",
-				},
-			},
-		}
+		cfg := &configpb.ProjectConfig{}
 		mask := ruleMask{
 			IncludeDefinition: true,
 			IncludeAuditUsers: true,
@@ -1495,7 +1467,7 @@ func TestRules(t *testing.T) {
 	Convey("isETagValid", t, func() {
 		rule := rules.NewRule(0).
 			WithProject(testProject).
-			WithBug(bugs.BugID{System: "monorail", ID: "monorailproject/111"}).Build()
+			WithBug(bugs.BugID{System: "buganizer", ID: "111"}).Build()
 
 		Convey("Should match ETags for same rule version", func() {
 			masks := []ruleMask{
@@ -1519,7 +1491,7 @@ func TestRules(t *testing.T) {
 	Convey("formatRule", t, func() {
 		rule := rules.NewRule(0).
 			WithProject(testProject).
-			WithBug(bugs.BugID{System: "monorail", ID: "monorailproject/123456"}).
+			WithBug(bugs.BugID{System: "buganizer", ID: "123456"}).
 			WithRuleDefinition(`test = "create"`).
 			WithActive(false).
 			WithBugManaged(true).
@@ -1529,7 +1501,7 @@ func TestRules(t *testing.T) {
 			}).Build()
 		expectedRule := `{
 	RuleDefinition: "test = \"create\"",
-	BugID: "monorail:monorailproject/123456",
+	BugID: "buganizer:123456",
 	IsActive: false,
 	IsManagingBug: true,
 	IsManagingBugPriority: true,

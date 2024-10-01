@@ -1021,18 +1021,8 @@ func isETagMatching(rule *rules.Entry, etag string) bool {
 func validateBugAgainstConfig(cfg *configpb.ProjectConfig, bug *pb.AssociatedBug) error {
 	switch bug.System {
 	case bugs.MonorailSystem:
-		b := bugs.BugID{System: bug.System, ID: bug.Id}
-		project, _, err := b.MonorailProjectAndID()
-		if err != nil {
-			return err
-		}
-		monorailCfg := cfg.BugManagement.GetMonorail()
-		if monorailCfg == nil {
-			return fmt.Errorf("monorail bug system not enabled for this LUCI project")
-		}
-		if project != monorailCfg.Project {
-			return fmt.Errorf("bug not in expected monorail project (%s)", monorailCfg.Project)
-		}
+		// Monorail bugs are no longer supported.
+		return fmt.Errorf("system: monorail bug system is no longer supported")
 	case bugs.BuganizerSystem:
 		// Buganizer bugs are permitted for all LUCI Analysis projects.
 	default:
