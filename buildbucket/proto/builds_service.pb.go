@@ -3435,6 +3435,9 @@ type BuildsClient interface {
 	//
 	// If build with the given ID already exists, returns ALREADY_EXISTS
 	// error code.
+	// CreateBuild does not support the max_concurrent_builds feature.
+	// Incidently, led builds will never reach the builder max_concurrent_builds
+	// threshold.
 	CreateBuild(ctx context.Context, in *CreateBuildRequest, opts ...grpc.CallOption) (*Build, error)
 	// Synthesizes a build proto.
 	//
@@ -3742,6 +3745,9 @@ type BuildsServer interface {
 	//
 	// If build with the given ID already exists, returns ALREADY_EXISTS
 	// error code.
+	// CreateBuild does not support the max_concurrent_builds feature.
+	// Incidently, led builds will never reach the builder max_concurrent_builds
+	// threshold.
 	CreateBuild(context.Context, *CreateBuildRequest) (*Build, error)
 	// Synthesizes a build proto.
 	//

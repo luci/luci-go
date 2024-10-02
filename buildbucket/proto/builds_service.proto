@@ -94,6 +94,9 @@ service Builds {
   //
   // If build with the given ID already exists, returns ALREADY_EXISTS
   // error code.
+  // CreateBuild does not support the max_concurrent_builds feature.
+  // Incidently, led builds will never reach the builder max_concurrent_builds
+  // threshold.
   rpc CreateBuild(CreateBuildRequest) returns (Build) {};
 
   // Synthesizes a build proto.

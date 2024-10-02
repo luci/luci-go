@@ -6468,6 +6468,17 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			},
 		}), ShouldBeNil)
+		So(datastore.Put(ctx, &model.Build{
+			ID: 9999,
+			Proto: &pb.Build{
+				Id: 1001,
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "maxConc",
+				},
+			},
+		}), ShouldBeNil)
 		So(datastore.Put(ctx, &model.Builder{
 			Parent: model.BucketKey(ctx, "project", "bucket"),
 			ID:     "builder",
@@ -6475,6 +6486,16 @@ func TestScheduleBuild(t *testing.T) {
 				BuildNumbers: pb.Toggle_YES,
 				Name:         "builder",
 				SwarmingHost: "host",
+			},
+		}), ShouldBeNil)
+		So(datastore.Put(ctx, &model.Builder{
+			Parent: model.BucketKey(ctx, "project", "bucket"),
+			ID:     "maxConc",
+			Config: &pb.BuilderConfig{
+				BuildNumbers:        pb.Toggle_YES,
+				Name:                "maxConc",
+				SwarmingHost:        "host",
+				MaxConcurrentBuilds: 2,
 			},
 		}), ShouldBeNil)
 
@@ -6519,6 +6540,40 @@ func TestScheduleBuild(t *testing.T) {
 					CreatedTime: datastore.RoundTime(testclock.TestRecentTimeUTC),
 				},
 			})
+		})
+
+		Convey("one with max_concurrent_builds", func() {
+			reqs := []*pb.ScheduleBuildRequest{
+				{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "maxConc",
+					},
+				},
+			}
+
+			rsp, merr := srv.scheduleBuilds(ctx, globalCfg, reqs)
+			So(merr, ShouldBeNil)
+			So(rsp, ShouldHaveLength, 1)
+			So(rsp[0], ShouldResembleProto, &pb.Build{
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "maxConc",
+				},
+				CreatedBy:  string(userID),
+				CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
+				UpdateTime: timestamppb.New(testclock.TestRecentTimeUTC),
+				Id:         9021868963221667745,
+				Number:     1,
+				Input:      &pb.Build_Input{},
+				Status:     pb.Status_SCHEDULED,
+			})
+			So(sch.Tasks(), ShouldHaveLength, 3)
+			So(sch.Tasks()[0].Payload.(*taskdefs.NotifyPubSub).GetBuildId(), ShouldEqual, 9021868963221667745)
+			So(sch.Tasks()[1].Payload.(*taskdefs.NotifyPubSubGoProxy).GetBuildId(), ShouldEqual, 9021868963221667745)
+			So(sch.Tasks()[2].Payload.(*taskdefs.PushPendingBuildTask).GetBuildId(), ShouldEqual, 9021868963221667745)
 		})
 
 		Convey("one with custom metrics", func() {
@@ -6902,11 +6957,20 @@ func TestScheduleBuild(t *testing.T) {
 							},
 						},
 					},
+					{
+						TemplateBuildId: 9999,
+						Tags: []*pb.StringPair{
+							{
+								Key:   "buildset",
+								Value: "buildset",
+							},
+						},
+					},
 				}
 
 				rsp, merr := srv.scheduleBuilds(ctx, globalCfg, reqs)
 				So(merr, ShouldBeNil)
-				So(rsp, ShouldHaveLength, 2)
+				So(rsp, ShouldHaveLength, 3)
 				So(rsp[0], ShouldResembleProto, &pb.Build{
 					Builder: &pb.BuilderID{
 						Project: "project",
@@ -6916,7 +6980,7 @@ func TestScheduleBuild(t *testing.T) {
 					CreatedBy:  string(userID),
 					UpdateTime: timestamppb.New(testclock.TestRecentTimeUTC),
 					CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
-					Id:         9021868963222163313,
+					Id:         9021868963221610337,
 					Input:      &pb.Build_Input{},
 					Number:     1,
 					Status:     pb.Status_SCHEDULED,
@@ -6930,23 +6994,58 @@ func TestScheduleBuild(t *testing.T) {
 					CreatedBy:  string(userID),
 					UpdateTime: timestamppb.New(testclock.TestRecentTimeUTC),
 					CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
-					Id:         9021868963222163297,
+					Id:         9021868963221610321,
 					Input:      &pb.Build_Input{},
 					Number:     2,
 					Status:     pb.Status_SCHEDULED,
 				})
-				So(sch.Tasks(), ShouldHaveLength, 6)
+				So(rsp[2], ShouldResembleProto, &pb.Build{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "maxConc",
+					},
+					CreatedBy:  string(userID),
+					UpdateTime: timestamppb.New(testclock.TestRecentTimeUTC),
+					CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
+					Id:         9021868963221610305,
+					Input:      &pb.Build_Input{},
+					Number:     1,
+					Status:     pb.Status_SCHEDULED,
+				})
+				So(sch.Tasks(), ShouldHaveLength, 9)
+				sum := 0
+				for _, task := range sch.Tasks() {
+					switch task.Payload.(type) {
+					case *taskdefs.NotifyPubSub:
+						sum++
+					case *taskdefs.NotifyPubSubGoProxy:
+						sum += 2
+					case *taskdefs.PushPendingBuildTask:
+						sum += 4
+					case *taskdefs.CreateSwarmingBuildTask:
+						sum += 8
+					default:
+						panic("invalid task payload")
+					}
+				}
+				So(sum, ShouldEqual, 29)
 
 				ind, err := model.SearchTagIndex(ctx, "buildset", "buildset")
 				So(err, ShouldBeNil)
 				So(ind, ShouldResemble, []*model.TagIndexEntry{
 					{
-						BuildID:     9021868963222163313,
+						BuildID:     9021868963221610337,
 						BucketID:    "project/bucket",
 						CreatedTime: datastore.RoundTime(testclock.TestRecentTimeUTC),
 					},
 					{
-						BuildID:     9021868963222163297,
+						BuildID:     9021868963221610321,
+						BucketID:    "project/bucket",
+						CreatedTime: datastore.RoundTime(testclock.TestRecentTimeUTC),
+					},
+					{
+						BuildID:     9021868963221610305,
 						BucketID:    "project/bucket",
 						CreatedTime: datastore.RoundTime(testclock.TestRecentTimeUTC),
 					},

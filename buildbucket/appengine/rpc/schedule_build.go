@@ -1567,6 +1567,7 @@ func scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, reqs ...*pb.
 	validReq, idxMapBlds := getValidReqs(reqs, merr)
 	blds := make([]*model.Build, len(validReq))
 	resultdbOpts := make([]resultdb.CreateOptions, len(validReq))
+	bldrsMCB := stringset.New(0)
 
 	pBld, err := validateParent(ctx)
 	if err != nil {
@@ -1632,6 +1633,10 @@ func scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, reqs ...*pb.
 		blds[i] = &model.Build{
 			Proto: build,
 		}
+		// max_concurrent_builds is enabled for this builder.
+		if cfg.GetMaxConcurrentBuilds() > 0 {
+			bldrsMCB.Add(protoutil.FormatBuilderID(blds[i].Proto.Builder))
+		}
 		resultdbOpts[i] = resultdb.CreateOptions{
 			// Build is an export root in ResultDB if it has no parent, or if
 			// explicitly requested.
@@ -1675,6 +1680,7 @@ func scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, reqs ...*pb.
 		idxMapBldToReq: idxMapBlds,
 		reqIDs:         reqIDs,
 		merr:           merr,
+		bldrsMCB:       bldrsMCB,
 	}
 	return bc.createBuilds(ctx)
 }

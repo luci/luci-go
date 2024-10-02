@@ -530,6 +530,8 @@ type buildCreator struct {
 	resultdbOpts []resultdb.CreateOptions
 	// RequestIDs of each request.
 	reqIDs []string
+	// Set of builders with max_concurrent_builds enabled.
+	bldrsMCB stringset.Set
 	// errors when creating the builds.
 	merr errors.MultiError
 }
@@ -624,14 +626,14 @@ func (bc *buildCreator) createBuilds(ctx context.Context) ([]*model.Build, error
 
 			reqID := bc.reqIDs[origI]
 			work <- func() error {
-				bldr := b.Proto.Builder
+				bldrID := b.Proto.Builder
 				bs := &model.BuildStatus{
 					Build:        datastore.KeyForObj(ctx, b),
 					Status:       pb.Status_SCHEDULED,
-					BuildAddress: fmt.Sprintf("%s/%s/%s/b%d", bldr.Project, bldr.Bucket, bldr.Builder, b.ID),
+					BuildAddress: fmt.Sprintf("%s/%s/%s/b%d", bldrID.Project, bldrID.Bucket, bldrID.Builder, b.ID),
 				}
 				if b.Proto.Number > 0 {
-					bs.BuildAddress = fmt.Sprintf("%s/%s/%s/%d", bldr.Project, bldr.Bucket, bldr.Builder, b.Proto.Number)
+					bs.BuildAddress = fmt.Sprintf("%s/%s/%s/%d", bldrID.Project, bldrID.Bucket, bldrID.Builder, b.Proto.Number)
 				}
 				toPut := []any{
 					b,
@@ -687,9 +689,17 @@ func (bc *buildCreator) createBuilds(ctx context.Context) ([]*model.Build, error
 						return errors.Annotate(err, "failed to store build: %d", b.ID).Err()
 					}
 
-					// If a backend is set, create a backend task. Otherwise, create a swarming task.
 					switch {
+					case bc.bldrsMCB.Has(protoutil.FormatBuilderID(bldrID)):
+						// max_concurrent_builds feature is enabled for this builder.
+						if err := tasks.CreatePushPendingBuildTask(ctx, &taskdefs.PushPendingBuildTask{
+							BuildId:   b.ID,
+							BuilderId: bldrID,
+						}); err != nil {
+							return errors.Annotate(err, "failed to enqueue PushPendingBuildTask").Err()
+						}
 					case infra.GetBackend() != nil:
+						// If a backend is set, create a backend task.
 						if err := tasks.CreateBackendBuildTask(ctx, &taskdefs.CreateBackendBuildTask{
 							BuildId:   b.ID,
 							RequestId: uuid.New().String(),
@@ -699,6 +709,7 @@ func (bc *buildCreator) createBuilds(ctx context.Context) ([]*model.Build, error
 					case infra.GetSwarming().GetHostname() == "":
 						return errors.Reason("failed to create build with missing backend info and swarming host").Err()
 					default:
+						// Otherwise, create a swarming task.
 						if err := tasks.CreateSwarmingBuildTask(ctx, &taskdefs.CreateSwarmingBuildTask{
 							BuildId: b.ID,
 						}); err != nil {
