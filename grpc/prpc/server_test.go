@@ -121,15 +121,20 @@ func TestServer(t *testing.T) {
 			So(err, ShouldBeNil)
 			req.Header.Set("Content-Type", mtPRPCText)
 
-			invalidArgument := strconv.Itoa(int(codes.InvalidArgument))
-			unimplemented := strconv.Itoa(int(codes.Unimplemented))
+			strCode := func(c codes.Code) string {
+				return strconv.Itoa(int(c))
+			}
 
 			Convey("Works", func() {
 				req.Header.Set("Accept", mtPRPCText)
 				r.ServeHTTP(res, req)
 				So(res.Code, ShouldEqual, http.StatusOK)
-				So(res.Header().Get(HeaderGRPCCode), ShouldEqual, "0")
-				So(res.Header().Get("X-Content-Type-Options"), ShouldEqual, "nosniff")
+				So(res.Result().Header, ShouldResemble, http.Header{
+					"Content-Type":           {"application/prpc; encoding=text"},
+					"Date":                   nil,
+					"X-Content-Type-Options": {"nosniff"},
+					"X-Prpc-Grpc-Code":       {strCode(codes.OK)},
+				})
 				So(decodeReply(res.Body.Bytes()), ShouldResembleProto, &HelloReply{Message: "Hello Lucy"})
 			})
 
@@ -137,15 +142,25 @@ func TestServer(t *testing.T) {
 				greeterSvc.headerMD = metadata.Pairs("a", "1", "b", "2")
 				r.ServeHTTP(res, req)
 				So(res.Code, ShouldEqual, http.StatusOK)
-				So(res.Header()["A"], ShouldResemble, []string{"1"})
-				So(res.Header()["B"], ShouldResemble, []string{"2"})
+				So(res.Result().Header, ShouldResemble, http.Header{
+					"A":                      {"1"},
+					"B":                      {"2"},
+					"Content-Type":           {"application/prpc; encoding=binary"},
+					"Date":                   nil,
+					"X-Content-Type-Options": {"nosniff"},
+					"X-Prpc-Grpc-Code":       {strCode(codes.OK)},
+				})
 			})
 
 			Convey("Status details", func() {
 				greeterSvc.errDetails = []proto.Message{&errdetails.DebugInfo{Detail: "x"}}
 				r.ServeHTTP(res, req)
-				So(res.Header()[HeaderStatusDetail], ShouldResemble, []string{
-					"Cih0eXBlLmdvb2dsZWFwaXMuY29tL2dvb2dsZS5ycGMuRGVidWdJbmZvEgMSAXg=",
+				So(res.Result().Header, ShouldResemble, http.Header{
+					"Content-Type":              {"text/plain"},
+					"Date":                      nil,
+					"X-Content-Type-Options":    {"nosniff"},
+					"X-Prpc-Grpc-Code":          {strCode(codes.Unknown)},
+					"X-Prpc-Status-Details-Bin": {"Cih0eXBlLmdvb2dsZWFwaXMuY29tL2dvb2dsZS5ycGMuRGVidWdJbmZvEgMSAXg="},
 				})
 			})
 
@@ -153,7 +168,13 @@ func TestServer(t *testing.T) {
 				req.Header.Set("Accept", "blah")
 				r.ServeHTTP(res, req)
 				So(res.Code, ShouldEqual, http.StatusNotAcceptable)
-				So(res.Header().Get(HeaderGRPCCode), ShouldEqual, invalidArgument)
+				So(res.Result().Header, ShouldResemble, http.Header{
+					"Content-Type":              {"text/plain"},
+					"Date":                      nil,
+					"X-Content-Type-Options":    {"nosniff"},
+					"X-Prpc-Grpc-Code":          {strCode(codes.InvalidArgument)},
+					"X-Prpc-Status-Details-Bin": []string{},
+				})
 			})
 
 			Convey("Invalid max response size header", func() {
@@ -161,7 +182,13 @@ func TestServer(t *testing.T) {
 					req.Header.Set(HeaderMaxResponseSize, bad)
 					r.ServeHTTP(res, req)
 					So(res.Code, ShouldEqual, http.StatusBadRequest)
-					So(res.Header().Get(HeaderGRPCCode), ShouldEqual, invalidArgument)
+					So(res.Result().Header, ShouldResemble, http.Header{
+						"Content-Type":              {"text/plain"},
+						"Date":                      nil,
+						"X-Content-Type-Options":    {"nosniff"},
+						"X-Prpc-Grpc-Code":          {strCode(codes.InvalidArgument)},
+						"X-Prpc-Status-Details-Bin": []string{},
+					})
 				}
 			})
 
@@ -169,22 +196,39 @@ func TestServer(t *testing.T) {
 				req.Header.Set("X-Bin", "zzz")
 				r.ServeHTTP(res, req)
 				So(res.Code, ShouldEqual, http.StatusBadRequest)
-				So(res.Header().Get(HeaderGRPCCode), ShouldEqual, invalidArgument)
+				So(res.Result().Header, ShouldResemble, http.Header{
+					"Content-Type":              {"text/plain"},
+					"Date":                      nil,
+					"X-Content-Type-Options":    {"nosniff"},
+					"X-Prpc-Grpc-Code":          {strCode(codes.InvalidArgument)},
+					"X-Prpc-Status-Details-Bin": []string{},
+				})
 			})
 
 			Convey("Malformed request message", func() {
 				hiMsg.WriteString("\nblah")
 				r.ServeHTTP(res, req)
 				So(res.Code, ShouldEqual, http.StatusBadRequest)
-				So(res.Header().Get(HeaderGRPCCode), ShouldEqual, invalidArgument)
-				So(res.Header().Get("X-Content-Type-Options"), ShouldEqual, "nosniff")
+				So(res.Result().Header, ShouldResemble, http.Header{
+					"Content-Type":              {"text/plain"},
+					"Date":                      nil,
+					"X-Content-Type-Options":    {"nosniff"},
+					"X-Prpc-Grpc-Code":          {strCode(codes.InvalidArgument)},
+					"X-Prpc-Status-Details-Bin": []string{},
+				})
 			})
 
 			Convey("Invalid request message", func() {
 				hiMsg.Reset()
 				r.ServeHTTP(res, req)
 				So(res.Code, ShouldEqual, http.StatusBadRequest)
-				So(res.Header().Get(HeaderGRPCCode), ShouldEqual, invalidArgument)
+				So(res.Result().Header, ShouldResemble, http.Header{
+					"Content-Type":              {"text/plain"},
+					"Date":                      nil,
+					"X-Content-Type-Options":    {"nosniff"},
+					"X-Prpc-Grpc-Code":          {strCode(codes.InvalidArgument)},
+					"X-Prpc-Status-Details-Bin": []string{},
+				})
 				So(res.Body.String(), ShouldEqual, "Name unspecified\n")
 			})
 
@@ -192,14 +236,26 @@ func TestServer(t *testing.T) {
 				req.URL.Path = "/prpc/xxx/SayHello"
 				r.ServeHTTP(res, req)
 				So(res.Code, ShouldEqual, http.StatusNotImplemented)
-				So(res.Header().Get(HeaderGRPCCode), ShouldEqual, unimplemented)
+				So(res.Result().Header, ShouldResemble, http.Header{
+					"Content-Type":              {"text/plain"},
+					"Date":                      nil,
+					"X-Content-Type-Options":    {"nosniff"},
+					"X-Prpc-Grpc-Code":          {strCode(codes.Unimplemented)},
+					"X-Prpc-Status-Details-Bin": []string{},
+				})
 			})
 
 			Convey("no such method", func() {
 				req.URL.Path = "/prpc/Greeter/xxx"
 				r.ServeHTTP(res, req)
 				So(res.Code, ShouldEqual, http.StatusNotImplemented)
-				So(res.Header().Get(HeaderGRPCCode), ShouldEqual, unimplemented)
+				So(res.Result().Header, ShouldResemble, http.Header{
+					"Content-Type":              {"text/plain"},
+					"Date":                      nil,
+					"X-Content-Type-Options":    {"nosniff"},
+					"X-Prpc-Grpc-Code":          {strCode(codes.Unimplemented)},
+					"X-Prpc-Status-Details-Bin": []string{},
+				})
 			})
 
 			Convey(`When access control is enabled without credentials`, func() {
@@ -213,10 +269,15 @@ func TestServer(t *testing.T) {
 
 				r.ServeHTTP(res, req)
 				So(res.Code, ShouldEqual, http.StatusOK)
-				So(res.Header().Get(HeaderGRPCCode), ShouldEqual, "0")
-				So(res.Header().Get("Access-Control-Allow-Origin"), ShouldEqual, "http://example.com")
-				So(res.Header().Get("Access-Control-Allow-Credentials"), ShouldEqual, "")
-				So(res.Header().Get("Access-Control-Expose-Headers"), ShouldEqual, "X-Prpc-Grpc-Code, X-Prpc-Status-Details-Bin")
+				So(res.Result().Header, ShouldResemble, http.Header{
+					"Access-Control-Allow-Origin":   {"http://example.com"},
+					"Access-Control-Expose-Headers": {"X-Prpc-Grpc-Code, X-Prpc-Status-Details-Bin"},
+					"Content-Type":                  {"application/prpc; encoding=binary"},
+					"Date":                          nil,
+					"Vary":                          {"Origin"},
+					"X-Content-Type-Options":        {"nosniff"},
+					"X-Prpc-Grpc-Code":              {strCode(codes.OK)},
+				})
 			})
 
 			Convey(`When access control is enabled for "http://example.com"`, func() {
@@ -239,11 +300,14 @@ func TestServer(t *testing.T) {
 
 						r.ServeHTTP(res, req)
 						So(res.Code, ShouldEqual, http.StatusOK)
-						So(res.Header().Get("Access-Control-Allow-Origin"), ShouldEqual, "http://example.com")
-						So(res.Header().Get("Access-Control-Allow-Credentials"), ShouldEqual, "true")
-						So(res.Header().Get("Access-Control-Allow-Headers"), ShouldEqual, "Origin, Content-Type, Accept, Authorization, X-Prpc-Grpc-Timeout, X-Prpc-Max-Response-Size")
-						So(res.Header().Get("Access-Control-Allow-Methods"), ShouldEqual, "OPTIONS, POST")
-						So(res.Header().Get("Access-Control-Max-Age"), ShouldEqual, "600")
+						So(res.Result().Header, ShouldResemble, http.Header{
+							"Access-Control-Allow-Credentials": {"true"},
+							"Access-Control-Allow-Headers":     {"Origin, Content-Type, Accept, Authorization, X-Prpc-Grpc-Timeout, X-Prpc-Max-Response-Size"},
+							"Access-Control-Allow-Methods":     {"OPTIONS, POST"},
+							"Access-Control-Allow-Origin":      {"http://example.com"},
+							"Access-Control-Max-Age":           {"600"},
+							"Vary":                             {"Origin"},
+						})
 					})
 
 					Convey(`Will not supply access-* headers to "http://foo.bar"`, func() {
@@ -251,7 +315,7 @@ func TestServer(t *testing.T) {
 
 						r.ServeHTTP(res, req)
 						So(res.Code, ShouldEqual, http.StatusOK)
-						So(res.Header().Get("Access-Control-Allow-Origin"), ShouldEqual, "")
+						So(res.Result().Header, ShouldResemble, http.Header{})
 					})
 				})
 
@@ -261,10 +325,16 @@ func TestServer(t *testing.T) {
 
 						r.ServeHTTP(res, req)
 						So(res.Code, ShouldEqual, http.StatusOK)
-						So(res.Header().Get(HeaderGRPCCode), ShouldEqual, "0")
-						So(res.Header().Get("Access-Control-Allow-Origin"), ShouldEqual, "http://example.com")
-						So(res.Header().Get("Access-Control-Allow-Credentials"), ShouldEqual, "true")
-						So(res.Header().Get("Access-Control-Expose-Headers"), ShouldEqual, "X-Prpc-Grpc-Code, X-Prpc-Status-Details-Bin")
+						So(res.Result().Header, ShouldResemble, http.Header{
+							"Access-Control-Allow-Credentials": {"true"},
+							"Access-Control-Allow-Origin":      {"http://example.com"},
+							"Access-Control-Expose-Headers":    {"X-Prpc-Grpc-Code, X-Prpc-Status-Details-Bin"},
+							"Content-Type":                     {"application/prpc; encoding=binary"},
+							"Date":                             nil,
+							"Vary":                             {"Origin"},
+							"X-Content-Type-Options":           {"nosniff"},
+							"X-Prpc-Grpc-Code":                 {strCode(codes.OK)},
+						})
 					})
 
 					Convey(`Will not supply access-* headers to "http://foo.bar"`, func() {
@@ -272,8 +342,12 @@ func TestServer(t *testing.T) {
 
 						r.ServeHTTP(res, req)
 						So(res.Code, ShouldEqual, http.StatusOK)
-						So(res.Header().Get(HeaderGRPCCode), ShouldEqual, "0")
-						So(res.Header().Get("Access-Control-Allow-Origin"), ShouldEqual, "")
+						So(res.Result().Header, ShouldResemble, http.Header{
+							"Content-Type":           {"application/prpc; encoding=binary"},
+							"Date":                   nil,
+							"X-Content-Type-Options": {"nosniff"},
+							"X-Prpc-Grpc-Code":       {strCode(codes.OK)},
+						})
 					})
 				})
 
@@ -285,11 +359,14 @@ func TestServer(t *testing.T) {
 
 					r.ServeHTTP(res, req)
 					So(res.Code, ShouldEqual, http.StatusOK)
-					So(res.Header().Get("Access-Control-Allow-Origin"), ShouldEqual, "http://example.com")
-					So(res.Header().Get("Access-Control-Allow-Credentials"), ShouldEqual, "true")
-					So(res.Header().Get("Access-Control-Allow-Headers"), ShouldEqual, "Booboo, bobo, Origin, Content-Type, Accept, Authorization, X-Prpc-Grpc-Timeout, X-Prpc-Max-Response-Size")
-					So(res.Header().Get("Access-Control-Allow-Methods"), ShouldEqual, "OPTIONS, POST")
-					So(res.Header().Get("Access-Control-Max-Age"), ShouldEqual, "600")
+					So(res.Result().Header, ShouldResemble, http.Header{
+						"Access-Control-Allow-Credentials": {"true"},
+						"Access-Control-Allow-Headers":     {"Booboo, bobo, Origin, Content-Type, Accept, Authorization, X-Prpc-Grpc-Timeout, X-Prpc-Max-Response-Size"},
+						"Access-Control-Allow-Methods":     {"OPTIONS, POST"},
+						"Access-Control-Allow-Origin":      {"http://example.com"},
+						"Access-Control-Max-Age":           {"600"},
+						"Vary":                             {"Origin"},
+					})
 				})
 			})
 
@@ -306,6 +383,12 @@ func TestServer(t *testing.T) {
 
 				r.ServeHTTP(res, req)
 				So(res.Code, ShouldEqual, http.StatusOK)
+				So(res.Result().Header, ShouldResemble, http.Header{
+					"Content-Type":           {"application/prpc; encoding=text"},
+					"Date":                   nil,
+					"X-Content-Type-Options": {"nosniff"},
+					"X-Prpc-Grpc-Code":       {strCode(codes.OK)},
+				})
 				So(decodeReply(res.Body.Bytes()), ShouldResembleProto, &HelloReply{Message: "Hello Lucy"})
 				So(called, ShouldBeTrue)
 			})
@@ -317,6 +400,7 @@ func TestServer(t *testing.T) {
 				server.RegisterOverride("prpc.Greeter", "SayHello",
 					func(rw http.ResponseWriter, req *http.Request, body func(msg proto.Message) error) (bool, error) {
 						rawBody, _ = io.ReadAll(req.Body)
+						rw.Header().Set("Overridden", "1")
 						_, _ = fmt.Fprintf(rw, "Override")
 						return true, nil
 					},
@@ -324,6 +408,10 @@ func TestServer(t *testing.T) {
 
 				r.ServeHTTP(res, req)
 				So(res.Code, ShouldEqual, http.StatusOK)
+				So(res.Result().Header, ShouldResemble, http.Header{
+					"Content-Type": {"text/plain; charset=utf-8"},
+					"Overridden":   {"1"},
+				})
 				So(res.Body.String(), ShouldEqual, "Override")
 				So(decodeRequest(rawBody), ShouldResembleProto, &HelloRequest{Name: "Lucy"})
 			})
@@ -340,6 +428,11 @@ func TestServer(t *testing.T) {
 
 				r.ServeHTTP(res, req)
 				So(res.Code, ShouldEqual, http.StatusBadRequest)
+				So(res.Result().Header, ShouldResemble, http.Header{
+					"Content-Type":              {"text/plain"},
+					"X-Prpc-Grpc-Code":          {strCode(codes.InvalidArgument)},
+					"X-Prpc-Status-Details-Bin": []string{},
+				})
 				So(res.Body.String(), ShouldEqual, "the override check: BOOM\n")
 			})
 
@@ -360,6 +453,12 @@ func TestServer(t *testing.T) {
 
 				r.ServeHTTP(res, req)
 				So(res.Code, ShouldEqual, http.StatusOK)
+				So(res.Result().Header, ShouldResemble, http.Header{
+					"Content-Type":           {"application/prpc; encoding=text"},
+					"Date":                   nil,
+					"X-Content-Type-Options": {"nosniff"},
+					"X-Prpc-Grpc-Code":       {strCode(codes.OK)},
+				})
 				So(decodeReply(res.Body.Bytes()), ShouldResembleProto, &HelloReply{Message: "Hello Lucy"})
 				So(rpcReq, ShouldResembleProto, &HelloRequest{Name: "Lucy"})
 			})
@@ -377,6 +476,7 @@ func TestServer(t *testing.T) {
 						}
 						rpcReq = r
 
+						rw.Header().Set("Overridden", "1")
 						rawBody, _ = io.ReadAll(req.Body)
 						_, _ = fmt.Fprintf(rw, "Override")
 						return true, nil
@@ -385,6 +485,10 @@ func TestServer(t *testing.T) {
 
 				r.ServeHTTP(res, req)
 				So(res.Code, ShouldEqual, http.StatusOK)
+				So(res.Result().Header, ShouldResemble, http.Header{
+					"Content-Type": {"text/plain; charset=utf-8"},
+					"Overridden":   {"1"},
+				})
 				So(rpcReq, ShouldResembleProto, &HelloRequest{Name: "Lucy"})
 				So(res.Body.String(), ShouldEqual, "Override")
 				So(decodeRequest(rawBody), ShouldResembleProto, &HelloRequest{Name: "Lucy"})
@@ -404,6 +508,13 @@ func TestServer(t *testing.T) {
 				r.ServeHTTP(res, req)
 				So(callbackErr, ShouldErrLike, "could not decode body")
 				So(res.Code, ShouldEqual, http.StatusBadRequest)
+				So(res.Result().Header, ShouldResemble, http.Header{
+					"Content-Type":              {"text/plain"},
+					"Date":                      nil,
+					"X-Content-Type-Options":    {"nosniff"},
+					"X-Prpc-Grpc-Code":          {strCode(codes.InvalidArgument)},
+					"X-Prpc-Status-Details-Bin": []string{},
+				})
 				So(res.Body.String(), ShouldStartWith, "could not decode body")
 			})
 
@@ -417,6 +528,7 @@ func TestServer(t *testing.T) {
 					func(rw http.ResponseWriter, req *http.Request, body func(msg proto.Message) error) (bool, error) {
 						callbackErr = body(&HelloRequest{})
 						rawBody, rawBodyErr = io.ReadAll(req.Body)
+						rw.Header().Set("Overridden", "1")
 						_, _ = fmt.Fprintf(rw, "Override")
 						return true, nil
 					},
@@ -427,6 +539,10 @@ func TestServer(t *testing.T) {
 				So(string(rawBody), ShouldEqual, "not a proto")
 				So(rawBodyErr, ShouldBeNil)
 				So(res.Code, ShouldEqual, http.StatusOK)
+				So(res.Result().Header, ShouldResemble, http.Header{
+					"Content-Type": {"text/plain; charset=utf-8"},
+					"Overridden":   {"1"},
+				})
 				So(res.Body.String(), ShouldEqual, "Override")
 			})
 
@@ -447,6 +563,13 @@ func TestServer(t *testing.T) {
 				r.ServeHTTP(res, req)
 				So(callbackErr, ShouldErrLike, "BOOM")
 				So(res.Code, ShouldEqual, http.StatusBadRequest)
+				So(res.Result().Header, ShouldResemble, http.Header{
+					"Content-Type":              {"text/plain"},
+					"Date":                      nil,
+					"X-Content-Type-Options":    {"nosniff"},
+					"X-Prpc-Grpc-Code":          {strCode(codes.InvalidArgument)},
+					"X-Prpc-Status-Details-Bin": []string{},
+				})
 				So(res.Body.String(), ShouldStartWith, "reading the request: BOOM")
 			})
 
@@ -463,6 +586,7 @@ func TestServer(t *testing.T) {
 					func(rw http.ResponseWriter, req *http.Request, body func(msg proto.Message) error) (bool, error) {
 						callbackErr = body(&HelloRequest{})
 						rawBody, rawBodyErr = io.ReadAll(req.Body)
+						rw.Header().Set("Overridden", "1")
 						_, _ = fmt.Fprintf(rw, "Override")
 						return true, nil
 					},
@@ -473,6 +597,10 @@ func TestServer(t *testing.T) {
 				So(string(rawBody), ShouldEqual, `name: "Zzz"`)
 				So(rawBodyErr, ShouldErrLike, "BOOM")
 				So(res.Code, ShouldEqual, http.StatusOK)
+				So(res.Result().Header, ShouldResemble, http.Header{
+					"Content-Type": {"text/plain; charset=utf-8"},
+					"Overridden":   {"1"},
+				})
 				So(res.Body.String(), ShouldEqual, "Override")
 			})
 
@@ -490,6 +618,13 @@ func TestServer(t *testing.T) {
 				r.ServeHTTP(res, req)
 				So(callbackErr, ShouldErrLike, "request body too large")
 				So(res.Code, ShouldEqual, http.StatusServiceUnavailable)
+				So(res.Result().Header, ShouldResemble, http.Header{
+					"Content-Type":              {"text/plain"},
+					"Date":                      nil,
+					"X-Content-Type-Options":    {"nosniff"},
+					"X-Prpc-Grpc-Code":          {strCode(codes.Unavailable)},
+					"X-Prpc-Status-Details-Bin": []string{},
+				})
 				So(res.Body.String(), ShouldStartWith, "reading the request: the request size exceeds the server limit")
 			})
 		})
