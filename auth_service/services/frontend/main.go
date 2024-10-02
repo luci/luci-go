@@ -129,15 +129,27 @@ func main() {
 			s.AccessControl = prpc.AllowOriginAll
 		})
 
-		// The middleware chain applied to all plain HTTP routes.
-		mw := router.MiddlewareChain{
+		// The middleware chain applied to all UI routes.
+		uiMW := router.MiddlewareChain{
 			templates.WithTemplates(prepareTemplates(&srv.Options)),
 			auth.Authenticate(srv.CookieAuth),
 			requireLogin,
 			authorizeUIAccess,
 		}
 
-		// The middleware chain for API like routes.
+		srv.Routes.GET("/", uiMW, func(ctx *router.Context) {
+			http.Redirect(ctx.Writer, ctx.Request, "/auth/groups", http.StatusFound)
+		})
+		srv.Routes.GET("/auth/groups", uiMW, servePage("pages/groups.html"))
+		// Note that external groups have "/" in their names.
+		srv.Routes.GET("/auth/groups/*groupName", uiMW, servePage("pages/groups.html"))
+		srv.Routes.GET("/auth/listing", uiMW, servePage("pages/listing.html"))
+		srv.Routes.GET("/auth/change_log", uiMW, servePage("pages/change_log.html"))
+		srv.Routes.GET("/auth/ip_allowlists", uiMW, servePage("pages/ip_allowlists.html"))
+		srv.Routes.GET("/auth/lookup", uiMW, servePage("pages/lookup.html"))
+		srv.Routes.GET("/auth/services", uiMW, servePage("pages/services.html"))
+
+		// The middleware chain for legacy API routes.
 		apiMw := router.MiddlewareChain{
 			auth.Authenticate(
 				// The preferred authentication method.
@@ -153,18 +165,6 @@ func main() {
 			authorizeAPIAccess,
 		}
 
-		srv.Routes.GET("/", mw, func(ctx *router.Context) {
-			http.Redirect(ctx.Writer, ctx.Request, "/auth/groups", http.StatusFound)
-		})
-		srv.Routes.GET("/auth/groups", mw, servePage("pages/groups.html"))
-		// Note that external groups have "/" in their names.
-		srv.Routes.GET("/auth/groups/*groupName", mw, servePage("pages/groups.html"))
-		srv.Routes.GET("/auth/listing", mw, servePage("pages/listing.html"))
-		srv.Routes.GET("/auth/change_log", mw, servePage("pages/change_log.html"))
-		srv.Routes.GET("/auth/ip_allowlists", mw, servePage("pages/ip_allowlists.html"))
-		srv.Routes.GET("/auth/lookup", mw, servePage("pages/lookup.html"))
-		srv.Routes.GET("/auth/services", mw, servePage("pages/services.html"))
-
 		// For PubSub subscriber and AuthDB Google Storage reader authorization.
 		//
 		// Note: the endpoint path is unchanged as there are no API changes,
@@ -173,6 +173,8 @@ func main() {
 		srv.Routes.GET("/auth_service/api/v1/authdb/subscription/authorization", apiMw, adaptGrpcErr(subscription.CheckAccess))
 		srv.Routes.POST("/auth_service/api/v1/authdb/subscription/authorization", apiMw, adaptGrpcErr(subscription.Authorize))
 		srv.Routes.DELETE("/auth_service/api/v1/authdb/subscription/authorization", apiMw, adaptGrpcErr(subscription.Deauthorize))
+		// Support legacy endpoint to get an AuthDB revision.
+		srv.Routes.GET("/auth_service/api/v1/authdb/revisions/:revID", apiMw, adaptGrpcErr(authdbServer.HandleLegacyAuthDBServing))
 
 		// Support legacy endpoint to get an AuthGroup.
 		srv.Routes.GET("/auth/api/v1/groups/*groupName", apiMw, adaptGrpcErr(groupsServer.GetLegacyAuthGroup))
@@ -181,13 +183,11 @@ func main() {
 		// Support legacy endpoint to check group membership.
 		srv.Routes.GET("/auth/api/v1/memberships/check", apiMw, adaptGrpcErr(authdbServer.CheckLegacyMembership))
 
-		// Legacy authdbrevision serving.
-		// TODO(cjacomet): Add smoke test for this endpoint
-		srv.Routes.GET("/auth_service/api/v1/authdb/revisions/:revID", apiMw, adaptGrpcErr(authdbServer.HandleLegacyAuthDBServing))
-		srv.Routes.GET("/auth/api/v1/server/oauth_config", nil, adaptGrpcErr(oauth.HandleLegacyOAuthEndpoint))
 		if enableGroupImports {
 			srv.Routes.PUT("/auth_service/api/v1/importer/ingest_tarball/:tarballName", apiMw, adaptGrpcErr(imports.HandleTarballIngestHandler))
 		}
+
+		srv.Routes.GET("/auth/api/v1/server/oauth_config", nil, adaptGrpcErr(oauth.HandleLegacyOAuthEndpoint))
 
 		return nil
 	})
