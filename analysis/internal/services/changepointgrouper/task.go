@@ -91,7 +91,7 @@ func Schedule(ctx context.Context, week time.Time) error {
 }
 
 type ChangePointClient interface {
-	ReadChangepointsRealtime(ctx context.Context, week time.Time) ([]*changepoints.ChangepointRow, error)
+	ReadChangepointsRealtime(ctx context.Context, week time.Time) ([]*changepoints.ChangepointDetailRow, error)
 }
 
 type changepointGrouper struct {
@@ -116,7 +116,7 @@ func (c *changepointGrouper) run(ctx context.Context, payload *taskspb.GroupChan
 		return errors.Annotate(err, "read BigQuery changepoints").Err()
 	}
 	changepointsByProject := splitByProject(rows)
-	groups := [][]*changepoints.ChangepointRow{}
+	groups := [][]*changepoints.ChangepointDetailRow{}
 	for _, project := range sortedKeys(changepointsByProject) {
 		cps := changepointsByProject[project]
 		groups = append(groups, changepoints.GroupChangepoints(ctx, cps)...)
@@ -128,18 +128,18 @@ func (c *changepointGrouper) run(ctx context.Context, payload *taskspb.GroupChan
 	return nil
 }
 
-func splitByProject(cps []*changepoints.ChangepointRow) map[string][]*changepoints.ChangepointRow {
-	splitted := map[string][]*changepoints.ChangepointRow{}
+func splitByProject(cps []*changepoints.ChangepointDetailRow) map[string][]*changepoints.ChangepointDetailRow {
+	splitted := map[string][]*changepoints.ChangepointDetailRow{}
 	for _, cp := range cps {
 		if _, ok := splitted[cp.Project]; !ok {
-			splitted[cp.Project] = make([]*changepoints.ChangepointRow, 0)
+			splitted[cp.Project] = make([]*changepoints.ChangepointDetailRow, 0)
 		}
 		splitted[cp.Project] = append(splitted[cp.Project], cp)
 	}
 	return splitted
 }
 
-func sortedKeys(m map[string][]*changepoints.ChangepointRow) []string {
+func sortedKeys(m map[string][]*changepoints.ChangepointDetailRow) []string {
 	keys := make([]string, len(m))
 	i := 0
 	for k := range m {

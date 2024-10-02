@@ -65,7 +65,7 @@ func TestGroupChangepoints(t *testing.T) {
 			cp2 := makeChangepointRow(2, 2, 3, "chromium")
 			cp3 := makeChangepointRow(2, 10, 12, "chromium")
 			cp4 := makeChangepointRow(1, 2, 4, "chromeos")
-			changepointClient.ReadChangepointsResult = []*changepoints.ChangepointRow{cp1, cp2, cp3, cp4}
+			changepointClient.ReadChangepointsResult = []*changepoints.ChangepointDetailRow{cp1, cp2, cp3, cp4}
 
 			err := grouper.run(ctx, payload)
 			assert.That(t, err, should.ErrLike(nil))
@@ -79,8 +79,8 @@ func TestGroupChangepoints(t *testing.T) {
 	})
 }
 
-func makeChangepointRow(testIDNum, lowerBound, upperBound int64, project string) *changepoints.ChangepointRow {
-	return &changepoints.ChangepointRow{
+func makeChangepointRow(testIDNum, lowerBound, upperBound int64, project string) *changepoints.ChangepointDetailRow {
+	return &changepoints.ChangepointDetailRow{
 		Project:     project,
 		TestIDNum:   testIDNum,
 		TestID:      fmt.Sprintf("test%d", testIDNum),
@@ -139,9 +139,9 @@ func makeGroupedChangepointRow(testIDNum, lowerBound, upperBound int64, project,
 }
 
 type fakeChangepointClient struct {
-	ReadChangepointsResult []*changepoints.ChangepointRow
+	ReadChangepointsResult []*changepoints.ChangepointDetailRow
 }
 
-func (f *fakeChangepointClient) ReadChangepointsRealtime(ctx context.Context, week time.Time) ([]*changepoints.ChangepointRow, error) {
+func (f *fakeChangepointClient) ReadChangepointsRealtime(ctx context.Context, week time.Time) ([]*changepoints.ChangepointDetailRow, error) {
 	return f.ReadChangepointsResult, nil
 }

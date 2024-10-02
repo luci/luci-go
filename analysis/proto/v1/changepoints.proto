@@ -185,7 +185,7 @@ message QueryChangepointsInGroupRequest {
   // Identify a group with this changepoint. Mandatory field.
   ChangepointIdentifier group_key = 2;
   // A filter to be applied to each changepoint.
-  ChangepointPredicateLegacy predicate = 3;
+  ChangepointPredicate predicate = 3;
 }
 
 // TODO: Implement pagination, currently just return at most 1000 changepoints.

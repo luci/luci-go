@@ -50,8 +50,8 @@ func (c *Client) Close() error {
 	return c.client.Close()
 }
 
-// ChangepointRow represents a changepoint of a test variant branch.
-type ChangepointRow struct {
+// ChangepointDetailRow represents a changepoint of a test variant branch with more details including TestIDNum and source verdict rates.
+type ChangepointDetailRow struct {
 	Project string
 	// TestIDNum is the alphabetical ranking of the test ID in this LUCI project.
 	TestIDNum   int64
@@ -75,6 +75,23 @@ type ChangepointRow struct {
 	PreviousNominalEndPosition int64
 }
 
+// ChangepointRow represents a changepoint of a test variant branch.
+type ChangepointRow struct {
+	Project     string
+	TestID      string
+	VariantHash string
+	Variant     bigquery.NullJSON
+	// Point to a branch in the source control.
+	Ref     *Ref
+	RefHash string
+	// The nominal start hour of the segment after the changepoint.
+	StartHour                  time.Time
+	LowerBound99th             int64
+	UpperBound99th             int64
+	NominalStartPosition       int64
+	PreviousNominalEndPosition int64
+}
+
 type Ref struct {
 	Gitiles *Gitiles
 }
@@ -86,7 +103,7 @@ type Gitiles struct {
 
 // ReadChangepoints reads changepoints of a certain week from BigQuery.
 // The week parameter can be at any time of that week. A week is defined by Sunday to Satureday in UTC.
-func (c *Client) ReadChangepoints(ctx context.Context, project string, week time.Time) (changepoints []*ChangepointRow, err error) {
+func (c *Client) ReadChangepoints(ctx context.Context, project string, week time.Time) (changepoints []*ChangepointDetailRow, err error) {
 	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/changepoints.ReadChangepoints",
 		attribute.String("project", project),
 		attribute.String("week", week.String()),
@@ -123,9 +140,9 @@ func (c *Client) ReadChangepoints(ctx context.Context, project string, week time
 	if err != nil {
 		return nil, errors.Annotate(err, "read query results").Err()
 	}
-	results := []*ChangepointRow{}
+	results := []*ChangepointDetailRow{}
 	for {
-		row := &ChangepointRow{}
+		row := &ChangepointDetailRow{}
 		err := it.Next(row)
 		if errors.Is(err, iterator.Done) {
 			break
@@ -142,7 +159,7 @@ func (c *Client) ReadChangepoints(ctx context.Context, project string, week time
 // A week in this context refers to the period from Sunday at 00:00:00 AM UTC (inclusive)
 // to the following Sunday at 00:00:00 AM UTC (exclusive).
 // The week parameter MUST be a timestamp representing the start of a week (Sunday at 00:00:00 AM UTC) and within the last 90 days.
-func (c *Client) ReadChangepointsRealtime(ctx context.Context, week time.Time) (changepoints []*ChangepointRow, err error) {
+func (c *Client) ReadChangepointsRealtime(ctx context.Context, week time.Time) (changepoints []*ChangepointDetailRow, err error) {
 	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/changepoints.ReadChangepointsRealtime",
 		attribute.String("week", week.String()),
 	)
@@ -226,9 +243,9 @@ func (c *Client) ReadChangepointsRealtime(ctx context.Context, week time.Time) (
 	if err != nil {
 		return nil, errors.Annotate(js.Err(), "read changepoint rows").Err()
 	}
-	results := []*ChangepointRow{}
+	results := []*ChangepointDetailRow{}
 	for {
-		row := &ChangepointRow{}
+		row := &ChangepointDetailRow{}
 		err := it.Next(row)
 		if errors.Is(err, iterator.Done) {
 			break
@@ -376,21 +393,17 @@ func (c *Client) ReadChangepointGroupSummaries(ctx context.Context, opts ReadCha
 		)
 		SELECT
 			ARRAY_AGG(struct(
-      project AS Project,
-			test_id_num AS TestIDNum,
-			test_id AS TestID,
-			variant_hash AS VariantHash,
-			ref_hash AS RefHash,
-			ref AS Ref,
-			variant AS Variant,
-			start_hour AS StartHour,
-			start_position_lower_bound_99th AS LowerBound99th,
-			start_position AS NominalStartPosition,
-			start_position_upper_bound_99th AS UpperBound99th,
-			unexpected_source_verdict_rate AS UnexpectedSourceVerdictRateAfter,
-			previous_unexpected_source_verdict_rate AS UnexpectedSourceVerdictRateBefore,
-			latest_unexpected_source_verdict_rate AS UnexpectedSourceVerdictRateCurrent,
-			previous_nominal_end_position as PreviousNominalEndPosition
+				project AS Project,
+				test_id AS TestID,
+				variant_hash AS VariantHash,
+				ref_hash AS RefHash,
+				ref AS Ref,
+				variant AS Variant,
+				start_hour AS StartHour,
+				start_position_lower_bound_99th AS LowerBound99th,
+				start_position AS NominalStartPosition,
+				start_position_upper_bound_99th AS UpperBound99th,
+				previous_nominal_end_position as PreviousNominalEndPosition
 			) ORDER BY project, test_id, variant_hash, ref_hash, start_position LIMIT 1)[OFFSET(0)] as CanonicalChangepoint,
 			COUNT(*) as Total,
 			` + aggregateRateCount("previous_unexpected_source_verdict_rate") + ` as UnexpectedSourceVerdictRateBefore,
@@ -441,4 +454,99 @@ func (c *Client) ReadChangepointGroupSummaries(ctx context.Context, opts ReadCha
 		nextPageToken = pagination.Token(fmt.Sprint(lastCanonicalChangepoint.StartHour.Unix()), lastCanonicalChangepoint.TestID, lastCanonicalChangepoint.VariantHash, lastCanonicalChangepoint.RefHash, fmt.Sprint(lastCanonicalChangepoint.NominalStartPosition))
 	}
 	return results, nextPageToken, nil
+}
+
+type ReadChangepointsInGroupOptions struct {
+	Project       string
+	TestIDContain string
+	// TestID, VariantHash, RefHash and StartPosition define a changepoint.
+	TestID        string
+	VariantHash   string
+	RefHash       string
+	StartPosition int64
+}
+
+// ReadChangepointsInGroup read changepoints in the same group as the changepoint specified in option.
+// At most 1000 changepoints are returned, ordered by NominalStartPosition DESC, TestID, VariantHash, RefHash.
+func (c *Client) ReadChangepointsInGroup(ctx context.Context, opts ReadChangepointsInGroupOptions) (changepoints []*ChangepointRow, err error) {
+	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/changepoints.ReadChangepointsInGroup")
+	defer func() { tracing.End(s, err) }()
+
+	testIDContainFilter := "(TRUE)"
+	if opts.TestIDContain != "" {
+		testIDContainFilter = "(CONTAINS_SUBSTR(test_id, @testIDContain ))"
+	}
+	query := `
+		WITH
+			latest AS (
+				SELECT start_hour_week, MAX(version) as version
+				FROM grouped_changepoints
+				GROUP BY start_hour_week
+			),
+			grouped_changepoint_latest AS (
+				SELECT g.*
+				FROM grouped_changepoints g
+				INNER JOIN latest l
+					ON g.start_hour_week = l.start_hour_week
+					AND g.version = l.version
+			),
+			select_group as (
+				SELECT group_id
+				FROM grouped_changepoint_latest
+				WHERE project = @project
+				AND test_id = @testID
+				AND variant_hash = @variantHash
+				AND ref_hash = @refHash
+				AND start_position_upper_bound_99th >= @startPosition
+				AND start_position_lower_bound_99th <= @startPosition
+				ORDER BY ABS(start_position - @startPosition)
+				LIMIT 1
+			)
+		SELECT
+			project AS Project,
+			test_id AS TestID,
+			variant_hash AS VariantHash,
+			ref_hash AS RefHash,
+			ref AS Ref,
+			variant AS Variant,
+			start_hour AS StartHour,
+			start_position_lower_bound_99th AS LowerBound99th,
+			start_position AS NominalStartPosition,
+			start_position_upper_bound_99th AS UpperBound99th,
+			previous_nominal_end_position as PreviousNominalEndPosition
+		FROM grouped_changepoint_latest cp
+		INNER JOIN select_group g
+			ON cp.group_id = g.group_id
+		WHERE project = @project AND ` + testIDContainFilter + `
+		ORDER BY NominalStartPosition DESC, TestID, VariantHash, RefHash
+		LIMIT 1000
+		`
+
+	q := c.client.Query(query)
+	q.DefaultDatasetID = "internal"
+	q.Parameters = []bigquery.QueryParameter{
+		{Name: "project", Value: opts.Project},
+		{Name: "testID", Value: opts.TestID},
+		{Name: "variantHash", Value: opts.VariantHash},
+		{Name: "refHash", Value: opts.RefHash},
+		{Name: "startPosition", Value: opts.StartPosition},
+		{Name: "testIDContain", Value: opts.TestIDContain},
+	}
+	it, err := q.Read(ctx)
+	if err != nil {
+		return nil, errors.Annotate(err, "read query results").Err()
+	}
+	results := []*ChangepointRow{}
+	for {
+		row := &ChangepointRow{}
+		err := it.Next(row)
+		if errors.Is(err, iterator.Done) {
+			break
+		}
+		if err != nil {
+			return nil, errors.Annotate(err, "obtain next changepoint row").Err()
+		}
+		results = append(results, row)
+	}
+	return results, nil
 }

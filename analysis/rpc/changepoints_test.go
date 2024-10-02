@@ -103,9 +103,9 @@ func TestChangepointsServer(t *testing.T) {
 				So(res, ShouldBeNil)
 			})
 			Convey("e2e", func() {
-				cp1 := makeChangepointRow(1, 2, 4)
-				cp2 := makeChangepointRow(2, 2, 3)
-				client.ReadChangepointsResult = []*changepoints.ChangepointRow{cp1, cp2}
+				cp1 := makeChangepointDetailRow(1, 2, 4)
+				cp2 := makeChangepointDetailRow(2, 2, 3)
+				client.ReadChangepointsResult = []*changepoints.ChangepointDetailRow{cp1, cp2}
 				stats := &pb.ChangepointGroupStatistics{
 					UnexpectedVerdictRateBefore: &pb.ChangepointGroupStatistics_RateDistribution{
 						Buckets: &pb.ChangepointGroupStatistics_RateDistribution_RateBuckets{},
@@ -252,33 +252,8 @@ func TestChangepointsServer(t *testing.T) {
 			Convey("e2e", func() {
 				client.ReadChangepointGroupSummariesResult = []*changepoints.GroupSummary{
 					{
-						CanonicalChangepoint: changepoints.ChangepointRow{
-							Project:     "chromium",
-							TestIDNum:   1,
-							TestID:      "test1",
-							VariantHash: "5097aaaaaaaaaaaa",
-							Variant: bigquery.NullJSON{
-								JSONVal: "{\"var\":\"abc\",\"varr\":\"xyx\"}",
-								Valid:   true,
-							},
-							Ref: &changepoints.Ref{
-								Gitiles: &changepoints.Gitiles{
-									Host:    bigquery.NullString{Valid: true, StringVal: "host"},
-									Project: bigquery.NullString{Valid: true, StringVal: "project"},
-									Ref:     bigquery.NullString{Valid: true, StringVal: "ref"},
-								},
-							},
-							RefHash:                            "b920ffffffffffff",
-							UnexpectedSourceVerdictRateBefore:  0.3,
-							UnexpectedSourceVerdictRateAfter:   0.99,
-							UnexpectedSourceVerdictRateCurrent: 0,
-							StartHour:                          time.Unix(1000, 0),
-							LowerBound99th:                     2,
-							UpperBound99th:                     4,
-							NominalStartPosition:               3,
-							PreviousNominalEndPosition:         1,
-						},
-						Total: 2,
+						CanonicalChangepoint: *makeChangepointRow("test1"),
+						Total:                2,
 						UnexpectedSourceVerdictRateBefore: changepoints.RateDistribution{
 							Mean:                    0.3,
 							Less5Percent:            2,
@@ -415,16 +390,6 @@ func TestChangepointsServer(t *testing.T) {
 			})
 
 			Convey("e2e", func() {
-				// Group1.
-				cp1 := makeChangepointRow(1, 2, 4)
-				cp2 := makeChangepointRow(2, 2, 3)
-				// Group2.
-				cp3 := makeChangepointRow(1, 2, 20)
-				cp4 := makeChangepointRow(2, 2, 20)
-				// Group3.
-				cp5 := makeChangepointRow(1, 20, 40)
-				cp6 := makeChangepointRow(2, 20, 30)
-				client.ReadChangepointsResult = []*changepoints.ChangepointRow{cp1, cp2, cp3, cp4, cp5, cp6}
 				req := &pb.QueryChangepointsInGroupRequest{
 					Project: "chromium",
 					GroupKey: &pb.QueryChangepointsInGroupRequest_ChangepointIdentifier{
@@ -437,31 +402,45 @@ func TestChangepointsServer(t *testing.T) {
 				}
 
 				Convey("group found", func() {
-					Convey("with no predicates", func() {
-						res, err := server.QueryChangepointsInGroup(ctx, req)
-						So(err, ShouldBeNil)
-						So(res.Changepoints, ShouldHaveLength, 2)
-						So(res.Changepoints[0].TestId, ShouldEqual, "test1")
-						So(res.Changepoints[0].NominalStartPosition, ShouldEqual, cp5.NominalStartPosition)
-						So(res.Changepoints[1].TestId, ShouldEqual, "test2")
-						So(res.Changepoints[1].NominalStartPosition, ShouldEqual, cp6.NominalStartPosition)
+					client.ReadChangepointsInGroupResult = []*changepoints.ChangepointRow{
+						makeChangepointRow("test1"),
+					}
+
+					res, err := server.QueryChangepointsInGroup(ctx, req)
+					So(err, ShouldBeNil)
+					So(res, ShouldResembleProto, &pb.QueryChangepointsInGroupResponse{
+						Changepoints: []*pb.Changepoint{{
+							Project:     "chromium",
+							TestId:      "test1",
+							VariantHash: "5097aaaaaaaaaaaa",
+							Variant: &pb.Variant{
+								Def: map[string]string{
+									"var":  "abc",
+									"varr": "xyx",
+								},
+							},
+							RefHash: "b920ffffffffffff",
+							Ref: &pb.SourceRef{
+								System: &pb.SourceRef_Gitiles{
+									Gitiles: &pb.GitilesRef{
+										Host:    "host",
+										Project: "project",
+										Ref:     "ref",
+									},
+								},
+							},
+							StartHour:                         timestamppb.New(time.Unix(1000, 0)),
+							StartPositionLowerBound_99Th:      2,
+							StartPositionUpperBound_99Th:      4,
+							NominalStartPosition:              3,
+							PreviousSegmentNominalEndPosition: 1,
+						}},
 					})
 
-					Convey("with predicates", func() {
-						req.Predicate = &pb.ChangepointPredicateLegacy{
-							TestIdPrefix: "test2",
-						}
-
-						res, err := server.QueryChangepointsInGroup(ctx, req)
-						So(err, ShouldBeNil)
-						So(res.Changepoints, ShouldHaveLength, 1)
-						So(res.Changepoints[0].TestId, ShouldEqual, "test2")
-						So(res.Changepoints[0].NominalStartPosition, ShouldEqual, cp6.NominalStartPosition)
-					})
 				})
 
 				Convey("group not found", func() {
-					req.GroupKey.NominalStartPosition = 100 // no match.
+					client.ReadChangepointsInGroupResult = []*changepoints.ChangepointRow{}
 
 					res, err := server.QueryChangepointsInGroup(ctx, req)
 					So(err, ShouldBeRPCNotFound)
@@ -523,7 +502,7 @@ func TestValidateRequest(t *testing.T) {
 				NominalStartPosition: 1,
 				StartHour:            timestamppb.New(time.Unix(1000, 0)),
 			},
-			Predicate: &pb.ChangepointPredicateLegacy{},
+			Predicate: &pb.ChangepointPredicate{},
 		}
 		Convey("valid", func() {
 			err := validateQueryChangepointsInGroupRequest(req)
@@ -603,8 +582,8 @@ func TestValidateRequest(t *testing.T) {
 	})
 }
 
-func makeChangepointRow(TestIDNum, lowerBound, upperBound int64) *changepoints.ChangepointRow {
-	return &changepoints.ChangepointRow{
+func makeChangepointDetailRow(TestIDNum, lowerBound, upperBound int64) *changepoints.ChangepointDetailRow {
+	return &changepoints.ChangepointDetailRow{
 		Project:     "chromium",
 		TestIDNum:   TestIDNum,
 		TestID:      fmt.Sprintf("test%d", TestIDNum),
@@ -631,15 +610,45 @@ func makeChangepointRow(TestIDNum, lowerBound, upperBound int64) *changepoints.C
 	}
 }
 
-type fakeChangepointClient struct {
-	ReadChangepointsResult              []*changepoints.ChangepointRow
-	ReadChangepointGroupSummariesResult []*changepoints.GroupSummary
+func makeChangepointRow(testID string) *changepoints.ChangepointRow {
+	return &changepoints.ChangepointRow{
+		Project:     "chromium",
+		TestID:      testID,
+		VariantHash: "5097aaaaaaaaaaaa",
+		Variant: bigquery.NullJSON{
+			JSONVal: "{\"var\":\"abc\",\"varr\":\"xyx\"}",
+			Valid:   true,
+		},
+		Ref: &changepoints.Ref{
+			Gitiles: &changepoints.Gitiles{
+				Host:    bigquery.NullString{Valid: true, StringVal: "host"},
+				Project: bigquery.NullString{Valid: true, StringVal: "project"},
+				Ref:     bigquery.NullString{Valid: true, StringVal: "ref"},
+			},
+		},
+		RefHash:                    "b920ffffffffffff",
+		StartHour:                  time.Unix(1000, 0),
+		LowerBound99th:             2,
+		UpperBound99th:             4,
+		NominalStartPosition:       3,
+		PreviousNominalEndPosition: 1,
+	}
 }
 
-func (f *fakeChangepointClient) ReadChangepoints(ctx context.Context, project string, week time.Time) ([]*changepoints.ChangepointRow, error) {
+type fakeChangepointClient struct {
+	ReadChangepointsResult              []*changepoints.ChangepointDetailRow
+	ReadChangepointGroupSummariesResult []*changepoints.GroupSummary
+	ReadChangepointsInGroupResult       []*changepoints.ChangepointRow
+}
+
+func (f *fakeChangepointClient) ReadChangepoints(ctx context.Context, project string, week time.Time) ([]*changepoints.ChangepointDetailRow, error) {
 	return f.ReadChangepointsResult, nil
 }
 
 func (f *fakeChangepointClient) ReadChangepointGroupSummaries(ctx context.Context, opts changepoints.ReadChangepointGroupSummariesOptions) ([]*changepoints.GroupSummary, string, error) {
 	return f.ReadChangepointGroupSummariesResult, "next-page", nil
+}
+
+func (f *fakeChangepointClient) ReadChangepointsInGroup(ctx context.Context, opts changepoints.ReadChangepointsInGroupOptions) (changepoints []*changepoints.ChangepointRow, err error) {
+	return f.ReadChangepointsInGroupResult, nil
 }

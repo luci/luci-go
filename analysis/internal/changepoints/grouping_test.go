@@ -49,8 +49,8 @@ func TestGroupChangepoints(t *testing.T) {
 		// Group 6 - different branch should't be grouped together.
 		cp10 := makeChangepointRow(1002, 120, 230, "otherrefhash")
 
-		groups := GroupChangepoints(ctx, []*ChangepointRow{cp1, cp2, cp3, cp4, cp5, cp6, cp7, cp8, cp9, cp10})
-		So(groups, ShouldResemble, [][]*ChangepointRow{
+		groups := GroupChangepoints(ctx, []*ChangepointDetailRow{cp1, cp2, cp3, cp4, cp5, cp6, cp7, cp8, cp9, cp10})
+		So(groups, ShouldResemble, [][]*ChangepointDetailRow{
 			{cp1, cp3, cp2, cp4},
 			{cp5, cp6},
 			{cp7, cp8},
@@ -88,8 +88,8 @@ func TestStartOfWeek(t *testing.T) {
 	})
 }
 
-func makeChangepointRow(TestIDNum, lowerBound, upperBound int64, refHash string) *ChangepointRow {
-	return &ChangepointRow{
+func makeChangepointRow(TestIDNum, lowerBound, upperBound int64, refHash string) *ChangepointDetailRow {
+	return &ChangepointDetailRow{
 		Project:     "chromium",
 		TestIDNum:   TestIDNum,
 		TestID:      fmt.Sprintf("test%d", TestIDNum),

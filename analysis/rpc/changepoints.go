@@ -16,7 +16,6 @@ package rpc
 
 import (
 	"context"
-	"math"
 	"regexp"
 	"sort"
 	"strings"
@@ -32,7 +31,6 @@ import (
 	"go.chromium.org/luci/analysis/internal/changepoints"
 	"go.chromium.org/luci/analysis/internal/pagination"
 	"go.chromium.org/luci/analysis/internal/perms"
-	"go.chromium.org/luci/analysis/internal/tracing"
 	"go.chromium.org/luci/analysis/pbutil"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 )
@@ -41,8 +39,9 @@ var refHashRe = regexp.MustCompile(`^[0-9a-f]{16}$`)
 
 type ChangePointClient interface {
 	// ReadChangepoints read changepoints for a certain week. The week is specified by any time at that week in UTC.
-	ReadChangepoints(ctx context.Context, project string, week time.Time) ([]*changepoints.ChangepointRow, error)
+	ReadChangepoints(ctx context.Context, project string, week time.Time) ([]*changepoints.ChangepointDetailRow, error)
 	ReadChangepointGroupSummaries(ctx context.Context, opts changepoints.ReadChangepointGroupSummariesOptions) ([]*changepoints.GroupSummary, string, error)
+	ReadChangepointsInGroup(ctx context.Context, opts changepoints.ReadChangepointsInGroupOptions) (changepoints []*changepoints.ChangepointRow, err error)
 }
 
 // NewChangepointsServer returns a new pb.ChangepointsServer.
@@ -159,37 +158,37 @@ func (c *changepointsServer) QueryChangepointsInGroup(ctx context.Context, req *
 	if err := validateQueryChangepointsInGroupRequest(req); err != nil {
 		return nil, invalidArgumentError(err)
 	}
-	rows, err := c.changePointClient.ReadChangepoints(ctx, req.Project, req.GroupKey.StartHour.AsTime())
+	opts := changepoints.ReadChangepointsInGroupOptions{
+		Project:       req.Project,
+		TestID:        req.GroupKey.TestId,
+		VariantHash:   req.GroupKey.VariantHash,
+		RefHash:       req.GroupKey.RefHash,
+		StartPosition: req.GroupKey.NominalStartPosition,
+		TestIDContain: req.Predicate.GetTestIdContain(),
+	}
+	rows, err := c.changePointClient.ReadChangepointsInGroup(ctx, opts)
 	if err != nil {
 		return nil, errors.Annotate(err, "read BigQuery changepoints").Err()
 	}
-	groups := changepoints.GroupChangepoints(ctx, rows)
-	group, found := changepointGroupWithGroupKey(ctx, groups, req.GroupKey)
-	if !found {
+	if len(rows) == 0 {
 		return nil, appstatus.Error(codes.NotFound, "changepoint group not found")
 	}
-	filteredCps := filterAndSortChangepointsWithPredicate(group, req.Predicate)
-	changepointsToReturn := make([]*pb.Changepoint, 0, len(filteredCps))
-	for _, t := range filteredCps {
-		cppb, err := toPBChangepoint(t)
+	cps := make([]*pb.Changepoint, 0, len(rows))
+	for _, row := range rows {
+		cp, err := toPBChangepoint(row)
 		if err != nil {
-			return nil, errors.Annotate(err, "construct changepoint proto").Err()
+			return nil, err
 		}
-		changepointsToReturn = append(changepointsToReturn, cppb)
-	}
-	if len(changepointsToReturn) > 1000 {
-		// Truncate to 1000 changepoints to avoid overloading the RPC.
-		// TODO: remove this and implement pagination.
-		changepointsToReturn = changepointsToReturn[:1000]
+		cps = append(cps, cp)
 	}
 	return &pb.QueryChangepointsInGroupResponse{
-		Changepoints: changepointsToReturn,
+		Changepoints: cps,
 	}, nil
 }
 
-type rateFunc func(*changepoints.ChangepointRow) float64
+type rateFunc func(*changepoints.ChangepointDetailRow) float64
 
-func aggregateRate(group []*changepoints.ChangepointRow, f rateFunc) *pb.ChangepointGroupStatistics_RateDistribution {
+func aggregateRate(group []*changepoints.ChangepointDetailRow, f rateFunc) *pb.ChangepointGroupStatistics_RateDistribution {
 	stats := pb.ChangepointGroupStatistics_RateDistribution{
 		Buckets: &pb.ChangepointGroupStatistics_RateDistribution_RateBuckets{},
 	}
@@ -210,7 +209,7 @@ func aggregateRate(group []*changepoints.ChangepointRow, f rateFunc) *pb.Changep
 	return &stats
 }
 
-func aggregateRateChange(group []*changepoints.ChangepointRow) *pb.ChangepointGroupStatistics_RateChangeBuckets {
+func aggregateRateChange(group []*changepoints.ChangepointDetailRow) *pb.ChangepointGroupStatistics_RateChangeBuckets {
 	bucket := pb.ChangepointGroupStatistics_RateChangeBuckets{}
 	for _, g := range group {
 		change := g.UnexpectedSourceVerdictRateAfter - g.UnexpectedSourceVerdictRateBefore
@@ -228,8 +227,8 @@ func aggregateRateChange(group []*changepoints.ChangepointRow) *pb.ChangepointGr
 
 // filterAndSortChangepointsWithPredicate filters the changepoints.
 // Changepoints will be sorted in by test id, variant hash, ref hash, nominal start position.
-func filterAndSortChangepointsWithPredicate(cps []*changepoints.ChangepointRow, predicate *pb.ChangepointPredicateLegacy) []*changepoints.ChangepointRow {
-	filtered := []*changepoints.ChangepointRow{}
+func filterAndSortChangepointsWithPredicate(cps []*changepoints.ChangepointDetailRow, predicate *pb.ChangepointPredicateLegacy) []*changepoints.ChangepointDetailRow {
+	filtered := []*changepoints.ChangepointDetailRow{}
 	for _, cp := range cps {
 		if predicate == nil {
 			filtered = append(filtered, cp)
@@ -252,44 +251,11 @@ func filterAndSortChangepointsWithPredicate(cps []*changepoints.ChangepointRow, 
 	return filtered
 }
 
-// changepointGroupWithGroupKey finds the group that matches the group_key,
-// returns the matched group and a bool to indicate whether a matching group is found.
-// We consider the changepoint group matches the group_key if there is a changepoint in the group such that:
-//   - the changepoint is of the same test variant branch as group_key (same test_id, variant_hash, ref_hash), AND
-//   - the changepoint's 99% confidence interval includes the group_key's nominal_start_position, AND
-//   - out of all changepoints that satisfy the above 2 rules, the changepoints has the shortest nominal start position distance with group_key.
-func changepointGroupWithGroupKey(ctx context.Context, groups [][]*changepoints.ChangepointRow, groupKey *pb.QueryChangepointsInGroupRequest_ChangepointIdentifier) ([]*changepoints.ChangepointRow, bool) {
-	_, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/rpc.ChangepointGroupWithGroupKey")
-	defer func() { tracing.End(s, nil) }()
-	var matchingGroup []*changepoints.ChangepointRow
-	var matchingChangepoint *changepoints.ChangepointRow
-	distanceFromGroupKey := func(cp *changepoints.ChangepointRow) int64 {
-		return int64(math.Abs(float64(groupKey.NominalStartPosition) - float64(cp.NominalStartPosition)))
-	}
-	for _, group := range groups {
-		for _, cp := range group {
-			if groupKey.TestId == cp.TestID &&
-				groupKey.VariantHash == cp.VariantHash &&
-				groupKey.RefHash == cp.RefHash &&
-				groupKey.NominalStartPosition <= cp.UpperBound99th &&
-				groupKey.NominalStartPosition >= cp.LowerBound99th &&
-				(matchingChangepoint == nil || distanceFromGroupKey(cp) < distanceFromGroupKey(matchingChangepoint)) {
-				matchingGroup = group
-				matchingChangepoint = cp
-			}
-		}
-	}
-	if matchingGroup == nil {
-		return nil, false
-	}
-	return matchingGroup, true
-}
-
-func aggregateChangepoints(group []*changepoints.ChangepointRow) (summary *pb.ChangepointGroupSummary, err error) {
+func aggregateChangepoints(group []*changepoints.ChangepointDetailRow) (summary *pb.ChangepointGroupSummary, err error) {
 	// Set the mimimum changepoint as the canonical changepoint to represent this group.
 	// Note, this canonical changepoint is different from the canonical changepoint used to create the group.
 	canonical := group[0]
-	canonicalpb, err := toPBChangepoint(canonical)
+	canonicalpb, err := toPBChangepointLegacy(canonical)
 	if err != nil {
 		return nil, errors.Annotate(err, "construct changepoint proto").Err()
 	}
@@ -297,9 +263,9 @@ func aggregateChangepoints(group []*changepoints.ChangepointRow) (summary *pb.Ch
 		CanonicalChangepoint: canonicalpb,
 		Statistics: &pb.ChangepointGroupStatistics{
 			Count:                        int32(len(group)),
-			UnexpectedVerdictRateBefore:  aggregateRate(group, func(tvr *changepoints.ChangepointRow) float64 { return tvr.UnexpectedSourceVerdictRateBefore }),
-			UnexpectedVerdictRateAfter:   aggregateRate(group, func(tvr *changepoints.ChangepointRow) float64 { return tvr.UnexpectedSourceVerdictRateAfter }),
-			UnexpectedVerdictRateCurrent: aggregateRate(group, func(tvr *changepoints.ChangepointRow) float64 { return tvr.UnexpectedSourceVerdictRateCurrent }),
+			UnexpectedVerdictRateBefore:  aggregateRate(group, func(tvr *changepoints.ChangepointDetailRow) float64 { return tvr.UnexpectedSourceVerdictRateBefore }),
+			UnexpectedVerdictRateAfter:   aggregateRate(group, func(tvr *changepoints.ChangepointDetailRow) float64 { return tvr.UnexpectedSourceVerdictRateAfter }),
+			UnexpectedVerdictRateCurrent: aggregateRate(group, func(tvr *changepoints.ChangepointDetailRow) float64 { return tvr.UnexpectedSourceVerdictRateCurrent }),
 			UnexpectedVerdictRateChange:  aggregateRateChange(group),
 		},
 	}, nil
@@ -339,6 +305,34 @@ func toPBRateChangeBuckets(dist *changepoints.RateChangeDistribution) *pb.Change
 		CountIncreased_20To_50Percent:  int32(dist.Increase20to50percent),
 		CountIncreased_50To_100Percent: int32(dist.Increase50to100percent),
 	}
+}
+
+func toPBChangepointLegacy(cp *changepoints.ChangepointDetailRow) (*pb.Changepoint, error) {
+	variant, err := pbutil.VariantFromJSON(cp.Variant.String())
+	if err != nil {
+		return nil, err
+	}
+	return &pb.Changepoint{
+		Project:     cp.Project,
+		TestId:      cp.TestID,
+		VariantHash: cp.VariantHash,
+		Variant:     variant,
+		RefHash:     cp.RefHash,
+		Ref: &pb.SourceRef{
+			System: &pb.SourceRef_Gitiles{
+				Gitiles: &pb.GitilesRef{
+					Host:    cp.Ref.Gitiles.Host.String(),
+					Project: cp.Ref.Gitiles.Project.String(),
+					Ref:     cp.Ref.Gitiles.Ref.String(),
+				},
+			},
+		},
+		StartHour:                         timestamppb.New(cp.StartHour),
+		StartPositionLowerBound_99Th:      cp.LowerBound99th,
+		StartPositionUpperBound_99Th:      cp.UpperBound99th,
+		NominalStartPosition:              cp.NominalStartPosition,
+		PreviousSegmentNominalEndPosition: cp.PreviousNominalEndPosition,
+	}, nil
 }
 
 func toPBChangepoint(cp *changepoints.ChangepointRow) (*pb.Changepoint, error) {
@@ -406,7 +400,7 @@ func validateQueryChangepointsInGroupRequest(req *pb.QueryChangepointsInGroupReq
 	// Project already validated by caller.
 
 	if req.Predicate != nil {
-		if err := validateChangepointPredicateLegacy(req.Predicate); err != nil {
+		if err := validateChangepointPredicate(req.Predicate); err != nil {
 			return errors.Annotate(err, "predicate").Err()
 		}
 	}

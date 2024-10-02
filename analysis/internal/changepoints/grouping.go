@@ -40,13 +40,13 @@ const RegressionRangeOverlapPrecThreshold = 0.4
 // The groups are generated with the following steps.
 //  1. partition changepoints base on test ID
 //  2. For changepoints in each partition, group base on percentage regression range overlap.
-func GroupChangepoints(ctx context.Context, rows []*ChangepointRow) [][]*ChangepointRow {
+func GroupChangepoints(ctx context.Context, rows []*ChangepointDetailRow) [][]*ChangepointDetailRow {
 	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/changepoints.GroupByTestID",
 		attribute.Int("n_changepoint_rows", len(rows)),
 	)
 	defer func() { tracing.End(s, nil) }()
 	testIDGroups := groupByTestID(ctx, rows)
-	groups := [][]*ChangepointRow{}
+	groups := [][]*ChangepointDetailRow{}
 	for _, testIDGroup := range testIDGroups {
 		groupsForTestID := groupByRegressionRange(ctx, testIDGroup)
 		groups = append(groups, groupsForTestID...)
@@ -55,18 +55,18 @@ func GroupChangepoints(ctx context.Context, rows []*ChangepointRow) [][]*Changep
 }
 
 // groupByTestID groups changepoints base on their test ID.
-func groupByTestID(ctx context.Context, rows []*ChangepointRow) [][]*ChangepointRow {
+func groupByTestID(ctx context.Context, rows []*ChangepointDetailRow) [][]*ChangepointDetailRow {
 	_, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/changepoints.GroupByTestID",
 		attribute.Int("n_changepoint_rows", len(rows)),
 	)
 	defer func() { tracing.End(s, nil) }()
 	// Copy the input slice, so that we don't change the input.
-	cps := make([]*ChangepointRow, len(rows))
+	cps := make([]*ChangepointDetailRow, len(rows))
 	copy(cps, rows)
 	sort.Slice(cps, func(i, j int) bool {
 		return CompareTestVariantBranchChangepoint(cps[i], cps[j])
 	})
-	testIDGroups := [][]*ChangepointRow{}
+	testIDGroups := [][]*ChangepointDetailRow{}
 	groupStart := 0
 	// Iterate the sorted list of changepoints, and create a split between two adjacent changepoints
 	// when the difference of their testIDNum is greater than TestIDGroupingThreshold.
@@ -85,7 +85,7 @@ type testVariantKey struct {
 	VariantHash string
 }
 
-func toTestVariantKey(changepoint *ChangepointRow) testVariantKey {
+func toTestVariantKey(changepoint *ChangepointDetailRow) testVariantKey {
 	return testVariantKey{
 		TestID:      changepoint.TestID,
 		VariantHash: changepoint.VariantHash,
@@ -94,13 +94,13 @@ func toTestVariantKey(changepoint *ChangepointRow) testVariantKey {
 
 // groupByRegressionRange groups changepoints base on overlap of 99% confidence interval of start position (aka. Regression range).
 // The same test variant branch can only appears once in a group.
-func groupByRegressionRange(ctx context.Context, rows []*ChangepointRow) [][]*ChangepointRow {
+func groupByRegressionRange(ctx context.Context, rows []*ChangepointDetailRow) [][]*ChangepointDetailRow {
 	_, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/changepoints.GroupByRegressionRange",
 		attribute.Int("n_changepoint_rows", len(rows)),
 	)
 	defer func() { tracing.End(s, nil) }()
 	// Copy the input slice, so that we don't change the input.
-	cps := make([]*ChangepointRow, len(rows))
+	cps := make([]*ChangepointDetailRow, len(rows))
 	copy(cps, rows)
 	// Sort changepoints by regression range width ASC.
 	// Regression range width is defined as start_position_upper_bound_99th - start_position_lower_bound_99th.
@@ -120,7 +120,7 @@ func groupByRegressionRange(ctx context.Context, rows []*ChangepointRow) [][]*Ch
 		// This is required to make sure the sort is deterministic when regression range width equal.
 		return CompareTestVariantBranchChangepoint(cps[i], cps[j])
 	})
-	groups := [][]*ChangepointRow{}
+	groups := [][]*ChangepointDetailRow{}
 	grouped := make([]bool, len(cps))
 	for i := range cps {
 		if grouped[i] {
@@ -135,7 +135,7 @@ func groupByRegressionRange(ctx context.Context, rows []*ChangepointRow) [][]*Ch
 		// We record whether a test variant branch has been added to this group.
 		// This is to avoid multiple changepoints from the same test variant branch being grouped into the same group.
 		seenTestVariant := map[testVariantKey]bool{}
-		group := []*ChangepointRow{base}
+		group := []*ChangepointDetailRow{base}
 		seenTestVariant[toTestVariantKey(base)] = true
 		for j := i + 1; j < len(cps); j++ {
 			// Skip this changepoint when
@@ -158,17 +158,17 @@ func groupByRegressionRange(ctx context.Context, rows []*ChangepointRow) [][]*Ch
 	return groups
 }
 
-func numberOfOverlapCommit(cp1, cp2 *ChangepointRow) float64 {
+func numberOfOverlapCommit(cp1, cp2 *ChangepointDetailRow) float64 {
 	return math.Min(float64(cp1.UpperBound99th), float64(cp2.UpperBound99th)) - math.Max(float64(cp1.LowerBound99th), float64(cp2.LowerBound99th)) + 1
 }
 
-func regressionRangeWidth(cp *ChangepointRow) int64 {
+func regressionRangeWidth(cp *ChangepointDetailRow) int64 {
 	return cp.UpperBound99th - cp.LowerBound99th + 1
 }
 
 // CompareTestVariantBranchChangepoint returns whether element at i is smaller than element at j
 // by comparing TestIDNum, VariantHash, RefHash, NominalStartPosition.
-func CompareTestVariantBranchChangepoint(cpi, cpj *ChangepointRow) bool {
+func CompareTestVariantBranchChangepoint(cpi, cpj *ChangepointDetailRow) bool {
 	switch {
 	case cpi.TestIDNum != cpj.TestIDNum:
 		return cpi.TestIDNum < cpj.TestIDNum

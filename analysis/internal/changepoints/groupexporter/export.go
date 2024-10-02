@@ -46,7 +46,7 @@ func NewExporter(client InsertClient) *Exporter {
 }
 
 // Export flattens and exports the grouped changepoints to BigQuery.
-func (e *Exporter) Export(ctx context.Context, groups [][]*changepoints.ChangepointRow, version time.Time) error {
+func (e *Exporter) Export(ctx context.Context, groups [][]*changepoints.ChangepointDetailRow, version time.Time) error {
 	rows := prepareExportRows(groups, version)
 
 	if err := e.client.Insert(ctx, rows); err != nil {
@@ -56,7 +56,7 @@ func (e *Exporter) Export(ctx context.Context, groups [][]*changepoints.Changepo
 }
 
 // prepareExportRows prepares BigQuery export rows for grouped changepoints.
-func prepareExportRows(groups [][]*changepoints.ChangepointRow, version time.Time) []*bqpb.GroupedChangepointRow {
+func prepareExportRows(groups [][]*changepoints.ChangepointDetailRow, version time.Time) []*bqpb.GroupedChangepointRow {
 	rows := make([]*bqpb.GroupedChangepointRow, 0)
 	for _, g := range groups {
 
@@ -97,7 +97,7 @@ func prepareExportRows(groups [][]*changepoints.ChangepointRow, version time.Tim
 
 // changepointGroupID is a concatenation of the lexicographically smallest
 // (test_id, variant_hash, ref_hash, start_position) tuple within this group.
-func changepointGroupID(cps []*changepoints.ChangepointRow) string {
+func changepointGroupID(cps []*changepoints.ChangepointDetailRow) string {
 	minimum := cps[0]
 	for _, cp := range cps {
 		if changepoints.CompareTestVariantBranchChangepoint(cp, minimum) {
@@ -107,6 +107,6 @@ func changepointGroupID(cps []*changepoints.ChangepointRow) string {
 	return ChangepointKey(minimum)
 }
 
-func ChangepointKey(cp *changepoints.ChangepointRow) string {
+func ChangepointKey(cp *changepoints.ChangepointDetailRow) string {
 	return fmt.Sprintf("%s-%s-%s-%s-%d", cp.Project, cp.TestID, cp.VariantHash, cp.RefHash, cp.NominalStartPosition)
 }
