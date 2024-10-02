@@ -20,6 +20,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -30,22 +31,25 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestLoadChildRuns(t *testing.T) {
 	t.Parallel()
 
-	Convey("LoadChildRuns works", t, func() {
+	ftt.Run("LoadChildRuns works", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
 		put := func(runID common.RunID, depRuns common.RunIDs) {
-			So(datastore.Put(ctx, &Run{
+			assert.Loosely(t, datastore.Put(ctx, &Run{
 				ID:      runID,
 				DepRuns: depRuns,
-			}), ShouldBeNil)
+			}), should.BeNil)
 		}
 
 		const parentRun1 = common.RunID("parent/1-cow")
@@ -53,8 +57,8 @@ func TestLoadChildRuns(t *testing.T) {
 		const orphanRun = common.RunID("orphan/1-chicken")
 		put(orphanRun, common.RunIDs{})
 		out1, err := LoadChildRuns(ctx, parentRun1)
-		So(err, ShouldBeNil)
-		So(out1, ShouldHaveLength, 0)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, out1, should.HaveLength(0))
 
 		const pendingRun = common.RunID("child/1-pending")
 		put(pendingRun, common.RunIDs{parentRun1})
@@ -62,25 +66,25 @@ func TestLoadChildRuns(t *testing.T) {
 		put(runningRun, common.RunIDs{parentRun1})
 
 		out2, err := LoadChildRuns(ctx, parentRun1)
-		So(err, ShouldBeNil)
-		So(out2, ShouldHaveLength, 2)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, out2, should.HaveLength(2))
 	})
 }
 
 func TestLoadRunLogEntries(t *testing.T) {
 	t.Parallel()
 
-	Convey("LoadRunLogEntries works", t, func() {
+	ftt.Run("LoadRunLogEntries works", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
 		ev := int64(1)
 		put := func(runID common.RunID, entries ...*LogEntry) {
-			So(datastore.Put(ctx, &RunLog{
+			assert.Loosely(t, datastore.Put(ctx, &RunLog{
 				Run:     datastore.MakeKey(ctx, common.RunKind, string(runID)),
 				ID:      ev,
 				Entries: &LogEntries{Entries: entries},
-			}), ShouldBeNil)
+			}), should.BeNil)
 			ev += 1
 		}
 
@@ -123,23 +127,23 @@ func TestLoadRunLogEntries(t *testing.T) {
 		)
 
 		out1, err := LoadRunLogEntries(ctx, run1)
-		So(err, ShouldBeNil)
-		So(out1, ShouldHaveLength, 3)
-		So(out1[0].GetCreated().GetConfigGroupId(), ShouldResemble, "fi/rst")
-		So(out1[1].GetConfigChanged().GetConfigGroupId(), ShouldResemble, "se/cond")
-		So(out1[2].GetTryjobsRequirementUpdated(), ShouldNotBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, out1, should.HaveLength(3))
+		assert.Loosely(t, out1[0].GetCreated().GetConfigGroupId(), should.Match("fi/rst"))
+		assert.Loosely(t, out1[1].GetConfigChanged().GetConfigGroupId(), should.Match("se/cond"))
+		assert.Loosely(t, out1[2].GetTryjobsRequirementUpdated(), should.NotBeNil)
 
 		out2, err := LoadRunLogEntries(ctx, run2)
-		So(err, ShouldBeNil)
-		So(out2, ShouldHaveLength, 1)
-		So(out2[0].GetCreated().GetConfigGroupId(), ShouldResemble, "fi/rst-but-run2")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, out2, should.HaveLength(1))
+		assert.Loosely(t, out2[0].GetCreated().GetConfigGroupId(), should.Match("fi/rst-but-run2"))
 	})
 }
 
 func TestLoadRunsBuilder(t *testing.T) {
 	t.Parallel()
 
-	Convey("LoadRunsBuilder works", t, func() {
+	ftt.Run("LoadRunsBuilder works", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
 
@@ -147,7 +151,7 @@ func TestLoadRunsBuilder(t *testing.T) {
 		// Run statuses are used in this test to ensure Runs were actually loaded.
 		makeRun := func(id int, s Status) *Run {
 			r := &Run{ID: common.RunID(fmt.Sprintf("%s/%03d", lProject, id)), Status: s}
-			So(datastore.Put(ctx, r), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, r), should.BeNil)
 			return r
 		}
 
@@ -159,23 +163,23 @@ func TestLoadRunsBuilder(t *testing.T) {
 		r202 := makeRun(202, Status_FAILED)
 		r404 := makeRun(404, Status_PENDING)
 		r405 := makeRun(405, Status_PENDING)
-		So(datastore.Delete(ctx, r404, r405), ShouldBeNil)
+		assert.Loosely(t, datastore.Delete(ctx, r404, r405), should.BeNil)
 
-		Convey("Without checker", func() {
-			Convey("Every Run exists", func() {
+		t.Run("Without checker", func(t *ftt.Test) {
+			t.Run("Every Run exists", func(t *ftt.Test) {
 				verify := func(b LoadRunsBuilder) {
 					runsA, errs := b.Do(ctx)
-					So(errs, ShouldResemble, make(errors.MultiError, 2))
-					So(runsA, ShouldResemble, []*Run{r201, r202})
+					assert.Loosely(t, errs, should.Resemble(make(errors.MultiError, 2)))
+					assert.Loosely(t, runsA, should.Resemble([]*Run{r201, r202}))
 
 					runsB, err := b.DoIgnoreNotFound(ctx)
-					So(err, ShouldBeNil)
-					So(runsB, ShouldResemble, runsA)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, runsB, should.Resemble(runsA))
 				}
-				Convey("IDs", func() {
+				t.Run("IDs", func(t *ftt.Test) {
 					verify(LoadRunsFromIDs(r201.ID, r202.ID))
 				})
-				Convey("keys", func() {
+				t.Run("keys", func(t *ftt.Test) {
 					verify(LoadRunsFromKeys(
 						datastore.MakeKey(ctx, common.RunKind, string(r201.ID)),
 						datastore.MakeKey(ctx, common.RunKind, string(r202.ID)),
@@ -183,66 +187,66 @@ func TestLoadRunsBuilder(t *testing.T) {
 				})
 			})
 
-			Convey("A missing Run", func() {
+			t.Run("A missing Run", func(t *ftt.Test) {
 				b := LoadRunsFromIDs(r404.ID)
 
 				runsA, errs := b.Do(ctx)
-				So(errs, ShouldResemble, errors.MultiError{datastore.ErrNoSuchEntity})
-				So(runsA, ShouldResemble, []*Run{{ID: r404.ID}})
+				assert.Loosely(t, errs, should.Match([]error{datastore.ErrNoSuchEntity}, cmpopts.EquateErrors()))
+				assert.Loosely(t, runsA, should.Resemble([]*Run{{ID: r404.ID}}))
 
 				runsB, err := b.DoIgnoreNotFound(ctx)
-				So(err, ShouldBeNil)
-				So(runsB, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, runsB, should.BeNil)
 			})
-			Convey("Mix of existing and missing", func() {
+			t.Run("Mix of existing and missing", func(t *ftt.Test) {
 				b := LoadRunsFromIDs(r201.ID, r404.ID, r202.ID, r405.ID, r4.ID)
 
 				runsA, errs := b.Do(ctx)
-				So(errs, ShouldResemble, errors.MultiError{nil, datastore.ErrNoSuchEntity, nil, datastore.ErrNoSuchEntity, nil})
-				So(runsA, ShouldResemble, []*Run{
+				assert.Loosely(t, errs, should.Match([]error{nil, datastore.ErrNoSuchEntity, nil, datastore.ErrNoSuchEntity, nil}, cmpopts.EquateErrors()))
+				assert.Loosely(t, runsA, should.Resemble([]*Run{
 					r201,
 					{ID: r404.ID},
 					r202,
 					{ID: r405.ID},
 					r4,
-				})
+				}))
 
 				runsB, err := b.DoIgnoreNotFound(ctx)
-				So(err, ShouldBeNil)
-				So(runsB, ShouldResemble, []*Run{r201, r202, r4})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, runsB, should.Resemble([]*Run{r201, r202, r4}))
 			})
 		})
 
-		Convey("With checker", func() {
+		t.Run("With checker", func(t *ftt.Test) {
 			checker := fakeRunChecker{
 				afterOnNotFound: appstatus.Error(codes.NotFound, "not-found-ds"),
 			}
 
-			Convey("No errors of any kind", func() {
+			t.Run("No errors of any kind", func(t *ftt.Test) {
 				b := LoadRunsFromIDs(r201.ID, r202.ID, r4.ID).Checker(checker)
 
 				runsA, errs := b.Do(ctx)
-				So(errs, ShouldResemble, make(errors.MultiError, 3))
-				So(runsA, ShouldResemble, []*Run{r201, r202, r4})
+				assert.Loosely(t, errs, should.Resemble(make(errors.MultiError, 3)))
+				assert.Loosely(t, runsA, should.Resemble([]*Run{r201, r202, r4}))
 
 				runsB, err := b.DoIgnoreNotFound(ctx)
-				So(err, ShouldBeNil)
-				So(runsB, ShouldResemble, runsA)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, runsB, should.Resemble(runsA))
 			})
 
-			Convey("Missing in datastore", func() {
+			t.Run("Missing in datastore", func(t *ftt.Test) {
 				b := LoadRunsFromIDs(r404.ID).Checker(checker)
 
 				runsA, errs := b.Do(ctx)
-				So(errs[0], ShouldHaveAppStatus, codes.NotFound)
-				So(runsA, ShouldResemble, []*Run{{ID: r404.ID}})
+				assert.Loosely(t, errs[0], convey.Adapt(ShouldHaveAppStatus)(codes.NotFound))
+				assert.Loosely(t, runsA, should.Resemble([]*Run{{ID: r404.ID}}))
 
 				runsB, err := b.DoIgnoreNotFound(ctx)
-				So(err, ShouldBeNil)
-				So(runsB, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, runsB, should.BeNil)
 			})
 
-			Convey("Mix", func() {
+			t.Run("Mix", func(t *ftt.Test) {
 				checker.before = map[common.RunID]error{
 					r1.ID: appstatus.Error(codes.NotFound, "not-found-before"),
 					r2.ID: errors.New("before-oops"),
@@ -251,49 +255,49 @@ func TestLoadRunsBuilder(t *testing.T) {
 					r3.ID: appstatus.Error(codes.NotFound, "not-found-after"),
 					r4.ID: errors.New("after-oops"),
 				}
-				Convey("only found and not found", func() {
+				t.Run("only found and not found", func(t *ftt.Test) {
 					b := LoadRunsFromIDs(r201.ID, r1.ID, r202.ID, r3.ID, r404.ID).Checker(checker)
 
 					runsA, errs := b.Do(ctx)
-					So(errs[0], ShouldBeNil) // r201
-					So(errs[1], ShouldErrLike, "not-found-before")
-					So(errs[2], ShouldBeNil) // r202
-					So(errs[3], ShouldErrLike, "not-found-after")
-					So(errs[4], ShouldErrLike, "not-found-ds")
-					So(runsA, ShouldResemble, []*Run{
+					assert.Loosely(t, errs[0], should.BeNil) // r201
+					assert.Loosely(t, errs[1], should.ErrLike("not-found-before"))
+					assert.Loosely(t, errs[2], should.BeNil) // r202
+					assert.Loosely(t, errs[3], should.ErrLike("not-found-after"))
+					assert.Loosely(t, errs[4], should.ErrLike("not-found-ds"))
+					assert.Loosely(t, runsA, should.Resemble([]*Run{
 						r201,
 						{ID: r1.ID},
 						r202,
 						r3, // loaded & returned, despite errors
 						{ID: r404.ID},
-					})
+					}))
 
 					runsB, err := b.DoIgnoreNotFound(ctx)
-					So(err, ShouldBeNil)
-					So(runsB, ShouldResemble, []*Run{r201, r202})
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, runsB, should.Resemble([]*Run{r201, r202}))
 				})
-				Convey("of everything", func() {
+				t.Run("of everything", func(t *ftt.Test) {
 					b := LoadRunsFromIDs(r201.ID, r1.ID, r2.ID, r3.ID, r4.ID, r404.ID).Checker(checker)
 
 					runsA, errs := b.Do(ctx)
-					So(errs[0], ShouldBeNil) // r201
-					So(errs[1], ShouldErrLike, "not-found-before")
-					So(errs[2], ShouldErrLike, "before-oops")
-					So(errs[3], ShouldErrLike, "not-found-after")
-					So(errs[4], ShouldErrLike, "after-oops")
-					So(errs[5], ShouldErrLike, "not-found-ds")
-					So(runsA, ShouldResemble, []*Run{
+					assert.Loosely(t, errs[0], should.BeNil) // r201
+					assert.Loosely(t, errs[1], should.ErrLike("not-found-before"))
+					assert.Loosely(t, errs[2], should.ErrLike("before-oops"))
+					assert.Loosely(t, errs[3], should.ErrLike("not-found-after"))
+					assert.Loosely(t, errs[4], should.ErrLike("after-oops"))
+					assert.Loosely(t, errs[5], should.ErrLike("not-found-ds"))
+					assert.Loosely(t, runsA, should.Resemble([]*Run{
 						r201,
 						{ID: r1.ID},
 						{ID: r2.ID},
 						r3, // loaded & returned, despite errors
 						r4, // loaded & returned, despite errors
 						{ID: r404.ID},
-					})
+					}))
 
 					runsB, err := b.DoIgnoreNotFound(ctx)
-					So(err, ShouldErrLike, "before-oops")
-					So(runsB, ShouldBeNil)
+					assert.Loosely(t, err, should.ErrLike("before-oops"))
+					assert.Loosely(t, runsB, should.BeNil)
 				})
 			})
 		})
