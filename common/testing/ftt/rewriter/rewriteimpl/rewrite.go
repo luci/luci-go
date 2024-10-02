@@ -110,7 +110,11 @@ func getImportName(f *dst.File, pkg string) string {
 }
 
 func rewriteConvey(convCall *dst.CallExpr, conveyContextName string) (newContextName string, warned bool) {
-	newContextName = conveyContextName
+	if conveyContextName == "." {
+		newContextName = "t"
+	} else {
+		newContextName = conveyContextName
+	}
 
 	adjustConvCall := func() {
 		if len(convCall.Args) == 3 {
@@ -130,11 +134,6 @@ func rewriteConvey(convCall *dst.CallExpr, conveyContextName string) (newContext
 		switch x := convCall.Args[len(convCall.Args)-1].(type) {
 		case *dst.FuncLit:
 			adjustConvCall()
-			if conveyContextName == "." {
-				newContextName = "t"
-			} else {
-				newContextName = conveyContextName
-			}
 			if len(x.Type.Params.List) == 1 {
 				if names := x.Type.Params.List[0].Names; len(names) == 1 {
 					newContextName = names[0].Name
