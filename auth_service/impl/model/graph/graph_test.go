@@ -141,12 +141,12 @@ func TestGetExpandedGroup(t *testing.T) {
 		graph := NewGraph(authGroups)
 
 		t.Run("unknown group should return error", func(t *ftt.Test) {
-			_, err := graph.GetExpandedGroup(ctx, "unknown-group")
+			_, err := graph.GetExpandedGroup(ctx, "unknown-group", false)
 			assert.Loosely(t, errors.Is(err, ErrNoSuchGroup), should.BeTrue)
 		})
 
 		t.Run("group with no nesting works", func(t *ftt.Test) {
-			expanded, err := graph.GetExpandedGroup(ctx, testGroup0)
+			expanded, err := graph.GetExpandedGroup(ctx, testGroup0, false)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, expanded, should.Match(&rpcpb.AuthGroup{
 				Name:    testGroup0,
@@ -157,7 +157,7 @@ func TestGetExpandedGroup(t *testing.T) {
 		})
 
 		t.Run("group with nested group works", func(t *ftt.Test) {
-			expanded, err := graph.GetExpandedGroup(ctx, testGroup1)
+			expanded, err := graph.GetExpandedGroup(ctx, testGroup1, false)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, expanded, should.Match(&rpcpb.AuthGroup{
 				Name:    testGroup1,
@@ -168,7 +168,7 @@ func TestGetExpandedGroup(t *testing.T) {
 		})
 
 		t.Run("subgroup nested twice", func(t *ftt.Test) {
-			expanded, err := graph.GetExpandedGroup(ctx, testGroup2)
+			expanded, err := graph.GetExpandedGroup(ctx, testGroup2, false)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, expanded, should.Match(&rpcpb.AuthGroup{
 				Name:    testGroup2,
@@ -179,7 +179,7 @@ func TestGetExpandedGroup(t *testing.T) {
 		})
 
 		t.Run("member filter works", func(t *ftt.Test) {
-			expanded, err := graph.GetExpandedGroup(ctx, testGoogleGroupA)
+			expanded, err := graph.GetExpandedGroup(ctx, testGoogleGroupA, false)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, expanded, should.Match(&rpcpb.AuthGroup{
 				Name:        testGoogleGroupA,
@@ -187,8 +187,18 @@ func TestGetExpandedGroup(t *testing.T) {
 			}))
 		})
 
+		t.Run("member filter can be skipped", func(t *ftt.Test) {
+			expanded, err := graph.GetExpandedGroup(ctx, testGoogleGroupA, true)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, expanded, should.Match(&rpcpb.AuthGroup{
+				Name:        testGoogleGroupA,
+				Members:     []string{testUser0, testUser1},
+				NumRedacted: 0,
+			}))
+		})
+
 		t.Run("known and redacted members are disjoint", func(t *ftt.Test) {
-			expanded, err := graph.GetExpandedGroup(ctx, testSysGroupA)
+			expanded, err := graph.GetExpandedGroup(ctx, testSysGroupA, false)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, expanded, should.Match(&rpcpb.AuthGroup{
 				Name:        testSysGroupA,
@@ -203,7 +213,7 @@ func TestGetExpandedGroup(t *testing.T) {
 				Identity:       "user:admin@example.com",
 				IdentityGroups: []string{model.AdminGroup},
 			})
-			expanded, err := graph.GetExpandedGroup(adminCTX, testGoogleGroupA)
+			expanded, err := graph.GetExpandedGroup(adminCTX, testGoogleGroupA, false)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, expanded, should.Match(&rpcpb.AuthGroup{
 				Name:        testGoogleGroupA,

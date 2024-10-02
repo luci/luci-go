@@ -105,14 +105,22 @@ func NewGraph(groups []*model.AuthGroup) *Graph {
 
 // GetExpandedGroup returns the explicit membership rules for the group.
 //
+// Note: a privacy filter for members was added in Auth Service v2. To support
+// legacy endpoints and maintain the existing behavior of Auth Service v1,
+// the privacy filter can be disabled with `skipFilter` set to `true`.
+//
 // If the group exists in the Graph, the returned AuthGroup shall have the
 // following fields:
 //   - Name, the name of the group;
-//   - Members, containing all unique members from both direct and indirect inclusions;
-//   - Globs, containing all unique globs from both direct and indirect inclusions; and
+//   - Members, containing all unique members from both direct and indirect
+//     inclusions;
+//   - Globs, containing all unique globs from both direct and indirect
+//     inclusions; and
 //   - Nested, containing all unique nested groups from both direct and indirect
 //     inclusions.
-func (g *Graph) GetExpandedGroup(ctx context.Context, name string) (*rpcpb.AuthGroup, error) {
+//   - NumRedacted, the number of members redacted.
+func (g *Graph) GetExpandedGroup(ctx context.Context,
+	name string, skipFilter bool) (*rpcpb.AuthGroup, error) {
 	root, ok := g.groups[name]
 	if !ok {
 		return nil, ErrNoSuchGroup
@@ -136,15 +144,19 @@ func (g *Graph) GetExpandedGroup(ctx context.Context, name string) (*rpcpb.AuthG
 
 		// Process the group's members, globs and nested groups.
 
-		// Check whether the caller can view members.
-		ok, err := model.CanCallerViewMembers(ctx, node.group)
-		if err != nil {
-			return err
-		}
-		if ok {
+		if skipFilter {
 			members.AddAll(node.group.Members)
 		} else {
-			redactedMembers.AddAll(node.group.Members)
+			// Check whether the caller can view members.
+			ok, err := model.CanCallerViewMembers(ctx, node.group)
+			if err != nil {
+				return err
+			}
+			if ok {
+				members.AddAll(node.group.Members)
+			} else {
+				redactedMembers.AddAll(node.group.Members)
+			}
 		}
 
 		// Record the group's globs and nested subgroups.

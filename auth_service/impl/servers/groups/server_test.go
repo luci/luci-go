@@ -342,7 +342,7 @@ func TestGroupsServer(t *testing.T) {
 
 	})
 
-	ftt.Run("Legacy GetAuthGroup REST call", t, func(t *ftt.Test) {
+	ftt.Run("GetLegacyAuthGroup REST call", t, func(t *ftt.Test) {
 		srv := Server{
 			authGroupsProvider: &CachingGroupsProvider{},
 		}
@@ -873,7 +873,7 @@ func TestGroupsServer(t *testing.T) {
 		})
 	})
 
-	ftt.Run("GetExpandedGroup RPC call", t, func(t *ftt.Test) {
+	ftt.Run("Expansion of a group works", t, func(t *ftt.Test) {
 		const (
 			// Identities, groups, globs
 			owningGroup = "owning-group"
@@ -928,43 +928,160 @@ func TestGroupsServer(t *testing.T) {
 			}), should.BeNil)
 		assert.Loosely(t, putRev(ctx, 123), should.BeNil)
 
-		t.Run("unknown group returns error", func(t *ftt.Test) {
-			request := &rpcpb.GetGroupRequest{Name: "unknown"}
-			_, err := srv.GetExpandedGroup(ctx, request)
-			assert.Loosely(t, err, should.ErrLike("not found"))
+		t.Run("GetExpandedGroup RPC call", func(t *ftt.Test) {
+			t.Run("unknown group is not found", func(t *ftt.Test) {
+				request := &rpcpb.GetGroupRequest{Name: "unknown"}
+				_, err := srv.GetExpandedGroup(ctx, request)
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.NotFound))
+			})
+
+			t.Run("works for standalone group", func(t *ftt.Test) {
+				request := &rpcpb.GetGroupRequest{Name: soloGroup}
+				expandedGroup, err := srv.GetExpandedGroup(ctx, request)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, expandedGroup, should.Match(&rpcpb.AuthGroup{
+					Name:  soloGroup,
+					Globs: []string{testGlob1},
+				}))
+			})
+
+			t.Run("nested memberships returned", func(t *ftt.Test) {
+				request := &rpcpb.GetGroupRequest{Name: owningGroup}
+				expandedGroup, err := srv.GetExpandedGroup(ctx, request)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, expandedGroup, should.Match(&rpcpb.AuthGroup{
+					Name:    owningGroup,
+					Members: []string{testUser0, testUser1, testUser2},
+					Globs:   []string{testGlob0, testGlob1},
+					Nested:  []string{nestedGroup},
+				}))
+			})
+
+			t.Run("works for nested group with no subgroups", func(t *ftt.Test) {
+				request := &rpcpb.GetGroupRequest{Name: nestedGroup}
+				expandedGroup, err := srv.GetExpandedGroup(ctx, request)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, expandedGroup, should.Match(&rpcpb.AuthGroup{
+					Name:    nestedGroup,
+					Members: []string{testUser2},
+					Globs:   []string{testGlob0, testGlob1},
+				}))
+			})
 		})
 
-		t.Run("works for standalone group", func(t *ftt.Test) {
-			request := &rpcpb.GetGroupRequest{Name: soloGroup}
-			expandedGroup, err := srv.GetExpandedGroup(ctx, request)
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, expandedGroup, should.Match(&rpcpb.AuthGroup{
-				Name:  soloGroup,
-				Globs: []string{testGlob1},
-			}))
-		})
+		t.Run("GetLegacyListing REST call", func(t *ftt.Test) {
+			t.Run("empty name", func(t *ftt.Test) {
+				rw := httptest.NewRecorder()
+				rctx := &router.Context{
+					Request: (&http.Request{}).WithContext(ctx),
+					Params: []httprouter.Param{
+						{Key: "groupName", Value: ""},
+					},
+					Writer: rw,
+				}
+				err := srv.GetLegacyListing(rctx)
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+				assert.Loosely(t, rw.Body.Bytes(), should.BeEmpty)
+			})
 
-		t.Run("nested memberships returned", func(t *ftt.Test) {
-			request := &rpcpb.GetGroupRequest{Name: owningGroup}
-			expandedGroup, err := srv.GetExpandedGroup(ctx, request)
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, expandedGroup, should.Match(&rpcpb.AuthGroup{
-				Name:    owningGroup,
-				Members: []string{testUser0, testUser1, testUser2},
-				Globs:   []string{testGlob0, testGlob1},
-				Nested:  []string{nestedGroup},
-			}))
-		})
+			t.Run("unknown group is not found", func(t *ftt.Test) {
+				rw := httptest.NewRecorder()
+				rctx := &router.Context{
+					Request: (&http.Request{}).WithContext(ctx),
+					Params: []httprouter.Param{
+						{Key: "groupName", Value: "test-group"},
+					},
+					Writer: rw,
+				}
+				err := srv.GetLegacyListing(rctx)
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.NotFound))
+				assert.Loosely(t, rw.Body.Bytes(), should.BeEmpty)
+			})
 
-		t.Run("works for nested group with no subgroups", func(t *ftt.Test) {
-			request := &rpcpb.GetGroupRequest{Name: nestedGroup}
-			expandedGroup, err := srv.GetExpandedGroup(ctx, request)
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, expandedGroup, should.Match(&rpcpb.AuthGroup{
-				Name:    nestedGroup,
-				Members: []string{testUser2},
-				Globs:   []string{testGlob0, testGlob1},
-			}))
+			t.Run("works for standalone group", func(t *ftt.Test) {
+				rw := httptest.NewRecorder()
+				rctx := &router.Context{
+					Request: (&http.Request{}).WithContext(ctx),
+					Params: []httprouter.Param{
+						{Key: "groupName", Value: soloGroup},
+					},
+					Writer: rw,
+				}
+				err := srv.GetLegacyListing(rctx)
+				assert.Loosely(t, err, should.BeNil)
+
+				actual := map[string]ListingJSON{}
+				assert.Loosely(t, json.NewDecoder(rw.Body).Decode(&actual), should.BeNil)
+				assert.Loosely(t, actual, should.Match(map[string]ListingJSON{
+					"listing": {
+						Members: []listingPrincipal{},
+						Globs: []listingPrincipal{
+							{Principal: testGlob1},
+						},
+						Nested: []listingPrincipal{},
+					},
+				}))
+			})
+
+			t.Run("nested memberships returned", func(t *ftt.Test) {
+				rw := httptest.NewRecorder()
+				rctx := &router.Context{
+					Request: (&http.Request{}).WithContext(ctx),
+					Params: []httprouter.Param{
+						{Key: "groupName", Value: owningGroup},
+					},
+					Writer: rw,
+				}
+				err := srv.GetLegacyListing(rctx)
+				assert.Loosely(t, err, should.BeNil)
+
+				actual := map[string]ListingJSON{}
+				assert.Loosely(t, json.NewDecoder(rw.Body).Decode(&actual), should.BeNil)
+				assert.Loosely(t, actual, should.Match(map[string]ListingJSON{
+					"listing": {
+						Members: []listingPrincipal{
+							{Principal: testUser0},
+							{Principal: testUser1},
+							{Principal: testUser2},
+						},
+						Globs: []listingPrincipal{
+							{Principal: testGlob0},
+							{Principal: testGlob1},
+						},
+						Nested: []listingPrincipal{
+							{Principal: nestedGroup},
+						},
+					},
+				}))
+			})
+
+			t.Run("works for nested group with no subgroup", func(t *ftt.Test) {
+				rw := httptest.NewRecorder()
+				rctx := &router.Context{
+					Request: (&http.Request{}).WithContext(ctx),
+					Params: []httprouter.Param{
+						{Key: "groupName", Value: nestedGroup},
+					},
+					Writer: rw,
+				}
+				err := srv.GetLegacyListing(rctx)
+				assert.Loosely(t, err, should.BeNil)
+
+				actual := map[string]ListingJSON{}
+				assert.Loosely(t, json.NewDecoder(rw.Body).Decode(&actual), should.BeNil)
+				assert.Loosely(t, actual, should.Match(map[string]ListingJSON{
+					"listing": {
+						Members: []listingPrincipal{
+							{Principal: testUser2},
+						},
+						Globs: []listingPrincipal{
+							{Principal: testGlob0},
+							{Principal: testGlob1},
+						},
+						Nested: []listingPrincipal{},
+					},
+				}))
+			})
 		})
 	})
 

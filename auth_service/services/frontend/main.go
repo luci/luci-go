@@ -176,6 +176,8 @@ func main() {
 
 		// Support legacy endpoint to get an AuthGroup.
 		srv.Routes.GET("/auth/api/v1/groups/*groupName", apiMw, adaptGrpcErr(groupsServer.GetLegacyAuthGroup))
+		// Support legacy endpoint to get the expanded listing of an AuthGroup.
+		srv.Routes.GET("/auth/api/v1/listing/groups/*groupName", apiMw, adaptGrpcErr(groupsServer.GetLegacyListing))
 		// Support legacy endpoint to check group membership.
 		srv.Routes.GET("/auth/api/v1/memberships/check", apiMw, adaptGrpcErr(authdbServer.CheckLegacyMembership))
 

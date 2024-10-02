@@ -52,6 +52,18 @@ type AuthGroupJSON struct {
 	CallerCanModify bool     `json:"caller_can_modify"`
 }
 
+type listingPrincipal struct {
+	Principal string `json:"principal"`
+}
+
+// ListingJSON is the underlying data structure returned by the legacy method of
+// getting the expanded listing of an AuthGroup.
+type ListingJSON struct {
+	Members []listingPrincipal `json:"members"`
+	Globs   []listingPrincipal `json:"globs"`
+	Nested  []listingPrincipal `json:"nested"`
+}
+
 // AuthGroupsProvider is the interface to get all AuthGroup entities.
 type AuthGroupsProvider interface {
 	GetAllAuthGroups(ctx context.Context) ([]*model.AuthGroup, error)
@@ -226,7 +238,10 @@ func (srv *Server) GetExpandedGroup(ctx context.Context, request *rpcpb.GetGroup
 
 	// Build graph from groups.
 	groupsGraph := graph.NewGraph(groups)
-	expandedGroup, err := groupsGraph.GetExpandedGroup(ctx, request.Name)
+
+	// Get the recursively expanded group members, globs and nested groups.
+	// Members may be redacted based on the caller's group memberships.
+	expandedGroup, err := groupsGraph.GetExpandedGroup(ctx, request.Name, false)
 	if err != nil {
 		if errors.Is(err, graph.ErrNoSuchGroup) {
 			return nil, status.Errorf(codes.NotFound,
@@ -339,6 +354,68 @@ func (srv *Server) GetLegacyAuthGroup(ctx *router.Context) error {
 			ModifiedTS:      group.ModifiedTS.UnixMicro(),
 			CallerCanModify: canModify,
 		},
+	})
+	if err != nil {
+		return errors.Annotate(err, "error encoding JSON").Err()
+	}
+
+	return nil
+}
+
+// GetLegacyListing serves the legacy REST API GET request for the listing of an
+// AuthGroup.
+func (srv *Server) GetLegacyListing(ctx *router.Context) error {
+	c, _, w := ctx.Request.Context(), ctx.Request, ctx.Writer
+
+	// Log the caller of this legacy function.
+	logging.Debugf(c, "GetLegacyListing call by %s", auth.CurrentIdentity(c))
+
+	// Catch-all params match includes the directory index (the leading "/"), so
+	// trim it to get the group name.
+	name := strings.TrimPrefix(ctx.Params.ByName("groupName"), "/")
+
+	if !auth.IsValidGroupName(name) {
+		return status.Error(codes.InvalidArgument, "invalid group name")
+	}
+
+	// Get all groups.
+	groups, err := srv.authGroupsProvider.GetAllAuthGroups(c)
+	if err != nil {
+		return status.Error(codes.Internal, "failed to fetch all groups")
+	}
+
+	// Build graph from groups.
+	groupsGraph := graph.NewGraph(groups)
+
+	// Get the recursively expanded group members, globs and nested groups.
+	// Disable the privacy filter to maintain the behavior of this legacy
+	// endpoint.
+	expandedGroup, err := groupsGraph.GetExpandedGroup(c, name, true)
+	if err != nil {
+		if errors.Is(err, graph.ErrNoSuchGroup) {
+			return status.Errorf(codes.NotFound, "no such group %q", name)
+		}
+
+		return status.Errorf(codes.Internal, "failed to expand group %q", name)
+	}
+
+	response := ListingJSON{
+		Members: make([]listingPrincipal, len(expandedGroup.Members)),
+		Globs:   make([]listingPrincipal, len(expandedGroup.Globs)),
+		Nested:  make([]listingPrincipal, len(expandedGroup.Nested)),
+	}
+	for i, member := range expandedGroup.Members {
+		response.Members[i] = listingPrincipal{Principal: member}
+	}
+	for i, glob := range expandedGroup.Globs {
+		response.Globs[i] = listingPrincipal{Principal: glob}
+	}
+	for i, nestedGroup := range expandedGroup.Nested {
+		response.Nested[i] = listingPrincipal{Principal: nestedGroup}
+	}
+
+	err = json.NewEncoder(w).Encode(map[string]ListingJSON{
+		"listing": response,
 	})
 	if err != nil {
 		return errors.Annotate(err, "error encoding JSON").Err()
