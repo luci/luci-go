@@ -64,6 +64,15 @@ import (
 	_ "go.chromium.org/luci/server/encryptedcookies/session/datastore"
 )
 
+var (
+	// ErrAnonymousIdentity is returned for APIs that require users to be
+	// signed in.
+	ErrAnonymousIdentity = errors.New("anonymous identity")
+	// ErrCheckMembership is returned if there is an error looking up group
+	// memberships when checking API access.
+	ErrCheckMembership = errors.New("failed to check group membership")
+)
+
 func main() {
 	modules := []module.Module{
 		encryptedcookies.NewModuleFromFlags(), // for authenticating web UI calls
@@ -149,44 +158,66 @@ func main() {
 		srv.Routes.GET("/auth/lookup", uiMW, servePage("pages/lookup.html"))
 		srv.Routes.GET("/auth/services", uiMW, servePage("pages/services.html"))
 
-		// The middleware chain for legacy API routes.
-		apiMw := router.MiddlewareChain{
-			auth.Authenticate(
-				// The preferred authentication method.
-				&openid.GoogleIDTokenAuthMethod{
-					AudienceCheck: openid.AudienceMatchesHost,
-					SkipNonJWT:    true, // pass OAuth2 access tokens through
-				},
-				// Backward compatibility for the RPC Explorer and old clients.
-				&auth.GoogleOAuth2Method{
-					Scopes: []string{"https://www.googleapis.com/auth/userinfo.email"},
-				},
-			),
-			authorizeAPIAccess,
+		// Helper to create middleware chains requiring the caller to be
+		// authenticated and a member in any of the given groups.
+		makeAPIMW := func(groups ...string) router.MiddlewareChain {
+			return router.MiddlewareChain{
+				auth.Authenticate(
+					// The preferred authentication method.
+					&openid.GoogleIDTokenAuthMethod{
+						AudienceCheck: openid.AudienceMatchesHost,
+						SkipNonJWT:    true, // pass OAuth2 access tokens through
+					},
+					// Backward compatibility for the RPC Explorer and old clients.
+					&auth.GoogleOAuth2Method{
+						Scopes: []string{"https://www.googleapis.com/auth/userinfo.email"},
+					},
+				),
+				authorizeAPIAccess(groups),
+			}
 		}
 
+		// Middleware chain for legacy APIs available to trusted services.
+		// These are services that are eligible for PubSub subscriber
+		// authorization and read access to the AuthDB in its entirety.
+		trustedServicesMW := makeAPIMW(model.TrustedServicesGroup, model.AdminGroup)
 		// For PubSub subscriber and AuthDB Google Storage reader authorization.
 		//
 		// Note: the endpoint path is unchanged as there are no API changes,
 		// and it's specified in
 		// https://pkg.go.dev/go.chromium.org/luci/server/auth/service#AuthService.RequestAccess
-		srv.Routes.GET("/auth_service/api/v1/authdb/subscription/authorization", apiMw, adaptGrpcErr(subscription.CheckAccess))
-		srv.Routes.POST("/auth_service/api/v1/authdb/subscription/authorization", apiMw, adaptGrpcErr(subscription.Authorize))
-		srv.Routes.DELETE("/auth_service/api/v1/authdb/subscription/authorization", apiMw, adaptGrpcErr(subscription.Deauthorize))
-		// Support legacy endpoint to get an AuthDB revision.
-		srv.Routes.GET("/auth_service/api/v1/authdb/revisions/:revID", apiMw, adaptGrpcErr(authdbServer.HandleLegacyAuthDBServing))
+		srv.Routes.GET("/auth_service/api/v1/authdb/subscription/authorization",
+			trustedServicesMW, adaptGrpcErr(subscription.CheckAccess))
+		srv.Routes.POST("/auth_service/api/v1/authdb/subscription/authorization",
+			trustedServicesMW, adaptGrpcErr(subscription.Authorize))
+		srv.Routes.DELETE("/auth_service/api/v1/authdb/subscription/authorization",
+			trustedServicesMW, adaptGrpcErr(subscription.Deauthorize))
+		// Support legacy endpoint for AuthDB revisions.
+		srv.Routes.GET("/auth_service/api/v1/authdb/revisions/:revID",
+			trustedServicesMW, adaptGrpcErr(authdbServer.HandleLegacyAuthDBServing))
 
+		// Middleware chain for legacy APIs available with basic service access.
+		// These are callers that have read access to groups.
+		authServiceAccessMW := makeAPIMW(srvauthdb.AuthServiceAccessGroup, model.AdminGroup)
 		// Support legacy endpoint to get an AuthGroup.
-		srv.Routes.GET("/auth/api/v1/groups/*groupName", apiMw, adaptGrpcErr(groupsServer.GetLegacyAuthGroup))
+		srv.Routes.GET("/auth/api/v1/groups/*groupName",
+			authServiceAccessMW, adaptGrpcErr(groupsServer.GetLegacyAuthGroup))
 		// Support legacy endpoint to get the expanded listing of an AuthGroup.
-		srv.Routes.GET("/auth/api/v1/listing/groups/*groupName", apiMw, adaptGrpcErr(groupsServer.GetLegacyListing))
+		srv.Routes.GET("/auth/api/v1/listing/groups/*groupName",
+			authServiceAccessMW, adaptGrpcErr(groupsServer.GetLegacyListing))
 		// Support legacy endpoint to check group membership.
-		srv.Routes.GET("/auth/api/v1/memberships/check", apiMw, adaptGrpcErr(authdbServer.CheckLegacyMembership))
+		srv.Routes.GET("/auth/api/v1/memberships/check",
+			authServiceAccessMW, adaptGrpcErr(authdbServer.CheckLegacyMembership))
 
 		if enableGroupImports {
-			srv.Routes.PUT("/auth_service/api/v1/importer/ingest_tarball/:tarballName", apiMw, adaptGrpcErr(imports.HandleTarballIngestHandler))
+			// Add endpoint for group imports.
+			// No group membership required, but the caller must be signed in.
+			requireAuthenticatedMW := makeAPIMW()
+			srv.Routes.PUT("/auth_service/api/v1/importer/ingest_tarball/:tarballName",
+				requireAuthenticatedMW, adaptGrpcErr(imports.HandleTarballIngestHandler))
 		}
 
+		// Allow anonymous access to the OAuth config.
 		srv.Routes.GET("/auth/api/v1/server/oauth_config", nil, adaptGrpcErr(oauth.HandleLegacyOAuthEndpoint))
 
 		return nil
@@ -286,35 +317,40 @@ func authorizeUIAccess(ctx *router.Context, next router.Handler) {
 	}
 }
 
-// authorizeAPIAccess checks whether the caller is allowed to access the API.
-func authorizeAPIAccess(ctx *router.Context, next router.Handler) {
-	jsonErr := func(err error, code int) {
-		w := ctx.Writer
-		if res, err := json.Marshal(map[string]any{"text": err.Error()}); err == nil {
-			http.Error(w, string(res), code)
+// authorizeAPIAccess generates a function which checks the caller is signed in
+// and is a member in any of the given groups.
+func authorizeAPIAccess(groups []string) func(ctx *router.Context, next router.Handler) {
+	return func(ctx *router.Context, next router.Handler) {
+		jsonErr := func(err error, code int) {
+			w := ctx.Writer
+			if res, err := json.Marshal(map[string]any{"text": err.Error()}); err == nil {
+				http.Error(w, string(res), code)
+			}
 		}
-	}
 
-	if auth.CurrentIdentity(ctx.Request.Context()) == identity.AnonymousIdentity {
-		jsonErr(errors.New("anonymous identity"), http.StatusForbidden)
-		return
-	}
+		// Check the caller is signed in.
+		requestCtx := ctx.Request.Context()
+		caller := auth.CurrentIdentity(requestCtx)
+		if caller == identity.AnonymousIdentity {
+			jsonErr(ErrAnonymousIdentity, http.StatusForbidden)
+			return
+		}
 
-	ingest := strings.HasPrefix(ctx.Request.URL.Path, "/auth_service/api/v1/importer/ingest_tarball/")
-	if !ingest {
-		switch yes, err := auth.IsMember(ctx.Request.Context(), model.TrustedServicesGroup, model.AdminGroup); {
+		if len(groups) == 0 {
+			next(ctx)
+			return
+		}
+
+		switch yes, err := auth.IsMember(requestCtx, groups...); {
 		case err != nil:
-			jsonErr(errors.New("failed to check group membership"), http.StatusInternalServerError)
+			jsonErr(ErrCheckMembership, http.StatusInternalServerError)
 		case !yes:
-			jsonErr(fmt.Errorf("%s is not a member of %s or %s",
-				auth.CurrentIdentity(ctx.Request.Context()),
-				model.TrustedServicesGroup, model.AdminGroup),
+			jsonErr(fmt.Errorf("%s is not a member in any of: %s",
+				caller, strings.Join(groups, ", ")),
 				http.StatusForbidden)
 		default:
 			next(ctx)
 		}
-	} else {
-		next(ctx)
 	}
 }
 
