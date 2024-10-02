@@ -123,7 +123,8 @@ export interface Step_MergeBuild {
    * If set, then this stream will be merged "in line" with this step.
    *
    * Properties emitted by the merge build stream will overwrite global
-   * outputs with the same top-level key.
+   * outputs with the same top-level key. This is the same as setting
+   * `merge_output_properties_to=["."]`.
    *
    * Steps emitted by the merge build stream will NOT have their names
    * namespaced (though the log stream names are still expected to
@@ -140,8 +141,62 @@ export interface Step_MergeBuild {
    * builders rely on this behavior.
    *
    * See crbug.com/1310155.
+   *
+   * If set in conjunction with merge_output_properties_to,
+   * merge_output_properties_to will take precedence for output property
+   * merging.
    */
   readonly legacyGlobalNamespace: boolean;
+  /**
+   * If set, this indicates that the output properties from this subbuild will
+   * be merged into the parent's output properties at this given path.
+   *
+   * If this is exactly `[""]` it means "merge the sub build's output
+   * properties directly into the top-level output properties".
+   *
+   * If this is empty (i.e. `[]` or nil), the sub build's properties will not
+   * be merged at all.
+   *
+   * Otherwise, this will be a path from the root of the parent's output
+   * properties to the place to add this build's output properties. For
+   * example, the value `["a", "b"]` would mean to merge properties like:
+   *
+   *    {
+   *      "a": {
+   *        "b": <this is where the properties will be merged>
+   *      }
+   *    }
+   *
+   * Merging works as follows:
+   *   * Start with the current Build.output.properties.
+   *   * We walk Build.Steps from the top to bottom.
+   *   * When we encounter a Step with merge_build set, we set a pointer in
+   *     the output properties to this path, possibly creating new Structs
+   *     along the way.
+   *     * If non-Struct property values are encountered, they are replaced
+   *       with Structs.
+   *     * If the leaf object is a pre-existing Struct, then this functionally
+   *       performs a python `dict.update()` of the sub-build's properties on
+   *       top of the parent's properties at that location.
+   *   * Recurse into the sub-build, possibly applying further merge_build
+   *     directives.
+   *
+   * This means that if you have:
+   *
+   *    parent
+   *      child1 (merge_output_properties_to=['a'])
+   *        child2 (merge_output_properties_to=['b'])
+   *
+   * Then the output properties of child2 will be at the parent build's
+   * ['a', 'b'] path.
+   *
+   * It is STRONGLY DISCOURAGED to merge into [""] - This creates
+   * composability issues and increases the likelihood of unintentional
+   * overwrites. However, sometimes this is the appropriate course of action
+   * (e.g. when writing thin wrappers over the 'real' implementation as
+   * a sub-build).
+   */
+  readonly mergeOutputPropertiesTo: readonly string[];
 }
 
 function createBaseStep(): Step {
@@ -320,7 +375,7 @@ export const Step = {
 };
 
 function createBaseStep_MergeBuild(): Step_MergeBuild {
-  return { fromLogdogStream: "", legacyGlobalNamespace: false };
+  return { fromLogdogStream: "", legacyGlobalNamespace: false, mergeOutputPropertiesTo: [] };
 }
 
 export const Step_MergeBuild = {
@@ -330,6 +385,9 @@ export const Step_MergeBuild = {
     }
     if (message.legacyGlobalNamespace !== false) {
       writer.uint32(16).bool(message.legacyGlobalNamespace);
+    }
+    for (const v of message.mergeOutputPropertiesTo) {
+      writer.uint32(26).string(v!);
     }
     return writer;
   },
@@ -355,6 +413,13 @@ export const Step_MergeBuild = {
 
           message.legacyGlobalNamespace = reader.bool();
           continue;
+        case 3:
+          if (tag !== 26) {
+            break;
+          }
+
+          message.mergeOutputPropertiesTo.push(reader.string());
+          continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -370,6 +435,9 @@ export const Step_MergeBuild = {
       legacyGlobalNamespace: isSet(object.legacyGlobalNamespace)
         ? globalThis.Boolean(object.legacyGlobalNamespace)
         : false,
+      mergeOutputPropertiesTo: globalThis.Array.isArray(object?.mergeOutputPropertiesTo)
+        ? object.mergeOutputPropertiesTo.map((e: any) => globalThis.String(e))
+        : [],
     };
   },
 
@@ -381,6 +449,9 @@ export const Step_MergeBuild = {
     if (message.legacyGlobalNamespace !== false) {
       obj.legacyGlobalNamespace = message.legacyGlobalNamespace;
     }
+    if (message.mergeOutputPropertiesTo?.length) {
+      obj.mergeOutputPropertiesTo = message.mergeOutputPropertiesTo;
+    }
     return obj;
   },
 
@@ -391,6 +462,7 @@ export const Step_MergeBuild = {
     const message = createBaseStep_MergeBuild() as any;
     message.fromLogdogStream = object.fromLogdogStream ?? "";
     message.legacyGlobalNamespace = object.legacyGlobalNamespace ?? false;
+    message.mergeOutputPropertiesTo = object.mergeOutputPropertiesTo?.map((e) => e) || [];
     return message;
   },
 };

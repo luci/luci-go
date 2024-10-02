@@ -28,25 +28,25 @@ describe('<RegressionFilters />', () => {
     render(
       <RegressionFilters
         predicate={ChangepointPredicate.fromPartial({
-          testIdPrefix: 'prefix1',
+          testIdContain: 'contain1',
         })}
         onPredicateUpdate={onPredicateChangeSpy}
       />,
     );
 
-    const prefixInputEle = screen.getByLabelText('Test ID prefix');
-    expect(prefixInputEle).toHaveValue('prefix1');
+    const containInputEle = screen.getByLabelText('Test ID contain');
+    expect(containInputEle).toHaveValue('contain1');
 
     // Input search query.
-    fireEvent.change(prefixInputEle, { target: { value: 'prefix-new' } });
-    expect(prefixInputEle).toHaveValue('prefix-new');
+    fireEvent.change(containInputEle, { target: { value: 'contain-new' } });
+    expect(containInputEle).toHaveValue('contain-new');
     expect(onPredicateChangeSpy).not.toHaveBeenCalled();
 
     fireEvent.click(screen.getByText('Apply Filter'));
     expect(onPredicateChangeSpy).toHaveBeenCalledTimes(1);
     expect(onPredicateChangeSpy).toHaveBeenNthCalledWith(
       1,
-      ChangepointPredicate.fromPartial({ testIdPrefix: 'prefix-new' }),
+      ChangepointPredicate.fromPartial({ testIdContain: 'contain-new' }),
     );
   });
 
@@ -55,29 +55,29 @@ describe('<RegressionFilters />', () => {
     const { rerender } = render(
       <RegressionFilters
         predicate={ChangepointPredicate.fromPartial({
-          testIdPrefix: 'prefix1',
+          testIdContain: 'contain1',
         })}
         onPredicateUpdate={onPredicateChangeSpy}
       />,
     );
 
-    const prefixInputEle = screen.getByLabelText('Test ID prefix');
-    expect(prefixInputEle).toHaveValue('prefix1');
+    const containInputEle = screen.getByLabelText('Test ID contain');
+    expect(containInputEle).toHaveValue('contain1');
 
     // Input search query.
-    fireEvent.change(prefixInputEle, { target: { value: 'prefix-new' } });
-    expect(prefixInputEle).toHaveValue('prefix-new');
+    fireEvent.change(containInputEle, { target: { value: 'contain-new' } });
+    expect(containInputEle).toHaveValue('contain-new');
 
     // Parent sets a new value while pending.
     rerender(
       <RegressionFilters
         predicate={ChangepointPredicate.fromPartial({
-          testIdPrefix: 'prefix2',
+          testIdContain: 'contain2',
         })}
         onPredicateUpdate={onPredicateChangeSpy}
       />,
     );
-    expect(prefixInputEle).toHaveValue('prefix2');
+    expect(containInputEle).toHaveValue('contain2');
 
     // No pending update since it was discarded.
     expect(screen.getByText('Apply Filter')).toBeDisabled();

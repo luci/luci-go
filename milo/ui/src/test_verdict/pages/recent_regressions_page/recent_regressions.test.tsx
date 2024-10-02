@@ -30,7 +30,7 @@ const mockedResponse = QueryChangepointGroupSummariesResponse.fromJSON({
     {
       canonicalChangepoint: {
         project: 'proj',
-        testId: 'prefix/testid',
+        testId: 'testid',
         variantHash: 'vhash',
         refHash: 'refhash',
         ref: {
@@ -75,20 +75,20 @@ const mockedResponse = QueryChangepointGroupSummariesResponse.fromJSON({
 });
 
 describe('<RecentRegressions />', () => {
-  let queryChangepointGroupSummariesMock: jest.SpiedFunction<
-    ChangepointsClientImpl['QueryChangepointGroupSummaries']
+  let queryGroupSummariesMock: jest.SpiedFunction<
+    ChangepointsClientImpl['QueryGroupSummaries']
   >;
 
   beforeEach(() => {
     jest.useFakeTimers();
-    queryChangepointGroupSummariesMock = jest
-      .spyOn(ChangepointsClientImpl.prototype, 'QueryChangepointGroupSummaries')
+    queryGroupSummariesMock = jest
+      .spyOn(ChangepointsClientImpl.prototype, 'QueryGroupSummaries')
       .mockResolvedValue(NEVER_PROMISE);
   });
 
   afterEach(() => {
     cleanup();
-    queryChangepointGroupSummariesMock.mockClear();
+    queryGroupSummariesMock.mockClear();
     jest.useRealTimers();
   });
 
@@ -97,14 +97,14 @@ describe('<RecentRegressions />', () => {
       <FakeContextProvider
         mountedPath="/"
         routerOptions={{
-          initialEntries: ['/?cp=%7B"testIdPrefix"%3A"prefix"%7D'],
+          initialEntries: ['/?cp=%7B"testIdContain"%3A"contain"%7D'],
         }}
       >
         <RecentRegressions project="proj" />
       </FakeContextProvider>,
     );
-    const prefixInputEle = screen.getByLabelText('Test ID prefix');
-    expect(prefixInputEle).toHaveValue('prefix');
+    const containInputEle = screen.getByLabelText('Test ID contain');
+    expect(containInputEle).toHaveValue('contain');
   });
 
   it('can save predicate to search param', () => {
@@ -116,26 +116,26 @@ describe('<RecentRegressions />', () => {
       </FakeContextProvider>,
     );
 
-    const prefixInputEle = screen.getByLabelText('Test ID prefix');
-    fireEvent.change(prefixInputEle, { target: { value: 'prefix' } });
+    const containInputEle = screen.getByLabelText('Test ID contain');
+    fireEvent.change(containInputEle, { target: { value: 'contain' } });
     fireEvent.click(screen.getByText('Apply Filter'));
 
     expect(urlCallback).toHaveBeenLastCalledWith(
       expect.objectContaining({
         search: {
-          cp: JSON.stringify({ testIdPrefix: 'prefix' }),
+          cp: JSON.stringify({ testIdContain: 'contain' }),
         },
       }),
     );
   });
 
   it('can pass predicate to regression details link', async () => {
-    queryChangepointGroupSummariesMock.mockResolvedValue(mockedResponse);
+    queryGroupSummariesMock.mockResolvedValue(mockedResponse);
     render(
       <FakeContextProvider
         mountedPath="test"
         routerOptions={{
-          initialEntries: ['/test?cp=%7B"testIdPrefix"%3A"prefix"%7D'],
+          initialEntries: ['/test?cp=%7B"testIdContain"%3A"contain"%7D'],
         }}
       >
         <RecentRegressions project="proj" />
@@ -147,10 +147,10 @@ describe('<RecentRegressions />', () => {
     const url = new URL(link, 'http://placeholder.com');
     const searchParams = Object.fromEntries(url.searchParams.entries());
     expect(searchParams).toEqual({
-      cp: JSON.stringify({ testIdPrefix: 'prefix' }),
+      cp: JSON.stringify({ testIdContain: 'contain' }),
       nsp: '124',
       sh: '2020-01-01',
-      tvb: 'projects/proj/tests/prefix%2Ftestid/variants/vhash/refs/refhash',
+      tvb: 'projects/proj/tests/testid/variants/vhash/refs/refhash',
     });
   });
 });

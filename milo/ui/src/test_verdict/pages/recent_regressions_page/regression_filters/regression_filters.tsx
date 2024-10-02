@@ -64,14 +64,14 @@ export function RegressionFilters({
     >
       <FormControl fullWidth>
         <TextField
-          label="Test ID prefix"
+          label="Test ID contain"
           fullWidth
           size="small"
-          value={pendingPredicate.testIdPrefix}
+          value={pendingPredicate.testIdContain}
           onChange={(e) =>
             handlePendingPredicateUpdate({
               ...predicate,
-              testIdPrefix: e.target.value,
+              testIdContain: e.target.value,
             })
           }
         />

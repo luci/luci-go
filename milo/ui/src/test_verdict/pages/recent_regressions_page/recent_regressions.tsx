@@ -14,11 +14,17 @@
 
 import { Box, CircularProgress } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
-import { DateTime } from 'luxon';
-import { useCallback, useRef } from 'react';
+import { useCallback } from 'react';
 
 import { useChangepointsClient } from '@/analysis/hooks/prpc_clients';
 import { OutputChangepointGroupSummary } from '@/analysis/types';
+import {
+  emptyPageTokenUpdater,
+  usePagerContext,
+  ParamsPager,
+  getPageSize,
+  getPageToken,
+} from '@/common/components/params_pager';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
   ChangepointPredicate,
@@ -27,7 +33,6 @@ import {
 import { getRegressionDetailsURLPath } from '@/test_verdict/tools/url_utils';
 
 import { RegressionFilters } from './regression_filters';
-import { getWeek, RegressionPager } from './regression_pager';
 import { RegressionTable } from './regression_table';
 
 function getPredicate(searchParams: URLSearchParams) {
@@ -57,15 +62,20 @@ export interface RecentRegressionsProps {
 export function RecentRegressions({ project }: RecentRegressionsProps) {
   const [searchParams, setSearchParams] = useSyncedSearchParams();
   const predicate = getPredicate(searchParams);
-  const now = useRef(DateTime.now());
-  const week = getWeek(searchParams, now.current);
+  const pagerCtx = usePagerContext({
+    pageSizeOptions: [25, 50, 100, 200],
+    defaultPageSize: 50,
+  });
+  const pageSize = getPageSize(pagerCtx, searchParams);
+  const pageToken = getPageToken(pagerCtx, searchParams);
   const client = useChangepointsClient();
   const { data, isLoading, isError, error } = useQuery(
-    client.QueryChangepointGroupSummaries.query(
+    client.QueryGroupSummaries.query(
       QueryChangepointGroupSummariesRequest.fromPartial({
         project,
         predicate,
-        beginOfWeek: week.toISO(),
+        pageToken,
+        pageSize,
       }),
     ),
   );
@@ -93,21 +103,31 @@ export function RecentRegressions({ project }: RecentRegressionsProps) {
       >
         <RegressionFilters
           predicate={predicate}
-          onPredicateUpdate={(p) => setSearchParams(predicateUpdater(p))}
+          onPredicateUpdate={(p) => {
+            setSearchParams(predicateUpdater(p));
+            setSearchParams(emptyPageTokenUpdater(pagerCtx));
+          }}
         />
       </Box>
-      <RegressionPager now={now.current} />
       {isLoading ? (
         <Box display="flex" justifyContent="center" alignItems="center">
           <CircularProgress />
         </Box>
       ) : (
-        <RegressionTable
-          regressions={
-            data.groupSummaries as readonly OutputChangepointGroupSummary[]
-          }
-          getDetailsUrlPath={getDetailsUrlPath}
-        />
+        <>
+          <RegressionTable
+            regressions={
+              data.groupSummaries as readonly OutputChangepointGroupSummary[]
+            }
+            getDetailsUrlPath={getDetailsUrlPath}
+          />
+          <Box sx={{ padding: '0px 10px' }}>
+            <ParamsPager
+              pagerCtx={pagerCtx}
+              nextPageToken={data?.nextPageToken || ''}
+            />
+          </Box>
+        </>
       )}
     </>
   );

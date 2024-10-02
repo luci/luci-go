@@ -518,6 +518,9 @@ export enum Config_SOC {
   SOC_RAPTOR_LAKE = 47,
   SOC_MT8196 = 48,
   SOC_MT8189 = 49,
+  SOC_TWIN_LAKE = 50,
+  SOC_PANTHER_LAKE = 51,
+  SOC_WILDCAT_LAKE = 52,
 }
 
 export function config_SOCFromJSON(object: any): Config_SOC {
@@ -672,6 +675,15 @@ export function config_SOCFromJSON(object: any): Config_SOC {
     case 49:
     case "SOC_MT8189":
       return Config_SOC.SOC_MT8189;
+    case 50:
+    case "SOC_TWIN_LAKE":
+      return Config_SOC.SOC_TWIN_LAKE;
+    case 51:
+    case "SOC_PANTHER_LAKE":
+      return Config_SOC.SOC_PANTHER_LAKE;
+    case 52:
+    case "SOC_WILDCAT_LAKE":
+      return Config_SOC.SOC_WILDCAT_LAKE;
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum Config_SOC");
   }
@@ -779,6 +791,12 @@ export function config_SOCToJSON(object: Config_SOC): string {
       return "SOC_MT8196";
     case Config_SOC.SOC_MT8189:
       return "SOC_MT8189";
+    case Config_SOC.SOC_TWIN_LAKE:
+      return "SOC_TWIN_LAKE";
+    case Config_SOC.SOC_PANTHER_LAKE:
+      return "SOC_PANTHER_LAKE";
+    case Config_SOC.SOC_WILDCAT_LAKE:
+      return "SOC_WILDCAT_LAKE";
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum Config_SOC");
   }

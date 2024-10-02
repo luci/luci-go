@@ -13,7 +13,7 @@ import { SourceRef } from "./sources.pb";
 
 export const protobufPackage = "luci.analysis.v1";
 
-export interface QueryChangepointGroupSummariesRequest {
+export interface QueryChangepointGroupSummariesRequestLegacy {
   /** The LUCI project. Mandatory field. */
   readonly project: string;
   /**
@@ -21,7 +21,7 @@ export interface QueryChangepointGroupSummariesRequest {
    * If all changepoints in a group are filtered out, this group will not be returned.
    */
   readonly predicate:
-    | ChangepointPredicate
+    | ChangepointPredicateLegacy
     | undefined;
   /**
    * A timestamp that select a particular week.
@@ -34,8 +34,40 @@ export interface QueryChangepointGroupSummariesRequest {
   readonly beginOfWeek: string | undefined;
 }
 
-/** Represent a function Changepoint -> bool */
-export interface ChangepointPredicate {
+export interface QueryChangepointGroupSummariesRequest {
+  /** The LUCI project. Mandatory field. */
+  readonly project: string;
+  /**
+   * A filter to be applied to each changepoint in the groups.
+   * If all changepoints in a group are filtered out, this group will not be returned.
+   */
+  readonly predicate:
+    | ChangepointPredicate
+    | undefined;
+  /**
+   * The maximum number of groups to return.
+   *
+   * The service may return fewer than this value.
+   * If unspecified, at most 100 groups will be returned.
+   * The maximum value is 1000; values above 1000 will be coerced to 1000.
+   */
+  readonly pageSize: number;
+  /**
+   * A page token, received from a previous call.
+   * Provide this to retrieve the subsequent page.
+   * This page token will expire after 50 minutes.
+   *
+   * When paginating, all other parameters provided to the next call
+   * MUST match the call that provided the page token.
+   */
+  readonly pageToken: string;
+}
+
+/**
+ * Represent a function Changepoint -> bool
+ * Deprecated: use ChangepointPredicate instead.
+ */
+export interface ChangepointPredicateLegacy {
   /** The test id of this changepoint matches this prefix. */
   readonly testIdPrefix: string;
   /**
@@ -47,9 +79,26 @@ export interface ChangepointPredicate {
   readonly unexpectedVerdictRateChangeRange: NumericRange | undefined;
 }
 
+/** Represent a function Changepoint -> bool */
+export interface ChangepointPredicate {
+  /** The test id of this changepoint contain this substring. */
+  readonly testIdContain: string;
+}
+
+export interface QueryChangepointGroupSummariesResponseLegacy {
+  /** A list of changepoint group summaries. */
+  readonly groupSummaries: readonly ChangepointGroupSummary[];
+}
+
 export interface QueryChangepointGroupSummariesResponse {
   /** A list of changepoint group summaries. */
   readonly groupSummaries: readonly ChangepointGroupSummary[];
+  /**
+   * This field will be set if there are more results to return.
+   * To get the next page of data, send the same request again, but include this
+   * token.
+   */
+  readonly nextPageToken: string;
 }
 
 /** Represent the summary of a changepoint group. */
@@ -201,8 +250,101 @@ export interface Changepoint {
   readonly previousSegmentNominalEndPosition: string;
 }
 
-function createBaseQueryChangepointGroupSummariesRequest(): QueryChangepointGroupSummariesRequest {
+function createBaseQueryChangepointGroupSummariesRequestLegacy(): QueryChangepointGroupSummariesRequestLegacy {
   return { project: "", predicate: undefined, beginOfWeek: undefined };
+}
+
+export const QueryChangepointGroupSummariesRequestLegacy = {
+  encode(message: QueryChangepointGroupSummariesRequestLegacy, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.project !== "") {
+      writer.uint32(10).string(message.project);
+    }
+    if (message.predicate !== undefined) {
+      ChangepointPredicateLegacy.encode(message.predicate, writer.uint32(18).fork()).ldelim();
+    }
+    if (message.beginOfWeek !== undefined) {
+      Timestamp.encode(toTimestamp(message.beginOfWeek), writer.uint32(26).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): QueryChangepointGroupSummariesRequestLegacy {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueryChangepointGroupSummariesRequestLegacy() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.project = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.predicate = ChangepointPredicateLegacy.decode(reader, reader.uint32());
+          continue;
+        case 3:
+          if (tag !== 26) {
+            break;
+          }
+
+          message.beginOfWeek = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): QueryChangepointGroupSummariesRequestLegacy {
+    return {
+      project: isSet(object.project) ? globalThis.String(object.project) : "",
+      predicate: isSet(object.predicate) ? ChangepointPredicateLegacy.fromJSON(object.predicate) : undefined,
+      beginOfWeek: isSet(object.beginOfWeek) ? globalThis.String(object.beginOfWeek) : undefined,
+    };
+  },
+
+  toJSON(message: QueryChangepointGroupSummariesRequestLegacy): unknown {
+    const obj: any = {};
+    if (message.project !== "") {
+      obj.project = message.project;
+    }
+    if (message.predicate !== undefined) {
+      obj.predicate = ChangepointPredicateLegacy.toJSON(message.predicate);
+    }
+    if (message.beginOfWeek !== undefined) {
+      obj.beginOfWeek = message.beginOfWeek;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<QueryChangepointGroupSummariesRequestLegacy>): QueryChangepointGroupSummariesRequestLegacy {
+    return QueryChangepointGroupSummariesRequestLegacy.fromPartial(base ?? {});
+  },
+  fromPartial(
+    object: DeepPartial<QueryChangepointGroupSummariesRequestLegacy>,
+  ): QueryChangepointGroupSummariesRequestLegacy {
+    const message = createBaseQueryChangepointGroupSummariesRequestLegacy() as any;
+    message.project = object.project ?? "";
+    message.predicate = (object.predicate !== undefined && object.predicate !== null)
+      ? ChangepointPredicateLegacy.fromPartial(object.predicate)
+      : undefined;
+    message.beginOfWeek = object.beginOfWeek ?? undefined;
+    return message;
+  },
+};
+
+function createBaseQueryChangepointGroupSummariesRequest(): QueryChangepointGroupSummariesRequest {
+  return { project: "", predicate: undefined, pageSize: 0, pageToken: "" };
 }
 
 export const QueryChangepointGroupSummariesRequest = {
@@ -213,8 +355,11 @@ export const QueryChangepointGroupSummariesRequest = {
     if (message.predicate !== undefined) {
       ChangepointPredicate.encode(message.predicate, writer.uint32(18).fork()).ldelim();
     }
-    if (message.beginOfWeek !== undefined) {
-      Timestamp.encode(toTimestamp(message.beginOfWeek), writer.uint32(26).fork()).ldelim();
+    if (message.pageSize !== 0) {
+      writer.uint32(24).int32(message.pageSize);
+    }
+    if (message.pageToken !== "") {
+      writer.uint32(34).string(message.pageToken);
     }
     return writer;
   },
@@ -241,11 +386,18 @@ export const QueryChangepointGroupSummariesRequest = {
           message.predicate = ChangepointPredicate.decode(reader, reader.uint32());
           continue;
         case 3:
-          if (tag !== 26) {
+          if (tag !== 24) {
             break;
           }
 
-          message.beginOfWeek = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          message.pageSize = reader.int32();
+          continue;
+        case 4:
+          if (tag !== 34) {
+            break;
+          }
+
+          message.pageToken = reader.string();
           continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
@@ -260,7 +412,8 @@ export const QueryChangepointGroupSummariesRequest = {
     return {
       project: isSet(object.project) ? globalThis.String(object.project) : "",
       predicate: isSet(object.predicate) ? ChangepointPredicate.fromJSON(object.predicate) : undefined,
-      beginOfWeek: isSet(object.beginOfWeek) ? globalThis.String(object.beginOfWeek) : undefined,
+      pageSize: isSet(object.pageSize) ? globalThis.Number(object.pageSize) : 0,
+      pageToken: isSet(object.pageToken) ? globalThis.String(object.pageToken) : "",
     };
   },
 
@@ -272,8 +425,11 @@ export const QueryChangepointGroupSummariesRequest = {
     if (message.predicate !== undefined) {
       obj.predicate = ChangepointPredicate.toJSON(message.predicate);
     }
-    if (message.beginOfWeek !== undefined) {
-      obj.beginOfWeek = message.beginOfWeek;
+    if (message.pageSize !== 0) {
+      obj.pageSize = Math.round(message.pageSize);
+    }
+    if (message.pageToken !== "") {
+      obj.pageToken = message.pageToken;
     }
     return obj;
   },
@@ -287,17 +443,18 @@ export const QueryChangepointGroupSummariesRequest = {
     message.predicate = (object.predicate !== undefined && object.predicate !== null)
       ? ChangepointPredicate.fromPartial(object.predicate)
       : undefined;
-    message.beginOfWeek = object.beginOfWeek ?? undefined;
+    message.pageSize = object.pageSize ?? 0;
+    message.pageToken = object.pageToken ?? "";
     return message;
   },
 };
 
-function createBaseChangepointPredicate(): ChangepointPredicate {
+function createBaseChangepointPredicateLegacy(): ChangepointPredicateLegacy {
   return { testIdPrefix: "", unexpectedVerdictRateChangeRange: undefined };
 }
 
-export const ChangepointPredicate = {
-  encode(message: ChangepointPredicate, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+export const ChangepointPredicateLegacy = {
+  encode(message: ChangepointPredicateLegacy, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.testIdPrefix !== "") {
       writer.uint32(10).string(message.testIdPrefix);
     }
@@ -307,10 +464,10 @@ export const ChangepointPredicate = {
     return writer;
   },
 
-  decode(input: _m0.Reader | Uint8Array, length?: number): ChangepointPredicate {
+  decode(input: _m0.Reader | Uint8Array, length?: number): ChangepointPredicateLegacy {
     const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
     let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseChangepointPredicate() as any;
+    const message = createBaseChangepointPredicateLegacy() as any;
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -337,7 +494,7 @@ export const ChangepointPredicate = {
     return message;
   },
 
-  fromJSON(object: any): ChangepointPredicate {
+  fromJSON(object: any): ChangepointPredicateLegacy {
     return {
       testIdPrefix: isSet(object.testIdPrefix) ? globalThis.String(object.testIdPrefix) : "",
       unexpectedVerdictRateChangeRange: isSet(object.unexpectedVerdictRateChangeRange)
@@ -346,7 +503,7 @@ export const ChangepointPredicate = {
     };
   },
 
-  toJSON(message: ChangepointPredicate): unknown {
+  toJSON(message: ChangepointPredicateLegacy): unknown {
     const obj: any = {};
     if (message.testIdPrefix !== "") {
       obj.testIdPrefix = message.testIdPrefix;
@@ -357,11 +514,11 @@ export const ChangepointPredicate = {
     return obj;
   },
 
-  create(base?: DeepPartial<ChangepointPredicate>): ChangepointPredicate {
-    return ChangepointPredicate.fromPartial(base ?? {});
+  create(base?: DeepPartial<ChangepointPredicateLegacy>): ChangepointPredicateLegacy {
+    return ChangepointPredicateLegacy.fromPartial(base ?? {});
   },
-  fromPartial(object: DeepPartial<ChangepointPredicate>): ChangepointPredicate {
-    const message = createBaseChangepointPredicate() as any;
+  fromPartial(object: DeepPartial<ChangepointPredicateLegacy>): ChangepointPredicateLegacy {
+    const message = createBaseChangepointPredicateLegacy() as any;
     message.testIdPrefix = object.testIdPrefix ?? "";
     message.unexpectedVerdictRateChangeRange =
       (object.unexpectedVerdictRateChangeRange !== undefined && object.unexpectedVerdictRateChangeRange !== null)
@@ -371,22 +528,79 @@ export const ChangepointPredicate = {
   },
 };
 
-function createBaseQueryChangepointGroupSummariesResponse(): QueryChangepointGroupSummariesResponse {
+function createBaseChangepointPredicate(): ChangepointPredicate {
+  return { testIdContain: "" };
+}
+
+export const ChangepointPredicate = {
+  encode(message: ChangepointPredicate, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.testIdContain !== "") {
+      writer.uint32(10).string(message.testIdContain);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): ChangepointPredicate {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseChangepointPredicate() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.testIdContain = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ChangepointPredicate {
+    return { testIdContain: isSet(object.testIdContain) ? globalThis.String(object.testIdContain) : "" };
+  },
+
+  toJSON(message: ChangepointPredicate): unknown {
+    const obj: any = {};
+    if (message.testIdContain !== "") {
+      obj.testIdContain = message.testIdContain;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ChangepointPredicate>): ChangepointPredicate {
+    return ChangepointPredicate.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ChangepointPredicate>): ChangepointPredicate {
+    const message = createBaseChangepointPredicate() as any;
+    message.testIdContain = object.testIdContain ?? "";
+    return message;
+  },
+};
+
+function createBaseQueryChangepointGroupSummariesResponseLegacy(): QueryChangepointGroupSummariesResponseLegacy {
   return { groupSummaries: [] };
 }
 
-export const QueryChangepointGroupSummariesResponse = {
-  encode(message: QueryChangepointGroupSummariesResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+export const QueryChangepointGroupSummariesResponseLegacy = {
+  encode(message: QueryChangepointGroupSummariesResponseLegacy, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     for (const v of message.groupSummaries) {
       ChangepointGroupSummary.encode(v!, writer.uint32(10).fork()).ldelim();
     }
     return writer;
   },
 
-  decode(input: _m0.Reader | Uint8Array, length?: number): QueryChangepointGroupSummariesResponse {
+  decode(input: _m0.Reader | Uint8Array, length?: number): QueryChangepointGroupSummariesResponseLegacy {
     const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
     let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseQueryChangepointGroupSummariesResponse() as any;
+    const message = createBaseQueryChangepointGroupSummariesResponseLegacy() as any;
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -406,7 +620,7 @@ export const QueryChangepointGroupSummariesResponse = {
     return message;
   },
 
-  fromJSON(object: any): QueryChangepointGroupSummariesResponse {
+  fromJSON(object: any): QueryChangepointGroupSummariesResponseLegacy {
     return {
       groupSummaries: globalThis.Array.isArray(object?.groupSummaries)
         ? object.groupSummaries.map((e: any) => ChangepointGroupSummary.fromJSON(e))
@@ -414,10 +628,89 @@ export const QueryChangepointGroupSummariesResponse = {
     };
   },
 
+  toJSON(message: QueryChangepointGroupSummariesResponseLegacy): unknown {
+    const obj: any = {};
+    if (message.groupSummaries?.length) {
+      obj.groupSummaries = message.groupSummaries.map((e) => ChangepointGroupSummary.toJSON(e));
+    }
+    return obj;
+  },
+
+  create(
+    base?: DeepPartial<QueryChangepointGroupSummariesResponseLegacy>,
+  ): QueryChangepointGroupSummariesResponseLegacy {
+    return QueryChangepointGroupSummariesResponseLegacy.fromPartial(base ?? {});
+  },
+  fromPartial(
+    object: DeepPartial<QueryChangepointGroupSummariesResponseLegacy>,
+  ): QueryChangepointGroupSummariesResponseLegacy {
+    const message = createBaseQueryChangepointGroupSummariesResponseLegacy() as any;
+    message.groupSummaries = object.groupSummaries?.map((e) => ChangepointGroupSummary.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseQueryChangepointGroupSummariesResponse(): QueryChangepointGroupSummariesResponse {
+  return { groupSummaries: [], nextPageToken: "" };
+}
+
+export const QueryChangepointGroupSummariesResponse = {
+  encode(message: QueryChangepointGroupSummariesResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    for (const v of message.groupSummaries) {
+      ChangepointGroupSummary.encode(v!, writer.uint32(10).fork()).ldelim();
+    }
+    if (message.nextPageToken !== "") {
+      writer.uint32(18).string(message.nextPageToken);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): QueryChangepointGroupSummariesResponse {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueryChangepointGroupSummariesResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.groupSummaries.push(ChangepointGroupSummary.decode(reader, reader.uint32()));
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.nextPageToken = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): QueryChangepointGroupSummariesResponse {
+    return {
+      groupSummaries: globalThis.Array.isArray(object?.groupSummaries)
+        ? object.groupSummaries.map((e: any) => ChangepointGroupSummary.fromJSON(e))
+        : [],
+      nextPageToken: isSet(object.nextPageToken) ? globalThis.String(object.nextPageToken) : "",
+    };
+  },
+
   toJSON(message: QueryChangepointGroupSummariesResponse): unknown {
     const obj: any = {};
     if (message.groupSummaries?.length) {
       obj.groupSummaries = message.groupSummaries.map((e) => ChangepointGroupSummary.toJSON(e));
+    }
+    if (message.nextPageToken !== "") {
+      obj.nextPageToken = message.nextPageToken;
     }
     return obj;
   },
@@ -428,6 +721,7 @@ export const QueryChangepointGroupSummariesResponse = {
   fromPartial(object: DeepPartial<QueryChangepointGroupSummariesResponse>): QueryChangepointGroupSummariesResponse {
     const message = createBaseQueryChangepointGroupSummariesResponse() as any;
     message.groupSummaries = object.groupSummaries?.map((e) => ChangepointGroupSummary.fromPartial(e)) || [];
+    message.nextPageToken = object.nextPageToken ?? "";
     return message;
   },
 };
@@ -1478,11 +1772,14 @@ export interface Changepoints {
   /**
    * Query the changepoint group summaries.
    * Currently this RPC only returns at most 1000 changepoint groups starting at the current week.
-   * TODO: Add pagination to this RPC so that more changepoint history can be seen.
+   *
+   * Deprecated: use QueryGroupSummaries instead.
    */
   QueryChangepointGroupSummaries(
-    request: QueryChangepointGroupSummariesRequest,
-  ): Promise<QueryChangepointGroupSummariesResponse>;
+    request: QueryChangepointGroupSummariesRequestLegacy,
+  ): Promise<QueryChangepointGroupSummariesResponseLegacy>;
+  /** Query the summaries of changepoint groups started at a week within the last 90 days. */
+  QueryGroupSummaries(request: QueryChangepointGroupSummariesRequest): Promise<QueryChangepointGroupSummariesResponse>;
   /**
    * Query the changepoints in a particular group.
    * TODO: Implement pagination, currently just return at most 1000 changepoints.
@@ -1499,13 +1796,20 @@ export class ChangepointsClientImpl implements Changepoints {
     this.service = opts?.service || ChangepointsServiceName;
     this.rpc = rpc;
     this.QueryChangepointGroupSummaries = this.QueryChangepointGroupSummaries.bind(this);
+    this.QueryGroupSummaries = this.QueryGroupSummaries.bind(this);
     this.QueryChangepointsInGroup = this.QueryChangepointsInGroup.bind(this);
   }
   QueryChangepointGroupSummaries(
-    request: QueryChangepointGroupSummariesRequest,
-  ): Promise<QueryChangepointGroupSummariesResponse> {
-    const data = QueryChangepointGroupSummariesRequest.toJSON(request);
+    request: QueryChangepointGroupSummariesRequestLegacy,
+  ): Promise<QueryChangepointGroupSummariesResponseLegacy> {
+    const data = QueryChangepointGroupSummariesRequestLegacy.toJSON(request);
     const promise = this.rpc.request(this.service, "QueryChangepointGroupSummaries", data);
+    return promise.then((data) => QueryChangepointGroupSummariesResponseLegacy.fromJSON(data));
+  }
+
+  QueryGroupSummaries(request: QueryChangepointGroupSummariesRequest): Promise<QueryChangepointGroupSummariesResponse> {
+    const data = QueryChangepointGroupSummariesRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "QueryGroupSummaries", data);
     return promise.then((data) => QueryChangepointGroupSummariesResponse.fromJSON(data));
   }
 

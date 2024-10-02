@@ -1379,7 +1379,7 @@ export function schedulableLabels_DevboardTypeToJSON(object: SchedulableLabels_D
 /**
  * Keep sorted by field name.
  *
- * NEXT TAG: 25
+ * NEXT TAG: 26
  */
 export interface HardwareCapabilities {
   readonly atrus?: boolean | undefined;
@@ -1407,6 +1407,7 @@ export interface HardwareCapabilities {
     | undefined;
   /** Indicating if the device has fingerprint sensor. */
   readonly fingerprint?: boolean | undefined;
+  readonly fingerprintMcu?: string | undefined;
   readonly flashrom?: boolean | undefined;
   readonly formFactor?: HardwareCapabilities_FormFactor | undefined;
   readonly gpuFamily?: string | undefined;
@@ -4328,6 +4329,7 @@ function createBaseHardwareCapabilities(): HardwareCapabilities {
     starfishSlotMapping: "",
     detachablebase: false,
     fingerprint: false,
+    fingerprintMcu: "",
     flashrom: false,
     formFactor: 0,
     gpuFamily: "",
@@ -4377,6 +4379,9 @@ export const HardwareCapabilities = {
     }
     if (message.fingerprint !== undefined && message.fingerprint !== false) {
       writer.uint32(152).bool(message.fingerprint);
+    }
+    if (message.fingerprintMcu !== undefined && message.fingerprintMcu !== "") {
+      writer.uint32(202).string(message.fingerprintMcu);
     }
     if (message.flashrom !== undefined && message.flashrom !== false) {
       writer.uint32(112).bool(message.flashrom);
@@ -4510,6 +4515,13 @@ export const HardwareCapabilities = {
           }
 
           message.fingerprint = reader.bool();
+          continue;
+        case 25:
+          if (tag !== 202) {
+            break;
+          }
+
+          message.fingerprintMcu = reader.string();
           continue;
         case 14:
           if (tag !== 112) {
@@ -4655,6 +4667,7 @@ export const HardwareCapabilities = {
       starfishSlotMapping: isSet(object.starfishSlotMapping) ? globalThis.String(object.starfishSlotMapping) : "",
       detachablebase: isSet(object.detachablebase) ? globalThis.Boolean(object.detachablebase) : false,
       fingerprint: isSet(object.fingerprint) ? globalThis.Boolean(object.fingerprint) : false,
+      fingerprintMcu: isSet(object.fingerprintMcu) ? globalThis.String(object.fingerprintMcu) : "",
       flashrom: isSet(object.flashrom) ? globalThis.Boolean(object.flashrom) : false,
       formFactor: isSet(object.formFactor) ? hardwareCapabilities_FormFactorFromJSON(object.formFactor) : 0,
       gpuFamily: isSet(object.gpuFamily) ? globalThis.String(object.gpuFamily) : "",
@@ -4704,6 +4717,9 @@ export const HardwareCapabilities = {
     }
     if (message.fingerprint !== undefined && message.fingerprint !== false) {
       obj.fingerprint = message.fingerprint;
+    }
+    if (message.fingerprintMcu !== undefined && message.fingerprintMcu !== "") {
+      obj.fingerprintMcu = message.fingerprintMcu;
     }
     if (message.flashrom !== undefined && message.flashrom !== false) {
       obj.flashrom = message.flashrom;
@@ -4770,6 +4786,7 @@ export const HardwareCapabilities = {
     message.starfishSlotMapping = object.starfishSlotMapping ?? "";
     message.detachablebase = object.detachablebase ?? false;
     message.fingerprint = object.fingerprint ?? false;
+    message.fingerprintMcu = object.fingerprintMcu ?? "";
     message.flashrom = object.flashrom ?? false;
     message.formFactor = object.formFactor ?? 0;
     message.gpuFamily = object.gpuFamily ?? "";
