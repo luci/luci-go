@@ -42,12 +42,14 @@ import (
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/gae/service/datastore"
 	rdbpbutil "go.chromium.org/luci/resultdb/pbutil"
+	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/buildbucket/appengine/common/buildcel"
 	"go.chromium.org/luci/buildbucket/appengine/internal/clients"
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	modeldefs "go.chromium.org/luci/buildbucket/appengine/model/defs"
+	taskdefs "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 )
@@ -163,7 +165,7 @@ func UpdateProjectCfg(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-
+	bldrsMCB := stringset.New(0)
 	for i, meta := range cfgMetas {
 		project := meta.ConfigSet.Project()
 		if cfgs[i] == nil || cfgs[i].Content == "" {
@@ -263,7 +265,7 @@ func UpdateProjectCfg(ctx context.Context) error {
 					cfgBuilder.Dimensions = append(cfgBuilder.Dimensions, fmt.Sprintf("pool:luci.%s.%s", project, cfgBktName))
 				}
 
-				cfgBldrName := fmt.Sprintf("%s/%s/%s", project, cfgBktName, cfgBuilder.Name)
+				cfgBldrName := protoutil.ToBuilderIDString(project, cfgBktName, cfgBuilder.Name)
 				cfgBuilderHash, bldrSize, err := computeBuilderHash(cfgBuilder)
 				if err != nil {
 					return errors.Annotate(err, "while computing hash for builder:%s", cfgBldrName).Err()
@@ -271,6 +273,13 @@ func UpdateProjectCfg(ctx context.Context) error {
 
 				if bldr, ok := bldrMap[cfgBldrName]; ok {
 					delete(bldrMap, cfgBldrName)
+					// Trigger a PopPendingBuildTask if max_concurrent_builds
+					// is increased or reset.
+					old := bldr.Config.GetMaxConcurrentBuilds()
+					new := cfgBuilder.GetMaxConcurrentBuilds()
+					if old != 0 && (new > old || new == 0) {
+						bldrsMCB.Add(cfgBldrName)
+					}
 					if bldr.ConfigHash == cfgBuilderHash {
 						continue
 					}
@@ -429,6 +438,23 @@ func UpdateProjectCfg(ctx context.Context) error {
 		}
 	}
 
+	// Trigger all the popPendingBuild tasks.
+	for bldrID := range bldrsMCB {
+		bldrID, err := protoutil.ParseBuilderID(bldrID)
+		if err != nil {
+			return err
+		}
+		// Import CreatePopPendingBuildTask will cause a circular dependency error.
+		err = tq.AddTask(ctx, &tq.Task{
+			Title: "pop-pending-build-0",
+			Payload: &taskdefs.PopPendingBuildTask{
+				BuilderId: bldrID,
+			},
+		})
+		if err != nil {
+			return err
+		}
+	}
 	return datastore.Delete(ctx, toDelete)
 }
 

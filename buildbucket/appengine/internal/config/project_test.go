@@ -25,6 +25,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/protobuf/encoding/prototext"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
 	"go.chromium.org/luci/common/clock/testclock"
@@ -35,10 +36,12 @@ import (
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/clients"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	modeldefs "go.chromium.org/luci/buildbucket/appengine/model/defs"
+	taskdefs "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
 	pb "go.chromium.org/luci/buildbucket/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -1800,6 +1803,95 @@ func TestUpdateProject(t *testing.T) {
 					ConfigHash: expectedBldrHash2,
 				},
 			})
+		})
+
+		Convey("max_concurent_builds", func() {
+			defer restoreCfgVars()
+			ctx, sch := tq.TestingContext(ctx, nil)
+			// RegisterTaskClass should be called only once.
+			if tq.Default.TaskClassRef("pop-pending-builds") == nil {
+				tq.RegisterTaskClass(tq.TaskClass{
+					ID:        "pop-pending-builds",
+					Kind:      tq.FollowsContext,
+					Prototype: (*taskdefs.PopPendingBuildTask)(nil),
+					Queue:     "pop-pending-builds",
+					Handler: func(ctx context.Context, payload proto.Message) error {
+						return nil
+					},
+				})
+			}
+
+			chromiumBuildbucketCfg = `
+			buckets {
+				name: "try"
+				swarming {
+					builders {
+						name: "linux"
+						max_concurrent_builds: 2
+					}
+				}
+			}
+			`
+			chromiumRevision = "new!"
+			So(UpdateProjectCfg(ctx), ShouldBeNil)
+			So(sch.Tasks(), ShouldHaveLength, 0)
+
+			Convey("increased", func() {
+				chromiumBuildbucketCfg = `
+				buckets {
+					name: "try"
+					swarming {
+						builders {
+							name: "linux"
+							max_concurrent_builds: 4
+						}
+					}
+				}
+				`
+				chromiumRevision = "new!!"
+				So(UpdateProjectCfg(ctx), ShouldBeNil)
+				So(sch.Tasks(), ShouldHaveLength, 1)
+				So(sch.Tasks()[0].Payload.(*taskdefs.PopPendingBuildTask).GetBuildId(), ShouldEqual, 0)
+				So(sch.Tasks()[0].Payload.(*taskdefs.PopPendingBuildTask).GetBuilderId(), ShouldEqual, &pb.BuilderID{
+					Project: "chromium",
+					Bucket:  "try",
+					Builder: "linux",
+				})
+			})
+
+			Convey("decreased", func() {
+				chromiumBuildbucketCfg = `
+				buckets {
+					name: "try"
+					swarming {
+						builders {
+							name: "linux"
+							max_concurrent_builds: 2
+						}
+					}
+				}
+				`
+				chromiumRevision = "new!!!"
+				So(UpdateProjectCfg(ctx), ShouldBeNil)
+				So(sch.Tasks(), ShouldHaveLength, 0)
+			})
+
+			Convey("reset", func() {
+				chromiumBuildbucketCfg = `
+				buckets {
+					name: "try"
+					swarming {
+						builders {
+							name: "linux"
+						}
+					}
+				}
+				`
+				chromiumRevision = "new!!!!"
+				So(UpdateProjectCfg(ctx), ShouldBeNil)
+				So(sch.Tasks(), ShouldHaveLength, 1)
+			})
+
 		})
 
 		Convey("test custom builder metrics", func() {
