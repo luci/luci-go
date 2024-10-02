@@ -16,6 +16,7 @@ import validator from 'validator';
 
 export const nameRe = /^([a-z\-]+\/)?[0-9a-z_\-\.@]{1,100}$/;
 export const membersRe = /^((user|bot|project|service|anonymous):)?[\w+%.@*\[\]-]+$/;
+export const nonUserMemberRe = /^(bot|project|service|anonymous):.+/;
 
 // Appends '<prefix>:' to a string if it doesn't have a prefix.
 const addPrefix = (prefix: string, str: string) => {
@@ -26,7 +27,6 @@ export const addPrefixToItems = (prefix: string, items: string[]) => {
     return items.map((item) => addPrefix(prefix, item));
 };
 
-
 // True if string looks like a glob pattern (and not a group member name).
 export const isGlob = (item: string) => {
     // Glob patterns contain '*' and '[]' not allowed in member names.
@@ -34,9 +34,20 @@ export const isGlob = (item: string) => {
 };
 
 export const isMember = (item: string) => {
-    return membersRe.test(item!) && validator.isEmail(item!);
+    return membersRe.test(item!) && isValidMember(item!);
 }
 
 export const isSubgroup = (item: string) => {
     return nameRe.test(item!);
+}
+
+const isValidMember = (item: string) => {
+    // Non user members are valid as long as prefix is specified.
+    if (nonUserMemberRe.test(item!)) {
+        return true;
+    }
+    // The member identity type is "user" (either explicitly,
+    // or implicitly assumed when no type is specified).
+    // It must be an email.
+    return validator.isEmail(item.replace('user:', ''));
 }

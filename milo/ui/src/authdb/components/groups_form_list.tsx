@@ -122,7 +122,7 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
       // If it doesn't meet the requirements, show error message.
       if (name == 'Members') {
         if (!isMember(currentItem!)) {
-          setErrorMessage('Each member should be an email address.');
+          setErrorMessage('Invalid member.');
           return;
         }
       } else if (name == 'Globs') {

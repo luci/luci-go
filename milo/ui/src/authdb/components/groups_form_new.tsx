@@ -184,7 +184,7 @@ export function GroupsFormNew() {
                 </TableRow>
                 <TableRow>
                   <TableCell align='left' style={{ width: '95%' }} sx={{ pt: 0, pb: '8px' }}>
-                    <TextField multiline value={members} style={{ width: '100%', minHeight: '60px' }} onChange={(e) => setMembers(e.target.value)} id='membersTextfield' data-testid='members-textfield' error={membersErrorMessage !== ""} helperText={membersErrorMessage}></TextField>
+                    <TextField placeholder='List of members, one per line' multiline value={members} style={{ width: '100%', minHeight: '60px' }} onChange={(e) => setMembers(e.target.value)} id='membersTextfield' data-testid='members-textfield' error={membersErrorMessage !== ""} helperText={membersErrorMessage}></TextField>
                   </TableCell>
                 </TableRow>
                 <TableRow>
@@ -194,7 +194,7 @@ export function GroupsFormNew() {
                 </TableRow>
                 <TableRow>
                   <TableCell align='left' style={{ width: '95%' }} sx={{ pt: 0, pb: '8px' }}>
-                    <TextField multiline value={globs} style={{ width: '100%', minHeight: '60px' }} onChange={(e) => setGlobs(e.target.value)} id='globsTextfield' data-testid='globs-textfield' error={globsErrorMessage !== ""} helperText={globsErrorMessage}></TextField>
+                    <TextField placeholder='List of globs, one per line' multiline value={globs} style={{ width: '100%', minHeight: '60px' }} onChange={(e) => setGlobs(e.target.value)} id='globsTextfield' data-testid='globs-textfield' error={globsErrorMessage !== ""} helperText={globsErrorMessage}></TextField>
                   </TableCell>
                 </TableRow>
                 <TableRow>
@@ -204,7 +204,7 @@ export function GroupsFormNew() {
                 </TableRow>
                 <TableRow>
                   <TableCell align='left' style={{ width: '95%' }} sx={{ pt: 0, pb: '8px' }}>
-                    <TextField multiline value={subgroups} style={{ width: '100%', minHeight: '60px' }} onChange={(e) => setSubgroups(e.target.value)} id='subgroupsTextfield' data-testid='subgroups-textfield' error={subgroupsErrorMessage !== ""} helperText={subgroupsErrorMessage}></TextField>
+                    <TextField placeholder='List of subgroups, one per line' multiline value={subgroups} style={{ width: '100%', minHeight: '60px' }} onChange={(e) => setSubgroups(e.target.value)} id='subgroupsTextfield' data-testid='subgroups-textfield' error={subgroupsErrorMessage !== ""} helperText={subgroupsErrorMessage}></TextField>
                   </TableCell>
                 </TableRow>
               </TableBody>

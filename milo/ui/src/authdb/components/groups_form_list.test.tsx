@@ -127,7 +127,7 @@ describe('<GroupsFormList editable/>', () => {
     expect(confirmButton).not.toBeNull();
     act(() => confirmButton!.click());
     // Check correct error message is shown.
-    expect(screen.getByText('Each member should be an email address.')).toBeInTheDocument();
+    expect(screen.getByText('Invalid member.')).toBeInTheDocument();
   })
 
   test('shows error message on invalid email', async () => {
@@ -144,7 +144,7 @@ describe('<GroupsFormList editable/>', () => {
     expect(confirmButton).not.toBeNull();
     act(() => confirmButton!.click());
     // Check correct error message is shown.
-    expect(screen.getByText('Each member should be an email address.')).toBeInTheDocument();
+    expect(screen.getByText('Invalid member.')).toBeInTheDocument();
   })
 
   test('shows error message on duplicate item added', async () => {
