@@ -64,11 +64,12 @@ Otherwise, the browser code will try to call a dev API that doesn't exist.
 ```sh
 cd luci/milo/ui
 npm run build
-# Both the `api`, and `default` service should be uploaded at least once.
+# The `api`, the `default` and the `ui` service should be uploaded at least
+# once.
 gae.py upload -p ../ -A luci-milo-dev
-# After that, you can deploy `default` only for shorter deployment time, if
-# there's no code changes to the API service.
-gae.py upload -p ../ -A luci-milo-dev default
+# After that, you can deploy `ui` only for shorter deployment time, if there's
+# no code changes to the API service or the default service.
+gae.py upload -p ../ -A luci-milo-dev ui
 ```
 
 ## Others
