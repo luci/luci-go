@@ -26,6 +26,7 @@ import (
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/cas"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/contextmd"
+	"github.com/bazelbuild/remote-apis-sdks/go/pkg/retry"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
@@ -100,6 +101,9 @@ func DefaultConfig() cas.ClientConfig {
 	// BUG(crbug.com/349853790) - encountered timeouts when uploading,
 	// so speculatively adjusting this.
 	cfg.BatchUpdateBlobs.Timeout = time.Minute * 2
+
+	// On some builders with low network bandwidth, increase the number of retries and delay time.
+	cfg.RetryPolicy = retry.ExponentialBackoff(225*time.Millisecond, 60*time.Second, retry.Attempts(12))
 
 	return cfg
 }
