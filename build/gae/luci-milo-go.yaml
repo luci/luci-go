@@ -1,0 +1,15 @@
+name: luci-go/luci-milo-go
+extends: ../gae.yaml
+
+inputsdir: ../../milo
+
+# Builds the go portion of LUCI Milo.
+build:
+  - copy: ${inputsdir}/dispatch.yaml
+    dest: ${contextdir}/dispatch.yaml
+  - go_gae_bundle: ${inputsdir}/frontend/app.yaml
+    go_gae_bundle_as_module: True
+    dest: ${contextdir}/frontend
+  - go_gae_bundle: ${inputsdir}/service-api/service-api.yaml
+    go_gae_bundle_as_module: True
+    dest: ${contextdir}/service-api

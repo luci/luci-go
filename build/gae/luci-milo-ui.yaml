@@ -1,0 +1,14 @@
+name: luci-go/luci-milo-ui
+extends: ../gae.yaml
+
+inputsdir: ../../milo
+
+# Builds the UI portion of LUCI Milo (LUCI UI).
+# It's separated from the server portion of LUCI Milo so the UI portion can be
+# built and deployed separately.
+build:
+  - run: ['make', 'release']
+    cwd: ${inputsdir}/ui
+  - go_gae_bundle: ${inputsdir}/service-ui/service-ui.yaml
+    go_gae_bundle_as_module: True
+    dest: ${contextdir}/service-ui
