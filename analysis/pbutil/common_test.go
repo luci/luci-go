@@ -18,17 +18,17 @@ import (
 	"strings"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/cv/api/bigquery/v1"
 	cvv0 "go.chromium.org/luci/cv/api/v0"
 
 	pb "go.chromium.org/luci/analysis/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestCommon(t *testing.T) {
-	Convey("PresubmitRunModeFromString", t, func() {
+	ftt.Run("PresubmitRunModeFromString", t, func(t *ftt.Test) {
 		// Confirm a mapping exists for every mode defined by LUCI CV.
 		// This test is designed to break if LUCI CV extends the set of
 		// allowed values, without a corresponding update to LUCI Analysis.
@@ -44,11 +44,11 @@ func TestCommon(t *testing.T) {
 				continue
 			}
 			mode, err := PresubmitRunModeFromString(mode)
-			So(err, ShouldBeNil)
-			So(mode, ShouldNotEqual, pb.PresubmitRunMode_PRESUBMIT_RUN_MODE_UNSPECIFIED)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, mode, should.NotEqual(pb.PresubmitRunMode_PRESUBMIT_RUN_MODE_UNSPECIFIED))
 		}
 	})
-	Convey("PresubmitRunStatusFromLUCICV", t, func() {
+	ftt.Run("PresubmitRunStatusFromLUCICV", t, func(t *ftt.Test) {
 		// Confirm a mapping exists for every run status defined by LUCI CV.
 		// This test is designed to break if LUCI CV extends the set of
 		// allowed values, without a corresponding update to LUCI Analysis.
@@ -65,56 +65,56 @@ func TestCommon(t *testing.T) {
 				continue
 			}
 			status, err := PresubmitRunStatusFromLUCICV(runStatus)
-			So(err, ShouldBeNil)
-			So(status, ShouldNotEqual, pb.PresubmitRunStatus_PRESUBMIT_RUN_STATUS_UNSPECIFIED)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, status, should.NotEqual(pb.PresubmitRunStatus_PRESUBMIT_RUN_STATUS_UNSPECIFIED))
 		}
 	})
 }
 
 func TestValidateStringPair(t *testing.T) {
 	t.Parallel()
-	Convey(`TestValidateStringPairs`, t, func() {
-		Convey(`empty`, func() {
+	ftt.Run(`TestValidateStringPairs`, t, func(t *ftt.Test) {
+		t.Run(`empty`, func(t *ftt.Test) {
 			err := ValidateStringPair(StringPair("", ""))
-			So(err, ShouldErrLike, `key: unspecified`)
+			assert.Loosely(t, err, should.ErrLike(`key: unspecified`))
 		})
 
-		Convey(`invalid key`, func() {
+		t.Run(`invalid key`, func(t *ftt.Test) {
 			err := ValidateStringPair(StringPair("1", ""))
-			So(err, ShouldErrLike, `key: does not match`)
+			assert.Loosely(t, err, should.ErrLike(`key: does not match`))
 		})
 
-		Convey(`long key`, func() {
+		t.Run(`long key`, func(t *ftt.Test) {
 			err := ValidateStringPair(StringPair(strings.Repeat("a", 1000), ""))
-			So(err, ShouldErrLike, `key length must be less or equal to 64`)
+			assert.Loosely(t, err, should.ErrLike(`key length must be less or equal to 64`))
 		})
 
-		Convey(`long value`, func() {
+		t.Run(`long value`, func(t *ftt.Test) {
 			err := ValidateStringPair(StringPair("a", strings.Repeat("a", 1000)))
-			So(err, ShouldErrLike, `value length must be less or equal to 256`)
+			assert.Loosely(t, err, should.ErrLike(`value length must be less or equal to 256`))
 		})
 
-		Convey(`multiline value`, func() {
+		t.Run(`multiline value`, func(t *ftt.Test) {
 			err := ValidateStringPair(StringPair("a", "multi\nline\nvalue"))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey(`valid`, func() {
+		t.Run(`valid`, func(t *ftt.Test) {
 			err := ValidateStringPair(StringPair("a", "b"))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 	})
 }
 
 func TestVariantToJSON(t *testing.T) {
 	t.Parallel()
-	Convey(`VariantToJSON`, t, func() {
-		Convey(`empty`, func() {
+	ftt.Run(`VariantToJSON`, t, func(t *ftt.Test) {
+		t.Run(`empty`, func(t *ftt.Test) {
 			result, err := VariantToJSON(nil)
-			So(err, ShouldBeNil)
-			So(result, ShouldEqual, "{}")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, result, should.Equal("{}"))
 		})
-		Convey(`non-empty`, func() {
+		t.Run(`non-empty`, func(t *ftt.Test) {
 			variant := &pb.Variant{
 				Def: map[string]string{
 					"builder":           "linux-rel",
@@ -123,8 +123,8 @@ func TestVariantToJSON(t *testing.T) {
 				},
 			}
 			result, err := VariantToJSON(variant)
-			So(err, ShouldBeNil)
-			So(result, ShouldEqual, `{"builder":"linux-rel","os":"Ubuntu-18.04","pathological-case":"\u0000\u0001\n\r\f"}`)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, result, should.Equal(`{"builder":"linux-rel","os":"Ubuntu-18.04","pathological-case":"\u0000\u0001\n\r\f"}`))
 		})
 	})
 }

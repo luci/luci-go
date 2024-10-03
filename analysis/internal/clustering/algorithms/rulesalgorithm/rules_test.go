@@ -19,41 +19,43 @@ import (
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
+
 	"go.chromium.org/luci/analysis/internal/clustering"
 	"go.chromium.org/luci/analysis/internal/clustering/rules"
 	"go.chromium.org/luci/analysis/internal/clustering/rules/cache"
 	pb "go.chromium.org/luci/analysis/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestAlgorithm(t *testing.T) {
-	Convey(`Name`, t, func() {
+	ftt.Run(`Name`, t, func(t *ftt.Test) {
 		// Algorithm name should be valid.
-		So(clustering.AlgorithmRe.MatchString(AlgorithmName), ShouldBeTrue)
+		assert.Loosely(t, clustering.AlgorithmRe.MatchString(AlgorithmName), should.BeTrue)
 	})
-	Convey(`Cluster from scratch`, t, func() {
+	ftt.Run(`Cluster from scratch`, t, func(t *ftt.Test) {
 		a := &Algorithm{}
 		existingRulesVersion := rules.StartingEpoch
 		ids := make(map[string]struct{})
-		Convey(`Empty Rules`, func() {
+		t.Run(`Empty Rules`, func(t *ftt.Test) {
 			ruleset := &cache.Ruleset{}
 			a.Cluster(ruleset, existingRulesVersion, ids, &clustering.Failure{
 				Reason: &pb.FailureReason{PrimaryErrorMessage: "Null pointer exception at ip 0x45637271"},
 			})
-			So(ids, ShouldBeEmpty)
+			assert.Loosely(t, ids, should.BeEmpty)
 		})
-		Convey(`With Rules`, func() {
+		t.Run(`With Rules`, func(t *ftt.Test) {
 			rule1, err := cache.NewCachedRule(
 				rules.NewRule(100).
 					WithRuleDefinition(`test = "ninja://test_name_one/"`).
 					Build())
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			rule2, err := cache.NewCachedRule(
 				rules.NewRule(101).
 					WithRuleDefinition(`reason LIKE "failed to connect to %.%.%.%"`).
 					Build())
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			rulesVersion := rules.Version{
 				Predicates: time.Now(),
@@ -62,34 +64,34 @@ func TestAlgorithm(t *testing.T) {
 			rules := []*cache.CachedRule{rule1, rule2}
 			ruleset := cache.NewRuleset("myproject", rules, rulesVersion, lastUpdated)
 
-			Convey(`Without failure reason`, func() {
-				Convey(`Matching`, func() {
+			t.Run(`Without failure reason`, func(t *ftt.Test) {
+				t.Run(`Matching`, func(t *ftt.Test) {
 					a.Cluster(ruleset, existingRulesVersion, ids, &clustering.Failure{
 						TestID: "ninja://test_name_one/",
 					})
-					So(ids, ShouldResemble, map[string]struct{}{
+					assert.Loosely(t, ids, should.Resemble(map[string]struct{}{
 						rule1.Rule.RuleID: {},
-					})
+					}))
 				})
-				Convey(`Non-matcing`, func() {
+				t.Run(`Non-matcing`, func(t *ftt.Test) {
 					a.Cluster(ruleset, existingRulesVersion, ids, &clustering.Failure{
 						TestID: "ninja://test_name_two/",
 					})
-					So(ids, ShouldBeEmpty)
+					assert.Loosely(t, ids, should.BeEmpty)
 				})
 			})
-			Convey(`Matches one`, func() {
+			t.Run(`Matches one`, func(t *ftt.Test) {
 				a.Cluster(ruleset, existingRulesVersion, ids, &clustering.Failure{
 					TestID: "ninja://test_name_three/",
 					Reason: &pb.FailureReason{
 						PrimaryErrorMessage: "failed to connect to 192.168.0.1",
 					},
 				})
-				So(ids, ShouldResemble, map[string]struct{}{
+				assert.Loosely(t, ids, should.Resemble(map[string]struct{}{
 					rule2.Rule.RuleID: {},
-				})
+				}))
 			})
-			Convey(`Matches multiple`, func() {
+			t.Run(`Matches multiple`, func(t *ftt.Test) {
 				a.Cluster(ruleset, existingRulesVersion, ids, &clustering.Failure{
 					TestID: "ninja://test_name_one/",
 					Reason: &pb.FailureReason{
@@ -98,14 +100,14 @@ func TestAlgorithm(t *testing.T) {
 				})
 				expectedIDs := []string{rule1.Rule.RuleID, rule2.Rule.RuleID}
 				sort.Strings(expectedIDs)
-				So(ids, ShouldResemble, map[string]struct{}{
+				assert.Loosely(t, ids, should.Resemble(map[string]struct{}{
 					rule1.Rule.RuleID: {},
 					rule2.Rule.RuleID: {},
-				})
+				}))
 			})
 		})
 	})
-	Convey(`Cluster incrementally`, t, func() {
+	ftt.Run(`Cluster incrementally`, t, func(t *ftt.Test) {
 		a := &Algorithm{}
 		originalRulesVersion := time.Date(2020, time.January, 1, 1, 0, 0, 0, time.UTC)
 		testFailure := &clustering.Failure{
@@ -122,12 +124,12 @@ func TestAlgorithm(t *testing.T) {
 		rule1, err := cache.NewCachedRule(
 			rules.NewRule(100).WithRuleDefinition(`FALSE`).
 				WithPredicateLastUpdateTime(originalRulesVersion).Build())
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		rule3, err := cache.NewCachedRule(
 			rules.NewRule(102).
 				WithRuleDefinition(`reason LIKE "failed to connect to %"`).
 				WithPredicateLastUpdateTime(originalRulesVersion.Add(time.Hour)).Build())
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		rs := []*cache.CachedRule{rule1, rule3}
 		newRulesVersion := rules.Version{
@@ -144,9 +146,9 @@ func TestAlgorithm(t *testing.T) {
 		// Test incrementally clustering leads to the correct outcome,
 		// matching rule 3 and unmatching rule 2.
 		a.Cluster(secondRuleset, originalRulesVersion, ids, testFailure)
-		So(ids, ShouldResemble, map[string]struct{}{
+		assert.Loosely(t, ids, should.Resemble(map[string]struct{}{
 			rule1.Rule.RuleID: {},
 			rule3.Rule.RuleID: {},
-		})
+		}))
 	})
 }

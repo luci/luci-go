@@ -17,16 +17,18 @@ package exporter
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestSchema(t *testing.T) {
 	t.Parallel()
-	Convey(`With Schema`, t, func() {
+	ftt.Run(`With Schema`, t, func(t *ftt.Test) {
 		destinations := []ExportDestination{ByDayTable, ByMonthTable}
 		for _, destination := range destinations {
-			So(destination.Key, ShouldNotBeEmpty)
-			So(destination.tableName, ShouldNotBeEmpty)
+			assert.Loosely(t, destination.Key, should.NotBeEmpty)
+			assert.Loosely(t, destination.tableName, should.NotBeEmpty)
 
 			var fieldNames []string
 			for _, field := range destination.tableMetadata.Schema {
@@ -35,11 +37,11 @@ func TestSchema(t *testing.T) {
 
 			// Time partitioning field is defined
 			partitioningField := destination.tableMetadata.TimePartitioning.Field
-			So(partitioningField, ShouldBeIn, fieldNames)
+			assert.Loosely(t, partitioningField, should.BeIn(fieldNames...))
 
 			// Clustering fields are defined.
 			for _, clusteringField := range destination.tableMetadata.Clustering.Fields {
-				So(clusteringField, ShouldBeIn, fieldNames)
+				assert.Loosely(t, clusteringField, should.BeIn(fieldNames...))
 			}
 		}
 	})

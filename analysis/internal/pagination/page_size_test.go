@@ -17,24 +17,25 @@ package pagination
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestPageSizeLimiter(t *testing.T) {
 	t.Parallel()
 
-	Convey(`PageSizeLimiter`, t, func() {
+	ftt.Run(`PageSizeLimiter`, t, func(t *ftt.Test) {
 		psl := PageSizeLimiter{
 			Max:     1000,
 			Default: 10,
 		}
 
-		Convey(`Adjust works`, func() {
-			So(psl.Adjust(0), ShouldEqual, 10)
-			So(psl.Adjust(10000), ShouldEqual, 1000)
-			So(psl.Adjust(500), ShouldEqual, 500)
-			So(psl.Adjust(5), ShouldEqual, 5)
+		t.Run(`Adjust works`, func(t *ftt.Test) {
+			assert.Loosely(t, psl.Adjust(0), should.Equal(10))
+			assert.Loosely(t, psl.Adjust(10000), should.Equal(1000))
+			assert.Loosely(t, psl.Adjust(500), should.Equal(500))
+			assert.Loosely(t, psl.Adjust(5), should.Equal(5))
 		})
 	})
 }
@@ -42,15 +43,15 @@ func TestPageSizeLimiter(t *testing.T) {
 func TestValidatePageSize(t *testing.T) {
 	t.Parallel()
 
-	Convey(`ValidatePageSize`, t, func() {
-		Convey(`Positive`, func() {
-			So(ValidatePageSize(10), ShouldBeNil)
+	ftt.Run(`ValidatePageSize`, t, func(t *ftt.Test) {
+		t.Run(`Positive`, func(t *ftt.Test) {
+			assert.Loosely(t, ValidatePageSize(10), should.BeNil)
 		})
-		Convey(`Zero`, func() {
-			So(ValidatePageSize(0), ShouldBeNil)
+		t.Run(`Zero`, func(t *ftt.Test) {
+			assert.Loosely(t, ValidatePageSize(0), should.BeNil)
 		})
-		Convey(`Negative`, func() {
-			So(ValidatePageSize(-10), ShouldErrLike, "negative")
+		t.Run(`Negative`, func(t *ftt.Test) {
+			assert.Loosely(t, ValidatePageSize(-10), should.ErrLike("negative"))
 		})
 	})
 }

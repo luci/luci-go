@@ -17,25 +17,26 @@ package bugs
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestValidate(t *testing.T) {
-	Convey(`Validate`, t, func() {
+	ftt.Run(`Validate`, t, func(t *ftt.Test) {
 		id := BugID{
 			System: "monorail",
 			ID:     "chromium/123",
 		}
-		Convey(`System missing`, func() {
+		t.Run(`System missing`, func(t *ftt.Test) {
 			id.System = ""
 			err := id.Validate()
-			So(err, ShouldErrLike, `invalid bug tracking system`)
+			assert.Loosely(t, err, should.ErrLike(`invalid bug tracking system`))
 		})
-		Convey("ID invalid", func() {
+		t.Run("ID invalid", func(t *ftt.Test) {
 			id.ID = "!!!"
 			err := id.Validate()
-			So(err, ShouldErrLike, `invalid monorail bug ID`)
+			assert.Loosely(t, err, should.ErrLike(`invalid monorail bug ID`))
 		})
 	})
 }

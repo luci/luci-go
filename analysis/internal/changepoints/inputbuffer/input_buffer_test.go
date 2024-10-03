@@ -19,11 +19,13 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestEncodeAndDecode(t *testing.T) {
-	Convey(`Encode and decode should return the same result`, t, func() {
+	ftt.Run(`Encode and decode should return the same result`, t, func(t *ftt.Test) {
 		history := History{
 			Runs: []Run{
 				{
@@ -93,12 +95,12 @@ func TestEncodeAndDecode(t *testing.T) {
 			Runs: make([]Run, 0, 100),
 		}
 		err := hs.DecodeInto(&decodedHistory, encoded)
-		So(err, ShouldBeNil)
-		So(len(decodedHistory.Runs), ShouldEqual, 6)
-		So(decodedHistory, ShouldResemble, history)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, len(decodedHistory.Runs), should.Equal(6))
+		assert.Loosely(t, decodedHistory, should.Resemble(history))
 	})
 
-	Convey(`Encode and decode long history should not have error`, t, func() {
+	ftt.Run(`Encode and decode long history should not have error`, t, func(t *ftt.Test) {
 		history := History{}
 		history.Runs = make([]Run, 2000)
 		for i := 0; i < 2000; i++ {
@@ -119,22 +121,22 @@ func TestEncodeAndDecode(t *testing.T) {
 			Runs: make([]Run, 0, 2000),
 		}
 		err := hs.DecodeInto(&decodedHistory, encoded)
-		So(err, ShouldBeNil)
-		So(len(decodedHistory.Runs), ShouldEqual, 2000)
-		So(decodedHistory, ShouldResemble, history)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, len(decodedHistory.Runs), should.Equal(2000))
+		assert.Loosely(t, decodedHistory, should.Resemble(history))
 	})
-	Convey(`Decode legacy data format v2`, t, func() {
-		Convey(`Short history`, func() {
+	ftt.Run(`Decode legacy data format v2`, t, func(t *ftt.Test) {
+		t.Run(`Short history`, func(t *ftt.Test) {
 			// Four verdicts.
 			b, err := base64.StdEncoding.DecodeString("enRkCii1L/0EAKEBAAIEghXQDxUKAAIBAgMEBQYHCAABAAAAAAIAAAEEAwEEAQIBAAAAAAIAAAEJCgsMDQ4PEACx/UmM")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			decodedHistory := History{
 				Runs: make([]Run, 0, 100),
 			}
 			hs := &HistorySerializer{}
 			err = hs.DecodeInto(&decodedHistory, b)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			expectedRuns := []Run{
 				{
@@ -180,9 +182,9 @@ func TestEncodeAndDecode(t *testing.T) {
 					},
 				},
 			}
-			So(decodedHistory.Runs, ShouldResemble, expectedRuns)
+			assert.Loosely(t, decodedHistory.Runs, should.Resemble(expectedRuns))
 		})
-		Convey(`Long history`, func() {
+		t.Run(`Long history`, func(t *ftt.Test) {
 			var expectedRuns []Run
 			for i := 0; i < 2000; i++ {
 				for j := 0; j < 3; j++ {
@@ -200,21 +202,21 @@ func TestEncodeAndDecode(t *testing.T) {
 			// hours and positions, which means they compresses extremely well in
 			// the encoding.
 			b, err := base64.StdEncoding.DecodeString("enRkCii1L/1kM/HtAAAiAQQK4EEA//+/3fDe99r12YFQAgAMcqF0jF5ZAnoIHDw=")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			decodedHistory := History{
 				Runs: make([]Run, 0, 100),
 			}
 			hs := &HistorySerializer{}
 			err = hs.DecodeInto(&decodedHistory, b)
-			So(err, ShouldBeNil)
-			So(decodedHistory.Runs, ShouldResemble, expectedRuns)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, decodedHistory.Runs, should.Resemble(expectedRuns))
 		})
 	})
 }
 
 func TestInputBuffer(t *testing.T) {
-	Convey(`Add item to input buffer`, t, func() {
+	ftt.Run(`Add item to input buffer`, t, func(t *ftt.Test) {
 		ib := NewWithCapacity(10, 100)
 		originalHotBuffer := ib.HotBuffer.Runs
 		originalColdBuffer := ib.ColdBuffer.Runs
@@ -230,13 +232,13 @@ func TestInputBuffer(t *testing.T) {
 		ib.InsertRun(createTestRun(7, 8))
 		ib.InsertRun(createTestRun(7, 7))
 
-		So(ib.IsColdBufferDirty, ShouldBeFalse)
+		assert.Loosely(t, ib.IsColdBufferDirty, should.BeFalse)
 
 		// Expect compaction to have no effect.
 		ib.CompactIfRequired()
-		So(ib.IsColdBufferDirty, ShouldBeFalse)
-		So(len(ib.HotBuffer.Runs), ShouldEqual, 9)
-		So(ib.HotBuffer.Runs, ShouldResemble, []Run{
+		assert.Loosely(t, ib.IsColdBufferDirty, should.BeFalse)
+		assert.Loosely(t, len(ib.HotBuffer.Runs), should.Equal(9))
+		assert.Loosely(t, ib.HotBuffer.Runs, should.Resemble([]Run{
 			createTestRun(1, 1),
 			createTestRun(1, 4),
 			createTestRun(2, 2),
@@ -246,18 +248,18 @@ func TestInputBuffer(t *testing.T) {
 			createTestRun(4, 5),
 			createTestRun(7, 7),
 			createTestRun(7, 8),
-		})
+		}))
 
 		// Insert the last verdict.
 		ib.InsertRun(createTestRun(6, 2))
-		So(ib.IsColdBufferDirty, ShouldBeFalse)
+		assert.Loosely(t, ib.IsColdBufferDirty, should.BeFalse)
 
 		// Compaction should not have an effect.
 		ib.CompactIfRequired()
-		So(ib.IsColdBufferDirty, ShouldBeTrue)
-		So(len(ib.HotBuffer.Runs), ShouldEqual, 0)
-		So(len(ib.ColdBuffer.Runs), ShouldEqual, 10)
-		So(ib.ColdBuffer.Runs, ShouldResemble, []Run{
+		assert.Loosely(t, ib.IsColdBufferDirty, should.BeTrue)
+		assert.Loosely(t, len(ib.HotBuffer.Runs), should.BeZero)
+		assert.Loosely(t, len(ib.ColdBuffer.Runs), should.Equal(10))
+		assert.Loosely(t, ib.ColdBuffer.Runs, should.Resemble([]Run{
 			createTestRun(1, 1),
 			createTestRun(1, 4),
 			createTestRun(2, 2),
@@ -268,13 +270,13 @@ func TestInputBuffer(t *testing.T) {
 			createTestRun(6, 2),
 			createTestRun(7, 7),
 			createTestRun(7, 8),
-		})
+		}))
 
 		// The pre-allocated buffer should be retained, at the same capacity.
-		So(&ib.HotBuffer.Runs[0:1][0], ShouldEqual, &originalHotBuffer[0:1][0])
-		So(&ib.ColdBuffer.Runs[0], ShouldEqual, &originalColdBuffer[0:1][0])
+		assert.Loosely(t, &ib.HotBuffer.Runs[0:1][0], should.Equal(&originalHotBuffer[0:1][0]))
+		assert.Loosely(t, &ib.ColdBuffer.Runs[0], should.Equal(&originalColdBuffer[0:1][0]))
 	})
-	Convey(`Test result flow is efficient`, t, func() {
+	ftt.Run(`Test result flow is efficient`, t, func(t *ftt.Test) {
 		ib := NewWithCapacity(10, 100)
 		coldBufferDirtyCount := 0
 		evictionCount := 0
@@ -296,12 +298,12 @@ func TestInputBuffer(t *testing.T) {
 		}
 		// We should not have to write the cold buffer out to Spanner
 		// every time, but only once per HotBufferCapacity times.
-		So(coldBufferDirtyCount, ShouldBeLessThanOrEqualTo, 100)
+		assert.Loosely(t, coldBufferDirtyCount, should.BeLessThanOrEqual(100))
 		// Eviction is similar, but only starts once the cold buffer
 		// is full.
-		So(evictionCount, ShouldEqual, 90)
+		assert.Loosely(t, evictionCount, should.Equal(90))
 	})
-	Convey(`Compaction should maintain order`, t, func() {
+	ftt.Run(`Compaction should maintain order`, t, func(t *ftt.Test) {
 		ib := Buffer{
 			HotBufferCapacity: 5,
 			HotBuffer: History{
@@ -328,12 +330,12 @@ func TestInputBuffer(t *testing.T) {
 		}
 		originalHotBuffer := ib.HotBuffer.Runs
 		originalColdBuffer := ib.ColdBuffer.Runs
-		So(cap(originalColdBuffer), ShouldEqual, 10)
+		assert.Loosely(t, cap(originalColdBuffer), should.Equal(10))
 
 		ib.CompactIfRequired()
-		So(len(ib.HotBuffer.Runs), ShouldEqual, 0)
-		So(len(ib.ColdBuffer.Runs), ShouldEqual, 10)
-		So(ib.ColdBuffer.Runs, ShouldResemble, []Run{
+		assert.Loosely(t, len(ib.HotBuffer.Runs), should.BeZero)
+		assert.Loosely(t, len(ib.ColdBuffer.Runs), should.Equal(10))
+		assert.Loosely(t, ib.ColdBuffer.Runs, should.Resemble([]Run{
 			createTestRun(1, 1),
 			createTestRun(2, 1),
 			createTestRun(3, 1),
@@ -344,14 +346,14 @@ func TestInputBuffer(t *testing.T) {
 			createTestRun(8, 1),
 			createTestRun(9, 1),
 			createTestRun(10, 1),
-		})
+		}))
 
 		// The pre-allocated buffer should be retained, at the same capacity.
-		So(&ib.HotBuffer.Runs[0:1][0], ShouldEqual, &originalHotBuffer[0:1][0])
-		So(&ib.ColdBuffer.Runs[0], ShouldEqual, &originalColdBuffer[0:1][0])
+		assert.Loosely(t, &ib.HotBuffer.Runs[0:1][0], should.Equal(&originalHotBuffer[0:1][0]))
+		assert.Loosely(t, &ib.ColdBuffer.Runs[0], should.Equal(&originalColdBuffer[0:1][0]))
 	})
 
-	Convey(`Cold buffer should keep old verdicts after compaction`, t, func() {
+	ftt.Run(`Cold buffer should keep old verdicts after compaction`, t, func(t *ftt.Test) {
 		ib := Buffer{
 			HotBufferCapacity: 2,
 			HotBuffer: History{
@@ -373,9 +375,9 @@ func TestInputBuffer(t *testing.T) {
 		}
 
 		ib.CompactIfRequired()
-		So(len(ib.HotBuffer.Runs), ShouldEqual, 0)
-		So(len(ib.ColdBuffer.Runs), ShouldEqual, 7)
-		So(ib.ColdBuffer.Runs, ShouldResemble, []Run{
+		assert.Loosely(t, len(ib.HotBuffer.Runs), should.BeZero)
+		assert.Loosely(t, len(ib.ColdBuffer.Runs), should.Equal(7))
+		assert.Loosely(t, ib.ColdBuffer.Runs, should.Resemble([]Run{
 			createTestRun(2, 1),
 			createTestRun(4, 1),
 			createTestRun(6, 1),
@@ -383,10 +385,10 @@ func TestInputBuffer(t *testing.T) {
 			createTestRun(8, 1),
 			createTestRun(9, 1),
 			createTestRun(10, 1),
-		})
+		}))
 	})
 
-	Convey(`EvictBefore`, t, func() {
+	ftt.Run(`EvictBefore`, t, func(t *ftt.Test) {
 		buffer := History{
 			Runs: []Run{
 				createTestRun(2, 1),
@@ -397,11 +399,11 @@ func TestInputBuffer(t *testing.T) {
 			},
 		}
 		originalVerdictsBuffer := buffer.Runs
-		So(cap(buffer.Runs), ShouldEqual, 5)
+		assert.Loosely(t, cap(buffer.Runs), should.Equal(5))
 
-		Convey(`Start of slice`, func() {
+		t.Run(`Start of slice`, func(t *ftt.Test) {
 			buffer.EvictBefore(0)
-			So(buffer, ShouldResemble, History{
+			assert.Loosely(t, buffer, should.Resemble(History{
 				Runs: []Run{
 					createTestRun(2, 1),
 					createTestRun(4, 1),
@@ -409,47 +411,47 @@ func TestInputBuffer(t *testing.T) {
 					createTestRun(8, 1),
 					createTestRun(10, 1),
 				},
-			})
+			}))
 
-			So(&buffer.Runs[0:1][0], ShouldEqual, &originalVerdictsBuffer[0])
-			So(cap(buffer.Runs), ShouldEqual, 5)
+			assert.Loosely(t, &buffer.Runs[0:1][0], should.Equal(&originalVerdictsBuffer[0]))
+			assert.Loosely(t, cap(buffer.Runs), should.Equal(5))
 		})
-		Convey(`Middle of slice`, func() {
+		t.Run(`Middle of slice`, func(t *ftt.Test) {
 			buffer.EvictBefore(2)
-			So(buffer, ShouldResemble, History{
+			assert.Loosely(t, buffer, should.Resemble(History{
 				Runs: []Run{
 					createTestRun(6, 1),
 					createTestRun(8, 1),
 					createTestRun(10, 1),
 				},
-			})
+			}))
 
 			// The pre-allocated buffer should be retained, at the same capacity.
-			So(&buffer.Runs[0:1][0], ShouldEqual, &originalVerdictsBuffer[0])
-			So(cap(buffer.Runs), ShouldEqual, 5)
+			assert.Loosely(t, &buffer.Runs[0:1][0], should.Equal(&originalVerdictsBuffer[0]))
+			assert.Loosely(t, cap(buffer.Runs), should.Equal(5))
 		})
-		Convey(`End of slice`, func() {
+		t.Run(`End of slice`, func(t *ftt.Test) {
 			buffer.EvictBefore(5)
-			So(buffer, ShouldResemble, History{
+			assert.Loosely(t, buffer, should.Resemble(History{
 				Runs: []Run{},
-			})
+			}))
 
 			// The pre-allocated buffer should be retained, at the same capacity.
-			So(&buffer.Runs[0:1][0], ShouldEqual, &originalVerdictsBuffer[0])
-			So(cap(buffer.Runs), ShouldEqual, 5)
+			assert.Loosely(t, &buffer.Runs[0:1][0], should.Equal(&originalVerdictsBuffer[0]))
+			assert.Loosely(t, cap(buffer.Runs), should.Equal(5))
 		})
-		Convey(`Empty slice`, func() {
+		t.Run(`Empty slice`, func(t *ftt.Test) {
 			buffer := History{
 				Runs: []Run{},
 			}
 			buffer.EvictBefore(0)
-			So(buffer, ShouldResemble, History{
+			assert.Loosely(t, buffer, should.Resemble(History{
 				Runs: []Run{},
-			})
+			}))
 		})
 	})
 
-	Convey(`Clear`, t, func() {
+	ftt.Run(`Clear`, t, func(t *ftt.Test) {
 		ib := NewWithCapacity(5, 10)
 		ib.HotBuffer.Runs = append(ib.HotBuffer.Runs, []Run{
 			createTestRun(1, 1),
@@ -470,7 +472,7 @@ func TestInputBuffer(t *testing.T) {
 
 		ib.Clear()
 
-		So(ib, ShouldResemble, &Buffer{
+		assert.Loosely(t, ib, should.Resemble(&Buffer{
 			HotBufferCapacity: 5,
 			HotBuffer: History{
 				Runs: []Run{},
@@ -479,10 +481,10 @@ func TestInputBuffer(t *testing.T) {
 			ColdBuffer: History{
 				Runs: []Run{},
 			},
-		})
+		}))
 		// The pre-allocated buffer should be retained, at the same capacity.
-		So(&ib.HotBuffer.Runs[0:1][0], ShouldEqual, &originalHotBuffer[0])
-		So(&ib.ColdBuffer.Runs[0:1][0], ShouldEqual, &originalColdBuffer[0])
+		assert.Loosely(t, &ib.HotBuffer.Runs[0:1][0], should.Equal(&originalHotBuffer[0]))
+		assert.Loosely(t, &ib.ColdBuffer.Runs[0:1][0], should.Equal(&originalColdBuffer[0]))
 	})
 }
 

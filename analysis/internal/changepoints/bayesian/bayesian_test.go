@@ -17,9 +17,11 @@ package bayesian
 import (
 	"testing"
 
-	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
 )
 
 func TestBayesianAnalysis(t *testing.T) {
@@ -34,7 +36,7 @@ func TestBayesianAnalysis(t *testing.T) {
 			Beta:  0.5,
 		},
 	}
-	Convey("Pass to fail transition 1", t, func() {
+	ftt.Run("Pass to fail transition 1", t, func(t *ftt.Test) {
 		var (
 			positions     = []int{1, 2, 3, 4, 5, 6}
 			total         = []int{2, 2, 1, 1, 2, 2}
@@ -42,10 +44,10 @@ func TestBayesianAnalysis(t *testing.T) {
 		)
 		vs := inputbuffer.VerdictRefs(positions, total, hasUnexpected)
 		changePoints := a.identifyChangePoints(vs)
-		So(changePoints, ShouldResemble, []int{sum(total[:3])})
+		assert.Loosely(t, changePoints, should.Resemble([]int{sum(total[:3])}))
 	})
 
-	Convey("Pass to fail transition 2", t, func() {
+	ftt.Run("Pass to fail transition 2", t, func(t *ftt.Test) {
 		var (
 			positions     = []int{1, 2, 3, 4, 5, 6}
 			total         = []int{2, 2, 1, 1, 2, 2}
@@ -53,10 +55,10 @@ func TestBayesianAnalysis(t *testing.T) {
 		)
 		vs := inputbuffer.VerdictRefs(positions, total, hasUnexpected)
 		changePoints := a.identifyChangePoints(vs)
-		So(changePoints, ShouldResemble, []int{sum(total[:2])})
+		assert.Loosely(t, changePoints, should.Resemble([]int{sum(total[:2])}))
 	})
 
-	Convey("Pass to flake transition", t, func() {
+	ftt.Run("Pass to flake transition", t, func(t *ftt.Test) {
 		var (
 			positions     = []int{1, 1, 2, 2, 2, 2}
 			total         = []int{3, 3, 1, 2, 3, 3}
@@ -64,10 +66,10 @@ func TestBayesianAnalysis(t *testing.T) {
 		)
 		vs := inputbuffer.VerdictRefs(positions, total, hasUnexpected)
 		changePoints := a.identifyChangePoints(vs)
-		So(changePoints, ShouldResemble, []int{sum(total[:2])})
+		assert.Loosely(t, changePoints, should.Resemble([]int{sum(total[:2])}))
 	})
 
-	Convey("Pass to fail to pass transition", t, func() {
+	ftt.Run("Pass to fail to pass transition", t, func(t *ftt.Test) {
 		var (
 			positions     = []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14}
 			total         = []int{2, 2, 3, 2, 3, 1, 1, 2, 2, 3, 2, 3, 2, 2}
@@ -75,10 +77,10 @@ func TestBayesianAnalysis(t *testing.T) {
 		)
 		vs := inputbuffer.VerdictRefs(positions, total, hasUnexpected)
 		changePoints := a.identifyChangePoints(vs)
-		So(changePoints, ShouldResemble, []int{sum(total[:5]), sum(total[:12])})
+		assert.Loosely(t, changePoints, should.Resemble([]int{sum(total[:5]), sum(total[:12])}))
 	})
 
-	Convey("Pass to flake transition", t, func() {
+	ftt.Run("Pass to flake transition", t, func(t *ftt.Test) {
 		var (
 			positions     = []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
 			total         = []int{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2}
@@ -86,10 +88,10 @@ func TestBayesianAnalysis(t *testing.T) {
 		)
 		vs := inputbuffer.VerdictRefs(positions, total, hasUnexpected)
 		changePoints := a.identifyChangePoints(vs)
-		So(changePoints, ShouldResemble, []int{sum(total[:6])})
+		assert.Loosely(t, changePoints, should.Resemble([]int{sum(total[:6])}))
 	})
 
-	Convey("Flake to fail transition", t, func() {
+	ftt.Run("Flake to fail transition", t, func(t *ftt.Test) {
 		var (
 			positions     = []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
 			total         = []int{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2}
@@ -97,10 +99,10 @@ func TestBayesianAnalysis(t *testing.T) {
 		)
 		vs := inputbuffer.VerdictRefs(positions, total, hasUnexpected)
 		changePoints := a.identifyChangePoints(vs)
-		So(changePoints, ShouldResemble, []int{sum(total[:6])})
+		assert.Loosely(t, changePoints, should.Resemble([]int{sum(total[:6])}))
 	})
 
-	Convey("Pass consistently", t, func() {
+	ftt.Run("Pass consistently", t, func(t *ftt.Test) {
 		var (
 			positions     = []int{1, 2, 3, 4, 5, 6, 7, 8}
 			total         = []int{2, 2, 2, 2, 2, 2, 2, 2}
@@ -108,10 +110,10 @@ func TestBayesianAnalysis(t *testing.T) {
 		)
 		vs := inputbuffer.VerdictRefs(positions, total, hasUnexpected)
 		changePoints := a.identifyChangePoints(vs)
-		So(len(changePoints), ShouldEqual, 0)
+		assert.Loosely(t, len(changePoints), should.BeZero)
 	})
 
-	Convey("Fail consistently", t, func() {
+	ftt.Run("Fail consistently", t, func(t *ftt.Test) {
 		var (
 			positions     = []int{1, 2, 3, 4, 5, 6, 7, 8}
 			total         = []int{2, 2, 2, 2, 2, 2, 2, 2}
@@ -119,10 +121,10 @@ func TestBayesianAnalysis(t *testing.T) {
 		)
 		vs := inputbuffer.VerdictRefs(positions, total, hasUnexpected)
 		changePoints := a.identifyChangePoints(vs)
-		So(len(changePoints), ShouldEqual, 0)
+		assert.Loosely(t, len(changePoints), should.BeZero)
 	})
 
-	Convey("Flake", t, func() {
+	ftt.Run("Flake", t, func(t *ftt.Test) {
 		var (
 			positions     = []int{1, 2, 3, 4, 5, 6, 7, 8}
 			total         = []int{2, 2, 2, 2, 2, 2, 2, 2}
@@ -130,10 +132,10 @@ func TestBayesianAnalysis(t *testing.T) {
 		)
 		vs := inputbuffer.VerdictRefs(positions, total, hasUnexpected)
 		changePoints := a.identifyChangePoints(vs)
-		So(len(changePoints), ShouldEqual, 0)
+		assert.Loosely(t, len(changePoints), should.BeZero)
 	})
 
-	Convey("(Fail, Pass after retry) to (Fail, Fail after retry)", t, func() {
+	ftt.Run("(Fail, Pass after retry) to (Fail, Fail after retry)", t, func(t *ftt.Test) {
 		var (
 			positions            = []int{1, 2, 3, 4, 5, 6, 7, 8}
 			total                = []int{2, 2, 2, 2, 2, 2, 2, 2}
@@ -143,10 +145,10 @@ func TestBayesianAnalysis(t *testing.T) {
 		)
 		vs := inputbuffer.VerdictsWithRetriesRefs(positions, total, hasUnexpected, retries, unexpectedAfterRetry)
 		changePoints := a.identifyChangePoints(vs)
-		So(changePoints, ShouldResemble, []int{sum(total[:4])})
+		assert.Loosely(t, changePoints, should.Resemble([]int{sum(total[:4])}))
 	})
 
-	Convey("(Fail, Fail after retry) consistently", t, func() {
+	ftt.Run("(Fail, Fail after retry) consistently", t, func(t *ftt.Test) {
 		var (
 			positions            = []int{1, 2, 3, 4, 5, 6, 7, 8}
 			total                = []int{2, 2, 2, 2, 2, 2, 2, 2}
@@ -156,10 +158,10 @@ func TestBayesianAnalysis(t *testing.T) {
 		)
 		vs := inputbuffer.VerdictsWithRetriesRefs(positions, total, hasUnexpected, retries, unexpectedAfterRetry)
 		changePoints := a.identifyChangePoints(vs)
-		So(len(changePoints), ShouldEqual, 0)
+		assert.Loosely(t, len(changePoints), should.BeZero)
 	})
 
-	Convey("(Fail, Fail after retry) to (Fail, Flaky on retry)", t, func() {
+	ftt.Run("(Fail, Fail after retry) to (Fail, Flaky on retry)", t, func(t *ftt.Test) {
 		var (
 			// The change point should be detected between commit positions 3 and 5.
 			positions            = []int{1, 2, 3, 5, 5, 5, 7, 7}
@@ -170,7 +172,7 @@ func TestBayesianAnalysis(t *testing.T) {
 		)
 		vs := inputbuffer.VerdictsWithRetriesRefs(positions, total, hasUnexpected, retries, unexpectedAfterRetry)
 		changePoints := a.identifyChangePoints(vs)
-		So(changePoints, ShouldResemble, []int{sum(total[:3])})
+		assert.Loosely(t, changePoints, should.Resemble([]int{sum(total[:3])}))
 	})
 }
 

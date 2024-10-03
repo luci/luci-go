@@ -23,11 +23,12 @@ import (
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
+
 	"go.chromium.org/luci/analysis/pbutil"
 	pb "go.chromium.org/luci/analysis/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestTypeConversion(t *testing.T) {
@@ -38,32 +39,32 @@ func TestTypeConversion(t *testing.T) {
 	test := func(goValue, spValue any) {
 		// ToSpanner
 		actualSPValue := ToSpanner(goValue)
-		So(actualSPValue, ShouldResemble, spValue)
+		assert.Loosely(t, actualSPValue, should.Resemble(spValue))
 
 		// FromSpanner
 		row, err := spanner.NewRow([]string{"a"}, []any{actualSPValue})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		goPtr := reflect.New(reflect.TypeOf(goValue))
 		err = b.FromSpanner(row, goPtr.Interface())
-		So(err, ShouldBeNil)
-		So(goPtr.Elem().Interface(), ShouldResemble, goValue)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, goPtr.Elem().Interface(), should.Resemble(goValue))
 	}
 
-	Convey(`int64`, t, func() {
+	ftt.Run(`int64`, t, func(t *ftt.Test) {
 		test(int64(42), int64(42))
 	})
 
-	Convey(`*timestamppb.Timestamp`, t, func() {
+	ftt.Run(`*timestamppb.Timestamp`, t, func(t *ftt.Test) {
 		test(
 			&timestamppb.Timestamp{Seconds: 1000, Nanos: 1234},
 			spanner.NullTime{Valid: true, Time: time.Unix(1000, 1234).UTC()},
 		)
 	})
 
-	Convey(`pb.BuildStatus`, t, func() {
+	ftt.Run(`pb.BuildStatus`, t, func(t *ftt.Test) {
 		test(pb.BuildStatus_BUILD_STATUS_SUCCESS, int64(1))
 	})
-	Convey(`[]pb.ExonerationReason`, t, func() {
+	ftt.Run(`[]pb.ExonerationReason`, t, func(t *ftt.Test) {
 		test(
 			[]pb.ExonerationReason{
 				pb.ExonerationReason_OCCURS_ON_MAINLINE,
@@ -80,18 +81,18 @@ func TestTypeConversion(t *testing.T) {
 			[]int64(nil),
 		)
 	})
-	Convey(`pb.TestResultStatus`, t, func() {
+	ftt.Run(`pb.TestResultStatus`, t, func(t *ftt.Test) {
 		test(pb.TestResultStatus_PASS, int64(1))
 	})
 
-	Convey(`*pb.Variant`, t, func() {
-		Convey(`Works`, func() {
+	ftt.Run(`*pb.Variant`, t, func(t *ftt.Test) {
+		t.Run(`Works`, func(t *ftt.Test) {
 			test(
 				pbutil.Variant("a", "1", "b", "2"),
 				[]string{"a:1", "b:2"},
 			)
 		})
-		Convey(`Empty`, func() {
+		t.Run(`Empty`, func(t *ftt.Test) {
 			test(
 				(*pb.Variant)(nil),
 				[]string{},
@@ -99,35 +100,35 @@ func TestTypeConversion(t *testing.T) {
 		})
 	})
 
-	Convey(`[]*pb.StringPair`, t, func() {
+	ftt.Run(`[]*pb.StringPair`, t, func(t *ftt.Test) {
 		test(
 			pbutil.StringPairs("a", "1", "b", "2"),
 			[]string{"a:1", "b:2"},
 		)
 	})
 
-	Convey(`Compressed`, t, func() {
-		Convey(`Empty`, func() {
+	ftt.Run(`Compressed`, t, func(t *ftt.Test) {
+		t.Run(`Empty`, func(t *ftt.Test) {
 			test(Compressed(nil), []byte(nil))
 		})
-		Convey(`non-Empty`, func() {
+		t.Run(`non-Empty`, func(t *ftt.Test) {
 			test(
 				Compressed("aaaaaaaaaaaaaaaaaaaa"),
 				[]byte{122, 116, 100, 10, 40, 181, 47, 253, 4, 0, 163, 0, 0, 97, 247, 175, 71, 227})
 		})
 	})
 
-	Convey(`Map`, t, func() {
+	ftt.Run(`Map`, t, func(t *ftt.Test) {
 		var varIntA, varIntB int64
 		var varStatus pb.BuildStatus
 
 		row, err := spanner.NewRow([]string{"a", "b", "c"}, []any{int64(42), int64(56), int64(0)})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		err = b.FromSpanner(row, &varIntA, &varIntB, &varStatus)
-		So(err, ShouldBeNil)
-		So(varIntA, ShouldEqual, 42)
-		So(varIntB, ShouldEqual, 56)
-		So(varStatus, ShouldEqual, pb.BuildStatus_BUILD_STATUS_UNSPECIFIED)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, varIntA, should.Equal(42))
+		assert.Loosely(t, varIntB, should.Equal(56))
+		assert.Loosely(t, varStatus, should.Equal(pb.BuildStatus_BUILD_STATUS_UNSPECIFIED))
 
 		// ToSpanner
 		spValues := ToSpannerMap(map[string]any{
@@ -135,31 +136,31 @@ func TestTypeConversion(t *testing.T) {
 			"b": varIntB,
 			"c": varStatus,
 		})
-		So(spValues, ShouldResemble, map[string]any{"a": int64(42), "b": int64(56), "c": int64(0)})
+		assert.Loosely(t, spValues, should.Resemble(map[string]any{"a": int64(42), "b": int64(56), "c": int64(0)}))
 	})
 
-	Convey(`proto.Message`, t, func() {
+	ftt.Run(`proto.Message`, t, func(t *ftt.Test) {
 		msg := &pb.FailureReason{
 			PrimaryErrorMessage: "primary error message",
 		}
 		expected, err := proto.Marshal(msg)
-		So(err, ShouldBeNil)
-		So(ToSpanner(msg), ShouldResemble, expected)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, ToSpanner(msg), should.Resemble(expected))
 
 		row, err := spanner.NewRow([]string{"a"}, []any{expected})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		Convey(`success`, func() {
+		t.Run(`success`, func(t *ftt.Test) {
 			expectedPtr := &pb.FailureReason{}
 			err = b.FromSpanner(row, expectedPtr)
-			So(err, ShouldBeNil)
-			So(expectedPtr, ShouldResembleProto, msg)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, expectedPtr, should.Resemble(msg))
 		})
 
-		Convey(`Passing nil pointer to fromSpanner`, func() {
+		t.Run(`Passing nil pointer to fromSpanner`, func(t *ftt.Test) {
 			var expectedPtr *pb.FailureReason
 			err = b.FromSpanner(row, expectedPtr)
-			So(err, ShouldErrLike, "nil pointer encountered")
+			assert.Loosely(t, err, should.ErrLike("nil pointer encountered"))
 		})
 	})
 }

@@ -17,12 +17,13 @@ package aip
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestOrderByClause(t *testing.T) {
-	Convey("OrderByClause", t, func() {
+	ftt.Run("OrderByClause", t, func(t *ftt.Test) {
 		table := NewTable().WithColumns(
 			NewColumn().WithFieldPath("foo").WithDatabaseName("db_foo").Sortable().Build(),
 			NewColumn().WithFieldPath("bar").WithDatabaseName("db_bar").Sortable().Build(),
@@ -30,21 +31,21 @@ func TestOrderByClause(t *testing.T) {
 			NewColumn().WithFieldPath("unsortable").WithDatabaseName("unsortable").Build(),
 		).Build()
 
-		Convey("Empty order by", func() {
+		t.Run("Empty order by", func(t *ftt.Test) {
 			result, err := table.OrderByClause([]OrderBy{})
-			So(err, ShouldBeNil)
-			So(result, ShouldEqual, "")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, result, should.BeEmpty)
 		})
-		Convey("Single order by", func() {
+		t.Run("Single order by", func(t *ftt.Test) {
 			result, err := table.OrderByClause([]OrderBy{
 				{
 					FieldPath: NewFieldPath("foo"),
 				},
 			})
-			So(err, ShouldBeNil)
-			So(result, ShouldEqual, "ORDER BY db_foo\n")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, result, should.Equal("ORDER BY db_foo\n"))
 		})
-		Convey("Multiple order by", func() {
+		t.Run("Multiple order by", func(t *ftt.Test) {
 			result, err := table.OrderByClause([]OrderBy{
 				{
 					FieldPath:  NewFieldPath("foo"),
@@ -58,19 +59,19 @@ func TestOrderByClause(t *testing.T) {
 					Descending: true,
 				},
 			})
-			So(err, ShouldBeNil)
-			So(result, ShouldEqual, "ORDER BY db_foo DESC, db_bar, db_baz DESC\n")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, result, should.Equal("ORDER BY db_foo DESC, db_bar, db_baz DESC\n"))
 		})
-		Convey("Unsortable field in order by", func() {
+		t.Run("Unsortable field in order by", func(t *ftt.Test) {
 			_, err := table.OrderByClause([]OrderBy{
 				{
 					FieldPath:  NewFieldPath("unsortable"),
 					Descending: true,
 				},
 			})
-			So(err, ShouldErrLike, `no sortable field named "unsortable", valid fields are foo, bar, baz`)
+			assert.Loosely(t, err, should.ErrLike(`no sortable field named "unsortable", valid fields are foo, bar, baz`))
 		})
-		Convey("Repeated field in order by", func() {
+		t.Run("Repeated field in order by", func(t *ftt.Test) {
 			_, err := table.OrderByClause([]OrderBy{
 				{
 					FieldPath: NewFieldPath("foo"),
@@ -79,13 +80,13 @@ func TestOrderByClause(t *testing.T) {
 					FieldPath: NewFieldPath("foo"),
 				},
 			})
-			So(err, ShouldErrLike, `field appears in order_by multiple times: "foo"`)
+			assert.Loosely(t, err, should.ErrLike(`field appears in order_by multiple times: "foo"`))
 		})
 	})
 }
 
 func TestMergeWithDefaultOrder(t *testing.T) {
-	Convey("MergeWithDefaultOrder", t, func() {
+	ftt.Run("MergeWithDefaultOrder", t, func(t *ftt.Test) {
 		defaultOrder := []OrderBy{
 			{
 				FieldPath:  NewFieldPath("foo"),
@@ -97,11 +98,11 @@ func TestMergeWithDefaultOrder(t *testing.T) {
 				Descending: true,
 			},
 		}
-		Convey("Empty order", func() {
+		t.Run("Empty order", func(t *ftt.Test) {
 			result := MergeWithDefaultOrder(defaultOrder, nil)
-			So(result, ShouldResemble, defaultOrder)
+			assert.Loosely(t, result, should.Resemble(defaultOrder))
 		})
-		Convey("Non-empty order", func() {
+		t.Run("Non-empty order", func(t *ftt.Test) {
 			order := []OrderBy{
 				{
 					FieldPath:  NewFieldPath("other"),
@@ -112,7 +113,7 @@ func TestMergeWithDefaultOrder(t *testing.T) {
 				},
 			}
 			result := MergeWithDefaultOrder(defaultOrder, order)
-			So(result, ShouldResemble, []OrderBy{
+			assert.Loosely(t, result, should.Resemble([]OrderBy{
 				{
 					FieldPath:  NewFieldPath("other"),
 					Descending: true,
@@ -126,7 +127,7 @@ func TestMergeWithDefaultOrder(t *testing.T) {
 				}, {
 					FieldPath: NewFieldPath("bar"),
 				},
-			})
+			}))
 		})
 	})
 }

@@ -23,121 +23,121 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	pb "go.chromium.org/luci/analysis/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestValidateVariantPredicate(t *testing.T) {
-	Convey(`TestValidateVariantPredicate`, t, func() {
+	ftt.Run(`TestValidateVariantPredicate`, t, func(t *ftt.Test) {
 		validVariant := Variant("a", "b")
 		invalidVariant := Variant("", "")
 
-		Convey(`Equals`, func() {
-			Convey(`Valid`, func() {
+		t.Run(`Equals`, func(t *ftt.Test) {
+			t.Run(`Valid`, func(t *ftt.Test) {
 				err := ValidateVariantPredicate(&pb.VariantPredicate{
 					Predicate: &pb.VariantPredicate_Equals{Equals: validVariant},
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
-			Convey(`Invalid`, func() {
+			t.Run(`Invalid`, func(t *ftt.Test) {
 				err := ValidateVariantPredicate(&pb.VariantPredicate{
 					Predicate: &pb.VariantPredicate_Equals{Equals: invalidVariant},
 				})
-				So(err, ShouldErrLike, `equals: "":"": key: unspecified`)
+				assert.Loosely(t, err, should.ErrLike(`equals: "":"": key: unspecified`))
 			})
 		})
 
-		Convey(`Contains`, func() {
-			Convey(`Valid`, func() {
+		t.Run(`Contains`, func(t *ftt.Test) {
+			t.Run(`Valid`, func(t *ftt.Test) {
 				err := ValidateVariantPredicate(&pb.VariantPredicate{
 					Predicate: &pb.VariantPredicate_Contains{Contains: validVariant},
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
-			Convey(`Invalid`, func() {
+			t.Run(`Invalid`, func(t *ftt.Test) {
 				err := ValidateVariantPredicate(&pb.VariantPredicate{
 					Predicate: &pb.VariantPredicate_Contains{Contains: invalidVariant},
 				})
-				So(err, ShouldErrLike, `contains: "":"": key: unspecified`)
+				assert.Loosely(t, err, should.ErrLike(`contains: "":"": key: unspecified`))
 			})
 		})
 
-		Convey(`HashEquals`, func() {
-			Convey(`Valid`, func() {
+		t.Run(`HashEquals`, func(t *ftt.Test) {
+			t.Run(`Valid`, func(t *ftt.Test) {
 				err := ValidateVariantPredicate(&pb.VariantPredicate{
 					Predicate: &pb.VariantPredicate_HashEquals{HashEquals: VariantHash(validVariant)},
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
-			Convey(`Empty string`, func() {
+			t.Run(`Empty string`, func(t *ftt.Test) {
 				err := ValidateVariantPredicate(&pb.VariantPredicate{
 					Predicate: &pb.VariantPredicate_HashEquals{HashEquals: ""},
 				})
-				So(err, ShouldErrLike, "hash_equals: unspecified")
+				assert.Loosely(t, err, should.ErrLike("hash_equals: unspecified"))
 			})
-			Convey(`Upper case`, func() {
+			t.Run(`Upper case`, func(t *ftt.Test) {
 				err := ValidateVariantPredicate(&pb.VariantPredicate{
 					Predicate: &pb.VariantPredicate_HashEquals{HashEquals: strings.ToUpper(VariantHash(validVariant))},
 				})
-				So(err, ShouldErrLike, "hash_equals: does not match")
+				assert.Loosely(t, err, should.ErrLike("hash_equals: does not match"))
 			})
-			Convey(`Invalid length`, func() {
+			t.Run(`Invalid length`, func(t *ftt.Test) {
 				err := ValidateVariantPredicate(&pb.VariantPredicate{
 					Predicate: &pb.VariantPredicate_HashEquals{HashEquals: VariantHash(validVariant)[1:]},
 				})
-				So(err, ShouldErrLike, "hash_equals: does not match")
+				assert.Loosely(t, err, should.ErrLike("hash_equals: does not match"))
 			})
 		})
 
-		Convey(`Unspecified`, func() {
+		t.Run(`Unspecified`, func(t *ftt.Test) {
 			err := ValidateVariantPredicate(&pb.VariantPredicate{})
-			So(err, ShouldErrLike, `unspecified`)
+			assert.Loosely(t, err, should.ErrLike(`unspecified`))
 		})
 	})
 }
 
 func TestValidateTimeRange(t *testing.T) {
-	Convey(`ValidateTimeRange`, t, func() {
+	ftt.Run(`ValidateTimeRange`, t, func(t *ftt.Test) {
 		ctx := context.Background()
 		now := time.Date(2044, time.April, 4, 4, 4, 4, 4, time.UTC)
 		ctx, _ = testclock.UseTime(ctx, now)
 
-		Convey(`Unspecified`, func() {
+		t.Run(`Unspecified`, func(t *ftt.Test) {
 			err := ValidateTimeRange(ctx, nil)
-			So(err, ShouldErrLike, `unspecified`)
+			assert.Loosely(t, err, should.ErrLike(`unspecified`))
 		})
-		Convey(`Earliest unspecified`, func() {
+		t.Run(`Earliest unspecified`, func(t *ftt.Test) {
 			tr := &pb.TimeRange{
 				Latest: timestamppb.New(now.Add(-1 * time.Hour)),
 			}
 			err := ValidateTimeRange(ctx, tr)
-			So(err, ShouldErrLike, `earliest: unspecified`)
+			assert.Loosely(t, err, should.ErrLike(`earliest: unspecified`))
 		})
-		Convey(`Latest unspecified`, func() {
+		t.Run(`Latest unspecified`, func(t *ftt.Test) {
 			tr := &pb.TimeRange{
 				Earliest: timestamppb.New(now.Add(-1 * time.Hour)),
 			}
 			err := ValidateTimeRange(ctx, tr)
-			So(err, ShouldErrLike, `latest: unspecified`)
+			assert.Loosely(t, err, should.ErrLike(`latest: unspecified`))
 		})
-		Convey(`Earliest before Latest`, func() {
+		t.Run(`Earliest before Latest`, func(t *ftt.Test) {
 			tr := &pb.TimeRange{
 				Earliest: timestamppb.New(now.Add(-1 * time.Hour)),
 				Latest:   timestamppb.New(now.Add(-2 * time.Hour)),
 			}
 			err := ValidateTimeRange(ctx, tr)
-			So(err, ShouldErrLike, `earliest must be before latest`)
+			assert.Loosely(t, err, should.ErrLike(`earliest must be before latest`))
 		})
-		Convey(`Valid`, func() {
+		t.Run(`Valid`, func(t *ftt.Test) {
 			tr := &pb.TimeRange{
 				Earliest: timestamppb.New(now.Add(-1 * time.Hour)),
 				Latest:   timestamppb.New(now.Add(-1 * time.Microsecond)),
 			}
 			err := ValidateTimeRange(ctx, tr)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 	})
 }

@@ -17,38 +17,40 @@ package testresults
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestHost(t *testing.T) {
-	Convey("Gerrit hostnames", t, func() {
-		Convey("Roundtrip", func() {
+	ftt.Run("Gerrit hostnames", t, func(t *ftt.Test) {
+		t.Run("Roundtrip", func(t *ftt.Test) {
 			values := []string{
 				"myproject-review.googlesource.com",
 				"other123-review.googlesource.com",
 				"something-other-123.gerrit.instance",
 			}
 			for _, input := range values {
-				So(DecompressHost(CompressHost(input)), ShouldEqual, input)
+				assert.Loosely(t, DecompressHost(CompressHost(input)), should.Equal(input))
 			}
 		})
-		Convey("Compress", func() {
+		t.Run("Compress", func(t *ftt.Test) {
 			testCases := map[string]string{
 				// Should get some compression.
 				"myproject-review.googlesource.com": "myproject",
 				"some.other.instance":               "some.other.instance",
 			}
 			for input, expectedOutput := range testCases {
-				So(CompressHost(input), ShouldEqual, expectedOutput)
+				assert.Loosely(t, CompressHost(input), should.Equal(expectedOutput))
 			}
 		})
-		Convey("Decompress", func() {
+		t.Run("Decompress", func(t *ftt.Test) {
 			testCases := map[string]string{
 				"myproject":           "myproject-review.googlesource.com",
 				"some.other.instance": "some.other.instance",
 			}
 			for input, expectedOutput := range testCases {
-				So(DecompressHost(input), ShouldEqual, expectedOutput)
+				assert.Loosely(t, DecompressHost(input), should.Equal(expectedOutput))
 			}
 		})
 	})

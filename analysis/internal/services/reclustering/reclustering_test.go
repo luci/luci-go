@@ -22,19 +22,19 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 	"go.chromium.org/luci/analysis/internal/testutil"
 
 	_ "go.chromium.org/luci/server/tq/txn/spanner"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestSchedule(t *testing.T) {
-	Convey(`TestSchedule`, t, func() {
+	ftt.Run(`TestSchedule`, t, func(t *ftt.Test) {
 		ctx, skdr := tq.TestingContext(testutil.TestingContext(), nil)
 
 		task := &taskspb.ReclusterChunks{
@@ -44,7 +44,7 @@ func TestSchedule(t *testing.T) {
 			EndChunkId:   strings.Repeat("ff", 16),
 		}
 		expected := proto.Clone(task).(*taskspb.ReclusterChunks)
-		So(Schedule(ctx, task), ShouldBeNil)
-		So(skdr.Tasks().Payloads()[0], ShouldResembleProto, expected)
+		assert.Loosely(t, Schedule(ctx, task), should.BeNil)
+		assert.Loosely(t, skdr.Tasks().Payloads()[0], should.Resemble(expected))
 	})
 }

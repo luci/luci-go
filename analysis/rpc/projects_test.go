@@ -22,6 +22,10 @@ import (
 	grpcStatus "google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
@@ -34,12 +38,11 @@ import (
 	configpb "go.chromium.org/luci/analysis/proto/config"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestProjects(t *testing.T) {
-	Convey("Given a projects server", t, func() {
+	ftt.Run("Given a projects server", t, func(t *ftt.Test) {
 		ctx := context.Background()
 
 		// For user identification.
@@ -55,7 +58,7 @@ func TestProjects(t *testing.T) {
 		ctx = memory.Use(ctx)
 		server := NewProjectsServer()
 
-		Convey("Unauthorised requests are rejected", func() {
+		t.Run("Unauthorised requests are rejected", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:someone@example.com",
 				// Not a member of luci-analysis-access.
@@ -68,11 +71,11 @@ func TestProjects(t *testing.T) {
 
 			rule, err := server.List(ctx, request)
 			st, _ := grpcStatus.FromError(err)
-			So(st.Code(), ShouldEqual, codes.PermissionDenied)
-			So(st.Message(), ShouldEqual, "not a member of luci-analysis-access")
-			So(rule, ShouldBeNil)
+			assert.Loosely(t, st.Code(), should.Equal(codes.PermissionDenied))
+			assert.Loosely(t, st.Message(), should.Equal("not a member of luci-analysis-access"))
+			assert.Loosely(t, rule, should.BeNil)
 		})
-		Convey("GetConfig", func() {
+		t.Run("GetConfig", func(t *ftt.Test) {
 			authState.IdentityPermissions = []authtest.RealmPermission{
 				{
 					Realm:      "testproject:@project",
@@ -85,20 +88,20 @@ func TestProjects(t *testing.T) {
 			projectCfg := config.CreateConfigWithBothBuganizerAndMonorail(configpb.BugSystem_BUGANIZER)
 
 			configs["testproject"] = projectCfg
-			So(config.SetTestProjectConfig(ctx, configs), ShouldBeNil)
+			assert.Loosely(t, config.SetTestProjectConfig(ctx, configs), should.BeNil)
 
 			request := &pb.GetProjectConfigRequest{
 				Name: "projects/testproject/config",
 			}
 
-			Convey("No permission to get project config", func() {
+			t.Run("No permission to get project config", func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetConfig)
 
 				response, err := server.GetConfig(ctx, request)
-				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.config.get")
-				So(response, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission analysis.config.get"))
+				assert.Loosely(t, response, should.BeNil)
 			})
-			Convey("Valid request", func() {
+			t.Run("Valid request", func(t *ftt.Test) {
 				expectedResponse := &pb.ProjectConfig{
 					Name: "projects/testproject/config",
 					BugManagement: &pb.BugManagement{
@@ -132,65 +135,65 @@ func TestProjects(t *testing.T) {
 					},
 				}
 
-				Convey("baseline", func() {
+				t.Run("baseline", func(t *ftt.Test) {
 					// Run
 					response, err := server.GetConfig(ctx, request)
 
 					// Verify
-					So(err, ShouldBeNil)
-					So(response, ShouldResembleProto, expectedResponse)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, response, should.Resemble(expectedResponse))
 				})
-				Convey("without monorail config", func() {
+				t.Run("without monorail config", func(t *ftt.Test) {
 					projectCfg.BugManagement.Monorail = nil
-					So(config.SetTestProjectConfig(ctx, configs), ShouldBeNil)
+					assert.Loosely(t, config.SetTestProjectConfig(ctx, configs), should.BeNil)
 
 					// Run
 					response, err := server.GetConfig(ctx, request)
 
 					// Verify
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					expectedResponse.BugManagement.Monorail = nil
-					So(response, ShouldResembleProto, expectedResponse)
+					assert.Loosely(t, response, should.Resemble(expectedResponse))
 				})
-				Convey("policy without activation threshold", func() {
+				t.Run("policy without activation threshold", func(t *ftt.Test) {
 					projectCfg.BugManagement.Policies[0].Metrics[0].ActivationThreshold = nil
-					So(config.SetTestProjectConfig(ctx, configs), ShouldBeNil)
+					assert.Loosely(t, config.SetTestProjectConfig(ctx, configs), should.BeNil)
 
 					// Run
 					response, err := server.GetConfig(ctx, request)
 
 					// Verify
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					expectedResponse.BugManagement.Policies[0].Metrics[0].ActivationThreshold = nil
-					So(response, ShouldResembleProto, expectedResponse)
+					assert.Loosely(t, response, should.Resemble(expectedResponse))
 				})
 			})
-			Convey("With project not configured", func() {
+			t.Run("With project not configured", func(t *ftt.Test) {
 				err := config.SetTestProjectConfig(ctx, map[string]*configpb.ProjectConfig{})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				// Run
 				response, err := server.GetConfig(ctx, request)
 
 				// Verify
-				So(err, ShouldBeNil)
-				So(response, ShouldResembleProto, &pb.ProjectConfig{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, response, should.Resemble(&pb.ProjectConfig{
 					Name:          "projects/testproject/config",
 					BugManagement: &pb.BugManagement{},
-				})
+				}))
 			})
-			Convey("Invalid request", func() {
+			t.Run("Invalid request", func(t *ftt.Test) {
 				request.Name = "blah"
 
 				// Run
 				response, err := server.GetConfig(ctx, request)
 
 				// Verify
-				So(err, ShouldBeRPCInvalidArgument, "name: invalid project config name, expected format: projects/{project}/config")
-				So(response, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("name: invalid project config name, expected format: projects/{project}/config"))
+				assert.Loosely(t, response, should.BeNil)
 			})
 		})
-		Convey("List", func() {
+		t.Run("List", func(t *ftt.Test) {
 			authState.IdentityPermissions = []authtest.RealmPermission{
 				{
 					Realm:      "chromium:@project",
@@ -208,23 +211,23 @@ func TestProjects(t *testing.T) {
 
 			request := &pb.ListProjectsRequest{}
 
-			Convey("No permission to view any project", func() {
+			t.Run("No permission to view any project", func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetConfig)
 
 				// Run
 				projectsResponse, err := server.List(ctx, request)
 
 				// Verify
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				expected := &pb.ListProjectsResponse{Projects: []*pb.Project{}}
-				So(projectsResponse, ShouldResembleProto, expected)
+				assert.Loosely(t, projectsResponse, should.Resemble(expected))
 			})
-			Convey("Valid request", func() {
+			t.Run("Valid request", func(t *ftt.Test) {
 				// Run
 				projectsResponse, err := server.List(ctx, request)
 
 				// Verify
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				expected := &pb.ListProjectsResponse{Projects: []*pb.Project{
 					{
 						Name:        "projects/chrome",
@@ -242,7 +245,7 @@ func TestProjects(t *testing.T) {
 						Project:     "chromium",
 					},
 				}}
-				So(projectsResponse, ShouldResembleProto, expected)
+				assert.Loosely(t, projectsResponse, should.Resemble(expected))
 			})
 		})
 	})

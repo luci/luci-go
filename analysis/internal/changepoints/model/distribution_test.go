@@ -17,30 +17,32 @@ package model
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestTailLikelihoods(t *testing.T) {
-	Convey(`TailLikelihoods invariants`, t, func() {
+	ftt.Run(`TailLikelihoods invariants`, t, func(t *ftt.Test) {
 		// Check that likelihoods are in strictly increasing order.
 		var lastLikelihood float64
 		for _, likelihood := range TailLikelihoods {
-			So(likelihood, ShouldBeGreaterThan, lastLikelihood)
+			assert.Loosely(t, likelihood, should.BeGreaterThan(lastLikelihood))
 			lastLikelihood = likelihood
 		}
 
 		// Check that likelihoods are symmetric around the center.
 		for i, likelihood := range TailLikelihoods {
-			So(likelihood, ShouldAlmostEqual, 1.0-TailLikelihoods[len(TailLikelihoods)-1-i])
+			assert.Loosely(t, likelihood, should.AlmostEqual(1.0-TailLikelihoods[len(TailLikelihoods)-1-i]))
 		}
 	})
 }
 
 func TestConfidenceInterval(t *testing.T) {
-	Convey(`ConfidenceInterval`, t, func() {
+	ftt.Run(`ConfidenceInterval`, t, func(t *ftt.Test) {
 		d := SimpleDistribution(100, 10)
 		min, max := d.ConfidenceInterval(0.99)
-		So(min, ShouldEqual, 90)
-		So(max, ShouldEqual, 110)
+		assert.Loosely(t, min, should.Equal(90))
+		assert.Loosely(t, max, should.Equal(110))
 	})
 }

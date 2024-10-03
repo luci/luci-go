@@ -18,22 +18,22 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestConfig(t *testing.T) {
-	Convey("SetTestConfig updates context config", t, func() {
+	ftt.Run("SetTestConfig updates context config", t, func(t *ftt.Test) {
 		sampleCfg, err := CreatePlaceholderConfig()
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		ctx := memory.Use(context.Background())
 		SetTestConfig(ctx, sampleCfg)
 
 		cfg, err := Get(ctx)
-		So(err, ShouldBeNil)
-		So(cfg, ShouldResembleProto, sampleCfg)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, cfg, should.Resemble(sampleCfg))
 	})
 }

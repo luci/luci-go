@@ -23,23 +23,23 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/analysis/internal/testutil"
 	"go.chromium.org/luci/analysis/pbutil"
 	pb "go.chromium.org/luci/analysis/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestReadTestHistory(t *testing.T) {
-	Convey("ReadTestHistory", t, func() {
+	ftt.Run("ReadTestHistory", t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 
 		referenceTime := time.Date(2022, time.January, 1, 0, 0, 0, 0, time.UTC)
 		err := createTestHistoryTestData(ctx, referenceTime)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		opts := ReadTestHistoryOptions{
 			Project:   "project",
@@ -133,13 +133,13 @@ func TestReadTestHistory(t *testing.T) {
 			},
 		}
 
-		Convey("baseline", func() {
+		t.Run("baseline", func(t *ftt.Test) {
 			verdicts, nextPageToken, err := ReadTestHistory(span.Single(ctx), opts)
-			So(err, ShouldBeNil)
-			So(nextPageToken, ShouldBeEmpty)
-			So(verdicts, ShouldResembleProto, expectedTestVerdicts)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, nextPageToken, should.BeEmpty)
+			assert.Loosely(t, verdicts, should.Resemble(expectedTestVerdicts))
 		})
-		Convey("with legacy test results data", func() {
+		t.Run("with legacy test results data", func(t *ftt.Test) {
 			// This test case can be deleted from March 2023. This should be
 			// combined with an update to make ChangelistOwnerKinds NOT NULL.
 			_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
@@ -147,7 +147,7 @@ func TestReadTestHistory(t *testing.T) {
 				_, err := span.Update(ctx, stmt)
 				return err
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			for _, v := range expectedTestVerdicts {
 				for _, cl := range v.Changelists {
@@ -156,25 +156,25 @@ func TestReadTestHistory(t *testing.T) {
 			}
 
 			verdicts, nextPageToken, err := ReadTestHistory(span.Single(ctx), opts)
-			So(err, ShouldBeNil)
-			So(nextPageToken, ShouldBeEmpty)
-			So(verdicts, ShouldResembleProto, expectedTestVerdicts)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, nextPageToken, should.BeEmpty)
+			assert.Loosely(t, verdicts, should.Resemble(expectedTestVerdicts))
 		})
-		Convey("pagination works", func() {
+		t.Run("pagination works", func(t *ftt.Test) {
 			opts.PageSize = 5
 			verdicts, nextPageToken, err := ReadTestHistory(span.Single(ctx), opts)
-			So(err, ShouldBeNil)
-			So(nextPageToken, ShouldNotBeEmpty)
-			So(verdicts, ShouldResembleProto, expectedTestVerdicts[:5])
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, nextPageToken, should.NotBeEmpty)
+			assert.Loosely(t, verdicts, should.Resemble(expectedTestVerdicts[:5]))
 
 			opts.PageToken = nextPageToken
 			verdicts, nextPageToken, err = ReadTestHistory(span.Single(ctx), opts)
-			So(err, ShouldBeNil)
-			So(nextPageToken, ShouldBeEmpty)
-			So(verdicts, ShouldResembleProto, expectedTestVerdicts[5:])
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, nextPageToken, should.BeEmpty)
+			assert.Loosely(t, verdicts, should.Resemble(expectedTestVerdicts[5:]))
 		})
 
-		Convey("with partition_time_range", func() {
+		t.Run("with partition_time_range", func(t *ftt.Test) {
 			opts.TimeRange = &pb.TimeRange{
 				// Inclusive.
 				Earliest: timestamppb.New(referenceTime.Add(-day - 24*time.Hour)),
@@ -182,9 +182,9 @@ func TestReadTestHistory(t *testing.T) {
 				Latest: timestamppb.New(referenceTime.Add(-24 * time.Hour)),
 			}
 			verdicts, nextPageToken, err := ReadTestHistory(span.Single(ctx), opts)
-			So(err, ShouldBeNil)
-			So(nextPageToken, ShouldBeEmpty)
-			So(verdicts, ShouldResembleProto, []*pb.TestVerdict{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, nextPageToken, should.BeEmpty)
+			assert.Loosely(t, verdicts, should.Resemble([]*pb.TestVerdict{
 				{
 					TestId:            "test_id",
 					VariantHash:       pbutil.VariantHash(testVariant1),
@@ -211,20 +211,20 @@ func TestReadTestHistory(t *testing.T) {
 					PassedAvgDuration: nil,
 					Changelists:       expectedChangelists,
 				},
-			})
+			}))
 		})
 
-		Convey("with contains variant_predicate", func() {
-			Convey("with single key-value pair", func() {
+		t.Run("with contains variant_predicate", func(t *ftt.Test) {
+			t.Run("with single key-value pair", func(t *ftt.Test) {
 				opts.VariantPredicate = &pb.VariantPredicate{
 					Predicate: &pb.VariantPredicate_Contains{
 						Contains: pbutil.Variant("key1", "val2"),
 					},
 				}
 				verdicts, nextPageToken, err := ReadTestHistory(span.Single(ctx), opts)
-				So(err, ShouldBeNil)
-				So(nextPageToken, ShouldBeEmpty)
-				So(verdicts, ShouldResembleProto, []*pb.TestVerdict{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, nextPageToken, should.BeEmpty)
+				assert.Loosely(t, verdicts, should.Resemble([]*pb.TestVerdict{
 					{
 						TestId:            "test_id",
 						VariantHash:       pbutil.VariantHash(testVariant2),
@@ -251,19 +251,19 @@ func TestReadTestHistory(t *testing.T) {
 						PassedAvgDuration: durationpb.New(88888 * time.Microsecond),
 						Changelists:       expectedChangelists,
 					},
-				})
+				}))
 			})
 
-			Convey("with multiple key-value pairs", func() {
+			t.Run("with multiple key-value pairs", func(t *ftt.Test) {
 				opts.VariantPredicate = &pb.VariantPredicate{
 					Predicate: &pb.VariantPredicate_Contains{
 						Contains: pbutil.Variant("key1", "val2", "key2", "val2"),
 					},
 				}
 				verdicts, nextPageToken, err := ReadTestHistory(span.Single(ctx), opts)
-				So(err, ShouldBeNil)
-				So(nextPageToken, ShouldBeEmpty)
-				So(verdicts, ShouldResembleProto, []*pb.TestVerdict{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, nextPageToken, should.BeEmpty)
+				assert.Loosely(t, verdicts, should.Resemble([]*pb.TestVerdict{
 					{
 						TestId:            "test_id",
 						VariantHash:       pbutil.VariantHash(testVariant3),
@@ -273,20 +273,20 @@ func TestReadTestHistory(t *testing.T) {
 						PassedAvgDuration: durationpb.New(88888 * time.Microsecond),
 						Changelists:       expectedChangelists,
 					},
-				})
+				}))
 			})
 		})
 
-		Convey("with equals variant_predicate", func() {
+		t.Run("with equals variant_predicate", func(t *ftt.Test) {
 			opts.VariantPredicate = &pb.VariantPredicate{
 				Predicate: &pb.VariantPredicate_Equals{
 					Equals: testVariant2,
 				},
 			}
 			verdicts, nextPageToken, err := ReadTestHistory(span.Single(ctx), opts)
-			So(err, ShouldBeNil)
-			So(nextPageToken, ShouldBeEmpty)
-			So(verdicts, ShouldResembleProto, []*pb.TestVerdict{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, nextPageToken, should.BeEmpty)
+			assert.Loosely(t, verdicts, should.Resemble([]*pb.TestVerdict{
 				{
 					TestId:            "test_id",
 					VariantHash:       pbutil.VariantHash(testVariant2),
@@ -304,19 +304,19 @@ func TestReadTestHistory(t *testing.T) {
 					PassedAvgDuration: nil,
 					Changelists:       expectedChangelists,
 				},
-			})
+			}))
 		})
 
-		Convey("with hash_equals variant_predicate", func() {
+		t.Run("with hash_equals variant_predicate", func(t *ftt.Test) {
 			opts.VariantPredicate = &pb.VariantPredicate{
 				Predicate: &pb.VariantPredicate_HashEquals{
 					HashEquals: pbutil.VariantHash(testVariant2),
 				},
 			}
 			verdicts, nextPageToken, err := ReadTestHistory(span.Single(ctx), opts)
-			So(err, ShouldBeNil)
-			So(nextPageToken, ShouldBeEmpty)
-			So(verdicts, ShouldResembleProto, []*pb.TestVerdict{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, nextPageToken, should.BeEmpty)
+			assert.Loosely(t, verdicts, should.Resemble([]*pb.TestVerdict{
 				{
 					TestId:            "test_id",
 					VariantHash:       pbutil.VariantHash(testVariant2),
@@ -334,15 +334,15 @@ func TestReadTestHistory(t *testing.T) {
 					PassedAvgDuration: nil,
 					Changelists:       expectedChangelists,
 				},
-			})
+			}))
 		})
 
-		Convey("with submitted_filter", func() {
+		t.Run("with submitted_filter", func(t *ftt.Test) {
 			opts.SubmittedFilter = pb.SubmittedFilter_ONLY_UNSUBMITTED
 			verdicts, nextPageToken, err := ReadTestHistory(span.Single(ctx), opts)
-			So(err, ShouldBeNil)
-			So(nextPageToken, ShouldBeEmpty)
-			So(verdicts, ShouldResembleProto, []*pb.TestVerdict{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, nextPageToken, should.BeEmpty)
+			assert.Loosely(t, verdicts, should.Resemble([]*pb.TestVerdict{
 				{
 					TestId:            "test_id",
 					VariantHash:       pbutil.VariantHash(testVariant4),
@@ -379,13 +379,13 @@ func TestReadTestHistory(t *testing.T) {
 					PassedAvgDuration: durationpb.New(88888 * time.Microsecond),
 					Changelists:       expectedChangelists,
 				},
-			})
+			}))
 
 			opts.SubmittedFilter = pb.SubmittedFilter_ONLY_SUBMITTED
 			verdicts, nextPageToken, err = ReadTestHistory(span.Single(ctx), opts)
-			So(err, ShouldBeNil)
-			So(nextPageToken, ShouldBeEmpty)
-			So(verdicts, ShouldResembleProto, []*pb.TestVerdict{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, nextPageToken, should.BeEmpty)
+			assert.Loosely(t, verdicts, should.Resemble([]*pb.TestVerdict{
 				{
 					TestId:            "test_id",
 					VariantHash:       pbutil.VariantHash(testVariant1),
@@ -418,15 +418,15 @@ func TestReadTestHistory(t *testing.T) {
 					PartitionTime:     timestamppb.New(referenceTime.Add(-day - 1*time.Hour)),
 					PassedAvgDuration: durationpb.New(33333 * time.Microsecond),
 				},
-			})
+			}))
 		})
 
-		Convey("with bisection filter", func() {
+		t.Run("with bisection filter", func(t *ftt.Test) {
 			opts.ExcludeBisectionResults = true
 			verdicts, nextPageToken, err := ReadTestHistory(span.Single(ctx), opts)
-			So(err, ShouldBeNil)
-			So(nextPageToken, ShouldBeEmpty)
-			So(verdicts, ShouldResembleProto, []*pb.TestVerdict{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, nextPageToken, should.BeEmpty)
+			assert.Loosely(t, verdicts, should.Resemble([]*pb.TestVerdict{
 				{
 					TestId:            "test_id",
 					VariantHash:       pbutil.VariantHash(testVariant1),
@@ -485,13 +485,13 @@ func TestReadTestHistory(t *testing.T) {
 					PassedAvgDuration: durationpb.New(88888 * time.Microsecond),
 					Changelists:       expectedChangelists,
 				},
-			})
+			}))
 		})
 	})
 }
 
 func TestReadTestHistoryStats(t *testing.T) {
-	Convey("ReadTestHistoryStats", t, func() {
+	ftt.Run("ReadTestHistoryStats", t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 
 		referenceTime := time.Date(2022, time.January, 1, 0, 0, 0, 0, time.UTC)
@@ -499,7 +499,7 @@ func TestReadTestHistoryStats(t *testing.T) {
 		day := 24 * time.Hour
 
 		err := createTestHistoryTestData(ctx, referenceTime)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		opts := ReadTestHistoryOptions{
 			Project:   "project",
@@ -548,26 +548,26 @@ func TestReadTestHistoryStats(t *testing.T) {
 			},
 		}
 
-		Convey("baseline", func() {
+		t.Run("baseline", func(t *ftt.Test) {
 			verdicts, nextPageToken, err := ReadTestHistoryStats(span.Single(ctx), opts)
-			So(err, ShouldBeNil)
-			So(nextPageToken, ShouldBeEmpty)
-			So(verdicts, ShouldResembleProto, expectedGroups)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, nextPageToken, should.BeEmpty)
+			assert.Loosely(t, verdicts, should.Resemble(expectedGroups))
 		})
-		Convey("pagination works", func() {
+		t.Run("pagination works", func(t *ftt.Test) {
 			opts.PageSize = 4
 			verdicts, nextPageToken, err := ReadTestHistoryStats(span.Single(ctx), opts)
-			So(err, ShouldBeNil)
-			So(nextPageToken, ShouldNotBeEmpty)
-			So(verdicts, ShouldResembleProto, expectedGroups[:4])
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, nextPageToken, should.NotBeEmpty)
+			assert.Loosely(t, verdicts, should.Resemble(expectedGroups[:4]))
 
 			opts.PageToken = nextPageToken
 			verdicts, nextPageToken, err = ReadTestHistoryStats(span.Single(ctx), opts)
-			So(err, ShouldBeNil)
-			So(nextPageToken, ShouldBeEmpty)
-			So(verdicts, ShouldResembleProto, expectedGroups[4:])
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, nextPageToken, should.BeEmpty)
+			assert.Loosely(t, verdicts, should.Resemble(expectedGroups[4:]))
 		})
-		Convey("with legacy test results data", func() {
+		t.Run("with legacy test results data", func(t *ftt.Test) {
 			// This test case can be deleted from March 2023. This should be
 			// combined with an update to make ChangelistOwnerKinds NOT NULL.
 			_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
@@ -575,16 +575,16 @@ func TestReadTestHistoryStats(t *testing.T) {
 				_, err := span.Update(ctx, stmt)
 				return err
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			verdicts, nextPageToken, err := ReadTestHistoryStats(span.Single(ctx), opts)
-			So(err, ShouldBeNil)
-			So(nextPageToken, ShouldBeEmpty)
-			So(verdicts, ShouldResembleProto, expectedGroups)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, nextPageToken, should.BeEmpty)
+			assert.Loosely(t, verdicts, should.Resemble(expectedGroups))
 		})
 
-		Convey("with partition_time_range", func() {
-			Convey("day boundaries", func() {
+		t.Run("with partition_time_range", func(t *ftt.Test) {
+			t.Run("day boundaries", func(t *ftt.Test) {
 				opts.TimeRange = &pb.TimeRange{
 					// Inclusive.
 					Earliest: timestamppb.New(referenceTime.Add(-2 * day)),
@@ -592,9 +592,9 @@ func TestReadTestHistoryStats(t *testing.T) {
 					Latest: timestamppb.New(referenceTime.Add(-1 * day)),
 				}
 				verdicts, nextPageToken, err := ReadTestHistoryStats(span.Single(ctx), opts)
-				So(err, ShouldBeNil)
-				So(nextPageToken, ShouldBeEmpty)
-				So(verdicts, ShouldResembleProto, []*pb.QueryTestHistoryStatsResponse_Group{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, nextPageToken, should.BeEmpty)
+				assert.Loosely(t, verdicts, should.Resemble([]*pb.QueryTestHistoryStatsResponse_Group{
 					{
 						PartitionTime:            timestamppb.New(referenceTime.Add(-2 * day)),
 						VariantHash:              pbutil.VariantHash(testVariant1),
@@ -608,9 +608,9 @@ func TestReadTestHistoryStats(t *testing.T) {
 						ExpectedCount:     1,
 						PassedAvgDuration: nil,
 					},
-				})
+				}))
 			})
-			Convey("part-day boundaries", func() {
+			t.Run("part-day boundaries", func(t *ftt.Test) {
 				opts.TimeRange = &pb.TimeRange{
 					// Inclusive.
 					Earliest: timestamppb.New(referenceTime.Add(-2*day - 3*time.Hour)),
@@ -618,9 +618,9 @@ func TestReadTestHistoryStats(t *testing.T) {
 					Latest: timestamppb.New(referenceTime.Add(-1*day - 1*time.Hour)),
 				}
 				verdicts, nextPageToken, err := ReadTestHistoryStats(span.Single(ctx), opts)
-				So(err, ShouldBeNil)
-				So(nextPageToken, ShouldBeEmpty)
-				So(verdicts, ShouldResembleProto, []*pb.QueryTestHistoryStatsResponse_Group{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, nextPageToken, should.BeEmpty)
+				assert.Loosely(t, verdicts, should.Resemble([]*pb.QueryTestHistoryStatsResponse_Group{
 					{
 						PartitionTime:            timestamppb.New(referenceTime.Add(-2 * day)),
 						VariantHash:              pbutil.VariantHash(testVariant1),
@@ -639,21 +639,21 @@ func TestReadTestHistoryStats(t *testing.T) {
 						ExoneratedCount:   1,
 						PassedAvgDuration: durationpb.New(88888 * time.Microsecond),
 					},
-				})
+				}))
 			})
 		})
 
-		Convey("with contains variant_predicate", func() {
-			Convey("with single key-value pair", func() {
+		t.Run("with contains variant_predicate", func(t *ftt.Test) {
+			t.Run("with single key-value pair", func(t *ftt.Test) {
 				opts.VariantPredicate = &pb.VariantPredicate{
 					Predicate: &pb.VariantPredicate_Contains{
 						Contains: pbutil.Variant("key1", "val2"),
 					},
 				}
 				verdicts, nextPageToken, err := ReadTestHistoryStats(span.Single(ctx), opts)
-				So(err, ShouldBeNil)
-				So(nextPageToken, ShouldBeEmpty)
-				So(verdicts, ShouldResembleProto, []*pb.QueryTestHistoryStatsResponse_Group{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, nextPageToken, should.BeEmpty)
+				assert.Loosely(t, verdicts, should.Resemble([]*pb.QueryTestHistoryStatsResponse_Group{
 					{
 						PartitionTime:     timestamppb.New(referenceTime.Add(-1 * day)),
 						VariantHash:       pbutil.VariantHash(testVariant2),
@@ -672,39 +672,39 @@ func TestReadTestHistoryStats(t *testing.T) {
 						ExoneratedCount:   1,
 						PassedAvgDuration: durationpb.New(88888 * time.Microsecond),
 					},
-				})
+				}))
 			})
 
-			Convey("with multiple key-value pairs", func() {
+			t.Run("with multiple key-value pairs", func(t *ftt.Test) {
 				opts.VariantPredicate = &pb.VariantPredicate{
 					Predicate: &pb.VariantPredicate_Contains{
 						Contains: pbutil.Variant("key1", "val2", "key2", "val2"),
 					},
 				}
 				verdicts, nextPageToken, err := ReadTestHistoryStats(span.Single(ctx), opts)
-				So(err, ShouldBeNil)
-				So(nextPageToken, ShouldBeEmpty)
-				So(verdicts, ShouldResembleProto, []*pb.QueryTestHistoryStatsResponse_Group{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, nextPageToken, should.BeEmpty)
+				assert.Loosely(t, verdicts, should.Resemble([]*pb.QueryTestHistoryStatsResponse_Group{
 					{
 						PartitionTime:     timestamppb.New(referenceTime.Add(-3 * day)),
 						VariantHash:       pbutil.VariantHash(testVariant3),
 						ExoneratedCount:   1,
 						PassedAvgDuration: durationpb.New(88888 * time.Microsecond),
 					},
-				})
+				}))
 			})
 		})
 
-		Convey("with equals variant_predicate", func() {
+		t.Run("with equals variant_predicate", func(t *ftt.Test) {
 			opts.VariantPredicate = &pb.VariantPredicate{
 				Predicate: &pb.VariantPredicate_Equals{
 					Equals: testVariant2,
 				},
 			}
 			verdicts, nextPageToken, err := ReadTestHistoryStats(span.Single(ctx), opts)
-			So(err, ShouldBeNil)
-			So(nextPageToken, ShouldBeEmpty)
-			So(verdicts, ShouldResembleProto, []*pb.QueryTestHistoryStatsResponse_Group{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, nextPageToken, should.BeEmpty)
+			assert.Loosely(t, verdicts, should.Resemble([]*pb.QueryTestHistoryStatsResponse_Group{
 				{
 					PartitionTime:     timestamppb.New(referenceTime.Add(-1 * day)),
 					VariantHash:       pbutil.VariantHash(testVariant2),
@@ -717,19 +717,19 @@ func TestReadTestHistoryStats(t *testing.T) {
 					ExpectedCount:     1,
 					PassedAvgDuration: nil,
 				},
-			})
+			}))
 		})
 
-		Convey("with hash_equals variant_predicate", func() {
+		t.Run("with hash_equals variant_predicate", func(t *ftt.Test) {
 			opts.VariantPredicate = &pb.VariantPredicate{
 				Predicate: &pb.VariantPredicate_HashEquals{
 					HashEquals: pbutil.VariantHash(testVariant2),
 				},
 			}
 			verdicts, nextPageToken, err := ReadTestHistoryStats(span.Single(ctx), opts)
-			So(err, ShouldBeNil)
-			So(nextPageToken, ShouldBeEmpty)
-			So(verdicts, ShouldResembleProto, []*pb.QueryTestHistoryStatsResponse_Group{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, nextPageToken, should.BeEmpty)
+			assert.Loosely(t, verdicts, should.Resemble([]*pb.QueryTestHistoryStatsResponse_Group{
 				{
 					PartitionTime:     timestamppb.New(referenceTime.Add(-1 * day)),
 					VariantHash:       pbutil.VariantHash(testVariant2),
@@ -742,27 +742,27 @@ func TestReadTestHistoryStats(t *testing.T) {
 					ExpectedCount:     1,
 					PassedAvgDuration: nil,
 				},
-			})
+			}))
 		})
 
-		Convey("with empty hash_equals variant_predicate", func() {
+		t.Run("with empty hash_equals variant_predicate", func(t *ftt.Test) {
 			opts.VariantPredicate = &pb.VariantPredicate{
 				Predicate: &pb.VariantPredicate_HashEquals{
 					HashEquals: "",
 				},
 			}
 			verdicts, nextPageToken, err := ReadTestHistoryStats(span.Single(ctx), opts)
-			So(err, ShouldBeNil)
-			So(nextPageToken, ShouldBeEmpty)
-			So(verdicts, ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, nextPageToken, should.BeEmpty)
+			assert.Loosely(t, verdicts, should.BeEmpty)
 		})
 
-		Convey("with submitted_filter", func() {
+		t.Run("with submitted_filter", func(t *ftt.Test) {
 			opts.SubmittedFilter = pb.SubmittedFilter_ONLY_UNSUBMITTED
 			verdicts, nextPageToken, err := ReadTestHistoryStats(span.Single(ctx), opts)
-			So(err, ShouldBeNil)
-			So(nextPageToken, ShouldBeEmpty)
-			So(verdicts, ShouldResembleProto, []*pb.QueryTestHistoryStatsResponse_Group{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, nextPageToken, should.BeEmpty)
+			assert.Loosely(t, verdicts, should.Resemble([]*pb.QueryTestHistoryStatsResponse_Group{
 				{
 					PartitionTime:     timestamppb.New(referenceTime.Add(-1 * day)),
 					VariantHash:       pbutil.VariantHash(testVariant4),
@@ -787,13 +787,13 @@ func TestReadTestHistoryStats(t *testing.T) {
 					ExoneratedCount:   1,
 					PassedAvgDuration: durationpb.New(88888 * time.Microsecond),
 				},
-			})
+			}))
 
 			opts.SubmittedFilter = pb.SubmittedFilter_ONLY_SUBMITTED
 			verdicts, nextPageToken, err = ReadTestHistoryStats(span.Single(ctx), opts)
-			So(err, ShouldBeNil)
-			So(nextPageToken, ShouldBeEmpty)
-			So(verdicts, ShouldResembleProto, []*pb.QueryTestHistoryStatsResponse_Group{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, nextPageToken, should.BeEmpty)
+			assert.Loosely(t, verdicts, should.Resemble([]*pb.QueryTestHistoryStatsResponse_Group{
 				{
 					PartitionTime:     timestamppb.New(referenceTime.Add(-1 * day)),
 					VariantHash:       pbutil.VariantHash(testVariant1),
@@ -813,15 +813,15 @@ func TestReadTestHistoryStats(t *testing.T) {
 					UnexpectedCount:   1,
 					PassedAvgDuration: durationpb.New(33333 * time.Microsecond),
 				},
-			})
+			}))
 		})
 
-		Convey("with bisection filter", func() {
+		t.Run("with bisection filter", func(t *ftt.Test) {
 			opts.ExcludeBisectionResults = true
 			verdicts, nextPageToken, err := ReadTestHistoryStats(span.Single(ctx), opts)
-			So(err, ShouldBeNil)
-			So(nextPageToken, ShouldBeEmpty)
-			So(verdicts, ShouldResembleProto, []*pb.QueryTestHistoryStatsResponse_Group{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, nextPageToken, should.BeEmpty)
+			assert.Loosely(t, verdicts, should.Resemble([]*pb.QueryTestHistoryStatsResponse_Group{
 				{
 					PartitionTime:     timestamppb.New(referenceTime.Add(-1 * day)),
 					VariantHash:       pbutil.VariantHash(testVariant1),
@@ -854,13 +854,13 @@ func TestReadTestHistoryStats(t *testing.T) {
 					ExoneratedCount:   1,
 					PassedAvgDuration: durationpb.New(88888 * time.Microsecond),
 				},
-			})
+			}))
 		})
 	})
 }
 
 func TestReadVariants(t *testing.T) {
-	Convey("ReadVariants", t, func() {
+	ftt.Run("ReadVariants", t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 
 		var1 := pbutil.Variant("key1", "val1", "key2", "val1")
@@ -889,14 +889,14 @@ func TestReadVariants(t *testing.T) {
 
 			return nil
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		Convey("pagination works", func() {
+		t.Run("pagination works", func(t *ftt.Test) {
 			opts := ReadVariantsOptions{PageSize: 3, SubRealms: []string{"realm1", "realm2", "realm3"}}
 			variants, nextPageToken, err := ReadVariants(span.Single(ctx), "project", "test_id", opts)
-			So(err, ShouldBeNil)
-			So(nextPageToken, ShouldNotBeEmpty)
-			So(variants, ShouldResembleProto, []*pb.QueryVariantsResponse_VariantInfo{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, nextPageToken, should.NotBeEmpty)
+			assert.Loosely(t, variants, should.Resemble([]*pb.QueryVariantsResponse_VariantInfo{
 				{
 					VariantHash: pbutil.VariantHash(var1),
 					Variant:     var1,
@@ -909,26 +909,26 @@ func TestReadVariants(t *testing.T) {
 					VariantHash: pbutil.VariantHash(var4),
 					Variant:     var4,
 				},
-			})
+			}))
 
 			opts.PageToken = nextPageToken
 			variants, nextPageToken, err = ReadVariants(span.Single(ctx), "project", "test_id", opts)
-			So(err, ShouldBeNil)
-			So(nextPageToken, ShouldBeEmpty)
-			So(variants, ShouldResembleProto, []*pb.QueryVariantsResponse_VariantInfo{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, nextPageToken, should.BeEmpty)
+			assert.Loosely(t, variants, should.Resemble([]*pb.QueryVariantsResponse_VariantInfo{
 				{
 					VariantHash: pbutil.VariantHash(var2),
 					Variant:     var2,
 				},
-			})
+			}))
 		})
 
-		Convey("multi-realm works", func() {
+		t.Run("multi-realm works", func(t *ftt.Test) {
 			opts := ReadVariantsOptions{SubRealms: []string{"realm1", "realm2"}}
 			variants, nextPageToken, err := ReadVariants(span.Single(ctx), "project", "test_id", opts)
-			So(err, ShouldBeNil)
-			So(nextPageToken, ShouldBeEmpty)
-			So(variants, ShouldResembleProto, []*pb.QueryVariantsResponse_VariantInfo{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, nextPageToken, should.BeEmpty)
+			assert.Loosely(t, variants, should.Resemble([]*pb.QueryVariantsResponse_VariantInfo{
 				{
 					VariantHash: pbutil.VariantHash(var1),
 					Variant:     var1,
@@ -941,15 +941,15 @@ func TestReadVariants(t *testing.T) {
 					VariantHash: pbutil.VariantHash(var2),
 					Variant:     var2,
 				},
-			})
+			}))
 		})
 
-		Convey("single-realm works", func() {
+		t.Run("single-realm works", func(t *ftt.Test) {
 			opts := ReadVariantsOptions{SubRealms: []string{"realm2"}}
 			variants, nextPageToken, err := ReadVariants(span.Single(ctx), "project", "test_id", opts)
-			So(err, ShouldBeNil)
-			So(nextPageToken, ShouldBeEmpty)
-			So(variants, ShouldResembleProto, []*pb.QueryVariantsResponse_VariantInfo{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, nextPageToken, should.BeEmpty)
+			assert.Loosely(t, variants, should.Resemble([]*pb.QueryVariantsResponse_VariantInfo{
 				{
 					VariantHash: pbutil.VariantHash(var3),
 					Variant:     var3,
@@ -958,11 +958,11 @@ func TestReadVariants(t *testing.T) {
 					VariantHash: pbutil.VariantHash(var2),
 					Variant:     var2,
 				},
-			})
+			}))
 		})
 
-		Convey("with contains variant predicate", func() {
-			Convey("with single key-value pair", func() {
+		t.Run("with contains variant predicate", func(t *ftt.Test) {
+			t.Run("with single key-value pair", func(t *ftt.Test) {
 				opts := ReadVariantsOptions{
 					SubRealms: []string{"realm1", "realm2"},
 					VariantPredicate: &pb.VariantPredicate{
@@ -972,9 +972,9 @@ func TestReadVariants(t *testing.T) {
 					},
 				}
 				variants, nextPageToken, err := ReadVariants(span.Single(ctx), "project", "test_id", opts)
-				So(err, ShouldBeNil)
-				So(nextPageToken, ShouldBeEmpty)
-				So(variants, ShouldResembleProto, []*pb.QueryVariantsResponse_VariantInfo{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, nextPageToken, should.BeEmpty)
+				assert.Loosely(t, variants, should.Resemble([]*pb.QueryVariantsResponse_VariantInfo{
 					{
 						VariantHash: pbutil.VariantHash(var3),
 						Variant:     var3,
@@ -983,10 +983,10 @@ func TestReadVariants(t *testing.T) {
 						VariantHash: pbutil.VariantHash(var2),
 						Variant:     var2,
 					},
-				})
+				}))
 			})
 
-			Convey("with multiple key-value pairs", func() {
+			t.Run("with multiple key-value pairs", func(t *ftt.Test) {
 				opts := ReadVariantsOptions{
 					SubRealms: []string{"realm1", "realm2"},
 					VariantPredicate: &pb.VariantPredicate{
@@ -996,18 +996,18 @@ func TestReadVariants(t *testing.T) {
 					},
 				}
 				variants, nextPageToken, err := ReadVariants(span.Single(ctx), "project", "test_id", opts)
-				So(err, ShouldBeNil)
-				So(nextPageToken, ShouldBeEmpty)
-				So(variants, ShouldResembleProto, []*pb.QueryVariantsResponse_VariantInfo{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, nextPageToken, should.BeEmpty)
+				assert.Loosely(t, variants, should.Resemble([]*pb.QueryVariantsResponse_VariantInfo{
 					{
 						VariantHash: pbutil.VariantHash(var3),
 						Variant:     var3,
 					},
-				})
+				}))
 			})
 		})
 
-		Convey("with equals variant predicate", func() {
+		t.Run("with equals variant predicate", func(t *ftt.Test) {
 			opts := ReadVariantsOptions{
 				SubRealms: []string{"realm1", "realm2"},
 				VariantPredicate: &pb.VariantPredicate{
@@ -1017,17 +1017,17 @@ func TestReadVariants(t *testing.T) {
 				},
 			}
 			variants, nextPageToken, err := ReadVariants(span.Single(ctx), "project", "test_id", opts)
-			So(err, ShouldBeNil)
-			So(nextPageToken, ShouldBeEmpty)
-			So(variants, ShouldResembleProto, []*pb.QueryVariantsResponse_VariantInfo{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, nextPageToken, should.BeEmpty)
+			assert.Loosely(t, variants, should.Resemble([]*pb.QueryVariantsResponse_VariantInfo{
 				{
 					VariantHash: pbutil.VariantHash(var2),
 					Variant:     var2,
 				},
-			})
+			}))
 		})
 
-		Convey("with hash_equals variant predicate", func() {
+		t.Run("with hash_equals variant predicate", func(t *ftt.Test) {
 			opts := ReadVariantsOptions{
 				SubRealms: []string{"realm2"},
 				VariantPredicate: &pb.VariantPredicate{
@@ -1037,20 +1037,20 @@ func TestReadVariants(t *testing.T) {
 				},
 			}
 			variants, nextPageToken, err := ReadVariants(span.Single(ctx), "project", "test_id", opts)
-			So(err, ShouldBeNil)
-			So(nextPageToken, ShouldBeEmpty)
-			So(variants, ShouldResembleProto, []*pb.QueryVariantsResponse_VariantInfo{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, nextPageToken, should.BeEmpty)
+			assert.Loosely(t, variants, should.Resemble([]*pb.QueryVariantsResponse_VariantInfo{
 				{
 					VariantHash: pbutil.VariantHash(var2),
 					Variant:     var2,
 				},
-			})
+			}))
 		})
 	})
 }
 
 func TestQueryTests(t *testing.T) {
-	Convey("QueryTests", t, func() {
+	ftt.Run("QueryTests", t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 
 		_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
@@ -1079,62 +1079,62 @@ func TestQueryTests(t *testing.T) {
 
 			return nil
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		Convey("pagination works", func() {
+		t.Run("pagination works", func(t *ftt.Test) {
 			opts := QueryTestsOptions{PageSize: 2, SubRealms: []string{"realm1", "realm2", "realm3"}}
 			testIDs, nextPageToken, err := QueryTests(span.Single(ctx), "project", "id1", opts)
-			So(err, ShouldBeNil)
-			So(nextPageToken, ShouldNotBeEmpty)
-			So(testIDs, ShouldResemble, []string{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, nextPageToken, should.NotBeEmpty)
+			assert.Loosely(t, testIDs, should.Resemble([]string{
 				"test-id10",
 				"test-id11",
-			})
+			}))
 
 			opts.PageToken = nextPageToken
 			testIDs, nextPageToken, err = QueryTests(span.Single(ctx), "project", "id1", opts)
-			So(err, ShouldBeNil)
-			So(nextPageToken, ShouldBeEmpty)
-			So(testIDs, ShouldResemble, []string{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, nextPageToken, should.BeEmpty)
+			assert.Loosely(t, testIDs, should.Resemble([]string{
 				"test-id12",
-			})
+			}))
 		})
 
-		Convey("multi-realm works", func() {
+		t.Run("multi-realm works", func(t *ftt.Test) {
 			opts := QueryTestsOptions{SubRealms: []string{"realm1", "realm2"}}
 			testIDs, nextPageToken, err := QueryTests(span.Single(ctx), "project", "test-id", opts)
-			So(err, ShouldBeNil)
-			So(nextPageToken, ShouldBeEmpty)
-			So(testIDs, ShouldResemble, []string{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, nextPageToken, should.BeEmpty)
+			assert.Loosely(t, testIDs, should.Resemble([]string{
 				"test-id00",
 				"test-id01",
 				"test-id10",
 				"test-id11",
 				"test-id20",
 				"test-id21",
-			})
+			}))
 		})
 
-		Convey("single-realm works", func() {
+		t.Run("single-realm works", func(t *ftt.Test) {
 			opts := QueryTestsOptions{SubRealms: []string{"realm3"}}
 			testIDs, nextPageToken, err := QueryTests(span.Single(ctx), "project", "test-id", opts)
-			So(err, ShouldBeNil)
-			So(nextPageToken, ShouldBeEmpty)
-			So(testIDs, ShouldResemble, []string{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, nextPageToken, should.BeEmpty)
+			assert.Loosely(t, testIDs, should.Resemble([]string{
 				"test-id02",
 				"test-id12",
 				"test-id22",
-			})
+			}))
 		})
 
-		Convey("special character works", func() {
+		t.Run("special character works", func(t *ftt.Test) {
 			opts := QueryTestsOptions{SubRealms: []string{"realm1", "realm2", "realm3"}}
 			testIDs, nextPageToken, err := QueryTests(span.Single(ctx), "project", "special%_characters", opts)
-			So(err, ShouldBeNil)
-			So(nextPageToken, ShouldBeEmpty)
-			So(testIDs, ShouldResemble, []string{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, nextPageToken, should.BeEmpty)
+			assert.Loosely(t, testIDs, should.Resemble([]string{
 				"special%_characters",
-			})
+			}))
 		})
 	})
 }

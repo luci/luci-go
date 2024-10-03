@@ -23,6 +23,9 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/server/span"
 
@@ -40,13 +43,10 @@ import (
 	analysispb "go.chromium.org/luci/analysis/proto/v1"
 
 	_ "go.chromium.org/luci/server/tq/txn/spanner"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestIngestForChangepointAnalysis(t *testing.T) {
-	Convey("TestIngestForChangepointAnalysis", t, func() {
+	ftt.Run("TestIngestForChangepointAnalysis", t, func(t *ftt.Test) {
 		ctx := testutil.IntegrationTestContext(t)
 		ctx = memory.Use(ctx) // For config cache.
 
@@ -60,7 +60,7 @@ func TestIngestForChangepointAnalysis(t *testing.T) {
 		inputs.Sources.IsDirty = false
 
 		err := createTestVariantBranchRecords(ctx)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		cfg := &configpb.Config{
 			TestVariantAnalysis: &configpb.TestVariantAnalysis{
@@ -69,7 +69,7 @@ func TestIngestForChangepointAnalysis(t *testing.T) {
 			},
 		}
 		err = config.SetTestConfig(ctx, cfg)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		expectedExports := expectedExports()
 		expectedCheckpoint := checkpoints.Checkpoint{
@@ -82,57 +82,57 @@ func TestIngestForChangepointAnalysis(t *testing.T) {
 			// Creation and expiry time not validated.
 		}
 
-		Convey(`Baseline`, func() {
+		t.Run(`Baseline`, func(t *ftt.Test) {
 			err := ingester.Ingest(ctx, inputs)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(removeVersions(exportClient.Insertions), ShouldResembleProto, expectedExports)
-			So(verifyCheckpoints(ctx, expectedCheckpoint), ShouldBeNil)
+			assert.Loosely(t, removeVersions(exportClient.Insertions), should.Resemble(expectedExports))
+			assert.Loosely(t, verifyCheckpoints(ctx, expectedCheckpoint), should.BeNil)
 
-			So(changepoints.RunCounter.Get(ctx, "rootproject", "ingested"), ShouldEqual, 2)
-			So(changepoints.RunCounter.Get(ctx, "rootproject", "skipped_only_skips"), ShouldEqual, 1)
+			assert.Loosely(t, changepoints.RunCounter.Get(ctx, "rootproject", "ingested"), should.Equal(2))
+			assert.Loosely(t, changepoints.RunCounter.Get(ctx, "rootproject", "skipped_only_skips"), should.Equal(1))
 
-			Convey(`Results are not exported again if the process is re-run`, func() {
+			t.Run(`Results are not exported again if the process is re-run`, func(t *ftt.Test) {
 				exportClient.Insertions = nil
 
 				err = ingester.Ingest(ctx, inputs)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				// Nothing should be exported because the checkpoint already exists.
-				So(exportClient.Insertions, ShouldBeEmpty)
-				So(verifyCheckpoints(ctx, expectedCheckpoint), ShouldBeNil)
+				assert.Loosely(t, exportClient.Insertions, should.BeEmpty)
+				assert.Loosely(t, verifyCheckpoints(ctx, expectedCheckpoint), should.BeNil)
 			})
 		})
-		Convey(`With invocation claimed by this root invocation`, func() {
+		t.Run(`With invocation claimed by this root invocation`, func(t *ftt.Test) {
 			// E.g. this invocation was claimed for the root invocation in an
 			// earlier page of test results.
 			m := changepoints.ClaimInvocationMutation(inputs.Project, inputs.InvocationID, inputs.RootInvocationID)
 			_, err := span.Apply(ctx, []*spanner.Mutation{m})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			err = ingester.Ingest(ctx, inputs)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(removeVersions(exportClient.Insertions), ShouldResembleProto, expectedExports)
-			So(verifyCheckpoints(ctx, expectedCheckpoint), ShouldBeNil)
+			assert.Loosely(t, removeVersions(exportClient.Insertions), should.Resemble(expectedExports))
+			assert.Loosely(t, verifyCheckpoints(ctx, expectedCheckpoint), should.BeNil)
 
-			So(changepoints.RunCounter.Get(ctx, "rootproject", "ingested"), ShouldEqual, 2)
-			So(changepoints.RunCounter.Get(ctx, "rootproject", "skipped_only_skips"), ShouldEqual, 1)
+			assert.Loosely(t, changepoints.RunCounter.Get(ctx, "rootproject", "ingested"), should.Equal(2))
+			assert.Loosely(t, changepoints.RunCounter.Get(ctx, "rootproject", "skipped_only_skips"), should.Equal(1))
 		})
-		Convey(`With invocation claimed by other root invocation`, func() {
+		t.Run(`With invocation claimed by other root invocation`, func(t *ftt.Test) {
 			// E.g. this invocation was first ingested under a different root
 			// in this project.
 			m := changepoints.ClaimInvocationMutation(inputs.Project, inputs.InvocationID, "other-root")
 			_, err := span.Apply(ctx, []*spanner.Mutation{m})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			err = ingester.Ingest(ctx, inputs)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(exportClient.Insertions, ShouldHaveLength, 0)
-			So(changepoints.RunCounter.Get(ctx, "rootproject", "skipped_unclaimed"), ShouldEqual, 1)
+			assert.Loosely(t, exportClient.Insertions, should.HaveLength(0))
+			assert.Loosely(t, changepoints.RunCounter.Get(ctx, "rootproject", "skipped_unclaimed"), should.Equal(1))
 		})
-		Convey(`Should not ingest invocations with changelists`, func() {
+		t.Run(`Should not ingest invocations with changelists`, func(t *ftt.Test) {
 			inputs.Sources.Changelists = []*analysispb.GerritChange{
 				{
 					Host:     "project-review.googlesource.com",
@@ -143,37 +143,37 @@ func TestIngestForChangepointAnalysis(t *testing.T) {
 			}
 
 			err := ingester.Ingest(ctx, inputs)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(exportClient.Insertions, ShouldHaveLength, 0)
-			So(changepoints.RunCounter.Get(ctx, "rootproject", "skipped_excluded_from_low_latency_pipeline"), ShouldEqual, 3)
+			assert.Loosely(t, exportClient.Insertions, should.HaveLength(0))
+			assert.Loosely(t, changepoints.RunCounter.Get(ctx, "rootproject", "skipped_excluded_from_low_latency_pipeline"), should.Equal(3))
 		})
-		Convey(`Without sources`, func() {
+		t.Run(`Without sources`, func(t *ftt.Test) {
 			inputs.Sources = nil
 
 			err := ingester.Ingest(ctx, inputs)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(exportClient.Insertions, ShouldHaveLength, 0)
-			So(changepoints.RunCounter.Get(ctx, "rootproject", "skipped_no_sources"), ShouldEqual, 3)
+			assert.Loosely(t, exportClient.Insertions, should.HaveLength(0))
+			assert.Loosely(t, changepoints.RunCounter.Get(ctx, "rootproject", "skipped_no_sources"), should.Equal(3))
 		})
-		Convey(`Without gitiles commit`, func() {
+		t.Run(`Without gitiles commit`, func(t *ftt.Test) {
 			inputs.Sources.GitilesCommit = nil
 
 			err := ingester.Ingest(ctx, inputs)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(exportClient.Insertions, ShouldHaveLength, 0)
-			So(changepoints.RunCounter.Get(ctx, "rootproject", "skipped_no_commit_data"), ShouldEqual, 3)
+			assert.Loosely(t, exportClient.Insertions, should.HaveLength(0))
+			assert.Loosely(t, changepoints.RunCounter.Get(ctx, "rootproject", "skipped_no_commit_data"), should.Equal(3))
 		})
-		Convey(`Too far out of order source position`, func() {
+		t.Run(`Too far out of order source position`, func(t *ftt.Test) {
 			// Out of order source positions can be accepted by changepoint analysis,
 			// so long as the positions are still covered by the 2000-run input buffer
 			// in which re-ordering can occur.
 			inputs.Sources.GitilesCommit.Position = 1
 
 			err := ingester.Ingest(ctx, inputs)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// Only "ninja://test_expected" should be ingested as it is has no
 			// record in the test variant branch table yet, so it cannot be
@@ -182,21 +182,21 @@ func TestIngestForChangepointAnalysis(t *testing.T) {
 			expectedExports[0].Segments[0].StartPosition = 1
 			expectedExports[0].Segments[0].EndPosition = 1
 
-			So(removeVersions(exportClient.Insertions), ShouldResembleProto, expectedExports)
-			So(changepoints.RunCounter.Get(ctx, "rootproject", "ingested"), ShouldEqual, 1)
-			So(changepoints.RunCounter.Get(ctx, "rootproject", "skipped_out_of_order"), ShouldEqual, 1)
-			So(changepoints.RunCounter.Get(ctx, "rootproject", "skipped_only_skips"), ShouldEqual, 1)
-			So(verifyCheckpoints(ctx, expectedCheckpoint), ShouldBeNil)
+			assert.Loosely(t, removeVersions(exportClient.Insertions), should.Resemble(expectedExports))
+			assert.Loosely(t, changepoints.RunCounter.Get(ctx, "rootproject", "ingested"), should.Equal(1))
+			assert.Loosely(t, changepoints.RunCounter.Get(ctx, "rootproject", "skipped_out_of_order"), should.Equal(1))
+			assert.Loosely(t, changepoints.RunCounter.Get(ctx, "rootproject", "skipped_only_skips"), should.Equal(1))
+			assert.Loosely(t, verifyCheckpoints(ctx, expectedCheckpoint), should.BeNil)
 		})
-		Convey(`With test variant analysis disabled`, func() {
+		t.Run(`With test variant analysis disabled`, func(t *ftt.Test) {
 			cfg.TestVariantAnalysis.Enabled = false
 			err = config.SetTestConfig(ctx, cfg)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			err := ingester.Ingest(ctx, inputs)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(exportClient.Insertions, ShouldHaveLength, 0)
+			assert.Loosely(t, exportClient.Insertions, should.HaveLength(0))
 		})
 	})
 }

@@ -25,14 +25,12 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestGroupChangepoints(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
-	Convey("TestGroupChangepoints", t, func() {
+	ftt.Run("TestGroupChangepoints", t, func(t *ftt.Test) {
 		// Group 1 - test id num gap less than the TestIDGroupingThreshold in the same group.
 		cp1 := makeChangepointRow(4, 100, 200, "refhash")
 		cp2 := makeChangepointRow(30, 160, 261, "refhash") // 41 commits, 40.6% overlap with cp1
@@ -50,13 +48,13 @@ func TestGroupChangepoints(t *testing.T) {
 		cp10 := makeChangepointRow(1002, 120, 230, "otherrefhash")
 
 		groups := GroupChangepoints(ctx, []*ChangepointDetailRow{cp1, cp2, cp3, cp4, cp5, cp6, cp7, cp8, cp9, cp10})
-		So(groups, ShouldResemble, [][]*ChangepointDetailRow{
+		assert.That(t, groups, should.Match([][]*ChangepointDetailRow{
 			{cp1, cp3, cp2, cp4},
 			{cp5, cp6},
 			{cp7, cp8},
 			{cp9},
 			{cp10},
-		})
+		}))
 	})
 }
 

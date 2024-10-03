@@ -17,24 +17,26 @@ package metrics
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestMetrics(t *testing.T) {
-	Convey(`Metrics`, t, func() {
-		Convey(`Metrics have unique sort orders`, func() {
+	ftt.Run(`Metrics`, t, func(t *ftt.Test) {
+		t.Run(`Metrics have unique sort orders`, func(t *ftt.Test) {
 			usedSortOrders := make(map[int]bool)
 			for _, m := range ComputedMetrics {
 				unique := !usedSortOrders[m.DefaultConfig.SortPriority]
-				So(unique, ShouldBeTrue)
+				assert.Loosely(t, unique, should.BeTrue)
 				usedSortOrders[m.DefaultConfig.SortPriority] = true
 			}
 		})
-		Convey(`Metrics have unique IDs`, func() {
+		t.Run(`Metrics have unique IDs`, func(t *ftt.Test) {
 			usedIDs := make(map[string]bool)
 			for _, m := range ComputedMetrics {
 				unique := !usedIDs[m.ID.String()]
-				So(unique, ShouldBeTrue)
+				assert.Loosely(t, unique, should.BeTrue)
 				usedIDs[m.ID.String()] = true
 			}
 		})

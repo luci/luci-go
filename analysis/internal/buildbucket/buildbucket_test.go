@@ -23,15 +23,15 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestGetBuild(t *testing.T) {
 	t.Parallel()
 
-	Convey("Get build", t, func() {
+	ftt.Run("Get build", t, func(t *ftt.Test) {
 
 		ctl := gomock.NewController(t)
 		defer ctl.Finish()
@@ -67,9 +67,9 @@ func TestGetBuild(t *testing.T) {
 		mc.GetBuild(reqCopy, res)
 
 		bc, err := NewClient(mc.Ctx, "bbhost", "chromium")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		b, err := bc.GetBuild(mc.Ctx, req)
-		So(err, ShouldBeNil)
-		So(b, ShouldResembleProto, res)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, b, should.Resemble(res))
 	})
 }

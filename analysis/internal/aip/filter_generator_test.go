@@ -17,12 +17,13 @@ package aip
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestWhereClause(t *testing.T) {
-	Convey("WhereClause", t, func() {
+	ftt.Run("WhereClause", t, func(t *ftt.Test) {
 		subFunc := func(sub string) string {
 			if sub == "somevalue" {
 				return "somevalue-v2"
@@ -41,94 +42,94 @@ func TestWhereClause(t *testing.T) {
 			NewColumn().WithFieldPath("quux").WithDatabaseName("db_quux").WithArgumentSubstitutor(subFunc).Filterable().KeyValue().Build(),
 		).Build()
 
-		Convey("Empty filter", func() {
+		t.Run("Empty filter", func(t *ftt.Test) {
 			result, pars, err := table.WhereClause(&Filter{}, "p_")
-			So(err, ShouldBeNil)
-			So(pars, ShouldHaveLength, 0)
-			So(result, ShouldEqual, "(TRUE)")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, pars, should.HaveLength(0))
+			assert.Loosely(t, result, should.Equal("(TRUE)"))
 		})
-		Convey("Simple filter", func() {
-			Convey("has operator", func() {
+		t.Run("Simple filter", func(t *ftt.Test) {
+			t.Run("has operator", func(t *ftt.Test) {
 				filter, err := ParseFilter("foo:somevalue")
-				So(err, ShouldEqual, nil)
+				assert.Loosely(t, err, should.BeNil)
 
 				result, pars, err := table.WhereClause(filter, "p_")
-				So(err, ShouldBeNil)
-				So(pars, ShouldResemble, []QueryParameter{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, pars, should.Resemble([]QueryParameter{
 					{
 						Name:  "p_0",
 						Value: "%somevalue%",
 					},
-				})
-				So(result, ShouldEqual, "(db_foo LIKE @p_0)")
+				}))
+				assert.Loosely(t, result, should.Equal("(db_foo LIKE @p_0)"))
 			})
-			Convey("equals operator", func() {
+			t.Run("equals operator", func(t *ftt.Test) {
 				filter, err := ParseFilter("foo = somevalue")
-				So(err, ShouldEqual, nil)
+				assert.Loosely(t, err, should.BeNil)
 
 				result, pars, err := table.WhereClause(filter, "p_")
-				So(err, ShouldBeNil)
-				So(pars, ShouldResemble, []QueryParameter{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, pars, should.Resemble([]QueryParameter{
 					{
 						Name:  "p_0",
 						Value: "somevalue",
 					},
-				})
-				So(result, ShouldEqual, "(db_foo = @p_0)")
+				}))
+				assert.Loosely(t, result, should.Equal("(db_foo = @p_0)"))
 			})
-			Convey("equals operator on bool column", func() {
+			t.Run("equals operator on bool column", func(t *ftt.Test) {
 				filter, err := ParseFilter("bool = true AND bool = false")
-				So(err, ShouldEqual, nil)
+				assert.Loosely(t, err, should.BeNil)
 
 				result, pars, err := table.WhereClause(filter, "p_")
-				So(err, ShouldBeNil)
-				So(pars, ShouldBeNil)
-				So(result, ShouldEqual, "((db_bool = TRUE) AND (db_bool = FALSE))")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, pars, should.BeNil)
+				assert.Loosely(t, result, should.Equal("((db_bool = TRUE) AND (db_bool = FALSE))"))
 			})
-			Convey("not equals operator", func() {
+			t.Run("not equals operator", func(t *ftt.Test) {
 				filter, err := ParseFilter("foo != somevalue")
-				So(err, ShouldEqual, nil)
+				assert.Loosely(t, err, should.BeNil)
 
 				result, pars, err := table.WhereClause(filter, "p_")
-				So(err, ShouldBeNil)
-				So(pars, ShouldResemble, []QueryParameter{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, pars, should.Resemble([]QueryParameter{
 					{
 						Name:  "p_0",
 						Value: "somevalue",
 					},
-				})
-				So(result, ShouldEqual, "(db_foo <> @p_0)")
+				}))
+				assert.Loosely(t, result, should.Equal("(db_foo <> @p_0)"))
 			})
-			Convey("not equals operator on bool column", func() {
+			t.Run("not equals operator on bool column", func(t *ftt.Test) {
 				filter, err := ParseFilter("bool != true AND bool != false")
-				So(err, ShouldEqual, nil)
+				assert.Loosely(t, err, should.BeNil)
 
 				result, pars, err := table.WhereClause(filter, "p_")
-				So(err, ShouldBeNil)
-				So(pars, ShouldBeNil)
-				So(result, ShouldEqual, "((db_bool <> TRUE) AND (db_bool <> FALSE))")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, pars, should.BeNil)
+				assert.Loosely(t, result, should.Equal("((db_bool <> TRUE) AND (db_bool <> FALSE))"))
 			})
-			Convey("implicit match operator", func() {
+			t.Run("implicit match operator", func(t *ftt.Test) {
 				filter, err := ParseFilter("somevalue")
-				So(err, ShouldEqual, nil)
+				assert.Loosely(t, err, should.BeNil)
 
 				result, pars, err := table.WhereClause(filter, "p_")
-				So(err, ShouldBeNil)
-				So(pars, ShouldResemble, []QueryParameter{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, pars, should.Resemble([]QueryParameter{
 					{
 						Name:  "p_0",
 						Value: "%somevalue%",
 					},
-				})
-				So(result, ShouldEqual, "(db_foo LIKE @p_0 OR db_bar LIKE @p_0)")
+				}))
+				assert.Loosely(t, result, should.Equal("(db_foo LIKE @p_0 OR db_bar LIKE @p_0)"))
 			})
-			Convey("key value contains operator", func() {
+			t.Run("key value contains operator", func(t *ftt.Test) {
 				filter, err := ParseFilter("kv.key:somevalue")
-				So(err, ShouldEqual, nil)
+				assert.Loosely(t, err, should.BeNil)
 
 				result, pars, err := table.WhereClause(filter, "p_")
-				So(err, ShouldBeNil)
-				So(pars, ShouldResemble, []QueryParameter{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, pars, should.Resemble([]QueryParameter{
 					{
 						Name:  "p_0",
 						Value: "key",
@@ -137,16 +138,16 @@ func TestWhereClause(t *testing.T) {
 						Name:  "p_1",
 						Value: "%somevalue%",
 					},
-				})
-				So(result, ShouldEqual, "(EXISTS (SELECT key, value FROM UNNEST(db_kv) WHERE key = @p_0 AND value LIKE @p_1))")
+				}))
+				assert.Loosely(t, result, should.Equal("(EXISTS (SELECT key, value FROM UNNEST(db_kv) WHERE key = @p_0 AND value LIKE @p_1))"))
 			})
-			Convey("key value equal operator", func() {
+			t.Run("key value equal operator", func(t *ftt.Test) {
 				filter, err := ParseFilter("kv.key=somevalue")
-				So(err, ShouldEqual, nil)
+				assert.Loosely(t, err, should.BeNil)
 
 				result, pars, err := table.WhereClause(filter, "p_")
-				So(err, ShouldBeNil)
-				So(pars, ShouldResemble, []QueryParameter{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, pars, should.Resemble([]QueryParameter{
 					{
 						Name:  "p_0",
 						Value: "key",
@@ -155,16 +156,16 @@ func TestWhereClause(t *testing.T) {
 						Name:  "p_1",
 						Value: "somevalue",
 					},
-				})
-				So(result, ShouldEqual, "(EXISTS (SELECT key, value FROM UNNEST(db_kv) WHERE key = @p_0 AND value = @p_1))")
+				}))
+				assert.Loosely(t, result, should.Equal("(EXISTS (SELECT key, value FROM UNNEST(db_kv) WHERE key = @p_0 AND value = @p_1))"))
 			})
-			Convey("key value not equal operator", func() {
+			t.Run("key value not equal operator", func(t *ftt.Test) {
 				filter, err := ParseFilter("kv.key!=somevalue")
-				So(err, ShouldEqual, nil)
+				assert.Loosely(t, err, should.BeNil)
 
 				result, pars, err := table.WhereClause(filter, "p_")
-				So(err, ShouldBeNil)
-				So(pars, ShouldResemble, []QueryParameter{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, pars, should.Resemble([]QueryParameter{
 					{
 						Name:  "p_0",
 						Value: "key",
@@ -173,93 +174,93 @@ func TestWhereClause(t *testing.T) {
 						Name:  "p_1",
 						Value: "somevalue",
 					},
-				})
-				So(result, ShouldEqual, "(EXISTS (SELECT key, value FROM UNNEST(db_kv) WHERE key = @p_0 AND value <> @p_1))")
+				}))
+				assert.Loosely(t, result, should.Equal("(EXISTS (SELECT key, value FROM UNNEST(db_kv) WHERE key = @p_0 AND value <> @p_1))"))
 			})
-			Convey("key value missing key contains operator", func() {
+			t.Run("key value missing key contains operator", func(t *ftt.Test) {
 				filter, err := ParseFilter("kv:somevalue")
-				So(err, ShouldEqual, nil)
+				assert.Loosely(t, err, should.BeNil)
 
 				_, _, err = table.WhereClause(filter, "p_")
-				So(err, ShouldErrLike, "key value columns must specify the key to search on")
+				assert.Loosely(t, err, should.ErrLike("key value columns must specify the key to search on"))
 			})
-			Convey("array contains operator", func() {
+			t.Run("array contains operator", func(t *ftt.Test) {
 				filter, err := ParseFilter("array:somevalue")
-				So(err, ShouldEqual, nil)
+				assert.Loosely(t, err, should.BeNil)
 
 				result, pars, err := table.WhereClause(filter, "p_")
-				So(err, ShouldBeNil)
-				So(pars, ShouldResemble, []QueryParameter{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, pars, should.Resemble([]QueryParameter{
 					{
 						Name:  "p_0",
 						Value: "somevalue",
 					},
-				})
-				So(result, ShouldEqual, "(EXISTS (SELECT value FROM UNNEST(db_array) as value WHERE value LIKE @p_0))")
+				}))
+				assert.Loosely(t, result, should.Equal("(EXISTS (SELECT value FROM UNNEST(db_array) as value WHERE value LIKE @p_0))"))
 			})
-			Convey("unsupported composite to LIKE", func() {
+			t.Run("unsupported composite to LIKE", func(t *ftt.Test) {
 				filter, err := ParseFilter("foo:(somevalue)")
-				So(err, ShouldEqual, nil)
+				assert.Loosely(t, err, should.BeNil)
 
 				_, _, err = table.WhereClause(filter, "p_")
-				So(err, ShouldErrLike, "composite expressions are not allowed as RHS to has (:) operator")
+				assert.Loosely(t, err, should.ErrLike("composite expressions are not allowed as RHS to has (:) operator"))
 			})
-			Convey("unsupported composite to equals", func() {
+			t.Run("unsupported composite to equals", func(t *ftt.Test) {
 				filter, err := ParseFilter("foo=(somevalue)")
-				So(err, ShouldEqual, nil)
+				assert.Loosely(t, err, should.BeNil)
 
 				_, _, err = table.WhereClause(filter, "p_")
-				So(err, ShouldErrLike, "composite expressions in arguments not implemented yet")
+				assert.Loosely(t, err, should.ErrLike("composite expressions in arguments not implemented yet"))
 			})
-			Convey("unsupported field LHS", func() {
+			t.Run("unsupported field LHS", func(t *ftt.Test) {
 				filter, err := ParseFilter("foo.baz=blah")
-				So(err, ShouldEqual, nil)
+				assert.Loosely(t, err, should.BeNil)
 
 				_, _, err = table.WhereClause(filter, "p_")
-				So(err, ShouldErrLike, "fields are only supported for key value columns")
+				assert.Loosely(t, err, should.ErrLike("fields are only supported for key value columns"))
 			})
-			Convey("unsupported field RHS", func() {
+			t.Run("unsupported field RHS", func(t *ftt.Test) {
 				filter, err := ParseFilter("foo=blah.baz")
-				So(err, ShouldEqual, nil)
+				assert.Loosely(t, err, should.BeNil)
 
 				_, _, err = table.WhereClause(filter, "p_")
-				So(err, ShouldErrLike, "fields not implemented yet")
+				assert.Loosely(t, err, should.ErrLike("fields not implemented yet"))
 			})
-			Convey("field on RHS of has", func() {
+			t.Run("field on RHS of has", func(t *ftt.Test) {
 				filter, err := ParseFilter("foo:blah.baz")
-				So(err, ShouldEqual, nil)
+				assert.Loosely(t, err, should.BeNil)
 
 				_, _, err = table.WhereClause(filter, "p_")
-				So(err, ShouldErrLike, "fields are not allowed on the RHS of has (:) operator")
+				assert.Loosely(t, err, should.ErrLike("fields are not allowed on the RHS of has (:) operator"))
 			})
-			Convey("WithArgumentSubstitutor filter substituted", func() {
+			t.Run("WithArgumentSubstitutor filter substituted", func(t *ftt.Test) {
 				filter, err := ParseFilter("qux=somevalue")
-				So(err, ShouldEqual, nil)
+				assert.Loosely(t, err, should.BeNil)
 
 				result, pars, err := table.WhereClause(filter, "p_")
-				So(err, ShouldBeNil)
-				So(pars, ShouldResemble, []QueryParameter{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, pars, should.Resemble([]QueryParameter{
 					{
 						Name:  "p_0",
 						Value: "somevalue-v2",
 					},
-				})
-				So(result, ShouldEqual, "(db_qux = @p_0)")
+				}))
+				assert.Loosely(t, result, should.Equal("(db_qux = @p_0)"))
 			})
-			Convey("WithArgumentSubstitutor filter not supported", func() {
+			t.Run("WithArgumentSubstitutor filter not supported", func(t *ftt.Test) {
 				filter, err := ParseFilter("qux:some")
-				So(err, ShouldEqual, nil)
+				assert.Loosely(t, err, should.BeNil)
 
 				_, _, err = table.WhereClause(filter, "p_")
-				So(err, ShouldErrLike, "cannot use has (:) operator on a field that have argSubstitute function")
+				assert.Loosely(t, err, should.ErrLike("cannot use has (:) operator on a field that have argSubstitute function"))
 			})
-			Convey("WithArgumentSubstitutor filter key value", func() {
+			t.Run("WithArgumentSubstitutor filter key value", func(t *ftt.Test) {
 				filter, err := ParseFilter("quux.somekey=somevalue")
-				So(err, ShouldEqual, nil)
+				assert.Loosely(t, err, should.BeNil)
 
 				result, pars, err := table.WhereClause(filter, "p_")
-				So(err, ShouldBeNil)
-				So(pars, ShouldResemble, []QueryParameter{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, pars, should.Resemble([]QueryParameter{
 					{
 						Name:  "p_0",
 						Value: "somekey",
@@ -268,17 +269,17 @@ func TestWhereClause(t *testing.T) {
 						Name:  "p_1",
 						Value: "somevalue-v2",
 					},
-				})
-				So(result, ShouldEqual, "(EXISTS (SELECT key, value FROM UNNEST(db_quux) WHERE key = @p_0 AND value = @p_1))")
+				}))
+				assert.Loosely(t, result, should.Equal("(EXISTS (SELECT key, value FROM UNNEST(db_quux) WHERE key = @p_0 AND value = @p_1))"))
 			})
 		})
-		Convey("Complex filter", func() {
+		t.Run("Complex filter", func(t *ftt.Test) {
 			filter, err := ParseFilter("implicit (foo=explicitone) OR -bar=explicittwo AND foo!=explicitthree OR baz:explicitfour")
-			So(err, ShouldEqual, nil)
+			assert.Loosely(t, err, should.BeNil)
 
 			result, pars, err := table.WhereClause(filter, "p_")
-			So(err, ShouldBeNil)
-			So(pars, ShouldResemble, []QueryParameter{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, pars, should.Resemble([]QueryParameter{
 				{
 					Name:  "p_0",
 					Value: "%implicit%",
@@ -299,8 +300,8 @@ func TestWhereClause(t *testing.T) {
 					Name:  "p_4",
 					Value: "%explicitfour%",
 				},
-			})
-			So(result, ShouldEqual, "((db_foo LIKE @p_0 OR db_bar LIKE @p_0) AND ((db_foo = @p_1) OR (NOT (db_bar = @p_2))) AND ((db_foo <> @p_3) OR (db_baz LIKE @p_4)))")
+			}))
+			assert.Loosely(t, result, should.Equal("((db_foo LIKE @p_0 OR db_bar LIKE @p_0) AND ((db_foo = @p_1) OR (NOT (db_bar = @p_2))) AND ((db_foo <> @p_3) OR (db_baz LIKE @p_4)))"))
 		})
 	})
 }

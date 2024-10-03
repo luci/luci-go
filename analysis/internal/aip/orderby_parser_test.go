@@ -17,37 +17,38 @@ package aip
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestParseOrderBy(t *testing.T) {
-	Convey("ParseOrderBy", t, func() {
+	ftt.Run("ParseOrderBy", t, func(t *ftt.Test) {
 		// Test examples from the AIP-132 spec.
-		Convey("Values should be a comma separated list of fields", func() {
+		t.Run("Values should be a comma separated list of fields", func(t *ftt.Test) {
 			result, err := ParseOrderBy("foo,bar")
-			So(err, ShouldBeNil)
-			So(result, ShouldResemble, []OrderBy{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, result, should.Resemble([]OrderBy{
 				{
 					FieldPath: NewFieldPath("foo"),
 				},
 				{
 					FieldPath: NewFieldPath("bar"),
 				},
-			})
+			}))
 
 			result, err = ParseOrderBy("foo")
-			So(err, ShouldBeNil)
-			So(result, ShouldResemble, []OrderBy{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, result, should.Resemble([]OrderBy{
 				{
 					FieldPath: NewFieldPath("foo"),
 				},
-			})
+			}))
 		})
-		Convey("The default sort order is ascending", func() {
+		t.Run("The default sort order is ascending", func(t *ftt.Test) {
 			result, err := ParseOrderBy("foo desc, bar")
-			So(err, ShouldBeNil)
-			So(result, ShouldResemble, []OrderBy{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, result, should.Resemble([]OrderBy{
 				{
 					FieldPath:  NewFieldPath("foo"),
 					Descending: true,
@@ -55,9 +56,9 @@ func TestParseOrderBy(t *testing.T) {
 				{
 					FieldPath: NewFieldPath("bar"),
 				},
-			})
+			}))
 		})
-		Convey("Redundant space characters in the syntax are insignificant", func() {
+		t.Run("Redundant space characters in the syntax are insignificant", func(t *ftt.Test) {
 			expectedResult := []OrderBy{
 				{
 					FieldPath: NewFieldPath("foo"),
@@ -68,21 +69,21 @@ func TestParseOrderBy(t *testing.T) {
 				},
 			}
 			result, err := ParseOrderBy("foo, bar desc")
-			So(err, ShouldBeNil)
-			So(result, ShouldResemble, expectedResult)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, result, should.Resemble(expectedResult))
 
 			result, err = ParseOrderBy("  foo  ,  bar desc  ")
-			So(err, ShouldBeNil)
-			So(result, ShouldResemble, expectedResult)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, result, should.Resemble(expectedResult))
 
 			result, err = ParseOrderBy("foo,bar desc")
-			So(err, ShouldBeNil)
-			So(result, ShouldResemble, expectedResult)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, result, should.Resemble(expectedResult))
 		})
-		Convey("Subfields are specified with a . character", func() {
+		t.Run("Subfields are specified with a . character", func(t *ftt.Test) {
 			result, err := ParseOrderBy("foo.bar, foo.foo.bar desc")
-			So(err, ShouldBeNil)
-			So(result, ShouldResemble, []OrderBy{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, result, should.Resemble([]OrderBy{
 				{
 					FieldPath: NewFieldPath("foo", "bar"),
 				},
@@ -90,12 +91,12 @@ func TestParseOrderBy(t *testing.T) {
 					FieldPath:  NewFieldPath("foo", "foo", "bar"),
 					Descending: true,
 				},
-			})
+			}))
 		})
-		Convey("Quoted strings can be used instead of string literals", func() {
+		t.Run("Quoted strings can be used instead of string literals", func(t *ftt.Test) {
 			result, err := ParseOrderBy("foo.`bar`, foo.foo.`a-backtick-```.bar desc")
-			So(err, ShouldBeNil)
-			So(result, ShouldResemble, []OrderBy{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, result, should.Resemble([]OrderBy{
 				{
 					FieldPath: NewFieldPath("foo", "bar"),
 				},
@@ -103,22 +104,22 @@ func TestParseOrderBy(t *testing.T) {
 					FieldPath:  NewFieldPath("foo", "foo", "a-backtick-`", "bar"),
 					Descending: true,
 				},
-			})
+			}))
 		})
-		Convey("Invalid input is rejected", func() {
+		t.Run("Invalid input is rejected", func(t *ftt.Test) {
 			_, err := ParseOrderBy("`something")
-			So(err, ShouldErrLike, "syntax error: 1:1: invalid input text \"`something\"")
+			assert.Loosely(t, err, should.ErrLike("syntax error: 1:1: invalid input text \"`something\""))
 		})
-		Convey("Empty order by", func() {
-			Convey("Spaces only", func() {
+		t.Run("Empty order by", func(t *ftt.Test) {
+			t.Run("Spaces only", func(t *ftt.Test) {
 				result, err := ParseOrderBy("   ")
-				So(err, ShouldBeNil)
-				So(result, ShouldHaveLength, 0)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, result, should.HaveLength(0))
 			})
-			Convey("Totally empty", func() {
+			t.Run("Totally empty", func(t *ftt.Test) {
 				result, err := ParseOrderBy("")
-				So(err, ShouldBeNil)
-				So(result, ShouldHaveLength, 0)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, result, should.HaveLength(0))
 			})
 		})
 	})

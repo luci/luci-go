@@ -21,6 +21,9 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/analysis/internal/bqutil"
 	"go.chromium.org/luci/analysis/internal/checkpoints"
@@ -30,13 +33,10 @@ import (
 	analysispb "go.chromium.org/luci/analysis/proto/v1"
 
 	_ "go.chromium.org/luci/server/tq/txn/spanner"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestExportTestResults(t *testing.T) {
-	Convey("TestExportTestResults", t, func() {
+	ftt.Run("TestExportTestResults", t, func(t *ftt.Test) {
 		ctx := testutil.IntegrationTestContext(t)
 		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeLocal)
 
@@ -108,7 +108,7 @@ func TestExportTestResults(t *testing.T) {
 
 		// Expect the JSON serialisation format for this platform.
 		properties, err := bqutil.MarshalStructPB(testProperties)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		expectedResults := []*bqpb.TestResultRow{
 			{
@@ -224,42 +224,42 @@ func TestExportTestResults(t *testing.T) {
 			},
 		}
 
-		Convey(`Baseline`, func() {
+		t.Run(`Baseline`, func(t *ftt.Test) {
 			err := ingester.Ingest(ctx, inputs)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(exportClient.InsertionsByDestinationKey, ShouldHaveLength, 2)
-			So(exportClient.InsertionsByDestinationKey["partitioned-by-day"], ShouldResembleProto, expectedResults)
-			So(exportClient.InsertionsByDestinationKey["partitioned-by-month"], ShouldResembleProto, expectedResults)
-			So(verifyCheckpoints(ctx, expectedCheckpoints...), ShouldBeNil)
+			assert.Loosely(t, exportClient.InsertionsByDestinationKey, should.HaveLength(2))
+			assert.Loosely(t, exportClient.InsertionsByDestinationKey["partitioned-by-day"], should.Resemble(expectedResults))
+			assert.Loosely(t, exportClient.InsertionsByDestinationKey["partitioned-by-month"], should.Resemble(expectedResults))
+			assert.Loosely(t, verifyCheckpoints(ctx, expectedCheckpoints...), should.BeNil)
 
-			Convey(`Results are not exported again if the process is re-run`, func() {
+			t.Run(`Results are not exported again if the process is re-run`, func(t *ftt.Test) {
 				exportClient.InsertionsByDestinationKey = map[string][]*bqpb.TestResultRow{}
 
 				err = ingester.Ingest(ctx, inputs)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				// Nothing should be exported because the checkpoint already exists.
-				So(exportClient.InsertionsByDestinationKey, ShouldBeEmpty)
+				assert.Loosely(t, exportClient.InsertionsByDestinationKey, should.BeEmpty)
 			})
 		})
-		Convey(`Without sources`, func() {
+		t.Run(`Without sources`, func(t *ftt.Test) {
 			// Base case should already have sources set.
-			So(inputs.Sources, ShouldNotBeNil)
+			assert.Loosely(t, inputs.Sources, should.NotBeNil)
 			inputs.Sources = nil
 
 			err := ingester.Ingest(ctx, inputs)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			for _, r := range expectedResults {
 				r.Sources = nil
 				r.SourceRef = nil
 				r.SourceRefHash = ""
 			}
-			So(exportClient.InsertionsByDestinationKey, ShouldHaveLength, 2)
-			So(exportClient.InsertionsByDestinationKey["partitioned-by-day"], ShouldResembleProto, expectedResults)
-			So(exportClient.InsertionsByDestinationKey["partitioned-by-month"], ShouldResembleProto, expectedResults)
-			So(verifyCheckpoints(ctx, expectedCheckpoints...), ShouldBeNil)
+			assert.Loosely(t, exportClient.InsertionsByDestinationKey, should.HaveLength(2))
+			assert.Loosely(t, exportClient.InsertionsByDestinationKey["partitioned-by-day"], should.Resemble(expectedResults))
+			assert.Loosely(t, exportClient.InsertionsByDestinationKey["partitioned-by-month"], should.Resemble(expectedResults))
+			assert.Loosely(t, verifyCheckpoints(ctx, expectedCheckpoints...), should.BeNil)
 		})
 	})
 }

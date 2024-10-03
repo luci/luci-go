@@ -17,23 +17,25 @@ package testverdicts
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestSchema(t *testing.T) {
 	t.Parallel()
-	Convey(`With Schema`, t, func() {
+	ftt.Run(`With Schema`, t, func(t *ftt.Test) {
 		var fieldNames []string
 		for _, field := range tableMetadata.Schema {
 			fieldNames = append(fieldNames, field.Name)
 		}
-		Convey(`Time partitioning field is defined`, func() {
+		t.Run(`Time partitioning field is defined`, func(t *ftt.Test) {
 			partitioningField := tableMetadata.TimePartitioning.Field
-			So(partitioningField, ShouldBeIn, fieldNames)
+			assert.Loosely(t, partitioningField, should.BeIn(fieldNames...))
 		})
-		Convey(`Clustering fields are defined`, func() {
+		t.Run(`Clustering fields are defined`, func(t *ftt.Test) {
 			for _, clusteringField := range tableMetadata.Clustering.Fields {
-				So(clusteringField, ShouldBeIn, fieldNames)
+				assert.Loosely(t, clusteringField, should.BeIn(fieldNames...))
 			}
 		})
 	})

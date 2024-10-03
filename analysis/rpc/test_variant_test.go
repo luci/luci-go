@@ -22,6 +22,10 @@ import (
 	grpcStatus "google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/resultdb/rdbperms"
 	"go.chromium.org/luci/server/auth"
@@ -38,12 +42,11 @@ import (
 	configpb "go.chromium.org/luci/analysis/proto/config"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestTestVariantsServer(t *testing.T) {
-	Convey("Given a test variants server", t, func() {
+	ftt.Run("Given a test variants server", t, func(t *ftt.Test) {
 		ctx := testutil.IntegrationTestContext(t)
 
 		// For user identification.
@@ -59,7 +62,7 @@ func TestTestVariantsServer(t *testing.T) {
 		ctx = memory.Use(ctx)
 		server := NewTestVariantsServer()
 
-		Convey("Unauthorised requests are rejected", func() {
+		t.Run("Unauthorised requests are rejected", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:someone@example.com",
 				// Not a member of luci-analysis-access.
@@ -71,10 +74,10 @@ func TestTestVariantsServer(t *testing.T) {
 			request := &pb.QueryTestVariantStabilityRequest{}
 
 			response, err := server.QueryStability(ctx, request)
-			So(err, ShouldBeRPCPermissionDenied, "not a member of luci-analysis-access")
-			So(response, ShouldBeNil)
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("not a member of luci-analysis-access"))
+			assert.Loosely(t, response, should.BeNil)
 		})
-		Convey("QueryFailureRate", func() {
+		t.Run("QueryFailureRate", func(t *ftt.Test) {
 			// Grant the permissions needed for this RPC.
 			authState.IdentityPermissions = []authtest.RealmPermission{
 				{
@@ -84,9 +87,9 @@ func TestTestVariantsServer(t *testing.T) {
 			}
 
 			err := testresults.CreateQueryFailureRateTestData(ctx)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			Convey("Valid input", func() {
+			t.Run("Valid input", func(t *ftt.Test) {
 				project, asAtTime, tvs := testresults.QueryFailureRateSampleRequest()
 				request := &pb.QueryTestVariantFailureRateRequest{
 					Project:      project,
@@ -95,12 +98,12 @@ func TestTestVariantsServer(t *testing.T) {
 				ctx, _ := testclock.UseTime(ctx, asAtTime)
 
 				response, err := server.QueryFailureRate(ctx, request)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				expectedResult := testresults.QueryFailureRateSampleResponse()
-				So(response, ShouldResembleProto, expectedResult)
+				assert.Loosely(t, response, should.Resemble(expectedResult))
 			})
-			Convey("Query by VariantHash", func() {
+			t.Run("Query by VariantHash", func(t *ftt.Test) {
 				project, asAtTime, tvs := testresults.QueryFailureRateSampleRequest()
 				for _, tv := range tvs {
 					tv.VariantHash = pbutil.VariantHash(tv.Variant)
@@ -113,16 +116,16 @@ func TestTestVariantsServer(t *testing.T) {
 				ctx, _ := testclock.UseTime(ctx, asAtTime)
 
 				response, err := server.QueryFailureRate(ctx, request)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				expectedResult := testresults.QueryFailureRateSampleResponse()
 				for _, tv := range expectedResult.TestVariants {
 					tv.VariantHash = pbutil.VariantHash(tv.Variant)
 					tv.Variant = nil
 				}
-				So(response, ShouldResembleProto, expectedResult)
+				assert.Loosely(t, response, should.Resemble(expectedResult))
 			})
-			Convey("No list test results permission", func() {
+			t.Run("No list test results permission", func(t *ftt.Test) {
 				authState.IdentityPermissions = []authtest.RealmPermission{
 					{
 						// This permission is for a project other than the one
@@ -140,10 +143,10 @@ func TestTestVariantsServer(t *testing.T) {
 				ctx, _ := testclock.UseTime(ctx, asAtTime)
 
 				response, err := server.QueryFailureRate(ctx, request)
-				So(err, ShouldBeRPCPermissionDenied, "caller does not have permissions [resultdb.testResults.list] in any realm")
-				So(response, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permissions [resultdb.testResults.list] in any realm"))
+				assert.Loosely(t, response, should.BeNil)
 			})
-			Convey("Invalid input", func() {
+			t.Run("Invalid input", func(t *ftt.Test) {
 				// This checks at least one case of invalid input is detected, sufficient to verify
 				// validation is invoked.
 				// Exhaustive checking of request validation is performed in TestValidateQueryRateRequest.
@@ -158,12 +161,12 @@ func TestTestVariantsServer(t *testing.T) {
 
 				response, err := server.QueryFailureRate(ctx, request)
 				st, _ := grpcStatus.FromError(err)
-				So(st.Code(), ShouldEqual, codes.InvalidArgument)
-				So(st.Message(), ShouldEqual, `project: unspecified`)
-				So(response, ShouldBeNil)
+				assert.Loosely(t, st.Code(), should.Equal(codes.InvalidArgument))
+				assert.Loosely(t, st.Message(), should.Equal(`project: unspecified`))
+				assert.Loosely(t, response, should.BeNil)
 			})
 		})
-		Convey("QueryStability", func() {
+		t.Run("QueryStability", func(t *ftt.Test) {
 			// Grant the permissions needed for this RPC.
 			authState.IdentityPermissions = []authtest.RealmPermission{
 				{
@@ -177,7 +180,7 @@ func TestTestVariantsServer(t *testing.T) {
 			}
 
 			err := stability.CreateQueryStabilityTestData(ctx)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			opts := stability.QueryStabilitySampleRequest()
 			request := &pb.QueryTestVariantStabilityRequest{
@@ -191,25 +194,25 @@ func TestTestVariantsServer(t *testing.T) {
 			configs := make(map[string]*configpb.ProjectConfig)
 			configs["project"] = projectCfg
 			err = config.SetTestProjectConfig(ctx, configs)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			Convey("Valid input", func() {
+			t.Run("Valid input", func(t *ftt.Test) {
 				rsp, err := server.QueryStability(ctx, request)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				expectedResult := &pb.QueryTestVariantStabilityResponse{
 					TestVariants: stability.QueryStabilitySampleResponse(),
 					Criteria:     opts.Criteria,
 				}
-				So(rsp, ShouldResembleProto, expectedResult)
+				assert.Loosely(t, rsp, should.Resemble(expectedResult))
 			})
-			Convey("Query by VariantHash", func() {
+			t.Run("Query by VariantHash", func(t *ftt.Test) {
 				for _, tv := range request.TestVariants {
 					tv.VariantHash = pbutil.VariantHash(tv.Variant)
 					tv.Variant = nil
 				}
 				rsp, err := server.QueryStability(ctx, request)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				expectedAnalysis := stability.QueryStabilitySampleResponse()
 				for _, tv := range expectedAnalysis {
@@ -220,33 +223,33 @@ func TestTestVariantsServer(t *testing.T) {
 					TestVariants: expectedAnalysis,
 					Criteria:     opts.Criteria,
 				}
-				So(rsp, ShouldResembleProto, expectedResult)
+				assert.Loosely(t, rsp, should.Resemble(expectedResult))
 			})
-			Convey("No test stability configuration", func() {
+			t.Run("No test stability configuration", func(t *ftt.Test) {
 				// Remove test stability configuration.
 				projectCfg.TestStabilityCriteria = nil
 				err = config.SetTestProjectConfig(ctx, configs)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				response, err := server.QueryStability(ctx, request)
-				So(err, ShouldBeRPCFailedPrecondition, "project has not defined test stability criteria; set test_stability_criteria in project configuration and try again")
-				So(response, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCFailedPrecondition)("project has not defined test stability criteria; set test_stability_criteria in project configuration and try again"))
+				assert.Loosely(t, response, should.BeNil)
 			})
-			Convey("No list test results permission", func() {
+			t.Run("No list test results permission", func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, rdbperms.PermListTestResults)
 
 				response, err := server.QueryStability(ctx, request)
-				So(err, ShouldBeRPCPermissionDenied, "caller does not have permissions [resultdb.testResults.list] in any realm")
-				So(response, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permissions [resultdb.testResults.list] in any realm"))
+				assert.Loosely(t, response, should.BeNil)
 			})
-			Convey("No get project config permission", func() {
+			t.Run("No get project config permission", func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetConfig)
 
 				response, err := server.QueryStability(ctx, request)
-				So(err, ShouldBeRPCPermissionDenied, `caller does not have permission analysis.config.get in realm "project:@project"`)
-				So(response, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)(`caller does not have permission analysis.config.get in realm "project:@project"`))
+				assert.Loosely(t, response, should.BeNil)
 			})
-			Convey("Invalid input", func() {
+			t.Run("Invalid input", func(t *ftt.Test) {
 				// This checks at least one case of invalid input is detected, sufficient to verify
 				// validation is invoked.
 				// Exhaustive checking of request validation is performed in
@@ -254,15 +257,15 @@ func TestTestVariantsServer(t *testing.T) {
 				request.Project = ""
 
 				response, err := server.QueryStability(ctx, request)
-				So(err, ShouldBeRPCInvalidArgument, `project: unspecified`)
-				So(response, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`project: unspecified`))
+				assert.Loosely(t, response, should.BeNil)
 			})
 		})
 	})
 }
 
 func TestValidateQueryFailureRateRequest(t *testing.T) {
-	Convey("ValidateQueryFailureRateRequest", t, func() {
+	ftt.Run("ValidateQueryFailureRateRequest", t, func(t *ftt.Test) {
 		req := &pb.QueryTestVariantFailureRateRequest{
 			Project: "project",
 			TestVariants: []*pb.TestVariantIdentifier{
@@ -277,30 +280,30 @@ func TestValidateQueryFailureRateRequest(t *testing.T) {
 			},
 		}
 
-		Convey("valid", func() {
+		t.Run("valid", func(t *ftt.Test) {
 			err := validateQueryTestVariantFailureRateRequest(req)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey("no project", func() {
+		t.Run("no project", func(t *ftt.Test) {
 			req.Project = ""
 			err := validateQueryTestVariantFailureRateRequest(req)
-			So(err, ShouldErrLike, "project: unspecified")
+			assert.Loosely(t, err, should.ErrLike("project: unspecified"))
 		})
 
-		Convey("invalid project", func() {
+		t.Run("invalid project", func(t *ftt.Test) {
 			req.Project = ":"
 			err := validateQueryTestVariantFailureRateRequest(req)
-			So(err, ShouldErrLike, `project: must match ^[a-z0-9\-]{1,40}$`)
+			assert.Loosely(t, err, should.ErrLike(`project: must match ^[a-z0-9\-]{1,40}$`))
 		})
 
-		Convey("no test variants", func() {
+		t.Run("no test variants", func(t *ftt.Test) {
 			req.TestVariants = nil
 			err := validateQueryTestVariantFailureRateRequest(req)
-			So(err, ShouldErrLike, `test_variants: unspecified`)
+			assert.Loosely(t, err, should.ErrLike(`test_variants: unspecified`))
 		})
 
-		Convey("too many test variants", func() {
+		t.Run("too many test variants", func(t *ftt.Test) {
 			req.TestVariants = make([]*pb.TestVariantIdentifier, 0, 101)
 			for i := 0; i < 101; i++ {
 				req.TestVariants = append(req.TestVariants, &pb.TestVariantIdentifier{
@@ -308,28 +311,28 @@ func TestValidateQueryFailureRateRequest(t *testing.T) {
 				})
 			}
 			err := validateQueryTestVariantFailureRateRequest(req)
-			So(err, ShouldErrLike, `no more than 100 may be queried at a time`)
+			assert.Loosely(t, err, should.ErrLike(`no more than 100 may be queried at a time`))
 		})
 
-		Convey("no test id", func() {
+		t.Run("no test id", func(t *ftt.Test) {
 			req.TestVariants[1].TestId = ""
 			err := validateQueryTestVariantFailureRateRequest(req)
-			So(err, ShouldErrLike, `test_variants[1]: test_id: unspecified`)
+			assert.Loosely(t, err, should.ErrLike(`test_variants[1]: test_id: unspecified`))
 		})
 
-		Convey("variant_hash invalid", func() {
+		t.Run("variant_hash invalid", func(t *ftt.Test) {
 			req.TestVariants[1].VariantHash = "invalid"
 			err := validateQueryTestVariantFailureRateRequest(req)
-			So(err, ShouldErrLike, `test_variants[1]: variant_hash: must match ^[0-9a-f]{16}$`)
+			assert.Loosely(t, err, should.ErrLike(`test_variants[1]: variant_hash: must match ^[0-9a-f]{16}$`))
 		})
 
-		Convey("variant_hash mismatch with variant", func() {
+		t.Run("variant_hash mismatch with variant", func(t *ftt.Test) {
 			req.TestVariants[1].VariantHash = "0123456789abcdef"
 			err := validateQueryTestVariantFailureRateRequest(req)
-			So(err, ShouldErrLike, `test_variants[1]: variant and variant_hash mismatch`)
+			assert.Loosely(t, err, should.ErrLike(`test_variants[1]: variant and variant_hash mismatch`))
 		})
 
-		Convey("duplicate test variants", func() {
+		t.Run("duplicate test variants", func(t *ftt.Test) {
 			req.TestVariants = []*pb.TestVariantIdentifier{
 				{
 					TestId:  "my_test",
@@ -341,13 +344,13 @@ func TestValidateQueryFailureRateRequest(t *testing.T) {
 				},
 			}
 			err := validateQueryTestVariantFailureRateRequest(req)
-			So(err, ShouldErrLike, `test_variants[1]: already requested in the same request`)
+			assert.Loosely(t, err, should.ErrLike(`test_variants[1]: already requested in the same request`))
 		})
 	})
 }
 
 func TestValidateQueryTestVariantStabilityRequest(t *testing.T) {
-	Convey("ValidateQueryTestVariantStabilityRequest", t, func() {
+	ftt.Run("ValidateQueryTestVariantStabilityRequest", t, func(t *ftt.Test) {
 		req := &pb.QueryTestVariantStabilityRequest{
 			Project: "project",
 			TestVariants: []*pb.QueryTestVariantStabilityRequest_TestVariantPosition{
@@ -364,30 +367,30 @@ func TestValidateQueryTestVariantStabilityRequest(t *testing.T) {
 			},
 		}
 
-		Convey("valid", func() {
+		t.Run("valid", func(t *ftt.Test) {
 			err := validateQueryTestVariantStabilityRequest(req)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey("no project", func() {
+		t.Run("no project", func(t *ftt.Test) {
 			req.Project = ""
 			err := validateQueryTestVariantStabilityRequest(req)
-			So(err, ShouldErrLike, "project: unspecified")
+			assert.Loosely(t, err, should.ErrLike("project: unspecified"))
 		})
 
-		Convey("invalid project", func() {
+		t.Run("invalid project", func(t *ftt.Test) {
 			req.Project = ":"
 			err := validateQueryTestVariantStabilityRequest(req)
-			So(err, ShouldErrLike, `project: must match ^[a-z0-9\-]{1,40}$`)
+			assert.Loosely(t, err, should.ErrLike(`project: must match ^[a-z0-9\-]{1,40}$`))
 		})
 
-		Convey("no test variants", func() {
+		t.Run("no test variants", func(t *ftt.Test) {
 			req.TestVariants = nil
 			err := validateQueryTestVariantStabilityRequest(req)
-			So(err, ShouldErrLike, `test_variants: unspecified`)
+			assert.Loosely(t, err, should.ErrLike(`test_variants: unspecified`))
 		})
 
-		Convey("too many test variants", func() {
+		t.Run("too many test variants", func(t *ftt.Test) {
 			req.TestVariants = make([]*pb.QueryTestVariantStabilityRequest_TestVariantPosition, 0, 101)
 			for i := 0; i < 101; i++ {
 				req.TestVariants = append(req.TestVariants, &pb.QueryTestVariantStabilityRequest_TestVariantPosition{
@@ -396,50 +399,50 @@ func TestValidateQueryTestVariantStabilityRequest(t *testing.T) {
 				})
 			}
 			err := validateQueryTestVariantStabilityRequest(req)
-			So(err, ShouldErrLike, `no more than 100 may be queried at a time`)
+			assert.Loosely(t, err, should.ErrLike(`no more than 100 may be queried at a time`))
 		})
 
-		Convey("no test id", func() {
+		t.Run("no test id", func(t *ftt.Test) {
 			req.TestVariants[1].TestId = ""
 			err := validateQueryTestVariantStabilityRequest(req)
-			So(err, ShouldErrLike, `test_variants[1]: test_id: unspecified`)
+			assert.Loosely(t, err, should.ErrLike(`test_variants[1]: test_id: unspecified`))
 		})
 
-		Convey("variant_hash invalid", func() {
+		t.Run("variant_hash invalid", func(t *ftt.Test) {
 			req.TestVariants[1].VariantHash = "invalid"
 			err := validateQueryTestVariantStabilityRequest(req)
-			So(err, ShouldErrLike, `test_variants[1]: variant_hash: must match ^[0-9a-f]{16}$`)
+			assert.Loosely(t, err, should.ErrLike(`test_variants[1]: variant_hash: must match ^[0-9a-f]{16}$`))
 		})
 
-		Convey("variant_hash mismatch with variant", func() {
+		t.Run("variant_hash mismatch with variant", func(t *ftt.Test) {
 			req.TestVariants[1].VariantHash = "0123456789abcdef"
 			err := validateQueryTestVariantStabilityRequest(req)
-			So(err, ShouldErrLike, `test_variants[1]: variant and variant_hash mismatch`)
+			assert.Loosely(t, err, should.ErrLike(`test_variants[1]: variant and variant_hash mismatch`))
 		})
 
-		Convey("variant_hash only", func() {
+		t.Run("variant_hash only", func(t *ftt.Test) {
 			req.TestVariants[1].Variant = nil
 			req.TestVariants[1].VariantHash = "0123456789abcdef"
 			err := validateQueryTestVariantStabilityRequest(req)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey("no sources", func() {
+		t.Run("no sources", func(t *ftt.Test) {
 			req.TestVariants[1].Sources = nil
 			err := validateQueryTestVariantStabilityRequest(req)
-			So(err, ShouldErrLike, `test_variants[1]: sources: unspecified`)
+			assert.Loosely(t, err, should.ErrLike(`test_variants[1]: sources: unspecified`))
 		})
 
-		Convey("invalid sources", func() {
+		t.Run("invalid sources", func(t *ftt.Test) {
 			// This checks at least one case of invalid input is detected, sufficient to verify
 			// sources validation is invoked.
 			// Exhaustive checking of sources validation is performed in pbutil.
 			req.TestVariants[1].Sources.GitilesCommit.Host = ""
 			err := validateQueryTestVariantStabilityRequest(req)
-			So(err, ShouldErrLike, `test_variants[1]: sources: gitiles_commit: host: unspecified`)
+			assert.Loosely(t, err, should.ErrLike(`test_variants[1]: sources: gitiles_commit: host: unspecified`))
 		})
 
-		Convey("multiple branches of same test variant", func() {
+		t.Run("multiple branches of same test variant", func(t *ftt.Test) {
 			sources2 := testSources()
 			sources2.GitilesCommit.Ref = "refs/heads/other"
 			req.TestVariants = append(req.TestVariants, []*pb.QueryTestVariantStabilityRequest_TestVariantPosition{
@@ -455,10 +458,10 @@ func TestValidateQueryTestVariantStabilityRequest(t *testing.T) {
 				},
 			}...)
 			err := validateQueryTestVariantStabilityRequest(req)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey("duplicate test variant branches", func() {
+		t.Run("duplicate test variant branches", func(t *ftt.Test) {
 			req.TestVariants = append(req.TestVariants, []*pb.QueryTestVariantStabilityRequest_TestVariantPosition{
 				{
 					TestId:  "my_test",
@@ -472,7 +475,7 @@ func TestValidateQueryTestVariantStabilityRequest(t *testing.T) {
 				},
 			}...)
 			err := validateQueryTestVariantStabilityRequest(req)
-			So(err, ShouldErrLike, `test_variants[3]: same test variant branch already requested at index 2`)
+			assert.Loosely(t, err, should.ErrLike(`test_variants[3]: same test variant branch already requested at index 2`))
 		})
 	})
 }

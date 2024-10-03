@@ -30,12 +30,15 @@ import (
 	"go.chromium.org/luci/analysis/internal/perms"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestChangepointsServer(t *testing.T) {
-	Convey("TestChangepointsServer", t, func() {
+	ftt.Run("TestChangepointsServer", t, func(t *ftt.Test) {
 		ctx := context.Background()
 		authState := &authtest.FakeState{
 			Identity:       "user:someone@example.com",
@@ -45,7 +48,7 @@ func TestChangepointsServer(t *testing.T) {
 		client := fakeChangepointClient{}
 		server := NewChangepointsServer(&client)
 
-		Convey("Unauthorised requests are rejected", func() {
+		t.Run("Unauthorised requests are rejected", func(t *ftt.Test) {
 			// Ensure no access to luci-analysis-access.
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:someone@example.com",
@@ -60,16 +63,16 @@ func TestChangepointsServer(t *testing.T) {
 			}
 
 			res, err := server.QueryChangepointGroupSummaries(ctx, req)
-			So(err, ShouldBeRPCPermissionDenied, "not a member of luci-analysis-access")
-			So(res, ShouldBeNil)
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("not a member of luci-analysis-access"))
+			assert.Loosely(t, res, should.BeNil)
 		})
-		Convey("QueryChangepointGroupSummaries", func() {
+		t.Run("QueryChangepointGroupSummaries", func(t *ftt.Test) {
 			authState.IdentityPermissions = append(authState.IdentityPermissions, authtest.RealmPermission{
 				Realm:      "chromium:@project",
 				Permission: perms.PermListChangepointGroups,
 			})
 
-			Convey("unauthorised requests are rejected", func() {
+			t.Run("unauthorised requests are rejected", func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermListChangepointGroups)
 
 				req := &pb.QueryChangepointGroupSummariesRequestLegacy{
@@ -77,19 +80,19 @@ func TestChangepointsServer(t *testing.T) {
 				}
 
 				res, err := server.QueryChangepointGroupSummaries(ctx, req)
-				So(err, ShouldBeRPCPermissionDenied, `caller does not have permission analysis.changepointgroups.list in realm "chromium:@project"`)
-				So(res, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)(`caller does not have permission analysis.changepointgroups.list in realm "chromium:@project"`))
+				assert.Loosely(t, res, should.BeNil)
 			})
-			Convey("invalid requests are rejected - project unspecified", func() {
+			t.Run("invalid requests are rejected - project unspecified", func(t *ftt.Test) {
 				// This is the only request validation that occurs prior to permission check
 				// comply with https://google.aip.dev/211.
 				req := &pb.QueryChangepointGroupSummariesRequestLegacy{}
 
 				res, err := server.QueryChangepointGroupSummaries(ctx, req)
-				So(err, ShouldBeRPCInvalidArgument, "project: unspecified")
-				So(res, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("project: unspecified"))
+				assert.Loosely(t, res, should.BeNil)
 			})
-			Convey("invalid requests are rejected - other", func() {
+			t.Run("invalid requests are rejected - other", func(t *ftt.Test) {
 				// Test one type of error detected by validateQueryChangepointGroupSummariesRequest.
 				req := &pb.QueryChangepointGroupSummariesRequestLegacy{
 					Project: "chromium",
@@ -99,10 +102,10 @@ func TestChangepointsServer(t *testing.T) {
 				}
 
 				res, err := server.QueryChangepointGroupSummaries(ctx, req)
-				So(err, ShouldBeRPCInvalidArgument, `predicate: test_id_prefix: non-printable rune '\x00' at byte index 0`)
-				So(res, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`predicate: test_id_prefix: non-printable rune '\x00' at byte index 0`))
+				assert.Loosely(t, res, should.BeNil)
 			})
-			Convey("e2e", func() {
+			t.Run("e2e", func(t *ftt.Test) {
 				cp1 := makeChangepointDetailRow(1, 2, 4)
 				cp2 := makeChangepointDetailRow(2, 2, 3)
 				client.ReadChangepointsResult = []*changepoints.ChangepointDetailRow{cp1, cp2}
@@ -146,11 +149,11 @@ func TestChangepointsServer(t *testing.T) {
 					},
 					Statistics: stats,
 				}
-				Convey("with no predicates", func() {
+				t.Run("with no predicates", func(t *ftt.Test) {
 					req := &pb.QueryChangepointGroupSummariesRequestLegacy{Project: "chromium"}
 
 					res, err := server.QueryChangepointGroupSummaries(ctx, req)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					stats.Count = 2
 					stats.UnexpectedVerdictRateBefore.Average = 0.3
 					stats.UnexpectedVerdictRateBefore.Buckets.CountAbove_5LessThan_95Percent = 2
@@ -160,12 +163,12 @@ func TestChangepointsServer(t *testing.T) {
 					stats.UnexpectedVerdictRateCurrent.Buckets.CountLess_5Percent = 2
 					stats.UnexpectedVerdictRateChange.CountIncreased_50To_100Percent = 2
 					changepointGroupSummary.Statistics = stats
-					So(res, ShouldResembleProto, &pb.QueryChangepointGroupSummariesResponseLegacy{
+					assert.Loosely(t, res, should.Resemble(&pb.QueryChangepointGroupSummariesResponseLegacy{
 						GroupSummaries: []*pb.ChangepointGroupSummary{changepointGroupSummary},
-					})
+					}))
 				})
-				Convey("with predicates", func() {
-					Convey("test id prefix predicate", func() {
+				t.Run("with predicates", func(t *ftt.Test) {
+					t.Run("test id prefix predicate", func(t *ftt.Test) {
 						req := &pb.QueryChangepointGroupSummariesRequestLegacy{
 							Project: "chromium",
 							Predicate: &pb.ChangepointPredicateLegacy{
@@ -173,7 +176,7 @@ func TestChangepointsServer(t *testing.T) {
 							}}
 
 						res, err := server.QueryChangepointGroupSummaries(ctx, req)
-						So(err, ShouldBeNil)
+						assert.Loosely(t, err, should.BeNil)
 						stats.Count = 1
 						stats.UnexpectedVerdictRateBefore.Average = 0.3
 						stats.UnexpectedVerdictRateBefore.Buckets.CountAbove_5LessThan_95Percent = 1
@@ -186,11 +189,11 @@ func TestChangepointsServer(t *testing.T) {
 						changepointGroupSummary.CanonicalChangepoint.TestId = "test2"
 						changepointGroupSummary.CanonicalChangepoint.NominalStartPosition = 2
 						changepointGroupSummary.CanonicalChangepoint.StartPositionUpperBound_99Th = 3
-						So(res, ShouldResembleProto, &pb.QueryChangepointGroupSummariesResponseLegacy{
+						assert.Loosely(t, res, should.Resemble(&pb.QueryChangepointGroupSummariesResponseLegacy{
 							GroupSummaries: []*pb.ChangepointGroupSummary{changepointGroupSummary},
-						})
+						}))
 					})
-					Convey("failure rate change predicate", func() {
+					t.Run("failure rate change predicate", func(t *ftt.Test) {
 						req := &pb.QueryChangepointGroupSummariesRequestLegacy{
 							Project: "chromium",
 							Predicate: &pb.ChangepointPredicateLegacy{
@@ -201,41 +204,41 @@ func TestChangepointsServer(t *testing.T) {
 							}}
 
 						res, err := server.QueryChangepointGroupSummaries(ctx, req)
-						So(err, ShouldBeNil)
-						So(res, ShouldResembleProto, &pb.QueryChangepointGroupSummariesResponseLegacy{})
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, res, should.Resemble(&pb.QueryChangepointGroupSummariesResponseLegacy{}))
 					})
 				})
 			})
 		})
 
-		Convey("QueryGroupSummaries", func() {
+		t.Run("QueryGroupSummaries", func(t *ftt.Test) {
 			authState.IdentityPermissions = append(authState.IdentityPermissions, authtest.RealmPermission{
 				Realm:      "chromium:@project",
 				Permission: perms.PermListChangepointGroups,
 			})
 
-			Convey("unauthorised requests are rejected", func() {
+			t.Run("unauthorised requests are rejected", func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermListChangepointGroups)
 				req := &pb.QueryChangepointGroupSummariesRequest{
 					Project: "chromium",
 				}
 
 				res, err := server.QueryGroupSummaries(ctx, req)
-				So(err, ShouldBeRPCPermissionDenied, `caller does not have permission analysis.changepointgroups.list in realm "chromium:@project"`)
-				So(res, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)(`caller does not have permission analysis.changepointgroups.list in realm "chromium:@project"`))
+				assert.Loosely(t, res, should.BeNil)
 			})
 
-			Convey("invalid requests are rejected - project unspecified", func() {
+			t.Run("invalid requests are rejected - project unspecified", func(t *ftt.Test) {
 				// This is the only request validation that occurs prior to permission check
 				// comply with https://google.aip.dev/211.
 				req := &pb.QueryChangepointGroupSummariesRequest{}
 
 				res, err := server.QueryGroupSummaries(ctx, req)
-				So(err, ShouldBeRPCInvalidArgument, "project: unspecified")
-				So(res, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("project: unspecified"))
+				assert.Loosely(t, res, should.BeNil)
 			})
 
-			Convey("invalid requests are rejected - other", func() {
+			t.Run("invalid requests are rejected - other", func(t *ftt.Test) {
 				// Test one type of error detected by validateQueryChangepointGroupSummariesRequest.
 				req := &pb.QueryChangepointGroupSummariesRequest{
 					Project: "chromium",
@@ -245,11 +248,11 @@ func TestChangepointsServer(t *testing.T) {
 				}
 
 				res, err := server.QueryGroupSummaries(ctx, req)
-				So(err, ShouldBeRPCInvalidArgument, `predicate: test_id_prefix: non-printable rune '\x00' at byte index 0`)
-				So(res, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`predicate: test_id_prefix: non-printable rune '\x00' at byte index 0`))
+				assert.Loosely(t, res, should.BeNil)
 			})
 
-			Convey("e2e", func() {
+			t.Run("e2e", func(t *ftt.Test) {
 				client.ReadChangepointGroupSummariesResult = []*changepoints.GroupSummary{
 					{
 						CanonicalChangepoint: *makeChangepointRow("test1"),
@@ -282,8 +285,8 @@ func TestChangepointsServer(t *testing.T) {
 				req := &pb.QueryChangepointGroupSummariesRequest{Project: "chromium"}
 
 				res, err := server.QueryGroupSummaries(ctx, req)
-				So(err, ShouldBeNil)
-				So(res, ShouldResembleProto, &pb.QueryChangepointGroupSummariesResponse{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res, should.Resemble(&pb.QueryChangepointGroupSummariesResponse{
 					GroupSummaries: []*pb.ChangepointGroupSummary{
 						{
 							CanonicalChangepoint: &pb.Changepoint{
@@ -347,37 +350,37 @@ func TestChangepointsServer(t *testing.T) {
 						},
 					},
 					NextPageToken: "next-page",
-				})
+				}))
 			})
 
 		})
 
-		Convey("QueryChangepointsInGroup", func() {
+		t.Run("QueryChangepointsInGroup", func(t *ftt.Test) {
 			authState.IdentityPermissions = append(authState.IdentityPermissions, authtest.RealmPermission{
 				Realm:      "chromium:@project",
 				Permission: perms.PermGetChangepointGroup,
 			})
 
-			Convey("unauthorised requests are rejected", func() {
+			t.Run("unauthorised requests are rejected", func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetChangepointGroup)
 				req := &pb.QueryChangepointsInGroupRequest{
 					Project: "chromium",
 				}
 
 				res, err := server.QueryChangepointsInGroup(ctx, req)
-				So(err, ShouldBeRPCPermissionDenied, `caller does not have permission analysis.changepointgroups.get in realm "chromium:@project"`)
-				So(res, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)(`caller does not have permission analysis.changepointgroups.get in realm "chromium:@project"`))
+				assert.Loosely(t, res, should.BeNil)
 			})
-			Convey("invalid requests are rejected - project unspecified", func() {
+			t.Run("invalid requests are rejected - project unspecified", func(t *ftt.Test) {
 				// This is the only request validation that occurs prior to permission check
 				// comply with https://google.aip.dev/211.
 				req := &pb.QueryChangepointsInGroupRequest{}
 
 				res, err := server.QueryChangepointsInGroup(ctx, req)
-				So(err, ShouldBeRPCInvalidArgument, "project: unspecified")
-				So(res, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("project: unspecified"))
+				assert.Loosely(t, res, should.BeNil)
 			})
-			Convey("invalid requests are rejected - other", func() {
+			t.Run("invalid requests are rejected - other", func(t *ftt.Test) {
 				// Test a validation error identified by validateQueryChangepointsInGroupRequest.
 				req := &pb.QueryChangepointsInGroupRequest{
 					Project:  "chromium",
@@ -385,11 +388,11 @@ func TestChangepointsServer(t *testing.T) {
 				}
 
 				res, err := server.QueryChangepointsInGroup(ctx, req)
-				So(err, ShouldBeRPCInvalidArgument, "group_key: test_id: unspecified")
-				So(res, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("group_key: test_id: unspecified"))
+				assert.Loosely(t, res, should.BeNil)
 			})
 
-			Convey("e2e", func() {
+			t.Run("e2e", func(t *ftt.Test) {
 				req := &pb.QueryChangepointsInGroupRequest{
 					Project: "chromium",
 					GroupKey: &pb.QueryChangepointsInGroupRequest_ChangepointIdentifier{
@@ -401,14 +404,14 @@ func TestChangepointsServer(t *testing.T) {
 					},
 				}
 
-				Convey("group found", func() {
+				t.Run("group found", func(t *ftt.Test) {
 					client.ReadChangepointsInGroupResult = []*changepoints.ChangepointRow{
 						makeChangepointRow("test1"),
 					}
 
 					res, err := server.QueryChangepointsInGroup(ctx, req)
-					So(err, ShouldBeNil)
-					So(res, ShouldResembleProto, &pb.QueryChangepointsInGroupResponse{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, res, should.Resemble(&pb.QueryChangepointsInGroupResponse{
 						Changepoints: []*pb.Changepoint{{
 							Project:     "chromium",
 							TestId:      "test1",
@@ -435,16 +438,16 @@ func TestChangepointsServer(t *testing.T) {
 							NominalStartPosition:              3,
 							PreviousSegmentNominalEndPosition: 1,
 						}},
-					})
+					}))
 
 				})
 
-				Convey("group not found", func() {
+				t.Run("group not found", func(t *ftt.Test) {
 					client.ReadChangepointsInGroupResult = []*changepoints.ChangepointRow{}
 
 					res, err := server.QueryChangepointsInGroup(ctx, req)
-					So(err, ShouldBeRPCNotFound)
-					So(res, ShouldBeNil)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)())
+					assert.Loosely(t, res, should.BeNil)
 				})
 			})
 		})
@@ -454,7 +457,7 @@ func TestChangepointsServer(t *testing.T) {
 func TestValidateRequest(t *testing.T) {
 	t.Parallel()
 
-	Convey("validateQueryChangepointGroupSummariesRequest", t, func() {
+	ftt.Run("validateQueryChangepointGroupSummariesRequest", t, func(t *ftt.Test) {
 		req := &pb.QueryChangepointGroupSummariesRequestLegacy{
 			Project: "chromium",
 			Predicate: &pb.ChangepointPredicateLegacy{
@@ -466,33 +469,33 @@ func TestValidateRequest(t *testing.T) {
 			},
 			BeginOfWeek: timestamppb.New(time.Date(2024, 8, 25, 0, 0, 0, 0, time.UTC)),
 		}
-		Convey("valid", func() {
+		t.Run("valid", func(t *ftt.Test) {
 			err := validateQueryChangepointGroupSummariesRequestLegacy(req)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
-		Convey("invalid predicate", func() {
+		t.Run("invalid predicate", func(t *ftt.Test) {
 			req.Predicate.TestIdPrefix = "\xFF"
 			err := validateQueryChangepointGroupSummariesRequestLegacy(req)
-			So(err, ShouldErrLike, "test_id_prefix: not a valid utf8 string")
+			assert.Loosely(t, err, should.ErrLike("test_id_prefix: not a valid utf8 string"))
 		})
-		Convey("invalid begin_of_week", func() {
+		t.Run("invalid begin_of_week", func(t *ftt.Test) {
 			req.BeginOfWeek = timestamppb.New(time.Date(2024, 8, 25, 1, 0, 0, 0, time.UTC))
 			err := validateQueryChangepointGroupSummariesRequestLegacy(req)
-			So(err, ShouldErrLike, "begin_of_week: must be Sunday midnight")
+			assert.Loosely(t, err, should.ErrLike("begin_of_week: must be Sunday midnight"))
 		})
-		Convey("begin_of_week at different time zone", func() {
+		t.Run("begin_of_week at different time zone", func(t *ftt.Test) {
 			req.BeginOfWeek = timestamppb.New(time.Date(2024, 8, 25, 0, 0, 0, 0, time.FixedZone("10sec", 10)))
 			err := validateQueryChangepointGroupSummariesRequestLegacy(req)
-			So(err, ShouldErrLike, "begin_of_week: must be Sunday midnight")
+			assert.Loosely(t, err, should.ErrLike("begin_of_week: must be Sunday midnight"))
 		})
-		Convey("no begin_of_week", func() {
+		t.Run("no begin_of_week", func(t *ftt.Test) {
 			req.BeginOfWeek = nil
 			err := validateQueryChangepointGroupSummariesRequestLegacy(req)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 	})
 
-	Convey("validateQueryChangepointsInGroupRequest", t, func() {
+	ftt.Run("validateQueryChangepointsInGroupRequest", t, func(t *ftt.Test) {
 		req := &pb.QueryChangepointsInGroupRequest{
 			Project: "chromium",
 			GroupKey: &pb.QueryChangepointsInGroupRequest_ChangepointIdentifier{
@@ -504,72 +507,72 @@ func TestValidateRequest(t *testing.T) {
 			},
 			Predicate: &pb.ChangepointPredicate{},
 		}
-		Convey("valid", func() {
+		t.Run("valid", func(t *ftt.Test) {
 			err := validateQueryChangepointsInGroupRequest(req)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
-		Convey("no group key", func() {
+		t.Run("no group key", func(t *ftt.Test) {
 			req.GroupKey = nil
 			err := validateQueryChangepointsInGroupRequest(req)
-			So(err, ShouldErrLike, "group_key: unspecified")
+			assert.Loosely(t, err, should.ErrLike("group_key: unspecified"))
 		})
-		Convey("invalid group key", func() {
+		t.Run("invalid group key", func(t *ftt.Test) {
 			req.GroupKey.TestId = "\xFF"
 			err := validateQueryChangepointsInGroupRequest(req)
-			So(err, ShouldErrLike, "test_id: not a valid utf8 string")
+			assert.Loosely(t, err, should.ErrLike("test_id: not a valid utf8 string"))
 		})
 	})
 
-	Convey("validateQueryChangepointGroupSummariesRequest", t, func() {
+	ftt.Run("validateQueryChangepointGroupSummariesRequest", t, func(t *ftt.Test) {
 		req := &pb.QueryChangepointGroupSummariesRequest{
 			Project: "chromium",
 			Predicate: &pb.ChangepointPredicate{
 				TestIdContain: "test",
 			},
 		}
-		Convey("valid", func() {
+		t.Run("valid", func(t *ftt.Test) {
 			err := validateQueryChangepointGroupSummariesRequest(req)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
-		Convey("invalid page size ", func() {
+		t.Run("invalid page size ", func(t *ftt.Test) {
 			req.PageSize = -1
 			err := validateQueryChangepointGroupSummariesRequest(req)
-			So(err, ShouldErrLike, "page_size")
+			assert.Loosely(t, err, should.ErrLike("page_size"))
 		})
-		Convey("invalid predicate", func() {
+		t.Run("invalid predicate", func(t *ftt.Test) {
 			req.Predicate.TestIdContain = "\xFF"
 			err := validateQueryChangepointGroupSummariesRequest(req)
-			So(err, ShouldErrLike, "test_id_prefix: not a valid utf8 string")
+			assert.Loosely(t, err, should.ErrLike("test_id_prefix: not a valid utf8 string"))
 		})
 	})
 
-	Convey("validateChangepointPredicate", t, func() {
-		Convey("invalid test prefix", func() {
+	ftt.Run("validateChangepointPredicate", t, func(t *ftt.Test) {
+		t.Run("invalid test prefix", func(t *ftt.Test) {
 			predicate := &pb.ChangepointPredicateLegacy{
 				TestIdPrefix: "\xFF",
 			}
 			err := validateChangepointPredicateLegacy(predicate)
-			So(err, ShouldErrLike, "test_id_prefix: not a valid utf8 string")
+			assert.Loosely(t, err, should.ErrLike("test_id_prefix: not a valid utf8 string"))
 		})
-		Convey("invalid lower bound", func() {
+		t.Run("invalid lower bound", func(t *ftt.Test) {
 			predicate := &pb.ChangepointPredicateLegacy{
 				UnexpectedVerdictRateChangeRange: &pb.NumericRange{
 					LowerBound: 2,
 				},
 			}
 			err := validateChangepointPredicateLegacy(predicate)
-			So(err, ShouldErrLike, "unexpected_verdict_rate_change_range_range: lower_bound: should between 0 and 1")
+			assert.Loosely(t, err, should.ErrLike("unexpected_verdict_rate_change_range_range: lower_bound: should between 0 and 1"))
 		})
-		Convey("invalid upper bound", func() {
+		t.Run("invalid upper bound", func(t *ftt.Test) {
 			predicate := &pb.ChangepointPredicateLegacy{
 				UnexpectedVerdictRateChangeRange: &pb.NumericRange{
 					UpperBound: 2,
 				},
 			}
 			err := validateChangepointPredicateLegacy(predicate)
-			So(err, ShouldErrLike, "unexpected_verdict_rate_change_range_range: upper_bound:  should between 0 and 1")
+			assert.Loosely(t, err, should.ErrLike("unexpected_verdict_rate_change_range_range: upper_bound:  should between 0 and 1"))
 		})
-		Convey("upper bound smaller than lower bound", func() {
+		t.Run("upper bound smaller than lower bound", func(t *ftt.Test) {
 			predicate := &pb.ChangepointPredicateLegacy{
 				UnexpectedVerdictRateChangeRange: &pb.NumericRange{
 					UpperBound: 0.1,
@@ -577,7 +580,7 @@ func TestValidateRequest(t *testing.T) {
 				},
 			}
 			err := validateChangepointPredicateLegacy(predicate)
-			So(err, ShouldErrLike, "unexpected_verdict_rate_change_range_range: upper_bound must greater or equal to lower_bound")
+			assert.Loosely(t, err, should.ErrLike("unexpected_verdict_rate_change_range_range: upper_bound must greater or equal to lower_bound"))
 		})
 	})
 }

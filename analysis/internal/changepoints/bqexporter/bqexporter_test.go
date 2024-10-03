@@ -22,18 +22,19 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
+
 	"go.chromium.org/luci/analysis/internal/changepoints/analyzer"
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
 	"go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
 	bqpb "go.chromium.org/luci/analysis/proto/bq"
 	pb "go.chromium.org/luci/analysis/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestBQExporter(t *testing.T) {
-	Convey(`Export test variant branches`, t, func() {
+	ftt.Run(`Export test variant branches`, t, func(t *ftt.Test) {
 		ctx := context.Background()
 		client := NewFakeClient()
 		exporter := NewExporter(client)
@@ -196,7 +197,7 @@ func TestBQExporter(t *testing.T) {
 		var bqRows []PartialBigQueryRow
 		for _, row := range []*RowInput{row1, row2, row3} {
 			bqRow, err := ToPartialBigQueryRow(row.TestVariantBranch, row.Segments)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			bqRows = append(bqRows, bqRow)
 		}
 
@@ -205,12 +206,12 @@ func TestBQExporter(t *testing.T) {
 			CommitTimestamp: time.Unix(10000*3600, 0),
 		}
 		err := exporter.ExportTestVariantBranches(ctx, ris)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		rows := client.Insertions
-		So(len(rows), ShouldEqual, 3)
+		assert.Loosely(t, len(rows), should.Equal(3))
 
 		// Asserts the rows.
-		So(rows[0], ShouldResembleProto, &bqpb.TestVariantBranchRow{
+		assert.Loosely(t, rows[0], should.Resemble(&bqpb.TestVariantBranchRow{
 			Project:     "chromium",
 			TestId:      "test_id_1",
 			VariantHash: "variant_hash_1",
@@ -232,9 +233,9 @@ func TestBQExporter(t *testing.T) {
 					},
 				},
 			},
-		})
+		}))
 
-		So(rows[1], ShouldResembleProto, &bqpb.TestVariantBranchRow{
+		assert.Loosely(t, rows[1], should.Resemble(&bqpb.TestVariantBranchRow{
 			Project:                    "chromium",
 			TestId:                     "test_id_2",
 			VariantHash:                "variant_hash_2",
@@ -309,9 +310,9 @@ func TestBQExporter(t *testing.T) {
 					},
 				},
 			},
-		})
+		}))
 
-		So(rows[2], ShouldResembleProto, &bqpb.TestVariantBranchRow{
+		assert.Loosely(t, rows[2], should.Resemble(&bqpb.TestVariantBranchRow{
 			Project:     "chromium",
 			TestId:      "test_id_3",
 			VariantHash: "variant_hash_3",
@@ -334,6 +335,6 @@ func TestBQExporter(t *testing.T) {
 					},
 				},
 			},
-		})
+		}))
 	})
 }

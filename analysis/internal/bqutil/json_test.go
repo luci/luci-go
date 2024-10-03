@@ -20,19 +20,20 @@ import (
 
 	"google.golang.org/protobuf/types/known/structpb"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	resultpb "go.chromium.org/luci/resultdb/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestJSON(t *testing.T) {
-	Convey(`VariantJSON`, t, func() {
-		Convey(`empty`, func() {
+	ftt.Run(`VariantJSON`, t, func(t *ftt.Test) {
+		t.Run(`empty`, func(t *ftt.Test) {
 			result, err := VariantJSON(nil)
-			So(err, ShouldBeNil)
-			So(result, ShouldEqual, "{}")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, result, should.Equal("{}"))
 		})
-		Convey(`non-empty`, func() {
+		t.Run(`non-empty`, func(t *ftt.Test) {
 			variant := &resultpb.Variant{
 				Def: map[string]string{
 					"builder":           "linux-rel",
@@ -41,31 +42,31 @@ func TestJSON(t *testing.T) {
 				},
 			}
 			result, err := VariantJSON(variant)
-			So(err, ShouldBeNil)
-			So(result, ShouldEqual, `{"builder":"linux-rel","os":"Ubuntu-18.04","pathological-case":"\u0000\u0001\n\r\f"}`)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, result, should.Equal(`{"builder":"linux-rel","os":"Ubuntu-18.04","pathological-case":"\u0000\u0001\n\r\f"}`))
 		})
 	})
-	Convey(`MarshalStructPB`, t, func() {
-		Convey(`empty`, func() {
+	ftt.Run(`MarshalStructPB`, t, func(t *ftt.Test) {
+		t.Run(`empty`, func(t *ftt.Test) {
 			result, err := MarshalStructPB(nil)
-			So(err, ShouldBeNil)
-			So(result, ShouldEqual, "{}")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, result, should.Equal("{}"))
 		})
-		Convey(`non-empty`, func() {
+		t.Run(`non-empty`, func(t *ftt.Test) {
 			values := make(map[string]any)
 			values["stringkey"] = "abcdef\000\001\n"
 			values["numberkey"] = 123
 			values["boolkey"] = true
 			values["listkey"] = []any{"a", 9, true}
 			pb, err := structpb.NewStruct(values)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			result, err := MarshalStructPB(pb)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// Different implementations may use different spacing between
 			// json elements. Ignore this.
 			result = strings.ReplaceAll(result, " ", "")
-			So(result, ShouldEqual, `{"boolkey":true,"listkey":["a",9,true],"numberkey":123,"stringkey":"abcdef\u0000\u0001\n"}`)
+			assert.Loosely(t, result, should.Equal(`{"boolkey":true,"listkey":["a",9,true],"numberkey":123,"stringkey":"abcdef\u0000\u0001\n"}`))
 		})
 	})
 }

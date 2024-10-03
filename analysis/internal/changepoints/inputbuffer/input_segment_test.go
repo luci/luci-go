@@ -19,16 +19,17 @@ import (
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
+
 	"go.chromium.org/luci/analysis/internal/changepoints/model"
 	cpb "go.chromium.org/luci/analysis/internal/changepoints/proto"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestSegmentizeInputBuffer(t *testing.T) {
-	Convey("Segmentize input buffer", t, func() {
-		Convey("No change point", func() {
+	ftt.Run("Segmentize input buffer", t, func(t *ftt.Test) {
+		t.Run("No change point", func(t *ftt.Test) {
 			var (
 				// index      = []int{0, 1, 3, 4, 6, 7}
 				positions     = []int{1, 2, 3, 4, 5, 6}
@@ -42,8 +43,8 @@ func TestSegmentizeInputBuffer(t *testing.T) {
 			ib.MergeBuffer(&merged)
 			sib := ib.Segmentize(merged, cps)
 			ibSegments := sib.Segments
-			So(len(ibSegments), ShouldEqual, 1)
-			So(ibSegments[0], ShouldResembleProto, &Segment{
+			assert.Loosely(t, len(ibSegments), should.Equal(1))
+			assert.Loosely(t, ibSegments[0], should.Resemble(&Segment{
 				StartIndex:                     0,
 				EndIndex:                       8, // runs
 				HasStartChangepoint:            false,
@@ -52,10 +53,10 @@ func TestSegmentizeInputBuffer(t *testing.T) {
 				StartHour:                      time.Unix(3600, 0),
 				EndHour:                        time.Unix(6*3600, 0),
 				MostRecentUnexpectedResultHour: time.Unix(4*3600, 0),
-			})
+			}))
 		})
 
-		Convey("With change points and retries", func() {
+		t.Run("With change points and retries", func(t *ftt.Test) {
 			var (
 				// index             = []int{0, 1, 2, 3, 5, 7, 9, 11,13,15, 16, 17}
 				positions            = []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}
@@ -83,8 +84,8 @@ func TestSegmentizeInputBuffer(t *testing.T) {
 			ib.MergeBuffer(&merged)
 			sib := ib.Segmentize(merged, cps)
 			ibSegments := sib.Segments
-			So(len(ibSegments), ShouldEqual, 4)
-			So(ibSegments[0], ShouldResembleProto, &Segment{
+			assert.Loosely(t, len(ibSegments), should.Equal(4))
+			assert.Loosely(t, ibSegments[0], should.Resemble(&Segment{
 				StartIndex:          0,
 				EndIndex:            2,
 				HasStartChangepoint: false,
@@ -92,9 +93,9 @@ func TestSegmentizeInputBuffer(t *testing.T) {
 				EndPosition:         3,
 				StartHour:           time.Unix(3600, 0),
 				EndHour:             time.Unix(3*3600, 0),
-			})
+			}))
 
-			So(ibSegments[1], ShouldResembleProto, &Segment{
+			assert.Loosely(t, ibSegments[1], should.Resemble(&Segment{
 				StartIndex:                     3,
 				EndIndex:                       8,
 				HasStartChangepoint:            true,
@@ -104,9 +105,9 @@ func TestSegmentizeInputBuffer(t *testing.T) {
 				StartHour:                      time.Unix(4*3600, 0),
 				EndHour:                        time.Unix(6*3600, 0),
 				MostRecentUnexpectedResultHour: time.Unix(6*3600, 0),
-			})
+			}))
 
-			So(ibSegments[2], ShouldResembleProto, &Segment{
+			assert.Loosely(t, ibSegments[2], should.Resemble(&Segment{
 				StartIndex:                     9,
 				EndIndex:                       14,
 				HasStartChangepoint:            true,
@@ -116,9 +117,9 @@ func TestSegmentizeInputBuffer(t *testing.T) {
 				StartHour:                      time.Unix(7*3600, 0),
 				EndHour:                        time.Unix(9*3600, 0),
 				MostRecentUnexpectedResultHour: time.Unix(9*3600, 0),
-			})
+			}))
 
-			So(ibSegments[3], ShouldResembleProto, &Segment{
+			assert.Loosely(t, ibSegments[3], should.Resemble(&Segment{
 				StartIndex:                     15,
 				EndIndex:                       17,
 				HasStartChangepoint:            true,
@@ -128,13 +129,13 @@ func TestSegmentizeInputBuffer(t *testing.T) {
 				StartHour:                      time.Unix(10*3600, 0),
 				EndHour:                        time.Unix(12*3600, 0),
 				MostRecentUnexpectedResultHour: time.Unix(12*3600, 0),
-			})
+			}))
 		})
 	})
 }
 
 func TestEvictSegments(t *testing.T) {
-	Convey("Does not evict if there is no buffer pressure and no changepoint", t, func() {
+	ftt.Run("Does not evict if there is no buffer pressure and no changepoint", t, func(t *ftt.Test) {
 		ib := genInputBuffer(100, 2000, simpleVerdicts(100, 1, []int{}))
 		segments := []*Segment{
 			{
@@ -150,13 +151,13 @@ func TestEvictSegments(t *testing.T) {
 		}
 		evicted := sib.EvictSegments()
 		remaining := sib.Segments
-		So(len(evicted), ShouldEqual, 0)
-		So(len(remaining), ShouldEqual, 1)
-		So(ib.IsColdBufferDirty, ShouldBeFalse)
-		So(remaining[0], ShouldResembleProto, segments[0])
+		assert.Loosely(t, len(evicted), should.BeZero)
+		assert.Loosely(t, len(remaining), should.Equal(1))
+		assert.Loosely(t, ib.IsColdBufferDirty, should.BeFalse)
+		assert.Loosely(t, remaining[0], should.Resemble(segments[0]))
 	})
 
-	Convey("Evict finalizing segment", t, func() {
+	ftt.Run("Evict finalizing segment", t, func(t *ftt.Test) {
 		ib := genInputBuffer(100, 2000, simpleVerdicts(2100, 1, []int{50, 1900}))
 		segments := []*Segment{
 			{
@@ -185,20 +186,20 @@ func TestEvictSegments(t *testing.T) {
 
 		evicted := sib.EvictSegments()
 		remaining := sib.Segments
-		So(len(evicted), ShouldEqual, 1)
-		So(len(remaining), ShouldEqual, 2)
-		So(ib.IsColdBufferDirty, ShouldBeTrue)
+		assert.Loosely(t, len(evicted), should.Equal(1))
+		assert.Loosely(t, len(remaining), should.Equal(2))
+		assert.Loosely(t, ib.IsColdBufferDirty, should.BeTrue)
 
-		So(evicted[0], ShouldResembleProto, EvictedSegment{
+		assert.Loosely(t, evicted[0], should.Resemble(EvictedSegment{
 			State:                          cpb.SegmentState_FINALIZING,
 			HasStartChangepoint:            false,
 			StartHour:                      time.Unix(1*3600, 0),
 			StartPosition:                  1,
 			MostRecentUnexpectedResultHour: time.Unix(51*3600, 0),
 			Runs:                           copyAndUnflattenRuns(simpleVerdicts(100, 1, []int{50})),
-		})
+		}))
 
-		So(remaining[0], ShouldResembleProto, &Segment{
+		assert.Loosely(t, remaining[0], should.Resemble(&Segment{
 			StartIndex:                     0,
 			EndIndex:                       1949,
 			StartPosition:                  101,
@@ -206,9 +207,9 @@ func TestEvictSegments(t *testing.T) {
 			EndPosition:                    2050,
 			EndHour:                        time.Unix(2050*3600, 0),
 			MostRecentUnexpectedResultHour: time.Unix(1901*3600, 0),
-		})
+		}))
 
-		So(remaining[1], ShouldResembleProto, &Segment{
+		assert.Loosely(t, remaining[1], should.Resemble(&Segment{
 			StartIndex:          1950,
 			EndIndex:            1999,
 			HasStartChangepoint: true,
@@ -216,10 +217,10 @@ func TestEvictSegments(t *testing.T) {
 			StartHour:           time.Unix(2051*3600, 0),
 			EndPosition:         2100,
 			EndHour:             time.Unix(2100*3600, 0),
-		})
+		}))
 	})
 
-	Convey("Evict finalized segment", t, func() {
+	ftt.Run("Evict finalized segment", t, func(t *ftt.Test) {
 		ib := genInputBuffer(100, 2000, simpleVerdicts(2100, 1, []int{}))
 		segments := []*Segment{
 			{
@@ -268,11 +269,11 @@ func TestEvictSegments(t *testing.T) {
 		}
 		evicted := sib.EvictSegments()
 		remaining := sib.Segments
-		So(len(evicted), ShouldEqual, 3)
-		So(len(remaining), ShouldEqual, 2)
-		So(ib.IsColdBufferDirty, ShouldBeTrue)
+		assert.Loosely(t, len(evicted), should.Equal(3))
+		assert.Loosely(t, len(remaining), should.Equal(2))
+		assert.Loosely(t, ib.IsColdBufferDirty, should.BeTrue)
 
-		So(evicted[0], ShouldResembleProto, EvictedSegment{
+		assert.Loosely(t, evicted[0], should.Resemble(EvictedSegment{
 			State:               cpb.SegmentState_FINALIZED,
 			HasStartChangepoint: false,
 			StartHour:           time.Unix(1*3600, 0),
@@ -280,9 +281,9 @@ func TestEvictSegments(t *testing.T) {
 			EndHour:             time.Unix(40*3600, 0),
 			EndPosition:         40,
 			Runs:                copyAndUnflattenRuns(simpleVerdicts(40, 1, []int{})),
-		})
+		}))
 
-		So(evicted[1], ShouldResembleProto, EvictedSegment{
+		assert.Loosely(t, evicted[1], should.Resemble(EvictedSegment{
 			State:                     cpb.SegmentState_FINALIZED,
 			HasStartChangepoint:       true,
 			StartHour:                 time.Unix(41*3600, 0),
@@ -291,27 +292,27 @@ func TestEvictSegments(t *testing.T) {
 			EndHour:                   time.Unix(80*3600, 0),
 			EndPosition:               80,
 			Runs:                      copyAndUnflattenRuns(simpleVerdicts(40, 41, []int{})),
-		})
+		}))
 
-		So(evicted[2], ShouldResembleProto, EvictedSegment{
+		assert.Loosely(t, evicted[2], should.Resemble(EvictedSegment{
 			State:                     cpb.SegmentState_FINALIZING,
 			HasStartChangepoint:       true,
 			StartHour:                 time.Unix(81*3600, 0),
 			StartPosition:             81,
 			StartPositionDistribution: model.SimpleDistribution(80, 10),
 			Runs:                      copyAndUnflattenRuns(simpleVerdicts(20, 81, []int{})),
-		})
+		}))
 
-		So(remaining[0], ShouldResembleProto, &Segment{
+		assert.Loosely(t, remaining[0], should.Resemble(&Segment{
 			StartIndex:    0,
 			StartPosition: 101,
 			StartHour:     time.Unix(101*3600, 0),
 			EndIndex:      1949,
 			EndPosition:   2050,
 			EndHour:       time.Unix(2050*3600, 0),
-		})
+		}))
 
-		So(remaining[1], ShouldResembleProto, &Segment{
+		assert.Loosely(t, remaining[1], should.Resemble(&Segment{
 			StartIndex:          1950,
 			EndIndex:            1999,
 			HasStartChangepoint: true,
@@ -319,10 +320,10 @@ func TestEvictSegments(t *testing.T) {
 			StartHour:           time.Unix(2051*3600, 0),
 			EndPosition:         2100,
 			EndHour:             time.Unix(2100*3600, 0),
-		})
+		}))
 	})
 
-	Convey("Evict all hot buffer", t, func() {
+	ftt.Run("Evict all hot buffer", t, func(t *ftt.Test) {
 		ib := genInputBuffer(100, 2000, simpleVerdicts(2000, 1, []int{}))
 		ib.HotBuffer = History{
 			Runs: []Run{
@@ -359,13 +360,13 @@ func TestEvictSegments(t *testing.T) {
 		}
 		evicted := sib.EvictSegments()
 		remaining := sib.Segments
-		So(len(evicted), ShouldEqual, 2)
-		So(len(remaining), ShouldEqual, 1)
-		So(sib.InputBuffer.IsColdBufferDirty, ShouldBeTrue)
+		assert.Loosely(t, len(evicted), should.Equal(2))
+		assert.Loosely(t, len(remaining), should.Equal(1))
+		assert.Loosely(t, sib.InputBuffer.IsColdBufferDirty, should.BeTrue)
 
 		// Hot bufffer should be empty.
-		So(len(sib.InputBuffer.HotBuffer.Runs), ShouldEqual, 0)
-		So(len(sib.InputBuffer.ColdBuffer.Runs), ShouldEqual, 1961)
+		assert.Loosely(t, len(sib.InputBuffer.HotBuffer.Runs), should.BeZero)
+		assert.Loosely(t, len(sib.InputBuffer.ColdBuffer.Runs), should.Equal(1961))
 
 		expectedRuns := []Run{
 			// The run in the hot buffer.
@@ -381,7 +382,7 @@ func TestEvictSegments(t *testing.T) {
 			return ri.Hour.Before(rj.Hour)
 		})
 
-		So(evicted[0], ShouldResembleProto, EvictedSegment{
+		assert.Loosely(t, evicted[0], should.Resemble(EvictedSegment{
 			State:               cpb.SegmentState_FINALIZED,
 			HasStartChangepoint: false,
 			StartHour:           time.Unix(1*3600, 0),
@@ -389,18 +390,18 @@ func TestEvictSegments(t *testing.T) {
 			EndHour:             time.Unix(39*3600, 0),
 			EndPosition:         39,
 			Runs:                copyAndUnflattenRuns(expectedRuns),
-		})
+		}))
 
-		So(evicted[1], ShouldResembleProto, EvictedSegment{
+		assert.Loosely(t, evicted[1], should.Resemble(EvictedSegment{
 			State:                     cpb.SegmentState_FINALIZING,
 			HasStartChangepoint:       true,
 			StartHour:                 time.Unix(40*3600, 0),
 			StartPosition:             40,
 			StartPositionDistribution: model.SimpleDistribution(40, 10),
 			Runs:                      []*Run{},
-		})
+		}))
 
-		So(remaining[0], ShouldResembleProto, segments[1])
+		assert.Loosely(t, remaining[0], should.Resemble(segments[1]))
 	})
 }
 

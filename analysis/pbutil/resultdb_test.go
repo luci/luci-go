@@ -18,25 +18,25 @@ import (
 	"encoding/hex"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 
 	pb "go.chromium.org/luci/analysis/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestResultDB(t *testing.T) {
-	Convey("FailureReasonFromResultDB", t, func() {
+	ftt.Run("FailureReasonFromResultDB", t, func(t *ftt.Test) {
 		rdbFailureReason := &rdbpb.FailureReason{
 			PrimaryErrorMessage: "Some error message.",
 		}
 		fr := FailureReasonFromResultDB(rdbFailureReason)
-		So(fr, ShouldResembleProto, &pb.FailureReason{
+		assert.Loosely(t, fr, should.Resemble(&pb.FailureReason{
 			PrimaryErrorMessage: "Some error message.",
-		})
+		}))
 	})
-	Convey("SkipReasonFromResultDB", t, func() {
+	ftt.Run("SkipReasonFromResultDB", t, func(t *ftt.Test) {
 		// Confirm LUCI Analysis handles every skip reason defined by ResultDB.
 		// This test is designed to break if ResultDB extends the set of
 		// allowed values, without a corresponding update to LUCI Analysis.
@@ -45,14 +45,14 @@ func TestResultDB(t *testing.T) {
 
 			reason := SkipReasonFromResultDB(rdbReason)
 			if rdbReason == rdbpb.SkipReason_SKIP_REASON_UNSPECIFIED {
-				So(reason, ShouldEqual, pb.TestVerdictStatus_TEST_VERDICT_STATUS_UNSPECIFIED)
+				assert.Loosely(t, reason, should.Equal(pb.TestVerdictStatus_TEST_VERDICT_STATUS_UNSPECIFIED))
 				continue
 			}
-			So(reason, ShouldNotEqual, pb.TestVerdictStatus_TEST_VERDICT_STATUS_UNSPECIFIED)
+			assert.Loosely(t, reason, should.NotEqual(pb.TestVerdictStatus_TEST_VERDICT_STATUS_UNSPECIFIED))
 		}
 
 	})
-	Convey("TestMetadataFromResultDB", t, func() {
+	ftt.Run("TestMetadataFromResultDB", t, func(t *ftt.Test) {
 		rdbTestMetadata := &rdbpb.TestMetadata{
 			Name: "name",
 			Location: &rdbpb.TestLocation{
@@ -62,15 +62,15 @@ func TestResultDB(t *testing.T) {
 			},
 		}
 		tmd := TestMetadataFromResultDB(rdbTestMetadata)
-		So(tmd, ShouldResembleProto, &pb.TestMetadata{
+		assert.Loosely(t, tmd, should.Resemble(&pb.TestMetadata{
 			Name: "name",
 			Location: &pb.TestLocation{
 				Repo:     "repo",
 				FileName: "fileName",
 				Line:     123,
-			}})
+			}}))
 	})
-	Convey("TestResultStatusFromResultDB", t, func() {
+	ftt.Run("TestResultStatusFromResultDB", t, func(t *ftt.Test) {
 		// Confirm LUCI Analysis handles every test status defined by ResultDB.
 		// This test is designed to break if ResultDB extends the set of
 		// allowed values, without a corresponding update to LUCI Analysis.
@@ -81,10 +81,10 @@ func TestResultDB(t *testing.T) {
 			}
 
 			status := TestResultStatusFromResultDB(rdbStatus)
-			So(status, ShouldNotEqual, pb.TestResultStatus_TEST_RESULT_STATUS_UNSPECIFIED)
+			assert.Loosely(t, status, should.NotEqual(pb.TestResultStatus_TEST_RESULT_STATUS_UNSPECIFIED))
 		}
 	})
-	Convey("TestVerdictStatusFromResultDB", t, func() {
+	ftt.Run("TestVerdictStatusFromResultDB", t, func(t *ftt.Test) {
 		// Confirm LUCI Analysis handles every test variant status defined by ResultDB.
 		// This test is designed to break if ResultDB extends the set of
 		// allowed values, without a corresponding update to LUCI Analysis.
@@ -96,10 +96,10 @@ func TestResultDB(t *testing.T) {
 			}
 
 			status := TestVerdictStatusFromResultDB(rdbStatus)
-			So(status, ShouldNotEqual, pb.TestVerdictStatus_TEST_VERDICT_STATUS_UNSPECIFIED)
+			assert.Loosely(t, status, should.NotEqual(pb.TestVerdictStatus_TEST_VERDICT_STATUS_UNSPECIFIED))
 		}
 	})
-	Convey("ExonerationReasonFromResultDB", t, func() {
+	ftt.Run("ExonerationReasonFromResultDB", t, func(t *ftt.Test) {
 		// Confirm LUCI Analysis handles every exoneration reason defined by
 		// ResultDB.
 		// This test is designed to break if ResultDB extends the set of
@@ -111,11 +111,11 @@ func TestResultDB(t *testing.T) {
 			}
 
 			reason := ExonerationReasonFromResultDB(rdbReason)
-			So(reason, ShouldNotEqual, pb.ExonerationReason_EXONERATION_REASON_UNSPECIFIED)
+			assert.Loosely(t, reason, should.NotEqual(pb.ExonerationReason_EXONERATION_REASON_UNSPECIFIED))
 		}
 	})
-	Convey("BugComponent from ResultDB Metadata", t, func() {
-		Convey("using issuetracker bug component", func() {
+	ftt.Run("BugComponent from ResultDB Metadata", t, func(t *ftt.Test) {
+		t.Run("using issuetracker bug component", func(t *ftt.Test) {
 			resultDbTmd := &rdbpb.TestMetadata{
 				BugComponent: &rdbpb.BugComponent{
 					System: &rdbpb.BugComponent_IssueTracker{
@@ -127,9 +127,9 @@ func TestResultDB(t *testing.T) {
 			}
 			converted := TestMetadataFromResultDB(resultDbTmd)
 
-			So(converted.BugComponent.System.(*pb.BugComponent_IssueTracker).IssueTracker.ComponentId, ShouldEqual, 12345)
+			assert.Loosely(t, converted.BugComponent.System.(*pb.BugComponent_IssueTracker).IssueTracker.ComponentId, should.Equal(12345))
 		})
-		Convey("using monorail bug component", func() {
+		t.Run("using monorail bug component", func(t *ftt.Test) {
 			resultDbTmd := &rdbpb.TestMetadata{
 				BugComponent: &rdbpb.BugComponent{
 					System: &rdbpb.BugComponent_Monorail{
@@ -142,11 +142,11 @@ func TestResultDB(t *testing.T) {
 			}
 			converted := TestMetadataFromResultDB(resultDbTmd)
 
-			So(converted.BugComponent.System.(*pb.BugComponent_Monorail).Monorail.Project, ShouldEqual, "chrome")
-			So(converted.BugComponent.System.(*pb.BugComponent_Monorail).Monorail.Value, ShouldEqual, "Blink>Data")
+			assert.Loosely(t, converted.BugComponent.System.(*pb.BugComponent_Monorail).Monorail.Project, should.Equal("chrome"))
+			assert.Loosely(t, converted.BugComponent.System.(*pb.BugComponent_Monorail).Monorail.Value, should.Equal("Blink>Data"))
 		})
 	})
-	Convey("Sources to/from ResultDB", t, func() {
+	ftt.Run("Sources to/from ResultDB", t, func(t *ftt.Test) {
 		rdbSources := &rdbpb.Sources{
 			GitilesCommit: &rdbpb.GitilesCommit{
 				Host:       "project.googlesource.com",
@@ -183,10 +183,10 @@ func TestResultDB(t *testing.T) {
 			},
 			IsDirty: true,
 		}
-		So(SourcesFromResultDB(rdbSources), ShouldResembleProto, analysisSources)
-		So(SourcesToResultDB(analysisSources), ShouldResembleProto, rdbSources)
+		assert.Loosely(t, SourcesFromResultDB(rdbSources), should.Resemble(analysisSources))
+		assert.Loosely(t, SourcesToResultDB(analysisSources), should.Resemble(rdbSources))
 	})
-	Convey("SourceRef to resultdb", t, func() {
+	ftt.Run("SourceRef to resultdb", t, func(t *ftt.Test) {
 		sourceRef := &pb.SourceRef{
 			System: &pb.SourceRef_Gitiles{
 				Gitiles: &pb.GitilesRef{
@@ -197,7 +197,7 @@ func TestResultDB(t *testing.T) {
 			},
 		}
 		sourceRef1 := SourceRefToResultDB(sourceRef)
-		So(sourceRef1, ShouldResembleProto, &rdbpb.SourceRef{
+		assert.Loosely(t, sourceRef1, should.Resemble(&rdbpb.SourceRef{
 			System: &rdbpb.SourceRef_Gitiles{
 				Gitiles: &rdbpb.GitilesRef{
 					Host:    "host",
@@ -205,9 +205,9 @@ func TestResultDB(t *testing.T) {
 					Ref:     "ref",
 				},
 			},
-		})
+		}))
 	})
-	Convey("RefFromSources", t, func() {
+	ftt.Run("RefFromSources", t, func(t *ftt.Test) {
 		sources := &pb.Sources{
 			GitilesCommit: &pb.GitilesCommit{
 				Host:       "project.googlesource.com",
@@ -218,7 +218,7 @@ func TestResultDB(t *testing.T) {
 			},
 		}
 		ref := SourceRefFromSources(sources)
-		So(ref, ShouldResembleProto, &pb.SourceRef{
+		assert.Loosely(t, ref, should.Resemble(&pb.SourceRef{
 			System: &pb.SourceRef_Gitiles{
 				Gitiles: &pb.GitilesRef{
 					Host:    "project.googlesource.com",
@@ -226,9 +226,9 @@ func TestResultDB(t *testing.T) {
 					Ref:     "refs/heads/main",
 				},
 			},
-		})
+		}))
 	})
-	Convey("RefHash", t, func() {
+	ftt.Run("RefHash", t, func(t *ftt.Test) {
 		ref := &pb.SourceRef{
 			System: &pb.SourceRef_Gitiles{
 				Gitiles: &pb.GitilesRef{
@@ -239,6 +239,6 @@ func TestResultDB(t *testing.T) {
 			},
 		}
 		hash := SourceRefHash(ref)
-		So(hex.EncodeToString(hash), ShouldEqual, `5d47c679cf080cb5`)
+		assert.Loosely(t, hex.EncodeToString(hash), should.Equal(`5d47c679cf080cb5`))
 	})
 }

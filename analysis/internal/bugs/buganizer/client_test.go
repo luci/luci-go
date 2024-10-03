@@ -18,28 +18,30 @@ import (
 	"context"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestBuganizerClient(t *testing.T) {
 	ctx := context.Background()
-	Convey("Buganizer client", t, func() {
-		Convey("no value in context means no buganizer client", func() {
+	ftt.Run("Buganizer client", t, func(t *ftt.Test) {
+		t.Run("no value in context means no buganizer client", func(t *ftt.Test) {
 			client, err := CreateBuganizerClient(ctx)
-			So(err, ShouldBeNil)
-			So(client, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, client, should.BeNil)
 		})
-		Convey("empty value in context means no buganizer client", func() {
+		t.Run("empty value in context means no buganizer client", func(t *ftt.Test) {
 			ctx = context.WithValue(ctx, &BuganizerClientModeKey, "")
 			client, err := CreateBuganizerClient(ctx)
-			So(err, ShouldBeNil)
-			So(client, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, client, should.BeNil)
 		})
-		Convey("`disable` mode doesn't create any client", func() {
+		t.Run("`disable` mode doesn't create any client", func(t *ftt.Test) {
 			ctx = context.WithValue(ctx, &BuganizerClientModeKey, ModeDisable)
 			client, err := CreateBuganizerClient(ctx)
-			So(err, ShouldBeNil)
-			So(client, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, client, should.BeNil)
 		})
 	})
 }

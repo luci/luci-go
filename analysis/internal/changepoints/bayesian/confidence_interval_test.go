@@ -17,10 +17,12 @@ package bayesian
 import (
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
+
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
 	"go.chromium.org/luci/analysis/internal/changepoints/model"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestChangePointPositionConfidenceInterval(t *testing.T) {
@@ -34,7 +36,7 @@ func TestChangePointPositionConfidenceInterval(t *testing.T) {
 			Beta:  0.5,
 		},
 	}
-	Convey("6 commit positions, each with 1 verdict", t, func() {
+	ftt.Run("6 commit positions, each with 1 verdict", t, func(t *ftt.Test) {
 		var (
 			positions     = []int{1, 2, 3, 4, 5, 6}
 			total         = []int{2, 2, 1, 1, 2, 2}
@@ -43,11 +45,11 @@ func TestChangePointPositionConfidenceInterval(t *testing.T) {
 		vs := inputbuffer.VerdictRefs(positions, total, hasUnexpected)
 		d := a.ChangePointPositionDistribution(vs)
 		min, max := d.ConfidenceInterval(0.99)
-		So(min, ShouldEqual, 2)
-		So(max, ShouldEqual, 5)
+		assert.Loosely(t, min, should.Equal(2))
+		assert.Loosely(t, max, should.Equal(5))
 	})
 
-	Convey("4 commit positions, 2 verdict each", t, func() {
+	ftt.Run("4 commit positions, 2 verdict each", t, func(t *ftt.Test) {
 		var (
 			positions     = []int{1, 1, 2, 2, 3, 3, 4, 4}
 			total         = []int{2, 2, 2, 2, 2, 2, 2, 2}
@@ -56,11 +58,11 @@ func TestChangePointPositionConfidenceInterval(t *testing.T) {
 		vs := inputbuffer.VerdictRefs(positions, total, hasUnexpected)
 		d := a.ChangePointPositionDistribution(vs)
 		min, max := d.ConfidenceInterval(0.99)
-		So(min, ShouldEqual, 2)
-		So(max, ShouldEqual, 4)
+		assert.Loosely(t, min, should.Equal(2))
+		assert.Loosely(t, max, should.Equal(4))
 	})
 
-	Convey("2 commit position with multiple verdicts each", t, func() {
+	ftt.Run("2 commit position with multiple verdicts each", t, func(t *ftt.Test) {
 		var (
 			positions     = []int{1, 1, 2, 2, 2, 2}
 			total         = []int{3, 3, 1, 2, 3, 3}
@@ -70,11 +72,11 @@ func TestChangePointPositionConfidenceInterval(t *testing.T) {
 		d := a.ChangePointPositionDistribution(vs)
 		min, max := d.ConfidenceInterval(0.99)
 		// There is only 1 possible position for change point
-		So(min, ShouldEqual, 2)
-		So(max, ShouldEqual, 2)
+		assert.Loosely(t, min, should.Equal(2))
+		assert.Loosely(t, max, should.Equal(2))
 	})
 
-	Convey("Pass to flake transition", t, func() {
+	ftt.Run("Pass to flake transition", t, func(t *ftt.Test) {
 		var (
 			positions     = []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
 			total         = []int{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2}
@@ -83,11 +85,11 @@ func TestChangePointPositionConfidenceInterval(t *testing.T) {
 		vs := inputbuffer.VerdictRefs(positions, total, hasUnexpected)
 		d := a.ChangePointPositionDistribution(vs)
 		min, max := d.ConfidenceInterval(0.99)
-		So(min, ShouldEqual, 3)
-		So(max, ShouldEqual, 14)
+		assert.Loosely(t, min, should.Equal(3))
+		assert.Loosely(t, max, should.Equal(14))
 	})
 
-	Convey("Flake to fail transition", t, func() {
+	ftt.Run("Flake to fail transition", t, func(t *ftt.Test) {
 		var (
 			positions     = []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
 			total         = []int{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2}
@@ -96,11 +98,11 @@ func TestChangePointPositionConfidenceInterval(t *testing.T) {
 		vs := inputbuffer.VerdictRefs(positions, total, hasUnexpected)
 		d := a.ChangePointPositionDistribution(vs)
 		min, max := d.ConfidenceInterval(0.99)
-		So(min, ShouldEqual, 3)
-		So(max, ShouldEqual, 14)
+		assert.Loosely(t, min, should.Equal(3))
+		assert.Loosely(t, max, should.Equal(14))
 	})
 
-	Convey("(Fail, Pass after retry) to (Fail, Fail after retry)", t, func() {
+	ftt.Run("(Fail, Pass after retry) to (Fail, Fail after retry)", t, func(t *ftt.Test) {
 		var (
 			positions            = []int{1, 2, 3, 4, 5, 6, 7, 8}
 			total                = []int{2, 2, 2, 2, 2, 2, 2, 2}
@@ -111,11 +113,11 @@ func TestChangePointPositionConfidenceInterval(t *testing.T) {
 		vs := inputbuffer.VerdictsWithRetriesRefs(positions, total, hasUnexpected, retries, unexpectedAfterRetry)
 		d := a.ChangePointPositionDistribution(vs)
 		min, max := d.ConfidenceInterval(0.99)
-		So(min, ShouldEqual, 4)
-		So(max, ShouldEqual, 6)
+		assert.Loosely(t, min, should.Equal(4))
+		assert.Loosely(t, max, should.Equal(6))
 	})
 
-	Convey("(Fail, Fail after retry) to (Fail, Flaky on retry)", t, func() {
+	ftt.Run("(Fail, Fail after retry) to (Fail, Flaky on retry)", t, func(t *ftt.Test) {
 		var (
 			positions            = []int{1, 2, 3, 5, 5, 5, 7, 7}
 			total                = []int{3, 3, 3, 1, 3, 3, 3, 3}
@@ -126,11 +128,11 @@ func TestChangePointPositionConfidenceInterval(t *testing.T) {
 		vs := inputbuffer.VerdictsWithRetriesRefs(positions, total, hasUnexpected, retries, unexpectedAfterRetry)
 		d := a.ChangePointPositionDistribution(vs)
 		min, max := d.ConfidenceInterval(0.99)
-		So(min, ShouldEqual, 3)
-		So(max, ShouldEqual, 5)
+		assert.Loosely(t, min, should.Equal(3))
+		assert.Loosely(t, max, should.Equal(5))
 	})
 
-	Convey("Pass to fail transition, sparse", t, func() {
+	ftt.Run("Pass to fail transition, sparse", t, func(t *ftt.Test) {
 		var (
 			positions     = []int{90, 100, 200, 210}
 			total         = []int{5, 5, 5, 5}
@@ -142,7 +144,7 @@ func TestChangePointPositionConfidenceInterval(t *testing.T) {
 		// The distribution reflects that we do not know where
 		// in the range 101...200 the changepoint is.
 		expectedDistribution := &model.PositionDistribution{101, 101, 101, 101, 101, 101, 101, 101, 150, 200, 200, 200, 200, 200, 200, 200, 200}
-		So(d, ShouldResemble, expectedDistribution)
+		assert.Loosely(t, d, should.Resemble(expectedDistribution))
 	})
 }
 

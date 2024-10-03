@@ -25,13 +25,13 @@ import (
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config/validation"
 
 	"go.chromium.org/luci/analysis/internal/analysis/metrics"
 	configpb "go.chromium.org/luci/analysis/proto/config"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 const project = "fakeproject"
@@ -46,67 +46,67 @@ func TestServiceConfigValidator(t *testing.T) {
 		return c.Finalize()
 	}
 
-	Convey("config template is valid", t, func() {
+	ftt.Run("config template is valid", t, func(t *ftt.Test) {
 		content, err := os.ReadFile(
 			"../../configs/services/luci-analysis-dev/config-template.cfg",
 		)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		cfg := &configpb.Config{}
-		So(prototext.Unmarshal(content, cfg), ShouldBeNil)
-		So(validate(cfg), ShouldBeNil)
+		assert.Loosely(t, prototext.Unmarshal(content, cfg), should.BeNil)
+		assert.Loosely(t, validate(cfg), should.BeNil)
 	})
 
-	Convey("valid config is valid", t, func() {
+	ftt.Run("valid config is valid", t, func(t *ftt.Test) {
 		cfg, err := CreatePlaceholderConfig()
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		So(validate(cfg), ShouldBeNil)
+		assert.Loosely(t, validate(cfg), should.BeNil)
 	})
 
-	Convey("monorail hostname", t, func() {
+	ftt.Run("monorail hostname", t, func(t *ftt.Test) {
 		cfg, err := CreatePlaceholderConfig()
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		Convey("must be specified", func() {
+		t.Run("must be specified", func(t *ftt.Test) {
 			cfg.MonorailHostname = ""
-			So(validate(cfg), ShouldErrLike, "(monorail_hostname): unspecified")
+			assert.Loosely(t, validate(cfg), should.ErrLike("(monorail_hostname): unspecified"))
 		})
-		Convey("must be correctly formed", func() {
+		t.Run("must be correctly formed", func(t *ftt.Test) {
 			cfg.MonorailHostname = "monorail host"
-			So(validate(cfg), ShouldErrLike, `(monorail_hostname): does not match pattern "^[a-z][a-z9-9\\-.]{0,62}[a-z]$"`)
+			assert.Loosely(t, validate(cfg), should.ErrLike(`(monorail_hostname): does not match pattern "^[a-z][a-z9-9\\-.]{0,62}[a-z]$"`))
 		})
 	})
-	Convey("chunk GCS bucket", t, func() {
+	ftt.Run("chunk GCS bucket", t, func(t *ftt.Test) {
 		cfg, err := CreatePlaceholderConfig()
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		Convey("must be specified", func() {
+		t.Run("must be specified", func(t *ftt.Test) {
 			cfg.ChunkGcsBucket = ""
-			So(validate(cfg), ShouldErrLike, `(chunk_gcs_bucket): unspecified`)
+			assert.Loosely(t, validate(cfg), should.ErrLike(`(chunk_gcs_bucket): unspecified`))
 		})
-		Convey("must be correctly formed", func() {
+		t.Run("must be correctly formed", func(t *ftt.Test) {
 			cfg, err := CreatePlaceholderConfig()
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			cfg.ChunkGcsBucket = "my bucket"
-			So(validate(cfg), ShouldErrLike, `(chunk_gcs_bucket): does not match pattern "^[a-z0-9][a-z0-9\\-_.]{1,220}[a-z0-9]$"`)
+			assert.Loosely(t, validate(cfg), should.ErrLike(`(chunk_gcs_bucket): does not match pattern "^[a-z0-9][a-z0-9\\-_.]{1,220}[a-z0-9]$"`))
 		})
 	})
-	Convey("reclustering workers", t, func() {
+	ftt.Run("reclustering workers", t, func(t *ftt.Test) {
 		cfg, err := CreatePlaceholderConfig()
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		Convey("zero", func() {
+		t.Run("zero", func(t *ftt.Test) {
 			cfg.ReclusteringWorkers = 0
-			So(validate(cfg), ShouldErrLike, `(reclustering_workers): must be specified`)
+			assert.Loosely(t, validate(cfg), should.ErrLike(`(reclustering_workers): must be specified`))
 		})
-		Convey("less than one", func() {
+		t.Run("less than one", func(t *ftt.Test) {
 			cfg.ReclusteringWorkers = -1
-			So(validate(cfg), ShouldErrLike, `(reclustering_workers): must be in the range [1, 1000]`)
+			assert.Loosely(t, validate(cfg), should.ErrLike(`(reclustering_workers): must be in the range [1, 1000]`))
 		})
-		Convey("too large", func() {
+		t.Run("too large", func(t *ftt.Test) {
 			cfg.ReclusteringWorkers = 1001
-			So(validate(cfg), ShouldErrLike, `(reclustering_workers): must be in the range [1, 1000]`)
+			assert.Loosely(t, validate(cfg), should.ErrLike(`(reclustering_workers): must be in the range [1, 1000]`))
 		})
 	})
 }
@@ -120,228 +120,228 @@ func TestProjectConfigValidator(t *testing.T) {
 		return c.Finalize()
 	}
 
-	Convey("config template is valid", t, func() {
+	ftt.Run("config template is valid", t, func(t *ftt.Test) {
 		content, err := os.ReadFile(
 			"../../configs/projects/chromium/luci-analysis-dev-template.cfg",
 		)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		cfg := &configpb.ProjectConfig{}
-		So(prototext.Unmarshal(content, cfg), ShouldBeNil)
-		So(validate(project, cfg), ShouldBeNil)
+		assert.Loosely(t, prototext.Unmarshal(content, cfg), should.BeNil)
+		assert.Loosely(t, validate(project, cfg), should.BeNil)
 	})
 
-	Convey("clustering", t, func() {
+	ftt.Run("clustering", t, func(t *ftt.Test) {
 		cfg := CreateConfigWithBothBuganizerAndMonorail(configpb.BugSystem_MONORAIL)
 
 		clustering := cfg.Clustering
 
-		Convey("may not be specified", func() {
+		t.Run("may not be specified", func(t *ftt.Test) {
 			cfg.Clustering = nil
-			So(validate(project, cfg), ShouldBeNil)
+			assert.Loosely(t, validate(project, cfg), should.BeNil)
 		})
-		Convey("test name rules", func() {
+		t.Run("test name rules", func(t *ftt.Test) {
 			rule := clustering.TestNameRules[0]
 			path := `clustering / test_name_rules / [0]`
-			Convey("name", func() {
-				Convey("unset", func() {
+			t.Run("name", func(t *ftt.Test) {
+				t.Run("unset", func(t *ftt.Test) {
 					rule.Name = ""
-					So(validate(project, cfg), ShouldErrLike, `(`+path+` / name): unspecified`)
+					assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+` / name): unspecified`))
 				})
-				Convey("invalid", func() {
+				t.Run("invalid", func(t *ftt.Test) {
 					rule.Name = "<script>evil()</script>"
-					So(validate(project, cfg), ShouldErrLike, `(`+path+` / name): does not match pattern "^[a-zA-Z0-9\\-(), ]+$"`)
+					assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+` / name): does not match pattern "^[a-zA-Z0-9\\-(), ]+$"`))
 				})
 			})
-			Convey("pattern", func() {
-				Convey("unset", func() {
+			t.Run("pattern", func(t *ftt.Test) {
+				t.Run("unset", func(t *ftt.Test) {
 					rule.Pattern = ""
 					// Make sure the like template does not refer to capture
 					// groups in the pattern, to avoid other errors in this test.
 					rule.LikeTemplate = "%blah%"
-					So(validate(project, cfg), ShouldErrLike, `(`+path+` / pattern): unspecified`)
+					assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+` / pattern): unspecified`))
 				})
-				Convey("invalid", func() {
+				t.Run("invalid", func(t *ftt.Test) {
 					rule.Pattern = "["
-					So(validate(project, cfg), ShouldErrLike, `(`+path+`): pattern: error parsing regexp: missing closing ]`)
+					assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+`): pattern: error parsing regexp: missing closing ]`))
 				})
 			})
-			Convey("like pattern", func() {
-				Convey("unset", func() {
+			t.Run("like pattern", func(t *ftt.Test) {
+				t.Run("unset", func(t *ftt.Test) {
 					rule.LikeTemplate = ""
-					So(validate(project, cfg), ShouldErrLike, `(`+path+` / like_template): unspecified`)
+					assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+` / like_template): unspecified`))
 				})
-				Convey("invalid", func() {
+				t.Run("invalid", func(t *ftt.Test) {
 					rule.LikeTemplate = "blah${broken"
-					So(validate(project, cfg), ShouldErrLike, `(`+path+`): like_template: invalid use of the $ operator at position 4 in "blah${broken"`)
+					assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+`): like_template: invalid use of the $ operator at position 4 in "blah${broken"`))
 				})
 			})
 		})
-		Convey("failure reason masks", func() {
-			Convey("empty", func() {
+		t.Run("failure reason masks", func(t *ftt.Test) {
+			t.Run("empty", func(t *ftt.Test) {
 				clustering.ReasonMaskPatterns = nil
-				So(validate(project, cfg), ShouldBeNil)
+				assert.Loosely(t, validate(project, cfg), should.BeNil)
 			})
-			Convey("pattern is not specified", func() {
+			t.Run("pattern is not specified", func(t *ftt.Test) {
 				clustering.ReasonMaskPatterns[0] = ""
-				So(validate(project, cfg), ShouldErrLike, "empty pattern is not allowed")
+				assert.Loosely(t, validate(project, cfg), should.ErrLike("empty pattern is not allowed"))
 			})
-			Convey("pattern is invalid", func() {
+			t.Run("pattern is invalid", func(t *ftt.Test) {
 				clustering.ReasonMaskPatterns[0] = "["
-				So(validate(project, cfg), ShouldErrLike, "could not compile pattern: error parsing regexp: missing closing ]")
+				assert.Loosely(t, validate(project, cfg), should.ErrLike("could not compile pattern: error parsing regexp: missing closing ]"))
 			})
-			Convey("pattern has multiple subexpressions", func() {
+			t.Run("pattern has multiple subexpressions", func(t *ftt.Test) {
 				clustering.ReasonMaskPatterns[0] = `(a)(b)`
-				So(validate(project, cfg), ShouldErrLike, "pattern must contain exactly one parenthesised capturing subexpression indicating the text to mask")
+				assert.Loosely(t, validate(project, cfg), should.ErrLike("pattern must contain exactly one parenthesised capturing subexpression indicating the text to mask"))
 			})
-			Convey("non-capturing subexpressions does not count", func() {
+			t.Run("non-capturing subexpressions does not count", func(t *ftt.Test) {
 				clustering.ReasonMaskPatterns[0] = `^(?:\[Fixture failure\]) ([a-zA-Z0-9_]+)(?:[:])`
-				So(validate(project, cfg), ShouldBeNil)
+				assert.Loosely(t, validate(project, cfg), should.BeNil)
 			})
 		})
 	})
-	Convey("metrics", t, func() {
+	ftt.Run("metrics", t, func(t *ftt.Test) {
 		cfg := CreateConfigWithBothBuganizerAndMonorail(configpb.BugSystem_MONORAIL)
 
 		metrics := cfg.Metrics
 
-		Convey("may be left unspecified", func() {
+		t.Run("may be left unspecified", func(t *ftt.Test) {
 			cfg.Metrics = nil
-			So(validate(project, cfg), ShouldBeNil)
+			assert.Loosely(t, validate(project, cfg), should.BeNil)
 		})
-		Convey("overrides must be valid", func() {
+		t.Run("overrides must be valid", func(t *ftt.Test) {
 			override := metrics.Overrides[0]
-			Convey("metric ID is not specified", func() {
+			t.Run("metric ID is not specified", func(t *ftt.Test) {
 				override.MetricId = ""
-				So(validate(project, cfg), ShouldErrLike, `no metric with ID ""`)
+				assert.Loosely(t, validate(project, cfg), should.ErrLike(`no metric with ID ""`))
 			})
-			Convey("metric ID is invalid", func() {
+			t.Run("metric ID is invalid", func(t *ftt.Test) {
 				override.MetricId = "not-exists"
-				So(validate(project, cfg), ShouldErrLike, `no metric with ID "not-exists"`)
+				assert.Loosely(t, validate(project, cfg), should.ErrLike(`no metric with ID "not-exists"`))
 			})
-			Convey("metric ID is repeated", func() {
+			t.Run("metric ID is repeated", func(t *ftt.Test) {
 				metrics.Overrides[0].MetricId = "failures"
 				metrics.Overrides[1].MetricId = "failures"
-				So(validate(project, cfg), ShouldErrLike, `metric with ID "failures" appears in collection more than once`)
+				assert.Loosely(t, validate(project, cfg), should.ErrLike(`metric with ID "failures" appears in collection more than once`))
 			})
-			Convey("sort priority is invalid", func() {
+			t.Run("sort priority is invalid", func(t *ftt.Test) {
 				override.SortPriority = proto.Int32(0)
-				So(validate(project, cfg), ShouldErrLike, `value must be positive`)
+				assert.Loosely(t, validate(project, cfg), should.ErrLike(`value must be positive`))
 			})
 		})
 	})
-	Convey("bug management", t, func() {
-		So(printableASCIIRE.MatchString("ninja:${target}/%${suite}.${case}%"), ShouldBeTrue)
+	ftt.Run("bug management", t, func(t *ftt.Test) {
+		assert.Loosely(t, printableASCIIRE.MatchString("ninja:${target}/%${suite}.${case}%"), should.BeTrue)
 		cfg := CreateConfigWithBothBuganizerAndMonorail(configpb.BugSystem_BUGANIZER)
 		bm := cfg.BugManagement
 
-		Convey("may be unspecified", func() {
+		t.Run("may be unspecified", func(t *ftt.Test) {
 			// E.g. if project does not want to use bug management capabilities.
 			cfg.BugManagement = nil
-			So(validate(project, cfg), ShouldBeNil)
+			assert.Loosely(t, validate(project, cfg), should.BeNil)
 		})
-		Convey("may be empty", func() {
+		t.Run("may be empty", func(t *ftt.Test) {
 			// E.g. if project does not want to use bug management capabilities.
 			cfg.BugManagement = &configpb.BugManagement{}
-			So(validate(project, cfg), ShouldBeNil)
+			assert.Loosely(t, validate(project, cfg), should.BeNil)
 		})
-		Convey("default bug system must be set if monorail or buganizer configured", func() {
+		t.Run("default bug system must be set if monorail or buganizer configured", func(t *ftt.Test) {
 			bm.DefaultBugSystem = configpb.BugSystem_BUG_SYSTEM_UNSPECIFIED
-			So(validate(project, cfg), ShouldErrLike, `(bug_management / default_bug_system): must be specified`)
+			assert.Loosely(t, validate(project, cfg), should.ErrLike(`(bug_management / default_bug_system): must be specified`))
 		})
-		Convey("buganizer", func() {
+		t.Run("buganizer", func(t *ftt.Test) {
 			b := bm.Buganizer
-			Convey("may be unset", func() {
+			t.Run("may be unset", func(t *ftt.Test) {
 				bm.DefaultBugSystem = configpb.BugSystem_MONORAIL
 				bm.Buganizer = nil
-				So(validate(project, cfg), ShouldBeNil)
+				assert.Loosely(t, validate(project, cfg), should.BeNil)
 
-				Convey("but not if buganizer is default bug system", func() {
+				t.Run("but not if buganizer is default bug system", func(t *ftt.Test) {
 					bm.DefaultBugSystem = configpb.BugSystem_BUGANIZER
-					So(validate(project, cfg), ShouldErrLike, `(bug_management): buganizer section is required when the default_bug_system is Buganizer`)
+					assert.Loosely(t, validate(project, cfg), should.ErrLike(`(bug_management): buganizer section is required when the default_bug_system is Buganizer`))
 				})
 			})
-			Convey("default component", func() {
+			t.Run("default component", func(t *ftt.Test) {
 				path := `bug_management / buganizer / default_component`
-				Convey("must be set", func() {
+				t.Run("must be set", func(t *ftt.Test) {
 					b.DefaultComponent = nil
-					So(validate(project, cfg), ShouldErrLike, `(`+path+`): must be specified`)
+					assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+`): must be specified`))
 				})
-				Convey("id must be set", func() {
+				t.Run("id must be set", func(t *ftt.Test) {
 					b.DefaultComponent.Id = 0
-					So(validate(project, cfg), ShouldErrLike, `(`+path+` / id): must be specified`)
+					assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+` / id): must be specified`))
 				})
-				Convey("id is non-positive", func() {
+				t.Run("id is non-positive", func(t *ftt.Test) {
 					b.DefaultComponent.Id = -1
-					So(validate(project, cfg), ShouldErrLike, `(`+path+` / id): must be positive`)
+					assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+` / id): must be positive`))
 				})
 			})
 		})
-		Convey("monorail", func() {
+		t.Run("monorail", func(t *ftt.Test) {
 			m := bm.Monorail
 			path := `bug_management / monorail`
-			Convey("may be unset", func() {
+			t.Run("may be unset", func(t *ftt.Test) {
 				bm.DefaultBugSystem = configpb.BugSystem_BUGANIZER
 				bm.Monorail = nil
-				So(validate(project, cfg), ShouldBeNil)
+				assert.Loosely(t, validate(project, cfg), should.BeNil)
 
-				Convey("but not if monorail is default bug system", func() {
+				t.Run("but not if monorail is default bug system", func(t *ftt.Test) {
 					bm.DefaultBugSystem = configpb.BugSystem_MONORAIL
-					So(validate(project, cfg), ShouldErrLike, `(bug_management): monorail section is required when the default_bug_system is Monorail`)
+					assert.Loosely(t, validate(project, cfg), should.ErrLike(`(bug_management): monorail section is required when the default_bug_system is Monorail`))
 				})
 			})
-			Convey("project", func() {
+			t.Run("project", func(t *ftt.Test) {
 				path := path + ` / project`
-				Convey("unset", func() {
+				t.Run("unset", func(t *ftt.Test) {
 					m.Project = ""
-					So(validate(project, cfg), ShouldErrLike, `(`+path+`): unspecified`)
+					assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+`): unspecified`))
 				})
-				Convey("invalid", func() {
+				t.Run("invalid", func(t *ftt.Test) {
 					m.Project = "<>"
-					So(validate(project, cfg), ShouldErrLike, `(`+path+`): does not match pattern "^[a-z0-9][-a-z0-9]{0,61}[a-z0-9]$"`)
+					assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+`): does not match pattern "^[a-z0-9][-a-z0-9]{0,61}[a-z0-9]$"`))
 				})
 			})
-			Convey("monorail hostname", func() {
+			t.Run("monorail hostname", func(t *ftt.Test) {
 				path := path + ` / monorail_hostname`
-				Convey("unset", func() {
+				t.Run("unset", func(t *ftt.Test) {
 					m.MonorailHostname = ""
-					So(validate(project, cfg), ShouldErrLike, `(`+path+`): unspecified`)
+					assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+`): unspecified`))
 				})
-				Convey("invalid", func() {
+				t.Run("invalid", func(t *ftt.Test) {
 					m.MonorailHostname = "<>"
-					So(validate(project, cfg), ShouldErrLike, `(`+path+`): does not match pattern "^[a-z][a-z9-9\\-.]{0,62}[a-z]$"`)
+					assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+`): does not match pattern "^[a-z][a-z9-9\\-.]{0,62}[a-z]$"`))
 				})
 			})
-			Convey("display prefix", func() {
+			t.Run("display prefix", func(t *ftt.Test) {
 				path := path + ` / display_prefix`
-				Convey("unset", func() {
+				t.Run("unset", func(t *ftt.Test) {
 					m.DisplayPrefix = ""
-					So(validate(project, cfg), ShouldErrLike, `(`+path+`): unspecified`)
+					assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+`): unspecified`))
 				})
-				Convey("invalid", func() {
+				t.Run("invalid", func(t *ftt.Test) {
 					m.DisplayPrefix = "<>"
-					So(validate(project, cfg), ShouldErrLike, `(`+path+`): does not match pattern "^[a-z0-9\\-.]{0,64}$"`)
+					assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+`): does not match pattern "^[a-z0-9\\-.]{0,64}$"`))
 				})
 			})
-			Convey("priority field id", func() {
+			t.Run("priority field id", func(t *ftt.Test) {
 				path := path + ` / priority_field_id`
-				Convey("unset", func() {
+				t.Run("unset", func(t *ftt.Test) {
 					m.PriorityFieldId = 0
-					So(validate(project, cfg), ShouldErrLike, `(`+path+`): must be specified`)
+					assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+`): must be specified`))
 				})
-				Convey("invalid", func() {
+				t.Run("invalid", func(t *ftt.Test) {
 					m.PriorityFieldId = -1
-					So(validate(project, cfg), ShouldErrLike, `(`+path+`): must be positive`)
+					assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+`): must be positive`))
 				})
 			})
-			Convey("default field values", func() {
+			t.Run("default field values", func(t *ftt.Test) {
 				path := path + ` / default_field_values`
 				fieldValue := m.DefaultFieldValues[0]
-				Convey("empty", func() {
+				t.Run("empty", func(t *ftt.Test) {
 					// Valid to have no default values.
 					m.DefaultFieldValues = nil
-					So(validate(project, cfg), ShouldBeNil)
+					assert.Loosely(t, validate(project, cfg), should.BeNil)
 				})
-				Convey("too many", func() {
+				t.Run("too many", func(t *ftt.Test) {
 					m.DefaultFieldValues = make([]*configpb.MonorailFieldValue, 0, 51)
 					for i := 0; i < 51; i++ {
 						m.DefaultFieldValues = append(m.DefaultFieldValues, &configpb.MonorailFieldValue{
@@ -350,127 +350,127 @@ func TestProjectConfigValidator(t *testing.T) {
 						})
 					}
 					m.DefaultFieldValues[0].Value = `\0`
-					So(validate(project, cfg), ShouldErrLike, `(`+path+`): at most 50 field values may be specified`)
+					assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+`): at most 50 field values may be specified`))
 				})
-				Convey("unset", func() {
+				t.Run("unset", func(t *ftt.Test) {
 					m.DefaultFieldValues[0] = nil
-					So(validate(project, cfg), ShouldErrLike, `(`+path+` / [0]): must be specified`)
+					assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+` / [0]): must be specified`))
 				})
-				Convey("invalid - unset field ID", func() {
+				t.Run("invalid - unset field ID", func(t *ftt.Test) {
 					fieldValue.FieldId = 0
-					So(validate(project, cfg), ShouldErrLike, `(`+path+` / [0] / field_id): must be specified`)
+					assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+` / [0] / field_id): must be specified`))
 				})
-				Convey("invalid - bad field value", func() {
+				t.Run("invalid - bad field value", func(t *ftt.Test) {
 					fieldValue.Value = "\x00"
-					So(validate(project, cfg), ShouldErrLike, `(`+path+` / [0] / value): does not match pattern "^[[:print:]]+$"`)
+					assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+` / [0] / value): does not match pattern "^[[:print:]]+$"`))
 				})
 			})
 		})
-		Convey("policies", func() {
+		t.Run("policies", func(t *ftt.Test) {
 			policy := bm.Policies[0]
 			path := "bug_management / policies"
-			Convey("may be empty", func() {
+			t.Run("may be empty", func(t *ftt.Test) {
 				bm.Policies = nil
-				So(validate(project, cfg), ShouldBeNil)
+				assert.Loosely(t, validate(project, cfg), should.BeNil)
 			})
 			// but may have non-duplicate IDs.
-			Convey("may have multiple", func() {
+			t.Run("may have multiple", func(t *ftt.Test) {
 				bm.Policies = []*configpb.BugManagementPolicy{
 					CreatePlaceholderBugManagementPolicy("policy-a"),
 					CreatePlaceholderBugManagementPolicy("policy-b"),
 				}
-				So(validate(project, cfg), ShouldBeNil)
+				assert.Loosely(t, validate(project, cfg), should.BeNil)
 
-				Convey("duplicate policy IDs", func() {
+				t.Run("duplicate policy IDs", func(t *ftt.Test) {
 					bm.Policies[1].Id = bm.Policies[0].Id
-					So(validate(project, cfg), ShouldErrLike, `(`+path+` / [1] / id): policy with ID "policy-a" appears in the collection more than once`)
+					assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+` / [1] / id): policy with ID "policy-a" appears in the collection more than once`))
 				})
 			})
-			Convey("too many", func() {
+			t.Run("too many", func(t *ftt.Test) {
 				bm.Policies = []*configpb.BugManagementPolicy{}
 				for i := 0; i < 51; i++ {
 					policy := CreatePlaceholderBugManagementPolicy(fmt.Sprintf("extra-%v", i))
 					bm.Policies = append(bm.Policies, policy)
 				}
-				So(validate(project, cfg), ShouldErrLike, `(`+path+`): exceeds maximum of 50 policies`)
+				assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+`): exceeds maximum of 50 policies`))
 			})
-			Convey("unset", func() {
+			t.Run("unset", func(t *ftt.Test) {
 				bm.Policies[0] = nil
-				So(validate(project, cfg), ShouldErrLike, `(`+path+` / [0]): must be specified`)
+				assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+` / [0]): must be specified`))
 			})
-			Convey("id", func() {
+			t.Run("id", func(t *ftt.Test) {
 				path := path + " / [0] / id"
-				Convey("unset", func() {
+				t.Run("unset", func(t *ftt.Test) {
 					policy.Id = ""
-					So(validate(project, cfg), ShouldErrLike, `(`+path+`): unspecified`)
+					assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+`): unspecified`))
 				})
-				Convey("invalid", func() {
+				t.Run("invalid", func(t *ftt.Test) {
 					policy.Id = "-a-"
-					So(validate(project, cfg), ShouldErrLike, `(`+path+`): does not match pattern "^[a-z]([a-z0-9-]{0,62}[a-z0-9])?$"`)
+					assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+`): does not match pattern "^[a-z]([a-z0-9-]{0,62}[a-z0-9])?$"`))
 				})
-				Convey("too long", func() {
+				t.Run("too long", func(t *ftt.Test) {
 					policy.Id = strings.Repeat("a", 65)
-					So(validate(project, cfg), ShouldErrLike, `(`+path+`): exceeds maximum allowed length of 64 bytes`)
+					assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+`): exceeds maximum allowed length of 64 bytes`))
 				})
 			})
-			Convey("human readable name", func() {
+			t.Run("human readable name", func(t *ftt.Test) {
 				path := path + " / [0] / human_readable_name"
-				Convey("unset", func() {
+				t.Run("unset", func(t *ftt.Test) {
 					policy.HumanReadableName = ""
-					So(validate(project, cfg), ShouldErrLike, `(`+path+`): unspecified`)
+					assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+`): unspecified`))
 				})
-				Convey("invalid", func() {
+				t.Run("invalid", func(t *ftt.Test) {
 					policy.HumanReadableName = "\x00"
-					So(validate(project, cfg), ShouldErrLike, `(`+path+`): does not match pattern "^[[:print:]]{1,100}$"`)
+					assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+`): does not match pattern "^[[:print:]]{1,100}$"`))
 				})
-				Convey("too long", func() {
+				t.Run("too long", func(t *ftt.Test) {
 					policy.HumanReadableName = strings.Repeat("a", 101)
-					So(validate(project, cfg), ShouldErrLike, `(`+path+`): exceeds maximum allowed length of 100 bytes`)
+					assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+`): exceeds maximum allowed length of 100 bytes`))
 				})
 			})
-			Convey("owners", func() {
+			t.Run("owners", func(t *ftt.Test) {
 				path := path + " / [0] / owners"
-				Convey("unset", func() {
+				t.Run("unset", func(t *ftt.Test) {
 					policy.Owners = nil
-					So(validate(project, cfg), ShouldErrLike, `(`+path+`): at least one owner must be specified`)
+					assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+`): at least one owner must be specified`))
 				})
-				Convey("too many", func() {
+				t.Run("too many", func(t *ftt.Test) {
 					policy.Owners = []string{}
 					for i := 0; i < 11; i++ {
 						policy.Owners = append(policy.Owners, "blah@google.com")
 					}
-					So(validate(project, cfg), ShouldErrLike, `(`+path+`): exceeds maximum of 10 owners`)
+					assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+`): exceeds maximum of 10 owners`))
 				})
-				Convey("invalid - empty", func() {
+				t.Run("invalid - empty", func(t *ftt.Test) {
 					// Must have a @google.com owner.
 					policy.Owners = []string{""}
-					So(validate(project, cfg), ShouldErrLike, `(`+path+` / [0]): unspecified`)
+					assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+` / [0]): unspecified`))
 				})
-				Convey("invalid - non @google.com", func() {
+				t.Run("invalid - non @google.com", func(t *ftt.Test) {
 					// Must have a @google.com owner.
 					policy.Owners = []string{"blah@blah.com"}
-					So(validate(project, cfg), ShouldErrLike, `(`+path+" / [0]): does not match pattern \"^[A-Za-z0-9!#$%&'*+-/=?^_`.{|}~]{1,64}@google\\\\.com$\"")
+					assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+" / [0]): does not match pattern \"^[A-Za-z0-9!#$%&'*+-/=?^_`.{|}~]{1,64}@google\\\\.com$\""))
 				})
-				Convey("invalid - too long", func() {
+				t.Run("invalid - too long", func(t *ftt.Test) {
 					policy.Owners = []string{strings.Repeat("a", 65) + "@google.com"}
-					So(validate(project, cfg), ShouldErrLike, `(`+path+` / [0]): exceeds maximum allowed length of 75 bytes`)
+					assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+` / [0]): exceeds maximum allowed length of 75 bytes`))
 				})
 			})
-			Convey("priority", func() {
+			t.Run("priority", func(t *ftt.Test) {
 				path := path + " / [0] / priority"
-				Convey("unset", func() {
+				t.Run("unset", func(t *ftt.Test) {
 					policy.Priority = configpb.BuganizerPriority_BUGANIZER_PRIORITY_UNSPECIFIED
-					So(validate(project, cfg), ShouldErrLike, `(`+path+`): must be specified`)
+					assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+`): must be specified`))
 				})
 			})
-			Convey("metrics", func() {
+			t.Run("metrics", func(t *ftt.Test) {
 				metric := policy.Metrics[0]
 				path := path + " / [0] / metrics"
-				Convey("unset", func() {
+				t.Run("unset", func(t *ftt.Test) {
 					policy.Metrics = nil
-					So(validate(project, cfg), ShouldErrLike, `(`+path+`): at least one metric must be specified`)
+					assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+`): at least one metric must be specified`))
 				})
-				Convey("multiple", func() {
+				t.Run("multiple", func(t *ftt.Test) {
 					policy.Metrics = []*configpb.BugManagementPolicy_Metric{
 						{
 							MetricId: metrics.CriticalFailuresExonerated.ID.String(),
@@ -492,14 +492,14 @@ func TestProjectConfigValidator(t *testing.T) {
 						},
 					}
 					// Valid
-					So(validate(project, cfg), ShouldBeNil)
+					assert.Loosely(t, validate(project, cfg), should.BeNil)
 
-					Convey("duplicate IDs", func() {
+					t.Run("duplicate IDs", func(t *ftt.Test) {
 						// Invalid.
 						policy.Metrics[1].MetricId = policy.Metrics[0].MetricId
-						So(validate(project, cfg), ShouldErrLike, `(`+path+` / [1] / metric_id): metric with ID "critical-failures-exonerated" appears in collection more than once`)
+						assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+` / [1] / metric_id): metric with ID "critical-failures-exonerated" appears in collection more than once`))
 					})
-					Convey("too many", func() {
+					t.Run("too many", func(t *ftt.Test) {
 						policy.Metrics = []*configpb.BugManagementPolicy_Metric{}
 						for i := 0; i < 11; i++ {
 							policy.Metrics = append(policy.Metrics, &configpb.BugManagementPolicy_Metric{
@@ -512,152 +512,152 @@ func TestProjectConfigValidator(t *testing.T) {
 								},
 							})
 						}
-						So(validate(project, cfg), ShouldErrLike, `(`+path+`): exceeds maximum of 10 metrics`)
+						assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+`): exceeds maximum of 10 metrics`))
 					})
 				})
-				Convey("metric ID", func() {
-					Convey("unset", func() {
+				t.Run("metric ID", func(t *ftt.Test) {
+					t.Run("unset", func(t *ftt.Test) {
 						metric.MetricId = ""
-						So(validate(project, cfg), ShouldErrLike, `(`+path+` / [0] / metric_id): no metric with ID ""`)
+						assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+` / [0] / metric_id): no metric with ID ""`))
 					})
-					Convey("invalid - metric not defined", func() {
+					t.Run("invalid - metric not defined", func(t *ftt.Test) {
 						metric.MetricId = "not-exists"
-						So(validate(project, cfg), ShouldErrLike, `(`+path+` / [0] / metric_id): no metric with ID "not-exists"`)
+						assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+` / [0] / metric_id): no metric with ID "not-exists"`))
 					})
 				})
-				Convey("activation threshold", func() {
+				t.Run("activation threshold", func(t *ftt.Test) {
 					path := path + " / [0] / activation_threshold"
-					Convey("unset", func() {
+					t.Run("unset", func(t *ftt.Test) {
 						// An activation threshold is not required, e.g. in case of
 						// policies which are paused or being removed, but where
 						// existing policy activations are to be kept.
 						metric.ActivationThreshold = nil
-						So(validate(project, cfg), ShouldBeNil)
+						assert.Loosely(t, validate(project, cfg), should.BeNil)
 					})
-					Convey("may be empty", func() {
+					t.Run("may be empty", func(t *ftt.Test) {
 						// An activation threshold is not required, e.g. in case of
 						// policies which are paused or being removed, but where
 						// existing policy activations are to be kept.
 						metric.ActivationThreshold = &configpb.MetricThreshold{}
-						So(validate(project, cfg), ShouldBeNil)
+						assert.Loosely(t, validate(project, cfg), should.BeNil)
 					})
-					Convey("invalid - non-positive threshold", func() {
+					t.Run("invalid - non-positive threshold", func(t *ftt.Test) {
 						metric.ActivationThreshold.ThreeDay = proto.Int64(0)
-						So(validate(project, cfg), ShouldErrLike, `(`+path+` / three_day): value must be positive`)
+						assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+` / three_day): value must be positive`))
 					})
-					Convey("invalid - too large threshold", func() {
+					t.Run("invalid - too large threshold", func(t *ftt.Test) {
 						metric.ActivationThreshold.SevenDay = proto.Int64(1000 * 1000 * 1000)
-						So(validate(project, cfg), ShouldErrLike, `(`+path+` / seven_day): value must be less than one million`)
+						assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+` / seven_day): value must be less than one million`))
 					})
 				})
-				Convey("deactivation threshold", func() {
+				t.Run("deactivation threshold", func(t *ftt.Test) {
 					path := path + " / [0] / deactivation_threshold"
-					Convey("unset", func() {
+					t.Run("unset", func(t *ftt.Test) {
 						metric.DeactivationThreshold = nil
-						So(validate(project, cfg), ShouldErrLike, `(`+path+`): must be specified`)
+						assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+`): must be specified`))
 					})
-					Convey("empty", func() {
+					t.Run("empty", func(t *ftt.Test) {
 						// There must always be a way for a policy to deactivate.
 						metric.DeactivationThreshold = &configpb.MetricThreshold{}
-						So(validate(project, cfg), ShouldErrLike, `(`+path+`): at least one of one_day, three_day and seven_day must be set`)
+						assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+`): at least one of one_day, three_day and seven_day must be set`))
 					})
-					Convey("invalid - non-positive threshold", func() {
+					t.Run("invalid - non-positive threshold", func(t *ftt.Test) {
 						metric.DeactivationThreshold.OneDay = proto.Int64(0)
-						So(validate(project, cfg), ShouldErrLike, `(`+path+` / one_day): value must be positive`)
+						assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+` / one_day): value must be positive`))
 					})
-					Convey("invalid - too large threshold", func() {
+					t.Run("invalid - too large threshold", func(t *ftt.Test) {
 						metric.DeactivationThreshold.ThreeDay = proto.Int64(1000 * 1000 * 1000)
-						So(validate(project, cfg), ShouldErrLike, `(`+path+` / three_day): value must be less than one million`)
+						assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+` / three_day): value must be less than one million`))
 					})
 				})
 			})
-			Convey("explanation", func() {
+			t.Run("explanation", func(t *ftt.Test) {
 				path := path + " / [0] / explanation"
-				Convey("unset", func() {
+				t.Run("unset", func(t *ftt.Test) {
 					policy.Explanation = nil
-					So(validate(project, cfg), ShouldErrLike, `(`+path+`): must be specified`)
+					assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+`): must be specified`))
 				})
 				explanation := policy.Explanation
-				Convey("problem html", func() {
+				t.Run("problem html", func(t *ftt.Test) {
 					path := path + " / problem_html"
-					Convey("unset", func() {
+					t.Run("unset", func(t *ftt.Test) {
 						explanation.ProblemHtml = ""
-						So(validate(project, cfg), ShouldErrLike, `(`+path+`): must be specified`)
+						assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+`): must be specified`))
 					})
-					Convey("invalid UTF-8", func() {
+					t.Run("invalid UTF-8", func(t *ftt.Test) {
 						explanation.ProblemHtml = "\xc3\x28"
-						So(validate(project, cfg), ShouldErrLike, `(`+path+`): not a valid UTF-8 string`)
+						assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+`): not a valid UTF-8 string`))
 					})
-					Convey("invalid rune", func() {
+					t.Run("invalid rune", func(t *ftt.Test) {
 						explanation.ProblemHtml = "a\x00"
-						So(validate(project, cfg), ShouldErrLike, `(`+path+`): unicode rune '\x00' at index 1 is not graphic or newline character`)
+						assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+`): unicode rune '\x00' at index 1 is not graphic or newline character`))
 					})
-					Convey("too long", func() {
+					t.Run("too long", func(t *ftt.Test) {
 						explanation.ProblemHtml = strings.Repeat("a", 10001)
-						So(validate(project, cfg), ShouldErrLike, `(`+path+`): exceeds maximum allowed length of 10000 bytes`)
+						assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+`): exceeds maximum allowed length of 10000 bytes`))
 					})
 				})
-				Convey("action html", func() {
+				t.Run("action html", func(t *ftt.Test) {
 					path := path + " / action_html"
-					Convey("unset", func() {
+					t.Run("unset", func(t *ftt.Test) {
 						explanation.ActionHtml = ""
-						So(validate(project, cfg), ShouldErrLike, `(`+path+`): must be specified`)
+						assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+`): must be specified`))
 					})
-					Convey("invalid UTF-8", func() {
+					t.Run("invalid UTF-8", func(t *ftt.Test) {
 						explanation.ActionHtml = "\xc3\x28"
-						So(validate(project, cfg), ShouldErrLike, `(`+path+`): not a valid UTF-8 string`)
+						assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+`): not a valid UTF-8 string`))
 					})
-					Convey("invalid", func() {
+					t.Run("invalid", func(t *ftt.Test) {
 						explanation.ActionHtml = "a\x00"
-						So(validate(project, cfg), ShouldErrLike, `(`+path+`): unicode rune '\x00' at index 1 is not graphic or newline character`)
+						assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+`): unicode rune '\x00' at index 1 is not graphic or newline character`))
 					})
-					Convey("too long", func() {
+					t.Run("too long", func(t *ftt.Test) {
 						explanation.ActionHtml = strings.Repeat("a", 10001)
-						So(validate(project, cfg), ShouldErrLike, `(`+path+`): exceeds maximum allowed length of 10000 bytes`)
+						assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+`): exceeds maximum allowed length of 10000 bytes`))
 					})
 				})
 			})
-			Convey("bug template", func() {
+			t.Run("bug template", func(t *ftt.Test) {
 				path := path + " / [0] / bug_template"
-				Convey("unset", func() {
+				t.Run("unset", func(t *ftt.Test) {
 					policy.BugTemplate = nil
-					So(validate(project, cfg), ShouldErrLike, `(`+path+`): must be specified`)
+					assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+`): must be specified`))
 				})
 				bugTemplate := policy.BugTemplate
-				Convey("comment template", func() {
+				t.Run("comment template", func(t *ftt.Test) {
 					path := path + " / comment_template"
-					Convey("unset", func() {
+					t.Run("unset", func(t *ftt.Test) {
 						// May be left blank to post no comment.
 						bugTemplate.CommentTemplate = ""
-						So(validate(project, cfg), ShouldBeNil)
+						assert.Loosely(t, validate(project, cfg), should.BeNil)
 					})
-					Convey("too long", func() {
+					t.Run("too long", func(t *ftt.Test) {
 						bugTemplate.CommentTemplate = strings.Repeat("a", 10001)
-						So(validate(project, cfg), ShouldErrLike, `(`+path+`): exceeds maximum allowed length of 10000 bytes`)
+						assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+`): exceeds maximum allowed length of 10000 bytes`))
 					})
-					Convey("invalid - not valid UTF-8", func() {
+					t.Run("invalid - not valid UTF-8", func(t *ftt.Test) {
 						bugTemplate.CommentTemplate = "\xc3\x28"
-						So(validate(project, cfg), ShouldErrLike, `(`+path+`): not a valid UTF-8 string`)
+						assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+`): not a valid UTF-8 string`))
 					})
-					Convey("invalid - non-ASCII characters", func() {
+					t.Run("invalid - non-ASCII characters", func(t *ftt.Test) {
 						bugTemplate.CommentTemplate = "a\x00"
-						So(validate(project, cfg), ShouldErrLike, `(`+path+`): unicode rune '\x00' at index 1 is not graphic or newline character`)
+						assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+`): unicode rune '\x00' at index 1 is not graphic or newline character`))
 					})
-					Convey("invalid - bad field reference", func() {
+					t.Run("invalid - bad field reference", func(t *ftt.Test) {
 						bugTemplate.CommentTemplate = "{{.FieldNotExisting}}"
 
 						err := validate(project, cfg)
-						So(err, ShouldErrLike, `(`+path+`): validate template: `)
-						So(err, ShouldErrLike, `can't evaluate field FieldNotExisting`)
+						assert.Loosely(t, err, should.ErrLike(`(`+path+`): validate template: `))
+						assert.Loosely(t, err, should.ErrLike(`can't evaluate field FieldNotExisting`))
 					})
-					Convey("invalid - bad function reference", func() {
+					t.Run("invalid - bad function reference", func(t *ftt.Test) {
 						bugTemplate.CommentTemplate = "{{call SomeFunc}}"
 
 						err := validate(project, cfg)
-						So(err, ShouldErrLike, `(`+path+`): parsing template: `)
-						So(err, ShouldErrLike, `function "SomeFunc" not defined`)
+						assert.Loosely(t, err, should.ErrLike(`(`+path+`): parsing template: `))
+						assert.Loosely(t, err, should.ErrLike(`function "SomeFunc" not defined`))
 					})
-					Convey("invalid - output too long on simulated examples", func() {
+					t.Run("invalid - output too long on simulated examples", func(t *ftt.Test) {
 						// Produces 10100 letter 'a's through nested templates, which
 						// exceeds the output length limit.
 						bugTemplate.CommentTemplate =
@@ -666,215 +666,215 @@ func TestProjectConfigValidator(t *testing.T) {
 								`{{template "T2"}}`
 
 						err := validate(project, cfg)
-						So(err, ShouldErrLike, `(`+path+`): validate template: `)
-						So(err, ShouldErrLike, `template produced 10100 bytes of output, which exceeds the limit of 10000 bytes`)
+						assert.Loosely(t, err, should.ErrLike(`(`+path+`): validate template: `))
+						assert.Loosely(t, err, should.ErrLike(`template produced 10100 bytes of output, which exceeds the limit of 10000 bytes`))
 					})
-					Convey("invalid - does not handle monorail bug", func() {
+					t.Run("invalid - does not handle monorail bug", func(t *ftt.Test) {
 						// Unqualified access of Buganizer Bug ID without checking bug type.
 						bugTemplate.CommentTemplate = "{{.BugID.BuganizerBugID}}"
 
 						err := validate(project, cfg)
-						So(err, ShouldErrLike, `(`+path+`): validate template: test case "monorail"`)
-						So(err, ShouldErrLike, `error calling BuganizerBugID: not a buganizer bug`)
+						assert.Loosely(t, err, should.ErrLike(`(`+path+`): validate template: test case "monorail"`))
+						assert.Loosely(t, err, should.ErrLike(`error calling BuganizerBugID: not a buganizer bug`))
 					})
-					Convey("invalid - does not handle buganizer bug", func() {
+					t.Run("invalid - does not handle buganizer bug", func(t *ftt.Test) {
 						// Unqualified access of Monorail Bug ID without checking bug type.
 						bugTemplate.CommentTemplate = "{{.BugID.MonorailBugID}}"
 
 						err := validate(project, cfg)
-						So(err, ShouldErrLike, `(`+path+`): validate template: test case "buganizer"`)
-						So(err, ShouldErrLike, `error calling MonorailBugID: not a monorail bug`)
+						assert.Loosely(t, err, should.ErrLike(`(`+path+`): validate template: test case "buganizer"`))
+						assert.Loosely(t, err, should.ErrLike(`error calling MonorailBugID: not a monorail bug`))
 					})
-					Convey("invalid - does not handle reserved bug system", func() {
+					t.Run("invalid - does not handle reserved bug system", func(t *ftt.Test) {
 						// Access of Buganizer Bug ID based on assumption that
 						// absence of monorail Bug ID implies Buganizer, without
 						// considering that the system may be extended in future.
 						bugTemplate.CommentTemplate = "{{if .BugID.IsMonorail}}{{.BugID.MonorailBugID}}{{else}}{{.BugID.BuganizerBugID}}{{end}}"
 
 						err := validate(project, cfg)
-						So(err, ShouldErrLike, `(`+path+`): validate template: test case "neither buganizer nor monorail"`)
-						So(err, ShouldErrLike, `error calling BuganizerBugID: not a buganizer bug`)
+						assert.Loosely(t, err, should.ErrLike(`(`+path+`): validate template: test case "neither buganizer nor monorail"`))
+						assert.Loosely(t, err, should.ErrLike(`error calling BuganizerBugID: not a buganizer bug`))
 					})
 				})
-				Convey("buganizer", func() {
+				t.Run("buganizer", func(t *ftt.Test) {
 					path := path + " / buganizer"
-					Convey("may be unset", func() {
+					t.Run("may be unset", func(t *ftt.Test) {
 						// Not all policies need to avail themselves of buganizer-specific
 						// features.
 						bugTemplate.Buganizer = nil
-						So(validate(project, cfg), ShouldBeNil)
+						assert.Loosely(t, validate(project, cfg), should.BeNil)
 					})
 					buganizer := bugTemplate.Buganizer
-					Convey("hotlists", func() {
+					t.Run("hotlists", func(t *ftt.Test) {
 						path := path + " / hotlists"
-						Convey("empty", func() {
+						t.Run("empty", func(t *ftt.Test) {
 							buganizer.Hotlists = nil
-							So(validate(project, cfg), ShouldBeNil)
+							assert.Loosely(t, validate(project, cfg), should.BeNil)
 						})
-						Convey("too many", func() {
+						t.Run("too many", func(t *ftt.Test) {
 							buganizer.Hotlists = make([]int64, 0, 11)
 							for i := 0; i < 11; i++ {
 								buganizer.Hotlists = append(buganizer.Hotlists, 1)
 							}
-							So(validate(project, cfg), ShouldErrLike, `(`+path+`): exceeds maximum of 5 hotlists`)
+							assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+`): exceeds maximum of 5 hotlists`))
 						})
-						Convey("duplicate IDs", func() {
+						t.Run("duplicate IDs", func(t *ftt.Test) {
 							buganizer.Hotlists = []int64{1, 1}
-							So(validate(project, cfg), ShouldErrLike, `(`+path+` / [1]): ID 1 appears in collection more than once`)
+							assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+` / [1]): ID 1 appears in collection more than once`))
 						})
-						Convey("invalid - non-positive ID", func() {
+						t.Run("invalid - non-positive ID", func(t *ftt.Test) {
 							buganizer.Hotlists[0] = 0
-							So(validate(project, cfg), ShouldErrLike, `(`+path+` / [0]): ID must be positive`)
+							assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+` / [0]): ID must be positive`))
 						})
 					})
 				})
-				Convey("monorail", func() {
+				t.Run("monorail", func(t *ftt.Test) {
 					path := path + " / monorail"
-					Convey("may be unset", func() {
+					t.Run("may be unset", func(t *ftt.Test) {
 						bugTemplate.Monorail = nil
-						So(validate(project, cfg), ShouldBeNil)
+						assert.Loosely(t, validate(project, cfg), should.BeNil)
 					})
 					monorail := bugTemplate.Monorail
-					Convey("labels", func() {
+					t.Run("labels", func(t *ftt.Test) {
 						path := path + " / labels"
-						Convey("empty", func() {
+						t.Run("empty", func(t *ftt.Test) {
 							monorail.Labels = nil
-							So(validate(project, cfg), ShouldBeNil)
+							assert.Loosely(t, validate(project, cfg), should.BeNil)
 						})
-						Convey("too many", func() {
+						t.Run("too many", func(t *ftt.Test) {
 							monorail.Labels = make([]string, 0, 11)
 							for i := 0; i < 11; i++ {
 								monorail.Labels = append(monorail.Labels, fmt.Sprintf("label-%v", i))
 							}
-							So(validate(project, cfg), ShouldErrLike, `(`+path+`): exceeds maximum of 5 labels`)
+							assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+`): exceeds maximum of 5 labels`))
 						})
-						Convey("duplicate labels", func() {
+						t.Run("duplicate labels", func(t *ftt.Test) {
 							monorail.Labels = []string{"a", "A"}
-							So(validate(project, cfg), ShouldErrLike, `(`+path+` / [1]): label "a" appears in collection more than once`)
+							assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+` / [1]): label "a" appears in collection more than once`))
 						})
-						Convey("invalid - empty label", func() {
+						t.Run("invalid - empty label", func(t *ftt.Test) {
 							monorail.Labels[0] = ""
-							So(validate(project, cfg), ShouldErrLike, `(`+path+` / [0]): unspecified`)
+							assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+` / [0]): unspecified`))
 						})
-						Convey("invalid - bad label", func() {
+						t.Run("invalid - bad label", func(t *ftt.Test) {
 							monorail.Labels[0] = "!test"
-							So(validate(project, cfg), ShouldErrLike, `(`+path+` / [0]): does not match pattern "^[a-zA-Z0-9\\-]+$"`)
+							assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+` / [0]): does not match pattern "^[a-zA-Z0-9\\-]+$"`))
 						})
-						Convey("invalid - too long label", func() {
+						t.Run("invalid - too long label", func(t *ftt.Test) {
 							monorail.Labels[0] = strings.Repeat("a", 61)
-							So(validate(project, cfg), ShouldErrLike, `(`+path+` / [0]): exceeds maximum allowed length of 60 bytes`)
+							assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+` / [0]): exceeds maximum allowed length of 60 bytes`))
 						})
 					})
 				})
 			})
 		})
 	})
-	Convey("test stability criteria", t, func() {
+	ftt.Run("test stability criteria", t, func(t *ftt.Test) {
 		cfg := CreateConfigWithBothBuganizerAndMonorail(configpb.BugSystem_BUGANIZER)
 
 		path := "test_stability_criteria"
 		tsc := cfg.TestStabilityCriteria
 
-		Convey("may be left unset", func() {
+		t.Run("may be left unset", func(t *ftt.Test) {
 			cfg.TestStabilityCriteria = nil
-			So(validate(project, cfg), ShouldBeNil)
+			assert.Loosely(t, validate(project, cfg), should.BeNil)
 		})
-		Convey("failure rate", func() {
+		t.Run("failure rate", func(t *ftt.Test) {
 			path := path + " / failure_rate"
 			fr := tsc.FailureRate
-			Convey("unset", func() {
+			t.Run("unset", func(t *ftt.Test) {
 				tsc.FailureRate = nil
-				So(validate(project, cfg), ShouldErrLike, `(`+path+`): must be specified`)
+				assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+`): must be specified`))
 			})
-			Convey("consecutive failure threshold", func() {
+			t.Run("consecutive failure threshold", func(t *ftt.Test) {
 				path := path + " / consecutive_failure_threshold"
-				Convey("unset", func() {
+				t.Run("unset", func(t *ftt.Test) {
 					fr.ConsecutiveFailureThreshold = 0
-					So(validate(project, cfg), ShouldErrLike, `(`+path+`): must be specified`)
+					assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+`): must be specified`))
 				})
-				Convey("invalid - more than ten", func() {
+				t.Run("invalid - more than ten", func(t *ftt.Test) {
 					fr.ConsecutiveFailureThreshold = 11
-					So(validate(project, cfg), ShouldErrLike, `(`+path+`): must be in the range [1, 10]`)
+					assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+`): must be in the range [1, 10]`))
 				})
-				Convey("invalid - less than zero", func() {
+				t.Run("invalid - less than zero", func(t *ftt.Test) {
 					fr.ConsecutiveFailureThreshold = -1
-					So(validate(project, cfg), ShouldErrLike, `(`+path+`): must be in the range [1, 10]`)
+					assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+`): must be in the range [1, 10]`))
 				})
 			})
-			Convey("failure threshold", func() {
+			t.Run("failure threshold", func(t *ftt.Test) {
 				path := path + " / failure_threshold"
-				Convey("unset", func() {
+				t.Run("unset", func(t *ftt.Test) {
 					fr.FailureThreshold = 0
-					So(validate(project, cfg), ShouldErrLike, `(`+path+`): must be specified`)
+					assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+`): must be specified`))
 				})
-				Convey("invalid - more than ten", func() {
+				t.Run("invalid - more than ten", func(t *ftt.Test) {
 					fr.FailureThreshold = 11
-					So(validate(project, cfg), ShouldErrLike, `(`+path+`): must be in the range [1, 10]`)
+					assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+`): must be in the range [1, 10]`))
 				})
-				Convey("invalid - less than zero", func() {
+				t.Run("invalid - less than zero", func(t *ftt.Test) {
 					fr.FailureThreshold = -1
-					So(validate(project, cfg), ShouldErrLike, `(`+path+`): must be in the range [1, 10]`)
+					assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+`): must be in the range [1, 10]`))
 				})
 			})
 		})
-		Convey("flake rate", func() {
+		t.Run("flake rate", func(t *ftt.Test) {
 			path := path + " / flake_rate"
 			fr := tsc.FlakeRate
-			Convey("unset", func() {
+			t.Run("unset", func(t *ftt.Test) {
 				tsc.FlakeRate = nil
-				So(validate(project, cfg), ShouldErrLike, `(`+path+`): must be specified`)
+				assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+`): must be specified`))
 			})
-			Convey("min window", func() {
+			t.Run("min window", func(t *ftt.Test) {
 				path := path + " / min_window"
-				Convey("may be unset", func() {
+				t.Run("may be unset", func(t *ftt.Test) {
 					fr.MinWindow = 0
-					So(validate(project, cfg), ShouldBeNil)
+					assert.Loosely(t, validate(project, cfg), should.BeNil)
 				})
-				Convey("invalid - too large", func() {
+				t.Run("invalid - too large", func(t *ftt.Test) {
 					fr.MinWindow = 1_000_001
-					So(validate(project, cfg), ShouldErrLike, `(`+path+`): must be in the range [0, 1000000]`)
+					assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+`): must be in the range [0, 1000000]`))
 				})
-				Convey("invalid - less than zero", func() {
+				t.Run("invalid - less than zero", func(t *ftt.Test) {
 					fr.MinWindow = -1
-					So(validate(project, cfg), ShouldErrLike, `(`+path+`): must be in the range [0, 1000000]`)
+					assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+`): must be in the range [0, 1000000]`))
 				})
 			})
-			Convey("flake threshold", func() {
+			t.Run("flake threshold", func(t *ftt.Test) {
 				path := path + " / flake_threshold"
-				Convey("unset", func() {
+				t.Run("unset", func(t *ftt.Test) {
 					fr.FlakeThreshold = 0
-					So(validate(project, cfg), ShouldErrLike, `(`+path+`): must be specified`)
+					assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+`): must be specified`))
 				})
-				Convey("invalid - too large", func() {
+				t.Run("invalid - too large", func(t *ftt.Test) {
 					fr.FlakeThreshold = 1_000_001
-					So(validate(project, cfg), ShouldErrLike, `(`+path+`): must be in the range [1, 1000000]`)
+					assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+`): must be in the range [1, 1000000]`))
 				})
-				Convey("invalid - less than zero", func() {
+				t.Run("invalid - less than zero", func(t *ftt.Test) {
 					fr.FlakeThreshold = -1
-					So(validate(project, cfg), ShouldErrLike, `(`+path+`): must be in the range [1, 1000000]`)
+					assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+`): must be in the range [1, 1000000]`))
 				})
 			})
-			Convey("flake rate threshold", func() {
+			t.Run("flake rate threshold", func(t *ftt.Test) {
 				path := path + " / flake_rate_threshold"
-				Convey("may be unset", func() {
+				t.Run("may be unset", func(t *ftt.Test) {
 					fr.FlakeRateThreshold = 0
-					So(validate(project, cfg), ShouldBeNil)
+					assert.Loosely(t, validate(project, cfg), should.BeNil)
 				})
-				Convey("invalid - NaN", func() {
+				t.Run("invalid - NaN", func(t *ftt.Test) {
 					fr.FlakeRateThreshold = math.NaN()
-					So(validate(project, cfg), ShouldErrLike, `(`+path+`): must be a finite number`)
+					assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+`): must be a finite number`))
 				})
-				Convey("invalid - infinity", func() {
+				t.Run("invalid - infinity", func(t *ftt.Test) {
 					fr.FlakeRateThreshold = math.Inf(1)
-					So(validate(project, cfg), ShouldErrLike, `(`+path+`): must be a finite number`)
+					assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+`): must be a finite number`))
 				})
-				Convey("invalid - too large", func() {
+				t.Run("invalid - too large", func(t *ftt.Test) {
 					fr.FlakeRateThreshold = 1.0001
-					So(validate(project, cfg), ShouldErrLike, `(`+path+`): must be in the range [0.000000, 1.000000]`)
+					assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+`): must be in the range [0.000000, 1.000000]`))
 				})
-				Convey("invalid - less than zero", func() {
+				t.Run("invalid - less than zero", func(t *ftt.Test) {
 					fr.FlakeRateThreshold = -0.0001
-					So(validate(project, cfg), ShouldErrLike, `(`+path+`): must be in the range [0.000000, 1.000000]`)
+					assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+`): must be in the range [0.000000, 1.000000]`))
 				})
 			})
 		})

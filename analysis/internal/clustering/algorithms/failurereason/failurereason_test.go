@@ -17,13 +17,15 @@ package failurereason
 import (
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
+
 	"go.chromium.org/luci/analysis/internal/clustering"
 	"go.chromium.org/luci/analysis/internal/clustering/rules/lang"
 	"go.chromium.org/luci/analysis/internal/config/compiledcfg"
 	configpb "go.chromium.org/luci/analysis/proto/config"
 	pb "go.chromium.org/luci/analysis/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestAlgorithm(t *testing.T) {
@@ -34,86 +36,86 @@ func TestAlgorithm(t *testing.T) {
 			},
 		},
 	}
-	Convey(`Name`, t, func() {
+	ftt.Run(`Name`, t, func(t *ftt.Test) {
 		// Algorithm name should be valid.
 		a := &Algorithm{}
-		So(clustering.AlgorithmRe.MatchString(a.Name()), ShouldBeTrue)
+		assert.Loosely(t, clustering.AlgorithmRe.MatchString(a.Name()), should.BeTrue)
 	})
-	Convey(`Cluster`, t, func() {
+	ftt.Run(`Cluster`, t, func(t *ftt.Test) {
 		a := &Algorithm{}
 		cfg, err := compiledcfg.NewConfig(cfgpb)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		Convey(`Does not cluster test result without failure reason`, func() {
+		t.Run(`Does not cluster test result without failure reason`, func(t *ftt.Test) {
 			id := a.Cluster(cfg, &clustering.Failure{})
-			So(id, ShouldBeNil)
+			assert.Loosely(t, id, should.BeNil)
 		})
-		Convey(`ID of appropriate length`, func() {
+		t.Run(`ID of appropriate length`, func(t *ftt.Test) {
 			id := a.Cluster(cfg, &clustering.Failure{
 				Reason: &pb.FailureReason{PrimaryErrorMessage: "abcd this is a test failure message"},
 			})
 			// IDs may be 16 bytes at most.
-			So(len(id), ShouldBeGreaterThan, 0)
-			So(len(id), ShouldBeLessThanOrEqualTo, clustering.MaxClusterIDBytes)
+			assert.Loosely(t, len(id), should.BeGreaterThan(0))
+			assert.Loosely(t, len(id), should.BeLessThanOrEqual(clustering.MaxClusterIDBytes))
 		})
-		Convey(`Same ID for same cluster with different numbers`, func() {
+		t.Run(`Same ID for same cluster with different numbers`, func(t *ftt.Test) {
 			id1 := a.Cluster(cfg, &clustering.Failure{
 				Reason: &pb.FailureReason{PrimaryErrorMessage: "Null pointer exception at ip 0x45637271"},
 			})
 			id2 := a.Cluster(cfg, &clustering.Failure{
 				Reason: &pb.FailureReason{PrimaryErrorMessage: "Null pointer exception at ip 0x12345678"},
 			})
-			So(id2, ShouldResemble, id1)
+			assert.Loosely(t, id2, should.Resemble(id1))
 		})
-		Convey(`Different ID for different clusters`, func() {
+		t.Run(`Different ID for different clusters`, func(t *ftt.Test) {
 			id1 := a.Cluster(cfg, &clustering.Failure{
 				Reason: &pb.FailureReason{PrimaryErrorMessage: "Exception in TestMethod"},
 			})
 			id2 := a.Cluster(cfg, &clustering.Failure{
 				Reason: &pb.FailureReason{PrimaryErrorMessage: "Exception in MethodUnderTest"},
 			})
-			So(id2, ShouldNotResemble, id1)
+			assert.Loosely(t, id2, should.NotResemble(id1))
 		})
 	})
-	Convey(`Failure Association Rule`, t, func() {
+	ftt.Run(`Failure Association Rule`, t, func(t *ftt.Test) {
 		a := &Algorithm{}
 		cfg, err := compiledcfg.NewConfig(cfgpb)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		test := func(failure *clustering.Failure, expectedRule string) {
 			rule := a.FailureAssociationRule(cfg, failure)
-			So(rule, ShouldEqual, expectedRule)
+			assert.Loosely(t, rule, should.Equal(expectedRule))
 
 			// Test the rule is valid syntax and matches at least the example failure.
 			expr, err := lang.Parse(rule)
-			So(err, ShouldBeNil)
-			So(expr.Evaluate(failure), ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, expr.Evaluate(failure), should.BeTrue)
 		}
-		Convey(`Hexadecimal`, func() {
+		t.Run(`Hexadecimal`, func(t *ftt.Test) {
 			failure := &clustering.Failure{
 				Reason: &pb.FailureReason{PrimaryErrorMessage: "Null pointer exception at ip 0x45637271"},
 			}
 			test(failure, `reason LIKE "Null pointer exception at ip %"`)
 		})
-		Convey(`Numeric`, func() {
+		t.Run(`Numeric`, func(t *ftt.Test) {
 			failure := &clustering.Failure{
 				Reason: &pb.FailureReason{PrimaryErrorMessage: "Could not connect to 127.1.2.1: connection refused"},
 			}
 			test(failure, `reason LIKE "Could not connect to %.%.%.%: connection refused"`)
 		})
-		Convey(`Base64`, func() {
+		t.Run(`Base64`, func(t *ftt.Test) {
 			failure := &clustering.Failure{
 				Reason: &pb.FailureReason{PrimaryErrorMessage: "Received unexpected response: AdafdxAAD17917+/="},
 			}
 			test(failure, `reason LIKE "Received unexpected response: %"`)
 		})
-		Convey(`Escaping`, func() {
+		t.Run(`Escaping`, func(t *ftt.Test) {
 			failure := &clustering.Failure{
 				Reason: &pb.FailureReason{PrimaryErrorMessage: `_%"'+[]|` + "\u0000\r\n\v\u202E\u2066 AdafdxAAD17917+/="},
 			}
 			test(failure, `reason LIKE "\\_\\%\"'+[]|\x00\r\n\v\u202e\u2066 %"`)
 		})
-		Convey(`Escaping of unicode replacement character / error rune (U+FFFD)`, func() {
+		t.Run(`Escaping of unicode replacement character / error rune (U+FFFD)`, func(t *ftt.Test) {
 			reason := "a\ufffdb\ufffd"
 
 			failure := &clustering.Failure{
@@ -121,7 +123,7 @@ func TestAlgorithm(t *testing.T) {
 			}
 			test(failure, `reason LIKE "a\ufffdb\ufffd"`)
 		})
-		Convey(`Multiline`, func() {
+		t.Run(`Multiline`, func(t *ftt.Test) {
 			failure := &clustering.Failure{
 				Reason: &pb.FailureReason{
 					// Previously "ce\n ... Ac" matched the hexadecimal format
@@ -131,46 +133,46 @@ func TestAlgorithm(t *testing.T) {
 			}
 			test(failure, `reason LIKE "Expected: to be called once\n          Actual: never called"`)
 		})
-		Convey(`User-defined masking`, func() {
+		t.Run(`User-defined masking`, func(t *ftt.Test) {
 			failure := &clustering.Failure{
 				Reason: &pb.FailureReason{PrimaryErrorMessage: `[Fixture failure] crostiniBuster: Failed to install Crostini: 3 is not 5`},
 			}
 			test(failure, `reason LIKE "[Fixture failure] %: Failed to install Crostini: % is not %"`)
 		})
 	})
-	Convey(`Cluster Title`, t, func() {
+	ftt.Run(`Cluster Title`, t, func(t *ftt.Test) {
 		a := &Algorithm{}
 		cfg, err := compiledcfg.NewConfig(cfgpb)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		Convey(`Baseline`, func() {
+		t.Run(`Baseline`, func(t *ftt.Test) {
 			failure := &clustering.Failure{
 				Reason: &pb.FailureReason{PrimaryErrorMessage: "Null pointer exception at ip 0x45637271"},
 			}
 			title := a.ClusterTitle(cfg, failure)
-			So(title, ShouldEqual, `Null pointer exception at ip %`)
+			assert.Loosely(t, title, should.Equal(`Null pointer exception at ip %`))
 		})
-		Convey(`Escaping`, func() {
+		t.Run(`Escaping`, func(t *ftt.Test) {
 			failure := &clustering.Failure{
 				Reason: &pb.FailureReason{PrimaryErrorMessage: `_%"'+[]|` + "\u0000\r\n\v\u202E\u2066 AdafdxAAD17917+/="},
 			}
 			title := a.ClusterTitle(cfg, failure)
-			So(title, ShouldEqual, `_%\"'+[]|\x00\r\n\v\u202e\u2066 %`)
+			assert.Loosely(t, title, should.Equal(`_%\"'+[]|\x00\r\n\v\u202e\u2066 %`))
 		})
-		Convey(`User-defined masking`, func() {
+		t.Run(`User-defined masking`, func(t *ftt.Test) {
 			failure := &clustering.Failure{
 				Reason: &pb.FailureReason{PrimaryErrorMessage: `[Fixture failure] crostiniBuster: Failed to install Crostini: 3 is not 5`},
 			}
 			title := a.ClusterTitle(cfg, failure)
-			So(title, ShouldEqual, `[Fixture failure] %: Failed to install Crostini: % is not %`)
+			assert.Loosely(t, title, should.Equal(`[Fixture failure] %: Failed to install Crostini: % is not %`))
 		})
 	})
-	Convey(`Cluster Description`, t, func() {
+	ftt.Run(`Cluster Description`, t, func(t *ftt.Test) {
 		a := &Algorithm{}
 		cfg, err := compiledcfg.NewConfig(cfgpb)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		Convey(`Baseline`, func() {
+		t.Run(`Baseline`, func(t *ftt.Test) {
 			failure := &clustering.ClusterSummary{
 				Example: clustering.Failure{
 					Reason: &pb.FailureReason{PrimaryErrorMessage: "Null pointer exception at ip 0x45637271"},
@@ -182,14 +184,14 @@ func TestAlgorithm(t *testing.T) {
 				},
 			}
 			description, err := a.ClusterDescription(cfg, failure)
-			So(err, ShouldBeNil)
-			So(description.Title, ShouldEqual, `Null pointer exception at ip 0x45637271`)
-			So(description.Description, ShouldContainSubstring, `Null pointer exception at ip 0x45637271`)
-			So(description.Description, ShouldContainSubstring, `- ninja://test_one`)
-			So(description.Description, ShouldContainSubstring, `- ninja://test_three`)
-			So(description.Description, ShouldContainSubstring, `- ninja://test_three`)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, description.Title, should.Equal(`Null pointer exception at ip 0x45637271`))
+			assert.Loosely(t, description.Description, should.ContainSubstring(`Null pointer exception at ip 0x45637271`))
+			assert.Loosely(t, description.Description, should.ContainSubstring(`- ninja://test_one`))
+			assert.Loosely(t, description.Description, should.ContainSubstring(`- ninja://test_three`))
+			assert.Loosely(t, description.Description, should.ContainSubstring(`- ninja://test_three`))
 		})
-		Convey(`Escaping`, func() {
+		t.Run(`Escaping`, func(t *ftt.Test) {
 			summary := &clustering.ClusterSummary{
 				Example: clustering.Failure{
 					Reason: &pb.FailureReason{PrimaryErrorMessage: `_%"'+[]|` + "\u0000\r\n\v\u202E\u2066 AdafdxAAD17917+/="},
@@ -199,10 +201,10 @@ func TestAlgorithm(t *testing.T) {
 				},
 			}
 			description, err := a.ClusterDescription(cfg, summary)
-			So(err, ShouldBeNil)
-			So(description.Title, ShouldEqual, `_%\"'+[]|\x00\r\n\v\u202e\u2066 AdafdxAAD17917+/=`)
-			So(description.Description, ShouldContainSubstring, `_%\"'+[]|\x00\r\n\v\u202e\u2066 AdafdxAAD17917+/=`)
-			So(description.Description, ShouldContainSubstring, `- \u2066\u202e\v\n\r\x00`)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, description.Title, should.Equal(`_%\"'+[]|\x00\r\n\v\u202e\u2066 AdafdxAAD17917+/=`))
+			assert.Loosely(t, description.Description, should.ContainSubstring(`_%\"'+[]|\x00\r\n\v\u202e\u2066 AdafdxAAD17917+/=`))
+			assert.Loosely(t, description.Description, should.ContainSubstring(`- \u2066\u202e\v\n\r\x00`))
 		})
 	})
 }

@@ -18,6 +18,9 @@ import (
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/analysis/internal/testresults"
@@ -27,13 +30,10 @@ import (
 	analysispb "go.chromium.org/luci/analysis/proto/v1"
 
 	_ "go.chromium.org/luci/server/tq/txn/spanner"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestIngestForExoneration(t *testing.T) {
-	Convey("TestIngestForExoneration", t, func() {
+	ftt.Run("TestIngestForExoneration", t, func(t *ftt.Test) {
 		ctx := testutil.IntegrationTestContext(t)
 
 		inputs := testInputs()
@@ -115,28 +115,28 @@ func TestIngestForExoneration(t *testing.T) {
 			},
 		}
 
-		Convey(`With sources`, func() {
+		t.Run(`With sources`, func(t *ftt.Test) {
 			// Base case should already have sources set.
-			So(inputs.Sources, ShouldNotBeNil)
+			assert.Loosely(t, inputs.Sources, should.NotBeNil)
 
 			ingester := IngestForExoneration{}
 			err := ingester.Ingest(ctx, inputs)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			results, err := lowlatency.ReadAllForTesting(span.Single(ctx))
-			So(err, ShouldBeNil)
-			So(results, ShouldResembleProto, expectedResults)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, results, should.Resemble(expectedResults))
 		})
-		Convey(`Without sources`, func() {
+		t.Run(`Without sources`, func(t *ftt.Test) {
 			inputs.Sources = nil
 
 			ingester := IngestForExoneration{}
 			err := ingester.Ingest(ctx, inputs)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			results, err := lowlatency.ReadAllForTesting(span.Single(ctx))
-			So(err, ShouldBeNil)
-			So(results, ShouldHaveLength, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, results, should.HaveLength(0))
 		})
 	})
 }

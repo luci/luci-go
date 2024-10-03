@@ -22,6 +22,10 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
@@ -32,12 +36,11 @@ import (
 	configpb "go.chromium.org/luci/analysis/proto/config"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestMetrics(t *testing.T) {
-	Convey("With a metrics server", t, func() {
+	ftt.Run("With a metrics server", t, func(t *ftt.Test) {
 		// For user identification.
 		ctx := authtest.MockAuthConfig(context.Background())
 		authState := &authtest.FakeState{
@@ -64,7 +67,7 @@ func TestMetrics(t *testing.T) {
 		// Provides datastore implementation needed for project config.
 		ctx = memory.Use(ctx)
 		err := config.SetTestProjectConfig(ctx, configs)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		request := &pb.ListProjectMetricsRequest{
 			Parent: "projects/testproject",
@@ -72,7 +75,7 @@ func TestMetrics(t *testing.T) {
 
 		server := NewMetricsServer()
 
-		Convey("Unauthorised requests are rejected", func() {
+		t.Run("Unauthorised requests are rejected", func(t *ftt.Test) {
 			// Ensure no access to luci-analysis-access.
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:someone@example.com",
@@ -87,10 +90,10 @@ func TestMetrics(t *testing.T) {
 			}
 
 			rsp, err := server.ListForProject(ctx, request)
-			So(err, ShouldBeRPCPermissionDenied, "not a member of luci-analysis-access")
-			So(rsp, ShouldBeNil)
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("not a member of luci-analysis-access"))
+			assert.Loosely(t, rsp, should.BeNil)
 		})
-		Convey("List", func() {
+		t.Run("List", func(t *ftt.Test) {
 			authState.IdentityPermissions = []authtest.RealmPermission{
 				{
 					Realm:      "testproject:@project",
@@ -99,29 +102,29 @@ func TestMetrics(t *testing.T) {
 			}
 
 			validateResponse := func(response *pb.ListProjectMetricsResponse) {
-				So(len(response.Metrics), ShouldBeGreaterThanOrEqualTo, 1)
+				assert.Loosely(t, len(response.Metrics), should.BeGreaterThanOrEqual(1))
 				hasDefaultMetric := false
 				for _, metric := range response.Metrics {
-					So(metric.MetricId, ShouldNotBeEmpty)
-					So(metric.Name, ShouldEqual, "projects/testproject/metrics/"+metric.MetricId)
-					So(metric.HumanReadableName, ShouldNotBeEmpty)
-					So(metric.Description, ShouldNotBeEmpty)
+					assert.Loosely(t, metric.MetricId, should.NotBeEmpty)
+					assert.Loosely(t, metric.Name, should.Equal("projects/testproject/metrics/"+metric.MetricId))
+					assert.Loosely(t, metric.HumanReadableName, should.NotBeEmpty)
+					assert.Loosely(t, metric.Description, should.NotBeEmpty)
 					if metric.IsDefault {
 						hasDefaultMetric = true
 					}
 				}
-				So(hasDefaultMetric, ShouldBeTrue)
+				assert.Loosely(t, hasDefaultMetric, should.BeTrue)
 			}
 
-			Convey("No config access", func() {
+			t.Run("No config access", func(t *ftt.Test) {
 				authState.IdentityPermissions = nil
 				response, err := server.ListForProject(ctx, request)
-				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.config.get")
-				So(response, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission analysis.config.get"))
+				assert.Loosely(t, response, should.BeNil)
 			})
-			Convey("Baseline", func() {
+			t.Run("Baseline", func(t *ftt.Test) {
 				response, err := server.ListForProject(ctx, request)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				validateResponse(response)
 
 				var clsFailedPresubmitMetric *pb.ProjectMetric
@@ -130,19 +133,19 @@ func TestMetrics(t *testing.T) {
 						clsFailedPresubmitMetric = metric
 					}
 				}
-				So(clsFailedPresubmitMetric, ShouldNotBeNil)
+				assert.Loosely(t, clsFailedPresubmitMetric, should.NotBeNil)
 
 				// Verify the overriden values are used for the metric.
-				So(clsFailedPresubmitMetric.IsDefault, ShouldBeFalse)
-				So(clsFailedPresubmitMetric.SortPriority, ShouldEqual, 1000)
+				assert.Loosely(t, clsFailedPresubmitMetric.IsDefault, should.BeFalse)
+				assert.Loosely(t, clsFailedPresubmitMetric.SortPriority, should.Equal(1000))
 			})
-			Convey("No project config", func() {
+			t.Run("No project config", func(t *ftt.Test) {
 				configs := make(map[string]*configpb.ProjectConfig)
 				err := config.SetTestProjectConfig(ctx, configs)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				response, err := server.ListForProject(ctx, request)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				validateResponse(response)
 
@@ -152,11 +155,11 @@ func TestMetrics(t *testing.T) {
 						clsFailedPresubmitMetric = metric
 					}
 				}
-				So(clsFailedPresubmitMetric, ShouldNotBeNil)
+				assert.Loosely(t, clsFailedPresubmitMetric, should.NotBeNil)
 
 				// Verify default values are used for the metric.
-				So(clsFailedPresubmitMetric.IsDefault, ShouldEqual, metrics.HumanClsFailedPresubmit.DefaultConfig.IsDefault)
-				So(clsFailedPresubmitMetric.SortPriority, ShouldEqual, metrics.HumanClsFailedPresubmit.DefaultConfig.SortPriority)
+				assert.Loosely(t, clsFailedPresubmitMetric.IsDefault, should.Equal(metrics.HumanClsFailedPresubmit.DefaultConfig.IsDefault))
+				assert.Loosely(t, clsFailedPresubmitMetric.SortPriority, should.Equal(metrics.HumanClsFailedPresubmit.DefaultConfig.SortPriority))
 			})
 		})
 	})

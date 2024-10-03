@@ -25,6 +25,9 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	cvv0 "go.chromium.org/luci/cv/api/v0"
 	"go.chromium.org/luci/server/tq"
 
@@ -35,9 +38,6 @@ import (
 	pb "go.chromium.org/luci/analysis/proto/v1"
 
 	_ "go.chromium.org/luci/analysis/internal/services/verdictingester" // Needed to ensure task class is registered.
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 // bbCreateTime is the create time assigned to buildbucket builds, for testing.
@@ -45,7 +45,7 @@ import (
 var bbCreateTime = time.Date(2025, time.December, 1, 2, 3, 4, 5000, time.UTC)
 
 func TestHandleCVRun(t *testing.T) {
-	Convey(`Test JoinCVRun`, t, func() {
+	ftt.Run(`Test JoinCVRun`, t, func(t *ftt.Test) {
 		ctx := testutil.IntegrationTestContext(t)
 		ctx, skdr := tq.TestingContext(ctx, nil)
 
@@ -59,16 +59,16 @@ func TestHandleCVRun(t *testing.T) {
 			WithCreateTime(bbCreateTime).
 			WithTags([]string{"user_agent:cq"})
 		builds := []*buildBuilder{buildOne, buildTwo}
-		So(ingestBuild(ctx, buildOne), ShouldBeNil)
-		So(ingestBuild(ctx, buildTwo), ShouldBeNil)
+		assert.Loosely(t, ingestBuild(ctx, buildOne), should.BeNil)
+		assert.Loosely(t, ingestBuild(ctx, buildTwo), should.BeNil)
 
 		// Ingest the invocation finalization.
 		invocationCreateTime := time.Date(2024, time.December, 11, 10, 9, 8, 7, time.UTC)
-		So(ingestFinalization(ctx, fmt.Sprintf("build-%d", buildOne.buildID), false, invocationCreateTime), ShouldBeNil)
+		assert.Loosely(t, ingestFinalization(ctx, fmt.Sprintf("build-%d", buildOne.buildID), false, invocationCreateTime), should.BeNil)
 
-		So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
+		assert.Loosely(t, len(skdr.Tasks().Payloads()), should.BeZero)
 
-		Convey(`CV run is processed`, func() {
+		t.Run(`CV run is processed`, func(t *ftt.Test) {
 			ctx, skdr := tq.TestingContext(ctx, nil)
 			rID := "id_full_run"
 			fullRunID := fullRunID("cvproject", rID)
@@ -82,8 +82,8 @@ func TestHandleCVRun(t *testing.T) {
 				ctx = cv.UseFakeClient(ctx, runs)
 				r := makeCVRunPubSub(fullRunID)
 				project, processed, err := JoinCVRun(ctx, r)
-				So(err, ShouldBeNil)
-				So(project, ShouldEqual, "cvproject")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, project, should.Equal("cvproject"))
 
 				tasks = make([]*taskspb.IngestTestVerdicts, 0,
 					len(skdr.Tasks().Payloads())-existingTaskCount)
@@ -123,83 +123,83 @@ func TestHandleCVRun(t *testing.T) {
 				},
 				Project: "buildproject",
 			}
-			Convey(`Baseline`, func() {
+			t.Run(`Baseline`, func(t *ftt.Test) {
 				processed, tasks := processCVRun(run)
-				So(processed, ShouldBeTrue)
+				assert.Loosely(t, processed, should.BeTrue)
 				// assert ingestion task has been scheduled.
-				So(sortTasks(tasks), ShouldResembleProto,
-					sortTasks(expectedTasks(expectedTaskTemplate, builds)))
+				assert.Loosely(t, sortTasks(tasks), should.Resemble(
+					sortTasks(expectedTasks(expectedTaskTemplate, builds))))
 
-				Convey(`Re-processing CV run should not result in further ingestion tasks`, func() {
+				t.Run(`Re-processing CV run should not result in further ingestion tasks`, func(t *ftt.Test) {
 					processed, tasks = processCVRun(run)
-					So(processed, ShouldBeTrue)
-					So(tasks, ShouldBeEmpty)
+					assert.Loosely(t, processed, should.BeTrue)
+					assert.Loosely(t, tasks, should.BeEmpty)
 				})
 			})
-			Convey(`Dry run`, func() {
+			t.Run(`Dry run`, func(t *ftt.Test) {
 				run.Mode = "DRY_RUN"
 				expectedTaskTemplate.PresubmitRun.Mode = pb.PresubmitRunMode_DRY_RUN
 
 				processed, tasks := processCVRun(run)
-				So(processed, ShouldBeTrue)
+				assert.Loosely(t, processed, should.BeTrue)
 				// assert ingestion task has been scheduled.
-				So(sortTasks(tasks), ShouldResembleProto,
-					sortTasks(expectedTasks(expectedTaskTemplate, builds)))
+				assert.Loosely(t, sortTasks(tasks), should.Resemble(
+					sortTasks(expectedTasks(expectedTaskTemplate, builds))))
 			})
-			Convey(`New patchset run`, func() {
+			t.Run(`New patchset run`, func(t *ftt.Test) {
 				run.Mode = "NEW_PATCHSET_RUN"
 				expectedTaskTemplate.PresubmitRun.Mode = pb.PresubmitRunMode_NEW_PATCHSET_RUN
 
 				processed, tasks := processCVRun(run)
-				So(processed, ShouldBeTrue)
+				assert.Loosely(t, processed, should.BeTrue)
 				// assert ingestion task has been scheduled.
-				So(sortTasks(tasks), ShouldResembleProto,
-					sortTasks(expectedTasks(expectedTaskTemplate, builds)))
+				assert.Loosely(t, sortTasks(tasks), should.Resemble(
+					sortTasks(expectedTasks(expectedTaskTemplate, builds))))
 			})
-			Convey(`CV Run owned by Automation`, func() {
+			t.Run(`CV Run owned by Automation`, func(t *ftt.Test) {
 				run.Owner = "chromium-autoroll@skia-public.iam.gserviceaccount.com"
 				expectedTaskTemplate.PresubmitRun.Owner = "automation"
 
 				processed, tasks := processCVRun(run)
-				So(processed, ShouldBeTrue)
+				assert.Loosely(t, processed, should.BeTrue)
 				// assert ingestion task has been scheduled.
-				So(sortTasks(tasks), ShouldResembleProto,
-					sortTasks(expectedTasks(expectedTaskTemplate, builds)))
+				assert.Loosely(t, sortTasks(tasks), should.Resemble(
+					sortTasks(expectedTasks(expectedTaskTemplate, builds))))
 			})
-			Convey(`CV Run owned by Automation 2`, func() {
+			t.Run(`CV Run owned by Automation 2`, func(t *ftt.Test) {
 				run.Owner = "3su6n15k.default@developer.gserviceaccount.com"
 				expectedTaskTemplate.PresubmitRun.Owner = "automation"
 
 				processed, tasks := processCVRun(run)
-				So(processed, ShouldBeTrue)
+				assert.Loosely(t, processed, should.BeTrue)
 				// assert ingestion task has been scheduled.
-				So(sortTasks(tasks), ShouldResembleProto,
-					sortTasks(expectedTasks(expectedTaskTemplate, builds)))
+				assert.Loosely(t, sortTasks(tasks), should.Resemble(
+					sortTasks(expectedTasks(expectedTaskTemplate, builds))))
 			})
-			Convey(`With non-buildbucket tryjob`, func() {
+			t.Run(`With non-buildbucket tryjob`, func(t *ftt.Test) {
 				// Should be ignored.
 				run.Tryjobs = append(run.Tryjobs, &cvv0.Tryjob{
 					Result: &cvv0.Tryjob_Result{},
 				})
 
 				processed, tasks := processCVRun(run)
-				So(processed, ShouldBeTrue)
+				assert.Loosely(t, processed, should.BeTrue)
 				// assert ingestion task has been scheduled.
-				So(sortTasks(tasks), ShouldResembleProto,
-					sortTasks(expectedTasks(expectedTaskTemplate, builds)))
+				assert.Loosely(t, sortTasks(tasks), should.Resemble(
+					sortTasks(expectedTasks(expectedTaskTemplate, builds))))
 			})
-			Convey(`With re-used tryjob`, func() {
+			t.Run(`With re-used tryjob`, func(t *ftt.Test) {
 				// Assume that this tryjob was created by another CV run,
 				// so should not be ingested with this CV run.
 				run.TryjobInvocations[0].Attempts[0].Reuse = true
 
 				processed, tasks := processCVRun(run)
-				So(processed, ShouldBeTrue)
+				assert.Loosely(t, processed, should.BeTrue)
 				// assert ingestion task has been scheduled.
-				So(sortTasks(tasks), ShouldResembleProto,
-					sortTasks(expectedTasks(expectedTaskTemplate, builds[1:])))
+				assert.Loosely(t, sortTasks(tasks), should.Resemble(
+					sortTasks(expectedTasks(expectedTaskTemplate, builds[1:]))))
 			})
-			Convey(`With retried tryjob`, func() {
+			t.Run(`With retried tryjob`, func(t *ftt.Test) {
 				// Despite tryjob group being marked critical,
 				// build one should remain non-critical as it
 				// was retried by build 3.
@@ -210,30 +210,30 @@ func TestHandleCVRun(t *testing.T) {
 				run.TryjobInvocations[0].Critical = true
 
 				processed, tasks := processCVRun(run)
-				So(processed, ShouldBeTrue)
+				assert.Loosely(t, processed, should.BeTrue)
 				// assert ingestion task has been scheduled.
-				So(sortTasks(tasks), ShouldResembleProto,
-					sortTasks(expectedTasks(expectedTaskTemplate, builds)))
+				assert.Loosely(t, sortTasks(tasks), should.Resemble(
+					sortTasks(expectedTasks(expectedTaskTemplate, builds))))
 			})
-			Convey(`Failing Run`, func() {
+			t.Run(`Failing Run`, func(t *ftt.Test) {
 				run.Status = cvv0.Run_FAILED
 				expectedTaskTemplate.PresubmitRun.Status = pb.PresubmitRunStatus_PRESUBMIT_RUN_STATUS_FAILED
 
 				processed, tasks := processCVRun(run)
-				So(processed, ShouldBeTrue)
+				assert.Loosely(t, processed, should.BeTrue)
 				// assert ingestion task has been scheduled.
-				So(sortTasks(tasks), ShouldResembleProto,
-					sortTasks(expectedTasks(expectedTaskTemplate, builds)))
+				assert.Loosely(t, sortTasks(tasks), should.Resemble(
+					sortTasks(expectedTasks(expectedTaskTemplate, builds))))
 			})
-			Convey(`Cancelled Run`, func() {
+			t.Run(`Cancelled Run`, func(t *ftt.Test) {
 				run.Status = cvv0.Run_CANCELLED
 				expectedTaskTemplate.PresubmitRun.Status = pb.PresubmitRunStatus_PRESUBMIT_RUN_STATUS_CANCELED
 
 				processed, tasks := processCVRun(run)
-				So(processed, ShouldBeTrue)
+				assert.Loosely(t, processed, should.BeTrue)
 				// assert ingestion task has been scheduled.
-				So(sortTasks(tasks), ShouldResembleProto,
-					sortTasks(expectedTasks(expectedTaskTemplate, builds)))
+				assert.Loosely(t, sortTasks(tasks), should.Resemble(
+					sortTasks(expectedTasks(expectedTaskTemplate, builds))))
 			})
 		})
 	})

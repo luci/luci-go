@@ -19,24 +19,26 @@ import (
 	"strings"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
+
 	"go.chromium.org/luci/analysis/internal/clustering"
 	analysispb "go.chromium.org/luci/analysis/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestRules(t *testing.T) {
-	Convey(`Syntax Parsing`, t, func() {
+	ftt.Run(`Syntax Parsing`, t, func(t *ftt.Test) {
 		parse := func(input string) error {
 			expr, err := Parse(input)
 			if err != nil {
-				So(expr, ShouldBeNil)
+				assert.Loosely(t, expr, should.BeNil)
 			} else {
-				So(expr, ShouldNotBeNil)
+				assert.Loosely(t, expr, should.NotBeNil)
 			}
 			return err
 		}
-		Convey(`Valid inputs`, func() {
+		t.Run(`Valid inputs`, func(t *ftt.Test) {
 			validInputs := []string{
 				`false`,
 				`true`,
@@ -61,10 +63,10 @@ func TestRules(t *testing.T) {
 				`test = "arc.Boot" AND reason LIKE "%failed%"`,
 			}
 			for _, v := range validInputs {
-				So(parse(v), ShouldBeNil)
+				assert.Loosely(t, parse(v), should.BeNil)
 			}
 		})
-		Convey(`Invalid inputs`, func() {
+		t.Run(`Invalid inputs`, func(t *ftt.Test) {
 			invalidInputs := []string{
 				`'' = 'foo'`,                  // Uses single quotes.
 				`"" = "\xff"`,                 // Illegal Unicode string.
@@ -86,14 +88,14 @@ func TestRules(t *testing.T) {
 				`reason NOTLIKE "%failed%"`,   // Bad operator.
 			}
 			for _, v := range invalidInputs {
-				So(parse(v), ShouldNotBeNil)
+				assert.Loosely(t, parse(v), should.NotBeNil)
 			}
 		})
 	})
-	Convey(`Semantics`, t, func() {
+	ftt.Run(`Semantics`, t, func(t *ftt.Test) {
 		eval := func(input string, failure *clustering.Failure) bool {
 			eval, err := Parse(input)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			return eval.eval(failure)
 		}
 		boot := &clustering.Failure{
@@ -104,112 +106,112 @@ func TestRules(t *testing.T) {
 			TestID: "tast.example.DBus",
 			Reason: &analysispb.FailureReason{PrimaryErrorMessage: "true was not true"},
 		}
-		Convey(`String Expression`, func() {
-			So(eval(`test = "tast.arc.Boot"`, boot), ShouldBeTrue)
-			So(eval(`test = "tast.arc.Boot"`, dbus), ShouldBeFalse)
-			So(eval(`test = test`, dbus), ShouldBeTrue)
+		t.Run(`String Expression`, func(t *ftt.Test) {
+			assert.Loosely(t, eval(`test = "tast.arc.Boot"`, boot), should.BeTrue)
+			assert.Loosely(t, eval(`test = "tast.arc.Boot"`, dbus), should.BeFalse)
+			assert.Loosely(t, eval(`test = test`, dbus), should.BeTrue)
 			escaping := &clustering.Failure{
 				TestID: "\a\b\f\n\r\t\v\"\101\x42\u0042\U00000042",
 			}
-			So(eval(`test = "\a\b\f\n\r\t\v\"\101\x42\u0042\U00000042"`, escaping), ShouldBeTrue)
+			assert.Loosely(t, eval(`test = "\a\b\f\n\r\t\v\"\101\x42\u0042\U00000042"`, escaping), should.BeTrue)
 		})
-		Convey(`Boolean Constants`, func() {
-			So(eval(`TRUE`, boot), ShouldBeTrue)
-			So(eval(`tRue`, boot), ShouldBeTrue)
-			So(eval(`FALSE`, boot), ShouldBeFalse)
+		t.Run(`Boolean Constants`, func(t *ftt.Test) {
+			assert.Loosely(t, eval(`TRUE`, boot), should.BeTrue)
+			assert.Loosely(t, eval(`tRue`, boot), should.BeTrue)
+			assert.Loosely(t, eval(`FALSE`, boot), should.BeFalse)
 		})
-		Convey(`Boolean Item`, func() {
-			So(eval(`(((TRUE)))`, boot), ShouldBeTrue)
-			So(eval(`(FALSE)`, boot), ShouldBeFalse)
+		t.Run(`Boolean Item`, func(t *ftt.Test) {
+			assert.Loosely(t, eval(`(((TRUE)))`, boot), should.BeTrue)
+			assert.Loosely(t, eval(`(FALSE)`, boot), should.BeFalse)
 		})
-		Convey(`Boolean Predicate`, func() {
-			Convey(`Comp`, func() {
-				So(eval(`test = "tast.arc.Boot"`, boot), ShouldBeTrue)
-				So(eval(`test = "tast.arc.Boot"`, dbus), ShouldBeFalse)
-				So(eval(`test <> "tast.arc.Boot"`, boot), ShouldBeFalse)
-				So(eval(`test <> "tast.arc.Boot"`, dbus), ShouldBeTrue)
-				So(eval(`test != "tast.arc.Boot"`, boot), ShouldBeFalse)
-				So(eval(`test != "tast.arc.Boot"`, dbus), ShouldBeTrue)
+		t.Run(`Boolean Predicate`, func(t *ftt.Test) {
+			t.Run(`Comp`, func(t *ftt.Test) {
+				assert.Loosely(t, eval(`test = "tast.arc.Boot"`, boot), should.BeTrue)
+				assert.Loosely(t, eval(`test = "tast.arc.Boot"`, dbus), should.BeFalse)
+				assert.Loosely(t, eval(`test <> "tast.arc.Boot"`, boot), should.BeFalse)
+				assert.Loosely(t, eval(`test <> "tast.arc.Boot"`, dbus), should.BeTrue)
+				assert.Loosely(t, eval(`test != "tast.arc.Boot"`, boot), should.BeFalse)
+				assert.Loosely(t, eval(`test != "tast.arc.Boot"`, dbus), should.BeTrue)
 			})
-			Convey(`Negatable`, func() {
-				So(eval(`test NOT LIKE "tast.arc.%"`, boot), ShouldBeFalse)
-				So(eval(`test NOT LIKE "tast.arc.%"`, dbus), ShouldBeTrue)
-				So(eval(`test LIKE "tast.arc.%"`, boot), ShouldBeTrue)
-				So(eval(`test LIKE "tast.arc.%"`, dbus), ShouldBeFalse)
+			t.Run(`Negatable`, func(t *ftt.Test) {
+				assert.Loosely(t, eval(`test NOT LIKE "tast.arc.%"`, boot), should.BeFalse)
+				assert.Loosely(t, eval(`test NOT LIKE "tast.arc.%"`, dbus), should.BeTrue)
+				assert.Loosely(t, eval(`test LIKE "tast.arc.%"`, boot), should.BeTrue)
+				assert.Loosely(t, eval(`test LIKE "tast.arc.%"`, dbus), should.BeFalse)
 			})
-			Convey(`Like`, func() {
-				So(eval(`test LIKE "tast.arc.%"`, boot), ShouldBeTrue)
-				So(eval(`test LIKE "tast.arc.%"`, dbus), ShouldBeFalse)
-				So(eval(`test LIKE "arc.%"`, boot), ShouldBeFalse)
-				So(eval(`test LIKE ".Boot"`, boot), ShouldBeFalse)
-				So(eval(`test LIKE "%arc.%"`, boot), ShouldBeTrue)
-				So(eval(`test LIKE "%.Boot"`, boot), ShouldBeTrue)
-				So(eval(`test LIKE "tast.%.Boot"`, boot), ShouldBeTrue)
+			t.Run(`Like`, func(t *ftt.Test) {
+				assert.Loosely(t, eval(`test LIKE "tast.arc.%"`, boot), should.BeTrue)
+				assert.Loosely(t, eval(`test LIKE "tast.arc.%"`, dbus), should.BeFalse)
+				assert.Loosely(t, eval(`test LIKE "arc.%"`, boot), should.BeFalse)
+				assert.Loosely(t, eval(`test LIKE ".Boot"`, boot), should.BeFalse)
+				assert.Loosely(t, eval(`test LIKE "%arc.%"`, boot), should.BeTrue)
+				assert.Loosely(t, eval(`test LIKE "%.Boot"`, boot), should.BeTrue)
+				assert.Loosely(t, eval(`test LIKE "tast.%.Boot"`, boot), should.BeTrue)
 
 				escapeTest := &clustering.Failure{
 					TestID: "a\\.+*?()|[]{}^$a",
 				}
-				So(eval(`test LIKE "\\\\.+*?()|[]{}^$a"`, escapeTest), ShouldBeFalse)
-				So(eval(`test LIKE "a\\\\.+*?()|[]{}^$"`, escapeTest), ShouldBeFalse)
-				So(eval(`test LIKE "a\\\\.+*?()|[]{}^$a"`, escapeTest), ShouldBeTrue)
-				So(eval(`test LIKE "a\\\\.+*?()|[]{}^$_"`, escapeTest), ShouldBeTrue)
-				So(eval(`test LIKE "a\\\\.+*?()|[]{}^$%"`, escapeTest), ShouldBeTrue)
+				assert.Loosely(t, eval(`test LIKE "\\\\.+*?()|[]{}^$a"`, escapeTest), should.BeFalse)
+				assert.Loosely(t, eval(`test LIKE "a\\\\.+*?()|[]{}^$"`, escapeTest), should.BeFalse)
+				assert.Loosely(t, eval(`test LIKE "a\\\\.+*?()|[]{}^$a"`, escapeTest), should.BeTrue)
+				assert.Loosely(t, eval(`test LIKE "a\\\\.+*?()|[]{}^$_"`, escapeTest), should.BeTrue)
+				assert.Loosely(t, eval(`test LIKE "a\\\\.+*?()|[]{}^$%"`, escapeTest), should.BeTrue)
 
 				escapeTest2 := &clustering.Failure{
 					TestID: "a\\.+*?()|[]{}^$_",
 				}
-				So(eval(`test LIKE "a\\\\.+*?()|[]{}^$\\_"`, escapeTest), ShouldBeFalse)
-				So(eval(`test LIKE "a\\\\.+*?()|[]{}^$\\_"`, escapeTest2), ShouldBeTrue)
+				assert.Loosely(t, eval(`test LIKE "a\\\\.+*?()|[]{}^$\\_"`, escapeTest), should.BeFalse)
+				assert.Loosely(t, eval(`test LIKE "a\\\\.+*?()|[]{}^$\\_"`, escapeTest2), should.BeTrue)
 
 				escapeTest3 := &clustering.Failure{
 					TestID: "a\\.+*?()|[]{}^$%",
 				}
 
-				So(eval(`test LIKE "a\\\\.+*?()|[]{}^$\\%"`, escapeTest), ShouldBeFalse)
-				So(eval(`test LIKE "a\\\\.+*?()|[]{}^$\\%"`, escapeTest3), ShouldBeTrue)
+				assert.Loosely(t, eval(`test LIKE "a\\\\.+*?()|[]{}^$\\%"`, escapeTest), should.BeFalse)
+				assert.Loosely(t, eval(`test LIKE "a\\\\.+*?()|[]{}^$\\%"`, escapeTest3), should.BeTrue)
 
 				escapeTest4 := &clustering.Failure{
 					Reason: &analysispb.FailureReason{
 						PrimaryErrorMessage: "a\nb",
 					},
 				}
-				So(eval(`reason LIKE "a"`, escapeTest4), ShouldBeFalse)
-				So(eval(`reason LIKE "%"`, escapeTest4), ShouldBeTrue)
-				So(eval(`reason LIKE "a%b"`, escapeTest4), ShouldBeTrue)
-				So(eval(`reason LIKE "a_b"`, escapeTest4), ShouldBeTrue)
+				assert.Loosely(t, eval(`reason LIKE "a"`, escapeTest4), should.BeFalse)
+				assert.Loosely(t, eval(`reason LIKE "%"`, escapeTest4), should.BeTrue)
+				assert.Loosely(t, eval(`reason LIKE "a%b"`, escapeTest4), should.BeTrue)
+				assert.Loosely(t, eval(`reason LIKE "a_b"`, escapeTest4), should.BeTrue)
 			})
-			Convey(`In`, func() {
-				So(eval(`test IN ("tast.arc.Boot")`, boot), ShouldBeTrue)
-				So(eval(`test IN ("tast.arc.Clipboard", "tast.arc.Boot")`, boot), ShouldBeTrue)
-				So(eval(`test IN ("tast.arc.Clipboard", "tast.arc.Boot")`, dbus), ShouldBeFalse)
+			t.Run(`In`, func(t *ftt.Test) {
+				assert.Loosely(t, eval(`test IN ("tast.arc.Boot")`, boot), should.BeTrue)
+				assert.Loosely(t, eval(`test IN ("tast.arc.Clipboard", "tast.arc.Boot")`, boot), should.BeTrue)
+				assert.Loosely(t, eval(`test IN ("tast.arc.Clipboard", "tast.arc.Boot")`, dbus), should.BeFalse)
 			})
 		})
-		Convey(`Boolean Function`, func() {
-			So(eval(`REGEXP_CONTAINS(test, "tast\\.arc\\..*")`, boot), ShouldBeTrue)
-			So(eval(`REGEXP_CONTAINS(test, "tast\\.arc\\..*")`, dbus), ShouldBeFalse)
+		t.Run(`Boolean Function`, func(t *ftt.Test) {
+			assert.Loosely(t, eval(`REGEXP_CONTAINS(test, "tast\\.arc\\..*")`, boot), should.BeTrue)
+			assert.Loosely(t, eval(`REGEXP_CONTAINS(test, "tast\\.arc\\..*")`, dbus), should.BeFalse)
 		})
-		Convey(`Boolean Factor`, func() {
-			So(eval(`NOT TRUE`, boot), ShouldBeFalse)
-			So(eval(`NOT FALSE`, boot), ShouldBeTrue)
-			So(eval(`NOT REGEXP_CONTAINS(test, "tast\\.arc\\..*")`, boot), ShouldBeFalse)
-			So(eval(`NOT REGEXP_CONTAINS(test, "tast\\.arc\\..*")`, dbus), ShouldBeTrue)
+		t.Run(`Boolean Factor`, func(t *ftt.Test) {
+			assert.Loosely(t, eval(`NOT TRUE`, boot), should.BeFalse)
+			assert.Loosely(t, eval(`NOT FALSE`, boot), should.BeTrue)
+			assert.Loosely(t, eval(`NOT REGEXP_CONTAINS(test, "tast\\.arc\\..*")`, boot), should.BeFalse)
+			assert.Loosely(t, eval(`NOT REGEXP_CONTAINS(test, "tast\\.arc\\..*")`, dbus), should.BeTrue)
 		})
-		Convey(`Boolean Term`, func() {
-			So(eval(`TRUE AND TRUE`, boot), ShouldBeTrue)
-			So(eval(`TRUE AND FALSE`, boot), ShouldBeFalse)
-			So(eval(`NOT FALSE AND NOT FALSE`, boot), ShouldBeTrue)
-			So(eval(`NOT FALSE AND NOT FALSE AND NOT FALSE`, boot), ShouldBeTrue)
+		t.Run(`Boolean Term`, func(t *ftt.Test) {
+			assert.Loosely(t, eval(`TRUE AND TRUE`, boot), should.BeTrue)
+			assert.Loosely(t, eval(`TRUE AND FALSE`, boot), should.BeFalse)
+			assert.Loosely(t, eval(`NOT FALSE AND NOT FALSE`, boot), should.BeTrue)
+			assert.Loosely(t, eval(`NOT FALSE AND NOT FALSE AND NOT FALSE`, boot), should.BeTrue)
 		})
-		Convey(`Boolean Expression`, func() {
-			So(eval(`TRUE OR FALSE`, boot), ShouldBeTrue)
-			So(eval(`FALSE AND FALSE OR TRUE`, boot), ShouldBeTrue)
-			So(eval(`FALSE AND TRUE OR FALSE OR FALSE AND TRUE`, boot), ShouldBeFalse)
+		t.Run(`Boolean Expression`, func(t *ftt.Test) {
+			assert.Loosely(t, eval(`TRUE OR FALSE`, boot), should.BeTrue)
+			assert.Loosely(t, eval(`FALSE AND FALSE OR TRUE`, boot), should.BeTrue)
+			assert.Loosely(t, eval(`FALSE AND TRUE OR FALSE OR FALSE AND TRUE`, boot), should.BeFalse)
 		})
 	})
-	Convey(`Formatting`, t, func() {
+	ftt.Run(`Formatting`, t, func(t *ftt.Test) {
 		roundtrip := func(input string) string {
 			eval, err := Parse(input)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			return eval.String()
 		}
 		// The following statements should be formatted exactly the same when they are printed.
@@ -236,7 +238,7 @@ func TestRules(t *testing.T) {
 			`test = "arc.Boot" AND reason LIKE "%failed%"`,
 		}
 		for _, input := range inputs {
-			So(roundtrip(input), ShouldEqual, input)
+			assert.Loosely(t, roundtrip(input), should.Equal(input))
 		}
 	})
 }

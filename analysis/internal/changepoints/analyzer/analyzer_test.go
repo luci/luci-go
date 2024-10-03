@@ -20,18 +20,19 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
+
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
 	"go.chromium.org/luci/analysis/internal/changepoints/model"
 	cpb "go.chromium.org/luci/analysis/internal/changepoints/proto"
 	"go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
 	pb "go.chromium.org/luci/analysis/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestAnalyzer(t *testing.T) {
-	Convey("Analyzer", t, func() {
+	ftt.Run("Analyzer", t, func(t *ftt.Test) {
 
 		var a Analyzer
 
@@ -51,7 +52,7 @@ func TestAnalyzer(t *testing.T) {
 			},
 		}
 
-		Convey("test variant branch without finalizing or finalized segments", func() {
+		t.Run("test variant branch without finalizing or finalized segments", func(t *ftt.Test) {
 			tvb := &testvariantbranch.Entry{
 				Project:     "chromium",
 				TestID:      "test_id_1",
@@ -120,15 +121,15 @@ func TestAnalyzer(t *testing.T) {
 					},
 				},
 			}
-			Convey("without eviction", func() {
+			t.Run("without eviction", func(t *ftt.Test) {
 				for _, run := range runs {
 					tvb.InputBuffer.InsertRun(run)
 				}
 
 				segments := a.Run(tvb)
-				So(segments, ShouldResembleProto, expectedSegments)
+				assert.Loosely(t, segments, should.Resemble(expectedSegments))
 			})
-			Convey("with eviction", func() {
+			t.Run("with eviction", func(t *ftt.Test) {
 				tvb.InputBuffer.ColdBufferCapacity = 2
 				tvb.InputBuffer.HotBufferCapacity = 1
 
@@ -137,9 +138,9 @@ func TestAnalyzer(t *testing.T) {
 				}
 
 				segments := a.Run(tvb)
-				So(segments, ShouldResembleProto, expectedSegments)
+				assert.Loosely(t, segments, should.Resemble(expectedSegments))
 
-				So(tvb.InputBuffer, ShouldResembleProto, &inputbuffer.Buffer{
+				assert.Loosely(t, tvb.InputBuffer, should.Resemble(&inputbuffer.Buffer{
 					HotBufferCapacity: 1,
 					HotBuffer: inputbuffer.History{
 						Runs: []inputbuffer.Run{},
@@ -164,8 +165,8 @@ func TestAnalyzer(t *testing.T) {
 						},
 					},
 					IsColdBufferDirty: true,
-				})
-				So(tvb.FinalizingSegment, ShouldResembleProto, &cpb.Segment{
+				}))
+				assert.Loosely(t, tvb.FinalizingSegment, should.Resemble(&cpb.Segment{
 					State:         cpb.SegmentState_FINALIZING,
 					StartPosition: 1,
 					StartHour:     timestamppb.New(time.Unix(1000*3600, 0)),
@@ -180,13 +181,13 @@ func TestAnalyzer(t *testing.T) {
 							ExpectedResults: 2,
 						},
 					},
-				})
-				So(tvb.IsFinalizingSegmentDirty, ShouldBeTrue)
-				So(tvb.FinalizedSegments, ShouldBeNil)
-				So(tvb.IsFinalizedSegmentsDirty, ShouldBeFalse)
+				}))
+				assert.Loosely(t, tvb.IsFinalizingSegmentDirty, should.BeTrue)
+				assert.Loosely(t, tvb.FinalizedSegments, should.BeNil)
+				assert.Loosely(t, tvb.IsFinalizedSegmentsDirty, should.BeFalse)
 			})
 		})
-		Convey("analyze test variant branch with finalizing and finalized segments", func() {
+		t.Run("analyze test variant branch with finalizing and finalized segments", func(t *ftt.Test) {
 			var (
 				positions     = []int{30, 31, 32, 33, 34, 35, 36, 37, 38, 39}
 				total         = []int{5, 5, 5, 5, 5, 5, 5, 5, 5, 5}
@@ -366,31 +367,31 @@ func TestAnalyzer(t *testing.T) {
 				},
 			}
 
-			Convey("without eviction", func() {
+			t.Run("without eviction", func(t *ftt.Test) {
 				// By increasing capacity, we avoid eviction due to
 				// the changepoint occuring in the old half of the input
 				// buffer.
 				row.InputBuffer.ColdBufferCapacity = 100
 
 				segments := a.Run(row)
-				So(segments, ShouldResembleProto, expectedSegments)
-				So(row.InputBuffer.IsColdBufferDirty, ShouldBeFalse)
+				assert.Loosely(t, segments, should.Resemble(expectedSegments))
+				assert.Loosely(t, row.InputBuffer.IsColdBufferDirty, should.BeFalse)
 			})
-			Convey("with eviction forced by space pressure", func() {
+			t.Run("with eviction forced by space pressure", func(t *ftt.Test) {
 				row.InputBuffer.ColdBufferCapacity = 10
 				row.InputBuffer.HotBufferCapacity = 5
 
 				segments := a.Run(row)
-				So(segments, ShouldResembleProto, expectedSegments)
-				So(row.InputBuffer.IsColdBufferDirty, ShouldBeTrue)
+				assert.Loosely(t, segments, should.Resemble(expectedSegments))
+				assert.Loosely(t, row.InputBuffer.IsColdBufferDirty, should.BeTrue)
 
-				So(row.InputBuffer.HotBuffer.Runs, ShouldHaveLength, 0)
-				So(row.InputBuffer.ColdBuffer.Runs, ShouldHaveLength, 10)
-				So(row.FinalizedSegments.Segments, ShouldHaveLength, 3)
-				So(row.FinalizedSegments.Segments[2].StartPosition, ShouldEqual, 21)
-				So(row.FinalizedSegments.Segments[2].EndPosition, ShouldEqual, 33)
-				So(row.FinalizingSegment.StartPosition, ShouldEqual, 34)
-				So(row.FinalizingSegment.FinalizedCounts, ShouldResembleProto, &cpb.Counts{
+				assert.Loosely(t, row.InputBuffer.HotBuffer.Runs, should.HaveLength(0))
+				assert.Loosely(t, row.InputBuffer.ColdBuffer.Runs, should.HaveLength(10))
+				assert.Loosely(t, row.FinalizedSegments.Segments, should.HaveLength(3))
+				assert.Loosely(t, row.FinalizedSegments.Segments[2].StartPosition, should.Equal(21))
+				assert.Loosely(t, row.FinalizedSegments.Segments[2].EndPosition, should.Equal(33))
+				assert.Loosely(t, row.FinalizingSegment.StartPosition, should.Equal(34))
+				assert.Loosely(t, row.FinalizingSegment.FinalizedCounts, should.Resemble(&cpb.Counts{
 					TotalResults:          20,
 					ExpectedPassedResults: 20,
 					TotalRuns:             20,
@@ -400,23 +401,23 @@ func TestAnalyzer(t *testing.T) {
 						LastHour:        timestamppb.New(time.Unix(37*3600, 0)),
 						ExpectedResults: 5,
 					},
-				})
+				}))
 			})
-			Convey("with eviction due to changepoint", func() {
+			t.Run("with eviction due to changepoint", func(t *ftt.Test) {
 				segments := a.Run(row)
-				So(segments, ShouldResembleProto, expectedSegments)
-				So(row.InputBuffer.IsColdBufferDirty, ShouldBeTrue)
+				assert.Loosely(t, segments, should.Resemble(expectedSegments))
+				assert.Loosely(t, row.InputBuffer.IsColdBufferDirty, should.BeTrue)
 
-				So(row.InputBuffer.HotBuffer.Runs, ShouldHaveLength, 0)
-				So(row.InputBuffer.ColdBuffer.Runs, ShouldHaveLength, 30)
-				So(row.FinalizedSegments.Segments, ShouldHaveLength, 3)
-				So(row.FinalizedSegments.Segments[2].StartPosition, ShouldEqual, 21)
-				So(row.FinalizedSegments.Segments[2].EndPosition, ShouldEqual, 33)
-				So(row.FinalizingSegment.StartPosition, ShouldEqual, 34)
-				So(row.FinalizingSegment.FinalizedCounts, ShouldResembleProto, &cpb.Counts{})
+				assert.Loosely(t, row.InputBuffer.HotBuffer.Runs, should.HaveLength(0))
+				assert.Loosely(t, row.InputBuffer.ColdBuffer.Runs, should.HaveLength(30))
+				assert.Loosely(t, row.FinalizedSegments.Segments, should.HaveLength(3))
+				assert.Loosely(t, row.FinalizedSegments.Segments[2].StartPosition, should.Equal(21))
+				assert.Loosely(t, row.FinalizedSegments.Segments[2].EndPosition, should.Equal(33))
+				assert.Loosely(t, row.FinalizingSegment.StartPosition, should.Equal(34))
+				assert.Loosely(t, row.FinalizingSegment.FinalizedCounts, should.Resemble(&cpb.Counts{}))
 			})
 		})
-		Convey("legacy test variant branch which has more runs than capacity", func() {
+		t.Run("legacy test variant branch which has more runs than capacity", func(t *ftt.Test) {
 			// Legacy data formats may be storing more runs than is now the buffer capacity.
 			// E.g. version 2 was limited to 2000 verdicts (not runs).
 
@@ -485,7 +486,7 @@ func TestAnalyzer(t *testing.T) {
 				},
 			}
 			segments := a.Run(row)
-			So(segments, ShouldResembleProto, expectedSegments)
+			assert.Loosely(t, segments, should.Resemble(expectedSegments))
 		})
 	})
 }

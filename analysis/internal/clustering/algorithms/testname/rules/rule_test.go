@@ -17,23 +17,24 @@ package rules
 import (
 	"testing"
 
-	configpb "go.chromium.org/luci/analysis/proto/config"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	configpb "go.chromium.org/luci/analysis/proto/config"
 )
 
 func TestRule(t *testing.T) {
-	Convey(`Evaluate`, t, func() {
-		Convey(`Valid Examples`, func() {
-			Convey(`Blink Web Tests`, func() {
+	ftt.Run(`Evaluate`, t, func(t *ftt.Test) {
+		t.Run(`Valid Examples`, func(t *ftt.Test) {
+			t.Run(`Blink Web Tests`, func(t *ftt.Test) {
 				rule := &configpb.TestNameClusteringRule{
 					Name:         "Blink Web Tests",
 					Pattern:      `^ninja://:blink_web_tests/(virtual/[^/]+/)?(?P<testname>([^/]+/)+[^/]+\.[a-zA-Z]+).*$`,
 					LikeTemplate: `ninja://:blink\_web\_tests/%${testname}%`,
 				}
 				eval, err := Compile(rule)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				inputs := []string{
 					"ninja://:blink_web_tests/virtual/oopr-canvas2d/fast/canvas/canvas-getImageData.html",
@@ -43,14 +44,14 @@ func TestRule(t *testing.T) {
 				}
 				for _, testname := range inputs {
 					like, ok := eval(testname)
-					So(ok, ShouldBeTrue)
-					So(like, ShouldEqual, `ninja://:blink\_web\_tests/%fast/canvas/canvas-getImageData.html%`)
+					assert.Loosely(t, ok, should.BeTrue)
+					assert.Loosely(t, like, should.Equal(`ninja://:blink\_web\_tests/%fast/canvas/canvas-getImageData.html%`))
 				}
 
 				_, ok := eval("ninja://:not_blink_web_tests/fast/canvas/canvas-getImageData.html")
-				So(ok, ShouldBeFalse)
+				assert.Loosely(t, ok, should.BeFalse)
 			})
-			Convey(`Google Tests`, func() {
+			t.Run(`Google Tests`, func(t *ftt.Test) {
 				rule := &configpb.TestNameClusteringRule{
 					Name: "Google Test (Value-parameterized)",
 					// E.g. ninja:{target}/Prefix/ColorSpaceTest.testNullTransform/11
@@ -59,7 +60,7 @@ func TestRule(t *testing.T) {
 					LikeTemplate: `ninja:${target}/%${suite}.${case}%`,
 				}
 				eval, err := Compile(rule)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				inputs := []string{
 					"ninja://chrome/test:interactive_ui_tests/Name/ColorSpaceTest.testNullTransform/0",
@@ -68,31 +69,31 @@ func TestRule(t *testing.T) {
 				}
 				for _, testname := range inputs {
 					like, ok := eval(testname)
-					So(ok, ShouldBeTrue)
-					So(like, ShouldEqual, "ninja://chrome/test:interactive\\_ui\\_tests/%ColorSpaceTest.testNullTransform%")
+					assert.Loosely(t, ok, should.BeTrue)
+					assert.Loosely(t, like, should.Equal("ninja://chrome/test:interactive\\_ui\\_tests/%ColorSpaceTest.testNullTransform%"))
 				}
 
 				_, ok := eval("ninja://:blink_web_tests/virtual/oopr-canvas2d/fast/canvas/canvas-getImageData.html")
-				So(ok, ShouldBeFalse)
+				assert.Loosely(t, ok, should.BeFalse)
 			})
 		})
-		Convey(`Test name escaping in LIKE output`, func() {
-			Convey(`Test name is escaped when substituted`, func() {
+		t.Run(`Test name escaping in LIKE output`, func(t *ftt.Test) {
+			t.Run(`Test name is escaped when substituted`, func(t *ftt.Test) {
 				rule := &configpb.TestNameClusteringRule{
 					Name:         "Escape test",
 					Pattern:      `^(?P<testname>.*)$`,
 					LikeTemplate: `${testname}_%`,
 				}
 				eval, err := Compile(rule)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				// Verify that the test name is not injected varbatim in the generated
 				// like expression, but is escaped to avoid it being interpreted.
 				like, ok := eval(`_\%`)
-				So(ok, ShouldBeTrue)
-				So(like, ShouldEqual, `\_\\\%_%`)
+				assert.Loosely(t, ok, should.BeTrue)
+				assert.Loosely(t, like, should.Equal(`\_\\\%_%`))
 			})
-			Convey(`Unsafe LIKE templates are rejected`, func() {
+			t.Run(`Unsafe LIKE templates are rejected`, func(t *ftt.Test) {
 				rule := &configpb.TestNameClusteringRule{
 					Name:    "Escape test",
 					Pattern: `^path\\(?P<testname>.*)$`,
@@ -105,31 +106,31 @@ func TestRule(t *testing.T) {
 					LikeTemplate: `path\${testname}`,
 				}
 				_, err := Compile(rule)
-				So(err, ShouldErrLike, `"path\\" is not a valid standalone LIKE expression: unfinished escape sequence "\" at end of LIKE pattern`)
+				assert.Loosely(t, err, should.ErrLike(`"path\\" is not a valid standalone LIKE expression: unfinished escape sequence "\" at end of LIKE pattern`))
 			})
 		})
-		Convey(`Substitution operator`, func() {
-			Convey(`Dollar sign can be inserted into output`, func() {
+		t.Run(`Substitution operator`, func(t *ftt.Test) {
+			t.Run(`Dollar sign can be inserted into output`, func(t *ftt.Test) {
 				rule := &configpb.TestNameClusteringRule{
 					Name:         "Insert $",
 					Pattern:      `^(?P<testname>.*)$`,
 					LikeTemplate: `${testname}$$blah$$$$`,
 				}
 				eval, err := Compile(rule)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				like, ok := eval(`test`)
-				So(ok, ShouldBeTrue)
-				So(like, ShouldEqual, `test$blah$$`)
+				assert.Loosely(t, ok, should.BeTrue)
+				assert.Loosely(t, like, should.Equal(`test$blah$$`))
 			})
-			Convey(`Invalid uses of substitution operator are rejected`, func() {
+			t.Run(`Invalid uses of substitution operator are rejected`, func(t *ftt.Test) {
 				rule := &configpb.TestNameClusteringRule{
 					Name:         "Invalid use of $ (neither $$ or ${name})",
 					Pattern:      `^(?P<testname>.*)$`,
 					LikeTemplate: `${testname}blah$$$`,
 				}
 				_, err := Compile(rule)
-				So(err, ShouldErrLike, `invalid use of the $ operator at position 17 in "${testname}blah$$$"`)
+				assert.Loosely(t, err, should.ErrLike(`invalid use of the $ operator at position 17 in "${testname}blah$$$"`))
 
 				rule = &configpb.TestNameClusteringRule{
 					Name:         "Invalid use of $ (invalid capture group name)",
@@ -137,7 +138,7 @@ func TestRule(t *testing.T) {
 					LikeTemplate: `${template@}blah`,
 				}
 				_, err = Compile(rule)
-				So(err, ShouldErrLike, `invalid use of the $ operator at position 0 in "${template@}blah"`)
+				assert.Loosely(t, err, should.ErrLike(`invalid use of the $ operator at position 0 in "${template@}blah"`))
 
 				rule = &configpb.TestNameClusteringRule{
 					Name:         "Capture group name not defined",
@@ -145,17 +146,17 @@ func TestRule(t *testing.T) {
 					LikeTemplate: `${myname}blah`,
 				}
 				_, err = Compile(rule)
-				So(err, ShouldErrLike, `like_template: contains reference to non-existant capturing group with name "myname"`)
+				assert.Loosely(t, err, should.ErrLike(`like_template: contains reference to non-existant capturing group with name "myname"`))
 			})
 		})
-		Convey(`Invalid Pattern`, func() {
+		t.Run(`Invalid Pattern`, func(t *ftt.Test) {
 			rule := &configpb.TestNameClusteringRule{
 				Name:         "Invalid Pattern",
 				Pattern:      `[`,
 				LikeTemplate: ``,
 			}
 			_, err := Compile(rule)
-			So(err, ShouldErrLike, `pattern: error parsing regexp`)
+			assert.Loosely(t, err, should.ErrLike(`pattern: error parsing regexp`))
 		})
 	})
 }
