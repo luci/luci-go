@@ -230,15 +230,13 @@ func (l *listener) processMsg(ctx context.Context, msg *pubsub.Message) error {
 	if err != nil {
 		return err
 	}
-	switch ids, err := tryjob.Resolve(ctx, eid); {
+	switch id, err := eid.Resolve(ctx); {
 	case err != nil:
 		return err
-	case len(ids) != 1:
-		panic(fmt.Errorf("impossible; requested to resolve 1 external ID %s, got %d", eid, len(ids)))
-	case ids[0] != 0:
-		// Build that is tracked by LUCI CV.
+	case id != 0:
+		// Build is tracked by LUCI CV.
 		if !isV2Msg {
-			return l.tjNotifier.ScheduleUpdate(ctx, ids[0], eid)
+			return l.tjNotifier.ScheduleUpdate(ctx, id, eid)
 		}
 		// TODO(crbug.com/1406393): remove the debugging once the migration is done.
 		logging.Debugf(ctx, "builds_v2 pubsub listener: updating tryjob %s", eid)

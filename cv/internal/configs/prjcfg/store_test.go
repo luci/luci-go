@@ -51,7 +51,7 @@ func TestComputeHash(t *testing.T) {
 	}
 
 	ftt.Run("Compute Hash", t, func(t *ftt.Test) {
-		tokens := strings.Split(ComputeHash(testCfg), ":")
+		tokens := strings.Split(MustComputeHash(testCfg), ":")
 		assert.Loosely(t, tokens, should.HaveLength(2))
 		assert.Loosely(t, tokens[0], should.Equal("sha256"))
 		assert.Loosely(t, tokens[1], should.HaveLength(16))

@@ -53,7 +53,7 @@ func regexpCompileCached(pattern string) (*regexp.Regexp, error) {
 		return regexpCacheValue{r, err}, 0, nil
 	})
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	return cached.r, cached.err
 }

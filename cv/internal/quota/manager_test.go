@@ -191,7 +191,7 @@ func TestManager(t *testing.T) {
 
 			r := &run.Run{
 				ID:            rid,
-				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
+				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.MustComputeHash(cfg), "infra"),
 				BilledTo:      makeIdentity(tEmail),
 				CLs:           clIDs,
 			}
@@ -213,7 +213,7 @@ func TestManager(t *testing.T) {
 
 			r := &run.Run{
 				ID:            rid,
-				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
+				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.MustComputeHash(cfg), "infra"),
 				BilledTo:      makeIdentity(tEmail),
 				CLs:           clIDs,
 			}
@@ -233,7 +233,7 @@ func TestManager(t *testing.T) {
 
 			r := &run.Run{
 				ID:            rid,
-				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
+				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.MustComputeHash(cfg), "infra"),
 				BilledTo:      makeIdentity(tEmail),
 				CLs:           clIDs,
 			}
@@ -253,7 +253,7 @@ func TestManager(t *testing.T) {
 
 			r := &run.Run{
 				ID:            rid,
-				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
+				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.MustComputeHash(cfg), "infra"),
 				BilledTo:      makeIdentity(tEmail),
 				CLs:           clIDs,
 			}
@@ -274,7 +274,7 @@ func TestManager(t *testing.T) {
 
 			r := &run.Run{
 				ID:            rid,
-				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
+				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.MustComputeHash(cfg), "infra"),
 				BilledTo:      makeIdentity(tEmail),
 				CLs:           clIDs,
 			}
@@ -309,7 +309,7 @@ func TestManager(t *testing.T) {
 
 			r := &run.Run{
 				ID:            rid,
-				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
+				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.MustComputeHash(cfg), "infra"),
 				BilledTo:      makeIdentity(tEmail),
 				CLs:           clIDs,
 			}
@@ -344,7 +344,7 @@ func TestManager(t *testing.T) {
 
 			r := &run.Run{
 				ID:            rid,
-				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
+				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.MustComputeHash(cfg), "infra"),
 				BilledTo:      makeIdentity(tEmail),
 				CLs:           clIDs,
 			}
@@ -395,7 +395,7 @@ func TestManager(t *testing.T) {
 
 			r := &run.Run{
 				ID:            rid,
-				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
+				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.MustComputeHash(cfg), "infra"),
 				BilledTo:      makeIdentity(tEmail),
 				CLs:           clIDs,
 			}
@@ -416,7 +416,7 @@ func TestManager(t *testing.T) {
 
 			r := &run.Run{
 				ID:            rid,
-				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
+				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.MustComputeHash(cfg), "infra"),
 				BilledTo:      makeIdentity(tEmail),
 				CLs:           clIDs,
 			}
@@ -472,7 +472,7 @@ func TestManager(t *testing.T) {
 
 			r := &run.Run{
 				ID:            rid,
-				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
+				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.MustComputeHash(cfg), "infra"),
 				BilledTo:      makeIdentity(tEmail),
 				CLs:           clIDs,
 			}
@@ -572,7 +572,7 @@ func TestManager(t *testing.T) {
 
 			r := &run.Run{
 				ID:            rid,
-				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
+				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.MustComputeHash(cfg), "infra"),
 				BilledTo:      makeIdentity(tEmail),
 				CLs:           clIDs,
 			}
@@ -617,7 +617,7 @@ func TestManager(t *testing.T) {
 		t.Run("RunQuotaAccountID() hashes emailID", func(t *ftt.Test) {
 			r := &run.Run{
 				ID:            rid,
-				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
+				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.MustComputeHash(cfg), "infra"),
 				BilledTo:      makeIdentity(tEmail),
 				CLs:           clIDs,
 			}

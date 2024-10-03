@@ -91,14 +91,23 @@ type ProjectConfig struct {
 // Therefore, in worst case scenario, when a newer version of proto lib is
 // deployed, CV may re-ingest functionally equivalent config.
 // See: https://godoc.org/google.golang.org/protobuf/proto#MarshalOptions
-func ComputeHash(cfg *cfgpb.Config) string {
+func ComputeHash(cfg *cfgpb.Config) (string, error) {
 	b, err := proto.MarshalOptions{Deterministic: true}.Marshal(cfg)
 	if err != nil {
-		panic(fmt.Sprintf("failed to marshal config: %s", err))
+		return "", fmt.Errorf("failed to marshal config: %w", err)
 	}
 	sha := sha256.New()
 	sha.Write(b)
-	return fmt.Sprintf("sha256:%s", hex.EncodeToString(sha.Sum(nil)[:8]))
+	return fmt.Sprintf("sha256:%s", hex.EncodeToString(sha.Sum(nil)[:8])), nil
+}
+
+// MustComputeHash is like ComputeHash but panics on error.
+func MustComputeHash(cfg *cfgpb.Config) string {
+	hash, err := ComputeHash(cfg)
+	if err != nil {
+		panic(err)
+	}
+	return hash
 }
 
 // ProjectConfigKey returns the ProjectConfig key for a given project.

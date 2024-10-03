@@ -275,35 +275,38 @@ func TestMutatorSingleCL(t *testing.T) {
 
 		t.Run("Invalid MutationCallback", func(t *ftt.Test) {
 			type badCallback func(cl *CL)
-			cases := func(kind string, repro func(bad badCallback)) {
+			cases := func(kind string, repro func(bad badCallback) error) {
 				t.Run(kind, func(t *ftt.Test) {
-					assert.Loosely(t, func() { repro(func(cl *CL) { cl.EVersion = 2 }) }, should.PanicLikeString("CL.EVersion"))
-					assert.Loosely(t, func() { repro(func(cl *CL) { cl.UpdateTime = ct.Clock.Now() }) }, should.PanicLikeString("CL.UpdateTime"))
-					assert.Loosely(t, func() { repro(func(cl *CL) { cl.ID++ }) }, should.PanicLikeString("CL.ID"))
-					assert.Loosely(t, func() { repro(func(cl *CL) { cl.ExternalID = "don't do this" }) }, should.PanicLikeString("CL.ExternalID"))
+					assert.Loosely(t, repro(func(cl *CL) { cl.EVersion = 2 }), should.ErrLike("CL.EVersion"))
+					assert.Loosely(t, repro(func(cl *CL) { cl.UpdateTime = ct.Clock.Now() }), should.ErrLike("CL.UpdateTime"))
+					assert.Loosely(t, repro(func(cl *CL) { cl.ID++ }), should.ErrLike("CL.ID"))
+					assert.Loosely(t, repro(func(cl *CL) { cl.ExternalID = "don't do this" }), should.ErrLike("CL.ExternalID"))
 				})
 			}
-			cases("Upsert creation", func(bad badCallback) {
-				_, _ = m.Upsert(ctx, lProject, eid, func(cl *CL) error {
+			cases("Upsert creation", func(bad badCallback) error {
+				_, err := m.Upsert(ctx, lProject, eid, func(cl *CL) error {
 					bad(cl)
 					return nil
 				})
+				return err
 			})
-			cases("Upsert update", func(bad badCallback) {
+			cases("Upsert update", func(bad badCallback) error {
 				eid.MustCreateIfNotExists(ctx)
 				ct.Clock.Add(time.Second)
-				_, _ = m.Upsert(ctx, lProject, eid, func(cl *CL) error {
+				_, err := m.Upsert(ctx, lProject, eid, func(cl *CL) error {
 					bad(cl)
 					return nil
 				})
+				return err
 			})
-			cases("Update", func(bad badCallback) {
+			cases("Update", func(bad badCallback) error {
 				cl := eid.MustCreateIfNotExists(ctx)
 				ct.Clock.Add(time.Second)
-				_, _ = m.Update(ctx, lProject, cl.ID, func(cl *CL) error {
+				_, err := m.Update(ctx, lProject, cl.ID, func(cl *CL) error {
 					bad(cl)
 					return nil
 				})
+				return err
 			})
 		})
 	})

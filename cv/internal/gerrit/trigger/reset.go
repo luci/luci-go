@@ -125,43 +125,38 @@ type ResetInput struct {
 	CLMutator *changelist.Mutator
 }
 
-func (in *ResetInput) panicIfInvalid() {
+func (in *ResetInput) validateInput() error {
 	// These are the conditions that shouldn't be met, and likely require code
 	// changes for fixes.
-	var err error
 	switch {
 	case in.CL.Snapshot == nil:
-		err = fmt.Errorf("cl.Snapshot must be non-nil")
+		return fmt.Errorf("cl.Snapshot must be non-nil")
 	case in.Triggers == nil:
-		err = fmt.Errorf("trigger must be non-nil")
+		return fmt.Errorf("trigger must be non-nil")
 	case in.Triggers.CqVoteTrigger == nil && in.Triggers.NewPatchsetRunTrigger == nil:
-		err = fmt.Errorf("at least one of {CqVoteTrigger, NewPatchsetRunTrigger} must be non-nil")
+		return fmt.Errorf("at least one of {CqVoteTrigger, NewPatchsetRunTrigger} must be non-nil")
 	case in.LUCIProject != in.CL.Snapshot.GetLuciProject():
-		err = fmt.Errorf("mismatched LUCI Project: got %q in input and %q in CL snapshot", in.LUCIProject, in.CL.Snapshot.GetLuciProject())
+		return fmt.Errorf("mismatched LUCI Project: got %q in input and %q in CL snapshot", in.LUCIProject, in.CL.Snapshot.GetLuciProject())
 	case len(in.ConfigGroups) == 0:
-		err = fmt.Errorf("config_groups must be given")
+		return fmt.Errorf("config_groups must be given")
 	case in.GFactory == nil:
-		err = fmt.Errorf("gerrit factory must be non-nil")
+		return fmt.Errorf("gerrit factory must be non-nil")
 	case in.CLMutator == nil:
-		err = fmt.Errorf("mutator must be non-nil")
+		return fmt.Errorf("mutator must be non-nil")
 	case len(in.Notify) > 0:
 		for _, enum := range in.Notify {
 			if _, ok := gerrit.Whom_name[int32(enum)]; !ok {
-				err = fmt.Errorf("notify: unknown Whom value %d", enum)
-				break
+				return fmt.Errorf("notify: unknown Whom value %d", enum)
 			}
 		}
 	case len(in.AddToAttentionSet) > 0:
 		for _, enum := range in.AddToAttentionSet {
 			if _, ok := gerrit.Whom_name[int32(enum)]; !ok {
-				err = fmt.Errorf("add_to_attention: unknown Whom value %d", enum)
-				break
+				return fmt.Errorf("add_to_attention: unknown Whom value %d", enum)
 			}
 		}
 	}
-	if err != nil {
-		panic(err)
-	}
+	return nil
 }
 
 // Reset removes or "deactivates" the trigger that made CV start processing the
@@ -196,7 +191,9 @@ func (in *ResetInput) panicIfInvalid() {
 // continuing to return a trigger for this patchset, analog to the effect of
 // removing a cq vote on gerrit.
 func Reset(ctx context.Context, in ResetInput) error {
-	in.panicIfInvalid()
+	if err := in.validateInput(); err != nil {
+		return err
+	}
 	if in.CL.AccessKindFromCodeReviewSite(ctx, in.LUCIProject) != changelist.AccessGranted {
 		return errors.New("failed to reset trigger because CV lost access to this CL", ErrResetPreconditionFailedTag)
 	}

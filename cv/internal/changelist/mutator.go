@@ -287,7 +287,7 @@ func (m *Mutator) Begin(ctx context.Context, project string, id common.CLID) (*C
 		project: project,
 	}
 	if clMutation.trans == nil {
-		panic(fmt.Errorf("changelist.Mutator.Begin must be called inside an existing Datastore transaction"))
+		return nil, errors.New("changelist.Mutator.Begin must be called inside an existing Datastore transaction")
 	}
 	switch err := datastore.Get(ctx, clMutation.CL); {
 	case err == datastore.ErrNoSuchEntity:
@@ -339,7 +339,9 @@ func (clm *CLMutation) backup() {
 // Must be called in the same Datastore transaction as Begin() which began the
 // CL mutation.
 func (clm *CLMutation) Finalize(ctx context.Context) (*CL, error) {
-	clm.finalize(ctx)
+	if err := clm.finalize(ctx); err != nil {
+		return nil, err
+	}
 	if err := datastore.Put(ctx, clm.CL); err != nil {
 		return nil, errors.Annotate(err, "failed to put CL %d", clm.id).Tag(transient.Tag).Err()
 	}
@@ -349,30 +351,31 @@ func (clm *CLMutation) Finalize(ctx context.Context) (*CL, error) {
 	return clm.CL, nil
 }
 
-func (clm *CLMutation) finalize(ctx context.Context) {
+func (clm *CLMutation) finalize(ctx context.Context) error {
 	switch t := datastore.CurrentTransaction(ctx); {
 	case clm.trans == nil:
-		panic(fmt.Errorf("changelist.CLMutation.Finalize called the second time"))
+		return errors.New("changelist.CLMutation.Finalize called the second time")
 	case t == nil:
-		panic(fmt.Errorf("changelist.CLMutation.Finalize must be called inside an existing Datastore transaction"))
+		return errors.New("changelist.CLMutation.Finalize must be called inside an existing Datastore transaction")
 	case t != clm.trans:
-		panic(fmt.Errorf("changelist.CLMutation.Finalize called inside a different Datastore transaction"))
+		return errors.New("changelist.CLMutation.Finalize called inside a different Datastore transaction")
 	}
 	clm.trans = nil
 
 	switch {
 	case clm.id != clm.CL.ID:
-		panic(fmt.Errorf("CL.ID must not be modified"))
+		return errors.New("CL.ID must not be modified")
 	case clm.externalID != clm.CL.ExternalID:
-		panic(fmt.Errorf("CL.ExternalID must not be modified"))
+		return errors.New("CL.ExternalID must not be modified")
 	case clm.priorEversion != clm.CL.EVersion:
-		panic(fmt.Errorf("CL.EVersion must not be modified"))
+		return errors.New("CL.EVersion must not be modified")
 	case !clm.priorUpdateTime.Equal(clm.CL.UpdateTime):
-		panic(fmt.Errorf("CL.UpdateTime must not be modified"))
+		return errors.New("CL.UpdateTime must not be modified")
 	}
 	clm.CL.EVersion++
 	clm.CL.UpdateTime = datastore.RoundTime(clock.Now(ctx).UTC())
 	clm.CL.UpdateRetentionKey()
+	return nil
 }
 
 // BeginBatch starts a batch of CL mutations within the same Datastore
@@ -380,7 +383,7 @@ func (clm *CLMutation) finalize(ctx context.Context) {
 func (m *Mutator) BeginBatch(ctx context.Context, project string, ids common.CLIDs) ([]*CLMutation, error) {
 	trans := datastore.CurrentTransaction(ctx)
 	if trans == nil {
-		panic(fmt.Errorf("changelist.Mutator.BeginBatch must be called inside an existing Datastore transaction"))
+		return nil, errors.New("changelist.Mutator.BeginBatch must be called inside an existing Datastore transaction")
 	}
 	cls, err := LoadCLsByIDs(ctx, ids)
 	if err != nil {
@@ -411,7 +414,9 @@ func (m *Mutator) BeginBatch(ctx context.Context, project string, ids common.CLI
 func (m *Mutator) FinalizeBatch(ctx context.Context, muts []*CLMutation) ([]*CL, error) {
 	cls := make([]*CL, len(muts))
 	for i, mut := range muts {
-		mut.finalize(ctx)
+		if err := mut.finalize(ctx); err != nil {
+			return nil, err
+		}
 		cls[i] = mut.CL
 	}
 	if err := datastore.Put(ctx, cls); err != nil {

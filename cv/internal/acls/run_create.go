@@ -177,13 +177,13 @@ func (ck runCreateChecker) canCreateRun(ctx context.Context) (evalResult, error)
 		// for mode trigger by CQ+1 and full run ACL for mode trigger by CQ+2.
 		switch {
 		case ck.runModeDef == nil:
-			panic(fmt.Errorf("impossible; run has non standard mode %q but mode definition is not provided", ck.runMode))
+			return evalResult{}, fmt.Errorf("run has non standard mode %q but mode definition is not provided", ck.runMode)
 		case ck.runModeDef.GetCqLabelValue() == 1:
 			return ck.canCreateDryRun(ctx)
 		case ck.runModeDef.GetCqLabelValue() == 2:
 			return ck.canCreateFullRun(ctx)
 		default:
-			panic(fmt.Errorf("impossible; mode specify CQ label value %d, expecting 1, or 2", ck.runModeDef.GetCqLabelValue()))
+			return evalResult{}, fmt.Errorf("impossible; mode specify CQ label value %d, expecting 1, or 2", ck.runModeDef.GetCqLabelValue())
 		}
 	}
 }

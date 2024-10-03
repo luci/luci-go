@@ -273,8 +273,7 @@ func (vd *projectConfigValidator) validateConfigGroup(group *cfgpb.ConfigGroup, 
 		case *cfgpb.ConfigGroup_PostAction_VoteGerritLabels_:
 			vd.validateVoteGerritLabels(act.VoteGerritLabels)
 		default:
-			// This must be a bug in this code.
-			panic(errors.Reason("unknown action; please fix"))
+			vd.ctx.Errorf("action %T is not supported", act)
 		}
 		vd.ctx.Exit() // action
 		vd.ctx.Exit() // post_actions #i

@@ -77,7 +77,7 @@ func List(ctx context.Context, r Recipient) (Events, error) {
 	case err != nil:
 		return nil, err
 	case len(l.Items) == effectivelyUnlimited:
-		panic(fmt.Errorf("fetched possibly not all events (limit: %d)", effectivelyUnlimited))
+		return nil, fmt.Errorf("fetched possibly not all events (limit: %d)", effectivelyUnlimited)
 	default:
 		return toEvents(l.Items), nil
 	}

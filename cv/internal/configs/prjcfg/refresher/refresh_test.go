@@ -117,7 +117,7 @@ func TestUpdateProject(t *testing.T) {
 			cfg, meta := &cfgpb.Config{}, &config.Meta{}
 			err := cfgclient.Get(ctx, config.MustProjectSet("chromium"), ConfigFileName, cfgclient.ProtoText(cfg), meta)
 			assert.Loosely(t, err, should.BeNil)
-			localHash := prjcfg.ComputeHash(cfg)
+			localHash := prjcfg.MustComputeHash(cfg)
 			projKey := prjcfg.ProjectConfigKey(ctx, "chromium")
 			cgNames := make([]string, len(cfg.GetConfigGroups()))
 			// Verify ConfigGroups.
@@ -373,7 +373,7 @@ func TestPutConfigGroups(t *testing.T) {
 		}
 
 		t.Run("New Configs", func(t *ftt.Test) {
-			hash := prjcfg.ComputeHash(testCfg)
+			hash := prjcfg.MustComputeHash(testCfg)
 			err := putConfigGroups(ctx, testCfg, "chromium", hash)
 			assert.Loosely(t, err, should.BeNil)
 			stored := prjcfg.ConfigGroup{
@@ -391,7 +391,7 @@ func TestPutConfigGroups(t *testing.T) {
 				ctx := datastore.AddRawFilters(ctx, func(_ context.Context, rds datastore.RawInterface) datastore.RawInterface {
 					return readOnlyFilter{rds}
 				})
-				err := putConfigGroups(ctx, testCfg, "chromium", prjcfg.ComputeHash(testCfg))
+				err := putConfigGroups(ctx, testCfg, "chromium", prjcfg.MustComputeHash(testCfg))
 				assert.Loosely(t, err, should.BeNil)
 			})
 
@@ -400,7 +400,7 @@ func TestPutConfigGroups(t *testing.T) {
 				old.SchemaVersion = prjcfg.SchemaVersion - 1
 				assert.Loosely(t, datastore.Put(ctx, &old), should.BeNil)
 
-				err := putConfigGroups(ctx, testCfg, "chromium", prjcfg.ComputeHash(testCfg))
+				err := putConfigGroups(ctx, testCfg, "chromium", prjcfg.MustComputeHash(testCfg))
 				assert.Loosely(t, err, should.BeNil)
 
 				assert.Loosely(t, datastore.Get(ctx, &stored), should.BeNil)

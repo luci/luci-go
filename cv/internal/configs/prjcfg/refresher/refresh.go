@@ -72,7 +72,10 @@ func UpdateProject(ctx context.Context, project string, notify NotifyCallback) e
 	}
 
 	// Write out ConfigHashInfo if missing and all ConfigGroups.
-	localHash := prjcfg.ComputeHash(cfg)
+	localHash, err := prjcfg.ComputeHash(cfg)
+	if err != nil {
+		return err
+	}
 	cgNames := make([]string, len(cfg.GetConfigGroups()))
 	for i, cg := range cfg.GetConfigGroups() {
 		cgNames[i] = cg.GetName()

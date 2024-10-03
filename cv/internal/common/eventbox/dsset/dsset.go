@@ -53,6 +53,7 @@ package dsset
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -177,7 +178,7 @@ func (s *Set) Add(c context.Context, items []Item) error {
 // as well as a set of tombstones that points to items that were previously
 // popped and can be cleaned up now.
 //
-// Must be called outside of transactions (panics otherwise).
+// Returns error if it is called outside of transactions.
 //
 // The set of tombstones to cleanup should be passed to 'CleanupGarbage', and
 // later to 'BeginPop' (via Listing), in that order. Not doing so will lead to
@@ -187,9 +188,9 @@ func (s *Set) Add(c context.Context, items []Item) error {
 func (s *Set) List(ctx context.Context, maxEvents int) (l *Listing, err error) {
 	switch {
 	case datastore.CurrentTransaction(ctx) != nil:
-		panic(fmt.Errorf("dsset.Set.List must be called outside of a transaction"))
+		return nil, errors.New("dsset.Set.List must be called outside of a transaction")
 	case maxEvents <= 0:
-		panic(fmt.Errorf("maxEvents must be >0, but %d given", maxEvents))
+		return nil, fmt.Errorf("maxEvents must be >0, but %d given", maxEvents)
 	}
 	ctx, span := tracing.Start(ctx, "go.chromium.org/luci/cv/internal/eventbox/dsset/List")
 	defer func() { tracing.End(span, err) }()
@@ -273,7 +274,7 @@ func (s *Set) List(ctx context.Context, maxEvents int) (l *Listing, err error) {
 // Calls nextID() to get next ID to delete until nextID() returns "".
 func (s *Set) Delete(ctx context.Context, nextID func() string) (err error) {
 	if datastore.CurrentTransaction(ctx) != nil {
-		panic("dsset.Set.Delete must be called outside of a transaction")
+		return errors.New("dsset.Set.Delete must be called outside of a transaction")
 	}
 	ctx, span := tracing.Start(ctx, "go.chromium.org/luci/cv/internal/eventbox/dsset/Delete")
 	defer func() { tracing.End(span, err) }()
@@ -322,11 +323,11 @@ type PopOp struct {
 // sequence ('List' + 'Pop') should be retried.
 func (s *Set) BeginPop(c context.Context, listing *Listing) (*PopOp, error) {
 	if listing.parent != s.Parent {
-		panic("passed Listing from another set")
+		return nil, errors.New("passed Listing from another set")
 	}
 	txn := datastore.CurrentTransaction(c)
 	if txn == nil {
-		panic("dsset.Set.BeginPop must be called inside a transaction")
+		return nil, errors.New("dsset.Set.BeginPop must be called inside a transaction")
 	}
 
 	now := clock.Now(c).UTC()
@@ -350,7 +351,7 @@ func (s *Set) BeginPop(c context.Context, listing *Listing) (*PopOp, error) {
 	for _, tomb := range listing.Garbage {
 		if tomb.old {
 			if !tomb.cleanedUp {
-				panic("trying to remove Tombstone that wasn't cleaned up")
+				return nil, errors.New("trying to remove Tombstone that wasn't cleaned up")
 			}
 			if _, hasTomb := tombs[tomb.id]; hasTomb {
 				delete(tombs, tomb.id)
@@ -390,7 +391,7 @@ func (p *PopOp) CanPop(id string) bool {
 // transaction), or it's not in the listing passed to BeginPop.
 func (p *PopOp) Pop(id string) bool {
 	if p.finished {
-		panic("the operation has already been finished")
+		return false
 	}
 	if !p.CanPop(id) {
 		return false
@@ -431,10 +432,10 @@ func FinishPop(ctx context.Context, ops ...*PopOp) error {
 	tombsCount := 0
 	for _, op := range ops {
 		if op.finished {
-			panic("the operation has already been finished")
+			return errors.New("the operation has already been finished")
 		}
 		if op.txn != txn {
-			panic("wrong transaction")
+			return errors.New("wrong transaction")
 		}
 		if op.dirty {
 			entities = append(entities, op.makeTombstonesEntity())
@@ -476,7 +477,7 @@ func FinishPop(ctx context.Context, ops ...*PopOp) error {
 // removed and which weren't in case of an error.
 func CleanupGarbage(ctx context.Context, cleanup ...Garbage) (err error) {
 	if datastore.CurrentTransaction(ctx) != nil {
-		panic("dsset.CleanupGarbage must be called outside of a transaction")
+		return errors.New("dsset.CleanupGarbage must be called outside of a transaction")
 	}
 	ctx, span := tracing.Start(ctx, "go.chromium.org/luci/cv/internal/eventbox/dsset/CleanupGarbage")
 	defer func() { tracing.End(span, err) }()

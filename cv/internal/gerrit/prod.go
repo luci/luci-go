@@ -16,6 +16,7 @@ package gerrit
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -59,7 +60,7 @@ func (p *prodFactory) MakeMirrorIterator(ctx context.Context) *MirrorIterator {
 // MakeClient implements Factory.
 func (f *prodFactory) MakeClient(ctx context.Context, gerritHost, luciProject string) (Client, error) {
 	if strings.ContainsRune(luciProject, '.') {
-		panic(errors.Reason("swapped host %q with luciProject %q", gerritHost, luciProject).Err())
+		return nil, fmt.Errorf("swapped host %q with luciProject %q", gerritHost, luciProject)
 	}
 	// TODO(crbug/824492): use auth.GetRPCTransport(ctx, auth.AsProject, ...)
 	// directly after pssa migration is over. Currently, we need a special

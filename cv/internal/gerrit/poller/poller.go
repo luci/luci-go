@@ -92,7 +92,7 @@ func New(tqd *tq.Dispatcher, g gerrit.Factory, clUpdater CLUpdater, pm pmNotifie
 // Must not be called inside a datastore transaction.
 func (p *Poller) Poke(ctx context.Context, luciProject string) error {
 	if datastore.CurrentTransaction(ctx) != nil {
-		panic("must be called outside of transaction context")
+		return errors.New("must be called outside of transaction context")
 	}
 	return p.schedule(ctx, luciProject, time.Time{})
 }
@@ -124,7 +124,7 @@ func (p *Poller) poll(ctx context.Context, luciProject string, eta time.Time) er
 	case meta.Status == prjcfg.StatusEnabled:
 		err = p.pollWithConfig(ctx, luciProject, meta)
 	default:
-		panic(fmt.Errorf("unknown project config status: %d", meta.Status))
+		return fmt.Errorf("unknown project config status: %d", meta.Status)
 	}
 
 	switch {
@@ -253,7 +253,7 @@ func (p *Poller) pollWithConfig(ctx context.Context, luciProject string, meta pr
 		}
 	})
 	if err != nil {
-		panic(err)
+		return err
 	}
 	// Save state regardless of failure of individual queries.
 	if saveErr := save(ctx, &stateBefore); saveErr != nil {

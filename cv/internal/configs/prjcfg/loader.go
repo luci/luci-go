@@ -162,7 +162,7 @@ func GetHashMetas(ctx context.Context, project string, hashes ...string) ([]Meta
 // Meta must correspond to an existing project.
 func (m Meta) GetConfigGroups(ctx context.Context) ([]*ConfigGroup, error) {
 	if !m.Exists() {
-		panic(fmt.Errorf("project %q config doesn't exist", m.Project))
+		return nil, fmt.Errorf("project %q config doesn't exist", m.Project)
 	}
 	projKey := datastore.MakeKey(ctx, projectConfigKind, m.Project)
 	cs := make([]*ConfigGroup, len(m.ConfigGroupIDs))

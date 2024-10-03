@@ -234,7 +234,7 @@ func Load(ctx context.Context, rid ResourceID) (*Lease, error) {
 // loaded in the same transaction.
 func TryApply(ctx context.Context, latestLease *Lease, app Application) (*Lease, error) {
 	if datastore.CurrentTransaction(ctx) == nil {
-		panic("must be called in transaction context")
+		return nil, errors.New("must be called in transaction context")
 	}
 	if err := app.validate(ctx); err != nil {
 		return nil, err

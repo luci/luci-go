@@ -119,7 +119,7 @@ func (l *Listener) reloadSubscribers(ctx context.Context, settings []*listenerpb
 		i, setting := i, setting
 		host := setting.GetHost()
 		if !activeHosts.Add(host) {
-			panic(fmt.Errorf("duplicate host %q; there must be a bug in the cfg validation", host))
+			return fmt.Errorf("duplicate host %q; there must be a bug in the cfg validation", host)
 		}
 
 		switch sber, ok := l.sbers[host]; {

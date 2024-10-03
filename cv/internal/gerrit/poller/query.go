@@ -139,7 +139,7 @@ func (p *Poller) doIncrementalQuery(ctx context.Context, q singleQuery) error {
 	lastInc := q.qs.GetLastIncrTime()
 	if lastInc == nil {
 		if lastInc = q.qs.GetLastFullTime(); lastInc == nil {
-			panic("must have been a full poll")
+			return errors.New("must have been a full poll")
 		}
 	}
 	after := lastInc.AsTime().Add(-incrementalPollOverlap)

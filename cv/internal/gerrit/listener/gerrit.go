@@ -61,8 +61,7 @@ func (p *gerritProcessor) process(ctx context.Context, m *pubsub.Message) error 
 			return errors.Annotate(err, "proto.Unmarshal").Err()
 		}
 	default:
-		// This must be a bug. A unit test should prevent this from happening.
-		panic(fmt.Errorf("impossible; missing an enum for GerritSubscription.MessageFormat"))
+		return fmt.Errorf("unknown GerritSubscription.MessageFormat %s", p.msgFormat)
 	}
 
 	var repo string
