@@ -158,6 +158,7 @@ func newBuildsClientWithSecrets(ctx context.Context, hostname string, retryF ret
 			PerRPCTimeout: 30 * time.Second,
 			Debug:         true,
 		},
+		EnableRequestCompression: true, // UpdateBuild RPCs are pretty heavy
 	}
 
 	// Use "system" account to call UpdateBuild RPCs.
