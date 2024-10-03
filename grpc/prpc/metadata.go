@@ -24,6 +24,18 @@ import (
 	"go.chromium.org/luci/common/errors"
 )
 
+// Standard HTTP headers that are vital for the pRPC protocol and should not
+// be messed with via prpc.SetHeader(...).
+var vitalHTTPHeaders = map[string]struct{}{
+	"Accept":                 {}, // content type negotiation
+	"Accept-Encoding":        {}, // content type negotiation
+	"Content-Encoding":       {}, // request/response compression
+	"Content-Length":         {}, // vital for HTTP
+	"Content-Type":           {}, // based on negotiated content type
+	"Vary":                   {}, // part of CORS response
+	"X-Content-Type-Options": {}, // always set to "nosniff"
+}
+
 // isReservedMetadataKey returns true for disallowed metadata keys.
 //
 // Keys are given in HTTP header canonical format.
@@ -31,21 +43,25 @@ import (
 // Setting metadata with such keys may break the protocol.
 // See also Client.prepareRequest.
 func isReservedMetadataKey(k string) bool {
-	switch {
-	case strings.HasPrefix(k, "X-Prpc-"):
+	// These standard HTTP headers are vital for the pRPC protocol and should not
+	// be messed with.
+	if _, yes := vitalHTTPHeaders[k]; yes {
 		return true
-
-	case k == "Accept",
-		k == "Accept-Encoding",
-		k == "Content-Encoding",
-		k == "Content-Length",
-		k == "Content-Type",
-		k == "X-Content-Type-Options":
-		return true
-
-	default:
-		return false
 	}
+
+	// These headers are used internally by pRPC protocol and should not be
+	// messed with.
+	if strings.HasPrefix(k, "X-Prpc-") {
+		return true
+	}
+
+	// CORS policies should be set via server.AccessControl callback, not via
+	// individual RPCs.
+	if strings.HasPrefix(k, "Access-Control-") {
+		return true
+	}
+
+	return false
 }
 
 // metaIntoHeaders merges outgoing metadata into the given set of headers.

@@ -236,7 +236,7 @@ func writeError(ctx context.Context, w http.ResponseWriter, err error, format Fo
 	if err != nil {
 		st = status.New(codes.Internal, "prpc: failed to write status details")
 		httpStatus = http.StatusInternalServerError
-	} else {
+	} else if len(detailHeader) != 0 {
 		w.Header()[HeaderStatusDetail] = detailHeader
 	}
 
@@ -284,7 +284,7 @@ func writeError(ctx context.Context, w http.ResponseWriter, err error, format Fo
 	}
 
 	w.Header().Set(HeaderGRPCCode, strconv.Itoa(int(st.Code())))
-	w.Header().Set(headerContentType, "text/plain")
+	w.Header().Set(headerContentType, "text/plain; charset=utf-8")
 	w.WriteHeader(httpStatus)
 	if _, err = io.WriteString(w, body); err == nil {
 		_, err = w.Write([]byte{'\n'})

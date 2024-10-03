@@ -393,16 +393,18 @@ func (s *Server) handlePOST(c *router.Context) {
 
 		switch {
 		case err != nil:
-			writeError(c.Request.Context(), c.Writer, requestReadErr(err, "the override check"), FormatText)
+			s.writeInitialHeaders(c.Request, c.Writer.Header())
+			writeError(
+				c.Request.Context(),
+				c.Writer,
+				requestReadErr(err, "the override check"),
+				FormatText,
+			)
 			return
 		case stop:
 			return
 		}
 	}
-
-	s.setAccessControlHeaders(c, false)
-	c.Writer.Header().Set("X-Content-Type-Options", "nosniff")
-	c.Writer.Header()["Date"] = nil // omit, not part of the protocol
 
 	res := response{}
 	switch {
@@ -417,7 +419,9 @@ func (s *Server) handlePOST(c *router.Context) {
 			"method %q in service %q is not implemented",
 			methodName, serviceName)
 	default:
-		s.parseAndCall(c, service, method, &res)
+		// Note: this at most populates some of c.Writer.Header(). The actual RPC
+		// response or error are placed into `res` and flushed below.
+		s.parseAndCall(c.Request, c.Writer, service, method, &res)
 	}
 
 	// Ignore client's gzip preference if the server doesn't want to do
@@ -433,11 +437,12 @@ func (s *Server) handlePOST(c *router.Context) {
 		}
 	}
 
+	s.writeInitialHeaders(c.Request, c.Writer.Header())
 	writeResponse(c.Request.Context(), c.Writer, &res)
 }
 
 func (s *Server) handleOPTIONS(c *router.Context) {
-	s.setAccessControlHeaders(c, true)
+	s.writeAccessControlHeaders(c.Request, c.Writer.Header(), true)
 	c.Writer.WriteHeader(http.StatusOK)
 }
 
@@ -468,12 +473,20 @@ func (r *reproducingReader) Close() error {
 var requestContextKey = "context key with *requestContext"
 
 type requestContext struct {
-	// additional headers that will be sent in the response
+	// Additional headers that will be sent in the response.
 	header http.Header
 }
 
 // SetHeader sets the header metadata.
+//
 // When called multiple times, all the provided metadata will be merged.
+// Headers set this way will be sent whenever the RPC handler finishes
+// (successfully or not).
+//
+// Some headers are reserved for internal pRPC or HTTP needs and can't be
+// set this way. This includes all "x-prpc-*" headers, various core HTTP
+// headers (like "content-type") and all "access-control-*" headers (if you want
+// to configure CORS policies, use [Server.AccessControl] field instead).
 //
 // If ctx is not a pRPC server context, then SetHeader calls grpc.SetHeader
 // such that calling prpc.SetHeader works for both pRPC and gRPC.
@@ -509,21 +522,27 @@ func (s *Server) lookup(serviceName, methodName string) (override Override, serv
 	return
 }
 
-func (s *Server) parseAndCall(c *router.Context, service *service, method grpc.MethodDesc, r *response) {
+// parseAndCall parses the request and calls the RPC implementation.
+//
+// All errors (either protocol-level or RPC errors) are placed into `r`.
+//
+// `rw` is used to pass it to http.MaxBytesReader(...) and to write headers to
+// via SetHeader(...).
+func (s *Server) parseAndCall(req *http.Request, rw http.ResponseWriter, service *service, method grpc.MethodDesc, r *response) {
 	var perr *protocolError
-	r.fmt, perr = responseFormat(c.Request.Header.Get(headerAccept))
+	r.fmt, perr = responseFormat(req.Header.Get(headerAccept))
 	if perr != nil {
 		r.err = perr
 		return
 	}
 
 	var err error
-	if r.acceptsGZip, err = acceptsGZipResponse(c.Request.Header); err != nil {
+	if r.acceptsGZip, err = acceptsGZipResponse(req.Header); err != nil {
 		r.err = protocolErr(codes.InvalidArgument, http.StatusBadRequest, "bad Accept header: %s", err)
 		return
 	}
 
-	if val := c.Request.Header.Get(HeaderMaxResponseSize); val != "" {
+	if val := req.Header.Get(HeaderMaxResponseSize); val != "" {
 		r.maxResponseSize, err = strconv.ParseInt(val, 10, 64)
 		if err == nil && r.maxResponseSize <= 0 {
 			err = fmt.Errorf("must be positive")
@@ -534,18 +553,18 @@ func (s *Server) parseAndCall(c *router.Context, service *service, method grpc.M
 		}
 	}
 
-	methodCtx, cancelFunc, err := parseHeader(c.Request.Context(), c.Request.Header, c.Request.Host)
+	methodCtx, cancelFunc, err := parseHeader(req.Context(), req.Header, req.Host)
 	if err != nil {
 		r.err = protocolErr(codes.InvalidArgument, http.StatusBadRequest, "bad request headers: %s", err)
 		return
 	}
 	defer cancelFunc()
 
-	methodCtx = context.WithValue(methodCtx, &requestContextKey, &requestContext{header: c.Writer.Header()})
+	methodCtx = context.WithValue(methodCtx, &requestContextKey, &requestContext{header: rw.Header()})
 
 	// Populate peer.Peer if we can manage to parse the address. This may fail
 	// if the server is exposed via a Unix socket, for example.
-	if addr, err := netip.ParseAddrPort(c.Request.RemoteAddr); err == nil {
+	if addr, err := netip.ParseAddrPort(req.RemoteAddr); err == nil {
 		methodCtx = peer.NewContext(methodCtx, &peer.Peer{
 			Addr: net.TCPAddrFromAddrPort(addr),
 		})
@@ -556,8 +575,8 @@ func (s *Server) parseAndCall(c *router.Context, service *service, method grpc.M
 			return status.Errorf(codes.Internal, "input message is nil")
 		}
 		return readMessage(
-			s.maxBytesReader(c.Writer, c.Request.Body),
-			c.Request.Header,
+			s.maxBytesReader(rw, req.Body),
+			req.Header,
 			in.(proto.Message),
 			s.maxRequestSize(),
 			s.HackFixFieldMasksForJSON,
@@ -574,42 +593,61 @@ func (s *Server) parseAndCall(c *router.Context, service *service, method grpc.M
 	}
 }
 
-func (s *Server) setAccessControlHeaders(c *router.Context, preflight bool) {
+// writeInitialHeaders populates headers present in all pRPC responses
+// (successful or not).
+func (s *Server) writeInitialHeaders(req *http.Request, headers http.Header) {
+	// CORS headers are necessary for successes and errors.
+	s.writeAccessControlHeaders(req, headers, false)
+
+	// Never interpret the response as e.g. HTML.
+	headers.Set("X-Content-Type-Options", "nosniff")
+
+	// This tells the http.Server not to auto-populate Date header. We do this
+	// because Date is not part of the pRPC protocol and its presence in responses
+	// is generally unexpected and should not be relied upon. If the header is set
+	// already, it means it was emitted via SetHeader(...) in the RPC handler and
+	// we should respect that.
+	if _, present := headers["Date"]; !present {
+		headers["Date"] = nil
+	}
+}
+
+// writeAccessControlHeaders populates Access-Control-* headers.
+func (s *Server) writeAccessControlHeaders(req *http.Request, headers http.Header, preflight bool) {
 	// Don't write out access control headers if the origin is unspecified.
 	const originHeader = "Origin"
-	origin := c.Request.Header.Get(originHeader)
+	origin := req.Header.Get(originHeader)
 	if origin == "" || s.AccessControl == nil {
 		return
 	}
-	accessControl := s.AccessControl(c.Request.Context(), origin)
+	accessControl := s.AccessControl(req.Context(), origin)
 	if !accessControl.AllowCrossOriginRequests {
 		if accessControl.AllowCredentials {
-			logging.Warningf(c.Request.Context(), "pRPC AccessControl: ignoring AllowCredentials since AllowCrossOriginRequests is false")
+			logging.Warningf(req.Context(), "pRPC AccessControl: ignoring AllowCredentials since AllowCrossOriginRequests is false")
 		}
 		if len(accessControl.AllowHeaders) != 0 {
-			logging.Warningf(c.Request.Context(), "pRPC AccessControl: ignoring AllowHeaders since AllowCrossOriginRequests is false")
+			logging.Warningf(req.Context(), "pRPC AccessControl: ignoring AllowHeaders since AllowCrossOriginRequests is false")
 		}
 		return
 	}
 
-	h := c.Writer.Header()
-	h.Add("Access-Control-Allow-Origin", origin)
-	h.Add("Vary", originHeader) // indicate the response depends on Origin header
+	headers.Add("Access-Control-Allow-Origin", origin)
+	headers.Add("Vary", originHeader) // indicate the response depends on Origin header
 	if accessControl.AllowCredentials {
-		h.Add("Access-Control-Allow-Credentials", "true")
+		headers.Add("Access-Control-Allow-Credentials", "true")
 	}
 
 	if preflight {
 		if len(accessControl.AllowHeaders) == 0 {
-			h.Add("Access-Control-Allow-Headers", allowHeaders)
+			headers.Add("Access-Control-Allow-Headers", allowHeaders)
 		} else {
-			h.Add("Access-Control-Allow-Headers",
+			headers.Add("Access-Control-Allow-Headers",
 				strings.Join(accessControl.AllowHeaders, ", ")+", "+allowHeaders)
 		}
-		h.Add("Access-Control-Allow-Methods", allowMethods)
-		h.Add("Access-Control-Max-Age", allowPreflightCacheAgeSecs)
+		headers.Add("Access-Control-Allow-Methods", allowMethods)
+		headers.Add("Access-Control-Max-Age", allowPreflightCacheAgeSecs)
 	} else {
-		h.Add("Access-Control-Expose-Headers", exposeHeaders)
+		headers.Add("Access-Control-Expose-Headers", exposeHeaders)
 	}
 }
 
