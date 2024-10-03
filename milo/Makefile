@@ -5,9 +5,9 @@
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 projdir := $(patsubst %/,%,$(dir $(mkfile_path)))
 
-# Both the `api`, and `default` service should be uploaded at least once.
-# Otherwise, the browser code will try to call a dev API that doesn't exist.
-# This, unfortunately, is unintuitive and doubles the deployment time.
+# Both the `api`, the `default`, and `ui` service should be uploaded at least
+# once. Otherwise, the browser code will try to call a dev API that doesn't
+# exist. This, unfortunately, is unintuitive and triples the deployment time.
 #
 # TODO: we can
 # * redirect calls to unmatched demo -dev version API service to the default
