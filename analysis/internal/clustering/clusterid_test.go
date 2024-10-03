@@ -16,47 +16,47 @@ package clustering
 
 import (
 	"encoding/hex"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"testing"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestValidate(t *testing.T) {
-	Convey(`Validate`, t, func() {
+	ftt.Run(`Validate`, t, func(t *ftt.Test) {
 		id := ClusterID{
 			Algorithm: "blah-v2",
 			ID:        hex.EncodeToString([]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}),
 		}
-		Convey(`Algorithm missing`, func() {
+		t.Run(`Algorithm missing`, func(t *ftt.Test) {
 			id.Algorithm = ""
 			err := id.Validate()
-			So(err, ShouldErrLike, `algorithm not valid`)
+			assert.Loosely(t, err, should.ErrLike(`algorithm not valid`))
 		})
-		Convey("Algorithm invalid", func() {
+		t.Run("Algorithm invalid", func(t *ftt.Test) {
 			id.Algorithm = "!!!"
 			err := id.Validate()
-			So(err, ShouldErrLike, `algorithm not valid`)
+			assert.Loosely(t, err, should.ErrLike(`algorithm not valid`))
 		})
-		Convey("ID missing", func() {
+		t.Run("ID missing", func(t *ftt.Test) {
 			id.ID = ""
 			err := id.Validate()
-			So(err, ShouldErrLike, `ID is empty`)
+			assert.Loosely(t, err, should.ErrLike(`ID is empty`))
 		})
-		Convey("ID invalid", func() {
+		t.Run("ID invalid", func(t *ftt.Test) {
 			id.ID = "!!!"
 			err := id.Validate()
-			So(err, ShouldErrLike, `ID is not valid lowercase hexadecimal bytes`)
+			assert.Loosely(t, err, should.ErrLike(`ID is not valid lowercase hexadecimal bytes`))
 		})
-		Convey("ID not lowercase", func() {
+		t.Run("ID not lowercase", func(t *ftt.Test) {
 			id.ID = "AA"
 			err := id.Validate()
-			So(err, ShouldErrLike, `ID is not valid lowercase hexadecimal bytes`)
+			assert.Loosely(t, err, should.ErrLike(`ID is not valid lowercase hexadecimal bytes`))
 		})
-		Convey("ID too long", func() {
+		t.Run("ID too long", func(t *ftt.Test) {
 			id.ID = hex.EncodeToString([]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17})
 			err := id.Validate()
-			So(err, ShouldErrLike, `ID is too long (got 17 bytes, want at most 16 bytes)`)
+			assert.Loosely(t, err, should.ErrLike(`ID is too long (got 17 bytes, want at most 16 bytes)`))
 		})
 	})
 }

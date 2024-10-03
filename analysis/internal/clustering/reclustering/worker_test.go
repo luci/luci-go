@@ -31,6 +31,10 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/span"
@@ -57,9 +61,6 @@ import (
 	bqpb "go.chromium.org/luci/analysis/proto/bq"
 	configpb "go.chromium.org/luci/analysis/proto/config"
 	pb "go.chromium.org/luci/analysis/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 const testProject = "testproject"
@@ -88,7 +89,7 @@ type scenario struct {
 }
 
 func TestReclustering(t *testing.T) {
-	Convey(`With Worker`, t, func() {
+	ftt.Run(`With Worker`, t, func(t *ftt.Test) {
 		ctx := testutil.IntegrationTestContext(t)
 		ctx, tc := testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 		ctx = caching.WithEmptyProcessCache(ctx) // For rules cache.
@@ -124,10 +125,10 @@ func TestReclustering(t *testing.T) {
 			task.ConfigVersion = timestamppb.New(s.configVersion)
 
 			// Create a shard entry corresponding to the task.
-			So(shards.SetShardsForTesting(ctx, []shards.ReclusteringShard{shard}), ShouldBeNil)
+			assert.Loosely(t, shards.SetShardsForTesting(ctx, t, []shards.ReclusteringShard{shard}), should.BeNil)
 
 			// Set stored failure association rules.
-			So(rules.SetForTesting(ctx, s.rules), ShouldBeNil)
+			assert.Loosely(t, rules.SetForTesting(ctx, t, s.rules), should.BeNil)
 
 			cfg := map[string]*configpb.ProjectConfig{
 				testProject: {
@@ -138,7 +139,7 @@ func TestReclustering(t *testing.T) {
 			if s.noProjectConfig {
 				cfg = map[string]*configpb.ProjectConfig{}
 			}
-			So(config.SetTestProjectConfig(ctx, cfg), ShouldBeNil)
+			assert.Loosely(t, config.SetTestProjectConfig(ctx, cfg), should.BeNil)
 
 			// Set stored test result chunks.
 			for objectID, chunk := range s.testResultsByObjectID {
@@ -150,47 +151,47 @@ func TestReclustering(t *testing.T) {
 			for _, e := range s.clusteringState {
 				e.LastUpdated = commitTime.In(time.UTC)
 			}
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		}
 
-		Convey(`Re-clustering`, func() {
+		t.Run(`Re-clustering`, func(t *ftt.Test) {
 			testReclustering := func(initial *scenario, expected *scenario) {
 				setupScenario(initial)
 
 				// Run the task.
 				continuation, err := worker.Do(ctx, task, TargetTaskDuration)
-				So(err, ShouldBeNil)
-				So(continuation, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, continuation, should.BeNil)
 
 				// Final clustering state should be equal expected state.
 				actualState, err := state.ReadAllForTesting(ctx, testProject)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				for _, as := range actualState {
 					// Clear last updated time to compare actual vs expected
 					// state based on row contents, not when the row was updated.
 					as.LastUpdated = time.Time{}
 				}
-				So(actualState, ShouldResemble, expected.clusteringState)
+				assert.Loosely(t, actualState, should.Resemble(expected.clusteringState))
 
 				// BigQuery exports should correctly reflect the new
 				// test result-cluster inclusions.
 				exports := clusteredFailures.Insertions
 				sortBQExport(exports)
 				netExports := flattenBigQueryExports(append(initial.netBQExports, exports...))
-				So(netExports, ShouldResembleProto, expected.netBQExports)
+				assert.Loosely(t, netExports, should.Resemble(expected.netBQExports))
 
 				// Run is reported as complete.
 				actualShards, err := shards.ReadAll(span.Single(ctx))
-				So(err, ShouldBeNil)
-				So(actualShards, ShouldHaveLength, 1)
-				So(actualShards[0].Progress, ShouldResemble, spanner.NullInt64{Valid: true, Int64: 1000})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, actualShards, should.HaveLength(1))
+				assert.Loosely(t, actualShards[0].Progress, should.Resemble(spanner.NullInt64{Valid: true, Int64: 1000}))
 			}
 
-			Convey("Already up-to-date", func() {
-				expected := newScenario().build()
+			t.Run("Already up-to-date", func(t *ftt.Test) {
+				expected := newScenario().build(t)
 
 				// Start with up-to-date clustering.
-				s := newScenario().build()
+				s := newScenario().build(t)
 
 				testReclustering(s, expected)
 
@@ -198,84 +199,84 @@ func TestReclustering(t *testing.T) {
 				// should there be zero net changes to the BigQuery
 				// export, no changes should be written to BigQuery
 				// at all.
-				So(clusteredFailures.Insertions, ShouldBeEmpty)
+				assert.Loosely(t, clusteredFailures.Insertions, should.BeEmpty)
 			})
-			Convey("From old algorithms", func() {
-				expected := newScenario().build()
+			t.Run("From old algorithms", func(t *ftt.Test) {
+				expected := newScenario().build(t)
 
 				// Start with an out of date clustering.
-				s := newScenario().withOldAlgorithms(true).build()
+				s := newScenario().withOldAlgorithms(true).build(t)
 
 				testReclustering(s, expected)
 			})
-			Convey("From old configuration", func() {
-				expected := newScenario().build()
+			t.Run("From old configuration", func(t *ftt.Test) {
+				expected := newScenario().build(t)
 
 				// Start with clustering based on old configuration.
-				s := newScenario().withOldConfig(true).build()
+				s := newScenario().withOldConfig(true).build(t)
 				s.config = expected.config
 				s.configVersion = expected.configVersion
 
 				testReclustering(s, expected)
 			})
-			Convey("From old rules", func() {
-				expected := newScenario().build()
+			t.Run("From old rules", func(t *ftt.Test) {
+				expected := newScenario().build(t)
 
 				// Start with clustering based on old rules.
-				s := newScenario().withOldRules(true).build()
+				s := newScenario().withOldRules(true).build(t)
 				s.rules = expected.rules
 				s.rulesVersion = expected.rulesVersion
 
 				testReclustering(s, expected)
 			})
-			Convey("From old rules with no project config", func() {
-				expected := newScenario().withNoConfig(true).build()
+			t.Run("From old rules with no project config", func(t *ftt.Test) {
+				expected := newScenario().withNoConfig(true).build(t)
 
 				// Start with clustering based on old rules.
-				s := newScenario().withNoConfig(true).withOldRules(true).build()
+				s := newScenario().withNoConfig(true).withOldRules(true).build(t)
 				s.rules = expected.rules
 				s.rulesVersion = expected.rulesVersion
 
 				testReclustering(s, expected)
 			})
 		})
-		Convey(`Worker respects end time`, func() {
-			expected := newScenario().build()
+		t.Run(`Worker respects end time`, func(t *ftt.Test) {
+			expected := newScenario().build(t)
 
 			// Start with an out of date clustering.
-			s := newScenario().withOldAlgorithms(true).build()
+			s := newScenario().withOldAlgorithms(true).build(t)
 			s.rules = expected.rules
 			s.rulesVersion = expected.rulesVersion
 			setupScenario(s)
 
 			// Start the worker after the run end time.
 			tc.Add(11 * time.Minute)
-			So(tc.Now(), ShouldHappenAfter, task.AttemptTime.AsTime())
+			assert.Loosely(t, tc.Now(), should.HappenAfter(task.AttemptTime.AsTime()))
 
 			// Run the task.
 			continuation, err := worker.Do(ctx, task, TargetTaskDuration)
-			So(err, ShouldBeNil)
-			So(continuation, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, continuation, should.BeNil)
 
 			// Clustering state should be same as the initial state.
 			actualState, err := state.ReadAllForTesting(ctx, testProject)
-			So(err, ShouldBeNil)
-			So(actualState, ShouldResemble, s.clusteringState)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actualState, should.Resemble(s.clusteringState))
 
 			// No changes written to BigQuery.
-			So(clusteredFailures.Insertions, ShouldBeEmpty)
+			assert.Loosely(t, clusteredFailures.Insertions, should.BeEmpty)
 
 			// No progress is reported.
 			actualShards, err := shards.ReadAll(span.Single(ctx))
-			So(err, ShouldBeNil)
-			So(actualShards, ShouldHaveLength, 1)
-			So(actualShards[0].Progress, ShouldResemble, spanner.NullInt64{Valid: false, Int64: 0})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actualShards, should.HaveLength(1))
+			assert.Loosely(t, actualShards[0].Progress, should.Resemble(spanner.NullInt64{Valid: false, Int64: 0}))
 		})
-		Convey(`Handles update/update races`, func() {
-			finalState := newScenario().build()
+		t.Run(`Handles update/update races`, func(t *ftt.Test) {
+			finalState := newScenario().build(t)
 
 			// Start with an out of date clustering.
-			s := newScenario().withOldAlgorithms(true).build()
+			s := newScenario().withOldAlgorithms(true).build(t)
 			s.rules = finalState.rules
 			s.rulesVersion = finalState.rulesVersion
 			setupScenario(s)
@@ -321,76 +322,76 @@ func TestReclustering(t *testing.T) {
 			// triggered.
 			runWithTimeAdvancing(tc, func() {
 				continuation, err := worker.Do(ctx, task, TargetTaskDuration)
-				So(err, ShouldBeNil)
-				So(continuation, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, continuation, should.BeNil)
 			})
 
 			// Because of update races, none of the chunks should have been
 			// re-clustered further.
-			expected := newScenario().withOldAlgorithms(true).build()
+			expected := newScenario().withOldAlgorithms(true).build(t)
 			for _, es := range expected.clusteringState {
 				es.Clustering.AlgorithmsVersion = algorithms.AlgorithmsVersion + 1
 			}
 
 			actualState, err := state.ReadAllForTesting(ctx, testProject)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			for _, as := range actualState {
 				as.LastUpdated = time.Time{}
 			}
-			So(actualState, ShouldResemble, expected.clusteringState)
+			assert.Loosely(t, actualState, should.Resemble(expected.clusteringState))
 
 			// No changes written to BigQuery.
-			So(clusteredFailures.Insertions, ShouldBeEmpty)
+			assert.Loosely(t, clusteredFailures.Insertions, should.BeEmpty)
 
 			// Shard is reported as complete.
 			actualShards, err := shards.ReadAll(span.Single(ctx))
-			So(err, ShouldBeNil)
-			So(actualShards, ShouldHaveLength, 1)
-			So(actualShards[0].Progress, ShouldResemble, spanner.NullInt64{Valid: true, Int64: 1000})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actualShards, should.HaveLength(1))
+			assert.Loosely(t, actualShards[0].Progress, should.Resemble(spanner.NullInt64{Valid: true, Int64: 1000}))
 		})
-		Convey(`Worker running out of date algorithms`, func() {
+		t.Run(`Worker running out of date algorithms`, func(t *ftt.Test) {
 			task.AlgorithmsVersion = algorithms.AlgorithmsVersion + 1
 			task.ConfigVersion = timestamppb.New(config.StartingEpoch)
 			task.RulesVersion = timestamppb.New(rules.StartingEpoch)
 
 			continuation, err := worker.Do(ctx, task, TargetTaskDuration)
-			So(err, ShouldErrLike, "running out-of-date algorithms version")
-			So(continuation, ShouldBeNil)
+			assert.Loosely(t, err, should.ErrLike("running out-of-date algorithms version"))
+			assert.Loosely(t, continuation, should.BeNil)
 		})
-		Convey(`Continuation correctly scheduled`, func() {
+		t.Run(`Continuation correctly scheduled`, func(t *ftt.Test) {
 			task.RulesVersion = timestamppb.New(rules.StartingEpoch)
 			task.ConfigVersion = timestamppb.New(config.StartingEpoch)
 
 			// Leave no time for the task to run.
 			continuation, err := worker.Do(ctx, task, 0*time.Second)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// Continuation should be scheduled, matching original task.
-			So(continuation, ShouldResembleProto, task)
+			assert.Loosely(t, continuation, should.Resemble(task))
 		})
 	})
 }
 
 func TestProgress(t *testing.T) {
-	Convey(`Task assigned entire keyspace`, t, func() {
+	ftt.Run(`Task assigned entire keyspace`, t, func(t *ftt.Test) {
 		task := &taskspb.ReclusterChunks{
 			StartChunkId: "",
 			EndChunkId:   strings.Repeat("ff", 16),
 		}
 
 		progress, err := calculateProgress(task, strings.Repeat("00", 16))
-		So(err, ShouldBeNil)
-		So(progress, ShouldEqual, 0)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, progress, should.BeZero)
 
 		progress, err = calculateProgress(task, "80"+strings.Repeat("00", 15))
-		So(err, ShouldBeNil)
-		So(progress, ShouldEqual, 500)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, progress, should.Equal(500))
 
 		progress, err = calculateProgress(task, strings.Repeat("ff", 16))
-		So(err, ShouldBeNil)
-		So(progress, ShouldEqual, 999)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, progress, should.Equal(999))
 	})
-	Convey(`Task assigned partial keyspace`, t, func() {
+	ftt.Run(`Task assigned partial keyspace`, t, func(t *ftt.Test) {
 		// Consistent with the second shard, if the keyspace is split into
 		// three.
 		task := &taskspb.ReclusterChunks{
@@ -399,16 +400,16 @@ func TestProgress(t *testing.T) {
 		}
 
 		progress, err := calculateProgress(task, strings.Repeat("55", 16))
-		So(err, ShouldBeNil)
-		So(progress, ShouldEqual, 0)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, progress, should.BeZero)
 
 		progress, err = calculateProgress(task, strings.Repeat("77", 16))
-		So(err, ShouldBeNil)
-		So(progress, ShouldEqual, 400)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, progress, should.Equal(400))
 
 		progress, err = calculateProgress(task, strings.Repeat("aa", 15)+"a9")
-		So(err, ShouldBeNil)
-		So(progress, ShouldEqual, 999)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, progress, should.Equal(999))
 	})
 }
 
@@ -843,7 +844,9 @@ func (b *scenarioBuilder) withNoConfig(value bool) *scenarioBuilder {
 	return b
 }
 
-func (b *scenarioBuilder) build() *scenario {
+func (b *scenarioBuilder) build(t testing.TB) *scenario {
+	t.Helper()
+
 	var rs []*rules.Entry
 	var activeRules []*cache.CachedRule
 
@@ -871,7 +874,7 @@ func (b *scenarioBuilder) build() *scenario {
 	}
 	for _, r := range rs {
 		active, err := cache.NewCachedRule(r)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil, truth.LineContext())
 		activeRules = append(activeRules, active)
 	}
 

@@ -54,12 +54,15 @@ import (
 	configpb "go.chromium.org/luci/analysis/proto/config"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestClusters(t *testing.T) {
-	Convey("With a clusters server", t, func() {
+	ftt.Run("With a clusters server", t, func(t *ftt.Test) {
 		ctx := testutil.IntegrationTestContext(t)
 		ctx = caching.WithEmptyProcessCache(ctx)
 
@@ -85,10 +88,10 @@ func TestClusters(t *testing.T) {
 		configs := make(map[string]*configpb.ProjectConfig)
 		configs["testproject"] = projectCfg
 		err := config.SetTestProjectConfig(ctx, configs)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		compiledTestProjectCfg, err := compiledcfg.NewConfig(projectCfg)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		// Rules version is in microsecond granularity, consistent with
 		// the granularity of Spanner commit timestamps.
@@ -119,10 +122,10 @@ func TestClusters(t *testing.T) {
 					ID:     "chromium/912345",
 				}).Build(),
 		}
-		err = rules.SetForTesting(ctx, rs)
-		So(err, ShouldBeNil)
+		err = rules.SetForTesting(ctx, t, rs)
+		assert.Loosely(t, err, should.BeNil)
 
-		Convey("Unauthorized requests are rejected", func() {
+		t.Run("Unauthorized requests are rejected", func(t *ftt.Test) {
 			// Ensure no access to luci-analysis-access.
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:someone@example.com",
@@ -137,10 +140,10 @@ func TestClusters(t *testing.T) {
 			}
 
 			rule, err := server.Cluster(ctx, request)
-			So(err, ShouldBeRPCPermissionDenied, "not a member of luci-analysis-access")
-			So(rule, ShouldBeNil)
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("not a member of luci-analysis-access"))
+			assert.Loosely(t, rule, should.BeNil)
 		})
-		Convey("Cluster", func() {
+		t.Run("Cluster", func(t *ftt.Test) {
 			authState.IdentityPermissions = []authtest.RealmPermission{
 				{
 					Realm:      "testproject:@project",
@@ -168,27 +171,27 @@ func TestClusters(t *testing.T) {
 					},
 				},
 			}
-			Convey("Not authorised to cluster", func() {
+			t.Run("Not authorised to cluster", func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetClustersByFailure)
 
 				response, err := server.Cluster(ctx, request)
-				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.clusters.getByFailure")
-				So(response, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission analysis.clusters.getByFailure"))
+				assert.Loosely(t, response, should.BeNil)
 			})
-			Convey("Not authorised to get rule", func() {
+			t.Run("Not authorised to get rule", func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetRule)
 
 				response, err := server.Cluster(ctx, request)
-				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.rules.get")
-				So(response, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission analysis.rules.get"))
+				assert.Loosely(t, response, should.BeNil)
 			})
-			Convey("With a valid request", func() {
+			t.Run("With a valid request", func(t *ftt.Test) {
 				// Run
 				response, err := server.Cluster(ctx, request)
 
 				// Verify
-				So(err, ShouldBeNil)
-				So(response, ShouldResembleProto, &pb.ClusterResponse{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, response, should.Resemble(&pb.ClusterResponse{
 					ClusteredTestResults: []*pb.ClusterResponse_ClusteredTestResult{
 						{
 							RequestTag: "my tag 1",
@@ -244,31 +247,31 @@ func TestClusters(t *testing.T) {
 						RulesVersion:      timestamppb.New(rulesVersion),
 						ConfigVersion:     timestamppb.New(configVersion),
 					},
-				})
+				}))
 			})
-			Convey("With no monorail configuration", func() {
+			t.Run("With no monorail configuration", func(t *ftt.Test) {
 				// Setup
 				projectCfg.BugManagement.Monorail = nil
 				configs := make(map[string]*configpb.ProjectConfig)
 				configs["testproject"] = projectCfg
 				err := config.SetTestProjectConfig(ctx, configs)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				// Run
 				response, err := server.Cluster(ctx, request)
-				So(err, ShouldBeNil)
-				So(response.ClusteredTestResults[0].Clusters[1].Bug.Url, ShouldEqual, "")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, response.ClusteredTestResults[0].Clusters[1].Bug.Url, should.BeEmpty)
 			})
-			Convey("With missing test ID", func() {
+			t.Run("With missing test ID", func(t *ftt.Test) {
 				request.TestResults[1].TestId = ""
 
 				// Run
 				response, err := server.Cluster(ctx, request)
 
 				// Verify
-				So(response, ShouldBeNil)
-				So(err, ShouldBeRPCInvalidArgument, "test result 1: test ID must not be empty")
+				assert.Loosely(t, response, should.BeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("test result 1: test ID must not be empty"))
 			})
-			Convey("With too many test results", func() {
+			t.Run("With too many test results", func(t *ftt.Test) {
 				var testResults []*pb.ClusterRequest_TestResult
 				for i := 0; i < 1001; i++ {
 					testResults = append(testResults, &pb.ClusterRequest_TestResult{
@@ -281,22 +284,22 @@ func TestClusters(t *testing.T) {
 				response, err := server.Cluster(ctx, request)
 
 				// Verify
-				So(response, ShouldBeNil)
-				So(err, ShouldBeRPCInvalidArgument, "too many test results: at most 1000 test results can be clustered in one request")
+				assert.Loosely(t, response, should.BeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("too many test results: at most 1000 test results can be clustered in one request"))
 			})
-			Convey("With project not configured", func() {
+			t.Run("With project not configured", func(t *ftt.Test) {
 				err := config.SetTestProjectConfig(ctx, map[string]*configpb.ProjectConfig{})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				// Run
 				response, err := server.Cluster(ctx, request)
 
 				// Verify
-				So(response.ClusteringVersion.ConfigVersion.AsTime(), ShouldEqual, config.StartingEpoch)
-				So(err, ShouldBeNil)
+				assert.That(t, response.ClusteringVersion.ConfigVersion.AsTime(), should.Match(config.StartingEpoch))
+				assert.Loosely(t, err, should.BeNil)
 			})
 		})
-		Convey("Get", func() {
+		t.Run("Get", func(t *ftt.Test) {
 			authState.IdentityPermissions = []authtest.RealmPermission{
 				{
 					Realm:      "testproject:@project",
@@ -327,14 +330,14 @@ func TestClusters(t *testing.T) {
 				Name: "projects/testproject/clusters/rules/22222200000000000000000000000000",
 			}
 
-			Convey("Not authorised to get cluster", func() {
+			t.Run("Not authorised to get cluster", func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetCluster)
 
 				response, err := server.Get(ctx, request)
-				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.clusters.get")
-				So(response, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission analysis.clusters.get"))
+				assert.Loosely(t, response, should.BeNil)
 			})
-			Convey("With a valid request", func() {
+			t.Run("With a valid request", func(t *ftt.Test) {
 				analysisClient.clustersByProject["testproject"] = []*analysis.Cluster{
 					{
 						ClusterID: clustering.ClusterID{
@@ -393,15 +396,15 @@ func TestClusters(t *testing.T) {
 					},
 				}
 
-				Convey("Rule with clustered failures", func() {
+				t.Run("Rule with clustered failures", func(t *ftt.Test) {
 					// Run
 					response, err := server.Get(ctx, request)
 
 					// Verify
-					So(err, ShouldBeNil)
-					So(response, ShouldResembleProto, expectedResponse)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, response, should.Resemble(expectedResponse))
 				})
-				Convey("Rule without clustered failures", func() {
+				t.Run("Rule without clustered failures", func(t *ftt.Test) {
 					analysisClient.clustersByProject["testproject"] = []*analysis.Cluster{}
 
 					expectedResponse.HasExample = false
@@ -414,10 +417,10 @@ func TestClusters(t *testing.T) {
 					response, err := server.Get(ctx, request)
 
 					// Verify
-					So(err, ShouldBeNil)
-					So(response, ShouldResembleProto, expectedResponse)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, response, should.Resemble(expectedResponse))
 				})
-				Convey("Suggested cluster with example failure matching cluster definition", func() {
+				t.Run("Suggested cluster with example failure matching cluster definition", func(t *ftt.Test) {
 					// Suggested cluster for which there are clustered failures, and
 					// the cluster ID matches the example provided for the cluster.
 					analysisClient.clustersByProject["testproject"] = []*analysis.Cluster{
@@ -460,10 +463,10 @@ func TestClusters(t *testing.T) {
 					response, err := server.Get(ctx, request)
 
 					// Verify
-					So(err, ShouldBeNil)
-					So(response, ShouldResembleProto, expectedResponse)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, response, should.Resemble(expectedResponse))
 
-					Convey("No test result list permission", func() {
+					t.Run("No test result list permission", func(t *ftt.Test) {
 						authState.IdentityPermissions = removePermission(authState.IdentityPermissions, rdbperms.PermListTestResults)
 
 						// Run
@@ -472,11 +475,11 @@ func TestClusters(t *testing.T) {
 						// Verify
 						expectedResponse.Title = ""
 						expectedResponse.EquivalentFailureAssociationRule = ""
-						So(err, ShouldBeNil)
-						So(response, ShouldResembleProto, expectedResponse)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, response, should.Resemble(expectedResponse))
 					})
 				})
-				Convey("Suggested cluster with example failure not matching cluster definition", func() {
+				t.Run("Suggested cluster with example failure not matching cluster definition", func(t *ftt.Test) {
 					// Suggested cluster for which there are clustered failures,
 					// but cluster ID mismatches the example provided for the cluster.
 					// This could be because clustering configuration has changed and
@@ -521,10 +524,10 @@ func TestClusters(t *testing.T) {
 					response, err := server.Get(ctx, request)
 
 					// Verify
-					So(err, ShouldBeNil)
-					So(response, ShouldResembleProto, expectedResponse)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, response, should.Resemble(expectedResponse))
 				})
-				Convey("Suggested cluster without clustered failures", func() {
+				t.Run("Suggested cluster without clustered failures", func(t *ftt.Test) {
 					// Suggested cluster for which no impact data exists.
 					request := &pb.GetClusterRequest{
 						Name: "projects/testproject/clusters/reason-v3/cccccc0000000000000000000000ffff",
@@ -542,65 +545,65 @@ func TestClusters(t *testing.T) {
 					response, err := server.Get(ctx, request)
 
 					// Verify
-					So(err, ShouldBeNil)
-					So(response, ShouldResembleProto, expectedResponse)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, response, should.Resemble(expectedResponse))
 				})
-				Convey("With project not configured", func() {
+				t.Run("With project not configured", func(t *ftt.Test) {
 					err := config.SetTestProjectConfig(ctx, map[string]*configpb.ProjectConfig{})
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 
 					// Run
 					response, err := server.Get(ctx, request)
 
 					// Verify
-					So(response, ShouldResembleProto, expectedResponse)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, response, should.Resemble(expectedResponse))
+					assert.Loosely(t, err, should.BeNil)
 				})
 			})
-			Convey("With invalid request", func() {
-				Convey("No name specified", func() {
+			t.Run("With invalid request", func(t *ftt.Test) {
+				t.Run("No name specified", func(t *ftt.Test) {
 					request.Name = ""
 
 					// Run
 					response, err := server.Get(ctx, request)
 
 					// Verify
-					So(response, ShouldBeNil)
-					So(err, ShouldBeRPCInvalidArgument, "name: must be specified")
+					assert.Loosely(t, response, should.BeNil)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("name: must be specified"))
 				})
-				Convey("Invalid name", func() {
+				t.Run("Invalid name", func(t *ftt.Test) {
 					request.Name = "invalid"
 
 					// Run
 					response, err := server.Get(ctx, request)
 
 					// Verify
-					So(response, ShouldBeNil)
-					So(err, ShouldBeRPCInvalidArgument, "name: invalid cluster name, expected format: projects/{project}/clusters/{cluster_alg}/{cluster_id}")
+					assert.Loosely(t, response, should.BeNil)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("name: invalid cluster name, expected format: projects/{project}/clusters/{cluster_alg}/{cluster_id}"))
 				})
-				Convey("Invalid cluster algorithm in name", func() {
+				t.Run("Invalid cluster algorithm in name", func(t *ftt.Test) {
 					request.Name = "projects/blah/clusters/reason/cccccc00000000000000000000000001"
 
 					// Run
 					response, err := server.Get(ctx, request)
 
 					// Verify
-					So(response, ShouldBeNil)
-					So(err, ShouldBeRPCInvalidArgument, "name: invalid cluster identity: algorithm not valid")
+					assert.Loosely(t, response, should.BeNil)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("name: invalid cluster identity: algorithm not valid"))
 				})
-				Convey("Invalid cluster ID in name", func() {
+				t.Run("Invalid cluster ID in name", func(t *ftt.Test) {
 					request.Name = "projects/blah/clusters/reason-v3/123"
 
 					// Run
 					response, err := server.Get(ctx, request)
 
 					// Verify
-					So(response, ShouldBeNil)
-					So(err, ShouldBeRPCInvalidArgument, "name: invalid cluster identity: ID is not valid lowercase hexadecimal bytes")
+					assert.Loosely(t, response, should.BeNil)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("name: invalid cluster identity: ID is not valid lowercase hexadecimal bytes"))
 				})
 			})
 		})
-		Convey("QueryClusterSummaries", func() {
+		t.Run("QueryClusterSummaries", func(t *ftt.Test) {
 			authState.IdentityPermissions = listTestResultsPermissions(
 				"testproject:realm1",
 				"testproject:realm2",
@@ -707,45 +710,45 @@ func TestClusters(t *testing.T) {
 					Latest:   timestamppb.New(now),
 				},
 			}
-			Convey("Invalid time range", func() {
+			t.Run("Invalid time range", func(t *ftt.Test) {
 				request.TimeRange = &pb.TimeRange{
 					Earliest: timestamppb.New(now),
 					Latest:   timestamppb.New(now.Add(-24 * time.Hour)),
 				}
 
 				response, err := server.QueryClusterSummaries(ctx, request)
-				So(err, ShouldBeRPCInvalidArgument, "time_range: earliest must be before latest")
-				So(response, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("time_range: earliest must be before latest"))
+				assert.Loosely(t, response, should.BeNil)
 			})
-			Convey("Not authorised to list clusters", func() {
+			t.Run("Not authorised to list clusters", func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermListClusters)
 
 				response, err := server.QueryClusterSummaries(ctx, request)
-				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.clusters.list")
-				So(response, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission analysis.clusters.list"))
+				assert.Loosely(t, response, should.BeNil)
 			})
-			Convey("Not authorised to get rules", func() {
+			t.Run("Not authorised to get rules", func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetRule)
 
 				response, err := server.QueryClusterSummaries(ctx, request)
-				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.rules.get")
-				So(response, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission analysis.rules.get"))
+				assert.Loosely(t, response, should.BeNil)
 			})
-			Convey("Not authorised to list test results in any realm", func() {
+			t.Run("Not authorised to list test results in any realm", func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, rdbperms.PermListTestResults)
 
 				response, err := server.QueryClusterSummaries(ctx, request)
-				So(err, ShouldBeRPCPermissionDenied, "caller does not have permissions [resultdb.testResults.list resultdb.testExonerations.list] in any realm in project \"testproject\"")
-				So(response, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permissions [resultdb.testResults.list resultdb.testExonerations.list] in any realm in project \"testproject\""))
+				assert.Loosely(t, response, should.BeNil)
 			})
-			Convey("Not authorised to list test exonerations in any realm", func() {
+			t.Run("Not authorised to list test exonerations in any realm", func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, rdbperms.PermListTestExonerations)
 
 				response, err := server.QueryClusterSummaries(ctx, request)
-				So(err, ShouldBeRPCPermissionDenied, "caller does not have permissions [resultdb.testResults.list resultdb.testExonerations.list] in any realm in project \"testproject\"")
-				So(response, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permissions [resultdb.testResults.list resultdb.testExonerations.list] in any realm in project \"testproject\""))
+				assert.Loosely(t, response, should.BeNil)
 			})
-			Convey("Valid request", func() {
+			t.Run("Valid request", func(t *ftt.Test) {
 				expectedResponse := &pb.QueryClusterSummariesResponse{
 					ClusterSummaries: []*pb.ClusterSummary{
 						{
@@ -811,20 +814,20 @@ func TestClusters(t *testing.T) {
 					},
 				}
 
-				Convey("With filters and order by", func() {
+				t.Run("With filters and order by", func(t *ftt.Test) {
 					response, err := server.QueryClusterSummaries(ctx, request)
-					So(err, ShouldBeNil)
-					So(response, ShouldResembleProto, expectedResponse)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, response, should.Resemble(expectedResponse))
 				})
-				Convey("Without filters or order", func() {
+				t.Run("Without filters or order", func(t *ftt.Test) {
 					request.FailureFilter = ""
 					request.OrderBy = ""
 
 					response, err := server.QueryClusterSummaries(ctx, request)
-					So(err, ShouldBeNil)
-					So(response, ShouldResembleProto, expectedResponse)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, response, should.Resemble(expectedResponse))
 				})
-				Convey("With full view", func() {
+				t.Run("With full view", func(t *ftt.Test) {
 					request.View = pb.ClusterSummaryView_FULL
 
 					expectedFullResponse := &pb.QueryClusterSummariesResponse{
@@ -902,10 +905,10 @@ func TestClusters(t *testing.T) {
 					}
 
 					response, err := server.QueryClusterSummaries(ctx, request)
-					So(err, ShouldBeNil)
-					So(response, ShouldResembleProto, expectedFullResponse)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, response, should.Resemble(expectedFullResponse))
 				})
-				Convey("Without rule definition get permission", func() {
+				t.Run("Without rule definition get permission", func(t *ftt.Test) {
 					authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetRuleDefinition)
 
 					// The RPC cannot return the rule definition as the
@@ -915,10 +918,10 @@ func TestClusters(t *testing.T) {
 					expectedResponse.ClusterSummaries[0].Title = "Selected failures in TestID 1"
 
 					response, err := server.QueryClusterSummaries(ctx, request)
-					So(err, ShouldBeNil)
-					So(response, ShouldResembleProto, expectedResponse)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, response, should.Resemble(expectedResponse))
 				})
-				Convey("Without metrics", func() {
+				t.Run("Without metrics", func(t *ftt.Test) {
 					request.Metrics = []string{}
 					request.OrderBy = ""
 
@@ -927,60 +930,60 @@ func TestClusters(t *testing.T) {
 					}
 
 					response, err := server.QueryClusterSummaries(ctx, request)
-					So(err, ShouldBeNil)
-					So(response, ShouldResembleProto, expectedResponse)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, response, should.Resemble(expectedResponse))
 				})
 			})
-			Convey("Invalid request", func() {
-				Convey("Failure filter syntax is invalid", func() {
+			t.Run("Invalid request", func(t *ftt.Test) {
+				t.Run("Failure filter syntax is invalid", func(t *ftt.Test) {
 					request.FailureFilter = "test_id::"
 
 					// Run
 					response, err := server.QueryClusterSummaries(ctx, request)
 
 					// Verify
-					So(response, ShouldBeNil)
-					So(err, ShouldBeRPCInvalidArgument, "failure_filter: expected arg after :")
+					assert.Loosely(t, response, should.BeNil)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("failure_filter: expected arg after :"))
 				})
-				Convey("Failure filter references non-existant column", func() {
+				t.Run("Failure filter references non-existant column", func(t *ftt.Test) {
 					request.FailureFilter = `test:"pita.Boot"`
 
 					// Run
 					response, err := server.QueryClusterSummaries(ctx, request)
 
 					// Verify
-					So(response, ShouldBeNil)
-					So(err, ShouldBeRPCInvalidArgument, `failure_filter: no filterable field "test"`)
+					assert.Loosely(t, response, should.BeNil)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`failure_filter: no filterable field "test"`))
 				})
-				Convey("Failure filter references unimplemented feature", func() {
+				t.Run("Failure filter references unimplemented feature", func(t *ftt.Test) {
 					request.FailureFilter = "test_id<=\"blah\""
 
 					// Run
 					response, err := server.QueryClusterSummaries(ctx, request)
 
 					// Verify
-					So(response, ShouldBeNil)
-					So(err, ShouldBeRPCInvalidArgument, "failure_filter: comparator operator not implemented yet")
+					assert.Loosely(t, response, should.BeNil)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("failure_filter: comparator operator not implemented yet"))
 				})
-				Convey("Metrics references non-existent metric", func() {
+				t.Run("Metrics references non-existent metric", func(t *ftt.Test) {
 					request.Metrics = []string{"projects/testproject/metrics/not-exists"}
 					// Run
 					response, err := server.QueryClusterSummaries(ctx, request)
 
 					// Verify
-					So(response, ShouldBeNil)
-					So(err, ShouldBeRPCInvalidArgument, `metrics: no metric with ID "not-exists"`)
+					assert.Loosely(t, response, should.BeNil)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`metrics: no metric with ID "not-exists"`))
 				})
-				Convey("Metrics references metric in another project", func() {
+				t.Run("Metrics references metric in another project", func(t *ftt.Test) {
 					request.Metrics = []string{"projects/anotherproject/metrics/failures"}
 					// Run
 					response, err := server.QueryClusterSummaries(ctx, request)
 
 					// Verify
-					So(response, ShouldBeNil)
-					So(err, ShouldBeRPCInvalidArgument, `metrics: metric projects/anotherproject/metrics/failures cannot be used as it is from a different LUCI Project`)
+					assert.Loosely(t, response, should.BeNil)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`metrics: metric projects/anotherproject/metrics/failures cannot be used as it is from a different LUCI Project`))
 				})
-				Convey("Order by references metric that is not selected", func() {
+				t.Run("Order by references metric that is not selected", func(t *ftt.Test) {
 					request.Metrics = []string{"projects/testproject/metrics/failures"}
 					request.OrderBy = "metrics.`human-cls-failed-presubmit`.value desc"
 
@@ -988,10 +991,10 @@ func TestClusters(t *testing.T) {
 					response, err := server.QueryClusterSummaries(ctx, request)
 
 					// Verify
-					So(response, ShouldBeNil)
-					So(err, ShouldBeRPCInvalidArgument, "order_by: no sortable field named \"metrics.`human-cls-failed-presubmit`.value\", valid fields are metrics.failures.value")
+					assert.Loosely(t, response, should.BeNil)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("order_by: no sortable field named \"metrics.`human-cls-failed-presubmit`.value\", valid fields are metrics.failures.value"))
 				})
-				Convey("Order by syntax invalid", func() {
+				t.Run("Order by syntax invalid", func(t *ftt.Test) {
 					// To sort in ascending order, "desc" should be omittted. "asc" is not valid syntax.
 					request.OrderBy = "metrics.`human-cls-failed-presubmit`.value asc"
 
@@ -999,22 +1002,22 @@ func TestClusters(t *testing.T) {
 					response, err := server.QueryClusterSummaries(ctx, request)
 
 					// Verify
-					So(response, ShouldBeNil)
-					So(err, ShouldBeRPCInvalidArgument, `order_by: syntax error: 1:44: unexpected token "asc"`)
+					assert.Loosely(t, response, should.BeNil)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`order_by: syntax error: 1:44: unexpected token "asc"`))
 				})
-				Convey("Order by syntax references invalid column", func() {
+				t.Run("Order by syntax references invalid column", func(t *ftt.Test) {
 					request.OrderBy = "not_exists desc"
 
 					// Run
 					response, err := server.QueryClusterSummaries(ctx, request)
 
 					// Verify
-					So(response, ShouldBeNil)
-					So(err, ShouldBeRPCInvalidArgument, `order_by: no sortable field named "not_exists"`)
+					assert.Loosely(t, response, should.BeNil)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`order_by: no sortable field named "not_exists"`))
 				})
 			})
 		})
-		Convey("GetReclusteringProgress", func() {
+		t.Run("GetReclusteringProgress", func(t *ftt.Test) {
 			authState.IdentityPermissions = []authtest.RealmPermission{{
 				Realm:      "testproject:@project",
 				Permission: perms.PermGetCluster,
@@ -1023,14 +1026,14 @@ func TestClusters(t *testing.T) {
 			request := &pb.GetReclusteringProgressRequest{
 				Name: "projects/testproject/reclusteringProgress",
 			}
-			Convey("Not authorised to get cluster", func() {
+			t.Run("Not authorised to get cluster", func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetCluster)
 
 				response, err := server.GetReclusteringProgress(ctx, request)
-				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.clusters.get")
-				So(response, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission analysis.clusters.get"))
+				assert.Loosely(t, response, should.BeNil)
 			})
-			Convey("With a valid request", func() {
+			t.Run("With a valid request", func(t *ftt.Test) {
 				rulesVersion := time.Date(2021, time.January, 1, 1, 0, 0, 0, time.UTC)
 				reference := time.Date(2020, time.February, 1, 1, 0, 0, 0, time.UTC)
 				configVersion := time.Date(2019, time.March, 1, 1, 0, 0, 0, time.UTC)
@@ -1060,15 +1063,15 @@ func TestClusters(t *testing.T) {
 						WithCompletedProgress().
 						Build(),
 				}
-				err := runs.SetRunsForTesting(ctx, rns)
-				So(err, ShouldBeNil)
+				err := runs.SetRunsForTesting(ctx, t, rns)
+				assert.Loosely(t, err, should.BeNil)
 
 				// Run
 				response, err := server.GetReclusteringProgress(ctx, request)
 
 				// Verify.
-				So(err, ShouldBeNil)
-				So(response, ShouldResembleProto, &pb.ReclusteringProgress{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, response, should.Resemble(&pb.ReclusteringProgress{
 					Name:             "projects/testproject/reclusteringProgress",
 					ProgressPerMille: 500,
 					Last: &pb.ClusteringVersion{
@@ -1081,22 +1084,22 @@ func TestClusters(t *testing.T) {
 						ConfigVersion:     timestamppb.New(configVersion),
 						RulesVersion:      timestamppb.New(rulesVersion),
 					},
-				})
+				}))
 			})
-			Convey("With an invalid request", func() {
-				Convey("Invalid name", func() {
+			t.Run("With an invalid request", func(t *ftt.Test) {
+				t.Run("Invalid name", func(t *ftt.Test) {
 					request.Name = "invalid"
 
 					// Run
 					response, err := server.GetReclusteringProgress(ctx, request)
 
 					// Verify
-					So(response, ShouldBeNil)
-					So(err, ShouldBeRPCInvalidArgument, "name: invalid reclustering progress name, expected format: projects/{project}/reclusteringProgress")
+					assert.Loosely(t, response, should.BeNil)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("name: invalid reclustering progress name, expected format: projects/{project}/reclusteringProgress"))
 				})
 			})
 		})
-		Convey("QueryClusterFailures", func() {
+		t.Run("QueryClusterFailures", func(t *ftt.Test) {
 			authState.IdentityPermissions = listTestResultsPermissions(
 				"testproject:realm1",
 				"testproject:realm2",
@@ -1110,28 +1113,28 @@ func TestClusters(t *testing.T) {
 			request := &pb.QueryClusterFailuresRequest{
 				Parent: "projects/testproject/clusters/reason-v1/cccccc00000000000000000000000001/failures",
 			}
-			Convey("Not authorised to get cluster", func() {
+			t.Run("Not authorised to get cluster", func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetCluster)
 
 				response, err := server.QueryClusterFailures(ctx, request)
-				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.clusters.get")
-				So(response, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission analysis.clusters.get"))
+				assert.Loosely(t, response, should.BeNil)
 			})
-			Convey("Not authorised to list test results in any realm", func() {
+			t.Run("Not authorised to list test results in any realm", func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, rdbperms.PermListTestResults)
 
 				response, err := server.QueryClusterFailures(ctx, request)
-				So(err, ShouldBeRPCPermissionDenied, "caller does not have permissions [resultdb.testResults.list resultdb.testExonerations.list] in any realm in project \"testproject\"")
-				So(response, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permissions [resultdb.testResults.list resultdb.testExonerations.list] in any realm in project \"testproject\""))
+				assert.Loosely(t, response, should.BeNil)
 			})
-			Convey("Not authorised to list test exonerations in any realm", func() {
+			t.Run("Not authorised to list test exonerations in any realm", func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, rdbperms.PermListTestExonerations)
 
 				response, err := server.QueryClusterFailures(ctx, request)
-				So(err, ShouldBeRPCPermissionDenied, "caller does not have permissions [resultdb.testResults.list resultdb.testExonerations.list] in any realm in project \"testproject\"")
-				So(response, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permissions [resultdb.testResults.list resultdb.testExonerations.list] in any realm in project \"testproject\""))
+				assert.Loosely(t, response, should.BeNil)
 			})
-			Convey("With a valid request", func() {
+			t.Run("With a valid request", func(t *ftt.Test) {
 				analysisClient.expectedRealmsQueried = []string{"testproject:realm1", "testproject:realm2"}
 				analysisClient.failuresByProjectAndCluster["testproject"] = map[clustering.ClusterID][]*analysis.ClusterFailure{
 					{
@@ -1261,18 +1264,18 @@ func TestClusters(t *testing.T) {
 					},
 				}
 
-				Convey("Without metric filter", func() {
+				t.Run("Without metric filter", func(t *ftt.Test) {
 					// Run
 					response, err := server.QueryClusterFailures(ctx, request)
 
 					// Verify.
-					So(err, ShouldBeNil)
-					So(response, ShouldResembleProto, expectedResponse)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, response, should.Resemble(expectedResponse))
 				})
-				Convey("With metric filter", func() {
+				t.Run("With metric filter", func(t *ftt.Test) {
 					request.MetricFilter = "projects/testproject/metrics/human-cls-failed-presubmit"
 					metric, err := metrics.ByID(metrics.HumanClsFailedPresubmit.ID)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					analysisClient.expectedMetricFilter = &metrics.Definition{}
 					*analysisClient.expectedMetricFilter = metric.AdaptToProject("testproject", projectCfg.Metrics)
 
@@ -1280,66 +1283,66 @@ func TestClusters(t *testing.T) {
 					response, err := server.QueryClusterFailures(ctx, request)
 
 					// Verify.
-					So(err, ShouldBeNil)
-					So(response, ShouldResembleProto, expectedResponse)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, response, should.Resemble(expectedResponse))
 
 				})
 			})
-			Convey("With an invalid request", func() {
-				Convey("Invalid parent", func() {
+			t.Run("With an invalid request", func(t *ftt.Test) {
+				t.Run("Invalid parent", func(t *ftt.Test) {
 					request.Parent = "blah"
 
 					// Run
 					response, err := server.QueryClusterFailures(ctx, request)
 
 					// Verify
-					So(response, ShouldBeNil)
-					So(err, ShouldBeRPCInvalidArgument, "parent: invalid cluster failures name, expected format: projects/{project}/clusters/{cluster_alg}/{cluster_id}/failures")
+					assert.Loosely(t, response, should.BeNil)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("parent: invalid cluster failures name, expected format: projects/{project}/clusters/{cluster_alg}/{cluster_id}/failures"))
 				})
-				Convey("Invalid cluster algorithm in parent", func() {
+				t.Run("Invalid cluster algorithm in parent", func(t *ftt.Test) {
 					request.Parent = "projects/blah/clusters/reason/cccccc00000000000000000000000001/failures"
 
 					// Run
 					response, err := server.QueryClusterFailures(ctx, request)
 
 					// Verify
-					So(response, ShouldBeNil)
-					So(err, ShouldBeRPCInvalidArgument, "parent: cluster id: algorithm not valid")
+					assert.Loosely(t, response, should.BeNil)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("parent: cluster id: algorithm not valid"))
 				})
-				Convey("Invalid cluster ID in parent", func() {
+				t.Run("Invalid cluster ID in parent", func(t *ftt.Test) {
 					request.Parent = "projects/blah/clusters/reason-v3/123/failures"
 
 					// Run
 					response, err := server.QueryClusterFailures(ctx, request)
 
 					// Verify
-					So(response, ShouldBeNil)
-					So(err, ShouldBeRPCInvalidArgument, "parent: cluster id: ID is not valid lowercase hexadecimal bytes")
+					assert.Loosely(t, response, should.BeNil)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("parent: cluster id: ID is not valid lowercase hexadecimal bytes"))
 				})
-				Convey("Invalid metric ID format", func() {
+				t.Run("Invalid metric ID format", func(t *ftt.Test) {
 					request.MetricFilter = "metrics/human-cls-failed-presubmit"
 
 					// Run
 					response, err := server.QueryClusterFailures(ctx, request)
 
 					// Verify
-					So(response, ShouldBeNil)
-					So(err, ShouldBeRPCInvalidArgument, "filter_metric: invalid project metric name, expected format: projects/{project}/metrics/{metric_id}")
+					assert.Loosely(t, response, should.BeNil)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("filter_metric: invalid project metric name, expected format: projects/{project}/metrics/{metric_id}"))
 				})
-				Convey("Filter metric references non-existant metric", func() {
+				t.Run("Filter metric references non-existant metric", func(t *ftt.Test) {
 					request.MetricFilter = "projects/testproject/metrics/not-exists"
 
 					// Run
 					response, err := server.QueryClusterFailures(ctx, request)
 
 					// Verify
-					So(response, ShouldBeNil)
-					So(err, ShouldBeRPCInvalidArgument, `filter_metric: no metric with ID "not-exists"`)
+					assert.Loosely(t, response, should.BeNil)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`filter_metric: no metric with ID "not-exists"`))
 				})
 			})
 		})
 
-		Convey("QueryExoneratedTestVariants", func() {
+		t.Run("QueryExoneratedTestVariants", func(t *ftt.Test) {
 			authState.IdentityPermissions = listTestResultsPermissions(
 				"testproject:realm1",
 				"testproject:realm2",
@@ -1353,28 +1356,28 @@ func TestClusters(t *testing.T) {
 			request := &pb.QueryClusterExoneratedTestVariantsRequest{
 				Parent: "projects/testproject/clusters/reason-v1/cccccc00000000000000000000000001/exoneratedTestVariants",
 			}
-			Convey("Not authorised to get cluster", func() {
+			t.Run("Not authorised to get cluster", func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetCluster)
 
 				response, err := server.QueryExoneratedTestVariants(ctx, request)
-				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.clusters.get")
-				So(response, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission analysis.clusters.get"))
+				assert.Loosely(t, response, should.BeNil)
 			})
-			Convey("Not authorised to list test results in any realm", func() {
+			t.Run("Not authorised to list test results in any realm", func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, rdbperms.PermListTestResults)
 
 				response, err := server.QueryExoneratedTestVariants(ctx, request)
-				So(err, ShouldBeRPCPermissionDenied, "caller does not have permissions [resultdb.testResults.list resultdb.testExonerations.list] in any realm in project \"testproject\"")
-				So(response, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permissions [resultdb.testResults.list resultdb.testExonerations.list] in any realm in project \"testproject\""))
+				assert.Loosely(t, response, should.BeNil)
 			})
-			Convey("Not authorised to list test exonerations in any realm", func() {
+			t.Run("Not authorised to list test exonerations in any realm", func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, rdbperms.PermListTestExonerations)
 
 				response, err := server.QueryExoneratedTestVariants(ctx, request)
-				So(err, ShouldBeRPCPermissionDenied, "caller does not have permissions [resultdb.testResults.list resultdb.testExonerations.list] in any realm in project \"testproject\"")
-				So(response, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permissions [resultdb.testResults.list resultdb.testExonerations.list] in any realm in project \"testproject\""))
+				assert.Loosely(t, response, should.BeNil)
 			})
-			Convey("With a valid request", func() {
+			t.Run("With a valid request", func(t *ftt.Test) {
 				analysisClient.expectedRealmsQueried = []string{"testproject:realm1", "testproject:realm2"}
 				analysisClient.exoneratedTVsByProjectAndCluster["testproject"] = map[clustering.ClusterID][]*analysis.ExoneratedTestVariant{
 					{
@@ -1435,44 +1438,44 @@ func TestClusters(t *testing.T) {
 				response, err := server.QueryExoneratedTestVariants(ctx, request)
 
 				// Verify.
-				So(err, ShouldBeNil)
-				So(response, ShouldResembleProto, expectedResponse)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, response, should.Resemble(expectedResponse))
 			})
-			Convey("With an invalid request", func() {
-				Convey("Invalid parent", func() {
+			t.Run("With an invalid request", func(t *ftt.Test) {
+				t.Run("Invalid parent", func(t *ftt.Test) {
 					request.Parent = "blah"
 
 					// Run
 					response, err := server.QueryExoneratedTestVariants(ctx, request)
 
 					// Verify
-					So(response, ShouldBeNil)
-					So(err, ShouldBeRPCInvalidArgument, "parent: invalid resource name, expected format: projects/{project}/clusters/{cluster_alg}/{cluster_id}/exoneratedTestVariants")
+					assert.Loosely(t, response, should.BeNil)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("parent: invalid resource name, expected format: projects/{project}/clusters/{cluster_alg}/{cluster_id}/exoneratedTestVariants"))
 				})
-				Convey("Invalid cluster algorithm in parent", func() {
+				t.Run("Invalid cluster algorithm in parent", func(t *ftt.Test) {
 					request.Parent = "projects/blah/clusters/reason/cccccc00000000000000000000000001/exoneratedTestVariants"
 
 					// Run
 					response, err := server.QueryExoneratedTestVariants(ctx, request)
 
 					// Verify
-					So(response, ShouldBeNil)
-					So(err, ShouldBeRPCInvalidArgument, "parent: cluster id: algorithm not valid")
+					assert.Loosely(t, response, should.BeNil)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("parent: cluster id: algorithm not valid"))
 				})
-				Convey("Invalid cluster ID in parent", func() {
+				t.Run("Invalid cluster ID in parent", func(t *ftt.Test) {
 					request.Parent = "projects/blah/clusters/reason-v3/123/exoneratedTestVariants"
 
 					// Run
 					response, err := server.QueryExoneratedTestVariants(ctx, request)
 
 					// Verify
-					So(response, ShouldBeNil)
-					So(err, ShouldBeRPCInvalidArgument, "parent: cluster id: ID is not valid lowercase hexadecimal bytes")
+					assert.Loosely(t, response, should.BeNil)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("parent: cluster id: ID is not valid lowercase hexadecimal bytes"))
 				})
 			})
 		})
 
-		Convey("QueryExoneratedTestVariantBranches", func() {
+		t.Run("QueryExoneratedTestVariantBranches", func(t *ftt.Test) {
 			authState.IdentityPermissions = listTestResultsPermissions(
 				"testproject:realm1",
 				"testproject:realm2",
@@ -1486,28 +1489,28 @@ func TestClusters(t *testing.T) {
 			request := &pb.QueryClusterExoneratedTestVariantBranchesRequest{
 				Parent: "projects/testproject/clusters/reason-v1/cccccc00000000000000000000000001/exoneratedTestVariantBranches",
 			}
-			Convey("Not authorised to get cluster", func() {
+			t.Run("Not authorised to get cluster", func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetCluster)
 
 				response, err := server.QueryExoneratedTestVariantBranches(ctx, request)
-				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.clusters.get")
-				So(response, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission analysis.clusters.get"))
+				assert.Loosely(t, response, should.BeNil)
 			})
-			Convey("Not authorised to list test results in any realm", func() {
+			t.Run("Not authorised to list test results in any realm", func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, rdbperms.PermListTestResults)
 
 				response, err := server.QueryExoneratedTestVariantBranches(ctx, request)
-				So(err, ShouldBeRPCPermissionDenied, "caller does not have permissions [resultdb.testResults.list resultdb.testExonerations.list] in any realm in project \"testproject\"")
-				So(response, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permissions [resultdb.testResults.list resultdb.testExonerations.list] in any realm in project \"testproject\""))
+				assert.Loosely(t, response, should.BeNil)
 			})
-			Convey("Not authorised to list test exonerations in any realm", func() {
+			t.Run("Not authorised to list test exonerations in any realm", func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, rdbperms.PermListTestExonerations)
 
 				response, err := server.QueryExoneratedTestVariantBranches(ctx, request)
-				So(err, ShouldBeRPCPermissionDenied, "caller does not have permissions [resultdb.testResults.list resultdb.testExonerations.list] in any realm in project \"testproject\"")
-				So(response, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permissions [resultdb.testResults.list resultdb.testExonerations.list] in any realm in project \"testproject\""))
+				assert.Loosely(t, response, should.BeNil)
 			})
-			Convey("With a valid request", func() {
+			t.Run("With a valid request", func(t *ftt.Test) {
 				analysisClient.expectedRealmsQueried = []string{"testproject:realm1", "testproject:realm2"}
 				analysisClient.exoneratedTVBsByProjectAndCluster["testproject"] = map[clustering.ClusterID][]*analysis.ExoneratedTestVariantBranch{
 					{
@@ -1604,39 +1607,39 @@ func TestClusters(t *testing.T) {
 				response, err := server.QueryExoneratedTestVariantBranches(ctx, request)
 
 				// Verify.
-				So(err, ShouldBeNil)
-				So(response, ShouldResembleProto, expectedResponse)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, response, should.Resemble(expectedResponse))
 			})
-			Convey("With an invalid request", func() {
-				Convey("Invalid parent", func() {
+			t.Run("With an invalid request", func(t *ftt.Test) {
+				t.Run("Invalid parent", func(t *ftt.Test) {
 					request.Parent = "blah"
 
 					// Run
 					response, err := server.QueryExoneratedTestVariantBranches(ctx, request)
 
 					// Verify
-					So(response, ShouldBeNil)
-					So(err, ShouldBeRPCInvalidArgument, "parent: invalid resource name, expected format: projects/{project}/clusters/{cluster_alg}/{cluster_id}/exoneratedTestVariantBranches")
+					assert.Loosely(t, response, should.BeNil)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("parent: invalid resource name, expected format: projects/{project}/clusters/{cluster_alg}/{cluster_id}/exoneratedTestVariantBranches"))
 				})
-				Convey("Invalid cluster algorithm in parent", func() {
+				t.Run("Invalid cluster algorithm in parent", func(t *ftt.Test) {
 					request.Parent = "projects/blah/clusters/reason/cccccc00000000000000000000000001/exoneratedTestVariantBranches"
 
 					// Run
 					response, err := server.QueryExoneratedTestVariantBranches(ctx, request)
 
 					// Verify
-					So(response, ShouldBeNil)
-					So(err, ShouldBeRPCInvalidArgument, "parent: cluster id: algorithm not valid")
+					assert.Loosely(t, response, should.BeNil)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("parent: cluster id: algorithm not valid"))
 				})
-				Convey("Invalid cluster ID in parent", func() {
+				t.Run("Invalid cluster ID in parent", func(t *ftt.Test) {
 					request.Parent = "projects/blah/clusters/reason-v3/123/exoneratedTestVariantBranches"
 
 					// Run
 					response, err := server.QueryExoneratedTestVariantBranches(ctx, request)
 
 					// Verify
-					So(response, ShouldBeNil)
-					So(err, ShouldBeRPCInvalidArgument, "parent: cluster id: ID is not valid lowercase hexadecimal bytes")
+					assert.Loosely(t, response, should.BeNil)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("parent: cluster id: ID is not valid lowercase hexadecimal bytes"))
 				})
 			})
 		})

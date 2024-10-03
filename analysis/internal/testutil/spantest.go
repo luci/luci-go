@@ -25,10 +25,11 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/spantest"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/server/span"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 // cleanupDatabase deletes all data from all tables.
@@ -109,8 +110,9 @@ func SpannerTestMain(m *testing.M) {
 // MustApply applies the mutations to the spanner client in the context.
 // Asserts that application succeeds.
 // Returns the commit timestamp.
-func MustApply(ctx context.Context, ms ...*spanner.Mutation) time.Time {
+func MustApply(ctx context.Context, t testing.TB, ms ...*spanner.Mutation) time.Time {
+	t.Helper()
 	ct, err := span.Apply(ctx, ms)
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil, truth.LineContext())
 	return ct
 }

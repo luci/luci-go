@@ -16,6 +16,7 @@ package runs
 
 import (
 	"context"
+	"testing"
 	"time"
 
 	"cloud.google.com/go/spanner"
@@ -123,8 +124,9 @@ func (b *RunBuilder) Build() *ReclusteringRun {
 }
 
 // SetRunsForTesting replaces the set of stored runs to match the given set.
-func SetRunsForTesting(ctx context.Context, rs []*ReclusteringRun) error {
-	testutil.MustApply(ctx,
+func SetRunsForTesting(ctx context.Context, t testing.TB, rs []*ReclusteringRun) error {
+	t.Helper()
+	testutil.MustApply(ctx, t,
 		spanner.Delete("ReclusteringRuns", spanner.AllKeys()))
 	// Insert some ReclusteringRuns.
 	_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {

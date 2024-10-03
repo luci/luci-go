@@ -25,6 +25,9 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/caching"
@@ -45,13 +48,10 @@ import (
 	bqpb "go.chromium.org/luci/analysis/proto/bq"
 	configpb "go.chromium.org/luci/analysis/proto/config"
 	pb "go.chromium.org/luci/analysis/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestIngest(t *testing.T) {
-	Convey(`With Ingestor`, t, func() {
+	ftt.Run(`With Ingestor`, t, func(t *ftt.Test) {
 		ctx := testutil.IntegrationTestContext(t)
 		ctx = caching.WithEmptyProcessCache(ctx) // For rules cache.
 		ctx = memory.Use(ctx)                    // For project config in datastore.
@@ -79,39 +79,39 @@ func TestIngest(t *testing.T) {
 		}
 		testIngestion := func(input []TestVerdict, expectedCFs []*bqpb.ClusteredFailureRow) {
 			err := ingestor.Ingest(ctx, opts, input)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			insertions := clusteredFailures.Insertions
-			So(len(insertions), ShouldEqual, len(expectedCFs))
+			assert.Loosely(t, len(insertions), should.Equal(len(expectedCFs)))
 
 			// Sort both actuals and expectations by key so that we compare corresponding rows.
 			sortClusteredFailures(insertions)
 			sortClusteredFailures(expectedCFs)
 			for i, exp := range expectedCFs {
 				actual := insertions[i]
-				So(actual, ShouldNotBeNil)
+				assert.Loosely(t, actual, should.NotBeNil)
 
 				// Chunk ID and index is assigned by ingestion.
 				copyExp := proto.Clone(exp).(*bqpb.ClusteredFailureRow)
-				So(actual.ChunkId, ShouldNotBeEmpty)
-				So(actual.ChunkIndex, ShouldBeGreaterThanOrEqualTo, 1)
+				assert.Loosely(t, actual.ChunkId, should.NotBeEmpty)
+				assert.Loosely(t, actual.ChunkIndex, should.BeGreaterThanOrEqual(1))
 				copyExp.ChunkId = actual.ChunkId
 				copyExp.ChunkIndex = actual.ChunkIndex
 
 				// LastUpdated time is assigned by Spanner.
-				So(actual.LastUpdated, ShouldNotBeZeroValue)
+				assert.Loosely(t, actual.LastUpdated, should.NotBeZero)
 				copyExp.LastUpdated = actual.LastUpdated
 
-				So(actual, ShouldResembleProto, copyExp)
+				assert.Loosely(t, actual, should.Resemble(copyExp))
 			}
 		}
 
 		// This rule should match failures used in this test.
 		rule := rules.NewRule(100).WithProject(opts.Project).WithRuleDefinition(`reason LIKE "Failure reason%"`).Build()
-		err := rules.SetForTesting(ctx, []*rules.Entry{
+		err := rules.SetForTesting(ctx, t, []*rules.Entry{
 			rule,
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		// Setup clustering configuration
 		projectCfg := &configpb.ProjectConfig{
@@ -121,12 +121,12 @@ func TestIngest(t *testing.T) {
 		projectCfgs := map[string]*configpb.ProjectConfig{
 			"chromium": projectCfg,
 		}
-		So(config.SetTestProjectConfig(ctx, projectCfgs), ShouldBeNil)
+		assert.Loosely(t, config.SetTestProjectConfig(ctx, projectCfgs), should.BeNil)
 
 		cfg, err := compiledcfg.NewConfig(projectCfg)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		Convey(`Ingest one failure`, func() {
+		t.Run(`Ingest one failure`, func(t *ftt.Test) {
 			const uniqifier = 1
 			const testRunCount = 1
 			const resultsPerTestRun = 1
@@ -144,14 +144,14 @@ func TestIngest(t *testing.T) {
 			setRuleClustered(ruleCF, rule)
 			expectedCFs := []*bqpb.ClusteredFailureRow{regexpCF, testnameCF, ruleCF}
 
-			Convey(`Unexpected failure`, func() {
+			t.Run(`Unexpected failure`, func(t *ftt.Test) {
 				tv.Verdict.Results[0].Result.Status = rdbpb.TestStatus_FAIL
 				tv.Verdict.Results[0].Result.Expected = false
 
 				testIngestion(tvs, expectedCFs)
-				So(len(chunkStore.Contents), ShouldEqual, 1)
+				assert.Loosely(t, len(chunkStore.Contents), should.Equal(1))
 			})
-			Convey(`Expected failure`, func() {
+			t.Run(`Expected failure`, func(t *ftt.Test) {
 				tv.Verdict.Results[0].Result.Status = rdbpb.TestStatus_FAIL
 				tv.Verdict.Results[0].Result.Expected = true
 
@@ -160,9 +160,9 @@ func TestIngest(t *testing.T) {
 				expectedCFs = nil
 
 				testIngestion(tvs, expectedCFs)
-				So(len(chunkStore.Contents), ShouldEqual, 0)
+				assert.Loosely(t, len(chunkStore.Contents), should.BeZero)
 			})
-			Convey(`Unexpected pass`, func() {
+			t.Run(`Unexpected pass`, func(t *ftt.Test) {
 				tv.Verdict.Results[0].Result.Status = rdbpb.TestStatus_PASS
 				tv.Verdict.Results[0].Result.Expected = false
 
@@ -170,9 +170,9 @@ func TestIngest(t *testing.T) {
 				// (even if unexpected).
 				expectedCFs = nil
 				testIngestion(tvs, expectedCFs)
-				So(len(chunkStore.Contents), ShouldEqual, 0)
+				assert.Loosely(t, len(chunkStore.Contents), should.BeZero)
 			})
-			Convey(`Unexpected skip`, func() {
+			t.Run(`Unexpected skip`, func(t *ftt.Test) {
 				tv.Verdict.Results[0].Result.Status = rdbpb.TestStatus_SKIP
 				tv.Verdict.Results[0].Result.Expected = false
 
@@ -181,9 +181,9 @@ func TestIngest(t *testing.T) {
 				expectedCFs = nil
 
 				testIngestion(tvs, expectedCFs)
-				So(len(chunkStore.Contents), ShouldEqual, 0)
+				assert.Loosely(t, len(chunkStore.Contents), should.BeZero)
 			})
-			Convey(`Failure with no tags`, func() {
+			t.Run(`Failure with no tags`, func(t *ftt.Test) {
 				// Tests are allowed to have no tags.
 				tv.Verdict.Results[0].Result.Tags = nil
 
@@ -193,9 +193,9 @@ func TestIngest(t *testing.T) {
 				}
 
 				testIngestion(tvs, expectedCFs)
-				So(len(chunkStore.Contents), ShouldEqual, 1)
+				assert.Loosely(t, len(chunkStore.Contents), should.Equal(1))
 			})
-			Convey(`Failure without variant`, func() {
+			t.Run(`Failure without variant`, func(t *ftt.Test) {
 				// Tests are allowed to have no variant.
 				tv.Verdict.Variant = nil
 				tv.Verdict.Results[0].Result.Variant = nil
@@ -205,9 +205,9 @@ func TestIngest(t *testing.T) {
 				}
 
 				testIngestion(tvs, expectedCFs)
-				So(len(chunkStore.Contents), ShouldEqual, 1)
+				assert.Loosely(t, len(chunkStore.Contents), should.Equal(1))
 			})
-			Convey(`Failure without failure reason`, func() {
+			t.Run(`Failure without failure reason`, func(t *ftt.Test) {
 				// Failures may not have a failure reason.
 				tv.Verdict.Results[0].Result.FailureReason = nil
 				testnameCF.FailureReason = nil
@@ -219,9 +219,9 @@ func TestIngest(t *testing.T) {
 				expectedCFs = []*bqpb.ClusteredFailureRow{testnameCF}
 
 				testIngestion(tvs, expectedCFs)
-				So(len(chunkStore.Contents), ShouldEqual, 1)
+				assert.Loosely(t, len(chunkStore.Contents), should.Equal(1))
 			})
-			Convey(`Failure without presubmit run`, func() {
+			t.Run(`Failure without presubmit run`, func(t *ftt.Test) {
 				opts.PresubmitRun = nil
 				for _, cf := range expectedCFs {
 					cf.PresubmitRunId = nil
@@ -232,9 +232,9 @@ func TestIngest(t *testing.T) {
 				}
 
 				testIngestion(tvs, expectedCFs)
-				So(len(chunkStore.Contents), ShouldEqual, 1)
+				assert.Loosely(t, len(chunkStore.Contents), should.Equal(1))
 			})
-			Convey(`Failure with multiple exoneration`, func() {
+			t.Run(`Failure with multiple exoneration`, func(t *ftt.Test) {
 				tv.Verdict.Exonerations = []*rdbpb.TestExoneration{
 					{
 						Name:            fmt.Sprintf("invocations/testrun-mytestrun/tests/test-name-%v/exonerations/exon-1", uniqifier),
@@ -267,9 +267,9 @@ func TestIngest(t *testing.T) {
 				}
 
 				testIngestion(tvs, expectedCFs)
-				So(len(chunkStore.Contents), ShouldEqual, 1)
+				assert.Loosely(t, len(chunkStore.Contents), should.Equal(1))
 			})
-			Convey(`Failure with only suggested clusters`, func() {
+			t.Run(`Failure with only suggested clusters`, func(t *ftt.Test) {
 				reason := &pb.FailureReason{
 					PrimaryErrorMessage: "Should not match rule",
 				}
@@ -291,11 +291,11 @@ func TestIngest(t *testing.T) {
 				expectedCFs = []*bqpb.ClusteredFailureRow{testnameCF, regexpCF}
 
 				testIngestion(tvs, expectedCFs)
-				So(len(chunkStore.Contents), ShouldEqual, 1)
+				assert.Loosely(t, len(chunkStore.Contents), should.Equal(1))
 			})
 
-			Convey(`Failure with bug component metadata`, func() {
-				Convey(`With monorail bug system`, func() {
+			t.Run(`Failure with bug component metadata`, func(t *ftt.Test) {
+				t.Run(`With monorail bug system`, func(t *ftt.Test) {
 					tv.Verdict.TestMetadata.BugComponent = &rdbpb.BugComponent{
 						System: &rdbpb.BugComponent_Monorail{
 							Monorail: &rdbpb.MonorailComponent{
@@ -309,9 +309,9 @@ func TestIngest(t *testing.T) {
 						cf.BugTrackingComponent.Component = "Blink>Component"
 					}
 					testIngestion(tvs, expectedCFs)
-					So(len(chunkStore.Contents), ShouldEqual, 1)
+					assert.Loosely(t, len(chunkStore.Contents), should.Equal(1))
 				})
-				Convey(`With Buganizer bug system`, func() {
+				t.Run(`With Buganizer bug system`, func(t *ftt.Test) {
 					tv.Verdict.TestMetadata.BugComponent = &rdbpb.BugComponent{
 						System: &rdbpb.BugComponent_IssueTracker{
 							IssueTracker: &rdbpb.IssueTrackerComponent{
@@ -324,9 +324,9 @@ func TestIngest(t *testing.T) {
 						cf.BugTrackingComponent.Component = "12345"
 					}
 					testIngestion(tvs, expectedCFs)
-					So(len(chunkStore.Contents), ShouldEqual, 1)
+					assert.Loosely(t, len(chunkStore.Contents), should.Equal(1))
 				})
-				Convey(`No BugComponent metadata, but public_buganizer_component tag present`, func() {
+				t.Run(`No BugComponent metadata, but public_buganizer_component tag present`, func(t *ftt.Test) {
 					tv.Verdict.TestMetadata.BugComponent = nil
 
 					for _, result := range tv.Verdict.Results {
@@ -348,9 +348,9 @@ func TestIngest(t *testing.T) {
 						}
 					}
 					testIngestion(tvs, expectedCFs)
-					So(len(chunkStore.Contents), ShouldEqual, 1)
+					assert.Loosely(t, len(chunkStore.Contents), should.Equal(1))
 				})
-				Convey(`No BugComponent metadata, both public_buganizer_component and monorail_component present`, func() {
+				t.Run(`No BugComponent metadata, both public_buganizer_component and monorail_component present`, func(t *ftt.Test) {
 					tv.Verdict.TestMetadata.BugComponent = nil
 
 					for _, result := range tv.Verdict.Results {
@@ -378,7 +378,7 @@ func TestIngest(t *testing.T) {
 						}
 					}
 
-					Convey("With monorail as preferred system", func() {
+					t.Run("With monorail as preferred system", func(t *ftt.Test) {
 						opts.PreferBuganizerComponents = false
 
 						for _, cf := range expectedCFs {
@@ -386,9 +386,9 @@ func TestIngest(t *testing.T) {
 							cf.BugTrackingComponent.Component = "Component>MyComponent"
 						}
 						testIngestion(tvs, expectedCFs)
-						So(len(chunkStore.Contents), ShouldEqual, 1)
+						assert.Loosely(t, len(chunkStore.Contents), should.Equal(1))
 					})
-					Convey("With buganizer as preferred system", func() {
+					t.Run("With buganizer as preferred system", func(t *ftt.Test) {
 						opts.PreferBuganizerComponents = true
 
 						for _, cf := range expectedCFs {
@@ -396,11 +396,11 @@ func TestIngest(t *testing.T) {
 							cf.BugTrackingComponent.Component = "654321"
 						}
 						testIngestion(tvs, expectedCFs)
-						So(len(chunkStore.Contents), ShouldEqual, 1)
+						assert.Loosely(t, len(chunkStore.Contents), should.Equal(1))
 					})
 				})
 			})
-			Convey(`Failure with no sources`, func() {
+			t.Run(`Failure with no sources`, func(t *ftt.Test) {
 				tv.Sources = nil
 				for _, cf := range expectedCFs {
 					cf.Sources = nil
@@ -411,7 +411,7 @@ func TestIngest(t *testing.T) {
 				tv.TestVariantBranch = nil
 			})
 		})
-		Convey(`Ingest multiple failures`, func() {
+		t.Run(`Ingest multiple failures`, func(t *ftt.Test) {
 			const uniqifier = 1
 			const testRunsPerVariant = 2
 			const resultsPerTestRun = 2
@@ -446,7 +446,7 @@ func TestIngest(t *testing.T) {
 				exp.IsTestRunBlocked = true
 			}
 
-			Convey(`Some test runs blocked and presubmit run not blocked`, func() {
+			t.Run(`Some test runs blocked and presubmit run not blocked`, func(t *ftt.Test) {
 				// Let the last retry of the last test run pass.
 				tv.Verdict.Results[testRunsPerVariant*resultsPerTestRun-1].Result.Status = rdbpb.TestStatus_PASS
 				// Drop the expected clustered failures for the last test result.
@@ -463,10 +463,10 @@ func TestIngest(t *testing.T) {
 					exp.IsTestRunBlocked = false
 				}
 				testIngestion(tvs, expectedCFs)
-				So(len(chunkStore.Contents), ShouldEqual, 1)
+				assert.Loosely(t, len(chunkStore.Contents), should.Equal(1))
 			})
 		})
-		Convey(`Ingest many failures`, func() {
+		t.Run(`Ingest many failures`, func(t *ftt.Test) {
 			var tvs []TestVerdict
 			var expectedCFs []*bqpb.ClusteredFailureRow
 
@@ -490,7 +490,7 @@ func TestIngest(t *testing.T) {
 			}
 			// Verify more than one chunk is ingested.
 			testIngestion(tvs, expectedCFs)
-			So(len(chunkStore.Contents), ShouldBeGreaterThan, 1)
+			assert.Loosely(t, len(chunkStore.Contents), should.BeGreaterThan(1))
 		})
 	})
 }

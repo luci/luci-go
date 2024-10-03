@@ -20,20 +20,20 @@ import (
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/analysis/internal/testutil"
 	analysispb "go.chromium.org/luci/analysis/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestSpan(t *testing.T) {
-	Convey("With Spanner Test Database", t, func() {
+	ftt.Run("With Spanner Test Database", t, func(t *ftt.Test) {
 		ctx := testutil.IntegrationTestContext(t)
 
-		Convey("With test data", func() {
+		t.Run("With test data", func(t *ftt.Test) {
 			clsToCreate := []*GerritChangelist{
 				{
 					Project:      "testprojecta",
@@ -64,23 +64,23 @@ func TestSpan(t *testing.T) {
 					CreationTime: time.Date(2022, 2, 3, 4, 5, 6, 0, time.UTC),
 				},
 			}
-			err := SetGerritChangelistsForTesting(ctx, clsToCreate)
-			So(err, ShouldBeNil)
+			err := SetGerritChangelistsForTesting(ctx, t, clsToCreate)
+			assert.Loosely(t, err, should.BeNil)
 
-			Convey("ReadAll", func() {
+			t.Run("ReadAll", func(t *ftt.Test) {
 				cls, err := ReadAll(span.Single(ctx))
-				So(err, ShouldBeNil)
-				So(cls, ShouldResemble, clsToCreate)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, cls, should.Resemble(clsToCreate))
 			})
-			Convey("Read", func() {
+			t.Run("Read", func(t *ftt.Test) {
 				expectedCLs := make(map[Key]*GerritChangelist)
 				keys := map[Key]struct{}{}
-				Convey("Zero", func() {
+				t.Run("Zero", func(t *ftt.Test) {
 					cls, err := Read(span.Single(ctx), keys)
-					So(err, ShouldBeNil)
-					So(cls, ShouldResemble, expectedCLs)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, cls, should.Resemble(expectedCLs))
 				})
-				Convey("One", func() {
+				t.Run("One", func(t *ftt.Test) {
 					k := Key{
 						Project: "testprojectb",
 						Host:    "mysource-internal-review.googlesource.com",
@@ -96,10 +96,10 @@ func TestSpan(t *testing.T) {
 					}
 
 					cls, err := Read(span.Single(ctx), keys)
-					So(err, ShouldBeNil)
-					So(cls, ShouldResemble, expectedCLs)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, cls, should.Resemble(expectedCLs))
 				})
-				Convey("Many", func() {
+				t.Run("Many", func(t *ftt.Test) {
 					for _, entry := range clsToCreate {
 						key := Key{entry.Project, entry.Host, entry.Change}
 						keys[key] = struct{}{}
@@ -107,12 +107,12 @@ func TestSpan(t *testing.T) {
 					}
 
 					cls, err := Read(span.Single(ctx), keys)
-					So(err, ShouldBeNil)
-					So(cls, ShouldResemble, expectedCLs)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, cls, should.Resemble(expectedCLs))
 				})
 			})
 		})
-		Convey("CreateOrUpdate", func() {
+		t.Run("CreateOrUpdate", func(t *ftt.Test) {
 			save := func(g *GerritChangelist) (time.Time, error) {
 				commitTime, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 					m, err := CreateOrUpdate(g)
@@ -139,19 +139,19 @@ func TestSpan(t *testing.T) {
 			keys := map[Key]struct{}{}
 			keys[key] = struct{}{}
 
-			Convey("Baseline", func() {
+			t.Run("Baseline", func(t *ftt.Test) {
 				expectedCL := cl
 
 				commitTime, err := save(&cl)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				expectedCL.CreationTime = commitTime
 
 				cls, err := Read(span.Single(ctx), keys)
-				So(err, ShouldBeNil)
-				So(cls, ShouldHaveLength, 1)
-				So(cls[key], ShouldResemble, &expectedCL)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, cls, should.HaveLength(1))
+				assert.Loosely(t, cls[key], should.Resemble(&expectedCL))
 			})
-			Convey("Owner kind unset", func() {
+			t.Run("Owner kind unset", func(t *ftt.Test) {
 				// If we do not have permission to read the changelist, we still may
 				// write a cache entry to avoid battering gerrit with requests.
 				// In this case, the owner kind will be UNSPECIFIED.
@@ -160,45 +160,45 @@ func TestSpan(t *testing.T) {
 				expectedCL := cl
 
 				commitTime, err := save(&cl)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				expectedCL.CreationTime = commitTime
 
 				cls, err := Read(span.Single(ctx), keys)
-				So(err, ShouldBeNil)
-				So(cls, ShouldHaveLength, 1)
-				So(cls[key], ShouldResemble, &expectedCL)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, cls, should.HaveLength(1))
+				assert.Loosely(t, cls[key], should.Resemble(&expectedCL))
 			})
 
-			Convey("Invalid GerritChangelists are rejected", func() {
-				Convey("Project is empty", func() {
+			t.Run("Invalid GerritChangelists are rejected", func(t *ftt.Test) {
+				t.Run("Project is empty", func(t *ftt.Test) {
 					cl.Project = ""
 					_, err := save(&cl)
-					So(err, ShouldErrLike, "project: unspecified")
+					assert.Loosely(t, err, should.ErrLike("project: unspecified"))
 				})
-				Convey("Project is invalid", func() {
+				t.Run("Project is invalid", func(t *ftt.Test) {
 					cl.Project = "!invalid"
 					_, err := save(&cl)
-					So(err, ShouldErrLike, `project: must match ^[a-z0-9\-]{1,40}$`)
+					assert.Loosely(t, err, should.ErrLike(`project: must match ^[a-z0-9\-]{1,40}$`))
 				})
-				Convey("Host is empty", func() {
+				t.Run("Host is empty", func(t *ftt.Test) {
 					cl.Host = ""
 					_, err := save(&cl)
-					So(err, ShouldErrLike, "host: must have a length between 1 and 255")
+					assert.Loosely(t, err, should.ErrLike("host: must have a length between 1 and 255"))
 				})
-				Convey("Host is too long", func() {
+				t.Run("Host is too long", func(t *ftt.Test) {
 					cl.Host = strings.Repeat("h", 256)
 					_, err := save(&cl)
-					So(err, ShouldErrLike, "host: must have a length between 1 and 255")
+					assert.Loosely(t, err, should.ErrLike("host: must have a length between 1 and 255"))
 				})
-				Convey("Change is empty", func() {
+				t.Run("Change is empty", func(t *ftt.Test) {
 					cl.Change = 0
 					_, err := save(&cl)
-					So(err, ShouldErrLike, "change: must be set and positive")
+					assert.Loosely(t, err, should.ErrLike("change: must be set and positive"))
 				})
-				Convey("Change is negative", func() {
+				t.Run("Change is negative", func(t *ftt.Test) {
 					cl.Change = -1
 					_, err := save(&cl)
-					So(err, ShouldErrLike, "change: must be set and positive")
+					assert.Loosely(t, err, should.ErrLike("change: must be set and positive"))
 				})
 			})
 		})

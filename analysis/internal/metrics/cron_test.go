@@ -18,6 +18,9 @@ import (
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 
 	"go.chromium.org/luci/analysis/internal/clustering/rules"
@@ -25,12 +28,10 @@ import (
 	"go.chromium.org/luci/analysis/internal/ingestion/control"
 	"go.chromium.org/luci/analysis/internal/testutil"
 	configpb "go.chromium.org/luci/analysis/proto/config"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestGlobalMetrics(t *testing.T) {
-	Convey(`With Spanner Test Database`, t, func() {
+	ftt.Run(`With Spanner Test Database`, t, func(t *ftt.Test) {
 		ctx := testutil.IntegrationTestContext(t)
 
 		ctx = memory.Use(ctx) // For project config in datastore.
@@ -40,15 +41,15 @@ func TestGlobalMetrics(t *testing.T) {
 			"project-a": {},
 			"project-b": {},
 		}
-		So(config.SetTestProjectConfig(ctx, projectCfgs), ShouldBeNil)
+		assert.Loosely(t, config.SetTestProjectConfig(ctx, projectCfgs), should.BeNil)
 
 		// Create some active rules.
 		rulesToCreate := []*rules.Entry{
 			rules.NewRule(0).WithProject("project-a").WithActive(true).Build(),
 			rules.NewRule(1).WithProject("project-a").WithActive(true).Build(),
 		}
-		err := rules.SetForTesting(ctx, rulesToCreate)
-		So(err, ShouldBeNil)
+		err := rules.SetForTesting(ctx, t, rulesToCreate)
+		assert.Loosely(t, err, should.BeNil)
 
 		// Create some ingestion control records.
 		reference := time.Now().Add(-1 * time.Minute)
@@ -77,10 +78,10 @@ func TestGlobalMetrics(t *testing.T) {
 				WithBuildResult(nil).
 				WithPresubmitResult(nil).Build(),
 		}
-		_, err = control.SetEntriesForTesting(ctx, entriesToCreate...)
-		So(err, ShouldBeNil)
+		_, err = control.SetEntriesForTesting(ctx, t, entriesToCreate...)
+		assert.Loosely(t, err, should.BeNil)
 
 		err = GlobalMetrics(ctx)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 	})
 }

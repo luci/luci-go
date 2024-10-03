@@ -87,7 +87,7 @@ func TestIngestForChangepointAnalysis(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 
 			assert.Loosely(t, removeVersions(exportClient.Insertions), should.Resemble(expectedExports))
-			assert.Loosely(t, verifyCheckpoints(ctx, expectedCheckpoint), should.BeNil)
+			assert.Loosely(t, verifyCheckpoints(ctx, t, expectedCheckpoint), should.BeNil)
 
 			assert.Loosely(t, changepoints.RunCounter.Get(ctx, "rootproject", "ingested"), should.Equal(2))
 			assert.Loosely(t, changepoints.RunCounter.Get(ctx, "rootproject", "skipped_only_skips"), should.Equal(1))
@@ -100,7 +100,7 @@ func TestIngestForChangepointAnalysis(t *testing.T) {
 
 				// Nothing should be exported because the checkpoint already exists.
 				assert.Loosely(t, exportClient.Insertions, should.BeEmpty)
-				assert.Loosely(t, verifyCheckpoints(ctx, expectedCheckpoint), should.BeNil)
+				assert.Loosely(t, verifyCheckpoints(ctx, t, expectedCheckpoint), should.BeNil)
 			})
 		})
 		t.Run(`With invocation claimed by this root invocation`, func(t *ftt.Test) {
@@ -114,7 +114,7 @@ func TestIngestForChangepointAnalysis(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 
 			assert.Loosely(t, removeVersions(exportClient.Insertions), should.Resemble(expectedExports))
-			assert.Loosely(t, verifyCheckpoints(ctx, expectedCheckpoint), should.BeNil)
+			assert.Loosely(t, verifyCheckpoints(ctx, t, expectedCheckpoint), should.BeNil)
 
 			assert.Loosely(t, changepoints.RunCounter.Get(ctx, "rootproject", "ingested"), should.Equal(2))
 			assert.Loosely(t, changepoints.RunCounter.Get(ctx, "rootproject", "skipped_only_skips"), should.Equal(1))
@@ -186,7 +186,7 @@ func TestIngestForChangepointAnalysis(t *testing.T) {
 			assert.Loosely(t, changepoints.RunCounter.Get(ctx, "rootproject", "ingested"), should.Equal(1))
 			assert.Loosely(t, changepoints.RunCounter.Get(ctx, "rootproject", "skipped_out_of_order"), should.Equal(1))
 			assert.Loosely(t, changepoints.RunCounter.Get(ctx, "rootproject", "skipped_only_skips"), should.Equal(1))
-			assert.Loosely(t, verifyCheckpoints(ctx, expectedCheckpoint), should.BeNil)
+			assert.Loosely(t, verifyCheckpoints(ctx, t, expectedCheckpoint), should.BeNil)
 		})
 		t.Run(`With test variant analysis disabled`, func(t *ftt.Test) {
 			cfg.TestVariantAnalysis.Enabled = false

@@ -44,12 +44,15 @@ import (
 	configpb "go.chromium.org/luci/analysis/proto/config"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestRules(t *testing.T) {
-	Convey("With Server", t, func() {
+	ftt.Run("With Server", t, func(t *ftt.Test) {
 		ctx := testutil.IntegrationTestContext(t)
 
 		// For user identification.
@@ -96,7 +99,7 @@ func TestRules(t *testing.T) {
 			WithBug(bugs.BugID{System: "buganizer", ID: "666"}).
 			Build()
 
-		err := rules.SetForTesting(ctx, []*rules.Entry{
+		err := rules.SetForTesting(ctx, t, []*rules.Entry{
 			ruleManaged,
 			ruleTwoProject,
 			ruleTwoProjectOther,
@@ -104,15 +107,15 @@ func TestRules(t *testing.T) {
 			ruleManagedOther,
 			ruleBuganizer,
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		cfg := &configpb.ProjectConfig{}
 		err = config.SetTestProjectConfig(ctx, map[string]*configpb.ProjectConfig{
 			"testproject": cfg,
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		Convey("Unauthorised requests are rejected", func() {
+		t.Run("Unauthorised requests are rejected", func(t *ftt.Test) {
 			// Ensure no access to luci-analysis-access.
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:someone@example.com",
@@ -127,10 +130,10 @@ func TestRules(t *testing.T) {
 			}
 
 			rule, err := srv.Get(ctx, request)
-			So(err, ShouldBeRPCPermissionDenied, "not a member of luci-analysis-access")
-			So(rule, ShouldBeNil)
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("not a member of luci-analysis-access"))
+			assert.Loosely(t, rule, should.BeNil)
 		})
-		Convey("Get", func() {
+		t.Run("Get", func(t *ftt.Test) {
 			authState.IdentityPermissions = []authtest.RealmPermission{
 				{
 					Realm:      "testproject:@project",
@@ -142,7 +145,7 @@ func TestRules(t *testing.T) {
 				},
 			}
 
-			Convey("No get rule permission", func() {
+			t.Run("No get rule permission", func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetRule)
 
 				request := &pb.GetRuleRequest{
@@ -150,24 +153,24 @@ func TestRules(t *testing.T) {
 				}
 
 				rule, err := srv.Get(ctx, request)
-				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.rules.get")
-				So(rule, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission analysis.rules.get"))
+				assert.Loosely(t, rule, should.BeNil)
 			})
-			Convey("Rule exists", func() {
+			t.Run("Rule exists", func(t *ftt.Test) {
 				mask := ruleMask{
 					IncludeDefinition: true,
 					IncludeAuditUsers: true,
 				}
-				Convey("Baseline", func() {
+				t.Run("Baseline", func(t *ftt.Test) {
 					request := &pb.GetRuleRequest{
 						Name: fmt.Sprintf("projects/%s/rules/%s", ruleManaged.Project, ruleManaged.RuleID),
 					}
 
 					rule, err := srv.Get(ctx, request)
-					So(err, ShouldBeNil)
-					So(rule, ShouldResembleProto, createRulePB(ruleManaged, cfg, mask))
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, rule, should.Resemble(createRulePB(ruleManaged, cfg, mask)))
 				})
-				Convey("Without get rule definition permission", func() {
+				t.Run("Without get rule definition permission", func(t *ftt.Test) {
 					authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetRuleDefinition)
 
 					request := &pb.GetRuleRequest{
@@ -175,11 +178,11 @@ func TestRules(t *testing.T) {
 					}
 
 					rule, err := srv.Get(ctx, request)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					mask.IncludeDefinition = false
-					So(rule, ShouldResembleProto, createRulePB(ruleManaged, cfg, mask))
+					assert.Loosely(t, rule, should.Resemble(createRulePB(ruleManaged, cfg, mask)))
 				})
-				Convey("Without get rule audit users permission", func() {
+				t.Run("Without get rule audit users permission", func(t *ftt.Test) {
 					authState.IdentityGroups = removeGroup(authState.IdentityGroups, auditUsersAccessGroup)
 
 					request := &pb.GetRuleRequest{
@@ -187,23 +190,23 @@ func TestRules(t *testing.T) {
 					}
 
 					rule, err := srv.Get(ctx, request)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					mask.IncludeAuditUsers = false
-					So(rule, ShouldResembleProto, createRulePB(ruleManaged, cfg, mask))
+					assert.Loosely(t, rule, should.Resemble(createRulePB(ruleManaged, cfg, mask)))
 				})
 			})
-			Convey("Rule does not exist", func() {
+			t.Run("Rule does not exist", func(t *ftt.Test) {
 				ruleID := strings.Repeat("00", 16)
 				request := &pb.GetRuleRequest{
 					Name: fmt.Sprintf("projects/%s/rules/%s", ruleManaged.Project, ruleID),
 				}
 
 				rule, err := srv.Get(ctx, request)
-				So(rule, ShouldBeNil)
-				So(err, ShouldBeRPCNotFound)
+				assert.Loosely(t, rule, should.BeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)())
 			})
 		})
-		Convey("List", func() {
+		t.Run("List", func(t *ftt.Test) {
 			authState.IdentityPermissions = []authtest.RealmPermission{
 				{
 					Realm:      "testproject:@project",
@@ -218,14 +221,14 @@ func TestRules(t *testing.T) {
 			request := &pb.ListRulesRequest{
 				Parent: fmt.Sprintf("projects/%s", testProject),
 			}
-			Convey("No list rules permission", func() {
+			t.Run("No list rules permission", func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermListRules)
 
 				response, err := srv.List(ctx, request)
-				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.rules.list")
-				So(response, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission analysis.rules.list"))
+				assert.Loosely(t, response, should.BeNil)
 			})
-			Convey("Non-Empty", func() {
+			t.Run("Non-Empty", func(t *ftt.Test) {
 				test := func(mask ruleMask, cfg *configpb.ProjectConfig) {
 					rs := []*rules.Entry{
 						ruleManaged,
@@ -236,11 +239,11 @@ func TestRules(t *testing.T) {
 						// In other project.
 						ruleManagedOther,
 					}
-					err := rules.SetForTesting(ctx, rs)
-					So(err, ShouldBeNil)
+					err := rules.SetForTesting(ctx, t, rs)
+					assert.Loosely(t, err, should.BeNil)
 
 					response, err := srv.List(ctx, request)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 
 					expected := &pb.ListRulesResponse{
 						Rules: []*pb.Rule{
@@ -257,45 +260,45 @@ func TestRules(t *testing.T) {
 					sort.Slice(response.Rules, func(i, j int) bool {
 						return response.Rules[i].RuleId < response.Rules[j].RuleId
 					})
-					So(response, ShouldResembleProto, expected)
+					assert.Loosely(t, response, should.Resemble(expected))
 				}
 				mask := ruleMask{
 					IncludeDefinition: true,
 					IncludeAuditUsers: true,
 				}
-				Convey("Baseline", func() {
+				t.Run("Baseline", func(t *ftt.Test) {
 					test(mask, cfg)
 				})
-				Convey("Without get rule definition permission", func() {
+				t.Run("Without get rule definition permission", func(t *ftt.Test) {
 					authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetRuleDefinition)
 
 					mask.IncludeDefinition = false
 					test(mask, cfg)
 				})
-				Convey("Without get rule audit users permission", func() {
+				t.Run("Without get rule audit users permission", func(t *ftt.Test) {
 					authState.IdentityGroups = removeGroup(authState.IdentityGroups, auditUsersAccessGroup)
 
 					mask.IncludeAuditUsers = false
 					test(mask, cfg)
 				})
-				Convey("With project not configured", func() {
+				t.Run("With project not configured", func(t *ftt.Test) {
 					err = config.SetTestProjectConfig(ctx, map[string]*configpb.ProjectConfig{})
 
 					test(mask, config.NewEmptyProject())
 				})
 			})
-			Convey("Empty", func() {
-				err := rules.SetForTesting(ctx, nil)
-				So(err, ShouldBeNil)
+			t.Run("Empty", func(t *ftt.Test) {
+				err := rules.SetForTesting(ctx, t, nil)
+				assert.Loosely(t, err, should.BeNil)
 
 				response, err := srv.List(ctx, request)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				expected := &pb.ListRulesResponse{}
-				So(response, ShouldResembleProto, expected)
+				assert.Loosely(t, response, should.Resemble(expected))
 			})
 		})
-		Convey("Update", func() {
+		t.Run("Update", func(t *ftt.Test) {
 			authState.IdentityPermissions = []authtest.RealmPermission{
 				{
 					Realm:      "testproject:@project",
@@ -327,55 +330,55 @@ func TestRules(t *testing.T) {
 				Etag: ruleETag(ruleManaged, ruleMask{IncludeDefinition: true, IncludeAuditUsers: false}),
 			}
 
-			Convey("No update rules permission", func() {
+			t.Run("No update rules permission", func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermUpdateRule)
 
 				rule, err := srv.Update(ctx, request)
-				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.rules.update")
-				So(rule, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission analysis.rules.update"))
+				assert.Loosely(t, rule, should.BeNil)
 			})
-			Convey("No rule definition permission", func() {
+			t.Run("No rule definition permission", func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetRuleDefinition)
 
 				rule, err := srv.Update(ctx, request)
-				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.rules.getDefinition")
-				So(rule, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission analysis.rules.getDefinition"))
+				assert.Loosely(t, rule, should.BeNil)
 			})
-			Convey("Validation error", func() {
-				Convey("Rule unspecified", func() {
+			t.Run("Validation error", func(t *ftt.Test) {
+				t.Run("Rule unspecified", func(t *ftt.Test) {
 					request.Rule = nil
 
 					_, err := srv.Update(ctx, request)
-					So(err, ShouldBeRPCInvalidArgument,
-						"rule: name: invalid rule name")
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(
+						"rule: name: invalid rule name"))
 				})
-				Convey("Empty bug", func() {
+				t.Run("Empty bug", func(t *ftt.Test) {
 					request.Rule.Bug = nil
 
 					_, err := srv.Update(ctx, request)
-					So(err, ShouldBeRPCInvalidArgument, "rule: bug: unspecified")
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("rule: bug: unspecified"))
 				})
-				Convey("Invalid bug system", func() {
+				t.Run("Invalid bug system", func(t *ftt.Test) {
 					request.Rule.Bug.System = "other"
 
 					_, err := srv.Update(ctx, request)
-					So(err, ShouldBeRPCInvalidArgument, "rule: bug: invalid bug tracking system \"other\"")
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("rule: bug: invalid bug tracking system \"other\""))
 				})
-				Convey("Invalid bug system - monorail", func() {
+				t.Run("Invalid bug system - monorail", func(t *ftt.Test) {
 					request.Rule.Bug.System = "monorail"
 					request.Rule.Bug.Id = "project/2"
 
 					_, err := srv.Update(ctx, request)
-					So(err, ShouldBeRPCInvalidArgument, "rule: bug: system: monorail bug system is no longer supported")
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("rule: bug: system: monorail bug system is no longer supported"))
 				})
-				Convey("Invalid buganizer bug id", func() {
+				t.Run("Invalid buganizer bug id", func(t *ftt.Test) {
 					request.Rule.Bug.System = "buganizer"
 					request.Rule.Bug.Id = "-12345"
 
 					_, err := srv.Update(ctx, request)
-					So(err, ShouldBeRPCInvalidArgument, "rule: bug: invalid buganizer bug ID \"-12345\"")
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("rule: bug: invalid buganizer bug ID \"-12345\""))
 				})
-				Convey("Re-use of same bug in same project", func() {
+				t.Run("Re-use of same bug in same project", func(t *ftt.Test) {
 					// Use the same bug as another rule.
 					request.Rule.Bug = &pb.AssociatedBug{
 						System: ruleTwoProject.BugID.System,
@@ -383,11 +386,11 @@ func TestRules(t *testing.T) {
 					}
 
 					_, err := srv.Update(ctx, request)
-					So(err, ShouldBeRPCFailedPrecondition,
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCFailedPrecondition)(
 						fmt.Sprintf("bug already used by a rule in the same project (%s/%s)",
-							ruleTwoProject.Project, ruleTwoProject.RuleID))
+							ruleTwoProject.Project, ruleTwoProject.RuleID)))
 				})
-				Convey("Bug managed by another rule", func() {
+				t.Run("Bug managed by another rule", func(t *ftt.Test) {
 					// Select a bug already managed by another rule.
 					request.Rule.Bug = &pb.AssociatedBug{
 						System: ruleManagedOther.BugID.System,
@@ -398,27 +401,27 @@ func TestRules(t *testing.T) {
 					request.UpdateMask.Paths = []string{"bug", "is_managing_bug"}
 
 					_, err := srv.Update(ctx, request)
-					So(err, ShouldBeRPCFailedPrecondition,
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCFailedPrecondition)(
 						fmt.Sprintf("rule: bug: bug already managed by a rule in another project (%s/%s)",
-							ruleManagedOther.Project, ruleManagedOther.RuleID))
+							ruleManagedOther.Project, ruleManagedOther.RuleID)))
 				})
-				Convey("Empty rule definition", func() {
+				t.Run("Empty rule definition", func(t *ftt.Test) {
 					// Use an invalid failure association rule.
 					request.Rule.RuleDefinition = ""
 
 					_, err := srv.Update(ctx, request)
-					So(err, ShouldBeRPCInvalidArgument, `rule: rule_definition: unspecified`)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`rule: rule_definition: unspecified`))
 				})
-				Convey("Invalid rule definition", func() {
+				t.Run("Invalid rule definition", func(t *ftt.Test) {
 					// Use an invalid failure association rule.
 					request.Rule.RuleDefinition = "<"
 
 					_, err := srv.Update(ctx, request)
-					So(err, ShouldBeRPCInvalidArgument, `rule: rule_definition: parse: syntax error: 1:1: invalid input text "<"`)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`rule: rule_definition: parse: syntax error: 1:1: invalid input text "<"`))
 				})
 			})
-			Convey("Success", func() {
-				Convey("Predicate updated", func() {
+			t.Run("Success", func(t *ftt.Test) {
+				t.Run("Predicate updated", func(t *ftt.Test) {
 					// The requested updates should be applied.
 					expectedRule := ruleManagedBuilder.Build().Clone()
 					expectedRule.RuleDefinition = `test = "updated"`
@@ -433,16 +436,16 @@ func TestRules(t *testing.T) {
 						policyState.ActivationNotified = false
 					}
 
-					Convey("baseline", func() {
+					t.Run("baseline", func(t *ftt.Test) {
 						// Act
 						rule, err := srv.Update(ctx, request)
 
 						// Verify
-						So(err, ShouldBeNil)
+						assert.Loosely(t, err, should.BeNil)
 
 						storedRule, err := rules.Read(span.Single(ctx), testProject, ruleManaged.RuleID)
-						So(err, ShouldBeNil)
-						So(storedRule.LastUpdateTime, ShouldNotEqual, ruleManaged.LastUpdateTime)
+						assert.Loosely(t, err, should.BeNil)
+						assert.That(t, storedRule.LastUpdateTime, should.NotMatch(ruleManaged.LastUpdateTime))
 
 						// Accept the new last update time (this value is set non-deterministically).
 						expectedRule.LastUpdateTime = storedRule.LastUpdateTime
@@ -452,24 +455,24 @@ func TestRules(t *testing.T) {
 						expectedRule.LastAuditableUpdateUser = "someone@example.com"
 
 						// Verify the rule was updated as expected.
-						So(storedRule, ShouldResembleProto, expectedRule)
+						assert.Loosely(t, storedRule, should.Resemble(expectedRule))
 
 						// Verify the returned rule matches what was expected.
 						mask := ruleMask{IncludeDefinition: true, IncludeAuditUsers: true}
-						So(rule, ShouldResembleProto, createRulePB(expectedRule, cfg, mask))
+						assert.Loosely(t, rule, should.Resemble(createRulePB(expectedRule, cfg, mask)))
 					})
-					Convey("No audit users permission", func() {
+					t.Run("No audit users permission", func(t *ftt.Test) {
 						authState.IdentityGroups = removeGroup(authState.IdentityGroups, auditUsersAccessGroup)
 
 						// Act
 						rule, err := srv.Update(ctx, request)
 
 						// Verify
-						So(err, ShouldBeNil)
+						assert.Loosely(t, err, should.BeNil)
 
 						storedRule, err := rules.Read(span.Single(ctx), testProject, ruleManaged.RuleID)
-						So(err, ShouldBeNil)
-						So(storedRule.LastUpdateTime, ShouldNotEqual, ruleManaged.LastUpdateTime)
+						assert.Loosely(t, err, should.BeNil)
+						assert.That(t, storedRule.LastUpdateTime, should.NotMatch(ruleManaged.LastUpdateTime))
 
 						// Accept the new last update time (this value is set non-deterministically).
 						expectedRule.LastUpdateTime = storedRule.LastUpdateTime
@@ -478,14 +481,14 @@ func TestRules(t *testing.T) {
 						expectedRule.IsManagingBugPriorityLastUpdateTime = storedRule.LastUpdateTime
 						expectedRule.LastAuditableUpdateUser = "someone@example.com"
 
-						So(storedRule, ShouldResembleProto, expectedRule)
+						assert.Loosely(t, storedRule, should.Resemble(expectedRule))
 
 						// Verify audit users are omitted from the result.
 						mask := ruleMask{IncludeDefinition: true, IncludeAuditUsers: false}
-						So(rule, ShouldResembleProto, createRulePB(expectedRule, cfg, mask))
+						assert.Loosely(t, rule, should.Resemble(createRulePB(expectedRule, cfg, mask)))
 					})
 				})
-				Convey("Predicate not updated", func() {
+				t.Run("Predicate not updated", func(t *ftt.Test) {
 					request.UpdateMask.Paths = []string{"bug"}
 					request.Rule.Bug = &pb.AssociatedBug{
 						System: "buganizer",
@@ -493,14 +496,14 @@ func TestRules(t *testing.T) {
 					}
 
 					rule, err := srv.Update(ctx, request)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 
 					storedRule, err := rules.Read(span.Single(ctx), testProject, ruleManaged.RuleID)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 
 					// Check the rule was updated, but that predicate last
 					// updated time was NOT updated.
-					So(storedRule.LastUpdateTime, ShouldNotEqual, ruleManaged.LastUpdateTime)
+					assert.That(t, storedRule.LastUpdateTime, should.NotMatch(ruleManaged.LastUpdateTime))
 
 					// Verify the rule was correctly updated in the database:
 					// - The requested updates should be applied.
@@ -518,24 +521,24 @@ func TestRules(t *testing.T) {
 					expectedRule.LastAuditableUpdateTime = storedRule.LastUpdateTime
 					expectedRule.LastAuditableUpdateUser = "someone@example.com"
 
-					So(storedRule, ShouldResembleProto, expectedRule)
+					assert.Loosely(t, storedRule, should.Resemble(expectedRule))
 
 					// Verify the returned rule matches what was expected.
 					mask := ruleMask{IncludeDefinition: true, IncludeAuditUsers: true}
-					So(rule, ShouldResembleProto, createRulePB(expectedRule, cfg, mask))
+					assert.Loosely(t, rule, should.Resemble(createRulePB(expectedRule, cfg, mask)))
 				})
-				Convey("Managing bug priority updated", func() {
+				t.Run("Managing bug priority updated", func(t *ftt.Test) {
 					request.UpdateMask.Paths = []string{"is_managing_bug_priority"}
 					request.Rule.IsManagingBugPriority = false
 
 					rule, err := srv.Update(ctx, request)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 
 					storedRule, err := rules.Read(span.Single(ctx), testProject, ruleManaged.RuleID)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 
 					// Check the rule was updated.
-					So(storedRule.LastUpdateTime, ShouldNotEqual, ruleManaged.LastUpdateTime)
+					assert.That(t, storedRule.LastUpdateTime, should.NotMatch(ruleManaged.LastUpdateTime))
 
 					// Verify the rule was correctly updated in the database:
 					// - The requested update should be applied.
@@ -548,13 +551,13 @@ func TestRules(t *testing.T) {
 					expectedRule.LastAuditableUpdateTime = storedRule.LastUpdateTime
 					expectedRule.LastAuditableUpdateUser = "someone@example.com"
 
-					So(storedRule, ShouldResembleProto, expectedRule)
+					assert.Loosely(t, storedRule, should.Resemble(expectedRule))
 
 					// Verify the returned rule matches what was expected.
 					mask := ruleMask{IncludeDefinition: true, IncludeAuditUsers: true}
-					So(rule, ShouldResembleProto, createRulePB(expectedRule, cfg, mask))
+					assert.Loosely(t, rule, should.Resemble(createRulePB(expectedRule, cfg, mask)))
 				})
-				Convey("Re-use of bug managed by another project", func() {
+				t.Run("Re-use of bug managed by another project", func(t *ftt.Test) {
 					request.UpdateMask.Paths = []string{"bug"}
 					request.Rule.Bug = &pb.AssociatedBug{
 						System: ruleManagedOther.BugID.System,
@@ -562,13 +565,13 @@ func TestRules(t *testing.T) {
 					}
 
 					rule, err := srv.Update(ctx, request)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 
 					storedRule, err := rules.Read(span.Single(ctx), testProject, ruleManaged.RuleID)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 
 					// Check the rule was updated.
-					So(storedRule.LastUpdateTime, ShouldNotEqual, ruleManaged.LastUpdateTime)
+					assert.That(t, storedRule.LastUpdateTime, should.NotMatch(ruleManaged.LastUpdateTime))
 
 					// Verify the rule was correctly updated in the database:
 					// - The requested update should be applied.
@@ -590,33 +593,33 @@ func TestRules(t *testing.T) {
 					expectedRule.LastAuditableUpdateTime = storedRule.LastUpdateTime
 					expectedRule.LastAuditableUpdateUser = "someone@example.com"
 
-					So(storedRule, ShouldResembleProto, expectedRule)
+					assert.Loosely(t, storedRule, should.Resemble(expectedRule))
 
 					// Verify the returned rule matches what was expected.
 					mask := ruleMask{IncludeDefinition: true, IncludeAuditUsers: true}
-					So(rule, ShouldResembleProto, createRulePB(expectedRule, cfg, mask))
+					assert.Loosely(t, rule, should.Resemble(createRulePB(expectedRule, cfg, mask)))
 				})
 			})
-			Convey("Concurrent Modification", func() {
+			t.Run("Concurrent Modification", func(t *ftt.Test) {
 				_, err := srv.Update(ctx, request)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				// Attempt the same modification again without
 				// requerying.
 				rule, err := srv.Update(ctx, request)
-				So(rule, ShouldBeNil)
-				So(err, ShouldBeRPCAborted)
+				assert.Loosely(t, rule, should.BeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCAborted)())
 			})
-			Convey("Rule does not exist", func() {
+			t.Run("Rule does not exist", func(t *ftt.Test) {
 				ruleID := strings.Repeat("00", 16)
 				request.Rule.Name = fmt.Sprintf("projects/%s/rules/%s", testProject, ruleID)
 
 				rule, err := srv.Update(ctx, request)
-				So(rule, ShouldBeNil)
-				So(err, ShouldBeRPCNotFound)
+				assert.Loosely(t, rule, should.BeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)())
 			})
 		})
-		Convey("Create", func() {
+		t.Run("Create", func(t *ftt.Test) {
 			authState.IdentityPermissions = []authtest.RealmPermission{
 				{
 					Realm:      "testproject:@project",
@@ -645,66 +648,66 @@ func TestRules(t *testing.T) {
 				},
 			}
 
-			Convey("No create rule permission", func() {
+			t.Run("No create rule permission", func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermCreateRule)
 
 				rule, err := srv.Create(ctx, request)
-				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.rules.create")
-				So(rule, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission analysis.rules.create"))
+				assert.Loosely(t, rule, should.BeNil)
 			})
-			Convey("No create rule definition permission", func() {
+			t.Run("No create rule definition permission", func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetRuleDefinition)
 
 				rule, err := srv.Create(ctx, request)
-				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.rules.getDefinition")
-				So(rule, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission analysis.rules.getDefinition"))
+				assert.Loosely(t, rule, should.BeNil)
 			})
-			Convey("Validation error", func() {
-				Convey("Rule unspecified", func() {
+			t.Run("Validation error", func(t *ftt.Test) {
+				t.Run("Rule unspecified", func(t *ftt.Test) {
 					request.Rule = nil
 
 					_, err := srv.Create(ctx, request)
-					So(err, ShouldBeRPCInvalidArgument,
-						"rule: unspecified")
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(
+						"rule: unspecified"))
 				})
-				Convey("Bug unspecified", func() {
+				t.Run("Bug unspecified", func(t *ftt.Test) {
 					request.Rule.Bug = nil
 
 					_, err := srv.Create(ctx, request)
-					So(err, ShouldBeRPCInvalidArgument,
-						"rule: bug: unspecified")
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(
+						"rule: bug: unspecified"))
 				})
-				Convey("Invalid buganizer bug", func() {
+				t.Run("Invalid buganizer bug", func(t *ftt.Test) {
 					request.Rule.Bug.System = "buganizer"
 					request.Rule.Bug.Id = "-2"
 
 					_, err := srv.Create(ctx, request)
-					So(err, ShouldBeRPCInvalidArgument,
-						"rule: bug: invalid buganizer bug ID \"-2\"")
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(
+						"rule: bug: invalid buganizer bug ID \"-2\""))
 				})
-				Convey("Invalid bug system", func() {
+				t.Run("Invalid bug system", func(t *ftt.Test) {
 					request.Rule.Bug.System = "other"
 
 					_, err := srv.Create(ctx, request)
-					So(err, ShouldBeRPCInvalidArgument,
-						"rule: bug: invalid bug tracking system \"other\"")
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(
+						"rule: bug: invalid bug tracking system \"other\""))
 				})
-				Convey("Invalid bug system - monorail", func() {
+				t.Run("Invalid bug system - monorail", func(t *ftt.Test) {
 					request.Rule.Bug.System = "monorail"
 					request.Rule.Bug.Id = "otherproject/2"
 
 					_, err := srv.Create(ctx, request)
-					So(err, ShouldBeRPCInvalidArgument,
-						"rule: bug: system: monorail bug system is no longer supported")
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(
+						"rule: bug: system: monorail bug system is no longer supported"))
 				})
-				Convey("Invalid source cluster", func() {
+				t.Run("Invalid source cluster", func(t *ftt.Test) {
 					request.Rule.SourceCluster.Algorithm = "*invalid*"
 
 					_, err := srv.Create(ctx, request)
-					So(err, ShouldBeRPCInvalidArgument,
-						"rule: source_cluster: algorithm not valid")
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(
+						"rule: source_cluster: algorithm not valid"))
 				})
-				Convey("Re-use of same bug in same project", func() {
+				t.Run("Re-use of same bug in same project", func(t *ftt.Test) {
 					// Use the same bug as another rule, in the same project.
 					request.Rule.Bug = &pb.AssociatedBug{
 						System: ruleTwoProject.BugID.System,
@@ -712,25 +715,25 @@ func TestRules(t *testing.T) {
 					}
 
 					_, err := srv.Create(ctx, request)
-					So(err, ShouldBeRPCFailedPrecondition,
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCFailedPrecondition)(
 						fmt.Sprintf("rule: bug: bug already used by a rule in the same project (%s/%s)",
-							ruleTwoProject.Project, ruleTwoProject.RuleID))
+							ruleTwoProject.Project, ruleTwoProject.RuleID)))
 				})
-				Convey("Empty rule definition", func() {
+				t.Run("Empty rule definition", func(t *ftt.Test) {
 					request.Rule.RuleDefinition = ""
 
 					_, err := srv.Create(ctx, request)
-					So(err, ShouldBeRPCInvalidArgument, `rule: rule_definition: unspecified`)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`rule: rule_definition: unspecified`))
 				})
-				Convey("Invalid rule definition", func() {
+				t.Run("Invalid rule definition", func(t *ftt.Test) {
 					// Use an invalid failure association rule.
 					request.Rule.RuleDefinition = "<"
 
 					_, err := srv.Create(ctx, request)
-					So(err, ShouldBeRPCInvalidArgument, `rule: rule_definition: parse: syntax error: 1:1: invalid input text "<"`)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`rule: rule_definition: parse: syntax error: 1:1: invalid input text "<"`))
 				})
 			})
-			Convey("Success", func() {
+			t.Run("Success", func(t *ftt.Test) {
 				expectedRuleBuilder := rules.NewRule(0).
 					WithProject(testProject).
 					WithRuleDefinition(`test = "create"`).
@@ -759,7 +762,7 @@ func TestRules(t *testing.T) {
 						WithBugPriorityManagedLastUpdateTime(storedRule.CreateTime)
 				}
 
-				Convey("Bug not managed by another rule", func() {
+				t.Run("Bug not managed by another rule", func(t *ftt.Test) {
 					// Re-use the same bug as a rule in another project,
 					// where the other rule is not managing the bug.
 					request.Rule.Bug = &pb.AssociatedBug{
@@ -768,10 +771,10 @@ func TestRules(t *testing.T) {
 					}
 
 					rule, err := srv.Create(ctx, request)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 
 					storedRule, err := rules.Read(span.Single(ctx), testProject, rule.RuleId)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 
 					expectedRule := acceptStoredRuleTimestamps(expectedRuleBuilder, storedRule).
 						// Accept the randomly generated rule ID.
@@ -780,13 +783,13 @@ func TestRules(t *testing.T) {
 						Build()
 
 					// Verify the rule was correctly created in the database.
-					So(storedRule, ShouldResembleProto, expectedRuleBuilder.Build())
+					assert.Loosely(t, storedRule, should.Resemble(expectedRuleBuilder.Build()))
 
 					// Verify the returned rule matches our expectations.
 					mask := ruleMask{IncludeDefinition: true, IncludeAuditUsers: true}
-					So(rule, ShouldResembleProto, createRulePB(expectedRule, cfg, mask))
+					assert.Loosely(t, rule, should.Resemble(createRulePB(expectedRule, cfg, mask)))
 				})
-				Convey("Bug managed by another rule", func() {
+				t.Run("Bug managed by another rule", func(t *ftt.Test) {
 					// Re-use the same bug as a rule in another project,
 					// where that rule is managing the bug.
 					request.Rule.Bug = &pb.AssociatedBug{
@@ -795,10 +798,10 @@ func TestRules(t *testing.T) {
 					}
 
 					rule, err := srv.Create(ctx, request)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 
 					storedRule, err := rules.Read(span.Single(ctx), testProject, rule.RuleId)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 
 					expectedRule := acceptStoredRuleTimestamps(expectedRuleBuilder, storedRule).
 						// Accept the randomly generated rule ID.
@@ -810,23 +813,23 @@ func TestRules(t *testing.T) {
 						Build()
 
 					// Verify the rule was correctly created in the database.
-					So(storedRule, ShouldResembleProto, expectedRuleBuilder.Build())
+					assert.Loosely(t, storedRule, should.Resemble(expectedRuleBuilder.Build()))
 
 					// Verify the returned rule matches our expectations.
 					mask := ruleMask{IncludeDefinition: true, IncludeAuditUsers: true}
-					So(rule, ShouldResembleProto, createRulePB(expectedRule, cfg, mask))
+					assert.Loosely(t, rule, should.Resemble(createRulePB(expectedRule, cfg, mask)))
 				})
-				Convey("Buganizer", func() {
+				t.Run("Buganizer", func(t *ftt.Test) {
 					request.Rule.Bug = &pb.AssociatedBug{
 						System: "buganizer",
 						Id:     "1111111111",
 					}
 
 					rule, err := srv.Create(ctx, request)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 
 					storedRule, err := rules.Read(span.Single(ctx), testProject, rule.RuleId)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 
 					expectedRule := acceptStoredRuleTimestamps(expectedRuleBuilder, storedRule).
 						// Accept the randomly generated rule ID.
@@ -835,20 +838,20 @@ func TestRules(t *testing.T) {
 						Build()
 
 					// Verify the rule was correctly created in the database.
-					So(storedRule, ShouldResembleProto, expectedRuleBuilder.Build())
+					assert.Loosely(t, storedRule, should.Resemble(expectedRuleBuilder.Build()))
 
 					// Verify the returned rule matches our expectations.
 					mask := ruleMask{IncludeDefinition: true, IncludeAuditUsers: true}
-					So(rule, ShouldResembleProto, createRulePB(expectedRule, cfg, mask))
+					assert.Loosely(t, rule, should.Resemble(createRulePB(expectedRule, cfg, mask)))
 				})
-				Convey("No audit users permission", func() {
+				t.Run("No audit users permission", func(t *ftt.Test) {
 					authState.IdentityGroups = removeGroup(authState.IdentityGroups, auditUsersAccessGroup)
 
 					rule, err := srv.Create(ctx, request)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 
 					storedRule, err := rules.Read(span.Single(ctx), testProject, rule.RuleId)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 
 					expectedRule := acceptStoredRuleTimestamps(expectedRuleBuilder, storedRule).
 						// Accept the randomly generated rule ID.
@@ -856,21 +859,21 @@ func TestRules(t *testing.T) {
 						Build()
 
 					// Verify the rule was correctly created in the database.
-					So(storedRule, ShouldResembleProto, expectedRuleBuilder.Build())
+					assert.Loosely(t, storedRule, should.Resemble(expectedRuleBuilder.Build()))
 
 					// Verify the returned rule matches our expectations.
 					mask := ruleMask{IncludeDefinition: true, IncludeAuditUsers: false}
-					So(rule, ShouldResembleProto, createRulePB(expectedRule, cfg, mask))
+					assert.Loosely(t, rule, should.Resemble(createRulePB(expectedRule, cfg, mask)))
 				})
-				Convey("Without source cluster", func() {
+				t.Run("Without source cluster", func(t *ftt.Test) {
 					request.Rule.SourceCluster = &pb.ClusterId{}
 
 					// Rule creation should succeed.
 					rule, err := srv.Create(ctx, request)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 
 					storedRule, err := rules.Read(span.Single(ctx), testProject, rule.RuleId)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 
 					expectedRule := acceptStoredRuleTimestamps(expectedRuleBuilder, storedRule).
 						// Accept the randomly generated rule ID.
@@ -879,15 +882,15 @@ func TestRules(t *testing.T) {
 						Build()
 
 					// Verify the rule was correctly created in the database.
-					So(storedRule, ShouldResembleProto, expectedRuleBuilder.Build())
+					assert.Loosely(t, storedRule, should.Resemble(expectedRuleBuilder.Build()))
 
 					// Verify the returned rule matches our expectations.
 					mask := ruleMask{IncludeDefinition: true, IncludeAuditUsers: true}
-					So(rule, ShouldResembleProto, createRulePB(expectedRule, cfg, mask))
+					assert.Loosely(t, rule, should.Resemble(createRulePB(expectedRule, cfg, mask)))
 				})
 			})
 		})
-		Convey("CreateWithNewIssue", func() {
+		t.Run("CreateWithNewIssue", func(t *ftt.Test) {
 			authState.IdentityGroups = []string{luciAnalysisAccessGroup, buganizerAccessGroup, auditUsersAccessGroup}
 			authState.IdentityPermissions = []authtest.RealmPermission{
 				{
@@ -937,37 +940,37 @@ func TestRules(t *testing.T) {
 				}).
 				WithBugManagementState(&bugspb.BugManagementState{})
 
-			Convey("Not a member of luci-analysis-buganizer-access", func() {
+			t.Run("Not a member of luci-analysis-buganizer-access", func(t *ftt.Test) {
 				authState.IdentityGroups = removeGroup(authState.IdentityGroups, "luci-analysis-buganizer-access")
 
 				rule, err := srv.CreateWithNewIssue(ctx, request)
-				So(err, ShouldBeRPCPermissionDenied, "not a member of luci-analysis-buganizer-access")
-				So(rule, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("not a member of luci-analysis-buganizer-access"))
+				assert.Loosely(t, rule, should.BeNil)
 			})
-			Convey("No create rule permission", func() {
+			t.Run("No create rule permission", func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermCreateRule)
 
 				rule, err := srv.CreateWithNewIssue(ctx, request)
-				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.rules.create")
-				So(rule, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission analysis.rules.create"))
+				assert.Loosely(t, rule, should.BeNil)
 			})
-			Convey("No create rule definition permission", func() {
+			t.Run("No create rule definition permission", func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetRuleDefinition)
 
 				rule, err := srv.CreateWithNewIssue(ctx, request)
-				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.rules.getDefinition")
-				So(rule, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission analysis.rules.getDefinition"))
+				assert.Loosely(t, rule, should.BeNil)
 			})
-			Convey("Validation error", func() {
-				Convey("Rule", func() {
-					Convey("Unspecified", func() {
+			t.Run("Validation error", func(t *ftt.Test) {
+				t.Run("Rule", func(t *ftt.Test) {
+					t.Run("Unspecified", func(t *ftt.Test) {
 						request.Rule = nil
 
 						_, err := srv.CreateWithNewIssue(ctx, request)
-						So(err, ShouldBeRPCInvalidArgument,
-							"rule: unspecified")
+						assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(
+							"rule: unspecified"))
 					})
-					Convey("Bug specified", func() {
+					t.Run("Bug specified", func(t *ftt.Test) {
 						// This RPC creates a bug, so the rule should not already have a
 						// bug.
 						request.Rule.Bug = &pb.AssociatedBug{
@@ -976,140 +979,140 @@ func TestRules(t *testing.T) {
 						}
 
 						_, err := srv.CreateWithNewIssue(ctx, request)
-						So(err, ShouldBeRPCInvalidArgument,
-							"rule: bug: must not be specified, as a new bug will be created by this RPC")
+						assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(
+							"rule: bug: must not be specified, as a new bug will be created by this RPC"))
 					})
-					Convey("Empty rule definition", func() {
+					t.Run("Empty rule definition", func(t *ftt.Test) {
 						request.Rule.RuleDefinition = ""
 
 						_, err := srv.CreateWithNewIssue(ctx, request)
-						So(err, ShouldBeRPCInvalidArgument, `rule: rule_definition: unspecified`)
+						assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`rule: rule_definition: unspecified`))
 					})
-					Convey("Invalid rule definition", func() {
+					t.Run("Invalid rule definition", func(t *ftt.Test) {
 						// Use an invalid failure association rule.
 						request.Rule.RuleDefinition = "<"
 
 						_, err := srv.CreateWithNewIssue(ctx, request)
-						So(err, ShouldBeRPCInvalidArgument, `rule: rule_definition: parse: syntax error: 1:1: invalid input text "<"`)
+						assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`rule: rule_definition: parse: syntax error: 1:1: invalid input text "<"`))
 					})
 				})
-				Convey("Issue", func() {
-					Convey("unspecified", func() {
+				t.Run("Issue", func(t *ftt.Test) {
+					t.Run("unspecified", func(t *ftt.Test) {
 						request.Issue = nil
 
 						_, err := srv.CreateWithNewIssue(ctx, request)
-						So(err, ShouldBeRPCInvalidArgument, `issue: unspecified`)
+						assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`issue: unspecified`))
 					})
-					Convey("title", func() {
-						Convey("unspecified", func() {
+					t.Run("title", func(t *ftt.Test) {
+						t.Run("unspecified", func(t *ftt.Test) {
 							request.Issue.Title = ""
 
 							_, err := srv.CreateWithNewIssue(ctx, request)
-							So(err, ShouldBeRPCInvalidArgument, `issue: title: unspecified`)
+							assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`issue: title: unspecified`))
 						})
-						Convey("too long", func() {
+						t.Run("too long", func(t *ftt.Test) {
 							request.Issue.Title = strings.Repeat("a", 251)
 
 							_, err := srv.CreateWithNewIssue(ctx, request)
-							So(err, ShouldBeRPCInvalidArgument, `issue: title: longer than 250 bytes`)
+							assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`issue: title: longer than 250 bytes`))
 						})
-						Convey("invalid - non-printables", func() {
+						t.Run("invalid - non-printables", func(t *ftt.Test) {
 							request.Issue.Title = "hello\x00"
 
 							_, err := srv.CreateWithNewIssue(ctx, request)
-							So(err, ShouldBeRPCInvalidArgument, `issue: title: non-printable rune '\x00' at byte index 5`)
+							assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`issue: title: non-printable rune '\x00' at byte index 5`))
 						})
-						Convey("invalid - invalid UTF-8", func() {
+						t.Run("invalid - invalid UTF-8", func(t *ftt.Test) {
 							request.Issue.Title = "\xFF"
 
 							_, err := srv.CreateWithNewIssue(ctx, request)
-							So(err, ShouldBeRPCInvalidArgument, `issue: title: not a valid utf8 string`)
+							assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`issue: title: not a valid utf8 string`))
 						})
-						Convey("invalid - not in normal form C", func() {
+						t.Run("invalid - not in normal form C", func(t *ftt.Test) {
 							// U+0041 (LATIN CAPITAL LETTER A) followed by U+030A (COMBINING ACUTE ACCENT) is Normal Form D.
 							// It should be written as U+00C5 (LATIN CAPITAL LETTER A WITH RING ABOVE) in Normal Form C.
 							request.Issue.Title = "\u0041\u030a"
 
 							_, err := srv.CreateWithNewIssue(ctx, request)
-							So(err, ShouldBeRPCInvalidArgument, `issue: title: not in unicode normalized form C`)
+							assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`issue: title: not in unicode normalized form C`))
 						})
 					})
-					Convey("comment", func() {
-						Convey("unspecified", func() {
+					t.Run("comment", func(t *ftt.Test) {
+						t.Run("unspecified", func(t *ftt.Test) {
 							request.Issue.Comment = ""
 
 							_, err := srv.CreateWithNewIssue(ctx, request)
-							So(err, ShouldBeRPCInvalidArgument, `issue: comment: unspecified`)
+							assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`issue: comment: unspecified`))
 						})
-						Convey("too long", func() {
+						t.Run("too long", func(t *ftt.Test) {
 							request.Issue.Comment = strings.Repeat("a", 100_001)
 
 							_, err := srv.CreateWithNewIssue(ctx, request)
-							So(err, ShouldBeRPCInvalidArgument, `issue: comment: longer than 100000 bytes`)
+							assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`issue: comment: longer than 100000 bytes`))
 						})
-						Convey("invalid - non-printables", func() {
+						t.Run("invalid - non-printables", func(t *ftt.Test) {
 							request.Issue.Comment = "hello\x00"
 
 							_, err := srv.CreateWithNewIssue(ctx, request)
-							So(err, ShouldBeRPCInvalidArgument, `issue: comment: non-printable rune '\x00' at byte index 5`)
+							assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`issue: comment: non-printable rune '\x00' at byte index 5`))
 						})
-						Convey("invalid - invalid UTF-8", func() {
+						t.Run("invalid - invalid UTF-8", func(t *ftt.Test) {
 							request.Issue.Comment = "\xFF"
 
 							_, err := srv.CreateWithNewIssue(ctx, request)
-							So(err, ShouldBeRPCInvalidArgument, `issue: comment: not a valid utf8 string`)
+							assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`issue: comment: not a valid utf8 string`))
 						})
-						Convey("invalid - not in normal form C", func() {
+						t.Run("invalid - not in normal form C", func(t *ftt.Test) {
 							// U+0041 (LATIN CAPITAL LETTER A) followed by U+030A (COMBINING ACUTE ACCENT) is Normal Form D.
 							// It should be written as U+00C5 (LATIN CAPITAL LETTER A WITH RING ABOVE) in Normal Form C.
 							request.Issue.Comment = "\u0041\u030a"
 
 							_, err := srv.CreateWithNewIssue(ctx, request)
-							So(err, ShouldBeRPCInvalidArgument, `issue: comment: not in unicode normalized form C`)
+							assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`issue: comment: not in unicode normalized form C`))
 						})
 					})
-					Convey("access limit", func() {
-						Convey("unspecified", func() {
+					t.Run("access limit", func(t *ftt.Test) {
+						t.Run("unspecified", func(t *ftt.Test) {
 							request.Issue.AccessLimit = pb.CreateRuleWithNewIssueRequest_Issue_ISSUE_ACCESS_LIMIT_UNSPECIFIED
 
 							_, err := srv.CreateWithNewIssue(ctx, request)
-							So(err, ShouldBeRPCInvalidArgument, `issue: access_limit: unspecified`)
+							assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`issue: access_limit: unspecified`))
 						})
-						Convey("invalid", func() {
+						t.Run("invalid", func(t *ftt.Test) {
 							request.Issue.AccessLimit = pb.CreateRuleWithNewIssueRequest_Issue_IssueAccessLimit(100)
 
 							_, err := srv.CreateWithNewIssue(ctx, request)
-							So(err, ShouldBeRPCInvalidArgument, `issue: access_limit: invalid value, must be a valid IssueAccessLimit`)
+							assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`issue: access_limit: invalid value, must be a valid IssueAccessLimit`))
 						})
 					})
-					Convey("priority", func() {
-						Convey("unspecified", func() {
+					t.Run("priority", func(t *ftt.Test) {
+						t.Run("unspecified", func(t *ftt.Test) {
 							request.Issue.Priority = pb.BuganizerPriority_BUGANIZER_PRIORITY_UNSPECIFIED
 
 							_, err := srv.CreateWithNewIssue(ctx, request)
-							So(err, ShouldBeRPCInvalidArgument, `issue: priority: unspecified`)
+							assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`issue: priority: unspecified`))
 						})
-						Convey("invalid", func() {
+						t.Run("invalid", func(t *ftt.Test) {
 							request.Issue.Priority = pb.BuganizerPriority(100)
 
 							_, err := srv.CreateWithNewIssue(ctx, request)
-							So(err, ShouldBeRPCInvalidArgument, `issue: priority: invalid value, must be a valid BuganizerPriority`)
+							assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`issue: priority: invalid value, must be a valid BuganizerPriority`))
 						})
 					})
-					Convey("component", func() {
-						Convey("unspecified", func() {
+					t.Run("component", func(t *ftt.Test) {
+						t.Run("unspecified", func(t *ftt.Test) {
 							request.Issue.Component = nil
 
 							_, err := srv.CreateWithNewIssue(ctx, request)
-							So(err, ShouldBeRPCInvalidArgument, `issue: component: unspecified`)
+							assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`issue: component: unspecified`))
 						})
-						Convey("system unspecified", func() {
+						t.Run("system unspecified", func(t *ftt.Test) {
 							request.Issue.Component.System = nil
 
 							_, err := srv.CreateWithNewIssue(ctx, request)
-							So(err, ShouldBeRPCInvalidArgument, `issue: component: system: unspecified`)
+							assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`issue: component: system: unspecified`))
 						})
-						Convey("invalid - monorail system", func() {
+						t.Run("invalid - monorail system", func(t *ftt.Test) {
 							request.Issue.Component.System = &pb.BugComponent_Monorail{
 								Monorail: &pb.MonorailComponent{
 									Project: "testproject",
@@ -1118,50 +1121,50 @@ func TestRules(t *testing.T) {
 							}
 
 							_, err := srv.CreateWithNewIssue(ctx, request)
-							So(err, ShouldBeRPCInvalidArgument, `issue: component: monorail: filing bugs into monorail is not supported by this RPC`)
+							assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`issue: component: monorail: filing bugs into monorail is not supported by this RPC`))
 						})
-						Convey("invalid - issue tracker unspecified", func() {
+						t.Run("invalid - issue tracker unspecified", func(t *ftt.Test) {
 							request.Issue.Component.System = &pb.BugComponent_IssueTracker{
 								IssueTracker: nil,
 							}
 
 							_, err := srv.CreateWithNewIssue(ctx, request)
-							So(err, ShouldBeRPCInvalidArgument, `issue: component: issue_tracker: unspecified`)
+							assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`issue: component: issue_tracker: unspecified`))
 						})
-						Convey("component ID unspecified", func() {
+						t.Run("component ID unspecified", func(t *ftt.Test) {
 							request.Issue.Component.GetIssueTracker().ComponentId = 0
 
 							_, err := srv.CreateWithNewIssue(ctx, request)
-							So(err, ShouldBeRPCInvalidArgument, `issue: component: issue_tracker: component_id: unspecified`)
+							assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`issue: component: issue_tracker: component_id: unspecified`))
 						})
-						Convey("component ID invalid", func() {
+						t.Run("component ID invalid", func(t *ftt.Test) {
 							request.Issue.Component.GetIssueTracker().ComponentId = -1
 
 							_, err := srv.CreateWithNewIssue(ctx, request)
-							So(err, ShouldBeRPCInvalidArgument, `issue: component: issue_tracker: component_id: must be positive`)
+							assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`issue: component: issue_tracker: component_id: must be positive`))
 						})
 					})
 				})
 			})
-			Convey("Success", func() {
-				Convey("With audit access", func() {
+			t.Run("Success", func(t *ftt.Test) {
+				t.Run("With audit access", func(t *ftt.Test) {
 					rule, err := srv.CreateWithNewIssue(ctx, request)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 
 					// Verify the issue that was filed.
-					So(buganizerClient.FakeStore.Issues, ShouldHaveLength, 1)
+					assert.Loosely(t, buganizerClient.FakeStore.Issues, should.HaveLength(1))
 					issue := buganizerClient.FakeStore.Issues[1]
-					So(issue, ShouldNotBeNil)
-					So(issue.Issue.IssueState.ComponentId, ShouldEqual, 123456)
-					So(issue.Issue.IssueState.Title, ShouldEqual, "Issue title.")
-					So(issue.Comments[0].Comment, ShouldEqual, "Description.\n\n"+
+					assert.Loosely(t, issue, should.NotBeNil)
+					assert.Loosely(t, issue.Issue.IssueState.ComponentId, should.Equal(123456))
+					assert.Loosely(t, issue.Issue.IssueState.Title, should.Equal("Issue title."))
+					assert.Loosely(t, issue.Comments[0].Comment, should.Equal("Description.\n\n"+
 						"View example failures and modify the failures associated with this bug in LUCI Analysis: https://analysis.luci.app/p/testproject/rules/"+rule.RuleId+". "+
-						"Filed on behalf of someone@example.com.")
-					So(issue.Issue.IssueState.AccessLimit.AccessLevel, ShouldEqual, issuetracker.IssueAccessLimit_LIMIT_VIEW_TRUSTED)
-					So(issue.Issue.IssueState.Priority, ShouldEqual, pb.BuganizerPriority_P1)
+						"Filed on behalf of someone@example.com."))
+					assert.Loosely(t, issue.Issue.IssueState.AccessLimit.AccessLevel, should.Equal(issuetracker.IssueAccessLimit_LIMIT_VIEW_TRUSTED))
+					assert.Loosely(t, issue.Issue.IssueState.Priority, should.Equal(pb.BuganizerPriority_P1))
 
 					storedRule, err := rules.Read(span.Single(ctx), testProject, rule.RuleId)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 
 					expectedRule := expectedRuleBuilder.
 						// Accept the randomly generated rule ID.
@@ -1182,32 +1185,32 @@ func TestRules(t *testing.T) {
 						Build()
 
 					// Verify the rule was correctly created in the database.
-					So(storedRule, ShouldResembleProto, expectedRule)
+					assert.Loosely(t, storedRule, should.Resemble(expectedRule))
 
 					// Verify the returned rule matches our expectations.
 					mask := ruleMask{IncludeDefinition: true, IncludeAuditUsers: true}
-					So(rule, ShouldResembleProto, createRulePB(expectedRule, cfg, mask))
+					assert.Loosely(t, rule, should.Resemble(createRulePB(expectedRule, cfg, mask)))
 				})
-				Convey("Without audit access", func() {
+				t.Run("Without audit access", func(t *ftt.Test) {
 					authState.IdentityGroups = removeGroup(authState.IdentityGroups, auditUsersAccessGroup)
 
 					rule, err := srv.CreateWithNewIssue(ctx, request)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 
 					// Verify the issue that was filed.
-					So(buganizerClient.FakeStore.Issues, ShouldHaveLength, 1)
+					assert.Loosely(t, buganizerClient.FakeStore.Issues, should.HaveLength(1))
 					issue := buganizerClient.FakeStore.Issues[1]
-					So(issue, ShouldNotBeNil)
-					So(issue.Issue.IssueState.ComponentId, ShouldEqual, 123456)
-					So(issue.Issue.IssueState.Title, ShouldEqual, "Issue title.")
-					So(issue.Comments[0].Comment, ShouldEqual, "Description.\n\n"+
+					assert.Loosely(t, issue, should.NotBeNil)
+					assert.Loosely(t, issue.Issue.IssueState.ComponentId, should.Equal(123456))
+					assert.Loosely(t, issue.Issue.IssueState.Title, should.Equal("Issue title."))
+					assert.Loosely(t, issue.Comments[0].Comment, should.Equal("Description.\n\n"+
 						"View example failures and modify the failures associated with this bug in LUCI Analysis: https://analysis.luci.app/p/testproject/rules/"+rule.RuleId+". "+
-						"Filed on behalf of someone@example.com.")
-					So(issue.Issue.IssueState.AccessLimit.AccessLevel, ShouldEqual, issuetracker.IssueAccessLimit_LIMIT_VIEW_TRUSTED)
-					So(issue.Issue.IssueState.Priority, ShouldEqual, pb.BuganizerPriority_P1)
+						"Filed on behalf of someone@example.com."))
+					assert.Loosely(t, issue.Issue.IssueState.AccessLimit.AccessLevel, should.Equal(issuetracker.IssueAccessLimit_LIMIT_VIEW_TRUSTED))
+					assert.Loosely(t, issue.Issue.IssueState.Priority, should.Equal(pb.BuganizerPriority_P1))
 
 					storedRule, err := rules.Read(span.Single(ctx), testProject, rule.RuleId)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 
 					expectedRule := expectedRuleBuilder.
 						// Accept the randomly generated rule ID.
@@ -1228,15 +1231,15 @@ func TestRules(t *testing.T) {
 						Build()
 
 					// Verify the rule was correctly created in the database.
-					So(storedRule, ShouldResembleProto, expectedRule)
+					assert.Loosely(t, storedRule, should.Resemble(expectedRule))
 
 					// Verify the returned rule matches our expectations.
 					mask := ruleMask{IncludeDefinition: true, IncludeAuditUsers: false}
-					So(rule, ShouldResembleProto, createRulePB(expectedRule, cfg, mask))
+					assert.Loosely(t, rule, should.Resemble(createRulePB(expectedRule, cfg, mask)))
 				})
 			})
 		})
-		Convey("LookupBug", func() {
+		t.Run("LookupBug", func(t *ftt.Test) {
 			authState.IdentityPermissions = []authtest.RealmPermission{
 				{
 					Realm:      "testproject:@project",
@@ -1248,60 +1251,60 @@ func TestRules(t *testing.T) {
 				},
 			}
 
-			Convey("Exists None", func() {
+			t.Run("Exists None", func(t *ftt.Test) {
 				request := &pb.LookupBugRequest{
 					System: "buganizer",
 					Id:     "999999",
 				}
 
 				response, err := srv.LookupBug(ctx, request)
-				So(err, ShouldBeNil)
-				So(response, ShouldResembleProto, &pb.LookupBugResponse{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, response, should.Resemble(&pb.LookupBugResponse{
 					Rules: []string{},
-				})
+				}))
 			})
-			Convey("Exists One", func() {
+			t.Run("Exists One", func(t *ftt.Test) {
 				request := &pb.LookupBugRequest{
 					System: ruleManaged.BugID.System,
 					Id:     ruleManaged.BugID.ID,
 				}
 
 				response, err := srv.LookupBug(ctx, request)
-				So(err, ShouldBeNil)
-				So(response, ShouldResembleProto, &pb.LookupBugResponse{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, response, should.Resemble(&pb.LookupBugResponse{
 					Rules: []string{
 						fmt.Sprintf("projects/%s/rules/%s",
 							ruleManaged.Project, ruleManaged.RuleID),
 					},
-				})
+				}))
 
-				Convey("If no permission in relevant project", func() {
+				t.Run("If no permission in relevant project", func(t *ftt.Test) {
 					authState.IdentityPermissions = nil
 
 					response, err := srv.LookupBug(ctx, request)
-					So(err, ShouldBeNil)
-					So(response, ShouldResembleProto, &pb.LookupBugResponse{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, response, should.Resemble(&pb.LookupBugResponse{
 						Rules: []string{},
-					})
+					}))
 				})
 			})
-			Convey("Exists Many", func() {
+			t.Run("Exists Many", func(t *ftt.Test) {
 				request := &pb.LookupBugRequest{
 					System: ruleTwoProject.BugID.System,
 					Id:     ruleTwoProject.BugID.ID,
 				}
 
 				response, err := srv.LookupBug(ctx, request)
-				So(err, ShouldBeNil)
-				So(response, ShouldResembleProto, &pb.LookupBugResponse{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, response, should.Resemble(&pb.LookupBugResponse{
 					Rules: []string{
 						// Rules are returned alphabetically by project.
 						fmt.Sprintf("projects/otherproject/rules/%s", ruleTwoProjectOther.RuleID),
 						fmt.Sprintf("projects/testproject/rules/%s", ruleTwoProject.RuleID),
 					},
-				})
+				}))
 
-				Convey("If list permission exists in only some projects", func() {
+				t.Run("If list permission exists in only some projects", func(t *ftt.Test) {
 					authState.IdentityPermissions = []authtest.RealmPermission{
 						{
 							Realm:      "testproject:@project",
@@ -1310,15 +1313,15 @@ func TestRules(t *testing.T) {
 					}
 
 					response, err := srv.LookupBug(ctx, request)
-					So(err, ShouldBeNil)
-					So(response, ShouldResembleProto, &pb.LookupBugResponse{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, response, should.Resemble(&pb.LookupBugResponse{
 						Rules: []string{
 							fmt.Sprintf("projects/testproject/rules/%s", ruleTwoProject.RuleID),
 						},
-					})
+					}))
 				})
 			})
-			Convey("PrepareDefaults", func() {
+			t.Run("PrepareDefaults", func(t *ftt.Test) {
 				authState.IdentityPermissions = []authtest.RealmPermission{
 					{
 						Realm:      "testproject:@project",
@@ -1335,70 +1338,70 @@ func TestRules(t *testing.T) {
 						},
 					},
 				}
-				Convey("No get config permission", func() {
+				t.Run("No get config permission", func(t *ftt.Test) {
 					authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetConfig)
 
 					_, err := srv.PrepareDefaults(ctx, request)
-					So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.config.get")
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission analysis.config.get"))
 				})
-				Convey("Validation", func() {
-					Convey("test ID", func() {
-						Convey("unspecified", func() {
+				t.Run("Validation", func(t *ftt.Test) {
+					t.Run("test ID", func(t *ftt.Test) {
+						t.Run("unspecified", func(t *ftt.Test) {
 							request.TestResult.TestId = ""
 
 							_, err := srv.PrepareDefaults(ctx, request)
-							So(err, ShouldBeRPCInvalidArgument, "")
+							assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(""))
 						})
-						Convey("invalid", func() {
+						t.Run("invalid", func(t *ftt.Test) {
 							request.TestResult.TestId = strings.Repeat("a", 513)
 
 							_, err := srv.PrepareDefaults(ctx, request)
-							So(err, ShouldBeRPCInvalidArgument, "test_result: test_id: longer than 512 bytes")
+							assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("test_result: test_id: longer than 512 bytes"))
 						})
 					})
-					Convey("failure reason", func() {
-						Convey("invalid", func() {
+					t.Run("failure reason", func(t *ftt.Test) {
+						t.Run("invalid", func(t *ftt.Test) {
 							request.TestResult.FailureReason.PrimaryErrorMessage = strings.Repeat("a", 1025)
 
 							_, err := srv.PrepareDefaults(ctx, request)
-							So(err, ShouldBeRPCInvalidArgument, "test_result: failure_reason: primary_error_message: exceeds the maximum size of 1024 bytes")
+							assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("test_result: failure_reason: primary_error_message: exceeds the maximum size of 1024 bytes"))
 						})
 					})
 				})
-				Convey("Success", func() {
-					Convey("Baseline", func() {
+				t.Run("Success", func(t *ftt.Test) {
+					t.Run("Baseline", func(t *ftt.Test) {
 						response, err := srv.PrepareDefaults(ctx, request)
-						So(err, ShouldBeNil)
-						So(response.Rule, ShouldResembleProto, &pb.Rule{
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, response.Rule, should.Resemble(&pb.Rule{
 							RuleDefinition: `test = "ninja://some_package/some_test" AND reason LIKE "Some error %."`,
 							IsActive:       true,
-						})
+						}))
 					})
-					Convey("With no failure reason", func() {
+					t.Run("With no failure reason", func(t *ftt.Test) {
 						request.TestResult.FailureReason = nil
 
 						response, err := srv.PrepareDefaults(ctx, request)
-						So(err, ShouldBeNil)
-						So(response.Rule, ShouldResembleProto, &pb.Rule{
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, response.Rule, should.Resemble(&pb.Rule{
 							RuleDefinition: `test = "ninja://some_package/some_test"`,
 							IsActive:       true,
-						})
+						}))
 					})
-					Convey("With no test result", func() {
+					t.Run("With no test result", func(t *ftt.Test) {
 						request.TestResult = nil
 
 						response, err := srv.PrepareDefaults(ctx, request)
-						So(err, ShouldBeNil)
-						So(response.Rule, ShouldResembleProto, &pb.Rule{
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, response.Rule, should.Resemble(&pb.Rule{
 							RuleDefinition: ``,
 							IsActive:       true,
-						})
+						}))
 					})
 				})
 			})
 		})
 	})
-	Convey("createRulePB", t, func() {
+	ftt.Run("createRulePB", t, func(t *ftt.Test) {
 		// The behaviour of createRulePB is assumed by many test cases.
 		// This verifies that behaviour.
 
@@ -1447,29 +1450,29 @@ func TestRules(t *testing.T) {
 			IncludeDefinition: true,
 			IncludeAuditUsers: true,
 		}
-		Convey("With all fields", func() {
-			So(createRulePB(rule, cfg, mask), ShouldResembleProto, expectedRule)
+		t.Run("With all fields", func(t *ftt.Test) {
+			assert.Loosely(t, createRulePB(rule, cfg, mask), should.Resemble(expectedRule))
 		})
-		Convey("Without definition field", func() {
+		t.Run("Without definition field", func(t *ftt.Test) {
 			mask.IncludeDefinition = false
 			expectedRule.RuleDefinition = ""
 			expectedRule.Etag = `W/"+u/1909-09-09T09:09:09.000000001Z"`
-			So(createRulePB(rule, cfg, mask), ShouldResembleProto, expectedRule)
+			assert.Loosely(t, createRulePB(rule, cfg, mask), should.Resemble(expectedRule))
 		})
-		Convey("Without audit users", func() {
+		t.Run("Without audit users", func(t *ftt.Test) {
 			mask.IncludeAuditUsers = false
 			expectedRule.CreateUser = ""
 			expectedRule.LastAuditableUpdateUser = ""
 			expectedRule.Etag = `W/"+d/1909-09-09T09:09:09.000000001Z"`
-			So(createRulePB(rule, cfg, mask), ShouldResembleProto, expectedRule)
+			assert.Loosely(t, createRulePB(rule, cfg, mask), should.Resemble(expectedRule))
 		})
 	})
-	Convey("isETagValid", t, func() {
+	ftt.Run("isETagValid", t, func(t *ftt.Test) {
 		rule := rules.NewRule(0).
 			WithProject(testProject).
 			WithBug(bugs.BugID{System: "buganizer", ID: "111"}).Build()
 
-		Convey("Should match ETags for same rule version", func() {
+		t.Run("Should match ETags for same rule version", func(t *ftt.Test) {
 			masks := []ruleMask{
 				{IncludeDefinition: true, IncludeAuditUsers: true},
 				{IncludeDefinition: true, IncludeAuditUsers: false},
@@ -1477,18 +1480,18 @@ func TestRules(t *testing.T) {
 				{IncludeDefinition: false, IncludeAuditUsers: false},
 			}
 			for _, mask := range masks {
-				So(isETagMatching(rule, ruleETag(rule, mask)), ShouldBeTrue)
+				assert.Loosely(t, isETagMatching(rule, ruleETag(rule, mask)), should.BeTrue)
 			}
 		})
-		Convey("Should not match ETag for different version of rule", func() {
+		t.Run("Should not match ETag for different version of rule", func(t *ftt.Test) {
 			mask := ruleMask{IncludeDefinition: true, IncludeAuditUsers: true}
 			etag := ruleETag(rule, mask)
 
 			rule.LastUpdateTime = time.Date(2021, 5, 4, 3, 2, 1, 0, time.UTC)
-			So(isETagMatching(rule, etag), ShouldBeFalse)
+			assert.Loosely(t, isETagMatching(rule, etag), should.BeFalse)
 		})
 	})
-	Convey("formatRule", t, func() {
+	ftt.Run("formatRule", t, func(t *ftt.Test) {
 		rule := rules.NewRule(0).
 			WithProject(testProject).
 			WithBug(bugs.BugID{System: "buganizer", ID: "123456"}).
@@ -1509,7 +1512,7 @@ func TestRules(t *testing.T) {
 	LastAuditableUpdate: "1907-07-07T07:07:07Z"
 	LastUpdated: "1909-09-09T09:09:09Z"
 }`
-		So(formatRule(rule), ShouldEqual, expectedRule)
+		assert.Loosely(t, formatRule(rule), should.Equal(expectedRule))
 	})
 }
 

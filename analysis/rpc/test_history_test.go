@@ -32,12 +32,15 @@ import (
 	"go.chromium.org/luci/analysis/pbutil"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestTestHistoryServer(t *testing.T) {
-	Convey("TestHistoryServer", t, func() {
+	ftt.Run("TestHistoryServer", t, func(t *ftt.Test) {
 		ctx := testutil.IntegrationTestContext(t)
 
 		ctx = auth.WithState(ctx, &authtest.FakeState{
@@ -159,11 +162,11 @@ func TestTestHistoryServer(t *testing.T) {
 
 			return nil
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		server := NewTestHistoryServer()
 
-		Convey("Query", func() {
+		t.Run("Query", func(t *ftt.Test) {
 			req := &pb.QueryTestHistoryRequest{
 				Project: "project",
 				TestId:  "test_id",
@@ -188,12 +191,13 @@ func TestTestHistoryServer(t *testing.T) {
 				},
 			}
 
-			Convey("unauthorised requests are rejected", func() {
+			t.Run("unauthorised requests are rejected", func(t *ftt.Test) {
 				testPerm := func(ctx context.Context) {
 					res, err := server.Query(ctx, req)
-					So(err, ShouldErrLike, `caller does not have permission`, `in realm "project:realm"`)
-					So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
-					So(res, ShouldBeNil)
+					assert.Loosely(t, err, should.ErrLike(`caller does not have permission`))
+					assert.Loosely(t, err, should.ErrLike(`in realm "project:realm"`))
+					assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
+					assert.Loosely(t, res, should.BeNil)
 				}
 
 				// No permission.
@@ -235,15 +239,15 @@ func TestTestHistoryServer(t *testing.T) {
 				testPerm(ctx)
 			})
 
-			Convey("invalid requests are rejected", func() {
+			t.Run("invalid requests are rejected", func(t *ftt.Test) {
 				req.PageSize = -1
 				res, err := server.Query(ctx, req)
-				So(err, ShouldNotBeNil)
-				So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
-				So(res, ShouldBeNil)
+				assert.Loosely(t, err, should.NotBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+				assert.Loosely(t, res, should.BeNil)
 			})
 
-			Convey("multi-realms", func() {
+			t.Run("multi-realms", func(t *ftt.Test) {
 				req.Predicate.SubRealm = ""
 				req.Predicate.VariantPredicate = &pb.VariantPredicate{
 					Predicate: &pb.VariantPredicate_Contains{
@@ -251,8 +255,8 @@ func TestTestHistoryServer(t *testing.T) {
 					},
 				}
 				res, err := server.Query(ctx, req)
-				So(err, ShouldBeNil)
-				So(res, ShouldResembleProto, &pb.QueryTestHistoryResponse{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res, should.Resemble(&pb.QueryTestHistoryResponse{
 					Verdicts: []*pb.TestVerdict{
 						{
 							TestId:        "test_id",
@@ -270,13 +274,13 @@ func TestTestHistoryServer(t *testing.T) {
 							PartitionTime: timestamppb.New(referenceTime.Add(-4 * day)),
 						},
 					},
-				})
+				}))
 			})
 
-			Convey("e2e", func() {
+			t.Run("e2e", func(t *ftt.Test) {
 				res, err := server.Query(ctx, req)
-				So(err, ShouldBeNil)
-				So(res, ShouldResembleProto, &pb.QueryTestHistoryResponse{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res, should.Resemble(&pb.QueryTestHistoryResponse{
 					Verdicts: []*pb.TestVerdict{
 						{
 							TestId:        "test_id",
@@ -316,13 +320,13 @@ func TestTestHistoryServer(t *testing.T) {
 						},
 					},
 					NextPageToken: res.NextPageToken,
-				})
-				So(res.NextPageToken, ShouldNotBeEmpty)
+				}))
+				assert.Loosely(t, res.NextPageToken, should.NotBeEmpty)
 
 				req.PageToken = res.NextPageToken
 				res, err = server.Query(ctx, req)
-				So(err, ShouldBeNil)
-				So(res, ShouldResembleProto, &pb.QueryTestHistoryResponse{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res, should.Resemble(&pb.QueryTestHistoryResponse{
 					Verdicts: []*pb.TestVerdict{
 						{
 							TestId:        "test_id",
@@ -341,15 +345,15 @@ func TestTestHistoryServer(t *testing.T) {
 							Changelists:   expectedChangelists,
 						},
 					},
-				})
+				}))
 			})
 
-			Convey("include bisection", func() {
+			t.Run("include bisection", func(t *ftt.Test) {
 				req.PageSize = 10
 				req.Predicate.IncludeBisectionResults = true
 				res, err := server.Query(ctx, req)
-				So(err, ShouldBeNil)
-				So(res, ShouldResembleProto, &pb.QueryTestHistoryResponse{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res, should.Resemble(&pb.QueryTestHistoryResponse{
 					Verdicts: []*pb.TestVerdict{
 						{
 							TestId:        "test_id",
@@ -411,11 +415,11 @@ func TestTestHistoryServer(t *testing.T) {
 							Changelists:   expectedChangelists,
 						},
 					},
-				})
+				}))
 			})
 		})
 
-		Convey("QueryStats", func() {
+		t.Run("QueryStats", func(t *ftt.Test) {
 			req := &pb.QueryTestHistoryStatsRequest{
 				Project: "project",
 				TestId:  "test_id",
@@ -425,12 +429,13 @@ func TestTestHistoryServer(t *testing.T) {
 				PageSize: 3,
 			}
 
-			Convey("unauthorised requests are rejected", func() {
+			t.Run("unauthorised requests are rejected", func(t *ftt.Test) {
 				testPerm := func(ctx context.Context) {
 					res, err := server.QueryStats(ctx, req)
-					So(err, ShouldErrLike, `caller does not have permission`, `in realm "project:realm"`)
-					So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
-					So(res, ShouldBeNil)
+					assert.Loosely(t, err, should.ErrLike(`caller does not have permission`))
+					assert.Loosely(t, err, should.ErrLike(`in realm "project:realm"`))
+					assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
+					assert.Loosely(t, res, should.BeNil)
 				}
 
 				// No permission.
@@ -472,15 +477,15 @@ func TestTestHistoryServer(t *testing.T) {
 				testPerm(ctx)
 			})
 
-			Convey("invalid requests are rejected", func() {
+			t.Run("invalid requests are rejected", func(t *ftt.Test) {
 				req.PageSize = -1
 				res, err := server.QueryStats(ctx, req)
-				So(err, ShouldNotBeNil)
-				So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
-				So(res, ShouldBeNil)
+				assert.Loosely(t, err, should.NotBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+				assert.Loosely(t, res, should.BeNil)
 			})
 
-			Convey("multi-realms", func() {
+			t.Run("multi-realms", func(t *ftt.Test) {
 				req.Predicate.SubRealm = ""
 				req.Predicate.VariantPredicate = &pb.VariantPredicate{
 					Predicate: &pb.VariantPredicate_Contains{
@@ -488,8 +493,8 @@ func TestTestHistoryServer(t *testing.T) {
 					},
 				}
 				res, err := server.QueryStats(ctx, req)
-				So(err, ShouldBeNil)
-				So(res, ShouldResembleProto, &pb.QueryTestHistoryStatsResponse{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res, should.Resemble(&pb.QueryTestHistoryStatsResponse{
 					Groups: []*pb.QueryTestHistoryStatsResponse_Group{
 						{
 							PartitionTime: timestamppb.New(referenceTime.Add(-3 * day)),
@@ -502,13 +507,13 @@ func TestTestHistoryServer(t *testing.T) {
 							ExpectedCount: 1,
 						},
 					},
-				})
+				}))
 			})
 
-			Convey("e2e", func() {
+			t.Run("e2e", func(t *ftt.Test) {
 				res, err := server.QueryStats(ctx, req)
-				So(err, ShouldBeNil)
-				So(res, ShouldResembleProto, &pb.QueryTestHistoryStatsResponse{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res, should.Resemble(&pb.QueryTestHistoryStatsResponse{
 					Groups: []*pb.QueryTestHistoryStatsResponse_Group{
 						{
 							PartitionTime: timestamppb.New(referenceTime.Add(-1 * day)),
@@ -527,13 +532,13 @@ func TestTestHistoryServer(t *testing.T) {
 						},
 					},
 					NextPageToken: res.NextPageToken,
-				})
-				So(res.NextPageToken, ShouldNotBeEmpty)
+				}))
+				assert.Loosely(t, res.NextPageToken, should.NotBeEmpty)
 
 				req.PageToken = res.NextPageToken
 				res, err = server.QueryStats(ctx, req)
-				So(err, ShouldBeNil)
-				So(res, ShouldResembleProto, &pb.QueryTestHistoryStatsResponse{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res, should.Resemble(&pb.QueryTestHistoryStatsResponse{
 					Groups: []*pb.QueryTestHistoryStatsResponse_Group{
 						{
 							PartitionTime: timestamppb.New(referenceTime.Add(-2 * day)),
@@ -546,15 +551,15 @@ func TestTestHistoryServer(t *testing.T) {
 							ExpectedCount: 1,
 						},
 					},
-				})
+				}))
 			})
 
-			Convey("include bisection", func() {
+			t.Run("include bisection", func(t *ftt.Test) {
 				req.Predicate.IncludeBisectionResults = true
 				req.PageSize = 10
 				res, err := server.QueryStats(ctx, req)
-				So(err, ShouldBeNil)
-				So(res, ShouldResembleProto, &pb.QueryTestHistoryStatsResponse{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res, should.Resemble(&pb.QueryTestHistoryStatsResponse{
 					Groups: []*pb.QueryTestHistoryStatsResponse_Group{
 						{
 							PartitionTime: timestamppb.New(referenceTime.Add(-1 * day)),
@@ -582,11 +587,11 @@ func TestTestHistoryServer(t *testing.T) {
 							ExpectedCount: 1,
 						},
 					},
-				})
+				}))
 			})
 		})
 
-		Convey("QueryVariants", func() {
+		t.Run("QueryVariants", func(t *ftt.Test) {
 			req := &pb.QueryVariantsRequest{
 				Project:  "project",
 				TestId:   "test_id",
@@ -594,25 +599,26 @@ func TestTestHistoryServer(t *testing.T) {
 				PageSize: 2,
 			}
 
-			Convey("unauthorised requests are rejected", func() {
+			t.Run("unauthorised requests are rejected", func(t *ftt.Test) {
 				ctx = auth.WithState(ctx, &authtest.FakeState{
 					Identity: "user:someone@example.com",
 				})
 				res, err := server.QueryVariants(ctx, req)
-				So(err, ShouldErrLike, `caller does not have permission`, `in realm "project:realm"`)
-				So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
-				So(res, ShouldBeNil)
+				assert.Loosely(t, err, should.ErrLike(`caller does not have permission`))
+				assert.Loosely(t, err, should.ErrLike(`in realm "project:realm"`))
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
+				assert.Loosely(t, res, should.BeNil)
 			})
 
-			Convey("invalid requests are rejected", func() {
+			t.Run("invalid requests are rejected", func(t *ftt.Test) {
 				req.PageSize = -1
 				res, err := server.QueryVariants(ctx, req)
-				So(err, ShouldNotBeNil)
-				So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
-				So(res, ShouldBeNil)
+				assert.Loosely(t, err, should.NotBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+				assert.Loosely(t, res, should.BeNil)
 			})
 
-			Convey("multi-realms", func() {
+			t.Run("multi-realms", func(t *ftt.Test) {
 				req.PageSize = 0
 				req.SubRealm = ""
 				req.VariantPredicate = &pb.VariantPredicate{
@@ -621,8 +627,8 @@ func TestTestHistoryServer(t *testing.T) {
 					},
 				}
 				res, err := server.QueryVariants(ctx, req)
-				So(err, ShouldBeNil)
-				So(res, ShouldResembleProto, &pb.QueryVariantsResponse{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res, should.Resemble(&pb.QueryVariantsResponse{
 					Variants: []*pb.QueryVariantsResponse_VariantInfo{
 						{
 							VariantHash: pbutil.VariantHash(var3),
@@ -633,13 +639,13 @@ func TestTestHistoryServer(t *testing.T) {
 							Variant:     var4,
 						},
 					},
-				})
+				}))
 			})
 
-			Convey("e2e", func() {
+			t.Run("e2e", func(t *ftt.Test) {
 				res, err := server.QueryVariants(ctx, req)
-				So(err, ShouldBeNil)
-				So(res, ShouldResembleProto, &pb.QueryVariantsResponse{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res, should.Resemble(&pb.QueryVariantsResponse{
 					Variants: []*pb.QueryVariantsResponse_VariantInfo{
 						{
 							VariantHash: pbutil.VariantHash(var1),
@@ -651,24 +657,24 @@ func TestTestHistoryServer(t *testing.T) {
 						},
 					},
 					NextPageToken: res.NextPageToken,
-				})
-				So(res.NextPageToken, ShouldNotBeEmpty)
+				}))
+				assert.Loosely(t, res.NextPageToken, should.NotBeEmpty)
 
 				req.PageToken = res.NextPageToken
 				res, err = server.QueryVariants(ctx, req)
-				So(err, ShouldBeNil)
-				So(res, ShouldResembleProto, &pb.QueryVariantsResponse{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res, should.Resemble(&pb.QueryVariantsResponse{
 					Variants: []*pb.QueryVariantsResponse_VariantInfo{
 						{
 							VariantHash: pbutil.VariantHash(var2),
 							Variant:     var2,
 						},
 					},
-				})
+				}))
 			})
 		})
 
-		Convey("QueryTests", func() {
+		t.Run("QueryTests", func(t *ftt.Test) {
 			req := &pb.QueryTestsRequest{
 				Project:         "project",
 				TestIdSubstring: "test_id",
@@ -676,49 +682,50 @@ func TestTestHistoryServer(t *testing.T) {
 				PageSize:        2,
 			}
 
-			Convey("unauthorised requests are rejected", func() {
+			t.Run("unauthorised requests are rejected", func(t *ftt.Test) {
 				ctx = auth.WithState(ctx, &authtest.FakeState{
 					Identity: "user:someone@example.com",
 				})
 				res, err := server.QueryTests(ctx, req)
-				So(err, ShouldErrLike, `caller does not have permission`, `in realm "project:realm"`)
-				So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
-				So(res, ShouldBeNil)
+				assert.Loosely(t, err, should.ErrLike(`caller does not have permission`))
+				assert.Loosely(t, err, should.ErrLike(`in realm "project:realm"`))
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
+				assert.Loosely(t, res, should.BeNil)
 			})
 
-			Convey("invalid requests are rejected", func() {
+			t.Run("invalid requests are rejected", func(t *ftt.Test) {
 				req.PageSize = -1
 				res, err := server.QueryTests(ctx, req)
-				So(err, ShouldNotBeNil)
-				So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
-				So(res, ShouldBeNil)
+				assert.Loosely(t, err, should.NotBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+				assert.Loosely(t, res, should.BeNil)
 			})
 
-			Convey("multi-realms", func() {
+			t.Run("multi-realms", func(t *ftt.Test) {
 				req.PageSize = 0
 				req.SubRealm = ""
 				res, err := server.QueryTests(ctx, req)
-				So(err, ShouldBeNil)
-				So(res, ShouldResembleProto, &pb.QueryTestsResponse{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res, should.Resemble(&pb.QueryTestsResponse{
 					TestIds: []string{"test_id", "test_id1", "test_id2", "test_id3"},
-				})
+				}))
 			})
 
-			Convey("e2e", func() {
+			t.Run("e2e", func(t *ftt.Test) {
 				res, err := server.QueryTests(ctx, req)
-				So(err, ShouldBeNil)
-				So(res, ShouldResembleProto, &pb.QueryTestsResponse{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res, should.Resemble(&pb.QueryTestsResponse{
 					TestIds:       []string{"test_id", "test_id1"},
 					NextPageToken: res.NextPageToken,
-				})
-				So(res.NextPageToken, ShouldNotBeEmpty)
+				}))
+				assert.Loosely(t, res.NextPageToken, should.NotBeEmpty)
 
 				req.PageToken = res.NextPageToken
 				res, err = server.QueryTests(ctx, req)
-				So(err, ShouldBeNil)
-				So(res, ShouldResembleProto, &pb.QueryTestsResponse{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res, should.Resemble(&pb.QueryTestsResponse{
 					TestIds: []string{"test_id2"},
-				})
+				}))
 			})
 		})
 	})
@@ -727,7 +734,7 @@ func TestTestHistoryServer(t *testing.T) {
 func TestValidateQueryTestHistoryRequest(t *testing.T) {
 	t.Parallel()
 
-	Convey("validateQueryTestHistoryRequest", t, func() {
+	ftt.Run("validateQueryTestHistoryRequest", t, func(t *ftt.Test) {
 		req := &pb.QueryTestHistoryRequest{
 			Project: "project",
 			TestId:  "test_id",
@@ -737,51 +744,53 @@ func TestValidateQueryTestHistoryRequest(t *testing.T) {
 			PageSize: 5,
 		}
 
-		Convey("valid", func() {
+		t.Run("valid", func(t *ftt.Test) {
 			err := validateQueryTestHistoryRequest(req)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey("no project", func() {
+		t.Run("no project", func(t *ftt.Test) {
 			req.Project = ""
 			err := validateQueryTestHistoryRequest(req)
-			So(err, ShouldErrLike, "project: unspecified")
+			assert.Loosely(t, err, should.ErrLike("project: unspecified"))
 		})
 
-		Convey("invalid project", func() {
+		t.Run("invalid project", func(t *ftt.Test) {
 			req.Project = "project:realm"
 			err := validateQueryTestHistoryRequest(req)
-			So(err, ShouldErrLike, `project: must match ^[a-z0-9\-]{1,40}$`)
+			assert.Loosely(t, err, should.ErrLike(`project: must match ^[a-z0-9\-]{1,40}$`))
 		})
 
-		Convey("no test_id", func() {
+		t.Run("no test_id", func(t *ftt.Test) {
 			req.TestId = ""
 			err := validateQueryTestHistoryRequest(req)
-			So(err, ShouldErrLike, "test_id: unspecified")
+			assert.Loosely(t, err, should.ErrLike("test_id: unspecified"))
 		})
 
-		Convey("invalid test_id", func() {
+		t.Run("invalid test_id", func(t *ftt.Test) {
 			req.TestId = "\xFF"
 			err := validateQueryTestHistoryRequest(req)
-			So(err, ShouldErrLike, "test_id: not a valid utf8 string")
+			assert.Loosely(t, err, should.ErrLike("test_id: not a valid utf8 string"))
 		})
 
-		Convey("no predicate", func() {
+		t.Run("no predicate", func(t *ftt.Test) {
 			req.Predicate = nil
 			err := validateQueryTestHistoryRequest(req)
-			So(err, ShouldErrLike, "predicate", "unspecified")
+			assert.Loosely(t, err, should.ErrLike("predicate"))
+			assert.Loosely(t, err, should.ErrLike("unspecified"))
 		})
 
-		Convey("no page size", func() {
+		t.Run("no page size", func(t *ftt.Test) {
 			req.PageSize = 0
 			err := validateQueryTestHistoryRequest(req)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey("negative page size", func() {
+		t.Run("negative page size", func(t *ftt.Test) {
 			req.PageSize = -1
 			err := validateQueryTestHistoryRequest(req)
-			So(err, ShouldErrLike, "page_size", "negative")
+			assert.Loosely(t, err, should.ErrLike("page_size"))
+			assert.Loosely(t, err, should.ErrLike("negative"))
 		})
 	})
 }
@@ -789,7 +798,7 @@ func TestValidateQueryTestHistoryRequest(t *testing.T) {
 func TestValidateQueryTestHistoryStatsRequest(t *testing.T) {
 	t.Parallel()
 
-	Convey("validateQueryTestHistoryStatsRequest", t, func() {
+	ftt.Run("validateQueryTestHistoryStatsRequest", t, func(t *ftt.Test) {
 		req := &pb.QueryTestHistoryStatsRequest{
 			Project: "project",
 			TestId:  "test_id",
@@ -799,51 +808,53 @@ func TestValidateQueryTestHistoryStatsRequest(t *testing.T) {
 			PageSize: 5,
 		}
 
-		Convey("valid", func() {
+		t.Run("valid", func(t *ftt.Test) {
 			err := validateQueryTestHistoryStatsRequest(req)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey("no project", func() {
+		t.Run("no project", func(t *ftt.Test) {
 			req.Project = ""
 			err := validateQueryTestHistoryStatsRequest(req)
-			So(err, ShouldErrLike, "project: unspecified")
+			assert.Loosely(t, err, should.ErrLike("project: unspecified"))
 		})
 
-		Convey("invalid project", func() {
+		t.Run("invalid project", func(t *ftt.Test) {
 			req.Project = "project:realm"
 			err := validateQueryTestHistoryStatsRequest(req)
-			So(err, ShouldErrLike, `project: must match ^[a-z0-9\-]{1,40}$`)
+			assert.Loosely(t, err, should.ErrLike(`project: must match ^[a-z0-9\-]{1,40}$`))
 		})
 
-		Convey("no test_id", func() {
+		t.Run("no test_id", func(t *ftt.Test) {
 			req.TestId = ""
 			err := validateQueryTestHistoryStatsRequest(req)
-			So(err, ShouldErrLike, "test_id: unspecified")
+			assert.Loosely(t, err, should.ErrLike("test_id: unspecified"))
 		})
 
-		Convey("invalid test_id", func() {
+		t.Run("invalid test_id", func(t *ftt.Test) {
 			req.TestId = "\xFF"
 			err := validateQueryTestHistoryStatsRequest(req)
-			So(err, ShouldErrLike, "test_id: not a valid utf8 string")
+			assert.Loosely(t, err, should.ErrLike("test_id: not a valid utf8 string"))
 		})
 
-		Convey("no predicate", func() {
+		t.Run("no predicate", func(t *ftt.Test) {
 			req.Predicate = nil
 			err := validateQueryTestHistoryStatsRequest(req)
-			So(err, ShouldErrLike, "predicate", "unspecified")
+			assert.Loosely(t, err, should.ErrLike("predicate"))
+			assert.Loosely(t, err, should.ErrLike("unspecified"))
 		})
 
-		Convey("no page size", func() {
+		t.Run("no page size", func(t *ftt.Test) {
 			req.PageSize = 0
 			err := validateQueryTestHistoryStatsRequest(req)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey("negative page size", func() {
+		t.Run("negative page size", func(t *ftt.Test) {
 			req.PageSize = -1
 			err := validateQueryTestHistoryStatsRequest(req)
-			So(err, ShouldErrLike, "page_size", "negative")
+			assert.Loosely(t, err, should.ErrLike("page_size"))
+			assert.Loosely(t, err, should.ErrLike("negative"))
 		})
 	})
 }
@@ -851,58 +862,59 @@ func TestValidateQueryTestHistoryStatsRequest(t *testing.T) {
 func TestValidateQueryVariantsRequest(t *testing.T) {
 	t.Parallel()
 
-	Convey("validateQueryVariantsRequest", t, func() {
+	ftt.Run("validateQueryVariantsRequest", t, func(t *ftt.Test) {
 		req := &pb.QueryVariantsRequest{
 			Project:  "project",
 			TestId:   "test_id",
 			PageSize: 5,
 		}
 
-		Convey("valid", func() {
+		t.Run("valid", func(t *ftt.Test) {
 			err := validateQueryVariantsRequest(req)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey("no project", func() {
+		t.Run("no project", func(t *ftt.Test) {
 			req.Project = ""
 			err := validateQueryVariantsRequest(req)
-			So(err, ShouldErrLike, "project: unspecified")
+			assert.Loosely(t, err, should.ErrLike("project: unspecified"))
 		})
 
-		Convey("invalid project", func() {
+		t.Run("invalid project", func(t *ftt.Test) {
 			req.Project = "project:realm"
 			err := validateQueryVariantsRequest(req)
-			So(err, ShouldErrLike, `project: must match ^[a-z0-9\-]{1,40}$`)
+			assert.Loosely(t, err, should.ErrLike(`project: must match ^[a-z0-9\-]{1,40}$`))
 		})
 
-		Convey("no test_id", func() {
+		t.Run("no test_id", func(t *ftt.Test) {
 			req.TestId = ""
 			err := validateQueryVariantsRequest(req)
-			So(err, ShouldErrLike, "test_id: unspecified")
+			assert.Loosely(t, err, should.ErrLike("test_id: unspecified"))
 		})
 
-		Convey("invalid test_id", func() {
+		t.Run("invalid test_id", func(t *ftt.Test) {
 			req.TestId = "\xFF"
 			err := validateQueryVariantsRequest(req)
-			So(err, ShouldErrLike, "test_id: not a valid utf8 string")
+			assert.Loosely(t, err, should.ErrLike("test_id: not a valid utf8 string"))
 		})
 
-		Convey("bad sub_realm", func() {
+		t.Run("bad sub_realm", func(t *ftt.Test) {
 			req.SubRealm = "a:realm"
 			err := validateQueryVariantsRequest(req)
-			So(err, ShouldErrLike, "sub_realm: bad project-scoped realm name")
+			assert.Loosely(t, err, should.ErrLike("sub_realm: bad project-scoped realm name"))
 		})
 
-		Convey("no page size", func() {
+		t.Run("no page size", func(t *ftt.Test) {
 			req.PageSize = 0
 			err := validateQueryVariantsRequest(req)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey("negative page size", func() {
+		t.Run("negative page size", func(t *ftt.Test) {
 			req.PageSize = -1
 			err := validateQueryVariantsRequest(req)
-			So(err, ShouldErrLike, "page_size", "negative")
+			assert.Loosely(t, err, should.ErrLike("page_size"))
+			assert.Loosely(t, err, should.ErrLike("negative"))
 		})
 	})
 }
@@ -910,58 +922,59 @@ func TestValidateQueryVariantsRequest(t *testing.T) {
 func TestValidateQueryTestsRequest(t *testing.T) {
 	t.Parallel()
 
-	Convey("validateQueryTestsRequest", t, func() {
+	ftt.Run("validateQueryTestsRequest", t, func(t *ftt.Test) {
 		req := &pb.QueryTestsRequest{
 			Project:         "project",
 			TestIdSubstring: "test_id",
 			PageSize:        5,
 		}
 
-		Convey("valid", func() {
+		t.Run("valid", func(t *ftt.Test) {
 			err := validateQueryTestsRequest(req)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey("no project", func() {
+		t.Run("no project", func(t *ftt.Test) {
 			req.Project = ""
 			err := validateQueryTestsRequest(req)
-			So(err, ShouldErrLike, "project: unspecified")
+			assert.Loosely(t, err, should.ErrLike("project: unspecified"))
 		})
 
-		Convey("invalid project", func() {
+		t.Run("invalid project", func(t *ftt.Test) {
 			req.Project = "project:realm"
 			err := validateQueryTestsRequest(req)
-			So(err, ShouldErrLike, `project: must match ^[a-z0-9\-]{1,40}$`)
+			assert.Loosely(t, err, should.ErrLike(`project: must match ^[a-z0-9\-]{1,40}$`))
 		})
 
-		Convey("no test_id_substring", func() {
+		t.Run("no test_id_substring", func(t *ftt.Test) {
 			req.TestIdSubstring = ""
 			err := validateQueryTestsRequest(req)
-			So(err, ShouldErrLike, "test_id_substring: unspecified")
+			assert.Loosely(t, err, should.ErrLike("test_id_substring: unspecified"))
 		})
 
-		Convey("bad test_id_substring", func() {
+		t.Run("bad test_id_substring", func(t *ftt.Test) {
 			req.TestIdSubstring = "\xFF"
 			err := validateQueryTestsRequest(req)
-			So(err, ShouldErrLike, "test_id_substring: not a valid utf8 string")
+			assert.Loosely(t, err, should.ErrLike("test_id_substring: not a valid utf8 string"))
 		})
 
-		Convey("bad sub_realm", func() {
+		t.Run("bad sub_realm", func(t *ftt.Test) {
 			req.SubRealm = "a:realm"
 			err := validateQueryTestsRequest(req)
-			So(err, ShouldErrLike, "sub_realm: bad project-scoped realm name")
+			assert.Loosely(t, err, should.ErrLike("sub_realm: bad project-scoped realm name"))
 		})
 
-		Convey("no page size", func() {
+		t.Run("no page size", func(t *ftt.Test) {
 			req.PageSize = 0
 			err := validateQueryTestsRequest(req)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey("negative page size", func() {
+		t.Run("negative page size", func(t *ftt.Test) {
 			req.PageSize = -1
 			err := validateQueryTestsRequest(req)
-			So(err, ShouldErrLike, "page_size", "negative")
+			assert.Loosely(t, err, should.ErrLike("page_size"))
+			assert.Loosely(t, err, should.ErrLike("negative"))
 		})
 	})
 }

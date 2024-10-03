@@ -19,25 +19,25 @@ import (
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/analysis/internal/testutil"
 	"go.chromium.org/luci/analysis/pbutil"
 	pb "go.chromium.org/luci/analysis/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestQueryFailureRate(t *testing.T) {
-	Convey("QueryFailureRate", t, func() {
+	ftt.Run("QueryFailureRate", t, func(t *ftt.Test) {
 		ctx := testutil.IntegrationTestContext(t)
 
 		var1 := pbutil.Variant("key1", "val1", "key2", "val1")
 		var3 := pbutil.Variant("key1", "val2", "key2", "val2")
 
 		err := CreateQueryFailureRateTestData(ctx)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		project, asAtTime, tvs := QueryFailureRateSampleRequest()
 		opts := QueryFailureRateOptions{
@@ -50,12 +50,12 @@ func TestQueryFailureRate(t *testing.T) {
 		txn, cancel := span.ReadOnlyTransaction(ctx)
 		defer cancel()
 
-		Convey("Baseline", func() {
+		t.Run("Baseline", func(t *ftt.Test) {
 			result, err := QueryFailureRate(txn, opts)
-			So(err, ShouldBeNil)
-			So(result, ShouldResembleProto, expectedResult)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, result, should.Resemble(expectedResult))
 		})
-		Convey("Project filter works correctly", func() {
+		t.Run("Project filter works correctly", func(t *ftt.Test) {
 			opts.Project = "none"
 			expectedResult.TestVariants = []*pb.TestVariantFailureRateAnalysis{
 				emptyAnalysis("test_id", var1),
@@ -63,10 +63,10 @@ func TestQueryFailureRate(t *testing.T) {
 			}
 
 			result, err := QueryFailureRate(txn, opts)
-			So(err, ShouldBeNil)
-			So(result, ShouldResembleProto, expectedResult)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, result, should.Resemble(expectedResult))
 		})
-		Convey("Realm filter works correctly", func() {
+		t.Run("Realm filter works correctly", func(t *ftt.Test) {
 			// No data exists in this realm.
 			opts.SubRealms = []string{"otherrealm"}
 			expectedResult.TestVariants = []*pb.TestVariantFailureRateAnalysis{
@@ -75,10 +75,10 @@ func TestQueryFailureRate(t *testing.T) {
 			}
 
 			result, err := QueryFailureRate(txn, opts)
-			So(err, ShouldBeNil)
-			So(result, ShouldResembleProto, expectedResult)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, result, should.Resemble(expectedResult))
 		})
-		Convey("Works for tests without data", func() {
+		t.Run("Works for tests without data", func(t *ftt.Test) {
 			notExistsVariant := pbutil.Variant("key1", "val1", "key2", "not_exists")
 			opts.TestVariants = append(opts.TestVariants,
 				&pb.TestVariantIdentifier{
@@ -95,10 +95,10 @@ func TestQueryFailureRate(t *testing.T) {
 				emptyAnalysis("test_id", notExistsVariant))
 
 			result, err := QueryFailureRate(txn, opts)
-			So(err, ShouldBeNil)
-			So(result, ShouldResembleProto, expectedResult)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, result, should.Resemble(expectedResult))
 		})
-		Convey("Batching works correctly", func() {
+		t.Run("Batching works correctly", func(t *ftt.Test) {
 			// Ensure the order of test variants in the request and response
 			// remain correct even when there are multiple batches.
 			var expandedInput []*pb.TestVariantIdentifier
@@ -119,8 +119,8 @@ func TestQueryFailureRate(t *testing.T) {
 			expectedResult.TestVariants = expectedOutput
 
 			result, err := QueryFailureRate(txn, opts)
-			So(err, ShouldBeNil)
-			So(result, ShouldResembleProto, expectedResult)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, result, should.Resemble(expectedResult))
 		})
 	})
 }
@@ -143,23 +143,23 @@ func emptyAnalysis(testId string, variant *pb.Variant) *pb.TestVariantFailureRat
 }
 
 func TestJumpBack24WeekdayHours(t *testing.T) {
-	Convey("jumpBack24WeekdayHours", t, func() {
+	ftt.Run("jumpBack24WeekdayHours", t, func(t *ftt.Test) {
 		// Expect jumpBack24WeekdayHours to go back in time just far enough
 		// that 24 workday hours are between the returned time and now.
-		Convey("Monday", func() {
+		t.Run("Monday", func(t *ftt.Test) {
 			// Given an input on a Monday (e.g. 14th of March 2022), expect
 			// failureRateQueryAfterTime to return the corresponding time
 			// on the previous Friday.
 
 			now := time.Date(2022, time.March, 14, 23, 59, 59, 999999999, time.UTC)
 			afterTime := jumpBack24WeekdayHours(now)
-			So(afterTime, ShouldEqual, time.Date(2022, time.March, 11, 23, 59, 59, 999999999, time.UTC))
+			assert.That(t, afterTime, should.Match(time.Date(2022, time.March, 11, 23, 59, 59, 999999999, time.UTC)))
 
 			now = time.Date(2022, time.March, 14, 0, 0, 0, 0, time.UTC)
 			afterTime = jumpBack24WeekdayHours(now)
-			So(afterTime, ShouldEqual, time.Date(2022, time.March, 11, 0, 0, 0, 0, time.UTC))
+			assert.That(t, afterTime, should.Match(time.Date(2022, time.March, 11, 0, 0, 0, 0, time.UTC)))
 		})
-		Convey("Sunday", func() {
+		t.Run("Sunday", func(t *ftt.Test) {
 			// Given a time on a Sunday (e.g. 13th of March 2022), expect
 			// failureRateQueryAfterTime to return the start of the previous
 			// Friday.
@@ -167,13 +167,13 @@ func TestJumpBack24WeekdayHours(t *testing.T) {
 
 			now := time.Date(2022, time.March, 13, 23, 59, 59, 999999999, time.UTC)
 			afterTime := jumpBack24WeekdayHours(now)
-			So(afterTime, ShouldEqual, startOfFriday)
+			assert.That(t, afterTime, should.Match(startOfFriday))
 
 			now = time.Date(2022, time.March, 13, 0, 0, 0, 0, time.UTC)
 			afterTime = jumpBack24WeekdayHours(now)
-			So(afterTime, ShouldEqual, startOfFriday)
+			assert.That(t, afterTime, should.Match(startOfFriday))
 		})
-		Convey("Saturday", func() {
+		t.Run("Saturday", func(t *ftt.Test) {
 			// Given a time on a Saturday (e.g. 12th of March 2022), expect
 			// failureRateQueryAfterTime to return the start of the previous
 			// Friday.
@@ -181,26 +181,26 @@ func TestJumpBack24WeekdayHours(t *testing.T) {
 
 			now := time.Date(2022, time.March, 12, 23, 59, 59, 999999999, time.UTC)
 			afterTime := jumpBack24WeekdayHours(now)
-			So(afterTime, ShouldEqual, startOfFriday)
+			assert.That(t, afterTime, should.Match(startOfFriday))
 
 			now = time.Date(2022, time.March, 12, 0, 0, 0, 0, time.UTC)
 			afterTime = jumpBack24WeekdayHours(now)
-			So(afterTime, ShouldEqual, startOfFriday)
+			assert.That(t, afterTime, should.Match(startOfFriday))
 		})
-		Convey("Tuesday to Friday", func() {
+		t.Run("Tuesday to Friday", func(t *ftt.Test) {
 			// Given an input on a Tuesday (e.g. 15th of March 2022), expect
 			// failureRateQueryAfterTime to return the corresponding time
 			// the previous day.
 			now := time.Date(2022, time.March, 15, 1, 2, 3, 4, time.UTC)
 			afterTime := jumpBack24WeekdayHours(now)
-			So(afterTime, ShouldEqual, time.Date(2022, time.March, 14, 1, 2, 3, 4, time.UTC))
+			assert.That(t, afterTime, should.Match(time.Date(2022, time.March, 14, 1, 2, 3, 4, time.UTC)))
 
 			// Given an input on a Friday (e.g. 18th of March 2022), expect
 			// failureRateQueryAfterTime to return the corresponding time
 			// the previous day.
 			now = time.Date(2022, time.March, 18, 1, 2, 3, 4, time.UTC)
 			afterTime = jumpBack24WeekdayHours(now)
-			So(afterTime, ShouldEqual, time.Date(2022, time.March, 17, 1, 2, 3, 4, time.UTC))
+			assert.That(t, afterTime, should.Match(time.Date(2022, time.March, 17, 1, 2, 3, 4, time.UTC)))
 		})
 	})
 }

@@ -19,36 +19,36 @@ import (
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/analysis/internal/testutil"
 	analysispb "go.chromium.org/luci/analysis/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestSpan(t *testing.T) {
-	Convey(`With Spanner Test Database`, t, func() {
+	ftt.Run(`With Spanner Test Database`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
-		Convey(`Read`, func() {
+		t.Run(`Read`, func(t *ftt.Test) {
 			entriesToCreate := []*Entry{
 				NewEntry(0).WithIngestionID("rdb-host/1").Build(),
 				NewEntry(2).WithIngestionID("rdb-host/2").WithBuildResult(nil).Build(),
 				NewEntry(3).WithIngestionID("rdb-host/3").WithPresubmitResult(nil).Build(),
 				NewEntry(4).WithIngestionID("rdb-host/4").WithInvocationResult(nil).Build(),
 			}
-			_, err := SetEntriesForTesting(ctx, entriesToCreate...)
-			So(err, ShouldBeNil)
+			_, err := SetEntriesForTesting(ctx, t, entriesToCreate...)
+			assert.Loosely(t, err, should.BeNil)
 
-			Convey(`None exist`, func() {
+			t.Run(`None exist`, func(t *ftt.Test) {
 				ingestionIDs := []IngestionID{"rdb-host/5"}
 				results, err := Read(span.Single(ctx), ingestionIDs)
-				So(err, ShouldBeNil)
-				So(len(results), ShouldEqual, 1)
-				So(results[0], ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, len(results), should.Equal(1))
+				assert.Loosely(t, results[0], should.BeNil)
 			})
-			Convey(`Some exist`, func() {
+			t.Run(`Some exist`, func(t *ftt.Test) {
 				ingestionIDs := []IngestionID{
 					"rdb-host/3",
 					"rdb-host/4",
@@ -57,16 +57,16 @@ func TestSpan(t *testing.T) {
 					"rdb-host/1",
 				}
 				results, err := Read(span.Single(ctx), ingestionIDs)
-				So(err, ShouldBeNil)
-				So(len(results), ShouldEqual, 5)
-				So(results[0], ShouldResembleProto, entriesToCreate[2])
-				So(results[1], ShouldResembleProto, entriesToCreate[3])
-				So(results[2], ShouldBeNil)
-				So(results[3], ShouldResembleProto, entriesToCreate[1])
-				So(results[4], ShouldResembleProto, entriesToCreate[0])
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, len(results), should.Equal(5))
+				assert.Loosely(t, results[0], should.Resemble(entriesToCreate[2]))
+				assert.Loosely(t, results[1], should.Resemble(entriesToCreate[3]))
+				assert.Loosely(t, results[2], should.BeNil)
+				assert.Loosely(t, results[3], should.Resemble(entriesToCreate[1]))
+				assert.Loosely(t, results[4], should.Resemble(entriesToCreate[0]))
 			})
 		})
-		Convey(`InsertOrUpdate`, func() {
+		t.Run(`InsertOrUpdate`, func(t *ftt.Test) {
 			testInsertOrUpdate := func(e *Entry) (time.Time, error) {
 				commitTime, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 					return InsertOrUpdate(ctx, e)
@@ -76,172 +76,172 @@ func TestSpan(t *testing.T) {
 
 			entryToCreate := NewEntry(0).Build()
 
-			_, err := SetEntriesForTesting(ctx, entryToCreate)
-			So(err, ShouldBeNil)
+			_, err := SetEntriesForTesting(ctx, t, entryToCreate)
+			assert.Loosely(t, err, should.BeNil)
 
 			e := NewEntry(1).Build()
 
-			Convey(`Valid`, func() {
-				Convey(`Insert`, func() {
+			t.Run(`Valid`, func(t *ftt.Test) {
+				t.Run(`Insert`, func(t *ftt.Test) {
 					commitTime, err := testInsertOrUpdate(e)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					e.LastUpdated = commitTime
 
 					result, err := Read(span.Single(ctx), []IngestionID{e.IngestionID})
-					So(err, ShouldBeNil)
-					So(len(result), ShouldEqual, 1)
-					So(result[0], ShouldResembleProto, e)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, len(result), should.Equal(1))
+					assert.Loosely(t, result[0], should.Resemble(e))
 				})
-				Convey(`Update`, func() {
+				t.Run(`Update`, func(t *ftt.Test) {
 					// Update the existing entry.
 					e.IngestionID = entryToCreate.IngestionID
 
 					commitTime, err := testInsertOrUpdate(e)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					e.LastUpdated = commitTime
 
 					result, err := Read(span.Single(ctx), []IngestionID{e.IngestionID})
-					So(err, ShouldBeNil)
-					So(len(result), ShouldEqual, 1)
-					So(result[0], ShouldResembleProto, e)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, len(result), should.Equal(1))
+					assert.Loosely(t, result[0], should.Resemble(e))
 				})
 			})
-			Convey(`With invalid Ingestion ID`, func() {
+			t.Run(`With invalid Ingestion ID`, func(t *ftt.Test) {
 				e.IngestionID = IngestionID("")
 				_, err := testInsertOrUpdate(e)
-				So(err, ShouldErrLike, "ingestionID must be set")
+				assert.Loosely(t, err, should.ErrLike("ingestionID must be set"))
 			})
-			Convey(`With invalid Build Project`, func() {
-				Convey(`Missing`, func() {
+			t.Run(`With invalid Build Project`, func(t *ftt.Test) {
+				t.Run(`Missing`, func(t *ftt.Test) {
 					e.BuildProject = ""
 					_, err := testInsertOrUpdate(e)
-					So(err, ShouldErrLike, "build project: unspecified")
+					assert.Loosely(t, err, should.ErrLike("build project: unspecified"))
 				})
-				Convey(`Invalid`, func() {
+				t.Run(`Invalid`, func(t *ftt.Test) {
 					e.BuildProject = "!"
 					_, err := testInsertOrUpdate(e)
-					So(err, ShouldErrLike, `build project: must match ^[a-z0-9\-]{1,40}$`)
+					assert.Loosely(t, err, should.ErrLike(`build project: must match ^[a-z0-9\-]{1,40}$`))
 				})
 			})
-			Convey(`With invalid Build Result`, func() {
-				Convey(`Missing host`, func() {
+			t.Run(`With invalid Build Result`, func(t *ftt.Test) {
+				t.Run(`Missing host`, func(t *ftt.Test) {
 					e.BuildResult.Host = ""
 					_, err := testInsertOrUpdate(e)
-					So(err, ShouldErrLike, "host must be specified")
+					assert.Loosely(t, err, should.ErrLike("host must be specified"))
 				})
-				Convey(`Missing id`, func() {
+				t.Run(`Missing id`, func(t *ftt.Test) {
 					e.BuildResult.Id = 0
 					_, err := testInsertOrUpdate(e)
-					So(err, ShouldErrLike, "id must be specified")
+					assert.Loosely(t, err, should.ErrLike("id must be specified"))
 				})
-				Convey(`Missing creation time`, func() {
+				t.Run(`Missing creation time`, func(t *ftt.Test) {
 					e.BuildResult.CreationTime = nil
 					_, err := testInsertOrUpdate(e)
-					So(err, ShouldErrLike, "build result: creation time must be specified")
+					assert.Loosely(t, err, should.ErrLike("build result: creation time must be specified"))
 				})
-				Convey(`Missing project`, func() {
+				t.Run(`Missing project`, func(t *ftt.Test) {
 					e.BuildResult.Project = ""
 					_, err := testInsertOrUpdate(e)
-					So(err, ShouldErrLike, "build result: project must be specified")
+					assert.Loosely(t, err, should.ErrLike("build result: project must be specified"))
 				})
-				Convey(`Missing resultdb_host`, func() {
+				t.Run(`Missing resultdb_host`, func(t *ftt.Test) {
 					e.BuildResult.HasInvocation = true
 					e.BuildResult.ResultdbHost = ""
 					_, err := testInsertOrUpdate(e)
-					So(err, ShouldErrLike, "build result: resultdb_host must be specified if has_invocation set")
+					assert.Loosely(t, err, should.ErrLike("build result: resultdb_host must be specified if has_invocation set"))
 				})
-				Convey(`Missing builder`, func() {
+				t.Run(`Missing builder`, func(t *ftt.Test) {
 					e.BuildResult.Builder = ""
 					_, err := testInsertOrUpdate(e)
-					So(err, ShouldErrLike, "build result: builder must be specified")
+					assert.Loosely(t, err, should.ErrLike("build result: builder must be specified"))
 				})
-				Convey(`Missing status`, func() {
+				t.Run(`Missing status`, func(t *ftt.Test) {
 					e.BuildResult.Status = analysispb.BuildStatus_BUILD_STATUS_UNSPECIFIED
 					_, err := testInsertOrUpdate(e)
-					So(err, ShouldErrLike, "build result: build status must be specified")
+					assert.Loosely(t, err, should.ErrLike("build result: build status must be specified"))
 				})
 			})
-			Convey(`With invalid Invocation Project`, func() {
-				Convey(`Unspecified`, func() {
+			t.Run(`With invalid Invocation Project`, func(t *ftt.Test) {
+				t.Run(`Unspecified`, func(t *ftt.Test) {
 					e.InvocationProject = ""
 					_, err := testInsertOrUpdate(e)
-					So(err, ShouldErrLike, `invocation project: unspecified`)
+					assert.Loosely(t, err, should.ErrLike(`invocation project: unspecified`))
 				})
-				Convey(`Invalid`, func() {
+				t.Run(`Invalid`, func(t *ftt.Test) {
 					e.InvocationProject = "!"
 					_, err := testInsertOrUpdate(e)
-					So(err, ShouldErrLike, `invocation project: must match ^[a-z0-9\-]{1,40}$`)
+					assert.Loosely(t, err, should.ErrLike(`invocation project: must match ^[a-z0-9\-]{1,40}$`))
 				})
 			})
-			Convey(`With invalid Invocation Result`, func() {
-				Convey(`Set when HasInvocation = false`, func() {
-					So(e.InvocationResult, ShouldNotBeNil)
+			t.Run(`With invalid Invocation Result`, func(t *ftt.Test) {
+				t.Run(`Set when HasInvocation = false`, func(t *ftt.Test) {
+					assert.Loosely(t, e.InvocationResult, should.NotBeNil)
 					e.HasInvocation = false
 					_, err := testInsertOrUpdate(e)
-					So(err, ShouldErrLike, "invocation result must not be set unless HasInvocation is set")
+					assert.Loosely(t, err, should.ErrLike("invocation result must not be set unless HasInvocation is set"))
 				})
 			})
-			Convey(`With invalid Presubmit Project`, func() {
-				Convey(`Unspecified`, func() {
+			t.Run(`With invalid Presubmit Project`, func(t *ftt.Test) {
+				t.Run(`Unspecified`, func(t *ftt.Test) {
 					e.PresubmitProject = ""
 					_, err := testInsertOrUpdate(e)
-					So(err, ShouldErrLike, `presubmit project: unspecified`)
+					assert.Loosely(t, err, should.ErrLike(`presubmit project: unspecified`))
 				})
-				Convey(`Invalid`, func() {
+				t.Run(`Invalid`, func(t *ftt.Test) {
 					e.PresubmitProject = "!"
 					_, err := testInsertOrUpdate(e)
-					So(err, ShouldErrLike, `presubmit project: must match ^[a-z0-9\-]{1,40}$`)
+					assert.Loosely(t, err, should.ErrLike(`presubmit project: must match ^[a-z0-9\-]{1,40}$`))
 				})
 			})
-			Convey(`With invalid Presubmit Result`, func() {
-				Convey(`Set when IsPresbumit = false`, func() {
-					So(e.PresubmitResult, ShouldNotBeNil)
+			t.Run(`With invalid Presubmit Result`, func(t *ftt.Test) {
+				t.Run(`Set when IsPresbumit = false`, func(t *ftt.Test) {
+					assert.Loosely(t, e.PresubmitResult, should.NotBeNil)
 					e.IsPresubmit = false
 					_, err := testInsertOrUpdate(e)
-					So(err, ShouldErrLike, "presubmit result must not be set unless IsPresubmit is set")
+					assert.Loosely(t, err, should.ErrLike("presubmit result must not be set unless IsPresubmit is set"))
 				})
-				Convey(`Missing Presubmit run ID`, func() {
+				t.Run(`Missing Presubmit run ID`, func(t *ftt.Test) {
 					e.PresubmitResult.PresubmitRunId = nil
 					_, err := testInsertOrUpdate(e)
-					So(err, ShouldErrLike, "presubmit run ID must be specified")
+					assert.Loosely(t, err, should.ErrLike("presubmit run ID must be specified"))
 				})
-				Convey(`Invalid Presubmit run ID host`, func() {
+				t.Run(`Invalid Presubmit run ID host`, func(t *ftt.Test) {
 					e.PresubmitResult.PresubmitRunId.System = "!"
 					_, err := testInsertOrUpdate(e)
-					So(err, ShouldErrLike, "presubmit run system must be 'luci-cv'")
+					assert.Loosely(t, err, should.ErrLike("presubmit run system must be 'luci-cv'"))
 				})
-				Convey(`Missing Presubmit run ID system-specific ID`, func() {
+				t.Run(`Missing Presubmit run ID system-specific ID`, func(t *ftt.Test) {
 					e.PresubmitResult.PresubmitRunId.Id = ""
 					_, err := testInsertOrUpdate(e)
-					So(err, ShouldErrLike, "presubmit run system-specific ID must be specified")
+					assert.Loosely(t, err, should.ErrLike("presubmit run system-specific ID must be specified"))
 				})
-				Convey(`Missing creation time`, func() {
+				t.Run(`Missing creation time`, func(t *ftt.Test) {
 					e.PresubmitResult.CreationTime = nil
 					_, err := testInsertOrUpdate(e)
-					So(err, ShouldErrLike, "presubmit result: creation time must be specified")
+					assert.Loosely(t, err, should.ErrLike("presubmit result: creation time must be specified"))
 				})
-				Convey(`Missing mode`, func() {
+				t.Run(`Missing mode`, func(t *ftt.Test) {
 					e.PresubmitResult.Mode = analysispb.PresubmitRunMode_PRESUBMIT_RUN_MODE_UNSPECIFIED
 					_, err := testInsertOrUpdate(e)
-					So(err, ShouldErrLike, "presubmit result: mode must be specified")
+					assert.Loosely(t, err, should.ErrLike("presubmit result: mode must be specified"))
 				})
-				Convey(`Missing status`, func() {
+				t.Run(`Missing status`, func(t *ftt.Test) {
 					e.PresubmitResult.Status = analysispb.PresubmitRunStatus_PRESUBMIT_RUN_STATUS_UNSPECIFIED
 					_, err := testInsertOrUpdate(e)
-					So(err, ShouldErrLike, "presubmit result: status must be specified")
+					assert.Loosely(t, err, should.ErrLike("presubmit result: status must be specified"))
 				})
 			})
 		})
-		Convey(`ReadBuildToPresubmitRunJoinStatistics`, func() {
-			Convey(`No data`, func() {
-				_, err := SetEntriesForTesting(ctx, nil...)
-				So(err, ShouldBeNil)
+		t.Run(`ReadBuildToPresubmitRunJoinStatistics`, func(t *ftt.Test) {
+			t.Run(`No data`, func(t *ftt.Test) {
+				_, err := SetEntriesForTesting(ctx, t, nil...)
+				assert.Loosely(t, err, should.BeNil)
 
 				results, err := ReadBuildToPresubmitRunJoinStatistics(span.Single(ctx))
-				So(err, ShouldBeNil)
-				So(results, ShouldResemble, map[string]JoinStatistics{})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, results, should.Resemble(map[string]JoinStatistics{}))
 			})
-			Convey(`Data`, func() {
+			t.Run(`Data`, func(t *ftt.Test) {
 				reference := time.Now().Add(-1 * time.Minute)
 				entriesToCreate := []*Entry{
 					// Setup following data:
@@ -267,11 +267,11 @@ func TestSpan(t *testing.T) {
 					NewEntry(6).WithBuildProject("alpha").WithBuildJoinedTime(reference.Add(-36 * time.Hour)).Build(),
 					NewEntry(7).WithBuildProject("beta").WithBuildJoinedTime(reference.Add(-36 * time.Hour)).WithPresubmitResult(nil).Build(),
 				}
-				_, err := SetEntriesForTesting(ctx, entriesToCreate...)
-				So(err, ShouldBeNil)
+				_, err := SetEntriesForTesting(ctx, t, entriesToCreate...)
+				assert.Loosely(t, err, should.BeNil)
 
 				results, err := ReadBuildToPresubmitRunJoinStatistics(span.Single(ctx))
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				expectedAlpha := JoinStatistics{
 					TotalByHour:  make([]int64, 36),
@@ -287,21 +287,21 @@ func TestSpan(t *testing.T) {
 				// Expect no entry to be returned for Project beta
 				// as all data is older than 36 hours.
 
-				So(results, ShouldResemble, map[string]JoinStatistics{
+				assert.Loosely(t, results, should.Resemble(map[string]JoinStatistics{
 					"alpha": expectedAlpha,
-				})
+				}))
 			})
 		})
-		Convey(`ReadPresubmitToBuildJoinStatistics`, func() {
-			Convey(`No data`, func() {
-				_, err := SetEntriesForTesting(ctx, nil...)
-				So(err, ShouldBeNil)
+		t.Run(`ReadPresubmitToBuildJoinStatistics`, func(t *ftt.Test) {
+			t.Run(`No data`, func(t *ftt.Test) {
+				_, err := SetEntriesForTesting(ctx, t, nil...)
+				assert.Loosely(t, err, should.BeNil)
 
 				results, err := ReadPresubmitToBuildJoinStatistics(span.Single(ctx))
-				So(err, ShouldBeNil)
-				So(results, ShouldResemble, map[string]JoinStatistics{})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, results, should.Resemble(map[string]JoinStatistics{}))
 			})
-			Convey(`Data`, func() {
+			t.Run(`Data`, func(t *ftt.Test) {
 				reference := time.Now().Add(-1 * time.Minute)
 				entriesToCreate := []*Entry{
 					// Setup following data:
@@ -327,11 +327,11 @@ func TestSpan(t *testing.T) {
 					NewEntry(6).WithPresubmitProject("alpha").WithPresubmitJoinedTime(reference.Add(-36 * time.Hour)).Build(),
 					NewEntry(7).WithPresubmitProject("beta").WithPresubmitJoinedTime(reference.Add(-36 * time.Hour)).WithBuildResult(nil).Build(),
 				}
-				_, err := SetEntriesForTesting(ctx, entriesToCreate...)
-				So(err, ShouldBeNil)
+				_, err := SetEntriesForTesting(ctx, t, entriesToCreate...)
+				assert.Loosely(t, err, should.BeNil)
 
 				results, err := ReadPresubmitToBuildJoinStatistics(span.Single(ctx))
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				expectedAlpha := JoinStatistics{
 					TotalByHour:  make([]int64, 36),
@@ -347,21 +347,21 @@ func TestSpan(t *testing.T) {
 				// Expect no entry to be returned for Project beta
 				// as all data is older than 36 hours.
 
-				So(results, ShouldResemble, map[string]JoinStatistics{
+				assert.Loosely(t, results, should.Resemble(map[string]JoinStatistics{
 					"alpha": expectedAlpha,
-				})
+				}))
 			})
 		})
-		Convey(`ReadBuildToInvocationJoinStatistics`, func() {
-			Convey(`No data`, func() {
-				_, err := SetEntriesForTesting(ctx, nil...)
-				So(err, ShouldBeNil)
+		t.Run(`ReadBuildToInvocationJoinStatistics`, func(t *ftt.Test) {
+			t.Run(`No data`, func(t *ftt.Test) {
+				_, err := SetEntriesForTesting(ctx, t, nil...)
+				assert.Loosely(t, err, should.BeNil)
 
 				results, err := ReadBuildToInvocationJoinStatistics(span.Single(ctx))
-				So(err, ShouldBeNil)
-				So(results, ShouldResemble, map[string]JoinStatistics{})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, results, should.Resemble(map[string]JoinStatistics{}))
 			})
-			Convey(`Data`, func() {
+			t.Run(`Data`, func(t *ftt.Test) {
 				reference := time.Now().Add(-1 * time.Minute)
 				entriesToCreate := []*Entry{
 					// Setup following data:
@@ -387,11 +387,11 @@ func TestSpan(t *testing.T) {
 					NewEntry(6).WithBuildProject("alpha").WithBuildJoinedTime(reference.Add(-36 * time.Hour)).Build(),
 					NewEntry(7).WithBuildProject("beta").WithBuildJoinedTime(reference.Add(-36 * time.Hour)).WithInvocationResult(nil).Build(),
 				}
-				_, err := SetEntriesForTesting(ctx, entriesToCreate...)
-				So(err, ShouldBeNil)
+				_, err := SetEntriesForTesting(ctx, t, entriesToCreate...)
+				assert.Loosely(t, err, should.BeNil)
 
 				results, err := ReadBuildToInvocationJoinStatistics(span.Single(ctx))
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				expectedAlpha := JoinStatistics{
 					TotalByHour:  make([]int64, 36),
@@ -407,21 +407,21 @@ func TestSpan(t *testing.T) {
 				// Expect no entry to be returned for Project beta
 				// as all data is older than 36 hours.
 
-				So(results, ShouldResemble, map[string]JoinStatistics{
+				assert.Loosely(t, results, should.Resemble(map[string]JoinStatistics{
 					"alpha": expectedAlpha,
-				})
+				}))
 			})
 		})
-		Convey(`ReadInvocationToBuildJoinStatistics`, func() {
-			Convey(`No data`, func() {
-				_, err := SetEntriesForTesting(ctx, nil...)
-				So(err, ShouldBeNil)
+		t.Run(`ReadInvocationToBuildJoinStatistics`, func(t *ftt.Test) {
+			t.Run(`No data`, func(t *ftt.Test) {
+				_, err := SetEntriesForTesting(ctx, t, nil...)
+				assert.Loosely(t, err, should.BeNil)
 
 				results, err := ReadInvocationToBuildJoinStatistics(span.Single(ctx))
-				So(err, ShouldBeNil)
-				So(results, ShouldResemble, map[string]JoinStatistics{})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, results, should.Resemble(map[string]JoinStatistics{}))
 			})
-			Convey(`Data`, func() {
+			t.Run(`Data`, func(t *ftt.Test) {
 				reference := time.Now().Add(-1 * time.Minute)
 				entriesToCreate := []*Entry{
 					// Setup following data:
@@ -448,11 +448,11 @@ func TestSpan(t *testing.T) {
 					NewEntry(7).WithInvocationProject("beta").WithInvocationJoinedTime(reference.Add(-36 * time.Hour)).WithBuildResult(nil).Build(),
 					NewEntry(8).WithInvocationProject("beta").WithInvocationJoinedTime(reference).WithBuildResult(nil).WithHasBuildbucketBuild(false).Build(),
 				}
-				_, err := SetEntriesForTesting(ctx, entriesToCreate...)
-				So(err, ShouldBeNil)
+				_, err := SetEntriesForTesting(ctx, t, entriesToCreate...)
+				assert.Loosely(t, err, should.BeNil)
 
 				results, err := ReadInvocationToBuildJoinStatistics(span.Single(ctx))
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				expectedAlpha := JoinStatistics{
 					TotalByHour:  make([]int64, 36),
@@ -468,9 +468,9 @@ func TestSpan(t *testing.T) {
 				// Expect no entry to be returned for Project beta
 				// as all data is older than 36 hours.
 
-				So(results, ShouldResemble, map[string]JoinStatistics{
+				assert.Loosely(t, results, should.Resemble(map[string]JoinStatistics{
 					"alpha": expectedAlpha,
-				})
+				}))
 			})
 		})
 	})

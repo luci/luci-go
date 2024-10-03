@@ -231,7 +231,7 @@ func TestExportTestResults(t *testing.T) {
 			assert.Loosely(t, exportClient.InsertionsByDestinationKey, should.HaveLength(2))
 			assert.Loosely(t, exportClient.InsertionsByDestinationKey["partitioned-by-day"], should.Resemble(expectedResults))
 			assert.Loosely(t, exportClient.InsertionsByDestinationKey["partitioned-by-month"], should.Resemble(expectedResults))
-			assert.Loosely(t, verifyCheckpoints(ctx, expectedCheckpoints...), should.BeNil)
+			assert.Loosely(t, verifyCheckpoints(ctx, t, expectedCheckpoints...), should.BeNil)
 
 			t.Run(`Results are not exported again if the process is re-run`, func(t *ftt.Test) {
 				exportClient.InsertionsByDestinationKey = map[string][]*bqpb.TestResultRow{}
@@ -259,7 +259,7 @@ func TestExportTestResults(t *testing.T) {
 			assert.Loosely(t, exportClient.InsertionsByDestinationKey, should.HaveLength(2))
 			assert.Loosely(t, exportClient.InsertionsByDestinationKey["partitioned-by-day"], should.Resemble(expectedResults))
 			assert.Loosely(t, exportClient.InsertionsByDestinationKey["partitioned-by-month"], should.Resemble(expectedResults))
-			assert.Loosely(t, verifyCheckpoints(ctx, expectedCheckpoints...), should.BeNil)
+			assert.Loosely(t, verifyCheckpoints(ctx, t, expectedCheckpoints...), should.BeNil)
 		})
 	})
 }

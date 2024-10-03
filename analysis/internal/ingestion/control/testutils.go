@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"testing"
 	"time"
 
 	"cloud.google.com/go/spanner"
@@ -181,8 +182,9 @@ func (b *EntryBuilder) Build() *Entry {
 }
 
 // SetEntriesForTesting replaces the set of stored entries to match the given set.
-func SetEntriesForTesting(ctx context.Context, es ...*Entry) (time.Time, error) {
-	testutil.MustApply(ctx,
+func SetEntriesForTesting(ctx context.Context, t testing.TB, es ...*Entry) (time.Time, error) {
+	t.Helper()
+	testutil.MustApply(ctx, t,
 		spanner.Delete("IngestionJoins", spanner.AllKeys()))
 	// Insert some Ingestion records.
 	commitTime, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {

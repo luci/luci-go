@@ -31,6 +31,10 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/server/span"
@@ -48,13 +52,10 @@ import (
 	"go.chromium.org/luci/analysis/internal/config/compiledcfg"
 	"go.chromium.org/luci/analysis/internal/testutil"
 	configpb "go.chromium.org/luci/analysis/proto/config"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestUpdate(t *testing.T) {
-	Convey("With bug updater", t, func() {
+	ftt.Run("With bug updater", t, func(t *ftt.Test) {
 		ctx := testutil.IntegrationTestContext(t)
 		ctx = memory.Use(ctx)
 		ctx = context.WithValue(ctx, &buganizer.BuganizerSelfEmailKey, "email@test.com")
@@ -73,17 +74,17 @@ func TestUpdate(t *testing.T) {
 			project: projectCfg,
 		}
 		err := config.SetTestProjectConfig(ctx, projectsCfg)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		compiledCfg, err := compiledcfg.NewConfig(projectCfg)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		suggestedClusters := []*analysis.Cluster{
-			makeReasonCluster(compiledCfg, 0),
-			makeReasonCluster(compiledCfg, 1),
-			makeReasonCluster(compiledCfg, 2),
-			makeReasonCluster(compiledCfg, 3),
-			makeReasonCluster(compiledCfg, 4),
+			makeReasonCluster(t, compiledCfg, 0),
+			makeReasonCluster(t, compiledCfg, 1),
+			makeReasonCluster(t, compiledCfg, 2),
+			makeReasonCluster(t, compiledCfg, 3),
+			makeReasonCluster(t, compiledCfg, 4),
 		}
 		analysisClient := &fakeAnalysisClient{
 			clusters: suggestedClusters,
@@ -94,7 +95,7 @@ func TestUpdate(t *testing.T) {
 
 		// Unless otherwise specified, assume re-clustering has caught up to
 		// the latest version of algorithms and config.
-		err = runs.SetRunsForTesting(ctx, []*runs.ReclusteringRun{
+		err = runs.SetRunsForTesting(ctx, t, []*runs.ReclusteringRun{
 			runs.NewRun(0).
 				WithProject(project).
 				WithAlgorithmsVersion(algorithms.AlgorithmsVersion).
@@ -102,10 +103,10 @@ func TestUpdate(t *testing.T) {
 				WithRulesVersion(rules.StartingEpoch).
 				WithCompletedProgress().Build(),
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		progress, err := runs.ReadReclusteringProgress(ctx, project)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		opts := UpdateOptions{
 			UIBaseURL:            "https://luci-analysis-test.appspot.com",
@@ -123,14 +124,14 @@ func TestUpdate(t *testing.T) {
 		now := time.Date(2055, time.May, 5, 5, 5, 5, 5, time.UTC)
 		ctx, tc := testclock.UseTime(ctx, now)
 
-		Convey("configuration used for testing is valid", func() {
+		t.Run("configuration used for testing is valid", func(t *ftt.Test) {
 			c := validation.Context{Context: context.Background()}
 			config.ValidateProjectConfig(&c, project, projectCfg)
-			So(c.Finalize(), ShouldBeNil)
+			assert.Loosely(t, c.Finalize(), should.BeNil)
 		})
-		Convey("with a suggested cluster", func() {
+		t.Run("with a suggested cluster", func(t *ftt.Test) {
 			// Create a suggested cluster we should consider filing a bug for.
-			sourceClusterID := reasonClusterID(compiledCfg, "Failed to connect to 100.1.1.99.")
+			sourceClusterID := reasonClusterID(t, compiledCfg, "Failed to connect to 100.1.1.99.")
 			suggestedClusters[1].ClusterID = sourceClusterID
 			suggestedClusters[1].ExampleFailureReason = bigquery.NullString{StringVal: "Failed to connect to 100.1.1.105.", Valid: true}
 			suggestedClusters[1].TopTestIDs = []analysis.TopCount{
@@ -188,47 +189,47 @@ func TestUpdate(t *testing.T) {
 				OneDay: metrics.Counts{Residual: 100},
 			}
 
-			Convey("bug filing threshold must be met to file a new bug", func() {
-				Convey("Reason cluster", func() {
-					Convey("Above threshold", func() {
+			t.Run("bug filing threshold must be met to file a new bug", func(t *ftt.Test) {
+				t.Run("Reason cluster", func(t *ftt.Test) {
+					t.Run("Above threshold", func(t *ftt.Test) {
 						suggestedClusters[1].MetricValues[metrics.CriticalFailuresExonerated.ID] = metrics.TimewiseCounts{OneDay: metrics.Counts{Residual: 100}}
 
 						// Act
 						err = UpdateBugsForProject(ctx, opts)
 
 						// Verify
-						So(err, ShouldBeNil)
+						assert.Loosely(t, err, should.BeNil)
 
-						So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
-						So(expectBuganizerBug(buganizerStore, expectedBuganizerBug), ShouldBeNil)
-						So(issueCount(), ShouldEqual, 1)
+						assert.Loosely(t, verifyRulesResemble(ctx, t, expectedRules), should.BeNil)
+						assert.Loosely(t, expectBuganizerBug(buganizerStore, expectedBuganizerBug), should.BeNil)
+						assert.Loosely(t, issueCount(), should.Equal(1))
 
 						// Further updates do nothing.
 						err = UpdateBugsForProject(ctx, opts)
 
 						// Verify
-						So(err, ShouldBeNil)
+						assert.Loosely(t, err, should.BeNil)
 
-						So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
-						So(expectBuganizerBug(buganizerStore, expectedBuganizerBug), ShouldBeNil)
-						So(issueCount(), ShouldEqual, 1)
+						assert.Loosely(t, verifyRulesResemble(ctx, t, expectedRules), should.BeNil)
+						assert.Loosely(t, expectBuganizerBug(buganizerStore, expectedBuganizerBug), should.BeNil)
+						assert.Loosely(t, issueCount(), should.Equal(1))
 					})
-					Convey("Below threshold", func() {
+					t.Run("Below threshold", func(t *ftt.Test) {
 						suggestedClusters[1].MetricValues[metrics.CriticalFailuresExonerated.ID] = metrics.TimewiseCounts{OneDay: metrics.Counts{Residual: 99}}
 
 						// Act
 						err = UpdateBugsForProject(ctx, opts)
 
 						// Verify
-						So(err, ShouldBeNil)
+						assert.Loosely(t, err, should.BeNil)
 
 						// No bug should be created.
-						So(verifyRulesResemble(ctx, nil), ShouldBeNil)
-						So(issueCount(), ShouldEqual, 0)
+						assert.Loosely(t, verifyRulesResemble(ctx, t, nil), should.BeNil)
+						assert.Loosely(t, issueCount(), should.BeZero)
 					})
 				})
-				Convey("Test name cluster", func() {
-					suggestedClusters[1].ClusterID = testIDClusterID(compiledCfg, "ui-test-1")
+				t.Run("Test name cluster", func(t *ftt.Test) {
+					suggestedClusters[1].ClusterID = testIDClusterID(t, compiledCfg, "ui-test-1")
 					suggestedClusters[1].TopTestIDs = []analysis.TopCount{
 						{Value: "ui-test-1", Count: 10},
 					}
@@ -239,56 +240,56 @@ func TestUpdate(t *testing.T) {
 
 					// 34% more impact is required for a test name cluster to
 					// be filed, compared to a failure reason cluster.
-					Convey("Above threshold", func() {
+					t.Run("Above threshold", func(t *ftt.Test) {
 						suggestedClusters[1].MetricValues[metrics.CriticalFailuresExonerated.ID] = metrics.TimewiseCounts{OneDay: metrics.Counts{Residual: 134}}
 
 						// Act
 						err = UpdateBugsForProject(ctx, opts)
 
 						// Verify
-						So(err, ShouldBeNil)
-						So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
-						So(expectBuganizerBug(buganizerStore, expectedBuganizerBug), ShouldBeNil)
-						So(issueCount(), ShouldEqual, 1)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, verifyRulesResemble(ctx, t, expectedRules), should.BeNil)
+						assert.Loosely(t, expectBuganizerBug(buganizerStore, expectedBuganizerBug), should.BeNil)
+						assert.Loosely(t, issueCount(), should.Equal(1))
 
 						// Further updates do nothing.
 						err = UpdateBugsForProject(ctx, opts)
 
 						// Verify
-						So(err, ShouldBeNil)
-						So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
-						So(expectBuganizerBug(buganizerStore, expectedBuganizerBug), ShouldBeNil)
-						So(issueCount(), ShouldEqual, 1)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, verifyRulesResemble(ctx, t, expectedRules), should.BeNil)
+						assert.Loosely(t, expectBuganizerBug(buganizerStore, expectedBuganizerBug), should.BeNil)
+						assert.Loosely(t, issueCount(), should.Equal(1))
 					})
-					Convey("Below threshold", func() {
+					t.Run("Below threshold", func(t *ftt.Test) {
 						suggestedClusters[1].MetricValues[metrics.CriticalFailuresExonerated.ID] = metrics.TimewiseCounts{OneDay: metrics.Counts{Residual: 133}}
 
 						// Act
 						err = UpdateBugsForProject(ctx, opts)
 
 						// Verify
-						So(err, ShouldBeNil)
+						assert.Loosely(t, err, should.BeNil)
 
 						// No bug should be created.
-						So(verifyRulesResemble(ctx, nil), ShouldBeNil)
-						So(issueCount(), ShouldEqual, 0)
+						assert.Loosely(t, verifyRulesResemble(ctx, t, nil), should.BeNil)
+						assert.Loosely(t, issueCount(), should.BeZero)
 					})
 				})
 			})
-			Convey("policies are correctly activated when new bugs are filed", func() {
-				Convey("other policy activation threshold not met", func() {
+			t.Run("policies are correctly activated when new bugs are filed", func(t *ftt.Test) {
+				t.Run("other policy activation threshold not met", func(t *ftt.Test) {
 					suggestedClusters[1].MetricValues[metrics.HumanClsFailedPresubmit.ID] = metrics.TimewiseCounts{SevenDay: metrics.Counts{Residual: 9}}
 
 					// Act
 					err = UpdateBugsForProject(ctx, opts)
 
 					// Verify
-					So(err, ShouldBeNil)
-					So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
-					So(expectBuganizerBug(buganizerStore, expectedBuganizerBug), ShouldBeNil)
-					So(issueCount(), ShouldEqual, 1)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, verifyRulesResemble(ctx, t, expectedRules), should.BeNil)
+					assert.Loosely(t, expectBuganizerBug(buganizerStore, expectedBuganizerBug), should.BeNil)
+					assert.Loosely(t, issueCount(), should.Equal(1))
 				})
-				Convey("other policy activation threshold met", func() {
+				t.Run("other policy activation threshold met", func(t *ftt.Test) {
 					suggestedClusters[1].MetricValues[metrics.HumanClsFailedPresubmit.ID] = metrics.TimewiseCounts{SevenDay: metrics.Counts{Residual: 10}}
 					expectedRule.BugManagementState.PolicyState["cls-rejected-policy"].IsActive = true
 					expectedRule.BugManagementState.PolicyState["cls-rejected-policy"].LastActivationTime = timestamppb.New(opts.RunTimestamp)
@@ -302,14 +303,14 @@ func TestUpdate(t *testing.T) {
 					err = UpdateBugsForProject(ctx, opts)
 
 					// Verify
-					So(err, ShouldBeNil)
-					So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
-					So(expectBuganizerBug(buganizerStore, expectedBuganizerBug), ShouldBeNil)
-					So(issueCount(), ShouldEqual, 1)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, verifyRulesResemble(ctx, t, expectedRules), should.BeNil)
+					assert.Loosely(t, expectBuganizerBug(buganizerStore, expectedBuganizerBug), should.BeNil)
+					assert.Loosely(t, issueCount(), should.Equal(1))
 				})
 			})
-			Convey("dispersion criteria must be met to file a new bug", func() {
-				Convey("met via User CLs with failures", func() {
+			t.Run("dispersion criteria must be met to file a new bug", func(t *ftt.Test) {
+				t.Run("met via User CLs with failures", func(t *ftt.Test) {
 					suggestedClusters[1].DistinctUserCLsWithFailures7d.Residual = 3
 					suggestedClusters[1].PostsubmitBuildsWithFailures7d.Residual = 0
 
@@ -317,12 +318,12 @@ func TestUpdate(t *testing.T) {
 					err = UpdateBugsForProject(ctx, opts)
 
 					// Verify
-					So(err, ShouldBeNil)
-					So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
-					So(expectBuganizerBug(buganizerStore, expectedBuganizerBug), ShouldBeNil)
-					So(issueCount(), ShouldEqual, 1)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, verifyRulesResemble(ctx, t, expectedRules), should.BeNil)
+					assert.Loosely(t, expectBuganizerBug(buganizerStore, expectedBuganizerBug), should.BeNil)
+					assert.Loosely(t, issueCount(), should.Equal(1))
 				})
-				Convey("met via Postsubmit builds with failures", func() {
+				t.Run("met via Postsubmit builds with failures", func(t *ftt.Test) {
 					suggestedClusters[1].DistinctUserCLsWithFailures7d.Residual = 0
 					suggestedClusters[1].PostsubmitBuildsWithFailures7d.Residual = 1
 
@@ -330,12 +331,12 @@ func TestUpdate(t *testing.T) {
 					err = UpdateBugsForProject(ctx, opts)
 
 					// Verify
-					So(err, ShouldBeNil)
-					So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
-					So(expectBuganizerBug(buganizerStore, expectedBuganizerBug), ShouldBeNil)
-					So(issueCount(), ShouldEqual, 1)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, verifyRulesResemble(ctx, t, expectedRules), should.BeNil)
+					assert.Loosely(t, expectBuganizerBug(buganizerStore, expectedBuganizerBug), should.BeNil)
+					assert.Loosely(t, issueCount(), should.Equal(1))
 				})
-				Convey("not met", func() {
+				t.Run("not met", func(t *ftt.Test) {
 					suggestedClusters[1].DistinctUserCLsWithFailures7d.Residual = 0
 					suggestedClusters[1].PostsubmitBuildsWithFailures7d.Residual = 0
 
@@ -343,14 +344,14 @@ func TestUpdate(t *testing.T) {
 					err = UpdateBugsForProject(ctx, opts)
 
 					// Verify
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					// No bug should be created.
-					So(verifyRulesResemble(ctx, nil), ShouldBeNil)
-					So(issueCount(), ShouldEqual, 0)
+					assert.Loosely(t, verifyRulesResemble(ctx, t, nil), should.BeNil)
+					assert.Loosely(t, issueCount(), should.BeZero)
 				})
 			})
-			Convey("duplicate bugs are suppressed", func() {
-				Convey("where a rule was recently filed for the same suggested cluster, and reclustering is pending", func() {
+			t.Run("duplicate bugs are suppressed", func(t *ftt.Test) {
+				t.Run("where a rule was recently filed for the same suggested cluster, and reclustering is pending", func(t *ftt.Test) {
 					createTime := time.Date(2021, time.January, 5, 12, 30, 0, 0, time.UTC)
 					buganizerStore.StoreIssue(ctx, buganizer.NewFakeIssue(1))
 					existingRule := rules.NewRule(1).
@@ -363,24 +364,24 @@ func TestUpdate(t *testing.T) {
 						WithBugPriorityManaged(true).
 						WithBugPriorityManagedLastUpdateTime(createTime.Add(1 * time.Hour)).
 						WithSourceCluster(sourceClusterID).Build()
-					err := rules.SetForTesting(ctx, []*rules.Entry{
+					err := rules.SetForTesting(ctx, t, []*rules.Entry{
 						existingRule,
 					})
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 
 					// Initially do not expect a new bug to be filed.
 					err = UpdateBugsForProject(ctx, opts)
 
-					So(err, ShouldBeNil)
-					So(verifyRulesResemble(ctx, []*rules.Entry{existingRule}), ShouldBeNil)
-					So(issueCount(), ShouldEqual, 1)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, verifyRulesResemble(ctx, t, []*rules.Entry{existingRule}), should.BeNil)
+					assert.Loosely(t, issueCount(), should.Equal(1))
 
 					// Once re-clustering has incorporated the version of rules
 					// that included this new rule, it is OK to file another bug
 					// for the suggested cluster if sufficient impact remains.
 					// This should only happen when the rule definition has been
 					// manually narrowed in some way from the originally filed bug.
-					err = runs.SetRunsForTesting(ctx, []*runs.ReclusteringRun{
+					err = runs.SetRunsForTesting(ctx, t, []*runs.ReclusteringRun{
 						runs.NewRun(0).
 							WithProject(project).
 							WithAlgorithmsVersion(algorithms.AlgorithmsVersion).
@@ -388,24 +389,24 @@ func TestUpdate(t *testing.T) {
 							WithRulesVersion(createTime).
 							WithCompletedProgress().Build(),
 					})
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					progress, err := runs.ReadReclusteringProgress(ctx, project)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					opts.ReclusteringProgress = progress
 
 					// Act
 					err = UpdateBugsForProject(ctx, opts)
 
 					// Verify
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					expectedBuganizerBug.ID = 2 // Because we already created a bug with ID 1 above.
 					expectedRule.BugID.ID = "2"
-					So(verifyRulesResemble(ctx, []*rules.Entry{expectedRule, existingRule}), ShouldBeNil)
-					So(expectBuganizerBug(buganizerStore, expectedBuganizerBug), ShouldBeNil)
-					So(issueCount(), ShouldEqual, 2)
+					assert.Loosely(t, verifyRulesResemble(ctx, t, []*rules.Entry{expectedRule, existingRule}), should.BeNil)
+					assert.Loosely(t, expectBuganizerBug(buganizerStore, expectedBuganizerBug), should.BeNil)
+					assert.Loosely(t, issueCount(), should.Equal(2))
 				})
-				Convey("when re-clustering to new algorithms", func() {
-					err = runs.SetRunsForTesting(ctx, []*runs.ReclusteringRun{
+				t.Run("when re-clustering to new algorithms", func(t *ftt.Test) {
+					err = runs.SetRunsForTesting(ctx, t, []*runs.ReclusteringRun{
 						runs.NewRun(0).
 							WithProject(project).
 							WithAlgorithmsVersion(algorithms.AlgorithmsVersion - 1).
@@ -413,21 +414,21 @@ func TestUpdate(t *testing.T) {
 							WithRulesVersion(rules.StartingEpoch).
 							WithCompletedProgress().Build(),
 					})
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					progress, err := runs.ReadReclusteringProgress(ctx, project)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					opts.ReclusteringProgress = progress
 
 					// Act
 					err = UpdateBugsForProject(ctx, opts)
 
 					// Verify no bugs were filed.
-					So(err, ShouldBeNil)
-					So(verifyRulesResemble(ctx, nil), ShouldBeNil)
-					So(issueCount(), ShouldEqual, 0)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, verifyRulesResemble(ctx, t, nil), should.BeNil)
+					assert.Loosely(t, issueCount(), should.BeZero)
 				})
-				Convey("when re-clustering to new config", func() {
-					err = runs.SetRunsForTesting(ctx, []*runs.ReclusteringRun{
+				t.Run("when re-clustering to new config", func(t *ftt.Test) {
+					err = runs.SetRunsForTesting(ctx, t, []*runs.ReclusteringRun{
 						runs.NewRun(0).
 							WithProject(project).
 							WithAlgorithmsVersion(algorithms.AlgorithmsVersion).
@@ -435,21 +436,21 @@ func TestUpdate(t *testing.T) {
 							WithRulesVersion(rules.StartingEpoch).
 							WithCompletedProgress().Build(),
 					})
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					progress, err := runs.ReadReclusteringProgress(ctx, project)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					opts.ReclusteringProgress = progress
 
 					// Act
 					err = UpdateBugsForProject(ctx, opts)
 
 					// Verify no bugs were filed.
-					So(err, ShouldBeNil)
-					So(verifyRulesResemble(ctx, nil), ShouldBeNil)
-					So(issueCount(), ShouldEqual, 0)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, verifyRulesResemble(ctx, t, nil), should.BeNil)
+					assert.Loosely(t, issueCount(), should.BeZero)
 				})
 			})
-			Convey("bugs are routed to the correct issue tracker and component", func() {
+			t.Run("bugs are routed to the correct issue tracker and component", func(t *ftt.Test) {
 				// As currently only Buganizer is supported, issues should always
 				// be routed there.
 
@@ -472,12 +473,12 @@ func TestUpdate(t *testing.T) {
 				err = UpdateBugsForProject(ctx, opts)
 
 				// Verify
-				So(err, ShouldBeNil)
-				So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
-				So(expectBuganizerBug(buganizerStore, expectedBuganizerBug), ShouldBeNil)
-				So(issueCount(), ShouldEqual, 1)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, verifyRulesResemble(ctx, t, expectedRules), should.BeNil)
+				assert.Loosely(t, expectBuganizerBug(buganizerStore, expectedBuganizerBug), should.BeNil)
+				assert.Loosely(t, issueCount(), should.Equal(1))
 			})
-			Convey("partial success creating bugs is correctly handled", func() {
+			t.Run("partial success creating bugs is correctly handled", func(t *ftt.Test) {
 				// Inject an error updating the bug after creation.
 				buganizerClient.CreateCommentError = status.Errorf(codes.Internal, "internal error creating comment")
 
@@ -489,15 +490,15 @@ func TestUpdate(t *testing.T) {
 				expectedRule.BugManagementState.PolicyState["exoneration-policy"].ActivationNotified = false
 
 				// Verify the rule was still created.
-				So(err, ShouldErrLike, "internal error creating comment")
-				So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
-				So(expectBuganizerBug(buganizerStore, expectedBuganizerBug), ShouldBeNil)
-				So(issueCount(), ShouldEqual, 1)
+				assert.Loosely(t, err, should.ErrLike("internal error creating comment"))
+				assert.Loosely(t, verifyRulesResemble(ctx, t, expectedRules), should.BeNil)
+				assert.Loosely(t, expectBuganizerBug(buganizerStore, expectedBuganizerBug), should.BeNil)
+				assert.Loosely(t, issueCount(), should.Equal(1))
 			})
 		})
-		Convey("With both failure reason and test name clusters above bug-filing threshold", func() {
+		t.Run("With both failure reason and test name clusters above bug-filing threshold", func(t *ftt.Test) {
 			// Reason cluster above the 1-day exoneration threshold.
-			suggestedClusters[2] = makeReasonCluster(compiledCfg, 2)
+			suggestedClusters[2] = makeReasonCluster(t, compiledCfg, 2)
 			suggestedClusters[2].MetricValues[metrics.CriticalFailuresExonerated.ID] = metrics.TimewiseCounts{
 				OneDay:   metrics.Counts{Residual: 100},
 				ThreeDay: metrics.Counts{Residual: 100},
@@ -506,7 +507,7 @@ func TestUpdate(t *testing.T) {
 			suggestedClusters[2].PostsubmitBuildsWithFailures7d.Residual = 1
 
 			// Test name cluster with 33% more impact.
-			suggestedClusters[1] = makeTestNameCluster(compiledCfg, 3)
+			suggestedClusters[1] = makeTestNameCluster(t, compiledCfg, 3)
 			suggestedClusters[1].MetricValues[metrics.CriticalFailuresExonerated.ID] = metrics.TimewiseCounts{
 				OneDay:   metrics.Counts{Residual: 133},
 				ThreeDay: metrics.Counts{Residual: 133},
@@ -518,7 +519,7 @@ func TestUpdate(t *testing.T) {
 			// we test change throttling.
 			opts.MaxBugsFiledPerRun = 1
 
-			Convey("reason clusters preferred over test name clusters", func() {
+			t.Run("reason clusters preferred over test name clusters", func(t *ftt.Test) {
 				// Test name cluster has <34% more impact than the reason
 				// cluster.
 
@@ -527,12 +528,12 @@ func TestUpdate(t *testing.T) {
 
 				// Verify reason cluster filed.
 				rs, err := rules.ReadAllForTesting(span.Single(ctx))
-				So(err, ShouldBeNil)
-				So(len(rs), ShouldEqual, 1)
-				So(rs[0].SourceCluster, ShouldResemble, suggestedClusters[2].ClusterID)
-				So(rs[0].SourceCluster.IsFailureReasonCluster(), ShouldBeTrue)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, len(rs), should.Equal(1))
+				assert.Loosely(t, rs[0].SourceCluster, should.Resemble(suggestedClusters[2].ClusterID))
+				assert.Loosely(t, rs[0].SourceCluster.IsFailureReasonCluster(), should.BeTrue)
 			})
-			Convey("test name clusters can be filed if significantly more impact", func() {
+			t.Run("test name clusters can be filed if significantly more impact", func(t *ftt.Test) {
 				// Increase impact of the test name cluster so that the
 				// test name cluster has >34% more impact than the reason
 				// cluster.
@@ -547,16 +548,16 @@ func TestUpdate(t *testing.T) {
 
 				// Verify test name cluster filed.
 				rs, err := rules.ReadAllForTesting(span.Single(ctx))
-				So(err, ShouldBeNil)
-				So(len(rs), ShouldEqual, 1)
-				So(rs[0].SourceCluster, ShouldResemble, suggestedClusters[1].ClusterID)
-				So(rs[0].SourceCluster.IsTestNameCluster(), ShouldBeTrue)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, len(rs), should.Equal(1))
+				assert.Loosely(t, rs[0].SourceCluster, should.Resemble(suggestedClusters[1].ClusterID))
+				assert.Loosely(t, rs[0].SourceCluster.IsTestNameCluster(), should.BeTrue)
 			})
 		})
-		Convey("With multiple rules / bugs on file", func() {
+		t.Run("With multiple rules / bugs on file", func(t *ftt.Test) {
 			// Use a mix of test name and failure reason clusters for
 			// code path coverage.
-			suggestedClusters[0] = makeTestNameCluster(compiledCfg, 0)
+			suggestedClusters[0] = makeTestNameCluster(t, compiledCfg, 0)
 			suggestedClusters[0].MetricValues[metrics.CriticalFailuresExonerated.ID] = metrics.TimewiseCounts{
 				OneDay:   metrics.Counts{Residual: 940},
 				ThreeDay: metrics.Counts{Residual: 940},
@@ -564,7 +565,7 @@ func TestUpdate(t *testing.T) {
 			}
 			suggestedClusters[0].PostsubmitBuildsWithFailures7d.Residual = 1
 
-			suggestedClusters[1] = makeReasonCluster(compiledCfg, 1)
+			suggestedClusters[1] = makeReasonCluster(t, compiledCfg, 1)
 			suggestedClusters[1].MetricValues[metrics.CriticalFailuresExonerated.ID] = metrics.TimewiseCounts{
 				OneDay:   metrics.Counts{Residual: 300},
 				ThreeDay: metrics.Counts{Residual: 300},
@@ -572,7 +573,7 @@ func TestUpdate(t *testing.T) {
 			}
 			suggestedClusters[1].PostsubmitBuildsWithFailures7d.Residual = 1
 
-			suggestedClusters[2] = makeReasonCluster(compiledCfg, 2)
+			suggestedClusters[2] = makeReasonCluster(t, compiledCfg, 2)
 			suggestedClusters[2].MetricValues[metrics.CriticalFailuresExonerated.ID] = metrics.TimewiseCounts{
 				OneDay:   metrics.Counts{Residual: 250},
 				ThreeDay: metrics.Counts{Residual: 250},
@@ -583,7 +584,7 @@ func TestUpdate(t *testing.T) {
 				{Value: "Monorail", Count: 250},
 			}
 
-			suggestedClusters[3] = makeReasonCluster(compiledCfg, 3)
+			suggestedClusters[3] = makeReasonCluster(t, compiledCfg, 3)
 			suggestedClusters[3].MetricValues[metrics.CriticalFailuresExonerated.ID] = metrics.TimewiseCounts{
 				OneDay:   metrics.Counts{Residual: 200},
 				ThreeDay: metrics.Counts{Residual: 200},
@@ -700,18 +701,18 @@ func TestUpdate(t *testing.T) {
 				err = UpdateBugsForProject(ctx, opts)
 
 				// Verify
-				So(err, ShouldBeNil)
-				So(verifyRulesResemble(ctx, expectedRules[:i+1]), ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, verifyRulesResemble(ctx, t, expectedRules[:i+1]), should.BeNil)
 			}
 
 			// Further updates do nothing.
 			err = UpdateBugsForProject(ctx, opts)
 
-			So(err, ShouldBeNil)
-			So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, verifyRulesResemble(ctx, t, expectedRules), should.BeNil)
 
 			rs, err := rules.ReadAllForTesting(span.Single(ctx))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			bugClusters := []*analysis.Cluster{
 				makeBugCluster(rs[0].RuleID),
@@ -720,17 +721,17 @@ func TestUpdate(t *testing.T) {
 				makeBugCluster(rs[3].RuleID),
 			}
 
-			Convey("if re-clustering in progress", func() {
+			t.Run("if re-clustering in progress", func(t *ftt.Test) {
 				analysisClient.clusters = append(suggestedClusters, bugClusters...)
 
-				Convey("negligable cluster metrics does not affect issue priority, status or active policies", func() {
+				t.Run("negligable cluster metrics does not affect issue priority, status or active policies", func(t *ftt.Test) {
 					// The policy should already be active from previous setup.
-					So(expectedRules[0].BugManagementState.PolicyState["exoneration-policy"].IsActive, ShouldBeTrue)
+					assert.Loosely(t, expectedRules[0].BugManagementState.PolicyState["exoneration-policy"].IsActive, should.BeTrue)
 
 					issue := buganizerStore.Issues[1]
 					originalPriority := issue.Issue.IssueState.Priority
 					originalStatus := issue.Issue.IssueState.Status
-					So(originalStatus, ShouldNotEqual, issuetracker.Issue_VERIFIED)
+					assert.Loosely(t, originalStatus, should.NotEqual(issuetracker.Issue_VERIFIED))
 
 					SetResidualMetrics(bugClusters[1], bugs.ClusterMetrics{
 						metrics.CriticalFailuresExonerated.ID: bugs.MetricValues{},
@@ -740,13 +741,13 @@ func TestUpdate(t *testing.T) {
 					err = UpdateBugsForProject(ctx, opts)
 
 					// Verify.
-					So(err, ShouldBeNil)
-					So(issue.Issue.IssueState.Priority, ShouldEqual, originalPriority)
-					So(issue.Issue.IssueState.Status, ShouldEqual, originalStatus)
-					So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, issue.Issue.IssueState.Priority, should.Equal(originalPriority))
+					assert.Loosely(t, issue.Issue.IssueState.Status, should.Equal(originalStatus))
+					assert.Loosely(t, verifyRulesResemble(ctx, t, expectedRules), should.BeNil)
 				})
 			})
-			Convey("with re-clustering complete", func() {
+			t.Run("with re-clustering complete", func(t *ftt.Test) {
 				analysisClient.clusters = append(suggestedClusters, bugClusters...)
 
 				// Move residual impact from suggested clusters to new bug clusters.
@@ -763,7 +764,7 @@ func TestUpdate(t *testing.T) {
 				suggestedClusters[3].MetricValues = emptyMetricValues()
 
 				// Mark reclustering complete.
-				err := runs.SetRunsForTesting(ctx, []*runs.ReclusteringRun{
+				err := runs.SetRunsForTesting(ctx, t, []*runs.ReclusteringRun{
 					runs.NewRun(0).
 						WithProject(project).
 						WithAlgorithmsVersion(algorithms.AlgorithmsVersion).
@@ -771,22 +772,22 @@ func TestUpdate(t *testing.T) {
 						WithRulesVersion(rs[3].PredicateLastUpdateTime).
 						WithCompletedProgress().Build(),
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				progress, err := runs.ReadReclusteringProgress(ctx, project)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				opts.ReclusteringProgress = progress
 
 				opts.RunTimestamp = opts.RunTimestamp.Add(10 * time.Minute)
 
-				Convey("policy activation", func() {
+				t.Run("policy activation", func(t *ftt.Test) {
 					// Verify updates work, even when rules are in later batches.
 					opts.UpdateRuleBatchSize = 1
 
-					Convey("policy remains inactive if activation threshold unmet", func() {
+					t.Run("policy remains inactive if activation threshold unmet", func(t *ftt.Test) {
 						// The policy should be inactive from previous setup.
 						expectedPolicyState := expectedRules[1].BugManagementState.PolicyState["cls-rejected-policy"]
-						So(expectedPolicyState.IsActive, ShouldBeFalse)
+						assert.Loosely(t, expectedPolicyState.IsActive, should.BeFalse)
 
 						// Set metrics just below the policy activation threshold.
 						bugClusters[1].MetricValues[metrics.HumanClsFailedPresubmit.ID] = metrics.TimewiseCounts{
@@ -799,14 +800,14 @@ func TestUpdate(t *testing.T) {
 						err = UpdateBugsForProject(ctx, opts)
 
 						// Verify policy activation unchanged.
-						So(err, ShouldBeNil)
-						So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, verifyRulesResemble(ctx, t, expectedRules), should.BeNil)
 					})
-					Convey("policy activates if activation threshold met", func() {
+					t.Run("policy activates if activation threshold met", func(t *ftt.Test) {
 						// The policy should be inactive from previous setup.
 						expectedPolicyState := expectedRules[1].BugManagementState.PolicyState["cls-rejected-policy"]
-						So(expectedPolicyState.IsActive, ShouldBeFalse)
-						So(expectedPolicyState.ActivationNotified, ShouldBeFalse)
+						assert.Loosely(t, expectedPolicyState.IsActive, should.BeFalse)
+						assert.Loosely(t, expectedPolicyState.ActivationNotified, should.BeFalse)
 
 						// Update metrics so that policy should activate.
 						bugClusters[1].MetricValues[metrics.HumanClsFailedPresubmit.ID] = metrics.TimewiseCounts{
@@ -816,30 +817,30 @@ func TestUpdate(t *testing.T) {
 						}
 
 						issue := buganizerStore.Issues[2]
-						So(expectedRules[1].BugID, ShouldResemble, bugs.BugID{System: bugs.BuganizerSystem, ID: "2"})
+						assert.Loosely(t, expectedRules[1].BugID, should.Resemble(bugs.BugID{System: bugs.BuganizerSystem, ID: "2"}))
 						existingCommentCount := len(issue.Comments)
 
 						// Act
 						err = UpdateBugsForProject(ctx, opts)
 
 						// Verify policy activates.
-						So(err, ShouldBeNil)
+						assert.Loosely(t, err, should.BeNil)
 						expectedPolicyState.IsActive = true
 						expectedPolicyState.LastActivationTime = timestamppb.New(opts.RunTimestamp)
 						expectedPolicyState.ActivationNotified = true
-						So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
+						assert.Loosely(t, verifyRulesResemble(ctx, t, expectedRules), should.BeNil)
 
 						// Expect comments to be posted.
-						So(issue.Comments, ShouldHaveLength, existingCommentCount+2)
-						So(issue.Comments[2].Comment, ShouldContainSubstring,
-							"Why LUCI Analysis posted this comment: https://luci-analysis-test.appspot.com/help#policy-activated (Policy ID: cls-rejected-policy)")
-						So(issue.Comments[3].Comment, ShouldContainSubstring,
-							"The bug priority has been increased from P2 to P1.")
+						assert.Loosely(t, issue.Comments, should.HaveLength(existingCommentCount+2))
+						assert.Loosely(t, issue.Comments[2].Comment, should.ContainSubstring(
+							"Why LUCI Analysis posted this comment: https://luci-analysis-test.appspot.com/help#policy-activated (Policy ID: cls-rejected-policy)"))
+						assert.Loosely(t, issue.Comments[3].Comment, should.ContainSubstring(
+							"The bug priority has been increased from P2 to P1."))
 					})
-					Convey("policy remains active if deactivation threshold unmet", func() {
+					t.Run("policy remains active if deactivation threshold unmet", func(t *ftt.Test) {
 						// The policy should already be active from previous setup.
 						expectedPolicyState := expectedRules[0].BugManagementState.PolicyState["exoneration-policy"]
-						So(expectedPolicyState.IsActive, ShouldBeTrue)
+						assert.Loosely(t, expectedPolicyState.IsActive, should.BeTrue)
 
 						// Metrics still meet/exceed the deactivation threshold, so deactivation is inhibited.
 						bugClusters[0].MetricValues[metrics.CriticalFailuresExonerated.ID] = metrics.TimewiseCounts{
@@ -852,13 +853,13 @@ func TestUpdate(t *testing.T) {
 						err = UpdateBugsForProject(ctx, opts)
 
 						// Verify policy activation should be unchanged.
-						So(err, ShouldBeNil)
-						So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, verifyRulesResemble(ctx, t, expectedRules), should.BeNil)
 					})
-					Convey("policy deactivates if deactivation threshold met", func() {
+					t.Run("policy deactivates if deactivation threshold met", func(t *ftt.Test) {
 						// The policy should already be active from previous setup.
 						expectedPolicyState := expectedRules[0].BugManagementState.PolicyState["exoneration-policy"]
-						So(expectedPolicyState.IsActive, ShouldBeTrue)
+						assert.Loosely(t, expectedPolicyState.IsActive, should.BeTrue)
 
 						// Update metrics so that policy should de-activate.
 						bugClusters[0].MetricValues[metrics.CriticalFailuresExonerated.ID] = metrics.TimewiseCounts{
@@ -871,12 +872,12 @@ func TestUpdate(t *testing.T) {
 						err = UpdateBugsForProject(ctx, opts)
 
 						// Verify policy deactivated.
-						So(err, ShouldBeNil)
+						assert.Loosely(t, err, should.BeNil)
 						expectedPolicyState.IsActive = false
 						expectedPolicyState.LastDeactivationTime = timestamppb.New(opts.RunTimestamp)
-						So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
+						assert.Loosely(t, verifyRulesResemble(ctx, t, expectedRules), should.BeNil)
 					})
-					Convey("policy configuration changes are handled", func() {
+					t.Run("policy configuration changes are handled", func(t *ftt.Test) {
 						// Delete the existing policy named "exoneration-policy", and replace it with a new policy,
 						// "new-exoneration-policy". Activation and de-activation criteria remain the same.
 						projectCfg.BugManagement.Policies[0].Id = "new-exoneration-policy"
@@ -885,7 +886,7 @@ func TestUpdate(t *testing.T) {
 						err = UpdateBugsForProject(ctx, opts)
 
 						// Verify state for the old policy is deleted, and state for the new policy is added.
-						So(err, ShouldBeNil)
+						assert.Loosely(t, err, should.BeNil)
 						expectedRules[0].BugManagementState.PolicyState = map[string]*bugspb.BugManagementState_PolicyState{
 							"new-exoneration-policy": {
 								// The new policy should activate, because the metrics justify its activation.
@@ -904,18 +905,18 @@ func TestUpdate(t *testing.T) {
 						}
 					})
 				})
-				Convey("rule associated notification", func() {
-					Convey("buganizer", func() {
+				t.Run("rule associated notification", func(t *ftt.Test) {
+					t.Run("buganizer", func(t *ftt.Test) {
 						// Select a Buganizer issue.
 						issue := buganizerStore.Issues[1]
 
 						// Get the corresponding rule, confirming we got the right one.
 						rule := rs[0]
-						So(rule.BugID.ID, ShouldEqual, fmt.Sprintf("%v", issue.Issue.IssueId))
+						assert.Loosely(t, rule.BugID.ID, should.Equal(fmt.Sprintf("%v", issue.Issue.IssueId)))
 
 						// Reset RuleAssociationNotified on the rule.
 						rule.BugManagementState.RuleAssociationNotified = false
-						So(rules.SetForTesting(ctx, rs), ShouldBeNil)
+						assert.Loosely(t, rules.SetForTesting(ctx, t, rs), should.BeNil)
 
 						originalCommentCount := len(issue.Comments)
 
@@ -923,77 +924,77 @@ func TestUpdate(t *testing.T) {
 						err = UpdateBugsForProject(ctx, opts)
 
 						// Verify
-						So(err, ShouldBeNil)
-						So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
-						So(issue.Comments, ShouldHaveLength, originalCommentCount+1)
-						So(issue.Comments[originalCommentCount].Comment, ShouldEqual,
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, verifyRulesResemble(ctx, t, expectedRules), should.BeNil)
+						assert.Loosely(t, issue.Comments, should.HaveLength(originalCommentCount+1))
+						assert.Loosely(t, issue.Comments[originalCommentCount].Comment, should.Equal(
 							"This bug has been associated with failures in LUCI Analysis."+
-								" To view failure examples or update the association, go to LUCI Analysis at: https://luci-analysis-test.appspot.com/p/chromeos/rules/"+rule.RuleID)
+								" To view failure examples or update the association, go to LUCI Analysis at: https://luci-analysis-test.appspot.com/p/chromeos/rules/"+rule.RuleID))
 
 						// Further runs should not lead to repeated posting of the comment.
 						err = UpdateBugsForProject(ctx, opts)
-						So(err, ShouldBeNil)
-						So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
-						So(issue.Comments, ShouldHaveLength, originalCommentCount+1)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, verifyRulesResemble(ctx, t, expectedRules), should.BeNil)
+						assert.Loosely(t, issue.Comments, should.HaveLength(originalCommentCount+1))
 					})
 				})
-				Convey("priority updates and auto-closure", func() {
-					Convey("buganizer", func() {
+				t.Run("priority updates and auto-closure", func(t *ftt.Test) {
+					t.Run("buganizer", func(t *ftt.Test) {
 						// Select a Buganizer issue.
 						issue := buganizerStore.Issues[1]
 						originalPriority := issue.Issue.IssueState.Priority
 						originalStatus := issue.Issue.IssueState.Status
-						So(originalStatus, ShouldEqual, issuetracker.Issue_NEW)
+						assert.Loosely(t, originalStatus, should.Equal(issuetracker.Issue_NEW))
 
 						// Get the corresponding rule, confirming we got the right one.
 						rule := rs[0]
-						So(rule.BugID.ID, ShouldEqual, fmt.Sprintf("%v", issue.Issue.IssueId))
+						assert.Loosely(t, rule.BugID.ID, should.Equal(fmt.Sprintf("%v", issue.Issue.IssueId)))
 
 						// Activate the cls-rejected-policy, which should raise the priority to P1.
-						So(originalPriority, ShouldNotEqual, issuetracker.Issue_P1)
+						assert.Loosely(t, originalPriority, should.NotEqual(issuetracker.Issue_P1))
 						SetResidualMetrics(bugClusters[0], bugs.ClusterMetrics{
 							metrics.CriticalFailuresExonerated.ID: bugs.MetricValues{OneDay: 100},
 							metrics.HumanClsFailedPresubmit.ID:    bugs.MetricValues{SevenDay: 10},
 						})
 
-						Convey("priority updates to reflect active policies", func() {
+						t.Run("priority updates to reflect active policies", func(t *ftt.Test) {
 							expectedRules[0].BugManagementState.PolicyState["cls-rejected-policy"].IsActive = true
 							expectedRules[0].BugManagementState.PolicyState["cls-rejected-policy"].LastActivationTime = timestamppb.New(opts.RunTimestamp)
 							expectedRules[0].BugManagementState.PolicyState["cls-rejected-policy"].ActivationNotified = true
-							So(originalPriority, ShouldNotEqual, issuetracker.Issue_P1)
+							assert.Loosely(t, originalPriority, should.NotEqual(issuetracker.Issue_P1))
 
 							// Act
 							err = UpdateBugsForProject(ctx, opts)
 
 							// Verify
-							So(err, ShouldBeNil)
-							So(issue.Issue.IssueState.Priority, ShouldEqual, issuetracker.Issue_P1)
-							So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
+							assert.Loosely(t, err, should.BeNil)
+							assert.Loosely(t, issue.Issue.IssueState.Priority, should.Equal(issuetracker.Issue_P1))
+							assert.Loosely(t, verifyRulesResemble(ctx, t, expectedRules), should.BeNil)
 						})
-						Convey("disabling IsManagingBugPriority prevents priority updates", func() {
+						t.Run("disabling IsManagingBugPriority prevents priority updates", func(t *ftt.Test) {
 							expectedRules[0].BugManagementState.PolicyState["cls-rejected-policy"].IsActive = true
 							expectedRules[0].BugManagementState.PolicyState["cls-rejected-policy"].LastActivationTime = timestamppb.New(opts.RunTimestamp)
 							expectedRules[0].BugManagementState.PolicyState["cls-rejected-policy"].ActivationNotified = true
 
 							// Set IsManagingBugPriority to false on the rule.
 							rule.IsManagingBugPriority = false
-							So(rules.SetForTesting(ctx, rs), ShouldBeNil)
+							assert.Loosely(t, rules.SetForTesting(ctx, t, rs), should.BeNil)
 
 							// Act
 							err = UpdateBugsForProject(ctx, opts)
 
 							// Verify
-							So(err, ShouldBeNil)
+							assert.Loosely(t, err, should.BeNil)
 
 							// Check that the bug priority and status has not changed.
-							So(issue.Issue.IssueState.Status, ShouldEqual, originalStatus)
-							So(issue.Issue.IssueState.Priority, ShouldEqual, originalPriority)
+							assert.Loosely(t, issue.Issue.IssueState.Status, should.Equal(originalStatus))
+							assert.Loosely(t, issue.Issue.IssueState.Priority, should.Equal(originalPriority))
 
 							// Check the rules have not changed except for the IsManagingBugPriority change.
 							expectedRules[0].IsManagingBugPriority = false
-							So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
+							assert.Loosely(t, verifyRulesResemble(ctx, t, expectedRules), should.BeNil)
 						})
-						Convey("manually setting a priority prevents bug updates", func() {
+						t.Run("manually setting a priority prevents bug updates", func(t *ftt.Test) {
 							expectedRules[0].BugManagementState.PolicyState["cls-rejected-policy"].IsActive = true
 							expectedRules[0].BugManagementState.PolicyState["cls-rejected-policy"].LastActivationTime = timestamppb.New(opts.RunTimestamp)
 							expectedRules[0].BugManagementState.PolicyState["cls-rejected-policy"].ActivationNotified = true
@@ -1010,33 +1011,33 @@ func TestUpdate(t *testing.T) {
 								},
 							})
 
-							Convey("happy path", func() {
+							t.Run("happy path", func(t *ftt.Test) {
 								// Act
 								err = UpdateBugsForProject(ctx, opts)
 
 								// Verify
-								So(err, ShouldBeNil)
-								So(issue.Issue.IssueState.Status, ShouldEqual, originalStatus)
-								So(issue.Issue.IssueState.Priority, ShouldEqual, originalPriority)
+								assert.Loosely(t, err, should.BeNil)
+								assert.Loosely(t, issue.Issue.IssueState.Status, should.Equal(originalStatus))
+								assert.Loosely(t, issue.Issue.IssueState.Priority, should.Equal(originalPriority))
 								expectedRules[0].IsManagingBugPriority = false
-								So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
+								assert.Loosely(t, verifyRulesResemble(ctx, t, expectedRules), should.BeNil)
 
-								Convey("further updates leave no comments", func() {
+								t.Run("further updates leave no comments", func(t *ftt.Test) {
 									initialComments := len(issue.Comments)
 
 									// Act
 									err = UpdateBugsForProject(ctx, opts)
 
 									// Verify
-									So(err, ShouldBeNil)
-									So(len(issue.Comments), ShouldEqual, initialComments)
-									So(issue.Issue.IssueState.Status, ShouldEqual, originalStatus)
-									So(issue.Issue.IssueState.Priority, ShouldEqual, originalPriority)
-									So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
+									assert.Loosely(t, err, should.BeNil)
+									assert.Loosely(t, len(issue.Comments), should.Equal(initialComments))
+									assert.Loosely(t, issue.Issue.IssueState.Status, should.Equal(originalStatus))
+									assert.Loosely(t, issue.Issue.IssueState.Priority, should.Equal(originalPriority))
+									assert.Loosely(t, verifyRulesResemble(ctx, t, expectedRules), should.BeNil)
 								})
 							})
 
-							Convey("errors updating other bugs", func() {
+							t.Run("errors updating other bugs", func(t *ftt.Test) {
 								// Check we handle partial success correctly:
 								// Even if there is an error updating another bug, if we comment on a bug
 								// to say the user took manual priority control, we must commit
@@ -1061,8 +1062,8 @@ func TestUpdate(t *testing.T) {
 								// Verify
 
 								// The error modifying bug 2 is bubbled up.
-								So(err, ShouldNotBeNil)
-								So(errors.Is(err, modifyError), ShouldBeTrue)
+								assert.Loosely(t, err, should.NotBeNil)
+								assert.Loosely(t, errors.Is(err, modifyError), should.BeTrue)
 
 								// The policy on the bug 2 was activated, and we notified
 								// bug 2 of the policy activation, even if we did
@@ -1074,20 +1075,20 @@ func TestUpdate(t *testing.T) {
 								expectedRules[1].BugManagementState.PolicyState["cls-rejected-policy"].ActivationNotified = true
 
 								otherIssue := buganizerStore.Issues[2]
-								So(otherIssue.Comments[len(otherIssue.Comments)-1].Comment, ShouldContainSubstring,
-									"Why LUCI Analysis posted this comment: https://luci-analysis-test.appspot.com/help#policy-activated (Policy ID: cls-rejected-policy)")
+								assert.Loosely(t, otherIssue.Comments[len(otherIssue.Comments)-1].Comment, should.ContainSubstring(
+									"Why LUCI Analysis posted this comment: https://luci-analysis-test.appspot.com/help#policy-activated (Policy ID: cls-rejected-policy)"))
 
 								// Despite the issue with bug 2, bug 1 was commented on updated and
 								// IsManagingBugPriority was set to false.
 								expectedRules[0].IsManagingBugPriority = false
-								So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
-								So(issue.Comments[len(issue.Comments)-1].Comment, ShouldContainSubstring,
-									"The bug priority has been manually set.")
-								So(issue.Issue.IssueState.Status, ShouldEqual, originalStatus)
-								So(issue.Issue.IssueState.Priority, ShouldEqual, originalPriority)
+								assert.Loosely(t, verifyRulesResemble(ctx, t, expectedRules), should.BeNil)
+								assert.Loosely(t, issue.Comments[len(issue.Comments)-1].Comment, should.ContainSubstring(
+									"The bug priority has been manually set."))
+								assert.Loosely(t, issue.Issue.IssueState.Status, should.Equal(originalStatus))
+								assert.Loosely(t, issue.Issue.IssueState.Priority, should.Equal(originalPriority))
 							})
 						})
-						Convey("if all policies de-activate, bug is auto-closed", func() {
+						t.Run("if all policies de-activate, bug is auto-closed", func(t *ftt.Test) {
 							SetResidualMetrics(bugClusters[0], bugs.ClusterMetrics{
 								metrics.CriticalFailuresExonerated.ID: bugs.MetricValues{OneDay: 9},
 								metrics.HumanClsFailedPresubmit.ID:    bugs.MetricValues{},
@@ -1097,14 +1098,14 @@ func TestUpdate(t *testing.T) {
 							err = UpdateBugsForProject(ctx, opts)
 
 							// Verify
-							So(err, ShouldBeNil)
+							assert.Loosely(t, err, should.BeNil)
 							expectedRules[0].BugManagementState.PolicyState["exoneration-policy"].IsActive = false
 							expectedRules[0].BugManagementState.PolicyState["exoneration-policy"].LastDeactivationTime = timestamppb.New(opts.RunTimestamp)
-							So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
-							So(issue.Issue.IssueState.Status, ShouldEqual, issuetracker.Issue_VERIFIED)
-							So(issue.Issue.IssueState.Priority, ShouldEqual, issuetracker.Issue_P2)
+							assert.Loosely(t, verifyRulesResemble(ctx, t, expectedRules), should.BeNil)
+							assert.Loosely(t, issue.Issue.IssueState.Status, should.Equal(issuetracker.Issue_VERIFIED))
+							assert.Loosely(t, issue.Issue.IssueState.Priority, should.Equal(issuetracker.Issue_P2))
 						})
-						Convey("disabling IsManagingBug prevents bug closure", func() {
+						t.Run("disabling IsManagingBug prevents bug closure", func(t *ftt.Test) {
 							SetResidualMetrics(bugClusters[0], bugs.ClusterMetrics{
 								metrics.CriticalFailuresExonerated.ID: bugs.MetricValues{OneDay: 9},
 								metrics.HumanClsFailedPresubmit.ID:    bugs.MetricValues{},
@@ -1114,23 +1115,23 @@ func TestUpdate(t *testing.T) {
 
 							// Set IsManagingBug to false on the rule.
 							rule.IsManagingBug = false
-							So(rules.SetForTesting(ctx, rs), ShouldBeNil)
+							assert.Loosely(t, rules.SetForTesting(ctx, t, rs), should.BeNil)
 
 							// Act
 							err = UpdateBugsForProject(ctx, opts)
 
 							// Verify
-							So(err, ShouldBeNil)
+							assert.Loosely(t, err, should.BeNil)
 
 							// Check the rules have not changed except for the IsManagingBug change.
 							expectedRules[0].IsManagingBug = false
-							So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
+							assert.Loosely(t, verifyRulesResemble(ctx, t, expectedRules), should.BeNil)
 
 							// Check that the bug priority and status has not changed.
-							So(issue.Issue.IssueState.Status, ShouldEqual, originalStatus)
-							So(issue.Issue.IssueState.Priority, ShouldEqual, originalPriority)
+							assert.Loosely(t, issue.Issue.IssueState.Status, should.Equal(originalStatus))
+							assert.Loosely(t, issue.Issue.IssueState.Priority, should.Equal(originalPriority))
 						})
-						Convey("cluster disappearing closes issue", func() {
+						t.Run("cluster disappearing closes issue", func(t *ftt.Test) {
 							// Drop the corresponding bug cluster. This is consistent with
 							// no more failures in the cluster occuring.
 							bugClusters = bugClusters[1:]
@@ -1140,29 +1141,29 @@ func TestUpdate(t *testing.T) {
 							err = UpdateBugsForProject(ctx, opts)
 
 							// Verify
-							So(err, ShouldBeNil)
+							assert.Loosely(t, err, should.BeNil)
 							expectedRules[0].BugManagementState.PolicyState["exoneration-policy"].IsActive = false
 							expectedRules[0].BugManagementState.PolicyState["exoneration-policy"].LastDeactivationTime = timestamppb.New(opts.RunTimestamp)
-							So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
-							So(issue.Issue.IssueState.Status, ShouldEqual, issuetracker.Issue_VERIFIED)
+							assert.Loosely(t, verifyRulesResemble(ctx, t, expectedRules), should.BeNil)
+							assert.Loosely(t, issue.Issue.IssueState.Status, should.Equal(issuetracker.Issue_VERIFIED))
 
-							Convey("rule automatically archived after 30 days", func() {
+							t.Run("rule automatically archived after 30 days", func(t *ftt.Test) {
 								tc.Add(time.Hour * 24 * 30)
 
 								// Act
 								err = UpdateBugsForProject(ctx, opts)
 
 								// Verify
-								So(err, ShouldBeNil)
+								assert.Loosely(t, err, should.BeNil)
 								expectedRules[0].IsActive = false
-								So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
-								So(issue.Issue.IssueState.Status, ShouldEqual, issuetracker.Issue_VERIFIED)
+								assert.Loosely(t, verifyRulesResemble(ctx, t, expectedRules), should.BeNil)
+								assert.Loosely(t, issue.Issue.IssueState.Status, should.Equal(issuetracker.Issue_VERIFIED))
 							})
 						})
-						Convey("if all policies are removed, bug is auto-closed", func() {
+						t.Run("if all policies are removed, bug is auto-closed", func(t *ftt.Test) {
 							projectCfg.BugManagement.Policies = nil
 							err := config.SetTestProjectConfig(ctx, projectsCfg)
-							So(err, ShouldBeNil)
+							assert.Loosely(t, err, should.BeNil)
 
 							for _, expectedRule := range expectedRules {
 								expectedRule.BugManagementState.PolicyState = nil
@@ -1172,15 +1173,15 @@ func TestUpdate(t *testing.T) {
 							err = UpdateBugsForProject(ctx, opts)
 
 							// Verify
-							So(err, ShouldBeNil)
-							So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
-							So(issue.Issue.IssueState.Status, ShouldEqual, issuetracker.Issue_VERIFIED)
-							So(issue.Issue.IssueState.Priority, ShouldEqual, issuetracker.Issue_P2)
+							assert.Loosely(t, err, should.BeNil)
+							assert.Loosely(t, verifyRulesResemble(ctx, t, expectedRules), should.BeNil)
+							assert.Loosely(t, issue.Issue.IssueState.Status, should.Equal(issuetracker.Issue_VERIFIED))
+							assert.Loosely(t, issue.Issue.IssueState.Priority, should.Equal(issuetracker.Issue_P2))
 						})
 					})
 				})
-				Convey("duplicate handling", func() {
-					Convey("buganizer to buganizer", func() {
+				t.Run("duplicate handling", func(t *ftt.Test) {
+					t.Run("buganizer to buganizer", func(t *ftt.Test) {
 						// Setup
 						issueOne := buganizerStore.Issues[1]
 						issueTwo := buganizerStore.Issues[2]
@@ -1196,51 +1197,51 @@ func TestUpdate(t *testing.T) {
 						for _, policyState := range rs[0].BugManagementState.PolicyState {
 							policyState.ActivationNotified = true
 						}
-						So(rules.SetForTesting(ctx, rs), ShouldBeNil)
+						assert.Loosely(t, rules.SetForTesting(ctx, t, rs), should.BeNil)
 
 						expectedRules[0].BugManagementState.RuleAssociationNotified = true
 						for _, policyState := range expectedRules[0].BugManagementState.PolicyState {
 							policyState.ActivationNotified = true
 						}
 
-						Convey("happy path", func() {
+						t.Run("happy path", func(t *ftt.Test) {
 							// Act
 							err = UpdateBugsForProject(ctx, opts)
 
 							// Verify
-							So(err, ShouldBeNil)
+							assert.Loosely(t, err, should.BeNil)
 							expectedRules[0].IsActive = false
 							expectedRules[1].RuleDefinition = "reason LIKE \"want foo, got bar\" OR\ntest = \"testname-0\""
-							So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
+							assert.Loosely(t, verifyRulesResemble(ctx, t, expectedRules), should.BeNil)
 
-							So(issueOne.Comments, ShouldHaveLength, issueOneOriginalCommentCount+1)
-							So(issueOne.Comments[issueOneOriginalCommentCount].Comment, ShouldContainSubstring, "LUCI Analysis has merged the failure association rule for this bug into the rule for the canonical bug.")
-							So(issueOne.Comments[issueOneOriginalCommentCount].Comment, ShouldContainSubstring, expectedRules[2].RuleID)
+							assert.Loosely(t, issueOne.Comments, should.HaveLength(issueOneOriginalCommentCount+1))
+							assert.Loosely(t, issueOne.Comments[issueOneOriginalCommentCount].Comment, should.ContainSubstring("LUCI Analysis has merged the failure association rule for this bug into the rule for the canonical bug."))
+							assert.Loosely(t, issueOne.Comments[issueOneOriginalCommentCount].Comment, should.ContainSubstring(expectedRules[2].RuleID))
 
-							So(issueTwo.Comments, ShouldHaveLength, issueTwoOriginalCommentCount)
+							assert.Loosely(t, issueTwo.Comments, should.HaveLength(issueTwoOriginalCommentCount))
 						})
-						Convey("happy path, with comments for duplicate bugs disabled", func() {
+						t.Run("happy path, with comments for duplicate bugs disabled", func(t *ftt.Test) {
 							// Setup
 							projectCfg.BugManagement.DisableDuplicateBugComments = true
 							projectsCfg := map[string]*configpb.ProjectConfig{
 								project: projectCfg,
 							}
 							err = config.SetTestProjectConfig(ctx, projectsCfg)
-							So(err, ShouldBeNil)
+							assert.Loosely(t, err, should.BeNil)
 
 							// Act
 							err = UpdateBugsForProject(ctx, opts)
 
 							// Verify
-							So(err, ShouldBeNil)
+							assert.Loosely(t, err, should.BeNil)
 							expectedRules[0].IsActive = false
 							expectedRules[1].RuleDefinition = "reason LIKE \"want foo, got bar\" OR\ntest = \"testname-0\""
-							So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
+							assert.Loosely(t, verifyRulesResemble(ctx, t, expectedRules), should.BeNil)
 
-							So(issueOne.Comments, ShouldHaveLength, issueOneOriginalCommentCount)
-							So(issueTwo.Comments, ShouldHaveLength, issueTwoOriginalCommentCount)
+							assert.Loosely(t, issueOne.Comments, should.HaveLength(issueOneOriginalCommentCount))
+							assert.Loosely(t, issueTwo.Comments, should.HaveLength(issueTwoOriginalCommentCount))
 						})
-						Convey("happy path, bug marked as duplicate of bug without a rule in this project", func() {
+						t.Run("happy path, bug marked as duplicate of bug without a rule in this project", func(t *ftt.Test) {
 							// Setup
 							issueOne.Issue.IssueState.Status = issuetracker.Issue_DUPLICATE
 							issueOne.Issue.IssueState.CanonicalIssueId = 1234
@@ -1267,13 +1268,13 @@ func TestUpdate(t *testing.T) {
 								span.BufferWrite(ctx, ms)
 								return nil
 							})
-							So(err, ShouldBeNil)
+							assert.Loosely(t, err, should.BeNil)
 
 							// Act
 							err = UpdateBugsForProject(ctx, opts)
 
 							// Verify
-							So(err, ShouldBeNil)
+							assert.Loosely(t, err, should.BeNil)
 							expectedRules[0].BugID = bugs.BugID{System: bugs.BuganizerSystem, ID: "1234"}
 							// Should reset to false as we didn't create the destination bug.
 							expectedRules[0].IsManagingBug = false
@@ -1283,14 +1284,14 @@ func TestUpdate(t *testing.T) {
 								policyState.ActivationNotified = false
 							}
 							expectedRules = append(expectedRules, extraRule)
-							So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
+							assert.Loosely(t, verifyRulesResemble(ctx, t, expectedRules), should.BeNil)
 
-							So(issueOne.Comments, ShouldHaveLength, issueOneOriginalCommentCount+1)
-							So(issueOne.Comments[issueOneOriginalCommentCount].Comment, ShouldContainSubstring, "LUCI Analysis has merged the failure association rule for this bug into the rule for the canonical bug.")
-							So(issueOne.Comments[issueOneOriginalCommentCount].Comment, ShouldContainSubstring, expectedRules[0].RuleID)
+							assert.Loosely(t, issueOne.Comments, should.HaveLength(issueOneOriginalCommentCount+1))
+							assert.Loosely(t, issueOne.Comments[issueOneOriginalCommentCount].Comment, should.ContainSubstring("LUCI Analysis has merged the failure association rule for this bug into the rule for the canonical bug."))
+							assert.Loosely(t, issueOne.Comments[issueOneOriginalCommentCount].Comment, should.ContainSubstring(expectedRules[0].RuleID))
 						})
-						Convey("error cases", func() {
-							Convey("bugs are in a duplicate bug cycle", func() {
+						t.Run("error cases", func(t *ftt.Test) {
+							t.Run("bugs are in a duplicate bug cycle", func(t *ftt.Test) {
 								// Note that this is a simple cycle with only two bugs.
 								// The implementation allows for larger cycles, however.
 								issueTwo.Issue.IssueState.Status = issuetracker.Issue_DUPLICATE
@@ -1300,21 +1301,21 @@ func TestUpdate(t *testing.T) {
 								err = UpdateBugsForProject(ctx, opts)
 
 								// Verify
-								So(err, ShouldBeNil)
+								assert.Loosely(t, err, should.BeNil)
 
 								// Issue one kicked out of duplicate status.
-								So(issueOne.Issue.IssueState.Status, ShouldNotEqual, issuetracker.Issue_DUPLICATE)
+								assert.Loosely(t, issueOne.Issue.IssueState.Status, should.NotEqual(issuetracker.Issue_DUPLICATE))
 
 								// As the cycle is now broken, issue two is merged into
 								// issue one.
 								expectedRules[0].RuleDefinition = "reason LIKE \"want foo, got bar\" OR\ntest = \"testname-0\""
 								expectedRules[1].IsActive = false
-								So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
+								assert.Loosely(t, verifyRulesResemble(ctx, t, expectedRules), should.BeNil)
 
-								So(issueOne.Comments, ShouldHaveLength, issueOneOriginalCommentCount+1)
-								So(issueOne.Comments[issueOneOriginalCommentCount].Comment, ShouldContainSubstring, "a cycle was detected in the bug merged-into graph")
+								assert.Loosely(t, issueOne.Comments, should.HaveLength(issueOneOriginalCommentCount+1))
+								assert.Loosely(t, issueOne.Comments[issueOneOriginalCommentCount].Comment, should.ContainSubstring("a cycle was detected in the bug merged-into graph"))
 							})
-							Convey("merged rule would be too long", func() {
+							t.Run("merged rule would be too long", func(t *ftt.Test) {
 								// Setup
 								// Make one of the rules we will be merging very close
 								// to the rule length limit.
@@ -1337,38 +1338,38 @@ func TestUpdate(t *testing.T) {
 									span.BufferWrite(ctx, ms)
 									return nil
 								})
-								So(err, ShouldBeNil)
+								assert.Loosely(t, err, should.BeNil)
 
 								// Act
 								err = UpdateBugsForProject(ctx, opts)
 
 								// Verify
-								So(err, ShouldBeNil)
+								assert.Loosely(t, err, should.BeNil)
 
 								// Rules should not have changed (except for the update we made).
 								expectedRules[0].RuleDefinition = longRule
-								So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
+								assert.Loosely(t, verifyRulesResemble(ctx, t, expectedRules), should.BeNil)
 
 								// Issue one kicked out of duplicate status.
-								So(issueOne.Issue.IssueState.Status, ShouldNotEqual, issuetracker.Issue_DUPLICATE)
+								assert.Loosely(t, issueOne.Issue.IssueState.Status, should.NotEqual(issuetracker.Issue_DUPLICATE))
 
 								// Comment should appear on the bug.
-								So(issueOne.Comments, ShouldHaveLength, issueOneOriginalCommentCount+1)
-								So(issueOne.Comments[issueOneOriginalCommentCount].Comment, ShouldContainSubstring, "the merged failure association rule would be too long")
+								assert.Loosely(t, issueOne.Comments, should.HaveLength(issueOneOriginalCommentCount+1))
+								assert.Loosely(t, issueOne.Comments[issueOneOriginalCommentCount].Comment, should.ContainSubstring("the merged failure association rule would be too long"))
 							})
-							Convey("bug marked as duplicate of bug we cannot access", func() {
+							t.Run("bug marked as duplicate of bug we cannot access", func(t *ftt.Test) {
 								issueTwo.ShouldReturnAccessPermissionError = true
 
 								// Act
 								err = UpdateBugsForProject(ctx, opts)
 
 								// Verify issue one kicked out of duplicate status.
-								So(err, ShouldBeNil)
-								So(issueOne.Issue.IssueState.Status, ShouldNotEqual, issuetracker.Issue_DUPLICATE)
-								So(issueOne.Comments, ShouldHaveLength, issueOneOriginalCommentCount+1)
-								So(issueOne.Comments[issueOneOriginalCommentCount].Comment, ShouldContainSubstring, "LUCI Analysis cannot merge the association rule for this bug into the rule")
+								assert.Loosely(t, err, should.BeNil)
+								assert.Loosely(t, issueOne.Issue.IssueState.Status, should.NotEqual(issuetracker.Issue_DUPLICATE))
+								assert.Loosely(t, issueOne.Comments, should.HaveLength(issueOneOriginalCommentCount+1))
+								assert.Loosely(t, issueOne.Comments[issueOneOriginalCommentCount].Comment, should.ContainSubstring("LUCI Analysis cannot merge the association rule for this bug into the rule"))
 							})
-							Convey("failed to handle duplicate bug - bug has an assignee", func() {
+							t.Run("failed to handle duplicate bug - bug has an assignee", func(t *ftt.Test) {
 								issueTwo.ShouldReturnAccessPermissionError = true
 
 								// Has an assignee.
@@ -1379,10 +1380,10 @@ func TestUpdate(t *testing.T) {
 								err = UpdateBugsForProject(ctx, opts)
 
 								// Verify issue is put back to assigned status, instead of New.
-								So(err, ShouldBeNil)
-								So(issueOne.Issue.IssueState.Status, ShouldEqual, issuetracker.Issue_ASSIGNED)
+								assert.Loosely(t, err, should.BeNil)
+								assert.Loosely(t, issueOne.Issue.IssueState.Status, should.Equal(issuetracker.Issue_ASSIGNED))
 							})
-							Convey("failed to handle duplicate bug - bug has no assignee", func() {
+							t.Run("failed to handle duplicate bug - bug has no assignee", func(t *ftt.Test) {
 								issueTwo.ShouldReturnAccessPermissionError = true
 
 								// Has no assignee.
@@ -1392,24 +1393,24 @@ func TestUpdate(t *testing.T) {
 								err = UpdateBugsForProject(ctx, opts)
 
 								// Verify issue is put back to New status, instead of Assigned.
-								So(err, ShouldBeNil)
-								So(issueOne.Issue.IssueState.Status, ShouldEqual, issuetracker.Issue_NEW)
+								assert.Loosely(t, err, should.BeNil)
+								assert.Loosely(t, issueOne.Issue.IssueState.Status, should.Equal(issuetracker.Issue_NEW))
 							})
 						})
 					})
 				})
-				Convey("bug marked as archived should archive rule", func() {
-					Convey("buganizer", func() {
+				t.Run("bug marked as archived should archive rule", func(t *ftt.Test) {
+					t.Run("buganizer", func(t *ftt.Test) {
 						issueOne := buganizerStore.Issues[1].Issue
 						issueOne.IsArchived = true
 
 						// Act
 						err = UpdateBugsForProject(ctx, opts)
-						So(err, ShouldBeNil)
+						assert.Loosely(t, err, should.BeNil)
 
 						// Verify
 						expectedRules[0].IsActive = false
-						So(verifyRulesResemble(ctx, expectedRules), ShouldBeNil)
+						assert.Loosely(t, verifyRulesResemble(ctx, t, expectedRules), should.BeNil)
 					})
 				})
 			})
@@ -1502,7 +1503,8 @@ func createCLsRejectedPolicy() *configpb.BugManagementPolicy {
 // verifyRulesResemble verifies rules stored in Spanner resemble
 // the passed expectations, modulo assigned RuleIDs and
 // audit timestamps.
-func verifyRulesResemble(ctx context.Context, expectedRules []*rules.Entry) error {
+func verifyRulesResemble(ctx context.Context, t testing.TB, expectedRules []*rules.Entry) error {
+	t.Helper()
 	// Read all rules. Sorted by BugSystem, BugId, Project.
 	rs, err := rules.ReadAllForTesting(span.Single(ctx))
 	if err != nil {
@@ -1546,9 +1548,7 @@ func verifyRulesResemble(ctx context.Context, expectedRules []*rules.Entry) erro
 		sortedExpected[i] = expectationCopy
 	}
 
-	if diff := ShouldResembleProto(rs, sortedExpected); diff != "" {
-		return errors.Reason("stored rules: %s", diff).Err()
-	}
+	assert.That(t, rs, should.Match(sortedExpected), truth.LineContext())
 	return nil
 }
 

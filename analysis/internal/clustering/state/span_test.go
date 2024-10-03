@@ -21,19 +21,19 @@ import (
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/analysis/internal/clustering"
 	"go.chromium.org/luci/analysis/internal/testutil"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestSpanner(t *testing.T) {
-	Convey(`With Spanner Test Database`, t, func() {
+	ftt.Run(`With Spanner Test Database`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
-		Convey(`Create`, func() {
+		t.Run(`Create`, func(t *ftt.Test) {
 			testCreate := func(e *Entry) (time.Time, error) {
 				commitTime, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 					return Create(ctx, e)
@@ -41,94 +41,94 @@ func TestSpanner(t *testing.T) {
 				return commitTime, err
 			}
 			e := NewEntry(100).Build()
-			Convey(`Valid`, func() {
+			t.Run(`Valid`, func(t *ftt.Test) {
 				commitTime, err := testCreate(e)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				e.LastUpdated = commitTime.In(time.UTC)
 
 				txn := span.Single(ctx)
 				actual, err := Read(txn, e.Project, e.ChunkID)
-				So(err, ShouldBeNil)
-				So(actual, ShouldResemble, e)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, actual, should.Resemble(e))
 			})
-			Convey(`Invalid`, func() {
-				Convey(`Project missing`, func() {
+			t.Run(`Invalid`, func(t *ftt.Test) {
+				t.Run(`Project missing`, func(t *ftt.Test) {
 					e.Project = ""
 					_, err := testCreate(e)
-					So(err, ShouldErrLike, `project: unspecified`)
+					assert.Loosely(t, err, should.ErrLike(`project: unspecified`))
 				})
-				Convey(`Chunk ID missing`, func() {
+				t.Run(`Chunk ID missing`, func(t *ftt.Test) {
 					e.ChunkID = ""
 					_, err := testCreate(e)
-					So(err, ShouldErrLike, `chunk ID "" is not valid`)
+					assert.Loosely(t, err, should.ErrLike(`chunk ID "" is not valid`))
 				})
-				Convey(`Partition Time missing`, func() {
-					var t time.Time
-					e.PartitionTime = t
+				t.Run(`Partition Time missing`, func(t *ftt.Test) {
+					var ts time.Time
+					e.PartitionTime = ts
 					_, err := testCreate(e)
-					So(err, ShouldErrLike, "partition time must be specified")
+					assert.Loosely(t, err, should.ErrLike("partition time must be specified"))
 				})
-				Convey(`Object ID missing`, func() {
+				t.Run(`Object ID missing`, func(t *ftt.Test) {
 					e.ObjectID = ""
 					_, err := testCreate(e)
-					So(err, ShouldErrLike, "object ID must be specified")
+					assert.Loosely(t, err, should.ErrLike("object ID must be specified"))
 				})
-				Convey(`Config Version missing`, func() {
-					var t time.Time
-					e.Clustering.ConfigVersion = t
+				t.Run(`Config Version missing`, func(t *ftt.Test) {
+					var ts time.Time
+					e.Clustering.ConfigVersion = ts
 					_, err := testCreate(e)
-					So(err, ShouldErrLike, "config version must be valid")
+					assert.Loosely(t, err, should.ErrLike("config version must be valid"))
 				})
-				Convey(`Rules Version missing`, func() {
-					var t time.Time
-					e.Clustering.RulesVersion = t
+				t.Run(`Rules Version missing`, func(t *ftt.Test) {
+					var ts time.Time
+					e.Clustering.RulesVersion = ts
 					_, err := testCreate(e)
-					So(err, ShouldErrLike, "rules version must be valid")
+					assert.Loosely(t, err, should.ErrLike("rules version must be valid"))
 				})
-				Convey(`Algorithms Version missing`, func() {
+				t.Run(`Algorithms Version missing`, func(t *ftt.Test) {
 					e.Clustering.AlgorithmsVersion = 0
 					_, err := testCreate(e)
-					So(err, ShouldErrLike, "algorithms version must be specified")
+					assert.Loosely(t, err, should.ErrLike("algorithms version must be specified"))
 				})
-				Convey(`Clusters missing`, func() {
+				t.Run(`Clusters missing`, func(t *ftt.Test) {
 					e.Clustering.Clusters = nil
 					_, err := testCreate(e)
-					So(err, ShouldErrLike, "there must be clustered test results in the chunk")
+					assert.Loosely(t, err, should.ErrLike("there must be clustered test results in the chunk"))
 				})
-				Convey(`Algorithms invalid`, func() {
-					Convey(`Empty algorithm`, func() {
+				t.Run(`Algorithms invalid`, func(t *ftt.Test) {
+					t.Run(`Empty algorithm`, func(t *ftt.Test) {
 						e.Clustering.Algorithms[""] = struct{}{}
 						_, err := testCreate(e)
-						So(err, ShouldErrLike, `algorithm "" is not valid`)
+						assert.Loosely(t, err, should.ErrLike(`algorithm "" is not valid`))
 					})
-					Convey("Algorithm invalid", func() {
+					t.Run("Algorithm invalid", func(t *ftt.Test) {
 						e.Clustering.Algorithms["!!!"] = struct{}{}
 						_, err := testCreate(e)
-						So(err, ShouldErrLike, `algorithm "!!!" is not valid`)
+						assert.Loosely(t, err, should.ErrLike(`algorithm "!!!" is not valid`))
 					})
 				})
-				Convey(`Clusters invalid`, func() {
-					Convey("Algorithm not in algorithms set", func() {
+				t.Run(`Clusters invalid`, func(t *ftt.Test) {
+					t.Run("Algorithm not in algorithms set", func(t *ftt.Test) {
 						e.Clustering.Algorithms = map[string]struct{}{}
 						_, err := testCreate(e)
-						So(err, ShouldErrLike, `clusters: test result 0: cluster 0: algorithm not in algorithms list`)
+						assert.Loosely(t, err, should.ErrLike(`clusters: test result 0: cluster 0: algorithm not in algorithms list`))
 					})
-					Convey("ID missing", func() {
+					t.Run("ID missing", func(t *ftt.Test) {
 						e.Clustering.Clusters[1][1].ID = ""
 						_, err := testCreate(e)
-						So(err, ShouldErrLike, `clusters: test result 1: cluster 1: cluster ID is not valid: ID is empty`)
+						assert.Loosely(t, err, should.ErrLike(`clusters: test result 1: cluster 1: cluster ID is not valid: ID is empty`))
 					})
 				})
 			})
 		})
-		Convey(`UpdateClustering`, func() {
-			Convey(`Valid`, func() {
+		t.Run(`UpdateClustering`, func(t *ftt.Test) {
+			t.Run(`Valid`, func(t *ftt.Test) {
 				entry := NewEntry(0).Build()
 				entries := []*Entry{
 					entry,
 				}
 				commitTime, err := CreateEntriesForTesting(ctx, entries)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				entry.LastUpdated = commitTime.In(time.UTC)
 
 				expected := NewEntry(0).Build()
@@ -139,23 +139,23 @@ func TestSpanner(t *testing.T) {
 						err := UpdateClustering(ctx, entry, &update)
 						return err
 					})
-					So(err, ShouldEqual, nil)
+					assert.Loosely(t, err, should.BeNil)
 					expected.LastUpdated = commitTime.In(time.UTC)
 
 					// Assert the update was applied.
 					actual, err := Read(span.Single(ctx), expected.Project, expected.ChunkID)
-					So(err, ShouldBeNil)
-					So(actual, ShouldResemble, expected)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, actual, should.Resemble(expected))
 				}
-				Convey(`Full update`, func() {
+				t.Run(`Full update`, func(t *ftt.Test) {
 					// Prepare an update.
 					newClustering := NewEntry(1).Build().Clustering
 					expected.Clustering = newClustering
 
-					So(clustering.AlgorithmsAndClustersEqual(&entry.Clustering, &newClustering), ShouldBeFalse)
+					assert.Loosely(t, clustering.AlgorithmsAndClustersEqual(&entry.Clustering, &newClustering), should.BeFalse)
 					test(newClustering, expected)
 				})
-				Convey(`Minor update`, func() {
+				t.Run(`Minor update`, func(t *ftt.Test) {
 					// Update only algorithms + rules + config version, without changing clustering content.
 					newClustering := NewEntry(0).
 						WithAlgorithmsVersion(10).
@@ -164,14 +164,14 @@ func TestSpanner(t *testing.T) {
 						Build().Clustering
 
 					expected.Clustering = newClustering
-					So(clustering.AlgorithmsAndClustersEqual(&entries[0].Clustering, &newClustering), ShouldBeTrue)
+					assert.Loosely(t, clustering.AlgorithmsAndClustersEqual(&entries[0].Clustering, &newClustering), should.BeTrue)
 					test(newClustering, expected)
 				})
-				Convey(`No-op update`, func() {
+				t.Run(`No-op update`, func(t *ftt.Test) {
 					test(entry.Clustering, expected)
 				})
 			})
-			Convey(`Invalid`, func() {
+			t.Run(`Invalid`, func(t *ftt.Test) {
 				originalEntry := NewEntry(0).Build()
 				newClustering := &NewEntry(0).Build().Clustering
 
@@ -184,18 +184,18 @@ func TestSpanner(t *testing.T) {
 					err := UpdateClustering(ctx, originalEntry, newClustering)
 					return err
 				})
-				So(err, ShouldErrLike, `algorithm "!!!" is not valid`)
+				assert.Loosely(t, err, should.ErrLike(`algorithm "!!!" is not valid`))
 			})
 		})
-		Convey(`ReadLastUpdated`, func() {
+		t.Run(`ReadLastUpdated`, func(t *ftt.Test) {
 			// Create two entries at different times to give them different LastUpdated times.
 			entryOne := NewEntry(0).Build()
 			lastUpdatedOne, err := CreateEntriesForTesting(ctx, []*Entry{entryOne})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			entryTwo := NewEntry(1).Build()
 			lastUpdatedTwo, err := CreateEntriesForTesting(ctx, []*Entry{entryTwo})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			chunkKeys := []ChunkKey{
 				{Project: testProject, ChunkID: entryOne.ChunkID},
@@ -205,14 +205,14 @@ func TestSpanner(t *testing.T) {
 			}
 
 			actual, err := ReadLastUpdated(span.Single(ctx), chunkKeys)
-			So(err, ShouldBeNil)
-			So(len(actual), ShouldEqual, len(chunkKeys))
-			So(actual[0], ShouldEqual, lastUpdatedOne)
-			So(actual[1], ShouldEqual, time.Time{})
-			So(actual[2], ShouldEqual, time.Time{})
-			So(actual[3], ShouldEqual, lastUpdatedTwo)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(actual), should.Equal(len(chunkKeys)))
+			assert.That(t, actual[0], should.Match(lastUpdatedOne))
+			assert.That(t, actual[1], should.Match(time.Time{}))
+			assert.That(t, actual[2], should.Match(time.Time{}))
+			assert.That(t, actual[3], should.Match(lastUpdatedTwo))
 		})
-		Convey(`ReadNextN`, func() {
+		t.Run(`ReadNextN`, func(t *ftt.Test) {
 			targetRulesVersion := time.Date(2024, 1, 1, 1, 1, 1, 0, time.UTC)
 			targetConfigVersion := time.Date(2024, 2, 1, 1, 1, 1, 0, time.UTC)
 			targetAlgorithmsVersion := 10
@@ -261,7 +261,7 @@ func TestSpanner(t *testing.T) {
 			for _, e := range entries {
 				e.LastUpdated = commitTime.In(time.UTC)
 			}
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			expectedEntries := []*Entry{
 				entries[1],
@@ -285,58 +285,58 @@ func TestSpanner(t *testing.T) {
 			}
 			// Reads first page.
 			rows, err := ReadNextN(span.Single(ctx), testProject, readOpts, 4)
-			So(err, ShouldBeNil)
-			So(rows, ShouldResemble, expectedEntries[0:4])
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, rows, should.Resemble(expectedEntries[0:4]))
 
 			// Read second page.
 			readOpts.StartChunkID = rows[3].ChunkID
 			rows, err = ReadNextN(span.Single(ctx), testProject, readOpts, 4)
-			So(err, ShouldBeNil)
-			So(rows, ShouldResemble, expectedEntries[4:])
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, rows, should.Resemble(expectedEntries[4:]))
 
 			// Read empty last page.
 			readOpts.StartChunkID = rows[2].ChunkID
 			rows, err = ReadNextN(span.Single(ctx), testProject, readOpts, 4)
-			So(err, ShouldBeNil)
-			So(rows, ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, rows, should.BeEmpty)
 		})
-		Convey(`EstimateChunks`, func() {
-			Convey(`Less than 100 chunks`, func() {
+		t.Run(`EstimateChunks`, func(t *ftt.Test) {
+			t.Run(`Less than 100 chunks`, func(t *ftt.Test) {
 				est, err := EstimateChunks(span.Single(ctx), testProject)
-				So(err, ShouldBeNil)
-				So(est, ShouldBeLessThan, 100)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, est, should.BeLessThan(100))
 			})
-			Convey(`At least 100 chunks`, func() {
+			t.Run(`At least 100 chunks`, func(t *ftt.Test) {
 				var entries []*Entry
 				for i := 0; i < 200; i++ {
 					entries = append(entries, NewEntry(i).Build())
 				}
 				_, err := CreateEntriesForTesting(ctx, entries)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				count, err := EstimateChunks(span.Single(ctx), testProject)
-				So(err, ShouldBeNil)
-				So(count, ShouldBeGreaterThan, 190)
-				So(count, ShouldBeLessThan, 210)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, count, should.BeGreaterThan(190))
+				assert.Loosely(t, count, should.BeLessThan(210))
 			})
 		})
 	})
-	Convey(`estimateChunksFromID`, t, func() {
+	ftt.Run(`estimateChunksFromID`, t, func(t *ftt.Test) {
 		// Extremely full table. This is the minimum that the 100th ID
 		// could be (considering 0x63 = 99).
 		count, err := estimateChunksFromID("00000000000000000000000000000063")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		// The maximum estimate.
-		So(count, ShouldEqual, 1000*1000*1000)
+		assert.Loosely(t, count, should.Equal(1000*1000*1000))
 
 		// The 100th ID is right in the middle of the keyspace.
 		count, err = estimateChunksFromID("7fffffffffffffffffffffffffffffff")
-		So(err, ShouldBeNil)
-		So(count, ShouldEqual, 200)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, count, should.Equal(200))
 
 		// The 100th ID is right at the end of the keyspace.
 		count, err = estimateChunksFromID("ffffffffffffffffffffffffffffffff")
-		So(err, ShouldBeNil)
-		So(count, ShouldEqual, 100)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, count, should.Equal(100))
 	})
 }

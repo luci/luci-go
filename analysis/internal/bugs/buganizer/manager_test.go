@@ -27,6 +27,10 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/third_party/google.golang.org/genproto/googleapis/devtools/issuetracker/v1"
 
 	"go.chromium.org/luci/analysis/internal/bugs"
@@ -34,15 +38,12 @@ import (
 	"go.chromium.org/luci/analysis/internal/clustering"
 	"go.chromium.org/luci/analysis/internal/config"
 	configpb "go.chromium.org/luci/analysis/proto/config"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestBugManager(t *testing.T) {
 	t.Parallel()
 
-	Convey("With Bug Manager", t, func() {
+	ftt.Run("With Bug Manager", t, func(t *ftt.Test) {
 		ctx := context.Background()
 		fakeClient := NewFakeClient()
 		fakeStore := fakeClient.FakeStore
@@ -76,11 +77,11 @@ func TestBugManager(t *testing.T) {
 		}
 
 		bm, err := NewBugManager(fakeClient, "https://luci-analysis-test.appspot.com", "chromeos", "email@test.com", projectCfg)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		now := time.Date(2044, time.April, 4, 4, 4, 4, 4, time.UTC)
 		ctx, tc := testclock.UseTime(ctx, now)
 
-		Convey("Create", func() {
+		t.Run("Create", func(t *ftt.Test) {
 			createRequest := newCreateRequest()
 			createRequest.ActivePolicyIDs = map[bugs.PolicyID]struct{}{
 				"policy-a": {}, // P4
@@ -111,7 +112,7 @@ func TestBugManager(t *testing.T) {
 				ModifiedTime: timestamppb.New(clock.Now(ctx)),
 			}
 
-			Convey("With reason-based failure cluster", func() {
+			t.Run("With reason-based failure cluster", func(t *ftt.Test) {
 				reason := `Expected equality of these values:
 					"Expected_Value"
 					my_expr.evaluate(123)
@@ -135,63 +136,63 @@ func TestBugManager(t *testing.T) {
 						"Was this bug filed in the wrong component? See: https://luci-analysis-test.appspot.com/help#component-selection",
 				}
 
-				Convey("Base case", func() {
+				t.Run("Base case", func(t *ftt.Test) {
 					response := bm.Create(ctx, createRequest)
-					So(response, ShouldResemble, bugs.BugCreateResponse{
+					assert.Loosely(t, response, should.Resemble(bugs.BugCreateResponse{
 						ID: "1",
 						PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
 							"policy-a": {},
 						},
-					})
-					So(len(fakeStore.Issues), ShouldEqual, 1)
+					}))
+					assert.Loosely(t, len(fakeStore.Issues), should.Equal(1))
 
 					issueData := fakeStore.Issues[1]
-					So(issueData.Issue, ShouldResembleProto, expectedIssue)
+					assert.Loosely(t, issueData.Issue, should.Resemble(expectedIssue))
 				})
 
-				Convey("Policy with comment template", func() {
+				t.Run("Policy with comment template", func(t *ftt.Test) {
 					policyA.BugTemplate.CommentTemplate = "RuleURL:{{.RuleURL}},BugID:{{if .BugID.IsBuganizer}}{{.BugID.BuganizerBugID}}{{end}}"
 
 					bm, err := NewBugManager(fakeClient, "https://luci-analysis-test.appspot.com", "chromeos", "email@test.com", projectCfg)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 
 					response := bm.Create(ctx, createRequest)
-					So(response, ShouldResemble, bugs.BugCreateResponse{
+					assert.Loosely(t, response, should.Resemble(bugs.BugCreateResponse{
 						ID: "1",
 						PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
 							"policy-a": {},
 						},
-					})
-					So(len(fakeStore.Issues), ShouldEqual, 1)
+					}))
+					assert.Loosely(t, len(fakeStore.Issues), should.Equal(1))
 
 					issueData := fakeStore.Issues[1]
-					So(issueData.Issue, ShouldResembleProto, expectedIssue)
+					assert.Loosely(t, issueData.Issue, should.Resemble(expectedIssue))
 					// Expect no comment for policy-a's activation, just the initial issue description.
-					So(len(issueData.Comments), ShouldEqual, 2)
-					So(issueData.Comments[1].Comment, ShouldEqual, "RuleURL:https://luci-analysis-test.appspot.com/p/chromeos/rules/new-rule-id,BugID:1\n\n"+
-						"Why LUCI Analysis posted this comment: https://luci-analysis-test.appspot.com/help#policy-activated (Policy ID: policy-a)")
+					assert.Loosely(t, len(issueData.Comments), should.Equal(2))
+					assert.Loosely(t, issueData.Comments[1].Comment, should.Equal("RuleURL:https://luci-analysis-test.appspot.com/p/chromeos/rules/new-rule-id,BugID:1\n\n"+
+						"Why LUCI Analysis posted this comment: https://luci-analysis-test.appspot.com/help#policy-activated (Policy ID: policy-a)"))
 				})
-				Convey("Policy has no comment template", func() {
+				t.Run("Policy has no comment template", func(t *ftt.Test) {
 					policyA.BugTemplate.CommentTemplate = ""
 
 					bm, err := NewBugManager(fakeClient, "https://luci-analysis-test.appspot.com", "chromeos", "email@test.com", projectCfg)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 
 					response := bm.Create(ctx, createRequest)
-					So(response, ShouldResemble, bugs.BugCreateResponse{
+					assert.Loosely(t, response, should.Resemble(bugs.BugCreateResponse{
 						ID: "1",
 						PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
 							"policy-a": {},
 						},
-					})
-					So(len(fakeStore.Issues), ShouldEqual, 1)
+					}))
+					assert.Loosely(t, len(fakeStore.Issues), should.Equal(1))
 
 					issueData := fakeStore.Issues[1]
-					So(issueData.Issue, ShouldResembleProto, expectedIssue)
+					assert.Loosely(t, issueData.Issue, should.Resemble(expectedIssue))
 					// Expect no comment for policy-a's activation, just the initial issue description.
-					So(len(issueData.Comments), ShouldEqual, 1)
+					assert.Loosely(t, len(issueData.Comments), should.Equal(1))
 				})
-				Convey("Multiple policies activated", func() {
+				t.Run("Multiple policies activated", func(t *ftt.Test) {
 					createRequest.ActivePolicyIDs = map[bugs.PolicyID]struct{}{
 						"policy-a": {}, // P4
 						"policy-b": {}, // P0
@@ -205,26 +206,26 @@ func TestBugManager(t *testing.T) {
 					response := bm.Create(ctx, createRequest)
 
 					// Verify
-					So(response, ShouldResemble, bugs.BugCreateResponse{
+					assert.Loosely(t, response, should.Resemble(bugs.BugCreateResponse{
 						ID: "1",
 						PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
 							"policy-a": {},
 							"policy-b": {},
 							"policy-c": {},
 						},
-					})
-					So(len(fakeStore.Issues), ShouldEqual, 1)
+					}))
+					assert.Loosely(t, len(fakeStore.Issues), should.Equal(1))
 
 					issueData := fakeStore.Issues[1]
-					So(issueData.Issue, ShouldResembleProto, expectedIssue)
-					So(len(issueData.Comments), ShouldEqual, 4)
+					assert.Loosely(t, issueData.Issue, should.Resemble(expectedIssue))
+					assert.Loosely(t, len(issueData.Comments), should.Equal(4))
 					// Policy notifications should be in order of priority.
-					So(issueData.Comments[1].Comment, ShouldStartWith, "Policy ID: policy-b")
-					So(issueData.Comments[2].Comment, ShouldStartWith, "Policy ID: policy-c")
-					So(issueData.Comments[3].Comment, ShouldStartWith, "Policy ID: policy-a")
+					assert.Loosely(t, issueData.Comments[1].Comment, should.HavePrefix("Policy ID: policy-b"))
+					assert.Loosely(t, issueData.Comments[2].Comment, should.HavePrefix("Policy ID: policy-c"))
+					assert.Loosely(t, issueData.Comments[3].Comment, should.HavePrefix("Policy ID: policy-a"))
 				})
 			})
-			Convey("With test name failure cluster", func() {
+			t.Run("With test name failure cluster", func(t *ftt.Test) {
 				createRequest.Description.Title = "ninja://:blink_web_tests/media/my-suite/my-test.html"
 				createRequest.Description.Description = "A test is failing " + createRequest.Description.Title
 				expectedIssue.Description = &issuetracker.IssueComment{
@@ -243,128 +244,128 @@ func TestBugManager(t *testing.T) {
 				expectedIssue.IssueState.Title = "Tests are failing: ninja://:blink_web_tests/media/my-suite/my-test.html"
 
 				response := bm.Create(ctx, createRequest)
-				So(response, ShouldResemble, bugs.BugCreateResponse{
+				assert.Loosely(t, response, should.Resemble(bugs.BugCreateResponse{
 					ID: "1",
 					PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
 						"policy-a": {},
 					},
-				})
-				So(len(fakeStore.Issues), ShouldEqual, 1)
+				}))
+				assert.Loosely(t, len(fakeStore.Issues), should.Equal(1))
 				issue := fakeStore.Issues[1]
 
-				So(issue.Issue, ShouldResembleProto, expectedIssue)
-				So(len(issue.Comments), ShouldEqual, 2)
-				So(issue.Comments[0].Comment, ShouldContainSubstring, "https://luci-analysis-test.appspot.com/p/chromeos/rules/new-rule-id")
-				So(issue.Comments[1].Comment, ShouldStartWith, "Policy ID: policy-a")
+				assert.Loosely(t, issue.Issue, should.Resemble(expectedIssue))
+				assert.Loosely(t, len(issue.Comments), should.Equal(2))
+				assert.Loosely(t, issue.Comments[0].Comment, should.ContainSubstring("https://luci-analysis-test.appspot.com/p/chromeos/rules/new-rule-id"))
+				assert.Loosely(t, issue.Comments[1].Comment, should.HavePrefix("Policy ID: policy-a"))
 			})
 
-			Convey("With provided component id", func() {
+			t.Run("With provided component id", func(t *ftt.Test) {
 				createRequest.BuganizerComponent = 7890
 				response := bm.Create(ctx, createRequest)
-				So(response, ShouldResemble, bugs.BugCreateResponse{
+				assert.Loosely(t, response, should.Resemble(bugs.BugCreateResponse{
 					ID: "1",
 					PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
 						"policy-a": {},
 					},
-				})
-				So(len(fakeStore.Issues), ShouldEqual, 1)
+				}))
+				assert.Loosely(t, len(fakeStore.Issues), should.Equal(1))
 				issue := fakeStore.Issues[1]
-				So(issue.Issue.IssueState.ComponentId, ShouldEqual, 7890)
+				assert.Loosely(t, issue.Issue.IssueState.ComponentId, should.Equal(7890))
 			})
 
-			Convey("With provided component id without permission", func() {
+			t.Run("With provided component id without permission", func(t *ftt.Test) {
 				createRequest.BuganizerComponent = ComponentWithNoAccess
 				// TODO: Mock permission call to fail.
 				response := bm.Create(ctx, createRequest)
-				So(response, ShouldResemble, bugs.BugCreateResponse{
+				assert.Loosely(t, response, should.Resemble(bugs.BugCreateResponse{
 					ID: "1",
 					PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
 						"policy-a": {},
 					},
-				})
-				So(len(fakeStore.Issues), ShouldEqual, 1)
+				}))
+				assert.Loosely(t, len(fakeStore.Issues), should.Equal(1))
 				issue := fakeStore.Issues[1]
 				// Should have fallback component ID because no permission to wanted component.
-				So(issue.Issue.IssueState.ComponentId, ShouldEqual, buganizerCfg.DefaultComponent.Id)
+				assert.Loosely(t, issue.Issue.IssueState.ComponentId, should.Equal(buganizerCfg.DefaultComponent.Id))
 				// No permission to component should appear in comments.
-				So(len(issue.Comments), ShouldEqual, 3)
-				So(issue.Comments[1].Comment, ShouldContainSubstring, strconv.Itoa(ComponentWithNoAccess))
-				So(issue.Comments[2].Comment, ShouldStartWith, "Policy ID: policy-a")
+				assert.Loosely(t, len(issue.Comments), should.Equal(3))
+				assert.Loosely(t, issue.Comments[1].Comment, should.ContainSubstring(strconv.Itoa(ComponentWithNoAccess)))
+				assert.Loosely(t, issue.Comments[2].Comment, should.HavePrefix("Policy ID: policy-a"))
 			})
 
-			Convey("With Buganizer test mode", func() {
+			t.Run("With Buganizer test mode", func(t *ftt.Test) {
 				createRequest.BuganizerComponent = 1234
 				// TODO: Mock permission call to fail.
 				ctx = context.WithValue(ctx, &BuganizerTestModeKey, true)
 				response := bm.Create(ctx, createRequest)
-				So(response, ShouldResemble, bugs.BugCreateResponse{
+				assert.Loosely(t, response, should.Resemble(bugs.BugCreateResponse{
 					ID: "1",
 					PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
 						"policy-a": {},
 					},
-				})
-				So(len(fakeStore.Issues), ShouldEqual, 1)
+				}))
+				assert.Loosely(t, len(fakeStore.Issues), should.Equal(1))
 				issue := fakeStore.Issues[1]
 				// Should have fallback component ID because no permission to wanted component.
-				So(issue.Issue.IssueState.ComponentId, ShouldEqual, buganizerCfg.DefaultComponent.Id)
-				So(len(issue.Comments), ShouldEqual, 3)
-				So(issue.Comments[1].Comment, ShouldContainSubstring, "This bug was filed in the fallback component")
-				So(issue.Comments[2].Comment, ShouldStartWith, "Policy ID: policy-a")
+				assert.Loosely(t, issue.Issue.IssueState.ComponentId, should.Equal(buganizerCfg.DefaultComponent.Id))
+				assert.Loosely(t, len(issue.Comments), should.Equal(3))
+				assert.Loosely(t, issue.Comments[1].Comment, should.ContainSubstring("This bug was filed in the fallback component"))
+				assert.Loosely(t, issue.Comments[2].Comment, should.HavePrefix("Policy ID: policy-a"))
 			})
 
-			Convey("With Limit View Trusted", func() {
+			t.Run("With Limit View Trusted", func(t *ftt.Test) {
 				// Check config is respected and we file with Limit View Trusted if the
 				// config option to file without it is not set.
 				buganizerCfg.FileWithoutLimitViewTrusted = false
 				bm, err := NewBugManager(fakeClient, "https://luci-analysis-test.appspot.com", "chromeos", "email@test.com", projectCfg)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
-				Convey("With internal component", func() {
+				t.Run("With internal component", func(t *ftt.Test) {
 					fakeClient.ComponentAccessLevel = issuetracker.AccessLimit_INTERNAL
 					response := bm.Create(ctx, createRequest)
-					So(response, ShouldResemble, bugs.BugCreateResponse{
+					assert.Loosely(t, response, should.Resemble(bugs.BugCreateResponse{
 						ID: "1",
 						PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
 							"policy-a": {},
 						},
-					})
-					So(len(fakeStore.Issues), ShouldEqual, 1)
+					}))
+					assert.Loosely(t, len(fakeStore.Issues), should.Equal(1))
 					issue := fakeStore.Issues[1]
-					So(issue.Issue.IssueState.AccessLimit.AccessLevel, ShouldEqual, issuetracker.IssueAccessLimit_LIMIT_NONE)
+					assert.Loosely(t, issue.Issue.IssueState.AccessLimit.AccessLevel, should.Equal(issuetracker.IssueAccessLimit_LIMIT_NONE))
 				})
 
-				Convey("With public component", func() {
+				t.Run("With public component", func(t *ftt.Test) {
 					fakeClient.ComponentAccessLevel = issuetracker.AccessLimit_EXTERNAL_PUBLIC
 					response := bm.Create(ctx, createRequest)
-					So(response, ShouldResemble, bugs.BugCreateResponse{
+					assert.Loosely(t, response, should.Resemble(bugs.BugCreateResponse{
 						ID: "1",
 						PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
 							"policy-a": {},
 						},
-					})
-					So(len(fakeStore.Issues), ShouldEqual, 1)
+					}))
+					assert.Loosely(t, len(fakeStore.Issues), should.Equal(1))
 					issue := fakeStore.Issues[1]
-					So(issue.Issue.IssueState.AccessLimit.AccessLevel, ShouldEqual, issuetracker.IssueAccessLimit_LIMIT_VIEW_TRUSTED)
+					assert.Loosely(t, issue.Issue.IssueState.AccessLimit.AccessLevel, should.Equal(issuetracker.IssueAccessLimit_LIMIT_VIEW_TRUSTED))
 				})
 			})
 		})
-		Convey("Update", func() {
+		t.Run("Update", func(t *ftt.Test) {
 			c := newCreateRequest()
 			c.ActivePolicyIDs = map[bugs.PolicyID]struct{}{
 				"policy-a": {}, // P4
 				"policy-c": {}, // P1
 			}
 			response := bm.Create(ctx, c)
-			So(response, ShouldResemble, bugs.BugCreateResponse{
+			assert.Loosely(t, response, should.Resemble(bugs.BugCreateResponse{
 				ID: "1",
 				PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
 					"policy-a": {},
 					"policy-c": {},
 				},
-			})
-			So(len(fakeStore.Issues), ShouldEqual, 1)
-			So(fakeStore.Issues[1].Issue.IssueState.Priority, ShouldEqual, issuetracker.Issue_P1)
-			So(fakeStore.Issues[1].Comments, ShouldHaveLength, 3)
+			}))
+			assert.Loosely(t, len(fakeStore.Issues), should.Equal(1))
+			assert.Loosely(t, fakeStore.Issues[1].Issue.IssueState.Priority, should.Equal(issuetracker.Issue_P1))
+			assert.Loosely(t, fakeStore.Issues[1].Comments, should.HaveLength(3))
 
 			originalCommentCount := len(fakeStore.Issues[1].Comments)
 
@@ -408,22 +409,19 @@ func TestBugManager(t *testing.T) {
 					PolicyActivationsNotified: map[bugs.PolicyID]struct{}{},
 				},
 			}
-			verifyUpdateDoesNothing := func() error {
+			verifyUpdateDoesNothing := func(t testing.TB) error {
+				t.Helper()
 				originalIssue := proto.Clone(fakeStore.Issues[1].Issue).(*issuetracker.Issue)
 				response, err := bm.Update(ctx, bugsToUpdate)
 				if err != nil {
 					return errors.Annotate(err, "update bugs").Err()
 				}
-				if diff := ShouldResemble(response, expectedResponse); diff != "" {
-					return errors.Reason("response: %s", diff).Err()
-				}
-				if diff := ShouldResembleProto(fakeStore.Issues[1].Issue, originalIssue); diff != "" {
-					return errors.Reason("issue 1: %s", diff).Err()
-				}
+				assert.That(t, response, should.Resemble(expectedResponse), truth.LineContext())
+				assert.That(t, fakeStore.Issues[1].Issue, should.Resemble(originalIssue), truth.LineContext())
 				return nil
 			}
 
-			Convey("If less than expected issues are returned, should not fail", func() {
+			t.Run("If less than expected issues are returned, should not fail", func(t *ftt.Test) {
 				fakeStore.Issues = map[int64]*IssueData{}
 
 				bugsToUpdate := []bugs.BugUpdateRequest{
@@ -443,14 +441,14 @@ func TestBugManager(t *testing.T) {
 					},
 				}
 				response, err := bm.Update(ctx, bugsToUpdate)
-				So(err, ShouldBeNil)
-				So(response, ShouldResemble, expectedResponse)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, response, should.Resemble(expectedResponse))
 			})
 
-			Convey("If active policies unchanged and no rule notification pending, does nothing", func() {
-				So(verifyUpdateDoesNothing(), ShouldBeNil)
+			t.Run("If active policies unchanged and no rule notification pending, does nothing", func(t *ftt.Test) {
+				assert.Loosely(t, verifyUpdateDoesNothing(t), should.BeNil)
 			})
-			Convey("Notifies association between bug and rule", func() {
+			t.Run("Notifies association between bug and rule", func(t *ftt.Test) {
 				// Setup
 				// When RuleAssociationNotified is false.
 				bugsToUpdate[0].BugManagementState.RuleAssociationNotified = false
@@ -461,29 +459,29 @@ func TestBugManager(t *testing.T) {
 				response, err := bm.Update(ctx, bugsToUpdate)
 
 				// Verify
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				// RuleAssociationNotified is set.
 				expectedResponse[0].RuleAssociationNotified = true
-				So(response, ShouldResemble, expectedResponse)
+				assert.Loosely(t, response, should.Resemble(expectedResponse))
 
 				// Expect a comment on the bug notifying us about the association.
-				So(fakeStore.Issues[1].Comments, ShouldHaveLength, originalCommentCount+1)
-				So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldEqual,
+				assert.Loosely(t, fakeStore.Issues[1].Comments, should.HaveLength(originalCommentCount+1))
+				assert.Loosely(t, fakeStore.Issues[1].Comments[originalCommentCount].Comment, should.Equal(
 					"This bug has been associated with failures in LUCI Analysis. "+
-						"To view failure examples or update the association, go to LUCI Analysis at: https://luci-analysis-test.appspot.com/p/chromeos/rules/rule-id")
+						"To view failure examples or update the association, go to LUCI Analysis at: https://luci-analysis-test.appspot.com/p/chromeos/rules/rule-id"))
 			})
-			Convey("If active policies changed", func() {
+			t.Run("If active policies changed", func(t *ftt.Test) {
 				// De-activates policy-c (P1), leaving only policy-a (P4) active.
 				bugsToUpdate[0].BugManagementState.PolicyState["policy-c"].IsActive = false
 				bugsToUpdate[0].BugManagementState.PolicyState["policy-c"].LastDeactivationTime = timestamppb.New(activationTime.Add(time.Hour))
 
-				Convey("Does not update bug priority/verified if IsManagingBug false", func() {
+				t.Run("Does not update bug priority/verified if IsManagingBug false", func(t *ftt.Test) {
 					bugsToUpdate[0].IsManagingBug = false
 
-					So(verifyUpdateDoesNothing(), ShouldBeNil)
+					assert.Loosely(t, verifyUpdateDoesNothing(t), should.BeNil)
 				})
-				Convey("Notifies policy activation, even if IsManagingBug false", func() {
+				t.Run("Notifies policy activation, even if IsManagingBug false", func(t *ftt.Test) {
 					bugsToUpdate[0].IsManagingBug = false
 
 					// Activate policy B (P0).
@@ -498,47 +496,47 @@ func TestBugManager(t *testing.T) {
 					response, err := bm.Update(ctx, bugsToUpdate)
 
 					// Verify
-					So(err, ShouldBeNil)
-					So(response, ShouldResemble, expectedResponse)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, response, should.Resemble(expectedResponse))
 
 					// Bug priority should NOT be increased to P0, because IsManagingBug is false.
-					So(fakeStore.Issues[1].Issue.IssueState.Priority, ShouldNotEqual, issuetracker.Issue_P0)
+					assert.Loosely(t, fakeStore.Issues[1].Issue.IssueState.Priority, should.NotEqual(issuetracker.Issue_P0))
 
 					// Expect the policy B activation comment to appear.
-					So(fakeStore.Issues[1].Comments, ShouldHaveLength, originalCommentCount+1)
-					So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring,
-						"Policy ID: policy-b")
+					assert.Loosely(t, fakeStore.Issues[1].Comments, should.HaveLength(originalCommentCount+1))
+					assert.Loosely(t, fakeStore.Issues[1].Comments[originalCommentCount].Comment, should.ContainSubstring(
+						"Policy ID: policy-b"))
 
 					// Expect policy B's hotlist to be added to the bug.
-					So(fakeStore.Issues[1].Issue.IssueState.HotlistIds, ShouldResemble, []int64{1001, 1002, 1003})
+					assert.Loosely(t, fakeStore.Issues[1].Issue.IssueState.HotlistIds, should.Resemble([]int64{1001, 1002, 1003}))
 
 					// Verify repeated update has no effect.
 					bugsToUpdate[0].BugManagementState.PolicyState["policy-b"].ActivationNotified = true
 					expectedResponse[0].PolicyActivationsNotified = map[bugs.PolicyID]struct{}{}
-					So(verifyUpdateDoesNothing(), ShouldBeNil)
+					assert.Loosely(t, verifyUpdateDoesNothing(t), should.BeNil)
 				})
-				Convey("Reduces priority in response to policies de-activating", func() {
+				t.Run("Reduces priority in response to policies de-activating", func(t *ftt.Test) {
 					// Act
 					response, err := bm.Update(ctx, bugsToUpdate)
 
 					// Verify
-					So(err, ShouldBeNil)
-					So(response, ShouldResemble, expectedResponse)
-					So(fakeStore.Issues[1].Issue.IssueState.Priority, ShouldEqual, issuetracker.Issue_P4)
-					So(fakeStore.Issues[1].Comments, ShouldHaveLength, originalCommentCount+1)
-					So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring,
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, response, should.Resemble(expectedResponse))
+					assert.Loosely(t, fakeStore.Issues[1].Issue.IssueState.Priority, should.Equal(issuetracker.Issue_P4))
+					assert.Loosely(t, fakeStore.Issues[1].Comments, should.HaveLength(originalCommentCount+1))
+					assert.Loosely(t, fakeStore.Issues[1].Comments[originalCommentCount].Comment, should.ContainSubstring(
 						"Because the following problem(s) have stopped:\n"+
 							"- Problem C (P1)\n"+
-							"The bug priority has been decreased from P1 to P4.")
-					So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring,
-						"https://luci-analysis-test.appspot.com/help#priority-update")
-					So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring,
-						"https://luci-analysis-test.appspot.com/p/chromeos/rules/rule-id")
+							"The bug priority has been decreased from P1 to P4."))
+					assert.Loosely(t, fakeStore.Issues[1].Comments[originalCommentCount].Comment, should.ContainSubstring(
+						"https://luci-analysis-test.appspot.com/help#priority-update"))
+					assert.Loosely(t, fakeStore.Issues[1].Comments[originalCommentCount].Comment, should.ContainSubstring(
+						"https://luci-analysis-test.appspot.com/p/chromeos/rules/rule-id"))
 
 					// Verify repeated update has no effect.
-					So(verifyUpdateDoesNothing(), ShouldBeNil)
+					assert.Loosely(t, verifyUpdateDoesNothing(t), should.BeNil)
 				})
-				Convey("Increases priority in response to priority policies activating", func() {
+				t.Run("Increases priority in response to priority policies activating", func(t *ftt.Test) {
 					// Activate policy B (P0).
 					bugsToUpdate[0].BugManagementState.PolicyState["policy-b"].IsActive = true
 					bugsToUpdate[0].BugManagementState.PolicyState["policy-b"].LastActivationTime = timestamppb.New(activationTime.Add(time.Hour))
@@ -551,26 +549,26 @@ func TestBugManager(t *testing.T) {
 					response, err := bm.Update(ctx, bugsToUpdate)
 
 					// Verify
-					So(err, ShouldBeNil)
-					So(response, ShouldResemble, expectedResponse)
-					So(fakeStore.Issues[1].Issue.IssueState.Priority, ShouldEqual, issuetracker.Issue_P0)
-					So(fakeStore.Issues[1].Comments, ShouldHaveLength, originalCommentCount+2)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, response, should.Resemble(expectedResponse))
+					assert.Loosely(t, fakeStore.Issues[1].Issue.IssueState.Priority, should.Equal(issuetracker.Issue_P0))
+					assert.Loosely(t, fakeStore.Issues[1].Comments, should.HaveLength(originalCommentCount+2))
 					// Expect the policy B activation comment to appear, followed by the priority update comment.
-					So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring,
-						"Policy ID: policy-b")
-					So(fakeStore.Issues[1].Comments[originalCommentCount+1].Comment, ShouldContainSubstring,
+					assert.Loosely(t, fakeStore.Issues[1].Comments[originalCommentCount].Comment, should.ContainSubstring(
+						"Policy ID: policy-b"))
+					assert.Loosely(t, fakeStore.Issues[1].Comments[originalCommentCount+1].Comment, should.ContainSubstring(
 						"Because the following problem(s) have started:\n"+
 							"- Problem B (P0)\n"+
-							"The bug priority has been increased from P1 to P0.")
-					So(fakeStore.Issues[1].Comments[originalCommentCount+1].Comment, ShouldContainSubstring,
-						"https://luci-analysis-test.appspot.com/help#priority-update")
-					So(fakeStore.Issues[1].Comments[originalCommentCount+1].Comment, ShouldContainSubstring,
-						"https://luci-analysis-test.appspot.com/p/chromeos/rules/rule-id")
+							"The bug priority has been increased from P1 to P0."))
+					assert.Loosely(t, fakeStore.Issues[1].Comments[originalCommentCount+1].Comment, should.ContainSubstring(
+						"https://luci-analysis-test.appspot.com/help#priority-update"))
+					assert.Loosely(t, fakeStore.Issues[1].Comments[originalCommentCount+1].Comment, should.ContainSubstring(
+						"https://luci-analysis-test.appspot.com/p/chromeos/rules/rule-id"))
 
 					// Verify repeated update has no effect.
-					So(verifyUpdateDoesNothing(), ShouldBeNil)
+					assert.Loosely(t, verifyUpdateDoesNothing(t), should.BeNil)
 				})
-				Convey("Does not adjust priority if priority manually set", func() {
+				t.Run("Does not adjust priority if priority manually set", func(t *ftt.Test) {
 					ctx := context.WithValue(ctx, &BuganizerSelfEmailKey, "luci-analysis@prod.google.com")
 					fakeStore.Issues[1].Issue.IssueState.Priority = issuetracker.Issue_P0
 					fakeStore.Issues[1].IssueUpdates = append(fakeStore.Issues[1].IssueUpdates, &issuetracker.IssueUpdate{
@@ -585,15 +583,15 @@ func TestBugManager(t *testing.T) {
 						},
 					})
 					response, err := bm.Update(ctx, bugsToUpdate)
-					So(err, ShouldBeNil)
-					So(fakeStore.Issues[1].Issue.IssueState.Priority, ShouldEqual, issuetracker.Issue_P0)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, fakeStore.Issues[1].Issue.IssueState.Priority, should.Equal(issuetracker.Issue_P0))
 					expectedResponse[0].DisableRulePriorityUpdates = true
-					So(response[0].DisableRulePriorityUpdates, ShouldBeTrue)
-					So(fakeStore.Issues[1].Comments, ShouldHaveLength, originalCommentCount+1)
-					So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldEqual,
+					assert.Loosely(t, response[0].DisableRulePriorityUpdates, should.BeTrue)
+					assert.Loosely(t, fakeStore.Issues[1].Comments, should.HaveLength(originalCommentCount+1))
+					assert.Loosely(t, fakeStore.Issues[1].Comments[originalCommentCount].Comment, should.Equal(
 						"The bug priority has been manually set. To re-enable automatic priority updates by LUCI Analysis,"+
 							" enable the update priority flag on the rule.\n\nSee failure impact and configure the failure"+
-							" association rule for this bug at: https://luci-analysis-test.appspot.com/p/chromeos/rules/rule-id")
+							" association rule for this bug at: https://luci-analysis-test.appspot.com/p/chromeos/rules/rule-id"))
 
 					// Normally, the caller would update IsManagingBugPriority to false
 					// now, but as this is a test, we have to do it manually.
@@ -606,34 +604,34 @@ func TestBugManager(t *testing.T) {
 
 					// Check repeated update does nothing more.
 					initialComments := len(fakeStore.Issues[1].Comments)
-					So(verifyUpdateDoesNothing(), ShouldBeNil)
-					So(len(fakeStore.Issues[1].Comments), ShouldEqual, initialComments)
+					assert.Loosely(t, verifyUpdateDoesNothing(t), should.BeNil)
+					assert.Loosely(t, len(fakeStore.Issues[1].Comments), should.Equal(initialComments))
 
-					Convey("Unless IsManagingBugPriority manually updated", func() {
+					t.Run("Unless IsManagingBugPriority manually updated", func(t *ftt.Test) {
 						bugsToUpdate[0].IsManagingBugPriority = true
 						bugsToUpdate[0].IsManagingBugPriorityLastUpdated = clock.Now(ctx).Add(time.Minute * 15)
 
 						response, err := bm.Update(ctx, bugsToUpdate)
-						So(response, ShouldResemble, expectedResponse)
-						So(err, ShouldBeNil)
-						So(fakeStore.Issues[1].Issue.IssueState.Priority, ShouldEqual, issuetracker.Issue_P4)
-						So(fakeStore.Issues[1].Comments, ShouldHaveLength, initialComments+1)
-						So(fakeStore.Issues[1].Comments[initialComments].Comment, ShouldContainSubstring,
+						assert.Loosely(t, response, should.Resemble(expectedResponse))
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, fakeStore.Issues[1].Issue.IssueState.Priority, should.Equal(issuetracker.Issue_P4))
+						assert.Loosely(t, fakeStore.Issues[1].Comments, should.HaveLength(initialComments+1))
+						assert.Loosely(t, fakeStore.Issues[1].Comments[initialComments].Comment, should.ContainSubstring(
 							"Because the following problem(s) are active:\n"+
 								"- Problem A (P4)\n"+
 								"\n"+
-								"The bug priority has been set to P4.")
-						So(fakeStore.Issues[1].Comments[initialComments].Comment, ShouldContainSubstring,
-							"https://luci-analysis-test.appspot.com/help#priority-update")
-						So(fakeStore.Issues[1].Comments[initialComments].Comment, ShouldContainSubstring,
-							"https://luci-analysis-test.appspot.com/p/chromeos/rules/rule-id")
+								"The bug priority has been set to P4."))
+						assert.Loosely(t, fakeStore.Issues[1].Comments[initialComments].Comment, should.ContainSubstring(
+							"https://luci-analysis-test.appspot.com/help#priority-update"))
+						assert.Loosely(t, fakeStore.Issues[1].Comments[initialComments].Comment, should.ContainSubstring(
+							"https://luci-analysis-test.appspot.com/p/chromeos/rules/rule-id"))
 
 						// Verify repeated update has no effect.
-						So(verifyUpdateDoesNothing(), ShouldBeNil)
+						assert.Loosely(t, verifyUpdateDoesNothing(t), should.BeNil)
 					})
 				})
 			})
-			Convey("If all policies deactivate", func() {
+			t.Run("If all policies deactivate", func(t *ftt.Test) {
 				// De-activate all policies, so the bug would normally be marked verified.
 				for _, policyState := range bugsToUpdate[0].BugManagementState.PolicyState {
 					if policyState.IsActive {
@@ -642,60 +640,60 @@ func TestBugManager(t *testing.T) {
 					}
 				}
 
-				Convey("Does not update bug if IsManagingBug false", func() {
+				t.Run("Does not update bug if IsManagingBug false", func(t *ftt.Test) {
 					bugsToUpdate[0].IsManagingBug = false
 
-					So(verifyUpdateDoesNothing(), ShouldBeNil)
+					assert.Loosely(t, verifyUpdateDoesNothing(t), should.BeNil)
 				})
-				Convey("Sets verifier and assignee to luci analysis if assignee is nil", func() {
+				t.Run("Sets verifier and assignee to luci analysis if assignee is nil", func(t *ftt.Test) {
 					fakeStore.Issues[1].Issue.IssueState.Assignee = nil
 
 					response, err := bm.Update(ctx, bugsToUpdate)
 
-					So(err, ShouldBeNil)
-					So(response, ShouldResemble, expectedResponse)
-					So(fakeStore.Issues[1].Issue.IssueState.Status, ShouldEqual, issuetracker.Issue_VERIFIED)
-					So(fakeStore.Issues[1].Issue.IssueState.Verifier.EmailAddress, ShouldEqual, "email@test.com")
-					So(fakeStore.Issues[1].Issue.IssueState.Assignee.EmailAddress, ShouldEqual, "email@test.com")
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, response, should.Resemble(expectedResponse))
+					assert.Loosely(t, fakeStore.Issues[1].Issue.IssueState.Status, should.Equal(issuetracker.Issue_VERIFIED))
+					assert.Loosely(t, fakeStore.Issues[1].Issue.IssueState.Verifier.EmailAddress, should.Equal("email@test.com"))
+					assert.Loosely(t, fakeStore.Issues[1].Issue.IssueState.Assignee.EmailAddress, should.Equal("email@test.com"))
 
-					Convey("If re-opening, LUCI Analysis assignee is removed", func() {
+					t.Run("If re-opening, LUCI Analysis assignee is removed", func(t *ftt.Test) {
 						bugsToUpdate[0].BugManagementState.PolicyState["policy-a"].IsActive = true
 						bugsToUpdate[0].BugManagementState.PolicyState["policy-a"].LastActivationTime = timestamppb.New(activationTime.Add(2 * time.Hour))
 
 						response, err := bm.Update(ctx, bugsToUpdate)
 
-						So(err, ShouldBeNil)
-						So(response, ShouldResemble, expectedResponse)
-						So(fakeStore.Issues[1].Issue.IssueState.Status, ShouldEqual, issuetracker.Issue_NEW)
-						So(fakeStore.Issues[1].Issue.IssueState.Assignee, ShouldBeNil)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, response, should.Resemble(expectedResponse))
+						assert.Loosely(t, fakeStore.Issues[1].Issue.IssueState.Status, should.Equal(issuetracker.Issue_NEW))
+						assert.Loosely(t, fakeStore.Issues[1].Issue.IssueState.Assignee, should.BeNil)
 					})
 				})
 
-				Convey("Update closes bug", func() {
+				t.Run("Update closes bug", func(t *ftt.Test) {
 					fakeStore.Issues[1].Issue.IssueState.Assignee = &issuetracker.User{
 						EmailAddress: "user@google.com",
 					}
 
 					response, err := bm.Update(ctx, bugsToUpdate)
-					So(err, ShouldBeNil)
-					So(response, ShouldResemble, expectedResponse)
-					So(fakeStore.Issues[1].Issue.IssueState.Status, ShouldEqual, issuetracker.Issue_VERIFIED)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, response, should.Resemble(expectedResponse))
+					assert.Loosely(t, fakeStore.Issues[1].Issue.IssueState.Status, should.Equal(issuetracker.Issue_VERIFIED))
 
 					expectedComment := "Because the following problem(s) have stopped:\n" +
 						"- Problem C (P1)\n" +
 						"- Problem A (P4)\n" +
 						"The bug has been verified."
-					So(fakeStore.Issues[1].Comments, ShouldHaveLength, originalCommentCount+1)
-					So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring, expectedComment)
-					So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring,
-						"https://luci-analysis-test.appspot.com/help#bug-verified")
-					So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring,
-						"https://luci-analysis-test.appspot.com/p/chromeos/rules/rule-id")
+					assert.Loosely(t, fakeStore.Issues[1].Comments, should.HaveLength(originalCommentCount+1))
+					assert.Loosely(t, fakeStore.Issues[1].Comments[originalCommentCount].Comment, should.ContainSubstring(expectedComment))
+					assert.Loosely(t, fakeStore.Issues[1].Comments[originalCommentCount].Comment, should.ContainSubstring(
+						"https://luci-analysis-test.appspot.com/help#bug-verified"))
+					assert.Loosely(t, fakeStore.Issues[1].Comments[originalCommentCount].Comment, should.ContainSubstring(
+						"https://luci-analysis-test.appspot.com/p/chromeos/rules/rule-id"))
 
 					// Verify repeated update has no effect.
-					So(verifyUpdateDoesNothing(), ShouldBeNil)
+					assert.Loosely(t, verifyUpdateDoesNothing(t), should.BeNil)
 
-					Convey("Rules for verified bugs archived after 30 days", func() {
+					t.Run("Rules for verified bugs archived after 30 days", func(t *ftt.Test) {
 						tc.Add(time.Hour * 24 * 30)
 
 						expectedResponse := []bugs.BugUpdateResponse{
@@ -706,12 +704,12 @@ func TestBugManager(t *testing.T) {
 						}
 						tc.Add(time.Minute * 2)
 						response, err := bm.Update(ctx, bugsToUpdate)
-						So(err, ShouldBeNil)
-						So(response, ShouldResemble, expectedResponse)
-						So(fakeStore.Issues[1].Issue.ModifiedTime, ShouldResembleProto, timestamppb.New(now))
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, response, should.Resemble(expectedResponse))
+						assert.Loosely(t, fakeStore.Issues[1].Issue.ModifiedTime, should.Resemble(timestamppb.New(now)))
 					})
 
-					Convey("If policies re-activate, bug is re-opened with correct priority", func() {
+					t.Run("If policies re-activate, bug is re-opened with correct priority", func(t *ftt.Test) {
 						// policy-b has priority P0.
 						bugsToUpdate[0].BugManagementState.PolicyState["policy-b"].IsActive = true
 						bugsToUpdate[0].BugManagementState.PolicyState["policy-b"].LastActivationTime = timestamppb.New(activationTime.Add(2 * time.Hour))
@@ -719,60 +717,60 @@ func TestBugManager(t *testing.T) {
 
 						originalCommentCount := len(fakeStore.Issues[1].Comments)
 
-						Convey("Issue has owner", func() {
+						t.Run("Issue has owner", func(t *ftt.Test) {
 							fakeStore.Issues[1].Issue.IssueState.Assignee = &issuetracker.User{
 								EmailAddress: "testuser@google.com",
 							}
 
 							// Issue should return to "Assigned" status.
 							response, err := bm.Update(ctx, bugsToUpdate)
-							So(err, ShouldBeNil)
-							So(response, ShouldResemble, expectedResponse)
-							So(fakeStore.Issues[1].Issue.IssueState.Status, ShouldEqual, issuetracker.Issue_ASSIGNED)
-							So(fakeStore.Issues[1].Issue.IssueState.Priority, ShouldEqual, issuetracker.Issue_P0)
+							assert.Loosely(t, err, should.BeNil)
+							assert.Loosely(t, response, should.Resemble(expectedResponse))
+							assert.Loosely(t, fakeStore.Issues[1].Issue.IssueState.Status, should.Equal(issuetracker.Issue_ASSIGNED))
+							assert.Loosely(t, fakeStore.Issues[1].Issue.IssueState.Priority, should.Equal(issuetracker.Issue_P0))
 
 							expectedComment := "Because the following problem(s) have started:\n" +
 								"- Problem B (P0)\n" +
 								"The bug has been re-opened as P0."
-							So(fakeStore.Issues[1].Comments, ShouldHaveLength, originalCommentCount+1)
-							So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring, expectedComment)
-							So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring,
-								"https://luci-analysis-test.appspot.com/help#bug-reopened")
-							So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring,
-								"https://luci-analysis-test.appspot.com/p/chromeos/rules/rule-id")
+							assert.Loosely(t, fakeStore.Issues[1].Comments, should.HaveLength(originalCommentCount+1))
+							assert.Loosely(t, fakeStore.Issues[1].Comments[originalCommentCount].Comment, should.ContainSubstring(expectedComment))
+							assert.Loosely(t, fakeStore.Issues[1].Comments[originalCommentCount].Comment, should.ContainSubstring(
+								"https://luci-analysis-test.appspot.com/help#bug-reopened"))
+							assert.Loosely(t, fakeStore.Issues[1].Comments[originalCommentCount].Comment, should.ContainSubstring(
+								"https://luci-analysis-test.appspot.com/p/chromeos/rules/rule-id"))
 
 							// Verify repeated update has no effect.
-							So(verifyUpdateDoesNothing(), ShouldBeNil)
+							assert.Loosely(t, verifyUpdateDoesNothing(t), should.BeNil)
 						})
-						Convey("Issue has no assignee", func() {
+						t.Run("Issue has no assignee", func(t *ftt.Test) {
 							fakeStore.Issues[1].Issue.IssueState.Assignee = nil
 
 							// Issue should return to "Untriaged" status.
 							response, err := bm.Update(ctx, bugsToUpdate)
-							So(err, ShouldBeNil)
-							So(response, ShouldResemble, expectedResponse)
-							So(fakeStore.Issues[1].Issue.IssueState.Status, ShouldEqual, issuetracker.Issue_NEW)
-							So(fakeStore.Issues[1].Issue.IssueState.Priority, ShouldEqual, issuetracker.Issue_P0)
+							assert.Loosely(t, err, should.BeNil)
+							assert.Loosely(t, response, should.Resemble(expectedResponse))
+							assert.Loosely(t, fakeStore.Issues[1].Issue.IssueState.Status, should.Equal(issuetracker.Issue_NEW))
+							assert.Loosely(t, fakeStore.Issues[1].Issue.IssueState.Priority, should.Equal(issuetracker.Issue_P0))
 
 							expectedComment := "Because the following problem(s) have started:\n" +
 								"- Problem B (P0)\n" +
 								"The bug has been re-opened as P0."
-							So(fakeStore.Issues[1].Comments, ShouldHaveLength, originalCommentCount+1)
-							So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring, expectedComment)
-							So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring,
-								"https://luci-analysis-test.appspot.com/help#priority-update")
-							So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring,
-								"https://luci-analysis-test.appspot.com/help#bug-reopened")
-							So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring,
-								"https://luci-analysis-test.appspot.com/p/chromeos/rules/rule-id")
+							assert.Loosely(t, fakeStore.Issues[1].Comments, should.HaveLength(originalCommentCount+1))
+							assert.Loosely(t, fakeStore.Issues[1].Comments[originalCommentCount].Comment, should.ContainSubstring(expectedComment))
+							assert.Loosely(t, fakeStore.Issues[1].Comments[originalCommentCount].Comment, should.ContainSubstring(
+								"https://luci-analysis-test.appspot.com/help#priority-update"))
+							assert.Loosely(t, fakeStore.Issues[1].Comments[originalCommentCount].Comment, should.ContainSubstring(
+								"https://luci-analysis-test.appspot.com/help#bug-reopened"))
+							assert.Loosely(t, fakeStore.Issues[1].Comments[originalCommentCount].Comment, should.ContainSubstring(
+								"https://luci-analysis-test.appspot.com/p/chromeos/rules/rule-id"))
 
 							// Verify repeated update has no effect.
-							So(verifyUpdateDoesNothing(), ShouldBeNil)
+							assert.Loosely(t, verifyUpdateDoesNothing(t), should.BeNil)
 						})
 					})
 				})
 			})
-			Convey("If bug duplicate", func() {
+			t.Run("If bug duplicate", func(t *ftt.Test) {
 				fakeStore.Issues[1].Issue.IssueState.Status = issuetracker.Issue_DUPLICATE
 				expectedResponse := []bugs.BugUpdateResponse{
 					{
@@ -785,11 +783,11 @@ func TestBugManager(t *testing.T) {
 				response, err := bm.Update(ctx, bugsToUpdate)
 
 				// Verify
-				So(err, ShouldBeNil)
-				So(response, ShouldResemble, expectedResponse)
-				So(fakeStore.Issues[1].Issue.ModifiedTime, ShouldResembleProto, timestamppb.New(clock.Now(ctx)))
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, response, should.Resemble(expectedResponse))
+				assert.Loosely(t, fakeStore.Issues[1].Issue.ModifiedTime, should.Resemble(timestamppb.New(clock.Now(ctx))))
 			})
-			Convey("Rule not managing a bug archived after 30 days of the bug being in any closed state", func() {
+			t.Run("Rule not managing a bug archived after 30 days of the bug being in any closed state", func(t *ftt.Test) {
 				bugsToUpdate[0].IsManagingBug = false
 				fakeStore.Issues[1].Issue.IssueState.Status = issuetracker.Issue_FIXED
 				fakeStore.Issues[1].Issue.ResolvedTime = timestamppb.New(tc.Now())
@@ -808,11 +806,11 @@ func TestBugManager(t *testing.T) {
 				response, err := bm.Update(ctx, bugsToUpdate)
 
 				// Verify
-				So(err, ShouldBeNil)
-				So(response, ShouldResemble, expectedResponse)
-				So(fakeStore.Issues[1].Issue.ModifiedTime, ShouldResembleProto, originalTime)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, response, should.Resemble(expectedResponse))
+				assert.Loosely(t, fakeStore.Issues[1].Issue.ModifiedTime, should.Resemble(originalTime))
 			})
-			Convey("Rule managing a bug not archived after 30 days of the bug being in fixed state", func() {
+			t.Run("Rule managing a bug not archived after 30 days of the bug being in fixed state", func(t *ftt.Test) {
 				// If LUCI Analysis is mangaging the bug state, the fixed state
 				// means the bug is still not verified. Do not archive the
 				// rule.
@@ -822,10 +820,10 @@ func TestBugManager(t *testing.T) {
 
 				tc.Add(time.Hour * 24 * 30)
 
-				So(verifyUpdateDoesNothing(), ShouldBeNil)
+				assert.Loosely(t, verifyUpdateDoesNothing(t), should.BeNil)
 			})
 
-			Convey("Rules archived immediately if bug archived", func() {
+			t.Run("Rules archived immediately if bug archived", func(t *ftt.Test) {
 				fakeStore.Issues[1].Issue.IsArchived = true
 
 				expectedResponse := []bugs.BugUpdateResponse{
@@ -839,70 +837,70 @@ func TestBugManager(t *testing.T) {
 				response, err := bm.Update(ctx, bugsToUpdate)
 
 				// Verify
-				So(err, ShouldBeNil)
-				So(response, ShouldResemble, expectedResponse)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, response, should.Resemble(expectedResponse))
 			})
-			Convey("If issue does not exist, does nothing", func() {
+			t.Run("If issue does not exist, does nothing", func(t *ftt.Test) {
 				fakeStore.Issues = nil
 				response, err := bm.Update(ctx, bugsToUpdate)
-				So(err, ShouldBeNil)
-				So(len(response), ShouldEqual, len(bugsToUpdate))
-				So(fakeStore.Issues, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, len(response), should.Equal(len(bugsToUpdate)))
+				assert.Loosely(t, fakeStore.Issues, should.BeNil)
 			})
 		})
-		Convey("GetMergedInto", func() {
+		t.Run("GetMergedInto", func(t *ftt.Test) {
 			c := newCreateRequest()
 			c.ActivePolicyIDs = map[bugs.PolicyID]struct{}{"policy-a": {}}
 			response := bm.Create(ctx, c)
-			So(response, ShouldResemble, bugs.BugCreateResponse{
+			assert.Loosely(t, response, should.Resemble(bugs.BugCreateResponse{
 				ID: "1",
 				PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
 					"policy-a": {},
 				},
-			})
-			So(len(fakeStore.Issues), ShouldEqual, 1)
+			}))
+			assert.Loosely(t, len(fakeStore.Issues), should.Equal(1))
 
 			bugID := bugs.BugID{System: bugs.BuganizerSystem, ID: "1"}
-			Convey("Merged into Buganizer bug", func() {
+			t.Run("Merged into Buganizer bug", func(t *ftt.Test) {
 				fakeStore.Issues[1].Issue.IssueState.Status = issuetracker.Issue_DUPLICATE
 				fakeStore.Issues[1].Issue.IssueState.CanonicalIssueId = 2
 
 				result, err := bm.GetMergedInto(ctx, bugID)
-				So(err, ShouldEqual, nil)
-				So(result, ShouldResemble, &bugs.BugID{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, result, should.Resemble(&bugs.BugID{
 					System: bugs.BuganizerSystem,
 					ID:     "2",
-				})
+				}))
 			})
-			Convey("Not merged into any bug", func() {
+			t.Run("Not merged into any bug", func(t *ftt.Test) {
 				// While MergedIntoIssueRef is set, the bug status is not
 				// set to "Duplicate", so this value should be ignored.
 				fakeStore.Issues[1].Issue.IssueState.Status = issuetracker.Issue_NEW
 				fakeStore.Issues[1].Issue.IssueState.CanonicalIssueId = 2
 
 				result, err := bm.GetMergedInto(ctx, bugID)
-				So(err, ShouldEqual, nil)
-				So(result, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, result, should.BeNil)
 			})
 		})
-		Convey("UpdateDuplicateSource", func() {
+		t.Run("UpdateDuplicateSource", func(t *ftt.Test) {
 			c := newCreateRequest()
 			c.ActivePolicyIDs = map[bugs.PolicyID]struct{}{"policy-a": {}}
 			response := bm.Create(ctx, c)
-			So(response, ShouldResemble, bugs.BugCreateResponse{
+			assert.Loosely(t, response, should.Resemble(bugs.BugCreateResponse{
 				ID: "1",
 				PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
 					"policy-a": {},
 				},
-			})
-			So(fakeStore.Issues, ShouldHaveLength, 1)
-			So(fakeStore.Issues[1].Comments, ShouldHaveLength, 2)
+			}))
+			assert.Loosely(t, fakeStore.Issues, should.HaveLength(1))
+			assert.Loosely(t, fakeStore.Issues[1].Comments, should.HaveLength(2))
 			originalCommentCount := len(fakeStore.Issues[1].Comments)
 
 			fakeStore.Issues[1].Issue.IssueState.Status = issuetracker.Issue_DUPLICATE
 			fakeStore.Issues[1].Issue.IssueState.CanonicalIssueId = 2
 
-			Convey("With ErrorMessage", func() {
+			t.Run("With ErrorMessage", func(t *ftt.Test) {
 				request := bugs.UpdateDuplicateSourceRequest{
 					BugDetails: bugs.DuplicateBugDetails{
 						RuleID: "source-rule-id",
@@ -911,15 +909,15 @@ func TestBugManager(t *testing.T) {
 					ErrorMessage: "Some error.",
 				}
 				err := bm.UpdateDuplicateSource(ctx, request)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
-				So(fakeStore.Issues[1].Issue.IssueState.Status, ShouldEqual, issuetracker.Issue_NEW)
-				So(fakeStore.Issues[1].Comments, ShouldHaveLength, originalCommentCount+1)
-				So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring, "Some error.")
-				So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring,
-					"https://luci-analysis-test.appspot.com/p/chromeos/rules/source-rule-id")
+				assert.Loosely(t, fakeStore.Issues[1].Issue.IssueState.Status, should.Equal(issuetracker.Issue_NEW))
+				assert.Loosely(t, fakeStore.Issues[1].Comments, should.HaveLength(originalCommentCount+1))
+				assert.Loosely(t, fakeStore.Issues[1].Comments[originalCommentCount].Comment, should.ContainSubstring("Some error."))
+				assert.Loosely(t, fakeStore.Issues[1].Comments[originalCommentCount].Comment, should.ContainSubstring(
+					"https://luci-analysis-test.appspot.com/p/chromeos/rules/source-rule-id"))
 			})
-			Convey("With ErrorMessage and IsAssigned is true", func() {
+			t.Run("With ErrorMessage and IsAssigned is true", func(t *ftt.Test) {
 				request := bugs.UpdateDuplicateSourceRequest{
 					BugDetails: bugs.DuplicateBugDetails{
 						RuleID:     "source-rule-id",
@@ -929,15 +927,15 @@ func TestBugManager(t *testing.T) {
 					ErrorMessage: "Some error.",
 				}
 				err := bm.UpdateDuplicateSource(ctx, request)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
-				So(fakeStore.Issues[1].Issue.IssueState.Status, ShouldEqual, issuetracker.Issue_ASSIGNED)
-				So(fakeStore.Issues[1].Comments, ShouldHaveLength, originalCommentCount+1)
-				So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring, "Some error.")
-				So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring,
-					"https://luci-analysis-test.appspot.com/p/chromeos/rules/source-rule-id")
+				assert.Loosely(t, fakeStore.Issues[1].Issue.IssueState.Status, should.Equal(issuetracker.Issue_ASSIGNED))
+				assert.Loosely(t, fakeStore.Issues[1].Comments, should.HaveLength(originalCommentCount+1))
+				assert.Loosely(t, fakeStore.Issues[1].Comments[originalCommentCount].Comment, should.ContainSubstring("Some error."))
+				assert.Loosely(t, fakeStore.Issues[1].Comments[originalCommentCount].Comment, should.ContainSubstring(
+					"https://luci-analysis-test.appspot.com/p/chromeos/rules/source-rule-id"))
 			})
-			Convey("Without ErrorMessage", func() {
+			t.Run("Without ErrorMessage", func(t *ftt.Test) {
 				request := bugs.UpdateDuplicateSourceRequest{
 					BugDetails: bugs.DuplicateBugDetails{
 						RuleID: "source-bug-rule-id",
@@ -946,13 +944,13 @@ func TestBugManager(t *testing.T) {
 					DestinationRuleID: "12345abcdef",
 				}
 				err := bm.UpdateDuplicateSource(ctx, request)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
-				So(fakeStore.Issues[1].Issue.IssueState.Status, ShouldEqual, issuetracker.Issue_DUPLICATE)
-				So(fakeStore.Issues[1].Comments, ShouldHaveLength, originalCommentCount+1)
-				So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring, "merged the failure association rule for this bug into the rule for the canonical bug.")
-				So(fakeStore.Issues[1].Comments[originalCommentCount].Comment, ShouldContainSubstring,
-					"https://luci-analysis-test.appspot.com/p/chromeos/rules/12345abcdef")
+				assert.Loosely(t, fakeStore.Issues[1].Issue.IssueState.Status, should.Equal(issuetracker.Issue_DUPLICATE))
+				assert.Loosely(t, fakeStore.Issues[1].Comments, should.HaveLength(originalCommentCount+1))
+				assert.Loosely(t, fakeStore.Issues[1].Comments[originalCommentCount].Comment, should.ContainSubstring("merged the failure association rule for this bug into the rule for the canonical bug."))
+				assert.Loosely(t, fakeStore.Issues[1].Comments[originalCommentCount].Comment, should.ContainSubstring(
+					"https://luci-analysis-test.appspot.com/p/chromeos/rules/12345abcdef"))
 			})
 		})
 	})

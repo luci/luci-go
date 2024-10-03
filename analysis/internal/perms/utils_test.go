@@ -25,8 +25,11 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/auth/realms"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func init() {
@@ -37,7 +40,7 @@ func init() {
 }
 
 func TestQueryRealms(t *testing.T) {
-	Convey("QueryRealms", t, func() {
+	ftt.Run("QueryRealms", t, func(t *ftt.Test) {
 		ctx := context.Background()
 
 		ctx = auth.WithState(ctx, &authtest.FakeState{
@@ -78,96 +81,99 @@ func TestQueryRealms(t *testing.T) {
 			},
 		})
 
-		Convey("QueryRealms", func() {
-			Convey("no permission specified", func() {
+		t.Run("QueryRealms", func(t *ftt.Test) {
+			t.Run("no permission specified", func(t *ftt.Test) {
 				realms, err := QueryRealms(ctx, "project1", nil)
-				So(err, ShouldErrLike, "at least one permission must be specified")
-				So(realms, ShouldBeEmpty)
+				assert.Loosely(t, err, should.ErrLike("at least one permission must be specified"))
+				assert.Loosely(t, realms, should.BeEmpty)
 			})
 
-			Convey("no project specified", func() {
+			t.Run("no project specified", func(t *ftt.Test) {
 				realms, err := QueryRealms(ctx, "", nil, rdbperms.PermListTestResults)
-				So(err, ShouldErrLike, "project must be specified")
-				So(realms, ShouldBeEmpty)
+				assert.Loosely(t, err, should.ErrLike("project must be specified"))
+				assert.Loosely(t, realms, should.BeEmpty)
 			})
 
-			Convey("check single permission", func() {
+			t.Run("check single permission", func(t *ftt.Test) {
 				realms, err := QueryRealms(ctx, "project1", nil, rdbperms.PermListTestResults)
-				So(err, ShouldBeNil)
-				So(realms, ShouldResemble, []string{"project1:realm1", "project1:realm2"})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, realms, should.Resemble([]string{"project1:realm1", "project1:realm2"}))
 			})
 
-			Convey("check multiple permissions", func() {
+			t.Run("check multiple permissions", func(t *ftt.Test) {
 				realms, err := QueryRealms(ctx, "project1", nil, rdbperms.PermListTestResults, rdbperms.PermGetArtifact)
-				So(err, ShouldBeNil)
-				So(realms, ShouldResemble, []string{"project1:realm1"})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, realms, should.Resemble([]string{"project1:realm1"}))
 			})
 
-			Convey("no matched realms", func() {
+			t.Run("no matched realms", func(t *ftt.Test) {
 				realms, err := QueryRealms(ctx, "project1", nil, rdbperms.PermListTestExonerations, rdbperms.PermListArtifacts)
-				So(err, ShouldBeNil)
-				So(realms, ShouldBeEmpty)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, realms, should.BeEmpty)
 			})
 
-			Convey("no matched realms with non-empty method variant", func() {
+			t.Run("no matched realms with non-empty method variant", func(t *ftt.Test) {
 				realms, err := QueryRealmsNonEmpty(ctx, "project1", nil, rdbperms.PermListTestExonerations, rdbperms.PermListArtifacts)
-				So(err, ShouldErrLike, "caller does not have permissions", "in any realm in project \"project1\"")
-				So(err, ShouldHaveAppStatus, codes.PermissionDenied)
-				So(realms, ShouldBeEmpty)
+				assert.That(t, err, should.ErrLike("caller does not have permissions"))
+				assert.That(t, err, should.ErrLike("in any realm in project \"project1\""))
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.PermissionDenied))
+				assert.Loosely(t, realms, should.BeEmpty)
 			})
 		})
-		Convey("QuerySubRealms", func() {
-			Convey("no permission specified", func() {
+		t.Run("QuerySubRealms", func(t *ftt.Test) {
+			t.Run("no permission specified", func(t *ftt.Test) {
 				realms, err := QuerySubRealmsNonEmpty(ctx, "project1", "realm1", nil)
-				So(err, ShouldErrLike, "at least one permission must be specified")
-				So(realms, ShouldBeEmpty)
+				assert.Loosely(t, err, should.ErrLike("at least one permission must be specified"))
+				assert.Loosely(t, realms, should.BeEmpty)
 			})
 
-			Convey("no project specified", func() {
+			t.Run("no project specified", func(t *ftt.Test) {
 				realms, err := QuerySubRealmsNonEmpty(ctx, "", "", nil, rdbperms.PermListTestResults)
-				So(err, ShouldErrLike, "project must be specified")
-				So(realms, ShouldBeEmpty)
+				assert.Loosely(t, err, should.ErrLike("project must be specified"))
+				assert.Loosely(t, realms, should.BeEmpty)
 			})
 
-			Convey("project scope", func() {
-				Convey("check single permission", func() {
+			t.Run("project scope", func(t *ftt.Test) {
+				t.Run("check single permission", func(t *ftt.Test) {
 					realms, err := QuerySubRealmsNonEmpty(ctx, "project1", "", nil, rdbperms.PermListTestResults)
-					So(err, ShouldBeNil)
-					So(realms, ShouldResemble, []string{"realm1", "realm2"})
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, realms, should.Resemble([]string{"realm1", "realm2"}))
 				})
 
-				Convey("check multiple permissions", func() {
+				t.Run("check multiple permissions", func(t *ftt.Test) {
 					realms, err := QuerySubRealmsNonEmpty(ctx, "project1", "", nil, rdbperms.PermListTestResults, rdbperms.PermGetArtifact)
-					So(err, ShouldBeNil)
-					So(realms, ShouldResemble, []string{"realm1"})
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, realms, should.Resemble([]string{"realm1"}))
 				})
 
-				Convey("no matched realms", func() {
+				t.Run("no matched realms", func(t *ftt.Test) {
 					realms, err := QuerySubRealmsNonEmpty(ctx, "project1", "", nil, rdbperms.PermListTestExonerations, rdbperms.PermListArtifacts)
-					So(err, ShouldErrLike, "caller does not have permissions", "in any realm in project \"project1\"")
-					So(err, ShouldHaveAppStatus, codes.PermissionDenied)
-					So(realms, ShouldBeEmpty)
+					assert.That(t, err, should.ErrLike("caller does not have permissions"))
+					assert.That(t, err, should.ErrLike("in any realm in project \"project1\""))
+					assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.PermissionDenied))
+					assert.Loosely(t, realms, should.BeEmpty)
 				})
 			})
 
-			Convey("realm scope", func() {
-				Convey("check single permission", func() {
+			t.Run("realm scope", func(t *ftt.Test) {
+				t.Run("check single permission", func(t *ftt.Test) {
 					realms, err := QuerySubRealmsNonEmpty(ctx, "project1", "realm1", nil, rdbperms.PermListTestResults)
-					So(err, ShouldBeNil)
-					So(realms, ShouldResemble, []string{"realm1"})
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, realms, should.Resemble([]string{"realm1"}))
 				})
 
-				Convey("check multiple permissions", func() {
+				t.Run("check multiple permissions", func(t *ftt.Test) {
 					realms, err := QuerySubRealmsNonEmpty(ctx, "project1", "realm1", nil, rdbperms.PermListTestResults, rdbperms.PermGetArtifact)
-					So(err, ShouldBeNil)
-					So(realms, ShouldResemble, []string{"realm1"})
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, realms, should.Resemble([]string{"realm1"}))
 				})
 
-				Convey("no matched realms", func() {
+				t.Run("no matched realms", func(t *ftt.Test) {
 					realms, err := QuerySubRealmsNonEmpty(ctx, "project1", "realm1", nil, rdbperms.PermListTestExonerations, rdbperms.PermListArtifacts)
-					So(err, ShouldErrLike, "caller does not have permission", "in realm \"project1:realm1\"")
-					So(err, ShouldHaveAppStatus, codes.PermissionDenied)
-					So(realms, ShouldBeEmpty)
+					assert.Loosely(t, err, should.ErrLike("caller does not have permission"))
+					assert.Loosely(t, err, should.ErrLike("in realm \"project1:realm1\""))
+					assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.PermissionDenied))
+					assert.Loosely(t, realms, should.BeEmpty)
 				})
 			})
 		})

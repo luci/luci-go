@@ -19,6 +19,9 @@ import (
 	"time"
 
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/span"
 
@@ -26,13 +29,10 @@ import (
 	"go.chromium.org/luci/analysis/internal/testutil"
 	"go.chromium.org/luci/analysis/pbutil"
 	pb "go.chromium.org/luci/analysis/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestPopulateOwnerKinds(t *testing.T) {
-	Convey("PopulateOwnerKinds", t, func() {
+	ftt.Run("PopulateOwnerKinds", t, func(t *ftt.Test) {
 		ctx := testutil.IntegrationTestContext(t)
 
 		clsByHost := make(map[string][]*gerritpb.ChangeInfo)
@@ -80,73 +80,73 @@ func TestPopulateOwnerKinds(t *testing.T) {
 			},
 		}
 
-		Convey("With human CL author", func() {
+		t.Run("With human CL author", func(t *ftt.Test) {
 			augmentedSources, err := PopulateOwnerKindsBatch(ctx, "testproject", sources)
-			So(err, ShouldBeNil)
-			So(augmentedSources, ShouldResembleProto, expectedSources)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, augmentedSources, should.Resemble(expectedSources))
 
 			// Verify cache record was created.
 			cls, err := ReadAll(span.Single(ctx))
-			So(err, ShouldBeNil)
-			So(removeCreationTimestamps(cls), ShouldResemble, expectedChangelists)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, removeCreationTimestamps(cls), should.Resemble(expectedChangelists))
 		})
-		Convey("With automation CL author", func() {
+		t.Run("With automation CL author", func(t *ftt.Test) {
 			clsByHost["chromium-review.googlesource.com"][0].Owner.Email = "robot@chromium.gserviceaccount.com"
 
 			augmentedSources, err := PopulateOwnerKindsBatch(ctx, "testproject", sources)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			expectedSources["sources-1"].Changelists[0].OwnerKind = pb.ChangelistOwnerKind_AUTOMATION
-			So(augmentedSources, ShouldResembleProto, expectedSources)
+			assert.Loosely(t, augmentedSources, should.Resemble(expectedSources))
 
 			// Verify cache record was created.
 			cls, err := ReadAll(span.Single(ctx))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			expectedChangelists[0].OwnerKind = pb.ChangelistOwnerKind_AUTOMATION
-			So(removeCreationTimestamps(cls), ShouldResemble, expectedChangelists)
+			assert.Loosely(t, removeCreationTimestamps(cls), should.Resemble(expectedChangelists))
 		})
-		Convey("With CL not existing", func() {
+		t.Run("With CL not existing", func(t *ftt.Test) {
 			clsByHost["chromium-review.googlesource.com"] = []*gerritpb.ChangeInfo{}
 
 			augmentedSources, err := PopulateOwnerKindsBatch(ctx, "testproject", sources)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			expectedSources["sources-1"].Changelists[0].OwnerKind = pb.ChangelistOwnerKind_CHANGELIST_OWNER_UNSPECIFIED
-			So(augmentedSources, ShouldResembleProto, expectedSources)
+			assert.Loosely(t, augmentedSources, should.Resemble(expectedSources))
 
 			// Verify cache record was created.
 			cls, err := ReadAll(span.Single(ctx))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			expectedChangelists[0].OwnerKind = pb.ChangelistOwnerKind_CHANGELIST_OWNER_UNSPECIFIED
-			So(removeCreationTimestamps(cls), ShouldResemble, expectedChangelists)
+			assert.Loosely(t, removeCreationTimestamps(cls), should.Resemble(expectedChangelists))
 		})
-		Convey("With cache record", func() {
+		t.Run("With cache record", func(t *ftt.Test) {
 			// Create a cache record that says the CL was created by automation.
 			expectedChangelists[0].OwnerKind = pb.ChangelistOwnerKind_AUTOMATION
-			So(SetGerritChangelistsForTesting(ctx, expectedChangelists), ShouldBeNil)
+			assert.Loosely(t, SetGerritChangelistsForTesting(ctx, t, expectedChangelists), should.BeNil)
 
 			augmentedSources, err := PopulateOwnerKindsBatch(ctx, "testproject", sources)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			expectedSources["sources-1"].Changelists[0].OwnerKind = pb.ChangelistOwnerKind_AUTOMATION
-			So(augmentedSources, ShouldResembleProto, expectedSources)
+			assert.Loosely(t, augmentedSources, should.Resemble(expectedSources))
 
 			// Verify cache remains in tact.
 			cls, err := ReadAll(span.Single(ctx))
-			So(err, ShouldBeNil)
-			So(removeCreationTimestamps(cls), ShouldResemble, expectedChangelists)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, removeCreationTimestamps(cls), should.Resemble(expectedChangelists))
 		})
-		Convey("With no changelists", func() {
+		t.Run("With no changelists", func(t *ftt.Test) {
 			sources["sources-1"].Changelists = nil
 
 			augmentedSources, err := PopulateOwnerKindsBatch(ctx, "testproject", sources)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			expectedSources["sources-1"].Changelists = nil
-			So(augmentedSources, ShouldResembleProto, expectedSources)
+			assert.Loosely(t, augmentedSources, should.Resemble(expectedSources))
 
 			// Verify no cache entries created.
 			cls, err := ReadAll(span.Single(ctx))
-			So(err, ShouldBeNil)
-			So(cls, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cls, should.BeNil)
 		})
-		Convey("With multiple changelists", func() {
+		t.Run("With multiple changelists", func(t *ftt.Test) {
 			sources := make(map[string]*rdbpb.Sources)
 			sources["sources-1"] = &rdbpb.Sources{
 				GitilesCommit: &rdbpb.GitilesCommit{
@@ -262,29 +262,29 @@ func TestPopulateOwnerKinds(t *testing.T) {
 				},
 			}
 
-			Convey("Without cache entries", func() {
+			t.Run("Without cache entries", func(t *ftt.Test) {
 				augmentedSources, err := PopulateOwnerKindsBatch(ctx, "testproject", sources)
-				So(err, ShouldBeNil)
-				So(augmentedSources, ShouldResembleProto, expectedSources)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, augmentedSources, should.Resemble(expectedSources))
 
 				// Verify cache record was created.
 				cls, err := ReadAll(span.Single(ctx))
-				So(err, ShouldBeNil)
-				So(removeCreationTimestamps(cls), ShouldResemble, expectedChangelists)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, removeCreationTimestamps(cls), should.Resemble(expectedChangelists))
 			})
-			Convey("With cache entries", func() {
-				So(SetGerritChangelistsForTesting(ctx, expectedChangelists), ShouldBeNil)
+			t.Run("With cache entries", func(t *ftt.Test) {
+				assert.Loosely(t, SetGerritChangelistsForTesting(ctx, t, expectedChangelists), should.BeNil)
 				// Remove CLs from gerrit to verify we did infact use the cache.
 				clsByHost["chromium-review.googlesource.com"] = nil
 
 				augmentedSources, err := PopulateOwnerKindsBatch(ctx, "testproject", sources)
-				So(err, ShouldBeNil)
-				So(augmentedSources, ShouldResembleProto, expectedSources)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, augmentedSources, should.Resemble(expectedSources))
 
 				// Verify cache records remain in tact.
 				cls, err := ReadAll(span.Single(ctx))
-				So(err, ShouldBeNil)
-				So(removeCreationTimestamps(cls), ShouldResemble, expectedChangelists)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, removeCreationTimestamps(cls), should.Resemble(expectedChangelists))
 			})
 		})
 	})

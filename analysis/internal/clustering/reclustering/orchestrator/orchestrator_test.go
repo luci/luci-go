@@ -25,6 +25,10 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
@@ -41,13 +45,10 @@ import (
 	configpb "go.chromium.org/luci/analysis/proto/config"
 
 	_ "go.chromium.org/luci/server/tq/txn/spanner"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestOrchestrator(t *testing.T) {
-	Convey(`With Spanner Test Database`, t, func() {
+	ftt.Run(`With Spanner Test Database`, t, func(t *ftt.Test) {
 		ctx := testutil.IntegrationTestContext(t)
 
 		// Simulate the Orchestrator job running one second past the hour.
@@ -64,33 +65,34 @@ func TestOrchestrator(t *testing.T) {
 
 		testProjects := []string{"project-a", "project-b", "project-c"}
 
-		testOrchestratorDoesNothing := func() {
+		testOrchestratorDoesNothing := func(t testing.TB) {
+			t.Helper()
 			beforeTasks := tasks(skdr)
-			beforeRuns := readRuns(ctx, testProjects)
+			beforeRuns := readRuns(ctx, t, testProjects)
 
 			err := CronHandler(ctx)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			afterTasks := tasks(skdr)
-			afterRuns := readRuns(ctx, testProjects)
-			So(afterTasks, ShouldResembleProto, beforeTasks)
-			So(afterRuns, ShouldResemble, beforeRuns)
+			afterRuns := readRuns(ctx, t, testProjects)
+			assert.Loosely(t, afterTasks, should.Resemble(beforeTasks), truth.LineContext())
+			assert.Loosely(t, afterRuns, should.Resemble(beforeRuns), truth.LineContext())
 		}
 
-		Convey("Without Projects", func() {
-			testutil.MustApply(ctx,
+		t.Run("Without Projects", func(t *ftt.Test) {
+			testutil.MustApply(ctx, t,
 				spanner.Delete("ClusteringState", spanner.AllKeys()))
 
-			testOrchestratorDoesNothing()
+			testOrchestratorDoesNothing(t)
 		})
-		Convey("With Projects", func() {
+		t.Run("With Projects", func(t *ftt.Test) {
 			// Orchestrator only looks at the projects in ClusteringState table.
 			var projectEntries []*state.Entry
 			for _, p := range testProjects {
 				projectEntries = append(projectEntries, state.NewEntry(0).WithProject(p).Build())
 			}
 			_, err := state.CreateEntriesForTesting(ctx, projectEntries)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// Some projects have config.
 			configVersionA := time.Date(2029, time.April, 1, 0, 0, 0, 1, time.UTC)
@@ -114,12 +116,12 @@ func TestOrchestrator(t *testing.T) {
 				entries = append(entries, state.NewEntry(i).WithProject("project-b").Build())
 			}
 			_, err = state.CreateEntriesForTesting(ctx, entries)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			rulesVersionB := time.Date(2020, time.January, 10, 9, 8, 7, 0, time.UTC)
 			rule := rules.NewRule(1).WithProject("project-b").WithPredicateLastUpdateTime(rulesVersionB).Build()
-			err = rules.SetForTesting(ctx, []*rules.Entry{rule})
-			So(err, ShouldBeNil)
+			err = rules.SetForTesting(ctx, t, []*rules.Entry{rule})
+			assert.Loosely(t, err, should.BeNil)
 
 			expectedRunStartTime := tc.Now().Truncate(time.Minute)
 			expectedRunEndTime := expectedRunStartTime.Add(time.Minute)
@@ -262,29 +264,29 @@ func TestOrchestrator(t *testing.T) {
 			}
 			updateExpectedTasks()
 
-			Convey("Disabled orchestrator does nothing", func() {
-				Convey("Workers is zero", func() {
+			t.Run("Disabled orchestrator does nothing", func(t *ftt.Test) {
+				t.Run("Workers is zero", func(t *ftt.Test) {
 					cfg.ReclusteringWorkers = 0
 					config.SetTestConfig(ctx, cfg)
 
-					testOrchestratorDoesNothing()
+					testOrchestratorDoesNothing(t)
 				})
 			})
-			Convey("Schedules successfully without existing runs", func() {
+			t.Run("Schedules successfully without existing runs", func(t *ftt.Test) {
 				err := CronHandler(ctx)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				actualTasks := tasks(skdr)
-				So(actualTasks, ShouldResembleProto, expectedTasks)
+				assert.Loosely(t, actualTasks, should.Resemble(expectedTasks))
 
-				actualRuns := readRuns(ctx, testProjects)
-				So(actualRuns, ShouldResemble, expectedRuns)
+				actualRuns := readRuns(ctx, t, testProjects)
+				assert.Loosely(t, actualRuns, should.Resemble(expectedRuns))
 
 				actualShards, err := shards.ReadAll(span.Single(ctx))
-				So(err, ShouldBeNil)
-				So(actualShards, ShouldResemble, expectedShards)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, actualShards, should.Resemble(expectedShards))
 			})
-			Convey("Schedules successfully with a previous run", func() {
+			t.Run("Schedules successfully with a previous run", func(t *ftt.Test) {
 				previousRunB := &runs.ReclusteringRun{
 					Project:           "project-b",
 					AttemptTimestamp:  expectedRunEndTime.Add(-1 * time.Minute),
@@ -307,55 +309,55 @@ func TestOrchestrator(t *testing.T) {
 				expectedShardsReported := 10
 				test := func() {
 					err = CronHandler(ctx)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 
 					// Verify that the previous run had its progress set correctly.
 					updatedPreviousRun, err := runs.Read(span.Single(ctx), previousRunB.Project, previousRunB.AttemptTimestamp)
-					So(err, ShouldBeNil)
-					So(updatedPreviousRun.Progress, ShouldEqual, expectedProgress)
-					So(updatedPreviousRun.ShardsReported, ShouldEqual, expectedShardsReported)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, updatedPreviousRun.Progress, should.Equal(expectedProgress))
+					assert.Loosely(t, updatedPreviousRun.ShardsReported, should.Equal(expectedShardsReported))
 
 					// Verify that correct shards were created and that shards
 					// from previous runs were deleted.
 					actualShards, err := shards.ReadAll(span.Single(ctx))
-					So(err, ShouldBeNil)
-					So(actualShards, ShouldResemble, expectedShards)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, actualShards, should.Resemble(expectedShards))
 
 					actualTasks := tasks(skdr)
-					So(actualTasks, ShouldResembleProto, expectedTasks)
+					assert.Loosely(t, actualTasks, should.Resemble(expectedTasks))
 
-					actualRuns := readRuns(ctx, testProjects)
-					So(actualRuns, ShouldResemble, expectedRuns)
+					actualRuns := readRuns(ctx, t, testProjects)
+					assert.Loosely(t, actualRuns, should.Resemble(expectedRuns))
 				}
 
-				Convey("existing complete run", func() {
-					err := runs.SetRunsForTesting(ctx, []*runs.ReclusteringRun{previousRunB})
-					So(err, ShouldBeNil)
+				t.Run("existing complete run", func(t *ftt.Test) {
+					err := runs.SetRunsForTesting(ctx, t, []*runs.ReclusteringRun{previousRunB})
+					assert.Loosely(t, err, should.BeNil)
 
-					err = shards.SetShardsForTesting(ctx, previousShards)
-					So(err, ShouldBeNil)
+					err = shards.SetShardsForTesting(ctx, t, previousShards)
+					assert.Loosely(t, err, should.BeNil)
 
 					// A run scheduled after an existing complete run should
 					// use the latest algorithms, config and rules available. So
 					// our expectations are unchanged.
 					test()
 				})
-				Convey("existing incomplete run", func() {
+				t.Run("existing incomplete run", func(t *ftt.Test) {
 					for i := range previousShards {
 						previousShards[i].Progress = spanner.NullInt64{Valid: true, Int64: 500}
 					}
 					expectedProgress = 10 * 500
 					expectedShardsReported = 10
 
-					err := runs.SetRunsForTesting(ctx, []*runs.ReclusteringRun{previousRunB})
-					So(err, ShouldBeNil)
+					err := runs.SetRunsForTesting(ctx, t, []*runs.ReclusteringRun{previousRunB})
+					assert.Loosely(t, err, should.BeNil)
 
-					err = shards.SetShardsForTesting(ctx, previousShards)
-					So(err, ShouldBeNil)
+					err = shards.SetShardsForTesting(ctx, t, previousShards)
+					assert.Loosely(t, err, should.BeNil)
 
 					sds, err := shards.ReadAll(span.Single(ctx))
-					So(err, ShouldBeNil)
-					So(sds, ShouldResemble, previousShards)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, sds, should.Resemble(previousShards))
 
 					// Expect the same algorithms and rules version to be used as
 					// the previous run, to ensure forward progress (if new rules
@@ -367,7 +369,7 @@ func TestOrchestrator(t *testing.T) {
 					updateExpectedTasks()
 					test()
 				})
-				Convey("existing unreported run", func() {
+				t.Run("existing unreported run", func(t *ftt.Test) {
 					for i := range previousShards {
 						// Assume the shards did not report progress at all.
 						previousShards[i].Progress = spanner.NullInt64{}
@@ -375,11 +377,11 @@ func TestOrchestrator(t *testing.T) {
 					expectedProgress = 0
 					expectedShardsReported = 0
 
-					err := runs.SetRunsForTesting(ctx, []*runs.ReclusteringRun{previousRunB})
-					So(err, ShouldBeNil)
+					err := runs.SetRunsForTesting(ctx, t, []*runs.ReclusteringRun{previousRunB})
+					assert.Loosely(t, err, should.BeNil)
 
-					err = shards.SetShardsForTesting(ctx, previousShards)
-					So(err, ShouldBeNil)
+					err = shards.SetShardsForTesting(ctx, t, previousShards)
+					assert.Loosely(t, err, should.BeNil)
 
 					// Expect the same algorithms and rules version to be used as
 					// the previous run, to ensure forward progress (if new rules
@@ -391,14 +393,14 @@ func TestOrchestrator(t *testing.T) {
 					updateExpectedTasks()
 					test()
 				})
-				Convey("existing complete run with later algorithms version", func() {
+				t.Run("existing complete run with later algorithms version", func(t *ftt.Test) {
 					previousRunB.AlgorithmsVersion = algorithms.AlgorithmsVersion + 5
 
-					err := runs.SetRunsForTesting(ctx, []*runs.ReclusteringRun{previousRunB})
-					So(err, ShouldBeNil)
+					err := runs.SetRunsForTesting(ctx, t, []*runs.ReclusteringRun{previousRunB})
+					assert.Loosely(t, err, should.BeNil)
 
-					err = shards.SetShardsForTesting(ctx, previousShards)
-					So(err, ShouldBeNil)
+					err = shards.SetShardsForTesting(ctx, t, previousShards)
+					assert.Loosely(t, err, should.BeNil)
 
 					// If new algorithms are being rolled out, some GAE instances
 					// may be running old code. This includes the instance that
@@ -411,14 +413,14 @@ func TestOrchestrator(t *testing.T) {
 					updateExpectedTasks()
 					test()
 				})
-				Convey("existing complete run with later config version", func() {
+				t.Run("existing complete run with later config version", func(t *ftt.Test) {
 					previousRunB.ConfigVersion = configVersionB.Add(time.Hour)
 
-					err := runs.SetRunsForTesting(ctx, []*runs.ReclusteringRun{previousRunB})
-					So(err, ShouldBeNil)
+					err := runs.SetRunsForTesting(ctx, t, []*runs.ReclusteringRun{previousRunB})
+					assert.Loosely(t, err, should.BeNil)
 
-					err = shards.SetShardsForTesting(ctx, previousShards)
-					So(err, ShouldBeNil)
+					err = shards.SetShardsForTesting(ctx, t, previousShards)
+					assert.Loosely(t, err, should.BeNil)
 
 					// If new config is being rolled out, some GAE instances
 					// may still have old config cached. This includes the instance
@@ -448,14 +450,15 @@ func tasks(s *tqtesting.Scheduler) []*taskspb.ReclusterChunks {
 	return tasks
 }
 
-func readRuns(ctx context.Context, projects []string) map[string]*runs.ReclusteringRun {
+func readRuns(ctx context.Context, t testing.TB, projects []string) map[string]*runs.ReclusteringRun {
+	t.Helper()
 	txn, cancel := span.ReadOnlyTransaction(ctx)
 	defer cancel()
 
 	result := make(map[string]*runs.ReclusteringRun)
 	for _, project := range projects {
 		run, err := runs.ReadLastUpTo(txn, project, runs.MaxAttemptTimestamp)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil, truth.LineContext())
 		result[project] = run
 	}
 	return result

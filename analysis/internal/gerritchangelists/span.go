@@ -19,6 +19,7 @@ package gerritchangelists
 import (
 	"context"
 	"sort"
+	"testing"
 	"time"
 
 	"cloud.google.com/go/spanner"
@@ -165,8 +166,9 @@ func validateGerritChangelist(g *GerritChangelist) error {
 
 // SetGerritChangelistsForTesting replaces the set of stored gerrit changelists
 // to match the given set. Provided for testing only.
-func SetGerritChangelistsForTesting(ctx context.Context, gs []*GerritChangelist) error {
-	testutil.MustApply(ctx,
+func SetGerritChangelistsForTesting(ctx context.Context, t testing.TB, gs []*GerritChangelist) error {
+	t.Helper()
+	testutil.MustApply(ctx, t,
 		spanner.Delete("GerritChangelists", spanner.AllKeys()))
 	// Insert some GerritChangelists.
 	_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {

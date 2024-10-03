@@ -21,6 +21,9 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/tq"
 
 	controlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
@@ -29,37 +32,34 @@ import (
 	pb "go.chromium.org/luci/analysis/proto/v1"
 
 	_ "go.chromium.org/luci/analysis/internal/services/verdictingester" // Needed to ensure task class is registered.
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestHandleInvocationFinalization(t *testing.T) {
-	Convey(`Test InvocationFinalizedPubSubHandler`, t, func() {
+	ftt.Run(`Test InvocationFinalizedPubSubHandler`, t, func(t *ftt.Test) {
 		ctx := testutil.IntegrationTestContext(t)
 		ctx, skdr := tq.TestingContext(ctx, nil)
 
 		assertTasksExpected := func(expectedTask *taskspb.IngestTestVerdicts) {
 			// assert ingestion task has been scheduled.
 			// Verify exactly one ingestion has been created.
-			So(len(skdr.Tasks().Payloads()), ShouldEqual, 1)
+			assert.Loosely(t, len(skdr.Tasks().Payloads()), should.Equal(1))
 			resultsTask := skdr.Tasks().Payloads()[0].(*taskspb.IngestTestVerdicts)
-			So(resultsTask, ShouldResembleProto, expectedTask)
+			assert.Loosely(t, resultsTask, should.Resemble(expectedTask))
 		}
-		Convey(`does not have buildbucket build`, func() {
+		t.Run(`does not have buildbucket build`, func(t *ftt.Test) {
 			invocationCreateTime := time.Date(2024, time.December, 11, 10, 9, 8, 7, time.UTC)
-			So(ingestFinalization(ctx, "inv-123", true, invocationCreateTime), ShouldBeNil)
+			assert.Loosely(t, ingestFinalization(ctx, "inv-123", true, invocationCreateTime), should.BeNil)
 
 			// Check metrics were reported correctly for this sequence.
 			isPresubmit := false
 			hasInvocation := true
 			hasBuildBucketBuild := false
-			So(bbBuildInputCounter.Get(ctx, "buildproject", isPresubmit, hasInvocation), ShouldEqual, 0)
-			So(bbBuildOutputCounter.Get(ctx, "buildproject", isPresubmit, hasInvocation), ShouldEqual, 0)
-			So(cvBuildInputCounter.Get(ctx, "cvproject"), ShouldEqual, 0)
-			So(cvBuildOutputCounter.Get(ctx, "cvproject"), ShouldEqual, 0)
-			So(rdbInvocationsInputCounter.Get(ctx, "buildproject", hasBuildBucketBuild), ShouldEqual, 1)
-			So(rdbInvocationsOutputCounter.Get(ctx, "buildproject", hasBuildBucketBuild), ShouldEqual, 1)
+			assert.Loosely(t, bbBuildInputCounter.Get(ctx, "buildproject", isPresubmit, hasInvocation), should.BeZero)
+			assert.Loosely(t, bbBuildOutputCounter.Get(ctx, "buildproject", isPresubmit, hasInvocation), should.BeZero)
+			assert.Loosely(t, cvBuildInputCounter.Get(ctx, "cvproject"), should.BeZero)
+			assert.Loosely(t, cvBuildOutputCounter.Get(ctx, "cvproject"), should.BeZero)
+			assert.Loosely(t, rdbInvocationsInputCounter.Get(ctx, "buildproject", hasBuildBucketBuild), should.Equal(1))
+			assert.Loosely(t, rdbInvocationsOutputCounter.Get(ctx, "buildproject", hasBuildBucketBuild), should.Equal(1))
 			// Task has been scheduled.
 			expectedTask := &taskspb.IngestTestVerdicts{
 				PartitionTime: timestamppb.New(invocationCreateTime),
@@ -73,13 +73,13 @@ func TestHandleInvocationFinalization(t *testing.T) {
 			}
 			assertTasksExpected(expectedTask)
 		})
-		Convey(`has buildbucket build`, func() {
+		t.Run(`has buildbucket build`, func(t *ftt.Test) {
 			invocationCreateTime := time.Date(2024, time.December, 11, 10, 9, 8, 7, time.UTC)
 
 			// Buildbucket timestamps are only in microsecond precision.
-			t := time.Now().Truncate(time.Nanosecond * 1000)
+			ts := time.Now().Truncate(time.Nanosecond * 1000)
 			build := newBuildBuilder(6363636363).
-				WithCreateTime(t).
+				WithCreateTime(ts).
 				WithInvocation()
 			invocationID := fmt.Sprintf("build-%d", build.buildID)
 			expectedTask := &taskspb.IngestTestVerdicts{
@@ -93,34 +93,34 @@ func TestHandleInvocationFinalization(t *testing.T) {
 					CreationTime: timestamppb.New(invocationCreateTime),
 				},
 			}
-			Convey(`Without build ingested previously`, func() {
-				So(ingestFinalization(ctx, invocationID, false, invocationCreateTime), ShouldBeNil)
+			t.Run(`Without build ingested previously`, func(t *ftt.Test) {
+				assert.Loosely(t, ingestFinalization(ctx, invocationID, false, invocationCreateTime), should.BeNil)
 
-				So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
+				assert.Loosely(t, len(skdr.Tasks().Payloads()), should.BeZero)
 			})
-			Convey(`With non-presubmit build ingested previously`, func() {
-				So(ingestBuild(ctx, build), ShouldBeNil)
+			t.Run(`With non-presubmit build ingested previously`, func(t *ftt.Test) {
+				assert.Loosely(t, ingestBuild(ctx, build), should.BeNil)
 
-				So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
+				assert.Loosely(t, len(skdr.Tasks().Payloads()), should.BeZero)
 
-				So(ingestFinalization(ctx, invocationID, false, invocationCreateTime), ShouldBeNil)
+				assert.Loosely(t, ingestFinalization(ctx, invocationID, false, invocationCreateTime), should.BeNil)
 
 				assertTasksExpected(expectedTask)
 
 				// Repeated messages should not trigger new ingestions.
-				So(ingestFinalization(ctx, invocationID, false, invocationCreateTime), ShouldBeNil)
+				assert.Loosely(t, ingestFinalization(ctx, invocationID, false, invocationCreateTime), should.BeNil)
 
 				assertTasksExpected(expectedTask)
 			})
-			Convey(`With presubmit build ingested previously`, func() {
+			t.Run(`With presubmit build ingested previously`, func(t *ftt.Test) {
 				build = build.WithTags([]string{"user_agent:cq"})
 				expectedTask.Build = build.ExpectedResult()
-				So(ingestBuild(ctx, build), ShouldBeNil)
+				assert.Loosely(t, ingestBuild(ctx, build), should.BeNil)
 
-				So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
+				assert.Loosely(t, len(skdr.Tasks().Payloads()), should.BeZero)
 
-				Convey(`With LUCI CV run ingested previously`, func() {
-					So(ingestCVRun(ctx, []int64{build.buildID}), ShouldBeNil)
+				t.Run(`With LUCI CV run ingested previously`, func(t *ftt.Test) {
+					assert.Loosely(t, ingestCVRun(ctx, []int64{build.buildID}), should.BeNil)
 
 					expectedTask.PresubmitRun = &controlpb.PresubmitResult{
 						PresubmitRunId: &pb.PresubmitRunId{
@@ -133,9 +133,9 @@ func TestHandleInvocationFinalization(t *testing.T) {
 						CreationTime: timestamppb.New(cvCreateTime),
 					}
 
-					So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
+					assert.Loosely(t, len(skdr.Tasks().Payloads()), should.BeZero)
 
-					So(ingestFinalization(ctx, invocationID, false, invocationCreateTime), ShouldBeNil)
+					assert.Loosely(t, ingestFinalization(ctx, invocationID, false, invocationCreateTime), should.BeNil)
 
 					assertTasksExpected(expectedTask)
 
@@ -143,17 +143,17 @@ func TestHandleInvocationFinalization(t *testing.T) {
 					isPresubmit := true
 					hasInvocation := true
 					hasBuildBucketBuild := true
-					So(bbBuildInputCounter.Get(ctx, "buildproject", isPresubmit, hasInvocation), ShouldEqual, 1)
-					So(bbBuildOutputCounter.Get(ctx, "buildproject", isPresubmit, hasInvocation), ShouldEqual, 1)
-					So(cvBuildInputCounter.Get(ctx, "cvproject"), ShouldEqual, 1)
-					So(cvBuildOutputCounter.Get(ctx, "cvproject"), ShouldEqual, 1)
-					So(rdbInvocationsInputCounter.Get(ctx, "buildproject", hasBuildBucketBuild), ShouldEqual, 1)
-					So(rdbInvocationsOutputCounter.Get(ctx, "buildproject", hasBuildBucketBuild), ShouldEqual, 1)
+					assert.Loosely(t, bbBuildInputCounter.Get(ctx, "buildproject", isPresubmit, hasInvocation), should.Equal(1))
+					assert.Loosely(t, bbBuildOutputCounter.Get(ctx, "buildproject", isPresubmit, hasInvocation), should.Equal(1))
+					assert.Loosely(t, cvBuildInputCounter.Get(ctx, "cvproject"), should.Equal(1))
+					assert.Loosely(t, cvBuildOutputCounter.Get(ctx, "cvproject"), should.Equal(1))
+					assert.Loosely(t, rdbInvocationsInputCounter.Get(ctx, "buildproject", hasBuildBucketBuild), should.Equal(1))
+					assert.Loosely(t, rdbInvocationsOutputCounter.Get(ctx, "buildproject", hasBuildBucketBuild), should.Equal(1))
 				})
-				Convey(`Without LUCI CV run ingested previously`, func() {
-					So(ingestFinalization(ctx, invocationID, false, invocationCreateTime), ShouldBeNil)
+				t.Run(`Without LUCI CV run ingested previously`, func(t *ftt.Test) {
+					assert.Loosely(t, ingestFinalization(ctx, invocationID, false, invocationCreateTime), should.BeNil)
 
-					So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
+					assert.Loosely(t, len(skdr.Tasks().Payloads()), should.BeZero)
 				})
 			})
 		})

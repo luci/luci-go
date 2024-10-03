@@ -21,15 +21,15 @@ import (
 
 	"go.chromium.org/luci/analysis/internal/analysis/metrics"
 	configpb "go.chromium.org/luci/analysis/proto/config"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestThresholding(t *testing.T) {
 	t.Parallel()
 
-	Convey("With Cluster", t, func() {
+	ftt.Run("With Cluster", t, func(t *ftt.Test) {
 		cl := &ClusterMetrics{
 			metrics.CriticalFailuresExonerated.ID: MetricValues{
 				OneDay:   60,
@@ -42,87 +42,87 @@ func TestThresholding(t *testing.T) {
 				SevenDay: 700,
 			},
 		}
-		Convey("MeetsAnyOfThresholds", func() {
-			Convey("No cluster meets empty threshold", func() {
-				t := []*configpb.ImpactMetricThreshold{}
-				So(cl.MeetsAnyOfThresholds(t), ShouldBeFalse)
+		t.Run("MeetsAnyOfThresholds", func(t *ftt.Test) {
+			t.Run("No cluster meets empty threshold", func(t *ftt.Test) {
+				thresh := []*configpb.ImpactMetricThreshold{}
+				assert.Loosely(t, cl.MeetsAnyOfThresholds(thresh), should.BeFalse)
 			})
-			Convey("Critical failures exonerated thresholding", func() {
-				t := setThresholdByID(metrics.CriticalFailuresExonerated.ID, &configpb.MetricThreshold{OneDay: proto.Int64(60)})
-				So(cl.MeetsAnyOfThresholds(t), ShouldBeTrue)
+			t.Run("Critical failures exonerated thresholding", func(t *ftt.Test) {
+				thresh := setThresholdByID(metrics.CriticalFailuresExonerated.ID, &configpb.MetricThreshold{OneDay: proto.Int64(60)})
+				assert.Loosely(t, cl.MeetsAnyOfThresholds(thresh), should.BeTrue)
 
-				t = setThresholdByID(metrics.CriticalFailuresExonerated.ID, &configpb.MetricThreshold{OneDay: proto.Int64(61)})
-				So(cl.MeetsAnyOfThresholds(t), ShouldBeFalse)
+				thresh = setThresholdByID(metrics.CriticalFailuresExonerated.ID, &configpb.MetricThreshold{OneDay: proto.Int64(61)})
+				assert.Loosely(t, cl.MeetsAnyOfThresholds(thresh), should.BeFalse)
 			})
-			Convey("Test results failed thresholding", func() {
-				t := setThresholdByID(metrics.Failures.ID, &configpb.MetricThreshold{OneDay: proto.Int64(100)})
-				So(cl.MeetsAnyOfThresholds(t), ShouldBeTrue)
+			t.Run("Test results failed thresholding", func(t *ftt.Test) {
+				thresh := setThresholdByID(metrics.Failures.ID, &configpb.MetricThreshold{OneDay: proto.Int64(100)})
+				assert.Loosely(t, cl.MeetsAnyOfThresholds(thresh), should.BeTrue)
 
-				t = setThresholdByID(metrics.Failures.ID, &configpb.MetricThreshold{OneDay: proto.Int64(101)})
-				So(cl.MeetsAnyOfThresholds(t), ShouldBeFalse)
+				thresh = setThresholdByID(metrics.Failures.ID, &configpb.MetricThreshold{OneDay: proto.Int64(101)})
+				assert.Loosely(t, cl.MeetsAnyOfThresholds(thresh), should.BeFalse)
 			})
-			Convey("One day threshold", func() {
-				t := setThresholdByID(metrics.Failures.ID, &configpb.MetricThreshold{OneDay: proto.Int64(100)})
-				So(cl.MeetsAnyOfThresholds(t), ShouldBeTrue)
+			t.Run("One day threshold", func(t *ftt.Test) {
+				thresh := setThresholdByID(metrics.Failures.ID, &configpb.MetricThreshold{OneDay: proto.Int64(100)})
+				assert.Loosely(t, cl.MeetsAnyOfThresholds(thresh), should.BeTrue)
 
-				t = setThresholdByID(metrics.Failures.ID, &configpb.MetricThreshold{OneDay: proto.Int64(101)})
-				So(cl.MeetsAnyOfThresholds(t), ShouldBeFalse)
+				thresh = setThresholdByID(metrics.Failures.ID, &configpb.MetricThreshold{OneDay: proto.Int64(101)})
+				assert.Loosely(t, cl.MeetsAnyOfThresholds(thresh), should.BeFalse)
 			})
-			Convey("Three day threshold", func() {
-				t := setThresholdByID(metrics.Failures.ID, &configpb.MetricThreshold{ThreeDay: proto.Int64(300)})
-				So(cl.MeetsAnyOfThresholds(t), ShouldBeTrue)
+			t.Run("Three day threshold", func(t *ftt.Test) {
+				thresh := setThresholdByID(metrics.Failures.ID, &configpb.MetricThreshold{ThreeDay: proto.Int64(300)})
+				assert.Loosely(t, cl.MeetsAnyOfThresholds(thresh), should.BeTrue)
 
-				t = setThresholdByID(metrics.Failures.ID, &configpb.MetricThreshold{ThreeDay: proto.Int64(301)})
-				So(cl.MeetsAnyOfThresholds(t), ShouldBeFalse)
+				thresh = setThresholdByID(metrics.Failures.ID, &configpb.MetricThreshold{ThreeDay: proto.Int64(301)})
+				assert.Loosely(t, cl.MeetsAnyOfThresholds(thresh), should.BeFalse)
 			})
-			Convey("Seven day threshold", func() {
-				t := setThresholdByID(metrics.Failures.ID, &configpb.MetricThreshold{SevenDay: proto.Int64(700)})
-				So(cl.MeetsAnyOfThresholds(t), ShouldBeTrue)
+			t.Run("Seven day threshold", func(t *ftt.Test) {
+				thresh := setThresholdByID(metrics.Failures.ID, &configpb.MetricThreshold{SevenDay: proto.Int64(700)})
+				assert.Loosely(t, cl.MeetsAnyOfThresholds(thresh), should.BeTrue)
 
-				t = setThresholdByID(metrics.Failures.ID, &configpb.MetricThreshold{SevenDay: proto.Int64(701)})
-				So(cl.MeetsAnyOfThresholds(t), ShouldBeFalse)
+				thresh = setThresholdByID(metrics.Failures.ID, &configpb.MetricThreshold{SevenDay: proto.Int64(701)})
+				assert.Loosely(t, cl.MeetsAnyOfThresholds(thresh), should.BeFalse)
 			})
 		})
-		Convey("InflateThreshold", func() {
-			Convey("Empty threshold", func() {
-				t := []*configpb.ImpactMetricThreshold{}
-				result := InflateThreshold(t, 15)
-				So(result, ShouldResembleProto, []*configpb.ImpactMetricThreshold{})
+		t.Run("InflateThreshold", func(t *ftt.Test) {
+			t.Run("Empty threshold", func(t *ftt.Test) {
+				thresh := []*configpb.ImpactMetricThreshold{}
+				result := InflateThreshold(thresh, 15)
+				assert.Loosely(t, result, should.Resemble([]*configpb.ImpactMetricThreshold{}))
 			})
-			Convey("One day threshold", func() {
-				t := setThresholdByID(metrics.Failures.ID, &configpb.MetricThreshold{OneDay: proto.Int64(100)})
-				result := InflateThreshold(t, 15)
-				So(result, ShouldResembleProto, []*configpb.ImpactMetricThreshold{
+			t.Run("One day threshold", func(t *ftt.Test) {
+				thresh := setThresholdByID(metrics.Failures.ID, &configpb.MetricThreshold{OneDay: proto.Int64(100)})
+				result := InflateThreshold(thresh, 15)
+				assert.Loosely(t, result, should.Resemble([]*configpb.ImpactMetricThreshold{
 					{MetricId: string(metrics.Failures.ID), Threshold: &configpb.MetricThreshold{OneDay: proto.Int64(115)}},
-				})
+				}))
 			})
-			Convey("Three day threshold", func() {
-				t := setThresholdByID(metrics.Failures.ID, &configpb.MetricThreshold{ThreeDay: proto.Int64(100)})
-				result := InflateThreshold(t, 15)
-				So(result, ShouldResembleProto, []*configpb.ImpactMetricThreshold{
+			t.Run("Three day threshold", func(t *ftt.Test) {
+				thresh := setThresholdByID(metrics.Failures.ID, &configpb.MetricThreshold{ThreeDay: proto.Int64(100)})
+				result := InflateThreshold(thresh, 15)
+				assert.Loosely(t, result, should.Resemble([]*configpb.ImpactMetricThreshold{
 					{MetricId: string(metrics.Failures.ID), Threshold: &configpb.MetricThreshold{ThreeDay: proto.Int64(115)}},
-				})
+				}))
 			})
-			Convey("Seven day threshold", func() {
-				t := setThresholdByID(metrics.Failures.ID, &configpb.MetricThreshold{SevenDay: proto.Int64(100)})
-				result := InflateThreshold(t, 15)
-				So(result, ShouldResembleProto, []*configpb.ImpactMetricThreshold{
+			t.Run("Seven day threshold", func(t *ftt.Test) {
+				thresh := setThresholdByID(metrics.Failures.ID, &configpb.MetricThreshold{SevenDay: proto.Int64(100)})
+				result := InflateThreshold(thresh, 15)
+				assert.Loosely(t, result, should.Resemble([]*configpb.ImpactMetricThreshold{
 					{MetricId: string(metrics.Failures.ID), Threshold: &configpb.MetricThreshold{SevenDay: proto.Int64(115)}},
-				})
+				}))
 			})
 		})
 	})
-	Convey("Zero value not inflated", t, func() {
+	ftt.Run("Zero value not inflated", t, func(t *ftt.Test) {
 		input := int64(0)
 		output := inflateSingleThreshold(&input, 200)
-		So(output, ShouldNotBeNil)
-		So(*output, ShouldEqual, 0)
+		assert.Loosely(t, output, should.NotBeNil)
+		assert.Loosely(t, *output, should.BeZero)
 	})
-	Convey("Non-zero value should not be inflated to zero", t, func() {
+	ftt.Run("Non-zero value should not be inflated to zero", t, func(t *ftt.Test) {
 		input := int64(1)
 		output := inflateSingleThreshold(&input, -200)
-		So(output, ShouldNotBeNil)
-		So(*output, ShouldNotEqual, 0)
+		assert.Loosely(t, output, should.NotBeNil)
+		assert.Loosely(t, *output, should.NotEqual(0))
 	})
 }
 

@@ -30,33 +30,36 @@ import (
 	"go.chromium.org/luci/analysis/internal/clustering"
 	"go.chromium.org/luci/analysis/internal/testutil"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestSpan(t *testing.T) {
-	Convey(`With Spanner Test Database`, t, func() {
+	ftt.Run(`With Spanner Test Database`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
-		Convey(`Read`, func() {
-			Convey(`Not Exists`, func() {
+		t.Run(`Read`, func(t *ftt.Test) {
+			t.Run(`Not Exists`, func(t *ftt.Test) {
 				ruleID := strings.Repeat("00", 16)
 				rule, err := Read(span.Single(ctx), testProject, ruleID)
-				So(err, ShouldEqual, NotExistsErr)
-				So(rule, ShouldBeNil)
+				assert.Loosely(t, err, should.Equal(NotExistsErr))
+				assert.Loosely(t, rule, should.BeNil)
 			})
-			Convey(`Exists`, func() {
+			t.Run(`Exists`, func(t *ftt.Test) {
 				expectedRule := NewRule(100).Build()
-				err := SetForTesting(ctx, []*Entry{expectedRule})
-				So(err, ShouldBeNil)
+				err := SetForTesting(ctx, t, []*Entry{expectedRule})
+				assert.Loosely(t, err, should.BeNil)
 
 				rule, err := Read(span.Single(ctx), testProject, expectedRule.RuleID)
-				So(err, ShouldBeNil)
-				So(rule, ShouldResembleProto, expectedRule)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, rule, should.Resemble(expectedRule))
 			})
-			Convey(`With null IsManagingBugPriorityLastUpdated`, func() {
+			t.Run(`With null IsManagingBugPriorityLastUpdated`, func(t *ftt.Test) {
 				expectedRule := NewRule(100).WithBugPriorityManagedLastUpdateTime(time.Time{}).Build()
-				err := SetForTesting(ctx, []*Entry{expectedRule})
-				So(err, ShouldBeNil)
+				err := SetForTesting(ctx, t, []*Entry{expectedRule})
+				assert.Loosely(t, err, should.BeNil)
 				_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 					stmt := spanner.NewStatement(`UPDATE FailureAssociationRules
 												SET IsManagingBugPriorityLastUpdated = NULL
@@ -64,48 +67,48 @@ func TestSpan(t *testing.T) {
 					_, err := span.Update(ctx, stmt)
 					return err
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				rule, err := Read(span.Single(ctx), testProject, expectedRule.RuleID)
-				So(err, ShouldBeNil)
-				So(rule.IsManagingBugPriorityLastUpdateTime.IsZero(), ShouldBeTrue)
-				So(rule, ShouldResembleProto, expectedRule)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, rule.IsManagingBugPriorityLastUpdateTime.IsZero(), should.BeTrue)
+				assert.Loosely(t, rule, should.Resemble(expectedRule))
 			})
 		})
-		Convey(`ReadActive`, func() {
-			Convey(`Empty`, func() {
-				err := SetForTesting(ctx, nil)
-				So(err, ShouldBeNil)
+		t.Run(`ReadActive`, func(t *ftt.Test) {
+			t.Run(`Empty`, func(t *ftt.Test) {
+				err := SetForTesting(ctx, t, nil)
+				assert.Loosely(t, err, should.BeNil)
 
 				rules, err := ReadActive(span.Single(ctx), testProject)
-				So(err, ShouldBeNil)
-				So(rules, ShouldResembleProto, []*Entry{})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, rules, should.Resemble([]*Entry{}))
 			})
-			Convey(`Multiple`, func() {
+			t.Run(`Multiple`, func(t *ftt.Test) {
 				rulesToCreate := []*Entry{
 					NewRule(0).Build(),
 					NewRule(1).WithProject("otherproject").Build(),
 					NewRule(2).WithActive(false).Build(),
 					NewRule(3).Build(),
 				}
-				err := SetForTesting(ctx, rulesToCreate)
-				So(err, ShouldBeNil)
+				err := SetForTesting(ctx, t, rulesToCreate)
+				assert.Loosely(t, err, should.BeNil)
 
 				rules, err := ReadActive(span.Single(ctx), testProject)
-				So(err, ShouldBeNil)
-				So(rules, ShouldResembleProto, []*Entry{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, rules, should.Resemble([]*Entry{
 					rulesToCreate[3],
 					rulesToCreate[0],
-				})
+				}))
 			})
 		})
-		Convey(`ReadByBug`, func() {
+		t.Run(`ReadByBug`, func(t *ftt.Test) {
 			bugID := bugs.BugID{System: "monorail", ID: "monorailproject/1"}
-			Convey(`Empty`, func() {
+			t.Run(`Empty`, func(t *ftt.Test) {
 				rules, err := ReadByBug(span.Single(ctx), bugID)
-				So(err, ShouldBeNil)
-				So(rules, ShouldBeEmpty)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, rules, should.BeEmpty)
 			})
-			Convey(`Multiple`, func() {
+			t.Run(`Multiple`, func(t *ftt.Test) {
 				expectedRule := NewRule(100).
 					WithProject("testproject").
 					WithBug(bugID).
@@ -117,28 +120,28 @@ func TestSpan(t *testing.T) {
 					WithBugPriorityManaged(false).
 					Build()
 				expectedRules := []*Entry{expectedRule, expectedRule2}
-				err := SetForTesting(ctx, expectedRules)
-				So(err, ShouldBeNil)
+				err := SetForTesting(ctx, t, expectedRules)
+				assert.Loosely(t, err, should.BeNil)
 
 				rules, err := ReadByBug(span.Single(ctx), bugID)
-				So(err, ShouldBeNil)
-				So(rules, ShouldResembleProto, expectedRules)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, rules, should.Resemble(expectedRules))
 			})
 		})
-		Convey(`ReadDelta`, func() {
-			Convey(`Invalid since time`, func() {
+		t.Run(`ReadDelta`, func(t *ftt.Test) {
+			t.Run(`Invalid since time`, func(t *ftt.Test) {
 				_, err := ReadDelta(span.Single(ctx), testProject, time.Time{})
-				So(err, ShouldErrLike, "cannot query rule deltas from before project inception")
+				assert.Loosely(t, err, should.ErrLike("cannot query rule deltas from before project inception"))
 			})
-			Convey(`Empty`, func() {
-				err := SetForTesting(ctx, nil)
-				So(err, ShouldBeNil)
+			t.Run(`Empty`, func(t *ftt.Test) {
+				err := SetForTesting(ctx, t, nil)
+				assert.Loosely(t, err, should.BeNil)
 
 				rules, err := ReadDelta(span.Single(ctx), testProject, StartingEpoch)
-				So(err, ShouldBeNil)
-				So(rules, ShouldResembleProto, []*Entry{})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, rules, should.Resemble([]*Entry{}))
 			})
-			Convey(`Multiple`, func() {
+			t.Run(`Multiple`, func(t *ftt.Test) {
 				reference := time.Date(2020, 1, 2, 3, 4, 5, 6000, time.UTC)
 				rulesToCreate := []*Entry{
 					NewRule(0).WithLastUpdateTime(reference).Build(),
@@ -146,44 +149,44 @@ func TestSpan(t *testing.T) {
 					NewRule(2).WithActive(false).WithLastUpdateTime(reference.Add(time.Minute)).Build(),
 					NewRule(3).WithLastUpdateTime(reference.Add(time.Microsecond)).Build(),
 				}
-				err := SetForTesting(ctx, rulesToCreate)
-				So(err, ShouldBeNil)
+				err := SetForTesting(ctx, t, rulesToCreate)
+				assert.Loosely(t, err, should.BeNil)
 
 				rules, err := ReadDelta(span.Single(ctx), testProject, StartingEpoch)
-				So(err, ShouldBeNil)
-				So(rules, ShouldResembleProto, []*Entry{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, rules, should.Resemble([]*Entry{
 					rulesToCreate[3],
 					rulesToCreate[0],
 					rulesToCreate[2],
-				})
+				}))
 
 				rules, err = ReadDelta(span.Single(ctx), testProject, reference)
-				So(err, ShouldBeNil)
-				So(rules, ShouldResembleProto, []*Entry{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, rules, should.Resemble([]*Entry{
 					rulesToCreate[3],
 					rulesToCreate[2],
-				})
+				}))
 
 				rules, err = ReadDelta(span.Single(ctx), testProject, reference.Add(time.Minute))
-				So(err, ShouldBeNil)
-				So(rules, ShouldResembleProto, []*Entry{})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, rules, should.Resemble([]*Entry{}))
 			})
 		})
 
-		Convey(`ReadDeltaAllProjects`, func() {
-			Convey(`Invalid since time`, func() {
+		t.Run(`ReadDeltaAllProjects`, func(t *ftt.Test) {
+			t.Run(`Invalid since time`, func(t *ftt.Test) {
 				_, err := ReadDeltaAllProjects(span.Single(ctx), time.Time{})
-				So(err, ShouldErrLike, "cannot query rule deltas from before project inception")
+				assert.Loosely(t, err, should.ErrLike("cannot query rule deltas from before project inception"))
 			})
-			Convey(`Empty`, func() {
-				err := SetForTesting(ctx, nil)
-				So(err, ShouldBeNil)
+			t.Run(`Empty`, func(t *ftt.Test) {
+				err := SetForTesting(ctx, t, nil)
+				assert.Loosely(t, err, should.BeNil)
 
 				rules, err := ReadDeltaAllProjects(span.Single(ctx), StartingEpoch)
-				So(err, ShouldBeNil)
-				So(rules, ShouldResembleProto, []*Entry{})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, rules, should.Resemble([]*Entry{}))
 			})
-			Convey(`Multiple`, func() {
+			t.Run(`Multiple`, func(t *ftt.Test) {
 				reference := time.Date(2020, 1, 2, 3, 4, 5, 6000, time.UTC)
 				rulesToCreate := []*Entry{
 					NewRule(0).WithLastUpdateTime(reference).Build(),
@@ -191,11 +194,11 @@ func TestSpan(t *testing.T) {
 					NewRule(2).WithActive(false).WithLastUpdateTime(reference.Add(time.Minute)).Build(),
 					NewRule(3).WithLastUpdateTime(reference.Add(time.Microsecond)).Build(),
 				}
-				err := SetForTesting(ctx, rulesToCreate)
-				So(err, ShouldBeNil)
+				err := SetForTesting(ctx, t, rulesToCreate)
+				assert.Loosely(t, err, should.BeNil)
 
 				rules, err := ReadDeltaAllProjects(span.Single(ctx), StartingEpoch)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				expected := []*Entry{
 					rulesToCreate[3],
 					rulesToCreate[0],
@@ -204,10 +207,10 @@ func TestSpan(t *testing.T) {
 				}
 				sortByID(expected)
 				sortByID(rules)
-				So(rules, ShouldResembleProto, expected)
+				assert.Loosely(t, rules, should.Resemble(expected))
 
 				rules, err = ReadDeltaAllProjects(span.Single(ctx), reference)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				expected = []*Entry{
 					rulesToCreate[3],
 					rulesToCreate[2],
@@ -215,23 +218,23 @@ func TestSpan(t *testing.T) {
 				}
 				sortByID(expected)
 				sortByID(rules)
-				So(rules, ShouldResembleProto, expected)
+				assert.Loosely(t, rules, should.Resemble(expected))
 
 				rules, err = ReadDeltaAllProjects(span.Single(ctx), reference.Add(time.Minute))
-				So(err, ShouldBeNil)
-				So(rules, ShouldResembleProto, []*Entry{})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, rules, should.Resemble([]*Entry{}))
 			})
 		})
 
-		Convey(`ReadMany`, func() {
+		t.Run(`ReadMany`, func(t *ftt.Test) {
 			rulesToCreate := []*Entry{
 				NewRule(0).Build(),
 				NewRule(1).WithProject("otherproject").Build(),
 				NewRule(2).WithActive(false).Build(),
 				NewRule(3).Build(),
 			}
-			err := SetForTesting(ctx, rulesToCreate)
-			So(err, ShouldBeNil)
+			err := SetForTesting(ctx, t, rulesToCreate)
+			assert.Loosely(t, err, should.BeNil)
 
 			ids := []string{
 				rulesToCreate[0].RuleID,
@@ -244,8 +247,8 @@ func TestSpan(t *testing.T) {
 				strings.Repeat("01", 16), // Repeat of non-existent ID, should not exist.
 			}
 			rules, err := ReadMany(span.Single(ctx), testProject, ids)
-			So(err, ShouldBeNil)
-			So(rules, ShouldResembleProto, []*Entry{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, rules, should.Resemble([]*Entry{
 				rulesToCreate[0],
 				nil,
 				rulesToCreate[2],
@@ -254,18 +257,18 @@ func TestSpan(t *testing.T) {
 				nil,
 				rulesToCreate[2],
 				nil,
-			})
+			}))
 		})
-		Convey(`ReadVersion`, func() {
-			Convey(`Empty`, func() {
-				err := SetForTesting(ctx, nil)
-				So(err, ShouldBeNil)
+		t.Run(`ReadVersion`, func(t *ftt.Test) {
+			t.Run(`Empty`, func(t *ftt.Test) {
+				err := SetForTesting(ctx, t, nil)
+				assert.Loosely(t, err, should.BeNil)
 
 				timestamp, err := ReadVersion(span.Single(ctx), testProject)
-				So(err, ShouldBeNil)
-				So(timestamp, ShouldResemble, StartingVersion)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, timestamp, should.Resemble(StartingVersion))
 			})
-			Convey(`Multiple`, func() {
+			t.Run(`Multiple`, func(t *ftt.Test) {
 				// Spanner commit timestamps are in microsecond
 				// (not nanosecond) granularity. The MAX operator
 				// on timestamps truncates to microseconds. For this
@@ -290,27 +293,27 @@ func TestSpan(t *testing.T) {
 						WithLastUpdateTime(reference.Add(-2 * time.Hour)).
 						Build(),
 				}
-				err := SetForTesting(ctx, rulesToCreate)
-				So(err, ShouldBeNil)
+				err := SetForTesting(ctx, t, rulesToCreate)
+				assert.Loosely(t, err, should.BeNil)
 
 				version, err := ReadVersion(span.Single(ctx), testProject)
-				So(err, ShouldBeNil)
-				So(version, ShouldResemble, Version{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, version, should.Resemble(Version{
 					Predicates: reference.Add(-1 * time.Second),
 					Total:      reference,
-				})
+				}))
 			})
 		})
-		Convey(`ReadTotalActiveRules`, func() {
-			Convey(`Empty`, func() {
-				err := SetForTesting(ctx, nil)
-				So(err, ShouldBeNil)
+		t.Run(`ReadTotalActiveRules`, func(t *ftt.Test) {
+			t.Run(`Empty`, func(t *ftt.Test) {
+				err := SetForTesting(ctx, t, nil)
+				assert.Loosely(t, err, should.BeNil)
 
 				result, err := ReadTotalActiveRules(span.Single(ctx))
-				So(err, ShouldBeNil)
-				So(result, ShouldResemble, map[string]int64{})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, result, should.Resemble(map[string]int64{}))
 			})
-			Convey(`Multiple`, func() {
+			t.Run(`Multiple`, func(t *ftt.Test) {
 				rulesToCreate := []*Entry{
 					// Two active and one inactive rule for Project A.
 					NewRule(0).WithProject("project-a").WithActive(true).Build(),
@@ -321,19 +324,19 @@ func TestSpan(t *testing.T) {
 					// One active rule for Project C.
 					NewRule(4).WithProject("project-c").WithActive(true).Build(),
 				}
-				err := SetForTesting(ctx, rulesToCreate)
-				So(err, ShouldBeNil)
+				err := SetForTesting(ctx, t, rulesToCreate)
+				assert.Loosely(t, err, should.BeNil)
 
 				result, err := ReadTotalActiveRules(span.Single(ctx))
-				So(err, ShouldBeNil)
-				So(result, ShouldResemble, map[string]int64{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, result, should.Resemble(map[string]int64{
 					"project-a": 2,
 					"project-b": 0,
 					"project-c": 1,
-				})
+				}))
 			})
 		})
-		Convey(`Create`, func() {
+		t.Run(`Create`, func(t *ftt.Test) {
 			testCreate := func(bc *Entry, user string) (time.Time, error) {
 				commitTime, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 					ms, err := Create(bc, user)
@@ -349,24 +352,24 @@ func TestSpan(t *testing.T) {
 			r.CreateUser = LUCIAnalysisSystem
 			r.LastAuditableUpdateUser = LUCIAnalysisSystem
 
-			Convey(`Valid`, func() {
+			t.Run(`Valid`, func(t *ftt.Test) {
 				testExists := func(expectedRule Entry) {
 					txn, cancel := span.ReadOnlyTransaction(ctx)
 					defer cancel()
 					rules, err := ReadActive(txn, testProject)
 
-					So(err, ShouldBeNil)
-					So(len(rules), ShouldEqual, 1)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, len(rules), should.Equal(1))
 
 					readRule := rules[0]
-					So(*readRule, ShouldResembleProto, expectedRule)
+					assert.Loosely(t, *readRule, should.Resemble(expectedRule))
 				}
 
-				Convey(`With Source Cluster`, func() {
-					So(r.SourceCluster.Algorithm, ShouldNotBeEmpty)
-					So(r.SourceCluster.ID, ShouldNotBeNil)
+				t.Run(`With Source Cluster`, func(t *ftt.Test) {
+					assert.Loosely(t, r.SourceCluster.Algorithm, should.NotBeEmpty)
+					assert.Loosely(t, r.SourceCluster.ID, should.NotBeZero)
 					commitTime, err := testCreate(r, LUCIAnalysisSystem)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 
 					expectedRule := *r
 					expectedRule.LastUpdateTime = commitTime
@@ -376,13 +379,13 @@ func TestSpan(t *testing.T) {
 					expectedRule.CreateTime = commitTime
 					testExists(expectedRule)
 				})
-				Convey(`Without Source Cluster`, func() {
+				t.Run(`Without Source Cluster`, func(t *ftt.Test) {
 					// E.g. in case of a manually created rule.
 					r.SourceCluster = clustering.ClusterID{}
 					r.CreateUser = "user@google.com"
 					r.LastAuditableUpdateUser = "user@google.com"
 					commitTime, err := testCreate(r, "user@google.com")
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 
 					expectedRule := *r
 					expectedRule.LastUpdateTime = commitTime
@@ -392,10 +395,10 @@ func TestSpan(t *testing.T) {
 					expectedRule.CreateTime = commitTime
 					testExists(expectedRule)
 				})
-				Convey(`With Buganizer Bug`, func() {
+				t.Run(`With Buganizer Bug`, func(t *ftt.Test) {
 					r.BugID = bugs.BugID{System: "buganizer", ID: "1234567890"}
 					commitTime, err := testCreate(r, LUCIAnalysisSystem)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 
 					expectedRule := *r
 					expectedRule.LastUpdateTime = commitTime
@@ -405,10 +408,10 @@ func TestSpan(t *testing.T) {
 					expectedRule.CreateTime = commitTime
 					testExists(expectedRule)
 				})
-				Convey(`With Monorail Bug`, func() {
+				t.Run(`With Monorail Bug`, func(t *ftt.Test) {
 					r.BugID = bugs.BugID{System: "monorail", ID: "project/1234567890"}
 					commitTime, err := testCreate(r, LUCIAnalysisSystem)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 
 					expectedRule := *r
 					expectedRule.LastUpdateTime = commitTime
@@ -419,51 +422,51 @@ func TestSpan(t *testing.T) {
 					testExists(expectedRule)
 				})
 			})
-			Convey(`With invalid Project`, func() {
-				Convey(`Unspecified`, func() {
+			t.Run(`With invalid Project`, func(t *ftt.Test) {
+				t.Run(`Unspecified`, func(t *ftt.Test) {
 					r.Project = ""
 					_, err := testCreate(r, LUCIAnalysisSystem)
-					So(err, ShouldErrLike, `project: unspecified`)
+					assert.Loosely(t, err, should.ErrLike(`project: unspecified`))
 				})
-				Convey(`Invalid`, func() {
+				t.Run(`Invalid`, func(t *ftt.Test) {
 					r.Project = "!"
 					_, err := testCreate(r, LUCIAnalysisSystem)
-					So(err, ShouldErrLike, `project: must match ^[a-z0-9\-]{1,40}$`)
+					assert.Loosely(t, err, should.ErrLike(`project: must match ^[a-z0-9\-]{1,40}$`))
 				})
 			})
-			Convey(`With invalid Rule Definition`, func() {
+			t.Run(`With invalid Rule Definition`, func(t *ftt.Test) {
 				r.RuleDefinition = "invalid"
 				_, err := testCreate(r, LUCIAnalysisSystem)
-				So(err, ShouldErrLike, "rule definition: parse: syntax error")
+				assert.Loosely(t, err, should.ErrLike("rule definition: parse: syntax error"))
 			})
-			Convey(`With too long Rule Definition`, func() {
+			t.Run(`With too long Rule Definition`, func(t *ftt.Test) {
 				r.RuleDefinition = strings.Repeat(" ", MaxRuleDefinitionLength+1)
 				_, err := testCreate(r, LUCIAnalysisSystem)
-				So(err, ShouldErrLike, "rule definition: exceeds maximum length of 65536")
+				assert.Loosely(t, err, should.ErrLike("rule definition: exceeds maximum length of 65536"))
 			})
-			Convey(`With invalid Bug ID`, func() {
+			t.Run(`With invalid Bug ID`, func(t *ftt.Test) {
 				r.BugID.System = ""
 				_, err := testCreate(r, LUCIAnalysisSystem)
-				So(err, ShouldErrLike, "bug ID: invalid bug tracking system")
+				assert.Loosely(t, err, should.ErrLike("bug ID: invalid bug tracking system"))
 			})
-			Convey(`With invalid Source Cluster`, func() {
-				So(r.SourceCluster.ID, ShouldNotBeNil)
+			t.Run(`With invalid Source Cluster`, func(t *ftt.Test) {
+				assert.Loosely(t, r.SourceCluster.ID, should.NotBeZero)
 				r.SourceCluster.Algorithm = ""
 				_, err := testCreate(r, LUCIAnalysisSystem)
-				So(err, ShouldErrLike, "source cluster ID: algorithm not valid")
+				assert.Loosely(t, err, should.ErrLike("source cluster ID: algorithm not valid"))
 			})
-			Convey(`With invalid User`, func() {
+			t.Run(`With invalid User`, func(t *ftt.Test) {
 				_, err := testCreate(r, "")
-				So(err, ShouldErrLike, "user must be valid")
+				assert.Loosely(t, err, should.ErrLike("user must be valid"))
 			})
 		})
-		Convey(`Update`, func() {
+		t.Run(`Update`, func(t *ftt.Test) {
 			testExists := func(expectedRule *Entry) {
 				txn, cancel := span.ReadOnlyTransaction(ctx)
 				defer cancel()
 				rule, err := Read(txn, expectedRule.Project, expectedRule.RuleID)
-				So(err, ShouldBeNil)
-				So(rule, ShouldResembleProto, expectedRule)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, rule, should.Resemble(expectedRule))
 			}
 			testUpdate := func(bc *Entry, options UpdateOptions, user string) (time.Time, error) {
 				commitTime, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
@@ -477,11 +480,11 @@ func TestSpan(t *testing.T) {
 				return commitTime.In(time.UTC), err
 			}
 			r := NewRule(100).Build()
-			err := SetForTesting(ctx, []*Entry{r})
-			So(err, ShouldBeNil)
+			err := SetForTesting(ctx, t, []*Entry{r})
+			assert.Loosely(t, err, should.BeNil)
 
-			Convey(`Valid`, func() {
-				Convey(`Update predicate`, func() {
+			t.Run(`Valid`, func(t *ftt.Test) {
+				t.Run(`Update predicate`, func(t *ftt.Test) {
 					r.RuleDefinition = `test = "UpdateTest"`
 					r.BugID = bugs.BugID{System: "monorail", ID: "chromium/651234"}
 					r.IsActive = false
@@ -489,7 +492,7 @@ func TestSpan(t *testing.T) {
 						IsAuditableUpdate: true,
 						PredicateUpdated:  true,
 					}, "testuser@google.com")
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 
 					expectedRule := *r
 					expectedRule.PredicateLastUpdateTime = commitTime
@@ -498,13 +501,13 @@ func TestSpan(t *testing.T) {
 					expectedRule.LastUpdateTime = commitTime
 					testExists(&expectedRule)
 				})
-				Convey(`Update IsManagingBugPriority`, func() {
+				t.Run(`Update IsManagingBugPriority`, func(t *ftt.Test) {
 					r.IsManagingBugPriority = false
 					commitTime, err := testUpdate(r, UpdateOptions{
 						IsAuditableUpdate:            true,
 						IsManagingBugPriorityUpdated: true,
 					}, "testuser@google.com")
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 
 					expectedRule := *r
 					expectedRule.IsManagingBugPriorityLastUpdateTime = commitTime
@@ -513,12 +516,12 @@ func TestSpan(t *testing.T) {
 					expectedRule.LastUpdateTime = commitTime
 					testExists(&expectedRule)
 				})
-				Convey(`Standard auditable update`, func() {
+				t.Run(`Standard auditable update`, func(t *ftt.Test) {
 					r.BugID = bugs.BugID{System: "monorail", ID: "chromium/651234"}
 					commitTime, err := testUpdate(r, UpdateOptions{
 						IsAuditableUpdate: true,
 					}, "testuser@google.com")
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 
 					expectedRule := *r
 					expectedRule.LastAuditableUpdateTime = commitTime
@@ -526,13 +529,13 @@ func TestSpan(t *testing.T) {
 					expectedRule.LastUpdateTime = commitTime
 					testExists(&expectedRule)
 				})
-				Convey(`SourceCluster is immutable`, func() {
+				t.Run(`SourceCluster is immutable`, func(t *ftt.Test) {
 					originalSourceCluster := r.SourceCluster
 					r.SourceCluster = clustering.ClusterID{Algorithm: "testname-v1", ID: "00112233445566778899aabbccddeeff"}
 					commitTime, err := testUpdate(r, UpdateOptions{
 						IsAuditableUpdate: true,
 					}, "testuser@google.com")
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 
 					expectedRule := *r
 					expectedRule.SourceCluster = originalSourceCluster
@@ -541,7 +544,7 @@ func TestSpan(t *testing.T) {
 					expectedRule.LastUpdateTime = commitTime
 					testExists(&expectedRule)
 				})
-				Convey(`Non-auditable update`, func() {
+				t.Run(`Non-auditable update`, func(t *ftt.Test) {
 					r.BugManagementState = &bugspb.BugManagementState{
 						RuleAssociationNotified: true,
 						PolicyState: map[string]*bugspb.BugManagementState_PolicyState{
@@ -554,38 +557,38 @@ func TestSpan(t *testing.T) {
 					}
 
 					commitTime, err := testUpdate(r, UpdateOptions{}, "system")
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 
 					expectedRule := *r
 					expectedRule.LastUpdateTime = commitTime
 					testExists(&expectedRule)
 				})
 			})
-			Convey(`Invalid`, func() {
-				Convey(`With invalid User`, func() {
+			t.Run(`Invalid`, func(t *ftt.Test) {
+				t.Run(`With invalid User`, func(t *ftt.Test) {
 					_, err := testUpdate(r, UpdateOptions{
 						IsAuditableUpdate: true,
 					}, "")
-					So(err, ShouldErrLike, "user must be valid")
+					assert.Loosely(t, err, should.ErrLike("user must be valid"))
 				})
-				Convey(`With invalid Rule Definition`, func() {
+				t.Run(`With invalid Rule Definition`, func(t *ftt.Test) {
 					r.RuleDefinition = "invalid"
 					_, err := testUpdate(r, UpdateOptions{
 						IsAuditableUpdate: true,
 						PredicateUpdated:  true,
 					}, LUCIAnalysisSystem)
-					So(err, ShouldErrLike, "rule definition: parse: syntax error")
+					assert.Loosely(t, err, should.ErrLike("rule definition: parse: syntax error"))
 				})
-				Convey(`With invalid Bug ID`, func() {
+				t.Run(`With invalid Bug ID`, func(t *ftt.Test) {
 					r.BugID.System = ""
 					_, err := testUpdate(r, UpdateOptions{
 						IsAuditableUpdate: true,
 					}, LUCIAnalysisSystem)
-					So(err, ShouldErrLike, "bug ID: invalid bug tracking system")
+					assert.Loosely(t, err, should.ErrLike("bug ID: invalid bug tracking system"))
 				})
 			})
 		})
-		Convey(`One rule managing bug constraint is correctly enforced`, func() {
+		t.Run(`One rule managing bug constraint is correctly enforced`, func(t *ftt.Test) {
 			testCreate := func(r *Entry, user string) error {
 				_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 					ms, err := Create(r, user)
@@ -617,31 +620,31 @@ func TestSpan(t *testing.T) {
 			}
 			for _, r := range rulesToCreate {
 				err := testCreate(r, LUCIAnalysisSystem)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			}
-			Convey("Cannot create a second rule managing a bug", func() {
+			t.Run("Cannot create a second rule managing a bug", func(t *ftt.Test) {
 				// Cannot create a second rule managing the same bug.
 				secondManagingRule := NewRule(3).WithProject("project-d").WithBug(bug).WithBugManaged(true).Build()
 				err := testCreate(secondManagingRule, LUCIAnalysisSystem)
-				So(err, ShouldBeRPCAlreadyExists)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCAlreadyExists)())
 			})
-			Convey("Cannot update a rule to manage the same bug", func() {
+			t.Run("Cannot update a rule to manage the same bug", func(t *ftt.Test) {
 				ruleToUpdate := rulesToCreate[2]
 				ruleToUpdate.IsManagingBug = true
 				err := testUpdate(ruleToUpdate, UpdateOptions{IsAuditableUpdate: true}, LUCIAnalysisSystem)
-				So(err, ShouldBeRPCAlreadyExists)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCAlreadyExists)())
 			})
-			Convey("Can swap which rule is managing a bug", func() {
+			t.Run("Can swap which rule is managing a bug", func(t *ftt.Test) {
 				// Stop the first rule from managing the bug.
 				ruleToUpdate := rulesToCreate[0]
 				ruleToUpdate.IsManagingBug = false
 				err := testUpdate(ruleToUpdate, UpdateOptions{IsAuditableUpdate: true}, LUCIAnalysisSystem)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				ruleToUpdate = rulesToCreate[2]
 				ruleToUpdate.IsManagingBug = true
 				err = testUpdate(ruleToUpdate, UpdateOptions{IsAuditableUpdate: true}, LUCIAnalysisSystem)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 		})
 	})

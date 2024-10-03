@@ -24,6 +24,10 @@ import (
 	"cloud.google.com/go/spanner"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/span"
@@ -42,9 +46,6 @@ import (
 	"go.chromium.org/luci/analysis/pbutil"
 	bqpb "go.chromium.org/luci/analysis/proto/bq"
 	pb "go.chromium.org/luci/analysis/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 type Invocation struct {
@@ -55,7 +56,7 @@ type Invocation struct {
 
 func TestAnalyzeChangePoint(t *testing.T) {
 	exporter, _ := fakeExporter()
-	Convey(`Can batch result`, t, func() {
+	ftt.Run(`Can batch result`, t, func(t *ftt.Test) {
 		ctx := newContext(t)
 		payload := tu.SamplePayload()
 		sourcesMap := tu.SampleSourcesWithChangelistsMap(10)
@@ -63,28 +64,28 @@ func TestAnalyzeChangePoint(t *testing.T) {
 		// 900 test variants should result in 5 batches (1000 each, last one has 500).
 		tvs := testVariants(4500)
 		err := Analyze(ctx, tvs, payload, sourcesMap, exporter)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		// Check that there are 5 checkpoints created.
-		So(countCheckPoint(ctx), ShouldEqual, 5)
+		assert.Loosely(t, countCheckPoint(ctx, t), should.Equal(5))
 	})
 
-	Convey(`Can skip batch`, t, func() {
+	ftt.Run(`Can skip batch`, t, func(t *ftt.Test) {
 		ctx := newContext(t)
 		payload := tu.SamplePayload()
 		sourcesMap := tu.SampleSourcesWithChangelistsMap(10)
 		tvs := testVariants(100)
 		err := analyzeSingleBatch(ctx, tvs, payload, sourcesMap, exporter)
-		So(err, ShouldBeNil)
-		So(countCheckPoint(ctx), ShouldEqual, 1)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, countCheckPoint(ctx, t), should.Equal(1))
 
 		// Analyze the batch again should not throw an error.
 		err = analyzeSingleBatch(ctx, tvs, payload, sourcesMap, exporter)
-		So(err, ShouldBeNil)
-		So(countCheckPoint(ctx), ShouldEqual, 1)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, countCheckPoint(ctx, t), should.Equal(1))
 	})
 
-	Convey(`No commit position should skip`, t, func() {
+	ftt.Run(`No commit position should skip`, t, func(t *ftt.Test) {
 		ctx := newContext(t)
 		payload := tu.SamplePayload()
 		sourcesMap := map[string]*pb.Sources{
@@ -98,12 +99,12 @@ func TestAnalyzeChangePoint(t *testing.T) {
 		}
 		tvs := testVariants(100)
 		err := Analyze(ctx, tvs, payload, sourcesMap, exporter)
-		So(err, ShouldBeNil)
-		So(countCheckPoint(ctx), ShouldEqual, 0)
-		So(verdictCounter.Get(ctx, "chromium", "skipped_no_commit_data"), ShouldEqual, 100)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, countCheckPoint(ctx, t), should.BeZero)
+		assert.Loosely(t, verdictCounter.Get(ctx, "chromium", "skipped_no_commit_data"), should.Equal(100))
 	})
 
-	Convey(`Filter test variant`, t, func() {
+	ftt.Run(`Filter test variant`, t, func(t *ftt.Test) {
 		ctx := newContext(t)
 		payload := &taskspb.IngestTestVerdicts{
 			Project: "chromium",
@@ -228,15 +229,15 @@ func TestAnalyzeChangePoint(t *testing.T) {
 			"inv-5": true,
 		}
 		tvs, err := filterTestVariantsHighLatency(ctx, tvs, payload, claimedInvs, sourcesMap)
-		So(err, ShouldBeNil)
-		So(len(tvs), ShouldEqual, 1)
-		So(tvs[0].TestId, ShouldEqual, "3")
-		So(verdictCounter.Get(ctx, "chromium", "skipped_no_sources"), ShouldEqual, 1)
-		So(verdictCounter.Get(ctx, "chromium", "skipped_no_commit_data"), ShouldEqual, 1)
-		So(verdictCounter.Get(ctx, "chromium", "skipped_all_skipped_or_unclaimed"), ShouldEqual, 2)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, len(tvs), should.Equal(1))
+		assert.Loosely(t, tvs[0].TestId, should.Equal("3"))
+		assert.Loosely(t, verdictCounter.Get(ctx, "chromium", "skipped_no_sources"), should.Equal(1))
+		assert.Loosely(t, verdictCounter.Get(ctx, "chromium", "skipped_no_commit_data"), should.Equal(1))
+		assert.Loosely(t, verdictCounter.Get(ctx, "chromium", "skipped_all_skipped_or_unclaimed"), should.Equal(2))
 	})
 
-	Convey(`Filter test variant with failed presubmit`, t, func() {
+	ftt.Run(`Filter test variant with failed presubmit`, t, func(t *ftt.Test) {
 		ctx := newContext(t)
 		payload := &taskspb.IngestTestVerdicts{
 			Project: "chromium",
@@ -273,15 +274,15 @@ func TestAnalyzeChangePoint(t *testing.T) {
 			"inv-1": true,
 		}
 		tvs, err := filterTestVariantsHighLatency(ctx, tvs, payload, claimedInvs, sourcesMap)
-		So(err, ShouldBeNil)
-		So(len(tvs), ShouldEqual, 0)
-		So(verdictCounter.Get(ctx, "chromium", "skipped_unsubmitted_code"), ShouldEqual, 1)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, len(tvs), should.BeZero)
+		assert.Loosely(t, verdictCounter.Get(ctx, "chromium", "skipped_unsubmitted_code"), should.Equal(1))
 	})
 }
 
 func TestAnalyzeSingleBatch(t *testing.T) {
 	exporter, client := fakeExporter()
-	Convey(`Analyze batch with empty buffer`, t, func() {
+	ftt.Run(`Analyze batch with empty buffer`, t, func(t *ftt.Test) {
 		ctx := newContext(t)
 		payload := tu.SamplePayload()
 		sourcesMap := tu.SampleSourcesWithChangelistsMap(10)
@@ -374,12 +375,12 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 		}
 
 		err := analyzeSingleBatch(ctx, tvs, payload, sourcesMap, exporter)
-		So(err, ShouldBeNil)
-		So(countCheckPoint(ctx), ShouldEqual, 1)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, countCheckPoint(ctx, t), should.Equal(1))
 
 		// Check invocations.
-		invs := fetchInvocations(ctx)
-		So(invs, ShouldResemble, []Invocation{
+		invs := fetchInvocations(ctx, t)
+		assert.Loosely(t, invs, should.Resemble([]Invocation{
 			{
 				Project:              "chromium",
 				InvocationID:         "abc",
@@ -390,14 +391,14 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 				InvocationID:         "def",
 				IngestedInvocationID: "build-1234",
 			},
-		})
+		}))
 
 		// Check test variant branch.
 		tvbs, err := FetchTestVariantBranches(ctx)
-		So(err, ShouldBeNil)
-		So(len(tvbs), ShouldEqual, 2)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, len(tvbs), should.Equal(2))
 
-		So(tvbs[0], ShouldResembleProto, &testvariantbranch.Entry{
+		assert.Loosely(t, tvbs[0], should.Resemble(&testvariantbranch.Entry{
 			Project:     "chromium",
 			TestID:      "test_1",
 			VariantHash: "hash_1",
@@ -434,9 +435,9 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 				HotBufferCapacity:  inputbuffer.DefaultHotBufferCapacity,
 				ColdBufferCapacity: inputbuffer.DefaultColdBufferCapacity,
 			},
-		})
+		}))
 
-		So(tvbs[1], ShouldResembleProto, &testvariantbranch.Entry{
+		assert.Loosely(t, tvbs[1], should.Resemble(&testvariantbranch.Entry{
 			Project:     "chromium",
 			TestID:      "test_2",
 			VariantHash: "hash_2",
@@ -482,20 +483,20 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 				HotBufferCapacity:  inputbuffer.DefaultHotBufferCapacity,
 				ColdBufferCapacity: inputbuffer.DefaultColdBufferCapacity,
 			},
-		})
+		}))
 
-		So(len(client.Insertions), ShouldEqual, 2)
+		assert.Loosely(t, len(client.Insertions), should.Equal(2))
 		for _, insert := range client.Insertions {
 			// Check the version is populated, but do not assert its value
 			// as it is a commit timestamp that varies each time the test runs.
-			So(insert.Version, ShouldNotBeNil)
+			assert.Loosely(t, insert.Version, should.NotBeNil)
 			insert.Version = nil
 		}
 
 		sort.Slice(client.Insertions, func(i, j int) bool {
 			return client.Insertions[i].TestId < client.Insertions[j].TestId
 		})
-		So(client.Insertions[0], ShouldResembleProto, &bqpb.TestVariantBranchRow{
+		assert.Loosely(t, client.Insertions[0], should.Resemble(&bqpb.TestVariantBranchRow{
 			Project:     "chromium",
 			TestId:      "test_1",
 			VariantHash: "hash_1",
@@ -524,8 +525,8 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 					},
 				},
 			},
-		})
-		So(client.Insertions[1], ShouldResembleProto, &bqpb.TestVariantBranchRow{
+		}))
+		assert.Loosely(t, client.Insertions[1], should.Resemble(&bqpb.TestVariantBranchRow{
 			Project:     "chromium",
 			TestId:      "test_2",
 			VariantHash: "hash_2",
@@ -564,12 +565,12 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 					},
 				},
 			},
-		})
+		}))
 
-		So(verdictCounter.Get(ctx, "chromium", "ingested"), ShouldEqual, 2)
+		assert.Loosely(t, verdictCounter.Get(ctx, "chromium", "ingested"), should.Equal(2))
 	})
 
-	Convey(`Analyze batch run analysis got change point`, t, func() {
+	ftt.Run(`Analyze batch run analysis got change point`, t, func(t *ftt.Test) {
 		ctx := newContext(t)
 		exporter, client := fakeExporter()
 
@@ -613,8 +614,8 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 		}
 		var hs inputbuffer.HistorySerializer
 		mutation, err := tvb.ToMutation(&hs)
-		So(err, ShouldBeNil)
-		testutil.MustApply(ctx, mutation)
+		assert.Loosely(t, err, should.BeNil)
+		testutil.MustApply(ctx, t, mutation)
 
 		// Insert a new verdict.
 		payload := tu.SamplePayload()
@@ -640,23 +641,23 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 		}
 
 		err = analyzeSingleBatch(ctx, tvs, payload, sourcesMap, exporter)
-		So(err, ShouldBeNil)
-		So(countCheckPoint(ctx), ShouldEqual, 1)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, countCheckPoint(ctx, t), should.Equal(1))
 
 		// Check invocations.
-		invs := fetchInvocations(ctx)
-		So(invs, ShouldResemble, []Invocation{
+		invs := fetchInvocations(ctx, t)
+		assert.Loosely(t, invs, should.Resemble([]Invocation{
 			{
 				Project:              "chromium",
 				InvocationID:         "abc",
 				IngestedInvocationID: "build-1234",
 			},
-		})
+		}))
 
 		// Check test variant branch.
 		tvbs, err := FetchTestVariantBranches(ctx)
-		So(err, ShouldBeNil)
-		So(len(tvbs), ShouldEqual, 1)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, len(tvbs), should.Equal(1))
 		tvb = tvbs[0]
 
 		// Setup bucket expectations.
@@ -690,7 +691,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 			}
 		}
 
-		So(tvb, ShouldResembleProto, &testvariantbranch.Entry{
+		assert.Loosely(t, tvb, should.Resemble(&testvariantbranch.Entry{
 			Project:     "chromium",
 			TestID:      "test_1",
 			VariantHash: "hash_1",
@@ -755,12 +756,12 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 					ExpectedResults: 1,
 				},
 			},
-		})
-		So(len(client.Insertions), ShouldEqual, 1)
-		So(verdictCounter.Get(ctx, "chromium", "ingested"), ShouldEqual, 1)
+		}))
+		assert.Loosely(t, len(client.Insertions), should.Equal(1))
+		assert.Loosely(t, verdictCounter.Get(ctx, "chromium", "ingested"), should.Equal(1))
 	})
 
-	Convey(`Analyze batch should apply retention policy`, t, func() {
+	ftt.Run(`Analyze batch should apply retention policy`, t, func(t *ftt.Test) {
 		ctx := newContext(t)
 		exporter, client := fakeExporter()
 
@@ -808,8 +809,8 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 		}
 		var hs inputbuffer.HistorySerializer
 		mutation, err := tvb.ToMutation(&hs)
-		So(err, ShouldBeNil)
-		testutil.MustApply(ctx, mutation)
+		assert.Loosely(t, err, should.BeNil)
+		testutil.MustApply(ctx, t, mutation)
 
 		// Insert a new verdict.
 		payload := tu.SamplePayload()
@@ -835,26 +836,26 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 		}
 
 		err = analyzeSingleBatch(ctx, tvs, payload, sourcesMap, exporter)
-		So(err, ShouldBeNil)
-		So(countCheckPoint(ctx), ShouldEqual, 1)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, countCheckPoint(ctx, t), should.Equal(1))
 
 		// Check invocations.
-		invs := fetchInvocations(ctx)
-		So(invs, ShouldResemble, []Invocation{
+		invs := fetchInvocations(ctx, t)
+		assert.Loosely(t, invs, should.Resemble([]Invocation{
 			{
 				Project:              "chromium",
 				InvocationID:         "abc",
 				IngestedInvocationID: "build-1234",
 			},
-		})
+		}))
 
 		// Check test variant branch.
 		tvbs, err := FetchTestVariantBranches(ctx)
-		So(err, ShouldBeNil)
-		So(len(tvbs), ShouldEqual, 1)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, len(tvbs), should.Equal(1))
 		tvb = tvbs[0]
 
-		So(tvb, ShouldResembleProto, &testvariantbranch.Entry{
+		assert.Loosely(t, tvb, should.Resemble(&testvariantbranch.Entry{
 			Project:     "chromium",
 			TestID:      "test_1",
 			VariantHash: "hash_1",
@@ -901,13 +902,14 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 			FinalizedSegments: &cpb.Segments{
 				Segments: finalizedSegments[14:],
 			},
-		})
-		So(len(client.Insertions), ShouldEqual, 1)
-		So(verdictCounter.Get(ctx, "chromium", "ingested"), ShouldEqual, 1)
+		}))
+		assert.Loosely(t, len(client.Insertions), should.Equal(1))
+		assert.Loosely(t, verdictCounter.Get(ctx, "chromium", "ingested"), should.Equal(1))
 	})
 }
 
-func countCheckPoint(ctx context.Context) int {
+func countCheckPoint(ctx context.Context, t testing.TB) int {
+	t.Helper()
 	st := spanner.NewStatement(`
 			SELECT *
 			FROM Checkpoints
@@ -918,11 +920,12 @@ func countCheckPoint(ctx context.Context) int {
 		count++
 		return nil
 	})
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil, truth.LineContext())
 	return count
 }
 
-func fetchInvocations(ctx context.Context) []Invocation {
+func fetchInvocations(ctx context.Context, t testing.TB) []Invocation {
+	t.Helper()
 	st := spanner.NewStatement(`
 			SELECT Project, InvocationID, IngestedInvocationID
 			FROM Invocations
@@ -940,7 +943,7 @@ func fetchInvocations(ctx context.Context) []Invocation {
 		results = append(results, inv)
 		return nil
 	})
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil, truth.LineContext())
 	return results
 }
 
@@ -964,9 +967,10 @@ func testVariants(n int) []*rdbpb.TestVariant {
 	return tvs
 }
 
-func newContext(t *testing.T) context.Context {
+func newContext(t testing.TB) context.Context {
+	t.Helper()
 	ctx := memory.Use(testutil.IntegrationTestContext(t))
-	So(config.SetTestConfig(ctx, tu.TestConfig()), ShouldBeNil)
+	assert.Loosely(t, config.SetTestConfig(ctx, tu.TestConfig()), should.BeNil, truth.LineContext())
 	return ctx
 }
 

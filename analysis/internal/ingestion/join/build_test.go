@@ -21,6 +21,10 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/tq"
 
 	controlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
@@ -29,13 +33,10 @@ import (
 	pb "go.chromium.org/luci/analysis/proto/v1"
 
 	_ "go.chromium.org/luci/analysis/internal/services/verdictingester" // Needed to ensure task class is registered.
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestHandleBuild(t *testing.T) {
-	Convey(`Test JoinBuild`, t, func() {
+	ftt.Run(`Test JoinBuild`, t, func(t *ftt.Test) {
 		ctx := testutil.IntegrationTestContext(t)
 		ctx, skdr := tq.TestingContext(ctx, nil)
 
@@ -51,29 +52,30 @@ func TestHandleBuild(t *testing.T) {
 			Project:       "buildproject",
 		}
 
-		assertTasksExpected := func() string {
+		assertTasksExpected := func(t testing.TB) {
+			t.Helper()
 			// assert ingestion task has been scheduled.
-			So(len(skdr.Tasks().Payloads()), ShouldEqual, 1)
+			assert.Loosely(t, len(skdr.Tasks().Payloads()), should.Equal(1), truth.LineContext())
 			resultsTask := skdr.Tasks().Payloads()[0].(*taskspb.IngestTestVerdicts)
-			return ShouldResembleProto(resultsTask, expectedTask)
+			assert.That(t, resultsTask, should.Match(expectedTask), truth.LineContext())
 		}
 
-		Convey(`With vanilla build`, func() {
-			Convey(`Vanilla CI Build`, func() {
+		t.Run(`With vanilla build`, func(t *ftt.Test) {
+			t.Run(`Vanilla CI Build`, func(t *ftt.Test) {
 				build = build.WithGardenerRotations([]string{"rotation1", "rotation2"})
 
 				// Process build.
-				So(ingestBuild(ctx, build), ShouldBeNil)
+				assert.Loosely(t, ingestBuild(ctx, build), should.BeNil)
 
-				So(assertTasksExpected(), ShouldBeEmpty)
+				assertTasksExpected(t)
 
 				// Test repeated processing does not lead to further
 				// ingestion tasks.
-				So(ingestBuild(ctx, build), ShouldBeNil)
+				assert.Loosely(t, ingestBuild(ctx, build), should.BeNil)
 
-				So(assertTasksExpected(), ShouldBeEmpty)
+				assertTasksExpected(t)
 			})
-			Convey(`Unusual CI Build`, func() {
+			t.Run(`Unusual CI Build`, func(t *ftt.Test) {
 				// v8 project had some buildbucket-triggered builds
 				// with both the user_agent:cq and user_agent:recipe tags.
 				// These should be treated as CI builds.
@@ -81,25 +83,25 @@ func TestHandleBuild(t *testing.T) {
 				expectedTask.Build = build.ExpectedResult()
 
 				// Process build.
-				So(ingestBuild(ctx, build), ShouldBeNil)
-				So(assertTasksExpected(), ShouldBeEmpty)
+				assert.Loosely(t, ingestBuild(ctx, build), should.BeNil)
+				assertTasksExpected(t)
 			})
 		})
-		Convey(`With build that is part of a LUCI CV run`, func() {
+		t.Run(`With build that is part of a LUCI CV run`, func(t *ftt.Test) {
 			build := build.WithTags([]string{"user_agent:cq"})
 			expectedTask.Build = build.ExpectedResult()
 
-			Convey(`Without LUCI CV run processed previously`, func() {
-				So(ingestBuild(ctx, build), ShouldBeNil)
+			t.Run(`Without LUCI CV run processed previously`, func(t *ftt.Test) {
+				assert.Loosely(t, ingestBuild(ctx, build), should.BeNil)
 
-				So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
+				assert.Loosely(t, len(skdr.Tasks().Payloads()), should.BeZero)
 			})
-			Convey(`With LUCI CV run processed previously`, func() {
-				So(ingestCVRun(ctx, []int64{11111171, build.buildID}), ShouldBeNil)
+			t.Run(`With LUCI CV run processed previously`, func(t *ftt.Test) {
+				assert.Loosely(t, ingestCVRun(ctx, []int64{11111171, build.buildID}), should.BeNil)
 
-				So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
+				assert.Loosely(t, len(skdr.Tasks().Payloads()), should.BeZero)
 
-				So(ingestBuild(ctx, build), ShouldBeNil)
+				assert.Loosely(t, ingestBuild(ctx, build), should.BeNil)
 
 				expectedTask.PresubmitRun = &controlpb.PresubmitResult{
 					PresubmitRunId: &pb.PresubmitRunId{
@@ -112,36 +114,36 @@ func TestHandleBuild(t *testing.T) {
 					CreationTime: timestamppb.New(cvCreateTime),
 					Critical:     true,
 				}
-				So(assertTasksExpected(), ShouldBeEmpty)
+				assertTasksExpected(t)
 
 				// Check metrics were reported correctly for this sequence.
 				isPresubmit := true
 				hasInvocation := false
 				hasBuildBucketBuild := true
-				So(bbBuildInputCounter.Get(ctx, "buildproject", isPresubmit, hasInvocation), ShouldEqual, 1)
-				So(bbBuildOutputCounter.Get(ctx, "buildproject", isPresubmit, hasInvocation), ShouldEqual, 1)
-				So(cvBuildInputCounter.Get(ctx, "cvproject"), ShouldEqual, 2)
-				So(cvBuildOutputCounter.Get(ctx, "cvproject"), ShouldEqual, 1)
-				So(rdbInvocationsInputCounter.Get(ctx, "buildproject", hasBuildBucketBuild), ShouldEqual, 0)
-				So(rdbInvocationsOutputCounter.Get(ctx, "buildproject", hasBuildBucketBuild), ShouldEqual, 0)
+				assert.Loosely(t, bbBuildInputCounter.Get(ctx, "buildproject", isPresubmit, hasInvocation), should.Equal(1))
+				assert.Loosely(t, bbBuildOutputCounter.Get(ctx, "buildproject", isPresubmit, hasInvocation), should.Equal(1))
+				assert.Loosely(t, cvBuildInputCounter.Get(ctx, "cvproject"), should.Equal(2))
+				assert.Loosely(t, cvBuildOutputCounter.Get(ctx, "cvproject"), should.Equal(1))
+				assert.Loosely(t, rdbInvocationsInputCounter.Get(ctx, "buildproject", hasBuildBucketBuild), should.BeZero)
+				assert.Loosely(t, rdbInvocationsOutputCounter.Get(ctx, "buildproject", hasBuildBucketBuild), should.BeZero)
 			})
 		})
-		Convey(`With build that has a ResultDB invocation`, func() {
+		t.Run(`With build that has a ResultDB invocation`, func(t *ftt.Test) {
 			build := build.WithInvocation()
 			expectedTask.Build = build.ExpectedResult()
 
-			Convey(`Without invocation finalization acknowledged previously`, func() {
-				So(ingestBuild(ctx, build), ShouldBeNil)
+			t.Run(`Without invocation finalization acknowledged previously`, func(t *ftt.Test) {
+				assert.Loosely(t, ingestBuild(ctx, build), should.BeNil)
 
-				So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
+				assert.Loosely(t, len(skdr.Tasks().Payloads()), should.BeZero)
 			})
-			Convey(`With invocation finalization acknowledged previously`, func() {
+			t.Run(`With invocation finalization acknowledged previously`, func(t *ftt.Test) {
 				invocationCreateTime := time.Date(2024, time.December, 11, 10, 9, 8, 7, time.UTC)
-				So(ingestFinalization(ctx, fmt.Sprintf("build-%d", build.buildID), false, invocationCreateTime), ShouldBeNil)
+				assert.Loosely(t, ingestFinalization(ctx, fmt.Sprintf("build-%d", build.buildID), false, invocationCreateTime), should.BeNil)
 
-				So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
+				assert.Loosely(t, len(skdr.Tasks().Payloads()), should.BeZero)
 
-				So(ingestBuild(ctx, build), ShouldBeNil)
+				assert.Loosely(t, ingestBuild(ctx, build), should.BeNil)
 
 				expectedTask.Invocation = &controlpb.InvocationResult{
 					ResultdbHost: rdbHost,
@@ -149,18 +151,18 @@ func TestHandleBuild(t *testing.T) {
 					CreationTime: timestamppb.New(invocationCreateTime),
 				}
 				expectedTask.PartitionTime = timestamppb.New(invocationCreateTime)
-				So(assertTasksExpected(), ShouldBeEmpty)
+				assertTasksExpected(t)
 
 				// Check metrics were reported correctly for this sequence.
 				isPresubmit := false
 				hasInvocation := true
 				hasBuildBucketBuild := true
-				So(bbBuildInputCounter.Get(ctx, "buildproject", isPresubmit, hasInvocation), ShouldEqual, 1)
-				So(bbBuildOutputCounter.Get(ctx, "buildproject", isPresubmit, hasInvocation), ShouldEqual, 1)
-				So(cvBuildInputCounter.Get(ctx, "cvproject"), ShouldEqual, 0)
-				So(cvBuildOutputCounter.Get(ctx, "cvproject"), ShouldEqual, 0)
-				So(rdbInvocationsInputCounter.Get(ctx, "buildproject", hasBuildBucketBuild), ShouldEqual, 1)
-				So(rdbInvocationsOutputCounter.Get(ctx, "buildproject", hasBuildBucketBuild), ShouldEqual, 1)
+				assert.Loosely(t, bbBuildInputCounter.Get(ctx, "buildproject", isPresubmit, hasInvocation), should.Equal(1))
+				assert.Loosely(t, bbBuildOutputCounter.Get(ctx, "buildproject", isPresubmit, hasInvocation), should.Equal(1))
+				assert.Loosely(t, cvBuildInputCounter.Get(ctx, "cvproject"), should.BeZero)
+				assert.Loosely(t, cvBuildOutputCounter.Get(ctx, "cvproject"), should.BeZero)
+				assert.Loosely(t, rdbInvocationsInputCounter.Get(ctx, "buildproject", hasBuildBucketBuild), should.Equal(1))
+				assert.Loosely(t, rdbInvocationsOutputCounter.Get(ctx, "buildproject", hasBuildBucketBuild), should.Equal(1))
 			})
 		})
 	})

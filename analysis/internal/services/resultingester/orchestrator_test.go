@@ -24,6 +24,10 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/span"
@@ -40,13 +44,10 @@ import (
 	configpb "go.chromium.org/luci/analysis/proto/config"
 
 	_ "go.chromium.org/luci/server/tq/txn/spanner"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestSchedule(t *testing.T) {
-	Convey(`TestSchedule`, t, func() {
+	ftt.Run(`TestSchedule`, t, func(t *ftt.Test) {
 		ctx := testutil.IntegrationTestContext(t)
 		ctx, skdr := tq.TestingContext(ctx, nil)
 
@@ -73,12 +74,12 @@ func TestSchedule(t *testing.T) {
 
 		Schedule(ctx, task)
 
-		So(skdr.Tasks().Payloads()[0], ShouldResembleProto, expected)
+		assert.Loosely(t, skdr.Tasks().Payloads()[0], should.Resemble(expected))
 	})
 }
 
 func TestOrchestrator(t *testing.T) {
-	Convey(`TestOrchestrator`, t, func() {
+	ftt.Run(`TestOrchestrator`, t, func(t *ftt.Test) {
 		ctx := testutil.IntegrationTestContext(t)
 		ctx, skdr := tq.TestingContext(ctx, nil)
 		ctx = memory.Use(ctx)
@@ -169,83 +170,83 @@ func TestOrchestrator(t *testing.T) {
 
 		cfg := &configpb.Config{}
 		err := config.SetTestConfig(ctx, cfg)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		Convey(`Baseline`, func() {
+		t.Run(`Baseline`, func(t *ftt.Test) {
 			setupGetParentInvocationMock()
 			setupQueryRunTestVariantsMock()
 			err := o.run(ctx, task)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(testIngestor.called, ShouldBeTrue)
-			So(testIngestor.gotInputs, ShouldResembleProto, expectedInputs)
+			assert.Loosely(t, testIngestor.called, should.BeTrue)
+			assert.Loosely(t, testIngestor.gotInputs, should.Resemble(expectedInputs))
 
 			// Expect continuation task.
-			verifyContinuationTask(skdr, expectedContinuationTask)
-			So(verifyCheckpoints(ctx, expectedCheckpoint), ShouldBeNil)
+			verifyContinuationTask(t, skdr, expectedContinuationTask)
+			assert.Loosely(t, verifyCheckpoints(ctx, t, expectedCheckpoint), should.BeNil)
 		})
-		Convey(`Without sources`, func() {
+		t.Run(`Without sources`, func(t *ftt.Test) {
 			notification.Sources = nil
 			expectedInputs.Sources = nil
 
 			setupGetParentInvocationMock()
 			setupQueryRunTestVariantsMock()
 			err := o.run(ctx, task)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(testIngestor.called, ShouldBeTrue)
-			So(testIngestor.gotInputs, ShouldResembleProto, expectedInputs)
+			assert.Loosely(t, testIngestor.called, should.BeTrue)
+			assert.Loosely(t, testIngestor.gotInputs, should.Resemble(expectedInputs))
 
 			// Expect continuation task.
-			verifyContinuationTask(skdr, expectedContinuationTask)
-			So(verifyCheckpoints(ctx, expectedCheckpoint), ShouldBeNil)
+			verifyContinuationTask(t, skdr, expectedContinuationTask)
+			assert.Loosely(t, verifyCheckpoints(ctx, t, expectedCheckpoint), should.BeNil)
 		})
-		Convey(`Continuation task previously scheduled`, func() {
+		t.Run(`Continuation task previously scheduled`, func(t *ftt.Test) {
 			// Create a checkpoint for the previous scheduling
 			// of the continuation task.
-			err := checkpoints.SetForTesting(ctx, expectedCheckpoint)
-			So(err, ShouldBeNil)
+			err := checkpoints.SetForTesting(ctx, t, expectedCheckpoint)
+			assert.Loosely(t, err, should.BeNil)
 
 			setupGetParentInvocationMock()
 			setupQueryRunTestVariantsMock()
 			err = o.run(ctx, task)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(testIngestor.called, ShouldBeTrue)
-			So(testIngestor.gotInputs, ShouldResembleProto, expectedInputs)
+			assert.Loosely(t, testIngestor.called, should.BeTrue)
+			assert.Loosely(t, testIngestor.gotInputs, should.Resemble(expectedInputs))
 
 			// Expect no further continuation task.
-			verifyContinuationTask(skdr, nil)
-			So(verifyCheckpoints(ctx, expectedCheckpoint), ShouldBeNil)
+			verifyContinuationTask(t, skdr, nil)
+			assert.Loosely(t, verifyCheckpoints(ctx, t, expectedCheckpoint), should.BeNil)
 		})
-		Convey(`Final page of results`, func() {
+		t.Run(`Final page of results`, func(t *ftt.Test) {
 			setupGetParentInvocationMock()
 			setupQueryRunTestVariantsMock(func(qrtvr *rdbpb.QueryRunTestVerdictsResponse) {
 				qrtvr.NextPageToken = ""
 			})
 			err := o.run(ctx, task)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(testIngestor.called, ShouldBeTrue)
-			So(testIngestor.gotInputs, ShouldResembleProto, expectedInputs)
+			assert.Loosely(t, testIngestor.called, should.BeTrue)
+			assert.Loosely(t, testIngestor.gotInputs, should.Resemble(expectedInputs))
 
 			// Expect no continuation task.
-			verifyContinuationTask(skdr, nil)
+			verifyContinuationTask(t, skdr, nil)
 			// Expect no checkpoint.
-			So(verifyCheckpoints(ctx), ShouldBeNil)
+			assert.Loosely(t, verifyCheckpoints(ctx, t), should.BeNil)
 		})
-		Convey(`Project not allowlisted for ingestion`, func() {
+		t.Run(`Project not allowlisted for ingestion`, func(t *ftt.Test) {
 			cfg.Ingestion = &configpb.Ingestion{
 				ProjectAllowlistEnabled: true,
 				ProjectAllowlist:        []string{"other"},
 			}
 			err := config.SetTestConfig(ctx, cfg)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			err = o.run(ctx, task)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(testIngestor.called, ShouldBeFalse)
+			assert.Loosely(t, testIngestor.called, should.BeFalse)
 		})
 	})
 }
@@ -268,22 +269,24 @@ func (t *testIngester) Ingest(ctx context.Context, inputs Inputs) error {
 	return nil
 }
 
-func verifyContinuationTask(skdr *tqtesting.Scheduler, expectedContinuation *taskspb.IngestTestResults) {
+func verifyContinuationTask(t testing.TB, skdr *tqtesting.Scheduler, expectedContinuation *taskspb.IngestTestResults) {
+	t.Helper()
 	count := 0
 	for _, pl := range skdr.Tasks().Payloads() {
 		if pl, ok := pl.(*taskspb.IngestTestResults); ok {
-			So(pl, ShouldResembleProto, expectedContinuation)
+			assert.Loosely(t, pl, should.Resemble(expectedContinuation), truth.LineContext())
 			count++
 		}
 	}
 	if expectedContinuation != nil {
-		So(count, ShouldEqual, 1)
+		assert.Loosely(t, count, should.Equal(1), truth.LineContext())
 	} else {
-		So(count, ShouldEqual, 0)
+		assert.Loosely(t, count, should.BeZero, truth.LineContext())
 	}
 }
 
-func verifyCheckpoints(ctx context.Context, expected ...checkpoints.Checkpoint) error {
+func verifyCheckpoints(ctx context.Context, t testing.TB, expected ...checkpoints.Checkpoint) error {
+	t.Helper()
 	result, err := checkpoints.ReadAllForTesting(span.Single(ctx))
 	if err != nil {
 		return err
@@ -297,8 +300,6 @@ func verifyCheckpoints(ctx context.Context, expected ...checkpoints.Checkpoint) 
 	for _, c := range result {
 		gotKeys = append(gotKeys, c.Key)
 	}
-	if msg := ShouldResemble(gotKeys, wantKeys); msg != "" {
-		return errors.New(msg)
-	}
+	assert.That(t, gotKeys, should.Match(wantKeys), truth.LineContext())
 	return nil
 }

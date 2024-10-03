@@ -19,43 +19,43 @@ import (
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/analysis/internal/testutil"
 	"go.chromium.org/luci/analysis/pbutil"
 	pb "go.chromium.org/luci/analysis/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestQueryStability(t *testing.T) {
-	Convey("QueryStability", t, func() {
+	ftt.Run("QueryStability", t, func(t *ftt.Test) {
 		ctx := testutil.IntegrationTestContext(t)
 
 		var1 := pbutil.Variant("key1", "val1", "key2", "val1")
 		var3 := pbutil.Variant("key1", "val2", "key2", "val2")
 
 		err := CreateQueryStabilityTestData(ctx)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		opts := QueryStabilitySampleRequest()
 		expectedResult := QueryStabilitySampleResponse()
 		txn, cancel := span.ReadOnlyTransaction(ctx)
 		defer cancel()
 
-		Convey("Baseline", func() {
+		t.Run("Baseline", func(t *ftt.Test) {
 			result, err := QueryStability(txn, opts)
-			So(err, ShouldBeNil)
-			So(result, ShouldResembleProto, expectedResult)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, result, should.Resemble(expectedResult))
 		})
-		Convey("Flake analysis uses full 14 days if MinWindow unmet", func() {
+		t.Run("Flake analysis uses full 14 days if MinWindow unmet", func(t *ftt.Test) {
 			opts.Criteria.FlakeRate.MinWindow = 100
 			result, err := QueryStability(txn, opts)
-			So(err, ShouldBeNil)
-			So(result, ShouldResembleProto, QueryStabilitySampleResponseLargeWindow())
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, result, should.Resemble(QueryStabilitySampleResponseLargeWindow()))
 		})
-		Convey("Project filter works correctly", func() {
+		t.Run("Project filter works correctly", func(t *ftt.Test) {
 			opts.Project = "none"
 			expectedResult = []*pb.TestVariantStabilityAnalysis{
 				emptyStabilityAnalysis("test_id", var1),
@@ -63,10 +63,10 @@ func TestQueryStability(t *testing.T) {
 			}
 
 			result, err := QueryStability(txn, opts)
-			So(err, ShouldBeNil)
-			So(result, ShouldResembleProto, expectedResult)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, result, should.Resemble(expectedResult))
 		})
-		Convey("Realm filter works correctly", func() {
+		t.Run("Realm filter works correctly", func(t *ftt.Test) {
 			// No data exists in this realm.
 			opts.SubRealms = []string{"otherrealm"}
 			expectedResult = []*pb.TestVariantStabilityAnalysis{
@@ -75,10 +75,10 @@ func TestQueryStability(t *testing.T) {
 			}
 
 			result, err := QueryStability(txn, opts)
-			So(err, ShouldBeNil)
-			So(result, ShouldResembleProto, expectedResult)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, result, should.Resemble(expectedResult))
 		})
-		Convey("Works for tests without data", func() {
+		t.Run("Works for tests without data", func(t *ftt.Test) {
 			notExistsVariant := pbutil.Variant("key1", "val1", "key2", "not_exists")
 			opts.TestVariantPositions = append(opts.TestVariantPositions,
 				&pb.QueryTestVariantStabilityRequest_TestVariantPosition{
@@ -113,10 +113,10 @@ func TestQueryStability(t *testing.T) {
 				emptyStabilityAnalysis("test_id", notExistsVariant))
 
 			result, err := QueryStability(txn, opts)
-			So(err, ShouldBeNil)
-			So(result, ShouldResembleProto, expectedResult)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, result, should.Resemble(expectedResult))
 		})
-		Convey("Batching works correctly", func() {
+		t.Run("Batching works correctly", func(t *ftt.Test) {
 			// Ensure the order of test variants in the request and response
 			// remain correct even when there are multiple batches.
 			var expandedInput []*pb.QueryTestVariantStabilityRequest_TestVariantPosition
@@ -143,8 +143,8 @@ func TestQueryStability(t *testing.T) {
 			expectedResult = append(expectedOutput, expectedResult...)
 
 			result, err := QueryStability(txn, opts)
-			So(err, ShouldBeNil)
-			So(result, ShouldResembleProto, expectedResult)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, result, should.Resemble(expectedResult))
 		})
 	})
 }
@@ -160,51 +160,51 @@ func emptyStabilityAnalysis(testID string, variant *pb.Variant) *pb.TestVariantS
 }
 
 func TestQueryStabilityHelpers(t *testing.T) {
-	Convey("flattenSourceVerdictsToRuns", t, func() {
+	ftt.Run("flattenSourceVerdictsToRuns", t, func(t *ftt.Test) {
 		unexpectedRun := run{expected: false}
 		expectedRun := run{expected: true}
-		Convey("With no verdicts", func() {
+		t.Run("With no verdicts", func(t *ftt.Test) {
 			verdicts := []*sourceVerdict{}
 			result := flattenSourceVerdictsToRuns(verdicts)
-			So(result, ShouldHaveLength, 0)
+			assert.Loosely(t, result, should.HaveLength(0))
 		})
-		Convey("With one unexpected run", func() {
+		t.Run("With one unexpected run", func(t *ftt.Test) {
 			verdicts := []*sourceVerdict{
 				{
 					UnexpectedRuns: 1,
 				},
 			}
 			result := flattenSourceVerdictsToRuns(verdicts)
-			So(result, ShouldResemble, []run{unexpectedRun})
+			assert.Loosely(t, result, should.Resemble([]run{unexpectedRun}))
 		})
-		Convey("With many unexpected runs", func() {
+		t.Run("With many unexpected runs", func(t *ftt.Test) {
 			verdicts := []*sourceVerdict{
 				{
 					UnexpectedRuns: 3,
 				},
 			}
 			result := flattenSourceVerdictsToRuns(verdicts)
-			So(result, ShouldResemble, []run{unexpectedRun, unexpectedRun, unexpectedRun})
+			assert.Loosely(t, result, should.Resemble([]run{unexpectedRun, unexpectedRun, unexpectedRun}))
 		})
-		Convey("With one expected run", func() {
+		t.Run("With one expected run", func(t *ftt.Test) {
 			verdicts := []*sourceVerdict{
 				{
 					ExpectedRuns: 1,
 				},
 			}
 			result := flattenSourceVerdictsToRuns(verdicts)
-			So(result, ShouldResemble, []run{expectedRun})
+			assert.Loosely(t, result, should.Resemble([]run{expectedRun}))
 		})
-		Convey("With many expected run", func() {
+		t.Run("With many expected run", func(t *ftt.Test) {
 			verdicts := []*sourceVerdict{
 				{
 					ExpectedRuns: 3,
 				},
 			}
 			result := flattenSourceVerdictsToRuns(verdicts)
-			So(result, ShouldResemble, []run{expectedRun, expectedRun, expectedRun})
+			assert.Loosely(t, result, should.Resemble([]run{expectedRun, expectedRun, expectedRun}))
 		})
-		Convey("With mixed runs, evenly split", func() {
+		t.Run("With mixed runs, evenly split", func(t *ftt.Test) {
 			verdicts := []*sourceVerdict{
 				{
 					ExpectedRuns:   3,
@@ -212,9 +212,9 @@ func TestQueryStabilityHelpers(t *testing.T) {
 				},
 			}
 			result := flattenSourceVerdictsToRuns(verdicts)
-			So(result, ShouldResemble, []run{unexpectedRun, expectedRun, unexpectedRun, expectedRun, unexpectedRun, expectedRun})
+			assert.Loosely(t, result, should.Resemble([]run{unexpectedRun, expectedRun, unexpectedRun, expectedRun, unexpectedRun, expectedRun}))
 		})
-		Convey("With mixed runs, 3/2 split", func() {
+		t.Run("With mixed runs, 3/2 split", func(t *ftt.Test) {
 			verdicts := []*sourceVerdict{
 				{
 					ExpectedRuns:   4,
@@ -222,9 +222,9 @@ func TestQueryStabilityHelpers(t *testing.T) {
 				},
 			}
 			result := flattenSourceVerdictsToRuns(verdicts)
-			So(result, ShouldResemble, []run{unexpectedRun, expectedRun, expectedRun, unexpectedRun, expectedRun, expectedRun})
+			assert.Loosely(t, result, should.Resemble([]run{unexpectedRun, expectedRun, expectedRun, unexpectedRun, expectedRun, expectedRun}))
 		})
-		Convey("With multiple verdicts", func() {
+		t.Run("With multiple verdicts", func(t *ftt.Test) {
 			verdicts := []*sourceVerdict{
 				{
 					ExpectedRuns: 2,
@@ -238,42 +238,42 @@ func TestQueryStabilityHelpers(t *testing.T) {
 				},
 			}
 			result := flattenSourceVerdictsToRuns(verdicts)
-			So(result, ShouldResemble, []run{expectedRun, expectedRun, unexpectedRun, expectedRun, unexpectedRun, unexpectedRun})
+			assert.Loosely(t, result, should.Resemble([]run{expectedRun, expectedRun, unexpectedRun, expectedRun, unexpectedRun, unexpectedRun}))
 		})
 	})
-	Convey("truncateSourceVerdicts", t, func() {
-		Convey("With no verdicts", func() {
+	ftt.Run("truncateSourceVerdicts", t, func(t *ftt.Test) {
+		t.Run("With no verdicts", func(t *ftt.Test) {
 			verdicts := []*sourceVerdict{}
 			result := truncateSourceVerdicts(verdicts, 10)
-			So(result, ShouldHaveLength, 0)
+			assert.Loosely(t, result, should.HaveLength(0))
 		})
-		Convey("With large expected verdict", func() {
+		t.Run("With large expected verdict", func(t *ftt.Test) {
 			verdicts := []*sourceVerdict{
 				{
 					ExpectedRuns: 11,
 				},
 			}
 			result := truncateSourceVerdicts(verdicts, 10)
-			So(result, ShouldResemble, []*sourceVerdict{
+			assert.Loosely(t, result, should.Resemble([]*sourceVerdict{
 				{
 					ExpectedRuns: 10,
 				},
-			})
+			}))
 		})
-		Convey("With large unexpected verdict", func() {
+		t.Run("With large unexpected verdict", func(t *ftt.Test) {
 			verdicts := []*sourceVerdict{
 				{
 					UnexpectedRuns: 111,
 				},
 			}
 			result := truncateSourceVerdicts(verdicts, 10)
-			So(result, ShouldResemble, []*sourceVerdict{
+			assert.Loosely(t, result, should.Resemble([]*sourceVerdict{
 				{
 					UnexpectedRuns: 10,
 				},
-			})
+			}))
 		})
-		Convey("With multiple verdicts", func() {
+		t.Run("With multiple verdicts", func(t *ftt.Test) {
 			verdicts := []*sourceVerdict{
 				{
 					ExpectedRuns: 2,
@@ -287,7 +287,7 @@ func TestQueryStabilityHelpers(t *testing.T) {
 				},
 			}
 			result := truncateSourceVerdicts(verdicts, 10)
-			So(result, ShouldResemble, []*sourceVerdict{
+			assert.Loosely(t, result, should.Resemble([]*sourceVerdict{
 				{
 					ExpectedRuns: 2,
 				},
@@ -295,11 +295,11 @@ func TestQueryStabilityHelpers(t *testing.T) {
 					ExpectedRuns:   4,
 					UnexpectedRuns: 4,
 				},
-			})
+			}))
 		})
 	})
-	Convey("consecutiveFailureCount", t, func() {
-		Convey("Consecutive from start and/or end", func() {
+	ftt.Run("consecutiveFailureCount", t, func(t *ftt.Test) {
+		t.Run("Consecutive from start and/or end", func(t *ftt.Test) {
 			type testCase struct {
 				runs     []run
 				expected int
@@ -377,60 +377,60 @@ func TestQueryStabilityHelpers(t *testing.T) {
 				afterRuns := tc.runs[:4]
 				onRuns := tc.runs[4:6]
 				beforeRuns := tc.runs[6:]
-				So(consecutiveUnexpectedCount(afterRuns, onRuns, beforeRuns), ShouldEqual, tc.expected)
+				assert.Loosely(t, consecutiveUnexpectedCount(afterRuns, onRuns, beforeRuns), should.Equal(tc.expected))
 			}
 		})
-		Convey("Consecutive runs do not touch start or end", func() {
+		t.Run("Consecutive runs do not touch start or end", func(t *ftt.Test) {
 			runs := combine(expectedRuns(1), unexpectedRuns(8), expectedRuns(1))
 
 			afterRuns := runs[:4]
 			onRuns := runs[4:6]
 			beforeRuns := runs[6:]
-			So(consecutiveUnexpectedCount(afterRuns, onRuns, beforeRuns), ShouldEqual, 0)
+			assert.Loosely(t, consecutiveUnexpectedCount(afterRuns, onRuns, beforeRuns), should.BeZero)
 		})
-		Convey("Consecutive unexpected runs on after side of queried position, no runs on queried position", func() {
+		t.Run("Consecutive unexpected runs on after side of queried position, no runs on queried position", func(t *ftt.Test) {
 			runs := combine(unexpectedRuns(5), expectedRuns(5))
 
 			afterRuns := runs[:5]
 			onRuns := runs[5:5] // Empty slice
 			beforeRuns := runs[5:]
-			So(consecutiveUnexpectedCount(afterRuns, onRuns, beforeRuns), ShouldEqual, 5)
+			assert.Loosely(t, consecutiveUnexpectedCount(afterRuns, onRuns, beforeRuns), should.Equal(5))
 		})
-		Convey("Consecutive unexpected runs on before side of queried position, no runs on queried position", func() {
+		t.Run("Consecutive unexpected runs on before side of queried position, no runs on queried position", func(t *ftt.Test) {
 			runs := combine(expectedRuns(5), unexpectedRuns(5))
 
 			afterRuns := runs[:5]
 			onRuns := runs[5:5] // Empty slice
 			beforeRuns := runs[5:]
-			So(consecutiveUnexpectedCount(afterRuns, onRuns, beforeRuns), ShouldEqual, 5)
+			assert.Loosely(t, consecutiveUnexpectedCount(afterRuns, onRuns, beforeRuns), should.Equal(5))
 		})
 	})
-	Convey("unexpectedRunsInWindow", t, func() {
-		Convey("no runs", func() {
-			So(unexpectedRunsInWindow(nil, 10), ShouldEqual, 0)
+	ftt.Run("unexpectedRunsInWindow", t, func(t *ftt.Test) {
+		t.Run("no runs", func(t *ftt.Test) {
+			assert.Loosely(t, unexpectedRunsInWindow(nil, 10), should.BeZero)
 		})
-		Convey("fewer runs than window size", func() {
+		t.Run("fewer runs than window size", func(t *ftt.Test) {
 			runs := combine(unexpectedRuns(3), expectedRuns(2), unexpectedRuns(2))
-			So(unexpectedRunsInWindow(runs, 10), ShouldEqual, 5)
+			assert.Loosely(t, unexpectedRunsInWindow(runs, 10), should.Equal(5))
 		})
-		Convey("only expected runs", func() {
+		t.Run("only expected runs", func(t *ftt.Test) {
 			runs := expectedRuns(20)
-			So(unexpectedRunsInWindow(runs, 10), ShouldEqual, 0)
+			assert.Loosely(t, unexpectedRunsInWindow(runs, 10), should.BeZero)
 		})
-		Convey("only unexpected runs", func() {
+		t.Run("only unexpected runs", func(t *ftt.Test) {
 			runs := unexpectedRuns(20)
-			So(unexpectedRunsInWindow(runs, 10), ShouldEqual, 10)
+			assert.Loosely(t, unexpectedRunsInWindow(runs, 10), should.Equal(10))
 		})
-		Convey("mixed runs", func() {
+		t.Run("mixed runs", func(t *ftt.Test) {
 			runs := combine(expectedRuns(5), unexpectedRuns(9), expectedRuns(6))
-			So(unexpectedRunsInWindow(runs, 10), ShouldEqual, 9)
+			assert.Loosely(t, unexpectedRunsInWindow(runs, 10), should.Equal(9))
 		})
-		Convey("mixed runs 2", func() {
+		t.Run("mixed runs 2", func(t *ftt.Test) {
 			runs := combine(expectedRuns(1), unexpectedRuns(4), expectedRuns(3), unexpectedRuns(4), expectedRuns(9))
-			So(unexpectedRunsInWindow(runs, 10), ShouldEqual, 7)
+			assert.Loosely(t, unexpectedRunsInWindow(runs, 10), should.Equal(7))
 		})
 	})
-	Convey("Bucket Analzyer", t, func() {
+	ftt.Run("Bucket Analzyer", t, func(t *ftt.Test) {
 		buckets := []*sourcePositionBucket{
 			{
 				StartSourcePosition:   2,
@@ -464,64 +464,64 @@ func TestQueryStabilityHelpers(t *testing.T) {
 				EarliestPartitionTime: time.Date(2100, time.July, 12, 0, 0, 0, 0, time.UTC),
 			},
 		}
-		Convey("With buckets", func() {
+		t.Run("With buckets", func(t *ftt.Test) {
 			ba := newBucketAnalyzer(buckets)
-			Convey("query at end", func() {
-				t := ba.earliestPartitionTimeAtSourcePosition(40)
-				So(t, ShouldEqual, time.Date(2100, time.July, 12, 0, 0, 0, 0, time.UTC))
+			t.Run("query at end", func(t *ftt.Test) {
+				ts := ba.earliestPartitionTimeAtSourcePosition(40)
+				assert.That(t, ts, should.Match(time.Date(2100, time.July, 12, 0, 0, 0, 0, time.UTC)))
 
-				result := ba.bucketsForTimeRange(t.Add(-7*24*time.Hour), t.Add(7*24*time.Hour))
-				So(result, ShouldResemble, buckets[2:])
+				result := ba.bucketsForTimeRange(ts.Add(-7*24*time.Hour), ts.Add(7*24*time.Hour))
+				assert.Loosely(t, result, should.Resemble(buckets[2:]))
 			})
-			Convey("query beyond end", func() {
-				t := ba.earliestPartitionTimeAtSourcePosition(50)
-				So(t, ShouldEqual, time.Date(2100, time.July, 12, 0, 0, 0, 0, time.UTC))
+			t.Run("query beyond end", func(t *ftt.Test) {
+				ts := ba.earliestPartitionTimeAtSourcePosition(50)
+				assert.That(t, ts, should.Match(time.Date(2100, time.July, 12, 0, 0, 0, 0, time.UTC)))
 			})
-			Convey("query in middle", func() {
-				t := ba.earliestPartitionTimeAtSourcePosition(8)
-				So(t, ShouldEqual, time.Date(2100, time.July, 6, 0, 0, 0, 0, time.UTC))
+			t.Run("query in middle", func(t *ftt.Test) {
+				ts := ba.earliestPartitionTimeAtSourcePosition(8)
+				assert.That(t, ts, should.Match(time.Date(2100, time.July, 6, 0, 0, 0, 0, time.UTC)))
 
-				result := ba.bucketsForTimeRange(t.Add(-7*24*time.Hour), t.Add(7*24*time.Hour))
-				So(result, ShouldResemble, buckets)
+				result := ba.bucketsForTimeRange(ts.Add(-7*24*time.Hour), ts.Add(7*24*time.Hour))
+				assert.Loosely(t, result, should.Resemble(buckets))
 			})
-			Convey("query at start", func() {
-				t := ba.earliestPartitionTimeAtSourcePosition(2)
-				So(t, ShouldEqual, time.Date(2100, time.July, 1, 0, 0, 0, 0, time.UTC))
+			t.Run("query at start", func(t *ftt.Test) {
+				ts := ba.earliestPartitionTimeAtSourcePosition(2)
+				assert.That(t, ts, should.Match(time.Date(2100, time.July, 1, 0, 0, 0, 0, time.UTC)))
 
-				result := ba.bucketsForTimeRange(t.Add(-7*24*time.Hour), t.Add(7*24*time.Hour))
-				So(result, ShouldResemble, buckets[:4])
+				result := ba.bucketsForTimeRange(ts.Add(-7*24*time.Hour), ts.Add(7*24*time.Hour))
+				assert.Loosely(t, result, should.Resemble(buckets[:4]))
 			})
-			Convey("query before start", func() {
-				t := ba.earliestPartitionTimeAtSourcePosition(1)
-				So(t, ShouldEqual, time.Date(2100, time.July, 1, 0, 0, 0, 0, time.UTC))
+			t.Run("query before start", func(t *ftt.Test) {
+				ts := ba.earliestPartitionTimeAtSourcePosition(1)
+				assert.That(t, ts, should.Match(time.Date(2100, time.July, 1, 0, 0, 0, 0, time.UTC)))
 			})
 		})
-		Convey("Without no buckets", func() {
+		t.Run("Without no buckets", func(t *ftt.Test) {
 			ba := newBucketAnalyzer(nil)
-			t := ba.earliestPartitionTimeAtSourcePosition(2)
-			So(t, ShouldEqual, time.Time{})
+			ts := ba.earliestPartitionTimeAtSourcePosition(2)
+			assert.That(t, ts, should.Match(time.Time{}))
 
-			result := ba.bucketsForTimeRange(t.Add(-7*24*time.Hour), t.Add(7*24*time.Hour))
-			So(result, ShouldHaveLength, 0)
+			result := ba.bucketsForTimeRange(ts.Add(-7*24*time.Hour), ts.Add(7*24*time.Hour))
+			assert.Loosely(t, result, should.HaveLength(0))
 		})
 	})
-	Convey("jumpBack24WeekdayHours", t, func() {
+	ftt.Run("jumpBack24WeekdayHours", t, func(t *ftt.Test) {
 		// Expect jumpBack24WeekdayHours to go back in time just far enough
 		// that 24 workday hours are between the returned time and now.
-		Convey("Monday", func() {
+		t.Run("Monday", func(t *ftt.Test) {
 			// Given an input on a Monday (e.g. 14th of March 2022), expect
 			// jumpBack24WeekdayHours to return the corresponding time
 			// on the previous Friday.
 
 			now := time.Date(2022, time.March, 14, 23, 59, 59, 999999999, time.UTC)
 			afterTime := jumpBack24WeekdayHours(now)
-			So(afterTime, ShouldEqual, time.Date(2022, time.March, 11, 23, 59, 59, 999999999, time.UTC))
+			assert.That(t, afterTime, should.Match(time.Date(2022, time.March, 11, 23, 59, 59, 999999999, time.UTC)))
 
 			now = time.Date(2022, time.March, 14, 0, 0, 0, 0, time.UTC)
 			afterTime = jumpBack24WeekdayHours(now)
-			So(afterTime, ShouldEqual, time.Date(2022, time.March, 11, 0, 0, 0, 0, time.UTC))
+			assert.That(t, afterTime, should.Match(time.Date(2022, time.March, 11, 0, 0, 0, 0, time.UTC)))
 		})
-		Convey("Sunday", func() {
+		t.Run("Sunday", func(t *ftt.Test) {
 			// Given a time on a Sunday (e.g. 13th of March 2022), expect
 			// jumpBack24WeekdayHours to return the start of the previous
 			// Friday.
@@ -529,13 +529,13 @@ func TestQueryStabilityHelpers(t *testing.T) {
 
 			now := time.Date(2022, time.March, 13, 23, 59, 59, 999999999, time.UTC)
 			afterTime := jumpBack24WeekdayHours(now)
-			So(afterTime, ShouldEqual, startOfFriday)
+			assert.That(t, afterTime, should.Match(startOfFriday))
 
 			now = time.Date(2022, time.March, 13, 0, 0, 0, 0, time.UTC)
 			afterTime = jumpBack24WeekdayHours(now)
-			So(afterTime, ShouldEqual, startOfFriday)
+			assert.That(t, afterTime, should.Match(startOfFriday))
 		})
-		Convey("Saturday", func() {
+		t.Run("Saturday", func(t *ftt.Test) {
 			// Given a time on a Saturday (e.g. 12th of March 2022), expect
 			// jumpBack24WeekdayHours to return the start of the previous
 			// Friday.
@@ -543,45 +543,45 @@ func TestQueryStabilityHelpers(t *testing.T) {
 
 			now := time.Date(2022, time.March, 12, 23, 59, 59, 999999999, time.UTC)
 			afterTime := jumpBack24WeekdayHours(now)
-			So(afterTime, ShouldEqual, startOfFriday)
+			assert.That(t, afterTime, should.Match(startOfFriday))
 
 			now = time.Date(2022, time.March, 12, 0, 0, 0, 0, time.UTC)
 			afterTime = jumpBack24WeekdayHours(now)
-			So(afterTime, ShouldEqual, startOfFriday)
+			assert.That(t, afterTime, should.Match(startOfFriday))
 		})
-		Convey("Tuesday to Friday", func() {
+		t.Run("Tuesday to Friday", func(t *ftt.Test) {
 			// Given an input on a Tuesday (e.g. 15th of March 2022), expect
 			// jumpBack24WeekdayHours to return the corresponding time
 			// the previous day.
 			now := time.Date(2022, time.March, 15, 1, 2, 3, 4, time.UTC)
 			afterTime := jumpBack24WeekdayHours(now)
-			So(afterTime, ShouldEqual, time.Date(2022, time.March, 14, 1, 2, 3, 4, time.UTC))
+			assert.That(t, afterTime, should.Match(time.Date(2022, time.March, 14, 1, 2, 3, 4, time.UTC)))
 
 			// Given an input on a Friday (e.g. 18th of March 2022), expect
 			// jumpBack24WeekdayHours to return the corresponding time
 			// the previous day.
 			now = time.Date(2022, time.March, 18, 1, 2, 3, 4, time.UTC)
 			afterTime = jumpBack24WeekdayHours(now)
-			So(afterTime, ShouldEqual, time.Date(2022, time.March, 17, 1, 2, 3, 4, time.UTC))
+			assert.That(t, afterTime, should.Match(time.Date(2022, time.March, 17, 1, 2, 3, 4, time.UTC)))
 		})
 	})
-	Convey("jumpAhead24WeekdayHours", t, func() {
+	ftt.Run("jumpAhead24WeekdayHours", t, func(t *ftt.Test) {
 		// Expect jumpAhead24WeekdayHours to go forward in time far enough
 		// that 24 workday hours are between the returned time and now.
-		Convey("Friday", func() {
+		t.Run("Friday", func(t *ftt.Test) {
 			// Given an input on a Friday (e.g. 11th of March 2022), expect
 			// jumpForward24WeekdayHours to return the corresponding time
 			// on the next Monday.
 
 			now := time.Date(2022, time.March, 11, 23, 59, 59, 999999999, time.UTC)
 			afterTime := jumpAhead24WeekdayHours(now)
-			So(afterTime, ShouldEqual, time.Date(2022, time.March, 14, 23, 59, 59, 999999999, time.UTC))
+			assert.That(t, afterTime, should.Match(time.Date(2022, time.March, 14, 23, 59, 59, 999999999, time.UTC)))
 
 			now = time.Date(2022, time.March, 11, 0, 0, 0, 0, time.UTC)
 			afterTime = jumpAhead24WeekdayHours(now)
-			So(afterTime, ShouldEqual, time.Date(2022, time.March, 14, 0, 0, 0, 0, time.UTC))
+			assert.That(t, afterTime, should.Match(time.Date(2022, time.March, 14, 0, 0, 0, 0, time.UTC)))
 		})
-		Convey("Sunday", func() {
+		t.Run("Sunday", func(t *ftt.Test) {
 			// Given a time on a Sunday (e.g. 13th of March 2022), expect
 			// jumpAhead24WeekdayHours to return the start of the next
 			// Tuesday.
@@ -589,13 +589,13 @@ func TestQueryStabilityHelpers(t *testing.T) {
 
 			now := time.Date(2022, time.March, 13, 23, 59, 59, 999999999, time.UTC)
 			afterTime := jumpAhead24WeekdayHours(now)
-			So(afterTime, ShouldEqual, startOfTuesday)
+			assert.That(t, afterTime, should.Match(startOfTuesday))
 
 			now = time.Date(2022, time.March, 13, 0, 0, 0, 0, time.UTC)
 			afterTime = jumpAhead24WeekdayHours(now)
-			So(afterTime, ShouldEqual, startOfTuesday)
+			assert.That(t, afterTime, should.Match(startOfTuesday))
 		})
-		Convey("Saturday", func() {
+		t.Run("Saturday", func(t *ftt.Test) {
 			// Given a time on a Saturday (e.g. 12th of March 2022), expect
 			// jumpAhead24WeekdayHours to return the start of the next
 			// Tuesday.
@@ -603,26 +603,26 @@ func TestQueryStabilityHelpers(t *testing.T) {
 
 			now := time.Date(2022, time.March, 12, 23, 59, 59, 999999999, time.UTC)
 			afterTime := jumpAhead24WeekdayHours(now)
-			So(afterTime, ShouldEqual, startOfTuesday)
+			assert.That(t, afterTime, should.Match(startOfTuesday))
 
 			now = time.Date(2022, time.March, 12, 0, 0, 0, 0, time.UTC)
 			afterTime = jumpAhead24WeekdayHours(now)
-			So(afterTime, ShouldEqual, startOfTuesday)
+			assert.That(t, afterTime, should.Match(startOfTuesday))
 		})
-		Convey("Monday to Thursday", func() {
+		t.Run("Monday to Thursday", func(t *ftt.Test) {
 			// Given an input on a Monday (e.g. 14th of March 2022), expect
 			// jumpAhead24WeekdayHours to return the corresponding time
 			// the next day.
 			now := time.Date(2022, time.March, 14, 1, 2, 3, 4, time.UTC)
 			afterTime := jumpAhead24WeekdayHours(now)
-			So(afterTime, ShouldEqual, time.Date(2022, time.March, 15, 1, 2, 3, 4, time.UTC))
+			assert.That(t, afterTime, should.Match(time.Date(2022, time.March, 15, 1, 2, 3, 4, time.UTC)))
 
 			// Given an input on a Thursday (e.g. 17th of March 2022), expect
 			// jumpAhead24WeekdayHours to return the corresponding time
 			// the next day.
 			now = time.Date(2022, time.March, 17, 1, 2, 3, 4, time.UTC)
 			afterTime = jumpAhead24WeekdayHours(now)
-			So(afterTime, ShouldEqual, time.Date(2022, time.March, 18, 1, 2, 3, 4, time.UTC))
+			assert.That(t, afterTime, should.Match(time.Date(2022, time.March, 18, 1, 2, 3, 4, time.UTC)))
 		})
 	})
 }

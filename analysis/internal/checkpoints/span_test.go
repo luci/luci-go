@@ -20,22 +20,23 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/analysis/internal/testutil"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestCheckpoints(t *testing.T) {
-	Convey("With Spanner context", t, func() {
+	ftt.Run("With Spanner context", t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 
 		now := time.Date(2055, time.May, 5, 5, 5, 5, 5, time.UTC)
 		ctx, _ = testclock.UseTime(ctx, now)
 
-		Convey("Exists", func() {
-			Convey("Does not exist", func() {
+		t.Run("Exists", func(t *ftt.Test) {
+			t.Run("Does not exist", func(t *ftt.Test) {
 				key := Key{
 					Project:    "project",
 					ResourceID: "resource-id",
@@ -43,10 +44,10 @@ func TestCheckpoints(t *testing.T) {
 					Uniquifier: "uniqifier",
 				}
 				exists, err := Exists(span.Single(ctx), key)
-				So(err, ShouldBeNil)
-				So(exists, ShouldBeFalse)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, exists, should.BeFalse)
 			})
-			Convey("Exists", func() {
+			t.Run("Exists", func(t *ftt.Test) {
 				key := Key{
 					Project:    "project",
 					ResourceID: "resource-id",
@@ -58,14 +59,14 @@ func TestCheckpoints(t *testing.T) {
 					span.BufferWrite(ctx, ms)
 					return nil
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				exists, err := Exists(span.Single(ctx), key)
-				So(err, ShouldBeNil)
-				So(exists, ShouldBeTrue)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, exists, should.BeTrue)
 			})
 		})
-		Convey("Insert", func() {
+		t.Run("Insert", func(t *ftt.Test) {
 			key := Key{
 				Project:    "project",
 				ResourceID: "resource-id",
@@ -77,14 +78,14 @@ func TestCheckpoints(t *testing.T) {
 				span.BufferWrite(ctx, ms)
 				return nil
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			checkpoints, err := ReadAllForTesting(span.Single(ctx))
-			So(err, ShouldBeNil)
-			So(checkpoints, ShouldHaveLength, 1)
-			So(checkpoints[0].Key, ShouldResemble, key)
-			So(checkpoints[0].CreationTime, ShouldNotBeZeroValue)
-			So(checkpoints[0].ExpiryTime, ShouldEqual, now.Add(time.Hour))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, checkpoints, should.HaveLength(1))
+			assert.Loosely(t, checkpoints[0].Key, should.Resemble(key))
+			assert.Loosely(t, checkpoints[0].CreationTime, should.NotBeZero)
+			assert.That(t, checkpoints[0].ExpiryTime, should.Match(now.Add(time.Hour)))
 		})
 	})
 }

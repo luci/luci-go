@@ -19,19 +19,19 @@ import (
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/analysis/internal/testresults"
 	"go.chromium.org/luci/analysis/internal/testutil"
 	"go.chromium.org/luci/analysis/pbutil"
 	pb "go.chromium.org/luci/analysis/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestSaveTestResults(t *testing.T) {
-	Convey("SaveUnverified", t, func() {
+	ftt.Run("SaveUnverified", t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 
 		result := NewTestResult().Build()
@@ -40,16 +40,16 @@ func TestSaveTestResults(t *testing.T) {
 			span.BufferWrite(ctx, ms)
 			return nil
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		results, err := ReadAllForTesting(span.Single(ctx))
-		So(err, ShouldBeNil)
-		So(results, ShouldResembleProto, []*TestResult{result})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, results, should.Resemble([]*TestResult{result}))
 	})
 }
 
 func TestReadSourceVerdicts(t *testing.T) {
-	Convey("ReadSourceVerdicts", t, func() {
+	ftt.Run("ReadSourceVerdicts", t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 
 		variant := pbutil.Variant("key1", "val1", "key2", "val1")
@@ -85,12 +85,12 @@ func TestReadSourceVerdicts(t *testing.T) {
 			StartPartitionTime:  partitionTime,
 		}
 
-		Convey("With no source verdicts", func() {
+		t.Run("With no source verdicts", func(t *ftt.Test) {
 			svs, err := ReadSourceVerdicts(span.Single(ctx), opts)
-			So(err, ShouldBeNil)
-			So(svs, ShouldHaveLength, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, svs, should.HaveLength(0))
 		})
-		Convey("With source verdicts", func() {
+		t.Run("With source verdicts", func(t *ftt.Test) {
 			baseTestResult := NewTestResult().
 				WithProject("testproject").
 				WithTestID("test_id").
@@ -204,12 +204,12 @@ func TestReadSourceVerdicts(t *testing.T) {
 			for _, v := range verdicts {
 				results = append(results, verdict(&v.baseResult, v.status)...)
 			}
-			err := SetForTesting(ctx, results)
-			So(err, ShouldBeNil)
+			err := SetForTesting(ctx, t, results)
+			assert.Loosely(t, err, should.BeNil)
 
 			svs, err := ReadSourceVerdicts(span.Single(ctx), opts)
-			So(err, ShouldBeNil)
-			So(svs, ShouldResemble, []SourceVerdict{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, svs, should.Resemble([]SourceVerdict{
 				{
 					Position: 2000,
 					Verdicts: []SourceVerdictTestVerdict{
@@ -273,7 +273,7 @@ func TestReadSourceVerdicts(t *testing.T) {
 						},
 					},
 				},
-			})
+			}))
 		})
 	})
 }

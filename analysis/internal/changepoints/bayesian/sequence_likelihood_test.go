@@ -18,59 +18,61 @@ import (
 	"math"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestSequenceLikelihood(t *testing.T) {
-	Convey("Uniform prior", t, func() {
+	ftt.Run("Uniform prior", t, func(t *ftt.Test) {
 		prior := BetaDistribution{
 			Alpha: 1.0,
 			Beta:  1.0,
 		}
 		sl := NewSequenceLikelihood(prior)
 
-		Convey("Empty sequence", func() {
+		t.Run("Empty sequence", func(t *ftt.Test) {
 			// The probability of observing the empty sequence
 			// knowing the sequence length is 0 is 1.0.
-			So(math.Exp(sl.LogLikelihood(0, 0)), ShouldAlmostEqual, 1.0)
+			assert.Loosely(t, math.Exp(sl.LogLikelihood(0, 0)), should.AlmostEqual(1.0))
 		})
-		Convey("Sequence of length one", func() {
+		t.Run("Sequence of length one", func(t *ftt.Test) {
 			// If the sequence is of length one, and the prior
 			// is not biased one way or the other, the probability
 			// of observing a pass or a fail should be the same
 			// and add up to 1.0.
-			So(math.Exp(sl.LogLikelihood(0, 1)), ShouldAlmostEqual, 0.5)
-			So(math.Exp(sl.LogLikelihood(1, 1)), ShouldAlmostEqual, 0.5)
+			assert.Loosely(t, math.Exp(sl.LogLikelihood(0, 1)), should.AlmostEqual(0.5))
+			assert.Loosely(t, math.Exp(sl.LogLikelihood(1, 1)), should.AlmostEqual(0.5))
 		})
-		Convey("Sequence of length two", func() {
+		t.Run("Sequence of length two", func(t *ftt.Test) {
 			// The following identities are harder to explain as
 			// the sequence likelihoods are obtained by integrating
 			// over all possible test failure rates.
 			// However, we know the probability of observing all
 			// sequences must add up to one.
 
-			So(math.Exp(sl.LogLikelihood(0, 2)), ShouldAlmostEqual, 0.3333333333333333)
+			assert.Loosely(t, math.Exp(sl.LogLikelihood(0, 2)), should.AlmostEqual(0.3333333333333333))
 			// There are two sequences that have one pass and one failure.
-			So(2*math.Exp(sl.LogLikelihood(1, 2)), ShouldAlmostEqual, 0.3333333333333333)
-			So(math.Exp(sl.LogLikelihood(2, 2)), ShouldAlmostEqual, 0.3333333333333333)
+			assert.Loosely(t, 2*math.Exp(sl.LogLikelihood(1, 2)), should.AlmostEqual(0.3333333333333333))
+			assert.Loosely(t, math.Exp(sl.LogLikelihood(2, 2)), should.AlmostEqual(0.3333333333333333))
 		})
-		Convey("Sequence of length three", func() {
+		t.Run("Sequence of length three", func(t *ftt.Test) {
 			// Coefficients (1, 3, 3, 1) from Pascal's triangle.
-			So(math.Exp(sl.LogLikelihood(0, 3)), ShouldAlmostEqual, 0.25)
-			So(3*math.Exp(sl.LogLikelihood(1, 3)), ShouldAlmostEqual, 0.25)
-			So(3*math.Exp(sl.LogLikelihood(2, 3)), ShouldAlmostEqual, 0.25)
-			So(math.Exp(sl.LogLikelihood(3, 3)), ShouldAlmostEqual, 0.25)
+			assert.Loosely(t, math.Exp(sl.LogLikelihood(0, 3)), should.AlmostEqual(0.25))
+			assert.Loosely(t, 3*math.Exp(sl.LogLikelihood(1, 3)), should.AlmostEqual(0.25))
+			assert.Loosely(t, 3*math.Exp(sl.LogLikelihood(2, 3)), should.AlmostEqual(0.25))
+			assert.Loosely(t, math.Exp(sl.LogLikelihood(3, 3)), should.AlmostEqual(0.25))
 		})
-		Convey("Sequence of length four", func() {
+		t.Run("Sequence of length four", func(t *ftt.Test) {
 			// Coefficients (1, 4, 6, 4, 1) from Pascal's triangle.
-			So(math.Exp(sl.LogLikelihood(0, 4)), ShouldAlmostEqual, 0.20)
-			So(4*math.Exp(sl.LogLikelihood(1, 4)), ShouldAlmostEqual, 0.20)
-			So(6*math.Exp(sl.LogLikelihood(2, 4)), ShouldAlmostEqual, 0.20)
-			So(4*math.Exp(sl.LogLikelihood(3, 4)), ShouldAlmostEqual, 0.20)
-			So(math.Exp(sl.LogLikelihood(4, 4)), ShouldAlmostEqual, 0.20)
+			assert.Loosely(t, math.Exp(sl.LogLikelihood(0, 4)), should.AlmostEqual(0.20))
+			assert.Loosely(t, 4*math.Exp(sl.LogLikelihood(1, 4)), should.AlmostEqual(0.20))
+			assert.Loosely(t, 6*math.Exp(sl.LogLikelihood(2, 4)), should.AlmostEqual(0.20))
+			assert.Loosely(t, 4*math.Exp(sl.LogLikelihood(3, 4)), should.AlmostEqual(0.20))
+			assert.Loosely(t, math.Exp(sl.LogLikelihood(4, 4)), should.AlmostEqual(0.20))
 		})
 	})
-	Convey("Non-uniform prior", t, func() {
+	ftt.Run("Non-uniform prior", t, func(t *ftt.Test) {
 		// This prior is biased towards the test either
 		// passing or failing consistently, with the
 		// passing consistently case more likely.
@@ -80,70 +82,70 @@ func TestSequenceLikelihood(t *testing.T) {
 		}
 		sl := NewSequenceLikelihood(prior)
 
-		Convey("Empty sequence", func() {
+		t.Run("Empty sequence", func(t *ftt.Test) {
 			// The probability of observing the empty sequence
 			// knowing the sequence length is 0 is 1.0.
-			So(math.Exp(sl.LogLikelihood(0, 0)), ShouldAlmostEqual, 1.0)
+			assert.Loosely(t, math.Exp(sl.LogLikelihood(0, 0)), should.AlmostEqual(1.0))
 		})
-		Convey("Sequence of length one", func() {
+		t.Run("Sequence of length one", func(t *ftt.Test) {
 			// Verify sequences with fewer failures are more likely
 			// and the probabilities add up to 1.0.
-			So(math.Exp(sl.LogLikelihood(0, 1)), ShouldAlmostEqual, 0.625)
-			So(math.Exp(sl.LogLikelihood(1, 1)), ShouldAlmostEqual, 0.375)
+			assert.Loosely(t, math.Exp(sl.LogLikelihood(0, 1)), should.AlmostEqual(0.625))
+			assert.Loosely(t, math.Exp(sl.LogLikelihood(1, 1)), should.AlmostEqual(0.375))
 		})
-		Convey("Sequence of length two", func() {
+		t.Run("Sequence of length two", func(t *ftt.Test) {
 			// The following results were not verified with respect to ground
 			// truth, but we did verify the probabilities added up to 1.0
 			// and shape is expected.
 
-			So(math.Exp(sl.LogLikelihood(0, 2)), ShouldAlmostEqual, 0.520833333333333)
+			assert.Loosely(t, math.Exp(sl.LogLikelihood(0, 2)), should.AlmostEqual(0.5208333333333335))
 			// There are two sequences that have one pass
 			// and one failure.
-			So(2*math.Exp(sl.LogLikelihood(1, 2)), ShouldAlmostEqual, 0.208333333333333)
-			So(math.Exp(sl.LogLikelihood(2, 2)), ShouldAlmostEqual, 0.2708333333333333)
+			assert.Loosely(t, 2*math.Exp(sl.LogLikelihood(1, 2)), should.AlmostEqual(0.2083333333333334))
+			assert.Loosely(t, math.Exp(sl.LogLikelihood(2, 2)), should.AlmostEqual(0.2708333333333333))
 		})
-		Convey("Sequence of length three", func() {
+		t.Run("Sequence of length three", func(t *ftt.Test) {
 			// The following results were not verified with respect to ground
 			// truth, but we did verify the probabilities added up to 1.0
 			// and shape is expected.
 
 			// Coefficients (1, 3, 3, 1) from Pascal's triangle.
-			So(math.Exp(sl.LogLikelihood(0, 3)), ShouldAlmostEqual, 0.465029761904762)
-			So(3*math.Exp(sl.LogLikelihood(1, 3)), ShouldAlmostEqual, 0.16741071428571436)
-			So(3*math.Exp(sl.LogLikelihood(2, 3)), ShouldAlmostEqual, 0.14508928571428578)
-			So(math.Exp(sl.LogLikelihood(3, 3)), ShouldAlmostEqual, 0.2224702380952381)
+			assert.Loosely(t, math.Exp(sl.LogLikelihood(0, 3)), should.AlmostEqual(0.465029761904762))
+			assert.Loosely(t, 3*math.Exp(sl.LogLikelihood(1, 3)), should.AlmostEqual(0.16741071428571436))
+			assert.Loosely(t, 3*math.Exp(sl.LogLikelihood(2, 3)), should.AlmostEqual(0.14508928571428578))
+			assert.Loosely(t, math.Exp(sl.LogLikelihood(3, 3)), should.AlmostEqual(0.2224702380952381))
 		})
-		Convey("Sequence of length four", func() {
+		t.Run("Sequence of length four", func(t *ftt.Test) {
 			// The following results were not verified with respect to ground
 			// truth, but we did verify the probabilities added up to 1.0
 			// and shape is expected.
 
 			// Coefficients (1, 4, 6, 4, 1) from Pascal's triangle.
-			So(math.Exp(sl.LogLikelihood(0, 4)), ShouldAlmostEqual, 0.4283168859649124)
-			So(4*math.Exp(sl.LogLikelihood(1, 4)), ShouldAlmostEqual, 0.14685150375939848)
-			So(6*math.Exp(sl.LogLikelihood(2, 4)), ShouldAlmostEqual, 0.11454417293233085)
-			So(4*math.Exp(sl.LogLikelihood(3, 4)), ShouldAlmostEqual, 0.11708959899749374)
-			So(math.Exp(sl.LogLikelihood(4, 4)), ShouldAlmostEqual, 0.19319783834586465)
+			assert.Loosely(t, math.Exp(sl.LogLikelihood(0, 4)), should.AlmostEqual(0.4283168859649124))
+			assert.Loosely(t, 4*math.Exp(sl.LogLikelihood(1, 4)), should.AlmostEqual(0.14685150375939848))
+			assert.Loosely(t, 6*math.Exp(sl.LogLikelihood(2, 4)), should.AlmostEqual(0.11454417293233085))
+			assert.Loosely(t, 4*math.Exp(sl.LogLikelihood(3, 4)), should.AlmostEqual(0.11708959899749374))
+			assert.Loosely(t, math.Exp(sl.LogLikelihood(4, 4)), should.AlmostEqual(0.19319783834586465))
 		})
 	})
 }
 
 func TestAddLogLikelihood(t *testing.T) {
-	Convey("AddLogLikelihood", t, func() {
-		Convey("One element", func() {
-			So(addLogLikelihoods([]float64{math.Log(0.1)}), ShouldEqual, math.Log(0.1))
+	ftt.Run("AddLogLikelihood", t, func(t *ftt.Test) {
+		t.Run("One element", func(t *ftt.Test) {
+			assert.Loosely(t, addLogLikelihoods([]float64{math.Log(0.1)}), should.Equal(math.Log(0.1)))
 		})
 
-		Convey("Many elements", func() {
-			So(addLogLikelihoods([]float64{math.Log(0.1), math.Log(0.2), math.Log(0.3)}), ShouldAlmostEqual, math.Log(0.6))
+		t.Run("Many elements", func(t *ftt.Test) {
+			assert.Loosely(t, addLogLikelihoods([]float64{math.Log(0.1), math.Log(0.2), math.Log(0.3)}), should.AlmostEqual(math.Log(0.6)))
 		})
 
-		Convey("Many small elements", func() {
+		t.Run("Many small elements", func(t *ftt.Test) {
 			var eles = make([]float64, 10)
 			for i := 0; i < 10; i++ {
 				eles[i] = math.Log(0.0000001)
 			}
-			So(addLogLikelihoods(eles), ShouldAlmostEqual, math.Log(0.000001))
+			assert.Loosely(t, addLogLikelihoods(eles), should.AlmostEqual(math.Log(0.000001)))
 		})
 
 	})

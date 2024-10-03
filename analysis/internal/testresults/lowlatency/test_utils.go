@@ -17,6 +17,7 @@ package lowlatency
 import (
 	"context"
 	"fmt"
+	"testing"
 	"time"
 
 	"cloud.google.com/go/spanner"
@@ -219,8 +220,9 @@ func (b *TestVerdictBuilder) Build() []*TestResult {
 
 // SetForTesting replaces the stored test results with the given list.
 // For use in unit/integration tests only.
-func SetForTesting(ctx context.Context, results []*TestResult) error {
-	testutil.MustApply(ctx,
+func SetForTesting(ctx context.Context, t testing.TB, results []*TestResult) error {
+	t.Helper()
+	testutil.MustApply(ctx, t,
 		spanner.Delete("TestResultsBySourcePosition", spanner.AllKeys()))
 	_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 		for _, tr := range results {

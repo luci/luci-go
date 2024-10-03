@@ -20,6 +20,9 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
@@ -30,13 +33,10 @@ import (
 	"go.chromium.org/luci/analysis/internal/testutil"
 	"go.chromium.org/luci/analysis/pbutil"
 	pb "go.chromium.org/luci/analysis/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestQueryForClustering(t *testing.T) {
-	Convey(`With analysis available`, t, func() {
+	ftt.Run(`With analysis available`, t, func(t *ftt.Test) {
 		ctx := newContext(t)
 		sourcesMap := tu.SampleSourcesMap(10)
 
@@ -114,8 +114,8 @@ func TestQueryForClustering(t *testing.T) {
 		}
 		var hs inputbuffer.HistorySerializer
 		mutation, err := tvb.ToMutation(&hs)
-		So(err, ShouldBeNil)
-		testutil.MustApply(ctx, mutation)
+		assert.Loosely(t, err, should.BeNil)
+		testutil.MustApply(ctx, t, mutation)
 
 		tvs := []*rdbpb.TestVariant{
 			{
@@ -132,14 +132,14 @@ func TestQueryForClustering(t *testing.T) {
 			TotalVerdicts_24H:      11, // 3 + 5 (from stored statistics) + 2 (cold buffer) + 1 (hot buffer).
 		}
 
-		Convey(`Query single test verdict`, func() {
+		t.Run(`Query single test verdict`, func(t *ftt.Test) {
 			result, err := QueryStatsForClustering(ctx, tvs, "chromium", partitionTime, sourcesMap)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(result, ShouldHaveLength, 1)
-			So(result[0], ShouldResembleProto, expectedResult)
+			assert.Loosely(t, result, should.HaveLength(1))
+			assert.Loosely(t, result[0], should.Resemble(expectedResult))
 		})
-		Convey(`Query multiple test verdicts, some without sources`, func() {
+		t.Run(`Query multiple test verdicts, some without sources`, func(t *ftt.Test) {
 			tvs = []*rdbpb.TestVariant{
 				{
 					TestId:      "test_0",
@@ -157,45 +157,45 @@ func TestQueryForClustering(t *testing.T) {
 			}
 
 			result, err := QueryStatsForClustering(ctx, tvs, "chromium", partitionTime, sourcesMap)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(result, ShouldHaveLength, 3)
-			So(result[0], ShouldBeNil)
-			So(result[1], ShouldResembleProto, expectedResult)
-			So(result[2], ShouldBeNil)
+			assert.Loosely(t, result, should.HaveLength(3))
+			assert.Loosely(t, result[0], should.BeNil)
+			assert.Loosely(t, result[1], should.Resemble(expectedResult))
+			assert.Loosely(t, result[2], should.BeNil)
 		})
-		Convey(`Query multiple test verdicts, some without stored analysis available`, func() {
+		t.Run(`Query multiple test verdicts, some without stored analysis available`, func(t *ftt.Test) {
 			tvs := testVariants(3)
 			result, err := QueryStatsForClustering(ctx, tvs, "chromium", partitionTime, sourcesMap)
-			So(err, ShouldBeNil)
-			So(result, ShouldHaveLength, 3)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, result, should.HaveLength(3))
 			for i, item := range result {
 				if i == 1 {
-					So(item, ShouldResembleProto, expectedResult)
+					assert.Loosely(t, item, should.Resemble(expectedResult))
 				} else {
 					// If we had sources and therefore could lookup analysis,
 					// but found no previous verdicts ingested, zero counts
 					// should be returned.
-					So(item, ShouldResembleProto, &clusteringpb.TestVariantBranch{})
+					assert.Loosely(t, item, should.Resemble(&clusteringpb.TestVariantBranch{}))
 				}
 			}
 		})
-		Convey(`Query large number of test verdicts`, func() {
+		t.Run(`Query large number of test verdicts`, func(t *ftt.Test) {
 			// Up to 10,000 test variant branches may be queried at once.
 			tvs := testVariants(10000)
 			result, err := QueryStatsForClustering(ctx, tvs, "chromium", partitionTime, sourcesMap)
-			So(err, ShouldBeNil)
-			So(result, ShouldHaveLength, 10000)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, result, should.HaveLength(10000))
 			for i, item := range result {
 				if i == 1 {
-					So(item, ShouldResembleProto, expectedResult)
+					assert.Loosely(t, item, should.Resemble(expectedResult))
 				} else {
-					So(item, ShouldResembleProto, &clusteringpb.TestVariantBranch{})
+					assert.Loosely(t, item, should.Resemble(&clusteringpb.TestVariantBranch{}))
 				}
 			}
 		})
 	})
-	Convey(`No verdicts have sources`, t, func() {
+	ftt.Run(`No verdicts have sources`, t, func(t *ftt.Test) {
 		ctx := newContext(t)
 		tvs := []*rdbpb.TestVariant{
 			{
@@ -205,16 +205,16 @@ func TestQueryForClustering(t *testing.T) {
 		}
 
 		result, err := QueryStatsForClustering(ctx, tvs, "chromium", time.Unix(10*3600, 0), nil)
-		So(err, ShouldBeNil)
-		So(result, ShouldHaveLength, 1)
-		So(result[0], ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, result, should.HaveLength(1))
+		assert.Loosely(t, result[0], should.BeNil)
 	})
-	Convey(`Empty request`, t, func() {
+	ftt.Run(`Empty request`, t, func(t *ftt.Test) {
 		ctx := newContext(t)
 		tvs := []*rdbpb.TestVariant{}
 		result, err := QueryStatsForClustering(ctx, tvs, "chromium", time.Unix(10*3600, 0), nil)
-		So(err, ShouldBeNil)
-		So(result, ShouldHaveLength, 0)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, result, should.HaveLength(0))
 	})
 }
 

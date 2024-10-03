@@ -29,53 +29,53 @@ import (
 	"go.chromium.org/luci/analysis/internal/testutil"
 	bqpb "go.chromium.org/luci/analysis/proto/bq"
 	analysispb "go.chromium.org/luci/analysis/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestExportRules(t *testing.T) {
-	Convey(`TestExportRules`, t, func() {
+	ftt.Run(`TestExportRules`, t, func(t *ftt.Test) {
 		exportTime, _ := time.Parse(time.RFC3339Nano, "2023-02-05T07:20:44.639000000Z")
 
 		sortF := func(rows []*bqpb.FailureAssociationRulesHistoryRow) {
 			sort.Slice(rows, func(i, j int) bool { return rows[i].RuleId < rows[j].RuleId })
 		}
 
-		Convey(`failed to get last updated`, func() {
+		t.Run(`failed to get last updated`, func(t *ftt.Test) {
 			mockClient := exporter.NewFakeClient().Errs([]error{errors.New("BOOM")})
 
 			err := exportRules(testutil.IntegrationTestContext(t), mockClient, exportTime)
-			So(err, ShouldErrLike, "BOOM")
+			assert.Loosely(t, err, should.ErrLike("BOOM"))
 		})
 
-		Convey(`failed to insert`, func() {
+		t.Run(`failed to insert`, func(t *ftt.Test) {
 			mockClient := exporter.NewFakeClient().Errs([]error{nil, errors.New("BOOM")})
 
 			err := exportRules(testutil.IntegrationTestContext(t), mockClient, exportTime)
-			So(err, ShouldErrLike, "BOOM")
+			assert.Loosely(t, err, should.ErrLike("BOOM"))
 		})
 
-		Convey(`empty Spanner rules table`, func() {
+		t.Run(`empty Spanner rules table`, func(t *ftt.Test) {
 			mockClient := exporter.NewFakeClient()
 			err := exportRules(testutil.IntegrationTestContext(t), mockClient, exportTime)
 
-			So(err, ShouldBeNil)
-			So(mockClient.Insertions, ShouldResembleProto, []*bqpb.FailureAssociationRulesHistoryRow{})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, mockClient.Insertions, should.Resemble([]*bqpb.FailureAssociationRulesHistoryRow{}))
 		})
 
-		Convey(`empty BigQuery table`, func() {
+		t.Run(`empty BigQuery table`, func(t *ftt.Test) {
 			mockClient := exporter.NewFakeClient()
 			ctx := testutil.IntegrationTestContext(t)
 			r1 := NewRule(1).Build()
 			r2 := NewRule(2).Build()
 			r3 := NewRule(3).Build()
 			rulesInTable := []*Entry{r1, r2, r3}
-			err := SetForTesting(ctx, rulesInTable)
-			So(err, ShouldBeNil)
+			err := SetForTesting(ctx, t, rulesInTable)
+			assert.Loosely(t, err, should.BeNil)
 
 			err = exportRules(ctx, mockClient, exportTime)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			expected := []*bqpb.FailureAssociationRulesHistoryRow{
 				toFailureAssociationRulesHistoryRow(r1, exportTime),
 				toFailureAssociationRulesHistoryRow(r2, exportTime),
@@ -83,10 +83,10 @@ func TestExportRules(t *testing.T) {
 			}
 			sortF(expected)
 			sortF(mockClient.Insertions)
-			So(mockClient.Insertions, ShouldResembleProto, expected)
+			assert.Loosely(t, mockClient.Insertions, should.Resemble(expected))
 		})
 
-		Convey(`incremental export`, func() {
+		t.Run(`incremental export`, func(t *ftt.Test) {
 			lastUpdatedTime, _ := time.Parse(time.RFC3339Nano, "2023-02-05T07:15:44.639000000Z")
 			mockClient := exporter.NewFakeClient().LastUpdate(lastUpdatedTime)
 			ctx := testutil.IntegrationTestContext(t)
@@ -95,22 +95,22 @@ func TestExportRules(t *testing.T) {
 			r3 := NewRule(3).WithLastUpdateTime(lastUpdatedTime.Add(time.Minute)).Build()
 			r4 := NewRule(4).WithLastUpdateTime(lastUpdatedTime.Add(2 * time.Minute)).Build()
 			rulesInTable := []*Entry{r1, r2, r3, r4}
-			err := SetForTesting(ctx, rulesInTable)
-			So(err, ShouldBeNil)
+			err := SetForTesting(ctx, t, rulesInTable)
+			assert.Loosely(t, err, should.BeNil)
 
 			err = exportRules(ctx, mockClient, exportTime)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			expected := []*bqpb.FailureAssociationRulesHistoryRow{
 				toFailureAssociationRulesHistoryRow(r3, exportTime),
 				toFailureAssociationRulesHistoryRow(r4, exportTime),
 			}
 			sortF(expected)
 			sortF(mockClient.Insertions)
-			So(mockClient.Insertions, ShouldResembleProto, expected)
+			assert.Loosely(t, mockClient.Insertions, should.Resemble(expected))
 		})
 	})
 	// The behaviour of this method is assumed in the tests above.
-	Convey(`toFailureAssociationRulesHistoryRow`, t, func() {
+	ftt.Run(`toFailureAssociationRulesHistoryRow`, t, func(t *ftt.Test) {
 		r := NewRule(1).
 			WithProject("myproject").
 			WithRuleID("11111111111111111111111111111111").
@@ -173,6 +173,6 @@ func TestExportRules(t *testing.T) {
 			LastUpdateTime:          timestamppb.New(time.Date(2005, 1, 1, 1, 1, 1, 1, time.UTC)),
 			ExportedTime:            timestamppb.New(exportTime),
 		}
-		So(toFailureAssociationRulesHistoryRow(r, exportTime), ShouldResembleProto, expected)
+		assert.Loosely(t, toFailureAssociationRulesHistoryRow(r, exportTime), should.Resemble(expected))
 	})
 }

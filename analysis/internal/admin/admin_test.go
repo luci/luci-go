@@ -31,12 +31,15 @@ import (
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 	"go.chromium.org/luci/analysis/internal/testutil"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestAdminServer(t *testing.T) {
-	Convey("Given an admin server", t, func() {
+	ftt.Run("Given an admin server", t, func(t *ftt.Test) {
 		ctx, skdr := tq.TestingContext(testutil.TestingContext(), nil)
 
 		// For user identification.
@@ -50,7 +53,7 @@ func TestAdminServer(t *testing.T) {
 
 		server := NewAdminServer()
 
-		Convey("Unauthorised requests are rejected", func() {
+		t.Run("Unauthorised requests are rejected", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:someone@example.com",
 				// Not a member of service-luci-analysis-admins.
@@ -62,10 +65,10 @@ func TestAdminServer(t *testing.T) {
 			request := &pb.BackfillTestResultsRequest{}
 
 			rsp, err := server.BackfillTestResults(ctx, request)
-			So(err, ShouldBeRPCPermissionDenied, "not a member of service-luci-analysis-admins")
-			So(rsp, ShouldBeNil)
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("not a member of service-luci-analysis-admins"))
+			assert.Loosely(t, rsp, should.BeNil)
 		})
-		Convey("BackfillTestResults", func() {
+		t.Run("BackfillTestResults", func(t *ftt.Test) {
 			// Make some request (the request should not matter, as
 			// a common decorator is used for all requests.)
 			request := &pb.BackfillTestResultsRequest{
@@ -74,23 +77,23 @@ func TestAdminServer(t *testing.T) {
 			}
 
 			rsp, err := server.BackfillTestResults(ctx, request)
-			So(err, ShouldBeNil)
-			So(rsp, ShouldResembleProto, &pb.BackfillTestResultsResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, rsp, should.Resemble(&pb.BackfillTestResultsResponse{
 				DaysScheduled: 30, // 30 days in June.
-			})
+			}))
 
-			So(skdr.Tasks().Payloads(), ShouldHaveLength, 30)
+			assert.Loosely(t, skdr.Tasks().Payloads(), should.HaveLength(30))
 			var dates []time.Time
 			for _, task := range skdr.Tasks().Payloads() {
-				t, ok := task.(*taskspb.Backfill)
-				So(ok, ShouldBeTrue)
-				dates = append(dates, t.Day.AsTime())
+				tsk, ok := task.(*taskspb.Backfill)
+				assert.Loosely(t, ok, should.BeTrue)
+				dates = append(dates, tsk.Day.AsTime())
 			}
 			sort.Slice(dates, func(i, j int) bool {
 				return dates[i].Before(dates[j])
 			})
 			for i, d := range dates {
-				So(d, ShouldEqual, request.StartDay.AsTime().Add(time.Duration(i)*24*time.Hour))
+				assert.Loosely(t, d, should.Resemble(request.StartDay.AsTime().Add(time.Duration(i)*24*time.Hour)))
 			}
 		})
 	})

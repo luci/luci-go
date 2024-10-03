@@ -19,6 +19,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"strings"
+	"testing"
 
 	"cloud.google.com/go/bigquery"
 
@@ -32,8 +33,9 @@ import (
 	"go.chromium.org/luci/analysis/internal/config/compiledcfg"
 	configpb "go.chromium.org/luci/analysis/proto/config"
 	pb "go.chromium.org/luci/analysis/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func emptyMetricValues() map[metrics.ID]metrics.TimewiseCounts {
@@ -44,10 +46,11 @@ func emptyMetricValues() map[metrics.ID]metrics.TimewiseCounts {
 	return result
 }
 
-func makeTestNameCluster(config *compiledcfg.ProjectConfig, uniqifier int) *analysis.Cluster {
+func makeTestNameCluster(t testing.TB, config *compiledcfg.ProjectConfig, uniqifier int) *analysis.Cluster {
+	t.Helper()
 	testID := fmt.Sprintf("testname-%v", uniqifier)
 	return &analysis.Cluster{
-		ClusterID: testIDClusterID(config, testID),
+		ClusterID: testIDClusterID(t, config, testID),
 		MetricValues: map[metrics.ID]metrics.TimewiseCounts{
 			metrics.Failures.ID: {
 				OneDay:   metrics.Counts{Residual: 9},
@@ -59,7 +62,7 @@ func makeTestNameCluster(config *compiledcfg.ProjectConfig, uniqifier int) *anal
 	}
 }
 
-func makeReasonCluster(config *compiledcfg.ProjectConfig, uniqifier int) *analysis.Cluster {
+func makeReasonCluster(t testing.TB, config *compiledcfg.ProjectConfig, uniqifier int) *analysis.Cluster {
 	// Because the failure reason clustering algorithm removes numbers
 	// when clustering failure reasons, it is better not to use the
 	// uniqifier directly in the reason, to avoid cluster ID collisions.
@@ -70,7 +73,7 @@ func makeReasonCluster(config *compiledcfg.ProjectConfig, uniqifier int) *analys
 	reason := fmt.Sprintf("want %s, got bar", foo.String())
 
 	return &analysis.Cluster{
-		ClusterID: reasonClusterID(config, reason),
+		ClusterID: reasonClusterID(t, config, reason),
 		MetricValues: map[metrics.ID]metrics.TimewiseCounts{
 			metrics.Failures.ID: {
 				OneDay:   metrics.Counts{Residual: 9},
@@ -100,9 +103,10 @@ func makeBugCluster(ruleID string) *analysis.Cluster {
 	}
 }
 
-func testIDClusterID(config *compiledcfg.ProjectConfig, testID string) clustering.ClusterID {
+func testIDClusterID(t testing.TB, config *compiledcfg.ProjectConfig, testID string) clustering.ClusterID {
+	t.Helper()
 	testAlg, err := algorithms.SuggestingAlgorithm(testname.AlgorithmName)
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil, truth.LineContext())
 
 	return clustering.ClusterID{
 		Algorithm: testname.AlgorithmName,
@@ -112,9 +116,10 @@ func testIDClusterID(config *compiledcfg.ProjectConfig, testID string) clusterin
 	}
 }
 
-func reasonClusterID(config *compiledcfg.ProjectConfig, reason string) clustering.ClusterID {
+func reasonClusterID(t testing.TB, config *compiledcfg.ProjectConfig, reason string) clustering.ClusterID {
+	t.Helper()
 	reasonAlg, err := algorithms.SuggestingAlgorithm(failurereason.AlgorithmName)
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil, truth.LineContext())
 
 	return clustering.ClusterID{
 		Algorithm: failurereason.AlgorithmName,

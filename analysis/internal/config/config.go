@@ -66,10 +66,3 @@ func Get(ctx context.Context) (*configpb.Config, error) {
 func SetTestConfig(ctx context.Context, cfg *configpb.Config) error {
 	return cachedCfg.Set(ctx, cfg, &config.Meta{})
 }
-
-func WithBothBugSystems(f func(system configpb.BugSystem, name string)) func() {
-	return func() {
-		f(configpb.BugSystem_MONORAIL, "monorail")
-		f(configpb.BugSystem_BUGANIZER, "buganizer")
-	}
-}

@@ -23,18 +23,18 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/server/caching"
 
 	"go.chromium.org/luci/analysis/internal/config"
 	configpb "go.chromium.org/luci/analysis/proto/config"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestCompiledConfig(t *testing.T) {
-	Convey(`With In-Process Cache`, t, func() {
+	ftt.Run(`With In-Process Cache`, t, func(t *ftt.Test) {
 		ctx := context.Background()
 		ctx = memory.Use(ctx)
 		ctx = caching.WithEmptyProcessCache(ctx)
@@ -46,45 +46,45 @@ func TestCompiledConfig(t *testing.T) {
 				"myproject": cfg,
 			}
 			err := config.SetTestProjectConfig(ctx, projectsCfg)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		}
 		clear := func() {
 			projectsCfg := map[string]*configpb.ProjectConfig{}
 			err := config.SetTestProjectConfig(ctx, projectsCfg)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		}
 		verify := func(minimumVersion time.Time, uniqifier int) {
 			cfg, err := Project(ctx, "myproject", minimumVersion)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			expectedCfg := generateProjectConfig(uniqifier)
-			So(cfg.Config, ShouldResembleProto, expectedCfg)
-			So(cfg.LastUpdated, ShouldEqual, expectedCfg.LastUpdated.AsTime())
-			So(len(cfg.TestNameRules), ShouldEqual, 1)
+			assert.Loosely(t, cfg.Config, should.Resemble(expectedCfg))
+			assert.That(t, cfg.LastUpdated, should.Match(expectedCfg.LastUpdated.AsTime()))
+			assert.Loosely(t, len(cfg.TestNameRules), should.Equal(1))
 
 			testName := fmt.Sprintf(`ninja://test_name/%v`, uniqifier)
 			rule := cfg.TestNameRules[0]
 			like, ok := rule(testName)
-			So(ok, ShouldBeTrue)
-			So(like, ShouldEqual, testName+"%")
+			assert.Loosely(t, ok, should.BeTrue)
+			assert.Loosely(t, like, should.Equal(testName+"%"))
 
-			So(cfg.ReasonMaskPatterns[0].String(), ShouldEqual, `(?:^\[Fixture failure\] )[a-zA-Z0-9_]+(?:[:])`)
+			assert.Loosely(t, cfg.ReasonMaskPatterns[0].String(), should.Equal(`(?:^\[Fixture failure\] )[a-zA-Z0-9_]+(?:[:])`))
 		}
 		verifyNotExists := func(minimumVersion time.Time) {
 			cfg, err := Project(ctx, "myproject", minimumVersion)
-			So(err, ShouldBeNil)
-			So(cfg.Config, ShouldResembleProto, &configpb.ProjectConfig{LastUpdated: timestamppb.New(config.StartingEpoch)})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cfg.Config, should.Resemble(&configpb.ProjectConfig{LastUpdated: timestamppb.New(config.StartingEpoch)}))
 		}
-		Convey(`Does not exist`, func() {
+		t.Run(`Does not exist`, func(t *ftt.Test) {
 			verifyNotExists(config.StartingEpoch)
 
-			Convey(`Then exists`, func() {
+			t.Run(`Then exists`, func(t *ftt.Test) {
 				create(1)
 
 				// Verify the old cache item is retained.
 				verifyNotExists(config.StartingEpoch)
 
-				Convey(`Evict by cache expiry`, func() {
+				t.Run(`Evict by cache expiry`, func(t *ftt.Test) {
 					// Let the cache expire (note this expires the cache
 					// in the config package, not this package).
 					tc.Add(2 * config.ProjectCacheExpiry)
@@ -92,7 +92,7 @@ func TestCompiledConfig(t *testing.T) {
 					verify(config.StartingEpoch, 1)
 					verify(configVersion(1), 1)
 				})
-				Convey(`Manually evict`, func() {
+				t.Run(`Manually evict`, func(t *ftt.Test) {
 					// Force the cache to be cleared by requesting
 					// a more recent version of config.
 					verify(configVersion(1), 1)
@@ -100,24 +100,24 @@ func TestCompiledConfig(t *testing.T) {
 					verify(config.StartingEpoch, 1)
 				})
 			})
-			Convey(`Then not exists`, func() {
+			t.Run(`Then not exists`, func(t *ftt.Test) {
 				clear()
 				verifyNotExists(config.StartingEpoch)
 			})
 		})
-		Convey(`Exists`, func() {
+		t.Run(`Exists`, func(t *ftt.Test) {
 			create(1)
 			verify(config.StartingEpoch, 1)
 			verify(configVersion(1), 1)
 
-			Convey(`Then modify`, func() {
+			t.Run(`Then modify`, func(t *ftt.Test) {
 				create(2)
 
 				// Verify the old entry is retained.
 				verify(config.StartingEpoch, 1)
 				verify(configVersion(1), 1)
 
-				Convey(`Evict by cache expiry`, func() {
+				t.Run(`Evict by cache expiry`, func(t *ftt.Test) {
 					// Let the cache expire (note this expires the cache
 					// in the config package, not this package).
 					tc.Add(2 * config.ProjectCacheExpiry)
@@ -126,7 +126,7 @@ func TestCompiledConfig(t *testing.T) {
 					verify(configVersion(1), 2)
 					verify(configVersion(2), 2)
 				})
-				Convey(`Manually evict`, func() {
+				t.Run(`Manually evict`, func(t *ftt.Test) {
 					// Force the cache to be cleared by requesting
 					// a more recent version of config.
 					verify(configVersion(2), 2)
@@ -135,7 +135,7 @@ func TestCompiledConfig(t *testing.T) {
 					verify(config.StartingEpoch, 2)
 				})
 			})
-			Convey(`Then retain`, func() {
+			t.Run(`Then retain`, func(t *ftt.Test) {
 				// Let the cache expire (note this expires the cache
 				// in the config package, not this package).
 				tc.Add(2 * config.ProjectCacheExpiry)
@@ -143,7 +143,7 @@ func TestCompiledConfig(t *testing.T) {
 				verify(config.StartingEpoch, 1)
 				verify(configVersion(1), 1)
 			})
-			Convey(`Then delete`, func() {
+			t.Run(`Then delete`, func(t *ftt.Test) {
 				clear()
 
 				// Let the cache expire (note this expires the cache

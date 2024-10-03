@@ -31,6 +31,10 @@ import (
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	rdbpbutil "go.chromium.org/luci/resultdb/pbutil"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
@@ -65,13 +69,10 @@ import (
 	pb "go.chromium.org/luci/analysis/proto/v1"
 
 	_ "go.chromium.org/luci/server/tq/txn/spanner"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestSchedule(t *testing.T) {
-	Convey(`TestSchedule`, t, func() {
+	ftt.Run(`TestSchedule`, t, func(t *ftt.Test) {
 		ctx := testutil.IntegrationTestContext(t)
 		ctx, skdr := tq.TestingContext(ctx, nil)
 
@@ -87,8 +88,8 @@ func TestSchedule(t *testing.T) {
 			Schedule(ctx, task)
 			return nil
 		})
-		So(err, ShouldBeNil)
-		So(skdr.Tasks().Payloads()[0], ShouldResembleProto, expected)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, skdr.Tasks().Payloads()[0], should.Resemble(expected))
 	})
 }
 
@@ -98,7 +99,7 @@ const testRealm = "project:ci"
 const testBuildID = int64(87654321)
 
 func TestIngestTestVerdicts(t *testing.T) {
-	Convey(`TestIngestTestVerdicts`, t, func() {
+	ftt.Run(`TestIngestTestVerdicts`, t, func(t *ftt.Test) {
 		ctx := testutil.IntegrationTestContext(t)
 		ctx = caching.WithEmptyProcessCache(ctx) // For failure association rules cache.
 		ctx, skdr := tq.TestingContext(ctx, nil)
@@ -116,7 +117,7 @@ func TestIngestTestVerdicts(t *testing.T) {
 			testVariantBranchExporter: bqexporter.NewExporter(tvBQExporterClient),
 		}
 
-		Convey(`partition time`, func() {
+		t.Run(`partition time`, func(t *ftt.Test) {
 			payload := &taskspb.IngestTestVerdicts{
 				IngestionId: "ingestion-id",
 				Project:     "test-project",
@@ -127,19 +128,19 @@ func TestIngestTestVerdicts(t *testing.T) {
 				},
 				PartitionTime: timestamppb.New(clock.Now(ctx).Add(-1 * time.Hour)),
 			}
-			Convey(`too early`, func() {
+			t.Run(`too early`, func(t *ftt.Test) {
 				payload.PartitionTime = timestamppb.New(clock.Now(ctx).Add(25 * time.Hour))
 				err := ri.ingestTestVerdicts(ctx, payload)
-				So(err, ShouldErrLike, "too far in the future")
+				assert.Loosely(t, err, should.ErrLike("too far in the future"))
 			})
-			Convey(`too late`, func() {
+			t.Run(`too late`, func(t *ftt.Test) {
 				payload.PartitionTime = timestamppb.New(clock.Now(ctx).Add(-91 * 24 * time.Hour))
 				err := ri.ingestTestVerdicts(ctx, payload)
-				So(err, ShouldErrLike, "too long ago")
+				assert.Loosely(t, err, should.ErrLike("too long ago"))
 			})
 		})
 
-		Convey(`valid payload`, func() {
+		t.Run(`valid payload`, func(t *ftt.Test) {
 			ctl := gomock.NewController(t)
 			defer ctl.Finish()
 
@@ -198,7 +199,7 @@ func TestIngestTestVerdicts(t *testing.T) {
 			}
 			setupConfig := func(ctx context.Context, cfg *configpb.Config) {
 				err := config.SetTestConfig(ctx, cfg)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			}
 
 			invocationCreationTime := partitionTime.Add(-3 * time.Hour)
@@ -206,7 +207,7 @@ func TestIngestTestVerdicts(t *testing.T) {
 			// Populate some existing test variant analysis.
 			// Test variant changepoint analysis uses invocation creation time
 			// as partition time.
-			branch := setupTestVariantAnalysis(ctx, invocationCreationTime)
+			branch := setupTestVariantAnalysis(ctx, t, invocationCreationTime)
 
 			expectedCheckpoints := []checkpoints.Checkpoint{
 				{
@@ -288,7 +289,7 @@ func TestIngestTestVerdicts(t *testing.T) {
 			expectedContinuation.PageToken = "continuation_token"
 			expectedContinuation.TaskIndex = 2
 
-			Convey(`Without build`, func() {
+			t.Run(`Without build`, func(t *ftt.Test) {
 				payload.Build = nil
 				payload.PresubmitRun = nil
 
@@ -301,25 +302,25 @@ func TestIngestTestVerdicts(t *testing.T) {
 
 				// Act
 				err := ri.ingestTestVerdicts(ctx, payload)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				// Verify
 
 				// Expect a continuation task to be created.
-				verifyContinuationTask(skdr, expectedContinuation)
+				verifyContinuationTask(t, skdr, expectedContinuation)
 
 				// Expect only the continuation task checkpoint.
 				// The test results should not be ingested into
 				// changepoint analysis here as there is no
 				// presubmit run that we can use to confirm the
 				// changes were submitted.
-				verifyCheckpoints(ctx, expectedCheckpoints[:1])
+				verifyCheckpoints(ctx, t, expectedCheckpoints[:1])
 
-				verifyTestResults(ctx, partitionTime, false)
+				verifyTestResults(ctx, t, partitionTime, false)
 
 				// Clustering not enabled - no chunk has been written to GCS.
-				So(len(chunkStore.Contents), ShouldEqual, 0)
-				verifyTestVerdicts(testVerdicts, partitionTime, false)
+				assert.Loosely(t, len(chunkStore.Contents), should.BeZero)
+				verifyTestVerdicts(t, testVerdicts, partitionTime, false)
 
 				// Changepoint analysis should not be updated.
 				// In this pipeline, invocations with changelists are ingested
@@ -327,31 +328,31 @@ func TestIngestTestVerdicts(t *testing.T) {
 				// to CL submission). Invocations without builds cannot have
 				// a presubmit run and therefore will not be ingested.
 				tvbs, err := changepoints.FetchTestVariantBranches(ctx)
-				So(err, ShouldBeNil)
-				So(len(tvbs), ShouldEqual, 1)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, len(tvbs), should.Equal(1))
 				branch.IsNew = false
-				So(tvbs[0], ShouldResembleProto, branch)
+				assert.Loosely(t, tvbs[0], should.Resemble(branch))
 			})
-			Convey(`First task`, func() {
+			t.Run(`First task`, func(t *ftt.Test) {
 				setupGetInvocationMock()
 				setupQueryTestVariantsMock()
 				setupConfig(ctx, cfg)
 
 				// Act
 				err := ri.ingestTestVerdicts(ctx, payload)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				// Verify
 
 				// Expect a continuation task to be created.
-				verifyContinuationTask(skdr, expectedContinuation)
-				verifyCheckpoints(ctx, expectedCheckpoints)
-				verifyTestResults(ctx, partitionTime, true)
-				verifyClustering(chunkStore, clusteredFailures)
-				verifyTestVerdicts(testVerdicts, partitionTime, true)
-				verifyTestVariantAnalysis(ctx, invocationCreationTime, tvBQExporterClient)
+				verifyContinuationTask(t, skdr, expectedContinuation)
+				verifyCheckpoints(ctx, t, expectedCheckpoints)
+				verifyTestResults(ctx, t, partitionTime, true)
+				verifyClustering(t, chunkStore, clusteredFailures)
+				verifyTestVerdicts(t, testVerdicts, partitionTime, true)
+				verifyTestVariantAnalysis(ctx, t, invocationCreationTime, tvBQExporterClient)
 			})
-			Convey(`Last task`, func() {
+			t.Run(`Last task`, func(t *ftt.Test) {
 				payload.TaskIndex = 10
 				expectedCheckpoints = removeCheckpointForProcess(expectedCheckpoints, "verdict-ingestion/schedule-continuation")
 
@@ -363,21 +364,21 @@ func TestIngestTestVerdicts(t *testing.T) {
 
 				// Act
 				err := ri.ingestTestVerdicts(ctx, payload)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				// Verify
 
 				// As this is the last task, do not expect a continuation
 				// task to be created.
-				verifyContinuationTask(skdr, nil)
-				verifyCheckpoints(ctx, expectedCheckpoints) // Expect no checkpoints to be created.
-				verifyTestResults(ctx, partitionTime, true)
-				verifyClustering(chunkStore, clusteredFailures)
-				verifyTestVerdicts(testVerdicts, partitionTime, true)
-				verifyTestVariantAnalysis(ctx, invocationCreationTime, tvBQExporterClient)
+				verifyContinuationTask(t, skdr, nil)
+				verifyCheckpoints(ctx, t, expectedCheckpoints) // Expect no checkpoints to be created.
+				verifyTestResults(ctx, t, partitionTime, true)
+				verifyClustering(t, chunkStore, clusteredFailures)
+				verifyTestVerdicts(t, testVerdicts, partitionTime, true)
+				verifyTestVariantAnalysis(ctx, t, invocationCreationTime, tvBQExporterClient)
 			})
 
-			Convey(`Retry task after continuation task already created`, func() {
+			t.Run(`Retry task after continuation task already created`, func(t *ftt.Test) {
 				// Scenario: First task fails after it has already scheduled
 				// its continuation.
 				existingCheckpoint := checkpoints.Checkpoint{
@@ -388,8 +389,8 @@ func TestIngestTestVerdicts(t *testing.T) {
 						Uniquifier: "1",
 					},
 				}
-				err := checkpoints.SetForTesting(ctx, existingCheckpoint)
-				So(err, ShouldBeNil)
+				err := checkpoints.SetForTesting(ctx, t, existingCheckpoint)
+				assert.Loosely(t, err, should.BeNil)
 
 				setupGetInvocationMock()
 				setupQueryTestVariantsMock()
@@ -397,20 +398,20 @@ func TestIngestTestVerdicts(t *testing.T) {
 
 				// Act
 				err = ri.ingestTestVerdicts(ctx, payload)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				// Verify
 
 				// Do not expect a continuation task to be created,
 				// as it was already scheduled.
-				verifyContinuationTask(skdr, nil)
-				verifyCheckpoints(ctx, expectedCheckpoints)
-				verifyTestResults(ctx, partitionTime, true)
-				verifyClustering(chunkStore, clusteredFailures)
-				verifyTestVerdicts(testVerdicts, partitionTime, true)
-				verifyTestVariantAnalysis(ctx, invocationCreationTime, tvBQExporterClient)
+				verifyContinuationTask(t, skdr, nil)
+				verifyCheckpoints(ctx, t, expectedCheckpoints)
+				verifyTestResults(ctx, t, partitionTime, true)
+				verifyClustering(t, chunkStore, clusteredFailures)
+				verifyTestVerdicts(t, testVerdicts, partitionTime, true)
+				verifyTestVariantAnalysis(ctx, t, invocationCreationTime, tvBQExporterClient)
 			})
-			Convey(`No project config`, func() {
+			t.Run(`No project config`, func(t *ftt.Test) {
 				// If no project config exists, results should be ingested into
 				// TestResults and clustered, but not used for the legacy test variant
 				// analysis.
@@ -422,20 +423,20 @@ func TestIngestTestVerdicts(t *testing.T) {
 
 				// Act
 				err := ri.ingestTestVerdicts(ctx, payload)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				// Verify
 				// Test results still ingested.
-				verifyTestResults(ctx, partitionTime, true)
+				verifyTestResults(ctx, t, partitionTime, true)
 
 				// Cluster has happened.
-				verifyClustering(chunkStore, clusteredFailures)
+				verifyClustering(t, chunkStore, clusteredFailures)
 
 				// Test verdicts exported.
-				verifyTestVerdicts(testVerdicts, partitionTime, true)
-				verifyTestVariantAnalysis(ctx, invocationCreationTime, tvBQExporterClient)
+				verifyTestVerdicts(t, testVerdicts, partitionTime, true)
+				verifyTestVariantAnalysis(ctx, t, invocationCreationTime, tvBQExporterClient)
 			})
-			Convey(`Invocation is not an export root`, func() {
+			t.Run(`Invocation is not an export root`, func(t *ftt.Test) {
 				setupGetInvocationMock(func(i *rdbpb.Invocation) {
 					i.IsExportRoot = false
 				})
@@ -443,7 +444,7 @@ func TestIngestTestVerdicts(t *testing.T) {
 
 				// Act
 				err := ri.ingestTestVerdicts(ctx, payload)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				// Verify no test results ingested into test history.
 				var actualTRs []*testresults.TestResult
@@ -451,16 +452,16 @@ func TestIngestTestVerdicts(t *testing.T) {
 					actualTRs = append(actualTRs, tr)
 					return nil
 				})
-				So(err, ShouldBeNil)
-				So(actualTRs, ShouldHaveLength, 0)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, actualTRs, should.HaveLength(0))
 			})
-			Convey(`no invocation`, func() {
+			t.Run(`no invocation`, func(t *ftt.Test) {
 				payload.Invocation = nil
 				setupConfig(ctx, cfg)
 
 				// Act
 				err := ri.ingestTestVerdicts(ctx, payload)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				// Verify no test results ingested into test history.
 				var actualTRs []*testresults.TestResult
@@ -468,10 +469,10 @@ func TestIngestTestVerdicts(t *testing.T) {
 					actualTRs = append(actualTRs, tr)
 					return nil
 				})
-				So(err, ShouldBeNil)
-				So(actualTRs, ShouldHaveLength, 0)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, actualTRs, should.HaveLength(0))
 			})
-			Convey(`Project not allowed`, func() {
+			t.Run(`Project not allowed`, func(t *ftt.Test) {
 				cfg.Ingestion = &configpb.Ingestion{
 					ProjectAllowlistEnabled: true,
 					ProjectAllowlist:        []string{"other"},
@@ -480,7 +481,7 @@ func TestIngestTestVerdicts(t *testing.T) {
 
 				// Act
 				err := ri.ingestTestVerdicts(ctx, payload)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				// Verify no test results ingested into test history.
 				var actualTRs []*testresults.TestResult
@@ -488,14 +489,15 @@ func TestIngestTestVerdicts(t *testing.T) {
 					actualTRs = append(actualTRs, tr)
 					return nil
 				})
-				So(err, ShouldBeNil)
-				So(actualTRs, ShouldHaveLength, 0)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, actualTRs, should.HaveLength(0))
 			})
 		})
 	})
 }
 
-func setupTestVariantAnalysis(ctx context.Context, partitionTime time.Time) *testvariantbranch.Entry {
+func setupTestVariantAnalysis(ctx context.Context, t testing.TB, partitionTime time.Time) *testvariantbranch.Entry {
+	t.Helper()
 	sr := &pb.SourceRef{
 		System: &pb.SourceRef_Gitiles{
 			Gitiles: &pb.GitilesRef{
@@ -538,15 +540,16 @@ func setupTestVariantAnalysis(ctx context.Context, partitionTime time.Time) *tes
 	}
 	var hs inputbuffer.HistorySerializer
 	m, err := branch.ToMutation(&hs)
-	So(err, ShouldBeNil)
-	testutil.MustApply(ctx, m)
+	assert.Loosely(t, err, should.BeNil, truth.LineContext())
+	testutil.MustApply(ctx, t, m)
 	return branch
 }
 
-func verifyTestVariantAnalysis(ctx context.Context, partitionTime time.Time, client *bqexporter.FakeClient) {
+func verifyTestVariantAnalysis(ctx context.Context, t testing.TB, partitionTime time.Time, client *bqexporter.FakeClient) {
+	t.Helper()
 	tvbs, err := changepoints.FetchTestVariantBranches(ctx)
-	So(err, ShouldBeNil)
-	So(len(tvbs), ShouldEqual, 1)
+	assert.Loosely(t, err, should.BeNil, truth.LineContext())
+	assert.Loosely(t, len(tvbs), should.Equal(1), truth.LineContext())
 	sr := &pb.SourceRef{
 		System: &pb.SourceRef_Gitiles{
 			Gitiles: &pb.GitilesRef{
@@ -559,7 +562,7 @@ func verifyTestVariantAnalysis(ctx context.Context, partitionTime time.Time, cli
 	// Truncated to nearest hour.
 	hour := time.Unix(partitionTime.Unix()/3600*3600, 0)
 
-	So(tvbs[0], ShouldResembleProto, &testvariantbranch.Entry{
+	assert.Loosely(t, tvbs[0], should.Resemble(&testvariantbranch.Entry{
 		Project:     "project",
 		TestID:      "ninja://test_consistent_failure",
 		VariantHash: "hash",
@@ -593,12 +596,12 @@ func verifyTestVariantAnalysis(ctx context.Context, partitionTime time.Time, cli
 				},
 			},
 		},
-	})
+	}), truth.LineContext())
 
-	So(len(client.Insertions), ShouldEqual, 1)
+	assert.Loosely(t, len(client.Insertions), should.Equal(1), truth.LineContext())
 }
 
-func verifyTestResults(ctx context.Context, expectedPartitionTime time.Time, withBuildSource bool) {
+func verifyTestResults(ctx context.Context, t testing.TB, expectedPartitionTime time.Time, withBuildSource bool) {
 	trBuilder := testresults.NewTestResult().
 		WithProject("project").
 		WithPartitionTime(expectedPartitionTime.In(time.UTC)).
@@ -797,8 +800,8 @@ func verifyTestResults(ctx context.Context, expectedPartitionTime time.Time, wit
 		actualTRs = append(actualTRs, tr)
 		return nil
 	})
-	So(err, ShouldBeNil)
-	So(actualTRs, ShouldResemble, expectedTRs)
+	assert.Loosely(t, err, should.BeNil, truth.LineContext())
+	assert.Loosely(t, actualTRs, should.Resemble(expectedTRs), truth.LineContext())
 
 	// Validate TestVariantRealms table is populated.
 	tvrs := make([]*testresults.TestVariantRealm, 0)
@@ -806,7 +809,7 @@ func verifyTestResults(ctx context.Context, expectedPartitionTime time.Time, wit
 		tvrs = append(tvrs, tvr)
 		return nil
 	})
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil, truth.LineContext())
 
 	expectedRealms := []*testresults.TestVariantRealm{
 		{
@@ -888,12 +891,12 @@ func verifyTestResults(ctx context.Context, expectedPartitionTime time.Time, wit
 		},
 	}
 
-	So(tvrs, ShouldHaveLength, len(expectedRealms))
+	assert.Loosely(t, tvrs, should.HaveLength(len(expectedRealms)), truth.LineContext())
 	for i, tvr := range tvrs {
 		expectedTVR := expectedRealms[i]
-		So(tvr.LastIngestionTime, ShouldNotBeZeroValue)
+		assert.Loosely(t, tvr.LastIngestionTime, should.NotBeZero, truth.LineContext())
 		expectedTVR.LastIngestionTime = tvr.LastIngestionTime
-		So(tvr, ShouldResemble, expectedTVR)
+		assert.Loosely(t, tvr, should.Resemble(expectedTVR), truth.LineContext())
 	}
 
 	// Validate TestRealms table is populated.
@@ -902,7 +905,7 @@ func verifyTestResults(ctx context.Context, expectedPartitionTime time.Time, wit
 		testRealms = append(testRealms, tvr)
 		return nil
 	})
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil, truth.LineContext())
 
 	// The order of test realms doesn't matter. Sort it to make comparing it
 	// against the expected test realm list easier.
@@ -979,24 +982,25 @@ func verifyTestResults(ctx context.Context, expectedPartitionTime time.Time, wit
 		},
 	}
 
-	So(testRealms, ShouldHaveLength, len(expectedTestRealms))
+	assert.Loosely(t, testRealms, should.HaveLength(len(expectedTestRealms)), truth.LineContext())
 	for i, tr := range testRealms {
 		expectedTR := expectedTestRealms[i]
-		So(tr.LastIngestionTime, ShouldNotBeZeroValue)
+		assert.Loosely(t, tr.LastIngestionTime, should.NotBeZero, truth.LineContext())
 		expectedTR.LastIngestionTime = tr.LastIngestionTime
-		So(tr, ShouldResemble, expectedTR)
+		assert.Loosely(t, tr, should.Resemble(expectedTR), truth.LineContext())
 	}
 }
 
-func verifyClustering(chunkStore *chunkstore.FakeClient, clusteredFailures *clusteredfailures.FakeClient) {
+func verifyClustering(t testing.TB, chunkStore *chunkstore.FakeClient, clusteredFailures *clusteredfailures.FakeClient) {
+	t.Helper()
 	// Confirm chunks have been written to GCS.
-	So(len(chunkStore.Contents), ShouldEqual, 1)
+	assert.Loosely(t, len(chunkStore.Contents), should.Equal(1), truth.LineContext())
 
 	// Confirm clustering has occurred, with each test result in at
 	// least one cluster.
 	actualClusteredFailures := make(map[string]int)
 	for _, f := range clusteredFailures.Insertions {
-		So(f.Project, ShouldEqual, "project")
+		assert.Loosely(t, f.Project, should.Equal("project"), truth.LineContext())
 		actualClusteredFailures[f.TestId] += 1
 	}
 	expectedClusteredFailures := map[string]int{
@@ -1007,25 +1011,26 @@ func verifyClustering(chunkStore *chunkstore.FakeClient, clusteredFailures *clus
 		"ninja://test_new_flake":          2,
 		"ninja://test_has_unexpected":     1,
 	}
-	So(actualClusteredFailures, ShouldResemble, expectedClusteredFailures)
+	assert.Loosely(t, actualClusteredFailures, should.Resemble(expectedClusteredFailures), truth.LineContext())
 
 	for _, cf := range clusteredFailures.Insertions {
-		So(cf.BuildGardenerRotations, ShouldResemble, []string{"rotation1", "rotation2"})
+		assert.Loosely(t, cf.BuildGardenerRotations, should.Resemble([]string{"rotation1", "rotation2"}), truth.LineContext())
 
 		// Verify test variant branch stats were correctly populated.
 		if cf.TestId == "ninja://test_consistent_failure" {
-			So(cf.TestVariantBranch, ShouldResembleProto, &bqpb.ClusteredFailureRow_TestVariantBranch{
+			assert.Loosely(t, cf.TestVariantBranch, should.Resemble(&bqpb.ClusteredFailureRow_TestVariantBranch{
 				UnexpectedVerdicts_24H: 124,
 				FlakyVerdicts_24H:      456,
 				TotalVerdicts_24H:      2000,
-			})
+			}), truth.LineContext())
 		} else {
-			So(cf.TestVariantBranch, ShouldBeNil)
+			assert.Loosely(t, cf.TestVariantBranch, should.BeNil, truth.LineContext())
 		}
 	}
 }
 
-func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime time.Time, expectBuild bool) {
+func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedPartitionTime time.Time, expectBuild bool) {
+	t.Helper()
 	actualRows := client.Insertions
 
 	invocation := &bqpb.TestVerdictRow_InvocationRecord{
@@ -1074,7 +1079,7 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 	// Different platforms may use different spacing when serializing
 	// JSONPB. Expect the spacing scheme used by this platform.
 	expectedProperties, err := bqutil.MarshalStructPB(testProperties)
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil, truth.LineContext())
 
 	sr := &pb.SourceRef{
 		System: &pb.SourceRef_Gitiles{
@@ -1478,30 +1483,32 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 			InsertTime:        timestamppb.New(testclock.TestRecentTimeLocal),
 		},
 	}
-	So(actualRows, ShouldHaveLength, len(expectedRows))
+	assert.Loosely(t, actualRows, should.HaveLength(len(expectedRows)), truth.LineContext())
 	for i, row := range actualRows {
-		So(row, ShouldResembleProto, expectedRows[i])
+		assert.Loosely(t, row, should.Resemble(expectedRows[i]), truth.LineContext())
 	}
 }
 
-func verifyContinuationTask(skdr *tqtesting.Scheduler, expectedContinuation *taskspb.IngestTestVerdicts) {
+func verifyContinuationTask(t testing.TB, skdr *tqtesting.Scheduler, expectedContinuation *taskspb.IngestTestVerdicts) {
+	t.Helper()
 	count := 0
 	for _, pl := range skdr.Tasks().Payloads() {
 		if pl, ok := pl.(*taskspb.IngestTestVerdicts); ok {
-			So(pl, ShouldResembleProto, expectedContinuation)
+			assert.Loosely(t, pl, should.Resemble(expectedContinuation), truth.LineContext())
 			count++
 		}
 	}
 	if expectedContinuation != nil {
-		So(count, ShouldEqual, 1)
+		assert.Loosely(t, count, should.Equal(1), truth.LineContext())
 	} else {
-		So(count, ShouldEqual, 0)
+		assert.Loosely(t, count, should.BeZero, truth.LineContext())
 	}
 }
 
-func verifyCheckpoints(ctx context.Context, expected []checkpoints.Checkpoint) {
+func verifyCheckpoints(ctx context.Context, t testing.TB, expected []checkpoints.Checkpoint) {
+	t.Helper()
 	result, err := checkpoints.ReadAllForTesting(span.Single(ctx))
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil, truth.LineContext())
 
 	var wantKeys []checkpoints.Key
 	var gotKeys []checkpoints.Key
@@ -1514,7 +1521,7 @@ func verifyCheckpoints(ctx context.Context, expected []checkpoints.Checkpoint) {
 	checkpoints.SortKeys(gotKeys)
 	checkpoints.SortKeys(wantKeys)
 
-	So(gotKeys, ShouldResemble, wantKeys)
+	assert.Loosely(t, gotKeys, should.Resemble(wantKeys), truth.LineContext())
 }
 
 func removeCheckpointForProcess(cs []checkpoints.Checkpoint, processID string) []checkpoints.Checkpoint {

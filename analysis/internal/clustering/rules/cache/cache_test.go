@@ -20,33 +20,33 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/caching"
 
 	"go.chromium.org/luci/analysis/internal/bugs"
 	"go.chromium.org/luci/analysis/internal/clustering/rules"
 	"go.chromium.org/luci/analysis/internal/testutil"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 var cache = caching.RegisterLRUCache[string, *Ruleset](50)
 
 func TestRulesCache(t *testing.T) {
-	Convey(`With Spanner Test Database`, t, func() {
+	ftt.Run(`With Spanner Test Database`, t, func(t *ftt.Test) {
 		ctx := testutil.IntegrationTestContext(t)
 		ctx, tc := testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 		ctx = caching.WithEmptyProcessCache(ctx)
 
 		rc := NewRulesCache(cache)
-		err := rules.SetForTesting(ctx, nil)
-		So(err, ShouldBeNil)
+		err := rules.SetForTesting(ctx, t, nil)
+		assert.Loosely(t, err, should.BeNil)
 
 		test := func(minimumPredicatesVerison time.Time, expectedRules []*rules.Entry, expectedVersion rules.Version) {
 			// Tests the content of the cache is as expected.
 			ruleset, err := rc.Ruleset(ctx, "myproject", minimumPredicatesVerison)
-			So(err, ShouldBeNil)
-			So(ruleset.Version, ShouldResemble, expectedVersion)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ruleset.Version, should.Resemble(expectedVersion))
 
 			activeRules := 0
 			for _, e := range expectedRules {
@@ -54,8 +54,8 @@ func TestRulesCache(t *testing.T) {
 					activeRules++
 				}
 			}
-			So(len(ruleset.ActiveRulesSorted), ShouldEqual, activeRules)
-			So(len(ruleset.ActiveRulesByID), ShouldEqual, activeRules)
+			assert.Loosely(t, len(ruleset.ActiveRulesSorted), should.Equal(activeRules))
+			assert.Loosely(t, len(ruleset.ActiveRulesByID), should.Equal(activeRules))
 
 			sortedExpectedRules := sortRulesByPredicateLastUpdated(expectedRules)
 
@@ -63,30 +63,30 @@ func TestRulesCache(t *testing.T) {
 			for _, e := range sortedExpectedRules {
 				if e.IsActive {
 					a := ruleset.ActiveRulesSorted[actualRuleIndex]
-					So(a.Rule, ShouldResembleProto, *e)
+					assert.Loosely(t, a.Rule, should.Resemble(*e))
 					// Technically (*lang.Expr).String() may not get us
 					// back the original rule if RuleDefinition didn't use
 					// normalised formatting. But for this test, we use
 					// normalised formatting, so that is not an issue.
-					So(a.Expr, ShouldNotBeNil)
-					So(a.Expr.String(), ShouldEqual, e.RuleDefinition)
+					assert.Loosely(t, a.Expr, should.NotBeNil)
+					assert.Loosely(t, a.Expr.String(), should.Equal(e.RuleDefinition))
 					actualRuleIndex++
 
 					a2, ok := ruleset.ActiveRulesByID[a.Rule.RuleID]
-					So(ok, ShouldBeTrue)
-					So(a2.Rule, ShouldResembleProto, *e)
+					assert.Loosely(t, ok, should.BeTrue)
+					assert.Loosely(t, a2.Rule, should.Resemble(*e))
 				}
 			}
-			So(len(ruleset.ActiveRulesWithPredicateUpdatedSince(rules.StartingEpoch)), ShouldEqual, activeRules)
-			So(len(ruleset.ActiveRulesWithPredicateUpdatedSince(time.Date(2100, time.January, 1, 1, 0, 0, 0, time.UTC))), ShouldEqual, 0)
+			assert.Loosely(t, len(ruleset.ActiveRulesWithPredicateUpdatedSince(rules.StartingEpoch)), should.Equal(activeRules))
+			assert.Loosely(t, len(ruleset.ActiveRulesWithPredicateUpdatedSince(time.Date(2100, time.January, 1, 1, 0, 0, 0, time.UTC))), should.BeZero)
 		}
 
-		Convey(`Initially Empty`, func() {
-			err := rules.SetForTesting(ctx, nil)
-			So(err, ShouldBeNil)
+		t.Run(`Initially Empty`, func(t *ftt.Test) {
+			err := rules.SetForTesting(ctx, t, nil)
+			assert.Loosely(t, err, should.BeNil)
 			test(rules.StartingEpoch, nil, rules.StartingVersion)
 
-			Convey(`Then Empty`, func() {
+			t.Run(`Then Empty`, func(t *ftt.Test) {
 				// Test cache.
 				test(rules.StartingEpoch, nil, rules.StartingVersion)
 
@@ -95,7 +95,7 @@ func TestRulesCache(t *testing.T) {
 				test(rules.StartingEpoch, nil, rules.StartingVersion)
 				test(rules.StartingEpoch, nil, rules.StartingVersion)
 			})
-			Convey(`Then Non-Empty`, func() {
+			t.Run(`Then Non-Empty`, func(t *ftt.Test) {
 				// Spanner commit timestamps are in microsecond
 				// (not nanosecond) granularity, and some Spanner timestamp
 				// operators truncates to microseconds. For this
@@ -113,22 +113,22 @@ func TestRulesCache(t *testing.T) {
 						WithPredicateLastUpdateTime(reference).
 						Build(),
 				}
-				err := rules.SetForTesting(ctx, rs)
-				So(err, ShouldBeNil)
+				err := rules.SetForTesting(ctx, t, rs)
+				assert.Loosely(t, err, should.BeNil)
 
 				expectedRulesVersion := rules.Version{
 					Total:      reference.Add(1 * time.Hour),
 					Predicates: reference,
 				}
 
-				Convey(`By Strong Read`, func() {
+				t.Run(`By Strong Read`, func(t *ftt.Test) {
 					test(StrongRead, rs, expectedRulesVersion)
 					test(StrongRead, rs, expectedRulesVersion)
 				})
-				Convey(`By Requesting Version`, func() {
+				t.Run(`By Requesting Version`, func(t *ftt.Test) {
 					test(expectedRulesVersion.Predicates, rs, expectedRulesVersion)
 				})
-				Convey(`By Cache Expiry`, func() {
+				t.Run(`By Cache Expiry`, func(t *ftt.Test) {
 					// Test cache is working and still returning the old value.
 					tc.Add(refreshInterval / 2)
 					test(rules.StartingEpoch, nil, rules.StartingVersion)
@@ -140,7 +140,7 @@ func TestRulesCache(t *testing.T) {
 				})
 			})
 		})
-		Convey(`Initially Non-Empty`, func() {
+		t.Run(`Initially Non-Empty`, func(t *ftt.Test) {
 			reference := time.Date(2021, 1, 2, 3, 4, 5, 6000, time.UTC)
 
 			ruleOne := rules.NewRule(100).
@@ -158,8 +158,8 @@ func TestRulesCache(t *testing.T) {
 				ruleTwo.Build(),
 				ruleThree.Build(),
 			}
-			err := rules.SetForTesting(ctx, rs)
-			So(err, ShouldBeNil)
+			err := rules.SetForTesting(ctx, t, rs)
+			assert.Loosely(t, err, should.BeNil)
 
 			expectedRulesVersion := rules.Version{
 				Total:      reference,
@@ -167,7 +167,7 @@ func TestRulesCache(t *testing.T) {
 			}
 			test(rules.StartingEpoch, rs, expectedRulesVersion)
 
-			Convey(`Then Empty`, func() {
+			t.Run(`Then Empty`, func(t *ftt.Test) {
 				// Mark all rules inactive.
 				newRules := []*rules.Entry{
 					ruleOne.WithActive(false).
@@ -183,8 +183,8 @@ func TestRulesCache(t *testing.T) {
 						WithPredicateLastUpdateTime(reference.Add(1 * time.Hour)).
 						Build(),
 				}
-				err := rules.SetForTesting(ctx, newRules)
-				So(err, ShouldBeNil)
+				err := rules.SetForTesting(ctx, t, newRules)
+				assert.Loosely(t, err, should.BeNil)
 
 				oldRulesVersion := expectedRulesVersion
 				expectedRulesVersion := rules.Version{
@@ -192,14 +192,14 @@ func TestRulesCache(t *testing.T) {
 					Predicates: reference.Add(3 * time.Hour),
 				}
 
-				Convey(`By Strong Read`, func() {
+				t.Run(`By Strong Read`, func(t *ftt.Test) {
 					test(StrongRead, newRules, expectedRulesVersion)
 					test(StrongRead, newRules, expectedRulesVersion)
 				})
-				Convey(`By Requesting Version`, func() {
+				t.Run(`By Requesting Version`, func(t *ftt.Test) {
 					test(expectedRulesVersion.Predicates, newRules, expectedRulesVersion)
 				})
-				Convey(`By Cache Expiry`, func() {
+				t.Run(`By Cache Expiry`, func(t *ftt.Test) {
 					// Test cache is working and still returning the old value.
 					tc.Add(refreshInterval / 2)
 					test(rules.StartingEpoch, rs, oldRulesVersion)
@@ -210,7 +210,7 @@ func TestRulesCache(t *testing.T) {
 					test(rules.StartingEpoch, newRules, expectedRulesVersion)
 				})
 			})
-			Convey(`Then Non-Empty`, func() {
+			t.Run(`Then Non-Empty`, func(t *ftt.Test) {
 				newRules := []*rules.Entry{
 					// Mark an existing rule inactive.
 					ruleOne.WithActive(false).
@@ -238,8 +238,8 @@ func TestRulesCache(t *testing.T) {
 						WithLastUpdateTime(reference.Add(3 * time.Hour)).
 						Build(),
 				}
-				err := rules.SetForTesting(ctx, newRules)
-				So(err, ShouldBeNil)
+				err := rules.SetForTesting(ctx, t, newRules)
+				assert.Loosely(t, err, should.BeNil)
 
 				oldRulesVersion := expectedRulesVersion
 				expectedRulesVersion := rules.Version{
@@ -247,14 +247,14 @@ func TestRulesCache(t *testing.T) {
 					Predicates: reference.Add(2 * time.Hour),
 				}
 
-				Convey(`By Strong Read`, func() {
+				t.Run(`By Strong Read`, func(t *ftt.Test) {
 					test(StrongRead, newRules, expectedRulesVersion)
 					test(StrongRead, newRules, expectedRulesVersion)
 				})
-				Convey(`By Forced Eviction`, func() {
+				t.Run(`By Forced Eviction`, func(t *ftt.Test) {
 					test(expectedRulesVersion.Predicates, newRules, expectedRulesVersion)
 				})
-				Convey(`By Cache Expiry`, func() {
+				t.Run(`By Cache Expiry`, func(t *ftt.Test) {
 					// Test cache is working and still returning the old value.
 					tc.Add(refreshInterval / 2)
 					test(rules.StartingEpoch, rs, oldRulesVersion)

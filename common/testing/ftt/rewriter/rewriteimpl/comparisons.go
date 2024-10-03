@@ -269,6 +269,8 @@ var assertionMap = map[assertionKey]*mappedComp{
 			// They probably actually need "should.NotResemble", so let it go through.
 			return name, hasArgs, extraArgs
 		}},
+	{originalConveyPkg, "ShouldBeZeroValue"}:    {name: "BeZero", argState: noArgs},
+	{originalConveyPkg, "ShouldNotBeZeroValue"}: {name: "NotBeZero", argState: noArgs},
 
 	{originalConveyPkg, "ShouldBeGreaterThanOrEqualTo"}: {name: "BeGreaterThanOrEqual", argState: hasArgs},
 	{originalConveyPkg, "ShouldBeGreaterThan"}:          {name: "BeGreaterThan", argState: hasArgs},

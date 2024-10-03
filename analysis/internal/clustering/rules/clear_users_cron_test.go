@@ -18,95 +18,96 @@ import (
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/analysis/internal/testutil"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestClearRuleUsers(t *testing.T) {
-	Convey(`With Spanner Test Database`, t, func() {
+	ftt.Run(`With Spanner Test Database`, t, func(t *ftt.Test) {
 
 		ctx := testutil.IntegrationTestContext(t)
 
-		Convey(`Rules older than 30 days should have their CreationUser cleared`, func() {
+		t.Run(`Rules older than 30 days should have their CreationUser cleared`, func(t *ftt.Test) {
 			expectedRule := NewRule(101).
 				WithCreateTime(time.Now().AddDate(0, 0, -31)).
 				WithCreateUser("user@example.com").
 				Build()
-			err := SetForTesting(ctx, []*Entry{expectedRule})
-			So(err, ShouldBeNil)
+			err := SetForTesting(ctx, t, []*Entry{expectedRule})
+			assert.Loosely(t, err, should.BeNil)
 
 			rows, err := clearCreationUserColumn(ctx)
-			So(err, ShouldBeNil)
-			So(rows, ShouldEqual, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, rows, should.Equal(1))
 
 			rule, err := Read(span.Single(ctx), testProject, expectedRule.RuleID)
-			So(err, ShouldBeNil)
-			So(rule.CreateUser, ShouldEqual, "")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, rule.CreateUser, should.BeEmpty)
 		})
 
-		Convey(`Rules created less than 30 days ago should not change`, func() {
+		t.Run(`Rules created less than 30 days ago should not change`, func(t *ftt.Test) {
 			expectedRule := NewRule(101).
 				WithCreateTime(time.Now()).
 				WithCreateUser("user@example.com").
 				Build()
-			err := SetForTesting(ctx, []*Entry{expectedRule})
-			So(err, ShouldBeNil)
+			err := SetForTesting(ctx, t, []*Entry{expectedRule})
+			assert.Loosely(t, err, should.BeNil)
 
 			rows, err := clearCreationUserColumn(ctx)
-			So(err, ShouldBeNil)
-			So(rows, ShouldEqual, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, rows, should.BeZero)
 		})
 
-		Convey(`Rules with auditable updates more than 30 days ago have their LastAuditableUpdateUser cleared`, func() {
+		t.Run(`Rules with auditable updates more than 30 days ago have their LastAuditableUpdateUser cleared`, func(t *ftt.Test) {
 			expectedRule := NewRule(101).
 				WithLastAuditableUpdateTime(time.Now().AddDate(0, 0, -31)).
 				WithLastAuditableUpdateUser("user@example.com").
 				Build()
-			err := SetForTesting(ctx, []*Entry{expectedRule})
-			So(err, ShouldBeNil)
+			err := SetForTesting(ctx, t, []*Entry{expectedRule})
+			assert.Loosely(t, err, should.BeNil)
 
 			rows, err := clearLastUpdatedUserColumn(ctx)
-			So(err, ShouldBeNil)
-			So(rows, ShouldEqual, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, rows, should.Equal(1))
 
 			rule, err := Read(span.Single(ctx), testProject, expectedRule.RuleID)
-			So(err, ShouldBeNil)
-			So(rule.LastAuditableUpdateUser, ShouldEqual, "")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, rule.LastAuditableUpdateUser, should.BeEmpty)
 		})
 
-		Convey(`Rules with auditable updates less than 30 days ago should not change`, func() {
+		t.Run(`Rules with auditable updates less than 30 days ago should not change`, func(t *ftt.Test) {
 			expectedRule := NewRule(101).
 				WithLastAuditableUpdateTime(time.Now().AddDate(0, 0, -29)).
 				WithLastAuditableUpdateUser("user@example.com").
 				Build()
-			err := SetForTesting(ctx, []*Entry{expectedRule})
-			So(err, ShouldBeNil)
+			err := SetForTesting(ctx, t, []*Entry{expectedRule})
+			assert.Loosely(t, err, should.BeNil)
 
 			rows, err := clearLastUpdatedUserColumn(ctx)
-			So(err, ShouldBeNil)
-			So(rows, ShouldEqual, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, rows, should.BeZero)
 		})
 
-		Convey(`ClearRulesUsers clears both LastAuditableUpdateUser and CreationUser`, func() {
+		t.Run(`ClearRulesUsers clears both LastAuditableUpdateUser and CreationUser`, func(t *ftt.Test) {
 			expectedRule := NewRule(101).
 				WithCreateTime(time.Now().AddDate(0, 0, -31)).
 				WithCreateUser("user@example.com").
 				WithLastAuditableUpdateTime(time.Now().AddDate(0, 0, -31)).
 				WithLastAuditableUpdateUser("user@example.com").
 				Build()
-			err := SetForTesting(ctx, []*Entry{expectedRule})
-			So(err, ShouldBeNil)
+			err := SetForTesting(ctx, t, []*Entry{expectedRule})
+			assert.Loosely(t, err, should.BeNil)
 
 			err = ClearRulesUsers(ctx)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			rule, err := Read(span.Single(ctx), testProject, expectedRule.RuleID)
-			So(err, ShouldBeNil)
-			So(rule.CreateUser, ShouldEqual, "")
-			So(rule.LastAuditableUpdateUser, ShouldEqual, "")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, rule.CreateUser, should.BeEmpty)
+			assert.Loosely(t, rule.LastAuditableUpdateUser, should.BeEmpty)
 		})
 	})
 }

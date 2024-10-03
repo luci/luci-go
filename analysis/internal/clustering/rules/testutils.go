@@ -20,6 +20,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"sort"
+	"testing"
 	"time"
 
 	"cloud.google.com/go/spanner"
@@ -209,8 +210,9 @@ func (b *RuleBuilder) Build() *Entry {
 }
 
 // SetForTesting replaces the set of stored rules to match the given set.
-func SetForTesting(ctx context.Context, rs []*Entry) error {
-	testutil.MustApply(ctx,
+func SetForTesting(ctx context.Context, t testing.TB, rs []*Entry) error {
+	t.Helper()
+	testutil.MustApply(ctx, t,
 		spanner.Delete("FailureAssociationRules", spanner.AllKeys()))
 	// Insert some FailureAssociationRules.
 	_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {

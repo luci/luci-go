@@ -20,6 +20,9 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/span"
 
@@ -29,13 +32,10 @@ import (
 	tu "go.chromium.org/luci/analysis/internal/changepoints/testutil"
 	"go.chromium.org/luci/analysis/internal/testutil"
 	pb "go.chromium.org/luci/analysis/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestFetchUpdateTestVariantBranch(t *testing.T) {
-	Convey("Fetch not found", t, func() {
+	ftt.Run("Fetch not found", t, func(t *ftt.Test) {
 		ctx := testutil.IntegrationTestContext(t)
 		key := Key{
 			Project:     "proj",
@@ -44,12 +44,12 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 			RefHash:     "git_hash",
 		}
 		tvbs, err := Read(span.Single(ctx), []Key{key})
-		So(err, ShouldBeNil)
-		So(len(tvbs), ShouldEqual, 1)
-		So(tvbs[0], ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, len(tvbs), should.Equal(1))
+		assert.Loosely(t, tvbs[0], should.BeNil)
 	})
 
-	Convey("Insert and fetch", t, func() {
+	ftt.Run("Insert and fetch", t, func(t *ftt.Test) {
 		ctx := testutil.IntegrationTestContext(t)
 		tvb1 := &Entry{
 			IsNew:       true,
@@ -139,10 +139,10 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 
 		var hs inputbuffer.HistorySerializer
 		mutation1, err := tvb1.ToMutation(&hs)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		mutation3, err := tvb3.ToMutation(&hs)
-		So(err, ShouldBeNil)
-		testutil.MustApply(ctx, mutation1, mutation3)
+		assert.Loosely(t, err, should.BeNil)
+		testutil.MustApply(ctx, t, mutation1, mutation3)
 
 		tvbks := []Key{
 			makeKey("proj_1", "test_id_1", "variant_hash_1", "refhash1"),
@@ -150,24 +150,24 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 			makeKey("proj_3", "test_id_3", "variant_hash_3", "refhash3"),
 		}
 		tvbs, err := Read(span.Single(ctx), tvbks)
-		So(err, ShouldBeNil)
-		So(len(tvbs), ShouldEqual, 3)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, len(tvbs), should.Equal(3))
 		// After inserting, the record should not be new anymore.
 		tvb1.IsNew = false
 		// After decoding, cold buffer should be empty.
 		tvb1.InputBuffer.ColdBuffer = inputbuffer.History{Runs: []inputbuffer.Run{}}
 
-		So(tvbs[0], ShouldResembleProto, tvb1)
+		assert.Loosely(t, tvbs[0], should.Resemble(tvb1))
 
-		So(tvbs[1], ShouldBeNil)
+		assert.Loosely(t, tvbs[1], should.BeNil)
 
 		tvb3.IsNew = false
 		tvb3.InputBuffer.ColdBuffer = inputbuffer.History{Runs: []inputbuffer.Run{}}
 
-		So(tvbs[2], ShouldResembleProto, tvb3)
+		assert.Loosely(t, tvbs[2], should.Resemble(tvb3))
 	})
 
-	Convey("Insert and update", t, func() {
+	ftt.Run("Insert and update", t, func(t *ftt.Test) {
 		ctx := testutil.IntegrationTestContext(t)
 
 		// Insert a new record.
@@ -211,8 +211,8 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 
 		var hs inputbuffer.HistorySerializer
 		mutation, err := tvb.ToMutation(&hs)
-		So(err, ShouldBeNil)
-		testutil.MustApply(ctx, mutation)
+		assert.Loosely(t, err, should.BeNil)
+		testutil.MustApply(ctx, t, mutation)
 
 		// Update the record
 		tvb = &Entry{
@@ -340,27 +340,27 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 		}
 
 		mutation, err = tvb.ToMutation(&hs)
-		So(err, ShouldBeNil)
-		testutil.MustApply(ctx, mutation)
+		assert.Loosely(t, err, should.BeNil)
+		testutil.MustApply(ctx, t, mutation)
 
 		tvbks := []Key{
 			makeKey("proj_1", "test_id_1", "variant_hash_1", "githash1"),
 		}
 		tvbs, err := Read(span.Single(ctx), tvbks)
-		So(err, ShouldBeNil)
-		So(len(tvbs), ShouldEqual, 1)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, len(tvbs), should.Equal(1))
 
 		tvb.IsStatisticsDirty = false
 		tvb.IsFinalizedSegmentsDirty = false
 		tvb.IsFinalizingSegmentDirty = false
 		tvb.InputBuffer.IsColdBufferDirty = false
 
-		So(tvbs[0], ShouldResembleProto, tvb)
+		assert.Loosely(t, tvbs[0], should.Resemble(tvb))
 	})
 }
 
 func TestInsertToInputBuffer(t *testing.T) {
-	Convey("Insert simple test variant", t, func() {
+	ftt.Run("Insert simple test variant", t, func(t *ftt.Test) {
 		tvb := &Entry{
 			InputBuffer: &inputbuffer.Buffer{
 				HotBufferCapacity:  10,
@@ -383,21 +383,21 @@ func TestInsertToInputBuffer(t *testing.T) {
 			SourcesId: "sources_id",
 		}
 		runs, err := ToRuns(tv, partitionTime, map[string]bool{"run-1": true}, sourcesMap["sources_id"])
-		So(err, ShouldBeNil)
-		So(runs, ShouldHaveLength, 1)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, runs, should.HaveLength(1))
 		tvb.InsertToInputBuffer(runs[0])
-		So(len(tvb.InputBuffer.HotBuffer.Runs), ShouldEqual, 1)
+		assert.Loosely(t, len(tvb.InputBuffer.HotBuffer.Runs), should.Equal(1))
 
-		So(tvb.InputBuffer.HotBuffer.Runs[0], ShouldResemble, inputbuffer.Run{
+		assert.Loosely(t, tvb.InputBuffer.HotBuffer.Runs[0], should.Resemble(inputbuffer.Run{
 			CommitPosition: 12,
 			Hour:           time.Date(2031, time.January, 1, 15, 0, 0, 0, time.UTC),
 			Expected: inputbuffer.ResultCounts{
 				PassCount: 1,
 			},
-		})
+		}))
 	})
 
-	Convey("Insert non-simple test variant", t, func() {
+	ftt.Run("Insert non-simple test variant", t, func(t *ftt.Test) {
 		tvb := &Entry{
 			InputBuffer: &inputbuffer.Buffer{
 				HotBufferCapacity:  10,
@@ -484,16 +484,16 @@ func TestInsertToInputBuffer(t *testing.T) {
 		partitionTime := time.Date(2031, time.January, 1, 15, 4, 0, 12, time.UTC)
 
 		runs, err := ToRuns(tv, partitionTime, claimedInvs, sourcesMap["sources_id"])
-		So(err, ShouldBeNil)
-		So(runs, ShouldHaveLength, 4)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, runs, should.HaveLength(4))
 		for _, run := range runs {
 			tvb.InsertToInputBuffer(run)
 		}
-		So(len(tvb.InputBuffer.HotBuffer.Runs), ShouldEqual, 4)
+		assert.Loosely(t, len(tvb.InputBuffer.HotBuffer.Runs), should.Equal(4))
 
 		// Insertion reverses the order of runs as they are preferentially
 		// added to the end of of the buffer.
-		So(tvb.InputBuffer.HotBuffer.Runs, ShouldResemble, []inputbuffer.Run{
+		assert.Loosely(t, tvb.InputBuffer.HotBuffer.Runs, should.Resemble([]inputbuffer.Run{
 			{
 				// run-4
 				CommitPosition: 12,
@@ -530,12 +530,12 @@ func TestInsertToInputBuffer(t *testing.T) {
 					CrashCount: 1,
 				},
 			},
-		})
+		}))
 	})
 }
 
 func TestUpdateOutputBuffer(t *testing.T) {
-	Convey("No existing finalizing segment", t, func() {
+	ftt.Run("No existing finalizing segment", t, func(t *ftt.Test) {
 		tvb := Entry{}
 		evictedSegments := []inputbuffer.EvictedSegment{
 			{
@@ -608,8 +608,8 @@ func TestUpdateOutputBuffer(t *testing.T) {
 		}
 		tvb.UpdateOutputBuffer(evictedSegments)
 
-		So(tvb.FinalizingSegment, ShouldNotBeNil)
-		So(tvb.FinalizingSegment, ShouldResembleProto, &cpb.Segment{
+		assert.Loosely(t, tvb.FinalizingSegment, should.NotBeNil)
+		assert.Loosely(t, tvb.FinalizingSegment, should.Resemble(&cpb.Segment{
 			State:                        cpb.SegmentState_FINALIZING,
 			HasStartChangepoint:          true,
 			StartPosition:                11,
@@ -645,11 +645,11 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				},
 			},
 			MostRecentUnexpectedResultHour: timestamppb.New(time.Unix((100000-StatisticsRetentionDays*24)*3600, 0)),
-		})
-		So(tvb.IsFinalizingSegmentDirty, ShouldBeTrue)
+		}))
+		assert.Loosely(t, tvb.IsFinalizingSegmentDirty, should.BeTrue)
 
-		So(len(tvb.FinalizedSegments.Segments), ShouldEqual, 1)
-		So(tvb.FinalizedSegments.Segments[0], ShouldResembleProto, &cpb.Segment{
+		assert.Loosely(t, len(tvb.FinalizedSegments.Segments), should.Equal(1))
+		assert.Loosely(t, tvb.FinalizedSegments.Segments[0], should.Resemble(&cpb.Segment{
 			State:               cpb.SegmentState_FINALIZED,
 			StartPosition:       1,
 			StartHour:           timestamppb.New(time.Unix(1*3600, 0)),
@@ -675,10 +675,10 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				FlakySourceVerdicts: 1,
 			},
 			MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(7*3600, 0)),
-		}) // evictedSegments[0].Segment
-		So(tvb.IsFinalizedSegmentsDirty, ShouldBeTrue)
+		})) // evictedSegments[0].Segment
+		assert.Loosely(t, tvb.IsFinalizedSegmentsDirty, should.BeTrue)
 
-		So(tvb.Statistics, ShouldResembleProto, &cpb.Statistics{
+		assert.Loosely(t, tvb.Statistics, should.Resemble(&cpb.Statistics{
 			HourlyBuckets: []*cpb.Statistics_HourBucket{
 				// Confirm that buckets for hours 11 and (100000 - StatisticsRetentionDays*24)
 				// are not present due to retention policies.
@@ -694,11 +694,11 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				ExpectedResults:   1,
 				UnexpectedResults: 1,
 			},
-		})
-		So(tvb.IsStatisticsDirty, ShouldBeTrue)
+		}))
+		assert.Loosely(t, tvb.IsStatisticsDirty, should.BeTrue)
 	})
 
-	Convey("Combine finalizing segment with finalizing segment", t, func() {
+	ftt.Run("Combine finalizing segment with finalizing segment", t, func(t *ftt.Test) {
 		tvb := Entry{
 			FinalizingSegment: &cpb.Segment{
 				State:                        cpb.SegmentState_FINALIZING,
@@ -773,8 +773,8 @@ func TestUpdateOutputBuffer(t *testing.T) {
 			},
 		}
 		tvb.UpdateOutputBuffer(evictedSegments)
-		So(tvb.FinalizedSegments, ShouldBeNil)
-		So(tvb.FinalizingSegment, ShouldNotBeNil)
+		assert.Loosely(t, tvb.FinalizedSegments, should.BeNil)
+		assert.Loosely(t, tvb.FinalizingSegment, should.NotBeNil)
 
 		expected := &cpb.Segment{
 			State:                        cpb.SegmentState_FINALIZING,
@@ -813,10 +813,10 @@ func TestUpdateOutputBuffer(t *testing.T) {
 			},
 			MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(10*3600, 0)),
 		}
-		So(tvb.FinalizingSegment, ShouldResembleProto, expected)
+		assert.Loosely(t, tvb.FinalizingSegment, should.Resemble(expected))
 	})
 
-	Convey("Combine finalizing segment with finalized segment", t, func() {
+	ftt.Run("Combine finalizing segment with finalized segment", t, func(t *ftt.Test) {
 		tvb := Entry{
 			FinalizingSegment: &cpb.Segment{
 				State:                        cpb.SegmentState_FINALIZING,
@@ -952,8 +952,8 @@ func TestUpdateOutputBuffer(t *testing.T) {
 			},
 			MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(10*3600, 0)),
 		}
-		So(len(tvb.FinalizedSegments.Segments), ShouldEqual, 1)
-		So(tvb.FinalizedSegments.Segments[0], ShouldResembleProto, expectedFinalizedSegment)
+		assert.Loosely(t, len(tvb.FinalizedSegments.Segments), should.Equal(1))
+		assert.Loosely(t, tvb.FinalizedSegments.Segments[0], should.Resemble(expectedFinalizedSegment))
 
 		expectedFinalizingSegment := &cpb.Segment{
 			State:                        cpb.SegmentState_FINALIZING,
@@ -981,10 +981,10 @@ func TestUpdateOutputBuffer(t *testing.T) {
 			},
 			MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(25*3600, 0)),
 		}
-		So(tvb.FinalizingSegment, ShouldResembleProto, expectedFinalizingSegment)
+		assert.Loosely(t, tvb.FinalizingSegment, should.Resemble(expectedFinalizingSegment))
 	})
 
-	Convey("Combine finalizing segment with finalized segment, with a token finalizing segment in input buffer", t, func() {
+	ftt.Run("Combine finalizing segment with finalized segment, with a token finalizing segment in input buffer", t, func(t *ftt.Test) {
 		tvb := Entry{
 			FinalizingSegment: &cpb.Segment{
 				State:                        cpb.SegmentState_FINALIZING,
@@ -1094,8 +1094,8 @@ func TestUpdateOutputBuffer(t *testing.T) {
 			},
 			MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(10*3600, 0)),
 		}
-		So(len(tvb.FinalizedSegments.Segments), ShouldEqual, 1)
-		So(tvb.FinalizedSegments.Segments[0], ShouldResembleProto, expectedFinalized)
+		assert.Loosely(t, len(tvb.FinalizedSegments.Segments), should.Equal(1))
+		assert.Loosely(t, tvb.FinalizedSegments.Segments[0], should.Resemble(expectedFinalized))
 
 		expectedFinalizing := &cpb.Segment{
 			State:                        cpb.SegmentState_FINALIZING,
@@ -1108,11 +1108,11 @@ func TestUpdateOutputBuffer(t *testing.T) {
 			FinalizedCounts:              &cpb.Counts{},
 		}
 
-		So(tvb.FinalizingSegment, ShouldNotBeNil)
-		So(tvb.FinalizingSegment, ShouldResembleProto, expectedFinalizing)
+		assert.Loosely(t, tvb.FinalizingSegment, should.NotBeNil)
+		assert.Loosely(t, tvb.FinalizingSegment, should.Resemble(expectedFinalizing))
 	})
 
-	Convey("Should panic if no finalizing segment in evicted segments", t, func() {
+	ftt.Run("Should panic if no finalizing segment in evicted segments", t, func(t *ftt.Test) {
 		tvb := Entry{
 			FinalizingSegment: &cpb.Segment{
 				State:                        cpb.SegmentState_FINALIZING,
@@ -1153,10 +1153,10 @@ func TestUpdateOutputBuffer(t *testing.T) {
 			},
 		}
 		f := func() { tvb.UpdateOutputBuffer(evictedSegments) }
-		So(f, ShouldPanic)
+		assert.Loosely(t, f, should.Panic)
 	})
 
-	Convey("Statistics should be updated following eviction", t, func() {
+	ftt.Run("Statistics should be updated following eviction", t, func(t *ftt.Test) {
 		tvb := Entry{
 			Statistics: &cpb.Statistics{
 				HourlyBuckets: []*cpb.Statistics_HourBucket{
@@ -1284,21 +1284,21 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				UnexpectedResults: 1,
 			},
 		}
-		So(tvb.Statistics, ShouldResembleProto, expected)
-		So(tvb.IsStatisticsDirty, ShouldBeTrue)
+		assert.Loosely(t, tvb.Statistics, should.Resemble(expected))
+		assert.Loosely(t, tvb.IsStatisticsDirty, should.BeTrue)
 	})
 
-	Convey("Output buffer should not be updated if there is no eviction", t, func() {
+	ftt.Run("Output buffer should not be updated if there is no eviction", t, func(t *ftt.Test) {
 		tvb := Entry{}
 		tvb.UpdateOutputBuffer([]inputbuffer.EvictedSegment{})
-		So(tvb.IsStatisticsDirty, ShouldBeFalse)
-		So(tvb.IsFinalizingSegmentDirty, ShouldBeFalse)
-		So(tvb.IsFinalizedSegmentsDirty, ShouldBeFalse)
+		assert.Loosely(t, tvb.IsStatisticsDirty, should.BeFalse)
+		assert.Loosely(t, tvb.IsFinalizingSegmentDirty, should.BeFalse)
+		assert.Loosely(t, tvb.IsFinalizedSegmentsDirty, should.BeFalse)
 	})
 }
 
 func TestOutOfOrderRuns(t *testing.T) {
-	Convey("Test out of order runs", t, func() {
+	ftt.Run("Test out of order runs", t, func(t *ftt.Test) {
 		tvb := &Entry{
 			IsNew:       true,
 			Project:     "proj_3",
@@ -1322,17 +1322,17 @@ func TestOutOfOrderRuns(t *testing.T) {
 			},
 		}
 
-		Convey("From empty", func() {
+		t.Run("From empty", func(t *ftt.Test) {
 			tvb.InputBuffer.ColdBuffer.Runs = nil
 			tvb.InputBuffer.HotBuffer.Runs = nil
 			tvb.FinalizingSegment = nil
 
-			So(tvb.InsertToInputBuffer(inputbuffer.Run{CommitPosition: 100}), ShouldBeTrue)
-			So(tvb.InsertToInputBuffer(inputbuffer.Run{CommitPosition: 1}), ShouldBeTrue)
-			So(tvb.InsertToInputBuffer(inputbuffer.Run{CommitPosition: 100}), ShouldBeTrue)
-			So(tvb.InputBuffer.HotBuffer.Runs, ShouldHaveLength, 3)
+			assert.Loosely(t, tvb.InsertToInputBuffer(inputbuffer.Run{CommitPosition: 100}), should.BeTrue)
+			assert.Loosely(t, tvb.InsertToInputBuffer(inputbuffer.Run{CommitPosition: 1}), should.BeTrue)
+			assert.Loosely(t, tvb.InsertToInputBuffer(inputbuffer.Run{CommitPosition: 100}), should.BeTrue)
+			assert.Loosely(t, tvb.InputBuffer.HotBuffer.Runs, should.HaveLength(3))
 		})
-		Convey("With finalizing segment and cold buffer setting bound", func() {
+		t.Run("With finalizing segment and cold buffer setting bound", func(t *ftt.Test) {
 			tvb.InputBuffer.ColdBuffer.Runs = []inputbuffer.Run{
 				{
 					CommitPosition: 20,
@@ -1345,13 +1345,13 @@ func TestOutOfOrderRuns(t *testing.T) {
 			tvb.FinalizingSegment = &cpb.Segment{
 				State: cpb.SegmentState_FINALIZING,
 			}
-			So(tvb.InsertToInputBuffer(inputbuffer.Run{CommitPosition: 20}), ShouldBeTrue)
-			So(tvb.InsertToInputBuffer(inputbuffer.Run{CommitPosition: 21}), ShouldBeTrue)
-			So(tvb.InsertToInputBuffer(inputbuffer.Run{CommitPosition: 19}), ShouldBeFalse)
-			So(tvb.InsertToInputBuffer(inputbuffer.Run{CommitPosition: 20}), ShouldBeTrue)
-			So(tvb.InputBuffer.HotBuffer.Runs, ShouldHaveLength, 3)
+			assert.Loosely(t, tvb.InsertToInputBuffer(inputbuffer.Run{CommitPosition: 20}), should.BeTrue)
+			assert.Loosely(t, tvb.InsertToInputBuffer(inputbuffer.Run{CommitPosition: 21}), should.BeTrue)
+			assert.Loosely(t, tvb.InsertToInputBuffer(inputbuffer.Run{CommitPosition: 19}), should.BeFalse)
+			assert.Loosely(t, tvb.InsertToInputBuffer(inputbuffer.Run{CommitPosition: 20}), should.BeTrue)
+			assert.Loosely(t, tvb.InputBuffer.HotBuffer.Runs, should.HaveLength(3))
 		})
-		Convey("With finalizing segment and hot buffer setting bound", func() {
+		t.Run("With finalizing segment and hot buffer setting bound", func(t *ftt.Test) {
 			tvb.InputBuffer.HotBuffer.Runs = []inputbuffer.Run{
 				{
 					CommitPosition: 20,
@@ -1364,11 +1364,11 @@ func TestOutOfOrderRuns(t *testing.T) {
 			tvb.FinalizingSegment = &cpb.Segment{
 				State: cpb.SegmentState_FINALIZING,
 			}
-			So(tvb.InsertToInputBuffer(inputbuffer.Run{CommitPosition: 20}), ShouldBeTrue)
-			So(tvb.InsertToInputBuffer(inputbuffer.Run{CommitPosition: 21}), ShouldBeTrue)
-			So(tvb.InsertToInputBuffer(inputbuffer.Run{CommitPosition: 19}), ShouldBeFalse)
-			So(tvb.InsertToInputBuffer(inputbuffer.Run{CommitPosition: 20}), ShouldBeTrue)
-			So(tvb.InputBuffer.HotBuffer.Runs, ShouldHaveLength, 4)
+			assert.Loosely(t, tvb.InsertToInputBuffer(inputbuffer.Run{CommitPosition: 20}), should.BeTrue)
+			assert.Loosely(t, tvb.InsertToInputBuffer(inputbuffer.Run{CommitPosition: 21}), should.BeTrue)
+			assert.Loosely(t, tvb.InsertToInputBuffer(inputbuffer.Run{CommitPosition: 19}), should.BeFalse)
+			assert.Loosely(t, tvb.InsertToInputBuffer(inputbuffer.Run{CommitPosition: 20}), should.BeTrue)
+			assert.Loosely(t, tvb.InputBuffer.HotBuffer.Runs, should.HaveLength(4))
 		})
 	})
 }

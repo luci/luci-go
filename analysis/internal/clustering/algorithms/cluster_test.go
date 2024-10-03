@@ -32,103 +32,104 @@ import (
 	"go.chromium.org/luci/analysis/internal/config/compiledcfg"
 	configpb "go.chromium.org/luci/analysis/proto/config"
 	pb "go.chromium.org/luci/analysis/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestCluster(t *testing.T) {
-	Convey(`Cluster`, t, func() {
-		Convey(`From scratch`, func() {
+	ftt.Run(`Cluster`, t, func(t *ftt.Test) {
+		t.Run(`From scratch`, func(t *ftt.Test) {
 			s := fromScratchScenario(1)
 
 			results := Cluster(s.config, s.ruleset, s.existing, s.failures)
 
-			So(results.AlgorithmsVersion, ShouldEqual, s.expected.AlgorithmsVersion)
-			So(results.RulesVersion, ShouldEqual, s.expected.RulesVersion)
-			So(results.Algorithms, ShouldResemble, s.expected.Algorithms)
-			So(diffClusters(results.Clusters, s.expected.Clusters), ShouldBeBlank)
+			assert.Loosely(t, results.AlgorithmsVersion, should.Equal(s.expected.AlgorithmsVersion))
+			assert.That(t, results.RulesVersion, should.Match(s.expected.RulesVersion))
+			assert.Loosely(t, results.Algorithms, should.Resemble(s.expected.Algorithms))
+			assert.Loosely(t, diffClusters(results.Clusters, s.expected.Clusters), should.BeZero)
 		})
-		Convey(`Incrementally`, func() {
-			Convey(`From already up-to-date clustering`, func() {
+		t.Run(`Incrementally`, func(t *ftt.Test) {
+			t.Run(`From already up-to-date clustering`, func(t *ftt.Test) {
 				s := upToDateScenario(1)
 
 				results := Cluster(s.config, s.ruleset, s.existing, s.failures)
 
-				So(results.AlgorithmsVersion, ShouldEqual, s.expected.AlgorithmsVersion)
-				So(results.RulesVersion, ShouldEqual, s.expected.RulesVersion)
-				So(results.Algorithms, ShouldResemble, s.expected.Algorithms)
-				So(diffClusters(results.Clusters, s.expected.Clusters), ShouldBeBlank)
+				assert.Loosely(t, results.AlgorithmsVersion, should.Equal(s.expected.AlgorithmsVersion))
+				assert.That(t, results.RulesVersion, should.Match(s.expected.RulesVersion))
+				assert.Loosely(t, results.Algorithms, should.Resemble(s.expected.Algorithms))
+				assert.Loosely(t, diffClusters(results.Clusters, s.expected.Clusters), should.BeZero)
 			})
 
-			Convey(`From older suggested clustering algorithm`, func() {
+			t.Run(`From older suggested clustering algorithm`, func(t *ftt.Test) {
 				s := fromOlderSuggestedClusteringScenario()
 
 				results := Cluster(s.config, s.ruleset, s.existing, s.failures)
 
-				So(results.AlgorithmsVersion, ShouldEqual, s.expected.AlgorithmsVersion)
-				So(results.RulesVersion, ShouldEqual, s.expected.RulesVersion)
-				So(results.Algorithms, ShouldResemble, s.expected.Algorithms)
-				So(diffClusters(results.Clusters, s.expected.Clusters), ShouldBeBlank)
+				assert.Loosely(t, results.AlgorithmsVersion, should.Equal(s.expected.AlgorithmsVersion))
+				assert.That(t, results.RulesVersion, should.Match(s.expected.RulesVersion))
+				assert.Loosely(t, results.Algorithms, should.Resemble(s.expected.Algorithms))
+				assert.Loosely(t, diffClusters(results.Clusters, s.expected.Clusters), should.BeZero)
 			})
-			Convey(`Incrementally from older rule-based clustering`, func() {
+			t.Run(`Incrementally from older rule-based clustering`, func(t *ftt.Test) {
 				s := fromOlderRuleAlgorithmScenario()
 
 				results := Cluster(s.config, s.ruleset, s.existing, s.failures)
 
-				So(results.AlgorithmsVersion, ShouldEqual, s.expected.AlgorithmsVersion)
-				So(results.RulesVersion, ShouldEqual, s.expected.RulesVersion)
-				So(results.Algorithms, ShouldResemble, s.expected.Algorithms)
-				So(diffClusters(results.Clusters, s.expected.Clusters), ShouldBeBlank)
+				assert.Loosely(t, results.AlgorithmsVersion, should.Equal(s.expected.AlgorithmsVersion))
+				assert.That(t, results.RulesVersion, should.Match(s.expected.RulesVersion))
+				assert.Loosely(t, results.Algorithms, should.Resemble(s.expected.Algorithms))
+				assert.Loosely(t, diffClusters(results.Clusters, s.expected.Clusters), should.BeZero)
 			})
-			Convey(`Incrementally from later clustering algorithms`, func() {
+			t.Run(`Incrementally from later clustering algorithms`, func(t *ftt.Test) {
 				s := fromLaterAlgorithmsScenario()
 
 				results := Cluster(s.config, s.ruleset, s.existing, s.failures)
 
-				So(results.AlgorithmsVersion, ShouldEqual, s.expected.AlgorithmsVersion)
-				So(results.RulesVersion, ShouldEqual, s.expected.RulesVersion)
-				So(results.Algorithms, ShouldResemble, s.expected.Algorithms)
-				So(diffClusters(results.Clusters, s.expected.Clusters), ShouldBeBlank)
+				assert.Loosely(t, results.AlgorithmsVersion, should.Equal(s.expected.AlgorithmsVersion))
+				assert.That(t, results.RulesVersion, should.Match(s.expected.RulesVersion))
+				assert.Loosely(t, results.Algorithms, should.Resemble(s.expected.Algorithms))
+				assert.Loosely(t, diffClusters(results.Clusters, s.expected.Clusters), should.BeZero)
 			})
-			Convey(`Incrementally from older rules version`, func() {
+			t.Run(`Incrementally from older rules version`, func(t *ftt.Test) {
 				s := fromOlderRulesVersionScenario(1)
 
 				results := Cluster(s.config, s.ruleset, s.existing, s.failures)
 
-				So(results.AlgorithmsVersion, ShouldEqual, s.expected.AlgorithmsVersion)
-				So(results.RulesVersion, ShouldEqual, s.expected.RulesVersion)
-				So(results.Algorithms, ShouldResemble, s.expected.Algorithms)
-				So(diffClusters(results.Clusters, s.expected.Clusters), ShouldBeBlank)
+				assert.Loosely(t, results.AlgorithmsVersion, should.Equal(s.expected.AlgorithmsVersion))
+				assert.That(t, results.RulesVersion, should.Match(s.expected.RulesVersion))
+				assert.Loosely(t, results.Algorithms, should.Resemble(s.expected.Algorithms))
+				assert.Loosely(t, diffClusters(results.Clusters, s.expected.Clusters), should.BeZero)
 			})
-			Convey(`Incrementally from newer rules version`, func() {
+			t.Run(`Incrementally from newer rules version`, func(t *ftt.Test) {
 				s := fromNewerRulesVersionScenario()
 
 				results := Cluster(s.config, s.ruleset, s.existing, s.failures)
 
-				So(results.AlgorithmsVersion, ShouldEqual, s.expected.AlgorithmsVersion)
-				So(results.RulesVersion, ShouldEqual, s.expected.RulesVersion)
-				So(results.Algorithms, ShouldResemble, s.expected.Algorithms)
-				So(diffClusters(results.Clusters, s.expected.Clusters), ShouldBeBlank)
+				assert.Loosely(t, results.AlgorithmsVersion, should.Equal(s.expected.AlgorithmsVersion))
+				assert.That(t, results.RulesVersion, should.Match(s.expected.RulesVersion))
+				assert.Loosely(t, results.Algorithms, should.Resemble(s.expected.Algorithms))
+				assert.Loosely(t, diffClusters(results.Clusters, s.expected.Clusters), should.BeZero)
 			})
-			Convey(`Incrementally from older config version`, func() {
+			t.Run(`Incrementally from older config version`, func(t *ftt.Test) {
 				s := fromOlderConfigVersionScenario()
 
 				results := Cluster(s.config, s.ruleset, s.existing, s.failures)
 
-				So(results.AlgorithmsVersion, ShouldEqual, s.expected.AlgorithmsVersion)
-				So(results.RulesVersion, ShouldEqual, s.expected.RulesVersion)
-				So(results.Algorithms, ShouldResemble, s.expected.Algorithms)
-				So(diffClusters(results.Clusters, s.expected.Clusters), ShouldBeBlank)
+				assert.Loosely(t, results.AlgorithmsVersion, should.Equal(s.expected.AlgorithmsVersion))
+				assert.That(t, results.RulesVersion, should.Match(s.expected.RulesVersion))
+				assert.Loosely(t, results.Algorithms, should.Resemble(s.expected.Algorithms))
+				assert.Loosely(t, diffClusters(results.Clusters, s.expected.Clusters), should.BeZero)
 			})
-			Convey(`Incrementally from newer config version`, func() {
+			t.Run(`Incrementally from newer config version`, func(t *ftt.Test) {
 				s := fromNewerConfigVersionScenario()
 
 				results := Cluster(s.config, s.ruleset, s.existing, s.failures)
 
-				So(results.AlgorithmsVersion, ShouldEqual, s.expected.AlgorithmsVersion)
-				So(results.RulesVersion, ShouldEqual, s.expected.RulesVersion)
-				So(results.Algorithms, ShouldResemble, s.expected.Algorithms)
-				So(diffClusters(results.Clusters, s.expected.Clusters), ShouldBeBlank)
+				assert.Loosely(t, results.AlgorithmsVersion, should.Equal(s.expected.AlgorithmsVersion))
+				assert.That(t, results.RulesVersion, should.Match(s.expected.RulesVersion))
+				assert.Loosely(t, results.Algorithms, should.Resemble(s.expected.Algorithms))
+				assert.Loosely(t, diffClusters(results.Clusters, s.expected.Clusters), should.BeZero)
 			})
 		})
 	})

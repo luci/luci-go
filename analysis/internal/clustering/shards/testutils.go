@@ -16,6 +16,7 @@ package shards
 
 import (
 	"context"
+	"testing"
 	"time"
 
 	"cloud.google.com/go/spanner"
@@ -83,8 +84,9 @@ func (b *ShardBuilder) Build() ReclusteringShard {
 }
 
 // SetShardsForTesting replaces the set of stored shards to match the given set.
-func SetShardsForTesting(ctx context.Context, rs []ReclusteringShard) error {
-	testutil.MustApply(ctx,
+func SetShardsForTesting(ctx context.Context, t testing.TB, rs []ReclusteringShard) error {
+	t.Helper()
+	testutil.MustApply(ctx, t,
 		spanner.Delete("ReclusteringShards", spanner.AllKeys()))
 	// Insert some ReclusteringShards.
 	_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
