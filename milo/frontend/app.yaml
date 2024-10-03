@@ -60,43 +60,6 @@ handlers:
   secure: always
   static_dir: static
 
-# Host root_sw.js at root so it can have root scope.
-- url: /(root_sw\.js(\.map)?)$
-  secure: always
-  static_files: ui/dist/\1
-  upload: ui/dist/(root_sw\.js(\.map)?)$
-
-# Immutable SPA static resources.
-- url: /ui/immutable
-  secure: always
-  static_dir: ui/dist/ui/immutable
-  # All files have content hash in their filenames.
-  # So they can be cached longer.
-  expiration: 7d
-
-# Some other SPA static resources.
-- url: /(ui/(ui_sw\.js(\.map)?|manifest\.webmanifest))$
-  secure: always
-  static_files: ui/dist/\1
-  upload: ui/dist/(ui/(ui_sw\.js(\.map)?|manifest\.webmanifest))$
-  # These resources are cached by the service worker. Don't serve the old
-  # content when the service worker tries to fetch a new version.
-  expiration: 0s
-
-# SPA frontend routes.
-#
-# Note that we do not handle `/ui` here. The UI service worker works on `/ui/.*`
-# routes but not on the `/ui` route. Therefore the `/ui` route cannot enjoy the
-# performance benefit delivered by the UI service worker. `/ui` requests should
-# be redirected to `/ui/` by the root service worker or the golang server.
-- url: /ui/.*
-  secure: always
-  static_files: ui/dist/ui/index.html
-  upload: ui/dist/ui/index.html
-  # These resources are cached by the service worker. Don't serve the old
-  # content when the service worker tries to fetch a new version.
-  expiration: 0s
-
 # The rest is handled by Go code.
 - url: /.*
   script: auto
