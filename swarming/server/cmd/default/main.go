@@ -218,13 +218,13 @@ func main() {
 		// bugs in the WIP code.
 		srv.RegisterUnifiedServerInterceptors(rpcacl.Interceptor(rpcacl.Map{
 			// Protect WIP or unimplemented Swarming APIs.
-			"/swarming.v2.Bots/DeleteBot":         devAPIAccessGroup,
 			"/swarming.v2.Bots/TerminateBot":      devAPIAccessGroup,
 			"/swarming.v2.Tasks/NewTask":          devAPIAccessGroup,
 			"/buildbucket.v2.TaskBackend/RunTask": devAPIAccessGroup,
 
 			// Fully implemented APIs allowed to receive external traffic.
 			"/swarming.v2.Bots/CountBots":                 rpcacl.All,
+			"/swarming.v2.Bots/DeleteBot":                 rpcacl.All,
 			"/swarming.v2.Bots/GetBot":                    rpcacl.All,
 			"/swarming.v2.Bots/GetBotDimensions":          rpcacl.All,
 			"/swarming.v2.Bots/ListBotEvents":             rpcacl.All,
