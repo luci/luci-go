@@ -75,7 +75,7 @@ func (s *HTTPService) configsJSHandler(c *router.Context) error {
 		"SettingsJSON": protojson.Format(settings),
 	})
 	if err != nil {
-		logging.Errorf(c.Request.Context(), "Failed to execute configs.template.js: %s", err)
+		logging.Errorf(c.Request.Context(), "Failed to execute configs.js template: %s", err)
 		return err
 	}
 
