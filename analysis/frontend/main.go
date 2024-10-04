@@ -86,10 +86,6 @@ func pageBase(srv *server.Server) router.MiddlewareChain {
 // Entrypoint for the default service.
 func main() {
 	analysisserver.Main(func(srv *server.Server) error {
-		if err := analysisserver.RegisterPRPCHandlers(srv); err != nil {
-			return errors.Annotate(err, "register pRPC handlers").Err()
-		}
-
 		// Only the frontend service serves frontend UI. This is because
 		// the frontend relies upon other assets (javascript, files) and
 		// it is annoying to deploy them with every backend service.
