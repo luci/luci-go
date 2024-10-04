@@ -46,6 +46,7 @@ deps=(
   github.com/danjacques/gofslock@latest
   github.com/dustin/go-humanize@latest
   github.com/envoyproxy/protoc-gen-validate@latest
+  github.com/go-git/go-git/v5@latest
   github.com/golang/protobuf@latest
   github.com/gomodule/redigo@latest
   github.com/google/go-cmp@latest
@@ -68,7 +69,6 @@ deps=(
   github.com/pmezard/go-difflib@latest
   github.com/protocolbuffers/txtpbfmt@latest
   github.com/russross/blackfriday/v2@latest
-  github.com/sergi/go-diff@latest
   github.com/smarty/assertions@latest
   github.com/smartystreets/goconvey@latest
   github.com/yosuke-furukawa/json5@latest
