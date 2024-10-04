@@ -16,41 +16,15 @@ package spanner
 
 import (
 	"context"
-	"os"
-	"path/filepath"
 	"testing"
 
 	"cloud.google.com/go/spanner"
 
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/spantest"
 )
 
 func TestMain(m *testing.M) {
-	spantest.SpannerTestMain(m, findInitScript)
-}
-
-// findInitScript returns path //tq/txn/spanner/init_db.sql.
-func findInitScript() (string, error) {
-	ancestor, err := filepath.Abs(".")
-	if err != nil {
-		return "", err
-	}
-
-	for {
-		scriptPath := filepath.Join(ancestor, "init_db.sql")
-		_, err := os.Stat(scriptPath)
-		if os.IsNotExist(err) {
-			parent := filepath.Dir(ancestor)
-			if parent == ancestor {
-				return "", errors.Reason("init_db.sql not found").Err()
-			}
-			ancestor = parent
-			continue
-		}
-
-		return scriptPath, err
-	}
+	spantest.SpannerTestMain(m, "init_db.sql")
 }
 
 // cleanupDatabase deletes all data from all tables.

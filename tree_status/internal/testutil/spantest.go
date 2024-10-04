@@ -17,14 +17,11 @@ package testutil
 
 import (
 	"context"
-	"os"
-	"path/filepath"
 	"testing"
 	"time"
 
 	"cloud.google.com/go/spanner"
 
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/spantest"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/server/span"
@@ -62,29 +59,6 @@ func SpannerTestContext(tb testing.TB) context.Context {
 	return spantest.SpannerTestContext(tb, cleanupDatabase)
 }
 
-// findInitScript returns path //analysis/internal/span/init_db.sql.
-func findInitScript() (string, error) {
-	ancestor, err := filepath.Abs(".")
-	if err != nil {
-		return "", err
-	}
-
-	for {
-		scriptPath := filepath.Join(ancestor, "internal", "span", "init_db.sql")
-		_, err := os.Stat(scriptPath)
-		if os.IsNotExist(err) {
-			parent := filepath.Dir(ancestor)
-			if parent == ancestor {
-				return "", errors.Reason("init_db.sql not found").Err()
-			}
-			ancestor = parent
-			continue
-		}
-
-		return scriptPath, err
-	}
-}
-
 // SpannerTestMain is a test main function for packages that have tests that
 // talk to spanner. It creates/destroys a temporary spanner database
 // before/after running tests.
@@ -92,7 +66,7 @@ func findInitScript() (string, error) {
 // This function never returns. Instead it calls os.Exit with the value returned
 // by m.Run().
 func SpannerTestMain(m *testing.M) {
-	spantest.SpannerTestMain(m, findInitScript)
+	spantest.SpannerTestMain(m, "internal/span/init_db.sql")
 }
 
 // MustApply applies the mutations to the spanner client in the context.

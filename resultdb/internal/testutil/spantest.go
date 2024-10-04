@@ -25,9 +25,12 @@ import (
 	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
 
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/spantest"
+	"go.chromium.org/luci/common/spantest/emulator"
+	"go.chromium.org/luci/hardcoded/chromeinfra"
 	"go.chromium.org/luci/server/redisconn"
 	"go.chromium.org/luci/server/span"
 
@@ -136,80 +139,72 @@ func findInitScript() (string, error) {
 // This function never returns. Instead it calls os.Exit with the value returned
 // by m.Run().
 func SpannerTestMain(m *testing.M) {
+	testing.Init()
 	exitCode, err := spannerTestMain(m)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+		exitCode = 1
 	}
-
 	os.Exit(exitCode)
 }
 
 func spannerTestMain(m *testing.M) (exitCode int, err error) {
-	testing.Init()
+	if !runIntegrationTests() {
+		return m.Run(), nil
+	}
 
-	if runIntegrationTests() {
-		ctx := context.Background()
-		start := clock.Now(ctx)
-		var instanceName string
-		var emulator *spantest.Emulator
+	ctx := gologger.StdConfig.Use(context.Background())
 
-		if runIntegrationTestsWithEmulator() {
-			var err error
-			// Start Cloud Spanner Emulator.
-			if emulator, err = spantest.StartEmulator(ctx); err != nil {
-				return 0, err
-			}
-			defer func() {
-				switch stopErr := emulator.Stop(); {
-				case stopErr == nil:
+	var emu *emulator.Emulator
+	var dbCfg spantest.TempDBConfig
 
-				case err == nil:
-					err = stopErr
+	if runIntegrationTestsWithEmulator() {
+		logging.Infof(ctx, "Launching Cloud Spanner emulator")
 
-				default:
-					fmt.Fprintf(os.Stderr, "failed to stop the emulator: %s\n", stopErr)
-				}
-			}()
-
-			// Create a Spanner instance.
-			if instanceName, err = emulator.NewInstance(ctx, ""); err != nil {
-				return 0, err
-			}
-			fmt.Printf("started cloud emulatorlator in and created a temporary Spanner instance %s in %s\n", instanceName, time.Since(start))
-			start = clock.Now(ctx)
+		if emu, err = emulator.Start(ctx); err != nil {
+			return 0, err
 		}
+		defer emu.Stop()
 
-		// Find init_db.sql
-		initScriptPath, err := findInitScript()
+		dbCfg.EmulatedInstance, err = spantest.NewEmulatedInstance(ctx, emu)
 		if err != nil {
 			return 0, err
 		}
+		logging.Infof(ctx, "Started Cloud Spanner emulator and created temporary instance %s", dbCfg.EmulatedInstance.Name)
+	} else {
+		// Use a **real** testing instance.
+		dbCfg.CloudInstance = chromeinfra.TestSpannerInstance
+	}
 
-		// Create a Spanner database.
-		db, err := spantest.NewTempDB(ctx, spantest.TempDBConfig{InitScriptPath: initScriptPath, InstanceName: instanceName}, emulator)
-		if err != nil {
-			return 0, errors.Annotate(err, "failed to create a temporary Spanner database").Err()
-		}
-		fmt.Printf("created a temporary Spanner database %s in %s\n", db.Name, time.Since(start))
+	// Find init_db.sql
+	if dbCfg.InitScriptPath, err = findInitScript(); err != nil {
+		return 0, err
+	}
 
+	// Create a Spanner database.
+	db, err := spantest.NewTempDB(ctx, dbCfg)
+	if err != nil {
+		return 0, errors.Annotate(err, "failed to create a temporary Spanner database").Err()
+	}
+	logging.Infof(ctx, "Created a temporary spanner database %s", db.Name)
+
+	// Don't bother dropping when in the emulator. It wipes its state.
+	if dbCfg.EmulatedInstance != nil {
 		defer func() {
 			switch dropErr := db.Drop(ctx); {
 			case dropErr == nil:
-
 			case err == nil:
 				err = dropErr
-
 			default:
-				fmt.Fprintf(os.Stderr, "failed to drop the database: %s\n", dropErr)
+				logging.Errorf(ctx, "Failed to drop the database: %s", dropErr)
 			}
 		}()
+	}
 
-		// Create a global Spanner client.
-		spannerClient, err = db.Client(ctx)
-		if err != nil {
-			return 0, err
-		}
+	// Create a global Spanner client.
+	spannerClient, err = db.Client(ctx)
+	if err != nil {
+		return 0, err
 	}
 
 	return m.Run(), nil
