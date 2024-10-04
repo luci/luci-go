@@ -278,22 +278,6 @@ export class TestLoader {
   private readonly stepsWithUnexpectedResults = new Set<string>();
 
   /**
-   * Returns true if the step has unexpected, non-exonerated test results.
-   * Returns false otherwise.
-   *
-   * This function may return false negatives when tests are not all loaded. But
-   * because builds typically take longer to load than tests, it's unlikely for
-   * the users to click on a step entry before all unexpected test results are
-   * loaded.
-   *
-   * TODO(weiweilin): delete this once we no longer needs it to record GA
-   * events.
-   */
-  hasAssociatedUnexpectedResults(stepName: string) {
-    return this.stepsWithUnexpectedResults.has(stepName);
-  }
-
-  /**
    * Adds the associated steps of the test variant to stepsWithFailedResults.
    */
   private recordStep(v: TestVariant) {
