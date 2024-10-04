@@ -61,11 +61,18 @@ import (
 	"bufio"
 	"context"
 	"io"
-	"net"
 	"os"
 	"os/exec"
 	"runtime"
 	"time"
+
+	spanins "cloud.google.com/go/spanner/admin/instance/apiv1"
+	inspb "cloud.google.com/go/spanner/admin/instance/apiv1/instancepb"
+	"google.golang.org/api/option"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -146,7 +153,7 @@ func Start(ctx context.Context) (emu *Emulator, err error) {
 	// returns as soon as the container is up, but the Cloud Spanner emulator
 	// inside of it might still be initializing itself. It should be extremely
 	// quick for "gcloud" code path (and won't hurt as a double check).
-	if err = waitTCPPort(ctx, emu.grpcAddr); err != nil {
+	if err = waitAvailable(ctx, emu.grpcAddr, emu.ClientOptions()); err != nil {
 		err = errors.Annotate(err, "Cloud Spanner emulator readiness check failed").Err()
 		return
 	}
@@ -158,6 +165,16 @@ func Start(ctx context.Context) (emu *Emulator, err error) {
 // GrpcAddr is the "127.0.0.1:<port>" address with the Cloud Spanner gRPC port.
 func (e *Emulator) GrpcAddr() string {
 	return e.grpcAddr
+}
+
+// ClientOptions returns a bundle of options to pass to the Cloud Spanner client
+// to tell it to connect to the emulator.
+func (e *Emulator) ClientOptions() []option.ClientOption {
+	return []option.ClientOption{
+		option.WithEndpoint(e.grpcAddr),
+		option.WithGRPCDialOption(grpc.WithTransportCredentials(insecure.NewCredentials())),
+		option.WithoutAuthentication(),
+	}
 }
 
 // Stop terminates the emulator process, wiping its state.
@@ -174,32 +191,42 @@ func (e *Emulator) Stop() {
 	<-e.logDone
 }
 
-// waitTCPPort tries to open a TCP connection, retrying a bunch of times.
-func waitTCPPort(ctx context.Context, addr string) error {
-	probeTCP := func() bool {
+// waitAvailable probes emulator's gRPC server, retrying a bunch of times.
+func waitAvailable(ctx context.Context, addr string, opts []option.ClientOption) error {
+	probeOnce := func() bool {
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
-		conn, err := (&net.Dialer{}).DialContext(ctx, "tcp", addr)
+
+		client, err := spanins.NewInstanceAdminClient(ctx, opts...)
 		if err != nil {
 			return false
 		}
-		_ = conn.Close()
-		return true
+		defer func() { _ = client.Close() }()
+
+		_, err = client.GetInstance(ctx, &inspb.GetInstanceRequest{
+			Name: "projects/ignored/instances/ignored",
+		})
+		switch status.Code(err) {
+		case codes.OK, codes.NotFound:
+			return true
+		default:
+			return false
+		}
 	}
 
-	const maxAttempts = 70
+	const maxAttempts = 20
 
 	attempt := 0
 	for ctx.Err() == nil {
 		attempt++
-		if probeTCP() {
+		if probeOnce() {
 			return nil
 		}
 		if ctx.Err() != nil {
 			return ctx.Err()
 		}
 		if attempt == maxAttempts {
-			return errors.Reason("can't connect to TCP endpoint %q after many attempts", addr).Err()
+			return errors.Reason("can't connect to the emulator at %q after many attempts", addr).Err()
 		}
 		clock.Sleep(ctx, 10*time.Millisecond*time.Duration(attempt))
 	}
