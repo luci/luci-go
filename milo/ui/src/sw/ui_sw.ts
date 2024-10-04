@@ -68,7 +68,7 @@ self.addEventListener('fetch', async (e) => {
       `self.VERSION = '${VERSION}';\n` +
         `self.SETTINGS = Object.freeze(${JSON.stringify(SETTINGS)});\n`,
     );
-    res.headers.set('content-type', 'application/javascript');
+    res.headers.set('content-type', 'text/javascript');
     e.respondWith(res);
     return;
   }
