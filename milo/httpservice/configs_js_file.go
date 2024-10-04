@@ -65,7 +65,7 @@ func (s *HTTPService) configsJSHandler(c *router.Context) error {
 	}
 
 	header := c.Writer.Header()
-	header.Set("content-type", "application/javascript")
+	header.Set("content-type", "text/javascript")
 
 	// We don't need to cache the configs file because it is fetched and re-served
 	// by the service worker.
