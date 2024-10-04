@@ -13,7 +13,14 @@
 // limitations under the License.
 
 import { HelpOutline } from '@mui/icons-material';
-import { Alert, Box, Button, InputAdornment, styled } from '@mui/material';
+import {
+  Alert,
+  Box,
+  Button,
+  InputAdornment,
+  styled,
+  Link,
+} from '@mui/material';
 import { isEqual } from 'lodash-es';
 import { DateTime } from 'luxon';
 import { useState, useRef } from 'react';
@@ -180,9 +187,13 @@ export function LogSearch() {
                       <br />
                       <strong>Regex</strong> - Regular expresssion support using
                       the{' '}
-                      <a href=" https://github.com/google/re2/wiki/Syntax">
+                      <Link
+                        href="https://github.com/google/re2/wiki/Syntax"
+                        target="_blank"
+                        rel="noreferrer"
+                      >
                         re2
-                      </a>{' '}
+                      </Link>{' '}
                       library with the following limitations.
                       <Box sx={{ marginLeft: '1em' }}>
                         <li>
@@ -194,6 +205,16 @@ export function LogSearch() {
                           Flags are not supported. All flags are set to default.
                         </li>
                       </Box>
+                      <br />
+                      See more details about this page in{' '}
+                      <Link
+                        href="http://go/luci-guide-log-search"
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        go/luci-guide-log-search
+                      </Link>
+                      .
                     </>
                   }
                 >
@@ -226,6 +247,27 @@ export function LogSearch() {
                 testIDStr: str,
               }));
             }}
+            endAdornment={
+              <InputAdornment position="end">
+                <HtmlTooltip
+                  title={
+                    <>
+                      What is a Test ID? see{' '}
+                      <Link
+                        href="http://go/luci-guide-log-search#step3-find-the-test-id-log-file-of-the-failure"
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        go/luci-guide-log-search
+                      </Link>
+                      .
+                    </>
+                  }
+                >
+                  <HelpOutline fontSize="small" />
+                </HtmlTooltip>
+              </InputAdornment>
+            }
           />
           <SelectTextField
             sx={{ flex: 2 }}
@@ -249,6 +291,27 @@ export function LogSearch() {
                 artifactIDStr: str,
               }));
             }}
+            endAdornment={
+              <InputAdornment position="end">
+                <HtmlTooltip
+                  title={
+                    <>
+                      What is a log file? see{' '}
+                      <Link
+                        href="http://go/luci-guide-log-search#step3-find-the-test-id-log-file-of-the-failure"
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        go/luci-guide-log-search
+                      </Link>
+                      .
+                    </>
+                  }
+                >
+                  <HelpOutline fontSize="small" />
+                </HtmlTooltip>
+              </InputAdornment>
+            }
           />
         </FormRowDiv>
         <Button
