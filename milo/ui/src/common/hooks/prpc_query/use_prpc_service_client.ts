@@ -221,6 +221,9 @@ export function usePrpcServiceClient<
 
   const client = useSingleton({
     key: [
+      // Include package name in the key to avoid collision just in case we ends
+      // up using the same key format in other places.
+      '@/common/hooks/prpc_query',
       getObjectId(ClientImpl),
       host,
       insecure,
