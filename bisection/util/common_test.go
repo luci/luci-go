@@ -15,26 +15,27 @@
 package util
 
 import (
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"testing"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestValidation(t *testing.T) {
-	Convey("Validate Project", t, func() {
-		So(ValidateProject(""), ShouldNotBeNil)
+	ftt.Run("Validate Project", t, func(t *ftt.Test) {
+		assert.Loosely(t, ValidateProject(""), should.NotBeNil)
 		// Too long.
-		So(ValidateProject("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), ShouldNotBeNil)
-		So(ValidateProject("chromium"), ShouldBeNil)
+		assert.Loosely(t, ValidateProject("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), should.NotBeNil)
+		assert.Loosely(t, ValidateProject("chromium"), should.BeNil)
 	})
 
-	Convey("Validate Variant Hash", t, func() {
-		So(ValidateVariantHash("11gg"), ShouldNotBeNil)
-		So(ValidateVariantHash("0123456789abcdef"), ShouldBeNil)
+	ftt.Run("Validate Variant Hash", t, func(t *ftt.Test) {
+		assert.Loosely(t, ValidateVariantHash("11gg"), should.NotBeNil)
+		assert.Loosely(t, ValidateVariantHash("0123456789abcdef"), should.BeNil)
 	})
 
-	Convey("Validate Ref Hash", t, func() {
-		So(ValidateRefHash("11gg"), ShouldNotBeNil)
-		So(ValidateRefHash("0123456789abcdef"), ShouldBeNil)
+	ftt.Run("Validate Ref Hash", t, func(t *ftt.Test) {
+		assert.Loosely(t, ValidateRefHash("11gg"), should.NotBeNil)
+		assert.Loosely(t, ValidateRefHash("0123456789abcdef"), should.BeNil)
 	})
 }

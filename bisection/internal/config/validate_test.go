@@ -18,10 +18,10 @@ import (
 	"context"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
-
 	configpb "go.chromium.org/luci/bisection/proto/config"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config/validation"
 )
 
@@ -34,20 +34,20 @@ func TestValidateProjectConfig(t *testing.T) {
 		return ctx.Finalize()
 	}
 
-	Convey("missing test analysis config", t, func() {
+	ftt.Run("missing test analysis config", t, func(t *ftt.Test) {
 		cfg := &configpb.ProjectConfig{CompileAnalysisConfig: &configpb.CompileAnalysisConfig{
 			GerritConfig: createPlaceHolderGerritConfig(),
 			BuildConfig:  createPlaceHolderCompileBuildConfig(),
 		}}
-		So(validate(cfg), ShouldErrLike, "missing test analysis config")
+		assert.Loosely(t, validate(cfg), should.ErrLike("missing test analysis config"))
 	})
 
-	Convey("missing compile analysis config", t, func() {
+	ftt.Run("missing compile analysis config", t, func(t *ftt.Test) {
 		cfg := &configpb.ProjectConfig{TestAnalysisConfig: &configpb.TestAnalysisConfig{
 			GerritConfig: createPlaceHolderGerritConfig(),
 			BuildConfig:  createPlaceHolderTestBuildConfig(),
 		}}
-		So(validate(cfg), ShouldErrLike, "missing compile analysis config")
+		assert.Loosely(t, validate(cfg), should.ErrLike("missing compile analysis config"))
 	})
 }
 
@@ -60,39 +60,39 @@ func TestValidateBuildConfig(t *testing.T) {
 		return ctx.Finalize()
 	}
 
-	Convey("build config is nil", t, func() {
-		So(validate(nil), ShouldErrLike, "missing build config")
+	ftt.Run("build config is nil", t, func(t *ftt.Test) {
+		assert.Loosely(t, validate(nil), should.ErrLike("missing build config"))
 	})
 
-	Convey("missing builder config", t, func() {
+	ftt.Run("missing builder config", t, func(t *ftt.Test) {
 		cfg := &configpb.BuildConfig{}
-		So(validate(cfg), ShouldErrLike, "missing builder config")
+		assert.Loosely(t, validate(cfg), should.ErrLike("missing builder config"))
 	})
 
-	Convey("missing project", t, func() {
+	ftt.Run("missing project", t, func(t *ftt.Test) {
 		cfg := &configpb.BuildConfig{
 			Builder: &configpb.Builder{},
 		}
-		So(validate(cfg), ShouldErrLike, "missing project")
+		assert.Loosely(t, validate(cfg), should.ErrLike("missing project"))
 	})
 
-	Convey("missing bucket", t, func() {
+	ftt.Run("missing bucket", t, func(t *ftt.Test) {
 		cfg := &configpb.BuildConfig{
 			Builder: &configpb.Builder{
 				Project: "chromium",
 			},
 		}
-		So(validate(cfg), ShouldErrLike, "missing bucket")
+		assert.Loosely(t, validate(cfg), should.ErrLike("missing bucket"))
 	})
 
-	Convey("missing builder", t, func() {
+	ftt.Run("missing builder", t, func(t *ftt.Test) {
 		cfg := &configpb.BuildConfig{
 			Builder: &configpb.Builder{
 				Project: "chromium",
 				Bucket:  "findit",
 			},
 		}
-		So(validate(cfg), ShouldErrLike, "missing builder")
+		assert.Loosely(t, validate(cfg), should.ErrLike("missing builder"))
 	})
 }
 
@@ -105,50 +105,50 @@ func TestValidateGerritConfig(t *testing.T) {
 		return ctx.Finalize()
 	}
 
-	Convey("Gerrit config structure", t, func() {
-		Convey("must not be empty", func() {
+	ftt.Run("Gerrit config structure", t, func(t *ftt.Test) {
+		t.Run("must not be empty", func(t *ftt.Test) {
 			cfg := &configpb.GerritConfig{}
-			So(validate(cfg), ShouldErrLike, "missing config for")
+			assert.Loosely(t, validate(cfg), should.ErrLike("missing config for"))
 		})
 
-		Convey("missing create revert settings is invalid", func() {
+		t.Run("missing create revert settings is invalid", func(t *ftt.Test) {
 			cfg := &configpb.GerritConfig{
 				MaxRevertibleCulpritAge: 21600,
 				SubmitRevertSettings:    &configpb.GerritConfig_RevertActionSettings{},
 			}
-			So(validate(cfg), ShouldErrLike, "missing config for creating reverts")
+			assert.Loosely(t, validate(cfg), should.ErrLike("missing config for creating reverts"))
 		})
 
-		Convey("missing submit revert settings is invalid", func() {
+		t.Run("missing submit revert settings is invalid", func(t *ftt.Test) {
 			cfg := &configpb.GerritConfig{
 				MaxRevertibleCulpritAge: 21600,
 				CreateRevertSettings:    &configpb.GerritConfig_RevertActionSettings{},
 			}
-			So(validate(cfg), ShouldErrLike, "missing config for submitting reverts")
+			assert.Loosely(t, validate(cfg), should.ErrLike("missing config for submitting reverts"))
 		})
 	})
 
-	Convey("Gerrit config values", t, func() {
+	ftt.Run("Gerrit config values", t, func(t *ftt.Test) {
 		cfg := &configpb.GerritConfig{
 			MaxRevertibleCulpritAge: 21600,
 			CreateRevertSettings:    &configpb.GerritConfig_RevertActionSettings{},
 			SubmitRevertSettings:    &configpb.GerritConfig_RevertActionSettings{},
 		}
 
-		Convey("max revertible culprit age", func() {
-			Convey("cannot be 0", func() {
+		t.Run("max revertible culprit age", func(t *ftt.Test) {
+			t.Run("cannot be 0", func(t *ftt.Test) {
 				cfg.MaxRevertibleCulpritAge = 0
-				So(validate(cfg), ShouldErrLike, "invalid - must be positive number of seconds")
+				assert.Loosely(t, validate(cfg), should.ErrLike("invalid - must be positive number of seconds"))
 			})
 
-			Convey("cannot be negative", func() {
+			t.Run("cannot be negative", func(t *ftt.Test) {
 				cfg.MaxRevertibleCulpritAge = -21600
-				So(validate(cfg), ShouldErrLike, "invalid - must be positive number of seconds")
+				assert.Loosely(t, validate(cfg), should.ErrLike("invalid - must be positive number of seconds"))
 			})
 
-			Convey("can be positive", func() {
+			t.Run("can be positive", func(t *ftt.Test) {
 				cfg.MaxRevertibleCulpritAge = 21600
-				So(validate(cfg), ShouldBeNil)
+				assert.Loosely(t, validate(cfg), should.BeNil)
 			})
 		})
 	})

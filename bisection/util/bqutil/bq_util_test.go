@@ -22,6 +22,9 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -29,9 +32,6 @@ import (
 	bqpb "go.chromium.org/luci/bisection/proto/bq"
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/util/testutil"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestConvertTestFailureAnalysisToBqRow(t *testing.T) {
@@ -39,8 +39,8 @@ func TestConvertTestFailureAnalysisToBqRow(t *testing.T) {
 	ctx := memory.Use(context.Background())
 	testutil.UpdateIndices(ctx)
 
-	Convey("TestFailureAnalysisToBqRow", t, func() {
-		tfa := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
+	ftt.Run("TestFailureAnalysisToBqRow", t, func(t *ftt.Test) {
+		tfa := testutil.CreateTestFailureAnalysis(ctx, t, &testutil.TestFailureAnalysisCreationOption{
 			ID:              int64(100),
 			Project:         "chromium",
 			Bucket:          "ci",
@@ -56,7 +56,7 @@ func TestConvertTestFailureAnalysisToBqRow(t *testing.T) {
 			RunStatus:       pb.AnalysisRunStatus_ENDED,
 		})
 		// non-primary test failure.
-		testutil.CreateTestFailure(ctx, &testutil.TestFailureCreationOption{
+		testutil.CreateTestFailure(ctx, t, &testutil.TestFailureCreationOption{
 			ID:        int64(99),
 			Analysis:  tfa,
 			TestID:    "testID2",
@@ -82,7 +82,7 @@ func TestConvertTestFailureAnalysisToBqRow(t *testing.T) {
 			EndFailureRate:   1.0,
 			IsDiverged:       true,
 		})
-		primaryTf := testutil.CreateTestFailure(ctx, &testutil.TestFailureCreationOption{
+		primaryTf := testutil.CreateTestFailure(ctx, t, &testutil.TestFailureCreationOption{
 			ID:        int64(100),
 			Analysis:  tfa,
 			IsPrimary: true,
@@ -108,7 +108,7 @@ func TestConvertTestFailureAnalysisToBqRow(t *testing.T) {
 			StartFailureRate: 0,
 			EndFailureRate:   1.0,
 		})
-		nsa := testutil.CreateTestNthSectionAnalysis(ctx, &testutil.TestNthSectionAnalysisCreationOption{
+		nsa := testutil.CreateTestNthSectionAnalysis(ctx, t, &testutil.TestNthSectionAnalysisCreationOption{
 			ID:                200,
 			ParentAnalysisKey: datastore.KeyForObj(ctx, tfa),
 			BlameList:         testutil.CreateBlamelist(4),
@@ -117,7 +117,7 @@ func TestConvertTestFailureAnalysisToBqRow(t *testing.T) {
 			StartTime:         time.Unix(int64(100), 0).UTC(),
 			EndTime:           time.Unix(int64(109), 0).UTC(),
 		})
-		culprit := testutil.CreateSuspect(ctx, &testutil.SuspectCreationOption{
+		culprit := testutil.CreateSuspect(ctx, t, &testutil.SuspectCreationOption{
 			ID:                 500,
 			ParentKey:          datastore.KeyForObj(ctx, nsa),
 			CommitID:           "culprit_commit_id",
@@ -134,7 +134,7 @@ func TestConvertTestFailureAnalysisToBqRow(t *testing.T) {
 		})
 
 		// Suspect verification rerun.
-		testutil.CreateTestSingleRerun(ctx, &testutil.TestSingleRerunCreationOption{
+		testutil.CreateTestSingleRerun(ctx, t, &testutil.TestSingleRerunCreationOption{
 			ID:          3000,
 			AnalysisKey: datastore.KeyForObj(ctx, tfa),
 			CulpritKey:  datastore.KeyForObj(ctx, culprit),
@@ -163,7 +163,7 @@ func TestConvertTestFailureAnalysisToBqRow(t *testing.T) {
 		})
 
 		// Parent verification rerun.
-		testutil.CreateTestSingleRerun(ctx, &testutil.TestSingleRerunCreationOption{
+		testutil.CreateTestSingleRerun(ctx, t, &testutil.TestSingleRerunCreationOption{
 			ID:          3001,
 			AnalysisKey: datastore.KeyForObj(ctx, tfa),
 			CulpritKey:  datastore.KeyForObj(ctx, culprit),
@@ -192,7 +192,7 @@ func TestConvertTestFailureAnalysisToBqRow(t *testing.T) {
 		})
 
 		// Nthsection rerun1.
-		testutil.CreateTestSingleRerun(ctx, &testutil.TestSingleRerunCreationOption{
+		testutil.CreateTestSingleRerun(ctx, t, &testutil.TestSingleRerunCreationOption{
 			ID:                    2998,
 			AnalysisKey:           datastore.KeyForObj(ctx, tfa),
 			NthSectionAnalysisKey: datastore.KeyForObj(ctx, nsa),
@@ -221,7 +221,7 @@ func TestConvertTestFailureAnalysisToBqRow(t *testing.T) {
 		})
 
 		// Nthsection rerun2.
-		testutil.CreateTestSingleRerun(ctx, &testutil.TestSingleRerunCreationOption{
+		testutil.CreateTestSingleRerun(ctx, t, &testutil.TestSingleRerunCreationOption{
 			ID:                    2999,
 			AnalysisKey:           datastore.KeyForObj(ctx, tfa),
 			NthSectionAnalysisKey: datastore.KeyForObj(ctx, nsa),
@@ -250,13 +250,13 @@ func TestConvertTestFailureAnalysisToBqRow(t *testing.T) {
 		})
 
 		tfa.VerifiedCulpritKey = datastore.KeyForObj(ctx, culprit)
-		So(datastore.Put(ctx, tfa), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, tfa), should.BeNil)
 		nsa.CulpritKey = datastore.KeyForObj(ctx, culprit)
-		So(datastore.Put(ctx, nsa), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, nsa), should.BeNil)
 		datastore.GetTestable(ctx).CatchupIndexes()
 
 		tfaProto, err := TestFailureAnalysisToBqRow(ctx, tfa)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		pbSuspectRerun := &pb.TestSingleRerun{
 			Bbid:       3000,
@@ -381,7 +381,7 @@ func TestConvertTestFailureAnalysisToBqRow(t *testing.T) {
 			},
 		}
 
-		So(tfaProto, ShouldResembleProto, &bqpb.TestAnalysisRow{
+		assert.Loosely(t, tfaProto, should.Resemble(&bqpb.TestAnalysisRow{
 			Project:    "chromium",
 			AnalysisId: 100,
 			Builder: &buildbucketpb.BuilderID{
@@ -451,6 +451,6 @@ func TestConvertTestFailureAnalysisToBqRow(t *testing.T) {
 				},
 			},
 			Culprit: culpritPb,
-		})
+		}))
 	})
 }

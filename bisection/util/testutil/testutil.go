@@ -18,14 +18,17 @@ package testutil
 import (
 	"context"
 	"fmt"
+	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 )
 
@@ -43,7 +46,8 @@ func CreateBlamelist(nCommits int) *pb.BlameList {
 	return blamelist
 }
 
-func CreateLUCIFailedBuild(c context.Context, id int64, project string) *model.LuciFailedBuild {
+func CreateLUCIFailedBuild(c context.Context, t testing.TB, id int64, project string) *model.LuciFailedBuild {
+	t.Helper()
 	fb := &model.LuciFailedBuild{
 		Id: id,
 		LuciBuild: model.LuciBuild{
@@ -51,73 +55,80 @@ func CreateLUCIFailedBuild(c context.Context, id int64, project string) *model.L
 		},
 		SheriffRotations: []string{"chromium"},
 	}
-	So(datastore.Put(c, fb), ShouldBeNil)
+	assert.Loosely(t, datastore.Put(c, fb), should.BeNil, truth.LineContext())
 	datastore.GetTestable(c).CatchupIndexes()
 	return fb
 }
 
-func CreateCompileFailure(c context.Context, fb *model.LuciFailedBuild) *model.CompileFailure {
+func CreateCompileFailure(c context.Context, t testing.TB, fb *model.LuciFailedBuild) *model.CompileFailure {
+	t.Helper()
 	cf := &model.CompileFailure{
 		Id:    fb.Id,
 		Build: datastore.KeyForObj(c, fb),
 	}
-	So(datastore.Put(c, cf), ShouldBeNil)
+	assert.Loosely(t, datastore.Put(c, cf), should.BeNil, truth.LineContext())
 	datastore.GetTestable(c).CatchupIndexes()
 	return cf
 }
 
-func CreateCompileFailureAnalysis(c context.Context, id int64, cf *model.CompileFailure) *model.CompileFailureAnalysis {
+func CreateCompileFailureAnalysis(c context.Context, t testing.TB, id int64, cf *model.CompileFailure) *model.CompileFailureAnalysis {
+	t.Helper()
 	cfa := &model.CompileFailureAnalysis{
 		Id:             id,
 		CompileFailure: datastore.KeyForObj(c, cf),
 	}
-	So(datastore.Put(c, cfa), ShouldBeNil)
+	assert.Loosely(t, datastore.Put(c, cfa), should.BeNil, truth.LineContext())
 	datastore.GetTestable(c).CatchupIndexes()
 	return cfa
 }
 
-func CreateCompileFailureAnalysisAnalysisChain(c context.Context, bbid int64, project string, analysisID int64) (*model.LuciFailedBuild, *model.CompileFailure, *model.CompileFailureAnalysis) {
-	fb := CreateLUCIFailedBuild(c, bbid, project)
-	cf := CreateCompileFailure(c, fb)
-	cfa := CreateCompileFailureAnalysis(c, analysisID, cf)
+func CreateCompileFailureAnalysisAnalysisChain(c context.Context, t testing.TB, bbid int64, project string, analysisID int64) (*model.LuciFailedBuild, *model.CompileFailure, *model.CompileFailureAnalysis) {
+	t.Helper()
+	fb := CreateLUCIFailedBuild(c, t, bbid, project)
+	cf := CreateCompileFailure(c, t, fb)
+	cfa := CreateCompileFailureAnalysis(c, t, analysisID, cf)
 	return fb, cf, cfa
 }
 
-func CreateHeuristicAnalysis(c context.Context, cfa *model.CompileFailureAnalysis) *model.CompileHeuristicAnalysis {
+func CreateHeuristicAnalysis(c context.Context, t testing.TB, cfa *model.CompileFailureAnalysis) *model.CompileHeuristicAnalysis {
+	t.Helper()
 	ha := &model.CompileHeuristicAnalysis{
 		ParentAnalysis: datastore.KeyForObj(c, cfa),
 	}
-	So(datastore.Put(c, ha), ShouldBeNil)
+	assert.Loosely(t, datastore.Put(c, ha), should.BeNil, truth.LineContext())
 	datastore.GetTestable(c).CatchupIndexes()
 	return ha
 }
 
-func CreateNthSectionAnalysis(c context.Context, cfa *model.CompileFailureAnalysis) *model.CompileNthSectionAnalysis {
+func CreateNthSectionAnalysis(c context.Context, t testing.TB, cfa *model.CompileFailureAnalysis) *model.CompileNthSectionAnalysis {
+	t.Helper()
 	nsa := &model.CompileNthSectionAnalysis{
 		ParentAnalysis: datastore.KeyForObj(c, cfa),
 	}
-	So(datastore.Put(c, nsa), ShouldBeNil)
+	assert.Loosely(t, datastore.Put(c, nsa), should.BeNil, truth.LineContext())
 	datastore.GetTestable(c).CatchupIndexes()
 	return nsa
 }
 
-func CreateHeuristicSuspect(c context.Context, ha *model.CompileHeuristicAnalysis, status model.SuspectVerificationStatus) *model.Suspect {
+func CreateHeuristicSuspect(c context.Context, t testing.TB, ha *model.CompileHeuristicAnalysis, status model.SuspectVerificationStatus) *model.Suspect {
+	t.Helper()
 	suspect := &model.Suspect{
 		ParentAnalysis:     datastore.KeyForObj(c, ha),
 		Type:               model.SuspectType_Heuristic,
 		VerificationStatus: status,
 	}
-	So(datastore.Put(c, suspect), ShouldBeNil)
+	assert.Loosely(t, datastore.Put(c, suspect), should.BeNil, truth.LineContext())
 	datastore.GetTestable(c).CatchupIndexes()
 	return suspect
 }
 
-func CreateNthSectionSuspect(c context.Context, nsa *model.CompileNthSectionAnalysis) *model.Suspect {
+func CreateNthSectionSuspect(c context.Context, t testing.TB, nsa *model.CompileNthSectionAnalysis) *model.Suspect {
+	t.Helper()
 	suspect := &model.Suspect{
 		ParentAnalysis: datastore.KeyForObj(c, nsa),
 		Type:           model.SuspectType_NthSection,
 	}
-	So(datastore.Put(c, suspect), ShouldBeNil)
+	assert.Loosely(t, datastore.Put(c, suspect), should.BeNil, truth.LineContext())
 	datastore.GetTestable(c).CatchupIndexes()
 	return suspect
 }
@@ -140,7 +151,8 @@ type TestFailureCreationOption struct {
 	IsDiverged       bool
 }
 
-func CreateTestFailure(ctx context.Context, option *TestFailureCreationOption) *model.TestFailure {
+func CreateTestFailure(ctx context.Context, t testing.TB, option *TestFailureCreationOption) *model.TestFailure {
+	t.Helper()
 	id := int64(100)
 	project := "chromium"
 	variant := map[string]string{}
@@ -201,7 +213,7 @@ func CreateTestFailure(ctx context.Context, option *TestFailureCreationOption) *
 		IsDiverged:               isDiverged,
 	}
 
-	So(datastore.Put(ctx, tf), ShouldBeNil)
+	assert.Loosely(t, datastore.Put(ctx, tf), should.BeNil, truth.LineContext())
 	datastore.GetTestable(ctx).CatchupIndexes()
 	return tf
 }
@@ -224,7 +236,8 @@ type TestFailureAnalysisCreationOption struct {
 	VerifiedCulpritKey *datastore.Key
 }
 
-func CreateTestFailureAnalysis(ctx context.Context, option *TestFailureAnalysisCreationOption) *model.TestFailureAnalysis {
+func CreateTestFailureAnalysis(ctx context.Context, t testing.TB, option *TestFailureAnalysisCreationOption) *model.TestFailureAnalysis {
+	t.Helper()
 	id := int64(1000)
 	project := "chromium"
 	bucket := "bucket"
@@ -290,7 +303,7 @@ func CreateTestFailureAnalysis(ctx context.Context, option *TestFailureAnalysisC
 		EndTime:            endTime,
 		VerifiedCulpritKey: verifiedCulpritKey,
 	}
-	So(datastore.Put(ctx, tfa), ShouldBeNil)
+	assert.Loosely(t, datastore.Put(ctx, tfa), should.BeNil, truth.LineContext())
 	datastore.GetTestable(ctx).CatchupIndexes()
 	return tfa
 }
@@ -311,7 +324,8 @@ type TestSingleRerunCreationOption struct {
 	GitilesCommit         *bbpb.GitilesCommit
 }
 
-func CreateTestSingleRerun(ctx context.Context, option *TestSingleRerunCreationOption) *model.TestSingleRerun {
+func CreateTestSingleRerun(ctx context.Context, t testing.TB, option *TestSingleRerunCreationOption) *model.TestSingleRerun {
+	t.Helper()
 	id := int64(1000)
 	status := pb.RerunStatus_RERUN_STATUS_UNSPECIFIED
 	var analysisKey *datastore.Key
@@ -360,7 +374,7 @@ func CreateTestSingleRerun(ctx context.Context, option *TestSingleRerunCreationO
 			GitilesCommit: gitilesCommit,
 		},
 	}
-	So(datastore.Put(ctx, rerun), ShouldBeNil)
+	assert.Loosely(t, datastore.Put(ctx, rerun), should.BeNil, truth.LineContext())
 	datastore.GetTestable(ctx).CatchupIndexes()
 	return rerun
 }
@@ -376,7 +390,8 @@ type TestNthSectionAnalysisCreationOption struct {
 	CulpritKey        *datastore.Key
 }
 
-func CreateTestNthSectionAnalysis(ctx context.Context, option *TestNthSectionAnalysisCreationOption) *model.TestNthSectionAnalysis {
+func CreateTestNthSectionAnalysis(ctx context.Context, t testing.TB, option *TestNthSectionAnalysisCreationOption) *model.TestNthSectionAnalysis {
+	t.Helper()
 	id := int64(1000)
 	var parentAnalysis *datastore.Key = nil
 	var blameList *pb.BlameList
@@ -408,7 +423,7 @@ func CreateTestNthSectionAnalysis(ctx context.Context, option *TestNthSectionAna
 		EndTime:           endTime,
 		CulpritKey:        culpritKey,
 	}
-	So(datastore.Put(ctx, nsa), ShouldBeNil)
+	assert.Loosely(t, datastore.Put(ctx, nsa), should.BeNil, truth.LineContext())
 	datastore.GetTestable(ctx).CatchupIndexes()
 	return nsa
 }
@@ -426,7 +441,8 @@ type SuspectCreationOption struct {
 	AnalysisType       pb.AnalysisType
 }
 
-func CreateSuspect(ctx context.Context, option *SuspectCreationOption) *model.Suspect {
+func CreateSuspect(ctx context.Context, t testing.TB, option *SuspectCreationOption) *model.Suspect {
+	t.Helper()
 	var parentKey *datastore.Key
 	id := int64(500)
 	commitID := "1"
@@ -471,7 +487,7 @@ func CreateSuspect(ctx context.Context, option *SuspectCreationOption) *model.Su
 		ActionDetails:      actionDetails,
 		AnalysisType:       analysisType,
 	}
-	So(datastore.Put(ctx, suspect), ShouldBeNil)
+	assert.Loosely(t, datastore.Put(ctx, suspect), should.BeNil, truth.LineContext())
 	datastore.GetTestable(ctx).CatchupIndexes()
 	return suspect
 }

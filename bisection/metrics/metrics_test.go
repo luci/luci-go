@@ -19,13 +19,16 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/util/testutil"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -36,71 +39,71 @@ func TestCollectGlobalMetrics(t *testing.T) {
 	c := memory.Use(context.Background())
 	c, _ = tsmon.WithDummyInMemory(c)
 
-	Convey("running compile analyses", t, func() {
-		createRunningAnalysis(c, 123, "chromium", model.PlatformLinux)
-		createRunningAnalysis(c, 456, "chromeos", model.PlatformLinux)
-		createRunningAnalysis(c, 789, "chromium", model.PlatformLinux)
+	ftt.Run("running compile analyses", t, func(t *ftt.Test) {
+		createRunningAnalysis(c, t, 123, "chromium", model.PlatformLinux)
+		createRunningAnalysis(c, t, 456, "chromeos", model.PlatformLinux)
+		createRunningAnalysis(c, t, 789, "chromium", model.PlatformLinux)
 		err := collectMetricsForRunningAnalyses(c)
-		So(err, ShouldBeNil)
-		So(runningAnalysesGauge.Get(c, "chromium", "compile"), ShouldEqual, 2)
-		So(runningAnalysesGauge.Get(c, "chromeos", "compile"), ShouldEqual, 1)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, runningAnalysesGauge.Get(c, "chromium", "compile"), should.Equal(2))
+		assert.Loosely(t, runningAnalysesGauge.Get(c, "chromeos", "compile"), should.Equal(1))
 
 		m, err := retrieveRunningAnalyses(c)
-		So(err, ShouldBeNil)
-		So(m, ShouldResemble, map[string]int{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, m, should.Resemble(map[string]int{
 			"chromium": 2,
 			"chromeos": 1,
-		})
+		}))
 	})
 
-	Convey("running test analyses", t, func() {
-		testutil.CreateTestFailureAnalysis(c, &testutil.TestFailureAnalysisCreationOption{
+	ftt.Run("running test analyses", t, func(t *ftt.Test) {
+		testutil.CreateTestFailureAnalysis(c, t, &testutil.TestFailureAnalysisCreationOption{
 			ID:        1000,
 			Project:   "chromium",
 			RunStatus: pb.AnalysisRunStatus_STARTED,
 		})
-		testutil.CreateTestFailureAnalysis(c, &testutil.TestFailureAnalysisCreationOption{
+		testutil.CreateTestFailureAnalysis(c, t, &testutil.TestFailureAnalysisCreationOption{
 			ID:        1001,
 			Project:   "chromium",
 			RunStatus: pb.AnalysisRunStatus_STARTED,
 		})
-		testutil.CreateTestFailureAnalysis(c, &testutil.TestFailureAnalysisCreationOption{
+		testutil.CreateTestFailureAnalysis(c, t, &testutil.TestFailureAnalysisCreationOption{
 			ID:        1002,
 			Project:   "chromeos",
 			RunStatus: pb.AnalysisRunStatus_STARTED,
 		})
-		testutil.CreateTestFailureAnalysis(c, &testutil.TestFailureAnalysisCreationOption{
+		testutil.CreateTestFailureAnalysis(c, t, &testutil.TestFailureAnalysisCreationOption{
 			ID:        1003,
 			Project:   "chromeos",
 			RunStatus: pb.AnalysisRunStatus_ENDED,
 		})
 		err := collectMetricsForRunningAnalyses(c)
-		So(err, ShouldBeNil)
-		So(runningAnalysesGauge.Get(c, "chromium", "test"), ShouldEqual, 2)
-		So(runningAnalysesGauge.Get(c, "chromeos", "test"), ShouldEqual, 1)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, runningAnalysesGauge.Get(c, "chromium", "test"), should.Equal(2))
+		assert.Loosely(t, runningAnalysesGauge.Get(c, "chromeos", "test"), should.Equal(1))
 
 		m, err := retrieveRunningAnalyses(c)
-		So(err, ShouldBeNil)
-		So(m, ShouldResemble, map[string]int{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, m, should.Resemble(map[string]int{
 			"chromium": 2,
 			"chromeos": 1,
-		})
+		}))
 	})
 
-	Convey("For running reruns", t, func() {
+	ftt.Run("For running reruns", t, func(t *ftt.Test) {
 		cl := testclock.New(testclock.TestTimeUTC)
 		c = clock.Set(c, cl)
 		testutil.UpdateIndices(c)
 
 		// Create a rerun for chromium
-		cfa1 := createRunningAnalysis(c, 123, "chromium", model.PlatformLinux)
+		cfa1 := createRunningAnalysis(c, t, 123, "chromium", model.PlatformLinux)
 
 		rrBuild1 := &model.CompileRerunBuild{
 			LuciBuild: model.LuciBuild{
 				Status: buildbucketpb.Status_STATUS_UNSPECIFIED,
 			},
 		}
-		So(datastore.Put(c, rrBuild1), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, rrBuild1), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		rerun1 := &model.SingleRerun{
@@ -109,18 +112,18 @@ func TestCollectGlobalMetrics(t *testing.T) {
 			CreateTime: clock.Now(c).Add(-10 * time.Second),
 			Status:     pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
 		}
-		So(datastore.Put(c, rerun1), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, rerun1), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		// Create another rerun for chromeos
-		cfa2 := createRunningAnalysis(c, 456, "chromeos", model.PlatformMac)
+		cfa2 := createRunningAnalysis(c, t, 456, "chromeos", model.PlatformMac)
 
 		rrBuild2 := &model.CompileRerunBuild{
 			LuciBuild: model.LuciBuild{
 				Status: buildbucketpb.Status_STARTED,
 			},
 		}
-		So(datastore.Put(c, rrBuild2), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, rrBuild2), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		rerun2 := &model.SingleRerun{
@@ -129,22 +132,22 @@ func TestCollectGlobalMetrics(t *testing.T) {
 			CreateTime: clock.Now(c).Add(time.Minute),
 			Status:     pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
 		}
-		So(datastore.Put(c, rerun2), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, rerun2), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		err := collectMetricsForRunningReruns(c)
-		So(err, ShouldBeNil)
-		So(runningRerunGauge.Get(c, "chromium", "pending", "linux", "compile"), ShouldEqual, 1)
-		So(runningRerunGauge.Get(c, "chromium", "running", "linux", "compile"), ShouldEqual, 0)
-		So(runningRerunGauge.Get(c, "chromeos", "pending", "mac", "compile"), ShouldEqual, 0)
-		So(runningRerunGauge.Get(c, "chromeos", "running", "mac", "compile"), ShouldEqual, 1)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, runningRerunGauge.Get(c, "chromium", "pending", "linux", "compile"), should.Equal(1))
+		assert.Loosely(t, runningRerunGauge.Get(c, "chromium", "running", "linux", "compile"), should.BeZero)
+		assert.Loosely(t, runningRerunGauge.Get(c, "chromeos", "pending", "mac", "compile"), should.BeZero)
+		assert.Loosely(t, runningRerunGauge.Get(c, "chromeos", "running", "mac", "compile"), should.Equal(1))
 		dist := rerunAgeMetric.Get(c, "chromium", "pending", "linux", "compile")
-		So(dist.Count(), ShouldEqual, 1)
+		assert.Loosely(t, dist.Count(), should.Equal(1))
 		dist = rerunAgeMetric.Get(c, "chromeos", "running", "mac", "compile")
-		So(dist.Count(), ShouldEqual, 1)
+		assert.Loosely(t, dist.Count(), should.Equal(1))
 	})
 
-	Convey("running test reruns", t, func() {
+	ftt.Run("running test reruns", t, func(t *ftt.Test) {
 		cl := testclock.New(testclock.TestTimeUTC)
 		c = clock.Set(c, cl)
 		createRerun := func(ID int64, project, OS string, status buildbucketpb.Status) {
@@ -161,7 +164,7 @@ func TestCollectGlobalMetrics(t *testing.T) {
 					Value: OS,
 				}}},
 			}
-			So(datastore.Put(c, rerun), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, rerun), should.BeNil)
 			datastore.GetTestable(c).CatchupIndexes()
 		}
 		createRerun(100, "chromium", "Ubuntu-22.04", buildbucketpb.Status_SCHEDULED)
@@ -171,19 +174,20 @@ func TestCollectGlobalMetrics(t *testing.T) {
 		createRerun(104, "chromeos", "Ubuntu-22.04", buildbucketpb.Status_STARTED)
 
 		err := collectMetricsForRunningTestReruns(c)
-		So(err, ShouldBeNil)
-		So(runningRerunGauge.Get(c, "chromium", "running", "linux", "test"), ShouldEqual, 2)
-		So(runningRerunGauge.Get(c, "chromium", "pending", "linux", "test"), ShouldEqual, 1)
-		So(runningRerunGauge.Get(c, "chromium", "running", "mac", "test"), ShouldEqual, 1)
-		So(runningRerunGauge.Get(c, "chromeos", "running", "linux", "test"), ShouldEqual, 1)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, runningRerunGauge.Get(c, "chromium", "running", "linux", "test"), should.Equal(2))
+		assert.Loosely(t, runningRerunGauge.Get(c, "chromium", "pending", "linux", "test"), should.Equal(1))
+		assert.Loosely(t, runningRerunGauge.Get(c, "chromium", "running", "mac", "test"), should.Equal(1))
+		assert.Loosely(t, runningRerunGauge.Get(c, "chromeos", "running", "linux", "test"), should.Equal(1))
 		dist := rerunAgeMetric.Get(c, "chromium", "pending", "linux", "test")
-		So(dist.Count(), ShouldEqual, 1)
+		assert.Loosely(t, dist.Count(), should.Equal(1))
 		dist = rerunAgeMetric.Get(c, "chromeos", "running", "linux", "test")
-		So(dist.Count(), ShouldEqual, 1)
+		assert.Loosely(t, dist.Count(), should.Equal(1))
 	})
 }
 
-func createRunningAnalysis(c context.Context, id int64, proj string, platform model.Platform) *model.CompileFailureAnalysis {
+func createRunningAnalysis(c context.Context, t testing.TB, id int64, proj string, platform model.Platform) *model.CompileFailureAnalysis {
+	t.Helper()
 	fb := &model.LuciFailedBuild{
 		Id: id,
 		LuciBuild: model.LuciBuild{
@@ -191,16 +195,16 @@ func createRunningAnalysis(c context.Context, id int64, proj string, platform mo
 		},
 		Platform: platform,
 	}
-	So(datastore.Put(c, fb), ShouldBeNil)
+	assert.Loosely(t, datastore.Put(c, fb), should.BeNil, truth.LineContext())
 	datastore.GetTestable(c).CatchupIndexes()
 
-	cf := testutil.CreateCompileFailure(c, fb)
+	cf := testutil.CreateCompileFailure(c, t, fb)
 	cfa := &model.CompileFailureAnalysis{
 		Id:             id,
 		CompileFailure: datastore.KeyForObj(c, cf),
 		RunStatus:      pb.AnalysisRunStatus_STARTED,
 	}
-	So(datastore.Put(c, cfa), ShouldBeNil)
+	assert.Loosely(t, datastore.Put(c, cfa), should.BeNil, truth.LineContext())
 	datastore.GetTestable(c).CatchupIndexes()
 	return cfa
 }

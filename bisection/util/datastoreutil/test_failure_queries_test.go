@@ -18,27 +18,28 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/bisection/model"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestGetTestFailures(t *testing.T) {
 	t.Parallel()
 
-	Convey("Get test failures by test id", t, func() {
+	ftt.Run("Get test failures by test id", t, func(t *ftt.Test) {
 		c := memory.Use(context.Background())
 
-		Convey("No test failure found", func() {
+		t.Run("No test failure found", func(t *ftt.Test) {
 			testFailures, err := GetTestFailures(c, "testproject", "testID", "testRefHash", "")
-			So(err, ShouldBeNil)
-			So(testFailures, ShouldHaveLength, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, testFailures, should.HaveLength(0))
 		})
 
-		Convey("Test failure found", func() {
+		t.Run("Test failure found", func(t *ftt.Test) {
 			// Prepare datastore
 			testFailure := &model.TestFailure{
 				ID:          101,
@@ -47,27 +48,27 @@ func TestGetTestFailures(t *testing.T) {
 				VariantHash: "othertestVariantHash",
 				RefHash:     "testRefHash",
 			}
-			So(datastore.Put(c, testFailure), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, testFailure), should.BeNil)
 
 			datastore.GetTestable(c).CatchupIndexes()
 
 			testFailures, err := GetTestFailures(c, "testproject", "testID", "testRefHash", "")
-			So(err, ShouldBeNil)
-			So(testFailures, ShouldHaveLength, 1)
-			So(testFailures[0].ID, ShouldEqual, 101)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, testFailures, should.HaveLength(1))
+			assert.Loosely(t, testFailures[0].ID, should.Equal(101))
 		})
 	})
 
-	Convey("Get test failures by test variant", t, func() {
+	ftt.Run("Get test failures by test variant", t, func(t *ftt.Test) {
 		c := memory.Use(context.Background())
 
-		Convey("No test failure found", func() {
+		t.Run("No test failure found", func(t *ftt.Test) {
 			testFailures, err := GetTestFailures(c, "testproject", "testID", "testRefHash", "testVariantHash")
-			So(err, ShouldBeNil)
-			So(testFailures, ShouldHaveLength, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, testFailures, should.HaveLength(0))
 		})
 
-		Convey("Test failure found", func() {
+		t.Run("Test failure found", func(t *ftt.Test) {
 			// Prepare datastore
 			testFailure := &model.TestFailure{
 				ID:          102,
@@ -76,14 +77,14 @@ func TestGetTestFailures(t *testing.T) {
 				VariantHash: "testVariantHash",
 				RefHash:     "testRefHash",
 			}
-			So(datastore.Put(c, testFailure), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, testFailure), should.BeNil)
 
 			datastore.GetTestable(c).CatchupIndexes()
 
 			testFailures, err := GetTestFailures(c, "testproject", "testID", "testRefHash", "testVariantHash")
-			So(err, ShouldBeNil)
-			So(testFailures, ShouldHaveLength, 1)
-			So(testFailures[0].ID, ShouldEqual, 102)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, testFailures, should.HaveLength(1))
+			assert.Loosely(t, testFailures[0].ID, should.Equal(102))
 		})
 	})
 }

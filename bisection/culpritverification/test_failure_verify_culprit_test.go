@@ -26,6 +26,8 @@ import (
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -38,9 +40,6 @@ import (
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	tpb "go.chromium.org/luci/bisection/task/proto"
 	"go.chromium.org/luci/bisection/util/testutil"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestProcessTestFailureTask(t *testing.T) {
@@ -61,88 +60,83 @@ func TestProcessTestFailureTask(t *testing.T) {
 	build2 := buildbucket.MockScheduleBuild(mc, 456, "3424")
 	buildbucket.MockGetBuild(mc)
 
-	Convey("process test failure task", t, func() {
-		c = memory.Use(c)
-		testutil.UpdateIndices(c)
+	c = memory.Use(c)
+	testutil.UpdateIndices(c)
 
-		// Setup config.
-		projectCfg := config.CreatePlaceholderProjectConfig()
-		cfg := map[string]*configpb.ProjectConfig{"chromium": projectCfg}
-		So(config.SetTestProjectConfig(c, cfg), ShouldBeNil)
+	// Setup config.
+	projectCfg := config.CreatePlaceholderProjectConfig()
+	cfg := map[string]*configpb.ProjectConfig{"chromium": projectCfg}
+	assert.Loosely(t, config.SetTestProjectConfig(c, cfg), should.BeNil)
 
-		Convey("trigger rerun", func() {
-			tfa := testutil.CreateTestFailureAnalysis(c, nil)
-			nsa := testutil.CreateTestNthSectionAnalysis(c, &testutil.TestNthSectionAnalysisCreationOption{
-				ParentAnalysisKey: datastore.KeyForObj(c, tfa),
-			})
-			suspect := testutil.CreateSuspect(c, &testutil.SuspectCreationOption{
-				ParentKey: datastore.KeyForObj(c, nsa),
-				CommitID:  "3425",
-			})
-			tf := testutil.CreateTestFailure(c, &testutil.TestFailureCreationOption{IsPrimary: true, Analysis: tfa})
-			gitilesResponse := model.ChangeLogResponse{
-				Log: []*model.ChangeLog{
-					{
-						Commit: "3424",
-					},
-				},
-			}
-			gitilesResponseStr, _ := json.Marshal(gitilesResponse)
-			c = gitiles.MockedGitilesClientContext(c, map[string]string{
-				"https://chromium.googlesource.com/chromium/src/+log/3425~2..3425^": string(gitilesResponseStr),
-			})
-			task := &tpb.TestFailureCulpritVerificationTask{
-				AnalysisId: tfa.ID,
-			}
-
-			err := processTestFailureTask(c, task)
-			So(err, ShouldBeNil)
-			datastore.GetTestable(c).CatchupIndexes()
-			// Check suspect updated.
-			So(datastore.Get(c, suspect), ShouldBeNil)
-			So(suspect.VerificationStatus, ShouldEqual, model.SuspectVerificationStatus_UnderVerification)
-			// Check rerun saved.
-			suspectRerun := &model.TestSingleRerun{
-				ID: suspect.SuspectRerunBuild.IntID(),
-			}
-			err = datastore.Get(c, suspectRerun)
-			So(err, ShouldBeNil)
-			expectedRerun := &model.TestSingleRerun{
-				ID: build1.Id,
-				LUCIBuild: model.LUCIBuild{
-					BuildID:       build1.Id,
-					Project:       build1.Builder.Project,
-					Bucket:        build1.Builder.Bucket,
-					Builder:       build1.Builder.Builder,
-					GitilesCommit: build1.Input.GitilesCommit,
-					CreateTime:    build1.CreateTime.AsTime(),
-					EndTime:       time.Time{},
-					StartTime:     build1.StartTime.AsTime(),
-					Status:        bbpb.Status_STARTED,
-				},
-				Type:        model.RerunBuildType_CulpritVerification,
-				AnalysisKey: datastore.KeyForObj(c, tfa),
-				CulpritKey:  datastore.KeyForObj(c, suspect),
-				TestResults: model.RerunTestResults{
-					IsFinalized: false,
-					Results: []model.RerunSingleTestResult{{
-						TestFailureKey: datastore.KeyForObj(c, tf),
-					}},
-				},
-				Dimensions: &pb.Dimensions{},
-				Status:     pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
-			}
-			So(suspectRerun, ShouldResembleProto, expectedRerun)
-			parentRerun := &model.TestSingleRerun{
-				ID: suspect.ParentRerunBuild.IntID(),
-			}
-			err = datastore.Get(c, parentRerun)
-			So(err, ShouldBeNil)
-			expectedRerun.ID = build2.Id
-			expectedRerun.LUCIBuild.BuildID = build2.Id
-			expectedRerun.LUCIBuild.GitilesCommit = build2.Input.GitilesCommit
-			So(parentRerun, ShouldResembleProto, expectedRerun)
-		})
+	tfa := testutil.CreateTestFailureAnalysis(c, t, nil)
+	nsa := testutil.CreateTestNthSectionAnalysis(c, t, &testutil.TestNthSectionAnalysisCreationOption{
+		ParentAnalysisKey: datastore.KeyForObj(c, tfa),
 	})
+	suspect := testutil.CreateSuspect(c, t, &testutil.SuspectCreationOption{
+		ParentKey: datastore.KeyForObj(c, nsa),
+		CommitID:  "3425",
+	})
+	tf := testutil.CreateTestFailure(c, t, &testutil.TestFailureCreationOption{IsPrimary: true, Analysis: tfa})
+	gitilesResponse := model.ChangeLogResponse{
+		Log: []*model.ChangeLog{
+			{
+				Commit: "3424",
+			},
+		},
+	}
+	gitilesResponseStr, _ := json.Marshal(gitilesResponse)
+	c = gitiles.MockedGitilesClientContext(c, map[string]string{
+		"https://chromium.googlesource.com/chromium/src/+log/3425~2..3425^": string(gitilesResponseStr),
+	})
+	task := &tpb.TestFailureCulpritVerificationTask{
+		AnalysisId: tfa.ID,
+	}
 
+	err := processTestFailureTask(c, task)
+	assert.Loosely(t, err, should.BeNil)
+	datastore.GetTestable(c).CatchupIndexes()
+	// Check suspect updated.
+	assert.Loosely(t, datastore.Get(c, suspect), should.BeNil)
+	assert.Loosely(t, suspect.VerificationStatus, should.Equal(model.SuspectVerificationStatus_UnderVerification))
+	// Check rerun saved.
+	suspectRerun := &model.TestSingleRerun{
+		ID: suspect.SuspectRerunBuild.IntID(),
+	}
+	err = datastore.Get(c, suspectRerun)
+	assert.Loosely(t, err, should.BeNil)
+	expectedRerun := &model.TestSingleRerun{
+		ID: build1.Id,
+		LUCIBuild: model.LUCIBuild{
+			BuildID:       build1.Id,
+			Project:       build1.Builder.Project,
+			Bucket:        build1.Builder.Bucket,
+			Builder:       build1.Builder.Builder,
+			GitilesCommit: build1.Input.GitilesCommit,
+			CreateTime:    build1.CreateTime.AsTime(),
+			EndTime:       time.Time{},
+			StartTime:     build1.StartTime.AsTime(),
+			Status:        bbpb.Status_STARTED,
+		},
+		Type:        model.RerunBuildType_CulpritVerification,
+		AnalysisKey: datastore.KeyForObj(c, tfa),
+		CulpritKey:  datastore.KeyForObj(c, suspect),
+		TestResults: model.RerunTestResults{
+			IsFinalized: false,
+			Results: []model.RerunSingleTestResult{{
+				TestFailureKey: datastore.KeyForObj(c, tf),
+			}},
+		},
+		Dimensions: &pb.Dimensions{},
+		Status:     pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
+	}
+	assert.Loosely(t, suspectRerun, should.Resemble(expectedRerun))
+	parentRerun := &model.TestSingleRerun{
+		ID: suspect.ParentRerunBuild.IntID(),
+	}
+	err = datastore.Get(c, parentRerun)
+	assert.Loosely(t, err, should.BeNil)
+	expectedRerun.ID = build2.Id
+	expectedRerun.LUCIBuild.BuildID = build2.Id
+	expectedRerun.LUCIBuild.GitilesCommit = build2.Input.GitilesCommit
+	assert.Loosely(t, parentRerun, should.Resemble(expectedRerun))
 }

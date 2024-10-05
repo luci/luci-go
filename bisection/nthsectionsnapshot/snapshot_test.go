@@ -19,14 +19,15 @@ import (
 
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/util/testutil"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestChunking(t *testing.T) {
 	t.Parallel()
 
-	Convey("One chunk", t, func() {
+	ftt.Run("One chunk", t, func(t *ftt.Test) {
 		chunks := []*NthSectionSnapshotChunk{
 			{
 				Begin: 0,
@@ -34,11 +35,11 @@ func TestChunking(t *testing.T) {
 			},
 		}
 		alloc, chunkSize := chunking(chunks, 0, 3, 10)
-		So(alloc, ShouldResemble, []int{3})
-		So(chunkSize, ShouldEqual, 2)
+		assert.Loosely(t, alloc, should.Resemble([]int{3}))
+		assert.Loosely(t, chunkSize, should.Equal(2))
 	})
 
-	Convey("One chunk, no divider", t, func() {
+	ftt.Run("One chunk, no divider", t, func(t *ftt.Test) {
 		chunks := []*NthSectionSnapshotChunk{
 			{
 				Begin: 0,
@@ -46,11 +47,11 @@ func TestChunking(t *testing.T) {
 			},
 		}
 		alloc, chunkSize := chunking(chunks, 0, 0, 10)
-		So(alloc, ShouldResemble, []int{0})
-		So(chunkSize, ShouldEqual, 10)
+		assert.Loosely(t, alloc, should.Resemble([]int{0}))
+		assert.Loosely(t, chunkSize, should.Equal(10))
 	})
 
-	Convey("One chunk, one divider", t, func() {
+	ftt.Run("One chunk, one divider", t, func(t *ftt.Test) {
 		chunks := []*NthSectionSnapshotChunk{
 			{
 				Begin: 0,
@@ -58,11 +59,11 @@ func TestChunking(t *testing.T) {
 			},
 		}
 		alloc, chunkSize := chunking(chunks, 0, 1, 1)
-		So(alloc, ShouldResemble, []int{1})
-		So(chunkSize, ShouldEqual, 5)
+		assert.Loosely(t, alloc, should.Resemble([]int{1}))
+		assert.Loosely(t, chunkSize, should.Equal(5))
 	})
 
-	Convey("One chunk, many dividers", t, func() {
+	ftt.Run("One chunk, many dividers", t, func(t *ftt.Test) {
 		chunks := []*NthSectionSnapshotChunk{
 			{
 				Begin: 0,
@@ -70,11 +71,11 @@ func TestChunking(t *testing.T) {
 			},
 		}
 		alloc, chunkSize := chunking(chunks, 0, 100, 100)
-		So(alloc, ShouldResemble, []int{100})
-		So(chunkSize, ShouldEqual, 0)
+		assert.Loosely(t, alloc, should.Resemble([]int{100}))
+		assert.Loosely(t, chunkSize, should.BeZero)
 	})
 
-	Convey("Two equal chunks", t, func() {
+	ftt.Run("Two equal chunks", t, func(t *ftt.Test) {
 		chunks := []*NthSectionSnapshotChunk{
 			{
 				Begin: 0,
@@ -86,11 +87,11 @@ func TestChunking(t *testing.T) {
 			},
 		}
 		alloc, chunkSize := chunking(chunks, 0, 1, 1)
-		So(alloc, ShouldResemble, []int{1, 0})
-		So(chunkSize, ShouldEqual, 10)
+		assert.Loosely(t, alloc, should.Resemble([]int{1, 0}))
+		assert.Loosely(t, chunkSize, should.Equal(10))
 	})
 
-	Convey("Two equal chunks, two dividers", t, func() {
+	ftt.Run("Two equal chunks, two dividers", t, func(t *ftt.Test) {
 		chunks := []*NthSectionSnapshotChunk{
 			{
 				Begin: 0,
@@ -102,11 +103,11 @@ func TestChunking(t *testing.T) {
 			},
 		}
 		alloc, chunkSize := chunking(chunks, 0, 2, 2)
-		So(alloc, ShouldResemble, []int{1, 1})
-		So(chunkSize, ShouldEqual, 5)
+		assert.Loosely(t, alloc, should.Resemble([]int{1, 1}))
+		assert.Loosely(t, chunkSize, should.Equal(5))
 	})
 
-	Convey("Two unequal chunks, two dividers", t, func() {
+	ftt.Run("Two unequal chunks, two dividers", t, func(t *ftt.Test) {
 		chunks := []*NthSectionSnapshotChunk{
 			{
 				Begin: 0,
@@ -118,11 +119,11 @@ func TestChunking(t *testing.T) {
 			},
 		}
 		alloc, chunkSize := chunking(chunks, 0, 2, 2)
-		So(alloc, ShouldResemble, []int{2, 0})
-		So(chunkSize, ShouldEqual, 3)
+		assert.Loosely(t, alloc, should.Resemble([]int{2, 0}))
+		assert.Loosely(t, chunkSize, should.Equal(3))
 	})
 
-	Convey("Two unequal chunks, many dividers", t, func() {
+	ftt.Run("Two unequal chunks, many dividers", t, func(t *ftt.Test) {
 		chunks := []*NthSectionSnapshotChunk{
 			{
 				Begin: 0,
@@ -134,11 +135,11 @@ func TestChunking(t *testing.T) {
 			},
 		}
 		alloc, chunkSize := chunking(chunks, 0, 6, 6)
-		So(alloc, ShouldResemble, []int{5, 1})
-		So(chunkSize, ShouldEqual, 1)
+		assert.Loosely(t, alloc, should.Resemble([]int{5, 1}))
+		assert.Loosely(t, chunkSize, should.Equal(1))
 	})
 
-	Convey("Three chunks", t, func() {
+	ftt.Run("Three chunks", t, func(t *ftt.Test) {
 		chunks := []*NthSectionSnapshotChunk{
 			{
 				Begin: 0,
@@ -154,15 +155,15 @@ func TestChunking(t *testing.T) {
 			},
 		}
 		alloc, chunkSize := chunking(chunks, 0, 4, 4)
-		So(alloc, ShouldResemble, []int{2, 1, 1})
-		So(chunkSize, ShouldEqual, 3)
+		assert.Loosely(t, alloc, should.Resemble([]int{2, 1, 1}))
+		assert.Loosely(t, chunkSize, should.Equal(3))
 	})
 }
 
 func TestGetRegressionRange(t *testing.T) {
 	t.Parallel()
 
-	Convey("GetRegressionRangeNoRun", t, func() {
+	ftt.Run("GetRegressionRangeNoRun", t, func(t *ftt.Test) {
 		// Create a blamelist with 100 commit
 		blamelist := testutil.CreateBlamelist(100)
 		snapshot := &Snapshot{
@@ -170,12 +171,12 @@ func TestGetRegressionRange(t *testing.T) {
 			Runs:      []*Run{},
 		}
 		ff, lp, err := snapshot.GetCurrentRegressionRange()
-		So(err, ShouldBeNil)
-		So(ff, ShouldEqual, 0)
-		So(lp, ShouldEqual, 99)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, ff, should.BeZero)
+		assert.Loosely(t, lp, should.Equal(99))
 	})
 
-	Convey("GetRegressionRangeOK", t, func() {
+	ftt.Run("GetRegressionRangeOK", t, func(t *ftt.Test) {
 		// Create a blamelist with 100 commit
 		blamelist := testutil.CreateBlamelist(100)
 		snapshot := &Snapshot{
@@ -200,12 +201,12 @@ func TestGetRegressionRange(t *testing.T) {
 			},
 		}
 		ff, lp, err := snapshot.GetCurrentRegressionRange()
-		So(err, ShouldBeNil)
-		So(ff, ShouldEqual, 15)
-		So(lp, ShouldEqual, 39)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, ff, should.Equal(15))
+		assert.Loosely(t, lp, should.Equal(39))
 	})
 
-	Convey("GetRegressionRangeError", t, func() {
+	ftt.Run("GetRegressionRangeError", t, func(t *ftt.Test) {
 		// Create a blamelist with 100 commit
 		blamelist := testutil.CreateBlamelist(100)
 		snapshot := &Snapshot{
@@ -222,10 +223,10 @@ func TestGetRegressionRange(t *testing.T) {
 			},
 		}
 		_, _, err := snapshot.GetCurrentRegressionRange()
-		So(err, ShouldNotBeNil)
+		assert.Loosely(t, err, should.NotBeNil)
 	})
 
-	Convey("GetRegressionRangeErrorFirstFailedEqualsLastPass", t, func() {
+	ftt.Run("GetRegressionRangeErrorFirstFailedEqualsLastPass", t, func(t *ftt.Test) {
 		// Create a blamelist with 100 commit
 		blamelist := testutil.CreateBlamelist(100)
 		snapshot := &Snapshot{
@@ -238,14 +239,14 @@ func TestGetRegressionRange(t *testing.T) {
 			},
 		}
 		_, _, err := snapshot.GetCurrentRegressionRange()
-		So(err, ShouldNotBeNil)
+		assert.Loosely(t, err, should.NotBeNil)
 	})
 }
 
 func TestGetCulprit(t *testing.T) {
 	t.Parallel()
 
-	Convey("GetCulpritOK", t, func() {
+	ftt.Run("GetCulpritOK", t, func(t *ftt.Test) {
 		// Create a blamelist with 100 commit
 		blamelist := testutil.CreateBlamelist(100)
 		snapshot := &Snapshot{
@@ -262,11 +263,11 @@ func TestGetCulprit(t *testing.T) {
 			},
 		}
 		ok, cul := snapshot.GetCulprit()
-		So(ok, ShouldBeTrue)
-		So(cul, ShouldEqual, 15)
+		assert.Loosely(t, ok, should.BeTrue)
+		assert.Loosely(t, cul, should.Equal(15))
 	})
 
-	Convey("GetCulpritFailed", t, func() {
+	ftt.Run("GetCulpritFailed", t, func(t *ftt.Test) {
 		// Create a blamelist with 100 commit
 		blamelist := testutil.CreateBlamelist(100)
 		snapshot := &Snapshot{
@@ -274,10 +275,10 @@ func TestGetCulprit(t *testing.T) {
 			Runs:      []*Run{},
 		}
 		ok, _ := snapshot.GetCulprit()
-		So(ok, ShouldBeFalse)
+		assert.Loosely(t, ok, should.BeFalse)
 	})
 
-	Convey("GetCulpritError", t, func() {
+	ftt.Run("GetCulpritError", t, func(t *ftt.Test) {
 		// Create a blamelist with 100 commit
 		blamelist := testutil.CreateBlamelist(100)
 		snapshot := &Snapshot{
@@ -294,7 +295,7 @@ func TestGetCulprit(t *testing.T) {
 			},
 		}
 		ok, _ := snapshot.GetCulprit()
-		So(ok, ShouldBeFalse)
+		assert.Loosely(t, ok, should.BeFalse)
 	})
 
 }
@@ -302,7 +303,7 @@ func TestGetCulprit(t *testing.T) {
 func TestFindRegressionChunks(t *testing.T) {
 	t.Parallel()
 
-	Convey("findRegressionChunks", t, func() {
+	ftt.Run("findRegressionChunks", t, func(t *ftt.Test) {
 		blamelist := testutil.CreateBlamelist(100)
 		snapshot := &Snapshot{
 			BlameList: blamelist,
@@ -334,8 +335,8 @@ func TestFindRegressionChunks(t *testing.T) {
 			},
 		}
 		chunks, err := snapshot.findRegressionChunks()
-		So(err, ShouldBeNil)
-		So(chunks, ShouldResemble, []*NthSectionSnapshotChunk{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, chunks, should.Resemble([]*NthSectionSnapshotChunk{
 			{
 				Begin: 27,
 				End:   34,
@@ -352,34 +353,34 @@ func TestFindRegressionChunks(t *testing.T) {
 				Begin: 36,
 				End:   38,
 			},
-		})
+		}))
 	})
 }
 
 func TestBreakIntoSmallerChunks(t *testing.T) {
 	t.Parallel()
 
-	Convey("break", t, func() {
+	ftt.Run("break", t, func(t *ftt.Test) {
 		chunk := &NthSectionSnapshotChunk{
 			Begin: 10,
 			End:   19,
 		}
-		So(breakToSmallerChunks(chunk, 0), ShouldResemble, []int{})
-		So(breakToSmallerChunks(chunk, 1), ShouldResemble, []int{15})
-		So(breakToSmallerChunks(chunk, 2), ShouldResemble, []int{13, 16})
-		So(breakToSmallerChunks(chunk, 3), ShouldResemble, []int{12, 15, 17})
-		So(breakToSmallerChunks(chunk, 4), ShouldResemble, []int{11, 13, 16, 18})
-		So(breakToSmallerChunks(chunk, 5), ShouldResemble, []int{11, 13, 15, 16, 18})
-		So(breakToSmallerChunks(chunk, 6), ShouldResemble, []int{11, 12, 14, 15, 17, 18})
-		So(breakToSmallerChunks(chunk, 10), ShouldResemble, []int{10, 11, 12, 13, 14, 15, 16, 17, 18, 19})
-		So(breakToSmallerChunks(chunk, 100), ShouldResemble, []int{10, 11, 12, 13, 14, 15, 16, 17, 18, 19})
+		assert.Loosely(t, breakToSmallerChunks(chunk, 0), should.Resemble([]int{}))
+		assert.Loosely(t, breakToSmallerChunks(chunk, 1), should.Resemble([]int{15}))
+		assert.Loosely(t, breakToSmallerChunks(chunk, 2), should.Resemble([]int{13, 16}))
+		assert.Loosely(t, breakToSmallerChunks(chunk, 3), should.Resemble([]int{12, 15, 17}))
+		assert.Loosely(t, breakToSmallerChunks(chunk, 4), should.Resemble([]int{11, 13, 16, 18}))
+		assert.Loosely(t, breakToSmallerChunks(chunk, 5), should.Resemble([]int{11, 13, 15, 16, 18}))
+		assert.Loosely(t, breakToSmallerChunks(chunk, 6), should.Resemble([]int{11, 12, 14, 15, 17, 18}))
+		assert.Loosely(t, breakToSmallerChunks(chunk, 10), should.Resemble([]int{10, 11, 12, 13, 14, 15, 16, 17, 18, 19}))
+		assert.Loosely(t, breakToSmallerChunks(chunk, 100), should.Resemble([]int{10, 11, 12, 13, 14, 15, 16, 17, 18, 19}))
 	})
 }
 
 func TestFindNextIndicesToRun(t *testing.T) {
 	t.Parallel()
 
-	Convey("FindNextIndicesToRun", t, func() {
+	ftt.Run("FindNextIndicesToRun", t, func(t *ftt.Test) {
 		blamelist := testutil.CreateBlamelist(10)
 		snapshot := &Snapshot{
 			BlameList: blamelist,
@@ -391,22 +392,22 @@ func TestFindNextIndicesToRun(t *testing.T) {
 			},
 		}
 		indices, err := snapshot.FindNextIndicesToRun(2)
-		So(err, ShouldBeNil)
-		So(indices, ShouldResemble, []int{2, 8})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, indices, should.Resemble([]int{2, 8}))
 	})
 
-	Convey("FindNextIndicesToRun with a single commit should not return anything", t, func() {
+	ftt.Run("FindNextIndicesToRun with a single commit should not return anything", t, func(t *ftt.Test) {
 		blamelist := testutil.CreateBlamelist(1)
 		snapshot := &Snapshot{
 			BlameList: blamelist,
 			Runs:      []*Run{},
 		}
 		indices, err := snapshot.FindNextIndicesToRun(2)
-		So(err, ShouldBeNil)
-		So(indices, ShouldResemble, []int{})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, indices, should.Resemble([]int{}))
 	})
 
-	Convey("FindNextIndicesToRun already found culprit", t, func() {
+	ftt.Run("FindNextIndicesToRun already found culprit", t, func(t *ftt.Test) {
 		blamelist := testutil.CreateBlamelist(10)
 		snapshot := &Snapshot{
 			BlameList: blamelist,
@@ -422,11 +423,11 @@ func TestFindNextIndicesToRun(t *testing.T) {
 			},
 		}
 		indices, err := snapshot.FindNextIndicesToRun(2)
-		So(err, ShouldBeNil)
-		So(indices, ShouldResemble, []int{})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, indices, should.Resemble([]int{}))
 	})
 
-	Convey("FindNextIndicesToRunAllRerunsAreRunning", t, func() {
+	ftt.Run("FindNextIndicesToRunAllRerunsAreRunning", t, func(t *ftt.Test) {
 		blamelist := testutil.CreateBlamelist(3)
 		snapshot := &Snapshot{
 			BlameList: blamelist,
@@ -446,15 +447,15 @@ func TestFindNextIndicesToRun(t *testing.T) {
 			},
 		}
 		indices, err := snapshot.FindNextIndicesToRun(2)
-		So(err, ShouldBeNil)
-		So(indices, ShouldResemble, []int{})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, indices, should.Resemble([]int{}))
 	})
 }
 
 func TestFindNextCommitsToRun(t *testing.T) {
 	t.Parallel()
 
-	Convey("FindNextIndicesToRun", t, func() {
+	ftt.Run("FindNextIndicesToRun", t, func(t *ftt.Test) {
 		blamelist := testutil.CreateBlamelist(10)
 		snapshot := &Snapshot{
 			BlameList: blamelist,
@@ -466,19 +467,19 @@ func TestFindNextCommitsToRun(t *testing.T) {
 			},
 		}
 		indices, err := snapshot.FindNextCommitsToRun(2)
-		So(err, ShouldBeNil)
-		So(indices, ShouldResemble, []string{"commit2", "commit8"})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, indices, should.Resemble([]string{"commit2", "commit8"}))
 	})
 }
 
 func TestCalculateChunkSize(t *testing.T) {
 	t.Parallel()
 
-	Convey("CalculateChunkSize", t, func() {
-		So(calculateChunkSize(5, 10), ShouldEqual, 0)
-		So(calculateChunkSize(5, 5), ShouldEqual, 0)
-		So(calculateChunkSize(10, 3), ShouldEqual, 2)
-		So(calculateChunkSize(10, 0), ShouldEqual, 10)
-		So(calculateChunkSize(3, 1), ShouldEqual, 1)
+	ftt.Run("CalculateChunkSize", t, func(t *ftt.Test) {
+		assert.Loosely(t, calculateChunkSize(5, 10), should.BeZero)
+		assert.Loosely(t, calculateChunkSize(5, 5), should.BeZero)
+		assert.Loosely(t, calculateChunkSize(10, 3), should.Equal(2))
+		assert.Loosely(t, calculateChunkSize(10, 0), should.Equal(10))
+		assert.Loosely(t, calculateChunkSize(3, 1), should.Equal(1))
 	})
 }

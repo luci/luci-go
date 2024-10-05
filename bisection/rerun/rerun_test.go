@@ -26,14 +26,15 @@ import (
 	"go.chromium.org/luci/bisection/util/testutil"
 
 	"github.com/golang/mock/gomock"
-	. "github.com/smartystreets/goconvey/convey"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
-	. "go.chromium.org/luci/common/testing/assertions"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 )
@@ -41,7 +42,7 @@ import (
 func TestRerun(t *testing.T) {
 	t.Parallel()
 
-	Convey("getRerunPropertiesAndDimensions", t, func() {
+	ftt.Run("getRerunPropertiesAndDimensions", t, func(t *ftt.Test) {
 		c := memory.Use(context.Background())
 		cl := testclock.New(testclock.TestTimeUTC)
 		c = clock.Set(c, cl)
@@ -98,7 +99,7 @@ func TestRerun(t *testing.T) {
 				},
 			},
 		}
-		Convey("has extra prop and dim", func() {
+		t.Run("has extra prop and dim", func(t *ftt.Test) {
 			mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(res, nil).AnyTimes()
 			extraProps := map[string]any{
 				"analysis_id":     4646418413256704,
@@ -110,8 +111,8 @@ func TestRerun(t *testing.T) {
 			}
 
 			props, dimens, err := getRerunPropertiesAndDimensions(c, 1234, extraProps, extraDimens)
-			So(err, ShouldBeNil)
-			So(props, ShouldResemble, &structpb.Struct{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, props, should.Resemble(&structpb.Struct{
 				Fields: map[string]*structpb.Value{
 					"builder_group":  structpb.NewStringValue("buildergroup1"),
 					"target_builder": structpb.NewStructValue(targetBuilder),
@@ -124,8 +125,8 @@ func TestRerun(t *testing.T) {
 					"compile_targets": structpb.NewListValue(&structpb.ListValue{Values: []*structpb.Value{structpb.NewStringValue("target")}}),
 					"bisection_host":  structpb.NewStringValue("luci-bisection.appspot.com"),
 				},
-			})
-			So(dimens, ShouldResemble, []*bbpb.RequestedDimension{
+			}))
+			assert.Loosely(t, dimens, should.Resemble([]*bbpb.RequestedDimension{
 				{
 					Key:   "os",
 					Value: "ubuntu",
@@ -138,15 +139,15 @@ func TestRerun(t *testing.T) {
 					Key:   "id",
 					Value: "bot-12345",
 				},
-			})
+			}))
 		})
 
-		Convey("no extra dim", func() {
+		t.Run("no extra dim", func(t *ftt.Test) {
 			mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(res, nil).AnyTimes()
 
 			_, dimens, err := getRerunPropertiesAndDimensions(c, 1234, nil, nil)
-			So(err, ShouldBeNil)
-			So(dimens, ShouldResemble, []*bbpb.RequestedDimension{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, dimens, should.Resemble([]*bbpb.RequestedDimension{
 				{
 					Key:   "os",
 					Value: "ubuntu",
@@ -155,10 +156,10 @@ func TestRerun(t *testing.T) {
 					Key:   "gpu",
 					Value: "Intel",
 				},
-			})
+			}))
 		})
 
-		Convey("builder is a tester", func() {
+		t.Run("builder is a tester", func(t *ftt.Test) {
 			res.Input.Properties.Fields["parent_build_id"] = structpb.NewStringValue("123")
 			parentBuild := &bbpb.Build{
 				Infra: &bbpb.BuildInfra{Swarming: &bbpb.BuildInfra_Swarming{
@@ -170,13 +171,13 @@ func TestRerun(t *testing.T) {
 			)
 
 			_, dimens, err := getRerunPropertiesAndDimensions(c, 1234, nil, nil)
-			So(err, ShouldBeNil)
-			So(dimens, ShouldResemble, []*bbpb.RequestedDimension{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, dimens, should.Resemble([]*bbpb.RequestedDimension{
 				{
 					Key:   "os",
 					Value: "parent os",
 				},
-			})
+			}))
 		})
 	})
 
@@ -235,31 +236,31 @@ func TestCreateRerunBuildModel(t *testing.T) {
 		StartTime:  &timestamppb.Timestamp{Seconds: 101},
 	}
 
-	Convey("Create rerun build", t, func() {
+	ftt.Run("Create rerun build", t, func(t *ftt.Test) {
 		compileFailure := &model.CompileFailure{
 			Id:            111,
 			OutputTargets: []string{"target1"},
 		}
-		So(datastore.Put(c, compileFailure), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, compileFailure), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		analysis := &model.CompileFailureAnalysis{
 			Id:             444,
 			CompileFailure: datastore.KeyForObj(c, compileFailure),
 		}
-		So(datastore.Put(c, analysis), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, analysis), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		nsa := &model.CompileNthSectionAnalysis{
 			ParentAnalysis: datastore.KeyForObj(c, analysis),
 		}
-		So(datastore.Put(c, nsa), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, nsa), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		heuristicAnalysis := &model.CompileHeuristicAnalysis{
 			ParentAnalysis: datastore.KeyForObj(c, analysis),
 		}
-		So(datastore.Put(c, heuristicAnalysis), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, heuristicAnalysis), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		suspect := &model.Suspect{
@@ -272,21 +273,21 @@ func TestCreateRerunBuildModel(t *testing.T) {
 				Id:      "3425",
 			},
 		}
-		So(datastore.Put(c, suspect), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, suspect), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
-		Convey("Invalid data", func() {
+		t.Run("Invalid data", func(t *ftt.Test) {
 			_, err := CreateRerunBuildModel(c, build, model.RerunBuildType_CulpritVerification, nil, nsa, 0)
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 			_, err = CreateRerunBuildModel(c, build, model.RerunBuildType_NthSection, suspect, nil, 0)
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 		})
 
-		Convey("Culprit verification", func() {
+		t.Run("Culprit verification", func(t *ftt.Test) {
 			rerunBuildModel, err := CreateRerunBuildModel(c, build, model.RerunBuildType_CulpritVerification, suspect, nil, 100)
 			datastore.GetTestable(c).CatchupIndexes()
-			So(err, ShouldBeNil)
-			So(rerunBuildModel, ShouldResemble, &model.CompileRerunBuild{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, rerunBuildModel, should.Resemble(&model.CompileRerunBuild{
 				Id: 123,
 				LuciBuild: model.LuciBuild{
 					BuildId: 123,
@@ -303,26 +304,26 @@ func TestCreateRerunBuildModel(t *testing.T) {
 					CreateTime: build.CreateTime.AsTime(),
 					StartTime:  build.StartTime.AsTime(),
 				},
-			})
+			}))
 
 			// Check SingleRerun
 			q := datastore.NewQuery("SingleRerun").Eq("rerun_build", datastore.KeyForObj(c, rerunBuildModel))
 			singleReruns := []*model.SingleRerun{}
 			err = datastore.GetAll(c, q, &singleReruns)
-			So(err, ShouldBeNil)
-			So(len(singleReruns), ShouldEqual, 1)
-			So(singleReruns[0].Suspect, ShouldResemble, datastore.KeyForObj(c, suspect))
-			So(singleReruns[0].Analysis, ShouldResemble, datastore.KeyForObj(c, analysis))
-			So(singleReruns[0].Type, ShouldEqual, model.RerunBuildType_CulpritVerification)
-			So(singleReruns[0].Dimensions, ShouldResembleProto, util.ToDimensionsPB(res.Infra.Swarming.TaskDimensions))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(singleReruns), should.Equal(1))
+			assert.Loosely(t, singleReruns[0].Suspect, should.Resemble(datastore.KeyForObj(c, suspect)))
+			assert.Loosely(t, singleReruns[0].Analysis, should.Resemble(datastore.KeyForObj(c, analysis)))
+			assert.Loosely(t, singleReruns[0].Type, should.Equal(model.RerunBuildType_CulpritVerification))
+			assert.Loosely(t, singleReruns[0].Dimensions, should.Resemble(util.ToDimensionsPB(res.Infra.Swarming.TaskDimensions)))
 		})
 
-		Convey("Nth Section", func() {
+		t.Run("Nth Section", func(t *ftt.Test) {
 			build.Id = 124
 			rerunBuildModel1, err := CreateRerunBuildModel(c, build, model.RerunBuildType_NthSection, nil, nsa, 100)
 			datastore.GetTestable(c).CatchupIndexes()
-			So(err, ShouldBeNil)
-			So(rerunBuildModel1, ShouldResemble, &model.CompileRerunBuild{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, rerunBuildModel1, should.Resemble(&model.CompileRerunBuild{
 				Id: 124,
 				LuciBuild: model.LuciBuild{
 					BuildId: 124,
@@ -339,18 +340,18 @@ func TestCreateRerunBuildModel(t *testing.T) {
 					CreateTime: build.CreateTime.AsTime(),
 					StartTime:  build.StartTime.AsTime(),
 				},
-			})
+			}))
 
 			// Check SingleRerun
 			q := datastore.NewQuery("SingleRerun").Eq("rerun_build", datastore.KeyForObj(c, rerunBuildModel1))
 			singleReruns := []*model.SingleRerun{}
 			err = datastore.GetAll(c, q, &singleReruns)
-			So(err, ShouldBeNil)
-			So(len(singleReruns), ShouldEqual, 1)
-			So(singleReruns[0].NthSectionAnalysis, ShouldResemble, datastore.KeyForObj(c, nsa))
-			So(singleReruns[0].Analysis, ShouldResemble, datastore.KeyForObj(c, analysis))
-			So(singleReruns[0].Type, ShouldEqual, model.RerunBuildType_NthSection)
-			So(singleReruns[0].Dimensions, ShouldResembleProto, util.ToDimensionsPB(res.Infra.Swarming.TaskDimensions))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(singleReruns), should.Equal(1))
+			assert.Loosely(t, singleReruns[0].NthSectionAnalysis, should.Resemble(datastore.KeyForObj(c, nsa)))
+			assert.Loosely(t, singleReruns[0].Analysis, should.Resemble(datastore.KeyForObj(c, analysis)))
+			assert.Loosely(t, singleReruns[0].Type, should.Equal(model.RerunBuildType_NthSection))
+			assert.Loosely(t, singleReruns[0].Dimensions, should.Resemble(util.ToDimensionsPB(res.Infra.Swarming.TaskDimensions)))
 		})
 	})
 }
@@ -358,7 +359,7 @@ func TestCreateRerunBuildModel(t *testing.T) {
 func TestUpdateRerunStatus(t *testing.T) {
 	t.Parallel()
 
-	Convey("TestUpdateRerunStatus", t, func() {
+	ftt.Run("TestUpdateRerunStatus", t, func(t *ftt.Test) {
 		c := memory.Use(context.Background())
 		testutil.UpdateIndices(c)
 
@@ -379,78 +380,78 @@ func TestUpdateRerunStatus(t *testing.T) {
 			EndTime:   &timestamppb.Timestamp{Seconds: 200},
 		}
 
-		Convey("build starts", func() {
+		t.Run("build starts", func(t *ftt.Test) {
 			mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(res, nil).AnyTimes()
 			rerunBuild := &model.CompileRerunBuild{
 				Id: 1234,
 			}
-			So(datastore.Put(c, rerunBuild), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, rerunBuild), should.BeNil)
 			datastore.GetTestable(c).CatchupIndexes()
 			singleRerun := &model.SingleRerun{
 				RerunBuild: datastore.KeyForObj(c, rerunBuild),
 				Status:     pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
 			}
-			So(datastore.Put(c, singleRerun), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, singleRerun), should.BeNil)
 			datastore.GetTestable(c).CatchupIndexes()
-			So(UpdateCompileRerunStatus(c, 1234), ShouldBeNil)
+			assert.Loosely(t, UpdateCompileRerunStatus(c, 1234), should.BeNil)
 			datastore.GetTestable(c).CatchupIndexes()
 
 			// Checking the start time
-			So(datastore.Get(c, rerunBuild), ShouldBeNil)
-			So(rerunBuild.StartTime.Unix(), ShouldEqual, 100)
-			So(rerunBuild.Status, ShouldEqual, bbpb.Status_STARTED)
-			So(datastore.Get(c, singleRerun), ShouldBeNil)
-			So(singleRerun.StartTime.Unix(), ShouldEqual, 100)
-			So(singleRerun.Status, ShouldEqual, pb.RerunStatus_RERUN_STATUS_IN_PROGRESS)
+			assert.Loosely(t, datastore.Get(c, rerunBuild), should.BeNil)
+			assert.Loosely(t, rerunBuild.StartTime.Unix(), should.Equal(100))
+			assert.Loosely(t, rerunBuild.Status, should.Equal(bbpb.Status_STARTED))
+			assert.Loosely(t, datastore.Get(c, singleRerun), should.BeNil)
+			assert.Loosely(t, singleRerun.StartTime.Unix(), should.Equal(100))
+			assert.Loosely(t, singleRerun.Status, should.Equal(pb.RerunStatus_RERUN_STATUS_IN_PROGRESS))
 		})
 
-		Convey("build ends", func() {
+		t.Run("build ends", func(t *ftt.Test) {
 			res.Status = bbpb.Status_SUCCESS
 			mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(res, nil).AnyTimes()
-			Convey("rerun didn't end", func() {
+			t.Run("rerun didn't end", func(t *ftt.Test) {
 				rerunBuild := &model.CompileRerunBuild{
 					Id: 1234,
 				}
-				So(datastore.Put(c, rerunBuild), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(c, rerunBuild), should.BeNil)
 				singleRerun := &model.SingleRerun{
 					RerunBuild: datastore.KeyForObj(c, rerunBuild),
 					Status:     pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
 				}
-				So(datastore.Put(c, singleRerun), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(c, singleRerun), should.BeNil)
 				datastore.GetTestable(c).CatchupIndexes()
 
-				So(UpdateCompileRerunStatus(c, 1234), ShouldBeNil)
+				assert.Loosely(t, UpdateCompileRerunStatus(c, 1234), should.BeNil)
 				datastore.GetTestable(c).CatchupIndexes()
 				// Checking the end time and status.
-				So(datastore.Get(c, rerunBuild), ShouldBeNil)
-				So(rerunBuild.EndTime.Unix(), ShouldEqual, 200)
-				So(rerunBuild.Status, ShouldEqual, bbpb.Status_SUCCESS)
-				So(datastore.Get(c, singleRerun), ShouldBeNil)
-				So(singleRerun.EndTime.Unix(), ShouldEqual, 200)
-				So(singleRerun.Status, ShouldEqual, pb.RerunStatus_RERUN_STATUS_INFRA_FAILED)
+				assert.Loosely(t, datastore.Get(c, rerunBuild), should.BeNil)
+				assert.Loosely(t, rerunBuild.EndTime.Unix(), should.Equal(200))
+				assert.Loosely(t, rerunBuild.Status, should.Equal(bbpb.Status_SUCCESS))
+				assert.Loosely(t, datastore.Get(c, singleRerun), should.BeNil)
+				assert.Loosely(t, singleRerun.EndTime.Unix(), should.Equal(200))
+				assert.Loosely(t, singleRerun.Status, should.Equal(pb.RerunStatus_RERUN_STATUS_INFRA_FAILED))
 			})
-			Convey("rerun ends", func() {
+			t.Run("rerun ends", func(t *ftt.Test) {
 				rerunBuild := &model.CompileRerunBuild{
 					Id: 1234,
 				}
-				So(datastore.Put(c, rerunBuild), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(c, rerunBuild), should.BeNil)
 				singleRerun := &model.SingleRerun{
 					RerunBuild: datastore.KeyForObj(c, rerunBuild),
 					Status:     pb.RerunStatus_RERUN_STATUS_PASSED,
 					EndTime:    time.Unix(101, 0).UTC(),
 				}
-				So(datastore.Put(c, singleRerun), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(c, singleRerun), should.BeNil)
 				datastore.GetTestable(c).CatchupIndexes()
 
-				So(UpdateCompileRerunStatus(c, 1234), ShouldBeNil)
+				assert.Loosely(t, UpdateCompileRerunStatus(c, 1234), should.BeNil)
 				datastore.GetTestable(c).CatchupIndexes()
 				// Checking the end time and status.
-				So(datastore.Get(c, rerunBuild), ShouldBeNil)
-				So(rerunBuild.EndTime.Unix(), ShouldEqual, 200)
-				So(rerunBuild.Status, ShouldEqual, bbpb.Status_SUCCESS)
-				So(datastore.Get(c, singleRerun), ShouldBeNil)
-				So(singleRerun.EndTime.Unix(), ShouldEqual, 101)
-				So(singleRerun.Status, ShouldEqual, pb.RerunStatus_RERUN_STATUS_PASSED)
+				assert.Loosely(t, datastore.Get(c, rerunBuild), should.BeNil)
+				assert.Loosely(t, rerunBuild.EndTime.Unix(), should.Equal(200))
+				assert.Loosely(t, rerunBuild.Status, should.Equal(bbpb.Status_SUCCESS))
+				assert.Loosely(t, datastore.Get(c, singleRerun), should.BeNil)
+				assert.Loosely(t, singleRerun.EndTime.Unix(), should.Equal(101))
+				assert.Loosely(t, singleRerun.Status, should.Equal(pb.RerunStatus_RERUN_STATUS_PASSED))
 			})
 		})
 	})
@@ -459,7 +460,7 @@ func TestUpdateRerunStatus(t *testing.T) {
 func TestUpdateTestRerunStatus(t *testing.T) {
 	t.Parallel()
 
-	Convey("TestUpdateRerunStatus", t, func() {
+	ftt.Run("TestUpdateRerunStatus", t, func(t *ftt.Test) {
 		c := memory.Use(context.Background())
 		testutil.UpdateIndices(c)
 		cl := testclock.New(testclock.TestTimeUTC)
@@ -478,74 +479,74 @@ func TestUpdateTestRerunStatus(t *testing.T) {
 			EndTime:   &timestamppb.Timestamp{Seconds: 200},
 		}
 
-		Convey("build starts", func() {
+		t.Run("build starts", func(t *ftt.Test) {
 			singleRerun := &model.TestSingleRerun{
 				ID:     1234,
 				Status: pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
 			}
-			So(datastore.Put(c, singleRerun), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, singleRerun), should.BeNil)
 			datastore.GetTestable(c).CatchupIndexes()
-			So(UpdateTestRerunStatus(c, build), ShouldBeNil)
+			assert.Loosely(t, UpdateTestRerunStatus(c, build), should.BeNil)
 			datastore.GetTestable(c).CatchupIndexes()
 
 			// Checking the start time
-			So(datastore.Get(c, singleRerun), ShouldBeNil)
-			So(singleRerun.LUCIBuild.StartTime.Unix(), ShouldEqual, 100)
-			So(singleRerun.LUCIBuild.Status, ShouldEqual, bbpb.Status_STARTED)
+			assert.Loosely(t, datastore.Get(c, singleRerun), should.BeNil)
+			assert.Loosely(t, singleRerun.LUCIBuild.StartTime.Unix(), should.Equal(100))
+			assert.Loosely(t, singleRerun.LUCIBuild.Status, should.Equal(bbpb.Status_STARTED))
 		})
 
-		Convey("build ends", func() {
+		t.Run("build ends", func(t *ftt.Test) {
 			build.Status = bbpb.Status_SUCCESS
-			Convey("rerun didn't end", func() {
-				tfa := testutil.CreateTestFailureAnalysis(c, &testutil.TestFailureAnalysisCreationOption{
+			t.Run("rerun didn't end", func(t *ftt.Test) {
+				tfa := testutil.CreateTestFailureAnalysis(c, t, &testutil.TestFailureAnalysisCreationOption{
 					ID: 100,
 				})
-				nsa := testutil.CreateTestNthSectionAnalysis(c, &testutil.TestNthSectionAnalysisCreationOption{
+				nsa := testutil.CreateTestNthSectionAnalysis(c, t, &testutil.TestNthSectionAnalysisCreationOption{
 					ID:                1000,
 					ParentAnalysisKey: datastore.KeyForObj(c, tfa),
 				})
-				singleRerun := testutil.CreateTestSingleRerun(c, &testutil.TestSingleRerunCreationOption{
+				singleRerun := testutil.CreateTestSingleRerun(c, t, &testutil.TestSingleRerunCreationOption{
 					AnalysisKey: datastore.KeyForObj(c, tfa),
 					ID:          1234,
 				})
-				So(datastore.Put(c, singleRerun), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(c, singleRerun), should.BeNil)
 				datastore.GetTestable(c).CatchupIndexes()
 
-				So(UpdateTestRerunStatus(c, build), ShouldBeNil)
+				assert.Loosely(t, UpdateTestRerunStatus(c, build), should.BeNil)
 				datastore.GetTestable(c).CatchupIndexes()
 
 				// Checking the end time and status.
-				So(datastore.Get(c, singleRerun), ShouldBeNil)
-				So(singleRerun.LUCIBuild.EndTime.Unix(), ShouldEqual, 200)
-				So(singleRerun.LUCIBuild.Status, ShouldEqual, bbpb.Status_SUCCESS)
-				So(singleRerun.Status, ShouldEqual, pb.RerunStatus_RERUN_STATUS_INFRA_FAILED)
+				assert.Loosely(t, datastore.Get(c, singleRerun), should.BeNil)
+				assert.Loosely(t, singleRerun.LUCIBuild.EndTime.Unix(), should.Equal(200))
+				assert.Loosely(t, singleRerun.LUCIBuild.Status, should.Equal(bbpb.Status_SUCCESS))
+				assert.Loosely(t, singleRerun.Status, should.Equal(pb.RerunStatus_RERUN_STATUS_INFRA_FAILED))
 
-				So(datastore.Get(c, nsa), ShouldBeNil)
-				So(nsa.Status, ShouldEqual, pb.AnalysisStatus_ERROR)
-				So(nsa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
-				So(nsa.EndTime.Unix(), ShouldEqual, 10000)
+				assert.Loosely(t, datastore.Get(c, nsa), should.BeNil)
+				assert.Loosely(t, nsa.Status, should.Equal(pb.AnalysisStatus_ERROR))
+				assert.Loosely(t, nsa.RunStatus, should.Equal(pb.AnalysisRunStatus_ENDED))
+				assert.Loosely(t, nsa.EndTime.Unix(), should.Equal(10000))
 
-				So(datastore.Get(c, tfa), ShouldBeNil)
-				So(tfa.Status, ShouldEqual, pb.AnalysisStatus_ERROR)
-				So(tfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
-				So(tfa.EndTime.Unix(), ShouldEqual, 10000)
+				assert.Loosely(t, datastore.Get(c, tfa), should.BeNil)
+				assert.Loosely(t, tfa.Status, should.Equal(pb.AnalysisStatus_ERROR))
+				assert.Loosely(t, tfa.RunStatus, should.Equal(pb.AnalysisRunStatus_ENDED))
+				assert.Loosely(t, tfa.EndTime.Unix(), should.Equal(10000))
 			})
 
-			Convey("rerun ends", func() {
+			t.Run("rerun ends", func(t *ftt.Test) {
 				singleRerun := &model.TestSingleRerun{
 					ID:     1234,
 					Status: pb.RerunStatus_RERUN_STATUS_PASSED,
 				}
-				So(datastore.Put(c, singleRerun), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(c, singleRerun), should.BeNil)
 				datastore.GetTestable(c).CatchupIndexes()
 
-				So(UpdateTestRerunStatus(c, build), ShouldBeNil)
+				assert.Loosely(t, UpdateTestRerunStatus(c, build), should.BeNil)
 				datastore.GetTestable(c).CatchupIndexes()
 				// Checking the end time and status.
-				So(datastore.Get(c, singleRerun), ShouldBeNil)
-				So(singleRerun.LUCIBuild.EndTime.Unix(), ShouldEqual, 200)
-				So(singleRerun.LUCIBuild.Status, ShouldEqual, bbpb.Status_SUCCESS)
-				So(singleRerun.Status, ShouldEqual, pb.RerunStatus_RERUN_STATUS_PASSED)
+				assert.Loosely(t, datastore.Get(c, singleRerun), should.BeNil)
+				assert.Loosely(t, singleRerun.LUCIBuild.EndTime.Unix(), should.Equal(200))
+				assert.Loosely(t, singleRerun.LUCIBuild.Status, should.Equal(bbpb.Status_SUCCESS))
+				assert.Loosely(t, singleRerun.Status, should.Equal(pb.RerunStatus_RERUN_STATUS_PASSED))
 			})
 		})
 	})

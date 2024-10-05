@@ -15,13 +15,14 @@
 package util
 
 import (
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"testing"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestExtractorUtil(t *testing.T) {
-	Convey("NormalizeFilePath", t, func() {
+	ftt.Run("NormalizeFilePath", t, func(t *ftt.Test) {
 		data := map[string]string{
 			"../a/b/c.cc":    "a/b/c.cc",
 			"a/b/./c.cc":     "a/b/c.cc",
@@ -31,11 +32,11 @@ func TestExtractorUtil(t *testing.T) {
 			"//a/b/c.cc":     "a/b/c.cc",
 		}
 		for fp, nfp := range data {
-			So(NormalizeFilePath(fp), ShouldEqual, nfp)
+			assert.Loosely(t, NormalizeFilePath(fp), should.Equal(nfp))
 		}
 	})
 
-	Convey("GetCanonicalFileName", t, func() {
+	ftt.Run("GetCanonicalFileName", t, func(t *ftt.Test) {
 		data := map[string]string{
 			"../a/b/c.cc":   "c",
 			"a/b/./d.dd":    "d",
@@ -43,18 +44,18 @@ func TestExtractorUtil(t *testing.T) {
 			"a/b/c_impl.xx": "c",
 		}
 		for fp, name := range data {
-			So(GetCanonicalFileName(fp), ShouldEqual, name)
+			assert.Loosely(t, GetCanonicalFileName(fp), should.Equal(name))
 		}
 	})
 
-	Convey("StripExtensionAndCommonSuffixFromFileName", t, func() {
+	ftt.Run("StripExtensionAndCommonSuffixFromFileName", t, func(t *ftt.Test) {
 		data := map[string]string{
 			"a_file_impl_mac_test.cc": "a_file",
 			"src/b_file_x11_ozone.h":  "src/b_file",
 			"c_file.cc":               "c_file",
 		}
 		for k, v := range data {
-			So(StripExtensionAndCommonSuffixFromFileName(k), ShouldEqual, v)
+			assert.Loosely(t, StripExtensionAndCommonSuffixFromFileName(k), should.Equal(v))
 		}
 	})
 

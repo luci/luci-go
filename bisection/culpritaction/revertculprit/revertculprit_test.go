@@ -21,7 +21,6 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -41,7 +40,9 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/proto"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -50,7 +51,7 @@ import (
 func TestRevertCulprit(t *testing.T) {
 	t.Parallel()
 
-	Convey("RevertCulprit", t, func() {
+	ftt.Run("RevertCulprit", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		testutil.UpdateIndices(ctx)
 
@@ -63,16 +64,16 @@ func TestRevertCulprit(t *testing.T) {
 
 		// Setup datastore
 		failedBuild, _, analysis := testutil.CreateCompileFailureAnalysisAnalysisChain(
-			ctx, 88128398584903, "chromium", 444)
+			ctx, t, 88128398584903, "chromium", 444)
 		heuristicAnalysis := &model.CompileHeuristicAnalysis{
 			ParentAnalysis: datastore.KeyForObj(ctx, analysis),
 		}
-		So(datastore.Put(ctx, heuristicAnalysis), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, heuristicAnalysis), should.BeNil)
 
 		nsa := &model.CompileNthSectionAnalysis{
 			ParentAnalysis: datastore.KeyForObj(ctx, analysis),
 		}
-		So(datastore.Put(ctx, nsa), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, nsa), should.BeNil)
 		datastore.GetTestable(ctx).CatchupIndexes()
 
 		analysisURL := util.ConstructCompileAnalysisURL("chromium", failedBuild.Id)
@@ -107,9 +108,9 @@ func TestRevertCulprit(t *testing.T) {
 		projectCfg := config.CreatePlaceholderProjectConfig()
 		projectCfg.CompileAnalysisConfig.GerritConfig = gerritConfig
 		cfg := map[string]*configpb.ProjectConfig{"chromium": projectCfg}
-		So(config.SetTestProjectConfig(ctx, cfg), ShouldBeNil)
+		assert.Loosely(t, config.SetTestProjectConfig(ctx, cfg), should.BeNil)
 
-		Convey("must be confirmed culprit", func() {
+		t.Run("must be confirmed culprit", func(t *ftt.Test) {
 			// Setup suspect in datastore
 			heuristicSuspect := &model.Suspect{
 				Id:             1,
@@ -125,30 +126,30 @@ func TestRevertCulprit(t *testing.T) {
 				VerificationStatus: model.SuspectVerificationStatus_UnderVerification,
 				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 			}
-			So(datastore.Put(ctx, heuristicSuspect), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, heuristicSuspect), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
 			err := TakeCulpritAction(ctx, heuristicSuspect)
 			expectedErr := fmt.Sprintf("suspect (commit %s) has verification status"+
 				" %s and should not be reverted", heuristicSuspect.GitilesCommit.Id,
 				heuristicSuspect.VerificationStatus)
-			So(err, ShouldErrLike, expectedErr)
+			assert.Loosely(t, err, should.ErrLike(expectedErr))
 
 			datastore.GetTestable(ctx).CatchupIndexes()
 			suspect, err := datastoreutil.GetSuspect(ctx,
 				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
-			So(err, ShouldBeNil)
-			So(suspect, ShouldNotBeNil)
-			So(suspect.ActionDetails, ShouldResemble, model.ActionDetails{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, suspect, should.NotBeNil)
+			assert.Loosely(t, suspect.ActionDetails, should.Resemble(model.ActionDetails{
 				RevertURL:               "",
 				IsRevertCreated:         false,
 				IsRevertCommitted:       false,
 				HasSupportRevertComment: false,
 				HasCulpritComment:       false,
-			})
+			}))
 		})
 
-		Convey("nthsection actions must be enabled", func() {
+		t.Run("nthsection actions must be enabled", func(t *ftt.Test) {
 			// Set up suspect in datastore
 			nthsectionSuspect := &model.Suspect{
 				Type:           model.SuspectType_NthSection,
@@ -160,7 +161,7 @@ func TestRevertCulprit(t *testing.T) {
 				},
 				AnalysisType: pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 			}
-			So(datastore.Put(ctx, nthsectionSuspect), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, nthsectionSuspect), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
 			// Set the project-level config for this test
@@ -168,26 +169,26 @@ func TestRevertCulprit(t *testing.T) {
 			projectCfg := config.CreatePlaceholderProjectConfig()
 			projectCfg.CompileAnalysisConfig.GerritConfig = gerritConfig
 			cfg := map[string]*configpb.ProjectConfig{"chromium": projectCfg}
-			So(config.SetTestProjectConfig(ctx, cfg), ShouldBeNil)
+			assert.Loosely(t, config.SetTestProjectConfig(ctx, cfg), should.BeNil)
 
 			err := TakeCulpritAction(ctx, nthsectionSuspect)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
 			suspect, err := datastoreutil.GetSuspect(ctx,
 				nthsectionSuspect.Id, nthsectionSuspect.ParentAnalysis)
-			So(err, ShouldBeNil)
-			So(suspect, ShouldNotBeNil)
-			So(suspect.ActionDetails, ShouldResemble, model.ActionDetails{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, suspect, should.NotBeNil)
+			assert.Loosely(t, suspect.ActionDetails, should.Resemble(model.ActionDetails{
 				RevertURL:               "",
 				IsRevertCreated:         false,
 				IsRevertCommitted:       false,
 				HasSupportRevertComment: false,
 				HasCulpritComment:       false,
-			})
+			}))
 		})
 
-		Convey("nthsection suspect must have correct status", func() {
+		t.Run("nthsection suspect must have correct status", func(t *ftt.Test) {
 			// Set up suspect in datastore
 			nthsectionSuspect := &model.Suspect{
 				Type:           model.SuspectType_NthSection,
@@ -200,30 +201,30 @@ func TestRevertCulprit(t *testing.T) {
 				VerificationStatus: model.SuspectVerificationStatus_VerificationError,
 				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 			}
-			So(datastore.Put(ctx, nthsectionSuspect), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, nthsectionSuspect), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
 			err := TakeCulpritAction(ctx, nthsectionSuspect)
 			expectedErr := fmt.Sprintf("suspect (commit %s) has verification status"+
 				" %s and should not be reverted", nthsectionSuspect.GitilesCommit.Id,
 				nthsectionSuspect.VerificationStatus)
-			So(err, ShouldErrLike, expectedErr)
+			assert.Loosely(t, err, should.ErrLike(expectedErr))
 
 			datastore.GetTestable(ctx).CatchupIndexes()
 			suspect, err := datastoreutil.GetSuspect(ctx,
 				nthsectionSuspect.Id, nthsectionSuspect.ParentAnalysis)
-			So(err, ShouldBeNil)
-			So(suspect, ShouldNotBeNil)
-			So(suspect.ActionDetails, ShouldResemble, model.ActionDetails{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, suspect, should.NotBeNil)
+			assert.Loosely(t, suspect.ActionDetails, should.Resemble(model.ActionDetails{
 				RevertURL:               "",
 				IsRevertCreated:         false,
 				IsRevertCommitted:       false,
 				HasSupportRevertComment: false,
 				HasCulpritComment:       false,
-			})
+			}))
 		})
 
-		Convey("all Gerrit actions disabled", func() {
+		t.Run("all Gerrit actions disabled", func(t *ftt.Test) {
 			// Setup suspect in datastore
 			heuristicSuspect := &model.Suspect{
 				Id:             2,
@@ -239,7 +240,7 @@ func TestRevertCulprit(t *testing.T) {
 				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
 				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 			}
-			So(datastore.Put(ctx, heuristicSuspect), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, heuristicSuspect), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
 			// Set the project-level config for this test
@@ -247,27 +248,27 @@ func TestRevertCulprit(t *testing.T) {
 			projectCfg := config.CreatePlaceholderProjectConfig()
 			projectCfg.CompileAnalysisConfig.GerritConfig = gerritConfig
 			cfg := map[string]*configpb.ProjectConfig{"chromium": projectCfg}
-			So(config.SetTestProjectConfig(ctx, cfg), ShouldBeNil)
+			assert.Loosely(t, config.SetTestProjectConfig(ctx, cfg), should.BeNil)
 
 			err := TakeCulpritAction(ctx, heuristicSuspect)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
 			suspect, err := datastoreutil.GetSuspect(ctx,
 				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
-			So(err, ShouldBeNil)
-			So(suspect, ShouldNotBeNil)
-			So(suspect.ActionDetails, ShouldResemble, model.ActionDetails{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, suspect, should.NotBeNil)
+			assert.Loosely(t, suspect.ActionDetails, should.Resemble(model.ActionDetails{
 				RevertURL:               "",
 				IsRevertCreated:         false,
 				IsRevertCommitted:       false,
 				HasSupportRevertComment: false,
 				HasCulpritComment:       false,
 				InactionReason:          pb.CulpritInactionReason_ACTIONS_DISABLED,
-			})
+			}))
 		})
 
-		Convey("already reverted", func() {
+		t.Run("already reverted", func(t *ftt.Test) {
 			// Setup suspect in datastore
 			heuristicSuspect := &model.Suspect{
 				Id:             3,
@@ -283,7 +284,7 @@ func TestRevertCulprit(t *testing.T) {
 				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
 				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 			}
-			So(datastore.Put(ctx, heuristicSuspect), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, heuristicSuspect), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
 			// Set up mock responses
@@ -327,24 +328,24 @@ func TestRevertCulprit(t *testing.T) {
 				Return(revertRes, nil).Times(1)
 
 			err := TakeCulpritAction(ctx, heuristicSuspect)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
 			suspect, err := datastoreutil.GetSuspect(ctx,
 				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
-			So(err, ShouldBeNil)
-			So(suspect, ShouldNotBeNil)
-			So(suspect.ActionDetails, ShouldResemble, model.ActionDetails{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, suspect, should.NotBeNil)
+			assert.Loosely(t, suspect.ActionDetails, should.Resemble(model.ActionDetails{
 				RevertURL:               "https://test-review.googlesource.com/c/chromium/src/+/876549",
 				IsRevertCreated:         false,
 				IsRevertCommitted:       false,
 				HasSupportRevertComment: false,
 				HasCulpritComment:       false,
 				InactionReason:          pb.CulpritInactionReason_REVERTED_MANUALLY,
-			})
+			}))
 		})
 
-		Convey("only abandoned revert exists", func() {
+		t.Run("only abandoned revert exists", func(t *ftt.Test) {
 			// Setup suspect in datastore
 			heuristicSuspect := &model.Suspect{
 				Id:             4,
@@ -360,7 +361,7 @@ func TestRevertCulprit(t *testing.T) {
 				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
 				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 			}
-			So(datastore.Put(ctx, heuristicSuspect), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, heuristicSuspect), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
 			// Set up mock responses
@@ -410,25 +411,25 @@ func TestRevertCulprit(t *testing.T) {
 			)).Times(1)
 
 			err := TakeCulpritAction(ctx, heuristicSuspect)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
 			suspect, err := datastoreutil.GetSuspect(ctx,
 				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
-			So(err, ShouldBeNil)
-			So(suspect, ShouldNotBeNil)
-			So(suspect.ActionDetails, ShouldResemble, model.ActionDetails{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, suspect, should.NotBeNil)
+			assert.Loosely(t, suspect.ActionDetails, should.Resemble(model.ActionDetails{
 				RevertURL:               "https://test-review.googlesource.com/c/chromium/src/+/876549",
 				IsRevertCreated:         false,
 				IsRevertCommitted:       false,
 				HasSupportRevertComment: false,
 				HasCulpritComment:       true,
 				CulpritCommentTime:      testclock.TestTimeUTC.Round(time.Second),
-			})
-			So(culpritActionCounter.Get(ctx, "chromium", "compile", "comment_culprit"), ShouldEqual, 1)
+			}))
+			assert.Loosely(t, culpritActionCounter.Get(ctx, "chromium", "compile", "comment_culprit"), should.Equal(1))
 		})
 
-		Convey("active revert exists", func() {
+		t.Run("active revert exists", func(t *ftt.Test) {
 			// Setup suspect in datastore
 			heuristicSuspect := &model.Suspect{
 				Id:             5,
@@ -444,7 +445,7 @@ func TestRevertCulprit(t *testing.T) {
 				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
 				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 			}
-			So(datastore.Put(ctx, heuristicSuspect), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, heuristicSuspect), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
 			// Set up mock responses
@@ -500,27 +501,27 @@ func TestRevertCulprit(t *testing.T) {
 			)).Times(1)
 
 			err := TakeCulpritAction(ctx, heuristicSuspect)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
 			suspect, err := datastoreutil.GetSuspect(ctx,
 				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
-			So(err, ShouldBeNil)
-			So(suspect, ShouldNotBeNil)
-			So(suspect.ActionDetails, ShouldResemble, model.ActionDetails{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, suspect, should.NotBeNil)
+			assert.Loosely(t, suspect.ActionDetails, should.Resemble(model.ActionDetails{
 				RevertURL:                "https://test-review.googlesource.com/c/chromium/src/+/876549",
 				IsRevertCreated:          false,
 				IsRevertCommitted:        false,
 				HasSupportRevertComment:  true,
 				SupportRevertCommentTime: testclock.TestTimeUTC.Round(time.Second),
 				HasCulpritComment:        false,
-			})
-			So(culpritActionCounter.Get(ctx, "chromium", "compile", "comment_revert"), ShouldEqual, 1)
+			}))
+			assert.Loosely(t, culpritActionCounter.Get(ctx, "chromium", "compile", "comment_revert"), should.Equal(1))
 		})
 
-		Convey("non-sheriffable builder", func() {
+		t.Run("non-sheriffable builder", func(t *ftt.Test) {
 			failedBuild.SheriffRotations = []string{}
-			So(datastore.Put(ctx, failedBuild), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, failedBuild), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 			// Setup suspect in datastore
 			heuristicSuspect := &model.Suspect{
@@ -537,7 +538,7 @@ func TestRevertCulprit(t *testing.T) {
 				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
 				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 			}
-			So(datastore.Put(ctx, heuristicSuspect), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, heuristicSuspect), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
 			// Set up mock responses
@@ -580,25 +581,25 @@ func TestRevertCulprit(t *testing.T) {
 			)).Times(1)
 
 			err := TakeCulpritAction(ctx, heuristicSuspect)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
 			suspect, err := datastoreutil.GetSuspect(ctx,
 				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
-			So(err, ShouldBeNil)
-			So(suspect, ShouldNotBeNil)
-			So(suspect.ActionDetails, ShouldResemble, model.ActionDetails{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, suspect, should.NotBeNil)
+			assert.Loosely(t, suspect.ActionDetails, should.Resemble(model.ActionDetails{
 				RevertURL:               "",
 				IsRevertCreated:         false,
 				IsRevertCommitted:       false,
 				HasSupportRevertComment: false,
 				HasCulpritComment:       true,
 				CulpritCommentTime:      testclock.TestTimeUTC.Round(time.Second),
-			})
-			So(culpritActionCounter.Get(ctx, "chromium", "compile", "comment_culprit"), ShouldEqual, 1)
+			}))
+			assert.Loosely(t, culpritActionCounter.Get(ctx, "chromium", "compile", "comment_culprit"), should.Equal(1))
 		})
 
-		Convey("revert has auto-revert off flag set", func() {
+		t.Run("revert has auto-revert off flag set", func(t *ftt.Test) {
 			// Setup suspect in datastore
 			heuristicSuspect := &model.Suspect{
 				Id:             6,
@@ -614,7 +615,7 @@ func TestRevertCulprit(t *testing.T) {
 				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
 				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 			}
-			So(datastore.Put(ctx, heuristicSuspect), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, heuristicSuspect), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
 			// Set up mock responses
@@ -657,25 +658,25 @@ func TestRevertCulprit(t *testing.T) {
 			)).Times(1)
 
 			err := TakeCulpritAction(ctx, heuristicSuspect)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
 			suspect, err := datastoreutil.GetSuspect(ctx,
 				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
-			So(err, ShouldBeNil)
-			So(suspect, ShouldNotBeNil)
-			So(suspect.ActionDetails, ShouldResemble, model.ActionDetails{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, suspect, should.NotBeNil)
+			assert.Loosely(t, suspect.ActionDetails, should.Resemble(model.ActionDetails{
 				RevertURL:               "",
 				IsRevertCreated:         false,
 				IsRevertCommitted:       false,
 				HasSupportRevertComment: false,
 				HasCulpritComment:       true,
 				CulpritCommentTime:      testclock.TestTimeUTC.Round(time.Second),
-			})
-			So(culpritActionCounter.Get(ctx, "chromium", "compile", "comment_culprit"), ShouldEqual, 1)
+			}))
+			assert.Loosely(t, culpritActionCounter.Get(ctx, "chromium", "compile", "comment_culprit"), should.Equal(1))
 		})
 
-		Convey("revert was from an irrevertible author", func() {
+		t.Run("revert was from an irrevertible author", func(t *ftt.Test) {
 			// Setup suspect in datastore
 			heuristicSuspect := &model.Suspect{
 				Id:             7,
@@ -691,7 +692,7 @@ func TestRevertCulprit(t *testing.T) {
 				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
 				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 			}
-			So(datastore.Put(ctx, heuristicSuspect), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, heuristicSuspect), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
 			// Set up mock responses
@@ -734,25 +735,25 @@ func TestRevertCulprit(t *testing.T) {
 			)).Times(1)
 
 			err := TakeCulpritAction(ctx, heuristicSuspect)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
 			suspect, err := datastoreutil.GetSuspect(ctx,
 				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
-			So(err, ShouldBeNil)
-			So(suspect, ShouldNotBeNil)
-			So(suspect.ActionDetails, ShouldResemble, model.ActionDetails{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, suspect, should.NotBeNil)
+			assert.Loosely(t, suspect.ActionDetails, should.Resemble(model.ActionDetails{
 				RevertURL:               "",
 				IsRevertCreated:         false,
 				IsRevertCommitted:       false,
 				HasSupportRevertComment: false,
 				HasCulpritComment:       true,
 				CulpritCommentTime:      testclock.TestTimeUTC.Round(time.Second),
-			})
-			So(culpritActionCounter.Get(ctx, "chromium", "compile", "comment_culprit"), ShouldEqual, 1)
+			}))
+			assert.Loosely(t, culpritActionCounter.Get(ctx, "chromium", "compile", "comment_culprit"), should.Equal(1))
 		})
 
-		Convey("culprit has a downstream dependency", func() {
+		t.Run("culprit has a downstream dependency", func(t *ftt.Test) {
 			// Setup suspect in datastore
 			heuristicSuspect := &model.Suspect{
 				Id:             8,
@@ -768,7 +769,7 @@ func TestRevertCulprit(t *testing.T) {
 				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
 				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 			}
-			So(datastore.Put(ctx, heuristicSuspect), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, heuristicSuspect), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
 			// Set up mock responses
@@ -830,25 +831,25 @@ func TestRevertCulprit(t *testing.T) {
 			)).Times(1)
 
 			err := TakeCulpritAction(ctx, heuristicSuspect)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
 			suspect, err := datastoreutil.GetSuspect(ctx,
 				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
-			So(err, ShouldBeNil)
-			So(suspect, ShouldNotBeNil)
-			So(suspect.ActionDetails, ShouldResemble, model.ActionDetails{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, suspect, should.NotBeNil)
+			assert.Loosely(t, suspect.ActionDetails, should.Resemble(model.ActionDetails{
 				RevertURL:               "",
 				IsRevertCreated:         false,
 				IsRevertCommitted:       false,
 				HasSupportRevertComment: false,
 				HasCulpritComment:       true,
 				CulpritCommentTime:      testclock.TestTimeUTC.Round(time.Second),
-			})
-			So(culpritActionCounter.Get(ctx, "chromium", "compile", "comment_culprit"), ShouldEqual, 1)
+			}))
+			assert.Loosely(t, culpritActionCounter.Get(ctx, "chromium", "compile", "comment_culprit"), should.Equal(1))
 		})
 
-		Convey("revert creation is disabled", func() {
+		t.Run("revert creation is disabled", func(t *ftt.Test) {
 			// Setup suspect in datastore
 			heuristicSuspect := &model.Suspect{
 				Id:             9,
@@ -864,7 +865,7 @@ func TestRevertCulprit(t *testing.T) {
 				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
 				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 			}
-			So(datastore.Put(ctx, heuristicSuspect), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, heuristicSuspect), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
 			// Set the project-level config for this test
@@ -872,7 +873,7 @@ func TestRevertCulprit(t *testing.T) {
 			projectCfg := config.CreatePlaceholderProjectConfig()
 			projectCfg.CompileAnalysisConfig.GerritConfig = gerritConfig
 			cfg := map[string]*configpb.ProjectConfig{"chromium": projectCfg}
-			So(config.SetTestProjectConfig(ctx, cfg), ShouldBeNil)
+			assert.Loosely(t, config.SetTestProjectConfig(ctx, cfg), should.BeNil)
 
 			// Set up mock responses
 			culpritRes := &gerritpb.ListChangesResponse{
@@ -916,25 +917,25 @@ func TestRevertCulprit(t *testing.T) {
 			)).Times(1)
 
 			err := TakeCulpritAction(ctx, heuristicSuspect)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
 			suspect, err := datastoreutil.GetSuspect(ctx,
 				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
-			So(err, ShouldBeNil)
-			So(suspect, ShouldNotBeNil)
-			So(suspect.ActionDetails, ShouldResemble, model.ActionDetails{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, suspect, should.NotBeNil)
+			assert.Loosely(t, suspect.ActionDetails, should.Resemble(model.ActionDetails{
 				RevertURL:               "",
 				IsRevertCreated:         false,
 				IsRevertCommitted:       false,
 				HasSupportRevertComment: false,
 				HasCulpritComment:       true,
 				CulpritCommentTime:      testclock.TestTimeUTC.Round(time.Second),
-			})
-			So(culpritActionCounter.Get(ctx, "chromium", "compile", "comment_culprit"), ShouldEqual, 1)
+			}))
+			assert.Loosely(t, culpritActionCounter.Get(ctx, "chromium", "compile", "comment_culprit"), should.Equal(1))
 		})
 
-		Convey("culprit was committed too long ago", func() {
+		t.Run("culprit was committed too long ago", func(t *ftt.Test) {
 			// Setup suspect in datastore
 			heuristicSuspect := &model.Suspect{
 				Id:             10,
@@ -950,7 +951,7 @@ func TestRevertCulprit(t *testing.T) {
 				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
 				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 			}
-			So(datastore.Put(ctx, heuristicSuspect), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, heuristicSuspect), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
 			// Set up mock responses
@@ -1014,25 +1015,25 @@ func TestRevertCulprit(t *testing.T) {
 			)).Times(1)
 
 			err := TakeCulpritAction(ctx, heuristicSuspect)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
 			suspect, err := datastoreutil.GetSuspect(ctx,
 				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
-			So(err, ShouldBeNil)
-			So(suspect, ShouldNotBeNil)
-			So(suspect.ActionDetails, ShouldResemble, model.ActionDetails{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, suspect, should.NotBeNil)
+			assert.Loosely(t, suspect.ActionDetails, should.Resemble(model.ActionDetails{
 				RevertURL:               "https://test-review.googlesource.com/c/chromium/src/+/876549",
 				IsRevertCreated:         true,
 				RevertCreateTime:        testclock.TestTimeUTC.Round(time.Second),
 				IsRevertCommitted:       false,
 				HasSupportRevertComment: false,
 				HasCulpritComment:       false,
-			})
-			So(culpritActionCounter.Get(ctx, "chromium", "compile", "create_revert"), ShouldEqual, 1)
+			}))
+			assert.Loosely(t, culpritActionCounter.Get(ctx, "chromium", "compile", "create_revert"), should.Equal(1))
 		})
 
-		Convey("revert commit is disabled", func() {
+		t.Run("revert commit is disabled", func(t *ftt.Test) {
 			// Setup suspect in datastore
 			heuristicSuspect := &model.Suspect{
 				Id:             11,
@@ -1048,7 +1049,7 @@ func TestRevertCulprit(t *testing.T) {
 				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
 				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 			}
-			So(datastore.Put(ctx, heuristicSuspect), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, heuristicSuspect), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
 			// Set the project-level config for this test
@@ -1056,7 +1057,7 @@ func TestRevertCulprit(t *testing.T) {
 			projectCfg := config.CreatePlaceholderProjectConfig()
 			projectCfg.CompileAnalysisConfig.GerritConfig = gerritConfig
 			cfg := map[string]*configpb.ProjectConfig{"chromium": projectCfg}
-			So(config.SetTestProjectConfig(ctx, cfg), ShouldBeNil)
+			assert.Loosely(t, config.SetTestProjectConfig(ctx, cfg), should.BeNil)
 
 			// Set up mock responses
 			culpritRes := &gerritpb.ListChangesResponse{
@@ -1119,25 +1120,25 @@ func TestRevertCulprit(t *testing.T) {
 			)).Times(1)
 
 			err := TakeCulpritAction(ctx, heuristicSuspect)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
 			suspect, err := datastoreutil.GetSuspect(ctx,
 				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
-			So(err, ShouldBeNil)
-			So(suspect, ShouldNotBeNil)
-			So(suspect.ActionDetails, ShouldResemble, model.ActionDetails{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, suspect, should.NotBeNil)
+			assert.Loosely(t, suspect.ActionDetails, should.Resemble(model.ActionDetails{
 				RevertURL:               "https://test-review.googlesource.com/c/chromium/src/+/876549",
 				IsRevertCreated:         true,
 				RevertCreateTime:        testclock.TestTimeUTC.Round(time.Second),
 				IsRevertCommitted:       false,
 				HasSupportRevertComment: false,
 				HasCulpritComment:       false,
-			})
-			So(culpritActionCounter.Get(ctx, "chromium", "compile", "create_revert"), ShouldEqual, 1)
+			}))
+			assert.Loosely(t, culpritActionCounter.Get(ctx, "chromium", "compile", "create_revert"), should.Equal(1))
 		})
 
-		Convey("revert for culprit is created and bot-committed", func() {
+		t.Run("revert for culprit is created and bot-committed", func(t *ftt.Test) {
 			// Setup suspect in datastore
 			heuristicSuspect := &model.Suspect{
 				Id:             12,
@@ -1153,7 +1154,7 @@ func TestRevertCulprit(t *testing.T) {
 				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
 				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 			}
-			So(datastore.Put(ctx, heuristicSuspect), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, heuristicSuspect), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
 			// Set up mock responses
@@ -1226,14 +1227,14 @@ func TestRevertCulprit(t *testing.T) {
 			)).Times(1)
 
 			err := TakeCulpritAction(ctx, heuristicSuspect)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
 			suspect, err := datastoreutil.GetSuspect(ctx,
 				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
-			So(err, ShouldBeNil)
-			So(suspect, ShouldNotBeNil)
-			So(suspect.ActionDetails, ShouldResemble, model.ActionDetails{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, suspect, should.NotBeNil)
+			assert.Loosely(t, suspect.ActionDetails, should.Resemble(model.ActionDetails{
 				RevertURL:               "https://test-review.googlesource.com/c/chromium/src/+/876549",
 				IsRevertCreated:         true,
 				RevertCreateTime:        testclock.TestTimeUTC.Round(time.Second),
@@ -1241,12 +1242,12 @@ func TestRevertCulprit(t *testing.T) {
 				RevertCommitTime:        testclock.TestTimeUTC.Round(time.Second),
 				HasSupportRevertComment: false,
 				HasCulpritComment:       false,
-			})
-			So(culpritActionCounter.Get(ctx, "chromium", "compile", "create_revert"), ShouldEqual, 1)
-			So(culpritActionCounter.Get(ctx, "chromium", "compile", "submit_revert"), ShouldEqual, 1)
+			}))
+			assert.Loosely(t, culpritActionCounter.Get(ctx, "chromium", "compile", "create_revert"), should.Equal(1))
+			assert.Loosely(t, culpritActionCounter.Get(ctx, "chromium", "compile", "submit_revert"), should.Equal(1))
 		})
 
-		Convey("revert for culprit is created then manually committed", func() {
+		t.Run("revert for culprit is created then manually committed", func(t *ftt.Test) {
 			// Setup suspect in datastore
 			heuristicSuspect := &model.Suspect{
 				Id:             13,
@@ -1262,7 +1263,7 @@ func TestRevertCulprit(t *testing.T) {
 				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
 				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 			}
-			So(datastore.Put(ctx, heuristicSuspect), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, heuristicSuspect), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
 			// Set up mock responses
@@ -1311,25 +1312,25 @@ func TestRevertCulprit(t *testing.T) {
 				}, nil).Times(1)
 
 			err := TakeCulpritAction(ctx, heuristicSuspect)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
 			suspect, err := datastoreutil.GetSuspect(ctx,
 				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
-			So(err, ShouldBeNil)
-			So(suspect, ShouldNotBeNil)
-			So(suspect.ActionDetails, ShouldResemble, model.ActionDetails{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, suspect, should.NotBeNil)
+			assert.Loosely(t, suspect.ActionDetails, should.Resemble(model.ActionDetails{
 				RevertURL:               "https://test-review.googlesource.com/c/chromium/src/+/876549",
 				IsRevertCreated:         true,
 				RevertCreateTime:        testclock.TestTimeUTC.Round(time.Second),
 				IsRevertCommitted:       false,
 				HasSupportRevertComment: false,
 				HasCulpritComment:       false,
-			})
-			So(culpritActionCounter.Get(ctx, "chromium", "compile", "create_revert"), ShouldEqual, 1)
+			}))
+			assert.Loosely(t, culpritActionCounter.Get(ctx, "chromium", "compile", "create_revert"), should.Equal(1))
 		})
 
-		Convey("revert for culprit is created but another revert was merged in the meantime", func() {
+		t.Run("revert for culprit is created but another revert was merged in the meantime", func(t *ftt.Test) {
 			// Setup suspect in datastore
 			heuristicSuspect := &model.Suspect{
 				Id:             14,
@@ -1345,7 +1346,7 @@ func TestRevertCulprit(t *testing.T) {
 				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
 				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 			}
-			So(datastore.Put(ctx, heuristicSuspect), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, heuristicSuspect), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
 			// Set up mock responses
@@ -1399,25 +1400,25 @@ func TestRevertCulprit(t *testing.T) {
 				}, nil).Times(1)
 
 			err := TakeCulpritAction(ctx, heuristicSuspect)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
 			suspect, err := datastoreutil.GetSuspect(ctx,
 				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
-			So(err, ShouldBeNil)
-			So(suspect, ShouldNotBeNil)
-			So(suspect.ActionDetails, ShouldResemble, model.ActionDetails{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, suspect, should.NotBeNil)
+			assert.Loosely(t, suspect.ActionDetails, should.Resemble(model.ActionDetails{
 				RevertURL:               "https://test-review.googlesource.com/c/chromium/src/+/876549",
 				IsRevertCreated:         true,
 				RevertCreateTime:        testclock.TestTimeUTC.Round(time.Second),
 				IsRevertCommitted:       false,
 				HasSupportRevertComment: false,
 				HasCulpritComment:       false,
-			})
-			So(culpritActionCounter.Get(ctx, "chromium", "compile", "create_revert"), ShouldEqual, 1)
+			}))
+			assert.Loosely(t, culpritActionCounter.Get(ctx, "chromium", "compile", "create_revert"), should.Equal(1))
 		})
 
-		Convey("revert can be created and bot-committed even if creation request times out", func() {
+		t.Run("revert can be created and bot-committed even if creation request times out", func(t *ftt.Test) {
 			// Setup suspect in datastore
 			heuristicSuspect := &model.Suspect{
 				Id:             15,
@@ -1433,7 +1434,7 @@ func TestRevertCulprit(t *testing.T) {
 				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
 				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 			}
-			So(datastore.Put(ctx, heuristicSuspect), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, heuristicSuspect), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
 			// Set up mock responses
@@ -1463,7 +1464,7 @@ Change-Id: I100deadbeef`,
 				}},
 			}
 			lbEmail, err := gerrit.ServiceAccountEmail(ctx)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			revertRes := &gerritpb.ChangeInfo{
 				Number:  876549,
 				Project: "chromium/src",
@@ -1547,14 +1548,14 @@ No-Try: true`, analysisURL, buildURL, bugURL),
 			)).Times(1)
 
 			err = TakeCulpritAction(ctx, heuristicSuspect)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
 			suspect, err := datastoreutil.GetSuspect(ctx,
 				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
-			So(err, ShouldBeNil)
-			So(suspect, ShouldNotBeNil)
-			So(suspect.ActionDetails, ShouldResemble, model.ActionDetails{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, suspect, should.NotBeNil)
+			assert.Loosely(t, suspect.ActionDetails, should.Resemble(model.ActionDetails{
 				RevertURL:               "https://test-review.googlesource.com/c/chromium/src/+/876549",
 				IsRevertCreated:         true,
 				RevertCreateTime:        testclock.TestTimeUTC.Round(time.Second),
@@ -1562,12 +1563,12 @@ No-Try: true`, analysisURL, buildURL, bugURL),
 				RevertCommitTime:        testclock.TestTimeUTC.Round(time.Second),
 				HasSupportRevertComment: false,
 				HasCulpritComment:       false,
-			})
-			So(culpritActionCounter.Get(ctx, "chromium", "compile", "create_revert"), ShouldEqual, 1)
-			So(culpritActionCounter.Get(ctx, "chromium", "compile", "submit_revert"), ShouldEqual, 1)
+			}))
+			assert.Loosely(t, culpritActionCounter.Get(ctx, "chromium", "compile", "create_revert"), should.Equal(1))
+			assert.Loosely(t, culpritActionCounter.Get(ctx, "chromium", "compile", "submit_revert"), should.Equal(1))
 		})
 
-		Convey("revert is not bot-committed for non-timeout error when creating a revert", func() {
+		t.Run("revert is not bot-committed for non-timeout error when creating a revert", func(t *ftt.Test) {
 			// Setup suspect in datastore
 			heuristicSuspect := &model.Suspect{
 				Id:             16,
@@ -1583,7 +1584,7 @@ No-Try: true`, analysisURL, buildURL, bugURL),
 				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
 				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 			}
-			So(datastore.Put(ctx, heuristicSuspect), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, heuristicSuspect), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
 			// Set up mock responses
@@ -1619,23 +1620,23 @@ No-Try: true`, analysisURL, buildURL, bugURL),
 				Times(1)
 
 			err := TakeCulpritAction(ctx, heuristicSuspect)
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
 			suspect, err := datastoreutil.GetSuspect(ctx,
 				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
-			So(err, ShouldBeNil)
-			So(suspect, ShouldNotBeNil)
-			So(suspect.ActionDetails, ShouldResemble, model.ActionDetails{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, suspect, should.NotBeNil)
+			assert.Loosely(t, suspect.ActionDetails, should.Resemble(model.ActionDetails{
 				RevertURL:               "",
 				IsRevertCreated:         false,
 				IsRevertCommitted:       false,
 				HasSupportRevertComment: false,
 				HasCulpritComment:       false,
-			})
+			}))
 		})
 
-		Convey("revert for nthsection suspect is created although verification error", func() {
+		t.Run("revert for nthsection suspect is created although verification error", func(t *ftt.Test) {
 			// Setup suspect in datastore
 			suspect := &model.Suspect{
 				Id:                 16,
@@ -1650,14 +1651,14 @@ No-Try: true`, analysisURL, buildURL, bugURL),
 				ReviewUrl:    "https://test-review.googlesource.com/c/chromium/test/+/876543",
 				AnalysisType: pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 			}
-			So(datastore.Put(ctx, suspect), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, suspect), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
 			gerritConfig.NthsectionSettings.ActionWhenVerificationError = true
 			projectCfg := config.CreatePlaceholderProjectConfig()
 			projectCfg.CompileAnalysisConfig.GerritConfig = gerritConfig
 			cfg := map[string]*configpb.ProjectConfig{"chromium": projectCfg}
-			So(config.SetTestProjectConfig(ctx, cfg), ShouldBeNil)
+			assert.Loosely(t, config.SetTestProjectConfig(ctx, cfg), should.BeNil)
 
 			// Set up mock responses
 			culpritRes := &gerritpb.ListChangesResponse{
@@ -1705,25 +1706,25 @@ No-Try: true`, analysisURL, buildURL, bugURL),
 				}, nil).Times(1)
 
 			err := TakeCulpritAction(ctx, suspect)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
 			suspect, err = datastoreutil.GetSuspect(ctx,
 				suspect.Id, suspect.ParentAnalysis)
-			So(err, ShouldBeNil)
-			So(suspect, ShouldNotBeNil)
-			So(suspect.ActionDetails, ShouldResemble, model.ActionDetails{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, suspect, should.NotBeNil)
+			assert.Loosely(t, suspect.ActionDetails, should.Resemble(model.ActionDetails{
 				RevertURL:               "https://test-review.googlesource.com/c/chromium/src/+/876549",
 				IsRevertCreated:         true,
 				RevertCreateTime:        testclock.TestTimeUTC.Round(time.Second),
 				IsRevertCommitted:       false,
 				HasSupportRevertComment: false,
 				HasCulpritComment:       false,
-			})
-			So(culpritActionCounter.Get(ctx, "chromium", "compile", "create_revert"), ShouldEqual, 1)
+			}))
+			assert.Loosely(t, culpritActionCounter.Get(ctx, "chromium", "compile", "create_revert"), should.Equal(1))
 		})
 
-		Convey("revert for culprit is created and bot-committed for nthsection", func() {
+		t.Run("revert for culprit is created and bot-committed for nthsection", func(t *ftt.Test) {
 			// Setup suspect in datastore
 			suspect := &model.Suspect{
 				Id:             14,
@@ -1738,7 +1739,7 @@ No-Try: true`, analysisURL, buildURL, bugURL),
 				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
 				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 			}
-			So(datastore.Put(ctx, suspect), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, suspect), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
 			// Set the project-level config for this test
@@ -1746,7 +1747,7 @@ No-Try: true`, analysisURL, buildURL, bugURL),
 			projectCfg := config.CreatePlaceholderProjectConfig()
 			projectCfg.CompileAnalysisConfig.GerritConfig = gerritConfig
 			cfg := map[string]*configpb.ProjectConfig{"chromium": projectCfg}
-			So(config.SetTestProjectConfig(ctx, cfg), ShouldBeNil)
+			assert.Loosely(t, config.SetTestProjectConfig(ctx, cfg), should.BeNil)
 
 			// Set up mock responses
 			culpritRes := &gerritpb.ListChangesResponse{
@@ -1818,14 +1819,14 @@ No-Try: true`, analysisURL, buildURL, bugURL),
 			)).Times(1)
 
 			err := TakeCulpritAction(ctx, suspect)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
 			suspect, err = datastoreutil.GetSuspect(ctx,
 				suspect.Id, suspect.ParentAnalysis)
-			So(err, ShouldBeNil)
-			So(suspect, ShouldNotBeNil)
-			So(suspect.ActionDetails, ShouldResemble, model.ActionDetails{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, suspect, should.NotBeNil)
+			assert.Loosely(t, suspect.ActionDetails, should.Resemble(model.ActionDetails{
 				RevertURL:               "https://test-review.googlesource.com/c/chromium/src/+/876549",
 				IsRevertCreated:         true,
 				RevertCreateTime:        testclock.TestTimeUTC.Round(time.Second),
@@ -1833,9 +1834,9 @@ No-Try: true`, analysisURL, buildURL, bugURL),
 				RevertCommitTime:        testclock.TestTimeUTC.Round(time.Second),
 				HasSupportRevertComment: false,
 				HasCulpritComment:       false,
-			})
-			So(culpritActionCounter.Get(ctx, "chromium", "compile", "create_revert"), ShouldEqual, 1)
-			So(culpritActionCounter.Get(ctx, "chromium", "compile", "submit_revert"), ShouldEqual, 1)
+			}))
+			assert.Loosely(t, culpritActionCounter.Get(ctx, "chromium", "compile", "create_revert"), should.Equal(1))
+			assert.Loosely(t, culpritActionCounter.Get(ctx, "chromium", "compile", "submit_revert"), should.Equal(1))
 		})
 
 	})

@@ -18,12 +18,15 @@ import (
 	"context"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/util/testutil"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 )
@@ -35,151 +38,151 @@ func TestUpdateAnalysisStatus(t *testing.T) {
 	cl := testclock.New(testclock.TestTimeUTC)
 	c = clock.Set(c, cl)
 
-	Convey("UpdateAnalysisStatus", t, func() {
+	ftt.Run("UpdateAnalysisStatus", t, func(t *ftt.Test) {
 		// No heuristic and nthsection
-		Convey("No heuristic and nthsection", func() {
-			cfa := createCompileFailureAnalysisModel(c, 1000)
-			checkUpdateAnalysisStatus(c, cfa, pb.AnalysisStatus_ERROR, pb.AnalysisRunStatus_ENDED)
+		t.Run("No heuristic and nthsection", func(t *ftt.Test) {
+			cfa := createCompileFailureAnalysisModel(c, t, 1000)
+			checkUpdateAnalysisStatus(c, t, cfa, pb.AnalysisStatus_ERROR, pb.AnalysisRunStatus_ENDED)
 		})
 
-		Convey("Have culprit", func() {
-			cfa := createCompileFailureAnalysisModel(c, 1001)
+		t.Run("Have culprit", func(t *ftt.Test) {
+			cfa := createCompileFailureAnalysisModel(c, t, 1001)
 			suspect := &model.Suspect{}
-			So(datastore.Put(c, suspect), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, suspect), should.BeNil)
 			datastore.GetTestable(c).CatchupIndexes()
 
 			cfa.VerifiedCulprits = []*datastore.Key{datastore.KeyForObj(c, suspect)}
-			So(datastore.Put(c, cfa), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, cfa), should.BeNil)
 			datastore.GetTestable(c).CatchupIndexes()
-			checkUpdateAnalysisStatus(c, cfa, pb.AnalysisStatus_FOUND, pb.AnalysisRunStatus_ENDED)
+			checkUpdateAnalysisStatus(c, t, cfa, pb.AnalysisStatus_FOUND, pb.AnalysisRunStatus_ENDED)
 		})
 
-		Convey("No nth section, run finished", func() {
-			cfa := createCompileFailureAnalysisModel(c, 1002)
-			createHeuristicAnalysis(c, cfa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
-			checkUpdateAnalysisStatus(c, cfa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
+		t.Run("No nth section, run finished", func(t *ftt.Test) {
+			cfa := createCompileFailureAnalysisModel(c, t, 1002)
+			createHeuristicAnalysis(c, t, cfa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
+			checkUpdateAnalysisStatus(c, t, cfa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
 		})
 
-		Convey("nth section error, run finished", func() {
-			cfa := createCompileFailureAnalysisModel(c, 1003)
-			createHeuristicAnalysis(c, cfa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
-			createNthSectionAnalysis(c, cfa, pb.AnalysisStatus_ERROR, pb.AnalysisRunStatus_ENDED)
-			checkUpdateAnalysisStatus(c, cfa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
+		t.Run("nth section error, run finished", func(t *ftt.Test) {
+			cfa := createCompileFailureAnalysisModel(c, t, 1003)
+			createHeuristicAnalysis(c, t, cfa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
+			createNthSectionAnalysis(c, t, cfa, pb.AnalysisStatus_ERROR, pb.AnalysisRunStatus_ENDED)
+			checkUpdateAnalysisStatus(c, t, cfa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
 		})
 
-		Convey("No nth section, heuristic suspect found, run finished", func() {
-			cfa := createCompileFailureAnalysisModel(c, 1004)
-			createHeuristicAnalysis(c, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_ENDED)
-			checkUpdateAnalysisStatus(c, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_ENDED)
+		t.Run("No nth section, heuristic suspect found, run finished", func(t *ftt.Test) {
+			cfa := createCompileFailureAnalysisModel(c, t, 1004)
+			createHeuristicAnalysis(c, t, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_ENDED)
+			checkUpdateAnalysisStatus(c, t, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_ENDED)
 		})
 
-		Convey("No nth section, heuristic suspect found, run unfinished", func() {
-			cfa := createCompileFailureAnalysisModel(c, 1005)
-			createHeuristicAnalysis(c, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_ENDED)
-			createUnfinishedRerun(c, cfa)
-			checkUpdateAnalysisStatus(c, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_STARTED)
+		t.Run("No nth section, heuristic suspect found, run unfinished", func(t *ftt.Test) {
+			cfa := createCompileFailureAnalysisModel(c, t, 1005)
+			createHeuristicAnalysis(c, t, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_ENDED)
+			createUnfinishedRerun(c, t, cfa)
+			checkUpdateAnalysisStatus(c, t, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_STARTED)
 		})
 
-		Convey("No heuristic, run finished", func() {
-			cfa := createCompileFailureAnalysisModel(c, 1006)
-			createNthSectionAnalysis(c, cfa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
-			checkUpdateAnalysisStatus(c, cfa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
+		t.Run("No heuristic, run finished", func(t *ftt.Test) {
+			cfa := createCompileFailureAnalysisModel(c, t, 1006)
+			createNthSectionAnalysis(c, t, cfa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
+			checkUpdateAnalysisStatus(c, t, cfa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
 		})
 
-		Convey("Heuristic error, run finished", func() {
-			cfa := createCompileFailureAnalysisModel(c, 1007)
-			createNthSectionAnalysis(c, cfa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
-			createHeuristicAnalysis(c, cfa, pb.AnalysisStatus_ERROR, pb.AnalysisRunStatus_ENDED)
-			checkUpdateAnalysisStatus(c, cfa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
+		t.Run("Heuristic error, run finished", func(t *ftt.Test) {
+			cfa := createCompileFailureAnalysisModel(c, t, 1007)
+			createNthSectionAnalysis(c, t, cfa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
+			createHeuristicAnalysis(c, t, cfa, pb.AnalysisStatus_ERROR, pb.AnalysisRunStatus_ENDED)
+			checkUpdateAnalysisStatus(c, t, cfa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
 		})
 
-		Convey("No heuristic, nthsection suspect found, run finished", func() {
-			cfa := createCompileFailureAnalysisModel(c, 1008)
-			createNthSectionAnalysis(c, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_ENDED)
-			checkUpdateAnalysisStatus(c, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_ENDED)
+		t.Run("No heuristic, nthsection suspect found, run finished", func(t *ftt.Test) {
+			cfa := createCompileFailureAnalysisModel(c, t, 1008)
+			createNthSectionAnalysis(c, t, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_ENDED)
+			checkUpdateAnalysisStatus(c, t, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_ENDED)
 		})
 
-		Convey("No heuristic, nthsection suspect found, run unfinished", func() {
-			cfa := createCompileFailureAnalysisModel(c, 1009)
-			createNthSectionAnalysis(c, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_ENDED)
-			createUnfinishedRerun(c, cfa)
-			checkUpdateAnalysisStatus(c, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_STARTED)
+		t.Run("No heuristic, nthsection suspect found, run unfinished", func(t *ftt.Test) {
+			cfa := createCompileFailureAnalysisModel(c, t, 1009)
+			createNthSectionAnalysis(c, t, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_ENDED)
+			createUnfinishedRerun(c, t, cfa)
+			checkUpdateAnalysisStatus(c, t, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_STARTED)
 		})
 
-		Convey("Heuristic and nthsection both error", func() {
-			cfa := createCompileFailureAnalysisModel(c, 1010)
-			createHeuristicAnalysis(c, cfa, pb.AnalysisStatus_ERROR, pb.AnalysisRunStatus_ENDED)
-			createNthSectionAnalysis(c, cfa, pb.AnalysisStatus_ERROR, pb.AnalysisRunStatus_ENDED)
-			checkUpdateAnalysisStatus(c, cfa, pb.AnalysisStatus_ERROR, pb.AnalysisRunStatus_ENDED)
+		t.Run("Heuristic and nthsection both error", func(t *ftt.Test) {
+			cfa := createCompileFailureAnalysisModel(c, t, 1010)
+			createHeuristicAnalysis(c, t, cfa, pb.AnalysisStatus_ERROR, pb.AnalysisRunStatus_ENDED)
+			createNthSectionAnalysis(c, t, cfa, pb.AnalysisStatus_ERROR, pb.AnalysisRunStatus_ENDED)
+			checkUpdateAnalysisStatus(c, t, cfa, pb.AnalysisStatus_ERROR, pb.AnalysisRunStatus_ENDED)
 		})
 
-		Convey("Heuristic suspect found, nth section in progress", func() {
-			cfa := createCompileFailureAnalysisModel(c, 1011)
-			createHeuristicAnalysis(c, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_ENDED)
-			createNthSectionAnalysis(c, cfa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
-			checkUpdateAnalysisStatus(c, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_STARTED)
+		t.Run("Heuristic suspect found, nth section in progress", func(t *ftt.Test) {
+			cfa := createCompileFailureAnalysisModel(c, t, 1011)
+			createHeuristicAnalysis(c, t, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_ENDED)
+			createNthSectionAnalysis(c, t, cfa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
+			checkUpdateAnalysisStatus(c, t, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_STARTED)
 		})
 
-		Convey("Heuristic suspect found, nth section finished", func() {
-			cfa := createCompileFailureAnalysisModel(c, 1012)
-			createHeuristicAnalysis(c, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_ENDED)
-			createNthSectionAnalysis(c, cfa, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_ENDED)
-			checkUpdateAnalysisStatus(c, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_ENDED)
+		t.Run("Heuristic suspect found, nth section finished", func(t *ftt.Test) {
+			cfa := createCompileFailureAnalysisModel(c, t, 1012)
+			createHeuristicAnalysis(c, t, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_ENDED)
+			createNthSectionAnalysis(c, t, cfa, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_ENDED)
+			checkUpdateAnalysisStatus(c, t, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_ENDED)
 		})
 
-		Convey("Nthsection suspect found, heuristic not found, verification running", func() {
-			cfa := createCompileFailureAnalysisModel(c, 1013)
-			createHeuristicAnalysis(c, cfa, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_ENDED)
-			createNthSectionAnalysis(c, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_ENDED)
-			createUnfinishedRerun(c, cfa)
-			checkUpdateAnalysisStatus(c, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_STARTED)
+		t.Run("Nthsection suspect found, heuristic not found, verification running", func(t *ftt.Test) {
+			cfa := createCompileFailureAnalysisModel(c, t, 1013)
+			createHeuristicAnalysis(c, t, cfa, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_ENDED)
+			createNthSectionAnalysis(c, t, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_ENDED)
+			createUnfinishedRerun(c, t, cfa)
+			checkUpdateAnalysisStatus(c, t, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_STARTED)
 		})
 
-		Convey("Nthsection suspect found, verification finished", func() {
-			cfa := createCompileFailureAnalysisModel(c, 1014)
-			createHeuristicAnalysis(c, cfa, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_ENDED)
-			createNthSectionAnalysis(c, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_ENDED)
-			checkUpdateAnalysisStatus(c, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_ENDED)
+		t.Run("Nthsection suspect found, verification finished", func(t *ftt.Test) {
+			cfa := createCompileFailureAnalysisModel(c, t, 1014)
+			createHeuristicAnalysis(c, t, cfa, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_ENDED)
+			createNthSectionAnalysis(c, t, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_ENDED)
+			checkUpdateAnalysisStatus(c, t, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_ENDED)
 		})
 
-		Convey("Nthsection in progress, heuristic in progress", func() {
-			cfa := createCompileFailureAnalysisModel(c, 1015)
-			createHeuristicAnalysis(c, cfa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
-			createNthSectionAnalysis(c, cfa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
-			checkUpdateAnalysisStatus(c, cfa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
+		t.Run("Nthsection in progress, heuristic in progress", func(t *ftt.Test) {
+			cfa := createCompileFailureAnalysisModel(c, t, 1015)
+			createHeuristicAnalysis(c, t, cfa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
+			createNthSectionAnalysis(c, t, cfa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
+			checkUpdateAnalysisStatus(c, t, cfa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
 		})
 
-		Convey("Nthsection not found, heuristic not found", func() {
-			cfa := createCompileFailureAnalysisModel(c, 1016)
-			createHeuristicAnalysis(c, cfa, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_ENDED)
-			createNthSectionAnalysis(c, cfa, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_ENDED)
-			checkUpdateAnalysisStatus(c, cfa, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_ENDED)
+		t.Run("Nthsection not found, heuristic not found", func(t *ftt.Test) {
+			cfa := createCompileFailureAnalysisModel(c, t, 1016)
+			createHeuristicAnalysis(c, t, cfa, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_ENDED)
+			createNthSectionAnalysis(c, t, cfa, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_ENDED)
+			checkUpdateAnalysisStatus(c, t, cfa, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_ENDED)
 		})
 
-		Convey("Heuristic not found, nth section running", func() {
-			cfa := createCompileFailureAnalysisModel(c, 1017)
-			createHeuristicAnalysis(c, cfa, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_ENDED)
-			createNthSectionAnalysis(c, cfa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
-			checkUpdateAnalysisStatus(c, cfa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
+		t.Run("Heuristic not found, nth section running", func(t *ftt.Test) {
+			cfa := createCompileFailureAnalysisModel(c, t, 1017)
+			createHeuristicAnalysis(c, t, cfa, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_ENDED)
+			createNthSectionAnalysis(c, t, cfa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
+			checkUpdateAnalysisStatus(c, t, cfa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
 		})
 
-		Convey("Heuristic running, nth section not found", func() {
-			cfa := createCompileFailureAnalysisModel(c, 1019)
-			createHeuristicAnalysis(c, cfa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
-			createNthSectionAnalysis(c, cfa, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_ENDED)
-			checkUpdateAnalysisStatus(c, cfa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
+		t.Run("Heuristic running, nth section not found", func(t *ftt.Test) {
+			cfa := createCompileFailureAnalysisModel(c, t, 1019)
+			createHeuristicAnalysis(c, t, cfa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
+			createNthSectionAnalysis(c, t, cfa, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_ENDED)
+			checkUpdateAnalysisStatus(c, t, cfa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
 		})
 
-		Convey("No heuristic, nthsection suspect found, run finished, verification schedule", func() {
-			cfa := createCompileFailureAnalysisModel(c, 1020)
-			nsa := createNthSectionAnalysis(c, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_ENDED)
+		t.Run("No heuristic, nthsection suspect found, run finished, verification schedule", func(t *ftt.Test) {
+			cfa := createCompileFailureAnalysisModel(c, t, 1020)
+			nsa := createNthSectionAnalysis(c, t, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_ENDED)
 			suspect := &model.Suspect{
 				ParentAnalysis:     datastore.KeyForObj(c, nsa),
 				VerificationStatus: model.SuspectVerificationStatus_VerificationScheduled,
 			}
-			So(datastore.Put(c, suspect), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, suspect), should.BeNil)
 			datastore.GetTestable(c).CatchupIndexes()
-			checkUpdateAnalysisStatus(c, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_STARTED)
+			checkUpdateAnalysisStatus(c, t, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_STARTED)
 		})
 	})
 }
@@ -190,29 +193,29 @@ func TestUpdateStatus(t *testing.T) {
 	cl := testclock.New(testclock.TestTimeUTC)
 	c = clock.Set(c, cl)
 
-	Convey("UpdateStatus", t, func() {
-		Convey("Ended analysis will not update", func() {
-			cfa := createCompileFailureAnalysisModelWithStatus(c, 1000, pb.AnalysisStatus_FOUND, pb.AnalysisRunStatus_ENDED)
+	ftt.Run("UpdateStatus", t, func(t *ftt.Test) {
+		t.Run("Ended analysis will not update", func(t *ftt.Test) {
+			cfa := createCompileFailureAnalysisModelWithStatus(c, t, 1000, pb.AnalysisStatus_FOUND, pb.AnalysisRunStatus_ENDED)
 			err := UpdateStatus(c, cfa, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_CANCELED)
-			So(err, ShouldBeNil)
-			So(cfa.Status, ShouldEqual, pb.AnalysisStatus_FOUND)
-			So(cfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cfa.Status, should.Equal(pb.AnalysisStatus_FOUND))
+			assert.Loosely(t, cfa.RunStatus, should.Equal(pb.AnalysisRunStatus_ENDED))
 		})
 
-		Convey("Canceled analysis will not update", func() {
-			cfa := createCompileFailureAnalysisModelWithStatus(c, 1001, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_CANCELED)
+		t.Run("Canceled analysis will not update", func(t *ftt.Test) {
+			cfa := createCompileFailureAnalysisModelWithStatus(c, t, 1001, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_CANCELED)
 			err := UpdateStatus(c, cfa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
-			So(err, ShouldBeNil)
-			So(cfa.Status, ShouldEqual, pb.AnalysisStatus_NOTFOUND)
-			So(cfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_CANCELED)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cfa.Status, should.Equal(pb.AnalysisStatus_NOTFOUND))
+			assert.Loosely(t, cfa.RunStatus, should.Equal(pb.AnalysisRunStatus_CANCELED))
 		})
 
-		Convey("Update status", func() {
-			cfa := createCompileFailureAnalysisModelWithStatus(c, 1001, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
+		t.Run("Update status", func(t *ftt.Test) {
+			cfa := createCompileFailureAnalysisModelWithStatus(c, t, 1001, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
 			err := UpdateStatus(c, cfa, pb.AnalysisStatus_FOUND, pb.AnalysisRunStatus_ENDED)
-			So(err, ShouldBeNil)
-			So(cfa.Status, ShouldEqual, pb.AnalysisStatus_FOUND)
-			So(cfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cfa.Status, should.Equal(pb.AnalysisStatus_FOUND))
+			assert.Loosely(t, cfa.RunStatus, should.Equal(pb.AnalysisRunStatus_ENDED))
 		})
 	})
 }
@@ -224,90 +227,95 @@ func TestUpdateNthSectionStatus(t *testing.T) {
 	cl := testclock.New(testclock.TestTimeUTC)
 	c = clock.Set(c, cl)
 
-	Convey("UpdateNthSectionStatus", t, func() {
-		Convey("Ended analysis will not update", func() {
-			cfa := createCompileFailureAnalysisModelWithStatus(c, 1000, pb.AnalysisStatus_FOUND, pb.AnalysisRunStatus_ENDED)
-			nsa := createNthSectionAnalysis(c, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_ENDED)
+	ftt.Run("UpdateNthSectionStatus", t, func(t *ftt.Test) {
+		t.Run("Ended analysis will not update", func(t *ftt.Test) {
+			cfa := createCompileFailureAnalysisModelWithStatus(c, t, 1000, pb.AnalysisStatus_FOUND, pb.AnalysisRunStatus_ENDED)
+			nsa := createNthSectionAnalysis(c, t, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_ENDED)
 			err := UpdateNthSectionStatus(c, nsa, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_CANCELED)
-			So(err, ShouldBeNil)
-			So(nsa.Status, ShouldEqual, pb.AnalysisStatus_SUSPECTFOUND)
-			So(nsa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, nsa.Status, should.Equal(pb.AnalysisStatus_SUSPECTFOUND))
+			assert.Loosely(t, nsa.RunStatus, should.Equal(pb.AnalysisRunStatus_ENDED))
 		})
 
-		Convey("Canceled analysis will not update", func() {
-			cfa := createCompileFailureAnalysisModelWithStatus(c, 1001, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_CANCELED)
-			nsa := createNthSectionAnalysis(c, cfa, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_CANCELED)
+		t.Run("Canceled analysis will not update", func(t *ftt.Test) {
+			cfa := createCompileFailureAnalysisModelWithStatus(c, t, 1001, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_CANCELED)
+			nsa := createNthSectionAnalysis(c, t, cfa, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_CANCELED)
 			err := UpdateNthSectionStatus(c, nsa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
-			So(err, ShouldBeNil)
-			So(nsa.Status, ShouldEqual, pb.AnalysisStatus_NOTFOUND)
-			So(nsa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_CANCELED)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, nsa.Status, should.Equal(pb.AnalysisStatus_NOTFOUND))
+			assert.Loosely(t, nsa.RunStatus, should.Equal(pb.AnalysisRunStatus_CANCELED))
 		})
 
-		Convey("Update status", func() {
-			cfa := createCompileFailureAnalysisModelWithStatus(c, 1002, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
-			nsa := createNthSectionAnalysis(c, cfa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
+		t.Run("Update status", func(t *ftt.Test) {
+			cfa := createCompileFailureAnalysisModelWithStatus(c, t, 1002, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
+			nsa := createNthSectionAnalysis(c, t, cfa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
 			err := UpdateNthSectionStatus(c, nsa, pb.AnalysisStatus_FOUND, pb.AnalysisRunStatus_ENDED)
-			So(err, ShouldBeNil)
-			So(nsa.Status, ShouldEqual, pb.AnalysisStatus_FOUND)
-			So(nsa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, nsa.Status, should.Equal(pb.AnalysisStatus_FOUND))
+			assert.Loosely(t, nsa.RunStatus, should.Equal(pb.AnalysisRunStatus_ENDED))
 		})
 	})
 }
 
-func createCompileFailureAnalysisModel(c context.Context, id int64) *model.CompileFailureAnalysis {
+func createCompileFailureAnalysisModel(c context.Context, t testing.TB, id int64) *model.CompileFailureAnalysis {
+	t.Helper()
 	cfa := &model.CompileFailureAnalysis{
 		Id: id,
 	}
-	So(datastore.Put(c, cfa), ShouldBeNil)
+	assert.Loosely(t, datastore.Put(c, cfa), should.BeNil, truth.LineContext())
 	datastore.GetTestable(c).CatchupIndexes()
 	return cfa
 }
 
-func createCompileFailureAnalysisModelWithStatus(c context.Context, id int64, status pb.AnalysisStatus, runStatus pb.AnalysisRunStatus) *model.CompileFailureAnalysis {
+func createCompileFailureAnalysisModelWithStatus(c context.Context, t testing.TB, id int64, status pb.AnalysisStatus, runStatus pb.AnalysisRunStatus) *model.CompileFailureAnalysis {
+	t.Helper()
 	cfa := &model.CompileFailureAnalysis{
 		Id:        id,
 		Status:    status,
 		RunStatus: runStatus,
 	}
-	So(datastore.Put(c, cfa), ShouldBeNil)
+	assert.Loosely(t, datastore.Put(c, cfa), should.BeNil, truth.LineContext())
 	datastore.GetTestable(c).CatchupIndexes()
 	return cfa
 }
 
-func createHeuristicAnalysis(c context.Context, cfa *model.CompileFailureAnalysis, status pb.AnalysisStatus, runStatus pb.AnalysisRunStatus) *model.CompileHeuristicAnalysis {
+func createHeuristicAnalysis(c context.Context, t testing.TB, cfa *model.CompileFailureAnalysis, status pb.AnalysisStatus, runStatus pb.AnalysisRunStatus) *model.CompileHeuristicAnalysis {
+	t.Helper()
 	ha := &model.CompileHeuristicAnalysis{
 		ParentAnalysis: datastore.KeyForObj(c, cfa),
 		Status:         status,
 		RunStatus:      runStatus,
 	}
-	So(datastore.Put(c, ha), ShouldBeNil)
+	assert.Loosely(t, datastore.Put(c, ha), should.BeNil, truth.LineContext())
 	datastore.GetTestable(c).CatchupIndexes()
 	return ha
 }
 
-func createNthSectionAnalysis(c context.Context, cfa *model.CompileFailureAnalysis, status pb.AnalysisStatus, runStatus pb.AnalysisRunStatus) *model.CompileNthSectionAnalysis {
+func createNthSectionAnalysis(c context.Context, t testing.TB, cfa *model.CompileFailureAnalysis, status pb.AnalysisStatus, runStatus pb.AnalysisRunStatus) *model.CompileNthSectionAnalysis {
+	t.Helper()
 	nsa := &model.CompileNthSectionAnalysis{
 		ParentAnalysis: datastore.KeyForObj(c, cfa),
 		Status:         status,
 		RunStatus:      runStatus,
 	}
-	So(datastore.Put(c, nsa), ShouldBeNil)
+	assert.Loosely(t, datastore.Put(c, nsa), should.BeNil, truth.LineContext())
 	datastore.GetTestable(c).CatchupIndexes()
 	return nsa
 }
 
-func createUnfinishedRerun(c context.Context, cfa *model.CompileFailureAnalysis) {
+func createUnfinishedRerun(c context.Context, t testing.TB, cfa *model.CompileFailureAnalysis) {
+	t.Helper()
 	rerun := &model.SingleRerun{
 		Analysis: datastore.KeyForObj(c, cfa),
 		Status:   pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
 	}
-	So(datastore.Put(c, rerun), ShouldBeNil)
+	assert.Loosely(t, datastore.Put(c, rerun), should.BeNil, truth.LineContext())
 	datastore.GetTestable(c).CatchupIndexes()
 }
 
-func checkUpdateAnalysisStatus(c context.Context, cfa *model.CompileFailureAnalysis, expectedStatus pb.AnalysisStatus, expectedRunStatus pb.AnalysisRunStatus) {
+func checkUpdateAnalysisStatus(c context.Context, t testing.TB, cfa *model.CompileFailureAnalysis, expectedStatus pb.AnalysisStatus, expectedRunStatus pb.AnalysisRunStatus) {
 	err := UpdateAnalysisStatus(c, cfa)
-	So(err, ShouldBeNil)
-	So(cfa.Status, ShouldEqual, expectedStatus)
-	So(cfa.RunStatus, ShouldEqual, expectedRunStatus)
+	assert.Loosely(t, err, should.BeNil, truth.LineContext())
+	assert.Loosely(t, cfa.Status, should.Equal(expectedStatus), truth.LineContext())
+	assert.Loosely(t, cfa.RunStatus, should.Equal(expectedRunStatus), truth.LineContext())
 }

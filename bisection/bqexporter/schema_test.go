@@ -15,21 +15,22 @@
 package bqexporter
 
 import (
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"testing"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestSchema(t *testing.T) {
 	t.Parallel()
-	Convey(`With Schema`, t, func() {
+	ftt.Run(`With Schema`, t, func(t *ftt.Test) {
 		var fieldNames []string
 		for _, field := range tableMetadata.Schema {
 			fieldNames = append(fieldNames, field.Name)
 		}
-		Convey(`Time partitioning field is defined`, func() {
+		t.Run(`Time partitioning field is defined`, func(t *ftt.Test) {
 			partitioningField := tableMetadata.TimePartitioning.Field
-			So(partitioningField, ShouldBeIn, fieldNames)
+			assert.Loosely(t, partitioningField, should.BeIn(fieldNames...))
 		})
 	})
 }

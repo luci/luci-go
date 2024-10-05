@@ -22,7 +22,6 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/internal/gerrit"
 	"go.chromium.org/luci/bisection/internal/lucianalysis"
@@ -36,6 +35,9 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/proto"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -48,7 +50,7 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 		FailedConsistently: true,
 	}
 
-	Convey("processTestFailureCulpritTask", t, func() {
+	ftt.Run("processTestFailureCulpritTask", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		testutil.UpdateIndices(ctx)
 
@@ -71,15 +73,15 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 		projectCfg := config.CreatePlaceholderProjectConfig()
 		projectCfg.TestAnalysisConfig.GerritConfig = gerritConfig
 		cfg := map[string]*configpb.ProjectConfig{"chromium": projectCfg}
-		So(config.SetTestProjectConfig(ctx, cfg), ShouldBeNil)
+		assert.Loosely(t, config.SetTestProjectConfig(ctx, cfg), should.BeNil)
 
 		// Setup datastore
-		tfa := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
+		tfa := testutil.CreateTestFailureAnalysis(ctx, t, &testutil.TestFailureAnalysisCreationOption{
 			Project:        "chromium",
 			TestFailureKey: datastore.NewKey(ctx, "TestFailure", "", 1, nil),
 			FailedBuildID:  123,
 		})
-		nsa := testutil.CreateTestNthSectionAnalysis(ctx, &testutil.TestNthSectionAnalysisCreationOption{
+		nsa := testutil.CreateTestNthSectionAnalysis(ctx, t, &testutil.TestNthSectionAnalysisCreationOption{
 			ParentAnalysisKey: datastore.KeyForObj(ctx, tfa),
 		})
 		suspect := &model.Suspect{
@@ -94,10 +96,10 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 			AnalysisType:       pb.AnalysisType_TEST_FAILURE_ANALYSIS,
 			VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
 		}
-		So(datastore.Put(ctx, suspect), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, suspect), should.BeNil)
 		tfa.VerifiedCulpritKey = datastore.KeyForObj(ctx, suspect)
-		So(datastore.Put(ctx, tfa), ShouldBeNil)
-		tf1 := testutil.CreateTestFailure(ctx, &testutil.TestFailureCreationOption{
+		assert.Loosely(t, datastore.Put(ctx, tfa), should.BeNil)
+		tf1 := testutil.CreateTestFailure(ctx, t, &testutil.TestFailureCreationOption{
 			ID:          1,
 			Project:     "chromium",
 			IsPrimary:   true,
@@ -105,7 +107,7 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 			TestID:      "testID1",
 			VariantHash: "varianthash1",
 		})
-		tf2 := testutil.CreateTestFailure(ctx, &testutil.TestFailureCreationOption{
+		tf2 := testutil.CreateTestFailure(ctx, t, &testutil.TestFailureCreationOption{
 			ID:          2,
 			Project:     "chromium",
 			IsPrimary:   false,
@@ -148,32 +150,32 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 			tf2.TestID,
 			util.ConstructTestHistoryURL(tf2.Project, tf2.TestID, tf2.VariantHash))
 
-		Convey("test no longer unexpected", func() {
+		t.Run("test no longer unexpected", func(t *ftt.Test) {
 			err := processTestFailureCulpritTask(ctx, tfa.ID, &fakeLUCIAnalysisClient{
 				FailedConsistently: false,
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			// Suspect action has been saved.
-			So(datastore.Get(ctx, suspect), ShouldBeNil)
-			So(suspect.InactionReason, ShouldEqual, pb.CulpritInactionReason_TEST_NO_LONGER_UNEXPECTED)
-			So(suspect.HasTakenActions, ShouldBeTrue)
+			assert.Loosely(t, datastore.Get(ctx, suspect), should.BeNil)
+			assert.Loosely(t, suspect.InactionReason, should.Equal(pb.CulpritInactionReason_TEST_NO_LONGER_UNEXPECTED))
+			assert.Loosely(t, suspect.HasTakenActions, should.BeTrue)
 		})
 
-		Convey("gerrit action disabled", func() {
+		t.Run("gerrit action disabled", func(t *ftt.Test) {
 			projectCfg.TestAnalysisConfig.GerritConfig.ActionsEnabled = false
 			cfg := map[string]*configpb.ProjectConfig{tfa.Project: projectCfg}
-			So(config.SetTestProjectConfig(ctx, cfg), ShouldBeNil)
+			assert.Loosely(t, config.SetTestProjectConfig(ctx, cfg), should.BeNil)
 
 			err := processTestFailureCulpritTask(ctx, tfa.ID, client)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			// Suspect action has been saved.
-			So(datastore.Get(ctx, suspect), ShouldBeNil)
-			So(suspect.InactionReason, ShouldEqual, pb.CulpritInactionReason_ACTIONS_DISABLED)
-			So(suspect.HasTakenActions, ShouldBeTrue)
+			assert.Loosely(t, datastore.Get(ctx, suspect), should.BeNil)
+			assert.Loosely(t, suspect.InactionReason, should.Equal(pb.CulpritInactionReason_ACTIONS_DISABLED))
+			assert.Loosely(t, suspect.HasTakenActions, should.BeTrue)
 		})
 
-		Convey("has existing revert", func() {
-			Convey("has merged revert", func() {
+		t.Run("has existing revert", func(t *ftt.Test) {
+			t.Run("has merged revert", func(t *ftt.Test) {
 				revertRes := &gerritpb.ListChangesResponse{
 					Changes: []*gerritpb.ChangeInfo{
 						{
@@ -189,14 +191,14 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 					Return(revertRes, nil).Times(1)
 
 				err := processTestFailureCulpritTask(ctx, tfa.ID, client)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				// Suspect action has been saved.
-				So(datastore.Get(ctx, suspect), ShouldBeNil)
-				So(suspect.InactionReason, ShouldEqual, pb.CulpritInactionReason_REVERTED_MANUALLY)
-				So(suspect.HasTakenActions, ShouldBeTrue)
+				assert.Loosely(t, datastore.Get(ctx, suspect), should.BeNil)
+				assert.Loosely(t, suspect.InactionReason, should.Equal(pb.CulpritInactionReason_REVERTED_MANUALLY))
+				assert.Loosely(t, suspect.HasTakenActions, should.BeTrue)
 			})
 
-			Convey("has new revert", func() {
+			t.Run("has new revert", func(t *ftt.Test) {
 				revertRes := &gerritpb.ListChangesResponse{
 					Changes: []*gerritpb.ChangeInfo{
 						{
@@ -225,17 +227,17 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 				)).Times(1)
 
 				err := processTestFailureCulpritTask(ctx, tfa.ID, client)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				// Suspect action has been saved.
-				So(datastore.Get(ctx, suspect), ShouldBeNil)
-				So(suspect.HasSupportRevertComment, ShouldBeTrue)
-				So(suspect.SupportRevertCommentTime, ShouldEqual, time.Unix(10000, 0).UTC())
+				assert.Loosely(t, datastore.Get(ctx, suspect), should.BeNil)
+				assert.Loosely(t, suspect.HasSupportRevertComment, should.BeTrue)
+				assert.That(t, suspect.SupportRevertCommentTime, should.Match(time.Unix(10000, 0).UTC()))
 				// Check counter incremented.
-				So(culpritActionCounter.Get(ctx, "chromium", "test", "comment_revert"), ShouldEqual, 1)
-				So(suspect.HasTakenActions, ShouldBeTrue)
+				assert.Loosely(t, culpritActionCounter.Get(ctx, "chromium", "test", "comment_revert"), should.Equal(1))
+				assert.Loosely(t, suspect.HasTakenActions, should.BeTrue)
 			})
 
-			Convey("only abandoned revert", func() {
+			t.Run("only abandoned revert", func(t *ftt.Test) {
 				revertRes := &gerritpb.ListChangesResponse{
 					Changes: []*gerritpb.ChangeInfo{
 						{
@@ -264,21 +266,21 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 				)).Times(1)
 
 				err := processTestFailureCulpritTask(ctx, tfa.ID, client)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				// Suspect action has been saved.
-				So(datastore.Get(ctx, suspect), ShouldBeNil)
-				So(suspect.HasCulpritComment, ShouldBeTrue)
-				So(suspect.CulpritCommentTime, ShouldEqual, time.Unix(10000, 0).UTC())
+				assert.Loosely(t, datastore.Get(ctx, suspect), should.BeNil)
+				assert.Loosely(t, suspect.HasCulpritComment, should.BeTrue)
+				assert.That(t, suspect.CulpritCommentTime, should.Match(time.Unix(10000, 0).UTC()))
 				// Check counter incremented.
-				So(culpritActionCounter.Get(ctx, "chromium", "test", "comment_culprit"), ShouldEqual, 1)
-				So(suspect.HasTakenActions, ShouldBeTrue)
+				assert.Loosely(t, culpritActionCounter.Get(ctx, "chromium", "test", "comment_culprit"), should.Equal(1))
+				assert.Loosely(t, suspect.HasTakenActions, should.BeTrue)
 			})
 		})
 
-		Convey("no existing revert", func() {
-			Convey("has LUCI bisection comment", func() {
+		t.Run("no existing revert", func(t *ftt.Test) {
+			t.Run("has LUCI bisection comment", func(t *ftt.Test) {
 				lbEmail, err := gerrit.ServiceAccountEmail(ctx)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				culpritRes.Changes[0].Messages = []*gerritpb.ChangeMessageInfo{
 					{Author: &gerritpb.AccountInfo{Email: lbEmail}},
 				}
@@ -288,14 +290,14 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 					Return(&gerritpb.ListChangesResponse{Changes: []*gerritpb.ChangeInfo{}}, nil).Times(1)
 
 				err = processTestFailureCulpritTask(ctx, tfa.ID, client)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				// Suspect action has been saved.
-				So(datastore.Get(ctx, suspect), ShouldBeNil)
-				So(suspect.InactionReason, ShouldEqual, pb.CulpritInactionReason_CULPRIT_HAS_COMMENT)
-				So(suspect.HasTakenActions, ShouldBeTrue)
+				assert.Loosely(t, datastore.Get(ctx, suspect), should.BeNil)
+				assert.Loosely(t, suspect.InactionReason, should.Equal(pb.CulpritInactionReason_CULPRIT_HAS_COMMENT))
+				assert.Loosely(t, suspect.HasTakenActions, should.BeTrue)
 			})
 
-			Convey("comment culprit", func() {
+			t.Run("comment culprit", func(t *ftt.Test) {
 				mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).
 					Return(culpritRes, nil).Times(1)
 				mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).
@@ -315,19 +317,19 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 				)).Times(1)
 
 				err := processTestFailureCulpritTask(ctx, tfa.ID, client)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				// Suspect action has been saved.
-				So(datastore.Get(ctx, suspect), ShouldBeNil)
-				So(suspect.HasCulpritComment, ShouldBeTrue)
-				So(suspect.CulpritCommentTime, ShouldEqual, time.Unix(10000, 0).UTC())
-				So(suspect.HasTakenActions, ShouldBeTrue)
+				assert.Loosely(t, datastore.Get(ctx, suspect), should.BeNil)
+				assert.Loosely(t, suspect.HasCulpritComment, should.BeTrue)
+				assert.That(t, suspect.CulpritCommentTime, should.Match(time.Unix(10000, 0).UTC()))
+				assert.Loosely(t, suspect.HasTakenActions, should.BeTrue)
 				// Check counter incremented.
-				So(culpritActionCounter.Get(ctx, "chromium", "test", "comment_culprit"), ShouldEqual, 1)
+				assert.Loosely(t, culpritActionCounter.Get(ctx, "chromium", "test", "comment_culprit"), should.Equal(1))
 			})
 
-			Convey("comment culprit with more than 5 test failures", func() {
+			t.Run("comment culprit with more than 5 test failures", func(t *ftt.Test) {
 				for i := 1; i < 8; i++ {
-					testutil.CreateTestFailure(ctx, &testutil.TestFailureCreationOption{
+					testutil.CreateTestFailure(ctx, t, &testutil.TestFailureCreationOption{
 						ID:          int64(i),
 						Project:     "chromium",
 						IsPrimary:   i == 1,
@@ -361,23 +363,23 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 				)).Times(1)
 
 				err := processTestFailureCulpritTask(ctx, tfa.ID, client)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				// Suspect action has been saved.
-				So(datastore.Get(ctx, suspect), ShouldBeNil)
-				So(suspect.HasCulpritComment, ShouldBeTrue)
-				So(suspect.CulpritCommentTime, ShouldEqual, time.Unix(10000, 0).UTC())
-				So(suspect.HasTakenActions, ShouldBeTrue)
+				assert.Loosely(t, datastore.Get(ctx, suspect), should.BeNil)
+				assert.Loosely(t, suspect.HasCulpritComment, should.BeTrue)
+				assert.That(t, suspect.CulpritCommentTime, should.Match(time.Unix(10000, 0).UTC()))
+				assert.Loosely(t, suspect.HasTakenActions, should.BeTrue)
 				// Check counter incremented.
-				So(culpritActionCounter.Get(ctx, "chromium", "test", "comment_culprit"), ShouldEqual, 1)
+				assert.Loosely(t, culpritActionCounter.Get(ctx, "chromium", "test", "comment_culprit"), should.Equal(1))
 			})
 		})
 
-		Convey("revert creation", func() {
+		t.Run("revert creation", func(t *ftt.Test) {
 			tfa.SheriffRotations = []string{"chromium"}
-			So(datastore.Put(ctx, tfa), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, tfa), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
-			Convey("revert has auto-revert off flag set", func() {
+			t.Run("revert has auto-revert off flag set", func(t *ftt.Test) {
 				culpritRes.Changes[0].Revisions["deadbeef"].Commit.Message = "Title.\n\nBody is here.\n\nNOAUTOREVERT=true\n\nChange-Id: I100deadbeef"
 				mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).
 					Return(culpritRes, nil).Times(1)
@@ -398,19 +400,19 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 				)).Times(1)
 
 				err := processTestFailureCulpritTask(ctx, tfa.ID, client)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				datastore.GetTestable(ctx).CatchupIndexes()
 				// Suspect action has been saved.
-				So(datastore.Get(ctx, suspect), ShouldBeNil)
-				So(suspect.HasCulpritComment, ShouldBeTrue)
-				So(suspect.CulpritCommentTime, ShouldEqual, time.Unix(10000, 0).UTC())
-				So(suspect.HasTakenActions, ShouldBeTrue)
+				assert.Loosely(t, datastore.Get(ctx, suspect), should.BeNil)
+				assert.Loosely(t, suspect.HasCulpritComment, should.BeTrue)
+				assert.That(t, suspect.CulpritCommentTime, should.Match(time.Unix(10000, 0).UTC()))
+				assert.Loosely(t, suspect.HasTakenActions, should.BeTrue)
 				// Check counter incremented.
-				So(culpritActionCounter.Get(ctx, "chromium", "test", "comment_culprit"), ShouldEqual, 1)
+				assert.Loosely(t, culpritActionCounter.Get(ctx, "chromium", "test", "comment_culprit"), should.Equal(1))
 			})
 
-			Convey("revert was from an irrevertible author", func() {
+			t.Run("revert was from an irrevertible author", func(t *ftt.Test) {
 				culpritRes.Changes[0].Revisions["deadbeef"].Commit.Author = &gerritpb.GitPersonInfo{
 					Name:  "ChromeOS Commit Bot",
 					Email: "chromeos-commit-bot@chromium.org",
@@ -435,19 +437,19 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 				)).Times(1)
 
 				err := processTestFailureCulpritTask(ctx, tfa.ID, client)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				datastore.GetTestable(ctx).CatchupIndexes()
 				// Suspect action has been saved.
-				So(datastore.Get(ctx, suspect), ShouldBeNil)
-				So(suspect.HasCulpritComment, ShouldBeTrue)
-				So(suspect.CulpritCommentTime, ShouldEqual, time.Unix(10000, 0).UTC())
-				So(suspect.HasTakenActions, ShouldBeTrue)
+				assert.Loosely(t, datastore.Get(ctx, suspect), should.BeNil)
+				assert.Loosely(t, suspect.HasCulpritComment, should.BeTrue)
+				assert.That(t, suspect.CulpritCommentTime, should.Match(time.Unix(10000, 0).UTC()))
+				assert.Loosely(t, suspect.HasTakenActions, should.BeTrue)
 				// Check counter incremented.
-				So(culpritActionCounter.Get(ctx, "chromium", "test", "comment_culprit"), ShouldEqual, 1)
+				assert.Loosely(t, culpritActionCounter.Get(ctx, "chromium", "test", "comment_culprit"), should.Equal(1))
 			})
 
-			Convey("culprit has a downstream dependency", func() {
+			t.Run("culprit has a downstream dependency", func(t *ftt.Test) {
 				revertRes := &gerritpb.ListChangesResponse{
 					Changes: []*gerritpb.ChangeInfo{},
 				}
@@ -486,24 +488,24 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 				)).Times(1)
 
 				err := processTestFailureCulpritTask(ctx, tfa.ID, client)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				datastore.GetTestable(ctx).CatchupIndexes()
 				// Suspect action has been saved.
-				So(datastore.Get(ctx, suspect), ShouldBeNil)
-				So(suspect.HasCulpritComment, ShouldBeTrue)
-				So(suspect.CulpritCommentTime, ShouldEqual, time.Unix(10000, 0).UTC())
-				So(suspect.HasTakenActions, ShouldBeTrue)
+				assert.Loosely(t, datastore.Get(ctx, suspect), should.BeNil)
+				assert.Loosely(t, suspect.HasCulpritComment, should.BeTrue)
+				assert.That(t, suspect.CulpritCommentTime, should.Match(time.Unix(10000, 0).UTC()))
+				assert.Loosely(t, suspect.HasTakenActions, should.BeTrue)
 				// Check counter incremented.
-				So(culpritActionCounter.Get(ctx, "chromium", "test", "comment_culprit"), ShouldEqual, 1)
+				assert.Loosely(t, culpritActionCounter.Get(ctx, "chromium", "test", "comment_culprit"), should.Equal(1))
 			})
 
-			Convey("revert creation is disabled", func() {
+			t.Run("revert creation is disabled", func(t *ftt.Test) {
 				projectCfg.TestAnalysisConfig.GerritConfig.CreateRevertSettings = &configpb.GerritConfig_RevertActionSettings{
 					Enabled: false,
 				}
 				cfg := map[string]*configpb.ProjectConfig{tfa.Project: projectCfg}
-				So(config.SetTestProjectConfig(ctx, cfg), ShouldBeNil)
+				assert.Loosely(t, config.SetTestProjectConfig(ctx, cfg), should.BeNil)
 				mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).
 					Return(culpritRes, nil).Times(1)
 				mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).
@@ -525,29 +527,29 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 				)).Times(1)
 
 				err := processTestFailureCulpritTask(ctx, tfa.ID, client)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				datastore.GetTestable(ctx).CatchupIndexes()
 				// Suspect action has been saved.
-				So(datastore.Get(ctx, suspect), ShouldBeNil)
-				So(suspect.HasCulpritComment, ShouldBeTrue)
-				So(suspect.CulpritCommentTime, ShouldEqual, time.Unix(10000, 0).UTC())
-				So(suspect.HasTakenActions, ShouldBeTrue)
+				assert.Loosely(t, datastore.Get(ctx, suspect), should.BeNil)
+				assert.Loosely(t, suspect.HasCulpritComment, should.BeTrue)
+				assert.That(t, suspect.CulpritCommentTime, should.Match(time.Unix(10000, 0).UTC()))
+				assert.Loosely(t, suspect.HasTakenActions, should.BeTrue)
 				// Check counter incremented.
-				So(culpritActionCounter.Get(ctx, "chromium", "test", "comment_culprit"), ShouldEqual, 1)
+				assert.Loosely(t, culpritActionCounter.Get(ctx, "chromium", "test", "comment_culprit"), should.Equal(1))
 			})
 
-			Convey("exceed daily limit", func() {
+			t.Run("exceed daily limit", func(t *ftt.Test) {
 				// Set up config.
 				projectCfg.TestAnalysisConfig.GerritConfig.CreateRevertSettings = &configpb.GerritConfig_RevertActionSettings{
 					DailyLimit: 1,
 					Enabled:    true,
 				}
 				cfg := map[string]*configpb.ProjectConfig{tfa.Project: projectCfg}
-				So(config.SetTestProjectConfig(ctx, cfg), ShouldBeNil)
+				assert.Loosely(t, config.SetTestProjectConfig(ctx, cfg), should.BeNil)
 
 				// Add existing revert.
-				testutil.CreateSuspect(ctx, &testutil.SuspectCreationOption{
+				testutil.CreateSuspect(ctx, t, &testutil.SuspectCreationOption{
 					AnalysisType: pb.AnalysisType_TEST_FAILURE_ANALYSIS,
 					ActionDetails: model.ActionDetails{
 						IsRevertCreated:  true,
@@ -575,26 +577,26 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 				)).Times(1)
 
 				err := processTestFailureCulpritTask(ctx, tfa.ID, client)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				datastore.GetTestable(ctx).CatchupIndexes()
 				// Suspect action has been saved.
-				So(datastore.Get(ctx, suspect), ShouldBeNil)
-				So(suspect.HasCulpritComment, ShouldBeTrue)
-				So(suspect.CulpritCommentTime, ShouldEqual, time.Unix(10000, 0).UTC())
-				So(suspect.HasTakenActions, ShouldBeTrue)
+				assert.Loosely(t, datastore.Get(ctx, suspect), should.BeNil)
+				assert.Loosely(t, suspect.HasCulpritComment, should.BeTrue)
+				assert.That(t, suspect.CulpritCommentTime, should.Match(time.Unix(10000, 0).UTC()))
+				assert.Loosely(t, suspect.HasTakenActions, should.BeTrue)
 				// Check counter incremented.
-				So(culpritActionCounter.Get(ctx, "chromium", "test", "comment_culprit"), ShouldEqual, 1)
+				assert.Loosely(t, culpritActionCounter.Get(ctx, "chromium", "test", "comment_culprit"), should.Equal(1))
 			})
 
-			Convey("revert created", func() {
+			t.Run("revert created", func(t *ftt.Test) {
 				// Set up config.
 				projectCfg.TestAnalysisConfig.GerritConfig.CreateRevertSettings = &configpb.GerritConfig_RevertActionSettings{
 					DailyLimit: 10,
 					Enabled:    true,
 				}
 				cfg := map[string]*configpb.ProjectConfig{tfa.Project: projectCfg}
-				So(config.SetTestProjectConfig(ctx, cfg), ShouldBeNil)
+				assert.Loosely(t, config.SetTestProjectConfig(ctx, cfg), should.BeNil)
 
 				revertRes := &gerritpb.ChangeInfo{
 					Number:  876549,
@@ -644,16 +646,16 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 					}, nil).Times(1)
 
 				err := processTestFailureCulpritTask(ctx, tfa.ID, client)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				datastore.GetTestable(ctx).CatchupIndexes()
 				// Suspect action has been saved.
-				So(datastore.Get(ctx, suspect), ShouldBeNil)
-				So(suspect.IsRevertCreated, ShouldBeTrue)
-				So(suspect.RevertCreateTime, ShouldEqual, time.Unix(10000, 0).UTC())
-				So(suspect.HasTakenActions, ShouldBeTrue)
+				assert.Loosely(t, datastore.Get(ctx, suspect), should.BeNil)
+				assert.Loosely(t, suspect.IsRevertCreated, should.BeTrue)
+				assert.That(t, suspect.RevertCreateTime, should.Match(time.Unix(10000, 0).UTC()))
+				assert.Loosely(t, suspect.HasTakenActions, should.BeTrue)
 				// Check counter incremented.
-				So(culpritActionCounter.Get(ctx, "chromium", "test", "create_revert"), ShouldEqual, 1)
+				assert.Loosely(t, culpritActionCounter.Get(ctx, "chromium", "test", "create_revert"), should.Equal(1))
 			})
 		})
 	})

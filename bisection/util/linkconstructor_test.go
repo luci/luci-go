@@ -19,38 +19,40 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	. "github.com/smartystreets/goconvey/convey"
 
 	"go.chromium.org/luci/bisection/internal/gerrit"
 
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestConstructAnalysisURL(t *testing.T) {
-	Convey("construct compile analysis URL", t, func() {
-		So(ConstructCompileAnalysisURL("testproject", 123456789876543), ShouldEqual,
-			"https://ci.chromium.org/ui/p/testproject/bisection/compile-analysis/b/123456789876543")
+	ftt.Run("construct compile analysis URL", t, func(t *ftt.Test) {
+		assert.Loosely(t, ConstructCompileAnalysisURL("testproject", 123456789876543), should.Equal(
+			"https://ci.chromium.org/ui/p/testproject/bisection/compile-analysis/b/123456789876543"))
 	})
 
-	Convey("construct test analysis URL", t, func() {
-		So(ConstructTestAnalysisURL("testproject", 123456789876543), ShouldEqual,
-			"https://ci.chromium.org/ui/p/testproject/bisection/test-analysis/b/123456789876543")
+	ftt.Run("construct test analysis URL", t, func(t *ftt.Test) {
+		assert.Loosely(t, ConstructTestAnalysisURL("testproject", 123456789876543), should.Equal(
+			"https://ci.chromium.org/ui/p/testproject/bisection/test-analysis/b/123456789876543"))
 	})
 }
 
 func TestConstructBuildURL(t *testing.T) {
 	ctx := context.Background()
 
-	Convey("construct build URL", t, func() {
-		So(ConstructBuildURL(ctx, 123456789876543), ShouldEqual,
-			"https://ci.chromium.org/b/123456789876543")
+	ftt.Run("construct build URL", t, func(t *ftt.Test) {
+		assert.Loosely(t, ConstructBuildURL(ctx, 123456789876543), should.Equal(
+			"https://ci.chromium.org/b/123456789876543"))
 	})
 }
 
 func TestConstructGerritCodeReviewURL(t *testing.T) {
 	ctx := context.Background()
 
-	Convey("construct Gerrit code review URL", t, func() {
+	ftt.Run("construct Gerrit code review URL", t, func(t *ftt.Test) {
 		// Set up mock Gerrit client
 		ctl := gomock.NewController(t)
 		defer ctl.Finish()
@@ -59,15 +61,15 @@ func TestConstructGerritCodeReviewURL(t *testing.T) {
 
 		// Set up Gerrit client
 		gerritClient, err := gerrit.NewClient(ctx, "chromium-test.googlesource.com")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		change := &gerritpb.ChangeInfo{
 			Project: "chromium/test",
 			Number:  123456,
 		}
 
-		So(ConstructGerritCodeReviewURL(ctx, gerritClient, change), ShouldEqual,
-			"https://chromium-test.googlesource.com/c/chromium/test/+/123456")
+		assert.Loosely(t, ConstructGerritCodeReviewURL(ctx, gerritClient, change), should.Equal(
+			"https://chromium-test.googlesource.com/c/chromium/test/+/123456"))
 	})
 }
 
@@ -75,7 +77,7 @@ func TestConstructBuganizerURLForTestAnalysis(t *testing.T) {
 
 	commitReviewURL := "https://chromium-test-review.googlesource.com/c/chromium/test/src/+/1234567"
 
-	Convey("construct buganizer URL", t, func() {
+	ftt.Run("construct buganizer URL", t, func(t *ftt.Test) {
 		analysisURL := "https://ci.chromium.org/ui/p/chromium/bisection/compile-analysis/b/8766961581788295857"
 		bugURL := ConstructBuganizerURLForAnalysis(commitReviewURL, analysisURL)
 		expectedBugURL := "http://b.corp.google.com/createIssue?component=1199205" +
@@ -83,14 +85,14 @@ func TestConstructBuganizerURLForTestAnalysis(t *testing.T) {
 			"section%2Fcompile-analysis%2Fb%2F8766961581788295857&format=PLAIN&priority=P3&title=Wrongly+" +
 			"blamed+https%3A%2F%2Fchromium-test-review.googlesource.com%2Fc%2Fchromium%2F" +
 			"test%2Fsrc%2F%2B%2F1234567&type=BUG"
-		So(bugURL, ShouldEqual, expectedBugURL)
+		assert.Loosely(t, bugURL, should.Equal(expectedBugURL))
 	})
 }
 
 func TestConstructTestHistoryURL(t *testing.T) {
-	Convey("construct test history URL", t, func() {
+	ftt.Run("construct test history URL", t, func(t *ftt.Test) {
 		testURL := ConstructTestHistoryURL("chromium", "testID", "6363b77a587c3046")
 		expectedTestURL := "https://ci.chromium.org/ui/test/chromium/testID?q=VHash%3A6363b77a587c3046"
-		So(testURL, ShouldEqual, expectedTestURL)
+		assert.Loosely(t, testURL, should.Equal(expectedTestURL))
 	})
 }

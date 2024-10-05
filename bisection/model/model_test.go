@@ -20,11 +20,12 @@ import (
 
 	pb "go.chromium.org/luci/bisection/proto/v1"
 
-	. "github.com/smartystreets/goconvey/convey"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 )
@@ -32,12 +33,12 @@ import (
 func TestDatastoreModel(t *testing.T) {
 	t.Parallel()
 
-	Convey("Datastore Model", t, func() {
+	ftt.Run("Datastore Model", t, func(t *ftt.Test) {
 		c := memory.Use(context.Background())
 		cl := testclock.New(testclock.TestTimeUTC)
 		c = clock.Set(c, cl)
 
-		Convey("Can create datastore models", func() {
+		t.Run("Can create datastore models", func(t *ftt.Test) {
 			failed_build := &LuciFailedBuild{
 				Id: 88128398584903,
 				LuciBuild: LuciBuild{
@@ -53,7 +54,7 @@ func TestDatastoreModel(t *testing.T) {
 				},
 				BuildFailureType: pb.BuildFailureType_COMPILE,
 			}
-			So(datastore.Put(c, failed_build), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, failed_build), should.BeNil)
 
 			compile_failure := &CompileFailure{
 				Build:         datastore.KeyForObj(c, failed_build),
@@ -61,7 +62,7 @@ func TestDatastoreModel(t *testing.T) {
 				Rule:          "CXX",
 				Dependencies:  []string{"dep"},
 			}
-			So(datastore.Put(c, compile_failure), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, compile_failure), should.BeNil)
 
 			compile_failure_analysis := &CompileFailureAnalysis{
 				CompileFailure:     datastore.KeyForObj(c, compile_failure),
@@ -87,7 +88,7 @@ func TestDatastoreModel(t *testing.T) {
 					NumberOfRevisions: 10,
 				},
 			}
-			So(datastore.Put(c, compile_failure_analysis), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, compile_failure_analysis), should.BeNil)
 
 			heuristic_analysis := &CompileHeuristicAnalysis{
 				ParentAnalysis: datastore.KeyForObj(c, compile_failure_analysis),
@@ -95,7 +96,7 @@ func TestDatastoreModel(t *testing.T) {
 				EndTime:        cl.Now(),
 				Status:         pb.AnalysisStatus_CREATED,
 			}
-			So(datastore.Put(c, heuristic_analysis), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, heuristic_analysis), should.BeNil)
 
 			nthsection_analysis := &CompileNthSectionAnalysis{
 				ParentAnalysis: datastore.KeyForObj(c, compile_failure_analysis),
@@ -117,7 +118,7 @@ func TestDatastoreModel(t *testing.T) {
 					},
 				},
 			}
-			So(datastore.Put(c, nthsection_analysis), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, nthsection_analysis), should.BeNil)
 
 			suspect := &Suspect{
 				ParentAnalysis: datastore.KeyForObj(c, compile_failure_analysis),
@@ -133,7 +134,7 @@ func TestDatastoreModel(t *testing.T) {
 				Score:         100,
 				Justification: "The CL touch the file abc.cc, and it is in the log",
 			}
-			So(datastore.Put(c, suspect), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, suspect), should.BeNil)
 
 			rerun_build := &CompileRerunBuild{
 				LuciBuild: LuciBuild{
@@ -148,10 +149,10 @@ func TestDatastoreModel(t *testing.T) {
 					CreateTime:  cl.Now(),
 				},
 			}
-			So(datastore.Put(c, rerun_build), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, rerun_build), should.BeNil)
 		})
 
-		Convey("Can create TestSingleRerun models", func() {
+		t.Run("Can create TestSingleRerun models", func(t *ftt.Test) {
 			tf1 := &TestFailure{
 				ID: 100,
 			}
@@ -161,9 +162,9 @@ func TestDatastoreModel(t *testing.T) {
 			tfa := &TestFailureAnalysis{
 				ID: 1000,
 			}
-			So(datastore.Put(c, tf1), ShouldBeNil)
-			So(datastore.Put(c, tf2), ShouldBeNil)
-			So(datastore.Put(c, tfa), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, tf1), should.BeNil)
+			assert.Loosely(t, datastore.Put(c, tf2), should.BeNil)
+			assert.Loosely(t, datastore.Put(c, tfa), should.BeNil)
 			datastore.GetTestable(c).CatchupIndexes()
 			singleRerun := &TestSingleRerun{
 				AnalysisKey: datastore.KeyForObj(c, tfa),
@@ -199,13 +200,13 @@ func TestDatastoreModel(t *testing.T) {
 				},
 				Status: pb.RerunStatus_RERUN_STATUS_PASSED,
 			}
-			So(datastore.Put(c, singleRerun), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, singleRerun), should.BeNil)
 			datastore.GetTestable(c).CatchupIndexes()
 			q := datastore.NewQuery("TestSingleRerun").Eq("analysis_key", datastore.KeyForObj(c, tfa))
 			reruns := []*TestSingleRerun{}
-			So(datastore.GetAll(c, q, &reruns), ShouldBeNil)
-			So(len(reruns), ShouldEqual, 1)
-			So(reruns[0], ShouldResembleProto, singleRerun)
+			assert.Loosely(t, datastore.GetAll(c, q, &reruns), should.BeNil)
+			assert.Loosely(t, len(reruns), should.Equal(1))
+			assert.Loosely(t, reruns[0], should.Resemble(singleRerun))
 		})
 	})
 }
@@ -213,7 +214,7 @@ func TestDatastoreModel(t *testing.T) {
 func TestTestFailureBundle(t *testing.T) {
 	t.Parallel()
 
-	Convey("Test failure bundle", t, func() {
+	ftt.Run("Test failure bundle", t, func(t *ftt.Test) {
 		bundle := &TestFailureBundle{}
 
 		tf1 := &TestFailure{
@@ -228,11 +229,11 @@ func TestTestFailureBundle(t *testing.T) {
 			tf1,
 			tf2,
 		})
-		So(err, ShouldBeNil)
-		So(bundle.Primary(), ShouldResemble, tf2)
-		So(len(bundle.Others()), ShouldEqual, 1)
-		So(bundle.Others()[0], ShouldResemble, tf1)
-		So(len(bundle.All()), ShouldEqual, 2)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, bundle.Primary(), should.Resemble(tf2))
+		assert.Loosely(t, len(bundle.Others()), should.Equal(1))
+		assert.Loosely(t, bundle.Others()[0], should.Resemble(tf1))
+		assert.Loosely(t, len(bundle.All()), should.Equal(2))
 
 		tf3 := &TestFailure{
 			ID:        102,
@@ -241,7 +242,7 @@ func TestTestFailureBundle(t *testing.T) {
 		err = bundle.Add([]*TestFailure{
 			tf3,
 		})
-		So(err, ShouldNotBeNil)
+		assert.Loosely(t, err, should.NotBeNil)
 
 		tf4 := &TestFailure{
 			ID: 103,
@@ -249,10 +250,10 @@ func TestTestFailureBundle(t *testing.T) {
 		err = bundle.Add([]*TestFailure{
 			tf4,
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		nonDiverged := bundle.NonDiverged()
-		So(len(nonDiverged), ShouldEqual, 2)
-		So(nonDiverged[0].ID, ShouldEqual, 101)
-		So(nonDiverged[1].ID, ShouldEqual, 103)
+		assert.Loosely(t, len(nonDiverged), should.Equal(2))
+		assert.Loosely(t, nonDiverged[0].ID, should.Equal(101))
+		assert.Loosely(t, nonDiverged[1].ID, should.Equal(103))
 	})
 }

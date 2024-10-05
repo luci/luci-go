@@ -19,7 +19,6 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/model"
 	configpb "go.chromium.org/luci/bisection/proto/config"
@@ -31,7 +30,10 @@ import (
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
@@ -46,68 +48,68 @@ func TestCronHandler(t *testing.T) {
 	ctx = clock.Set(ctx, cl)
 	testutil.UpdateIndices(ctx)
 
-	Convey("Check daily limit", t, func() {
-		setDailyLimit(ctx, 1)
-		Convey("no analysis", func() {
+	ftt.Run("Check daily limit", t, func(t *ftt.Test) {
+		setDailyLimit(ctx, t, 1)
+		t.Run("no analysis", func(t *ftt.Test) {
 			ctx, skdr := tq.TestingContext(ctx, nil)
 			err := CronHandler(ctx)
-			So(err, ShouldBeNil)
-			So(len(skdr.Tasks().Payloads()), ShouldEqual, 2)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(skdr.Tasks().Payloads()), should.Equal(2))
 		})
-		Convey("analysis is disabled", func() {
+		t.Run("analysis is disabled", func(t *ftt.Test) {
 			ctx, skdr := tq.TestingContext(ctx, nil)
-			testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
+			testutil.CreateTestFailureAnalysis(ctx, t, &testutil.TestFailureAnalysisCreationOption{
 				Status:     pb.AnalysisStatus_DISABLED,
 				CreateTime: clock.Now(ctx),
 			})
 			err := CronHandler(ctx)
-			So(err, ShouldBeNil)
-			So(len(skdr.Tasks().Payloads()), ShouldEqual, 2)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(skdr.Tasks().Payloads()), should.Equal(2))
 		})
-		Convey("analysis is not supported", func() {
+		t.Run("analysis is not supported", func(t *ftt.Test) {
 			ctx, skdr := tq.TestingContext(ctx, nil)
-			testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
+			testutil.CreateTestFailureAnalysis(ctx, t, &testutil.TestFailureAnalysisCreationOption{
 				Status:     pb.AnalysisStatus_UNSUPPORTED,
 				CreateTime: clock.Now(ctx),
 			})
 			err := CronHandler(ctx)
-			So(err, ShouldBeNil)
-			So(len(skdr.Tasks().Payloads()), ShouldEqual, 2)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(skdr.Tasks().Payloads()), should.Equal(2))
 		})
-		Convey("analysis is not recent", func() {
+		t.Run("analysis is not recent", func(t *ftt.Test) {
 			ctx, skdr := tq.TestingContext(ctx, nil)
-			testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
+			testutil.CreateTestFailureAnalysis(ctx, t, &testutil.TestFailureAnalysisCreationOption{
 				Status:     pb.AnalysisStatus_FOUND,
 				CreateTime: clock.Now(ctx).Add(-25 * time.Hour),
 			})
 			err := CronHandler(ctx)
-			So(err, ShouldBeNil)
-			So(len(skdr.Tasks().Payloads()), ShouldEqual, 2)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(skdr.Tasks().Payloads()), should.Equal(2))
 		})
-		Convey("analysis is recent", func() {
+		t.Run("analysis is recent", func(t *ftt.Test) {
 			ctx, skdr := tq.TestingContext(ctx, nil)
-			testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
+			testutil.CreateTestFailureAnalysis(ctx, t, &testutil.TestFailureAnalysisCreationOption{
 				Project:    "chrome",
 				Status:     pb.AnalysisStatus_FOUND,
 				CreateTime: clock.Now(ctx).Add(-23 * time.Hour),
 			})
 			err := CronHandler(ctx)
-			So(err, ShouldBeNil)
-			So(len(skdr.Tasks().Payloads()), ShouldEqual, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(skdr.Tasks().Payloads()), should.Equal(1))
 			// Chromium
 			resultsTask := skdr.Tasks().Payloads()[0].(*tpb.TestFailureDetectionTask)
-			So(resultsTask, ShouldResembleProto, &tpb.TestFailureDetectionTask{
+			assert.Loosely(t, resultsTask, should.Resemble(&tpb.TestFailureDetectionTask{
 				Project:           "chromium",
 				DimensionExcludes: []*pb.Dimension{},
-			})
+			}))
 		})
 	})
 
-	Convey("schedule test failure detection task", t, func() {
+	ftt.Run("schedule test failure detection task", t, func(t *ftt.Test) {
 		ctx, skdr := tq.TestingContext(ctx, nil)
-		setDailyLimit(ctx, 100)
-		Convey("no exclude dimensions", func() {
-			testRerun := createTestSingleRerun(ctx, buildbucketpb.Status_SCHEDULED, baseTime.Add(-6*time.Minute), "")
+		setDailyLimit(ctx, t, 100)
+		t.Run("no exclude dimensions", func(t *ftt.Test) {
+			testRerun := createTestSingleRerun(ctx, t, buildbucketpb.Status_SCHEDULED, baseTime.Add(-6*time.Minute), "")
 			// No OS dimension.
 			testRerun.Dimensions = &pb.Dimensions{
 				Dimensions: []*pb.Dimension{{
@@ -115,63 +117,64 @@ func TestCronHandler(t *testing.T) {
 					Value: "8",
 				}},
 			}
-			So(datastore.Put(ctx, testRerun), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, testRerun), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
 			err := CronHandler(ctx)
-			So(err, ShouldBeNil)
-			So(len(skdr.Tasks().Payloads()), ShouldEqual, 2)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(skdr.Tasks().Payloads()), should.Equal(2))
 			resultsTask := skdr.Tasks().Payloads()[0].(*tpb.TestFailureDetectionTask)
-			So(resultsTask, ShouldResembleProto, &tpb.TestFailureDetectionTask{
+			assert.Loosely(t, resultsTask, should.Resemble(&tpb.TestFailureDetectionTask{
 				Project:           "chrome",
 				DimensionExcludes: []*pb.Dimension{},
-			})
+			}))
 		})
-		Convey("exclude dimensions", func() {
-			setDailyLimit(ctx, 100)
+		t.Run("exclude dimensions", func(t *ftt.Test) {
+			setDailyLimit(ctx, t, 100)
 			// Scheduled test rerun - os excluded.
-			createTestSingleRerun(ctx, buildbucketpb.Status_SCHEDULED, baseTime.Add(-6*time.Minute), "test_os1")
+			createTestSingleRerun(ctx, t, buildbucketpb.Status_SCHEDULED, baseTime.Add(-6*time.Minute), "test_os1")
 			// Started test rerun - os not excluded.
-			createTestSingleRerun(ctx, buildbucketpb.Status_STARTED, baseTime.Add(-6*time.Minute), "test_os2")
+			createTestSingleRerun(ctx, t, buildbucketpb.Status_STARTED, baseTime.Add(-6*time.Minute), "test_os2")
 			// Scheduled test rerun older than 7 days - os not excluded.
-			createTestSingleRerun(ctx, buildbucketpb.Status_SCHEDULED, baseTime.Add(-time.Hour*7*24), "test_os3")
+			createTestSingleRerun(ctx, t, buildbucketpb.Status_SCHEDULED, baseTime.Add(-time.Hour*7*24), "test_os3")
 			// Scheduled test rerun created less than 5 minutes - os not excluded.
-			createTestSingleRerun(ctx, buildbucketpb.Status_SCHEDULED, baseTime.Add(-4*time.Minute), "test_os4")
+			createTestSingleRerun(ctx, t, buildbucketpb.Status_SCHEDULED, baseTime.Add(-4*time.Minute), "test_os4")
 			// Scheduled test rerun belongs to a different project - os not excluded.
-			testRerun := createTestSingleRerun(ctx, buildbucketpb.Status_SCHEDULED, baseTime.Add(-6*time.Minute), "test_os5")
+			testRerun := createTestSingleRerun(ctx, t, buildbucketpb.Status_SCHEDULED, baseTime.Add(-6*time.Minute), "test_os5")
 			testRerun.Project = "otherproject"
-			So(datastore.Put(ctx, testRerun), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, testRerun), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
 			// Scheduled compile rerun - os excluded.
-			createCompileReruns(ctx, buildbucketpb.Status_SCHEDULED, baseTime.Add(-6*time.Minute), "compile_os1")
+			createCompileReruns(ctx, t, buildbucketpb.Status_SCHEDULED, baseTime.Add(-6*time.Minute), "compile_os1")
 			// Started compile rerun - os not excluded.
-			createCompileReruns(ctx, buildbucketpb.Status_STARTED, baseTime.Add(-6*time.Minute), "compile_os2")
+			createCompileReruns(ctx, t, buildbucketpb.Status_STARTED, baseTime.Add(-6*time.Minute), "compile_os2")
 			// Scheduled compile rerun older than 7 days - os not excluded.
-			createCompileReruns(ctx, buildbucketpb.Status_SCHEDULED, baseTime.Add(-time.Hour*7*24), "compile_os3")
+			createCompileReruns(ctx, t, buildbucketpb.Status_SCHEDULED, baseTime.Add(-time.Hour*7*24), "compile_os3")
 			// Scheduled compile rerun created less than 5 minutes - os not excluded.
-			createCompileReruns(ctx, buildbucketpb.Status_SCHEDULED, baseTime.Add(-4*time.Minute), "compile_os4")
+			createCompileReruns(ctx, t, buildbucketpb.Status_SCHEDULED, baseTime.Add(-4*time.Minute), "compile_os4")
 			// Scheduled compile rerun belongs to a different project - os not excluded.
-			rerunBuild, _ := createCompileReruns(ctx, buildbucketpb.Status_SCHEDULED, baseTime.Add(-6*time.Minute), "compile_os5")
+			rerunBuild, _ := createCompileReruns(ctx, t, buildbucketpb.Status_SCHEDULED, baseTime.Add(-6*time.Minute), "compile_os5")
 			rerunBuild.Project = "otherproject"
-			So(datastore.Put(ctx, rerunBuild), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, rerunBuild), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
 			err := CronHandler(ctx)
-			So(err, ShouldBeNil)
-			So(len(skdr.Tasks().Payloads()), ShouldEqual, 2)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(skdr.Tasks().Payloads()), should.Equal(2))
 			resultsTask := skdr.Tasks().Payloads()[1].(*tpb.TestFailureDetectionTask)
 			expectedDimensionExcludes := []*pb.Dimension{{Key: "os", Value: "test_os1"}, {Key: "os", Value: "compile_os1"}}
 			util.SortDimension(expectedDimensionExcludes)
-			So(resultsTask, ShouldResembleProto, &tpb.TestFailureDetectionTask{
+			assert.Loosely(t, resultsTask, should.Resemble(&tpb.TestFailureDetectionTask{
 				Project:           "chromium",
 				DimensionExcludes: expectedDimensionExcludes,
-			})
+			}))
 		})
 	})
 }
 
-func createTestSingleRerun(ctx context.Context, status buildbucketpb.Status, createdTime time.Time, os string) *model.TestSingleRerun {
+func createTestSingleRerun(ctx context.Context, t testing.TB, status buildbucketpb.Status, createdTime time.Time, os string) *model.TestSingleRerun {
+	t.Helper()
 	tsr := &model.TestSingleRerun{
 		ID: 0,
 		LUCIBuild: model.LUCIBuild{
@@ -187,12 +190,13 @@ func createTestSingleRerun(ctx context.Context, status buildbucketpb.Status, cre
 			}},
 		},
 	}
-	So(datastore.Put(ctx, tsr), ShouldBeNil)
+	assert.Loosely(t, datastore.Put(ctx, tsr), should.BeNil, truth.LineContext())
 	datastore.GetTestable(ctx).CatchupIndexes()
 	return tsr
 }
 
-func createCompileReruns(ctx context.Context, status buildbucketpb.Status, createdTime time.Time, os string) (*model.CompileRerunBuild, *model.SingleRerun) {
+func createCompileReruns(ctx context.Context, t testing.TB, status buildbucketpb.Status, createdTime time.Time, os string) (*model.CompileRerunBuild, *model.SingleRerun) {
+	t.Helper()
 	crb := &model.CompileRerunBuild{
 		LuciBuild: model.LuciBuild{
 			Project:    "chromium",
@@ -200,22 +204,23 @@ func createCompileReruns(ctx context.Context, status buildbucketpb.Status, creat
 			Status:     status,
 		},
 	}
-	So(datastore.Put(ctx, crb), ShouldBeNil)
+	assert.Loosely(t, datastore.Put(ctx, crb), should.BeNil, truth.LineContext())
 	sr := &model.SingleRerun{
 		RerunBuild: datastore.KeyForObj(ctx, crb),
 		Dimensions: &pb.Dimensions{Dimensions: []*pb.Dimension{{Key: "os", Value: os}}},
 	}
-	So(datastore.Put(ctx, sr), ShouldBeNil)
+	assert.Loosely(t, datastore.Put(ctx, sr), should.BeNil, truth.LineContext())
 	datastore.GetTestable(ctx).CatchupIndexes()
 	return crb, sr
 }
 
-func setDailyLimit(ctx context.Context, limit int) {
+func setDailyLimit(ctx context.Context, t testing.TB, limit int) {
+	t.Helper()
 	projectCfg := config.CreatePlaceholderProjectConfig()
 	projectCfg.TestAnalysisConfig.DailyLimit = uint32(limit)
 	cfg := map[string]*configpb.ProjectConfig{
 		"chromium": projectCfg,
 		"chrome":   projectCfg,
 	}
-	So(config.SetTestProjectConfig(ctx, cfg), ShouldBeNil)
+	assert.Loosely(t, config.SetTestProjectConfig(ctx, cfg), should.BeNil, truth.LineContext())
 }

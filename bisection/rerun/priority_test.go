@@ -19,10 +19,12 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/bisection/model"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 )
@@ -30,10 +32,10 @@ import (
 func TestPriority(t *testing.T) {
 	t.Parallel()
 
-	Convey("CapPriority", t, func() {
-		So(CapPriority(40), ShouldEqual, 40)
-		So(CapPriority(260), ShouldEqual, 255)
-		So(CapPriority(10), ShouldEqual, 20)
+	ftt.Run("CapPriority", t, func(t *ftt.Test) {
+		assert.Loosely(t, CapPriority(40), should.Equal(40))
+		assert.Loosely(t, CapPriority(260), should.Equal(255))
+		assert.Loosely(t, CapPriority(10), should.Equal(20))
 	})
 }
 
@@ -43,7 +45,7 @@ func TestOffsetDuration(t *testing.T) {
 	cl := testclock.New(testclock.TestTimeUTC)
 	c = clock.Set(c, cl)
 
-	Convey("OffsetDuration", t, func() {
+	ftt.Run("OffsetDuration", t, func(t *ftt.Test) {
 		now := clock.Now(c)
 		fb := &model.LuciFailedBuild{
 			Id: 123,
@@ -52,51 +54,51 @@ func TestOffsetDuration(t *testing.T) {
 				EndTime:   now.Add(9 * time.Minute),
 			},
 		}
-		So(datastore.Put(c, fb), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, fb), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		cf := &model.CompileFailure{
 			Build: datastore.KeyForObj(c, fb),
 		}
-		So(datastore.Put(c, cf), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, cf), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		cfa := &model.CompileFailureAnalysis{
 			CompileFailure: datastore.KeyForObj(c, cf),
 		}
-		So(datastore.Put(c, cfa), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, cfa), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		pri, err := OffsetPriorityBasedOnRunDuration(c, 100, cfa)
-		So(err, ShouldBeNil)
-		So(pri, ShouldEqual, 80)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, pri, should.Equal(80))
 
 		fb.LuciBuild.EndTime = now.Add(20 * time.Minute)
-		So(datastore.Put(c, fb), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, fb), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 		pri, err = OffsetPriorityBasedOnRunDuration(c, 100, cfa)
-		So(err, ShouldBeNil)
-		So(pri, ShouldEqual, 90)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, pri, should.Equal(90))
 
 		fb.LuciBuild.EndTime = now.Add(50 * time.Minute)
-		So(datastore.Put(c, fb), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, fb), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 		pri, err = OffsetPriorityBasedOnRunDuration(c, 100, cfa)
-		So(err, ShouldBeNil)
-		So(pri, ShouldEqual, 100)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, pri, should.Equal(100))
 
 		fb.LuciBuild.EndTime = now.Add(90 * time.Minute)
-		So(datastore.Put(c, fb), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, fb), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 		pri, err = OffsetPriorityBasedOnRunDuration(c, 100, cfa)
-		So(err, ShouldBeNil)
-		So(pri, ShouldEqual, 120)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, pri, should.Equal(120))
 
 		fb.LuciBuild.EndTime = now.Add(300 * time.Minute)
-		So(datastore.Put(c, fb), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, fb), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 		pri, err = OffsetPriorityBasedOnRunDuration(c, 100, cfa)
-		So(err, ShouldBeNil)
-		So(pri, ShouldEqual, 140)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, pri, should.Equal(140))
 	})
 }

@@ -18,10 +18,12 @@ import (
 	"context"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 )
@@ -30,10 +32,10 @@ func TestSaveResultsToDatastore(t *testing.T) {
 	t.Parallel()
 	c := memory.Use(context.Background())
 
-	Convey("SaveResultsToDatastore", t, func() {
+	ftt.Run("SaveResultsToDatastore", t, func(t *ftt.Test) {
 		heuristicAnalysis := &model.CompileHeuristicAnalysis{}
 		err := datastore.Put(c, heuristicAnalysis)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		result := &model.HeuristicAnalysisResult{
@@ -56,15 +58,15 @@ func TestSaveResultsToDatastore(t *testing.T) {
 		}
 
 		err = saveResultsToDatastore(c, heuristicAnalysis, result, "host", "proj", "ref")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		suspects := []*model.Suspect{}
 		q := datastore.NewQuery("Suspect")
 		err = datastore.GetAll(c, q, &suspects)
-		So(err, ShouldBeNil)
-		So(len(suspects), ShouldEqual, 1)
-		So(suspects[0], ShouldResemble, &model.Suspect{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, len(suspects), should.Equal(1))
+		assert.Loosely(t, suspects[0], should.Resemble(&model.Suspect{
 			ParentAnalysis: datastore.KeyForObj(c, heuristicAnalysis),
 			Id:             suspects[0].Id,
 			ReviewUrl:      "this/is/review/url",
@@ -80,6 +82,6 @@ func TestSaveResultsToDatastore(t *testing.T) {
 			VerificationStatus: model.SuspectVerificationStatus_Unverified,
 			Type:               model.SuspectType_Heuristic,
 			AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
-		})
+		}))
 	})
 }

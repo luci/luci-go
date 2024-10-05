@@ -22,15 +22,15 @@ import (
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/util/testutil"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestCountLatestRevertsCreated(t *testing.T) {
@@ -42,13 +42,13 @@ func TestCountLatestRevertsCreated(t *testing.T) {
 	cl := testclock.New(testclock.TestTimeUTC)
 	c = clock.Set(c, cl)
 
-	Convey("No suspects at all", t, func() {
+	ftt.Run("No suspects at all", t, func(t *ftt.Test) {
 		count, err := CountLatestRevertsCreated(c, 24, pb.AnalysisType_COMPILE_FAILURE_ANALYSIS)
-		So(err, ShouldBeNil)
-		So(count, ShouldEqual, 0)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, count, should.BeZero)
 	})
 
-	Convey("Count of recent created reverts", t, func() {
+	ftt.Run("Count of recent created reverts", t, func(t *ftt.Test) {
 		// Set up suspects
 		suspect1 := &model.Suspect{}
 		suspect2 := &model.Suspect{
@@ -108,22 +108,22 @@ func TestCountLatestRevertsCreated(t *testing.T) {
 			AnalysisType: pb.AnalysisType_TEST_FAILURE_ANALYSIS,
 		}
 
-		So(datastore.Put(c, suspect1), ShouldBeNil)
-		So(datastore.Put(c, suspect2), ShouldBeNil)
-		So(datastore.Put(c, suspect3), ShouldBeNil)
-		So(datastore.Put(c, suspect4), ShouldBeNil)
-		So(datastore.Put(c, suspect5), ShouldBeNil)
-		So(datastore.Put(c, suspect6), ShouldBeNil)
-		So(datastore.Put(c, suspect7), ShouldBeNil)
-		So(datastore.Put(c, suspect8), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, suspect1), should.BeNil)
+		assert.Loosely(t, datastore.Put(c, suspect2), should.BeNil)
+		assert.Loosely(t, datastore.Put(c, suspect3), should.BeNil)
+		assert.Loosely(t, datastore.Put(c, suspect4), should.BeNil)
+		assert.Loosely(t, datastore.Put(c, suspect5), should.BeNil)
+		assert.Loosely(t, datastore.Put(c, suspect6), should.BeNil)
+		assert.Loosely(t, datastore.Put(c, suspect7), should.BeNil)
+		assert.Loosely(t, datastore.Put(c, suspect8), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		count, err := CountLatestRevertsCreated(c, 24, pb.AnalysisType_COMPILE_FAILURE_ANALYSIS)
-		So(err, ShouldBeNil)
-		So(count, ShouldEqual, 3)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, count, should.Equal(3))
 		count, err = CountLatestRevertsCreated(c, 24, pb.AnalysisType_TEST_FAILURE_ANALYSIS)
-		So(err, ShouldBeNil)
-		So(count, ShouldEqual, 1)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, count, should.Equal(1))
 	})
 }
 
@@ -136,13 +136,13 @@ func TestCountLatestRevertsCommitted(t *testing.T) {
 	cl := testclock.New(testclock.TestTimeUTC)
 	c = clock.Set(c, cl)
 
-	Convey("No suspects at all", t, func() {
+	ftt.Run("No suspects at all", t, func(t *ftt.Test) {
 		count, err := CountLatestRevertsCommitted(c, 24)
-		So(err, ShouldBeNil)
-		So(count, ShouldEqual, 0)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, count, should.BeZero)
 	})
 
-	Convey("Count of recent committed reverts", t, func() {
+	ftt.Run("Count of recent committed reverts", t, func(t *ftt.Test) {
 		// Set up suspects
 		suspect1 := &model.Suspect{}
 		suspect2 := &model.Suspect{
@@ -181,25 +181,25 @@ func TestCountLatestRevertsCommitted(t *testing.T) {
 				RevertCommitTime:  clock.Now(c).Add(-time.Minute * 10),
 			},
 		}
-		So(datastore.Put(c, suspect1), ShouldBeNil)
-		So(datastore.Put(c, suspect2), ShouldBeNil)
-		So(datastore.Put(c, suspect3), ShouldBeNil)
-		So(datastore.Put(c, suspect4), ShouldBeNil)
-		So(datastore.Put(c, suspect5), ShouldBeNil)
-		So(datastore.Put(c, suspect6), ShouldBeNil)
-		So(datastore.Put(c, suspect7), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, suspect1), should.BeNil)
+		assert.Loosely(t, datastore.Put(c, suspect2), should.BeNil)
+		assert.Loosely(t, datastore.Put(c, suspect3), should.BeNil)
+		assert.Loosely(t, datastore.Put(c, suspect4), should.BeNil)
+		assert.Loosely(t, datastore.Put(c, suspect5), should.BeNil)
+		assert.Loosely(t, datastore.Put(c, suspect6), should.BeNil)
+		assert.Loosely(t, datastore.Put(c, suspect7), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		count, err := CountLatestRevertsCommitted(c, 24)
-		So(err, ShouldBeNil)
-		So(count, ShouldEqual, 3)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, count, should.Equal(3))
 	})
 }
 
 func TestGetAssociatedBuildID(t *testing.T) {
 	ctx := memory.Use(context.Background())
 
-	Convey("Associated failed build ID for heuristic suspect", t, func() {
+	ftt.Run("Associated failed build ID for heuristic suspect", t, func(t *ftt.Test) {
 		failedBuild := &model.LuciFailedBuild{
 			Id: 88128398584903,
 			LuciBuild: model.LuciBuild{
@@ -211,23 +211,23 @@ func TestGetAssociatedBuildID(t *testing.T) {
 			},
 			BuildFailureType: pb.BuildFailureType_COMPILE,
 		}
-		So(datastore.Put(ctx, failedBuild), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, failedBuild), should.BeNil)
 		datastore.GetTestable(ctx).CatchupIndexes()
 		compileFailure := &model.CompileFailure{
 			Build: datastore.KeyForObj(ctx, failedBuild),
 		}
-		So(datastore.Put(ctx, compileFailure), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, compileFailure), should.BeNil)
 		datastore.GetTestable(ctx).CatchupIndexes()
 		analysis := &model.CompileFailureAnalysis{
 			Id:             444,
 			CompileFailure: datastore.KeyForObj(ctx, compileFailure),
 		}
-		So(datastore.Put(ctx, analysis), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, analysis), should.BeNil)
 		datastore.GetTestable(ctx).CatchupIndexes()
 		heuristicAnalysis := &model.CompileHeuristicAnalysis{
 			ParentAnalysis: datastore.KeyForObj(ctx, analysis),
 		}
-		So(datastore.Put(ctx, heuristicAnalysis), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, heuristicAnalysis), should.BeNil)
 		datastore.GetTestable(ctx).CatchupIndexes()
 
 		heuristicSuspect := &model.Suspect{
@@ -244,24 +244,24 @@ func TestGetAssociatedBuildID(t *testing.T) {
 			VerificationStatus: model.SuspectVerificationStatus_UnderVerification,
 			AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 		}
-		So(datastore.Put(ctx, heuristicSuspect), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, heuristicSuspect), should.BeNil)
 		datastore.GetTestable(ctx).CatchupIndexes()
 
 		bbid, err := GetAssociatedBuildID(ctx, heuristicSuspect)
-		So(err, ShouldBeNil)
-		So(bbid, ShouldEqual, 88128398584903)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, bbid, should.Equal(88128398584903))
 	})
 }
 
 func TestGetSuspect(t *testing.T) {
 	ctx := memory.Use(context.Background())
 
-	Convey("GetSuspect", t, func() {
+	ftt.Run("GetSuspect", t, func(t *ftt.Test) {
 		// Setup datastore
 		compileFailureAnalysis := &model.CompileFailureAnalysis{
 			Id: 123,
 		}
-		So(datastore.Put(ctx, compileFailureAnalysis), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, compileFailureAnalysis), should.BeNil)
 		datastore.GetTestable(ctx).CatchupIndexes()
 
 		parentAnalysis := datastore.KeyForObj(ctx, compileFailureAnalysis)
@@ -270,27 +270,27 @@ func TestGetSuspect(t *testing.T) {
 			Id:             45600001,
 			ParentAnalysis: parentAnalysis,
 		}
-		So(datastore.Put(ctx, compileHeuristicAnalysis), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, compileHeuristicAnalysis), should.BeNil)
 		datastore.GetTestable(ctx).CatchupIndexes()
 
-		Convey("no suspect exists", func() {
+		t.Run("no suspect exists", func(t *ftt.Test) {
 			suspect, err := GetSuspect(ctx, 789, parentAnalysis)
-			So(err, ShouldNotBeNil)
-			So(suspect, ShouldBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, suspect, should.BeNil)
 		})
 
-		Convey("suspect exists", func() {
+		t.Run("suspect exists", func(t *ftt.Test) {
 			// Setup suspect in datastore
 			s := &model.Suspect{
 				Id:             789,
 				ParentAnalysis: parentAnalysis,
 			}
-			So(datastore.Put(ctx, s), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, s), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
 			suspect, err := GetSuspect(ctx, 789, parentAnalysis)
-			So(err, ShouldBeNil)
-			So(suspect, ShouldResemble, s)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, suspect, should.Resemble(s))
 		})
 	})
 }
@@ -298,59 +298,59 @@ func TestGetSuspect(t *testing.T) {
 func TestFetchSuspectsForAnalysis(t *testing.T) {
 	c := memory.Use(context.Background())
 
-	Convey("FetchSuspectsForAnalysis", t, func() {
-		_, _, cfa := testutil.CreateCompileFailureAnalysisAnalysisChain(c, 8000, "chromium", 555)
+	ftt.Run("FetchSuspectsForAnalysis", t, func(t *ftt.Test) {
+		_, _, cfa := testutil.CreateCompileFailureAnalysisAnalysisChain(c, t, 8000, "chromium", 555)
 		suspects, err := FetchSuspectsForAnalysis(c, cfa)
-		So(err, ShouldBeNil)
-		So(len(suspects), ShouldEqual, 0)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, len(suspects), should.BeZero)
 
-		ha := testutil.CreateHeuristicAnalysis(c, cfa)
-		testutil.CreateHeuristicSuspect(c, ha, model.SuspectVerificationStatus_Unverified)
-
-		suspects, err = FetchSuspectsForAnalysis(c, cfa)
-		So(err, ShouldBeNil)
-		So(len(suspects), ShouldEqual, 1)
-
-		nsa := testutil.CreateNthSectionAnalysis(c, cfa)
-		testutil.CreateNthSectionSuspect(c, nsa)
+		ha := testutil.CreateHeuristicAnalysis(c, t, cfa)
+		testutil.CreateHeuristicSuspect(c, t, ha, model.SuspectVerificationStatus_Unverified)
 
 		suspects, err = FetchSuspectsForAnalysis(c, cfa)
-		So(err, ShouldBeNil)
-		So(len(suspects), ShouldEqual, 2)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, len(suspects), should.Equal(1))
+
+		nsa := testutil.CreateNthSectionAnalysis(c, t, cfa)
+		testutil.CreateNthSectionSuspect(c, t, nsa)
+
+		suspects, err = FetchSuspectsForAnalysis(c, cfa)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, len(suspects), should.Equal(2))
 	})
 }
 
 func TestGetSuspectForTestAnalysis(t *testing.T) {
 	ctx := memory.Use(context.Background())
 
-	Convey("GetSuspectForTestAnalysis", t, func() {
-		tfa := testutil.CreateTestFailureAnalysis(ctx, nil)
-		nsa := testutil.CreateTestNthSectionAnalysis(ctx, &testutil.TestNthSectionAnalysisCreationOption{
+	ftt.Run("GetSuspectForTestAnalysis", t, func(t *ftt.Test) {
+		tfa := testutil.CreateTestFailureAnalysis(ctx, t, nil)
+		nsa := testutil.CreateTestNthSectionAnalysis(ctx, t, &testutil.TestNthSectionAnalysisCreationOption{
 			ParentAnalysisKey: datastore.KeyForObj(ctx, tfa),
 		})
 		s, err := GetSuspectForTestAnalysis(ctx, tfa)
-		So(err, ShouldBeNil)
-		So(s, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, s, should.BeNil)
 
-		testutil.CreateSuspect(ctx, &testutil.SuspectCreationOption{
+		testutil.CreateSuspect(ctx, t, &testutil.SuspectCreationOption{
 			ID:        300,
 			ParentKey: datastore.KeyForObj(ctx, nsa),
 		})
 		s, err = GetSuspectForTestAnalysis(ctx, tfa)
-		So(err, ShouldBeNil)
-		So(s.Id, ShouldEqual, 300)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, s.Id, should.Equal(300))
 	})
 }
 
 func TestFetchTestFailuresForSuspect(t *testing.T) {
 	ctx := memory.Use(context.Background())
 
-	Convey("FetchTestFailuresForSuspect", t, func() {
-		tfa := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
+	ftt.Run("FetchTestFailuresForSuspect", t, func(t *ftt.Test) {
+		tfa := testutil.CreateTestFailureAnalysis(ctx, t, &testutil.TestFailureAnalysisCreationOption{
 			Project:        "chromium",
 			TestFailureKey: datastore.NewKey(ctx, "TestFailure", "", 1, nil),
 		})
-		nsa := testutil.CreateTestNthSectionAnalysis(ctx, &testutil.TestNthSectionAnalysisCreationOption{
+		nsa := testutil.CreateTestNthSectionAnalysis(ctx, t, &testutil.TestNthSectionAnalysisCreationOption{
 			ParentAnalysisKey: datastore.KeyForObj(ctx, tfa),
 		})
 		suspect := &model.Suspect{
@@ -359,29 +359,29 @@ func TestFetchTestFailuresForSuspect(t *testing.T) {
 			ParentAnalysis: datastore.KeyForObj(ctx, nsa),
 			AnalysisType:   pb.AnalysisType_TEST_FAILURE_ANALYSIS,
 		}
-		So(datastore.Put(ctx, suspect), ShouldBeNil)
-		tf1 := testutil.CreateTestFailure(ctx, &testutil.TestFailureCreationOption{
+		assert.Loosely(t, datastore.Put(ctx, suspect), should.BeNil)
+		tf1 := testutil.CreateTestFailure(ctx, t, &testutil.TestFailureCreationOption{
 			ID: 1, IsPrimary: true, Analysis: tfa,
 		})
-		tf2 := testutil.CreateTestFailure(ctx, &testutil.TestFailureCreationOption{ID: 2, Analysis: tfa})
+		tf2 := testutil.CreateTestFailure(ctx, t, &testutil.TestFailureCreationOption{ID: 2, Analysis: tfa})
 
 		bundle, err := FetchTestFailuresForSuspect(ctx, suspect)
-		So(err, ShouldBeNil)
-		So(len(bundle.All()), ShouldEqual, 2)
-		So(bundle.Primary(), ShouldResembleProto, tf1)
-		So(bundle.Others()[0], ShouldResembleProto, tf2)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, len(bundle.All()), should.Equal(2))
+		assert.Loosely(t, bundle.Primary(), should.Resemble(tf1))
+		assert.Loosely(t, bundle.Others()[0], should.Resemble(tf2))
 	})
 }
 
 func TestGetTestFailureAnalysisForSuspect(t *testing.T) {
 	ctx := memory.Use(context.Background())
 
-	Convey("GetTestFailureAnalysisForSuspect", t, func() {
-		tfa := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
+	ftt.Run("GetTestFailureAnalysisForSuspect", t, func(t *ftt.Test) {
+		tfa := testutil.CreateTestFailureAnalysis(ctx, t, &testutil.TestFailureAnalysisCreationOption{
 			Project:        "chromium",
 			TestFailureKey: datastore.NewKey(ctx, "TestFailure", "", 1, nil),
 		})
-		nsa := testutil.CreateTestNthSectionAnalysis(ctx, &testutil.TestNthSectionAnalysisCreationOption{
+		nsa := testutil.CreateTestNthSectionAnalysis(ctx, t, &testutil.TestNthSectionAnalysisCreationOption{
 			ParentAnalysisKey: datastore.KeyForObj(ctx, tfa),
 		})
 		suspect := &model.Suspect{
@@ -392,34 +392,34 @@ func TestGetTestFailureAnalysisForSuspect(t *testing.T) {
 		}
 
 		res, err := GetTestFailureAnalysisForSuspect(ctx, suspect)
-		So(err, ShouldBeNil)
-		So(res, ShouldResembleProto, tfa)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, res, should.Resemble(tfa))
 	})
 }
 
 func TestGetVerifiedCulprit(t *testing.T) {
 	ctx := memory.Use(context.Background())
 
-	Convey("Get verified culprit", t, func() {
-		tfa := testutil.CreateTestFailureAnalysis(ctx, nil)
+	ftt.Run("Get verified culprit", t, func(t *ftt.Test) {
+		tfa := testutil.CreateTestFailureAnalysis(ctx, t, nil)
 		culprit, err := GetVerifiedCulpritForTestAnalysis(ctx, tfa)
-		So(err, ShouldBeNil)
-		So(culprit, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, culprit, should.BeNil)
 
-		nsa := testutil.CreateTestNthSectionAnalysis(ctx, &testutil.TestNthSectionAnalysisCreationOption{
+		nsa := testutil.CreateTestNthSectionAnalysis(ctx, t, &testutil.TestNthSectionAnalysisCreationOption{
 			ParentAnalysisKey: datastore.KeyForObj(ctx, tfa),
 		})
 
-		suspect := testutil.CreateSuspect(ctx, &testutil.SuspectCreationOption{
+		suspect := testutil.CreateSuspect(ctx, t, &testutil.SuspectCreationOption{
 			ID:        300,
 			ParentKey: datastore.KeyForObj(ctx, nsa),
 		})
 		tfa.VerifiedCulpritKey = datastore.KeyForObj(ctx, suspect)
-		So(datastore.Put(ctx, tfa), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, tfa), should.BeNil)
 		datastore.GetTestable(ctx).CatchupIndexes()
 
 		culprit, err = GetVerifiedCulpritForTestAnalysis(ctx, tfa)
-		So(err, ShouldBeNil)
-		So(culprit.Id, ShouldEqual, 300)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, culprit.Id, should.Equal(300))
 	})
 }

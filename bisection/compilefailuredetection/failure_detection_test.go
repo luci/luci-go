@@ -26,11 +26,12 @@ import (
 	"go.chromium.org/luci/bisection/util/testutil"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/tq"
 
 	"github.com/golang/mock/gomock"
-	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -43,15 +44,15 @@ import (
 func TestFailureDetection(t *testing.T) {
 	t.Parallel()
 
-	Convey("Has Compile Step Status", t, func() {
+	ftt.Run("Has Compile Step Status", t, func(t *ftt.Test) {
 		c := context.Background()
-		Convey("No Compile Step", func() {
+		t.Run("No Compile Step", func(t *ftt.Test) {
 			build := &buildbucketpb.Build{
 				Steps: []*buildbucketpb.Step{},
 			}
-			So(hasCompileStepStatus(c, build, buildbucketpb.Status_FAILURE), ShouldBeFalse)
+			assert.Loosely(t, hasCompileStepStatus(c, build, buildbucketpb.Status_FAILURE), should.BeFalse)
 		})
-		Convey("Has Compile Step", func() {
+		t.Run("Has Compile Step", func(t *ftt.Test) {
 			build := &buildbucketpb.Build{
 				Steps: []*buildbucketpb.Step{
 					{
@@ -60,43 +61,43 @@ func TestFailureDetection(t *testing.T) {
 					},
 				},
 			}
-			So(hasCompileStepStatus(c, build, buildbucketpb.Status_FAILURE), ShouldBeTrue)
-			So(hasCompileStepStatus(c, build, buildbucketpb.Status_SUCCESS), ShouldBeFalse)
+			assert.Loosely(t, hasCompileStepStatus(c, build, buildbucketpb.Status_FAILURE), should.BeTrue)
+			assert.Loosely(t, hasCompileStepStatus(c, build, buildbucketpb.Status_SUCCESS), should.BeFalse)
 		})
 	})
 
-	Convey("Should analyze build", t, func() {
+	ftt.Run("Should analyze build", t, func(t *ftt.Test) {
 		build := &buildbucketpb.Build{}
 		c := context.Background()
-		So(shouldAnalyzeBuild(c, build), ShouldBeFalse)
+		assert.Loosely(t, shouldAnalyzeBuild(c, build), should.BeFalse)
 		build.Status = buildbucketpb.Status_FAILURE
-		So(shouldAnalyzeBuild(c, build), ShouldBeFalse)
+		assert.Loosely(t, shouldAnalyzeBuild(c, build), should.BeFalse)
 		build.Steps = []*buildbucketpb.Step{
 			{
 				Name:   "compile",
 				Status: buildbucketpb.Status_FAILURE,
 			},
 		}
-		So(shouldAnalyzeBuild(c, build), ShouldBeTrue)
+		assert.Loosely(t, shouldAnalyzeBuild(c, build), should.BeTrue)
 	})
 
-	Convey("GetLastPassedFirstFailedBuild", t, func() {
+	ftt.Run("GetLastPassedFirstFailedBuild", t, func(t *ftt.Test) {
 		c := context.Background()
 		ctl := gomock.NewController(t)
 		defer ctl.Finish()
 		mc := buildbucket.NewMockedClient(c, ctl)
 		c = mc.Ctx
 
-		Convey("No builds", func() {
+		t.Run("No builds", func(t *ftt.Test) {
 			res := &buildbucketpb.SearchBuildsResponse{
 				Builds: []*buildbucketpb.Build{},
 			}
 			mc.Client.EXPECT().SearchBuilds(gomock.Any(), gomock.Any(), gomock.Any()).Return(res, nil).Times(1)
 			_, _, err := getLastPassedFirstFailedBuilds(c, &buildbucketpb.Build{Id: 123})
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 		})
 
-		Convey("Got succeeded builds", func() {
+		t.Run("Got succeeded builds", func(t *ftt.Test) {
 			res := &buildbucketpb.SearchBuildsResponse{
 				Builds: []*buildbucketpb.Build{
 					{
@@ -157,12 +158,12 @@ func TestFailureDetection(t *testing.T) {
 			}
 			mc.Client.EXPECT().SearchBuilds(gomock.Any(), gomock.Any(), gomock.Any()).Return(res, nil).Times(1)
 			lastPassedBuild, firstFailedBuild, err := getLastPassedFirstFailedBuilds(c, &buildbucketpb.Build{Id: 123})
-			So(err, ShouldBeNil)
-			So(lastPassedBuild.Id, ShouldEqual, 118)
-			So(firstFailedBuild.Id, ShouldEqual, 122)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, lastPassedBuild.Id, should.Equal(118))
+			assert.Loosely(t, firstFailedBuild.Id, should.Equal(122))
 		})
 
-		Convey("Last passed build not in first search", func() {
+		t.Run("Last passed build not in first search", func(t *ftt.Test) {
 			firstRes := &buildbucketpb.SearchBuildsResponse{
 				Builds: []*buildbucketpb.Build{
 					{
@@ -220,12 +221,12 @@ func TestFailureDetection(t *testing.T) {
 			mc.Client.EXPECT().SearchBuilds(gomock.Any(), gomock.Any(), gomock.Any()).Return(firstRes, nil).Times(1)
 			mc.Client.EXPECT().SearchBuilds(gomock.Any(), gomock.Any(), gomock.Any()).Return(secondRes, nil).Times(1)
 			lastPassedBuild, firstFailedBuild, err := getLastPassedFirstFailedBuilds(c, &buildbucketpb.Build{Id: 123})
-			So(err, ShouldBeNil)
-			So(lastPassedBuild.Id, ShouldEqual, 120)
-			So(firstFailedBuild.Id, ShouldEqual, 122)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, lastPassedBuild.Id, should.Equal(120))
+			assert.Loosely(t, firstFailedBuild.Id, should.Equal(122))
 		})
 
-		Convey("Fewer older builds than the search limit and all failed", func() {
+		t.Run("Fewer older builds than the search limit and all failed", func(t *ftt.Test) {
 			res := &buildbucketpb.SearchBuildsResponse{
 				Builds: []*buildbucketpb.Build{
 					{
@@ -256,12 +257,12 @@ func TestFailureDetection(t *testing.T) {
 			}
 			mc.Client.EXPECT().SearchBuilds(gomock.Any(), gomock.Any(), gomock.Any()).Return(res, nil).Times(1)
 			lastPassedBuild, firstFailedBuild, err := getLastPassedFirstFailedBuilds(c, &buildbucketpb.Build{Id: 123})
-			So(lastPassedBuild, ShouldBeNil)
-			So(firstFailedBuild, ShouldBeNil)
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, lastPassedBuild, should.BeNil)
+			assert.Loosely(t, firstFailedBuild, should.BeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 		})
 
-		Convey("No recent passed build", func() {
+		t.Run("No recent passed build", func(t *ftt.Test) {
 			failedBuilds := make([]*buildbucketpb.Build, 100)
 			for i := 0; i < 100; i++ {
 				failedBuilds[i] = &buildbucketpb.Build{
@@ -287,13 +288,13 @@ func TestFailureDetection(t *testing.T) {
 			}
 
 			lastPassedBuild, firstFailedBuild, err := getLastPassedFirstFailedBuilds(c, &buildbucketpb.Build{Id: 123})
-			So(lastPassedBuild, ShouldBeNil)
-			So(firstFailedBuild, ShouldBeNil)
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, lastPassedBuild, should.BeNil)
+			assert.Loosely(t, firstFailedBuild, should.BeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 		})
 	})
 
-	Convey("analysisExists", t, func() {
+	ftt.Run("analysisExists", t, func(t *ftt.Test) {
 		c := memory.Use(context.Background())
 
 		build := &buildbucketpb.Build{
@@ -327,14 +328,14 @@ func TestFailureDetection(t *testing.T) {
 			CreateTime: &timestamppb.Timestamp{Seconds: 100},
 		}
 
-		Convey("There is no existing analysis", func() {
+		t.Run("There is no existing analysis", func(t *ftt.Test) {
 			check, cf, e := analysisExists(c, build, firstFailedBuild)
-			So(check, ShouldBeTrue)
-			So(cf, ShouldNotBeNil)
-			So(e, ShouldBeNil)
+			assert.Loosely(t, check, should.BeTrue)
+			assert.Loosely(t, cf, should.NotBeNil)
+			assert.Loosely(t, e, should.BeNil)
 		})
 
-		Convey("There is existing analysis", func() {
+		t.Run("There is existing analysis", func(t *ftt.Test) {
 			failed_build := &model.LuciFailedBuild{
 				Id: 8001,
 				LuciBuild: model.LuciBuild{
@@ -342,14 +343,14 @@ func TestFailureDetection(t *testing.T) {
 				},
 				BuildFailureType: pb.BuildFailureType_COMPILE,
 			}
-			So(datastore.Put(c, failed_build), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, failed_build), should.BeNil)
 			datastore.GetTestable(c).CatchupIndexes()
 
 			compile_failure := &model.CompileFailure{
 				Id:    8001,
 				Build: datastore.KeyForObj(c, failed_build),
 			}
-			So(datastore.Put(c, compile_failure), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, compile_failure), should.BeNil)
 			datastore.GetTestable(c).CatchupIndexes()
 
 			compile_failure_analysis := &model.CompileFailureAnalysis{
@@ -357,18 +358,18 @@ func TestFailureDetection(t *testing.T) {
 				FirstFailedBuildId: 8001,
 				LastPassedBuildId:  8000,
 			}
-			So(datastore.Put(c, compile_failure_analysis), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, compile_failure_analysis), should.BeNil)
 			datastore.GetTestable(c).CatchupIndexes()
 			check, cf, e := analysisExists(c, build, firstFailedBuild)
-			So(check, ShouldBeFalse)
-			So(e, ShouldBeNil)
-			So(cf, ShouldNotBeNil)
-			So(cf.Id, ShouldEqual, 8002)
-			So(cf.MergedFailureKey.IntID(), ShouldEqual, 8001)
+			assert.Loosely(t, check, should.BeFalse)
+			assert.Loosely(t, e, should.BeNil)
+			assert.Loosely(t, cf, should.NotBeNil)
+			assert.Loosely(t, cf.Id, should.Equal(8002))
+			assert.Loosely(t, cf.MergedFailureKey.IntID(), should.Equal(8001))
 		})
 	})
 
-	Convey("createCompileFailureModel", t, func() {
+	ftt.Run("createCompileFailureModel", t, func(t *ftt.Test) {
 		c := memory.Use(context.Background())
 
 		build := &buildbucketpb.Build{
@@ -425,16 +426,16 @@ func TestFailureDetection(t *testing.T) {
 
 		// Create a CompileFailure record in datastore
 		compileFailure, err := createCompileFailureModel(c, build)
-		So(compileFailure, ShouldNotBeNil)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, compileFailure, should.NotBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		Convey("Can create LuciFailedBuild with same info", func() {
+		t.Run("Can create LuciFailedBuild with same info", func(t *ftt.Test) {
 			// Get the record from datastore
 			failedBuild := &model.LuciFailedBuild{Id: 8003}
 			err := datastore.Get(c, failedBuild)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			// Check that the build information matches
-			So(failedBuild, ShouldResemble, &model.LuciFailedBuild{
+			assert.Loosely(t, failedBuild, should.Resemble(&model.LuciFailedBuild{
 				Id: 8003,
 				LuciBuild: model.LuciBuild{
 					BuildId:     8003,
@@ -457,7 +458,7 @@ func TestFailureDetection(t *testing.T) {
 				BuildFailureType: pb.BuildFailureType_COMPILE,
 				Platform:         model.PlatformMac,
 				SheriffRotations: []string{"chromium"},
-			})
+			}))
 		})
 	})
 }
@@ -486,12 +487,12 @@ func TestUpdateSucceededBuild(t *testing.T) {
 	}
 	mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(res, nil).AnyTimes()
 
-	Convey("UpdateSucceededBuild no build", t, func() {
+	ftt.Run("UpdateSucceededBuild no build", t, func(t *ftt.Test) {
 		err := UpdateSucceededBuild(c, 123)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 	})
 
-	Convey("UpdateSucceededBuild", t, func() {
+	ftt.Run("UpdateSucceededBuild", t, func(t *ftt.Test) {
 		c, scheduler := tq.TestingContext(c, nil)
 		cancelanalysis.RegisterTaskClass()
 
@@ -506,36 +507,36 @@ func TestUpdateSucceededBuild(t *testing.T) {
 			},
 		}
 
-		So(datastore.Put(c, bf), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, bf), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		cf := &model.CompileFailure{
 			Id:    123,
 			Build: datastore.KeyForObj(c, bf),
 		}
-		So(datastore.Put(c, cf), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, cf), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		cfa := &model.CompileFailureAnalysis{
 			Id:             789,
 			CompileFailure: datastore.KeyForObj(c, cf),
 		}
-		So(datastore.Put(c, cfa), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, cfa), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		err := UpdateSucceededBuild(c, 123)
 		datastore.GetTestable(c).CatchupIndexes()
 
-		So(err, ShouldBeNil)
-		So(datastore.Get(c, cfa), ShouldBeNil)
-		So(cfa.ShouldCancel, ShouldBeTrue)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, datastore.Get(c, cfa), should.BeNil)
+		assert.Loosely(t, cfa.ShouldCancel, should.BeTrue)
 
 		// Assert task
 		task := &tpb.CancelAnalysisTask{
 			AnalysisId: cfa.Id,
 		}
 		expected := proto.Clone(task).(*tpb.CancelAnalysisTask)
-		So(scheduler.Tasks().Payloads()[0], ShouldResembleProto, expected)
+		assert.Loosely(t, scheduler.Tasks().Payloads()[0], should.Resemble(expected))
 	})
 }
 
@@ -543,7 +544,7 @@ func TestShouldCancelAnalysis(t *testing.T) {
 	t.Parallel()
 	c := memory.Use(context.Background())
 
-	Convey("Should cancel analysis", t, func() {
+	ftt.Run("Should cancel analysis", t, func(t *ftt.Test) {
 		fb := &model.LuciFailedBuild{
 			LuciBuild: model.LuciBuild{
 				GitilesCommit: buildbucketpb.GitilesCommit{
@@ -553,10 +554,10 @@ func TestShouldCancelAnalysis(t *testing.T) {
 			},
 		}
 
-		So(datastore.Put(c, fb), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, fb), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
-		cf := testutil.CreateCompileFailure(c, fb)
-		cfa := testutil.CreateCompileFailureAnalysis(c, 789, cf)
+		cf := testutil.CreateCompileFailure(c, t, fb)
+		cfa := testutil.CreateCompileFailureAnalysis(c, t, 789, cf)
 
 		build := &buildbucketpb.Build{
 			Output: &buildbucketpb.Build_Output{
@@ -567,15 +568,15 @@ func TestShouldCancelAnalysis(t *testing.T) {
 		}
 
 		shouldCancel, err := shouldCancelAnalysis(c, cfa, build)
-		So(err, ShouldBeNil)
-		So(shouldCancel, ShouldBeTrue)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, shouldCancel, should.BeTrue)
 
 		build = &buildbucketpb.Build{
 			Number: 101,
 		}
 		shouldCancel, err = shouldCancelAnalysis(c, cfa, build)
-		So(err, ShouldBeNil)
-		So(shouldCancel, ShouldBeTrue)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, shouldCancel, should.BeTrue)
 
 		build = &buildbucketpb.Build{
 			Output: &buildbucketpb.Build_Output{
@@ -586,7 +587,7 @@ func TestShouldCancelAnalysis(t *testing.T) {
 			Number: 101,
 		}
 		shouldCancel, err = shouldCancelAnalysis(c, cfa, build)
-		So(err, ShouldBeNil)
-		So(shouldCancel, ShouldBeFalse)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, shouldCancel, should.BeFalse)
 	})
 }

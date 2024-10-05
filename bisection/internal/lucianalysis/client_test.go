@@ -19,22 +19,24 @@ package lucianalysis
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
 	tpb "go.chromium.org/luci/bisection/task/proto"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestUpdateAnalysisStatus(t *testing.T) {
 	t.Parallel()
 
-	Convey("generate test failures query", t, func() {
+	ftt.Run("generate test failures query", t, func(t *ftt.Test) {
 		task := &tpb.TestFailureDetectionTask{
 			Project: "chromium",
 		}
 		dimensionExcludeFilter := "(NOT (SELECT LOGICAL_OR((SELECT count(*) > 0 FROM UNNEST(task_dimensions) WHERE KEY = kv.key and value = kv.value)) FROM UNNEST(@dimensionExcludes) kv))"
-		Convey("no excluded pools", func() {
+		t.Run("no excluded pools", func(t *ftt.Test) {
 			q, err := generateTestFailuresQuery(task, dimensionExcludeFilter, []string{})
-			So(err, ShouldBeNil)
-			So(q, ShouldEqual, `WITH
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, q, should.Equal(`WITH
   segments_with_failure_rate AS (
     SELECT
       *,
@@ -111,13 +113,13 @@ WHERE (NOT (SELECT LOGICAL_OR((SELECT count(*) > 0 FROM UNNEST(task_dimensions) 
   AND ((BuilderGroup IN UNNEST(@allowedBuilderGroups)) OR ARRAY_LENGTH(@allowedBuilderGroups) = 0 OR ARRAY_LENGTH(@allowedBuilderGroups) IS NULL)
   AND (BuilderGroup NOT IN UNNEST(@excludedBuilderGroups))
 ORDER BY regression_group.RegressionEndPosition DESC
-LIMIT 5000`)
+LIMIT 5000`))
 		})
 
-		Convey("have excluded pools", func() {
+		t.Run("have excluded pools", func(t *ftt.Test) {
 			q, err := generateTestFailuresQuery(task, dimensionExcludeFilter, []string{"chromium.tests.gpu"})
-			So(err, ShouldBeNil)
-			So(q, ShouldEqual, `WITH
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, q, should.Equal(`WITH
   segments_with_failure_rate AS (
     SELECT
       *,
@@ -198,7 +200,7 @@ WHERE s.end_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 DAY)
   AND ((BuilderGroup IN UNNEST(@allowedBuilderGroups)) OR ARRAY_LENGTH(@allowedBuilderGroups) = 0 OR ARRAY_LENGTH(@allowedBuilderGroups) IS NULL)
   AND (BuilderGroup NOT IN UNNEST(@excludedBuilderGroups))
 ORDER BY regression_group.RegressionEndPosition DESC
-LIMIT 5000`)
+LIMIT 5000`))
 		})
 	})
 

@@ -21,6 +21,10 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -28,8 +32,6 @@ import (
 	bqpb "go.chromium.org/luci/bisection/proto/bq"
 	bisectionpb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/util/testutil"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestExport(t *testing.T) {
@@ -41,16 +43,16 @@ func TestExport(t *testing.T) {
 	cl.Set(baseTime)
 	ctx = clock.Set(ctx, cl)
 
-	Convey("export", t, func() {
+	ftt.Run("export", t, func(t *ftt.Test) {
 		// Create 5 test analyses.
 		for i := 1; i <= 5; i++ {
-			tfa := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
+			tfa := testutil.CreateTestFailureAnalysis(ctx, t, &testutil.TestFailureAnalysisCreationOption{
 				ID:         int64(1000 + i),
 				RunStatus:  bisectionpb.AnalysisRunStatus_ENDED,
 				Status:     bisectionpb.AnalysisStatus(bisectionpb.AnalysisStatus_NOTFOUND),
 				CreateTime: clock.Now(ctx).Add(time.Hour * time.Duration(-i)),
 			})
-			testutil.CreateTestFailure(ctx, &testutil.TestFailureCreationOption{
+			testutil.CreateTestFailure(ctx, t, &testutil.TestFailureCreationOption{
 				ID:        int64(2000 + i),
 				Analysis:  tfa,
 				IsPrimary: true,
@@ -59,11 +61,11 @@ func TestExport(t *testing.T) {
 
 		client := &fakeExportClient{}
 		err := export(ctx, client)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		// Filtered out 3.
-		So(len(client.rows), ShouldEqual, 2)
-		So(client.rows[0].AnalysisId, ShouldEqual, 1002)
-		So(client.rows[1].AnalysisId, ShouldEqual, 1004)
+		assert.Loosely(t, len(client.rows), should.Equal(2))
+		assert.Loosely(t, client.rows[0].AnalysisId, should.Equal(1002))
+		assert.Loosely(t, client.rows[1].AnalysisId, should.Equal(1004))
 	})
 }
 func TestFetchTestAnalyses(t *testing.T) {
@@ -75,71 +77,71 @@ func TestFetchTestAnalyses(t *testing.T) {
 	cl.Set(baseTime)
 	ctx = clock.Set(ctx, cl)
 
-	Convey("fetch test analyses", t, func() {
+	ftt.Run("fetch test analyses", t, func(t *ftt.Test) {
 		// Not ended, should be skipped.
-		tf1 := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
+		tf1 := testutil.CreateTestFailureAnalysis(ctx, t, &testutil.TestFailureAnalysisCreationOption{
 			ID:         1001,
 			RunStatus:  bisectionpb.AnalysisRunStatus_STARTED,
 			CreateTime: clock.Now(ctx).Add(-time.Hour),
 		})
 		// Ended, but from a long time ago. Should be skipped.
-		tf2 := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
+		tf2 := testutil.CreateTestFailureAnalysis(ctx, t, &testutil.TestFailureAnalysisCreationOption{
 			ID:         1002,
 			RunStatus:  bisectionpb.AnalysisRunStatus_ENDED,
 			CreateTime: clock.Now(ctx).Add(-15 * 24 * time.Hour),
 		})
 		// Ended, not found.
-		tf3 := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
+		tf3 := testutil.CreateTestFailureAnalysis(ctx, t, &testutil.TestFailureAnalysisCreationOption{
 			ID:         1003,
 			RunStatus:  bisectionpb.AnalysisRunStatus_ENDED,
 			Status:     bisectionpb.AnalysisStatus(bisectionpb.AnalysisStatus_NOTFOUND),
 			CreateTime: clock.Now(ctx).Add(-time.Hour),
 		})
 		// Ended, found, but action not taken, ended recently, should be skipped.
-		tf4 := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
+		tf4 := testutil.CreateTestFailureAnalysis(ctx, t, &testutil.TestFailureAnalysisCreationOption{
 			ID:         1004,
 			RunStatus:  bisectionpb.AnalysisRunStatus_ENDED,
 			Status:     bisectionpb.AnalysisStatus(bisectionpb.AnalysisStatus_FOUND),
 			CreateTime: clock.Now(ctx).Add(-time.Hour),
 			EndTime:    clock.Now(ctx).Add(-time.Minute),
 		})
-		createSuspect(ctx, tf4, false)
+		createSuspect(ctx, t, tf4, false)
 		// Ended, found, actions taken.
-		tf5 := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
+		tf5 := testutil.CreateTestFailureAnalysis(ctx, t, &testutil.TestFailureAnalysisCreationOption{
 			ID:         1005,
 			RunStatus:  bisectionpb.AnalysisRunStatus_ENDED,
 			Status:     bisectionpb.AnalysisStatus(bisectionpb.AnalysisStatus_FOUND),
 			CreateTime: clock.Now(ctx).Add(-2 * time.Hour),
 		})
-		createSuspect(ctx, tf5, true)
+		createSuspect(ctx, t, tf5, true)
 		// Ended, found, but action not taken, ended long time ago.
-		tf6 := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
+		tf6 := testutil.CreateTestFailureAnalysis(ctx, t, &testutil.TestFailureAnalysisCreationOption{
 			ID:         1006,
 			RunStatus:  bisectionpb.AnalysisRunStatus_ENDED,
 			Status:     bisectionpb.AnalysisStatus(bisectionpb.AnalysisStatus_FOUND),
 			CreateTime: clock.Now(ctx).Add(-26 * time.Hour),
 			EndTime:    clock.Now(ctx).Add(-25 * time.Hour),
 		})
-		createSuspect(ctx, tf6, false)
-		So(datastore.Put(ctx, []*model.TestFailureAnalysis{tf1, tf2, tf3, tf4, tf5, tf6}), ShouldBeNil)
+		createSuspect(ctx, t, tf6, false)
+		assert.Loosely(t, datastore.Put(ctx, []*model.TestFailureAnalysis{tf1, tf2, tf3, tf4, tf5, tf6}), should.BeNil)
 		datastore.GetTestable(ctx).CatchupIndexes()
 		tfas, err := fetchTestAnalyses(ctx)
-		So(err, ShouldBeNil)
-		So(len(tfas), ShouldEqual, 3)
-		So(tfas[0].ID, ShouldEqual, 1003)
-		So(tfas[1].ID, ShouldEqual, 1005)
-		So(tfas[2].ID, ShouldEqual, 1006)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, len(tfas), should.Equal(3))
+		assert.Loosely(t, tfas[0].ID, should.Equal(1003))
+		assert.Loosely(t, tfas[1].ID, should.Equal(1005))
+		assert.Loosely(t, tfas[2].ID, should.Equal(1006))
 	})
 }
 
-func createSuspect(ctx context.Context, tfa *model.TestFailureAnalysis, hasTakenAction bool) {
+func createSuspect(ctx context.Context, t testing.TB, tfa *model.TestFailureAnalysis, hasTakenAction bool) {
 	suspect := &model.Suspect{
 		Id: tfa.ID,
 		ActionDetails: model.ActionDetails{
 			HasTakenActions: hasTakenAction,
 		},
 	}
-	So(datastore.Put(ctx, suspect), ShouldBeNil)
+	assert.Loosely(t, datastore.Put(ctx, suspect), should.BeNil, truth.LineContext())
 	datastore.GetTestable(ctx).CatchupIndexes()
 	tfa.VerifiedCulpritKey = datastore.KeyForObj(ctx, suspect)
 }

@@ -23,7 +23,6 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery"
-	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/internal/lucianalysis"
 	"go.chromium.org/luci/bisection/model"
@@ -34,7 +33,10 @@ import (
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -45,15 +47,15 @@ import (
 func TestRedundancyScore(t *testing.T) {
 	t.Parallel()
 
-	Convey("Same test variant exist", t, func() {
+	ftt.Run("Same test variant exist", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 
-		Convey("no overlap regression range", func() {
+		t.Run("no overlap regression range", func(t *ftt.Test) {
 			// Existing test failure.
 			failureInDB := fakeTestFailure(102, "testID", "testvarianthash")
 			failureInDB.RegressionStartPosition = 101
 			failureInDB.RegressionEndPosition = 102
-			So(datastore.Put(ctx, failureInDB), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, failureInDB), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 			// New test failure.
 			failure := fakeTestFailure(101, "testID", "testvarianthash")
@@ -61,15 +63,15 @@ func TestRedundancyScore(t *testing.T) {
 			failure.RegressionEndPosition = 100
 
 			score, err := redundancyScore(ctx, failure)
-			So(err, ShouldBeNil)
-			So(score, ShouldEqual, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, score, should.BeZero)
 		})
-		Convey("overlap regression range", func() {
+		t.Run("overlap regression range", func(t *ftt.Test) {
 			// Existing test failure.
 			failureInDB := fakeTestFailure(102, "testID", "testvarianthash")
 			failureInDB.RegressionStartPosition = 100
 			failureInDB.RegressionEndPosition = 1000
-			So(datastore.Put(ctx, failureInDB), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, failureInDB), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 			// New test failure.
 			failure := fakeTestFailure(101, "testID", "testvarianthash")
@@ -77,19 +79,19 @@ func TestRedundancyScore(t *testing.T) {
 			failure.RegressionEndPosition = 100
 
 			score, err := redundancyScore(ctx, failure)
-			So(err, ShouldBeNil)
-			So(score, ShouldEqual, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.That(t, score, should.Equal(1.0))
 		})
 	})
 
-	Convey("Same test exist, same test variant not exist", t, func() {
+	ftt.Run("Same test exist, same test variant not exist", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
-		Convey("no overlap regression range", func() {
+		t.Run("no overlap regression range", func(t *ftt.Test) {
 			// Existing test failure.
 			failureInDB := fakeTestFailure(102, "testID", "othervarianthash")
 			failureInDB.RegressionStartPosition = 101
 			failureInDB.RegressionEndPosition = 102
-			So(datastore.Put(ctx, failureInDB), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, failureInDB), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 			// New test failure.
 			failure := fakeTestFailure(101, "testID", "testvarianthash")
@@ -97,15 +99,15 @@ func TestRedundancyScore(t *testing.T) {
 			failure.RegressionEndPosition = 100
 
 			score, err := redundancyScore(ctx, failure)
-			So(err, ShouldBeNil)
-			So(score, ShouldEqual, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, score, should.BeZero)
 		})
-		Convey("overlap regression range", func() {
+		t.Run("overlap regression range", func(t *ftt.Test) {
 			// Existing test failure.
 			failureInDB := fakeTestFailure(102, "testID", "othervarianthash")
 			failureInDB.RegressionStartPosition = 100
 			failureInDB.RegressionEndPosition = 102
-			So(datastore.Put(ctx, failureInDB), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, failureInDB), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 			// New test failure.
 			failure := fakeTestFailure(101, "testID", "testvarianthash")
@@ -113,18 +115,18 @@ func TestRedundancyScore(t *testing.T) {
 			failure.RegressionEndPosition = 100
 
 			score, err := redundancyScore(ctx, failure)
-			So(err, ShouldBeNil)
-			So(score, ShouldEqual, float64(1)/103)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, score, should.Equal(float64(1)/103))
 		})
 	})
 
-	Convey("No test failure with same test or test variant exists", t, func() {
+	ftt.Run("No test failure with same test or test variant exists", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		// Existing test failure.
 		failureInDB := fakeTestFailure(102, "othertestID", "varianthash")
 		failureInDB.RegressionStartPosition = 1
 		failureInDB.RegressionEndPosition = 100
-		So(datastore.Put(ctx, failureInDB), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, failureInDB), should.BeNil)
 		datastore.GetTestable(ctx).CatchupIndexes()
 		// New test failure.
 		failure := fakeTestFailure(101, "testID", "testvarianthash")
@@ -132,16 +134,16 @@ func TestRedundancyScore(t *testing.T) {
 		failure.RegressionEndPosition = 100
 
 		score, err := redundancyScore(ctx, failure)
-		So(err, ShouldBeNil)
-		So(score, ShouldEqual, 0)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, score, should.BeZero)
 	})
 }
 
 func TestFailureDetection(t *testing.T) {
 	t.Parallel()
 
-	Convey("Have bisection task to send", t, func() {
-		ctx, skdr := setupTestingContext()
+	ftt.Run("Have bisection task to send", t, func(t *ftt.Test) {
+		ctx, skdr := setupTestingContext(t)
 		analysisClient := &fakeLUCIAnalysisClient{
 			testFailuresByProject: map[string][]*lucianalysis.BuilderRegressionGroup{},
 			buildInfoByProject: map[string]lucianalysis.BuildInfo{
@@ -157,31 +159,31 @@ func TestFailureDetection(t *testing.T) {
 		}
 		verify := func(selectedGroup *lucianalysis.BuilderRegressionGroup, redundancyScore float64) {
 			err := Run(ctx, analysisClient, task)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
-			So(len(skdr.Tasks().Payloads()), ShouldEqual, 1)
+			assert.Loosely(t, len(skdr.Tasks().Payloads()), should.Equal(1))
 			resultsTask := skdr.Tasks().Payloads()[0].(*tpb.TestFailureBisectionTask)
 			analysisID := resultsTask.AnalysisId
 			// Verify TestFailures are saved.
 			var primaryFailureKey *datastore.Key
 			for i, tv := range selectedGroup.TestVariants {
 				testFailureDB, err := datastoreutil.GetTestFailures(ctx, "testProject", tv.TestID.String(), selectedGroup.RefHash.String(), tv.VariantHash.String())
-				So(err, ShouldBeNil)
-				So(testFailureDB, ShouldHaveLength, 1)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, testFailureDB, should.HaveLength(1))
 				if i == 0 {
 					primaryFailureKey = datastore.KeyForObj(ctx, testFailureDB[0])
-					So(testFailureDB[0].IsPrimary, ShouldEqual, true)
-					So(testFailureDB[0].RedundancyScore, ShouldEqual, redundancyScore)
+					assert.Loosely(t, testFailureDB[0].IsPrimary, should.Equal(true))
+					assert.Loosely(t, testFailureDB[0].RedundancyScore, should.Equal(redundancyScore))
 				} else {
-					So(testFailureDB[0].IsPrimary, ShouldEqual, false)
+					assert.Loosely(t, testFailureDB[0].IsPrimary, should.Equal(false))
 				}
-				So(testFailureDB[0].RegressionStartPosition, ShouldEqual, selectedGroup.RegressionStartPosition.Int64)
-				So(testFailureDB[0].RegressionEndPosition, ShouldEqual, selectedGroup.RegressionEndPosition.Int64)
-				So(testFailureDB[0].AnalysisKey, ShouldEqual, datastore.NewKey(ctx, "TestFailureAnalysis", "", analysisID, nil))
+				assert.Loosely(t, testFailureDB[0].RegressionStartPosition, should.Equal(selectedGroup.RegressionStartPosition.Int64))
+				assert.Loosely(t, testFailureDB[0].RegressionEndPosition, should.Equal(selectedGroup.RegressionEndPosition.Int64))
+				assert.Loosely(t, testFailureDB[0].AnalysisKey, should.Match(datastore.NewKey(ctx, "TestFailureAnalysis", "", analysisID, nil)))
 			}
 			// Verify TestFailureAnalysis is saved.
 			analysis, err := datastoreutil.GetTestFailureAnalysis(ctx, resultsTask.AnalysisId)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			expected := &model.TestFailureAnalysis{
 				ID:               resultsTask.AnalysisId,
 				Project:          "testProject",
@@ -196,9 +198,9 @@ func TestFailureDetection(t *testing.T) {
 				FailedBuildID:    1,
 				SheriffRotations: []string{"chromium"},
 			}
-			So(analysis, ShouldResemble, expected)
+			assert.Loosely(t, analysis, should.Resemble(expected))
 		}
-		Convey("send the most recent test failure", func() {
+		t.Run("send the most recent test failure", func(t *ftt.Test) {
 			selectedGroup := fakeBuilderRegressionGroup("testID", "varianthash3", 200, 201, time.Unix(3600*24*100, 0))
 			analysisClient.testFailuresByProject["testProject"] = []*lucianalysis.BuilderRegressionGroup{
 				fakeBuilderRegressionGroup("testID", "varianthash", 100, 101, time.Unix(3600*24*99, 0)),
@@ -209,13 +211,13 @@ func TestFailureDetection(t *testing.T) {
 			failureInDB := fakeTestFailure(101, "testID", "varianthash4")
 			failureInDB.RegressionStartPosition = 201
 			failureInDB.RegressionEndPosition = 202
-			So(datastore.Put(ctx, failureInDB), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, failureInDB), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
 			verify(selectedGroup, 0.25)
 		})
 
-		Convey("send the least redundant test failure when recency is the same", func() {
+		t.Run("send the least redundant test failure when recency is the same", func(t *ftt.Test) {
 			selectedGroup := fakeBuilderRegressionGroup("testID", "varianthash3", 200, 201, time.Unix(3600*24*100, 0))
 			analysisClient.testFailuresByProject["testProject"] = []*lucianalysis.BuilderRegressionGroup{
 				fakeBuilderRegressionGroup("testID", "varianthash", 100, 101, time.Unix(3600*24*100, 0)),
@@ -226,15 +228,15 @@ func TestFailureDetection(t *testing.T) {
 			failureInDB := fakeTestFailure(101, "testID", "varianthash4")
 			failureInDB.RegressionStartPosition = 99
 			failureInDB.RegressionEndPosition = 101
-			So(datastore.Put(ctx, failureInDB), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, failureInDB), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
 			verify(selectedGroup, 0)
 		})
 	})
 
-	Convey("No bisection task to send", t, func() {
-		ctx, skdr := setupTestingContext()
+	ftt.Run("No bisection task to send", t, func(t *ftt.Test) {
+		ctx, skdr := setupTestingContext(t)
 		analysisClient := &fakeLUCIAnalysisClient{
 			testFailuresByProject: map[string][]*lucianalysis.BuilderRegressionGroup{},
 			buildInfoByProject: map[string]lucianalysis.BuildInfo{
@@ -248,13 +250,13 @@ func TestFailureDetection(t *testing.T) {
 		task := &tpb.TestFailureDetectionTask{
 			Project: "testProject",
 		}
-		Convey("no builder regression group", func() {
+		t.Run("no builder regression group", func(t *ftt.Test) {
 			err := Run(ctx, analysisClient, task)
-			So(err, ShouldBeNil)
-			So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(skdr.Tasks().Payloads()), should.BeZero)
 		})
 
-		Convey("all groups are redundant", func() {
+		t.Run("all groups are redundant", func(t *ftt.Test) {
 			analysisClient.testFailuresByProject["testProject"] = []*lucianalysis.BuilderRegressionGroup{
 				fakeBuilderRegressionGroup("testID", "varianthash", 99, 100, time.Unix(0, 0)),
 			}
@@ -262,34 +264,34 @@ func TestFailureDetection(t *testing.T) {
 			failureInDB := fakeTestFailure(101, "testID", "varianthash")
 			failureInDB.RegressionStartPosition = 100
 			failureInDB.RegressionEndPosition = 102
-			So(datastore.Put(ctx, failureInDB), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, failureInDB), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
 			err := Run(ctx, analysisClient, task)
-			So(err, ShouldBeNil)
-			So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(skdr.Tasks().Payloads()), should.BeZero)
 		})
 
-		Convey("insufficient data", func() {
+		t.Run("insufficient data", func(t *ftt.Test) {
 			analysisClient.testFailuresByProject["testProject"] = []*lucianalysis.BuilderRegressionGroup{
 				fakeBuilderRegressionGroup(insufficientDataTestID, "varianthash", 99, 100, time.Unix(1689343797, 0)),
 			}
 
 			err := Run(ctx, analysisClient, task)
-			So(err, ShouldNotBeNil)
-			So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, len(skdr.Tasks().Payloads()), should.BeZero)
 			// Check test analysis is saved.
 			q := datastore.NewQuery("TestFailureAnalysis")
 			analyses := []*model.TestFailureAnalysis{}
-			So(datastore.GetAll(ctx, q, &analyses), ShouldBeNil)
-			So(len(analyses), ShouldEqual, 1)
+			assert.Loosely(t, datastore.GetAll(ctx, q, &analyses), should.BeNil)
+			assert.Loosely(t, len(analyses), should.Equal(1))
 
 			q = datastore.NewQuery("TestFailure").Eq("test_id", insufficientDataTestID)
 			tfs := []*model.TestFailure{}
-			So(datastore.GetAll(ctx, q, &tfs), ShouldBeNil)
-			So(len(tfs), ShouldEqual, 1)
+			assert.Loosely(t, datastore.GetAll(ctx, q, &tfs), should.BeNil)
+			assert.Loosely(t, len(tfs), should.Equal(1))
 
-			So(analyses[0], ShouldResemble, &model.TestFailureAnalysis{
+			assert.Loosely(t, analyses[0], should.Resemble(&model.TestFailureAnalysis{
 				ID:               analyses[0].ID,
 				Project:          "testProject",
 				CreateTime:       time.Unix(10000, 0).UTC(),
@@ -298,9 +300,9 @@ func TestFailureDetection(t *testing.T) {
 				EndTime:          time.Unix(10000, 0).UTC(),
 				TestFailure:      datastore.KeyForObj(ctx, tfs[0]),
 				SheriffRotations: []string{"chromium"},
-			})
+			}))
 
-			So(tfs[0], ShouldResembleProto, &model.TestFailure{
+			assert.Loosely(t, tfs[0], should.Resemble(&model.TestFailure{
 				ID:          tfs[0].ID,
 				Project:     "testProject",
 				TestID:      insufficientDataTestID,
@@ -329,7 +331,7 @@ func TestFailureDetection(t *testing.T) {
 				EndPositionFailureRate:  1,
 				StartHour:               time.Unix(1689343797, 0).UTC(),
 				EndHour:                 time.Unix(1689343798, 0).UTC(),
-			})
+			}))
 		})
 	})
 }
@@ -407,7 +409,8 @@ func fakeTestFailure(ID int64, testID, variantHash string) *model.TestFailure {
 	}
 }
 
-func setupTestingContext() (context.Context, *tqtesting.Scheduler) {
+func setupTestingContext(t testing.TB) (context.Context, *tqtesting.Scheduler) {
+	t.Helper()
 	ctx := memory.Use(context.Background())
 	cl := testclock.New(testclock.TestTimeUTC)
 	cl.Set(time.Unix(10000, 0).UTC())
@@ -419,7 +422,7 @@ func setupTestingContext() (context.Context, *tqtesting.Scheduler) {
 		ExcludedBuckets: []string{"try", "findit", "reviver"},
 	}
 	cfg := map[string]*configpb.ProjectConfig{"testProject": projectCfg}
-	So(config.SetTestProjectConfig(ctx, cfg), ShouldBeNil)
+	assert.Loosely(t, config.SetTestProjectConfig(ctx, cfg), should.BeNil, truth.LineContext())
 	datastore.GetTestable(ctx).Consistent(true)
 	return tq.TestingContext(txndefer.FilterRDS(ctx), nil)
 }

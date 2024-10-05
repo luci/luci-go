@@ -19,13 +19,14 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 )
 
@@ -33,22 +34,22 @@ func TestGetHost(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	Convey("Empty string returns error", t, func() {
+	ftt.Run("Empty string returns error", t, func(t *ftt.Test) {
 		host, err := GetHost(ctx, "")
-		So(err, ShouldErrLike, "could not find Gerrit host")
-		So(host, ShouldEqual, "")
+		assert.Loosely(t, err, should.ErrLike("could not find Gerrit host"))
+		assert.Loosely(t, host, should.BeEmpty)
 	})
 
-	Convey("Non-URL format returns error", t, func() {
+	ftt.Run("Non-URL format returns error", t, func(t *ftt.Test) {
 		host, err := GetHost(ctx, "[Test] This is a review title, not a URL")
-		So(err, ShouldErrLike, "could not find Gerrit host")
-		So(host, ShouldEqual, "")
+		assert.Loosely(t, err, should.ErrLike("could not find Gerrit host"))
+		assert.Loosely(t, host, should.BeEmpty)
 	})
 
-	Convey("Gets host from review URL", t, func() {
+	ftt.Run("Gets host from review URL", t, func(t *ftt.Test) {
 		host, err := GetHost(ctx, " https://chromium-test-review.googlesource.com/c/proj/+/1200003\n")
-		So(err, ShouldBeNil)
-		So(host, ShouldEqual, "chromium-test-review.googlesource.com")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, host, should.Equal("chromium-test-review.googlesource.com"))
 	})
 }
 
@@ -56,13 +57,13 @@ func TestHasLUCIBisectionComment(t *testing.T) {
 	t.Parallel()
 	ctx := memory.Use(context.Background())
 
-	Convey("No comments", t, func() {
+	ftt.Run("No comments", t, func(t *ftt.Test) {
 		hasLBComment, err := HasLUCIBisectionComment(ctx, &gerritpb.ChangeInfo{})
-		So(err, ShouldBeNil)
-		So(hasLBComment, ShouldEqual, false)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, hasLBComment, should.Equal(false))
 	})
 
-	Convey("No LUCI Bisection comment", t, func() {
+	ftt.Run("No LUCI Bisection comment", t, func(t *ftt.Test) {
 		change := &gerritpb.ChangeInfo{
 			Messages: []*gerritpb.ChangeMessageInfo{
 				{
@@ -82,14 +83,14 @@ func TestHasLUCIBisectionComment(t *testing.T) {
 			},
 		}
 		hasLBComment, err := HasLUCIBisectionComment(ctx, change)
-		So(err, ShouldBeNil)
-		So(hasLBComment, ShouldEqual, false)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, hasLBComment, should.Equal(false))
 	})
 
-	Convey("LUCI Bisection has commented", t, func() {
+	ftt.Run("LUCI Bisection has commented", t, func(t *ftt.Test) {
 		// Get the service account email value in this test context
 		testEmail, err := ServiceAccountEmail(ctx)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		change := &gerritpb.ChangeInfo{
 			Messages: []*gerritpb.ChangeMessageInfo{
@@ -119,8 +120,8 @@ func TestHasLUCIBisectionComment(t *testing.T) {
 			},
 		}
 		hasLBComment, err := HasLUCIBisectionComment(ctx, change)
-		So(err, ShouldBeNil)
-		So(hasLBComment, ShouldEqual, true)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, hasLBComment, should.Equal(true))
 	})
 }
 
@@ -128,17 +129,17 @@ func TestIsOwnedByLUCIBisection(t *testing.T) {
 	t.Parallel()
 	ctx := memory.Use(context.Background())
 
-	Convey("No owner", t, func() {
+	ftt.Run("No owner", t, func(t *ftt.Test) {
 		change := &gerritpb.ChangeInfo{
 			Project: "chromium/test/src",
 			Number:  615243,
 		}
 		lbOwned, err := IsOwnedByLUCIBisection(ctx, change)
-		So(err, ShouldBeNil)
-		So(lbOwned, ShouldEqual, false)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, lbOwned, should.Equal(false))
 	})
 
-	Convey("Change is not owned by LUCI Bisection", t, func() {
+	ftt.Run("Change is not owned by LUCI Bisection", t, func(t *ftt.Test) {
 		change := &gerritpb.ChangeInfo{
 			Project: "chromium/test/src",
 			Number:  615243,
@@ -150,14 +151,14 @@ func TestIsOwnedByLUCIBisection(t *testing.T) {
 			},
 		}
 		lbOwned, err := IsOwnedByLUCIBisection(ctx, change)
-		So(err, ShouldBeNil)
-		So(lbOwned, ShouldEqual, false)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, lbOwned, should.Equal(false))
 	})
 
-	Convey("Change is owned by LUCI Bisection", t, func() {
+	ftt.Run("Change is owned by LUCI Bisection", t, func(t *ftt.Test) {
 		// Get the service account email value in this test context
 		testEmail, err := ServiceAccountEmail(ctx)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		change := &gerritpb.ChangeInfo{
 			Project: "chromium/test/src",
@@ -170,8 +171,8 @@ func TestIsOwnedByLUCIBisection(t *testing.T) {
 			},
 		}
 		lbOwned, err := IsOwnedByLUCIBisection(ctx, change)
-		So(err, ShouldBeNil)
-		So(lbOwned, ShouldEqual, true)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, lbOwned, should.Equal(true))
 	})
 }
 
@@ -183,26 +184,26 @@ func TestIsRecentSubmit(t *testing.T) {
 	cl := testclock.New(testclock.TestTimeUTC)
 	ctx = clock.Set(ctx, cl)
 
-	Convey("IsRecentSubmit", t, func() {
+	ftt.Run("IsRecentSubmit", t, func(t *ftt.Test) {
 		change := &gerritpb.ChangeInfo{
 			Project: "chromium/test/src",
 			Number:  234567,
 		}
 		maxAge := time.Duration(6) * time.Hour
 
-		Convey("change submitted now is recent", func() {
+		t.Run("change submitted now is recent", func(t *ftt.Test) {
 			change.Submitted = timestamppb.New(clock.Now(ctx))
-			So(IsRecentSubmit(ctx, change, maxAge), ShouldEqual, true)
+			assert.Loosely(t, IsRecentSubmit(ctx, change, maxAge), should.Equal(true))
 		})
 
-		Convey("change submitted at threshold time is recent", func() {
+		t.Run("change submitted at threshold time is recent", func(t *ftt.Test) {
 			change.Submitted = timestamppb.New(clock.Now(ctx).Add(-time.Hour * 6))
-			So(IsRecentSubmit(ctx, change, maxAge), ShouldEqual, true)
+			assert.Loosely(t, IsRecentSubmit(ctx, change, maxAge), should.Equal(true))
 		})
 
-		Convey("change submitted a while ago is not recent", func() {
+		t.Run("change submitted a while ago is not recent", func(t *ftt.Test) {
 			change.Submitted = timestamppb.New(clock.Now(ctx).Add(-time.Hour * 30))
-			So(IsRecentSubmit(ctx, change, maxAge), ShouldEqual, false)
+			assert.Loosely(t, IsRecentSubmit(ctx, change, maxAge), should.Equal(false))
 		})
 	})
 }
@@ -211,16 +212,17 @@ func TestHasAutoRevertOffFlagSet(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	Convey("change does not have enough information", t, func() {
+	ftt.Run("change does not have enough information", t, func(t *ftt.Test) {
 		change := &gerritpb.ChangeInfo{
 			Project: "chromium/test/src",
 			Number:  234567,
 		}
 		_, err := HasAutoRevertOffFlagSet(ctx, change)
-		So(err, ShouldErrLike, "could not get", "info")
+		assert.Loosely(t, err, should.ErrLike("could not get"))
+		assert.Loosely(t, err, should.ErrLike("info"))
 	})
 
-	Convey("change does not mention flag", t, func() {
+	ftt.Run("change does not mention flag", t, func(t *ftt.Test) {
 		change := &gerritpb.ChangeInfo{
 			Project:         "chromium/test/src",
 			Number:          234567,
@@ -258,11 +260,11 @@ func TestHasAutoRevertOffFlagSet(t *testing.T) {
 		}
 
 		hasFlag, err := HasAutoRevertOffFlagSet(ctx, change)
-		So(err, ShouldBeNil)
-		So(hasFlag, ShouldEqual, false)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, hasFlag, should.Equal(false))
 	})
 
-	Convey("change has flag set", t, func() {
+	ftt.Run("change has flag set", t, func(t *ftt.Test) {
 		change := &gerritpb.ChangeInfo{
 			Project:         "chromium/test/src",
 			Number:          234567,
@@ -300,11 +302,11 @@ func TestHasAutoRevertOffFlagSet(t *testing.T) {
 		}
 
 		hasFlag, err := HasAutoRevertOffFlagSet(ctx, change)
-		So(err, ShouldBeNil)
-		So(hasFlag, ShouldEqual, true)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, hasFlag, should.Equal(true))
 	})
 
-	Convey("change has flag set with extra whitespace", t, func() {
+	ftt.Run("change has flag set with extra whitespace", t, func(t *ftt.Test) {
 		change := &gerritpb.ChangeInfo{
 			Project:         "chromium/test/src",
 			Number:          234567,
@@ -342,11 +344,11 @@ func TestHasAutoRevertOffFlagSet(t *testing.T) {
 		}
 
 		hasFlag, err := HasAutoRevertOffFlagSet(ctx, change)
-		So(err, ShouldBeNil)
-		So(hasFlag, ShouldEqual, true)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, hasFlag, should.Equal(true))
 	})
 
-	Convey("change has flag set to false", t, func() {
+	ftt.Run("change has flag set to false", t, func(t *ftt.Test) {
 		change := &gerritpb.ChangeInfo{
 			Project:         "chromium/test/src",
 			Number:          234567,
@@ -384,8 +386,8 @@ func TestHasAutoRevertOffFlagSet(t *testing.T) {
 		}
 
 		hasFlag, err := HasAutoRevertOffFlagSet(ctx, change)
-		So(err, ShouldBeNil)
-		So(hasFlag, ShouldEqual, false)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, hasFlag, should.Equal(false))
 	})
 }
 
@@ -393,16 +395,17 @@ func TestAuthorEmail(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	Convey("change does not have enough information", t, func() {
+	ftt.Run("change does not have enough information", t, func(t *ftt.Test) {
 		change := &gerritpb.ChangeInfo{
 			Project: "chromium/test/src",
 			Number:  234567,
 		}
 		_, err := AuthorEmail(ctx, change)
-		So(err, ShouldErrLike, "could not get", "info")
+		assert.Loosely(t, err, should.ErrLike("could not get"))
+		assert.Loosely(t, err, should.ErrLike("info"))
 	})
 
-	Convey("change does not have an author", t, func() {
+	ftt.Run("change does not have an author", t, func(t *ftt.Test) {
 		change := &gerritpb.ChangeInfo{
 			Project:         "chromium/test/src",
 			Number:          234567,
@@ -440,10 +443,10 @@ func TestAuthorEmail(t *testing.T) {
 		}
 
 		_, err := AuthorEmail(ctx, change)
-		So(err, ShouldErrLike, "no author in commit info")
+		assert.Loosely(t, err, should.ErrLike("no author in commit info"))
 	})
 
-	Convey("author email is returned", t, func() {
+	ftt.Run("author email is returned", t, func(t *ftt.Test) {
 		change := &gerritpb.ChangeInfo{
 			Project:         "chromium/test/src",
 			Number:          234567,
@@ -485,8 +488,8 @@ func TestAuthorEmail(t *testing.T) {
 		}
 
 		author, err := AuthorEmail(ctx, change)
-		So(err, ShouldBeNil)
-		So(author, ShouldEqual, "jdoe@example.com")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, author, should.Equal("jdoe@example.com"))
 	})
 }
 
@@ -494,16 +497,17 @@ func TestCommitMessage(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	Convey("change does not have enough information", t, func() {
+	ftt.Run("change does not have enough information", t, func(t *ftt.Test) {
 		change := &gerritpb.ChangeInfo{
 			Project: "chromium/test/src",
 			Number:  234567,
 		}
 		_, err := CommitMessage(ctx, change)
-		So(err, ShouldErrLike, "could not get", "info")
+		assert.Loosely(t, err, should.ErrLike("could not get"))
+		assert.Loosely(t, err, should.ErrLike("info"))
 	})
 
-	Convey("commit message is returned", t, func() {
+	ftt.Run("commit message is returned", t, func(t *ftt.Test) {
 		expectedMessage := "Title.\n\nBody is here.\n\nNOAUTOREVERT=true\n\nChange-Id: I100deadbeef"
 		change := &gerritpb.ChangeInfo{
 			Project:         "chromium/test/src",
@@ -546,7 +550,7 @@ func TestCommitMessage(t *testing.T) {
 		}
 
 		message, err := CommitMessage(ctx, change)
-		So(err, ShouldBeNil)
-		So(message, ShouldEqual, expectedMessage)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, message, should.Equal(expectedMessage))
 	})
 }

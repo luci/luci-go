@@ -19,12 +19,14 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/util/testutil"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 )
@@ -32,68 +34,68 @@ import (
 func TestUpdateAnalysisStatus(t *testing.T) {
 	t.Parallel()
 
-	Convey("UpdateStatus", t, func() {
+	ftt.Run("UpdateStatus", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		cl := testclock.New(testclock.TestTimeUTC)
 		cl.Set(time.Unix(10000, 0).UTC())
 		ctx = clock.Set(ctx, cl)
-		Convey("Update status ended", func() {
-			tfa := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
+		t.Run("Update status ended", func(t *ftt.Test) {
+			tfa := testutil.CreateTestFailureAnalysis(ctx, t, &testutil.TestFailureAnalysisCreationOption{
 				Status:    pb.AnalysisStatus_RUNNING,
 				RunStatus: pb.AnalysisRunStatus_STARTED,
 			})
 			err := UpdateAnalysisStatus(ctx, tfa, pb.AnalysisStatus_FOUND, pb.AnalysisRunStatus_ENDED)
-			So(err, ShouldBeNil)
-			So(tfa.Status, ShouldEqual, pb.AnalysisStatus_FOUND)
-			So(tfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
-			So(tfa.EndTime.Unix(), ShouldEqual, 10000)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tfa.Status, should.Equal(pb.AnalysisStatus_FOUND))
+			assert.Loosely(t, tfa.RunStatus, should.Equal(pb.AnalysisRunStatus_ENDED))
+			assert.Loosely(t, tfa.EndTime.Unix(), should.Equal(10000))
 		})
 
-		Convey("Update status started", func() {
-			tfa := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
+		t.Run("Update status started", func(t *ftt.Test) {
+			tfa := testutil.CreateTestFailureAnalysis(ctx, t, &testutil.TestFailureAnalysisCreationOption{
 				Status:    pb.AnalysisStatus_CREATED,
 				RunStatus: pb.AnalysisRunStatus_ANALYSIS_RUN_STATUS_UNSPECIFIED,
 			})
 			err := UpdateAnalysisStatus(ctx, tfa, pb.AnalysisStatus_CREATED, pb.AnalysisRunStatus_STARTED)
-			So(err, ShouldBeNil)
-			So(tfa.Status, ShouldEqual, pb.AnalysisStatus_CREATED)
-			So(tfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_STARTED)
-			So(tfa.StartTime.Unix(), ShouldEqual, 10000)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tfa.Status, should.Equal(pb.AnalysisStatus_CREATED))
+			assert.Loosely(t, tfa.RunStatus, should.Equal(pb.AnalysisRunStatus_STARTED))
+			assert.Loosely(t, tfa.StartTime.Unix(), should.Equal(10000))
 		})
 
-		Convey("Do not update the start time of a started analysis", func() {
-			tfa := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
+		t.Run("Do not update the start time of a started analysis", func(t *ftt.Test) {
+			tfa := testutil.CreateTestFailureAnalysis(ctx, t, &testutil.TestFailureAnalysisCreationOption{
 				Status:    pb.AnalysisStatus_RUNNING,
 				RunStatus: pb.AnalysisRunStatus_STARTED,
 				StartTime: time.Unix(5000, 0).UTC(),
 			})
 			err := UpdateAnalysisStatus(ctx, tfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_STARTED)
-			So(err, ShouldBeNil)
-			So(tfa.Status, ShouldEqual, pb.AnalysisStatus_SUSPECTFOUND)
-			So(tfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_STARTED)
-			So(tfa.StartTime.Unix(), ShouldEqual, 5000)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tfa.Status, should.Equal(pb.AnalysisStatus_SUSPECTFOUND))
+			assert.Loosely(t, tfa.RunStatus, should.Equal(pb.AnalysisRunStatus_STARTED))
+			assert.Loosely(t, tfa.StartTime.Unix(), should.Equal(5000))
 		})
 
-		Convey("Ended analysis will not update", func() {
-			tfa := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
+		t.Run("Ended analysis will not update", func(t *ftt.Test) {
+			tfa := testutil.CreateTestFailureAnalysis(ctx, t, &testutil.TestFailureAnalysisCreationOption{
 				Status:    pb.AnalysisStatus_FOUND,
 				RunStatus: pb.AnalysisRunStatus_ENDED,
 			})
 			err := UpdateAnalysisStatus(ctx, tfa, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_CANCELED)
-			So(err, ShouldBeNil)
-			So(tfa.Status, ShouldEqual, pb.AnalysisStatus_FOUND)
-			So(tfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tfa.Status, should.Equal(pb.AnalysisStatus_FOUND))
+			assert.Loosely(t, tfa.RunStatus, should.Equal(pb.AnalysisRunStatus_ENDED))
 		})
 
-		Convey("Canceled analysis will not update", func() {
-			tfa := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
+		t.Run("Canceled analysis will not update", func(t *ftt.Test) {
+			tfa := testutil.CreateTestFailureAnalysis(ctx, t, &testutil.TestFailureAnalysisCreationOption{
 				Status:    pb.AnalysisStatus_NOTFOUND,
 				RunStatus: pb.AnalysisRunStatus_CANCELED,
 			})
 			err := UpdateAnalysisStatus(ctx, tfa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
-			So(err, ShouldBeNil)
-			So(tfa.Status, ShouldEqual, pb.AnalysisStatus_NOTFOUND)
-			So(tfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_CANCELED)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tfa.Status, should.Equal(pb.AnalysisStatus_NOTFOUND))
+			assert.Loosely(t, tfa.RunStatus, should.Equal(pb.AnalysisRunStatus_CANCELED))
 		})
 	})
 }
@@ -101,43 +103,43 @@ func TestUpdateAnalysisStatus(t *testing.T) {
 func TestUpdateNthSectionAnalysisStatus(t *testing.T) {
 	t.Parallel()
 
-	Convey("Update Nthsection Status", t, func() {
+	ftt.Run("Update Nthsection Status", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		cl := testclock.New(testclock.TestTimeUTC)
 		cl.Set(time.Unix(10000, 0).UTC())
 		ctx = clock.Set(ctx, cl)
-		Convey("Update status ended", func() {
-			nsa := testutil.CreateTestNthSectionAnalysis(ctx, &testutil.TestNthSectionAnalysisCreationOption{
+		t.Run("Update status ended", func(t *ftt.Test) {
+			nsa := testutil.CreateTestNthSectionAnalysis(ctx, t, &testutil.TestNthSectionAnalysisCreationOption{
 				Status:    pb.AnalysisStatus_RUNNING,
 				RunStatus: pb.AnalysisRunStatus_STARTED,
 			})
 			err := UpdateNthSectionAnalysisStatus(ctx, nsa, pb.AnalysisStatus_FOUND, pb.AnalysisRunStatus_ENDED)
-			So(err, ShouldBeNil)
-			So(nsa.Status, ShouldEqual, pb.AnalysisStatus_FOUND)
-			So(nsa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
-			So(nsa.EndTime.Unix(), ShouldEqual, 10000)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, nsa.Status, should.Equal(pb.AnalysisStatus_FOUND))
+			assert.Loosely(t, nsa.RunStatus, should.Equal(pb.AnalysisRunStatus_ENDED))
+			assert.Loosely(t, nsa.EndTime.Unix(), should.Equal(10000))
 		})
 
-		Convey("Ended analysis will not update", func() {
-			nsa := testutil.CreateTestNthSectionAnalysis(ctx, &testutil.TestNthSectionAnalysisCreationOption{
+		t.Run("Ended analysis will not update", func(t *ftt.Test) {
+			nsa := testutil.CreateTestNthSectionAnalysis(ctx, t, &testutil.TestNthSectionAnalysisCreationOption{
 				Status:    pb.AnalysisStatus_FOUND,
 				RunStatus: pb.AnalysisRunStatus_ENDED,
 			})
 			err := UpdateNthSectionAnalysisStatus(ctx, nsa, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_CANCELED)
-			So(err, ShouldBeNil)
-			So(nsa.Status, ShouldEqual, pb.AnalysisStatus_FOUND)
-			So(nsa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, nsa.Status, should.Equal(pb.AnalysisStatus_FOUND))
+			assert.Loosely(t, nsa.RunStatus, should.Equal(pb.AnalysisRunStatus_ENDED))
 		})
 
-		Convey("Canceled analysis will not update", func() {
-			nsa := testutil.CreateTestNthSectionAnalysis(ctx, &testutil.TestNthSectionAnalysisCreationOption{
+		t.Run("Canceled analysis will not update", func(t *ftt.Test) {
+			nsa := testutil.CreateTestNthSectionAnalysis(ctx, t, &testutil.TestNthSectionAnalysisCreationOption{
 				Status:    pb.AnalysisStatus_NOTFOUND,
 				RunStatus: pb.AnalysisRunStatus_CANCELED,
 			})
 			err := UpdateNthSectionAnalysisStatus(ctx, nsa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
-			So(err, ShouldBeNil)
-			So(nsa.Status, ShouldEqual, pb.AnalysisStatus_NOTFOUND)
-			So(nsa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_CANCELED)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, nsa.Status, should.Equal(pb.AnalysisStatus_NOTFOUND))
+			assert.Loosely(t, nsa.RunStatus, should.Equal(pb.AnalysisRunStatus_CANCELED))
 		})
 	})
 }
@@ -145,48 +147,48 @@ func TestUpdateNthSectionAnalysisStatus(t *testing.T) {
 func TestUpdateStatusWhenError(t *testing.T) {
 	t.Parallel()
 
-	Convey("Update Status When Error", t, func() {
+	ftt.Run("Update Status When Error", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		cl := testclock.New(testclock.TestTimeUTC)
 		cl.Set(time.Unix(10000, 0).UTC())
 		ctx = clock.Set(ctx, cl)
-		tfa := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
+		tfa := testutil.CreateTestFailureAnalysis(ctx, t, &testutil.TestFailureAnalysisCreationOption{
 			Status:    pb.AnalysisStatus_CREATED,
 			RunStatus: pb.AnalysisRunStatus_STARTED,
 		})
-		nsa := testutil.CreateTestNthSectionAnalysis(ctx, &testutil.TestNthSectionAnalysisCreationOption{
+		nsa := testutil.CreateTestNthSectionAnalysis(ctx, t, &testutil.TestNthSectionAnalysisCreationOption{
 			ParentAnalysisKey: datastore.KeyForObj(ctx, tfa),
 			Status:            pb.AnalysisStatus_CREATED,
 			RunStatus:         pb.AnalysisRunStatus_STARTED,
 		})
 
-		Convey("No in progress rerun", func() {
+		t.Run("No in progress rerun", func(t *ftt.Test) {
 			err := UpdateAnalysisStatusWhenError(ctx, tfa)
-			So(err, ShouldBeNil)
-			So(datastore.Get(ctx, nsa), ShouldBeNil)
-			So(nsa.Status, ShouldEqual, pb.AnalysisStatus_ERROR)
-			So(nsa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
-			So(nsa.EndTime, ShouldEqual, time.Unix(10000, 0).UTC())
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, datastore.Get(ctx, nsa), should.BeNil)
+			assert.Loosely(t, nsa.Status, should.Equal(pb.AnalysisStatus_ERROR))
+			assert.Loosely(t, nsa.RunStatus, should.Equal(pb.AnalysisRunStatus_ENDED))
+			assert.That(t, nsa.EndTime, should.Match(time.Unix(10000, 0).UTC()))
 
-			So(datastore.Get(ctx, tfa), ShouldBeNil)
-			So(tfa.Status, ShouldEqual, pb.AnalysisStatus_ERROR)
-			So(tfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
-			So(tfa.EndTime, ShouldEqual, time.Unix(10000, 0).UTC())
+			assert.Loosely(t, datastore.Get(ctx, tfa), should.BeNil)
+			assert.Loosely(t, tfa.Status, should.Equal(pb.AnalysisStatus_ERROR))
+			assert.Loosely(t, tfa.RunStatus, should.Equal(pb.AnalysisRunStatus_ENDED))
+			assert.That(t, tfa.EndTime, should.Match(time.Unix(10000, 0).UTC()))
 		})
 
-		Convey("Have in progress rerun", func() {
-			testutil.CreateTestSingleRerun(ctx, &testutil.TestSingleRerunCreationOption{
+		t.Run("Have in progress rerun", func(t *ftt.Test) {
+			testutil.CreateTestSingleRerun(ctx, t, &testutil.TestSingleRerunCreationOption{
 				AnalysisKey: datastore.KeyForObj(ctx, tfa),
 				Type:        model.RerunBuildType_NthSection,
 				Status:      pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
 			})
 			err := UpdateAnalysisStatusWhenError(ctx, tfa)
-			So(err, ShouldBeNil)
-			So(datastore.Get(ctx, nsa), ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, datastore.Get(ctx, nsa), should.BeNil)
 			// No change.
-			So(nsa.Status, ShouldEqual, pb.AnalysisStatus_CREATED)
-			So(datastore.Get(ctx, tfa), ShouldBeNil)
-			So(tfa.Status, ShouldEqual, pb.AnalysisStatus_CREATED)
+			assert.Loosely(t, nsa.Status, should.Equal(pb.AnalysisStatus_CREATED))
+			assert.Loosely(t, datastore.Get(ctx, tfa), should.BeNil)
+			assert.Loosely(t, tfa.Status, should.Equal(pb.AnalysisStatus_CREATED))
 		})
 	})
 }

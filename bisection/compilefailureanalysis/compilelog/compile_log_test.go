@@ -20,8 +20,10 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	. "github.com/smartystreets/goconvey/convey"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 
 	"go.chromium.org/luci/bisection/internal/buildbucket"
@@ -61,7 +63,7 @@ func TestGetCompileLogs(t *testing.T) {
 	}
 	mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(res, nil).AnyTimes()
 
-	Convey("GetCompileLog", t, func() {
+	ftt.Run("GetCompileLog", t, func(t *ftt.Test) {
 		ninjaLogJson := map[string]any{
 			"failures": []any{
 				map[string]any{
@@ -73,15 +75,15 @@ func TestGetCompileLogs(t *testing.T) {
 			},
 		}
 		ninjaLogStr, err := json.Marshal(ninjaLogJson)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		c = logdog.MockClientContext(c, map[string]string{
 			"https://logs.chromium.org/logs/ninja_log":  string(ninjaLogStr),
 			"https://logs.chromium.org/logs/stdout_log": "stdout_log",
 		})
 		logs, err := GetCompileLogs(c, 12345)
-		So(err, ShouldBeNil)
-		So(*logs, ShouldResemble, model.CompileLogs{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, *logs, should.Resemble(model.CompileLogs{
 			NinjaLog: &model.NinjaLog{
 				Failures: []*model.NinjaLogFailure{
 					{
@@ -93,24 +95,24 @@ func TestGetCompileLogs(t *testing.T) {
 				},
 			},
 			StdOutLog: "stdout_log",
-		})
+		}))
 	})
-	Convey("GetCompileLog failed", t, func() {
+	ftt.Run("GetCompileLog failed", t, func(t *ftt.Test) {
 		c = logdog.MockClientContext(c, map[string]string{})
 		_, err := GetCompileLogs(c, 12345)
-		So(err, ShouldNotBeNil)
+		assert.Loosely(t, err, should.NotBeNil)
 	})
 }
 
 func TestGetFailedTargets(t *testing.T) {
 	t.Parallel()
 
-	Convey("No Ninja log", t, func() {
+	ftt.Run("No Ninja log", t, func(t *ftt.Test) {
 		compileLogs := &model.CompileLogs{}
-		So(GetFailedTargets(compileLogs), ShouldResemble, []string{})
+		assert.Loosely(t, GetFailedTargets(compileLogs), should.Resemble([]string{}))
 	})
 
-	Convey("Have Ninja log", t, func() {
+	ftt.Run("Have Ninja log", t, func(t *ftt.Test) {
 		compileLogs := &model.CompileLogs{
 			NinjaLog: &model.NinjaLog{
 				Failures: []*model.NinjaLogFailure{
@@ -123,6 +125,6 @@ func TestGetFailedTargets(t *testing.T) {
 				},
 			},
 		}
-		So(GetFailedTargets(compileLogs), ShouldResemble, []string{"node1", "node2", "node3", "node4"})
+		assert.Loosely(t, GetFailedTargets(compileLogs), should.Resemble([]string{"node1", "node2", "node3", "node4"}))
 	})
 }

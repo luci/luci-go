@@ -18,10 +18,11 @@ import (
 	"context"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-
 	"go.chromium.org/luci/bisection/util/testutil"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 )
 
@@ -29,15 +30,15 @@ func TestLogging(t *testing.T) {
 	t.Parallel()
 	c := memory.Use(context.Background())
 
-	Convey("Logging", t, func() {
-		testutil.CreateCompileFailureAnalysisAnalysisChain(c, 123, "chromium", 456)
+	ftt.Run("Logging", t, func(t *ftt.Test) {
+		testutil.CreateCompileFailureAnalysisAnalysisChain(c, t, 123, "chromium", 456)
 		c, err := UpdateLoggingWithAnalysisID(c, 456)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		// Check the logging fields
 		entries := logging.GetFields(c).SortedEntries()
-		So(checkEntries(entries, "analyzed_bbid", int64(123)), ShouldBeTrue)
-		So(checkEntries(entries, "analysis_id", int64(456)), ShouldBeTrue)
+		assert.Loosely(t, checkEntries(entries, "analyzed_bbid", int64(123)), should.BeTrue)
+		assert.Loosely(t, checkEntries(entries, "analysis_id", int64(456)), should.BeTrue)
 	})
 }
 

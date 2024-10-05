@@ -27,6 +27,9 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/server/pubsub"
@@ -36,21 +39,18 @@ import (
 	"go.chromium.org/luci/bisection/internal/config"
 	configpb "go.chromium.org/luci/bisection/proto/config"
 	taskpb "go.chromium.org/luci/bisection/task/proto"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestBuildBucketPubsub(t *testing.T) {
 	t.Parallel()
 	compilefailuredetection.RegisterTaskClass()
 
-	Convey("Buildbucket Pubsub Handler", t, func() {
+	ftt.Run("Buildbucket Pubsub Handler", t, func(t *ftt.Test) {
 		c := memory.Use(context.Background())
 		// Setup config.
 		projectCfg := config.CreatePlaceholderProjectConfig()
 		cfg := map[string]*configpb.ProjectConfig{"chromium": projectCfg}
-		So(config.SetTestProjectConfig(c, cfg), ShouldBeNil)
+		assert.Loosely(t, config.SetTestProjectConfig(c, cfg), should.BeNil)
 
 		message := pubsub.Message{
 			Attributes: map[string]string{
@@ -58,10 +58,10 @@ func TestBuildBucketPubsub(t *testing.T) {
 			},
 		}
 
-		Convey("Should create new task", func() {
+		t.Run("Should create new task", func(t *ftt.Test) {
 			c, scheduler := tq.TestingContext(c, nil)
 			largeField, err := largeField("bg")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			buildPubsub := &buildbucketpb.BuildsV2PubSub{
 				Build: &buildbucketpb.Build{
@@ -75,16 +75,16 @@ func TestBuildBucketPubsub(t *testing.T) {
 				BuildLargeFields: largeField,
 			}
 			err = BuildbucketPubSubHandler(c, message, buildPubsub)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			// Check that a task was created.
 			task := &taskpb.FailedBuildIngestionTask{
 				Bbid: 8000,
 			}
 			expected := proto.Clone(task).(*taskpb.FailedBuildIngestionTask)
-			So(scheduler.Tasks().Payloads()[0], ShouldResembleProto, expected)
+			assert.Loosely(t, scheduler.Tasks().Payloads()[0], should.Resemble(expected))
 		})
 
-		Convey("Unsupported project", func() {
+		t.Run("Unsupported project", func(t *ftt.Test) {
 			c, _ := tsmon.WithDummyInMemory(c)
 			buildPubsub := &buildbucketpb.BuildsV2PubSub{
 				Build: &buildbucketpb.Build{
@@ -96,14 +96,14 @@ func TestBuildBucketPubsub(t *testing.T) {
 				},
 			}
 			err := BuildbucketPubSubHandler(c, message, buildPubsub)
-			So(err, ShouldBeNil)
-			So(bbCounter.Get(c, "chrome", "unsupported"), ShouldEqual, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, bbCounter.Get(c, "chrome", "unsupported"), should.Equal(1))
 		})
 
-		Convey("Excluded builder group", func() {
+		t.Run("Excluded builder group", func(t *ftt.Test) {
 			c, _ := tsmon.WithDummyInMemory(c)
 			largeField, err := largeField("chromium.clang")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			buildPubsub := &buildbucketpb.BuildsV2PubSub{
 				Build: &buildbucketpb.Build{
 					Builder: &buildbucketpb.BuilderID{
@@ -115,11 +115,11 @@ func TestBuildBucketPubsub(t *testing.T) {
 				BuildLargeFields: largeField,
 			}
 			err = BuildbucketPubSubHandler(c, message, buildPubsub)
-			So(err, ShouldBeNil)
-			So(bbCounter.Get(c, "chromium", "unsupported"), ShouldEqual, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, bbCounter.Get(c, "chromium", "unsupported"), should.Equal(1))
 		})
 
-		Convey("Rerun metrics captured", func() {
+		t.Run("Rerun metrics captured", func(t *ftt.Test) {
 			c, _ := tsmon.WithDummyInMemory(c)
 
 			// Receiving a pubsub message for a terminal status should increase counter.
@@ -135,8 +135,8 @@ func TestBuildBucketPubsub(t *testing.T) {
 				},
 			}
 			err := BuildbucketPubSubHandler(c, message, buildPubsub)
-			So(err, ShouldBeNil)
-			So(rerunCounter.Get(c, "chromium", "INFRA_FAILURE", "compile"), ShouldEqual, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, rerunCounter.Get(c, "chromium", "INFRA_FAILURE", "compile"), should.Equal(1))
 
 			// Receiving a pubsub message for a terminal status should not increase counter.
 			buildPubsub = &buildbucketpb.BuildsV2PubSub{
@@ -151,8 +151,8 @@ func TestBuildBucketPubsub(t *testing.T) {
 				},
 			}
 			err = BuildbucketPubSubHandler(c, message, buildPubsub)
-			So(err, ShouldBeNil)
-			So(rerunCounter.Get(c, "chromium", "SCHEDULED", "compile"), ShouldEqual, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, rerunCounter.Get(c, "chromium", "SCHEDULED", "compile"), should.BeZero)
 		})
 	})
 }

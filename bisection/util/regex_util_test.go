@@ -15,22 +15,23 @@
 package util
 
 import (
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"regexp"
 	"testing"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestRegexUtil(t *testing.T) {
-	Convey("MatchedNamedGroup", t, func() {
+	ftt.Run("MatchedNamedGroup", t, func(t *ftt.Test) {
 		pattern := regexp.MustCompile(`(?P<g1>test1)(test2)(?P<g2>test3)`)
 		matches, err := MatchedNamedGroup(pattern, `test1test2test3`)
-		So(err, ShouldBeNil)
-		So(matches, ShouldResemble, map[string]string{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, matches, should.Resemble(map[string]string{
 			"g1": "test1",
 			"g2": "test3",
-		})
+		}))
 		_, err = MatchedNamedGroup(pattern, `test`)
-		So(err, ShouldNotBeNil)
+		assert.Loosely(t, err, should.NotBeNil)
 	})
 }

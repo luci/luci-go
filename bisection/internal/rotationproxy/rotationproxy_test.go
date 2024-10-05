@@ -18,9 +18,9 @@ import (
 	"context"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestGetOnCallEmails(t *testing.T) {
@@ -29,14 +29,15 @@ func TestGetOnCallEmails(t *testing.T) {
 		"oncallator:chrome-build-sheriff": `{"emails":["jdoe@example.com", "esmith@example.com"],"updated_unix_timestamp":1669331526}`,
 	})
 
-	Convey("Chromium arborists are returned", t, func() {
+	ftt.Run("Chromium arborists are returned", t, func(t *ftt.Test) {
 		emails, err := GetOnCallEmails(ctx, "chromium/src")
-		So(err, ShouldBeNil)
-		So(emails, ShouldResemble, []string{"jdoe@example.com", "esmith@example.com"})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, emails, should.Resemble([]string{"jdoe@example.com", "esmith@example.com"}))
 	})
 
-	Convey("unknown project", t, func() {
+	ftt.Run("unknown project", t, func(t *ftt.Test) {
 		_, err := GetOnCallEmails(ctx, "infra/infra")
-		So(err, ShouldErrLike, "could not get on-call rotation for project", "infra/infra")
+		assert.Loosely(t, err, should.ErrLike("could not get on-call rotation for project"))
+		assert.Loosely(t, err, should.ErrLike("infra/infra"))
 	})
 }

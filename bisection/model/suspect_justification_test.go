@@ -15,21 +15,22 @@
 package model
 
 import (
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"testing"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestSuspectJutification(t *testing.T) {
 	t.Parallel()
 
-	Convey("SuspectJutification", t, func() {
+	ftt.Run("SuspectJutification", t, func(t *ftt.Test) {
 		justification := &SuspectJustification{}
 		justification.AddItem(10, "a/b", "fileInLog", JustificationType_FAILURELOG)
-		So(justification.GetScore(), ShouldEqual, 10)
+		assert.Loosely(t, justification.GetScore(), should.Equal(10))
 		justification.AddItem(2, "c/d", "fileInDependency1", JustificationType_DEPENDENCY)
-		So(justification.GetScore(), ShouldEqual, 12)
+		assert.Loosely(t, justification.GetScore(), should.Equal(12))
 		justification.AddItem(8, "e/f", "fileInDependency2", JustificationType_DEPENDENCY)
-		So(justification.GetScore(), ShouldEqual, 19)
+		assert.Loosely(t, justification.GetScore(), should.Equal(19))
 	})
 }

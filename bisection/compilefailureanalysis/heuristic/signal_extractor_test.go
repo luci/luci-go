@@ -18,20 +18,22 @@ import (
 	"context"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/bisection/model"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestExtractSignal(t *testing.T) {
 	t.Parallel()
 	c := context.Background()
-	Convey("Extract Ninja Log", t, func() {
-		Convey("No Log Should throw error", func() {
+	ftt.Run("Extract Ninja Log", t, func(t *ftt.Test) {
+		t.Run("No Log Should throw error", func(t *ftt.Test) {
 			failureLog := &model.CompileLogs{}
 			_, e := ExtractSignals(c, failureLog)
-			So(e, ShouldNotBeNil)
+			assert.Loosely(t, e, should.NotBeNil)
 		})
-		Convey("No output", func() {
+		t.Run("No output", func(t *ftt.Test) {
 			failureLog := &model.CompileLogs{
 				NinjaLog: &model.NinjaLog{
 					Failures: []*model.NinjaLogFailure{
@@ -49,8 +51,8 @@ func TestExtractSignal(t *testing.T) {
 				},
 			}
 			signal, e := ExtractSignals(c, failureLog)
-			So(e, ShouldBeNil)
-			So(signal, ShouldResemble, &model.CompileFailureSignal{
+			assert.Loosely(t, e, should.BeNil)
+			assert.Loosely(t, signal, should.Resemble(&model.CompileFailureSignal{
 				Nodes: []string{"n1", "n2", "n3", "n4"},
 				Edges: []*model.CompileFailureEdge{
 					{
@@ -64,8 +66,8 @@ func TestExtractSignal(t *testing.T) {
 						Dependencies: []string{"x/y/z", "d/e/f"},
 					},
 				},
-			})
-			Convey("Python patterns", func() {
+			}))
+			t.Run("Python patterns", func(t *ftt.Test) {
 				failureLog := &model.CompileLogs{
 					NinjaLog: &model.NinjaLog{
 						Failures: []*model.NinjaLogFailure{
@@ -94,8 +96,8 @@ blabalError: blabla...`,
 					},
 				}
 				signal, e := ExtractSignals(c, failureLog)
-				So(e, ShouldBeNil)
-				So(signal, ShouldResemble, &model.CompileFailureSignal{
+				assert.Loosely(t, e, should.BeNil)
+				assert.Loosely(t, signal, should.Resemble(&model.CompileFailureSignal{
 					Nodes: []string{"n1", "n2"},
 					Edges: []*model.CompileFailureEdge{
 						{
@@ -109,10 +111,10 @@ blabalError: blabla...`,
 						"path/b.py": {2},
 						"path/c.py": {34},
 					},
-				})
+				}))
 			})
 
-			Convey("NonPython patterns", func() {
+			t.Run("NonPython patterns", func(t *ftt.Test) {
 				failureLog := &model.CompileLogs{
 					NinjaLog: &model.NinjaLog{
 						Failures: []*model.NinjaLogFailure{
@@ -135,8 +137,8 @@ D:\\x\\y.cc[line 456]
 					},
 				}
 				signal, e := ExtractSignals(c, failureLog)
-				So(e, ShouldBeNil)
-				So(signal, ShouldResemble, &model.CompileFailureSignal{
+				assert.Loosely(t, e, should.BeNil)
+				assert.Loosely(t, signal, should.Resemble(&model.CompileFailureSignal{
 					Nodes: []string{"obj/a/b/test.c.o"},
 					Edges: []*model.CompileFailureEdge{
 						{
@@ -152,13 +154,13 @@ D:\\x\\y.cc[line 456]
 						"D:/x/y.cc":  {456},
 						"BUILD.gn":   {},
 					},
-				})
+				}))
 			})
 		})
 	})
 
-	Convey("Extract Stdout Log", t, func() {
-		Convey("Stdout", func() {
+	ftt.Run("Extract Stdout Log", t, func(t *ftt.Test) {
+		t.Run("Stdout", func(t *ftt.Test) {
 			failureLog := &model.CompileLogs{
 				NinjaLog: nil,
 				StdOutLog: `
@@ -185,8 +187,8 @@ blabla...
 				`,
 			}
 			signal, e := ExtractSignals(c, failureLog)
-			So(e, ShouldBeNil)
-			So(signal, ShouldResemble, &model.CompileFailureSignal{
+			assert.Loosely(t, e, should.BeNil)
+			assert.Loosely(t, signal, should.Resemble(&model.CompileFailureSignal{
 				Files: map[string][]int{
 					"a/b/c.cc":         {307},
 					"a/b/d.cc":         {123},
@@ -204,7 +206,7 @@ blabla...
 					"another node 2",
 					"another node 3",
 				},
-			})
+			}))
 		})
 	})
 }

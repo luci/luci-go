@@ -26,6 +26,9 @@ import (
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
@@ -42,9 +45,6 @@ import (
 	"go.chromium.org/luci/bisection/util/testutil"
 
 	_ "go.chromium.org/luci/bisection/culpritaction/revertculprit"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestUpdateAnalysisProgress(t *testing.T) {
@@ -55,7 +55,7 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 	cl := testclock.New(testclock.TestTimeUTC)
 	c = clock.Set(c, cl)
 
-	Convey("UpdateAnalysisProgress Culprit Verification", t, func() {
+	ftt.Run("UpdateAnalysisProgress Culprit Verification", t, func(t *ftt.Test) {
 		c, scheduler := tq.TestingContext(c, nil)
 		cancelanalysis.RegisterTaskClass()
 		culpritverification.RegisterTaskClass()
@@ -65,13 +65,13 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 		analysis := &model.CompileFailureAnalysis{
 			Id: 1234,
 		}
-		So(datastore.Put(c, analysis), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, analysis), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		heuristicAnalysis := &model.CompileHeuristicAnalysis{
 			ParentAnalysis: datastore.KeyForObj(c, analysis),
 		}
-		So(datastore.Put(c, heuristicAnalysis), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, heuristicAnalysis), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		suspect := &model.Suspect{
@@ -83,24 +83,24 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 				Id:      "3425",
 			},
 		}
-		So(datastore.Put(c, suspect), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, suspect), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		// Set up reruns
 		rerunBuildModel := &model.CompileRerunBuild{
 			Id: 8800,
 		}
-		So(datastore.Put(c, rerunBuildModel), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, rerunBuildModel), should.BeNil)
 
 		parentRerunBuildModel := &model.CompileRerunBuild{
 			Id: 8801,
 		}
-		So(datastore.Put(c, parentRerunBuildModel), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, parentRerunBuildModel), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		suspect.SuspectRerunBuild = datastore.KeyForObj(c, rerunBuildModel)
 		suspect.ParentRerunBuild = datastore.KeyForObj(c, parentRerunBuildModel)
-		So(datastore.Put(c, suspect), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, suspect), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		// Setup single rerun
@@ -127,8 +127,8 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 			Type:    model.RerunBuildType_CulpritVerification,
 			Suspect: datastore.KeyForObj(c, suspect),
 		}
-		So(datastore.Put(c, singleRerun1), ShouldBeNil)
-		So(datastore.Put(c, singleRerun2), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, singleRerun1), should.BeNil)
+		assert.Loosely(t, datastore.Put(c, singleRerun2), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		// Update analysis
@@ -162,35 +162,35 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 
 		server := &BotUpdatesServer{}
 		_, err := server.UpdateAnalysisProgress(c, req1)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		datastore.Get(c, singleRerun1)
-		So(singleRerun1.Status, ShouldEqual, pb.RerunStatus_RERUN_STATUS_FAILED)
+		assert.Loosely(t, singleRerun1.Status, should.Equal(pb.RerunStatus_RERUN_STATUS_FAILED))
 		datastore.Get(c, suspect)
-		So(suspect.VerificationStatus, ShouldEqual, model.SuspectVerificationStatus_UnderVerification)
+		assert.Loosely(t, suspect.VerificationStatus, should.Equal(model.SuspectVerificationStatus_UnderVerification))
 
 		_, err = server.UpdateAnalysisProgress(c, req2)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		datastore.Get(c, singleRerun2)
-		So(singleRerun2.Status, ShouldEqual, pb.RerunStatus_RERUN_STATUS_PASSED)
+		assert.Loosely(t, singleRerun2.Status, should.Equal(pb.RerunStatus_RERUN_STATUS_PASSED))
 		datastore.Get(c, suspect)
-		So(suspect.VerificationStatus, ShouldEqual, model.SuspectVerificationStatus_ConfirmedCulprit)
+		assert.Loosely(t, suspect.VerificationStatus, should.Equal(model.SuspectVerificationStatus_ConfirmedCulprit))
 
 		err = datastore.Get(c, analysis)
-		So(err, ShouldBeNil)
-		So(analysis.Status, ShouldEqual, pb.AnalysisStatus_FOUND)
-		So(analysis.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
-		So(len(analysis.VerifiedCulprits), ShouldEqual, 1)
-		So(analysis.VerifiedCulprits[0], ShouldResemble, datastore.KeyForObj(c, suspect))
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, analysis.Status, should.Equal(pb.AnalysisStatus_FOUND))
+		assert.Loosely(t, analysis.RunStatus, should.Equal(pb.AnalysisRunStatus_ENDED))
+		assert.Loosely(t, len(analysis.VerifiedCulprits), should.Equal(1))
+		assert.Loosely(t, analysis.VerifiedCulprits[0], should.Resemble(datastore.KeyForObj(c, suspect)))
 
 		// Assert task
 		task := &tpb.CancelAnalysisTask{
 			AnalysisId: 1234,
 		}
 		expected := proto.Clone(task).(*tpb.CancelAnalysisTask)
-		So(scheduler.Tasks().Payloads()[0], ShouldResembleProto, expected)
+		assert.Loosely(t, scheduler.Tasks().Payloads()[0], should.Resemble(expected))
 	})
 
-	Convey("UpdateAnalysisProgress NthSection", t, func() {
+	ftt.Run("UpdateAnalysisProgress NthSection", t, func(t *ftt.Test) {
 		ctl := gomock.NewController(t)
 		defer ctl.Finish()
 		mc := buildbucket.NewMockedClient(c, ctl)
@@ -208,9 +208,9 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 		projectCfg.CompileAnalysisConfig.NthsectionEnabled = true
 		projectCfg.CompileAnalysisConfig.CulpritVerificationEnabled = true
 		cfg := map[string]*configpb.ProjectConfig{"chromium": projectCfg}
-		So(config.SetTestProjectConfig(c, cfg), ShouldBeNil)
+		assert.Loosely(t, config.SetTestProjectConfig(c, cfg), should.BeNil)
 
-		Convey("Schedule run for next commit", func() {
+		t.Run("Schedule run for next commit", func(t *ftt.Test) {
 			bbres := &bbpb.Build{
 				Builder: &bbpb.BuilderID{
 					Project: "chromium",
@@ -235,13 +235,13 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 			fb := &model.LuciFailedBuild{
 				LuciBuild: model.LuciBuild{Project: "chromium"},
 			}
-			So(datastore.Put(c, fb), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, fb), should.BeNil)
 			datastore.GetTestable(c).CatchupIndexes()
 
 			cf := &model.CompileFailure{
 				Build: datastore.KeyForObj(c, fb),
 			}
-			So(datastore.Put(c, cf), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, cf), should.BeNil)
 			datastore.GetTestable(c).CatchupIndexes()
 
 			cfa := &model.CompileFailureAnalysis{
@@ -249,20 +249,20 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 				CompileFailure:     datastore.KeyForObj(c, cf),
 				FirstFailedBuildId: 1000,
 			}
-			So(datastore.Put(c, cfa), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, cfa), should.BeNil)
 			datastore.GetTestable(c).CatchupIndexes()
 
 			nsa := &model.CompileNthSectionAnalysis{
 				ParentAnalysis: datastore.KeyForObj(c, cfa),
 				BlameList:      testutil.CreateBlamelist(10),
 			}
-			So(datastore.Put(c, nsa), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, nsa), should.BeNil)
 
 			// Set up reruns
 			rerunBuildModel := &model.CompileRerunBuild{
 				Id: 8800,
 			}
-			So(datastore.Put(c, rerunBuildModel), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, rerunBuildModel), should.BeNil)
 
 			singleRerun := &model.SingleRerun{
 				RerunBuild: datastore.KeyForObj(c, rerunBuildModel),
@@ -277,7 +277,7 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 				NthSectionAnalysis: datastore.KeyForObj(c, nsa),
 				Analysis:           datastore.KeyForObj(c, cfa),
 			}
-			So(datastore.Put(c, singleRerun), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, singleRerun), should.BeNil)
 			datastore.GetTestable(c).CatchupIndexes()
 
 			// Update analysis
@@ -299,33 +299,33 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 			server := &BotUpdatesServer{}
 			res, err := server.UpdateAnalysisProgress(c, req)
 			datastore.GetTestable(c).CatchupIndexes()
-			So(err, ShouldBeNil)
-			So(datastore.Get(c, singleRerun), ShouldBeNil)
-			So(singleRerun.Status, ShouldEqual, pb.RerunStatus_RERUN_STATUS_FAILED)
-			So(res, ShouldResemble, &pb.UpdateAnalysisProgressResponse{})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, datastore.Get(c, singleRerun), should.BeNil)
+			assert.Loosely(t, singleRerun.Status, should.Equal(pb.RerunStatus_RERUN_STATUS_FAILED))
+			assert.Loosely(t, res, should.Resemble(&pb.UpdateAnalysisProgressResponse{}))
 			// Check that another rerun is scheduled
 			rr := &model.CompileRerunBuild{
 				Id: 9999,
 			}
-			So(datastore.Get(c, rr), ShouldBeNil)
-			So(datastore.Get(c, cfa), ShouldBeNil)
-			So(cfa.Status, ShouldEqual, pb.AnalysisStatus_RUNNING)
-			So(cfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_STARTED)
+			assert.Loosely(t, datastore.Get(c, rr), should.BeNil)
+			assert.Loosely(t, datastore.Get(c, cfa), should.BeNil)
+			assert.Loosely(t, cfa.Status, should.Equal(pb.AnalysisStatus_RUNNING))
+			assert.Loosely(t, cfa.RunStatus, should.Equal(pb.AnalysisRunStatus_STARTED))
 		})
 
-		Convey("Culprit found", func() {
+		t.Run("Culprit found", func(t *ftt.Test) {
 			c, scheduler := tq.TestingContext(c, nil)
 
 			fb := &model.LuciFailedBuild{
 				LuciBuild: model.LuciBuild{Project: "chromium"},
 			}
-			So(datastore.Put(c, fb), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, fb), should.BeNil)
 			datastore.GetTestable(c).CatchupIndexes()
 
 			cf := &model.CompileFailure{
 				Build: datastore.KeyForObj(c, fb),
 			}
-			So(datastore.Put(c, cf), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, cf), should.BeNil)
 			datastore.GetTestable(c).CatchupIndexes()
 
 			cfa := &model.CompileFailureAnalysis{
@@ -339,20 +339,20 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 					},
 				},
 			}
-			So(datastore.Put(c, cfa), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, cfa), should.BeNil)
 			datastore.GetTestable(c).CatchupIndexes()
 
 			nsa := &model.CompileNthSectionAnalysis{
 				ParentAnalysis: datastore.KeyForObj(c, cfa),
 				BlameList:      testutil.CreateBlamelist(10),
 			}
-			So(datastore.Put(c, nsa), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, nsa), should.BeNil)
 
 			// Set up reruns
 			rerunBuildModel := &model.CompileRerunBuild{
 				Id: 9876,
 			}
-			So(datastore.Put(c, rerunBuildModel), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, rerunBuildModel), should.BeNil)
 			datastore.GetTestable(c).CatchupIndexes()
 
 			// Create 2 SingleRerun of 2 commits next to each other
@@ -385,8 +385,8 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 				StartTime:          clock.Now(c),
 			}
 
-			So(datastore.Put(c, singleRerun1), ShouldBeNil)
-			So(datastore.Put(c, singleRerun2), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, singleRerun1), should.BeNil)
+			assert.Loosely(t, datastore.Put(c, singleRerun2), should.BeNil)
 			datastore.GetTestable(c).CatchupIndexes()
 
 			// Update analysis
@@ -409,23 +409,23 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 			mc.Client.EXPECT().ScheduleBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(&bbpb.Build{}, nil).Times(0)
 			server := &BotUpdatesServer{}
 			res, err := server.UpdateAnalysisProgress(c, req)
-			So(err, ShouldBeNil)
-			So(datastore.Get(c, singleRerun1), ShouldBeNil)
-			So(singleRerun1.Status, ShouldEqual, pb.RerunStatus_RERUN_STATUS_FAILED)
-			So(res, ShouldResemble, &pb.UpdateAnalysisProgressResponse{})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, datastore.Get(c, singleRerun1), should.BeNil)
+			assert.Loosely(t, singleRerun1.Status, should.Equal(pb.RerunStatus_RERUN_STATUS_FAILED))
+			assert.Loosely(t, res, should.Resemble(&pb.UpdateAnalysisProgressResponse{}))
 
 			// Check that the nthsection analysis is updated with Suspect
 			datastore.GetTestable(c).CatchupIndexes()
-			So(datastore.Get(c, nsa), ShouldBeNil)
-			So(nsa.Status, ShouldEqual, pb.AnalysisStatus_SUSPECTFOUND)
-			So(nsa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
-			So(nsa.Suspect, ShouldNotBeNil)
+			assert.Loosely(t, datastore.Get(c, nsa), should.BeNil)
+			assert.Loosely(t, nsa.Status, should.Equal(pb.AnalysisStatus_SUSPECTFOUND))
+			assert.Loosely(t, nsa.RunStatus, should.Equal(pb.AnalysisRunStatus_ENDED))
+			assert.Loosely(t, nsa.Suspect, should.NotBeNil)
 			nsaSuspect := &model.Suspect{
 				Id:             nsa.Suspect.IntID(),
 				ParentAnalysis: nsa.Suspect.Parent(),
 			}
-			So(datastore.Get(c, nsaSuspect), ShouldBeNil)
-			So(nsaSuspect, ShouldResemble, &model.Suspect{
+			assert.Loosely(t, datastore.Get(c, nsaSuspect), should.BeNil)
+			assert.Loosely(t, nsaSuspect, should.Resemble(&model.Suspect{
 				Id:             nsaSuspect.Id,
 				Type:           model.SuspectType_NthSection,
 				ParentAnalysis: nsaSuspect.ParentAnalysis,
@@ -437,10 +437,10 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 				},
 				VerificationStatus: model.SuspectVerificationStatus_VerificationScheduled,
 				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
-			})
-			So(datastore.Get(c, cfa), ShouldBeNil)
-			So(cfa.Status, ShouldEqual, pb.AnalysisStatus_SUSPECTFOUND)
-			So(cfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_STARTED)
+			}))
+			assert.Loosely(t, datastore.Get(c, cfa), should.BeNil)
+			assert.Loosely(t, cfa.Status, should.Equal(pb.AnalysisStatus_SUSPECTFOUND))
+			assert.Loosely(t, cfa.RunStatus, should.Equal(pb.AnalysisRunStatus_STARTED))
 
 			// Assert task
 			task := &tpb.CulpritVerificationTask{
@@ -449,40 +449,40 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 				ParentKey:  datastore.KeyForObj(c, nsa).Encode(),
 			}
 			expected := proto.Clone(task).(*tpb.CulpritVerificationTask)
-			So(scheduler.Tasks().Payloads()[0], ShouldResembleProto, expected)
+			assert.Loosely(t, scheduler.Tasks().Payloads()[0], should.Resemble(expected))
 		})
 
-		Convey("Nthsection couldn't find suspect", func() {
+		t.Run("Nthsection couldn't find suspect", func(t *ftt.Test) {
 			fb := &model.LuciFailedBuild{
 				LuciBuild: model.LuciBuild{Project: "chromium"},
 			}
-			So(datastore.Put(c, fb), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, fb), should.BeNil)
 			datastore.GetTestable(c).CatchupIndexes()
 
 			cf := &model.CompileFailure{
 				Build: datastore.KeyForObj(c, fb),
 			}
-			So(datastore.Put(c, cf), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, cf), should.BeNil)
 			datastore.GetTestable(c).CatchupIndexes()
 
 			cfa := &model.CompileFailureAnalysis{
 				Id:             3457,
 				CompileFailure: datastore.KeyForObj(c, cf),
 			}
-			So(datastore.Put(c, cfa), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, cfa), should.BeNil)
 			datastore.GetTestable(c).CatchupIndexes()
 
 			nsa := &model.CompileNthSectionAnalysis{
 				ParentAnalysis: datastore.KeyForObj(c, cfa),
 				BlameList:      testutil.CreateBlamelist(10),
 			}
-			So(datastore.Put(c, nsa), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, nsa), should.BeNil)
 
 			// Set up reruns
 			rerunBuildModel := &model.CompileRerunBuild{
 				Id: 9768,
 			}
-			So(datastore.Put(c, rerunBuildModel), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, rerunBuildModel), should.BeNil)
 			datastore.GetTestable(c).CatchupIndexes()
 
 			// Create 2 SingleRerun of 2 commits next to each other
@@ -527,9 +527,9 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 				StartTime:          clock.Now(c),
 			}
 
-			So(datastore.Put(c, singleRerun1), ShouldBeNil)
-			So(datastore.Put(c, singleRerun2), ShouldBeNil)
-			So(datastore.Put(c, singleRerun3), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, singleRerun1), should.BeNil)
+			assert.Loosely(t, datastore.Put(c, singleRerun2), should.BeNil)
+			assert.Loosely(t, datastore.Put(c, singleRerun3), should.BeNil)
 			datastore.GetTestable(c).CatchupIndexes()
 
 			// Update analysis
@@ -552,52 +552,52 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 			mc.Client.EXPECT().ScheduleBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(&bbpb.Build{}, nil).Times(0)
 			server := &BotUpdatesServer{}
 			res, err := server.UpdateAnalysisProgress(c, req)
-			So(err, ShouldBeNil)
-			So(datastore.Get(c, singleRerun3), ShouldBeNil)
-			So(singleRerun3.Status, ShouldEqual, pb.RerunStatus_RERUN_STATUS_INFRA_FAILED)
-			So(res, ShouldResemble, &pb.UpdateAnalysisProgressResponse{})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, datastore.Get(c, singleRerun3), should.BeNil)
+			assert.Loosely(t, singleRerun3.Status, should.Equal(pb.RerunStatus_RERUN_STATUS_INFRA_FAILED))
+			assert.Loosely(t, res, should.Resemble(&pb.UpdateAnalysisProgressResponse{}))
 
 			// Check that the nthsection analysis is updated with Suspect
 			datastore.GetTestable(c).CatchupIndexes()
-			So(datastore.Get(c, nsa), ShouldBeNil)
-			So(nsa.Status, ShouldEqual, pb.AnalysisStatus_NOTFOUND)
-			So(nsa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
-			So(datastore.Get(c, cfa), ShouldBeNil)
-			So(cfa.Status, ShouldEqual, pb.AnalysisStatus_NOTFOUND)
-			So(cfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
+			assert.Loosely(t, datastore.Get(c, nsa), should.BeNil)
+			assert.Loosely(t, nsa.Status, should.Equal(pb.AnalysisStatus_NOTFOUND))
+			assert.Loosely(t, nsa.RunStatus, should.Equal(pb.AnalysisRunStatus_ENDED))
+			assert.Loosely(t, datastore.Get(c, cfa), should.BeNil)
+			assert.Loosely(t, cfa.Status, should.Equal(pb.AnalysisStatus_NOTFOUND))
+			assert.Loosely(t, cfa.RunStatus, should.Equal(pb.AnalysisRunStatus_ENDED))
 		})
 
-		Convey("Nthsection regression range conflicts", func() {
+		t.Run("Nthsection regression range conflicts", func(t *ftt.Test) {
 			fb := &model.LuciFailedBuild{
 				LuciBuild: model.LuciBuild{Project: "chromium"},
 			}
-			So(datastore.Put(c, fb), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, fb), should.BeNil)
 			datastore.GetTestable(c).CatchupIndexes()
 
 			cf := &model.CompileFailure{
 				Build: datastore.KeyForObj(c, fb),
 			}
-			So(datastore.Put(c, cf), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, cf), should.BeNil)
 			datastore.GetTestable(c).CatchupIndexes()
 
 			cfa := &model.CompileFailureAnalysis{
 				Id:             2122,
 				CompileFailure: datastore.KeyForObj(c, cf),
 			}
-			So(datastore.Put(c, cfa), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, cfa), should.BeNil)
 			datastore.GetTestable(c).CatchupIndexes()
 
 			nsa := &model.CompileNthSectionAnalysis{
 				ParentAnalysis: datastore.KeyForObj(c, cfa),
 				BlameList:      testutil.CreateBlamelist(10),
 			}
-			So(datastore.Put(c, nsa), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, nsa), should.BeNil)
 
 			// Set up reruns
 			rerunBuildModel := &model.CompileRerunBuild{
 				Id: 4343,
 			}
-			So(datastore.Put(c, rerunBuildModel), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, rerunBuildModel), should.BeNil)
 			datastore.GetTestable(c).CatchupIndexes()
 
 			singleRerun1 := &model.SingleRerun{
@@ -628,8 +628,8 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 				RerunBuild:         datastore.KeyForObj(c, rerunBuildModel),
 			}
 
-			So(datastore.Put(c, singleRerun1), ShouldBeNil)
-			So(datastore.Put(c, singleRerun2), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, singleRerun1), should.BeNil)
+			assert.Loosely(t, datastore.Put(c, singleRerun2), should.BeNil)
 			datastore.GetTestable(c).CatchupIndexes()
 
 			// Update analysis
@@ -652,35 +652,35 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 			mc.Client.EXPECT().ScheduleBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(&bbpb.Build{}, nil).Times(0)
 			server := &BotUpdatesServer{}
 			_, err := server.UpdateAnalysisProgress(c, req)
-			So(err, ShouldBeNil)
-			So(datastore.Get(c, singleRerun2), ShouldBeNil)
-			So(singleRerun2.Status, ShouldEqual, pb.RerunStatus_RERUN_STATUS_PASSED)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, datastore.Get(c, singleRerun2), should.BeNil)
+			assert.Loosely(t, singleRerun2.Status, should.Equal(pb.RerunStatus_RERUN_STATUS_PASSED))
 
 			// Check analysis status
 			datastore.GetTestable(c).CatchupIndexes()
-			So(datastore.Get(c, nsa), ShouldBeNil)
-			So(nsa.Status, ShouldEqual, pb.AnalysisStatus_NOTFOUND)
-			So(nsa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
-			So(datastore.Get(c, cfa), ShouldBeNil)
-			So(cfa.Status, ShouldEqual, pb.AnalysisStatus_NOTFOUND)
-			So(cfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
+			assert.Loosely(t, datastore.Get(c, nsa), should.BeNil)
+			assert.Loosely(t, nsa.Status, should.Equal(pb.AnalysisStatus_NOTFOUND))
+			assert.Loosely(t, nsa.RunStatus, should.Equal(pb.AnalysisRunStatus_ENDED))
+			assert.Loosely(t, datastore.Get(c, cfa), should.BeNil)
+			assert.Loosely(t, cfa.Status, should.Equal(pb.AnalysisStatus_NOTFOUND))
+			assert.Loosely(t, cfa.RunStatus, should.Equal(pb.AnalysisRunStatus_ENDED))
 		})
 	})
 
-	Convey("verifyUpdateAnalysisProgressRequest", t, func() {
+	ftt.Run("verifyUpdateAnalysisProgressRequest", t, func(t *ftt.Test) {
 		req := &pb.UpdateAnalysisProgressRequest{}
-		So(verifyUpdateAnalysisProgressRequest(c, req), ShouldNotBeNil)
+		assert.Loosely(t, verifyUpdateAnalysisProgressRequest(c, req), should.NotBeNil)
 		req.AnalysisId = 123
-		So(verifyUpdateAnalysisProgressRequest(c, req), ShouldNotBeNil)
+		assert.Loosely(t, verifyUpdateAnalysisProgressRequest(c, req), should.NotBeNil)
 		req.Bbid = 8888
-		So(verifyUpdateAnalysisProgressRequest(c, req), ShouldNotBeNil)
+		assert.Loosely(t, verifyUpdateAnalysisProgressRequest(c, req), should.NotBeNil)
 		req.GitilesCommit = &bbpb.GitilesCommit{}
-		So(verifyUpdateAnalysisProgressRequest(c, req), ShouldNotBeNil)
+		assert.Loosely(t, verifyUpdateAnalysisProgressRequest(c, req), should.NotBeNil)
 		req.RerunResult = &pb.RerunResult{
 			RerunStatus: pb.RerunStatus_RERUN_STATUS_FAILED,
 		}
-		So(verifyUpdateAnalysisProgressRequest(c, req), ShouldNotBeNil)
+		assert.Loosely(t, verifyUpdateAnalysisProgressRequest(c, req), should.NotBeNil)
 		req.BotId = "botid"
-		So(verifyUpdateAnalysisProgressRequest(c, req), ShouldBeNil)
+		assert.Loosely(t, verifyUpdateAnalysisProgressRequest(c, req), should.BeNil)
 	})
 }

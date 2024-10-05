@@ -18,22 +18,24 @@ import (
 	"context"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/bisection/model"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestChangeLogAnalyzer(t *testing.T) {
 	t.Parallel()
 
-	Convey("AreRelelatedExtensions", t, func() {
-		So(AreRelelatedExtensions("c", "cpp"), ShouldBeTrue)
-		So(AreRelelatedExtensions("py", "pyc"), ShouldBeTrue)
-		So(AreRelelatedExtensions("gyp", "gypi"), ShouldBeTrue)
-		So(AreRelelatedExtensions("c", "py"), ShouldBeFalse)
-		So(AreRelelatedExtensions("abc", "xyz"), ShouldBeFalse)
+	ftt.Run("AreRelelatedExtensions", t, func(t *ftt.Test) {
+		assert.Loosely(t, AreRelelatedExtensions("c", "cpp"), should.BeTrue)
+		assert.Loosely(t, AreRelelatedExtensions("py", "pyc"), should.BeTrue)
+		assert.Loosely(t, AreRelelatedExtensions("gyp", "gypi"), should.BeTrue)
+		assert.Loosely(t, AreRelelatedExtensions("c", "py"), should.BeFalse)
+		assert.Loosely(t, AreRelelatedExtensions("abc", "xyz"), should.BeFalse)
 	})
 
-	Convey("NormalizeObjectFilePath", t, func() {
+	ftt.Run("NormalizeObjectFilePath", t, func(t *ftt.Test) {
 		data := map[string]string{
 			"obj/a/T.x.o":   "a/x.o",
 			"obj/a/T.x.y.o": "a/x.y.o",
@@ -45,11 +47,11 @@ func TestChangeLogAnalyzer(t *testing.T) {
 			"T.a.b.c":       "T.a.b.c",
 		}
 		for k, v := range data {
-			So(NormalizeObjectFilePath(k), ShouldEqual, v)
+			assert.Loosely(t, NormalizeObjectFilePath(k), should.Equal(v))
 		}
 	})
 
-	Convey("AnalyzeOneChangeLog", t, func() {
+	ftt.Run("AnalyzeOneChangeLog", t, func(t *ftt.Test) {
 		c := context.Background()
 		signal := &model.CompileFailureSignal{
 			Files: map[string][]int{
@@ -66,7 +68,7 @@ func TestChangeLogAnalyzer(t *testing.T) {
 			},
 		}
 		signal.CalculateDependencyMap(c)
-		Convey("Changelog from a non-blamable email", func() {
+		t.Run("Changelog from a non-blamable email", func(t *ftt.Test) {
 			cl := &model.ChangeLog{
 				Author: model.ChangeLogActor{
 					Email: "chrome-release-bot@chromium.org",
@@ -74,11 +76,11 @@ func TestChangeLogAnalyzer(t *testing.T) {
 			}
 
 			justification, err := AnalyzeOneChangeLog(c, signal, cl)
-			So(err, ShouldBeNil)
-			So(justification, ShouldResemble, &model.SuspectJustification{IsNonBlamable: true})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, justification, should.Resemble(&model.SuspectJustification{IsNonBlamable: true}))
 		})
 
-		Convey("Changelog did not touch any file", func() {
+		t.Run("Changelog did not touch any file", func(t *ftt.Test) {
 			cl := &model.ChangeLog{
 				ChangeLogDiffs: []model.ChangeLogDiff{
 					{
@@ -88,11 +90,11 @@ func TestChangeLogAnalyzer(t *testing.T) {
 				},
 			}
 			justification, err := AnalyzeOneChangeLog(c, signal, cl)
-			So(err, ShouldBeNil)
-			So(justification, ShouldResemble, &model.SuspectJustification{})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, justification, should.Resemble(&model.SuspectJustification{}))
 		})
 
-		Convey("Changelog touched relevant files", func() {
+		t.Run("Changelog touched relevant files", func(t *ftt.Test) {
 			cl := &model.ChangeLog{
 				ChangeLogDiffs: []model.ChangeLogDiff{
 					{
@@ -121,8 +123,8 @@ func TestChangeLogAnalyzer(t *testing.T) {
 				},
 			}
 			justification, err := AnalyzeOneChangeLog(c, signal, cl)
-			So(err, ShouldBeNil)
-			So(justification, ShouldResemble, &model.SuspectJustification{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, justification, should.Resemble(&model.SuspectJustification{
 				Items: []*model.SuspectJustificationItem{
 					{
 						Score:    10,
@@ -149,11 +151,11 @@ func TestChangeLogAnalyzer(t *testing.T) {
 						Type:     model.JustificationType_DEPENDENCY,
 					},
 				},
-			})
+			}))
 		})
 	})
 
-	Convey("AnalyzeChangeLogs", t, func() {
+	ftt.Run("AnalyzeChangeLogs", t, func(t *ftt.Test) {
 		c := context.Background()
 		signal := &model.CompileFailureSignal{
 			Files: map[string][]int{
@@ -162,7 +164,7 @@ func TestChangeLogAnalyzer(t *testing.T) {
 			},
 		}
 
-		Convey("Results should be sorted", func() {
+		t.Run("Results should be sorted", func(t *ftt.Test) {
 			cls := []*model.ChangeLog{
 				{
 					Commit:  "abcd",
@@ -198,8 +200,8 @@ func TestChangeLogAnalyzer(t *testing.T) {
 			}
 
 			analysisResult, err := AnalyzeChangeLogs(c, signal, cls)
-			So(err, ShouldBeNil)
-			So(analysisResult, ShouldResemble, &model.HeuristicAnalysisResult{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, analysisResult, should.Resemble(&model.HeuristicAnalysisResult{
 				Items: []*model.HeuristicAnalysisResultItem{
 					{
 						Commit:      "wxyz",
@@ -232,7 +234,7 @@ func TestChangeLogAnalyzer(t *testing.T) {
 						},
 					},
 				},
-			})
+			}))
 		})
 	})
 

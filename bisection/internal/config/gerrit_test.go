@@ -18,14 +18,15 @@ import (
 	"context"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-
 	configpb "go.chromium.org/luci/bisection/proto/config"
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/util/testutil"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 )
 
@@ -37,7 +38,7 @@ func TestCanCreateRevert(t *testing.T) {
 	cl := testclock.New(testclock.TestTimeUTC)
 	ctx = clock.Set(ctx, cl)
 
-	Convey("Disabling all Gerrit actions should override CanCreateRevert to false", t, func() {
+	ftt.Run("Disabling all Gerrit actions should override CanCreateRevert to false", t, func(t *ftt.Test) {
 		gerritCfg := &configpb.GerritConfig{
 			ActionsEnabled: false,
 			CreateRevertSettings: &configpb.GerritConfig_RevertActionSettings{
@@ -51,12 +52,12 @@ func TestCanCreateRevert(t *testing.T) {
 			MaxRevertibleCulpritAge: 21600, // 6 hours
 		}
 		canCreate, reason, err := CanCreateRevert(ctx, gerritCfg, pb.AnalysisType_COMPILE_FAILURE_ANALYSIS)
-		So(err, ShouldBeNil)
-		So(canCreate, ShouldEqual, false)
-		So(reason, ShouldEqual, "all Gerrit actions are disabled")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, canCreate, should.Equal(false))
+		assert.Loosely(t, reason, should.Equal("all Gerrit actions are disabled"))
 	})
 
-	Convey("CanCreateRevert should be false when create is disabled", t, func() {
+	ftt.Run("CanCreateRevert should be false when create is disabled", t, func(t *ftt.Test) {
 		gerritCfg := &configpb.GerritConfig{
 			ActionsEnabled: true,
 			CreateRevertSettings: &configpb.GerritConfig_RevertActionSettings{
@@ -70,12 +71,12 @@ func TestCanCreateRevert(t *testing.T) {
 			MaxRevertibleCulpritAge: 21600, // 6 hours
 		}
 		canCreate, reason, err := CanCreateRevert(ctx, gerritCfg, pb.AnalysisType_COMPILE_FAILURE_ANALYSIS)
-		So(err, ShouldBeNil)
-		So(canCreate, ShouldEqual, false)
-		So(reason, ShouldEqual, "LUCI Bisection's revert creation has been disabled")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, canCreate, should.Equal(false))
+		assert.Loosely(t, reason, should.Equal("LUCI Bisection's revert creation has been disabled"))
 	})
 
-	Convey("CanCreateRevert should be true", t, func() {
+	ftt.Run("CanCreateRevert should be true", t, func(t *ftt.Test) {
 		gerritCfg := &configpb.GerritConfig{
 			ActionsEnabled: true,
 			CreateRevertSettings: &configpb.GerritConfig_RevertActionSettings{
@@ -89,12 +90,12 @@ func TestCanCreateRevert(t *testing.T) {
 			MaxRevertibleCulpritAge: 21600, // 6 hours
 		}
 		canCreate, reason, err := CanCreateRevert(ctx, gerritCfg, pb.AnalysisType_COMPILE_FAILURE_ANALYSIS)
-		So(err, ShouldBeNil)
-		So(canCreate, ShouldEqual, true)
-		So(reason, ShouldEqual, "")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, canCreate, should.Equal(true))
+		assert.Loosely(t, reason, should.BeEmpty)
 	})
 
-	Convey("CanCreateRevert should be false when daily limit has been reached", t, func() {
+	ftt.Run("CanCreateRevert should be false when daily limit has been reached", t, func(t *ftt.Test) {
 		gerritCfg := &configpb.GerritConfig{
 			ActionsEnabled: true,
 			CreateRevertSettings: &configpb.GerritConfig_RevertActionSettings{
@@ -108,10 +109,10 @@ func TestCanCreateRevert(t *testing.T) {
 			MaxRevertibleCulpritAge: 21600, // 6 hours
 		}
 		canCreate, reason, err := CanCreateRevert(ctx, gerritCfg, pb.AnalysisType_COMPILE_FAILURE_ANALYSIS)
-		So(err, ShouldBeNil)
-		So(canCreate, ShouldEqual, false)
-		So(reason, ShouldEqual, "LUCI Bisection's daily limit for revert creation"+
-			" (0) has been reached; 0 reverts have already been created")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, canCreate, should.Equal(false))
+		assert.Loosely(t, reason, should.Equal("LUCI Bisection's daily limit for revert creation"+
+			" (0) has been reached; 0 reverts have already been created"))
 	})
 }
 
@@ -123,7 +124,7 @@ func TestCanSubmitRevert(t *testing.T) {
 	cl := testclock.New(testclock.TestTimeUTC)
 	ctx = clock.Set(ctx, cl)
 
-	Convey("Disabling all Gerrit actions should override CanSubmitRevert to false", t, func() {
+	ftt.Run("Disabling all Gerrit actions should override CanSubmitRevert to false", t, func(t *ftt.Test) {
 		gerritCfg := &configpb.GerritConfig{
 			ActionsEnabled: false,
 			CreateRevertSettings: &configpb.GerritConfig_RevertActionSettings{
@@ -137,12 +138,12 @@ func TestCanSubmitRevert(t *testing.T) {
 			MaxRevertibleCulpritAge: 21600, // 6 hours
 		}
 		canSubmit, reason, err := CanSubmitRevert(ctx, gerritCfg)
-		So(err, ShouldBeNil)
-		So(canSubmit, ShouldEqual, false)
-		So(reason, ShouldEqual, "all Gerrit actions are disabled")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, canSubmit, should.Equal(false))
+		assert.Loosely(t, reason, should.Equal("all Gerrit actions are disabled"))
 	})
 
-	Convey("CanSubmitRevert should be false when submit is disabled", t, func() {
+	ftt.Run("CanSubmitRevert should be false when submit is disabled", t, func(t *ftt.Test) {
 		gerritCfg := &configpb.GerritConfig{
 			ActionsEnabled: true,
 			CreateRevertSettings: &configpb.GerritConfig_RevertActionSettings{
@@ -156,12 +157,12 @@ func TestCanSubmitRevert(t *testing.T) {
 			MaxRevertibleCulpritAge: 21600, // 6 hours
 		}
 		canSubmit, reason, err := CanSubmitRevert(ctx, gerritCfg)
-		So(err, ShouldBeNil)
-		So(canSubmit, ShouldEqual, false)
-		So(reason, ShouldEqual, "LUCI Bisection's revert submission has been disabled")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, canSubmit, should.Equal(false))
+		assert.Loosely(t, reason, should.Equal("LUCI Bisection's revert submission has been disabled"))
 	})
 
-	Convey("CanSubmitRevert should be true", t, func() {
+	ftt.Run("CanSubmitRevert should be true", t, func(t *ftt.Test) {
 		gerritCfg := &configpb.GerritConfig{
 			ActionsEnabled: true,
 			CreateRevertSettings: &configpb.GerritConfig_RevertActionSettings{
@@ -175,12 +176,12 @@ func TestCanSubmitRevert(t *testing.T) {
 			MaxRevertibleCulpritAge: 21600, // 6 hours
 		}
 		canSubmit, reason, err := CanSubmitRevert(ctx, gerritCfg)
-		So(err, ShouldBeNil)
-		So(canSubmit, ShouldEqual, true)
-		So(reason, ShouldEqual, "")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, canSubmit, should.Equal(true))
+		assert.Loosely(t, reason, should.BeEmpty)
 	})
 
-	Convey("CanSubmitRevert should be false when daily limit has been reached", t, func() {
+	ftt.Run("CanSubmitRevert should be false when daily limit has been reached", t, func(t *ftt.Test) {
 		gerritCfg := &configpb.GerritConfig{
 			ActionsEnabled: true,
 			CreateRevertSettings: &configpb.GerritConfig_RevertActionSettings{
@@ -194,9 +195,9 @@ func TestCanSubmitRevert(t *testing.T) {
 			MaxRevertibleCulpritAge: 21600, // 6 hours
 		}
 		canSubmit, reason, err := CanSubmitRevert(ctx, gerritCfg)
-		So(err, ShouldBeNil)
-		So(canSubmit, ShouldEqual, false)
-		So(reason, ShouldEqual, "LUCI Bisection's daily limit for revert submission"+
-			" (0) has been reached; 0 reverts have already been submitted")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, canSubmit, should.Equal(false))
+		assert.Loosely(t, reason, should.Equal("LUCI Bisection's daily limit for revert submission"+
+			" (0) has been reached; 0 reverts have already been submitted"))
 	})
 }

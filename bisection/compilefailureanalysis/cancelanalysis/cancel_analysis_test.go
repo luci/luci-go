@@ -20,7 +20,6 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	. "github.com/smartystreets/goconvey/convey"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 
@@ -31,6 +30,9 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 )
@@ -47,25 +49,25 @@ func TestCancelAnalysis(t *testing.T) {
 	mc := buildbucket.NewMockedClient(c, ctl)
 	c = mc.Ctx
 
-	Convey("Cancel Analysis", t, func() {
+	ftt.Run("Cancel Analysis", t, func(t *ftt.Test) {
 		cfa := &model.CompileFailureAnalysis{
 			Id:        123,
 			Status:    pb.AnalysisStatus_RUNNING,
 			RunStatus: pb.AnalysisRunStatus_STARTED,
 		}
-		So(datastore.Put(c, cfa), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, cfa), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		ha := &model.CompileHeuristicAnalysis{
 			ParentAnalysis: datastore.KeyForObj(c, cfa),
 		}
-		So(datastore.Put(c, ha), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, ha), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		suspect := &model.Suspect{
 			ParentAnalysis: datastore.KeyForObj(c, ha),
 		}
-		So(datastore.Put(c, suspect), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, suspect), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		nsa := &model.CompileNthSectionAnalysis{
@@ -73,7 +75,7 @@ func TestCancelAnalysis(t *testing.T) {
 			RunStatus:      pb.AnalysisRunStatus_STARTED,
 			ParentAnalysis: datastore.KeyForObj(c, cfa),
 		}
-		So(datastore.Put(c, nsa), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, nsa), should.BeNil)
 
 		rb1 := &model.CompileRerunBuild{
 			Id: 997,
@@ -84,9 +86,9 @@ func TestCancelAnalysis(t *testing.T) {
 		rb3 := &model.CompileRerunBuild{
 			Id: 999,
 		}
-		So(datastore.Put(c, rb1), ShouldBeNil)
-		So(datastore.Put(c, rb2), ShouldBeNil)
-		So(datastore.Put(c, rb3), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, rb1), should.BeNil)
+		assert.Loosely(t, datastore.Put(c, rb2), should.BeNil)
+		assert.Loosely(t, datastore.Put(c, rb3), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		rr1 := &model.SingleRerun{
@@ -105,32 +107,32 @@ func TestCancelAnalysis(t *testing.T) {
 			Analysis:   datastore.KeyForObj(c, cfa),
 			Status:     pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
 		}
-		So(datastore.Put(c, rr1), ShouldBeNil)
-		So(datastore.Put(c, rr2), ShouldBeNil)
-		So(datastore.Put(c, rr3), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, rr1), should.BeNil)
+		assert.Loosely(t, datastore.Put(c, rr2), should.BeNil)
+		assert.Loosely(t, datastore.Put(c, rr3), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		mc.Client.EXPECT().CancelBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(&bbpb.Build{}, nil).Times(2)
 		e := CancelAnalysis(c, 123)
-		So(e, ShouldBeNil)
+		assert.Loosely(t, e, should.BeNil)
 
 		datastore.GetTestable(c).CatchupIndexes()
-		So(datastore.Get(c, cfa), ShouldBeNil)
-		So(datastore.Get(c, nsa), ShouldBeNil)
-		So(datastore.Get(c, rr1), ShouldBeNil)
-		So(datastore.Get(c, rr3), ShouldBeNil)
-		So(datastore.Get(c, rb1), ShouldBeNil)
-		So(datastore.Get(c, rb3), ShouldBeNil)
-		So(datastore.Get(c, suspect), ShouldBeNil)
+		assert.Loosely(t, datastore.Get(c, cfa), should.BeNil)
+		assert.Loosely(t, datastore.Get(c, nsa), should.BeNil)
+		assert.Loosely(t, datastore.Get(c, rr1), should.BeNil)
+		assert.Loosely(t, datastore.Get(c, rr3), should.BeNil)
+		assert.Loosely(t, datastore.Get(c, rb1), should.BeNil)
+		assert.Loosely(t, datastore.Get(c, rb3), should.BeNil)
+		assert.Loosely(t, datastore.Get(c, suspect), should.BeNil)
 
-		So(cfa.Status, ShouldEqual, pb.AnalysisStatus_NOTFOUND)
-		So(cfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_CANCELED)
-		So(nsa.Status, ShouldEqual, pb.AnalysisStatus_NOTFOUND)
-		So(nsa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_CANCELED)
-		So(rr1.Status, ShouldEqual, pb.RerunStatus_RERUN_STATUS_CANCELED)
-		So(rr3.Status, ShouldEqual, pb.RerunStatus_RERUN_STATUS_CANCELED)
-		So(rb1.Status, ShouldEqual, bbpb.Status_CANCELED)
-		So(rb3.Status, ShouldEqual, bbpb.Status_CANCELED)
-		So(suspect.VerificationStatus, ShouldEqual, model.SuspectVerificationStatus_Canceled)
+		assert.Loosely(t, cfa.Status, should.Equal(pb.AnalysisStatus_NOTFOUND))
+		assert.Loosely(t, cfa.RunStatus, should.Equal(pb.AnalysisRunStatus_CANCELED))
+		assert.Loosely(t, nsa.Status, should.Equal(pb.AnalysisStatus_NOTFOUND))
+		assert.Loosely(t, nsa.RunStatus, should.Equal(pb.AnalysisRunStatus_CANCELED))
+		assert.Loosely(t, rr1.Status, should.Equal(pb.RerunStatus_RERUN_STATUS_CANCELED))
+		assert.Loosely(t, rr3.Status, should.Equal(pb.RerunStatus_RERUN_STATUS_CANCELED))
+		assert.Loosely(t, rb1.Status, should.Equal(bbpb.Status_CANCELED))
+		assert.Loosely(t, rb3.Status, should.Equal(bbpb.Status_CANCELED))
+		assert.Loosely(t, suspect.VerificationStatus, should.Equal(model.SuspectVerificationStatus_Canceled))
 	})
 }

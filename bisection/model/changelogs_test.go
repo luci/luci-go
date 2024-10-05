@@ -18,47 +18,49 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func TestChangeLogs(t *testing.T) {
-	Convey("GetReviewUrl", t, func() {
+	ftt.Run("GetReviewUrl", t, func(t *ftt.Test) {
 		cl := &ChangeLog{
 			Message: "",
 		}
 		_, err := cl.GetReviewUrl()
-		So(err, ShouldNotBeNil)
+		assert.Loosely(t, err, should.NotBeNil)
 		cl = &ChangeLog{
 			Message: "Use TestActivationManager for all page activations\n\nblah blah\n\nChange-Id: blah\nBug: blah\nReviewed-on: https://chromium-review.googlesource.com/c/chromium/src/+/3472129\nReviewed-by: blah blah\n",
 		}
 		reviewUrl, err := cl.GetReviewUrl()
-		So(err, ShouldBeNil)
-		So(reviewUrl, ShouldEqual, "https://chromium-review.googlesource.com/c/chromium/src/+/3472129")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, reviewUrl, should.Equal("https://chromium-review.googlesource.com/c/chromium/src/+/3472129"))
 	})
 
-	Convey("GetReviewTitle", t, func() {
+	ftt.Run("GetReviewTitle", t, func(t *ftt.Test) {
 		cl := &ChangeLog{
 			Message: "",
 		}
 		reviewTitle, err := cl.GetReviewTitle()
-		So(err, ShouldNotBeNil)
-		So(reviewTitle, ShouldEqual, "")
+		assert.Loosely(t, err, should.NotBeNil)
+		assert.Loosely(t, reviewTitle, should.BeEmpty)
 
 		cl = &ChangeLog{
 			Message: "Use TestActivationManager for all page activations\n\nblah blah\n\nChange-Id: blah\nBug: blah\nReviewed-on: https://chromium-review.googlesource.com/c/chromium/src/+/3472129\nReviewed-by: blah blah\n",
 		}
 		reviewTitle, err = cl.GetReviewTitle()
-		So(err, ShouldBeNil)
-		So(reviewTitle, ShouldEqual, "Use TestActivationManager for all page activations")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, reviewTitle, should.Equal("Use TestActivationManager for all page activations"))
 	})
 
-	Convey("Get commit time", t, func() {
+	ftt.Run("Get commit time", t, func(t *ftt.Test) {
 		cl := &ChangeLog{
 			Message: "",
 		}
 		_, err := cl.GetCommitTime()
-		So(err, ShouldNotBeNil)
+		assert.Loosely(t, err, should.NotBeNil)
 
 		cl = &ChangeLog{
 			Committer: ChangeLogActor{
@@ -66,7 +68,7 @@ func TestChangeLogs(t *testing.T) {
 			},
 		}
 		commitTime, err := cl.GetCommitTime()
-		So(err, ShouldBeNil)
-		So(commitTime, ShouldEqual, timestamppb.New(time.Date(2023, time.October, 17, 7, 6, 57, 0, time.UTC)))
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, commitTime, should.Match(timestamppb.New(time.Date(2023, time.October, 17, 7, 6, 57, 0, time.UTC))))
 	})
 }

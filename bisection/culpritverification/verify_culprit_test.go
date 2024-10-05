@@ -26,6 +26,9 @@ import (
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -37,14 +40,12 @@ import (
 	configpb "go.chromium.org/luci/bisection/proto/config"
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/util/testutil"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestVerifySuspect(t *testing.T) {
 	t.Parallel()
 
-	Convey("Verify Suspect", t, func() {
+	ftt.Run("Verify Suspect", t, func(t *ftt.Test) {
 		c := memory.Use(context.Background())
 		testutil.UpdateIndices(c)
 
@@ -58,9 +59,9 @@ func TestVerifySuspect(t *testing.T) {
 		// Setup config.
 		projectCfg := config.CreatePlaceholderProjectConfig()
 		cfg := map[string]*configpb.ProjectConfig{"chromium": projectCfg}
-		So(config.SetTestProjectConfig(c, cfg), ShouldBeNil)
+		assert.Loosely(t, config.SetTestProjectConfig(c, cfg), should.BeNil)
 
-		Convey("Verify Suspect triggers rerun", func() {
+		t.Run("Verify Suspect triggers rerun", func(t *ftt.Test) {
 			// Setup mock for buildbucket
 			ctl := gomock.NewController(t)
 			defer ctl.Finish()
@@ -123,7 +124,7 @@ func TestVerifySuspect(t *testing.T) {
 			})
 
 			fb := &model.LuciFailedBuild{}
-			So(datastore.Put(c, fb), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, fb), should.BeNil)
 			datastore.GetTestable(c).CatchupIndexes()
 
 			compileFailure := &model.CompileFailure{
@@ -131,7 +132,7 @@ func TestVerifySuspect(t *testing.T) {
 				Build:         datastore.KeyForObj(c, fb),
 				OutputTargets: []string{"target1"},
 			}
-			So(datastore.Put(c, compileFailure), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, compileFailure), should.BeNil)
 			datastore.GetTestable(c).CatchupIndexes()
 
 			analysis := &model.CompileFailureAnalysis{
@@ -139,13 +140,13 @@ func TestVerifySuspect(t *testing.T) {
 				CompileFailure:     datastore.KeyForObj(c, compileFailure),
 				FirstFailedBuildId: 1000,
 			}
-			So(datastore.Put(c, analysis), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, analysis), should.BeNil)
 			datastore.GetTestable(c).CatchupIndexes()
 
 			heuristicAnalysis := &model.CompileHeuristicAnalysis{
 				ParentAnalysis: datastore.KeyForObj(c, analysis),
 			}
-			So(datastore.Put(c, heuristicAnalysis), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, heuristicAnalysis), should.BeNil)
 			datastore.GetTestable(c).CatchupIndexes()
 
 			suspect := &model.Suspect{
@@ -157,13 +158,13 @@ func TestVerifySuspect(t *testing.T) {
 					Id:      "3425",
 				},
 			}
-			So(datastore.Put(c, suspect), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, suspect), should.BeNil)
 			datastore.GetTestable(c).CatchupIndexes()
 
 			err := processCulpritVerificationTask(c, 444, suspect.Id, suspect.ParentAnalysis.Encode())
-			So(err, ShouldBeNil)
-			So(datastore.Get(c, suspect), ShouldBeNil)
-			So(suspect.VerificationStatus, ShouldEqual, model.SuspectVerificationStatus_UnderVerification)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, datastore.Get(c, suspect), should.BeNil)
+			assert.Loosely(t, suspect.VerificationStatus, should.Equal(model.SuspectVerificationStatus_UnderVerification))
 			datastore.GetTestable(c).CatchupIndexes()
 
 			// Check that 2 rerun builds were created, and linked to suspect
@@ -171,8 +172,8 @@ func TestVerifySuspect(t *testing.T) {
 				Id: suspect.SuspectRerunBuild.IntID(),
 			}
 			err = datastore.Get(c, rerun1)
-			So(err, ShouldBeNil)
-			So(rerun1, ShouldResemble, &model.CompileRerunBuild{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, rerun1, should.Resemble(&model.CompileRerunBuild{
 				Id: 123,
 				LuciBuild: model.LuciBuild{
 					BuildId: 123,
@@ -189,14 +190,14 @@ func TestVerifySuspect(t *testing.T) {
 					CreateTime: res1.CreateTime.AsTime(),
 					StartTime:  res1.StartTime.AsTime(),
 				},
-			})
+			}))
 
 			rerun2 := &model.CompileRerunBuild{
 				Id: suspect.ParentRerunBuild.IntID(),
 			}
 			err = datastore.Get(c, rerun2)
-			So(err, ShouldBeNil)
-			So(rerun2, ShouldResemble, &model.CompileRerunBuild{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, rerun2, should.Resemble(&model.CompileRerunBuild{
 				Id: 456,
 				LuciBuild: model.LuciBuild{
 					BuildId: 456,
@@ -213,59 +214,59 @@ func TestVerifySuspect(t *testing.T) {
 					CreateTime: res2.CreateTime.AsTime(),
 					StartTime:  res2.StartTime.AsTime(),
 				},
-			})
+			}))
 
 			// Check that 2 SingleRerun model was created
 			q := datastore.NewQuery("SingleRerun").Eq("rerun_build", datastore.KeyForObj(c, rerun1))
 			singleReruns := []*model.SingleRerun{}
 			err = datastore.GetAll(c, q, &singleReruns)
-			So(err, ShouldBeNil)
-			So(len(singleReruns), ShouldEqual, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(singleReruns), should.Equal(1))
 
 			q = datastore.NewQuery("SingleRerun").Eq("rerun_build", datastore.KeyForObj(c, rerun2))
 			singleReruns = []*model.SingleRerun{}
 			err = datastore.GetAll(c, q, &singleReruns)
-			So(err, ShouldBeNil)
-			So(len(singleReruns), ShouldEqual, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(singleReruns), should.Equal(1))
 		})
 
-		Convey("Verify Suspect should not trigger any rerun if culprit found", func() {
-			_, _, cfa := testutil.CreateCompileFailureAnalysisAnalysisChain(c, 8001, "chromium", 555)
+		t.Run("Verify Suspect should not trigger any rerun if culprit found", func(t *ftt.Test) {
+			_, _, cfa := testutil.CreateCompileFailureAnalysisAnalysisChain(c, t, 8001, "chromium", 555)
 
 			suspect := &model.Suspect{
 				VerificationStatus: model.SuspectVerificationStatus_VerificationScheduled,
 			}
-			So(datastore.Put(c, suspect), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, suspect), should.BeNil)
 			datastore.GetTestable(c).CatchupIndexes()
 			cfa.VerifiedCulprits = []*datastore.Key{
 				datastore.KeyForObj(c, suspect),
 			}
-			So(datastore.Put(c, cfa), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, cfa), should.BeNil)
 			datastore.GetTestable(c).CatchupIndexes()
 			err := VerifySuspect(c, suspect, 8001, 555)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			datastore.GetTestable(c).CatchupIndexes()
 
 			// Check that no rerun was created
 			q := datastore.NewQuery("SingleRerun").Eq("analysis", datastore.KeyForObj(c, cfa))
 			singleReruns := []*model.SingleRerun{}
 			err = datastore.GetAll(c, q, &singleReruns)
-			So(err, ShouldBeNil)
-			So(len(singleReruns), ShouldEqual, 0)
-			So(suspect.VerificationStatus, ShouldEqual, model.SuspectVerificationStatus_Unverified)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(singleReruns), should.BeZero)
+			assert.Loosely(t, suspect.VerificationStatus, should.Equal(model.SuspectVerificationStatus_Unverified))
 		})
 
-		Convey("Verify Suspect should also update analysis status", func() {
-			_, _, cfa := testutil.CreateCompileFailureAnalysisAnalysisChain(c, 8001, "chromium", 666)
+		t.Run("Verify Suspect should also update analysis status", func(t *ftt.Test) {
+			_, _, cfa := testutil.CreateCompileFailureAnalysisAnalysisChain(c, t, 8001, "chromium", 666)
 			cfa.Status = pb.AnalysisStatus_SUSPECTFOUND
 			cfa.RunStatus = pb.AnalysisRunStatus_STARTED
-			So(datastore.Put(c, cfa), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, cfa), should.BeNil)
 			datastore.GetTestable(c).CatchupIndexes()
 
-			nsa := testutil.CreateNthSectionAnalysis(c, cfa)
+			nsa := testutil.CreateNthSectionAnalysis(c, t, cfa)
 			nsa.Status = pb.AnalysisStatus_SUSPECTFOUND
 			nsa.RunStatus = pb.AnalysisRunStatus_ENDED
-			So(datastore.Put(c, nsa), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, nsa), should.BeNil)
 			datastore.GetTestable(c).CatchupIndexes()
 
 			suspect := &model.Suspect{
@@ -290,27 +291,27 @@ func TestVerifySuspect(t *testing.T) {
 					Id:      "id",
 				},
 			}
-			So(datastore.Put(c, suspect), ShouldBeNil)
-			So(datastore.Put(c, suspect1), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, suspect), should.BeNil)
+			assert.Loosely(t, datastore.Put(c, suspect1), should.BeNil)
 			datastore.GetTestable(c).CatchupIndexes()
 
 			err := VerifySuspect(c, suspect, 8001, 666)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			datastore.GetTestable(c).CatchupIndexes()
 
 			// Check that no rerun was created
 			q := datastore.NewQuery("SingleRerun").Eq("analysis", datastore.KeyForObj(c, cfa))
 			singleReruns := []*model.SingleRerun{}
 			err = datastore.GetAll(c, q, &singleReruns)
-			So(err, ShouldBeNil)
-			So(len(singleReruns), ShouldEqual, 0)
-			So(datastore.Get(c, suspect), ShouldBeNil)
-			So(suspect.VerificationStatus, ShouldEqual, model.SuspectVerificationStatus_Unverified)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(singleReruns), should.BeZero)
+			assert.Loosely(t, datastore.Get(c, suspect), should.BeNil)
+			assert.Loosely(t, suspect.VerificationStatus, should.Equal(model.SuspectVerificationStatus_Unverified))
 
 			// Verify the status is updated
-			So(datastore.Get(c, cfa), ShouldBeNil)
-			So(cfa.Status, ShouldEqual, pb.AnalysisStatus_SUSPECTFOUND)
-			So(cfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
+			assert.Loosely(t, datastore.Get(c, cfa), should.BeNil)
+			assert.Loosely(t, cfa.Status, should.Equal(pb.AnalysisStatus_SUSPECTFOUND))
+			assert.Loosely(t, cfa.RunStatus, should.Equal(pb.AnalysisRunStatus_ENDED))
 		})
 	})
 }
@@ -339,11 +340,11 @@ func TestHasNewTargets(t *testing.T) {
 
 	c := context.Background()
 
-	Convey("Has New Targets", t, func() {
-		So(hasNewTarget(c, []string{"device/bluetooth/floss/bluetooth_gatt_service_floss.h"}, cls), ShouldBeTrue)
-		So(hasNewTarget(c, []string{"device/bluetooth/floss/bluetooth_gatt_service_floss_1.h"}, cls), ShouldBeTrue)
-		So(hasNewTarget(c, []string{"device/bluetooth/floss/bluetooth_gatt_service_floss_2.h"}, cls), ShouldBeTrue)
-		So(hasNewTarget(c, []string{"device/bluetooth/floss/bluetooth_gatt_service_floss_3.h"}, cls), ShouldBeFalse)
+	ftt.Run("Has New Targets", t, func(t *ftt.Test) {
+		assert.Loosely(t, hasNewTarget(c, []string{"device/bluetooth/floss/bluetooth_gatt_service_floss.h"}, cls), should.BeTrue)
+		assert.Loosely(t, hasNewTarget(c, []string{"device/bluetooth/floss/bluetooth_gatt_service_floss_1.h"}, cls), should.BeTrue)
+		assert.Loosely(t, hasNewTarget(c, []string{"device/bluetooth/floss/bluetooth_gatt_service_floss_2.h"}, cls), should.BeTrue)
+		assert.Loosely(t, hasNewTarget(c, []string{"device/bluetooth/floss/bluetooth_gatt_service_floss_3.h"}, cls), should.BeFalse)
 	})
 }
 
@@ -353,7 +354,7 @@ func TestGetPriority(t *testing.T) {
 	cl := testclock.New(testclock.TestTimeUTC)
 	c = clock.Set(c, cl)
 
-	Convey("GetPriority", t, func() {
+	ftt.Run("GetPriority", t, func(t *ftt.Test) {
 		now := clock.Now(c)
 		fb := &model.LuciFailedBuild{
 			Id: 123,
@@ -362,25 +363,25 @@ func TestGetPriority(t *testing.T) {
 				EndTime:   now.Add(9 * time.Minute),
 			},
 		}
-		So(datastore.Put(c, fb), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, fb), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		cf := &model.CompileFailure{
 			Build: datastore.KeyForObj(c, fb),
 		}
-		So(datastore.Put(c, cf), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, cf), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		cfa := &model.CompileFailureAnalysis{
 			CompileFailure: datastore.KeyForObj(c, cf),
 		}
-		So(datastore.Put(c, cfa), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, cfa), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		ha := &model.CompileHeuristicAnalysis{
 			ParentAnalysis: datastore.KeyForObj(c, cfa),
 		}
-		So(datastore.Put(c, ha), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, ha), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		suspect := &model.Suspect{
@@ -389,19 +390,19 @@ func TestGetPriority(t *testing.T) {
 			Id:             123,
 			ReviewUrl:      "reviewUrl",
 		}
-		So(datastore.Put(c, suspect), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, suspect), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 		pri, err := getSuspectPriority(c, suspect)
-		So(err, ShouldBeNil)
-		So(pri, ShouldEqual, 120)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, pri, should.Equal(120))
 		suspect.Score = 5
 		pri, err = getSuspectPriority(c, suspect)
-		So(err, ShouldBeNil)
-		So(pri, ShouldEqual, 100)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, pri, should.Equal(100))
 		suspect.Score = 15
 		pri, err = getSuspectPriority(c, suspect)
-		So(err, ShouldBeNil)
-		So(pri, ShouldEqual, 80)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, pri, should.Equal(80))
 
 		// Add another suspect
 		suspect1 := &model.Suspect{
@@ -410,18 +411,18 @@ func TestGetPriority(t *testing.T) {
 			ReviewUrl:          "reviewUrl",
 			VerificationStatus: model.SuspectVerificationStatus_UnderVerification,
 		}
-		So(datastore.Put(c, suspect1), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, suspect1), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 		pri, err = getSuspectPriority(c, suspect)
-		So(err, ShouldBeNil)
-		So(pri, ShouldEqual, 100)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, pri, should.Equal(100))
 
 		cfa.IsTreeCloser = true
-		So(datastore.Put(c, cfa), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, cfa), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 		pri, err = getSuspectPriority(c, suspect)
-		So(err, ShouldBeNil)
-		So(pri, ShouldEqual, 30)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, pri, should.Equal(30))
 	})
 }
 
@@ -429,27 +430,27 @@ func TestCheckSuspectWithSameCommitExist(t *testing.T) {
 	t.Parallel()
 	c := memory.Use(context.Background())
 
-	Convey("CheckSuspectWithSameCommitExist", t, func() {
-		_, _, cfa := testutil.CreateCompileFailureAnalysisAnalysisChain(c, 8000, "chromium", 555)
-		nsa := testutil.CreateNthSectionAnalysis(c, cfa)
-		suspect := testutil.CreateNthSectionSuspect(c, nsa)
+	ftt.Run("CheckSuspectWithSameCommitExist", t, func(t *ftt.Test) {
+		_, _, cfa := testutil.CreateCompileFailureAnalysisAnalysisChain(c, t, 8000, "chromium", 555)
+		nsa := testutil.CreateNthSectionAnalysis(c, t, cfa)
+		suspect := testutil.CreateNthSectionSuspect(c, t, nsa)
 
 		exist, err := checkSuspectWithSameCommitExist(c, cfa, suspect)
-		So(err, ShouldBeNil)
-		So(exist, ShouldBeFalse)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, exist, should.BeFalse)
 
-		ha := testutil.CreateHeuristicAnalysis(c, cfa)
-		s1 := testutil.CreateHeuristicSuspect(c, ha, model.SuspectVerificationStatus_Unverified)
+		ha := testutil.CreateHeuristicAnalysis(c, t, cfa)
+		s1 := testutil.CreateHeuristicSuspect(c, t, ha, model.SuspectVerificationStatus_Unverified)
 
 		exist, err = checkSuspectWithSameCommitExist(c, cfa, suspect)
-		So(err, ShouldBeNil)
-		So(exist, ShouldBeFalse)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, exist, should.BeFalse)
 
 		s1.VerificationStatus = model.SuspectVerificationStatus_UnderVerification
-		So(datastore.Put(c, s1), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, s1), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 		exist, err = checkSuspectWithSameCommitExist(c, cfa, suspect)
-		So(err, ShouldBeNil)
-		So(exist, ShouldBeTrue)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, exist, should.BeTrue)
 	})
 }

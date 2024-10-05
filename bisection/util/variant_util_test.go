@@ -17,24 +17,25 @@ package util
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
 	pb "go.chromium.org/luci/bisection/proto/v1"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestVariantUtil(t *testing.T) {
-	Convey("VariantPB", t, func() {
-		Convey("no error", func() {
+	ftt.Run("VariantPB", t, func(t *ftt.Test) {
+		t.Run("no error", func(t *ftt.Test) {
 			variant, err := VariantPB(`{"builder": "testbuilder"}`)
-			So(err, ShouldBeNil)
-			So(variant, ShouldResembleProto, &pb.Variant{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, variant, should.Resemble(&pb.Variant{
 				Def: map[string]string{"builder": "testbuilder"},
-			})
+			}))
 		})
-		Convey("error", func() {
+		t.Run("error", func(t *ftt.Test) {
 			variant, err := VariantPB("invalid json")
-			So(err, ShouldErrLike, "invalid")
-			So(variant, ShouldBeNil)
+			assert.Loosely(t, err, should.ErrLike("invalid"))
+			assert.Loosely(t, variant, should.BeNil)
 		})
 	})
 

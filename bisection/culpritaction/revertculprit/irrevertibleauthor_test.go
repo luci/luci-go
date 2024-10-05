@@ -18,15 +18,16 @@ import (
 	"context"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestHasIrrevertibleAuthor(t *testing.T) {
 	ctx := context.Background()
 
-	Convey("HasIrrevertibleAuthor", t, func() {
+	ftt.Run("HasIrrevertibleAuthor", t, func(t *ftt.Test) {
 		change := &gerritpb.ChangeInfo{
 			Project:         "chromium/test/src",
 			Number:          234567,
@@ -63,48 +64,48 @@ func TestHasIrrevertibleAuthor(t *testing.T) {
 			},
 		}
 
-		Convey("author is revertible", func() {
+		t.Run("author is revertible", func(t *ftt.Test) {
 			change.Revisions["deadbeef"].Commit.Author = &gerritpb.GitPersonInfo{
 				Name:  "John Doe",
 				Email: "jdoe@example.com",
 			}
 
 			cannotRevert, err := HasIrrevertibleAuthor(ctx, change)
-			So(err, ShouldBeNil)
-			So(cannotRevert, ShouldEqual, false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cannotRevert, should.Equal(false))
 		})
 
-		Convey("author is irrevertible with exact match", func() {
+		t.Run("author is irrevertible with exact match", func(t *ftt.Test) {
 			change.Revisions["deadbeef"].Commit.Author = &gerritpb.GitPersonInfo{
 				Name:  "ChromeOS Commit Bot",
 				Email: "chromeos-commit-bot@chromium.org",
 			}
 
 			cannotRevert, err := HasIrrevertibleAuthor(ctx, change)
-			So(err, ShouldBeNil)
-			So(cannotRevert, ShouldEqual, true)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cannotRevert, should.Equal(true))
 		})
 
-		Convey("author is irrevertible with pattern match", func() {
+		t.Run("author is irrevertible with pattern match", func(t *ftt.Test) {
 			change.Revisions["deadbeef"].Commit.Author = &gerritpb.GitPersonInfo{
 				Name:  "Example Service Account",
 				Email: "examplechromiumtest-autoroll@skia-buildbots.iam.gserviceaccount.com",
 			}
 
 			cannotRevert, err := HasIrrevertibleAuthor(ctx, change)
-			So(err, ShouldBeNil)
-			So(cannotRevert, ShouldEqual, true)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cannotRevert, should.Equal(true))
 		})
 
-		Convey("author is irrevertible with pattern match extended", func() {
+		t.Run("author is irrevertible with pattern match extended", func(t *ftt.Test) {
 			change.Revisions["deadbeef"].Commit.Author = &gerritpb.GitPersonInfo{
 				Name:  "Another Example Service Account",
 				Email: "chromium-autoroll@skia-corp.google.com.iam.gserviceaccount.com",
 			}
 
 			cannotRevert, err := HasIrrevertibleAuthor(ctx, change)
-			So(err, ShouldBeNil)
-			So(cannotRevert, ShouldEqual, true)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cannotRevert, should.Equal(true))
 		})
 	})
 }

@@ -28,6 +28,9 @@ import (
 
 	analysispb "go.chromium.org/luci/analysis/proto/v1"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/secrets"
@@ -36,9 +39,6 @@ import (
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/util/testutil"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestQueryAnalysis(t *testing.T) {
@@ -48,21 +48,21 @@ func TestQueryAnalysis(t *testing.T) {
 	testutil.UpdateIndices(c)
 	datastore.GetTestable(c).AutoIndex(true)
 
-	Convey("No BuildFailure Info", t, func() {
+	ftt.Run("No BuildFailure Info", t, func(t *ftt.Test) {
 		req := &pb.QueryAnalysisRequest{}
 		_, err := server.QueryAnalysis(c, req)
-		So(err, ShouldNotBeNil)
-		So(status.Convert(err).Code(), ShouldEqual, codes.InvalidArgument)
+		assert.Loosely(t, err, should.NotBeNil)
+		assert.Loosely(t, status.Convert(err).Code(), should.Equal(codes.InvalidArgument))
 	})
 
-	Convey("No bbid", t, func() {
+	ftt.Run("No bbid", t, func(t *ftt.Test) {
 		req := &pb.QueryAnalysisRequest{BuildFailure: &pb.BuildFailure{}}
 		_, err := server.QueryAnalysis(c, req)
-		So(err, ShouldNotBeNil)
-		So(status.Convert(err).Code(), ShouldEqual, codes.InvalidArgument)
+		assert.Loosely(t, err, should.NotBeNil)
+		assert.Loosely(t, status.Convert(err).Code(), should.Equal(codes.InvalidArgument))
 	})
 
-	Convey("Unsupported step", t, func() {
+	ftt.Run("Unsupported step", t, func(t *ftt.Test) {
 		req := &pb.QueryAnalysisRequest{
 			BuildFailure: &pb.BuildFailure{
 				FailedStepName: "some step",
@@ -70,11 +70,11 @@ func TestQueryAnalysis(t *testing.T) {
 			},
 		}
 		_, err := server.QueryAnalysis(c, req)
-		So(err, ShouldNotBeNil)
-		So(status.Convert(err).Code(), ShouldEqual, codes.Unimplemented)
+		assert.Loosely(t, err, should.NotBeNil)
+		assert.Loosely(t, status.Convert(err).Code(), should.Equal(codes.Unimplemented))
 	})
 
-	Convey("No analysis found", t, func() {
+	ftt.Run("No analysis found", t, func(t *ftt.Test) {
 		req := &pb.QueryAnalysisRequest{
 			BuildFailure: &pb.BuildFailure{
 				FailedStepName: "compile",
@@ -82,11 +82,11 @@ func TestQueryAnalysis(t *testing.T) {
 			},
 		}
 		_, err := server.QueryAnalysis(c, req)
-		So(err, ShouldNotBeNil)
-		So(status.Convert(err).Code(), ShouldEqual, codes.NotFound)
+		assert.Loosely(t, err, should.NotBeNil)
+		assert.Loosely(t, status.Convert(err).Code(), should.Equal(codes.NotFound))
 	})
 
-	Convey("Analysis found", t, func() {
+	ftt.Run("Analysis found", t, func(t *ftt.Test) {
 		// Prepares datastore
 		failedBuild := &model.LuciFailedBuild{
 			Id: 123,
@@ -97,14 +97,14 @@ func TestQueryAnalysis(t *testing.T) {
 			},
 			BuildFailureType: pb.BuildFailureType_COMPILE,
 		}
-		So(datastore.Put(c, failedBuild), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, failedBuild), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		compileFailure := &model.CompileFailure{
 			Id:    123,
 			Build: datastore.KeyForObj(c, failedBuild),
 		}
-		So(datastore.Put(c, compileFailure), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, compileFailure), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		suspect := &model.Suspect{
@@ -126,7 +126,7 @@ func TestQueryAnalysis(t *testing.T) {
 			Score:              100,
 			Justification:      "Justification",
 		}
-		So(datastore.Put(c, suspect), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, suspect), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		compileFailureAnalysis := &model.CompileFailureAnalysis{
@@ -147,13 +147,13 @@ func TestQueryAnalysis(t *testing.T) {
 				},
 			},
 		}
-		So(datastore.Put(c, compileFailureAnalysis), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, compileFailureAnalysis), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		heuristicAnalysis := &model.CompileHeuristicAnalysis{
 			ParentAnalysis: datastore.KeyForObj(c, compileFailureAnalysis),
 		}
-		So(datastore.Put(c, heuristicAnalysis), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, heuristicAnalysis), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		// Create nth section analysis
@@ -165,7 +165,7 @@ func TestQueryAnalysis(t *testing.T) {
 			EndTime:        (&timestamppb.Timestamp{Seconds: 102}).AsTime(),
 			BlameList:      testutil.CreateBlamelist(10),
 		}
-		So(datastore.Put(c, nsa), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, nsa), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		// Create suspect for nthsection
@@ -180,7 +180,7 @@ func TestQueryAnalysis(t *testing.T) {
 			VerificationStatus: model.SuspectVerificationStatus_Vindicated,
 			ParentAnalysis:     datastore.KeyForObj(c, nsa),
 		}
-		So(datastore.Put(c, nthSectionSuspect), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, nthSectionSuspect), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		// Add culprit verification rerun build for suspect
@@ -203,7 +203,7 @@ func TestQueryAnalysis(t *testing.T) {
 				},
 			},
 		}
-		So(datastore.Put(c, suspectRerunBuild), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, suspectRerunBuild), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		// Add culprit verification single rerun for suspect
@@ -224,7 +224,7 @@ func TestQueryAnalysis(t *testing.T) {
 			Type:       model.RerunBuildType_CulpritVerification,
 			Priority:   100,
 		}
-		So(datastore.Put(c, suspectSingleRerun), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, suspectSingleRerun), should.BeNil)
 
 		// Add culprit verification rerun build for parent of suspect
 		parentRerunBuild := &model.CompileRerunBuild{
@@ -246,7 +246,7 @@ func TestQueryAnalysis(t *testing.T) {
 				},
 			},
 		}
-		So(datastore.Put(c, parentRerunBuild), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, parentRerunBuild), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		// Add culprit verification single rerun for parent of suspect
@@ -267,7 +267,7 @@ func TestQueryAnalysis(t *testing.T) {
 			Type:       model.RerunBuildType_CulpritVerification,
 			Priority:   100,
 		}
-		So(datastore.Put(c, parentSingleRerun), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, parentSingleRerun), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		// Update suspect's culprit verification results
@@ -275,20 +275,20 @@ func TestQueryAnalysis(t *testing.T) {
 		suspect.VerificationStatus = model.SuspectVerificationStatus_ConfirmedCulprit
 		suspect.SuspectRerunBuild = datastore.KeyForObj(c, suspectRerunBuild)
 		suspect.ParentRerunBuild = datastore.KeyForObj(c, parentRerunBuild)
-		So(datastore.Put(c, suspect), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, suspect), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		compileFailureAnalysis.VerifiedCulprits = []*datastore.Key{
 			datastore.KeyForObj(c, suspect),
 		}
-		So(datastore.Put(c, compileFailureAnalysis), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, compileFailureAnalysis), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		// nth section rerun
 		rrBuild := &model.CompileRerunBuild{
 			Id: 800999000,
 		}
-		So(datastore.Put(c, rrBuild), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, rrBuild), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		nthSectionRerun := &model.SingleRerun{
@@ -309,7 +309,7 @@ func TestQueryAnalysis(t *testing.T) {
 			Priority:   100,
 		}
 
-		So(datastore.Put(c, nthSectionRerun), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, nthSectionRerun), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		req := &pb.QueryAnalysisRequest{
@@ -320,18 +320,18 @@ func TestQueryAnalysis(t *testing.T) {
 		}
 
 		res, err := server.QueryAnalysis(c, req)
-		So(err, ShouldBeNil)
-		So(len(res.Analyses), ShouldEqual, 1)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, len(res.Analyses), should.Equal(1))
 
 		analysis := res.Analyses[0]
-		So(analysis.Builder, ShouldResemble, &buildbucketpb.BuilderID{
+		assert.Loosely(t, analysis.Builder, should.Resemble(&buildbucketpb.BuilderID{
 			Project: "chromium/test",
 			Bucket:  "ci",
 			Builder: "android",
-		})
-		So(analysis.BuildFailureType, ShouldEqual, pb.BuildFailureType_COMPILE)
-		So(len(analysis.Culprits), ShouldEqual, 1)
-		So(proto.Equal(analysis.Culprits[0], &pb.Culprit{
+		}))
+		assert.Loosely(t, analysis.BuildFailureType, should.Equal(pb.BuildFailureType_COMPILE))
+		assert.Loosely(t, len(analysis.Culprits), should.Equal(1))
+		assert.Loosely(t, proto.Equal(analysis.Culprits[0], &pb.Culprit{
 			Commit: &buildbucketpb.GitilesCommit{
 				Host:    "host1",
 				Project: "proj1",
@@ -377,10 +377,10 @@ func TestQueryAnalysis(t *testing.T) {
 					},
 				},
 			},
-		}), ShouldBeTrue)
+		}), should.BeTrue)
 
-		So(len(analysis.HeuristicResult.Suspects), ShouldEqual, 1)
-		So(proto.Equal(analysis.HeuristicResult.Suspects[0], &pb.HeuristicSuspect{
+		assert.Loosely(t, len(analysis.HeuristicResult.Suspects), should.Equal(1))
+		assert.Loosely(t, proto.Equal(analysis.HeuristicResult.Suspects[0], &pb.HeuristicSuspect{
 			GitilesCommit: &buildbucketpb.GitilesCommit{
 				Host:    "host1",
 				Project: "proj1",
@@ -422,14 +422,14 @@ func TestQueryAnalysis(t *testing.T) {
 					},
 				},
 			},
-		}), ShouldBeTrue)
+		}), should.BeTrue)
 
 		nthSectionResult := analysis.NthSectionResult
-		So(nthSectionResult, ShouldNotBeNil)
-		So(proto.Equal(nthSectionResult.StartTime, &timestamppb.Timestamp{Seconds: 100}), ShouldBeTrue)
-		So(proto.Equal(nthSectionResult.EndTime, &timestamppb.Timestamp{Seconds: 102}), ShouldBeTrue)
-		So(nthSectionResult.Status, ShouldEqual, pb.AnalysisStatus_FOUND)
-		So(nthSectionResult.Suspect, ShouldResembleProto, &pb.NthSectionSuspect{
+		assert.Loosely(t, nthSectionResult, should.NotBeNil)
+		assert.Loosely(t, proto.Equal(nthSectionResult.StartTime, &timestamppb.Timestamp{Seconds: 100}), should.BeTrue)
+		assert.Loosely(t, proto.Equal(nthSectionResult.EndTime, &timestamppb.Timestamp{Seconds: 102}), should.BeTrue)
+		assert.Loosely(t, nthSectionResult.Status, should.Equal(pb.AnalysisStatus_FOUND))
+		assert.Loosely(t, nthSectionResult.Suspect, should.Resemble(&pb.NthSectionSuspect{
 			GitilesCommit: &buildbucketpb.GitilesCommit{
 				Host:    "host1",
 				Project: "proj1",
@@ -445,9 +445,9 @@ func TestQueryAnalysis(t *testing.T) {
 				Project: "proj1",
 				Id:      "commit6",
 			},
-		})
+		}))
 
-		So(nthSectionResult.RemainingNthSectionRange, ShouldResembleProto, &pb.RegressionRange{
+		assert.Loosely(t, nthSectionResult.RemainingNthSectionRange, should.Resemble(&pb.RegressionRange{
 			LastPassed: &buildbucketpb.GitilesCommit{
 				Host:    "host1",
 				Project: "proj1",
@@ -460,11 +460,11 @@ func TestQueryAnalysis(t *testing.T) {
 				Ref:     "ref",
 				Id:      "commit5",
 			},
-		})
+		}))
 
-		So(len(nthSectionResult.Reruns), ShouldEqual, 3)
+		assert.Loosely(t, len(nthSectionResult.Reruns), should.Equal(3))
 
-		So(nthSectionResult.Reruns[0], ShouldResembleProto, &pb.SingleRerun{
+		assert.Loosely(t, nthSectionResult.Reruns[0], should.Resemble(&pb.SingleRerun{
 			Bbid:      8877665544332211,
 			StartTime: &timestamppb.Timestamp{Seconds: 101},
 			EndTime:   &timestamppb.Timestamp{Seconds: 102},
@@ -479,9 +479,9 @@ func TestQueryAnalysis(t *testing.T) {
 			},
 			Index: "5",
 			Type:  "Culprit Verification",
-		})
+		}))
 
-		So(nthSectionResult.Reruns[1], ShouldResembleProto, &pb.SingleRerun{
+		assert.Loosely(t, nthSectionResult.Reruns[1], should.Resemble(&pb.SingleRerun{
 			Bbid:      7766554433221100,
 			StartTime: &timestamppb.Timestamp{Seconds: 201},
 			EndTime:   &timestamppb.Timestamp{Seconds: 202},
@@ -496,9 +496,9 @@ func TestQueryAnalysis(t *testing.T) {
 			},
 			Index: "6",
 			Type:  "Culprit Verification",
-		})
+		}))
 
-		So(nthSectionResult.Reruns[2], ShouldResembleProto, &pb.SingleRerun{
+		assert.Loosely(t, nthSectionResult.Reruns[2], should.Resemble(&pb.SingleRerun{
 			Bbid:      800999000,
 			StartTime: &timestamppb.Timestamp{Seconds: 301},
 			EndTime:   &timestamppb.Timestamp{Seconds: 302},
@@ -513,30 +513,30 @@ func TestQueryAnalysis(t *testing.T) {
 			},
 			Index: "8",
 			Type:  "NthSection",
-		})
+		}))
 
-		So(nthSectionResult.BlameList, ShouldResembleProto, nsa.BlameList)
+		assert.Loosely(t, nthSectionResult.BlameList, should.Resemble(nsa.BlameList))
 	})
 
-	Convey("Analysis found for a similar failure", t, func() {
+	ftt.Run("Analysis found for a similar failure", t, func(t *ftt.Test) {
 		// Prepares datastore
 		basedFailedBuild := &model.LuciFailedBuild{
 			Id: 122,
 		}
-		So(datastore.Put(c, basedFailedBuild), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, basedFailedBuild), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		basedCompileFailure := &model.CompileFailure{
 			Id:    122,
 			Build: datastore.KeyForObj(c, basedFailedBuild),
 		}
-		So(datastore.Put(c, basedCompileFailure), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, basedCompileFailure), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		failedBuild := &model.LuciFailedBuild{
 			Id: 123,
 		}
-		So(datastore.Put(c, failedBuild), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, failedBuild), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		compileFailure := &model.CompileFailure{
@@ -544,13 +544,13 @@ func TestQueryAnalysis(t *testing.T) {
 			Build:            datastore.KeyForObj(c, failedBuild),
 			MergedFailureKey: datastore.KeyForObj(c, basedCompileFailure),
 		}
-		So(datastore.Put(c, compileFailure), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, compileFailure), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		compileFailureAnalysis := &model.CompileFailureAnalysis{
 			CompileFailure: datastore.KeyForObj(c, basedCompileFailure),
 		}
-		So(datastore.Put(c, compileFailureAnalysis), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, compileFailureAnalysis), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		req := &pb.QueryAnalysisRequest{
@@ -561,8 +561,8 @@ func TestQueryAnalysis(t *testing.T) {
 		}
 
 		res, err := server.QueryAnalysis(c, req)
-		So(err, ShouldBeNil)
-		So(len(res.Analyses), ShouldEqual, 1)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, len(res.Analyses), should.Equal(1))
 	})
 
 }
@@ -571,7 +571,7 @@ func TestListAnalyses(t *testing.T) {
 	t.Parallel()
 	server := &AnalysesServer{}
 
-	Convey("List existing analyses", t, func() {
+	ftt.Run("List existing analyses", t, func(t *ftt.Test) {
 		// Set up context and AEAD so that page tokens can be generated
 		c := memory.Use(context.Background())
 		c = secrets.GeneratePrimaryTinkAEADForTest(c)
@@ -593,55 +593,55 @@ func TestListAnalyses(t *testing.T) {
 			Id:         4,
 			CreateTime: (&timestamppb.Timestamp{Seconds: 103}).AsTime(),
 		}
-		So(datastore.Put(c, failureAnalysis1), ShouldBeNil)
-		So(datastore.Put(c, failureAnalysis2), ShouldBeNil)
-		So(datastore.Put(c, failureAnalysis3), ShouldBeNil)
-		So(datastore.Put(c, failureAnalysis4), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, failureAnalysis1), should.BeNil)
+		assert.Loosely(t, datastore.Put(c, failureAnalysis2), should.BeNil)
+		assert.Loosely(t, datastore.Put(c, failureAnalysis3), should.BeNil)
+		assert.Loosely(t, datastore.Put(c, failureAnalysis4), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
-		Convey("Invalid page size", func() {
+		t.Run("Invalid page size", func(t *ftt.Test) {
 			req := &pb.ListAnalysesRequest{
 				PageSize: -5,
 			}
 			_, err := server.ListAnalyses(c, req)
-			So(err, ShouldNotBeNil)
-			So(status.Convert(err).Code(), ShouldEqual, codes.InvalidArgument)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, status.Convert(err).Code(), should.Equal(codes.InvalidArgument))
 		})
 
-		Convey("Specifying page size is optional", func() {
+		t.Run("Specifying page size is optional", func(t *ftt.Test) {
 			req := &pb.ListAnalysesRequest{}
 			res, err := server.ListAnalyses(c, req)
-			So(err, ShouldBeNil)
-			So(len(res.Analyses), ShouldEqual, 4)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(res.Analyses), should.Equal(4))
 
-			Convey("Next page token is empty if there are no more analyses", func() {
-				So(res.NextPageToken, ShouldEqual, "")
+			t.Run("Next page token is empty if there are no more analyses", func(t *ftt.Test) {
+				assert.Loosely(t, res.NextPageToken, should.BeEmpty)
 			})
 		})
 
-		Convey("Response is limited by the page size", func() {
+		t.Run("Response is limited by the page size", func(t *ftt.Test) {
 			req := &pb.ListAnalysesRequest{
 				PageSize: 3,
 			}
 			res, err := server.ListAnalyses(c, req)
-			So(err, ShouldBeNil)
-			So(len(res.Analyses), ShouldEqual, req.PageSize)
-			So(res.NextPageToken, ShouldNotEqual, "")
+			assert.Loosely(t, err, should.BeNil)
+			assert.That(t, len(res.Analyses), should.Equal(int(req.PageSize)))
+			assert.Loosely(t, res.NextPageToken, should.NotEqual(""))
 
-			Convey("Returned analyses are sorted correctly", func() {
-				So(res.Analyses[0].AnalysisId, ShouldEqual, 4)
-				So(res.Analyses[1].AnalysisId, ShouldEqual, 2)
-				So(res.Analyses[2].AnalysisId, ShouldEqual, 3)
+			t.Run("Returned analyses are sorted correctly", func(t *ftt.Test) {
+				assert.Loosely(t, res.Analyses[0].AnalysisId, should.Equal(4))
+				assert.Loosely(t, res.Analyses[1].AnalysisId, should.Equal(2))
+				assert.Loosely(t, res.Analyses[2].AnalysisId, should.Equal(3))
 
-				Convey("Page token will get the next page of analyses", func() {
+				t.Run("Page token will get the next page of analyses", func(t *ftt.Test) {
 					req = &pb.ListAnalysesRequest{
 						PageSize:  3,
 						PageToken: res.NextPageToken,
 					}
 					res, err = server.ListAnalyses(c, req)
-					So(err, ShouldBeNil)
-					So(len(res.Analyses), ShouldEqual, 1)
-					So(res.Analyses[0].AnalysisId, ShouldEqual, 1)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, len(res.Analyses), should.Equal(1))
+					assert.Loosely(t, res.Analyses[0].AnalysisId, should.Equal(1))
 				})
 			})
 		})
@@ -652,7 +652,7 @@ func TestListTestAnalyses(t *testing.T) {
 	t.Parallel()
 	server := &AnalysesServer{}
 
-	Convey("List existing analyses", t, func() {
+	ftt.Run("List existing analyses", t, func(t *ftt.Test) {
 		// Set up context and AEAD so that page tokens can be generated
 		ctx := memory.Use(context.Background())
 		ctx = secrets.GeneratePrimaryTinkAEADForTest(ctx)
@@ -660,59 +660,59 @@ func TestListTestAnalyses(t *testing.T) {
 
 		// Prepares datastore
 		for i := 1; i < 5; i++ {
-			tfa := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
+			tfa := testutil.CreateTestFailureAnalysis(ctx, t, &testutil.TestFailureAnalysisCreationOption{
 				ID:             int64(i),
 				CreateTime:     time.Unix(int64(100+i), 0).UTC(),
 				TestFailureKey: datastore.MakeKey(ctx, "TestFailure", i),
 			})
-			testutil.CreateTestFailure(ctx, &testutil.TestFailureCreationOption{
+			testutil.CreateTestFailure(ctx, t, &testutil.TestFailureCreationOption{
 				ID:        int64(i),
 				Analysis:  tfa,
 				IsPrimary: true,
 			})
 		}
 
-		Convey("Empty project", func() {
+		t.Run("Empty project", func(t *ftt.Test) {
 			req := &pb.ListTestAnalysesRequest{
 				PageSize: 3,
 			}
 			_, err := server.ListTestAnalyses(ctx, req)
-			So(err, ShouldNotBeNil)
-			So(status.Convert(err).Code(), ShouldEqual, codes.InvalidArgument)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, status.Convert(err).Code(), should.Equal(codes.InvalidArgument))
 		})
 
-		Convey("Invalid page size", func() {
+		t.Run("Invalid page size", func(t *ftt.Test) {
 			req := &pb.ListTestAnalysesRequest{
 				Project:  "chromium",
 				PageSize: -5,
 			}
 			_, err := server.ListTestAnalyses(ctx, req)
-			So(err, ShouldNotBeNil)
-			So(status.Convert(err).Code(), ShouldEqual, codes.InvalidArgument)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, status.Convert(err).Code(), should.Equal(codes.InvalidArgument))
 		})
 
-		Convey("Specifying page size is optional", func() {
+		t.Run("Specifying page size is optional", func(t *ftt.Test) {
 			req := &pb.ListTestAnalysesRequest{
 				Project: "chromium",
 			}
 			res, err := server.ListTestAnalyses(ctx, req)
-			So(err, ShouldBeNil)
-			So(len(res.Analyses), ShouldEqual, 4)
-			So(res.NextPageToken, ShouldEqual, "")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(res.Analyses), should.Equal(4))
+			assert.Loosely(t, res.NextPageToken, should.BeEmpty)
 		})
 
-		Convey("Response is limited by the page size", func() {
+		t.Run("Response is limited by the page size", func(t *ftt.Test) {
 			req := &pb.ListTestAnalysesRequest{
 				Project:  "chromium",
 				PageSize: 3,
 			}
 			res, err := server.ListTestAnalyses(ctx, req)
-			So(err, ShouldBeNil)
-			So(len(res.Analyses), ShouldEqual, req.PageSize)
-			So(res.NextPageToken, ShouldNotEqual, "")
-			So(res.Analyses[0].AnalysisId, ShouldEqual, 4)
-			So(res.Analyses[1].AnalysisId, ShouldEqual, 3)
-			So(res.Analyses[2].AnalysisId, ShouldEqual, 2)
+			assert.Loosely(t, err, should.BeNil)
+			assert.That(t, len(res.Analyses), should.Equal(int(req.PageSize)))
+			assert.Loosely(t, res.NextPageToken, should.NotEqual(""))
+			assert.Loosely(t, res.Analyses[0].AnalysisId, should.Equal(4))
+			assert.Loosely(t, res.Analyses[1].AnalysisId, should.Equal(3))
+			assert.Loosely(t, res.Analyses[2].AnalysisId, should.Equal(2))
 
 			// Next page.
 			req = &pb.ListTestAnalysesRequest{
@@ -721,9 +721,9 @@ func TestListTestAnalyses(t *testing.T) {
 				PageToken: res.NextPageToken,
 			}
 			res, err = server.ListTestAnalyses(ctx, req)
-			So(err, ShouldBeNil)
-			So(len(res.Analyses), ShouldEqual, 1)
-			So(res.Analyses[0].AnalysisId, ShouldEqual, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(res.Analyses), should.Equal(1))
+			assert.Loosely(t, res.Analyses[0].AnalysisId, should.Equal(1))
 		})
 	})
 }
@@ -732,18 +732,18 @@ func TestGetTestAnalyses(t *testing.T) {
 	t.Parallel()
 	server := &AnalysesServer{}
 
-	Convey("List existing analyses", t, func() {
+	ftt.Run("List existing analyses", t, func(t *ftt.Test) {
 		// Set up context and AEAD so that page tokens can be generated
 		ctx := memory.Use(context.Background())
 		ctx = secrets.GeneratePrimaryTinkAEADForTest(ctx)
 		testutil.UpdateIndices(ctx)
 
-		tfa := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
+		tfa := testutil.CreateTestFailureAnalysis(ctx, t, &testutil.TestFailureAnalysisCreationOption{
 			ID:             int64(100),
 			CreateTime:     time.Unix(int64(100), 0).UTC(),
 			TestFailureKey: datastore.MakeKey(ctx, "TestFailure", 100),
 		})
-		testutil.CreateTestFailure(ctx, &testutil.TestFailureCreationOption{
+		testutil.CreateTestFailure(ctx, t, &testutil.TestFailureCreationOption{
 			ID:        int64(100),
 			Analysis:  tfa,
 			IsPrimary: true,
@@ -751,22 +751,22 @@ func TestGetTestAnalyses(t *testing.T) {
 			StartHour: time.Unix(int64(100), 0).UTC(),
 		})
 
-		Convey("Not found", func() {
+		t.Run("Not found", func(t *ftt.Test) {
 			req := &pb.GetTestAnalysisRequest{
 				AnalysisId: 101,
 			}
 			_, err := server.GetTestAnalysis(ctx, req)
-			So(err, ShouldNotBeNil)
-			So(status.Convert(err).Code(), ShouldEqual, codes.NotFound)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, status.Convert(err).Code(), should.Equal(codes.NotFound))
 		})
 
-		Convey("Found", func() {
+		t.Run("Found", func(t *ftt.Test) {
 			req := &pb.GetTestAnalysisRequest{
 				AnalysisId: 100,
 			}
 			res, err := server.GetTestAnalysis(ctx, req)
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, &pb.TestAnalysis{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(&pb.TestAnalysis{
 				AnalysisId: 100,
 				Builder: &buildbucketpb.BuilderID{
 					Project: "chromium",
@@ -785,7 +785,7 @@ func TestGetTestAnalyses(t *testing.T) {
 						StartHour: timestamppb.New(time.Unix(100, 0).UTC()),
 					},
 				},
-			})
+			}))
 		})
 	})
 }
@@ -793,43 +793,43 @@ func TestGetTestAnalyses(t *testing.T) {
 func TestBatchGetTestAnalyses(t *testing.T) {
 	t.Parallel()
 	server := &AnalysesServer{LUCIAnalysisHost: "fake-host"}
-	Convey("With server", t, func() {
+	ftt.Run("With server", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		testutil.UpdateIndices(ctx)
 
-		Convey("invalid request", func() {
-			Convey("missing project", func() {
+		t.Run("invalid request", func(t *ftt.Test) {
+			t.Run("missing project", func(t *ftt.Test) {
 				req := &pb.BatchGetTestAnalysesRequest{
 					TestFailures: []*pb.BatchGetTestAnalysesRequest_TestFailureIdentifier{},
 				}
 				_, err := server.BatchGetTestAnalyses(ctx, req)
-				So(err, ShouldNotBeNil)
-				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-				So(err.Error(), ShouldContainSubstring, "project: unspecified")
+				assert.Loosely(t, err, should.NotBeNil)
+				assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+				assert.Loosely(t, err.Error(), should.ContainSubstring("project: unspecified"))
 			})
-			Convey("missing test failures", func() {
+			t.Run("missing test failures", func(t *ftt.Test) {
 				req := &pb.BatchGetTestAnalysesRequest{
 					Project:      "chromium",
 					TestFailures: []*pb.BatchGetTestAnalysesRequest_TestFailureIdentifier{},
 				}
 				_, err := server.BatchGetTestAnalyses(ctx, req)
-				So(err, ShouldNotBeNil)
-				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-				So(err.Error(), ShouldContainSubstring, "test_failures: unspecified")
+				assert.Loosely(t, err, should.NotBeNil)
+				assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+				assert.Loosely(t, err.Error(), should.ContainSubstring("test_failures: unspecified"))
 			})
 
-			Convey("missing test id", func() {
+			t.Run("missing test id", func(t *ftt.Test) {
 				req := &pb.BatchGetTestAnalysesRequest{
 					Project:      "chromium",
 					TestFailures: []*pb.BatchGetTestAnalysesRequest_TestFailureIdentifier{{}},
 				}
 				_, err := server.BatchGetTestAnalyses(ctx, req)
-				So(err, ShouldNotBeNil)
-				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-				So(err.Error(), ShouldContainSubstring, "test_variants[0]: test_id: unspecified")
+				assert.Loosely(t, err, should.NotBeNil)
+				assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+				assert.Loosely(t, err.Error(), should.ContainSubstring("test_variants[0]: test_id: unspecified"))
 			})
 
-			Convey("invalid variant hash", func() {
+			t.Run("invalid variant hash", func(t *ftt.Test) {
 				req := &pb.BatchGetTestAnalysesRequest{
 					Project: "chromium",
 					TestFailures: []*pb.BatchGetTestAnalysesRequest_TestFailureIdentifier{{
@@ -839,25 +839,25 @@ func TestBatchGetTestAnalyses(t *testing.T) {
 					}},
 				}
 				_, err := server.BatchGetTestAnalyses(ctx, req)
-				So(err, ShouldNotBeNil)
-				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-				So(err.Error(), ShouldContainSubstring, "test_variants[0].variant_hash")
+				assert.Loosely(t, err, should.NotBeNil)
+				assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+				assert.Loosely(t, err.Error(), should.ContainSubstring("test_variants[0].variant_hash"))
 			})
 		})
 
 		fakeAnalysisClient := &analysis.FakeTestVariantBranchesClient{}
 		ctx = analysis.UseFakeClient(ctx, fakeAnalysisClient)
 
-		Convey("valid request", func() {
+		t.Run("valid request", func(t *ftt.Test) {
 			testFailureInRequest := []*pb.BatchGetTestAnalysesRequest_TestFailureIdentifier{}
 			for i := 1; i < 6; i++ {
-				tfa := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
+				tfa := testutil.CreateTestFailureAnalysis(ctx, t, &testutil.TestFailureAnalysisCreationOption{
 					ID:             int64(100 + i),
 					CreateTime:     time.Unix(int64(100), 0).UTC(),
 					TestFailureKey: datastore.MakeKey(ctx, "TestFailure", 100+i),
 				})
 				// Create the most recent test failure.
-				testutil.CreateTestFailure(ctx, &testutil.TestFailureCreationOption{
+				testutil.CreateTestFailure(ctx, t, &testutil.TestFailureCreationOption{
 					ID:            int64(100 + i),
 					Analysis:      tfa,
 					TestID:        "testid" + fmt.Sprint(i),
@@ -870,7 +870,7 @@ func TestBatchGetTestAnalyses(t *testing.T) {
 					IsDiverged:    i == 5, // TestFailure 105 is diverged.
 				})
 				// Create another less recent test failure.
-				testutil.CreateTestFailure(ctx, &testutil.TestFailureCreationOption{
+				testutil.CreateTestFailure(ctx, t, &testutil.TestFailureCreationOption{
 					ID:            int64(1000 + i),
 					TestID:        "testid" + fmt.Sprint(i),
 					VariantHash:   "aaaaaaaaaaaaaaa" + fmt.Sprint(i),
@@ -907,7 +907,7 @@ func TestBatchGetTestAnalyses(t *testing.T) {
 
 			}
 
-			Convey("request with multiple test failures", func() {
+			t.Run("request with multiple test failures", func(t *ftt.Test) {
 				req := &pb.BatchGetTestAnalysesRequest{
 					Project:      "chromium",
 					TestFailures: testFailureInRequest,
@@ -980,8 +980,8 @@ func TestBatchGetTestAnalyses(t *testing.T) {
 				fakeAnalysisClient.TestVariantBranches = branches
 
 				resp, err := server.BatchGetTestAnalyses(ctx, req)
-				So(err, ShouldBeNil)
-				So(resp, ShouldResembleProto, &pb.BatchGetTestAnalysesResponse{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, resp, should.Resemble(&pb.BatchGetTestAnalysesResponse{
 					TestAnalyses: []*pb.TestAnalysis{nil, nil, nil, {
 						AnalysisId:  104,
 						Builder:     &buildbucketpb.BuilderID{Project: "chromium", Bucket: "bucket", Builder: "builder"},
@@ -1001,10 +1001,10 @@ func TestBatchGetTestAnalyses(t *testing.T) {
 							},
 						},
 					}, nil},
-				})
+				}))
 			})
 		})
-		Convey("valid request, permission denied obtaining LUCI Analysis test variant branches", func() {
+		t.Run("valid request, permission denied obtaining LUCI Analysis test variant branches", func(t *ftt.Test) {
 			// When a project does not exist in LUCI, LUCI Analysis returns a permission denied error.
 			fakeAnalysisClient.BatchGetErr = status.Error(codes.PermissionDenied, "permission denied")
 
@@ -1021,8 +1021,8 @@ func TestBatchGetTestAnalyses(t *testing.T) {
 
 			// Expect a response with an empty item for each requested test failure in this case.
 			rsp, err := server.BatchGetTestAnalyses(ctx, req)
-			So(err, ShouldBeNil)
-			So(rsp.TestAnalyses, ShouldResembleProto, []*pb.TestAnalysis{nil})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, rsp.TestAnalyses, should.Resemble([]*pb.TestAnalysis{nil}))
 		})
 	})
 }

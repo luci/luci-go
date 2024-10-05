@@ -30,6 +30,10 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/proto"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
@@ -43,34 +47,31 @@ import (
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	tpb "go.chromium.org/luci/bisection/task/proto"
 	"go.chromium.org/luci/bisection/util/testutil"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestUpdate(t *testing.T) {
 	t.Parallel()
 	ctx := memory.Use(context.Background())
 
-	Convey("Invalid request", t, func() {
+	ftt.Run("Invalid request", t, func(t *ftt.Test) {
 		req := &pb.UpdateTestAnalysisProgressRequest{}
 		err := Update(ctx, req)
-		So(err, ShouldNotBeNil)
-		So(status.Convert(err).Code(), ShouldEqual, codes.InvalidArgument)
+		assert.Loosely(t, err, should.NotBeNil)
+		assert.Loosely(t, status.Convert(err).Code(), should.Equal(codes.InvalidArgument))
 
 		req.Bbid = 888
 		err = Update(ctx, req)
-		So(err, ShouldNotBeNil)
-		So(status.Convert(err).Code(), ShouldEqual, codes.InvalidArgument)
+		assert.Loosely(t, err, should.NotBeNil)
+		assert.Loosely(t, status.Convert(err).Code(), should.Equal(codes.InvalidArgument))
 
 		req.Bbid = 0
 		req.BotId = ""
 		err = Update(ctx, req)
-		So(err, ShouldNotBeNil)
-		So(status.Convert(err).Code(), ShouldEqual, codes.InvalidArgument)
+		assert.Loosely(t, err, should.NotBeNil)
+		assert.Loosely(t, status.Convert(err).Code(), should.Equal(codes.InvalidArgument))
 	})
 
-	Convey("Update", t, func() {
+	ftt.Run("Update", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		// We need this because without this, updates on TestSingleRerun status
 		// will not be reflected in subsequent queries, due to the eventual
@@ -94,58 +95,58 @@ func TestUpdate(t *testing.T) {
 		ctx = mc.Ctx
 		mockBuildBucket(mc, false)
 
-		tfa := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
+		tfa := testutil.CreateTestFailureAnalysis(ctx, t, &testutil.TestFailureAnalysisCreationOption{
 			ID: 100,
 		})
 
-		Convey("No rerun", func() {
+		t.Run("No rerun", func(t *ftt.Test) {
 			req := &pb.UpdateTestAnalysisProgressRequest{
 				Bbid:  800,
 				BotId: "bot",
 			}
 			err := Update(ctx, req)
-			So(err, ShouldNotBeNil)
-			So(status.Convert(err).Code(), ShouldEqual, codes.NotFound)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, status.Convert(err).Code(), should.Equal(codes.NotFound))
 		})
 
-		Convey("Rerun ended", func() {
+		t.Run("Rerun ended", func(t *ftt.Test) {
 			req := &pb.UpdateTestAnalysisProgressRequest{
 				Bbid:  801,
 				BotId: "bot",
 			}
-			testutil.CreateTestSingleRerun(ctx, &testutil.TestSingleRerunCreationOption{
+			testutil.CreateTestSingleRerun(ctx, t, &testutil.TestSingleRerunCreationOption{
 				ID:     801,
 				Status: pb.RerunStatus_RERUN_STATUS_FAILED,
 			})
 			err := Update(ctx, req)
-			So(err, ShouldNotBeNil)
-			So(status.Convert(err).Code(), ShouldEqual, codes.Internal)
-			So(err.Error(), ShouldContainSubstring, "rerun has ended")
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, status.Convert(err).Code(), should.Equal(codes.Internal))
+			assert.Loosely(t, err.Error(), should.ContainSubstring("rerun has ended"))
 		})
 
-		Convey("Invalid rerun type", func() {
+		t.Run("Invalid rerun type", func(t *ftt.Test) {
 			req := &pb.UpdateTestAnalysisProgressRequest{
 				Bbid:  802,
 				BotId: "bot",
 			}
-			testutil.CreateTestSingleRerun(ctx, &testutil.TestSingleRerunCreationOption{
+			testutil.CreateTestSingleRerun(ctx, t, &testutil.TestSingleRerunCreationOption{
 				ID:          802,
 				Status:      pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
 				AnalysisKey: datastore.KeyForObj(ctx, tfa),
 			})
 
 			err := Update(ctx, req)
-			So(err, ShouldNotBeNil)
-			So(status.Convert(err).Code(), ShouldEqual, codes.Internal)
-			So(err.Error(), ShouldContainSubstring, "invalid rerun type")
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, status.Convert(err).Code(), should.Equal(codes.Internal))
+			assert.Loosely(t, err.Error(), should.ContainSubstring("invalid rerun type"))
 		})
 
-		Convey("No analysis", func() {
+		t.Run("No analysis", func(t *ftt.Test) {
 			req := &pb.UpdateTestAnalysisProgressRequest{
 				Bbid:  803,
 				BotId: "bot",
 			}
-			testutil.CreateTestSingleRerun(ctx, &testutil.TestSingleRerunCreationOption{
+			testutil.CreateTestSingleRerun(ctx, t, &testutil.TestSingleRerunCreationOption{
 				ID:          803,
 				Status:      pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
 				AnalysisKey: datastore.MakeKey(ctx, "TestFailureAnalysis", 1),
@@ -153,72 +154,72 @@ func TestUpdate(t *testing.T) {
 			})
 
 			err := Update(ctx, req)
-			So(err, ShouldNotBeNil)
-			So(status.Convert(err).Code(), ShouldEqual, codes.Internal)
-			So(err.Error(), ShouldContainSubstring, "get test failure analysis")
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, status.Convert(err).Code(), should.Equal(codes.Internal))
+			assert.Loosely(t, err.Error(), should.ContainSubstring("get test failure analysis"))
 		})
 
-		Convey("Tests did not run", func() {
-			tfa, _, rerun, _ := setupTestAnalysisForTesting(ctx, 1)
+		t.Run("Tests did not run", func(t *ftt.Test) {
+			tfa, _, rerun, _ := setupTestAnalysisForTesting(ctx, t, 1)
 			req := &pb.UpdateTestAnalysisProgressRequest{
 				Bbid:         8000,
 				BotId:        "bot",
 				RunSucceeded: false,
 			}
-			enableBisection(ctx, true, tfa.Project)
+			enableBisection(ctx, t, true, tfa.Project)
 
 			err := Update(ctx, req)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 			err = datastore.Get(ctx, rerun)
-			So(err, ShouldBeNil)
-			So(rerun.ReportTime, ShouldEqual, time.Unix(10000, 0).UTC())
-			So(rerun.Status, ShouldEqual, pb.RerunStatus_RERUN_STATUS_INFRA_FAILED)
+			assert.Loosely(t, err, should.BeNil)
+			assert.That(t, rerun.ReportTime, should.Match(time.Unix(10000, 0).UTC()))
+			assert.Loosely(t, rerun.Status, should.Equal(pb.RerunStatus_RERUN_STATUS_INFRA_FAILED))
 		})
 
-		Convey("No primary test failure", func() {
+		t.Run("No primary test failure", func(t *ftt.Test) {
 			req := &pb.UpdateTestAnalysisProgressRequest{
 				Bbid:         805,
 				BotId:        "bot",
 				RunSucceeded: true,
 			}
-			nsa := testutil.CreateTestNthSectionAnalysis(ctx, &testutil.TestNthSectionAnalysisCreationOption{
+			nsa := testutil.CreateTestNthSectionAnalysis(ctx, t, &testutil.TestNthSectionAnalysisCreationOption{
 				ParentAnalysisKey: datastore.KeyForObj(ctx, tfa),
 			})
-			rerun := testutil.CreateTestSingleRerun(ctx, &testutil.TestSingleRerunCreationOption{
+			rerun := testutil.CreateTestSingleRerun(ctx, t, &testutil.TestSingleRerunCreationOption{
 				ID:          805,
 				Status:      pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
 				AnalysisKey: datastore.KeyForObj(ctx, tfa),
 				Type:        model.RerunBuildType_NthSection,
 			})
 			err := Update(ctx, req)
-			So(err, ShouldNotBeNil)
-			So(status.Convert(err).Code(), ShouldEqual, codes.Internal)
-			So(err.Error(), ShouldContainSubstring, "get primary test failure")
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, status.Convert(err).Code(), should.Equal(codes.Internal))
+			assert.Loosely(t, err.Error(), should.ContainSubstring("get primary test failure"))
 
 			datastore.GetTestable(ctx).CatchupIndexes()
 			err = datastore.Get(ctx, rerun)
-			So(err, ShouldBeNil)
-			So(rerun.ReportTime, ShouldEqual, time.Unix(10000, 0).UTC())
-			So(rerun.Status, ShouldEqual, pb.RerunStatus_RERUN_STATUS_INFRA_FAILED)
+			assert.Loosely(t, err, should.BeNil)
+			assert.That(t, rerun.ReportTime, should.Match(time.Unix(10000, 0).UTC()))
+			assert.Loosely(t, rerun.Status, should.Equal(pb.RerunStatus_RERUN_STATUS_INFRA_FAILED))
 
-			So(datastore.Get(ctx, nsa), ShouldBeNil)
-			So(nsa.Status, ShouldEqual, pb.AnalysisStatus_ERROR)
-			So(nsa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
-			So(nsa.EndTime, ShouldEqual, time.Unix(10000, 0).UTC())
+			assert.Loosely(t, datastore.Get(ctx, nsa), should.BeNil)
+			assert.Loosely(t, nsa.Status, should.Equal(pb.AnalysisStatus_ERROR))
+			assert.Loosely(t, nsa.RunStatus, should.Equal(pb.AnalysisRunStatus_ENDED))
+			assert.That(t, nsa.EndTime, should.Match(time.Unix(10000, 0).UTC()))
 
-			So(datastore.Get(ctx, tfa), ShouldBeNil)
-			So(tfa.Status, ShouldEqual, pb.AnalysisStatus_ERROR)
-			So(tfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
-			So(tfa.EndTime, ShouldEqual, time.Unix(10000, 0).UTC())
+			assert.Loosely(t, datastore.Get(ctx, tfa), should.BeNil)
+			assert.Loosely(t, tfa.Status, should.Equal(pb.AnalysisStatus_ERROR))
+			assert.Loosely(t, tfa.RunStatus, should.Equal(pb.AnalysisRunStatus_ENDED))
+			assert.That(t, tfa.EndTime, should.Match(time.Unix(10000, 0).UTC()))
 		})
 
-		Convey("No result for primary failure", func() {
-			tfa := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
+		t.Run("No result for primary failure", func(t *ftt.Test) {
+			tfa := testutil.CreateTestFailureAnalysis(ctx, t, &testutil.TestFailureAnalysisCreationOption{
 				ID:             106,
 				TestFailureKey: datastore.MakeKey(ctx, "TestFailure", 1061),
 			})
-			nsa := testutil.CreateTestNthSectionAnalysis(ctx, &testutil.TestNthSectionAnalysisCreationOption{
+			nsa := testutil.CreateTestNthSectionAnalysis(ctx, t, &testutil.TestNthSectionAnalysisCreationOption{
 				ParentAnalysisKey: datastore.KeyForObj(ctx, tfa),
 			})
 
@@ -227,7 +228,7 @@ func TestUpdate(t *testing.T) {
 				BotId:        "bot",
 				RunSucceeded: true,
 			}
-			rerun := testutil.CreateTestSingleRerun(ctx, &testutil.TestSingleRerunCreationOption{
+			rerun := testutil.CreateTestSingleRerun(ctx, t, &testutil.TestSingleRerunCreationOption{
 				ID:          806,
 				Status:      pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
 				AnalysisKey: datastore.KeyForObj(ctx, tfa),
@@ -235,14 +236,14 @@ func TestUpdate(t *testing.T) {
 			})
 
 			// Set up test failures
-			testutil.CreateTestFailure(ctx, &testutil.TestFailureCreationOption{
+			testutil.CreateTestFailure(ctx, t, &testutil.TestFailureCreationOption{
 				ID:          1061,
 				IsPrimary:   true,
 				TestID:      "test1",
 				VariantHash: "hash1",
 				Analysis:    tfa,
 			})
-			testutil.CreateTestFailure(ctx, &testutil.TestFailureCreationOption{
+			testutil.CreateTestFailure(ctx, t, &testutil.TestFailureCreationOption{
 				ID:          1062,
 				TestID:      "test2",
 				VariantHash: "hash2",
@@ -250,29 +251,29 @@ func TestUpdate(t *testing.T) {
 			})
 
 			err := Update(ctx, req)
-			So(err, ShouldNotBeNil)
-			So(status.Convert(err).Code(), ShouldEqual, codes.InvalidArgument)
-			So(err.Error(), ShouldContainSubstring, "no result for primary failure")
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, status.Convert(err).Code(), should.Equal(codes.InvalidArgument))
+			assert.Loosely(t, err.Error(), should.ContainSubstring("no result for primary failure"))
 			datastore.GetTestable(ctx).CatchupIndexes()
 			err = datastore.Get(ctx, rerun)
-			So(err, ShouldBeNil)
-			So(rerun.ReportTime, ShouldEqual, time.Unix(10000, 0).UTC())
-			So(rerun.Status, ShouldEqual, pb.RerunStatus_RERUN_STATUS_INFRA_FAILED)
+			assert.Loosely(t, err, should.BeNil)
+			assert.That(t, rerun.ReportTime, should.Match(time.Unix(10000, 0).UTC()))
+			assert.Loosely(t, rerun.Status, should.Equal(pb.RerunStatus_RERUN_STATUS_INFRA_FAILED))
 
-			So(datastore.Get(ctx, nsa), ShouldBeNil)
-			So(nsa.Status, ShouldEqual, pb.AnalysisStatus_ERROR)
-			So(nsa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
-			So(nsa.EndTime, ShouldEqual, time.Unix(10000, 0).UTC())
+			assert.Loosely(t, datastore.Get(ctx, nsa), should.BeNil)
+			assert.Loosely(t, nsa.Status, should.Equal(pb.AnalysisStatus_ERROR))
+			assert.Loosely(t, nsa.RunStatus, should.Equal(pb.AnalysisRunStatus_ENDED))
+			assert.That(t, nsa.EndTime, should.Match(time.Unix(10000, 0).UTC()))
 
-			So(datastore.Get(ctx, tfa), ShouldBeNil)
-			So(tfa.Status, ShouldEqual, pb.AnalysisStatus_ERROR)
-			So(tfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
-			So(tfa.EndTime, ShouldEqual, time.Unix(10000, 0).UTC())
+			assert.Loosely(t, datastore.Get(ctx, tfa), should.BeNil)
+			assert.Loosely(t, tfa.Status, should.Equal(pb.AnalysisStatus_ERROR))
+			assert.Loosely(t, tfa.RunStatus, should.Equal(pb.AnalysisRunStatus_ENDED))
+			assert.That(t, tfa.EndTime, should.Match(time.Unix(10000, 0).UTC()))
 		})
 
-		Convey("Primary test failure skipped", func() {
-			tfa, tfs, rerun, nsa := setupTestAnalysisForTesting(ctx, 2)
-			enableBisection(ctx, false, tfa.Project)
+		t.Run("Primary test failure skipped", func(t *ftt.Test) {
+			tfa, tfs, rerun, nsa := setupTestAnalysisForTesting(ctx, t, 2)
+			enableBisection(ctx, t, false, tfa.Project)
 
 			req := &pb.UpdateTestAnalysisProgressRequest{
 				Bbid:         8000,
@@ -294,13 +295,13 @@ func TestUpdate(t *testing.T) {
 				},
 			}
 			err := Update(ctx, req)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 			err = datastore.Get(ctx, rerun)
-			So(err, ShouldBeNil)
-			So(rerun.ReportTime, ShouldEqual, time.Unix(10000, 0).UTC())
-			So(rerun.Status, ShouldEqual, pb.RerunStatus_RERUN_STATUS_TEST_SKIPPED)
-			So(rerun.TestResults, ShouldResembleProto, model.RerunTestResults{
+			assert.Loosely(t, err, should.BeNil)
+			assert.That(t, rerun.ReportTime, should.Match(time.Unix(10000, 0).UTC()))
+			assert.Loosely(t, rerun.Status, should.Equal(pb.RerunStatus_RERUN_STATUS_TEST_SKIPPED))
+			assert.Loosely(t, rerun.TestResults, should.Resemble(model.RerunTestResults{
 				IsFinalized: true,
 				Results: []model.RerunSingleTestResult{
 					{
@@ -311,20 +312,20 @@ func TestUpdate(t *testing.T) {
 						ExpectedCount:  1,
 					},
 				},
-			})
+			}))
 			err = datastore.Get(ctx, tfs[1])
-			So(err, ShouldBeNil)
-			So(tfs[1].IsDiverged, ShouldBeFalse)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tfs[1].IsDiverged, should.BeFalse)
 			// Check that a new rerun is not scheduled, because primary test was skipped.
 			q := datastore.NewQuery("TestSingleRerun").Eq("nthsection_analysis_key", datastore.KeyForObj(ctx, nsa))
 			reruns := []*model.TestSingleRerun{}
-			So(datastore.GetAll(ctx, q, &reruns), ShouldBeNil)
-			So(len(reruns), ShouldEqual, 1)
+			assert.Loosely(t, datastore.GetAll(ctx, q, &reruns), should.BeNil)
+			assert.Loosely(t, len(reruns), should.Equal(1))
 		})
 
-		Convey("Primary test failure expected", func() {
-			tfa, tfs, rerun, nsa := setupTestAnalysisForTesting(ctx, 4)
-			enableBisection(ctx, true, tfa.Project)
+		t.Run("Primary test failure expected", func(t *ftt.Test) {
+			tfa, tfs, rerun, nsa := setupTestAnalysisForTesting(ctx, t, 4)
+			enableBisection(ctx, t, true, tfa.Project)
 
 			req := &pb.UpdateTestAnalysisProgressRequest{
 				Bbid:         8000,
@@ -359,13 +360,13 @@ func TestUpdate(t *testing.T) {
 			}
 
 			err := Update(ctx, req)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 			err = datastore.Get(ctx, rerun)
-			So(err, ShouldBeNil)
-			So(rerun.ReportTime, ShouldEqual, time.Unix(10000, 0).UTC())
-			So(rerun.Status, ShouldEqual, pb.RerunStatus_RERUN_STATUS_PASSED)
-			So(rerun.TestResults, ShouldResembleProto, model.RerunTestResults{
+			assert.Loosely(t, err, should.BeNil)
+			assert.That(t, rerun.ReportTime, should.Match(time.Unix(10000, 0).UTC()))
+			assert.Loosely(t, rerun.Status, should.Equal(pb.RerunStatus_RERUN_STATUS_PASSED))
+			assert.Loosely(t, rerun.TestResults, should.Resemble(model.RerunTestResults{
 				IsFinalized: true,
 				Results: []model.RerunSingleTestResult{
 					{
@@ -384,26 +385,26 @@ func TestUpdate(t *testing.T) {
 						TestFailureKey: datastore.KeyForObj(ctx, tfs[3]),
 					},
 				},
-			})
+			}))
 			err = datastore.Get(ctx, tfs[1])
-			So(err, ShouldBeNil)
-			So(tfs[1].IsDiverged, ShouldBeFalse)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tfs[1].IsDiverged, should.BeFalse)
 			err = datastore.Get(ctx, tfs[2])
-			So(err, ShouldBeNil)
-			So(tfs[2].IsDiverged, ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tfs[2].IsDiverged, should.BeTrue)
 			err = datastore.Get(ctx, tfs[3])
-			So(err, ShouldBeNil)
-			So(tfs[3].IsDiverged, ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tfs[3].IsDiverged, should.BeTrue)
 			// Check that a new rerun is scheduled.
 			q := datastore.NewQuery("TestSingleRerun").Eq("nthsection_analysis_key", datastore.KeyForObj(ctx, nsa))
 			reruns := []*model.TestSingleRerun{}
-			So(datastore.GetAll(ctx, q, &reruns), ShouldBeNil)
-			So(len(reruns), ShouldEqual, 2)
+			assert.Loosely(t, datastore.GetAll(ctx, q, &reruns), should.BeNil)
+			assert.Loosely(t, len(reruns), should.Equal(2))
 		})
 
-		Convey("Primary test failure unexpected", func() {
-			tfa, tfs, rerun, nsa := setupTestAnalysisForTesting(ctx, 4)
-			enableBisection(ctx, true, tfa.Project)
+		t.Run("Primary test failure unexpected", func(t *ftt.Test) {
+			tfa, tfs, rerun, nsa := setupTestAnalysisForTesting(ctx, t, 4)
+			enableBisection(ctx, t, true, tfa.Project)
 
 			req := &pb.UpdateTestAnalysisProgressRequest{
 				Bbid:         8000,
@@ -438,13 +439,13 @@ func TestUpdate(t *testing.T) {
 			}
 
 			err := Update(ctx, req)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 			err = datastore.Get(ctx, rerun)
-			So(err, ShouldBeNil)
-			So(rerun.ReportTime, ShouldEqual, time.Unix(10000, 0).UTC())
-			So(rerun.Status, ShouldEqual, pb.RerunStatus_RERUN_STATUS_FAILED)
-			So(rerun.TestResults, ShouldResembleProto, model.RerunTestResults{
+			assert.Loosely(t, err, should.BeNil)
+			assert.That(t, rerun.ReportTime, should.Match(time.Unix(10000, 0).UTC()))
+			assert.Loosely(t, rerun.Status, should.Equal(pb.RerunStatus_RERUN_STATUS_FAILED))
+			assert.Loosely(t, rerun.TestResults, should.Resemble(model.RerunTestResults{
 				IsFinalized: true,
 				Results: []model.RerunSingleTestResult{
 					{
@@ -463,30 +464,30 @@ func TestUpdate(t *testing.T) {
 						TestFailureKey: datastore.KeyForObj(ctx, tfs[3]),
 					},
 				},
-			})
+			}))
 			err = datastore.Get(ctx, tfs[1])
-			So(err, ShouldBeNil)
-			So(tfs[1].IsDiverged, ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tfs[1].IsDiverged, should.BeTrue)
 			err = datastore.Get(ctx, tfs[2])
-			So(err, ShouldBeNil)
-			So(tfs[2].IsDiverged, ShouldBeFalse)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tfs[2].IsDiverged, should.BeFalse)
 			err = datastore.Get(ctx, tfs[3])
-			So(err, ShouldBeNil)
-			So(tfs[3].IsDiverged, ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tfs[3].IsDiverged, should.BeTrue)
 			// Check that a new rerun is scheduled.
 			q := datastore.NewQuery("TestSingleRerun").Eq("nthsection_analysis_key", datastore.KeyForObj(ctx, nsa))
 			reruns := []*model.TestSingleRerun{}
-			So(datastore.GetAll(ctx, q, &reruns), ShouldBeNil)
-			So(len(reruns), ShouldEqual, 2)
+			assert.Loosely(t, datastore.GetAll(ctx, q, &reruns), should.BeNil)
+			assert.Loosely(t, len(reruns), should.Equal(2))
 		})
 
-		Convey("Ended nthsection should not get updated", func() {
-			tfa, _, _, nsa := setupTestAnalysisForTesting(ctx, 1)
-			enableBisection(ctx, true, tfa.Project)
+		t.Run("Ended nthsection should not get updated", func(t *ftt.Test) {
+			tfa, _, _, nsa := setupTestAnalysisForTesting(ctx, t, 1)
+			enableBisection(ctx, t, true, tfa.Project)
 
 			// Set nthsection to end.
 			nsa.RunStatus = pb.AnalysisRunStatus_ENDED
-			So(datastore.Put(ctx, nsa), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, nsa), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
 			req := &pb.UpdateTestAnalysisProgressRequest{
@@ -504,44 +505,44 @@ func TestUpdate(t *testing.T) {
 			}
 
 			err := Update(ctx, req)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
 			// Check that a new rerun is not scheduled.
 			q := datastore.NewQuery("TestSingleRerun").Eq("nthsection_analysis_key", datastore.KeyForObj(ctx, nsa))
 			reruns := []*model.TestSingleRerun{}
-			So(datastore.GetAll(ctx, q, &reruns), ShouldBeNil)
+			assert.Loosely(t, datastore.GetAll(ctx, q, &reruns), should.BeNil)
 			// 1 because of the rerun created in setupTestAnalysisForTesting.
-			So(len(reruns), ShouldEqual, 1)
+			assert.Loosely(t, len(reruns), should.Equal(1))
 
 			// Check that no suspect is created.
 			q = datastore.NewQuery("Suspect")
 			suspects := []*model.Suspect{}
-			So(datastore.GetAll(ctx, q, &suspects), ShouldBeNil)
-			So(len(suspects), ShouldEqual, 0)
+			assert.Loosely(t, datastore.GetAll(ctx, q, &suspects), should.BeNil)
+			assert.Loosely(t, len(suspects), should.BeZero)
 		})
 	})
 
-	Convey("process culprit verification update", t, func() {
+	ftt.Run("process culprit verification update", t, func(t *ftt.Test) {
 		cl := testclock.New(testclock.TestTimeUTC)
 		cl.Set(time.Unix(10000, 0).UTC())
 		ctx = clock.Set(ctx, cl)
 		// set up tfa, rerun, suspect
-		tfa := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
+		tfa := testutil.CreateTestFailureAnalysis(ctx, t, &testutil.TestFailureAnalysisCreationOption{
 			ID:             100,
 			TestFailureKey: datastore.MakeKey(ctx, "TestFailure", 1000),
 			Status:         pb.AnalysisStatus_SUSPECTFOUND,
 			RunStatus:      pb.AnalysisRunStatus_STARTED,
 		})
-		testFailure := testutil.CreateTestFailure(ctx, &testutil.TestFailureCreationOption{
+		testFailure := testutil.CreateTestFailure(ctx, t, &testutil.TestFailureCreationOption{
 			ID:          1000,
 			IsPrimary:   true,
 			TestID:      "test0",
 			VariantHash: "hash0",
 			Analysis:    tfa,
 		})
-		suspect := testutil.CreateSuspect(ctx, nil)
-		suspectRerun := testutil.CreateTestSingleRerun(ctx, &testutil.TestSingleRerunCreationOption{
+		suspect := testutil.CreateSuspect(ctx, t, nil)
+		suspectRerun := testutil.CreateTestSingleRerun(ctx, t, &testutil.TestSingleRerunCreationOption{
 			ID:          8000,
 			Status:      pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
 			AnalysisKey: datastore.KeyForObj(ctx, tfa),
@@ -553,7 +554,7 @@ func TestUpdate(t *testing.T) {
 			},
 			CulpritKey: datastore.KeyForObj(ctx, suspect),
 		})
-		parentRerun := testutil.CreateTestSingleRerun(ctx, &testutil.TestSingleRerunCreationOption{
+		parentRerun := testutil.CreateTestSingleRerun(ctx, t, &testutil.TestSingleRerunCreationOption{
 			ID:          8001,
 			Status:      pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
 			AnalysisKey: datastore.KeyForObj(ctx, tfa),
@@ -567,7 +568,7 @@ func TestUpdate(t *testing.T) {
 		})
 		suspect.SuspectRerunBuild = datastore.KeyForObj(ctx, suspectRerun)
 		suspect.ParentRerunBuild = datastore.KeyForObj(ctx, parentRerun)
-		So(datastore.Put(ctx, suspect), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, suspect), should.BeNil)
 		datastore.GetTestable(ctx).CatchupIndexes()
 
 		req := &pb.UpdateTestAnalysisProgressRequest{
@@ -583,60 +584,60 @@ func TestUpdate(t *testing.T) {
 				},
 			},
 		}
-		Convey("suspect under verification", func() {
+		t.Run("suspect under verification", func(t *ftt.Test) {
 			err := Update(ctx, req)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
-			So(datastore.Get(ctx, suspectRerun), ShouldBeNil)
-			So(suspectRerun.Status, ShouldEqual, pb.RerunStatus_RERUN_STATUS_FAILED)
+			assert.Loosely(t, datastore.Get(ctx, suspectRerun), should.BeNil)
+			assert.Loosely(t, suspectRerun.Status, should.Equal(pb.RerunStatus_RERUN_STATUS_FAILED))
 			// Check suspect status.
-			So(datastore.Get(ctx, suspect), ShouldBeNil)
-			So(suspect.VerificationStatus, ShouldEqual, model.SuspectVerificationStatus_UnderVerification)
+			assert.Loosely(t, datastore.Get(ctx, suspect), should.BeNil)
+			assert.Loosely(t, suspect.VerificationStatus, should.Equal(model.SuspectVerificationStatus_UnderVerification))
 			// Check analysis - no update.
-			So(datastore.Get(ctx, tfa), ShouldBeNil)
-			So(tfa.Status, ShouldEqual, pb.AnalysisStatus_SUSPECTFOUND)
-			So(tfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_STARTED)
-			So(tfa.VerifiedCulpritKey, ShouldBeNil)
+			assert.Loosely(t, datastore.Get(ctx, tfa), should.BeNil)
+			assert.Loosely(t, tfa.Status, should.Equal(pb.AnalysisStatus_SUSPECTFOUND))
+			assert.Loosely(t, tfa.RunStatus, should.Equal(pb.AnalysisRunStatus_STARTED))
+			assert.Loosely(t, tfa.VerifiedCulpritKey, should.BeNil)
 		})
 
-		Convey("suspect verified", func() {
+		t.Run("suspect verified", func(t *ftt.Test) {
 			// ParentSuspect finished running.
 			parentRerun.Status = pb.RerunStatus_RERUN_STATUS_PASSED
-			So(datastore.Put(ctx, parentRerun), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, parentRerun), should.BeNil)
 
 			err := Update(ctx, req)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
-			So(datastore.Get(ctx, suspectRerun), ShouldBeNil)
-			So(suspectRerun.Status, ShouldEqual, pb.RerunStatus_RERUN_STATUS_FAILED)
+			assert.Loosely(t, datastore.Get(ctx, suspectRerun), should.BeNil)
+			assert.Loosely(t, suspectRerun.Status, should.Equal(pb.RerunStatus_RERUN_STATUS_FAILED))
 			// Check suspect status.
-			So(datastore.Get(ctx, suspect), ShouldBeNil)
-			So(suspect.VerificationStatus, ShouldEqual, model.SuspectVerificationStatus_ConfirmedCulprit)
+			assert.Loosely(t, datastore.Get(ctx, suspect), should.BeNil)
+			assert.Loosely(t, suspect.VerificationStatus, should.Equal(model.SuspectVerificationStatus_ConfirmedCulprit))
 			// Check analysis.
-			So(datastore.Get(ctx, tfa), ShouldBeNil)
-			So(tfa.Status, ShouldEqual, pb.AnalysisStatus_FOUND)
-			So(tfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
-			So(tfa.VerifiedCulpritKey, ShouldEqual, datastore.KeyForObj(ctx, suspect))
+			assert.Loosely(t, datastore.Get(ctx, tfa), should.BeNil)
+			assert.Loosely(t, tfa.Status, should.Equal(pb.AnalysisStatus_FOUND))
+			assert.Loosely(t, tfa.RunStatus, should.Equal(pb.AnalysisRunStatus_ENDED))
+			assert.Loosely(t, tfa.VerifiedCulpritKey, should.Match(datastore.KeyForObj(ctx, suspect)))
 		})
 
-		Convey("suspect not verified", func() {
+		t.Run("suspect not verified", func(t *ftt.Test) {
 			// ParentSuspect finished running.
 			parentRerun.Status = pb.RerunStatus_RERUN_STATUS_FAILED
-			So(datastore.Put(ctx, parentRerun), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, parentRerun), should.BeNil)
 
 			err := Update(ctx, req)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
-			So(datastore.Get(ctx, suspectRerun), ShouldBeNil)
-			So(suspectRerun.Status, ShouldEqual, pb.RerunStatus_RERUN_STATUS_FAILED)
+			assert.Loosely(t, datastore.Get(ctx, suspectRerun), should.BeNil)
+			assert.Loosely(t, suspectRerun.Status, should.Equal(pb.RerunStatus_RERUN_STATUS_FAILED))
 			// Check suspect status.
-			So(datastore.Get(ctx, suspect), ShouldBeNil)
-			So(suspect.VerificationStatus, ShouldEqual, model.SuspectVerificationStatus_Vindicated)
+			assert.Loosely(t, datastore.Get(ctx, suspect), should.BeNil)
+			assert.Loosely(t, suspect.VerificationStatus, should.Equal(model.SuspectVerificationStatus_Vindicated))
 			// Check analysis.
-			So(datastore.Get(ctx, tfa), ShouldBeNil)
-			So(tfa.Status, ShouldEqual, pb.AnalysisStatus_SUSPECTFOUND)
-			So(tfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
-			So(tfa.VerifiedCulpritKey, ShouldBeNil)
+			assert.Loosely(t, datastore.Get(ctx, tfa), should.BeNil)
+			assert.Loosely(t, tfa.Status, should.Equal(pb.AnalysisStatus_SUSPECTFOUND))
+			assert.Loosely(t, tfa.RunStatus, should.Equal(pb.AnalysisRunStatus_ENDED))
+			assert.Loosely(t, tfa.VerifiedCulpritKey, should.BeNil)
 		})
 	})
 }
@@ -660,11 +661,11 @@ func TestScheduleNewRerun(t *testing.T) {
 	ctx = mc.Ctx
 	mockBuildBucket(mc, false)
 
-	Convey("Nth section found culprit", t, func() {
+	ftt.Run("Nth section found culprit", t, func(t *ftt.Test) {
 		culpritverification.RegisterTaskClass()
 		ctx, skdr := tq.TestingContext(ctx, nil)
-		tfa, _, rerun, nsa := setupTestAnalysisForTesting(ctx, 1)
-		enableBisection(ctx, true, tfa.Project)
+		tfa, _, rerun, nsa := setupTestAnalysisForTesting(ctx, t, 1)
+		enableBisection(ctx, t, true, tfa.Project)
 		// Commit 1 pass -> commit 0 is the culprit.
 		rerun.LUCIBuild.GitilesCommit = &bbpb.GitilesCommit{
 			Id:      "commit1",
@@ -673,51 +674,51 @@ func TestScheduleNewRerun(t *testing.T) {
 			Ref:     "ref",
 		}
 		rerun.Status = pb.RerunStatus_RERUN_STATUS_PASSED
-		So(datastore.Put(ctx, rerun), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, rerun), should.BeNil)
 		datastore.GetTestable(ctx).CatchupIndexes()
 		err := processNthSectionUpdate(ctx, rerun, tfa, &pb.UpdateTestAnalysisProgressRequest{})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		datastore.GetTestable(ctx).CatchupIndexes()
 
 		// Check suspect being stored.
 		q := datastore.NewQuery("Suspect")
 		suspects := []*model.Suspect{}
-		So(datastore.GetAll(ctx, q, &suspects), ShouldBeNil)
-		So(len(suspects), ShouldEqual, 1)
+		assert.Loosely(t, datastore.GetAll(ctx, q, &suspects), should.BeNil)
+		assert.Loosely(t, len(suspects), should.Equal(1))
 		// Check the field individually because ShouldResembleProto does not work here.
-		So(&suspects[0].GitilesCommit, ShouldResembleProto, &bbpb.GitilesCommit{
+		assert.Loosely(t, &suspects[0].GitilesCommit, should.Resemble(&bbpb.GitilesCommit{
 			Id:      "commit0",
 			Host:    "chromium.googlesource.com",
 			Project: "chromium/src",
 			Ref:     "ref",
-		})
-		So(suspects[0].ParentAnalysis, ShouldEqual, datastore.KeyForObj(ctx, nsa))
-		So(suspects[0].Type, ShouldEqual, model.SuspectType_NthSection)
-		So(suspects[0].AnalysisType, ShouldEqual, pb.AnalysisType_TEST_FAILURE_ANALYSIS)
+		}))
+		assert.Loosely(t, suspects[0].ParentAnalysis, should.Match(datastore.KeyForObj(ctx, nsa)))
+		assert.Loosely(t, suspects[0].Type, should.Equal(model.SuspectType_NthSection))
+		assert.Loosely(t, suspects[0].AnalysisType, should.Equal(pb.AnalysisType_TEST_FAILURE_ANALYSIS))
 
 		// Check nsa.
-		So(datastore.Get(ctx, nsa), ShouldBeNil)
-		So(nsa.Status, ShouldEqual, pb.AnalysisStatus_SUSPECTFOUND)
-		So(nsa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
-		So(nsa.EndTime, ShouldEqual, time.Unix(10000, 0).UTC())
-		So(nsa.CulpritKey, ShouldEqual, datastore.KeyForObj(ctx, suspects[0]))
+		assert.Loosely(t, datastore.Get(ctx, nsa), should.BeNil)
+		assert.Loosely(t, nsa.Status, should.Equal(pb.AnalysisStatus_SUSPECTFOUND))
+		assert.Loosely(t, nsa.RunStatus, should.Equal(pb.AnalysisRunStatus_ENDED))
+		assert.That(t, nsa.EndTime, should.Match(time.Unix(10000, 0).UTC()))
+		assert.That(t, nsa.CulpritKey, should.Match(datastore.KeyForObj(ctx, suspects[0])))
 
 		// Check tfa.
-		So(datastore.Get(ctx, tfa), ShouldBeNil)
-		So(tfa.Status, ShouldEqual, pb.AnalysisStatus_SUSPECTFOUND)
-		So(tfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_STARTED)
+		assert.Loosely(t, datastore.Get(ctx, tfa), should.BeNil)
+		assert.Loosely(t, tfa.Status, should.Equal(pb.AnalysisStatus_SUSPECTFOUND))
+		assert.Loosely(t, tfa.RunStatus, should.Equal(pb.AnalysisRunStatus_STARTED))
 
 		// Culprit verification task scheduled.
-		So(len(skdr.Tasks().Payloads()), ShouldEqual, 1)
+		assert.Loosely(t, len(skdr.Tasks().Payloads()), should.Equal(1))
 		resultsTask := skdr.Tasks().Payloads()[0].(*tpb.TestFailureCulpritVerificationTask)
-		So(resultsTask, ShouldResembleProto, &tpb.TestFailureCulpritVerificationTask{
+		assert.Loosely(t, resultsTask, should.Resemble(&tpb.TestFailureCulpritVerificationTask{
 			AnalysisId: tfa.ID,
-		})
+		}))
 	})
 
-	Convey("Nth section not found", t, func() {
-		tfa, _, rerun, nsa := setupTestAnalysisForTesting(ctx, 1)
-		enableBisection(ctx, true, tfa.Project)
+	ftt.Run("Nth section not found", t, func(t *ftt.Test) {
+		tfa, _, rerun, nsa := setupTestAnalysisForTesting(ctx, t, 1)
+		enableBisection(ctx, t, true, tfa.Project)
 		// Commit 1 pass -> commit 0 is the culprit.
 		rerun.LUCIBuild.GitilesCommit = &bbpb.GitilesCommit{
 			Id:      "commit1",
@@ -726,28 +727,28 @@ func TestScheduleNewRerun(t *testing.T) {
 			Ref:     "ref",
 		}
 		rerun.Status = pb.RerunStatus_RERUN_STATUS_TEST_SKIPPED
-		So(datastore.Put(ctx, rerun), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, rerun), should.BeNil)
 		datastore.GetTestable(ctx).CatchupIndexes()
 		err := processNthSectionUpdate(ctx, rerun, tfa, &pb.UpdateTestAnalysisProgressRequest{})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		datastore.GetTestable(ctx).CatchupIndexes()
 
 		// Check nsa.
-		So(datastore.Get(ctx, nsa), ShouldBeNil)
-		So(nsa.Status, ShouldEqual, pb.AnalysisStatus_NOTFOUND)
-		So(nsa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
-		So(nsa.EndTime, ShouldEqual, time.Unix(10000, 0).UTC())
+		assert.Loosely(t, datastore.Get(ctx, nsa), should.BeNil)
+		assert.Loosely(t, nsa.Status, should.Equal(pb.AnalysisStatus_NOTFOUND))
+		assert.Loosely(t, nsa.RunStatus, should.Equal(pb.AnalysisRunStatus_ENDED))
+		assert.That(t, nsa.EndTime, should.Match(time.Unix(10000, 0).UTC()))
 
 		// Check tfa.
-		So(datastore.Get(ctx, tfa), ShouldBeNil)
-		So(tfa.Status, ShouldEqual, pb.AnalysisStatus_NOTFOUND)
-		So(tfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
-		So(tfa.EndTime, ShouldEqual, time.Unix(10000, 0).UTC())
+		assert.Loosely(t, datastore.Get(ctx, tfa), should.BeNil)
+		assert.Loosely(t, tfa.Status, should.Equal(pb.AnalysisStatus_NOTFOUND))
+		assert.Loosely(t, tfa.RunStatus, should.Equal(pb.AnalysisRunStatus_ENDED))
+		assert.That(t, tfa.EndTime, should.Match(time.Unix(10000, 0).UTC()))
 	})
 
-	Convey("regression range conflicts", t, func() {
-		tfa, _, rerun, nsa := setupTestAnalysisForTesting(ctx, 1)
-		enableBisection(ctx, true, tfa.Project)
+	ftt.Run("regression range conflicts", t, func(t *ftt.Test) {
+		tfa, _, rerun, nsa := setupTestAnalysisForTesting(ctx, t, 1)
+		enableBisection(ctx, t, true, tfa.Project)
 		// Commit 0 pass -> no culprit.
 		rerun.LUCIBuild.GitilesCommit = &bbpb.GitilesCommit{
 			Id:      "commit0",
@@ -756,31 +757,31 @@ func TestScheduleNewRerun(t *testing.T) {
 			Ref:     "ref",
 		}
 		rerun.Status = pb.RerunStatus_RERUN_STATUS_PASSED
-		So(datastore.Put(ctx, rerun), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, rerun), should.BeNil)
 		datastore.GetTestable(ctx).CatchupIndexes()
 		err := processNthSectionUpdate(ctx, rerun, tfa, &pb.UpdateTestAnalysisProgressRequest{})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		datastore.GetTestable(ctx).CatchupIndexes()
 
 		// Check nsa.
-		So(datastore.Get(ctx, nsa), ShouldBeNil)
-		So(nsa.Status, ShouldEqual, pb.AnalysisStatus_NOTFOUND)
-		So(nsa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
-		So(nsa.EndTime, ShouldEqual, time.Unix(10000, 0).UTC())
+		assert.Loosely(t, datastore.Get(ctx, nsa), should.BeNil)
+		assert.Loosely(t, nsa.Status, should.Equal(pb.AnalysisStatus_NOTFOUND))
+		assert.Loosely(t, nsa.RunStatus, should.Equal(pb.AnalysisRunStatus_ENDED))
+		assert.That(t, nsa.EndTime, should.Match(time.Unix(10000, 0).UTC()))
 
 		// Check tfa.
-		So(datastore.Get(ctx, tfa), ShouldBeNil)
-		So(tfa.Status, ShouldEqual, pb.AnalysisStatus_NOTFOUND)
-		So(tfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
-		So(tfa.EndTime, ShouldEqual, time.Unix(10000, 0).UTC())
+		assert.Loosely(t, datastore.Get(ctx, tfa), should.BeNil)
+		assert.Loosely(t, tfa.Status, should.Equal(pb.AnalysisStatus_NOTFOUND))
+		assert.Loosely(t, tfa.RunStatus, should.Equal(pb.AnalysisRunStatus_ENDED))
+		assert.That(t, tfa.EndTime, should.Match(time.Unix(10000, 0).UTC()))
 	})
 
-	Convey("Nth section should schedule another run", t, func() {
+	ftt.Run("Nth section should schedule another run", t, func(t *ftt.Test) {
 		mc := buildbucket.NewMockedClient(ctx, ctl)
 		ctx = mc.Ctx
 		mockBuildBucket(mc, true)
-		tfa, tfs, rerun, nsa := setupTestAnalysisForTesting(ctx, 1)
-		enableBisection(ctx, true, tfa.Project)
+		tfa, tfs, rerun, nsa := setupTestAnalysisForTesting(ctx, t, 1)
+		enableBisection(ctx, t, true, tfa.Project)
 		// Commit 1 pass -> commit 0 is the culprit.
 		rerun.LUCIBuild.GitilesCommit = &bbpb.GitilesCommit{
 			Id:      "commit2",
@@ -789,21 +790,21 @@ func TestScheduleNewRerun(t *testing.T) {
 			Ref:     "ref",
 		}
 		rerun.Status = pb.RerunStatus_RERUN_STATUS_PASSED
-		So(datastore.Put(ctx, rerun), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, rerun), should.BeNil)
 		datastore.GetTestable(ctx).CatchupIndexes()
 		req := &pb.UpdateTestAnalysisProgressRequest{
 			BotId: "bot",
 		}
 		err := processNthSectionUpdate(ctx, rerun, tfa, req)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		datastore.GetTestable(ctx).CatchupIndexes()
 
 		// Check that a new rerun is scheduled.
 		q := datastore.NewQuery("TestSingleRerun").Eq("nthsection_analysis_key", datastore.KeyForObj(ctx, nsa)).Eq("status", pb.RerunStatus_RERUN_STATUS_IN_PROGRESS)
 		reruns := []*model.TestSingleRerun{}
-		So(datastore.GetAll(ctx, q, &reruns), ShouldBeNil)
-		So(len(reruns), ShouldEqual, 1)
-		So(reruns[0], ShouldResembleProto, &model.TestSingleRerun{
+		assert.Loosely(t, datastore.GetAll(ctx, q, &reruns), should.BeNil)
+		assert.Loosely(t, len(reruns), should.Equal(1))
+		assert.Loosely(t, reruns[0], should.Resemble(&model.TestSingleRerun{
 			ID:                    reruns[0].ID,
 			Type:                  model.RerunBuildType_NthSection,
 			AnalysisKey:           datastore.KeyForObj(ctx, tfa),
@@ -839,17 +840,18 @@ func TestScheduleNewRerun(t *testing.T) {
 					},
 				},
 			},
-		})
+		}))
 	})
 }
 
-func setupTestAnalysisForTesting(ctx context.Context, numTest int) (*model.TestFailureAnalysis, []*model.TestFailure, *model.TestSingleRerun, *model.TestNthSectionAnalysis) {
-	tfa := testutil.CreateTestFailureAnalysis(ctx, &testutil.TestFailureAnalysisCreationOption{
+func setupTestAnalysisForTesting(ctx context.Context, t testing.TB, numTest int) (*model.TestFailureAnalysis, []*model.TestFailure, *model.TestSingleRerun, *model.TestNthSectionAnalysis) {
+	t.Helper()
+	tfa := testutil.CreateTestFailureAnalysis(ctx, t, &testutil.TestFailureAnalysisCreationOption{
 		ID:             100,
 		TestFailureKey: datastore.MakeKey(ctx, "TestFailure", 1000),
 	})
 
-	nsa := testutil.CreateTestNthSectionAnalysis(ctx, &testutil.TestNthSectionAnalysisCreationOption{
+	nsa := testutil.CreateTestNthSectionAnalysis(ctx, t, &testutil.TestNthSectionAnalysisCreationOption{
 		ID:                200,
 		ParentAnalysisKey: datastore.KeyForObj(ctx, tfa),
 		BlameList:         testutil.CreateBlamelist(4),
@@ -860,7 +862,7 @@ func setupTestAnalysisForTesting(ctx context.Context, numTest int) (*model.TestF
 	results := make([]model.RerunSingleTestResult, numTest)
 	for i := 0; i < numTest; i++ {
 		isPrimary := (i == 0)
-		tfs[i] = testutil.CreateTestFailure(ctx, &testutil.TestFailureCreationOption{
+		tfs[i] = testutil.CreateTestFailure(ctx, t, &testutil.TestFailureCreationOption{
 			ID:          1000 + int64(i),
 			IsPrimary:   isPrimary,
 			TestID:      fmt.Sprintf("test%d", i),
@@ -880,7 +882,7 @@ func setupTestAnalysisForTesting(ctx context.Context, numTest int) (*model.TestF
 			TestFailureKey: datastore.KeyForObj(ctx, tfs[i]),
 		}
 	}
-	rerun := testutil.CreateTestSingleRerun(ctx, &testutil.TestSingleRerunCreationOption{
+	rerun := testutil.CreateTestSingleRerun(ctx, t, &testutil.TestSingleRerunCreationOption{
 		ID:          8000,
 		Status:      pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
 		AnalysisKey: datastore.KeyForObj(ctx, tfa),
@@ -893,11 +895,12 @@ func setupTestAnalysisForTesting(ctx context.Context, numTest int) (*model.TestF
 	return tfa, tfs, rerun, nsa
 }
 
-func enableBisection(ctx context.Context, enabled bool, project string) {
+func enableBisection(ctx context.Context, t testing.TB, enabled bool, project string) {
+	t.Helper()
 	projectCfg := config.CreatePlaceholderProjectConfig()
 	projectCfg.TestAnalysisConfig.BisectorEnabled = enabled
 	cfg := map[string]*configpb.ProjectConfig{project: projectCfg}
-	So(config.SetTestProjectConfig(ctx, cfg), ShouldBeNil)
+	assert.Loosely(t, config.SetTestProjectConfig(ctx, cfg), should.BeNil, truth.LineContext())
 }
 
 func mockBuildBucket(mc *buildbucket.MockedClient, withBotID bool) {

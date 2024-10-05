@@ -16,31 +16,32 @@ package model
 
 import (
 	"context"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"testing"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestAddLine(t *testing.T) {
-	Convey("Add line or file path", t, func() {
+	ftt.Run("Add line or file path", t, func(t *ftt.Test) {
 		signal := &CompileFailureSignal{}
 		signal.AddLine("a/b", 12)
-		So(signal.Files, ShouldResemble, map[string][]int{"a/b": {12}})
+		assert.Loosely(t, signal.Files, should.Resemble(map[string][]int{"a/b": {12}}))
 		signal.AddLine("a/b", 14)
-		So(signal.Files, ShouldResemble, map[string][]int{"a/b": {12, 14}})
+		assert.Loosely(t, signal.Files, should.Resemble(map[string][]int{"a/b": {12, 14}}))
 		signal.AddLine("c/d", 8)
-		So(signal.Files, ShouldResemble, map[string][]int{"a/b": {12, 14}, "c/d": {8}})
+		assert.Loosely(t, signal.Files, should.Resemble(map[string][]int{"a/b": {12, 14}, "c/d": {8}}))
 		signal.AddLine("a/b", 14)
-		So(signal.Files, ShouldResemble, map[string][]int{"a/b": {12, 14}, "c/d": {8}})
+		assert.Loosely(t, signal.Files, should.Resemble(map[string][]int{"a/b": {12, 14}, "c/d": {8}}))
 		signal.AddFilePath("x/y")
-		So(signal.Files, ShouldResemble, map[string][]int{"a/b": {12, 14}, "c/d": {8}, "x/y": {}})
+		assert.Loosely(t, signal.Files, should.Resemble(map[string][]int{"a/b": {12, 14}, "c/d": {8}, "x/y": {}}))
 		signal.AddFilePath("x/y")
-		So(signal.Files, ShouldResemble, map[string][]int{"a/b": {12, 14}, "c/d": {8}, "x/y": {}})
+		assert.Loosely(t, signal.Files, should.Resemble(map[string][]int{"a/b": {12, 14}, "c/d": {8}, "x/y": {}}))
 	})
 }
 
 func TestCalculateDependencyMap(t *testing.T) {
-	Convey("Calculate dependency map", t, func() {
+	ftt.Run("Calculate dependency map", t, func(t *ftt.Test) {
 		signal := &CompileFailureSignal{
 			Edges: []*CompileFailureEdge{
 				{
@@ -59,10 +60,10 @@ func TestCalculateDependencyMap(t *testing.T) {
 			},
 		}
 		signal.CalculateDependencyMap(context.Background())
-		So(signal.DependencyMap, ShouldResemble, map[string][]string{
+		assert.Loosely(t, signal.DependencyMap, should.Resemble(map[string][]string{
 			"a": {"x/y/a.h", "y/z/a.cc"},
 			"b": {"xx/yy/b.h"},
 			"c": {"zz/y/c.yy"},
-		})
+		}))
 	})
 }

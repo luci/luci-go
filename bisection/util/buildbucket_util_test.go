@@ -18,14 +18,14 @@ import (
 	"testing"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"google.golang.org/protobuf/types/known/structpb"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestGetGitilesCommitForBuild(t *testing.T) {
-	Convey("Get position from output", t, func() {
+	ftt.Run("Get position from output", t, func(t *ftt.Test) {
 		build := &bbpb.Build{
 			Input: &bbpb.Build_Input{
 				GitilesCommit: &bbpb.GitilesCommit{
@@ -46,16 +46,16 @@ func TestGetGitilesCommitForBuild(t *testing.T) {
 			},
 		}
 		commit := GetGitilesCommitForBuild(build)
-		So(commit, ShouldResembleProto, &bbpb.GitilesCommit{
+		assert.Loosely(t, commit, should.Resemble(&bbpb.GitilesCommit{
 			Host:     "chromium.googlesource.com",
 			Project:  "chromium/src",
 			Id:       "refs/heads/gfiTest",
 			Ref:      "1",
 			Position: 456,
-		})
+		}))
 	})
 
-	Convey("Output does not match input", t, func() {
+	ftt.Run("Output does not match input", t, func(t *ftt.Test) {
 		build := &bbpb.Build{
 			Input: &bbpb.Build_Input{
 				GitilesCommit: &bbpb.GitilesCommit{
@@ -76,15 +76,15 @@ func TestGetGitilesCommitForBuild(t *testing.T) {
 			},
 		}
 		commit := GetGitilesCommitForBuild(build)
-		So(commit, ShouldResembleProto, &bbpb.GitilesCommit{
+		assert.Loosely(t, commit, should.Resemble(&bbpb.GitilesCommit{
 			Host:    "chromium.googlesource.com",
 			Project: "chromium/src",
 			Id:      "refs/heads/gfiTest",
 			Ref:     "1",
-		})
+		}))
 	})
 
-	Convey("No output", t, func() {
+	ftt.Run("No output", t, func(t *ftt.Test) {
 		build := &bbpb.Build{
 			Input: &bbpb.Build_Input{
 				GitilesCommit: &bbpb.GitilesCommit{
@@ -96,23 +96,23 @@ func TestGetGitilesCommitForBuild(t *testing.T) {
 			},
 		}
 		commit := GetGitilesCommitForBuild(build)
-		So(commit, ShouldResembleProto, &bbpb.GitilesCommit{
+		assert.Loosely(t, commit, should.Resemble(&bbpb.GitilesCommit{
 			Host:    "chromium.googlesource.com",
 			Project: "chromium/src",
 			Id:      "refs/heads/gfiTest",
 			Ref:     "1",
-		})
+		}))
 	})
 }
 
 func TestGetSheriffRotationsForBuild(t *testing.T) {
-	Convey("No sheriff rotation", t, func() {
+	ftt.Run("No sheriff rotation", t, func(t *ftt.Test) {
 		build := &bbpb.Build{}
 		rotations := GetSheriffRotationsForBuild(build)
-		So(rotations, ShouldResemble, []string{})
+		assert.Loosely(t, rotations, should.Resemble([]string{}))
 	})
 
-	Convey("Has sheriff rotation", t, func() {
+	ftt.Run("Has sheriff rotation", t, func(t *ftt.Test) {
 		build := &bbpb.Build{
 			Input: &bbpb.Build_Input{
 				Properties: &structpb.Struct{
@@ -127,7 +127,7 @@ func TestGetSheriffRotationsForBuild(t *testing.T) {
 			},
 		}
 		rotations := GetSheriffRotationsForBuild(build)
-		So(rotations, ShouldResemble, []string{"chromium"})
+		assert.Loosely(t, rotations, should.Resemble([]string{"chromium"}))
 	})
 
 }
@@ -139,7 +139,7 @@ func TestGetTaskDimensions(t *testing.T) {
 			Value: "dimen_val_1",
 		},
 	}
-	Convey("from build on swarming", t, func() {
+	ftt.Run("from build on swarming", t, func(t *ftt.Test) {
 		build := &bbpb.Build{
 			Infra: &bbpb.BuildInfra{
 				Swarming: &bbpb.BuildInfra_Swarming{
@@ -148,10 +148,10 @@ func TestGetTaskDimensions(t *testing.T) {
 			},
 		}
 		got := GetTaskDimensions(build)
-		So(got, ShouldResembleProto, dims)
+		assert.Loosely(t, got, should.Resemble(dims))
 	})
 
-	Convey("from build on backend", t, func() {
+	ftt.Run("from build on backend", t, func(t *ftt.Test) {
 		build := &bbpb.Build{
 			Infra: &bbpb.BuildInfra{
 				Backend: &bbpb.BuildInfra_Backend{
@@ -160,7 +160,7 @@ func TestGetTaskDimensions(t *testing.T) {
 			},
 		}
 		got := GetTaskDimensions(build)
-		So(got, ShouldResembleProto, dims)
+		assert.Loosely(t, got, should.Resemble(dims))
 	})
 
 }
