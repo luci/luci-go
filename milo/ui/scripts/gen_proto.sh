@@ -1,3 +1,4 @@
+#!/bin/bash
 # Copyright 2023 The LUCI Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,11 +13,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cd "$(dirname "$0")"
+die() {
+  printf '%s\n' "$@" 1>&2
+  exit 1
+}
+
+cd -- "$(dirname "$0")" || die 'cannot chdir'
+[ -f gen_proto.sh ] || die 'failed to find own directory'
 
 rm -rf ../src/proto
 mkdir ../src/proto
-cd ../../../../../
+cd ../../../../..
+[ -d ./go.chromium.org ] || die 'no chromium.org directory'
+[ -d ./infra ] || die 'no infra directory'
+[ -d ./go.chromium.org/luci/common/proto/googleapis ] || die 'no googleapis protos'
 
 # Use ts-proto instead of the official grpc-web because it is RPC framework
 # agnostic. This is crucial because we use a non-standard protocol (pRPC) for

@@ -463,6 +463,8 @@ export interface AudioLatencyToolkit {
 export interface AMTManager {
   /** Hostname for the AMT management port. */
   readonly hostname: string;
+  /** Connect to AMT on port 16993 with TLS enabled. */
+  readonly useTls: boolean;
 }
 
 function createBasePeripherals(): Peripherals {
@@ -1842,13 +1844,16 @@ export const AudioLatencyToolkit = {
 };
 
 function createBaseAMTManager(): AMTManager {
-  return { hostname: "" };
+  return { hostname: "", useTls: false };
 }
 
 export const AMTManager = {
   encode(message: AMTManager, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.hostname !== "") {
       writer.uint32(10).string(message.hostname);
+    }
+    if (message.useTls !== false) {
+      writer.uint32(24).bool(message.useTls);
     }
     return writer;
   },
@@ -1867,6 +1872,13 @@ export const AMTManager = {
 
           message.hostname = reader.string();
           continue;
+        case 3:
+          if (tag !== 24) {
+            break;
+          }
+
+          message.useTls = reader.bool();
+          continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1877,13 +1889,19 @@ export const AMTManager = {
   },
 
   fromJSON(object: any): AMTManager {
-    return { hostname: isSet(object.hostname) ? globalThis.String(object.hostname) : "" };
+    return {
+      hostname: isSet(object.hostname) ? globalThis.String(object.hostname) : "",
+      useTls: isSet(object.useTls) ? globalThis.Boolean(object.useTls) : false,
+    };
   },
 
   toJSON(message: AMTManager): unknown {
     const obj: any = {};
     if (message.hostname !== "") {
       obj.hostname = message.hostname;
+    }
+    if (message.useTls !== false) {
+      obj.useTls = message.useTls;
     }
     return obj;
   },
@@ -1894,6 +1912,7 @@ export const AMTManager = {
   fromPartial(object: DeepPartial<AMTManager>): AMTManager {
     const message = createBaseAMTManager() as any;
     message.hostname = object.hostname ?? "";
+    message.useTls = object.useTls ?? false;
     return message;
   },
 };

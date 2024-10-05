@@ -356,7 +356,7 @@ export function hardwareStateToJSON(object: HardwareState): string {
 
 /**
  * This proto defines status labels in lab config of a DUT.
- * Next Tag: 34
+ * Next Tag: 36
  */
 export interface DutState {
   readonly id: ChromeOSDeviceID | undefined;
@@ -424,8 +424,12 @@ export interface DutState {
   readonly audioBeamforming: string;
   /** State for camera on the DUT. */
   readonly cameraState: HardwareState;
+  /** The type of Fingerprint board on the DUT. */
+  readonly fingerprintBoard: string;
   /** The type of Fingerprint MCU on the DUT. */
   readonly fingerprintMcu: string;
+  /** The type of Fingerprint sensor on the DUT. */
+  readonly fingerprintSensor: string;
 }
 
 /**
@@ -519,6 +523,8 @@ export enum DutState_RepairRequest {
   REPAIR_REQUEST_REIMAGE_BY_USBKEY = 2,
   /** REPAIR_REQUEST_UPDATE_USBKEY_IMAGE - Request to re-download image to USB-key. */
   REPAIR_REQUEST_UPDATE_USBKEY_IMAGE = 3,
+  /** REPAIR_REQUEST_REFLASH_FW - Request to re-flash firmware of the DUT. */
+  REPAIR_REQUEST_REFLASH_FW = 4,
 }
 
 export function dutState_RepairRequestFromJSON(object: any): DutState_RepairRequest {
@@ -535,6 +541,9 @@ export function dutState_RepairRequestFromJSON(object: any): DutState_RepairRequ
     case 3:
     case "REPAIR_REQUEST_UPDATE_USBKEY_IMAGE":
       return DutState_RepairRequest.REPAIR_REQUEST_UPDATE_USBKEY_IMAGE;
+    case 4:
+    case "REPAIR_REQUEST_REFLASH_FW":
+      return DutState_RepairRequest.REPAIR_REQUEST_REFLASH_FW;
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum DutState_RepairRequest");
   }
@@ -550,6 +559,8 @@ export function dutState_RepairRequestToJSON(object: DutState_RepairRequest): st
       return "REPAIR_REQUEST_REIMAGE_BY_USBKEY";
     case DutState_RepairRequest.REPAIR_REQUEST_UPDATE_USBKEY_IMAGE:
       return "REPAIR_REQUEST_UPDATE_USBKEY_IMAGE";
+    case DutState_RepairRequest.REPAIR_REQUEST_REFLASH_FW:
+      return "REPAIR_REQUEST_REFLASH_FW";
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum DutState_RepairRequest");
   }
@@ -557,12 +568,48 @@ export function dutState_RepairRequestToJSON(object: DutState_RepairRequest): st
 
 /**
  * This proto define common version info we want to record from a device.
- * Next Tag: 4
+ * Next Tag: 5
  */
 export interface VersionInfo {
   readonly os: string;
   readonly roFirmware: string;
   readonly rwFirmware: string;
+  readonly osType: VersionInfo_OsType;
+}
+
+export enum VersionInfo_OsType {
+  UNKNOWN = 0,
+  CHROMEOS = 1,
+  ANDROID = 2,
+}
+
+export function versionInfo_OsTypeFromJSON(object: any): VersionInfo_OsType {
+  switch (object) {
+    case 0:
+    case "UNKNOWN":
+      return VersionInfo_OsType.UNKNOWN;
+    case 1:
+    case "CHROMEOS":
+      return VersionInfo_OsType.CHROMEOS;
+    case 2:
+    case "ANDROID":
+      return VersionInfo_OsType.ANDROID;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum VersionInfo_OsType");
+  }
+}
+
+export function versionInfo_OsTypeToJSON(object: VersionInfo_OsType): string {
+  switch (object) {
+    case VersionInfo_OsType.UNKNOWN:
+      return "UNKNOWN";
+    case VersionInfo_OsType.CHROMEOS:
+      return "CHROMEOS";
+    case VersionInfo_OsType.ANDROID:
+      return "ANDROID";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum VersionInfo_OsType");
+  }
 }
 
 function createBaseDutState(): DutState {
@@ -599,7 +646,9 @@ function createBaseDutState(): DutState {
     amtManagerState: 0,
     audioBeamforming: "",
     cameraState: 0,
+    fingerprintBoard: "",
     fingerprintMcu: "",
+    fingerprintSensor: "",
   };
 }
 
@@ -703,8 +752,14 @@ export const DutState = {
     if (message.cameraState !== 0) {
       writer.uint32(256).int32(message.cameraState);
     }
+    if (message.fingerprintBoard !== "") {
+      writer.uint32(274).string(message.fingerprintBoard);
+    }
     if (message.fingerprintMcu !== "") {
       writer.uint32(266).string(message.fingerprintMcu);
+    }
+    if (message.fingerprintSensor !== "") {
+      writer.uint32(282).string(message.fingerprintSensor);
     }
     return writer;
   },
@@ -950,12 +1005,26 @@ export const DutState = {
 
           message.cameraState = reader.int32() as any;
           continue;
+        case 34:
+          if (tag !== 274) {
+            break;
+          }
+
+          message.fingerprintBoard = reader.string();
+          continue;
         case 33:
           if (tag !== 266) {
             break;
           }
 
           message.fingerprintMcu = reader.string();
+          continue;
+        case 35:
+          if (tag !== 282) {
+            break;
+          }
+
+          message.fingerprintSensor = reader.string();
           continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
@@ -1008,7 +1077,9 @@ export const DutState = {
       amtManagerState: isSet(object.amtManagerState) ? peripheralStateFromJSON(object.amtManagerState) : 0,
       audioBeamforming: isSet(object.audioBeamforming) ? globalThis.String(object.audioBeamforming) : "",
       cameraState: isSet(object.cameraState) ? hardwareStateFromJSON(object.cameraState) : 0,
+      fingerprintBoard: isSet(object.fingerprintBoard) ? globalThis.String(object.fingerprintBoard) : "",
       fingerprintMcu: isSet(object.fingerprintMcu) ? globalThis.String(object.fingerprintMcu) : "",
+      fingerprintSensor: isSet(object.fingerprintSensor) ? globalThis.String(object.fingerprintSensor) : "",
     };
   },
 
@@ -1110,8 +1181,14 @@ export const DutState = {
     if (message.cameraState !== 0) {
       obj.cameraState = hardwareStateToJSON(message.cameraState);
     }
+    if (message.fingerprintBoard !== "") {
+      obj.fingerprintBoard = message.fingerprintBoard;
+    }
     if (message.fingerprintMcu !== "") {
       obj.fingerprintMcu = message.fingerprintMcu;
+    }
+    if (message.fingerprintSensor !== "") {
+      obj.fingerprintSensor = message.fingerprintSensor;
     }
     return obj;
   },
@@ -1155,13 +1232,15 @@ export const DutState = {
     message.amtManagerState = object.amtManagerState ?? 0;
     message.audioBeamforming = object.audioBeamforming ?? "";
     message.cameraState = object.cameraState ?? 0;
+    message.fingerprintBoard = object.fingerprintBoard ?? "";
     message.fingerprintMcu = object.fingerprintMcu ?? "";
+    message.fingerprintSensor = object.fingerprintSensor ?? "";
     return message;
   },
 };
 
 function createBaseVersionInfo(): VersionInfo {
-  return { os: "", roFirmware: "", rwFirmware: "" };
+  return { os: "", roFirmware: "", rwFirmware: "", osType: 0 };
 }
 
 export const VersionInfo = {
@@ -1174,6 +1253,9 @@ export const VersionInfo = {
     }
     if (message.rwFirmware !== "") {
       writer.uint32(26).string(message.rwFirmware);
+    }
+    if (message.osType !== 0) {
+      writer.uint32(32).int32(message.osType);
     }
     return writer;
   },
@@ -1206,6 +1288,13 @@ export const VersionInfo = {
 
           message.rwFirmware = reader.string();
           continue;
+        case 4:
+          if (tag !== 32) {
+            break;
+          }
+
+          message.osType = reader.int32() as any;
+          continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1220,6 +1309,7 @@ export const VersionInfo = {
       os: isSet(object.os) ? globalThis.String(object.os) : "",
       roFirmware: isSet(object.roFirmware) ? globalThis.String(object.roFirmware) : "",
       rwFirmware: isSet(object.rwFirmware) ? globalThis.String(object.rwFirmware) : "",
+      osType: isSet(object.osType) ? versionInfo_OsTypeFromJSON(object.osType) : 0,
     };
   },
 
@@ -1234,6 +1324,9 @@ export const VersionInfo = {
     if (message.rwFirmware !== "") {
       obj.rwFirmware = message.rwFirmware;
     }
+    if (message.osType !== 0) {
+      obj.osType = versionInfo_OsTypeToJSON(message.osType);
+    }
     return obj;
   },
 
@@ -1245,6 +1338,7 @@ export const VersionInfo = {
     message.os = object.os ?? "";
     message.roFirmware = object.roFirmware ?? "";
     message.rwFirmware = object.rwFirmware ?? "";
+    message.osType = object.osType ?? 0;
     return message;
   },
 };

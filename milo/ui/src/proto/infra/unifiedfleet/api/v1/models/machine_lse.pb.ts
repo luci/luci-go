@@ -250,7 +250,10 @@ export interface LabMeta {
 /** NEXT TAG: 10 */
 export interface ChromeOSDeviceData {
   readonly labConfig: MachineLSE | undefined;
-  readonly machine: Machine | undefined;
+  readonly machine:
+    | Machine
+    | undefined;
+  /** @deprecated */
   readonly deviceConfig: Config | undefined;
   readonly manufacturingConfig: ManufacturingConfig | undefined;
   readonly hwidData: HwidData | undefined;

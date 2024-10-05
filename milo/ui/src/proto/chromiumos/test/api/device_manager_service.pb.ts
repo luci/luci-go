@@ -127,6 +127,43 @@ export function leaseDeviceResponseErrorTypeToJSON(object: LeaseDeviceResponseEr
   }
 }
 
+export enum BulkLeaseDevicesResponseErrorType {
+  BULK_LEASE_ERROR_TYPE_NONE = 0,
+  /** BULK_LEASE_ERROR_TYPE_INTERNAL_DATABASE_ERR - Internal Postgres errors. */
+  BULK_LEASE_ERROR_TYPE_INTERNAL_DATABASE_ERR = 1,
+  /** BULK_LEASE_ERROR_TYPE_PARTIAL_LEASE_FAILURE - Some Devices failed to be leased. See individual lease request errors. */
+  BULK_LEASE_ERROR_TYPE_PARTIAL_LEASE_FAILURE = 2,
+}
+
+export function bulkLeaseDevicesResponseErrorTypeFromJSON(object: any): BulkLeaseDevicesResponseErrorType {
+  switch (object) {
+    case 0:
+    case "BULK_LEASE_ERROR_TYPE_NONE":
+      return BulkLeaseDevicesResponseErrorType.BULK_LEASE_ERROR_TYPE_NONE;
+    case 1:
+    case "BULK_LEASE_ERROR_TYPE_INTERNAL_DATABASE_ERR":
+      return BulkLeaseDevicesResponseErrorType.BULK_LEASE_ERROR_TYPE_INTERNAL_DATABASE_ERR;
+    case 2:
+    case "BULK_LEASE_ERROR_TYPE_PARTIAL_LEASE_FAILURE":
+      return BulkLeaseDevicesResponseErrorType.BULK_LEASE_ERROR_TYPE_PARTIAL_LEASE_FAILURE;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum BulkLeaseDevicesResponseErrorType");
+  }
+}
+
+export function bulkLeaseDevicesResponseErrorTypeToJSON(object: BulkLeaseDevicesResponseErrorType): string {
+  switch (object) {
+    case BulkLeaseDevicesResponseErrorType.BULK_LEASE_ERROR_TYPE_NONE:
+      return "BULK_LEASE_ERROR_TYPE_NONE";
+    case BulkLeaseDevicesResponseErrorType.BULK_LEASE_ERROR_TYPE_INTERNAL_DATABASE_ERR:
+      return "BULK_LEASE_ERROR_TYPE_INTERNAL_DATABASE_ERR";
+    case BulkLeaseDevicesResponseErrorType.BULK_LEASE_ERROR_TYPE_PARTIAL_LEASE_FAILURE:
+      return "BULK_LEASE_ERROR_TYPE_PARTIAL_LEASE_FAILURE";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum BulkLeaseDevicesResponseErrorType");
+  }
+}
+
 export enum ReleaseDeviceResponseErrorType {
   ERROR_TYPE_NONE = 0,
   ERROR_TYPE_DEVICE_ALREADY_RELEASED = 1,
@@ -162,6 +199,8 @@ export interface Device {
    * DUTs we use the IDs we get from UFS.
    */
   readonly id: string;
+  /** dut_id is the asset tag for a Device */
+  readonly dutId: string;
   readonly address: DeviceAddress | undefined;
   readonly type: DeviceType;
   readonly state: DeviceState;
@@ -191,9 +230,11 @@ export interface DeviceLeaseRecord {
   readonly idempotencyKey: string;
   /**
    * Device data.
-   * Id corresponding to the device name.
+   * Id (hostname) corresponding to the device name.
    */
   readonly deviceId: string;
+  /** DUT ID (asset tag) corresponding to the device name. */
+  readonly dutId: string;
   /** SSH-able address to access the device. */
   readonly deviceAddress:
     | DeviceAddress
@@ -287,6 +328,25 @@ export interface LeaseDeviceResponse {
   readonly errorString: string;
 }
 
+export interface BulkLeaseDevicesRequest {
+  /** A list of LeaseDeviceRequests. */
+  readonly leaseDeviceRequests: readonly LeaseDeviceRequest[];
+}
+
+export interface BulkLeaseDevicesResponse {
+  /**
+   * One LeaseDeviceResponse for each LeaseDeviceRequest in the
+   * BulkLeaseDevicesRequest.
+   */
+  readonly leaseDeviceResponses: readonly LeaseDeviceResponse[];
+  /**
+   * Overall error for the bulk request. It is possible for the response to
+   * error with partial success of leasing.
+   */
+  readonly errorType: BulkLeaseDevicesResponseErrorType;
+  readonly errorString: string;
+}
+
 export interface ReleaseDeviceRequest {
   readonly leaseId: string;
 }
@@ -343,13 +403,16 @@ export interface ListDevicesResponse {
 }
 
 function createBaseDevice(): Device {
-  return { id: "", address: undefined, type: 0, state: 0, hardwareReqs: undefined };
+  return { id: "", dutId: "", address: undefined, type: 0, state: 0, hardwareReqs: undefined };
 }
 
 export const Device = {
   encode(message: Device, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.id !== "") {
       writer.uint32(10).string(message.id);
+    }
+    if (message.dutId !== "") {
+      writer.uint32(50).string(message.dutId);
     }
     if (message.address !== undefined) {
       DeviceAddress.encode(message.address, writer.uint32(18).fork()).ldelim();
@@ -379,6 +442,13 @@ export const Device = {
           }
 
           message.id = reader.string();
+          continue;
+        case 6:
+          if (tag !== 50) {
+            break;
+          }
+
+          message.dutId = reader.string();
           continue;
         case 2:
           if (tag !== 18) {
@@ -420,6 +490,7 @@ export const Device = {
   fromJSON(object: any): Device {
     return {
       id: isSet(object.id) ? globalThis.String(object.id) : "",
+      dutId: isSet(object.dutId) ? globalThis.String(object.dutId) : "",
       address: isSet(object.address) ? DeviceAddress.fromJSON(object.address) : undefined,
       type: isSet(object.type) ? deviceTypeFromJSON(object.type) : 0,
       state: isSet(object.state) ? deviceStateFromJSON(object.state) : 0,
@@ -431,6 +502,9 @@ export const Device = {
     const obj: any = {};
     if (message.id !== "") {
       obj.id = message.id;
+    }
+    if (message.dutId !== "") {
+      obj.dutId = message.dutId;
     }
     if (message.address !== undefined) {
       obj.address = DeviceAddress.toJSON(message.address);
@@ -453,6 +527,7 @@ export const Device = {
   fromPartial(object: DeepPartial<Device>): Device {
     const message = createBaseDevice() as any;
     message.id = object.id ?? "";
+    message.dutId = object.dutId ?? "";
     message.address = (object.address !== undefined && object.address !== null)
       ? DeviceAddress.fromPartial(object.address)
       : undefined;
@@ -544,6 +619,7 @@ function createBaseDeviceLeaseRecord(): DeviceLeaseRecord {
     id: "",
     idempotencyKey: "",
     deviceId: "",
+    dutId: "",
     deviceAddress: undefined,
     deviceType: 0,
     leasedTime: undefined,
@@ -564,6 +640,9 @@ export const DeviceLeaseRecord = {
     }
     if (message.deviceId !== "") {
       writer.uint32(26).string(message.deviceId);
+    }
+    if (message.dutId !== "") {
+      writer.uint32(90).string(message.dutId);
     }
     if (message.deviceAddress !== undefined) {
       DeviceAddress.encode(message.deviceAddress, writer.uint32(34).fork()).ldelim();
@@ -616,6 +695,13 @@ export const DeviceLeaseRecord = {
           }
 
           message.deviceId = reader.string();
+          continue;
+        case 11:
+          if (tag !== 90) {
+            break;
+          }
+
+          message.dutId = reader.string();
           continue;
         case 4:
           if (tag !== 34) {
@@ -683,6 +769,7 @@ export const DeviceLeaseRecord = {
       id: isSet(object.id) ? globalThis.String(object.id) : "",
       idempotencyKey: isSet(object.idempotencyKey) ? globalThis.String(object.idempotencyKey) : "",
       deviceId: isSet(object.deviceId) ? globalThis.String(object.deviceId) : "",
+      dutId: isSet(object.dutId) ? globalThis.String(object.dutId) : "",
       deviceAddress: isSet(object.deviceAddress) ? DeviceAddress.fromJSON(object.deviceAddress) : undefined,
       deviceType: isSet(object.deviceType) ? deviceTypeFromJSON(object.deviceType) : 0,
       leasedTime: isSet(object.leasedTime) ? globalThis.String(object.leasedTime) : undefined,
@@ -708,6 +795,9 @@ export const DeviceLeaseRecord = {
     }
     if (message.deviceId !== "") {
       obj.deviceId = message.deviceId;
+    }
+    if (message.dutId !== "") {
+      obj.dutId = message.dutId;
     }
     if (message.deviceAddress !== undefined) {
       obj.deviceAddress = DeviceAddress.toJSON(message.deviceAddress);
@@ -747,6 +837,7 @@ export const DeviceLeaseRecord = {
     message.id = object.id ?? "";
     message.idempotencyKey = object.idempotencyKey ?? "";
     message.deviceId = object.deviceId ?? "";
+    message.dutId = object.dutId ?? "";
     message.deviceAddress = (object.deviceAddress !== undefined && object.deviceAddress !== null)
       ? DeviceAddress.fromPartial(object.deviceAddress)
       : undefined;
@@ -1076,6 +1167,158 @@ export const LeaseDeviceResponse = {
     message.deviceLease = (object.deviceLease !== undefined && object.deviceLease !== null)
       ? DeviceLeaseRecord.fromPartial(object.deviceLease)
       : undefined;
+    message.errorType = object.errorType ?? 0;
+    message.errorString = object.errorString ?? "";
+    return message;
+  },
+};
+
+function createBaseBulkLeaseDevicesRequest(): BulkLeaseDevicesRequest {
+  return { leaseDeviceRequests: [] };
+}
+
+export const BulkLeaseDevicesRequest = {
+  encode(message: BulkLeaseDevicesRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    for (const v of message.leaseDeviceRequests) {
+      LeaseDeviceRequest.encode(v!, writer.uint32(10).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): BulkLeaseDevicesRequest {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseBulkLeaseDevicesRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.leaseDeviceRequests.push(LeaseDeviceRequest.decode(reader, reader.uint32()));
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): BulkLeaseDevicesRequest {
+    return {
+      leaseDeviceRequests: globalThis.Array.isArray(object?.leaseDeviceRequests)
+        ? object.leaseDeviceRequests.map((e: any) => LeaseDeviceRequest.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: BulkLeaseDevicesRequest): unknown {
+    const obj: any = {};
+    if (message.leaseDeviceRequests?.length) {
+      obj.leaseDeviceRequests = message.leaseDeviceRequests.map((e) => LeaseDeviceRequest.toJSON(e));
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<BulkLeaseDevicesRequest>): BulkLeaseDevicesRequest {
+    return BulkLeaseDevicesRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<BulkLeaseDevicesRequest>): BulkLeaseDevicesRequest {
+    const message = createBaseBulkLeaseDevicesRequest() as any;
+    message.leaseDeviceRequests = object.leaseDeviceRequests?.map((e) => LeaseDeviceRequest.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseBulkLeaseDevicesResponse(): BulkLeaseDevicesResponse {
+  return { leaseDeviceResponses: [], errorType: 0, errorString: "" };
+}
+
+export const BulkLeaseDevicesResponse = {
+  encode(message: BulkLeaseDevicesResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    for (const v of message.leaseDeviceResponses) {
+      LeaseDeviceResponse.encode(v!, writer.uint32(10).fork()).ldelim();
+    }
+    if (message.errorType !== 0) {
+      writer.uint32(16).int32(message.errorType);
+    }
+    if (message.errorString !== "") {
+      writer.uint32(26).string(message.errorString);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): BulkLeaseDevicesResponse {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseBulkLeaseDevicesResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.leaseDeviceResponses.push(LeaseDeviceResponse.decode(reader, reader.uint32()));
+          continue;
+        case 2:
+          if (tag !== 16) {
+            break;
+          }
+
+          message.errorType = reader.int32() as any;
+          continue;
+        case 3:
+          if (tag !== 26) {
+            break;
+          }
+
+          message.errorString = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): BulkLeaseDevicesResponse {
+    return {
+      leaseDeviceResponses: globalThis.Array.isArray(object?.leaseDeviceResponses)
+        ? object.leaseDeviceResponses.map((e: any) => LeaseDeviceResponse.fromJSON(e))
+        : [],
+      errorType: isSet(object.errorType) ? bulkLeaseDevicesResponseErrorTypeFromJSON(object.errorType) : 0,
+      errorString: isSet(object.errorString) ? globalThis.String(object.errorString) : "",
+    };
+  },
+
+  toJSON(message: BulkLeaseDevicesResponse): unknown {
+    const obj: any = {};
+    if (message.leaseDeviceResponses?.length) {
+      obj.leaseDeviceResponses = message.leaseDeviceResponses.map((e) => LeaseDeviceResponse.toJSON(e));
+    }
+    if (message.errorType !== 0) {
+      obj.errorType = bulkLeaseDevicesResponseErrorTypeToJSON(message.errorType);
+    }
+    if (message.errorString !== "") {
+      obj.errorString = message.errorString;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<BulkLeaseDevicesResponse>): BulkLeaseDevicesResponse {
+    return BulkLeaseDevicesResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<BulkLeaseDevicesResponse>): BulkLeaseDevicesResponse {
+    const message = createBaseBulkLeaseDevicesResponse() as any;
+    message.leaseDeviceResponses = object.leaseDeviceResponses?.map((e) => LeaseDeviceResponse.fromPartial(e)) || [];
     message.errorType = object.errorType ?? 0;
     message.errorString = object.errorString ?? "";
     return message;
@@ -1466,6 +1709,8 @@ export const ListDevicesResponse = {
 export interface DeviceLeaseService {
   /** Lease a device and create a lease. */
   LeaseDevice(request: LeaseDeviceRequest): Promise<LeaseDeviceResponse>;
+  /** Bulk lease devices and create leases for all of them. */
+  BulkLeaseDevices(request: BulkLeaseDevicesRequest): Promise<BulkLeaseDevicesResponse>;
   /** Release a device lease. */
   ReleaseDevice(request: ReleaseDeviceRequest): Promise<ReleaseDeviceResponse>;
   /** Extend a device lease by modifying the expiration time. */
@@ -1491,6 +1736,7 @@ export class DeviceLeaseServiceClientImpl implements DeviceLeaseService {
     this.service = opts?.service || DeviceLeaseServiceServiceName;
     this.rpc = rpc;
     this.LeaseDevice = this.LeaseDevice.bind(this);
+    this.BulkLeaseDevices = this.BulkLeaseDevices.bind(this);
     this.ReleaseDevice = this.ReleaseDevice.bind(this);
     this.ExtendLease = this.ExtendLease.bind(this);
     this.GetDevice = this.GetDevice.bind(this);
@@ -1500,6 +1746,12 @@ export class DeviceLeaseServiceClientImpl implements DeviceLeaseService {
     const data = LeaseDeviceRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "LeaseDevice", data);
     return promise.then((data) => LeaseDeviceResponse.fromJSON(data));
+  }
+
+  BulkLeaseDevices(request: BulkLeaseDevicesRequest): Promise<BulkLeaseDevicesResponse> {
+    const data = BulkLeaseDevicesRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "BulkLeaseDevices", data);
+    return promise.then((data) => BulkLeaseDevicesResponse.fromJSON(data));
   }
 
   ReleaseDevice(request: ReleaseDeviceRequest): Promise<ReleaseDeviceResponse> {

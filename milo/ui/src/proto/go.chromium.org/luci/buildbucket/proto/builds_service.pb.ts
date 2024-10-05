@@ -3875,6 +3875,9 @@ export interface Builds {
    *
    * If build with the given ID already exists, returns ALREADY_EXISTS
    * error code.
+   * CreateBuild does not support the max_concurrent_builds feature.
+   * Incidently, led builds will never reach the builder max_concurrent_builds
+   * threshold.
    */
   CreateBuild(request: CreateBuildRequest): Promise<Build>;
   /**

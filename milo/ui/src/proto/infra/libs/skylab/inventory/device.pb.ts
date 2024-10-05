@@ -1379,7 +1379,7 @@ export function schedulableLabels_DevboardTypeToJSON(object: SchedulableLabels_D
 /**
  * Keep sorted by field name.
  *
- * NEXT TAG: 26
+ * NEXT TAG: 28
  */
 export interface HardwareCapabilities {
   readonly atrus?: boolean | undefined;
@@ -1407,7 +1407,9 @@ export interface HardwareCapabilities {
     | undefined;
   /** Indicating if the device has fingerprint sensor. */
   readonly fingerprint?: boolean | undefined;
+  readonly fingerprintBoard?: string | undefined;
   readonly fingerprintMcu?: string | undefined;
+  readonly fingerprintSensor?: string | undefined;
   readonly flashrom?: boolean | undefined;
   readonly formFactor?: HardwareCapabilities_FormFactor | undefined;
   readonly gpuFamily?: string | undefined;
@@ -2027,7 +2029,16 @@ export interface Peripherals {
     | string
     | undefined;
   /** The state of camera on the DUT. */
-  readonly cameraState?: HardwareState | undefined;
+  readonly cameraState?:
+    | HardwareState
+    | undefined;
+  /**
+   * Features supported by the available SIMs on the DUT.
+   * These are extracted from the underlying SIMProfileInfo and merged together.
+   * See go/cros-cellular-features for more information.
+   * File bugs against buganizer component: 979102.
+   */
+  readonly simFeatures: readonly Peripherals_SIMFeature[];
 }
 
 /** NEXT TAG: 12 */
@@ -2429,6 +2440,45 @@ export function peripherals_WifiRouterFeatureToJSON(object: Peripherals_WifiRout
       return "WIFI_ROUTER_FEATURE_SAE_EXT_KEY";
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum Peripherals_WifiRouterFeature");
+  }
+}
+
+/** Possible features that the SIM supports. */
+export enum Peripherals_SIMFeature {
+  /** SIM_FEATURE_UNSPECIFIED - Unset feature. */
+  SIM_FEATURE_UNSPECIFIED = 0,
+  /** SIM_FEATURE_LIVE_NETWORK - The SIM supports a generic live network. */
+  SIM_FEATURE_LIVE_NETWORK = 1,
+  /** SIM_FEATURE_SMS - The SIM supports SMS messaging. */
+  SIM_FEATURE_SMS = 2,
+}
+
+export function peripherals_SIMFeatureFromJSON(object: any): Peripherals_SIMFeature {
+  switch (object) {
+    case 0:
+    case "SIM_FEATURE_UNSPECIFIED":
+      return Peripherals_SIMFeature.SIM_FEATURE_UNSPECIFIED;
+    case 1:
+    case "SIM_FEATURE_LIVE_NETWORK":
+      return Peripherals_SIMFeature.SIM_FEATURE_LIVE_NETWORK;
+    case 2:
+    case "SIM_FEATURE_SMS":
+      return Peripherals_SIMFeature.SIM_FEATURE_SMS;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum Peripherals_SIMFeature");
+  }
+}
+
+export function peripherals_SIMFeatureToJSON(object: Peripherals_SIMFeature): string {
+  switch (object) {
+    case Peripherals_SIMFeature.SIM_FEATURE_UNSPECIFIED:
+      return "SIM_FEATURE_UNSPECIFIED";
+    case Peripherals_SIMFeature.SIM_FEATURE_LIVE_NETWORK:
+      return "SIM_FEATURE_LIVE_NETWORK";
+    case Peripherals_SIMFeature.SIM_FEATURE_SMS:
+      return "SIM_FEATURE_SMS";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum Peripherals_SIMFeature");
   }
 }
 
@@ -4329,7 +4379,9 @@ function createBaseHardwareCapabilities(): HardwareCapabilities {
     starfishSlotMapping: "",
     detachablebase: false,
     fingerprint: false,
+    fingerprintBoard: "",
     fingerprintMcu: "",
+    fingerprintSensor: "",
     flashrom: false,
     formFactor: 0,
     gpuFamily: "",
@@ -4380,8 +4432,14 @@ export const HardwareCapabilities = {
     if (message.fingerprint !== undefined && message.fingerprint !== false) {
       writer.uint32(152).bool(message.fingerprint);
     }
+    if (message.fingerprintBoard !== undefined && message.fingerprintBoard !== "") {
+      writer.uint32(210).string(message.fingerprintBoard);
+    }
     if (message.fingerprintMcu !== undefined && message.fingerprintMcu !== "") {
       writer.uint32(202).string(message.fingerprintMcu);
+    }
+    if (message.fingerprintSensor !== undefined && message.fingerprintSensor !== "") {
+      writer.uint32(218).string(message.fingerprintSensor);
     }
     if (message.flashrom !== undefined && message.flashrom !== false) {
       writer.uint32(112).bool(message.flashrom);
@@ -4516,12 +4574,26 @@ export const HardwareCapabilities = {
 
           message.fingerprint = reader.bool();
           continue;
+        case 26:
+          if (tag !== 210) {
+            break;
+          }
+
+          message.fingerprintBoard = reader.string();
+          continue;
         case 25:
           if (tag !== 202) {
             break;
           }
 
           message.fingerprintMcu = reader.string();
+          continue;
+        case 27:
+          if (tag !== 218) {
+            break;
+          }
+
+          message.fingerprintSensor = reader.string();
           continue;
         case 14:
           if (tag !== 112) {
@@ -4667,7 +4739,9 @@ export const HardwareCapabilities = {
       starfishSlotMapping: isSet(object.starfishSlotMapping) ? globalThis.String(object.starfishSlotMapping) : "",
       detachablebase: isSet(object.detachablebase) ? globalThis.Boolean(object.detachablebase) : false,
       fingerprint: isSet(object.fingerprint) ? globalThis.Boolean(object.fingerprint) : false,
+      fingerprintBoard: isSet(object.fingerprintBoard) ? globalThis.String(object.fingerprintBoard) : "",
       fingerprintMcu: isSet(object.fingerprintMcu) ? globalThis.String(object.fingerprintMcu) : "",
+      fingerprintSensor: isSet(object.fingerprintSensor) ? globalThis.String(object.fingerprintSensor) : "",
       flashrom: isSet(object.flashrom) ? globalThis.Boolean(object.flashrom) : false,
       formFactor: isSet(object.formFactor) ? hardwareCapabilities_FormFactorFromJSON(object.formFactor) : 0,
       gpuFamily: isSet(object.gpuFamily) ? globalThis.String(object.gpuFamily) : "",
@@ -4718,8 +4792,14 @@ export const HardwareCapabilities = {
     if (message.fingerprint !== undefined && message.fingerprint !== false) {
       obj.fingerprint = message.fingerprint;
     }
+    if (message.fingerprintBoard !== undefined && message.fingerprintBoard !== "") {
+      obj.fingerprintBoard = message.fingerprintBoard;
+    }
     if (message.fingerprintMcu !== undefined && message.fingerprintMcu !== "") {
       obj.fingerprintMcu = message.fingerprintMcu;
+    }
+    if (message.fingerprintSensor !== undefined && message.fingerprintSensor !== "") {
+      obj.fingerprintSensor = message.fingerprintSensor;
     }
     if (message.flashrom !== undefined && message.flashrom !== false) {
       obj.flashrom = message.flashrom;
@@ -4786,7 +4866,9 @@ export const HardwareCapabilities = {
     message.starfishSlotMapping = object.starfishSlotMapping ?? "";
     message.detachablebase = object.detachablebase ?? false;
     message.fingerprint = object.fingerprint ?? false;
+    message.fingerprintBoard = object.fingerprintBoard ?? "";
     message.fingerprintMcu = object.fingerprintMcu ?? "";
+    message.fingerprintSensor = object.fingerprintSensor ?? "";
     message.flashrom = object.flashrom ?? false;
     message.formFactor = object.formFactor ?? 0;
     message.gpuFamily = object.gpuFamily ?? "";
@@ -4857,6 +4939,7 @@ function createBasePeripherals(): Peripherals {
     amtManagerState: 0,
     audioBeamforming: "",
     cameraState: 0,
+    simFeatures: [],
   };
 }
 
@@ -5012,6 +5095,11 @@ export const Peripherals = {
     if (message.cameraState !== undefined && message.cameraState !== 0) {
       writer.uint32(416).int32(message.cameraState);
     }
+    writer.uint32(426).fork();
+    for (const v of message.simFeatures) {
+      writer.int32(v);
+    }
+    writer.ldelim();
     return writer;
   },
 
@@ -5388,6 +5476,23 @@ export const Peripherals = {
 
           message.cameraState = reader.int32() as any;
           continue;
+        case 53:
+          if (tag === 424) {
+            message.simFeatures.push(reader.int32() as any);
+
+            continue;
+          }
+
+          if (tag === 426) {
+            const end2 = reader.uint32() + reader.pos;
+            while (reader.pos < end2) {
+              message.simFeatures.push(reader.int32() as any);
+            }
+
+            continue;
+          }
+
+          break;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -5467,6 +5572,9 @@ export const Peripherals = {
       amtManagerState: isSet(object.amtManagerState) ? peripheralStateFromJSON(object.amtManagerState) : 0,
       audioBeamforming: isSet(object.audioBeamforming) ? globalThis.String(object.audioBeamforming) : "",
       cameraState: isSet(object.cameraState) ? hardwareStateFromJSON(object.cameraState) : 0,
+      simFeatures: globalThis.Array.isArray(object?.simFeatures)
+        ? object.simFeatures.map((e: any) => peripherals_SIMFeatureFromJSON(e))
+        : [],
     };
   },
 
@@ -5618,6 +5726,9 @@ export const Peripherals = {
     if (message.cameraState !== undefined && message.cameraState !== 0) {
       obj.cameraState = hardwareStateToJSON(message.cameraState);
     }
+    if (message.simFeatures?.length) {
+      obj.simFeatures = message.simFeatures.map((e) => peripherals_SIMFeatureToJSON(e));
+    }
     return obj;
   },
 
@@ -5676,6 +5787,7 @@ export const Peripherals = {
     message.amtManagerState = object.amtManagerState ?? 0;
     message.audioBeamforming = object.audioBeamforming ?? "";
     message.cameraState = object.cameraState ?? 0;
+    message.simFeatures = object.simFeatures?.map((e) => e) || [];
     return message;
   },
 };

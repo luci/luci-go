@@ -213,6 +213,13 @@ export interface SIMProfileInfo {
   readonly ownNumber: string;
   /** The SIM state as reported by the cellular modem. */
   readonly state: SIMProfileInfo_State;
+  /**
+   * Features supported by the profile.
+   * These features are used to determine what tests can be run against which SIMs
+   * in the lab, see go/cros-cellular-features for more information.
+   * File bugs against buganizer component: 979102.
+   */
+  readonly features: readonly SIMProfileInfo_Feature[];
 }
 
 /** Possible states of the SIM profile. */
@@ -227,6 +234,8 @@ export enum SIMProfileInfo_State {
   NO_NETWORK = 3,
   /** WORKING - The device is registered with a network provider, and data connections and messaging may be available for use. */
   WORKING = 4,
+  /** WRONG_CONFIG - The device has an invalid configuration in UFS. */
+  WRONG_CONFIG = 5,
 }
 
 export function sIMProfileInfo_StateFromJSON(object: any): SIMProfileInfo_State {
@@ -246,6 +255,9 @@ export function sIMProfileInfo_StateFromJSON(object: any): SIMProfileInfo_State 
     case 4:
     case "WORKING":
       return SIMProfileInfo_State.WORKING;
+    case 5:
+    case "WRONG_CONFIG":
+      return SIMProfileInfo_State.WRONG_CONFIG;
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum SIMProfileInfo_State");
   }
@@ -263,8 +275,49 @@ export function sIMProfileInfo_StateToJSON(object: SIMProfileInfo_State): string
       return "NO_NETWORK";
     case SIMProfileInfo_State.WORKING:
       return "WORKING";
+    case SIMProfileInfo_State.WRONG_CONFIG:
+      return "WRONG_CONFIG";
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum SIMProfileInfo_State");
+  }
+}
+
+/** Possible features that the SIM supports. */
+export enum SIMProfileInfo_Feature {
+  /** FEATURE_UNSPECIFIED - Unset feature. */
+  FEATURE_UNSPECIFIED = 0,
+  /** FEATURE_LIVE_NETWORK - The SIM supports a generic live network. */
+  FEATURE_LIVE_NETWORK = 1,
+  /** FEATURE_SMS - The SIM supports SMS messaging. */
+  FEATURE_SMS = 2,
+}
+
+export function sIMProfileInfo_FeatureFromJSON(object: any): SIMProfileInfo_Feature {
+  switch (object) {
+    case 0:
+    case "FEATURE_UNSPECIFIED":
+      return SIMProfileInfo_Feature.FEATURE_UNSPECIFIED;
+    case 1:
+    case "FEATURE_LIVE_NETWORK":
+      return SIMProfileInfo_Feature.FEATURE_LIVE_NETWORK;
+    case 2:
+    case "FEATURE_SMS":
+      return SIMProfileInfo_Feature.FEATURE_SMS;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum SIMProfileInfo_Feature");
+  }
+}
+
+export function sIMProfileInfo_FeatureToJSON(object: SIMProfileInfo_Feature): string {
+  switch (object) {
+    case SIMProfileInfo_Feature.FEATURE_UNSPECIFIED:
+      return "FEATURE_UNSPECIFIED";
+    case SIMProfileInfo_Feature.FEATURE_LIVE_NETWORK:
+      return "FEATURE_LIVE_NETWORK";
+    case SIMProfileInfo_Feature.FEATURE_SMS:
+      return "FEATURE_SMS";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum SIMProfileInfo_Feature");
   }
 }
 
@@ -390,7 +443,7 @@ export const SIMInfo = {
 };
 
 function createBaseSIMProfileInfo(): SIMProfileInfo {
-  return { iccid: "", simPin: "", simPuk: "", carrierName: 0, ownNumber: "", state: 0 };
+  return { iccid: "", simPin: "", simPuk: "", carrierName: 0, ownNumber: "", state: 0, features: [] };
 }
 
 export const SIMProfileInfo = {
@@ -413,6 +466,11 @@ export const SIMProfileInfo = {
     if (message.state !== 0) {
       writer.uint32(48).int32(message.state);
     }
+    writer.uint32(58).fork();
+    for (const v of message.features) {
+      writer.int32(v);
+    }
+    writer.ldelim();
     return writer;
   },
 
@@ -465,6 +523,23 @@ export const SIMProfileInfo = {
 
           message.state = reader.int32() as any;
           continue;
+        case 7:
+          if (tag === 56) {
+            message.features.push(reader.int32() as any);
+
+            continue;
+          }
+
+          if (tag === 58) {
+            const end2 = reader.uint32() + reader.pos;
+            while (reader.pos < end2) {
+              message.features.push(reader.int32() as any);
+            }
+
+            continue;
+          }
+
+          break;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -482,6 +557,9 @@ export const SIMProfileInfo = {
       carrierName: isSet(object.carrierName) ? networkProviderFromJSON(object.carrierName) : 0,
       ownNumber: isSet(object.ownNumber) ? globalThis.String(object.ownNumber) : "",
       state: isSet(object.state) ? sIMProfileInfo_StateFromJSON(object.state) : 0,
+      features: globalThis.Array.isArray(object?.features)
+        ? object.features.map((e: any) => sIMProfileInfo_FeatureFromJSON(e))
+        : [],
     };
   },
 
@@ -505,6 +583,9 @@ export const SIMProfileInfo = {
     if (message.state !== 0) {
       obj.state = sIMProfileInfo_StateToJSON(message.state);
     }
+    if (message.features?.length) {
+      obj.features = message.features.map((e) => sIMProfileInfo_FeatureToJSON(e));
+    }
     return obj;
   },
 
@@ -519,6 +600,7 @@ export const SIMProfileInfo = {
     message.carrierName = object.carrierName ?? 0;
     message.ownNumber = object.ownNumber ?? "";
     message.state = object.state ?? 0;
+    message.features = object.features?.map((e) => e) || [];
     return message;
   },
 };
