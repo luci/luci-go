@@ -12,7 +12,8 @@ To solve this issue, you can
 1. comment out `registry = https://npm.skia.org/luci-milo` in [.npmrc](../.npmrc), then
 2. install/upgrade your dependencies, then
 3. replace all `https://registry.npmjs.org` with `https://npm.skia.org/luci-milo`
-   in [package-lock.json](../package-lock.json), then
+   in [package-lock.json](../package-lock.json)
+   (`sed -i 's\https://registry.npmjs.org\https://npm.skia.org/luci-milo\g' package-lock.json`), then
 4. uncomment `registry = https://npm.skia.org/luci-milo` in [.npmrc](../.npmrc), then
 5. upload your CL.
 
