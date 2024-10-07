@@ -91,4 +91,5 @@ protoc \
   ./go.chromium.org/luci/tree_status/proto/v1/trees.proto \
   ./infra/appengine/cr-rev/frontend/api/v1/service.proto \
   ./infra/appengine/sheriff-o-matic/proto/v1/alerts.proto \
+  ./infra/fleetconsole/api/fleetconsolerpc/service.proto \
   ./infra/unifiedfleet/api/v1/rpc/fleet.proto \
