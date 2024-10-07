@@ -1,40 +1,24 @@
-
-# Design Decisions
-## Service Workers
-To improve the loading time, the service workers are added to
- * redirect users from the old URLs to the new URLs (e.g. from
-   `` `/b/${build_id}` `` to `` `/ui/b/${build_id}` ``) without hitting the
-   server, and
- * cache and serve static assets, including the entry file (index.html), and
- * prefetch resources if the URL matches certain pattern.
-
-It's very hard (if not impossible) to achieve the results above without service
-workers because most page visits hit a dynamic (e.g.
-`` `/p/${project}/...` ``), and possibly constantly changing (e.g.
-`` `/b/${build_id}` ``) URL path, which means cache layers that rely on HTTP
-cache headers will not be very effective.
-
-## [Src Directory](../src) Structure
-### Goals
+# [Src Directory](../../src) Structure
+## Goals
 The directory structure is designed to achieve the following goals:
- * Fit to host all LUCI Single UI projects.
+ * Fit to host all LUCI UI projects.
  * Discovering/locating existing modules should be straightforward.
  * Deciding where a new module should be placed should not be confusing.
  * Managing (first party) modules dependencies should be straightforward, which
    requires
    * making the dependency relationship between modules more obvious, and
-   * making it harder to accidentally introducing circular dependencies.
+   * making it harder to accidentally introduce circular dependencies.
  * Support different levels of encapsulation, which includes the abilities to
    * limit the surface of a module, and
    * enforce module-level invariants.
 
-### Rules
-To achieve those goals, the [./src](../src) directory are generally structured
-with the following rules:
+## Rules
+To achieve those goals, the [./src](../../src) directory are generally
+structured with the following rules:
  * Modules are grouped into packages. Packages are all located at the top level
    directory in the ./src directory. It can be one of the followings:
-   * A business domain package (e.g. [@/build](../src/build),
-     [@/bisection](../src/bisection)).
+   * A business domain package (e.g. [@/build](../../src/build),
+     [@/bisection](../../src/bisection)).
      * The contained modules are specific to the business domain.
      * The business domain typically matches a top-level navigation/feature
        area.
@@ -48,7 +32,7 @@ with the following rules:
        isolation easier.
      * Placing modules under a package named after their domain helps
        discovering/locating modules as the project grows larger.
-   * The [@/common](../src/common) package.
+   * The [@/common](../../src/common) package.
      * The contained modules can have business/application logic.
      * The contained modules must not make assumptions on the business domains
        it's used in.
@@ -56,21 +40,21 @@ with the following rules:
      * Must not import from domain packages.
      * This helps capturing modules that cross domains.
      * The name gives a clear signal that the modules should stay reusable.
-   * The [@/generic_libs](../src/generic_libs) package.
+   * The [@/generic_libs](../../src/generic_libs) package.
      * The contained modules must not contain any business logic.
      * The contained modules should be highly generic and reusable (akin to a
        published module).
      * The contained modules (excluding unit tests) must not depend on any first
-       party module outside of [@/generic_libs](../src/generic_libs).
-     * Comparing to @/common, [@/generic_libs](../src/generic_libs) must not
+       party module outside of [@/generic_libs](../../src/generic_libs).
+     * Comparing to @/common, [@/generic_libs](../../src/generic_libs) must not
        contain business/application logic.
      * The name gives a clear signal that the modules should stay generic.
      * Separating from @/common makes it harder to accidentally
        add business logic to a generic module.
-   * The [@/core](../src/core) package.
+   * The [@/core](../../src/core) package.
      * The contained modules are for core functionality such as login or
        the landing page.
-   * The [@/testing_tools](../src/testing_tools) package.
+   * The [@/testing_tools](../../src/testing_tools) package.
      * Contains utilities for writing unit tests.
      * Can import from other packages or be imported to other packages.
      * Must only be used in unit tests.
@@ -114,12 +98,12 @@ Note: At the moment (2023-09-14), some packages are in an inconsistent state.
 Some modules should be moved to other packages. Notable items include but not
 limited to
  * Some modules in @/common should be moved to business domain packages.
- * [@/bisection](../src/bisection) and other recently merged in projects should
-   have common modules lifted to @/common.
+ * [@/bisection](../../src/bisection) and other recently merged in projects
+   should have common modules lifted to @/common.
 
 ### Graph illustration of the package relationships:
 ```ascii
-@/core                    ─┬─> @/build                        ─┬─> @/common           ─┬─> @/generic_libs
+@/core                   ─┬─> @/build                        ─┬─> @/common           ─┬─> @/generic_libs
   ├─■ ./pages             │     ├─■ ./pages                   │     ├─■ ./components  │     ├─■ ./components
   ├─■ ...other groups...  │     ├─■ ./components              │     ├─■ ./hooks       │     ├─■ ./hooks
   ├─■ ...entry files...   │     ├─■ ./hooks                   │     ├─■ ./tools       │     ├─■ ./tools
