@@ -21,19 +21,21 @@ import (
 	"net/http"
 	"strings"
 
+	"google.golang.org/grpc/credentials"
+
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/config"
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/config/cfgclient"
-	"go.chromium.org/luci/config/validation"
-	"go.chromium.org/luci/config/vars"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/signing"
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/router"
-	"google.golang.org/grpc/credentials"
+
+	"go.chromium.org/luci/config/cfgclient"
+	"go.chromium.org/luci/config/validation"
+	"go.chromium.org/luci/config/vars"
 )
 
 // ModuleName can be used to refer to this module when declaring dependencies.
@@ -137,29 +139,25 @@ func (m *serverModule) Initialize(ctx context.Context, host module.Host, opts mo
 	}
 	m.registerVars(opts)
 
+	var creds credentials.PerRPCCredentials
+	if m.opts.ServiceHost != "" {
+		var err error
+		creds, err = auth.GetPerRPCCredentials(ctx,
+			auth.AsSelf,
+			auth.WithIDTokenAudience("https://"+m.opts.ServiceHost),
+		)
+		if err != nil {
+			return nil, errors.Annotate(err, "failed to get credentials to access %s", m.opts.ServiceHost).Err()
+		}
+	}
+
 	// Instantiate an appropriate client based on options.
 	client, err := cfgclient.New(ctx, cfgclient.Options{
-		Vars:        m.opts.Vars,
-		ServiceHost: m.opts.ServiceHost,
-		ConfigsDir:  m.opts.LocalDir,
-		ClientFactory: func(ctx context.Context) (*http.Client, error) {
-			t, err := auth.GetRPCTransport(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
-			if err != nil {
-				return nil, err
-			}
-			return &http.Client{Transport: t}, nil
-		},
-		GetPerRPCCredsFn: func(ctx context.Context) (credentials.PerRPCCredentials, error) {
-			creds, err := auth.GetPerRPCCredentials(ctx,
-				auth.AsSelf,
-				auth.WithIDTokenAudience("https://"+m.opts.ServiceHost),
-			)
-			if err != nil {
-				return nil, errors.Annotate(err, "failed to get credentials to access %s", host).Err()
-			}
-			return creds, nil
-		},
-		UserAgent: opts.CloudProject,
+		Vars:              m.opts.Vars,
+		ServiceHost:       m.opts.ServiceHost,
+		ConfigsDir:        m.opts.LocalDir,
+		PerRPCCredentials: creds,
+		UserAgent:         opts.CloudProject,
 	})
 	if err != nil {
 		return nil, err

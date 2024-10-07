@@ -19,9 +19,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
-	"encoding/base64"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -29,24 +27,19 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
-	"sync"
 
 	"github.com/dustin/go-humanize"
 	"github.com/klauspost/compress/gzip"
-	"github.com/klauspost/compress/zlib"
 	"golang.org/x/sync/errgroup"
-	"google.golang.org/api/googleapi"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/protojson"
 
-	legacy_config "go.chromium.org/luci/common/api/luci_config/config/v1"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/config"
-	"go.chromium.org/luci/common/sync/parallel"
 	configpb "go.chromium.org/luci/config_service/proto"
 )
 
@@ -258,156 +251,6 @@ func uploadMissingFiles(ctx context.Context, cs ConfigSet, uploadFiles []*config
 		})
 	}
 	return eg.Wait()
-}
-
-type legacyRemoteValidator struct {
-	validateConfig        func(context.Context, *legacy_config.LuciConfigValidateConfigRequestMessage) (*legacy_config.LuciConfigValidateConfigResponseMessage, error)
-	requestSizeLimitBytes int64
-}
-
-func (r *legacyRemoteValidator) Validate(ctx context.Context, cs ConfigSet) ([]*config.ValidationResult_Message, error) {
-	// Sort by size, smaller first, to group small files in a single request.
-	files := make([]*legacy_config.LuciConfigValidateConfigRequestMessageFile, 0, len(cs.Data))
-	for path, content := range cs.Data {
-		files = append(files, &legacy_config.LuciConfigValidateConfigRequestMessageFile{
-			Path:    path,
-			Content: base64.StdEncoding.EncodeToString(content),
-		})
-	}
-	sort.Slice(files, func(i, j int) bool {
-		if len(files[i].Content) == len(files[j].Content) {
-			return strings.Compare(files[i].Path, files[j].Path) < 0
-		}
-		return len(files[i].Content) < len(files[j].Content)
-	})
-
-	// Split all files into a bunch of smallish validation requests to avoid
-	// hitting 32MB request size limit.
-	var (
-		requests []*legacy_config.LuciConfigValidateConfigRequestMessage
-		curFiles []*legacy_config.LuciConfigValidateConfigRequestMessageFile
-		curSize  int64
-	)
-	flush := func() {
-		if len(curFiles) > 0 {
-			requests = append(requests, &legacy_config.LuciConfigValidateConfigRequestMessage{
-				ConfigSet: cs.Name,
-				Files:     curFiles,
-			})
-		}
-		curFiles = nil
-		curSize = 0
-	}
-	for _, f := range files {
-		switch contentSize := int64(len(f.Content)); {
-		case contentSize > r.requestSizeLimitBytes:
-			return nil, errors.Reason("the size of file %q is %s that is exceeding the limit of %s", f.Path, humanize.Bytes(uint64(contentSize)), humanize.Bytes(uint64(r.requestSizeLimitBytes))).Err()
-		case curSize+contentSize > r.requestSizeLimitBytes:
-			flush()
-			fallthrough
-		default:
-			curFiles = append(curFiles, f)
-			curSize += int64(len(f.Content))
-		}
-	}
-	flush()
-
-	var (
-		lock     sync.Mutex
-		messages []*config.ValidationResult_Message
-	)
-
-	// Execute all requests in parallel.
-	err := parallel.FanOutIn(func(gen chan<- func() error) {
-		for _, req := range requests {
-			req := req
-			gen <- func() error {
-				resp, err := r.validateConfig(ctx, req)
-				if resp != nil {
-					lock.Lock()
-					for _, msg := range resp.Messages {
-						if val, ok := config.ValidationResult_Severity_value[strings.ToUpper(msg.Severity)]; ok {
-							messages = append(messages, &config.ValidationResult_Message{
-								Path:     msg.Path,
-								Severity: config.ValidationResult_Severity(val),
-								Text:     msg.Text,
-							})
-						} else {
-							logging.Warningf(ctx, "unknown severity %q; full msg: %+v", msg.Severity, msg)
-						}
-					}
-					lock.Unlock()
-				}
-				return err
-			}
-		}
-	})
-
-	// Sort messages by path for determinism.
-	sort.Slice(messages, func(i, j int) bool {
-		return messages[i].Path < messages[j].Path
-	})
-
-	return messages, err
-}
-
-// LegacyRemoteValidator returns ConfigSetValidator that makes RPCs to legacy
-// LUCI Config service.
-func LegacyRemoteValidator(client *http.Client, host string) ConfigSetValidator {
-	validateURL := fmt.Sprintf("https://%s/_ah/api/config/v1/validate-config", host)
-	return &legacyRemoteValidator{
-		// 160 MiB is picked because compression is done before sending the final
-		// request and the real request size limit is 32 MiB. Since config is
-		// highly repetitive content, it should easily achieve 5:1 compression
-		// ratio.
-		requestSizeLimitBytes: 160 * 1024 * 1024,
-		validateConfig: func(ctx context.Context, req *legacy_config.LuciConfigValidateConfigRequestMessage) (*legacy_config.LuciConfigValidateConfigResponseMessage, error) {
-
-			debug := make([]string, len(req.Files))
-			for i, f := range req.Files {
-				debug[i] = fmt.Sprintf("%s (%s)", f.Path, humanize.Bytes(uint64(len(f.Content))))
-			}
-			logging.Debugf(ctx, "Sending request to %s to validate %d files: %s",
-				validateURL,
-				len(req.Files),
-				strings.Join(debug, ", "),
-			)
-
-			var body bytes.Buffer
-			zlibWriter := zlib.NewWriter(&body)
-			if err := json.NewEncoder(zlibWriter).Encode(req); err != nil {
-				return nil, errors.Annotate(err, "failed to encode the request").Err()
-			}
-			if err := zlibWriter.Close(); err != nil {
-				return nil, errors.Annotate(err, "failed to close the zlib stream").Err()
-			}
-			httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, validateURL, &body)
-			if err != nil {
-				return nil, errors.Annotate(err, "failed to create a new request").Err()
-			}
-			httpReq.Header.Add("Content-Type", `application/json-zlib`)
-			httpReq.Header.Add("User-Agent", UserAgent)
-
-			res, err := client.Do(httpReq)
-			if err != nil {
-				return nil, errors.Annotate(err, "failed to execute HTTP request").Err()
-			}
-			defer func() { _ = res.Body.Close() }()
-			if res.StatusCode < 200 || res.StatusCode > 299 {
-				return nil, googleapi.CheckResponse(res)
-			}
-			ret := &legacy_config.LuciConfigValidateConfigResponseMessage{
-				ServerResponse: googleapi.ServerResponse{
-					Header:         res.Header,
-					HTTPStatusCode: res.StatusCode,
-				},
-			}
-			if err := json.NewDecoder(res.Body).Decode(&ret); err != nil {
-				return nil, err
-			}
-			return ret, nil
-		},
-	}
 }
 
 // ReadConfigSet reads all regular files in the given directory (recursively)

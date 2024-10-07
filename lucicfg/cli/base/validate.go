@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"strings"
 	"sync"
 
 	"github.com/bazelbuild/buildtools/build"
@@ -168,26 +167,16 @@ func validateOutput(ctx context.Context, output lucicfg.Output,
 		return nil, nil
 	}
 
-	var validator lucicfg.ConfigSetValidator
-	if strings.HasSuffix(host, "luci.app") {
-		conn, err := clientConnFactory(ctx, host)
-		if err != nil {
-			return nil, err
-		}
-		defer func() {
-			if err := conn.Close(); err != nil {
-				logging.Warningf(ctx, "failed to close the connection to config service: %s", err)
-			}
-		}()
-		validator = lucicfg.NewRemoteValidator(conn)
-	} else {
-		logging.Warningf(ctx, "The legacy LUCI Config service is deprecated. Please use the new LUCI Config service host \"config.luci.app\" by passing it through -config-service-host.")
-		configClient, err := legacyClientFactory(ctx)
-		if err != nil {
-			return nil, err
-		}
-		validator = lucicfg.LegacyRemoteValidator(configClient, host)
+	conn, err := clientConnFactory(ctx, host)
+	if err != nil {
+		return nil, err
 	}
+	defer func() {
+		if err := conn.Close(); err != nil {
+			logging.Warningf(ctx, "failed to close the connection to config service: %s", err)
+		}
+	}()
+	validator := lucicfg.NewRemoteValidator(conn)
 
 	// Validate all config sets in parallel.
 	results := make([]*lucicfg.ValidationResult, len(configSets))

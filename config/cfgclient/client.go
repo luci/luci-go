@@ -17,8 +17,6 @@ package cfgclient
 import (
 	"context"
 	"errors"
-	"net/http"
-	"strings"
 
 	"google.golang.org/grpc/credentials"
 
@@ -41,8 +39,7 @@ type Options struct {
 	// ServiceHost is a hostname of a LUCI Config service to use.
 	//
 	// If given, indicates configs should be fetched from the LUCI Config service.
-	// If it's Config Service V1 (where the host ends with "appspot.com"), it
-	// requires ClientFactory to be provided as well.
+	// Requires PerRPCCredentials to be provided as well.
 	//
 	// Not compatible with ConfigsDir.
 	ServiceHost string
@@ -57,16 +54,10 @@ type Options struct {
 	// ServiceHost.
 	ConfigsDir string
 
-	// ClientFactory initializes an authenticating HTTP client on demand.
+	// PerRPCCredentials to use to authenticate gRPC requests.
 	//
-	// It will be used to call LUCI Config service. Must be set if ServiceHost
-	// points to Config Service V1, ignored otherwise.
-	ClientFactory func(context.Context) (*http.Client, error)
-
-	// GetPerRPCCredsFn generates PerRPCCredentials for the gRPC connection.
-	//
-	// Must be set for calling Luci-Config v2, ignored otherwise.
-	GetPerRPCCredsFn func(context.Context) (credentials.PerRPCCredentials, error)
+	// Must be set if ServiceHost is set, ignored otherwise.
+	PerRPCCredentials credentials.PerRPCCredentials
 
 	// UserAgent is the optional additional User-Agent fragment which will be
 	// appended to gRPC calls.
@@ -85,26 +76,19 @@ func New(ctx context.Context, opts Options) (config.Interface, error) {
 		return erroring.New(errors.New("LUCI Config client is not configured")), nil
 	case opts.ServiceHost != "" && opts.ConfigsDir != "":
 		return nil, errors.New("either a LUCI Config service or a local config directory should be used, not both")
-	case IsV1Host(opts.ServiceHost) && opts.ClientFactory == nil:
-		return nil, errors.New("need a client factory when using a LUCI Config service v1")
-	case opts.ServiceHost != "" && opts.GetPerRPCCredsFn == nil:
-		return nil, errors.New("GetPerRPCCredsFn must be set when using a LUCI Config service v2")
+	case opts.ServiceHost != "" && opts.PerRPCCredentials == nil:
+		return nil, errors.New("PerRPCCredentials must be set when using a LUCI Config service")
 	}
 
 	var base config.Interface
 	var err error
 	switch {
-	case opts.ServiceHost != "" && IsV1Host(opts.ServiceHost):
-		base = remote.NewV1(opts.ServiceHost, false, opts.ClientFactory)
 	case opts.ServiceHost != "":
-		var creds credentials.PerRPCCredentials
-		if creds, err = opts.GetPerRPCCredsFn(ctx); err == nil {
-			base, err = remote.NewV2(ctx, remote.V2Options{
-				Host:      opts.ServiceHost,
-				Creds:     creds,
-				UserAgent: opts.UserAgent,
-			})
-		}
+		base, err = remote.New(ctx, remote.Options{
+			Host:      opts.ServiceHost,
+			Creds:     opts.PerRPCCredentials,
+			UserAgent: opts.UserAgent,
+		})
 	case opts.ConfigsDir != "":
 		base, err = filesystem.New(opts.ConfigsDir)
 	default:
@@ -120,9 +104,4 @@ func New(ctx context.Context, opts Options) (config.Interface, error) {
 	}
 
 	return resolving.New(varz, base), nil
-}
-
-// IsV1Host checks if the provided host points to the old v1 service.
-func IsV1Host(host string) bool {
-	return strings.HasSuffix(host, ".appspot.com")
 }
