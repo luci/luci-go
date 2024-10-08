@@ -1449,6 +1449,7 @@ luci.builder(
     execution_timeout = None,
     grace_period = None,
     heartbeat_timeout = None,
+    max_concurrent_builds = None,
     dimensions = None,
     priority = None,
     swarming_host = None,
@@ -1539,6 +1540,7 @@ Buildbucket.
 * **execution_timeout**: how long to wait for a running build to finish before forcefully aborting it and marking the build as timed out. If None, defer the decision to Buildbucket service. Supports the module-scoped default.
 * **grace_period**: how long to wait after the expiration of `execution_timeout` or after a Cancel event, before the build is forcefully shut down. Your build can use this time as a 'last gasp' to do quick actions like killing child processes, cleaning resources, etc. Supports the module-scoped default.
 * **heartbeat_timeout**: How long Buildbucket should wait for a running build to send any updates before forcefully fail it with `INFRA_FAILURE`. If None, Buildbucket won't check the heartbeat timeout. This field only takes effect for builds that don't have Buildbucket managing their underlying backend tasks, namely the ones on TaskBackendLite. E.g. builds running on Swarming don't need to set this.
+* **max_concurrent_builds**: maximum number of builds running concurrently for this builder. Builds can be scheduled normally with no limitation. Only the number of builds started is throttled to this value. If set to None, no limit will be enforced to the builder, this is the default flow.
 * **dimensions**: a dict with swarming dimensions, indicating requirements for a bot to execute the build. Keys are strings (e.g. `os`), and values are either strings (e.g. `Linux`), [swarming.dimension(...)](#swarming.dimension) objects (for defining expiring dimensions) or lists of thereof. Supports the module-scoped defaults. They are merged (non-recursively) with the explicitly passed dimensions.
 * **priority**: int [1-255] or None, indicating swarming task priority, lower is more important. If None, defer the decision to Buildbucket service. Supports the module-scoped default.
 * **swarming_host**: appspot hostname of a Swarming service to use for this builder instead of the default specified in [luci.project(...)](#luci.project). Use with great caution. Supports the module-scoped default.

@@ -135,6 +135,7 @@ luci.builder(
     execution_timeout = 3 * time.hour,
     grace_period = 2 * time.minute,
     heartbeat_timeout = 10 * time.minute,
+    max_concurrent_builds = 2,
     dimensions = {
         "os": "Linux",
         "builder": "linux ci builder",  # no auto_builder_dimension
@@ -987,6 +988,7 @@ lucicfg.emit(
 #         }
 #       }
 #       description_html: "this is a linux ci builder"
+#       max_concurrent_builds: 2
 #     }
 #     builders {
 #       name: "newest first schedule builder"

@@ -461,6 +461,7 @@ def _buildbucket_builder(node, def_swarming_host):
         execution_timeout_secs = optional_sec(node.props.execution_timeout),
         grace_period = optional_duration_pb(node.props.grace_period),
         heartbeat_timeout_secs = optional_sec(node.props.heartbeat_timeout),
+        max_concurrent_builds = node.props.max_concurrent_builds,
         dimensions = _buildbucket_dimensions(node.props.dimensions),
         priority = node.props.priority,
         expiration_secs = optional_sec(node.props.expiration_timeout),

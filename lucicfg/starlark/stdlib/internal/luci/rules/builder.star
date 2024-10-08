@@ -41,6 +41,7 @@ def _generate_builder(
         execution_timeout = None,
         grace_period = None,
         heartbeat_timeout = None,
+        max_concurrent_builds = None,
 
         # Scheduling parameters.
         dimensions = None,
@@ -129,6 +130,11 @@ def _generate_builder(
         takes effect for builds that don't have Buildbucket managing their
         underlying backend tasks, namely the ones on TaskBackendLite. E.g.
         builds running on Swarming don't need to set this.
+      max_concurrent_builds: maximum number of builds running concurrently
+        for this builder. Builds can be scheduled normally with no limitation.
+        Only the number of builds started is throttled to this value.
+        If set to None, no limit will be enforced to the builder,
+        this is the default flow.
 
       dimensions: a dict with swarming dimensions, indicating requirements for
         a bot to execute the build. Keys are strings (e.g. `os`), and values
@@ -262,6 +268,7 @@ def _generate_builder(
         "execution_timeout": validate.duration("execution_timeout", execution_timeout, required = False),
         "grace_period": validate.duration("grace_period", grace_period, required = False),
         "heartbeat_timeout": validate.duration("heartbeat_timeout", heartbeat_timeout, required = False),
+        "max_concurrent_builds": validate.int("max_concurrent_builds", max_concurrent_builds, min = 0, required = False),
         "dimensions": swarming.validate_dimensions("dimensions", dimensions, allow_none = True),
         "priority": validate.int("priority", priority, min = 1, max = 255, required = False),
         "swarming_host": validate.string("swarming_host", swarming_host, required = False),
@@ -391,6 +398,7 @@ def _builder(
         execution_timeout = None,
         grace_period = None,
         heartbeat_timeout = None,
+        max_concurrent_builds = None,
 
         # Scheduling parameters.
         dimensions = None,
@@ -523,6 +531,11 @@ def _builder(
         takes effect for builds that don't have Buildbucket managing their
         underlying backend tasks, namely the ones on TaskBackendLite. E.g.
         builds running on Swarming don't need to set this.
+      max_concurrent_builds: maximum number of builds running concurrently
+        for this builder. Builds can be scheduled normally with no limitation.
+        Only the number of builds started is throttled to this value.
+        If set to None, no limit will be enforced to the builder,
+        this is the default flow.
 
       dimensions: a dict with swarming dimensions, indicating requirements for
         a bot to execute the build. Keys are strings (e.g. `os`), and values
@@ -654,6 +667,7 @@ def _builder(
         execution_timeout = execution_timeout,
         grace_period = grace_period,
         heartbeat_timeout = heartbeat_timeout,
+        max_concurrent_builds = max_concurrent_builds,
 
         # Scheduling parameters.
         dimensions = dimensions,
@@ -788,6 +802,7 @@ builder = lucicfg.rule(
         "execution_timeout": validate.duration,
         "grace_period": validate.duration,
         "heartbeat_timeout": validate.duration,
+        "max_concurrent_builds": lambda attr, val: validate.int(attr, val, min = 0),
         "dimensions": swarming.validate_dimensions,
         "priority": lambda attr, val: validate.int(attr, val, min = 1, max = 255),
         "swarming_host": validate.string,
