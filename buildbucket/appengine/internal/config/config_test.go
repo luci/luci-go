@@ -18,46 +18,46 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/gae/impl/memory"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestConfig(t *testing.T) {
 	t.Parallel()
-	Convey("get settings.cfg", t, func() {
+	ftt.Run("get settings.cfg", t, func(t *ftt.Test) {
 		settingsCfg := &pb.SettingsCfg{Resultdb: &pb.ResultDBSettings{Hostname: "testing.results.api.cr.dev"}}
 		ctx := memory.Use(context.Background())
 		SetTestSettingsCfg(ctx, settingsCfg)
 		cfg, err := GetSettingsCfg(ctx)
-		So(err, ShouldBeNil)
-		So(cfg, ShouldResembleProto, settingsCfg)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, cfg, should.Resemble(settingsCfg))
 	})
 
-	Convey("validate settings.cfg", t, func() {
+	ftt.Run("validate settings.cfg", t, func(t *ftt.Test) {
 		vctx := &validation.Context{
 			Context: context.Background(),
 		}
 		configSet := "services/${appid}"
 		path := "settings.cfg"
 
-		Convey("bad proto", func() {
+		t.Run("bad proto", func(t *ftt.Test) {
 			content := []byte(` bad: "bad" `)
-			So(validateSettingsCfg(vctx, configSet, path, content), ShouldBeNil)
-			So(vctx.Finalize().Error(), ShouldContainSubstring, "invalid SettingsCfg proto message")
+			assert.Loosely(t, validateSettingsCfg(vctx, configSet, path, content), should.BeNil)
+			assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("invalid SettingsCfg proto message"))
 		})
 
-		Convey("empty settings.cfg", func() {
+		t.Run("empty settings.cfg", func(t *ftt.Test) {
 			content := []byte(` `)
-			So(validateSettingsCfg(vctx, configSet, path, content), ShouldBeNil)
-			So(vctx.Finalize().Error(), ShouldContainSubstring, "logdog.hostname unspecified")
+			assert.Loosely(t, validateSettingsCfg(vctx, configSet, path, content), should.BeNil)
+			assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("logdog.hostname unspecified"))
 		})
 
-		Convey("no swarming cfg", func() {
+		t.Run("no swarming cfg", func(t *ftt.Test) {
 			content := []byte(`
 				logdog {
 					hostname: "logs.chromium.org"
@@ -66,17 +66,17 @@ func TestConfig(t *testing.T) {
 					hostname: "results.api.cr.dev"
 				}
 			`)
-			So(validateSettingsCfg(vctx, configSet, path, content), ShouldBeNil)
-			So(vctx.Finalize(), ShouldBeNil)
+			assert.Loosely(t, validateSettingsCfg(vctx, configSet, path, content), should.BeNil)
+			assert.Loosely(t, vctx.Finalize(), should.BeNil)
 		})
 
-		Convey("no milo", func() {
+		t.Run("no milo", func(t *ftt.Test) {
 			content := []byte(`swarming{}`)
-			So(validateSettingsCfg(vctx, configSet, path, content), ShouldBeNil)
-			So(vctx.Finalize().Error(), ShouldContainSubstring, "milo_hostname unspecified")
+			assert.Loosely(t, validateSettingsCfg(vctx, configSet, path, content), should.BeNil)
+			assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("milo_hostname unspecified"))
 		})
 
-		Convey("invalid user_packages", func() {
+		t.Run("invalid user_packages", func(t *ftt.Test) {
 			content := []byte(`
 				swarming {
 					milo_hostname: "ci.chromium.org"
@@ -86,11 +86,11 @@ func TestConfig(t *testing.T) {
 					}
 				}
 			`)
-			So(validateSettingsCfg(vctx, configSet, path, content), ShouldBeNil)
-			So(vctx.Finalize().Error(), ShouldContainSubstring, "(swarming / user_packages #0): package_name is required")
+			assert.Loosely(t, validateSettingsCfg(vctx, configSet, path, content), should.BeNil)
+			assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("(swarming / user_packages #0): package_name is required"))
 		})
 
-		Convey("invalid alternative_agent_packages", func() {
+		t.Run("invalid alternative_agent_packages", func(t *ftt.Test) {
 			content := []byte(`
 				swarming {
 					milo_hostname: "ci.chromium.org"
@@ -100,11 +100,11 @@ func TestConfig(t *testing.T) {
 					}
 				}
 			`)
-			So(validateSettingsCfg(vctx, configSet, path, content), ShouldBeNil)
-			So(vctx.Finalize().Error(), ShouldContainSubstring, "alternative_agent_package must set constraints on either omit_on_experiment or include_on_experiment")
+			assert.Loosely(t, validateSettingsCfg(vctx, configSet, path, content), should.BeNil)
+			assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("alternative_agent_package must set constraints on either omit_on_experiment or include_on_experiment"))
 		})
 
-		Convey("no /${platform} in bbagent", func() {
+		t.Run("no /${platform} in bbagent", func(t *ftt.Test) {
 			content := []byte(`
 				swarming {
 					milo_hostname: "ci.chromium.org"
@@ -114,11 +114,11 @@ func TestConfig(t *testing.T) {
 					}
 				}
 			`)
-			So(validateSettingsCfg(vctx, configSet, path, content), ShouldBeNil)
-			So(vctx.Finalize().Error(), ShouldContainSubstring, "(swarming / bbagent_package): package_name must end with '/${platform}'")
+			assert.Loosely(t, validateSettingsCfg(vctx, configSet, path, content), should.BeNil)
+			assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("(swarming / bbagent_package): package_name must end with '/${platform}'"))
 		})
 
-		Convey("invalid builders.regex in experiments", func() {
+		t.Run("invalid builders.regex in experiments", func(t *ftt.Test) {
 			content := []byte(`
 				experiment {
 					experiments {
@@ -129,11 +129,11 @@ func TestConfig(t *testing.T) {
 					}
 				}
 			`)
-			So(validateSettingsCfg(vctx, configSet, path, content), ShouldBeNil)
-			So(vctx.Finalize().Error(), ShouldContainSubstring, "(experiment.experiments #0): builders.regex \"(no right parenthesis\": invalid regex")
+			assert.Loosely(t, validateSettingsCfg(vctx, configSet, path, content), should.BeNil)
+			assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("(experiment.experiments #0): builders.regex \"(no right parenthesis\": invalid regex"))
 		})
 
-		Convey("wrong minimum_value in experiments", func() {
+		t.Run("wrong minimum_value in experiments", func(t *ftt.Test) {
 			content := []byte(`
 				experiment {
 					experiments {
@@ -142,11 +142,11 @@ func TestConfig(t *testing.T) {
 					}
 				}
 			`)
-			So(validateSettingsCfg(vctx, configSet, path, content), ShouldBeNil)
-			So(vctx.Finalize().Error(), ShouldContainSubstring, "minimum_value must be in [0,100]")
+			assert.Loosely(t, validateSettingsCfg(vctx, configSet, path, content), should.BeNil)
+			assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("minimum_value must be in [0,100]"))
 		})
 
-		Convey("wrong default_value in experiments", func() {
+		t.Run("wrong default_value in experiments", func(t *ftt.Test) {
 			content := []byte(`
 				experiment {
 					experiments {
@@ -156,11 +156,11 @@ func TestConfig(t *testing.T) {
 					}
 				}
 			`)
-			So(validateSettingsCfg(vctx, configSet, path, content), ShouldBeNil)
-			So(vctx.Finalize().Error(), ShouldContainSubstring, "default_value must be in [${minimum_value},100]")
+			assert.Loosely(t, validateSettingsCfg(vctx, configSet, path, content), should.BeNil)
+			assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("default_value must be in [${minimum_value},100]"))
 		})
 
-		Convey("invalid inactive in experiments", func() {
+		t.Run("invalid inactive in experiments", func(t *ftt.Test) {
 			content := []byte(`
 				experiment {
 					experiments {
@@ -171,22 +171,22 @@ func TestConfig(t *testing.T) {
 					}
 				}
 			`)
-			So(validateSettingsCfg(vctx, configSet, path, content), ShouldBeNil)
-			So(vctx.Finalize().Error(), ShouldContainSubstring, "default_value and minimum_value must both be 0 when inactive is true")
+			assert.Loosely(t, validateSettingsCfg(vctx, configSet, path, content), should.BeNil)
+			assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("default_value and minimum_value must both be 0 when inactive is true"))
 		})
 
-		Convey("invalid backend", func() {
+		t.Run("invalid backend", func(t *ftt.Test) {
 			content := []byte(`
 				backends {
 					target: "swarming://chromium-swarm"
 					hostname: "swarming://chromium-swarm"
 				}
 			`)
-			So(validateSettingsCfg(vctx, configSet, path, content), ShouldBeNil)
-			So(vctx.Finalize().Error(), ShouldContainSubstring, "BackendSetting.hostname must not contain '://")
+			assert.Loosely(t, validateSettingsCfg(vctx, configSet, path, content), should.BeNil)
+			assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("BackendSetting.hostname must not contain '://"))
 		})
 
-		Convey("valid empty target backend", func() {
+		t.Run("valid empty target backend", func(t *ftt.Test) {
 			content := []byte(`
 				logdog {
 					hostname: "logs.chromium.org"
@@ -200,13 +200,13 @@ func TestConfig(t *testing.T) {
 					lite_mode {}
 				}
 			`)
-			So(validateSettingsCfg(vctx, configSet, path, content), ShouldBeNil)
-			So(vctx.Finalize(), ShouldBeNil)
+			assert.Loosely(t, validateSettingsCfg(vctx, configSet, path, content), should.BeNil)
+			assert.Loosely(t, vctx.Finalize(), should.BeNil)
 		})
 
-		Convey("invalid backend full mode", func() {
-			Convey("build_sync_setting", func() {
-				Convey("sync_interval_seconds", func() {
+		t.Run("invalid backend full mode", func(t *ftt.Test) {
+			t.Run("build_sync_setting", func(t *ftt.Test) {
+				t.Run("sync_interval_seconds", func(t *ftt.Test) {
 					content := []byte(`
 						logdog {
 							hostname: "logs.chromium.org"
@@ -225,10 +225,10 @@ func TestConfig(t *testing.T) {
 							}
 						}
 					`)
-					So(validateSettingsCfg(vctx, configSet, path, content), ShouldBeNil)
-					So(vctx.Finalize().Error(), ShouldContainSubstring, "sync_interval_seconds must be greater than or equal to 60")
+					assert.Loosely(t, validateSettingsCfg(vctx, configSet, path, content), should.BeNil)
+					assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("sync_interval_seconds must be greater than or equal to 60"))
 				})
-				Convey("shards", func() {
+				t.Run("shards", func(t *ftt.Test) {
 					content := []byte(`
 						logdog {
 							hostname: "logs.chromium.org"
@@ -247,11 +247,11 @@ func TestConfig(t *testing.T) {
 							}
 						}
 					`)
-					So(validateSettingsCfg(vctx, configSet, path, content), ShouldBeNil)
-					So(vctx.Finalize().Error(), ShouldContainSubstring, "shards must be greater than or equal to 0")
+					assert.Loosely(t, validateSettingsCfg(vctx, configSet, path, content), should.BeNil)
+					assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("shards must be greater than or equal to 0"))
 				})
 			})
-			Convey("pubsub_id", func() {
+			t.Run("pubsub_id", func(t *ftt.Test) {
 				content := []byte(`
 						logdog {
 							hostname: "logs.chromium.org"
@@ -266,11 +266,11 @@ func TestConfig(t *testing.T) {
 							}
 						}
 					`)
-				So(validateSettingsCfg(vctx, configSet, path, content), ShouldBeNil)
-				So(vctx.Finalize().Error(), ShouldContainSubstring, "pubsub_id for UpdateBuildTask must be specified")
+				assert.Loosely(t, validateSettingsCfg(vctx, configSet, path, content), should.BeNil)
+				assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("pubsub_id for UpdateBuildTask must be specified"))
 			})
 
-			Convey("empty", func() {
+			t.Run("empty", func(t *ftt.Test) {
 				content := []byte(`
 						logdog {
 							hostname: "logs.chromium.org"
@@ -283,13 +283,13 @@ func TestConfig(t *testing.T) {
 							hostname: "chromium-swarm.appspot.com"
 						}
 					`)
-				So(validateSettingsCfg(vctx, configSet, path, content), ShouldBeNil)
-				So(vctx.Finalize().Error(), ShouldContainSubstring, "mode field is not set or its type is unsupported")
+				assert.Loosely(t, validateSettingsCfg(vctx, configSet, path, content), should.BeNil)
+				assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("mode field is not set or its type is unsupported"))
 			})
 		})
 
-		Convey("invalid custom metrics", func() {
-			Convey("invalid name", func() {
+		t.Run("invalid custom metrics", func(t *ftt.Test) {
+			t.Run("invalid name", func(t *ftt.Test) {
 				content := []byte(`
 							logdog {
 								hostname: "logs.chromium.org"
@@ -302,11 +302,11 @@ func TestConfig(t *testing.T) {
 								metric_base: CUSTOM_METRIC_BASE_STARTED,
 							}
 						`)
-				So(validateSettingsCfg(vctx, configSet, path, content), ShouldBeNil)
-				So(vctx.Finalize().Error(), ShouldContainSubstring, `invalid metric name "/chrome/infra/custom/builds/started/": doesn't match ^(/[a-zA-Z0-9_-]+)+$`)
+				assert.Loosely(t, validateSettingsCfg(vctx, configSet, path, content), should.BeNil)
+				assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring(`invalid metric name "/chrome/infra/custom/builds/started/": doesn't match ^(/[a-zA-Z0-9_-]+)+$`))
 			})
 
-			Convey("name without / prefix", func() {
+			t.Run("name without / prefix", func(t *ftt.Test) {
 				content := []byte(`
 							logdog {
 								hostname: "logs.chromium.org"
@@ -319,11 +319,11 @@ func TestConfig(t *testing.T) {
 								metric_base: CUSTOM_METRIC_BASE_STARTED,
 							}
 						`)
-				So(validateSettingsCfg(vctx, configSet, path, content), ShouldBeNil)
-				So(vctx.Finalize().Error(), ShouldContainSubstring, `invalid metric name "custom/builds/started/": must starts with "/"`)
+				assert.Loosely(t, validateSettingsCfg(vctx, configSet, path, content), should.BeNil)
+				assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring(`invalid metric name "custom/builds/started/": must starts with "/"`))
 			})
 
-			Convey("bb reserved name", func() {
+			t.Run("bb reserved name", func(t *ftt.Test) {
 				content := []byte(`
 							logdog {
 								hostname: "logs.chromium.org"
@@ -336,11 +336,11 @@ func TestConfig(t *testing.T) {
 								metric_base: CUSTOM_METRIC_BASE_STARTED,
 							}
 						`)
-				So(validateSettingsCfg(vctx, configSet, path, content), ShouldBeNil)
-				So(vctx.Finalize().Error(), ShouldContainSubstring, `"/chrome/infra/buildbucket/v2/builds/started" is reserved by Buildbucket`)
+				assert.Loosely(t, validateSettingsCfg(vctx, configSet, path, content), should.BeNil)
+				assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring(`"/chrome/infra/buildbucket/v2/builds/started" is reserved by Buildbucket`))
 			})
 
-			Convey("duplicated names", func() {
+			t.Run("duplicated names", func(t *ftt.Test) {
 				content := []byte(`
 						logdog {
 							hostname: "logs.chromium.org"
@@ -359,11 +359,11 @@ func TestConfig(t *testing.T) {
 							metric_base: CUSTOM_METRIC_BASE_STARTED,
 						}
 					`)
-				So(validateSettingsCfg(vctx, configSet, path, content), ShouldBeNil)
-				So(vctx.Finalize().Error(), ShouldContainSubstring, "duplicated name is not allowed: /chrome/infra/custom/builds/started")
+				assert.Loosely(t, validateSettingsCfg(vctx, configSet, path, content), should.BeNil)
+				assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("duplicated name is not allowed: /chrome/infra/custom/builds/started"))
 			})
 
-			Convey("invalid base", func() {
+			t.Run("invalid base", func(t *ftt.Test) {
 				content := []byte(`
 						logdog {
 							hostname: "logs.chromium.org"
@@ -376,11 +376,11 @@ func TestConfig(t *testing.T) {
 							metric_base: CUSTOM_METRIC_BASE_UNSET,
 						}
 					`)
-				So(validateSettingsCfg(vctx, configSet, path, content), ShouldBeNil)
-				So(vctx.Finalize().Error(), ShouldContainSubstring, `base CUSTOM_METRIC_BASE_UNSET is invalid`)
+				assert.Loosely(t, validateSettingsCfg(vctx, configSet, path, content), should.BeNil)
+				assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring(`base CUSTOM_METRIC_BASE_UNSET is invalid`))
 			})
 
-			Convey("invalid field", func() {
+			t.Run("invalid field", func(t *ftt.Test) {
 				content := []byte(`
 						logdog {
 							hostname: "logs.chromium.org"
@@ -394,11 +394,11 @@ func TestConfig(t *testing.T) {
 							metric_base: CUSTOM_METRIC_BASE_STARTED,
 						}
 					`)
-				So(validateSettingsCfg(vctx, configSet, path, content), ShouldBeNil)
-				So(vctx.Finalize().Error(), ShouldContainSubstring, `invalid field name "$status": doesn't match ^[A-Za-z_][A-Za-z0-9_]*$`)
+				assert.Loosely(t, validateSettingsCfg(vctx, configSet, path, content), should.BeNil)
+				assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring(`invalid field name "$status": doesn't match ^[A-Za-z_][A-Za-z0-9_]*$`))
 			})
 
-			Convey("duplicated field", func() {
+			t.Run("duplicated field", func(t *ftt.Test) {
 				content := []byte(`
 						logdog {
 							hostname: "logs.chromium.org"
@@ -413,11 +413,11 @@ func TestConfig(t *testing.T) {
 							metric_base: CUSTOM_METRIC_BASE_STARTED,
 						}
 					`)
-				So(validateSettingsCfg(vctx, configSet, path, content), ShouldBeNil)
-				So(vctx.Finalize().Error(), ShouldContainSubstring, `"os" is duplicated`)
+				assert.Loosely(t, validateSettingsCfg(vctx, configSet, path, content), should.BeNil)
+				assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring(`"os" is duplicated`))
 			})
 
-			Convey("extra_fields contain base field", func() {
+			t.Run("extra_fields contain base field", func(t *ftt.Test) {
 				content := []byte(`
 						logdog {
 							hostname: "logs.chromium.org"
@@ -432,11 +432,11 @@ func TestConfig(t *testing.T) {
 							metric_base: CUSTOM_METRIC_BASE_COMPLETED,
 						}
 					`)
-				So(validateSettingsCfg(vctx, configSet, path, content), ShouldBeNil)
-				So(vctx.Finalize().Error(), ShouldContainSubstring, `cannot contain base fields ["status"] in extra_fields`)
+				assert.Loosely(t, validateSettingsCfg(vctx, configSet, path, content), should.BeNil)
+				assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring(`cannot contain base fields ["status"] in extra_fields`))
 			})
 
-			Convey("extra_fields for builder metrics", func() {
+			t.Run("extra_fields for builder metrics", func(t *ftt.Test) {
 				content := []byte(`
 						logdog {
 							hostname: "logs.chromium.org"
@@ -450,12 +450,12 @@ func TestConfig(t *testing.T) {
 							metric_base: CUSTOM_METRIC_BASE_COUNT,
 						}
 					`)
-				So(validateSettingsCfg(vctx, configSet, path, content), ShouldBeNil)
-				So(vctx.Finalize().Error(), ShouldContainSubstring, `custom builder metric cannot have extra_fields`)
+				assert.Loosely(t, validateSettingsCfg(vctx, configSet, path, content), should.BeNil)
+				assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring(`custom builder metric cannot have extra_fields`))
 			})
 		})
 
-		Convey("OK", func() {
+		t.Run("OK", func(t *ftt.Test) {
 			var okCfg = `
 				swarming {
 					milo_hostname: "ci.chromium.org"
@@ -521,8 +521,8 @@ func TestConfig(t *testing.T) {
 					metric_base: CUSTOM_METRIC_BASE_COUNT,
 				}
 			`
-			So(validateSettingsCfg(vctx, configSet, path, []byte(okCfg)), ShouldBeNil)
-			So(vctx.Finalize(), ShouldBeNil)
+			assert.Loosely(t, validateSettingsCfg(vctx, configSet, path, []byte(okCfg)), should.BeNil)
+			assert.Loosely(t, vctx.Finalize(), should.BeNil)
 		})
 	})
 }

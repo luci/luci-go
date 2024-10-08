@@ -18,12 +18,13 @@ import (
 	"fmt"
 	"math"
 
-	"go.chromium.org/luci/buildbucket/appengine/model"
-	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/tsmon/distribution"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/common/tsmon/types"
+
+	"go.chromium.org/luci/buildbucket/appengine/model"
+	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
 var (

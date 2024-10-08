@@ -21,8 +21,10 @@ import (
 	"io"
 
 	"github.com/golang/protobuf/proto"
-	bbpb "go.chromium.org/luci/buildbucket/proto"
+
 	"go.chromium.org/luci/common/errors"
+
+	bbpb "go.chromium.org/luci/buildbucket/proto"
 )
 
 // Parse returns proto.Unmarshal(zlibDec(base64Dec(encodedData))).

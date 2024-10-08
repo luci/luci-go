@@ -30,6 +30,9 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -39,16 +42,12 @@ import (
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
-
-	. "github.com/smartystreets/goconvey/convey"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestBQ(t *testing.T) {
 	t.Parallel()
 
-	Convey("ExportBuild", t, func() {
+	ftt.Run("ExportBuild", t, func(t *ftt.Test) {
 		ctx := txndefer.FilterRDS(memory.Use(context.Background()))
 		ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
 		datastore.GetTestable(ctx).AutoIndex(true)
@@ -71,7 +70,7 @@ func TestBQ(t *testing.T) {
 		}
 		bk := datastore.KeyForObj(ctx, b)
 		bs := &model.BuildSteps{ID: 1, Build: bk}
-		So(bs.FromProto([]*pb.Step{
+		assert.Loosely(t, bs.FromProto([]*pb.Step{
 			{
 				Name:            "step",
 				SummaryMarkdown: "summary",
@@ -82,7 +81,7 @@ func TestBQ(t *testing.T) {
 				},
 				},
 			},
-		}), ShouldBeNil)
+		}), should.BeNil)
 		bi := &model.BuildInfra{
 			ID:    1,
 			Build: bk,
@@ -103,29 +102,29 @@ func TestBQ(t *testing.T) {
 				},
 			},
 		}
-		So(datastore.Put(ctx, b, bi, bs), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, b, bi, bs), should.BeNil)
 
-		Convey("build not found", func() {
+		t.Run("build not found", func(t *ftt.Test) {
 			err := ExportBuild(ctx, 111)
-			So(tq.Fatal.In(err), ShouldBeTrue)
-			So(err, ShouldErrLike, "build 111 not found when exporting into BQ")
+			assert.Loosely(t, tq.Fatal.In(err), should.BeTrue)
+			assert.Loosely(t, err, should.ErrLike("build 111 not found when exporting into BQ"))
 		})
 
-		Convey("bad row", func() {
+		t.Run("bad row", func(t *ftt.Test) {
 			ctx1 := context.WithValue(ctx, &fakeBqErrCtxKey, bigquery.PutMultiError{bigquery.RowInsertionError{}})
 			err := ExportBuild(ctx1, 123)
-			So(err, ShouldErrLike, "bad row for build 123")
-			So(tq.Fatal.In(err), ShouldBeTrue)
+			assert.Loosely(t, err, should.ErrLike("bad row for build 123"))
+			assert.Loosely(t, tq.Fatal.In(err), should.BeTrue)
 		})
 
-		Convey("transient BQ err", func() {
+		t.Run("transient BQ err", func(t *ftt.Test) {
 			ctx1 := context.WithValue(ctx, &fakeBqErrCtxKey, errors.New("transient"))
 			err := ExportBuild(ctx1, 123)
-			So(err, ShouldErrLike, "transient error when inserting BQ for build 123")
-			So(transient.Tag.In(err), ShouldBeTrue)
+			assert.Loosely(t, err, should.ErrLike("transient error when inserting BQ for build 123"))
+			assert.Loosely(t, transient.Tag.In(err), should.BeTrue)
 		})
 
-		Convey("output properties too large", func() {
+		t.Run("output properties too large", func(t *ftt.Test) {
 			originLimit := maxBuildSizeInBQ
 			maxBuildSizeInBQ = 600
 			defer func() {
@@ -143,14 +142,14 @@ func TestBQ(t *testing.T) {
 					},
 				},
 			}
-			So(datastore.Put(ctx, bo), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, bo), should.BeNil)
 
-			So(ExportBuild(ctx, 123), ShouldBeNil)
+			assert.Loosely(t, ExportBuild(ctx, 123), should.BeNil)
 			rows := fakeBq.GetRows("raw", "completed_builds")
-			So(len(rows), ShouldEqual, 1)
-			So(rows[0].InsertID, ShouldEqual, "123")
+			assert.Loosely(t, len(rows), should.Equal(1))
+			assert.Loosely(t, rows[0].InsertID, should.Equal("123"))
 			p, _ := rows[0].Message.(*pb.Build)
-			So(p, ShouldResembleProto, &pb.Build{
+			assert.Loosely(t, p, should.Resemble(&pb.Build{
 				Id: 123,
 				Builder: &pb.BuilderID{
 					Project: "project",
@@ -190,10 +189,10 @@ func TestBQ(t *testing.T) {
 						},
 					},
 				},
-			})
+			}))
 		})
 
-		Convey("strip step log as well if build is still too big", func() {
+		t.Run("strip step log as well if build is still too big", func(t *ftt.Test) {
 			originLimit := maxBuildSizeInBQ
 			maxBuildSizeInBQ = 500
 			defer func() {
@@ -211,14 +210,14 @@ func TestBQ(t *testing.T) {
 					},
 				},
 			}
-			So(datastore.Put(ctx, bo), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, bo), should.BeNil)
 
-			So(ExportBuild(ctx, 123), ShouldBeNil)
+			assert.Loosely(t, ExportBuild(ctx, 123), should.BeNil)
 			rows := fakeBq.GetRows("raw", "completed_builds")
-			So(len(rows), ShouldEqual, 1)
-			So(rows[0].InsertID, ShouldEqual, "123")
+			assert.Loosely(t, len(rows), should.Equal(1))
+			assert.Loosely(t, rows[0].InsertID, should.Equal("123"))
 			p, _ := rows[0].Message.(*pb.Build)
-			So(p, ShouldResembleProto, &pb.Build{
+			assert.Loosely(t, p, should.Resemble(&pb.Build{
 				Id: 123,
 				Builder: &pb.BuilderID{
 					Project: "project",
@@ -257,10 +256,10 @@ func TestBQ(t *testing.T) {
 						},
 					},
 				},
-			})
+			}))
 		})
 
-		Convey("fail export if build is still too big", func() {
+		t.Run("fail export if build is still too big", func(t *ftt.Test) {
 			originLimit := maxBuildSizeInBQ
 			maxBuildSizeInBQ = 50
 			defer func() {
@@ -278,22 +277,22 @@ func TestBQ(t *testing.T) {
 					},
 				},
 			}
-			So(datastore.Put(ctx, bo), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, bo), should.BeNil)
 
-			So(ExportBuild(ctx, 123), ShouldErrLike, errRowTooBig)
+			assert.Loosely(t, ExportBuild(ctx, 123), should.ErrLike(errRowTooBig))
 		})
 
-		Convey("summary markdown and cancelation reason are concatenated", func() {
+		t.Run("summary markdown and cancelation reason are concatenated", func(t *ftt.Test) {
 			b.Proto.SummaryMarkdown = "summary"
 			b.Proto.CancellationMarkdown = "cancelled"
-			So(datastore.Put(ctx, b), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, b), should.BeNil)
 
-			So(ExportBuild(ctx, 123), ShouldBeNil)
+			assert.Loosely(t, ExportBuild(ctx, 123), should.BeNil)
 			rows := fakeBq.GetRows("raw", "completed_builds")
-			So(len(rows), ShouldEqual, 1)
-			So(rows[0].InsertID, ShouldEqual, "123")
+			assert.Loosely(t, len(rows), should.Equal(1))
+			assert.Loosely(t, rows[0].InsertID, should.Equal("123"))
 			p, _ := rows[0].Message.(*pb.Build)
-			So(p, ShouldResembleProto, &pb.Build{
+			assert.Loosely(t, p, should.Resemble(&pb.Build{
 				Id: 123,
 				Builder: &pb.BuilderID{
 					Project: "project",
@@ -325,19 +324,19 @@ func TestBQ(t *testing.T) {
 				},
 				Input:  &pb.Build_Input{},
 				Output: &pb.Build_Output{},
-			})
+			}))
 		})
 
-		Convey("success", func() {
+		t.Run("success", func(t *ftt.Test) {
 			b.Proto.CancellationMarkdown = "cancelled"
-			So(datastore.Put(ctx, b), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, b), should.BeNil)
 
-			So(ExportBuild(ctx, 123), ShouldBeNil)
+			assert.Loosely(t, ExportBuild(ctx, 123), should.BeNil)
 			rows := fakeBq.GetRows("raw", "completed_builds")
-			So(len(rows), ShouldEqual, 1)
-			So(rows[0].InsertID, ShouldEqual, "123")
+			assert.Loosely(t, len(rows), should.Equal(1))
+			assert.Loosely(t, rows[0].InsertID, should.Equal("123"))
 			p, _ := rows[0].Message.(*pb.Build)
-			So(p, ShouldResembleProto, &pb.Build{
+			assert.Loosely(t, p, should.Resemble(&pb.Build{
 				Id: 123,
 				Builder: &pb.BuilderID{
 					Project: "project",
@@ -369,7 +368,7 @@ func TestBQ(t *testing.T) {
 				},
 				Input:  &pb.Build_Input{},
 				Output: &pb.Build_Output{},
-			})
+			}))
 		})
 	})
 }
@@ -377,7 +376,7 @@ func TestBQ(t *testing.T) {
 func TestTryBackfillSwarming(t *testing.T) {
 	t.Parallel()
 
-	Convey("tryBackfillSwarming", t, func() {
+	ftt.Run("tryBackfillSwarming", t, func(t *ftt.Test) {
 		b := &pb.Build{
 			Id: 1,
 			Builder: &pb.BuilderID{
@@ -388,13 +387,13 @@ func TestTryBackfillSwarming(t *testing.T) {
 			Status: pb.Status_SUCCESS,
 			Infra:  &pb.BuildInfra{},
 		}
-		Convey("noop", func() {
-			Convey("no backend", func() {
-				So(tryBackfillSwarming(b), ShouldBeNil)
-				So(b.Infra.Swarming, ShouldBeNil)
+		t.Run("noop", func(t *ftt.Test) {
+			t.Run("no backend", func(t *ftt.Test) {
+				assert.Loosely(t, tryBackfillSwarming(b), should.BeNil)
+				assert.Loosely(t, b.Infra.Swarming, should.BeNil)
 			})
 
-			Convey("no backend task", func() {
+			t.Run("no backend task", func(t *ftt.Test) {
 				b.Infra.Backend = &pb.BuildInfra_Backend{
 					Task: &pb.Task{
 						Id: &pb.TaskID{
@@ -402,11 +401,11 @@ func TestTryBackfillSwarming(t *testing.T) {
 						},
 					},
 				}
-				So(tryBackfillSwarming(b), ShouldBeNil)
-				So(b.Infra.Swarming, ShouldBeNil)
+				assert.Loosely(t, tryBackfillSwarming(b), should.BeNil)
+				assert.Loosely(t, b.Infra.Swarming, should.BeNil)
 			})
 
-			Convey("not a swarming implemented backend", func() {
+			t.Run("not a swarming implemented backend", func(t *ftt.Test) {
 				b.Infra.Backend = &pb.BuildInfra_Backend{
 					Task: &pb.Task{
 						Id: &pb.TaskID{
@@ -415,12 +414,12 @@ func TestTryBackfillSwarming(t *testing.T) {
 						},
 					},
 				}
-				So(tryBackfillSwarming(b), ShouldBeNil)
-				So(b.Infra.Swarming, ShouldBeNil)
+				assert.Loosely(t, tryBackfillSwarming(b), should.BeNil)
+				assert.Loosely(t, b.Infra.Swarming, should.BeNil)
 			})
 		})
 
-		Convey("swarming backfilled", func() {
+		t.Run("swarming backfilled", func(t *ftt.Test) {
 			taskDims := []*pb.RequestedDimension{
 				{
 					Key:   "key",
@@ -453,17 +452,17 @@ func TestTryBackfillSwarming(t *testing.T) {
 				},
 				TaskDimensions: taskDims,
 			}
-			Convey("partially fail", func() {
+			t.Run("partially fail", func(t *ftt.Test) {
 				b.Infra.Backend.Task.Details = &structpb.Struct{
 					Fields: map[string]*structpb.Value{
 						"bot_dimensions": &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "wrong format"}},
 					},
 				}
-				So(tryBackfillSwarming(b), ShouldErrLike, "failed to unmarshal task details JSON for build 1")
-				So(b.Infra.Swarming.BotDimensions, ShouldHaveLength, 0)
+				assert.Loosely(t, tryBackfillSwarming(b), should.ErrLike("failed to unmarshal task details JSON for build 1"))
+				assert.Loosely(t, b.Infra.Swarming.BotDimensions, should.HaveLength(0))
 			})
 
-			Convey("pass", func() {
+			t.Run("pass", func(t *ftt.Test) {
 				b.Infra.Backend.Task.Details = &structpb.Struct{
 					Fields: map[string]*structpb.Value{
 						"bot_dimensions": &structpb.Value{
@@ -525,8 +524,8 @@ func TestTryBackfillSwarming(t *testing.T) {
 						},
 					},
 				}
-				So(tryBackfillSwarming(b), ShouldBeNil)
-				So(b.Infra.Swarming, ShouldResembleProto, expected)
+				assert.Loosely(t, tryBackfillSwarming(b), should.BeNil)
+				assert.Loosely(t, b.Infra.Swarming, should.Resemble(expected))
 			})
 		})
 	})
@@ -535,7 +534,7 @@ func TestTryBackfillSwarming(t *testing.T) {
 func TestTryBackfillBackend(t *testing.T) {
 	t.Parallel()
 
-	Convey("tryBackfillBackend", t, func() {
+	ftt.Run("tryBackfillBackend", t, func(t *ftt.Test) {
 		b := &pb.Build{
 			Id: 1,
 			Builder: &pb.BuilderID{
@@ -546,22 +545,22 @@ func TestTryBackfillBackend(t *testing.T) {
 			Status: pb.Status_SUCCESS,
 			Infra:  &pb.BuildInfra{},
 		}
-		Convey("noop", func() {
-			Convey("no swarming", func() {
-				So(tryBackfillBackend(b), ShouldBeNil)
-				So(b.Infra.Backend, ShouldBeNil)
+		t.Run("noop", func(t *ftt.Test) {
+			t.Run("no swarming", func(t *ftt.Test) {
+				assert.Loosely(t, tryBackfillBackend(b), should.BeNil)
+				assert.Loosely(t, b.Infra.Backend, should.BeNil)
 			})
 
-			Convey("no swarming task", func() {
+			t.Run("no swarming task", func(t *ftt.Test) {
 				b.Infra.Swarming = &pb.BuildInfra_Swarming{
 					Hostname: "host",
 				}
-				So(tryBackfillBackend(b), ShouldBeNil)
-				So(b.Infra.Backend, ShouldBeNil)
+				assert.Loosely(t, tryBackfillBackend(b), should.BeNil)
+				assert.Loosely(t, b.Infra.Backend, should.BeNil)
 			})
 		})
 
-		Convey("backend backfilled", func() {
+		t.Run("backend backfilled", func(t *ftt.Test) {
 			taskDims := []*pb.RequestedDimension{
 				{
 					Key:   "key",
@@ -655,8 +654,8 @@ func TestTryBackfillBackend(t *testing.T) {
 					},
 				},
 			}
-			So(tryBackfillBackend(b), ShouldBeNil)
-			So(b.Infra.Backend, ShouldResembleProto, expected)
+			assert.Loosely(t, tryBackfillBackend(b), should.BeNil)
+			assert.Loosely(t, b.Infra.Backend, should.Resemble(expected))
 		})
 	})
 }

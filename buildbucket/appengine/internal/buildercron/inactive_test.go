@@ -19,28 +19,29 @@ import (
 	"testing"
 	"time"
 
-	"go.chromium.org/luci/buildbucket/appengine/model"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
+	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestResetExpiredLeases(t *testing.T) {
 	t.Parallel()
 
-	Convey("RemoveInactiveBuilderStats", t, func() {
+	ftt.Run("RemoveInactiveBuilderStats", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		now := testclock.TestTimeUTC
 		ctx, _ = testclock.UseTime(ctx, now)
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 
-		Convey("works when the world is empty", func() {
-			So(RemoveInactiveBuilderStats(ctx), ShouldBeNil)
+		t.Run("works when the world is empty", func(t *ftt.Test) {
+			assert.Loosely(t, RemoveInactiveBuilderStats(ctx), should.BeNil)
 		})
 
 		builds := []*model.Build{
@@ -63,7 +64,7 @@ func TestResetExpiredLeases(t *testing.T) {
 		}
 		statExist := func() bool {
 			r, err := datastore.Exists(ctx, model.BuilderStatKey(ctx, "prj", "bkt", "bld"))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			return r.Any()
 		}
 
@@ -71,34 +72,34 @@ func TestResetExpiredLeases(t *testing.T) {
 			fresh = now.Add(-1 * time.Hour)
 			old   = now.Add(-1 * model.BuilderExpirationDuration)
 		)
-		So(datastore.Put(ctx, builder), ShouldBeNil)
-		So(statExist(), ShouldBeFalse)
+		assert.Loosely(t, datastore.Put(ctx, builder), should.BeNil)
+		assert.Loosely(t, statExist(), should.BeFalse)
 
-		Convey("leaves Active Stats", func() {
-			So(model.UpdateBuilderStat(ctx, builds, fresh), ShouldBeNil)
-			So(RemoveInactiveBuilderStats(ctx), ShouldBeNil)
-			So(statExist(), ShouldBeTrue)
+		t.Run("leaves Active Stats", func(t *ftt.Test) {
+			assert.Loosely(t, model.UpdateBuilderStat(ctx, builds, fresh), should.BeNil)
+			assert.Loosely(t, RemoveInactiveBuilderStats(ctx), should.BeNil)
+			assert.Loosely(t, statExist(), should.BeTrue)
 		})
 
-		Convey("removes BuilderStat for an inactive Builder", func() {
-			So(model.UpdateBuilderStat(ctx, builds, old), ShouldBeNil)
-			So(RemoveInactiveBuilderStats(ctx), ShouldBeNil)
-			So(statExist(), ShouldBeFalse)
+		t.Run("removes BuilderStat for an inactive Builder", func(t *ftt.Test) {
+			assert.Loosely(t, model.UpdateBuilderStat(ctx, builds, old), should.BeNil)
+			assert.Loosely(t, RemoveInactiveBuilderStats(ctx), should.BeNil)
+			assert.Loosely(t, statExist(), should.BeFalse)
 		})
 
-		Convey("leaves young zombie BuilderStat", func() {
-			So(model.UpdateBuilderStat(ctx, builds, fresh), ShouldBeNil)
-			So(datastore.Delete(ctx, model.BuilderKey(ctx, "prj", "bkt", "bld")), ShouldBeNil)
-			So(RemoveInactiveBuilderStats(ctx), ShouldBeNil)
-			So(statExist(), ShouldBeTrue)
+		t.Run("leaves young zombie BuilderStat", func(t *ftt.Test) {
+			assert.Loosely(t, model.UpdateBuilderStat(ctx, builds, fresh), should.BeNil)
+			assert.Loosely(t, datastore.Delete(ctx, model.BuilderKey(ctx, "prj", "bkt", "bld")), should.BeNil)
+			assert.Loosely(t, RemoveInactiveBuilderStats(ctx), should.BeNil)
+			assert.Loosely(t, statExist(), should.BeTrue)
 		})
 
-		Convey("removes old zombie BuilderStat", func() {
+		t.Run("removes old zombie BuilderStat", func(t *ftt.Test) {
 			old := now.Add(-1 * model.BuilderStatZombieDuration)
-			So(model.UpdateBuilderStat(ctx, builds, old), ShouldBeNil)
-			So(datastore.Delete(ctx, model.BuilderKey(ctx, "prj", "bkt", "bld")), ShouldBeNil)
-			So(RemoveInactiveBuilderStats(ctx), ShouldBeNil)
-			So(statExist(), ShouldBeFalse)
+			assert.Loosely(t, model.UpdateBuilderStat(ctx, builds, old), should.BeNil)
+			assert.Loosely(t, datastore.Delete(ctx, model.BuilderKey(ctx, "prj", "bkt", "bld")), should.BeNil)
+			assert.Loosely(t, RemoveInactiveBuilderStats(ctx), should.BeNil)
+			assert.Loosely(t, statExist(), should.BeFalse)
 		})
 	})
 }

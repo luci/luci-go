@@ -19,6 +19,9 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
@@ -28,9 +31,6 @@ import (
 	"go.chromium.org/luci/buildbucket/appengine/rpc/testutil"
 	"go.chromium.org/luci/buildbucket/bbperms"
 	pb "go.chromium.org/luci/buildbucket/proto"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestCustomMetricPreview(t *testing.T) {
@@ -38,7 +38,7 @@ func TestCustomMetricPreview(t *testing.T) {
 
 	const userID = identity.Identity("user:user@example.com")
 
-	Convey("CustomMetricPreview", t, func() {
+	ftt.Run("CustomMetricPreview", t, func(t *ftt.Test) {
 		srv := &Builds{}
 		ctx := memory.Use(context.Background())
 		datastore.GetTestable(ctx).AutoIndex(true)
@@ -48,22 +48,22 @@ func TestCustomMetricPreview(t *testing.T) {
 			Identity: userID,
 		})
 
-		Convey("validation", func() {
-			Convey("empty request", func() {
+		t.Run("validation", func(t *ftt.Test) {
+			t.Run("empty request", func(t *ftt.Test) {
 				req := &pb.CustomMetricPreviewRequest{}
 				rsp, err := srv.CustomMetricPreview(ctx, req)
-				So(err, ShouldErrLike, ".build_id: required")
-				So(rsp, ShouldBeNil)
+				assert.Loosely(t, err, should.ErrLike(".build_id: required"))
+				assert.Loosely(t, rsp, should.BeNil)
 			})
-			Convey("no metric", func() {
+			t.Run("no metric", func(t *ftt.Test) {
 				req := &pb.CustomMetricPreviewRequest{
 					BuildId: 1,
 				}
 				rsp, err := srv.CustomMetricPreview(ctx, req)
-				So(err, ShouldErrLike, ".metric_definition: required")
-				So(rsp, ShouldBeNil)
+				assert.Loosely(t, err, should.ErrLike(".metric_definition: required"))
+				assert.Loosely(t, rsp, should.BeNil)
 			})
-			Convey("no base", func() {
+			t.Run("no base", func(t *ftt.Test) {
 				req := &pb.CustomMetricPreviewRequest{
 					BuildId: 1,
 					MetricDefinition: &pb.CustomMetricDefinition{
@@ -72,10 +72,10 @@ func TestCustomMetricPreview(t *testing.T) {
 					},
 				}
 				rsp, err := srv.CustomMetricPreview(ctx, req)
-				So(err, ShouldErrLike, "metric_base is required")
-				So(rsp, ShouldBeNil)
+				assert.Loosely(t, err, should.ErrLike("metric_base is required"))
+				assert.Loosely(t, rsp, should.BeNil)
 			})
-			Convey("metric has no predicates", func() {
+			t.Run("metric has no predicates", func(t *ftt.Test) {
 				req := &pb.CustomMetricPreviewRequest{
 					BuildId: 1,
 					MetricDefinition: &pb.CustomMetricDefinition{
@@ -86,11 +86,11 @@ func TestCustomMetricPreview(t *testing.T) {
 					},
 				}
 				rsp, err := srv.CustomMetricPreview(ctx, req)
-				So(err, ShouldErrLike, "metric_definition.predicates is required")
-				So(rsp, ShouldBeNil)
+				assert.Loosely(t, err, should.ErrLike("metric_definition.predicates is required"))
+				assert.Loosely(t, rsp, should.BeNil)
 			})
 
-			Convey("builder metric has extra_fields", func() {
+			t.Run("builder metric has extra_fields", func(t *ftt.Test) {
 				req := &pb.CustomMetricPreviewRequest{
 					BuildId: 1,
 					MetricDefinition: &pb.CustomMetricDefinition{
@@ -105,11 +105,11 @@ func TestCustomMetricPreview(t *testing.T) {
 					},
 				}
 				rsp, err := srv.CustomMetricPreview(ctx, req)
-				So(err, ShouldErrLike, `custom builder metric cannot have extra_fields`)
-				So(rsp, ShouldBeNil)
+				assert.Loosely(t, err, should.ErrLike(`custom builder metric cannot have extra_fields`))
+				assert.Loosely(t, rsp, should.BeNil)
 			})
 
-			Convey("metric reuses base fields in extra_fields", func() {
+			t.Run("metric reuses base fields in extra_fields", func(t *ftt.Test) {
 				req := &pb.CustomMetricPreviewRequest{
 					BuildId: 1,
 					MetricDefinition: &pb.CustomMetricDefinition{
@@ -124,8 +124,8 @@ func TestCustomMetricPreview(t *testing.T) {
 					},
 				}
 				rsp, err := srv.CustomMetricPreview(ctx, req)
-				So(err, ShouldErrLike, `cannot contain base fields ["status"] in extra_fields`)
-				So(rsp, ShouldBeNil)
+				assert.Loosely(t, err, should.ErrLike(`cannot contain base fields ["status"] in extra_fields`))
+				assert.Loosely(t, rsp, should.BeNil)
 			})
 
 			req := &pb.CustomMetricPreviewRequest{
@@ -138,13 +138,13 @@ func TestCustomMetricPreview(t *testing.T) {
 					MetricBase: pb.CustomMetricBase_CUSTOM_METRIC_BASE_STARTED,
 				},
 			}
-			Convey("build not found", func() {
+			t.Run("build not found", func(t *ftt.Test) {
 				rsp, err := srv.CustomMetricPreview(ctx, req)
-				So(err, ShouldErrLike, "not found")
-				So(rsp, ShouldBeNil)
+				assert.Loosely(t, err, should.ErrLike("not found"))
+				assert.Loosely(t, rsp, should.BeNil)
 			})
 
-			Convey("with build", func() {
+			t.Run("with build", func(t *ftt.Test) {
 				testutil.PutBucket(ctx, "project", "bucket", nil)
 				build := &model.Build{
 					Proto: &pb.Build{
@@ -156,13 +156,13 @@ func TestCustomMetricPreview(t *testing.T) {
 						},
 					},
 				}
-				So(datastore.Put(ctx, build), ShouldBeNil)
-				Convey("no access", func() {
+				assert.Loosely(t, datastore.Put(ctx, build), should.BeNil)
+				t.Run("no access", func(t *ftt.Test) {
 					rsp, err := srv.CustomMetricPreview(ctx, req)
-					So(err, ShouldErrLike, "not found")
-					So(rsp, ShouldBeNil)
+					assert.Loosely(t, err, should.ErrLike("not found"))
+					assert.Loosely(t, rsp, should.BeNil)
 				})
-				Convey("OK", func() {
+				t.Run("OK", func(t *ftt.Test) {
 					ctx = auth.WithState(ctx, &authtest.FakeState{
 						Identity: userID,
 						FakeDB: authtest.NewFakeDB(
@@ -170,13 +170,13 @@ func TestCustomMetricPreview(t *testing.T) {
 						),
 					})
 					rsp, err := srv.CustomMetricPreview(ctx, req)
-					So(err, ShouldBeNil)
-					So(rsp, ShouldNotBeNil)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, rsp, should.NotBeNil)
 				})
 			})
 		})
 
-		Convey("preview", func() {
+		t.Run("preview", func(t *ftt.Test) {
 			testutil.PutBucket(ctx, "project", "bucket", nil)
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: userID,
@@ -205,9 +205,9 @@ func TestCustomMetricPreview(t *testing.T) {
 					"os:mac",
 				},
 			}
-			So(datastore.Put(ctx, build), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, build), should.BeNil)
 
-			Convey("invalid predicate", func() {
+			t.Run("invalid predicate", func(t *ftt.Test) {
 				req := &pb.CustomMetricPreviewRequest{
 					BuildId: 1,
 					MetricDefinition: &pb.CustomMetricDefinition{
@@ -220,16 +220,16 @@ func TestCustomMetricPreview(t *testing.T) {
 					},
 				}
 				rsp, err := srv.CustomMetricPreview(ctx, req)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				expected := &pb.CustomMetricPreviewResponse{
 					Response: &pb.CustomMetricPreviewResponse_Error{
 						Error: "failed to evaluate the build with predicates: failed to generate CEL expression: expect bool, got string",
 					},
 				}
-				So(rsp, ShouldResembleProto, expected)
+				assert.Loosely(t, rsp, should.Resemble(expected))
 			})
 
-			Convey("build not pass predicate", func() {
+			t.Run("build not pass predicate", func(t *ftt.Test) {
 				req := &pb.CustomMetricPreviewRequest{
 					BuildId: 1,
 					MetricDefinition: &pb.CustomMetricDefinition{
@@ -241,16 +241,16 @@ func TestCustomMetricPreview(t *testing.T) {
 					},
 				}
 				rsp, err := srv.CustomMetricPreview(ctx, req)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				expected := &pb.CustomMetricPreviewResponse{
 					Response: &pb.CustomMetricPreviewResponse_Error{
 						Error: "the build doesn't pass the predicates evaluation, it will not be reported by the custom metric",
 					},
 				}
-				So(rsp, ShouldResembleProto, expected)
+				assert.Loosely(t, rsp, should.Resemble(expected))
 			})
 
-			Convey("invalid field", func() {
+			t.Run("invalid field", func(t *ftt.Test) {
 				req := &pb.CustomMetricPreviewRequest{
 					BuildId: 1,
 					MetricDefinition: &pb.CustomMetricDefinition{
@@ -266,16 +266,16 @@ func TestCustomMetricPreview(t *testing.T) {
 					},
 				}
 				rsp, err := srv.CustomMetricPreview(ctx, req)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				expected := &pb.CustomMetricPreviewResponse{
 					Response: &pb.CustomMetricPreviewResponse_Error{
 						Error: "failed to evaluate the build with extra_fields: failed to generate CEL expression: expect string, got bool",
 					},
 				}
-				So(rsp, ShouldResembleProto, expected)
+				assert.Loosely(t, rsp, should.Resemble(expected))
 			})
 
-			Convey("ok", func() {
+			t.Run("ok", func(t *ftt.Test) {
 				req := &pb.CustomMetricPreviewRequest{
 					BuildId: 1,
 					MetricDefinition: &pb.CustomMetricDefinition{
@@ -290,7 +290,7 @@ func TestCustomMetricPreview(t *testing.T) {
 					},
 				}
 				rsp, err := srv.CustomMetricPreview(ctx, req)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				expected := &pb.CustomMetricPreviewResponse{
 					Response: &pb.CustomMetricPreviewResponse_Report_{
 						Report: &pb.CustomMetricPreviewResponse_Report{
@@ -301,7 +301,7 @@ func TestCustomMetricPreview(t *testing.T) {
 						},
 					},
 				}
-				So(rsp, ShouldResembleProto, expected)
+				assert.Loosely(t, rsp, should.Resemble(expected))
 			})
 		})
 	})

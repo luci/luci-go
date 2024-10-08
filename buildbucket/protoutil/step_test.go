@@ -17,26 +17,27 @@ package protoutil
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestParentStepName(t *testing.T) {
 	t.Parallel()
 
-	Convey("ParentStepName", t, func() {
-		Convey("with an empty name", func() {
-			So(ParentStepName(""), ShouldEqual, "")
+	ftt.Run("ParentStepName", t, func(t *ftt.Test) {
+		t.Run("with an empty name", func(t *ftt.Test) {
+			assert.Loosely(t, ParentStepName(""), should.BeEmpty)
 		})
 
-		Convey("with a parent", func() {
-			So(ParentStepName("a|b"), ShouldEqual, "a")
-			So(ParentStepName("a|b|c"), ShouldEqual, "a|b")
-			So(ParentStepName("|b|"), ShouldEqual, "|b")
+		t.Run("with a parent", func(t *ftt.Test) {
+			assert.Loosely(t, ParentStepName("a|b"), should.Equal("a"))
+			assert.Loosely(t, ParentStepName("a|b|c"), should.Equal("a|b"))
+			assert.Loosely(t, ParentStepName("|b|"), should.Equal("|b"))
 		})
 
-		Convey("without a paraent", func() {
-			So(ParentStepName("a.b"), ShouldEqual, "")
+		t.Run("without a paraent", func(t *ftt.Test) {
+			assert.Loosely(t, ParentStepName("a.b"), should.BeEmpty)
 		})
 	})
 }
@@ -44,23 +45,23 @@ func TestParentStepName(t *testing.T) {
 func TestValidateStepName(t *testing.T) {
 	t.Parallel()
 
-	Convey("Validate", t, func() {
-		Convey("with an empty name", func() {
-			So(ValidateStepName(""), ShouldErrLike, "required")
+	ftt.Run("Validate", t, func(t *ftt.Test) {
+		t.Run("with an empty name", func(t *ftt.Test) {
+			assert.Loosely(t, ValidateStepName(""), should.ErrLike("required"))
 		})
 
-		Convey("with valid names", func() {
-			So(ValidateStepName("a"), ShouldBeNil)
-			So(ValidateStepName("a|b"), ShouldBeNil)
-			So(ValidateStepName("a|b|c"), ShouldBeNil)
+		t.Run("with valid names", func(t *ftt.Test) {
+			assert.Loosely(t, ValidateStepName("a"), should.BeNil)
+			assert.Loosely(t, ValidateStepName("a|b"), should.BeNil)
+			assert.Loosely(t, ValidateStepName("a|b|c"), should.BeNil)
 		})
 
-		Convey("with invalid names", func() {
+		t.Run("with invalid names", func(t *ftt.Test) {
 			errMsg := `there must be at least one character before and after "|"`
-			So(ValidateStepName("|"), ShouldErrLike, errMsg)
-			So(ValidateStepName("a|"), ShouldErrLike, errMsg)
-			So(ValidateStepName("|a"), ShouldErrLike, errMsg)
-			So(ValidateStepName("a||b"), ShouldErrLike, errMsg)
+			assert.Loosely(t, ValidateStepName("|"), should.ErrLike(errMsg))
+			assert.Loosely(t, ValidateStepName("a|"), should.ErrLike(errMsg))
+			assert.Loosely(t, ValidateStepName("|a"), should.ErrLike(errMsg))
+			assert.Loosely(t, ValidateStepName("a||b"), should.ErrLike(errMsg))
 		})
 	})
 }

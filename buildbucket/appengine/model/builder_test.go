@@ -20,29 +20,30 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestBuilderStat(t *testing.T) {
 	t.Parallel()
 
-	Convey("BuilderStat", t, func() {
+	ftt.Run("BuilderStat", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 
 		ts := testclock.TestTimeUTC
-		So(datastore.Put(ctx, &BuilderStat{
+		assert.Loosely(t, datastore.Put(ctx, &BuilderStat{
 			ID:            "proj:bucket:builder1",
 			LastScheduled: ts,
-		}), ShouldBeNil)
+		}), should.BeNil)
 
-		Convey("update builder", func() {
+		t.Run("update builder", func(t *ftt.Test) {
 			builds := []*Build{
 				{
 					ID: 1,
@@ -77,15 +78,15 @@ func TestBuilderStat(t *testing.T) {
 			}
 			now := ts.Add(3600 * time.Second)
 			err := UpdateBuilderStat(ctx, builds, now)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			currentBuilders := []*BuilderStat{
 				{ID: "proj:bucket:builder1"},
 				{ID: "proj:bucket:builder2"},
 			}
 			err = datastore.Get(ctx, currentBuilders)
-			So(err, ShouldBeNil)
-			So(currentBuilders, ShouldResemble, []*BuilderStat{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, currentBuilders, should.Resemble([]*BuilderStat{
 				{
 					ID:            "proj:bucket:builder1",
 					LastScheduled: datastore.RoundTime(now),
@@ -94,12 +95,12 @@ func TestBuilderStat(t *testing.T) {
 					ID:            "proj:bucket:builder2",
 					LastScheduled: datastore.RoundTime(now),
 				},
-			})
+			}))
 		})
 
-		Convey("uninitialized build.proto.builder", func() {
+		t.Run("uninitialized build.proto.builder", func(t *ftt.Test) {
 			builds := []*Build{{ID: 1}}
-			So(func() { UpdateBuilderStat(ctx, builds, ts) }, ShouldPanic)
+			assert.Loosely(t, func() { UpdateBuilderStat(ctx, builds, ts) }, should.Panic)
 		})
 	})
 }

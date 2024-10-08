@@ -17,95 +17,96 @@ package protoutil
 import (
 	"testing"
 
-	pb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
 func TestValidateBuilderID(t *testing.T) {
 	t.Parallel()
 
-	Convey("ValidateBuilderID", t, func() {
-		Convey("nil", func() {
+	ftt.Run("ValidateBuilderID", t, func(t *ftt.Test) {
+		t.Run("nil", func(t *ftt.Test) {
 			err := ValidateBuilderID(nil)
-			So(err, ShouldErrLike, "project must match")
+			assert.Loosely(t, err, should.ErrLike("project must match"))
 		})
 
-		Convey("empty", func() {
+		t.Run("empty", func(t *ftt.Test) {
 			b := &pb.BuilderID{}
 			err := ValidateBuilderID(b)
-			So(err, ShouldErrLike, "project must match")
+			assert.Loosely(t, err, should.ErrLike("project must match"))
 		})
 
-		Convey("project", func() {
+		t.Run("project", func(t *ftt.Test) {
 			b := &pb.BuilderID{}
 			err := ValidateBuilderID(b)
-			So(err, ShouldErrLike, "project must match")
+			assert.Loosely(t, err, should.ErrLike("project must match"))
 		})
 
-		Convey("bucket", func() {
-			Convey("empty", func() {
+		t.Run("bucket", func(t *ftt.Test) {
+			t.Run("empty", func(t *ftt.Test) {
 				b := &pb.BuilderID{
 					Project: "project",
 				}
 				err := ValidateBuilderID(b)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 
-			Convey("invalid", func() {
+			t.Run("invalid", func(t *ftt.Test) {
 				b := &pb.BuilderID{
 					Project: "project",
 					Bucket:  "bucket!",
 				}
 				err := ValidateBuilderID(b)
-				So(err, ShouldErrLike, "bucket must match")
+				assert.Loosely(t, err, should.ErrLike("bucket must match"))
 			})
 
-			Convey("v1", func() {
+			t.Run("v1", func(t *ftt.Test) {
 				b := &pb.BuilderID{
 					Project: "project",
 					Bucket:  "luci.project.bucket",
 				}
 				err := ValidateBuilderID(b)
-				So(err, ShouldErrLike, "invalid use of v1 bucket in v2 API")
+				assert.Loosely(t, err, should.ErrLike("invalid use of v1 bucket in v2 API"))
 			})
 
-			Convey("ok", func() {
+			t.Run("ok", func(t *ftt.Test) {
 				b := &pb.BuilderID{
 					Project: "project",
 					Bucket:  "bucket",
 				}
 				err := ValidateBuilderID(b)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 		})
 
-		Convey("builder", func() {
-			Convey("empty", func() {
+		t.Run("builder", func(t *ftt.Test) {
+			t.Run("empty", func(t *ftt.Test) {
 				b := &pb.BuilderID{
 					Project: "project",
 				}
 				err := ValidateBuilderID(b)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 
-			Convey("invalid", func() {
+			t.Run("invalid", func(t *ftt.Test) {
 				b := &pb.BuilderID{
 					Project: "project",
 					Builder: "builder!",
 				}
 				err := ValidateBuilderID(b)
-				So(err, ShouldErrLike, "builder must match")
+				assert.Loosely(t, err, should.ErrLike("builder must match"))
 			})
 
-			Convey("ok", func() {
+			t.Run("ok", func(t *ftt.Test) {
 				b := &pb.BuilderID{
 					Project: "project",
 					Builder: "builder",
 				}
 				err := ValidateBuilderID(b)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 		})
 	})
@@ -114,79 +115,79 @@ func TestValidateBuilderID(t *testing.T) {
 func TestValidateRequiredBuilderID(t *testing.T) {
 	t.Parallel()
 
-	Convey("ValidateRequiredBuilderID", t, func() {
-		Convey("nil", func() {
+	ftt.Run("ValidateRequiredBuilderID", t, func(t *ftt.Test) {
+		t.Run("nil", func(t *ftt.Test) {
 			err := ValidateRequiredBuilderID(nil)
-			So(err, ShouldErrLike, "project must match")
+			assert.Loosely(t, err, should.ErrLike("project must match"))
 		})
 
-		Convey("empty", func() {
+		t.Run("empty", func(t *ftt.Test) {
 			b := &pb.BuilderID{}
 			err := ValidateRequiredBuilderID(b)
-			So(err, ShouldErrLike, "project must match")
+			assert.Loosely(t, err, should.ErrLike("project must match"))
 		})
 
-		Convey("project", func() {
+		t.Run("project", func(t *ftt.Test) {
 			b := &pb.BuilderID{}
 			err := ValidateRequiredBuilderID(b)
-			So(err, ShouldErrLike, "project must match")
+			assert.Loosely(t, err, should.ErrLike("project must match"))
 		})
 
-		Convey("bucket", func() {
-			Convey("empty", func() {
+		t.Run("bucket", func(t *ftt.Test) {
+			t.Run("empty", func(t *ftt.Test) {
 				b := &pb.BuilderID{
 					Project: "project",
 				}
 				err := ValidateRequiredBuilderID(b)
-				So(err, ShouldErrLike, "bucket is required")
+				assert.Loosely(t, err, should.ErrLike("bucket is required"))
 			})
 
-			Convey("invalid", func() {
+			t.Run("invalid", func(t *ftt.Test) {
 				b := &pb.BuilderID{
 					Project: "project",
 					Bucket:  "bucket!",
 				}
 				err := ValidateRequiredBuilderID(b)
-				So(err, ShouldErrLike, "bucket must match")
+				assert.Loosely(t, err, should.ErrLike("bucket must match"))
 			})
 
-			Convey("v1", func() {
+			t.Run("v1", func(t *ftt.Test) {
 				b := &pb.BuilderID{
 					Project: "project",
 					Bucket:  "luci.project.bucket",
 				}
 				err := ValidateRequiredBuilderID(b)
-				So(err, ShouldErrLike, "invalid use of v1 bucket in v2 API")
+				assert.Loosely(t, err, should.ErrLike("invalid use of v1 bucket in v2 API"))
 			})
 
-			Convey("builder", func() {
-				Convey("empty", func() {
+			t.Run("builder", func(t *ftt.Test) {
+				t.Run("empty", func(t *ftt.Test) {
 					b := &pb.BuilderID{
 						Project: "project",
 						Bucket:  "bucket",
 					}
 					err := ValidateRequiredBuilderID(b)
-					So(err, ShouldErrLike, "builder is required")
+					assert.Loosely(t, err, should.ErrLike("builder is required"))
 				})
 
-				Convey("invalid", func() {
+				t.Run("invalid", func(t *ftt.Test) {
 					b := &pb.BuilderID{
 						Project: "project",
 						Bucket:  "bucket",
 						Builder: "builder!",
 					}
 					err := ValidateRequiredBuilderID(b)
-					So(err, ShouldErrLike, "builder must match")
+					assert.Loosely(t, err, should.ErrLike("builder must match"))
 				})
 
-				Convey("ok", func() {
+				t.Run("ok", func(t *ftt.Test) {
 					b := &pb.BuilderID{
 						Project: "project",
 						Bucket:  "bucket",
 						Builder: "builder",
 					}
 					err := ValidateRequiredBuilderID(b)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 				})
 			})
 		})
@@ -196,37 +197,37 @@ func TestValidateRequiredBuilderID(t *testing.T) {
 func TestBuilderConversion(t *testing.T) {
 	t.Parallel()
 
-	Convey("FormatBuilderID", t, func() {
-		So(FormatBuilderID(&pb.BuilderID{
+	ftt.Run("FormatBuilderID", t, func(t *ftt.Test) {
+		assert.Loosely(t, FormatBuilderID(&pb.BuilderID{
 			Project: "proj",
 			Bucket:  "bucket",
 			Builder: "builder",
 		}),
-			ShouldEqual,
-			"proj/bucket/builder")
+			should.Equal(
+				"proj/bucket/builder"))
 	})
 
-	Convey("FormatBucketID", t, func() {
-		So(FormatBucketID("proj", "bucket"), ShouldEqual, "proj/bucket")
+	ftt.Run("FormatBucketID", t, func(t *ftt.Test) {
+		assert.Loosely(t, FormatBucketID("proj", "bucket"), should.Equal("proj/bucket"))
 	})
 
-	Convey("ParseBucketID", t, func() {
-		Convey("valid", func() {
+	ftt.Run("ParseBucketID", t, func(t *ftt.Test) {
+		t.Run("valid", func(t *ftt.Test) {
 			p, b, err := ParseBucketID("proj/bucket")
-			So(err, ShouldBeNil)
-			So(p, ShouldEqual, "proj")
-			So(b, ShouldEqual, "bucket")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, p, should.Equal("proj"))
+			assert.Loosely(t, b, should.Equal("bucket"))
 		})
 
-		Convey("invalid", func() {
+		t.Run("invalid", func(t *ftt.Test) {
 			_, _, err := ParseBucketID("proj/bucket/bldr")
-			So(err, ShouldErrLike, "invalid bucket id; must have 1 slash")
+			assert.Loosely(t, err, should.ErrLike("invalid bucket id; must have 1 slash"))
 
 			_, _, err = ParseBucketID(" / ")
-			So(err, ShouldErrLike, "invalid bucket id; project is empty")
+			assert.Loosely(t, err, should.ErrLike("invalid bucket id; project is empty"))
 
 			_, _, err = ParseBucketID("proj/ ")
-			So(err, ShouldErrLike, "invalid bucket id; bucket is empty")
+			assert.Loosely(t, err, should.ErrLike("invalid bucket id; bucket is empty"))
 		})
 	})
 }

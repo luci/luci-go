@@ -17,45 +17,46 @@ package cli
 import (
 	"testing"
 
-	pb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
 func TestStatusFlag(t *testing.T) {
 	t.Parallel()
 
-	Convey("StatusFlag", t, func() {
+	ftt.Run("StatusFlag", t, func(t *ftt.Test) {
 		var status pb.Status
 		f := StatusFlag(&status)
 
-		Convey("Get", func() {
-			So(f.Get(), ShouldEqual, status)
+		t.Run("Get", func(t *ftt.Test) {
+			assert.Loosely(t, f.Get(), should.Equal(status))
 			status = pb.Status_SUCCESS
-			So(f.Get(), ShouldEqual, status)
+			assert.Loosely(t, f.Get(), should.Equal(status))
 		})
 
-		Convey("String", func() {
-			So(f.String(), ShouldEqual, "")
+		t.Run("String", func(t *ftt.Test) {
+			assert.Loosely(t, f.String(), should.BeEmpty)
 			status = pb.Status_SUCCESS
-			So(f.String(), ShouldEqual, "success")
+			assert.Loosely(t, f.String(), should.Equal("success"))
 		})
 
-		Convey("Set", func() {
-			Convey("success", func() {
-				So(f.Set("success"), ShouldBeNil)
-				So(status, ShouldEqual, pb.Status_SUCCESS)
+		t.Run("Set", func(t *ftt.Test) {
+			t.Run("success", func(t *ftt.Test) {
+				assert.Loosely(t, f.Set("success"), should.BeNil)
+				assert.Loosely(t, status, should.Equal(pb.Status_SUCCESS))
 			})
-			Convey("SUCCESS", func() {
-				So(f.Set("SUCCESS"), ShouldBeNil)
-				So(status, ShouldEqual, pb.Status_SUCCESS)
+			t.Run("SUCCESS", func(t *ftt.Test) {
+				assert.Loosely(t, f.Set("SUCCESS"), should.BeNil)
+				assert.Loosely(t, status, should.Equal(pb.Status_SUCCESS))
 			})
-			Convey("unspecified", func() {
-				So(f.Set("unspecified"), ShouldErrLike, `invalid status "unspecified"; expected one of canceled, ended, failure, infra_failure, scheduled, started, success`)
+			t.Run("unspecified", func(t *ftt.Test) {
+				assert.Loosely(t, f.Set("unspecified"), should.ErrLike(`invalid status "unspecified"; expected one of canceled, ended, failure, infra_failure, scheduled, started, success`))
 			})
-			Convey("garbage", func() {
-				So(f.Set("garbage"), ShouldErrLike, `invalid status "garbage"; expected one of canceled, ended, failure, infra_failure, scheduled, started, success`)
+			t.Run("garbage", func(t *ftt.Test) {
+				assert.Loosely(t, f.Set("garbage"), should.ErrLike(`invalid status "garbage"; expected one of canceled, ended, failure, infra_failure, scheduled, started, success`))
 			})
 		})
 	})

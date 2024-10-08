@@ -17,11 +17,12 @@ package main
 import (
 	"context"
 
-	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/logdog/client/butler/output"
 	"go.chromium.org/luci/logdog/client/butler/output/logdog"
 	"go.chromium.org/luci/logdog/common/types"
+
+	bbpb "go.chromium.org/luci/buildbucket/proto"
 )
 
 func mkLogdogOutput(ctx context.Context, opts *bbpb.BuildInfra_LogDog) (output.Output, error) {

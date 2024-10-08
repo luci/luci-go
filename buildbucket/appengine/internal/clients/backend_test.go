@@ -18,7 +18,12 @@ import (
 	"context"
 	"testing"
 
+	gomock "github.com/golang/mock/gomock"
+
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -28,16 +33,12 @@ import (
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
 	pb "go.chromium.org/luci/buildbucket/proto"
-
-	gomock "github.com/golang/mock/gomock"
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestBackendTaskClient(t *testing.T) {
 	t.Parallel()
 
-	Convey("assert NewBackendClient", t, func() {
+	ftt.Run("assert NewBackendClient", t, func(t *ftt.Test) {
 		ctl := gomock.NewController(t)
 		defer ctl.Finish()
 		mockBackend := NewMockTaskBackendClient(ctl)
@@ -81,19 +82,19 @@ func TestBackendTaskClient(t *testing.T) {
 			},
 		}
 
-		Convey("global settings not defined", func() {
+		t.Run("global settings not defined", func(t *ftt.Test) {
 			_, err := NewBackendClient(ctx, build.Builder.Project, infra.Backend.Task.Id.Target, nil)
-			So(err, ShouldErrLike, "could not get global settings config")
+			assert.Loosely(t, err, should.ErrLike("could not get global settings config"))
 		})
 
-		Convey("target not in global config", func() {
+		t.Run("target not in global config", func(t *ftt.Test) {
 			backendSetting := []*pb.BackendSetting{}
 			settingsCfg := &pb.SettingsCfg{Backends: backendSetting}
 			_, err := NewBackendClient(ctx, build.Builder.Project, infra.Backend.Task.Id.Target, settingsCfg)
-			So(err, ShouldErrLike, "could not find target in global config settings")
+			assert.Loosely(t, err, should.ErrLike("could not find target in global config settings"))
 		})
 
-		Convey("target is in global config", func() {
+		t.Run("target is in global config", func(t *ftt.Test) {
 			backendSetting := []*pb.BackendSetting{}
 			backendSetting = append(backendSetting, &pb.BackendSetting{
 				Target:   "swarming://mytarget",
@@ -101,7 +102,7 @@ func TestBackendTaskClient(t *testing.T) {
 			})
 			settingsCfg := &pb.SettingsCfg{Backends: backendSetting}
 			_, err := NewBackendClient(ctx, build.Builder.Project, infra.Backend.Task.Id.Target, settingsCfg)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 	})
 }

@@ -21,17 +21,17 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestPrintAndDone(t *testing.T) {
 	t.Parallel()
 
-	Convey("printAndDone", t, func(c C) {
+	ftt.Run("printAndDone", t, func(c *ftt.Test) {
 		ctx := context.Background()
 
 		call := func(args []string, fn func(string) (*pb.Build, error)) []buildResult {
@@ -51,7 +51,7 @@ func TestPrintAndDone(t *testing.T) {
 			return ret
 		}
 
-		Convey("actual args", func() {
+		c.Run("actual args", func(c *ftt.Test) {
 			var m sync.Mutex
 			actualArgs := stringset.New(3)
 			call([]string{"1", "2"}, func(arg string) (*pb.Build, error) {
@@ -60,20 +60,20 @@ func TestPrintAndDone(t *testing.T) {
 				actualArgs.Add(arg)
 				return &pb.Build{SummaryMarkdown: arg}, nil
 			})
-			So(actualArgs, ShouldResemble, stringset.NewFromSlice("1", "2"))
+			assert.Loosely(c, actualArgs, should.Resemble(stringset.NewFromSlice("1", "2")))
 		})
 
-		Convey("one build", func() {
+		c.Run("one build", func(c *ftt.Test) {
 			build := &pb.Build{SummaryMarkdown: "1"}
 			res := call([]string{"1"}, func(arg string) (*pb.Build, error) {
 				return build, nil
 			})
-			So(res[0].arg, ShouldEqual, "1")
-			So(res[0].err, ShouldBeNil)
-			So(res[0].build, ShouldResembleProto, build)
+			assert.Loosely(c, res[0].arg, should.Equal("1"))
+			assert.Loosely(c, res[0].err, should.BeNil)
+			assert.Loosely(c, res[0].build, should.Resemble(build))
 		})
 
-		Convey("two builds", func() {
+		c.Run("two builds", func(c *ftt.Test) {
 			build := &pb.Build{SummaryMarkdown: "1"}
 			res := call([]string{"1", "2"}, func(arg string) (*pb.Build, error) {
 				if arg == "1" {
@@ -82,15 +82,15 @@ func TestPrintAndDone(t *testing.T) {
 				return nil, fmt.Errorf("bad")
 			})
 
-			So(res, ShouldHaveLength, 2)
+			assert.Loosely(c, res, should.HaveLength(2))
 
-			So(res[0].arg, ShouldEqual, "1")
-			So(res[0].err, ShouldBeNil)
-			So(res[0].build, ShouldResembleProto, build)
+			assert.Loosely(c, res[0].arg, should.Equal("1"))
+			assert.Loosely(c, res[0].err, should.BeNil)
+			assert.Loosely(c, res[0].build, should.Resemble(build))
 
-			So(res[1].arg, ShouldEqual, "2")
-			So(res[1].err, ShouldErrLike, "bad")
-			So(res[1].build, ShouldBeNil)
+			assert.Loosely(c, res[1].arg, should.Equal("2"))
+			assert.Loosely(c, res[1].err, should.ErrLike("bad"))
+			assert.Loosely(c, res[1].build, should.BeNil)
 		})
 	})
 }

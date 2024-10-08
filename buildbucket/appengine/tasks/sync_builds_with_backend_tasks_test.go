@@ -22,7 +22,6 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-
 	"google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/timestamppb"

@@ -17,8 +17,9 @@ package metrics
 import (
 	"context"
 
-	bbmetrics "go.chromium.org/luci/buildbucket/metrics"
 	"go.chromium.org/luci/common/tsmon/target"
+
+	bbmetrics "go.chromium.org/luci/buildbucket/metrics"
 )
 
 var serviceInfoCtxKey = "holds the service information"

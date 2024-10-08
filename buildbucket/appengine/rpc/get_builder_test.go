@@ -21,6 +21,10 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
@@ -30,7 +34,6 @@ import (
 	"go.chromium.org/luci/buildbucket/bbperms"
 	pb "go.chromium.org/luci/buildbucket/proto"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -39,7 +42,7 @@ func TestGetBuilder(t *testing.T) {
 
 	const userID = identity.Identity("user:user@example.com")
 
-	Convey("GetBuilder", t, func() {
+	ftt.Run("GetBuilder", t, func(t *ftt.Test) {
 		srv := &Builders{}
 		ctx := memory.Use(context.Background())
 		datastore.GetTestable(ctx).AutoIndex(true)
@@ -51,18 +54,18 @@ func TestGetBuilder(t *testing.T) {
 			Builder: "builder",
 		}
 
-		Convey(`Request validation`, func() {
-			Convey(`Invalid ID`, func() {
+		t.Run(`Request validation`, func(t *ftt.Test) {
+			t.Run(`Invalid ID`, func(t *ftt.Test) {
 				_, err := srv.GetBuilder(ctx, &pb.GetBuilderRequest{})
-				So(err, ShouldHaveAppStatus, codes.InvalidArgument, "id: project must match")
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.InvalidArgument, "id: project must match"))
 			})
 		})
 
-		Convey(`No permissions`, func() {
+		t.Run(`No permissions`, func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: userID,
 			})
-			So(datastore.Put(
+			assert.Loosely(t, datastore.Put(
 				ctx,
 				&model.Bucket{
 					Parent: model.ProjectKey(ctx, "project"),
@@ -73,20 +76,20 @@ func TestGetBuilder(t *testing.T) {
 					ID:     "builder",
 					Config: &pb.BuilderConfig{Name: "builder"},
 				},
-			), ShouldBeNil)
+			), should.BeNil)
 
 			_, err := srv.GetBuilder(ctx, &pb.GetBuilderRequest{Id: bid})
-			So(err, ShouldHaveAppStatus, codes.NotFound, "not found")
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.NotFound, "not found"))
 		})
 
-		Convey(`End to end`, func() {
+		t.Run(`End to end`, func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: userID,
 				FakeDB: authtest.NewFakeDB(
 					authtest.MockPermission(userID, "project:bucket", bbperms.BuildersGet),
 				),
 			})
-			So(datastore.Put(
+			assert.Loosely(t, datastore.Put(
 				ctx,
 				&model.Bucket{
 					Parent: model.ProjectKey(ctx, "project"),
@@ -98,24 +101,24 @@ func TestGetBuilder(t *testing.T) {
 					ID:     "builder",
 					Config: &pb.BuilderConfig{Name: "builder"},
 				},
-			), ShouldBeNil)
+			), should.BeNil)
 
 			res, err := srv.GetBuilder(ctx, &pb.GetBuilderRequest{Id: bid})
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, &pb.BuilderItem{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(&pb.BuilderItem{
 				Id:     bid,
 				Config: &pb.BuilderConfig{Name: "builder"},
-			})
+			}))
 		})
 
-		Convey(`metadata`, func() {
+		t.Run(`metadata`, func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: userID,
 				FakeDB: authtest.NewFakeDB(
 					authtest.MockPermission(userID, "project:bucket", bbperms.BuildersGet),
 				),
 			})
-			So(datastore.Put(
+			assert.Loosely(t, datastore.Put(
 				ctx,
 				&model.Bucket{
 					Parent: model.ProjectKey(ctx, "project"),
@@ -138,15 +141,15 @@ func TestGetBuilder(t *testing.T) {
 					ID:     "builder2",
 					Config: &pb.BuilderConfig{Name: "builder2"},
 				},
-			), ShouldBeNil)
+			), should.BeNil)
 			res, err := srv.GetBuilder(ctx, &pb.GetBuilderRequest{
 				Id: bid,
 				Mask: &pb.BuilderMask{
 					Type: pb.BuilderMask_ALL,
 				},
 			})
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, &pb.BuilderItem{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(&pb.BuilderItem{
 				Id:     bid,
 				Config: &pb.BuilderConfig{Name: "builder"},
 				Metadata: &pb.BuilderMetadata{
@@ -155,7 +158,7 @@ func TestGetBuilder(t *testing.T) {
 						HealthScore: 9,
 					},
 				},
-			})
+			}))
 			bid.Builder = "builder2"
 			res, err = srv.GetBuilder(ctx, &pb.GetBuilderRequest{
 				Id: bid,
@@ -163,21 +166,21 @@ func TestGetBuilder(t *testing.T) {
 					Type: pb.BuilderMask_ALL,
 				},
 			})
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, &pb.BuilderItem{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(&pb.BuilderItem{
 				Id:     bid,
 				Config: &pb.BuilderConfig{Name: "builder2"},
-			})
+			}))
 		})
 
-		Convey(`mask`, func() {
+		t.Run(`mask`, func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: userID,
 				FakeDB: authtest.NewFakeDB(
 					authtest.MockPermission(userID, "project:bucket", bbperms.BuildersGet),
 				),
 			})
-			So(datastore.Put(
+			assert.Loosely(t, datastore.Put(
 				ctx,
 				&model.Bucket{
 					Parent: model.ProjectKey(ctx, "project"),
@@ -195,40 +198,40 @@ func TestGetBuilder(t *testing.T) {
 						},
 					},
 				},
-			), ShouldBeNil)
+			), should.BeNil)
 
-			Convey(`default mask`, func() {
+			t.Run(`default mask`, func(t *ftt.Test) {
 				res, err := srv.GetBuilder(ctx, &pb.GetBuilderRequest{Id: bid})
-				So(err, ShouldBeNil)
-				So(res, ShouldResembleProto, &pb.BuilderItem{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res, should.Resemble(&pb.BuilderItem{
 					Id:     bid,
 					Config: &pb.BuilderConfig{Name: "builder"},
-				})
+				}))
 			})
 
-			Convey(`config only`, func() {
+			t.Run(`config only`, func(t *ftt.Test) {
 				res, err := srv.GetBuilder(ctx, &pb.GetBuilderRequest{
 					Id: bid,
 					Mask: &pb.BuilderMask{
 						Type: pb.BuilderMask_CONFIG_ONLY,
 					},
 				})
-				So(err, ShouldBeNil)
-				So(res, ShouldResembleProto, &pb.BuilderItem{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res, should.Resemble(&pb.BuilderItem{
 					Id:     bid,
 					Config: &pb.BuilderConfig{Name: "builder"},
-				})
+				}))
 			})
 
-			Convey(`metadata only`, func() {
+			t.Run(`metadata only`, func(t *ftt.Test) {
 				res, err := srv.GetBuilder(ctx, &pb.GetBuilderRequest{
 					Id: bid,
 					Mask: &pb.BuilderMask{
 						Type: pb.BuilderMask_METADATA_ONLY,
 					},
 				})
-				So(err, ShouldBeNil)
-				So(res, ShouldResembleProto, &pb.BuilderItem{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res, should.Resemble(&pb.BuilderItem{
 					Id: bid,
 					Metadata: &pb.BuilderMetadata{
 						Owner: "owner",
@@ -236,18 +239,18 @@ func TestGetBuilder(t *testing.T) {
 							HealthScore: 9,
 						},
 					},
-				})
+				}))
 			})
 
-			Convey(`all`, func() {
+			t.Run(`all`, func(t *ftt.Test) {
 				res, err := srv.GetBuilder(ctx, &pb.GetBuilderRequest{
 					Id: bid,
 					Mask: &pb.BuilderMask{
 						Type: pb.BuilderMask_ALL,
 					},
 				})
-				So(err, ShouldBeNil)
-				So(res, ShouldResembleProto, &pb.BuilderItem{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res, should.Resemble(&pb.BuilderItem{
 					Id:     bid,
 					Config: &pb.BuilderConfig{Name: "builder"},
 					Metadata: &pb.BuilderMetadata{
@@ -256,18 +259,18 @@ func TestGetBuilder(t *testing.T) {
 							HealthScore: 9,
 						},
 					},
-				})
+				}))
 			})
 		})
 
-		Convey(`shadow`, func() {
+		t.Run(`shadow`, func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: userID,
 				FakeDB: authtest.NewFakeDB(
 					authtest.MockPermission(userID, "project:bucket.shadow", bbperms.BuildersGet),
 				),
 			})
-			So(datastore.Put(
+			assert.Loosely(t, datastore.Put(
 				ctx,
 				&model.Bucket{
 					Parent: model.ProjectKey(ctx, "project"),
@@ -302,7 +305,7 @@ func TestGetBuilder(t *testing.T) {
 						},
 					},
 				},
-			), ShouldBeNil)
+			), should.BeNil)
 
 			shadowBID := &pb.BuilderID{
 				Project: "project",
@@ -310,8 +313,8 @@ func TestGetBuilder(t *testing.T) {
 				Builder: "builder",
 			}
 			res, err := srv.GetBuilder(ctx, &pb.GetBuilderRequest{Id: shadowBID})
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, &pb.BuilderItem{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(&pb.BuilderItem{
 				Id: shadowBID,
 				Config: &pb.BuilderConfig{
 					Name:           "builder",
@@ -319,7 +322,7 @@ func TestGetBuilder(t *testing.T) {
 					Dimensions:     []string{"120:toadd:v", "os:Linux", "pool:shadow.pool"},
 					Properties:     `{"a":"b2"}`,
 				},
-			})
+			}))
 		})
 	})
 }

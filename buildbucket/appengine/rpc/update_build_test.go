@@ -33,6 +33,10 @@ import (
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/mask"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/gae/filter/featureBreaker"
 	"go.chromium.org/luci/gae/filter/txndefer"
@@ -50,18 +54,17 @@ import (
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestValidateUpdate(t *testing.T) {
 	t.Parallel()
 	ctx := memory.Use(context.Background())
-	Convey("validate UpdateMask", t, func() {
+	ftt.Run("validate UpdateMask", t, func(t *ftt.Test) {
 		req := &pb.UpdateBuildRequest{Build: &pb.Build{Id: 1}}
 
-		Convey("succeeds", func() {
-			Convey("with valid paths", func() {
+		t.Run("succeeds", func(t *ftt.Test) {
+			t.Run("with valid paths", func(t *ftt.Test) {
 				req.UpdateMask = &field_mask.FieldMask{Paths: []string{
 					"build.tags",
 					"build.output",
@@ -69,63 +72,63 @@ func TestValidateUpdate(t *testing.T) {
 					"build.summary_markdown",
 				}}
 				req.Build.SummaryMarkdown = "this is a string"
-				So(validateUpdate(ctx, req, nil), ShouldBeNil)
+				assert.Loosely(t, validateUpdate(ctx, req, nil), should.BeNil)
 			})
 		})
 
-		Convey("fails", func() {
-			Convey("with nil request", func() {
-				So(validateUpdate(ctx, nil, nil), ShouldErrLike, "build.id: required")
+		t.Run("fails", func(t *ftt.Test) {
+			t.Run("with nil request", func(t *ftt.Test) {
+				assert.Loosely(t, validateUpdate(ctx, nil, nil), should.ErrLike("build.id: required"))
 			})
 
-			Convey("with an invalid path", func() {
+			t.Run("with an invalid path", func(t *ftt.Test) {
 				req.UpdateMask = &field_mask.FieldMask{Paths: []string{
 					"bucket.name",
 				}}
-				So(validateUpdate(ctx, req, nil), ShouldErrLike, `unsupported path "bucket.name"`)
+				assert.Loosely(t, validateUpdate(ctx, req, nil), should.ErrLike(`unsupported path "bucket.name"`))
 			})
 
-			Convey("with a mix of valid and invalid paths", func() {
+			t.Run("with a mix of valid and invalid paths", func(t *ftt.Test) {
 				req.UpdateMask = &field_mask.FieldMask{Paths: []string{
 					"build.tags",
 					"bucket.name",
 					"build.output",
 				}}
-				So(validateUpdate(ctx, req, nil), ShouldErrLike, `unsupported path "bucket.name"`)
+				assert.Loosely(t, validateUpdate(ctx, req, nil), should.ErrLike(`unsupported path "bucket.name"`))
 			})
 		})
 	})
 
-	Convey("validate status", t, func() {
+	ftt.Run("validate status", t, func(t *ftt.Test) {
 		req := &pb.UpdateBuildRequest{Build: &pb.Build{Id: 1}}
 		req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.status"}}
 
-		Convey("succeeds", func() {
+		t.Run("succeeds", func(t *ftt.Test) {
 			req.Build.Status = pb.Status_SUCCESS
-			So(validateUpdate(ctx, req, nil), ShouldBeNil)
+			assert.Loosely(t, validateUpdate(ctx, req, nil), should.BeNil)
 		})
 
-		Convey("fails", func() {
+		t.Run("fails", func(t *ftt.Test) {
 			req.Build.Status = pb.Status_SCHEDULED
-			So(validateUpdate(ctx, req, nil), ShouldErrLike, "build.status: invalid status SCHEDULED for UpdateBuild")
+			assert.Loosely(t, validateUpdate(ctx, req, nil), should.ErrLike("build.status: invalid status SCHEDULED for UpdateBuild"))
 		})
 	})
 
-	Convey("validate tags", t, func() {
+	ftt.Run("validate tags", t, func(t *ftt.Test) {
 		req := &pb.UpdateBuildRequest{Build: &pb.Build{Id: 1}}
 		req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.tags"}}
 		req.Build.Tags = []*pb.StringPair{{Key: "ci:builder", Value: ""}}
-		So(validateUpdate(ctx, req, nil), ShouldErrLike, `tag key "ci:builder" cannot have a colon`)
+		assert.Loosely(t, validateUpdate(ctx, req, nil), should.ErrLike(`tag key "ci:builder" cannot have a colon`))
 	})
 
-	Convey("validate summary_markdown", t, func() {
+	ftt.Run("validate summary_markdown", t, func(t *ftt.Test) {
 		req := &pb.UpdateBuildRequest{Build: &pb.Build{Id: 1}}
 		req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.summary_markdown"}}
 		req.Build.SummaryMarkdown = strings.Repeat("☕", protoutil.SummaryMarkdownMaxLength)
-		So(validateUpdate(ctx, req, nil), ShouldErrLike, "too big to accept")
+		assert.Loosely(t, validateUpdate(ctx, req, nil), should.ErrLike("too big to accept"))
 	})
 
-	Convey("validate output.gitiles_ommit", t, func() {
+	ftt.Run("validate output.gitiles_ommit", t, func(t *ftt.Test) {
 		req := &pb.UpdateBuildRequest{Build: &pb.Build{Id: 1}}
 		req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.output.gitiles_commit"}}
 		req.Build.Output = &pb.Build_Output{GitilesCommit: &pb.GitilesCommit{
@@ -133,52 +136,52 @@ func TestValidateUpdate(t *testing.T) {
 			Host:    "host",
 			Id:      "id",
 		}}
-		So(validateUpdate(ctx, req, nil), ShouldErrLike, "ref is required")
+		assert.Loosely(t, validateUpdate(ctx, req, nil), should.ErrLike("ref is required"))
 	})
 
-	Convey("validate output.properties", t, func() {
+	ftt.Run("validate output.properties", t, func(t *ftt.Test) {
 		req := &pb.UpdateBuildRequest{Build: &pb.Build{Id: 1}}
 		req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.output.properties"}}
 
-		Convey("succeeds", func() {
+		t.Run("succeeds", func(t *ftt.Test) {
 			props, _ := structpb.NewStruct(map[string]any{"key": "value"})
 			req.Build.Output = &pb.Build_Output{Properties: props}
-			So(validateUpdate(ctx, req, nil), ShouldBeNil)
+			assert.Loosely(t, validateUpdate(ctx, req, nil), should.BeNil)
 		})
 
-		Convey("fails", func() {
+		t.Run("fails", func(t *ftt.Test) {
 			props, _ := structpb.NewStruct(map[string]any{"key": nil})
 			req.Build.Output = &pb.Build_Output{Properties: props}
-			So(validateUpdate(ctx, req, nil), ShouldErrLike, "value is not set")
+			assert.Loosely(t, validateUpdate(ctx, req, nil), should.ErrLike("value is not set"))
 		})
 	})
 
-	Convey("validate output.status", t, func() {
+	ftt.Run("validate output.status", t, func(t *ftt.Test) {
 		req := &pb.UpdateBuildRequest{Build: &pb.Build{Id: 1}}
 		req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.output.status"}}
 
-		Convey("succeeds", func() {
+		t.Run("succeeds", func(t *ftt.Test) {
 			req.Build.Output = &pb.Build_Output{Status: pb.Status_SUCCESS}
-			So(validateUpdate(ctx, req, nil), ShouldBeNil)
+			assert.Loosely(t, validateUpdate(ctx, req, nil), should.BeNil)
 		})
 
-		Convey("fails", func() {
+		t.Run("fails", func(t *ftt.Test) {
 			req.Build.Output = &pb.Build_Output{Status: pb.Status_SCHEDULED}
-			So(validateUpdate(ctx, req, nil), ShouldErrLike, "build.output.status: invalid status SCHEDULED for UpdateBuild")
+			assert.Loosely(t, validateUpdate(ctx, req, nil), should.ErrLike("build.output.status: invalid status SCHEDULED for UpdateBuild"))
 		})
 	})
 
-	Convey("validate output.summary_markdown", t, func() {
+	ftt.Run("validate output.summary_markdown", t, func(t *ftt.Test) {
 		req := &pb.UpdateBuildRequest{Build: &pb.Build{Id: 1}}
 		req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.output.summary_markdown"}}
 		req.Build.Output = &pb.Build_Output{SummaryMarkdown: strings.Repeat("☕", protoutil.SummaryMarkdownMaxLength)}
-		So(validateUpdate(ctx, req, nil), ShouldErrLike, "too big to accept")
+		assert.Loosely(t, validateUpdate(ctx, req, nil), should.ErrLike("too big to accept"))
 	})
 
-	Convey("validate output without sub masks", t, func() {
+	ftt.Run("validate output without sub masks", t, func(t *ftt.Test) {
 		req := &pb.UpdateBuildRequest{Build: &pb.Build{Id: 1}}
 		req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.output"}}
-		Convey("ok", func() {
+		t.Run("ok", func(t *ftt.Test) {
 			props, _ := structpb.NewStruct(map[string]any{"key": "value"})
 			req.Build.Output = &pb.Build_Output{
 				Properties: props,
@@ -190,23 +193,23 @@ func TestValidateUpdate(t *testing.T) {
 				},
 				SummaryMarkdown: "summary",
 			}
-			So(validateUpdate(ctx, req, nil), ShouldBeNil)
+			assert.Loosely(t, validateUpdate(ctx, req, nil), should.BeNil)
 		})
-		Convey("properties is invalid", func() {
+		t.Run("properties is invalid", func(t *ftt.Test) {
 			props, _ := structpb.NewStruct(map[string]any{"key": nil})
 			req.Build.Output = &pb.Build_Output{
 				Properties:      props,
 				SummaryMarkdown: "summary",
 			}
-			So(validateUpdate(ctx, req, nil), ShouldErrLike, "value is not set")
+			assert.Loosely(t, validateUpdate(ctx, req, nil), should.ErrLike("value is not set"))
 		})
-		Convey("summary_markdown is invalid", func() {
+		t.Run("summary_markdown is invalid", func(t *ftt.Test) {
 			req.Build.Output = &pb.Build_Output{
 				SummaryMarkdown: strings.Repeat("☕", protoutil.SummaryMarkdownMaxLength),
 			}
-			So(validateUpdate(ctx, req, nil), ShouldErrLike, "too big to accept")
+			assert.Loosely(t, validateUpdate(ctx, req, nil), should.ErrLike("too big to accept"))
 		})
-		Convey("gitiles_commit is invalid", func() {
+		t.Run("gitiles_commit is invalid", func(t *ftt.Test) {
 			req.Build.Output = &pb.Build_Output{
 				GitilesCommit: &pb.GitilesCommit{
 					Host:     "host",
@@ -214,52 +217,52 @@ func TestValidateUpdate(t *testing.T) {
 					Position: 1,
 				},
 			}
-			So(validateUpdate(ctx, req, nil), ShouldErrLike, "ref is required")
+			assert.Loosely(t, validateUpdate(ctx, req, nil), should.ErrLike("ref is required"))
 		})
 	})
 
-	Convey("validate steps", t, func() {
+	ftt.Run("validate steps", t, func(t *ftt.Test) {
 		ts := timestamppb.New(testclock.TestRecentTimeUTC)
 		bs := &model.BuildSteps{ID: 1}
 		req := &pb.UpdateBuildRequest{Build: &pb.Build{Id: 1}}
 		req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.steps"}}
 
-		Convey("succeeds", func() {
+		t.Run("succeeds", func(t *ftt.Test) {
 			req.Build.Steps = []*pb.Step{
 				{Name: "step1", Status: pb.Status_SUCCESS, StartTime: ts, EndTime: ts},
 				{Name: "step2", Status: pb.Status_SUCCESS, StartTime: ts, EndTime: ts},
 			}
-			So(validateUpdate(ctx, req, bs), ShouldBeNil)
+			assert.Loosely(t, validateUpdate(ctx, req, bs), should.BeNil)
 		})
 
-		Convey("fails with duplicates", func() {
+		t.Run("fails with duplicates", func(t *ftt.Test) {
 			ts := timestamppb.New(testclock.TestRecentTimeUTC)
 			req.Build.Steps = []*pb.Step{
 				{Name: "step1", Status: pb.Status_SUCCESS, StartTime: ts, EndTime: ts},
 				{Name: "step1", Status: pb.Status_SUCCESS, StartTime: ts, EndTime: ts},
 			}
-			So(validateUpdate(ctx, req, bs), ShouldErrLike, `duplicate: "step1"`)
+			assert.Loosely(t, validateUpdate(ctx, req, bs), should.ErrLike(`duplicate: "step1"`))
 		})
 
-		Convey("with a parent step", func() {
-			Convey("before child", func() {
+		t.Run("with a parent step", func(t *ftt.Test) {
+			t.Run("before child", func(t *ftt.Test) {
 				req.Build.Steps = []*pb.Step{
 					{Name: "parent", Status: pb.Status_SUCCESS, StartTime: ts, EndTime: ts},
 					{Name: "parent|child", Status: pb.Status_SUCCESS, StartTime: ts, EndTime: ts},
 				}
-				So(validateUpdate(ctx, req, bs), ShouldBeNil)
+				assert.Loosely(t, validateUpdate(ctx, req, bs), should.BeNil)
 			})
-			Convey("after child", func() {
+			t.Run("after child", func(t *ftt.Test) {
 				req.Build.Steps = []*pb.Step{
 					{Name: "parent|child", Status: pb.Status_SUCCESS, StartTime: ts, EndTime: ts},
 					{Name: "parent", Status: pb.Status_SUCCESS, StartTime: ts, EndTime: ts},
 				}
-				So(validateUpdate(ctx, req, bs), ShouldErrLike, `parent of "parent|child" must precede`)
+				assert.Loosely(t, validateUpdate(ctx, req, bs), should.ErrLike(`parent of "parent|child" must precede`))
 			})
 		})
 	})
 
-	Convey("validate agent output", t, func() {
+	ftt.Run("validate agent output", t, func(t *ftt.Test) {
 		req := &pb.UpdateBuildRequest{
 			Build: &pb.Build{
 				Id: 1,
@@ -272,11 +275,11 @@ func TestValidateUpdate(t *testing.T) {
 		}
 		req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.infra.buildbucket.agent.output"}}
 
-		Convey("empty", func() {
-			So(validateUpdate(ctx, req, nil), ShouldErrLike, "agent output is not set while its field path appears in update_mask")
+		t.Run("empty", func(t *ftt.Test) {
+			assert.Loosely(t, validateUpdate(ctx, req, nil), should.ErrLike("agent output is not set while its field path appears in update_mask"))
 		})
 
-		Convey("invalid cipd", func() {
+		t.Run("invalid cipd", func(t *ftt.Test) {
 			// wrong or unresolved version
 			req.Build.Infra.Buildbucket.Agent.Output = &pb.BuildInfra_Buildbucket_Agent_Output{
 				ResolvedData: map[string]*pb.ResolvedDataRef{
@@ -289,7 +292,7 @@ func TestValidateUpdate(t *testing.T) {
 					},
 				},
 			}
-			So(validateUpdate(ctx, req, nil), ShouldErrLike, `build.infra.buildbucket.agent.output: cipd.version: not a valid package instance ID "unresolved_v"`)
+			assert.Loosely(t, validateUpdate(ctx, req, nil), should.ErrLike(`build.infra.buildbucket.agent.output: cipd.version: not a valid package instance ID "unresolved_v"`))
 
 			// wrong or unresolved package name
 			req.Build.Infra.Buildbucket.Agent.Output = &pb.BuildInfra_Buildbucket_Agent_Output{
@@ -303,15 +306,15 @@ func TestValidateUpdate(t *testing.T) {
 					},
 				},
 			}
-			So(validateUpdate(ctx, req, nil), ShouldErrLike, `cipd.package: invalid package name "infra/${platform}"`)
+			assert.Loosely(t, validateUpdate(ctx, req, nil), should.ErrLike(`cipd.package: invalid package name "infra/${platform}"`))
 
 			// build.status and agent.output.status conflicts
 			req.Build.Status = pb.Status_CANCELED
 			req.Build.Infra.Buildbucket.Agent.Output.Status = pb.Status_STARTED
-			So(validateUpdate(ctx, req, nil), ShouldErrLike, "build is in an ended status while agent output status is not ended")
+			assert.Loosely(t, validateUpdate(ctx, req, nil), should.ErrLike("build is in an ended status while agent output status is not ended"))
 		})
 
-		Convey("valid", func() {
+		t.Run("valid", func(t *ftt.Test) {
 			req.Build.Infra.Buildbucket.Agent.Output = &pb.BuildInfra_Buildbucket_Agent_Output{
 				Status:        pb.Status_SUCCESS,
 				AgentPlatform: "linux-amd64",
@@ -326,12 +329,12 @@ func TestValidateUpdate(t *testing.T) {
 					},
 				},
 			}
-			So(validateUpdate(ctx, req, nil), ShouldBeNil)
+			assert.Loosely(t, validateUpdate(ctx, req, nil), should.BeNil)
 		})
 
 	})
 
-	Convey("validate agent purpose", t, func() {
+	ftt.Run("validate agent purpose", t, func(t *ftt.Test) {
 		req := &pb.UpdateBuildRequest{
 			Build: &pb.Build{
 				Id: 1,
@@ -346,7 +349,7 @@ func TestValidateUpdate(t *testing.T) {
 
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
-		So(datastore.Put(ctx, &model.BuildInfra{
+		assert.Loosely(t, datastore.Put(ctx, &model.BuildInfra{
 			Build: datastore.KeyForObj(ctx, &model.Build{ID: req.Build.Id}),
 			Proto: &pb.BuildInfra{
 				Buildbucket: &pb.BuildInfra_Buildbucket{
@@ -357,25 +360,25 @@ func TestValidateUpdate(t *testing.T) {
 					},
 				},
 			},
-		}), ShouldBeNil)
+		}), should.BeNil)
 
-		Convey("nil", func() {
-			So(validateUpdate(ctx, req, nil), ShouldErrLike, "build.infra.buildbucket.agent.purposes: not set")
+		t.Run("nil", func(t *ftt.Test) {
+			assert.Loosely(t, validateUpdate(ctx, req, nil), should.ErrLike("build.infra.buildbucket.agent.purposes: not set"))
 		})
 
-		Convey("invalid agent purpose", func() {
+		t.Run("invalid agent purpose", func(t *ftt.Test) {
 			req.Build.Infra.Buildbucket.Agent.Purposes = map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
 				"random_p": pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
 			}
-			So(validateUpdate(ctx, req, nil), ShouldErrLike, "build.infra.buildbucket.agent.purposes: Invalid path random_p - not in either input or output dataRef")
+			assert.Loosely(t, validateUpdate(ctx, req, nil), should.ErrLike("build.infra.buildbucket.agent.purposes: Invalid path random_p - not in either input or output dataRef"))
 		})
 
-		Convey("valid", func() {
+		t.Run("valid", func(t *ftt.Test) {
 			// in input data.
 			req.Build.Infra.Buildbucket.Agent.Purposes = map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
 				"p1": pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
 			}
-			So(validateUpdate(ctx, req, nil), ShouldBeNil)
+			assert.Loosely(t, validateUpdate(ctx, req, nil), should.BeNil)
 
 			// in output data
 			req.UpdateMask.Paths = append(req.UpdateMask.Paths, "build.infra.buildbucket.agent.output")
@@ -386,7 +389,7 @@ func TestValidateUpdate(t *testing.T) {
 			req.Build.Infra.Buildbucket.Agent.Purposes = map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
 				"output_p1": pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
 			}
-			So(validateUpdate(ctx, req, nil), ShouldBeNil)
+			assert.Loosely(t, validateUpdate(ctx, req, nil), should.BeNil)
 		})
 	})
 }
@@ -394,110 +397,110 @@ func TestValidateUpdate(t *testing.T) {
 func TestValidateStep(t *testing.T) {
 	t.Parallel()
 
-	Convey("validate", t, func() {
+	ftt.Run("validate", t, func(t *ftt.Test) {
 		ts := timestamppb.New(testclock.TestRecentTimeUTC)
 		step := &pb.Step{Name: "step1"}
 		bStatus := pb.Status_STARTED
 
-		Convey("with status unspecified", func() {
+		t.Run("with status unspecified", func(t *ftt.Test) {
 			step.Status = pb.Status_STATUS_UNSPECIFIED
-			So(validateStep(step, nil, bStatus), ShouldErrLike, "status: is unspecified or unknown")
+			assert.Loosely(t, validateStep(step, nil, bStatus), should.ErrLike("status: is unspecified or unknown"))
 		})
 
-		Convey("with status ENDED_MASK", func() {
+		t.Run("with status ENDED_MASK", func(t *ftt.Test) {
 			step.Status = pb.Status_ENDED_MASK
-			So(validateStep(step, nil, bStatus), ShouldErrLike, "status: must not be ENDED_MASK")
+			assert.Loosely(t, validateStep(step, nil, bStatus), should.ErrLike("status: must not be ENDED_MASK"))
 		})
 
-		Convey("with non-terminal status", func() {
-			Convey("without start_time, when should have", func() {
+		t.Run("with non-terminal status", func(t *ftt.Test) {
+			t.Run("without start_time, when should have", func(t *ftt.Test) {
 				step.Status = pb.Status_STARTED
-				So(validateStep(step, nil, bStatus), ShouldErrLike, `start_time: required by status "STARTED"`)
+				assert.Loosely(t, validateStep(step, nil, bStatus), should.ErrLike(`start_time: required by status "STARTED"`))
 			})
 
-			Convey("with start_time, when should not have", func() {
+			t.Run("with start_time, when should not have", func(t *ftt.Test) {
 				step.Status = pb.Status_SCHEDULED
 				step.StartTime = ts
-				So(validateStep(step, nil, bStatus), ShouldErrLike, `start_time: must not be specified for status "SCHEDULED"`)
+				assert.Loosely(t, validateStep(step, nil, bStatus), should.ErrLike(`start_time: must not be specified for status "SCHEDULED"`))
 			})
 
-			Convey("with terminal build status", func() {
+			t.Run("with terminal build status", func(t *ftt.Test) {
 				bStatus = pb.Status_SUCCESS
 				step.Status = pb.Status_STARTED
-				So(validateStep(step, nil, bStatus), ShouldErrLike, `status: cannot be "STARTED" because the build has a terminal status "SUCCESS"`)
+				assert.Loosely(t, validateStep(step, nil, bStatus), should.ErrLike(`status: cannot be "STARTED" because the build has a terminal status "SUCCESS"`))
 			})
 
 		})
 
-		Convey("with terminal status", func() {
+		t.Run("with terminal status", func(t *ftt.Test) {
 			step.Status = pb.Status_INFRA_FAILURE
 
-			Convey("missing start_time, but end_time", func() {
+			t.Run("missing start_time, but end_time", func(t *ftt.Test) {
 				step.EndTime = ts
-				So(validateStep(step, nil, bStatus), ShouldErrLike, `start_time: required by status "INFRA_FAILURE"`)
+				assert.Loosely(t, validateStep(step, nil, bStatus), should.ErrLike(`start_time: required by status "INFRA_FAILURE"`))
 			})
 
-			Convey("missing end_time", func() {
+			t.Run("missing end_time", func(t *ftt.Test) {
 				step.StartTime = ts
-				So(validateStep(step, nil, bStatus), ShouldErrLike, `end_time: must have both or neither end_time and a terminal status. Got end_time: "0001-01-01 00:00:00 +0000 UTC", status: "INFRA_FAILURE" for step "step1"`)
+				assert.Loosely(t, validateStep(step, nil, bStatus), should.ErrLike(`end_time: must have both or neither end_time and a terminal status. Got end_time: "0001-01-01 00:00:00 +0000 UTC", status: "INFRA_FAILURE" for step "step1"`))
 			})
 
-			Convey("end_time is before start_time", func() {
+			t.Run("end_time is before start_time", func(t *ftt.Test) {
 				step.EndTime = ts
 				sts := timestamppb.New(testclock.TestRecentTimeUTC.AddDate(0, 0, 1))
 				step.StartTime = sts
-				So(validateStep(step, nil, bStatus), ShouldErrLike, "end_time: is before the start_time")
+				assert.Loosely(t, validateStep(step, nil, bStatus), should.ErrLike("end_time: is before the start_time"))
 			})
 		})
 
-		Convey("with logs", func() {
+		t.Run("with logs", func(t *ftt.Test) {
 			step.Status = pb.Status_STARTED
 			step.StartTime = ts
 
-			Convey("missing name", func() {
+			t.Run("missing name", func(t *ftt.Test) {
 				step.Logs = []*pb.Log{{Url: "url", ViewUrl: "view_url"}}
-				So(validateStep(step, nil, bStatus), ShouldErrLike, "logs[0].name: required")
+				assert.Loosely(t, validateStep(step, nil, bStatus), should.ErrLike("logs[0].name: required"))
 			})
 
-			Convey("missing url", func() {
+			t.Run("missing url", func(t *ftt.Test) {
 				step.Logs = []*pb.Log{{Name: "name", ViewUrl: "view_url"}}
-				So(validateStep(step, nil, bStatus), ShouldErrLike, "logs[0].url: required")
+				assert.Loosely(t, validateStep(step, nil, bStatus), should.ErrLike("logs[0].url: required"))
 			})
 
-			Convey("missing view_url", func() {
+			t.Run("missing view_url", func(t *ftt.Test) {
 				step.Logs = []*pb.Log{{Name: "name", Url: "url"}}
-				So(validateStep(step, nil, bStatus), ShouldErrLike, "logs[0].view_url: required")
+				assert.Loosely(t, validateStep(step, nil, bStatus), should.ErrLike("logs[0].view_url: required"))
 			})
 
-			Convey("duplicate name", func() {
+			t.Run("duplicate name", func(t *ftt.Test) {
 				step.Logs = []*pb.Log{
 					{Name: "name", Url: "url", ViewUrl: "view_url"},
 					{Name: "name", Url: "url", ViewUrl: "view_url"},
 				}
-				So(validateStep(step, nil, bStatus), ShouldErrLike, `logs[1].name: duplicate: "name"`)
+				assert.Loosely(t, validateStep(step, nil, bStatus), should.ErrLike(`logs[1].name: duplicate: "name"`))
 			})
 		})
 
-		Convey("with tags", func() {
+		t.Run("with tags", func(t *ftt.Test) {
 			step.Status = pb.Status_STARTED
 			step.StartTime = ts
 
-			Convey("missing key", func() {
+			t.Run("missing key", func(t *ftt.Test) {
 				step.Tags = []*pb.StringPair{{Value: "hi"}}
-				So(validateStep(step, nil, bStatus), ShouldErrLike, "tags[0].key: required")
+				assert.Loosely(t, validateStep(step, nil, bStatus), should.ErrLike("tags[0].key: required"))
 			})
 
-			Convey("reserved key", func() {
+			t.Run("reserved key", func(t *ftt.Test) {
 				step.Tags = []*pb.StringPair{{Key: "luci.something", Value: "hi"}}
-				So(validateStep(step, nil, bStatus), ShouldErrLike, "tags[0].key: reserved prefix")
+				assert.Loosely(t, validateStep(step, nil, bStatus), should.ErrLike("tags[0].key: reserved prefix"))
 			})
 
-			Convey("missing value", func() {
+			t.Run("missing value", func(t *ftt.Test) {
 				step.Tags = []*pb.StringPair{{Key: "my-service.tag"}}
-				So(validateStep(step, nil, bStatus), ShouldErrLike, "tags[0].value: required")
+				assert.Loosely(t, validateStep(step, nil, bStatus), should.ErrLike("tags[0].value: required"))
 			})
 
-			Convey("long key", func() {
+			t.Run("long key", func(t *ftt.Test) {
 				step.Tags = []*pb.StringPair{{
 					// len=297
 					Key: ("my-service.my-service.my-service.my-service.my-service.my-service.my-service.my-service.my-service." +
@@ -505,12 +508,12 @@ func TestValidateStep(t *testing.T) {
 						"my-service.my-service.my-service.my-service.my-service.my-service.my-service.my-service.my-service."),
 					Value: "yo",
 				}}
-				So(validateStep(step, nil, bStatus), ShouldErrLike, "tags[0].key: len > 256")
+				assert.Loosely(t, validateStep(step, nil, bStatus), should.ErrLike("tags[0].key: len > 256"))
 			})
 
-			Convey("long value", func() {
+			t.Run("long value", func(t *ftt.Test) {
 				step.Tags = []*pb.StringPair{{Key: "my-service.tag", Value: strings.Repeat("derp", 500)}}
-				So(validateStep(step, nil, bStatus), ShouldErrLike, "tags[0].value: len > 1024")
+				assert.Loosely(t, validateStep(step, nil, bStatus), should.ErrLike("tags[0].value: len > 1024"))
 			})
 		})
 	})
@@ -520,11 +523,11 @@ func TestCheckBuildForUpdate(t *testing.T) {
 	t.Parallel()
 	updateMask := func(req *pb.UpdateBuildRequest) *mask.Mask {
 		fm, err := mask.FromFieldMask(req.UpdateMask, req, false, true)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		return fm.MustSubmask("build")
 	}
 
-	Convey("checkBuildForUpdate", t, func() {
+	ftt.Run("checkBuildForUpdate", t, func(t *ftt.Test) {
 		ctx := metrics.WithServiceInfo(memory.Use(context.Background()), "sv", "job", "ins")
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
@@ -542,72 +545,72 @@ func TestCheckBuildForUpdate(t *testing.T) {
 			},
 			CreateTime: testclock.TestRecentTimeUTC,
 		}
-		So(datastore.Put(ctx, build), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, build), should.BeNil)
 		req := &pb.UpdateBuildRequest{Build: &pb.Build{Id: 1}}
 
-		Convey("works", func() {
+		t.Run("works", func(t *ftt.Test) {
 			b, err := common.GetBuild(ctx, 1)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			err = checkBuildForUpdate(updateMask(req), req, b)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			Convey("with build.steps", func() {
+			t.Run("with build.steps", func(t *ftt.Test) {
 				req.Build.Status = pb.Status_STARTED
 				req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.status", "build.steps"}}
 				b, err := common.GetBuild(ctx, 1)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				err = checkBuildForUpdate(updateMask(req), req, b)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
-			Convey("with build.output", func() {
+			t.Run("with build.output", func(t *ftt.Test) {
 				req.Build.Status = pb.Status_STARTED
 				req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.status", "build.output"}}
 				b, err := common.GetBuild(ctx, 1)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				err = checkBuildForUpdate(updateMask(req), req, b)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
-			Convey("with nothing to update", func() {
+			t.Run("with nothing to update", func(t *ftt.Test) {
 				build.Proto.Status = pb.Status_SUCCESS
-				So(datastore.Put(ctx, build), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, build), should.BeNil)
 				b, err := common.GetBuild(ctx, 1)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				err = checkBuildForUpdate(updateMask(req), req, b)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 		})
 
-		Convey("fails", func() {
-			Convey("if ended", func() {
+		t.Run("fails", func(t *ftt.Test) {
+			t.Run("if ended", func(t *ftt.Test) {
 				build.Proto.Status = pb.Status_SUCCESS
-				So(datastore.Put(ctx, build), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, build), should.BeNil)
 				req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.status"}}
 				b, err := common.GetBuild(ctx, 1)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				err = checkBuildForUpdate(updateMask(req), req, b)
-				So(err, ShouldBeRPCFailedPrecondition, "cannot update an ended build")
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCFailedPrecondition)("cannot update an ended build"))
 			})
 
-			Convey("with build.steps", func() {
+			t.Run("with build.steps", func(t *ftt.Test) {
 				req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.steps"}}
 				b, err := common.GetBuild(ctx, 1)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				err = checkBuildForUpdate(updateMask(req), req, b)
-				So(err, ShouldBeRPCInvalidArgument, "cannot update steps of a SCHEDULED build")
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("cannot update steps of a SCHEDULED build"))
 			})
-			Convey("with build.output", func() {
+			t.Run("with build.output", func(t *ftt.Test) {
 				req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.output.properties"}}
 				b, err := common.GetBuild(ctx, 1)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				err = checkBuildForUpdate(updateMask(req), req, b)
-				So(err, ShouldBeRPCInvalidArgument, "cannot update build output fields of a SCHEDULED build")
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("cannot update build output fields of a SCHEDULED build"))
 			})
-			Convey("with build.infra.buildbucket.agent.output", func() {
+			t.Run("with build.infra.buildbucket.agent.output", func(t *ftt.Test) {
 				req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.infra.buildbucket.agent.output"}}
 				b, err := common.GetBuild(ctx, 1)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				err = checkBuildForUpdate(updateMask(req), req, b)
-				So(err, ShouldBeRPCInvalidArgument, "cannot update agent output of a SCHEDULED build")
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("cannot update agent output of a SCHEDULED build"))
 			})
 		})
 	})
@@ -630,19 +633,19 @@ func TestUpdateBuild(t *testing.T) {
 
 	getBuildWithDetails := func(ctx context.Context, bid int64) *model.Build {
 		b, err := common.GetBuild(ctx, bid)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		// ensure that the below fields were cleared when the build was saved.
-		So(b.Proto.Tags, ShouldBeNil)
-		So(b.Proto.Steps, ShouldBeNil)
+		assert.Loosely(t, b.Proto.Tags, should.BeNil)
+		assert.Loosely(t, b.Proto.Steps, should.BeNil)
 		if b.Proto.Output != nil {
-			So(b.Proto.Output.Properties, ShouldBeNil)
+			assert.Loosely(t, b.Proto.Output.Properties, should.BeNil)
 		}
 		m := model.HardcodedBuildMask("output.properties", "steps", "tags", "infra")
-		So(model.LoadBuildDetails(ctx, m, nil, b.Proto), ShouldBeNil)
+		assert.Loosely(t, model.LoadBuildDetails(ctx, m, nil, b.Proto), should.BeNil)
 		return b
 	}
 
-	Convey("UpdateBuild", t, func() {
+	ftt.Run("UpdateBuild", t, func(t *ftt.Test) {
 		srv := &Builds{}
 		ctx := memory.Use(context.Background())
 		ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
@@ -722,7 +725,7 @@ func TestUpdateBuild(t *testing.T) {
 				MaxConcurrentBuilds: 2,
 			},
 		}
-		So(datastore.Put(ctx, build, infra, bs, bldr), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, build, infra, bs, bldr), should.BeNil)
 
 		req := &pb.UpdateBuildRequest{
 			Build: &pb.Build{Id: 1, SummaryMarkdown: "summary"},
@@ -731,13 +734,13 @@ func TestUpdateBuild(t *testing.T) {
 			}},
 		}
 
-		Convey("wrong purpose token", func() {
+		t.Run("wrong purpose token", func(t *ftt.Test) {
 			tk, _ = buildtoken.GenerateToken(ctx, 1, pb.TokenBody_START_BUILD)
 			ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(buildbucket.BuildbucketTokenHeader, tk))
-			So(updateBuild(ctx, req), ShouldErrLike, "invalid token")
+			assert.Loosely(t, updateBuild(ctx, req), should.ErrLike("invalid token"))
 		})
 
-		Convey("open mask, empty request", func() {
+		t.Run("open mask, empty request", func(t *ftt.Test) {
 			validMasks := []struct {
 				name string
 				err  string
@@ -755,70 +758,70 @@ func TestUpdateBuild(t *testing.T) {
 				{"build.output.gitiles_commit", "ref is required"},
 			}
 			for _, test := range validMasks {
-				Convey(test.name, func() {
+				t.Run(test.name, func(t *ftt.Test) {
 					req.UpdateMask.Paths[0] = test.name
 					err := updateBuild(ctx, req)
 					if test.err == "" {
-						So(err, ShouldBeNil)
+						assert.Loosely(t, err, should.BeNil)
 					} else {
-						So(err, ShouldErrLike, test.err)
+						assert.Loosely(t, err, should.ErrLike(test.err))
 					}
 				})
 			}
 		})
 
-		Convey("build.update_time is always updated", func() {
+		t.Run("build.update_time is always updated", func(t *ftt.Test) {
 			req.UpdateMask = nil
-			So(updateBuild(ctx, req), ShouldBeNil)
+			assert.Loosely(t, updateBuild(ctx, req), should.BeNil)
 			b, err := common.GetBuild(ctx, req.Build.Id)
-			So(err, ShouldBeNil)
-			So(b.Proto.UpdateTime, ShouldResembleProto, timestamppb.New(t0))
-			So(b.Proto.Status, ShouldEqual, pb.Status_STARTED)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, b.Proto.UpdateTime, should.Resemble(timestamppb.New(t0)))
+			assert.Loosely(t, b.Proto.Status, should.Equal(pb.Status_STARTED))
 
 			tclock.Add(time.Second)
 
-			So(updateBuild(ctx, req), ShouldBeNil)
+			assert.Loosely(t, updateBuild(ctx, req), should.BeNil)
 			b, err = common.GetBuild(ctx, req.Build.Id)
-			So(err, ShouldBeNil)
-			So(b.Proto.UpdateTime, ShouldResembleProto, timestamppb.New(t0.Add(time.Second)))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, b.Proto.UpdateTime, should.Resemble(timestamppb.New(t0.Add(time.Second))))
 		})
 
-		Convey("build.view_url", func() {
+		t.Run("build.view_url", func(t *ftt.Test) {
 			url := "https://redirect.com"
 			req.Build.ViewUrl = url
 			req.UpdateMask.Paths[0] = "build.view_url"
-			So(updateBuild(ctx, req), ShouldBeRPCOK)
+			assert.Loosely(t, updateBuild(ctx, req), convey.Adapt(ShouldBeRPCOK)())
 			b, err := common.GetBuild(ctx, req.Build.Id)
-			So(err, ShouldBeNil)
-			So(b.Proto.ViewUrl, ShouldEqual, url)
-			So(len(b.CustomBuilderCountMetrics), ShouldEqual, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, b.Proto.ViewUrl, should.Equal(url))
+			assert.Loosely(t, len(b.CustomBuilderCountMetrics), should.BeZero)
 		})
 
-		Convey("build.output.properties", func() {
+		t.Run("build.output.properties", func(t *ftt.Test) {
 			props, err := structpb.NewStruct(map[string]any{"key": "value"})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			req.Build.Output = &pb.Build_Output{Properties: props}
 
-			Convey("with mask", func() {
+			t.Run("with mask", func(t *ftt.Test) {
 				req.UpdateMask.Paths[0] = "build.output.properties"
-				So(updateBuild(ctx, req), ShouldBeRPCOK)
+				assert.Loosely(t, updateBuild(ctx, req), convey.Adapt(ShouldBeRPCOK)())
 				b := getBuildWithDetails(ctx, req.Build.Id)
 				m, err := structpb.NewStruct(map[string]any{"key": "value"})
-				So(err, ShouldBeNil)
-				So(b.Proto.Output.Properties, ShouldResembleProto, m)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, b.Proto.Output.Properties, should.Resemble(m))
 			})
 
-			Convey("without mask", func() {
-				So(updateBuild(ctx, req), ShouldBeRPCOK)
+			t.Run("without mask", func(t *ftt.Test) {
+				assert.Loosely(t, updateBuild(ctx, req), convey.Adapt(ShouldBeRPCOK)())
 				b := getBuildWithDetails(ctx, req.Build.Id)
-				So(b.Proto.Output.Properties, ShouldBeNil)
+				assert.Loosely(t, b.Proto.Output.Properties, should.BeNil)
 			})
 
 		})
 
-		Convey("build.output.properties large", func() {
+		t.Run("build.output.properties large", func(t *ftt.Test) {
 			largeProps, err := structpb.NewStruct(map[string]any{})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			k := "laaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaarge_key"
 			v := "laaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaarge_value"
 			for i := 0; i < 10000; i++ {
@@ -828,27 +831,27 @@ func TestUpdateBuild(t *testing.T) {
 					},
 				}
 			}
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			req.Build.Output = &pb.Build_Output{Properties: largeProps}
 
-			Convey("with mask", func() {
+			t.Run("with mask", func(t *ftt.Test) {
 				req.UpdateMask.Paths[0] = "build.output"
-				So(updateBuild(ctx, req), ShouldBeRPCOK)
+				assert.Loosely(t, updateBuild(ctx, req), convey.Adapt(ShouldBeRPCOK)())
 				b := getBuildWithDetails(ctx, req.Build.Id)
-				So(b.Proto.Output.Properties, ShouldResembleProto, largeProps)
+				assert.Loosely(t, b.Proto.Output.Properties, should.Resemble(largeProps))
 				count, err := datastore.Count(ctx, datastore.NewQuery("PropertyChunk"))
-				So(err, ShouldBeNil)
-				So(count, ShouldEqual, 1)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, count, should.Equal(1))
 			})
 
-			Convey("without mask", func() {
-				So(updateBuild(ctx, req), ShouldBeRPCOK)
+			t.Run("without mask", func(t *ftt.Test) {
+				assert.Loosely(t, updateBuild(ctx, req), convey.Adapt(ShouldBeRPCOK)())
 				b := getBuildWithDetails(ctx, req.Build.Id)
-				So(b.Proto.Output.Properties, ShouldBeNil)
+				assert.Loosely(t, b.Proto.Output.Properties, should.BeNil)
 			})
 		})
 
-		Convey("build.steps", func() {
+		t.Run("build.steps", func(t *ftt.Test) {
 			step := &pb.Step{
 				Name:      "step",
 				StartTime: &timestamppb.Timestamp{Seconds: 1},
@@ -857,55 +860,55 @@ func TestUpdateBuild(t *testing.T) {
 			}
 			req.Build.Steps = []*pb.Step{step}
 
-			Convey("with mask", func() {
+			t.Run("with mask", func(t *ftt.Test) {
 				req.UpdateMask.Paths[0] = "build.steps"
-				So(updateBuild(ctx, req), ShouldBeRPCOK)
+				assert.Loosely(t, updateBuild(ctx, req), convey.Adapt(ShouldBeRPCOK)())
 				b := getBuildWithDetails(ctx, req.Build.Id)
-				So(b.Proto.Steps[0], ShouldResembleProto, step)
+				assert.Loosely(t, b.Proto.Steps[0], should.Resemble(step))
 			})
 
-			Convey("without mask", func() {
-				So(updateBuild(ctx, req), ShouldBeRPCOK)
+			t.Run("without mask", func(t *ftt.Test) {
+				assert.Loosely(t, updateBuild(ctx, req), convey.Adapt(ShouldBeRPCOK)())
 				b := getBuildWithDetails(ctx, req.Build.Id)
-				So(b.Proto.Steps, ShouldBeNil)
+				assert.Loosely(t, b.Proto.Steps, should.BeNil)
 			})
 
-			Convey("incomplete steps with non-terminal Build status", func() {
+			t.Run("incomplete steps with non-terminal Build status", func(t *ftt.Test) {
 				req.UpdateMask.Paths = []string{"build.status", "build.steps"}
 				req.Build.Status = pb.Status_STARTED
 				req.Build.Steps[0].Status = pb.Status_STARTED
 				req.Build.Steps[0].EndTime = nil
-				So(updateBuild(ctx, req), ShouldBeRPCOK)
+				assert.Loosely(t, updateBuild(ctx, req), convey.Adapt(ShouldBeRPCOK)())
 			})
 
-			Convey("incomplete steps with terminal Build status", func() {
+			t.Run("incomplete steps with terminal Build status", func(t *ftt.Test) {
 				req.UpdateMask.Paths = []string{"build.status", "build.steps"}
 				req.Build.Status = pb.Status_SUCCESS
 
-				Convey("with mask", func() {
+				t.Run("with mask", func(t *ftt.Test) {
 					req.Build.Steps[0].Status = pb.Status_STARTED
 					req.Build.Steps[0].EndTime = nil
 
 					// Should be rejected.
 					msg := `cannot be "STARTED" because the build has a terminal status "SUCCESS"`
-					So(updateBuild(ctx, req), ShouldHaveRPCCode, codes.InvalidArgument, msg)
+					assert.Loosely(t, updateBuild(ctx, req), convey.Adapt(ShouldHaveRPCCode)(codes.InvalidArgument, msg))
 				})
 
-				Convey("w/o mask", func() {
+				t.Run("w/o mask", func(t *ftt.Test) {
 					// update the build with incomplete steps first.
 					req.Build.Status = pb.Status_STARTED
 					req.Build.Steps[0].Status = pb.Status_STARTED
 					req.Build.Steps[0].EndTime = nil
-					So(updateBuild(ctx, req), ShouldBeRPCOK)
+					assert.Loosely(t, updateBuild(ctx, req), convey.Adapt(ShouldBeRPCOK)())
 
 					// update the build again with a terminal status, but w/o step mask.
 					req.UpdateMask.Paths = []string{"build.status"}
 					req.Build.Status = pb.Status_SUCCESS
-					So(updateBuild(ctx, req), ShouldBeRPCOK)
+					assert.Loosely(t, updateBuild(ctx, req), convey.Adapt(ShouldBeRPCOK)())
 					nbs := &model.BuildStatus{Build: bk}
 					err := datastore.Get(ctx, nbs)
-					So(err, ShouldBeNil)
-					So(nbs.Status, ShouldEqual, pb.Status_SUCCESS)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, nbs.Status, should.Equal(pb.Status_SUCCESS))
 
 					// the step should have been cancelled.
 					b := getBuildWithDetails(ctx, req.Build.Id)
@@ -915,43 +918,43 @@ func TestUpdateBuild(t *testing.T) {
 						StartTime: step.StartTime,
 						EndTime:   timestamppb.New(t0),
 					}
-					So(b.Proto.Steps[0], ShouldResembleProto, expected)
+					assert.Loosely(t, b.Proto.Steps[0], should.Resemble(expected))
 				})
 			})
 		})
 
-		Convey("build.tags", func() {
+		t.Run("build.tags", func(t *ftt.Test) {
 			tag := &pb.StringPair{Key: "resultdb", Value: "disabled"}
 			req.Build.Tags = []*pb.StringPair{tag}
 
-			Convey("with mask", func() {
+			t.Run("with mask", func(t *ftt.Test) {
 				req.UpdateMask.Paths[0] = "build.tags"
-				So(updateBuild(ctx, req), ShouldBeRPCOK)
+				assert.Loosely(t, updateBuild(ctx, req), convey.Adapt(ShouldBeRPCOK)())
 
 				b := getBuildWithDetails(ctx, req.Build.Id)
 				expected := []string{strpair.Format("resultdb", "disabled")}
-				So(b.Tags, ShouldResemble, expected)
-				So(b.CustomBuilderCountMetrics, ShouldResemble, []string{"chrome/infra/custom/builds/count"})
+				assert.Loosely(t, b.Tags, should.Resemble(expected))
+				assert.Loosely(t, b.CustomBuilderCountMetrics, should.Resemble([]string{"chrome/infra/custom/builds/count"}))
 
 				// change the value and update it again
 				tag.Value = "enabled"
-				So(updateBuild(ctx, req), ShouldBeRPCOK)
+				assert.Loosely(t, updateBuild(ctx, req), convey.Adapt(ShouldBeRPCOK)())
 
 				// both tags should exist
 				b = getBuildWithDetails(ctx, req.Build.Id)
 				expected = append(expected, strpair.Format("resultdb", "enabled"))
-				So(b.Tags, ShouldResemble, expected)
-				So(b.CustomBuilderCountMetrics, ShouldResemble, []string{"chrome/infra/custom/builds/count"})
+				assert.Loosely(t, b.Tags, should.Resemble(expected))
+				assert.Loosely(t, b.CustomBuilderCountMetrics, should.Resemble([]string{"chrome/infra/custom/builds/count"}))
 			})
 
-			Convey("without mask", func() {
-				So(updateBuild(ctx, req), ShouldBeRPCOK)
+			t.Run("without mask", func(t *ftt.Test) {
+				assert.Loosely(t, updateBuild(ctx, req), convey.Adapt(ShouldBeRPCOK)())
 				b := getBuildWithDetails(ctx, req.Build.Id)
-				So(b.Tags, ShouldBeNil)
+				assert.Loosely(t, b.Tags, should.BeNil)
 			})
 		})
 
-		Convey("build.infra.buildbucket.agent.output", func() {
+		t.Run("build.infra.buildbucket.agent.output", func(t *ftt.Test) {
 			agentOutput := &pb.BuildInfra_Buildbucket_Agent_Output{
 				Status:        pb.Status_SUCCESS,
 				AgentPlatform: "linux-amd64",
@@ -976,22 +979,22 @@ func TestUpdateBuild(t *testing.T) {
 				Experiments: []string{"luci.buildbucket.agent.cipd_installation"},
 			}
 
-			Convey("with mask", func() {
+			t.Run("with mask", func(t *ftt.Test) {
 				req.UpdateMask.Paths[0] = "build.infra.buildbucket.agent.output"
-				So(updateBuild(ctx, req), ShouldBeRPCOK)
+				assert.Loosely(t, updateBuild(ctx, req), convey.Adapt(ShouldBeRPCOK)())
 				b := getBuildWithDetails(ctx, req.Build.Id)
-				So(b.Proto.Infra.Buildbucket.Agent.Output, ShouldResembleProto, agentOutput)
+				assert.Loosely(t, b.Proto.Infra.Buildbucket.Agent.Output, should.Resemble(agentOutput))
 			})
 
-			Convey("without mask", func() {
-				So(updateBuild(ctx, req), ShouldBeRPCOK)
+			t.Run("without mask", func(t *ftt.Test) {
+				assert.Loosely(t, updateBuild(ctx, req), convey.Adapt(ShouldBeRPCOK)())
 				b := getBuildWithDetails(ctx, req.Build.Id)
-				So(b.Proto.Infra.Buildbucket.Agent.Output, ShouldBeNil)
+				assert.Loosely(t, b.Proto.Infra.Buildbucket.Agent.Output, should.BeNil)
 			})
 
 		})
 
-		Convey("build.infra.buildbucket.agent.purposes", func() {
+		t.Run("build.infra.buildbucket.agent.purposes", func(t *ftt.Test) {
 			req.Build.Infra = &pb.BuildInfra{
 				Buildbucket: &pb.BuildInfra_Buildbucket{
 					Agent: &pb.BuildInfra_Buildbucket_Agent{
@@ -1007,37 +1010,37 @@ func TestUpdateBuild(t *testing.T) {
 				},
 			}
 
-			Convey("with mask", func() {
+			t.Run("with mask", func(t *ftt.Test) {
 				req.UpdateMask = &field_mask.FieldMask{Paths: []string{
 					"build.infra.buildbucket.agent.output",
 					"build.infra.buildbucket.agent.purposes",
 				}}
-				So(updateBuild(ctx, req), ShouldBeRPCOK)
+				assert.Loosely(t, updateBuild(ctx, req), convey.Adapt(ShouldBeRPCOK)())
 				b := getBuildWithDetails(ctx, req.Build.Id)
-				So(b.Proto.Infra.Buildbucket.Agent.Purposes["p1"], ShouldEqual, pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD)
+				assert.Loosely(t, b.Proto.Infra.Buildbucket.Agent.Purposes["p1"], should.Equal(pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD))
 			})
 
-			Convey("without mask", func() {
-				So(updateBuild(ctx, req), ShouldBeRPCOK)
+			t.Run("without mask", func(t *ftt.Test) {
+				assert.Loosely(t, updateBuild(ctx, req), convey.Adapt(ShouldBeRPCOK)())
 				b := getBuildWithDetails(ctx, req.Build.Id)
-				So(b.Proto.Infra.Buildbucket.Agent.Purposes, ShouldBeNil)
+				assert.Loosely(t, b.Proto.Infra.Buildbucket.Agent.Purposes, should.BeNil)
 			})
 		})
 
-		Convey("build-start event", func() {
-			Convey("Status_STARTED w/o status change", func() {
+		t.Run("build-start event", func(t *ftt.Test) {
+			t.Run("Status_STARTED w/o status change", func(t *ftt.Test) {
 				req.UpdateMask.Paths[0] = "build.status"
 				req.Build.Status = pb.Status_STARTED
-				So(updateBuild(ctx, req), ShouldBeRPCOK)
+				assert.Loosely(t, updateBuild(ctx, req), convey.Adapt(ShouldBeRPCOK)())
 
 				// no TQ tasks should be scheduled.
-				So(sch.Tasks(), ShouldBeEmpty)
+				assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 
 				// no metric update, either.
-				So(store.Get(ctx, metrics.V1.BuildCountStarted, time.Time{}, fv(false)), ShouldEqual, nil)
+				assert.Loosely(t, store.Get(ctx, metrics.V1.BuildCountStarted, time.Time{}, fv(false)), should.BeNil)
 			})
 
-			Convey("Status_STARTED w/ status change", func() {
+			t.Run("Status_STARTED w/ status change", func(t *ftt.Test) {
 				// create a sample task with SCHEDULED.
 				build.Proto.Id++
 				build.ID++
@@ -1048,44 +1051,44 @@ func TestUpdateBuild(t *testing.T) {
 					Build:  datastore.KeyForObj(ctx, build),
 					Status: pb.Status_SCHEDULED,
 				}
-				So(datastore.Put(ctx, build, buildStatus), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, build, buildStatus), should.BeNil)
 
 				// update it with STARTED
 				req.Build.Id = build.ID
 				req.UpdateMask.Paths[0] = "build.status"
 				req.Build.Status = pb.Status_STARTED
-				So(updateBuild(ctx, req), ShouldBeRPCOK)
+				assert.Loosely(t, updateBuild(ctx, req), convey.Adapt(ShouldBeRPCOK)())
 
 				// TQ tasks for pubsub-notification.
 				tasks := sch.Tasks()
 				sortTasksByClassName(tasks)
-				So(tasks, ShouldHaveLength, 2)
-				So(tasks[0].Payload.(*taskdefs.NotifyPubSub).GetBuildId(), ShouldEqual, build.ID)
-				So(tasks[1].Payload.(*taskdefs.NotifyPubSubGoProxy).GetBuildId(), ShouldEqual, 2)
-				So(tasks[1].Payload.(*taskdefs.NotifyPubSubGoProxy).GetProject(), ShouldEqual, "project")
+				assert.Loosely(t, tasks, should.HaveLength(2))
+				assert.Loosely(t, tasks[0].Payload.(*taskdefs.NotifyPubSub).GetBuildId(), should.Equal(build.ID))
+				assert.Loosely(t, tasks[1].Payload.(*taskdefs.NotifyPubSubGoProxy).GetBuildId(), should.Equal(2))
+				assert.Loosely(t, tasks[1].Payload.(*taskdefs.NotifyPubSubGoProxy).GetProject(), should.Equal("project"))
 
 				// BuildStarted metric should be set 1.
-				So(store.Get(ctx, metrics.V1.BuildCountStarted, time.Time{}, fv(false)), ShouldEqual, 1)
+				assert.Loosely(t, store.Get(ctx, metrics.V1.BuildCountStarted, time.Time{}, fv(false)), should.Equal(1))
 
 				// BuildStatus should be updated.
 				buildStatus = &model.BuildStatus{Build: datastore.KeyForObj(ctx, build)}
-				So(datastore.Get(ctx, buildStatus), ShouldBeNil)
-				So(buildStatus.Status, ShouldEqual, pb.Status_STARTED)
+				assert.Loosely(t, datastore.Get(ctx, buildStatus), should.BeNil)
+				assert.Loosely(t, buildStatus.Status, should.Equal(pb.Status_STARTED))
 			})
 
-			Convey("output.status Status_STARTED w/o status change", func() {
+			t.Run("output.status Status_STARTED w/o status change", func(t *ftt.Test) {
 				req.UpdateMask.Paths[0] = "build.output.status"
 				req.Build.Output = &pb.Build_Output{Status: pb.Status_STARTED}
-				So(updateBuild(ctx, req), ShouldBeRPCOK)
+				assert.Loosely(t, updateBuild(ctx, req), convey.Adapt(ShouldBeRPCOK)())
 
 				// no TQ tasks should be scheduled.
-				So(sch.Tasks(), ShouldBeEmpty)
+				assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 
 				// no metric update, either.
-				So(store.Get(ctx, metrics.V1.BuildCountStarted, time.Time{}, fv(false)), ShouldEqual, nil)
+				assert.Loosely(t, store.Get(ctx, metrics.V1.BuildCountStarted, time.Time{}, fv(false)), should.BeNil)
 			})
 
-			Convey("output.status Status_STARTED w/ status change", func() {
+			t.Run("output.status Status_STARTED w/ status change", func(t *ftt.Test) {
 				// create a sample task with SCHEDULED.
 				build.Proto.Id++
 				build.ID++
@@ -1096,35 +1099,35 @@ func TestUpdateBuild(t *testing.T) {
 					Build:  datastore.KeyForObj(ctx, build),
 					Status: pb.Status_SCHEDULED,
 				}
-				So(datastore.Put(ctx, build, buildStatus), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, build, buildStatus), should.BeNil)
 
 				// update it with STARTED
 				req.Build.Id = build.ID
 				req.UpdateMask.Paths[0] = "build.output.status"
 				req.Build.Output = &pb.Build_Output{Status: pb.Status_STARTED}
-				So(updateBuild(ctx, req), ShouldBeRPCOK)
+				assert.Loosely(t, updateBuild(ctx, req), convey.Adapt(ShouldBeRPCOK)())
 
 				// TQ tasks for pubsub-notification.
 				tasks := sch.Tasks()
 				sortTasksByClassName(tasks)
-				So(tasks, ShouldHaveLength, 2)
-				So(tasks[0].Payload.(*taskdefs.NotifyPubSub).GetBuildId(), ShouldEqual, build.ID)
-				So(tasks[1].Payload.(*taskdefs.NotifyPubSubGoProxy).GetBuildId(), ShouldEqual, 2)
-				So(tasks[1].Payload.(*taskdefs.NotifyPubSubGoProxy).GetProject(), ShouldEqual, "project")
+				assert.Loosely(t, tasks, should.HaveLength(2))
+				assert.Loosely(t, tasks[0].Payload.(*taskdefs.NotifyPubSub).GetBuildId(), should.Equal(build.ID))
+				assert.Loosely(t, tasks[1].Payload.(*taskdefs.NotifyPubSubGoProxy).GetBuildId(), should.Equal(2))
+				assert.Loosely(t, tasks[1].Payload.(*taskdefs.NotifyPubSubGoProxy).GetProject(), should.Equal("project"))
 
 				// BuildStarted metric should be set 1.
-				So(store.Get(ctx, metrics.V1.BuildCountStarted, time.Time{}, fv(false)), ShouldEqual, 1)
+				assert.Loosely(t, store.Get(ctx, metrics.V1.BuildCountStarted, time.Time{}, fv(false)), should.Equal(1))
 
 				// BuildStatus should be updated.
 				buildStatus = &model.BuildStatus{Build: datastore.KeyForObj(ctx, build)}
-				So(datastore.Get(ctx, build, buildStatus), ShouldBeNil)
-				So(buildStatus.Status, ShouldEqual, pb.Status_STARTED)
-				So(build.Proto.Status, ShouldEqual, pb.Status_STARTED)
+				assert.Loosely(t, datastore.Get(ctx, build, buildStatus), should.BeNil)
+				assert.Loosely(t, buildStatus.Status, should.Equal(pb.Status_STARTED))
+				assert.Loosely(t, build.Proto.Status, should.Equal(pb.Status_STARTED))
 			})
 		})
 
-		Convey("build-completion event", func() {
-			Convey("Status_SUCCESSS w/ status change", func() {
+		t.Run("build-completion event", func(t *ftt.Test) {
+			t.Run("Status_SUCCESSS w/ status change", func(t *ftt.Test) {
 				base := pb.CustomMetricBase_CUSTOM_METRIC_BASE_COMPLETED
 				name := "chrome/infra/custom/builds/completed"
 				globalCfg := &pb.SettingsCfg{
@@ -1141,7 +1144,7 @@ func TestUpdateBuild(t *testing.T) {
 				ctx, _ = metrics.WithCustomMetrics(ctx, globalCfg)
 
 				bld := &model.Build{ID: req.Build.Id}
-				So(datastore.Get(ctx, bld), ShouldBeNil)
+				assert.Loosely(t, datastore.Get(ctx, bld), should.BeNil)
 				bld.CustomMetrics = []model.CustomMetric{
 					{
 						Base: base,
@@ -1154,118 +1157,118 @@ func TestUpdateBuild(t *testing.T) {
 						},
 					},
 				}
-				So(datastore.Put(ctx, bld), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, bld), should.BeNil)
 
 				req.UpdateMask.Paths[0] = "build.status"
 				req.Build.Status = pb.Status_SUCCESS
-				So(updateBuild(ctx, req), ShouldBeRPCOK)
+				assert.Loosely(t, updateBuild(ctx, req), convey.Adapt(ShouldBeRPCOK)())
 
 				// TQ tasks for pubsub-notification, bq-export, and invocation-finalization.
 				tasks := sch.Tasks()
-				So(tasks, ShouldHaveLength, 5)
+				assert.Loosely(t, tasks, should.HaveLength(5))
 				sum := 0
 				for _, task := range tasks {
 					switch v := task.Payload.(type) {
 					case *taskdefs.NotifyPubSub:
 						sum++
-						So(v.GetBuildId(), ShouldEqual, req.Build.Id)
+						assert.Loosely(t, v.GetBuildId(), should.Equal(req.Build.Id))
 					case *taskdefs.ExportBigQueryGo:
 						sum += 2
-						So(v.GetBuildId(), ShouldEqual, req.Build.Id)
+						assert.Loosely(t, v.GetBuildId(), should.Equal(req.Build.Id))
 					case *taskdefs.FinalizeResultDBGo:
 						sum += 4
-						So(v.GetBuildId(), ShouldEqual, req.Build.Id)
+						assert.Loosely(t, v.GetBuildId(), should.Equal(req.Build.Id))
 					case *taskdefs.NotifyPubSubGoProxy:
 						sum += 8
-						So(v.GetBuildId(), ShouldEqual, req.Build.Id)
+						assert.Loosely(t, v.GetBuildId(), should.Equal(req.Build.Id))
 					case *taskdefs.PopPendingBuildTask:
 						sum += 16
-						So(v.GetBuildId(), ShouldEqual, req.Build.Id)
+						assert.Loosely(t, v.GetBuildId(), should.Equal(req.Build.Id))
 					default:
 						panic("invalid task payload")
 					}
 				}
-				So(sum, ShouldEqual, 31)
+				assert.Loosely(t, sum, should.Equal(31))
 
 				// BuildCompleted metric should be set to 1 with SUCCESS.
 				fvs := fv(model.Success.String(), "", "", false)
-				So(store.Get(ctx, metrics.V1.BuildCountCompleted, time.Time{}, fvs), ShouldEqual, 1)
+				assert.Loosely(t, store.Get(ctx, metrics.V1.BuildCountCompleted, time.Time{}, fvs), should.Equal(1))
 
 				ctx = metrics.WithBuilder(ctx, "project", "bucket", "builder")
-				So(store.Get(ctx, metrics.V2.BuildCountCompleted, time.Time{}, []any{"SUCCESS", "None"}), ShouldEqual, 1)
+				assert.Loosely(t, store.Get(ctx, metrics.V2.BuildCountCompleted, time.Time{}, []any{"SUCCESS", "None"}), should.Equal(1))
 
 				val, err := metrics.GetCustomMetricsData(ctx, base, name, time.Time{}, []any{"SUCCESS", "None"})
-				So(err, ShouldBeNil)
-				So(val, ShouldEqual, 1)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, val, should.Equal(1))
 			})
-			Convey("output.status Status_SUCCESSS w/ status change", func() {
+			t.Run("output.status Status_SUCCESSS w/ status change", func(t *ftt.Test) {
 				buildStatus := &model.BuildStatus{
 					Build:  datastore.KeyForObj(ctx, build),
 					Status: pb.Status_STARTED,
 				}
-				So(datastore.Put(ctx, build, buildStatus), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, build, buildStatus), should.BeNil)
 
 				req.UpdateMask.Paths[0] = "build.output.status"
 				req.Build.Output = &pb.Build_Output{Status: pb.Status_SUCCESS}
-				So(updateBuild(ctx, req), ShouldBeRPCOK)
+				assert.Loosely(t, updateBuild(ctx, req), convey.Adapt(ShouldBeRPCOK)())
 
 				// TQ tasks for pubsub-notification, bq-export, and invocation-finalization.
 				tasks := sch.Tasks()
-				So(tasks, ShouldHaveLength, 0)
+				assert.Loosely(t, tasks, should.HaveLength(0))
 
 				// BuildCompleted metric should not be set.
 				fvs := fv(model.Success.String(), "", "", false)
-				So(store.Get(ctx, metrics.V1.BuildCountCompleted, time.Time{}, fvs), ShouldBeNil)
+				assert.Loosely(t, store.Get(ctx, metrics.V1.BuildCountCompleted, time.Time{}, fvs), should.BeNil)
 
 				// BuildStatus should not be updated.
 				buildStatus = &model.BuildStatus{Build: datastore.KeyForObj(ctx, build)}
-				So(datastore.Get(ctx, build, buildStatus), ShouldBeNil)
-				So(buildStatus.Status, ShouldEqual, pb.Status_STARTED)
-				So(build.Proto.Status, ShouldEqual, pb.Status_STARTED)
+				assert.Loosely(t, datastore.Get(ctx, build, buildStatus), should.BeNil)
+				assert.Loosely(t, buildStatus.Status, should.Equal(pb.Status_STARTED))
+				assert.Loosely(t, build.Proto.Status, should.Equal(pb.Status_STARTED))
 			})
-			Convey("update output without output.status should not affect overall status", func() {
+			t.Run("update output without output.status should not affect overall status", func(t *ftt.Test) {
 				buildStatus := &model.BuildStatus{
 					Build:  datastore.KeyForObj(ctx, build),
 					Status: pb.Status_STARTED,
 				}
-				So(datastore.Put(ctx, build, buildStatus), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, build, buildStatus), should.BeNil)
 
 				req.UpdateMask.Paths[0] = "build.output"
 				req.Build.Output = &pb.Build_Output{
 					Status: pb.Status_SUCCESS,
 				}
 				req.Build.Status = pb.Status_SUCCESS
-				So(updateBuild(ctx, req), ShouldBeRPCOK)
+				assert.Loosely(t, updateBuild(ctx, req), convey.Adapt(ShouldBeRPCOK)())
 
 				// TQ tasks for pubsub-notification, bq-export, and invocation-finalization.
 				tasks := sch.Tasks()
-				So(tasks, ShouldHaveLength, 0)
+				assert.Loosely(t, tasks, should.HaveLength(0))
 
 				// BuildCompleted metric should not be set.
 				fvs := fv(model.Success.String(), "", "", false)
-				So(store.Get(ctx, metrics.V1.BuildCountCompleted, time.Time{}, fvs), ShouldBeNil)
+				assert.Loosely(t, store.Get(ctx, metrics.V1.BuildCountCompleted, time.Time{}, fvs), should.BeNil)
 
 				// BuildStatus should not be updated.
 				buildStatus = &model.BuildStatus{Build: datastore.KeyForObj(ctx, build)}
-				So(datastore.Get(ctx, build, buildStatus), ShouldBeNil)
-				So(buildStatus.Status, ShouldEqual, pb.Status_STARTED)
-				So(build.Proto.Status, ShouldEqual, pb.Status_STARTED)
-				So(build.Proto.Output.Status, ShouldEqual, pb.Status_STARTED)
+				assert.Loosely(t, datastore.Get(ctx, build, buildStatus), should.BeNil)
+				assert.Loosely(t, buildStatus.Status, should.Equal(pb.Status_STARTED))
+				assert.Loosely(t, build.Proto.Status, should.Equal(pb.Status_STARTED))
+				assert.Loosely(t, build.Proto.Output.Status, should.Equal(pb.Status_STARTED))
 			})
-			Convey("Status_SUCCESSS w/ status change with max_concurrent_builds disabled", func() {
+			t.Run("Status_SUCCESSS w/ status change with max_concurrent_builds disabled", func(t *ftt.Test) {
 				bldr := &model.Builder{
 					ID:     "builder",
 					Parent: model.BucketKey(ctx, "project", "bucket"),
 				}
-				So(datastore.Put(ctx, bldr), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, bldr), should.BeNil)
 				req.UpdateMask.Paths[0] = "build.status"
 				req.Build.Status = pb.Status_SUCCESS
-				So(updateBuild(ctx, req), ShouldBeRPCOK)
+				assert.Loosely(t, updateBuild(ctx, req), convey.Adapt(ShouldBeRPCOK)())
 				// TQ tasks for pubsub-notification, bq-export, and invocation-finalization.
 				tasks := sch.Tasks()
-				So(tasks, ShouldHaveLength, 4)
+				assert.Loosely(t, tasks, should.HaveLength(4))
 			})
-			Convey("led build - Status_SUCCESSS w/ status change", func() {
+			t.Run("led build - Status_SUCCESSS w/ status change", func(t *ftt.Test) {
 				tk, ctx := updateContextForNewBuildToken(ctx, 2)
 				build := &model.Build{
 					ID: 2,
@@ -1299,22 +1302,22 @@ func TestUpdateBuild(t *testing.T) {
 					Build:  bk,
 					Status: pb.Status_STARTED,
 				}
-				So(datastore.Put(ctx, build, infra, bs), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, build, infra, bs), should.BeNil)
 				req.Build = &pb.Build{Id: 2, SummaryMarkdown: "summary", Infra: &pb.BuildInfra{Led: &pb.BuildInfra_Led{
 					ShadowedBucket: "bucket",
 				}}}
 				req.UpdateMask.Paths[0] = "build.status"
 				req.Build.Status = pb.Status_SUCCESS
-				So(updateBuild(ctx, req), ShouldBeRPCOK)
+				assert.Loosely(t, updateBuild(ctx, req), convey.Adapt(ShouldBeRPCOK)())
 				// TQ tasks for pubsub-notification, bq-export, and invocation-finalization.
 				tasks := sch.Tasks()
 				// led builds not supported by max_concurrent_builds.
-				So(tasks, ShouldHaveLength, 4)
+				assert.Loosely(t, tasks, should.HaveLength(4))
 			})
 		})
 
-		Convey("read mask", func() {
-			Convey("w/ read mask", func() {
+		t.Run("read mask", func(t *ftt.Test) {
+			t.Run("w/ read mask", func(t *ftt.Test) {
 				req.UpdateMask.Paths[0] = "build.status"
 				req.Build.Status = pb.Status_SUCCESS
 				req.Mask = &pb.BuildMask{
@@ -1325,14 +1328,14 @@ func TestUpdateBuild(t *testing.T) {
 					},
 				}
 				b, err := srv.UpdateBuild(ctx, req)
-				So(err, ShouldBeNil)
-				So(b, ShouldResembleProto, &pb.Build{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, b, should.Resemble(&pb.Build{
 					Status: pb.Status_SUCCESS,
-				})
+				}))
 			})
 		})
 
-		Convey("update build with parent", func() {
+		t.Run("update build with parent", func(t *ftt.Test) {
 			parent := &model.Build{
 				ID: 10,
 				Proto: &pb.Build{
@@ -1351,9 +1354,9 @@ func TestUpdateBuild(t *testing.T) {
 				Build:  datastore.KeyForObj(ctx, parent),
 				Status: pb.Status_STARTED,
 			}
-			So(datastore.Put(ctx, parent, ps), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, parent, ps), should.BeNil)
 
-			Convey("child can outlive parent", func() {
+			t.Run("child can outlive parent", func(t *ftt.Test) {
 				child := &model.Build{
 					ID: 11,
 					Proto: &pb.Build{
@@ -1370,13 +1373,13 @@ func TestUpdateBuild(t *testing.T) {
 					CreateTime:  t0,
 					UpdateToken: tk,
 				}
-				So(datastore.Put(ctx, child), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, child), should.BeNil)
 				req.UpdateMask.Paths[0] = "build.status"
 				req.Build.Status = pb.Status_STARTED
-				So(updateBuild(ctx, req), ShouldBeRPCOK)
+				assert.Loosely(t, updateBuild(ctx, req), convey.Adapt(ShouldBeRPCOK)())
 			})
 
-			Convey("child cannot outlive parent", func() {
+			t.Run("child cannot outlive parent", func(t *ftt.Test) {
 				child := &model.Build{
 					ID: 11,
 					Proto: &pb.Build{
@@ -1409,9 +1412,9 @@ func TestUpdateBuild(t *testing.T) {
 					Build:  datastore.KeyForObj(ctx, child),
 					Status: pb.Status_STARTED,
 				}
-				So(datastore.Put(ctx, child, cinf, cs), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, child, cinf, cs), should.BeNil)
 
-				Convey("request is to terminate the child", func() {
+				t.Run("request is to terminate the child", func(t *ftt.Test) {
 					req.UpdateMask.Paths[0] = "build.status"
 					req.Build.Id = 11
 					req.Build.Status = pb.Status_SUCCESS
@@ -1424,44 +1427,44 @@ func TestUpdateBuild(t *testing.T) {
 						},
 					}
 					build, err := srv.UpdateBuild(ctx, req)
-					So(err, ShouldBeRPCOK)
-					So(build.Status, ShouldEqual, pb.Status_SUCCESS)
-					So(build.CancelTime, ShouldBeNil)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, build.Status, should.Equal(pb.Status_SUCCESS))
+					assert.Loosely(t, build.CancelTime, should.BeNil)
 
 					tasks := sch.Tasks()
-					So(tasks, ShouldHaveLength, 5)
+					assert.Loosely(t, tasks, should.HaveLength(5))
 					sum := 0
 					for _, task := range tasks {
 						switch v := task.Payload.(type) {
 						case *taskdefs.NotifyPubSub:
 							sum++
-							So(v.GetBuildId(), ShouldEqual, req.Build.Id)
+							assert.Loosely(t, v.GetBuildId(), should.Equal(req.Build.Id))
 						case *taskdefs.ExportBigQueryGo:
 							sum += 2
-							So(v.GetBuildId(), ShouldEqual, req.Build.Id)
+							assert.Loosely(t, v.GetBuildId(), should.Equal(req.Build.Id))
 						case *taskdefs.FinalizeResultDBGo:
 							sum += 4
-							So(v.GetBuildId(), ShouldEqual, req.Build.Id)
+							assert.Loosely(t, v.GetBuildId(), should.Equal(req.Build.Id))
 						case *taskdefs.NotifyPubSubGoProxy:
 							sum += 8
-							So(v.GetBuildId(), ShouldEqual, req.Build.Id)
+							assert.Loosely(t, v.GetBuildId(), should.Equal(req.Build.Id))
 						case *taskdefs.PopPendingBuildTask:
 							sum += 16
-							So(v.GetBuildId(), ShouldEqual, req.Build.Id)
+							assert.Loosely(t, v.GetBuildId(), should.Equal(req.Build.Id))
 						default:
 							panic("invalid task payload")
 						}
 					}
-					So(sum, ShouldEqual, 31)
+					assert.Loosely(t, sum, should.Equal(31))
 
 					// BuildCompleted metric should be set to 1 with SUCCESS.
 					fvs := fv(model.Success.String(), "", "", false)
-					So(store.Get(ctx, metrics.V1.BuildCountCompleted, time.Time{}, fvs), ShouldEqual, 1)
+					assert.Loosely(t, store.Get(ctx, metrics.V1.BuildCountCompleted, time.Time{}, fvs), should.Equal(1))
 				})
 
-				Convey("start the cancel process if parent has ended", func() {
+				t.Run("start the cancel process if parent has ended", func(t *ftt.Test) {
 					// Child of the requested build.
-					So(datastore.Put(ctx, &model.Build{
+					assert.Loosely(t, datastore.Put(ctx, &model.Build{
 						ID: 12,
 						Proto: &pb.Build{
 							Id: 12,
@@ -1474,7 +1477,7 @@ func TestUpdateBuild(t *testing.T) {
 							CanOutliveParent: false,
 						},
 						UpdateToken: tk,
-					}), ShouldBeNil)
+					}), should.BeNil)
 					req.Build.Id = 11
 					req.Build.Status = pb.Status_STARTED
 					req.UpdateMask.Paths[0] = "build.status"
@@ -1488,22 +1491,22 @@ func TestUpdateBuild(t *testing.T) {
 						},
 					}
 					build, err := srv.UpdateBuild(ctx, req)
-					So(err, ShouldBeRPCOK)
-					So(build.Status, ShouldEqual, pb.Status_STARTED)
-					So(build.CancelTime.AsTime(), ShouldResemble, t0)
-					So(build.CancellationMarkdown, ShouldEqual, "canceled because its parent 10 has terminated")
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, build.Status, should.Equal(pb.Status_STARTED))
+					assert.Loosely(t, build.CancelTime.AsTime(), should.Resemble(t0))
+					assert.Loosely(t, build.CancellationMarkdown, should.Equal("canceled because its parent 10 has terminated"))
 					// One pubsub notification for the status update in the request,
 					// one CancelBuildTask for the requested build,
 					// one CancelBuildTask for the child build.
-					So(sch.Tasks(), ShouldHaveLength, 4)
+					assert.Loosely(t, sch.Tasks(), should.HaveLength(4))
 
 					// BuildStatus is updated.
 					updatedStatus := &model.BuildStatus{Build: datastore.MakeKey(ctx, "Build", 11)}
-					So(datastore.Get(ctx, updatedStatus), ShouldBeNil)
-					So(updatedStatus.Status, ShouldEqual, pb.Status_STARTED)
+					assert.Loosely(t, datastore.Get(ctx, updatedStatus), should.BeNil)
+					assert.Loosely(t, updatedStatus.Status, should.Equal(pb.Status_STARTED))
 				})
 
-				Convey("start the cancel process if parent is missing", func() {
+				t.Run("start the cancel process if parent is missing", func(t *ftt.Test) {
 					tk, ctx = updateContextForNewBuildToken(ctx, 15)
 					b := &model.Build{
 						ID: 15,
@@ -1524,7 +1527,7 @@ func TestUpdateBuild(t *testing.T) {
 						Build:  datastore.KeyForObj(ctx, b),
 						Status: b.Proto.Status,
 					}
-					So(datastore.Put(ctx, b, buildStatus), ShouldBeNil)
+					assert.Loosely(t, datastore.Put(ctx, b, buildStatus), should.BeNil)
 					req.Build.Id = 15
 					req.Build.Status = pb.Status_STARTED
 					req.UpdateMask.Paths[0] = "build.status"
@@ -1538,20 +1541,20 @@ func TestUpdateBuild(t *testing.T) {
 						},
 					}
 					build, err := srv.UpdateBuild(ctx, req)
-					So(err, ShouldBeRPCOK)
-					So(build.Status, ShouldEqual, pb.Status_STARTED)
-					So(build.CancelTime.AsTime(), ShouldResemble, t0)
-					So(build.CancellationMarkdown, ShouldEqual, "canceled because its parent 3000000 is missing")
-					So(sch.Tasks(), ShouldHaveLength, 3)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, build.Status, should.Equal(pb.Status_STARTED))
+					assert.Loosely(t, build.CancelTime.AsTime(), should.Resemble(t0))
+					assert.Loosely(t, build.CancellationMarkdown, should.Equal("canceled because its parent 3000000 is missing"))
+					assert.Loosely(t, sch.Tasks(), should.HaveLength(3))
 
 					// BuildStatus is updated.
 					updatedStatus := &model.BuildStatus{Build: datastore.MakeKey(ctx, "Build", 15)}
-					So(datastore.Get(ctx, updatedStatus), ShouldBeNil)
-					So(updatedStatus.Status, ShouldEqual, pb.Status_STARTED)
+					assert.Loosely(t, datastore.Get(ctx, updatedStatus), should.BeNil)
+					assert.Loosely(t, updatedStatus.Status, should.Equal(pb.Status_STARTED))
 				})
 
-				Convey("return err if failed to get parent", func() {
-					So(datastore.Put(ctx, &model.Build{
+				t.Run("return err if failed to get parent", func(t *ftt.Test) {
+					assert.Loosely(t, datastore.Put(ctx, &model.Build{
 						ID: 31,
 						Proto: &pb.Build{
 							Id: 31,
@@ -1564,7 +1567,7 @@ func TestUpdateBuild(t *testing.T) {
 							CanOutliveParent: false,
 						},
 						UpdateToken: tk,
-					}), ShouldBeNil)
+					}), should.BeNil)
 
 					// Mock datastore.Get failure.
 					var fb featureBreaker.FeatureBreaker
@@ -1578,13 +1581,13 @@ func TestUpdateBuild(t *testing.T) {
 					tk, ctx = updateContextForNewBuildToken(ctx, 31)
 					req.UpdateMask.Paths[0] = "build.status"
 					_, err := srv.UpdateBuild(ctx, req)
-					So(err, ShouldErrLike, "get error")
+					assert.Loosely(t, err, should.ErrLike("get error"))
 
 				})
 
-				Convey("build is being canceled", func() {
+				t.Run("build is being canceled", func(t *ftt.Test) {
 					tk, ctx = updateContextForNewBuildToken(ctx, 13)
-					So(datastore.Put(ctx, &model.Build{
+					assert.Loosely(t, datastore.Put(ctx, &model.Build{
 						ID: 13,
 						Proto: &pb.Build{
 							Id: 13,
@@ -1598,9 +1601,9 @@ func TestUpdateBuild(t *testing.T) {
 							Status:          pb.Status_STARTED,
 						},
 						UpdateToken: tk,
-					}), ShouldBeNil)
+					}), should.BeNil)
 					// Child of the requested build.
-					So(datastore.Put(ctx, &model.Build{
+					assert.Loosely(t, datastore.Put(ctx, &model.Build{
 						ID: 14,
 						Proto: &pb.Build{
 							Id: 14,
@@ -1614,7 +1617,7 @@ func TestUpdateBuild(t *testing.T) {
 							Status:           pb.Status_STARTED,
 						},
 						UpdateToken: tk,
-					}), ShouldBeNil)
+					}), should.BeNil)
 					req.Build.Id = 13
 					req.Build.SummaryMarkdown = "new summary"
 					req.UpdateMask.Paths[0] = "build.summary_markdown"
@@ -1627,13 +1630,13 @@ func TestUpdateBuild(t *testing.T) {
 						},
 					}
 					build, err := srv.UpdateBuild(ctx, req)
-					So(err, ShouldBeRPCOK)
-					So(build.CancelTime.AsTime(), ShouldResemble, t0.Add(-time.Minute))
-					So(build.SummaryMarkdown, ShouldEqual, "new summary")
-					So(sch.Tasks(), ShouldBeEmpty)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, build.CancelTime.AsTime(), should.Resemble(t0.Add(-time.Minute)))
+					assert.Loosely(t, build.SummaryMarkdown, should.Equal("new summary"))
+					assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 				})
 
-				Convey("build is ended, should cancel children", func() {
+				t.Run("build is ended, should cancel children", func(t *ftt.Test) {
 					tk, ctx = updateContextForNewBuildToken(ctx, 20)
 					p := &model.Build{
 						ID: 20,
@@ -1661,7 +1664,7 @@ func TestUpdateBuild(t *testing.T) {
 						Build:  datastore.KeyForObj(ctx, p),
 						Status: pb.Status_STARTED,
 					}
-					So(datastore.Put(ctx, p, pinf, ps), ShouldBeNil)
+					assert.Loosely(t, datastore.Put(ctx, p, pinf, ps), should.BeNil)
 					// Child of the requested build.
 					c := &model.Build{
 						ID: 21,
@@ -1677,21 +1680,21 @@ func TestUpdateBuild(t *testing.T) {
 						},
 						UpdateToken: tk,
 					}
-					So(datastore.Put(ctx, c), ShouldBeNil)
+					assert.Loosely(t, datastore.Put(ctx, c), should.BeNil)
 					req.Build.Id = 20
 					req.Build.Status = pb.Status_INFRA_FAILURE
 					req.UpdateMask.Paths[0] = "build.status"
 					_, err := srv.UpdateBuild(ctx, req)
-					So(err, ShouldBeRPCOK)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
 
 					child, err := common.GetBuild(ctx, 21)
-					So(err, ShouldBeNil)
-					So(child.Proto.CancelTime, ShouldNotBeNil)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, child.Proto.CancelTime, should.NotBeNil)
 				})
 
-				Convey("build gets cancel signal from backend, should cancel children", func() {
+				t.Run("build gets cancel signal from backend, should cancel children", func(t *ftt.Test) {
 					tk, ctx = updateContextForNewBuildToken(ctx, 20)
-					So(datastore.Put(ctx, &model.Build{
+					assert.Loosely(t, datastore.Put(ctx, &model.Build{
 						ID: 20,
 						Proto: &pb.Build{
 							Id: 20,
@@ -1703,9 +1706,9 @@ func TestUpdateBuild(t *testing.T) {
 							Status: pb.Status_STARTED,
 						},
 						UpdateToken: tk,
-					}), ShouldBeNil)
+					}), should.BeNil)
 					// Child of the requested build.
-					So(datastore.Put(ctx, &model.Build{
+					assert.Loosely(t, datastore.Put(ctx, &model.Build{
 						ID: 21,
 						Proto: &pb.Build{
 							Id: 21,
@@ -1719,21 +1722,21 @@ func TestUpdateBuild(t *testing.T) {
 							Status:           pb.Status_STARTED,
 						},
 						UpdateToken: tk,
-					}), ShouldBeNil)
+					}), should.BeNil)
 					req.Build.Id = 20
 					req.UpdateMask.Paths = []string{"build.cancel_time", "build.cancellation_markdown"}
 					req.Build.CancelTime = timestamppb.New(t0.Add(-time.Minute))
 					req.Build.CancellationMarkdown = "swarming task is cancelled"
 					_, err := srv.UpdateBuild(ctx, req)
-					So(err, ShouldBeRPCOK)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
 
 					child, err := common.GetBuild(ctx, 21)
-					So(err, ShouldBeNil)
-					So(child.Proto.CancelTime, ShouldNotBeNil)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, child.Proto.CancelTime, should.NotBeNil)
 
 					// One CancelBuildTask for the requested build,
 					// one CancelBuildTask for the child build.
-					So(sch.Tasks(), ShouldHaveLength, 2)
+					assert.Loosely(t, sch.Tasks(), should.HaveLength(2))
 				})
 			})
 		})

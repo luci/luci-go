@@ -28,6 +28,9 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -40,9 +43,6 @@ import (
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	"go.chromium.org/luci/buildbucket/bbperms"
 	pb "go.chromium.org/luci/buildbucket/proto"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestBatch(t *testing.T) {
@@ -50,7 +50,7 @@ func TestBatch(t *testing.T) {
 
 	const userID = identity.Identity("user:caller@example.com")
 
-	Convey("Batch", t, func() {
+	ftt.Run("Batch", t, func(t *ftt.Test) {
 		ctl := gomock.NewController(t)
 		defer ctl.Finish()
 		srv := &Builds{}
@@ -59,7 +59,7 @@ func TestBatch(t *testing.T) {
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 
-		So(config.SetTestSettingsCfg(ctx, &pb.SettingsCfg{}), ShouldBeNil)
+		assert.Loosely(t, config.SetTestSettingsCfg(ctx, &pb.SettingsCfg{}), should.BeNil)
 
 		b := &bqlog.Bundler{
 			CloudProject: "project",
@@ -84,7 +84,7 @@ func TestBatch(t *testing.T) {
 				authtest.MockPermission(userID, "project:bucket", bbperms.BuildsList),
 			),
 		})
-		So(datastore.Put(
+		assert.Loosely(t, datastore.Put(
 			ctx,
 			&model.Bucket{
 				ID:     "bucket",
@@ -117,26 +117,26 @@ func TestBatch(t *testing.T) {
 						Builder: "builder2",
 					},
 				},
-			}), ShouldBeNil)
+			}), should.BeNil)
 
-		Convey("empty", func() {
+		t.Run("empty", func(t *ftt.Test) {
 			req := &pb.BatchRequest{
 				Requests: []*pb.BatchRequest_Request{},
 			}
 			res, err := srv.Batch(ctx, req)
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, &pb.BatchResponse{})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(&pb.BatchResponse{}))
 
 			req = &pb.BatchRequest{
 				Requests: []*pb.BatchRequest_Request{{}},
 			}
 			res, err = srv.Batch(ctx, req)
-			So(err, ShouldNotBeNil)
-			So(res, ShouldBeNil)
-			So(err, ShouldErrLike, "request includes an unsupported type")
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, res, should.BeNil)
+			assert.Loosely(t, err, should.ErrLike("request includes an unsupported type"))
 		})
 
-		Convey("error", func() {
+		t.Run("error", func(t *ftt.Test) {
 			req := &pb.BatchRequest{
 				Requests: []*pb.BatchRequest_Request{
 					{Request: &pb.BatchRequest_Request_GetBuild{
@@ -155,17 +155,17 @@ func TestBatch(t *testing.T) {
 					}},
 				},
 			}
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, expectedRes)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(expectedRes))
 		})
 
-		Convey("getBuildStatus req", func() {
+		t.Run("getBuildStatus req", func(t *ftt.Test) {
 			bs := &model.BuildStatus{
 				Build:        datastore.MakeKey(ctx, "Build", 500),
 				BuildAddress: "project/bucket/builder/b500",
 				Status:       pb.Status_SCHEDULED,
 			}
-			So(datastore.Put(ctx, bs), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, bs), should.BeNil)
 			req := &pb.BatchRequest{
 				Requests: []*pb.BatchRequest_Request{
 					{Request: &pb.BatchRequest_Request_GetBuildStatus{
@@ -193,11 +193,11 @@ func TestBatch(t *testing.T) {
 					}},
 				},
 			}
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, expectedRes)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(expectedRes))
 		})
 
-		Convey("getBuild req", func() {
+		t.Run("getBuild req", func(t *ftt.Test) {
 			req := &pb.BatchRequest{
 				Requests: []*pb.BatchRequest_Request{
 					{Request: &pb.BatchRequest_Request_GetBuild{
@@ -221,11 +221,11 @@ func TestBatch(t *testing.T) {
 					}},
 				},
 			}
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, expectedRes)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(expectedRes))
 		})
 
-		Convey("searchBuilds req", func() {
+		t.Run("searchBuilds req", func(t *ftt.Test) {
 			req := &pb.BatchRequest{
 				Requests: []*pb.BatchRequest_Request{
 					{Request: &pb.BatchRequest_Request_SearchBuilds{
@@ -260,11 +260,11 @@ func TestBatch(t *testing.T) {
 					}},
 				},
 			}
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, expectedRes)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(expectedRes))
 		})
 
-		Convey("get and search reqs", func() {
+		t.Run("get and search reqs", func(t *ftt.Test) {
 			req := &pb.BatchRequest{
 				Requests: []*pb.BatchRequest_Request{
 					{Request: &pb.BatchRequest_Request_GetBuild{
@@ -312,11 +312,11 @@ func TestBatch(t *testing.T) {
 					}},
 				},
 			}
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, expectedRes)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(expectedRes))
 		})
 
-		Convey("schedule req", func() {
+		t.Run("schedule req", func(t *ftt.Test) {
 			req := &pb.BatchRequest{
 				Requests: []*pb.BatchRequest_Request{
 					{Request: &pb.BatchRequest_Request_ScheduleBuild{
@@ -335,11 +335,11 @@ func TestBatch(t *testing.T) {
 					}},
 				},
 			}
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, expectedRes)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(expectedRes))
 		})
 
-		Convey("schedule batch", func() {
+		t.Run("schedule batch", func(t *ftt.Test) {
 			req := &pb.BatchRequest{
 				Requests: []*pb.BatchRequest_Request{
 					{Request: &pb.BatchRequest_Request_ScheduleBuild{
@@ -417,11 +417,11 @@ func TestBatch(t *testing.T) {
 					}},
 				},
 			}
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, expectedRes)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(expectedRes))
 		})
 
-		Convey("cancel req", func() {
+		t.Run("cancel req", func(t *ftt.Test) {
 			now := testclock.TestRecentTimeLocal
 			ctx, _ = testclock.UseTime(ctx, now)
 			req := &pb.BatchRequest{
@@ -464,11 +464,11 @@ func TestBatch(t *testing.T) {
 					}},
 				},
 			}
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, expectedRes)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(expectedRes))
 		})
 
-		Convey("get, schedule, search, cancel and get_build_status in req", func() {
+		t.Run("get, schedule, search, cancel and get_build_status in req", func(t *ftt.Test) {
 			req := &pb.BatchRequest{}
 			err := protojson.Unmarshal([]byte(`{
 				"requests": [
@@ -478,13 +478,13 @@ func TestBatch(t *testing.T) {
 					{"cancelBuild": {}},
 					{"getBuildStatus": {"id": "1"}}
 				]}`), req)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			expectedPyReq := &pb.BatchRequest{}
 			err = protojson.Unmarshal([]byte(`{
 				"requests": [
 					{"scheduleBuild": {}}
 				]}`), expectedPyReq)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			actualRes, err := srv.Batch(ctx, req)
 			build1 := &pb.Build{
 				Id: 1,
@@ -534,26 +534,26 @@ func TestBatch(t *testing.T) {
 					}},
 				},
 			}
-			So(err, ShouldBeNil)
-			So(actualRes, ShouldResembleProto, expectedRes)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actualRes, should.Resemble(expectedRes))
 		})
 
-		Convey("exceed max read reqs amount", func() {
+		t.Run("exceed max read reqs amount", func(t *ftt.Test) {
 			req := &pb.BatchRequest{}
 			for i := 0; i < readReqsSizeLimit+1; i++ {
 				req.Requests = append(req.Requests, &pb.BatchRequest_Request{Request: &pb.BatchRequest_Request_GetBuild{}})
 			}
 			_, err := srv.Batch(ctx, req)
-			So(err, ShouldErrLike, "the maximum allowed read request count in Batch is 1000.")
+			assert.Loosely(t, err, should.ErrLike("the maximum allowed read request count in Batch is 1000."))
 		})
 
-		Convey("exceed max write reqs amount", func() {
+		t.Run("exceed max write reqs amount", func(t *ftt.Test) {
 			req := &pb.BatchRequest{}
 			for i := 0; i < writeReqsSizeLimit+1; i++ {
 				req.Requests = append(req.Requests, &pb.BatchRequest_Request{Request: &pb.BatchRequest_Request_ScheduleBuild{}})
 			}
 			_, err := srv.Batch(ctx, req)
-			So(err, ShouldErrLike, "the maximum allowed write request count in Batch is 200.")
+			assert.Loosely(t, err, should.ErrLike("the maximum allowed write request count in Batch is 200."))
 		})
 	})
 }

@@ -21,6 +21,9 @@ import (
 	"google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -31,24 +34,21 @@ import (
 	"go.chromium.org/luci/buildbucket/appengine/rpc/testutil"
 	"go.chromium.org/luci/buildbucket/bbperms"
 	pb "go.chromium.org/luci/buildbucket/proto"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestValidateSetBuilderHealthRequest(t *testing.T) {
 	t.Parallel()
-	Convey("validateSetBuilderHealthRequest", t, func() {
+	ftt.Run("validateSetBuilderHealthRequest", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		testutil.PutBucket(ctx, "project", "bucket", nil)
 
-		Convey("empty req", func() {
+		t.Run("empty req", func(t *ftt.Test) {
 			req := &pb.SetBuilderHealthRequest{}
 			err := validateRequest(ctx, req, nil, nil)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey("ok req", func() {
+		t.Run("ok req", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:someone@example.com",
 				IdentityPermissions: []authtest.RealmPermission{
@@ -88,13 +88,13 @@ func TestValidateSetBuilderHealthRequest(t *testing.T) {
 			}
 			resp := make([]*pb.SetBuilderHealthResponse_Response, 3)
 			err := validateRequest(ctx, req, nil, resp)
-			So(err, ShouldBeNil)
-			So(resp, ShouldResembleProto, []*pb.SetBuilderHealthResponse_Response{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.Resemble([]*pb.SetBuilderHealthResponse_Response{
 				nil, nil, nil,
-			})
+			}))
 		})
 
-		Convey("miltiple entries", func() {
+		t.Run("miltiple entries", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:someone@example.com",
 				IdentityPermissions: []authtest.RealmPermission{
@@ -132,11 +132,11 @@ func TestValidateSetBuilderHealthRequest(t *testing.T) {
 			}
 			resp := make([]*pb.SetBuilderHealthResponse_Response, 3)
 			err := validateRequest(ctx, req, nil, resp)
-			So(err, ShouldNotBeNil)
-			So(err.Error(), ShouldEqual, "The following builder has multiple entries: project/bucket/builder")
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, err.Error(), should.Equal("The following builder has multiple entries: project/bucket/builder"))
 		})
 
-		Convey("bad health score", func() {
+		t.Run("bad health score", func(t *ftt.Test) {
 			errs := map[int]error{}
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:someone@example.com",
@@ -159,8 +159,8 @@ func TestValidateSetBuilderHealthRequest(t *testing.T) {
 			}
 			resp := make([]*pb.SetBuilderHealthResponse_Response, 1)
 			err := validateRequest(ctx, req, errs, resp)
-			So(err, ShouldBeNil)
-			So(resp, ShouldResembleProto, []*pb.SetBuilderHealthResponse_Response{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.Resemble([]*pb.SetBuilderHealthResponse_Response{
 				{
 					Response: &pb.SetBuilderHealthResponse_Response_Error{
 						Error: &status.Status{
@@ -169,10 +169,10 @@ func TestValidateSetBuilderHealthRequest(t *testing.T) {
 						},
 					},
 				},
-			})
+			}))
 		})
 
-		Convey("builderID not present, health is", func() {
+		t.Run("builderID not present, health is", func(t *ftt.Test) {
 			errs := map[int]error{}
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:someone@example.com",
@@ -189,8 +189,8 @@ func TestValidateSetBuilderHealthRequest(t *testing.T) {
 				},
 			}
 			err := validateRequest(ctx, req, errs, nil)
-			So(err, ShouldNotBeNil)
-			So(err.Error(), ShouldContainSubstring, ".health[0].id: required")
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, err.Error(), should.ContainSubstring(".health[0].id: required"))
 		})
 	})
 }
@@ -198,13 +198,13 @@ func TestValidateSetBuilderHealthRequest(t *testing.T) {
 func TestSetBuilderHealth(t *testing.T) {
 	t.Parallel()
 
-	Convey("requests", t, func() {
+	ftt.Run("requests", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		srv := &Builders{}
 		testutil.PutBucket(ctx, "chrome", "cq", nil)
 		testutil.PutBucket(ctx, "chromeos", "cq", nil)
 
-		Convey("bad request; no perms", func() {
+		t.Run("bad request; no perms", func(t *ftt.Test) {
 			req := &pb.SetBuilderHealthRequest{
 				Health: []*pb.SetBuilderHealthRequest_BuilderHealth{
 					{
@@ -226,8 +226,8 @@ func TestSetBuilderHealth(t *testing.T) {
 				},
 			}
 			resp, err := srv.SetBuilderHealth(ctx, req)
-			So(err, ShouldBeNil)
-			So(resp, ShouldResembleProto, &pb.SetBuilderHealthResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.Resemble(&pb.SetBuilderHealthResponse{
 				Responses: []*pb.SetBuilderHealthResponse_Response{
 					{
 						Response: &pb.SetBuilderHealthResponse_Response_Error{
@@ -246,14 +246,14 @@ func TestSetBuilderHealth(t *testing.T) {
 						},
 					},
 				},
-			})
+			}))
 		})
 
-		Convey("bad request; has perms", func() {
-			So(datastore.Put(ctx, &model.Builder{
+		t.Run("bad request; has perms", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(ctx, &model.Builder{
 				ID:     "amd-cq",
 				Parent: model.BucketKey(ctx, "chrome", "cq"),
-			}), ShouldBeNil)
+			}), should.BeNil)
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:someone@example.com",
 				IdentityPermissions: []authtest.RealmPermission{
@@ -278,18 +278,18 @@ func TestSetBuilderHealth(t *testing.T) {
 				},
 			}
 			_, err := srv.SetBuilderHealth(ctx, req)
-			So(err.Error(), ShouldContainSubstring, ".health[1].id.project: required (and 2 other errors)")
+			assert.Loosely(t, err.Error(), should.ContainSubstring(".health[1].id.project: required (and 2 other errors)"))
 		})
 
-		Convey("bad req; one no perm, one validation err, one no builder saved", func() {
-			So(datastore.Put(ctx, &model.Builder{
+		t.Run("bad req; one no perm, one validation err, one no builder saved", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(ctx, &model.Builder{
 				ID:     "amd-cq",
 				Parent: model.BucketKey(ctx, "chrome", "cq"),
-			}), ShouldBeNil)
-			So(datastore.Put(ctx, &model.Builder{
+			}), should.BeNil)
+			assert.Loosely(t, datastore.Put(ctx, &model.Builder{
 				ID:     "amd-cq",
 				Parent: model.BucketKey(ctx, "chromeos", "cq"),
-			}), ShouldBeNil)
+			}), should.BeNil)
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:someone@example.com",
 				IdentityPermissions: []authtest.RealmPermission{
@@ -327,8 +327,8 @@ func TestSetBuilderHealth(t *testing.T) {
 				},
 			}
 			resp, err := srv.SetBuilderHealth(ctx, req)
-			So(err, ShouldBeNil)
-			So(resp, ShouldResembleProto, &pb.SetBuilderHealthResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.Resemble(&pb.SetBuilderHealthResponse{
 				Responses: []*pb.SetBuilderHealthResponse_Response{
 					{
 						Response: &pb.SetBuilderHealthResponse_Response_Error{
@@ -355,11 +355,11 @@ func TestSetBuilderHealth(t *testing.T) {
 						},
 					},
 				},
-			})
+			}))
 		})
 	})
 
-	Convey("existing entities", t, func() {
+	ftt.Run("existing entities", t, func(t *ftt.Test) {
 		ctx := memory.UseWithAppID(context.Background(), "fake-cr-buildbucket")
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
@@ -367,7 +367,7 @@ func TestSetBuilderHealth(t *testing.T) {
 		srv := &Builders{}
 		testutil.PutBucket(ctx, "chrome", "cq", nil)
 
-		Convey("builders exists; update is normal", func() {
+		t.Run("builders exists; update is normal", func(t *ftt.Test) {
 			bktKey := model.BucketKey(ctx, "chrome", "cq")
 
 			bldrToPut1 := &model.Builder{
@@ -402,7 +402,7 @@ func TestSetBuilderHealth(t *testing.T) {
 				ID:     "amd-cq-3",
 				Parent: bktKey,
 			}
-			So(datastore.Put(ctx, bldrToPut1, bldrToPut2, bldrToPut3), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, bldrToPut1, bldrToPut2, bldrToPut3), should.BeNil)
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:someone@example.com",
 				IdentityPermissions: []authtest.RealmPermission{
@@ -453,40 +453,40 @@ func TestSetBuilderHealth(t *testing.T) {
 				},
 			}
 			_, err := srv.SetBuilderHealth(ctx, req)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			expectedBuilder1 := &model.Builder{ID: "amd-cq", Parent: bktKey}
 			expectedBuilder2 := &model.Builder{ID: "amd-cq-2", Parent: bktKey}
 			expectedBuilder3 := &model.Builder{ID: "amd-cq-3", Parent: bktKey}
-			So(datastore.Get(ctx, expectedBuilder1, expectedBuilder2, expectedBuilder3), ShouldBeNil)
-			So(expectedBuilder1.Metadata.Health.HealthScore, ShouldEqual, 9)
-			So(expectedBuilder1.Metadata.Health.Reporter, ShouldEqual, "someone@example.com")
-			So(expectedBuilder1.Metadata.Health.ReportedTime, ShouldNotBeNil)
-			So(expectedBuilder1.Metadata.Health.DataLinks, ShouldResemble, map[string]string{
+			assert.Loosely(t, datastore.Get(ctx, expectedBuilder1, expectedBuilder2, expectedBuilder3), should.BeNil)
+			assert.Loosely(t, expectedBuilder1.Metadata.Health.HealthScore, should.Equal(9))
+			assert.Loosely(t, expectedBuilder1.Metadata.Health.Reporter, should.Equal("someone@example.com"))
+			assert.Loosely(t, expectedBuilder1.Metadata.Health.ReportedTime, should.NotBeNil)
+			assert.Loosely(t, expectedBuilder1.Metadata.Health.DataLinks, should.Resemble(map[string]string{
 				"user": "data-link-for-amd-cq-from-req",
-			})
-			So(expectedBuilder1.Metadata.Health.DocLinks, ShouldResemble, map[string]string{
+			}))
+			assert.Loosely(t, expectedBuilder1.Metadata.Health.DocLinks, should.Resemble(map[string]string{
 				"user": "doc-link-for-amd-cq-from-req",
-			})
-			So(expectedBuilder2.Metadata.Health.HealthScore, ShouldEqual, 8)
-			So(expectedBuilder2.Metadata.Health.Reporter, ShouldEqual, "someone@example.com")
-			So(expectedBuilder2.Metadata.Health.ReportedTime, ShouldNotBeNil)
-			So(expectedBuilder2.Metadata.Health.DataLinks, ShouldResemble, map[string]string{
+			}))
+			assert.Loosely(t, expectedBuilder2.Metadata.Health.HealthScore, should.Equal(8))
+			assert.Loosely(t, expectedBuilder2.Metadata.Health.Reporter, should.Equal("someone@example.com"))
+			assert.Loosely(t, expectedBuilder2.Metadata.Health.ReportedTime, should.NotBeNil)
+			assert.Loosely(t, expectedBuilder2.Metadata.Health.DataLinks, should.Resemble(map[string]string{
 				"user": "data-link-for-amd-cq-2",
-			})
-			So(expectedBuilder2.Metadata.Health.DocLinks, ShouldResemble, map[string]string{
+			}))
+			assert.Loosely(t, expectedBuilder2.Metadata.Health.DocLinks, should.Resemble(map[string]string{
 				"user": "doc-link-for-amd-cq-2",
-			})
-			So(expectedBuilder3.Metadata.Health.HealthScore, ShouldEqual, 2)
-			So(expectedBuilder3.Metadata.Health.Reporter, ShouldEqual, "someone@example.com")
-			So(expectedBuilder3.Metadata.Health.ReportedTime, ShouldNotBeNil)
+			}))
+			assert.Loosely(t, expectedBuilder3.Metadata.Health.HealthScore, should.Equal(2))
+			assert.Loosely(t, expectedBuilder3.Metadata.Health.Reporter, should.Equal("someone@example.com"))
+			assert.Loosely(t, expectedBuilder3.Metadata.Health.ReportedTime, should.NotBeNil)
 		})
 
-		Convey("one builder does not exist", func() {
+		t.Run("one builder does not exist", func(t *ftt.Test) {
 			bktKey := model.BucketKey(ctx, "chrome", "cq")
-			So(datastore.Put(ctx, &model.Builder{
+			assert.Loosely(t, datastore.Put(ctx, &model.Builder{
 				ID:     "amd-cq",
 				Parent: bktKey,
-			}), ShouldBeNil)
+			}), should.BeNil)
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:someone@example.com",
 				IdentityPermissions: []authtest.RealmPermission{
@@ -519,8 +519,8 @@ func TestSetBuilderHealth(t *testing.T) {
 				},
 			}
 			resp, err := srv.SetBuilderHealth(ctx, req)
-			So(err, ShouldBeNil)
-			So(resp, ShouldResembleProto, &pb.SetBuilderHealthResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.Resemble(&pb.SetBuilderHealthResponse{
 				Responses: []*pb.SetBuilderHealthResponse_Response{
 					{
 						Response: &pb.SetBuilderHealthResponse_Response_Result{
@@ -536,17 +536,17 @@ func TestSetBuilderHealth(t *testing.T) {
 						},
 					},
 				},
-			})
+			}))
 			expectedBuilder1 := &model.Builder{ID: "amd-cq", Parent: bktKey}
-			So(datastore.Get(ctx, expectedBuilder1), ShouldBeNil)
-			So(expectedBuilder1.Metadata.Health.HealthScore, ShouldEqual, 9)
+			assert.Loosely(t, datastore.Get(ctx, expectedBuilder1), should.BeNil)
+			assert.Loosely(t, expectedBuilder1.Metadata.Health.HealthScore, should.Equal(9))
 		})
 
-		Convey("multiple requests for same builder", func() {
-			So(datastore.Put(ctx, &model.Builder{
+		t.Run("multiple requests for same builder", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(ctx, &model.Builder{
 				ID:     "amd-cq",
 				Parent: model.BucketKey(ctx, "chrome", "cq"),
-			}), ShouldBeNil)
+			}), should.BeNil)
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:someone@example.com",
 				IdentityPermissions: []authtest.RealmPermission{
@@ -575,11 +575,11 @@ func TestSetBuilderHealth(t *testing.T) {
 				},
 			}
 			_, err := srv.SetBuilderHealth(ctx, req)
-			So(err.Error(), ShouldContainSubstring, "The following builder has multiple entries: chrome/cq/amd-cq")
+			assert.Loosely(t, err.Error(), should.ContainSubstring("The following builder has multiple entries: chrome/cq/amd-cq"))
 		})
 	})
 
-	Convey("links", t, func() {
+	ftt.Run("links", t, func(t *ftt.Test) {
 		ctx := memory.UseWithAppID(context.Background(), "fake-cr-buildbucket")
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
@@ -587,7 +587,7 @@ func TestSetBuilderHealth(t *testing.T) {
 		srv := &Builders{}
 		testutil.PutBucket(ctx, "chrome", "cq", nil)
 		bktKey := model.BucketKey(ctx, "chrome", "cq")
-		So(datastore.Put(ctx, &model.Builder{
+		assert.Loosely(t, datastore.Put(ctx, &model.Builder{
 			ID:     "amd-cq",
 			Parent: bktKey,
 			Config: &pb.BuilderConfig{
@@ -602,9 +602,9 @@ func TestSetBuilderHealth(t *testing.T) {
 					},
 				},
 			},
-		}), ShouldBeNil)
+		}), should.BeNil)
 
-		Convey("links from cfg", func() {
+		t.Run("links from cfg", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:someone@google.com",
 				IdentityPermissions: []authtest.RealmPermission{
@@ -627,17 +627,17 @@ func TestSetBuilderHealth(t *testing.T) {
 				},
 			}
 			_, err := srv.SetBuilderHealth(ctx, req)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			expectedBuilder := &model.Builder{ID: "amd-cq", Parent: bktKey}
-			So(datastore.Get(ctx, expectedBuilder), ShouldBeNil)
-			So(expectedBuilder.Metadata.Health.DataLinks, ShouldResemble, map[string]string{
+			assert.Loosely(t, datastore.Get(ctx, expectedBuilder), should.BeNil)
+			assert.Loosely(t, expectedBuilder.Metadata.Health.DataLinks, should.Resemble(map[string]string{
 				"google.com":   "go/somelink",
 				"chromium.org": "some_public_link.com",
-			})
-			So(expectedBuilder.Metadata.Health.DocLinks, ShouldResemble, map[string]string{
+			}))
+			assert.Loosely(t, expectedBuilder.Metadata.Health.DocLinks, should.Resemble(map[string]string{
 				"google.com":   "go/some_doc_link",
 				"chromium.org": "some_public_doc_link.com",
-			})
+			}))
 		})
 	})
 }

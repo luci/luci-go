@@ -25,20 +25,20 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/server/caching"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/clients"
 	"go.chromium.org/luci/buildbucket/appengine/internal/config"
 	pb "go.chromium.org/luci/buildbucket/proto"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestHandleCancelBackendTask(t *testing.T) {
 	t.Parallel()
-	Convey("TestHandleCancelBackendTask", t, func() {
+	ftt.Run("TestHandleCancelBackendTask", t, func(t *ftt.Test) {
 		ctl := gomock.NewController(t)
 		defer ctl.Finish()
 		mockBackend := clients.NewMockTaskBackendClient(ctl)
@@ -64,9 +64,9 @@ func TestHandleCancelBackendTask(t *testing.T) {
 		}
 		settingsCfg := &pb.SettingsCfg{Backends: backendSetting}
 		err := config.SetTestSettingsCfg(ctx, settingsCfg)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		Convey("ok", func() {
+		t.Run("ok", func(t *ftt.Test) {
 			mockBackend.EXPECT().CancelTasks(gomock.Any(), gomock.Any()).Return(&pb.CancelTasksResponse{
 				Tasks: []*pb.Task{
 					&pb.Task{
@@ -76,10 +76,10 @@ func TestHandleCancelBackendTask(t *testing.T) {
 					},
 				},
 			}, nil)
-			So(HandleCancelBackendTask(ctx, "project:bucket", "swarming://chromium-swarm-dev", "a83908f94as40"), ShouldBeNil)
+			assert.Loosely(t, HandleCancelBackendTask(ctx, "project:bucket", "swarming://chromium-swarm-dev", "a83908f94as40"), should.BeNil)
 		})
 
-		Convey("ok with responses", func() {
+		t.Run("ok with responses", func(t *ftt.Test) {
 			mockBackend.EXPECT().CancelTasks(gomock.Any(), gomock.Any()).Return(&pb.CancelTasksResponse{
 				Responses: []*pb.CancelTasksResponse_Response{
 					{
@@ -93,16 +93,16 @@ func TestHandleCancelBackendTask(t *testing.T) {
 					},
 				},
 			}, nil)
-			So(HandleCancelBackendTask(ctx, "project:bucket", "swarming://chromium-swarm-dev", "a83908f94as40"), ShouldBeNil)
+			assert.Loosely(t, HandleCancelBackendTask(ctx, "project:bucket", "swarming://chromium-swarm-dev", "a83908f94as40"), should.BeNil)
 		})
 
-		Convey("failed CancelTasks RPC call", func() {
+		t.Run("failed CancelTasks RPC call", func(t *ftt.Test) {
 			mockBackend.EXPECT().CancelTasks(gomock.Any(), gomock.Any()).Return(nil, status.Errorf(codes.Internal, "Internal"))
 			err := HandleCancelBackendTask(ctx, "project:bucket", "swarming://chromium-swarm-dev", "a83908f94as40")
-			So(err, ShouldErrLike, "transient error in canceling task a83908f94as40 for target swarming://chromium-swarm-dev")
+			assert.Loosely(t, err, should.ErrLike("transient error in canceling task a83908f94as40 for target swarming://chromium-swarm-dev"))
 		})
 
-		Convey("failure in response fatal", func() {
+		t.Run("failure in response fatal", func(t *ftt.Test) {
 			mockBackend.EXPECT().CancelTasks(gomock.Any(), gomock.Any()).Return(&pb.CancelTasksResponse{
 				Responses: []*pb.CancelTasksResponse_Response{
 					{
@@ -113,10 +113,10 @@ func TestHandleCancelBackendTask(t *testing.T) {
 				},
 			}, nil)
 			err := HandleCancelBackendTask(ctx, "project:bucket", "swarming://chromium-swarm-dev", "a83908f94as40")
-			So(err, ShouldErrLike, "fatal error in canceling task a83908f94as40 for target swarming://chromium-swarm-dev: PermissionDenied")
+			assert.Loosely(t, err, should.ErrLike("fatal error in canceling task a83908f94as40 for target swarming://chromium-swarm-dev: PermissionDenied"))
 		})
 
-		Convey("failure in response transient", func() {
+		t.Run("failure in response transient", func(t *ftt.Test) {
 			mockBackend.EXPECT().CancelTasks(gomock.Any(), gomock.Any()).Return(&pb.CancelTasksResponse{
 				Responses: []*pb.CancelTasksResponse_Response{
 					{
@@ -127,7 +127,7 @@ func TestHandleCancelBackendTask(t *testing.T) {
 				},
 			}, nil)
 			err := HandleCancelBackendTask(ctx, "project:bucket", "swarming://chromium-swarm-dev", "a83908f94as40")
-			So(err, ShouldErrLike, "transient error in canceling task a83908f94as40 for target swarming://chromium-swarm-dev: Internal")
+			assert.Loosely(t, err, should.ErrLike("transient error in canceling task a83908f94as40 for target swarming://chromium-swarm-dev: Internal"))
 		})
 	})
 }

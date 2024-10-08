@@ -20,10 +20,11 @@ import (
 	"os"
 	"path/filepath"
 
-	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/lucictx"
+
+	bbpb "go.chromium.org/luci/buildbucket/proto"
 )
 
 // Find CAS Client. It should have been downloaded when host installs

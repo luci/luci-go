@@ -18,18 +18,19 @@ import (
 	"sort"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	taskdefs "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
 	pb "go.chromium.org/luci/buildbucket/proto"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestTriggerSyncBackendTasks(t *testing.T) {
 	t.Parallel()
-	Convey("TriggerSyncBackendTasks", t, func() {
+	ftt.Run("TriggerSyncBackendTasks", t, func(t *ftt.Test) {
 		ctx, _, sch := setUp()
 
 		b1 := &model.Build{
@@ -86,9 +87,9 @@ func TestTriggerSyncBackendTasks(t *testing.T) {
 			},
 		}
 
-		So(datastore.Put(ctx, b1, b2, b3, b4, b5, b6), ShouldBeNil)
-		So(TriggerSyncBackendTasks(ctx), ShouldBeNil)
-		So(sch.Tasks(), ShouldHaveLength, 4)
+		assert.Loosely(t, datastore.Put(ctx, b1, b2, b3, b4, b5, b6), should.BeNil)
+		assert.Loosely(t, TriggerSyncBackendTasks(ctx), should.BeNil)
+		assert.Loosely(t, sch.Tasks(), should.HaveLength(4))
 		pairs := make([]*projectBackendPair, 4)
 		for i, tsk := range sch.Tasks() {
 			switch v := tsk.Payload.(type) {
@@ -130,6 +131,6 @@ func TestTriggerSyncBackendTasks(t *testing.T) {
 				backend: "b3",
 			},
 		}
-		So(pairs, ShouldResemble, expected)
+		assert.Loosely(t, pairs, should.Resemble(expected))
 	})
 }

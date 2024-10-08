@@ -22,7 +22,6 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 
-	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
@@ -33,6 +32,7 @@ import (
 	"go.chromium.org/luci/buildbucket/appengine/internal/compression"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	taskdefs "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
+	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 )
 

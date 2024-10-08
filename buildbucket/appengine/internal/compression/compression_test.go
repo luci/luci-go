@@ -17,27 +17,29 @@ package compression
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestCompression(t *testing.T) {
 	t.Parallel()
 
-	Convey("zlib", t, func() {
+	ftt.Run("zlib", t, func(t *ftt.Test) {
 		raw := []byte("abc")
 		compressed, err := ZlibCompress(raw)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		decompressed, err := ZlibDecompress(compressed)
-		So(err, ShouldBeNil)
-		So(string(decompressed), ShouldEqual, "abc")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, string(decompressed), should.Equal("abc"))
 	})
 
-	Convey("zstd", t, func() {
+	ftt.Run("zstd", t, func(t *ftt.Test) {
 		raw := []byte("abc")
 		compressed := make([]byte, 0, len(raw))
 		compressed = ZstdCompress(raw, compressed)
 		decompressed, err := ZstdDecompress(compressed, nil)
-		So(err, ShouldBeNil)
-		So(string(decompressed), ShouldEqual, "abc")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, string(decompressed), should.Equal("abc"))
 	})
 }

@@ -25,11 +25,12 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/proto/structmask"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
 func TestBuildMask(t *testing.T) {
@@ -160,33 +161,33 @@ func TestBuildMask(t *testing.T) {
 		return b, err
 	}
 
-	Convey("Default", t, func() {
-		Convey("No masks at all", func() {
+	ftt.Run("Default", t, func(t *ftt.Test) {
+		t.Run("No masks at all", func(t *ftt.Test) {
 			m, err := NewBuildMask("", nil, nil)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			b, err := apply(m)
-			So(err, ShouldBeNil)
-			So(b, ShouldResembleProto, afterDefaultMask)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, b, should.Resemble(afterDefaultMask))
 		})
 
-		Convey("Legacy", func() {
+		t.Run("Legacy", func(t *ftt.Test) {
 			m, err := NewBuildMask("", &fieldmaskpb.FieldMask{}, nil)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			b, err := apply(m)
-			So(err, ShouldBeNil)
-			So(b, ShouldResembleProto, afterDefaultMask)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, b, should.Resemble(afterDefaultMask))
 		})
 
-		Convey("BuildMask", func() {
+		t.Run("BuildMask", func(t *ftt.Test) {
 			m, err := NewBuildMask("", nil, &pb.BuildMask{})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			b, err := apply(m)
-			So(err, ShouldBeNil)
-			So(b, ShouldResembleProto, afterDefaultMask)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, b, should.Resemble(afterDefaultMask))
 		})
 	})
 
-	Convey("Legacy", t, func() {
+	ftt.Run("Legacy", t, func(t *ftt.Test) {
 		m, err := NewBuildMask("", &fieldmaskpb.FieldMask{
 			Paths: []string{
 				"builder",
@@ -194,11 +195,11 @@ func TestBuildMask(t *testing.T) {
 				"steps.*.name", // note: extended syntax
 			},
 		}, nil)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		b, err := apply(m)
-		So(err, ShouldBeNil)
-		So(b, ShouldResembleProto, &pb.Build{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, b, should.Resemble(&pb.Build{
 			Builder: build.Builder,
 			Input: &pb.Build_Input{
 				Properties: build.Input.Properties,
@@ -208,10 +209,10 @@ func TestBuildMask(t *testing.T) {
 				{Name: "s2"},
 				{Name: "s3"},
 			},
-		})
+		}))
 	})
 
-	Convey("Simple build mask", t, func() {
+	ftt.Run("Simple build mask", t, func(t *ftt.Test) {
 		m, err := NewBuildMask("", nil, &pb.BuildMask{
 			Fields: &fieldmaskpb.FieldMask{
 				Paths: []string{
@@ -221,11 +222,11 @@ func TestBuildMask(t *testing.T) {
 				},
 			},
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		b, err := apply(m)
-		So(err, ShouldBeNil)
-		So(b, ShouldResembleProto, &pb.Build{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, b, should.Resemble(&pb.Build{
 			Builder: build.Builder,
 			Steps: []*pb.Step{
 				{Name: "s1", Status: pb.Status_SUCCESS, SummaryMarkdown: "md1"},
@@ -235,10 +236,10 @@ func TestBuildMask(t *testing.T) {
 			Input: &pb.Build_Input{
 				Properties: build.Input.Properties,
 			},
-		})
+		}))
 	})
 
-	Convey("Struct filters", t, func() {
+	ftt.Run("Struct filters", t, func(t *ftt.Test) {
 		m, err := NewBuildMask("", nil, &pb.BuildMask{
 			Fields: &fieldmaskpb.FieldMask{
 				Paths: []string{
@@ -260,11 +261,11 @@ func TestBuildMask(t *testing.T) {
 				{Path: []string{"unknown"}},
 			},
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		b, err := apply(m)
-		So(err, ShouldBeNil)
-		So(b, ShouldResembleProto, &pb.Build{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, b, should.Resemble(&pb.Build{
 			Builder: build.Builder,
 			Input: &pb.Build_Input{
 				GerritChanges: build.Input.GerritChanges,
@@ -287,28 +288,28 @@ func TestBuildMask(t *testing.T) {
 					RequestedProperties: &structpb.Struct{}, // all was filtered out
 				},
 			},
-		})
+		}))
 	})
 
-	Convey("Struct filters and default mask", t, func() {
+	ftt.Run("Struct filters and default mask", t, func(t *ftt.Test) {
 		m, err := NewBuildMask("", nil, &pb.BuildMask{
 			OutputProperties: []*structmask.StructMask{
 				{Path: []string{"str"}},
 			},
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		b, err := apply(m)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		expected := proto.Clone(afterDefaultMask).(*pb.Build)
 		expected.Output = &pb.Build_Output{
 			Properties: asStructPb(testStruct{Str: "output"}),
 		}
-		So(b, ShouldResembleProto, expected)
+		assert.Loosely(t, b, should.Resemble(expected))
 	})
 
-	Convey("Step status with steps", t, func() {
+	ftt.Run("Step status with steps", t, func(t *ftt.Test) {
 		m, err := NewBuildMask("", nil, &pb.BuildMask{
 			Fields: &fieldmaskpb.FieldMask{
 				Paths: []string{
@@ -319,10 +320,10 @@ func TestBuildMask(t *testing.T) {
 				pb.Status_FAILURE,
 			},
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		b, err := apply(m)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		expected := &pb.Build{
 			Steps: []*pb.Step{
@@ -333,36 +334,36 @@ func TestBuildMask(t *testing.T) {
 				},
 			},
 		}
-		So(b, ShouldResembleProto, expected)
+		assert.Loosely(t, b, should.Resemble(expected))
 	})
 
-	Convey("Step status no steps", t, func() {
+	ftt.Run("Step status no steps", t, func(t *ftt.Test) {
 		m, err := NewBuildMask("", nil, &pb.BuildMask{
 			StepStatus: []pb.Status{
 				pb.Status_FAILURE,
 			},
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		b, err := apply(m)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		expected := proto.Clone(afterDefaultMask).(*pb.Build)
 		expected.Steps = nil
-		So(b, ShouldResembleProto, expected)
+		assert.Loosely(t, b, should.Resemble(expected))
 	})
 
-	Convey("Step status all fields", t, func() {
+	ftt.Run("Step status all fields", t, func(t *ftt.Test) {
 		m, err := NewBuildMask("", nil, &pb.BuildMask{
 			AllFields: true,
 			StepStatus: []pb.Status{
 				pb.Status_FAILURE,
 			},
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		b, err := apply(m)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		expected := proto.Clone(&build).(*pb.Build)
 		expected.Steps = []*pb.Step{
@@ -372,61 +373,61 @@ func TestBuildMask(t *testing.T) {
 				SummaryMarkdown: "md3",
 			},
 		}
-		So(b, ShouldResembleProto, expected)
+		assert.Loosely(t, b, should.Resemble(expected))
 	})
 
-	Convey("Unknown mask paths", t, func() {
+	ftt.Run("Unknown mask paths", t, func(t *ftt.Test) {
 		_, err := NewBuildMask("", nil, &pb.BuildMask{
 			Fields: &fieldmaskpb.FieldMask{
 				Paths: []string{"builderzzz"},
 			},
 		})
-		So(err, ShouldErrLike, `field "builderzzz" does not exist in message Build`)
+		assert.Loosely(t, err, should.ErrLike(`field "builderzzz" does not exist in message Build`))
 	})
 
-	Convey("Bad struct mask", t, func() {
+	ftt.Run("Bad struct mask", t, func(t *ftt.Test) {
 		_, err := NewBuildMask("", nil, &pb.BuildMask{
 			InputProperties: []*structmask.StructMask{
 				{Path: []string{"'unbalanced"}},
 			},
 		})
-		So(err, ShouldErrLike, `bad "input_properties" struct mask: bad element "'unbalanced" in the mask`)
+		assert.Loosely(t, err, should.ErrLike(`bad "input_properties" struct mask: bad element "'unbalanced" in the mask`))
 	})
 
-	Convey("Unsupported extended syntax", t, func() {
+	ftt.Run("Unsupported extended syntax", t, func(t *ftt.Test) {
 		_, err := NewBuildMask("", nil, &pb.BuildMask{
 			Fields: &fieldmaskpb.FieldMask{
 				Paths: []string{"steps.*.name"},
 			},
 		})
-		So(err, ShouldErrLike, "no longer supported")
+		assert.Loosely(t, err, should.ErrLike("no longer supported"))
 	})
 
-	Convey("Legacy and new at the same time are not allowed", t, func() {
+	ftt.Run("Legacy and new at the same time are not allowed", t, func(t *ftt.Test) {
 		_, err := NewBuildMask("", &fieldmaskpb.FieldMask{}, &pb.BuildMask{})
-		So(err, ShouldErrLike, "can't be used together")
+		assert.Loosely(t, err, should.ErrLike("can't be used together"))
 	})
 
-	Convey("all_fields", t, func() {
-		Convey("fail", func() {
+	ftt.Run("all_fields", t, func(t *ftt.Test) {
+		t.Run("fail", func(t *ftt.Test) {
 			_, err := NewBuildMask("", nil, &pb.BuildMask{
 				AllFields: true,
 				Fields: &fieldmaskpb.FieldMask{
 					Paths: []string{"status"},
 				},
 			})
-			So(err, ShouldErrLike, "mask.AllFields is mutually exclusive with other mask fields")
+			assert.Loosely(t, err, should.ErrLike("mask.AllFields is mutually exclusive with other mask fields"))
 		})
-		Convey("pass", func() {
+		t.Run("pass", func(t *ftt.Test) {
 			m, err := NewBuildMask("", nil, &pb.BuildMask{AllFields: true})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			b, err := apply(m)
-			So(err, ShouldBeNil)
-			So(b, ShouldResembleProto, &build)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, b, should.Resemble(&build))
 		})
 	})
 
-	Convey("sanity check mask for list-only permission", t, func() {
+	ftt.Run("sanity check mask for list-only permission", t, func(t *ftt.Test) {
 		expectedFields := []string{
 			"id",
 			"status",
@@ -434,10 +435,10 @@ func TestBuildMask(t *testing.T) {
 			"can_outlive_parent",
 			"ancestor_ids",
 		}
-		So(BuildFieldsWithVisibility(pb.BuildFieldVisibility_BUILDS_LIST_PERMISSION), ShouldResemble, expectedFields)
+		assert.Loosely(t, BuildFieldsWithVisibility(pb.BuildFieldVisibility_BUILDS_LIST_PERMISSION), should.Resemble(expectedFields))
 	})
 
-	Convey("sanity check mask for get-limited permission", t, func() {
+	ftt.Run("sanity check mask for get-limited permission", t, func(t *ftt.Test) {
 		expectedFields := []string{
 			"id",
 			"builder",
@@ -456,7 +457,7 @@ func TestBuildMask(t *testing.T) {
 			"can_outlive_parent",
 			"ancestor_ids",
 		}
-		So(BuildFieldsWithVisibility(pb.BuildFieldVisibility_BUILDS_GET_LIMITED_PERMISSION), ShouldResemble, expectedFields)
+		assert.Loosely(t, BuildFieldsWithVisibility(pb.BuildFieldVisibility_BUILDS_GET_LIMITED_PERMISSION), should.Resemble(expectedFields))
 	})
 }
 

@@ -21,15 +21,15 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func update(ctx context.Context, u *Updater) (*model.BuildStatus, error) {
@@ -43,21 +43,21 @@ func update(ctx context.Context, u *Updater) (*model.BuildStatus, error) {
 }
 func TestUpdate(t *testing.T) {
 	t.Parallel()
-	Convey("Update", t, func() {
+	ftt.Run("Update", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		ctx = txndefer.FilterRDS(ctx)
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 
-		Convey("fail", func() {
+		t.Run("fail", func(t *ftt.Test) {
 
-			Convey("not in transaction", func() {
+			t.Run("not in transaction", func(t *ftt.Test) {
 				u := &Updater{}
 				_, err := u.Do(ctx)
-				So(err, ShouldErrLike, "must update build status in a transaction")
+				assert.Loosely(t, err, should.ErrLike("must update build status in a transaction"))
 			})
 
-			Convey("update ended build", func() {
+			t.Run("update ended build", func(t *ftt.Test) {
 				b := &model.Build{
 					ID: 1,
 					Proto: &pb.Build{
@@ -71,16 +71,16 @@ func TestUpdate(t *testing.T) {
 					},
 					Status: pb.Status_SUCCESS,
 				}
-				So(datastore.Put(ctx, b), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, b), should.BeNil)
 				u := &Updater{
 					Build:       b,
 					BuildStatus: &StatusWithDetails{Status: pb.Status_SUCCESS},
 				}
 				_, err := update(ctx, u)
-				So(err, ShouldErrLike, "cannot update status for an ended build")
+				assert.Loosely(t, err, should.ErrLike("cannot update status for an ended build"))
 			})
 
-			Convey("output status and task status", func() {
+			t.Run("output status and task status", func(t *ftt.Test) {
 				b := &model.Build{
 					ID: 1,
 					Proto: &pb.Build{
@@ -94,17 +94,17 @@ func TestUpdate(t *testing.T) {
 					},
 					Status: pb.Status_SCHEDULED,
 				}
-				So(datastore.Put(ctx, b), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, b), should.BeNil)
 				u := &Updater{
 					Build:        b,
 					OutputStatus: &StatusWithDetails{Status: pb.Status_SUCCESS},
 					TaskStatus:   &StatusWithDetails{Status: pb.Status_SUCCESS},
 				}
 				_, err := update(ctx, u)
-				So(err, ShouldErrLike, "impossible: update build output status and task status at the same time")
+				assert.Loosely(t, err, should.ErrLike("impossible: update build output status and task status at the same time"))
 			})
 
-			Convey("nothing is provided to update", func() {
+			t.Run("nothing is provided to update", func(t *ftt.Test) {
 				b := &model.Build{
 					ID: 1,
 					Proto: &pb.Build{
@@ -118,15 +118,15 @@ func TestUpdate(t *testing.T) {
 					},
 					Status: pb.Status_SCHEDULED,
 				}
-				So(datastore.Put(ctx, b), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, b), should.BeNil)
 				u := &Updater{
 					Build: b,
 				}
 				_, err := update(ctx, u)
-				So(err, ShouldErrLike, "cannot set a build status to UNSPECIFIED")
+				assert.Loosely(t, err, should.ErrLike("cannot set a build status to UNSPECIFIED"))
 			})
 
-			Convey("BuildStatus not found", func() {
+			t.Run("BuildStatus not found", func(t *ftt.Test) {
 				b := &model.Build{
 					ID: 1,
 					Proto: &pb.Build{
@@ -140,17 +140,17 @@ func TestUpdate(t *testing.T) {
 					},
 					Status: pb.Status_SCHEDULED,
 				}
-				So(datastore.Put(ctx, b), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, b), should.BeNil)
 				u := &Updater{
 					Build:       b,
 					BuildStatus: &StatusWithDetails{Status: pb.Status_SUCCESS},
 				}
 				_, err := update(ctx, u)
-				So(err, ShouldErrLike, "not found")
+				assert.Loosely(t, err, should.ErrLike("not found"))
 			})
 		})
 
-		Convey("pass", func() {
+		t.Run("pass", func(t *ftt.Test) {
 
 			b := &model.Build{
 				ID: 87654321,
@@ -187,7 +187,7 @@ func TestUpdate(t *testing.T) {
 				Build:  bk,
 				Status: pb.Status_SCHEDULED,
 			}
-			So(datastore.Put(ctx, b, bs), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, b, bs), should.BeNil)
 			updatedStatus := b.Proto.Status
 			updatedStatusDetails := b.Proto.StatusDetails
 			u := &Updater{
@@ -199,79 +199,79 @@ func TestUpdate(t *testing.T) {
 				},
 			}
 
-			Convey("direct update on build status ignore sub status", func() {
+			t.Run("direct update on build status ignore sub status", func(t *ftt.Test) {
 				u.BuildStatus = &StatusWithDetails{Status: pb.Status_STARTED}
 				u.OutputStatus = &StatusWithDetails{Status: pb.Status_SUCCESS} // only for test, impossible in practice
 				bs, err := update(ctx, u)
-				So(err, ShouldBeNil)
-				So(bs.Status, ShouldEqual, pb.Status_STARTED)
-				So(updatedStatus, ShouldEqual, pb.Status_STARTED)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, bs.Status, should.Equal(pb.Status_STARTED))
+				assert.Loosely(t, updatedStatus, should.Equal(pb.Status_STARTED))
 			})
 
-			Convey("update output status", func() {
-				Convey("start, so build status is updated", func() {
+			t.Run("update output status", func(t *ftt.Test) {
+				t.Run("start, so build status is updated", func(t *ftt.Test) {
 					u.OutputStatus = &StatusWithDetails{Status: pb.Status_STARTED}
 					bs, err := update(ctx, u)
-					So(err, ShouldBeNil)
-					So(bs.Status, ShouldEqual, pb.Status_STARTED)
-					So(updatedStatus, ShouldEqual, pb.Status_STARTED)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, bs.Status, should.Equal(pb.Status_STARTED))
+					assert.Loosely(t, updatedStatus, should.Equal(pb.Status_STARTED))
 				})
 
-				Convey("end, so build status is unchanged", func() {
+				t.Run("end, so build status is unchanged", func(t *ftt.Test) {
 					u.OutputStatus = &StatusWithDetails{Status: pb.Status_SUCCESS}
 					bs, err := update(ctx, u)
-					So(err, ShouldBeNil)
-					So(bs, ShouldBeNil)
-					So(updatedStatus, ShouldEqual, pb.Status_SCHEDULED)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, bs, should.BeNil)
+					assert.Loosely(t, updatedStatus, should.Equal(pb.Status_SCHEDULED))
 				})
 			})
 
-			Convey("update task status", func() {
-				Convey("end, so build status is updated", func() {
+			t.Run("update task status", func(t *ftt.Test) {
+				t.Run("end, so build status is updated", func(t *ftt.Test) {
 					b.Proto.Output.Status = pb.Status_SUCCESS
-					So(datastore.Put(ctx, b), ShouldBeNil)
+					assert.Loosely(t, datastore.Put(ctx, b), should.BeNil)
 					u.TaskStatus = &StatusWithDetails{Status: pb.Status_SUCCESS}
 					bs, err := update(ctx, u)
-					So(err, ShouldBeNil)
-					So(bs.Status, ShouldEqual, pb.Status_SUCCESS)
-					So(updatedStatus, ShouldEqual, pb.Status_SUCCESS)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, bs.Status, should.Equal(pb.Status_SUCCESS))
+					assert.Loosely(t, updatedStatus, should.Equal(pb.Status_SUCCESS))
 				})
 
-				Convey("start, so build status is unchanged", func() {
+				t.Run("start, so build status is unchanged", func(t *ftt.Test) {
 					b.Proto.Output.Status = pb.Status_STARTED
-					So(datastore.Put(ctx, b), ShouldBeNil)
+					assert.Loosely(t, datastore.Put(ctx, b), should.BeNil)
 					u.TaskStatus = &StatusWithDetails{Status: pb.Status_STARTED}
 					bs, err := update(ctx, u)
-					So(err, ShouldBeNil)
-					So(bs, ShouldBeNil)
-					So(updatedStatus, ShouldEqual, pb.Status_SCHEDULED)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, bs, should.BeNil)
+					assert.Loosely(t, updatedStatus, should.Equal(pb.Status_SCHEDULED))
 				})
 
-				Convey("final status based on both statuses", func() {
+				t.Run("final status based on both statuses", func(t *ftt.Test) {
 					// output status is from the build entity.
-					Convey("output status not ended when task status success", func() {
+					t.Run("output status not ended when task status success", func(t *ftt.Test) {
 						b.Proto.Output.Status = pb.Status_STARTED
-						So(datastore.Put(ctx, b), ShouldBeNil)
+						assert.Loosely(t, datastore.Put(ctx, b), should.BeNil)
 						u.TaskStatus = &StatusWithDetails{Status: pb.Status_SUCCESS}
 						bs, err := update(ctx, u)
-						So(err, ShouldBeNil)
-						So(bs.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
-						So(updatedStatus, ShouldEqual, pb.Status_INFRA_FAILURE)
-						So(b.CustomBuilderConsecutiveFailuresMetrics, ShouldResemble, []string{"chrome/infra/custom/builds/failure_count_2"})
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, bs.Status, should.Equal(pb.Status_INFRA_FAILURE))
+						assert.Loosely(t, updatedStatus, should.Equal(pb.Status_INFRA_FAILURE))
+						assert.Loosely(t, b.CustomBuilderConsecutiveFailuresMetrics, should.Resemble([]string{"chrome/infra/custom/builds/failure_count_2"}))
 					})
-					Convey("output status not ended when task status success with SucceedBuildIfTaskSucceeded true", func() {
+					t.Run("output status not ended when task status success with SucceedBuildIfTaskSucceeded true", func(t *ftt.Test) {
 						b.Proto.Output.Status = pb.Status_STARTED
-						So(datastore.Put(ctx, b), ShouldBeNil)
+						assert.Loosely(t, datastore.Put(ctx, b), should.BeNil)
 						u.SucceedBuildIfTaskSucceeded = true
 						u.TaskStatus = &StatusWithDetails{Status: pb.Status_SUCCESS}
 						bs, err := update(ctx, u)
-						So(err, ShouldBeNil)
-						So(bs.Status, ShouldEqual, pb.Status_SUCCESS)
-						So(updatedStatus, ShouldEqual, pb.Status_SUCCESS)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, bs.Status, should.Equal(pb.Status_SUCCESS))
+						assert.Loosely(t, updatedStatus, should.Equal(pb.Status_SUCCESS))
 					})
-					Convey("output status not ended when task status fail", func() {
+					t.Run("output status not ended when task status fail", func(t *ftt.Test) {
 						b.Proto.Output.Status = pb.Status_STARTED
-						So(datastore.Put(ctx, b), ShouldBeNil)
+						assert.Loosely(t, datastore.Put(ctx, b), should.BeNil)
 						u.TaskStatus = &StatusWithDetails{
 							Status: pb.Status_INFRA_FAILURE,
 							Details: &pb.StatusDetails{
@@ -279,40 +279,40 @@ func TestUpdate(t *testing.T) {
 							},
 						}
 						bs, err := update(ctx, u)
-						So(err, ShouldBeNil)
-						So(bs.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
-						So(updatedStatus, ShouldEqual, pb.Status_INFRA_FAILURE)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, bs.Status, should.Equal(pb.Status_INFRA_FAILURE))
+						assert.Loosely(t, updatedStatus, should.Equal(pb.Status_INFRA_FAILURE))
 					})
-					Convey("output status SUCCESS, task status FAILURE", func() {
+					t.Run("output status SUCCESS, task status FAILURE", func(t *ftt.Test) {
 						b.Proto.Output.Status = pb.Status_SUCCESS
-						So(datastore.Put(ctx, b), ShouldBeNil)
+						assert.Loosely(t, datastore.Put(ctx, b), should.BeNil)
 						u.TaskStatus = &StatusWithDetails{Status: pb.Status_FAILURE}
 						bs, err := update(ctx, u)
-						So(err, ShouldBeNil)
-						So(bs.Status, ShouldEqual, pb.Status_FAILURE)
-						So(updatedStatus, ShouldEqual, pb.Status_FAILURE)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, bs.Status, should.Equal(pb.Status_FAILURE))
+						assert.Loosely(t, updatedStatus, should.Equal(pb.Status_FAILURE))
 					})
-					Convey("output status SUCCESS, task status Status_INFRA_FAILURE", func() {
+					t.Run("output status SUCCESS, task status Status_INFRA_FAILURE", func(t *ftt.Test) {
 						b.Proto.Output.Status = pb.Status_SUCCESS
-						So(datastore.Put(ctx, b), ShouldBeNil)
+						assert.Loosely(t, datastore.Put(ctx, b), should.BeNil)
 						u.TaskStatus = &StatusWithDetails{Status: pb.Status_INFRA_FAILURE}
 						bs, err := update(ctx, u)
-						So(err, ShouldBeNil)
-						So(bs.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
-						So(updatedStatus, ShouldEqual, pb.Status_INFRA_FAILURE)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, bs.Status, should.Equal(pb.Status_INFRA_FAILURE))
+						assert.Loosely(t, updatedStatus, should.Equal(pb.Status_INFRA_FAILURE))
 					})
-					Convey("output status FAILURE, task status PASS", func() {
+					t.Run("output status FAILURE, task status PASS", func(t *ftt.Test) {
 						b.Proto.Output.Status = pb.Status_FAILURE
-						So(datastore.Put(ctx, b), ShouldBeNil)
+						assert.Loosely(t, datastore.Put(ctx, b), should.BeNil)
 						u.TaskStatus = &StatusWithDetails{Status: pb.Status_SUCCESS}
 						bs, err := update(ctx, u)
-						So(err, ShouldBeNil)
-						So(bs.Status, ShouldEqual, pb.Status_FAILURE)
-						So(updatedStatus, ShouldEqual, pb.Status_FAILURE)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, bs.Status, should.Equal(pb.Status_FAILURE))
+						assert.Loosely(t, updatedStatus, should.Equal(pb.Status_FAILURE))
 					})
-					Convey("output status FAILURE, task status INFRA_FAILURE", func() {
+					t.Run("output status FAILURE, task status INFRA_FAILURE", func(t *ftt.Test) {
 						b.Proto.Output.Status = pb.Status_FAILURE
-						So(datastore.Put(ctx, b), ShouldBeNil)
+						assert.Loosely(t, datastore.Put(ctx, b), should.BeNil)
 						u.TaskStatus = &StatusWithDetails{
 							Status: pb.Status_INFRA_FAILURE,
 							Details: &pb.StatusDetails{
@@ -320,14 +320,14 @@ func TestUpdate(t *testing.T) {
 							},
 						}
 						bs, err := update(ctx, u)
-						So(err, ShouldBeNil)
-						So(bs.Status, ShouldEqual, pb.Status_FAILURE)
-						So(updatedStatus, ShouldEqual, pb.Status_FAILURE)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, bs.Status, should.Equal(pb.Status_FAILURE))
+						assert.Loosely(t, updatedStatus, should.Equal(pb.Status_FAILURE))
 					})
-					Convey("output status CANCEL intentially, task status INFRA_FAILURE", func() {
+					t.Run("output status CANCEL intentially, task status INFRA_FAILURE", func(t *ftt.Test) {
 						b.Proto.Output.Status = pb.Status_CANCELED
 						b.Proto.CancelTime = timestamppb.New(testclock.TestRecentTimeLocal)
-						So(datastore.Put(ctx, b), ShouldBeNil)
+						assert.Loosely(t, datastore.Put(ctx, b), should.BeNil)
 						u.TaskStatus = &StatusWithDetails{
 							Status: pb.Status_INFRA_FAILURE,
 							Details: &pb.StatusDetails{
@@ -335,13 +335,13 @@ func TestUpdate(t *testing.T) {
 							},
 						}
 						bs, err := update(ctx, u)
-						So(err, ShouldBeNil)
-						So(bs.Status, ShouldEqual, pb.Status_CANCELED)
-						So(updatedStatus, ShouldEqual, pb.Status_CANCELED)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, bs.Status, should.Equal(pb.Status_CANCELED))
+						assert.Loosely(t, updatedStatus, should.Equal(pb.Status_CANCELED))
 					})
-					Convey("output status CANCEL unintentially, task status INFRA_FAILURE", func() {
+					t.Run("output status CANCEL unintentially, task status INFRA_FAILURE", func(t *ftt.Test) {
 						b.Proto.Output.Status = pb.Status_CANCELED
-						So(datastore.Put(ctx, b), ShouldBeNil)
+						assert.Loosely(t, datastore.Put(ctx, b), should.BeNil)
 						u.TaskStatus = &StatusWithDetails{
 							Status: pb.Status_INFRA_FAILURE,
 							Details: &pb.StatusDetails{
@@ -349,27 +349,27 @@ func TestUpdate(t *testing.T) {
 							},
 						}
 						bs, err := update(ctx, u)
-						So(err, ShouldBeNil)
-						So(bs.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
-						So(updatedStatus, ShouldEqual, pb.Status_INFRA_FAILURE)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, bs.Status, should.Equal(pb.Status_INFRA_FAILURE))
+						assert.Loosely(t, updatedStatus, should.Equal(pb.Status_INFRA_FAILURE))
 					})
-					Convey("output status CANCEL unintentially, task status SUCCESS", func() {
+					t.Run("output status CANCEL unintentially, task status SUCCESS", func(t *ftt.Test) {
 						b.Proto.Output.Status = pb.Status_CANCELED
-						So(datastore.Put(ctx, b), ShouldBeNil)
+						assert.Loosely(t, datastore.Put(ctx, b), should.BeNil)
 						u.TaskStatus = &StatusWithDetails{
 							Status: pb.Status_SUCCESS,
 						}
 						bs, err := update(ctx, u)
-						So(err, ShouldBeNil)
-						So(bs.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
-						So(updatedStatus, ShouldEqual, pb.Status_INFRA_FAILURE)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, bs.Status, should.Equal(pb.Status_INFRA_FAILURE))
+						assert.Loosely(t, updatedStatus, should.Equal(pb.Status_INFRA_FAILURE))
 					})
-					Convey("both infra_failure with different details", func() {
+					t.Run("both infra_failure with different details", func(t *ftt.Test) {
 						b.Proto.Output.Status = pb.Status_INFRA_FAILURE
 						b.Proto.Output.StatusDetails = &pb.StatusDetails{
 							Timeout: &pb.StatusDetails_Timeout{},
 						}
-						So(datastore.Put(ctx, b), ShouldBeNil)
+						assert.Loosely(t, datastore.Put(ctx, b), should.BeNil)
 						u.TaskStatus = &StatusWithDetails{
 							Status: pb.Status_INFRA_FAILURE,
 							Details: &pb.StatusDetails{
@@ -377,12 +377,12 @@ func TestUpdate(t *testing.T) {
 							},
 						}
 						bs, err := update(ctx, u)
-						So(err, ShouldBeNil)
-						So(bs.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
-						So(updatedStatus, ShouldEqual, pb.Status_INFRA_FAILURE)
-						So(updatedStatusDetails, ShouldResembleProto, &pb.StatusDetails{
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, bs.Status, should.Equal(pb.Status_INFRA_FAILURE))
+						assert.Loosely(t, updatedStatus, should.Equal(pb.Status_INFRA_FAILURE))
+						assert.Loosely(t, updatedStatusDetails, should.Resemble(&pb.StatusDetails{
 							Timeout: &pb.StatusDetails_Timeout{},
-						})
+						}))
 					})
 				})
 			})

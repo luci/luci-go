@@ -25,6 +25,9 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -35,27 +38,24 @@ import (
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	"go.chromium.org/luci/buildbucket/bbperms"
 	pb "go.chromium.org/luci/buildbucket/proto"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestValidateSynthesize(t *testing.T) {
 	t.Parallel()
 
-	Convey("validateSynthesize", t, func() {
-		Convey("nil", func() {
-			So(validateSynthesize(&pb.SynthesizeBuildRequest{}), ShouldErrLike, "builder or template_build_id is required")
+	ftt.Run("validateSynthesize", t, func(t *ftt.Test) {
+		t.Run("nil", func(t *ftt.Test) {
+			assert.Loosely(t, validateSynthesize(&pb.SynthesizeBuildRequest{}), should.ErrLike("builder or template_build_id is required"))
 		})
 
-		Convey("invalid Builder", func() {
+		t.Run("invalid Builder", func(t *ftt.Test) {
 			req := &pb.SynthesizeBuildRequest{
 				Builder: &pb.BuilderID{
 					Project: "project",
 					Builder: "builder",
 				},
 			}
-			So(validateSynthesize(req), ShouldErrLike, "builder:")
+			assert.Loosely(t, validateSynthesize(req), should.ErrLike("builder:"))
 		})
 	})
 
@@ -64,7 +64,7 @@ func TestValidateSynthesize(t *testing.T) {
 func TestSynthesizeBuild(t *testing.T) {
 	const userID = identity.Identity("user:user@example.com")
 
-	Convey("SynthesizeBuild", t, func() {
+	ftt.Run("SynthesizeBuild", t, func(t *ftt.Test) {
 		srv := &Builds{}
 		ctx := txndefer.FilterRDS(memory.Use(context.Background()))
 		ctx = mathrand.Set(ctx, rand.New(rand.NewSource(0)))
@@ -72,7 +72,7 @@ func TestSynthesizeBuild(t *testing.T) {
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 
-		So(config.SetTestSettingsCfg(ctx, &pb.SettingsCfg{
+		assert.Loosely(t, config.SetTestSettingsCfg(ctx, &pb.SettingsCfg{
 			Resultdb: &pb.ResultDBSettings{
 				Hostname: "rdbHost",
 			},
@@ -86,7 +86,7 @@ func TestSynthesizeBuild(t *testing.T) {
 					Version:     "kitchen-version",
 				},
 			},
-		}), ShouldBeNil)
+		}), should.BeNil)
 
 		ctx = auth.WithState(ctx, &authtest.FakeState{
 			Identity: userID,
@@ -95,9 +95,9 @@ func TestSynthesizeBuild(t *testing.T) {
 			),
 		})
 
-		Convey("fail", func() {
-			Convey("entities missing", func() {
-				Convey("bucket missing", func() {
+		t.Run("fail", func(t *ftt.Test) {
+			t.Run("entities missing", func(t *ftt.Test) {
+				t.Run("bucket missing", func(t *ftt.Test) {
 					req := &pb.SynthesizeBuildRequest{
 						Builder: &pb.BuilderID{
 							Project: "project",
@@ -106,15 +106,15 @@ func TestSynthesizeBuild(t *testing.T) {
 						},
 					}
 					_, err := srv.SynthesizeBuild(ctx, req)
-					So(err, ShouldErrLike, "not found")
+					assert.Loosely(t, err, should.ErrLike("not found"))
 				})
-				Convey("shadow bucket", func() {
-					So(datastore.Put(ctx, &model.Bucket{
+				t.Run("shadow bucket", func(t *ftt.Test) {
+					assert.Loosely(t, datastore.Put(ctx, &model.Bucket{
 						ID:      "bucket.shadow",
 						Parent:  model.ProjectKey(ctx, "project"),
 						Proto:   &pb.Bucket{},
 						Shadows: []string{"bucket"},
-					}), ShouldBeNil)
+					}), should.BeNil)
 					ctx = auth.WithState(ctx, &authtest.FakeState{
 						Identity: userID,
 						FakeDB: authtest.NewFakeDB(
@@ -129,14 +129,14 @@ func TestSynthesizeBuild(t *testing.T) {
 						},
 					}
 					_, err := srv.SynthesizeBuild(ctx, req)
-					So(err, ShouldErrLike, "Synthesizing a build from a shadow bucket is not supported")
+					assert.Loosely(t, err, should.ErrLike("Synthesizing a build from a shadow bucket is not supported"))
 				})
-				Convey("builder missing", func() {
-					So(datastore.Put(ctx, &model.Bucket{
+				t.Run("builder missing", func(t *ftt.Test) {
+					assert.Loosely(t, datastore.Put(ctx, &model.Bucket{
 						ID:     "bucket",
 						Parent: model.ProjectKey(ctx, "project"),
 						Proto:  &pb.Bucket{},
-					}), ShouldBeNil)
+					}), should.BeNil)
 					req := &pb.SynthesizeBuildRequest{
 						Builder: &pb.BuilderID{
 							Project: "project",
@@ -145,16 +145,16 @@ func TestSynthesizeBuild(t *testing.T) {
 						},
 					}
 					_, err := srv.SynthesizeBuild(ctx, req)
-					So(err, ShouldErrLike, "not found")
+					assert.Loosely(t, err, should.ErrLike("not found"))
 				})
 			})
-			Convey("permissions denied", func() {
-				So(datastore.Put(ctx, &model.Bucket{
+			t.Run("permissions denied", func(t *ftt.Test) {
+				assert.Loosely(t, datastore.Put(ctx, &model.Bucket{
 					ID:     "bucket",
 					Parent: model.ProjectKey(ctx, "project"),
 					Proto:  &pb.Bucket{},
-				}), ShouldBeNil)
-				Convey("permission denied for getting builder", func() {
+				}), should.BeNil)
+				t.Run("permission denied for getting builder", func(t *ftt.Test) {
 					ctx = auth.WithState(ctx, &authtest.FakeState{
 						Identity: "user:unauthorized@example.com",
 					})
@@ -166,13 +166,13 @@ func TestSynthesizeBuild(t *testing.T) {
 						},
 					}
 					_, err := srv.SynthesizeBuild(ctx, req)
-					So(err, ShouldErrLike, "not found")
+					assert.Loosely(t, err, should.ErrLike("not found"))
 				})
-				Convey("permission denied for getting template build", func() {
+				t.Run("permission denied for getting template build", func(t *ftt.Test) {
 					ctx = auth.WithState(ctx, &authtest.FakeState{
 						Identity: "user:unauthorized@example.com",
 					})
-					So(datastore.Put(ctx, &model.Build{
+					assert.Loosely(t, datastore.Put(ctx, &model.Build{
 						Proto: &pb.Build{
 							Id: 1,
 							Builder: &pb.BuilderID{
@@ -181,24 +181,24 @@ func TestSynthesizeBuild(t *testing.T) {
 								Builder: "builder",
 							},
 						},
-					}), ShouldBeNil)
+					}), should.BeNil)
 
 					req := &pb.SynthesizeBuildRequest{
 						TemplateBuildId: 1,
 					}
 					_, err := srv.SynthesizeBuild(ctx, req)
-					So(err, ShouldErrLike, "not found")
+					assert.Loosely(t, err, should.ErrLike("not found"))
 				})
 			})
 		})
 
-		Convey("pass", func() {
-			So(datastore.Put(ctx, &model.Bucket{
+		t.Run("pass", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(ctx, &model.Bucket{
 				ID:     "bucket",
 				Parent: model.ProjectKey(ctx, "project"),
 				Proto:  &pb.Bucket{},
-			}), ShouldBeNil)
-			So(datastore.Put(ctx, &model.Builder{
+			}), should.BeNil)
+			assert.Loosely(t, datastore.Put(ctx, &model.Builder{
 				Parent: model.BucketKey(ctx, "project", "bucket"),
 				ID:     "builder",
 				Config: &pb.BuilderConfig{
@@ -215,7 +215,7 @@ func TestSynthesizeBuild(t *testing.T) {
 						},
 					},
 				},
-			}), ShouldBeNil)
+			}), should.BeNil)
 
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: userID,
@@ -225,8 +225,8 @@ func TestSynthesizeBuild(t *testing.T) {
 				),
 			})
 
-			Convey("template build", func() {
-				So(datastore.Put(ctx, &model.Build{
+			t.Run("template build", func(t *ftt.Test) {
+				assert.Loosely(t, datastore.Put(ctx, &model.Build{
 					Proto: &pb.Build{
 						Id: 1,
 						Builder: &pb.BuilderID{
@@ -246,13 +246,13 @@ func TestSynthesizeBuild(t *testing.T) {
 						// Non-retriable build can still be synthesized.
 						Retriable: pb.Trinary_NO,
 					},
-				}), ShouldBeNil)
+				}), should.BeNil)
 
 				req := &pb.SynthesizeBuildRequest{
 					TemplateBuildId: 1,
 				}
 				b, err := srv.SynthesizeBuild(ctx, req)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				expected := &pb.Build{
 					Builder: &pb.BuilderID{
@@ -346,11 +346,11 @@ func TestSynthesizeBuild(t *testing.T) {
 						},
 					},
 				}
-				So(b, ShouldResembleProto, expected)
+				assert.Loosely(t, b, should.Resemble(expected))
 			})
 
-			Convey("builder", func() {
-				So(datastore.Put(ctx, &model.Bucket{
+			t.Run("builder", func(t *ftt.Test) {
+				assert.Loosely(t, datastore.Put(ctx, &model.Bucket{
 					ID:     "bucket",
 					Parent: model.ProjectKey(ctx, "project"),
 					Proto: &pb.Bucket{
@@ -362,7 +362,7 @@ func TestSynthesizeBuild(t *testing.T) {
 						},
 						Shadow: "bucket.shadow",
 					},
-				}), ShouldBeNil)
+				}), should.BeNil)
 				expected := &pb.Build{
 					Builder: &pb.BuilderID{
 						Project: "project",
@@ -473,13 +473,13 @@ func TestSynthesizeBuild(t *testing.T) {
 					},
 				}
 				b, err := srv.SynthesizeBuild(ctx, req)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
-				So(b, ShouldResembleProto, expected)
+				assert.Loosely(t, b, should.Resemble(expected))
 			})
 
-			Convey("set experiments", func() {
-				So(datastore.Put(ctx, &model.Bucket{
+			t.Run("set experiments", func(t *ftt.Test) {
+				assert.Loosely(t, datastore.Put(ctx, &model.Bucket{
 					ID:     "bucket",
 					Parent: model.ProjectKey(ctx, "project"),
 					Proto: &pb.Bucket{
@@ -491,7 +491,7 @@ func TestSynthesizeBuild(t *testing.T) {
 						},
 						Shadow: "bucket.shadow",
 					},
-				}), ShouldBeNil)
+				}), should.BeNil)
 				expected := &pb.Build{
 					Builder: &pb.BuilderID{
 						Project: "project",
@@ -613,9 +613,9 @@ func TestSynthesizeBuild(t *testing.T) {
 					},
 				}
 				b, err := srv.SynthesizeBuild(ctx, req)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
-				So(b, ShouldResembleProto, expected)
+				assert.Loosely(t, b, should.Resemble(expected))
 			})
 
 		})

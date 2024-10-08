@@ -26,10 +26,11 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 var buildJSON = `
@@ -203,24 +204,24 @@ func ansifyTemplate(template string) string {
 }
 
 func TestPrint(t *testing.T) {
-	Convey("Print", t, func() {
+	ftt.Run("Print", t, func(t *ftt.Test) {
 		buf := &bytes.Buffer{}
 		p := newPrinter(buf, false, func() time.Time {
 			return testclock.TestRecentTimeUTC
 		})
 
-		Convey("Build", func() {
+		t.Run("Build", func(t *ftt.Test) {
 			build := &pb.Build{}
-			So(protojson.Unmarshal([]byte(buildJSON), build), ShouldBeNil)
+			assert.Loosely(t, protojson.Unmarshal([]byte(buildJSON), build), should.BeNil)
 
 			expectedBuildPrinted := ansifyTemplate(expectedBuildPrintedTemplate)
 			p.Build(build)
 
-			So(p.Err, ShouldBeNil)
-			So(buf.String(), ShouldEqual, expectedBuildPrinted)
+			assert.Loosely(t, p.Err, should.BeNil)
+			assert.Loosely(t, buf.String(), should.Equal(expectedBuildPrinted))
 		})
 
-		Convey("Partial build", func() {
+		t.Run("Partial build", func(t *ftt.Test) {
 			// Only Id, Status and Builder are available
 			build := &pb.Build{
 				Id:     8917899588926498064,
@@ -234,11 +235,11 @@ func TestPrint(t *testing.T) {
 			expectedBuildPrinted := ansifyTemplate("<white+b><white+u><yellow+h>http://ci.chromium.org/b/8917899588926498064<reset><white+b><yellow+h> STARTED   'chromium/try/linux-rel'<reset>\n")
 			p.Build(build)
 
-			So(p.Err, ShouldBeNil)
-			So(buf.String(), ShouldEqual, expectedBuildPrinted)
+			assert.Loosely(t, p.Err, should.BeNil)
+			assert.Loosely(t, buf.String(), should.Equal(expectedBuildPrinted))
 		})
 
-		Convey("Build error when any of required fields is missing", func() {
+		t.Run("Build error when any of required fields is missing", func(t *ftt.Test) {
 			validBuild := &pb.Build{
 				Id:     8917899588926498064,
 				Status: pb.Status_STARTED,
@@ -250,22 +251,22 @@ func TestPrint(t *testing.T) {
 			}
 			// Make sure Build can be printed
 			p.Build(validBuild)
-			So(p.Err, ShouldBeNil)
+			assert.Loosely(t, p.Err, should.BeNil)
 
 			buildWithoutID := proto.Clone(validBuild).(*pb.Build)
 			buildWithoutID.Id = 0
-			So(func() { p.Build(buildWithoutID) }, ShouldPanic)
+			assert.Loosely(t, func() { p.Build(buildWithoutID) }, should.Panic)
 
 			buildWithoutStatus := proto.Clone(validBuild).(*pb.Build)
 			buildWithoutStatus.Status = pb.Status_STATUS_UNSPECIFIED
-			So(func() { p.Build(buildWithoutStatus) }, ShouldPanic)
+			assert.Loosely(t, func() { p.Build(buildWithoutStatus) }, should.Panic)
 
 			buildWithoutBuilder := proto.Clone(validBuild).(*pb.Build)
 			buildWithoutBuilder.Builder = nil
-			So(func() { p.Build(buildWithoutBuilder) }, ShouldPanic)
+			assert.Loosely(t, func() { p.Build(buildWithoutBuilder) }, should.Panic)
 		})
 
-		Convey("Chromium commit", func() {
+		t.Run("Chromium commit", func(t *ftt.Test) {
 			p.commit(&pb.GitilesCommit{
 				Host:    "chromium.googlesource.com",
 				Project: "chromium/src",
@@ -273,22 +274,22 @@ func TestPrint(t *testing.T) {
 				Id:      "deadbeef",
 			})
 
-			So(p.Err, ShouldBeNil)
-			So(buf.String(), ShouldEqual, ansi.Color("https://crrev.com/deadbeef", "white+u")+" on refs/heads/x")
+			assert.Loosely(t, p.Err, should.BeNil)
+			assert.Loosely(t, buf.String(), should.Equal(ansi.Color("https://crrev.com/deadbeef", "white+u")+" on refs/heads/x"))
 		})
 
-		Convey("Chromium commit without id", func() {
+		t.Run("Chromium commit without id", func(t *ftt.Test) {
 			p.commit(&pb.GitilesCommit{
 				Host:    "chromium.googlesource.com",
 				Project: "infra/luci/luci-go",
 				Ref:     "refs/heads/x",
 			})
 
-			So(p.Err, ShouldBeNil)
-			So(buf.String(), ShouldEqual, ansi.Color("https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/x", "white+u"))
+			assert.Loosely(t, p.Err, should.BeNil)
+			assert.Loosely(t, buf.String(), should.Equal(ansi.Color("https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/x", "white+u")))
 		})
 
-		Convey("Arbitrary commit", func() {
+		t.Run("Arbitrary commit", func(t *ftt.Test) {
 			p.commit(&pb.GitilesCommit{
 				Host:    "fuchsia.googlesource.com",
 				Project: "infra",
@@ -296,22 +297,22 @@ func TestPrint(t *testing.T) {
 				Id:      "deadbeef",
 			})
 
-			So(p.Err, ShouldBeNil)
-			So(buf.String(), ShouldEqual, ansi.Color("https://fuchsia.googlesource.com/infra/+/deadbeef", "white+u")+" on refs/heads/x")
+			assert.Loosely(t, p.Err, should.BeNil)
+			assert.Loosely(t, buf.String(), should.Equal(ansi.Color("https://fuchsia.googlesource.com/infra/+/deadbeef", "white+u")+" on refs/heads/x"))
 		})
 
-		Convey("Arbitrary commit without id", func() {
+		t.Run("Arbitrary commit without id", func(t *ftt.Test) {
 			p.commit(&pb.GitilesCommit{
 				Host:    "fuchsia.googlesource.com",
 				Project: "infra",
 				Ref:     "refs/heads/x",
 			})
 
-			So(p.Err, ShouldBeNil)
-			So(buf.String(), ShouldEqual, ansi.Color("https://fuchsia.googlesource.com/infra/+/refs/heads/x", "white+u"))
+			assert.Loosely(t, p.Err, should.BeNil)
+			assert.Loosely(t, buf.String(), should.Equal(ansi.Color("https://fuchsia.googlesource.com/infra/+/refs/heads/x", "white+u")))
 		})
 
-		Convey("Chromium CL", func() {
+		t.Run("Chromium CL", func(t *ftt.Test) {
 			p.change(&pb.GerritChange{
 				Host:     "chromium-review.googlesource.com",
 				Project:  "infra/luci/luci-go",
@@ -319,11 +320,11 @@ func TestPrint(t *testing.T) {
 				Patchset: 4,
 			})
 
-			So(p.Err, ShouldBeNil)
-			So(buf.String(), ShouldEqual, ansi.Color("https://crrev.com/c/123/4", "white+u"))
+			assert.Loosely(t, p.Err, should.BeNil)
+			assert.Loosely(t, buf.String(), should.Equal(ansi.Color("https://crrev.com/c/123/4", "white+u")))
 		})
 
-		Convey("Chrome CL", func() {
+		t.Run("Chrome CL", func(t *ftt.Test) {
 			p.change(&pb.GerritChange{
 				Host:     "chrome-internal-review.googlesource.com",
 				Project:  "secret",
@@ -331,8 +332,8 @@ func TestPrint(t *testing.T) {
 				Patchset: 4,
 			})
 
-			So(p.Err, ShouldBeNil)
-			So(buf.String(), ShouldEqual, ansi.Color("https://crrev.com/i/123/4", "white+u"))
+			assert.Loosely(t, p.Err, should.BeNil)
+			assert.Loosely(t, buf.String(), should.Equal(ansi.Color("https://crrev.com/i/123/4", "white+u")))
 		})
 	})
 }

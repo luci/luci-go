@@ -26,7 +26,6 @@ import (
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/clients"
 	"go.chromium.org/luci/buildbucket/appengine/internal/config"
-
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
 

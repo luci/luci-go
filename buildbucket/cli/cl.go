@@ -23,11 +23,11 @@ import (
 	"strconv"
 
 	"go.chromium.org/luci/common/api/gerrit"
+	luciflag "go.chromium.org/luci/common/flag"
+	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/common/sync/parallel"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
-	luciflag "go.chromium.org/luci/common/flag"
-	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 )
 
 type clsFlag struct {

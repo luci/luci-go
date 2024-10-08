@@ -27,14 +27,13 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
-
-	. "github.com/smartystreets/goconvey/convey"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func mustStruct(data map[string]any) *structpb.Struct {
@@ -48,7 +47,7 @@ func mustStruct(data map[string]any) *structpb.Struct {
 func TestBuild(t *testing.T) {
 	t.Parallel()
 
-	Convey("Build", t, func() {
+	ftt.Run("Build", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		ctx, tclock := testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 
@@ -59,7 +58,7 @@ func TestBuild(t *testing.T) {
 		datastore.GetTestable(ctx).Consistent(true)
 		m := NoopBuildMask
 
-		Convey("read/write", func() {
+		t.Run("read/write", func(t *ftt.Test) {
 			cms := []CustomMetric{
 				{
 					Base: pb.CustomMetricBase_CUSTOM_METRIC_BASE_CREATED,
@@ -84,7 +83,7 @@ func TestBuild(t *testing.T) {
 					},
 				},
 			}
-			So(datastore.Put(ctx, &Build{
+			assert.Loosely(t, datastore.Put(ctx, &Build{
 				ID: 1,
 				Proto: &pb.Build{
 					Id: 1,
@@ -99,12 +98,12 @@ func TestBuild(t *testing.T) {
 					AncestorIds: []int64{2, 3, 4},
 				},
 				CustomMetrics: cms,
-			}), ShouldBeNil)
+			}), should.BeNil)
 
 			b := &Build{
 				ID: 1,
 			}
-			So(datastore.Get(ctx, b), ShouldBeNil)
+			assert.Loosely(t, datastore.Get(ctx, b), should.BeNil)
 			p := proto.Clone(b.Proto).(*pb.Build)
 			b.Proto = &pb.Build{}
 			b.NextBackendSyncTime = ""
@@ -116,7 +115,7 @@ func TestBuild(t *testing.T) {
 				}
 			}
 			b.CustomMetrics = nil
-			So(b, ShouldResemble, &Build{
+			assert.Loosely(t, b, should.Resemble(&Build{
 				ID:                1,
 				Proto:             &pb.Build{},
 				BucketID:          "project/bucket",
@@ -134,8 +133,8 @@ func TestBuild(t *testing.T) {
 				},
 				AncestorIds: []int64{2, 3, 4},
 				ParentID:    4,
-			})
-			So(p, ShouldResembleProto, &pb.Build{
+			}))
+			assert.Loosely(t, p, should.Resemble(&pb.Build{
 				Id: 1,
 				Builder: &pb.BuilderID{
 					Project: "project",
@@ -146,18 +145,18 @@ func TestBuild(t *testing.T) {
 				CreateTime:  t0pb,
 				UpdateTime:  t0pb,
 				AncestorIds: []int64{2, 3, 4},
-			})
+			}))
 
-			So(len(expectedCms), ShouldEqual, len(cms))
+			assert.Loosely(t, len(expectedCms), should.Equal(len(cms)))
 			for i, cm := range expectedCms {
-				So(cm.Base, ShouldEqual, cms[i].Base)
-				So(cm.Metric, ShouldResembleProto, cms[i].Metric)
+				assert.Loosely(t, cm.Base, should.Equal(cms[i].Base))
+				assert.Loosely(t, cm.Metric, should.Resemble(cms[i].Metric))
 			}
 		})
 
-		Convey("legacy", func() {
-			Convey("infra failure", func() {
-				So(datastore.Put(ctx, &Build{
+		t.Run("legacy", func(t *ftt.Test) {
+			t.Run("infra failure", func(t *ftt.Test) {
+				assert.Loosely(t, datastore.Put(ctx, &Build{
 					ID: 1,
 					Proto: &pb.Build{
 						Id: 1,
@@ -170,16 +169,16 @@ func TestBuild(t *testing.T) {
 						CreateTime: t0pb,
 						UpdateTime: t0pb,
 					},
-				}), ShouldBeNil)
+				}), should.BeNil)
 
 				b := &Build{
 					ID: 1,
 				}
-				So(datastore.Get(ctx, b), ShouldBeNil)
+				assert.Loosely(t, datastore.Get(ctx, b), should.BeNil)
 				p := proto.Clone(b.Proto).(*pb.Build)
 				b.Proto = &pb.Build{}
 				b.NextBackendSyncTime = ""
-				So(b, ShouldResemble, &Build{
+				assert.Loosely(t, b, should.Resemble(&Build{
 					ID:                1,
 					Proto:             &pb.Build{},
 					BucketID:          "project/bucket",
@@ -196,8 +195,8 @@ func TestBuild(t *testing.T) {
 						Result:        Failure,
 						Status:        Completed,
 					},
-				})
-				So(p, ShouldResembleProto, &pb.Build{
+				}))
+				assert.Loosely(t, p, should.Resemble(&pb.Build{
 					Id: 1,
 					Builder: &pb.BuilderID{
 						Project: "project",
@@ -207,11 +206,11 @@ func TestBuild(t *testing.T) {
 					Status:     pb.Status_INFRA_FAILURE,
 					CreateTime: t0pb,
 					UpdateTime: t0pb,
-				})
+				}))
 			})
 
-			Convey("timeout", func() {
-				So(datastore.Put(ctx, &Build{
+			t.Run("timeout", func(t *ftt.Test) {
+				assert.Loosely(t, datastore.Put(ctx, &Build{
 					ID: 1,
 					Proto: &pb.Build{
 						Id: 1,
@@ -227,16 +226,16 @@ func TestBuild(t *testing.T) {
 						CreateTime: t0pb,
 						UpdateTime: t0pb,
 					},
-				}), ShouldBeNil)
+				}), should.BeNil)
 
 				b := &Build{
 					ID: 1,
 				}
-				So(datastore.Get(ctx, b), ShouldBeNil)
+				assert.Loosely(t, datastore.Get(ctx, b), should.BeNil)
 				p := proto.Clone(b.Proto).(*pb.Build)
 				b.Proto = &pb.Build{}
 				b.NextBackendSyncTime = ""
-				So(b, ShouldResemble, &Build{
+				assert.Loosely(t, b, should.Resemble(&Build{
 					ID:                1,
 					Proto:             &pb.Build{},
 					BucketID:          "project/bucket",
@@ -253,8 +252,8 @@ func TestBuild(t *testing.T) {
 						Result:            Canceled,
 						Status:            Completed,
 					},
-				})
-				So(p, ShouldResembleProto, &pb.Build{
+				}))
+				assert.Loosely(t, p, should.Resemble(&pb.Build{
 					Id: 1,
 					Builder: &pb.BuilderID{
 						Project: "project",
@@ -267,11 +266,11 @@ func TestBuild(t *testing.T) {
 					},
 					CreateTime: t0pb,
 					UpdateTime: t0pb,
-				})
+				}))
 			})
 
-			Convey("canceled", func() {
-				So(datastore.Put(ctx, &Build{
+			t.Run("canceled", func(t *ftt.Test) {
+				assert.Loosely(t, datastore.Put(ctx, &Build{
 					ID: 1,
 					Proto: &pb.Build{
 						Id: 1,
@@ -284,16 +283,16 @@ func TestBuild(t *testing.T) {
 						CreateTime: t0pb,
 						UpdateTime: t0pb,
 					},
-				}), ShouldBeNil)
+				}), should.BeNil)
 
 				b := &Build{
 					ID: 1,
 				}
-				So(datastore.Get(ctx, b), ShouldBeNil)
+				assert.Loosely(t, datastore.Get(ctx, b), should.BeNil)
 				p := proto.Clone(b.Proto).(*pb.Build)
 				b.Proto = &pb.Build{}
 				b.NextBackendSyncTime = ""
-				So(b, ShouldResemble, &Build{
+				assert.Loosely(t, b, should.Resemble(&Build{
 					ID:                1,
 					Proto:             &pb.Build{},
 					BucketID:          "project/bucket",
@@ -310,8 +309,8 @@ func TestBuild(t *testing.T) {
 						Result:            Canceled,
 						Status:            Completed,
 					},
-				})
-				So(p, ShouldResembleProto, &pb.Build{
+				}))
+				assert.Loosely(t, p, should.Resemble(&pb.Build{
 					Id: 1,
 					Builder: &pb.BuilderID{
 						Project: "project",
@@ -321,11 +320,11 @@ func TestBuild(t *testing.T) {
 					Status:     pb.Status_CANCELED,
 					CreateTime: t0pb,
 					UpdateTime: t0pb,
-				})
+				}))
 			})
 		})
 
-		Convey("Realm", func() {
+		t.Run("Realm", func(t *ftt.Test) {
 			b := &Build{
 				ID: 1,
 				Proto: &pb.Build{
@@ -337,10 +336,10 @@ func TestBuild(t *testing.T) {
 					},
 				},
 			}
-			So(b.Realm(), ShouldEqual, "project:bucket")
+			assert.Loosely(t, b.Realm(), should.Equal("project:bucket"))
 		})
 
-		Convey("ToProto", func() {
+		t.Run("ToProto", func(t *ftt.Test) {
 			b := &Build{
 				ID: 1,
 				Proto: &pb.Build{
@@ -353,15 +352,15 @@ func TestBuild(t *testing.T) {
 				},
 			}
 			key := datastore.KeyForObj(ctx, b)
-			So(datastore.Put(ctx, &BuildInfra{
+			assert.Loosely(t, datastore.Put(ctx, &BuildInfra{
 				Build: key,
 				Proto: &pb.BuildInfra{
 					Buildbucket: &pb.BuildInfra_Buildbucket{
 						Hostname: "example.com",
 					},
 				},
-			}), ShouldBeNil)
-			So(datastore.Put(ctx, &BuildInputProperties{
+			}), should.BeNil)
+			assert.Loosely(t, datastore.Put(ctx, &BuildInputProperties{
 				Build: key,
 				Proto: &structpb.Struct{
 					Fields: map[string]*structpb.Value{
@@ -372,28 +371,28 @@ func TestBuild(t *testing.T) {
 						},
 					},
 				},
-			}), ShouldBeNil)
+			}), should.BeNil)
 
-			Convey("mask", func() {
-				Convey("include", func() {
+			t.Run("mask", func(t *ftt.Test) {
+				t.Run("include", func(t *ftt.Test) {
 					m := HardcodedBuildMask("id")
 					p, err := b.ToProto(ctx, m, nil)
-					So(err, ShouldBeNil)
-					So(p.Id, ShouldEqual, 1)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, p.Id, should.Equal(1))
 				})
 
-				Convey("exclude", func() {
+				t.Run("exclude", func(t *ftt.Test) {
 					m := HardcodedBuildMask("builder")
 					p, err := b.ToProto(ctx, m, nil)
-					So(err, ShouldBeNil)
-					So(p.Id, ShouldEqual, 0)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, p.Id, should.BeZero)
 				})
 			})
 
-			Convey("tags", func() {
+			t.Run("tags", func(t *ftt.Test) {
 				p, err := b.ToProto(ctx, m, nil)
-				So(err, ShouldBeNil)
-				So(p.Tags, ShouldResembleProto, []*pb.StringPair{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, p.Tags, should.Resemble([]*pb.StringPair{
 					{
 						Key:   "key1",
 						Value: "value1",
@@ -402,32 +401,32 @@ func TestBuild(t *testing.T) {
 						Key:   "key2",
 						Value: "value2",
 					},
-				})
-				So(b.Proto.Tags, ShouldBeEmpty)
+				}))
+				assert.Loosely(t, b.Proto.Tags, should.BeEmpty)
 			})
 
-			Convey("infra", func() {
+			t.Run("infra", func(t *ftt.Test) {
 				p, err := b.ToProto(ctx, m, nil)
-				So(err, ShouldBeNil)
-				So(p.Infra, ShouldResembleProto, &pb.BuildInfra{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, p.Infra, should.Resemble(&pb.BuildInfra{
 					Buildbucket: &pb.BuildInfra_Buildbucket{
 						Hostname: "example.com",
 					},
-				})
-				So(b.Proto.Infra, ShouldBeNil)
-			})
-
-			Convey("input properties", func() {
-				p, err := b.ToProto(ctx, m, nil)
-				So(err, ShouldBeNil)
-				So(p.Input.Properties, ShouldResembleProto, mustStruct(map[string]any{
-					"input": "input value",
 				}))
-				So(b.Proto.Input, ShouldBeNil)
+				assert.Loosely(t, b.Proto.Infra, should.BeNil)
 			})
 
-			Convey("output properties", func() {
-				So(datastore.Put(ctx, &BuildOutputProperties{
+			t.Run("input properties", func(t *ftt.Test) {
+				p, err := b.ToProto(ctx, m, nil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, p.Input.Properties, should.Resemble(mustStruct(map[string]any{
+					"input": "input value",
+				})))
+				assert.Loosely(t, b.Proto.Input, should.BeNil)
+			})
+
+			t.Run("output properties", func(t *ftt.Test) {
+				assert.Loosely(t, datastore.Put(ctx, &BuildOutputProperties{
 					Build: key,
 					Proto: &structpb.Struct{
 						Fields: map[string]*structpb.Value{
@@ -438,15 +437,15 @@ func TestBuild(t *testing.T) {
 							},
 						},
 					},
-				}), ShouldBeNil)
+				}), should.BeNil)
 				p, err := b.ToProto(ctx, m, nil)
-				So(err, ShouldBeNil)
-				So(p.Output.Properties, ShouldResembleProto, mustStruct(map[string]any{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, p.Output.Properties, should.Resemble(mustStruct(map[string]any{
 					"output": "output value",
-				}))
-				So(b.Proto.Output, ShouldBeNil)
+				})))
+				assert.Loosely(t, b.Proto.Output, should.BeNil)
 
-				Convey("one missing, one found", func() {
+				t.Run("one missing, one found", func(t *ftt.Test) {
 					b1 := &pb.Build{
 						Id: 1,
 					}
@@ -454,17 +453,17 @@ func TestBuild(t *testing.T) {
 						Id: 2,
 					}
 					m := HardcodedBuildMask("output.properties")
-					So(LoadBuildDetails(ctx, m, nil, b1, b2), ShouldBeNil)
-					So(b1.Output.Properties, ShouldResembleProto, mustStruct(map[string]any{
+					assert.Loosely(t, LoadBuildDetails(ctx, m, nil, b1, b2), should.BeNil)
+					assert.Loosely(t, b1.Output.Properties, should.Resemble(mustStruct(map[string]any{
 						"output": "output value",
-					}))
-					So(b2.Output.GetProperties(), ShouldBeNil)
+					})))
+					assert.Loosely(t, b2.Output.GetProperties(), should.BeNil)
 				})
 			})
 
-			Convey("output properties(large)", func() {
+			t.Run("output properties(large)", func(t *ftt.Test) {
 				largeProps, err := structpb.NewStruct(map[string]any{})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				k := "laaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaarge_key"
 				v := "laaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaarge_value"
 				for i := 0; i < 10000; i++ {
@@ -478,15 +477,15 @@ func TestBuild(t *testing.T) {
 					Build: key,
 					Proto: largeProps,
 				}
-				So(outProp.Put(ctx), ShouldBeNil)
+				assert.Loosely(t, outProp.Put(ctx), should.BeNil)
 
 				p, err := b.ToProto(ctx, m, nil)
-				So(err, ShouldBeNil)
-				So(p.Output.Properties, ShouldResembleProto, largeProps)
-				So(b.Proto.Output, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, p.Output.Properties, should.Resemble(largeProps))
+				assert.Loosely(t, b.Proto.Output, should.BeNil)
 			})
 
-			Convey("steps", func() {
+			t.Run("steps", func(t *ftt.Test) {
 				s, err := proto.Marshal(&pb.Build{
 					Steps: []*pb.Step{
 						{
@@ -494,24 +493,24 @@ func TestBuild(t *testing.T) {
 						},
 					},
 				})
-				So(err, ShouldBeNil)
-				So(datastore.Put(ctx, &BuildSteps{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, datastore.Put(ctx, &BuildSteps{
 					Build:    key,
 					Bytes:    s,
 					IsZipped: false,
-				}), ShouldBeNil)
+				}), should.BeNil)
 				p, err := b.ToProto(ctx, m, nil)
-				So(err, ShouldBeNil)
-				So(p.Steps, ShouldResembleProto, []*pb.Step{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, p.Steps, should.Resemble([]*pb.Step{
 					{
 						Name: "step",
 					},
-				})
-				So(b.Proto.Steps, ShouldBeEmpty)
+				}))
+				assert.Loosely(t, b.Proto.Steps, should.BeEmpty)
 			})
 		})
 
-		Convey("ToSimpleBuildProto", func() {
+		t.Run("ToSimpleBuildProto", func(t *ftt.Test) {
 			b := &Build{
 				ID: 1,
 				Proto: &pb.Build{
@@ -537,7 +536,7 @@ func TestBuild(t *testing.T) {
 			}
 
 			actual := b.ToSimpleBuildProto(ctx)
-			So(actual, ShouldResembleProto, &pb.Build{
+			assert.Loosely(t, actual, should.Resemble(&pb.Build{
 				Id: 1,
 				Builder: &pb.BuilderID{
 					Project: "project",
@@ -550,27 +549,27 @@ func TestBuild(t *testing.T) {
 						Value: "v1",
 					},
 				},
-			})
+			}))
 		})
 
-		Convey("ExperimentsString", func() {
+		t.Run("ExperimentsString", func(t *ftt.Test) {
 			b := &Build{}
 			check := func(exps []string, enabled string) {
 				b.Experiments = exps
-				So(b.ExperimentsString(), ShouldEqual, enabled)
+				assert.Loosely(t, b.ExperimentsString(), should.Equal(enabled))
 			}
 
-			Convey("Returns None", func() {
+			t.Run("Returns None", func(t *ftt.Test) {
 				check([]string{}, "None")
 			})
 
-			Convey("Sorted", func() {
+			t.Run("Sorted", func(t *ftt.Test) {
 				exps := []string{"+exp4", "-exp3", "+exp1", "-exp10"}
 				check(exps, "exp1|exp4")
 			})
 		})
 
-		Convey("NextBackendSyncTime", func() {
+		t.Run("NextBackendSyncTime", func(t *ftt.Test) {
 			b := &Build{
 				ID:      1,
 				Project: "project",
@@ -589,42 +588,42 @@ func TestBuild(t *testing.T) {
 				BackendTarget: "backend",
 			}
 			b.GenerateNextBackendSyncTime(ctx, 1)
-			So(datastore.Put(ctx, b), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, b), should.BeNil)
 
 			// First save.
-			So(datastore.Get(ctx, b), ShouldBeNil)
+			assert.Loosely(t, datastore.Get(ctx, b), should.BeNil)
 			ut0 := b.NextBackendSyncTime
 			parts := strings.Split(ut0, syncTimeSep)
-			So(parts, ShouldHaveLength, 4)
-			So(parts[3], ShouldEqual, fmt.Sprint(t0.Add(b.BackendSyncInterval).Truncate(time.Minute).Unix()))
-			So(ut0, ShouldEqual, "backend--project--0--1454472600")
+			assert.Loosely(t, parts, should.HaveLength(4))
+			assert.Loosely(t, parts[3], should.Equal(fmt.Sprint(t0.Add(b.BackendSyncInterval).Truncate(time.Minute).Unix())))
+			assert.Loosely(t, ut0, should.Equal("backend--project--0--1454472600"))
 
 			// update soon after, NextBackendSyncTime unchanged.
 			b.Proto.UpdateTime = timestamppb.New(t0.Add(time.Second))
-			So(datastore.Put(ctx, b), ShouldBeNil)
-			So(datastore.Get(ctx, b), ShouldBeNil)
-			So(b.NextBackendSyncTime, ShouldEqual, ut0)
-			So(b.BackendSyncInterval, ShouldEqual, defaultBuildSyncInterval)
+			assert.Loosely(t, datastore.Put(ctx, b), should.BeNil)
+			assert.Loosely(t, datastore.Get(ctx, b), should.BeNil)
+			assert.Loosely(t, b.NextBackendSyncTime, should.Equal(ut0))
+			assert.Loosely(t, b.BackendSyncInterval, should.Equal(defaultBuildSyncInterval))
 
 			// update after 30sec, NextBackendSyncTime unchanged.
 			b.Proto.UpdateTime = timestamppb.New(t0.Add(40 * time.Second))
-			So(datastore.Put(ctx, b), ShouldBeNil)
-			So(datastore.Get(ctx, b), ShouldBeNil)
-			So(b.NextBackendSyncTime, ShouldBeGreaterThan, ut0)
+			assert.Loosely(t, datastore.Put(ctx, b), should.BeNil)
+			assert.Loosely(t, datastore.Get(ctx, b), should.BeNil)
+			assert.Loosely(t, b.NextBackendSyncTime, should.BeGreaterThan(ut0))
 
 			// update after 2min, NextBackendSyncTime changed.
 			t1 := t0.Add(2 * time.Minute)
 			b.Proto.UpdateTime = timestamppb.New(t1)
-			So(datastore.Put(ctx, b), ShouldBeNil)
-			So(datastore.Get(ctx, b), ShouldBeNil)
-			So(b.NextBackendSyncTime, ShouldBeGreaterThan, ut0)
+			assert.Loosely(t, datastore.Put(ctx, b), should.BeNil)
+			assert.Loosely(t, datastore.Get(ctx, b), should.BeNil)
+			assert.Loosely(t, b.NextBackendSyncTime, should.BeGreaterThan(ut0))
 			parts = strings.Split(b.NextBackendSyncTime, syncTimeSep)
-			So(parts, ShouldHaveLength, 4)
-			So(parts[3], ShouldEqual, fmt.Sprint(t1.Add(b.BackendSyncInterval).Truncate(time.Minute).Unix()))
+			assert.Loosely(t, parts, should.HaveLength(4))
+			assert.Loosely(t, parts[3], should.Equal(fmt.Sprint(t1.Add(b.BackendSyncInterval).Truncate(time.Minute).Unix())))
 		})
 
-		Convey("EvaluateBuildForCustomBuilderMetrics", func() {
-			Convey("nothing to check", func() {
+		t.Run("EvaluateBuildForCustomBuilderMetrics", func(t *ftt.Test) {
+			t.Run("nothing to check", func(t *ftt.Test) {
 				blds := []*Build{
 					// no custom metrics.
 					{
@@ -672,11 +671,11 @@ func TestBuild(t *testing.T) {
 				}
 				for _, bld := range blds {
 					err := EvaluateBuildForCustomBuilderMetrics(ctx, bld, false)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 				}
 			})
 
-			Convey("failed", func() {
+			t.Run("failed", func(t *ftt.Test) {
 				bld := &Build{
 					ID: 3,
 					Proto: &pb.Build{
@@ -698,10 +697,10 @@ func TestBuild(t *testing.T) {
 					},
 				}
 				err := EvaluateBuildForCustomBuilderMetrics(ctx, bld, false)
-				So(err, ShouldNotBeNil)
+				assert.Loosely(t, err, should.NotBeNil)
 			})
 
-			Convey("re-evaluate", func() {
+			t.Run("re-evaluate", func(t *ftt.Test) {
 				b := &Build{
 					ID: 1,
 					Proto: &pb.Build{
@@ -733,11 +732,11 @@ func TestBuild(t *testing.T) {
 					CustomBuilderCountMetrics: []string{"custom_metric_count1"},
 				}
 				err := EvaluateBuildForCustomBuilderMetrics(ctx, b, false)
-				So(err, ShouldBeNil)
-				So(b.CustomBuilderCountMetrics, ShouldResemble, []string{"custom_metric_count2"})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, b.CustomBuilderCountMetrics, should.Resemble([]string{"custom_metric_count2"}))
 			})
 
-			Convey("loadDetails", func() {
+			t.Run("loadDetails", func(t *ftt.Test) {
 				b := &Build{
 					ID: 1,
 					Proto: &pb.Build{
@@ -755,7 +754,7 @@ func TestBuild(t *testing.T) {
 					},
 				}
 				key := datastore.KeyForObj(ctx, b)
-				So(datastore.Put(ctx, &BuildInputProperties{
+				assert.Loosely(t, datastore.Put(ctx, &BuildInputProperties{
 					Build: key,
 					Proto: &structpb.Struct{
 						Fields: map[string]*structpb.Value{
@@ -766,13 +765,13 @@ func TestBuild(t *testing.T) {
 							},
 						},
 					},
-				}), ShouldBeNil)
+				}), should.BeNil)
 				err := EvaluateBuildForCustomBuilderMetrics(ctx, b, false)
-				So(err, ShouldBeNil)
-				So(len(b.CustomBuilderCountMetrics), ShouldEqual, 0)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, len(b.CustomBuilderCountMetrics), should.BeZero)
 				err = EvaluateBuildForCustomBuilderMetrics(ctx, b, true)
-				So(err, ShouldBeNil)
-				So(b.CustomBuilderCountMetrics, ShouldResemble, []string{"custom_metric_count"})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, b.CustomBuilderCountMetrics, should.Resemble([]string{"custom_metric_count"}))
 			})
 		})
 	})

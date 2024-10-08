@@ -25,6 +25,9 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -36,9 +39,6 @@ import (
 	"go.chromium.org/luci/buildbucket/appengine/rpc/testutil"
 	"go.chromium.org/luci/buildbucket/bbperms"
 	pb "go.chromium.org/luci/buildbucket/proto"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestCancelBuild(t *testing.T) {
@@ -46,49 +46,49 @@ func TestCancelBuild(t *testing.T) {
 
 	const userID = identity.Identity("user:user@example.com")
 
-	Convey("validateCancel", t, func() {
-		Convey("request", func() {
-			Convey("nil", func() {
+	ftt.Run("validateCancel", t, func(t *ftt.Test) {
+		t.Run("request", func(t *ftt.Test) {
+			t.Run("nil", func(t *ftt.Test) {
 				err := validateCancel(nil)
-				So(err, ShouldErrLike, "id is required")
+				assert.Loosely(t, err, should.ErrLike("id is required"))
 			})
 
-			Convey("empty", func() {
+			t.Run("empty", func(t *ftt.Test) {
 				req := &pb.CancelBuildRequest{}
 				err := validateCancel(req)
-				So(err, ShouldErrLike, "id is required")
+				assert.Loosely(t, err, should.ErrLike("id is required"))
 			})
 
-			Convey("id", func() {
+			t.Run("id", func(t *ftt.Test) {
 				req := &pb.CancelBuildRequest{
 					Id: 1,
 				}
 				err := validateCancel(req)
-				So(err, ShouldErrLike, "summary_markdown is required")
+				assert.Loosely(t, err, should.ErrLike("summary_markdown is required"))
 			})
 		})
 	})
 
-	Convey("CancelBuild", t, func() {
+	ftt.Run("CancelBuild", t, func(t *ftt.Test) {
 		srv := &Builds{}
 		ctx := txndefer.FilterRDS(memory.Use(context.Background()))
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 		ctx, sch := tq.TestingContext(ctx, nil)
 
-		Convey("id", func() {
-			Convey("not found", func() {
+		t.Run("id", func(t *ftt.Test) {
+			t.Run("not found", func(t *ftt.Test) {
 				req := &pb.CancelBuildRequest{
 					Id:              1,
 					SummaryMarkdown: "summary",
 				}
 				rsp, err := srv.CancelBuild(ctx, req)
-				So(err, ShouldErrLike, "not found")
-				So(rsp, ShouldBeNil)
-				So(sch.Tasks(), ShouldBeEmpty)
+				assert.Loosely(t, err, should.ErrLike("not found"))
+				assert.Loosely(t, rsp, should.BeNil)
+				assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 			})
 
-			Convey("permission denied", func() {
+			t.Run("permission denied", func(t *ftt.Test) {
 				ctx = auth.WithState(ctx, &authtest.FakeState{
 					Identity: userID,
 					FakeDB: authtest.NewFakeDB(
@@ -97,7 +97,7 @@ func TestCancelBuild(t *testing.T) {
 					),
 				})
 				testutil.PutBucket(ctx, "project", "bucket 1", nil)
-				So(datastore.Put(ctx, &model.Build{
+				assert.Loosely(t, datastore.Put(ctx, &model.Build{
 					Proto: &pb.Build{
 						Id: 1,
 						Builder: &pb.BuilderID{
@@ -106,18 +106,18 @@ func TestCancelBuild(t *testing.T) {
 							Builder: "builder",
 						},
 					},
-				}), ShouldBeNil)
+				}), should.BeNil)
 				req := &pb.CancelBuildRequest{
 					Id:              1,
 					SummaryMarkdown: "summary",
 				}
 				rsp, err := srv.CancelBuild(ctx, req)
-				So(err, ShouldErrLike, "does not have permission")
-				So(rsp, ShouldBeNil)
-				So(sch.Tasks(), ShouldBeEmpty)
+				assert.Loosely(t, err, should.ErrLike("does not have permission"))
+				assert.Loosely(t, rsp, should.BeNil)
+				assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 			})
 
-			Convey("found", func() {
+			t.Run("found", func(t *ftt.Test) {
 				now := testclock.TestRecentTimeLocal
 				ctx, _ = testclock.UseTime(ctx, now)
 				testutil.PutBucket(ctx, "project", "bucket", nil)
@@ -138,7 +138,7 @@ func TestCancelBuild(t *testing.T) {
 						},
 					},
 				}
-				So(datastore.Put(ctx, build), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, build), should.BeNil)
 				key := datastore.KeyForObj(ctx, build)
 				s, err := proto.Marshal(&pb.Build{
 					Steps: []*pb.Step{
@@ -147,13 +147,13 @@ func TestCancelBuild(t *testing.T) {
 						},
 					},
 				})
-				So(err, ShouldBeNil)
-				So(datastore.Put(ctx, &model.BuildSteps{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, datastore.Put(ctx, &model.BuildSteps{
 					Build:    key,
 					Bytes:    s,
 					IsZipped: false,
-				}), ShouldBeNil)
-				So(datastore.Put(ctx, &model.BuildInfra{
+				}), should.BeNil)
+				assert.Loosely(t, datastore.Put(ctx, &model.BuildInfra{
 					Build: key,
 					Proto: &pb.BuildInfra{
 						Buildbucket: &pb.BuildInfra_Buildbucket{
@@ -164,8 +164,8 @@ func TestCancelBuild(t *testing.T) {
 							Invocation: "bb-12345",
 						},
 					},
-				}), ShouldBeNil)
-				So(datastore.Put(ctx, &model.BuildInputProperties{
+				}), should.BeNil)
+				assert.Loosely(t, datastore.Put(ctx, &model.BuildInputProperties{
 					Build: key,
 					Proto: &structpb.Struct{
 						Fields: map[string]*structpb.Value{
@@ -176,8 +176,8 @@ func TestCancelBuild(t *testing.T) {
 							},
 						},
 					},
-				}), ShouldBeNil)
-				So(datastore.Put(ctx, &model.BuildOutputProperties{
+				}), should.BeNil)
+				assert.Loosely(t, datastore.Put(ctx, &model.BuildOutputProperties{
 					Build: key,
 					Proto: &structpb.Struct{
 						Fields: map[string]*structpb.Value{
@@ -188,9 +188,9 @@ func TestCancelBuild(t *testing.T) {
 							},
 						},
 					},
-				}), ShouldBeNil)
+				}), should.BeNil)
 
-				Convey("found with BuildsList permission only", func() {
+				t.Run("found with BuildsList permission only", func(t *ftt.Test) {
 					ctx = auth.WithState(ctx, &authtest.FakeState{
 						Identity: userID,
 						FakeDB: authtest.NewFakeDB(
@@ -206,15 +206,15 @@ func TestCancelBuild(t *testing.T) {
 						},
 					}
 					rsp, err := srv.CancelBuild(ctx, req)
-					So(err, ShouldBeNil)
-					So(rsp, ShouldResembleProto, &pb.Build{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, rsp, should.Resemble(&pb.Build{
 						Id:     1,
 						Status: pb.Status_STARTED,
-					})
-					So(sch.Tasks(), ShouldHaveLength, 1)
+					}))
+					assert.Loosely(t, sch.Tasks(), should.HaveLength(1))
 				})
 
-				Convey("found with BuildsGetLimited permission only", func() {
+				t.Run("found with BuildsGetLimited permission only", func(t *ftt.Test) {
 					ctx = auth.WithState(ctx, &authtest.FakeState{
 						Identity: userID,
 						FakeDB: authtest.NewFakeDB(
@@ -230,8 +230,8 @@ func TestCancelBuild(t *testing.T) {
 						},
 					}
 					rsp, err := srv.CancelBuild(ctx, req)
-					So(err, ShouldBeNil)
-					So(rsp, ShouldResembleProto, &pb.Build{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, rsp, should.Resemble(&pb.Build{
 						Id: 1,
 						Builder: &pb.BuilderID{
 							Project: "project",
@@ -253,11 +253,11 @@ func TestCancelBuild(t *testing.T) {
 						UpdateTime: timestamppb.New(now),
 						CancelTime: timestamppb.New(now),
 						Status:     pb.Status_STARTED,
-					})
-					So(sch.Tasks(), ShouldHaveLength, 1)
+					}))
+					assert.Loosely(t, sch.Tasks(), should.HaveLength(1))
 				})
 
-				Convey("found with BuildsGet permission", func() {
+				t.Run("found with BuildsGet permission", func(t *ftt.Test) {
 					ctx = auth.WithState(ctx, &authtest.FakeState{
 						Identity: userID,
 						FakeDB: authtest.NewFakeDB(
@@ -282,8 +282,8 @@ func TestCancelBuild(t *testing.T) {
 						},
 					}
 					rsp, err := srv.CancelBuild(ctx, req)
-					So(err, ShouldBeNil)
-					So(rsp, ShouldResembleProto, &pb.Build{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, rsp, should.Resemble(&pb.Build{
 						Id: 1,
 						Builder: &pb.BuilderID{
 							Project: "project",
@@ -294,8 +294,8 @@ func TestCancelBuild(t *testing.T) {
 						CancelTime:           timestamppb.New(now),
 						Status:               pb.Status_STARTED,
 						CancellationMarkdown: "summary",
-					})
-					So(sch.Tasks(), ShouldHaveLength, 1)
+					}))
+					assert.Loosely(t, sch.Tasks(), should.HaveLength(1))
 				})
 			})
 		})

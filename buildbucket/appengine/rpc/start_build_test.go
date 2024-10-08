@@ -21,6 +21,9 @@ import (
 
 	"google.golang.org/grpc/metadata"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
@@ -36,9 +39,6 @@ import (
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func validStartBuildRequest() *pb.StartBuildRequest {
@@ -51,35 +51,35 @@ func validStartBuildRequest() *pb.StartBuildRequest {
 
 func TestValidateStartBuildRequest(t *testing.T) {
 	t.Parallel()
-	Convey("validateStartBuildRequest", t, func() {
+	ftt.Run("validateStartBuildRequest", t, func(t *ftt.Test) {
 		ctx := context.Background()
 
-		Convey("empty req", func() {
+		t.Run("empty req", func(t *ftt.Test) {
 			err := validateStartBuildRequest(ctx, &pb.StartBuildRequest{})
-			So(err, ShouldErrLike, `.request_id: required`)
+			assert.Loosely(t, err, should.ErrLike(`.request_id: required`))
 		})
 
-		Convey("missing build id", func() {
+		t.Run("missing build id", func(t *ftt.Test) {
 			req := &pb.StartBuildRequest{
 				RequestId: "random",
 			}
 			err := validateStartBuildRequest(ctx, req)
-			So(err, ShouldErrLike, `.build_id: required`)
+			assert.Loosely(t, err, should.ErrLike(`.build_id: required`))
 		})
 
-		Convey("missing task id", func() {
+		t.Run("missing task id", func(t *ftt.Test) {
 			req := &pb.StartBuildRequest{
 				RequestId: "random",
 				BuildId:   87654321,
 			}
 			err := validateStartBuildRequest(ctx, req)
-			So(err, ShouldErrLike, `.task_id: required`)
+			assert.Loosely(t, err, should.ErrLike(`.task_id: required`))
 		})
 
-		Convey("pass", func() {
+		t.Run("pass", func(t *ftt.Test) {
 			req := validStartBuildRequest()
 			err := validateStartBuildRequest(ctx, req)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 	})
 }
@@ -96,29 +96,29 @@ func TestStartBuild(t *testing.T) {
 	ctx = secrets.GeneratePrimaryTinkAEADForTest(ctx)
 
 	req := validStartBuildRequest()
-	Convey("validate token", t, func() {
-		Convey("token missing", func() {
+	ftt.Run("validate token", t, func(t *ftt.Test) {
+		t.Run("token missing", func(t *ftt.Test) {
 			_, err := srv.StartBuild(ctx, req)
-			So(err, ShouldErrLike, errBadTokenAuth)
+			assert.Loosely(t, err, should.ErrLike(errBadTokenAuth))
 		})
 
-		Convey("wrong purpose", func() {
+		t.Run("wrong purpose", func(t *ftt.Test) {
 			tk, err := buildtoken.GenerateToken(ctx, 87654321, pb.TokenBody_TASK)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(buildbucket.BuildbucketTokenHeader, tk))
 			_, err = srv.StartBuild(ctx, req)
-			So(err, ShouldErrLike, buildtoken.ErrBadToken)
+			assert.Loosely(t, err, should.ErrLike(buildtoken.ErrBadToken))
 		})
 
-		Convey("wrong build id", func() {
+		t.Run("wrong build id", func(t *ftt.Test) {
 			tk, _ := buildtoken.GenerateToken(ctx, 1, pb.TokenBody_START_BUILD)
 			ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(buildbucket.BuildbucketTokenHeader, tk))
 			_, err := srv.StartBuild(ctx, req)
-			So(err, ShouldErrLike, buildtoken.ErrBadToken)
+			assert.Loosely(t, err, should.ErrLike(buildtoken.ErrBadToken))
 		})
 	})
 
-	Convey("StartBuild", t, func() {
+	ftt.Run("StartBuild", t, func(t *ftt.Test) {
 		ctx, _ = tsmon.WithDummyInMemory(ctx)
 		ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
 		ctx = metrics.WithBuilder(ctx, "project", "bucket", "builder")
@@ -160,7 +160,7 @@ func TestStartBuild(t *testing.T) {
 						Name:       name,
 						Predicates: []string{`build.tags.get_value("os")!=""`},
 						ExtraFields: map[string]string{
-							"os":          `build.tags.get_value("os")`,
+							"os": `build.tags.get_value("os")`,
 						},
 					},
 				},
@@ -175,19 +175,19 @@ func TestStartBuild(t *testing.T) {
 			Build:  bk,
 			Status: pb.Status_SCHEDULED,
 		}
-		So(datastore.Put(ctx, build, infra, bs), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, build, infra, bs), should.BeNil)
 
-		Convey("build on backend", func() {
+		t.Run("build on backend", func(t *ftt.Test) {
 			tk, _ := buildtoken.GenerateToken(ctx, 87654321, pb.TokenBody_START_BUILD)
 			ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(buildbucket.BuildbucketTokenHeader, tk))
 
-			Convey("build not on backend", func() {
+			t.Run("build not on backend", func(t *ftt.Test) {
 				_, err := srv.StartBuild(ctx, req)
-				So(err, ShouldErrLike, `the build 87654321 does not run on task backend`)
+				assert.Loosely(t, err, should.ErrLike(`the build 87654321 does not run on task backend`))
 			})
 
-			Convey("first StartBuild", func() {
-				Convey("first handshake", func() {
+			t.Run("first StartBuild", func(t *ftt.Test) {
+				t.Run("first handshake", func(t *ftt.Test) {
 					infra.Proto.Backend = &pb.BuildInfra_Backend{
 						Task: &pb.Task{
 							Id: &pb.TaskID{
@@ -195,33 +195,33 @@ func TestStartBuild(t *testing.T) {
 							},
 						},
 					}
-					So(datastore.Put(ctx, infra), ShouldBeNil)
+					assert.Loosely(t, datastore.Put(ctx, infra), should.BeNil)
 					res, err := srv.StartBuild(ctx, req)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 
 					err = datastore.Get(ctx, build, bs)
-					So(err, ShouldBeNil)
-					So(build.UpdateToken, ShouldEqual, res.UpdateBuildToken)
-					So(build.StartBuildRequestID, ShouldEqual, req.RequestId)
-					So(build.Status, ShouldEqual, pb.Status_STARTED)
-					So(bs.Status, ShouldEqual, pb.Status_STARTED)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, build.UpdateToken, should.Equal(res.UpdateBuildToken))
+					assert.Loosely(t, build.StartBuildRequestID, should.Equal(req.RequestId))
+					assert.Loosely(t, build.Status, should.Equal(pb.Status_STARTED))
+					assert.Loosely(t, bs.Status, should.Equal(pb.Status_STARTED))
 
 					err = datastore.Get(ctx, infra)
-					So(err, ShouldBeNil)
-					So(infra.Proto.Backend.Task.Id.Id, ShouldEqual, req.TaskId)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, infra.Proto.Backend.Task.Id.Id, should.Equal(req.TaskId))
 
 					// TQ tasks for pubsub-notification.
 					tasks := sch.Tasks()
-					So(tasks, ShouldHaveLength, 2)
+					assert.Loosely(t, tasks, should.HaveLength(2))
 
 					// metrics
-					So(tsmon.Store(ctx).Get(ctx, metrics.V2.BuildCountStarted, time.Time{}, []any{"None"}), ShouldEqual, 1)
+					assert.Loosely(t, tsmon.Store(ctx).Get(ctx, metrics.V2.BuildCountStarted, time.Time{}, []any{"None"}), should.Equal(1))
 					val, err := metrics.GetCustomMetricsData(ctx, base, name, time.Time{}, []any{"Linux"})
-					So(err, ShouldBeNil)
-					So(val, ShouldEqual, 1)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, val, should.Equal(1))
 				})
 
-				Convey("same task", func() {
+				t.Run("same task", func(t *ftt.Test) {
 					infra.Proto.Backend = &pb.BuildInfra_Backend{
 						Task: &pb.Task{
 							Id: &pb.TaskID{
@@ -230,23 +230,23 @@ func TestStartBuild(t *testing.T) {
 							},
 						},
 					}
-					So(datastore.Put(ctx, infra), ShouldBeNil)
+					assert.Loosely(t, datastore.Put(ctx, infra), should.BeNil)
 					res, err := srv.StartBuild(ctx, req)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 
 					build, err = common.GetBuild(ctx, 87654321)
-					So(err, ShouldBeNil)
-					So(build.UpdateToken, ShouldEqual, res.UpdateBuildToken)
-					So(build.StartBuildRequestID, ShouldEqual, req.RequestId)
-					So(build.Status, ShouldEqual, pb.Status_STARTED)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, build.UpdateToken, should.Equal(res.UpdateBuildToken))
+					assert.Loosely(t, build.StartBuildRequestID, should.Equal(req.RequestId))
+					assert.Loosely(t, build.Status, should.Equal(pb.Status_STARTED))
 
 					// TQ tasks for pubsub-notification.
 					tasks := sch.Tasks()
-					So(tasks, ShouldHaveLength, 2)
+					assert.Loosely(t, tasks, should.HaveLength(2))
 				})
 
-				Convey("after RegisterBuildTask", func() {
-					Convey("duplicated task", func() {
+				t.Run("after RegisterBuildTask", func(t *ftt.Test) {
+					t.Run("duplicated task", func(t *ftt.Test) {
 						infra.Proto.Backend = &pb.BuildInfra_Backend{
 							Task: &pb.Task{
 								Id: &pb.TaskID{
@@ -255,22 +255,22 @@ func TestStartBuild(t *testing.T) {
 								},
 							},
 						}
-						So(datastore.Put(ctx, infra), ShouldBeNil)
+						assert.Loosely(t, datastore.Put(ctx, infra), should.BeNil)
 						_, err := srv.StartBuild(ctx, req)
-						So(err, ShouldErrLike, `build 87654321 has associated with task "other"`)
-						So(buildbucket.DuplicateTask.In(err), ShouldBeTrue)
+						assert.Loosely(t, err, should.ErrLike(`build 87654321 has associated with task "other"`))
+						assert.Loosely(t, buildbucket.DuplicateTask.In(err), should.BeTrue)
 						build, err = common.GetBuild(ctx, 87654321)
-						So(err, ShouldBeNil)
-						So(build.UpdateToken, ShouldEqual, "")
-						So(build.StartBuildRequestID, ShouldEqual, "")
-						So(build.Status, ShouldEqual, pb.Status_SCHEDULED)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, build.UpdateToken, should.BeEmpty)
+						assert.Loosely(t, build.StartBuildRequestID, should.BeEmpty)
+						assert.Loosely(t, build.Status, should.Equal(pb.Status_SCHEDULED))
 
 						// TQ tasks for pubsub-notification.
 						tasks := sch.Tasks()
-						So(tasks, ShouldHaveLength, 0)
+						assert.Loosely(t, tasks, should.HaveLength(0))
 					})
 
-					Convey("same task", func() {
+					t.Run("same task", func(t *ftt.Test) {
 						infra.Proto.Backend = &pb.BuildInfra_Backend{
 							Task: &pb.Task{
 								Id: &pb.TaskID{
@@ -279,19 +279,19 @@ func TestStartBuild(t *testing.T) {
 								},
 							},
 						}
-						So(datastore.Put(ctx, infra), ShouldBeNil)
+						assert.Loosely(t, datastore.Put(ctx, infra), should.BeNil)
 						res, err := srv.StartBuild(ctx, req)
-						So(err, ShouldBeNil)
+						assert.Loosely(t, err, should.BeNil)
 
 						build, err = common.GetBuild(ctx, 87654321)
-						So(err, ShouldBeNil)
-						So(build.UpdateToken, ShouldEqual, res.UpdateBuildToken)
-						So(build.StartBuildRequestID, ShouldEqual, req.RequestId)
-						So(build.Status, ShouldEqual, pb.Status_STARTED)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, build.UpdateToken, should.Equal(res.UpdateBuildToken))
+						assert.Loosely(t, build.StartBuildRequestID, should.Equal(req.RequestId))
+						assert.Loosely(t, build.Status, should.Equal(pb.Status_STARTED))
 					})
 				})
 
-				Convey("build has started", func() {
+				t.Run("build has started", func(t *ftt.Test) {
 					infra.Proto.Backend = &pb.BuildInfra_Backend{
 						Task: &pb.Task{
 							Id: &pb.TaskID{
@@ -300,12 +300,12 @@ func TestStartBuild(t *testing.T) {
 						},
 					}
 					build.Proto.Status = pb.Status_STARTED
-					So(datastore.Put(ctx, infra, build), ShouldBeNil)
+					assert.Loosely(t, datastore.Put(ctx, infra, build), should.BeNil)
 					_, err := srv.StartBuild(ctx, req)
-					So(err, ShouldErrLike, `cannot start started build`)
+					assert.Loosely(t, err, should.ErrLike(`cannot start started build`))
 				})
 
-				Convey("build has ended", func() {
+				t.Run("build has ended", func(t *ftt.Test) {
 					infra.Proto.Backend = &pb.BuildInfra_Backend{
 						Task: &pb.Task{
 							Id: &pb.TaskID{
@@ -314,14 +314,14 @@ func TestStartBuild(t *testing.T) {
 						},
 					}
 					build.Proto.Status = pb.Status_FAILURE
-					So(datastore.Put(ctx, infra, build), ShouldBeNil)
+					assert.Loosely(t, datastore.Put(ctx, infra, build), should.BeNil)
 					_, err := srv.StartBuild(ctx, req)
-					So(err, ShouldErrLike, `cannot start ended build`)
+					assert.Loosely(t, err, should.ErrLike(`cannot start ended build`))
 				})
 			})
 
-			Convey("subsequent StartBuild", func() {
-				Convey("duplicate task", func() {
+			t.Run("subsequent StartBuild", func(t *ftt.Test) {
+				t.Run("duplicate task", func(t *ftt.Test) {
 					build.StartBuildRequestID = "other request"
 					infra.Proto.Backend = &pb.BuildInfra_Backend{
 						Task: &pb.Task{
@@ -331,18 +331,18 @@ func TestStartBuild(t *testing.T) {
 							},
 						},
 					}
-					So(datastore.Put(ctx, []any{build, infra}), ShouldBeNil)
+					assert.Loosely(t, datastore.Put(ctx, []any{build, infra}), should.BeNil)
 
 					_, err := srv.StartBuild(ctx, req)
-					So(err, ShouldErrLike, `build 87654321 has recorded another StartBuild with request id "other request"`)
-					So(buildbucket.DuplicateTask.In(err), ShouldBeTrue)
+					assert.Loosely(t, err, should.ErrLike(`build 87654321 has recorded another StartBuild with request id "other request"`))
+					assert.Loosely(t, buildbucket.DuplicateTask.In(err), should.BeTrue)
 				})
 
-				Convey("task with collided request id", func() {
+				t.Run("task with collided request id", func(t *ftt.Test) {
 					build.StartBuildRequestID = req.RequestId
 					var err error
 					tok, err := buildtoken.GenerateToken(ctx, build.ID, pb.TokenBody_BUILD)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					build.UpdateToken = tok
 					infra.Proto.Backend = &pb.BuildInfra_Backend{
 						Task: &pb.Task{
@@ -352,18 +352,18 @@ func TestStartBuild(t *testing.T) {
 							},
 						},
 					}
-					So(datastore.Put(ctx, []any{build, infra}), ShouldBeNil)
+					assert.Loosely(t, datastore.Put(ctx, []any{build, infra}), should.BeNil)
 
 					_, err = srv.StartBuild(ctx, req)
-					So(err, ShouldErrLike, `build 87654321 has associated with task id "another" with StartBuild request id "random"`)
-					So(buildbucket.TaskWithCollidedRequestID.In(err), ShouldBeTrue)
+					assert.Loosely(t, err, should.ErrLike(`build 87654321 has associated with task id "another" with StartBuild request id "random"`))
+					assert.Loosely(t, buildbucket.TaskWithCollidedRequestID.In(err), should.BeTrue)
 				})
 
-				Convey("idempotent", func() {
+				t.Run("idempotent", func(t *ftt.Test) {
 					build.StartBuildRequestID = req.RequestId
 					var err error
 					tok, err := buildtoken.GenerateToken(ctx, build.ID, pb.TokenBody_BUILD)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					build.UpdateToken = tok
 					build.Proto.Status = pb.Status_STARTED
 					infra.Proto.Backend = &pb.BuildInfra_Backend{
@@ -374,161 +374,161 @@ func TestStartBuild(t *testing.T) {
 							},
 						},
 					}
-					So(datastore.Put(ctx, []any{build, infra}), ShouldBeNil)
+					assert.Loosely(t, datastore.Put(ctx, []any{build, infra}), should.BeNil)
 
 					res, err := srv.StartBuild(ctx, req)
-					So(err, ShouldBeNil)
-					So(res.UpdateBuildToken, ShouldEqual, tok)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, res.UpdateBuildToken, should.Equal(tok))
 				})
 			})
 		})
 
-		Convey("build on swarming", func() {
-			Convey("build token missing", func() {
+		t.Run("build on swarming", func(t *ftt.Test) {
+			t.Run("build token missing", func(t *ftt.Test) {
 				ctx := metadata.NewIncomingContext(ctx, metadata.Pairs(buildbucket.BuildbucketTokenHeader, "I am a potato"))
 				_, err := srv.StartBuild(ctx, req)
-				So(err, ShouldErrLike, buildtoken.ErrBadToken)
+				assert.Loosely(t, err, should.ErrLike(buildtoken.ErrBadToken))
 			})
 
-			Convey("build token mismatch", func() {
+			t.Run("build token mismatch", func(t *ftt.Test) {
 				tk, err := buildtoken.GenerateToken(ctx, 123456, pb.TokenBody_BUILD)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				ctx := metadata.NewIncomingContext(ctx, metadata.Pairs(buildbucket.BuildbucketTokenHeader, tk))
 
 				_, err = srv.StartBuild(ctx, req)
-				So(err, ShouldErrLike, buildtoken.ErrBadToken)
+				assert.Loosely(t, err, should.ErrLike(buildtoken.ErrBadToken))
 			})
 
-			Convey("StartBuild", func() {
+			t.Run("StartBuild", func(t *ftt.Test) {
 				tk, err := buildtoken.GenerateToken(ctx, 87654321, pb.TokenBody_BUILD)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(buildbucket.BuildbucketTokenHeader, tk))
 				build.UpdateToken = tk
 				bs := &model.BuildStatus{
 					Build:  datastore.KeyForObj(ctx, build),
 					Status: pb.Status_SCHEDULED,
 				}
-				So(datastore.Put(ctx, build, bs), ShouldBeNil)
-				Convey("build not on swarming", func() {
+				assert.Loosely(t, datastore.Put(ctx, build, bs), should.BeNil)
+				t.Run("build not on swarming", func(t *ftt.Test) {
 					_, err := srv.StartBuild(ctx, req)
-					So(err, ShouldErrLike, `the build 87654321 does not run on swarming`)
+					assert.Loosely(t, err, should.ErrLike(`the build 87654321 does not run on swarming`))
 				})
 
-				Convey("first StartBuild", func() {
-					Convey("first handshake", func() {
+				t.Run("first StartBuild", func(t *ftt.Test) {
+					t.Run("first handshake", func(t *ftt.Test) {
 						infra.Proto.Swarming = &pb.BuildInfra_Swarming{
 							TaskId: req.TaskId,
 						}
-						So(datastore.Put(ctx, infra), ShouldBeNil)
+						assert.Loosely(t, datastore.Put(ctx, infra), should.BeNil)
 						res, err := srv.StartBuild(ctx, req)
-						So(err, ShouldBeNil)
+						assert.Loosely(t, err, should.BeNil)
 
 						err = datastore.Get(ctx, build, bs)
-						So(err, ShouldBeNil)
-						So(build.UpdateToken, ShouldEqual, res.UpdateBuildToken)
-						So(build.StartBuildRequestID, ShouldEqual, req.RequestId)
-						So(build.Status, ShouldEqual, pb.Status_STARTED)
-						So(bs.Status, ShouldEqual, pb.Status_STARTED)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, build.UpdateToken, should.Equal(res.UpdateBuildToken))
+						assert.Loosely(t, build.StartBuildRequestID, should.Equal(req.RequestId))
+						assert.Loosely(t, build.Status, should.Equal(pb.Status_STARTED))
+						assert.Loosely(t, bs.Status, should.Equal(pb.Status_STARTED))
 
 						// TQ tasks for pubsub-notification.
 						tasks := sch.Tasks()
-						So(tasks, ShouldHaveLength, 2)
+						assert.Loosely(t, tasks, should.HaveLength(2))
 					})
 
-					Convey("first handshake with no task id in datastore", func() {
+					t.Run("first handshake with no task id in datastore", func(t *ftt.Test) {
 						infra.Proto.Swarming = &pb.BuildInfra_Swarming{}
-						So(datastore.Put(ctx, infra), ShouldBeNil)
+						assert.Loosely(t, datastore.Put(ctx, infra), should.BeNil)
 						res, err := srv.StartBuild(ctx, req)
-						So(err, ShouldBeNil)
+						assert.Loosely(t, err, should.BeNil)
 
 						err = datastore.Get(ctx, build, bs, infra)
-						So(err, ShouldBeNil)
-						So(build.UpdateToken, ShouldEqual, res.UpdateBuildToken)
-						So(build.StartBuildRequestID, ShouldEqual, req.RequestId)
-						So(build.Status, ShouldEqual, pb.Status_STARTED)
-						So(bs.Status, ShouldEqual, pb.Status_STARTED)
-						So(infra.Proto.Swarming.TaskId, ShouldEqual, req.TaskId)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, build.UpdateToken, should.Equal(res.UpdateBuildToken))
+						assert.Loosely(t, build.StartBuildRequestID, should.Equal(req.RequestId))
+						assert.Loosely(t, build.Status, should.Equal(pb.Status_STARTED))
+						assert.Loosely(t, bs.Status, should.Equal(pb.Status_STARTED))
+						assert.Loosely(t, infra.Proto.Swarming.TaskId, should.Equal(req.TaskId))
 
 						// TQ tasks for pubsub-notification.
 						tasks := sch.Tasks()
-						So(tasks, ShouldHaveLength, 2)
+						assert.Loosely(t, tasks, should.HaveLength(2))
 					})
 
-					Convey("duplicated task", func() {
+					t.Run("duplicated task", func(t *ftt.Test) {
 						infra.Proto.Swarming = &pb.BuildInfra_Swarming{
 							TaskId: "another",
 						}
-						So(datastore.Put(ctx, infra), ShouldBeNil)
+						assert.Loosely(t, datastore.Put(ctx, infra), should.BeNil)
 						_, err := srv.StartBuild(ctx, req)
-						So(err, ShouldErrLike, `build 87654321 has associated with task "another"`)
-						So(buildbucket.DuplicateTask.In(err), ShouldBeTrue)
+						assert.Loosely(t, err, should.ErrLike(`build 87654321 has associated with task "another"`))
+						assert.Loosely(t, buildbucket.DuplicateTask.In(err), should.BeTrue)
 
 						// TQ tasks for pubsub-notification.
 						tasks := sch.Tasks()
-						So(tasks, ShouldHaveLength, 0)
+						assert.Loosely(t, tasks, should.HaveLength(0))
 					})
 
-					Convey("build has started", func() {
+					t.Run("build has started", func(t *ftt.Test) {
 						infra.Proto.Swarming = &pb.BuildInfra_Swarming{
 							TaskId: req.TaskId,
 						}
 						build.Proto.Status = pb.Status_STARTED
-						So(datastore.Put(ctx, infra, build), ShouldBeNil)
+						assert.Loosely(t, datastore.Put(ctx, infra, build), should.BeNil)
 						res, err := srv.StartBuild(ctx, req)
-						So(err, ShouldBeNil)
-						So(res.UpdateBuildToken, ShouldEqual, build.UpdateToken)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, res.UpdateBuildToken, should.Equal(build.UpdateToken))
 						// TQ tasks for pubsub-notification.
 						tasks := sch.Tasks()
-						So(tasks, ShouldHaveLength, 0)
+						assert.Loosely(t, tasks, should.HaveLength(0))
 					})
 
-					Convey("build has ended", func() {
+					t.Run("build has ended", func(t *ftt.Test) {
 						infra.Proto.Swarming = &pb.BuildInfra_Swarming{
 							TaskId: req.TaskId,
 						}
 						build.Proto.Status = pb.Status_FAILURE
-						So(datastore.Put(ctx, infra, build), ShouldBeNil)
+						assert.Loosely(t, datastore.Put(ctx, infra, build), should.BeNil)
 						_, err := srv.StartBuild(ctx, req)
-						So(err, ShouldErrLike, `cannot start ended build`)
+						assert.Loosely(t, err, should.ErrLike(`cannot start ended build`))
 					})
 				})
 
-				Convey("subsequent StartBuild", func() {
-					Convey("duplicate task", func() {
+				t.Run("subsequent StartBuild", func(t *ftt.Test) {
+					t.Run("duplicate task", func(t *ftt.Test) {
 						build.StartBuildRequestID = "other request"
 						infra.Proto.Swarming = &pb.BuildInfra_Swarming{
 							TaskId: "another",
 						}
-						So(datastore.Put(ctx, []any{build, infra}), ShouldBeNil)
+						assert.Loosely(t, datastore.Put(ctx, []any{build, infra}), should.BeNil)
 
 						_, err := srv.StartBuild(ctx, req)
-						So(err, ShouldErrLike, `build 87654321 has recorded another StartBuild with request id "other request"`)
-						So(buildbucket.DuplicateTask.In(err), ShouldBeTrue)
+						assert.Loosely(t, err, should.ErrLike(`build 87654321 has recorded another StartBuild with request id "other request"`))
+						assert.Loosely(t, buildbucket.DuplicateTask.In(err), should.BeTrue)
 					})
 
-					Convey("task with collided request id", func() {
+					t.Run("task with collided request id", func(t *ftt.Test) {
 						build.StartBuildRequestID = req.RequestId
 						infra.Proto.Swarming = &pb.BuildInfra_Swarming{
 							TaskId: "another",
 						}
-						So(datastore.Put(ctx, []any{build, infra}), ShouldBeNil)
+						assert.Loosely(t, datastore.Put(ctx, []any{build, infra}), should.BeNil)
 
 						_, err := srv.StartBuild(ctx, req)
-						So(err, ShouldErrLike, `build 87654321 has associated with task id "another" with StartBuild request id "random"`)
-						So(buildbucket.TaskWithCollidedRequestID.In(err), ShouldBeTrue)
+						assert.Loosely(t, err, should.ErrLike(`build 87654321 has associated with task id "another" with StartBuild request id "random"`))
+						assert.Loosely(t, buildbucket.TaskWithCollidedRequestID.In(err), should.BeTrue)
 					})
 
-					Convey("idempotent", func() {
+					t.Run("idempotent", func(t *ftt.Test) {
 						build.StartBuildRequestID = req.RequestId
 						build.Proto.Status = pb.Status_STARTED
 						infra.Proto.Swarming = &pb.BuildInfra_Swarming{
 							TaskId: req.TaskId,
 						}
-						So(datastore.Put(ctx, []any{build, infra}), ShouldBeNil)
+						assert.Loosely(t, datastore.Put(ctx, []any{build, infra}), should.BeNil)
 
 						res, err := srv.StartBuild(ctx, req)
-						So(err, ShouldBeNil)
-						So(res.UpdateBuildToken, ShouldEqual, tk)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, res.UpdateBuildToken, should.Equal(tk))
 					})
 				})
 			})

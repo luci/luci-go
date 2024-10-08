@@ -21,12 +21,13 @@ import (
 
 	"google.golang.org/protobuf/encoding/prototext"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/monitor"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 var testContext context.Context
@@ -87,24 +88,24 @@ func getCurrentMetricsAndState(ctx context.Context) (map[pb.CustomMetricBase]map
 func TestWithCustomMetrics(t *testing.T) {
 	ctx, _ := tsmon.WithDummyInMemory(testContext)
 
-	Convey("WithCustomMetrics", t, func() {
+	ftt.Run("WithCustomMetrics", t, func(t *ftt.Test) {
 		globalCfg := &pb.SettingsCfg{}
 		_ = prototext.Unmarshal([]byte(cfgContent), globalCfg)
 
-		Convey("check metrics from test context", func() {
+		t.Run("check metrics from test context", func(t *ftt.Test) {
 			v2Custom, _ := getCurrentMetricsAndState(ctx)
 			startM := v2Custom[pb.CustomMetricBase_CUSTOM_METRIC_BASE_STARTED]["/chrome/infra/custom/builds/started"]
 			_, ok := startM.(*counter)
-			So(ok, ShouldBeTrue)
+			assert.Loosely(t, ok, should.BeTrue)
 			runDurationM := v2Custom[pb.CustomMetricBase_CUSTOM_METRIC_BASE_RUN_DURATIONS]["/chrome/infra/custom/builds/run_duration"]
 			_, ok = runDurationM.(*cumulativeDistribution)
-			So(ok, ShouldBeTrue)
+			assert.Loosely(t, ok, should.BeTrue)
 			maxAgeM := v2Custom[pb.CustomMetricBase_CUSTOM_METRIC_BASE_MAX_AGE_SCHEDULED]["/chrome/infra/custom/builds/max_age"]
 			_, ok = maxAgeM.(*float)
-			So(ok, ShouldBeTrue)
+			assert.Loosely(t, ok, should.BeTrue)
 			countM := v2Custom[pb.CustomMetricBase_CUSTOM_METRIC_BASE_COUNT]["/chrome/infra/custom/builds/count"]
 			_, ok = countM.(*int)
-			So(ok, ShouldBeTrue)
+			assert.Loosely(t, ok, should.BeTrue)
 		})
 	})
 }
@@ -112,11 +113,11 @@ func TestWithCustomMetrics(t *testing.T) {
 func TestUpdateCustomMetrics(t *testing.T) {
 	ctx, _ := tsmon.WithDummyInMemory(testContext)
 
-	Convey("Flush/report", t, func() {
+	ftt.Run("Flush/report", t, func(t *ftt.Test) {
 		ctx = resetCustomMetrics(ctx)
 		globalCfg := &pb.SettingsCfg{}
 		_ = prototext.Unmarshal([]byte(cfgContent), globalCfg)
-		Convey("normal report", func() {
+		t.Run("normal report", func(t *ftt.Test) {
 			cms := GetCustomMetrics(ctx)
 			// Normal report.
 			cms.Report(ctx, &Report{
@@ -128,7 +129,7 @@ func TestUpdateCustomMetrics(t *testing.T) {
 				Value: int64(1),
 			})
 			err := cms.Flush(ctx, globalCfg, monitor.NewNilMonitor())
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
 		flushAndMultiReports := func(globalCfg *pb.SettingsCfg, buffered *bool) {
@@ -166,18 +167,18 @@ func TestUpdateCustomMetrics(t *testing.T) {
 			wg.Wait()
 		}
 
-		Convey("normal report synced", func() {
+		t.Run("normal report synced", func(t *ftt.Test) {
 			oldCms := GetCustomMetrics(ctx)
 			oldState := oldCms.state
 
 			buffered := false
 			flushAndMultiReports(globalCfg, &buffered)
-			So(buffered, ShouldBeFalse)
+			assert.Loosely(t, buffered, should.BeFalse)
 			newCms := GetCustomMetrics(ctx)
-			So(newCms.state, ShouldEqual, oldState)
+			assert.Loosely(t, newCms.state, should.Equal(oldState))
 		})
 
-		Convey("with a metric updating extra_fields", func() {
+		t.Run("with a metric updating extra_fields", func(t *ftt.Test) {
 			oldCms := GetCustomMetrics(ctx)
 			oldState := oldCms.state
 
@@ -188,10 +189,10 @@ func TestUpdateCustomMetrics(t *testing.T) {
 			//So(buffered, ShouldBeTrue)
 			newCms := GetCustomMetrics(ctx)
 			newCms.m.RLock()
-			So(newCms.state, ShouldNotEqual, oldState)
+			assert.Loosely(t, newCms.state, should.NotEqual(oldState))
 			newCms.m.RUnlock()
-			So(len(oldCms.buf), ShouldEqual, 0)
-			So(len(newCms.buf), ShouldEqual, 0)
+			assert.Loosely(t, len(oldCms.buf), should.BeZero)
+			assert.Loosely(t, len(newCms.buf), should.BeZero)
 		})
 	})
 }

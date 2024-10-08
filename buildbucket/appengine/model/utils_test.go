@@ -18,10 +18,11 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 type testEntity struct {
@@ -32,76 +33,76 @@ type testEntity struct {
 func TestGetIgnoreMissing(t *testing.T) {
 	t.Parallel()
 
-	Convey("With datastore", t, func() {
+	ftt.Run("With datastore", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		datastore.GetTestable(ctx).AutoIndex(true)
 
 		for i := 1; i < 5; i++ {
-			So(datastore.Put(ctx, &testEntity{ID: i, Val: i}), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, &testEntity{ID: i, Val: i}), should.BeNil)
 		}
 
-		Convey("No missing", func() {
+		t.Run("No missing", func(t *ftt.Test) {
 			exists := testEntity{ID: 1}
-			So(GetIgnoreMissing(ctx, &exists), ShouldBeNil)
-			So(exists.Val, ShouldEqual, 1)
+			assert.Loosely(t, GetIgnoreMissing(ctx, &exists), should.BeNil)
+			assert.Loosely(t, exists.Val, should.Equal(1))
 		})
 
-		Convey("Scalar args", func() {
+		t.Run("Scalar args", func(t *ftt.Test) {
 			exists1 := testEntity{ID: 1}
 			exists2 := testEntity{ID: 2}
 			missing := testEntity{ID: 1000}
 
-			Convey("One", func() {
-				So(GetIgnoreMissing(ctx, &exists1), ShouldBeNil)
-				So(exists1.Val, ShouldEqual, 1)
+			t.Run("One", func(t *ftt.Test) {
+				assert.Loosely(t, GetIgnoreMissing(ctx, &exists1), should.BeNil)
+				assert.Loosely(t, exists1.Val, should.Equal(1))
 
-				So(GetIgnoreMissing(ctx, &missing), ShouldBeNil)
-				So(missing.Val, ShouldEqual, 0)
+				assert.Loosely(t, GetIgnoreMissing(ctx, &missing), should.BeNil)
+				assert.Loosely(t, missing.Val, should.BeZero)
 			})
 
-			Convey("Many", func() {
-				So(GetIgnoreMissing(ctx, &exists1, &missing, &exists2), ShouldBeNil)
-				So(exists1.Val, ShouldEqual, 1)
-				So(missing.Val, ShouldEqual, 0)
-				So(exists2.Val, ShouldEqual, 2)
+			t.Run("Many", func(t *ftt.Test) {
+				assert.Loosely(t, GetIgnoreMissing(ctx, &exists1, &missing, &exists2), should.BeNil)
+				assert.Loosely(t, exists1.Val, should.Equal(1))
+				assert.Loosely(t, missing.Val, should.BeZero)
+				assert.Loosely(t, exists2.Val, should.Equal(2))
 			})
 		})
 
-		Convey("Vector args", func() {
-			Convey("One", func() {
+		t.Run("Vector args", func(t *ftt.Test) {
+			t.Run("One", func(t *ftt.Test) {
 				ents := []testEntity{{ID: 1}, {ID: 1000}, {ID: 2}}
 
-				So(GetIgnoreMissing(ctx, ents), ShouldBeNil)
-				So(ents[0].Val, ShouldEqual, 1)
-				So(ents[1].Val, ShouldEqual, 0)
-				So(ents[2].Val, ShouldEqual, 2)
+				assert.Loosely(t, GetIgnoreMissing(ctx, ents), should.BeNil)
+				assert.Loosely(t, ents[0].Val, should.Equal(1))
+				assert.Loosely(t, ents[1].Val, should.BeZero)
+				assert.Loosely(t, ents[2].Val, should.Equal(2))
 			})
 
-			Convey("Many", func() {
+			t.Run("Many", func(t *ftt.Test) {
 				ents1 := []testEntity{{ID: 1}, {ID: 1000}, {ID: 2}}
 				ents2 := []testEntity{{ID: 3}, {ID: 1001}, {ID: 4}}
 
-				So(GetIgnoreMissing(ctx, ents1, ents2), ShouldBeNil)
-				So(ents1[0].Val, ShouldEqual, 1)
-				So(ents1[1].Val, ShouldEqual, 0)
-				So(ents1[2].Val, ShouldEqual, 2)
-				So(ents2[0].Val, ShouldEqual, 3)
-				So(ents2[1].Val, ShouldEqual, 0)
-				So(ents2[2].Val, ShouldEqual, 4)
+				assert.Loosely(t, GetIgnoreMissing(ctx, ents1, ents2), should.BeNil)
+				assert.Loosely(t, ents1[0].Val, should.Equal(1))
+				assert.Loosely(t, ents1[1].Val, should.BeZero)
+				assert.Loosely(t, ents1[2].Val, should.Equal(2))
+				assert.Loosely(t, ents2[0].Val, should.Equal(3))
+				assert.Loosely(t, ents2[1].Val, should.BeZero)
+				assert.Loosely(t, ents2[2].Val, should.Equal(4))
 			})
 		})
 
-		Convey("Mixed args", func() {
+		t.Run("Mixed args", func(t *ftt.Test) {
 			exists := testEntity{ID: 1}
 			missing := testEntity{ID: 1000}
 			ents := []testEntity{{ID: 3}, {ID: 1001}, {ID: 4}}
 
-			So(GetIgnoreMissing(ctx, &exists, &missing, ents), ShouldBeNil)
-			So(exists.Val, ShouldEqual, 1)
-			So(missing.Val, ShouldEqual, 0)
-			So(ents[0].Val, ShouldEqual, 3)
-			So(ents[1].Val, ShouldEqual, 0)
-			So(ents[2].Val, ShouldEqual, 4)
+			assert.Loosely(t, GetIgnoreMissing(ctx, &exists, &missing, ents), should.BeNil)
+			assert.Loosely(t, exists.Val, should.Equal(1))
+			assert.Loosely(t, missing.Val, should.BeZero)
+			assert.Loosely(t, ents[0].Val, should.Equal(3))
+			assert.Loosely(t, ents[1].Val, should.BeZero)
+			assert.Loosely(t, ents[2].Val, should.Equal(4))
 		})
 	})
 }

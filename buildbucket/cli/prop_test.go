@@ -20,9 +20,9 @@ import (
 
 	"google.golang.org/protobuf/types/known/structpb"
 
-	. "github.com/smartystreets/goconvey/convey"
-
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func mustStruct(data map[string]any) *structpb.Struct {
@@ -36,68 +36,68 @@ func mustStruct(data map[string]any) *structpb.Struct {
 func TestPropertiesFlag(t *testing.T) {
 	t.Parallel()
 
-	Convey("PropertieFlag", t, func() {
+	ftt.Run("PropertieFlag", t, func(t *ftt.Test) {
 		props := &structpb.Struct{}
 		f := PropertiesFlag(props)
 
-		Convey("File", func() {
+		t.Run("File", func(t *ftt.Test) {
 			file, err := ioutil.TempFile("", "")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			defer file.Close()
 
 			_, err = file.WriteString(`{
 				"in-file-1": "orig",
 				"in-file-2": "orig"
 			}`)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(f.Set("@"+file.Name()), ShouldBeNil)
+			assert.Loosely(t, f.Set("@"+file.Name()), should.BeNil)
 
-			So(props, ShouldResembleProto, mustStruct(map[string]any{
+			assert.Loosely(t, props, should.Resemble(mustStruct(map[string]any{
 				"in-file-1": "orig",
 				"in-file-2": "orig",
-			}))
+			})))
 
-			Convey("Override", func() {
-				So(f.Set("in-file-2=override"), ShouldBeNil)
-				So(props, ShouldResembleProto, mustStruct(map[string]any{
+			t.Run("Override", func(t *ftt.Test) {
+				assert.Loosely(t, f.Set("in-file-2=override"), should.BeNil)
+				assert.Loosely(t, props, should.Resemble(mustStruct(map[string]any{
 					"in-file-1": "orig",
 					"in-file-2": "override",
-				}))
+				})))
 
-				So(f.Set("a=b"), ShouldBeNil)
-				So(props, ShouldResembleProto, mustStruct(map[string]any{
+				assert.Loosely(t, f.Set("a=b"), should.BeNil)
+				assert.Loosely(t, props, should.Resemble(mustStruct(map[string]any{
 					"in-file-1": "orig",
 					"in-file-2": "override",
 					"a":         "b",
-				}))
+				})))
 			})
 		})
 
-		Convey("Name=Value", func() {
-			So(f.Set("foo=bar"), ShouldBeNil)
-			So(props, ShouldResembleProto, mustStruct(map[string]any{
+		t.Run("Name=Value", func(t *ftt.Test) {
+			assert.Loosely(t, f.Set("foo=bar"), should.BeNil)
+			assert.Loosely(t, props, should.Resemble(mustStruct(map[string]any{
 				"foo": "bar",
-			}))
+			})))
 
-			Convey("JSON", func() {
-				So(f.Set("array=[1]"), ShouldBeNil)
-				So(props, ShouldResembleProto, mustStruct(map[string]any{
+			t.Run("JSON", func(t *ftt.Test) {
+				assert.Loosely(t, f.Set("array=[1]"), should.BeNil)
+				assert.Loosely(t, props, should.Resemble(mustStruct(map[string]any{
 					"foo":   "bar",
 					"array": []any{1},
-				}))
+				})))
 			})
 
-			Convey("Trims spaces", func() {
-				So(f.Set("array = [1]"), ShouldBeNil)
-				So(props, ShouldResembleProto, mustStruct(map[string]any{
+			t.Run("Trims spaces", func(t *ftt.Test) {
+				assert.Loosely(t, f.Set("array = [1]"), should.BeNil)
+				assert.Loosely(t, props, should.Resemble(mustStruct(map[string]any{
 					"foo":   "bar",
 					"array": []any{1},
-				}))
+				})))
 			})
 
-			Convey("Dup", func() {
-				So(f.Set("foo=bar"), ShouldErrLike, `duplicate property "foo`)
+			t.Run("Dup", func(t *ftt.Test) {
+				assert.Loosely(t, f.Set("foo=bar"), should.ErrLike(`duplicate property "foo`))
 			})
 		})
 	})

@@ -19,28 +19,29 @@ import (
 
 	"google.golang.org/protobuf/types/known/structpb"
 
-	pb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
 func TestBuildCEL(t *testing.T) {
 	t.Parallel()
 
-	Convey("Bool", t, func() {
-		Convey("fail", func() {
-			Convey("empty predicates", func() {
+	ftt.Run("Bool", t, func(t *ftt.Test) {
+		t.Run("fail", func(t *ftt.Test) {
+			t.Run("empty predicates", func(t *ftt.Test) {
 				_, err := NewBool([]string{})
-				So(err, ShouldErrLike, "predicates are required")
+				assert.Loosely(t, err, should.ErrLike("predicates are required"))
 			})
-			Convey("wrong build field", func() {
+			t.Run("wrong build field", func(t *ftt.Test) {
 				_, err := NewBool([]string{`has(build.tags)`, `has(build.random)`})
-				So(err, ShouldNotBeNil)
+				assert.Loosely(t, err, should.NotBeNil)
 			})
 		})
 
-		Convey("work", func() {
+		t.Run("work", func(t *ftt.Test) {
 			predicates := []string{
 				`(has(build.tags)||(has(build.input)))`,
 				`has(build.input.properties.pro_key)`,
@@ -48,13 +49,13 @@ func TestBuildCEL(t *testing.T) {
 				`string(build.output.properties.out_key) == "out_val"`,
 			}
 
-			Convey("not match", func() {
+			t.Run("not match", func(t *ftt.Test) {
 				pass, err := BoolEval(&pb.Build{}, predicates)
-				So(err, ShouldBeNil)
-				So(pass, ShouldBeFalse)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, pass, should.BeFalse)
 			})
 
-			Convey("partial match", func() {
+			t.Run("partial match", func(t *ftt.Test) {
 				b := &pb.Build{
 					Input: &pb.Build_Input{
 						Properties: &structpb.Struct{
@@ -75,11 +76,11 @@ func TestBuildCEL(t *testing.T) {
 					},
 				}
 				pass, err := BoolEval(b, predicates)
-				So(err, ShouldBeNil)
-				So(pass, ShouldBeFalse)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, pass, should.BeFalse)
 			})
 
-			Convey("pass", func() {
+			t.Run("pass", func(t *ftt.Test) {
 				b := &pb.Build{
 					Input: &pb.Build_Input{
 						Properties: &structpb.Struct{
@@ -108,52 +109,52 @@ func TestBuildCEL(t *testing.T) {
 					},
 				}
 				pass, err := BoolEval(b, predicates)
-				So(err, ShouldBeNil)
-				So(pass, ShouldBeTrue)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, pass, should.BeTrue)
 			})
 		})
 	})
 
-	Convey("StringMap", t, func() {
-		Convey("fail", func() {
-			Convey("string unrecognized", func() {
+	ftt.Run("StringMap", t, func(t *ftt.Test) {
+		t.Run("fail", func(t *ftt.Test) {
+			t.Run("string unrecognized", func(t *ftt.Test) {
 				_, err := NewStringMap(map[string]string{
 					"b": `random_string_literal`,
 				})
-				So(err, ShouldNotBeNil)
+				assert.Loosely(t, err, should.NotBeNil)
 			})
-			Convey("type unmatched", func() {
+			t.Run("type unmatched", func(t *ftt.Test) {
 				_, err := NewStringMap(map[string]string{
 					"b": `build.tags`,
 				})
-				So(err, ShouldNotBeNil)
+				assert.Loosely(t, err, should.NotBeNil)
 			})
 		})
-		Convey("empty", func() {
+		t.Run("empty", func(t *ftt.Test) {
 			smbc, err := NewStringMap(map[string]string{
 				"a": `build.summary_markdown`,
 				"b": `"random_string_literal"`,
 				"c": `build.cancellation_markdown`,
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			out, err := smbc.Eval(&pb.Build{})
 			expected := map[string]string{
 				"a": "",
 				"b": "random_string_literal",
 				"c": "",
 			}
-			So(err, ShouldBeNil)
-			So(out, ShouldResemble, expected)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, out, should.Resemble(expected))
 		})
-		Convey("missing struct key", func() {
+		t.Run("missing struct key", func(t *ftt.Test) {
 			smbc, err := NewStringMap(map[string]string{
 				"d": `string(build.input.properties.key)`,
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			_, err = smbc.Eval(&pb.Build{})
-			So(err, ShouldErrLike, "no such key: key")
+			assert.Loosely(t, err, should.ErrLike("no such key: key"))
 		})
-		Convey("work", func() {
+		t.Run("work", func(t *ftt.Test) {
 			fields := map[string]string{
 				"a": `build.summary_markdown`,
 				"b": `"random_string_literal"`,
@@ -188,19 +189,19 @@ func TestBuildCEL(t *testing.T) {
 				"d": "value",
 			}
 			out, err := StringMapEval(b, fields)
-			So(err, ShouldBeNil)
-			So(out, ShouldResemble, expected)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, out, should.Resemble(expected))
 		})
 	})
 
-	Convey("tags", t, func() {
-		Convey("tag exists", func() {
+	ftt.Run("tags", t, func(t *ftt.Test) {
+		t.Run("tag exists", func(t *ftt.Test) {
 			bbc, err := NewBool([]string{
 				`build.tags.exists(t, t.key=="os")`,
 				`build.tags.get_value("os")!=""`,
 			})
-			So(err, ShouldBeNil)
-			Convey("not matched", func() {
+			assert.Loosely(t, err, should.BeNil)
+			t.Run("not matched", func(t *ftt.Test) {
 				b := &pb.Build{
 					Tags: []*pb.StringPair{
 						{
@@ -210,10 +211,10 @@ func TestBuildCEL(t *testing.T) {
 					},
 				}
 				pass, err := bbc.Eval(b)
-				So(err, ShouldBeNil)
-				So(pass, ShouldBeFalse)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, pass, should.BeFalse)
 			})
-			Convey("matched", func() {
+			t.Run("matched", func(t *ftt.Test) {
 				b := &pb.Build{
 					Tags: []*pb.StringPair{
 						{
@@ -223,14 +224,14 @@ func TestBuildCEL(t *testing.T) {
 					},
 				}
 				pass, err := bbc.Eval(b)
-				So(err, ShouldBeNil)
-				So(pass, ShouldBeTrue)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, pass, should.BeTrue)
 			})
 		})
-		Convey("get_value", func() {
+		t.Run("get_value", func(t *ftt.Test) {
 			bbc, err := NewStringMap(map[string]string{"os": `build.tags.get_value("os")`})
-			So(err, ShouldBeNil)
-			Convey("not found", func() {
+			assert.Loosely(t, err, should.BeNil)
+			t.Run("not found", func(t *ftt.Test) {
 				b := &pb.Build{
 					Tags: []*pb.StringPair{
 						{
@@ -240,10 +241,10 @@ func TestBuildCEL(t *testing.T) {
 					},
 				}
 				res, err := bbc.Eval(b)
-				So(err, ShouldBeNil)
-				So(res, ShouldResemble, map[string]string{"os": ""})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res, should.Resemble(map[string]string{"os": ""}))
 			})
-			Convey("found", func() {
+			t.Run("found", func(t *ftt.Test) {
 				b := &pb.Build{
 					Tags: []*pb.StringPair{
 						{
@@ -253,22 +254,22 @@ func TestBuildCEL(t *testing.T) {
 					},
 				}
 				res, err := bbc.Eval(b)
-				So(err, ShouldBeNil)
-				So(res, ShouldResemble, map[string]string{"os": "Mac"})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res, should.Resemble(map[string]string{"os": "Mac"}))
 			})
 		})
 	})
 
-	Convey("experments", t, func() {
+	ftt.Run("experments", t, func(t *ftt.Test) {
 		bbc, err := NewStringMap(map[string]string{"experiments": `build.input.experiments.to_string()`})
-		So(err, ShouldBeNil)
-		Convey("not found", func() {
+		assert.Loosely(t, err, should.BeNil)
+		t.Run("not found", func(t *ftt.Test) {
 			b := &pb.Build{}
 			res, err := bbc.Eval(b)
-			So(err, ShouldBeNil)
-			So(res, ShouldResemble, map[string]string{"experiments": "None"})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(map[string]string{"experiments": "None"}))
 		})
-		Convey("found", func() {
+		t.Run("found", func(t *ftt.Test) {
 			b := &pb.Build{
 				Input: &pb.Build_Input{
 					Experiments: []string{
@@ -278,32 +279,32 @@ func TestBuildCEL(t *testing.T) {
 				},
 			}
 			res, err := bbc.Eval(b)
-			So(err, ShouldBeNil)
-			So(res, ShouldResemble, map[string]string{"experiments": "luci.buildbucket.exp1|luci.buildbucket.exp2"})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(map[string]string{"experiments": "luci.buildbucket.exp1|luci.buildbucket.exp2"}))
 		})
 	})
 
-	Convey("status", t, func() {
-		Convey("status match", func() {
+	ftt.Run("status", t, func(t *ftt.Test) {
+		t.Run("status match", func(t *ftt.Test) {
 			b := &pb.Build{
 				Status: pb.Status_SUCCESS,
 			}
 			matched, err := BoolEval(b, []string{`build.status.to_string()=="SUCCESS"`})
-			So(err, ShouldBeNil)
-			So(matched, ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, matched, should.BeTrue)
 
 			matched, err = BoolEval(b, []string{`build.status.to_string()=="INFRA_FAILURE"`})
-			So(err, ShouldBeNil)
-			So(matched, ShouldBeFalse)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, matched, should.BeFalse)
 		})
 
-		Convey("get status", func() {
+		t.Run("get status", func(t *ftt.Test) {
 			b := &pb.Build{
 				Status: pb.Status_SUCCESS,
 			}
 			res, err := StringMapEval(b, map[string]string{"status": `build.status.to_string()`})
-			So(err, ShouldBeNil)
-			So(res, ShouldResemble, map[string]string{"status": "SUCCESS"})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(map[string]string{"status": "SUCCESS"}))
 		})
 	})
 }

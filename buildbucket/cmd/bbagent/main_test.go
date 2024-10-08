@@ -21,17 +21,18 @@ import (
 	"path/filepath"
 	"testing"
 
-	"go.chromium.org/luci/buildbucket"
-	bbpb "go.chromium.org/luci/buildbucket/proto"
-	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging/memlogger"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/lucictx"
 	"go.chromium.org/luci/luciexe"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/buildbucket"
+	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/buildbucket/protoutil"
 )
 
 func TestReadyToFinalize(t *testing.T) {
@@ -40,22 +41,22 @@ func TestReadyToFinalize(t *testing.T) {
 	outputFlag := luciexe.AddOutputFlagToSet(&flag.FlagSet{})
 	finalBuild := &bbpb.Build{}
 
-	Convey("Ready to finalize: success", t, func() {
+	ftt.Run("Ready to finalize: success", t, func(t *ftt.Test) {
 		isReady := readyToFinalize(ctx, finalBuild, nil, nil, outputFlag)
-		So(isReady, ShouldEqual, true)
+		assert.Loosely(t, isReady, should.Equal(true))
 
 	})
 
-	Convey("Not ready to finalize: fatal error not nil", t, func() {
+	ftt.Run("Not ready to finalize: fatal error not nil", t, func(t *ftt.Test) {
 		isReady := readyToFinalize(ctx, finalBuild, errors.New("Fatal Error Happened"), nil, outputFlag)
-		So(isReady, ShouldEqual, false)
+		assert.Loosely(t, isReady, should.Equal(false))
 
 	})
 }
 
 func TestBackFillTaskInfo(t *testing.T) {
 	t.Parallel()
-	Convey("backFillTaskInfo", t, func() {
+	ftt.Run("backFillTaskInfo", t, func(t *ftt.Test) {
 		ctx := lucictx.SetSwarming(context.Background(), &lucictx.Swarming{
 			Task: &lucictx.Task{
 				BotDimensions: []string{
@@ -67,7 +68,7 @@ func TestBackFillTaskInfo(t *testing.T) {
 			},
 		})
 
-		Convey("swarming", func() {
+		t.Run("swarming", func(t *ftt.Test) {
 			build := &bbpb.Build{
 				Infra: &bbpb.BuildInfra{
 					Swarming: &bbpb.BuildInfra_Swarming{},
@@ -75,8 +76,8 @@ func TestBackFillTaskInfo(t *testing.T) {
 			}
 			input := clientInput{input: &bbpb.BBAgentArgs{Build: build}}
 
-			So(backFillTaskInfo(ctx, input), ShouldEqual, 0)
-			So(build.Infra.Swarming.BotDimensions, ShouldResembleProto, []*bbpb.StringPair{
+			assert.Loosely(t, backFillTaskInfo(ctx, input), should.BeZero)
+			assert.Loosely(t, build.Infra.Swarming.BotDimensions, should.Resemble([]*bbpb.StringPair{
 				{
 					Key:   "cpu",
 					Value: "x86",
@@ -93,31 +94,31 @@ func TestBackFillTaskInfo(t *testing.T) {
 					Key:   "gcp",
 					Value: "google.com:chromecompute",
 				},
-			})
+			}))
 		})
 
-		Convey("backend", func() {
+		t.Run("backend", func(t *ftt.Test) {
 			build := &bbpb.Build{
 				Infra: &bbpb.BuildInfra{
 					Backend: &bbpb.BuildInfra_Backend{},
 				},
 			}
 			input := clientInput{input: &bbpb.BBAgentArgs{Build: build}}
-			Convey("fail", func() {
-				So(backFillTaskInfo(ctx, input), ShouldEqual, 1)
+			t.Run("fail", func(t *ftt.Test) {
+				assert.Loosely(t, backFillTaskInfo(ctx, input), should.Equal(1))
 			})
 
-			Convey("pass", func() {
+			t.Run("pass", func(t *ftt.Test) {
 				build.Infra.Backend.Task = &bbpb.Task{
 					Id: &bbpb.TaskID{
 						Id:     "id",
 						Target: "swarming://target",
 					},
 				}
-				So(backFillTaskInfo(ctx, input), ShouldEqual, 0)
+				assert.Loosely(t, backFillTaskInfo(ctx, input), should.BeZero)
 				actual, err := protoutil.BotDimensionsFromBackend(build)
-				So(err, ShouldBeNil)
-				So(actual, ShouldResembleProto, []*bbpb.StringPair{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, actual, should.Resemble([]*bbpb.StringPair{
 					{
 						Key:   "cpu",
 						Value: "x86",
@@ -134,7 +135,7 @@ func TestBackFillTaskInfo(t *testing.T) {
 						Key:   "id",
 						Value: "bot_id",
 					},
-				})
+				}))
 			})
 		})
 	})
@@ -184,8 +185,8 @@ func TestDownloadInputs(t *testing.T) {
 		CancelTime: nil,
 	}
 
-	Convey("downloadCipdPackages", t, func(c C) {
-		Convey("success", func() {
+	ftt.Run("downloadCipdPackages", t, func(c *ftt.Test) {
+		c.Run("success", func(c *ftt.Test) {
 			testCase = "success"
 
 			ctx := memory.Use(context.Background())
@@ -198,30 +199,30 @@ func TestDownloadInputs(t *testing.T) {
 			input := &bbpb.BBAgentArgs{Build: build}
 			rc := downloadInputs(ctx, tempDir, "cache", clientInput{bbclient, input})
 
-			So(rc, ShouldEqual, 0)
-			So(len(bbclient.requests), ShouldEqual, 2)
-			So(bbclient.requests[0].Build.Infra.Buildbucket.Agent.Output.Status, ShouldEqual, bbpb.Status_STARTED)
-			So(bbclient.requests[1].Build.Infra.Buildbucket.Agent.Output.Status, ShouldEqual, bbpb.Status_SUCCESS)
+			assert.Loosely(c, rc, should.BeZero)
+			assert.Loosely(c, len(bbclient.requests), should.Equal(2))
+			assert.Loosely(c, bbclient.requests[0].Build.Infra.Buildbucket.Agent.Output.Status, should.Equal(bbpb.Status_STARTED))
+			assert.Loosely(c, bbclient.requests[1].Build.Infra.Buildbucket.Agent.Output.Status, should.Equal(bbpb.Status_SUCCESS))
 		})
 	})
 
 }
 
 func TestStartBuild(t *testing.T) {
-	Convey("startBuild", t, func() {
+	ftt.Run("startBuild", t, func(t *ftt.Test) {
 		ctx := context.Background()
-		Convey("pass", func() {
+		t.Run("pass", func(t *ftt.Test) {
 			bbclient := &testBBClient{}
 			res, err := startBuild(ctx, bbclient, 87654321, "pass")
-			So(err, ShouldBeNil)
-			So(res, ShouldNotBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.NotBeNil)
 		})
 
-		Convey("duplicate", func() {
+		t.Run("duplicate", func(t *ftt.Test) {
 			bbclient := &testBBClient{}
 			res, err := startBuild(ctx, bbclient, 87654321, "duplicate")
-			So(res, ShouldBeNil)
-			So(buildbucket.DuplicateTask.In(err), ShouldBeTrue)
+			assert.Loosely(t, res, should.BeNil)
+			assert.Loosely(t, buildbucket.DuplicateTask.In(err), should.BeTrue)
 		})
 	})
 }
@@ -232,27 +233,27 @@ func TestChooseCacheDir(t *testing.T) {
 		CacheDir: "inputCacheDir",
 	}
 
-	Convey("use input.CacheDir no backend", t, func() {
+	ftt.Run("use input.CacheDir no backend", t, func(t *ftt.Test) {
 		cacheDir := chooseCacheDir(input, "")
-		So(cacheDir, ShouldEqual, "inputCacheDir")
+		assert.Loosely(t, cacheDir, should.Equal("inputCacheDir"))
 
 	})
 
-	Convey("use input.CacheDir backend exists", t, func() {
+	ftt.Run("use input.CacheDir backend exists", t, func(t *ftt.Test) {
 		input.Build.Infra = &bbpb.BuildInfra{
 			Backend: &bbpb.BuildInfra_Backend{},
 		}
 		cacheDir := chooseCacheDir(input, "")
-		So(cacheDir, ShouldEqual, "inputCacheDir")
+		assert.Loosely(t, cacheDir, should.Equal("inputCacheDir"))
 
 	})
 
-	Convey("use cache-base flag backend exists", t, func() {
+	ftt.Run("use cache-base flag backend exists", t, func(t *ftt.Test) {
 		input.Build.Infra = &bbpb.BuildInfra{
 			Backend: &bbpb.BuildInfra_Backend{},
 		}
 		cacheDir := chooseCacheDir(input, "cache")
-		So(cacheDir, ShouldEqual, "cache")
+		assert.Loosely(t, cacheDir, should.Equal("cache"))
 
 	})
 }

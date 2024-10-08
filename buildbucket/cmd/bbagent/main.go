@@ -27,6 +27,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"os/exec"
 	"path"
@@ -37,9 +38,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"net/http"
-	_ "net/http/pprof"
-
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
@@ -48,10 +46,6 @@ import (
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"go.chromium.org/luci/buildbucket"
-	"go.chromium.org/luci/buildbucket/cmd/bbagent/bbinput"
-	bbpb "go.chromium.org/luci/buildbucket/proto"
-	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/cipd/client/cipd/platform"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
@@ -66,6 +60,13 @@ import (
 	"go.chromium.org/luci/luciexe"
 	"go.chromium.org/luci/luciexe/host"
 	"go.chromium.org/luci/luciexe/invoke"
+
+	"go.chromium.org/luci/buildbucket"
+	"go.chromium.org/luci/buildbucket/cmd/bbagent/bbinput"
+	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/buildbucket/protoutil"
+
+	_ "net/http/pprof"
 )
 
 type closeOnceCh struct {

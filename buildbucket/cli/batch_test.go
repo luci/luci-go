@@ -22,17 +22,17 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/common/proto"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
+	"go.chromium.org/luci/buildbucket"
 	pb "go.chromium.org/luci/buildbucket/proto"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestSendBatchReq(t *testing.T) {
-	Convey("SendBatchReq", t, func() {
+	ftt.Run("SendBatchReq", t, func(t *ftt.Test) {
 		ctl := gomock.NewController(t)
 		defer ctl.Finish()
 		mockBBClient := pb.NewMockBuildsClient(ctl)
@@ -48,7 +48,7 @@ func TestSendBatchReq(t *testing.T) {
 			Input: &pb.Build_Input{},
 		}
 
-		Convey("success", func() {
+		t.Run("success", func(t *ftt.Test) {
 			req := &pb.BatchRequest{
 				Requests: []*pb.BatchRequest_Request{
 					{Request: &pb.BatchRequest_Request_ScheduleBuild{
@@ -65,11 +65,11 @@ func TestSendBatchReq(t *testing.T) {
 			}
 			mockBBClient.EXPECT().Batch(ctx, req).Return(expectedRes, nil)
 			res, err := sendBatchReq(ctx, req, mockBBClient)
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, expectedRes)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(expectedRes))
 		})
 
-		Convey("sub-requests transient errors", func() {
+		t.Run("sub-requests transient errors", func(t *ftt.Test) {
 			req := &pb.BatchRequest{
 				Requests: []*pb.BatchRequest_Request{
 					{Request: &pb.BatchRequest_Request_ScheduleBuild{
@@ -152,13 +152,13 @@ func TestSendBatchReq(t *testing.T) {
 				},
 			}, nil)
 			res, err := sendBatchReq(ctx, req, mockBBClient)
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, expectedRes)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(expectedRes))
 		})
 	})
-	Convey("updateRequest", t, func() {
+	ftt.Run("updateRequest", t, func(t *ftt.Test) {
 		ctx := context.Background()
-		Convey("updateRequest if dummy token", func() {
+		t.Run("updateRequest if dummy token", func(t *ftt.Test) {
 			req := &pb.BatchRequest{
 				Requests: []*pb.BatchRequest_Request{
 					{Request: &pb.BatchRequest_Request_ScheduleBuild{
@@ -169,9 +169,9 @@ func TestSendBatchReq(t *testing.T) {
 				},
 			}
 			updateRequest(ctx, req, buildbucket.DummyBuildbucketToken)
-			So(req.Requests[0].GetScheduleBuild().CanOutliveParent, ShouldEqual, pb.Trinary_UNSET)
+			assert.Loosely(t, req.Requests[0].GetScheduleBuild().CanOutliveParent, should.Equal(pb.Trinary_UNSET))
 		})
-		Convey("updateRequest if empty token", func() {
+		t.Run("updateRequest if empty token", func(t *ftt.Test) {
 			req := &pb.BatchRequest{
 				Requests: []*pb.BatchRequest_Request{
 					{Request: &pb.BatchRequest_Request_ScheduleBuild{
@@ -182,9 +182,9 @@ func TestSendBatchReq(t *testing.T) {
 				},
 			}
 			updateRequest(ctx, req, "")
-			So(req.Requests[0].GetScheduleBuild().CanOutliveParent, ShouldEqual, pb.Trinary_YES)
+			assert.Loosely(t, req.Requests[0].GetScheduleBuild().CanOutliveParent, should.Equal(pb.Trinary_YES))
 		})
-		Convey("updateRequest if real token", func() {
+		t.Run("updateRequest if real token", func(t *ftt.Test) {
 			req := &pb.BatchRequest{
 				Requests: []*pb.BatchRequest_Request{
 					{Request: &pb.BatchRequest_Request_ScheduleBuild{
@@ -195,7 +195,7 @@ func TestSendBatchReq(t *testing.T) {
 				},
 			}
 			updateRequest(ctx, req, "real token")
-			So(req.Requests[0].GetScheduleBuild().CanOutliveParent, ShouldEqual, pb.Trinary_YES)
+			assert.Loosely(t, req.Requests[0].GetScheduleBuild().CanOutliveParent, should.Equal(pb.Trinary_YES))
 		})
 	})
 }

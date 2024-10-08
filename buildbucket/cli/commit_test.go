@@ -17,109 +17,110 @@ package cli
 import (
 	"testing"
 
-	pb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
 func TestParseCommit(t *testing.T) {
-	Convey("ParseCommit", t, func() {
+	ftt.Run("ParseCommit", t, func(t *ftt.Test) {
 
-		Convey("https://chromium.googlesource.com/infra/luci/luci-go/+/7a63166bfab5de38ddb2cb8e29aca756bdc2a28d", func() {
+		t.Run("https://chromium.googlesource.com/infra/luci/luci-go/+/7a63166bfab5de38ddb2cb8e29aca756bdc2a28d", func(t *ftt.Test) {
 			actual, confirm, err := parseCommit("https://chromium.googlesource.com/infra/luci/luci-go/+/7a63166bfab5de38ddb2cb8e29aca756bdc2a28d")
-			So(err, ShouldBeNil)
-			So(confirm, ShouldBeFalse)
-			So(actual, ShouldResembleProto, &pb.GitilesCommit{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, confirm, should.BeFalse)
+			assert.Loosely(t, actual, should.Resemble(&pb.GitilesCommit{
 				Host:    "chromium.googlesource.com",
 				Project: "infra/luci/luci-go",
 				Ref:     "",
 				Id:      "7a63166bfab5de38ddb2cb8e29aca756bdc2a28d",
-			})
+			}))
 		})
 
-		Convey("https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/x", func() {
+		t.Run("https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/x", func(t *ftt.Test) {
 			actual, confirm, err := parseCommit("https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/x")
-			So(err, ShouldBeNil)
-			So(confirm, ShouldBeFalse)
-			So(actual, ShouldResembleProto, &pb.GitilesCommit{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, confirm, should.BeFalse)
+			assert.Loosely(t, actual, should.Resemble(&pb.GitilesCommit{
 				Host:    "chromium.googlesource.com",
 				Project: "infra/luci/luci-go",
 				Ref:     "refs/heads/x",
 				Id:      "",
-			})
+			}))
 		})
 
-		Convey("https://chromium.googlesource.com/infra/luci/luci-go/+/refs/tags/10.0.1", func() {
+		t.Run("https://chromium.googlesource.com/infra/luci/luci-go/+/refs/tags/10.0.1", func(t *ftt.Test) {
 			actual, confirm, err := parseCommit("https://chromium.googlesource.com/infra/luci/luci-go/+/refs/tags/10.0.1")
-			So(err, ShouldBeNil)
-			So(confirm, ShouldBeTrue)
-			So(actual, ShouldResembleProto, &pb.GitilesCommit{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, confirm, should.BeTrue)
+			assert.Loosely(t, actual, should.Resemble(&pb.GitilesCommit{
 				Host:    "chromium.googlesource.com",
 				Project: "infra/luci/luci-go",
 				Ref:     "refs/tags/10.0.1",
 				Id:      "",
-			})
+			}))
 		})
 
-		Convey("https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/x/y", func() {
+		t.Run("https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/x/y", func(t *ftt.Test) {
 			actual, confirm, err := parseCommit("https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/x/y")
-			So(err, ShouldBeNil)
-			So(confirm, ShouldBeTrue)
-			So(actual, ShouldResembleProto, &pb.GitilesCommit{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, confirm, should.BeTrue)
+			assert.Loosely(t, actual, should.Resemble(&pb.GitilesCommit{
 				Host:    "chromium.googlesource.com",
 				Project: "infra/luci/luci-go",
 				Ref:     "refs/heads/x",
 				Id:      "",
-			})
+			}))
 		})
 
-		Convey("https://chromium.googlesource.com/infra/luci/luci-go/+/refs/branch-heads/x", func() {
+		t.Run("https://chromium.googlesource.com/infra/luci/luci-go/+/refs/branch-heads/x", func(t *ftt.Test) {
 			actual, confirm, err := parseCommit("https://chromium.googlesource.com/infra/luci/luci-go/+/refs/branch-heads/x")
-			So(err, ShouldBeNil)
-			So(confirm, ShouldBeTrue)
-			So(actual, ShouldResembleProto, &pb.GitilesCommit{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, confirm, should.BeTrue)
+			assert.Loosely(t, actual, should.Resemble(&pb.GitilesCommit{
 				Host:    "chromium.googlesource.com",
 				Project: "infra/luci/luci-go",
 				Ref:     "refs/branch-heads/x",
 				Id:      "",
-			})
+			}))
 		})
 
-		Convey("https://chromium.googlesource.com/infra/luci/luci-go/+/main", func() {
+		t.Run("https://chromium.googlesource.com/infra/luci/luci-go/+/main", func(t *ftt.Test) {
 			actual, confirm, err := parseCommit("https://chromium.googlesource.com/infra/luci/luci-go/+/main")
-			So(err, ShouldBeNil)
-			So(confirm, ShouldBeTrue)
-			So(actual, ShouldResembleProto, &pb.GitilesCommit{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, confirm, should.BeTrue)
+			assert.Loosely(t, actual, should.Resemble(&pb.GitilesCommit{
 				Host:    "chromium.googlesource.com",
 				Project: "infra/luci/luci-go",
 				Ref:     "refs/heads/main",
 				Id:      "",
-			})
+			}))
 		})
 
-		Convey("https://chromium.googlesource.com/infra/luci/luci-go/+/refs/x", func() {
+		t.Run("https://chromium.googlesource.com/infra/luci/luci-go/+/refs/x", func(t *ftt.Test) {
 			actual, confirm, err := parseCommit("https://chromium.googlesource.com/infra/luci/luci-go/+/refs/x")
-			So(err, ShouldBeNil)
-			So(confirm, ShouldBeTrue)
-			So(actual, ShouldResembleProto, &pb.GitilesCommit{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, confirm, should.BeTrue)
+			assert.Loosely(t, actual, should.Resemble(&pb.GitilesCommit{
 				Host:    "chromium.googlesource.com",
 				Project: "infra/luci/luci-go",
 				Ref:     "refs/x",
 				Id:      "",
-			})
+			}))
 		})
 
-		Convey("https://chromium-foo.googlesource.com/infra/luci/luci-go/+/refs/x", func() {
+		t.Run("https://chromium-foo.googlesource.com/infra/luci/luci-go/+/refs/x", func(t *ftt.Test) {
 			actual, confirm, err := parseCommit("https://chromium-foo.googlesource.com/infra/luci/luci-go/+/refs/x")
-			So(err, ShouldBeNil)
-			So(confirm, ShouldBeTrue)
-			So(actual, ShouldResembleProto, &pb.GitilesCommit{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, confirm, should.BeTrue)
+			assert.Loosely(t, actual, should.Resemble(&pb.GitilesCommit{
 				Host:    "chromium-foo.googlesource.com",
 				Project: "infra/luci/luci-go",
 				Ref:     "refs/x",
 				Id:      "",
-			})
+			}))
 		})
 	})
 }

@@ -26,13 +26,14 @@ import (
 	"strings"
 	"time"
 
-	bbpb "go.chromium.org/luci/buildbucket/proto"
 	cipdVersion "go.chromium.org/luci/cipd/version"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
+
+	bbpb "go.chromium.org/luci/buildbucket/proto"
 )
 
 const (

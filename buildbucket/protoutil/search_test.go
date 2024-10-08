@@ -24,11 +24,11 @@ import (
 	"google.golang.org/grpc"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 type searchStub struct {
@@ -54,7 +54,7 @@ func (c *searchStub) simpleMock(res *pb.SearchBuildsResponse, err error) {
 func TestSearch(t *testing.T) {
 	t.Parallel()
 
-	Convey("Search", t, func(c C) {
+	ftt.Run("Search", t, func(c *ftt.Test) {
 		ctx := context.Background()
 
 		client := &searchStub{}
@@ -74,15 +74,15 @@ func TestSearch(t *testing.T) {
 			return builds, <-errC
 		}
 
-		Convey("One page", func() {
+		c.Run("One page", func(c *ftt.Test) {
 			expectedBuilds := []*pb.Build{{Id: 1}, {Id: 2}}
 			client.simpleMock(&pb.SearchBuildsResponse{Builds: expectedBuilds}, nil)
 			actualBuilds, err := search(&pb.SearchBuildsRequest{})
-			So(err, ShouldBeNil)
-			So(actualBuilds, ShouldResembleProto, expectedBuilds)
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, actualBuilds, should.Resemble(expectedBuilds))
 		})
 
-		Convey("Two pages", func() {
+		c.Run("Two pages", func(c *ftt.Test) {
 			client.searchBuilds = func(ctx context.Context, in *pb.SearchBuildsRequest) (*pb.SearchBuildsResponse, error) {
 				switch in.PageToken {
 				case "":
@@ -100,29 +100,29 @@ func TestSearch(t *testing.T) {
 			}
 
 			actualBuilds, err := search(&pb.SearchBuildsRequest{})
-			So(err, ShouldBeNil)
-			So(actualBuilds, ShouldResembleProto, []*pb.Build{{Id: 1}, {Id: 2}, {Id: 3}})
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, actualBuilds, should.Resemble([]*pb.Build{{Id: 1}, {Id: 2}, {Id: 3}}))
 		})
 
-		Convey("Response error", func() {
+		c.Run("Response error", func(c *ftt.Test) {
 			client.simpleMock(nil, fmt.Errorf("request failed"))
 			actualBuilds, err := search(&pb.SearchBuildsRequest{})
-			So(err, ShouldErrLike, "request failed")
-			So(actualBuilds, ShouldBeEmpty)
+			assert.Loosely(c, err, should.ErrLike("request failed"))
+			assert.Loosely(c, actualBuilds, should.BeEmpty)
 		})
 
-		Convey("Ensure Required fields", func() {
+		c.Run("Ensure Required fields", func(c *ftt.Test) {
 			client.simpleMock(&pb.SearchBuildsResponse{}, nil)
 			actualBuilds, err := search(&pb.SearchBuildsRequest{
 				Fields: &field_mask.FieldMask{Paths: []string{"builds.*.created_by"}},
 			})
-			So(err, ShouldBeNil)
-			So(actualBuilds, ShouldBeEmpty)
-			So(client.reqs, ShouldHaveLength, 1)
-			So(client.reqs[0].Fields, ShouldResembleProto, &field_mask.FieldMask{Paths: []string{"builds.*.created_by", "builds.*.id", "next_page_token"}})
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, actualBuilds, should.BeEmpty)
+			assert.Loosely(c, client.reqs, should.HaveLength(1))
+			assert.Loosely(c, client.reqs[0].Fields, should.Resemble(&field_mask.FieldMask{Paths: []string{"builds.*.created_by", "builds.*.id", "next_page_token"}}))
 		})
 
-		Convey("Interrupt", func() {
+		c.Run("Interrupt", func(c *ftt.Test) {
 			ctx, cancel := context.WithCancel(ctx)
 			defer cancel()
 
@@ -136,14 +136,14 @@ func TestSearch(t *testing.T) {
 				errC <- Search(ctx, builds, client, &pb.SearchBuildsRequest{})
 			}()
 
-			So(<-builds, ShouldResembleProto, &pb.Build{Id: 1})
+			assert.Loosely(c, <-builds, should.Resemble(&pb.Build{Id: 1}))
 			cancel()
 			err := <-errC
-			So(err, ShouldNotBeNil)
-			So(err == context.Canceled, ShouldBeTrue)
+			assert.Loosely(c, err, should.NotBeNil)
+			assert.Loosely(c, err == context.Canceled, should.BeTrue)
 		})
 
-		Convey("Multiple requests", func() {
+		c.Run("Multiple requests", func(c *ftt.Test) {
 			// First stream, with status filter SUCCESS and two pages.
 			requests := []struct {
 				status    pb.Status
@@ -203,9 +203,9 @@ func TestSearch(t *testing.T) {
 				{Predicate: &pb.BuildPredicate{Status: pb.Status_FAILURE}},
 				{Predicate: &pb.BuildPredicate{Status: pb.Status_INFRA_FAILURE}},
 			}...)
-			So(err, ShouldBeNil)
+			assert.Loosely(c, err, should.BeNil)
 
-			So(builds, ShouldResembleProto, []*pb.Build{
+			assert.Loosely(c, builds, should.Resemble([]*pb.Build{
 				{Id: 1},
 				{Id: 2},
 				{Id: 3},
@@ -216,10 +216,10 @@ func TestSearch(t *testing.T) {
 				{Id: 31},
 				{Id: 32},
 				{Id: 42},
-			})
+			}))
 		})
 
-		Convey("Duplicate build", func() {
+		c.Run("Duplicate build", func(c *ftt.Test) {
 			client.searchBuilds = func(ctx context.Context, in *pb.SearchBuildsRequest) (*pb.SearchBuildsResponse, error) {
 				switch {
 				case in.Predicate.Status == pb.Status_SUCCESS:
@@ -242,20 +242,20 @@ func TestSearch(t *testing.T) {
 				{Predicate: &pb.BuildPredicate{Status: pb.Status_FAILURE}},
 			}...)
 
-			So(err, ShouldBeNil)
-			So(builds, ShouldResembleProto, []*pb.Build{
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, builds, should.Resemble([]*pb.Build{
 				{Id: 1},
 				{Id: 2},
 				{Id: 11},
 				{Id: 21},
 				{Id: 22},
-			})
+			}))
 		})
 
-		Convey("Empty request slice", func() {
+		c.Run("Empty request slice", func(c *ftt.Test) {
 			actualBuilds, err := search()
-			So(err, ShouldBeNil)
-			So(actualBuilds, ShouldBeEmpty)
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, actualBuilds, should.BeEmpty)
 		})
 	})
 }

@@ -21,6 +21,9 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
@@ -32,8 +35,6 @@ import (
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	"go.chromium.org/luci/buildbucket/bbperms"
 	pb "go.chromium.org/luci/buildbucket/proto"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func testingContext() context.Context {
@@ -46,7 +47,7 @@ func testingContext() context.Context {
 func TestHasInBucket(t *testing.T) {
 	t.Parallel()
 
-	Convey("With mocked auth DB", t, func() {
+	ftt.Run("With mocked auth DB", t, func(t *ftt.Test) {
 		const (
 			anon   = identity.AnonymousIdentity
 			admin  = identity.Identity("user:admin@example.com")
@@ -64,11 +65,11 @@ func TestHasInBucket(t *testing.T) {
 
 		ctx := testingContext()
 
-		So(datastore.Put(ctx, &model.Bucket{
+		assert.Loosely(t, datastore.Put(ctx, &model.Bucket{
 			ID:     existingBucketID,
 			Parent: model.ProjectKey(ctx, projectID),
 			Proto:  &pb.Bucket{},
-		}), ShouldBeNil)
+		}), should.BeNil)
 
 		s := &authtest.FakeState{
 			FakeDB: authtest.NewFakeDB(
@@ -90,19 +91,19 @@ func TestHasInBucket(t *testing.T) {
 			return status.Code()
 		}
 
-		Convey("No realm ACLs", func() {
-			So(check(existingBucketID, bbperms.BuildsGet, anon), ShouldEqual, codes.NotFound)
-			So(check(existingBucketID, bbperms.BuildsGet, admin), ShouldEqual, codes.OK)
-			So(check(existingBucketID, bbperms.BuildsGet, reader), ShouldEqual, codes.NotFound)
-			So(check(existingBucketID, bbperms.BuildsGet, writer), ShouldEqual, codes.NotFound)
+		t.Run("No realm ACLs", func(t *ftt.Test) {
+			assert.Loosely(t, check(existingBucketID, bbperms.BuildsGet, anon), should.Equal(codes.NotFound))
+			assert.Loosely(t, check(existingBucketID, bbperms.BuildsGet, admin), should.Equal(codes.OK))
+			assert.Loosely(t, check(existingBucketID, bbperms.BuildsGet, reader), should.Equal(codes.NotFound))
+			assert.Loosely(t, check(existingBucketID, bbperms.BuildsGet, writer), should.Equal(codes.NotFound))
 
-			So(check(missingBucketID, bbperms.BuildsGet, anon), ShouldEqual, codes.NotFound)
-			So(check(missingBucketID, bbperms.BuildsGet, admin), ShouldEqual, codes.NotFound)
-			So(check(missingBucketID, bbperms.BuildsGet, reader), ShouldEqual, codes.NotFound)
-			So(check(missingBucketID, bbperms.BuildsGet, writer), ShouldEqual, codes.NotFound)
+			assert.Loosely(t, check(missingBucketID, bbperms.BuildsGet, anon), should.Equal(codes.NotFound))
+			assert.Loosely(t, check(missingBucketID, bbperms.BuildsGet, admin), should.Equal(codes.NotFound))
+			assert.Loosely(t, check(missingBucketID, bbperms.BuildsGet, reader), should.Equal(codes.NotFound))
+			assert.Loosely(t, check(missingBucketID, bbperms.BuildsGet, writer), should.Equal(codes.NotFound))
 		})
 
-		Convey("With realm ACLs", func() {
+		t.Run("With realm ACLs", func(t *ftt.Test) {
 			s.FakeDB.(*authtest.FakeDB).AddMocks(
 				authtest.MockPermission(reader, existingRealmID, bbperms.BuildersGet),
 				authtest.MockPermission(reader, existingRealmID, bbperms.BuildsGet),
@@ -117,30 +118,30 @@ func TestHasInBucket(t *testing.T) {
 				authtest.MockPermission(writer, missingRealmID, bbperms.BuildsCancel),
 			)
 
-			Convey("Read perm", func() {
-				So(check(existingBucketID, bbperms.BuildsGet, anon), ShouldEqual, codes.NotFound)
-				So(check(existingBucketID, bbperms.BuildsGet, admin), ShouldEqual, codes.OK)
-				So(check(existingBucketID, bbperms.BuildsGet, reader), ShouldEqual, codes.OK)
-				So(check(existingBucketID, bbperms.BuildsGet, writer), ShouldEqual, codes.OK)
+			t.Run("Read perm", func(t *ftt.Test) {
+				assert.Loosely(t, check(existingBucketID, bbperms.BuildsGet, anon), should.Equal(codes.NotFound))
+				assert.Loosely(t, check(existingBucketID, bbperms.BuildsGet, admin), should.Equal(codes.OK))
+				assert.Loosely(t, check(existingBucketID, bbperms.BuildsGet, reader), should.Equal(codes.OK))
+				assert.Loosely(t, check(existingBucketID, bbperms.BuildsGet, writer), should.Equal(codes.OK))
 			})
 
-			Convey("Write perm", func() {
-				So(check(existingBucketID, bbperms.BuildsCancel, anon), ShouldEqual, codes.NotFound)
-				So(check(existingBucketID, bbperms.BuildsCancel, admin), ShouldEqual, codes.OK)
-				So(check(existingBucketID, bbperms.BuildsCancel, reader), ShouldEqual, codes.PermissionDenied)
-				So(check(existingBucketID, bbperms.BuildsCancel, writer), ShouldEqual, codes.OK)
+			t.Run("Write perm", func(t *ftt.Test) {
+				assert.Loosely(t, check(existingBucketID, bbperms.BuildsCancel, anon), should.Equal(codes.NotFound))
+				assert.Loosely(t, check(existingBucketID, bbperms.BuildsCancel, admin), should.Equal(codes.OK))
+				assert.Loosely(t, check(existingBucketID, bbperms.BuildsCancel, reader), should.Equal(codes.PermissionDenied))
+				assert.Loosely(t, check(existingBucketID, bbperms.BuildsCancel, writer), should.Equal(codes.OK))
 			})
 
-			Convey("Missing bucket", func() {
-				So(check(missingBucketID, bbperms.BuildsGet, anon), ShouldEqual, codes.NotFound)
-				So(check(missingBucketID, bbperms.BuildsGet, admin), ShouldEqual, codes.NotFound)
-				So(check(missingBucketID, bbperms.BuildsGet, reader), ShouldEqual, codes.NotFound)
-				So(check(missingBucketID, bbperms.BuildsGet, writer), ShouldEqual, codes.NotFound)
+			t.Run("Missing bucket", func(t *ftt.Test) {
+				assert.Loosely(t, check(missingBucketID, bbperms.BuildsGet, anon), should.Equal(codes.NotFound))
+				assert.Loosely(t, check(missingBucketID, bbperms.BuildsGet, admin), should.Equal(codes.NotFound))
+				assert.Loosely(t, check(missingBucketID, bbperms.BuildsGet, reader), should.Equal(codes.NotFound))
+				assert.Loosely(t, check(missingBucketID, bbperms.BuildsGet, writer), should.Equal(codes.NotFound))
 
-				So(check(missingBucketID, bbperms.BuildsCancel, anon), ShouldEqual, codes.NotFound)
-				So(check(missingBucketID, bbperms.BuildsCancel, admin), ShouldEqual, codes.NotFound)
-				So(check(missingBucketID, bbperms.BuildsCancel, reader), ShouldEqual, codes.NotFound)
-				So(check(missingBucketID, bbperms.BuildsCancel, writer), ShouldEqual, codes.NotFound)
+				assert.Loosely(t, check(missingBucketID, bbperms.BuildsCancel, anon), should.Equal(codes.NotFound))
+				assert.Loosely(t, check(missingBucketID, bbperms.BuildsCancel, admin), should.Equal(codes.NotFound))
+				assert.Loosely(t, check(missingBucketID, bbperms.BuildsCancel, reader), should.Equal(codes.NotFound))
+				assert.Loosely(t, check(missingBucketID, bbperms.BuildsCancel, writer), should.Equal(codes.NotFound))
 			})
 		})
 	})
@@ -149,7 +150,7 @@ func TestHasInBucket(t *testing.T) {
 func TestBucketsByPerm(t *testing.T) {
 	t.Parallel()
 
-	Convey("GetAccessibleBuckets", t, func() {
+	ftt.Run("GetAccessibleBuckets", t, func(t *ftt.Test) {
 		const reader = identity.Identity("user:reader@example.com")
 
 		ctx := testingContext()
@@ -165,7 +166,7 @@ func TestBucketsByPerm(t *testing.T) {
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 
-		So(datastore.Put(ctx,
+		assert.Loosely(t, datastore.Put(ctx,
 			&model.Bucket{
 				ID:     "bucket1",
 				Parent: model.ProjectKey(ctx, "project"),
@@ -181,25 +182,25 @@ func TestBucketsByPerm(t *testing.T) {
 				Parent: model.ProjectKey(ctx, "project"),
 				Proto:  &pb.Bucket{},
 			},
-		), ShouldBeNil)
+		), should.BeNil)
 
 		buckets1, err := BucketsByPerm(ctx, bbperms.BuildersList, "")
-		So(err, ShouldBeNil)
-		So(buckets1, ShouldResemble, []string{"project/bucket1", "project/bucket2", "project2/bucket1"})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, buckets1, should.Resemble([]string{"project/bucket1", "project/bucket2", "project2/bucket1"}))
 
 		buckets2, err := BucketsByPerm(ctx, bbperms.BuildsCancel, "")
-		So(err, ShouldBeNil)
-		So(buckets2, ShouldResemble, []string{"project/bucket2"})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, buckets2, should.Resemble([]string{"project/bucket2"}))
 
 		buckets3, err := BucketsByPerm(ctx, bbperms.BuildersList, "project2")
-		So(err, ShouldBeNil)
-		So(buckets3, ShouldResemble, []string{"project2/bucket1"})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, buckets3, should.Resemble([]string{"project2/bucket1"}))
 
 		ctx = auth.WithState(ctx, &authtest.FakeState{
 			Identity: identity.Identity("user:unknown@example.com"),
 		})
 		buckets4, err := BucketsByPerm(ctx, bbperms.BuildersList, "")
-		So(err, ShouldBeNil)
-		So(buckets4, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, buckets4, should.BeNil)
 	})
 }

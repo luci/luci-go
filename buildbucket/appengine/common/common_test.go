@@ -17,23 +17,23 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestGetBuildEntities(t *testing.T) {
 	t.Parallel()
 
 	ctx := memory.Use(context.Background())
-	Convey("GetBuild", t, func() {
-		Convey("ok", func() {
-			So(datastore.Put(ctx, &model.Build{
+	ftt.Run("GetBuild", t, func(t *ftt.Test) {
+		t.Run("ok", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(ctx, &model.Build{
 				Proto: &pb.Build{
 					Id: 1,
 					Builder: &pb.BuilderID{
@@ -43,10 +43,10 @@ func TestGetBuildEntities(t *testing.T) {
 					},
 					Status: pb.Status_SUCCESS,
 				},
-			}), ShouldBeNil)
+			}), should.BeNil)
 			b, err := GetBuild(ctx, 1)
-			So(err, ShouldBeNil)
-			So(b.Proto, ShouldResembleProto, &pb.Build{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, b.Proto, should.Resemble(&pb.Build{
 				Id: 1,
 				Builder: &pb.BuilderID{
 					Project: "project",
@@ -54,12 +54,12 @@ func TestGetBuildEntities(t *testing.T) {
 					Builder: "builder",
 				},
 				Status: pb.Status_SUCCESS,
-			})
+			}))
 		})
 
-		Convey("wrong BuildID", func() {
+		t.Run("wrong BuildID", func(t *ftt.Test) {
 			ctx := memory.Use(context.Background())
-			So(datastore.Put(ctx, &model.Build{
+			assert.Loosely(t, datastore.Put(ctx, &model.Build{
 				Proto: &pb.Build{
 					Id: 1,
 					Builder: &pb.BuilderID{
@@ -69,14 +69,14 @@ func TestGetBuildEntities(t *testing.T) {
 					},
 					Status: pb.Status_SUCCESS,
 				},
-			}), ShouldBeNil)
+			}), should.BeNil)
 			_, err := GetBuild(ctx, 2)
-			So(err, ShouldNotBeNil)
-			So(err.Error(), ShouldContainSubstring, "resource not found")
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, err.Error(), should.ContainSubstring("resource not found"))
 		})
 	})
 
-	Convey("GetBuildEntities", t, func() {
+	ftt.Run("GetBuildEntities", t, func(t *ftt.Test) {
 		bld := &model.Build{
 			ID: 1,
 			Proto: &pb.Build{
@@ -94,25 +94,25 @@ func TestGetBuildEntities(t *testing.T) {
 		infra := &model.BuildInfra{Build: bk}
 		steps := &model.BuildSteps{Build: bk}
 		inputProp := &model.BuildInputProperties{Build: bk}
-		So(datastore.Put(ctx, bld, infra, bs, steps, inputProp), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, bld, infra, bs, steps, inputProp), should.BeNil)
 
-		Convey("partial not found", func() {
+		t.Run("partial not found", func(t *ftt.Test) {
 			_, err := GetBuildEntities(ctx, bld.Proto.Id, model.BuildOutputPropertiesKind)
-			So(err, ShouldErrLike, "not found")
+			assert.Loosely(t, err, should.ErrLike("not found"))
 		})
 
-		Convey("pass", func() {
+		t.Run("pass", func(t *ftt.Test) {
 			outputProp := &model.BuildOutputProperties{Build: bk}
-			So(datastore.Put(ctx, outputProp), ShouldBeNil)
-			Convey("all", func() {
+			assert.Loosely(t, datastore.Put(ctx, outputProp), should.BeNil)
+			t.Run("all", func(t *ftt.Test) {
 				entities, err := GetBuildEntities(ctx, bld.Proto.Id, model.BuildKind, model.BuildStatusKind, model.BuildStepsKind, model.BuildInfraKind, model.BuildInputPropertiesKind, model.BuildOutputPropertiesKind)
-				So(err, ShouldBeNil)
-				So(entities, ShouldHaveLength, 6)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, entities, should.HaveLength(6))
 			})
-			Convey("only infra", func() {
+			t.Run("only infra", func(t *ftt.Test) {
 				entities, err := GetBuildEntities(ctx, bld.Proto.Id, model.BuildInfraKind)
-				So(err, ShouldBeNil)
-				So(entities, ShouldHaveLength, 1)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, entities, should.HaveLength(1))
 			})
 		})
 	})

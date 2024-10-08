@@ -23,6 +23,9 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
@@ -32,9 +35,6 @@ import (
 	"go.chromium.org/luci/buildbucket/appengine/rpc/testutil"
 	"go.chromium.org/luci/buildbucket/bbperms"
 	pb "go.chromium.org/luci/buildbucket/proto"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestGetBuild(t *testing.T) {
@@ -42,7 +42,7 @@ func TestGetBuild(t *testing.T) {
 
 	const userID = identity.Identity("user:user@example.com")
 
-	Convey("GetBuild", t, func() {
+	ftt.Run("GetBuild", t, func(t *ftt.Test) {
 		srv := &Builds{}
 		ctx := memory.Use(context.Background())
 		datastore.GetTestable(ctx).AutoIndex(true)
@@ -52,17 +52,17 @@ func TestGetBuild(t *testing.T) {
 			Identity: userID,
 		})
 
-		Convey("id", func() {
-			Convey("not found", func() {
+		t.Run("id", func(t *ftt.Test) {
+			t.Run("not found", func(t *ftt.Test) {
 				req := &pb.GetBuildRequest{
 					Id: 1,
 				}
 				rsp, err := srv.GetBuild(ctx, req)
-				So(err, ShouldErrLike, "not found")
-				So(rsp, ShouldBeNil)
+				assert.Loosely(t, err, should.ErrLike("not found"))
+				assert.Loosely(t, rsp, should.BeNil)
 			})
 
-			Convey("with build entity", func() {
+			t.Run("with build entity", func(t *ftt.Test) {
 				testutil.PutBucket(ctx, "project", "bucket", nil)
 				build := &model.Build{
 					Proto: &pb.Build{
@@ -82,7 +82,7 @@ func TestGetBuild(t *testing.T) {
 						SummaryMarkdown:      "summary",
 					},
 				}
-				So(datastore.Put(ctx, build), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, build), should.BeNil)
 				key := datastore.KeyForObj(ctx, build)
 				s, err := proto.Marshal(&pb.Build{
 					Steps: []*pb.Step{
@@ -91,13 +91,13 @@ func TestGetBuild(t *testing.T) {
 						},
 					},
 				})
-				So(err, ShouldBeNil)
-				So(datastore.Put(ctx, &model.BuildSteps{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, datastore.Put(ctx, &model.BuildSteps{
 					Build:    key,
 					Bytes:    s,
 					IsZipped: false,
-				}), ShouldBeNil)
-				So(datastore.Put(ctx, &model.BuildInfra{
+				}), should.BeNil)
+				assert.Loosely(t, datastore.Put(ctx, &model.BuildInfra{
 					Build: key,
 					Proto: &pb.BuildInfra{
 						Buildbucket: &pb.BuildInfra_Buildbucket{
@@ -108,8 +108,8 @@ func TestGetBuild(t *testing.T) {
 							Invocation: "bb-12345",
 						},
 					},
-				}), ShouldBeNil)
-				So(datastore.Put(ctx, &model.BuildInputProperties{
+				}), should.BeNil)
+				assert.Loosely(t, datastore.Put(ctx, &model.BuildInputProperties{
 					Build: key,
 					Proto: &structpb.Struct{
 						Fields: map[string]*structpb.Value{
@@ -120,8 +120,8 @@ func TestGetBuild(t *testing.T) {
 							},
 						},
 					},
-				}), ShouldBeNil)
-				So(datastore.Put(ctx, &model.BuildOutputProperties{
+				}), should.BeNil)
+				assert.Loosely(t, datastore.Put(ctx, &model.BuildOutputProperties{
 					Build: key,
 					Proto: &structpb.Struct{
 						Fields: map[string]*structpb.Value{
@@ -132,7 +132,7 @@ func TestGetBuild(t *testing.T) {
 							},
 						},
 					},
-				}), ShouldBeNil)
+				}), should.BeNil)
 
 				req := &pb.GetBuildRequest{
 					Id: 1,
@@ -141,13 +141,13 @@ func TestGetBuild(t *testing.T) {
 					},
 				}
 
-				Convey("permission denied", func() {
+				t.Run("permission denied", func(t *ftt.Test) {
 					rsp, err := srv.GetBuild(ctx, req)
-					So(err, ShouldErrLike, "not found")
-					So(rsp, ShouldBeNil)
+					assert.Loosely(t, err, should.ErrLike("not found"))
+					assert.Loosely(t, rsp, should.BeNil)
 				})
 
-				Convey("permission denied if user only has BuildsList permission", func() {
+				t.Run("permission denied if user only has BuildsList permission", func(t *ftt.Test) {
 					ctx = auth.WithState(ctx, &authtest.FakeState{
 						Identity: userID,
 						FakeDB: authtest.NewFakeDB(
@@ -156,11 +156,11 @@ func TestGetBuild(t *testing.T) {
 						),
 					})
 					rsp, err := srv.GetBuild(ctx, req)
-					So(err, ShouldErrLike, "not found")
-					So(rsp, ShouldBeNil)
+					assert.Loosely(t, err, should.ErrLike("not found"))
+					assert.Loosely(t, rsp, should.BeNil)
 				})
 
-				Convey("found with BuildsGetLimited permission only", func() {
+				t.Run("found with BuildsGetLimited permission only", func(t *ftt.Test) {
 					ctx = auth.WithState(ctx, &authtest.FakeState{
 						Identity: userID,
 						FakeDB: authtest.NewFakeDB(
@@ -169,8 +169,8 @@ func TestGetBuild(t *testing.T) {
 						),
 					})
 					rsp, err := srv.GetBuild(ctx, req)
-					So(err, ShouldBeNil)
-					So(rsp, ShouldResembleProto, &pb.Build{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, rsp, should.Resemble(&pb.Build{
 						Id: 1,
 						Builder: &pb.BuilderID{
 							Project: "project",
@@ -189,10 +189,10 @@ func TestGetBuild(t *testing.T) {
 								Invocation: "bb-12345",
 							},
 						},
-					})
+					}))
 				})
 
-				Convey("found", func() {
+				t.Run("found", func(t *ftt.Test) {
 					ctx = auth.WithState(ctx, &authtest.FakeState{
 						Identity: userID,
 						FakeDB: authtest.NewFakeDB(
@@ -200,8 +200,8 @@ func TestGetBuild(t *testing.T) {
 						),
 					})
 					rsp, err := srv.GetBuild(ctx, req)
-					So(err, ShouldBeNil)
-					So(rsp, ShouldResembleProto, &pb.Build{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, rsp, should.Resemble(&pb.Build{
 						Id: 1,
 						Builder: &pb.BuilderID{
 							Project: "project",
@@ -248,10 +248,10 @@ func TestGetBuild(t *testing.T) {
 						},
 						CancellationMarkdown: "cancelled",
 						SummaryMarkdown:      "summary\ncancelled",
-					})
+					}))
 				})
 
-				Convey("summary", func() {
+				t.Run("summary", func(t *ftt.Test) {
 					ctx = auth.WithState(ctx, &authtest.FakeState{
 						Identity: userID,
 						FakeDB: authtest.NewFakeDB(
@@ -266,16 +266,16 @@ func TestGetBuild(t *testing.T) {
 						},
 					}
 					rsp, err := srv.GetBuild(ctx, req)
-					So(err, ShouldBeNil)
-					So(rsp, ShouldResembleProto, &pb.Build{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, rsp, should.Resemble(&pb.Build{
 						SummaryMarkdown: "summary\ncancelled",
-					})
+					}))
 				})
 			})
 		})
 
-		Convey("index", func() {
-			So(datastore.Put(ctx, &model.Build{
+		t.Run("index", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(ctx, &model.Build{
 				Proto: &pb.Build{
 					Id: 1,
 					Builder: &pb.BuilderID{
@@ -286,11 +286,11 @@ func TestGetBuild(t *testing.T) {
 				},
 				BucketID: "project/bucket",
 				Tags:     []string{"build_address:luci.project.bucket/builder/1"},
-			}), ShouldBeNil)
+			}), should.BeNil)
 
-			Convey("error", func() {
-				Convey("incomplete index", func() {
-					So(datastore.Put(ctx, &model.TagIndex{
+			t.Run("error", func(t *ftt.Test) {
+				t.Run("incomplete index", func(t *ftt.Test) {
+					assert.Loosely(t, datastore.Put(ctx, &model.TagIndex{
 						ID: ":2:build_address:luci.project.bucket/builder/1",
 						Entries: []model.TagIndexEntry{
 							{
@@ -298,7 +298,7 @@ func TestGetBuild(t *testing.T) {
 							},
 						},
 						Incomplete: true,
-					}), ShouldBeNil)
+					}), should.BeNil)
 					req := &pb.GetBuildRequest{
 						Builder: &pb.BuilderID{
 							Project: "project",
@@ -308,11 +308,11 @@ func TestGetBuild(t *testing.T) {
 						BuildNumber: 1,
 					}
 					rsp, err := srv.GetBuild(ctx, req)
-					So(err, ShouldErrLike, "unexpected incomplete index")
-					So(rsp, ShouldBeNil)
+					assert.Loosely(t, err, should.ErrLike("unexpected incomplete index"))
+					assert.Loosely(t, rsp, should.BeNil)
 				})
 
-				Convey("not found", func() {
+				t.Run("not found", func(t *ftt.Test) {
 					req := &pb.GetBuildRequest{
 						Builder: &pb.BuilderID{
 							Project: "project",
@@ -322,12 +322,12 @@ func TestGetBuild(t *testing.T) {
 						BuildNumber: 2,
 					}
 					rsp, err := srv.GetBuild(ctx, req)
-					So(err, ShouldErrLike, "not found")
-					So(rsp, ShouldBeNil)
+					assert.Loosely(t, err, should.ErrLike("not found"))
+					assert.Loosely(t, rsp, should.BeNil)
 				})
 
-				Convey("excessive results", func() {
-					So(datastore.Put(ctx, &model.TagIndex{
+				t.Run("excessive results", func(t *ftt.Test) {
+					assert.Loosely(t, datastore.Put(ctx, &model.TagIndex{
 						ID: ":2:build_address:luci.project.bucket/builder/1",
 						Entries: []model.TagIndexEntry{
 							{
@@ -339,7 +339,7 @@ func TestGetBuild(t *testing.T) {
 								BucketID: "proj/bucket",
 							},
 						},
-					}), ShouldBeNil)
+					}), should.BeNil)
 					req := &pb.GetBuildRequest{
 						Builder: &pb.BuilderID{
 							Project: "project",
@@ -349,12 +349,12 @@ func TestGetBuild(t *testing.T) {
 						BuildNumber: 1,
 					}
 					rsp, err := srv.GetBuild(ctx, req)
-					So(err, ShouldErrLike, "unexpected number of results")
-					So(rsp, ShouldBeNil)
+					assert.Loosely(t, err, should.ErrLike("unexpected number of results"))
+					assert.Loosely(t, rsp, should.BeNil)
 				})
 			})
 
-			Convey("ok", func() {
+			t.Run("ok", func(t *ftt.Test) {
 				ctx = auth.WithState(ctx, &authtest.FakeState{
 					Identity: userID,
 					FakeDB: authtest.NewFakeDB(
@@ -362,7 +362,7 @@ func TestGetBuild(t *testing.T) {
 					),
 				})
 				testutil.PutBucket(ctx, "project", "bucket", nil)
-				So(datastore.Put(ctx, &model.TagIndex{
+				assert.Loosely(t, datastore.Put(ctx, &model.TagIndex{
 					ID: ":2:build_address:luci.project.bucket/builder/1",
 					Entries: []model.TagIndexEntry{
 						{
@@ -370,7 +370,7 @@ func TestGetBuild(t *testing.T) {
 							BucketID: "project/bucket",
 						},
 					},
-				}), ShouldBeNil)
+				}), should.BeNil)
 				req := &pb.GetBuildRequest{
 					Builder: &pb.BuilderID{
 						Project: "project",
@@ -380,8 +380,8 @@ func TestGetBuild(t *testing.T) {
 					BuildNumber: 1,
 				}
 				rsp, err := srv.GetBuild(ctx, req)
-				So(err, ShouldBeNil)
-				So(rsp, ShouldResembleProto, &pb.Build{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, rsp, should.Resemble(&pb.Build{
 					Id: 1,
 					Builder: &pb.BuilderID{
 						Project: "project",
@@ -389,11 +389,11 @@ func TestGetBuild(t *testing.T) {
 						Builder: "builder",
 					},
 					Input: &pb.Build_Input{},
-				})
+				}))
 			})
 		})
 
-		Convey("led build", func() {
+		t.Run("led build", func(t *ftt.Test) {
 			testutil.PutBucket(ctx, "project", "bucket", nil)
 			testutil.PutBucket(ctx, "project", "bucket.shadow", nil)
 			build := &model.Build{
@@ -414,7 +414,7 @@ func TestGetBuild(t *testing.T) {
 					SummaryMarkdown:      "summary",
 				},
 			}
-			So(datastore.Put(ctx, build), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, build), should.BeNil)
 			key := datastore.KeyForObj(ctx, build)
 			s, err := proto.Marshal(&pb.Build{
 				Steps: []*pb.Step{
@@ -423,13 +423,13 @@ func TestGetBuild(t *testing.T) {
 					},
 				},
 			})
-			So(err, ShouldBeNil)
-			So(datastore.Put(ctx, &model.BuildSteps{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, datastore.Put(ctx, &model.BuildSteps{
 				Build:    key,
 				Bytes:    s,
 				IsZipped: false,
-			}), ShouldBeNil)
-			So(datastore.Put(ctx, &model.BuildInfra{
+			}), should.BeNil)
+			assert.Loosely(t, datastore.Put(ctx, &model.BuildInfra{
 				Build: key,
 				Proto: &pb.BuildInfra{
 					Buildbucket: &pb.BuildInfra_Buildbucket{
@@ -443,8 +443,8 @@ func TestGetBuild(t *testing.T) {
 						ShadowedBucket: "bucket",
 					},
 				},
-			}), ShouldBeNil)
-			So(datastore.Put(ctx, &model.BuildInputProperties{
+			}), should.BeNil)
+			assert.Loosely(t, datastore.Put(ctx, &model.BuildInputProperties{
 				Build: key,
 				Proto: &structpb.Struct{
 					Fields: map[string]*structpb.Value{
@@ -455,8 +455,8 @@ func TestGetBuild(t *testing.T) {
 						},
 					},
 				},
-			}), ShouldBeNil)
-			So(datastore.Put(ctx, &model.BuildOutputProperties{
+			}), should.BeNil)
+			assert.Loosely(t, datastore.Put(ctx, &model.BuildOutputProperties{
 				Build: key,
 				Proto: &structpb.Struct{
 					Fields: map[string]*structpb.Value{
@@ -467,7 +467,7 @@ func TestGetBuild(t *testing.T) {
 						},
 					},
 				},
-			}), ShouldBeNil)
+			}), should.BeNil)
 
 			req := &pb.GetBuildRequest{
 				Id: 1,
@@ -476,13 +476,13 @@ func TestGetBuild(t *testing.T) {
 				},
 			}
 
-			Convey("permission denied", func() {
+			t.Run("permission denied", func(t *ftt.Test) {
 				rsp, err := srv.GetBuild(ctx, req)
-				So(err, ShouldErrLike, "not found")
-				So(rsp, ShouldBeNil)
+				assert.Loosely(t, err, should.ErrLike("not found"))
+				assert.Loosely(t, rsp, should.BeNil)
 			})
 
-			Convey("found with permission on shadowed bucket", func() {
+			t.Run("found with permission on shadowed bucket", func(t *ftt.Test) {
 				ctx = auth.WithState(ctx, &authtest.FakeState{
 					Identity: userID,
 					FakeDB: authtest.NewFakeDB(
@@ -490,8 +490,8 @@ func TestGetBuild(t *testing.T) {
 					),
 				})
 				rsp, err := srv.GetBuild(ctx, req)
-				So(err, ShouldBeNil)
-				So(rsp, ShouldResembleProto, &pb.Build{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, rsp, should.Resemble(&pb.Build{
 					Id: 1,
 					Builder: &pb.BuilderID{
 						Project: "project",
@@ -541,71 +541,71 @@ func TestGetBuild(t *testing.T) {
 					},
 					CancellationMarkdown: "cancelled",
 					SummaryMarkdown:      "summary\ncancelled",
-				})
+				}))
 			})
 		})
 	})
 
-	Convey("validateGet", t, func() {
-		Convey("nil", func() {
+	ftt.Run("validateGet", t, func(t *ftt.Test) {
+		t.Run("nil", func(t *ftt.Test) {
 			err := validateGet(nil)
-			So(err, ShouldErrLike, "id or (builder and build_number) is required")
+			assert.Loosely(t, err, should.ErrLike("id or (builder and build_number) is required"))
 		})
 
-		Convey("empty", func() {
+		t.Run("empty", func(t *ftt.Test) {
 			req := &pb.GetBuildRequest{}
 			err := validateGet(req)
-			So(err, ShouldErrLike, "id or (builder and build_number) is required")
+			assert.Loosely(t, err, should.ErrLike("id or (builder and build_number) is required"))
 		})
 
-		Convey("builder", func() {
+		t.Run("builder", func(t *ftt.Test) {
 			req := &pb.GetBuildRequest{
 				Builder: &pb.BuilderID{},
 			}
 			err := validateGet(req)
-			So(err, ShouldErrLike, "id or (builder and build_number) is required")
+			assert.Loosely(t, err, should.ErrLike("id or (builder and build_number) is required"))
 		})
 
-		Convey("build number", func() {
+		t.Run("build number", func(t *ftt.Test) {
 			req := &pb.GetBuildRequest{
 				BuildNumber: 1,
 			}
 			err := validateGet(req)
-			So(err, ShouldErrLike, "id or (builder and build_number) is required")
+			assert.Loosely(t, err, should.ErrLike("id or (builder and build_number) is required"))
 		})
 
-		Convey("mutual exclusion", func() {
-			Convey("builder", func() {
+		t.Run("mutual exclusion", func(t *ftt.Test) {
+			t.Run("builder", func(t *ftt.Test) {
 				req := &pb.GetBuildRequest{
 					Id:      1,
 					Builder: &pb.BuilderID{},
 				}
 				err := validateGet(req)
-				So(err, ShouldErrLike, "id is mutually exclusive with (builder and build_number)")
+				assert.Loosely(t, err, should.ErrLike("id is mutually exclusive with (builder and build_number)"))
 			})
 
-			Convey("build number", func() {
+			t.Run("build number", func(t *ftt.Test) {
 				req := &pb.GetBuildRequest{
 					Id:          1,
 					BuildNumber: 1,
 				}
 				err := validateGet(req)
-				So(err, ShouldErrLike, "id is mutually exclusive with (builder and build_number)")
+				assert.Loosely(t, err, should.ErrLike("id is mutually exclusive with (builder and build_number)"))
 			})
 		})
 
-		Convey("builder ID", func() {
-			Convey("project", func() {
+		t.Run("builder ID", func(t *ftt.Test) {
+			t.Run("project", func(t *ftt.Test) {
 				req := &pb.GetBuildRequest{
 					Builder:     &pb.BuilderID{},
 					BuildNumber: 1,
 				}
 				err := validateGet(req)
-				So(err, ShouldErrLike, "project must match")
+				assert.Loosely(t, err, should.ErrLike("project must match"))
 			})
 
-			Convey("bucket", func() {
-				Convey("empty", func() {
+			t.Run("bucket", func(t *ftt.Test) {
+				t.Run("empty", func(t *ftt.Test) {
 					req := &pb.GetBuildRequest{
 						Builder: &pb.BuilderID{
 							Project: "project",
@@ -613,10 +613,10 @@ func TestGetBuild(t *testing.T) {
 						BuildNumber: 1,
 					}
 					err := validateGet(req)
-					So(err, ShouldErrLike, "bucket is required")
+					assert.Loosely(t, err, should.ErrLike("bucket is required"))
 				})
 
-				Convey("v1", func() {
+				t.Run("v1", func(t *ftt.Test) {
 					req := &pb.GetBuildRequest{
 						Builder: &pb.BuilderID{
 							Project: "project",
@@ -626,11 +626,11 @@ func TestGetBuild(t *testing.T) {
 						BuildNumber: 1,
 					}
 					err := validateGet(req)
-					So(err, ShouldErrLike, "invalid use of v1 bucket in v2 API")
+					assert.Loosely(t, err, should.ErrLike("invalid use of v1 bucket in v2 API"))
 				})
 			})
 
-			Convey("builder", func() {
+			t.Run("builder", func(t *ftt.Test) {
 				req := &pb.GetBuildRequest{
 					Builder: &pb.BuilderID{
 						Project: "project",
@@ -639,7 +639,7 @@ func TestGetBuild(t *testing.T) {
 					BuildNumber: 1,
 				}
 				err := validateGet(req)
-				So(err, ShouldErrLike, "builder is required")
+				assert.Loosely(t, err, should.ErrLike("builder is required"))
 			})
 		})
 	})

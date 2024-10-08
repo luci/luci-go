@@ -17,34 +17,34 @@ package clients
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestValidatePubSubTopicName(t *testing.T) {
-	Convey("validateTopicName", t, func() {
-		Convey("wrong topic name", func() {
+	ftt.Run("validateTopicName", t, func(t *ftt.Test) {
+		t.Run("wrong topic name", func(t *ftt.Test) {
 			_, _, err := ValidatePubSubTopicName("projects/adsf/")
-			So(err, ShouldErrLike, `topic "projects/adsf/" does not match "^projects/(.*)/topics/(.*)$"`)
+			assert.Loosely(t, err, should.ErrLike(`topic "projects/adsf/" does not match "^projects/(.*)/topics/(.*)$"`))
 		})
-		Convey("wrong project identifier", func() {
+		t.Run("wrong project identifier", func(t *ftt.Test) {
 			_, _, err := ValidatePubSubTopicName("projects/pro/topics/topic1")
-			So(err, ShouldErrLike, `cloud project id "pro" does not match "^[a-z]([a-z0-9-]){4,28}[a-z0-9]$"`)
+			assert.Loosely(t, err, should.ErrLike(`cloud project id "pro" does not match "^[a-z]([a-z0-9-]){4,28}[a-z0-9]$"`))
 		})
-		Convey("wrong topic id prefix", func() {
+		t.Run("wrong topic id prefix", func(t *ftt.Test) {
 			_, _, err := ValidatePubSubTopicName("projects/cloud-project/topics/goog11")
-			So(err, ShouldErrLike, `topic id "goog11" shouldn't begin with the string goog`)
+			assert.Loosely(t, err, should.ErrLike(`topic id "goog11" shouldn't begin with the string goog`))
 		})
-		Convey("wrong topic id format", func() {
+		t.Run("wrong topic id format", func(t *ftt.Test) {
 			_, _, err := ValidatePubSubTopicName("projects/cloud-project/topics/abc##")
-			So(err, ShouldErrLike, `topic id "abc##" does not match "^[A-Za-z]([0-9A-Za-z\\._\\-~+%]){3,255}$"`)
+			assert.Loosely(t, err, should.ErrLike(`topic id "abc##" does not match "^[A-Za-z]([0-9A-Za-z\\._\\-~+%]){3,255}$"`))
 		})
-		Convey("success", func() {
+		t.Run("success", func(t *ftt.Test) {
 			cloudProj, topic, err := ValidatePubSubTopicName("projects/cloud-project/topics/mytopic")
-			So(err, ShouldBeNil)
-			So(cloudProj, ShouldEqual, "cloud-project")
-			So(topic, ShouldEqual, "mytopic")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cloudProj, should.Equal("cloud-project"))
+			assert.Loosely(t, topic, should.Equal("mytopic"))
 		})
 	})
 }

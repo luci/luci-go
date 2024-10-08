@@ -17,11 +17,11 @@ package cli
 import (
 	"flag"
 
-	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/data/strpair"
+	luciflag "go.chromium.org/luci/common/flag"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
-	luciflag "go.chromium.org/luci/common/flag"
+	"go.chromium.org/luci/buildbucket/protoutil"
 )
 
 type tagsFlag struct {

@@ -24,6 +24,10 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
@@ -33,14 +37,13 @@ import (
 	"go.chromium.org/luci/buildbucket/appengine/internal/clients"
 	pb "go.chromium.org/luci/buildbucket/proto"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestRunTask(t *testing.T) {
 	t.Parallel()
 
-	Convey("RunTask", t, func() {
+	ftt.Run("RunTask", t, func(t *ftt.Test) {
 		ctx := memory.UseWithAppID(context.Background(), "myApp-dev")
 		ctx = cachingtest.WithGlobalCache(ctx, map[string]caching.BlobCache{
 			"taskbackendlite-run-task": cachingtest.NewBlobCache(),
@@ -50,13 +53,13 @@ func TestRunTask(t *testing.T) {
 			PeerIdentityOverride: identity.Identity("user:cr-buildbucket-dev@appspot.gserviceaccount.com"),
 		})
 		ctx, psserver, psclient, err := clients.SetupTestPubsub(ctx, "myApp-dev")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		defer func() {
 			psclient.Close()
 			psserver.Close()
 		}()
 		myTopic, err := psclient.CreateTopic(ctx, fmt.Sprintf(TopicIDFormat, "myProject"))
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		srv := &TaskBackendLite{}
 		req := &pb.RunTaskRequest{
@@ -81,11 +84,11 @@ func TestRunTask(t *testing.T) {
 				},
 			},
 		}
-		Convey("ok", func() {
+		t.Run("ok", func(t *ftt.Test) {
 			res, err := srv.RunTask(ctx, req)
 
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, &pb.RunTaskResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(&pb.RunTaskResponse{
 				Task: &pb.Task{
 					Id: &pb.TaskID{
 						Id:     "123_request_id",
@@ -93,29 +96,29 @@ func TestRunTask(t *testing.T) {
 					},
 					UpdateId: 1,
 				},
-			})
-			So(psserver.Messages(), ShouldHaveLength, 1)
+			}))
+			assert.Loosely(t, psserver.Messages(), should.HaveLength(1))
 			publishedMsg := psserver.Messages()[0]
-			So(publishedMsg.Attributes["dummy_task_id"], ShouldEqual, "123_request_id")
-			So(publishedMsg.Attributes["project"], ShouldEqual, "infra")
-			So(publishedMsg.Attributes["bucket"], ShouldEqual, "try")
-			So(publishedMsg.Attributes["builder"], ShouldEqual, "foo")
+			assert.Loosely(t, publishedMsg.Attributes["dummy_task_id"], should.Equal("123_request_id"))
+			assert.Loosely(t, publishedMsg.Attributes["project"], should.Equal("infra"))
+			assert.Loosely(t, publishedMsg.Attributes["bucket"], should.Equal("try"))
+			assert.Loosely(t, publishedMsg.Attributes["builder"], should.Equal("foo"))
 			data := &TaskNotification{}
 			err = json.Unmarshal(publishedMsg.Data, data)
-			So(err, ShouldBeNil)
-			So(data, ShouldResemble, &TaskNotification{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, data, should.Resemble(&TaskNotification{
 				BuildID:         "123",
 				StartBuildToken: "token",
-			})
+			}))
 		})
 
-		Convey("nil BackendConfig", func() {
+		t.Run("nil BackendConfig", func(t *ftt.Test) {
 			req.BackendConfig = nil
 
 			res, err := srv.RunTask(ctx, req)
-			So(err, ShouldBeNil)
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, &pb.RunTaskResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(&pb.RunTaskResponse{
 				Task: &pb.Task{
 					Id: &pb.TaskID{
 						Id:     "123_request_id",
@@ -123,17 +126,17 @@ func TestRunTask(t *testing.T) {
 					},
 					UpdateId: 1,
 				},
-			})
+			}))
 
-			So(psserver.Messages(), ShouldHaveLength, 1)
+			assert.Loosely(t, psserver.Messages(), should.HaveLength(1))
 			publishedMsg := psserver.Messages()[0]
-			So(publishedMsg.Attributes["dummy_task_id"], ShouldEqual, "123_request_id")
-			So(publishedMsg.Attributes["project"], ShouldEqual, "")
-			So(publishedMsg.Attributes["bucket"], ShouldEqual, "")
-			So(publishedMsg.Attributes["builder"], ShouldEqual, "")
+			assert.Loosely(t, publishedMsg.Attributes["dummy_task_id"], should.Equal("123_request_id"))
+			assert.Loosely(t, publishedMsg.Attributes["project"], should.BeEmpty)
+			assert.Loosely(t, publishedMsg.Attributes["bucket"], should.BeEmpty)
+			assert.Loosely(t, publishedMsg.Attributes["builder"], should.BeEmpty)
 		})
 
-		Convey("no builder related tags in req", func() {
+		t.Run("no builder related tags in req", func(t *ftt.Test) {
 			req.BackendConfig = &structpb.Struct{
 				Fields: map[string]*structpb.Value{
 					"tags": {
@@ -150,8 +153,8 @@ func TestRunTask(t *testing.T) {
 			}
 
 			res, err := srv.RunTask(ctx, req)
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, &pb.RunTaskResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(&pb.RunTaskResponse{
 				Task: &pb.Task{
 					Id: &pb.TaskID{
 						Id:     "123_request_id",
@@ -159,25 +162,25 @@ func TestRunTask(t *testing.T) {
 					},
 					UpdateId: 1,
 				},
-			})
+			}))
 
-			So(psserver.Messages(), ShouldHaveLength, 1)
+			assert.Loosely(t, psserver.Messages(), should.HaveLength(1))
 			publishedMsg := psserver.Messages()[0]
-			So(publishedMsg.Attributes["dummy_task_id"], ShouldEqual, "123_request_id")
-			So(publishedMsg.Attributes["project"], ShouldEqual, "")
-			So(publishedMsg.Attributes["bucket"], ShouldEqual, "")
-			So(publishedMsg.Attributes["builder"], ShouldEqual, "")
+			assert.Loosely(t, publishedMsg.Attributes["dummy_task_id"], should.Equal("123_request_id"))
+			assert.Loosely(t, publishedMsg.Attributes["project"], should.BeEmpty)
+			assert.Loosely(t, publishedMsg.Attributes["bucket"], should.BeEmpty)
+			assert.Loosely(t, publishedMsg.Attributes["builder"], should.BeEmpty)
 		})
 
-		Convey("duplicate req", func() {
+		t.Run("duplicate req", func(t *ftt.Test) {
 			cache := caching.GlobalCache(ctx, "taskbackendlite-run-task")
 			err := cache.Set(ctx, "123_request_id", []byte{1}, DefaultTaskCreationTimeout)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			res, err := srv.RunTask(ctx, req)
 
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, &pb.RunTaskResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(&pb.RunTaskResponse{
 				Task: &pb.Task{
 					Id: &pb.TaskID{
 						Id:     "123_request_id",
@@ -185,37 +188,37 @@ func TestRunTask(t *testing.T) {
 					},
 					UpdateId: 1,
 				},
-			})
-			So(psserver.Messages(), ShouldHaveLength, 0)
+			}))
+			assert.Loosely(t, psserver.Messages(), should.HaveLength(0))
 		})
 
-		Convey("topic not exist", func() {
+		t.Run("topic not exist", func(t *ftt.Test) {
 			err := myTopic.Delete(ctx)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			res, err := srv.RunTask(ctx, req)
-			So(res, ShouldBeNil)
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument, "topic taskbackendlite-myProject does not exist on Cloud project myApp-dev")
+			assert.Loosely(t, res, should.BeNil)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument, "topic taskbackendlite-myProject does not exist on Cloud project myApp-dev"))
 		})
 
-		Convey("perm errors", func() {
-			Convey("no access", func() {
+		t.Run("perm errors", func(t *ftt.Test) {
+			t.Run("no access", func(t *ftt.Test) {
 				ctx = auth.WithState(ctx, &authtest.FakeState{
 					Identity:             identity.Identity("project:myProject"),
 					PeerIdentityOverride: identity.Identity("user:user1@example.com"),
 				})
 				res, err := srv.RunTask(ctx, req)
-				So(res, ShouldBeNil)
-				So(err, ShouldHaveGRPCStatus, codes.PermissionDenied, `the peer "user:user1@example.com" is not allowed to access this task backend`)
+				assert.Loosely(t, res, should.BeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied, `the peer "user:user1@example.com" is not allowed to access this task backend`))
 			})
 
-			Convey("not a project identity", func() {
+			t.Run("not a project identity", func(t *ftt.Test) {
 				ctx = auth.WithState(ctx, &authtest.FakeState{
 					Identity:             identity.Identity("user:user1"),
 					PeerIdentityOverride: identity.Identity("user:cr-buildbucket-dev@appspot.gserviceaccount.com"),
 				})
 				res, err := srv.RunTask(ctx, req)
-				So(res, ShouldBeNil)
-				So(err, ShouldHaveGRPCStatus, codes.PermissionDenied, `The caller's user identity "user:user1" is not a project identity`)
+				assert.Loosely(t, res, should.BeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied, `The caller's user identity "user:user1" is not a project identity`))
 			})
 		})
 	})

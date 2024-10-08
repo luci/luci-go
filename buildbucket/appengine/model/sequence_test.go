@@ -18,86 +18,87 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestSequence(t *testing.T) {
 	t.Parallel()
 
-	Convey("GenerateSequenceNumbers", t, func() {
+	ftt.Run("GenerateSequenceNumbers", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 
-		Convey("not found", func() {
-			Convey("zero", func() {
+		t.Run("not found", func(t *ftt.Test) {
+			t.Run("zero", func(t *ftt.Test) {
 				seq, err := GenerateSequenceNumbers(ctx, "seq", 0)
-				So(err, ShouldBeNil)
-				So(seq, ShouldEqual, 1)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, seq, should.Equal(1))
 
 				seq, err = GenerateSequenceNumbers(ctx, "seq", 0)
-				So(err, ShouldBeNil)
-				So(seq, ShouldEqual, 1)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, seq, should.Equal(1))
 			})
 
-			Convey("one", func() {
+			t.Run("one", func(t *ftt.Test) {
 				seq, err := GenerateSequenceNumbers(ctx, "seq", 1)
-				So(err, ShouldBeNil)
-				So(seq, ShouldEqual, 1)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, seq, should.Equal(1))
 
 				seq, err = GenerateSequenceNumbers(ctx, "seq", 1)
-				So(err, ShouldBeNil)
-				So(seq, ShouldEqual, 2)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, seq, should.Equal(2))
 			})
 
-			Convey("many", func() {
+			t.Run("many", func(t *ftt.Test) {
 				seq, err := GenerateSequenceNumbers(ctx, "seq", 10)
-				So(err, ShouldBeNil)
-				So(seq, ShouldEqual, 1)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, seq, should.Equal(1))
 
 				seq, err = GenerateSequenceNumbers(ctx, "seq", 10)
-				So(err, ShouldBeNil)
-				So(seq, ShouldEqual, 11)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, seq, should.Equal(11))
 			})
 		})
 
-		Convey("found", func() {
-			So(datastore.Put(ctx, &NumberSequence{
+		t.Run("found", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(ctx, &NumberSequence{
 				ID:   "seq",
 				Next: 2,
-			}), ShouldBeNil)
+			}), should.BeNil)
 
-			Convey("zero", func() {
+			t.Run("zero", func(t *ftt.Test) {
 				seq, err := GenerateSequenceNumbers(ctx, "seq", 0)
-				So(err, ShouldBeNil)
-				So(seq, ShouldEqual, 2)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, seq, should.Equal(2))
 
 				seq, err = GenerateSequenceNumbers(ctx, "seq", 0)
-				So(err, ShouldBeNil)
-				So(seq, ShouldEqual, 2)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, seq, should.Equal(2))
 			})
 
-			Convey("one", func() {
+			t.Run("one", func(t *ftt.Test) {
 				seq, err := GenerateSequenceNumbers(ctx, "seq", 1)
-				So(err, ShouldBeNil)
-				So(seq, ShouldEqual, 2)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, seq, should.Equal(2))
 
 				seq, err = GenerateSequenceNumbers(ctx, "seq", 1)
-				So(err, ShouldBeNil)
-				So(seq, ShouldEqual, 3)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, seq, should.Equal(3))
 			})
 
-			Convey("many", func() {
+			t.Run("many", func(t *ftt.Test) {
 				seq, err := GenerateSequenceNumbers(ctx, "seq", 10)
-				So(err, ShouldBeNil)
-				So(seq, ShouldEqual, 2)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, seq, should.Equal(2))
 
 				seq, err = GenerateSequenceNumbers(ctx, "seq", 10)
-				So(err, ShouldBeNil)
-				So(seq, ShouldEqual, 12)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, seq, should.Equal(12))
 			})
 		})
 	})

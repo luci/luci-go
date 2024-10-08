@@ -17,10 +17,11 @@ package bbinput
 import (
 	"testing"
 
-	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	bbpb "go.chromium.org/luci/buildbucket/proto"
 )
 
 func TestInputOK(t *testing.T) {
@@ -37,12 +38,12 @@ func TestInputOK(t *testing.T) {
 		}},
 	}
 
-	Convey(`Parse (ok)`, t, func() {
+	ftt.Run(`Parse (ok)`, t, func(t *ftt.Test) {
 		for _, tc := range tests {
-			Convey(tc.name, func() {
+			t.Run(tc.name, func(t *ftt.Test) {
 				ret, err := Parse(tc.input)
-				So(err, ShouldBeNil)
-				So(ret, ShouldResembleProto, tc.expect)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, ret, should.Resemble(tc.expect))
 			})
 		}
 	})
@@ -63,11 +64,11 @@ func TestInputBad(t *testing.T) {
 		{"proto", "eJxLSswDQgAITwJi", "parsing proto"},
 	}
 
-	Convey(`Parse (err)`, t, func() {
+	ftt.Run(`Parse (err)`, t, func(t *ftt.Test) {
 		for _, tc := range tests {
-			Convey(tc.name, func() {
+			t.Run(tc.name, func(t *ftt.Test) {
 				_, err := Parse(tc.input)
-				So(err, ShouldErrLike, tc.expect)
+				assert.Loosely(t, err, should.ErrLike(tc.expect))
 			})
 		}
 	})

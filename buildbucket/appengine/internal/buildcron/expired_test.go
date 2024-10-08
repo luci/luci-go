@@ -21,6 +21,9 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/store"
 	"go.chromium.org/luci/gae/filter/txndefer"
@@ -34,9 +37,6 @@ import (
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	taskdefs "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
 	pb "go.chromium.org/luci/buildbucket/proto"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 // now needs to be further fresh enough from buildid.beginningOfTheWorld
@@ -95,44 +95,44 @@ func newInfraFromBuild(ctx context.Context, b *model.Build) *model.BuildInfra {
 func TestTimeoutExpiredBuilds(t *testing.T) {
 	t.Parallel()
 
-	Convey("TimeoutExpiredBuilds", t, func() {
+	ftt.Run("TimeoutExpiredBuilds", t, func(t *ftt.Test) {
 		ctx, store, sch := setUp()
 
-		Convey("skips young, running builds", func() {
+		t.Run("skips young, running builds", func(t *ftt.Test) {
 			b1, bs1 := newBuildAndStatus(ctx, pb.Status_SCHEDULED, now.Add(-model.BuildMaxCompletionTime))
 			b2, bs2 := newBuildAndStatus(ctx, pb.Status_STARTED, now.Add(-model.BuildMaxCompletionTime))
-			So(datastore.Put(ctx, b1, b2, bs1, bs2), ShouldBeNil)
-			So(TimeoutExpiredBuilds(ctx), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, b1, b2, bs1, bs2), should.BeNil)
+			assert.Loosely(t, TimeoutExpiredBuilds(ctx), should.BeNil)
 
 			b := &model.Build{ID: b1.ID}
 			bs := &model.BuildStatus{Build: datastore.KeyForObj(ctx, b)}
-			So(datastore.Get(ctx, b, bs), ShouldBeNil)
-			So(b.Proto, ShouldResembleProto, b1.Proto)
-			So(bs.Status, ShouldEqual, pb.Status_SCHEDULED)
+			assert.Loosely(t, datastore.Get(ctx, b, bs), should.BeNil)
+			assert.Loosely(t, b.Proto, should.Resemble(b1.Proto))
+			assert.Loosely(t, bs.Status, should.Equal(pb.Status_SCHEDULED))
 
 			b = &model.Build{ID: b2.ID}
 			bs = &model.BuildStatus{Build: datastore.KeyForObj(ctx, b)}
-			So(datastore.Get(ctx, b, bs), ShouldBeNil)
-			So(b.Proto, ShouldResembleProto, b2.Proto)
-			So(bs.Status, ShouldEqual, pb.Status_STARTED)
+			assert.Loosely(t, datastore.Get(ctx, b, bs), should.BeNil)
+			assert.Loosely(t, b.Proto, should.Resemble(b2.Proto))
+			assert.Loosely(t, bs.Status, should.Equal(pb.Status_STARTED))
 		})
 
-		Convey("skips old, completed builds", func() {
+		t.Run("skips old, completed builds", func(t *ftt.Test) {
 			b1, bs1 := newBuildAndStatus(ctx, pb.Status_SUCCESS, now.Add(-model.BuildMaxCompletionTime))
 			b2, bs2 := newBuildAndStatus(ctx, pb.Status_FAILURE, now.Add(-model.BuildMaxCompletionTime))
-			So(datastore.Put(ctx, b1, b2, bs1, bs2), ShouldBeNil)
-			So(TimeoutExpiredBuilds(ctx), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, b1, b2, bs1, bs2), should.BeNil)
+			assert.Loosely(t, TimeoutExpiredBuilds(ctx), should.BeNil)
 
 			b := &model.Build{ID: b1.ID}
-			So(datastore.Get(ctx, b), ShouldBeNil)
-			So(b.Proto, ShouldResembleProto, b1.Proto)
+			assert.Loosely(t, datastore.Get(ctx, b), should.BeNil)
+			assert.Loosely(t, b.Proto, should.Resemble(b1.Proto))
 
 			b = &model.Build{ID: b2.ID}
-			So(datastore.Get(ctx, b), ShouldBeNil)
-			So(b.Proto, ShouldResembleProto, b2.Proto)
+			assert.Loosely(t, datastore.Get(ctx, b), should.BeNil)
+			assert.Loosely(t, b.Proto, should.Resemble(b2.Proto))
 		})
 
-		Convey("works w/ a large number of expired builds", func() {
+		t.Run("works w/ a large number of expired builds", func(t *ftt.Test) {
 			bs := make([]*model.Build, 128)
 			bss := make([]*model.BuildStatus, len(bs))
 			infs := make([]*model.BuildInfra, len(bs))
@@ -145,14 +145,14 @@ func TestTimeoutExpiredBuilds(t *testing.T) {
 				ID:     "builder",
 				Parent: model.BucketKey(ctx, "project", "bucket"),
 			}
-			So(datastore.Put(ctx, bs), ShouldBeNil)
-			So(datastore.Put(ctx, bss), ShouldBeNil)
-			So(datastore.Put(ctx, infs), ShouldBeNil)
-			So(datastore.Put(ctx, bldr), ShouldBeNil)
-			So(TimeoutExpiredBuilds(ctx), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, bs), should.BeNil)
+			assert.Loosely(t, datastore.Put(ctx, bss), should.BeNil)
+			assert.Loosely(t, datastore.Put(ctx, infs), should.BeNil)
+			assert.Loosely(t, datastore.Put(ctx, bldr), should.BeNil)
+			assert.Loosely(t, TimeoutExpiredBuilds(ctx), should.BeNil)
 		})
 
-		Convey("marks old, running builds w/ infra_failure", func() {
+		t.Run("marks old, running builds w/ infra_failure", func(t *ftt.Test) {
 			base := pb.CustomMetricBase_CUSTOM_METRIC_BASE_COMPLETED
 			name := "/chrome/infra/custom/builds/completed"
 			cm := &pb.CustomMetricDefinition{
@@ -182,7 +182,7 @@ func TestTimeoutExpiredBuilds(t *testing.T) {
 					MaxConcurrentBuilds: 2,
 				},
 			}
-			So(datastore.Put(ctx, b1, b2, bs1, bs2, inf1, inf2, bldr), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, b1, b2, bs1, bs2, inf1, inf2, bldr), should.BeNil)
 
 			globalCfg := &pb.SettingsCfg{
 				CustomMetrics: []*pb.CustomMetric{
@@ -197,37 +197,37 @@ func TestTimeoutExpiredBuilds(t *testing.T) {
 			}
 			ctx, _ = metrics.WithCustomMetrics(ctx, globalCfg)
 
-			So(TimeoutExpiredBuilds(ctx), ShouldBeNil)
+			assert.Loosely(t, TimeoutExpiredBuilds(ctx), should.BeNil)
 
 			b := &model.Build{ID: b1.ID}
 			bs := &model.BuildStatus{Build: datastore.KeyForObj(ctx, b)}
-			So(datastore.Get(ctx, b, bs), ShouldBeNil)
-			So(b.Proto.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
-			So(b.LegacyProperties.LeaseProperties.IsLeased, ShouldBeFalse)
-			So(b.Proto.StatusDetails.GetTimeout(), ShouldNotBeNil)
-			So(bs.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
+			assert.Loosely(t, datastore.Get(ctx, b, bs), should.BeNil)
+			assert.Loosely(t, b.Proto.Status, should.Equal(pb.Status_INFRA_FAILURE))
+			assert.Loosely(t, b.LegacyProperties.LeaseProperties.IsLeased, should.BeFalse)
+			assert.Loosely(t, b.Proto.StatusDetails.GetTimeout(), should.NotBeNil)
+			assert.Loosely(t, bs.Status, should.Equal(pb.Status_INFRA_FAILURE))
 
 			b = &model.Build{ID: b2.ID}
 			bs = &model.BuildStatus{Build: datastore.KeyForObj(ctx, b)}
-			So(datastore.Get(ctx, b, bs), ShouldBeNil)
-			So(b.Proto.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
-			So(b.Proto.StatusDetails.GetTimeout(), ShouldNotBeNil)
-			So(bs.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
+			assert.Loosely(t, datastore.Get(ctx, b, bs), should.BeNil)
+			assert.Loosely(t, b.Proto.Status, should.Equal(pb.Status_INFRA_FAILURE))
+			assert.Loosely(t, b.Proto.StatusDetails.GetTimeout(), should.NotBeNil)
+			assert.Loosely(t, bs.Status, should.Equal(pb.Status_INFRA_FAILURE))
 
-			Convey("reports metrics", func() {
+			t.Run("reports metrics", func(t *ftt.Test) {
 				fv := []any{
 					"INFRA_FAILURE", /* metric:status */
 					"None",          /* metric:experiments */
 				}
-				So(store.Get(ctx, metrics.V2.BuildCountCompleted, time.Time{}, fv), ShouldEqual, 2)
+				assert.Loosely(t, store.Get(ctx, metrics.V2.BuildCountCompleted, time.Time{}, fv), should.Equal(2))
 
 				// Custom metrics
 				res, err := metrics.GetCustomMetricsData(ctx, base, name, time.Time{}, fv)
-				So(err, ShouldBeNil)
-				So(res, ShouldEqual, 2)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res, should.Equal(2))
 			})
 
-			Convey("adds TQ tasks", func() {
+			t.Run("adds TQ tasks", func(t *ftt.Test) {
 				// TQ tasks for pubsub-notification, bq-export, and invocation-finalization.
 				tasks := sch.Tasks()
 				notifyIDs := []int64{}
@@ -265,16 +265,16 @@ func TestTimeoutExpiredBuilds(t *testing.T) {
 				sortIDs(notifyGoIDs)
 				sortIDs(popPendingIDs)
 
-				So(notifyIDs, ShouldHaveLength, 2)
-				So(notifyIDs, ShouldResemble, expected)
-				So(bqIDs, ShouldHaveLength, 2)
-				So(bqIDs, ShouldResemble, expected)
-				So(rdbIDs, ShouldHaveLength, 2)
-				So(rdbIDs, ShouldResemble, expected)
-				So(notifyGoIDs, ShouldHaveLength, 2)
-				So(notifyGoIDs, ShouldResemble, expected)
-				So(popPendingIDs, ShouldHaveLength, 2)
-				So(popPendingIDs, ShouldResemble, expected)
+				assert.Loosely(t, notifyIDs, should.HaveLength(2))
+				assert.Loosely(t, notifyIDs, should.Resemble(expected))
+				assert.Loosely(t, bqIDs, should.HaveLength(2))
+				assert.Loosely(t, bqIDs, should.Resemble(expected))
+				assert.Loosely(t, rdbIDs, should.HaveLength(2))
+				assert.Loosely(t, rdbIDs, should.Resemble(expected))
+				assert.Loosely(t, notifyGoIDs, should.HaveLength(2))
+				assert.Loosely(t, notifyGoIDs, should.Resemble(expected))
+				assert.Loosely(t, popPendingIDs, should.HaveLength(2))
+				assert.Loosely(t, popPendingIDs, should.Resemble(expected))
 			})
 		})
 	})

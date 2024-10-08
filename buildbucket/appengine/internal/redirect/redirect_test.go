@@ -24,6 +24,9 @@ import (
 	"github.com/julienschmidt/httprouter"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
@@ -34,14 +37,12 @@ import (
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	"go.chromium.org/luci/buildbucket/bbperms"
 	pb "go.chromium.org/luci/buildbucket/proto"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestHandleViewBuild(t *testing.T) {
 	t.Parallel()
 
-	Convey("handleViewBuild", t, func() {
+	ftt.Run("handleViewBuild", t, func(t *ftt.Test) {
 		rsp := httptest.NewRecorder()
 		rctx := &router.Context{
 			Writer: rsp,
@@ -69,42 +70,42 @@ func TestHandleViewBuild(t *testing.T) {
 			BackendTarget: "foo",
 		}
 		bucket := &model.Bucket{ID: "bucket", Parent: model.ProjectKey(ctx, "project")}
-		So(datastore.Put(ctx, build, bucket), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, build, bucket), should.BeNil)
 
-		Convey("invalid build id", func() {
+		t.Run("invalid build id", func(t *ftt.Test) {
 			rctx.Request = (&http.Request{}).WithContext(ctx)
 			rctx.Params = httprouter.Params{
 				{Key: "BuildID", Value: "foo"},
 			}
 
 			handleViewBuild(rctx)
-			So(rsp.Code, ShouldEqual, http.StatusBadRequest)
-			So(rsp.Body.String(), ShouldContainSubstring, "invalid build id")
+			assert.Loosely(t, rsp.Code, should.Equal(http.StatusBadRequest))
+			assert.Loosely(t, rsp.Body.String(), should.ContainSubstring("invalid build id"))
 		})
 
-		Convey("permission denied", func() {
+		t.Run("permission denied", func(t *ftt.Test) {
 			rctx.Request = (&http.Request{}).WithContext(ctx)
 			rctx.Params = httprouter.Params{
 				{Key: "BuildID", Value: "123"},
 			}
 
 			handleViewBuild(rctx)
-			So(rsp.Code, ShouldEqual, http.StatusNotFound)
-			So(rsp.Body.String(), ShouldContainSubstring, `resource not found or "user:user@example.com" does not have permission to view it`)
+			assert.Loosely(t, rsp.Code, should.Equal(http.StatusNotFound))
+			assert.Loosely(t, rsp.Body.String(), should.ContainSubstring(`resource not found or "user:user@example.com" does not have permission to view it`))
 		})
 
-		Convey("build not exist", func() {
+		t.Run("build not exist", func(t *ftt.Test) {
 			rctx.Request = (&http.Request{}).WithContext(ctx)
 			rctx.Params = httprouter.Params{
 				{Key: "BuildID", Value: "9"},
 			}
 
 			handleViewBuild(rctx)
-			So(rsp.Code, ShouldEqual, http.StatusNotFound)
-			So(rsp.Body.String(), ShouldContainSubstring, `resource not found or "user:user@example.com" does not have permission to view it`)
+			assert.Loosely(t, rsp.Code, should.Equal(http.StatusNotFound))
+			assert.Loosely(t, rsp.Body.String(), should.ContainSubstring(`resource not found or "user:user@example.com" does not have permission to view it`))
 		})
 
-		Convey("anonymous", func() {
+		t.Run("anonymous", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: identity.AnonymousIdentity,
 			})
@@ -117,11 +118,11 @@ func TestHandleViewBuild(t *testing.T) {
 			}
 
 			handleViewBuild(rctx)
-			So(rsp.Code, ShouldEqual, http.StatusFound)
-			So(rsp.Header().Get("Location"), ShouldEqual, "http://fake.example.com/login?dest=%2Fbuild%2F123")
+			assert.Loosely(t, rsp.Code, should.Equal(http.StatusFound))
+			assert.Loosely(t, rsp.Header().Get("Location"), should.Equal("http://fake.example.com/login?dest=%2Fbuild%2F123"))
 		})
 
-		Convey("ok", func() {
+		t.Run("ok", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: userID,
 				FakeDB: authtest.NewFakeDB(
@@ -134,7 +135,7 @@ func TestHandleViewBuild(t *testing.T) {
 					MiloHostname: "milo.com",
 				},
 			}
-			So(config.SetTestSettingsCfg(ctx, settingsCfg), ShouldBeNil)
+			assert.Loosely(t, config.SetTestSettingsCfg(ctx, settingsCfg), should.BeNil)
 
 			rctx.Request = (&http.Request{}).WithContext(ctx)
 			rctx.Params = httprouter.Params{
@@ -142,11 +143,11 @@ func TestHandleViewBuild(t *testing.T) {
 			}
 
 			handleViewBuild(rctx)
-			So(rsp.Code, ShouldEqual, http.StatusFound)
-			So(rsp.Header().Get("Location"), ShouldEqual, "https://milo.com/b/123")
+			assert.Loosely(t, rsp.Code, should.Equal(http.StatusFound))
+			assert.Loosely(t, rsp.Header().Get("Location"), should.Equal("https://milo.com/b/123"))
 		})
 
-		Convey("build with view_url", func() {
+		t.Run("build with view_url", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: userID,
 				FakeDB: authtest.NewFakeDB(
@@ -159,7 +160,7 @@ func TestHandleViewBuild(t *testing.T) {
 					MiloHostname: "milo.com",
 				},
 			}
-			So(config.SetTestSettingsCfg(ctx, settingsCfg), ShouldBeNil)
+			assert.Loosely(t, config.SetTestSettingsCfg(ctx, settingsCfg), should.BeNil)
 			url := "https://another.com"
 			b := &model.Build{
 				ID: 300,
@@ -173,18 +174,18 @@ func TestHandleViewBuild(t *testing.T) {
 					ViewUrl: url,
 				},
 			}
-			So(datastore.Put(ctx, b), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, b), should.BeNil)
 
 			rctx.Request = (&http.Request{}).WithContext(ctx)
 			rctx.Params = httprouter.Params{
 				{Key: "BuildID", Value: "300"},
 			}
 			handleViewBuild(rctx)
-			So(rsp.Code, ShouldEqual, http.StatusFound)
-			So(rsp.Header().Get("Location"), ShouldEqual, url)
+			assert.Loosely(t, rsp.Code, should.Equal(http.StatusFound))
+			assert.Loosely(t, rsp.Header().Get("Location"), should.Equal(url))
 		})
 
-		Convey("RedirectToTaskPage", func() {
+		t.Run("RedirectToTaskPage", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: userID,
 				FakeDB: authtest.NewFakeDB(
@@ -207,7 +208,7 @@ func TestHandleViewBuild(t *testing.T) {
 					},
 				},
 			}
-			So(config.SetTestSettingsCfg(ctx, settingsCfg), ShouldBeNil)
+			assert.Loosely(t, config.SetTestSettingsCfg(ctx, settingsCfg), should.BeNil)
 			bInfra := &model.BuildInfra{
 				Build: datastore.KeyForObj(ctx, build),
 				Proto: &pb.BuildInfra{
@@ -222,33 +223,33 @@ func TestHandleViewBuild(t *testing.T) {
 				},
 			}
 
-			Convey("task.Link is populated", func() {
+			t.Run("task.Link is populated", func(t *ftt.Test) {
 				bInfra.Proto.Backend.Task.Link = "https://fake-task-page-link"
-				So(datastore.Put(ctx, bInfra), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, bInfra), should.BeNil)
 				rctx.Request = (&http.Request{}).WithContext(ctx)
 				rctx.Params = httprouter.Params{
 					{Key: "BuildID", Value: "123"},
 				}
 
 				handleViewBuild(rctx)
-				So(rsp.Code, ShouldEqual, http.StatusFound)
-				So(rsp.Header().Get("Location"), ShouldEqual, "https://fake-task-page-link")
+				assert.Loosely(t, rsp.Code, should.Equal(http.StatusFound))
+				assert.Loosely(t, rsp.Header().Get("Location"), should.Equal("https://fake-task-page-link"))
 			})
 
-			Convey("task.Link is not populated", func() {
+			t.Run("task.Link is not populated", func(t *ftt.Test) {
 				bInfra.Proto.Backend.Task.Link = ""
-				So(datastore.Put(ctx, bInfra), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, bInfra), should.BeNil)
 				rctx.Request = (&http.Request{}).WithContext(ctx)
 				rctx.Params = httprouter.Params{
 					{Key: "BuildID", Value: "123"},
 				}
 
 				handleViewBuild(rctx)
-				So(rsp.Code, ShouldEqual, http.StatusFound)
-				So(rsp.Header().Get("Location"), ShouldEqual, "https://milo.com/b/123")
+				assert.Loosely(t, rsp.Code, should.Equal(http.StatusFound))
+				assert.Loosely(t, rsp.Header().Get("Location"), should.Equal("https://milo.com/b/123"))
 			})
 		})
-		Convey("builder redirect", func() {
+		t.Run("builder redirect", func(t *ftt.Test) {
 			rsp := httptest.NewRecorder()
 			rctx := &router.Context{
 				Writer: rsp,
@@ -259,41 +260,41 @@ func TestHandleViewBuild(t *testing.T) {
 					MiloHostname: "milo.com",
 				},
 			}
-			So(config.SetTestSettingsCfg(ctx, settingsCfg), ShouldBeNil)
+			assert.Loosely(t, config.SetTestSettingsCfg(ctx, settingsCfg), should.BeNil)
 			rctx.Request = (&http.Request{}).WithContext(ctx)
 
-			Convey("invalid parameters", func() {
-				Convey("project", func() {
+			t.Run("invalid parameters", func(t *ftt.Test) {
+				t.Run("project", func(t *ftt.Test) {
 					rctx.Params = httprouter.Params{}
 					handleViewBuilder(rctx)
-					So(rsp.Code, ShouldEqual, http.StatusBadRequest)
+					assert.Loosely(t, rsp.Code, should.Equal(http.StatusBadRequest))
 				})
-				Convey("bucket", func() {
+				t.Run("bucket", func(t *ftt.Test) {
 					rctx.Params = httprouter.Params{
 						{Key: "Project", Value: "project"},
 					}
 					handleViewBuilder(rctx)
-					So(rsp.Code, ShouldEqual, http.StatusBadRequest)
+					assert.Loosely(t, rsp.Code, should.Equal(http.StatusBadRequest))
 				})
-				Convey("builder", func() {
+				t.Run("builder", func(t *ftt.Test) {
 					rctx.Params = httprouter.Params{
 						{Key: "Project", Value: "project"},
 						{Key: "Bucket", Value: "bucket"},
 					}
 					handleViewBuilder(rctx)
-					So(rsp.Code, ShouldEqual, http.StatusBadRequest)
+					assert.Loosely(t, rsp.Code, should.Equal(http.StatusBadRequest))
 				})
 			})
 
-			Convey("ok", func() {
+			t.Run("ok", func(t *ftt.Test) {
 				rctx.Params = httprouter.Params{
 					{Key: "Project", Value: "project"},
 					{Key: "Bucket", Value: "bucket"},
 					{Key: "Builder", Value: "builder"},
 				}
 				handleViewBuilder(rctx)
-				So(rsp.Code, ShouldEqual, http.StatusFound)
-				So(rsp.Header().Get("Location"), ShouldEqual, "https://milo.com/ui/p/project/builders/bucket/builder")
+				assert.Loosely(t, rsp.Code, should.Equal(http.StatusFound))
+				assert.Loosely(t, rsp.Header().Get("Location"), should.Equal("https://milo.com/ui/p/project/builders/bucket/builder"))
 			})
 		})
 	})
@@ -302,7 +303,7 @@ func TestHandleViewBuild(t *testing.T) {
 func TestHandleViewLog(t *testing.T) {
 	t.Parallel()
 
-	Convey("handleViewLog", t, func() {
+	ftt.Run("handleViewLog", t, func(t *ftt.Test) {
 		rsp := httptest.NewRecorder()
 		rctx := &router.Context{
 			Writer: rsp,
@@ -335,7 +336,7 @@ func TestHandleViewLog(t *testing.T) {
 		bs := &model.BuildSteps{
 			Build: datastore.KeyForObj(ctx, build),
 		}
-		So(bs.FromProto([]*pb.Step{
+		assert.Loosely(t, bs.FromProto([]*pb.Step{
 			{
 				Name:            "first",
 				SummaryMarkdown: "summary",
@@ -346,10 +347,10 @@ func TestHandleViewLog(t *testing.T) {
 				},
 				},
 			},
-		}), ShouldBeNil)
-		So(datastore.Put(ctx, build, bucket, bs), ShouldBeNil)
+		}), should.BeNil)
+		assert.Loosely(t, datastore.Put(ctx, build, bucket, bs), should.BeNil)
 
-		Convey("invalid build id", func() {
+		t.Run("invalid build id", func(t *ftt.Test) {
 			rctx.Request = (&http.Request{}).WithContext(ctx)
 			rctx.Params = httprouter.Params{
 				{Key: "BuildID", Value: "foo"},
@@ -357,11 +358,11 @@ func TestHandleViewLog(t *testing.T) {
 			}
 
 			handleViewLog(rctx)
-			So(rsp.Code, ShouldEqual, http.StatusBadRequest)
-			So(rsp.Body.String(), ShouldContainSubstring, "invalid build id")
+			assert.Loosely(t, rsp.Code, should.Equal(http.StatusBadRequest))
+			assert.Loosely(t, rsp.Body.String(), should.ContainSubstring("invalid build id"))
 		})
 
-		Convey("no access to build", func() {
+		t.Run("no access to build", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: identity.Identity("user:random@example.com"),
 			})
@@ -373,11 +374,11 @@ func TestHandleViewLog(t *testing.T) {
 			}
 
 			handleViewLog(rctx)
-			So(rsp.Code, ShouldEqual, http.StatusNotFound)
-			So(rsp.Body.String(), ShouldContainSubstring, `resource not found or "user:random@example.com" does not have permission to view it`)
+			assert.Loosely(t, rsp.Code, should.Equal(http.StatusNotFound))
+			assert.Loosely(t, rsp.Body.String(), should.ContainSubstring(`resource not found or "user:random@example.com" does not have permission to view it`))
 		})
 
-		Convey("build not found", func() {
+		t.Run("build not found", func(t *ftt.Test) {
 			rctx.Request = (&http.Request{}).WithContext(ctx)
 			rctx.Params = httprouter.Params{
 				{Key: "BuildID", Value: "9"},
@@ -385,24 +386,24 @@ func TestHandleViewLog(t *testing.T) {
 			}
 
 			handleViewLog(rctx)
-			So(rsp.Code, ShouldEqual, http.StatusNotFound)
-			So(rsp.Body.String(), ShouldContainSubstring, `resource not found or "user:user@example.com" does not have permission to view it`)
+			assert.Loosely(t, rsp.Code, should.Equal(http.StatusNotFound))
+			assert.Loosely(t, rsp.Body.String(), should.ContainSubstring(`resource not found or "user:user@example.com" does not have permission to view it`))
 		})
 
-		Convey("no steps", func() {
+		t.Run("no steps", func(t *ftt.Test) {
 			rctx.Request = (&http.Request{}).WithContext(ctx)
 			rctx.Params = httprouter.Params{
 				{Key: "BuildID", Value: "123"},
 				{Key: "StepName", Value: "first"},
 			}
-			So(datastore.Delete(ctx, bs), ShouldBeNil)
+			assert.Loosely(t, datastore.Delete(ctx, bs), should.BeNil)
 
 			handleViewLog(rctx)
-			So(rsp.Code, ShouldEqual, http.StatusNotFound)
-			So(rsp.Body.String(), ShouldContainSubstring, "no steps found")
+			assert.Loosely(t, rsp.Code, should.Equal(http.StatusNotFound))
+			assert.Loosely(t, rsp.Body.String(), should.ContainSubstring("no steps found"))
 		})
 
-		Convey("the requested step not found", func() {
+		t.Run("the requested step not found", func(t *ftt.Test) {
 			rctx.Request = (&http.Request{}).WithContext(ctx)
 			rctx.Request.URL = &url.URL{}
 			rctx.Params = httprouter.Params{
@@ -411,11 +412,11 @@ func TestHandleViewLog(t *testing.T) {
 			}
 
 			handleViewLog(rctx)
-			So(rsp.Code, ShouldEqual, http.StatusNotFound)
-			So(rsp.Body.String(), ShouldContainSubstring, `view url for log "stdout" in step "second" in build 123 not found`)
+			assert.Loosely(t, rsp.Code, should.Equal(http.StatusNotFound))
+			assert.Loosely(t, rsp.Body.String(), should.ContainSubstring(`view url for log "stdout" in step "second" in build 123 not found`))
 		})
 
-		Convey("the requested log not found", func() {
+		t.Run("the requested log not found", func(t *ftt.Test) {
 			rctx.Request = (&http.Request{}).WithContext(ctx)
 			rctx.Request.URL = &url.URL{
 				RawQuery: "log=stderr",
@@ -426,11 +427,11 @@ func TestHandleViewLog(t *testing.T) {
 			}
 
 			handleViewLog(rctx)
-			So(rsp.Code, ShouldEqual, http.StatusNotFound)
-			So(rsp.Body.String(), ShouldContainSubstring, `view url for log "stderr" in step "first" in build 123 not found`)
+			assert.Loosely(t, rsp.Code, should.Equal(http.StatusNotFound))
+			assert.Loosely(t, rsp.Body.String(), should.ContainSubstring(`view url for log "stderr" in step "first" in build 123 not found`))
 		})
 
-		Convey("ok", func() {
+		t.Run("ok", func(t *ftt.Test) {
 			rctx.Request = (&http.Request{}).WithContext(ctx)
 			rctx.Request.URL = &url.URL{}
 			rctx.Params = httprouter.Params{
@@ -439,8 +440,8 @@ func TestHandleViewLog(t *testing.T) {
 			}
 
 			handleViewLog(rctx)
-			So(rsp.Code, ShouldEqual, http.StatusFound)
-			So(rsp.Header().Get("Location"), ShouldEqual, "https://log.com/123/first")
+			assert.Loosely(t, rsp.Code, should.Equal(http.StatusFound))
+			assert.Loosely(t, rsp.Header().Get("Location"), should.Equal("https://log.com/123/first"))
 		})
 	})
 }

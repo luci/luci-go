@@ -23,10 +23,11 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
-	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/common/proto/structmask"
+
+	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
 // The default field mask to use for read requests.

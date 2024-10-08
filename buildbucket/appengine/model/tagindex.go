@@ -19,11 +19,12 @@ import (
 	"fmt"
 	"time"
 
-	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
+
+	"go.chromium.org/luci/buildbucket/protoutil"
 )
 
 // Ensure TagIndexEntry implements datastore.PropertyConverter.

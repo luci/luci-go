@@ -23,64 +23,64 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestTimestamps(t *testing.T) {
 	t.Parallel()
 
-	Convey("Durations", t, func() {
+	ftt.Run("Durations", t, func(t *ftt.Test) {
 		build := &pb.Build{
 			CreateTime: &timestamppb.Timestamp{Seconds: 1000},
 			StartTime:  &timestamppb.Timestamp{Seconds: 1010},
 			EndTime:    &timestamppb.Timestamp{Seconds: 1030},
 		}
 		dur, ok := SchedulingDuration(build)
-		So(ok, ShouldBeTrue)
-		So(dur, ShouldEqual, 10*time.Second)
+		assert.Loosely(t, ok, should.BeTrue)
+		assert.Loosely(t, dur, should.Equal(10*time.Second))
 
 		dur, ok = RunDuration(build)
-		So(ok, ShouldBeTrue)
-		So(dur, ShouldEqual, 20*time.Second)
+		assert.Loosely(t, ok, should.BeTrue)
+		assert.Loosely(t, dur, should.Equal(20*time.Second))
 	})
 }
 
 func TestSetStatus(t *testing.T) {
 	t.Parallel()
 
-	Convey("SetStatus", t, func() {
+	ftt.Run("SetStatus", t, func(t *ftt.Test) {
 		build := &pb.Build{}
 		now := testclock.TestRecentTimeUTC
 
-		Convey("STARTED", func() {
+		t.Run("STARTED", func(t *ftt.Test) {
 			SetStatus(now, build, pb.Status_STARTED)
-			So(build, ShouldResembleProto, &pb.Build{
+			assert.Loosely(t, build, should.Resemble(&pb.Build{
 				Status:     pb.Status_STARTED,
 				StartTime:  timestamppb.New(now),
 				UpdateTime: timestamppb.New(now),
-			})
+			}))
 
-			Convey("no-op", func() {
+			t.Run("no-op", func(t *ftt.Test) {
 				SetStatus(now.Add(time.Minute), build, pb.Status_STARTED)
-				So(build, ShouldResembleProto, &pb.Build{
+				assert.Loosely(t, build, should.Resemble(&pb.Build{
 					Status:     pb.Status_STARTED,
 					StartTime:  timestamppb.New(now),
 					UpdateTime: timestamppb.New(now),
-				})
+				}))
 			})
 		})
 
-		Convey("CANCELED", func() {
+		t.Run("CANCELED", func(t *ftt.Test) {
 			SetStatus(now, build, pb.Status_CANCELED)
-			So(build, ShouldResembleProto, &pb.Build{
+			assert.Loosely(t, build, should.Resemble(&pb.Build{
 				Status:     pb.Status_CANCELED,
 				UpdateTime: timestamppb.New(now),
 				EndTime:    timestamppb.New(now),
-			})
+			}))
 		})
 	})
 }
@@ -88,7 +88,7 @@ func TestSetStatus(t *testing.T) {
 func TestExePayloadPath(t *testing.T) {
 	t.Parallel()
 
-	Convey("from agent.purposes", t, func() {
+	ftt.Run("from agent.purposes", t, func(t *ftt.Test) {
 		b := &pb.Build{
 			Infra: &pb.BuildInfra{
 				Buildbucket: &pb.BuildInfra_Buildbucket{
@@ -100,10 +100,10 @@ func TestExePayloadPath(t *testing.T) {
 				},
 			},
 		}
-		So(ExePayloadPath(b), ShouldEqual, "kitchen-checkout")
+		assert.Loosely(t, ExePayloadPath(b), should.Equal("kitchen-checkout"))
 	})
 
-	Convey("from agent.purposes", t, func() {
+	ftt.Run("from agent.purposes", t, func(t *ftt.Test) {
 		b := &pb.Build{
 			Infra: &pb.BuildInfra{
 				Bbagent: &pb.BuildInfra_BBAgent{
@@ -112,37 +112,37 @@ func TestExePayloadPath(t *testing.T) {
 				},
 			},
 		}
-		So(ExePayloadPath(b), ShouldEqual, "kitchen-checkout")
+		assert.Loosely(t, ExePayloadPath(b), should.Equal("kitchen-checkout"))
 	})
 }
 
 func TestMergeSummary(t *testing.T) {
 	t.Parallel()
 
-	Convey("Variants of MergeSummary", t, func() {
-		Convey("No cancel message", func() {
+	ftt.Run("Variants of MergeSummary", t, func(t *ftt.Test) {
+		t.Run("No cancel message", func(t *ftt.Test) {
 			b := &pb.Build{
 				SummaryMarkdown: "summary",
 			}
-			So(MergeSummary(b), ShouldEqual, "summary")
+			assert.Loosely(t, MergeSummary(b), should.Equal("summary"))
 		})
 
-		Convey("No summary message", func() {
+		t.Run("No summary message", func(t *ftt.Test) {
 			b := &pb.Build{
 				CancellationMarkdown: "cancellation",
 			}
-			So(MergeSummary(b), ShouldEqual, "cancellation")
+			assert.Loosely(t, MergeSummary(b), should.Equal("cancellation"))
 		})
 
-		Convey("Summary and cancel message", func() {
+		t.Run("Summary and cancel message", func(t *ftt.Test) {
 			b := &pb.Build{
 				SummaryMarkdown:      "summary",
 				CancellationMarkdown: "cancellation",
 			}
-			So(MergeSummary(b), ShouldEqual, "summary\ncancellation")
+			assert.Loosely(t, MergeSummary(b), should.Equal("summary\ncancellation"))
 		})
 
-		Convey("Summary and task message", func() {
+		t.Run("Summary and task message", func(t *ftt.Test) {
 			b := &pb.Build{
 				SummaryMarkdown: "summary",
 				Infra: &pb.BuildInfra{
@@ -153,22 +153,22 @@ func TestMergeSummary(t *testing.T) {
 					},
 				},
 			}
-			So(MergeSummary(b), ShouldEqual, "summary\nbot_died")
+			assert.Loosely(t, MergeSummary(b), should.Equal("summary\nbot_died"))
 		})
 
-		Convey("Neither summary nor CancelMessage", func() {
+		t.Run("Neither summary nor CancelMessage", func(t *ftt.Test) {
 			b := &pb.Build{}
-			So(MergeSummary(b), ShouldBeEmpty)
+			assert.Loosely(t, MergeSummary(b), should.BeEmpty)
 		})
 
-		Convey("merged summary too long", func() {
+		t.Run("merged summary too long", func(t *ftt.Test) {
 			b := &pb.Build{
 				SummaryMarkdown: strings.Repeat("l", SummaryMarkdownMaxLength+1),
 			}
-			So(MergeSummary(b), ShouldEqual, strings.Repeat("l", SummaryMarkdownMaxLength-3)+"...")
+			assert.Loosely(t, MergeSummary(b), should.Equal(strings.Repeat("l", SummaryMarkdownMaxLength-3)+"..."))
 		})
 
-		Convey("Summary duplication", func() {
+		t.Run("Summary duplication", func(t *ftt.Test) {
 			b := &pb.Build{
 				SummaryMarkdown: "summary",
 				Output: &pb.Build_Output{
@@ -176,7 +176,7 @@ func TestMergeSummary(t *testing.T) {
 				},
 				CancellationMarkdown: "cancellation",
 			}
-			So(MergeSummary(b), ShouldEqual, "summary\ncancellation")
+			assert.Loosely(t, MergeSummary(b), should.Equal("summary\ncancellation"))
 		})
 	})
 }
@@ -202,14 +202,14 @@ func TestBotDimensions(t *testing.T) {
 	b := &pb.Build{
 		Infra: &pb.BuildInfra{},
 	}
-	Convey("build on swarming", t, func() {
+	ftt.Run("build on swarming", t, func(t *ftt.Test) {
 		b.Infra.Swarming = &pb.BuildInfra_Swarming{
 			BotDimensions: botDims,
 		}
-		So(MustBotDimensions(b), ShouldResembleProto, botDims)
+		assert.Loosely(t, MustBotDimensions(b), should.Resemble(botDims))
 	})
 
-	Convey("build on backend", t, func() {
+	ftt.Run("build on backend", t, func(t *ftt.Test) {
 		b.Infra.Backend = &pb.BuildInfra_Backend{
 			Task: &pb.Task{
 				Details: &structpb.Struct{
@@ -245,13 +245,13 @@ func TestBotDimensions(t *testing.T) {
 				},
 			},
 		}
-		So(MustBotDimensions(b), ShouldResembleProto, botDims)
+		assert.Loosely(t, MustBotDimensions(b), should.Resemble(botDims))
 	})
 }
 
 func TestAddBotDimensionsToTaskDetails(t *testing.T) {
 	t.Parallel()
-	Convey("with empty details", t, func() {
+	ftt.Run("with empty details", t, func(t *ftt.Test) {
 		botDims := []*pb.StringPair{
 			{
 				Key:   "cpu",
@@ -298,10 +298,10 @@ func TestAddBotDimensionsToTaskDetails(t *testing.T) {
 			},
 		}
 		actual, err := AddBotDimensionsToTaskDetails(botDims, nil)
-		So(err, ShouldBeNil)
-		So(actual, ShouldResembleProto, expected)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, actual, should.Resemble(expected))
 	})
-	Convey("with existing details", t, func() {
+	ftt.Run("with existing details", t, func(t *ftt.Test) {
 		botDims := []*pb.StringPair{
 			{
 				Key:   "cpu",
@@ -358,7 +358,7 @@ func TestAddBotDimensionsToTaskDetails(t *testing.T) {
 			},
 		}
 		actual, err := AddBotDimensionsToTaskDetails(botDims, details)
-		So(err, ShouldBeNil)
-		So(actual, ShouldResembleProto, expected)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, actual, should.Resemble(expected))
 	})
 }

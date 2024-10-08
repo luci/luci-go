@@ -21,6 +21,10 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
@@ -31,7 +35,6 @@ import (
 	"go.chromium.org/luci/buildbucket/bbperms"
 	pb "go.chromium.org/luci/buildbucket/proto"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -40,42 +43,42 @@ func TestListBuilders(t *testing.T) {
 
 	const userID = identity.Identity("user:user@example.com")
 
-	Convey("ListBuilders", t, func() {
+	ftt.Run("ListBuilders", t, func(t *ftt.Test) {
 		srv := &Builders{}
 		ctx := memory.Use(context.Background())
 		ctx = secrets.GeneratePrimaryTinkAEADForTest(ctx)
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 
-		Convey(`Request validation`, func() {
-			Convey(`No project when bucket is specified`, func() {
+		t.Run(`Request validation`, func(t *ftt.Test) {
+			t.Run(`No project when bucket is specified`, func(t *ftt.Test) {
 				_, err := srv.ListBuilders(ctx, &pb.ListBuildersRequest{Bucket: "bucket"})
-				So(err, ShouldHaveAppStatus, codes.InvalidArgument, "project must be specified")
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.InvalidArgument, "project must be specified"))
 			})
 
-			Convey(`Invalid bucket`, func() {
+			t.Run(`Invalid bucket`, func(t *ftt.Test) {
 				_, err := srv.ListBuilders(ctx, &pb.ListBuildersRequest{
 					Project: "project",
 					Bucket:  "!",
 				})
-				So(err, ShouldHaveAppStatus, codes.InvalidArgument, "bucket must match")
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.InvalidArgument, "bucket must match"))
 			})
 
-			Convey(`Invalid page token`, func() {
+			t.Run(`Invalid page token`, func(t *ftt.Test) {
 				_, err := srv.ListBuilders(ctx, &pb.ListBuildersRequest{
 					Project:   "project",
 					Bucket:    "bucket",
 					PageToken: "invalid token",
 				})
-				So(err, ShouldHaveAppStatus, codes.InvalidArgument, "invalid page token")
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.InvalidArgument, "invalid page token"))
 			})
 		})
 
-		Convey(`No permissions`, func() {
+		t.Run(`No permissions`, func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: userID,
 			})
-			So(datastore.Put(
+			assert.Loosely(t, datastore.Put(
 				ctx,
 				&model.Bucket{
 					Parent: model.ProjectKey(ctx, "project"),
@@ -86,16 +89,16 @@ func TestListBuilders(t *testing.T) {
 					ID:     "builder1",
 					Config: &pb.BuilderConfig{Name: "builder"},
 				},
-			), ShouldBeNil)
+			), should.BeNil)
 
 			_, err := srv.ListBuilders(ctx, &pb.ListBuildersRequest{
 				Project: "project",
 				Bucket:  "bucket",
 			})
-			So(err, ShouldHaveAppStatus, codes.NotFound, "not found")
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.NotFound, "not found"))
 		})
 
-		Convey(`End to end`, func() {
+		t.Run(`End to end`, func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: userID,
 				FakeDB: authtest.NewFakeDB(
@@ -104,7 +107,7 @@ func TestListBuilders(t *testing.T) {
 					authtest.MockPermission(userID, "project2:bucket1", bbperms.BuildersList),
 				),
 			})
-			So(datastore.Put(
+			assert.Loosely(t, datastore.Put(
 				ctx,
 				&model.Bucket{
 					Parent: model.ProjectKey(ctx, "project"),
@@ -173,17 +176,17 @@ func TestListBuilders(t *testing.T) {
 					ID:     "builder1",
 					Config: &pb.BuilderConfig{Name: "builder1"},
 				},
-			), ShouldBeNil)
+			), should.BeNil)
 
-			Convey(`List all builders in bucket`, func() {
+			t.Run(`List all builders in bucket`, func(t *ftt.Test) {
 				res, err := srv.ListBuilders(ctx, &pb.ListBuildersRequest{
 					Project:  "project",
 					Bucket:   "bucket1",
 					PageSize: 2,
 				})
-				So(err, ShouldBeNil)
-				So(res.NextPageToken, ShouldNotEqual, "")
-				So(res.GetBuilders(), ShouldResembleProto, []*pb.BuilderItem{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res.NextPageToken, should.NotEqual(""))
+				assert.Loosely(t, res.GetBuilders(), should.Resemble([]*pb.BuilderItem{
 					{
 						Id: &pb.BuilderID{
 							Project: "project",
@@ -200,16 +203,16 @@ func TestListBuilders(t *testing.T) {
 						},
 						Config: &pb.BuilderConfig{Name: "builder2"},
 					},
-				})
+				}))
 
 				res, err = srv.ListBuilders(ctx, &pb.ListBuildersRequest{
 					Project:   "project",
 					Bucket:    "bucket1",
 					PageToken: res.NextPageToken,
 				})
-				So(err, ShouldBeNil)
-				So(res.NextPageToken, ShouldBeEmpty)
-				So(res.GetBuilders(), ShouldResembleProto, []*pb.BuilderItem{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res.NextPageToken, should.BeEmpty)
+				assert.Loosely(t, res.GetBuilders(), should.Resemble([]*pb.BuilderItem{
 					{
 						Id: &pb.BuilderID{
 							Project: "project",
@@ -218,17 +221,17 @@ func TestListBuilders(t *testing.T) {
 						},
 						Config: &pb.BuilderConfig{Name: "builder3"},
 					},
-				})
+				}))
 			})
 
-			Convey(`List all builders in project`, func() {
+			t.Run(`List all builders in project`, func(t *ftt.Test) {
 				res, err := srv.ListBuilders(ctx, &pb.ListBuildersRequest{
 					Project:  "project",
 					PageSize: 2,
 				})
-				So(err, ShouldBeNil)
-				So(res.NextPageToken, ShouldNotEqual, "")
-				So(res.GetBuilders(), ShouldResembleProto, []*pb.BuilderItem{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res.NextPageToken, should.NotEqual(""))
+				assert.Loosely(t, res.GetBuilders(), should.Resemble([]*pb.BuilderItem{
 					{
 						Id: &pb.BuilderID{
 							Project: "project",
@@ -245,15 +248,15 @@ func TestListBuilders(t *testing.T) {
 						},
 						Config: &pb.BuilderConfig{Name: "builder2"},
 					},
-				})
+				}))
 
 				res, err = srv.ListBuilders(ctx, &pb.ListBuildersRequest{
 					Project:   "project",
 					PageToken: res.NextPageToken,
 				})
-				So(err, ShouldBeNil)
-				So(res.NextPageToken, ShouldBeEmpty)
-				So(res.GetBuilders(), ShouldResembleProto, []*pb.BuilderItem{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res.NextPageToken, should.BeEmpty)
+				assert.Loosely(t, res.GetBuilders(), should.Resemble([]*pb.BuilderItem{
 					{
 						Id: &pb.BuilderID{
 							Project: "project",
@@ -270,14 +273,14 @@ func TestListBuilders(t *testing.T) {
 						},
 						Config: &pb.BuilderConfig{Name: "builder1"},
 					},
-				})
+				}))
 			})
 
-			Convey(`List all builders`, func() {
+			t.Run(`List all builders`, func(t *ftt.Test) {
 				res, err := srv.ListBuilders(ctx, &pb.ListBuildersRequest{})
-				So(err, ShouldBeNil)
-				So(res.NextPageToken, ShouldEqual, "")
-				So(res.GetBuilders(), ShouldResembleProto, []*pb.BuilderItem{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res.NextPageToken, should.BeEmpty)
+				assert.Loosely(t, res.GetBuilders(), should.Resemble([]*pb.BuilderItem{
 					{
 						Id: &pb.BuilderID{
 							Project: "project",
@@ -318,7 +321,7 @@ func TestListBuilders(t *testing.T) {
 						},
 						Config: &pb.BuilderConfig{Name: "builder1"},
 					},
-				})
+				}))
 			})
 		})
 	})

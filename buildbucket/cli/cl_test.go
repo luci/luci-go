@@ -17,114 +17,115 @@ package cli
 import (
 	"testing"
 
-	pb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
 func TestParseCL(t *testing.T) {
-	Convey("ParseCL", t, func() {
+	ftt.Run("ParseCL", t, func(t *ftt.Test) {
 
-		Convey("https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1541677/7", func() {
+		t.Run("https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1541677/7", func(t *ftt.Test) {
 			actual, err := parseCL("https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1541677/7")
-			So(err, ShouldBeNil)
-			So(actual, ShouldResembleProto, &pb.GerritChange{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actual, should.Resemble(&pb.GerritChange{
 				Host:     "chromium-review.googlesource.com",
 				Project:  "infra/luci/luci-go",
 				Change:   1541677,
 				Patchset: 7,
-			})
+			}))
 		})
 
-		Convey("https://chromium-review.googlesource.com/#/c/infra/luci/luci-go/+/1541677/7", func() {
+		t.Run("https://chromium-review.googlesource.com/#/c/infra/luci/luci-go/+/1541677/7", func(t *ftt.Test) {
 			actual, err := parseCL("https://chromium-review.googlesource.com/#/c/infra/luci/luci-go/+/1541677/7")
-			So(err, ShouldBeNil)
-			So(actual, ShouldResembleProto, &pb.GerritChange{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actual, should.Resemble(&pb.GerritChange{
 				Host:     "chromium-review.googlesource.com",
 				Project:  "infra/luci/luci-go",
 				Change:   1541677,
 				Patchset: 7,
-			})
+			}))
 		})
 
-		Convey("https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1541677/7/buildbucket/cmd/bb/base_command.go", func() {
+		t.Run("https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1541677/7/buildbucket/cmd/bb/base_command.go", func(t *ftt.Test) {
 			actual, err := parseCL("https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1541677/7/buildbucket/cmd/bb/base_command.go")
-			So(err, ShouldBeNil)
-			So(actual, ShouldResembleProto, &pb.GerritChange{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actual, should.Resemble(&pb.GerritChange{
 				Host:     "chromium-review.googlesource.com",
 				Project:  "infra/luci/luci-go",
 				Change:   1541677,
 				Patchset: 7,
-			})
+			}))
 		})
 
-		Convey("https://chromium-review.googlesource.com/c/1541677/7", func() {
+		t.Run("https://chromium-review.googlesource.com/c/1541677/7", func(t *ftt.Test) {
 			actual, err := parseCL("https://chromium-review.googlesource.com/c/1541677/7")
-			So(err, ShouldBeNil)
-			So(actual, ShouldResembleProto, &pb.GerritChange{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actual, should.Resemble(&pb.GerritChange{
 				Host:     "chromium-review.googlesource.com",
 				Change:   1541677,
 				Patchset: 7,
-			})
+			}))
 		})
 
-		Convey("https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1541677", func() {
+		t.Run("https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1541677", func(t *ftt.Test) {
 			actual, err := parseCL("https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1541677")
-			So(err, ShouldBeNil)
-			So(actual, ShouldResembleProto, &pb.GerritChange{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actual, should.Resemble(&pb.GerritChange{
 				Host:    "chromium-review.googlesource.com",
 				Project: "infra/luci/luci-go",
 				Change:  1541677,
-			})
+			}))
 		})
 
-		Convey("crrev.com/c/123", func() {
+		t.Run("crrev.com/c/123", func(t *ftt.Test) {
 			actual, err := parseCL("crrev.com/c/123")
-			So(err, ShouldBeNil)
-			So(actual, ShouldResembleProto, &pb.GerritChange{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actual, should.Resemble(&pb.GerritChange{
 				Host:   "chromium-review.googlesource.com",
 				Change: 123,
-			})
+			}))
 		})
 
-		Convey("crrev.com/c/123/4", func() {
+		t.Run("crrev.com/c/123/4", func(t *ftt.Test) {
 			actual, err := parseCL("crrev.com/c/123/4")
-			So(err, ShouldBeNil)
-			So(actual, ShouldResembleProto, &pb.GerritChange{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actual, should.Resemble(&pb.GerritChange{
 				Host:     "chromium-review.googlesource.com",
 				Change:   123,
 				Patchset: 4,
-			})
+			}))
 		})
 
-		Convey("crrev.com/i/123", func() {
+		t.Run("crrev.com/i/123", func(t *ftt.Test) {
 			actual, err := parseCL("crrev.com/i/123")
-			So(err, ShouldBeNil)
-			So(actual, ShouldResembleProto, &pb.GerritChange{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actual, should.Resemble(&pb.GerritChange{
 				Host:   "chrome-internal-review.googlesource.com",
 				Change: 123,
-			})
+			}))
 		})
 
-		Convey("https://crrev.com/i/123", func() {
+		t.Run("https://crrev.com/i/123", func(t *ftt.Test) {
 			actual, err := parseCL("https://crrev.com/i/123")
-			So(err, ShouldBeNil)
-			So(actual, ShouldResembleProto, &pb.GerritChange{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actual, should.Resemble(&pb.GerritChange{
 				Host:   "chrome-internal-review.googlesource.com",
 				Change: 123,
-			})
+			}))
 		})
 
-		Convey("https://chrome-internal-review.googlesource.com/c/src/+/1/2", func() {
+		t.Run("https://chrome-internal-review.googlesource.com/c/src/+/1/2", func(t *ftt.Test) {
 			actual, err := parseCL("https://chrome-internal-review.googlesource.com/c/src/+/1/2")
-			So(err, ShouldBeNil)
-			So(actual, ShouldResembleProto, &pb.GerritChange{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actual, should.Resemble(&pb.GerritChange{
 				Host:     "chrome-internal-review.googlesource.com",
 				Project:  "src",
 				Change:   1,
 				Patchset: 2,
-			})
+			}))
 		})
 	})
 }

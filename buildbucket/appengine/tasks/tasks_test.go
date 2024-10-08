@@ -19,6 +19,9 @@ import (
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -26,308 +29,305 @@ import (
 
 	taskdef "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
 	pb "go.chromium.org/luci/buildbucket/proto"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestTasks(t *testing.T) {
 	t.Parallel()
 
-	Convey("tasks", t, func() {
+	ftt.Run("tasks", t, func(t *ftt.Test) {
 		ctx := txndefer.FilterRDS(memory.Use(context.Background()))
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 
 		ctx, sch := tq.TestingContext(ctx, nil)
 
-		Convey("CancelSwarmingTask", func() {
-			Convey("invalid", func() {
-				Convey("nil", func() {
-					So(CancelSwarmingTask(ctx, nil), ShouldErrLike, "hostname is required")
-					So(sch.Tasks(), ShouldBeEmpty)
+		t.Run("CancelSwarmingTask", func(t *ftt.Test) {
+			t.Run("invalid", func(t *ftt.Test) {
+				t.Run("nil", func(t *ftt.Test) {
+					assert.Loosely(t, CancelSwarmingTask(ctx, nil), should.ErrLike("hostname is required"))
+					assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 				})
 
-				Convey("empty", func() {
+				t.Run("empty", func(t *ftt.Test) {
 					task := &taskdef.CancelSwarmingTaskGo{}
-					So(CancelSwarmingTask(ctx, task), ShouldErrLike, "hostname is required")
-					So(sch.Tasks(), ShouldBeEmpty)
+					assert.Loosely(t, CancelSwarmingTask(ctx, task), should.ErrLike("hostname is required"))
+					assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 				})
 
-				Convey("hostname", func() {
+				t.Run("hostname", func(t *ftt.Test) {
 					task := &taskdef.CancelSwarmingTaskGo{
 						TaskId: "id",
 					}
-					So(CancelSwarmingTask(ctx, task), ShouldErrLike, "hostname is required")
-					So(sch.Tasks(), ShouldBeEmpty)
+					assert.Loosely(t, CancelSwarmingTask(ctx, task), should.ErrLike("hostname is required"))
+					assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 				})
 
-				Convey("task id", func() {
+				t.Run("task id", func(t *ftt.Test) {
 					task := &taskdef.CancelSwarmingTaskGo{
 						Hostname: "example.com",
 					}
-					So(CancelSwarmingTask(ctx, task), ShouldErrLike, "task_id is required")
-					So(sch.Tasks(), ShouldBeEmpty)
+					assert.Loosely(t, CancelSwarmingTask(ctx, task), should.ErrLike("task_id is required"))
+					assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 				})
 			})
 
-			Convey("valid", func() {
-				Convey("empty realm", func() {
+			t.Run("valid", func(t *ftt.Test) {
+				t.Run("empty realm", func(t *ftt.Test) {
 					task := &taskdef.CancelSwarmingTaskGo{
 						Hostname: "example.com",
 						TaskId:   "id",
 					}
-					So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+					assert.Loosely(t, datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 						return CancelSwarmingTask(ctx, task)
-					}, nil), ShouldBeNil)
-					So(sch.Tasks(), ShouldHaveLength, 1)
+					}, nil), should.BeNil)
+					assert.Loosely(t, sch.Tasks(), should.HaveLength(1))
 				})
 
-				Convey("non-empty realm", func() {
+				t.Run("non-empty realm", func(t *ftt.Test) {
 					task := &taskdef.CancelSwarmingTaskGo{
 						Hostname: "example.com",
 						TaskId:   "id",
 						Realm:    "realm",
 					}
-					So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+					assert.Loosely(t, datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 						return CancelSwarmingTask(ctx, task)
-					}, nil), ShouldBeNil)
-					So(sch.Tasks(), ShouldHaveLength, 1)
+					}, nil), should.BeNil)
+					assert.Loosely(t, sch.Tasks(), should.HaveLength(1))
 				})
 			})
 		})
 
-		Convey("ExportBigQuery", func() {
-			Convey("invalid", func() {
+		t.Run("ExportBigQuery", func(t *ftt.Test) {
+			t.Run("invalid", func(t *ftt.Test) {
 
-				Convey("zero", func() {
+				t.Run("zero", func(t *ftt.Test) {
 
-					So(ExportBigQuery(ctx, 0), ShouldErrLike, "build_id is invalid")
-					So(sch.Tasks(), ShouldBeEmpty)
+					assert.Loosely(t, ExportBigQuery(ctx, 0), should.ErrLike("build_id is invalid"))
+					assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 				})
 			})
 
-			Convey("valid - to Go", func() {
-				So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+			t.Run("valid - to Go", func(t *ftt.Test) {
+				assert.Loosely(t, datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 					return ExportBigQuery(ctx, 1)
-				}, nil), ShouldBeNil)
-				So(sch.Tasks(), ShouldHaveLength, 1)
-				So(sch.Tasks().Payloads()[0], ShouldResembleProto, &taskdef.ExportBigQueryGo{
+				}, nil), should.BeNil)
+				assert.Loosely(t, sch.Tasks(), should.HaveLength(1))
+				assert.Loosely(t, sch.Tasks().Payloads()[0], should.Resemble(&taskdef.ExportBigQueryGo{
 					BuildId: 1,
-				})
+				}))
 			})
 		})
 
-		Convey("NotifyPubSub", func() {
-			Convey("invalid", func() {
-				Convey("nil", func() {
-					So(notifyPubSub(ctx, nil), ShouldErrLike, "build_id is required")
-					So(sch.Tasks(), ShouldBeEmpty)
+		t.Run("NotifyPubSub", func(t *ftt.Test) {
+			t.Run("invalid", func(t *ftt.Test) {
+				t.Run("nil", func(t *ftt.Test) {
+					assert.Loosely(t, notifyPubSub(ctx, nil), should.ErrLike("build_id is required"))
+					assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 				})
 
-				Convey("empty", func() {
+				t.Run("empty", func(t *ftt.Test) {
 					task := &taskdef.NotifyPubSub{}
-					So(notifyPubSub(ctx, task), ShouldErrLike, "build_id is required")
-					So(sch.Tasks(), ShouldBeEmpty)
+					assert.Loosely(t, notifyPubSub(ctx, task), should.ErrLike("build_id is required"))
+					assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 				})
 
-				Convey("zero", func() {
+				t.Run("zero", func(t *ftt.Test) {
 					task := &taskdef.NotifyPubSub{
 						BuildId: 0,
 					}
-					So(notifyPubSub(ctx, task), ShouldErrLike, "build_id is required")
-					So(sch.Tasks(), ShouldBeEmpty)
+					assert.Loosely(t, notifyPubSub(ctx, task), should.ErrLike("build_id is required"))
+					assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 				})
 			})
 
-			Convey("valid", func() {
+			t.Run("valid", func(t *ftt.Test) {
 				task := &taskdef.NotifyPubSub{
 					BuildId:  1,
 					Callback: true,
 				}
-				So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+				assert.Loosely(t, datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 					return notifyPubSub(ctx, task)
-				}, nil), ShouldBeNil)
-				So(sch.Tasks(), ShouldHaveLength, 1)
+				}, nil), should.BeNil)
+				assert.Loosely(t, sch.Tasks(), should.HaveLength(1))
 			})
 		})
 
-		Convey("CreateSwarmingBuildTask", func() {
-			Convey("invalid", func() {
-				Convey("nil", func() {
-					So(CreateSwarmingBuildTask(ctx, nil), ShouldErrLike, "build_id is required")
-					So(sch.Tasks(), ShouldBeEmpty)
+		t.Run("CreateSwarmingBuildTask", func(t *ftt.Test) {
+			t.Run("invalid", func(t *ftt.Test) {
+				t.Run("nil", func(t *ftt.Test) {
+					assert.Loosely(t, CreateSwarmingBuildTask(ctx, nil), should.ErrLike("build_id is required"))
+					assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 				})
 
-				Convey("empty", func() {
+				t.Run("empty", func(t *ftt.Test) {
 					task := &taskdef.CreateSwarmingBuildTask{}
-					So(CreateSwarmingBuildTask(ctx, task), ShouldErrLike, "build_id is required")
-					So(sch.Tasks(), ShouldBeEmpty)
+					assert.Loosely(t, CreateSwarmingBuildTask(ctx, task), should.ErrLike("build_id is required"))
+					assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 				})
 
-				Convey("zero", func() {
+				t.Run("zero", func(t *ftt.Test) {
 					task := &taskdef.CreateSwarmingBuildTask{
 						BuildId: 0,
 					}
-					So(CreateSwarmingBuildTask(ctx, task), ShouldErrLike, "build_id is required")
-					So(sch.Tasks(), ShouldBeEmpty)
+					assert.Loosely(t, CreateSwarmingBuildTask(ctx, task), should.ErrLike("build_id is required"))
+					assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 				})
 			})
 
-			Convey("valid", func() {
+			t.Run("valid", func(t *ftt.Test) {
 				task := &taskdef.CreateSwarmingBuildTask{
 					BuildId: 1,
 				}
-				So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+				assert.Loosely(t, datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 					return CreateSwarmingBuildTask(ctx, task)
-				}, nil), ShouldBeNil)
-				So(sch.Tasks(), ShouldHaveLength, 1)
+				}, nil), should.BeNil)
+				assert.Loosely(t, sch.Tasks(), should.HaveLength(1))
 			})
 		})
 
-		Convey("SyncSwarmingBuildTask", func() {
-			Convey("invalid", func() {
-				Convey("nil", func() {
-					So(SyncSwarmingBuildTask(ctx, nil, time.Second), ShouldErrLike, "build_id is required")
-					So(sch.Tasks(), ShouldBeEmpty)
+		t.Run("SyncSwarmingBuildTask", func(t *ftt.Test) {
+			t.Run("invalid", func(t *ftt.Test) {
+				t.Run("nil", func(t *ftt.Test) {
+					assert.Loosely(t, SyncSwarmingBuildTask(ctx, nil, time.Second), should.ErrLike("build_id is required"))
+					assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 				})
 
-				Convey("empty", func() {
+				t.Run("empty", func(t *ftt.Test) {
 					task := &taskdef.SyncSwarmingBuildTask{}
-					So(SyncSwarmingBuildTask(ctx, task, time.Second), ShouldErrLike, "build_id is required")
-					So(sch.Tasks(), ShouldBeEmpty)
+					assert.Loosely(t, SyncSwarmingBuildTask(ctx, task, time.Second), should.ErrLike("build_id is required"))
+					assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 				})
 
-				Convey("zero generation", func() {
+				t.Run("zero generation", func(t *ftt.Test) {
 					task := &taskdef.SyncSwarmingBuildTask{
 						BuildId:    123,
 						Generation: 0,
 					}
-					So(SyncSwarmingBuildTask(ctx, task, time.Second), ShouldErrLike, "generation should be larger than 0")
-					So(sch.Tasks(), ShouldBeEmpty)
+					assert.Loosely(t, SyncSwarmingBuildTask(ctx, task, time.Second), should.ErrLike("generation should be larger than 0"))
+					assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 				})
 			})
 
-			Convey("valid", func() {
+			t.Run("valid", func(t *ftt.Test) {
 				task := &taskdef.SyncSwarmingBuildTask{
 					BuildId:    123,
 					Generation: 1,
 				}
-				So(SyncSwarmingBuildTask(ctx, task, time.Second), ShouldBeNil)
-				So(sch.Tasks(), ShouldHaveLength, 1)
+				assert.Loosely(t, SyncSwarmingBuildTask(ctx, task, time.Second), should.BeNil)
+				assert.Loosely(t, sch.Tasks(), should.HaveLength(1))
 			})
 		})
 
-		Convey("SyncWithBackend", func() {
-			Convey("invalid", func() {
-				Convey("empty backend", func() {
-					So(SyncWithBackend(ctx, "", "project"), ShouldErrLike, "backend is required")
-					So(sch.Tasks(), ShouldBeEmpty)
+		t.Run("SyncWithBackend", func(t *ftt.Test) {
+			t.Run("invalid", func(t *ftt.Test) {
+				t.Run("empty backend", func(t *ftt.Test) {
+					assert.Loosely(t, SyncWithBackend(ctx, "", "project"), should.ErrLike("backend is required"))
+					assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 				})
 
-				Convey("empty project", func() {
-					So(SyncWithBackend(ctx, "backend", ""), ShouldErrLike, "project is required")
-					So(sch.Tasks(), ShouldBeEmpty)
+				t.Run("empty project", func(t *ftt.Test) {
+					assert.Loosely(t, SyncWithBackend(ctx, "backend", ""), should.ErrLike("project is required"))
+					assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 				})
 			})
 
-			Convey("valid", func() {
-				So(SyncWithBackend(ctx, "backend", "project"), ShouldBeNil)
-				So(sch.Tasks(), ShouldHaveLength, 1)
+			t.Run("valid", func(t *ftt.Test) {
+				assert.Loosely(t, SyncWithBackend(ctx, "backend", "project"), should.BeNil)
+				assert.Loosely(t, sch.Tasks(), should.HaveLength(1))
 			})
 		})
 
-		Convey("CancelBackendTask", func() {
-			Convey("invalid", func() {
-				Convey("empty target", func() {
-					So(CancelBackendTask(ctx, &taskdef.CancelBackendTask{
+		t.Run("CancelBackendTask", func(t *ftt.Test) {
+			t.Run("invalid", func(t *ftt.Test) {
+				t.Run("empty target", func(t *ftt.Test) {
+					assert.Loosely(t, CancelBackendTask(ctx, &taskdef.CancelBackendTask{
 						Project: "project",
 						TaskId:  "123",
-					}), ShouldErrLike, "target is required")
+					}), should.ErrLike("target is required"))
 				})
 
-				Convey("empty task_id", func() {
-					So(CancelBackendTask(ctx, &taskdef.CancelBackendTask{
+				t.Run("empty task_id", func(t *ftt.Test) {
+					assert.Loosely(t, CancelBackendTask(ctx, &taskdef.CancelBackendTask{
 						Project: "project",
 						Target:  "123",
-					}), ShouldErrLike, "task_id is required")
+					}), should.ErrLike("task_id is required"))
 				})
-				Convey("invalid project", func() {
-					So(CancelBackendTask(ctx, &taskdef.CancelBackendTask{
+				t.Run("invalid project", func(t *ftt.Test) {
+					assert.Loosely(t, CancelBackendTask(ctx, &taskdef.CancelBackendTask{
 						TaskId: "123",
 						Target: "123",
-					}), ShouldErrLike, "project is required")
+					}), should.ErrLike("project is required"))
 				})
 			})
 
-			Convey("valid", func() {
-				So(CancelBackendTask(ctx, &taskdef.CancelBackendTask{
+			t.Run("valid", func(t *ftt.Test) {
+				assert.Loosely(t, CancelBackendTask(ctx, &taskdef.CancelBackendTask{
 					Target:  "abc",
 					TaskId:  "123",
 					Project: "project",
-				}), ShouldBeNil)
-				So(sch.Tasks(), ShouldHaveLength, 1)
+				}), should.BeNil)
+				assert.Loosely(t, sch.Tasks(), should.HaveLength(1))
 			})
 		})
 
-		Convey("CheckBuildLiveness", func() {
-			Convey("invalid", func() {
-				Convey("build id", func() {
-					So(CheckBuildLiveness(ctx, 0, 0, time.Duration(1)), ShouldErrLike, "build_id is invalid")
-					So(sch.Tasks(), ShouldBeEmpty)
+		t.Run("CheckBuildLiveness", func(t *ftt.Test) {
+			t.Run("invalid", func(t *ftt.Test) {
+				t.Run("build id", func(t *ftt.Test) {
+					assert.Loosely(t, CheckBuildLiveness(ctx, 0, 0, time.Duration(1)), should.ErrLike("build_id is invalid"))
+					assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 				})
 			})
 
-			Convey("valid", func() {
-				So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+			t.Run("valid", func(t *ftt.Test) {
+				assert.Loosely(t, datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 					return CheckBuildLiveness(ctx, 123, 60, time.Duration(1))
-				}, nil), ShouldBeNil)
-				So(sch.Tasks(), ShouldHaveLength, 1)
+				}, nil), should.BeNil)
+				assert.Loosely(t, sch.Tasks(), should.HaveLength(1))
 			})
 		})
 
-		Convey("CreatePushPendingTask", func() {
-			Convey("invalid", func() {
-				Convey("empty build_id", func() {
-					So(CreatePushPendingBuildTask(ctx, &taskdef.PushPendingBuildTask{
+		t.Run("CreatePushPendingTask", func(t *ftt.Test) {
+			t.Run("invalid", func(t *ftt.Test) {
+				t.Run("empty build_id", func(t *ftt.Test) {
+					assert.Loosely(t, CreatePushPendingBuildTask(ctx, &taskdef.PushPendingBuildTask{
 						BuilderId: &pb.BuilderID{Builder: "builder", Bucket: "bucket", Project: "project"},
-					}), ShouldErrLike, "build_id is required")
-					So(sch.Tasks(), ShouldBeEmpty)
+					}), should.ErrLike("build_id is required"))
+					assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 				})
 
-				Convey("empty builder_id", func() {
-					So(CreatePushPendingBuildTask(ctx, &taskdef.PushPendingBuildTask{
+				t.Run("empty builder_id", func(t *ftt.Test) {
+					assert.Loosely(t, CreatePushPendingBuildTask(ctx, &taskdef.PushPendingBuildTask{
 						BuildId: 123,
-					}), ShouldErrLike, "builder_id is required")
-					So(sch.Tasks(), ShouldBeEmpty)
+					}), should.ErrLike("builder_id is required"))
+					assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 				})
 			})
 
-			Convey("valid", func() {
-				So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+			t.Run("valid", func(t *ftt.Test) {
+				assert.Loosely(t, datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 					return CreatePushPendingBuildTask(ctx, &taskdef.PushPendingBuildTask{
 						BuildId:   123,
 						BuilderId: &pb.BuilderID{Builder: "builder", Bucket: "bucket", Project: "project"},
 					})
-				}, nil), ShouldBeNil)
-				So(sch.Tasks(), ShouldHaveLength, 1)
+				}, nil), should.BeNil)
+				assert.Loosely(t, sch.Tasks(), should.HaveLength(1))
 			})
 		})
 
-		Convey("CreatePopPendingTask", func() {
-			Convey("invalid", func() {
-				So(CreatePopPendingBuildTask(ctx, &taskdef.PopPendingBuildTask{
+		t.Run("CreatePopPendingTask", func(t *ftt.Test) {
+			t.Run("invalid", func(t *ftt.Test) {
+				assert.Loosely(t, CreatePopPendingBuildTask(ctx, &taskdef.PopPendingBuildTask{
 					BuildId: 123,
-				}), ShouldErrLike, "builder_id is required")
-				So(sch.Tasks(), ShouldBeEmpty)
+				}), should.ErrLike("builder_id is required"))
+				assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 			})
 
-			Convey("valid", func() {
-				So(CreatePopPendingBuildTask(ctx, &taskdef.PopPendingBuildTask{
+			t.Run("valid", func(t *ftt.Test) {
+				assert.Loosely(t, CreatePopPendingBuildTask(ctx, &taskdef.PopPendingBuildTask{
 					BuildId:   123,
 					BuilderId: &pb.BuilderID{Builder: "builder", Bucket: "bucket", Project: "project"},
-				}), ShouldBeNil)
-				So(sch.Tasks(), ShouldHaveLength, 1)
+				}), should.BeNil)
+				assert.Loosely(t, sch.Tasks(), should.HaveLength(1))
 			})
 		})
 	})

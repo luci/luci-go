@@ -27,16 +27,14 @@ import (
 	"github.com/maruel/subcommands"
 	"google.golang.org/genproto/protobuf/field_mask"
 
-	bb "go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/data/stringset"
+	luciflag "go.chromium.org/luci/common/flag"
 	"go.chromium.org/luci/common/system/pager"
 
-	luciflag "go.chromium.org/luci/common/flag"
-
-	"go.chromium.org/luci/buildbucket/protoutil"
-
+	bb "go.chromium.org/luci/buildbucket"
 	pb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/buildbucket/protoutil"
 )
 
 func cmdLS(p Params) *subcommands.Command {

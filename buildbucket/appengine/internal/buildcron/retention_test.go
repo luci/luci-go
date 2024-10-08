@@ -20,21 +20,21 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/buildid"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestDeleteOldBuilds(t *testing.T) {
 	t.Parallel()
 
-	Convey("DeleteOldBuilds", t, func() {
+	ftt.Run("DeleteOldBuilds", t, func(t *ftt.Test) {
 		// now needs to be further fresh enough from buildid.beginningOfTheWorld
 		now := time.Date(2020, 01, 01, 0, 0, 0, 0, time.UTC)
 
@@ -53,53 +53,53 @@ func TestDeleteOldBuilds(t *testing.T) {
 		}
 		setID := func(b *model.Build, ts time.Time) {
 			b.ID = buildid.NewBuildIDs(ctx, ts, 1)[0]
-			So(datastore.Put(ctx, b), ShouldBeNil)
-			So(datastore.Put(ctx, &model.BuildSteps{
+			assert.Loosely(t, datastore.Put(ctx, b), should.BeNil)
+			assert.Loosely(t, datastore.Put(ctx, &model.BuildSteps{
 				ID:    1,
 				Build: datastore.KeyForObj(ctx, b),
-			}), ShouldBeNil)
+			}), should.BeNil)
 		}
 
-		Convey("keeps builds", func() {
-			Convey("as old as BuildStorageDuration", func() {
+		t.Run("keeps builds", func(t *ftt.Test) {
+			t.Run("as old as BuildStorageDuration", func(t *ftt.Test) {
 				setID(b, now.Add(-model.BuildStorageDuration))
-				So(DeleteOldBuilds(ctx), ShouldBeNil)
-				So(datastore.Get(ctx, b), ShouldBeNil)
+				assert.Loosely(t, DeleteOldBuilds(ctx), should.BeNil)
+				assert.Loosely(t, datastore.Get(ctx, b), should.BeNil)
 				count, err := datastore.Count(ctx, datastore.NewQuery(""))
-				So(err, ShouldBeNil)
-				So(count, ShouldResemble, int64(2))
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, count, should.Resemble(int64(2)))
 			})
-			Convey("younger than BuildStorageDuration", func() {
+			t.Run("younger than BuildStorageDuration", func(t *ftt.Test) {
 				setID(b, now.Add(-model.BuildStorageDuration+time.Minute))
-				So(DeleteOldBuilds(ctx), ShouldBeNil)
+				assert.Loosely(t, DeleteOldBuilds(ctx), should.BeNil)
 				count, err := datastore.Count(ctx, datastore.NewQuery(""))
-				So(err, ShouldBeNil)
-				So(count, ShouldResemble, int64(2))
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, count, should.Resemble(int64(2)))
 			})
 		})
 
-		Convey("deletes builds older than BuildStorageDuration", func() {
+		t.Run("deletes builds older than BuildStorageDuration", func(t *ftt.Test) {
 			setID(b, now.Add(-model.BuildStorageDuration-time.Minute))
-			So(DeleteOldBuilds(ctx), ShouldBeNil)
-			So(datastore.Get(ctx, b), ShouldEqual, datastore.ErrNoSuchEntity)
+			assert.Loosely(t, DeleteOldBuilds(ctx), should.BeNil)
+			assert.Loosely(t, datastore.Get(ctx, b), should.Equal(datastore.ErrNoSuchEntity))
 			count, err := datastore.Count(ctx, datastore.NewQuery(""))
-			So(err, ShouldBeNil)
-			So(count, ShouldResemble, int64(0))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, count, should.Resemble(int64(0)))
 		})
 
-		Convey("removes many builds", func() {
+		t.Run("removes many builds", func(t *ftt.Test) {
 			bs := make([]model.Build, 234)
 			old := now.Add(-model.BuildStorageDuration - time.Minute)
 			for i := range bs {
 				bs[i] = *b
 				setID(&bs[i], old)
 			}
-			So(DeleteOldBuilds(ctx), ShouldBeNil)
+			assert.Loosely(t, DeleteOldBuilds(ctx), should.BeNil)
 			count, err := datastore.Count(ctx, datastore.NewQuery(""))
-			So(err, ShouldBeNil)
-			So(count, ShouldResemble, int64(0))
-			So(datastore.Get(ctx, bs), ShouldErrLike,
-				"datastore: no such entity (and 233 other errors)")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, count, should.Resemble(int64(0)))
+			assert.Loosely(t, datastore.Get(ctx, bs), should.ErrLike(
+				"datastore: no such entity (and 233 other errors)"))
 		})
 	})
 }

@@ -24,6 +24,9 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/logging/memlogger"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
@@ -34,84 +37,81 @@ import (
 	"go.chromium.org/luci/buildbucket/appengine/rpc/testutil"
 	"go.chromium.org/luci/buildbucket/bbperms"
 	pb "go.chromium.org/luci/buildbucket/proto"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestValidateSearchBuilds(t *testing.T) {
 	t.Parallel()
 
-	Convey("validateChange", t, func() {
-		Convey("nil", func() {
+	ftt.Run("validateChange", t, func(t *ftt.Test) {
+		t.Run("nil", func(t *ftt.Test) {
 			err := validateChange(nil)
-			So(err, ShouldErrLike, "host is required")
+			assert.Loosely(t, err, should.ErrLike("host is required"))
 		})
 
-		Convey("empty", func() {
+		t.Run("empty", func(t *ftt.Test) {
 			ch := &pb.GerritChange{}
 			err := validateChange(ch)
-			So(err, ShouldErrLike, "host is required")
+			assert.Loosely(t, err, should.ErrLike("host is required"))
 		})
 
-		Convey("change", func() {
+		t.Run("change", func(t *ftt.Test) {
 			ch := &pb.GerritChange{
 				Host: "host",
 			}
 			err := validateChange(ch)
-			So(err, ShouldErrLike, "change is required")
+			assert.Loosely(t, err, should.ErrLike("change is required"))
 		})
 
-		Convey("patchset", func() {
+		t.Run("patchset", func(t *ftt.Test) {
 			ch := &pb.GerritChange{
 				Host:   "host",
 				Change: 1,
 			}
 			err := validateChange(ch)
-			So(err, ShouldErrLike, "patchset is required")
+			assert.Loosely(t, err, should.ErrLike("patchset is required"))
 		})
 
-		Convey("valid", func() {
+		t.Run("valid", func(t *ftt.Test) {
 			ch := &pb.GerritChange{
 				Host:     "host",
 				Change:   1,
 				Patchset: 1,
 			}
 			err := validateChange(ch)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 	})
 
-	Convey("validatePredicate", t, func() {
-		Convey("nil", func() {
+	ftt.Run("validatePredicate", t, func(t *ftt.Test) {
+		t.Run("nil", func(t *ftt.Test) {
 			err := validatePredicate(nil)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey("empty", func() {
+		t.Run("empty", func(t *ftt.Test) {
 			pr := &pb.BuildPredicate{}
 			err := validatePredicate(pr)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey("mutual exclusion", func() {
+		t.Run("mutual exclusion", func(t *ftt.Test) {
 			pr := &pb.BuildPredicate{
 				Build:      &pb.BuildRange{},
 				CreateTime: &pb.TimeRange{},
 			}
 			err := validatePredicate(pr)
-			So(err, ShouldErrLike, "build is mutually exclusive with create_time")
+			assert.Loosely(t, err, should.ErrLike("build is mutually exclusive with create_time"))
 		})
 
-		Convey("builder id", func() {
-			Convey("no project", func() {
+		t.Run("builder id", func(t *ftt.Test) {
+			t.Run("no project", func(t *ftt.Test) {
 				pr := &pb.BuildPredicate{
 					Builder: &pb.BuilderID{Bucket: "bucket"},
 				}
 				err := validatePredicate(pr)
-				So(err, ShouldErrLike, `builder: project must match "^[a-z0-9\\-_]+$"`)
+				assert.Loosely(t, err, should.ErrLike(`builder: project must match "^[a-z0-9\\-_]+$"`))
 			})
-			Convey("only project and builder", func() {
+			t.Run("only project and builder", func(t *ftt.Test) {
 				pr := &pb.BuildPredicate{
 					Builder: &pb.BuilderID{
 						Project: "project",
@@ -119,35 +119,35 @@ func TestValidateSearchBuilds(t *testing.T) {
 					},
 				}
 				err := validatePredicate(pr)
-				So(err, ShouldErrLike, "builder: bucket is required")
+				assert.Loosely(t, err, should.ErrLike("builder: bucket is required"))
 			})
 		})
 
-		Convey("experiments", func() {
-			Convey("empty", func() {
+		t.Run("experiments", func(t *ftt.Test) {
+			t.Run("empty", func(t *ftt.Test) {
 				pr := &pb.BuildPredicate{
 					Experiments: []string{""},
 				}
 				err := validatePredicate(pr)
-				So(err, ShouldErrLike, `too short (expected [+-]$experiment_name)`)
+				assert.Loosely(t, err, should.ErrLike(`too short (expected [+-]$experiment_name)`))
 			})
-			Convey("bang", func() {
+			t.Run("bang", func(t *ftt.Test) {
 				pr := &pb.BuildPredicate{
 					Experiments: []string{"!something"},
 				}
 				err := validatePredicate(pr)
-				So(err, ShouldErrLike, `first character must be + or -`)
+				assert.Loosely(t, err, should.ErrLike(`first character must be + or -`))
 			})
-			Convey("canary conflict", func() {
+			t.Run("canary conflict", func(t *ftt.Test) {
 				pr := &pb.BuildPredicate{
 					Experiments: []string{"+" + bb.ExperimentBBCanarySoftware},
 					Canary:      pb.Trinary_YES,
 				}
 				err := validatePredicate(pr)
-				So(err, ShouldErrLike,
-					`cannot specify "luci.buildbucket.canary_software" and canary in the same predicate`)
+				assert.Loosely(t, err, should.ErrLike(
+					`cannot specify "luci.buildbucket.canary_software" and canary in the same predicate`))
 			})
-			Convey("duplicate (bad)", func() {
+			t.Run("duplicate (bad)", func(t *ftt.Test) {
 				pr := &pb.BuildPredicate{
 					Experiments: []string{
 						"+" + bb.ExperimentBBCanarySoftware,
@@ -155,92 +155,92 @@ func TestValidateSearchBuilds(t *testing.T) {
 					},
 				}
 				err := validatePredicate(pr)
-				So(err, ShouldErrLike,
-					`"luci.buildbucket.canary_software" has both inclusive and exclusive filter`)
+				assert.Loosely(t, err, should.ErrLike(
+					`"luci.buildbucket.canary_software" has both inclusive and exclusive filter`))
 			})
 
-			Convey("ok", func() {
+			t.Run("ok", func(t *ftt.Test) {
 				pr := &pb.BuildPredicate{
 					Experiments: []string{
 						"+" + bb.ExperimentBBCanarySoftware,
 						"+" + bb.ExperimentNonProduction,
 					},
 				}
-				So(validatePredicate(pr), ShouldBeNil)
+				assert.Loosely(t, validatePredicate(pr), should.BeNil)
 			})
-			Convey("duplicate (ok)", func() {
+			t.Run("duplicate (ok)", func(t *ftt.Test) {
 				pr := &pb.BuildPredicate{
 					Experiments: []string{
 						"+" + bb.ExperimentBBCanarySoftware,
 						"+" + bb.ExperimentBBCanarySoftware,
 					},
 				}
-				So(validatePredicate(pr), ShouldBeNil)
+				assert.Loosely(t, validatePredicate(pr), should.BeNil)
 			})
 		})
 
-		Convey("descendant_of and child_of mutual exclusion", func() {
+		t.Run("descendant_of and child_of mutual exclusion", func(t *ftt.Test) {
 			pr := &pb.BuildPredicate{
 				DescendantOf: 1,
 				ChildOf:      1,
 			}
 			err := validatePredicate(pr)
-			So(err, ShouldErrLike, "descendant_of is mutually exclusive with child_of")
+			assert.Loosely(t, err, should.ErrLike("descendant_of is mutually exclusive with child_of"))
 		})
 	})
 
-	Convey("validatePageToken", t, func() {
-		Convey("empty token", func() {
+	ftt.Run("validatePageToken", t, func(t *ftt.Test) {
+		t.Run("empty token", func(t *ftt.Test) {
 			err := validatePageToken("")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey("invalid page token", func() {
+		t.Run("invalid page token", func(t *ftt.Test) {
 			err := validatePageToken("abc")
-			So(err, ShouldErrLike, "invalid page_token")
+			assert.Loosely(t, err, should.ErrLike("invalid page_token"))
 		})
 
-		Convey("valid page token", func() {
+		t.Run("valid page token", func(t *ftt.Test) {
 			err := validatePageToken("id>123")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 	})
 
-	Convey("validateSearch", t, func() {
-		Convey("nil", func() {
+	ftt.Run("validateSearch", t, func(t *ftt.Test) {
+		t.Run("nil", func(t *ftt.Test) {
 			err := validateSearch(nil)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey("empty", func() {
+		t.Run("empty", func(t *ftt.Test) {
 			req := &pb.SearchBuildsRequest{}
 			err := validateSearch(req)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey("page size", func() {
-			Convey("negative", func() {
+		t.Run("page size", func(t *ftt.Test) {
+			t.Run("negative", func(t *ftt.Test) {
 				req := &pb.SearchBuildsRequest{
 					PageSize: -1,
 				}
 				err := validateSearch(req)
-				So(err, ShouldErrLike, "page_size cannot be negative")
+				assert.Loosely(t, err, should.ErrLike("page_size cannot be negative"))
 			})
 
-			Convey("zero", func() {
+			t.Run("zero", func(t *ftt.Test) {
 				req := &pb.SearchBuildsRequest{
 					PageSize: 0,
 				}
 				err := validateSearch(req)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 
-			Convey("positive", func() {
+			t.Run("positive", func(t *ftt.Test) {
 				req := &pb.SearchBuildsRequest{
 					PageSize: 1,
 				}
 				err := validateSearch(req)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 		})
 	})
@@ -251,7 +251,7 @@ func TestSearchBuilds(t *testing.T) {
 
 	const userID = identity.Identity("user:user@example.com")
 
-	Convey("search builds", t, func() {
+	ftt.Run("search builds", t, func(t *ftt.Test) {
 		srv := &Builds{}
 		ctx := memory.Use(context.Background())
 		ctx = memlogger.Use(ctx)
@@ -266,7 +266,7 @@ func TestSearchBuilds(t *testing.T) {
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 		testutil.PutBucket(ctx, "project", "bucket", nil)
-		So(datastore.Put(ctx, &model.Build{
+		assert.Loosely(t, datastore.Put(ctx, &model.Build{
 			Proto: &pb.Build{
 				Id: 1,
 				Builder: &pb.BuilderID{
@@ -285,8 +285,8 @@ func TestSearchBuilds(t *testing.T) {
 			BucketID:  "project/bucket",
 			BuilderID: "project/bucket/builder",
 			Tags:      []string{"k1:v1", "k2:v2"},
-		}), ShouldBeNil)
-		So(datastore.Put(ctx, &model.Build{
+		}), should.BeNil)
+		assert.Loosely(t, datastore.Put(ctx, &model.Build{
 			Proto: &pb.Build{
 				Id: 2,
 				Builder: &pb.BuilderID{
@@ -297,8 +297,8 @@ func TestSearchBuilds(t *testing.T) {
 			},
 			BucketID:  "project/bucket",
 			BuilderID: "project/bucket/builder2",
-		}), ShouldBeNil)
-		Convey("query search on Builds", func() {
+		}), should.BeNil)
+		t.Run("query search on Builds", func(t *ftt.Test) {
 			req := &pb.SearchBuildsRequest{
 				Predicate: &pb.BuildPredicate{
 					Builder: &pb.BuilderID{
@@ -313,7 +313,7 @@ func TestSearchBuilds(t *testing.T) {
 				},
 			}
 			rsp, err := srv.SearchBuilds(ctx, req)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			expectedRsp := &pb.SearchBuildsResponse{
 				Builds: []*pb.Build{
 					{
@@ -332,23 +332,23 @@ func TestSearchBuilds(t *testing.T) {
 					},
 				},
 			}
-			So(rsp, ShouldResembleProto, expectedRsp)
+			assert.Loosely(t, rsp, should.Resemble(expectedRsp))
 		})
 
-		Convey("search builds with field masks", func() {
+		t.Run("search builds with field masks", func(t *ftt.Test) {
 			b := &model.Build{
 				ID: 1,
 			}
 			key := datastore.KeyForObj(ctx, b)
-			So(datastore.Put(ctx, &model.BuildInfra{
+			assert.Loosely(t, datastore.Put(ctx, &model.BuildInfra{
 				Build: key,
 				Proto: &pb.BuildInfra{
 					Buildbucket: &pb.BuildInfra_Buildbucket{
 						Hostname: "example.com",
 					},
 				},
-			}), ShouldBeNil)
-			So(datastore.Put(ctx, &model.BuildInputProperties{
+			}), should.BeNil)
+			assert.Loosely(t, datastore.Put(ctx, &model.BuildInputProperties{
 				Build: key,
 				Proto: &structpb.Struct{
 					Fields: map[string]*structpb.Value{
@@ -359,7 +359,7 @@ func TestSearchBuilds(t *testing.T) {
 						},
 					},
 				},
-			}), ShouldBeNil)
+			}), should.BeNil)
 
 			req := &pb.SearchBuildsRequest{
 				Fields: &field_mask.FieldMask{
@@ -367,7 +367,7 @@ func TestSearchBuilds(t *testing.T) {
 				},
 			}
 			rsp, err := srv.SearchBuilds(ctx, req)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			expectedRsp := &pb.SearchBuildsResponse{
 				Builds: []*pb.Build{
 					{
@@ -399,10 +399,10 @@ func TestSearchBuilds(t *testing.T) {
 					},
 				},
 			}
-			So(rsp, ShouldResembleProto, expectedRsp)
+			assert.Loosely(t, rsp, should.Resemble(expectedRsp))
 		})
 
-		Convey("search builds with limited access", func() {
+		t.Run("search builds with limited access", func(t *ftt.Test) {
 			key := datastore.KeyForObj(ctx, &model.Build{ID: 1})
 			s, err := proto.Marshal(&pb.Build{
 				Steps: []*pb.Step{
@@ -411,13 +411,13 @@ func TestSearchBuilds(t *testing.T) {
 					},
 				},
 			})
-			So(err, ShouldBeNil)
-			So(datastore.Put(ctx, &model.BuildSteps{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, datastore.Put(ctx, &model.BuildSteps{
 				Build:    key,
 				Bytes:    s,
 				IsZipped: false,
-			}), ShouldBeNil)
-			So(datastore.Put(ctx, &model.BuildInfra{
+			}), should.BeNil)
+			assert.Loosely(t, datastore.Put(ctx, &model.BuildInfra{
 				Build: key,
 				Proto: &pb.BuildInfra{
 					Buildbucket: &pb.BuildInfra_Buildbucket{
@@ -428,8 +428,8 @@ func TestSearchBuilds(t *testing.T) {
 						Invocation: "bb-12345",
 					},
 				},
-			}), ShouldBeNil)
-			So(datastore.Put(ctx, &model.BuildInputProperties{
+			}), should.BeNil)
+			assert.Loosely(t, datastore.Put(ctx, &model.BuildInputProperties{
 				Build: key,
 				Proto: &structpb.Struct{
 					Fields: map[string]*structpb.Value{
@@ -440,8 +440,8 @@ func TestSearchBuilds(t *testing.T) {
 						},
 					},
 				},
-			}), ShouldBeNil)
-			So(datastore.Put(ctx, &model.BuildOutputProperties{
+			}), should.BeNil)
+			assert.Loosely(t, datastore.Put(ctx, &model.BuildOutputProperties{
 				Build: key,
 				Proto: &structpb.Struct{
 					Fields: map[string]*structpb.Value{
@@ -452,7 +452,7 @@ func TestSearchBuilds(t *testing.T) {
 						},
 					},
 				},
-			}), ShouldBeNil)
+			}), should.BeNil)
 
 			req := &pb.SearchBuildsRequest{
 				Mask: &pb.BuildMask{
@@ -460,7 +460,7 @@ func TestSearchBuilds(t *testing.T) {
 				},
 			}
 
-			Convey("BuildsGetLimited only", func() {
+			t.Run("BuildsGetLimited only", func(t *ftt.Test) {
 				ctx = auth.WithState(ctx, &authtest.FakeState{
 					Identity: userID,
 					FakeDB: authtest.NewFakeDB(
@@ -470,7 +470,7 @@ func TestSearchBuilds(t *testing.T) {
 				})
 
 				rsp, err := srv.SearchBuilds(ctx, req)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				expectedRsp := &pb.SearchBuildsResponse{
 					Builds: []*pb.Build{
 						{
@@ -504,10 +504,10 @@ func TestSearchBuilds(t *testing.T) {
 						},
 					},
 				}
-				So(rsp, ShouldResembleProto, expectedRsp)
+				assert.Loosely(t, rsp, should.Resemble(expectedRsp))
 			})
 
-			Convey("BuildsList only", func() {
+			t.Run("BuildsList only", func(t *ftt.Test) {
 				ctx = auth.WithState(ctx, &authtest.FakeState{
 					Identity: userID,
 					FakeDB: authtest.NewFakeDB(
@@ -517,7 +517,7 @@ func TestSearchBuilds(t *testing.T) {
 				})
 
 				rsp, err := srv.SearchBuilds(ctx, req)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				expectedRsp := &pb.SearchBuildsResponse{
 					Builds: []*pb.Build{
 						{
@@ -528,7 +528,7 @@ func TestSearchBuilds(t *testing.T) {
 						},
 					},
 				}
-				So(rsp, ShouldResembleProto, expectedRsp)
+				assert.Loosely(t, rsp, should.Resemble(expectedRsp))
 			})
 		})
 	})

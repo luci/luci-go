@@ -25,6 +25,9 @@ import (
 	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/bqlog"
@@ -36,9 +39,6 @@ import (
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func installTestSecret(ctx context.Context) context.Context {
@@ -54,7 +54,7 @@ func installTestSecret(ctx context.Context) context.Context {
 func TestLogToBQ(t *testing.T) {
 	t.Parallel()
 
-	Convey("logToBQ", t, func(c C) {
+	ftt.Run("logToBQ", t, func(c *ftt.Test) {
 		b := &bqlog.Bundler{
 			CloudProject: "project",
 			Dataset:      "dataset",
@@ -68,7 +68,7 @@ func TestLogToBQ(t *testing.T) {
 			Send: func(req *storagepb.AppendRowsRequest) error {
 				rows := req.GetProtoRows().GetRows().GetSerializedRows()
 				// TODO(crbug/1250459): Check that rows being sent to BQ look correct.
-				c.So(len(rows), ShouldEqual, 1)
+				assert.Loosely(c, len(rows), should.Equal(1))
 				return nil
 			},
 		})
@@ -81,100 +81,100 @@ func TestLogToBQ(t *testing.T) {
 func TestValidateTags(t *testing.T) {
 	t.Parallel()
 
-	Convey("validate build set", t, func() {
-		Convey("valid", func() {
+	ftt.Run("validate build set", t, func(t *ftt.Test) {
+		t.Run("valid", func(t *ftt.Test) {
 			// test gitiles format
 			gitiles := fmt.Sprintf("commit/gitiles/chromium.googlesource.com/chromium/src/+/%s", strings.Repeat("a", 40))
-			So(validateBuildSet(gitiles), ShouldBeNil)
+			assert.Loosely(t, validateBuildSet(gitiles), should.BeNil)
 			// test gerrit format
-			So(validateBuildSet("patch/gerrit/chromium-review.googlesource.com/123/456"), ShouldBeNil)
+			assert.Loosely(t, validateBuildSet("patch/gerrit/chromium-review.googlesource.com/123/456"), should.BeNil)
 			// test user format
-			So(validateBuildSet("myformat/x"), ShouldBeNil)
+			assert.Loosely(t, validateBuildSet("myformat/x"), should.BeNil)
 		})
-		Convey("invalid", func() {
+		t.Run("invalid", func(t *ftt.Test) {
 			gitiles := fmt.Sprintf("commit/gitiles/chromium.googlesource.com/a/chromium/src/+/%s", strings.Repeat("a", 40))
-			So(validateBuildSet(gitiles), ShouldErrLike, `gitiles project must not start with "a/"`)
+			assert.Loosely(t, validateBuildSet(gitiles), should.ErrLike(`gitiles project must not start with "a/"`))
 			gitiles = fmt.Sprintf("commit/gitiles/chromium.googlesource.com/chromium/src.git/+/%s", strings.Repeat("a", 40))
-			So(validateBuildSet(gitiles), ShouldErrLike, `gitiles project must not end with ".git"`)
+			assert.Loosely(t, validateBuildSet(gitiles), should.ErrLike(`gitiles project must not end with ".git"`))
 
-			So(validateBuildSet("patch/gerrit/chromium-review.googlesource.com/aa/bb"), ShouldErrLike, `does not match regex "^patch/gerrit/([^/]+)/(\d+)/(\d+)$"`)
-			So(validateBuildSet(strings.Repeat("a", 2000)), ShouldErrLike, "buildset tag is too long")
+			assert.Loosely(t, validateBuildSet("patch/gerrit/chromium-review.googlesource.com/aa/bb"), should.ErrLike(`does not match regex "^patch/gerrit/([^/]+)/(\d+)/(\d+)$"`))
+			assert.Loosely(t, validateBuildSet(strings.Repeat("a", 2000)), should.ErrLike("buildset tag is too long"))
 		})
 	})
 
-	Convey("validate tags", t, func() {
-		Convey("invalid", func() {
+	ftt.Run("validate tags", t, func(t *ftt.Test) {
+		t.Run("invalid", func(t *ftt.Test) {
 			// in general
-			So(validateTags([]*pb.StringPair{{Key: "k:1", Value: "v"}}, TagNew), ShouldErrLike, "cannot have a colon")
+			assert.Loosely(t, validateTags([]*pb.StringPair{{Key: "k:1", Value: "v"}}, TagNew), should.ErrLike("cannot have a colon"))
 
 			// build address
-			So(validateTags([]*pb.StringPair{{Key: "build_address", Value: "v"}}, TagNew), ShouldErrLike, `tag "build_address" is reserved`)
-			So(validateTags([]*pb.StringPair{{Key: "build_address", Value: "v"}}, TagAppend), ShouldErrLike, `cannot be added to an existing build`)
+			assert.Loosely(t, validateTags([]*pb.StringPair{{Key: "build_address", Value: "v"}}, TagNew), should.ErrLike(`tag "build_address" is reserved`))
+			assert.Loosely(t, validateTags([]*pb.StringPair{{Key: "build_address", Value: "v"}}, TagAppend), should.ErrLike(`cannot be added to an existing build`))
 
 			// buildset
-			So(validateTags([]*pb.StringPair{{Key: "buildset", Value: "patch/gerrit/foo"}}, TagNew), ShouldErrLike, `does not match regex "^patch/gerrit/([^/]+)/(\d+)/(\d+)$"`)
+			assert.Loosely(t, validateTags([]*pb.StringPair{{Key: "buildset", Value: "patch/gerrit/foo"}}, TagNew), should.ErrLike(`does not match regex "^patch/gerrit/([^/]+)/(\d+)/(\d+)$"`))
 
 			gitiles1 := fmt.Sprintf("commit/gitiles/chromium.googlesource.com/chromium/src/+/%s", strings.Repeat("a", 40))
 			gitiles2 := fmt.Sprintf("commit/gitiles/chromium.googlesource.com/chromium/src/+/%s", strings.Repeat("b", 40))
-			So(validateTags([]*pb.StringPair{
+			assert.Loosely(t, validateTags([]*pb.StringPair{
 				{Key: "buildset", Value: gitiles1},
 				{Key: "buildset", Value: gitiles2},
 			}, TagNew),
-				ShouldBeNil)
-			So(validateTags([]*pb.StringPair{
+				should.BeNil)
+			assert.Loosely(t, validateTags([]*pb.StringPair{
 				{Key: "buildset", Value: gitiles1},
 				{Key: "buildset", Value: gitiles1},
 			}, TagNew),
-				ShouldBeNil)
+				should.BeNil)
 
 			// builder
-			So(validateTags([]*pb.StringPair{
+			assert.Loosely(t, validateTags([]*pb.StringPair{
 				{Key: "builder", Value: "1"},
 				{Key: "builder", Value: "2"},
 			}, TagNew),
-				ShouldErrLike,
-				`tag "builder:2" conflicts with tag "builder:1"`)
-			So(validateTags([]*pb.StringPair{
+				should.ErrLike(
+					`tag "builder:2" conflicts with tag "builder:1"`))
+			assert.Loosely(t, validateTags([]*pb.StringPair{
 				{Key: "builder", Value: "1"},
 				{Key: "builder", Value: "1"},
 			}, TagNew),
-				ShouldBeNil)
-			So(validateTags([]*pb.StringPair{{Key: "builder", Value: "v"}}, TagAppend), ShouldErrLike, "cannot be added to an existing build")
+				should.BeNil)
+			assert.Loosely(t, validateTags([]*pb.StringPair{{Key: "builder", Value: "v"}}, TagAppend), should.ErrLike("cannot be added to an existing build"))
 		})
 	})
 
-	Convey("validate summary_markdown", t, func() {
-		Convey("valid", func() {
-			So(validateSummaryMarkdown("[this](http://example.org) is a link"), ShouldBeNil)
+	ftt.Run("validate summary_markdown", t, func(t *ftt.Test) {
+		t.Run("valid", func(t *ftt.Test) {
+			assert.Loosely(t, validateSummaryMarkdown("[this](http://example.org) is a link"), should.BeNil)
 		})
 
-		Convey("too big", func() {
-			So(validateSummaryMarkdown(strings.Repeat("☕", protoutil.SummaryMarkdownMaxLength)), ShouldErrLike, "too big to accept")
+		t.Run("too big", func(t *ftt.Test) {
+			assert.Loosely(t, validateSummaryMarkdown(strings.Repeat("☕", protoutil.SummaryMarkdownMaxLength)), should.ErrLike("too big to accept"))
 		})
 	})
 
-	Convey("validateCommit", t, func() {
-		Convey("nil", func() {
+	ftt.Run("validateCommit", t, func(t *ftt.Test) {
+		t.Run("nil", func(t *ftt.Test) {
 			err := validateCommit(nil)
-			So(err, ShouldErrLike, "host is required")
+			assert.Loosely(t, err, should.ErrLike("host is required"))
 		})
 
-		Convey("empty", func() {
+		t.Run("empty", func(t *ftt.Test) {
 			cm := &pb.GitilesCommit{}
 			err := validateCommit(cm)
-			So(err, ShouldErrLike, "host is required")
+			assert.Loosely(t, err, should.ErrLike("host is required"))
 		})
 
-		Convey("project", func() {
+		t.Run("project", func(t *ftt.Test) {
 			cm := &pb.GitilesCommit{
 				Host: "host",
 			}
 			err := validateCommit(cm)
-			So(err, ShouldErrLike, "project is required")
+			assert.Loosely(t, err, should.ErrLike("project is required"))
 		})
 
-		Convey("id", func() {
-			Convey("invalid ID", func() {
+		t.Run("id", func(t *ftt.Test) {
+			t.Run("invalid ID", func(t *ftt.Test) {
 				cm := &pb.GitilesCommit{
 					Host:    "host",
 					Project: "project",
@@ -182,10 +182,10 @@ func TestValidateTags(t *testing.T) {
 				}
 				err := validateCommit(cm)
 				// sha1
-				So(err, ShouldErrLike, "id must match")
+				assert.Loosely(t, err, should.ErrLike("id must match"))
 			})
 
-			Convey("position", func() {
+			t.Run("position", func(t *ftt.Test) {
 				cm := &pb.GitilesCommit{
 					Host:     "host",
 					Project:  "project",
@@ -193,22 +193,22 @@ func TestValidateTags(t *testing.T) {
 					Position: 1,
 				}
 				err := validateCommit(cm)
-				So(err, ShouldErrLike, "position requires ref")
+				assert.Loosely(t, err, should.ErrLike("position requires ref"))
 			})
 		})
 
-		Convey("ref", func() {
-			Convey("invalid ref", func() {
+		t.Run("ref", func(t *ftt.Test) {
+			t.Run("invalid ref", func(t *ftt.Test) {
 				cm := &pb.GitilesCommit{
 					Host:    "host",
 					Project: "project",
 					Ref:     "ref",
 				}
 				err := validateCommit(cm)
-				So(err, ShouldErrLike, "ref must match")
+				assert.Loosely(t, err, should.ErrLike("ref must match"))
 			})
 
-			Convey("valid, but w/ invalid ID", func() {
+			t.Run("valid, but w/ invalid ID", func(t *ftt.Test) {
 				cm := &pb.GitilesCommit{
 					Host:    "host",
 					Project: "project",
@@ -216,31 +216,31 @@ func TestValidateTags(t *testing.T) {
 					Id:      "id",
 				}
 				err := validateCommit(cm)
-				So(err, ShouldErrLike, "id must match")
+				assert.Loosely(t, err, should.ErrLike("id must match"))
 			})
 		})
 
-		Convey("neither ID nor ref", func() {
+		t.Run("neither ID nor ref", func(t *ftt.Test) {
 			cm := &pb.GitilesCommit{
 				Host:    "host",
 				Project: "project",
 			}
 			err := validateCommit(cm)
-			So(err, ShouldErrLike, "one of")
+			assert.Loosely(t, err, should.ErrLike("one of"))
 		})
 
-		Convey("valid", func() {
-			Convey("id", func() {
+		t.Run("valid", func(t *ftt.Test) {
+			t.Run("id", func(t *ftt.Test) {
 				cm := &pb.GitilesCommit{
 					Host:    "host",
 					Project: "project",
 					Id:      "1234567890123456789012345678901234567890",
 				}
 				err := validateCommit(cm)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 
-			Convey("ref", func() {
+			t.Run("ref", func(t *ftt.Test) {
 				cm := &pb.GitilesCommit{
 					Host:     "host",
 					Project:  "project",
@@ -248,37 +248,37 @@ func TestValidateTags(t *testing.T) {
 					Position: 1,
 				}
 				err := validateCommit(cm)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 		})
 	})
 
-	Convey("validateCommitWithRef", t, func() {
-		Convey("nil", func() {
-			So(validateCommitWithRef(nil), ShouldErrLike, "ref is required")
+	ftt.Run("validateCommitWithRef", t, func(t *ftt.Test) {
+		t.Run("nil", func(t *ftt.Test) {
+			assert.Loosely(t, validateCommitWithRef(nil), should.ErrLike("ref is required"))
 		})
 
-		Convey("empty", func() {
-			So(validateCommitWithRef(&pb.GitilesCommit{}), ShouldErrLike, "ref is required")
+		t.Run("empty", func(t *ftt.Test) {
+			assert.Loosely(t, validateCommitWithRef(&pb.GitilesCommit{}), should.ErrLike("ref is required"))
 		})
 
-		Convey("with id", func() {
+		t.Run("with id", func(t *ftt.Test) {
 			cm := &pb.GitilesCommit{
 				Host:    "host",
 				Project: "project",
 				Id:      "id",
 			}
-			So(validateCommitWithRef(cm), ShouldErrLike, "ref is required")
+			assert.Loosely(t, validateCommitWithRef(cm), should.ErrLike("ref is required"))
 		})
 
-		Convey("with ref", func() {
+		t.Run("with ref", func(t *ftt.Test) {
 			cm := &pb.GitilesCommit{
 				Host:     "host",
 				Project:  "project",
 				Ref:      "refs/",
 				Position: 1,
 			}
-			So(validateCommitWithRef(cm), ShouldBeNil)
+			assert.Loosely(t, validateCommitWithRef(cm), should.BeNil)
 		})
 	})
 }
@@ -286,7 +286,7 @@ func TestValidateTags(t *testing.T) {
 func TestValidateBuildToken(t *testing.T) {
 	t.Parallel()
 
-	Convey("validateBuildToken", t, func() {
+	ftt.Run("validateBuildToken", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		ctx, _ = testclock.UseTime(ctx, time.Unix(1444945245, 0))
 		ctx = installTestSecret(ctx)
@@ -306,23 +306,23 @@ func TestValidateBuildToken(t *testing.T) {
 			},
 			UpdateToken: tk1,
 		}
-		So(datastore.Put(ctx, build), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, build), should.BeNil)
 
-		Convey("Works", func() {
+		t.Run("Works", func(t *ftt.Test) {
 			ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(buildbucket.BuildbucketTokenHeader, tk1))
 			_, err := validateToken(ctx, 1, pb.TokenBody_BUILD)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey("Fails", func() {
-			Convey("if unmatched", func() {
+		t.Run("Fails", func(t *ftt.Test) {
+			t.Run("if unmatched", func(t *ftt.Test) {
 				ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(buildbucket.BuildbucketTokenHeader, tk2))
 				_, err := validateToken(ctx, 1, pb.TokenBody_BUILD)
-				So(err, ShouldNotBeNil)
+				assert.Loosely(t, err, should.NotBeNil)
 			})
-			Convey("if missing", func() {
+			t.Run("if missing", func(t *ftt.Test) {
 				_, err := validateToken(ctx, 1, pb.TokenBody_BUILD)
-				So(err, ShouldNotBeNil)
+				assert.Loosely(t, err, should.NotBeNil)
 			})
 		})
 	})
@@ -331,15 +331,15 @@ func TestValidateBuildToken(t *testing.T) {
 func TestValidateBuildTaskToken(t *testing.T) {
 	t.Parallel()
 
-	Convey("validateBuildTaskToken", t, func() {
+	ftt.Run("validateBuildTaskToken", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		ctx, _ = testclock.UseTime(ctx, time.Unix(1444945245, 0))
 		ctx = installTestSecret(ctx)
 
 		tk1, err := buildtoken.GenerateToken(ctx, 1, pb.TokenBody_TASK)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		tk2, err := buildtoken.GenerateToken(ctx, 2, pb.TokenBody_TASK)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		build := &model.Build{
 			ID: 1,
@@ -353,27 +353,27 @@ func TestValidateBuildTaskToken(t *testing.T) {
 				Status: pb.Status_STARTED,
 			},
 		}
-		So(datastore.Put(ctx, build), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, build), should.BeNil)
 
-		Convey("Works", func() {
+		t.Run("Works", func(t *ftt.Test) {
 			ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(buildbucket.BuildbucketTokenHeader, tk1))
 			_, err := validateToken(ctx, 1, pb.TokenBody_TASK)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey("Fails", func() {
-			Convey("if unmatched", func() {
+		t.Run("Fails", func(t *ftt.Test) {
+			t.Run("if unmatched", func(t *ftt.Test) {
 				ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(buildbucket.BuildbucketTokenHeader, tk2))
 				_, err := validateToken(ctx, 1, pb.TokenBody_TASK)
-				So(err, ShouldNotBeNil)
+				assert.Loosely(t, err, should.NotBeNil)
 			})
-			Convey("if missing", func() {
+			t.Run("if missing", func(t *ftt.Test) {
 				_, err := validateToken(ctx, 1, pb.TokenBody_TASK)
-				So(err, ShouldNotBeNil)
+				assert.Loosely(t, err, should.NotBeNil)
 			})
-			Convey("if wrong purpose", func() {
+			t.Run("if wrong purpose", func(t *ftt.Test) {
 				_, err := validateToken(ctx, 1, pb.TokenBody_BUILD)
-				So(err, ShouldNotBeNil)
+				assert.Loosely(t, err, should.NotBeNil)
 			})
 		})
 	})

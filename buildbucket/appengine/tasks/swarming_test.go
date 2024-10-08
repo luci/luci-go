@@ -33,6 +33,9 @@ import (
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
@@ -51,13 +54,10 @@ import (
 	"go.chromium.org/luci/buildbucket/cmd/bbagent/bbinput"
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestTaskDef(t *testing.T) {
-	Convey("compute task slice", t, func() {
+	ftt.Run("compute task slice", t, func(t *ftt.Test) {
 		b := &model.Build{
 			ID: 123,
 			Proto: &pb.Build{
@@ -101,7 +101,7 @@ func TestTaskDef(t *testing.T) {
 				},
 			},
 		}
-		Convey("only base slice", func() {
+		t.Run("only base slice", func(t *ftt.Test) {
 			b.Proto.Infra.Swarming = &pb.BuildInfra_Swarming{
 				Caches: []*pb.BuildInfra_Swarming_CacheEntry{
 					{Name: "shared_builder_cache", Path: "builder"},
@@ -111,9 +111,9 @@ func TestTaskDef(t *testing.T) {
 				},
 			}
 			slices, err := computeTaskSlice(b)
-			So(err, ShouldBeNil)
-			So(len(slices), ShouldEqual, 1)
-			So(slices[0].Properties.Caches, ShouldResemble, []*apipb.CacheEntry{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(slices), should.Equal(1))
+			assert.Loosely(t, slices[0].Properties.Caches, should.Resemble([]*apipb.CacheEntry{
 				{
 					Path: filepath.Join("cache", "builder"),
 					Name: "shared_builder_cache",
@@ -126,16 +126,16 @@ func TestTaskDef(t *testing.T) {
 					Path: filepath.Join("cache", "cipd_cache"),
 					Name: "cipd_cache_hash",
 				},
-			})
-			So(slices[0].Properties.Dimensions, ShouldResemble, []*apipb.StringPair{
+			}))
+			assert.Loosely(t, slices[0].Properties.Dimensions, should.Resemble([]*apipb.StringPair{
 				{
 					Key:   "pool",
 					Value: "Chrome",
 				},
-			})
+			}))
 		})
 
-		Convey("multiple dimensions and cache fallback", func() {
+		t.Run("multiple dimensions and cache fallback", func(t *ftt.Test) {
 			// Creates 4 task_slices by modifying the buildercfg in 2 ways:
 			//  - Add two named caches, one expiring at 60 seconds, one at 360 seconds.
 			//  - Add an optional builder dimension, expiring at 120 seconds.
@@ -154,62 +154,62 @@ func TestTaskDef(t *testing.T) {
 				},
 			}
 			slices, err := computeTaskSlice(b)
-			So(err, ShouldBeNil)
-			So(len(slices), ShouldEqual, 4)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(slices), should.Equal(4))
 
 			// All slices properties fields have the same value except dimensions.
 			for _, tSlice := range slices {
-				So(tSlice.Properties.ExecutionTimeoutSecs, ShouldEqual, 4800)
-				So(tSlice.Properties.GracePeriodSecs, ShouldEqual, 240)
-				So(tSlice.Properties.Caches, ShouldResemble, []*apipb.CacheEntry{
+				assert.Loosely(t, tSlice.Properties.ExecutionTimeoutSecs, should.Equal(4800))
+				assert.Loosely(t, tSlice.Properties.GracePeriodSecs, should.Equal(240))
+				assert.Loosely(t, tSlice.Properties.Caches, should.Resemble([]*apipb.CacheEntry{
 					{Path: filepath.Join("cache", "builder"), Name: "shared_builder_cache"},
 					{Path: filepath.Join("cache", "second"), Name: "second_cache"},
 					{Path: filepath.Join("cache", "cipd_client"), Name: "cipd_client_hash"},
 					{Path: filepath.Join("cache", "cipd_cache"), Name: "cipd_cache_hash"},
-				})
-				So(tSlice.Properties.Env, ShouldResemble, []*apipb.StringPair{
+				}))
+				assert.Loosely(t, tSlice.Properties.Env, should.Resemble([]*apipb.StringPair{
 					{Key: "BUILDBUCKET_EXPERIMENTAL", Value: "FALSE"},
-				})
+				}))
 			}
 
-			So(slices[0].ExpirationSecs, ShouldEqual, 60)
+			assert.Loosely(t, slices[0].ExpirationSecs, should.Equal(60))
 			// The dimensions are different. 'a' and 'caches' are injected.
-			So(slices[0].Properties.Dimensions, ShouldResemble, []*apipb.StringPair{
+			assert.Loosely(t, slices[0].Properties.Dimensions, should.Resemble([]*apipb.StringPair{
 				{Key: "a", Value: "1"},
 				{Key: "a", Value: "2"},
 				{Key: "caches", Value: "second_cache"},
 				{Key: "caches", Value: "shared_builder_cache"},
 				{Key: "pool", Value: "Chrome"},
-			})
+			}))
 
 			// 120 - 60
-			So(slices[1].ExpirationSecs, ShouldEqual, 60)
+			assert.Loosely(t, slices[1].ExpirationSecs, should.Equal(60))
 			// The dimensions are different. 'a' and 'caches' are injected.
-			So(slices[1].Properties.Dimensions, ShouldResemble, []*apipb.StringPair{
+			assert.Loosely(t, slices[1].Properties.Dimensions, should.Resemble([]*apipb.StringPair{
 				{Key: "a", Value: "1"},
 				{Key: "a", Value: "2"},
 				{Key: "caches", Value: "second_cache"},
 				{Key: "pool", Value: "Chrome"},
-			})
+			}))
 
 			// 360 - 120
-			So(slices[2].ExpirationSecs, ShouldEqual, 240)
+			assert.Loosely(t, slices[2].ExpirationSecs, should.Equal(240))
 			// 'a' expired, one 'caches' remains.
-			So(slices[2].Properties.Dimensions, ShouldResemble, []*apipb.StringPair{
+			assert.Loosely(t, slices[2].Properties.Dimensions, should.Resemble([]*apipb.StringPair{
 				{Key: "caches", Value: "second_cache"},
 				{Key: "pool", Value: "Chrome"},
-			})
+			}))
 
 			// 3600-360
-			So(slices[3].ExpirationSecs, ShouldEqual, 3240)
+			assert.Loosely(t, slices[3].ExpirationSecs, should.Equal(3240))
 			// # The cold fallback; the last 'caches' expired.
-			So(slices[3].Properties.Dimensions, ShouldResemble, []*apipb.StringPair{
+			assert.Loosely(t, slices[3].Properties.Dimensions, should.Resemble([]*apipb.StringPair{
 				{Key: "pool", Value: "Chrome"},
-			})
+			}))
 		})
 	})
 
-	Convey("compute bbagent command", t, func() {
+	ftt.Run("compute bbagent command", t, func(t *ftt.Test) {
 		b := &model.Build{
 			ID: 123,
 			Proto: &pb.Build{
@@ -220,19 +220,19 @@ func TestTaskDef(t *testing.T) {
 				},
 			},
 		}
-		Convey("bbagent_getbuild experiment", func() {
+		t.Run("bbagent_getbuild experiment", func(t *ftt.Test) {
 			b.Experiments = []string{"+luci.buildbucket.bbagent_getbuild"}
 			bbagentCmd := computeCommand(b)
-			So(bbagentCmd, ShouldResemble, []string{
+			assert.Loosely(t, bbagentCmd, should.Resemble([]string{
 				"bbagent${EXECUTABLE_SUFFIX}",
 				"-host",
 				"bbhost.com",
 				"-build-id",
 				"123",
-			})
+			}))
 		})
 
-		Convey("no bbagent_getbuild experiment", func() {
+		t.Run("no bbagent_getbuild experiment", func(t *ftt.Test) {
 			b.Experiments = []string{"-luci.buildbucket.bbagent_getbuild"}
 			b.Proto.Infra.Bbagent = &pb.BuildInfra_BBAgent{
 				CacheDir:    "cache",
@@ -244,14 +244,14 @@ func TestTaskDef(t *testing.T) {
 				CacheDir:    "cache",
 				PayloadPath: "payload_path",
 			})
-			So(bbagentCmd, ShouldResemble, []string{
+			assert.Loosely(t, bbagentCmd, should.Resemble([]string{
 				"bbagent${EXECUTABLE_SUFFIX}",
 				expectedEncoded,
-			})
+			}))
 		})
 	})
 
-	Convey("compute env_prefixes", t, func() {
+	ftt.Run("compute env_prefixes", t, func(t *ftt.Test) {
 		b := &model.Build{
 			ID: 123,
 			Proto: &pb.Build{
@@ -260,25 +260,25 @@ func TestTaskDef(t *testing.T) {
 				},
 			},
 		}
-		Convey("empty swarming cache", func() {
+		t.Run("empty swarming cache", func(t *ftt.Test) {
 			prefixes := computeEnvPrefixes(b)
-			So(prefixes, ShouldResemble, []*apipb.StringListPair{})
+			assert.Loosely(t, prefixes, should.Resemble([]*apipb.StringListPair{}))
 		})
 
-		Convey("normal", func() {
+		t.Run("normal", func(t *ftt.Test) {
 			b.Proto.Infra.Swarming.Caches = []*pb.BuildInfra_Swarming_CacheEntry{
 				{Path: "vpython", Name: "vpython", EnvVar: "VPYTHON_VIRTUALENV_ROOT"},
 				{Path: "abc", Name: "abc", EnvVar: "ABC"},
 			}
 			prefixes := computeEnvPrefixes(b)
-			So(prefixes, ShouldResemble, []*apipb.StringListPair{
+			assert.Loosely(t, prefixes, should.Resemble([]*apipb.StringListPair{
 				{Key: "ABC", Value: []string{filepath.Join("cache", "abc")}},
 				{Key: "VPYTHON_VIRTUALENV_ROOT", Value: []string{filepath.Join("cache", "vpython")}},
-			})
+			}))
 		})
 	})
 
-	Convey("compute swarming new task req", t, func() {
+	ftt.Run("compute swarming new task req", t, func(t *ftt.Test) {
 		ctx := memory.UseWithAppID(context.Background(), "dev~app-id")
 		ctx, _ = testclock.UseTime(ctx, time.Unix(1444945245, 0).UTC())
 		b := &model.Build{
@@ -322,7 +322,7 @@ func TestTaskDef(t *testing.T) {
 		req, err := computeSwarmingNewTaskReq(ctx, b)
 		// Strip out TaskSlices. It has been tested in other tests
 		req.TaskSlices = []*apipb.TaskSlice(nil)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		ud, _ := json.Marshal(&userdata{
 			BuildID:          123,
 			CreatedTS:        1444945245000000,
@@ -339,13 +339,13 @@ func TestTaskDef(t *testing.T) {
 			ServiceAccount:   "abc",
 			PoolTaskTemplate: apipb.NewTaskRequest_SKIP,
 		}
-		So(req, ShouldResemble, expected)
+		assert.Loosely(t, req, should.Resemble(expected))
 	})
 }
 
 func TestSyncBuild(t *testing.T) {
 	t.Parallel()
-	Convey("SyncBuild", t, func() {
+	ftt.Run("SyncBuild", t, func(t *ftt.Test) {
 		ctl := gomock.NewController(t)
 		defer ctl.Finish()
 		now := testclock.TestRecentTimeUTC
@@ -442,175 +442,175 @@ func TestSyncBuild(t *testing.T) {
 				MaxConcurrentBuilds: 2,
 			},
 		}
-		So(datastore.Put(ctx, b, inf, bs, bldr), ShouldBeNil)
-		Convey("swarming-build-create", func() {
+		assert.Loosely(t, datastore.Put(ctx, b, inf, bs, bldr), should.BeNil)
+		t.Run("swarming-build-create", func(t *ftt.Test) {
 
-			Convey("build not found", func() {
+			t.Run("build not found", func(t *ftt.Test) {
 				err := SyncBuild(ctx, 789, 0)
-				So(err, ShouldErrLike, "build 789 or buildInfra not found")
+				assert.Loosely(t, err, should.ErrLike("build 789 or buildInfra not found"))
 			})
 
-			Convey("build too old", func() {
-				So(datastore.Put(ctx, &model.Build{
+			t.Run("build too old", func(t *ftt.Test) {
+				assert.Loosely(t, datastore.Put(ctx, &model.Build{
 					ID:         111,
 					CreateTime: now.AddDate(0, 0, -3),
 					Proto: &pb.Build{
 						Builder: &pb.BuilderID{},
 					},
-				}), ShouldBeNil)
+				}), should.BeNil)
 
-				So(datastore.Put(ctx, &model.BuildInfra{
+				assert.Loosely(t, datastore.Put(ctx, &model.BuildInfra{
 					ID:    1,
 					Build: datastore.KeyForObj(ctx, &model.Build{ID: 111}),
-				}), ShouldBeNil)
+				}), should.BeNil)
 				err := SyncBuild(ctx, 111, 0)
-				So(err, ShouldBeNil)
-				So(sch.Tasks(), ShouldHaveLength, 0)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, sch.Tasks(), should.HaveLength(0))
 			})
 
-			Convey("build ended", func() {
-				So(datastore.Put(ctx, &model.Build{
+			t.Run("build ended", func(t *ftt.Test) {
+				assert.Loosely(t, datastore.Put(ctx, &model.Build{
 					ID:     111,
 					Status: pb.Status_SUCCESS,
 					Proto: &pb.Build{
 						Builder: &pb.BuilderID{},
 					},
-				}), ShouldBeNil)
-				So(datastore.Put(ctx, &model.BuildInfra{
+				}), should.BeNil)
+				assert.Loosely(t, datastore.Put(ctx, &model.BuildInfra{
 					ID:    1,
 					Build: datastore.KeyForObj(ctx, &model.Build{ID: 111}),
-				}), ShouldBeNil)
+				}), should.BeNil)
 				err := SyncBuild(ctx, 111, 0)
-				So(err, ShouldBeNil)
-				So(sch.Tasks(), ShouldHaveLength, 0)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, sch.Tasks(), should.HaveLength(0))
 			})
 
-			Convey("create swarming success", func() {
+			t.Run("create swarming success", func(t *ftt.Test) {
 				mockSwarm.EXPECT().CreateTask(gomock.Any(), gomock.Any()).Return(&apipb.TaskRequestMetadataResponse{
 					TaskId: "task123",
 				}, nil)
 				err := SyncBuild(ctx, 123, 0)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				updatedBuild := &model.Build{ID: 123}
 				updatedInfra := &model.BuildInfra{Build: datastore.KeyForObj(ctx, updatedBuild)}
-				So(datastore.Get(ctx, updatedBuild), ShouldBeNil)
-				So(datastore.Get(ctx, updatedInfra), ShouldBeNil)
-				So(updatedBuild.UpdateToken, ShouldNotBeEmpty)
-				So(updatedInfra.Proto.Swarming.TaskId, ShouldEqual, "task123")
-				So(sch.Tasks(), ShouldHaveLength, 1)
+				assert.Loosely(t, datastore.Get(ctx, updatedBuild), should.BeNil)
+				assert.Loosely(t, datastore.Get(ctx, updatedInfra), should.BeNil)
+				assert.Loosely(t, updatedBuild.UpdateToken, should.NotBeEmpty)
+				assert.Loosely(t, updatedInfra.Proto.Swarming.TaskId, should.Equal("task123"))
+				assert.Loosely(t, sch.Tasks(), should.HaveLength(1))
 			})
 
-			Convey("create swarming http 400 err", func() {
+			t.Run("create swarming http 400 err", func(t *ftt.Test) {
 				mockSwarm.EXPECT().CreateTask(gomock.Any(), gomock.Any()).Return(nil, status.Errorf(codes.PermissionDenied, "PermissionDenied"))
 				err := SyncBuild(ctx, 123, 0)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				failedBuild := &model.Build{ID: 123}
 				bldStatus := &model.BuildStatus{
 					Build: datastore.KeyForObj(ctx, &model.Build{ID: 123}),
 				}
-				So(datastore.Get(ctx, failedBuild, bldStatus), ShouldBeNil)
-				So(failedBuild.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
-				So(failedBuild.Proto.SummaryMarkdown, ShouldContainSubstring, "failed to create a swarming task: rpc error: code = PermissionDenied desc = PermissionDenied")
-				So(sch.Tasks(), ShouldHaveLength, 5)
-				So(bldStatus.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
+				assert.Loosely(t, datastore.Get(ctx, failedBuild, bldStatus), should.BeNil)
+				assert.Loosely(t, failedBuild.Status, should.Equal(pb.Status_INFRA_FAILURE))
+				assert.Loosely(t, failedBuild.Proto.SummaryMarkdown, should.ContainSubstring("failed to create a swarming task: rpc error: code = PermissionDenied desc = PermissionDenied"))
+				assert.Loosely(t, sch.Tasks(), should.HaveLength(5))
+				assert.Loosely(t, bldStatus.Status, should.Equal(pb.Status_INFRA_FAILURE))
 			})
 
-			Convey("create swarming http 500 err", func() {
+			t.Run("create swarming http 500 err", func(t *ftt.Test) {
 				mockSwarm.EXPECT().CreateTask(gomock.Any(), gomock.Any()).Return(nil, status.Errorf(codes.Internal, "Server error"))
 				err := SyncBuild(ctx, 123, 0)
-				So(err, ShouldErrLike, "failed to create a swarming task")
-				So(transient.Tag.In(err), ShouldBeTrue)
+				assert.Loosely(t, err, should.ErrLike("failed to create a swarming task"))
+				assert.Loosely(t, transient.Tag.In(err), should.BeTrue)
 				bld := &model.Build{ID: 123}
-				So(datastore.Get(ctx, bld), ShouldBeNil)
-				So(bld.Status, ShouldEqual, pb.Status_SCHEDULED)
+				assert.Loosely(t, datastore.Get(ctx, bld), should.BeNil)
+				assert.Loosely(t, bld.Status, should.Equal(pb.Status_SCHEDULED))
 			})
 
-			Convey("create swarming http 500 err give up", func() {
+			t.Run("create swarming http 500 err give up", func(t *ftt.Test) {
 				ctx1, _ := testclock.UseTime(ctx, now.Add(swarmingCreateTaskGiveUpTimeout))
 				mockSwarm.EXPECT().CreateTask(gomock.Any(), gomock.Any()).Return(nil, status.Errorf(codes.Internal, "Server error"))
 				err := SyncBuild(ctx1, 123, 0)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				failedBuild := &model.Build{ID: 123}
-				So(datastore.Get(ctx, failedBuild), ShouldBeNil)
-				So(failedBuild.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
-				So(failedBuild.Proto.SummaryMarkdown, ShouldContainSubstring, "failed to create a swarming task: rpc error: code = Internal desc = Server error")
-				So(sch.Tasks(), ShouldHaveLength, 5)
+				assert.Loosely(t, datastore.Get(ctx, failedBuild), should.BeNil)
+				assert.Loosely(t, failedBuild.Status, should.Equal(pb.Status_INFRA_FAILURE))
+				assert.Loosely(t, failedBuild.Proto.SummaryMarkdown, should.ContainSubstring("failed to create a swarming task: rpc error: code = Internal desc = Server error"))
+				assert.Loosely(t, sch.Tasks(), should.HaveLength(5))
 			})
 
-			Convey("swarming task creation success but update build fail", func() {
+			t.Run("swarming task creation success but update build fail", func(t *ftt.Test) {
 				mockSwarm.EXPECT().CreateTask(gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, req *apipb.NewTaskRequest) (*apipb.TaskRequestMetadataResponse, error) {
 					// Hack to make the build update fail when trying to update build with the new task ID.
 					inf.Proto.Swarming.TaskId = "old task ID"
-					So(datastore.Put(ctx, inf), ShouldBeNil)
+					assert.Loosely(t, datastore.Put(ctx, inf), should.BeNil)
 					return &apipb.TaskRequestMetadataResponse{TaskId: "new task ID"}, nil
 				})
 
 				err := SyncBuild(ctx, 123, 0)
-				So(err, ShouldErrLike, "failed to update build 123: build already has a task old task ID")
+				assert.Loosely(t, err, should.ErrLike("failed to update build 123: build already has a task old task ID"))
 				currentInfra := &model.BuildInfra{Build: datastore.KeyForObj(ctx, &model.Build{
 					ID: 123,
 				})}
-				So(datastore.Get(ctx, currentInfra), ShouldBeNil)
-				So(currentInfra.Proto.Swarming.TaskId, ShouldEqual, "old task ID")
-				So(sch.Tasks(), ShouldHaveLength, 0)
+				assert.Loosely(t, datastore.Get(ctx, currentInfra), should.BeNil)
+				assert.Loosely(t, currentInfra.Proto.Swarming.TaskId, should.Equal("old task ID"))
+				assert.Loosely(t, sch.Tasks(), should.HaveLength(0))
 			})
 		})
 
-		Convey("swarming sync", func() {
+		t.Run("swarming sync", func(t *ftt.Test) {
 			inf.Proto.Swarming.TaskId = "task_id"
-			So(datastore.Put(ctx, inf), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, inf), should.BeNil)
 
-			Convey("non-existing task ID", func() {
+			t.Run("non-existing task ID", func(t *ftt.Test) {
 				mockSwarm.EXPECT().GetTaskResult(ctx, "task_id").Return(nil, status.Errorf(codes.NotFound, "Not found"))
 				err := syncBuildWithTaskResult(ctx, 123, "task_id", mockSwarm)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				failedBuild := &model.Build{ID: 123}
-				So(datastore.Get(ctx, failedBuild), ShouldBeNil)
-				So(failedBuild.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
-				So(failedBuild.Proto.SummaryMarkdown, ShouldContainSubstring, "invalid swarming task task_id")
+				assert.Loosely(t, datastore.Get(ctx, failedBuild), should.BeNil)
+				assert.Loosely(t, failedBuild.Status, should.Equal(pb.Status_INFRA_FAILURE))
+				assert.Loosely(t, failedBuild.Proto.SummaryMarkdown, should.ContainSubstring("invalid swarming task task_id"))
 			})
 
-			Convey("swarming server 500", func() {
+			t.Run("swarming server 500", func(t *ftt.Test) {
 				mockSwarm.EXPECT().GetTaskResult(ctx, "task_id").Return(nil, status.Errorf(codes.Internal, "Server error"))
 				err := syncBuildWithTaskResult(ctx, 123, "task_id", mockSwarm)
-				So(transient.Tag.In(err), ShouldBeTrue)
+				assert.Loosely(t, transient.Tag.In(err), should.BeTrue)
 			})
 
-			Convey("empty task result", func() {
+			t.Run("empty task result", func(t *ftt.Test) {
 				mockSwarm.EXPECT().GetTaskResult(ctx, "task_id").Return(nil, nil)
 				err := syncBuildWithTaskResult(ctx, 123, "task_id", mockSwarm)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				failedBuild := &model.Build{ID: 123}
-				So(datastore.Get(ctx, failedBuild), ShouldBeNil)
-				So(failedBuild.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
-				So(failedBuild.Proto.SummaryMarkdown, ShouldContainSubstring, "Swarming task task_id unexpectedly disappeared")
+				assert.Loosely(t, datastore.Get(ctx, failedBuild), should.BeNil)
+				assert.Loosely(t, failedBuild.Status, should.Equal(pb.Status_INFRA_FAILURE))
+				assert.Loosely(t, failedBuild.Proto.SummaryMarkdown, should.ContainSubstring("Swarming task task_id unexpectedly disappeared"))
 			})
 
-			Convey("invalid task result state", func() {
+			t.Run("invalid task result state", func(t *ftt.Test) {
 				// syncBuildWithTaskResult should return Fatal error
 				mockSwarm.EXPECT().GetTaskResult(ctx, "task_id").Return(&apipb.TaskResultResponse{State: apipb.TaskState_INVALID}, nil)
 				err := syncBuildWithTaskResult(ctx, 123, "task_id", mockSwarm)
-				So(tq.Fatal.In(err), ShouldBeTrue)
+				assert.Loosely(t, tq.Fatal.In(err), should.BeTrue)
 				bb := &model.Build{ID: 123}
-				So(datastore.Get(ctx, bb), ShouldBeNil)
-				So(bb.Status, ShouldEqual, pb.Status_SCHEDULED) // build status should not been impacted
+				assert.Loosely(t, datastore.Get(ctx, bb), should.BeNil)
+				assert.Loosely(t, bb.Status, should.Equal(pb.Status_SCHEDULED)) // build status should not been impacted
 
 				// The swarming-build-sync flow shouldn't bubble up the Fatal error.
 				// It should ignore and enqueue the next generation of sync task.
 				mockSwarm.EXPECT().GetTaskResult(ctx, "task_id").Return(&apipb.TaskResultResponse{State: apipb.TaskState_INVALID}, nil)
 				err = SyncBuild(ctx, 123, 1)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				bb = &model.Build{ID: 123}
-				So(datastore.Get(ctx, bb), ShouldBeNil)
-				So(bb.Status, ShouldEqual, pb.Status_SCHEDULED)
-				So(sch.Tasks(), ShouldHaveLength, 1)
-				So(sch.Tasks().Payloads()[0], ShouldResembleProto, &taskdefs.SyncSwarmingBuildTask{
+				assert.Loosely(t, datastore.Get(ctx, bb), should.BeNil)
+				assert.Loosely(t, bb.Status, should.Equal(pb.Status_SCHEDULED))
+				assert.Loosely(t, sch.Tasks(), should.HaveLength(1))
+				assert.Loosely(t, sch.Tasks().Payloads()[0], should.Resemble(&taskdefs.SyncSwarmingBuildTask{
 					BuildId:    123,
 					Generation: 2,
-				})
+				}))
 			})
 
-			Convey("cancel incomplete steps for an ended build", func() {
+			t.Run("cancel incomplete steps for an ended build", func(t *ftt.Test) {
 				mockSwarm.EXPECT().GetTaskResult(ctx, "task_id").Return(&apipb.TaskResultResponse{
 					State:       apipb.TaskState_BOT_DIED,
 					StartedTs:   &timestamppb.Timestamp{Seconds: 1517260502, Nanos: 649750000},
@@ -620,25 +620,25 @@ func TestSyncBuild(t *testing.T) {
 					ID:    1,
 					Build: datastore.KeyForObj(ctx, &model.Build{ID: 123}),
 				}
-				So(steps.FromProto([]*pb.Step{
+				assert.Loosely(t, steps.FromProto([]*pb.Step{
 					{Name: "step1", Status: pb.Status_SUCCESS},
 					{Name: "step2", Status: pb.Status_STARTED},
-				}), ShouldBeNil)
-				So(datastore.Put(ctx, &steps), ShouldBeNil)
+				}), should.BeNil)
+				assert.Loosely(t, datastore.Put(ctx, &steps), should.BeNil)
 
 				err := syncBuildWithTaskResult(ctx, 123, "task_id", mockSwarm)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				failedBuild := &model.Build{ID: 123}
-				So(datastore.Get(ctx, failedBuild), ShouldBeNil)
-				So(failedBuild.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
+				assert.Loosely(t, datastore.Get(ctx, failedBuild), should.BeNil)
+				assert.Loosely(t, failedBuild.Status, should.Equal(pb.Status_INFRA_FAILURE))
 				allSteps := &model.BuildSteps{
 					ID:    1,
 					Build: datastore.KeyForObj(ctx, &model.Build{ID: 123}),
 				}
-				So(datastore.Get(ctx, allSteps), ShouldBeNil)
+				assert.Loosely(t, datastore.Get(ctx, allSteps), should.BeNil)
 				mSteps, err := allSteps.ToProto(ctx)
-				So(err, ShouldBeNil)
-				So(mSteps, ShouldResembleProto, []*pb.Step{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, mSteps, should.Resemble([]*pb.Step{
 					{
 						Name:   "step1",
 						Status: pb.Status_SUCCESS,
@@ -648,10 +648,10 @@ func TestSyncBuild(t *testing.T) {
 						Status:  pb.Status_CANCELED,
 						EndTime: &timestamppb.Timestamp{Seconds: 1517271318, Nanos: 162860000},
 					},
-				})
+				}))
 			})
 
-			Convey("build has output status set to FAILURE", func() {
+			t.Run("build has output status set to FAILURE", func(t *ftt.Test) {
 				fakeTaskResult := &apipb.TaskResultResponse{
 					State:   apipb.TaskState_COMPLETED,
 					Failure: true,
@@ -686,14 +686,14 @@ func TestSyncBuild(t *testing.T) {
 					Build:  datastore.KeyForObj(ctx, b),
 					Status: b.Proto.Status,
 				}
-				So(datastore.Put(ctx, b, inf, bs), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, b, inf, bs), should.BeNil)
 				err := SyncBuild(ctx, 567, 1)
-				So(err, ShouldBeNil)
-				So(datastore.Get(ctx, b), ShouldBeNil)
-				So(b.Proto.Status, ShouldEqual, pb.Status_FAILURE)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, datastore.Get(ctx, b), should.BeNil)
+				assert.Loosely(t, b.Proto.Status, should.Equal(pb.Status_FAILURE))
 			})
 
-			Convey("build has output status set to CANCELED", func() {
+			t.Run("build has output status set to CANCELED", func(t *ftt.Test) {
 				fakeTaskResult := &apipb.TaskResultResponse{
 					State:   apipb.TaskState_COMPLETED,
 					Failure: true,
@@ -728,14 +728,14 @@ func TestSyncBuild(t *testing.T) {
 					Build:  datastore.KeyForObj(ctx, b),
 					Status: b.Proto.Status,
 				}
-				So(datastore.Put(ctx, b, inf, bs), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, b, inf, bs), should.BeNil)
 				err := SyncBuild(ctx, 567, 1)
-				So(err, ShouldBeNil)
-				So(datastore.Get(ctx, b), ShouldBeNil)
-				So(b.Proto.Status, ShouldEqual, pb.Status_CANCELED)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, datastore.Get(ctx, b), should.BeNil)
+				assert.Loosely(t, b.Proto.Status, should.Equal(pb.Status_CANCELED))
 			})
 
-			Convey("build has output status set to CANCELED while swarming task succeeded", func() {
+			t.Run("build has output status set to CANCELED while swarming task succeeded", func(t *ftt.Test) {
 				fakeTaskResult := &apipb.TaskResultResponse{
 					State: apipb.TaskState_COMPLETED,
 				}
@@ -769,14 +769,14 @@ func TestSyncBuild(t *testing.T) {
 					Build:  datastore.KeyForObj(ctx, b),
 					Status: b.Proto.Status,
 				}
-				So(datastore.Put(ctx, b, inf, bs), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, b, inf, bs), should.BeNil)
 				err := SyncBuild(ctx, 567, 1)
-				So(err, ShouldBeNil)
-				So(datastore.Get(ctx, b), ShouldBeNil)
-				So(b.Proto.Status, ShouldEqual, pb.Status_CANCELED)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, datastore.Get(ctx, b), should.BeNil)
+				assert.Loosely(t, b.Proto.Status, should.Equal(pb.Status_CANCELED))
 			})
 
-			Convey("task has no resource", func() {
+			t.Run("task has no resource", func(t *ftt.Test) {
 				fakeTaskResult := &apipb.TaskResultResponse{
 					State:       apipb.TaskState_NO_RESOURCE,
 					AbandonedTs: &timestamppb.Timestamp{Seconds: now.UnixNano() / 1000000000},
@@ -808,12 +808,12 @@ func TestSyncBuild(t *testing.T) {
 					Build:  datastore.KeyForObj(ctx, b),
 					Status: b.Proto.Status,
 				}
-				So(datastore.Put(ctx, b, inf, bs), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, b, inf, bs), should.BeNil)
 				err := SyncBuild(ctx, 567, 1)
-				So(err, ShouldBeNil)
-				So(datastore.Get(ctx, b), ShouldBeNil)
-				So(b.Proto.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
-				So(b.Proto.StartTime, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, datastore.Get(ctx, b), should.BeNil)
+				assert.Loosely(t, b.Proto.Status, should.Equal(pb.Status_INFRA_FAILURE))
+				assert.Loosely(t, b.Proto.StartTime, should.BeNil)
 			})
 
 			var cases = []struct {
@@ -967,49 +967,49 @@ func TestSyncBuild(t *testing.T) {
 				},
 			}
 			for i, tCase := range cases {
-				Convey(fmt.Sprintf("test %d - task %s", i, tCase.fakeTaskResult.State), func() {
+				t.Run(fmt.Sprintf("test %d - task %s", i, tCase.fakeTaskResult.State), func(t *ftt.Test) {
 					mockSwarm.EXPECT().GetTaskResult(ctx, "task_id").Return(tCase.fakeTaskResult, nil)
 					err := SyncBuild(ctx, 123, 1)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					syncedBuild := &model.Build{ID: 123}
-					So(datastore.Get(ctx, syncedBuild), ShouldBeNil)
-					So(syncedBuild.Status, ShouldEqual, tCase.expected.status)
+					assert.Loosely(t, datastore.Get(ctx, syncedBuild), should.BeNil)
+					assert.Loosely(t, syncedBuild.Status, should.Equal(tCase.expected.status))
 					if tCase.expected.isResourceExhaustion {
-						So(syncedBuild.Proto.StatusDetails.ResourceExhaustion, ShouldResembleProto, &pb.StatusDetails_ResourceExhaustion{})
+						assert.Loosely(t, syncedBuild.Proto.StatusDetails.ResourceExhaustion, should.Resemble(&pb.StatusDetails_ResourceExhaustion{}))
 					} else {
-						So(syncedBuild.Proto.StatusDetails.GetResourceExhaustion(), ShouldBeNil)
+						assert.Loosely(t, syncedBuild.Proto.StatusDetails.GetResourceExhaustion(), should.BeNil)
 					}
 					if tCase.expected.isTimeOut {
-						So(syncedBuild.Proto.StatusDetails.Timeout, ShouldResembleProto, &pb.StatusDetails_Timeout{})
+						assert.Loosely(t, syncedBuild.Proto.StatusDetails.Timeout, should.Resemble(&pb.StatusDetails_Timeout{}))
 					} else {
-						So(syncedBuild.Proto.StatusDetails.GetTimeout(), ShouldBeNil)
+						assert.Loosely(t, syncedBuild.Proto.StatusDetails.GetTimeout(), should.BeNil)
 					}
 					if tCase.expected.startT != nil {
-						So(syncedBuild.Proto.StartTime, ShouldResembleProto, tCase.expected.startT)
+						assert.Loosely(t, syncedBuild.Proto.StartTime, should.Resemble(tCase.expected.startT))
 					}
 					if tCase.expected.endT != nil {
-						So(syncedBuild.Proto.EndTime, ShouldResembleProto, tCase.expected.endT)
+						assert.Loosely(t, syncedBuild.Proto.EndTime, should.Resemble(tCase.expected.endT))
 					}
 					if tCase.expected.botDimensions != nil {
 						syncedInfra := &model.BuildInfra{Build: datastore.KeyForObj(ctx, syncedBuild)}
-						So(datastore.Get(ctx, syncedInfra), ShouldBeNil)
-						So(syncedInfra.Proto.Swarming.BotDimensions, ShouldResembleProto, tCase.expected.botDimensions)
+						assert.Loosely(t, datastore.Get(ctx, syncedInfra), should.BeNil)
+						assert.Loosely(t, syncedInfra.Proto.Swarming.BotDimensions, should.Resemble(tCase.expected.botDimensions))
 					}
 					if protoutil.IsEnded(syncedBuild.Status) {
 						// FinalizeResultDB, ExportBigQuery, NotifyPubSub, NotifyPubSubGoProxy, PopPendingBuilds and a continuation sync task.
-						So(sch.Tasks(), ShouldHaveLength, 6)
+						assert.Loosely(t, sch.Tasks(), should.HaveLength(6))
 
 						v2fs := []any{pb.Status_name[int32(syncedBuild.Status)], "None"}
-						So(metricsStore.Get(ctx, metrics.V2.BuildCountCompleted, time.Time{}, v2fs), ShouldEqual, 1)
+						assert.Loosely(t, metricsStore.Get(ctx, metrics.V2.BuildCountCompleted, time.Time{}, v2fs), should.Equal(1))
 
 					} else if syncedBuild.Status == pb.Status_STARTED {
 						// NotifyPubSub, NotifyPubSubGoProxy and a continuation sync task.
-						So(sch.Tasks(), ShouldHaveLength, 3)
-						So(metricsStore.Get(ctx, metrics.V2.BuildCountStarted, time.Time{}, []any{"None"}), ShouldEqual, 1)
+						assert.Loosely(t, sch.Tasks(), should.HaveLength(3))
+						assert.Loosely(t, metricsStore.Get(ctx, metrics.V2.BuildCountStarted, time.Time{}, []any{"None"}), should.Equal(1))
 					}
 					syncedBuildStatus := &model.BuildStatus{Build: datastore.KeyForObj(ctx, syncedBuild)}
-					So(datastore.Get(ctx, syncedBuildStatus), ShouldBeNil)
-					So(syncedBuildStatus.Status, ShouldEqual, syncedBuild.Proto.Status)
+					assert.Loosely(t, datastore.Get(ctx, syncedBuildStatus), should.BeNil)
+					assert.Loosely(t, syncedBuildStatus.Status, should.Equal(syncedBuild.Proto.Status))
 				})
 			}
 		})
@@ -1019,7 +1019,7 @@ func TestSyncBuild(t *testing.T) {
 
 func TestHandleCancelSwarmingTask(t *testing.T) {
 	t.Parallel()
-	Convey("HandleCancelSwarmingTask", t, func() {
+	ftt.Run("HandleCancelSwarmingTask", t, func(t *ftt.Test) {
 		ctl := gomock.NewController(t)
 		defer ctl.Finish()
 		now := testclock.TestRecentTimeUTC
@@ -1033,51 +1033,51 @@ func TestHandleCancelSwarmingTask(t *testing.T) {
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 
-		Convey("wrong", func() {
-			Convey("empty hostname", func() {
+		t.Run("wrong", func(t *ftt.Test) {
+			t.Run("empty hostname", func(t *ftt.Test) {
 				err := HandleCancelSwarmingTask(ctx, "", "task123", "project:bucket")
-				So(err, ShouldErrLike, "hostname is empty")
-				So(tq.Fatal.In(err), ShouldBeTrue)
+				assert.Loosely(t, err, should.ErrLike("hostname is empty"))
+				assert.Loosely(t, tq.Fatal.In(err), should.BeTrue)
 			})
 
-			Convey("empty taskID", func() {
+			t.Run("empty taskID", func(t *ftt.Test) {
 				err := HandleCancelSwarmingTask(ctx, "hostname", "", "project:bucket")
-				So(err, ShouldErrLike, "taskID is empty")
-				So(tq.Fatal.In(err), ShouldBeTrue)
+				assert.Loosely(t, err, should.ErrLike("taskID is empty"))
+				assert.Loosely(t, tq.Fatal.In(err), should.BeTrue)
 			})
 
-			Convey("wrong realm", func() {
+			t.Run("wrong realm", func(t *ftt.Test) {
 				err := HandleCancelSwarmingTask(ctx, "hostname", "task123", "bad_realm")
-				So(err, ShouldErrLike, `bad global realm name "bad_realm"`)
-				So(tq.Fatal.In(err), ShouldBeTrue)
+				assert.Loosely(t, err, should.ErrLike(`bad global realm name "bad_realm"`))
+				assert.Loosely(t, tq.Fatal.In(err), should.BeTrue)
 			})
 
-			Convey("swarming http 500", func() {
+			t.Run("swarming http 500", func(t *ftt.Test) {
 				mockSwarm.EXPECT().CancelTask(ctx, gomock.Any()).Return(nil, status.Errorf(codes.Internal, "swarming internal error"))
 				err := HandleCancelSwarmingTask(ctx, "hostname", "task123", "project:bucket")
 
-				So(err, ShouldErrLike, "transient error in cancelling the task task123")
-				So(transient.Tag.In(err), ShouldBeTrue)
+				assert.Loosely(t, err, should.ErrLike("transient error in cancelling the task task123"))
+				assert.Loosely(t, transient.Tag.In(err), should.BeTrue)
 			})
 
-			Convey("swarming http <500", func() {
+			t.Run("swarming http <500", func(t *ftt.Test) {
 				mockSwarm.EXPECT().CancelTask(ctx, gomock.Any()).Return(nil, status.Errorf(codes.InvalidArgument, "bad request"))
 				err := HandleCancelSwarmingTask(ctx, "hostname", "task123", "project:bucket")
 
-				So(err, ShouldErrLike, "fatal error in cancelling the task task123")
-				So(tq.Fatal.In(err), ShouldBeTrue)
+				assert.Loosely(t, err, should.ErrLike("fatal error in cancelling the task task123"))
+				assert.Loosely(t, tq.Fatal.In(err), should.BeTrue)
 			})
 		})
 
-		Convey("success", func() {
-			Convey("response.ok", func() {
+		t.Run("success", func(t *ftt.Test) {
+			t.Run("response.ok", func(t *ftt.Test) {
 				mockSwarm.EXPECT().CancelTask(ctx, gomock.Any()).Return(&apipb.CancelResponse{Canceled: true}, nil)
-				So(HandleCancelSwarmingTask(ctx, "hostname", "task123", "project:bucket"), ShouldBeNil)
+				assert.Loosely(t, HandleCancelSwarmingTask(ctx, "hostname", "task123", "project:bucket"), should.BeNil)
 			})
 
-			Convey("!response.ok", func() {
+			t.Run("!response.ok", func(t *ftt.Test) {
 				mockSwarm.EXPECT().CancelTask(ctx, gomock.Any()).Return(&apipb.CancelResponse{Canceled: false, WasRunning: false}, nil)
-				So(HandleCancelSwarmingTask(ctx, "hostname", "task123", "project:bucket"), ShouldBeNil)
+				assert.Loosely(t, HandleCancelSwarmingTask(ctx, "hostname", "task123", "project:bucket"), should.BeNil)
 			})
 		})
 	})
@@ -1085,7 +1085,7 @@ func TestHandleCancelSwarmingTask(t *testing.T) {
 
 func TestSubNotify(t *testing.T) {
 	t.Parallel()
-	Convey("SubNotify", t, func() {
+	ftt.Run("SubNotify", t, func(t *ftt.Test) {
 		ctl := gomock.NewController(t)
 		defer ctl.Finish()
 		now := testclock.TestRecentTimeUTC
@@ -1176,31 +1176,31 @@ func TestSubNotify(t *testing.T) {
 				MaxConcurrentBuilds: 2,
 			},
 		}
-		So(datastore.Put(ctx, b, inf, bs, bldr), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, b, inf, bs, bldr), should.BeNil)
 
-		Convey("bad msg data", func() {
+		t.Run("bad msg data", func(t *ftt.Test) {
 			body := makeSwarmingPubsubMsg(&userdata{
 				BuildID:          999,
 				CreatedTS:        1448841600000,
 				SwarmingHostname: "swarm",
 			}, "", "msg1")
 			err := SubNotify(ctx, body)
-			So(err, ShouldErrLike, "task_id not found in message data")
-			So(transient.Tag.In(err), ShouldBeFalse)
+			assert.Loosely(t, err, should.ErrLike("task_id not found in message data"))
+			assert.Loosely(t, transient.Tag.In(err), should.BeFalse)
 
 			body = makeSwarmingPubsubMsg(&userdata{
 				CreatedTS:        1448841600000,
 				SwarmingHostname: "swarm",
 			}, "task123", "msg1")
 			err = SubNotify(ctx, body)
-			So(err, ShouldErrLike, "invalid build_id 0")
+			assert.Loosely(t, err, should.ErrLike("invalid build_id 0"))
 
 			body = makeSwarmingPubsubMsg(&userdata{
 				BuildID:          999,
 				SwarmingHostname: "swarm",
 			}, "task123", "msg1")
 			err = SubNotify(ctx, body)
-			So(err, ShouldErrLike, "invalid created_ts 0")
+			assert.Loosely(t, err, should.ErrLike("invalid created_ts 0"))
 
 			body = makeSwarmingPubsubMsg(&userdata{
 				BuildID:          999,
@@ -1208,7 +1208,7 @@ func TestSubNotify(t *testing.T) {
 				SwarmingHostname: " ",
 			}, "task123", "msg1")
 			err = SubNotify(ctx, body)
-			So(err, ShouldErrLike, "swarming hostname not found in userdata")
+			assert.Loosely(t, err, should.ErrLike("swarming hostname not found in userdata"))
 
 			body = makeSwarmingPubsubMsg(&userdata{
 				BuildID:          999,
@@ -1216,10 +1216,10 @@ func TestSubNotify(t *testing.T) {
 				SwarmingHostname: "https://swarm.com",
 			}, "task123", "msg1")
 			err = SubNotify(ctx, body)
-			So(err, ShouldErrLike, "swarming hostname https://swarm.com must not contain '://'")
+			assert.Loosely(t, err, should.ErrLike("swarming hostname https://swarm.com must not contain '://'"))
 		})
 
-		Convey("build not found", func() {
+		t.Run("build not found", func(t *ftt.Test) {
 			old := now.Add(-time.Minute).UnixNano() / int64(time.Microsecond)
 			body := makeSwarmingPubsubMsg(&userdata{
 				BuildID:          999,
@@ -1227,8 +1227,8 @@ func TestSubNotify(t *testing.T) {
 				SwarmingHostname: "swarm",
 			}, "task123", "msg1")
 			err := SubNotify(ctx, body)
-			So(err, ShouldErrLike, "Build 999 or BuildInfra for task https://swarm/task?id=task123 not found")
-			So(transient.Tag.In(err), ShouldBeFalse)
+			assert.Loosely(t, err, should.ErrLike("Build 999 or BuildInfra for task https://swarm/task?id=task123 not found"))
+			assert.Loosely(t, transient.Tag.In(err), should.BeFalse)
 
 			recent := now.Add(-50*time.Second).UnixNano() / int64(time.Microsecond)
 			body = makeSwarmingPubsubMsg(&userdata{
@@ -1237,11 +1237,11 @@ func TestSubNotify(t *testing.T) {
 				SwarmingHostname: "swarm",
 			}, "task123", "msg1")
 			err = SubNotify(ctx, body)
-			So(err, ShouldErrLike, "Build 999 or BuildInfra for task https://swarm/task?id=task123 not found yet")
-			So(transient.Tag.In(err), ShouldBeTrue)
+			assert.Loosely(t, err, should.ErrLike("Build 999 or BuildInfra for task https://swarm/task?id=task123 not found yet"))
+			assert.Loosely(t, transient.Tag.In(err), should.BeTrue)
 		})
 
-		Convey("different swarming hostname", func() {
+		t.Run("different swarming hostname", func(t *ftt.Test) {
 
 			body := makeSwarmingPubsubMsg(&userdata{
 				BuildID:          123,
@@ -1249,22 +1249,22 @@ func TestSubNotify(t *testing.T) {
 				SwarmingHostname: "swarm2",
 			}, "task123", "msg1")
 			err := SubNotify(ctx, body)
-			So(err, ShouldErrLike, "swarming_hostname swarm of build 123 does not match swarm2")
-			So(transient.Tag.In(err), ShouldBeFalse)
+			assert.Loosely(t, err, should.ErrLike("swarming_hostname swarm of build 123 does not match swarm2"))
+			assert.Loosely(t, transient.Tag.In(err), should.BeFalse)
 		})
 
-		Convey("different task id", func() {
+		t.Run("different task id", func(t *ftt.Test) {
 			body := makeSwarmingPubsubMsg(&userdata{
 				BuildID:          123,
 				CreatedTS:        1517260502000000,
 				SwarmingHostname: "swarm",
 			}, "task345", "msg1")
 			err := SubNotify(ctx, body)
-			So(err, ShouldErrLike, "swarming_task_id task123 of build 123 does not match task345")
-			So(transient.Tag.In(err), ShouldBeFalse)
+			assert.Loosely(t, err, should.ErrLike("swarming_task_id task123 of build 123 does not match task345"))
+			assert.Loosely(t, transient.Tag.In(err), should.BeFalse)
 		})
 
-		Convey("swarming 500s error", func() {
+		t.Run("swarming 500s error", func(t *ftt.Test) {
 			body := makeSwarmingPubsubMsg(&userdata{
 				BuildID:          123,
 				CreatedTS:        1517260502000000,
@@ -1272,17 +1272,17 @@ func TestSubNotify(t *testing.T) {
 			}, "task123", "msg1")
 			mockSwarm.EXPECT().GetTaskResult(ctx, "task123").Return(nil, status.Errorf(codes.Internal, "swarming internal error"))
 			err := SubNotify(ctx, body)
-			So(err, ShouldErrLike, "rpc error: code = Internal desc = swarming internal error")
-			So(transient.Tag.In(err), ShouldBeTrue)
+			assert.Loosely(t, err, should.ErrLike("rpc error: code = Internal desc = swarming internal error"))
+			assert.Loosely(t, transient.Tag.In(err), should.BeTrue)
 
 			cache := caching.GlobalCache(ctx, "swarming-pubsub-msg-id")
 			_, err = cache.Get(ctx, "msg1")
-			So(err, ShouldEqual, caching.ErrCacheMiss)
+			assert.Loosely(t, err, should.Equal(caching.ErrCacheMiss))
 		})
 
-		Convey("status already ended", func() {
+		t.Run("status already ended", func(t *ftt.Test) {
 			b.Proto.Status = pb.Status_SUCCESS
-			So(datastore.Put(ctx, b), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, b), should.BeNil)
 
 			body := makeSwarmingPubsubMsg(&userdata{
 				BuildID:          123,
@@ -1290,13 +1290,13 @@ func TestSubNotify(t *testing.T) {
 				SwarmingHostname: "swarm",
 			}, "task123", "msg1")
 			err := SubNotify(ctx, body)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			mockSwarm.EXPECT().CreateTask(gomock.Any(), gomock.Any()).Times(0)
 
-			So(sch.Tasks(), ShouldHaveLength, 0)
+			assert.Loosely(t, sch.Tasks(), should.HaveLength(0))
 		})
 
-		Convey("status changed to success", func() {
+		t.Run("status changed to success", func(t *ftt.Test) {
 			body := makeSwarmingPubsubMsg(&userdata{
 				BuildID:          123,
 				CreatedTS:        1517260502000000,
@@ -1314,42 +1314,42 @@ func TestSubNotify(t *testing.T) {
 				},
 			}, nil)
 			err := SubNotify(ctx, body)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			syncedBuild := &model.Build{ID: 123}
-			So(datastore.Get(ctx, syncedBuild), ShouldBeNil)
-			So(syncedBuild.Status, ShouldEqual, pb.Status_SUCCESS)
-			So(syncedBuild.Proto.StartTime, ShouldResembleProto, &timestamppb.Timestamp{Seconds: 1517260502, Nanos: 649750000})
-			So(syncedBuild.Proto.EndTime, ShouldResembleProto, &timestamppb.Timestamp{Seconds: 1517271318, Nanos: 162860000})
+			assert.Loosely(t, datastore.Get(ctx, syncedBuild), should.BeNil)
+			assert.Loosely(t, syncedBuild.Status, should.Equal(pb.Status_SUCCESS))
+			assert.Loosely(t, syncedBuild.Proto.StartTime, should.Resemble(&timestamppb.Timestamp{Seconds: 1517260502, Nanos: 649750000}))
+			assert.Loosely(t, syncedBuild.Proto.EndTime, should.Resemble(&timestamppb.Timestamp{Seconds: 1517271318, Nanos: 162860000}))
 
 			syncedInfra := &model.BuildInfra{Build: datastore.KeyForObj(ctx, syncedBuild)}
-			So(datastore.Get(ctx, syncedInfra), ShouldBeNil)
-			So(syncedInfra.Proto.Swarming.BotDimensions, ShouldResembleProto, []*pb.StringPair{
+			assert.Loosely(t, datastore.Get(ctx, syncedInfra), should.BeNil)
+			assert.Loosely(t, syncedInfra.Proto.Swarming.BotDimensions, should.Resemble([]*pb.StringPair{
 				{
 					Key:   "new_key",
 					Value: "new_val",
 				},
-			})
+			}))
 			syncedBuildStatus := &model.BuildStatus{Build: datastore.KeyForObj(ctx, syncedBuild)}
-			So(datastore.Get(ctx, syncedBuildStatus), ShouldBeNil)
-			So(syncedBuildStatus.Status, ShouldEqual, pb.Status_SUCCESS)
+			assert.Loosely(t, datastore.Get(ctx, syncedBuildStatus), should.BeNil)
+			assert.Loosely(t, syncedBuildStatus.Status, should.Equal(pb.Status_SUCCESS))
 
 			cache := caching.GlobalCache(ctx, "swarming-pubsub-msg-id")
 			cached, err := cache.Get(ctx, "msg1")
-			So(err, ShouldBeNil)
-			So(cached, ShouldResemble, []byte{1})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cached, should.Resemble([]byte{1}))
 
 			// ExportBigQuery, NotifyPubSub, NotifyPubSubGoProxy, PopPendingBuilds tasks.
-			So(sch.Tasks(), ShouldHaveLength, 4)
+			assert.Loosely(t, sch.Tasks(), should.HaveLength(4))
 
 			// BuildCompleted metric should be set to 1 with SUCCESS.
 			v2fs := []any{pb.Status_name[int32(syncedBuild.Status)], "None"}
-			So(store.Get(ctx, metrics.V2.BuildCountCompleted, time.Time{}, v2fs), ShouldEqual, 1)
+			assert.Loosely(t, store.Get(ctx, metrics.V2.BuildCountCompleted, time.Time{}, v2fs), should.Equal(1))
 		})
 
-		Convey("status unchanged(in STARTED) while bot dimensions changed", func() {
+		t.Run("status unchanged(in STARTED) while bot dimensions changed", func(t *ftt.Test) {
 			b.Proto.Status = pb.Status_STARTED
 			bs.Status = b.Proto.Status
-			So(datastore.Put(ctx, b, bs), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, b, bs), should.BeNil)
 			body := makeSwarmingPubsubMsg(&userdata{
 				BuildID:          123,
 				CreatedTS:        1517260502000000,
@@ -1366,28 +1366,28 @@ func TestSubNotify(t *testing.T) {
 				},
 			}, nil)
 			err := SubNotify(ctx, body)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			syncedBuild := &model.Build{ID: 123}
-			So(datastore.Get(ctx, syncedBuild), ShouldBeNil)
-			So(syncedBuild.Status, ShouldEqual, pb.Status_STARTED)
+			assert.Loosely(t, datastore.Get(ctx, syncedBuild), should.BeNil)
+			assert.Loosely(t, syncedBuild.Status, should.Equal(pb.Status_STARTED))
 
 			syncedInfra := &model.BuildInfra{Build: datastore.KeyForObj(ctx, syncedBuild)}
-			So(datastore.Get(ctx, syncedInfra), ShouldBeNil)
-			So(syncedInfra.Proto.Swarming.BotDimensions, ShouldResembleProto, []*pb.StringPair{{
+			assert.Loosely(t, datastore.Get(ctx, syncedInfra), should.BeNil)
+			assert.Loosely(t, syncedInfra.Proto.Swarming.BotDimensions, should.Resemble([]*pb.StringPair{{
 				Key:   "new_key",
 				Value: "new_val",
-			}})
+			}}))
 			syncedBuildStatus := &model.BuildStatus{Build: datastore.KeyForObj(ctx, syncedBuild)}
-			So(datastore.Get(ctx, syncedBuildStatus), ShouldBeNil)
-			So(syncedBuildStatus.Status, ShouldEqual, pb.Status_STARTED)
+			assert.Loosely(t, datastore.Get(ctx, syncedBuildStatus), should.BeNil)
+			assert.Loosely(t, syncedBuildStatus.Status, should.Equal(pb.Status_STARTED))
 
-			So(sch.Tasks(), ShouldHaveLength, 0)
+			assert.Loosely(t, sch.Tasks(), should.HaveLength(0))
 		})
 
-		Convey("status unchanged(not in STARTED) while bot dimensions changed", func() {
+		t.Run("status unchanged(not in STARTED) while bot dimensions changed", func(t *ftt.Test) {
 			b.Proto.Status = pb.Status_STARTED
 			bs.Status = b.Proto.Status
-			So(datastore.Put(ctx, b, bs), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, b, bs), should.BeNil)
 			body := makeSwarmingPubsubMsg(&userdata{
 				BuildID:          123,
 				CreatedTS:        1517260502000000,
@@ -1403,26 +1403,26 @@ func TestSubNotify(t *testing.T) {
 				},
 			}, nil)
 			err := SubNotify(ctx, body)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			syncedBuild := &model.Build{ID: 123}
-			So(datastore.Get(ctx, syncedBuild), ShouldBeNil)
-			So(syncedBuild.Status, ShouldEqual, pb.Status_STARTED)
+			assert.Loosely(t, datastore.Get(ctx, syncedBuild), should.BeNil)
+			assert.Loosely(t, syncedBuild.Status, should.Equal(pb.Status_STARTED))
 
 			currentInfra := &model.BuildInfra{Build: datastore.KeyForObj(ctx, syncedBuild)}
-			So(datastore.Get(ctx, currentInfra), ShouldBeNil)
-			So(currentInfra.Proto.Swarming.BotDimensions, ShouldBeEmpty)
+			assert.Loosely(t, datastore.Get(ctx, currentInfra), should.BeNil)
+			assert.Loosely(t, currentInfra.Proto.Swarming.BotDimensions, should.BeEmpty)
 
 			syncedBuildStatus := &model.BuildStatus{Build: datastore.KeyForObj(ctx, syncedBuild)}
-			So(datastore.Get(ctx, syncedBuildStatus), ShouldBeNil)
-			So(syncedBuildStatus.Status, ShouldEqual, pb.Status_STARTED)
+			assert.Loosely(t, datastore.Get(ctx, syncedBuildStatus), should.BeNil)
+			assert.Loosely(t, syncedBuildStatus.Status, should.Equal(pb.Status_STARTED))
 
-			So(sch.Tasks(), ShouldHaveLength, 0)
+			assert.Loosely(t, sch.Tasks(), should.HaveLength(0))
 		})
 
-		Convey("duplicate message", func() {
+		t.Run("duplicate message", func(t *ftt.Test) {
 			cache := caching.GlobalCache(ctx, "swarming-pubsub-msg-id")
 			err := cache.Set(ctx, "msg123", []byte{1}, 0*time.Second)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			body := makeSwarmingPubsubMsg(&userdata{
 				BuildID:          123,
@@ -1431,7 +1431,7 @@ func TestSubNotify(t *testing.T) {
 			}, "task123", "msg123")
 			mockSwarm.EXPECT().GetTaskResult(ctx, "task_id").Times(0)
 			err = SubNotify(ctx, body)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 	})
 }

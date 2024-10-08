@@ -18,64 +18,64 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/data/strpair"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestBuildSet(t *testing.T) {
 	t.Parallel()
 
-	Convey("Gerrit", t, func() {
-		Convey("ParseBuildSet", func() {
+	ftt.Run("Gerrit", t, func(t *ftt.Test) {
+		t.Run("ParseBuildSet", func(t *ftt.Test) {
 			actual := ParseBuildSet("patch/gerrit/chromium-review.googlesource.com/678507/3")
-			So(actual, ShouldResemble, &pb.GerritChange{
+			assert.Loosely(t, actual, should.Resemble(&pb.GerritChange{
 				Host:     "chromium-review.googlesource.com",
 				Change:   678507,
 				Patchset: 3,
-			})
+			}))
 		})
-		Convey("BuildSet", func() {
+		t.Run("BuildSet", func(t *ftt.Test) {
 			bs := GerritBuildSet(&pb.GerritChange{
 				Host:     "chromium-review.googlesource.com",
 				Change:   678507,
 				Patchset: 3,
 			})
-			So(bs, ShouldEqual, "patch/gerrit/chromium-review.googlesource.com/678507/3")
+			assert.Loosely(t, bs, should.Equal("patch/gerrit/chromium-review.googlesource.com/678507/3"))
 		})
 	})
 
-	Convey("Gitiles", t, func() {
-		Convey("ParseBuildSet", func() {
+	ftt.Run("Gitiles", t, func(t *ftt.Test) {
+		t.Run("ParseBuildSet", func(t *ftt.Test) {
 			actual := ParseBuildSet("commit/gitiles/chromium.googlesource.com/infra/luci/luci-go/+/b7a757f457487cd5cfe2dae83f65c5bc10e288b7")
-			So(actual, ShouldResemble, &pb.GitilesCommit{
+			assert.Loosely(t, actual, should.Resemble(&pb.GitilesCommit{
 				Host:    "chromium.googlesource.com",
 				Project: "infra/luci/luci-go",
 				Id:      "b7a757f457487cd5cfe2dae83f65c5bc10e288b7",
-			})
+			}))
 		})
-		Convey("not sha1", func() {
+		t.Run("not sha1", func(t *ftt.Test) {
 			bs := ParseBuildSet("commit/gitiles/chromium.googlesource.com/infra/luci/luci-go/+/non-sha1")
-			So(bs, ShouldBeNil)
+			assert.Loosely(t, bs, should.BeNil)
 		})
 
-		Convey("no host", func() {
+		t.Run("no host", func(t *ftt.Test) {
 			bs := ParseBuildSet("commit/gitiles//infra/luci/luci-go/+/b7a757f457487cd5cfe2dae83f65c5bc10e288b7")
-			So(bs, ShouldBeNil)
+			assert.Loosely(t, bs, should.BeNil)
 		})
-		Convey("no plus", func() {
+		t.Run("no plus", func(t *ftt.Test) {
 			bs := ParseBuildSet("commit/gitiles//infra/luci/luci-go/b7a757f457487cd5cfe2dae83f65c5bc10e288b7")
-			So(bs, ShouldBeNil)
+			assert.Loosely(t, bs, should.BeNil)
 		})
-		Convey("BuildSet", func() {
+		t.Run("BuildSet", func(t *ftt.Test) {
 			bs := GitilesBuildSet(&pb.GitilesCommit{
 				Host:    "chromium.googlesource.com",
 				Project: "infra/luci/luci-go",
 				Id:      "b7a757f457487cd5cfe2dae83f65c5bc10e288b7",
 			})
-			So(bs, ShouldEqual, "commit/gitiles/chromium.googlesource.com/infra/luci/luci-go/+/b7a757f457487cd5cfe2dae83f65c5bc10e288b7")
+			assert.Loosely(t, bs, should.Equal("commit/gitiles/chromium.googlesource.com/infra/luci/luci-go/+/b7a757f457487cd5cfe2dae83f65c5bc10e288b7"))
 		})
 	})
 }
@@ -83,27 +83,27 @@ func TestBuildSet(t *testing.T) {
 func TestStringPairs(t *testing.T) {
 	t.Parallel()
 
-	Convey("StringPairs", t, func() {
+	ftt.Run("StringPairs", t, func(t *ftt.Test) {
 		m := strpair.Map{}
 		m.Add("a", "1")
 		m.Add("a", "2")
 		m.Add("b", "1")
 
 		pairs := StringPairs(m)
-		So(pairs, ShouldResembleProto, []*pb.StringPair{
+		assert.Loosely(t, pairs, should.Resemble([]*pb.StringPair{
 			{Key: "a", Value: "1"},
 			{Key: "a", Value: "2"},
 			{Key: "b", Value: "1"},
-		})
+		}))
 	})
 
-	Convey("StringPairMap", t, func() {
+	ftt.Run("StringPairMap", t, func(t *ftt.Test) {
 		expected := make(strpair.Map)
 		var stringPairs []*pb.StringPair
-		So(StringPairMap(stringPairs), ShouldResemble, expected)
+		assert.Loosely(t, StringPairMap(stringPairs), should.Resemble(expected))
 
 		stringPairs = []*pb.StringPair{}
-		So(StringPairMap(stringPairs), ShouldResemble, expected)
+		assert.Loosely(t, StringPairMap(stringPairs), should.Resemble(expected))
 
 		stringPairs = []*pb.StringPair{
 			{Key: "a", Value: "1"},
@@ -111,6 +111,6 @@ func TestStringPairs(t *testing.T) {
 			{Key: "b", Value: "1"},
 		}
 		expected = strpair.ParseMap([]string{"a:1", "a:2", "b:1"})
-		So(StringPairMap(stringPairs), ShouldResemble, expected)
+		assert.Loosely(t, StringPairMap(stringPairs), should.Resemble(expected))
 	})
 }

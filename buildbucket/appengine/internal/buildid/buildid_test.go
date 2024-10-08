@@ -21,62 +21,63 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/data/rand/mathrand"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestNewBuildIDs(t *testing.T) {
 	t.Parallel()
 
-	Convey("NewBuildIDs", t, func() {
+	ftt.Run("NewBuildIDs", t, func(t *ftt.Test) {
 		ctx := mathrand.Set(context.Background(), rand.New(rand.NewSource(0)))
 		ts := time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC)
-		So(1<<16, ShouldEqual, 65536)
+		assert.Loosely(t, 1<<16, should.Equal(65536))
 
-		Convey("zero", func() {
+		t.Run("zero", func(t *ftt.Test) {
 			ids := NewBuildIDs(ctx, ts, 0)
-			So(ids, ShouldBeEmpty)
+			assert.Loosely(t, ids, should.BeEmpty)
 		})
 
-		Convey("one", func() {
+		t.Run("one", func(t *ftt.Test) {
 			ids := NewBuildIDs(ctx, ts, 1)
-			So(ids, ShouldResemble, []int64{
+			assert.Loosely(t, ids, should.Resemble([]int64{
 				0x7DB4463C7FF2FFA1,
-			})
-			So(ids[0]>>63, ShouldEqual, 0)
-			So(ids[0]&0x0FFFFFFFFFFFFFFF>>buildIDTimeSuffixLen, ShouldEqual, 941745227775)
-			So(ids[0]&0x0000000000000001, ShouldEqual, buildIDVersion)
+			}))
+			assert.Loosely(t, ids[0]>>63, should.BeZero)
+			assert.Loosely(t, ids[0]&0x0FFFFFFFFFFFFFFF>>buildIDTimeSuffixLen, should.Equal(941745227775))
+			assert.Loosely(t, ids[0]&0x0000000000000001, should.Equal(buildIDVersion))
 		})
 
-		Convey("two", func() {
+		t.Run("two", func(t *ftt.Test) {
 			ids := NewBuildIDs(ctx, ts, 2)
-			So(ids, ShouldResemble, []int64{
+			assert.Loosely(t, ids, should.Resemble([]int64{
 				0x7DB4463C7FFA8F71,
 				0x7DB4463C7FFA8F61,
-			})
-			So(ids[0]>>63, ShouldEqual, 0)
-			So(ids[0]&0x0000000000000001, ShouldEqual, buildIDVersion)
-			So(ids[0]&0x0FFFFFFFFFFFFFFF>>buildIDTimeSuffixLen, ShouldEqual, 941745227775)
-			So(ids[1]>>63, ShouldEqual, 0)
-			So(ids[1]&0x0000000000000001, ShouldEqual, buildIDVersion)
-			So(ids[1]&0x0FFFFFFFFFFFFFFF>>buildIDTimeSuffixLen, ShouldEqual, 941745227775)
+			}))
+			assert.Loosely(t, ids[0]>>63, should.BeZero)
+			assert.Loosely(t, ids[0]&0x0000000000000001, should.Equal(buildIDVersion))
+			assert.Loosely(t, ids[0]&0x0FFFFFFFFFFFFFFF>>buildIDTimeSuffixLen, should.Equal(941745227775))
+			assert.Loosely(t, ids[1]>>63, should.BeZero)
+			assert.Loosely(t, ids[1]&0x0000000000000001, should.Equal(buildIDVersion))
+			assert.Loosely(t, ids[1]&0x0FFFFFFFFFFFFFFF>>buildIDTimeSuffixLen, should.Equal(941745227775))
 		})
 
-		Convey("many", func() {
+		t.Run("many", func(t *ftt.Test) {
 			for i := 0; i < 2^16; i++ {
 				ids := NewBuildIDs(ctx, ts, i)
-				So(ids, ShouldHaveLength, i)
+				assert.Loosely(t, ids, should.HaveLength(i))
 				prev := BuildIDMax
 				for _, id := range ids {
 					// Ensure strictly decreasing.
-					So(id, ShouldBeLessThan, prev)
+					assert.Loosely(t, id, should.BeLessThan(prev))
 					prev = id
 					// Ensure positive.
-					So(id>>63, ShouldEqual, 0)
+					assert.Loosely(t, id>>63, should.BeZero)
 					// Ensure time component.
-					So(id&0x0FFFFFFFFFFFFFFF>>buildIDTimeSuffixLen, ShouldEqual, 941745227775)
+					assert.Loosely(t, id&0x0FFFFFFFFFFFFFFF>>buildIDTimeSuffixLen, should.Equal(941745227775))
 					// Ensure version.
-					So(id&0x000000000000000F, ShouldEqual, buildIDVersion)
+					assert.Loosely(t, id&0x000000000000000F, should.Equal(buildIDVersion))
 				}
 			}
 		})
@@ -86,8 +87,8 @@ func TestNewBuildIDs(t *testing.T) {
 func TestIDRange(t *testing.T) {
 	t.Parallel()
 
-	Convey("IDRange", t, func() {
-		Convey("valid time", func() {
+	ftt.Run("IDRange", t, func(t *ftt.Test) {
+		t.Run("valid time", func(t *ftt.Test) {
 			timeLow := time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC)
 			timeHigh := timeLow.Add(timeResolution * 10000)
 			idLow, idHigh := IDRange(timeLow, timeHigh)
@@ -101,22 +102,22 @@ func TestIDRange(t *testing.T) {
 			// Ensure that min and max possible build IDs are within
 			// the range up to the timeResolution.
 			for _, suffix := range []int64{0, ones} {
-				So(inRange(timeLow.Add(-timeResolution), suffix), ShouldBeFalse)
-				So(inRange(timeLow, suffix), ShouldBeTrue)
-				So(inRange(timeLow.Add(timeResolution), suffix), ShouldBeTrue)
+				assert.Loosely(t, inRange(timeLow.Add(-timeResolution), suffix), should.BeFalse)
+				assert.Loosely(t, inRange(timeLow, suffix), should.BeTrue)
+				assert.Loosely(t, inRange(timeLow.Add(timeResolution), suffix), should.BeTrue)
 
-				So(inRange(timeHigh.Add(-timeResolution), suffix), ShouldBeTrue)
-				So(inRange(timeHigh, suffix), ShouldBeFalse)
-				So(inRange(timeHigh.Add(timeResolution), suffix), ShouldBeFalse)
+				assert.Loosely(t, inRange(timeHigh.Add(-timeResolution), suffix), should.BeTrue)
+				assert.Loosely(t, inRange(timeHigh, suffix), should.BeFalse)
+				assert.Loosely(t, inRange(timeHigh.Add(timeResolution), suffix), should.BeFalse)
 			}
 		})
 
-		Convey("invalid time", func() {
+		t.Run("invalid time", func(t *ftt.Test) {
 			timeLow := time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
 			timeHigh := timeLow.Add(timeResolution * 10000)
 			idLow, idHigh := IDRange(timeLow, timeHigh)
-			So(idLow, ShouldEqual, 0)
-			So(idHigh, ShouldEqual, 0)
+			assert.Loosely(t, idLow, should.BeZero)
+			assert.Loosely(t, idHigh, should.BeZero)
 		})
 	})
 }
@@ -124,21 +125,21 @@ func TestIDRange(t *testing.T) {
 func TestIDTimeSegment(t *testing.T) {
 	t.Parallel()
 
-	Convey("idTimeSegment", t, func() {
-		Convey("after the start of the word time", func() {
+	ftt.Run("idTimeSegment", t, func(t *ftt.Test) {
+		t.Run("after the start of the word time", func(t *ftt.Test) {
 			id := idTimeSegment(beginningOfTheWorld.Add(timeResolution))
-			So(id, ShouldEqual, 0x7FFFFFFFFFE00000)
+			assert.Loosely(t, id, should.Equal(0x7FFFFFFFFFE00000))
 		})
 
-		Convey("at the start of the word time", func() {
+		t.Run("at the start of the word time", func(t *ftt.Test) {
 			id := idTimeSegment(beginningOfTheWorld)
-			So(id, ShouldEqual, 0x7FFFFFFFFFF00000)
+			assert.Loosely(t, id, should.Equal(0x7FFFFFFFFFF00000))
 		})
 
-		Convey("before the start of the word time", func() {
+		t.Run("before the start of the word time", func(t *ftt.Test) {
 			ts := time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
 			id := idTimeSegment(ts)
-			So(id, ShouldEqual, 0)
+			assert.Loosely(t, id, should.BeZero)
 		})
 	})
 }
@@ -146,27 +147,27 @@ func TestIDTimeSegment(t *testing.T) {
 func TestMayContainBuilds(t *testing.T) {
 	t.Parallel()
 
-	Convey("normal", t, func() {
+	ftt.Run("normal", t, func(t *ftt.Test) {
 		low := time.Date(2011, 1, 1, 0, 0, 0, 0, time.UTC)
 		high := time.Date(2011, 2, 1, 0, 0, 0, 0, time.UTC)
-		So(MayContainBuilds(low, high), ShouldBeTrue)
+		assert.Loosely(t, MayContainBuilds(low, high), should.BeTrue)
 	})
 
-	Convey("low time is larger than high time", t, func() {
+	ftt.Run("low time is larger than high time", t, func(t *ftt.Test) {
 		low := time.Date(2011, 2, 1, 0, 0, 0, 0, time.UTC)
 		high := time.Date(2011, 1, 1, 0, 0, 0, 0, time.UTC)
-		So(MayContainBuilds(low, high), ShouldBeFalse)
+		assert.Loosely(t, MayContainBuilds(low, high), should.BeFalse)
 	})
 
-	Convey("low and high time are nil", t, func() {
+	ftt.Run("low and high time are nil", t, func(t *ftt.Test) {
 		low := time.Time{}
 		high := time.Time{}
-		So(MayContainBuilds(low, high), ShouldBeTrue)
+		assert.Loosely(t, MayContainBuilds(low, high), should.BeTrue)
 	})
 
-	Convey("high time is less than beginningOfTheWorld", t, func() {
+	ftt.Run("high time is less than beginningOfTheWorld", t, func(t *ftt.Test) {
 		low := time.Date(2011, 2, 1, 0, 0, 0, 0, time.UTC)
 		high := beginningOfTheWorld.Add(-1)
-		So(MayContainBuilds(low, high), ShouldBeFalse)
+		assert.Loosely(t, MayContainBuilds(low, high), should.BeFalse)
 	})
 }

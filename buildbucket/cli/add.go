@@ -21,22 +21,20 @@ import (
 	"strings"
 	"sync/atomic"
 
-	"google.golang.org/genproto/protobuf/field_mask"
-
 	"github.com/golang/protobuf/proto"
 	"github.com/google/uuid"
 	"github.com/maruel/subcommands"
+	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/protobuf/types/known/structpb"
 
-	bb "go.chromium.org/luci/buildbucket"
-	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
-	"google.golang.org/protobuf/types/known/structpb"
-
+	bb "go.chromium.org/luci/buildbucket"
 	pb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/buildbucket/protoutil"
 )
 
 func cmdAdd(p Params) *subcommands.Command {

@@ -18,56 +18,56 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestTagIndex(t *testing.T) {
 	t.Parallel()
 
-	Convey("TagIndex", t, func() {
+	ftt.Run("TagIndex", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 
-		Convey("updateTagIndex", func() {
-			Convey("create", func() {
-				Convey("nil", func() {
-					So(updateTagIndex(ctx, "key:val", 0, nil), ShouldBeNil)
+		t.Run("updateTagIndex", func(t *ftt.Test) {
+			t.Run("create", func(t *ftt.Test) {
+				t.Run("nil", func(t *ftt.Test) {
+					assert.Loosely(t, updateTagIndex(ctx, "key:val", 0, nil), should.BeNil)
 
 					shd := &TagIndex{
 						ID: "key:val",
 					}
-					So(datastore.Get(ctx, shd), ShouldErrLike, "no such entity")
+					assert.Loosely(t, datastore.Get(ctx, shd), should.ErrLike("no such entity"))
 				})
 
-				Convey("empty", func() {
+				t.Run("empty", func(t *ftt.Test) {
 					ents := []TagIndexEntry{}
-					So(updateTagIndex(ctx, "key:val", 0, ents), ShouldBeNil)
+					assert.Loosely(t, updateTagIndex(ctx, "key:val", 0, ents), should.BeNil)
 
 					shd := &TagIndex{
 						ID: "key:val",
 					}
-					So(datastore.Get(ctx, shd), ShouldErrLike, "no such entity")
+					assert.Loosely(t, datastore.Get(ctx, shd), should.ErrLike("no such entity"))
 				})
 
-				Convey("one", func() {
+				t.Run("one", func(t *ftt.Test) {
 					ents := []TagIndexEntry{
 						{
 							BuildID:  1,
 							BucketID: "bucket",
 						},
 					}
-					So(updateTagIndex(ctx, "key:val", 0, ents), ShouldBeNil)
+					assert.Loosely(t, updateTagIndex(ctx, "key:val", 0, ents), should.BeNil)
 
 					shd := &TagIndex{
 						ID: "key:val",
 					}
-					So(datastore.Get(ctx, shd), ShouldBeNil)
-					So(shd, ShouldResemble, &TagIndex{
+					assert.Loosely(t, datastore.Get(ctx, shd), should.BeNil)
+					assert.Loosely(t, shd, should.Resemble(&TagIndex{
 						ID: "key:val",
 						Entries: []TagIndexEntry{
 							{
@@ -75,10 +75,10 @@ func TestTagIndex(t *testing.T) {
 								BucketID: "bucket",
 							},
 						},
-					})
+					}))
 				})
 
-				Convey("many", func() {
+				t.Run("many", func(t *ftt.Test) {
 					ents := []TagIndexEntry{
 						{
 							BuildID:  1,
@@ -89,13 +89,13 @@ func TestTagIndex(t *testing.T) {
 							BucketID: "bucket",
 						},
 					}
-					So(updateTagIndex(ctx, "key:val", 0, ents), ShouldBeNil)
+					assert.Loosely(t, updateTagIndex(ctx, "key:val", 0, ents), should.BeNil)
 
 					shd := &TagIndex{
 						ID: "key:val",
 					}
-					So(datastore.Get(ctx, shd), ShouldBeNil)
-					So(shd, ShouldResemble, &TagIndex{
+					assert.Loosely(t, datastore.Get(ctx, shd), should.BeNil)
+					assert.Loosely(t, shd, should.Resemble(&TagIndex{
 						ID: "key:val",
 						Entries: []TagIndexEntry{
 							{
@@ -107,10 +107,10 @@ func TestTagIndex(t *testing.T) {
 								BucketID: "bucket",
 							},
 						},
-					})
+					}))
 				})
 
-				Convey("excessive", func() {
+				t.Run("excessive", func(t *ftt.Test) {
 					ents := make([]TagIndexEntry, MaxTagIndexEntries+1)
 					for i := range ents {
 						ents[i] = TagIndexEntry{
@@ -118,21 +118,21 @@ func TestTagIndex(t *testing.T) {
 							BucketID: "bucket",
 						}
 					}
-					So(updateTagIndex(ctx, "key:val", 0, ents), ShouldBeNil)
+					assert.Loosely(t, updateTagIndex(ctx, "key:val", 0, ents), should.BeNil)
 
 					shd := &TagIndex{
 						ID: "key:val",
 					}
-					So(datastore.Get(ctx, shd), ShouldBeNil)
-					So(shd, ShouldResemble, &TagIndex{
+					assert.Loosely(t, datastore.Get(ctx, shd), should.BeNil)
+					assert.Loosely(t, shd, should.Resemble(&TagIndex{
 						ID:         "key:val",
 						Incomplete: true,
-					})
+					}))
 				})
 			})
 
-			Convey("update", func() {
-				So(datastore.Put(ctx, &TagIndex{
+			t.Run("update", func(t *ftt.Test) {
+				assert.Loosely(t, datastore.Put(ctx, &TagIndex{
 					ID: ":1:key:val",
 					Entries: []TagIndexEntry{
 						{
@@ -140,16 +140,16 @@ func TestTagIndex(t *testing.T) {
 							BucketID: "bucket",
 						},
 					},
-				}), ShouldBeNil)
+				}), should.BeNil)
 
-				Convey("nil", func() {
-					So(updateTagIndex(ctx, "key:val", 1, nil), ShouldBeNil)
+				t.Run("nil", func(t *ftt.Test) {
+					assert.Loosely(t, updateTagIndex(ctx, "key:val", 1, nil), should.BeNil)
 
 					shd := &TagIndex{
 						ID: ":1:key:val",
 					}
-					So(datastore.Get(ctx, shd), ShouldBeNil)
-					So(shd, ShouldResemble, &TagIndex{
+					assert.Loosely(t, datastore.Get(ctx, shd), should.BeNil)
+					assert.Loosely(t, shd, should.Resemble(&TagIndex{
 						ID: ":1:key:val",
 						Entries: []TagIndexEntry{
 							{
@@ -157,18 +157,18 @@ func TestTagIndex(t *testing.T) {
 								BucketID: "bucket",
 							},
 						},
-					})
+					}))
 				})
 
-				Convey("empty", func() {
+				t.Run("empty", func(t *ftt.Test) {
 					ents := []TagIndexEntry{}
-					So(updateTagIndex(ctx, "key:val", 1, ents), ShouldBeNil)
+					assert.Loosely(t, updateTagIndex(ctx, "key:val", 1, ents), should.BeNil)
 
 					shd := &TagIndex{
 						ID: ":1:key:val",
 					}
-					So(datastore.Get(ctx, shd), ShouldBeNil)
-					So(shd, ShouldResemble, &TagIndex{
+					assert.Loosely(t, datastore.Get(ctx, shd), should.BeNil)
+					assert.Loosely(t, shd, should.Resemble(&TagIndex{
 						ID: ":1:key:val",
 						Entries: []TagIndexEntry{
 							{
@@ -176,23 +176,23 @@ func TestTagIndex(t *testing.T) {
 								BucketID: "bucket",
 							},
 						},
-					})
+					}))
 				})
 
-				Convey("one", func() {
+				t.Run("one", func(t *ftt.Test) {
 					ents := []TagIndexEntry{
 						{
 							BuildID:  2,
 							BucketID: "bucket",
 						},
 					}
-					So(updateTagIndex(ctx, "key:val", 1, ents), ShouldBeNil)
+					assert.Loosely(t, updateTagIndex(ctx, "key:val", 1, ents), should.BeNil)
 
 					shd := &TagIndex{
 						ID: ":1:key:val",
 					}
-					So(datastore.Get(ctx, shd), ShouldBeNil)
-					So(shd, ShouldResemble, &TagIndex{
+					assert.Loosely(t, datastore.Get(ctx, shd), should.BeNil)
+					assert.Loosely(t, shd, should.Resemble(&TagIndex{
 						ID: ":1:key:val",
 						Entries: []TagIndexEntry{
 							{
@@ -204,10 +204,10 @@ func TestTagIndex(t *testing.T) {
 								BucketID: "bucket",
 							},
 						},
-					})
+					}))
 				})
 
-				Convey("many", func() {
+				t.Run("many", func(t *ftt.Test) {
 					ents := []TagIndexEntry{
 						{
 							BuildID:  2,
@@ -218,13 +218,13 @@ func TestTagIndex(t *testing.T) {
 							BucketID: "bucket",
 						},
 					}
-					So(updateTagIndex(ctx, "key:val", 1, ents), ShouldBeNil)
+					assert.Loosely(t, updateTagIndex(ctx, "key:val", 1, ents), should.BeNil)
 
 					shd := &TagIndex{
 						ID: ":1:key:val",
 					}
-					So(datastore.Get(ctx, shd), ShouldBeNil)
-					So(shd, ShouldResemble, &TagIndex{
+					assert.Loosely(t, datastore.Get(ctx, shd), should.BeNil)
+					assert.Loosely(t, shd, should.Resemble(&TagIndex{
 						ID: ":1:key:val",
 						Entries: []TagIndexEntry{
 							{
@@ -240,10 +240,10 @@ func TestTagIndex(t *testing.T) {
 								BucketID: "bucket",
 							},
 						},
-					})
+					}))
 				})
 
-				Convey("excessive", func() {
+				t.Run("excessive", func(t *ftt.Test) {
 					ents := make([]TagIndexEntry, MaxTagIndexEntries)
 					for i := range ents {
 						ents[i] = TagIndexEntry{
@@ -251,100 +251,100 @@ func TestTagIndex(t *testing.T) {
 							BucketID: "bucket",
 						}
 					}
-					So(updateTagIndex(ctx, "key:val", 1, ents), ShouldBeNil)
+					assert.Loosely(t, updateTagIndex(ctx, "key:val", 1, ents), should.BeNil)
 
 					shd := &TagIndex{
 						ID: ":1:key:val",
 					}
-					So(datastore.Get(ctx, shd), ShouldBeNil)
-					So(shd, ShouldResemble, &TagIndex{
+					assert.Loosely(t, datastore.Get(ctx, shd), should.BeNil)
+					assert.Loosely(t, shd, should.Resemble(&TagIndex{
 						ID:         ":1:key:val",
 						Incomplete: true,
-					})
+					}))
 				})
 			})
 
-			Convey("incomplete", func() {
-				So(datastore.Put(ctx, &TagIndex{
+			t.Run("incomplete", func(t *ftt.Test) {
+				assert.Loosely(t, datastore.Put(ctx, &TagIndex{
 					ID:         ":2:key:val",
 					Incomplete: true,
-				}), ShouldBeNil)
+				}), should.BeNil)
 
-				Convey("nil", func() {
-					So(updateTagIndex(ctx, "key:val", 2, nil), ShouldBeNil)
+				t.Run("nil", func(t *ftt.Test) {
+					assert.Loosely(t, updateTagIndex(ctx, "key:val", 2, nil), should.BeNil)
 
 					shd := &TagIndex{
 						ID: ":2:key:val",
 					}
-					So(datastore.Get(ctx, shd), ShouldBeNil)
-					So(shd, ShouldResemble, &TagIndex{
+					assert.Loosely(t, datastore.Get(ctx, shd), should.BeNil)
+					assert.Loosely(t, shd, should.Resemble(&TagIndex{
 						ID:         ":2:key:val",
 						Incomplete: true,
-					})
+					}))
 				})
 
-				Convey("empty", func() {
+				t.Run("empty", func(t *ftt.Test) {
 					ents := []TagIndexEntry{}
-					So(updateTagIndex(ctx, "key:val", 2, ents), ShouldBeNil)
+					assert.Loosely(t, updateTagIndex(ctx, "key:val", 2, ents), should.BeNil)
 
 					shd := &TagIndex{
 						ID: ":2:key:val",
 					}
-					So(datastore.Get(ctx, shd), ShouldBeNil)
-					So(shd, ShouldResemble, &TagIndex{
+					assert.Loosely(t, datastore.Get(ctx, shd), should.BeNil)
+					assert.Loosely(t, shd, should.Resemble(&TagIndex{
 						ID:         ":2:key:val",
 						Incomplete: true,
-					})
+					}))
 				})
 
-				Convey("one", func() {
+				t.Run("one", func(t *ftt.Test) {
 					ents := []TagIndexEntry{
 						{
 							BuildID:  1,
 							BucketID: "bucket",
 						},
 					}
-					So(updateTagIndex(ctx, "key:val", 2, ents), ShouldBeNil)
+					assert.Loosely(t, updateTagIndex(ctx, "key:val", 2, ents), should.BeNil)
 
 					shd := &TagIndex{
 						ID: ":2:key:val",
 					}
-					So(datastore.Get(ctx, shd), ShouldBeNil)
-					So(shd, ShouldResemble, &TagIndex{
+					assert.Loosely(t, datastore.Get(ctx, shd), should.BeNil)
+					assert.Loosely(t, shd, should.Resemble(&TagIndex{
 						ID:         ":2:key:val",
 						Incomplete: true,
-					})
+					}))
 				})
 			})
 		})
 
-		Convey("searchTagIndex", func() {
-			So(datastore.Put(ctx, &TagIndex{
+		t.Run("searchTagIndex", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(ctx, &TagIndex{
 				ID:      ":1:buildset:patch/gerrit/chromium-review.googlesource.com/123/1",
 				Entries: []TagIndexEntry{{BuildID: 123, BucketID: "proj/bkt"}},
-			}), ShouldBeNil)
-			Convey("found", func() {
+			}), should.BeNil)
+			t.Run("found", func(t *ftt.Test) {
 				entries, err := SearchTagIndex(ctx, "buildset", "patch/gerrit/chromium-review.googlesource.com/123/1")
-				So(err, ShouldBeNil)
-				So(entries, ShouldResembleProto, []*TagIndexEntry{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, entries, should.Resemble([]*TagIndexEntry{
 					{BuildID: 123, BucketID: "proj/bkt"},
-				})
+				}))
 			})
 
-			Convey("not found", func() {
+			t.Run("not found", func(t *ftt.Test) {
 				entries, err := SearchTagIndex(ctx, "buildset", "not exist")
-				So(err, ShouldBeNil)
-				So(entries, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, entries, should.BeNil)
 			})
 
-			Convey("bad TagIndexEntry", func() {
-				So(datastore.Put(ctx, &TagIndex{
+			t.Run("bad TagIndexEntry", func(t *ftt.Test) {
+				assert.Loosely(t, datastore.Put(ctx, &TagIndex{
 					ID:      "key:val",
 					Entries: []TagIndexEntry{{BuildID: 123, BucketID: "/"}},
-				}), ShouldBeNil)
+				}), should.BeNil)
 				entries, err := SearchTagIndex(ctx, "key", "val")
-				So(err, ShouldBeNil)
-				So(entries, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, entries, should.BeNil)
 			})
 		})
 	})

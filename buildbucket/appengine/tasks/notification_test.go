@@ -24,6 +24,9 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -37,16 +40,12 @@ import (
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	taskdefs "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
 	pb "go.chromium.org/luci/buildbucket/proto"
-
-	. "github.com/smartystreets/goconvey/convey"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestNotification(t *testing.T) {
 	t.Parallel()
 
-	Convey("notifyPubsub", t, func() {
+	ftt.Run("notifyPubsub", t, func(t *ftt.Test) {
 		ctx := auth.WithState(memory.Use(context.Background()), &authtest.FakeState{})
 		ctx = txndefer.FilterRDS(ctx)
 		ctx, sch := tq.TestingContext(ctx, nil)
@@ -59,7 +58,7 @@ func TestNotification(t *testing.T) {
 			})
 		}
 
-		Convey("w/o callback", func() {
+		t.Run("w/o callback", func(t *ftt.Test) {
 			txErr := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 				return NotifyPubSub(ctx, &model.Build{
 					ID: 123,
@@ -70,17 +69,17 @@ func TestNotification(t *testing.T) {
 					},
 				})
 			}, nil)
-			So(txErr, ShouldBeNil)
+			assert.Loosely(t, txErr, should.BeNil)
 			tasks := sch.Tasks()
 			sortTasksByClassName(tasks)
-			So(tasks, ShouldHaveLength, 2)
-			So(tasks[0].Payload.(*taskdefs.NotifyPubSub).GetBuildId(), ShouldEqual, 123)
-			So(tasks[0].Payload.(*taskdefs.NotifyPubSub).GetCallback(), ShouldBeFalse)
-			So(tasks[1].Payload.(*taskdefs.NotifyPubSubGoProxy).GetBuildId(), ShouldEqual, 123)
-			So(tasks[1].Payload.(*taskdefs.NotifyPubSubGoProxy).GetProject(), ShouldEqual, "project")
+			assert.Loosely(t, tasks, should.HaveLength(2))
+			assert.Loosely(t, tasks[0].Payload.(*taskdefs.NotifyPubSub).GetBuildId(), should.Equal(123))
+			assert.Loosely(t, tasks[0].Payload.(*taskdefs.NotifyPubSub).GetCallback(), should.BeFalse)
+			assert.Loosely(t, tasks[1].Payload.(*taskdefs.NotifyPubSubGoProxy).GetBuildId(), should.Equal(123))
+			assert.Loosely(t, tasks[1].Payload.(*taskdefs.NotifyPubSubGoProxy).GetProject(), should.Equal("project"))
 		})
 
-		Convey("w/ callback", func() {
+		t.Run("w/ callback", func(t *ftt.Test) {
 			txErr := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 				cb := model.PubSubCallback{
 					AuthToken: "token",
@@ -97,31 +96,31 @@ func TestNotification(t *testing.T) {
 					},
 				})
 			}, nil)
-			So(txErr, ShouldBeNil)
+			assert.Loosely(t, txErr, should.BeNil)
 			tasks := sch.Tasks()
 			sortTasksByClassName(tasks)
-			So(tasks, ShouldHaveLength, 3)
+			assert.Loosely(t, tasks, should.HaveLength(3))
 
 			n1 := tasks[0].Payload.(*taskdefs.NotifyPubSub)
 			n2 := tasks[1].Payload.(*taskdefs.NotifyPubSubGo)
-			So(n1.GetBuildId(), ShouldEqual, 123)
-			So(n1.GetCallback(), ShouldBeFalse)
-			So(n2.GetBuildId(), ShouldEqual, 123)
-			So(n2.GetCallback(), ShouldBeTrue)
-			So(n2.GetTopic().GetName(), ShouldEqual, "topic")
+			assert.Loosely(t, n1.GetBuildId(), should.Equal(123))
+			assert.Loosely(t, n1.GetCallback(), should.BeFalse)
+			assert.Loosely(t, n2.GetBuildId(), should.Equal(123))
+			assert.Loosely(t, n2.GetCallback(), should.BeTrue)
+			assert.Loosely(t, n2.GetTopic().GetName(), should.Equal("topic"))
 
-			So(tasks[2].Payload.(*taskdefs.NotifyPubSubGoProxy).GetBuildId(), ShouldEqual, 123)
-			So(tasks[2].Payload.(*taskdefs.NotifyPubSubGoProxy).GetProject(), ShouldEqual, "project")
+			assert.Loosely(t, tasks[2].Payload.(*taskdefs.NotifyPubSubGoProxy).GetBuildId(), should.Equal(123))
+			assert.Loosely(t, tasks[2].Payload.(*taskdefs.NotifyPubSubGoProxy).GetProject(), should.Equal("project"))
 		})
 	})
 
-	Convey("EnqueueNotifyPubSubGo", t, func() {
+	ftt.Run("EnqueueNotifyPubSubGo", t, func(t *ftt.Test) {
 		ctx := auth.WithState(memory.Use(context.Background()), &authtest.FakeState{})
 		ctx = txndefer.FilterRDS(ctx)
 		ctx, sch := tq.TestingContext(ctx, nil)
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
-		So(datastore.Put(ctx, &model.Project{
+		assert.Loosely(t, datastore.Put(ctx, &model.Project{
 			ID: "project_with_external_topics",
 			CommonConfig: &pb.BuildbucketCfg_CommonConfig{
 				BuildsNotificationTopics: []*pb.BuildbucketCfg_Topic{
@@ -130,46 +129,46 @@ func TestNotification(t *testing.T) {
 					},
 				},
 			},
-		}), ShouldBeNil)
+		}), should.BeNil)
 
-		Convey("no project entity", func() {
+		t.Run("no project entity", func(t *ftt.Test) {
 			txErr := EnqueueNotifyPubSubGo(ctx, 123, "project_no_external_topics")
-			So(txErr, ShouldBeNil)
+			assert.Loosely(t, txErr, should.BeNil)
 			tasks := sch.Tasks()
-			So(tasks, ShouldHaveLength, 1)
-			So(tasks[0].Payload, ShouldResembleProto, &taskdefs.NotifyPubSubGo{
+			assert.Loosely(t, tasks, should.HaveLength(1))
+			assert.Loosely(t, tasks[0].Payload, should.Resemble(&taskdefs.NotifyPubSubGo{
 				BuildId: 123,
-			})
+			}))
 		})
 
-		Convey("empty project.common_config", func() {
-			So(datastore.Put(ctx, &model.Project{
+		t.Run("empty project.common_config", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(ctx, &model.Project{
 				ID:           "project_empty",
 				CommonConfig: &pb.BuildbucketCfg_CommonConfig{},
-			}), ShouldBeNil)
+			}), should.BeNil)
 			txErr := EnqueueNotifyPubSubGo(ctx, 123, "project_empty")
-			So(txErr, ShouldBeNil)
+			assert.Loosely(t, txErr, should.BeNil)
 			tasks := sch.Tasks()
-			So(tasks, ShouldHaveLength, 1)
-			So(tasks[0].Payload, ShouldResembleProto, &taskdefs.NotifyPubSubGo{
+			assert.Loosely(t, tasks, should.HaveLength(1))
+			assert.Loosely(t, tasks[0].Payload, should.Resemble(&taskdefs.NotifyPubSubGo{
 				BuildId: 123,
-			})
+			}))
 		})
 
-		Convey("has external topics", func() {
+		t.Run("has external topics", func(t *ftt.Test) {
 			txErr := EnqueueNotifyPubSubGo(ctx, 123, "project_with_external_topics")
-			So(txErr, ShouldBeNil)
+			assert.Loosely(t, txErr, should.BeNil)
 			tasks := sch.Tasks()
-			So(tasks, ShouldHaveLength, 2)
+			assert.Loosely(t, tasks, should.HaveLength(2))
 			taskGo0 := tasks[0].Payload.(*taskdefs.NotifyPubSubGo)
 			taskGo1 := tasks[1].Payload.(*taskdefs.NotifyPubSubGo)
-			So(taskGo0.BuildId, ShouldEqual, 123)
-			So(taskGo1.BuildId, ShouldEqual, 123)
-			So(taskGo0.Topic.GetName()+taskGo1.Topic.GetName(), ShouldEqual, "projects/my-cloud-project/topics/my-topic")
+			assert.Loosely(t, taskGo0.BuildId, should.Equal(123))
+			assert.Loosely(t, taskGo1.BuildId, should.Equal(123))
+			assert.Loosely(t, taskGo0.Topic.GetName()+taskGo1.Topic.GetName(), should.Equal("projects/my-cloud-project/topics/my-topic"))
 		})
 	})
 
-	Convey("PublishBuildsV2Notification", t, func() {
+	ftt.Run("PublishBuildsV2Notification", t, func(t *ftt.Test) {
 		ctx := auth.WithState(memory.Use(context.Background()), &authtest.FakeState{})
 		ctx = txndefer.FilterRDS(ctx)
 		ctx, sch := tq.TestingContext(ctx, nil)
@@ -203,7 +202,7 @@ func TestNotification(t *testing.T) {
 				},
 			},
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		bs := &model.BuildSteps{ID: 1, Build: bk, Bytes: bsBytes}
 		bi := &model.BuildInfra{
 			ID:    1,
@@ -238,26 +237,26 @@ func TestNotification(t *testing.T) {
 				},
 			},
 		}
-		So(datastore.Put(ctx, b, bi, bs, bo, binpProp), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, b, bi, bs, bo, binpProp), should.BeNil)
 
-		Convey("build not exist", func() {
+		t.Run("build not exist", func(t *ftt.Test) {
 			err := PublishBuildsV2Notification(ctx, 999, nil, false)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			tasks := sch.Tasks()
-			So(tasks, ShouldHaveLength, 0)
+			assert.Loosely(t, tasks, should.HaveLength(0))
 		})
 
-		Convey("To internal topic", func() {
+		t.Run("To internal topic", func(t *ftt.Test) {
 
-			Convey("success", func() {
+			t.Run("success", func(t *ftt.Test) {
 				err := PublishBuildsV2Notification(ctx, 123, nil, false)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				tasks := sch.Tasks()
-				So(tasks, ShouldHaveLength, 1)
-				So(tasks[0].Message.Attributes["project"], ShouldEqual, "project")
-				So(tasks[0].Message.Attributes["is_completed"], ShouldEqual, "true")
-				So(tasks[0].Payload.(*pb.BuildsV2PubSub).GetBuild(), ShouldResembleProto, &pb.Build{
+				assert.Loosely(t, tasks, should.HaveLength(1))
+				assert.Loosely(t, tasks[0].Message.Attributes["project"], should.Equal("project"))
+				assert.Loosely(t, tasks[0].Message.Attributes["is_completed"], should.Equal("true"))
+				assert.Loosely(t, tasks[0].Payload.(*pb.BuildsV2PubSub).GetBuild(), should.Resemble(&pb.Build{
 					Id: 123,
 					Builder: &pb.BuilderID{
 						Project: "project",
@@ -272,12 +271,12 @@ func TestNotification(t *testing.T) {
 					},
 					Input:  &pb.Build_Input{},
 					Output: &pb.Build_Output{},
-				})
-				So(tasks[0].Payload.(*pb.BuildsV2PubSub).GetBuildLargeFields(), ShouldNotBeNil)
+				}))
+				assert.Loosely(t, tasks[0].Payload.(*pb.BuildsV2PubSub).GetBuildLargeFields(), should.NotBeNil)
 				bLargeBytes := tasks[0].Payload.(*pb.BuildsV2PubSub).GetBuildLargeFields()
 				buildLarge, err := zlibUncompressBuild(bLargeBytes)
-				So(err, ShouldBeNil)
-				So(buildLarge, ShouldResembleProto, &pb.Build{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, buildLarge, should.Resemble(&pb.Build{
 					Steps: []*pb.Step{
 						{
 							Name:            "step",
@@ -312,10 +311,10 @@ func TestNotification(t *testing.T) {
 							},
 						},
 					},
-				})
+				}))
 			})
 
-			Convey("success - no large fields", func() {
+			t.Run("success - no large fields", func(t *ftt.Test) {
 				b := &model.Build{
 					ID: 456,
 					Proto: &pb.Build{
@@ -338,14 +337,14 @@ func TestNotification(t *testing.T) {
 						},
 					},
 				}
-				So(datastore.Put(ctx, b, bi), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, b, bi), should.BeNil)
 
 				err := PublishBuildsV2Notification(ctx, 456, nil, false)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				tasks := sch.Tasks()
-				So(tasks, ShouldHaveLength, 1)
-				So(tasks[0].Payload.(*pb.BuildsV2PubSub).GetBuild(), ShouldResembleProto, &pb.Build{
+				assert.Loosely(t, tasks, should.HaveLength(1))
+				assert.Loosely(t, tasks[0].Payload.(*pb.BuildsV2PubSub).GetBuild(), should.Resemble(&pb.Build{
 					Id: 456,
 					Builder: &pb.BuilderID{
 						Project: "project",
@@ -360,45 +359,45 @@ func TestNotification(t *testing.T) {
 					},
 					Input:  &pb.Build_Input{},
 					Output: &pb.Build_Output{},
-				})
-				So(tasks[0].Payload.(*pb.BuildsV2PubSub).GetBuildLargeFields(), ShouldNotBeNil)
+				}))
+				assert.Loosely(t, tasks[0].Payload.(*pb.BuildsV2PubSub).GetBuildLargeFields(), should.NotBeNil)
 				bLargeBytes := tasks[0].Payload.(*pb.BuildsV2PubSub).GetBuildLargeFields()
 				buildLarge, err := zlibUncompressBuild(bLargeBytes)
-				So(err, ShouldBeNil)
-				So(buildLarge, ShouldResembleProto, &pb.Build{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, buildLarge, should.Resemble(&pb.Build{
 					Input:  &pb.Build_Input{},
 					Output: &pb.Build_Output{},
-				})
+				}))
 			})
 		})
 
-		Convey("To external topic (non callback)", func() {
+		t.Run("To external topic (non callback)", func(t *ftt.Test) {
 			ctx, psserver, psclient, err := clients.SetupTestPubsub(ctx, "my-cloud-project")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			defer func() {
 				psclient.Close()
 				psserver.Close()
 			}()
 			_, err = psclient.CreateTopic(ctx, "my-topic")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			Convey("success (zlib compression)", func() {
+			t.Run("success (zlib compression)", func(t *ftt.Test) {
 				err := PublishBuildsV2Notification(ctx, 123, &pb.BuildbucketCfg_Topic{Name: "projects/my-cloud-project/topics/my-topic"}, false)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				tasks := sch.Tasks()
-				So(tasks, ShouldHaveLength, 0)
-				So(psserver.Messages(), ShouldHaveLength, 1)
+				assert.Loosely(t, tasks, should.HaveLength(0))
+				assert.Loosely(t, psserver.Messages(), should.HaveLength(1))
 				publishedMsg := psserver.Messages()[0]
 
-				So(publishedMsg.Attributes["project"], ShouldEqual, "project")
-				So(publishedMsg.Attributes["bucket"], ShouldEqual, "bucket")
-				So(publishedMsg.Attributes["builder"], ShouldEqual, "builder")
-				So(publishedMsg.Attributes["is_completed"], ShouldEqual, "true")
+				assert.Loosely(t, publishedMsg.Attributes["project"], should.Equal("project"))
+				assert.Loosely(t, publishedMsg.Attributes["bucket"], should.Equal("bucket"))
+				assert.Loosely(t, publishedMsg.Attributes["builder"], should.Equal("builder"))
+				assert.Loosely(t, publishedMsg.Attributes["is_completed"], should.Equal("true"))
 				buildMsg := &pb.BuildsV2PubSub{}
 				err = protojson.Unmarshal(publishedMsg.Data, buildMsg)
-				So(err, ShouldBeNil)
-				So(buildMsg.Build, ShouldResembleProto, &pb.Build{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, buildMsg.Build, should.Resemble(&pb.Build{
 					Id: 123,
 					Builder: &pb.BuilderID{
 						Project: "project",
@@ -413,11 +412,11 @@ func TestNotification(t *testing.T) {
 					},
 					Input:  &pb.Build_Input{},
 					Output: &pb.Build_Output{},
-				})
-				So(buildMsg.BuildLargeFields, ShouldNotBeNil)
+				}))
+				assert.Loosely(t, buildMsg.BuildLargeFields, should.NotBeNil)
 				buildLarge, err := zlibUncompressBuild(buildMsg.BuildLargeFields)
-				So(err, ShouldBeNil)
-				So(buildLarge, ShouldResembleProto, &pb.Build{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, buildLarge, should.Resemble(&pb.Build{
 					Steps: []*pb.Step{
 						{
 							Name:            "step",
@@ -452,29 +451,29 @@ func TestNotification(t *testing.T) {
 							},
 						},
 					},
-				})
+				}))
 			})
 
-			Convey("success (zstd compression)", func() {
+			t.Run("success (zstd compression)", func(t *ftt.Test) {
 				err := PublishBuildsV2Notification(ctx, 123, &pb.BuildbucketCfg_Topic{
 					Name:        "projects/my-cloud-project/topics/my-topic",
 					Compression: pb.Compression_ZSTD,
 				}, false)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				tasks := sch.Tasks()
-				So(tasks, ShouldHaveLength, 0)
-				So(psserver.Messages(), ShouldHaveLength, 1)
+				assert.Loosely(t, tasks, should.HaveLength(0))
+				assert.Loosely(t, psserver.Messages(), should.HaveLength(1))
 				publishedMsg := psserver.Messages()[0]
 
-				So(publishedMsg.Attributes["project"], ShouldEqual, "project")
-				So(publishedMsg.Attributes["bucket"], ShouldEqual, "bucket")
-				So(publishedMsg.Attributes["builder"], ShouldEqual, "builder")
-				So(publishedMsg.Attributes["is_completed"], ShouldEqual, "true")
+				assert.Loosely(t, publishedMsg.Attributes["project"], should.Equal("project"))
+				assert.Loosely(t, publishedMsg.Attributes["bucket"], should.Equal("bucket"))
+				assert.Loosely(t, publishedMsg.Attributes["builder"], should.Equal("builder"))
+				assert.Loosely(t, publishedMsg.Attributes["is_completed"], should.Equal("true"))
 				buildMsg := &pb.BuildsV2PubSub{}
 				err = protojson.Unmarshal(publishedMsg.Data, buildMsg)
-				So(err, ShouldBeNil)
-				So(buildMsg.Build, ShouldResembleProto, &pb.Build{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, buildMsg.Build, should.Resemble(&pb.Build{
 					Id: 123,
 					Builder: &pb.BuilderID{
 						Project: "project",
@@ -489,12 +488,12 @@ func TestNotification(t *testing.T) {
 					},
 					Input:  &pb.Build_Input{},
 					Output: &pb.Build_Output{},
-				})
-				So(buildMsg.BuildLargeFields, ShouldNotBeNil)
-				So(buildMsg.Compression, ShouldEqual, pb.Compression_ZSTD)
+				}))
+				assert.Loosely(t, buildMsg.BuildLargeFields, should.NotBeNil)
+				assert.Loosely(t, buildMsg.Compression, should.Equal(pb.Compression_ZSTD))
 				buildLarge, err := zstdUncompressBuild(buildMsg.BuildLargeFields)
-				So(err, ShouldBeNil)
-				So(buildLarge, ShouldResembleProto, &pb.Build{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, buildLarge, should.Resemble(&pb.Build{
 					Steps: []*pb.Step{
 						{
 							Name:            "step",
@@ -529,29 +528,29 @@ func TestNotification(t *testing.T) {
 							},
 						},
 					},
-				})
+				}))
 			})
 
-			Convey("non-exist topic", func() {
+			t.Run("non-exist topic", func(t *ftt.Test) {
 				err := PublishBuildsV2Notification(ctx, 123, &pb.BuildbucketCfg_Topic{
 					Name: "projects/my-cloud-project/topics/non-exist-topic",
 				}, false)
-				So(err, ShouldNotBeNil)
-				So(transient.Tag.In(err), ShouldBeTrue)
+				assert.Loosely(t, err, should.NotBeNil)
+				assert.Loosely(t, transient.Tag.In(err), should.BeTrue)
 			})
 		})
 
-		Convey("To external topic (callback)", func() {
+		t.Run("To external topic (callback)", func(t *ftt.Test) {
 			ctx, psserver, psclient, err := clients.SetupTestPubsub(ctx, "my-cloud-project")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			defer func() {
 				psclient.Close()
 				psserver.Close()
 			}()
 			_, err = psclient.CreateTopic(ctx, "callback-topic")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(datastore.Put(ctx, &model.Build{
+			assert.Loosely(t, datastore.Put(ctx, &model.Build{
 				ID:        999,
 				Project:   "project",
 				BucketID:  "bucket",
@@ -568,28 +567,28 @@ func TestNotification(t *testing.T) {
 					Topic:    "projects/my-cloud-project/topics/callback-topic",
 					UserData: []byte("userdata"),
 				},
-			}), ShouldBeNil)
+			}), should.BeNil)
 
 			err = PublishBuildsV2Notification(ctx, 999, &pb.BuildbucketCfg_Topic{Name: "projects/my-cloud-project/topics/callback-topic"}, true)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			tasks := sch.Tasks()
-			So(tasks, ShouldHaveLength, 0)
-			So(psserver.Messages(), ShouldHaveLength, 1)
+			assert.Loosely(t, tasks, should.HaveLength(0))
+			assert.Loosely(t, psserver.Messages(), should.HaveLength(1))
 			publishedMsg := psserver.Messages()[0]
 
-			So(publishedMsg.Attributes["project"], ShouldEqual, "project")
-			So(publishedMsg.Attributes["bucket"], ShouldEqual, "bucket")
-			So(publishedMsg.Attributes["builder"], ShouldEqual, "builder")
-			So(publishedMsg.Attributes["is_completed"], ShouldEqual, "false")
+			assert.Loosely(t, publishedMsg.Attributes["project"], should.Equal("project"))
+			assert.Loosely(t, publishedMsg.Attributes["bucket"], should.Equal("bucket"))
+			assert.Loosely(t, publishedMsg.Attributes["builder"], should.Equal("builder"))
+			assert.Loosely(t, publishedMsg.Attributes["is_completed"], should.Equal("false"))
 			psCallbackMsg := &pb.PubSubCallBack{}
 			err = protojson.Unmarshal(publishedMsg.Data, psCallbackMsg)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			buildLarge, err := zlibUncompressBuild(psCallbackMsg.BuildPubsub.BuildLargeFields)
-			So(err, ShouldBeNil)
-			So(buildLarge, ShouldResembleProto, &pb.Build{Input: &pb.Build_Input{}, Output: &pb.Build_Output{}})
-			So(psCallbackMsg.BuildPubsub.Build, ShouldResembleProto, &pb.Build{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, buildLarge, should.Resemble(&pb.Build{Input: &pb.Build_Input{}, Output: &pb.Build_Output{}}))
+			assert.Loosely(t, psCallbackMsg.BuildPubsub.Build, should.Resemble(&pb.Build{
 				Id: 999,
 				Builder: &pb.BuilderID{
 					Project: "project",
@@ -598,9 +597,9 @@ func TestNotification(t *testing.T) {
 				},
 				Input:  &pb.Build_Input{},
 				Output: &pb.Build_Output{},
-			})
-			So(err, ShouldBeNil)
-			So(psCallbackMsg.UserData, ShouldResemble, []byte("userdata"))
+			}))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, psCallbackMsg.UserData, should.Resemble([]byte("userdata")))
 		})
 	})
 }

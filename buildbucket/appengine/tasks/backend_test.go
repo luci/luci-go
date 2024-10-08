@@ -26,7 +26,6 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-
 	codepb "google.golang.org/genproto/googleapis/rpc/code"
 	statuspb "google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc/codes"

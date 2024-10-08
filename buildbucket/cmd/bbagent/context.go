@@ -24,10 +24,11 @@ import (
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/authctx"
-	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/lucictx"
+
+	bbpb "go.chromium.org/luci/buildbucket/proto"
 )
 
 func setResultDBContext(ctx context.Context, buildProto *bbpb.Build, secrets *bbpb.BuildSecrets) context.Context {
