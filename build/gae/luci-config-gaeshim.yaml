@@ -1,4 +1,4 @@
-name: luci-go/luci-deploy
+name: luci-go/luci-config-gaeshim
 extends: ../gae.yaml
 
 inputsdir: ../../config_service
