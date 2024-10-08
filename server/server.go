@@ -981,6 +981,11 @@ func (h *moduleHostImpl) GRPCAddr() net.Addr {
 	return nil
 }
 
+func (h *moduleHostImpl) UserAgent() string {
+	h.panicIfInvalid()
+	return h.srv.UserAgent()
+}
+
 func (h *moduleHostImpl) Routes() *router.Router {
 	h.panicIfInvalid()
 	return h.srv.Routes
@@ -1216,6 +1221,21 @@ func New(ctx context.Context, opts Options, mods []module.Module) (srv *Server, 
 	rpcexplorer.Install(srv.Routes, rpcExpAuth)
 
 	return srv, nil
+}
+
+// UserAgent can be put into "User-Agent" header when calling other servers.
+//
+// It includes some public details about the server (like its name and
+// version). Placing them into "User-Agent" header is useful since it is exposed
+// in the logs of the server being called. It allows to identify at a glance
+// what software is making calls. This is similar to how e.g. "curl" places its
+// version into "User-Agent" header.
+//
+// Note that HTTP clients obtained through go.chromium.org/luci/server/auth
+// are already setup to report this header. Thus this method is primarily useful
+// for manually constructed http.Client and for gRPC clients.
+func (s *Server) UserAgent() string {
+	return s.Options.userAgent()
 }
 
 // AddPort prepares and binds an additional serving HTTP port.

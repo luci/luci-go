@@ -119,6 +119,19 @@ type Host interface {
 	// May be nil if the server doesn't expose the gRPC port.
 	GRPCAddr() net.Addr
 
+	// UserAgent can be put into "User-Agent" header when calling other servers.
+	//
+	// It includes some public details about the server (like its name and
+	// version). Placing them into "User-Agent" header is useful since it is
+	// exposed in the logs of the server being called. It allows to identify at
+	// a glance what software is making calls. This is similar to how e.g. "curl"
+	// places its version into "User-Agent" header.
+	//
+	// Note that HTTP clients obtained through go.chromium.org/luci/server/auth
+	// are already setup to report this header. Thus this method is primarily
+	// useful for manually constructed http.Client and for gRPC clients.
+	UserAgent() string
+
 	// Routes returns a router that servers HTTP requests hitting the main port.
 	//
 	// The module can use it to register additional request handlers.

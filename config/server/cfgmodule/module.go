@@ -157,7 +157,7 @@ func (m *serverModule) Initialize(ctx context.Context, host module.Host, opts mo
 		ServiceHost:       m.opts.ServiceHost,
 		ConfigsDir:        m.opts.LocalDir,
 		PerRPCCredentials: creds,
-		UserAgent:         opts.CloudProject,
+		UserAgent:         host.UserAgent(),
 	})
 	if err != nil {
 		return nil, err
