@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package analysispb defines the API of the LUCI Analysis service.
 package analysispb
 
 //go:generate cproto
