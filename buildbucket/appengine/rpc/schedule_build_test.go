@@ -40,6 +40,10 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/memlogger"
 	luciCmProto "go.chromium.org/luci/common/proto"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
@@ -63,9 +67,6 @@ import (
 	taskdefs "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
 	"go.chromium.org/luci/buildbucket/bbperms"
 	pb "go.chromium.org/luci/buildbucket/proto"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func fv(vs ...any) []any {
@@ -79,41 +80,41 @@ func TestScheduleBuild(t *testing.T) {
 	// Note: request deduplication IDs depend on a hash of this value.
 	const userID = identity.Identity("user:caller@example.com")
 
-	Convey("builderMatches", t, func() {
-		Convey("nil", func() {
-			So(builderMatches("", nil), ShouldBeTrue)
-			So(builderMatches("project/bucket/builder", nil), ShouldBeTrue)
+	ftt.Run("builderMatches", t, func(t *ftt.Test) {
+		t.Run("nil", func(t *ftt.Test) {
+			assert.Loosely(t, builderMatches("", nil), should.BeTrue)
+			assert.Loosely(t, builderMatches("project/bucket/builder", nil), should.BeTrue)
 		})
 
-		Convey("empty", func() {
+		t.Run("empty", func(t *ftt.Test) {
 			p := &pb.BuilderPredicate{}
-			So(builderMatches("", p), ShouldBeTrue)
-			So(builderMatches("project/bucket/builder", p), ShouldBeTrue)
+			assert.Loosely(t, builderMatches("", p), should.BeTrue)
+			assert.Loosely(t, builderMatches("project/bucket/builder", p), should.BeTrue)
 		})
 
-		Convey("regex", func() {
+		t.Run("regex", func(t *ftt.Test) {
 			p := &pb.BuilderPredicate{
 				Regex: []string{
 					"project/bucket/.+",
 				},
 			}
-			So(builderMatches("", p), ShouldBeFalse)
-			So(builderMatches("project/bucket/builder", p), ShouldBeTrue)
-			So(builderMatches("project/other/builder", p), ShouldBeFalse)
+			assert.Loosely(t, builderMatches("", p), should.BeFalse)
+			assert.Loosely(t, builderMatches("project/bucket/builder", p), should.BeTrue)
+			assert.Loosely(t, builderMatches("project/other/builder", p), should.BeFalse)
 		})
 
-		Convey("regex exclude", func() {
+		t.Run("regex exclude", func(t *ftt.Test) {
 			p := &pb.BuilderPredicate{
 				RegexExclude: []string{
 					"project/bucket/.+",
 				},
 			}
-			So(builderMatches("", p), ShouldBeTrue)
-			So(builderMatches("project/bucket/builder", p), ShouldBeFalse)
-			So(builderMatches("project/other/builder", p), ShouldBeTrue)
+			assert.Loosely(t, builderMatches("", p), should.BeTrue)
+			assert.Loosely(t, builderMatches("project/bucket/builder", p), should.BeFalse)
+			assert.Loosely(t, builderMatches("project/other/builder", p), should.BeTrue)
 		})
 
-		Convey("regex exclude > regex", func() {
+		t.Run("regex exclude > regex", func(t *ftt.Test) {
 			p := &pb.BuilderPredicate{
 				Regex: []string{
 					"project/bucket/.+",
@@ -122,13 +123,13 @@ func TestScheduleBuild(t *testing.T) {
 					"project/bucket/builder",
 				},
 			}
-			So(builderMatches("", p), ShouldBeFalse)
-			So(builderMatches("project/bucket/builder", p), ShouldBeFalse)
-			So(builderMatches("project/bucket/other", p), ShouldBeTrue)
+			assert.Loosely(t, builderMatches("", p), should.BeFalse)
+			assert.Loosely(t, builderMatches("project/bucket/builder", p), should.BeFalse)
+			assert.Loosely(t, builderMatches("project/bucket/other", p), should.BeTrue)
 		})
 	})
 
-	Convey("fetchBuilderConfigs", t, func() {
+	ftt.Run("fetchBuilderConfigs", t, func(t *ftt.Test) {
 		ctx := metrics.WithServiceInfo(memory.Use(context.Background()), "svc", "job", "ins")
 		ctx, _ = metrics.WithCustomMetrics(ctx, &pb.SettingsCfg{})
 		datastore.GetTestable(ctx).AutoIndex(true)
@@ -142,7 +143,7 @@ func TestScheduleBuild(t *testing.T) {
 		})
 		testutil.PutBucket(ctx, "project", "bucket 2", &pb.Bucket{DynamicBuilderTemplate: &pb.Bucket_DynamicBuilderTemplate{}})
 
-		Convey("bucket not found", func() {
+		t.Run("bucket not found", func(t *ftt.Test) {
 			bldrIDs := []*pb.BuilderID{
 				{
 					Project: "project",
@@ -151,12 +152,12 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 			bldrs, _, _, err := fetchBuilderConfigs(ctx, bldrIDs)
-			So(len(err.(errors.MultiError)), ShouldEqual, len(bldrIDs))
-			So(err, ShouldErrLike, "bucket not found")
-			So(bldrs["project/bucket 3"]["builder 1"], ShouldBeNil)
+			assert.Loosely(t, len(err.(errors.MultiError)), should.Equal(len(bldrIDs)))
+			assert.Loosely(t, err, should.ErrLike("bucket not found"))
+			assert.Loosely(t, bldrs["project/bucket 3"]["builder 1"], should.BeNil)
 		})
 
-		Convey("builder not found", func() {
+		t.Run("builder not found", func(t *ftt.Test) {
 			bldrIDs := []*pb.BuilderID{
 				{
 					Project: "project",
@@ -165,12 +166,12 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 			bldrs, _, _, err := fetchBuilderConfigs(ctx, bldrIDs)
-			So(len(err.(errors.MultiError)), ShouldEqual, len(bldrIDs))
-			So(err, ShouldErrLike, "builder not found")
-			So(bldrs["project/bucket 3"]["builder 1"], ShouldBeNil)
+			assert.Loosely(t, len(err.(errors.MultiError)), should.Equal(len(bldrIDs)))
+			assert.Loosely(t, err, should.ErrLike("builder not found"))
+			assert.Loosely(t, bldrs["project/bucket 3"]["builder 1"], should.BeNil)
 		})
 
-		Convey("one found and the other not found", func() {
+		t.Run("one found and the other not found", func(t *ftt.Test) {
 			bldrIDs := []*pb.BuilderID{
 				{
 					Project: "project",
@@ -184,16 +185,16 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 			bldrs, _, shadowMap, err := fetchBuilderConfigs(ctx, bldrIDs)
-			So(err.(errors.MultiError)[1], ShouldErrLike, "builder not found")
-			So(bldrs["project/bucket 3"]["builder 1"], ShouldBeNil)
-			So(bldrs["project/bucket 1"]["builder 1"], ShouldResembleProto, &pb.BuilderConfig{
+			assert.Loosely(t, err.(errors.MultiError)[1], should.ErrLike("builder not found"))
+			assert.Loosely(t, bldrs["project/bucket 3"]["builder 1"], should.BeNil)
+			assert.Loosely(t, bldrs["project/bucket 1"]["builder 1"], should.Resemble(&pb.BuilderConfig{
 				Name:         "builder 1",
 				SwarmingHost: "host",
-			})
-			So(shadowMap, ShouldResemble, map[string]string{"project/bucket 1": "bucket 2"})
+			}))
+			assert.Loosely(t, shadowMap, should.Resemble(map[string]string{"project/bucket 1": "bucket 2"}))
 		})
 
-		Convey("dynamic", func() {
+		t.Run("dynamic", func(t *ftt.Test) {
 			bldrIDs := []*pb.BuilderID{
 				{
 					Project: "project",
@@ -202,17 +203,17 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 			bldrs, dynamicBuckets, shadowMap, err := fetchBuilderConfigs(ctx, bldrIDs)
-			So(err, ShouldBeNil)
-			So(bldrs["project/bucket 2"]["builder 1"], ShouldBeNil)
-			So(len(dynamicBuckets), ShouldEqual, 1)
-			So(dynamicBuckets["project/bucket 2"], ShouldResembleProto, &pb.Bucket{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, bldrs["project/bucket 2"]["builder 1"], should.BeNil)
+			assert.Loosely(t, len(dynamicBuckets), should.Equal(1))
+			assert.Loosely(t, dynamicBuckets["project/bucket 2"], should.Resemble(&pb.Bucket{
 				Name:                   "bucket 2",
 				DynamicBuilderTemplate: &pb.Bucket_DynamicBuilderTemplate{},
-			})
-			So(shadowMap, ShouldResemble, map[string]string{"project/bucket 2": ""})
+			}))
+			assert.Loosely(t, shadowMap, should.Resemble(map[string]string{"project/bucket 2": ""}))
 		})
 
-		Convey("one", func() {
+		t.Run("one", func(t *ftt.Test) {
 			bldrIDs := []*pb.BuilderID{
 				{
 					Project: "project",
@@ -221,14 +222,14 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 			bldrs, _, _, err := fetchBuilderConfigs(ctx, bldrIDs)
-			So(err, ShouldBeNil)
-			So(bldrs["project/bucket 1"]["builder 1"], ShouldResembleProto, &pb.BuilderConfig{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, bldrs["project/bucket 1"]["builder 1"], should.Resemble(&pb.BuilderConfig{
 				Name:         "builder 1",
 				SwarmingHost: "host",
-			})
+			}))
 		})
 
-		Convey("many", func() {
+		t.Run("many", func(t *ftt.Test) {
 			bldrIDs := []*pb.BuilderID{
 				{
 					Project: "project",
@@ -247,26 +248,26 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 			bldrs, _, _, err := fetchBuilderConfigs(ctx, bldrIDs)
-			So(err, ShouldBeNil)
-			So(bldrs["project/bucket 1"]["builder 1"], ShouldResembleProto, &pb.BuilderConfig{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, bldrs["project/bucket 1"]["builder 1"], should.Resemble(&pb.BuilderConfig{
 				Name:         "builder 1",
 				SwarmingHost: "host",
-			})
-			So(bldrs["project/bucket 1"]["builder 2"], ShouldResembleProto, &pb.BuilderConfig{
+			}))
+			assert.Loosely(t, bldrs["project/bucket 1"]["builder 2"], should.Resemble(&pb.BuilderConfig{
 				Name:         "builder 2",
 				SwarmingHost: "host",
-			})
-			So(bldrs["project/bucket 2"]["builder 1"], ShouldBeNil)
+			}))
+			assert.Loosely(t, bldrs["project/bucket 2"]["builder 1"], should.BeNil)
 		})
 	})
 
-	Convey("generateBuildNumbers", t, func() {
+	ftt.Run("generateBuildNumbers", t, func(t *ftt.Test) {
 		ctx := metrics.WithServiceInfo(memory.Use(context.Background()), "svc", "job", "ins")
 		ctx, _ = metrics.WithCustomMetrics(ctx, &pb.SettingsCfg{})
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 
-		Convey("one", func() {
+		t.Run("one", func(t *ftt.Test) {
 			blds := []*model.Build{
 				{
 					Proto: &pb.Build{
@@ -279,8 +280,8 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 			err := generateBuildNumbers(ctx, blds)
-			So(err, ShouldBeNil)
-			So(blds, ShouldResemble, []*model.Build{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, blds, should.Resemble([]*model.Build{
 				{
 					Proto: &pb.Build{
 						Builder: &pb.BuilderID{
@@ -294,10 +295,10 @@ func TestScheduleBuild(t *testing.T) {
 						"build_address:luci.project.bucket/builder/1",
 					},
 				},
-			})
+			}))
 		})
 
-		Convey("many", func() {
+		t.Run("many", func(t *ftt.Test) {
 			blds := []*model.Build{
 				{
 					Proto: &pb.Build{
@@ -328,8 +329,8 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 			err := generateBuildNumbers(ctx, blds)
-			So(err, ShouldBeNil)
-			So(blds, ShouldResemble, []*model.Build{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, blds, should.Resemble([]*model.Build{
 				{
 					Proto: &pb.Build{
 						Builder: &pb.BuilderID{
@@ -369,11 +370,11 @@ func TestScheduleBuild(t *testing.T) {
 						"build_address:luci.project.bucket/builder1/2",
 					},
 				},
-			})
+			}))
 		})
 	})
 
-	Convey("scheduleBuilds", t, func() {
+	ftt.Run("scheduleBuilds", t, func(t *ftt.Test) {
 		ctx := txndefer.FilterRDS(memory.Use(context.Background()))
 		ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
 		ctx, _ = metrics.WithCustomMetrics(ctx, &pb.SettingsCfg{})
@@ -419,8 +420,8 @@ func TestScheduleBuild(t *testing.T) {
 			return ret
 		}
 
-		Convey("builder not found", func() {
-			Convey("error", func() {
+		t.Run("builder not found", func(t *ftt.Test) {
+			t.Run("error", func(t *ftt.Test) {
 				req := &pb.ScheduleBuildRequest{
 					Builder: &pb.BuilderID{
 						Project: "project",
@@ -430,15 +431,15 @@ func TestScheduleBuild(t *testing.T) {
 				}
 
 				blds, err := scheduleBuilds(ctx, globalCfg, req)
-				So(err, ShouldHaveLength, 1)
-				So(err.(errors.MultiError), ShouldErrLike, "error fetching builders")
-				So(blds, ShouldHaveLength, 1)
-				So(blds[0], ShouldBeNil)
-				So(sch.Tasks(), ShouldBeEmpty)
-				So(store.Get(ctx, metrics.V1.BuildCountCreated, time.Time{}, fv("")), ShouldBeNil)
+				assert.Loosely(t, err, should.HaveLength(1))
+				assert.Loosely(t, err.(errors.MultiError), should.ErrLike("error fetching builders"))
+				assert.Loosely(t, blds, should.HaveLength(1))
+				assert.Loosely(t, blds[0], should.BeNil)
+				assert.Loosely(t, sch.Tasks(), should.BeEmpty)
+				assert.Loosely(t, store.Get(ctx, metrics.V1.BuildCountCreated, time.Time{}, fv("")), should.BeNil)
 			})
 
-			Convey("dynamic", func() {
+			t.Run("dynamic", func(t *ftt.Test) {
 				testutil.PutBucket(ctx, "project", "bucket", nil)
 				req := &pb.ScheduleBuildRequest{
 					Builder: &pb.BuilderID{
@@ -450,8 +451,8 @@ func TestScheduleBuild(t *testing.T) {
 				}
 
 				blds, err := scheduleBuilds(ctx, globalCfg, req)
-				So(err, ShouldBeNil)
-				So(stripProtos(blds), ShouldResembleProto, []*pb.Build{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, stripProtos(blds), should.Resemble([]*pb.Build{
 					{
 						Builder: &pb.BuilderID{
 							Project: "project",
@@ -513,16 +514,16 @@ func TestScheduleBuild(t *testing.T) {
 							},
 						},
 					},
-				})
-				So(sch.Tasks(), ShouldBeEmpty)
+				}))
+				assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 			})
 		})
 
-		Convey("dry run", func() {
+		t.Run("dry run", func(t *ftt.Test) {
 			testutil.PutBuilder(ctx, "project", "bucket", "builder", "")
 			testutil.PutBucket(ctx, "project", "bucket", nil)
 
-			Convey("mixed", func() {
+			t.Run("mixed", func(t *ftt.Test) {
 				reqs := []*pb.ScheduleBuildRequest{
 					{
 						Builder: &pb.BuilderID{
@@ -551,16 +552,16 @@ func TestScheduleBuild(t *testing.T) {
 
 				blds, err := scheduleBuilds(ctx, globalCfg, reqs...)
 				_, ok := err.(errors.MultiError)
-				So(ok, ShouldBeFalse)
-				So(err, ShouldErrLike, "all requests must have the same dry_run value")
-				So(blds, ShouldBeNil)
-				So(sch.Tasks(), ShouldBeEmpty)
+				assert.Loosely(t, ok, should.BeFalse)
+				assert.Loosely(t, err, should.ErrLike("all requests must have the same dry_run value"))
+				assert.Loosely(t, blds, should.BeNil)
+				assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 
 				// dry-run should not increase the build creation counter metric.
-				So(store.Get(ctx, metrics.V1.BuildCountCreated, time.Time{}, fv("")), ShouldBeNil)
+				assert.Loosely(t, store.Get(ctx, metrics.V1.BuildCountCreated, time.Time{}, fv("")), should.BeNil)
 			})
 
-			Convey("one", func() {
+			t.Run("one", func(t *ftt.Test) {
 				req := &pb.ScheduleBuildRequest{
 					Builder: &pb.BuilderID{
 						Project: "project",
@@ -571,8 +572,8 @@ func TestScheduleBuild(t *testing.T) {
 				}
 
 				blds, err := scheduleBuilds(ctx, globalCfg, req)
-				So(err, ShouldBeNil)
-				So(stripProtos(blds), ShouldResembleProto, []*pb.Build{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, stripProtos(blds), should.Resemble([]*pb.Build{
 					{
 						Builder: &pb.BuilderID{
 							Project: "project",
@@ -635,19 +636,19 @@ func TestScheduleBuild(t *testing.T) {
 							},
 						},
 					},
-				})
-				So(sch.Tasks(), ShouldBeEmpty)
+				}))
+				assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 			})
 		})
 
-		Convey("zero", func() {
+		t.Run("zero", func(t *ftt.Test) {
 			blds, err := scheduleBuilds(ctx, nil)
-			So(err, ShouldBeNil)
-			So(blds, ShouldBeEmpty)
-			So(sch.Tasks(), ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, blds, should.BeEmpty)
+			assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 		})
 
-		Convey("one", func() {
+		t.Run("one", func(t *ftt.Test) {
 			req := &pb.ScheduleBuildRequest{
 				Builder: &pb.BuilderID{
 					Project: "project",
@@ -673,9 +674,9 @@ func TestScheduleBuild(t *testing.T) {
 			testutil.PutBucket(ctx, "project", "bucket", nil)
 
 			blds, err := scheduleBuilds(ctx, globalCfg, req)
-			So(err, ShouldBeNil)
-			So(store.Get(ctx, metrics.V1.BuildCountCreated, time.Time{}, fv("gerrit")), ShouldEqual, 1)
-			So(stripProtos(blds), ShouldResembleProto, []*pb.Build{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, store.Get(ctx, metrics.V1.BuildCountCreated, time.Time{}, fv("gerrit")), should.Equal(1))
+			assert.Loosely(t, stripProtos(blds), should.Resemble([]*pb.Build{
 				{
 					Builder: &pb.BuilderID{
 						Project: "project",
@@ -752,8 +753,8 @@ func TestScheduleBuild(t *testing.T) {
 						},
 					},
 				},
-			})
-			So(blds, ShouldResemble, []*model.Build{
+			}))
+			assert.Loosely(t, blds, should.Resemble([]*model.Build{
 				{
 					ID:                9021868963221667745,
 					BucketID:          "project/bucket",
@@ -779,45 +780,45 @@ func TestScheduleBuild(t *testing.T) {
 						Status: model.Scheduled,
 					},
 				},
-			})
+			}))
 			tasks := sch.Tasks()
-			So(tasks, ShouldHaveLength, 4)
+			assert.Loosely(t, tasks, should.HaveLength(4))
 			sortTasksByClassName(tasks)
-			So(tasks.Payloads()[0], ShouldResembleProto, &taskdefs.CreateSwarmingBuildTask{
+			assert.Loosely(t, tasks.Payloads()[0], should.Resemble(&taskdefs.CreateSwarmingBuildTask{
 				BuildId: 9021868963221667745,
-			})
+			}))
 			// for `builds` topic.
-			So(tasks.Payloads()[1], ShouldResembleProto, &taskdefs.NotifyPubSub{
+			assert.Loosely(t, tasks.Payloads()[1], should.Resemble(&taskdefs.NotifyPubSub{
 				BuildId: 9021868963221667745,
-			})
+			}))
 			// for topic in build.PubSubCallback.topic field.
-			So(tasks.Payloads()[2], ShouldResembleProto, &taskdefs.NotifyPubSubGo{
+			assert.Loosely(t, tasks.Payloads()[2], should.Resemble(&taskdefs.NotifyPubSubGo{
 				BuildId: 9021868963221667745,
 				Topic: &pb.BuildbucketCfg_Topic{
 					Name: "topic",
 				},
 				Callback: true,
-			})
+			}))
 			// for `bulids_v2` topic
-			So(tasks.Payloads()[3], ShouldResembleProto, &taskdefs.NotifyPubSubGoProxy{
+			assert.Loosely(t, tasks.Payloads()[3], should.Resemble(&taskdefs.NotifyPubSubGoProxy{
 				BuildId: 9021868963221667745,
 				Project: "project",
-			})
+			}))
 
-			So(datastore.Get(ctx, blds), ShouldBeNil)
+			assert.Loosely(t, datastore.Get(ctx, blds), should.BeNil)
 
 			ind, err := model.SearchTagIndex(ctx, "buildset", "buildset")
-			So(err, ShouldBeNil)
-			So(ind, ShouldResemble, []*model.TagIndexEntry{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ind, should.Resemble([]*model.TagIndexEntry{
 				{
 					BuildID:     9021868963221667745,
 					BucketID:    "project/bucket",
 					CreatedTime: datastore.RoundTime(testclock.TestRecentTimeUTC),
 				},
-			})
+			}))
 		})
 
-		Convey("many", func() {
+		t.Run("many", func(t *ftt.Test) {
 			reqs := []*pb.ScheduleBuildRequest{
 				{
 					Builder: &pb.BuilderID{
@@ -852,14 +853,14 @@ func TestScheduleBuild(t *testing.T) {
 			testutil.PutBucket(ctx, "project", "dynamic bucket", &pb.Bucket{DynamicBuilderTemplate: &pb.Bucket_DynamicBuilderTemplate{Template: &pb.BuilderConfig{SwarmingHost: "host"}}})
 
 			blds, err := scheduleBuilds(ctx, globalCfg, reqs...)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			fvs := []any{"luci.project.static bucket", "static builder", ""}
-			So(store.Get(ctx, metrics.V1.BuildCountCreated, time.Time{}, fvs), ShouldEqual, 2)
+			assert.Loosely(t, store.Get(ctx, metrics.V1.BuildCountCreated, time.Time{}, fvs), should.Equal(2))
 			fvs = []any{"luci.project.dynamic bucket", "dynamic builder", ""}
-			So(store.Get(ctx, metrics.V1.BuildCountCreated, time.Time{}, fvs), ShouldEqual, 1)
+			assert.Loosely(t, store.Get(ctx, metrics.V1.BuildCountCreated, time.Time{}, fvs), should.Equal(1))
 
-			So(stripProtos(blds), ShouldResembleProto, []*pb.Build{
+			assert.Loosely(t, stripProtos(blds), should.Resemble([]*pb.Build{
 				{
 					Builder: &pb.BuilderID{
 						Project: "project",
@@ -1068,9 +1069,9 @@ func TestScheduleBuild(t *testing.T) {
 						},
 					},
 				},
-			})
+			}))
 
-			So(blds, ShouldResemble, []*model.Build{
+			assert.Loosely(t, blds, should.Resemble([]*model.Build{
 				{
 					ID:                9021868963221610337,
 					BucketID:          "project/static bucket",
@@ -1125,13 +1126,13 @@ func TestScheduleBuild(t *testing.T) {
 						Status: model.Scheduled,
 					},
 				},
-			})
+			}))
 
-			So(sch.Tasks(), ShouldHaveLength, 9)
-			So(datastore.Get(ctx, blds), ShouldBeNil)
+			assert.Loosely(t, sch.Tasks(), should.HaveLength(9))
+			assert.Loosely(t, datastore.Get(ctx, blds), should.BeNil)
 		})
 
-		Convey("one success and one failure", func() {
+		t.Run("one success and one failure", func(t *ftt.Test) {
 			reqs := []*pb.ScheduleBuildRequest{
 				{
 					Builder: &pb.BuilderID{
@@ -1178,7 +1179,7 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 			r := model.NewRequestID(ctx, 0, time.Time{}, "dupReqIdWithoutBuildAssociated")
-			So(datastore.Put(ctx,
+			assert.Loosely(t, datastore.Put(ctx,
 				r,
 				&model.Builder{
 					Parent: model.BucketKey(ctx, "project", "bucket"),
@@ -1187,14 +1188,14 @@ func TestScheduleBuild(t *testing.T) {
 						Name:         "builder",
 						SwarmingHost: "host",
 					},
-				}), ShouldBeNil)
+				}), should.BeNil)
 			testutil.PutBucket(ctx, "project", "bucket", nil)
 
 			blds, err := scheduleBuilds(ctx, globalCfg, reqs...)
-			So(err.(errors.MultiError), ShouldHaveLength, 2)
-			So(err.(errors.MultiError)[1], ShouldErrLike, "failed to fetch deduplicated build")
-			So(store.Get(ctx, metrics.V1.BuildCountCreated, time.Time{}, fv("gerrit")), ShouldEqual, 1)
-			So(stripProtos(blds), ShouldResembleProto, []*pb.Build{
+			assert.Loosely(t, err.(errors.MultiError), should.HaveLength(2))
+			assert.Loosely(t, err.(errors.MultiError)[1], should.ErrLike("failed to fetch deduplicated build"))
+			assert.Loosely(t, store.Get(ctx, metrics.V1.BuildCountCreated, time.Time{}, fv("gerrit")), should.Equal(1))
+			assert.Loosely(t, stripProtos(blds), should.Resemble([]*pb.Build{
 				{
 					Builder: &pb.BuilderID{
 						Project: "project",
@@ -1272,8 +1273,8 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				},
 				nil,
-			})
-			So(blds, ShouldResemble, []*model.Build{
+			}))
+			assert.Loosely(t, blds, should.Resemble([]*model.Build{
 				{
 					ID:                9021868963222163313,
 					BucketID:          "project/bucket",
@@ -1299,15 +1300,15 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				},
 				nil,
-			})
-			So(sch.Tasks(), ShouldHaveLength, 4)
-			So(datastore.Get(ctx, blds[0]), ShouldBeNil)
+			}))
+			assert.Loosely(t, sch.Tasks(), should.HaveLength(4))
+			assert.Loosely(t, datastore.Get(ctx, blds[0]), should.BeNil)
 
 			ind, err := model.SearchTagIndex(ctx, "buildset", "buildset")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			// TagIndexEntry for the 2nd req should exist but its build entity shouldn't.
 			// Because an error was thrown in the build creation transaction which is after the TagIndex update.
-			So(ind, ShouldResemble, []*model.TagIndexEntry{
+			assert.Loosely(t, ind, should.Resemble([]*model.TagIndexEntry{
 				{
 					BuildID:     9021868963222163313,
 					BucketID:    "project/bucket",
@@ -1318,19 +1319,19 @@ func TestScheduleBuild(t *testing.T) {
 					BucketID:    "project/bucket",
 					CreatedTime: datastore.RoundTime(testclock.TestRecentTimeUTC),
 				},
-			})
-			So(datastore.Get(ctx, &model.Build{ID: 9021868963222163297}), ShouldErrLike, "no such entity")
+			}))
+			assert.Loosely(t, datastore.Get(ctx, &model.Build{ID: 9021868963222163297}), should.ErrLike("no such entity"))
 		})
 
-		Convey("one with parent", func() {
+		t.Run("one with parent", func(t *ftt.Test) {
 			tk, err := buildtoken.GenerateToken(ctx, 1, pb.TokenBody_BUILD)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			testutil.PutBuilder(ctx, "project", "bucket", "builder", "")
 			testutil.PutBuilder(ctx, "project", "bucket", "builder", "")
 			testutil.PutBucket(ctx, "project", "bucket", nil)
 
-			So(datastore.Put(ctx, &model.Build{
+			assert.Loosely(t, datastore.Put(ctx, &model.Build{
 				Proto: &pb.Build{
 					Id: 1,
 					Builder: &pb.BuilderID{
@@ -1342,20 +1343,20 @@ func TestScheduleBuild(t *testing.T) {
 					AncestorIds: []int64{2, 3},
 				},
 				UpdateToken: tk,
-			}), ShouldBeNil)
+			}), should.BeNil)
 
 			bld := &model.Build{ID: 1}
-			So(datastore.Get(ctx, bld), ShouldBeNil)
+			assert.Loosely(t, datastore.Get(ctx, bld), should.BeNil)
 
 			key := datastore.KeyForObj(ctx, bld)
-			So(datastore.Put(ctx, &model.BuildInfra{
+			assert.Loosely(t, datastore.Put(ctx, &model.BuildInfra{
 				Build: key,
 				Proto: &pb.BuildInfra{
 					Swarming: &pb.BuildInfra_Swarming{
 						TaskId: "544239050",
 					},
 				},
-			}), ShouldBeNil)
+			}), should.BeNil)
 
 			req := &pb.ScheduleBuildRequest{
 				Builder: &pb.BuilderID{
@@ -1385,9 +1386,9 @@ func TestScheduleBuild(t *testing.T) {
 			}
 			ctx := metadata.NewIncomingContext(ctx, metadata.Pairs(bb.BuildbucketTokenHeader, tk))
 			blds, err := scheduleBuilds(ctx, globalCfg, req)
-			So(err, ShouldBeNil)
-			So(store.Get(ctx, metrics.V1.BuildCountCreated, time.Time{}, fv("gerrit")), ShouldEqual, 1)
-			So(stripProtos(blds), ShouldResembleProto, []*pb.Build{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, store.Get(ctx, metrics.V1.BuildCountCreated, time.Time{}, fv("gerrit")), should.Equal(1))
+			assert.Loosely(t, stripProtos(blds), should.Resemble([]*pb.Build{
 				{
 					Builder: &pb.BuilderID{
 						Project: "project",
@@ -1474,8 +1475,8 @@ func TestScheduleBuild(t *testing.T) {
 					CanOutliveParent: false,
 					AncestorIds:      []int64{2, 3, 1},
 				},
-			})
-			So(blds, ShouldResemble, []*model.Build{
+			}))
+			assert.Loosely(t, blds, should.Resemble([]*model.Build{
 				{
 					ID:                9021868963221667745,
 					BucketID:          "project/bucket",
@@ -1504,12 +1505,12 @@ func TestScheduleBuild(t *testing.T) {
 					AncestorIds: []int64{2, 3, 1},
 					ParentID:    1,
 				},
-			})
-			So(sch.Tasks(), ShouldHaveLength, 4)
-			So(datastore.Get(ctx, blds), ShouldBeNil)
+			}))
+			assert.Loosely(t, sch.Tasks(), should.HaveLength(4))
+			assert.Loosely(t, datastore.Get(ctx, blds), should.BeNil)
 		})
 
-		Convey("one shadow inherit parent, one shadow not inherit, one original, and one with no shadow bucket", func() {
+		t.Run("one shadow inherit parent, one shadow not inherit, one original, and one with no shadow bucket", func(t *ftt.Test) {
 			globalCfg = &pb.SettingsCfg{
 				Resultdb: &pb.ResultDBSettings{
 					Hostname: "rdbHost",
@@ -1525,7 +1526,7 @@ func TestScheduleBuild(t *testing.T) {
 			}
 			testutil.PutBucket(ctx, "project", "bucket", &pb.Bucket{Swarming: &pb.Swarming{}, Shadow: "bucket.shadow"})
 			testutil.PutBucket(ctx, "project", "bucket.shadow", &pb.Bucket{DynamicBuilderTemplate: &pb.Bucket_DynamicBuilderTemplate{}})
-			So(datastore.Put(ctx, &model.Builder{
+			assert.Loosely(t, datastore.Put(ctx, &model.Builder{
 				Parent: model.BucketKey(ctx, "project", "bucket"),
 				ID:     "builder",
 				Config: &pb.BuilderConfig{
@@ -1547,13 +1548,13 @@ func TestScheduleBuild(t *testing.T) {
 						CipdVersion: "version",
 					},
 				},
-			}), ShouldBeNil)
+			}), should.BeNil)
 
 			tk, err := buildtoken.GenerateToken(ctx, 1, pb.TokenBody_BUILD)
 			ctx := metadata.NewIncomingContext(ctx, metadata.Pairs(bb.BuildbucketTokenHeader, tk))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			// This is the parent led build of the newly requested led build.
-			So(datastore.Put(ctx, &model.Build{
+			assert.Loosely(t, datastore.Put(ctx, &model.Build{
 				Proto: &pb.Build{
 					Id: 1,
 					Builder: &pb.BuilderID{
@@ -1567,8 +1568,8 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				},
 				UpdateToken: tk,
-			}), ShouldBeNil)
-			So(datastore.Put(ctx, &model.BuildInfra{
+			}), should.BeNil)
+			assert.Loosely(t, datastore.Put(ctx, &model.BuildInfra{
 				Build: datastore.MakeKey(ctx, "Build", 1),
 				Proto: &pb.BuildInfra{
 					Buildbucket: &pb.BuildInfra_Buildbucket{
@@ -1615,7 +1616,7 @@ func TestScheduleBuild(t *testing.T) {
 						},
 					},
 				},
-			}), ShouldBeNil)
+			}), should.BeNil)
 			reqs := []*pb.ScheduleBuildRequest{
 				{
 					Builder: &pb.BuilderID{
@@ -1652,9 +1653,9 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 			blds, err := scheduleBuilds(ctx, globalCfg, reqs...)
-			So(err, ShouldNotBeNil)
-			So(err, ShouldErrLike, "scheduling a shadow build in the original bucket is not allowed")
-			So(stripProtos(blds), ShouldResembleProto, []*pb.Build{
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, err, should.ErrLike("scheduling a shadow build in the original bucket is not allowed"))
+			assert.Loosely(t, stripProtos(blds), should.Resemble([]*pb.Build{
 				{
 					Builder: &pb.BuilderID{
 						Project: "project",
@@ -2071,11 +2072,11 @@ func TestScheduleBuild(t *testing.T) {
 					CanOutliveParent: true,
 				},
 				nil,
-			})
+			}))
 		})
 	})
 
-	Convey("scheduleRequestFromTemplate", t, func() {
+	ftt.Run("scheduleRequestFromTemplate", t, func(t *ftt.Test) {
 		ctx := metrics.WithServiceInfo(memory.Use(context.Background()), "svc", "job", "ins")
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
@@ -2088,37 +2089,37 @@ func TestScheduleBuild(t *testing.T) {
 
 		testutil.PutBucket(ctx, "project", "bucket", nil)
 
-		Convey("nil", func() {
+		t.Run("nil", func(t *ftt.Test) {
 			ret, err := scheduleRequestFromTemplate(ctx, nil)
-			So(err, ShouldBeNil)
-			So(ret, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ret, should.BeNil)
 		})
 
-		Convey("empty", func() {
+		t.Run("empty", func(t *ftt.Test) {
 			req := &pb.ScheduleBuildRequest{}
 			ret, err := scheduleRequestFromTemplate(ctx, req)
-			So(err, ShouldBeNil)
-			So(req, ShouldResembleProto, &pb.ScheduleBuildRequest{})
-			So(ret, ShouldResembleProto, &pb.ScheduleBuildRequest{})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, req, should.Resemble(&pb.ScheduleBuildRequest{}))
+			assert.Loosely(t, ret, should.Resemble(&pb.ScheduleBuildRequest{}))
 		})
 
-		Convey("not found", func() {
+		t.Run("not found", func(t *ftt.Test) {
 			req := &pb.ScheduleBuildRequest{
 				TemplateBuildId: 1,
 			}
 			ret, err := scheduleRequestFromTemplate(ctx, req)
-			So(err, ShouldErrLike, "not found")
-			So(req, ShouldResembleProto, &pb.ScheduleBuildRequest{
+			assert.Loosely(t, err, should.ErrLike("not found"))
+			assert.Loosely(t, req, should.Resemble(&pb.ScheduleBuildRequest{
 				TemplateBuildId: 1,
-			})
-			So(ret, ShouldBeNil)
+			}))
+			assert.Loosely(t, ret, should.BeNil)
 		})
 
-		Convey("permission denied", func() {
+		t.Run("permission denied", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:unauthorized@example.com",
 			})
-			So(datastore.Put(ctx, &model.Build{
+			assert.Loosely(t, datastore.Put(ctx, &model.Build{
 				Proto: &pb.Build{
 					Id: 1,
 					Builder: &pb.BuilderID{
@@ -2127,21 +2128,21 @@ func TestScheduleBuild(t *testing.T) {
 						Builder: "builder",
 					},
 				},
-			}), ShouldBeNil)
+			}), should.BeNil)
 			req := &pb.ScheduleBuildRequest{
 				TemplateBuildId: 1,
 			}
 			ret, err := scheduleRequestFromTemplate(ctx, req)
-			So(err, ShouldErrLike, "not found")
-			So(req, ShouldResembleProto, &pb.ScheduleBuildRequest{
+			assert.Loosely(t, err, should.ErrLike("not found"))
+			assert.Loosely(t, req, should.Resemble(&pb.ScheduleBuildRequest{
 				TemplateBuildId: 1,
-			})
-			So(ret, ShouldBeNil)
+			}))
+			assert.Loosely(t, ret, should.BeNil)
 		})
 
-		Convey("canary", func() {
-			Convey("false default", func() {
-				So(datastore.Put(ctx, &model.Build{
+		t.Run("canary", func(t *ftt.Test) {
+			t.Run("false default", func(t *ftt.Test) {
+				assert.Loosely(t, datastore.Put(ctx, &model.Build{
 					Proto: &pb.Build{
 						Id: 1,
 						Builder: &pb.BuilderID{
@@ -2153,20 +2154,20 @@ func TestScheduleBuild(t *testing.T) {
 					Experiments: []string{
 						"-" + bb.ExperimentBBCanarySoftware,
 					},
-				}), ShouldBeNil)
+				}), should.BeNil)
 
-				Convey("merge", func() {
+				t.Run("merge", func(t *ftt.Test) {
 					req := &pb.ScheduleBuildRequest{
 						TemplateBuildId: 1,
 						Experiments:     map[string]bool{bb.ExperimentBBCanarySoftware: true},
 					}
 					ret, err := scheduleRequestFromTemplate(ctx, req)
-					So(err, ShouldBeNil)
-					So(req, ShouldResembleProto, &pb.ScheduleBuildRequest{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, req, should.Resemble(&pb.ScheduleBuildRequest{
 						TemplateBuildId: 1,
 						Experiments:     map[string]bool{bb.ExperimentBBCanarySoftware: true},
-					})
-					So(ret, ShouldResembleProto, &pb.ScheduleBuildRequest{
+					}))
+					assert.Loosely(t, ret, should.Resemble(&pb.ScheduleBuildRequest{
 						Builder: &pb.BuilderID{
 							Project: "project",
 							Bucket:  "bucket",
@@ -2176,19 +2177,19 @@ func TestScheduleBuild(t *testing.T) {
 							bb.ExperimentBBCanarySoftware: true,
 							bb.ExperimentNonProduction:    false,
 						},
-					})
+					}))
 				})
 
-				Convey("ok", func() {
+				t.Run("ok", func(t *ftt.Test) {
 					req := &pb.ScheduleBuildRequest{
 						TemplateBuildId: 1,
 					}
 					ret, err := scheduleRequestFromTemplate(ctx, req)
-					So(err, ShouldBeNil)
-					So(req, ShouldResembleProto, &pb.ScheduleBuildRequest{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, req, should.Resemble(&pb.ScheduleBuildRequest{
 						TemplateBuildId: 1,
-					})
-					So(ret, ShouldResembleProto, &pb.ScheduleBuildRequest{
+					}))
+					assert.Loosely(t, ret, should.Resemble(&pb.ScheduleBuildRequest{
 						Builder: &pb.BuilderID{
 							Project: "project",
 							Bucket:  "bucket",
@@ -2198,12 +2199,12 @@ func TestScheduleBuild(t *testing.T) {
 							bb.ExperimentBBCanarySoftware: false,
 							bb.ExperimentNonProduction:    false,
 						},
-					})
+					}))
 				})
 			})
 
-			Convey("true default", func() {
-				So(datastore.Put(ctx, &model.Build{
+			t.Run("true default", func(t *ftt.Test) {
+				assert.Loosely(t, datastore.Put(ctx, &model.Build{
 					Proto: &pb.Build{
 						Id: 1,
 						Builder: &pb.BuilderID{
@@ -2215,9 +2216,9 @@ func TestScheduleBuild(t *testing.T) {
 					Experiments: []string{
 						"+" + bb.ExperimentBBCanarySoftware,
 					},
-				}), ShouldBeNil)
+				}), should.BeNil)
 
-				Convey("merge", func() {
+				t.Run("merge", func(t *ftt.Test) {
 					req := &pb.ScheduleBuildRequest{
 						TemplateBuildId: 1,
 						Experiments: map[string]bool{
@@ -2225,14 +2226,14 @@ func TestScheduleBuild(t *testing.T) {
 						},
 					}
 					ret, err := scheduleRequestFromTemplate(ctx, req)
-					So(err, ShouldBeNil)
-					So(req, ShouldResembleProto, &pb.ScheduleBuildRequest{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, req, should.Resemble(&pb.ScheduleBuildRequest{
 						TemplateBuildId: 1,
 						Experiments: map[string]bool{
 							bb.ExperimentBBCanarySoftware: false,
 						},
-					})
-					So(ret, ShouldResembleProto, &pb.ScheduleBuildRequest{
+					}))
+					assert.Loosely(t, ret, should.Resemble(&pb.ScheduleBuildRequest{
 						Builder: &pb.BuilderID{
 							Project: "project",
 							Bucket:  "bucket",
@@ -2242,19 +2243,19 @@ func TestScheduleBuild(t *testing.T) {
 							bb.ExperimentBBCanarySoftware: false,
 							bb.ExperimentNonProduction:    false,
 						},
-					})
+					}))
 				})
 
-				Convey("ok", func() {
+				t.Run("ok", func(t *ftt.Test) {
 					req := &pb.ScheduleBuildRequest{
 						TemplateBuildId: 1,
 					}
 					ret, err := scheduleRequestFromTemplate(ctx, req)
-					So(err, ShouldBeNil)
-					So(req, ShouldResembleProto, &pb.ScheduleBuildRequest{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, req, should.Resemble(&pb.ScheduleBuildRequest{
 						TemplateBuildId: 1,
-					})
-					So(ret, ShouldResembleProto, &pb.ScheduleBuildRequest{
+					}))
+					assert.Loosely(t, ret, should.Resemble(&pb.ScheduleBuildRequest{
 						Builder: &pb.BuilderID{
 							Project: "project",
 							Bucket:  "bucket",
@@ -2264,13 +2265,13 @@ func TestScheduleBuild(t *testing.T) {
 							bb.ExperimentBBCanarySoftware: true,
 							bb.ExperimentNonProduction:    false,
 						},
-					})
+					}))
 				})
 			})
 		})
 
-		Convey("critical", func() {
-			So(datastore.Put(ctx, &model.Build{
+		t.Run("critical", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(ctx, &model.Build{
 				Proto: &pb.Build{
 					Id: 1,
 					Builder: &pb.BuilderID{
@@ -2281,20 +2282,20 @@ func TestScheduleBuild(t *testing.T) {
 					Critical: pb.Trinary_YES,
 				},
 				Experiments: []string{"-" + bb.ExperimentBBCanarySoftware},
-			}), ShouldBeNil)
+			}), should.BeNil)
 
-			Convey("merge", func() {
+			t.Run("merge", func(t *ftt.Test) {
 				req := &pb.ScheduleBuildRequest{
 					TemplateBuildId: 1,
 					Critical:        pb.Trinary_NO,
 				}
 				ret, err := scheduleRequestFromTemplate(ctx, req)
-				So(err, ShouldBeNil)
-				So(req, ShouldResembleProto, &pb.ScheduleBuildRequest{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, req, should.Resemble(&pb.ScheduleBuildRequest{
 					TemplateBuildId: 1,
 					Critical:        pb.Trinary_NO,
-				})
-				So(ret, ShouldResembleProto, &pb.ScheduleBuildRequest{
+				}))
+				assert.Loosely(t, ret, should.Resemble(&pb.ScheduleBuildRequest{
 					Builder: &pb.BuilderID{
 						Project: "project",
 						Bucket:  "bucket",
@@ -2305,19 +2306,19 @@ func TestScheduleBuild(t *testing.T) {
 						bb.ExperimentBBCanarySoftware: false,
 						bb.ExperimentNonProduction:    false,
 					},
-				})
+				}))
 			})
 
-			Convey("ok", func() {
+			t.Run("ok", func(t *ftt.Test) {
 				req := &pb.ScheduleBuildRequest{
 					TemplateBuildId: 1,
 				}
 				ret, err := scheduleRequestFromTemplate(ctx, req)
-				So(err, ShouldBeNil)
-				So(req, ShouldResembleProto, &pb.ScheduleBuildRequest{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, req, should.Resemble(&pb.ScheduleBuildRequest{
 					TemplateBuildId: 1,
-				})
-				So(ret, ShouldResembleProto, &pb.ScheduleBuildRequest{
+				}))
+				assert.Loosely(t, ret, should.Resemble(&pb.ScheduleBuildRequest{
 					Builder: &pb.BuilderID{
 						Project: "project",
 						Bucket:  "bucket",
@@ -2328,12 +2329,12 @@ func TestScheduleBuild(t *testing.T) {
 						bb.ExperimentBBCanarySoftware: false,
 						bb.ExperimentNonProduction:    false,
 					},
-				})
+				}))
 			})
 		})
 
-		Convey("exe", func() {
-			So(datastore.Put(ctx, &model.Build{
+		t.Run("exe", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(ctx, &model.Build{
 				Proto: &pb.Build{
 					Id: 1,
 					Builder: &pb.BuilderID{
@@ -2347,21 +2348,21 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				},
 				Experiments: []string{"-" + bb.ExperimentBBCanarySoftware},
-			}), ShouldBeNil)
+			}), should.BeNil)
 
-			Convey("merge", func() {
-				Convey("empty", func() {
+			t.Run("merge", func(t *ftt.Test) {
+				t.Run("empty", func(t *ftt.Test) {
 					req := &pb.ScheduleBuildRequest{
 						TemplateBuildId: 1,
 						Exe:             &pb.Executable{},
 					}
 					ret, err := scheduleRequestFromTemplate(ctx, req)
-					So(err, ShouldBeNil)
-					So(req, ShouldResembleProto, &pb.ScheduleBuildRequest{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, req, should.Resemble(&pb.ScheduleBuildRequest{
 						TemplateBuildId: 1,
 						Exe:             &pb.Executable{},
-					})
-					So(ret, ShouldResembleProto, &pb.ScheduleBuildRequest{
+					}))
+					assert.Loosely(t, ret, should.Resemble(&pb.ScheduleBuildRequest{
 						Builder: &pb.BuilderID{
 							Project: "project",
 							Bucket:  "bucket",
@@ -2372,10 +2373,10 @@ func TestScheduleBuild(t *testing.T) {
 							bb.ExperimentBBCanarySoftware: false,
 							bb.ExperimentNonProduction:    false,
 						},
-					})
+					}))
 				})
 
-				Convey("non-empty", func() {
+				t.Run("non-empty", func(t *ftt.Test) {
 					req := &pb.ScheduleBuildRequest{
 						TemplateBuildId: 1,
 						Exe: &pb.Executable{
@@ -2384,15 +2385,15 @@ func TestScheduleBuild(t *testing.T) {
 						},
 					}
 					ret, err := scheduleRequestFromTemplate(ctx, req)
-					So(err, ShouldBeNil)
-					So(req, ShouldResembleProto, &pb.ScheduleBuildRequest{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, req, should.Resemble(&pb.ScheduleBuildRequest{
 						TemplateBuildId: 1,
 						Exe: &pb.Executable{
 							CipdPackage: "package",
 							CipdVersion: "new",
 						},
-					})
-					So(ret, ShouldResembleProto, &pb.ScheduleBuildRequest{
+					}))
+					assert.Loosely(t, ret, should.Resemble(&pb.ScheduleBuildRequest{
 						Builder: &pb.BuilderID{
 							Project: "project",
 							Bucket:  "bucket",
@@ -2406,20 +2407,20 @@ func TestScheduleBuild(t *testing.T) {
 							CipdPackage: "package",
 							CipdVersion: "new",
 						},
-					})
+					}))
 				})
 			})
 
-			Convey("ok", func() {
+			t.Run("ok", func(t *ftt.Test) {
 				req := &pb.ScheduleBuildRequest{
 					TemplateBuildId: 1,
 				}
 				ret, err := scheduleRequestFromTemplate(ctx, req)
-				So(err, ShouldBeNil)
-				So(req, ShouldResembleProto, &pb.ScheduleBuildRequest{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, req, should.Resemble(&pb.ScheduleBuildRequest{
 					TemplateBuildId: 1,
-				})
-				So(ret, ShouldResembleProto, &pb.ScheduleBuildRequest{
+				}))
+				assert.Loosely(t, ret, should.Resemble(&pb.ScheduleBuildRequest{
 					Builder: &pb.BuilderID{
 						Project: "project",
 						Bucket:  "bucket",
@@ -2433,12 +2434,12 @@ func TestScheduleBuild(t *testing.T) {
 						CipdPackage: "package",
 						CipdVersion: "version",
 					},
-				})
+				}))
 			})
 		})
 
-		Convey("gerrit changes", func() {
-			So(datastore.Put(ctx, &model.Build{
+		t.Run("gerrit changes", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(ctx, &model.Build{
 				Proto: &pb.Build{
 					Id: 1,
 					Builder: &pb.BuilderID{
@@ -2458,21 +2459,21 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				},
 				Experiments: []string{"-" + bb.ExperimentBBCanarySoftware},
-			}), ShouldBeNil)
+			}), should.BeNil)
 
-			Convey("merge", func() {
-				Convey("empty", func() {
+			t.Run("merge", func(t *ftt.Test) {
+				t.Run("empty", func(t *ftt.Test) {
 					req := &pb.ScheduleBuildRequest{
 						TemplateBuildId: 1,
 						GerritChanges:   []*pb.GerritChange{},
 					}
 					ret, err := scheduleRequestFromTemplate(ctx, req)
-					So(err, ShouldBeNil)
-					So(req, ShouldResembleProto, &pb.ScheduleBuildRequest{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, req, should.Resemble(&pb.ScheduleBuildRequest{
 						TemplateBuildId: 1,
 						GerritChanges:   []*pb.GerritChange{},
-					})
-					So(ret, ShouldResembleProto, &pb.ScheduleBuildRequest{
+					}))
+					assert.Loosely(t, ret, should.Resemble(&pb.ScheduleBuildRequest{
 						Builder: &pb.BuilderID{
 							Project: "project",
 							Bucket:  "bucket",
@@ -2490,10 +2491,10 @@ func TestScheduleBuild(t *testing.T) {
 								Patchset: 1,
 							},
 						},
-					})
+					}))
 				})
 
-				Convey("non-empty", func() {
+				t.Run("non-empty", func(t *ftt.Test) {
 					req := &pb.ScheduleBuildRequest{
 						TemplateBuildId: 1,
 						GerritChanges: []*pb.GerritChange{
@@ -2506,8 +2507,8 @@ func TestScheduleBuild(t *testing.T) {
 						},
 					}
 					ret, err := scheduleRequestFromTemplate(ctx, req)
-					So(err, ShouldBeNil)
-					So(req, ShouldResembleProto, &pb.ScheduleBuildRequest{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, req, should.Resemble(&pb.ScheduleBuildRequest{
 						TemplateBuildId: 1,
 						GerritChanges: []*pb.GerritChange{
 							{
@@ -2517,8 +2518,8 @@ func TestScheduleBuild(t *testing.T) {
 								Patchset: 2,
 							},
 						},
-					})
-					So(ret, ShouldResembleProto, &pb.ScheduleBuildRequest{
+					}))
+					assert.Loosely(t, ret, should.Resemble(&pb.ScheduleBuildRequest{
 						Builder: &pb.BuilderID{
 							Project: "project",
 							Bucket:  "bucket",
@@ -2536,20 +2537,20 @@ func TestScheduleBuild(t *testing.T) {
 								Patchset: 2,
 							},
 						},
-					})
+					}))
 				})
 			})
 
-			Convey("ok", func() {
+			t.Run("ok", func(t *ftt.Test) {
 				req := &pb.ScheduleBuildRequest{
 					TemplateBuildId: 1,
 				}
 				ret, err := scheduleRequestFromTemplate(ctx, req)
-				So(err, ShouldBeNil)
-				So(req, ShouldResembleProto, &pb.ScheduleBuildRequest{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, req, should.Resemble(&pb.ScheduleBuildRequest{
 					TemplateBuildId: 1,
-				})
-				So(ret, ShouldResembleProto, &pb.ScheduleBuildRequest{
+				}))
+				assert.Loosely(t, ret, should.Resemble(&pb.ScheduleBuildRequest{
 					Builder: &pb.BuilderID{
 						Project: "project",
 						Bucket:  "bucket",
@@ -2567,12 +2568,12 @@ func TestScheduleBuild(t *testing.T) {
 							Patchset: 1,
 						},
 					},
-				})
+				}))
 			})
 		})
 
-		Convey("gitiles commit", func() {
-			So(datastore.Put(ctx, &model.Build{
+		t.Run("gitiles commit", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(ctx, &model.Build{
 				Proto: &pb.Build{
 					Id: 1,
 					Builder: &pb.BuilderID{
@@ -2589,16 +2590,16 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				},
 				Experiments: []string{"-" + bb.ExperimentBBCanarySoftware},
-			}), ShouldBeNil)
+			}), should.BeNil)
 			req := &pb.ScheduleBuildRequest{
 				TemplateBuildId: 1,
 			}
 			ret, err := scheduleRequestFromTemplate(ctx, req)
-			So(err, ShouldBeNil)
-			So(req, ShouldResembleProto, &pb.ScheduleBuildRequest{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, req, should.Resemble(&pb.ScheduleBuildRequest{
 				TemplateBuildId: 1,
-			})
-			So(ret, ShouldResembleProto, &pb.ScheduleBuildRequest{
+			}))
+			assert.Loosely(t, ret, should.Resemble(&pb.ScheduleBuildRequest{
 				Builder: &pb.BuilderID{
 					Project: "project",
 					Bucket:  "bucket",
@@ -2613,11 +2614,11 @@ func TestScheduleBuild(t *testing.T) {
 					Project: "project",
 					Ref:     "refs/heads/master",
 				},
-			})
+			}))
 		})
 
-		Convey("input properties", func() {
-			So(datastore.Put(ctx, &model.Build{
+		t.Run("input properties", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(ctx, &model.Build{
 				Proto: &pb.Build{
 					Id: 1,
 					Builder: &pb.BuilderID{
@@ -2627,14 +2628,14 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				},
 				Experiments: []string{"-" + bb.ExperimentBBCanarySoftware},
-			}), ShouldBeNil)
+			}), should.BeNil)
 
-			Convey("empty", func() {
-				So(datastore.Put(ctx, &model.BuildInputProperties{
+			t.Run("empty", func(t *ftt.Test) {
+				assert.Loosely(t, datastore.Put(ctx, &model.BuildInputProperties{
 					Build: datastore.MakeKey(ctx, "Build", 1),
-				}), ShouldBeNil)
+				}), should.BeNil)
 
-				Convey("merge", func() {
+				t.Run("merge", func(t *ftt.Test) {
 					req := &pb.ScheduleBuildRequest{
 						TemplateBuildId: 1,
 						Properties: &structpb.Struct{
@@ -2648,8 +2649,8 @@ func TestScheduleBuild(t *testing.T) {
 						},
 					}
 					ret, err := scheduleRequestFromTemplate(ctx, req)
-					So(err, ShouldBeNil)
-					So(req, ShouldResembleProto, &pb.ScheduleBuildRequest{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, req, should.Resemble(&pb.ScheduleBuildRequest{
 						TemplateBuildId: 1,
 						Properties: &structpb.Struct{
 							Fields: map[string]*structpb.Value{
@@ -2660,8 +2661,8 @@ func TestScheduleBuild(t *testing.T) {
 								},
 							},
 						},
-					})
-					So(ret, ShouldResembleProto, &pb.ScheduleBuildRequest{
+					}))
+					assert.Loosely(t, ret, should.Resemble(&pb.ScheduleBuildRequest{
 						Builder: &pb.BuilderID{
 							Project: "project",
 							Bucket:  "bucket",
@@ -2680,19 +2681,19 @@ func TestScheduleBuild(t *testing.T) {
 								},
 							},
 						},
-					})
+					}))
 				})
 
-				Convey("ok", func() {
+				t.Run("ok", func(t *ftt.Test) {
 					req := &pb.ScheduleBuildRequest{
 						TemplateBuildId: 1,
 					}
 					ret, err := scheduleRequestFromTemplate(ctx, req)
-					So(err, ShouldBeNil)
-					So(req, ShouldResembleProto, &pb.ScheduleBuildRequest{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, req, should.Resemble(&pb.ScheduleBuildRequest{
 						TemplateBuildId: 1,
-					})
-					So(ret, ShouldResembleProto, &pb.ScheduleBuildRequest{
+					}))
+					assert.Loosely(t, ret, should.Resemble(&pb.ScheduleBuildRequest{
 						Builder: &pb.BuilderID{
 							Project: "project",
 							Bucket:  "bucket",
@@ -2702,12 +2703,12 @@ func TestScheduleBuild(t *testing.T) {
 							bb.ExperimentBBCanarySoftware: false,
 							bb.ExperimentNonProduction:    false,
 						},
-					})
+					}))
 				})
 			})
 
-			Convey("non-empty", func() {
-				So(datastore.Put(ctx, &model.BuildInputProperties{
+			t.Run("non-empty", func(t *ftt.Test) {
+				assert.Loosely(t, datastore.Put(ctx, &model.BuildInputProperties{
 					Build: datastore.MakeKey(ctx, "Build", 1),
 					Proto: &structpb.Struct{
 						Fields: map[string]*structpb.Value{
@@ -2718,21 +2719,21 @@ func TestScheduleBuild(t *testing.T) {
 							},
 						},
 					},
-				}), ShouldBeNil)
+				}), should.BeNil)
 
-				Convey("merge", func() {
-					Convey("empty", func() {
+				t.Run("merge", func(t *ftt.Test) {
+					t.Run("empty", func(t *ftt.Test) {
 						req := &pb.ScheduleBuildRequest{
 							TemplateBuildId: 1,
 							Properties:      &structpb.Struct{},
 						}
 						ret, err := scheduleRequestFromTemplate(ctx, req)
-						So(err, ShouldBeNil)
-						So(req, ShouldResembleProto, &pb.ScheduleBuildRequest{
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, req, should.Resemble(&pb.ScheduleBuildRequest{
 							TemplateBuildId: 1,
 							Properties:      &structpb.Struct{},
-						})
-						So(ret, ShouldResembleProto, &pb.ScheduleBuildRequest{
+						}))
+						assert.Loosely(t, ret, should.Resemble(&pb.ScheduleBuildRequest{
 							Builder: &pb.BuilderID{
 								Project: "project",
 								Bucket:  "bucket",
@@ -2743,10 +2744,10 @@ func TestScheduleBuild(t *testing.T) {
 								bb.ExperimentNonProduction:    false,
 							},
 							Properties: &structpb.Struct{},
-						})
+						}))
 					})
 
-					Convey("non-empty", func() {
+					t.Run("non-empty", func(t *ftt.Test) {
 						req := &pb.ScheduleBuildRequest{
 							TemplateBuildId: 1,
 							Properties: &structpb.Struct{
@@ -2760,8 +2761,8 @@ func TestScheduleBuild(t *testing.T) {
 							},
 						}
 						ret, err := scheduleRequestFromTemplate(ctx, req)
-						So(err, ShouldBeNil)
-						So(req, ShouldResembleProto, &pb.ScheduleBuildRequest{
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, req, should.Resemble(&pb.ScheduleBuildRequest{
 							TemplateBuildId: 1,
 							Properties: &structpb.Struct{
 								Fields: map[string]*structpb.Value{
@@ -2772,8 +2773,8 @@ func TestScheduleBuild(t *testing.T) {
 									},
 								},
 							},
-						})
-						So(ret, ShouldResembleProto, &pb.ScheduleBuildRequest{
+						}))
+						assert.Loosely(t, ret, should.Resemble(&pb.ScheduleBuildRequest{
 							Builder: &pb.BuilderID{
 								Project: "project",
 								Bucket:  "bucket",
@@ -2792,20 +2793,20 @@ func TestScheduleBuild(t *testing.T) {
 									},
 								},
 							},
-						})
+						}))
 					})
 				})
 
-				Convey("ok", func() {
+				t.Run("ok", func(t *ftt.Test) {
 					req := &pb.ScheduleBuildRequest{
 						TemplateBuildId: 1,
 					}
 					ret, err := scheduleRequestFromTemplate(ctx, req)
-					So(err, ShouldBeNil)
-					So(req, ShouldResembleProto, &pb.ScheduleBuildRequest{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, req, should.Resemble(&pb.ScheduleBuildRequest{
 						TemplateBuildId: 1,
-					})
-					So(ret, ShouldResembleProto, &pb.ScheduleBuildRequest{
+					}))
+					assert.Loosely(t, ret, should.Resemble(&pb.ScheduleBuildRequest{
 						Builder: &pb.BuilderID{
 							Project: "project",
 							Bucket:  "bucket",
@@ -2824,13 +2825,13 @@ func TestScheduleBuild(t *testing.T) {
 								},
 							},
 						},
-					})
+					}))
 				})
 			})
 		})
 
-		Convey("tags", func() {
-			So(datastore.Put(ctx, &model.Build{
+		t.Run("tags", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(ctx, &model.Build{
 				Proto: &pb.Build{
 					Id: 1,
 					Builder: &pb.BuilderID{
@@ -2843,21 +2844,21 @@ func TestScheduleBuild(t *testing.T) {
 					"key:value",
 				},
 				Experiments: []string{"-" + bb.ExperimentBBCanarySoftware},
-			}), ShouldBeNil)
+			}), should.BeNil)
 
-			Convey("merge", func() {
-				Convey("empty", func() {
+			t.Run("merge", func(t *ftt.Test) {
+				t.Run("empty", func(t *ftt.Test) {
 					req := &pb.ScheduleBuildRequest{
 						TemplateBuildId: 1,
 						Tags:            []*pb.StringPair{},
 					}
 					ret, err := scheduleRequestFromTemplate(ctx, req)
-					So(err, ShouldBeNil)
-					So(req, ShouldResembleProto, &pb.ScheduleBuildRequest{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, req, should.Resemble(&pb.ScheduleBuildRequest{
 						TemplateBuildId: 1,
 						Tags:            []*pb.StringPair{},
-					})
-					So(ret, ShouldResembleProto, &pb.ScheduleBuildRequest{
+					}))
+					assert.Loosely(t, ret, should.Resemble(&pb.ScheduleBuildRequest{
 						Builder: &pb.BuilderID{
 							Project: "project",
 							Bucket:  "bucket",
@@ -2873,10 +2874,10 @@ func TestScheduleBuild(t *testing.T) {
 								Value: "value",
 							},
 						},
-					})
+					}))
 				})
 
-				Convey("non-empty", func() {
+				t.Run("non-empty", func(t *ftt.Test) {
 					req := &pb.ScheduleBuildRequest{
 						TemplateBuildId: 1,
 						Tags: []*pb.StringPair{
@@ -2887,8 +2888,8 @@ func TestScheduleBuild(t *testing.T) {
 						},
 					}
 					ret, err := scheduleRequestFromTemplate(ctx, req)
-					So(err, ShouldBeNil)
-					So(req, ShouldResembleProto, &pb.ScheduleBuildRequest{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, req, should.Resemble(&pb.ScheduleBuildRequest{
 						TemplateBuildId: 1,
 						Tags: []*pb.StringPair{
 							{
@@ -2896,8 +2897,8 @@ func TestScheduleBuild(t *testing.T) {
 								Value: "other",
 							},
 						},
-					})
-					So(ret, ShouldResembleProto, &pb.ScheduleBuildRequest{
+					}))
+					assert.Loosely(t, ret, should.Resemble(&pb.ScheduleBuildRequest{
 						Builder: &pb.BuilderID{
 							Project: "project",
 							Bucket:  "bucket",
@@ -2913,20 +2914,20 @@ func TestScheduleBuild(t *testing.T) {
 								Value: "other",
 							},
 						},
-					})
+					}))
 				})
 			})
 
-			Convey("ok", func() {
+			t.Run("ok", func(t *ftt.Test) {
 				req := &pb.ScheduleBuildRequest{
 					TemplateBuildId: 1,
 				}
 				ret, err := scheduleRequestFromTemplate(ctx, req)
-				So(err, ShouldBeNil)
-				So(req, ShouldResembleProto, &pb.ScheduleBuildRequest{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, req, should.Resemble(&pb.ScheduleBuildRequest{
 					TemplateBuildId: 1,
-				})
-				So(ret, ShouldResembleProto, &pb.ScheduleBuildRequest{
+				}))
+				assert.Loosely(t, ret, should.Resemble(&pb.ScheduleBuildRequest{
 					Builder: &pb.BuilderID{
 						Project: "project",
 						Bucket:  "bucket",
@@ -2942,12 +2943,12 @@ func TestScheduleBuild(t *testing.T) {
 							Value: "value",
 						},
 					},
-				})
+				}))
 			})
 		})
 
-		Convey("requested dimensions", func() {
-			So(datastore.Put(ctx, &model.Build{
+		t.Run("requested dimensions", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(ctx, &model.Build{
 				Proto: &pb.Build{
 					Id: 1,
 					Builder: &pb.BuilderID{
@@ -2957,8 +2958,8 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				},
 				Experiments: []string{"-" + bb.ExperimentBBCanarySoftware},
-			}), ShouldBeNil)
-			So(datastore.Put(ctx, &model.BuildInfra{
+			}), should.BeNil)
+			assert.Loosely(t, datastore.Put(ctx, &model.BuildInfra{
 				Build: datastore.MakeKey(ctx, "Build", 1),
 				Proto: &pb.BuildInfra{
 					Buildbucket: &pb.BuildInfra_Buildbucket{
@@ -2968,15 +2969,15 @@ func TestScheduleBuild(t *testing.T) {
 						},
 					},
 				},
-			}), ShouldBeNil)
+			}), should.BeNil)
 
-			Convey("ok", func() {
+			t.Run("ok", func(t *ftt.Test) {
 				req := &pb.ScheduleBuildRequest{
 					TemplateBuildId: 1,
 				}
 				ret, err := scheduleRequestFromTemplate(ctx, req)
-				So(err, ShouldBeNil)
-				So(ret, ShouldResembleProto, &pb.ScheduleBuildRequest{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, ret, should.Resemble(&pb.ScheduleBuildRequest{
 					Builder: &pb.BuilderID{
 						Project: "project",
 						Bucket:  "bucket",
@@ -2989,10 +2990,10 @@ func TestScheduleBuild(t *testing.T) {
 						bb.ExperimentBBCanarySoftware: false,
 						bb.ExperimentNonProduction:    false,
 					},
-				})
+				}))
 			})
 
-			Convey("override", func() {
+			t.Run("override", func(t *ftt.Test) {
 				req := &pb.ScheduleBuildRequest{
 					TemplateBuildId: 1,
 					Dimensions: []*pb.RequestedDimension{
@@ -3000,8 +3001,8 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 				ret, err := scheduleRequestFromTemplate(ctx, req)
-				So(err, ShouldBeNil)
-				So(ret, ShouldResembleProto, &pb.ScheduleBuildRequest{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, ret, should.Resemble(&pb.ScheduleBuildRequest{
 					Builder: &pb.BuilderID{
 						Project: "project",
 						Bucket:  "bucket",
@@ -3014,12 +3015,12 @@ func TestScheduleBuild(t *testing.T) {
 						bb.ExperimentBBCanarySoftware: false,
 						bb.ExperimentNonProduction:    false,
 					},
-				})
+				}))
 			})
 		})
 
-		Convey("priority", func() {
-			So(datastore.Put(ctx, &model.Build{
+		t.Run("priority", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(ctx, &model.Build{
 				Proto: &pb.Build{
 					Id: 1,
 					Builder: &pb.BuilderID{
@@ -3029,23 +3030,23 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				},
 				Experiments: []string{"-" + bb.ExperimentBBCanarySoftware},
-			}), ShouldBeNil)
-			So(datastore.Put(ctx, &model.BuildInfra{
+			}), should.BeNil)
+			assert.Loosely(t, datastore.Put(ctx, &model.BuildInfra{
 				Build: datastore.MakeKey(ctx, "Build", 1),
 				Proto: &pb.BuildInfra{
 					Swarming: &pb.BuildInfra_Swarming{
 						Priority: int32(30),
 					},
 				},
-			}), ShouldBeNil)
+			}), should.BeNil)
 
-			Convey("ok", func() {
+			t.Run("ok", func(t *ftt.Test) {
 				req := &pb.ScheduleBuildRequest{
 					TemplateBuildId: 1,
 				}
 				ret, err := scheduleRequestFromTemplate(ctx, req)
-				So(err, ShouldBeNil)
-				So(ret, ShouldResembleProto, &pb.ScheduleBuildRequest{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, ret, should.Resemble(&pb.ScheduleBuildRequest{
 					Builder: &pb.BuilderID{
 						Project: "project",
 						Bucket:  "bucket",
@@ -3056,17 +3057,17 @@ func TestScheduleBuild(t *testing.T) {
 						bb.ExperimentBBCanarySoftware: false,
 						bb.ExperimentNonProduction:    false,
 					},
-				})
+				}))
 			})
 
-			Convey("override", func() {
+			t.Run("override", func(t *ftt.Test) {
 				req := &pb.ScheduleBuildRequest{
 					TemplateBuildId: 1,
 					Priority:        int32(25),
 				}
 				ret, err := scheduleRequestFromTemplate(ctx, req)
-				So(err, ShouldBeNil)
-				So(ret, ShouldResembleProto, &pb.ScheduleBuildRequest{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, ret, should.Resemble(&pb.ScheduleBuildRequest{
 					Builder: &pb.BuilderID{
 						Project: "project",
 						Bucket:  "bucket",
@@ -3077,12 +3078,12 @@ func TestScheduleBuild(t *testing.T) {
 						bb.ExperimentBBCanarySoftware: false,
 						bb.ExperimentNonProduction:    false,
 					},
-				})
+				}))
 			})
 		})
 
-		Convey("ok", func() {
-			So(datastore.Put(ctx, &model.Build{
+		t.Run("ok", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(ctx, &model.Build{
 				Proto: &pb.Build{
 					Id: 1,
 					Builder: &pb.BuilderID{
@@ -3092,16 +3093,16 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				},
 				Experiments: []string{"-" + bb.ExperimentBBCanarySoftware},
-			}), ShouldBeNil)
+			}), should.BeNil)
 			req := &pb.ScheduleBuildRequest{
 				TemplateBuildId: 1,
 			}
 			ret, err := scheduleRequestFromTemplate(ctx, req)
-			So(err, ShouldBeNil)
-			So(req, ShouldResembleProto, &pb.ScheduleBuildRequest{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, req, should.Resemble(&pb.ScheduleBuildRequest{
 				TemplateBuildId: 1,
-			})
-			So(ret, ShouldResembleProto, &pb.ScheduleBuildRequest{
+			}))
+			assert.Loosely(t, ret, should.Resemble(&pb.ScheduleBuildRequest{
 				Builder: &pb.BuilderID{
 					Project: "project",
 					Bucket:  "bucket",
@@ -3111,13 +3112,13 @@ func TestScheduleBuild(t *testing.T) {
 					bb.ExperimentBBCanarySoftware: false,
 					bb.ExperimentNonProduction:    false,
 				},
-			})
+			}))
 		})
 	})
 
-	Convey("setDimensions", t, func() {
-		Convey("config", func() {
-			Convey("omit", func() {
+	ftt.Run("setDimensions", t, func(t *ftt.Test) {
+		t.Run("config", func(t *ftt.Test) {
+			t.Run("omit", func(t *ftt.Test) {
 				cfg := &pb.BuilderConfig{
 					Dimensions: []string{
 						"key:",
@@ -3130,10 +3131,10 @@ func TestScheduleBuild(t *testing.T) {
 				}
 
 				setDimensions(nil, cfg, b, false)
-				So(b.Infra.Swarming, ShouldResembleProto, &pb.BuildInfra_Swarming{})
+				assert.Loosely(t, b.Infra.Swarming, should.Resemble(&pb.BuildInfra_Swarming{}))
 			})
 
-			Convey("simple", func() {
+			t.Run("simple", func(t *ftt.Test) {
 				cfg := &pb.BuilderConfig{
 					Dimensions: []string{
 						"key:value",
@@ -3146,17 +3147,17 @@ func TestScheduleBuild(t *testing.T) {
 				}
 
 				setDimensions(nil, cfg, b, false)
-				So(b.Infra.Swarming, ShouldResembleProto, &pb.BuildInfra_Swarming{
+				assert.Loosely(t, b.Infra.Swarming, should.Resemble(&pb.BuildInfra_Swarming{
 					TaskDimensions: []*pb.RequestedDimension{
 						{
 							Key:   "key",
 							Value: "value",
 						},
 					},
-				})
+				}))
 			})
 
-			Convey("expiration", func() {
+			t.Run("expiration", func(t *ftt.Test) {
 				cfg := &pb.BuilderConfig{
 					Dimensions: []string{
 						"1:key:value",
@@ -3169,7 +3170,7 @@ func TestScheduleBuild(t *testing.T) {
 				}
 
 				setDimensions(nil, cfg, b, false)
-				So(b.Infra.Swarming, ShouldResembleProto, &pb.BuildInfra_Swarming{
+				assert.Loosely(t, b.Infra.Swarming, should.Resemble(&pb.BuildInfra_Swarming{
 					TaskDimensions: []*pb.RequestedDimension{
 						{
 							Expiration: &durationpb.Duration{
@@ -3179,10 +3180,10 @@ func TestScheduleBuild(t *testing.T) {
 							Value: "value",
 						},
 					},
-				})
+				}))
 			})
 
-			Convey("many", func() {
+			t.Run("many", func(t *ftt.Test) {
 				cfg := &pb.BuilderConfig{
 					Dimensions: []string{
 						"key:",
@@ -3206,7 +3207,7 @@ func TestScheduleBuild(t *testing.T) {
 				}
 
 				setDimensions(nil, cfg, b, false)
-				So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
+				assert.Loosely(t, b.Infra, should.Resemble(&pb.BuildInfra{
 					Swarming: &pb.BuildInfra_Swarming{
 						TaskDimensions: []*pb.RequestedDimension{
 							{
@@ -3256,10 +3257,10 @@ func TestScheduleBuild(t *testing.T) {
 							},
 						},
 					},
-				})
+				}))
 			})
 
-			Convey("auto builder", func() {
+			t.Run("auto builder", func(t *ftt.Test) {
 				cfg := &pb.BuilderConfig{
 					AutoBuilderDimension: pb.Toggle_YES,
 					Name:                 "builder",
@@ -3271,17 +3272,17 @@ func TestScheduleBuild(t *testing.T) {
 				}
 
 				setDimensions(nil, cfg, b, false)
-				So(b.Infra.Swarming, ShouldResembleProto, &pb.BuildInfra_Swarming{
+				assert.Loosely(t, b.Infra.Swarming, should.Resemble(&pb.BuildInfra_Swarming{
 					TaskDimensions: []*pb.RequestedDimension{
 						{
 							Key:   "builder",
 							Value: "builder",
 						},
 					},
-				})
+				}))
 			})
 
-			Convey("builder > auto builder", func() {
+			t.Run("builder > auto builder", func(t *ftt.Test) {
 				cfg := &pb.BuilderConfig{
 					AutoBuilderDimension: pb.Toggle_YES,
 					Dimensions: []string{
@@ -3296,7 +3297,7 @@ func TestScheduleBuild(t *testing.T) {
 				}
 
 				setDimensions(nil, cfg, b, false)
-				So(b.Infra.Swarming, ShouldResembleProto, &pb.BuildInfra_Swarming{
+				assert.Loosely(t, b.Infra.Swarming, should.Resemble(&pb.BuildInfra_Swarming{
 					TaskDimensions: []*pb.RequestedDimension{
 						{
 							Expiration: &durationpb.Duration{
@@ -3306,10 +3307,10 @@ func TestScheduleBuild(t *testing.T) {
 							Value: "cfg builder",
 						},
 					},
-				})
+				}))
 			})
 
-			Convey("omit builder > auto builder", func() {
+			t.Run("omit builder > auto builder", func(t *ftt.Test) {
 				cfg := &pb.BuilderConfig{
 					AutoBuilderDimension: pb.Toggle_YES,
 					Dimensions: []string{
@@ -3324,11 +3325,11 @@ func TestScheduleBuild(t *testing.T) {
 				}
 
 				setDimensions(nil, cfg, b, false)
-				So(b.Infra.Swarming, ShouldResembleProto, &pb.BuildInfra_Swarming{})
+				assert.Loosely(t, b.Infra.Swarming, should.Resemble(&pb.BuildInfra_Swarming{}))
 			})
 		})
 
-		Convey("request", func() {
+		t.Run("request", func(t *ftt.Test) {
 			req := &pb.ScheduleBuildRequest{
 				Dimensions: []*pb.RequestedDimension{
 					{
@@ -3347,7 +3348,7 @@ func TestScheduleBuild(t *testing.T) {
 			}
 
 			setDimensions(req, nil, b, false)
-			So(b.Infra.Swarming, ShouldResembleProto, &pb.BuildInfra_Swarming{
+			assert.Loosely(t, b.Infra.Swarming, should.Resemble(&pb.BuildInfra_Swarming{
 				TaskDimensions: []*pb.RequestedDimension{
 					{
 						Expiration: &durationpb.Duration{
@@ -3357,10 +3358,10 @@ func TestScheduleBuild(t *testing.T) {
 						Value: "value",
 					},
 				},
-			})
+			}))
 		})
 
-		Convey("request > config", func() {
+		t.Run("request > config", func(t *ftt.Test) {
 			req := &pb.ScheduleBuildRequest{
 				Dimensions: []*pb.RequestedDimension{
 					{
@@ -3402,7 +3403,7 @@ func TestScheduleBuild(t *testing.T) {
 			}
 
 			setDimensions(req, cfg, b, false)
-			So(b.Infra.Swarming, ShouldResembleProto, &pb.BuildInfra_Swarming{
+			assert.Loosely(t, b.Infra.Swarming, should.Resemble(&pb.BuildInfra_Swarming{
 				TaskDimensions: []*pb.RequestedDimension{
 					{
 						Key:   "builder",
@@ -3435,19 +3436,19 @@ func TestScheduleBuild(t *testing.T) {
 						Value: "req value",
 					},
 				},
-			})
+			}))
 		})
 	})
 
-	Convey("setExecutable", t, func() {
-		Convey("nil", func() {
+	ftt.Run("setExecutable", t, func(t *ftt.Test) {
+		t.Run("nil", func(t *ftt.Test) {
 			b := &pb.Build{}
 
 			setExecutable(nil, nil, b)
-			So(b.Exe, ShouldResembleProto, &pb.Executable{})
+			assert.Loosely(t, b.Exe, should.Resemble(&pb.Executable{}))
 		})
 
-		Convey("request only", func() {
+		t.Run("request only", func(t *ftt.Test) {
 			req := &pb.ScheduleBuildRequest{
 				Exe: &pb.Executable{
 					CipdPackage: "package",
@@ -3458,13 +3459,13 @@ func TestScheduleBuild(t *testing.T) {
 			b := &pb.Build{}
 
 			setExecutable(req, nil, b)
-			So(b.Exe, ShouldResembleProto, &pb.Executable{
+			assert.Loosely(t, b.Exe, should.Resemble(&pb.Executable{
 				CipdVersion: "version",
-			})
+			}))
 		})
 
-		Convey("config only", func() {
-			Convey("exe", func() {
+		t.Run("config only", func(t *ftt.Test) {
+			t.Run("exe", func(t *ftt.Test) {
 				cfg := &pb.BuilderConfig{
 					Exe: &pb.Executable{
 						CipdPackage: "package",
@@ -3475,14 +3476,14 @@ func TestScheduleBuild(t *testing.T) {
 				b := &pb.Build{}
 
 				setExecutable(nil, cfg, b)
-				So(b.Exe, ShouldResembleProto, &pb.Executable{
+				assert.Loosely(t, b.Exe, should.Resemble(&pb.Executable{
 					CipdPackage: "package",
 					CipdVersion: "version",
 					Cmd:         []string{"command"},
-				})
+				}))
 			})
 
-			Convey("recipe", func() {
+			t.Run("recipe", func(t *ftt.Test) {
 				cfg := &pb.BuilderConfig{
 					Exe: &pb.Executable{
 						CipdPackage: "package 1",
@@ -3497,15 +3498,15 @@ func TestScheduleBuild(t *testing.T) {
 				b := &pb.Build{}
 
 				setExecutable(nil, cfg, b)
-				So(b.Exe, ShouldResembleProto, &pb.Executable{
+				assert.Loosely(t, b.Exe, should.Resemble(&pb.Executable{
 					CipdPackage: "package 2",
 					CipdVersion: "version 2",
 					Cmd:         []string{"command"},
-				})
+				}))
 			})
 		})
 
-		Convey("request > config", func() {
+		t.Run("request > config", func(t *ftt.Test) {
 			req := &pb.ScheduleBuildRequest{
 				Exe: &pb.Executable{
 					CipdPackage: "package 1",
@@ -3523,15 +3524,15 @@ func TestScheduleBuild(t *testing.T) {
 			b := &pb.Build{}
 
 			setExecutable(req, cfg, b)
-			So(b.Exe, ShouldResembleProto, &pb.Executable{
+			assert.Loosely(t, b.Exe, should.Resemble(&pb.Executable{
 				CipdPackage: "package 2",
 				CipdVersion: "version 1",
 				Cmd:         []string{"command 2"},
-			})
+			}))
 		})
 	})
 
-	Convey("setExperiments", t, func() {
+	ftt.Run("setExperiments", t, func(t *ftt.Test) {
 		ctx := mathrand.Set(memory.Use(context.Background()), rand.New(rand.NewSource(1)))
 		ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
 
@@ -3597,87 +3598,87 @@ func TestScheduleBuild(t *testing.T) {
 			return er
 		}
 
-		Convey("nil", func() {
+		t.Run("nil", func(t *ftt.Test) {
 			setExps()
-			So(ent, ShouldResemble, expect)
+			assert.Loosely(t, ent, should.Resemble(expect))
 		})
 
-		Convey("dice rolling works", func() {
+		t.Run("dice rolling works", func(t *ftt.Test) {
 			for i := 0; i < 100; i += 10 {
 				cfg.Experiments["exp"+strconv.Itoa(i)] = int32(i)
 			}
 			setExps()
 
-			So(ent.Proto.Input.Experiments, ShouldResemble, []string{
+			assert.Loosely(t, ent.Proto.Input.Experiments, should.Resemble([]string{
 				"exp60", "exp70", "exp80", "exp90",
-			})
+			}))
 		})
 
-		Convey("command", func() {
-			Convey("recipes", func() {
+		t.Run("command", func(t *ftt.Test) {
+			t.Run("recipes", func(t *ftt.Test) {
 				req.Experiments[bb.ExperimentBBAgent] = false
 				setExps()
 
-				So(ent.Proto.Exe, ShouldResembleProto, &pb.Executable{
+				assert.Loosely(t, ent.Proto.Exe, should.Resemble(&pb.Executable{
 					Cmd: []string{"recipes"},
-				})
-				So(ent.Proto.Infra.Buildbucket.ExperimentReasons[bb.ExperimentBBAgent],
-					ShouldEqual, pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED)
+				}))
+				assert.Loosely(t, ent.Proto.Infra.Buildbucket.ExperimentReasons[bb.ExperimentBBAgent],
+					should.Equal(pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED))
 			})
 
-			Convey("recipes (explicit)", func() {
+			t.Run("recipes (explicit)", func(t *ftt.Test) {
 				ent.Proto.Exe.Cmd = []string{"recipes"}
 				req.Experiments[bb.ExperimentBBAgent] = false
 				setExps()
 
-				So(ent.Proto.Exe, ShouldResembleProto, &pb.Executable{
+				assert.Loosely(t, ent.Proto.Exe, should.Resemble(&pb.Executable{
 					Cmd: []string{"recipes"},
-				})
-				So(ent.Proto.Input.Experiments, ShouldBeEmpty)
-				So(ent.Proto.Infra.Buildbucket.ExperimentReasons[bb.ExperimentBBAgent],
-					ShouldEqual, pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_BUILDER_CONFIG)
+				}))
+				assert.Loosely(t, ent.Proto.Input.Experiments, should.BeEmpty)
+				assert.Loosely(t, ent.Proto.Infra.Buildbucket.ExperimentReasons[bb.ExperimentBBAgent],
+					should.Equal(pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_BUILDER_CONFIG))
 			})
 
-			Convey("luciexe (experiment)", func() {
+			t.Run("luciexe (experiment)", func(t *ftt.Test) {
 				req.Experiments[bb.ExperimentBBAgent] = true
 				setExps()
 
-				So(ent.Proto.Exe, ShouldResembleProto, &pb.Executable{
+				assert.Loosely(t, ent.Proto.Exe, should.Resemble(&pb.Executable{
 					Cmd: []string{"luciexe"},
-				})
-				So(ent.Proto.Input.Experiments, ShouldContain, bb.ExperimentBBAgent)
-				So(ent.Experiments, ShouldContain, "+"+bb.ExperimentBBAgent)
-				So(ent.Proto.Infra.Buildbucket.ExperimentReasons[bb.ExperimentBBAgent],
-					ShouldEqual, pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED)
+				}))
+				assert.Loosely(t, ent.Proto.Input.Experiments, should.Contain(bb.ExperimentBBAgent))
+				assert.Loosely(t, ent.Experiments, should.Contain("+"+bb.ExperimentBBAgent))
+				assert.Loosely(t, ent.Proto.Infra.Buildbucket.ExperimentReasons[bb.ExperimentBBAgent],
+					should.Equal(pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED))
 			})
 
-			Convey("luciexe (explicit)", func() {
+			t.Run("luciexe (explicit)", func(t *ftt.Test) {
 				ent.Proto.Exe.Cmd = []string{"luciexe"}
 				setExps()
 
-				So(ent.Proto.Exe, ShouldResembleProto, &pb.Executable{
+				assert.Loosely(t, ent.Proto.Exe, should.Resemble(&pb.Executable{
 					Cmd: []string{"luciexe"},
-				})
-				So(ent.Proto.Input.Experiments, ShouldContain, bb.ExperimentBBAgent)
-				So(ent.Proto.Infra.Buildbucket.ExperimentReasons[bb.ExperimentBBAgent],
-					ShouldEqual, pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_BUILDER_CONFIG)
+				}))
+				assert.Loosely(t, ent.Proto.Input.Experiments, should.Contain(bb.ExperimentBBAgent))
+				assert.Loosely(t, ent.Proto.Infra.Buildbucket.ExperimentReasons[bb.ExperimentBBAgent],
+					should.Equal(pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_BUILDER_CONFIG))
 			})
 
-			Convey("cmd > experiment", func() {
+			t.Run("cmd > experiment", func(t *ftt.Test) {
 				req.Experiments[bb.ExperimentBBAgent] = false
 				ent.Proto.Exe.Cmd = []string{"command"}
 				setExps()
 
-				So(ent.Proto.Exe, ShouldResembleProto, &pb.Executable{
+				assert.Loosely(t, ent.Proto.Exe, should.Resemble(&pb.Executable{
 					Cmd: []string{"command"},
-				})
-				So(ent.Proto.Input.Experiments, ShouldContain, bb.ExperimentBBAgent)
-				So(ent.Proto.Infra.Buildbucket.ExperimentReasons[bb.ExperimentBBAgent],
-					ShouldEqual, pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_BUILDER_CONFIG)
+				}))
+				assert.Loosely(t, ent.Proto.Input.Experiments, should.Contain(bb.ExperimentBBAgent))
+				assert.Loosely(t, ent.Proto.Infra.Buildbucket.ExperimentReasons[bb.ExperimentBBAgent],
+					should.Equal(pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_BUILDER_CONFIG))
 			})
 		})
 
-		Convey("request only", func() {
+		t.Run("request only", func(t *ftt.Test) {
 			req.Experiments["experiment1"] = true
 			req.Experiments["experiment2"] = false
 			setExps()
@@ -3691,10 +3692,10 @@ func TestScheduleBuild(t *testing.T) {
 			er["experiment1"] = pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED
 			er["experiment2"] = pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED
 
-			So(ent, ShouldResemble, expect)
+			assert.Loosely(t, ent, should.Resemble(expect))
 		})
 
-		Convey("legacy only", func() {
+		t.Run("legacy only", func(t *ftt.Test) {
 			req.Canary = pb.Trinary_YES
 			req.Experimental = pb.Trinary_NO
 			setExps()
@@ -3710,10 +3711,10 @@ func TestScheduleBuild(t *testing.T) {
 			er[bb.ExperimentBBCanarySoftware] = pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED
 			er[bb.ExperimentNonProduction] = pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED
 
-			So(ent, ShouldResemble, expect)
+			assert.Loosely(t, ent, should.Resemble(expect))
 		})
 
-		Convey("config only", func() {
+		t.Run("config only", func(t *ftt.Test) {
 			cfg.Experiments["experiment1"] = 100
 			cfg.Experiments["experiment2"] = 0
 			setExps()
@@ -3727,11 +3728,11 @@ func TestScheduleBuild(t *testing.T) {
 			er["experiment1"] = pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_BUILDER_CONFIG
 			er["experiment2"] = pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_BUILDER_CONFIG
 
-			So(ent, ShouldResemble, expect)
+			assert.Loosely(t, ent, should.Resemble(expect))
 		})
 
-		Convey("override", func() {
-			Convey("request > legacy", func() {
+		t.Run("override", func(t *ftt.Test) {
+			t.Run("request > legacy", func(t *ftt.Test) {
 				req.Canary = pb.Trinary_YES
 				req.Experimental = pb.Trinary_NO
 				req.Experiments[bb.ExperimentBBCanarySoftware] = false
@@ -3749,10 +3750,10 @@ func TestScheduleBuild(t *testing.T) {
 				er[bb.ExperimentNonProduction] = pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED
 				er[bb.ExperimentBBCanarySoftware] = pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED
 
-				So(ent, ShouldResemble, expect)
+				assert.Loosely(t, ent, should.Resemble(expect))
 			})
 
-			Convey("legacy > config", func() {
+			t.Run("legacy > config", func(t *ftt.Test) {
 				req.Canary = pb.Trinary_YES
 				req.Experimental = pb.Trinary_NO
 				cfg.Experiments[bb.ExperimentBBCanarySoftware] = 0
@@ -3770,10 +3771,10 @@ func TestScheduleBuild(t *testing.T) {
 				er[bb.ExperimentNonProduction] = pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED
 				er[bb.ExperimentBBCanarySoftware] = pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED
 
-				So(ent, ShouldResemble, expect)
+				assert.Loosely(t, ent, should.Resemble(expect))
 			})
 
-			Convey("request > config", func() {
+			t.Run("request > config", func(t *ftt.Test) {
 				req.Experiments["experiment1"] = true
 				req.Experiments["experiment2"] = false
 				cfg.Experiments["experiment1"] = 0
@@ -3789,10 +3790,10 @@ func TestScheduleBuild(t *testing.T) {
 				er["experiment1"] = pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED
 				er["experiment2"] = pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED
 
-				So(ent, ShouldResemble, expect)
+				assert.Loosely(t, ent, should.Resemble(expect))
 			})
 
-			Convey("request > legacy > config", func() {
+			t.Run("request > legacy > config", func(t *ftt.Test) {
 				req.Canary = pb.Trinary_YES
 				req.Experimental = pb.Trinary_NO
 				req.Experiments[bb.ExperimentBBCanarySoftware] = false
@@ -3823,11 +3824,11 @@ func TestScheduleBuild(t *testing.T) {
 				er[bb.ExperimentBBCanarySoftware] = pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED
 				er[bb.ExperimentNonProduction] = pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED
 
-				So(ent, ShouldResemble, expect)
+				assert.Loosely(t, ent, should.Resemble(expect))
 			})
 		})
 
-		Convey("global configuration", func() {
+		t.Run("global configuration", func(t *ftt.Test) {
 			addExp := func(name string, dflt, min int32, inactive bool, b *pb.BuilderPredicate) {
 				gCfg.Experiment.Experiments = append(gCfg.Experiment.Experiments, &pb.ExperimentSettings_Experiment{
 					Name:         name,
@@ -3838,30 +3839,30 @@ func TestScheduleBuild(t *testing.T) {
 				})
 			}
 
-			Convey("default always", func() {
+			t.Run("default always", func(t *ftt.Test) {
 				addExp("always", 100, 0, false, nil)
 
-				Convey("will fill in if unset", func() {
+				t.Run("will fill in if unset", func(t *ftt.Test) {
 					setExps()
 
-					So(ent.Proto.Input.Experiments, ShouldResemble, []string{"always"})
-					So(ent.Proto.Infra.Buildbucket.ExperimentReasons, ShouldResemble, map[string]pb.BuildInfra_Buildbucket_ExperimentReason{
+					assert.Loosely(t, ent.Proto.Input.Experiments, should.Resemble([]string{"always"}))
+					assert.Loosely(t, ent.Proto.Infra.Buildbucket.ExperimentReasons, should.Resemble(map[string]pb.BuildInfra_Buildbucket_ExperimentReason{
 						"always": pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_GLOBAL_DEFAULT,
-					})
+					}))
 				})
 
-				Convey("can be overridden from request", func() {
+				t.Run("can be overridden from request", func(t *ftt.Test) {
 					req.Experiments["always"] = false
 					setExps()
 
-					So(ent.Proto.Input.Experiments, ShouldBeEmpty)
-					So(ent.Proto.Infra.Buildbucket.ExperimentReasons, ShouldResemble, map[string]pb.BuildInfra_Buildbucket_ExperimentReason{
+					assert.Loosely(t, ent.Proto.Input.Experiments, should.BeEmpty)
+					assert.Loosely(t, ent.Proto.Infra.Buildbucket.ExperimentReasons, should.Resemble(map[string]pb.BuildInfra_Buildbucket_ExperimentReason{
 						"always": pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED,
-					})
+					}))
 				})
 			})
 
-			Convey("per builder", func() {
+			t.Run("per builder", func(t *ftt.Test) {
 				addExp("per.builder", 100, 0, false, &pb.BuilderPredicate{
 					Regex: []string{"project/bucket/builder"},
 				})
@@ -3870,59 +3871,59 @@ func TestScheduleBuild(t *testing.T) {
 				})
 				setExps()
 
-				So(ent.Proto.Input.Experiments, ShouldResemble, []string{"per.builder"})
-				So(ent.Experiments, ShouldContain, "-other.builder")
-				So(ent.Proto.Infra.Buildbucket.ExperimentReasons, ShouldResemble, map[string]pb.BuildInfra_Buildbucket_ExperimentReason{
+				assert.Loosely(t, ent.Proto.Input.Experiments, should.Resemble([]string{"per.builder"}))
+				assert.Loosely(t, ent.Experiments, should.Contain("-other.builder"))
+				assert.Loosely(t, ent.Proto.Infra.Buildbucket.ExperimentReasons, should.Resemble(map[string]pb.BuildInfra_Buildbucket_ExperimentReason{
 					"per.builder":   pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_GLOBAL_DEFAULT,
 					"other.builder": pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_GLOBAL_DEFAULT,
-				})
+				}))
 			})
 
-			Convey("min value", func() {
+			t.Run("min value", func(t *ftt.Test) {
 				// note that default == 0, min == 100 is a bit silly, but works for this
 				// test.
 				addExp("min.value", 0, 100, false, nil)
 
-				Convey("overrides builder config", func() {
+				t.Run("overrides builder config", func(t *ftt.Test) {
 					cfg.Experiments["min.value"] = 0
 					setExps()
 
-					So(ent.Proto.Input.Experiments, ShouldResemble, []string{"min.value"})
-					So(ent.Proto.Infra.Buildbucket.ExperimentReasons, ShouldResemble, map[string]pb.BuildInfra_Buildbucket_ExperimentReason{
+					assert.Loosely(t, ent.Proto.Input.Experiments, should.Resemble([]string{"min.value"}))
+					assert.Loosely(t, ent.Proto.Infra.Buildbucket.ExperimentReasons, should.Resemble(map[string]pb.BuildInfra_Buildbucket_ExperimentReason{
 						"min.value": pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_GLOBAL_MINIMUM,
-					})
+					}))
 				})
 
-				Convey("can be overridden from request", func() {
+				t.Run("can be overridden from request", func(t *ftt.Test) {
 					req.Experiments["min.value"] = false
 					setExps()
 
-					So(ent.Proto.Input.Experiments, ShouldBeEmpty)
-					So(ent.Proto.Infra.Buildbucket.ExperimentReasons, ShouldResemble, map[string]pb.BuildInfra_Buildbucket_ExperimentReason{
+					assert.Loosely(t, ent.Proto.Input.Experiments, should.BeEmpty)
+					assert.Loosely(t, ent.Proto.Infra.Buildbucket.ExperimentReasons, should.Resemble(map[string]pb.BuildInfra_Buildbucket_ExperimentReason{
 						"min.value": pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED,
-					})
+					}))
 				})
 			})
 
-			Convey("inactive", func() {
+			t.Run("inactive", func(t *ftt.Test) {
 				addExp("inactive", 30, 30, true, nil)
 				addExp("other_inactive", 30, 30, true, nil)
 				cfg.Experiments["inactive"] = 100
 				setExps()
 
-				So(ent.Proto.Input.Experiments, ShouldBeEmpty)
-				So(ent.Proto.Infra.Buildbucket.ExperimentReasons, ShouldResemble, map[string]pb.BuildInfra_Buildbucket_ExperimentReason{
+				assert.Loosely(t, ent.Proto.Input.Experiments, should.BeEmpty)
+				assert.Loosely(t, ent.Proto.Infra.Buildbucket.ExperimentReasons, should.Resemble(map[string]pb.BuildInfra_Buildbucket_ExperimentReason{
 					"inactive": pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_GLOBAL_INACTIVE,
 					// Note that other_inactive wasn't requested in the build so it's
 					// absent here.
-				})
+				}))
 			})
 		})
 	})
 
-	Convey("buildFromScheduleRequest", t, func() {
+	ftt.Run("buildFromScheduleRequest", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
-		Convey("backend is enabled", func() {
+		t.Run("backend is enabled", func(t *ftt.Test) {
 			s := &pb.SettingsCfg{
 				Backends: []*pb.BackendSetting{
 					{
@@ -3974,7 +3975,7 @@ func TestScheduleBuild(t *testing.T) {
 			expectedBackendConfig.Fields["agent_binary_cipd_filename"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "bbagent${EXECUTABLE_SUFFIX}"}}
 			expectedBackendConfig.Fields["wait_for_capacity"] = &structpb.Value{Kind: &structpb.Value_BoolValue{BoolValue: true}}
 
-			So(buildResult.Infra.Backend, ShouldResembleProto, &pb.BuildInfra_Backend{
+			assert.Loosely(t, buildResult.Infra.Backend, should.Resemble(&pb.BuildInfra_Backend{
 				Caches: []*pb.CacheEntry{
 					{
 						Name:             "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
@@ -3995,14 +3996,14 @@ func TestScheduleBuild(t *testing.T) {
 						Value: "value",
 					},
 				},
-			})
+			}))
 		})
 	})
 
-	Convey("setInfra", t, func() {
+	ftt.Run("setInfra", t, func(t *ftt.Test) {
 		ctx := mathrand.Set(memory.Use(context.Background()), rand.New(rand.NewSource(1)))
 		ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
-		Convey("nil", func() {
+		t.Run("nil", func(t *ftt.Test) {
 			b := &pb.Build{
 				Builder: &pb.BuilderID{
 					Project: "project",
@@ -4012,7 +4013,7 @@ func TestScheduleBuild(t *testing.T) {
 			}
 
 			setInfra(ctx, nil, nil, b, nil)
-			So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
+			assert.Loosely(t, b.Infra, should.Resemble(&pb.BuildInfra{
 				Bbagent: &pb.BuildInfra_BBAgent{
 					CacheDir:    "cache",
 					PayloadPath: "kitchen-checkout",
@@ -4024,10 +4025,10 @@ func TestScheduleBuild(t *testing.T) {
 					Project: "project",
 				},
 				Resultdb: &pb.BuildInfra_ResultDB{},
-			})
+			}))
 		})
 
-		Convey("bbagent", func() {
+		t.Run("bbagent", func(t *ftt.Test) {
 			b := &pb.Build{
 				Builder: &pb.BuilderID{
 					Project: "project",
@@ -4042,7 +4043,7 @@ func TestScheduleBuild(t *testing.T) {
 			}
 
 			setInfra(ctx, nil, nil, b, s)
-			So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
+			assert.Loosely(t, b.Infra, should.Resemble(&pb.BuildInfra{
 				Bbagent: &pb.BuildInfra_BBAgent{
 					CacheDir:    "cache",
 					PayloadPath: "kitchen-checkout",
@@ -4057,10 +4058,10 @@ func TestScheduleBuild(t *testing.T) {
 					Project: "project",
 				},
 				Resultdb: &pb.BuildInfra_ResultDB{},
-			})
+			}))
 		})
 
-		Convey("logdog", func() {
+		t.Run("logdog", func(t *ftt.Test) {
 			b := &pb.Build{
 				Builder: &pb.BuilderID{
 					Project: "project",
@@ -4075,7 +4076,7 @@ func TestScheduleBuild(t *testing.T) {
 			}
 
 			setInfra(ctx, nil, nil, b, s)
-			So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
+			assert.Loosely(t, b.Infra, should.Resemble(&pb.BuildInfra{
 				Bbagent: &pb.BuildInfra_BBAgent{
 					CacheDir:    "cache",
 					PayloadPath: "kitchen-checkout",
@@ -4088,10 +4089,10 @@ func TestScheduleBuild(t *testing.T) {
 					Project:  "project",
 				},
 				Resultdb: &pb.BuildInfra_ResultDB{},
-			})
+			}))
 		})
 
-		Convey("resultdb", func() {
+		t.Run("resultdb", func(t *ftt.Test) {
 			b := &pb.Build{
 				Builder: &pb.BuilderID{
 					Project: "project",
@@ -4115,7 +4116,7 @@ func TestScheduleBuild(t *testing.T) {
 			}
 
 			setInfra(ctx, nil, cfg, b, s)
-			So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
+			assert.Loosely(t, b.Infra, should.Resemble(&pb.BuildInfra{
 				Bbagent: &pb.BuildInfra_BBAgent{
 					PayloadPath: "kitchen-checkout",
 					CacheDir:    "cache",
@@ -4132,11 +4133,11 @@ func TestScheduleBuild(t *testing.T) {
 					Enable:    true,
 					BqExports: bqExports,
 				},
-			})
+			}))
 		})
 
-		Convey("config", func() {
-			Convey("recipe", func() {
+		t.Run("config", func(t *ftt.Test) {
+			t.Run("recipe", func(t *ftt.Test) {
 				cfg := &pb.BuilderConfig{
 					Recipe: &pb.BuilderConfig_Recipe{
 						CipdPackage: "package",
@@ -4152,7 +4153,7 @@ func TestScheduleBuild(t *testing.T) {
 				}
 
 				setInfra(ctx, nil, cfg, b, nil)
-				So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
+				assert.Loosely(t, b.Infra, should.Resemble(&pb.BuildInfra{
 					Bbagent: &pb.BuildInfra_BBAgent{
 						CacheDir:    "cache",
 						PayloadPath: "kitchen-checkout",
@@ -4168,12 +4169,12 @@ func TestScheduleBuild(t *testing.T) {
 						Name:        "name",
 					},
 					Resultdb: &pb.BuildInfra_ResultDB{},
-				})
+				}))
 			})
 		})
 
-		Convey("request", func() {
-			Convey("dimensions", func() {
+		t.Run("request", func(t *ftt.Test) {
+			t.Run("dimensions", func(t *ftt.Test) {
 				req := &pb.ScheduleBuildRequest{
 					Dimensions: []*pb.RequestedDimension{
 						{
@@ -4194,7 +4195,7 @@ func TestScheduleBuild(t *testing.T) {
 				}
 
 				setInfra(ctx, req, nil, b, nil)
-				So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
+				assert.Loosely(t, b.Infra, should.Resemble(&pb.BuildInfra{
 					Bbagent: &pb.BuildInfra_BBAgent{
 						CacheDir:    "cache",
 						PayloadPath: "kitchen-checkout",
@@ -4215,10 +4216,10 @@ func TestScheduleBuild(t *testing.T) {
 						Project: "project",
 					},
 					Resultdb: &pb.BuildInfra_ResultDB{},
-				})
+				}))
 			})
 
-			Convey("properties", func() {
+			t.Run("properties", func(t *ftt.Test) {
 				req := &pb.ScheduleBuildRequest{
 					Properties: &structpb.Struct{
 						Fields: map[string]*structpb.Value{
@@ -4239,7 +4240,7 @@ func TestScheduleBuild(t *testing.T) {
 				}
 
 				setInfra(ctx, req, nil, b, nil)
-				So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
+				assert.Loosely(t, b.Infra, should.Resemble(&pb.BuildInfra{
 					Bbagent: &pb.BuildInfra_BBAgent{
 						CacheDir:    "cache",
 						PayloadPath: "kitchen-checkout",
@@ -4260,15 +4261,15 @@ func TestScheduleBuild(t *testing.T) {
 						Project: "project",
 					},
 					Resultdb: &pb.BuildInfra_ResultDB{},
-				})
+				}))
 			})
 		})
 	})
 
-	Convey("setSwarmingOrBackend", t, func() {
+	ftt.Run("setSwarmingOrBackend", t, func(t *ftt.Test) {
 		ctx := mathrand.Set(memory.Use(context.Background()), rand.New(rand.NewSource(1)))
 		ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
-		Convey("nil", func() {
+		t.Run("nil", func(t *ftt.Test) {
 			b := &pb.Build{
 				Builder: &pb.BuilderID{
 					Project: "project",
@@ -4292,7 +4293,7 @@ func TestScheduleBuild(t *testing.T) {
 			}
 
 			setSwarmingOrBackend(ctx, nil, nil, b, nil)
-			So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
+			assert.Loosely(t, b.Infra, should.Resemble(&pb.BuildInfra{
 				Bbagent: &pb.BuildInfra_BBAgent{
 					CacheDir:    "cache",
 					PayloadPath: "kitchen-checkout",
@@ -4317,9 +4318,9 @@ func TestScheduleBuild(t *testing.T) {
 					},
 					Priority: 30,
 				},
-			})
+			}))
 		})
-		Convey("priority", func() {
+		t.Run("priority", func(t *ftt.Test) {
 			b := &pb.Build{
 				Builder: &pb.BuilderID{
 					Project: "project",
@@ -4344,31 +4345,31 @@ func TestScheduleBuild(t *testing.T) {
 					Experiments: []string{},
 				},
 			}
-			Convey("default production", func() {
+			t.Run("default production", func(t *ftt.Test) {
 				setSwarmingOrBackend(ctx, nil, nil, b, nil)
-				So(b.Infra.Swarming.Priority, ShouldEqual, 30)
-				So(b.Input.Experimental, ShouldBeFalse)
+				assert.Loosely(t, b.Infra.Swarming.Priority, should.Equal(30))
+				assert.Loosely(t, b.Input.Experimental, should.BeFalse)
 			})
 
-			Convey("non-production", func() {
+			t.Run("non-production", func(t *ftt.Test) {
 				b.Input.Experiments = append(b.Input.Experiments, bb.ExperimentNonProduction)
 				setSwarmingOrBackend(ctx, nil, nil, b, nil)
-				So(b.Infra.Swarming.Priority, ShouldEqual, 255)
-				So(b.Input.Experimental, ShouldBeFalse)
+				assert.Loosely(t, b.Infra.Swarming.Priority, should.Equal(255))
+				assert.Loosely(t, b.Input.Experimental, should.BeFalse)
 			})
 
-			Convey("req > experiment", func() {
+			t.Run("req > experiment", func(t *ftt.Test) {
 				b.Input.Experiments = append(b.Input.Experiments, bb.ExperimentNonProduction)
 				req := &pb.ScheduleBuildRequest{
 					Priority: 1,
 				}
 				setSwarmingOrBackend(ctx, req, nil, b, nil)
-				So(b.Infra.Swarming.Priority, ShouldEqual, 1)
+				assert.Loosely(t, b.Infra.Swarming.Priority, should.Equal(1))
 			})
 		})
 
-		Convey("swarming", func() {
-			Convey("no dimensions", func() {
+		t.Run("swarming", func(t *ftt.Test) {
+			t.Run("no dimensions", func(t *ftt.Test) {
 				cfg := &pb.BuilderConfig{
 					Priority:       1,
 					ServiceAccount: "account",
@@ -4396,7 +4397,7 @@ func TestScheduleBuild(t *testing.T) {
 				}
 
 				setSwarmingOrBackend(ctx, nil, cfg, b, nil)
-				So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
+				assert.Loosely(t, b.Infra, should.Resemble(&pb.BuildInfra{
 					Bbagent: &pb.BuildInfra_BBAgent{
 						PayloadPath: "kitchen-checkout",
 						CacheDir:    "cache",
@@ -4422,11 +4423,11 @@ func TestScheduleBuild(t *testing.T) {
 						Priority:           1,
 						TaskServiceAccount: "account",
 					},
-				})
+				}))
 			})
 
-			Convey("caches", func() {
-				Convey("nil", func() {
+			t.Run("caches", func(t *ftt.Test) {
+				t.Run("nil", func(t *ftt.Test) {
 					b := &pb.Build{
 						Builder: &pb.BuilderID{
 							Project: "project",
@@ -4449,7 +4450,7 @@ func TestScheduleBuild(t *testing.T) {
 					}
 
 					setSwarmingOrBackend(ctx, nil, nil, b, nil)
-					So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
+					assert.Loosely(t, b.Infra, should.Resemble(&pb.BuildInfra{
 						Bbagent: &pb.BuildInfra_BBAgent{
 							CacheDir:    "cache",
 							PayloadPath: "kitchen-checkout",
@@ -4473,10 +4474,10 @@ func TestScheduleBuild(t *testing.T) {
 							},
 							Priority: 30,
 						},
-					})
+					}))
 				})
 
-				Convey("global", func() {
+				t.Run("global", func(t *ftt.Test) {
 					b := &pb.Build{
 						Builder: &pb.BuilderID{
 							Project: "project",
@@ -4508,7 +4509,7 @@ func TestScheduleBuild(t *testing.T) {
 					}
 
 					setSwarmingOrBackend(ctx, nil, nil, b, s)
-					So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
+					assert.Loosely(t, b.Infra, should.Resemble(&pb.BuildInfra{
 						Bbagent: &pb.BuildInfra_BBAgent{
 							CacheDir:    "cache",
 							PayloadPath: "kitchen-checkout",
@@ -4536,10 +4537,10 @@ func TestScheduleBuild(t *testing.T) {
 							},
 							Priority: 30,
 						},
-					})
+					}))
 				})
 
-				Convey("config", func() {
+				t.Run("config", func(t *ftt.Test) {
 					cfg := &pb.BuilderConfig{
 						Caches: []*pb.BuilderConfig_CacheEntry{
 							{
@@ -4569,7 +4570,7 @@ func TestScheduleBuild(t *testing.T) {
 					}
 
 					setSwarmingOrBackend(ctx, nil, cfg, b, nil)
-					So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
+					assert.Loosely(t, b.Infra, should.Resemble(&pb.BuildInfra{
 						Bbagent: &pb.BuildInfra_BBAgent{
 							CacheDir:    "cache",
 							PayloadPath: "kitchen-checkout",
@@ -4597,10 +4598,10 @@ func TestScheduleBuild(t *testing.T) {
 							},
 							Priority: 30,
 						},
-					})
+					}))
 				})
 
-				Convey("config > global", func() {
+				t.Run("config > global", func(t *ftt.Test) {
 					cfg := &pb.BuilderConfig{
 						Caches: []*pb.BuilderConfig_CacheEntry{
 							{
@@ -4665,7 +4666,7 @@ func TestScheduleBuild(t *testing.T) {
 					}
 
 					setSwarmingOrBackend(ctx, nil, cfg, b, s)
-					So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
+					assert.Loosely(t, b.Infra, should.Resemble(&pb.BuildInfra{
 						Bbagent: &pb.BuildInfra_BBAgent{
 							CacheDir:    "cache",
 							PayloadPath: "kitchen-checkout",
@@ -4710,11 +4711,11 @@ func TestScheduleBuild(t *testing.T) {
 							},
 							Priority: 30,
 						},
-					})
+					}))
 				})
 			})
 
-			Convey("parent run id", func() {
+			t.Run("parent run id", func(t *ftt.Test) {
 				req := &pb.ScheduleBuildRequest{
 					Swarming: &pb.ScheduleBuildRequest_Swarming{
 						ParentRunId: "id",
@@ -4742,7 +4743,7 @@ func TestScheduleBuild(t *testing.T) {
 				}
 
 				setSwarmingOrBackend(ctx, req, nil, b, nil)
-				So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
+				assert.Loosely(t, b.Infra, should.Resemble(&pb.BuildInfra{
 					Bbagent: &pb.BuildInfra_BBAgent{
 						CacheDir:    "cache",
 						PayloadPath: "kitchen-checkout",
@@ -4767,10 +4768,10 @@ func TestScheduleBuild(t *testing.T) {
 						ParentRunId: "id",
 						Priority:    30,
 					},
-				})
+				}))
 			})
 
-			Convey("priority", func() {
+			t.Run("priority", func(t *ftt.Test) {
 				req := &pb.ScheduleBuildRequest{
 					Priority: 1,
 				}
@@ -4796,7 +4797,7 @@ func TestScheduleBuild(t *testing.T) {
 				}
 
 				setSwarmingOrBackend(ctx, req, nil, b, nil)
-				So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
+				assert.Loosely(t, b.Infra, should.Resemble(&pb.BuildInfra{
 					Bbagent: &pb.BuildInfra_BBAgent{
 						CacheDir:    "cache",
 						PayloadPath: "kitchen-checkout",
@@ -4820,11 +4821,11 @@ func TestScheduleBuild(t *testing.T) {
 						},
 						Priority: 1,
 					},
-				})
+				}))
 			})
 		})
 
-		Convey("backend", func() {
+		t.Run("backend", func(t *ftt.Test) {
 			b := &pb.Build{
 				Builder: &pb.BuilderID{
 					Project: "project",
@@ -4870,7 +4871,7 @@ func TestScheduleBuild(t *testing.T) {
 			setInput(ctx, nil, bldrCfg, b)
 			setExperiments(ctx, nil, bldrCfg, s, b)
 
-			Convey("use builder Priority and ServiceAccount", func() {
+			t.Run("use builder Priority and ServiceAccount", func(t *ftt.Test) {
 
 				setSwarmingOrBackend(ctx, nil, bldrCfg, b, s)
 
@@ -4879,7 +4880,7 @@ func TestScheduleBuild(t *testing.T) {
 				expectedBackendConfig.Fields["priority"] = &structpb.Value{Kind: &structpb.Value_NumberValue{NumberValue: 200}}
 				expectedBackendConfig.Fields["service_account"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "account"}}
 
-				So(b.Infra.Backend, ShouldResembleProto, &pb.BuildInfra_Backend{
+				assert.Loosely(t, b.Infra.Backend, should.Resemble(&pb.BuildInfra_Backend{
 					Caches: []*pb.CacheEntry{
 						{
 							Name:             "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
@@ -4894,10 +4895,10 @@ func TestScheduleBuild(t *testing.T) {
 							Target: "swarming://chromium-swarm",
 						},
 					},
-				})
+				}))
 			})
 
-			Convey("use backend priority and ServiceAccount", func() {
+			t.Run("use backend priority and ServiceAccount", func(t *ftt.Test) {
 				bldrCfg.Backend.ConfigJson = "{\"priority\": 2, \"service_account\": \"service_account\"}"
 				setSwarmingOrBackend(ctx, nil, bldrCfg, b, s)
 
@@ -4906,7 +4907,7 @@ func TestScheduleBuild(t *testing.T) {
 				expectedBackendConfig.Fields["priority"] = &structpb.Value{Kind: &structpb.Value_NumberValue{NumberValue: 2}}
 				expectedBackendConfig.Fields["service_account"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "service_account"}}
 
-				So(b.Infra.Backend, ShouldResembleProto, &pb.BuildInfra_Backend{
+				assert.Loosely(t, b.Infra.Backend, should.Resemble(&pb.BuildInfra_Backend{
 					Caches: []*pb.CacheEntry{
 						{
 							Name:             "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
@@ -4921,10 +4922,10 @@ func TestScheduleBuild(t *testing.T) {
 							Target: "swarming://chromium-swarm",
 						},
 					},
-				})
+				}))
 			})
 
-			Convey("use user requested priority", func() {
+			t.Run("use user requested priority", func(t *ftt.Test) {
 				req := &pb.ScheduleBuildRequest{Priority: 22}
 				setSwarmingOrBackend(ctx, req, bldrCfg, b, s)
 
@@ -4933,7 +4934,7 @@ func TestScheduleBuild(t *testing.T) {
 				expectedBackendConfig.Fields["priority"] = &structpb.Value{Kind: &structpb.Value_NumberValue{NumberValue: 22}}
 				expectedBackendConfig.Fields["service_account"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "account"}}
 
-				So(b.Infra.Backend, ShouldResembleProto, &pb.BuildInfra_Backend{
+				assert.Loosely(t, b.Infra.Backend, should.Resemble(&pb.BuildInfra_Backend{
 					Caches: []*pb.CacheEntry{
 						{
 							Name:             "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
@@ -4948,10 +4949,10 @@ func TestScheduleBuild(t *testing.T) {
 							Target: "swarming://chromium-swarm",
 						},
 					},
-				})
+				}))
 			})
 
-			Convey("backend alt is used", func() {
+			t.Run("backend alt is used", func(t *ftt.Test) {
 				bldrCfg.BackendAlt = &pb.BuilderConfig_Backend{
 					Target: "swarming://chromium-swarm-alt",
 				}
@@ -4963,7 +4964,7 @@ func TestScheduleBuild(t *testing.T) {
 				expectedBackendConfig.Fields["priority"] = &structpb.Value{Kind: &structpb.Value_NumberValue{NumberValue: 200}}
 				expectedBackendConfig.Fields["service_account"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "account"}}
 
-				So(b.Infra.Backend, ShouldResembleProto, &pb.BuildInfra_Backend{
+				assert.Loosely(t, b.Infra.Backend, should.Resemble(&pb.BuildInfra_Backend{
 					Caches: []*pb.CacheEntry{
 						{
 							Name:             "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
@@ -4977,10 +4978,10 @@ func TestScheduleBuild(t *testing.T) {
 							Target: "swarming://chromium-swarm-alt",
 						},
 					},
-				})
+				}))
 			})
 
-			Convey("backend_alt exp is true, derive backend from swarming", func() {
+			t.Run("backend_alt exp is true, derive backend from swarming", func(t *ftt.Test) {
 				bldrCfg := &pb.BuilderConfig{
 					ServiceAccount: "account",
 					Priority:       200,
@@ -5000,8 +5001,8 @@ func TestScheduleBuild(t *testing.T) {
 				expectedBackendConfig.Fields["priority"] = &structpb.Value{Kind: &structpb.Value_NumberValue{NumberValue: 200}}
 				expectedBackendConfig.Fields["service_account"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "account"}}
 
-				So(b.Infra.Swarming, ShouldBeNil)
-				So(b.Infra.Backend, ShouldResembleProto, &pb.BuildInfra_Backend{
+				assert.Loosely(t, b.Infra.Swarming, should.BeNil)
+				assert.Loosely(t, b.Infra.Backend, should.Resemble(&pb.BuildInfra_Backend{
 					Caches: []*pb.CacheEntry{
 						{
 							Name:             "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
@@ -5016,10 +5017,10 @@ func TestScheduleBuild(t *testing.T) {
 							Target: "swarming://chromium-swarm",
 						},
 					},
-				})
+				}))
 			})
 
-			Convey("backend_alt exp is true but no swarming to backend mapping, so use swarming", func() {
+			t.Run("backend_alt exp is true but no swarming to backend mapping, so use swarming", func(t *ftt.Test) {
 				bldrCfg := &pb.BuilderConfig{
 					ServiceAccount: "account",
 					Priority:       200,
@@ -5035,8 +5036,8 @@ func TestScheduleBuild(t *testing.T) {
 				expectedBackendConfig.Fields["priority"] = &structpb.Value{Kind: &structpb.Value_NumberValue{NumberValue: 200}}
 				expectedBackendConfig.Fields["service_account"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "account"}}
 
-				So(b.Infra.Backend, ShouldBeNil)
-				So(b.Infra.Swarming, ShouldResembleProto, &pb.BuildInfra_Swarming{
+				assert.Loosely(t, b.Infra.Backend, should.BeNil)
+				assert.Loosely(t, b.Infra.Swarming, should.Resemble(&pb.BuildInfra_Swarming{
 					TaskServiceAccount: "account",
 					Priority:           200,
 					Caches: []*pb.BuildInfra_Swarming_CacheEntry{
@@ -5046,10 +5047,10 @@ func TestScheduleBuild(t *testing.T) {
 							WaitForWarmCache: &durationpb.Duration{Seconds: 240},
 						},
 					},
-				})
+				}))
 			})
 
-			Convey("swarming is used", func() {
+			t.Run("swarming is used", func(t *ftt.Test) {
 				bldrCfg := &pb.BuilderConfig{
 					ServiceAccount: "account",
 					Priority:       200,
@@ -5062,8 +5063,8 @@ func TestScheduleBuild(t *testing.T) {
 				expectedBackendConfig.Fields["priority"] = &structpb.Value{Kind: &structpb.Value_NumberValue{NumberValue: 200}}
 				expectedBackendConfig.Fields["service_account"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "account"}}
 
-				So(b.Infra.Backend, ShouldBeNil)
-				So(b.Infra.Swarming, ShouldResembleProto, &pb.BuildInfra_Swarming{
+				assert.Loosely(t, b.Infra.Backend, should.BeNil)
+				assert.Loosely(t, b.Infra.Swarming, should.Resemble(&pb.BuildInfra_Swarming{
 					TaskServiceAccount: "account",
 					Priority:           200,
 					Caches: []*pb.BuildInfra_Swarming_CacheEntry{
@@ -5073,36 +5074,36 @@ func TestScheduleBuild(t *testing.T) {
 							WaitForWarmCache: &durationpb.Duration{Seconds: 240},
 						},
 					},
-				})
+				}))
 			})
 		})
 	})
 
-	Convey("setInput", t, func() {
+	ftt.Run("setInput", t, func(t *ftt.Test) {
 		ctx := memlogger.Use(context.Background())
 
-		Convey("nil", func() {
+		t.Run("nil", func(t *ftt.Test) {
 			b := &pb.Build{}
 
 			setInput(ctx, nil, nil, b)
-			So(b.Input, ShouldResembleProto, &pb.Build_Input{
+			assert.Loosely(t, b.Input, should.Resemble(&pb.Build_Input{
 				Properties: &structpb.Struct{},
-			})
+			}))
 		})
 
-		Convey("request", func() {
-			Convey("properties", func() {
-				Convey("empty", func() {
+		t.Run("request", func(t *ftt.Test) {
+			t.Run("properties", func(t *ftt.Test) {
+				t.Run("empty", func(t *ftt.Test) {
 					req := &pb.ScheduleBuildRequest{}
 					b := &pb.Build{}
 
 					setInput(ctx, req, nil, b)
-					So(b.Input, ShouldResembleProto, &pb.Build_Input{
+					assert.Loosely(t, b.Input, should.Resemble(&pb.Build_Input{
 						Properties: &structpb.Struct{},
-					})
+					}))
 				})
 
-				Convey("non-empty", func() {
+				t.Run("non-empty", func(t *ftt.Test) {
 					req := &pb.ScheduleBuildRequest{
 						Properties: &structpb.Struct{
 							Fields: map[string]*structpb.Value{
@@ -5122,7 +5123,7 @@ func TestScheduleBuild(t *testing.T) {
 					b := &pb.Build{}
 
 					setInput(ctx, req, nil, b)
-					So(b.Input, ShouldResembleProto, &pb.Build_Input{
+					assert.Loosely(t, b.Input, should.Resemble(&pb.Build_Input{
 						Properties: &structpb.Struct{
 							Fields: map[string]*structpb.Value{
 								"int": {
@@ -5137,13 +5138,13 @@ func TestScheduleBuild(t *testing.T) {
 								},
 							},
 						},
-					})
+					}))
 				})
 			})
 		})
 
-		Convey("config", func() {
-			Convey("properties", func() {
+		t.Run("config", func(t *ftt.Test) {
+			t.Run("properties", func(t *ftt.Test) {
 				cfg := &pb.BuilderConfig{
 					Properties: "{\"int\": 1, \"str\": \"value\"}",
 				}
@@ -5156,7 +5157,7 @@ func TestScheduleBuild(t *testing.T) {
 				}
 
 				setInput(ctx, nil, cfg, b)
-				So(b.Input, ShouldResembleProto, &pb.Build_Input{
+				assert.Loosely(t, b.Input, should.Resemble(&pb.Build_Input{
 					Properties: &structpb.Struct{
 						Fields: map[string]*structpb.Value{
 							"int": {
@@ -5171,11 +5172,11 @@ func TestScheduleBuild(t *testing.T) {
 							},
 						},
 					},
-				})
+				}))
 			})
 
-			Convey("recipe", func() {
-				Convey("empty", func() {
+			t.Run("recipe", func(t *ftt.Test) {
+				t.Run("empty", func(t *ftt.Test) {
 					cfg := &pb.BuilderConfig{
 						Recipe: &pb.BuilderConfig_Recipe{},
 					}
@@ -5188,7 +5189,7 @@ func TestScheduleBuild(t *testing.T) {
 					}
 
 					setInput(ctx, nil, cfg, b)
-					So(b.Input, ShouldResembleProto, &pb.Build_Input{
+					assert.Loosely(t, b.Input, should.Resemble(&pb.Build_Input{
 						Properties: &structpb.Struct{
 							Fields: map[string]*structpb.Value{
 								"recipe": {
@@ -5196,10 +5197,10 @@ func TestScheduleBuild(t *testing.T) {
 								},
 							},
 						},
-					})
+					}))
 				})
 
-				Convey("properties", func() {
+				t.Run("properties", func(t *ftt.Test) {
 					cfg := &pb.BuilderConfig{
 						Recipe: &pb.BuilderConfig_Recipe{
 							Properties: []string{
@@ -5216,7 +5217,7 @@ func TestScheduleBuild(t *testing.T) {
 					}
 
 					setInput(ctx, nil, cfg, b)
-					So(b.Input, ShouldResembleProto, &pb.Build_Input{
+					assert.Loosely(t, b.Input, should.Resemble(&pb.Build_Input{
 						Properties: &structpb.Struct{
 							Fields: map[string]*structpb.Value{
 								"key": {
@@ -5231,10 +5232,10 @@ func TestScheduleBuild(t *testing.T) {
 								},
 							},
 						},
-					})
+					}))
 				})
 
-				Convey("properties json", func() {
+				t.Run("properties json", func(t *ftt.Test) {
 					cfg := &pb.BuilderConfig{
 						Recipe: &pb.BuilderConfig_Recipe{
 							PropertiesJ: []string{
@@ -5252,7 +5253,7 @@ func TestScheduleBuild(t *testing.T) {
 					}
 
 					setInput(ctx, nil, cfg, b)
-					So(b.Input, ShouldResembleProto, &pb.Build_Input{
+					assert.Loosely(t, b.Input, should.Resemble(&pb.Build_Input{
 						Properties: &structpb.Struct{
 							Fields: map[string]*structpb.Value{
 								"int": {
@@ -5270,10 +5271,10 @@ func TestScheduleBuild(t *testing.T) {
 								},
 							},
 						},
-					})
+					}))
 				})
 
-				Convey("recipe", func() {
+				t.Run("recipe", func(t *ftt.Test) {
 					cfg := &pb.BuilderConfig{
 						Recipe: &pb.BuilderConfig_Recipe{
 							Name: "recipe",
@@ -5288,7 +5289,7 @@ func TestScheduleBuild(t *testing.T) {
 					}
 
 					setInput(ctx, nil, cfg, b)
-					So(b.Input, ShouldResembleProto, &pb.Build_Input{
+					assert.Loosely(t, b.Input, should.Resemble(&pb.Build_Input{
 						Properties: &structpb.Struct{
 							Fields: map[string]*structpb.Value{
 								"recipe": {
@@ -5298,10 +5299,10 @@ func TestScheduleBuild(t *testing.T) {
 								},
 							},
 						},
-					})
+					}))
 				})
 
-				Convey("properties json > properties", func() {
+				t.Run("properties json > properties", func(t *ftt.Test) {
 					cfg := &pb.BuilderConfig{
 						Recipe: &pb.BuilderConfig_Recipe{
 							Properties: []string{
@@ -5321,7 +5322,7 @@ func TestScheduleBuild(t *testing.T) {
 					}
 
 					setInput(ctx, nil, cfg, b)
-					So(b.Input, ShouldResembleProto, &pb.Build_Input{
+					assert.Loosely(t, b.Input, should.Resemble(&pb.Build_Input{
 						Properties: &structpb.Struct{
 							Fields: map[string]*structpb.Value{
 								"key": {
@@ -5336,10 +5337,10 @@ func TestScheduleBuild(t *testing.T) {
 								},
 							},
 						},
-					})
+					}))
 				})
 
-				Convey("recipe > properties", func() {
+				t.Run("recipe > properties", func(t *ftt.Test) {
 					cfg := &pb.BuilderConfig{
 						Recipe: &pb.BuilderConfig_Recipe{
 							Name: "recipe",
@@ -5357,7 +5358,7 @@ func TestScheduleBuild(t *testing.T) {
 					}
 
 					setInput(ctx, nil, cfg, b)
-					So(b.Input, ShouldResembleProto, &pb.Build_Input{
+					assert.Loosely(t, b.Input, should.Resemble(&pb.Build_Input{
 						Properties: &structpb.Struct{
 							Fields: map[string]*structpb.Value{
 								"recipe": {
@@ -5367,10 +5368,10 @@ func TestScheduleBuild(t *testing.T) {
 								},
 							},
 						},
-					})
+					}))
 				})
 
-				Convey("recipe > properties json", func() {
+				t.Run("recipe > properties json", func(t *ftt.Test) {
 					cfg := &pb.BuilderConfig{
 						Recipe: &pb.BuilderConfig_Recipe{
 							Name: "recipe",
@@ -5388,7 +5389,7 @@ func TestScheduleBuild(t *testing.T) {
 					}
 
 					setInput(ctx, nil, cfg, b)
-					So(b.Input, ShouldResembleProto, &pb.Build_Input{
+					assert.Loosely(t, b.Input, should.Resemble(&pb.Build_Input{
 						Properties: &structpb.Struct{
 							Fields: map[string]*structpb.Value{
 								"recipe": {
@@ -5398,12 +5399,12 @@ func TestScheduleBuild(t *testing.T) {
 								},
 							},
 						},
-					})
+					}))
 				})
 			})
 		})
 
-		Convey("request > config", func() {
+		t.Run("request > config", func(t *ftt.Test) {
 			req := &pb.ScheduleBuildRequest{
 				Properties: &structpb.Struct{
 					Fields: map[string]*structpb.Value{
@@ -5438,7 +5439,7 @@ func TestScheduleBuild(t *testing.T) {
 			}
 
 			setInput(ctx, req, cfg, b)
-			So(b.Input, ShouldResembleProto, &pb.Build_Input{
+			assert.Loosely(t, b.Input, should.Resemble(&pb.Build_Input{
 				Properties: &structpb.Struct{
 					Fields: map[string]*structpb.Value{
 						"allowed": {
@@ -5463,23 +5464,23 @@ func TestScheduleBuild(t *testing.T) {
 						},
 					},
 				},
-			})
-			So(ctx, memlogger.ShouldHaveLog, logging.Warning, "ScheduleBuild: Unpermitted Override for property \"override\"")
-			So(ctx, memlogger.ShouldNotHaveLog, logging.Warning, "ScheduleBuild: Unpermitted Override for property \"allowed\"")
-			So(ctx, memlogger.ShouldNotHaveLog, logging.Warning, "ScheduleBuild: Unpermitted Override for property \"cfg key\"")
-			So(ctx, memlogger.ShouldNotHaveLog, logging.Warning, "ScheduleBuild: Unpermitted Override for property \"req key\"")
+			}))
+			assert.Loosely(t, ctx, convey.Adapt(memlogger.ShouldHaveLog)(logging.Warning, "ScheduleBuild: Unpermitted Override for property \"override\""))
+			assert.Loosely(t, ctx, convey.Adapt(memlogger.ShouldNotHaveLog)(logging.Warning, "ScheduleBuild: Unpermitted Override for property \"allowed\""))
+			assert.Loosely(t, ctx, convey.Adapt(memlogger.ShouldNotHaveLog)(logging.Warning, "ScheduleBuild: Unpermitted Override for property \"cfg key\""))
+			assert.Loosely(t, ctx, convey.Adapt(memlogger.ShouldNotHaveLog)(logging.Warning, "ScheduleBuild: Unpermitted Override for property \"req key\""))
 		})
 	})
 
-	Convey("setTags", t, func() {
-		Convey("nil", func() {
+	ftt.Run("setTags", t, func(t *ftt.Test) {
+		t.Run("nil", func(t *ftt.Test) {
 			b := &pb.Build{}
 
 			setTags(nil, b, "")
-			So(b.Tags, ShouldResemble, []*pb.StringPair{})
+			assert.Loosely(t, b.Tags, should.Resemble([]*pb.StringPair{}))
 		})
 
-		Convey("request", func() {
+		t.Run("request", func(t *ftt.Test) {
 			req := &pb.ScheduleBuildRequest{
 				Tags: []*pb.StringPair{
 					{
@@ -5496,7 +5497,7 @@ func TestScheduleBuild(t *testing.T) {
 			b := &pb.Build{}
 
 			setTags(req, b, "")
-			So(b.Tags, ShouldResemble, []*pb.StringPair{
+			assert.Loosely(t, b.Tags, should.Resemble([]*pb.StringPair{
 				{
 					Key:   "key1",
 					Value: "value1",
@@ -5505,10 +5506,10 @@ func TestScheduleBuild(t *testing.T) {
 					Key:   "key2",
 					Value: "value2",
 				},
-			})
+			}))
 		})
 
-		Convey("builder", func() {
+		t.Run("builder", func(t *ftt.Test) {
 			req := &pb.ScheduleBuildRequest{
 				Builder: &pb.BuilderID{
 					Project: "project",
@@ -5520,15 +5521,15 @@ func TestScheduleBuild(t *testing.T) {
 			b := &pb.Build{}
 
 			setTags(req, b, "")
-			So(b.Tags, ShouldResemble, []*pb.StringPair{
+			assert.Loosely(t, b.Tags, should.Resemble([]*pb.StringPair{
 				{
 					Key:   "builder",
 					Value: "builder",
 				},
-			})
+			}))
 		})
 
-		Convey("gitiles commit", func() {
+		t.Run("gitiles commit", func(t *ftt.Test) {
 			req := &pb.ScheduleBuildRequest{
 				GitilesCommit: &pb.GitilesCommit{
 					Host:    "host",
@@ -5541,7 +5542,7 @@ func TestScheduleBuild(t *testing.T) {
 			b := &pb.Build{}
 
 			setTags(req, b, "")
-			So(b.Tags, ShouldResemble, []*pb.StringPair{
+			assert.Loosely(t, b.Tags, should.Resemble([]*pb.StringPair{
 				{
 					Key:   "buildset",
 					Value: "commit/gitiles/host/project/+/id",
@@ -5550,10 +5551,10 @@ func TestScheduleBuild(t *testing.T) {
 					Key:   "gitiles_ref",
 					Value: "ref",
 				},
-			})
+			}))
 		})
 
-		Convey("partial gitiles commit", func() {
+		t.Run("partial gitiles commit", func(t *ftt.Test) {
 			req := &pb.ScheduleBuildRequest{
 				GitilesCommit: &pb.GitilesCommit{
 					Host:    "host",
@@ -5565,16 +5566,16 @@ func TestScheduleBuild(t *testing.T) {
 			b := &pb.Build{}
 
 			setTags(req, b, "")
-			So(b.Tags, ShouldResemble, []*pb.StringPair{
+			assert.Loosely(t, b.Tags, should.Resemble([]*pb.StringPair{
 				{
 					Key:   "gitiles_ref",
 					Value: "ref",
 				},
-			})
+			}))
 		})
 
-		Convey("gerrit changes", func() {
-			Convey("one", func() {
+		t.Run("gerrit changes", func(t *ftt.Test) {
+			t.Run("one", func(t *ftt.Test) {
 				req := &pb.ScheduleBuildRequest{
 					GerritChanges: []*pb.GerritChange{
 						{
@@ -5588,15 +5589,15 @@ func TestScheduleBuild(t *testing.T) {
 				b := &pb.Build{}
 
 				setTags(req, b, "")
-				So(b.Tags, ShouldResemble, []*pb.StringPair{
+				assert.Loosely(t, b.Tags, should.Resemble([]*pb.StringPair{
 					{
 						Key:   "buildset",
 						Value: "patch/gerrit/host/1/2",
 					},
-				})
+				}))
 			})
 
-			Convey("many", func() {
+			t.Run("many", func(t *ftt.Test) {
 				req := &pb.ScheduleBuildRequest{
 					GerritChanges: []*pb.GerritChange{
 						{
@@ -5615,7 +5616,7 @@ func TestScheduleBuild(t *testing.T) {
 				b := &pb.Build{}
 
 				setTags(req, b, "")
-				So(b.Tags, ShouldResemble, []*pb.StringPair{
+				assert.Loosely(t, b.Tags, should.Resemble([]*pb.StringPair{
 					{
 						Key:   "buildset",
 						Value: "patch/gerrit/host/1/2",
@@ -5624,11 +5625,11 @@ func TestScheduleBuild(t *testing.T) {
 						Key:   "buildset",
 						Value: "patch/gerrit/host/3/4",
 					},
-				})
+				}))
 			})
 		})
 
-		Convey("various", func() {
+		t.Run("various", func(t *ftt.Test) {
 			req := &pb.ScheduleBuildRequest{
 				Builder: &pb.BuilderID{
 					Project: "project",
@@ -5668,7 +5669,7 @@ func TestScheduleBuild(t *testing.T) {
 			b := &pb.Build{}
 
 			setTags(req, b, "")
-			So(b.Tags, ShouldResemble, []*pb.StringPair{
+			assert.Loosely(t, b.Tags, should.Resemble([]*pb.StringPair{
 				{
 					Key:   "builder",
 					Value: "builder",
@@ -5697,27 +5698,27 @@ func TestScheduleBuild(t *testing.T) {
 					Key:   "key2",
 					Value: "value2",
 				},
-			})
+			}))
 		})
 	})
 
-	Convey("setTimeouts", t, func() {
-		Convey("nil", func() {
+	ftt.Run("setTimeouts", t, func(t *ftt.Test) {
+		t.Run("nil", func(t *ftt.Test) {
 			b := &pb.Build{}
 
 			setTimeouts(nil, nil, b)
-			So(b.ExecutionTimeout, ShouldResembleProto, &durationpb.Duration{
+			assert.Loosely(t, b.ExecutionTimeout, should.Resemble(&durationpb.Duration{
 				Seconds: 10800,
-			})
-			So(b.GracePeriod, ShouldResembleProto, &durationpb.Duration{
+			}))
+			assert.Loosely(t, b.GracePeriod, should.Resemble(&durationpb.Duration{
 				Seconds: 30,
-			})
-			So(b.SchedulingTimeout, ShouldResembleProto, &durationpb.Duration{
+			}))
+			assert.Loosely(t, b.SchedulingTimeout, should.Resemble(&durationpb.Duration{
 				Seconds: 21600,
-			})
+			}))
 		})
 
-		Convey("request only", func() {
+		t.Run("request only", func(t *ftt.Test) {
 			req := &pb.ScheduleBuildRequest{
 				ExecutionTimeout: &durationpb.Duration{
 					Seconds: 1,
@@ -5733,18 +5734,18 @@ func TestScheduleBuild(t *testing.T) {
 			b := &pb.Build{}
 
 			setTimeouts(req, nil, b)
-			So(b.ExecutionTimeout, ShouldResembleProto, &durationpb.Duration{
+			assert.Loosely(t, b.ExecutionTimeout, should.Resemble(&durationpb.Duration{
 				Seconds: 1,
-			})
-			So(b.GracePeriod, ShouldResembleProto, &durationpb.Duration{
+			}))
+			assert.Loosely(t, b.GracePeriod, should.Resemble(&durationpb.Duration{
 				Seconds: 2,
-			})
-			So(b.SchedulingTimeout, ShouldResembleProto, &durationpb.Duration{
+			}))
+			assert.Loosely(t, b.SchedulingTimeout, should.Resemble(&durationpb.Duration{
 				Seconds: 3,
-			})
+			}))
 		})
 
-		Convey("config only", func() {
+		t.Run("config only", func(t *ftt.Test) {
 			cfg := &pb.BuilderConfig{
 				ExecutionTimeoutSecs: 1,
 				ExpirationSecs:       3,
@@ -5755,18 +5756,18 @@ func TestScheduleBuild(t *testing.T) {
 			b := &pb.Build{}
 
 			setTimeouts(nil, cfg, b)
-			So(b.ExecutionTimeout, ShouldResembleProto, &durationpb.Duration{
+			assert.Loosely(t, b.ExecutionTimeout, should.Resemble(&durationpb.Duration{
 				Seconds: 1,
-			})
-			So(b.GracePeriod, ShouldResembleProto, &durationpb.Duration{
+			}))
+			assert.Loosely(t, b.GracePeriod, should.Resemble(&durationpb.Duration{
 				Seconds: 2,
-			})
-			So(b.SchedulingTimeout, ShouldResembleProto, &durationpb.Duration{
+			}))
+			assert.Loosely(t, b.SchedulingTimeout, should.Resemble(&durationpb.Duration{
 				Seconds: 3,
-			})
+			}))
 		})
 
-		Convey("override", func() {
+		t.Run("override", func(t *ftt.Test) {
 			req := &pb.ScheduleBuildRequest{
 				ExecutionTimeout: &durationpb.Duration{
 					Seconds: 1,
@@ -5789,19 +5790,19 @@ func TestScheduleBuild(t *testing.T) {
 			b := &pb.Build{}
 
 			setTimeouts(req, cfg, b)
-			So(b.ExecutionTimeout, ShouldResembleProto, &durationpb.Duration{
+			assert.Loosely(t, b.ExecutionTimeout, should.Resemble(&durationpb.Duration{
 				Seconds: 1,
-			})
-			So(b.GracePeriod, ShouldResembleProto, &durationpb.Duration{
+			}))
+			assert.Loosely(t, b.GracePeriod, should.Resemble(&durationpb.Duration{
 				Seconds: 2,
-			})
-			So(b.SchedulingTimeout, ShouldResembleProto, &durationpb.Duration{
+			}))
+			assert.Loosely(t, b.SchedulingTimeout, should.Resemble(&durationpb.Duration{
 				Seconds: 3,
-			})
+			}))
 		})
 	})
 
-	Convey("ScheduleBuild", t, func() {
+	ftt.Run("ScheduleBuild", t, func(t *ftt.Test) {
 		srv := &Builds{}
 		ctx := txndefer.FilterRDS(memory.Use(context.Background()))
 		ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
@@ -5815,7 +5816,7 @@ func TestScheduleBuild(t *testing.T) {
 			Identity: userID,
 		})
 
-		So(config.SetTestSettingsCfg(ctx, &pb.SettingsCfg{
+		assert.Loosely(t, config.SetTestSettingsCfg(ctx, &pb.SettingsCfg{
 			Resultdb: &pb.ResultDBSettings{
 				Hostname: "rdbHost",
 			},
@@ -5836,10 +5837,10 @@ func TestScheduleBuild(t *testing.T) {
 					Mode:     &pb.BackendSetting_LiteMode_{},
 				},
 			},
-		}), ShouldBeNil)
+		}), should.BeNil)
 
-		Convey("builder", func() {
-			Convey("not found", func() {
+		t.Run("builder", func(t *ftt.Test) {
+			t.Run("not found", func(t *ftt.Test) {
 				req := &pb.ScheduleBuildRequest{
 					Builder: &pb.BuilderID{
 						Project: "project",
@@ -5848,13 +5849,13 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 				rsp, err := srv.ScheduleBuild(ctx, req)
-				So(err, ShouldErrLike, "not found")
-				So(rsp, ShouldBeNil)
-				So(sch.Tasks(), ShouldBeEmpty)
+				assert.Loosely(t, err, should.ErrLike("not found"))
+				assert.Loosely(t, rsp, should.BeNil)
+				assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 			})
 
-			Convey("permission denied", func() {
-				So(datastore.Put(ctx, &model.Build{
+			t.Run("permission denied", func(t *ftt.Test) {
+				assert.Loosely(t, datastore.Put(ctx, &model.Build{
 					Proto: &pb.Build{
 						Id: 1,
 						Builder: &pb.BuilderID{
@@ -5863,7 +5864,7 @@ func TestScheduleBuild(t *testing.T) {
 							Builder: "builder",
 						},
 					},
-				}), ShouldBeNil)
+				}), should.BeNil)
 				req := &pb.ScheduleBuildRequest{
 					Builder: &pb.BuilderID{
 						Project: "project",
@@ -5872,12 +5873,12 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 				rsp, err := srv.ScheduleBuild(ctx, req)
-				So(err, ShouldErrLike, "not found")
-				So(rsp, ShouldBeNil)
-				So(sch.Tasks(), ShouldBeEmpty)
+				assert.Loosely(t, err, should.ErrLike("not found"))
+				assert.Loosely(t, rsp, should.BeNil)
+				assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 			})
 
-			Convey("directly from dynamic", func() {
+			t.Run("directly from dynamic", func(t *ftt.Test) {
 				ctx = auth.WithState(ctx, &authtest.FakeState{
 					Identity: userID,
 					FakeDB: authtest.NewFakeDB(
@@ -5885,7 +5886,7 @@ func TestScheduleBuild(t *testing.T) {
 					),
 				})
 
-				Convey("no template in dynamic_builder_template", func() {
+				t.Run("no template in dynamic_builder_template", func(t *ftt.Test) {
 					testutil.PutBucket(ctx, "project", "bucket", &pb.Bucket{DynamicBuilderTemplate: &pb.Bucket_DynamicBuilderTemplate{}})
 					req := &pb.ScheduleBuildRequest{
 						Builder: &pb.BuilderID{
@@ -5896,11 +5897,11 @@ func TestScheduleBuild(t *testing.T) {
 					}
 
 					_, err := srv.ScheduleBuild(ctx, req)
-					So(err, ShouldErrLike, "failed to create build with missing backend info and swarming host")
-					So(sch.Tasks(), ShouldBeEmpty)
+					assert.Loosely(t, err, should.ErrLike("failed to create build with missing backend info and swarming host"))
+					assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 				})
 
-				Convey("has template in dynamic_builder_template", func() {
+				t.Run("has template in dynamic_builder_template", func(t *ftt.Test) {
 					testutil.PutBucket(ctx, "project", "bucket", &pb.Bucket{
 						DynamicBuilderTemplate: &pb.Bucket_DynamicBuilderTemplate{
 							Template: &pb.BuilderConfig{
@@ -5922,8 +5923,8 @@ func TestScheduleBuild(t *testing.T) {
 					}
 
 					rsp, err := srv.ScheduleBuild(ctx, req)
-					So(err, ShouldBeNil)
-					So(rsp, ShouldResembleProto, &pb.Build{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, rsp, should.Resemble(&pb.Build{
 						Builder: &pb.BuilderID{
 							Project: "project",
 							Bucket:  "bucket",
@@ -5935,12 +5936,12 @@ func TestScheduleBuild(t *testing.T) {
 						Id:         9021868963221667745,
 						Input:      &pb.Build_Input{},
 						Status:     pb.Status_SCHEDULED,
-					})
+					}))
 
 					buildInDB := &model.Build{ID: 9021868963221667745}
 					bInfra := &model.BuildInfra{Build: datastore.KeyForObj(ctx, buildInDB)}
-					So(datastore.Get(ctx, buildInDB, bInfra), ShouldBeNil)
-					So(bInfra.Proto.Backend, ShouldResembleProto, &pb.BuildInfra_Backend{
+					assert.Loosely(t, datastore.Get(ctx, buildInDB, bInfra), should.BeNil)
+					assert.Loosely(t, bInfra.Proto.Backend, should.Resemble(&pb.BuildInfra_Backend{
 						Caches: []*pb.CacheEntry{
 							{
 								Name:             "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
@@ -5959,25 +5960,25 @@ func TestScheduleBuild(t *testing.T) {
 								Target: "lite://foo-lite",
 							},
 						},
-					})
+					}))
 
 					tasks := sch.Tasks()
-					So(tasks, ShouldHaveLength, 3)
+					assert.Loosely(t, tasks, should.HaveLength(3))
 					sortTasksByClassName(tasks)
 					backendTask, ok := tasks.Payloads()[0].(*taskdefs.CreateBackendBuildTask)
-					So(ok, ShouldBeTrue)
-					So(backendTask.BuildId, ShouldEqual, 9021868963221667745)
-					So(tasks.Payloads()[1], ShouldResembleProto, &taskdefs.NotifyPubSub{
+					assert.Loosely(t, ok, should.BeTrue)
+					assert.Loosely(t, backendTask.BuildId, should.Equal(9021868963221667745))
+					assert.Loosely(t, tasks.Payloads()[1], should.Resemble(&taskdefs.NotifyPubSub{
 						BuildId: 9021868963221667745,
-					})
-					So(tasks.Payloads()[2], ShouldResembleProto, &taskdefs.NotifyPubSubGoProxy{
+					}))
+					assert.Loosely(t, tasks.Payloads()[2], should.Resemble(&taskdefs.NotifyPubSubGoProxy{
 						BuildId: 9021868963221667745,
 						Project: "project",
-					})
+					}))
 				})
 			})
 
-			Convey("static", func() {
+			t.Run("static", func(t *ftt.Test) {
 				ctx = auth.WithState(ctx, &authtest.FakeState{
 					Identity: userID,
 					FakeDB: authtest.NewFakeDB(
@@ -5996,16 +5997,16 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 
-				Convey("not found", func() {
+				t.Run("not found", func(t *ftt.Test) {
 					rsp, err := srv.ScheduleBuild(ctx, req)
-					So(err, ShouldErrLike, "error fetching builders")
-					So(rsp, ShouldBeNil)
-					So(sch.Tasks(), ShouldBeEmpty)
+					assert.Loosely(t, err, should.ErrLike("error fetching builders"))
+					assert.Loosely(t, rsp, should.BeNil)
+					assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 				})
 
-				Convey("exists", func() {
+				t.Run("exists", func(t *ftt.Test) {
 					testutil.PutBuilder(ctx, "project", "bucket", "builder", "")
-					So(datastore.Put(ctx, &model.Build{
+					assert.Loosely(t, datastore.Put(ctx, &model.Build{
 						ID: 9021868963221667745,
 						Proto: &pb.Build{
 							Id: 9021868963221667745,
@@ -6015,16 +6016,16 @@ func TestScheduleBuild(t *testing.T) {
 								Builder: "builder",
 							},
 						},
-					}), ShouldBeNil)
+					}), should.BeNil)
 
 					rsp, err := srv.ScheduleBuild(ctx, req)
-					So(err, ShouldErrLike, "build already exists")
-					So(rsp, ShouldBeNil)
-					So(sch.Tasks(), ShouldBeEmpty)
+					assert.Loosely(t, err, should.ErrLike("build already exists"))
+					assert.Loosely(t, rsp, should.BeNil)
+					assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 				})
 
-				Convey("ok with backend_go exp", func() {
-					So(datastore.Put(ctx, &model.Builder{
+				t.Run("ok with backend_go exp", func(t *ftt.Test) {
+					assert.Loosely(t, datastore.Put(ctx, &model.Builder{
 						Parent: model.BucketKey(ctx, "project", "bucket"),
 						ID:     "builder",
 						Config: &pb.BuilderConfig{
@@ -6033,7 +6034,7 @@ func TestScheduleBuild(t *testing.T) {
 							Experiments:  map[string]int32{bb.ExperimentBackendGo: 100},
 							SwarmingHost: "host",
 						},
-					}), ShouldBeNil)
+					}), should.BeNil)
 
 					req.Properties = &structpb.Struct{
 						Fields: map[string]*structpb.Value{
@@ -6045,8 +6046,8 @@ func TestScheduleBuild(t *testing.T) {
 						},
 					}
 					rsp, err := srv.ScheduleBuild(ctx, req)
-					So(err, ShouldBeNil)
-					So(rsp, ShouldResembleProto, &pb.Build{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, rsp, should.Resemble(&pb.Build{
 						Builder: &pb.BuilderID{
 							Project: "project",
 							Bucket:  "bucket",
@@ -6059,19 +6060,19 @@ func TestScheduleBuild(t *testing.T) {
 						Input:      &pb.Build_Input{},
 						Number:     1,
 						Status:     pb.Status_SCHEDULED,
-					})
+					}))
 
 					// check input.properties and infra are stored in their own Datastore
 					// entities and not in Build entity.
 					buildInDB := &model.Build{ID: 9021868963221667745}
-					So(datastore.Get(ctx, buildInDB), ShouldBeNil)
-					So(buildInDB.Proto.Input.Properties, ShouldBeNil)
-					So(buildInDB.Proto.Infra, ShouldBeNil)
+					assert.Loosely(t, datastore.Get(ctx, buildInDB), should.BeNil)
+					assert.Loosely(t, buildInDB.Proto.Input.Properties, should.BeNil)
+					assert.Loosely(t, buildInDB.Proto.Infra, should.BeNil)
 					inProp := &model.BuildInputProperties{Build: datastore.KeyForObj(ctx, buildInDB)}
 					bInfra := &model.BuildInfra{Build: datastore.KeyForObj(ctx, buildInDB)}
 					bs := &model.BuildStatus{Build: datastore.KeyForObj(ctx, buildInDB)}
-					So(datastore.Get(ctx, inProp, bInfra, bs), ShouldBeNil)
-					So(inProp.Proto, ShouldResembleProto, &structpb.Struct{
+					assert.Loosely(t, datastore.Get(ctx, inProp, bInfra, bs), should.BeNil)
+					assert.Loosely(t, inProp.Proto, should.Resemble(&structpb.Struct{
 						Fields: map[string]*structpb.Value{
 							"input key": {
 								Kind: &structpb.Value_StringValue{
@@ -6079,40 +6080,40 @@ func TestScheduleBuild(t *testing.T) {
 								},
 							},
 						},
-					})
-					So(bInfra.Proto, ShouldNotBeNil)
-					So(bs.BuildAddress, ShouldEqual, "project/bucket/builder/1")
-					So(bs.Status, ShouldEqual, pb.Status_SCHEDULED)
+					}))
+					assert.Loosely(t, bInfra.Proto, should.NotBeNil)
+					assert.Loosely(t, bs.BuildAddress, should.Equal("project/bucket/builder/1"))
+					assert.Loosely(t, bs.Status, should.Equal(pb.Status_SCHEDULED))
 
 					tasks := sch.Tasks()
-					So(tasks, ShouldHaveLength, 3)
+					assert.Loosely(t, tasks, should.HaveLength(3))
 					sortTasksByClassName(tasks)
-					So(tasks.Payloads()[0], ShouldResembleProto, &taskdefs.CreateSwarmingBuildTask{
+					assert.Loosely(t, tasks.Payloads()[0], should.Resemble(&taskdefs.CreateSwarmingBuildTask{
 						BuildId: 9021868963221667745,
-					})
-					So(tasks.Payloads()[1], ShouldResembleProto, &taskdefs.NotifyPubSub{
+					}))
+					assert.Loosely(t, tasks.Payloads()[1], should.Resemble(&taskdefs.NotifyPubSub{
 						BuildId: 9021868963221667745,
-					})
-					So(tasks.Payloads()[2], ShouldResembleProto, &taskdefs.NotifyPubSubGoProxy{
+					}))
+					assert.Loosely(t, tasks.Payloads()[2], should.Resemble(&taskdefs.NotifyPubSubGoProxy{
 						BuildId: 9021868963221667745,
 						Project: "project",
-					})
+					}))
 				})
 
-				Convey("dry_run", func() {
-					So(datastore.Put(ctx, &model.Builder{
+				t.Run("dry_run", func(t *ftt.Test) {
+					assert.Loosely(t, datastore.Put(ctx, &model.Builder{
 						Parent: model.BucketKey(ctx, "project", "bucket"),
 						ID:     "builder",
 						Config: &pb.BuilderConfig{
 							BuildNumbers: pb.Toggle_YES,
 							Name:         "builder",
 						},
-					}), ShouldBeNil)
+					}), should.BeNil)
 
 					req.DryRun = true
 					rsp, err := srv.ScheduleBuild(ctx, req)
-					So(err, ShouldBeNil)
-					So(rsp, ShouldResembleProto, &pb.Build{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, rsp, should.Resemble(&pb.Build{
 						Builder: &pb.BuilderID{
 							Project: "project",
 							Bucket:  "bucket",
@@ -6165,11 +6166,11 @@ func TestScheduleBuild(t *testing.T) {
 						SchedulingTimeout: &durationpb.Duration{Seconds: 21600},
 						ExecutionTimeout:  &durationpb.Duration{Seconds: 10800},
 						GracePeriod:       &durationpb.Duration{Seconds: 30},
-					})
-					So(sch.Tasks(), ShouldBeEmpty)
+					}))
+					assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 				})
 
-				Convey("request ID", func() {
+				t.Run("request ID", func(t *ftt.Test) {
 					req := &pb.ScheduleBuildRequest{
 						Builder: &pb.BuilderID{
 							Project: "project",
@@ -6180,21 +6181,21 @@ func TestScheduleBuild(t *testing.T) {
 					}
 					testutil.PutBuilder(ctx, "project", "bucket", "builder", "")
 
-					Convey("deduplication", func() {
-						So(datastore.Put(ctx, &model.RequestID{
+					t.Run("deduplication", func(t *ftt.Test) {
+						assert.Loosely(t, datastore.Put(ctx, &model.RequestID{
 							ID:      "6d03f5c780125e74ac6cb0f25c5e0b6467ff96c96d98bfb41ba382863ba7707a",
 							BuildID: 1,
-						}), ShouldBeNil)
+						}), should.BeNil)
 
-						Convey("not found", func() {
+						t.Run("not found", func(t *ftt.Test) {
 							rsp, err := srv.ScheduleBuild(ctx, req)
-							So(err, ShouldErrLike, "no such entity")
-							So(rsp, ShouldBeNil)
-							So(sch.Tasks(), ShouldBeEmpty)
+							assert.Loosely(t, err, should.ErrLike("no such entity"))
+							assert.Loosely(t, rsp, should.BeNil)
+							assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 						})
 
-						Convey("ok", func() {
-							So(datastore.Put(ctx, &model.Build{
+						t.Run("ok", func(t *ftt.Test) {
+							assert.Loosely(t, datastore.Put(ctx, &model.Build{
 								ID: 1,
 								Proto: &pb.Build{
 									Builder: &pb.BuilderID{
@@ -6204,11 +6205,11 @@ func TestScheduleBuild(t *testing.T) {
 									},
 									Id: 1,
 								},
-							}), ShouldBeNil)
+							}), should.BeNil)
 
 							rsp, err := srv.ScheduleBuild(ctx, req)
-							So(err, ShouldBeNil)
-							So(rsp, ShouldResembleProto, &pb.Build{
+							assert.Loosely(t, err, should.BeNil)
+							assert.Loosely(t, rsp, should.Resemble(&pb.Build{
 								Builder: &pb.BuilderID{
 									Project: "project",
 									Bucket:  "bucket",
@@ -6216,15 +6217,15 @@ func TestScheduleBuild(t *testing.T) {
 								},
 								Id:    1,
 								Input: &pb.Build_Input{},
-							})
-							So(sch.Tasks(), ShouldBeEmpty)
+							}))
+							assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 						})
 					})
 
-					Convey("ok", func() {
+					t.Run("ok", func(t *ftt.Test) {
 						rsp, err := srv.ScheduleBuild(ctx, req)
-						So(err, ShouldBeNil)
-						So(rsp, ShouldResembleProto, &pb.Build{
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, rsp, should.Resemble(&pb.Build{
 							Builder: &pb.BuilderID{
 								Project: "project",
 								Bucket:  "bucket",
@@ -6236,24 +6237,24 @@ func TestScheduleBuild(t *testing.T) {
 							Id:         9021868963221667745,
 							Input:      &pb.Build_Input{},
 							Status:     pb.Status_SCHEDULED,
-						})
-						So(sch.Tasks(), ShouldHaveLength, 3)
+						}))
+						assert.Loosely(t, sch.Tasks(), should.HaveLength(3))
 
 						r := &model.RequestID{
 							ID: "6d03f5c780125e74ac6cb0f25c5e0b6467ff96c96d98bfb41ba382863ba7707a",
 						}
-						So(datastore.Get(ctx, r), ShouldBeNil)
-						So(r, ShouldResemble, &model.RequestID{
+						assert.Loosely(t, datastore.Get(ctx, r), should.BeNil)
+						assert.Loosely(t, r, should.Resemble(&model.RequestID{
 							ID:         "6d03f5c780125e74ac6cb0f25c5e0b6467ff96c96d98bfb41ba382863ba7707a",
 							BuildID:    9021868963221667745,
 							CreatedBy:  userID,
 							CreateTime: datastore.RoundTime(testclock.TestRecentTimeUTC),
 							RequestID:  "id",
-						})
+						}))
 					})
 
-					Convey("builder description", func() {
-						So(datastore.Put(ctx, &model.Builder{
+					t.Run("builder description", func(t *ftt.Test) {
+						assert.Loosely(t, datastore.Put(ctx, &model.Builder{
 							Parent: model.BucketKey(ctx, "project", "bucket"),
 							ID:     "builder",
 							Config: &pb.BuilderConfig{
@@ -6262,7 +6263,7 @@ func TestScheduleBuild(t *testing.T) {
 								SwarmingHost:    "host",
 								DescriptionHtml: "test builder description",
 							},
-						}), ShouldBeNil)
+						}), should.BeNil)
 						req.Mask = &pb.BuildMask{
 							Fields: &fieldmaskpb.FieldMask{
 								Paths: []string{
@@ -6271,26 +6272,26 @@ func TestScheduleBuild(t *testing.T) {
 							},
 						}
 						rsp, err := srv.ScheduleBuild(ctx, req)
-						So(err, ShouldBeNil)
-						So(rsp.BuilderInfo.Description, ShouldEqual, "test builder description")
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, rsp.BuilderInfo.Description, should.Equal("test builder description"))
 					})
 				})
 			})
 		})
 
-		Convey("template build ID", func() {
-			Convey("not found", func() {
+		t.Run("template build ID", func(t *ftt.Test) {
+			t.Run("not found", func(t *ftt.Test) {
 				req := &pb.ScheduleBuildRequest{
 					TemplateBuildId: 1000,
 				}
 				rsp, err := srv.ScheduleBuild(ctx, req)
-				So(err, ShouldErrLike, "not found")
-				So(rsp, ShouldBeNil)
-				So(sch.Tasks(), ShouldBeEmpty)
+				assert.Loosely(t, err, should.ErrLike("not found"))
+				assert.Loosely(t, rsp, should.BeNil)
+				assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 			})
 
-			Convey("permission denied", func() {
-				So(datastore.Put(ctx, &model.Build{
+			t.Run("permission denied", func(t *ftt.Test) {
+				assert.Loosely(t, datastore.Put(ctx, &model.Build{
 					ID: 1000,
 					Proto: &pb.Build{
 						Id: 1000,
@@ -6300,17 +6301,17 @@ func TestScheduleBuild(t *testing.T) {
 							Builder: "builder",
 						},
 					},
-				}), ShouldBeNil)
+				}), should.BeNil)
 				req := &pb.ScheduleBuildRequest{
 					TemplateBuildId: 1,
 				}
 				rsp, err := srv.ScheduleBuild(ctx, req)
-				So(err, ShouldErrLike, "not found")
-				So(rsp, ShouldBeNil)
-				So(sch.Tasks(), ShouldBeEmpty)
+				assert.Loosely(t, err, should.ErrLike("not found"))
+				assert.Loosely(t, rsp, should.BeNil)
+				assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 			})
 
-			Convey("not retriable", func() {
+			t.Run("not retriable", func(t *ftt.Test) {
 				ctx = auth.WithState(ctx, &authtest.FakeState{
 					Identity: userID,
 					FakeDB: authtest.NewFakeDB(
@@ -6322,7 +6323,7 @@ func TestScheduleBuild(t *testing.T) {
 					Name:     "bucket",
 					Swarming: &pb.Swarming{},
 				})
-				So(datastore.Put(ctx, &model.Build{
+				assert.Loosely(t, datastore.Put(ctx, &model.Build{
 					ID: 1000,
 					Proto: &pb.Build{
 						Id: 1000,
@@ -6333,8 +6334,8 @@ func TestScheduleBuild(t *testing.T) {
 						},
 						Retriable: pb.Trinary_NO,
 					},
-				}), ShouldBeNil)
-				So(datastore.Put(ctx, &model.Builder{
+				}), should.BeNil)
+				assert.Loosely(t, datastore.Put(ctx, &model.Builder{
 					Parent: model.BucketKey(ctx, "project", "bucket"),
 					ID:     "builder",
 					Config: &pb.BuilderConfig{
@@ -6342,18 +6343,18 @@ func TestScheduleBuild(t *testing.T) {
 						Name:         "builder",
 						SwarmingHost: "host",
 					},
-				}), ShouldBeNil)
+				}), should.BeNil)
 				req := &pb.ScheduleBuildRequest{
 					TemplateBuildId: 1000,
 				}
 
 				rsp, err := srv.ScheduleBuild(ctx, req)
-				So(err, ShouldErrLike, "build 1000 is not retriable")
-				So(rsp, ShouldBeNil)
-				So(sch.Tasks(), ShouldBeEmpty)
+				assert.Loosely(t, err, should.ErrLike("build 1000 is not retriable"))
+				assert.Loosely(t, rsp, should.BeNil)
+				assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 			})
 
-			Convey("ok", func() {
+			t.Run("ok", func(t *ftt.Test) {
 				ctx = auth.WithState(ctx, &authtest.FakeState{
 					Identity: userID,
 					FakeDB: authtest.NewFakeDB(
@@ -6365,7 +6366,7 @@ func TestScheduleBuild(t *testing.T) {
 					Name:     "bucket",
 					Swarming: &pb.Swarming{},
 				})
-				So(datastore.Put(ctx, &model.Build{
+				assert.Loosely(t, datastore.Put(ctx, &model.Build{
 					ID: 1000,
 					Proto: &pb.Build{
 						Id: 1000,
@@ -6375,20 +6376,20 @@ func TestScheduleBuild(t *testing.T) {
 							Builder: "builder",
 						},
 					},
-				}), ShouldBeNil)
+				}), should.BeNil)
 				req := &pb.ScheduleBuildRequest{
 					TemplateBuildId: 1000,
 				}
 
-				Convey("not found", func() {
+				t.Run("not found", func(t *ftt.Test) {
 					rsp, err := srv.ScheduleBuild(ctx, req)
-					So(err, ShouldErrLike, "error fetching builders")
-					So(rsp, ShouldBeNil)
-					So(sch.Tasks(), ShouldBeEmpty)
+					assert.Loosely(t, err, should.ErrLike("error fetching builders"))
+					assert.Loosely(t, rsp, should.BeNil)
+					assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 				})
 
-				Convey("ok", func() {
-					So(datastore.Put(ctx, &model.Builder{
+				t.Run("ok", func(t *ftt.Test) {
+					assert.Loosely(t, datastore.Put(ctx, &model.Builder{
 						Parent: model.BucketKey(ctx, "project", "bucket"),
 						ID:     "builder",
 						Config: &pb.BuilderConfig{
@@ -6396,10 +6397,10 @@ func TestScheduleBuild(t *testing.T) {
 							Name:         "builder",
 							SwarmingHost: "host",
 						},
-					}), ShouldBeNil)
+					}), should.BeNil)
 					rsp, err := srv.ScheduleBuild(ctx, req)
-					So(err, ShouldBeNil)
-					So(rsp, ShouldResembleProto, &pb.Build{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, rsp, should.Resemble(&pb.Build{
 						Builder: &pb.BuilderID{
 							Project: "project",
 							Bucket:  "bucket",
@@ -6412,14 +6413,14 @@ func TestScheduleBuild(t *testing.T) {
 						Input:      &pb.Build_Input{},
 						Number:     1,
 						Status:     pb.Status_SCHEDULED,
-					})
-					So(sch.Tasks(), ShouldHaveLength, 3)
+					}))
+					assert.Loosely(t, sch.Tasks(), should.HaveLength(3))
 				})
 			})
 		})
 	})
 
-	Convey("scheduleBuilds", t, func() {
+	ftt.Run("scheduleBuilds", t, func(t *ftt.Test) {
 		srv := &Builds{}
 		ctx := txndefer.FilterRDS(memory.Use(context.Background()))
 		ctx, _ = tsmon.WithDummyInMemory(ctx)
@@ -6457,7 +6458,7 @@ func TestScheduleBuild(t *testing.T) {
 			Name:     "bucket",
 			Swarming: &pb.Swarming{},
 		})
-		So(datastore.Put(ctx, &model.Build{
+		assert.Loosely(t, datastore.Put(ctx, &model.Build{
 			ID: 1000,
 			Proto: &pb.Build{
 				Id: 1000,
@@ -6467,8 +6468,8 @@ func TestScheduleBuild(t *testing.T) {
 					Builder: "builder",
 				},
 			},
-		}), ShouldBeNil)
-		So(datastore.Put(ctx, &model.Build{
+		}), should.BeNil)
+		assert.Loosely(t, datastore.Put(ctx, &model.Build{
 			ID: 9999,
 			Proto: &pb.Build{
 				Id: 1001,
@@ -6478,8 +6479,8 @@ func TestScheduleBuild(t *testing.T) {
 					Builder: "maxConc",
 				},
 			},
-		}), ShouldBeNil)
-		So(datastore.Put(ctx, &model.Builder{
+		}), should.BeNil)
+		assert.Loosely(t, datastore.Put(ctx, &model.Builder{
 			Parent: model.BucketKey(ctx, "project", "bucket"),
 			ID:     "builder",
 			Config: &pb.BuilderConfig{
@@ -6487,8 +6488,8 @@ func TestScheduleBuild(t *testing.T) {
 				Name:         "builder",
 				SwarmingHost: "host",
 			},
-		}), ShouldBeNil)
-		So(datastore.Put(ctx, &model.Builder{
+		}), should.BeNil)
+		assert.Loosely(t, datastore.Put(ctx, &model.Builder{
 			Parent: model.BucketKey(ctx, "project", "bucket"),
 			ID:     "maxConc",
 			Config: &pb.BuilderConfig{
@@ -6497,9 +6498,9 @@ func TestScheduleBuild(t *testing.T) {
 				SwarmingHost:        "host",
 				MaxConcurrentBuilds: 2,
 			},
-		}), ShouldBeNil)
+		}), should.BeNil)
 
-		Convey("one", func() {
+		t.Run("one", func(t *ftt.Test) {
 			reqs := []*pb.ScheduleBuildRequest{
 				{
 					TemplateBuildId: 1000,
@@ -6513,9 +6514,9 @@ func TestScheduleBuild(t *testing.T) {
 			}
 
 			rsp, merr := srv.scheduleBuilds(ctx, globalCfg, reqs)
-			So(merr, ShouldBeNil)
-			So(rsp, ShouldHaveLength, 1)
-			So(rsp[0], ShouldResembleProto, &pb.Build{
+			assert.Loosely(t, merr, should.BeEmpty)
+			assert.Loosely(t, rsp, should.HaveLength(1))
+			assert.Loosely(t, rsp[0], should.Resemble(&pb.Build{
 				Builder: &pb.BuilderID{
 					Project: "project",
 					Bucket:  "bucket",
@@ -6528,21 +6529,21 @@ func TestScheduleBuild(t *testing.T) {
 				Input:      &pb.Build_Input{},
 				Number:     1,
 				Status:     pb.Status_SCHEDULED,
-			})
-			So(sch.Tasks(), ShouldHaveLength, 3)
+			}))
+			assert.Loosely(t, sch.Tasks(), should.HaveLength(3))
 
 			ind, err := model.SearchTagIndex(ctx, "buildset", "buildset")
-			So(err, ShouldBeNil)
-			So(ind, ShouldResemble, []*model.TagIndexEntry{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ind, should.Resemble([]*model.TagIndexEntry{
 				{
 					BuildID:     9021868963221667745,
 					BucketID:    "project/bucket",
 					CreatedTime: datastore.RoundTime(testclock.TestRecentTimeUTC),
 				},
-			})
+			}))
 		})
 
-		Convey("one with max_concurrent_builds", func() {
+		t.Run("one with max_concurrent_builds", func(t *ftt.Test) {
 			reqs := []*pb.ScheduleBuildRequest{
 				{
 					Builder: &pb.BuilderID{
@@ -6554,9 +6555,9 @@ func TestScheduleBuild(t *testing.T) {
 			}
 
 			rsp, merr := srv.scheduleBuilds(ctx, globalCfg, reqs)
-			So(merr, ShouldBeNil)
-			So(rsp, ShouldHaveLength, 1)
-			So(rsp[0], ShouldResembleProto, &pb.Build{
+			assert.Loosely(t, merr, should.BeEmpty)
+			assert.Loosely(t, rsp, should.HaveLength(1))
+			assert.Loosely(t, rsp[0], should.Resemble(&pb.Build{
 				Builder: &pb.BuilderID{
 					Project: "project",
 					Bucket:  "bucket",
@@ -6569,14 +6570,14 @@ func TestScheduleBuild(t *testing.T) {
 				Number:     1,
 				Input:      &pb.Build_Input{},
 				Status:     pb.Status_SCHEDULED,
-			})
-			So(sch.Tasks(), ShouldHaveLength, 3)
-			So(sch.Tasks()[0].Payload.(*taskdefs.NotifyPubSub).GetBuildId(), ShouldEqual, 9021868963221667745)
-			So(sch.Tasks()[1].Payload.(*taskdefs.NotifyPubSubGoProxy).GetBuildId(), ShouldEqual, 9021868963221667745)
-			So(sch.Tasks()[2].Payload.(*taskdefs.PushPendingBuildTask).GetBuildId(), ShouldEqual, 9021868963221667745)
+			}))
+			assert.Loosely(t, sch.Tasks(), should.HaveLength(3))
+			assert.Loosely(t, sch.Tasks()[0].Payload.(*taskdefs.NotifyPubSub).GetBuildId(), should.Equal(9021868963221667745))
+			assert.Loosely(t, sch.Tasks()[1].Payload.(*taskdefs.NotifyPubSubGoProxy).GetBuildId(), should.Equal(9021868963221667745))
+			assert.Loosely(t, sch.Tasks()[2].Payload.(*taskdefs.PushPendingBuildTask).GetBuildId(), should.Equal(9021868963221667745))
 		})
 
-		Convey("one with custom metrics", func() {
+		t.Run("one with custom metrics", func(t *ftt.Test) {
 			globalCfg := &pb.SettingsCfg{
 				Resultdb: &pb.ResultDBSettings{
 					Hostname: "rdbHost",
@@ -6636,7 +6637,7 @@ func TestScheduleBuild(t *testing.T) {
 				Name:       "chrome/infra/custom/builds/max_age",
 				Predicates: []string{`build.tags.get_value("buildset")!=""`},
 			}
-			So(datastore.Put(ctx, &model.Builder{
+			assert.Loosely(t, datastore.Put(ctx, &model.Builder{
 				Parent: model.BucketKey(ctx, "project", "bucket"),
 				ID:     "builder",
 				Config: &pb.BuilderConfig{
@@ -6645,7 +6646,7 @@ func TestScheduleBuild(t *testing.T) {
 					SwarmingHost:            "host",
 					CustomMetricDefinitions: []*pb.CustomMetricDefinition{cm1, cm2, cm3, cm4},
 				},
-			}), ShouldBeNil)
+			}), should.BeNil)
 			reqs := []*pb.ScheduleBuildRequest{
 				{
 					TemplateBuildId: 1000,
@@ -6662,9 +6663,9 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 			rsp, merr := srv.scheduleBuilds(ctx, globalCfg, reqs)
-			So(merr, ShouldBeNil)
-			So(rsp, ShouldHaveLength, 1)
-			So(rsp[0], ShouldResembleProto, &pb.Build{
+			assert.Loosely(t, merr, should.BeEmpty)
+			assert.Loosely(t, rsp, should.HaveLength(1))
+			assert.Loosely(t, rsp[0], should.Resemble(&pb.Build{
 				Builder: &pb.BuilderID{
 					Project: "project",
 					Bucket:  "bucket",
@@ -6677,32 +6678,32 @@ func TestScheduleBuild(t *testing.T) {
 				Input:      &pb.Build_Input{},
 				Number:     1,
 				Status:     pb.Status_SCHEDULED,
-			})
-			So(sch.Tasks(), ShouldHaveLength, 3)
+			}))
+			assert.Loosely(t, sch.Tasks(), should.HaveLength(3))
 
 			ind, err := model.SearchTagIndex(ctx, "buildset", "buildset")
-			So(err, ShouldBeNil)
-			So(ind, ShouldResemble, []*model.TagIndexEntry{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ind, should.Resemble([]*model.TagIndexEntry{
 				{
 					BuildID:     9021868963221667745,
 					BucketID:    "project/bucket",
 					CreatedTime: datastore.RoundTime(testclock.TestRecentTimeUTC),
 				},
-			})
+			}))
 			bld := &model.Build{ID: 9021868963221667745}
-			So(datastore.Get(ctx, bld), ShouldBeNil)
-			So(len(bld.CustomMetrics), ShouldEqual, 3)
-			So(bld.CustomMetrics[0].Base, ShouldEqual, pb.CustomMetricBase_CUSTOM_METRIC_BASE_CREATED)
-			So(bld.CustomMetrics[0].Metric, ShouldResembleProto, cm1)
-			So(bld.CustomMetrics[1].Base, ShouldEqual, pb.CustomMetricBase_CUSTOM_METRIC_BASE_COMPLETED)
-			So(bld.CustomMetrics[1].Metric, ShouldResembleProto, cm2)
-			So(bld.CustomMetrics[2].Base, ShouldEqual, pb.CustomMetricBase_CUSTOM_METRIC_BASE_MAX_AGE_SCHEDULED)
-			So(bld.CustomMetrics[2].Metric, ShouldResembleProto, cm4)
-			So(bld.CustomBuilderMaxAgeMetrics, ShouldResemble, []string{"chrome/infra/custom/builds/max_age"})
+			assert.Loosely(t, datastore.Get(ctx, bld), should.BeNil)
+			assert.Loosely(t, len(bld.CustomMetrics), should.Equal(3))
+			assert.Loosely(t, bld.CustomMetrics[0].Base, should.Equal(pb.CustomMetricBase_CUSTOM_METRIC_BASE_CREATED))
+			assert.Loosely(t, bld.CustomMetrics[0].Metric, should.Resemble(cm1))
+			assert.Loosely(t, bld.CustomMetrics[1].Base, should.Equal(pb.CustomMetricBase_CUSTOM_METRIC_BASE_COMPLETED))
+			assert.Loosely(t, bld.CustomMetrics[1].Metric, should.Resemble(cm2))
+			assert.Loosely(t, bld.CustomMetrics[2].Base, should.Equal(pb.CustomMetricBase_CUSTOM_METRIC_BASE_MAX_AGE_SCHEDULED))
+			assert.Loosely(t, bld.CustomMetrics[2].Metric, should.Resemble(cm4))
+			assert.Loosely(t, bld.CustomBuilderMaxAgeMetrics, should.Resemble([]string{"chrome/infra/custom/builds/max_age"}))
 		})
 
-		Convey("many", func() {
-			Convey("one of TemplateBuildId builds not found", func() {
+		t.Run("many", func(t *ftt.Test) {
+			t.Run("one of TemplateBuildId builds not found", func(t *ftt.Test) {
 				reqs := []*pb.ScheduleBuildRequest{
 					{
 						TemplateBuildId: 1000,
@@ -6734,11 +6735,11 @@ func TestScheduleBuild(t *testing.T) {
 				}
 
 				rsp, err := srv.scheduleBuilds(ctx, globalCfg, reqs)
-				So(err, ShouldNotBeNil)
-				So(err[0], ShouldBeNil)
-				So(err[1], ShouldErrLike, `requested resource not found or "user:caller@example.com" does not have permission to view it`)
-				So(err[2], ShouldBeNil)
-				So(rsp, ShouldResembleProto, []*pb.Build{
+				assert.Loosely(t, err, should.NotBeNil)
+				assert.Loosely(t, err[0], should.BeNil)
+				assert.Loosely(t, err[1], should.ErrLike(`requested resource not found or "user:caller@example.com" does not have permission to view it`))
+				assert.Loosely(t, err[2], should.BeNil)
+				assert.Loosely(t, rsp, should.Resemble([]*pb.Build{
 					{
 						Id:         9021868963222163313,
 						Builder:    &pb.BuilderID{Project: "project", Bucket: "bucket", Builder: "builder"},
@@ -6760,11 +6761,11 @@ func TestScheduleBuild(t *testing.T) {
 						UpdateTime: timestamppb.New(testclock.TestRecentTimeUTC),
 						Input:      &pb.Build_Input{},
 					},
-				})
+				}))
 			})
 
-			Convey("one of builds missing builderCfg", func() {
-				So(datastore.Put(ctx, &model.Build{
+			t.Run("one of builds missing builderCfg", func(t *ftt.Test) {
+				assert.Loosely(t, datastore.Put(ctx, &model.Build{
 					ID: 1010,
 					Proto: &pb.Build{
 						Id: 1010,
@@ -6774,7 +6775,7 @@ func TestScheduleBuild(t *testing.T) {
 							Builder: "miss_builder_cfg",
 						},
 					},
-				}), ShouldBeNil)
+				}), should.BeNil)
 
 				reqs := []*pb.ScheduleBuildRequest{
 					{
@@ -6801,11 +6802,11 @@ func TestScheduleBuild(t *testing.T) {
 				}
 
 				rsp, err := srv.scheduleBuilds(ctx, globalCfg, reqs)
-				So(err, ShouldNotBeNil)
-				So(err[0], ShouldBeNil)
-				So(err[1], ShouldErrLike, `builder not found: "miss_builder_cfg"`)
-				So(err[2], ShouldBeNil)
-				So(rsp, ShouldResembleProto, []*pb.Build{
+				assert.Loosely(t, err, should.NotBeNil)
+				assert.Loosely(t, err[0], should.BeNil)
+				assert.Loosely(t, err[1], should.ErrLike(`builder not found: "miss_builder_cfg"`))
+				assert.Loosely(t, err[2], should.BeNil)
+				assert.Loosely(t, rsp, should.Resemble([]*pb.Build{
 					{
 						Id:         9021868963222163313,
 						Builder:    &pb.BuilderID{Project: "project", Bucket: "bucket", Builder: "builder"},
@@ -6827,12 +6828,12 @@ func TestScheduleBuild(t *testing.T) {
 						UpdateTime: timestamppb.New(testclock.TestRecentTimeUTC),
 						Input:      &pb.Build_Input{},
 					},
-				})
+				}))
 
 			})
 
-			Convey("one of builds failed in `createBuilds` part", func() {
-				So(datastore.Put(ctx, &model.Build{
+			t.Run("one of builds failed in `createBuilds` part", func(t *ftt.Test) {
+				assert.Loosely(t, datastore.Put(ctx, &model.Build{
 					ID: 1011,
 					Proto: &pb.Build{
 						Id: 1011,
@@ -6842,9 +6843,9 @@ func TestScheduleBuild(t *testing.T) {
 							Builder: "builder_with_rdb",
 						},
 					},
-				}), ShouldBeNil)
+				}), should.BeNil)
 				bqExports := []*rdbPb.BigQueryExport{}
-				So(datastore.Put(ctx, &model.Builder{
+				assert.Loosely(t, datastore.Put(ctx, &model.Builder{
 					Parent: model.BucketKey(ctx, "project", "bucket"),
 					ID:     "builder_with_rdb",
 					Config: &pb.BuilderConfig{
@@ -6856,7 +6857,7 @@ func TestScheduleBuild(t *testing.T) {
 							BqExports: bqExports,
 						},
 					},
-				}), ShouldBeNil)
+				}), should.BeNil)
 
 				ctl := gomock.NewController(t)
 				defer ctl.Finish()
@@ -6908,11 +6909,11 @@ func TestScheduleBuild(t *testing.T) {
 				}
 
 				rsp, err := srv.scheduleBuilds(ctx, globalCfg, reqs)
-				So(err, ShouldNotBeNil)
-				So(err[0], ShouldBeNil)
-				So(err[1], ShouldErrLike, "failed to create the invocation for build id: 9021868963221610321: rpc error: code = Internal desc = internal error")
-				So(err[2], ShouldBeNil)
-				So(rsp, ShouldResembleProto, []*pb.Build{
+				assert.Loosely(t, err, should.NotBeNil)
+				assert.Loosely(t, err[0], should.BeNil)
+				assert.Loosely(t, err[1], should.ErrLike("failed to create the invocation for build id: 9021868963221610321: rpc error: code = Internal desc = internal error"))
+				assert.Loosely(t, err[2], should.BeNil)
+				assert.Loosely(t, rsp, should.Resemble([]*pb.Build{
 					{
 						Id:         9021868963221610337,
 						Builder:    &pb.BuilderID{Project: "project", Bucket: "bucket", Builder: "builder"},
@@ -6934,10 +6935,10 @@ func TestScheduleBuild(t *testing.T) {
 						UpdateTime: timestamppb.New(testclock.TestRecentTimeUTC),
 						Input:      &pb.Build_Input{},
 					},
-				})
+				}))
 			})
 
-			Convey("ok", func() {
+			t.Run("ok", func(t *ftt.Test) {
 				reqs := []*pb.ScheduleBuildRequest{
 					{
 						TemplateBuildId: 1000,
@@ -6969,9 +6970,9 @@ func TestScheduleBuild(t *testing.T) {
 				}
 
 				rsp, merr := srv.scheduleBuilds(ctx, globalCfg, reqs)
-				So(merr, ShouldBeNil)
-				So(rsp, ShouldHaveLength, 3)
-				So(rsp[0], ShouldResembleProto, &pb.Build{
+				assert.Loosely(t, merr, should.BeEmpty)
+				assert.Loosely(t, rsp, should.HaveLength(3))
+				assert.Loosely(t, rsp[0], should.Resemble(&pb.Build{
 					Builder: &pb.BuilderID{
 						Project: "project",
 						Bucket:  "bucket",
@@ -6984,8 +6985,8 @@ func TestScheduleBuild(t *testing.T) {
 					Input:      &pb.Build_Input{},
 					Number:     1,
 					Status:     pb.Status_SCHEDULED,
-				})
-				So(rsp[1], ShouldResembleProto, &pb.Build{
+				}))
+				assert.Loosely(t, rsp[1], should.Resemble(&pb.Build{
 					Builder: &pb.BuilderID{
 						Project: "project",
 						Bucket:  "bucket",
@@ -6998,8 +6999,8 @@ func TestScheduleBuild(t *testing.T) {
 					Input:      &pb.Build_Input{},
 					Number:     2,
 					Status:     pb.Status_SCHEDULED,
-				})
-				So(rsp[2], ShouldResembleProto, &pb.Build{
+				}))
+				assert.Loosely(t, rsp[2], should.Resemble(&pb.Build{
 					Builder: &pb.BuilderID{
 						Project: "project",
 						Bucket:  "bucket",
@@ -7012,8 +7013,8 @@ func TestScheduleBuild(t *testing.T) {
 					Input:      &pb.Build_Input{},
 					Number:     1,
 					Status:     pb.Status_SCHEDULED,
-				})
-				So(sch.Tasks(), ShouldHaveLength, 9)
+				}))
+				assert.Loosely(t, sch.Tasks(), should.HaveLength(9))
 				sum := 0
 				for _, task := range sch.Tasks() {
 					switch task.Payload.(type) {
@@ -7029,11 +7030,11 @@ func TestScheduleBuild(t *testing.T) {
 						panic("invalid task payload")
 					}
 				}
-				So(sum, ShouldEqual, 29)
+				assert.Loosely(t, sum, should.Equal(29))
 
 				ind, err := model.SearchTagIndex(ctx, "buildset", "buildset")
-				So(err, ShouldBeNil)
-				So(ind, ShouldResemble, []*model.TagIndexEntry{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, ind, should.Resemble([]*model.TagIndexEntry{
 					{
 						BuildID:     9021868963221610337,
 						BucketID:    "project/bucket",
@@ -7049,14 +7050,14 @@ func TestScheduleBuild(t *testing.T) {
 						BucketID:    "project/bucket",
 						CreatedTime: datastore.RoundTime(testclock.TestRecentTimeUTC),
 					},
-				})
+				}))
 			})
 		})
 
-		Convey("schedule in shadow", func() {
+		t.Run("schedule in shadow", func(t *ftt.Test) {
 			testutil.PutBucket(ctx, "project", "bucket", &pb.Bucket{Swarming: &pb.Swarming{}, Shadow: "bucket.shadow"})
 			testutil.PutBucket(ctx, "project", "bucket.shadow", &pb.Bucket{DynamicBuilderTemplate: &pb.Bucket_DynamicBuilderTemplate{}})
-			So(datastore.Put(ctx, &model.Builder{
+			assert.Loosely(t, datastore.Put(ctx, &model.Builder{
 				Parent: model.BucketKey(ctx, "project", "bucket"),
 				ID:     "builder",
 				Config: &pb.BuilderConfig{
@@ -7074,8 +7075,8 @@ func TestScheduleBuild(t *testing.T) {
 						},
 					},
 				},
-			}), ShouldBeNil)
-			Convey("no permission", func() {
+			}), should.BeNil)
+			t.Run("no permission", func(t *ftt.Test) {
 				ctx = auth.WithState(ctx, &authtest.FakeState{
 					Identity: userID,
 					FakeDB: authtest.NewFakeDB(
@@ -7095,10 +7096,10 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 				_, err := srv.scheduleBuilds(ctx, globalCfg, reqs)
-				So(err, ShouldErrLike, `does not have permission "buildbucket.builds.add"`)
+				assert.Loosely(t, err, should.ErrLike(`does not have permission "buildbucket.builds.add"`))
 			})
 
-			Convey("one shadow, one original, and one with no shadow bucket", func() {
+			t.Run("one shadow, one original, and one with no shadow bucket", func(t *ftt.Test) {
 				ctx = auth.WithState(ctx, &authtest.FakeState{
 					Identity: userID,
 					FakeDB: authtest.NewFakeDB(
@@ -7134,31 +7135,31 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 				blds, err := srv.scheduleBuilds(ctx, globalCfg, reqs)
-				So(err, ShouldNotBeNil)
-				So(err, ShouldErrLike, "scheduling a shadow build in the original bucket is not allowed")
-				So(len(blds), ShouldEqual, 3)
-				So(blds[2], ShouldBeNil)
+				assert.Loosely(t, err, should.NotBeNil)
+				assert.Loosely(t, err, should.ErrLike("scheduling a shadow build in the original bucket is not allowed"))
+				assert.Loosely(t, len(blds), should.Equal(3))
+				assert.Loosely(t, blds[2], should.BeNil)
 			})
 		})
 
 	})
 
-	Convey("structContains", t, func() {
-		Convey("nil", func() {
-			So(structContains(nil, nil), ShouldBeTrue)
+	ftt.Run("structContains", t, func(t *ftt.Test) {
+		t.Run("nil", func(t *ftt.Test) {
+			assert.Loosely(t, structContains(nil, nil), should.BeTrue)
 		})
 
-		Convey("nil struct", func() {
+		t.Run("nil struct", func(t *ftt.Test) {
 			path := []string{"path"}
-			So(structContains(nil, path), ShouldBeFalse)
+			assert.Loosely(t, structContains(nil, path), should.BeFalse)
 		})
 
-		Convey("nil path", func() {
+		t.Run("nil path", func(t *ftt.Test) {
 			s := &structpb.Struct{}
-			So(structContains(s, nil), ShouldBeTrue)
+			assert.Loosely(t, structContains(s, nil), should.BeTrue)
 		})
 
-		Convey("one component", func() {
+		t.Run("one component", func(t *ftt.Test) {
 			s := &structpb.Struct{
 				Fields: map[string]*structpb.Value{
 					"key": {
@@ -7169,10 +7170,10 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 			path := []string{"key"}
-			So(structContains(s, path), ShouldBeTrue)
+			assert.Loosely(t, structContains(s, path), should.BeTrue)
 		})
 
-		Convey("many components", func() {
+		t.Run("many components", func(t *ftt.Test) {
 			s := &structpb.Struct{
 				Fields: map[string]*structpb.Value{
 					"key1": {
@@ -7199,10 +7200,10 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 			path := []string{"key1", "key2", "key3"}
-			So(structContains(s, path), ShouldBeTrue)
+			assert.Loosely(t, structContains(s, path), should.BeTrue)
 		})
 
-		Convey("excess component", func() {
+		t.Run("excess component", func(t *ftt.Test) {
 			s := &structpb.Struct{
 				Fields: map[string]*structpb.Value{
 					"key1": {
@@ -7221,44 +7222,44 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 			path := []string{"key1"}
-			So(structContains(s, path), ShouldBeTrue)
+			assert.Loosely(t, structContains(s, path), should.BeTrue)
 		})
 	})
 
-	Convey("validateSchedule", t, func() {
+	ftt.Run("validateSchedule", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		ctx = installTestSecret(ctx)
 
-		Convey("nil", func() {
+		t.Run("nil", func(t *ftt.Test) {
 			err := validateSchedule(ctx, nil, nil, nil)
-			So(err, ShouldErrLike, "builder or template_build_id is required")
+			assert.Loosely(t, err, should.ErrLike("builder or template_build_id is required"))
 		})
 
-		Convey("empty", func() {
+		t.Run("empty", func(t *ftt.Test) {
 			req := &pb.ScheduleBuildRequest{}
 			err := validateSchedule(ctx, req, nil, nil)
-			So(err, ShouldErrLike, "builder or template_build_id is required")
+			assert.Loosely(t, err, should.ErrLike("builder or template_build_id is required"))
 		})
 
-		Convey("request ID", func() {
+		t.Run("request ID", func(t *ftt.Test) {
 			req := &pb.ScheduleBuildRequest{
 				RequestId:       "request/id",
 				TemplateBuildId: 1,
 			}
 			err := validateSchedule(ctx, req, nil, nil)
-			So(err, ShouldErrLike, "request_id cannot contain")
+			assert.Loosely(t, err, should.ErrLike("request_id cannot contain"))
 		})
 
-		Convey("builder ID", func() {
+		t.Run("builder ID", func(t *ftt.Test) {
 			req := &pb.ScheduleBuildRequest{
 				Builder: &pb.BuilderID{},
 			}
 			err := validateSchedule(ctx, req, nil, nil)
-			So(err, ShouldErrLike, "project must match")
+			assert.Loosely(t, err, should.ErrLike("project must match"))
 		})
 
-		Convey("dimensions", func() {
-			Convey("empty", func() {
+		t.Run("dimensions", func(t *ftt.Test) {
+			t.Run("empty", func(t *ftt.Test) {
 				req := &pb.ScheduleBuildRequest{
 					Dimensions: []*pb.RequestedDimension{
 						{},
@@ -7266,11 +7267,11 @@ func TestScheduleBuild(t *testing.T) {
 					TemplateBuildId: 1,
 				}
 				err := validateSchedule(ctx, req, nil, nil)
-				So(err, ShouldErrLike, "dimensions")
+				assert.Loosely(t, err, should.ErrLike("dimensions"))
 			})
 
-			Convey("expiration", func() {
-				Convey("empty", func() {
+			t.Run("expiration", func(t *ftt.Test) {
+				t.Run("empty", func(t *ftt.Test) {
 					req := &pb.ScheduleBuildRequest{
 						Dimensions: []*pb.RequestedDimension{
 							{
@@ -7282,10 +7283,10 @@ func TestScheduleBuild(t *testing.T) {
 						TemplateBuildId: 1,
 					}
 					err := validateSchedule(ctx, req, nil, nil)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 				})
 
-				Convey("nanos", func() {
+				t.Run("nanos", func(t *ftt.Test) {
 					req := &pb.ScheduleBuildRequest{
 						Dimensions: []*pb.RequestedDimension{
 							{
@@ -7299,11 +7300,11 @@ func TestScheduleBuild(t *testing.T) {
 						TemplateBuildId: 1,
 					}
 					err := validateSchedule(ctx, req, nil, nil)
-					So(err, ShouldErrLike, "nanos must not be specified")
+					assert.Loosely(t, err, should.ErrLike("nanos must not be specified"))
 				})
 
-				Convey("seconds", func() {
-					Convey("negative", func() {
+				t.Run("seconds", func(t *ftt.Test) {
+					t.Run("negative", func(t *ftt.Test) {
 						req := &pb.ScheduleBuildRequest{
 							Dimensions: []*pb.RequestedDimension{
 								{
@@ -7317,10 +7318,10 @@ func TestScheduleBuild(t *testing.T) {
 							TemplateBuildId: 1,
 						}
 						err := validateSchedule(ctx, req, nil, nil)
-						So(err, ShouldErrLike, "seconds must not be negative")
+						assert.Loosely(t, err, should.ErrLike("seconds must not be negative"))
 					})
 
-					Convey("whole minute", func() {
+					t.Run("whole minute", func(t *ftt.Test) {
 						req := &pb.ScheduleBuildRequest{
 							Dimensions: []*pb.RequestedDimension{
 								{
@@ -7334,11 +7335,11 @@ func TestScheduleBuild(t *testing.T) {
 							TemplateBuildId: 1,
 						}
 						err := validateSchedule(ctx, req, nil, nil)
-						So(err, ShouldErrLike, "seconds must be a multiple of 60")
+						assert.Loosely(t, err, should.ErrLike("seconds must be a multiple of 60"))
 					})
 				})
 
-				Convey("ok", func() {
+				t.Run("ok", func(t *ftt.Test) {
 					req := &pb.ScheduleBuildRequest{
 						Dimensions: []*pb.RequestedDimension{
 							{
@@ -7352,12 +7353,12 @@ func TestScheduleBuild(t *testing.T) {
 						TemplateBuildId: 1,
 					}
 					err := validateSchedule(ctx, req, nil, nil)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 				})
 			})
 
-			Convey("key", func() {
-				Convey("empty", func() {
+			t.Run("key", func(t *ftt.Test) {
+				t.Run("empty", func(t *ftt.Test) {
 					req := &pb.ScheduleBuildRequest{
 						Dimensions: []*pb.RequestedDimension{
 							{
@@ -7367,10 +7368,10 @@ func TestScheduleBuild(t *testing.T) {
 						TemplateBuildId: 1,
 					}
 					err := validateSchedule(ctx, req, nil, nil)
-					So(err, ShouldErrLike, "key must be specified")
+					assert.Loosely(t, err, should.ErrLike("key must be specified"))
 				})
 
-				Convey("caches", func() {
+				t.Run("caches", func(t *ftt.Test) {
 					req := &pb.ScheduleBuildRequest{
 						Dimensions: []*pb.RequestedDimension{
 							{
@@ -7381,10 +7382,10 @@ func TestScheduleBuild(t *testing.T) {
 						TemplateBuildId: 1,
 					}
 					err := validateSchedule(ctx, req, nil, nil)
-					So(err, ShouldErrLike, "caches may only be specified in builder configs")
+					assert.Loosely(t, err, should.ErrLike("caches may only be specified in builder configs"))
 				})
 
-				Convey("pool", func() {
+				t.Run("pool", func(t *ftt.Test) {
 					req := &pb.ScheduleBuildRequest{
 						Dimensions: []*pb.RequestedDimension{
 							{
@@ -7395,10 +7396,10 @@ func TestScheduleBuild(t *testing.T) {
 						TemplateBuildId: 1,
 					}
 					err := validateSchedule(ctx, req, nil, nil)
-					So(err, ShouldErrLike, "pool may only be specified in builder configs")
+					assert.Loosely(t, err, should.ErrLike("pool may only be specified in builder configs"))
 				})
 
-				Convey("ok", func() {
+				t.Run("ok", func(t *ftt.Test) {
 					req := &pb.ScheduleBuildRequest{
 						Dimensions: []*pb.RequestedDimension{
 							{
@@ -7412,12 +7413,12 @@ func TestScheduleBuild(t *testing.T) {
 						TemplateBuildId: 1,
 					}
 					err := validateSchedule(ctx, req, nil, nil)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 				})
 			})
 
-			Convey("parent", func() {
-				Convey("missing parent", func() {
+			t.Run("parent", func(t *ftt.Test) {
+				t.Run("missing parent", func(t *ftt.Test) {
 					req := &pb.ScheduleBuildRequest{
 						Dimensions: []*pb.RequestedDimension{
 							{
@@ -7429,10 +7430,10 @@ func TestScheduleBuild(t *testing.T) {
 						CanOutliveParent: pb.Trinary_NO,
 					}
 					err := validateSchedule(ctx, req, nil, nil)
-					So(err, ShouldErrLike, "can_outlive_parent is specified without parent build token")
+					assert.Loosely(t, err, should.ErrLike("can_outlive_parent is specified without parent build token"))
 				})
 
-				Convey("schedule no parent build", func() {
+				t.Run("schedule no parent build", func(t *ftt.Test) {
 					req := &pb.ScheduleBuildRequest{
 						Dimensions: []*pb.RequestedDimension{
 							{
@@ -7444,15 +7445,15 @@ func TestScheduleBuild(t *testing.T) {
 						CanOutliveParent: pb.Trinary_UNSET,
 					}
 					err := validateSchedule(ctx, req, nil, nil)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 				})
 
 				tk, err := buildtoken.GenerateToken(ctx, 1, pb.TokenBody_BUILD)
-				So(err, ShouldBeNil)
-				Convey("ended parent", func() {
+				assert.Loosely(t, err, should.BeNil)
+				t.Run("ended parent", func(t *ftt.Test) {
 					testutil.PutBucket(ctx, "project", "bucket", nil)
 
-					So(datastore.Put(ctx, &model.Build{
+					assert.Loosely(t, datastore.Put(ctx, &model.Build{
 						Proto: &pb.Build{
 							Id: 1,
 							Builder: &pb.BuilderID{
@@ -7463,16 +7464,16 @@ func TestScheduleBuild(t *testing.T) {
 							Status: pb.Status_SUCCESS,
 						},
 						UpdateToken: tk,
-					}), ShouldBeNil)
+					}), should.BeNil)
 
 					ctx := metadata.NewIncomingContext(ctx, metadata.Pairs(bb.BuildbucketTokenHeader, tk))
 					_, err := validateParent(ctx)
-					So(err, ShouldErrLike, "1 has ended, cannot add child to it")
+					assert.Loosely(t, err, should.ErrLike("1 has ended, cannot add child to it"))
 				})
 
-				Convey("OK", func() {
+				t.Run("OK", func(t *ftt.Test) {
 					testutil.PutBucket(ctx, "project", "bucket", nil)
-					So(datastore.Put(ctx, &model.Build{
+					assert.Loosely(t, datastore.Put(ctx, &model.Build{
 						Proto: &pb.Build{
 							Id: 1,
 							Builder: &pb.BuilderID{
@@ -7483,16 +7484,16 @@ func TestScheduleBuild(t *testing.T) {
 							Status: pb.Status_STARTED,
 						},
 						UpdateToken: tk,
-					}), ShouldBeNil)
+					}), should.BeNil)
 
 					ctx := metadata.NewIncomingContext(ctx, metadata.Pairs(bb.BuildbucketTokenHeader, tk))
 					b, err := validateParent(ctx)
-					So(err, ShouldBeNil)
-					So(b.Proto.Id, ShouldEqual, 1)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, b.Proto.Id, should.Equal(1))
 				})
 			})
 
-			Convey("ok", func() {
+			t.Run("ok", func(t *ftt.Test) {
 				req := &pb.ScheduleBuildRequest{
 					Dimensions: []*pb.RequestedDimension{
 						{
@@ -7503,10 +7504,10 @@ func TestScheduleBuild(t *testing.T) {
 					TemplateBuildId: 1,
 				}
 				err := validateSchedule(ctx, req, nil, nil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 
-			Convey("empty value & non-value", func() {
+			t.Run("empty value & non-value", func(t *ftt.Test) {
 				req := &pb.ScheduleBuildRequest{
 					Dimensions: []*pb.RequestedDimension{
 						{
@@ -7520,21 +7521,21 @@ func TestScheduleBuild(t *testing.T) {
 					TemplateBuildId: 1,
 				}
 				err := validateSchedule(ctx, req, nil, nil)
-				So(err, ShouldErrLike, `dimensions: contain both empty and non-empty value for the same key - "req_key"`)
+				assert.Loosely(t, err, should.ErrLike(`dimensions: contain both empty and non-empty value for the same key - "req_key"`))
 			})
 		})
 
-		Convey("exe", func() {
-			Convey("empty", func() {
+		t.Run("exe", func(t *ftt.Test) {
+			t.Run("empty", func(t *ftt.Test) {
 				req := &pb.ScheduleBuildRequest{
 					Exe:             &pb.Executable{},
 					TemplateBuildId: 1,
 				}
 				err := validateSchedule(ctx, req, nil, nil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 
-			Convey("package", func() {
+			t.Run("package", func(t *ftt.Test) {
 				req := &pb.ScheduleBuildRequest{
 					Exe: &pb.Executable{
 						CipdPackage: "package",
@@ -7542,11 +7543,11 @@ func TestScheduleBuild(t *testing.T) {
 					TemplateBuildId: 1,
 				}
 				err := validateSchedule(ctx, req, nil, nil)
-				So(err, ShouldErrLike, "cipd_package must not be specified")
+				assert.Loosely(t, err, should.ErrLike("cipd_package must not be specified"))
 			})
 
-			Convey("version", func() {
-				Convey("invalid", func() {
+			t.Run("version", func(t *ftt.Test) {
+				t.Run("invalid", func(t *ftt.Test) {
 					req := &pb.ScheduleBuildRequest{
 						Exe: &pb.Executable{
 							CipdVersion: "invalid!",
@@ -7554,10 +7555,10 @@ func TestScheduleBuild(t *testing.T) {
 						TemplateBuildId: 1,
 					}
 					err := validateSchedule(ctx, req, nil, nil)
-					So(err, ShouldErrLike, "cipd_version")
+					assert.Loosely(t, err, should.ErrLike("cipd_version"))
 				})
 
-				Convey("valid", func() {
+				t.Run("valid", func(t *ftt.Test) {
 					req := &pb.ScheduleBuildRequest{
 						Exe: &pb.Executable{
 							CipdVersion: "valid",
@@ -7565,22 +7566,22 @@ func TestScheduleBuild(t *testing.T) {
 						TemplateBuildId: 1,
 					}
 					err := validateSchedule(ctx, req, nil, nil)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 				})
 			})
 		})
 
-		Convey("gerrit changes", func() {
-			Convey("empty", func() {
+		t.Run("gerrit changes", func(t *ftt.Test) {
+			t.Run("empty", func(t *ftt.Test) {
 				req := &pb.ScheduleBuildRequest{
 					GerritChanges:   []*pb.GerritChange{},
 					TemplateBuildId: 1,
 				}
 				err := validateSchedule(ctx, req, nil, nil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 
-			Convey("unspecified", func() {
+			t.Run("unspecified", func(t *ftt.Test) {
 				req := &pb.ScheduleBuildRequest{
 					GerritChanges: []*pb.GerritChange{
 						{},
@@ -7588,10 +7589,10 @@ func TestScheduleBuild(t *testing.T) {
 					TemplateBuildId: 1,
 				}
 				err := validateSchedule(ctx, req, nil, nil)
-				So(err, ShouldErrLike, "gerrit_changes")
+				assert.Loosely(t, err, should.ErrLike("gerrit_changes"))
 			})
 
-			Convey("change", func() {
+			t.Run("change", func(t *ftt.Test) {
 				req := &pb.ScheduleBuildRequest{
 					GerritChanges: []*pb.GerritChange{
 						{
@@ -7603,11 +7604,11 @@ func TestScheduleBuild(t *testing.T) {
 					TemplateBuildId: 1,
 				}
 				err := validateSchedule(ctx, req, nil, nil)
-				So(err, ShouldErrLike, "change must be specified")
+				assert.Loosely(t, err, should.ErrLike("change must be specified"))
 			})
 
-			Convey("host", func() {
-				Convey("not specified", func() {
+			t.Run("host", func(t *ftt.Test) {
+				t.Run("not specified", func(t *ftt.Test) {
 					req := &pb.ScheduleBuildRequest{
 						GerritChanges: []*pb.GerritChange{
 							{
@@ -7619,9 +7620,9 @@ func TestScheduleBuild(t *testing.T) {
 						TemplateBuildId: 1,
 					}
 					err := validateSchedule(ctx, req, nil, nil)
-					So(err, ShouldErrLike, "host must be specified")
+					assert.Loosely(t, err, should.ErrLike("host must be specified"))
 				})
-				Convey("invalid", func() {
+				t.Run("invalid", func(t *ftt.Test) {
 					req := &pb.ScheduleBuildRequest{
 						GerritChanges: []*pb.GerritChange{
 							{
@@ -7634,9 +7635,9 @@ func TestScheduleBuild(t *testing.T) {
 						TemplateBuildId: 1,
 					}
 					err := validateSchedule(ctx, req, nil, nil)
-					So(err, ShouldErrLike, "host does not match pattern")
+					assert.Loosely(t, err, should.ErrLike("host does not match pattern"))
 				})
-				Convey("too long", func() {
+				t.Run("too long", func(t *ftt.Test) {
 					req := &pb.ScheduleBuildRequest{
 						GerritChanges: []*pb.GerritChange{
 							{
@@ -7649,11 +7650,11 @@ func TestScheduleBuild(t *testing.T) {
 						TemplateBuildId: 1,
 					}
 					err := validateSchedule(ctx, req, nil, nil)
-					So(err, ShouldErrLike, "host must not exceed 255 characters")
+					assert.Loosely(t, err, should.ErrLike("host must not exceed 255 characters"))
 				})
 			})
 
-			Convey("patchset", func() {
+			t.Run("patchset", func(t *ftt.Test) {
 				req := &pb.ScheduleBuildRequest{
 					GerritChanges: []*pb.GerritChange{
 						{
@@ -7665,10 +7666,10 @@ func TestScheduleBuild(t *testing.T) {
 					TemplateBuildId: 1,
 				}
 				err := validateSchedule(ctx, req, nil, nil)
-				So(err, ShouldErrLike, "patchset must be specified")
+				assert.Loosely(t, err, should.ErrLike("patchset must be specified"))
 			})
 
-			Convey("project", func() {
+			t.Run("project", func(t *ftt.Test) {
 				req := &pb.ScheduleBuildRequest{
 					GerritChanges: []*pb.GerritChange{
 						{
@@ -7680,10 +7681,10 @@ func TestScheduleBuild(t *testing.T) {
 					TemplateBuildId: 1,
 				}
 				err := validateSchedule(ctx, req, nil, nil)
-				So(err, ShouldErrLike, "project must be specified")
+				assert.Loosely(t, err, should.ErrLike("project must be specified"))
 			})
 
-			Convey("ok", func() {
+			t.Run("ok", func(t *ftt.Test) {
 				req := &pb.ScheduleBuildRequest{
 					GerritChanges: []*pb.GerritChange{
 						{
@@ -7696,11 +7697,11 @@ func TestScheduleBuild(t *testing.T) {
 					TemplateBuildId: 1,
 				}
 				err := validateSchedule(ctx, req, nil, nil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 		})
 
-		Convey("gitiles commit", func() {
+		t.Run("gitiles commit", func(t *ftt.Test) {
 			req := &pb.ScheduleBuildRequest{
 				GitilesCommit: &pb.GitilesCommit{
 					Host: "example.com",
@@ -7708,32 +7709,32 @@ func TestScheduleBuild(t *testing.T) {
 				TemplateBuildId: 1,
 			}
 			err := validateSchedule(ctx, req, nil, nil)
-			So(err, ShouldErrLike, "gitiles_commit")
+			assert.Loosely(t, err, should.ErrLike("gitiles_commit"))
 		})
 
-		Convey("notify", func() {
+		t.Run("notify", func(t *ftt.Test) {
 			ctx, psserver, psclient, err := clients.SetupTestPubsub(ctx, "project")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			defer func() {
 				psclient.Close()
 				psserver.Close()
 			}()
 			tpc, err := psclient.CreateTopic(ctx, "topic")
 			tpc.IAM()
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			ctx = cachingtest.WithGlobalCache(ctx, map[string]caching.BlobCache{
 				"has_perm_on_pubsub_callback_topic": cachingtest.NewBlobCache(),
 			})
-			Convey("empty", func() {
+			t.Run("empty", func(t *ftt.Test) {
 				req := &pb.ScheduleBuildRequest{
 					Notify:          &pb.NotificationConfig{},
 					TemplateBuildId: 1,
 				}
 				err := validateSchedule(ctx, req, nil, nil)
-				So(err, ShouldErrLike, "notify")
+				assert.Loosely(t, err, should.ErrLike("notify"))
 			})
 
-			Convey("pubsub topic", func() {
+			t.Run("pubsub topic", func(t *ftt.Test) {
 				req := &pb.ScheduleBuildRequest{
 					Notify: &pb.NotificationConfig{
 						UserData: []byte("user data"),
@@ -7741,10 +7742,10 @@ func TestScheduleBuild(t *testing.T) {
 					TemplateBuildId: 1,
 				}
 				err := validateSchedule(ctx, req, nil, nil)
-				So(err, ShouldErrLike, "pubsub_topic")
+				assert.Loosely(t, err, should.ErrLike("pubsub_topic"))
 			})
 
-			Convey("user data", func() {
+			t.Run("user data", func(t *ftt.Test) {
 				req := &pb.ScheduleBuildRequest{
 					Notify: &pb.NotificationConfig{
 						PubsubTopic: "projects/project/topics/topic",
@@ -7753,13 +7754,13 @@ func TestScheduleBuild(t *testing.T) {
 					TemplateBuildId: 1,
 				}
 				err := validateSchedule(ctx, req, nil, nil)
-				So(err, ShouldErrLike, "user_data")
+				assert.Loosely(t, err, should.ErrLike("user_data"))
 			})
 
-			Convey("ok - pubsub topic perm cached", func() {
+			t.Run("ok - pubsub topic perm cached", func(t *ftt.Test) {
 				cache := caching.GlobalCache(ctx, "has_perm_on_pubsub_callback_topic")
 				err := cache.Set(ctx, "projects/project/topics/topic", []byte{1}, 10*time.Hour)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				req := &pb.ScheduleBuildRequest{
 					Notify: &pb.NotificationConfig{
 						PubsubTopic: "projects/project/topics/topic",
@@ -7768,10 +7769,10 @@ func TestScheduleBuild(t *testing.T) {
 					TemplateBuildId: 1,
 				}
 				err = validateSchedule(ctx, req, nil, nil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 
-			Convey("ok - pubsub topic perm not cached", func() {
+			t.Run("ok - pubsub topic perm not cached", func(t *ftt.Test) {
 				req := &pb.ScheduleBuildRequest{
 					Notify: &pb.NotificationConfig{
 						PubsubTopic: "projects/project/topics/topic",
@@ -7784,36 +7785,36 @@ func TestScheduleBuild(t *testing.T) {
 				// IAM policy check. Therefore, only check if our `validateSchedule`
 				// tries to call `topic.IAM().TestPermissions()` and get the expected
 				// `Unimplemented` err msg.
-				So(err, ShouldErrLike, "Unimplemented desc = unknown service google.iam.v1.IAMPolicy")
+				assert.Loosely(t, err, should.ErrLike("Unimplemented desc = unknown service google.iam.v1.IAMPolicy"))
 				// The bad result should not be cached.
 				cache := caching.GlobalCache(ctx, "has_perm_on_pubsub_callback_topic")
 				_, err = cache.Get(ctx, "projects/project/topics/topic")
-				So(err, ShouldErrLike, caching.ErrCacheMiss)
+				assert.Loosely(t, err, should.ErrLike(caching.ErrCacheMiss))
 			})
 		})
 
-		Convey("priority", func() {
-			Convey("negative", func() {
+		t.Run("priority", func(t *ftt.Test) {
+			t.Run("negative", func(t *ftt.Test) {
 				req := &pb.ScheduleBuildRequest{
 					Priority:        -1,
 					TemplateBuildId: 1,
 				}
 				err := validateSchedule(ctx, req, nil, nil)
-				So(err, ShouldErrLike, "priority must be in")
+				assert.Loosely(t, err, should.ErrLike("priority must be in"))
 			})
 
-			Convey("excessive", func() {
+			t.Run("excessive", func(t *ftt.Test) {
 				req := &pb.ScheduleBuildRequest{
 					Priority:        256,
 					TemplateBuildId: 1,
 				}
 				err := validateSchedule(ctx, req, nil, nil)
-				So(err, ShouldErrLike, "priority must be in")
+				assert.Loosely(t, err, should.ErrLike("priority must be in"))
 			})
 		})
 
-		Convey("properties", func() {
-			Convey("prohibited", func() {
+		t.Run("properties", func(t *ftt.Test) {
+			t.Run("prohibited", func(t *ftt.Test) {
 				req := &pb.ScheduleBuildRequest{
 					Properties: &structpb.Struct{
 						Fields: map[string]*structpb.Value{
@@ -7825,10 +7826,10 @@ func TestScheduleBuild(t *testing.T) {
 					TemplateBuildId: 1,
 				}
 				err := validateSchedule(ctx, req, nil, nil)
-				So(err, ShouldErrLike, "must not be specified")
+				assert.Loosely(t, err, should.ErrLike("must not be specified"))
 			})
 
-			Convey("ok", func() {
+			t.Run("ok", func(t *ftt.Test) {
 				req := &pb.ScheduleBuildRequest{
 					Properties: &structpb.Struct{
 						Fields: map[string]*structpb.Value{
@@ -7840,11 +7841,11 @@ func TestScheduleBuild(t *testing.T) {
 					TemplateBuildId: 1,
 				}
 				err := validateSchedule(ctx, req, nil, nil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 		})
 
-		Convey("tags", func() {
+		t.Run("tags", func(t *ftt.Test) {
 			req := &pb.ScheduleBuildRequest{
 				Tags: []*pb.StringPair{
 					{
@@ -7854,11 +7855,11 @@ func TestScheduleBuild(t *testing.T) {
 				TemplateBuildId: 1,
 			}
 			err := validateSchedule(ctx, req, nil, nil)
-			So(err, ShouldErrLike, "tags")
+			assert.Loosely(t, err, should.ErrLike("tags"))
 		})
 
-		Convey("experiments", func() {
-			Convey("ok", func() {
+		t.Run("experiments", func(t *ftt.Test) {
+			t.Run("ok", func(t *ftt.Test) {
 				req := &pb.ScheduleBuildRequest{
 					TemplateBuildId: 1,
 					Experiments: map[string]bool{
@@ -7866,33 +7867,33 @@ func TestScheduleBuild(t *testing.T) {
 						"cool.experiment_thing": true,
 					},
 				}
-				So(validateSchedule(ctx, req, stringset.NewFromSlice(bb.ExperimentBBAgent), nil), ShouldBeNil)
+				assert.Loosely(t, validateSchedule(ctx, req, stringset.NewFromSlice(bb.ExperimentBBAgent), nil), should.BeNil)
 			})
 
-			Convey("bad name", func() {
+			t.Run("bad name", func(t *ftt.Test) {
 				req := &pb.ScheduleBuildRequest{
 					TemplateBuildId: 1,
 					Experiments: map[string]bool{
 						"bad name": true,
 					},
 				}
-				So(validateSchedule(ctx, req, nil, nil), ShouldErrLike, "does not match")
+				assert.Loosely(t, validateSchedule(ctx, req, nil, nil), should.ErrLike("does not match"))
 			})
 
-			Convey("bad reserved", func() {
+			t.Run("bad reserved", func(t *ftt.Test) {
 				req := &pb.ScheduleBuildRequest{
 					TemplateBuildId: 1,
 					Experiments: map[string]bool{
 						"luci.use_ralms": true,
 					},
 				}
-				So(validateSchedule(ctx, req, nil, nil), ShouldErrLike, "unknown experiment has reserved prefix")
+				assert.Loosely(t, validateSchedule(ctx, req, nil, nil), should.ErrLike("unknown experiment has reserved prefix"))
 			})
 		})
 	})
 
-	Convey("setInfraAgent", t, func() {
-		Convey("bbagent+userpackages", func() {
+	ftt.Run("setInfraAgent", t, func(t *ftt.Test) {
+		t.Run("bbagent+userpackages", func(t *ftt.Test) {
 			b := &pb.Build{
 				Builder: &pb.BuilderID{
 					Project: "project",
@@ -7974,8 +7975,8 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 			err := setInfraAgent(b, cfg)
-			So(err, ShouldBeNil)
-			So(b.Infra.Buildbucket.Agent, ShouldResembleProto, &pb.BuildInfra_Buildbucket_Agent{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, b.Infra.Buildbucket.Agent, should.Resemble(&pb.BuildInfra_Buildbucket_Agent{
 				Source: &pb.BuildInfra_Buildbucket_Agent_Source{
 					DataType: &pb.BuildInfra_Buildbucket_Agent_Source_Cipd{
 						Cipd: &pb.BuildInfra_Buildbucket_Agent_Source_CIPD{
@@ -8049,10 +8050,10 @@ func TestScheduleBuild(t *testing.T) {
 					Name: "cipd_cache_e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
 					Path: "cipd_cache",
 				},
-			})
+			}))
 		})
 
-		Convey("bad bbagent cfg", func() {
+		t.Run("bad bbagent cfg", func(t *ftt.Test) {
 			b := &pb.Build{
 				Builder: &pb.BuilderID{
 					Project: "project",
@@ -8085,11 +8086,11 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 			err := setInfraAgent(b, cfg)
-			So(err, ShouldErrLike, "bad settings: bbagent package name must end with '/${platform}'")
-			So(b.Infra.Buildbucket.Agent.Source, ShouldBeNil)
+			assert.Loosely(t, err, should.ErrLike("bad settings: bbagent package name must end with '/${platform}'"))
+			assert.Loosely(t, b.Infra.Buildbucket.Agent.Source, should.BeNil)
 		})
 
-		Convey("empty settings", func() {
+		t.Run("empty settings", func(t *ftt.Test) {
 			b := &pb.Build{
 				Builder: &pb.BuilderID{
 					Project: "project",
@@ -8103,12 +8104,12 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 			err := setInfraAgent(b, &pb.SettingsCfg{})
-			So(err, ShouldBeNil)
-			So(b.Infra.Buildbucket.Agent.Source, ShouldBeNil)
-			So(b.Infra.Buildbucket.Agent.Input.Data, ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, b.Infra.Buildbucket.Agent.Source, should.BeNil)
+			assert.Loosely(t, b.Infra.Buildbucket.Agent.Input.Data, should.BeEmpty)
 		})
 
-		Convey("bbagent alternative", func() {
+		t.Run("bbagent alternative", func(t *ftt.Test) {
 			b := &pb.Build{
 				Builder: &pb.BuilderID{
 					Project: "project",
@@ -8125,7 +8126,7 @@ func TestScheduleBuild(t *testing.T) {
 					Experiments: []string{"omit", "include"},
 				},
 			}
-			Convey("cannot decide bbagent", func() {
+			t.Run("cannot decide bbagent", func(t *ftt.Test) {
 				cfg := &pb.SettingsCfg{
 					Swarming: &pb.SwarmingSettings{
 						BbagentPackage: &pb.SwarmingSettings_Package{
@@ -8151,9 +8152,9 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 				err := setInfraAgent(b, cfg)
-				So(err, ShouldErrLike, "cannot decide buildbucket agent source")
+				assert.Loosely(t, err, should.ErrLike("cannot decide buildbucket agent source"))
 			})
-			Convey("pass", func() {
+			t.Run("pass", func(t *ftt.Test) {
 				cfg := &pb.SettingsCfg{
 					Swarming: &pb.SwarmingSettings{
 						BbagentPackage: &pb.SwarmingSettings_Package{
@@ -8178,8 +8179,8 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 				err := setInfraAgent(b, cfg)
-				So(err, ShouldBeNil)
-				So(b.Infra.Buildbucket.Agent, ShouldResembleProto, &pb.BuildInfra_Buildbucket_Agent{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, b.Infra.Buildbucket.Agent, should.Resemble(&pb.BuildInfra_Buildbucket_Agent{
 					Source: &pb.BuildInfra_Buildbucket_Agent_Source{
 						DataType: &pb.BuildInfra_Buildbucket_Agent_Source_Cipd{
 							Cipd: &pb.BuildInfra_Buildbucket_Agent_Source_CIPD{
@@ -8214,11 +8215,11 @@ func TestScheduleBuild(t *testing.T) {
 						Name: "cipd_client_6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b",
 						Path: "cipd_client",
 					},
-				})
+				}))
 			})
 		})
 
-		Convey("bbagent_utilility_packages", func() {
+		t.Run("bbagent_utilility_packages", func(t *ftt.Test) {
 			b := &pb.Build{
 				Builder: &pb.BuilderID{
 					Project: "project",
@@ -8295,8 +8296,8 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 			err := setInfraAgent(b, cfg)
-			So(err, ShouldBeNil)
-			So(b.Infra.Buildbucket.Agent, ShouldResembleProto, &pb.BuildInfra_Buildbucket_Agent{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, b.Infra.Buildbucket.Agent, should.Resemble(&pb.BuildInfra_Buildbucket_Agent{
 				Source: &pb.BuildInfra_Buildbucket_Agent_Source{
 					DataType: &pb.BuildInfra_Buildbucket_Agent_Source_Cipd{
 						Cipd: &pb.BuildInfra_Buildbucket_Agent_Source_CIPD{
@@ -8362,7 +8363,7 @@ func TestScheduleBuild(t *testing.T) {
 					Name: "cipd_cache_e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
 					Path: "cipd_cache",
 				},
-			})
+			}))
 		})
 	})
 }

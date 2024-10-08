@@ -22,6 +22,9 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/target"
 	"go.chromium.org/luci/gae/impl/memory"
@@ -30,14 +33,12 @@ import (
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	modeldefs "go.chromium.org/luci/buildbucket/appengine/model/defs"
 	pb "go.chromium.org/luci/buildbucket/proto"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestReportBuilderMetrics(t *testing.T) {
 	t.Parallel()
 
-	Convey("ReportBuilderMetrics", t, func() {
+	ftt.Run("ReportBuilderMetrics", t, func(t *ftt.Test) {
 		ctx, clock := testclock.UseTime(
 			WithServiceInfo(memory.Use(context.Background()), "svc", "job", "ins"),
 			testclock.TestTimeUTC.Truncate(time.Millisecond),
@@ -77,34 +78,34 @@ func TestReportBuilderMetrics(t *testing.T) {
 			)
 		}
 
-		Convey("report v2.BuilderPresence", func() {
-			So(createBuilder("b1"), ShouldBeNil)
-			So(createBuilder("b2"), ShouldBeNil)
-			So(ReportBuilderMetrics(ctx), ShouldBeNil)
-			So(store.Get(target("b1"), V2.BuilderPresence, time.Time{}, nil), ShouldEqual, true)
-			So(store.Get(target("b2"), V2.BuilderPresence, time.Time{}, nil), ShouldEqual, true)
-			So(store.Get(target("b3"), V2.BuilderPresence, time.Time{}, nil), ShouldBeNil)
+		t.Run("report v2.BuilderPresence", func(t *ftt.Test) {
+			assert.Loosely(t, createBuilder("b1"), should.BeNil)
+			assert.Loosely(t, createBuilder("b2"), should.BeNil)
+			assert.Loosely(t, ReportBuilderMetrics(ctx), should.BeNil)
+			assert.Loosely(t, store.Get(target("b1"), V2.BuilderPresence, time.Time{}, nil), should.Equal(true))
+			assert.Loosely(t, store.Get(target("b2"), V2.BuilderPresence, time.Time{}, nil), should.Equal(true))
+			assert.Loosely(t, store.Get(target("b3"), V2.BuilderPresence, time.Time{}, nil), should.BeNil)
 
-			Convey("w/o removed builder", func() {
-				So(deleteBuilder("b1"), ShouldBeNil)
-				So(ReportBuilderMetrics(ctx), ShouldBeNil)
-				So(store.Get(target("b1"), V2.BuilderPresence, time.Time{}, nil), ShouldBeNil)
-				So(store.Get(target("b2"), V2.BuilderPresence, time.Time{}, nil), ShouldEqual, true)
+			t.Run("w/o removed builder", func(t *ftt.Test) {
+				assert.Loosely(t, deleteBuilder("b1"), should.BeNil)
+				assert.Loosely(t, ReportBuilderMetrics(ctx), should.BeNil)
+				assert.Loosely(t, store.Get(target("b1"), V2.BuilderPresence, time.Time{}, nil), should.BeNil)
+				assert.Loosely(t, store.Get(target("b2"), V2.BuilderPresence, time.Time{}, nil), should.Equal(true))
 			})
 
-			Convey("w/o inactive builder", func() {
+			t.Run("w/o inactive builder", func(t *ftt.Test) {
 				// Let's pretend that b1 was inactive for 4 weeks, and
 				// got unregistered from the BuilderStat.
-				So(datastore.Delete(ctx, &model.BuilderStat{ID: prj + ":" + bkt + ":b1"}), ShouldBeNil)
-				So(ReportBuilderMetrics(ctx), ShouldBeNil)
+				assert.Loosely(t, datastore.Delete(ctx, &model.BuilderStat{ID: prj + ":" + bkt + ":b1"}), should.BeNil)
+				assert.Loosely(t, ReportBuilderMetrics(ctx), should.BeNil)
 				// b1 should no longer be reported in the presence metric.
-				So(store.Get(target("b1"), V2.BuilderPresence, time.Time{}, nil), ShouldBeNil)
-				So(store.Get(target("b2"), V2.BuilderPresence, time.Time{}, nil), ShouldEqual, true)
+				assert.Loosely(t, store.Get(target("b1"), V2.BuilderPresence, time.Time{}, nil), should.BeNil)
+				assert.Loosely(t, store.Get(target("b2"), V2.BuilderPresence, time.Time{}, nil), should.Equal(true))
 			})
 		})
 
-		Convey("report MaxAgeScheduled", func() {
-			So(createBuilder("b1"), ShouldBeNil)
+		t.Run("report MaxAgeScheduled", func(t *ftt.Test) {
+			assert.Loosely(t, createBuilder("b1"), should.BeNil)
 			builderID := &pb.BuilderID{
 				Project: prj,
 				Bucket:  bkt,
@@ -124,48 +125,48 @@ func TestReportBuilderMetrics(t *testing.T) {
 			builds[1].NeverLeased = false
 			now := clock.Now()
 
-			Convey("never_leased_age >= leased_age", func() {
+			t.Run("never_leased_age >= leased_age", func(t *ftt.Test) {
 				builds[0].Proto.CreateTime = timestamppb.New(now.Add(-2 * time.Hour))
 				builds[1].Proto.CreateTime = timestamppb.New(now.Add(-1 * time.Hour))
-				So(datastore.Put(ctx, builds[0], builds[1]), ShouldBeNil)
-				So(ReportBuilderMetrics(ctx), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, builds[0], builds[1]), should.BeNil)
+				assert.Loosely(t, ReportBuilderMetrics(ctx), should.BeNil)
 
 				age := (2 * time.Hour).Seconds()
 
-				Convey("v1", func() {
+				t.Run("v1", func(t *ftt.Test) {
 					// the ages should be the same.
 					fields := []any{bkt, "b1", true}
-					So(store.Get(ctx, V1.MaxAgeScheduled, time.Time{}, fields), ShouldEqual, age)
+					assert.Loosely(t, store.Get(ctx, V1.MaxAgeScheduled, time.Time{}, fields), should.Equal(age))
 					fields = []any{bkt, "b1", false}
-					So(store.Get(ctx, V1.MaxAgeScheduled, time.Time{}, fields), ShouldEqual, age)
+					assert.Loosely(t, store.Get(ctx, V1.MaxAgeScheduled, time.Time{}, fields), should.Equal(age))
 				})
 
-				Convey("v2", func() {
-					So(store.Get(target("b1"), V2.MaxAgeScheduled, time.Time{}, nil), ShouldEqual, age)
+				t.Run("v2", func(t *ftt.Test) {
+					assert.Loosely(t, store.Get(target("b1"), V2.MaxAgeScheduled, time.Time{}, nil), should.Equal(age))
 				})
 			})
 
-			Convey("v1: never_leased_age < leased_age", func() {
+			t.Run("v1: never_leased_age < leased_age", func(t *ftt.Test) {
 				builds[0].Proto.CreateTime = timestamppb.New(now.Add(-1 * time.Hour))
 				builds[1].Proto.CreateTime = timestamppb.New(now.Add(-2 * time.Hour))
-				So(datastore.Put(ctx, builds[0], builds[1]), ShouldBeNil)
-				So(ReportBuilderMetrics(ctx), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, builds[0], builds[1]), should.BeNil)
+				assert.Loosely(t, ReportBuilderMetrics(ctx), should.BeNil)
 
 				age := time.Hour.Seconds()
 
-				Convey("v1", func() {
+				t.Run("v1", func(t *ftt.Test) {
 					// the ages should be different.
 					fields := []any{bkt, "b1", true}
-					So(store.Get(ctx, V1.MaxAgeScheduled, time.Time{}, fields), ShouldEqual, age)
+					assert.Loosely(t, store.Get(ctx, V1.MaxAgeScheduled, time.Time{}, fields), should.Equal(age))
 					fields = []any{bkt, "b1", false}
-					So(store.Get(ctx, V1.MaxAgeScheduled, time.Time{}, fields), ShouldEqual, 2*age)
+					assert.Loosely(t, store.Get(ctx, V1.MaxAgeScheduled, time.Time{}, fields), should.Equal(2*age))
 				})
 
-				Convey("v2", func() {
-					So(store.Get(target("b1"), V2.MaxAgeScheduled, time.Time{}, nil), ShouldEqual, 2*age)
+				t.Run("v2", func(t *ftt.Test) {
+					assert.Loosely(t, store.Get(target("b1"), V2.MaxAgeScheduled, time.Time{}, nil), should.Equal(2*age))
 				})
 
-				Convey("custom", func() {
+				t.Run("custom", func(t *ftt.Test) {
 					base := pb.CustomMetricBase_CUSTOM_METRIC_BASE_MAX_AGE_SCHEDULED
 					name := "chrome/infra/custom/builds/max_age"
 
@@ -182,11 +183,11 @@ func TestReportBuilderMetrics(t *testing.T) {
 					ctx = WithBuilder(ctx, prj, bkt, "b1")
 					ctx, _ = WithCustomMetrics(ctx, globalCfg)
 
-					Convey("builder no custom metric", func() {
-						So(ReportBuilderMetrics(ctx), ShouldBeNil)
+					t.Run("builder no custom metric", func(t *ftt.Test) {
+						assert.Loosely(t, ReportBuilderMetrics(ctx), should.BeNil)
 						res, err := GetCustomMetricsData(ctx, base, name, time.Time{}, nil)
-						So(err, ShouldBeNil)
-						So(res, ShouldBeNil)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, res, should.BeNil)
 					})
 
 					bldr := &model.Builder{
@@ -200,7 +201,7 @@ func TestReportBuilderMetrics(t *testing.T) {
 							},
 						},
 					}
-					So(datastore.Put(ctx, bldr), ShouldBeNil)
+					assert.Loosely(t, datastore.Put(ctx, bldr), should.BeNil)
 					bldrMetrics := &model.CustomBuilderMetrics{
 						Key:        model.CustomBuilderMetricsKey(ctx),
 						LastUpdate: testclock.TestRecentTimeUTC,
@@ -219,51 +220,51 @@ func TestReportBuilderMetrics(t *testing.T) {
 							},
 						},
 					}
-					So(datastore.Put(ctx, bldrMetrics), ShouldBeNil)
-					Convey("no build populates the metric", func() {
-						So(ReportBuilderMetrics(ctx), ShouldBeNil)
+					assert.Loosely(t, datastore.Put(ctx, bldrMetrics), should.BeNil)
+					t.Run("no build populates the metric", func(t *ftt.Test) {
+						assert.Loosely(t, ReportBuilderMetrics(ctx), should.BeNil)
 						res, err := GetCustomMetricsData(ctx, base, name, time.Time{}, nil)
-						So(err, ShouldBeNil)
-						So(res, ShouldBeNil)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, res, should.BeNil)
 					})
 
-					Convey("work", func() {
+					t.Run("work", func(t *ftt.Test) {
 						builds[0].CustomBuilderMaxAgeMetrics = []string{name}
-						So(datastore.Put(ctx, builds[0]), ShouldBeNil)
-						So(ReportBuilderMetrics(ctx), ShouldBeNil)
+						assert.Loosely(t, datastore.Put(ctx, builds[0]), should.BeNil)
+						assert.Loosely(t, ReportBuilderMetrics(ctx), should.BeNil)
 
 						res, err := GetCustomMetricsData(ctx, base, name, time.Time{}, nil)
-						So(err, ShouldBeNil)
-						So(res, ShouldEqual, age)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, res, should.Equal(age))
 					})
 				})
 			})
 
-			Convey("w/ swarming config in bucket", func() {
-				So(datastore.Put(ctx, &model.Bucket{
+			t.Run("w/ swarming config in bucket", func(t *ftt.Test) {
+				assert.Loosely(t, datastore.Put(ctx, &model.Bucket{
 					Parent: model.ProjectKey(ctx, prj), ID: bkt,
 					Proto: &pb.Bucket{Swarming: &pb.Swarming{}},
-				}), ShouldBeNil)
-				So(datastore.Put(ctx, builds[0], builds[1]), ShouldBeNil)
-				So(ReportBuilderMetrics(ctx), ShouldBeNil)
+				}), should.BeNil)
+				assert.Loosely(t, datastore.Put(ctx, builds[0], builds[1]), should.BeNil)
+				assert.Loosely(t, ReportBuilderMetrics(ctx), should.BeNil)
 
-				Convey("v1", func() {
+				t.Run("v1", func(t *ftt.Test) {
 					// Data should have been reported with "luci.$project.$bucket"
 					fields := []any{bkt, "b1", true}
-					So(store.Get(ctx, V1.MaxAgeScheduled, time.Time{}, fields), ShouldBeNil)
+					assert.Loosely(t, store.Get(ctx, V1.MaxAgeScheduled, time.Time{}, fields), should.BeNil)
 					fields = []any{"luci." + prj + "." + bkt, "b1", true}
-					So(store.Get(ctx, V1.MaxAgeScheduled, time.Time{}, fields), ShouldNotBeNil)
+					assert.Loosely(t, store.Get(ctx, V1.MaxAgeScheduled, time.Time{}, fields), should.NotBeNilInterface)
 				})
 
-				Convey("v2", func() {
+				t.Run("v2", func(t *ftt.Test) {
 					// V2 doesn't care. It always reports the bucket name as it is.
-					So(store.Get(target("b1"), V2.MaxAgeScheduled, time.Time{}, nil), ShouldNotBeNil)
+					assert.Loosely(t, store.Get(target("b1"), V2.MaxAgeScheduled, time.Time{}, nil), should.NotBeNilInterface)
 				})
 			})
 		})
 
-		Convey("report ConsecutiveFailures", func() {
-			So(createBuilder("b1"), ShouldBeNil)
+		t.Run("report ConsecutiveFailures", func(t *ftt.Test) {
+			assert.Loosely(t, createBuilder("b1"), should.BeNil)
 			builderID := &pb.BuilderID{
 				Project: prj,
 				Bucket:  bkt,
@@ -282,35 +283,35 @@ func TestReportBuilderMetrics(t *testing.T) {
 			}
 			ts := clock.Now()
 
-			Convey("w/o success", func() {
+			t.Run("w/o success", func(t *ftt.Test) {
 				builds := []*model.Build{
 					B(pb.Status_CANCELED, ts.Add(-4*time.Minute)),
 					B(pb.Status_FAILURE, ts.Add(-3*time.Minute)),
 					B(pb.Status_INFRA_FAILURE, ts.Add(-2*time.Minute)),
 					B(pb.Status_CANCELED, ts.Add(-1*time.Minute)),
 				}
-				So(datastore.Put(ctx, builds), ShouldBeNil)
-				So(ReportBuilderMetrics(ctx), ShouldBeNil)
-				So(count("FAILURE"), ShouldEqual, 1)
-				So(count("INFRA_FAILURE"), ShouldEqual, 1)
-				So(count("CANCELED"), ShouldEqual, 2)
+				assert.Loosely(t, datastore.Put(ctx, builds), should.BeNil)
+				assert.Loosely(t, ReportBuilderMetrics(ctx), should.BeNil)
+				assert.Loosely(t, count("FAILURE"), should.Equal(1))
+				assert.Loosely(t, count("INFRA_FAILURE"), should.Equal(1))
+				assert.Loosely(t, count("CANCELED"), should.Equal(2))
 			})
 
-			Convey("w/ success only", func() {
+			t.Run("w/ success only", func(t *ftt.Test) {
 				builds := []*model.Build{
 					B(pb.Status_SUCCESS, ts.Add(-3*time.Minute)),
 					B(pb.Status_SUCCESS, ts.Add(-2*time.Minute)),
 					B(pb.Status_SUCCESS, ts.Add(-1*time.Minute)),
 				}
-				So(datastore.Put(ctx, builds), ShouldBeNil)
-				So(ReportBuilderMetrics(ctx), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, builds), should.BeNil)
+				assert.Loosely(t, ReportBuilderMetrics(ctx), should.BeNil)
 				// The count for each status should still be reported w/o 0.
-				So(count("FAILURE"), ShouldEqual, 0)
-				So(count("INFRA_FAILURE"), ShouldEqual, 0)
-				So(count("CANCELED"), ShouldEqual, 0)
+				assert.Loosely(t, count("FAILURE"), should.BeZero)
+				assert.Loosely(t, count("INFRA_FAILURE"), should.BeZero)
+				assert.Loosely(t, count("CANCELED"), should.BeZero)
 			})
 
-			Convey("w/ a series of failures after success", func() {
+			t.Run("w/ a series of failures after success", func(t *ftt.Test) {
 				builds := []*model.Build{
 					B(pb.Status_CANCELED, ts.Add(-6*time.Minute)),
 					B(pb.Status_SUCCESS, ts.Add(-5*time.Minute)),
@@ -319,16 +320,16 @@ func TestReportBuilderMetrics(t *testing.T) {
 					B(pb.Status_INFRA_FAILURE, ts.Add(-2*time.Minute)),
 					B(pb.Status_CANCELED, ts.Add(-1*time.Minute)),
 				}
-				So(datastore.Put(ctx, builds), ShouldBeNil)
-				So(ReportBuilderMetrics(ctx), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, builds), should.BeNil)
+				assert.Loosely(t, ReportBuilderMetrics(ctx), should.BeNil)
 				// 2 failures, 1 infra-failure, and 1 cancel.
 				// Note that the first cancel is ignored because it happened before
 				// the success.
-				So(count("FAILURE"), ShouldEqual, 2)
-				So(count("INFRA_FAILURE"), ShouldEqual, 1)
-				So(count("CANCELED"), ShouldEqual, 1)
+				assert.Loosely(t, count("FAILURE"), should.Equal(2))
+				assert.Loosely(t, count("INFRA_FAILURE"), should.Equal(1))
+				assert.Loosely(t, count("CANCELED"), should.Equal(1))
 
-				Convey("custom", func() {
+				t.Run("custom", func(t *ftt.Test) {
 					base := pb.CustomMetricBase_CUSTOM_METRIC_BASE_CONSECUTIVE_FAILURE_COUNT
 					name1 := "chrome/infra/custom/builds/failures1"
 					name2 := "chrome/infra/custom/builds/failures2"
@@ -380,31 +381,31 @@ func TestReportBuilderMetrics(t *testing.T) {
 							},
 						},
 					}
-					So(datastore.Put(ctx, bldrMetrics), ShouldBeNil)
+					assert.Loosely(t, datastore.Put(ctx, bldrMetrics), should.BeNil)
 					for _, b := range builds {
 						b.CustomBuilderConsecutiveFailuresMetrics = []string{name1}
 					}
 					builds[2].CustomBuilderConsecutiveFailuresMetrics = append(builds[2].CustomBuilderConsecutiveFailuresMetrics, name2)
-					So(datastore.Put(ctx, builds), ShouldBeNil)
-					So(ReportBuilderMetrics(ctx), ShouldBeNil)
+					assert.Loosely(t, datastore.Put(ctx, builds), should.BeNil)
+					assert.Loosely(t, ReportBuilderMetrics(ctx), should.BeNil)
 					res, err := GetCustomMetricsData(ctx, base, name1, time.Time{}, []any{"FAILURE"})
-					So(err, ShouldBeNil)
-					So(res, ShouldEqual, 2)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, res, should.Equal(2))
 					res, err = GetCustomMetricsData(ctx, base, name1, time.Time{}, []any{"INFRA_FAILURE"})
-					So(err, ShouldBeNil)
-					So(res, ShouldEqual, 1)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, res, should.Equal(1))
 					res, err = GetCustomMetricsData(ctx, base, name1, time.Time{}, []any{"CANCELED"})
-					So(err, ShouldBeNil)
-					So(res, ShouldEqual, 1)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, res, should.Equal(1))
 					res, err = GetCustomMetricsData(ctx, base, name2, time.Time{}, []any{"FAILURE"})
-					So(err, ShouldBeNil)
-					So(res, ShouldEqual, 1)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, res, should.Equal(1))
 					res, err = GetCustomMetricsData(ctx, base, name2, time.Time{}, []any{"INFRA_FAILURE"})
-					So(err, ShouldBeNil)
-					So(res, ShouldEqual, 0)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, res, should.BeZero)
 				})
 			})
-			Convey("w/ a series of failures before a success", func() {
+			t.Run("w/ a series of failures before a success", func(t *ftt.Test) {
 				builds := []*model.Build{
 					B(pb.Status_CANCELED, ts.Add(-5*time.Minute)),
 					B(pb.Status_SUCCESS, ts.Add(-4*time.Minute)),
@@ -413,11 +414,11 @@ func TestReportBuilderMetrics(t *testing.T) {
 					B(pb.Status_CANCELED, ts.Add(-1*time.Minute)),
 					B(pb.Status_SUCCESS, ts.Add(time.Minute)),
 				}
-				So(datastore.Put(ctx, builds), ShouldBeNil)
-				So(ReportBuilderMetrics(ctx), ShouldBeNil)
-				So(count("FAILURE"), ShouldEqual, 0)
-				So(count("INFRA_FAILURE"), ShouldEqual, 0)
-				So(count("CANCELED"), ShouldEqual, 0)
+				assert.Loosely(t, datastore.Put(ctx, builds), should.BeNil)
+				assert.Loosely(t, ReportBuilderMetrics(ctx), should.BeNil)
+				assert.Loosely(t, count("FAILURE"), should.BeZero)
+				assert.Loosely(t, count("INFRA_FAILURE"), should.BeZero)
+				assert.Loosely(t, count("CANCELED"), should.BeZero)
 			})
 		})
 	})

@@ -22,7 +22,6 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"go.chromium.org/luci/gae/impl/memory"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -33,21 +32,22 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/proto"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	rdbPb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestCreateInvocations(t *testing.T) {
 	t.Parallel()
 
-	Convey("create invocations", t, func() {
+	ftt.Run("create invocations", t, func(t *ftt.Test) {
 		ctl := gomock.NewController(t)
 		defer ctl.Finish()
 		mockClient := rdbPb.NewMockRecorderClient(ctl)
@@ -57,7 +57,7 @@ func TestCreateInvocations(t *testing.T) {
 
 		bqExports := []*rdbPb.BigQueryExport{}
 
-		Convey("builds without number", func() {
+		t.Run("builds without number", func(t *ftt.Test) {
 			builds := []*model.Build{
 				{
 					ID: 1,
@@ -137,14 +137,14 @@ func TestCreateInvocations(t *testing.T) {
 			})
 
 			err := CreateInvocations(ctx, builds, opts)
-			So(err, ShouldBeNil)
-			So(builds[0].ResultDBUpdateToken, ShouldEqual, "token for build-1")
-			So(builds[0].Proto.Infra.Resultdb.Invocation, ShouldEqual, "invocations/build-1")
-			So(builds[1].ResultDBUpdateToken, ShouldEqual, "token for build-2")
-			So(builds[1].Proto.Infra.Resultdb.Invocation, ShouldEqual, "invocations/build-2")
+			assert.Loosely(t, err, should.BeEmpty)
+			assert.Loosely(t, builds[0].ResultDBUpdateToken, should.Equal("token for build-1"))
+			assert.Loosely(t, builds[0].Proto.Infra.Resultdb.Invocation, should.Equal("invocations/build-1"))
+			assert.Loosely(t, builds[1].ResultDBUpdateToken, should.Equal("token for build-2"))
+			assert.Loosely(t, builds[1].Proto.Infra.Resultdb.Invocation, should.Equal("invocations/build-2"))
 		})
 
-		Convey("build with number and expirations", func() {
+		t.Run("build with number and expirations", func(t *ftt.Test) {
 			builds := []*model.Build{
 				{
 					ID: 1,
@@ -204,13 +204,13 @@ func TestCreateInvocations(t *testing.T) {
 				})).Return(&rdbPb.Invocation{}, nil)
 
 			err := CreateInvocations(ctx, builds, opts)
-			So(err, ShouldBeNil)
-			So(len(builds), ShouldEqual, 1)
-			So(builds[0].ResultDBUpdateToken, ShouldEqual, "token for build id 1")
-			So(builds[0].Proto.Infra.Resultdb.Invocation, ShouldEqual, "invocations/build-1")
+			assert.Loosely(t, err, should.BeEmpty)
+			assert.Loosely(t, len(builds), should.Equal(1))
+			assert.Loosely(t, builds[0].ResultDBUpdateToken, should.Equal("token for build id 1"))
+			assert.Loosely(t, builds[0].Proto.Infra.Resultdb.Invocation, should.Equal("invocations/build-1"))
 		})
 
-		Convey("already exists error", func() {
+		t.Run("already exists error", func(t *ftt.Test) {
 			builds := []*model.Build{
 				{
 					ID: 1,
@@ -250,10 +250,10 @@ func TestCreateInvocations(t *testing.T) {
 				}), gomock.Any()).Return(nil, grpcStatus.Error(codes.AlreadyExists, "already exists"))
 
 			err := CreateInvocations(ctx, builds, opts)
-			So(err, ShouldErrLike, "failed to create the invocation for build id: 1: rpc error: code = AlreadyExists desc = already exists")
+			assert.Loosely(t, err, should.ErrLike("failed to create the invocation for build id: 1: rpc error: code = AlreadyExists desc = already exists"))
 		})
 
-		Convey("resultDB throws err", func() {
+		t.Run("resultDB throws err", func(t *ftt.Test) {
 			builds := []*model.Build{
 				{
 					ID: 1,
@@ -281,10 +281,10 @@ func TestCreateInvocations(t *testing.T) {
 			mockClient.EXPECT().CreateInvocation(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, grpcStatus.Error(codes.DeadlineExceeded, "timeout"))
 
 			err := CreateInvocations(ctx, builds, opts)
-			So(err, ShouldErrLike, "failed to create the invocation for build id: 1: rpc error: code = DeadlineExceeded desc = timeout")
+			assert.Loosely(t, err, should.ErrLike("failed to create the invocation for build id: 1: rpc error: code = DeadlineExceeded desc = timeout"))
 		})
 
-		Convey("partial success", func() {
+		t.Run("partial success", func(t *ftt.Test) {
 			builds := []*model.Build{
 				{
 					ID: 1,
@@ -358,15 +358,15 @@ func TestCreateInvocations(t *testing.T) {
 			})
 
 			err := CreateInvocations(ctx, builds, opts)
-			So(err[0], ShouldErrLike, "failed to create the invocation for build id: 1: rpc error: code = Internal desc = error")
-			So(err[1], ShouldBeNil)
-			So(builds[0].ResultDBUpdateToken, ShouldEqual, "")
-			So(builds[0].Proto.Infra.Resultdb.Invocation, ShouldEqual, "")
-			So(builds[1].ResultDBUpdateToken, ShouldEqual, "update token")
-			So(builds[1].Proto.Infra.Resultdb.Invocation, ShouldEqual, "invocations/build-2")
+			assert.Loosely(t, err[0], should.ErrLike("failed to create the invocation for build id: 1: rpc error: code = Internal desc = error"))
+			assert.Loosely(t, err[1], should.BeNil)
+			assert.Loosely(t, builds[0].ResultDBUpdateToken, should.BeEmpty)
+			assert.Loosely(t, builds[0].Proto.Infra.Resultdb.Invocation, should.BeEmpty)
+			assert.Loosely(t, builds[1].ResultDBUpdateToken, should.Equal("update token"))
+			assert.Loosely(t, builds[1].Proto.Infra.Resultdb.Invocation, should.Equal("invocations/build-2"))
 		})
 
-		Convey("resultDB not enabled", func() {
+		t.Run("resultDB not enabled", func(t *ftt.Test) {
 			builds := []*model.Build{
 				{
 					ID: 1,
@@ -387,8 +387,8 @@ func TestCreateInvocations(t *testing.T) {
 			opts := []CreateOptions{{}}
 
 			err := CreateInvocations(ctx, builds, opts)
-			So(err, ShouldBeNil)
-			So(builds[0].Proto.Infra.Resultdb.Invocation, ShouldEqual, "")
+			assert.Loosely(t, err, should.BeEmpty)
+			assert.Loosely(t, builds[0].Proto.Infra.Resultdb.Invocation, should.BeEmpty)
 		})
 	})
 }
@@ -396,7 +396,7 @@ func TestCreateInvocations(t *testing.T) {
 func TestFinalizeInvocation(t *testing.T) {
 	t.Parallel()
 
-	Convey("finalize invocations", t, func() {
+	ftt.Run("finalize invocations", t, func(t *ftt.Test) {
 		ctl := gomock.NewController(t)
 		defer ctl.Finish()
 		mockClient := rdbPb.NewMockRecorderClient(ctl)
@@ -405,7 +405,7 @@ func TestFinalizeInvocation(t *testing.T) {
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 
-		So(datastore.Put(ctx, &model.Build{
+		assert.Loosely(t, datastore.Put(ctx, &model.Build{
 			ID:                  1,
 			Project:             "project",
 			BucketID:            "bucket",
@@ -420,14 +420,14 @@ func TestFinalizeInvocation(t *testing.T) {
 				},
 				Status: pb.Status_SUCCESS,
 			},
-		}), ShouldBeNil)
+		}), should.BeNil)
 
-		Convey("no exists", func() {
-			So(FinalizeInvocation(ctx, 1), ShouldErrLike, "build 1 or buildInfra not found")
+		t.Run("no exists", func(t *ftt.Test) {
+			assert.Loosely(t, FinalizeInvocation(ctx, 1), should.ErrLike("build 1 or buildInfra not found"))
 		})
 
-		Convey("no resultdb hostname", func() {
-			So(datastore.Put(ctx, &model.BuildInfra{
+		t.Run("no resultdb hostname", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(ctx, &model.BuildInfra{
 				ID:    1,
 				Build: datastore.KeyForObj(ctx, &model.Build{ID: 1}),
 				Proto: &pb.BuildInfra{
@@ -435,14 +435,14 @@ func TestFinalizeInvocation(t *testing.T) {
 						Invocation: "invocation",
 					},
 				},
-			}), ShouldBeNil)
+			}), should.BeNil)
 
 			mockClient.EXPECT().FinalizeInvocation(gomock.Any(), gomock.Any()).Times(0)
-			So(FinalizeInvocation(ctx, 1), ShouldBeNil)
+			assert.Loosely(t, FinalizeInvocation(ctx, 1), should.BeNil)
 		})
 
-		Convey("no invocation", func() {
-			So(datastore.Put(ctx, &model.BuildInfra{
+		t.Run("no invocation", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(ctx, &model.BuildInfra{
 				ID:    1,
 				Build: datastore.KeyForObj(ctx, &model.Build{ID: 1}),
 				Proto: &pb.BuildInfra{
@@ -450,14 +450,14 @@ func TestFinalizeInvocation(t *testing.T) {
 						Hostname: "hostname",
 					},
 				},
-			}), ShouldBeNil)
+			}), should.BeNil)
 
 			mockClient.EXPECT().FinalizeInvocation(gomock.Any(), gomock.Any()).Times(0)
-			So(FinalizeInvocation(ctx, 1), ShouldBeNil)
+			assert.Loosely(t, FinalizeInvocation(ctx, 1), should.BeNil)
 		})
 
-		Convey("success", func() {
-			So(datastore.Put(ctx, &model.BuildInfra{
+		t.Run("success", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(ctx, &model.BuildInfra{
 				ID:    1,
 				Build: datastore.KeyForObj(ctx, &model.Build{ID: 1}),
 				Proto: &pb.BuildInfra{
@@ -466,18 +466,18 @@ func TestFinalizeInvocation(t *testing.T) {
 						Invocation: "invocation",
 					},
 				},
-			}), ShouldBeNil)
+			}), should.BeNil)
 
 			expectedCtx := metadata.AppendToOutgoingContext(ctx, "update-token", "token")
 			mockClient.EXPECT().FinalizeInvocation(expectedCtx, proto.MatcherEqual(&rdbPb.FinalizeInvocationRequest{
 				Name: "invocation",
 			})).Return(&rdbPb.Invocation{}, nil)
 
-			So(FinalizeInvocation(ctx, 1), ShouldBeNil)
+			assert.Loosely(t, FinalizeInvocation(ctx, 1), should.BeNil)
 		})
 
-		Convey("resultDB server fatal err", func() {
-			So(datastore.Put(ctx, &model.BuildInfra{
+		t.Run("resultDB server fatal err", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(ctx, &model.BuildInfra{
 				ID:    1,
 				Build: datastore.KeyForObj(ctx, &model.Build{ID: 1}),
 				Proto: &pb.BuildInfra{
@@ -486,19 +486,19 @@ func TestFinalizeInvocation(t *testing.T) {
 						Invocation: "invocation",
 					},
 				},
-			}), ShouldBeNil)
+			}), should.BeNil)
 
 			mockClient.EXPECT().FinalizeInvocation(gomock.Any(), proto.MatcherEqual(&rdbPb.FinalizeInvocationRequest{
 				Name: "invocation",
 			})).Return(nil, grpcStatus.Error(codes.PermissionDenied, "permission denied"))
 
 			err := FinalizeInvocation(ctx, 1)
-			So(err, ShouldNotBeNil)
-			So(tq.Fatal.In(err), ShouldBeTrue)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, tq.Fatal.In(err), should.BeTrue)
 		})
 
-		Convey("resultDB server retryable err", func() {
-			So(datastore.Put(ctx, &model.BuildInfra{
+		t.Run("resultDB server retryable err", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(ctx, &model.BuildInfra{
 				ID:    1,
 				Build: datastore.KeyForObj(ctx, &model.Build{ID: 1}),
 				Proto: &pb.BuildInfra{
@@ -507,15 +507,15 @@ func TestFinalizeInvocation(t *testing.T) {
 						Invocation: "invocation",
 					},
 				},
-			}), ShouldBeNil)
+			}), should.BeNil)
 
 			mockClient.EXPECT().FinalizeInvocation(gomock.Any(), proto.MatcherEqual(&rdbPb.FinalizeInvocationRequest{
 				Name: "invocation",
 			})).Return(nil, grpcStatus.Error(codes.Internal, "internal error"))
 
 			err := FinalizeInvocation(ctx, 1)
-			So(err, ShouldNotBeNil)
-			So(transient.Tag.In(err), ShouldBeTrue)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, transient.Tag.In(err), should.BeTrue)
 		})
 	})
 }

@@ -29,6 +29,10 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/logging/memlogger"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
@@ -39,8 +43,6 @@ import (
 	"go.chromium.org/luci/buildbucket/bbperms"
 	pb "go.chromium.org/luci/buildbucket/proto"
 
-	. "github.com/smartystreets/goconvey/convey"
-
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -49,8 +51,8 @@ const userID = identity.Identity("user:user@example.com")
 func TestNewSearchQuery(t *testing.T) {
 	t.Parallel()
 
-	Convey("NewQuery", t, func() {
-		Convey("valid input", func() {
+	ftt.Run("NewQuery", t, func(t *ftt.Test) {
+		t.Run("valid input", func(t *ftt.Test) {
 			gerritChanges := make([]*pb.GerritChange, 2)
 			gerritChanges[0] = &pb.GerritChange{
 				Host:     "a",
@@ -104,7 +106,7 @@ func TestNewSearchQuery(t *testing.T) {
 				Builder: "test",
 			}
 
-			So(query, ShouldResemble, &Query{
+			assert.Loosely(t, query, should.Resemble(&Query{
 				Builder:   expectedBuilder,
 				Tags:      expectedTags,
 				Status:    pb.Status_ENDED_MASK,
@@ -120,27 +122,27 @@ func TestNewSearchQuery(t *testing.T) {
 				DescendantOf: 2,
 				PageSize:     100,
 				PageToken:    "",
-			})
+			}))
 		})
 
-		Convey("empty req", func() {
-			So(NewQuery(&pb.SearchBuildsRequest{}), ShouldResemble, &Query{PageSize: 100})
+		t.Run("empty req", func(t *ftt.Test) {
+			assert.Loosely(t, NewQuery(&pb.SearchBuildsRequest{}), should.Resemble(&Query{PageSize: 100}))
 		})
 
-		Convey("empty predict", func() {
+		t.Run("empty predict", func(t *ftt.Test) {
 			req := &pb.SearchBuildsRequest{
 				PageToken: "aa",
 				PageSize:  2,
 			}
 			query := NewQuery(req)
 
-			So(query, ShouldResemble, &Query{
+			assert.Loosely(t, query, should.Resemble(&Query{
 				PageSize:  2,
 				PageToken: "aa",
-			})
+			}))
 		})
 
-		Convey("empty identity", func() {
+		t.Run("empty identity", func(t *ftt.Test) {
 			req := &pb.SearchBuildsRequest{
 				Predicate: &pb.BuildPredicate{
 					CreatedBy: "",
@@ -148,10 +150,10 @@ func TestNewSearchQuery(t *testing.T) {
 			}
 			query := NewQuery(req)
 
-			So(query.CreatedBy, ShouldEqual, identity.Identity(""))
+			assert.Loosely(t, query.CreatedBy, should.Equal(identity.Identity("")))
 		})
 
-		Convey("invalid create time", func() {
+		t.Run("invalid create time", func(t *ftt.Test) {
 			req := &pb.SearchBuildsRequest{
 				Predicate: &pb.BuildPredicate{
 					CreatedBy: string(identity.AnonymousIdentity),
@@ -160,7 +162,7 @@ func TestNewSearchQuery(t *testing.T) {
 					},
 				},
 			}
-			So(func() { NewQuery(req) }, ShouldPanic)
+			assert.Loosely(t, func() { NewQuery(req) }, should.Panic)
 		})
 	})
 }
@@ -168,31 +170,31 @@ func TestNewSearchQuery(t *testing.T) {
 func TestFixPageSize(t *testing.T) {
 	t.Parallel()
 
-	Convey("normal page size", t, func() {
-		So(fixPageSize(200), ShouldEqual, 200)
+	ftt.Run("normal page size", t, func(t *ftt.Test) {
+		assert.Loosely(t, fixPageSize(200), should.Equal(200))
 	})
 
-	Convey("default page size", t, func() {
-		So(fixPageSize(0), ShouldEqual, 100)
+	ftt.Run("default page size", t, func(t *ftt.Test) {
+		assert.Loosely(t, fixPageSize(0), should.Equal(100))
 	})
 
-	Convey("max page size", t, func() {
-		So(fixPageSize(1500), ShouldEqual, 1000)
+	ftt.Run("max page size", t, func(t *ftt.Test) {
+		assert.Loosely(t, fixPageSize(1500), should.Equal(1000))
 	})
 }
 
 func TestMustTimestamp(t *testing.T) {
 	t.Parallel()
-	Convey("normal timestamp", t, func() {
+	ftt.Run("normal timestamp", t, func(t *ftt.Test) {
 		res := mustTimestamp(&timestamppb.Timestamp{Seconds: 1592701200})
-		So(res, ShouldEqual, time.Unix(1592701200, 0).UTC())
+		assert.Loosely(t, res, should.Match(time.Unix(1592701200, 0).UTC()))
 	})
-	Convey("invalid timestamp", t, func() {
-		So(func() { mustTimestamp(&timestamppb.Timestamp{Seconds: 253402300801}) }, ShouldPanic)
+	ftt.Run("invalid timestamp", t, func(t *ftt.Test) {
+		assert.Loosely(t, func() { mustTimestamp(&timestamppb.Timestamp{Seconds: 253402300801}) }, should.Panic)
 	})
-	Convey("nil timestamp", t, func() {
+	ftt.Run("nil timestamp", t, func(t *ftt.Test) {
 		res := mustTimestamp(nil)
-		So(res.IsZero(), ShouldBeTrue)
+		assert.Loosely(t, res.IsZero(), should.BeTrue)
 	})
 }
 
@@ -212,13 +214,13 @@ func experiments(canary, experimental bool) (ret []string) {
 func TestMainFetchFlow(t *testing.T) {
 	t.Parallel()
 
-	Convey("Fetch", t, func() {
+	ftt.Run("Fetch", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		ctx = memlogger.Use(ctx)
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 
-		So(datastore.Put(
+		assert.Loosely(t, datastore.Put(
 			ctx,
 			&model.Bucket{
 				Parent: model.ProjectKey(ctx, "project"),
@@ -230,7 +232,7 @@ func TestMainFetchFlow(t *testing.T) {
 				ID:     "builder",
 				Config: &pb.BuilderConfig{Name: "builder"},
 			},
-		), ShouldBeNil)
+		), should.BeNil)
 
 		query := NewQuery(&pb.SearchBuildsRequest{
 			Predicate: &pb.BuildPredicate{
@@ -242,15 +244,15 @@ func TestMainFetchFlow(t *testing.T) {
 			},
 		})
 
-		Convey("No permission for requested bucketId", func() {
+		t.Run("No permission for requested bucketId", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: userID,
 			})
 			_, err := query.Fetch(ctx)
-			So(err, ShouldHaveAppStatus, codes.NotFound, "not found")
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.NotFound, "not found"))
 		})
 
-		Convey("With read permission", func() {
+		t.Run("With read permission", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: userID,
 				FakeDB: authtest.NewFakeDB(
@@ -259,15 +261,15 @@ func TestMainFetchFlow(t *testing.T) {
 				),
 			})
 
-			Convey("Fetch via TagIndex flow", func() {
+			t.Run("Fetch via TagIndex flow", func(t *ftt.Test) {
 				query.Tags = strpair.ParseMap([]string{"buildset:1"})
 				actualRsp, err := query.Fetch(ctx)
-				So(err, ShouldBeNil)
-				So(actualRsp, ShouldResembleProto, &pb.SearchBuildsResponse{})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, actualRsp, should.Resemble(&pb.SearchBuildsResponse{}))
 			})
 
-			Convey("Fetch via Build flow", func() {
-				So(datastore.Put(ctx, &model.Build{
+			t.Run("Fetch via Build flow", func(t *ftt.Test) {
+				assert.Loosely(t, datastore.Put(ctx, &model.Build{
 					Proto: &pb.Build{
 						Id: 1,
 						Builder: &pb.BuilderID{
@@ -279,11 +281,11 @@ func TestMainFetchFlow(t *testing.T) {
 					BucketID:    "project/bucket",
 					BuilderID:   "project/bucket/builder",
 					Experiments: experiments(false, false),
-				}), ShouldBeNil)
+				}), should.BeNil)
 
 				query := NewQuery(&pb.SearchBuildsRequest{})
 				rsp, err := query.Fetch(ctx)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				expectedRsp := &pb.SearchBuildsResponse{
 					Builds: []*pb.Build{
 						{
@@ -296,16 +298,16 @@ func TestMainFetchFlow(t *testing.T) {
 						},
 					},
 				}
-				So(rsp, ShouldResembleProto, expectedRsp)
+				assert.Loosely(t, rsp, should.Resemble(expectedRsp))
 			})
 
-			Convey("Fallback to fetchOnBuild flow", func() {
-				So(datastore.Put(ctx, &model.TagIndex{
+			t.Run("Fallback to fetchOnBuild flow", func(t *ftt.Test) {
+				assert.Loosely(t, datastore.Put(ctx, &model.TagIndex{
 					ID:         ":10:buildset:1",
 					Incomplete: true,
 					Entries:    nil,
-				}), ShouldBeNil)
-				So(datastore.Put(ctx, &model.Build{
+				}), should.BeNil)
+				assert.Loosely(t, datastore.Put(ctx, &model.Build{
 					Proto: &pb.Build{
 						Id: 1,
 						Builder: &pb.BuilderID{
@@ -318,12 +320,12 @@ func TestMainFetchFlow(t *testing.T) {
 					BuilderID:   "project/bucket/builder",
 					Tags:        []string{"buildset:1"},
 					Experiments: experiments(false, false),
-				}), ShouldBeNil)
+				}), should.BeNil)
 
 				query.Tags = strpair.ParseMap([]string{"buildset:1"})
 				actualRsp, err := query.Fetch(ctx)
-				So(err, ShouldBeNil)
-				So(actualRsp, ShouldResembleProto, &pb.SearchBuildsResponse{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, actualRsp, should.Resemble(&pb.SearchBuildsResponse{
 					Builds: []*pb.Build{
 						{
 							Id: 1,
@@ -340,7 +342,7 @@ func TestMainFetchFlow(t *testing.T) {
 							},
 						},
 					},
-				})
+				}))
 			})
 		})
 	})
@@ -349,7 +351,7 @@ func TestMainFetchFlow(t *testing.T) {
 func TestFetchOnBuild(t *testing.T) {
 	t.Parallel()
 
-	Convey("FetchOnBuild", t, func() {
+	ftt.Run("FetchOnBuild", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		ctx = auth.WithState(ctx, &authtest.FakeState{
 			Identity: userID,
@@ -361,12 +363,12 @@ func TestFetchOnBuild(t *testing.T) {
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 
-		So(datastore.Put(ctx, &model.Bucket{
+		assert.Loosely(t, datastore.Put(ctx, &model.Bucket{
 			ID:     "bucket",
 			Parent: model.ProjectKey(ctx, "project"),
 			Proto:  &pb.Bucket{},
-		}), ShouldBeNil)
-		So(datastore.Put(ctx, &model.Build{
+		}), should.BeNil)
+		assert.Loosely(t, datastore.Put(ctx, &model.Build{
 			ID: 100,
 			Proto: &pb.Build{
 				Id: 100,
@@ -383,8 +385,8 @@ func TestFetchOnBuild(t *testing.T) {
 			BuilderID:   "project/bucket/builder1",
 			Tags:        []string{"k1:v1", "k2:v2"},
 			Experiments: experiments(false, false),
-		}), ShouldBeNil)
-		So(datastore.Put(ctx, &model.Build{
+		}), should.BeNil)
+		assert.Loosely(t, datastore.Put(ctx, &model.Build{
 			ID: 200,
 			Proto: &pb.Build{
 				Id: 200,
@@ -400,9 +402,9 @@ func TestFetchOnBuild(t *testing.T) {
 			BucketID:    "project/bucket",
 			BuilderID:   "project/bucket/builder2",
 			Experiments: experiments(false, false),
-		}), ShouldBeNil)
+		}), should.BeNil)
 
-		Convey("found by builder", func() {
+		t.Run("found by builder", func(t *ftt.Test) {
 			req := &pb.SearchBuildsRequest{
 				Predicate: &pb.BuildPredicate{
 					Builder: &pb.BuilderID{
@@ -432,10 +434,10 @@ func TestFetchOnBuild(t *testing.T) {
 				},
 			}
 
-			So(err, ShouldBeNil)
-			So(actualRsp, ShouldResembleProto, expectedRsp)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actualRsp, should.Resemble(expectedRsp))
 		})
-		Convey("found by tag", func() {
+		t.Run("found by tag", func(t *ftt.Test) {
 			req := &pb.SearchBuildsRequest{
 				Predicate: &pb.BuildPredicate{
 					Status: pb.Status_SUCCESS,
@@ -465,10 +467,10 @@ func TestFetchOnBuild(t *testing.T) {
 				},
 			}
 
-			So(err, ShouldBeNil)
-			So(actualRsp, ShouldResembleProto, expectedRsp)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actualRsp, should.Resemble(expectedRsp))
 		})
-		Convey("found by status", func() {
+		t.Run("found by status", func(t *ftt.Test) {
 			req := &pb.SearchBuildsRequest{
 				Predicate: &pb.BuildPredicate{
 					Status: pb.Status_SUCCESS,
@@ -494,10 +496,10 @@ func TestFetchOnBuild(t *testing.T) {
 				},
 			}
 
-			So(err, ShouldBeNil)
-			So(actualRsp, ShouldResembleProto, expectedRsp)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actualRsp, should.Resemble(expectedRsp))
 		})
-		Convey("found by build range", func() {
+		t.Run("found by build range", func(t *ftt.Test) {
 			req := &pb.SearchBuildsRequest{
 				Predicate: &pb.BuildPredicate{
 					Build: &pb.BuildRange{
@@ -526,11 +528,11 @@ func TestFetchOnBuild(t *testing.T) {
 				},
 			}
 
-			So(err, ShouldBeNil)
-			So(actualRsp, ShouldResembleProto, expectedRsp)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actualRsp, should.Resemble(expectedRsp))
 		})
-		Convey("found by create time", func() {
-			So(datastore.Put(ctx, &model.Build{
+		t.Run("found by create time", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(ctx, &model.Build{
 				ID: 8764414515958775808,
 				Proto: &pb.Build{
 					Builder: &pb.BuilderID{
@@ -542,7 +544,7 @@ func TestFetchOnBuild(t *testing.T) {
 				},
 				BucketID:    "project/bucket",
 				Experiments: experiments(false, false),
-			}), ShouldBeNil)
+			}), should.BeNil)
 			req := &pb.SearchBuildsRequest{
 				Predicate: &pb.BuildPredicate{
 					CreateTime: &pb.TimeRange{
@@ -566,11 +568,11 @@ func TestFetchOnBuild(t *testing.T) {
 				},
 			}
 
-			So(err, ShouldBeNil)
-			So(actualRsp, ShouldResembleProto, expectedRsp)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actualRsp, should.Resemble(expectedRsp))
 		})
-		Convey("found by created_by", func() {
-			So(datastore.Put(ctx, &model.Build{
+		t.Run("found by created_by", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(ctx, &model.Build{
 				ID: 1111,
 				Proto: &pb.Build{
 					Id:        1111,
@@ -584,7 +586,7 @@ func TestFetchOnBuild(t *testing.T) {
 				CreatedBy:   "project:infra",
 				BucketID:    "project/bucket",
 				Experiments: experiments(false, false),
-			}), ShouldBeNil)
+			}), should.BeNil)
 			req := &pb.SearchBuildsRequest{
 				Predicate: &pb.BuildPredicate{
 					CreatedBy: "project:infra",
@@ -606,11 +608,11 @@ func TestFetchOnBuild(t *testing.T) {
 				},
 			}
 
-			So(err, ShouldBeNil)
-			So(actualRsp, ShouldResembleProto, expectedRsp)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actualRsp, should.Resemble(expectedRsp))
 		})
-		Convey("found by ENDED_MASK", func() {
-			So(datastore.Put(ctx, &model.Build{
+		t.Run("found by ENDED_MASK", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(ctx, &model.Build{
 				ID: 300,
 				Proto: &pb.Build{
 					Id: 300,
@@ -626,7 +628,7 @@ func TestFetchOnBuild(t *testing.T) {
 				BuilderID:   "project/bucket/builder3",
 				Status:      pb.Status_STARTED,
 				Experiments: experiments(false, false),
-			}), ShouldBeNil)
+			}), should.BeNil)
 
 			req := &pb.SearchBuildsRequest{
 				Predicate: &pb.BuildPredicate{
@@ -662,16 +664,16 @@ func TestFetchOnBuild(t *testing.T) {
 				},
 			}
 
-			So(err, ShouldBeNil)
-			So(actualRsp, ShouldResembleProto, expectedRsp)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actualRsp, should.Resemble(expectedRsp))
 		})
-		Convey("found by canary", func() {
+		t.Run("found by canary", func(t *ftt.Test) {
 			req := &pb.SearchBuildsRequest{
 				Predicate: &pb.BuildPredicate{
 					Canary: pb.Trinary_YES,
 				},
 			}
-			So(datastore.Put(ctx, &model.Build{
+			assert.Loosely(t, datastore.Put(ctx, &model.Build{
 				ID: 321,
 				Proto: &pb.Build{
 					Id: 321,
@@ -686,7 +688,7 @@ func TestFetchOnBuild(t *testing.T) {
 				BucketID:    "project/bucket",
 				BuilderID:   "project/bucket/builder321",
 				Experiments: experiments(true, false),
-			}), ShouldBeNil)
+			}), should.BeNil)
 			query := NewQuery(req)
 			actualRsp, err := query.fetchOnBuild(ctx)
 			expectedRsp := &pb.SearchBuildsResponse{
@@ -703,16 +705,16 @@ func TestFetchOnBuild(t *testing.T) {
 				},
 			}
 
-			So(err, ShouldBeNil)
-			So(actualRsp, ShouldResembleProto, expectedRsp)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actualRsp, should.Resemble(expectedRsp))
 		})
-		Convey("found only experimental", func() {
+		t.Run("found only experimental", func(t *ftt.Test) {
 			req := &pb.SearchBuildsRequest{
 				Predicate: &pb.BuildPredicate{
 					Experiments: []string{"+" + bb.ExperimentNonProduction},
 				},
 			}
-			So(datastore.Put(ctx, &model.Build{
+			assert.Loosely(t, datastore.Put(ctx, &model.Build{
 				ID: 321,
 				Proto: &pb.Build{
 					Id: 321,
@@ -727,8 +729,8 @@ func TestFetchOnBuild(t *testing.T) {
 				BucketID:    "project/bucket",
 				BuilderID:   "project/bucket/builder321",
 				Experiments: experiments(false, true),
-			}), ShouldBeNil)
-			So(datastore.Put(ctx, &model.Build{
+			}), should.BeNil)
+			assert.Loosely(t, datastore.Put(ctx, &model.Build{
 				ID: 123,
 				Proto: &pb.Build{
 					Id: 123,
@@ -742,7 +744,7 @@ func TestFetchOnBuild(t *testing.T) {
 				BucketID:    "project/bucket",
 				BuilderID:   "project/bucket/builder123",
 				Experiments: experiments(false, false),
-			}), ShouldBeNil)
+			}), should.BeNil)
 			query := NewQuery(req)
 			actualRsp, err := query.fetchOnBuild(ctx)
 			expectedRsp := &pb.SearchBuildsResponse{
@@ -759,16 +761,16 @@ func TestFetchOnBuild(t *testing.T) {
 				},
 			}
 
-			So(err, ShouldBeNil)
-			So(actualRsp, ShouldResembleProto, expectedRsp)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actualRsp, should.Resemble(expectedRsp))
 		})
-		Convey("found non experimental", func() {
+		t.Run("found non experimental", func(t *ftt.Test) {
 			req := &pb.SearchBuildsRequest{
 				Predicate: &pb.BuildPredicate{
 					Experiments: []string{"-" + bb.ExperimentNonProduction},
 				},
 			}
-			So(datastore.Put(ctx, &model.Build{
+			assert.Loosely(t, datastore.Put(ctx, &model.Build{
 				ID: 321,
 				Proto: &pb.Build{
 					Id: 321,
@@ -783,8 +785,8 @@ func TestFetchOnBuild(t *testing.T) {
 				BucketID:    "project/bucket",
 				BuilderID:   "project/bucket/builder321",
 				Experiments: experiments(false, true),
-			}), ShouldBeNil)
-			So(datastore.Put(ctx, &model.Build{
+			}), should.BeNil)
+			assert.Loosely(t, datastore.Put(ctx, &model.Build{
 				ID: 123,
 				Proto: &pb.Build{
 					Id: 123,
@@ -798,7 +800,7 @@ func TestFetchOnBuild(t *testing.T) {
 				BucketID:    "project/bucket",
 				BuilderID:   "project/bucket/builder123",
 				Experiments: experiments(false, false),
-			}), ShouldBeNil)
+			}), should.BeNil)
 			query := NewQuery(req)
 			actualRsp, err := query.fetchOnBuild(ctx)
 			expectedRsp := &pb.SearchBuildsResponse{
@@ -836,10 +838,10 @@ func TestFetchOnBuild(t *testing.T) {
 				},
 			}
 
-			So(err, ShouldBeNil)
-			So(actualRsp, ShouldResembleProto, expectedRsp)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actualRsp, should.Resemble(expectedRsp))
 		})
-		Convey("found by ancestors", func() {
+		t.Run("found by ancestors", func(t *ftt.Test) {
 			bIDs := func(rsp *pb.SearchBuildsResponse) []int {
 				ids := make([]int, 0, len(rsp.Builds))
 				for _, b := range rsp.Builds {
@@ -848,7 +850,7 @@ func TestFetchOnBuild(t *testing.T) {
 				sort.Ints(ids)
 				return ids
 			}
-			So(datastore.Put(ctx, &model.Build{
+			assert.Loosely(t, datastore.Put(ctx, &model.Build{
 				ID: 1,
 				Proto: &pb.Build{
 					Id: 1,
@@ -858,8 +860,8 @@ func TestFetchOnBuild(t *testing.T) {
 						Builder: "builder",
 					},
 				},
-			}), ShouldBeNil)
-			So(datastore.Put(ctx, &model.Build{
+			}), should.BeNil)
+			assert.Loosely(t, datastore.Put(ctx, &model.Build{
 				ID: 2,
 				Proto: &pb.Build{
 					Id: 2,
@@ -870,8 +872,8 @@ func TestFetchOnBuild(t *testing.T) {
 					},
 					AncestorIds: []int64{1},
 				},
-			}), ShouldBeNil)
-			So(datastore.Put(ctx, &model.Build{
+			}), should.BeNil)
+			assert.Loosely(t, datastore.Put(ctx, &model.Build{
 				ID: 3,
 				Proto: &pb.Build{
 					Id: 3,
@@ -882,8 +884,8 @@ func TestFetchOnBuild(t *testing.T) {
 					},
 					AncestorIds: []int64{1},
 				},
-			}), ShouldBeNil)
-			So(datastore.Put(ctx, &model.Build{
+			}), should.BeNil)
+			assert.Loosely(t, datastore.Put(ctx, &model.Build{
 				ID: 4,
 				Proto: &pb.Build{
 					Id: 4,
@@ -894,8 +896,8 @@ func TestFetchOnBuild(t *testing.T) {
 					},
 					AncestorIds: []int64{1, 2},
 				},
-			}), ShouldBeNil)
-			Convey("by ancestor_ids", func() {
+			}), should.BeNil)
+			t.Run("by ancestor_ids", func(t *ftt.Test) {
 				req := &pb.SearchBuildsRequest{
 					Predicate: &pb.BuildPredicate{
 						DescendantOf: 1,
@@ -903,10 +905,10 @@ func TestFetchOnBuild(t *testing.T) {
 				}
 				query := NewQuery(req)
 				actualRsp, err := query.fetchOnBuild(ctx)
-				So(err, ShouldBeNil)
-				So(bIDs(actualRsp), ShouldResemble, []int{2, 3, 4})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, bIDs(actualRsp), should.Resemble([]int{2, 3, 4}))
 			})
-			Convey("by parent_id", func() {
+			t.Run("by parent_id", func(t *ftt.Test) {
 				req := &pb.SearchBuildsRequest{
 					Predicate: &pb.BuildPredicate{
 						ChildOf: 1,
@@ -914,11 +916,11 @@ func TestFetchOnBuild(t *testing.T) {
 				}
 				query := NewQuery(req)
 				actualRsp, err := query.fetchOnBuild(ctx)
-				So(err, ShouldBeNil)
-				So(bIDs(actualRsp), ShouldResemble, []int{2, 3})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, bIDs(actualRsp), should.Resemble([]int{2, 3}))
 			})
 		})
-		Convey("empty request", func() {
+		t.Run("empty request", func(t *ftt.Test) {
 			req := &pb.SearchBuildsRequest{
 				Predicate: &pb.BuildPredicate{},
 			}
@@ -951,11 +953,11 @@ func TestFetchOnBuild(t *testing.T) {
 				},
 			}
 
-			So(err, ShouldBeNil)
-			So(actualRsp, ShouldResembleProto, expectedRsp)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actualRsp, should.Resemble(expectedRsp))
 		})
-		Convey("pagination", func() {
-			So(datastore.Put(ctx, &model.Build{
+		t.Run("pagination", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(ctx, &model.Build{
 				ID: 300,
 				Proto: &pb.Build{
 					Id: 300,
@@ -969,10 +971,10 @@ func TestFetchOnBuild(t *testing.T) {
 				BucketID:    "project/bucket",
 				BuilderID:   "project/bucket/builder3",
 				Experiments: experiments(false, false),
-			}), ShouldBeNil)
+			}), should.BeNil)
 
 			// this build can be fetched from db but not accessible by the user.
-			So(datastore.Put(ctx, &model.Build{
+			assert.Loosely(t, datastore.Put(ctx, &model.Build{
 				ID: 400,
 				Proto: &pb.Build{
 					Id: 400,
@@ -986,7 +988,7 @@ func TestFetchOnBuild(t *testing.T) {
 				BucketID:    "project_no_access/bucket",
 				BuilderID:   "project_no_access/bucket/builder",
 				Experiments: experiments(false, false),
-			}), ShouldBeNil)
+			}), should.BeNil)
 
 			req := &pb.SearchBuildsRequest{
 				PageSize: 2,
@@ -1020,9 +1022,9 @@ func TestFetchOnBuild(t *testing.T) {
 				},
 			}
 
-			So(err, ShouldBeNil)
-			So(actualRsp.Builds, ShouldResembleProto, expectedBuilds)
-			So(actualRsp.NextPageToken, ShouldEqual, "id>200")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actualRsp.Builds, should.Resemble(expectedBuilds))
+			assert.Loosely(t, actualRsp.NextPageToken, should.Equal("id>200"))
 
 			// fetch the following page (response should have a build with the ID - 400).
 			req.PageToken = actualRsp.NextPageToken
@@ -1039,11 +1041,11 @@ func TestFetchOnBuild(t *testing.T) {
 				},
 			}
 
-			So(err, ShouldBeNil)
-			So(actualRsp.Builds, ShouldResembleProto, expectedBuilds)
-			So(actualRsp.NextPageToken, ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actualRsp.Builds, should.Resemble(expectedBuilds))
+			assert.Loosely(t, actualRsp.NextPageToken, should.BeEmpty)
 		})
-		Convey("found by start build id and pagination", func() {
+		t.Run("found by start build id and pagination", func(t *ftt.Test) {
 			req := &pb.SearchBuildsRequest{
 				Predicate: &pb.BuildPredicate{
 					Build: &pb.BuildRange{
@@ -1056,8 +1058,8 @@ func TestFetchOnBuild(t *testing.T) {
 			actualRsp, err := query.fetchOnBuild(ctx)
 			expectedRsp := &pb.SearchBuildsResponse{}
 
-			So(err, ShouldBeNil)
-			So(actualRsp, ShouldResembleProto, expectedRsp)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actualRsp, should.Resemble(expectedRsp))
 		})
 	})
 }
@@ -1065,35 +1067,35 @@ func TestFetchOnBuild(t *testing.T) {
 func TestIndexedTags(t *testing.T) {
 	t.Parallel()
 
-	Convey("tags", t, func() {
+	ftt.Run("tags", t, func(t *ftt.Test) {
 		tags := strpair.Map{
 			"a":        []string{"b"},
 			"buildset": []string{"b1"},
 		}
 		result := IndexedTags(tags)
-		So(result, ShouldResemble, []string{"buildset:b1"})
+		assert.Loosely(t, result, should.Resemble([]string{"buildset:b1"}))
 	})
 
-	Convey("duplicate tags", t, func() {
+	ftt.Run("duplicate tags", t, func(t *ftt.Test) {
 		tags := strpair.Map{
 			"buildset":      []string{"b1", "b1"},
 			"build_address": []string{"address"},
 		}
 		result := IndexedTags(tags)
-		So(result, ShouldResemble, []string{"build_address:address", "buildset:b1"})
+		assert.Loosely(t, result, should.Resemble([]string{"build_address:address", "buildset:b1"}))
 	})
 
-	Convey("empty tags", t, func() {
+	ftt.Run("empty tags", t, func(t *ftt.Test) {
 		tags := strpair.Map{}
 		result := IndexedTags(tags)
-		So(result, ShouldResemble, []string{})
+		assert.Loosely(t, result, should.Resemble([]string{}))
 	})
 }
 
 func TestUpdateTagIndex(t *testing.T) {
 	t.Parallel()
 
-	Convey("UpdateTagIndex", t, func() {
+	ftt.Run("UpdateTagIndex", t, func(t *ftt.Test) {
 		ctx, _ := testclock.UseTime(memory.Use(context.Background()), testclock.TestRecentTimeUTC)
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
@@ -1133,15 +1135,15 @@ func TestUpdateTagIndex(t *testing.T) {
 				Experiments: experiments(false, false),
 			},
 		}
-		So(UpdateTagIndex(ctx, builds), ShouldBeNil)
+		assert.Loosely(t, UpdateTagIndex(ctx, builds), should.BeEmpty)
 
 		idx, err := model.SearchTagIndex(ctx, "a", "b")
-		So(err, ShouldBeNil)
-		So(idx, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, idx, should.BeNil)
 
 		idx, err = model.SearchTagIndex(ctx, "buildset", "b1")
-		So(err, ShouldBeNil)
-		So(idx, ShouldResemble, []*model.TagIndexEntry{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, idx, should.Resemble([]*model.TagIndexEntry{
 			{
 				BuildID:     int64(1),
 				BucketID:    "project/bucket",
@@ -1152,24 +1154,24 @@ func TestUpdateTagIndex(t *testing.T) {
 				BucketID:    "project/bucket",
 				CreatedTime: datastore.RoundTime(testclock.TestRecentTimeUTC),
 			},
-		})
+		}))
 
 		idx, err = model.SearchTagIndex(ctx, "build_address", "address")
-		So(err, ShouldBeNil)
-		So(idx, ShouldResemble, []*model.TagIndexEntry{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, idx, should.Resemble([]*model.TagIndexEntry{
 			{
 				BuildID:     int64(2),
 				BucketID:    "project/bucket",
 				CreatedTime: datastore.RoundTime(testclock.TestRecentTimeUTC),
 			},
-		})
+		}))
 	})
 }
 
 func TestFetchOnTagIndex(t *testing.T) {
 	t.Parallel()
 
-	Convey("FetchOnTagIndex", t, func() {
+	ftt.Run("FetchOnTagIndex", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		ctx = auth.WithState(ctx, &authtest.FakeState{
 			Identity: userID,
@@ -1181,12 +1183,12 @@ func TestFetchOnTagIndex(t *testing.T) {
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 
-		So(datastore.Put(ctx, &model.Bucket{
+		assert.Loosely(t, datastore.Put(ctx, &model.Bucket{
 			ID:     "bucket",
 			Parent: model.ProjectKey(ctx, "project"),
 			Proto:  &pb.Bucket{},
-		}), ShouldBeNil)
-		So(datastore.Put(ctx, &model.Build{
+		}), should.BeNil)
+		assert.Loosely(t, datastore.Put(ctx, &model.Build{
 			ID: 100,
 			Proto: &pb.Build{
 				Id: 100,
@@ -1203,8 +1205,8 @@ func TestFetchOnTagIndex(t *testing.T) {
 			BuilderID:   "project/bucket/builder1",
 			Tags:        []string{"buildset:commit/git/abcd"},
 			Experiments: experiments(false, false),
-		}), ShouldBeNil)
-		So(datastore.Put(ctx, &model.Build{
+		}), should.BeNil)
+		assert.Loosely(t, datastore.Put(ctx, &model.Build{
 			ID: 200,
 			Proto: &pb.Build{
 				Id: 200,
@@ -1221,8 +1223,8 @@ func TestFetchOnTagIndex(t *testing.T) {
 			BuilderID: "project/bucket/builder2",
 			Tags:      []string{"buildset:commit/git/abcd"},
 			// legacy; no Experiments, assumed to be prod
-		}), ShouldBeNil)
-		So(datastore.Put(ctx, &model.Build{
+		}), should.BeNil)
+		assert.Loosely(t, datastore.Put(ctx, &model.Build{
 			ID: 300,
 			Proto: &pb.Build{
 				Id: 300,
@@ -1240,8 +1242,8 @@ func TestFetchOnTagIndex(t *testing.T) {
 			BuilderID:   "project/bucket/builder3",
 			Tags:        []string{"buildset:commit/git/abcd"},
 			Experiments: experiments(false, true),
-		}), ShouldBeNil)
-		So(datastore.Put(ctx, &model.TagIndex{
+		}), should.BeNil)
+		assert.Loosely(t, datastore.Put(ctx, &model.TagIndex{
 			ID: ":2:buildset:commit/git/abcd",
 			Entries: []model.TagIndexEntry{
 				{
@@ -1249,8 +1251,8 @@ func TestFetchOnTagIndex(t *testing.T) {
 					BucketID: "project/bucket",
 				},
 			},
-		}), ShouldBeNil)
-		So(datastore.Put(ctx, &model.TagIndex{
+		}), should.BeNil)
+		assert.Loosely(t, datastore.Put(ctx, &model.TagIndex{
 			ID: ":3:buildset:commit/git/abcd",
 			Entries: []model.TagIndexEntry{
 				{
@@ -1262,7 +1264,7 @@ func TestFetchOnTagIndex(t *testing.T) {
 					BucketID: "project/bucket",
 				},
 			},
-		}), ShouldBeNil)
+		}), should.BeNil)
 		req := &pb.SearchBuildsRequest{
 			Predicate: &pb.BuildPredicate{
 				Tags: []*pb.StringPair{
@@ -1270,7 +1272,7 @@ func TestFetchOnTagIndex(t *testing.T) {
 				},
 			},
 		}
-		Convey("filter only by an indexed tag", func() {
+		t.Run("filter only by an indexed tag", func(t *ftt.Test) {
 			query := NewQuery(req)
 			actualRsp, err := query.fetchOnTagIndex(ctx)
 			expectedRsp := &pb.SearchBuildsResponse{
@@ -1302,11 +1304,11 @@ func TestFetchOnTagIndex(t *testing.T) {
 				},
 			}
 
-			So(err, ShouldBeNil)
-			So(actualRsp, ShouldResembleProto, expectedRsp)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actualRsp, should.Resemble(expectedRsp))
 		})
 
-		Convey("filter by status", func() {
+		t.Run("filter by status", func(t *ftt.Test) {
 			req.Predicate.Status = pb.Status_CANCELED
 			query := NewQuery(req)
 			actualRsp, err := query.fetchOnTagIndex(ctx)
@@ -1326,11 +1328,11 @@ func TestFetchOnTagIndex(t *testing.T) {
 					},
 				},
 			}
-			So(err, ShouldBeNil)
-			So(actualRsp, ShouldResembleProto, expectedRsp)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actualRsp, should.Resemble(expectedRsp))
 		})
-		Convey("filter by ENDED_MASK", func() {
-			So(datastore.Put(ctx, &model.Build{
+		t.Run("filter by ENDED_MASK", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(ctx, &model.Build{
 				ID: 999,
 				Proto: &pb.Build{
 					Id:     999,
@@ -1347,8 +1349,8 @@ func TestFetchOnTagIndex(t *testing.T) {
 				Status:      pb.Status_STARTED,
 				Tags:        []string{"buildset:commit/git/abcd"},
 				Experiments: experiments(false, false),
-			}), ShouldBeNil)
-			So(datastore.Put(ctx, &model.TagIndex{
+			}), should.BeNil)
+			assert.Loosely(t, datastore.Put(ctx, &model.TagIndex{
 				ID: ":4:buildset:commit/git/abcd",
 				Entries: []model.TagIndexEntry{
 					{
@@ -1356,7 +1358,7 @@ func TestFetchOnTagIndex(t *testing.T) {
 						BucketID: "project/bucket",
 					},
 				},
-			}), ShouldBeNil)
+			}), should.BeNil)
 			req.Predicate.Status = pb.Status_ENDED_MASK
 			query := NewQuery(req)
 			actualRsp, err := query.fetchOnTagIndex(ctx)
@@ -1388,17 +1390,17 @@ func TestFetchOnTagIndex(t *testing.T) {
 					},
 				},
 			}
-			So(err, ShouldBeNil)
-			So(actualRsp, ShouldResembleProto, expectedRsp)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actualRsp, should.Resemble(expectedRsp))
 		})
-		Convey("filter by an indexed tag and a normal tag", func() {
+		t.Run("filter by an indexed tag and a normal tag", func(t *ftt.Test) {
 			req.Predicate.Tags = append(req.Predicate.Tags, &pb.StringPair{Key: "k1", Value: "v1"})
 			query := NewQuery(req)
 			actualRsp, err := query.fetchOnTagIndex(ctx)
-			So(err, ShouldBeNil)
-			So(actualRsp, ShouldResembleProto, &pb.SearchBuildsResponse{})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actualRsp, should.Resemble(&pb.SearchBuildsResponse{}))
 		})
-		Convey("filter by build range", func() {
+		t.Run("filter by build range", func(t *ftt.Test) {
 			req.Predicate.Build = &pb.BuildRange{
 				StartBuildId: 199,
 				EndBuildId:   99,
@@ -1422,24 +1424,24 @@ func TestFetchOnTagIndex(t *testing.T) {
 				},
 			}
 
-			So(err, ShouldBeNil)
-			So(actualRsp, ShouldResembleProto, expectedRsp)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actualRsp, should.Resemble(expectedRsp))
 		})
-		Convey("filter by created_by", func() {
+		t.Run("filter by created_by", func(t *ftt.Test) {
 			req.Predicate.CreatedBy = "project:infra"
 			query := NewQuery(req)
 			actualRsp, err := query.fetchOnTagIndex(ctx)
-			So(err, ShouldBeNil)
-			So(actualRsp, ShouldResembleProto, &pb.SearchBuildsResponse{})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actualRsp, should.Resemble(&pb.SearchBuildsResponse{}))
 		})
-		Convey("filter by canary", func() {
+		t.Run("filter by canary", func(t *ftt.Test) {
 			req.Predicate.Canary = pb.Trinary_YES
 			query := NewQuery(req)
 			actualRsp, err := query.fetchOnTagIndex(ctx)
-			So(err, ShouldBeNil)
-			So(actualRsp, ShouldResembleProto, &pb.SearchBuildsResponse{})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actualRsp, should.Resemble(&pb.SearchBuildsResponse{}))
 		})
-		Convey("filter by IncludeExperimental", func() {
+		t.Run("filter by IncludeExperimental", func(t *ftt.Test) {
 			req.Predicate.IncludeExperimental = true
 			query := NewQuery(req)
 			actualRsp, err := query.fetchOnTagIndex(ctx)
@@ -1485,10 +1487,10 @@ func TestFetchOnTagIndex(t *testing.T) {
 				},
 			}
 
-			So(err, ShouldBeNil)
-			So(actualRsp, ShouldResembleProto, expectedRsp)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actualRsp, should.Resemble(expectedRsp))
 		})
-		Convey("pagination", func() {
+		t.Run("pagination", func(t *ftt.Test) {
 			req.PageSize = 1
 			query := NewQuery(req)
 			actualRsp, err := query.fetchOnTagIndex(ctx)
@@ -1510,18 +1512,18 @@ func TestFetchOnTagIndex(t *testing.T) {
 				NextPageToken: "id>100",
 			}
 
-			So(err, ShouldBeNil)
-			So(actualRsp, ShouldResembleProto, expectedRsp)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actualRsp, should.Resemble(expectedRsp))
 		})
-		Convey("No permission on requested buckets", func() {
+		t.Run("No permission on requested buckets", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:none",
 			})
 			query := NewQuery(req)
 			actualRsp, err := query.fetchOnTagIndex(ctx)
 
-			So(err, ShouldBeNil)
-			So(actualRsp, ShouldResembleProto, &pb.SearchBuildsResponse{})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actualRsp, should.Resemble(&pb.SearchBuildsResponse{}))
 		})
 	})
 }
@@ -1529,7 +1531,7 @@ func TestFetchOnTagIndex(t *testing.T) {
 func TestMinHeap(t *testing.T) {
 	t.Parallel()
 
-	Convey("minHeap", t, func() {
+	ftt.Run("minHeap", t, func(t *ftt.Test) {
 		h := &minHeap{{BuildID: 2}, {BuildID: 1}, {BuildID: 5}}
 
 		heap.Init(h)
@@ -1538,7 +1540,7 @@ func TestMinHeap(t *testing.T) {
 		for h.Len() > 0 {
 			res = append(res, heap.Pop(h).(*model.TagIndexEntry).BuildID)
 		}
-		So(res, ShouldResemble, []int64{1, 2, 3, 5})
+		assert.Loosely(t, res, should.Resemble([]int64{1, 2, 3, 5}))
 	})
 
 }

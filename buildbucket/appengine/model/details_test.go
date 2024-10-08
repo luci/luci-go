@@ -24,60 +24,60 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestDetails(t *testing.T) {
 	t.Parallel()
 
-	Convey("Details", t, func() {
-		Convey("BuildSteps", func() {
+	ftt.Run("Details", t, func(t *ftt.Test) {
+		t.Run("BuildSteps", func(t *ftt.Test) {
 			ctx := memory.Use(context.Background())
 			datastore.GetTestable(ctx).AutoIndex(true)
 			datastore.GetTestable(ctx).Consistent(true)
 
-			Convey("CancelIncomplete", func() {
+			t.Run("CancelIncomplete", func(t *ftt.Test) {
 				now := &timestamppb.Timestamp{
 					Seconds: 123,
 				}
 
-				Convey("error", func() {
+				t.Run("error", func(t *ftt.Test) {
 					s := &BuildSteps{
 						IsZipped: true,
 					}
 					ch, err := s.CancelIncomplete(ctx, now)
-					So(err, ShouldErrLike, "error creating reader")
-					So(ch, ShouldBeFalse)
-					So(s, ShouldResemble, &BuildSteps{
+					assert.Loosely(t, err, should.ErrLike("error creating reader"))
+					assert.Loosely(t, ch, should.BeFalse)
+					assert.Loosely(t, s, should.Resemble(&BuildSteps{
 						IsZipped: true,
-					})
+					}))
 				})
 
-				Convey("not changed", func() {
-					Convey("empty", func() {
+				t.Run("not changed", func(t *ftt.Test) {
+					t.Run("empty", func(t *ftt.Test) {
 						b, err := proto.Marshal(&pb.Build{})
-						So(err, ShouldBeNil)
+						assert.Loosely(t, err, should.BeNil)
 
 						s := &BuildSteps{
 							IsZipped: false,
 							Bytes:    b,
 						}
 						ch, err := s.CancelIncomplete(ctx, now)
-						So(err, ShouldBeNil)
-						So(ch, ShouldBeFalse)
-						So(s, ShouldResemble, &BuildSteps{
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, ch, should.BeFalse)
+						assert.Loosely(t, s, should.Resemble(&BuildSteps{
 							IsZipped: false,
 							Bytes:    b,
-						})
+						}))
 					})
 
-					Convey("completed", func() {
+					t.Run("completed", func(t *ftt.Test) {
 						b, err := proto.Marshal(&pb.Build{
 							Steps: []*pb.Step{
 								{
@@ -85,22 +85,22 @@ func TestDetails(t *testing.T) {
 								},
 							},
 						})
-						So(err, ShouldBeNil)
+						assert.Loosely(t, err, should.BeNil)
 						s := &BuildSteps{
 							IsZipped: false,
 							Bytes:    b,
 						}
 						ch, err := s.CancelIncomplete(ctx, now)
-						So(err, ShouldBeNil)
-						So(ch, ShouldBeFalse)
-						So(s, ShouldResemble, &BuildSteps{
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, ch, should.BeFalse)
+						assert.Loosely(t, s, should.Resemble(&BuildSteps{
 							IsZipped: false,
 							Bytes:    b,
-						})
+						}))
 					})
 				})
 
-				Convey("changed", func() {
+				t.Run("changed", func(t *ftt.Test) {
 					b, err := proto.Marshal(&pb.Build{
 						Steps: []*pb.Step{
 							{
@@ -108,7 +108,7 @@ func TestDetails(t *testing.T) {
 							},
 						},
 					})
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					s := &BuildSteps{
 						IsZipped: false,
 						Bytes:    b,
@@ -122,19 +122,19 @@ func TestDetails(t *testing.T) {
 							},
 						},
 					})
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					ch, err := s.CancelIncomplete(ctx, now)
-					So(err, ShouldBeNil)
-					So(ch, ShouldBeTrue)
-					So(s, ShouldResemble, &BuildSteps{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, ch, should.BeTrue)
+					assert.Loosely(t, s, should.Resemble(&BuildSteps{
 						IsZipped: false,
 						Bytes:    b,
-					})
+					}))
 				})
 			})
 
-			Convey("FromProto", func() {
-				Convey("not zipped", func() {
+			t.Run("FromProto", func(t *ftt.Test) {
+				t.Run("not zipped", func(t *ftt.Test) {
 					b, err := proto.Marshal(&pb.Build{
 						Steps: []*pb.Step{
 							{
@@ -142,46 +142,46 @@ func TestDetails(t *testing.T) {
 							},
 						},
 					})
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					s := &BuildSteps{}
-					So(s.FromProto([]*pb.Step{
+					assert.Loosely(t, s.FromProto([]*pb.Step{
 						{
 							Name: "step",
 						},
-					}), ShouldBeNil)
-					So(s.Bytes, ShouldResemble, b)
-					So(s.IsZipped, ShouldBeFalse)
+					}), should.BeNil)
+					assert.Loosely(t, s.Bytes, should.Resemble(b))
+					assert.Loosely(t, s.IsZipped, should.BeFalse)
 				})
 			})
 
-			Convey("ToProto", func() {
-				Convey("zipped", func() {
-					Convey("error", func() {
+			t.Run("ToProto", func(t *ftt.Test) {
+				t.Run("zipped", func(t *ftt.Test) {
+					t.Run("error", func(t *ftt.Test) {
 						s := &BuildSteps{
 							IsZipped: true,
 						}
 						p, err := s.ToProto(ctx)
-						So(err, ShouldErrLike, "error creating reader")
-						So(p, ShouldBeNil)
+						assert.Loosely(t, err, should.ErrLike("error creating reader"))
+						assert.Loosely(t, p, should.BeNil)
 					})
 
-					Convey("ok", func() {
+					t.Run("ok", func(t *ftt.Test) {
 						s := &BuildSteps{
 							// { name: "step" }
 							Bytes:    []byte{120, 156, 234, 98, 100, 227, 98, 41, 46, 73, 45, 0, 4, 0, 0, 255, 255, 9, 199, 2, 92},
 							IsZipped: true,
 						}
 						p, err := s.ToProto(ctx)
-						So(err, ShouldBeNil)
-						So(p, ShouldResembleProto, []*pb.Step{
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, p, should.Resemble([]*pb.Step{
 							{
 								Name: "step",
 							},
-						})
+						}))
 					})
 				})
 
-				Convey("not zipped", func() {
+				t.Run("not zipped", func(t *ftt.Test) {
 					b, err := proto.Marshal(&pb.Build{
 						Steps: []*pb.Step{
 							{
@@ -189,76 +189,76 @@ func TestDetails(t *testing.T) {
 							},
 						},
 					})
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					s := &BuildSteps{
 						IsZipped: false,
 						Bytes:    b,
 					}
 					p, err := s.ToProto(ctx)
-					So(err, ShouldBeNil)
-					So(p, ShouldResembleProto, []*pb.Step{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, p, should.Resemble([]*pb.Step{
 						{
 							Name: "step",
 						},
-					})
+					}))
 				})
 			})
 		})
 
-		Convey("defaultStructValue", func() {
-			Convey("nil struct", func() {
+		t.Run("defaultStructValue", func(t *ftt.Test) {
+			t.Run("nil struct", func(t *ftt.Test) {
 				defaultStructValues(nil)
 			})
 
-			Convey("empty struct", func() {
+			t.Run("empty struct", func(t *ftt.Test) {
 				s := &structpb.Struct{}
 				defaultStructValues(s)
-				So(s, ShouldResembleProto, &structpb.Struct{})
+				assert.Loosely(t, s, should.Resemble(&structpb.Struct{}))
 			})
 
-			Convey("empty fields", func() {
+			t.Run("empty fields", func(t *ftt.Test) {
 				s := &structpb.Struct{
 					Fields: map[string]*structpb.Value{},
 				}
 				defaultStructValues(s)
-				So(s, ShouldResembleProto, &structpb.Struct{
+				assert.Loosely(t, s, should.Resemble(&structpb.Struct{
 					Fields: map[string]*structpb.Value{},
-				})
+				}))
 			})
 
-			Convey("nil value", func() {
+			t.Run("nil value", func(t *ftt.Test) {
 				s := &structpb.Struct{
 					Fields: map[string]*structpb.Value{
 						"key": nil,
 					},
 				}
 				defaultStructValues(s)
-				So(s, ShouldResembleProto, &structpb.Struct{
+				assert.Loosely(t, s, should.Resemble(&structpb.Struct{
 					Fields: map[string]*structpb.Value{
 						"key": {
 							Kind: &structpb.Value_NullValue{},
 						},
 					},
-				})
+				}))
 			})
 
-			Convey("empty value", func() {
+			t.Run("empty value", func(t *ftt.Test) {
 				s := &structpb.Struct{
 					Fields: map[string]*structpb.Value{
 						"key": {},
 					},
 				}
 				defaultStructValues(s)
-				So(s, ShouldResembleProto, &structpb.Struct{
+				assert.Loosely(t, s, should.Resemble(&structpb.Struct{
 					Fields: map[string]*structpb.Value{
 						"key": {
 							Kind: &structpb.Value_NullValue{},
 						},
 					},
-				})
+				}))
 			})
 
-			Convey("recursive", func() {
+			t.Run("recursive", func(t *ftt.Test) {
 				s := &structpb.Struct{
 					Fields: map[string]*structpb.Value{
 						"key": {
@@ -273,7 +273,7 @@ func TestDetails(t *testing.T) {
 					},
 				}
 				defaultStructValues(s)
-				So(s, ShouldResembleProto, &structpb.Struct{
+				assert.Loosely(t, s, should.Resemble(&structpb.Struct{
 					Fields: map[string]*structpb.Value{
 						"key": {
 							Kind: &structpb.Value_StructValue{
@@ -287,39 +287,39 @@ func TestDetails(t *testing.T) {
 							},
 						},
 					},
-				})
+				}))
 			})
 		})
 	})
 
-	Convey("BuildOutputProperties", t, func() {
+	ftt.Run("BuildOutputProperties", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 
-		Convey("normal", func() {
+		t.Run("normal", func(t *ftt.Test) {
 			prop, err := structpb.NewStruct(map[string]any{"key": "value"})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			outProp := &BuildOutputProperties{
 				Build: datastore.KeyForObj(ctx, &Build{ID: 123}),
 				Proto: prop,
 			}
-			So(outProp.Put(ctx), ShouldBeNil)
+			assert.Loosely(t, outProp.Put(ctx), should.BeNil)
 
 			count, err := datastore.Count(ctx, datastore.NewQuery("PropertyChunk"))
-			So(err, ShouldBeNil)
-			So(count, ShouldEqual, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, count, should.BeZero)
 
 			outPropInDB := &BuildOutputProperties{
 				Build: datastore.KeyForObj(ctx, &Build{ID: 123}),
 			}
-			So(outPropInDB.Get(ctx), ShouldBeNil)
-			So(outPropInDB.Proto, ShouldResembleProto, mustStruct(map[string]any{
+			assert.Loosely(t, outPropInDB.Get(ctx), should.BeNil)
+			assert.Loosely(t, outPropInDB.Proto, should.Resemble(mustStruct(map[string]any{
 				"key": "value",
-			}))
-			So(outPropInDB.ChunkCount, ShouldEqual, 0)
+			})))
+			assert.Loosely(t, outPropInDB.ChunkCount, should.BeZero)
 
-			Convey("normal -> larger", func() {
+			t.Run("normal -> larger", func(t *ftt.Test) {
 				larger := proto.Clone(prop).(*structpb.Struct)
 				larger.Fields["new_key"] = &structpb.Value{
 					Kind: &structpb.Value_StringValue{
@@ -328,22 +328,22 @@ func TestDetails(t *testing.T) {
 				}
 
 				outProp.Proto = larger
-				So(outProp.Put(ctx), ShouldBeNil)
-				So(outProp.ChunkCount, ShouldEqual, 0)
+				assert.Loosely(t, outProp.Put(ctx), should.BeNil)
+				assert.Loosely(t, outProp.ChunkCount, should.BeZero)
 
 				outPropInDB := &BuildOutputProperties{
 					Build: outProp.Build,
 				}
-				So(outPropInDB.Get(ctx), ShouldBeNil)
-				So(outPropInDB.Proto, ShouldResembleProto, mustStruct(map[string]any{
+				assert.Loosely(t, outPropInDB.Get(ctx), should.BeNil)
+				assert.Loosely(t, outPropInDB.Proto, should.Resemble(mustStruct(map[string]any{
 					"key":     "value",
 					"new_key": "new_value",
-				}))
+				})))
 			})
 
-			Convey("normal -> extreme large", func() {
+			t.Run("normal -> extreme large", func(t *ftt.Test) {
 				larger, err := structpb.NewStruct(map[string]any{})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				k := "laaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaarge_key"
 				v := "laaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaarge_value"
 				for i := 0; i < 10000; i++ {
@@ -355,20 +355,20 @@ func TestDetails(t *testing.T) {
 				}
 
 				outProp.Proto = larger
-				So(outProp.Put(ctx), ShouldBeNil)
-				So(outProp.ChunkCount, ShouldAlmostEqual, 1, 1)
+				assert.Loosely(t, outProp.Put(ctx), should.BeNil)
+				assert.Loosely(t, outProp.ChunkCount, should.Equal(1))
 
 				outPropInDB := &BuildOutputProperties{
 					Build: outProp.Build,
 				}
-				So(outPropInDB.Get(ctx), ShouldBeNil)
-				So(outPropInDB.Proto, ShouldResembleProto, larger)
+				assert.Loosely(t, outPropInDB.Get(ctx), should.BeNil)
+				assert.Loosely(t, outPropInDB.Proto, should.Resemble(larger))
 			})
 		})
 
-		Convey("large", func() {
+		t.Run("large", func(t *ftt.Test) {
 			largeProps, err := structpb.NewStruct(map[string]any{})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			k := "laaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaarge_key"
 			v := "laaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaarge_value"
 			for i := 0; i < 10000; i++ {
@@ -382,42 +382,42 @@ func TestDetails(t *testing.T) {
 				Build: datastore.KeyForObj(ctx, &Build{ID: 123}),
 				Proto: largeProps,
 			}
-			So(outProp.Put(ctx), ShouldBeNil)
-			So(outProp.Proto, ShouldResembleProto, largeProps)
-			So(outProp.ChunkCount, ShouldAlmostEqual, 1, 1)
+			assert.Loosely(t, outProp.Put(ctx), should.BeNil)
+			assert.Loosely(t, outProp.Proto, should.Resemble(largeProps))
+			assert.Loosely(t, outProp.ChunkCount, should.Equal(1))
 
 			count, err := datastore.Count(ctx, datastore.NewQuery("PropertyChunk"))
-			So(err, ShouldBeNil)
-			So(count, ShouldAlmostEqual, 1, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, count, should.Equal(1))
 
 			outPropInDB := &BuildOutputProperties{
 				Build: datastore.KeyForObj(ctx, &Build{ID: 123}),
 			}
-			So(datastore.Get(ctx, outPropInDB), ShouldBeNil)
-			So(outPropInDB.ChunkCount, ShouldAlmostEqual, 1, 1)
+			assert.Loosely(t, datastore.Get(ctx, outPropInDB), should.BeNil)
+			assert.Loosely(t, outPropInDB.ChunkCount, should.Equal(1))
 
-			So(outPropInDB.Get(ctx), ShouldBeNil)
-			So(outPropInDB.Proto, ShouldResembleProto, largeProps)
-			So(outPropInDB.ChunkCount, ShouldEqual, 0)
+			assert.Loosely(t, outPropInDB.Get(ctx), should.BeNil)
+			assert.Loosely(t, outPropInDB.Proto, should.Resemble(largeProps))
+			assert.Loosely(t, outPropInDB.ChunkCount, should.BeZero)
 
-			Convey("large -> small", func() {
+			t.Run("large -> small", func(t *ftt.Test) {
 				prop, err := structpb.NewStruct(map[string]any{"key": "value"})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				// Proto got updated to a smaller one.
 				outProp.Proto = prop
 
-				So(outProp.Put(ctx), ShouldBeNil)
-				So(outProp.ChunkCount, ShouldEqual, 0)
+				assert.Loosely(t, outProp.Put(ctx), should.BeNil)
+				assert.Loosely(t, outProp.ChunkCount, should.BeZero)
 
 				outPropInDB := &BuildOutputProperties{
 					Build: outProp.Build,
 				}
-				So(outPropInDB.Get(ctx), ShouldBeNil)
-				So(outPropInDB.Proto, ShouldResembleProto, prop)
-				So(outPropInDB.ChunkCount, ShouldEqual, 0)
+				assert.Loosely(t, outPropInDB.Get(ctx), should.BeNil)
+				assert.Loosely(t, outPropInDB.Proto, should.Resemble(prop))
+				assert.Loosely(t, outPropInDB.ChunkCount, should.BeZero)
 			})
 
-			Convey("large -> larger", func() {
+			t.Run("large -> larger", func(t *ftt.Test) {
 				larger := proto.Clone(largeProps).(*structpb.Struct)
 				curLen := len(larger.Fields)
 				for i := 0; i < 10; i++ {
@@ -430,20 +430,20 @@ func TestDetails(t *testing.T) {
 				// Proto got updated to an even larger one.
 				outProp.Proto = larger
 
-				So(outProp.Put(ctx), ShouldBeNil)
-				So(outProp.ChunkCount, ShouldAlmostEqual, 1, 1)
-				So(outProp.Proto, ShouldResembleProto, larger)
+				assert.Loosely(t, outProp.Put(ctx), should.BeNil)
+				assert.Loosely(t, outProp.ChunkCount, should.Equal(1))
+				assert.Loosely(t, outProp.Proto, should.Resemble(larger))
 
 				outPropInDB := &BuildOutputProperties{
 					Build: outProp.Build,
 				}
-				So(outPropInDB.Get(ctx), ShouldBeNil)
-				So(outPropInDB.Proto, ShouldResembleProto, larger)
-				So(outPropInDB.ChunkCount, ShouldEqual, 0)
+				assert.Loosely(t, outPropInDB.Get(ctx), should.BeNil)
+				assert.Loosely(t, outPropInDB.Proto, should.Resemble(larger))
+				assert.Loosely(t, outPropInDB.ChunkCount, should.BeZero)
 			})
 		})
 
-		Convey("too large (>1 chunks)", func() {
+		t.Run("too large (>1 chunks)", func(t *ftt.Test) {
 			originMaxPropertySize := maxPropertySize
 			defer func() {
 				maxPropertySize = originMaxPropertySize
@@ -452,11 +452,11 @@ func TestDetails(t *testing.T) {
 			maxPropertySize = 100
 
 			largeProps, err := structpb.NewStruct(map[string]any{})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			k := "largeeeeeee_key"
 			v := "largeeeeeee_value"
 
-			Convey(">1 and <4 chunks", func() {
+			t.Run(">1 and <4 chunks", func(t *ftt.Test) {
 				for i := 0; i < 60; i++ {
 					largeProps.Fields[k+strconv.Itoa(i)] = &structpb.Value{
 						Kind: &structpb.Value_StringValue{
@@ -468,23 +468,23 @@ func TestDetails(t *testing.T) {
 					Build: datastore.KeyForObj(ctx, &Build{ID: 123}),
 					Proto: largeProps,
 				}
-				So(outProp.Put(ctx), ShouldBeNil)
-				So(outProp.Proto, ShouldResembleProto, largeProps)
-				So(outProp.ChunkCount, ShouldBeBetween, 1, 4)
+				assert.Loosely(t, outProp.Put(ctx), should.BeNil)
+				assert.Loosely(t, outProp.Proto, should.Resemble(largeProps))
+				assert.Loosely(t, outProp.ChunkCount, should.BeBetween(1, 4))
 
 				count, err := datastore.Count(ctx, datastore.NewQuery("PropertyChunk"))
-				So(err, ShouldBeNil)
-				So(count, ShouldBeBetween, 1, 4)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, count, should.BeBetween(1, 4))
 
 				outPropInDB := &BuildOutputProperties{
 					Build: datastore.KeyForObj(ctx, &Build{ID: 123}),
 				}
-				So(outPropInDB.Get(ctx), ShouldBeNil)
-				So(outPropInDB.Proto, ShouldResembleProto, largeProps)
-				So(outPropInDB.ChunkCount, ShouldEqual, 0)
+				assert.Loosely(t, outPropInDB.Get(ctx), should.BeNil)
+				assert.Loosely(t, outPropInDB.Proto, should.Resemble(largeProps))
+				assert.Loosely(t, outPropInDB.ChunkCount, should.BeZero)
 			})
 
-			Convey("~4 chunks", func() {
+			t.Run("~4 chunks", func(t *ftt.Test) {
 				for i := 0; i < 120; i++ {
 					largeProps.Fields[k+strconv.Itoa(i)] = &structpb.Value{
 						Kind: &structpb.Value_StringValue{
@@ -496,23 +496,23 @@ func TestDetails(t *testing.T) {
 					Build: datastore.KeyForObj(ctx, &Build{ID: 123}),
 					Proto: largeProps,
 				}
-				So(outProp.Put(ctx), ShouldBeNil)
-				So(outProp.Proto, ShouldResembleProto, largeProps)
-				So(outProp.ChunkCount, ShouldAlmostEqual, 4, 2)
+				assert.Loosely(t, outProp.Put(ctx), should.BeNil)
+				assert.Loosely(t, outProp.Proto, should.Resemble(largeProps))
+				assert.Loosely(t, outProp.ChunkCount, should.Equal(4))
 
 				count, err := datastore.Count(ctx, datastore.NewQuery("PropertyChunk"))
-				So(err, ShouldBeNil)
-				So(count, ShouldAlmostEqual, 4, 2)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, count, should.Equal(4))
 
 				outPropInDB := &BuildOutputProperties{
 					Build: datastore.KeyForObj(ctx, &Build{ID: 123}),
 				}
-				So(outPropInDB.Get(ctx), ShouldBeNil)
-				So(outPropInDB.Proto, ShouldResembleProto, largeProps)
-				So(outPropInDB.ChunkCount, ShouldEqual, 0)
+				assert.Loosely(t, outPropInDB.Get(ctx), should.BeNil)
+				assert.Loosely(t, outPropInDB.Proto, should.Resemble(largeProps))
+				assert.Loosely(t, outPropInDB.ChunkCount, should.BeZero)
 			})
 
-			Convey("> 4 chunks", func() {
+			t.Run("> 4 chunks", func(t *ftt.Test) {
 				for i := 0; i < 500; i++ {
 					largeProps.Fields[k+strconv.Itoa(i)] = &structpb.Value{
 						Kind: &structpb.Value_StringValue{
@@ -524,22 +524,22 @@ func TestDetails(t *testing.T) {
 					Build: datastore.KeyForObj(ctx, &Build{ID: 123}),
 					Proto: largeProps,
 				}
-				So(outProp.Put(ctx), ShouldBeNil)
-				So(outProp.Proto, ShouldResembleProto, largeProps)
-				So(outProp.ChunkCount, ShouldBeGreaterThan, 4)
+				assert.Loosely(t, outProp.Put(ctx), should.BeNil)
+				assert.Loosely(t, outProp.Proto, should.Resemble(largeProps))
+				assert.Loosely(t, outProp.ChunkCount, should.BeGreaterThan(4))
 
 				count, err := datastore.Count(ctx, datastore.NewQuery("PropertyChunk"))
-				So(err, ShouldBeNil)
-				So(count, ShouldBeGreaterThan, 4)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, count, should.BeGreaterThan(4))
 
 				outPropInDB := &BuildOutputProperties{
 					Build: datastore.KeyForObj(ctx, &Build{ID: 123}),
 				}
-				So(outPropInDB.Get(ctx), ShouldBeNil)
-				So(outPropInDB.Proto, ShouldResembleProto, largeProps)
-				So(outPropInDB.ChunkCount, ShouldEqual, 0)
+				assert.Loosely(t, outPropInDB.Get(ctx), should.BeNil)
+				assert.Loosely(t, outPropInDB.Proto, should.Resemble(largeProps))
+				assert.Loosely(t, outPropInDB.ChunkCount, should.BeZero)
 
-				Convey("missing 2nd Chunk", func() {
+				t.Run("missing 2nd Chunk", func(t *ftt.Test) {
 					// Originally, it has >4 chunks. Now, intentionally delete the 2nd chunk
 					chunk2 := &PropertyChunk{
 						ID:    2,
@@ -548,16 +548,16 @@ func TestDetails(t *testing.T) {
 							Build: datastore.KeyForObj(ctx, &Build{ID: 123}),
 						}),
 					}
-					So(datastore.Put(ctx, chunk2), ShouldBeNil)
+					assert.Loosely(t, datastore.Put(ctx, chunk2), should.BeNil)
 
 					outPropInDB := &BuildOutputProperties{
 						Build: datastore.KeyForObj(ctx, &Build{ID: 123}),
 					}
 					err = outPropInDB.Get(ctx)
-					So(err, ShouldErrLike, "failed to decompress output properties bytes")
+					assert.Loosely(t, err, should.ErrLike("failed to decompress output properties bytes"))
 				})
 
-				Convey("missing 5nd Chunk", func() {
+				t.Run("missing 5nd Chunk", func(t *ftt.Test) {
 					// Originally, it has >4 chunks. Now, intentionally delete the 5nd chunk
 					chunk5 := &PropertyChunk{
 						ID: 5,
@@ -565,29 +565,29 @@ func TestDetails(t *testing.T) {
 							Build: datastore.KeyForObj(ctx, &Build{ID: 123}),
 						}),
 					}
-					So(datastore.Delete(ctx, chunk5), ShouldBeNil)
+					assert.Loosely(t, datastore.Delete(ctx, chunk5), should.BeNil)
 
 					outPropInDB := &BuildOutputProperties{
 						Build: datastore.KeyForObj(ctx, &Build{ID: 123}),
 					}
 					err = outPropInDB.Get(ctx)
-					So(err, ShouldErrLike, "failed to fetch the rest chunks for BuildOutputProperties: datastore: no such entity")
+					assert.Loosely(t, err, should.ErrLike("failed to fetch the rest chunks for BuildOutputProperties: datastore: no such entity"))
 				})
 			})
 		})
 
-		Convey("BuildOutputProperties not exist", func() {
+		t.Run("BuildOutputProperties not exist", func(t *ftt.Test) {
 			outProp := &BuildOutputProperties{
 				Build: datastore.KeyForObj(ctx, &Build{
 					ID: 999,
 				}),
 			}
-			So(outProp.Get(ctx), ShouldEqual, datastore.ErrNoSuchEntity)
+			assert.Loosely(t, outProp.Get(ctx), should.Equal(datastore.ErrNoSuchEntity))
 		})
 
-		Convey("GetMultiOutputProperties", func() {
+		t.Run("GetMultiOutputProperties", func(t *ftt.Test) {
 			largeProps, err := structpb.NewStruct(map[string]any{})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			k := "laaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaarge_key"
 			v := "laaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaarge_value"
 			for i := 0; i < 10000; i++ {
@@ -605,8 +605,8 @@ func TestDetails(t *testing.T) {
 				Build: datastore.KeyForObj(ctx, &Build{ID: 456}),
 				Proto: largeProps,
 			}
-			So(outProp1.Put(ctx), ShouldBeNil)
-			So(outProp2.Put(ctx), ShouldBeNil)
+			assert.Loosely(t, outProp1.Put(ctx), should.BeNil)
+			assert.Loosely(t, outProp2.Put(ctx), should.BeNil)
 
 			outPropInDB1 := &BuildOutputProperties{
 				Build: datastore.KeyForObj(ctx, &Build{ID: 123}),
@@ -614,21 +614,21 @@ func TestDetails(t *testing.T) {
 			outPropInDB2 := &BuildOutputProperties{
 				Build: datastore.KeyForObj(ctx, &Build{ID: 456}),
 			}
-			So(GetMultiOutputProperties(ctx, outPropInDB1, outPropInDB2), ShouldBeNil)
-			So(outPropInDB1.Proto, ShouldResembleProto, largeProps)
-			So(outPropInDB2.Proto, ShouldResembleProto, largeProps)
+			assert.Loosely(t, GetMultiOutputProperties(ctx, outPropInDB1, outPropInDB2), should.BeNil)
+			assert.Loosely(t, outPropInDB1.Proto, should.Resemble(largeProps))
+			assert.Loosely(t, outPropInDB2.Proto, should.Resemble(largeProps))
 
-			Convey("one empty, one found", func() {
+			t.Run("one empty, one found", func(t *ftt.Test) {
 				outPropInDB1 := &BuildOutputProperties{}
 				outPropInDB2 := &BuildOutputProperties{
 					Build: datastore.KeyForObj(ctx, &Build{ID: 456}),
 				}
-				So(GetMultiOutputProperties(ctx, outPropInDB1, outPropInDB2), ShouldBeNil)
-				So(outPropInDB1.Proto, ShouldBeNil)
-				So(outPropInDB2.Proto, ShouldResembleProto, largeProps)
+				assert.Loosely(t, GetMultiOutputProperties(ctx, outPropInDB1, outPropInDB2), should.BeNil)
+				assert.Loosely(t, outPropInDB1.Proto, should.BeNil)
+				assert.Loosely(t, outPropInDB2.Proto, should.Resemble(largeProps))
 			})
 
-			Convey("one not found, one found", func() {
+			t.Run("one not found, one found", func(t *ftt.Test) {
 				outPropInDB1 := &BuildOutputProperties{
 					Build: datastore.KeyForObj(ctx, &Build{ID: 999}),
 				}
@@ -636,11 +636,11 @@ func TestDetails(t *testing.T) {
 					Build: datastore.KeyForObj(ctx, &Build{ID: 456}),
 				}
 				err := GetMultiOutputProperties(ctx, outPropInDB1, outPropInDB2)
-				So(err, ShouldNotBeNil)
+				assert.Loosely(t, err, should.NotBeNil)
 				me, _ := err.(errors.MultiError)
-				So(me[0], ShouldErrLike, datastore.ErrNoSuchEntity)
-				So(outPropInDB1.Proto, ShouldBeNil)
-				So(outPropInDB2.Proto, ShouldResembleProto, largeProps)
+				assert.Loosely(t, me[0], should.ErrLike(datastore.ErrNoSuchEntity))
+				assert.Loosely(t, outPropInDB1.Proto, should.BeNil)
+				assert.Loosely(t, outPropInDB2.Proto, should.Resemble(largeProps))
 			})
 		})
 	})

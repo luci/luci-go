@@ -28,6 +28,9 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -39,15 +42,12 @@ import (
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestValidateBuildTask(t *testing.T) {
 	t.Parallel()
 
-	Convey("ValidateBuildTask", t, func() {
+	ftt.Run("ValidateBuildTask", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 
 		t0 := testclock.TestRecentTimeUTC
@@ -69,8 +69,8 @@ func TestValidateBuildTask(t *testing.T) {
 			Build: bk,
 			Proto: &pb.BuildInfra{},
 		}
-		So(datastore.Put(ctx, build, infra), ShouldBeNil)
-		Convey("backend not in build infra", func() {
+		assert.Loosely(t, datastore.Put(ctx, build, infra), should.BeNil)
+		t.Run("backend not in build infra", func(t *ftt.Test) {
 			req := &pb.BuildTaskUpdate{
 				BuildId: "1",
 				Task: &pb.Task{
@@ -81,16 +81,16 @@ func TestValidateBuildTask(t *testing.T) {
 				},
 			}
 			err := validateBuildTask(req, infra)
-			So(err, ShouldErrLike, "build 1 does not support task backend")
+			assert.Loosely(t, err, should.ErrLike("build 1 does not support task backend"))
 		})
-		Convey("task not in build infra", func() {
+		t.Run("task not in build infra", func(t *ftt.Test) {
 			infra := &model.BuildInfra{
 				Build: bk,
 				Proto: &pb.BuildInfra{
 					Backend: &pb.BuildInfra_Backend{},
 				},
 			}
-			So(datastore.Put(ctx, infra), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, infra), should.BeNil)
 			req := &pb.BuildTaskUpdate{
 				BuildId: "1",
 				Task: &pb.Task{
@@ -101,9 +101,9 @@ func TestValidateBuildTask(t *testing.T) {
 				},
 			}
 			err := validateBuildTask(req, infra)
-			So(err, ShouldErrLike, "no task is associated with the build")
+			assert.Loosely(t, err, should.ErrLike("no task is associated with the build"))
 		})
-		Convey("task ID target mismatch", func() {
+		t.Run("task ID target mismatch", func(t *ftt.Test) {
 			infra := &model.BuildInfra{
 				Build: bk,
 				Proto: &pb.BuildInfra{
@@ -117,7 +117,7 @@ func TestValidateBuildTask(t *testing.T) {
 					},
 				},
 			}
-			So(datastore.Put(ctx, infra), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, infra), should.BeNil)
 			req := &pb.BuildTaskUpdate{
 				BuildId: "1",
 				Task: &pb.Task{
@@ -128,9 +128,9 @@ func TestValidateBuildTask(t *testing.T) {
 				},
 			}
 			err := validateBuildTask(req, infra)
-			So(err, ShouldBeError)
+			assert.Loosely(t, err, should.ErrLike("does not match TaskID associated with build"))
 		})
-		Convey("Run task did not return yet", func() {
+		t.Run("Run task did not return yet", func(t *ftt.Test) {
 			infra := &model.BuildInfra{
 				Build: bk,
 				Proto: &pb.BuildInfra{
@@ -143,7 +143,7 @@ func TestValidateBuildTask(t *testing.T) {
 					},
 				},
 			}
-			So(datastore.Put(ctx, infra), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, infra), should.BeNil)
 			req := &pb.BuildTaskUpdate{
 				BuildId: "1",
 				Task: &pb.Task{
@@ -155,9 +155,9 @@ func TestValidateBuildTask(t *testing.T) {
 				},
 			}
 			err := validateBuildTask(req, infra)
-			So(err, ShouldErrLike, "no task is associated with the build")
+			assert.Loosely(t, err, should.ErrLike("no task is associated with the build"))
 		})
-		Convey("task is complete and success", func() {
+		t.Run("task is complete and success", func(t *ftt.Test) {
 			infra := &model.BuildInfra{
 				Build: bk,
 				Proto: &pb.BuildInfra{
@@ -172,7 +172,7 @@ func TestValidateBuildTask(t *testing.T) {
 					},
 				},
 			}
-			So(datastore.Put(ctx, infra), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, infra), should.BeNil)
 			req := &pb.BuildTaskUpdate{
 				BuildId: "1",
 				Task: &pb.Task{
@@ -183,9 +183,9 @@ func TestValidateBuildTask(t *testing.T) {
 				},
 			}
 			err := validateBuildTask(req, infra)
-			So(err, ShouldBeError)
+			assert.Loosely(t, err, should.ErrLike("cannot update an ended task"))
 		})
-		Convey("task is cancelled", func() {
+		t.Run("task is cancelled", func(t *ftt.Test) {
 			infra := &model.BuildInfra{
 				Build: bk,
 				Proto: &pb.BuildInfra{
@@ -200,7 +200,7 @@ func TestValidateBuildTask(t *testing.T) {
 					},
 				},
 			}
-			So(datastore.Put(ctx, infra), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, infra), should.BeNil)
 			req := &pb.BuildTaskUpdate{
 				BuildId: "1",
 				Task: &pb.Task{
@@ -211,9 +211,9 @@ func TestValidateBuildTask(t *testing.T) {
 				},
 			}
 			err := validateBuildTask(req, infra)
-			So(err, ShouldBeError)
+			assert.Loosely(t, err, should.ErrLike("cannot update an ended task"))
 		})
-		Convey("task is running", func() {
+		t.Run("task is running", func(t *ftt.Test) {
 			infra := &model.BuildInfra{
 				Build: bk,
 				Proto: &pb.BuildInfra{
@@ -228,7 +228,7 @@ func TestValidateBuildTask(t *testing.T) {
 					},
 				},
 			}
-			So(datastore.Put(ctx, infra), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, infra), should.BeNil)
 			req := &pb.BuildTaskUpdate{
 				BuildId: "1",
 				Task: &pb.Task{
@@ -239,7 +239,7 @@ func TestValidateBuildTask(t *testing.T) {
 				},
 			}
 			err := validateBuildTask(req, infra)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
 	})
@@ -248,8 +248,8 @@ func TestValidateBuildTask(t *testing.T) {
 func TestValidateTaskUpdate(t *testing.T) {
 	t.Parallel()
 
-	Convey("ValidateTaskUpdate", t, func() {
-		Convey("is valid task", func() {
+	ftt.Run("ValidateTaskUpdate", t, func(t *ftt.Test) {
+		t.Run("is valid task", func(t *ftt.Test) {
 			req := &pb.BuildTaskUpdate{
 				BuildId: "1",
 				Task: &pb.Task{
@@ -261,17 +261,17 @@ func TestValidateTaskUpdate(t *testing.T) {
 					UpdateId: 1,
 				},
 			}
-			So(validateBuildTaskUpdate(req), ShouldBeNil)
+			assert.Loosely(t, validateBuildTaskUpdate(req), should.BeNil)
 		})
-		Convey("is missing task", func() {
+		t.Run("is missing task", func(t *ftt.Test) {
 			req := &pb.BuildTaskUpdate{
 				BuildId: "1",
 			}
 			err := validateBuildTaskUpdate(req)
-			So(err, ShouldNotBeNil)
-			So(err.Error(), ShouldContainSubstring, "task.id: required")
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, err.Error(), should.ContainSubstring("task.id: required"))
 		})
-		Convey("is missing build ID", func() {
+		t.Run("is missing build ID", func(t *ftt.Test) {
 			req := &pb.BuildTaskUpdate{
 				Task: &pb.Task{
 					Status: pb.Status_STARTED,
@@ -282,10 +282,10 @@ func TestValidateTaskUpdate(t *testing.T) {
 				},
 			}
 			err := validateBuildTaskUpdate(req)
-			So(err, ShouldNotBeNil)
-			So(err.Error(), ShouldContainSubstring, "build_id required")
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, err.Error(), should.ContainSubstring("build_id required"))
 		})
-		Convey("is missing task ID", func() {
+		t.Run("is missing task ID", func(t *ftt.Test) {
 			req := &pb.BuildTaskUpdate{
 				BuildId: "1",
 				Task: &pb.Task{
@@ -293,10 +293,10 @@ func TestValidateTaskUpdate(t *testing.T) {
 				},
 			}
 			err := validateBuildTaskUpdate(req)
-			So(err, ShouldNotBeNil)
-			So(err.Error(), ShouldContainSubstring, "task.id: required")
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, err.Error(), should.ContainSubstring("task.id: required"))
 		})
-		Convey("is missing update ID", func() {
+		t.Run("is missing update ID", func(t *ftt.Test) {
 			req := &pb.BuildTaskUpdate{
 				BuildId: "1",
 				Task: &pb.Task{
@@ -308,10 +308,10 @@ func TestValidateTaskUpdate(t *testing.T) {
 				},
 			}
 			err := validateBuildTaskUpdate(req)
-			So(err, ShouldNotBeNil)
-			So(err.Error(), ShouldContainSubstring, "task.UpdateId: required")
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, err.Error(), should.ContainSubstring("task.UpdateId: required"))
 		})
-		Convey("is invalid task status: SCHEDULED", func() {
+		t.Run("is invalid task status: SCHEDULED", func(t *ftt.Test) {
 			req := &pb.BuildTaskUpdate{
 				BuildId: "1",
 				Task: &pb.Task{
@@ -324,10 +324,10 @@ func TestValidateTaskUpdate(t *testing.T) {
 				},
 			}
 			err := validateBuildTaskUpdate(req)
-			So(err, ShouldNotBeNil)
-			So(err.Error(), ShouldContainSubstring, "invalid status SCHEDULED")
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, err.Error(), should.ContainSubstring("invalid status SCHEDULED"))
 		})
-		Convey("is invalid task status: ENDED_MASK", func() {
+		t.Run("is invalid task status: ENDED_MASK", func(t *ftt.Test) {
 			req := &pb.BuildTaskUpdate{
 				BuildId: "1",
 				Task: &pb.Task{
@@ -340,10 +340,10 @@ func TestValidateTaskUpdate(t *testing.T) {
 				},
 			}
 			err := validateBuildTaskUpdate(req)
-			So(err, ShouldNotBeNil)
-			So(err.Error(), ShouldContainSubstring, "invalid status ENDED_MASK")
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, err.Error(), should.ContainSubstring("invalid status ENDED_MASK"))
 		})
-		Convey("is invalid task status: STATUS_UNSPECIFIED", func() {
+		t.Run("is invalid task status: STATUS_UNSPECIFIED", func(t *ftt.Test) {
 			req := &pb.BuildTaskUpdate{
 				BuildId: "1",
 				Task: &pb.Task{
@@ -356,10 +356,10 @@ func TestValidateTaskUpdate(t *testing.T) {
 				},
 			}
 			err := validateBuildTaskUpdate(req)
-			So(err, ShouldNotBeNil)
-			So(err.Error(), ShouldContainSubstring, "invalid status STATUS_UNSPECIFIED")
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, err.Error(), should.ContainSubstring("invalid status STATUS_UNSPECIFIED"))
 		})
-		Convey("is invalid task detail", func() {
+		t.Run("is invalid task detail", func(t *ftt.Test) {
 
 			details := make(map[string]*structpb.Value)
 			for i := 0; i < 10000; i++ {
@@ -381,15 +381,15 @@ func TestValidateTaskUpdate(t *testing.T) {
 				},
 			}
 			err := validateBuildTaskUpdate(req)
-			So(err, ShouldNotBeNil)
-			So(err.Error(), ShouldContainSubstring, "task.details is greater than 10 kb")
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, err.Error(), should.ContainSubstring("task.details is greater than 10 kb"))
 		})
 	})
 }
 
 func TestUpdateTaskEntity(t *testing.T) {
 	t.Parallel()
-	Convey("UpdateTaskEntity", t, func() {
+	ftt.Run("UpdateTaskEntity", t, func(t *ftt.Test) {
 		ctx, sch := tq.TestingContext(memory.Use(context.Background()), nil)
 		ctx = txndefer.FilterRDS(ctx)
 		ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
@@ -438,8 +438,8 @@ func TestUpdateTaskEntity(t *testing.T) {
 				MaxConcurrentBuilds: 2,
 			},
 		}
-		So(datastore.Put(ctx, buildModel, infraModel, bldr), ShouldBeNil)
-		Convey("normal task save", func() {
+		assert.Loosely(t, datastore.Put(ctx, buildModel, infraModel, bldr), should.BeNil)
+		t.Run("normal task save", func(t *ftt.Test) {
 			req := &pb.BuildTaskUpdate{
 				BuildId: "1",
 				Task: &pb.Task{
@@ -452,14 +452,14 @@ func TestUpdateTaskEntity(t *testing.T) {
 				},
 			}
 			err := updateTaskEntity(ctx, req, 1, false)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			bk := datastore.KeyForObj(ctx, &model.Build{ID: 1})
 			resultInfraModel := &model.BuildInfra{
 				Build: bk,
 			}
 			result := datastore.Get(ctx, resultInfraModel)
-			So(result, ShouldBeNil)
-			So(resultInfraModel.Proto, ShouldResembleProto, &pb.BuildInfra{
+			assert.Loosely(t, result, should.BeNil)
+			assert.Loosely(t, resultInfraModel.Proto, should.Resemble(&pb.BuildInfra{
 				Backend: &pb.BuildInfra_Backend{
 					Task: &pb.Task{
 						Status: pb.Status_STARTED,
@@ -471,10 +471,10 @@ func TestUpdateTaskEntity(t *testing.T) {
 						UpdateId: 100,
 					},
 				},
-			})
+			}))
 		})
 
-		Convey("old update_id", func() {
+		t.Run("old update_id", func(t *ftt.Test) {
 			req := &pb.BuildTaskUpdate{
 				BuildId: "1",
 				Task: &pb.Task{
@@ -488,10 +488,10 @@ func TestUpdateTaskEntity(t *testing.T) {
 				},
 			}
 			err := updateTaskEntity(ctx, req, 1, false)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey("end a task", func() {
+		t.Run("end a task", func(t *ftt.Test) {
 			bs := &model.BuildStatus{
 				Build:  bk,
 				Status: pb.Status_STARTED,
@@ -503,14 +503,14 @@ func TestUpdateTaskEntity(t *testing.T) {
 					},
 				},
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			steps := &model.BuildSteps{
 				ID:       1,
 				Build:    bk,
 				IsZipped: false,
 				Bytes:    b,
 			}
-			So(datastore.Put(ctx, buildModel, infraModel, bs, steps), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, buildModel, infraModel, bs, steps), should.BeNil)
 
 			endReq := &pb.BuildTaskUpdate{
 				BuildId: "1",
@@ -524,13 +524,13 @@ func TestUpdateTaskEntity(t *testing.T) {
 				},
 			}
 			err = updateTaskEntity(ctx, endReq, 1, false)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			resultInfraModel := &model.BuildInfra{
 				Build: bk,
 			}
 			result := datastore.Get(ctx, resultInfraModel, bs, buildModel, steps)
-			So(result, ShouldBeNil)
-			So(resultInfraModel.Proto, ShouldResembleProto, &pb.BuildInfra{
+			assert.Loosely(t, result, should.BeNil)
+			assert.Loosely(t, resultInfraModel.Proto, should.Resemble(&pb.BuildInfra{
 				Backend: &pb.BuildInfra_Backend{
 					Task: &pb.Task{
 						Status: pb.Status_INFRA_FAILURE,
@@ -542,23 +542,23 @@ func TestUpdateTaskEntity(t *testing.T) {
 						Link:     "a link",
 					},
 				},
-			})
+			}))
 
-			So(sch.Tasks(), ShouldHaveLength, 4)
-			So(bs.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
-			So(buildModel.Proto.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
+			assert.Loosely(t, sch.Tasks(), should.HaveLength(4))
+			assert.Loosely(t, bs.Status, should.Equal(pb.Status_INFRA_FAILURE))
+			assert.Loosely(t, buildModel.Proto.Status, should.Equal(pb.Status_INFRA_FAILURE))
 			stp, err := steps.ToProto(ctx)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			for _, s := range stp {
-				So(s.Status, ShouldEqual, pb.Status_CANCELED)
+				assert.Loosely(t, s.Status, should.Equal(pb.Status_CANCELED))
 			}
 		})
-		Convey("expire a task", func() {
+		t.Run("expire a task", func(t *ftt.Test) {
 			bs := &model.BuildStatus{
 				Build:  bk,
 				Status: pb.Status_SCHEDULED,
 			}
-			So(datastore.Put(ctx, buildModel, infraModel, bs), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, buildModel, infraModel, bs), should.BeNil)
 
 			statusDetails := &pb.StatusDetails{
 				Timeout: &pb.StatusDetails_Timeout{},
@@ -576,13 +576,13 @@ func TestUpdateTaskEntity(t *testing.T) {
 				},
 			}
 			err := updateTaskEntity(ctx, endReq, 1, false)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			resultInfraModel := &model.BuildInfra{
 				Build: bk,
 			}
 			result := datastore.Get(ctx, resultInfraModel, bs, buildModel)
-			So(result, ShouldBeNil)
-			So(resultInfraModel.Proto, ShouldResembleProto, &pb.BuildInfra{
+			assert.Loosely(t, result, should.BeNil)
+			assert.Loosely(t, resultInfraModel.Proto, should.Resemble(&pb.BuildInfra{
 				Backend: &pb.BuildInfra_Backend{
 					Task: &pb.Task{
 						Status:        pb.Status_INFRA_FAILURE,
@@ -595,21 +595,21 @@ func TestUpdateTaskEntity(t *testing.T) {
 						Link:     "a link",
 					},
 				},
-			})
+			}))
 
-			So(sch.Tasks(), ShouldHaveLength, 4)
-			So(bs.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
-			So(buildModel.Proto.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
-			So(buildModel.Proto.StatusDetails, ShouldResembleProto, statusDetails)
+			assert.Loosely(t, sch.Tasks(), should.HaveLength(4))
+			assert.Loosely(t, bs.Status, should.Equal(pb.Status_INFRA_FAILURE))
+			assert.Loosely(t, buildModel.Proto.Status, should.Equal(pb.Status_INFRA_FAILURE))
+			assert.Loosely(t, buildModel.Proto.StatusDetails, should.Resemble(statusDetails))
 		})
-		Convey("start a task", func() {
+		t.Run("start a task", func(t *ftt.Test) {
 			buildModel.Proto.Status = pb.Status_SCHEDULED
 			infraModel.Proto.Backend.Task.Status = pb.Status_SCHEDULED
 			bs := &model.BuildStatus{
 				Build:  bk,
 				Status: pb.Status_SCHEDULED,
 			}
-			So(datastore.Put(ctx, buildModel, infraModel, bs), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, buildModel, infraModel, bs), should.BeNil)
 
 			endReq := &pb.BuildTaskUpdate{
 				BuildId: "1",
@@ -623,20 +623,20 @@ func TestUpdateTaskEntity(t *testing.T) {
 				},
 			}
 			err := updateTaskEntity(ctx, endReq, 1, false)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			resultInfraModel := &model.BuildInfra{
 				Build: bk,
 			}
 			result := datastore.Get(ctx, resultInfraModel, bs, buildModel)
-			So(result, ShouldBeNil)
-			So(resultInfraModel.Proto.Backend.Task.Status, ShouldEqual, pb.Status_STARTED)
+			assert.Loosely(t, result, should.BeNil)
+			assert.Loosely(t, resultInfraModel.Proto.Backend.Task.Status, should.Equal(pb.Status_STARTED))
 
-			So(sch.Tasks(), ShouldHaveLength, 0)
-			So(bs.Status, ShouldEqual, pb.Status_SCHEDULED)
-			So(buildModel.Proto.Status, ShouldEqual, pb.Status_SCHEDULED)
+			assert.Loosely(t, sch.Tasks(), should.HaveLength(0))
+			assert.Loosely(t, bs.Status, should.Equal(pb.Status_SCHEDULED))
+			assert.Loosely(t, buildModel.Proto.Status, should.Equal(pb.Status_SCHEDULED))
 		})
 
-		Convey("RunTask did not return but UpdateBuildTask called", func() {
+		t.Run("RunTask did not return but UpdateBuildTask called", func(t *ftt.Test) {
 			buildModel.Proto.Status = pb.Status_SCHEDULED
 			infraModel.Proto.Backend.Task.Id.Id = ""
 			infraModel.Proto.Backend.Task.UpdateId = 0
@@ -645,7 +645,7 @@ func TestUpdateTaskEntity(t *testing.T) {
 				Build:  bk,
 				Status: pb.Status_SCHEDULED,
 			}
-			So(datastore.Put(ctx, buildModel, infraModel, bs), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, buildModel, infraModel, bs), should.BeNil)
 
 			endReq := &pb.BuildTaskUpdate{
 				BuildId: "1",
@@ -659,36 +659,36 @@ func TestUpdateTaskEntity(t *testing.T) {
 				},
 			}
 			err := updateTaskEntity(ctx, endReq, 1, false)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			resultInfraModel := &model.BuildInfra{
 				Build: bk,
 			}
 			result := datastore.Get(ctx, resultInfraModel, bs, buildModel)
-			So(result, ShouldBeNil)
-			So(resultInfraModel.Proto.Backend.Task.Status, ShouldEqual, pb.Status_STARTED)
+			assert.Loosely(t, result, should.BeNil)
+			assert.Loosely(t, resultInfraModel.Proto.Backend.Task.Status, should.Equal(pb.Status_STARTED))
 
-			So(sch.Tasks(), ShouldHaveLength, 0)
-			So(bs.Status, ShouldEqual, pb.Status_SCHEDULED)
-			So(buildModel.Proto.Status, ShouldEqual, pb.Status_SCHEDULED)
+			assert.Loosely(t, sch.Tasks(), should.HaveLength(0))
+			assert.Loosely(t, bs.Status, should.Equal(pb.Status_SCHEDULED))
+			assert.Loosely(t, buildModel.Proto.Status, should.Equal(pb.Status_SCHEDULED))
 
 			postInfra := &model.BuildInfra{Build: bk}
-			So(datastore.Get(ctx, postInfra), ShouldBeNil)
-			So(postInfra.Proto.Backend.Task, ShouldResembleProto, &pb.Task{
+			assert.Loosely(t, datastore.Get(ctx, postInfra), should.BeNil)
+			assert.Loosely(t, postInfra.Proto.Backend.Task, should.Resemble(&pb.Task{
 				Status: pb.Status_STARTED,
 				Id: &pb.TaskID{
 					Id:     "1",
 					Target: "swarming",
 				},
 				UpdateId: 200,
-			})
+			}))
 		})
 
-		Convey("Backfill task for a canceled build", func() {
+		t.Run("Backfill task for a canceled build", func(t *ftt.Test) {
 			buildModel.Proto.Status = pb.Status_CANCELED
-			So(datastore.Put(ctx, buildModel), ShouldBeNil)
-			Convey("bypassing if task has ended", func() {
+			assert.Loosely(t, datastore.Put(ctx, buildModel), should.BeNil)
+			t.Run("bypassing if task has ended", func(t *ftt.Test) {
 				infraModel.Proto.Backend.Task.Status = pb.Status_CANCELED
-				So(datastore.Put(ctx, infraModel), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, infraModel), should.BeNil)
 				endReq := &pb.BuildTaskUpdate{
 					BuildId: "1",
 					Task: &pb.Task{
@@ -701,15 +701,15 @@ func TestUpdateTaskEntity(t *testing.T) {
 					},
 				}
 				err := updateTaskEntity(ctx, endReq, 1, false)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				result := &model.BuildInfra{
 					Build: bk,
 				}
-				So(datastore.Get(ctx, result), ShouldBeNil)
+				assert.Loosely(t, datastore.Get(ctx, result), should.BeNil)
 				// No update made.
-				So(result.Proto.Backend.Task.UpdateId, ShouldEqual, 50)
+				assert.Loosely(t, result.Proto.Backend.Task.UpdateId, should.Equal(50))
 			})
-			Convey("bypassing intermediate update", func() {
+			t.Run("bypassing intermediate update", func(t *ftt.Test) {
 				endReq := &pb.BuildTaskUpdate{
 					BuildId: "1",
 					Task: &pb.Task{
@@ -722,15 +722,15 @@ func TestUpdateTaskEntity(t *testing.T) {
 					},
 				}
 				err := updateTaskEntity(ctx, endReq, 1, false)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				result := &model.BuildInfra{
 					Build: bk,
 				}
-				So(datastore.Get(ctx, result), ShouldBeNil)
+				assert.Loosely(t, datastore.Get(ctx, result), should.BeNil)
 				// No update made.
-				So(result.Proto.Backend.Task.UpdateId, ShouldEqual, 50)
+				assert.Loosely(t, result.Proto.Backend.Task.UpdateId, should.Equal(50))
 			})
-			Convey("backfilled", func() {
+			t.Run("backfilled", func(t *ftt.Test) {
 				endReq := &pb.BuildTaskUpdate{
 					BuildId: "1",
 					Task: &pb.Task{
@@ -743,13 +743,13 @@ func TestUpdateTaskEntity(t *testing.T) {
 					},
 				}
 				err := updateTaskEntity(ctx, endReq, 1, false)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				result := &model.BuildInfra{
 					Build: bk,
 				}
-				So(datastore.Get(ctx, result), ShouldBeNil)
-				So(result.Proto.Backend.Task.UpdateId, ShouldEqual, 200)
-				So(result.Proto.Backend.Task.Status, ShouldEqual, pb.Status_CANCELED)
+				assert.Loosely(t, datastore.Get(ctx, result), should.BeNil)
+				assert.Loosely(t, result.Proto.Backend.Task.UpdateId, should.Equal(200))
+				assert.Loosely(t, result.Proto.Backend.Task.Status, should.Equal(pb.Status_CANCELED))
 			})
 		})
 
@@ -759,12 +759,12 @@ func TestUpdateTaskEntity(t *testing.T) {
 func TestUpdateBuildTask(t *testing.T) {
 	t.Parallel()
 
-	Convey("pubsub handler", t, func() {
+	ftt.Run("pubsub handler", t, func(t *ftt.Test) {
 		ctx := memory.UseWithAppID(context.Background(), "dev~app-id")
 		ctx = cachingtest.WithGlobalCache(ctx, map[string]caching.BlobCache{
 			"update-build-task-pubsub-msg-id": cachingtest.NewBlobCache(),
 		})
-		So(config.SetTestSettingsCfg(ctx, &pb.SettingsCfg{
+		assert.Loosely(t, config.SetTestSettingsCfg(ctx, &pb.SettingsCfg{
 			Backends: []*pb.BackendSetting{
 				{
 					Target:   "swarming://chromium-swarm",
@@ -781,7 +781,7 @@ func TestUpdateBuildTask(t *testing.T) {
 					Mode:     &pb.BackendSetting_LiteMode_{},
 				},
 			},
-		}), ShouldBeNil)
+		}), should.BeNil)
 
 		t0 := testclock.TestRecentTimeUTC
 
@@ -821,13 +821,13 @@ func TestUpdateBuildTask(t *testing.T) {
 				},
 			},
 		}
-		Convey("full mode", func() {
-			Convey("ok", func() {
+		t.Run("full mode", func(t *ftt.Test) {
+			t.Run("ok", func(t *ftt.Test) {
 				// Update the backend task as if RunTask had responded.
 				infra.Proto.Backend.Task.Id.Id = "one"
 				infra.Proto.Backend.Task.UpdateId = 1
 				infra.Proto.Backend.Task.Status = pb.Status_SCHEDULED
-				So(datastore.Put(ctx, build, infra), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, build, infra), should.BeNil)
 				req := &pb.BuildTaskUpdate{
 					BuildId: "1",
 					Task: &pb.Task{
@@ -841,17 +841,17 @@ func TestUpdateBuildTask(t *testing.T) {
 					},
 				}
 				body := makeUpdateBuildTaskPubsubMsg(req, "msg_id_1", "chromium-swarm-backend")
-				So(UpdateBuildTask(ctx, body), ShouldBeNil)
+				assert.Loosely(t, UpdateBuildTask(ctx, body), should.BeNil)
 
 				expectedBuildInfra := &model.BuildInfra{Build: datastore.KeyForObj(ctx, &model.Build{ID: 1})}
-				So(datastore.Get(ctx, expectedBuildInfra), ShouldBeNil)
-				So(expectedBuildInfra.Proto.Backend.Task.Status, ShouldEqual, pb.Status_STARTED)
-				So(expectedBuildInfra.Proto.Backend.Task.UpdateId, ShouldEqual, 2)
-				So(expectedBuildInfra.Proto.Backend.Task.SummaryMarkdown, ShouldEqual, "imo, html is ugly to read")
+				assert.Loosely(t, datastore.Get(ctx, expectedBuildInfra), should.BeNil)
+				assert.Loosely(t, expectedBuildInfra.Proto.Backend.Task.Status, should.Equal(pb.Status_STARTED))
+				assert.Loosely(t, expectedBuildInfra.Proto.Backend.Task.UpdateId, should.Equal(2))
+				assert.Loosely(t, expectedBuildInfra.Proto.Backend.Task.SummaryMarkdown, should.Equal("imo, html is ugly to read"))
 			})
 
-			Convey("task is not registered", func() {
-				So(datastore.Put(ctx, build, infra), ShouldBeNil)
+			t.Run("task is not registered", func(t *ftt.Test) {
+				assert.Loosely(t, datastore.Put(ctx, build, infra), should.BeNil)
 				req := &pb.BuildTaskUpdate{
 					BuildId: "1",
 					Task: &pb.Task{
@@ -865,10 +865,10 @@ func TestUpdateBuildTask(t *testing.T) {
 					},
 				}
 				body := makeUpdateBuildTaskPubsubMsg(req, "msg_id_1", "chromium-swarm-backend")
-				So(UpdateBuildTask(ctx, body), ShouldErrLike, "no task is associated with the build")
+				assert.Loosely(t, UpdateBuildTask(ctx, body), should.ErrLike("no task is associated with the build"))
 			})
 
-			Convey("subscription id mismatch", func() {
+			t.Run("subscription id mismatch", func(t *ftt.Test) {
 				req := &pb.BuildTaskUpdate{
 					BuildId: "1",
 					Task: &pb.Task{
@@ -882,10 +882,10 @@ func TestUpdateBuildTask(t *testing.T) {
 					},
 				}
 				body := makeUpdateBuildTaskPubsubMsg(req, "msg_id_1", "chromium-swarm-backend-v2")
-				So(UpdateBuildTask(ctx, body), ShouldErrLike, "pubsub subscription projects/app-id/subscriptions/chromium-swarm-backend-v2 did not match the one configured for target swarming://chromium-swarm")
+				assert.Loosely(t, UpdateBuildTask(ctx, body), should.ErrLike("pubsub subscription projects/app-id/subscriptions/chromium-swarm-backend-v2 did not match the one configured for target swarming://chromium-swarm"))
 			})
 		})
-		Convey("lite mode", func() {
+		t.Run("lite mode", func(t *ftt.Test) {
 			req := &pb.BuildTaskUpdate{
 				BuildId: "1",
 				Task: &pb.Task{
@@ -898,7 +898,7 @@ func TestUpdateBuildTask(t *testing.T) {
 				},
 			}
 			body := makeUpdateBuildTaskPubsubMsg(req, "msg_id_1", "foo")
-			So(UpdateBuildTask(ctx, body), ShouldErrLike, "backend target foo://foo-backend is in lite mode. The task update isn't supported")
+			assert.Loosely(t, UpdateBuildTask(ctx, body), should.ErrLike("backend target foo://foo-backend is in lite mode. The task update isn't supported"))
 		})
 	})
 }

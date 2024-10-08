@@ -29,6 +29,10 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -40,9 +44,6 @@ import (
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 var shards int32 = 10
@@ -92,7 +93,7 @@ func fakeFetchTasksResponse(ctx context.Context, taskReq *pb.FetchTasksRequest, 
 	return &pb.FetchTasksResponse{Responses: responses}, nil
 }
 
-func prepEntities(ctx context.Context, bID int64, buildStatus, outputStatus, taskStatus pb.Status, tIDSuffix string, updateTime time.Time) *datastore.Key {
+func prepEntities(ctx context.Context, t testing.TB, bID int64, buildStatus, outputStatus, taskStatus pb.Status, tIDSuffix string, updateTime time.Time) *datastore.Key {
 	tID := ""
 	if tIDSuffix != "no_task" {
 		tID = fmt.Sprintf("task%d%s", bID, tIDSuffix)
@@ -146,7 +147,7 @@ func prepEntities(ctx context.Context, bID int64, buildStatus, outputStatus, tas
 			MaxConcurrentBuilds: 2,
 		},
 	}
-	So(datastore.Put(ctx, b, inf, bs, bldr), ShouldBeNil)
+	assert.Loosely(t, datastore.Put(ctx, b, inf, bs, bldr), should.BeNil, truth.LineContext())
 	return bk
 }
 
@@ -162,7 +163,7 @@ func TestQueryBuildsToSync(t *testing.T) {
 
 	t.Parallel()
 
-	Convey("queryBuildsToSync", t, func() {
+	ftt.Run("queryBuildsToSync", t, func(t *ftt.Test) {
 		put := func(ctx context.Context, project, backend string, bID int64, status pb.Status, updateTime time.Time) {
 			b := &model.Build{
 				ID: bID,
@@ -182,7 +183,7 @@ func TestQueryBuildsToSync(t *testing.T) {
 				BackendSyncInterval: 5 * time.Minute,
 			}
 			b.GenerateNextBackendSyncTime(ctx, shards)
-			So(datastore.Put(ctx, b), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, b), should.BeNil)
 		}
 
 		project := "project"
@@ -219,8 +220,8 @@ func TestQueryBuildsToSync(t *testing.T) {
 				}
 			})
 		})
-		So(err, ShouldBeNil)
-		So(len(allBks), ShouldEqual, 5)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, len(allBks), should.Equal(5))
 	})
 }
 
@@ -246,11 +247,11 @@ func TestSyncBuildsWithBackendTasksOneFetchBatch(t *testing.T) {
 		for _, id := range bIDs {
 			blds = append(blds, &model.Build{ID: id})
 		}
-		So(datastore.Get(ctx, blds), ShouldBeNil)
+		assert.Loosely(t, datastore.Get(ctx, blds), should.BeNil)
 		return blds
 	}
 
-	Convey("syncBuildsWithBackendTasks", t, func() {
+	ftt.Run("syncBuildsWithBackendTasks", t, func(t *ftt.Test) {
 		ctx, sch := tq.TestingContext(ctx, nil)
 		backendSetting := []*pb.BackendSetting{
 			&pb.BackendSetting{
@@ -261,7 +262,7 @@ func TestSyncBuildsWithBackendTasksOneFetchBatch(t *testing.T) {
 		settingsCfg := &pb.SettingsCfg{Backends: backendSetting}
 
 		bc, err := clients.NewBackendClient(ctx, "project", "swarming", settingsCfg)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		sync := func(bks []*datastore.Key) error {
 			return parallel.RunMulti(ctx, 5, func(mr parallel.MultiRunner) error {
@@ -273,102 +274,102 @@ func TestSyncBuildsWithBackendTasksOneFetchBatch(t *testing.T) {
 			})
 		}
 
-		Convey("nothing to update", func() {
+		t.Run("nothing to update", func(t *ftt.Test) {
 			updateTime := now.Add(-2 * time.Minute)
 			bIDs := []int64{3, 4, 5}
 			var bks []*datastore.Key
-			bks = append(bks, prepEntities(ctx, 3, pb.Status_STARTED, pb.Status_STARTED, pb.Status_STARTED, "", updateTime))
-			bks = append(bks, prepEntities(ctx, 4, pb.Status_FAILURE, pb.Status_FAILURE, pb.Status_FAILURE, "", updateTime))
-			bks = append(bks, prepEntities(ctx, 5, pb.Status_SCHEDULED, pb.Status_SCHEDULED, pb.Status_SCHEDULED, "no_task", updateTime))
+			bks = append(bks, prepEntities(ctx, t, 3, pb.Status_STARTED, pb.Status_STARTED, pb.Status_STARTED, "", updateTime))
+			bks = append(bks, prepEntities(ctx, t, 4, pb.Status_FAILURE, pb.Status_FAILURE, pb.Status_FAILURE, "", updateTime))
+			bks = append(bks, prepEntities(ctx, t, 5, pb.Status_SCHEDULED, pb.Status_SCHEDULED, pb.Status_SCHEDULED, "no_task", updateTime))
 			err := sync(bks)
-			So(err, ShouldBeNil)
-			So(sch.Tasks(), ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 			blds := getEntities(bIDs)
 			for _, b := range blds {
-				So(b.Proto.UpdateTime.AsTime(), ShouldEqual, updateTime)
+				assert.Loosely(t, b.Proto.UpdateTime.AsTime(), should.Match(updateTime))
 			}
 		})
 
-		Convey("ok", func() {
+		t.Run("ok", func(t *ftt.Test) {
 			bIDs := []int64{1, 2}
 			var bks []*datastore.Key
 			for _, id := range bIDs {
-				bks = append(bks, prepEntities(ctx, id, pb.Status_STARTED, pb.Status_STARTED, pb.Status_STARTED, "", now.Add(-time.Hour)))
+				bks = append(bks, prepEntities(ctx, t, id, pb.Status_STARTED, pb.Status_STARTED, pb.Status_STARTED, "", now.Add(-time.Hour)))
 			}
 			err = sync(bks)
-			So(err, ShouldBeNil)
-			So(sch.Tasks(), ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 			blds := getEntities(bIDs)
 			for _, b := range blds {
-				So(b.Proto.UpdateTime.AsTime(), ShouldEqual, now)
+				assert.Loosely(t, b.Proto.UpdateTime.AsTime(), should.Match(now))
 			}
 		})
 
-		Convey("ok end builds", func() {
+		t.Run("ok end builds", func(t *ftt.Test) {
 			bIDs := []int64{3, 4}
 			var bks []*datastore.Key
 			for _, id := range bIDs {
-				bks = append(bks, prepEntities(ctx, id, pb.Status_STARTED, pb.Status_SUCCESS, pb.Status_STARTED, "ended", now.Add(-time.Hour)))
+				bks = append(bks, prepEntities(ctx, t, id, pb.Status_STARTED, pb.Status_SUCCESS, pb.Status_STARTED, "ended", now.Add(-time.Hour)))
 			}
 
 			err := sync(bks)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			// TQ tasks for pubsub-notification *2, and bq-export per build.
 			// Resultdb invocation finalization is noop since the builds don't have
 			// resultdb invocations.
-			So(sch.Tasks(), ShouldHaveLength, 8)
+			assert.Loosely(t, sch.Tasks(), should.HaveLength(8))
 			blds := getEntities(bIDs)
 			for _, b := range blds {
-				So(b.Proto.UpdateTime.AsTime(), ShouldEqual, now)
-				So(b.Status, ShouldEqual, pb.Status_SUCCESS)
+				assert.Loosely(t, b.Proto.UpdateTime.AsTime(), should.Match(now))
+				assert.Loosely(t, b.Status, should.Equal(pb.Status_SUCCESS))
 			}
 		})
 
-		Convey("partially ok", func() {
+		t.Run("partially ok", func(t *ftt.Test) {
 			preSyncUpdateTime := now.Add(-time.Hour)
 			bIDs := []int64{5, 6, 7, 8}
 			var bks []*datastore.Key
 			// build 5 is ok.
-			bks = append(bks, prepEntities(ctx, 5, pb.Status_STARTED, pb.Status_STARTED, pb.Status_STARTED, "", preSyncUpdateTime))
+			bks = append(bks, prepEntities(ctx, t, 5, pb.Status_STARTED, pb.Status_STARTED, pb.Status_STARTED, "", preSyncUpdateTime))
 			// failed to get the task for build 6.
-			bks = append(bks, prepEntities(ctx, 6, pb.Status_STARTED, pb.Status_STARTED, pb.Status_STARTED, "fail_me", preSyncUpdateTime))
+			bks = append(bks, prepEntities(ctx, t, 6, pb.Status_STARTED, pb.Status_STARTED, pb.Status_STARTED, "fail_me", preSyncUpdateTime))
 			// task for build 7 is stale.
-			bks = append(bks, prepEntities(ctx, 7, pb.Status_STARTED, pb.Status_STARTED, pb.Status_STARTED, "stale", preSyncUpdateTime))
+			bks = append(bks, prepEntities(ctx, t, 7, pb.Status_STARTED, pb.Status_STARTED, pb.Status_STARTED, "stale", preSyncUpdateTime))
 			// task for build 8 is unchanged.
-			bks = append(bks, prepEntities(ctx, 8, pb.Status_STARTED, pb.Status_STARTED, pb.Status_STARTED, "unchanged", preSyncUpdateTime))
+			bks = append(bks, prepEntities(ctx, t, 8, pb.Status_STARTED, pb.Status_STARTED, pb.Status_STARTED, "unchanged", preSyncUpdateTime))
 
 			blds := getEntities(bIDs)
 			nextSyncTimeBeforeSync := blds[3].NextBackendSyncTime
 
 			err := sync(bks)
-			So(err, ShouldBeNil)
-			So(sch.Tasks(), ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 			blds = getEntities(bIDs)
 			// build 5 is updated with new update_id
-			So(blds[0].Proto.UpdateTime.AsTime(), ShouldEqual, now)
+			assert.Loosely(t, blds[0].Proto.UpdateTime.AsTime(), should.Match(now))
 			// build 6 is not updated due to failing to get the task
-			So(blds[1].Proto.UpdateTime.AsTime(), ShouldEqual, preSyncUpdateTime)
+			assert.Loosely(t, blds[1].Proto.UpdateTime.AsTime(), should.Match(preSyncUpdateTime))
 			// build 7 has a stale updateID so it is not udpated
-			So(blds[2].Proto.UpdateTime.AsTime(), ShouldEqual, preSyncUpdateTime)
+			assert.Loosely(t, blds[2].Proto.UpdateTime.AsTime(), should.Match(preSyncUpdateTime))
 			// build 8 is unchanged, but we still update the builds update time
-			So(blds[3].Proto.UpdateTime.AsTime(), ShouldEqual, now)
-			So(blds[3].NextBackendSyncTime, ShouldBeGreaterThan, nextSyncTimeBeforeSync)
+			assert.Loosely(t, blds[3].Proto.UpdateTime.AsTime(), should.Match(now))
+			assert.Loosely(t, blds[3].NextBackendSyncTime, should.BeGreaterThan(nextSyncTimeBeforeSync))
 
 		})
 
-		Convey("all fail", func() {
+		t.Run("all fail", func(t *ftt.Test) {
 			preSyncUpdateTime := now.Add(-time.Hour)
 			bIDs := []int64{5, 6}
 			var bks []*datastore.Key
-			bks = append(bks, prepEntities(ctx, 5, pb.Status_STARTED, pb.Status_STARTED, pb.Status_STARTED, "", preSyncUpdateTime))
-			bks = append(bks, prepEntities(ctx, 6, pb.Status_STARTED, pb.Status_STARTED, pb.Status_STARTED, "all_fail", preSyncUpdateTime))
+			bks = append(bks, prepEntities(ctx, t, 5, pb.Status_STARTED, pb.Status_STARTED, pb.Status_STARTED, "", preSyncUpdateTime))
+			bks = append(bks, prepEntities(ctx, t, 6, pb.Status_STARTED, pb.Status_STARTED, pb.Status_STARTED, "all_fail", preSyncUpdateTime))
 
 			err := sync(bks)
-			So(err, ShouldErrLike, "idk, wanted to fail i guess :/")
-			So(sch.Tasks(), ShouldBeEmpty)
+			assert.Loosely(t, err, should.ErrLike("idk, wanted to fail i guess :/"))
+			assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 			blds := getEntities(bIDs)
 			for _, b := range blds {
-				So(b.Proto.UpdateTime.AsTime(), ShouldEqual, preSyncUpdateTime)
+				assert.Loosely(t, b.Proto.UpdateTime.AsTime(), should.Match(preSyncUpdateTime))
 			}
 		})
 	})
@@ -396,11 +397,11 @@ func TestSyncBuildsWithBackendTasks(t *testing.T) {
 		for _, id := range bIDs {
 			blds = append(blds, &model.Build{ID: id})
 		}
-		So(datastore.Get(ctx, blds), ShouldBeNil)
+		assert.Loosely(t, datastore.Get(ctx, blds), should.BeNil)
 		return blds
 	}
 
-	Convey("SyncBuildsWithBackendTasks", t, func() {
+	ftt.Run("SyncBuildsWithBackendTasks", t, func(t *ftt.Test) {
 		ctx, sch := tq.TestingContext(ctx, nil)
 		backendSetting := []*pb.BackendSetting{
 			{
@@ -424,37 +425,37 @@ func TestSyncBuildsWithBackendTasks(t *testing.T) {
 		}
 		settingsCfg := &pb.SettingsCfg{Backends: backendSetting}
 		err := config.SetTestSettingsCfg(ctx, settingsCfg)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		Convey("ok - full mode", func() {
+		t.Run("ok - full mode", func(t *ftt.Test) {
 			bIDs := []int64{101, 102, 103, 104, 105}
 			fetchBatchSize = 1
 			for _, id := range bIDs {
-				prepEntities(ctx, id, pb.Status_STARTED, pb.Status_SUCCESS, pb.Status_STARTED, "", now.Add(-time.Hour))
+				prepEntities(ctx, t, id, pb.Status_STARTED, pb.Status_SUCCESS, pb.Status_STARTED, "", now.Add(-time.Hour))
 			}
-			prepEntities(ctx, 106, pb.Status_STARTED, pb.Status_SUCCESS, pb.Status_STARTED, "ended", now.Add(-time.Hour))
+			prepEntities(ctx, t, 106, pb.Status_STARTED, pb.Status_SUCCESS, pb.Status_STARTED, "ended", now.Add(-time.Hour))
 			bIDs = append(bIDs, 106)
 			err = SyncBuildsWithBackendTasks(ctx, "swarming", "project")
-			So(err, ShouldBeNil)
-			So(sch.Tasks(), ShouldHaveLength, 4) // 106 completed
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, sch.Tasks(), should.HaveLength(4)) // 106 completed
 			blds := getEntities(bIDs)
 			for _, b := range blds {
-				So(b.Proto.UpdateTime.AsTime(), ShouldEqual, now)
+				assert.Loosely(t, b.Proto.UpdateTime.AsTime(), should.Match(now))
 				if b.ID == int64(106) {
-					So(b.Status, ShouldEqual, pb.Status_SUCCESS)
+					assert.Loosely(t, b.Status, should.Equal(pb.Status_SUCCESS))
 				}
 			}
 		})
 
-		Convey("no sync - lite mode", func() {
+		t.Run("no sync - lite mode", func(t *ftt.Test) {
 			err = SyncBuildsWithBackendTasks(ctx, "foo", "project")
-			So(err, ShouldBeNil)
-			So(sch.Tasks(), ShouldHaveLength, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, sch.Tasks(), should.HaveLength(0))
 		})
 
-		Convey("backend setting not found", func() {
+		t.Run("backend setting not found", func(t *ftt.Test) {
 			err = SyncBuildsWithBackendTasks(ctx, "not_exist", "project")
-			So(err, ShouldErrLike, "failed to find backend not_exist from global config")
+			assert.Loosely(t, err, should.ErrLike("failed to find backend not_exist from global config"))
 		})
 	})
 }

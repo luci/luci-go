@@ -40,6 +40,11 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/memlogger"
 	"go.chromium.org/luci/common/retry"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -55,23 +60,22 @@ import (
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	taskdefs "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
 	pb "go.chromium.org/luci/buildbucket/proto"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 // This will help track the number of times the cipd server is called to test if the cache is working as intended.
 var numCipdCalls int
 
-func describeBootstrapBundle(c C, hasBadPkgFile bool) http.HandlerFunc {
+func describeBootstrapBundle(t testing.TB, hasBadPkgFile bool) http.HandlerFunc {
+	// no t.Helper or LineContext because it just ends up indicating a function
+	// deep inside of the http stack.
 	return func(w http.ResponseWriter, r *http.Request) {
-		c.So(r.URL.Path, ShouldEqual, "/prpc/cipd.Repository/DescribeBootstrapBundle")
+		assert.Loosely(t, r.URL.Path, should.Equal("/prpc/cipd.Repository/DescribeBootstrapBundle"))
 		numCipdCalls++
 		reqBody, err := io.ReadAll(r.Body)
-		c.So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		req := &cipdpb.DescribeBootstrapBundleRequest{}
 		err = proto.Unmarshal(reqBody, req)
-		c.So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		variants := []string{
 			"linux-amd64",
 			"mac-amd64",
@@ -109,34 +113,35 @@ func describeBootstrapBundle(c C, hasBadPkgFile bool) http.HandlerFunc {
 		w.Header().Set(prpc.HeaderGRPCCode, strconv.Itoa(int(code)))
 		w.WriteHeader(status)
 		_, err = w.Write(buf)
-		c.So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 	}
 }
 
-func helpTestCipdCall(c C, ctx context.Context, infra *pb.BuildInfra, expectedNumCalls int) {
+func helpTestCipdCall(t testing.TB, ctx context.Context, infra *pb.BuildInfra, expectedNumCalls int) {
+	t.Helper()
 	m, err := extractCipdDetails(ctx, "project", infra)
-	c.So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil, truth.LineContext())
 	detail, ok := m["infra/tools/luci/bbagent/linux-amd64"]
-	c.So(ok, ShouldBeTrue)
-	c.So(detail, ShouldResembleProto, &pb.RunTaskRequest_AgentExecutable_AgentSource{
+	assert.Loosely(t, ok, should.BeTrue, truth.LineContext())
+	assert.Loosely(t, detail, should.Resemble(&pb.RunTaskRequest_AgentExecutable_AgentSource{
 		Sha256:    "this_is_a_sha_256_I_swear",
 		SizeBytes: 100,
 		Url:       "https://chrome-infra-packages.appspot.com/bootstrap/infra/tools/luci/bbagent/linux-amd64/+/latest",
-	})
+	}), truth.LineContext())
 	detail, ok = m["infra/tools/luci/bbagent/mac-amd64"]
-	c.So(ok, ShouldBeTrue)
-	c.So(detail, ShouldResembleProto, &pb.RunTaskRequest_AgentExecutable_AgentSource{
+	assert.Loosely(t, ok, should.BeTrue, truth.LineContext())
+	assert.Loosely(t, detail, should.Resemble(&pb.RunTaskRequest_AgentExecutable_AgentSource{
 		Sha256:    "this_is_a_sha_256_I_swear",
 		SizeBytes: 100,
 		Url:       "https://chrome-infra-packages.appspot.com/bootstrap/infra/tools/luci/bbagent/mac-amd64/+/latest",
-	})
-	c.So(numCipdCalls, ShouldEqual, expectedNumCalls)
+	}), truth.LineContext())
+	assert.Loosely(t, numCipdCalls, should.Equal(expectedNumCalls), truth.LineContext())
 }
 
 func TestCipdClient(t *testing.T) {
 	t.Parallel()
 
-	Convey("extractCipdDetails", t, func(c C) {
+	ftt.Run("extractCipdDetails", t, func(c *ftt.Test) {
 		now := testclock.TestRecentTimeUTC
 		ctx, _ := testclock.UseTime(context.Background(), now)
 		ctx = caching.WithEmptyProcessCache(ctx)
@@ -147,7 +152,7 @@ func TestCipdClient(t *testing.T) {
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 		ctx, _ = tq.TestingContext(ctx, nil)
-		mockCipdServer := httptest.NewServer(describeBootstrapBundle(c, false))
+		mockCipdServer := httptest.NewServer(describeBootstrapBundle(t, false))
 		defer mockCipdServer.Close()
 		mockCipdClient := &prpc.Client{
 			Host: strings.TrimPrefix(mockCipdServer.URL, "http://"),
@@ -164,7 +169,7 @@ func TestCipdClient(t *testing.T) {
 		}
 		ctx = context.WithValue(ctx, MockCipdClientKey{}, mockCipdClient)
 
-		Convey("ok", func() {
+		c.Run("ok", func(c *ftt.Test) {
 			infra := &pb.BuildInfra{
 				Backend: &pb.BuildInfra_Backend{
 					Task: &pb.Task{
@@ -189,7 +194,7 @@ func TestCipdClient(t *testing.T) {
 					Hostname: "some unique host name",
 				},
 			}
-			Convey("no non-ok pkg file", func() {
+			c.Run("no non-ok pkg file", func(c *ftt.Test) {
 				numCipdCalls = 0
 				// call extractCipdDetails function 10 times.
 				// The test asserts that numCipdCalls should always be 1
@@ -197,8 +202,8 @@ func TestCipdClient(t *testing.T) {
 					helpTestCipdCall(c, ctx, infra, 1)
 				}
 			})
-			Convey("contain non-ok pkg file", func() {
-				mockCipdServer := httptest.NewServer(describeBootstrapBundle(c, true))
+			c.Run("contain non-ok pkg file", func(c *ftt.Test) {
+				mockCipdServer := httptest.NewServer(describeBootstrapBundle(t, true))
 				defer mockCipdServer.Close()
 				mockCipdClient := &prpc.Client{
 					Host: strings.TrimPrefix(mockCipdServer.URL, "http://"),
@@ -225,7 +230,7 @@ func TestCipdClient(t *testing.T) {
 }
 
 func TestCreateBackendTask(t *testing.T) {
-	Convey("computeBackendNewTaskReq", t, func(c C) {
+	ftt.Run("computeBackendNewTaskReq", t, func(c *ftt.Test) {
 		ctl := gomock.NewController(t)
 		defer ctl.Finish()
 		mockTaskCreator := clients.NewMockTaskCreator(ctl)
@@ -259,7 +264,7 @@ func TestCreateBackendTask(t *testing.T) {
 			},
 		})
 		settingsCfg := &pb.SettingsCfg{Backends: backendSetting}
-		server := httptest.NewServer(describeBootstrapBundle(c, false))
+		server := httptest.NewServer(describeBootstrapBundle(t, false))
 		defer server.Close()
 		client := &prpc.Client{
 			Host: strings.TrimPrefix(server.URL, "http://"),
@@ -276,7 +281,7 @@ func TestCreateBackendTask(t *testing.T) {
 		}
 		ctx = context.WithValue(ctx, MockCipdClientKey{}, client)
 
-		Convey("ok", func() {
+		c.Run("ok", func(c *ftt.Test) {
 			build := &model.Build{
 				ID:        1,
 				BucketID:  "project/bucket",
@@ -365,8 +370,8 @@ func TestCreateBackendTask(t *testing.T) {
 				},
 			}
 			req, err := computeBackendNewTaskReq(ctx, build, infra, "request_id", settingsCfg)
-			So(err, ShouldBeNil)
-			So(req.BackendConfig, ShouldResembleProto, &structpb.Struct{
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, req.BackendConfig, should.Resemble(&structpb.Struct{
 				Fields: map[string]*structpb.Value{
 					"priority": {
 						Kind: &structpb.Value_NumberValue{NumberValue: 32},
@@ -389,10 +394,10 @@ func TestCreateBackendTask(t *testing.T) {
 					},
 					"task_name": &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "bb-1-project/bucket"}},
 				},
-			})
-			So(req.BuildbucketHost, ShouldEqual, "some unique host name")
-			So(req.BuildId, ShouldEqual, "1")
-			So(req.Caches, ShouldResembleProto, []*pb.CacheEntry{
+			}))
+			assert.Loosely(c, req.BuildbucketHost, should.Equal("some unique host name"))
+			assert.Loosely(c, req.BuildId, should.Equal("1"))
+			assert.Loosely(c, req.Caches, should.Resemble([]*pb.CacheEntry{
 				{
 					Name: "cache_name",
 					Path: "cache_value",
@@ -405,41 +410,41 @@ func TestCreateBackendTask(t *testing.T) {
 					Name: "cipd_cache_hash",
 					Path: "cipd_cache",
 				},
-			})
-			So(req.ExecutionTimeout, ShouldResembleProto, &durationpb.Duration{Seconds: 500})
-			So(req.GracePeriod, ShouldResembleProto, &durationpb.Duration{Seconds: 230})
-			So(req.Agent.Source["infra/tools/luci/bbagent/linux-amd64"], ShouldResembleProto, &pb.RunTaskRequest_AgentExecutable_AgentSource{
+			}))
+			assert.Loosely(c, req.ExecutionTimeout, should.Resemble(&durationpb.Duration{Seconds: 500}))
+			assert.Loosely(c, req.GracePeriod, should.Resemble(&durationpb.Duration{Seconds: 230}))
+			assert.Loosely(c, req.Agent.Source["infra/tools/luci/bbagent/linux-amd64"], should.Resemble(&pb.RunTaskRequest_AgentExecutable_AgentSource{
 				Sha256:    "this_is_a_sha_256_I_swear",
 				SizeBytes: 100,
 				Url:       "https://chrome-infra-packages.appspot.com/bootstrap/infra/tools/luci/bbagent/linux-amd64/+/latest",
-			})
-			So(req.Agent.Source["infra/tools/luci/bbagent/mac-amd64"], ShouldResembleProto, &pb.RunTaskRequest_AgentExecutable_AgentSource{
+			}))
+			assert.Loosely(c, req.Agent.Source["infra/tools/luci/bbagent/mac-amd64"], should.Resemble(&pb.RunTaskRequest_AgentExecutable_AgentSource{
 				Sha256:    "this_is_a_sha_256_I_swear",
 				SizeBytes: 100,
 				Url:       "https://chrome-infra-packages.appspot.com/bootstrap/infra/tools/luci/bbagent/mac-amd64/+/latest",
-			})
-			So(req.AgentArgs, ShouldResemble, []string{
+			}))
+			assert.Loosely(c, req.AgentArgs, should.Resemble([]string{
 				"-build-id", "1",
 				"-host", "some unique host name",
 				"-cache-base", "cache",
 				"-context-file", "${BUILDBUCKET_AGENT_CONTEXT_FILE}",
-			})
-			So(req.Dimensions, ShouldResembleProto, []*pb.RequestedDimension{
+			}))
+			assert.Loosely(c, req.Dimensions, should.Resemble([]*pb.RequestedDimension{
 				{
 					Key:   "dim_key_1",
 					Value: "dim_val_1",
 				},
-			})
-			So(req.StartDeadline.Seconds, ShouldEqual, 1677511893)
-			So(req.Experiments, ShouldResemble, []string{
+			}))
+			assert.Loosely(c, req.StartDeadline.Seconds, should.Equal(1677511893))
+			assert.Loosely(c, req.Experiments, should.Resemble([]string{
 				"cow_eggs_experiment",
 				"are_cow_eggs_real_experiment",
-			})
-			So(req.PubsubTopic, ShouldEqual, "projects/app-id/topics/chromium-swarm-dev-backend")
+			}))
+			assert.Loosely(c, req.PubsubTopic, should.Equal("projects/app-id/topics/chromium-swarm-dev-backend"))
 		})
 	})
 
-	Convey("RunTask", t, func(c C) {
+	ftt.Run("RunTask", t, func(c *ftt.Test) {
 		ctl := gomock.NewController(t)
 		defer ctl.Finish()
 		mockTaskCreator := clients.NewMockTaskCreator(ctl)
@@ -492,7 +497,7 @@ func TestCreateBackendTask(t *testing.T) {
 		})
 		settingsCfg := &pb.SettingsCfg{Backends: backendSetting}
 		err := config.SetTestSettingsCfg(ctx, settingsCfg)
-		So(err, ShouldBeNil)
+		assert.Loosely(c, err, should.BeNil)
 		server := httptest.NewServer(describeBootstrapBundle(c, false))
 		defer server.Close()
 		client := &prpc.Client{
@@ -584,9 +589,9 @@ func TestCreateBackendTask(t *testing.T) {
 			},
 		}
 		bs := &model.BuildStatus{Build: datastore.KeyForObj(ctx, build)}
-		So(datastore.Put(ctx, build, infra, bs), ShouldBeNil)
+		assert.Loosely(c, datastore.Put(ctx, build, infra, bs), should.BeNil)
 
-		Convey("ok", func() {
+		c.Run("ok", func(c *ftt.Test) {
 			mockTaskCreator.EXPECT().RunTask(gomock.Any(), gomock.Any()).Return(&pb.RunTaskResponse{
 				Task: &pb.Task{
 					Id:       &pb.TaskID{Id: "abc123", Target: "swarming://chromium-swarm"},
@@ -595,78 +600,78 @@ func TestCreateBackendTask(t *testing.T) {
 				},
 			}, nil)
 			err = CreateBackendTask(ctx, 1, "request_id")
-			So(err, ShouldBeNil)
+			assert.Loosely(c, err, should.BeNil)
 			eb := &model.Build{ID: build.ID}
 			expectedBuildInfra := &model.BuildInfra{Build: key}
-			So(datastore.Get(ctx, eb, expectedBuildInfra), ShouldBeNil)
+			assert.Loosely(c, datastore.Get(ctx, eb, expectedBuildInfra), should.BeNil)
 			updateTime := eb.Proto.UpdateTime.AsTime()
-			So(updateTime, ShouldEqual, now)
-			So(eb.BackendTarget, ShouldEqual, "swarming://chromium-swarm")
-			So(eb.BackendSyncInterval, ShouldEqual, time.Duration(300)*time.Second)
+			assert.Loosely(c, updateTime, should.Match(now))
+			assert.Loosely(c, eb.BackendTarget, should.Equal("swarming://chromium-swarm"))
+			assert.Loosely(c, eb.BackendSyncInterval, should.Equal(time.Duration(300)*time.Second))
 			parts := strings.Split(eb.NextBackendSyncTime, "--")
-			So(parts, ShouldHaveLength, 4)
-			So(parts[0], ShouldEqual, eb.BackendTarget)
-			So(parts[1], ShouldEqual, "project")
+			assert.Loosely(c, parts, should.HaveLength(4))
+			assert.Loosely(c, parts[0], should.Equal(eb.BackendTarget))
+			assert.Loosely(c, parts[1], should.Equal("project"))
 			shardID, err := strconv.Atoi(parts[2])
-			So(err, ShouldBeNil)
-			So(shardID >= 0, ShouldBeTrue)
-			So(shardID < 5, ShouldBeTrue)
-			So(parts[3], ShouldEqual, fmt.Sprint(updateTime.Round(time.Minute).Add(eb.BackendSyncInterval).Unix()))
-			So(expectedBuildInfra.Proto.Backend.Task, ShouldResembleProto, &pb.Task{
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, shardID >= 0, should.BeTrue)
+			assert.Loosely(c, shardID < 5, should.BeTrue)
+			assert.Loosely(c, parts[3], should.Equal(fmt.Sprint(updateTime.Round(time.Minute).Add(eb.BackendSyncInterval).Unix())))
+			assert.Loosely(c, expectedBuildInfra.Proto.Backend.Task, should.Resemble(&pb.Task{
 				Id: &pb.TaskID{
 					Id:     "abc123",
 					Target: "swarming://chromium-swarm",
 				},
 				Link:     "this_is_a_url_link",
 				UpdateId: 1,
-			})
-			So(sch.Tasks(), ShouldBeEmpty)
+			}))
+			assert.Loosely(c, sch.Tasks(), should.BeEmpty)
 		})
 
-		Convey("fail", func() {
+		c.Run("fail", func(c *ftt.Test) {
 			mockTaskCreator.EXPECT().RunTask(gomock.Any(), gomock.Any()).Return(nil, status.Errorf(codes.InvalidArgument, "bad request"))
 			bldr := &model.Builder{
 				ID:     "builder",
 				Parent: model.BucketKey(ctx, "project", "bucket"),
 			}
-			So(datastore.Put(ctx, bldr), ShouldBeNil)
+			assert.Loosely(c, datastore.Put(ctx, bldr), should.BeNil)
 			err = CreateBackendTask(ctx, 1, "request_id")
 			expectedBuild := &model.Build{ID: 1}
-			So(datastore.Get(ctx, expectedBuild), ShouldBeNil)
-			So(err, ShouldErrLike, "failed to create a backend task")
-			So(expectedBuild.Proto.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
-			So(expectedBuild.Proto.SummaryMarkdown, ShouldContainSubstring, "Backend task creation failure.")
+			assert.Loosely(c, datastore.Get(ctx, expectedBuild), should.BeNil)
+			assert.Loosely(c, err, should.ErrLike("failed to create a backend task"))
+			assert.Loosely(c, expectedBuild.Proto.Status, should.Equal(pb.Status_INFRA_FAILURE))
+			assert.Loosely(c, expectedBuild.Proto.SummaryMarkdown, should.ContainSubstring("Backend task creation failure."))
 		})
 
-		Convey("bail out if the build has a task associated", func() {
+		c.Run("bail out if the build has a task associated", func(c *ftt.Test) {
 			infra.Proto.Backend.Task.Id.Id = "task"
-			So(datastore.Put(ctx, infra), ShouldBeNil)
+			assert.Loosely(c, datastore.Put(ctx, infra), should.BeNil)
 			err = CreateBackendTask(ctx, 1, "request_id")
-			So(err, ShouldBeNil)
+			assert.Loosely(c, err, should.BeNil)
 			expectedBuildInfra := &model.BuildInfra{Build: key}
-			So(datastore.Get(ctx, expectedBuildInfra), ShouldBeNil)
-			So(expectedBuildInfra.Proto.Backend.Task.Id.Id, ShouldEqual, "task")
-			So(logs, memlogger.ShouldHaveLog,
-				logging.Info, "build 1 has associated with task")
+			assert.Loosely(c, datastore.Get(ctx, expectedBuildInfra), should.BeNil)
+			assert.Loosely(c, expectedBuildInfra.Proto.Backend.Task.Id.Id, should.Equal("task"))
+			assert.Loosely(c, logs, convey.Adapt(memlogger.ShouldHaveLog)(
+				logging.Info, "build 1 has associated with task"))
 		})
 
-		Convey("give up after backend timeout", func() {
+		c.Run("give up after backend timeout", func(c *ftt.Test) {
 			bldr := &model.Builder{
 				ID:     "builder",
 				Parent: model.BucketKey(ctx, "project", "bucket"),
 			}
-			So(datastore.Put(ctx, bldr), ShouldBeNil)
+			assert.Loosely(c, datastore.Put(ctx, bldr), should.BeNil)
 			now = now.Add(9 * time.Minute)
 			ctx, _ = testclock.UseTime(ctx, now)
 			err = CreateBackendTask(ctx, 1, "request_id")
 			expectedBuild := &model.Build{ID: 1}
-			So(datastore.Get(ctx, expectedBuild), ShouldBeNil)
-			So(err, ShouldErrLike, "creating backend task for build 1 with requestID request_id has expired after 8m0s")
-			So(expectedBuild.Proto.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
-			So(expectedBuild.Proto.SummaryMarkdown, ShouldContainSubstring, "Backend task creation failure.")
+			assert.Loosely(c, datastore.Get(ctx, expectedBuild), should.BeNil)
+			assert.Loosely(c, err, should.ErrLike("creating backend task for build 1 with requestID request_id has expired after 8m0s"))
+			assert.Loosely(c, expectedBuild.Proto.Status, should.Equal(pb.Status_INFRA_FAILURE))
+			assert.Loosely(c, expectedBuild.Proto.SummaryMarkdown, should.ContainSubstring("Backend task creation failure."))
 		})
 
-		Convey("Lite backend", func() {
+		c.Run("Lite backend", func(c *ftt.Test) {
 			bkt := &model.Bucket{
 				ID:     "bucket",
 				Parent: model.ProjectKey(ctx, "project"),
@@ -681,90 +686,96 @@ func TestCreateBackendTask(t *testing.T) {
 			}
 			build.Proto.SchedulingTimeout = durationpb.New(1 * time.Minute)
 			infra.Proto.Backend.Task.Id.Target = "lite://foo-lite"
-			So(datastore.Put(ctx, build, infra, bkt, bldr), ShouldBeNil)
+			assert.Loosely(c, datastore.Put(ctx, build, infra, bkt, bldr), should.BeNil)
 
-			mockTaskCreator.EXPECT().RunTask(gomock.Any(), gomock.Any()).Return(&pb.RunTaskResponse{
-				Task: &pb.Task{
-					Id:       &pb.TaskID{Id: "abc123", Target: "lite://foo-lite"},
-					Link:     "this_is_a_url_link",
-					UpdateId: 1,
-				},
-			}, nil)
+			boilerplate := func() {
+				mockTaskCreator.EXPECT().RunTask(gomock.Any(), gomock.Any()).Return(&pb.RunTaskResponse{
+					Task: &pb.Task{
+						Id:       &pb.TaskID{Id: "abc123", Target: "lite://foo-lite"},
+						Link:     "this_is_a_url_link",
+						UpdateId: 1,
+					},
+				}, nil)
+			}
 
-			Convey("ok", func() {
+			c.Run("ok", func(c *ftt.Test) {
+				boilerplate()
 				err = CreateBackendTask(ctx, 1, "request_id")
-				So(err, ShouldBeNil)
+				assert.Loosely(c, err, should.BeNil)
 				eb := &model.Build{ID: build.ID}
 				expectedBuildInfra := &model.BuildInfra{Build: datastore.KeyForObj(ctx, build)}
-				So(datastore.Get(ctx, eb, expectedBuildInfra), ShouldBeNil)
+				assert.Loosely(c, datastore.Get(ctx, eb, expectedBuildInfra), should.BeNil)
 				updateTime := eb.Proto.UpdateTime.AsTime()
-				So(updateTime, ShouldEqual, now)
-				So(expectedBuildInfra.Proto.Backend.Task, ShouldResembleProto, &pb.Task{
+				assert.Loosely(c, updateTime, should.Match(now))
+				assert.Loosely(c, expectedBuildInfra.Proto.Backend.Task, should.Resemble(&pb.Task{
 					Id: &pb.TaskID{
 						Id:     "abc123",
 						Target: "lite://foo-lite",
 					},
 					Link:     "this_is_a_url_link",
 					UpdateId: 1,
-				})
+				}))
 				tasks := sch.Tasks()
-				So(tasks, ShouldHaveLength, 1)
-				So(tasks[0].Payload.(*taskdefs.CheckBuildLiveness).GetBuildId(), ShouldEqual, build.ID)
-				So(tasks[0].Payload.(*taskdefs.CheckBuildLiveness).GetHeartbeatTimeout(), ShouldEqual, 5)
-				So(tasks[0].ETA, ShouldEqual, now.Add(5*time.Second))
+				assert.Loosely(c, tasks, should.HaveLength(1))
+				assert.Loosely(c, tasks[0].Payload.(*taskdefs.CheckBuildLiveness).GetBuildId(), should.Equal(build.ID))
+				assert.Loosely(c, tasks[0].Payload.(*taskdefs.CheckBuildLiveness).GetHeartbeatTimeout(), should.Equal(5))
+				assert.Loosely(c, tasks[0].ETA, should.Match(now.Add(5*time.Second)))
 			})
 
-			Convey("SchedulingTimeout shorter than heartbeat timeout", func() {
+			c.Run("SchedulingTimeout shorter than heartbeat timeout", func(c *ftt.Test) {
+				boilerplate()
 				bldr.Config.HeartbeatTimeoutSecs = 60
 				build.Proto.SchedulingTimeout = durationpb.New(10 * time.Second)
-				So(datastore.Put(ctx, build, bldr), ShouldBeNil)
+				assert.Loosely(c, datastore.Put(ctx, build, bldr), should.BeNil)
 
 				err = CreateBackendTask(ctx, 1, "request_id")
-				So(err, ShouldBeNil)
+				assert.Loosely(c, err, should.BeNil)
 				tasks := sch.Tasks()
-				So(tasks, ShouldHaveLength, 1)
-				So(tasks[0].Payload.(*taskdefs.CheckBuildLiveness).GetBuildId(), ShouldEqual, build.ID)
-				So(tasks[0].Payload.(*taskdefs.CheckBuildLiveness).GetHeartbeatTimeout(), ShouldEqual, 60)
-				So(tasks[0].ETA, ShouldEqual, now.Add(10*time.Second))
+				assert.Loosely(c, tasks, should.HaveLength(1))
+				assert.Loosely(c, tasks[0].Payload.(*taskdefs.CheckBuildLiveness).GetBuildId(), should.Equal(build.ID))
+				assert.Loosely(c, tasks[0].Payload.(*taskdefs.CheckBuildLiveness).GetHeartbeatTimeout(), should.Equal(60))
+				assert.Loosely(c, tasks[0].ETA, should.Match(now.Add(10*time.Second)))
 			})
 
-			Convey("no heartbeat_timeout_secs field set", func() {
+			c.Run("no heartbeat_timeout_secs field set", func(c *ftt.Test) {
+				boilerplate()
 				bldr.Config.HeartbeatTimeoutSecs = 0
 				build.Proto.SchedulingTimeout = durationpb.New(10 * time.Second)
-				So(datastore.Put(ctx, build, bldr), ShouldBeNil)
+				assert.Loosely(c, datastore.Put(ctx, build, bldr), should.BeNil)
 
 				err = CreateBackendTask(ctx, 1, "request_id")
-				So(err, ShouldBeNil)
+				assert.Loosely(c, err, should.BeNil)
 				tasks := sch.Tasks()
-				So(tasks, ShouldHaveLength, 1)
-				So(tasks[0].Payload.(*taskdefs.CheckBuildLiveness).GetBuildId(), ShouldEqual, build.ID)
-				So(tasks[0].Payload.(*taskdefs.CheckBuildLiveness).GetHeartbeatTimeout(), ShouldEqual, 0)
-				So(tasks[0].ETA, ShouldEqual, now.Add(10*time.Second))
+				assert.Loosely(c, tasks, should.HaveLength(1))
+				assert.Loosely(c, tasks[0].Payload.(*taskdefs.CheckBuildLiveness).GetBuildId(), should.Equal(build.ID))
+				assert.Loosely(c, tasks[0].Payload.(*taskdefs.CheckBuildLiveness).GetHeartbeatTimeout(), should.BeZero)
+				assert.Loosely(c, tasks[0].ETA, should.Match(now.Add(10*time.Second)))
 			})
 
-			Convey("builder not found", func() {
-				So(datastore.Delete(ctx, bldr), ShouldBeNil)
+			c.Run("builder not found", func(c *ftt.Test) {
+				boilerplate()
+				assert.Loosely(c, datastore.Delete(ctx, bldr), should.BeNil)
 				err = CreateBackendTask(ctx, 1, "request_id")
-				So(err, ShouldErrLike, "failed to fetch builder project/bucket/builder: datastore: no such entity")
-
+				assert.Loosely(c, err, should.ErrLike("failed to fetch builder project/bucket/builder: datastore: no such entity"))
 			})
 
-			Convey("in dynamic bucket", func() {
-				So(datastore.Delete(ctx, bldr, bkt), ShouldBeNil)
+			c.Run("in dynamic bucket", func(c *ftt.Test) {
+				boilerplate()
+				assert.Loosely(c, datastore.Delete(ctx, bldr, bkt), should.BeNil)
 				bkt.Proto = &pb.Bucket{
 					Name: "bucket",
 					DynamicBuilderTemplate: &pb.Bucket_DynamicBuilderTemplate{
 						Template: &pb.BuilderConfig{},
 					},
 				}
-				So(datastore.Put(ctx, bkt), ShouldBeNil)
+				assert.Loosely(c, datastore.Put(ctx, bkt), should.BeNil)
 				err = CreateBackendTask(ctx, 1, "request_id")
-				So(err, ShouldBeNil)
+				assert.Loosely(c, err, should.BeNil)
 				tasks := sch.Tasks()
-				So(tasks, ShouldHaveLength, 1)
-				So(tasks[0].Payload.(*taskdefs.CheckBuildLiveness).GetBuildId(), ShouldEqual, build.ID)
-				So(tasks[0].Payload.(*taskdefs.CheckBuildLiveness).GetHeartbeatTimeout(), ShouldEqual, 0)
-				So(tasks[0].ETA, ShouldEqual, now.Add(1*time.Minute))
+				assert.Loosely(c, tasks, should.HaveLength(1))
+				assert.Loosely(c, tasks[0].Payload.(*taskdefs.CheckBuildLiveness).GetBuildId(), should.Equal(build.ID))
+				assert.Loosely(c, tasks[0].Payload.(*taskdefs.CheckBuildLiveness).GetHeartbeatTimeout(), should.BeZero)
+				assert.Loosely(c, tasks[0].ETA, should.Match(now.Add(1*time.Minute)))
 			})
 		})
 	})

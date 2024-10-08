@@ -23,6 +23,9 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -32,15 +35,12 @@ import (
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	taskdefs "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
 	pb "go.chromium.org/luci/buildbucket/proto"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestCheckLiveness(t *testing.T) {
 	t.Parallel()
 
-	Convey("CheckLiveness", t, func() {
+	ftt.Run("CheckLiveness", t, func(t *ftt.Test) {
 		ctx := txndefer.FilterRDS(memory.Use(context.Background()))
 		ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
 		ctx, _ = metrics.WithCustomMetrics(ctx, &pb.SettingsCfg{})
@@ -91,38 +91,38 @@ func TestCheckLiveness(t *testing.T) {
 			},
 		}
 
-		So(datastore.Put(ctx, bld, inf, bs, bldr), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, bld, inf, bs, bldr), should.BeNil)
 
-		Convey("build not found", func() {
+		t.Run("build not found", func(t *ftt.Test) {
 			err := CheckLiveness(ctx, 999, 10)
-			So(err, ShouldErrLike, "failed to get build")
-			So(sch.Tasks(), ShouldBeEmpty)
+			assert.Loosely(t, err, should.ErrLike("failed to get build"))
+			assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 		})
 
-		Convey("build is ended", func() {
+		t.Run("build is ended", func(t *ftt.Test) {
 			bld.Proto.Status = pb.Status_SUCCESS
 			bs.Status = pb.Status_SUCCESS
-			So(datastore.Put(ctx, bld), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, bld), should.BeNil)
 
 			err := CheckLiveness(ctx, 1, 10)
-			So(err, ShouldBeNil)
-			So(sch.Tasks(), ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 		})
 
-		Convey("exceeds scheduling timeout", func() {
+		t.Run("exceeds scheduling timeout", func(t *ftt.Test) {
 			now := baseTime.Add(61 * time.Second)
 			ctx, _ = testclock.UseTime(ctx, now)
 
 			err := CheckLiveness(ctx, 1, 10)
-			So(err, ShouldBeNil)
-			So(datastore.Get(ctx, bld, bs), ShouldBeNil)
-			So(bld.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
-			So(bs.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, datastore.Get(ctx, bld, bs), should.BeNil)
+			assert.Loosely(t, bld.Status, should.Equal(pb.Status_INFRA_FAILURE))
+			assert.Loosely(t, bs.Status, should.Equal(pb.Status_INFRA_FAILURE))
 			// FinalizeResultDB, ExportBigQuery, NotifyPubSub, NotifyPubSubGoProxy, PopPendingBuilds tasks.
-			So(sch.Tasks(), ShouldHaveLength, 5)
+			assert.Loosely(t, sch.Tasks(), should.HaveLength(5))
 		})
 
-		Convey("exceeds heartbeat timeout", func() {
+		t.Run("exceeds heartbeat timeout", func(t *ftt.Test) {
 			bld.Proto.Status = pb.Status_STARTED
 			bld.Proto.StartTime = timestamppb.New(baseTime)
 			bs.Status = pb.Status_STARTED
@@ -130,31 +130,31 @@ func TestCheckLiveness(t *testing.T) {
 				ID:    1,
 				Build: datastore.KeyForObj(ctx, bld),
 			}
-			So(steps.FromProto([]*pb.Step{
+			assert.Loosely(t, steps.FromProto([]*pb.Step{
 				{Name: "step1", Status: pb.Status_STARTED},
-			}), ShouldBeNil)
-			So(datastore.Put(ctx, bld, steps), ShouldBeNil)
+			}), should.BeNil)
+			assert.Loosely(t, datastore.Put(ctx, bld, steps), should.BeNil)
 			now := baseTime.Add(11 * time.Second)
 			ctx, _ = testclock.UseTime(ctx, now)
 
 			err := CheckLiveness(ctx, 1, 10)
-			So(err, ShouldBeNil)
-			So(datastore.Get(ctx, bld, bs, steps), ShouldBeNil)
-			So(bld.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
-			So(bs.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, datastore.Get(ctx, bld, bs, steps), should.BeNil)
+			assert.Loosely(t, bld.Status, should.Equal(pb.Status_INFRA_FAILURE))
+			assert.Loosely(t, bs.Status, should.Equal(pb.Status_INFRA_FAILURE))
 			mSteps, err := steps.ToProto(ctx)
-			So(err, ShouldBeNil)
-			So(mSteps, ShouldResembleProto, []*pb.Step{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, mSteps, should.Resemble([]*pb.Step{
 				{
 					Name:    "step1",
 					Status:  pb.Status_CANCELED,
 					EndTime: timestamppb.New(now),
 				},
-			})
-			So(sch.Tasks(), ShouldHaveLength, 5)
+			}))
+			assert.Loosely(t, sch.Tasks(), should.HaveLength(5))
 		})
 
-		Convey("exceeds execution timeout", func() {
+		t.Run("exceeds execution timeout", func(t *ftt.Test) {
 			now := baseTime.Add(121 * time.Second)
 			bld.Proto.Status = pb.Status_STARTED
 			bld.Proto.StartTime = timestamppb.New(baseTime)
@@ -162,66 +162,66 @@ func TestCheckLiveness(t *testing.T) {
 			bld.Proto.UpdateTime = timestamppb.New(now.Add(-9 * time.Second))
 			bs.Status = pb.Status_STARTED
 
-			So(datastore.Put(ctx, bld), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, bld), should.BeNil)
 			ctx, _ = testclock.UseTime(ctx, now)
 
 			err := CheckLiveness(ctx, 1, 10)
-			So(err, ShouldBeNil)
-			So(datastore.Get(ctx, bld, bs), ShouldBeNil)
-			So(bld.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
-			So(bs.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
-			So(sch.Tasks(), ShouldHaveLength, 5)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, datastore.Get(ctx, bld, bs), should.BeNil)
+			assert.Loosely(t, bld.Status, should.Equal(pb.Status_INFRA_FAILURE))
+			assert.Loosely(t, bs.Status, should.Equal(pb.Status_INFRA_FAILURE))
+			assert.Loosely(t, sch.Tasks(), should.HaveLength(5))
 		})
 
-		Convey("not exceed scheduling timeout", func() {
+		t.Run("not exceed scheduling timeout", func(t *ftt.Test) {
 			now := baseTime.Add(59 * time.Second)
 			ctx, _ = testclock.UseTime(ctx, now)
 
 			err := CheckLiveness(ctx, 1, 10)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			// continuation task
-			So(sch.Tasks(), ShouldHaveLength, 1)
-			So(sch.Tasks().Payloads()[0], ShouldResembleProto, &taskdefs.CheckBuildLiveness{
+			assert.Loosely(t, sch.Tasks(), should.HaveLength(1))
+			assert.Loosely(t, sch.Tasks().Payloads()[0], should.Resemble(&taskdefs.CheckBuildLiveness{
 				BuildId:          1,
 				HeartbeatTimeout: 10,
-			})
+			}))
 		})
 
-		Convey("not exceed heartbeat timeout", func() {
+		t.Run("not exceed heartbeat timeout", func(t *ftt.Test) {
 			bld.Proto.Status = pb.Status_STARTED
 			bld.Proto.StartTime = timestamppb.New(baseTime)
 			bs.Status = pb.Status_STARTED
-			So(datastore.Put(ctx, bld), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, bld), should.BeNil)
 			now := baseTime.Add(9 * time.Second)
 			ctx, _ = testclock.UseTime(ctx, now)
 
 			err := CheckLiveness(ctx, 1, 10)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			// continuation task
-			So(sch.Tasks(), ShouldHaveLength, 1)
-			So(sch.Tasks().Payloads()[0], ShouldResembleProto, &taskdefs.CheckBuildLiveness{
+			assert.Loosely(t, sch.Tasks(), should.HaveLength(1))
+			assert.Loosely(t, sch.Tasks().Payloads()[0], should.Resemble(&taskdefs.CheckBuildLiveness{
 				BuildId:          1,
 				HeartbeatTimeout: 10,
-			})
-			So(sch.Tasks()[0].ETA, ShouldEqual, now.Add(10*time.Second))
+			}))
+			assert.Loosely(t, sch.Tasks()[0].ETA, should.Match(now.Add(10*time.Second)))
 		})
 
-		Convey("not exceed any timout && heartbeat timeout not set", func() {
+		t.Run("not exceed any timout && heartbeat timeout not set", func(t *ftt.Test) {
 			bld.Proto.Status = pb.Status_STARTED
 			bld.Proto.StartTime = timestamppb.New(baseTime)
 			bs.Status = pb.Status_STARTED
-			So(datastore.Put(ctx, bld), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, bld), should.BeNil)
 			now := baseTime.Add(9 * time.Second)
 			ctx, _ = testclock.UseTime(ctx, now)
 
 			err := CheckLiveness(ctx, 1, 0)
-			So(err, ShouldBeNil)
-			So(sch.Tasks(), ShouldHaveLength, 1)
-			So(sch.Tasks().Payloads()[0], ShouldResembleProto, &taskdefs.CheckBuildLiveness{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, sch.Tasks(), should.HaveLength(1))
+			assert.Loosely(t, sch.Tasks().Payloads()[0], should.Resemble(&taskdefs.CheckBuildLiveness{
 				BuildId:          1,
 				HeartbeatTimeout: 0,
-			})
-			So(sch.Tasks()[0].ETA, ShouldEqual, baseTime.Add(120*time.Second))
+			}))
+			assert.Loosely(t, sch.Tasks()[0].ETA, should.Match(baseTime.Add(120*time.Second)))
 		})
 	})
 }
