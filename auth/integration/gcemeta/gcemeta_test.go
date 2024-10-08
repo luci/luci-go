@@ -22,11 +22,12 @@ import (
 	"time"
 
 	"cloud.google.com/go/compute/metadata"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
+
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/google"
 )
 
 type fakeGenerator struct {
@@ -58,11 +59,6 @@ func TestServer(t *testing.T) {
 		Email:            "fake@example.com",
 		Scopes:           []string{"scope1", "scope2"},
 		MinTokenLifetime: 2 * time.Minute,
-
-		md: &serverMetadata{
-			zone: "luci-emulated-zone",
-			name: "luci-emulated",
-		},
 	}
 
 	// Need to set GCE_METADATA_HOST once before all tests because 'metadata'
@@ -81,37 +77,29 @@ func TestServer(t *testing.T) {
 		c.Run("Metadata client works", func(c *ftt.Test) {
 			cl := metadata.NewClient(http.DefaultClient)
 
-			num, err := cl.NumericProjectID()
+			num, err := cl.NumericProjectIDWithContext(ctx)
 			assert.Loosely(c, err, should.BeNil)
 			assert.Loosely(c, num, should.Equal("0"))
 
-			pid, err := cl.ProjectID()
+			pid, err := cl.ProjectIDWithContext(ctx)
 			assert.Loosely(c, err, should.BeNil)
 			assert.Loosely(c, pid, should.Equal("none"))
 
-			zone, err := cl.Zone()
+			accounts, err := cl.GetWithContext(ctx, "instance/service-accounts/")
 			assert.Loosely(c, err, should.BeNil)
-			assert.Loosely(c, zone, should.Equal("luci-emulated-zone"))
-
-			name, err := cl.InstanceName()
-			assert.Loosely(c, err, should.BeNil)
-			assert.Loosely(c, name, should.Equal("luci-emulated"))
-
-			accounts, err := cl.Get("instance/service-accounts/")
-			assert.Loosely(c, err, should.BeNil)
-			assert.Loosely(c, accounts, should.Equal("fake@example.com/\ndefault/\n"))
+			assert.Loosely(c, accounts, should.Equal("default/\nfake@example.com/\n"))
 
 			for _, acc := range []string{"fake@example.com", "default"} {
-				info, err := cl.Get("instance/service-accounts/" + acc + "/?recursive=true")
+				info, err := cl.GetWithContext(ctx, "instance/service-accounts/"+acc+"/?recursive=true")
 				assert.Loosely(c, err, should.BeNil)
 				assert.Loosely(c, info, should.Equal(
-					`{"aliases":["default"],"email":"fake@example.com","scopes":["scope1","scope2"]}`+"\n"))
+					`{"aliases":["default"],"email":"fake@example.com","scopes":["scope1","scope2"]}`))
 
-				email, err := cl.Get("instance/service-accounts/" + acc + "/email")
+				email, err := cl.GetWithContext(ctx, "instance/service-accounts/"+acc+"/email")
 				assert.Loosely(c, err, should.BeNil)
 				assert.Loosely(c, email, should.Equal("fake@example.com"))
 
-				scopes, err := cl.Scopes(acc)
+				scopes, err := cl.ScopesWithContext(ctx, acc)
 				assert.Loosely(c, err, should.BeNil)
 				assert.Loosely(c, scopes, should.Resemble([]string{"scope1", "scope2"}))
 			}
@@ -146,7 +134,7 @@ func TestServer(t *testing.T) {
 		})
 
 		c.Run("ID token fetch works", func(c *ftt.Test) {
-			reply, err := metadata.Get("instance/service-accounts/default/identity?audience=boo&format=ignored")
+			reply, err := metadata.GetWithContext(ctx, "instance/service-accounts/default/identity?audience=boo&format=ignored")
 			assert.Loosely(c, err, should.BeNil)
 			// Do not put tokens into logs, in case we somehow accidentally hit real
 			// metadata server with real tokens.
@@ -156,8 +144,8 @@ func TestServer(t *testing.T) {
 		})
 
 		c.Run("Unsupported metadata call", func(c *ftt.Test) {
-			_, err := metadata.InstanceID()
-			assert.Loosely(c, err.Error(), should.Equal(`metadata: GCE metadata "instance/id" not defined`))
+			_, err := metadata.ExternalIPWithContext(ctx)
+			assert.Loosely(c, err.Error(), should.Equal(`metadata: GCE metadata "instance/network-interfaces/0/access-configs/0/external-ip" not defined`))
 		})
 	})
 }

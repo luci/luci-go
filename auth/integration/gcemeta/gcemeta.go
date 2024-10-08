@@ -18,17 +18,21 @@
 // Default Credentials into believing they run on GCE so that they request
 // OAuth2 tokens via GCE metadata server (which is implemented by us here).
 //
-// The implemented subset of the protocol is very limited. Only a few endpoints
-// commonly used to bootstrap GCE auth are supported, and their response format
-// is not tweakable (i.e. alt=json or alt=text have no effect).
+// It implements a significant portion of the GCE metadata protocol, but
+// populates only a small subset of the metadata values that are commonly
+// accessed by tools.
+//
+// Following features of the protocol are not implemented:
+//   - "wait-for-change"
+//   - "https://..." endpoints
 package gcemeta
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"net"
 	"net/http"
+	"net/url"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -36,12 +40,11 @@ import (
 	"cloud.google.com/go/compute/metadata"
 	"golang.org/x/oauth2"
 
+	"go.chromium.org/luci/auth/integration/internal/localsrv"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/runtime/paniccatcher"
-
-	"go.chromium.org/luci/auth/integration/internal/localsrv"
 )
 
 // TokenGenerator produces access and ID tokens.
@@ -52,14 +55,6 @@ type TokenGenerator interface {
 	GenerateOAuthToken(ctx context.Context, scopes []string, lifetime time.Duration) (*oauth2.Token, error)
 	// GenerateIDToken returns an ID token with the given audience in `aud` claim.
 	GenerateIDToken(ctx context.Context, audience string, lifetime time.Duration) (*oauth2.Token, error)
-}
-
-// serverMetadata represents GCE metadata returned by the fake GCE metadata server.
-type serverMetadata struct {
-	// zone is the VM's zone, such as "us-central1-b".
-	zone string
-	// name is the VM's instance ID string.
-	name string
 }
 
 // Server runs a local fake GCE metadata server.
@@ -74,39 +69,9 @@ type Server struct {
 	MinTokenLifetime time.Duration
 	// Port is a local TCP port to bind to or 0 to allow the OS to pick one.
 	Port int
-	// AssumeNonGCE is true to avoid calling any GCE metadata methods itself.
-	AssumeNonGCE bool
 
-	srv localsrv.Server
-	md  *serverMetadata
-}
-
-func (s *Server) setupMetadata(ctx context.Context) {
-	if s.md != nil {
-		// This path might be used for the test.
-		// We do not configure metadata again if it has already been
-		// configured.
-		return
-	}
-	if s.AssumeNonGCE || !metadata.OnGCE() {
-		// If not on real GCE, just do not expose zone and instance name. We don't
-		// really know them.
-		return
-	}
-	zone, err := metadata.Zone()
-	if err != nil {
-		logging.Warningf(ctx, "Failed to get zone: %v", err)
-		return
-	}
-	name, err := metadata.InstanceName()
-	if err != nil {
-		logging.Warningf(ctx, "Failed to get instance name: %v", err)
-		return
-	}
-	s.md = &serverMetadata{
-		zone: zone,
-		name: name,
-	}
+	srv  localsrv.Server
+	addr string
 }
 
 // Start launches background goroutine with the serving loop.
@@ -116,13 +81,27 @@ func (s *Server) setupMetadata(ctx context.Context) {
 //
 // Returns "host:port" address of the launched metadata server.
 func (s *Server) Start(ctx context.Context) (string, error) {
-	s.setupMetadata(ctx)
-	mux := http.NewServeMux()
-	s.installRoutes(mux)
-	addr, err := s.srv.Start(ctx, "gcemeta", s.Port, func(c context.Context, l net.Listener, wg *sync.WaitGroup) error {
-		srv := http.Server{Handler: &handler{c, wg, mux}}
+	root := s.emulatedMetadata()
+
+	addr, err := s.srv.Start(ctx, "gcemeta", s.Port, func(ctx context.Context, l net.Listener, wg *sync.WaitGroup) error {
+		s.addr = l.Addr().String()
+		srv := http.Server{
+			Handler: http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+				defer paniccatcher.Catch(func(p *paniccatcher.Panic) {
+					logging.Fields{
+						"panic.error": p.Reason,
+					}.Errorf(ctx, "Caught panic during handling of %q: %s\n%s", req.RequestURI, p.Reason, p.Stack)
+					http.Error(rw, "Internal Server Error. See logs.", http.StatusInternalServerError)
+				})
+				wg.Add(1)
+				defer wg.Done()
+				logging.Debugf(ctx, "Handling %s %s", req.Method, req.RequestURI)
+				serveMetadata(root, rw, req.WithContext(ctx))
+			}),
+		}
 		return srv.Serve(l)
 	})
+
 	if err != nil {
 		return "", errors.Annotate(err, "failed to start the server").Err()
 	}
@@ -141,80 +120,75 @@ func (s *Server) Stop(ctx context.Context) error {
 	return s.srv.Stop(ctx)
 }
 
-// installRoutes populates the muxer.
-func (s *Server) installRoutes(mux *http.ServeMux) {
-	// This is used by oauth2client to probe that we are on GCE.
-	mux.HandleFunc("/", func(rw http.ResponseWriter, r *http.Request) {
-		if subtreeRootOnly(rw, r) {
-			replyList(rw, []string{"computeMetadata/"})
-		}
+// emulatedMetadata creates emulated metadata tree.
+func (s *Server) emulatedMetadata() *node {
+	root := &node{kind: kindDict}
+
+	// These are used by gcloud to probe that we are on GCE. Put in some fake
+	// values since we don't want real GCE VM's project to be used for anything
+	// when running on GCE.
+	root.mount("/computeMetadata/v1/project").dict(map[string]generator{
+		"numeric-project-id": emit(0),
+		"project-id":         emit("none"),
 	})
 
-	// These are used by gcloud to probe that we are on GCE.
-	mux.HandleFunc("/computeMetadata/v1/project/numeric-project-id", func(rw http.ResponseWriter, r *http.Request) {
-		replyText(rw, "0")
+	// These are used by "gcp-metadata" npm package to probe that we are on GCE.
+	// Additionally some tools want a real zone when running on GCE, so pick it
+	// up if running there.
+	root.mount("/computeMetadata/v1/instance").dict(map[string]generator{
+		"name": fast(func(ctx context.Context, _ url.Values) (any, error) {
+			if s.onGCE() {
+				return metadata.InstanceNameWithContext(ctx)
+			}
+			hostname, err := os.Hostname()
+			if err != nil {
+				return nil, errors.Annotate(err, "failed to get the hostname").Err()
+			}
+			hostname, _, _ = strings.Cut(hostname, ".")
+			return hostname, nil
+		}),
+		"zone": fast(func(ctx context.Context, _ url.Values) (any, error) {
+			if s.onGCE() {
+				zone, err := metadata.ZoneWithContext(ctx)
+				if err != nil {
+					return nil, err
+				}
+				return "projects/0/zones/" + zone, nil
+			}
+			return nil, errors.Reason("Not available when not on GCE").
+				Tag(statusTag(http.StatusNotFound)).Err()
+		}),
 	})
-	mux.HandleFunc("/computeMetadata/v1/project/project-id", func(rw http.ResponseWriter, r *http.Request) {
-		replyText(rw, "none")
-	})
-	mux.HandleFunc("/computeMetadata/v1/instance/service-accounts/", func(rw http.ResponseWriter, r *http.Request) {
-		if subtreeRootOnly(rw, r) {
-			replyList(rw, []string{s.Email + "/", "default/"})
-		}
-	})
-	// These are used by cloud.google.com/go libraries, e.g. profiler.
-	// crbug.com/1219914
-	if s.md != nil {
-		mux.HandleFunc("/computeMetadata/v1/instance/zone", func(rw http.ResponseWriter, r *http.Request) {
-			replyText(rw, fmt.Sprintf("projects/0/zones/%s", s.md.zone))
-		})
-		mux.HandleFunc("/computeMetadata/v1/instance/name", func(rw http.ResponseWriter, r *http.Request) {
-			replyText(rw, s.md.name)
-		})
-	}
 
+	// Fully emulate service-accounts/... section.
 	for _, acc := range []string{s.Email, "default"} {
-		// Used by oauth2client to fetch the list of scopes.
-		mux.HandleFunc("/computeMetadata/v1/instance/service-accounts/"+acc+"/", s.accountInfoHandler)
-		// Used by gcloud when listing accounts.
-		mux.HandleFunc("/computeMetadata/v1/instance/service-accounts/"+acc+"/email", s.accountEmailHandler)
-		// Used (at least) by gsutil instead of '/?recursive=True'.
-		mux.HandleFunc("/computeMetadata/v1/instance/service-accounts/"+acc+"/scopes", s.accountScopesHandler)
-		// Used to mint access tokens.
-		mux.HandleFunc("/computeMetadata/v1/instance/service-accounts/"+acc+"/token", s.accountTokenHandler)
-		// Used to mint ID tokens.
-		mux.HandleFunc("/computeMetadata/v1/instance/service-accounts/"+acc+"/identity", s.accountIdentityHandler)
+		root.mount("/computeMetadata/v1/instance/service-accounts/" + acc).dict(map[string]generator{
+			"aliases":  emit([]string{"default"}),
+			"email":    emit(s.Email),
+			"identity": expensive(s.accountIdentity),
+			"scopes":   emit(s.Scopes),
+			"token":    expensive(s.accountToken),
+		})
 	}
+
+	return root
 }
 
-func (s *Server) accountInfoHandler(rw http.ResponseWriter, r *http.Request) {
-	if !subtreeRootOnly(rw, r) {
-		return
+// onGCE returns true when running in an environment with a metadata server.
+//
+// Returns false if GCE_METADATA_HOST is set to this server already (to avoid
+// infinite recursion).
+func (s *Server) onGCE() bool {
+	if s.addr != "" && os.Getenv("GCE_METADATA_HOST") == s.addr {
+		return false
 	}
-	// No one should be calling this handler without /?recursive=True, since it is
-	// pretty useless in the non-recursive mode. Add a check just in case.
-	if rec := strings.ToLower(r.FormValue("recursive")); rec != "true" && rec != "1" {
-		http.Error(rw, "Expected /?recursive=true call", http.StatusBadRequest)
-		return
-	}
-	replyJSON(rw, map[string]any{
-		"aliases": []string{"default"},
-		"email":   s.Email,
-		"scopes":  s.Scopes,
-	})
+	return metadata.OnGCE()
 }
 
-func (s *Server) accountEmailHandler(rw http.ResponseWriter, r *http.Request) {
-	replyText(rw, s.Email)
-}
-
-func (s *Server) accountScopesHandler(rw http.ResponseWriter, r *http.Request) {
-	replyList(rw, s.Scopes)
-}
-
-func (s *Server) accountTokenHandler(rw http.ResponseWriter, r *http.Request) {
+// accountToken implements "/token" metadata leaf.
+func (s *Server) accountToken(ctx context.Context, q url.Values) (any, error) {
 	scopesSet := stringset.New(0)
-	for _, scope := range strings.Split(r.URL.Query().Get("scopes"), ",") {
+	for _, scope := range strings.Split(q.Get("scopes"), ",") {
 		if scope = strings.TrimSpace(scope); scope != "" {
 			scopesSet.Add(scope)
 		}
@@ -223,109 +197,40 @@ func (s *Server) accountTokenHandler(rw http.ResponseWriter, r *http.Request) {
 	if len(scopesSet) > 0 {
 		scopes = scopesSet.ToSortedSlice()
 	}
-	tok, err := s.Generator.GenerateOAuthToken(r.Context(), scopes, s.MinTokenLifetime)
+	tok, err := s.Generator.GenerateOAuthToken(ctx, scopes, s.MinTokenLifetime)
 	if err != nil {
-		http.Error(rw, fmt.Sprintf("Failed to mint the token - %s", err), http.StatusInternalServerError)
-		return
+		return nil, errors.Annotate(err, "failed to mint the token").Err()
 	}
-	replyJSON(rw, map[string]any{
+	return map[string]any{
 		"access_token": tok.AccessToken,
 		"expires_in":   time.Until(tok.Expiry) / time.Second,
 		"token_type":   "Bearer",
-	})
+	}, nil
 }
 
-func (s *Server) accountIdentityHandler(rw http.ResponseWriter, r *http.Request) {
-	aud := r.URL.Query().Get("audience")
+// accountToken implements "/identity" metadata leaf.
+func (s *Server) accountIdentity(ctx context.Context, q url.Values) (any, error) {
+	aud := q.Get("audience")
 	if aud == "" {
-		http.Error(rw, "`audience` is required", http.StatusBadRequest)
-		return
+		return nil, errors.Reason("`audience` is required").
+			Tag(statusTag(http.StatusBadRequest)).Err()
 	}
 
 	// HACK(crbug.com/1210747): Refuse to serve ID tokens to "gcloud" CLI tool
 	// (based on its audience). They are not available everywhere yet, causing
 	// tasks that use "gcloud" to fail. Note that "gcloud" handles the HTTP 404
-	// just  fine by totally ignoring it. It appears "gcloud" requests ID tokens
+	// just fine by totally ignoring it. It appears "gcloud" requests ID tokens
 	// just because it can, not because they are really needed (at least for all
 	// current "gcloud" calls from LUCI). This hack can be removed when all tasks
 	// that use "gcloud" are in the realms mode.
 	if aud == "32555940559.apps.googleusercontent.com" {
-		http.Error(rw, "Go away: crbug.com/1210747", http.StatusNotFound)
-		return
+		return nil, errors.Reason("Go away: crbug.com/1210747").
+			Tag(statusTag(http.StatusNotFound)).Err()
 	}
 
-	tok, err := s.Generator.GenerateIDToken(r.Context(), aud, s.MinTokenLifetime)
+	tok, err := s.Generator.GenerateIDToken(ctx, aud, s.MinTokenLifetime)
 	if err != nil {
-		http.Error(rw, fmt.Sprintf("Failed to mint the token - %s", err), http.StatusInternalServerError)
-		return
+		return nil, errors.Annotate(err, "failed to mint the token").Err()
 	}
-	replyText(rw, tok.AccessToken)
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-// subtreeRootOnly fails with HTTP 404 if request URI doesn't end with '/'.
-//
-// This is workaround for stupid http.ServeMux behavior that routes "<stuff>/*"
-// to "<stuff>/" handler.
-func subtreeRootOnly(rw http.ResponseWriter, r *http.Request) bool {
-	if strings.HasSuffix(r.URL.Path, "/") {
-		return true
-	}
-	http.Error(rw, "Unsupported metadata call", http.StatusNotFound)
-	return false
-}
-
-func replyText(rw http.ResponseWriter, text string) {
-	rw.Header().Set("Content-Type", "application/text")
-	rw.Write([]byte(text))
-}
-
-func replyList(rw http.ResponseWriter, list []string) {
-	replyText(rw, strings.Join(list, "\n")+"\n")
-}
-
-func replyJSON(rw http.ResponseWriter, obj any) {
-	rw.Header().Set("Content-Type", "application/json")
-	err := json.NewEncoder(rw).Encode(obj)
-	if err != nil {
-		panic(err)
-	}
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-// handler implements http.Handler by wrapping the given handler and adding some
-// common logic.
-type handler struct {
-	ctx context.Context
-	wg  *sync.WaitGroup
-	h   http.Handler
-}
-
-func (h *handler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
-	h.wg.Add(1)
-	defer h.wg.Done()
-
-	defer paniccatcher.Catch(func(p *paniccatcher.Panic) {
-		logging.Fields{
-			"panic.error": p.Reason,
-		}.Errorf(h.ctx, "Caught panic during handling of %q: %s\n%s", r.RequestURI, p.Reason, p.Stack)
-		http.Error(rw, "Internal Server Error. See logs.", http.StatusInternalServerError)
-	})
-
-	logging.Debugf(h.ctx, "Handling %s %s", r.Method, r.RequestURI)
-
-	// See https://cloud.google.com/compute/docs/storing-retrieving-metadata#querying
-	if fl := r.Header.Get("Metadata-Flavor"); fl != "Google" {
-		http.Error(rw, fmt.Sprintf("Bad Metadata-Flavor: got %q, want %q", fl, "Google"), http.StatusBadRequest)
-		return
-	}
-	if ff := r.Header.Get("X-Forwarded-For"); ff != "" {
-		http.Error(rw, fmt.Sprintf("Forbidden X-Forwarded-For header %q", ff), http.StatusBadRequest)
-		return
-	}
-
-	rw.Header().Set("Metadata-Flavor", "Google")
-	h.h.ServeHTTP(rw, r.WithContext(h.ctx))
+	return tok.AccessToken, nil
 }

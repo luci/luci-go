@@ -167,9 +167,6 @@ func RunServer(ctx context.Context, settings *Settings) (*TestServer, error) {
 				"https://www.googleapis.com/auth/userinfo.email",
 			},
 			MinTokenLifetime: 15 * time.Minute,
-			// This is needed to avoid calling metadata.OnGCE from inside
-			// gcemeta.Server. When it is called, it "caches" that it is not on GCE.
-			AssumeNonGCE: true,
 		}
 		metaHost, err := metaSrv.Start(ctx)
 		if err != nil {
