@@ -55,8 +55,6 @@ func (s *HTTPService) RegisterRoutes() {
 	)
 
 	s.Server.Routes.GET("/raw-artifact/*artifactName", baseAuthMW, handleError(s.buildRawArtifactHandler("/raw-artifact/")))
-	// TODO(b/368980134): Remove configs.js once no client hit this endpoint.
-	s.Server.Routes.GET("/configs.js", baseMW, handleError(s.configsJSHandler))
 	s.Server.Routes.GET("/settings.js", baseMW, handleError(s.settingsJSHandler))
 }
 
