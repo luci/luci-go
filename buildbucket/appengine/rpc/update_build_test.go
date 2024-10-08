@@ -1490,7 +1490,7 @@ func TestUpdateBuild(t *testing.T) {
 					build, err := srv.UpdateBuild(ctx, req)
 					So(err, ShouldBeRPCOK)
 					So(build.Status, ShouldEqual, pb.Status_STARTED)
-					So(build.CancelTime.AsTime(), ShouldEqual, t0)
+					So(build.CancelTime.AsTime(), ShouldResemble, t0)
 					So(build.CancellationMarkdown, ShouldEqual, "canceled because its parent 10 has terminated")
 					// One pubsub notification for the status update in the request,
 					// one CancelBuildTask for the requested build,
@@ -1540,7 +1540,7 @@ func TestUpdateBuild(t *testing.T) {
 					build, err := srv.UpdateBuild(ctx, req)
 					So(err, ShouldBeRPCOK)
 					So(build.Status, ShouldEqual, pb.Status_STARTED)
-					So(build.CancelTime.AsTime(), ShouldEqual, t0)
+					So(build.CancelTime.AsTime(), ShouldResemble, t0)
 					So(build.CancellationMarkdown, ShouldEqual, "canceled because its parent 3000000 is missing")
 					So(sch.Tasks(), ShouldHaveLength, 3)
 
@@ -1628,7 +1628,7 @@ func TestUpdateBuild(t *testing.T) {
 					}
 					build, err := srv.UpdateBuild(ctx, req)
 					So(err, ShouldBeRPCOK)
-					So(build.CancelTime.AsTime(), ShouldEqual, t0.Add(-time.Minute))
+					So(build.CancelTime.AsTime(), ShouldResemble, t0.Add(-time.Minute))
 					So(build.SummaryMarkdown, ShouldEqual, "new summary")
 					So(sch.Tasks(), ShouldBeEmpty)
 				})

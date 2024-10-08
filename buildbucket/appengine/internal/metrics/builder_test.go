@@ -280,14 +280,14 @@ func TestReportBuilderMetrics(t *testing.T) {
 			count := func(s string) any {
 				return store.Get(target("b1"), V2.ConsecutiveFailureCount, time.Time{}, []any{s})
 			}
-			t := clock.Now()
+			ts := clock.Now()
 
 			Convey("w/o success", func() {
 				builds := []*model.Build{
-					B(pb.Status_CANCELED, t.Add(-4*time.Minute)),
-					B(pb.Status_FAILURE, t.Add(-3*time.Minute)),
-					B(pb.Status_INFRA_FAILURE, t.Add(-2*time.Minute)),
-					B(pb.Status_CANCELED, t.Add(-1*time.Minute)),
+					B(pb.Status_CANCELED, ts.Add(-4*time.Minute)),
+					B(pb.Status_FAILURE, ts.Add(-3*time.Minute)),
+					B(pb.Status_INFRA_FAILURE, ts.Add(-2*time.Minute)),
+					B(pb.Status_CANCELED, ts.Add(-1*time.Minute)),
 				}
 				So(datastore.Put(ctx, builds), ShouldBeNil)
 				So(ReportBuilderMetrics(ctx), ShouldBeNil)
@@ -298,9 +298,9 @@ func TestReportBuilderMetrics(t *testing.T) {
 
 			Convey("w/ success only", func() {
 				builds := []*model.Build{
-					B(pb.Status_SUCCESS, t.Add(-3*time.Minute)),
-					B(pb.Status_SUCCESS, t.Add(-2*time.Minute)),
-					B(pb.Status_SUCCESS, t.Add(-1*time.Minute)),
+					B(pb.Status_SUCCESS, ts.Add(-3*time.Minute)),
+					B(pb.Status_SUCCESS, ts.Add(-2*time.Minute)),
+					B(pb.Status_SUCCESS, ts.Add(-1*time.Minute)),
 				}
 				So(datastore.Put(ctx, builds), ShouldBeNil)
 				So(ReportBuilderMetrics(ctx), ShouldBeNil)
@@ -312,12 +312,12 @@ func TestReportBuilderMetrics(t *testing.T) {
 
 			Convey("w/ a series of failures after success", func() {
 				builds := []*model.Build{
-					B(pb.Status_CANCELED, t.Add(-6*time.Minute)),
-					B(pb.Status_SUCCESS, t.Add(-5*time.Minute)),
-					B(pb.Status_FAILURE, t.Add(-4*time.Minute)),
-					B(pb.Status_FAILURE, t.Add(-3*time.Minute)),
-					B(pb.Status_INFRA_FAILURE, t.Add(-2*time.Minute)),
-					B(pb.Status_CANCELED, t.Add(-1*time.Minute)),
+					B(pb.Status_CANCELED, ts.Add(-6*time.Minute)),
+					B(pb.Status_SUCCESS, ts.Add(-5*time.Minute)),
+					B(pb.Status_FAILURE, ts.Add(-4*time.Minute)),
+					B(pb.Status_FAILURE, ts.Add(-3*time.Minute)),
+					B(pb.Status_INFRA_FAILURE, ts.Add(-2*time.Minute)),
+					B(pb.Status_CANCELED, ts.Add(-1*time.Minute)),
 				}
 				So(datastore.Put(ctx, builds), ShouldBeNil)
 				So(ReportBuilderMetrics(ctx), ShouldBeNil)
@@ -406,12 +406,12 @@ func TestReportBuilderMetrics(t *testing.T) {
 			})
 			Convey("w/ a series of failures before a success", func() {
 				builds := []*model.Build{
-					B(pb.Status_CANCELED, t.Add(-5*time.Minute)),
-					B(pb.Status_SUCCESS, t.Add(-4*time.Minute)),
-					B(pb.Status_FAILURE, t.Add(-3*time.Minute)),
-					B(pb.Status_INFRA_FAILURE, t.Add(-2*time.Minute)),
-					B(pb.Status_CANCELED, t.Add(-1*time.Minute)),
-					B(pb.Status_SUCCESS, t.Add(time.Minute)),
+					B(pb.Status_CANCELED, ts.Add(-5*time.Minute)),
+					B(pb.Status_SUCCESS, ts.Add(-4*time.Minute)),
+					B(pb.Status_FAILURE, ts.Add(-3*time.Minute)),
+					B(pb.Status_INFRA_FAILURE, ts.Add(-2*time.Minute)),
+					B(pb.Status_CANCELED, ts.Add(-1*time.Minute)),
+					B(pb.Status_SUCCESS, ts.Add(time.Minute)),
 				}
 				So(datastore.Put(ctx, builds), ShouldBeNil)
 				So(ReportBuilderMetrics(ctx), ShouldBeNil)

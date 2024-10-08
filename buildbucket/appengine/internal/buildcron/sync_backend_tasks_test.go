@@ -90,8 +90,8 @@ func TestTriggerSyncBackendTasks(t *testing.T) {
 		So(TriggerSyncBackendTasks(ctx), ShouldBeNil)
 		So(sch.Tasks(), ShouldHaveLength, 4)
 		pairs := make([]*projectBackendPair, 4)
-		for i, t := range sch.Tasks() {
-			switch v := t.Payload.(type) {
+		for i, tsk := range sch.Tasks() {
+			switch v := tsk.Payload.(type) {
 			case *taskdefs.SyncBuildsWithBackendTasks:
 				pairs[i] = &projectBackendPair{
 					project: v.Project,

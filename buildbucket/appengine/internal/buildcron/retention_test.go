@@ -51,8 +51,8 @@ func TestDeleteOldBuilds(t *testing.T) {
 				Status: pb.Status_SUCCESS,
 			},
 		}
-		setID := func(b *model.Build, t time.Time) {
-			b.ID = buildid.NewBuildIDs(ctx, t, 1)[0]
+		setID := func(b *model.Build, ts time.Time) {
+			b.ID = buildid.NewBuildIDs(ctx, ts, 1)[0]
 			So(datastore.Put(ctx, b), ShouldBeNil)
 			So(datastore.Put(ctx, &model.BuildSteps{
 				ID:    1,

@@ -36,10 +36,10 @@ func TestBuilderStat(t *testing.T) {
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 
-		t := testclock.TestTimeUTC
+		ts := testclock.TestTimeUTC
 		So(datastore.Put(ctx, &BuilderStat{
 			ID:            "proj:bucket:builder1",
-			LastScheduled: t,
+			LastScheduled: ts,
 		}), ShouldBeNil)
 
 		Convey("update builder", func() {
@@ -75,7 +75,7 @@ func TestBuilderStat(t *testing.T) {
 					},
 				},
 			}
-			now := t.Add(3600 * time.Second)
+			now := ts.Add(3600 * time.Second)
 			err := UpdateBuilderStat(ctx, builds, now)
 			So(err, ShouldBeNil)
 
@@ -99,7 +99,7 @@ func TestBuilderStat(t *testing.T) {
 
 		Convey("uninitialized build.proto.builder", func() {
 			builds := []*Build{{ID: 1}}
-			So(func() { UpdateBuilderStat(ctx, builds, t) }, ShouldPanic)
+			So(func() { UpdateBuilderStat(ctx, builds, ts) }, ShouldPanic)
 		})
 	})
 }

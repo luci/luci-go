@@ -30,16 +30,16 @@ func TestNewBuildIDs(t *testing.T) {
 
 	Convey("NewBuildIDs", t, func() {
 		ctx := mathrand.Set(context.Background(), rand.New(rand.NewSource(0)))
-		t := time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC)
+		ts := time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC)
 		So(1<<16, ShouldEqual, 65536)
 
 		Convey("zero", func() {
-			ids := NewBuildIDs(ctx, t, 0)
+			ids := NewBuildIDs(ctx, ts, 0)
 			So(ids, ShouldBeEmpty)
 		})
 
 		Convey("one", func() {
-			ids := NewBuildIDs(ctx, t, 1)
+			ids := NewBuildIDs(ctx, ts, 1)
 			So(ids, ShouldResemble, []int64{
 				0x7DB4463C7FF2FFA1,
 			})
@@ -49,7 +49,7 @@ func TestNewBuildIDs(t *testing.T) {
 		})
 
 		Convey("two", func() {
-			ids := NewBuildIDs(ctx, t, 2)
+			ids := NewBuildIDs(ctx, ts, 2)
 			So(ids, ShouldResemble, []int64{
 				0x7DB4463C7FFA8F71,
 				0x7DB4463C7FFA8F61,
@@ -64,7 +64,7 @@ func TestNewBuildIDs(t *testing.T) {
 
 		Convey("many", func() {
 			for i := 0; i < 2^16; i++ {
-				ids := NewBuildIDs(ctx, t, i)
+				ids := NewBuildIDs(ctx, ts, i)
 				So(ids, ShouldHaveLength, i)
 				prev := BuildIDMax
 				for _, id := range ids {
@@ -136,8 +136,8 @@ func TestIDTimeSegment(t *testing.T) {
 		})
 
 		Convey("before the start of the word time", func() {
-			t := time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
-			id := idTimeSegment(t)
+			ts := time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
+			id := idTimeSegment(ts)
 			So(id, ShouldEqual, 0)
 		})
 	})
