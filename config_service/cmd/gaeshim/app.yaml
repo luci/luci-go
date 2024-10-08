@@ -1,0 +1,17 @@
+service: default
+runtime: go122
+
+# Note: this is interpreted by gae.py, it maps the app ID being deployed to
+# values of ${...} vars.
+luci_gae_vars:
+  luci-config-dev:
+    CONFIG_V2_HOST: config-dev.luci.app
+    TS_MON_ACCOUNT: app-engine-metric-publishers@prodx-mon-chrome-infra.google.com.iam.gserviceaccount.com
+  luci-config:
+    CONFIG_V2_HOST: config.luci.app
+    TS_MON_ACCOUNT: app-engine-metric-publishers@prodx-mon-chrome-infra.google.com.iam.gserviceaccount.com
+
+entrypoint: >
+  main
+  -config-v2-host ${CONFIG_V2_HOST}
+  -ts-mon-account ${TS_MON_ACCOUNT}
