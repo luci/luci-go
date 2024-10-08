@@ -19,7 +19,7 @@
     "type-check": "tsc --noEmit --skipLibCheck",
     "lint": "eslint -c .eslintrc.cjs ./",
     "test": "jest",
-    "e2e": "cypress run"
+    "e2e": "bash ./scripts/run_e2e.sh"
   },
   "dependencies": {
     "@adobe/lit-mobx": "^2.2.2",
