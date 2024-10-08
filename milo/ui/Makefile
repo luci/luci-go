@@ -4,28 +4,31 @@ help:
 	@echo "Available commands:"
 	@sed -n '/^[a-zA-Z0-9_]*:/s/:.*//p' <Makefile
 
-node_deps:
-	npm ci
+# Note: prefer using a Makefile command over package.json scripts when running
+# commands in bots so we can document the usage of those commands. This prevents
+# us from accidentally breaking commands that a bot relies on.
 
-build: node_deps
-	npm run build
+lint:
+	npm run lint
 
-# Used when building release tarballs. See
-# https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/main/build/gae/luci-milo-ui.yaml
-release:
-	npm ci && npm run build
+format:
+	npm run lint -- --fix
 
-test: node_deps
+# Used to run unit tests in a builder.
+# The acutal builder uses `npm run test` directly. Still document it here so we
+# less likely to accidentally change `test` script and break the unit test
+# builder.
+test:
 	npm run test
+
+# Used to build
+# * release tarballs (see https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/main/build/gae/luci-milo-ui.yaml).
+# * preview server assets when running integration tests.
+build:
+	npm run build
 
 e2e:
 	npm run e2e
-
-lint: node_deps
-	npm run lint
-
-format: node_deps
-	npm run lint -- --fix
 
 # Provided for convience.
 # See up-dev in `../Makefile` for details.

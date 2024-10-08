@@ -27,4 +27,4 @@ gen:
 	go generate ./...
 
 build-ui:
-	cd ui && make build
+	cd ui && npm ci && make build

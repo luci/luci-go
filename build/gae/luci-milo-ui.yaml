@@ -7,7 +7,9 @@ inputsdir: ../../milo
 # It's separated from the server portion of LUCI Milo so the UI portion can be
 # built and deployed separately.
 build:
-  - run: ['make', 'release']
+  - run: ['npm', 'ci']
+    cwd: ${inputsdir}/ui
+  - run: ['make', 'build']
     cwd: ${inputsdir}/ui
   - go_gae_bundle: ${inputsdir}/service-ui/service-ui.yaml
     go_gae_bundle_as_module: True
