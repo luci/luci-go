@@ -39,5 +39,8 @@ dispatch:
   service: ui
 - url: "*/root_sw.js.map"
   service: ui
+# The UI service also serve its own version.
+- url: "*/ui_version.js"
+  service: ui
 
 # All other requests are routed to the 'default' service by default.
