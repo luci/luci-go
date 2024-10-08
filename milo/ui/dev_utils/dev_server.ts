@@ -14,7 +14,8 @@
 
 import { PluginOption } from 'vite';
 
-import { getLocalDevConfigsJs } from './configs_js_utils';
+import { getLocalDevSettingsJs } from './settings_js_utils';
+import { getLocalUiVersionJs } from './ui_version_js_utils';
 
 export function devServer(
   env: Record<string, string | undefined>,
@@ -30,16 +31,28 @@ export function devServer(
         return next();
       });
 
-      // Serve `/configs.js` in local development environment.
-      // We don't want to define `SETTINGS` directly because that would
-      // prevent us from testing the service worker's `GET '/configs.js'`
+      // Serve `/ui_version.js` in local development environment.
+      // We don't want to define `UI_VERSION` directly because that would
+      // prevent us from testing the service worker's `GET '/ui_version.js'`
       // handler.
       server.middlewares.use((req, res, next) => {
-        if (req.url !== '/configs.js') {
+        if (req.url !== '/ui_version.js') {
           return next();
         }
         res.setHeader('content-type', 'text/javascript');
-        res.end(getLocalDevConfigsJs(env));
+        res.end(getLocalUiVersionJs(env));
+      });
+
+      // Serve `/settings.js` in local development environment.
+      // We don't want to define `SETTINGS` directly because that would
+      // prevent us from testing the service worker's `GET '/settings.js'`
+      // handler.
+      server.middlewares.use((req, res, next) => {
+        if (req.url !== '/settings.js') {
+          return next();
+        }
+        res.setHeader('content-type', 'text/javascript');
+        res.end(getLocalDevSettingsJs(env));
       });
     },
   };

@@ -43,15 +43,17 @@ dotenv.config({
 });
 
 // Those variables are declared as `const` so their value won't be accidentally
-// changed. But they are actually injected by `/configs.js` to `self` in
-// production environment. Here we need to do the same so they are available to
-// code run under the test environment.
-const configJSVars = self as unknown as {
-  VERSION: typeof VERSION;
+// changed. But they are actually injected by `/settings.js` and
+// `/ui_version.js` to `self` in the production environment. Here we need to do
+// the same so they are available to code run under the test environment.
+const serverInjectedVars = self as unknown as {
+  UI_VERSION: typeof UI_VERSION;
   SETTINGS: typeof SETTINGS;
 };
-configJSVars.VERSION = assertNonNullable(process.env['VITE_MILO_VERSION']);
-configJSVars.SETTINGS = Object.freeze({
+serverInjectedVars.UI_VERSION = assertNonNullable(
+  process.env['VITE_LOCAL_UI_VERSION'],
+);
+serverInjectedVars.SETTINGS = Object.freeze({
   buildbucket: {
     host: assertNonNullable(process.env['VITE_BUILDBUCKET_HOST']),
   },

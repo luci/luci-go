@@ -20,15 +20,19 @@ import { defineConfig, loadEnv } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import tsconfigPaths from 'vite-tsconfig-paths';
 
-import {
-  getVirtualConfigsJsPlugin,
-  overrideMiloHostPlugin,
-  stableConfigsJsLinkPlugin,
-} from './dev_utils/configs_js_utils';
 import { devServer } from './dev_utils/dev_server';
 import { localAuthPlugin } from './dev_utils/local_auth_plugin';
 import { preloadModulesPlugin } from './dev_utils/preload_modules_plugin';
 import { previewServer } from './dev_utils/preview_server';
+import {
+  getVirtualSettingsJsPlugin,
+  overrideMiloHostPlugin,
+  stableSettingsJsLinkPlugin,
+} from './dev_utils/settings_js_utils';
+import {
+  getVirtualUiVersionJsPlugin,
+  stableUiVersionJsLinkPlugin,
+} from './dev_utils/ui_version_js_utils';
 import { getBoolEnv } from './dev_utils/utils';
 import { regexpsForRoutes } from './src/generic_libs/tools/react_router_utils';
 import { routes } from './src/routes';
@@ -48,7 +52,8 @@ export default defineConfig(({ mode }) => {
     ),
   };
 
-  const virtualConfigJs = getVirtualConfigsJsPlugin(mode, env);
+  const virtualSettingsJs = getVirtualSettingsJsPlugin(mode, env);
+  const virtualUiVersionJs = getVirtualUiVersionJsPlugin(mode, env);
   const overrideMiloHost = overrideMiloHostPlugin(env);
   const defineRoutesRegex = replace({
     preventAssignment: true,
@@ -104,14 +109,16 @@ export default defineConfig(({ mode }) => {
           ),
         },
       }),
-      stableConfigsJsLinkPlugin(),
-      virtualConfigJs,
+      stableUiVersionJsLinkPlugin(),
+      virtualUiVersionJs,
+      stableSettingsJsLinkPlugin(),
+      virtualSettingsJs,
       overrideMiloHost,
       defineRoutesRegex,
       preloadModulesPlugin(),
       localAuthPlugin(),
       devServer(env),
-      previewServer(path.join(__dirname, 'dist')),
+      previewServer(path.join(__dirname, 'dist'), env),
       react({
         babel: {
           configFile: true,
@@ -153,7 +160,8 @@ export default defineConfig(({ mode }) => {
           buildPlugins: {
             vite: [
               defineRoutesRegex,
-              virtualConfigJs,
+              virtualUiVersionJs,
+              virtualSettingsJs,
               overrideMiloHost,
               tsconfigPaths(),
             ],

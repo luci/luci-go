@@ -17,7 +17,7 @@
  */
 export function genFeedbackUrl(errMsg?: string, stacktrace?: string) {
   const feedbackComment =
-    `Version: ${VERSION}\n` +
+    `Version: ${UI_VERSION}\n` +
     `From Link: ${self.location.href}\n` +
     (errMsg ? `Error Message:\n${errMsg}\n` : '') +
     (stacktrace ? `Stacktrace:\n${stacktrace}\n` : '') +

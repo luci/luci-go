@@ -22,20 +22,20 @@ import { assertNonNullable } from '../src/generic_libs/tools/utils';
  * Vite resolves external resources with relative URLs (URLs without a domain
  * name) inconsistently.
  *
- * Inject `<script src="/configs.js" ><script>` via a plugin to prevent Vite
+ * Inject `<script src="/settings.js"><script>` via a plugin to prevent Vite
  * from conditionally prepending "/ui" prefix onto the URL during local
  * development.
  */
-export function stableConfigsJsLinkPlugin(): Plugin {
+export function stableSettingsJsLinkPlugin(): Plugin {
   return {
-    name: 'luci-ui-stable-configs-js',
+    name: 'luci-ui-stable-settings-js',
     transformIndexHtml: (html) => ({
       html,
       tags: [
         {
           tag: 'script',
           attrs: {
-            src: '/configs.js',
+            src: '/settings.js',
           },
           injectTo: 'head-prepend',
         },
@@ -45,10 +45,9 @@ export function stableConfigsJsLinkPlugin(): Plugin {
 }
 
 /**
- * Construct a `configs.js` file from environment variables.
+ * Construct a `settings.js` file from environment variables.
  */
-export function getLocalDevConfigsJs(env: Record<string, string | undefined>) {
-  const localVersion = env['VITE_MILO_VERSION'];
+export function getLocalDevSettingsJs(env: Record<string, string | undefined>) {
   const localSettings: typeof SETTINGS = {
     buildbucket: {
       host: assertNonNullable(env['VITE_BUILDBUCKET_HOST']),
@@ -89,29 +88,27 @@ export function getLocalDevConfigsJs(env: Record<string, string | undefined>) {
     },
   };
 
-  const localDevConfigsJs =
-    `self.VERSION = '${localVersion}';\n` +
-    `self.SETTINGS = Object.freeze(${JSON.stringify(
-      localSettings,
-      undefined,
-      2,
-    )});\n`;
+  const localDevSettingsJs = `self.SETTINGS = Object.freeze(${JSON.stringify(
+    localSettings,
+    undefined,
+    2,
+  )});\n`;
 
-  return localDevConfigsJs;
+  return localDevSettingsJs;
 }
 
 /**
- * Get a virtual-configs-js plugin so we can import configs.js in the service
+ * Get a virtual-settings-js plugin so we can import settings.js in the service
  * workers with the correct syntax required by different environments.
  */
-export function getVirtualConfigsJsPlugin(
+export function getVirtualSettingsJsPlugin(
   mode: string,
   env: Record<string, string | undefined>,
 ): Plugin {
   return {
-    name: 'virtual-configs-js',
+    name: 'luci-ui-virtual-settings-js',
     resolveId: (id, importer) => {
-      if (id !== 'virtual:configs.js') {
+      if (id !== 'virtual:settings.js') {
         return null;
       }
 
@@ -123,34 +120,34 @@ export function getVirtualConfigsJsPlugin(
           .includes(importer || '')
       ) {
         throw new Error(
-          'virtual:configs.js should only be imported by a service worker script.',
+          'virtual:settings.js should only be imported by a service worker script.',
         );
       }
-      return '\0virtual:configs.js';
+      return '\0virtual:settings.js';
     },
     load: (id) => {
-      if (id !== '\0virtual:configs.js') {
+      if (id !== '\0virtual:settings.js') {
         return null;
       }
 
       // In production, the service worker script cannot be a JS module due to
       // limited browser support. So we need to use `importScripts` instead of
-      // `import` to load `/configs.js`.
+      // `import` to load `/settings.js`.
       if (mode !== 'development') {
-        return "importScripts('/configs.js');";
+        return "importScripts('/settings.js');";
       }
 
       // During development, the service worker script can only be a JS module,
       // because it runs through the same pipeline as the rest of the scripts.
-      // It cannot use the `importScripts`. So we inject the configs directly.
-      return getLocalDevConfigsJs(env);
+      // It cannot use the `importScripts`. So we inject the settings directly.
+      return getLocalDevSettingsJs(env);
     },
   };
 }
 
 /**
  * Get a override-milo-host plugin so we can override Milo (API) host specified
- * in configs.js if required.
+ * in settings.js if required.
  *
  * This is useful when deploying an UI only demo where the API service of the
  * same version does not exist.

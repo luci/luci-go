@@ -83,21 +83,21 @@ export class Prefetcher {
   private readonly prefetchResultDBService: ResultDb;
 
   constructor(
-    private readonly configs: typeof SETTINGS,
+    private readonly settings: typeof SETTINGS,
     private readonly fetchImpl: typeof fetch,
   ) {
     this.cachedUrls = [
       this.authStateUrl,
-      `https://${this.configs.buildbucket.host}/prpc/buildbucket.v2.Builds/GetBuild`,
-      `https://${this.configs.resultdb.host}/prpc/luci.resultdb.v1.ResultDB/GetArtifact`,
-      `https://${this.configs.resultdb.host}/prpc/luci.resultdb.v1.ResultDB/GetInvocation`,
-      `https://${this.configs.resultdb.host}/prpc/luci.resultdb.v1.ResultDB/QueryTestVariants`,
+      `https://${this.settings.buildbucket.host}/prpc/buildbucket.v2.Builds/GetBuild`,
+      `https://${this.settings.resultdb.host}/prpc/luci.resultdb.v1.ResultDB/GetArtifact`,
+      `https://${this.settings.resultdb.host}/prpc/luci.resultdb.v1.ResultDB/GetInvocation`,
+      `https://${this.settings.resultdb.host}/prpc/luci.resultdb.v1.ResultDB/QueryTestVariants`,
     ];
     this.prefetchBuildClient = new BuildsClientImpl(
-      this.makeRpcClient(this.configs.buildbucket.host),
+      this.makeRpcClient(this.settings.buildbucket.host),
     );
     this.prefetchResultDBService = new ResultDb(
-      this.makePrpcClient(this.configs.resultdb.host),
+      this.makePrpcClient(this.settings.resultdb.host),
     );
   }
 

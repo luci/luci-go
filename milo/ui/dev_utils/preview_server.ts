@@ -17,6 +17,8 @@ import * as path from 'node:path';
 
 import { PluginOption } from 'vite';
 
+import { getLocalUiVersionJs } from './ui_version_js_utils';
+
 function getContentType(filename: string) {
   if (filename.endsWith('.js.map')) {
     return 'application/json';
@@ -29,10 +31,24 @@ function getContentType(filename: string) {
   );
 }
 
-export function previewServer(assetDir: string): PluginOption {
+export function previewServer(
+  assetDir: string,
+  env: Record<string, string | undefined>,
+): PluginOption {
   return {
     name: 'luci-ui-preview-server',
     configurePreviewServer: (server) => {
+      // Serve `/ui_version.js` during local preview. During local preview, we
+      // are serving a local build. The UI's version is different from the
+      // active staging UI version.
+      server.middlewares.use((req, res, next) => {
+        if (req.url !== '/ui_version.js') {
+          return next();
+        }
+        res.setHeader('content-type', 'text/javascript');
+        res.end(getLocalUiVersionJs(env));
+      });
+
       // Serve files in `./dist/` but not in `./dist/ui/` (e.g. `root_sw.js`).
       server.middlewares.use((req, res, next) => {
         if (!req.url || req.url.match(/^\/ui\/.*$/)) {

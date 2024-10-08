@@ -26,7 +26,7 @@ Instructions:
 Design decisions:
  * The version number is incremental so we won't repeatedly show the release
    notes after rolling back a release.
- * We do not use the AppEngine version string (i.e. `VERSION`) because
+ * We do not use the AppEngine version string (i.e. `UI_VERSION`) because
    * there might be releases without user facing features, and
    * it's hard to annotate sections with AppEngine versions since we don't know
      the AppEngine version at coding time.

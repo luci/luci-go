@@ -13,14 +13,16 @@
 // limitations under the License.
 
 /**
- * Version of the app.
- * Declared in the server generated file, /configs.js, included as a script tag.
+ * Version of the UI.
+ * Declared in the server generated file, /ui_version.js, included as a script
+ * tag.
  */
-declare const VERSION: string;
+declare const UI_VERSION: string;
 
 /**
  * Settings of the app.
- * Declared in the server generated file, /configs.js, included as a script tag.
+ * Declared in the server generated file, /settings.js, included as a script
+ * tag.
  */
 // While it's possible to use a code generated binding for this. The JSON
 // representation of a proto message does not necessarily match the generated

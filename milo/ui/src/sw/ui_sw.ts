@@ -14,8 +14,10 @@
 
 // TODO(weiweilin): add integration tests to ensure the SW works properly.
 
-import 'virtual:configs.js';
+import 'virtual:ui_version.js';
+import 'virtual:settings.js';
 import 'virtual:override-milo-host';
+
 import {
   cleanupOutdatedCaches,
   createHandlerBoundToURL,
@@ -62,11 +64,19 @@ self.addEventListener('fetch', async (e) => {
     return;
   }
 
-  // Ensure all clients served by this service worker use the same config.
-  if (e.request.url === self.origin + '/configs.js') {
+  // The version of the UI is the AppEngine UI service version that installed
+  // this service worker. Not the current active AppEngine UI service version.
+  if (e.request.url === self.origin + '/ui_version.js') {
+    const res = new Response(`self.UI_VERSION = '${UI_VERSION}';\n`);
+    res.headers.set('content-type', 'text/javascript');
+    e.respondWith(res);
+    return;
+  }
+
+  // Ensure all clients served by this service worker use the same settings.
+  if (e.request.url === self.origin + '/settings.js') {
     const res = new Response(
-      `self.VERSION = '${VERSION}';\n` +
-        `self.SETTINGS = Object.freeze(${JSON.stringify(SETTINGS)});\n`,
+      `self.SETTINGS = Object.freeze(${JSON.stringify(SETTINGS)});\n`,
     );
     res.headers.set('content-type', 'text/javascript');
     e.respondWith(res);
