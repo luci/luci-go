@@ -69,7 +69,7 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
   {initialValues, name, itemsChanged}, ref
   ) => {
     const [addingItem, setAddingItem] = useState<boolean>();
-    const [currentItem, setCurrentItem] = useState<string>();
+    const [newItems, setNewItems] = useState<string>('');
     const [errorMessage, setErrorMessage] = useState<string>('');
     // The initial form items which reflect the items currently in auth service backend.
     const [savedValues, setSavedValues] = useState<string[]>(initialValues);
@@ -82,7 +82,7 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
       },
       setReadonly: () => {
         setAddingItem(false);
-        setCurrentItem("");
+        setNewItems("");
       },
       changeItems: (newItems: string[]) => {
         setItems(asItems(newItems));
@@ -95,7 +95,7 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
 
     const resetTextfield = () => {
         setAddingItem(!addingItem);
-        setCurrentItem('');
+        setNewItems("");
         setErrorMessage('');
       }
 
@@ -110,35 +110,45 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
       return updatedItems;
     }
 
+    const hasValues = (value: string) => {
+      for (const item of items) {
+        if (item.value == value) {
+          return true;
+        }
+      }
+      return false;
+    }
+
     const addToItems = () => {
       // Make sure item added is not a duplicate.
-      for (const item of items) {
-        if (item.value == currentItem!) {
-          setErrorMessage('Duplicate item.');
-          return;
-        }
+      let newItemsArray = newItems.split(/[\n ]+/).filter((item) => item !== "");
+      const duplicateValues = newItemsArray.filter(value => hasValues(value));
+      var isValid: (item: string) => boolean;
+      switch (name) {
+        case 'Members':
+          isValid = isMember;
+          break;
+        case 'Globs':
+          isValid = isGlob;
+          break;
+        case 'Subgroups':
+          isValid = isSubgroup;
+          break;
+        default:
+          isValid = () => { return false; };
       }
-      // If this is members or globs, verify accordingly before adding.
-      // If it doesn't meet the requirements, show error message.
-      if (name == 'Members') {
-        if (!isMember(currentItem!)) {
-          setErrorMessage('Invalid member.');
-          return;
-        }
-      } else if (name == 'Globs') {
-        if (!isGlob(currentItem!)) {
-          setErrorMessage('Each glob should use at least one wildcard (i.e. *).');
-          return;
-        }
-      } else if (name == 'Subgroups') {
-        if (!isSubgroup(currentItem!)) {
-          setErrorMessage('Invalid subgroup name.');
-          return;
-        }
-      }
-      if (currentItem) {
-        setItems([...items, {value: currentItem, include: true}]);
-        resetTextfield()
+      const invalidValues = newItemsArray.filter((value) => !isValid(value));
+      // Check for errors and update state accordingly.
+      if (invalidValues.length > 0 || duplicateValues.length > 0) {
+        let allInvalidItems = duplicateValues.concat(invalidValues);
+        let errorMessage = `Invalid ${name}: ` + allInvalidItems.join(', ');
+        setErrorMessage(errorMessage);
+      } else {
+        setErrorMessage('');
+        let updatedItems = items;
+        updatedItems.push(...asItems(newItemsArray));
+        setItems(updatedItems);
+        resetTextfield();
       }
     }
 
@@ -152,12 +162,6 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
       }
       return true;
     }
-
-    const submitItem = (e: React.KeyboardEvent<HTMLDivElement>) => {
-        if (e.key == 'Enter') {
-          addToItems();
-        }
-      }
 
     const handleChange = (index: number) => {
       const updatedItems = [...items];
@@ -198,8 +202,7 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
       {addingItem && (
         <TableRow>
           <TableCell sx={{p: 0, pt: '15px', pr: '15px'}} style={{width: '94%'}}>
-            <TextField label='Add New' style={{width: '100%'}} onChange={(e) => setCurrentItem(e.target.value)} onKeyDown={submitItem} value={currentItem} data-testid='add-textfield' error={errorMessage !== ''} helperText={errorMessage}></TextField>
-          </TableCell>
+          <TextField multiline placeholder='Add new members, one per line' label='Add new members, one per line' style={{width: '100%'}} onChange={(e) => setNewItems(e.target.value)} value={newItems} data-testid='add-textfield' error={errorMessage !== ''} helperText={errorMessage}></TextField>          </TableCell>
           <TableCell align='center' style={{width: '3%'}} sx={{p: 0, pt: '15px'}}>
             <IconButton color='success' sx={{p: 0}} onClick={() => {addToItems()}} data-testid='confirm-button'>
               <DoneIcon />

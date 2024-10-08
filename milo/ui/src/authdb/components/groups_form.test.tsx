@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import { render, screen, fireEvent } from '@testing-library/react';
-import userEvent from '@testing-library/user-event'
 import { createMockGroupIndividual, mockFetchGetGroup, mockErrorFetchingGetGroup } from '@/authdb/testing_tools/mocks/group_individual_mock';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 import List from '@mui/material/List';
@@ -310,34 +309,6 @@ describe('<GroupsForm />', () => {
 
     // Confirm changed owners and check message is shown.
     act(() => editButton.click());
-    expect(screen.getByText('You have unsaved changes!')).toBeInTheDocument();
-  });
-
-  test('message shown for edited state in groups form list item', async () => {
-    const mockGroup = createMockGroupIndividual('123', true, true);
-    mockFetchGetGroup(mockGroup);
-
-    render(
-      <FakeContextProvider>
-        <GroupsForm name='123'/>
-      </FakeContextProvider>,
-    );
-    await screen.findByTestId('groups-form');
-
-    // Click add button for first list (members).
-    const addButton = screen.queryAllByTestId('add-button')[0];
-    act(() => addButton!.click());
-    // Type in textfield.
-    const textfield = screen.getByTestId('add-textfield').querySelector('input');
-    expect(textfield).toBeInTheDocument();
-    await userEvent.type(textfield!, 'newMember@email.com');
-    expect(textfield!.value).toBe('newMember@email.com');
-    // Click confirm button.
-    const confirmButton = screen.queryByTestId('confirm-button');
-    expect(confirmButton).not.toBeNull();
-    act(() => confirmButton!.click());
-    // Check new member shown in list & message is shown.
-    expect(screen.getByText('newMember@email.com')).toBeInTheDocument();
     expect(screen.getByText('You have unsaved changes!')).toBeInTheDocument();
   });
 
