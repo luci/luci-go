@@ -312,6 +312,16 @@ func TestUpdate(t *testing.T) {
 				check(t)
 			})
 
+			t.Run("if only the update time in result has changed", func(t *ftt.Test) {
+				data = &returnValues{
+					s: tryjob.Status_TRIGGERED,
+					r: &tryjob.Result{
+						UpdateTime: timestamppb.New(clock.Now(ctx).Add(1 * time.Hour)),
+					},
+				}
+				check(t)
+			})
+
 			t.Run("if CV has newer data", func(t *ftt.Test) {
 				data = &returnValues{
 					s: tryjob.Status_TRIGGERED,

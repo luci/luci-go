@@ -183,7 +183,7 @@ func (u *Updater) conditionallyUpdate(ctx context.Context, id common.TryjobID, s
 	var priorStatus tryjob.Status
 	tj, err := u.mutator.Update(ctx, id, func(tj *tryjob.Tryjob) error {
 		switch {
-		case status == tj.Status && proto.Equal(tj.Result, result):
+		case status == tj.Status && isSemanticallyEqual(tj.Result, result):
 			return tryjob.ErrStopMutation
 		case tj.Result.GetUpdateTime() != nil && result.GetUpdateTime() != nil && tj.Result.GetUpdateTime().AsTime().After(result.GetUpdateTime().AsTime()):
 			// the stored Tryjob is newer, skip update
@@ -205,6 +205,23 @@ func (u *Updater) conditionallyUpdate(ctx context.Context, id common.TryjobID, s
 		}
 	}
 	return nil
+}
+
+// isSemanticallyEqual returns whether two tryjob Results are semantically equal.
+//
+// Two results are semantically equal if all their attributes are equal except
+// for the UpdateTime
+func isSemanticallyEqual(left, right *tryjob.Result) bool {
+	// Clearing the UpdateTime for both left and right for comparison but cloning
+	// the results instead of modifying the inputs.
+	left, right = proto.Clone(left).(*tryjob.Result), proto.Clone(right).(*tryjob.Result)
+	if left != nil {
+		left.UpdateTime = nil
+	}
+	if right != nil {
+		right.UpdateTime = nil
+	}
+	return proto.Equal(left, right)
 }
 
 func (u *Updater) reportTryjobEndedStatus(ctx context.Context, tj *tryjob.Tryjob) error {
