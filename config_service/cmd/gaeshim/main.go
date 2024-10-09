@@ -69,10 +69,11 @@ func main() {
 
 		// E.g. ".../schemas/projects:luci-logdog.cfg"
 		srv.Routes.GET("/schemas/*SchemaName", nil, func(ctx *router.Context) {
+			schema := strings.TrimPrefix(ctx.Params.ByName("SchemaName"), "/")
 			http.Redirect(
 				ctx.Writer,
 				ctx.Request,
-				fmt.Sprintf("https://%s/schemas/%s", destHost, ctx.Params.ByName("SchemaName")),
+				fmt.Sprintf("https://%s/schemas/%s", destHost, schema),
 				http.StatusMovedPermanently,
 			)
 		})
