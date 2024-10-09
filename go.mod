@@ -31,7 +31,7 @@ require (
 	cloud.google.com/go/kms v1.20.0
 	cloud.google.com/go/logging v1.11.0
 	cloud.google.com/go/profiler v0.4.1
-	cloud.google.com/go/pubsub v1.43.0
+	cloud.google.com/go/pubsub v1.44.0
 	cloud.google.com/go/secretmanager v1.14.1
 	cloud.google.com/go/spanner v1.69.0
 	cloud.google.com/go/storage v1.44.0
@@ -103,13 +103,13 @@ require (
 	gonum.org/v1/gonum v0.12.0
 	google.golang.org/api v0.199.0
 	google.golang.org/appengine v1.6.8
-	google.golang.org/genproto v0.0.0-20240930140551-af27646dc61f
-	google.golang.org/genproto/googleapis/api v0.0.0-20240930140551-af27646dc61f
-	google.golang.org/genproto/googleapis/bytestream v0.0.0-20240930140551-af27646dc61f
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240930140551-af27646dc61f
+	google.golang.org/genproto v0.0.0-20241007155032-5fefd90f89a9
+	google.golang.org/genproto/googleapis/api v0.0.0-20241007155032-5fefd90f89a9
+	google.golang.org/genproto/googleapis/bytestream v0.0.0-20241007155032-5fefd90f89a9
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20241007155032-5fefd90f89a9
 	google.golang.org/grpc v1.67.1
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.5.1
-	google.golang.org/protobuf v1.34.2
+	google.golang.org/protobuf v1.35.1
 	gopkg.in/yaml.v2 v2.4.0
 )
 

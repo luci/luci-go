@@ -221,8 +221,8 @@ func TestMain(t *testing.T) {
 				err := main(ctx, args, stdin, func(ctx context.Context, args []string, st *State) error {
 					return nil
 				})
-				So(err, ShouldErrLike, `invalid value for string type: 100`)
-				summary := "fatal error starting build: build.Start: properties.Registry.Instantiate - input[top-level]: protoFromStruct[*testpb.TopLevel]: proto: (line 1:10): invalid value for string type: 100"
+				So(err, ShouldErrLike, `invalid value for string field field: 100`)
+				summary := "fatal error starting build: build.Start: properties.Registry.Instantiate - input[top-level]: protoFromStruct[*testpb.TopLevel]: proto: (line 1:10): invalid value for string field field: 100"
 				final := getFinal()
 				// protobuf package deliberately introduce random prefix:
 				// https://github.com/protocolbuffers/protobuf-go/blob/master/internal/errors/errors.go#L26
