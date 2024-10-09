@@ -18,9 +18,13 @@ import (
 	"context"
 	"fmt"
 
+	"google.golang.org/grpc/codes"
+
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/grpc/appstatus"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
 	"go.chromium.org/luci/buildbucket/appengine/model"
@@ -78,7 +82,8 @@ func GetBuildEntities(ctx context.Context, id int64, kinds ...string) ([]any, er
 	case errors.Contains(err, datastore.ErrNoSuchEntity):
 		return nil, perm.NotFoundErr(ctx)
 	case err != nil:
-		return nil, errors.Annotate(err, "error fetching build entities with ID %d", id).Tag(transient.Tag).Err()
+		logging.Errorf(ctx, "error fetching build entities with ID %d: %s", id, err)
+		return nil, transient.Tag.Apply(appstatus.Errorf(codes.Internal, "error fetching build entities with ID %d", id))
 	default:
 		return toGet, nil
 	}

@@ -737,7 +737,7 @@ func TestUpdateBuild(t *testing.T) {
 		t.Run("wrong purpose token", func(t *ftt.Test) {
 			tk, _ = buildtoken.GenerateToken(ctx, 1, pb.TokenBody_START_BUILD)
 			ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(buildbucket.BuildbucketTokenHeader, tk))
-			assert.Loosely(t, updateBuild(ctx, req), should.ErrLike("invalid token"))
+			assert.Loosely(t, updateBuild(ctx, req), convey.Adapt(ShouldHaveGRPCStatus)(codes.Unauthenticated))
 		})
 
 		t.Run("open mask, empty request", func(t *ftt.Test) {
@@ -1574,6 +1574,8 @@ func TestUpdateBuild(t *testing.T) {
 					ctx, fb = featureBreaker.FilterRDS(ctx, nil)
 					// Break GetMulti will ingest the error to datastore.Get,
 					// directly breaking "Get" doesn't work.
+					// This error is only logged, and the response only contains a
+					// general error message.
 					fb.BreakFeatures(errors.New("get error"), "GetMulti")
 
 					req.Build.Id = 31
@@ -1581,7 +1583,7 @@ func TestUpdateBuild(t *testing.T) {
 					tk, ctx = updateContextForNewBuildToken(ctx, 31)
 					req.UpdateMask.Paths[0] = "build.status"
 					_, err := srv.UpdateBuild(ctx, req)
-					assert.Loosely(t, err, should.ErrLike("get error"))
+					assert.Loosely(t, err, should.ErrLike("error fetching build entities with ID"))
 
 				})
 

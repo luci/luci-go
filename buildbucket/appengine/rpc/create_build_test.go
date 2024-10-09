@@ -824,7 +824,7 @@ func TestCreateBuild(t *testing.T) {
 						ServiceAccounts: []string{"example@account.com"},
 					}})
 				testutil.PutBuilder(ctx, "project", "bucket", "parent", "")
-				assert.Loosely(t, datastore.Put(ctx, &model.Build{
+				pBld := &model.Build{
 					ID: 97654321,
 					Proto: &pb.Build{
 						Id: 97654321,
@@ -836,9 +836,11 @@ func TestCreateBuild(t *testing.T) {
 						Status: pb.Status_SUCCESS,
 					},
 					UpdateToken: pTok,
-				}), should.BeNil)
+				}
+				pInfra := &model.BuildInfra{Build: datastore.KeyForObj(ctx, pBld)}
+				assert.Loosely(t, datastore.Put(ctx, pBld, pInfra), should.BeNil)
 				_, err = srv.CreateBuild(ctx, req)
-				assert.Loosely(t, err, should.ErrLike(`build parent: 97654321 has ended, cannot add child to it`))
+				assert.Loosely(t, err, should.ErrLike(`97654321 has ended, cannot add child to it`))
 			})
 
 			t.Run("pass", func(t *ftt.Test) {

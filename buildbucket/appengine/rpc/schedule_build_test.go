@@ -67,6 +67,8 @@ import (
 	taskdefs "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
 	"go.chromium.org/luci/buildbucket/bbperms"
 	pb "go.chromium.org/luci/buildbucket/proto"
+
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func fv(vs ...any) []any {
@@ -430,7 +432,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 
-				blds, err := scheduleBuilds(ctx, globalCfg, req)
+				blds, err := scheduleBuilds(ctx, globalCfg, nil, req)
 				assert.Loosely(t, err, should.HaveLength(1))
 				assert.Loosely(t, err.(errors.MultiError), should.ErrLike("error fetching builders"))
 				assert.Loosely(t, blds, should.HaveLength(1))
@@ -450,7 +452,7 @@ func TestScheduleBuild(t *testing.T) {
 					DryRun: true,
 				}
 
-				blds, err := scheduleBuilds(ctx, globalCfg, req)
+				blds, err := scheduleBuilds(ctx, globalCfg, nil, req)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, stripProtos(blds), should.Resemble([]*pb.Build{
 					{
@@ -550,7 +552,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 
-				blds, err := scheduleBuilds(ctx, globalCfg, reqs...)
+				blds, err := scheduleBuilds(ctx, globalCfg, nil, reqs...)
 				_, ok := err.(errors.MultiError)
 				assert.Loosely(t, ok, should.BeFalse)
 				assert.Loosely(t, err, should.ErrLike("all requests must have the same dry_run value"))
@@ -571,7 +573,7 @@ func TestScheduleBuild(t *testing.T) {
 					DryRun: true,
 				}
 
-				blds, err := scheduleBuilds(ctx, globalCfg, req)
+				blds, err := scheduleBuilds(ctx, globalCfg, nil, req)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, stripProtos(blds), should.Resemble([]*pb.Build{
 					{
@@ -642,7 +644,7 @@ func TestScheduleBuild(t *testing.T) {
 		})
 
 		t.Run("zero", func(t *ftt.Test) {
-			blds, err := scheduleBuilds(ctx, nil)
+			blds, err := scheduleBuilds(ctx, nil, nil)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, blds, should.BeEmpty)
 			assert.Loosely(t, sch.Tasks(), should.BeEmpty)
@@ -673,7 +675,7 @@ func TestScheduleBuild(t *testing.T) {
 			testutil.PutBuilder(ctx, "project", "bucket", "builder", "")
 			testutil.PutBucket(ctx, "project", "bucket", nil)
 
-			blds, err := scheduleBuilds(ctx, globalCfg, req)
+			blds, err := scheduleBuilds(ctx, globalCfg, nil, req)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, store.Get(ctx, metrics.V1.BuildCountCreated, time.Time{}, fv("gerrit")), should.Equal(1))
 			assert.Loosely(t, stripProtos(blds), should.Resemble([]*pb.Build{
@@ -852,7 +854,7 @@ func TestScheduleBuild(t *testing.T) {
 			testutil.PutBucket(ctx, "project", "static bucket", &pb.Bucket{Swarming: &pb.Swarming{}})
 			testutil.PutBucket(ctx, "project", "dynamic bucket", &pb.Bucket{DynamicBuilderTemplate: &pb.Bucket_DynamicBuilderTemplate{Template: &pb.BuilderConfig{SwarmingHost: "host"}}})
 
-			blds, err := scheduleBuilds(ctx, globalCfg, reqs...)
+			blds, err := scheduleBuilds(ctx, globalCfg, nil, reqs...)
 			assert.Loosely(t, err, should.BeNil)
 
 			fvs := []any{"luci.project.static bucket", "static builder", ""}
@@ -1191,7 +1193,7 @@ func TestScheduleBuild(t *testing.T) {
 				}), should.BeNil)
 			testutil.PutBucket(ctx, "project", "bucket", nil)
 
-			blds, err := scheduleBuilds(ctx, globalCfg, reqs...)
+			blds, err := scheduleBuilds(ctx, globalCfg, nil, reqs...)
 			assert.Loosely(t, err.(errors.MultiError), should.HaveLength(2))
 			assert.Loosely(t, err.(errors.MultiError)[1], should.ErrLike("failed to fetch deduplicated build"))
 			assert.Loosely(t, store.Get(ctx, metrics.V1.BuildCountCreated, time.Time{}, fv("gerrit")), should.Equal(1))
@@ -1324,14 +1326,12 @@ func TestScheduleBuild(t *testing.T) {
 		})
 
 		t.Run("one with parent", func(t *ftt.Test) {
-			tk, err := buildtoken.GenerateToken(ctx, 1, pb.TokenBody_BUILD)
-			assert.Loosely(t, err, should.BeNil)
-
 			testutil.PutBuilder(ctx, "project", "bucket", "builder", "")
 			testutil.PutBuilder(ctx, "project", "bucket", "builder", "")
 			testutil.PutBucket(ctx, "project", "bucket", nil)
 
-			assert.Loosely(t, datastore.Put(ctx, &model.Build{
+			pBld := &model.Build{
+				ID: 1,
 				Proto: &pb.Build{
 					Id: 1,
 					Builder: &pb.BuilderID{
@@ -1342,21 +1342,7 @@ func TestScheduleBuild(t *testing.T) {
 					Status:      pb.Status_STARTED,
 					AncestorIds: []int64{2, 3},
 				},
-				UpdateToken: tk,
-			}), should.BeNil)
-
-			bld := &model.Build{ID: 1}
-			assert.Loosely(t, datastore.Get(ctx, bld), should.BeNil)
-
-			key := datastore.KeyForObj(ctx, bld)
-			assert.Loosely(t, datastore.Put(ctx, &model.BuildInfra{
-				Build: key,
-				Proto: &pb.BuildInfra{
-					Swarming: &pb.BuildInfra_Swarming{
-						TaskId: "544239050",
-					},
-				},
-			}), should.BeNil)
+			}
 
 			req := &pb.ScheduleBuildRequest{
 				Builder: &pb.BuilderID{
@@ -1383,9 +1369,19 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				},
 				CanOutliveParent: pb.Trinary_NO,
+				ParentBuildId:    1,
 			}
-			ctx := metadata.NewIncomingContext(ctx, metadata.Pairs(bb.BuildbucketTokenHeader, tk))
-			blds, err := scheduleBuilds(ctx, globalCfg, req)
+
+			pMap := &parentsMap{
+				fromRequests: map[int64]*parent{
+					1: {
+						bld:       pBld,
+						ancestors: []int64{2, 3, 1},
+						pRunID:    "544239051",
+					},
+				},
+			}
+			blds, err := scheduleBuilds(ctx, globalCfg, pMap, req)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, store.Get(ctx, metrics.V1.BuildCountCreated, time.Time{}, fv("gerrit")), should.Equal(1))
 			assert.Loosely(t, stripProtos(blds), should.Resemble([]*pb.Build{
@@ -1554,7 +1550,7 @@ func TestScheduleBuild(t *testing.T) {
 			ctx := metadata.NewIncomingContext(ctx, metadata.Pairs(bb.BuildbucketTokenHeader, tk))
 			assert.Loosely(t, err, should.BeNil)
 			// This is the parent led build of the newly requested led build.
-			assert.Loosely(t, datastore.Put(ctx, &model.Build{
+			pBld := &model.Build{
 				Proto: &pb.Build{
 					Id: 1,
 					Builder: &pb.BuilderID{
@@ -1568,7 +1564,8 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				},
 				UpdateToken: tk,
-			}), should.BeNil)
+			}
+			assert.Loosely(t, datastore.Put(ctx, pBld), should.BeNil)
 			assert.Loosely(t, datastore.Put(ctx, &model.BuildInfra{
 				Build: datastore.MakeKey(ctx, "Build", 1),
 				Proto: &pb.BuildInfra{
@@ -1652,7 +1649,13 @@ func TestScheduleBuild(t *testing.T) {
 					ShadowInput: &pb.ScheduleBuildRequest_ShadowInput{},
 				},
 			}
-			blds, err := scheduleBuilds(ctx, globalCfg, reqs...)
+			pMap := &parentsMap{
+				fromToken: &parent{
+					bld:       pBld,
+					ancestors: []int64{1},
+				},
+			}
+			blds, err := scheduleBuilds(ctx, globalCfg, pMap, reqs...)
 			assert.Loosely(t, err, should.NotBeNil)
 			assert.Loosely(t, err, should.ErrLike("scheduling a shadow build in the original bucket is not allowed"))
 			assert.Loosely(t, stripProtos(blds), should.Resemble([]*pb.Build{
@@ -6938,6 +6941,127 @@ func TestScheduleBuild(t *testing.T) {
 				}))
 			})
 
+			t.Run("scheduleBuilds with parent_build_id", func(t *ftt.Test) {
+				testutil.PutBucket(ctx, "project", "bucket1", &pb.Bucket{
+					Name:     "bucket1",
+					Swarming: &pb.Swarming{},
+				})
+				testutil.PutBuilder(ctx, "project", "bucket1", "builder", "")
+				testutil.PutBucket(ctx, "project", "parent_bucket", &pb.Bucket{
+					Name:     "parent_bucket",
+					Swarming: &pb.Swarming{},
+				})
+				p1 := &model.Build{
+					ID: 1,
+					Proto: &pb.Build{
+						Id: 1,
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "parent_bucket",
+							Builder: "builder",
+						},
+						Status: pb.Status_STARTED,
+					},
+				}
+				pi1 := &model.BuildInfra{
+					Build: datastore.KeyForObj(ctx, p1),
+				}
+				p2 := &model.Build{
+					ID: 2,
+					Proto: &pb.Build{
+						Id: 2,
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "parent_bucket",
+							Builder: "builder",
+						},
+						Status: pb.Status_STARTED,
+					},
+				}
+				pi2 := &model.BuildInfra{
+					Build: datastore.KeyForObj(ctx, p2),
+				}
+				assert.Loosely(t, datastore.Put(ctx, p1, p2, pi1, pi2), should.BeNil)
+
+				reqs := []*pb.ScheduleBuildRequest{
+					{
+						TemplateBuildId: 1000,
+						Tags: []*pb.StringPair{
+							{
+								Key:   "buildset",
+								Value: "buildset",
+							},
+						},
+						ParentBuildId: 1,
+					},
+					{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket1",
+							Builder: "builder",
+						},
+						Tags: []*pb.StringPair{
+							{
+								Key:   "buildset",
+								Value: "buildset",
+							},
+						},
+						ParentBuildId: 2,
+					},
+				}
+				t.Run("no permission to update parent to include children", func(t *ftt.Test) {
+					ctx = auth.WithState(ctx, &authtest.FakeState{
+						Identity: userID,
+						FakeDB: authtest.NewFakeDB(
+							authtest.MockPermission(userID, "project:bucket", bbperms.BuildsAdd),
+							authtest.MockPermission(userID, "project:bucket", bbperms.BuildsAddAsChild),
+							// Because it's using TemplateBuildId
+							authtest.MockPermission(userID, "project:bucket", bbperms.BuildsGet),
+							authtest.MockPermission(userID, "project:bucket1", bbperms.BuildsAdd),
+							authtest.MockPermission(userID, "project:bucket1", bbperms.BuildsAddAsChild),
+							authtest.MockPermission(userID, "project:parent_bucket", bbperms.BuildersGet),
+						),
+					})
+					_, merr := srv.scheduleBuilds(ctx, globalCfg, reqs)
+					assert.Loosely(t, merr, should.NotBeNil)
+					assert.Loosely(t, merr[0], convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
+					assert.Loosely(t, merr[1], convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
+				})
+
+				t.Run("one of builds doesn't have permission to set parent_build_id", func(t *ftt.Test) {
+					ctx = auth.WithState(ctx, &authtest.FakeState{
+						Identity: userID,
+						FakeDB: authtest.NewFakeDB(
+							authtest.MockPermission(userID, "project:bucket", bbperms.BuildsAdd),
+							authtest.MockPermission(userID, "project:bucket", bbperms.BuildsAddAsChild),
+							// Because it's using TemplateBuildId
+							authtest.MockPermission(userID, "project:bucket", bbperms.BuildsGet),
+							authtest.MockPermission(userID, "project:bucket1", bbperms.BuildersGet),
+							authtest.MockPermission(userID, "project:parent_bucket", bbperms.BuildsIncludeChild),
+						),
+					})
+					_, merr := srv.scheduleBuilds(ctx, globalCfg, reqs)
+					assert.Loosely(t, merr, should.NotBeNil)
+					assert.Loosely(t, merr[0], should.BeNil)
+					assert.Loosely(t, merr[1], convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
+				})
+				t.Run("OK", func(t *ftt.Test) {
+					ctx = auth.WithState(ctx, &authtest.FakeState{
+						Identity: userID,
+						FakeDB: authtest.NewFakeDB(
+							authtest.MockPermission(userID, "project:bucket", bbperms.BuildsAdd),
+							authtest.MockPermission(userID, "project:bucket", bbperms.BuildsAddAsChild),
+							authtest.MockPermission(userID, "project:bucket", bbperms.BuildsGet),
+							authtest.MockPermission(userID, "project:bucket1", bbperms.BuildsAdd),
+							authtest.MockPermission(userID, "project:bucket1", bbperms.BuildsAddAsChild),
+							authtest.MockPermission(userID, "project:parent_bucket", bbperms.BuildsIncludeChild),
+						),
+					})
+					_, merr := srv.scheduleBuilds(ctx, globalCfg, reqs)
+					assert.Loosely(t, merr.First(), should.BeNil)
+				})
+			})
+
 			t.Run("ok", func(t *ftt.Test) {
 				reqs := []*pb.ScheduleBuildRequest{
 					{
@@ -7418,6 +7542,33 @@ func TestScheduleBuild(t *testing.T) {
 			})
 
 			t.Run("parent", func(t *ftt.Test) {
+				ctx = auth.WithState(ctx, &authtest.FakeState{
+					Identity: userID,
+					FakeDB: authtest.NewFakeDB(
+						authtest.MockPermission(userID, "project:bucket", bbperms.BuildersGet),
+					),
+				})
+				tk, err := buildtoken.GenerateToken(ctx, 1, pb.TokenBody_BUILD)
+				assert.Loosely(t, err, should.BeNil)
+				testutil.PutBucket(ctx, "project", "bucket", nil)
+				pBld := &model.Build{
+					ID: 1,
+					Proto: &pb.Build{
+						Id: 1,
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+						Status: pb.Status_STARTED,
+					},
+					UpdateToken: tk,
+				}
+				pBldInfra := &model.BuildInfra{
+					Build: datastore.KeyForObj(ctx, pBld),
+				}
+				assert.Loosely(t, datastore.Put(ctx, pBld, pBldInfra), should.BeNil)
+
 				t.Run("missing parent", func(t *ftt.Test) {
 					req := &pb.ScheduleBuildRequest{
 						Dimensions: []*pb.RequestedDimension{
@@ -7430,7 +7581,7 @@ func TestScheduleBuild(t *testing.T) {
 						CanOutliveParent: pb.Trinary_NO,
 					}
 					err := validateSchedule(ctx, req, nil, nil)
-					assert.Loosely(t, err, should.ErrLike("can_outlive_parent is specified without parent build token"))
+					assert.Loosely(t, err, should.ErrLike("can_outlive_parent is specified without parent"))
 				})
 
 				t.Run("schedule no parent build", func(t *ftt.Test) {
@@ -7448,48 +7599,92 @@ func TestScheduleBuild(t *testing.T) {
 					assert.Loosely(t, err, should.BeNil)
 				})
 
-				tk, err := buildtoken.GenerateToken(ctx, 1, pb.TokenBody_BUILD)
-				assert.Loosely(t, err, should.BeNil)
-				t.Run("ended parent", func(t *ftt.Test) {
-					testutil.PutBucket(ctx, "project", "bucket", nil)
+				t.Run("use parent build token", func(t *ftt.Test) {
+					t.Run("ended parent", func(t *ftt.Test) {
+						pBld.Proto.Status = pb.Status_SUCCESS
+						assert.Loosely(t, datastore.Put(ctx, pBld), should.BeNil)
+						assert.Loosely(t, datastore.Put(ctx, pBld), should.BeNil)
+						ctx := metadata.NewIncomingContext(ctx, metadata.Pairs(bb.BuildbucketTokenHeader, tk))
+						ps, err := validateParents(ctx, nil)
+						assert.Loosely(t, err, should.ErrLike("1 has ended, cannot add child to it"))
+						assert.Loosely(t, ps, should.BeNil)
+					})
 
-					assert.Loosely(t, datastore.Put(ctx, &model.Build{
-						Proto: &pb.Build{
-							Id: 1,
-							Builder: &pb.BuilderID{
-								Project: "project",
-								Bucket:  "bucket",
-								Builder: "builder",
-							},
-							Status: pb.Status_SUCCESS,
-						},
-						UpdateToken: tk,
-					}), should.BeNil)
+					t.Run("OK", func(t *ftt.Test) {
+						pBld.Proto.Status = pb.Status_STARTED
+						assert.Loosely(t, datastore.Put(ctx, pBld), should.BeNil)
+						ctx := metadata.NewIncomingContext(ctx, metadata.Pairs(bb.BuildbucketTokenHeader, tk))
+						pMap, err := validateParents(ctx, nil)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, pMap.fromToken.bld.Proto.Id, should.Equal(1))
+					})
 
-					ctx := metadata.NewIncomingContext(ctx, metadata.Pairs(bb.BuildbucketTokenHeader, tk))
-					_, err := validateParent(ctx)
-					assert.Loosely(t, err, should.ErrLike("1 has ended, cannot add child to it"))
+					t.Run("both token and id are provided", func(t *ftt.Test) {
+						ctx := metadata.NewIncomingContext(ctx, metadata.Pairs(bb.BuildbucketTokenHeader, tk))
+						_, err := validateParents(ctx, []int64{1})
+						assert.Loosely(t, err, should.ErrLike("parent buildbucket token and parent_build_id are mutually exclusive"))
+					})
 				})
 
-				t.Run("OK", func(t *ftt.Test) {
-					testutil.PutBucket(ctx, "project", "bucket", nil)
-					assert.Loosely(t, datastore.Put(ctx, &model.Build{
-						Proto: &pb.Build{
-							Id: 1,
-							Builder: &pb.BuilderID{
-								Project: "project",
-								Bucket:  "bucket",
-								Builder: "builder",
+				t.Run("use parent_build_id", func(t *ftt.Test) {
+					t.Run("no permission to set parent_build_id", func(t *ftt.Test) {
+						req := &pb.ScheduleBuildRequest{
+							Dimensions: []*pb.RequestedDimension{
+								{
+									Key:   "key",
+									Value: "value",
+								},
 							},
-							Status: pb.Status_STARTED,
-						},
-						UpdateToken: tk,
-					}), should.BeNil)
+							TemplateBuildId:  1,
+							CanOutliveParent: pb.Trinary_NO,
+							ParentBuildId:    1,
+						}
+						pMap := &parentsMap{
+							fromRequests: map[int64]*parent{
+								1: &parent{bld: pBld},
+							},
+						}
+						_, _, err := validateScheduleBuild(ctx, nil, req, pMap, nil)
+						assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
+					})
 
-					ctx := metadata.NewIncomingContext(ctx, metadata.Pairs(bb.BuildbucketTokenHeader, tk))
-					b, err := validateParent(ctx)
-					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, b.Proto.Id, should.Equal(1))
+					t.Run("missing build entities", func(t *ftt.Test) {
+						assert.Loosely(t, datastore.Put(ctx, &model.Build{
+							Proto: &pb.Build{
+								Id: 333,
+								Builder: &pb.BuilderID{
+									Project: "project",
+									Bucket:  "bucket",
+									Builder: "builder",
+								},
+								Status: pb.Status_STARTED,
+							},
+						}), should.BeNil)
+						ctx = auth.WithState(ctx, &authtest.FakeState{
+							Identity: userID,
+							FakeDB: authtest.NewFakeDB(
+								authtest.MockPermission(userID, "project:bucket", bbperms.BuildsGet),
+								authtest.MockPermission(userID, "project:bucket", bbperms.BuildsIncludeChild),
+							),
+						})
+						pMap, err := validateParents(ctx, []int64{333, 444})
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, pMap.fromRequests[333].err, convey.Adapt(ShouldHaveGRPCStatus)(codes.NotFound))
+						assert.Loosely(t, pMap.fromRequests[444].err, convey.Adapt(ShouldHaveGRPCStatus)(codes.NotFound))
+					})
+
+					t.Run("OK", func(t *ftt.Test) {
+						ctx = auth.WithState(ctx, &authtest.FakeState{
+							Identity: userID,
+							FakeDB: authtest.NewFakeDB(
+								authtest.MockPermission(userID, "project:bucket", bbperms.BuildsGet),
+								authtest.MockPermission(userID, "project:bucket", bbperms.BuildsIncludeChild),
+							),
+						})
+						pMap, err := validateParents(ctx, []int64{1})
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, pMap.fromRequests[1].bld.Proto.Id, should.Equal(1))
+					})
 				})
 			})
 

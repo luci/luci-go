@@ -252,7 +252,7 @@ func (*Builds) StartBuild(ctx context.Context, req *pb.StartBuildRequest) (*pb.S
 	var err error
 
 	// a token is required
-	rawToken, err := getBuildbucketToken(ctx, false)
+	rawToken, err, _ := getBuildbucketToken(ctx, false)
 	if err != nil {
 		return nil, err
 	}

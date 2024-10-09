@@ -21,6 +21,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	spb "google.golang.org/genproto/googleapis/rpc/status"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -41,6 +42,7 @@ import (
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/config"
 	"go.chromium.org/luci/buildbucket/appengine/model"
+	"go.chromium.org/luci/buildbucket/appengine/rpc/testutil"
 	"go.chromium.org/luci/buildbucket/bbperms"
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
@@ -149,7 +151,7 @@ func TestBatch(t *testing.T) {
 				Responses: []*pb.BatchResponse_Response{
 					{Response: &pb.BatchResponse_Response_Error{
 						Error: &spb.Status{
-							Code:    3,
+							Code:    int32(codes.InvalidArgument),
 							Message: "bad request: one of id or (builder and build_number) is required",
 						},
 					}},
@@ -329,7 +331,7 @@ func TestBatch(t *testing.T) {
 				Responses: []*pb.BatchResponse_Response{
 					{Response: &pb.BatchResponse_Response_Error{
 						Error: &spb.Status{
-							Code:    3,
+							Code:    int32(codes.InvalidArgument),
 							Message: "bad request: builder or template_build_id is required",
 						},
 					}},
@@ -340,6 +342,23 @@ func TestBatch(t *testing.T) {
 		})
 
 		t.Run("schedule batch", func(t *ftt.Test) {
+			testutil.PutBucket(ctx, "project", "bucket", nil)
+			pBld := &model.Build{
+				ID: 654321,
+				Proto: &pb.Build{
+					Id: 654321,
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					Status: pb.Status_STARTED,
+				},
+			}
+			pBldInfra := &model.BuildInfra{
+				Build: datastore.KeyForObj(ctx, pBld),
+			}
+			assert.Loosely(t, datastore.Put(ctx, pBld, pBldInfra), should.BeNil)
 			req := &pb.BatchRequest{
 				Requests: []*pb.BatchRequest_Request{
 					{Request: &pb.BatchRequest_Request_ScheduleBuild{
@@ -380,6 +399,16 @@ func TestBatch(t *testing.T) {
 							ShadowInput: &pb.ScheduleBuildRequest_ShadowInput{},
 						},
 					}},
+					{Request: &pb.BatchRequest_Request_ScheduleBuild{
+						ScheduleBuild: &pb.ScheduleBuildRequest{
+							Builder: &pb.BuilderID{
+								Project: "project",
+								Bucket:  "bucket",
+								Builder: "builder",
+							},
+							ParentBuildId: 654321,
+						},
+					}},
 				},
 			}
 			res, err := srv.Batch(ctx, req)
@@ -387,32 +416,38 @@ func TestBatch(t *testing.T) {
 				Responses: []*pb.BatchResponse_Response{
 					{Response: &pb.BatchResponse_Response_Error{
 						Error: &spb.Status{
-							Code:    3,
+							Code:    int32(codes.InvalidArgument),
 							Message: "bad request: builder or template_build_id is required",
 						},
 					}},
 					{Response: &pb.BatchResponse_Response_Error{
 						Error: &spb.Status{
-							Code:    3,
+							Code:    int32(codes.InvalidArgument),
 							Message: "bad request: builder: bucket is required",
 						},
 					}},
 					{Response: &pb.BatchResponse_Response_Error{
 						Error: &spb.Status{
-							Code:    3,
+							Code:    int32(codes.InvalidArgument),
 							Message: "bad request: builder: builder is required",
 						},
 					}},
 					{Response: &pb.BatchResponse_Response_Error{
 						Error: &spb.Status{
-							Code:    3,
+							Code:    int32(codes.InvalidArgument),
 							Message: "bad request: scheduling a shadow build in the original bucket is not allowed",
 						},
 					}},
 					{Response: &pb.BatchResponse_Response_Error{
 						Error: &spb.Status{
-							Code:    3,
+							Code:    int32(codes.InvalidArgument),
 							Message: "bad request: scheduling a shadow build in the original bucket is not allowed",
+						},
+					}},
+					{Response: &pb.BatchResponse_Response_Error{
+						Error: &spb.Status{
+							Code:    int32(codes.PermissionDenied),
+							Message: `"user:caller@example.com" does not have permission "buildbucket.builds.addAsChild" in bucket "project/bucket"`,
 						},
 					}},
 				},
@@ -511,7 +546,7 @@ func TestBatch(t *testing.T) {
 					}},
 					{Response: &pb.BatchResponse_Response_Error{
 						Error: &spb.Status{
-							Code:    3,
+							Code:    int32(codes.InvalidArgument),
 							Message: "bad request: builder or template_build_id is required",
 						},
 					}},
@@ -522,7 +557,7 @@ func TestBatch(t *testing.T) {
 					}},
 					{Response: &pb.BatchResponse_Response_Error{
 						Error: &spb.Status{
-							Code:    3,
+							Code:    int32(codes.InvalidArgument),
 							Message: "bad request: id is required",
 						},
 					}},

@@ -20,12 +20,18 @@ import "go.chromium.org/luci/server/auth/realms"
 var (
 	// BuildsAdd allows to schedule new builds in a bucket.
 	BuildsAdd = realms.RegisterPermission("buildbucket.builds.add")
+	// BuildsAddAsChild allows to set ScheduleBuildRequest.ParentBuildId
+	// when schduling new builds in a bucket.
+	BuildsAddAsChild = realms.RegisterPermission("buildbucket.builds.addAsChild")
 	// BuildsCreate allows to create new builds in a bucket.
 	BuildsCreate = realms.RegisterPermission("buildbucket.builds.create")
 	// BuildsGet allows to see all information about a build.
 	BuildsGet = realms.RegisterPermission("buildbucket.builds.get")
 	// BuildsGetLimited allows to see a limited set of information about a build.
 	BuildsGetLimited = realms.RegisterPermission("buildbucket.builds.getLimited")
+	// BuildsIncludeChild allows to update a build in a bucket to include a
+	// new build as its child.
+	BuildsIncludeChild = realms.RegisterPermission("buildbucket.builds.includeChild")
 	// BuildsList allows to list and search builds in a bucket.
 	// Note that the ability to search on certain fields may leak information that
 	// would otherwise be redacted if the user only had this permission (and not

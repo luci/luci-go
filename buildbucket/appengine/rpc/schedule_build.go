@@ -38,9 +38,9 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/grpc/appstatus"
-	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/caching"
 
 	bb "go.chromium.org/luci/buildbucket"
@@ -253,16 +253,105 @@ func validateProperties(p *structpb.Struct) error {
 	return nil
 }
 
-// validateParent validates the given parent build, if the request contains
-// a BUILD token.
+type parent struct {
+	bld *model.Build
+	// ancestors including self.
+	ancestors []int64
+	pRunID    string
+	err       error
+}
+
+type parentsMap struct {
+	fromRequests map[int64]*parent
+	fromToken    *parent
+}
+
+// parentForRequest returns the parent of the build to create.
+// If the request has ParentBuildId specified,
+//   - returns the parent by ParentBuildId,
+//   - will panic if missing parentsMap or missing parent from the map.
+//
+// If the request doesn't specify ParentBuildId, tries to get the parent from
+// BUILD token. And missing parentsMap is allowed.
+func (ps *parentsMap) parentForRequest(req *pb.ScheduleBuildRequest) *parent {
+	if ps == nil {
+		if req.GetParentBuildId() != 0 {
+			panic(fmt.Sprintf("requested parent %d not found", req.ParentBuildId))
+		}
+		return nil
+	}
+	if req.GetParentBuildId() != 0 {
+		p, ok := ps.fromRequests[req.ParentBuildId]
+		if !ok {
+			panic(fmt.Sprintf("requested parent %d not found", req.ParentBuildId))
+		}
+		return p
+	}
+	return ps.fromToken
+}
+
+func (ps *parentsMap) parentBuildForRequest(req *pb.ScheduleBuildRequest) (*model.Build, error) {
+	p := ps.parentForRequest(req)
+	switch {
+	case p == nil:
+		return nil, nil
+	case p.err != nil:
+		return nil, p.err
+	default:
+		return p.bld, nil
+	}
+}
+
+func (ps *parentsMap) ancestorsForRequest(req *pb.ScheduleBuildRequest) ([]int64, error) {
+	p := ps.parentForRequest(req)
+	switch {
+	case p == nil:
+		return nil, nil
+	case p.err != nil:
+		return nil, p.err
+	default:
+		return p.ancestors, nil
+	}
+}
+
+func (ps *parentsMap) parentRunIDForRequest(req *pb.ScheduleBuildRequest) (string, error) {
+	p := ps.parentForRequest(req)
+	switch {
+	case p == nil:
+		return "", nil
+	case p.err != nil:
+		return "", p.err
+	default:
+		return p.pRunID, nil
+	}
+}
+
+func populateParentFields(p *parent, pBld *model.Build, pInfra *model.BuildInfra) {
+	if pBld == nil || pInfra == nil {
+		panic("impossible")
+	}
+	if protoutil.IsEnded(pBld.Proto.GetStatus()) || protoutil.IsEnded(pBld.Proto.GetOutput().GetStatus()) {
+		p.err = appstatus.BadRequest(errors.Reason("%d has ended, cannot add child to it", pBld.ID).Err())
+		return
+	}
+	p.bld = pBld
+	p.ancestors, p.pRunID = getParentInfo(pBld, pInfra)
+}
+
+// validateParentViaToken validates the given parent build, if the request
+// contains a BUILD token.
 //
 // If there is no token present in `ctx`, returns (nil, nil).
 // Incorrect tokens, broken tokens, non-BUILD tokens, missing builds, etc.
-// all return errors.
-func validateParent(ctx context.Context) (*model.Build, error) {
-	buildTok, err := getBuildbucketToken(ctx, false)
-	if err == errBadTokenAuth {
-		return nil, nil
+// all return status-annotated errors.
+func validateParentViaToken(ctx context.Context) (p *parent) {
+	p = &parent{}
+	buildTok, err, hasToken := getBuildbucketToken(ctx, false)
+	if errors.Is(err, errBadTokenAuth) {
+		if hasToken {
+			p.err = err
+		}
+		return
 	}
 
 	// NOTE: We pass buildid == 0 here because we are relying on the token itself
@@ -272,19 +361,86 @@ func validateParent(ctx context.Context) (*model.Build, error) {
 	if err != nil {
 		// We don't return `err` here because it will include the Unauthenticated
 		// gRPC tag, which isn't accurate.
-		return nil, errors.New("invalid parent buildbucket token", grpcutil.InvalidArgumentTag)
+		p.err = appstatus.BadRequest(errors.New("invalid parent buildbucket token"))
+		return
 	}
 
-	pBld, err := common.GetBuild(ctx, tok.BuildId)
+	entities, err := common.GetBuildEntities(ctx, tok.BuildId, model.BuildKind, model.BuildInfraKind)
 	if err != nil {
-		return nil, err
+		p.err = err
+		return
+	}
+	populateParentFields(p, entities[0].(*model.Build), entities[1].(*model.BuildInfra))
+	return
+}
+
+// validateParents validates the given parent build(s).
+func validateParents(ctx context.Context, pIDs []int64) (*parentsMap, error) {
+	p := validateParentViaToken(ctx)
+	switch {
+	case p.err != nil:
+		return nil, p.err
+	case p.bld == nil && len(pIDs) == 0:
+		return nil, nil
+	case p.bld != nil && len(pIDs) > 0:
+		return nil, appstatus.BadRequest(errors.New("parent buildbucket token and parent_build_id are mutually exclusive"))
+	case p.bld != nil:
+		return &parentsMap{fromToken: p}, nil
 	}
 
-	if protoutil.IsEnded(pBld.Proto.Status) || protoutil.IsEnded(pBld.Proto.Output.GetStatus()) {
-		return nil, errors.Reason("%d has ended, cannot add child to it", pBld.ID).Err()
+	// Get parent builds using pIDs.
+	ps := make(map[int64]*parent, len(pIDs))
+	blds := make([]*model.Build, len(pIDs))
+	infras := make([]*model.BuildInfra, len(pIDs))
+	for i, pID := range pIDs {
+		ps[pID] = &parent{}
+		b := &model.Build{ID: pID}
+		blds[i] = b
+		infras[i] = &model.BuildInfra{Build: datastore.KeyForObj(ctx, b)}
 	}
 
-	return pBld, nil
+	asMultiErr := func(err error) errors.MultiError {
+		var me errors.MultiError
+		if !errors.As(err, &me) {
+			me = make(errors.MultiError, len(pIDs))
+			for i := range pIDs {
+				me[i] = err
+			}
+		}
+		return me
+	}
+
+	if err := datastore.Get(ctx, blds, infras); err != nil {
+		var merr errors.MultiError
+		if !errors.As(err, &merr) {
+			logging.Errorf(ctx, "Failed to fetch parent builds %q: %s", pIDs, err)
+			return nil, appstatus.Error(codes.Internal, "failed to fetch parent builds")
+		}
+		bldsMErr := asMultiErr(merr[0])
+		infrasMErr := asMultiErr(merr[1])
+		mergeErrs(bldsMErr, infrasMErr, "BuildInfra", func(i int) int { return i })
+		for i, pID := range pIDs {
+			err := bldsMErr[i]
+			if err != nil {
+				if errors.Is(err, datastore.ErrNoSuchEntity) {
+					ps[pID].err = perm.NotFoundErr(ctx)
+				} else {
+					logging.Errorf(ctx, "failed to fetch parent build %d, %s", pID, err)
+					ps[pID].err = appstatus.Errorf(codes.Internal, "failed to fetch parent build %d", pID)
+				}
+			}
+		}
+	}
+
+	for i, pID := range pIDs {
+		p := ps[pID]
+		if p.err != nil {
+			continue
+		}
+
+		populateParentFields(p, blds[i], infras[i])
+	}
+	return &parentsMap{fromRequests: ps}, nil
 }
 
 // validateSchedule validates the given request.
@@ -312,7 +468,7 @@ func validateSchedule(ctx context.Context, req *pb.ScheduleBuildRequest, wellKno
 	case req.Properties != nil && teeErr(validateProperties(req.Properties), &err) != nil:
 		return errors.Annotate(err, "properties").Err()
 	case parent == nil && req.CanOutliveParent != pb.Trinary_UNSET:
-		return errors.Reason("can_outlive_parent is specified without parent build token").Err()
+		return errors.Reason("can_outlive_parent is specified without parent").Err()
 	case teeErr(validateTags(req.Tags, TagNew), &err) != nil:
 		return errors.Annotate(err, "tags").Err()
 	}
@@ -1145,6 +1301,8 @@ func setTimeouts(req *pb.ScheduleBuildRequest, cfg *pb.BuilderConfig, build *pb.
 // buildFromScheduleRequest returns a build proto created from the given
 // request and builder config. Sets fields except those which can only be
 // determined at creation time.
+//
+// TODO(b/371610971): Refactor the code to use a struct to organize the arguments.
 func buildFromScheduleRequest(ctx context.Context, req *pb.ScheduleBuildRequest, ancestors []int64, pRunID string, cfg *pb.BuilderConfig, globalCfg *pb.SettingsCfg) (b *pb.Build) {
 	b = &pb.Build{
 		Builder:         req.Builder,
@@ -1445,7 +1603,7 @@ func setExperimentsFromProto(build *model.Build) {
 	build.Experimental = build.Proto.Input.Experimental
 }
 
-func getParentInfo(ctx context.Context, pBld *model.Build) (ancestors []int64, pRunID string, err error) {
+func getParentInfo(pBld *model.Build, pInfra *model.BuildInfra) (ancestors []int64, pRunID string) {
 	switch {
 	case pBld == nil:
 		ancestors = make([]int64, 0)
@@ -1455,14 +1613,8 @@ func getParentInfo(ctx context.Context, pBld *model.Build) (ancestors []int64, p
 		ancestors = append(ancestors, pBld.ID)
 	}
 
-	if pBld != nil {
-		parentBuildMask := model.HardcodedBuildMask("infra.swarming.task_id")
-		pBuild := pBld.ToSimpleBuildProto(ctx)
-		if err = model.LoadBuildDetails(ctx, parentBuildMask, nil, pBuild); err != nil {
-			return
-		}
-
-		pRunID = pBuild.GetInfra().GetSwarming().GetTaskId()
+	if pBld != nil && pInfra != nil {
+		pRunID = pInfra.Proto.GetSwarming().GetTaskId()
 		if pRunID != "" {
 			pRunID = pRunID[:len(pRunID)-1] + "1"
 		}
@@ -1539,7 +1691,7 @@ func builderCustomMetrics(ctx context.Context, globalCfg *pb.SettingsCfg, cfg *p
 // The length of returned builds always equal to len(reqs).
 // A single returned error means a global error which applies to every request.
 // Otherwise, it would be a MultiError where len(MultiError) equals to len(reqs).
-func scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, reqs ...*pb.ScheduleBuildRequest) ([]*model.Build, error) {
+func scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, pMap *parentsMap, reqs ...*pb.ScheduleBuildRequest) ([]*model.Build, error) {
 	if len(reqs) == 0 {
 		return []*model.Build{}, nil
 	}
@@ -1569,19 +1721,19 @@ func scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, reqs ...*pb.
 	resultdbOpts := make([]resultdb.CreateOptions, len(validReq))
 	bldrsMCB := stringset.New(0)
 
-	pBld, err := validateParent(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	ancestors, pRunID, err := getParentInfo(ctx, pBld)
-	if err != nil {
-		return nil, err
-	}
-
 	var pInfra *model.BuildInfra
 	for i := range blds {
 		origI := idxMapBlds[i]
+		pBld, err := pMap.parentBuildForRequest(reqs[origI])
+		if err != nil {
+			merr[origI] = errors.Reason("error getting the parent").Err()
+			blds[i] = nil
+			continue
+		}
+		// Any error here would have been caught by pMap.parentBuildForRequest
+		ancestors, _ := pMap.ancestorsForRequest(reqs[origI])
+		pRunID, _ := pMap.parentRunIDForRequest(reqs[origI])
+
 		bucket := fmt.Sprintf("%s/%s", validReq[i].Builder.Project, validReq[i].Builder.Bucket)
 		cfg := cfgs[bucket][validReq[i].Builder.Builder]
 		inDynamicBucket := false
@@ -1715,9 +1867,12 @@ func normalizeSchedule(req *pb.ScheduleBuildRequest) {
 
 // validateScheduleBuild validates and authorizes the given request, returning
 // a normalized version of the request and field mask.
-func validateScheduleBuild(ctx context.Context, wellKnownExperiments stringset.Set, req *pb.ScheduleBuildRequest, parent *model.Build, shadowBuckets map[string]string) (*pb.ScheduleBuildRequest, *model.BuildMask, error) {
-	var err error
-	if err = validateSchedule(ctx, req, wellKnownExperiments, parent); err != nil {
+func validateScheduleBuild(ctx context.Context, wellKnownExperiments stringset.Set, req *pb.ScheduleBuildRequest, pMap *parentsMap, shadowBuckets map[string]string) (*pb.ScheduleBuildRequest, *model.BuildMask, error) {
+	pBld, err := pMap.parentBuildForRequest(req)
+	if err != nil {
+		return nil, nil, err
+	}
+	if err = validateSchedule(ctx, req, wellKnownExperiments, pBld); err != nil {
 		return nil, nil, appstatus.BadRequest(err)
 	}
 	normalizeSchedule(req)
@@ -1744,6 +1899,14 @@ func validateScheduleBuild(ctx context.Context, wellKnownExperiments stringset.S
 	if err = perm.HasInBucket(ctx, bbperms.BuildsAdd, req.Builder.Project, bkt); err != nil {
 		return nil, nil, err
 	}
+	if req.ParentBuildId != 0 {
+		if err = perm.HasInBucket(ctx, bbperms.BuildsAddAsChild, req.Builder.Project, bkt); err != nil {
+			return nil, nil, err
+		}
+		if err = perm.HasInBuilder(ctx, bbperms.BuildsIncludeChild, pBld.Proto.Builder); err != nil {
+			return nil, nil, err
+		}
+	}
 	return req, m, nil
 }
 
@@ -1755,7 +1918,11 @@ func (*Builds) ScheduleBuild(ctx context.Context, req *pb.ScheduleBuildRequest) 
 	}
 	wellKnownExperiments := protoutil.WellKnownExperiments(globalCfg)
 
-	pBld, err := validateParent(ctx)
+	var pIDs []int64
+	if req.ParentBuildId > 0 {
+		pIDs = append(pIDs, req.ParentBuildId)
+	}
+	pMap, err := validateParents(ctx, pIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -1766,12 +1933,12 @@ func (*Builds) ScheduleBuild(ctx context.Context, req *pb.ScheduleBuildRequest) 
 		return nil, errors.Annotate(err, "error in getting shadow buckets").Err()
 	}
 
-	req, m, err := validateScheduleBuild(ctx, wellKnownExperiments, req, pBld, shadowBuckets)
+	req, m, err := validateScheduleBuild(ctx, wellKnownExperiments, req, pMap, shadowBuckets)
 	if err != nil {
 		return nil, err
 	}
 
-	blds, err := scheduleBuilds(ctx, globalCfg, req)
+	blds, err := scheduleBuilds(ctx, globalCfg, pMap, req)
 	if err != nil {
 		if merr, ok := err.(errors.MultiError); ok {
 			return nil, merr.First()
@@ -1807,8 +1974,19 @@ func (*Builds) scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, re
 		return merr
 	}
 
-	// Validate parent.
-	pBld, err := validateParent(ctx)
+	// Validate parents.
+	pIDs := make([]int64, 0, len(reqs))
+	pIDSet := make(map[int64]struct{})
+	for _, req := range reqs {
+		if req.ParentBuildId == 0 {
+			continue
+		}
+		if _, ok := pIDSet[req.ParentBuildId]; !ok {
+			pIDSet[req.ParentBuildId] = struct{}{}
+			pIDs = append(pIDs, req.ParentBuildId)
+		}
+	}
+	pMap, err := validateParents(ctx, pIDs)
 	if err != nil {
 		return nil, errorInBatch(err, func(err error) error {
 			return appstatus.BadRequest(errors.Annotate(err, "error in schedule batch").Err())
@@ -1829,7 +2007,7 @@ func (*Builds) scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, re
 			i := i
 			req := req
 			work <- func() error {
-				reqs[i], masks[i], merr[i] = validateScheduleBuild(ctx, wellKnownExperiments, req, pBld, shadowBuckets)
+				reqs[i], masks[i], merr[i] = validateScheduleBuild(ctx, wellKnownExperiments, req, pMap, shadowBuckets)
 				return nil
 			}
 		}
@@ -1837,7 +2015,7 @@ func (*Builds) scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, re
 
 	validReqs, idxMapValidReqs := getValidReqs(reqs, merr)
 	// Non-MultiError error should apply to every item and fail all requests.
-	blds, err := scheduleBuilds(ctx, globalCfg, validReqs...)
+	blds, err := scheduleBuilds(ctx, globalCfg, pMap, validReqs...)
 	if err != nil {
 		if me, ok := err.(errors.MultiError); ok {
 			merr = mergeErrs(merr, me, "", func(i int) int { return idxMapValidReqs[i] })

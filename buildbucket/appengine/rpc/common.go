@@ -22,6 +22,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"go.opentelemetry.io/otel/trace"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/auth/identity"
@@ -30,7 +31,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/appstatus"
-	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/bqlog"
 
@@ -258,10 +258,8 @@ func validateCommit(cm *pb.GitilesCommit) error {
 	return nil
 }
 
-// Returned from validateToken if no token is found; Some uses of validateToken
-// allow a missing token (such as establishing parent->child relationship during
-// ScheduleBuild).
-var errBadTokenAuth = errors.New("expected buildID and exactly one buildbucket token", grpcutil.UnauthenticatedTag)
+// Generic error for missing/ more than one/ bad update_token.
+var errBadTokenAuth = appstatus.Error(codes.Unauthenticated, "bad update_token")
 
 // getBuildbucketToken extracts a singlar encoded build token from the current
 // gRPC Metadata in `ctx`.
@@ -273,7 +271,9 @@ var errBadTokenAuth = errors.New("expected buildID and exactly one buildbucket t
 // to kitchen's deprecated BuildTokenHeader.
 //
 // Returns errBadTokenAuth if the token is missing, or there is more than one.
-func getBuildbucketToken(ctx context.Context, kitchenFallback bool) (string, error) {
+// Also returns a bool where true means the token is present (could be more than
+// one though).
+func getBuildbucketToken(ctx context.Context, kitchenFallback bool) (string, error, bool) {
 	md, _ := metadata.FromIncomingContext(ctx)
 	tokens := md.Get(buildbucket.BuildbucketTokenHeader)
 	if len(tokens) == 0 && kitchenFallback {
@@ -281,10 +281,10 @@ func getBuildbucketToken(ctx context.Context, kitchenFallback bool) (string, err
 		tokens = md.Get(buildbucket.BuildTokenHeader)
 	}
 	if len(tokens) == 1 {
-		return tokens[0], nil
+		return tokens[0], nil, true
 	}
 
-	return "", errBadTokenAuth
+	return "", errBadTokenAuth, len(tokens) > 0
 }
 
 // validateToken validates the build token from the header.
@@ -297,13 +297,13 @@ func validateToken(ctx context.Context, bID int64, purpose pb.TokenBody_Purpose)
 	if bID <= 0 {
 		return nil, errBadTokenAuth
 	}
-	buildTok, err := getBuildbucketToken(ctx, purpose == pb.TokenBody_BUILD)
+	buildTok, err, _ := getBuildbucketToken(ctx, purpose == pb.TokenBody_BUILD)
 	if err != nil {
 		return nil, err
 	}
 	tok, err := buildtoken.ParseToTokenBody(ctx, buildTok, bID, purpose)
 	if err != nil {
-		return nil, err
+		return nil, errBadTokenAuth
 	}
 	return tok, nil
 }

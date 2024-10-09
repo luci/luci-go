@@ -298,7 +298,7 @@ message UpdateBuildRequest {
 
 // A request message for ScheduleBuild RPC.
 //
-// Next ID: 25.
+// Next ID: 26.
 message ScheduleBuildRequest {
   // ** STRONGLY RECOMMENDED **.
   // A unique string id used for detecting duplicate requests.
@@ -493,12 +493,11 @@ message ScheduleBuildRequest {
   // Flag to control if the build can outlive its parent.
   //
   // If the value is UNSET, it means this build doesn't have any parent, so
-  // the request must not have a head with any BuildToken.
+  // the request must not have a header with any BuildToken nor have
+  // parent_build_id set.
   //
-  // If the value is anything other than UNSET, then the BuildToken for the
-  // parent build must be set as a header.
-  // Note: it's not currently possible to establish parent/child relationship
-  // except via the parent build at the time the build is launched.
+  // If the value is anything other than UNSET, then either the BuildToken for
+  // the parent build is set as a header, or parent_build_id is set.
   //
   // If the value is NO, it means that the build SHOULD reach a terminal status
   // (SUCCESS, FAILURE, INFRA_FAILURE or CANCELED) before its parent. If the
@@ -514,6 +513,27 @@ message ScheduleBuildRequest {
   // TODO(crbug.com/1031205): after the parent tracking feature is stable,
   // require this field to be set when scheduling a build with parent.
   Trinary can_outlive_parent = 21;
+
+  // ID of the parent build.
+  //
+  // The standard way to establish parent/child relationship is via the parent
+  // build at the time the build is launched using the parent build's BuildToken.
+  //
+  // Only when that's not possible, i.e. creating the child build is deligated
+  // to a diffrerent service out of the context of the parent build, can a user
+  // consider using this field.
+  //
+  // Mutually exclusive with the parent build's BuildToken.
+  //
+  // To use this field to establish parent/child relationship, the caller must
+  // have below permissions:
+  // * `buildbucket.builds.addAsChild` at this build (child)'s realm to create
+  //   this build as another build's child;
+  // * `buildbucket.builds.includeChild` at the parent build's realm to update
+  //   it to include a child.
+  //
+  // When batching, requests can have different values for parent_build_id.
+  int64 parent_build_id = 25;
 
   // Value for Build.retriable.
   Trinary retriable = 22;

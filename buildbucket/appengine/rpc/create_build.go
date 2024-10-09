@@ -841,27 +841,24 @@ func (*Builds) CreateBuild(ctx context.Context, req *pb.CreateBuildRequest) (*pb
 	}
 
 	// Update ancestors info.
-	pBld, err := validateParent(ctx)
-	if err != nil {
-		return nil, errors.Annotate(err, "build parent").Err()
+	p := validateParentViaToken(ctx)
+	if p.err != nil {
+		return nil, errors.Annotate(p.err, "build parent").Err()
 	}
-	ancestors, pRunID, err := getParentInfo(ctx, pBld)
-	if err != nil {
-		return nil, errors.Annotate(err, "build ancestors").Err()
-	}
-	if len(ancestors) > 0 {
-		bld.Proto.AncestorIds = ancestors
+
+	if len(p.ancestors) > 0 {
+		bld.Proto.AncestorIds = p.ancestors
 	}
 
 	resultdbOpts := resultdb.CreateOptions{
-		IsExportRoot: pBld == nil,
+		IsExportRoot: p.bld == nil,
 	}
 
 	setExperimentsFromProto(bld)
 	// Tags are stored in the outer struct (see model/build.go).
 	tagMap := protoutil.StringPairMap(bld.Proto.Tags)
-	if pRunID != "" {
-		tagMap.Add("parent_task_id", pRunID)
+	if p.pRunID != "" {
+		tagMap.Add("parent_task_id", p.pRunID)
 	}
 	tags := tagMap.Format()
 	tags = stringset.NewFromSlice(tags...).ToSlice() // Deduplicate tags.
