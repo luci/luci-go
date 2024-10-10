@@ -180,12 +180,6 @@ export function GroupsForm({name}: GroupsFormProps) {
     setOwnersMode(!ownersMode);
   }
 
-  // Each time a list (members, subgroups, globs) is changed, we need to check if they are all same as initial items.
-  const itemsChanged = () => {
-    setChangedState(description != initialDescription || owners != initialOwners ||
-      membersRef.current?.isChanged() || subgroupsRef.current?.isChanged() || globsRef.current?.isChanged());
-  }
-
   useEffect(() => {
   }, [description]);
 
@@ -366,11 +360,11 @@ export function GroupsForm({name}: GroupsFormProps) {
               {callerCanModify ?
                 <>
                   {callerCanViewMembers
-                    ? <GroupsFormList name='Members' initialValues={members} ref={membersRef} itemsChanged={itemsChanged}/>
+                    ? <GroupsFormList name='Members' initialValues={members} ref={membersRef}/>
                     : <Typography variant="h6" sx={{p: '16px'}}> {numRedacted} members redacted</Typography>
                   }
-                  <GroupsFormList name='Globs' initialValues={globs} ref={globsRef} itemsChanged={itemsChanged}/>
-                  <GroupsFormList name='Subgroups' initialValues={subgroups} ref={subgroupsRef} itemsChanged={itemsChanged}/>
+                  <GroupsFormList name='Globs' initialValues={globs} ref={globsRef}/>
+                  <GroupsFormList name='Subgroups' initialValues={subgroups} ref={subgroupsRef}/>
                   {(changedState && !successEditedGroup) &&
                     <>
                       <Typography variant="subtitle1" sx={{ pl: 1.5 }}> You have unsaved changes! </Typography>

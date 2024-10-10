@@ -12,10 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 import Button from '@mui/material/Button';
-import IconButton from '@mui/material/IconButton';
-import ClearIcon from '@mui/icons-material/Clear';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
-import DoneIcon from '@mui/icons-material/Done';
 import Checkbox from '@mui/material/Checkbox';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -24,7 +21,7 @@ import TableContainer from '@mui/material/TableContainer';
 import TableRow from '@mui/material/TableRow';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import {useState, forwardRef, useImperativeHandle, useEffect} from 'react';
+import {useState, forwardRef, useImperativeHandle} from 'react';
 import { isGlob, isMember, isSubgroup } from '@/authdb/common/helpers';
 
 import './groups_list.css';
@@ -34,17 +31,12 @@ interface GroupsFormListProps {
     initialValues: string[];
     // This will be either members, subgroups or globs. Used for header in form and to check validity of added items.
     name: string;
-    // groups_form function called when items are added or removed in this array.
-    // Also called when items are 'reset' (same as initial).
-    // This allows groups_form component to know of edited state.
-    itemsChanged: () => void;
 }
 
 export interface FormListElement {
   getItems: () => string[];
   setReadonly: () => void;
   changeItems: (items: string[]) => void;
-  isChanged: () => boolean;
 }
 
 type Item = {
@@ -66,7 +58,7 @@ const asItems = (values: string[]) => {
 
 export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
   (
-  {initialValues, name, itemsChanged}, ref
+  {initialValues, name}, ref
   ) => {
     const [addingItem, setAddingItem] = useState<boolean>();
     const [newItems, setNewItems] = useState<string>('');
@@ -88,9 +80,6 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
         setItems(asItems(newItems));
         setSavedValues(newItems);
       },
-      isChanged: () => {
-        return !(items.length === savedValues.length && items.every((val, index) => val.value === savedValues[index]) && items.every((item) => item.include === true));
-      }
     }));
 
     const resetTextfield = () => {
@@ -152,17 +141,6 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
       }
     }
 
-    useEffect(() => {
-      itemsChanged();
-    }, [items])
-
-    const isNewItem = (item: string) => {
-      if (savedValues.includes(item)) {
-        return false;
-      }
-      return true;
-    }
-
     const handleChange = (index: number) => {
       const updatedItems = [...items];
       // This is a new item, so just remove.
@@ -187,33 +165,28 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
         <TableRow key={index} style={{height: '34px'}} sx={{borderBottom: '1px solid grey'}} className='item-row' data-testid={`item-row-${item.value}`}>
           <TableCell sx={{p: 0, pt: '1px'}} style={{display: 'flex', flexDirection: 'row', alignItems:'center', minHeight: '30px'}}>
             <Checkbox sx={{pt: 0, pb: 0}} checked={item.include} data-testid={`checkbox-button-${item.value}`} id={`${index}`} onChange={() => {handleChange(index)}}/>
-            {isNewItem(item.value)
-            ? <Typography variant="body2" color="green">{item.value}</Typography>
-            : <>
-              {(!item.include)
-                ? <Typography variant="body2" color="red" style={{textDecoration:'line-through'}} data-testid={`removed-item-${item.value}`} id="removed-item">{item.value}</Typography>
-                : <Typography variant="body2">{item.value}</Typography>
-              }
-              </>
-            }
+            <Typography variant="body2">{item.value}</Typography>
           </TableCell>
         </TableRow>
       )}
       {addingItem && (
-        <TableRow>
-          <TableCell sx={{p: 0, pt: '15px', pr: '15px'}} style={{width: '94%'}}>
-          <TextField multiline placeholder='Add new members, one per line' label='Add new members, one per line' style={{width: '100%'}} onChange={(e) => setNewItems(e.target.value)} value={newItems} data-testid='add-textfield' error={errorMessage !== ''} helperText={errorMessage}></TextField>          </TableCell>
-          <TableCell align='center' style={{width: '3%'}} sx={{p: 0, pt: '15px'}}>
-            <IconButton color='success' sx={{p: 0}} onClick={() => {addToItems()}} data-testid='confirm-button'>
-              <DoneIcon />
-            </IconButton>
-          </TableCell>
-          <TableCell align='center' style={{width: '3%'}} sx={{p: 0, pt: '15px'}}>
-            <IconButton color='error' sx={{p: 0}} onClick={resetTextfield} data-testid='clear-button'>
-              <ClearIcon />
-            </IconButton>
-          </TableCell>
-        </TableRow>)
+        <>
+          <TableRow>
+            <TableCell sx={{p: 0, pt: '15px', pr: '15px'}} style={{width: '94%'}}>
+              <TextField multiline placeholder='Add new members, one per line' label='Add new members, one per line' style={{width: '100%'}} onChange={(e) => setNewItems(e.target.value)} value={newItems} data-testid='add-textfield' error={errorMessage !== ''} helperText={errorMessage}></TextField>
+            </TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell sx={{p: 0}}>
+              <Button sx={{mt: '10px', mr: 1.5}} variant='contained' color='success' onClick={() => {addToItems()}} data-testid='confirm-button'>
+                Confirm
+              </Button>
+              <Button sx={{mt: '10px'}} variant='contained' color='error' onClick={resetTextfield} data-testid='clear-button'>
+                Cancel
+              </Button>
+            </TableCell>
+          </TableRow>
+        </>)
       }
       {!addingItem &&
         <TableRow>

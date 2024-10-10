@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event'
 import { createMockGroupIndividual } from '@/authdb/testing_tools/mocks/group_individual_mock';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
@@ -20,35 +20,24 @@ import { GroupsFormList } from './groups_form_list';
 import { act } from 'react';
 
 describe('<GroupsFormList editable/>', () => {
-    const mockGroup = createMockGroupIndividual('123', true, true);
-    beforeEach(async () => {
-      render(
-        <FakeContextProvider>
-          <GroupsFormList name='Members' initialValues={mockGroup.members as string[]} itemsChanged={() => {}}/>
-        </FakeContextProvider>,
-      );
-      await screen.findByTestId('groups-form-list');
+  const mockGroup = createMockGroupIndividual('123', true, true);
+  beforeEach(async () => {
+    render(
+      <FakeContextProvider>
+        <GroupsFormList name='Members' initialValues={mockGroup.members as string[]} />
+      </FakeContextProvider>,
+    );
+    await screen.findByTestId('groups-form-list');
   });
-    test('displays items', async () => {
-      // Check each member is displayed.
-      for (let i = 0; i < mockGroup.members.length; i++) {
-          expect(screen.getByText(mockGroup.members[i])).toBeInTheDocument();
-      }
-      // Check no remove button exists on readonly.
-      expect(screen.queryAllByTestId('remove-button')).toHaveLength(0);
-    });
-
-  test('shows removed members', async () => {
-    // Simulate mouse enter event each row.
+  test('displays items', async () => {
+    // Check each member is displayed.
     for (let i = 0; i < mockGroup.members.length; i++) {
-      const row = screen.getByTestId(`item-row-${mockGroup.members[i]}`);
-      fireEvent.mouseEnter(row);
-      const removeCheckbox = screen.getByTestId(`checkbox-button-${mockGroup.members[i]}`).querySelector('input');
-      act(() => removeCheckbox!.click());
-      const removedItem = screen.getByTestId(`removed-item-${mockGroup.members[i]}`);
-      expect(removedItem).toHaveStyle('text-decoration: line-through');
+      expect(screen.getByText(mockGroup.members[i])).toBeInTheDocument();
     }
-  })
+    // Check no remove button exists on readonly.
+    expect(screen.queryAllByTestId('remove-button')).toHaveLength(0);
+  });
+
   test('added then removed members are removed from list ', async () => {
     // Click add button.
     const addButton = screen.queryByTestId('add-button');
@@ -148,7 +137,7 @@ describe('<GroupsFormList editable/>', () => {
     expect(screen.getByText('Invalid Members: member1@email.com')).toBeInTheDocument();
   })
 
-  test('hides textfield with clear button', async() => {
+  test('hides textfield with clear button', async () => {
     // Click add button.
     const addButton = screen.queryByTestId('add-button');
     expect(addButton).not.toBeNull();
@@ -172,7 +161,7 @@ describe('<GroupsFormList editable globs/>', () => {
   beforeEach(async () => {
     render(
       <FakeContextProvider>
-        <GroupsFormList name='Globs' initialValues={mockGroup.members as string[]} itemsChanged={() => {}}/>
+        <GroupsFormList name='Globs' initialValues={mockGroup.members as string[]} />
       </FakeContextProvider>,
     );
     await screen.findByTestId('groups-form-list');
@@ -200,7 +189,7 @@ describe('<GroupsFormList editable subgroups/>', () => {
   beforeEach(async () => {
     render(
       <FakeContextProvider>
-        <GroupsFormList name='Subgroups' initialValues={mockGroup.members as string[]} itemsChanged={() => {}}/>
+        <GroupsFormList name='Subgroups' initialValues={mockGroup.members as string[]} />
       </FakeContextProvider>,
     );
     await screen.findByTestId('groups-form-list');

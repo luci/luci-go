@@ -312,25 +312,6 @@ describe('<GroupsForm />', () => {
     expect(screen.getByText('You have unsaved changes!')).toBeInTheDocument();
   });
 
-  test('Removed members message shown for groups form list item', async () => {
-    const mockGroup = createMockGroupIndividual('123', true, true);
-    mockFetchGetGroup(mockGroup);
-
-    render(
-      <FakeContextProvider>
-        <GroupsForm name='123'/>
-      </FakeContextProvider>,
-    );
-    await screen.findByTestId('groups-form');
-    const row = screen.getByTestId(`item-row-member1@email.com`);
-    fireEvent.mouseEnter(row);
-    const removeCheckbox = screen.getByTestId(`checkbox-button-member1@email.com`).querySelector('input');
-    act(() => removeCheckbox!.click());
-
-    // Check new member shown in list & message is shown.
-    expect(screen.getByText('You have unsaved changes!')).toBeInTheDocument();
-  });
-
   test('members redacted if caller cannot view external group', async () => {
     const mockGroup = createMockGroupIndividual('google/testGoogleGroup', true, false);
     mockFetchGetGroup(mockGroup);
