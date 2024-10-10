@@ -1,8 +1,11 @@
+// DO NOT EDIT!!!
+// Copied from https://chromium.googlesource.com/infra/luci/recipes-py/+/HEAD/recipe_engine/recipes_cfg.proto
+// Please run the update script (update/main.go) to pull the latest proto.
+
 // Copyright 2016 The LUCI Authors. All rights reserved.
 // Use of this source code is governed under the Apache License, Version 2.0
 // that can be found in the LICENSE file.
 
-// This is a copy of https://chromium.googlesource.com/infra/luci/recipes-py/+/HEAD/recipe_engine/recipes_cfg.proto
 syntax = "proto3";
 
 package recipe_engine;
