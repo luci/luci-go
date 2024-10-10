@@ -24,10 +24,12 @@ import (
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/fakes"
 	repb "github.com/bazelbuild/remote-apis/build/bazel/remote/execution/v2"
-	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/templates"
 )
@@ -40,31 +42,31 @@ func TestBlobs(t *testing.T) {
 
 	w := httptest.NewRecorder()
 
-	Convey("renderTree", t, func() {
+	ftt.Run("renderTree", t, func(t *ftt.Test) {
 		cl := fakeClient(ctx, t)
 
-		Convey("Not Found", func() {
+		t.Run("Not Found", func(t *ftt.Test) {
 			// This blob doesn't exist on CAS.
 			bd := digest.NewFromBlob([]byte{1})
 
 			err := renderTree(ctx, w, cl, &bd, testInstance)
 
-			So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
-			So(w.Body.String(), ShouldEqual, "")
+			assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.NotFound))
+			assert.Loosely(t, w.Body.String(), should.BeEmpty)
 		})
 
-		Convey("Must be Directory", func() {
+		t.Run("Must be Directory", func(t *ftt.Test) {
 			// This blob exists on CAS, but isn't a Directory.
 			bd, err := cl.WriteBlob(context.Background(), []byte{1})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			err = renderTree(ctx, w, cl, &bd, testInstance)
 
-			So(grpcutil.Code(err), ShouldEqual, codes.InvalidArgument)
-			So(w.Body.String(), ShouldEqual, "")
+			assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.InvalidArgument))
+			assert.Loosely(t, w.Body.String(), should.BeEmpty)
 		})
 
-		Convey("OK", func() {
+		t.Run("OK", func(t *ftt.Test) {
 			// Upload a directory node.
 			d := &repb.Directory{
 				Directories: []*repb.DirectoryNode{
@@ -81,58 +83,58 @@ func TestBlobs(t *testing.T) {
 				},
 			}
 			b, err := proto.Marshal(d)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			bd, err := cl.WriteBlob(context.Background(), b)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			err = renderTree(ctx, w, cl, &bd, testInstance)
 
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			body, err := io.ReadAll(w.Body)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			// body should contain file name, hash, size.
-			So(string(body), ShouldContainSubstring, d.Files[0].Name)
-			So(string(body), ShouldContainSubstring, d.Files[0].Digest.Hash)
-			So(string(body), ShouldContainSubstring, "1 B")
+			assert.Loosely(t, string(body), should.ContainSubstring(d.Files[0].Name))
+			assert.Loosely(t, string(body), should.ContainSubstring(d.Files[0].Digest.Hash))
+			assert.Loosely(t, string(body), should.ContainSubstring("1 B"))
 		})
 	})
 
-	Convey("returnBlob", t, func() {
+	ftt.Run("returnBlob", t, func(t *ftt.Test) {
 		cl := fakeClient(ctx, t)
 
-		Convey("Not Found", func() {
+		t.Run("Not Found", func(t *ftt.Test) {
 			// This blob doesn't exist on CAS.
 			bd := digest.NewFromBlob([]byte{1})
 
 			err := returnBlob(ctx, w, cl, &bd, "")
 
-			So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
-			So(w.Body.String(), ShouldEqual, "")
+			assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.NotFound))
+			assert.Loosely(t, w.Body.String(), should.BeEmpty)
 		})
 
-		Convey("OK", func() {
+		t.Run("OK", func(t *ftt.Test) {
 			// Upload a blob.
 			b := []byte{1}
 			bd, err := cl.WriteBlob(context.Background(), b)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			err = returnBlob(ctx, w, cl, &bd, "test.txt")
 
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			body, err := io.ReadAll(w.Body)
-			So(err, ShouldBeNil)
-			So(body, ShouldResemble, b)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, body, should.Resemble(b))
 		})
 	})
 }
 
 // fakeClient returns a Client for a fake CAS.
-func fakeClient(ctx context.Context, t *testing.T) *client.Client {
+func fakeClient(ctx context.Context, t testing.TB) *client.Client {
 	casSrv, err := fakes.NewServer(t)
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil)
 	t.Cleanup(casSrv.Clear)
 	cl, err := casSrv.NewTestClient(ctx)
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil)
 	t.Cleanup(func() {
 		cl.Close() // ignore error.
 	})

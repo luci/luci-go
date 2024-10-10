@@ -19,8 +19,9 @@ import (
 	"net/http"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/router"
 )
@@ -28,30 +29,30 @@ import (
 func TestClient(t *testing.T) {
 	t.Parallel()
 
-	Convey("ClientCache", t, func() {
-		Convey("Get", func() {
+	ftt.Run("ClientCache", t, func(t *ftt.Test) {
+		t.Run("Get", func(t *ftt.Test) {
 			c := newContext()
 			inst1 := "projects/test-proj/instances/inst1"
 			inst2 := "projects/test-proj/instances/inst2"
 
 			// First time, it creates a new client.
 			cl1, err := GetClient(c.Request.Context(), inst1)
-			So(err, ShouldBeNil)
-			So(cl1, ShouldNotBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cl1, should.NotBeNil)
 
 			// The client should be reused for the same instance.
 			cl2, err := GetClient(c.Request.Context(), inst1)
-			So(err, ShouldBeNil)
-			So(cl2, ShouldEqual, cl1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cl2, should.Equal(cl1))
 
 			// A new client for a different instance will be created.
 			cl3, err := GetClient(c.Request.Context(), inst2)
-			So(err, ShouldBeNil)
-			So(cl3, ShouldNotBeNil)
-			So(cl3, ShouldNotPointTo, cl1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cl3, should.NotBeNil)
+			assert.Loosely(t, cl3, should.NotEqual(cl1))
 		})
 
-		Convey("Clear", func() {
+		t.Run("Clear", func(t *ftt.Test) {
 			c := newContext()
 			inst1 := "projects/test-proj/instances/inst1"
 			inst2 := "projects/test-proj/instances/inst2"
@@ -59,15 +60,15 @@ func TestClient(t *testing.T) {
 			// Create clients.
 			var err error
 			_, err = GetClient(c.Request.Context(), inst1)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			_, err = GetClient(c.Request.Context(), inst2)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			cc, err := clientCache(c.Request.Context())
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			cc.Clear()
 
-			So(cc.clients, ShouldBeEmpty)
+			assert.Loosely(t, cc.clients, should.BeEmpty)
 		})
 	})
 }

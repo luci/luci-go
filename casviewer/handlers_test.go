@@ -24,9 +24,11 @@ import (
 
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
 	repb "github.com/bazelbuild/remote-apis/build/bazel/remote/execution/v2"
-	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/router"
@@ -41,7 +43,7 @@ func TestHandlers(t *testing.T) {
 	ctx := context.Background()
 
 	// Basic template rendering tests.
-	Convey("Templates", t, func() {
+	ftt.Run("Templates", t, func(t *ftt.Test) {
 		ctx = auth.WithState(ctx, fakeAuthState())
 		c := &router.Context{
 			Request: (&http.Request{}).WithContext(ctx),
@@ -49,13 +51,13 @@ func TestHandlers(t *testing.T) {
 		templateBundleMW := templates.WithTemplates(getTemplateBundle("test-version-1"))
 		templateBundleMW(c, func(c *router.Context) {
 			top, err := templates.Render(c.Request.Context(), "pages/index.html", nil)
-			So(err, ShouldBeNil)
-			So(string(top), ShouldContainSubstring, "user@example.com")
-			So(string(top), ShouldContainSubstring, "test-version-1")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, string(top), should.ContainSubstring("user@example.com"))
+			assert.Loosely(t, string(top), should.ContainSubstring("test-version-1"))
 		})
 	})
 
-	Convey("InstallHandlers", t, func() {
+	ftt.Run("InstallHandlers", t, func(t *ftt.Test) {
 		// Install handlers with fake auth state.
 		r := router.New()
 		r.Use(router.NewMiddlewareChain(func(c *router.Context, next router.Handler) {
@@ -76,7 +78,7 @@ func TestHandlers(t *testing.T) {
 
 		// Simple blob.
 		bd, err := cl.WriteBlob(ctx, []byte{1})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		rSimple := fmt.Sprintf("/%s/blobs/%s/%d", testInstance, bd.Hash, bd.Size)
 
 		// Directory.
@@ -89,9 +91,9 @@ func TestHandlers(t *testing.T) {
 			},
 		}
 		b, err := proto.Marshal(d)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		bd, err = cl.WriteBlob(context.Background(), b)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		rDict := fmt.Sprintf("/%s/blobs/%s/%d", testInstance, bd.Hash, bd.Size)
 
 		// Unknown blob.
@@ -100,68 +102,68 @@ func TestHandlers(t *testing.T) {
 		// Invalid digest size.
 		rInvalidDigest := fmt.Sprintf("/%s/blobs/12345/a", testInstance)
 
-		Convey("rootHanlder", func() {
+		t.Run("rootHanlder", func(t *ftt.Test) {
 			resp, err := http.Get(srv.URL)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			defer resp.Body.Close()
 
-			So(resp.StatusCode, ShouldEqual, http.StatusOK)
+			assert.Loosely(t, resp.StatusCode, should.Equal(http.StatusOK))
 			_, err = io.ReadAll(resp.Body)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey("treeHandler", func() {
+		t.Run("treeHandler", func(t *ftt.Test) {
 			// Not found.
 			resp, err := http.Get(srv.URL + rUnknown + "/tree")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			resp.Body.Close()
-			So(resp.StatusCode, ShouldEqual, http.StatusNotFound)
+			assert.Loosely(t, resp.StatusCode, should.Equal(http.StatusNotFound))
 
 			// Bad Request - Must be Directory.
 			resp, err = http.Get(srv.URL + rSimple + "/tree")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			resp.Body.Close()
-			So(resp.StatusCode, ShouldEqual, http.StatusBadRequest)
+			assert.Loosely(t, resp.StatusCode, should.Equal(http.StatusBadRequest))
 
 			// Bad Request - Digest size must be number.
 			resp, err = http.Get(srv.URL + rInvalidDigest + "/tree")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			resp.Body.Close()
-			So(resp.StatusCode, ShouldEqual, http.StatusBadRequest)
+			assert.Loosely(t, resp.StatusCode, should.Equal(http.StatusBadRequest))
 
 			// OK.
 			resp, err = http.Get(srv.URL + rDict + "/tree")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			resp.Body.Close()
-			So(resp.StatusCode, ShouldEqual, http.StatusOK)
+			assert.Loosely(t, resp.StatusCode, should.Equal(http.StatusOK))
 		})
 
-		Convey("getHandler", func() {
+		t.Run("getHandler", func(t *ftt.Test) {
 			// Not found.
 			resp, err := http.Get(srv.URL + rUnknown)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			resp.Body.Close()
-			So(resp.StatusCode, ShouldEqual, http.StatusNotFound)
+			assert.Loosely(t, resp.StatusCode, should.Equal(http.StatusNotFound))
 
 			// Bad Request - Digest size must be number.
 			resp, err = http.Get(srv.URL + rInvalidDigest)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			resp.Body.Close()
-			So(resp.StatusCode, ShouldEqual, http.StatusBadRequest)
+			assert.Loosely(t, resp.StatusCode, should.Equal(http.StatusBadRequest))
 
 			// OK.
 			resp, err = http.Get(srv.URL + rDict + "?filename=text.txt")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			resp.Body.Close()
-			So(resp.StatusCode, ShouldEqual, http.StatusOK)
+			assert.Loosely(t, resp.StatusCode, should.Equal(http.StatusOK))
 		})
 
-		Convey("checkPermission", func() {
+		t.Run("checkPermission", func(t *ftt.Test) {
 			resp, err := http.Get(
 				srv.URL + "/projects/test-proj-no-perm/instances/default_instance/blobs/12345/6/tree")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			defer resp.Body.Close()
-			So(resp.StatusCode, ShouldEqual, http.StatusForbidden)
+			assert.Loosely(t, resp.StatusCode, should.Equal(http.StatusForbidden))
 		})
 	})
 }
