@@ -178,7 +178,7 @@ func init() {
 		Queue:     "create-backend-task-go",
 		Handler: func(ctx context.Context, payload proto.Message) error {
 			t := payload.(*taskdefs.CreateBackendBuildTask)
-			return CreateBackendTask(ctx, t.GetBuildId(), t.GetRequestId())
+			return CreateBackendTask(ctx, t.GetBuildId(), t.GetRequestId(), t.GetDequeueTime())
 		},
 	})
 

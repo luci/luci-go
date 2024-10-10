@@ -316,7 +316,7 @@ func isFatalError(err error) bool {
 }
 
 // CreateBackendTask creates a backend task for the build.
-func CreateBackendTask(ctx context.Context, buildID int64, requestID string) error {
+func CreateBackendTask(ctx context.Context, buildID int64, requestID string, dequeueTime *timestamppb.Timestamp) error {
 	entities, err := common.GetBuildEntities(ctx, buildID, model.BuildKind, model.BuildInfraKind)
 	if err != nil {
 		return errors.Annotate(err, "failed to get build %d", buildID).Err()
@@ -356,8 +356,15 @@ func CreateBackendTask(ctx context.Context, buildID int64, requestID string) err
 		runTaskGiveUpTimeout = backendCfg.TaskCreatingTimeout.AsDuration()
 	}
 
+	var sentToBackendTime time.Time
+	if dequeueTime == nil {
+		sentToBackendTime = bld.CreateTime
+	} else {
+		sentToBackendTime = dequeueTime.AsTime()
+	}
+
 	// If task creation has already expired, fail the build immediately.
-	if clock.Now(ctx).Sub(bld.CreateTime) >= runTaskGiveUpTimeout {
+	if clock.Now(ctx).Sub(sentToBackendTime) >= runTaskGiveUpTimeout {
 		dsPutErr := failBuild(ctx, buildID, "Backend task creation failure.")
 		if dsPutErr != nil {
 			return dsPutErr

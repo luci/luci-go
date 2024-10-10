@@ -599,7 +599,9 @@ func TestCreateBackendTask(t *testing.T) {
 					UpdateId: 1,
 				},
 			}, nil)
-			err = CreateBackendTask(ctx, 1, "request_id")
+			now = now.Add(9 * time.Minute)
+			ctx, _ = testclock.UseTime(ctx, now)
+			err = CreateBackendTask(ctx, 1, "request_id", timestamppb.New(now))
 			assert.Loosely(c, err, should.BeNil)
 			eb := &model.Build{ID: build.ID}
 			expectedBuildInfra := &model.BuildInfra{Build: key}
@@ -635,7 +637,7 @@ func TestCreateBackendTask(t *testing.T) {
 				Parent: model.BucketKey(ctx, "project", "bucket"),
 			}
 			assert.Loosely(c, datastore.Put(ctx, bldr), should.BeNil)
-			err = CreateBackendTask(ctx, 1, "request_id")
+			err = CreateBackendTask(ctx, 1, "request_id", nil)
 			expectedBuild := &model.Build{ID: 1}
 			assert.Loosely(c, datastore.Get(ctx, expectedBuild), should.BeNil)
 			assert.Loosely(c, err, should.ErrLike("failed to create a backend task"))
@@ -646,7 +648,7 @@ func TestCreateBackendTask(t *testing.T) {
 		c.Run("bail out if the build has a task associated", func(c *ftt.Test) {
 			infra.Proto.Backend.Task.Id.Id = "task"
 			assert.Loosely(c, datastore.Put(ctx, infra), should.BeNil)
-			err = CreateBackendTask(ctx, 1, "request_id")
+			err = CreateBackendTask(ctx, 1, "request_id", nil)
 			assert.Loosely(c, err, should.BeNil)
 			expectedBuildInfra := &model.BuildInfra{Build: key}
 			assert.Loosely(c, datastore.Get(ctx, expectedBuildInfra), should.BeNil)
@@ -663,7 +665,7 @@ func TestCreateBackendTask(t *testing.T) {
 			assert.Loosely(c, datastore.Put(ctx, bldr), should.BeNil)
 			now = now.Add(9 * time.Minute)
 			ctx, _ = testclock.UseTime(ctx, now)
-			err = CreateBackendTask(ctx, 1, "request_id")
+			err = CreateBackendTask(ctx, 1, "request_id", nil)
 			expectedBuild := &model.Build{ID: 1}
 			assert.Loosely(c, datastore.Get(ctx, expectedBuild), should.BeNil)
 			assert.Loosely(c, err, should.ErrLike("creating backend task for build 1 with requestID request_id has expired after 8m0s"))
@@ -700,7 +702,7 @@ func TestCreateBackendTask(t *testing.T) {
 
 			c.Run("ok", func(c *ftt.Test) {
 				boilerplate()
-				err = CreateBackendTask(ctx, 1, "request_id")
+				err = CreateBackendTask(ctx, 1, "request_id", nil)
 				assert.Loosely(c, err, should.BeNil)
 				eb := &model.Build{ID: build.ID}
 				expectedBuildInfra := &model.BuildInfra{Build: datastore.KeyForObj(ctx, build)}
@@ -728,7 +730,7 @@ func TestCreateBackendTask(t *testing.T) {
 				build.Proto.SchedulingTimeout = durationpb.New(10 * time.Second)
 				assert.Loosely(c, datastore.Put(ctx, build, bldr), should.BeNil)
 
-				err = CreateBackendTask(ctx, 1, "request_id")
+				err = CreateBackendTask(ctx, 1, "request_id", nil)
 				assert.Loosely(c, err, should.BeNil)
 				tasks := sch.Tasks()
 				assert.Loosely(c, tasks, should.HaveLength(1))
@@ -743,7 +745,7 @@ func TestCreateBackendTask(t *testing.T) {
 				build.Proto.SchedulingTimeout = durationpb.New(10 * time.Second)
 				assert.Loosely(c, datastore.Put(ctx, build, bldr), should.BeNil)
 
-				err = CreateBackendTask(ctx, 1, "request_id")
+				err = CreateBackendTask(ctx, 1, "request_id", nil)
 				assert.Loosely(c, err, should.BeNil)
 				tasks := sch.Tasks()
 				assert.Loosely(c, tasks, should.HaveLength(1))
@@ -755,7 +757,7 @@ func TestCreateBackendTask(t *testing.T) {
 			c.Run("builder not found", func(c *ftt.Test) {
 				boilerplate()
 				assert.Loosely(c, datastore.Delete(ctx, bldr), should.BeNil)
-				err = CreateBackendTask(ctx, 1, "request_id")
+				err = CreateBackendTask(ctx, 1, "request_id", nil)
 				assert.Loosely(c, err, should.ErrLike("failed to fetch builder project/bucket/builder: datastore: no such entity"))
 			})
 
@@ -769,7 +771,7 @@ func TestCreateBackendTask(t *testing.T) {
 					},
 				}
 				assert.Loosely(c, datastore.Put(ctx, bkt), should.BeNil)
-				err = CreateBackendTask(ctx, 1, "request_id")
+				err = CreateBackendTask(ctx, 1, "request_id", nil)
 				assert.Loosely(c, err, should.BeNil)
 				tasks := sch.Tasks()
 				assert.Loosely(c, tasks, should.HaveLength(1))

@@ -8,6 +8,7 @@ package taskdefs;
 
 option go_package = "go.chromium.org/luci/buildbucket/appengine/tasks/defs;taskdefs";
 
+import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/buildbucket/proto/project_config.proto";
 import "go.chromium.org/luci/buildbucket/proto/builder_common.proto";
 
@@ -34,6 +35,11 @@ message CreateBackendBuildTask {
 
   // The request ID to be sent to TaskBackend RunTask for idempotency.
   string request_id = 2;
+
+  // Timestamp of when the task was sent to TaskBackend.
+  // This is useful to find out when the task creation should expire.
+  // Only used for builder with the max_concurrent_builds feature enabled.
+  google.protobuf.Timestamp DequeueTime = 3;
 }
 
 // A task to create a Swarming task.

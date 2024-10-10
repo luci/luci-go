@@ -19,7 +19,9 @@ import (
 	"math"
 
 	"github.com/google/uuid"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -111,8 +113,9 @@ func popAndTriggerBuilds(ctx context.Context, bldrQ *model.BuilderQueue, mcb uin
 		toPop := int(math.Min(float64(int(mcb)-len(bldrQ.TriggeredBuilds)), float64(len(bldrQ.PendingBuilds))))
 		for _, pb := range bldrQ.PendingBuilds[:toPop] {
 			err := CreateBackendBuildTask(ctx, &taskdefs.CreateBackendBuildTask{
-				BuildId:   pb,
-				RequestId: uuid.New().String(),
+				BuildId:     pb,
+				RequestId:   uuid.New().String(),
+				DequeueTime: timestamppb.New(clock.Now(ctx)),
 			})
 			if err != nil {
 				return err
