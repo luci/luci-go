@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event'
 import { createMockGroupIndividual } from '@/authdb/testing_tools/mocks/group_individual_mock';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
@@ -38,28 +38,18 @@ describe('<GroupsFormList editable/>', () => {
     expect(screen.queryAllByTestId('remove-button')).toHaveLength(0);
   });
 
-  test('added then removed members are removed from list ', async () => {
-    // Click add button.
-    const addButton = screen.queryByTestId('add-button');
-    expect(addButton).not.toBeNull();
-    act(() => addButton!.click());
-    // Type in textfield.
-    const textfield = screen.getByTestId('add-textfield').querySelector('textarea');
-    expect(textfield).toBeInTheDocument();
-    await userEvent.type(textfield!, 'newMember@email.com');
-    expect(textfield!.value).toBe('newMember@email.com');
-    // Click confirm button.
-    const confirmButton = screen.queryByTestId('confirm-button');
-    expect(confirmButton).not.toBeNull();
-    act(() => confirmButton!.click());
-    // Check new member shown in list?
-    expect(screen.getByText('newMember@email.com')).toBeInTheDocument();
-
-    // Remove added member.
-    const removeCheckbox = screen.getByTestId(`checkbox-button-newMember@email.com`).querySelector('input');
-    act(() => removeCheckbox!.click());
-    expect(screen.queryByText('newMember@email.com')).toBeNull();
-  });
+  test('shows removed members confirm dialog', async () => {
+    // Simulate mouse enter event each row.
+    for (let i = 0; i < mockGroup.members.length; i++) {
+      const row = screen.getByTestId(`item-row-${mockGroup.members[i]}`);
+      fireEvent.mouseEnter(row);
+      const removeCheckbox = screen.getByTestId(`checkbox-button-${mockGroup.members[i]}`).querySelector('input');
+      act(() => removeCheckbox!.click());
+      const removeButton = screen.getByTestId('remove-button');
+      act(() => removeButton.click());
+      expect(screen.queryByTestId('remove-confirm-dialog')).not.toBeNull();
+    }
+  })
 
   test('shows add button', async () => {
     // Check that remove button exists for each member.
