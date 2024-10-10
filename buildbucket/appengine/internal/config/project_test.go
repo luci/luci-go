@@ -31,6 +31,9 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/gae/filter/txndefer"
@@ -43,24 +46,21 @@ import (
 	modeldefs "go.chromium.org/luci/buildbucket/appengine/model/defs"
 	taskdefs "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
 	pb "go.chromium.org/luci/buildbucket/proto"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestValidateProject(t *testing.T) {
 	t.Parallel()
 
-	Convey("validate buildbucket cfg", t, func() {
+	ftt.Run("validate buildbucket cfg", t, func(t *ftt.Test) {
 		vctx := &validation.Context{
 			Context: memory.Use(context.Background()),
 		}
 		configSet := "projects/test"
 		path := "cr-buildbucket.cfg"
 		settingsCfg := &pb.SettingsCfg{}
-		So(SetTestSettingsCfg(vctx.Context, settingsCfg), ShouldBeNil)
+		assert.Loosely(t, SetTestSettingsCfg(vctx.Context, settingsCfg), should.BeNil)
 
-		Convey("OK", func() {
+		t.Run("OK", func(t *ftt.Test) {
 			var okCfg = `
 				buckets {
 					name: "good.name"
@@ -69,23 +69,23 @@ func TestValidateProject(t *testing.T) {
 					name: "good.name2"
 				}
 			`
-			So(validateProjectCfg(vctx, configSet, path, []byte(okCfg)), ShouldBeNil)
-			So(vctx.Finalize(), ShouldBeNil)
+			assert.Loosely(t, validateProjectCfg(vctx, configSet, path, []byte(okCfg)), should.BeNil)
+			assert.Loosely(t, vctx.Finalize(), should.BeNil)
 		})
 
-		Convey("bad proto", func() {
+		t.Run("bad proto", func(t *ftt.Test) {
 			content := []byte(` bad: "bad" `)
-			So(validateProjectCfg(vctx, configSet, path, content), ShouldBeNil)
-			So(vctx.Finalize().Error(), ShouldContainSubstring, "invalid BuildbucketCfg proto message")
+			assert.Loosely(t, validateProjectCfg(vctx, configSet, path, content), should.BeNil)
+			assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("invalid BuildbucketCfg proto message"))
 		})
 
-		Convey("empty cr-buildbucket.cfg", func() {
+		t.Run("empty cr-buildbucket.cfg", func(t *ftt.Test) {
 			content := []byte(` `)
-			So(validateProjectCfg(vctx, configSet, path, content), ShouldBeNil)
-			So(vctx.Finalize(), ShouldBeNil)
+			assert.Loosely(t, validateProjectCfg(vctx, configSet, path, content), should.BeNil)
+			assert.Loosely(t, vctx.Finalize(), should.BeNil)
 		})
 
-		Convey("fail", func() {
+		t.Run("fail", func(t *ftt.Test) {
 			var badCfg = `
 				buckets {
 					name: "a"
@@ -96,30 +96,30 @@ func TestValidateProject(t *testing.T) {
 				buckets {}
 				buckets { name: "luci.x" }
 			`
-			So(validateProjectCfg(vctx, configSet, path, []byte(badCfg)), ShouldBeNil)
+			assert.Loosely(t, validateProjectCfg(vctx, configSet, path, []byte(badCfg)), should.BeNil)
 			ve, ok := vctx.Finalize().(*validation.Error)
-			So(ok, ShouldEqual, true)
-			So(len(ve.Errors), ShouldEqual, 3)
-			So(ve.Errors[0].Error(), ShouldContainSubstring, "(buckets #1 - a): duplicate bucket name \"a\"")
-			So(ve.Errors[1].Error(), ShouldContainSubstring, "(buckets #2 - ): invalid name \"\": bucket name is not specified")
-			So(ve.Errors[2].Error(), ShouldContainSubstring, "(buckets #3 - luci.x): invalid name \"luci.x\": must start with 'luci.test.' because it starts with 'luci.' and is defined in the \"test\" project")
+			assert.Loosely(t, ok, should.Equal(true))
+			assert.Loosely(t, len(ve.Errors), should.Equal(3))
+			assert.Loosely(t, ve.Errors[0].Error(), should.ContainSubstring("(buckets #1 - a): duplicate bucket name \"a\""))
+			assert.Loosely(t, ve.Errors[1].Error(), should.ContainSubstring("(buckets #2 - ): invalid name \"\": bucket name is not specified"))
+			assert.Loosely(t, ve.Errors[2].Error(), should.ContainSubstring("(buckets #3 - luci.x): invalid name \"luci.x\": must start with 'luci.test.' because it starts with 'luci.' and is defined in the \"test\" project"))
 		})
 
-		Convey("buckets unsorted", func() {
+		t.Run("buckets unsorted", func(t *ftt.Test) {
 			badCfg := `
 				buckets { name: "c" }
 				buckets { name: "b" }
 				buckets { name: "a" }
 			`
-			So(validateProjectCfg(vctx, configSet, path, []byte(badCfg)), ShouldBeNil)
+			assert.Loosely(t, validateProjectCfg(vctx, configSet, path, []byte(badCfg)), should.BeNil)
 			ve, ok := vctx.Finalize().(*validation.Error)
-			So(ok, ShouldEqual, true)
+			assert.Loosely(t, ok, should.Equal(true))
 			warnings := ve.WithSeverity(validation.Warning).(errors.MultiError)
-			So(warnings[0].Error(), ShouldContainSubstring, "bucket \"b\" out of order")
-			So(warnings[1].Error(), ShouldContainSubstring, "bucket \"a\" out of order")
+			assert.Loosely(t, warnings[0].Error(), should.ContainSubstring("bucket \"b\" out of order"))
+			assert.Loosely(t, warnings[1].Error(), should.ContainSubstring("bucket \"a\" out of order"))
 		})
 
-		Convey("swarming and dynamic_builder_template co-exist", func() {
+		t.Run("swarming and dynamic_builder_template co-exist", func(t *ftt.Test) {
 			badCfg := `
 				buckets {
 					name: "a"
@@ -127,15 +127,15 @@ func TestValidateProject(t *testing.T) {
 					dynamic_builder_template: {}
 				}
 			`
-			So(validateProjectCfg(vctx, configSet, path, []byte(badCfg)), ShouldBeNil)
+			assert.Loosely(t, validateProjectCfg(vctx, configSet, path, []byte(badCfg)), should.BeNil)
 			ve, ok := vctx.Finalize().(*validation.Error)
-			So(ok, ShouldEqual, true)
-			So(len(ve.Errors), ShouldEqual, 1)
-			So(ve.Errors[0].Error(), ShouldContainSubstring, "mutually exclusive fields swarming and dynamic_builder_template both exist in bucket \"a\"")
+			assert.Loosely(t, ok, should.Equal(true))
+			assert.Loosely(t, len(ve.Errors), should.Equal(1))
+			assert.Loosely(t, ve.Errors[0].Error(), should.ContainSubstring("mutually exclusive fields swarming and dynamic_builder_template both exist in bucket \"a\""))
 		})
 
-		Convey("dynamic_builder_template", func() {
-			Convey("builder name", func() {
+		t.Run("dynamic_builder_template", func(t *ftt.Test) {
+			t.Run("builder name", func(t *ftt.Test) {
 				var badCfg = `
 					buckets {
 						name: "a"
@@ -147,14 +147,14 @@ func TestValidateProject(t *testing.T) {
 						}
 					}
 			`
-				So(validateProjectCfg(vctx, configSet, path, []byte(badCfg)), ShouldBeNil)
+				assert.Loosely(t, validateProjectCfg(vctx, configSet, path, []byte(badCfg)), should.BeNil)
 				ve, ok := vctx.Finalize().(*validation.Error)
-				So(ok, ShouldEqual, true)
-				So(len(ve.Errors), ShouldEqual, 1)
-				So(ve.Errors[0].Error(), ShouldContainSubstring, "builder name should not be set in a dynamic bucket")
+				assert.Loosely(t, ok, should.Equal(true))
+				assert.Loosely(t, len(ve.Errors), should.Equal(1))
+				assert.Loosely(t, ve.Errors[0].Error(), should.ContainSubstring("builder name should not be set in a dynamic bucket"))
 			})
 
-			Convey("shadow", func() {
+			t.Run("shadow", func(t *ftt.Test) {
 				var badCfg = `
 					buckets {
 						name: "a"
@@ -170,16 +170,16 @@ func TestValidateProject(t *testing.T) {
 						}
 					}
 			`
-				So(validateProjectCfg(vctx, configSet, path, []byte(badCfg)), ShouldBeNil)
+				assert.Loosely(t, validateProjectCfg(vctx, configSet, path, []byte(badCfg)), should.BeNil)
 				ve, ok := vctx.Finalize().(*validation.Error)
-				So(ok, ShouldEqual, true)
-				So(len(ve.Errors), ShouldEqual, 3)
-				So(ve.Errors[0].Error(), ShouldContainSubstring, `dynamic bucket "a" cannot have a shadow bucket "a.shadow"`)
-				So(ve.Errors[1].Error(), ShouldContainSubstring, "should not toggle on auto_builder_dimension in a dynamic bucket")
-				So(ve.Errors[2].Error(), ShouldContainSubstring, "cannot set shadow_builder_adjustments in a dynamic builder template")
+				assert.Loosely(t, ok, should.Equal(true))
+				assert.Loosely(t, len(ve.Errors), should.Equal(3))
+				assert.Loosely(t, ve.Errors[0].Error(), should.ContainSubstring(`dynamic bucket "a" cannot have a shadow bucket "a.shadow"`))
+				assert.Loosely(t, ve.Errors[1].Error(), should.ContainSubstring("should not toggle on auto_builder_dimension in a dynamic bucket"))
+				assert.Loosely(t, ve.Errors[2].Error(), should.ContainSubstring("cannot set shadow_builder_adjustments in a dynamic builder template"))
 			})
 
-			Convey("empty builder", func() {
+			t.Run("empty builder", func(t *ftt.Test) {
 				var badCfg = `
 					buckets {
 						name: "a"
@@ -191,14 +191,14 @@ func TestValidateProject(t *testing.T) {
 				settingsCfg := &pb.SettingsCfg{Backends: []*pb.BackendSetting{}}
 				_ = SetTestSettingsCfg(vctx.Context, settingsCfg)
 
-				So(validateProjectCfg(vctx, configSet, path, []byte(badCfg)), ShouldBeNil)
+				assert.Loosely(t, validateProjectCfg(vctx, configSet, path, []byte(badCfg)), should.BeNil)
 				ve, ok := vctx.Finalize().(*validation.Error)
-				So(ok, ShouldEqual, true)
-				So(len(ve.Errors), ShouldEqual, 1)
-				So(ve.Errors[0].Error(), ShouldContainSubstring, "either swarming host or task backend must be set")
+				assert.Loosely(t, ok, should.Equal(true))
+				assert.Loosely(t, len(ve.Errors), should.Equal(1))
+				assert.Loosely(t, ve.Errors[0].Error(), should.ContainSubstring("either swarming host or task backend must be set"))
 			})
 
-			Convey("empty dynamic_builder_template", func() {
+			t.Run("empty dynamic_builder_template", func(t *ftt.Test) {
 				var goodCfg = `
 					buckets {
 						name: "a"
@@ -209,11 +209,11 @@ func TestValidateProject(t *testing.T) {
 				settingsCfg := &pb.SettingsCfg{Backends: []*pb.BackendSetting{}}
 				_ = SetTestSettingsCfg(vctx.Context, settingsCfg)
 
-				So(validateProjectCfg(vctx, configSet, path, []byte(goodCfg)), ShouldBeNil)
-				So(vctx.Finalize(), ShouldBeNil)
+				assert.Loosely(t, validateProjectCfg(vctx, configSet, path, []byte(goodCfg)), should.BeNil)
+				assert.Loosely(t, vctx.Finalize(), should.BeNil)
 			})
 
-			Convey("valid", func() {
+			t.Run("valid", func(t *ftt.Test) {
 				var goodCfg = `
 					buckets {
 						name: "a"
@@ -234,13 +234,13 @@ func TestValidateProject(t *testing.T) {
 				}}
 				_ = SetTestSettingsCfg(vctx.Context, settingsCfg)
 
-				So(validateProjectCfg(vctx, configSet, path, []byte(goodCfg)), ShouldBeNil)
-				So(vctx.Finalize(), ShouldBeNil)
+				assert.Loosely(t, validateProjectCfg(vctx, configSet, path, []byte(goodCfg)), should.BeNil)
+				assert.Loosely(t, vctx.Finalize(), should.BeNil)
 			})
 		})
 	})
 
-	Convey("validate project_config.Swarming", t, func() {
+	ftt.Run("validate project_config.Swarming", t, func(t *ftt.Test) {
 		ctl := gomock.NewController(t)
 		defer ctl.Finish()
 		mockBackend := clients.NewMockTaskBackendClient(ctl)
@@ -253,10 +253,10 @@ func TestValidateProject(t *testing.T) {
 		toBBSwarmingCfg := func(content string) *pb.Swarming {
 			cfg := pb.Swarming{}
 			err := prototext.Unmarshal([]byte(content), &cfg)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			return &cfg
 		}
-		Convey("OK", func() {
+		t.Run("OK", func(t *ftt.Test) {
 			content := `
 				builders {
 					name: "release"
@@ -330,11 +330,11 @@ func TestValidateProject(t *testing.T) {
 				}
 			`
 			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", nil)
-			So(vctx.Finalize(), ShouldBeNil)
+			assert.Loosely(t, vctx.Finalize(), should.BeNil)
 		})
 
-		Convey("shadow_builder_adjustments", func() {
-			Convey("properties", func() {
+		t.Run("shadow_builder_adjustments", func(t *ftt.Test) {
+			t.Run("properties", func(t *ftt.Test) {
 				content := `
 								builders {
 					name: "release cipd"
@@ -350,11 +350,11 @@ func TestValidateProject(t *testing.T) {
 			`
 				validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", nil)
 				ve, ok := vctx.Finalize().(*validation.Error)
-				So(ok, ShouldEqual, true)
-				So(len(ve.Errors), ShouldEqual, 1)
-				So(ve.Errors[0].Error(), ShouldContainSubstring, "(swarming / builders #0 - release cipd / shadow_builder_adjustments): properties is not a JSON object")
+				assert.Loosely(t, ok, should.Equal(true))
+				assert.Loosely(t, len(ve.Errors), should.Equal(1))
+				assert.Loosely(t, ve.Errors[0].Error(), should.ContainSubstring("(swarming / builders #0 - release cipd / shadow_builder_adjustments): properties is not a JSON object"))
 			})
-			Convey("set pool without setting dimensions is allowed", func() {
+			t.Run("set pool without setting dimensions is allowed", func(t *ftt.Test) {
 				content := `
 								builders {
 					name: "release cipd"
@@ -370,11 +370,11 @@ func TestValidateProject(t *testing.T) {
 			`
 				validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", nil)
 				ve, ok := vctx.Finalize().(*validation.Error)
-				So(ok, ShouldEqual, true)
-				So(len(ve.Errors), ShouldEqual, 1)
-				So(ve.Errors[0].Error(), ShouldContainSubstring, "(swarming / builders #0 - release cipd / shadow_builder_adjustments): dimensions.pool must be consistent with pool")
+				assert.Loosely(t, ok, should.Equal(true))
+				assert.Loosely(t, len(ve.Errors), should.Equal(1))
+				assert.Loosely(t, ve.Errors[0].Error(), should.ContainSubstring("(swarming / builders #0 - release cipd / shadow_builder_adjustments): dimensions.pool must be consistent with pool"))
 			})
-			Convey("set dimensions without setting pool", func() {
+			t.Run("set dimensions without setting pool", func(t *ftt.Test) {
 				content := `
 								builders {
 					name: "release cipd"
@@ -390,11 +390,11 @@ func TestValidateProject(t *testing.T) {
 			`
 				validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", nil)
 				ve, ok := vctx.Finalize().(*validation.Error)
-				So(ok, ShouldEqual, true)
-				So(len(ve.Errors), ShouldEqual, 1)
-				So(ve.Errors[0].Error(), ShouldContainSubstring, "(swarming / builders #0 - release cipd / shadow_builder_adjustments): dimensions.pool must be consistent with pool")
+				assert.Loosely(t, ok, should.Equal(true))
+				assert.Loosely(t, len(ve.Errors), should.Equal(1))
+				assert.Loosely(t, ve.Errors[0].Error(), should.ContainSubstring("(swarming / builders #0 - release cipd / shadow_builder_adjustments): dimensions.pool must be consistent with pool"))
 			})
-			Convey("pool and dimensions different value", func() {
+			t.Run("pool and dimensions different value", func(t *ftt.Test) {
 				content := `
 								builders {
 					name: "release cipd"
@@ -411,11 +411,11 @@ func TestValidateProject(t *testing.T) {
 			`
 				validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", nil)
 				ve, ok := vctx.Finalize().(*validation.Error)
-				So(ok, ShouldEqual, true)
-				So(len(ve.Errors), ShouldEqual, 1)
-				So(ve.Errors[0].Error(), ShouldContainSubstring, "(swarming / builders #0 - release cipd / shadow_builder_adjustments): dimensions.pool must be consistent with pool")
+				assert.Loosely(t, ok, should.Equal(true))
+				assert.Loosely(t, len(ve.Errors), should.Equal(1))
+				assert.Loosely(t, ve.Errors[0].Error(), should.ContainSubstring("(swarming / builders #0 - release cipd / shadow_builder_adjustments): dimensions.pool must be consistent with pool"))
 			})
-			Convey("same key dimensions", func() {
+			t.Run("same key dimensions", func(t *ftt.Test) {
 				content := `
 								builders {
 					name: "release cipd"
@@ -434,24 +434,24 @@ func TestValidateProject(t *testing.T) {
 			`
 				validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", nil)
 				ve, ok := vctx.Finalize().(*validation.Error)
-				So(ok, ShouldEqual, true)
-				So(len(ve.Errors), ShouldEqual, 1)
-				So(ve.Errors[0].Error(), ShouldContainSubstring, `(swarming / builders #0 - release cipd / shadow_builder_adjustments): dimensions contain both empty and non-empty value for the same key - "conflict"`)
+				assert.Loosely(t, ok, should.Equal(true))
+				assert.Loosely(t, len(ve.Errors), should.Equal(1))
+				assert.Loosely(t, ve.Errors[0].Error(), should.ContainSubstring(`(swarming / builders #0 - release cipd / shadow_builder_adjustments): dimensions contain both empty and non-empty value for the same key - "conflict"`))
 			})
 		})
 
-		Convey("empty builders", func() {
+		t.Run("empty builders", func(t *ftt.Test) {
 			content := `builders {}`
 			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", nil)
 			ve, ok := vctx.Finalize().(*validation.Error)
-			So(ok, ShouldEqual, true)
-			So(len(ve.Errors), ShouldEqual, 3)
-			So(ve.Errors[0].Error(), ShouldContainSubstring, "(swarming / builders #0 - ): name must match "+builderRegex.String())
-			So(ve.Errors[1].Error(), ShouldContainSubstring, "(swarming / builders #0 - ): either swarming host or task backend must be set")
-			So(ve.Errors[2].Error(), ShouldContainSubstring, "(swarming / builders #0 - ): exactly one of exe or recipe must be specified")
+			assert.Loosely(t, ok, should.Equal(true))
+			assert.Loosely(t, len(ve.Errors), should.Equal(3))
+			assert.Loosely(t, ve.Errors[0].Error(), should.ContainSubstring("(swarming / builders #0 - ): name must match "+builderRegex.String()))
+			assert.Loosely(t, ve.Errors[1].Error(), should.ContainSubstring("(swarming / builders #0 - ): either swarming host or task backend must be set"))
+			assert.Loosely(t, ve.Errors[2].Error(), should.ContainSubstring("(swarming / builders #0 - ): exactly one of exe or recipe must be specified"))
 		})
 
-		Convey("bad builders cfg 1", func() {
+		t.Run("bad builders cfg 1", func(t *ftt.Test) {
 			content := `
 				builders {
 					name: "both"
@@ -541,21 +541,21 @@ func TestValidateProject(t *testing.T) {
 			`
 			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", nil)
 			ve, ok := vctx.Finalize().(*validation.Error)
-			So(ok, ShouldEqual, true)
-			So(len(ve.Errors), ShouldEqual, 10)
-			So(ve.Errors[0].Error(), ShouldContainSubstring, "(swarming / builders #0 - both): exactly one of exe or recipe must be specified")
-			So(ve.Errors[1].Error(), ShouldContainSubstring, "(swarming / builders #1 - bad exe): exe.cipd_package: unspecified")
-			So(ve.Errors[2].Error(), ShouldContainSubstring, "(swarming / builders #2 - non json properties): properties is not a JSON object")
-			So(ve.Errors[3].Error(), ShouldContainSubstring, "(swarming / builders #3 - non dict properties): properties is not a JSON object")
-			So(ve.Errors[4].Error(), ShouldContainSubstring, "(swarming / builders #4 - bad recipe / recipe): name: unspecified")
-			So(ve.Errors[5].Error(), ShouldContainSubstring, "(swarming / builders #4 - bad recipe / recipe): cipd_package: unspecified")
-			So(ve.Errors[6].Error(), ShouldContainSubstring, "(swarming / builders #5 - recipe and properties): recipe and properties cannot be set together")
-			So(ve.Errors[7].Error(), ShouldContainSubstring, "name must match ^[a-zA-Z0-9\\-_.\\(\\) ]{1,128}$")
-			So(ve.Errors[8].Error(), ShouldContainSubstring, "(swarming / builders #7 - bad resultdb): resultdb.history_options.commit must be unset")
-			So(ve.Errors[9].Error(), ShouldContainSubstring, "(swarming / builders #7 - bad resultdb): error validating resultdb.bq_exports[1]")
+			assert.Loosely(t, ok, should.Equal(true))
+			assert.Loosely(t, len(ve.Errors), should.Equal(10))
+			assert.Loosely(t, ve.Errors[0].Error(), should.ContainSubstring("(swarming / builders #0 - both): exactly one of exe or recipe must be specified"))
+			assert.Loosely(t, ve.Errors[1].Error(), should.ContainSubstring("(swarming / builders #1 - bad exe): exe.cipd_package: unspecified"))
+			assert.Loosely(t, ve.Errors[2].Error(), should.ContainSubstring("(swarming / builders #2 - non json properties): properties is not a JSON object"))
+			assert.Loosely(t, ve.Errors[3].Error(), should.ContainSubstring("(swarming / builders #3 - non dict properties): properties is not a JSON object"))
+			assert.Loosely(t, ve.Errors[4].Error(), should.ContainSubstring("(swarming / builders #4 - bad recipe / recipe): name: unspecified"))
+			assert.Loosely(t, ve.Errors[5].Error(), should.ContainSubstring("(swarming / builders #4 - bad recipe / recipe): cipd_package: unspecified"))
+			assert.Loosely(t, ve.Errors[6].Error(), should.ContainSubstring("(swarming / builders #5 - recipe and properties): recipe and properties cannot be set together"))
+			assert.Loosely(t, ve.Errors[7].Error(), should.ContainSubstring("name must match ^[a-zA-Z0-9\\-_.\\(\\) ]{1,128}$"))
+			assert.Loosely(t, ve.Errors[8].Error(), should.ContainSubstring("(swarming / builders #7 - bad resultdb): resultdb.history_options.commit must be unset"))
+			assert.Loosely(t, ve.Errors[9].Error(), should.ContainSubstring("(swarming / builders #7 - bad resultdb): error validating resultdb.bq_exports[1]"))
 		})
 
-		Convey("bad builders cfg 2", func() {
+		t.Run("bad builders cfg 2", func(t *ftt.Test) {
 			content := `
 				task_template_canary_percentage { value: 102 }
 				builders {
@@ -588,16 +588,16 @@ func TestValidateProject(t *testing.T) {
 			`
 			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", nil)
 			ve, ok := vctx.Finalize().(*validation.Error)
-			So(ok, ShouldEqual, true)
-			So(len(ve.Errors), ShouldEqual, 5)
-			So(ve.Errors[0].Error(), ShouldContainSubstring, "task_template_canary_percentage.value must must be in [0, 100]")
-			So(ve.Errors[1].Error(), ShouldContainSubstring, "(swarming / builders #1 - meep / swarming_tags #0): Deprecated. Used only to enable \"vpython:native-python-wrapper\"")
-			So(ve.Errors[2].Error(), ShouldContainSubstring, "(swarming / builders #1 - meep): name: duplicate")
-			So(ve.Errors[3].Error(), ShouldContainSubstring, "priority: must be in [20, 255] range; got 300")
-			So(ve.Errors[4].Error(), ShouldContainSubstring, `service_account "not an email" doesn't match "^[0-9a-zA-Z_\\-\\.\\+\\%]+@[0-9a-zA-Z_\\-\\.]+$"`)
+			assert.Loosely(t, ok, should.Equal(true))
+			assert.Loosely(t, len(ve.Errors), should.Equal(5))
+			assert.Loosely(t, ve.Errors[0].Error(), should.ContainSubstring("task_template_canary_percentage.value must must be in [0, 100]"))
+			assert.Loosely(t, ve.Errors[1].Error(), should.ContainSubstring("(swarming / builders #1 - meep / swarming_tags #0): Deprecated. Used only to enable \"vpython:native-python-wrapper\""))
+			assert.Loosely(t, ve.Errors[2].Error(), should.ContainSubstring("(swarming / builders #1 - meep): name: duplicate"))
+			assert.Loosely(t, ve.Errors[3].Error(), should.ContainSubstring("priority: must be in [20, 255] range; got 300"))
+			assert.Loosely(t, ve.Errors[4].Error(), should.ContainSubstring(`service_account "not an email" doesn't match "^[0-9a-zA-Z_\\-\\.\\+\\%]+@[0-9a-zA-Z_\\-\\.]+$"`))
 		})
 
-		Convey("bad caches in builders cfg", func() {
+		t.Run("bad caches in builders cfg", func(t *ftt.Test) {
 			content := `
 				builders {
 					name: "b1"
@@ -655,22 +655,22 @@ func TestValidateProject(t *testing.T) {
 			`
 			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", nil)
 			ve, ok := vctx.Finalize().(*validation.Error)
-			So(ok, ShouldEqual, true)
-			So(len(ve.Errors), ShouldEqual, 11)
-			So(ve.Errors[0].Error(), ShouldContainSubstring, "(swarming / builders #0 - b1 / caches #0): name: required")
-			So(ve.Errors[1].Error(), ShouldContainSubstring, "(swarming / builders #0 - b1 / caches #0 / path): required")
-			So(ve.Errors[2].Error(), ShouldContainSubstring, `(swarming / builders #0 - b1 / caches #1): name: "a/b" does not match "^[a-z0-9_]+$"`)
-			So(ve.Errors[3].Error(), ShouldContainSubstring, `(swarming / builders #0 - b1 / caches #2 / path): cannot contain \. On Windows forward-slashes will be replaced with back-slashes.`)
-			So(ve.Errors[4].Error(), ShouldContainSubstring, "(swarming / builders #0 - b1 / caches #3 / path): cannot contain '..'")
-			So(ve.Errors[5].Error(), ShouldContainSubstring, "(swarming / builders #0 - b1 / caches #4 / path): cannot start with '/'")
-			So(ve.Errors[6].Error(), ShouldContainSubstring, "(swarming / builders #1 - rel / caches #1): duplicate name")
-			So(ve.Errors[7].Error(), ShouldContainSubstring, "(swarming / builders #1 - rel / caches #1): duplicate path")
-			So(ve.Errors[8].Error(), ShouldContainSubstring, "(swarming / builders #2 - bad secs / caches #0): wait_for_warm_cache_secs must be rounded on 60 seconds")
-			So(ve.Errors[9].Error(), ShouldContainSubstring, "(swarming / builders #2 - bad secs / caches #1): wait_for_warm_cache_secs must be at least 60 seconds")
-			So(ve.Errors[10].Error(), ShouldContainSubstring, "(swarming / builders #3 - many): 'too many different (8) wait_for_warm_cache_secs values; max 7")
+			assert.Loosely(t, ok, should.Equal(true))
+			assert.Loosely(t, len(ve.Errors), should.Equal(11))
+			assert.Loosely(t, ve.Errors[0].Error(), should.ContainSubstring("(swarming / builders #0 - b1 / caches #0): name: required"))
+			assert.Loosely(t, ve.Errors[1].Error(), should.ContainSubstring("(swarming / builders #0 - b1 / caches #0 / path): required"))
+			assert.Loosely(t, ve.Errors[2].Error(), should.ContainSubstring(`(swarming / builders #0 - b1 / caches #1): name: "a/b" does not match "^[a-z0-9_]+$"`))
+			assert.Loosely(t, ve.Errors[3].Error(), should.ContainSubstring(`(swarming / builders #0 - b1 / caches #2 / path): cannot contain \. On Windows forward-slashes will be replaced with back-slashes.`))
+			assert.Loosely(t, ve.Errors[4].Error(), should.ContainSubstring("(swarming / builders #0 - b1 / caches #3 / path): cannot contain '..'"))
+			assert.Loosely(t, ve.Errors[5].Error(), should.ContainSubstring("(swarming / builders #0 - b1 / caches #4 / path): cannot start with '/'"))
+			assert.Loosely(t, ve.Errors[6].Error(), should.ContainSubstring("(swarming / builders #1 - rel / caches #1): duplicate name"))
+			assert.Loosely(t, ve.Errors[7].Error(), should.ContainSubstring("(swarming / builders #1 - rel / caches #1): duplicate path"))
+			assert.Loosely(t, ve.Errors[8].Error(), should.ContainSubstring("(swarming / builders #2 - bad secs / caches #0): wait_for_warm_cache_secs must be rounded on 60 seconds"))
+			assert.Loosely(t, ve.Errors[9].Error(), should.ContainSubstring("(swarming / builders #2 - bad secs / caches #1): wait_for_warm_cache_secs must be at least 60 seconds"))
+			assert.Loosely(t, ve.Errors[10].Error(), should.ContainSubstring("(swarming / builders #3 - many): 'too many different (8) wait_for_warm_cache_secs values; max 7"))
 		})
 
-		Convey("bad experiments in builders cfg", func() {
+		t.Run("bad experiments in builders cfg", func(t *ftt.Test) {
 			content := `
 				builders {
 					name: "b1"
@@ -704,17 +704,17 @@ func TestValidateProject(t *testing.T) {
 			`
 			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", nil)
 			ve, ok := vctx.Finalize().(*validation.Error)
-			So(ok, ShouldEqual, true)
-			So(len(ve.Errors), ShouldEqual, 4)
+			assert.Loosely(t, ok, should.Equal(true))
+			assert.Loosely(t, len(ve.Errors), should.Equal(4))
 			// Have to concatenate all error strings because experiments is Map and iteration over Map is non-deterministic.
 			allErrs := fmt.Sprintf("%s\n%s\n%s\n%s", ve.Errors[0].Error(), ve.Errors[1].Error(), ve.Errors[2].Error(), ve.Errors[3].Error())
-			So(allErrs, ShouldContainSubstring, `(swarming / builders #0 - b1 / experiments "bad!"): does not match "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)*$"`)
-			So(allErrs, ShouldContainSubstring, `(swarming / builders #0 - b1 / experiments "bad!"): value must be in [0, 100]`)
-			So(allErrs, ShouldContainSubstring, `(swarming / builders #0 - b1 / experiments "negative"): value must be in [0, 100]`)
-			So(allErrs, ShouldContainSubstring, `(swarming / builders #0 - b1 / experiments "luci.bad"): unknown experiment has reserved prefix "luci."`)
+			assert.Loosely(t, allErrs, should.ContainSubstring(`(swarming / builders #0 - b1 / experiments "bad!"): does not match "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)*$"`))
+			assert.Loosely(t, allErrs, should.ContainSubstring(`(swarming / builders #0 - b1 / experiments "bad!"): value must be in [0, 100]`))
+			assert.Loosely(t, allErrs, should.ContainSubstring(`(swarming / builders #0 - b1 / experiments "negative"): value must be in [0, 100]`))
+			assert.Loosely(t, allErrs, should.ContainSubstring(`(swarming / builders #0 - b1 / experiments "luci.bad"): unknown experiment has reserved prefix "luci."`))
 		})
 
-		Convey("backend and swarming in builder", func() {
+		t.Run("backend and swarming in builder", func(t *ftt.Test) {
 			backendSettings := []*pb.BackendSetting{
 				{
 					Target:   "swarming://chromium-swarm",
@@ -739,12 +739,12 @@ func TestValidateProject(t *testing.T) {
 			`
 			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", nil)
 			ve, ok := vctx.Finalize().(*validation.Error)
-			So(ok, ShouldEqual, true)
-			So(len(ve.Errors), ShouldEqual, 1)
-			So(ve.Errors[0].Error(), ShouldContainSubstring, "only one of swarming host or task backend is allowed")
+			assert.Loosely(t, ok, should.Equal(true))
+			assert.Loosely(t, len(ve.Errors), should.Equal(1))
+			assert.Loosely(t, ve.Errors[0].Error(), should.ContainSubstring("only one of swarming host or task backend is allowed"))
 		})
 
-		Convey("backend and no swarming in builder; valid config_json present", func() {
+		t.Run("backend and no swarming in builder; valid config_json present", func(t *ftt.Test) {
 			mockBackend.EXPECT().ValidateConfigs(gomock.Any(), gomock.Any()).Return(&pb.ValidateConfigsResponse{
 				ConfigErrors: []*pb.ValidateConfigsResponse_ErrorDetail{},
 			}, nil)
@@ -772,10 +772,10 @@ func TestValidateProject(t *testing.T) {
 			`
 			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "myluciproject", nil)
 			_, ok := vctx.Finalize().(*validation.Error)
-			So(ok, ShouldEqual, false)
+			assert.Loosely(t, ok, should.Equal(false))
 		})
 
-		Convey("backend, backend_alt and no swarming in builder", func() {
+		t.Run("backend, backend_alt and no swarming in builder", func(t *ftt.Test) {
 			backendSettings := []*pb.BackendSetting{
 				{
 					Target:   "swarming://chromium-swarm",
@@ -806,10 +806,10 @@ func TestValidateProject(t *testing.T) {
 			`
 			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", nil)
 			_, ok := vctx.Finalize().(*validation.Error)
-			So(ok, ShouldEqual, false)
+			assert.Loosely(t, ok, should.Equal(false))
 		})
 
-		Convey("no backend, backend_alt and no swarming in builder", func() {
+		t.Run("no backend, backend_alt and no swarming in builder", func(t *ftt.Test) {
 			backendSettings := []*pb.BackendSetting{
 				{
 					Target:   "swarming://chromium-swarm",
@@ -837,12 +837,12 @@ func TestValidateProject(t *testing.T) {
 			`
 			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", nil)
 			ve, ok := vctx.Finalize().(*validation.Error)
-			So(ok, ShouldEqual, true)
-			So(len(ve.Errors), ShouldEqual, 1)
-			So(ve.Errors[0].Error(), ShouldContainSubstring, "either swarming host or task backend must be set")
+			assert.Loosely(t, ok, should.Equal(true))
+			assert.Loosely(t, len(ve.Errors), should.Equal(1))
+			assert.Loosely(t, ve.Errors[0].Error(), should.ContainSubstring("either swarming host or task backend must be set"))
 		})
 
-		Convey("backend and no swarming in builder; invalid config_json present", func() {
+		t.Run("backend and no swarming in builder; invalid config_json present", func(t *ftt.Test) {
 			mockBackend.EXPECT().ValidateConfigs(gomock.Any(), gomock.Any()).Return(&pb.ValidateConfigsResponse{
 				ConfigErrors: []*pb.ValidateConfigsResponse_ErrorDetail{
 					{
@@ -879,13 +879,13 @@ func TestValidateProject(t *testing.T) {
 			`
 			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "myluciproject", nil)
 			ve, ok := vctx.Finalize().(*validation.Error)
-			So(ok, ShouldEqual, true)
-			So(len(ve.Errors), ShouldEqual, 2)
-			So(ve.Errors[0].Error(), ShouldContainSubstring, "error validating task backend ConfigJson at index 1: really bad error")
-			So(ve.Errors[1].Error(), ShouldContainSubstring, "error validating task backend ConfigJson at index 1: the worst possible error")
+			assert.Loosely(t, ok, should.Equal(true))
+			assert.Loosely(t, len(ve.Errors), should.Equal(2))
+			assert.Loosely(t, ve.Errors[0].Error(), should.ContainSubstring("error validating task backend ConfigJson at index 1: really bad error"))
+			assert.Loosely(t, ve.Errors[1].Error(), should.ContainSubstring("error validating task backend ConfigJson at index 1: the worst possible error"))
 		})
 
-		Convey("backend and no swarming in builder; error validating config_json", func() {
+		t.Run("backend and no swarming in builder; error validating config_json", func(t *ftt.Test) {
 			mockBackend.EXPECT().ValidateConfigs(gomock.Any(), gomock.Any()).Return(nil, &googleapi.Error{Code: 400})
 			backendSettings := []*pb.BackendSetting{
 				{
@@ -911,12 +911,12 @@ func TestValidateProject(t *testing.T) {
 			`
 			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "myluciproject", nil)
 			ve, ok := vctx.Finalize().(*validation.Error)
-			So(ok, ShouldEqual, true)
-			So(len(ve.Errors), ShouldEqual, 1)
-			So(ve.Errors[0].Error(), ShouldContainSubstring, "error validating task backend ConfigJson: googleapi: got HTTP response code 400 ")
+			assert.Loosely(t, ok, should.Equal(true))
+			assert.Loosely(t, len(ve.Errors), should.Equal(1))
+			assert.Loosely(t, ve.Errors[0].Error(), should.ContainSubstring("error validating task backend ConfigJson: googleapi: got HTTP response code 400 "))
 		})
 
-		Convey("hearbeat_timeout", func() {
+		t.Run("hearbeat_timeout", func(t *ftt.Test) {
 			settingsCfg := &pb.SettingsCfg{Backends: []*pb.BackendSetting{
 				{
 					Target:   "lite://foo-lite",
@@ -937,7 +937,7 @@ func TestValidateProject(t *testing.T) {
 			}}
 			_ = SetTestSettingsCfg(vctx.Context, settingsCfg)
 
-			Convey("backend is TaskBackendLite", func() {
+			t.Run("backend is TaskBackendLite", func(t *ftt.Test) {
 				content := `
 				builders {
 					name: "bar"
@@ -954,10 +954,10 @@ func TestValidateProject(t *testing.T) {
 			`
 				validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "myluciproject", settingsCfg)
 				_, ok := vctx.Finalize().(*validation.Error)
-				So(ok, ShouldBeFalse)
+				assert.Loosely(t, ok, should.BeFalse)
 			})
 
-			Convey("backend_alt is TaskBackendLite", func() {
+			t.Run("backend_alt is TaskBackendLite", func(t *ftt.Test) {
 				content := `
 				builders {
 					name: "bar"
@@ -975,9 +975,9 @@ func TestValidateProject(t *testing.T) {
 			`
 				validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "myluciproject", settingsCfg)
 				_, ok := vctx.Finalize().(*validation.Error)
-				So(ok, ShouldBeFalse)
+				assert.Loosely(t, ok, should.BeFalse)
 			})
-			Convey("No backend is TaskBackendLite", func() {
+			t.Run("No backend is TaskBackendLite", func(t *ftt.Test) {
 				content := `
 				builders {
 					name: "bar"
@@ -994,13 +994,13 @@ func TestValidateProject(t *testing.T) {
 			`
 				validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "myluciproject", settingsCfg)
 				ve, ok := vctx.Finalize().(*validation.Error)
-				So(ok, ShouldBeTrue)
-				So(len(ve.Errors), ShouldEqual, 1)
-				So(ve.Errors[0].Error(), ShouldContainSubstring, "heartbeat_timeout_secs should only be set for builders using a TaskBackendLite backend")
+				assert.Loosely(t, ok, should.BeTrue)
+				assert.Loosely(t, len(ve.Errors), should.Equal(1))
+				assert.Loosely(t, ve.Errors[0].Error(), should.ContainSubstring("heartbeat_timeout_secs should only be set for builders using a TaskBackendLite backend"))
 			})
 		})
 
-		Convey("timeout", func() {
+		t.Run("timeout", func(t *ftt.Test) {
 			content := `
 				builders {
 					name: "both default"
@@ -1079,14 +1079,14 @@ func TestValidateProject(t *testing.T) {
 			`
 			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", nil)
 			ve, ok := vctx.Finalize().(*validation.Error)
-			So(ok, ShouldEqual, true)
-			So(len(ve.Errors), ShouldEqual, 3)
-			So(ve.Errors[0].Error(), ShouldContainSubstring, "execution_timeout_secs 432000 + (default) expiration_secs 21600 exceeds max build completion time 432000")
-			So(ve.Errors[1].Error(), ShouldContainSubstring, "(default) execution_timeout_secs 10800 + expiration_secs 432000 exceeds max build completion time 432000")
-			So(ve.Errors[2].Error(), ShouldContainSubstring, "execution_timeout_secs 172800 + expiration_secs 432000 exceeds max build completion time 432000")
+			assert.Loosely(t, ok, should.Equal(true))
+			assert.Loosely(t, len(ve.Errors), should.Equal(3))
+			assert.Loosely(t, ve.Errors[0].Error(), should.ContainSubstring("execution_timeout_secs 432000 + (default) expiration_secs 21600 exceeds max build completion time 432000"))
+			assert.Loosely(t, ve.Errors[1].Error(), should.ContainSubstring("(default) execution_timeout_secs 10800 + expiration_secs 432000 exceeds max build completion time 432000"))
+			assert.Loosely(t, ve.Errors[2].Error(), should.ContainSubstring("execution_timeout_secs 172800 + expiration_secs 432000 exceeds max build completion time 432000"))
 		})
 
-		Convey("custom metrics", func() {
+		t.Run("custom metrics", func(t *ftt.Test) {
 			settingsCfg := &pb.SettingsCfg{
 				CustomMetrics: []*pb.CustomMetric{
 					{
@@ -1114,7 +1114,7 @@ func TestValidateProject(t *testing.T) {
 			}
 			_ = SetTestSettingsCfg(vctx.Context, settingsCfg)
 
-			Convey("metric name empty", func() {
+			t.Run("metric name empty", func(t *ftt.Test) {
 				content := `
 					builders {
 						name: "both default"
@@ -1140,12 +1140,12 @@ func TestValidateProject(t *testing.T) {
 				`
 				validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", settingsCfg)
 				ve, ok := vctx.Finalize().(*validation.Error)
-				So(ok, ShouldEqual, true)
-				So(len(ve.Errors), ShouldEqual, 1)
-				So(ve.Errors[0].Error(), ShouldContainSubstring, "name is required")
+				assert.Loosely(t, ok, should.Equal(true))
+				assert.Loosely(t, len(ve.Errors), should.Equal(1))
+				assert.Loosely(t, ve.Errors[0].Error(), should.ContainSubstring("name is required"))
 			})
 
-			Convey("metric name not registered", func() {
+			t.Run("metric name not registered", func(t *ftt.Test) {
 				content := `
 					builders {
 						name: "both default"
@@ -1173,12 +1173,12 @@ func TestValidateProject(t *testing.T) {
 				`
 				validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", settingsCfg)
 				ve, ok := vctx.Finalize().(*validation.Error)
-				So(ok, ShouldEqual, true)
-				So(len(ve.Errors), ShouldEqual, 1)
-				So(ve.Errors[0].Error(), ShouldContainSubstring, "not registered in Buildbucket service config")
+				assert.Loosely(t, ok, should.Equal(true))
+				assert.Loosely(t, len(ve.Errors), should.Equal(1))
+				assert.Loosely(t, ve.Errors[0].Error(), should.ContainSubstring("not registered in Buildbucket service config"))
 			})
 
-			Convey("metric predicates empty", func() {
+			t.Run("metric predicates empty", func(t *ftt.Test) {
 				content := `
 					builders {
 						name: "both default"
@@ -1207,12 +1207,12 @@ func TestValidateProject(t *testing.T) {
 
 				validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", settingsCfg)
 				ve, ok := vctx.Finalize().(*validation.Error)
-				So(ok, ShouldEqual, true)
-				So(len(ve.Errors), ShouldEqual, 2)
-				So(ve.Errors[0].Error(), ShouldContainSubstring, "predicates are required")
+				assert.Loosely(t, ok, should.Equal(true))
+				assert.Loosely(t, len(ve.Errors), should.Equal(2))
+				assert.Loosely(t, ve.Errors[0].Error(), should.ContainSubstring("predicates are required"))
 			})
 
-			Convey("metric predicates invalid", func() {
+			t.Run("metric predicates invalid", func(t *ftt.Test) {
 				content := `
 					builders {
 						name: "both default"
@@ -1242,12 +1242,12 @@ func TestValidateProject(t *testing.T) {
 
 				validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", settingsCfg)
 				ve, ok := vctx.Finalize().(*validation.Error)
-				So(ok, ShouldEqual, true)
-				So(len(ve.Errors), ShouldEqual, 2)
-				So(ve.Errors[0].Error(), ShouldContainSubstring, "failed to generate CEL expression")
+				assert.Loosely(t, ok, should.Equal(true))
+				assert.Loosely(t, len(ve.Errors), should.Equal(2))
+				assert.Loosely(t, ve.Errors[0].Error(), should.ContainSubstring("failed to generate CEL expression"))
 			})
 
-			Convey("metric extra_fields empty", func() {
+			t.Run("metric extra_fields empty", func(t *ftt.Test) {
 				content := `
 					builders {
 						name: "both default"
@@ -1277,12 +1277,12 @@ func TestValidateProject(t *testing.T) {
 
 				validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", settingsCfg)
 				ve, ok := vctx.Finalize().(*validation.Error)
-				So(ok, ShouldEqual, true)
-				So(len(ve.Errors), ShouldEqual, 1)
-				So(ve.Errors[0].Error(), ShouldContainSubstring, `field(s) ["os"] must be included`)
+				assert.Loosely(t, ok, should.Equal(true))
+				assert.Loosely(t, len(ve.Errors), should.Equal(1))
+				assert.Loosely(t, ve.Errors[0].Error(), should.ContainSubstring(`field(s) ["os"] must be included`))
 			})
 
-			Convey("metric fields invalid", func() {
+			t.Run("metric fields invalid", func(t *ftt.Test) {
 				content := `
 					builders {
 						name: "both default"
@@ -1316,12 +1316,12 @@ func TestValidateProject(t *testing.T) {
 
 				validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", settingsCfg)
 				ve, ok := vctx.Finalize().(*validation.Error)
-				So(ok, ShouldEqual, true)
-				So(len(ve.Errors), ShouldEqual, 1)
-				So(ve.Errors[0].Error(), ShouldContainSubstring, `failed to generate CEL expression`)
+				assert.Loosely(t, ok, should.Equal(true))
+				assert.Loosely(t, len(ve.Errors), should.Equal(1))
+				assert.Loosely(t, ve.Errors[0].Error(), should.ContainSubstring(`failed to generate CEL expression`))
 			})
 
-			Convey("metric fields for builder metric", func() {
+			t.Run("metric fields for builder metric", func(t *ftt.Test) {
 				content := `
 					builders {
 						name: "both default"
@@ -1355,12 +1355,12 @@ func TestValidateProject(t *testing.T) {
 
 				validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", settingsCfg)
 				ve, ok := vctx.Finalize().(*validation.Error)
-				So(ok, ShouldEqual, true)
-				So(len(ve.Errors), ShouldEqual, 1)
-				So(ve.Errors[0].Error(), ShouldContainSubstring, `custom builder metric cannot have extra_fields`)
+				assert.Loosely(t, ok, should.Equal(true))
+				assert.Loosely(t, len(ve.Errors), should.Equal(1))
+				assert.Loosely(t, ve.Errors[0].Error(), should.ContainSubstring(`custom builder metric cannot have extra_fields`))
 			})
 
-			Convey("OK", func() {
+			t.Run("OK", func(t *ftt.Test) {
 				content := `
 					builders {
 						name: "both default"
@@ -1398,21 +1398,21 @@ func TestValidateProject(t *testing.T) {
 
 				validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", settingsCfg)
 				_, ok := vctx.Finalize().(*validation.Error)
-				So(ok, ShouldEqual, false)
+				assert.Loosely(t, ok, should.Equal(false))
 			})
 		})
 	})
 
-	Convey("validate dimensions", t, func() {
+	ftt.Run("validate dimensions", t, func(t *ftt.Test) {
 		helper := func(expectedErr string, dimensions []string) {
 			vctx := &validation.Context{
 				Context: context.Background(),
 			}
 			validateDimensions(vctx, dimensions, false)
 			if strings.HasPrefix(expectedErr, "ok") {
-				So(vctx.Finalize(), ShouldBeNil)
+				assert.Loosely(t, vctx.Finalize(), should.BeNil)
 			} else {
-				So(vctx.Finalize().Error(), ShouldContainSubstring, expectedErr)
+				assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring(expectedErr))
 			}
 		}
 
@@ -1444,12 +1444,12 @@ func TestValidateProject(t *testing.T) {
 		}
 	})
 
-	Convey("validate builder recipe", t, func() {
+	ftt.Run("validate builder recipe", t, func(t *ftt.Test) {
 		vctx := &validation.Context{
 			Context: context.Background(),
 		}
 
-		Convey("ok", func() {
+		t.Run("ok", func(t *ftt.Test) {
 			recipe := &pb.BuilderConfig_Recipe{
 				Name:        "foo",
 				CipdPackage: "infra/recipe_bundle",
@@ -1458,28 +1458,28 @@ func TestValidateProject(t *testing.T) {
 				PropertiesJ: []string{"x:null", "y:true", "z:{\"zz\":true}"},
 			}
 			validateBuilderRecipe(vctx, recipe)
-			So(vctx.Finalize(), ShouldBeNil)
+			assert.Loosely(t, vctx.Finalize(), should.BeNil)
 		})
 
-		Convey("bad", func() {
+		t.Run("bad", func(t *ftt.Test) {
 			recipe := &pb.BuilderConfig_Recipe{
 				Properties:  []string{"", ":", "buildbucket:foobar", "x:y"},
 				PropertiesJ: []string{"x:'y'", "y:b", "z"},
 			}
 			validateBuilderRecipe(vctx, recipe)
 			ve := vctx.Finalize().(*validation.Error)
-			So(len(ve.Errors), ShouldEqual, 8)
-			So(ve.Errors[0].Error(), ShouldContainSubstring, "name: unspecified")
-			So(ve.Errors[1].Error(), ShouldContainSubstring, "cipd_package: unspecified")
-			So(ve.Errors[2].Error(), ShouldContainSubstring, "(properties #0 - ): doesn't have a colon")
-			So(ve.Errors[3].Error(), ShouldContainSubstring, "(properties #1 - :): key not specified")
-			So(ve.Errors[4].Error(), ShouldContainSubstring, "(properties #2 - buildbucket:foobar): reserved property")
-			So(ve.Errors[5].Error(), ShouldContainSubstring, "(properties_j #0 - x:'y'): duplicate property")
-			So(ve.Errors[6].Error(), ShouldContainSubstring, "(properties_j #1 - y:b): not a JSON object")
-			So(ve.Errors[7].Error(), ShouldContainSubstring, "(properties_j #2 - z): doesn't have a colon")
+			assert.Loosely(t, len(ve.Errors), should.Equal(8))
+			assert.Loosely(t, ve.Errors[0].Error(), should.ContainSubstring("name: unspecified"))
+			assert.Loosely(t, ve.Errors[1].Error(), should.ContainSubstring("cipd_package: unspecified"))
+			assert.Loosely(t, ve.Errors[2].Error(), should.ContainSubstring("(properties #0 - ): doesn't have a colon"))
+			assert.Loosely(t, ve.Errors[3].Error(), should.ContainSubstring("(properties #1 - :): key not specified"))
+			assert.Loosely(t, ve.Errors[4].Error(), should.ContainSubstring("(properties #2 - buildbucket:foobar): reserved property"))
+			assert.Loosely(t, ve.Errors[5].Error(), should.ContainSubstring("(properties_j #0 - x:'y'): duplicate property"))
+			assert.Loosely(t, ve.Errors[6].Error(), should.ContainSubstring("(properties_j #1 - y:b): not a JSON object"))
+			assert.Loosely(t, ve.Errors[7].Error(), should.ContainSubstring("(properties_j #2 - z): doesn't have a colon"))
 		})
 
-		Convey("bad $recipe_engine/runtime props", func() {
+		t.Run("bad $recipe_engine/runtime props", func(t *ftt.Test) {
 			runtime := `$recipe_engine/runtime:{"is_luci": false,"is_experimental": true, "unrecognized_is_fine": 1}`
 			recipe := &pb.BuilderConfig_Recipe{
 				Name:        "foo",
@@ -1489,11 +1489,11 @@ func TestValidateProject(t *testing.T) {
 			}
 			validateBuilderRecipe(vctx, recipe)
 			ve, ok := vctx.Finalize().(*validation.Error)
-			So(ok, ShouldEqual, true)
-			So(len(ve.Errors), ShouldEqual, 2)
+			assert.Loosely(t, ok, should.Equal(true))
+			assert.Loosely(t, len(ve.Errors), should.Equal(2))
 			allErrs := fmt.Sprintf("%s\n%s", ve.Errors[0].Error(), ve.Errors[1].Error())
-			So(allErrs, ShouldContainSubstring, `key "is_luci": reserved key`)
-			So(allErrs, ShouldContainSubstring, `key "is_experimental": reserved key`)
+			assert.Loosely(t, allErrs, should.ContainSubstring(`key "is_luci": reserved key`))
+			assert.Loosely(t, allErrs, should.ContainSubstring(`key "is_experimental": reserved key`))
 		})
 	})
 
@@ -1531,29 +1531,26 @@ func TestUpdateProject(t *testing.T) {
 		return ret
 	}
 
-	Convey("update", t, func() {
+	ftt.Run("update", t, func(t *ftt.Test) {
 		ctx := memory.UseWithAppID(context.Background(), "fake-cr-buildbucket")
-		ctx = cfgclient.Use(ctx, &fakeCfgClient{})
+
+		cfgClient := newFakeCfgClient()
+
+		ctx = cfgclient.Use(ctx, cfgClient)
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 		ctx = txndefer.FilterRDS(ctx)
-		origChromiumCfg, origChromiumRev, origDartCfg, origDartRev, origV8Cfg, origV8Rev :=
-			chromiumBuildbucketCfg, chromiumRevision, dartBuildbucketCfg, dartRevision, v8BuildbucketCfg, v8Revision
-		restoreCfgVars := func() {
-			chromiumBuildbucketCfg, chromiumRevision = origChromiumCfg, origChromiumRev
-			dartBuildbucketCfg, dartRevision = origDartCfg, origDartRev
-			v8BuildbucketCfg, v8Revision = origV8Cfg, origV8Rev
-		}
+
 		settingsCfg := &pb.SettingsCfg{}
-		So(SetTestSettingsCfg(ctx, settingsCfg), ShouldBeNil)
+		assert.Loosely(t, SetTestSettingsCfg(ctx, settingsCfg), should.BeNil)
 
 		// Datastore is empty. Mimic the first time receiving configs and store all
 		// of them into Datastore.
-		So(UpdateProjectCfg(ctx), ShouldBeNil)
+		assert.Loosely(t, UpdateProjectCfg(ctx), should.BeNil)
 		var actualBkts []*model.Bucket
-		So(datastore.GetAll(ctx, datastore.NewQuery(model.BucketKind), &actualBkts), ShouldBeNil)
-		So(len(actualBkts), ShouldEqual, 5)
-		So(stripBucketProtos(actualBkts), ShouldResembleProto, []*pb.Bucket{
+		assert.Loosely(t, datastore.GetAll(ctx, datastore.NewQuery(model.BucketKind), &actualBkts), should.BeNil)
+		assert.Loosely(t, len(actualBkts), should.Equal(5))
+		assert.Loosely(t, stripBucketProtos(actualBkts), should.Resemble([]*pb.Bucket{
 			{
 				Name: "master.tryserver.chromium.linux",
 			},
@@ -1576,9 +1573,9 @@ func TestUpdateProject(t *testing.T) {
 			{
 				Name: "master.tryserver.v8",
 			},
-		})
+		}))
 
-		So(actualBkts, ShouldResemble, []*model.Bucket{
+		assert.Loosely(t, actualBkts, should.Resemble([]*model.Bucket{
 			{
 				ID:       "master.tryserver.chromium.linux",
 				Parent:   model.ProjectKey(ctx, "chromium"),
@@ -1614,11 +1611,11 @@ func TestUpdateProject(t *testing.T) {
 				Schema:   CurrentBucketSchemaVersion,
 				Revision: "sha1:502558141dd8e90ed88de7f1bf3fa430d4128966",
 			},
-		})
+		}))
 
 		var actualBuilders []*model.Builder
-		So(datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind), &actualBuilders), ShouldBeNil)
-		So(len(actualBuilders), ShouldEqual, 2)
+		assert.Loosely(t, datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind), &actualBuilders), should.BeNil)
+		assert.Loosely(t, len(actualBuilders), should.Equal(2))
 		expectedBuilder1 := &pb.BuilderConfig{
 			Name:                         "linux",
 			Dimensions:                   []string{"os:Linux", "pool:luci.chromium.try"},
@@ -1641,8 +1638,8 @@ func TestUpdateProject(t *testing.T) {
 		}
 		expectedBldrHash1, _, _ := computeBuilderHash(expectedBuilder1)
 		expectedBldrHash2, _, _ := computeBuilderHash(expectedBuilder2)
-		So(stripBuilderProtos(actualBuilders), ShouldResembleProto, []*pb.BuilderConfig{expectedBuilder1, expectedBuilder2})
-		So(actualBuilders, ShouldResemble, []*model.Builder{
+		assert.Loosely(t, stripBuilderProtos(actualBuilders), should.Resemble([]*pb.BuilderConfig{expectedBuilder1, expectedBuilder2}))
+		assert.Loosely(t, actualBuilders, should.Resemble([]*model.Builder{
 			{
 				ID:         "linux",
 				Parent:     model.BucketKey(ctx, "chromium", "try"),
@@ -1653,16 +1650,14 @@ func TestUpdateProject(t *testing.T) {
 				Parent:     model.BucketKey(ctx, "dart", "try"),
 				ConfigHash: expectedBldrHash2,
 			},
-		})
+		}))
 
-		Convey("with existing", func() {
-			defer restoreCfgVars()
-
+		t.Run("with existing", func(t *ftt.Test) {
 			// Add master.tryserver.chromium.mac
 			// Update luci.chromium.try
 			// Delete master.tryserver.chromium.win
 			// Add shadow bucket try.shadow which shadows try
-			chromiumBuildbucketCfg = `
+			cfgClient.chromiumBuildbucketCfg = `
 			buckets {
 				name: "master.tryserver.chromium.linux"
 			}
@@ -1692,15 +1687,15 @@ func TestUpdateProject(t *testing.T) {
 				dynamic_builder_template {}
 			}
 			`
-			chromiumRevision = "new!"
+			cfgClient.chromiumRevision = "new!"
 			// Delete the entire v8 cfg
-			v8BuildbucketCfg = ""
+			cfgClient.v8BuildbucketCfg = ""
 
-			So(UpdateProjectCfg(ctx), ShouldBeNil)
+			assert.Loosely(t, UpdateProjectCfg(ctx), should.BeNil)
 			var actualBkts []*model.Bucket
-			So(datastore.GetAll(ctx, datastore.NewQuery(model.BucketKind), &actualBkts), ShouldBeNil)
-			So(len(actualBkts), ShouldEqual, 5)
-			So(stripBucketProtos(actualBkts), ShouldResembleProto, []*pb.Bucket{
+			assert.Loosely(t, datastore.GetAll(ctx, datastore.NewQuery(model.BucketKind), &actualBkts), should.BeNil)
+			assert.Loosely(t, len(actualBkts), should.Equal(5))
+			assert.Loosely(t, stripBucketProtos(actualBkts), should.Resemble([]*pb.Bucket{
 				{
 					Name: "master.tryserver.chromium.linux",
 				},
@@ -1725,8 +1720,8 @@ func TestUpdateProject(t *testing.T) {
 						Builders: []*pb.BuilderConfig{},
 					},
 				},
-			})
-			So(actualBkts, ShouldResemble, []*model.Bucket{
+			}))
+			assert.Loosely(t, actualBkts, should.Resemble([]*model.Bucket{
 				{
 					ID:       "master.tryserver.chromium.linux",
 					Parent:   model.ProjectKey(ctx, "chromium"),
@@ -1763,11 +1758,11 @@ func TestUpdateProject(t *testing.T) {
 					Schema:   CurrentBucketSchemaVersion,
 					Revision: "deadbeef",
 				},
-			})
+			}))
 
 			var actualBuilders []*model.Builder
-			So(datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind), &actualBuilders), ShouldBeNil)
-			So(len(actualBuilders), ShouldEqual, 2)
+			assert.Loosely(t, datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind), &actualBuilders), should.BeNil)
+			assert.Loosely(t, len(actualBuilders), should.Equal(2))
 			expectedBuilder1 := &pb.BuilderConfig{
 				Name:                         "linux",
 				Dimensions:                   []string{"os:Linux", "pool:luci.chromium.try"},
@@ -1790,8 +1785,8 @@ func TestUpdateProject(t *testing.T) {
 			}
 			expectedBldrHash1, _, _ := computeBuilderHash(expectedBuilder1)
 			expectedBldrHash2, _, _ := computeBuilderHash(expectedBuilder2)
-			So(stripBuilderProtos(actualBuilders), ShouldResembleProto, []*pb.BuilderConfig{expectedBuilder1, expectedBuilder2})
-			So(actualBuilders, ShouldResemble, []*model.Builder{
+			assert.Loosely(t, stripBuilderProtos(actualBuilders), should.Resemble([]*pb.BuilderConfig{expectedBuilder1, expectedBuilder2}))
+			assert.Loosely(t, actualBuilders, should.Resemble([]*model.Builder{
 				{
 					ID:         "linux",
 					Parent:     model.BucketKey(ctx, "chromium", "try"),
@@ -1802,11 +1797,10 @@ func TestUpdateProject(t *testing.T) {
 					Parent:     model.BucketKey(ctx, "dart", "try"),
 					ConfigHash: expectedBldrHash2,
 				},
-			})
+			}))
 		})
 
-		Convey("max_concurent_builds", func() {
-			defer restoreCfgVars()
+		t.Run("max_concurent_builds", func(t *ftt.Test) {
 			ctx, sch := tq.TestingContext(ctx, nil)
 			// RegisterTaskClass should be called only once.
 			if tq.Default.TaskClassRef("pop-pending-builds") == nil {
@@ -1821,7 +1815,7 @@ func TestUpdateProject(t *testing.T) {
 				})
 			}
 
-			chromiumBuildbucketCfg = `
+			cfgClient.chromiumBuildbucketCfg = `
 			buckets {
 				name: "try"
 				swarming {
@@ -1832,12 +1826,12 @@ func TestUpdateProject(t *testing.T) {
 				}
 			}
 			`
-			chromiumRevision = "new!"
-			So(UpdateProjectCfg(ctx), ShouldBeNil)
-			So(sch.Tasks(), ShouldHaveLength, 0)
+			cfgClient.chromiumRevision = "new!"
+			assert.Loosely(t, UpdateProjectCfg(ctx), should.BeNil)
+			assert.Loosely(t, sch.Tasks(), should.HaveLength(0))
 
-			Convey("increased", func() {
-				chromiumBuildbucketCfg = `
+			t.Run("increased", func(t *ftt.Test) {
+				cfgClient.chromiumBuildbucketCfg = `
 				buckets {
 					name: "try"
 					swarming {
@@ -1848,19 +1842,19 @@ func TestUpdateProject(t *testing.T) {
 					}
 				}
 				`
-				chromiumRevision = "new!!"
-				So(UpdateProjectCfg(ctx), ShouldBeNil)
-				So(sch.Tasks(), ShouldHaveLength, 1)
-				So(sch.Tasks()[0].Payload.(*taskdefs.PopPendingBuildTask).GetBuildId(), ShouldEqual, 0)
-				So(sch.Tasks()[0].Payload.(*taskdefs.PopPendingBuildTask).GetBuilderId(), ShouldEqual, &pb.BuilderID{
+				cfgClient.chromiumRevision = "new!!"
+				assert.Loosely(t, UpdateProjectCfg(ctx), should.BeNil)
+				assert.Loosely(t, sch.Tasks(), should.HaveLength(1))
+				assert.Loosely(t, sch.Tasks()[0].Payload.(*taskdefs.PopPendingBuildTask).GetBuildId(), should.BeZero)
+				assert.Loosely(t, sch.Tasks()[0].Payload.(*taskdefs.PopPendingBuildTask).GetBuilderId(), should.Match(&pb.BuilderID{
 					Project: "chromium",
 					Bucket:  "try",
 					Builder: "linux",
-				})
+				}))
 			})
 
-			Convey("decreased", func() {
-				chromiumBuildbucketCfg = `
+			t.Run("decreased", func(t *ftt.Test) {
+				cfgClient.chromiumBuildbucketCfg = `
 				buckets {
 					name: "try"
 					swarming {
@@ -1871,13 +1865,13 @@ func TestUpdateProject(t *testing.T) {
 					}
 				}
 				`
-				chromiumRevision = "new!!!"
-				So(UpdateProjectCfg(ctx), ShouldBeNil)
-				So(sch.Tasks(), ShouldHaveLength, 0)
+				cfgClient.chromiumRevision = "new!!!"
+				assert.Loosely(t, UpdateProjectCfg(ctx), should.BeNil)
+				assert.Loosely(t, sch.Tasks(), should.HaveLength(0))
 			})
 
-			Convey("reset", func() {
-				chromiumBuildbucketCfg = `
+			t.Run("reset", func(t *ftt.Test) {
+				cfgClient.chromiumBuildbucketCfg = `
 				buckets {
 					name: "try"
 					swarming {
@@ -1887,16 +1881,14 @@ func TestUpdateProject(t *testing.T) {
 					}
 				}
 				`
-				chromiumRevision = "new!!!!"
-				So(UpdateProjectCfg(ctx), ShouldBeNil)
-				So(sch.Tasks(), ShouldHaveLength, 1)
+				cfgClient.chromiumRevision = "new!!!!"
+				assert.Loosely(t, UpdateProjectCfg(ctx), should.BeNil)
+				assert.Loosely(t, sch.Tasks(), should.HaveLength(1))
 			})
 
 		})
 
-		Convey("test custom builder metrics", func() {
-			defer restoreCfgVars()
-
+		t.Run("test custom builder metrics", func(t *ftt.Test) {
 			settingsCfg := &pb.SettingsCfg{
 				CustomMetrics: []*pb.CustomMetric{
 					{
@@ -1913,7 +1905,7 @@ func TestUpdateProject(t *testing.T) {
 			// Update luci.chromium.try
 			// Delete master.tryserver.chromium.linux
 			// Delete master.tryserver.chromium.win
-			chromiumBuildbucketCfg = `
+			cfgClient.chromiumBuildbucketCfg = `
 			buckets {
 				name: "try"
 				swarming {
@@ -1940,32 +1932,32 @@ func TestUpdateProject(t *testing.T) {
 				}
 			}
 			`
-			chromiumRevision = "new!"
+			cfgClient.chromiumRevision = "new!"
 			// Delete the entire dart cfg
-			dartBuildbucketCfg = ""
+			cfgClient.dartBuildbucketCfg = ""
 
-			So(UpdateProjectCfg(ctx), ShouldBeNil)
+			assert.Loosely(t, UpdateProjectCfg(ctx), should.BeNil)
 			var actualBkts []*model.Bucket
-			So(datastore.GetAll(ctx, datastore.NewQuery(model.BucketKind), &actualBkts), ShouldBeNil)
-			So(len(actualBkts), ShouldEqual, 2)
-			So(stripBucketProtos(actualBkts)[0], ShouldResembleProto, &pb.Bucket{
+			assert.Loosely(t, datastore.GetAll(ctx, datastore.NewQuery(model.BucketKind), &actualBkts), should.BeNil)
+			assert.Loosely(t, len(actualBkts), should.Equal(2))
+			assert.Loosely(t, stripBucketProtos(actualBkts)[0], should.Resemble(&pb.Bucket{
 				Name: "try",
 				Swarming: &pb.Swarming{
 					Builders:                     []*pb.BuilderConfig{},
 					TaskTemplateCanaryPercentage: &wrapperspb.UInt32Value{Value: uint32(10)},
 				},
-			})
-			So(actualBkts[0], ShouldResemble, &model.Bucket{
+			}))
+			assert.Loosely(t, actualBkts[0], should.Resemble(&model.Bucket{
 				ID:       "try",
 				Parent:   model.ProjectKey(ctx, "chromium"),
 				Bucket:   "try",
 				Schema:   CurrentBucketSchemaVersion,
 				Revision: "new!",
-			})
+			}))
 
 			var actualBuilders []*model.Builder
-			So(datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind), &actualBuilders), ShouldBeNil)
-			So(len(actualBuilders), ShouldEqual, 1)
+			assert.Loosely(t, datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind), &actualBuilders), should.BeNil)
+			assert.Loosely(t, len(actualBuilders), should.Equal(1))
 			expectedBuilder1 := &pb.BuilderConfig{
 				Name:                         "linux",
 				Dimensions:                   []string{"os:Linux", "pool:luci.chromium.try"},
@@ -1985,17 +1977,17 @@ func TestUpdateProject(t *testing.T) {
 				},
 			}
 			expectedBldrHash1, _, _ := computeBuilderHash(expectedBuilder1)
-			So(stripBuilderProtos(actualBuilders), ShouldResembleProto, []*pb.BuilderConfig{expectedBuilder1})
-			So(actualBuilders, ShouldResemble, []*model.Builder{
+			assert.Loosely(t, stripBuilderProtos(actualBuilders), should.Resemble([]*pb.BuilderConfig{expectedBuilder1}))
+			assert.Loosely(t, actualBuilders, should.Resemble([]*model.Builder{
 				{
 					ID:         "linux",
 					Parent:     model.BucketKey(ctx, "chromium", "try"),
 					ConfigHash: expectedBldrHash1,
 				},
-			})
+			}))
 
 			bldrMetrics := &model.CustomBuilderMetrics{Key: model.CustomBuilderMetricsKey(ctx)}
-			So(datastore.Get(ctx, bldrMetrics), ShouldBeNil)
+			assert.Loosely(t, datastore.Get(ctx, bldrMetrics), should.BeNil)
 			expectedBldrMetricsP := &modeldefs.CustomBuilderMetrics{
 				Metrics: []*modeldefs.CustomBuilderMetric{
 					{
@@ -2010,25 +2002,23 @@ func TestUpdateProject(t *testing.T) {
 					},
 				},
 			}
-			So(bldrMetrics.Metrics, ShouldResembleProto, expectedBldrMetricsP)
+			assert.Loosely(t, bldrMetrics.Metrics, should.Resemble(expectedBldrMetricsP))
 
 			// Delete the entire v8 cfg
-			v8BuildbucketCfg = ""
-			So(UpdateProjectCfg(ctx), ShouldBeNil)
-			So(datastore.Get(ctx, bldrMetrics), ShouldBeNil)
-			So(bldrMetrics.Metrics, ShouldResembleProto, expectedBldrMetricsP)
+			cfgClient.v8BuildbucketCfg = ""
+			assert.Loosely(t, UpdateProjectCfg(ctx), should.BeNil)
+			assert.Loosely(t, datastore.Get(ctx, bldrMetrics), should.BeNil)
+			assert.Loosely(t, bldrMetrics.Metrics, should.Resemble(expectedBldrMetricsP))
 
 			// no change on the configs.
-			So(UpdateProjectCfg(ctx), ShouldBeNil)
-			So(datastore.Get(ctx, bldrMetrics), ShouldBeNil)
-			So(bldrMetrics.Metrics, ShouldResembleProto, expectedBldrMetricsP)
+			assert.Loosely(t, UpdateProjectCfg(ctx), should.BeNil)
+			assert.Loosely(t, datastore.Get(ctx, bldrMetrics), should.BeNil)
+			assert.Loosely(t, bldrMetrics.Metrics, should.Resemble(expectedBldrMetricsP))
 		})
 
-		Convey("test shadow", func() {
-			defer restoreCfgVars()
-
+		t.Run("test shadow", func(t *ftt.Test) {
 			// Add shadow bucket try.shadow which shadows try
-			chromiumBuildbucketCfg = `
+			cfgClient.chromiumBuildbucketCfg = `
 			buckets {
 				name: "try"
 				swarming {
@@ -2052,14 +2042,14 @@ func TestUpdateProject(t *testing.T) {
 				dynamic_builder_template {}
 			}
 			`
-			chromiumRevision = "new!"
+			cfgClient.chromiumRevision = "new!"
 			// Delete the entire v8 cfg
-			v8BuildbucketCfg = ""
+			cfgClient.v8BuildbucketCfg = ""
 
-			So(UpdateProjectCfg(ctx), ShouldBeNil)
+			assert.Loosely(t, UpdateProjectCfg(ctx), should.BeNil)
 
 			// Add a new bucket also shadowed by try.shadow
-			chromiumBuildbucketCfg = `
+			cfgClient.chromiumBuildbucketCfg = `
 			buckets {
 				name: "try"
 				swarming {
@@ -2088,13 +2078,13 @@ func TestUpdateProject(t *testing.T) {
 			}
 			`
 			// Delete the entire v8 cfg
-			v8BuildbucketCfg = ""
+			cfgClient.v8BuildbucketCfg = ""
 
-			So(UpdateProjectCfg(ctx), ShouldBeNil)
+			assert.Loosely(t, UpdateProjectCfg(ctx), should.BeNil)
 			var actualBkts []*model.Bucket
-			So(datastore.GetAll(ctx, datastore.NewQuery(model.BucketKind), &actualBkts), ShouldBeNil)
-			So(len(actualBkts), ShouldEqual, 4)
-			So(stripBucketProtos(actualBkts), ShouldResembleProto, []*pb.Bucket{
+			assert.Loosely(t, datastore.GetAll(ctx, datastore.NewQuery(model.BucketKind), &actualBkts), should.BeNil)
+			assert.Loosely(t, len(actualBkts), should.Equal(4))
+			assert.Loosely(t, stripBucketProtos(actualBkts), should.Resemble([]*pb.Bucket{
 				{
 					Name:   "another",
 					Shadow: "try.shadow",
@@ -2117,8 +2107,8 @@ func TestUpdateProject(t *testing.T) {
 						Builders: []*pb.BuilderConfig{},
 					},
 				},
-			})
-			So(actualBkts, ShouldResemble, []*model.Bucket{
+			}))
+			assert.Loosely(t, actualBkts, should.Resemble([]*model.Bucket{
 				{
 					ID:       "another",
 					Parent:   model.ProjectKey(ctx, "chromium"),
@@ -2148,36 +2138,34 @@ func TestUpdateProject(t *testing.T) {
 					Schema:   CurrentBucketSchemaVersion,
 					Revision: "deadbeef",
 				},
-			})
+			}))
 
 		})
 
-		Convey("with broken configs", func() {
-			defer restoreCfgVars()
-
+		t.Run("with broken configs", func(t *ftt.Test) {
 			// Delete chromium and v8 configs
-			chromiumBuildbucketCfg = ""
-			v8BuildbucketCfg = ""
+			cfgClient.chromiumBuildbucketCfg = ""
+			cfgClient.v8BuildbucketCfg = ""
 
-			dartBuildbucketCfg = "broken bucket cfg"
-			dartBuildbucketCfg = "new!"
+			cfgClient.dartBuildbucketCfg = "broken bucket cfg"
+			cfgClient.dartBuildbucketCfg = "new!"
 
-			So(UpdateProjectCfg(ctx), ShouldBeNil)
+			assert.Loosely(t, UpdateProjectCfg(ctx), should.BeNil)
 
 			// We must not delete buckets or builders defined in a project that
 			// currently have a broken config.
 			var actualBkts []*model.Bucket
-			So(datastore.GetAll(ctx, datastore.NewQuery(model.BucketKind), &actualBkts), ShouldBeNil)
-			So(len(actualBkts), ShouldEqual, 1)
-			So(stripBucketProtos(actualBkts), ShouldResembleProto, []*pb.Bucket{
+			assert.Loosely(t, datastore.GetAll(ctx, datastore.NewQuery(model.BucketKind), &actualBkts), should.BeNil)
+			assert.Loosely(t, len(actualBkts), should.Equal(1))
+			assert.Loosely(t, stripBucketProtos(actualBkts), should.Resemble([]*pb.Bucket{
 				{
 					Name: "try",
 					Swarming: &pb.Swarming{
 						Builders: []*pb.BuilderConfig{},
 					},
 				},
-			})
-			So(actualBkts, ShouldResemble, []*model.Bucket{
+			}))
+			assert.Loosely(t, actualBkts, should.Resemble([]*model.Bucket{
 				{
 					ID:       "try",
 					Parent:   model.ProjectKey(ctx, "dart"),
@@ -2185,11 +2173,11 @@ func TestUpdateProject(t *testing.T) {
 					Schema:   CurrentBucketSchemaVersion,
 					Revision: "deadbeef",
 				},
-			})
+			}))
 
 			var actualBuilders []*model.Builder
-			So(datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind), &actualBuilders), ShouldBeNil)
-			So(len(actualBuilders), ShouldEqual, 1)
+			assert.Loosely(t, datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind), &actualBuilders), should.BeNil)
+			assert.Loosely(t, len(actualBuilders), should.Equal(1))
 			dartBuilder := &pb.BuilderConfig{
 				Name:       "linux",
 				Dimensions: []string{"pool:Dart.LUCI"},
@@ -2200,42 +2188,40 @@ func TestUpdateProject(t *testing.T) {
 				},
 			}
 			dartBuilderHash, _, _ := computeBuilderHash(dartBuilder)
-			So(stripBuilderProtos(actualBuilders), ShouldResembleProto, []*pb.BuilderConfig{dartBuilder})
-			So(actualBuilders, ShouldResemble, []*model.Builder{
+			assert.Loosely(t, stripBuilderProtos(actualBuilders), should.Resemble([]*pb.BuilderConfig{dartBuilder}))
+			assert.Loosely(t, actualBuilders, should.Resemble([]*model.Builder{
 				{
 					ID:         "linux",
 					Parent:     model.BucketKey(ctx, "dart", "try"),
 					ConfigHash: dartBuilderHash,
 				},
-			})
+			}))
 		})
 
-		Convey("dart config return error", func() {
-			defer restoreCfgVars()
-
+		t.Run("dart config return error", func(t *ftt.Test) {
 			// Delete chromium and v8 configs
-			chromiumBuildbucketCfg = ""
-			v8BuildbucketCfg = ""
+			cfgClient.chromiumBuildbucketCfg = ""
+			cfgClient.v8BuildbucketCfg = ""
 
 			// luci-config return server error when fetching dart config.
-			dartBuildbucketCfg = "error"
+			cfgClient.dartBuildbucketCfg = "error"
 
-			So(UpdateProjectCfg(ctx), ShouldBeNil)
+			assert.Loosely(t, UpdateProjectCfg(ctx), should.BeNil)
 
 			// Don't delete the stored buckets and builders when luci-config returns
 			// an error for fetching that project config.
 			var actualBkts []*model.Bucket
-			So(datastore.GetAll(ctx, datastore.NewQuery(model.BucketKind), &actualBkts), ShouldBeNil)
-			So(len(actualBkts), ShouldEqual, 1)
-			So(stripBucketProtos(actualBkts), ShouldResembleProto, []*pb.Bucket{
+			assert.Loosely(t, datastore.GetAll(ctx, datastore.NewQuery(model.BucketKind), &actualBkts), should.BeNil)
+			assert.Loosely(t, len(actualBkts), should.Equal(1))
+			assert.Loosely(t, stripBucketProtos(actualBkts), should.Resemble([]*pb.Bucket{
 				{
 					Name: "try",
 					Swarming: &pb.Swarming{
 						Builders: []*pb.BuilderConfig{},
 					},
 				},
-			})
-			So(actualBkts, ShouldResemble, []*model.Bucket{
+			}))
+			assert.Loosely(t, actualBkts, should.Resemble([]*model.Bucket{
 				{
 					ID:       "try",
 					Parent:   model.ProjectKey(ctx, "dart"),
@@ -2243,11 +2229,11 @@ func TestUpdateProject(t *testing.T) {
 					Schema:   CurrentBucketSchemaVersion,
 					Revision: "deadbeef",
 				},
-			})
+			}))
 
 			var actualBuilders []*model.Builder
-			So(datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind), &actualBuilders), ShouldBeNil)
-			So(len(actualBuilders), ShouldEqual, 1)
+			assert.Loosely(t, datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind), &actualBuilders), should.BeNil)
+			assert.Loosely(t, len(actualBuilders), should.Equal(1))
 			dartBuilder := &pb.BuilderConfig{
 				Name:       "linux",
 				Dimensions: []string{"pool:Dart.LUCI"},
@@ -2258,90 +2244,83 @@ func TestUpdateProject(t *testing.T) {
 				},
 			}
 			dartBuilderHash, _, _ := computeBuilderHash(dartBuilder)
-			So(stripBuilderProtos(actualBuilders), ShouldResembleProto, []*pb.BuilderConfig{dartBuilder})
-			So(actualBuilders, ShouldResemble, []*model.Builder{
+			assert.Loosely(t, stripBuilderProtos(actualBuilders), should.Resemble([]*pb.BuilderConfig{dartBuilder}))
+			assert.Loosely(t, actualBuilders, should.Resemble([]*model.Builder{
 				{
 					ID:         "linux",
 					Parent:     model.BucketKey(ctx, "dart", "try"),
 					ConfigHash: dartBuilderHash,
 				},
-			})
+			}))
 		})
 
-		Convey("large builders count", func() {
+		t.Run("large builders count", func(t *ftt.Test) {
 			// clear dart configs first
-			defer restoreCfgVars()
-			dartBuildbucketCfg = `buckets {name: "try"}`
-			dartRevision = `clear_dart`
+			cfgClient.dartBuildbucketCfg = `buckets {name: "try"}`
+			cfgClient.dartRevision = `clear_dart`
 
-			So(UpdateProjectCfg(ctx), ShouldBeNil)
+			assert.Loosely(t, UpdateProjectCfg(ctx), should.BeNil)
 			actualBucket := &model.Bucket{ID: "try", Parent: model.ProjectKey(ctx, "dart")}
-			So(datastore.Get(ctx, actualBucket), ShouldBeNil)
-			So(actualBucket.Revision, ShouldEqual, "clear_dart")
+			assert.Loosely(t, datastore.Get(ctx, actualBucket), should.BeNil)
+			assert.Loosely(t, actualBucket.Revision, should.Equal("clear_dart"))
 			var actualBuilders []*model.Builder
-			So(datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind).Ancestor(model.BucketKey(ctx, "dart", "try")).Order("__key__"), &actualBuilders), ShouldBeNil)
-			So(len(actualBuilders), ShouldEqual, 0)
+			assert.Loosely(t, datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind).Ancestor(model.BucketKey(ctx, "dart", "try")).Order("__key__"), &actualBuilders), should.BeNil)
+			assert.Loosely(t, len(actualBuilders), should.BeZero)
 
-			Convey("to put 499 builders", func() {
-				defer restoreCfgVars()
-
+			t.Run("to put 499 builders", func(t *ftt.Test) {
 				bldrsCfg := ""
 				for i := 0; i < 499; i++ {
 					bldrsCfg += fmt.Sprintf("builders {name: \"builder%d\"}\n", i)
 				}
-				dartBuildbucketCfg = fmt.Sprintf(`buckets {name: "try"swarming {%s}}`, bldrsCfg)
-				dartRevision = "put499"
+				cfgClient.dartBuildbucketCfg = fmt.Sprintf(`buckets {name: "try"swarming {%s}}`, bldrsCfg)
+				cfgClient.dartRevision = "put499"
 
-				So(UpdateProjectCfg(ctx), ShouldBeNil)
+				assert.Loosely(t, UpdateProjectCfg(ctx), should.BeNil)
 
 				actualBucket := &model.Bucket{ID: "try", Parent: model.ProjectKey(ctx, "dart")}
-				So(datastore.Get(ctx, actualBucket), ShouldBeNil)
-				So(actualBucket.Revision, ShouldEqual, "put499")
+				assert.Loosely(t, datastore.Get(ctx, actualBucket), should.BeNil)
+				assert.Loosely(t, actualBucket.Revision, should.Equal("put499"))
 				var actualBuilders []*model.Builder
-				So(datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind).Ancestor(model.BucketKey(ctx, "dart", "try")).Order("__key__"), &actualBuilders), ShouldBeNil)
-				So(len(actualBuilders), ShouldEqual, 499)
+				assert.Loosely(t, datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind).Ancestor(model.BucketKey(ctx, "dart", "try")).Order("__key__"), &actualBuilders), should.BeNil)
+				assert.Loosely(t, len(actualBuilders), should.Equal(499))
 			})
 
-			Convey("to put 500 builders", func() {
-				defer restoreCfgVars()
-
+			t.Run("to put 500 builders", func(t *ftt.Test) {
 				bldrsCfg := ""
 				for i := 0; i < 500; i++ {
 					bldrsCfg += fmt.Sprintf("builders {name: \"builder%d\"}\n", i)
 				}
-				dartBuildbucketCfg = fmt.Sprintf(`buckets {name: "try"swarming {%s}}`, bldrsCfg)
-				dartRevision = "put500"
+				cfgClient.dartBuildbucketCfg = fmt.Sprintf(`buckets {name: "try"swarming {%s}}`, bldrsCfg)
+				cfgClient.dartRevision = "put500"
 
-				So(UpdateProjectCfg(ctx), ShouldBeNil)
+				assert.Loosely(t, UpdateProjectCfg(ctx), should.BeNil)
 
 				actualBucket := &model.Bucket{ID: "try", Parent: model.ProjectKey(ctx, "dart")}
-				So(datastore.Get(ctx, actualBucket), ShouldBeNil)
-				So(actualBucket.Revision, ShouldEqual, "put500")
+				assert.Loosely(t, datastore.Get(ctx, actualBucket), should.BeNil)
+				assert.Loosely(t, actualBucket.Revision, should.Equal("put500"))
 				var actualBuilders []*model.Builder
-				So(datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind).Ancestor(model.BucketKey(ctx, "dart", "try")).Order("__key__"), &actualBuilders), ShouldBeNil)
-				So(len(actualBuilders), ShouldEqual, 500)
+				assert.Loosely(t, datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind).Ancestor(model.BucketKey(ctx, "dart", "try")).Order("__key__"), &actualBuilders), should.BeNil)
+				assert.Loosely(t, len(actualBuilders), should.Equal(500))
 			})
 
-			Convey("to put 1105 builders", func() {
-				defer restoreCfgVars()
-
+			t.Run("to put 1105 builders", func(t *ftt.Test) {
 				bldrsCfg := ""
 				for i := 0; i < 1105; i++ {
 					bldrsCfg += fmt.Sprintf("builders {name: \"builder%d\"}\n", i)
 				}
-				dartBuildbucketCfg = fmt.Sprintf(`buckets {name: "try"swarming {%s}}`, bldrsCfg)
-				dartRevision = "put1105"
+				cfgClient.dartBuildbucketCfg = fmt.Sprintf(`buckets {name: "try"swarming {%s}}`, bldrsCfg)
+				cfgClient.dartRevision = "put1105"
 
-				So(UpdateProjectCfg(ctx), ShouldBeNil)
+				assert.Loosely(t, UpdateProjectCfg(ctx), should.BeNil)
 
 				actualBucket := &model.Bucket{ID: "try", Parent: model.ProjectKey(ctx, "dart")}
-				So(datastore.Get(ctx, actualBucket), ShouldBeNil)
-				So(actualBucket.Revision, ShouldEqual, "put1105")
+				assert.Loosely(t, datastore.Get(ctx, actualBucket), should.BeNil)
+				assert.Loosely(t, actualBucket.Revision, should.Equal("put1105"))
 				var actualBuilders []*model.Builder
-				So(datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind).Ancestor(model.BucketKey(ctx, "dart", "try")).Order("__key__"), &actualBuilders), ShouldBeNil)
-				So(len(actualBuilders), ShouldEqual, 1105)
+				assert.Loosely(t, datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind).Ancestor(model.BucketKey(ctx, "dart", "try")).Order("__key__"), &actualBuilders), should.BeNil)
+				assert.Loosely(t, len(actualBuilders), should.Equal(1105))
 
-				Convey("delete 111 and update 994", func() {
+				t.Run("delete 111 and update 994", func(t *ftt.Test) {
 					bldrsCfg := ""
 					for i := 0; i < 1105; i++ {
 						// delete builders which the name ends with "1".
@@ -2350,24 +2329,24 @@ func TestUpdateProject(t *testing.T) {
 						}
 						bldrsCfg += fmt.Sprintf("builders {name: \"builder%d\" \n dimensions: \"pool:newly_added\"}\n", i)
 					}
-					dartBuildbucketCfg = fmt.Sprintf(`buckets {name: "try"swarming {%s}}`, bldrsCfg)
-					dartRevision = "del111_update994"
+					cfgClient.dartBuildbucketCfg = fmt.Sprintf(`buckets {name: "try"swarming {%s}}`, bldrsCfg)
+					cfgClient.dartRevision = "del111_update994"
 
-					So(UpdateProjectCfg(ctx), ShouldBeNil)
+					assert.Loosely(t, UpdateProjectCfg(ctx), should.BeNil)
 
 					actualBucket := &model.Bucket{ID: "try", Parent: model.ProjectKey(ctx, "dart")}
-					So(datastore.Get(ctx, actualBucket), ShouldBeNil)
-					So(actualBucket.Revision, ShouldEqual, "del111_update994")
+					assert.Loosely(t, datastore.Get(ctx, actualBucket), should.BeNil)
+					assert.Loosely(t, actualBucket.Revision, should.Equal("del111_update994"))
 					var actualBuilders []*model.Builder
-					So(datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind).Ancestor(model.BucketKey(ctx, "dart", "try")).Order("__key__"), &actualBuilders), ShouldBeNil)
-					So(len(actualBuilders), ShouldEqual, 994)
+					assert.Loosely(t, datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind).Ancestor(model.BucketKey(ctx, "dart", "try")).Order("__key__"), &actualBuilders), should.BeNil)
+					assert.Loosely(t, len(actualBuilders), should.Equal(994))
 					for _, bldr := range actualBuilders {
-						So(strings.HasSuffix(bldr.ID, "1"), ShouldBeFalse)
-						So(bldr.Config.Dimensions[0], ShouldEqual, "pool:newly_added")
+						assert.Loosely(t, strings.HasSuffix(bldr.ID, "1"), should.BeFalse)
+						assert.Loosely(t, bldr.Config.Dimensions[0], should.Equal("pool:newly_added"))
 					}
 				})
 
-				Convey("delete 994 and update 111", func() {
+				t.Run("delete 994 and update 111", func(t *ftt.Test) {
 					bldrsCfg := ""
 					for i := 0; i < 1105; i++ {
 						// only keep builders which the name ends with "1" and update them.
@@ -2375,38 +2354,37 @@ func TestUpdateProject(t *testing.T) {
 							bldrsCfg += fmt.Sprintf("builders {name: \"builder%d\" \n dimensions: \"pool:newly_added\"}\n", i)
 						}
 					}
-					dartBuildbucketCfg = fmt.Sprintf(`buckets {name: "try"swarming {%s}}`, bldrsCfg)
-					dartRevision = "del994_update111"
+					cfgClient.dartBuildbucketCfg = fmt.Sprintf(`buckets {name: "try"swarming {%s}}`, bldrsCfg)
+					cfgClient.dartRevision = "del994_update111"
 
-					So(UpdateProjectCfg(ctx), ShouldBeNil)
+					assert.Loosely(t, UpdateProjectCfg(ctx), should.BeNil)
 
 					actualBucket := &model.Bucket{ID: "try", Parent: model.ProjectKey(ctx, "dart")}
-					So(datastore.Get(ctx, actualBucket), ShouldBeNil)
-					So(actualBucket.Revision, ShouldEqual, "del994_update111")
+					assert.Loosely(t, datastore.Get(ctx, actualBucket), should.BeNil)
+					assert.Loosely(t, actualBucket.Revision, should.Equal("del994_update111"))
 					var actualBuilders []*model.Builder
-					So(datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind).Ancestor(model.BucketKey(ctx, "dart", "try")).Order("__key__"), &actualBuilders), ShouldBeNil)
-					So(len(actualBuilders), ShouldEqual, 111)
+					assert.Loosely(t, datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind).Ancestor(model.BucketKey(ctx, "dart", "try")).Order("__key__"), &actualBuilders), should.BeNil)
+					assert.Loosely(t, len(actualBuilders), should.Equal(111))
 					for _, bldr := range actualBuilders {
-						So(strings.HasSuffix(bldr.ID, "1"), ShouldBeTrue)
-						So(bldr.Config.Dimensions[0], ShouldEqual, "pool:newly_added")
+						assert.Loosely(t, strings.HasSuffix(bldr.ID, "1"), should.BeTrue)
+						assert.Loosely(t, bldr.Config.Dimensions[0], should.Equal("pool:newly_added"))
 					}
 				})
 			})
 		})
 
-		Convey("large builder content", func() {
+		t.Run("large builder content", func(t *ftt.Test) {
 			// clear dart configs first
-			defer restoreCfgVars()
-			dartBuildbucketCfg = `buckets {name: "try"}`
-			dartRevision = `clear_dart`
+			cfgClient.dartBuildbucketCfg = `buckets {name: "try"}`
+			cfgClient.dartRevision = `clear_dart`
 
-			So(UpdateProjectCfg(ctx), ShouldBeNil)
+			assert.Loosely(t, UpdateProjectCfg(ctx), should.BeNil)
 			actualBucket := &model.Bucket{ID: "try", Parent: model.ProjectKey(ctx, "dart")}
-			So(datastore.Get(ctx, actualBucket), ShouldBeNil)
-			So(actualBucket.Revision, ShouldEqual, "clear_dart")
+			assert.Loosely(t, datastore.Get(ctx, actualBucket), should.BeNil)
+			assert.Loosely(t, actualBucket.Revision, should.Equal("clear_dart"))
 			var actualBuilders []*model.Builder
-			So(datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind).Ancestor(model.BucketKey(ctx, "dart", "try")).Order("__key__"), &actualBuilders), ShouldBeNil)
-			So(len(actualBuilders), ShouldEqual, 0)
+			assert.Loosely(t, datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind).Ancestor(model.BucketKey(ctx, "dart", "try")).Order("__key__"), &actualBuilders), should.BeNil)
+			assert.Loosely(t, len(actualBuilders), should.BeZero)
 
 			originalMaxBatchSize := maxBatchSize
 			defer func() {
@@ -2414,44 +2392,39 @@ func TestUpdateProject(t *testing.T) {
 			}()
 			maxBatchSize = 200
 
-			Convey("a single too large", func() {
-				defer restoreCfgVars()
-
+			t.Run("a single too large", func(t *ftt.Test) {
 				large := ""
 				for i := 0; i < 30; i++ {
 					large += "0123456789"
 				}
-				dartBuildbucketCfg = fmt.Sprintf(`buckets {name: "try" swarming {builders {name: "%s"}}}`, large)
-				dartRevision = "one_large"
+				cfgClient.dartBuildbucketCfg = fmt.Sprintf(`buckets {name: "try" swarming {builders {name: "%s"}}}`, large)
+				cfgClient.dartRevision = "one_large"
 
 				err := UpdateProjectCfg(ctx)
-				So(err, ShouldErrLike, "size exceeds 200 bytes")
+				assert.Loosely(t, err, should.ErrLike("size exceeds 200 bytes"))
 			})
 
-			Convey("the sum > maxBatchSize while builders count < 500", func() {
-				defer restoreCfgVars()
-
+			t.Run("the sum > maxBatchSize while builders count < 500", func(t *ftt.Test) {
 				bldrsCfg := ""
 				for i := 0; i < 212; i++ {
 					bldrsCfg += fmt.Sprintf("builders {name: \"medium_size_builder_%d\"}\n", i)
 				}
 
-				dartBuildbucketCfg = fmt.Sprintf(`buckets {name: "try"swarming {%s}}`, bldrsCfg)
-				dartRevision = "sum_large"
+				cfgClient.dartBuildbucketCfg = fmt.Sprintf(`buckets {name: "try"swarming {%s}}`, bldrsCfg)
+				cfgClient.dartRevision = "sum_large"
 
-				So(UpdateProjectCfg(ctx), ShouldBeNil)
+				assert.Loosely(t, UpdateProjectCfg(ctx), should.BeNil)
 
 				actualBucket := &model.Bucket{ID: "try", Parent: model.ProjectKey(ctx, "dart")}
-				So(datastore.Get(ctx, actualBucket), ShouldBeNil)
-				So(actualBucket.Revision, ShouldEqual, "sum_large")
+				assert.Loosely(t, datastore.Get(ctx, actualBucket), should.BeNil)
+				assert.Loosely(t, actualBucket.Revision, should.Equal("sum_large"))
 				var actualBuilders []*model.Builder
-				So(datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind).Ancestor(model.BucketKey(ctx, "dart", "try")).Order("__key__"), &actualBuilders), ShouldBeNil)
-				So(len(actualBuilders), ShouldEqual, 212)
+				assert.Loosely(t, datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind).Ancestor(model.BucketKey(ctx, "dart", "try")).Order("__key__"), &actualBuilders), should.BeNil)
+				assert.Loosely(t, len(actualBuilders), should.Equal(212))
 			})
 		})
 
-		Convey("builds_notification_topics", func() {
-			defer restoreCfgVars()
+		t.Run("builds_notification_topics", func(t *ftt.Test) {
 			topicSort := func(topics []*pb.BuildbucketCfg_Topic) {
 				sort.Slice(topics, func(i, j int) bool {
 					if topics[i].Name == topics[j].Name {
@@ -2460,7 +2433,7 @@ func TestUpdateProject(t *testing.T) {
 					return topics[i].Name < topics[j].Name
 				})
 			}
-			dartBuildbucketCfg = origDartCfg + `
+			cfgClient.dartBuildbucketCfg = defaultDartBuildbucketCfg + `
 	common_config {
 		builds_notification_topics {
 			name: "projects/dart/topics/my-dart-topic1"
@@ -2469,15 +2442,15 @@ func TestUpdateProject(t *testing.T) {
 			name: "projects/dart/topics/my-dart-topic2"
 		}
 	}`
-			dartRevision = "dart_add_topics"
+			cfgClient.dartRevision = "dart_add_topics"
 
 			// before UpdateProjectCfg, no project entity.
-			So(datastore.Get(ctx, &model.Project{ID: "dart"}), ShouldEqual, datastore.ErrNoSuchEntity)
-			So(UpdateProjectCfg(ctx), ShouldBeNil)
+			assert.Loosely(t, datastore.Get(ctx, &model.Project{ID: "dart"}), should.Equal(datastore.ErrNoSuchEntity))
+			assert.Loosely(t, UpdateProjectCfg(ctx), should.BeNil)
 			actualProj := &model.Project{ID: "dart"}
-			So(datastore.Get(ctx, actualProj), ShouldBeNil)
+			assert.Loosely(t, datastore.Get(ctx, actualProj), should.BeNil)
 			topicSort(actualProj.CommonConfig.BuildsNotificationTopics)
-			So(actualProj.CommonConfig.BuildsNotificationTopics, ShouldResembleProto, []*pb.BuildbucketCfg_Topic{
+			assert.Loosely(t, actualProj.CommonConfig.BuildsNotificationTopics, should.Resemble([]*pb.BuildbucketCfg_Topic{
 				{
 					Name:        "projects/dart/topics/my-dart-topic1",
 					Compression: pb.Compression_ZLIB,
@@ -2486,10 +2459,10 @@ func TestUpdateProject(t *testing.T) {
 					Name:        "projects/dart/topics/my-dart-topic2",
 					Compression: pb.Compression_ZLIB,
 				},
-			})
+			}))
 
-			Convey("modify", func() {
-				dartBuildbucketCfg = origDartCfg + `
+			t.Run("modify", func(t *ftt.Test) {
+				cfgClient.dartBuildbucketCfg = defaultDartBuildbucketCfg + `
 	common_config {
 		builds_notification_topics {
 			name: "projects/dart/topics/my-dart-topic1"
@@ -2499,12 +2472,12 @@ func TestUpdateProject(t *testing.T) {
 			name: "projects/dart/topics/my-dart-topic2"
 		}
 	}`
-				dartRevision = "dart_modify_topics"
-				So(UpdateProjectCfg(ctx), ShouldBeNil)
+				cfgClient.dartRevision = "dart_modify_topics"
+				assert.Loosely(t, UpdateProjectCfg(ctx), should.BeNil)
 				actualProj := &model.Project{ID: "dart"}
-				So(datastore.Get(ctx, actualProj), ShouldBeNil)
+				assert.Loosely(t, datastore.Get(ctx, actualProj), should.BeNil)
 				topicSort(actualProj.CommonConfig.BuildsNotificationTopics)
-				So(actualProj.CommonConfig.BuildsNotificationTopics, ShouldResembleProto, []*pb.BuildbucketCfg_Topic{
+				assert.Loosely(t, actualProj.CommonConfig.BuildsNotificationTopics, should.Resemble([]*pb.BuildbucketCfg_Topic{
 					{
 						Name:        "projects/dart/topics/my-dart-topic1",
 						Compression: pb.Compression_ZSTD,
@@ -2513,31 +2486,31 @@ func TestUpdateProject(t *testing.T) {
 						Name:        "projects/dart/topics/my-dart-topic2",
 						Compression: pb.Compression_ZLIB,
 					},
-				})
+				}))
 
 			})
 
-			Convey("delete all topics", func() {
-				dartBuildbucketCfg = origDartCfg
-				dartRevision = "dart_empty_topics"
-				So(UpdateProjectCfg(ctx), ShouldBeNil)
+			t.Run("delete all topics", func(t *ftt.Test) {
+				cfgClient.dartBuildbucketCfg = defaultDartBuildbucketCfg
+				cfgClient.dartRevision = "dart_empty_topics"
+				assert.Loosely(t, UpdateProjectCfg(ctx), should.BeNil)
 				actualProj := &model.Project{ID: "dart"}
-				So(datastore.Get(ctx, actualProj), ShouldBeNil)
-				So(actualProj.CommonConfig, ShouldBeNil)
+				assert.Loosely(t, datastore.Get(ctx, actualProj), should.BeNil)
+				assert.Loosely(t, actualProj.CommonConfig, should.BeNil)
 			})
 
-			Convey("delete the project", func() {
-				dartBuildbucketCfg = ``
-				dartRevision = "dart_is_deleted"
-				So(UpdateProjectCfg(ctx), ShouldBeNil)
+			t.Run("delete the project", func(t *ftt.Test) {
+				cfgClient.dartBuildbucketCfg = ``
+				cfgClient.dartRevision = "dart_is_deleted"
+				assert.Loosely(t, UpdateProjectCfg(ctx), should.BeNil)
 				actualProj := &model.Project{ID: "dart"}
-				So(datastore.Get(ctx, actualProj), ShouldEqual, datastore.ErrNoSuchEntity)
+				assert.Loosely(t, datastore.Get(ctx, actualProj), should.Equal(datastore.ErrNoSuchEntity))
 				dartBuckets := []*model.Bucket{}
-				So(datastore.GetAll(ctx, datastore.NewQuery(model.BucketKind).Ancestor(model.ProjectKey(ctx, "dart")), &dartBuckets), ShouldBeNil)
-				So(dartBuckets, ShouldBeEmpty)
+				assert.Loosely(t, datastore.GetAll(ctx, datastore.NewQuery(model.BucketKind).Ancestor(model.ProjectKey(ctx, "dart")), &dartBuckets), should.BeNil)
+				assert.Loosely(t, dartBuckets, should.BeEmpty)
 				dartBuilders := []*model.Builder{}
-				So(datastore.GetAll(ctx, datastore.NewQuery(model.BucketKind).Ancestor(model.BucketKey(ctx, "dart", "try")), &dartBuilders), ShouldBeNil)
-				So(dartBuilders, ShouldBeEmpty)
+				assert.Loosely(t, datastore.GetAll(ctx, datastore.NewQuery(model.BucketKind).Ancestor(model.BucketKey(ctx, "dart", "try")), &dartBuilders), should.BeNil)
+				assert.Loosely(t, dartBuilders, should.BeEmpty)
 			})
 		})
 	})
@@ -2545,7 +2518,8 @@ func TestUpdateProject(t *testing.T) {
 
 func TestPrepareBuilderMetricsToPut(t *testing.T) {
 	t.Parallel()
-	Convey("prepareBuilderMetricsToPut", t, func() {
+
+	ftt.Run("prepareBuilderMetricsToPut", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
@@ -2585,50 +2559,50 @@ func TestPrepareBuilderMetricsToPut(t *testing.T) {
 				},
 			},
 		}
-		So(datastore.Put(ctx, bldrMetrics), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, bldrMetrics), should.BeNil)
 
-		Convey("no update", func() {
-			Convey("exactly same content", func() {
+		t.Run("no update", func(t *ftt.Test) {
+			t.Run("exactly same content", func(t *ftt.Test) {
 				bldrMetrics := map[string]stringset.Set{
 					"chrome/infra/custom/builds/count":   stringset.NewFromSlice([]string{"chromium/try/linux", "chromium/try/mac"}...),
 					"chrome/infra/custom/builds/max_age": stringset.NewFromSlice([]string{"chromium/try/linux"}...),
 				}
 				newEnt, err := prepareBuilderMetricsToPut(ctx, bldrMetrics)
-				So(newEnt, ShouldBeNil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, newEnt, should.BeNil)
 			})
 
-			Convey("same content, different metric order", func() {
+			t.Run("same content, different metric order", func(t *ftt.Test) {
 				bldrMetrics := map[string]stringset.Set{
 					"chrome/infra/custom/builds/max_age": stringset.NewFromSlice([]string{"chromium/try/linux"}...),
 					"chrome/infra/custom/builds/count":   stringset.NewFromSlice([]string{"chromium/try/linux", "chromium/try/mac"}...),
 				}
 				newEnt, err := prepareBuilderMetricsToPut(ctx, bldrMetrics)
-				So(newEnt, ShouldBeNil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, newEnt, should.BeNil)
 			})
 
-			Convey("same content, different builder order", func() {
+			t.Run("same content, different builder order", func(t *ftt.Test) {
 				bldrMetrics := map[string]stringset.Set{
 					"chrome/infra/custom/builds/count":   stringset.NewFromSlice([]string{"chromium/try/mac", "chromium/try/linux"}...),
 					"chrome/infra/custom/builds/max_age": stringset.NewFromSlice([]string{"chromium/try/linux"}...),
 				}
 				newEnt, err := prepareBuilderMetricsToPut(ctx, bldrMetrics)
-				So(newEnt, ShouldBeNil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, newEnt, should.BeNil)
 			})
 		})
 
-		Convey("updated", func() {
-			Convey("add metric", func() {
+		t.Run("updated", func(t *ftt.Test) {
+			t.Run("add metric", func(t *ftt.Test) {
 				bldrMetrics := map[string]stringset.Set{
 					"chrome/infra/custom/builds/count":    stringset.NewFromSlice([]string{"chromium/try/linux", "chromium/try/mac"}...),
 					"chrome/infra/custom/builds/max_age":  stringset.NewFromSlice([]string{"chromium/try/linux"}...),
 					"chrome/infra/custom/builds/max_age2": stringset.NewFromSlice([]string{"chromium/try/linux"}...),
 				}
 				newEnt, err := prepareBuilderMetricsToPut(ctx, bldrMetrics)
-				So(err, ShouldBeNil)
-				So(newEnt.LastUpdate, ShouldEqual, now)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, newEnt.LastUpdate, should.Match(now))
 				expected := &modeldefs.CustomBuilderMetrics{
 					Metrics: []*modeldefs.CustomBuilderMetric{
 						{
@@ -2668,15 +2642,15 @@ func TestPrepareBuilderMetricsToPut(t *testing.T) {
 						},
 					},
 				}
-				So(newEnt.Metrics, ShouldResembleProto, expected)
+				assert.Loosely(t, newEnt.Metrics, should.Resemble(expected))
 			})
-			Convey("delete metric", func() {
+			t.Run("delete metric", func(t *ftt.Test) {
 				bldrMetrics := map[string]stringset.Set{
 					"chrome/infra/custom/builds/count": stringset.NewFromSlice([]string{"chromium/try/linux", "chromium/try/mac"}...),
 				}
 				newEnt, err := prepareBuilderMetricsToPut(ctx, bldrMetrics)
-				So(err, ShouldBeNil)
-				So(newEnt.LastUpdate, ShouldEqual, now)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, newEnt.LastUpdate, should.Match(now))
 				expected := &modeldefs.CustomBuilderMetrics{
 					Metrics: []*modeldefs.CustomBuilderMetric{
 						{
@@ -2696,16 +2670,16 @@ func TestPrepareBuilderMetricsToPut(t *testing.T) {
 						},
 					},
 				}
-				So(newEnt.Metrics, ShouldResembleProto, expected)
+				assert.Loosely(t, newEnt.Metrics, should.Resemble(expected))
 			})
-			Convey("add builder", func() {
+			t.Run("add builder", func(t *ftt.Test) {
 				bldrMetrics := map[string]stringset.Set{
 					"chrome/infra/custom/builds/count":   stringset.NewFromSlice([]string{"chromium/try/linux", "chromium/try/mac"}...),
 					"chrome/infra/custom/builds/max_age": stringset.NewFromSlice([]string{"chromium/try/linux", "chromium/try/mac"}...),
 				}
 				newEnt, err := prepareBuilderMetricsToPut(ctx, bldrMetrics)
-				So(err, ShouldBeNil)
-				So(newEnt.LastUpdate, ShouldEqual, now)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, newEnt.LastUpdate, should.Match(now))
 				expected := &modeldefs.CustomBuilderMetrics{
 					Metrics: []*modeldefs.CustomBuilderMetric{
 						{
@@ -2740,16 +2714,16 @@ func TestPrepareBuilderMetricsToPut(t *testing.T) {
 						},
 					},
 				}
-				So(newEnt.Metrics, ShouldResembleProto, expected)
+				assert.Loosely(t, newEnt.Metrics, should.Resemble(expected))
 			})
-			Convey("remove builder", func() {
+			t.Run("remove builder", func(t *ftt.Test) {
 				bldrMetrics := map[string]stringset.Set{
 					"chrome/infra/custom/builds/count":   stringset.NewFromSlice([]string{"chromium/try/linux", "chromium/try/mac"}...),
 					"chrome/infra/custom/builds/max_age": stringset.New(0),
 				}
 				newEnt, err := prepareBuilderMetricsToPut(ctx, bldrMetrics)
-				So(err, ShouldBeNil)
-				So(newEnt.LastUpdate, ShouldEqual, now)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, newEnt.LastUpdate, should.Match(now))
 				expected := &modeldefs.CustomBuilderMetrics{
 					Metrics: []*modeldefs.CustomBuilderMetric{
 						{
@@ -2769,7 +2743,7 @@ func TestPrepareBuilderMetricsToPut(t *testing.T) {
 						},
 					},
 				}
-				So(newEnt.Metrics, ShouldResembleProto, expected)
+				assert.Loosely(t, newEnt.Metrics, should.Resemble(expected))
 			})
 		})
 	})

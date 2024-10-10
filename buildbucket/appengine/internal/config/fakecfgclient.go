@@ -21,8 +21,9 @@ import (
 	luciconfig "go.chromium.org/luci/config"
 )
 
-var chromiumRevision = "deadbeef"
-var chromiumBuildbucketCfg = `
+const (
+	defaultChromiumRevision       = "deadbeef"
+	defaultChromiumBuildbucketCfg = `
 	buckets {
 		name: "try"
 		swarming {
@@ -49,8 +50,8 @@ var chromiumBuildbucketCfg = `
 		name: "master.tryserver.chromium.win"
 	}
 `
-var dartRevision = "deadbeef"
-var dartBuildbucketCfg = `
+	defaultDartRevision       = "deadbeef"
+	defaultDartBuildbucketCfg = `
 	buckets {
 		name: "try"
 		swarming {
@@ -66,84 +67,105 @@ var dartBuildbucketCfg = `
 		}
 	}
 `
-var v8Revision = ""
-var v8BuildbucketCfg = `
+	defaultV8Revision       = ""
+	defaultV8BuildbucketCfg = `
 	buckets {
 		name: "master.tryserver.v8"
 	}
 `
+)
 
 // fakeCfgClient mocks the luciconfig.Interface.
 type fakeCfgClient struct {
 	luciconfig.Interface
+
+	chromiumRevision       string
+	chromiumBuildbucketCfg string
+
+	dartRevision       string
+	dartBuildbucketCfg string
+
+	v8Revision       string
+	v8BuildbucketCfg string
 }
 
-func (*fakeCfgClient) GetConfig(ctx context.Context, configSet luciconfig.Set, path string, metaOnly bool) (*luciconfig.Config, error) {
+func newFakeCfgClient() *fakeCfgClient {
+	return &fakeCfgClient{
+		chromiumRevision:       defaultChromiumRevision,
+		chromiumBuildbucketCfg: defaultChromiumBuildbucketCfg,
+		dartRevision:           defaultDartRevision,
+		dartBuildbucketCfg:     defaultDartBuildbucketCfg,
+		v8Revision:             defaultV8Revision,
+		v8BuildbucketCfg:       defaultV8BuildbucketCfg,
+	}
+}
+
+func (f *fakeCfgClient) GetConfig(ctx context.Context, configSet luciconfig.Set, path string, metaOnly bool) (*luciconfig.Config, error) {
 	switch configSet {
 	case "projects/chromium":
 		return &luciconfig.Config{
 			Meta: luciconfig.Meta{
 				ConfigSet: "projects/chromium",
 				Path:      "fake-cr-buildbucket.cfg",
-				Revision:  chromiumRevision,
+				Revision:  f.chromiumRevision,
 			},
-			Content: chromiumBuildbucketCfg,
+			Content: f.chromiumBuildbucketCfg,
 		}, nil
 	case "projects/dart":
-		if dartBuildbucketCfg == "error" {
+		if f.dartBuildbucketCfg == "error" {
 			return nil, errors.New("internal server error")
 		}
 		return &luciconfig.Config{
 			Meta: luciconfig.Meta{
 				ConfigSet: "projects/dart",
 				Path:      "fake-cr-buildbucket.cfg",
-				Revision:  dartRevision,
+				Revision:  f.dartRevision,
 			},
-			Content: dartBuildbucketCfg,
+			Content: f.dartBuildbucketCfg,
 		}, nil
 	case "projects/v8":
 		return &luciconfig.Config{
 			Meta: luciconfig.Meta{
 				ConfigSet: "projects/v8",
 				Path:      "fake-cr-buildbucket.cfg",
-				Revision:  v8Revision,
+				Revision:  f.v8Revision,
 			},
-			Content: v8BuildbucketCfg,
+			Content: f.v8BuildbucketCfg,
 		}, nil
 	default:
 		return nil, nil
 	}
 }
 
-func (*fakeCfgClient) GetProjectConfigs(ctx context.Context, path string, metaOnly bool) ([]luciconfig.Config, error) {
+func (f *fakeCfgClient) GetProjectConfigs(ctx context.Context, path string, metaOnly bool) ([]luciconfig.Config, error) {
 	if path != "${appid}.cfg" {
 		return nil, errors.New("not found")
 	}
 	var configsToReturn []luciconfig.Config
-	if chromiumBuildbucketCfg != "" {
+	if f.chromiumBuildbucketCfg != "" {
 		configsToReturn = append(configsToReturn, luciconfig.Config{
 			Meta: luciconfig.Meta{
 				ConfigSet: "projects/chromium",
 				Path:      "fake-cr-buildbucket.cfg",
-				Revision:  chromiumRevision,
+				Revision:  f.chromiumRevision,
 			},
 		})
 	}
-	if dartBuildbucketCfg != "" {
+	if f.dartBuildbucketCfg != "" {
 		configsToReturn = append(configsToReturn, luciconfig.Config{
 			Meta: luciconfig.Meta{
 				ConfigSet: "projects/dart",
 				Path:      "fake-cr-buildbucket.cfg",
-				Revision:  dartRevision,
+				Revision:  f.dartRevision,
 			},
 		})
 	}
-	if v8BuildbucketCfg != "" {
+	if f.v8BuildbucketCfg != "" {
 		configsToReturn = append(configsToReturn, luciconfig.Config{
 			Meta: luciconfig.Meta{
 				ConfigSet: "projects/v8",
 				Path:      "fake-cr-buildbucket.cfg",
-				Revision:  v8Revision,
+				Revision:  f.v8Revision,
 			},
 		})
 	}
