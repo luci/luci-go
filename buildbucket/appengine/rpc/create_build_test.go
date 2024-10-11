@@ -877,8 +877,13 @@ func TestCreateBuild(t *testing.T) {
 				assert.Loosely(t, datastore.Put(ctx, &model.BuildInfra{
 					Build: datastore.KeyForObj(ctx, pBld),
 					Proto: &pb.BuildInfra{
-						Swarming: &pb.BuildInfra_Swarming{
-							TaskId: "544239050",
+						Backend: &pb.BuildInfra_Backend{
+							Task: &pb.Task{
+								Id: &pb.TaskID{
+									Target: "swarming://swarming-host",
+									Id:     "544239050",
+								},
+							},
 						},
 					},
 				}), should.BeNil)

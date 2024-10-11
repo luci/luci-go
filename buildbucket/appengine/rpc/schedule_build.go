@@ -1614,7 +1614,12 @@ func getParentInfo(pBld *model.Build, pInfra *model.BuildInfra) (ancestors []int
 	}
 
 	if pBld != nil && pInfra != nil {
-		pRunID = pInfra.Proto.GetSwarming().GetTaskId()
+		pTaskID := pInfra.Proto.GetBackend().GetTask().GetId()
+		pTarget := pTaskID.GetTarget()
+		if !strings.HasPrefix(pTarget, "swarming://") {
+			return
+		}
+		pRunID = pTaskID.GetId()
 		if pRunID != "" {
 			pRunID = pRunID[:len(pRunID)-1] + "1"
 		}
