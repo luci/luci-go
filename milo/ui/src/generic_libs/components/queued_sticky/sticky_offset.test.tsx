@@ -17,7 +17,7 @@ import ResizeObserver from 'resize-observer-polyfill';
 
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
-import { QueuedStickyScrollingBase } from './queued_sticky_scrolling_based';
+import { QueuedStickyScrollingBase } from './queued_sticky_scrolling_base';
 import { Sticky } from './sticky';
 import { StickyOffset } from './sticky_offset';
 

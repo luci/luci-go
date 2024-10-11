@@ -46,7 +46,7 @@ export const Alerts = () => {
       <Box
         sx={{
           position: 'sticky',
-          top: 48,
+          top: 'var(--accumulated-top)',
           zIndex: 30,
           backgroundColor: '#fff',
           padding: '8px 16px',

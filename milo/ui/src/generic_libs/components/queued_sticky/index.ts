@@ -12,6 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export * from './queued_sticky_scrolling_based';
+export * from './queued_sticky_scrolling_base';
 export * from './sticky_offset';
 export * from './sticky';

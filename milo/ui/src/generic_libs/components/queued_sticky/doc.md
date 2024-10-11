@@ -56,8 +56,8 @@ function Page() {
 When the page above is scrolled to the bottom, the second line will overlap
 the first line, while the third line will not overlap the second line.
 
-`<Sticky />` comes with a rendering performance cost because it needs track the
-size of its children. To avoid this performance cost, CSS variables
+`<Sticky />` comes with a rendering performance cost because it needs to track
+the size of its children. To avoid this performance cost, CSS variables
 `--accumulated-top`, `--accumulated-right`, `--accumulated-bottom`, and
 `--accumulated-left` can be used to create non-overlapping sticky elements.
 ```tsx
