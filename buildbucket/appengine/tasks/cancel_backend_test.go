@@ -48,7 +48,7 @@ func TestHandleCancelBackendTask(t *testing.T) {
 		ctx = caching.WithEmptyProcessCache(ctx)
 		ctx = memory.UseWithAppID(ctx, "dev~app-id")
 		backendSetting := []*pb.BackendSetting{
-			&pb.BackendSetting{
+			{
 				Target:   "swarming://chromium-swarm-dev",
 				Hostname: "hostname2",
 				Mode: &pb.BackendSetting_FullMode_{
@@ -60,6 +60,13 @@ func TestHandleCancelBackendTask(t *testing.T) {
 					},
 				},
 				TaskCreatingTimeout: durationpb.New(8 * time.Minute),
+			},
+			{
+				Target:   "lite://taskbackendlite",
+				Hostname: "taskbackendlite",
+				Mode: &pb.BackendSetting_LiteMode_{
+					LiteMode: &pb.BackendSetting_LiteMode{},
+				},
 			},
 		}
 		settingsCfg := &pb.SettingsCfg{Backends: backendSetting}
@@ -94,6 +101,10 @@ func TestHandleCancelBackendTask(t *testing.T) {
 				},
 			}, nil)
 			assert.Loosely(t, HandleCancelBackendTask(ctx, "project:bucket", "swarming://chromium-swarm-dev", "a83908f94as40"), should.BeNil)
+		})
+
+		t.Run("bypass TaskBackendLite", func(t *ftt.Test) {
+			assert.Loosely(t, HandleCancelBackendTask(ctx, "project:bucket", "lite://taskbackendlite", "taskid"), should.BeNil)
 		})
 
 		t.Run("failed CancelTasks RPC call", func(t *ftt.Test) {

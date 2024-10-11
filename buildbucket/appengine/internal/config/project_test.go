@@ -916,6 +916,38 @@ func TestValidateProject(t *testing.T) {
 			assert.Loosely(t, ve.Errors[0].Error(), should.ContainSubstring("error validating task backend ConfigJson: googleapi: got HTTP response code 400 "))
 		})
 
+		t.Run("no config_json allowed for TaskBackendLite", func(t *ftt.Test) {
+			settingsCfg := &pb.SettingsCfg{Backends: []*pb.BackendSetting{
+				{
+					Target:   "lite://foo-lite",
+					Hostname: "foo_hostname",
+					Mode: &pb.BackendSetting_LiteMode_{
+						LiteMode: &pb.BackendSetting_LiteMode{},
+					},
+				},
+			}}
+			_ = SetTestSettingsCfg(vctx.Context, settingsCfg)
+
+			content := `
+				builders {
+					name: "bar"
+					exe {
+						cipd_package: "infra/executable/bar"
+						cipd_version: "refs/heads/main"
+					}
+					properties: "{}"
+					backend: {
+						target: "lite://foo-lite"
+						config_json: '{"a":"b","x":true}'
+					}
+				}
+			`
+			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "myluciproject", settingsCfg)
+			ve, ok := vctx.Finalize().(*validation.Error)
+			assert.Loosely(t, ok, should.BeTrue)
+			assert.Loosely(t, ve.Errors[0].Error(), should.ContainSubstring("no config_json allowed for TaskBackendLite"))
+		})
+
 		t.Run("hearbeat_timeout", func(t *ftt.Test) {
 			settingsCfg := &pb.SettingsCfg{Backends: []*pb.BackendSetting{
 				{

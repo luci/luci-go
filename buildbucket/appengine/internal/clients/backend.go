@@ -54,7 +54,8 @@ func newRawTaskBackendClient(ctx context.Context, host string, project string) (
 	return pb.NewTaskBackendPRPCClient(prpcClient), nil
 }
 
-func ComputeHostnameFromTarget(target string, globalCfg *pb.SettingsCfg) (hostname string, err error) {
+// GetBackendHost returns the backend's hostname from service config.
+func GetBackendHost(target string, globalCfg *pb.SettingsCfg) (hostname string, err error) {
 	if globalCfg == nil {
 		return "", errors.Reason("could not get global settings config").Err()
 	}
@@ -66,9 +67,32 @@ func ComputeHostnameFromTarget(target string, globalCfg *pb.SettingsCfg) (hostna
 	return "", errors.Reason("could not find target in global config settings").Err()
 }
 
+// IsTaskBackendLite returns whether the backend is a TaskBackendLite.
+func IsTaskBackendLite(target string, globalCfg *pb.SettingsCfg) (bool, error) {
+	if globalCfg == nil {
+		return false, errors.Reason("could not get global settings config").Err()
+	}
+	for _, backend := range globalCfg.Backends {
+		if backend.Target == target {
+			_, isLite := backend.Mode.(*pb.BackendSetting_LiteMode_)
+			return isLite, nil
+		}
+	}
+	return false, errors.Reason("could not find target in global config settings").Err()
+}
+
+var ErrTaskBackendLite = errors.New("cannot create a TaskBackend client for a TaskBackendLite server")
+
 // NewBackendClient creates a client to communicate with a full-featured TaskBackend server.
 func NewBackendClient(ctx context.Context, project, target string, globalCfg *pb.SettingsCfg) (*BackendClient, error) {
-	hostname, err := ComputeHostnameFromTarget(target, globalCfg)
+	isLite, err := IsTaskBackendLite(target, globalCfg)
+	if err != nil {
+		return nil, err
+	}
+	if isLite {
+		return nil, ErrTaskBackendLite
+	}
+	hostname, err := GetBackendHost(target, globalCfg)
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +149,7 @@ func NewTaskCreator(ctx context.Context, project, target string, globalCfg *pb.S
 		return mockClient, nil
 	}
 
-	hostname, err := ComputeHostnameFromTarget(target, globalCfg)
+	hostname, err := GetBackendHost(target, globalCfg)
 	if err != nil {
 		return nil, err
 	}

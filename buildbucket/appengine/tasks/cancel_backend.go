@@ -21,6 +21,7 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/tq"
 
@@ -37,8 +38,13 @@ func HandleCancelBackendTask(ctx context.Context, project, target, taskID string
 	}
 	backendClient, err := clients.NewBackendClient(ctx, project, target, globalCfg)
 	if err != nil {
+		if errors.Is(err, clients.ErrTaskBackendLite) {
+			logging.Infof(ctx, "bypass cancelling TaskBackendLite task")
+			return nil
+		}
 		return tq.Fatal.Apply(errors.Annotate(err, "failed to connect to backend service").Err())
 	}
+
 	res, err := backendClient.CancelTasks(ctx, &pb.CancelTasksRequest{
 		TaskIds: []*pb.TaskID{
 			&pb.TaskID{

@@ -720,6 +720,9 @@ func validateTaskBackendConfigJson(ctx *validation.Context, backend *pb.BuilderC
 	}
 	backendClient, err := clients.NewBackendClient(ctx.Context, project, backend.Target, globalCfg)
 	if err != nil {
+		if errors.Is(err, clients.ErrTaskBackendLite) {
+			return errors.New("no config_json allowed for TaskBackendLite")
+		}
 		return err
 	}
 	configJsonPb := &structpb.Struct{}
