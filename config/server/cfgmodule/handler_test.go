@@ -17,7 +17,6 @@ package cfgmodule
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -32,122 +31,14 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/proto/config"
-	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
-	"go.chromium.org/luci/server/router"
+
+	"go.chromium.org/luci/config/validation"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
-
-func TestInstallHandlers(t *testing.T) {
-	t.Parallel()
-
-	Convey("Initialization of validator, validation routes and handlers", t, func() {
-		rules := validation.NewRuleSet()
-
-		r := router.New()
-		rr := httptest.NewRecorder()
-		host := "example.com"
-
-		metaCall := func() *config.ServiceDynamicMetadata {
-			req, err := http.NewRequest("GET", "https://"+host+metadataPath, nil)
-			So(err, ShouldBeNil)
-			r.ServeHTTP(rr, req)
-
-			var resp config.ServiceDynamicMetadata
-			err = json.NewDecoder(rr.Body).Decode(&resp)
-			So(err, ShouldBeNil)
-			return &resp
-		}
-		valCall := func(configSet, path, content string) *config.ValidationResponseMessage {
-			respBodyJSON, err := json.Marshal(config.ValidationRequestMessage{
-				ConfigSet: configSet,
-				Path:      path,
-				Content:   []byte(content),
-			})
-			So(err, ShouldBeNil)
-			req, err := http.NewRequest("POST", validationPath, bytes.NewReader(respBodyJSON))
-			So(err, ShouldBeNil)
-			r.ServeHTTP(rr, req)
-			if rr.Code != http.StatusOK {
-				return nil
-			}
-			var resp config.ValidationResponseMessage
-			err = json.NewDecoder(rr.Body).Decode(&resp)
-			So(err, ShouldBeNil)
-			return &resp
-		}
-
-		InstallHandlers(r, nil, rules)
-
-		Convey("Basic metadataHandler call", func() {
-			So(rr.Code, ShouldEqual, http.StatusOK)
-			So(metaCall(), ShouldResemble, &config.ServiceDynamicMetadata{
-				Version:                 metaDataFormatVersion,
-				SupportsGzipCompression: true,
-				Validation: &config.Validator{
-					Url: fmt.Sprintf("https://%s%s", host, validationPath),
-				},
-			})
-		})
-
-		Convey("metadataHandler call with patterns", func() {
-			rules.Add("configSet", "path", nil)
-			meta := metaCall()
-			So(rr.Code, ShouldEqual, http.StatusOK)
-			So(meta, ShouldResemble, &config.ServiceDynamicMetadata{
-				Version:                 metaDataFormatVersion,
-				SupportsGzipCompression: true,
-				Validation: &config.Validator{
-					Url: fmt.Sprintf("https://%s%s", host, validationPath),
-					Patterns: []*config.ConfigPattern{
-						{
-							ConfigSet: "exact:configSet",
-							Path:      "exact:path",
-						},
-					},
-				},
-			})
-		})
-
-		Convey("Basic validationHandler call", func() {
-			rules.Add("dead", "beef", func(ctx *validation.Context, configSet, path string, content []byte) error {
-				So(string(content), ShouldEqual, "content")
-				ctx.Errorf("blocking error")
-				ctx.Warningf("diagnostic warning")
-				return nil
-			})
-			valResp := valCall("dead", "beef", "content")
-			So(rr.Code, ShouldEqual, http.StatusOK)
-			So(valResp, ShouldResemble, &config.ValidationResponseMessage{
-				Messages: []*config.ValidationResponseMessage_Message{
-					{
-						Text:     "in \"beef\": blocking error",
-						Severity: config.ValidationResponseMessage_ERROR,
-					},
-					{
-						Text:     "in \"beef\": diagnostic warning",
-						Severity: config.ValidationResponseMessage_WARNING,
-					},
-				},
-			})
-		})
-
-		Convey("validationHandler call with no configSet or path", func() {
-			valCall("", "", "")
-			So(rr.Code, ShouldEqual, http.StatusBadRequest)
-			So(rr.Body.String(), ShouldEqual, "Must specify the config_set of the file to validate")
-		})
-
-		Convey("validationHandler call with no path", func() {
-			valCall("dead", "", "")
-			So(rr.Code, ShouldEqual, http.StatusBadRequest)
-			So(rr.Body.String(), ShouldEqual, "Must specify the path of the file to validate")
-		})
-	})
-}
 
 func TestConsumerServer(t *testing.T) {
 	t.Parallel()

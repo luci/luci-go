@@ -18,20 +18,15 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"net/http"
-	"strings"
 
 	"google.golang.org/grpc/credentials"
 
-	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/config"
-	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/signing"
 	"go.chromium.org/luci/server/module"
-	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/validation"
@@ -40,9 +35,6 @@ import (
 
 // ModuleName can be used to refer to this module when declaring dependencies.
 var ModuleName = module.RegisterName("go.chromium.org/luci/config/server/cfgmodule")
-
-// A scope expected in access tokens from the LUCI Config service.
-const configValidationAuthScope = "https://www.googleapis.com/auth/userinfo.email"
 
 // ModuleOptions contain configuration of the LUCI Config server module.
 type ModuleOptions struct {
@@ -172,46 +164,11 @@ func (m *serverModule) Initialize(ctx context.Context, host module.Host, opts mo
 		}
 	})
 
-	// Enable authentication and authorization for the validation endpoint only
-	// when running in production (i.e. not on a developer workstation).
-	var middleware router.MiddlewareChain
-	if opts.Prod {
-		middleware = router.NewMiddlewareChain(
-			(&auth.Authenticator{
-				Methods: []auth.Method{
-					&auth.GoogleOAuth2Method{
-						Scopes: []string{configValidationAuthScope},
-					},
-				},
-			}).GetMiddleware(),
-			m.authorizeConfigService,
-		)
-	}
-
-	// Install the validation endpoint that will be called by the legacy
-	// LUCI Config.
-	// TODO(yiwzhang): Remove after all apps using LUCI Server Framework is
-	// redeployed and the legacy LUCI Config service has been turned down.
-	InstallHandlers(host.Routes(), middleware, m.opts.Rules)
-
 	// Register the prpc `config.Consumer` service that handles configs
 	// validation.
 	config.RegisterConsumerServer(host, &ConsumerServer{
 		Rules: m.opts.Rules,
 		GetConfigServiceAccountFn: func(ctx context.Context) (string, error) {
-			// TODO(yiwzhang): Remove this after the service host pointing to the new
-			// LUCI Config service. For now, hardcode the expected service account
-			// name when the service is still using legacy LUCI Config service as
-			// config service host. However, it's possible for the service to
-			// receive the validation traffic from the new LUCI Config service.
-			// So the consumer server needs to allow corresponding new LUCI Config
-			// service account.
-			if strings.HasSuffix(m.opts.ServiceHost, "appspot.com") {
-				if strings.Contains(m.opts.ServiceHost, "dev") {
-					return "config-service@luci-config-dev.iam.gserviceaccount.com", nil
-				}
-				return "config-service@luci-config.iam.gserviceaccount.com", nil
-			}
 			// Grab the expected service account ID of the LUCI Config service we use.
 			info, err := m.configServiceInfo(ctx)
 			if err != nil {
@@ -249,44 +206,4 @@ func (m *serverModule) registerVars(opts module.HostOptions) {
 		}
 		return info.AppID, nil
 	})
-}
-
-// authorizeConfigService is a middleware that passes the request only if it
-// came from LUCI Config service.
-func (m *serverModule) authorizeConfigService(c *router.Context, next router.Handler) {
-	// Grab the expected service account ID of the LUCI Config service we use.
-	info, err := m.configServiceInfo(c.Request.Context())
-	if err != nil {
-		errors.Log(c.Request.Context(), err)
-		if transient.Tag.In(err) {
-			http.Error(c.Writer, "Transient error during authorization", http.StatusInternalServerError)
-		} else {
-			http.Error(c.Writer, "Permission denied (not configured)", http.StatusForbidden)
-		}
-		return
-	}
-
-	// Check the call is actually from the LUCI Config.
-	caller := auth.CurrentIdentity(c.Request.Context())
-	if caller.Kind() == identity.User && caller.Value() == info.ServiceAccountName {
-		next(c)
-	} else {
-		// TODO(yiwzhang): Temporarily allow both old and new LUCI Config service
-		// account to make the validation request. Revert this change after the old
-		// LUCI Config service is fully deprecated and all traffic have been
-		// migrated to the new LUCI Config service.
-		allowedGroup := "service-accounts-luci-config"
-		if strings.Contains(m.opts.ServiceHost, "dev") {
-			allowedGroup += "-dev"
-		}
-		switch yes, err := auth.IsMember(c.Request.Context(), allowedGroup); {
-		case err != nil:
-			errors.Log(c.Request.Context(), err)
-			http.Error(c.Writer, "error during authorization", http.StatusInternalServerError)
-		case yes:
-			next(c)
-		default:
-			http.Error(c.Writer, "Permission denied", http.StatusForbidden)
-		}
-	}
 }

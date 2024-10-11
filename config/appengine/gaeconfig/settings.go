@@ -102,7 +102,6 @@ func (settingsPage) Title(c context.Context) (string, error) {
 }
 
 func (settingsPage) Overview(c context.Context) (template.HTML, error) {
-	metadataURL := fmt.Sprintf("https://%s/api/config/v1/metadata", info.DefaultVersionHostname(c))
 	serviceAcc, err := info.ServiceAccount(c)
 	if err != nil {
 		return "", err
@@ -120,13 +119,11 @@ adding something similar to this:</p>
 services {
   id: "%s"
   owners: &lt;your email&gt;
-  metadata_url: "%s"
   access: "%s"
 }
 </pre>
 <p>Refer to the documentation in the services.cfg file for more info.</p>`,
 		html.EscapeString(info.TrimmedAppID(c)),
-		html.EscapeString(metadataURL),
 		html.EscapeString(serviceAcc)),
 	), nil
 }

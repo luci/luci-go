@@ -22,10 +22,16 @@ import (
 
 	"google.golang.org/appengine"
 
+	"go.chromium.org/luci/appengine/gaeauth/client"
+	gaeauth "go.chromium.org/luci/appengine/gaeauth/server"
+	"go.chromium.org/luci/appengine/gaeauth/server/gaesigner"
+	"go.chromium.org/luci/appengine/gaemiddleware"
+	gaetsmon "go.chromium.org/luci/appengine/tsmon"
 	"go.chromium.org/luci/common/tsmon/monitor"
 	"go.chromium.org/luci/common/tsmon/target"
 	"go.chromium.org/luci/config/appengine/gaeconfig"
-	"go.chromium.org/luci/config/validation"
+	"go.chromium.org/luci/gae/impl/prod"
+	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/middleware"
@@ -33,15 +39,6 @@ import (
 	"go.chromium.org/luci/server/pprof"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/tsmon"
-
-	"go.chromium.org/luci/appengine/gaeauth/client"
-	gaeauth "go.chromium.org/luci/appengine/gaeauth/server"
-	"go.chromium.org/luci/appengine/gaeauth/server/gaesigner"
-	"go.chromium.org/luci/appengine/gaemiddleware"
-	gaetsmon "go.chromium.org/luci/appengine/tsmon"
-
-	"go.chromium.org/luci/gae/impl/prod"
-	"go.chromium.org/luci/gae/service/info"
 )
 
 var (
@@ -115,7 +112,6 @@ var classicEnv = gaemiddleware.Environment{
 		gaeauth.InstallHandlers(r, base)
 		gaetsmon.InstallHandlers(r, base)
 		portal.InstallHandlers(r, base, &gaeauth.UsersAPIAuthMethod{})
-		gaeconfig.InstallValidationHandlers(r, base, &validation.Rules)
 		pprof.InstallHandlers(r, base)
 	},
 }
