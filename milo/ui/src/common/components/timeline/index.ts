@@ -19,5 +19,3 @@ export * from './bottom_label';
 export * from './bottom_axis';
 export * from './side_panel';
 export * from './body';
-
-export * from './lit_timeline';
