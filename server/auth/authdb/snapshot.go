@@ -54,8 +54,8 @@ type SnapshotDB struct {
 	allowlistedIPs ipaddr.Allowlist       // set of named IP allowlist
 	securityCfg    *seccfg.SecurityConfig // parsed SecurityConfig proto
 
-	tokenServiceURL   string       // URL of the token server as provided by Auth service
-	tokenServiceCerts certs.Bundle // cached public keys of the token server
+	tokenServiceURL   string        // URL of the token server as provided by Auth service
+	tokenServiceCerts *certs.Bundle // cached public keys of the token server
 }
 
 var _ DB = &SnapshotDB{}
@@ -135,7 +135,7 @@ func NewSnapshotDB(authDB *protocol.AuthDB, authServiceURL string, rev int64, va
 		allowlistedIPs:    allowlistedIPs,
 		securityCfg:       securityCfg,
 		tokenServiceURL:   authDB.TokenServerUrl,
-		tokenServiceCerts: certs.Bundle{ServiceURL: authDB.TokenServerUrl},
+		tokenServiceCerts: &certs.Bundle{ServiceURL: authDB.TokenServerUrl},
 	}, nil
 }
 
