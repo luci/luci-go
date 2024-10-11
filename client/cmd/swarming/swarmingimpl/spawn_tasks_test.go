@@ -23,12 +23,12 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/swarming/client/swarming"
 	"go.chromium.org/luci/swarming/client/swarming/swarmingtest"
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 var testSpawnEnv = subcommands.Env{
@@ -46,11 +46,11 @@ func TestSpawnTasksParse(t *testing.T) {
 			append([]string{"-server", "example.com"}, argv...),
 			nil, nil,
 		)
-		So(code, ShouldEqual, 1)
-		So(stderr, ShouldContainSubstring, errLike)
+		assert.Loosely(t, code, should.Equal(1))
+		assert.Loosely(t, stderr, should.ContainSubstring(errLike))
 	}
 
-	Convey(`Wants -json-input`, t, func() {
+	ftt.Run(`Wants -json-input`, t, func(t *ftt.Test) {
 		expectErr(nil, "input JSON file is required")
 	})
 }
@@ -58,13 +58,13 @@ func TestSpawnTasksParse(t *testing.T) {
 func TestProcessTasksStream(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Test disallow unknown fields`, t, func() {
+	ftt.Run(`Test disallow unknown fields`, t, func(t *ftt.Test) {
 		r := bytes.NewReader([]byte(`{"requests": [{"thing": "does not exist"}]}`))
 		_, err := processTasksStream(r, testSpawnEnv)
-		So(err, ShouldNotBeNil)
+		assert.Loosely(t, err, should.NotBeNil)
 	})
 
-	Convey(`Test success`, t, func() {
+	ftt.Run(`Test success`, t, func(t *ftt.Test) {
 		r := bytes.NewReader([]byte(`{
 			"requests": [
 				{
@@ -79,9 +79,9 @@ func TestProcessTasksStream(t *testing.T) {
 
 		// Set environment variables to ensure they get picked up.
 		result, err := processTasksStream(r, testSpawnEnv)
-		So(err, ShouldBeNil)
-		So(result, ShouldHaveLength, 1)
-		So(result[0], ShouldResembleProto, &swarmingv2.NewTaskRequest{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, result, should.HaveLength(1))
+		assert.Loosely(t, result[0], should.Resemble(&swarmingv2.NewTaskRequest{
 			Name:         "foo",
 			User:         "test",
 			ParentTaskId: "293109284abc",
@@ -89,7 +89,7 @@ func TestProcessTasksStream(t *testing.T) {
 				Command: []string{"/bin/ls"},
 				Outputs: []string{"my_output.bin"},
 			},
-		})
+		}))
 	})
 }
 
@@ -100,14 +100,14 @@ func TestCreateNewTasks(t *testing.T) {
 	expectReq := &swarmingv2.TaskRequestResponse{Name: "hello!"}
 	ctx := context.Background()
 
-	Convey(`Test fatal response`, t, func() {
+	ftt.Run(`Test fatal response`, t, func(t *ftt.Test) {
 		service := &swarmingtest.Client{
 			NewTaskMock: func(ctx context.Context, req *swarmingv2.NewTaskRequest) (*swarmingv2.TaskRequestMetadataResponse, error) {
 				return nil, status.Errorf(codes.NotFound, "not found")
 			},
 		}
 		_, err := createNewTasks(ctx, service, []*swarmingv2.NewTaskRequest{req})
-		So(err, ShouldErrLike, "not found")
+		assert.Loosely(t, err, should.ErrLike("not found"))
 	})
 
 	goodService := &swarmingtest.Client{
@@ -120,23 +120,23 @@ func TestCreateNewTasks(t *testing.T) {
 		},
 	}
 
-	Convey(`Test single success`, t, func() {
+	ftt.Run(`Test single success`, t, func(t *ftt.Test) {
 		results, err := createNewTasks(ctx, goodService, []*swarmingv2.NewTaskRequest{req})
-		So(err, ShouldBeNil)
-		So(results, ShouldHaveLength, 1)
-		So(results[0].Request, ShouldResemble, expectReq)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, results, should.HaveLength(1))
+		assert.Loosely(t, results[0].Request, should.Resemble(expectReq))
 	})
 
-	Convey(`Test many success`, t, func() {
+	ftt.Run(`Test many success`, t, func(t *ftt.Test) {
 		reqs := make([]*swarmingv2.NewTaskRequest, 0, 12)
 		for i := 0; i < 12; i++ {
 			reqs = append(reqs, req)
 		}
 		results, err := createNewTasks(ctx, goodService, reqs)
-		So(err, ShouldBeNil)
-		So(results, ShouldHaveLength, 12)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, results, should.HaveLength(12))
 		for i := 0; i < 12; i++ {
-			So(results[i].Request, ShouldResemble, expectReq)
+			assert.Loosely(t, results[i].Request, should.Resemble(expectReq))
 		}
 	})
 }

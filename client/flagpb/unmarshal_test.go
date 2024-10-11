@@ -21,207 +21,207 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 
-	. "github.com/smartystreets/goconvey/convey"
-
 	"go.chromium.org/luci/common/proto/google/descutil"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestUnmarshal(t *testing.T) {
 	t.Parallel()
 
-	Convey("Unmarshal", t, func() {
+	ftt.Run("Unmarshal", t, func(t *ftt.Test) {
 		descFileBytes, err := os.ReadFile("unmarshal_test.desc")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		var desc descriptorpb.FileDescriptorSet
 		err = proto.Unmarshal(descFileBytes, &desc)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		resolver := NewResolver(&desc)
 
 		resolveMsg := func(name string) *descriptorpb.DescriptorProto {
 			_, obj, _ := descutil.Resolve(&desc, "flagpb."+name)
-			So(obj, ShouldNotBeNil)
+			assert.Loosely(t, obj, should.NotBeNil)
 			return obj.(*descriptorpb.DescriptorProto)
 		}
 
 		unmarshalOK := func(typeName string, args ...string) map[string]any {
 			msg, err := UnmarshalUntyped(args, resolveMsg(typeName), resolver)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			return msg
 		}
 
 		unmarshalErr := func(typeName string, args ...string) error {
 			msg, err := UnmarshalUntyped(args, resolveMsg(typeName), resolver)
-			So(msg, ShouldBeNil)
+			assert.Loosely(t, msg, should.BeNil)
 			return err
 		}
 
-		Convey("empty", func() {
-			So(unmarshalOK("M1"), ShouldResemble, msg())
+		t.Run("empty", func(t *ftt.Test) {
+			assert.Loosely(t, unmarshalOK("M1"), should.Resemble(msg()))
 		})
-		Convey("non-flag", func() {
-			So(unmarshalErr("M1", "abc"), ShouldErrLike, `abc: a flag was expected`)
+		t.Run("non-flag", func(t *ftt.Test) {
+			assert.Loosely(t, unmarshalErr("M1", "abc"), should.ErrLike(`abc: a flag was expected`))
 		})
-		Convey("string", func() {
-			Convey("next arg", func() {
-				So(unmarshalOK("M1", "-s", "x"), ShouldResemble, msg("s", "x"))
+		t.Run("string", func(t *ftt.Test) {
+			t.Run("next arg", func(t *ftt.Test) {
+				assert.Loosely(t, unmarshalOK("M1", "-s", "x"), should.Resemble(msg("s", "x")))
 			})
-			Convey("equals sign", func() {
-				So(unmarshalOK("M1", "-s=x"), ShouldResemble, msg("s", "x"))
+			t.Run("equals sign", func(t *ftt.Test) {
+				assert.Loosely(t, unmarshalOK("M1", "-s=x"), should.Resemble(msg("s", "x")))
 			})
 		})
-		Convey("int32", func() {
-			Convey("next arg", func() {
-				So(unmarshalOK("M1", "-i", "1"), ShouldResemble, msg("i", int32(1)))
+		t.Run("int32", func(t *ftt.Test) {
+			t.Run("next arg", func(t *ftt.Test) {
+				assert.Loosely(t, unmarshalOK("M1", "-i", "1"), should.Resemble(msg("i", int32(1))))
 			})
-			Convey("equals sign", func() {
-				So(unmarshalOK("M1", "-i=1"), ShouldResemble, msg(
+			t.Run("equals sign", func(t *ftt.Test) {
+				assert.Loosely(t, unmarshalOK("M1", "-i=1"), should.Resemble(msg(
 					"i", int32(1),
-				))
+				)))
 			})
-			Convey("error", func() {
-				So(unmarshalErr("M1", "-i", "abc"), ShouldErrLike, "invalid syntax")
-				So(unmarshalErr("M1", "-i=abc"), ShouldErrLike, "invalid syntax")
-			})
-		})
-		Convey("enum", func() {
-			Convey("by name", func() {
-				So(unmarshalOK("M2", "-e", "V0"), ShouldResemble, msg("e", int32(0)))
-			})
-			Convey("error", func() {
-				So(unmarshalErr("M2", "-e", "abc"), ShouldErrLike, `invalid value "abc" for enum E`)
-			})
-			Convey("by value", func() {
-				So(unmarshalOK("M2", "-e", "0"), ShouldResemble, msg("e", int32(0)))
+			t.Run("error", func(t *ftt.Test) {
+				assert.Loosely(t, unmarshalErr("M1", "-i", "abc"), should.ErrLike("invalid syntax"))
+				assert.Loosely(t, unmarshalErr("M1", "-i=abc"), should.ErrLike("invalid syntax"))
 			})
 		})
-		Convey("bool", func() {
-			Convey("without value", func() {
-				So(unmarshalOK("M1", "-b"), ShouldResemble, msg("b", true))
+		t.Run("enum", func(t *ftt.Test) {
+			t.Run("by name", func(t *ftt.Test) {
+				assert.Loosely(t, unmarshalOK("M2", "-e", "V0"), should.Resemble(msg("e", int32(0))))
+			})
+			t.Run("error", func(t *ftt.Test) {
+				assert.Loosely(t, unmarshalErr("M2", "-e", "abc"), should.ErrLike(`invalid value "abc" for enum E`))
+			})
+			t.Run("by value", func(t *ftt.Test) {
+				assert.Loosely(t, unmarshalOK("M2", "-e", "0"), should.Resemble(msg("e", int32(0))))
+			})
+		})
+		t.Run("bool", func(t *ftt.Test) {
+			t.Run("without value", func(t *ftt.Test) {
+				assert.Loosely(t, unmarshalOK("M1", "-b"), should.Resemble(msg("b", true)))
 
-				So(unmarshalOK("M1", "-b", "-s", "x"), ShouldResemble, msg(
+				assert.Loosely(t, unmarshalOK("M1", "-b", "-s", "x"), should.Resemble(msg(
 					"b", true,
 					"s", "x",
-				))
+				)))
 			})
-			Convey("without value, repeated", func() {
-				So(unmarshalOK("M1", "-rb=false", "-rb"), ShouldResemble, msg("rb", repeated(false, true)))
+			t.Run("without value, repeated", func(t *ftt.Test) {
+				assert.Loosely(t, unmarshalOK("M1", "-rb=false", "-rb"), should.Resemble(msg("rb", repeated(false, true))))
 			})
-			Convey("with value", func() {
-				So(unmarshalOK("M1", "-b=true"), ShouldResemble, msg("b", true))
-				So(unmarshalOK("M1", "-b=false"), ShouldResemble, msg("b", false))
-			})
-		})
-		Convey("bytes", func() {
-			Convey("next arg", func() {
-				So(unmarshalOK("M1", "-bb", "6869"), ShouldResemble, msg("bb", []byte("hi")))
-			})
-			Convey("equals sign", func() {
-				So(unmarshalOK("M1", "-bb=6869"), ShouldResemble, msg("bb", []byte("hi")))
-			})
-			Convey("error", func() {
-				So(unmarshalErr("M1", "-bb", "xx"), ShouldErrLike, "invalid byte: U+0078 'x'")
+			t.Run("with value", func(t *ftt.Test) {
+				assert.Loosely(t, unmarshalOK("M1", "-b=true"), should.Resemble(msg("b", true)))
+				assert.Loosely(t, unmarshalOK("M1", "-b=false"), should.Resemble(msg("b", false)))
 			})
 		})
-
-		Convey("many dashes", func() {
-			Convey("2", func() {
-				So(unmarshalOK("M1", "--s", "x"), ShouldResemble, msg("s", "x"))
+		t.Run("bytes", func(t *ftt.Test) {
+			t.Run("next arg", func(t *ftt.Test) {
+				assert.Loosely(t, unmarshalOK("M1", "-bb", "6869"), should.Resemble(msg("bb", []byte("hi"))))
 			})
-			Convey("3", func() {
-				So(unmarshalErr("M1", "---s", "x"), ShouldErrLike, "---s: bad flag syntax")
+			t.Run("equals sign", func(t *ftt.Test) {
+				assert.Loosely(t, unmarshalOK("M1", "-bb=6869"), should.Resemble(msg("bb", []byte("hi"))))
+			})
+			t.Run("error", func(t *ftt.Test) {
+				assert.Loosely(t, unmarshalErr("M1", "-bb", "xx"), should.ErrLike("invalid byte: U+0078 'x'"))
 			})
 		})
 
-		Convey("field not found", func() {
-			So(unmarshalErr("M2", "-abc", "abc"), ShouldErrLike, `-abc: field abc not found in message M2`)
-		})
-		Convey("value not specified", func() {
-			So(unmarshalErr("M1", "-s"), ShouldErrLike, `value was expected`)
+		t.Run("many dashes", func(t *ftt.Test) {
+			t.Run("2", func(t *ftt.Test) {
+				assert.Loosely(t, unmarshalOK("M1", "--s", "x"), should.Resemble(msg("s", "x")))
+			})
+			t.Run("3", func(t *ftt.Test) {
+				assert.Loosely(t, unmarshalErr("M1", "---s", "x"), should.ErrLike("---s: bad flag syntax"))
+			})
 		})
 
-		Convey("message", func() {
-			Convey("level 1", func() {
-				So(unmarshalOK("M2", "-m1.s", "x"), ShouldResemble, msg(
+		t.Run("field not found", func(t *ftt.Test) {
+			assert.Loosely(t, unmarshalErr("M2", "-abc", "abc"), should.ErrLike(`-abc: field abc not found in message M2`))
+		})
+		t.Run("value not specified", func(t *ftt.Test) {
+			assert.Loosely(t, unmarshalErr("M1", "-s"), should.ErrLike(`value was expected`))
+		})
+
+		t.Run("message", func(t *ftt.Test) {
+			t.Run("level 1", func(t *ftt.Test) {
+				assert.Loosely(t, unmarshalOK("M2", "-m1.s", "x"), should.Resemble(msg(
 					"m1", msg("s", "x"),
-				))
-				So(unmarshalOK("M2", "-m1.s", "x", "-m1.b"), ShouldResemble, msg(
+				)))
+				assert.Loosely(t, unmarshalOK("M2", "-m1.s", "x", "-m1.b"), should.Resemble(msg(
 					"m1", msg(
 						"s", "x",
 						"b", true,
 					),
-				))
+				)))
 			})
-			Convey("level 2", func() {
-				So(unmarshalOK("M3", "-m2.m1.s", "x"), ShouldResemble, msg(
+			t.Run("level 2", func(t *ftt.Test) {
+				assert.Loosely(t, unmarshalOK("M3", "-m2.m1.s", "x"), should.Resemble(msg(
 					"m2", msg(
 						"m1", msg("s", "x"),
 					),
-				))
+				)))
 			})
-			Convey("not found", func() {
-				So(unmarshalErr("M2", "-abc.s", "x"), ShouldErrLike, `field "abc" not found in message M2`)
+			t.Run("not found", func(t *ftt.Test) {
+				assert.Loosely(t, unmarshalErr("M2", "-abc.s", "x"), should.ErrLike(`field "abc" not found in message M2`))
 			})
-			Convey("non-msg subfield", func() {
-				So(unmarshalErr("M1", "-s.dummy", "x"), ShouldErrLike, "field s is not a message")
+			t.Run("non-msg subfield", func(t *ftt.Test) {
+				assert.Loosely(t, unmarshalErr("M1", "-s.dummy", "x"), should.ErrLike("field s is not a message"))
 			})
-			Convey("message value", func() {
+			t.Run("message value", func(t *ftt.Test) {
 				const err = "M2.m1 is a message field. Specify its field values, not the message itself"
-				So(unmarshalErr("M2", "-m1", "x"), ShouldErrLike, err)
-				So(unmarshalErr("M2", "-m1=x"), ShouldErrLike, err)
+				assert.Loosely(t, unmarshalErr("M2", "-m1", "x"), should.ErrLike(err))
+				assert.Loosely(t, unmarshalErr("M2", "-m1=x"), should.ErrLike(err))
 			})
 		})
 
-		Convey("string and int32", func() {
-			So(unmarshalOK("M1", "-s", "x", "-i", "1"), ShouldResemble, msg(
+		t.Run("string and int32", func(t *ftt.Test) {
+			assert.Loosely(t, unmarshalOK("M1", "-s", "x", "-i", "1"), should.Resemble(msg(
 				"s", "x",
 				"i", int32(1),
-			))
+			)))
 		})
 
-		Convey("repeated", func() {
-			Convey("int32", func() {
-				So(unmarshalOK("M1", "-ri", "1", "-ri", "2"), ShouldResemble, msg(
+		t.Run("repeated", func(t *ftt.Test) {
+			t.Run("int32", func(t *ftt.Test) {
+				assert.Loosely(t, unmarshalOK("M1", "-ri", "1", "-ri", "2"), should.Resemble(msg(
 					"ri", repeated(int32(1), int32(2)),
-				))
+				)))
 			})
-			Convey("submessage string", func() {
-				Convey("works", func() {
-					So(unmarshalOK("M3", "-m1.s", "x", "-m1", "-m1.s", "y"), ShouldResemble, msg(
+			t.Run("submessage string", func(t *ftt.Test) {
+				t.Run("works", func(t *ftt.Test) {
+					assert.Loosely(t, unmarshalOK("M3", "-m1.s", "x", "-m1", "-m1.s", "y"), should.Resemble(msg(
 						"m1", repeated(
 							msg("s", "x"),
 							msg("s", "y"),
 						),
-					))
+					)))
 				})
-				Convey("reports meaningful error", func() {
+				t.Run("reports meaningful error", func(t *ftt.Test) {
 					err := unmarshalErr("M3", "-m1.s", "x", "-m1.s", "y")
-					So(err, ShouldErrLike, `-m1.s: value is already set`)
-					So(err, ShouldErrLike, `insert -m1`)
+					assert.Loosely(t, err, should.ErrLike(`-m1.s: value is already set`))
+					assert.Loosely(t, err, should.ErrLike(`insert -m1`))
 				})
 			})
 		})
 
-		Convey("map", func() {
-			Convey("map<string, string>", func() {
-				So(unmarshalOK("MapContainer", "-ss.x", "a", "-ss.y", "b"), ShouldResemble, msg(
+		t.Run("map", func(t *ftt.Test) {
+			t.Run("map<string, string>", func(t *ftt.Test) {
+				assert.Loosely(t, unmarshalOK("MapContainer", "-ss.x", "a", "-ss.y", "b"), should.Resemble(msg(
 					"ss", msg("x", "a", "y", "b"),
-				))
+				)))
 			})
-			Convey("map<int32, int32>", func() {
-				So(unmarshalOK("MapContainer", "-ii.1", "10", "-ii.2", "20"), ShouldResemble, msg(
+			t.Run("map<int32, int32>", func(t *ftt.Test) {
+				assert.Loosely(t, unmarshalOK("MapContainer", "-ii.1", "10", "-ii.2", "20"), should.Resemble(msg(
 					"ii", msg("1", int32(10), "2", int32(20)),
-				))
+				)))
 			})
-			Convey("map<string, M1>", func() {
-				So(unmarshalOK("MapContainer", "-sm1.x.s", "a", "-sm1.y.s", "b"), ShouldResemble, msg(
+			t.Run("map<string, M1>", func(t *ftt.Test) {
+				assert.Loosely(t, unmarshalOK("MapContainer", "-sm1.x.s", "a", "-sm1.y.s", "b"), should.Resemble(msg(
 					"sm1", msg(
 						"x", msg("s", "a"),
 						"y", msg("s", "b"),
 					),
-				))
+				)))
 			})
 		})
 	})

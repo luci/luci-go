@@ -18,11 +18,11 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/swarming/client/swarming/swarmingtest"
 	swarming "go.chromium.org/luci/swarming/proto/api_v2"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestCancelTaskParse(t *testing.T) {
@@ -35,15 +35,15 @@ func TestCancelTaskParse(t *testing.T) {
 			append([]string{"-server", "example.com"}, argv...),
 			nil, nil,
 		)
-		So(code, ShouldEqual, 1)
-		So(stderr, ShouldContainSubstring, errLike)
+		assert.Loosely(t, code, should.Equal(1))
+		assert.Loosely(t, stderr, should.ContainSubstring(errLike))
 	}
 
-	Convey(`Make sure that Parse handles when no task ID is given.`, t, func() {
+	ftt.Run(`Make sure that Parse handles when no task ID is given.`, t, func(t *ftt.Test) {
 		expectErr(nil, "expecting exactly 1 argument")
 	})
 
-	Convey(`Make sure that Parse handles when too many task ID is given.`, t, func() {
+	ftt.Run(`Make sure that Parse handles when too many task ID is given.`, t, func(t *ftt.Test) {
 		expectErr([]string{"toomany234", "taskids567"}, "expecting exactly 1 argument")
 	})
 }
@@ -51,7 +51,7 @@ func TestCancelTaskParse(t *testing.T) {
 func TestCancelTask(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Cancel`, t, func() {
+	ftt.Run(`Cancel`, t, func(t *ftt.Test) {
 		var givenTaskID string
 		var givenKillRunning bool
 		failTaskID := "failtask"
@@ -72,39 +72,39 @@ func TestCancelTask(t *testing.T) {
 			},
 		}
 
-		Convey(`Cancel task`, func() {
+		t.Run(`Cancel task`, func(t *ftt.Test) {
 			_, code, _, _ := SubcommandTest(
 				context.Background(),
 				CmdCancelTask,
 				[]string{"-server", "example.com", "task"},
 				nil, service,
 			)
-			So(code, ShouldEqual, 0)
-			So(givenTaskID, ShouldEqual, "task")
+			assert.Loosely(t, code, should.BeZero)
+			assert.Loosely(t, givenTaskID, should.Equal("task"))
 		})
 
-		Convey(`Cancel running task `, func() {
+		t.Run(`Cancel running task `, func(t *ftt.Test) {
 			_, code, _, _ := SubcommandTest(
 				context.Background(),
 				CmdCancelTask,
 				[]string{"-server", "example.com", "-kill-running", "runningtask"},
 				nil, service,
 			)
-			So(code, ShouldEqual, 0)
-			So(givenTaskID, ShouldEqual, "runningtask")
-			So(givenKillRunning, ShouldEqual, true)
+			assert.Loosely(t, code, should.BeZero)
+			assert.Loosely(t, givenTaskID, should.Equal("runningtask"))
+			assert.Loosely(t, givenKillRunning, should.Equal(true))
 		})
 
-		Convey(`Cancel task was not OK`, func() {
+		t.Run(`Cancel task was not OK`, func(t *ftt.Test) {
 			err, code, _, _ := SubcommandTest(
 				context.Background(),
 				CmdCancelTask,
 				[]string{"-server", "example.com", failTaskID},
 				nil, service,
 			)
-			So(code, ShouldEqual, 1)
-			So(err, ShouldErrLike, "failed to cancel task")
-			So(givenTaskID, ShouldEqual, failTaskID)
+			assert.Loosely(t, code, should.Equal(1))
+			assert.Loosely(t, err, should.ErrLike("failed to cancel task"))
+			assert.Loosely(t, givenTaskID, should.Equal(failTaskID))
 		})
 	})
 }

@@ -20,7 +20,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 )
 
-func assert(condition bool, info ...any) {
+func must(condition bool, info ...any) {
 	if condition {
 		return
 	}
@@ -42,8 +42,8 @@ func uniqueMergeSortedStrings(ls, rs []string) []string {
 			i += copy(varSet[i:], ls)
 			return varSet[:i]
 		}
-		assert(i < len(varSet))
-		assert(len(rs) > 0 && len(ls) > 0)
+		must(i < len(varSet))
+		must(len(rs) > 0 && len(ls) > 0)
 		if ls[0] > rs[0] {
 			ls, rs = rs, ls
 		}

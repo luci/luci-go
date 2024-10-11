@@ -15,10 +15,11 @@
 package casimpl
 
 import (
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"path/filepath"
 	"testing"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestScatterGatherAdd(t *testing.T) {
@@ -31,35 +32,35 @@ func TestScatterGatherAdd(t *testing.T) {
 	rp3 := filepath.Join("hah", "nah")
 	rp3unclean := rp3 + "/"
 
-	Convey(`Test that Add works in a good case.`, t, func() {
+	ftt.Run(`Test that Add works in a good case.`, t, func(t *ftt.Test) {
 		sc := scatterGather{}
-		So(sc.Add(wd1, rp1), ShouldBeNil)
-		So(sc.Add(wd1, rp2), ShouldBeNil)
-		So(sc.Add(wd2, rp3unclean), ShouldBeNil)
+		assert.Loosely(t, sc.Add(wd1, rp1), should.BeNil)
+		assert.Loosely(t, sc.Add(wd1, rp2), should.BeNil)
+		assert.Loosely(t, sc.Add(wd2, rp3unclean), should.BeNil)
 
-		So(sc, ShouldResemble, scatterGather{
+		assert.Loosely(t, sc, should.Resemble(scatterGather{
 			rp1: wd1,
 			rp2: wd1,
 			rp3: wd2,
-		})
+		}))
 	})
 
-	Convey(`Test that Add fails in a bad case.`, t, func() {
+	ftt.Run(`Test that Add fails in a bad case.`, t, func(t *ftt.Test) {
 		sc := scatterGather{}
-		So(sc.Add(wd1, rp1), ShouldBeNil)
-		So(sc.Add(wd1, rp1), ShouldNotBeNil)
-		So(sc.Add(wd2, rp1), ShouldNotBeNil)
-		So(sc.Add(wd2, rp3), ShouldBeNil)
-		So(sc.Add(wd1, rp3unclean), ShouldNotBeNil)
+		assert.Loosely(t, sc.Add(wd1, rp1), should.BeNil)
+		assert.Loosely(t, sc.Add(wd1, rp1), should.NotBeNil)
+		assert.Loosely(t, sc.Add(wd2, rp1), should.NotBeNil)
+		assert.Loosely(t, sc.Add(wd2, rp3), should.BeNil)
+		assert.Loosely(t, sc.Add(wd1, rp3unclean), should.NotBeNil)
 	})
 }
 
 func TestScatterGatherSet(t *testing.T) {
 	t.Parallel()
 
-	Convey("Test that Set works in a good case.", t, func() {
+	ftt.Run("Test that Set works in a good case.", t, func(t *ftt.Test) {
 		sc := scatterGather{}
-		So(sc.Set("C:\\windir:dir"), ShouldBeNil)
-		So(sc.String(), ShouldEqual, "map[C:\\windir:[dir]]")
+		assert.Loosely(t, sc.Set("C:\\windir:dir"), should.BeNil)
+		assert.Loosely(t, sc.String(), should.Equal("map[C:\\windir:[dir]]"))
 	})
 }

@@ -18,10 +18,11 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/swarming/client/swarming/swarmingtest"
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestBotTasksParse(t *testing.T) {
@@ -34,19 +35,19 @@ func TestBotTasksParse(t *testing.T) {
 			append([]string{"-server", "example.com"}, argv...),
 			nil, nil,
 		)
-		So(code, ShouldEqual, 1)
-		So(stderr, ShouldContainSubstring, errLike)
+		assert.Loosely(t, code, should.Equal(1))
+		assert.Loosely(t, stderr, should.ContainSubstring(errLike))
 	}
 
-	Convey(`Make sure that Parse fails with invalid -id.`, t, func() {
+	ftt.Run(`Make sure that Parse fails with invalid -id.`, t, func(t *ftt.Test) {
 		expectErr([]string{"-id", ""}, "non-empty -id")
 	})
 
-	Convey(`Make sure that Parse fails with negative -limit.`, t, func() {
+	ftt.Run(`Make sure that Parse fails with negative -limit.`, t, func(t *ftt.Test) {
 		expectErr([]string{"-id", "device_id", "-limit", "-1"}, "invalid -limit")
 	})
 
-	Convey(`Make sure that Parse fails with invalid -state.`, t, func() {
+	ftt.Run(`Make sure that Parse fails with invalid -state.`, t, func(t *ftt.Test) {
 		expectErr([]string{"-id", "device_id", "-state", "invalid_state"}, "Invalid state invalid_state")
 	})
 }
@@ -63,20 +64,20 @@ func TestListBotTasksOutput(t *testing.T) {
 
 	service := &swarmingtest.Client{
 		ListBotTasksMock: func(ctx context.Context, s string, i int32, f float64, sq swarmingv2.StateQuery) ([]*swarmingv2.TaskResultResponse, error) {
-			So(s, ShouldEqual, botID)
+			assert.Loosely(t, s, should.Equal(botID))
 			return expectedTasks, nil
 		},
 	}
 
-	Convey(`Expected tasks are outputted`, t, func() {
+	ftt.Run(`Expected tasks are outputted`, t, func(t *ftt.Test) {
 		_, code, stdout, _ := SubcommandTest(
 			context.Background(),
 			CmdBotTasks,
 			[]string{"-server", "example.com", "-id", botID},
 			nil, service,
 		)
-		So(code, ShouldEqual, 0)
-		So(stdout, ShouldEqual, `[
+		assert.Loosely(t, code, should.BeZero)
+		assert.Loosely(t, stdout, should.Equal(`[
  {
   "task_id": "task1"
  },
@@ -84,6 +85,6 @@ func TestListBotTasksOutput(t *testing.T) {
   "task_id": "task2"
  }
 ]
-`)
+`))
 	})
 }

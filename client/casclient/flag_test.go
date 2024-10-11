@@ -15,32 +15,33 @@
 package casclient
 
 import (
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"testing"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestParseCASInstance(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Basic`, t, func() {
+	ftt.Run(`Basic`, t, func(t *ftt.Test) {
 		ins, err := parseCASInstance("abc-123")
-		So(err, ShouldBeNil)
-		So(ins, ShouldResemble, "projects/abc-123/instances/default_instance")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, ins, should.Match("projects/abc-123/instances/default_instance"))
 
 		ins, err = parseCASInstance("projects/foo/instances/bar")
-		So(err, ShouldBeNil)
-		So(ins, ShouldResemble, "projects/foo/instances/bar")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, ins, should.Match("projects/foo/instances/bar"))
 	})
 
-	Convey(`Invalid`, t, func() {
+	ftt.Run(`Invalid`, t, func(t *ftt.Test) {
 		_, err := parseCASInstance("ABC")
-		So(err, ShouldNotBeNil)
+		assert.Loosely(t, err, should.NotBeNil)
 
 		_, err = parseCASInstance("projects/foo")
-		So(err, ShouldNotBeNil)
+		assert.Loosely(t, err, should.NotBeNil)
 
 		_, err = parseCASInstance("projects/foo/instances/bar/42")
-		So(err, ShouldNotBeNil)
+		assert.Loosely(t, err, should.NotBeNil)
 	})
 }

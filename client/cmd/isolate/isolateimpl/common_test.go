@@ -29,9 +29,10 @@ import (
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/client/casclient"
 	"go.chromium.org/luci/client/isolate"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestElideNestedPaths(t *testing.T) {
@@ -41,7 +42,7 @@ func TestElideNestedPaths(t *testing.T) {
 		return elideNestedPaths(deps, "/")
 	}
 
-	Convey(`Mixed`, t, func() {
+	ftt.Run(`Mixed`, t, func(t *ftt.Test) {
 		deps := []string{
 			"ab/foo",
 			"ab/",
@@ -51,30 +52,30 @@ func TestElideNestedPaths(t *testing.T) {
 			"b/c/a",
 			"ab/cd/",
 		}
-		So(doElision(deps), ShouldResemble, []string{"ab/", "b/a", "b/c/", "foo"})
+		assert.Loosely(t, doElision(deps), should.Resemble([]string{"ab/", "b/a", "b/c/", "foo"}))
 	})
 
-	Convey(`All files`, t, func() {
+	ftt.Run(`All files`, t, func(t *ftt.Test) {
 		deps := []string{
 			"ab/foo",
 			"ab/cd/foo",
 			"foo",
 			"ab/bar",
 		}
-		So(doElision(deps), ShouldResemble, []string{"ab/bar", "ab/cd/foo", "ab/foo", "foo"})
+		assert.Loosely(t, doElision(deps), should.Resemble([]string{"ab/bar", "ab/cd/foo", "ab/foo", "foo"}))
 	})
 
-	Convey(`Cousin paths`, t, func() {
+	ftt.Run(`Cousin paths`, t, func(t *ftt.Test) {
 		deps := []string{
 			"ab/foo", // This is a file
 			"ab/cd/",
 			"ab/ef/",
 			"ab/bar",
 		}
-		So(doElision(deps), ShouldResemble, []string{"ab/bar", "ab/cd/", "ab/ef/", "ab/foo"})
+		assert.Loosely(t, doElision(deps), should.Resemble([]string{"ab/bar", "ab/cd/", "ab/ef/", "ab/foo"}))
 	})
 
-	Convey(`Interesting dirs`, t, func() {
+	ftt.Run(`Interesting dirs`, t, func(t *ftt.Test) {
 		deps := []string{
 			"a/b/",
 			"a/b/c/",
@@ -86,10 +87,10 @@ func TestElideNestedPaths(t *testing.T) {
 		// Make sure:
 		// 1. "a/b/" elides "a/b/c/", but not "a/bc/"
 		// 2. "a/bc/" elides "a/bc/d/", but not "a/bcd/"
-		So(doElision(deps), ShouldResemble, []string{"a/b/", "a/bc/", "a/bcd/", "a/c/"})
+		assert.Loosely(t, doElision(deps), should.Resemble([]string{"a/b/", "a/bc/", "a/bcd/", "a/c/"}))
 	})
 
-	Convey(`Interesting files`, t, func() {
+	ftt.Run(`Interesting files`, t, func(t *ftt.Test) {
 		deps := []string{
 			"a/b",
 			"a/bc",
@@ -97,12 +98,12 @@ func TestElideNestedPaths(t *testing.T) {
 			"a/c",
 		}
 		// Make sure "a/b" elides neither "a/bc" nor "a/bcd"
-		So(doElision(deps), ShouldResemble, []string{"a/b", "a/bc", "a/bcd", "a/c"})
+		assert.Loosely(t, doElision(deps), should.Resemble([]string{"a/b", "a/bc", "a/bcd", "a/c"}))
 	})
 }
 
 func TestUploadToCAS(t *testing.T) {
-	Convey(`Top-level Setup`, t, func() {
+	ftt.Run(`Top-level Setup`, t, func(t *ftt.Test) {
 		// We need a top-level Convey so that the fake env is reset for each test cases.
 		// See https://github.com/smartystreets/goconvey/wiki/Execution-order
 		tmpDir := t.TempDir()
@@ -130,7 +131,7 @@ func TestUploadToCAS(t *testing.T) {
 		}
 		cas := e.Server.CAS
 
-		Convey(`Basic`, func() {
+		t.Run(`Basic`, func(t *ftt.Test) {
 			isol1Content := `{
 			  'variables': {
 			    'files': [
@@ -148,20 +149,20 @@ func TestUploadToCAS(t *testing.T) {
 			  },
 			}`
 
-			writeFile(tmpDir, "foo", fooContent)
-			writeFile(tmpDir, "foo2", fooContent)
-			writeFile(tmpDir, "bar", barContent)
-			writeFile(tmpDir, "baz", bazContent)
-			isol1Path := writeFile(tmpDir, "isol1.isolate", []byte(isol1Content))
-			isol2Path := writeFile(tmpDir, "isol2.isolate", []byte(isol2Content))
+			writeFile(t, tmpDir, "foo", fooContent)
+			writeFile(t, tmpDir, "foo2", fooContent)
+			writeFile(t, tmpDir, "bar", barContent)
+			writeFile(t, tmpDir, "baz", bazContent)
+			isol1Path := writeFile(t, tmpDir, "isol1.isolate", []byte(isol1Content))
+			isol2Path := writeFile(t, tmpDir, "isol2.isolate", []byte(isol2Content))
 
 			dgs, err := run.uploadToCAS(context.Background(), "", opts, &fakeFlags, nil, &isolate.ArchiveOptions{
 				Isolate: isol1Path,
 			}, &isolate.ArchiveOptions{
 				Isolate: isol2Path,
 			})
-			So(err, ShouldBeNil)
-			So(dgs, ShouldHaveLength, 2)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, dgs, should.HaveLength(2))
 
 			isol1Dir := &repb.Directory{Files: []*repb.FileNode{
 				{Name: "bar", Digest: barDg.ToProto()},
@@ -172,18 +173,18 @@ func TestUploadToCAS(t *testing.T) {
 				{Name: "foo2", Digest: fooDg.ToProto()},
 			}}
 			blob, ok := cas.Get(dgs[0])
-			So(ok, ShouldBeTrue)
-			So(blob, ShouldResemble, mustMarshal(isol1Dir))
+			assert.Loosely(t, ok, should.BeTrue)
+			assert.Loosely(t, blob, should.Resemble(mustMarshal(t, isol1Dir)))
 			blob, ok = cas.Get(dgs[1])
-			So(ok, ShouldBeTrue)
-			So(blob, ShouldResemble, mustMarshal(isol2Dir))
+			assert.Loosely(t, ok, should.BeTrue)
+			assert.Loosely(t, blob, should.Resemble(mustMarshal(t, isol2Dir)))
 
-			So(cas.BlobWrites(fooDg), ShouldEqual, 1)
-			So(cas.BlobWrites(barDg), ShouldEqual, 1)
-			So(cas.BlobWrites(bazDg), ShouldEqual, 1)
+			assert.Loosely(t, cas.BlobWrites(fooDg), should.Equal(1))
+			assert.Loosely(t, cas.BlobWrites(barDg), should.Equal(1))
+			assert.Loosely(t, cas.BlobWrites(bazDg), should.Equal(1))
 		})
 
-		Convey(`No upload if already on the server`, func() {
+		t.Run(`No upload if already on the server`, func(t *ftt.Test) {
 			isol1Content := `{
 			  'variables': {
 			    'files': [
@@ -194,10 +195,10 @@ func TestUploadToCAS(t *testing.T) {
 			  },
 			}`
 
-			writeFile(tmpDir, "foo", fooContent)
-			writeFile(tmpDir, "bar", barContent)
-			writeFile(tmpDir, "baz", bazContent)
-			isol1Path := writeFile(tmpDir, "isol1.isolate", []byte(isol1Content))
+			writeFile(t, tmpDir, "foo", fooContent)
+			writeFile(t, tmpDir, "bar", barContent)
+			writeFile(t, tmpDir, "baz", bazContent)
+			isol1Path := writeFile(t, tmpDir, "isol1.isolate", []byte(isol1Content))
 
 			// Upload `foo` and `bar` to the server
 			cas.Put(fooContent)
@@ -206,8 +207,8 @@ func TestUploadToCAS(t *testing.T) {
 			dgs, err := run.uploadToCAS(context.Background(), "", opts, &fakeFlags, nil, &isolate.ArchiveOptions{
 				Isolate: isol1Path,
 			})
-			So(err, ShouldBeNil)
-			So(dgs, ShouldHaveLength, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, dgs, should.HaveLength(1))
 
 			isol1Dir := &repb.Directory{Files: []*repb.FileNode{
 				{Name: "bar", Digest: barDg.ToProto()},
@@ -215,15 +216,15 @@ func TestUploadToCAS(t *testing.T) {
 				{Name: "foo", Digest: fooDg.ToProto()},
 			}}
 			blob, ok := cas.Get(dgs[0])
-			So(ok, ShouldBeTrue)
-			So(blob, ShouldResemble, mustMarshal(isol1Dir))
+			assert.Loosely(t, ok, should.BeTrue)
+			assert.Loosely(t, blob, should.Resemble(mustMarshal(t, isol1Dir)))
 
-			So(cas.BlobWrites(fooDg), ShouldEqual, 0)
-			So(cas.BlobWrites(barDg), ShouldEqual, 0)
-			So(cas.BlobWrites(bazDg), ShouldEqual, 1)
+			assert.Loosely(t, cas.BlobWrites(fooDg), should.BeZero)
+			assert.Loosely(t, cas.BlobWrites(barDg), should.BeZero)
+			assert.Loosely(t, cas.BlobWrites(bazDg), should.Equal(1))
 		})
 
-		Convey(`Filter files`, func() {
+		t.Run(`Filter files`, func(t *ftt.Test) {
 			isol1Content := `{
 			  'variables': {
 			    'files': [
@@ -235,44 +236,46 @@ func TestUploadToCAS(t *testing.T) {
 			}`
 
 			filteredDir := filepath.Join(tmpDir, "filtered")
-			So(os.Mkdir(filteredDir, 0700), ShouldBeNil)
-			writeFile(filteredDir, "foo", fooContent)
-			writeFile(filteredDir, "foo2", fooContent)
-			writeFile(tmpDir, "bar", barContent)
-			isol1Path := writeFile(tmpDir, "isol1.isolate", []byte(isol1Content))
+			assert.Loosely(t, os.Mkdir(filteredDir, 0700), should.BeNil)
+			writeFile(t, filteredDir, "foo", fooContent)
+			writeFile(t, filteredDir, "foo2", fooContent)
+			writeFile(t, tmpDir, "bar", barContent)
+			isol1Path := writeFile(t, tmpDir, "isol1.isolate", []byte(isol1Content))
 
 			dgs, err := run.uploadToCAS(context.Background(), "", opts, &fakeFlags, nil, &isolate.ArchiveOptions{
 				Isolate:             isol1Path,
 				IgnoredPathFilterRe: "filtered/foo",
 			})
-			So(err, ShouldBeNil)
-			So(dgs, ShouldHaveLength, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, dgs, should.HaveLength(1))
 
 			// `foo*` files are filtered away
 			isol1Dir := &repb.Directory{Files: []*repb.FileNode{
 				{Name: "bar", Digest: barDg.ToProto()},
 			}}
 			blob, ok := cas.Get(dgs[0])
-			So(ok, ShouldBeTrue)
+			assert.Loosely(t, ok, should.BeTrue)
 
 			gotDir := &repb.Directory{}
-			So(proto.Unmarshal(blob, gotDir), ShouldBeNil)
-			So(gotDir, ShouldResembleProto, isol1Dir)
+			assert.Loosely(t, proto.Unmarshal(blob, gotDir), should.BeNil)
+			assert.Loosely(t, gotDir, should.Resemble(isol1Dir))
 
-			So(cas.BlobWrites(fooDg), ShouldEqual, 0)
-			So(cas.BlobWrites(barDg), ShouldEqual, 1)
+			assert.Loosely(t, cas.BlobWrites(fooDg), should.BeZero)
+			assert.Loosely(t, cas.BlobWrites(barDg), should.Equal(1))
 		})
 	})
 }
 
-func mustMarshal(p proto.Message) []byte {
+func mustMarshal(t testing.TB, p proto.Message) []byte {
+	t.Helper()
 	b, err := proto.Marshal(p)
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil, truth.LineContext())
 	return b
 }
 
-func writeFile(dir, name string, content []byte) string {
+func writeFile(t testing.TB, dir, name string, content []byte) string {
+	t.Helper()
 	p := filepath.Join(dir, name)
-	So(os.WriteFile(p, content, 0600), ShouldBeNil)
+	assert.Loosely(t, os.WriteFile(p, content, 0600), should.BeNil, truth.LineContext())
 	return p
 }

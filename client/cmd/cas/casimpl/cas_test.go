@@ -26,11 +26,14 @@ import (
 
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/fakes"
-	. "github.com/smartystreets/goconvey/convey"
 
 	"go.chromium.org/luci/common/data/caching/cache"
 	"go.chromium.org/luci/common/data/embeddedkvs"
+	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/testfs"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 type testAuthFlags struct {
@@ -49,7 +52,7 @@ func TestArchiveDownload(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	Convey(`Upload and download`, t, func() {
+	ftt.Run(`Upload and download`, t, func(t *ftt.Test) {
 		testEnv, cleanup := fakes.NewTestEnv(t)
 		t.Cleanup(cleanup)
 
@@ -61,68 +64,73 @@ func TestArchiveDownload(t *testing.T) {
 			"large_file": largeFile,
 			"empty/":     "",
 		}
-		So(testfs.Build(uploaded, layout), ShouldBeNil)
+		assert.Loosely(t, testfs.Build(uploaded, layout), should.BeNil)
 
 		var ar archiveRun
 		ar.commonFlags.Init(&testAuthFlags{testEnv: testEnv})
 		ar.dumpDigest = filepath.Join(t.TempDir(), "digest")
-		So(ar.paths.Set(uploaded+":."), ShouldBeNil)
-		So(ar.doArchive(ctx), ShouldBeNil)
+		assert.Loosely(t, ar.paths.Set(uploaded+":."), should.BeNil)
+		assert.Loosely(t, ar.doArchive(ctx), should.BeNil)
 
 		digest, err := os.ReadFile(ar.dumpDigest)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		var dr downloadRun
 		dr.commonFlags.Init(&testAuthFlags{testEnv: testEnv})
 		dr.digest = string(digest)
 		dr.dir = t.TempDir()
 
-		Convey("use cache", func() {
+		check := func(t testing.TB) {
+			t.Helper()
+			downloaded, err := testfs.Collect(dr.dir)
+			assert.Loosely(t, err, should.BeNil, truth.LineContext())
+			assert.Loosely(t, downloaded, should.Resemble(layout), truth.LineContext())
+		}
+
+		t.Run("use cache", func(t *ftt.Test) {
 			dr.kvs = filepath.Join(t.TempDir(), "kvs")
 			dr.cacheDir = filepath.Join(t.TempDir(), "cache")
 			err = dr.doDownload(ctx)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			kvs, err := embeddedkvs.New(ctx, dr.kvs)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			defer func() {
-				So(kvs.Close(), ShouldBeNil)
+				assert.Loosely(t, kvs.Close(), should.BeNil)
 			}()
 
 			var keys, values []string
-			So(kvs.ForEach(func(key string, value []byte) error {
+			assert.Loosely(t, kvs.ForEach(func(key string, value []byte) error {
 				keys = append(keys, key)
 				values = append(values, string(value))
 				return nil
-			}), ShouldBeNil)
+			}), should.BeNil)
 
 			sha256hex := func(value string) string {
 				h := sha256.Sum256([]byte(value))
 				return hex.EncodeToString(h[:])
 			}
 
-			So(keys, ShouldResemble, []string{
+			assert.Loosely(t, keys, should.Resemble([]string{
 				sha256hex("bc"),
 				sha256hex("a"),
-			})
-			So(values, ShouldResemble, []string{"bc", "a"})
+			}))
+			assert.Loosely(t, values, should.Resemble([]string{"bc", "a"}))
 
 			diskcache, err := cache.New(dr.cachePolicies, dr.cacheDir, crypto.SHA256)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			defer func() {
-				So(diskcache.Close(), ShouldBeNil)
+				assert.Loosely(t, diskcache.Close(), should.BeNil)
 			}()
-			So(diskcache.Touch(cache.HexDigest(sha256hex(largeFile))), ShouldBeTrue)
+			assert.Loosely(t, diskcache.Touch(cache.HexDigest(sha256hex(largeFile))), should.BeTrue)
+			check(t)
 		})
 
-		Convey("not use cache", func() {
+		t.Run("not use cache", func(t *ftt.Test) {
 			// do not set kvs.
 			err = dr.doDownload(ctx)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			check(t)
 		})
-
-		downloaded, err := testfs.Collect(dr.dir)
-		So(err, ShouldBeNil)
-		So(downloaded, ShouldResemble, layout)
 	})
 }

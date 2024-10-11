@@ -18,10 +18,11 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/swarming/client/swarming/swarmingtest"
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestRequestShowParse(t *testing.T) {
@@ -34,15 +35,15 @@ func TestRequestShowParse(t *testing.T) {
 			append([]string{"-server", "example.com"}, argv...),
 			nil, nil,
 		)
-		So(code, ShouldEqual, 1)
-		So(stderr, ShouldContainSubstring, errLike)
+		assert.Loosely(t, code, should.Equal(1))
+		assert.Loosely(t, stderr, should.ContainSubstring(errLike))
 	}
 
-	Convey(`Need an arg`, t, func() {
+	ftt.Run(`Need an arg`, t, func(t *ftt.Test) {
 		expectErr(nil, "expecting exactly 1 argument")
 	})
 
-	Convey(`At most one arg`, t, func() {
+	ftt.Run(`At most one arg`, t, func(t *ftt.Test) {
 		expectErr([]string{"aaaa", "bbbb"}, "expecting exactly 1 argument")
 	})
 }
@@ -52,7 +53,7 @@ func TestRequestShow(t *testing.T) {
 
 	service := &swarmingtest.Client{
 		TaskRequestMock: func(ctx context.Context, s string) (*swarmingv2.TaskRequestResponse, error) {
-			So(s, ShouldEqual, "aaaa")
+			assert.Loosely(t, s, should.Equal("aaaa"))
 			return &swarmingv2.TaskRequestResponse{
 				TaskId:       "aaaa",
 				ParentTaskId: "bbbb",
@@ -60,18 +61,18 @@ func TestRequestShow(t *testing.T) {
 		},
 	}
 
-	Convey(`Output is correct`, t, func() {
+	ftt.Run(`Output is correct`, t, func(t *ftt.Test) {
 		_, code, stdout, _ := SubcommandTest(
 			context.Background(),
 			CmdRequestShow,
 			[]string{"-server", "example.com", "aaaa"},
 			nil, service,
 		)
-		So(code, ShouldEqual, 0)
-		So(stdout, ShouldEqual, `{
+		assert.Loosely(t, code, should.BeZero)
+		assert.Loosely(t, stdout, should.Equal(`{
  "task_id": "aaaa",
  "parent_task_id": "bbbb"
 }
-`)
+`))
 	})
 }

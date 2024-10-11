@@ -186,7 +186,7 @@ type Configs struct {
 
 func newConfigs(configVariables []string) *Configs {
 	c := &Configs{configVariables, map[string]configPair{}}
-	assert(sort.IsSorted(sort.StringSlice(c.ConfigVariables)))
+	must(sort.IsSorted(sort.StringSlice(c.ConfigVariables)))
 	return c
 }
 
@@ -229,11 +229,11 @@ func (c *Configs) GetConfig(cn configName) (*ConfigSettings, error) {
 // The key is a tuple of bounded or unbounded variables. The global variable
 // is the key where all values are unbounded.
 func (c *Configs) setConfig(cn configName, value *ConfigSettings) {
-	assert(len(cn) == len(c.ConfigVariables))
-	assert(value != nil)
+	must(len(cn) == len(c.ConfigVariables))
+	must(value != nil)
 	key := cn.key()
 	pair, ok := c.byConfig[key]
-	assert(!ok, "setConfig must not override existing keys (%s => %v)", key, pair.value)
+	must(!ok, "setConfig must not override existing keys (%s => %v)", key, pair.value)
 	c.byConfig[key] = configPair{cn, value}
 }
 
@@ -322,9 +322,9 @@ type ConfigSettings struct {
 func newConfigSettings(variables variables, isolateDir string) *ConfigSettings {
 	if isolateDir == "" {
 		// It must be an empty object if isolateDir is not set.
-		assert(variables.isEmpty(), variables)
+		must(variables.isEmpty(), variables)
 	} else {
-		assert(filepath.IsAbs(isolateDir))
+		must(filepath.IsAbs(isolateDir))
 	}
 	c := &ConfigSettings{
 		make([]string, len(variables.Files)),
@@ -809,14 +809,14 @@ func (c *conditionEvaluator) eval(e ast.Expr) bool {
 		} else if e.Op == token.LOR {
 			return c.eval(e.X) || c.eval(e.Y)
 		}
-		assert(e.Op == token.EQL)
+		must(e.Op == token.EQL)
 		value := c.getVarValue(e.X.(*ast.Ident).Name)
 		if !value.isBound() {
 			c.stop = true
 			return false
 		}
 		eqValue := c.cond.equalityValues[e.Pos()]
-		assert(eqValue.isBound())
+		must(eqValue.isBound())
 		return value.compare(c.cond.equalityValues[e.Pos()]) == 0
 	default:
 		panic(errors.New("processCondition must have ensured condition is evaluatable"))
@@ -945,7 +945,7 @@ type configName []variableValue
 
 func (c configName) compare(rhs configName) int {
 	// Bound value is less than unbound one.
-	assert(len(c) == len(rhs))
+	must(len(c) == len(rhs))
 	for i, l := range c {
 		if r := l.compare(rhs[i]); r != 0 {
 			return r

@@ -16,9 +16,10 @@ package swarmingimpl
 
 import (
 	"context"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"testing"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestCancelTasksParse(t *testing.T) {
@@ -31,16 +32,16 @@ func TestCancelTasksParse(t *testing.T) {
 			append([]string{"-server", "example.com"}, argv...),
 			nil, nil,
 		)
-		So(code, ShouldEqual, 1)
-		So(stderr, ShouldContainSubstring, errLike)
+		assert.Loosely(t, code, should.Equal(1))
+		assert.Loosely(t, stderr, should.ContainSubstring(errLike))
 	}
 
-	Convey(`Make sure that Parse fails with zero -limit.`, t, func() {
+	ftt.Run(`Make sure that Parse fails with zero -limit.`, t, func(t *ftt.Test) {
 		expectErr([]string{"-limit", "0"}, "must be positive")
 		expectErr([]string{"-limit", "-1"}, "must be positive")
 	})
 
-	Convey(`Make sure that tag is specified when limit is greater than default limit.`, t, func() {
+	ftt.Run(`Make sure that tag is specified when limit is greater than default limit.`, t, func(t *ftt.Test) {
 		expectErr([]string{"-limit", "500"}, "cannot be larger than")
 	})
 

@@ -24,12 +24,12 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/swarming/client/swarming"
 	"go.chromium.org/luci/swarming/client/swarming/swarmingtest"
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestTerminateBotsParse(t *testing.T) {
@@ -42,15 +42,15 @@ func TestTerminateBotsParse(t *testing.T) {
 			append([]string{"-server", "example.com"}, argv...),
 			nil, nil,
 		)
-		So(code, ShouldEqual, 1)
-		So(stderr, ShouldContainSubstring, errLike)
+		assert.Loosely(t, code, should.Equal(1))
+		assert.Loosely(t, stderr, should.ContainSubstring(errLike))
 	}
 
-	Convey(`Wants a bot ID`, t, func() {
+	ftt.Run(`Wants a bot ID`, t, func(t *ftt.Test) {
 		expectErr(nil, "expecting exactly 1 argument")
 	})
 
-	Convey(`Wants only one bot ID`, t, func() {
+	ftt.Run(`Wants only one bot ID`, t, func(t *ftt.Test) {
 		expectErr([]string{"b1", "b2"}, "expecting exactly 1 argument")
 	})
 }
@@ -58,7 +58,7 @@ func TestTerminateBotsParse(t *testing.T) {
 func TestTerminateBots(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Test terminate`, t, func() {
+	ftt.Run(`Test terminate`, t, func(t *ftt.Test) {
 		taskStillRunningBotID := "stillrunningbotid123"
 		failBotID := "failingbot123"
 		errorAtTaskBotID := "errorattaskbot123"
@@ -126,78 +126,78 @@ func TestTerminateBots(t *testing.T) {
 			},
 		}
 
-		Convey(`Test terminating bot`, func() {
+		t.Run(`Test terminating bot`, func(t *ftt.Test) {
 			_, code, _, _ := SubcommandTest(
 				ctx,
 				CmdTerminateBot,
 				[]string{"-server", "example.com", "testbot123"},
 				nil, service,
 			)
-			So(code, ShouldEqual, 0)
-			So(givenBotID, ShouldEqual, "testbot123")
+			assert.Loosely(t, code, should.BeZero)
+			assert.Loosely(t, givenBotID, should.Equal("testbot123"))
 		})
 
-		Convey(`Test when terminating bot fails`, func() {
+		t.Run(`Test when terminating bot fails`, func(t *ftt.Test) {
 			err, code, _, _ := SubcommandTest(
 				ctx,
 				CmdTerminateBot,
 				[]string{"-server", "example.com", failBotID},
 				nil, service,
 			)
-			So(code, ShouldEqual, 1)
-			So(err, ShouldErrLike, "no such bot")
-			So(givenBotID, ShouldEqual, failBotID)
+			assert.Loosely(t, code, should.Equal(1))
+			assert.Loosely(t, err, should.ErrLike("no such bot"))
+			assert.Loosely(t, givenBotID, should.Equal(failBotID))
 		})
 
-		Convey(`Test terminating bot with waiting`, func() {
+		t.Run(`Test terminating bot with waiting`, func(t *ftt.Test) {
 			_, code, _, _ := SubcommandTest(
 				ctx,
 				CmdTerminateBot,
 				[]string{"-server", "example.com", "-wait", "testbot123"},
 				nil, service,
 			)
-			So(code, ShouldEqual, 0)
-			So(givenBotID, ShouldEqual, "testbot123")
-			So(givenTaskID, ShouldEqual, terminateTaskID)
+			assert.Loosely(t, code, should.BeZero)
+			assert.Loosely(t, givenBotID, should.Equal("testbot123"))
+			assert.Loosely(t, givenTaskID, should.Equal(terminateTaskID))
 		})
 
-		Convey(`Test terminating bot with waiting and bot doesn't stop running immediately`, func() {
+		t.Run(`Test terminating bot with waiting and bot doesn't stop running immediately`, func(t *ftt.Test) {
 			_, code, _, _ := SubcommandTest(
 				ctx,
 				CmdTerminateBot,
 				[]string{"-server", "example.com", "-wait", taskStillRunningBotID},
 				nil, service,
 			)
-			So(code, ShouldEqual, 0)
-			So(countLoop, ShouldEqual, 2)
-			So(givenBotID, ShouldEqual, taskStillRunningBotID)
-			So(givenTaskID, ShouldEqual, stillRunningTaskID)
+			assert.Loosely(t, code, should.BeZero)
+			assert.Loosely(t, countLoop, should.Equal(2))
+			assert.Loosely(t, givenBotID, should.Equal(taskStillRunningBotID))
+			assert.Loosely(t, givenTaskID, should.Equal(stillRunningTaskID))
 		})
 
-		Convey(`Test terminating bot when wait fails with error`, func() {
+		t.Run(`Test terminating bot when wait fails with error`, func(t *ftt.Test) {
 			err, code, _, _ := SubcommandTest(
 				ctx,
 				CmdTerminateBot,
 				[]string{"-server", "example.com", "-wait", errorAtTaskBotID},
 				nil, service,
 			)
-			So(code, ShouldEqual, 1)
-			So(err, ShouldErrLike, "failed to call")
-			So(givenBotID, ShouldEqual, errorAtTaskBotID)
-			So(givenTaskID, ShouldEqual, failTaskID)
+			assert.Loosely(t, code, should.Equal(1))
+			assert.Loosely(t, err, should.ErrLike("failed to call"))
+			assert.Loosely(t, givenBotID, should.Equal(errorAtTaskBotID))
+			assert.Loosely(t, givenTaskID, should.Equal(failTaskID))
 		})
 
-		Convey(`Other than status "complete" returned when terminating bot with wait`, func() {
+		t.Run(`Other than status "complete" returned when terminating bot with wait`, func(t *ftt.Test) {
 			err, code, _, _ := SubcommandTest(
 				ctx,
 				CmdTerminateBot,
 				[]string{"-server", "example.com", "-wait", statusNotCompletedBotID},
 				nil, service,
 			)
-			So(code, ShouldEqual, 1)
-			So(err, ShouldErrLike, "failed to terminate bot")
-			So(givenBotID, ShouldEqual, statusNotCompletedBotID)
-			So(givenTaskID, ShouldEqual, statusNotCompletedTaskID)
+			assert.Loosely(t, code, should.Equal(1))
+			assert.Loosely(t, err, should.ErrLike("failed to terminate bot"))
+			assert.Loosely(t, givenBotID, should.Equal(statusNotCompletedBotID))
+			assert.Loosely(t, givenTaskID, should.Equal(statusNotCompletedTaskID))
 		})
 	})
 }

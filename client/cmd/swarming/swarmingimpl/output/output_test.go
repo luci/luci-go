@@ -20,8 +20,9 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/clipb"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestSink(t *testing.T) {
@@ -31,19 +32,19 @@ func TestSink(t *testing.T) {
 		buf := &bytes.Buffer{}
 		sink := NewSink(buf)
 		cb(sink)
-		So(sink.Finalize(), ShouldBeNil)
+		assert.Loosely(t, sink.Finalize(), should.BeNil)
 		fmt.Printf("%s", buf.String())
 		return buf.String()
 	}
 
-	Convey("Proto", t, func() {
+	ftt.Run("Proto", t, func(t *ftt.Test) {
 		out := withSink(func(sink *Sink) {
-			So(Proto(sink, &clipb.ResultSummaryEntry{
+			assert.Loosely(t, Proto(sink, &clipb.ResultSummaryEntry{
 				Output:  "hi",
 				Outputs: []string{"a", "b", "c"},
-			}), ShouldBeNil)
+			}), should.BeNil)
 		})
-		So(out, ShouldEqual, `{
+		assert.Loosely(t, out, should.Equal(`{
  "output": "hi",
  "outputs": [
   "a",
@@ -51,38 +52,38 @@ func TestSink(t *testing.T) {
   "c"
  ]
 }
-`)
+`))
 	})
 
-	Convey("JSON", t, func() {
+	ftt.Run("JSON", t, func(t *ftt.Test) {
 		out := withSink(func(sink *Sink) {
-			So(JSON(sink, map[string]int{"a": 1, "b": 2}), ShouldBeNil)
+			assert.Loosely(t, JSON(sink, map[string]int{"a": 1, "b": 2}), should.BeNil)
 		})
-		So(out, ShouldEqual, `{
+		assert.Loosely(t, out, should.Equal(`{
  "a": 1,
  "b": 2
 }
-`)
+`))
 	})
 
-	Convey("List", t, func() {
-		Convey("Zero", func() {
+	ftt.Run("List", t, func(t *ftt.Test) {
+		t.Run("Zero", func(t *ftt.Test) {
 			out := withSink(func(sink *Sink) {
-				So(List[*clipb.ResultSummaryEntry](sink, nil), ShouldBeNil)
+				assert.Loosely(t, List[*clipb.ResultSummaryEntry](sink, nil), should.BeNil)
 			})
-			So(out, ShouldEqual, "[]\n")
+			assert.Loosely(t, out, should.Equal("[]\n"))
 		})
 
-		Convey("One", func() {
+		t.Run("One", func(t *ftt.Test) {
 			out := withSink(func(sink *Sink) {
-				So(List(sink, []*clipb.ResultSummaryEntry{
+				assert.Loosely(t, List(sink, []*clipb.ResultSummaryEntry{
 					{
 						Output:  "hi 1",
 						Outputs: []string{"a", "b", "c"},
 					},
-				}), ShouldBeNil)
+				}), should.BeNil)
 			})
-			So(out, ShouldEqual, `[
+			assert.Loosely(t, out, should.Equal(`[
  {
   "output": "hi 1",
   "outputs": [
@@ -92,12 +93,12 @@ func TestSink(t *testing.T) {
   ]
  }
 ]
-`)
+`))
 		})
 
-		Convey("Many", func() {
+		t.Run("Many", func(t *ftt.Test) {
 			out := withSink(func(sink *Sink) {
-				So(List(sink, []*clipb.ResultSummaryEntry{
+				assert.Loosely(t, List(sink, []*clipb.ResultSummaryEntry{
 					{
 						Output:  "hi 1",
 						Outputs: []string{"a", "b", "c"},
@@ -106,9 +107,9 @@ func TestSink(t *testing.T) {
 						Output:  "hi 2",
 						Outputs: []string{"d", "e", "f"},
 					},
-				}), ShouldBeNil)
+				}), should.BeNil)
 			})
-			So(out, ShouldEqual, `[
+			assert.Loosely(t, out, should.Equal(`[
  {
   "output": "hi 1",
   "outputs": [
@@ -126,28 +127,28 @@ func TestSink(t *testing.T) {
   ]
  }
 ]
-`)
+`))
 		})
 	})
 
-	Convey("Map", t, func() {
-		Convey("Zero", func() {
+	ftt.Run("Map", t, func(t *ftt.Test) {
+		t.Run("Zero", func(t *ftt.Test) {
 			out := withSink(func(sink *Sink) {
-				So(Map[*clipb.ResultSummaryEntry](sink, nil), ShouldBeNil)
+				assert.Loosely(t, Map[*clipb.ResultSummaryEntry](sink, nil), should.BeNil)
 			})
-			So(out, ShouldEqual, "{}\n")
+			assert.Loosely(t, out, should.Equal("{}\n"))
 		})
 
-		Convey("One", func() {
+		t.Run("One", func(t *ftt.Test) {
 			out := withSink(func(sink *Sink) {
-				So(Map(sink, map[string]*clipb.ResultSummaryEntry{
+				assert.Loosely(t, Map(sink, map[string]*clipb.ResultSummaryEntry{
 					"a": {
 						Output:  "hi 1",
 						Outputs: []string{"a", "b", "c"},
 					},
-				}), ShouldBeNil)
+				}), should.BeNil)
 			})
-			So(out, ShouldEqual, `{
+			assert.Loosely(t, out, should.Equal(`{
  "a": {
   "output": "hi 1",
   "outputs": [
@@ -157,12 +158,12 @@ func TestSink(t *testing.T) {
   ]
  }
 }
-`)
+`))
 		})
 
-		Convey("Many", func() {
+		t.Run("Many", func(t *ftt.Test) {
 			out := withSink(func(sink *Sink) {
-				So(Map(sink, map[string]*clipb.ResultSummaryEntry{
+				assert.Loosely(t, Map(sink, map[string]*clipb.ResultSummaryEntry{
 					"a": {
 						Output:  "hi 1",
 						Outputs: []string{"a", "b", "c"},
@@ -171,9 +172,9 @@ func TestSink(t *testing.T) {
 						Output:  "hi 2",
 						Outputs: []string{"d", "e", "f"},
 					},
-				}), ShouldBeNil)
+				}), should.BeNil)
 			})
-			So(out, ShouldEqual, `{
+			assert.Loosely(t, out, should.Equal(`{
  "a": {
   "output": "hi 1",
   "outputs": [
@@ -191,7 +192,7 @@ func TestSink(t *testing.T) {
   ]
  }
 }
-`)
+`))
 		})
 	})
 }

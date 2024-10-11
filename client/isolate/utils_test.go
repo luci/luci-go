@@ -20,12 +20,14 @@ import (
 	"os"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestUniqueMergeSortedStrings(t *testing.T) {
 	t.Parallel()
-	Convey(`Tests the unique merge of sorted of strings.`, t, func() {
+	ftt.Run(`Tests the unique merge of sorted of strings.`, t, func(t *ftt.Test) {
 		SS := func(s string) []string {
 			out := make([]string, 0, len(s))
 			for _, c := range s {
@@ -33,22 +35,22 @@ func TestUniqueMergeSortedStrings(t *testing.T) {
 			}
 			return out
 		}
-		So(uniqueMergeSortedStrings(SS("acde"), SS("abe")), ShouldResemble, SS("abcde"))
-		So(uniqueMergeSortedStrings(SS("abc"), SS("")), ShouldResemble, SS("abc"))
-		So(uniqueMergeSortedStrings(
+		assert.Loosely(t, uniqueMergeSortedStrings(SS("acde"), SS("abe")), should.Resemble(SS("abcde")))
+		assert.Loosely(t, uniqueMergeSortedStrings(SS("abc"), SS("")), should.Resemble(SS("abc")))
+		assert.Loosely(t, uniqueMergeSortedStrings(
 			[]string{"bar", "foo", "test"},
 			[]string{"foo", "toss", "xyz"}),
-			ShouldResemble, []string{"bar", "foo", "test", "toss", "xyz"})
+			should.Resemble([]string{"bar", "foo", "test", "toss", "xyz"}))
 
 		// Test degenerate cases (empty and single-element lists)
-		So(uniqueMergeSortedStrings(SS(""), SS("")), ShouldResemble, SS(""))
-		So(uniqueMergeSortedStrings(SS("x"), SS("")), ShouldResemble, SS("x"))
-		So(uniqueMergeSortedStrings(SS(""), SS("x")), ShouldResemble, SS("x"))
+		assert.Loosely(t, uniqueMergeSortedStrings(SS(""), SS("")), should.Resemble(SS("")))
+		assert.Loosely(t, uniqueMergeSortedStrings(SS("x"), SS("")), should.Resemble(SS("x")))
+		assert.Loosely(t, uniqueMergeSortedStrings(SS(""), SS("x")), should.Resemble(SS("x")))
 	})
 }
 
-func TestAssert(t *testing.T) {
-	Convey(`Helper function for test assertion.`, t, func() {
+func TestMust(t *testing.T) {
+	ftt.Run(`Helper function for test assertion.`, t, func(t *ftt.Test) {
 		log.SetOutput(io.Discard)
 		defer log.SetOutput(os.Stderr)
 
@@ -59,8 +61,8 @@ func TestAssert(t *testing.T) {
 			f()
 			return
 		}
-		So(wasPanic(func() { assert(false) }), ShouldBeTrue)
-		So(wasPanic(func() { assert(false, "format") }), ShouldBeTrue)
-		So(wasPanic(func() { assert(false, "format") }), ShouldBeTrue)
+		assert.Loosely(t, wasPanic(func() { must(false) }), should.BeTrue)
+		assert.Loosely(t, wasPanic(func() { must(false, "format") }), should.BeTrue)
+		assert.Loosely(t, wasPanic(func() { must(false, "format") }), should.BeTrue)
 	})
 }

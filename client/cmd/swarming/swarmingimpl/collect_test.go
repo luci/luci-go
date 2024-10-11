@@ -33,11 +33,13 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/swarming/client/swarming"
 	"go.chromium.org/luci/swarming/client/swarming/swarmingtest"
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestCollectParse(t *testing.T) {
@@ -50,23 +52,23 @@ func TestCollectParse(t *testing.T) {
 			append([]string{"-server", "example.com"}, argv...),
 			nil, nil,
 		)
-		So(code, ShouldEqual, 1)
-		So(stderr, ShouldContainSubstring, errLike)
+		assert.Loosely(t, code, should.Equal(1))
+		assert.Loosely(t, stderr, should.ContainSubstring(errLike))
 	}
 
-	Convey(`Make sure that Parse handles no task IDs given.`, t, func() {
+	ftt.Run(`Make sure that Parse handles no task IDs given.`, t, func(t *ftt.Test) {
 		expectErr(nil, "must specify at least one task id")
 	})
 
-	Convey(`Make sure that Parse handles a malformed task ID.`, t, func() {
+	ftt.Run(`Make sure that Parse handles a malformed task ID.`, t, func(t *ftt.Test) {
 		expectErr([]string{"$$$$$"}, "must be hex")
 	})
 
-	Convey(`Make sure that Parse handles a dup task ID.`, t, func() {
+	ftt.Run(`Make sure that Parse handles a dup task ID.`, t, func(t *ftt.Test) {
 		expectErr([]string{"aaaaaaaaa", "aaaaaaaaa"}, "given more than once")
 	})
 
-	Convey(`Make sure that Parse handles a negative timeout.`, t, func() {
+	ftt.Run(`Make sure that Parse handles a negative timeout.`, t, func(t *ftt.Test) {
 		expectErr([]string{"-timeout", "-30m", "aaaaaaaaa"}, "negative timeout")
 	})
 }
@@ -76,7 +78,7 @@ func TestCollect(t *testing.T) {
 
 	casOutputDir := t.TempDir()
 
-	Convey(`With mocks`, t, func() {
+	ftt.Run(`With mocks`, t, func(t *ftt.Test) {
 		sleeps := 0
 		onSleep := func() {}
 
@@ -144,7 +146,7 @@ func TestCollect(t *testing.T) {
 			},
 		}
 
-		Convey(`Happy path`, func() {
+		t.Run(`Happy path`, func(t *ftt.Test) {
 			mockedState["a0"] = swarmingv2.TaskState_PENDING
 			mockedHasCAS["a0"] = true
 
@@ -170,8 +172,8 @@ func TestCollect(t *testing.T) {
 				},
 				nil, service,
 			)
-			So(code, ShouldEqual, 0)
-			So(sortJSON(stdout), ShouldEqual, `{
+			assert.Loosely(t, code, should.BeZero)
+			assert.Loosely(t, sortJSON(stdout), should.Equal(`{
  "a0": {
   "output": "Output of a0",
   "outputs": [
@@ -212,18 +214,18 @@ func TestCollect(t *testing.T) {
   }
  }
 }
-`)
+`))
 
 			// Check actually created output directories, even for tasks with no
 			// outputs.
 			for _, taskID := range []string{"a0", "a1", "a2"} {
 				s, err := os.Stat(filepath.Join(casOutputDir, taskID))
-				So(err, ShouldBeNil)
-				So(s.IsDir(), ShouldBeTrue)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, s.IsDir(), should.BeTrue)
 			}
 		})
 
-		Convey(`Collect error`, func() {
+		t.Run(`Collect error`, func(t *ftt.Test) {
 			mockedState["a0"] = swarmingv2.TaskState_COMPLETED
 			mockedErr["a1"] = codes.PermissionDenied
 
@@ -239,8 +241,8 @@ func TestCollect(t *testing.T) {
 				},
 				nil, service,
 			)
-			So(code, ShouldEqual, 0)
-			So(sortJSON(stdout), ShouldEqual, `{
+			assert.Loosely(t, code, should.BeZero)
+			assert.Loosely(t, sortJSON(stdout), should.Equal(`{
  "a0": {
   "output": "Output of a0",
   "results": {
@@ -252,10 +254,10 @@ func TestCollect(t *testing.T) {
   "error": "rpc error: code = PermissionDenied desc = some error"
  }
 }
-`)
+`))
 		})
 
-		Convey(`Stdout fetch error`, func() {
+		t.Run(`Stdout fetch error`, func(t *ftt.Test) {
 			mockedState["a0"] = swarmingv2.TaskState_COMPLETED
 			mockedStdoutErr = errors.New("boom")
 
@@ -271,8 +273,8 @@ func TestCollect(t *testing.T) {
 				},
 				nil, service,
 			)
-			So(code, ShouldEqual, 0)
-			So(sortJSON(stdout), ShouldEqual, `{
+			assert.Loosely(t, code, should.BeZero)
+			assert.Loosely(t, sortJSON(stdout), should.Equal(`{
  "a0": {
   "error": "fetching console output of a0: boom",
   "results": {
@@ -281,10 +283,10 @@ func TestCollect(t *testing.T) {
   }
  }
 }
-`)
+`))
 		})
 
-		Convey(`CAS fetch error`, func() {
+		t.Run(`CAS fetch error`, func(t *ftt.Test) {
 			mockedState["a0"] = swarmingv2.TaskState_COMPLETED
 			mockedHasCAS["a0"] = true
 			mockedCASErr = errors.New("boom")
@@ -301,8 +303,8 @@ func TestCollect(t *testing.T) {
 				},
 				nil, service,
 			)
-			So(code, ShouldEqual, 0)
-			So(sortJSON(stdout), ShouldEqual, `{
+			assert.Loosely(t, code, should.BeZero)
+			assert.Loosely(t, sortJSON(stdout), should.Equal(`{
  "a0": {
   "error": "fetching isolated output of a0: boom",
   "output": "Output of a0",
@@ -318,10 +320,10 @@ func TestCollect(t *testing.T) {
   }
  }
 }
-`)
+`))
 		})
 
-		Convey(`Timeout waiting`, func() {
+		t.Run(`Timeout waiting`, func(t *ftt.Test) {
 			mockedState["a0"] = swarmingv2.TaskState_PENDING
 
 			_, code, stdout, _ := SubcommandTest(
@@ -337,8 +339,8 @@ func TestCollect(t *testing.T) {
 				},
 				nil, service,
 			)
-			So(code, ShouldEqual, 0)
-			So(sortJSON(stdout), ShouldEqual, `{
+			assert.Loosely(t, code, should.BeZero)
+			assert.Loosely(t, sortJSON(stdout), should.Equal(`{
  "a0": {
   "error": "rpc_timeout",
   "results": {
@@ -347,10 +349,10 @@ func TestCollect(t *testing.T) {
   }
  }
 }
-`)
+`))
 		})
 
-		Convey(`No waiting`, func() {
+		t.Run(`No waiting`, func(t *ftt.Test) {
 			mockedState["a0"] = swarmingv2.TaskState_PENDING
 			mockedState["a1"] = swarmingv2.TaskState_PENDING
 
@@ -371,8 +373,8 @@ func TestCollect(t *testing.T) {
 				},
 				nil, service,
 			)
-			So(code, ShouldEqual, 0)
-			So(sortJSON(stdout), ShouldEqual, `{
+			assert.Loosely(t, code, should.BeZero)
+			assert.Loosely(t, sortJSON(stdout), should.Equal(`{
  "a0": {
   "results": {
    "task_id": "a0",
@@ -386,10 +388,10 @@ func TestCollect(t *testing.T) {
   }
  }
 }
-`)
+`))
 		})
 
-		Convey(`Waiting any`, func() {
+		t.Run(`Waiting any`, func(t *ftt.Test) {
 			mockedState["a0"] = swarmingv2.TaskState_PENDING
 			mockedState["a1"] = swarmingv2.TaskState_PENDING
 			mockedState["a2"] = swarmingv2.TaskState_PENDING
@@ -412,8 +414,8 @@ func TestCollect(t *testing.T) {
 				},
 				nil, service,
 			)
-			So(code, ShouldEqual, 0)
-			So(sortJSON(stdout), ShouldEqual, `{
+			assert.Loosely(t, code, should.BeZero)
+			assert.Loosely(t, sortJSON(stdout), should.Equal(`{
  "a0": {
   "results": {
    "task_id": "a0",
@@ -435,7 +437,7 @@ func TestCollect(t *testing.T) {
   }
  }
 }
-`)
+`))
 		})
 	})
 }
@@ -443,7 +445,7 @@ func TestCollect(t *testing.T) {
 func TestCollectSummarizeResults(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Generates json.`, t, func() {
+	ftt.Run(`Generates json.`, t, func(t *ftt.Test) {
 		result1 := &swarmingv2.TaskResultResponse{
 			CurrentTaskSlice: 0,
 			Duration:         1,
@@ -531,7 +533,7 @@ func TestCollectSummarizeResults(t *testing.T) {
 
 		tmpDir := t.TempDir()
 
-		emitted := passThroughEmitter(func(sink *output.Sink) summaryEmitter {
+		emitted := passThroughEmitter(t, func(sink *output.Sink) summaryEmitter {
 			return &defaultSummaryEmitter{
 				sink:           sink,
 				populateStdout: true,
@@ -540,26 +542,26 @@ func TestCollectSummarizeResults(t *testing.T) {
 			{
 				taskID: "task1",
 				result: result1,
-				output: fakeTextOutput(tmpDir, "Output"),
+				output: fakeTextOutput(t, tmpDir, "Output"),
 			},
 			{
 				taskID: "task2",
 				result: result2,
-				output: fakeTextOutput(tmpDir, "Output"),
+				output: fakeTextOutput(t, tmpDir, "Output"),
 			},
 			{
 				taskID: "task3",
 				result: result3,
-				output: fakeTextOutput(tmpDir, "Output"),
+				output: fakeTextOutput(t, tmpDir, "Output"),
 			},
 			{
 				taskID: "task4",
 				result: result4,
-				output: fakeTextOutput(tmpDir, "Output"),
+				output: fakeTextOutput(t, tmpDir, "Output"),
 			},
 		})
 
-		So(emitted, ShouldEqual, `{
+		assert.Loosely(t, emitted, should.Equal(`{
  "task1": {
   "output": "Output",
   "results": {
@@ -655,17 +657,17 @@ func TestCollectSummarizeResults(t *testing.T) {
   }
  }
 }
-`)
+`))
 	})
 }
 
 func TestCollectSummarizeResultsPython(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Simple json.`, t, func() {
+	ftt.Run(`Simple json.`, t, func(t *ftt.Test) {
 		tmpDir := t.TempDir()
 
-		emitted := passThroughEmitter(func(sink *output.Sink) summaryEmitter {
+		emitted := passThroughEmitter(t, func(sink *output.Sink) summaryEmitter {
 			return &legacySummaryEmitter{
 				sink:           sink,
 				populateStdout: true,
@@ -680,7 +682,7 @@ func TestCollectSummarizeResultsPython(t *testing.T) {
 					Duration: 1,
 					ExitCode: 0,
 				},
-				output: fakeTextOutput(tmpDir, "Output"),
+				output: fakeTextOutput(t, tmpDir, "Output"),
 			},
 			{
 				taskID: "failed1",
@@ -692,7 +694,7 @@ func TestCollectSummarizeResultsPython(t *testing.T) {
 			},
 		})
 
-		So(emitted, ShouldEqual, `{
+		assert.Loosely(t, emitted, should.Equal(`{
  "shards": [
   null,
   {
@@ -703,7 +705,7 @@ func TestCollectSummarizeResultsPython(t *testing.T) {
   null
  ]
 }
-`)
+`))
 	})
 }
 
@@ -719,7 +721,8 @@ func sortJSON(s string) string {
 	return string(blob) + "\n"
 }
 
-func passThroughEmitter(emitter func(sink *output.Sink) summaryEmitter, results []*taskResult) string {
+func passThroughEmitter(t testing.TB, emitter func(sink *output.Sink) summaryEmitter, results []*taskResult) string {
+	t.Helper()
 	var merr errors.MultiError
 	var buf bytes.Buffer
 	sink := output.NewSink(&buf)
@@ -729,16 +732,17 @@ func passThroughEmitter(emitter func(sink *output.Sink) summaryEmitter, results 
 		em.emit(res, &merr)
 	}
 	em.finish(&merr)
-	So(merr, ShouldBeNil)
-	So(sink.Finalize(), ShouldBeNil)
+	assert.Loosely(t, merr, should.BeEmpty, truth.LineContext())
+	assert.Loosely(t, sink.Finalize(), should.BeNil, truth.LineContext())
 	return buf.String()
 }
 
-func fakeTextOutput(tmpDir string, text string) *textOutput {
+func fakeTextOutput(t testing.TB, tmpDir string, text string) *textOutput {
+	t.Helper()
 	file, err := os.CreateTemp(tmpDir, "swarming_collect_test_*.txt")
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil, truth.LineContext())
 	_, err = file.WriteString(text)
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil, truth.LineContext())
 	return &textOutput{
 		file: file,
 		temp: true,

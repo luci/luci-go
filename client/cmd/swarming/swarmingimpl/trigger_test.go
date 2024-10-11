@@ -23,10 +23,10 @@ import (
 
 	"go.chromium.org/luci/common/flag/stringlistflag"
 	"go.chromium.org/luci/common/flag/stringmapflag"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 // TODO(vadimsh): Add a test for actually triggering stuff (calling NewTask).
@@ -34,7 +34,7 @@ import (
 func TestMapToArray(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Make sure that stringmapflag.Value are returned as sorted arrays.`, t, func() {
+	ftt.Run(`Make sure that stringmapflag.Value are returned as sorted arrays.`, t, func(t *ftt.Test) {
 		type item struct {
 			m stringmapflag.Value
 			a []*swarmingv2.StringPair
@@ -77,8 +77,8 @@ func TestMapToArray(t *testing.T) {
 
 		for _, item := range data {
 			a := mapToArray(item.m)
-			So(len(a), ShouldResemble, len(item.m))
-			So(a, ShouldResemble, item.a)
+			assert.Loosely(t, len(a), should.Resemble(len(item.m)))
+			assert.Loosely(t, a, should.Resemble(item.a))
 		}
 	})
 }
@@ -86,7 +86,7 @@ func TestMapToArray(t *testing.T) {
 func TestOptionalDimension(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Make sure that stringmapflag.Value are returned as sorted arrays.`, t, func() {
+	ftt.Run(`Make sure that stringmapflag.Value are returned as sorted arrays.`, t, func(t *ftt.Test) {
 		type item struct {
 			s string
 			d *optionalDimension
@@ -131,10 +131,10 @@ func TestOptionalDimension(t *testing.T) {
 			f := optionalDimension{}
 			err := f.Set(item.s)
 			if item.d == nil {
-				So(err, ShouldNotBeNil)
+				assert.Loosely(t, err, should.NotBeNil)
 			} else {
-				So(err, ShouldBeNil)
-				So(f, ShouldResemble, *item.d)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, f, should.Resemble(*item.d))
 			}
 		}
 	})
@@ -143,7 +143,7 @@ func TestOptionalDimension(t *testing.T) {
 func TestListToStringListPairArray(t *testing.T) {
 	t.Parallel()
 
-	Convey(`TestListToStringListPairArray`, t, func() {
+	ftt.Run(`TestListToStringListPairArray`, t, func(t *ftt.Test) {
 		input := stringlistflag.Flag{
 			"x=a",
 			"y=c",
@@ -154,14 +154,14 @@ func TestListToStringListPairArray(t *testing.T) {
 			{Key: "y", Value: []string{"c"}},
 		}
 
-		So(listToStringListPairArray(input), ShouldResembleProto, expected)
+		assert.Loosely(t, listToStringListPairArray(input), should.Resemble(expected))
 	})
 }
 
 func TestNamePartFromDimensions(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Make sure that a string name can be constructed from dimensions.`, t, func() {
+	ftt.Run(`Make sure that a string name can be constructed from dimensions.`, t, func(t *ftt.Test) {
 		type item struct {
 			m    stringmapflag.Value
 			part string
@@ -196,7 +196,7 @@ func TestNamePartFromDimensions(t *testing.T) {
 
 		for _, item := range data {
 			part := namePartFromDimensions(item.m)
-			So(part, ShouldResemble, item.part)
+			assert.Loosely(t, part, should.Resemble(item.part))
 		}
 	})
 }
@@ -211,15 +211,15 @@ func TestTriggerParse(t *testing.T) {
 			append([]string{"-server", "example.com"}, argv...),
 			nil, nil,
 		)
-		So(code, ShouldEqual, 1)
-		So(stderr, ShouldContainSubstring, errLike)
+		assert.Loosely(t, code, should.Equal(1))
+		assert.Loosely(t, stderr, should.ContainSubstring(errLike))
 	}
 
-	Convey("Wants dimensions", t, func() {
+	ftt.Run("Wants dimensions", t, func(t *ftt.Test) {
 		expectErr(nil, "please specify at least one dimension")
 	})
 
-	Convey("Wants a command", t, func() {
+	ftt.Run("Wants a command", t, func(t *ftt.Test) {
 		expectErr([]string{"-d", "k=v"}, "please specify command after '--'")
 	})
 }
@@ -227,88 +227,88 @@ func TestTriggerParse(t *testing.T) {
 func TestProcessTriggerOptions_WithRawArgs(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Make sure that processing trigger options handles raw-args.`, t, func() {
+	ftt.Run(`Make sure that processing trigger options handles raw-args.`, t, func(t *ftt.Test) {
 		c := triggerImpl{}
 
 		result, err := c.processTriggerOptions([]string{"arg1", "arg2"}, &url.URL{
 			Scheme: "http",
 			Host:   "localhost:9050",
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		// Setting properties directly on the task is deprecated.
-		So(result.Properties, ShouldBeNil)
-		So(result.TaskSlices, ShouldHaveLength, 1)
+		assert.Loosely(t, result.Properties, should.BeNil)
+		assert.Loosely(t, result.TaskSlices, should.HaveLength(1))
 		properties := result.TaskSlices[0].Properties
-		So(properties.Command, ShouldResemble, []string{"arg1", "arg2"})
+		assert.Loosely(t, properties.Command, should.Resemble([]string{"arg1", "arg2"}))
 	})
 }
 
 func TestProcessTriggerOptions_CipdPackages(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Make sure that processing trigger options handles cipd packages.`, t, func() {
+	ftt.Run(`Make sure that processing trigger options handles cipd packages.`, t, func(t *ftt.Test) {
 		c := triggerImpl{}
 		c.cipdPackage = map[string]string{
 			"path:name": "version",
 		}
 		result, err := c.processTriggerOptions([]string(nil), nil)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		// Setting properties directly on the task is deprecated.
-		So(result.Properties, ShouldBeNil)
-		So(result.TaskSlices, ShouldHaveLength, 1)
+		assert.Loosely(t, result.Properties, should.BeNil)
+		assert.Loosely(t, result.TaskSlices, should.HaveLength(1))
 		properties := result.TaskSlices[0].Properties
-		So(properties.CipdInput, ShouldResembleProto, &swarmingv2.CipdInput{
+		assert.Loosely(t, properties.CipdInput, should.Resemble(&swarmingv2.CipdInput{
 			Packages: []*swarmingv2.CipdPackage{{
 				PackageName: "name",
 				Path:        "path",
 				Version:     "version",
 			}},
-		})
+		}))
 	})
 }
 
 func TestProcessTriggerOptions_CAS(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Make sure that processing trigger options handles cas digest.`, t, func() {
+	ftt.Run(`Make sure that processing trigger options handles cas digest.`, t, func(t *ftt.Test) {
 		c := triggerImpl{}
 		c.digest = "1d1e14a2d0da6348f3f37312ef524a2cea1db4ead9ebc6c335f9948ad634cbfd/10430"
 		result, err := c.processTriggerOptions([]string(nil), &url.URL{
 			Scheme: "https",
 			Host:   "cas.appspot.com",
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		// Setting properties directly on the task is deprecated.
-		So(result.Properties, ShouldBeNil)
-		So(result.TaskSlices, ShouldHaveLength, 1)
+		assert.Loosely(t, result.Properties, should.BeNil)
+		assert.Loosely(t, result.TaskSlices, should.HaveLength(1))
 		properties := result.TaskSlices[0].Properties
-		So(properties.CasInputRoot, ShouldResembleProto,
+		assert.Loosely(t, properties.CasInputRoot, should.Resemble(
 			&swarmingv2.CASReference{
 				CasInstance: "projects/cas/instances/default_instance",
 				Digest: &swarmingv2.Digest{
 					Hash:      "1d1e14a2d0da6348f3f37312ef524a2cea1db4ead9ebc6c335f9948ad634cbfd",
 					SizeBytes: 10430,
 				},
-			})
+			}))
 	})
 }
 
 func TestProcessTriggerOptions_OptionalDimension(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Basic`, t, func() {
+	ftt.Run(`Basic`, t, func(t *ftt.Test) {
 		c := triggerImpl{}
-		So(c.dimensions.Set("foo=abc"), ShouldBeNil)
-		So(c.optionalDimension.Set("bar=def:60"), ShouldBeNil)
+		assert.Loosely(t, c.dimensions.Set("foo=abc"), should.BeNil)
+		assert.Loosely(t, c.optionalDimension.Set("bar=def:60"), should.BeNil)
 
 		const optDimExp = 60
 		const totalExp = 660
 		c.expiration = totalExp
 
 		result, err := c.processTriggerOptions([]string(nil), nil)
-		So(err, ShouldBeNil)
-		So(result.Properties, ShouldBeNil)
-		So(result.TaskSlices, ShouldHaveLength, 2)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, result.Properties, should.BeNil)
+		assert.Loosely(t, result.TaskSlices, should.HaveLength(2))
 
 		slice1 := result.TaskSlices[0]
 		expectedDims := []*swarmingv2.StringPair{
@@ -321,32 +321,32 @@ func TestProcessTriggerOptions_OptionalDimension(t *testing.T) {
 				Value: "def",
 			},
 		}
-		So(slice1.Properties.Dimensions, ShouldResembleProto, expectedDims)
-		So(slice1.ExpirationSecs, ShouldEqual, optDimExp)
+		assert.Loosely(t, slice1.Properties.Dimensions, should.Resemble(expectedDims))
+		assert.Loosely(t, slice1.ExpirationSecs, should.Equal(optDimExp))
 		slice2 := result.TaskSlices[1]
-		So(slice2.Properties.Dimensions, ShouldResembleProto, expectedDims[0:1])
-		So(slice2.ExpirationSecs, ShouldEqual, totalExp-optDimExp)
+		assert.Loosely(t, slice2.Properties.Dimensions, should.Resemble(expectedDims[0:1]))
+		assert.Loosely(t, slice2.ExpirationSecs, should.Equal(totalExp-optDimExp))
 	})
 }
 
 func TestProcessTriggerOptions_SecretBytesPath(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Read secret bytes from the file, and set the base64 encoded string.`, t, func() {
+	ftt.Run(`Read secret bytes from the file, and set the base64 encoded string.`, t, func(t *ftt.Test) {
 		// prepare secret bytes file.
 		dir := t.TempDir()
 		secretBytes := []byte("this is secret!")
 		secretBytesPath := filepath.Join(dir, "secret_bytes")
 		err := os.WriteFile(secretBytesPath, secretBytes, 0600)
-		So(err, ShouldBeEmpty)
+		assert.Loosely(t, err, should.ErrLike(nil))
 
 		c := triggerImpl{}
 		c.secretBytesPath = secretBytesPath
 		result, err := c.processTriggerOptions(nil, nil)
-		So(err, ShouldBeNil)
-		So(result.Properties, ShouldBeNil)
-		So(result.TaskSlices, ShouldHaveLength, 1)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, result.Properties, should.BeNil)
+		assert.Loosely(t, result.TaskSlices, should.HaveLength(1))
 		slice := result.TaskSlices[0]
-		So(slice.Properties.SecretBytes, ShouldEqual, secretBytes)
+		assert.Loosely(t, slice.Properties.SecretBytes, should.Match(secretBytes))
 	})
 }

@@ -27,11 +27,12 @@ import (
 
 	"go.chromium.org/luci/cipd/client/cipd/ensure"
 	"go.chromium.org/luci/common/system/environ"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/swarming/client/swarming"
 	"go.chromium.org/luci/swarming/client/swarming/swarmingtest"
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestReproduceParse(t *testing.T) {
@@ -44,15 +45,15 @@ func TestReproduceParse(t *testing.T) {
 			append([]string{"-server", "example.com"}, argv...),
 			nil, nil,
 		)
-		So(code, ShouldEqual, 1)
-		So(stderr, ShouldContainSubstring, errLike)
+		assert.Loosely(t, code, should.Equal(1))
+		assert.Loosely(t, stderr, should.ContainSubstring(errLike))
 	}
 
-	Convey(`Requires task ID.`, t, func() {
+	ftt.Run(`Requires task ID.`, t, func(t *ftt.Test) {
 		expectErr(nil, "expecting exactly 1 argument")
 	})
 
-	Convey(`Accepts only one task ID.`, t, func() {
+	ftt.Run(`Accepts only one task ID.`, t, func(t *ftt.Test) {
 		expectErr([]string{"aaaa", "bbbb"}, "expecting exactly 1 argument")
 	})
 }
@@ -60,7 +61,7 @@ func TestReproduceParse(t *testing.T) {
 func TestPrepareTaskRequestEnvironment(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Make sure we can create the correct Cmd from a fetched task's properties.`, t, func() {
+	ftt.Run(`Make sure we can create the correct Cmd from a fetched task's properties.`, t, func(t *ftt.Test) {
 		c := reproduceImpl{}
 
 		var cipdSlicesByPath map[string]ensure.PackageSlice
@@ -153,7 +154,7 @@ func TestPrepareTaskRequestEnvironment(t *testing.T) {
 		}
 
 		cmd, err := c.prepareTaskRequestEnvironment(ctx, properties, service, &testAuthFlags{})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		expected := exec.CommandContext(ctx, "rbd", "stream", "-test-id-prefix",
 			fmt.Sprintf("--isolated-output=%s", filepath.Join(c.out, "chicken-output.json")))
@@ -175,14 +176,14 @@ func TestPrepareTaskRequestEnvironment(t *testing.T) {
 
 		expected.Env = expectedEnvMap.Sorted()
 
-		So(cmd.Path, ShouldEqual, expected.Path)
-		So(cmd.Args, ShouldResemble, expected.Args)
-		So(cmd.Env, ShouldResemble, expected.Env)
-		So(cmd.Dir, ShouldEqual, expected.Dir)
+		assert.Loosely(t, cmd.Path, should.Equal(expected.Path))
+		assert.Loosely(t, cmd.Args, should.Resemble(expected.Args))
+		assert.Loosely(t, cmd.Env, should.Resemble(expected.Env))
+		assert.Loosely(t, cmd.Dir, should.Equal(expected.Dir))
 
-		So(fetchedCASFiles, ShouldBeTrue)
+		assert.Loosely(t, fetchedCASFiles, should.BeTrue)
 
-		So(cipdSlicesByPath, ShouldResemble, map[string]ensure.PackageSlice{
+		assert.Loosely(t, cipdSlicesByPath, should.Resemble(map[string]ensure.PackageSlice{
 			"": {
 				ensure.PackageDef{
 					PackageTemplate:   "infra/tools/luci/logdog/butler/${platform}",
@@ -198,14 +199,14 @@ func TestPrepareTaskRequestEnvironment(t *testing.T) {
 					PackageTemplate:   "infra/tools/luci-auth/${platform}",
 					UnresolvedVersion: "git_revision:41a7e9bcbf18718dcda83dd5c6188cfc44271e70",
 				}},
-		})
+		}))
 	})
 }
 
 func TestReproduceTaskRequestCommand(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Make sure we can execute commands.`, t, func() {
+	ftt.Run(`Make sure we can execute commands.`, t, func(t *ftt.Test) {
 		c := reproduceImpl{}
 
 		ctx := context.Background()
@@ -219,11 +220,11 @@ func TestReproduceTaskRequestCommand(t *testing.T) {
 		var stdout bytes.Buffer
 		cmd.Stdout = &stdout
 		err := c.executeTaskRequestCommand(ctx, &swarmingv2.TaskRequestResponse{}, cmd, &testAuthFlags{})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		if runtime.GOOS == "windows" {
-			So(stdout.String(), ShouldEqual, "chicken\r\n")
+			assert.Loosely(t, stdout.String(), should.Equal("chicken\r\n"))
 		} else {
-			So(stdout.String(), ShouldEqual, "chicken\n")
+			assert.Loosely(t, stdout.String(), should.Equal("chicken\n"))
 		}
 	})
 }

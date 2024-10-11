@@ -15,10 +15,11 @@
 package flagpb
 
 import (
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"strings"
 	"testing"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func msg(keysValues ...any) map[string]any {
@@ -36,12 +37,12 @@ func repeated(a ...any) []any {
 func TestMarshal(t *testing.T) {
 	t.Parallel()
 
-	Convey("Marshal", t, func() {
+	ftt.Run("Marshal", t, func(t *ftt.Test) {
 		test := func(m map[string]any, flags ...string) {
-			Convey(strings.Join(flags, " "), func() {
+			t.Run(strings.Join(flags, " "), func(t *ftt.Test) {
 				actualFlags, err := MarshalUntyped(m)
-				So(err, ShouldBeNil)
-				So(actualFlags, ShouldResemble, flags)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, actualFlags, should.Resemble(flags))
 			})
 		}
 

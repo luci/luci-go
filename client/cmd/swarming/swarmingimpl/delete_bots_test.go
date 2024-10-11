@@ -21,11 +21,11 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/swarming/client/swarming/swarmingtest"
 	swarming "go.chromium.org/luci/swarming/proto/api_v2"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestDeleteBotsParse(t *testing.T) {
@@ -38,11 +38,11 @@ func TestDeleteBotsParse(t *testing.T) {
 			append([]string{"-server", "example.com"}, argv...),
 			nil, nil,
 		)
-		So(code, ShouldEqual, 1)
-		So(stderr, ShouldContainSubstring, errLike)
+		assert.Loosely(t, code, should.Equal(1))
+		assert.Loosely(t, stderr, should.ContainSubstring(errLike))
 	}
 
-	Convey(`Make sure that Parse handles when no bot ID is given.`, t, func() {
+	ftt.Run(`Make sure that Parse handles when no bot ID is given.`, t, func(t *ftt.Test) {
 		expectErr(nil, "expecting at least 1 argument")
 	})
 }
@@ -50,7 +50,7 @@ func TestDeleteBotsParse(t *testing.T) {
 func TestDeleteBots(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Test delete bots`, t, func() {
+	ftt.Run(`Test delete bots`, t, func(t *ftt.Test) {
 		failbotID := "failingbotID"
 		givenbotID := []string{}
 
@@ -71,62 +71,62 @@ func TestDeleteBots(t *testing.T) {
 			},
 		}
 
-		Convey(`Test deleting one bot`, func() {
+		t.Run(`Test deleting one bot`, func(t *ftt.Test) {
 			_, code, _, _ := SubcommandTest(
 				context.Background(),
 				CmdDeleteBots,
 				[]string{"-server", "example.com", "-f", "testbot123"},
 				nil, service,
 			)
-			So(code, ShouldEqual, 0)
-			So(givenbotID, ShouldResemble, []string{"testbot123"})
+			assert.Loosely(t, code, should.BeZero)
+			assert.Loosely(t, givenbotID, should.Resemble([]string{"testbot123"}))
 		})
 
-		Convey(`Test deleting few bots`, func() {
+		t.Run(`Test deleting few bots`, func(t *ftt.Test) {
 			_, code, _, _ := SubcommandTest(
 				context.Background(),
 				CmdDeleteBots,
 				[]string{"-server", "example.com", "-f", "testbot123", "testbot456"},
 				nil, service,
 			)
-			So(code, ShouldEqual, 0)
-			So(givenbotID, ShouldResemble, []string{"testbot123", "testbot456"})
+			assert.Loosely(t, code, should.BeZero)
+			assert.Loosely(t, givenbotID, should.Resemble([]string{"testbot123", "testbot456"}))
 		})
 
-		Convey(`Test when a bot can't be deleted`, func() {
+		t.Run(`Test when a bot can't be deleted`, func(t *ftt.Test) {
 			err, code, _, _ := SubcommandTest(
 				context.Background(),
 				CmdDeleteBots,
 				[]string{"-server", "example.com", "-f", failbotID},
 				nil, service,
 			)
-			So(code, ShouldEqual, 1)
-			So(err, ShouldErrLike, "no such bot")
-			So(givenbotID, ShouldResemble, []string{failbotID})
+			assert.Loosely(t, code, should.Equal(1))
+			assert.Loosely(t, err, should.ErrLike("no such bot"))
+			assert.Loosely(t, givenbotID, should.Resemble([]string{failbotID}))
 		})
 
-		Convey(`stop deleting bots immediately when encounter a bot that can't be deleted`, func() {
+		t.Run(`stop deleting bots immediately when encounter a bot that can't be deleted`, func(t *ftt.Test) {
 			err, code, _, _ := SubcommandTest(
 				context.Background(),
 				CmdDeleteBots,
 				[]string{"-server", "example.com", "-f", "testbot123", "failingbotID", "testbot456", "testbot789"},
 				nil, service,
 			)
-			So(code, ShouldEqual, 1)
-			So(err, ShouldErrLike, "no such bot")
-			So(givenbotID, ShouldResemble, []string{"testbot123", "failingbotID"})
+			assert.Loosely(t, code, should.Equal(1))
+			assert.Loosely(t, err, should.ErrLike("no such bot"))
+			assert.Loosely(t, givenbotID, should.Resemble([]string{"testbot123", "failingbotID"}))
 		})
 
-		Convey(`Test when bot wasn't deleted`, func() {
+		t.Run(`Test when bot wasn't deleted`, func(t *ftt.Test) {
 			err, code, _, _ := SubcommandTest(
 				context.Background(),
 				CmdDeleteBots,
 				[]string{"-server", "example.com", "-f", "testbot123", "cannotdeletebotID", "testbot456", "testbot789"},
 				nil, service,
 			)
-			So(code, ShouldEqual, 1)
-			So(err, ShouldErrLike, "not deleted")
-			So(givenbotID, ShouldResemble, []string{"testbot123", "cannotdeletebotID"})
+			assert.Loosely(t, code, should.Equal(1))
+			assert.Loosely(t, err, should.ErrLike("not deleted"))
+			assert.Loosely(t, givenbotID, should.Resemble([]string{"testbot123", "cannotdeletebotID"}))
 		})
 	})
 }

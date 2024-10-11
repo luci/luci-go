@@ -19,35 +19,35 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/auth"
-	. "go.chromium.org/luci/common/testing/assertions"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestPathValidation(t *testing.T) {
-	Convey(`Path too short.`, t, func() {
+	ftt.Run(`Path too short.`, t, func(t *ftt.Test) {
 		err := validateCryptoKeysKMSPath("bad/path")
-		So(err, ShouldErrLike, "path should have the form")
+		assert.Loosely(t, err, should.ErrLike("path should have the form"))
 	})
-	Convey(`Path too long.`, t, func() {
+	ftt.Run(`Path too long.`, t, func(t *ftt.Test) {
 		err := validateCryptoKeysKMSPath("bad/long/long/long/long/long/long/long/long/long/path")
-		So(err, ShouldErrLike, "path should have the form")
+		assert.Loosely(t, err, should.ErrLike("path should have the form"))
 	})
-	Convey(`Path misspelling.`, t, func() {
+	ftt.Run(`Path misspelling.`, t, func(t *ftt.Test) {
 		err := validateCryptoKeysKMSPath("projects/chromium/oops/global/keyRings/test/cryptoKeys/my_key")
-		So(err, ShouldErrLike, "expected component 3")
+		assert.Loosely(t, err, should.ErrLike("expected component 3"))
 	})
-	Convey(`Good path.`, t, func() {
+	ftt.Run(`Good path.`, t, func(t *ftt.Test) {
 		err := validateCryptoKeysKMSPath("projects/chromium/locations/global/keyRings/test/cryptoKeys/my_key")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 	})
-	Convey(`Good path.`, t, func() {
+	ftt.Run(`Good path.`, t, func(t *ftt.Test) {
 		err := validateCryptoKeysKMSPath("projects/chromium/locations/global/keyRings/test/cryptoKeys/my_key/cryptoKeyVersions/1")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 	})
-	Convey(`Support leading slash.`, t, func() {
+	ftt.Run(`Support leading slash.`, t, func(t *ftt.Test) {
 		err := validateCryptoKeysKMSPath("/projects/chromium/locations/global/keyRings/test/cryptoKeys/my_key")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 	})
 }
 
@@ -61,29 +61,29 @@ func TestCryptoRunParse(t *testing.T) {
 		c.GetFlags().Parse(flags)
 		return c.Parse(ctx, args)
 	}
-	Convey(`Make sure that Parse fails with no positional args.`, t, func() {
+	ftt.Run(`Make sure that Parse fails with no positional args.`, t, func(t *ftt.Test) {
 		err := testParse(flags, []string{})
-		So(err, ShouldErrLike, "positional arguments missing")
+		assert.Loosely(t, err, should.ErrLike("positional arguments missing"))
 	})
-	Convey(`Make sure that Parse fails with too many positional args.`, t, func() {
+	ftt.Run(`Make sure that Parse fails with too many positional args.`, t, func(t *ftt.Test) {
 		err := testParse(flags, []string{"one", "two"})
-		So(err, ShouldErrLike, "unexpected positional arguments")
+		assert.Loosely(t, err, should.ErrLike("unexpected positional arguments"))
 	})
-	Convey(`Make sure that Parse fails with no input.`, t, func() {
+	ftt.Run(`Make sure that Parse fails with no input.`, t, func(t *ftt.Test) {
 		err := testParse([]string{"-output", "goodbye"}, []string{path})
-		So(err, ShouldErrLike, "input file")
+		assert.Loosely(t, err, should.ErrLike("input file"))
 	})
-	Convey(`Make sure that Parse fails with no output.`, t, func() {
+	ftt.Run(`Make sure that Parse fails with no output.`, t, func(t *ftt.Test) {
 		err := testParse([]string{"-input", "hello"}, []string{path})
-		So(err, ShouldErrLike, "output location")
+		assert.Loosely(t, err, should.ErrLike("output location"))
 	})
-	Convey(`Make sure that Parse fails with bad key path.`, t, func() {
+	ftt.Run(`Make sure that Parse fails with bad key path.`, t, func(t *ftt.Test) {
 		err := testParse(flags, []string{"abcdefg"})
-		So(err, ShouldNotBeNil)
+		assert.Loosely(t, err, should.NotBeNil)
 	})
-	Convey(`Make sure that Parse works with everything set right.`, t, func() {
+	ftt.Run(`Make sure that Parse works with everything set right.`, t, func(t *ftt.Test) {
 		err := testParse(flags, []string{path})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 	})
 }
 
@@ -97,29 +97,29 @@ func TestVerifyRunParse(t *testing.T) {
 		v.GetFlags().Parse(flags)
 		return v.Parse(ctx, args)
 	}
-	Convey(`Make sure that Parse fails with no positional args.`, t, func() {
+	ftt.Run(`Make sure that Parse fails with no positional args.`, t, func(t *ftt.Test) {
 		err := testParse(flags, []string{})
-		So(err, ShouldErrLike, "positional arguments missing")
+		assert.Loosely(t, err, should.ErrLike("positional arguments missing"))
 	})
-	Convey(`Make sure that Parse fails with too many positional args.`, t, func() {
+	ftt.Run(`Make sure that Parse fails with too many positional args.`, t, func(t *ftt.Test) {
 		err := testParse(flags, []string{"one", "two"})
-		So(err, ShouldErrLike, "unexpected positional arguments")
+		assert.Loosely(t, err, should.ErrLike("unexpected positional arguments"))
 	})
-	Convey(`Make sure that Parse fails with no input.`, t, func() {
+	ftt.Run(`Make sure that Parse fails with no input.`, t, func(t *ftt.Test) {
 		err := testParse([]string{"-input-sig", "goodbye"}, []string{path})
-		So(err, ShouldErrLike, "input file")
+		assert.Loosely(t, err, should.ErrLike("input file"))
 	})
-	Convey(`Make sure that Parse fails with no input sig.`, t, func() {
+	ftt.Run(`Make sure that Parse fails with no input sig.`, t, func(t *ftt.Test) {
 		err := testParse([]string{"-input", "hello"}, []string{path})
-		So(err, ShouldErrLike, "input sig")
+		assert.Loosely(t, err, should.ErrLike("input sig"))
 	})
-	Convey(`Make sure that Parse fails with bad key path.`, t, func() {
+	ftt.Run(`Make sure that Parse fails with bad key path.`, t, func(t *ftt.Test) {
 		err := testParse(flags, []string{"abcdefg"})
-		So(err, ShouldNotBeNil)
+		assert.Loosely(t, err, should.NotBeNil)
 	})
-	Convey(`Make sure that Parse works with everything set right.`, t, func() {
+	ftt.Run(`Make sure that Parse works with everything set right.`, t, func(t *ftt.Test) {
 		err := testParse(flags, []string{path})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 	})
 }
 
@@ -133,29 +133,29 @@ func TestSignRunParse(t *testing.T) {
 		s.GetFlags().Parse(flags)
 		return s.Parse(ctx, args)
 	}
-	Convey(`Make sure that Parse fails with no positional args.`, t, func() {
+	ftt.Run(`Make sure that Parse fails with no positional args.`, t, func(t *ftt.Test) {
 		err := testParse(flags, []string{})
-		So(err, ShouldErrLike, "positional arguments missing")
+		assert.Loosely(t, err, should.ErrLike("positional arguments missing"))
 	})
-	Convey(`Make sure that Parse fails with too many positional args.`, t, func() {
+	ftt.Run(`Make sure that Parse fails with too many positional args.`, t, func(t *ftt.Test) {
 		err := testParse(flags, []string{"one", "two"})
-		So(err, ShouldErrLike, "unexpected positional arguments")
+		assert.Loosely(t, err, should.ErrLike("unexpected positional arguments"))
 	})
-	Convey(`Make sure that Parse fails with no input.`, t, func() {
+	ftt.Run(`Make sure that Parse fails with no input.`, t, func(t *ftt.Test) {
 		err := testParse([]string{"-output", "goodbye"}, []string{path})
-		So(err, ShouldErrLike, "input file")
+		assert.Loosely(t, err, should.ErrLike("input file"))
 	})
-	Convey(`Make sure that Parse fails with no input sig.`, t, func() {
+	ftt.Run(`Make sure that Parse fails with no input sig.`, t, func(t *ftt.Test) {
 		err := testParse([]string{"-input", "hello"}, []string{path})
-		So(err, ShouldErrLike, "output location")
+		assert.Loosely(t, err, should.ErrLike("output location"))
 	})
-	Convey(`Make sure that Parse fails with bad key path.`, t, func() {
+	ftt.Run(`Make sure that Parse fails with bad key path.`, t, func(t *ftt.Test) {
 		err := testParse(flags, []string{"abcdefg"})
-		So(err, ShouldNotBeNil)
+		assert.Loosely(t, err, should.NotBeNil)
 	})
-	Convey(`Make sure that Parse works with everything set right.`, t, func() {
+	ftt.Run(`Make sure that Parse works with everything set right.`, t, func(t *ftt.Test) {
 		err := testParse(flags, []string{path})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 	})
 }
 
@@ -169,24 +169,24 @@ func TestDownloadRunParse(t *testing.T) {
 		d.GetFlags().Parse(flags)
 		return d.Parse(ctx, args)
 	}
-	Convey(`Make sure that Parse fails with no positional args.`, t, func() {
+	ftt.Run(`Make sure that Parse fails with no positional args.`, t, func(t *ftt.Test) {
 		err := testParse(flags, []string{})
-		So(err, ShouldErrLike, "positional arguments missing")
+		assert.Loosely(t, err, should.ErrLike("positional arguments missing"))
 	})
-	Convey(`Make sure that Parse fails with too many positional args.`, t, func() {
+	ftt.Run(`Make sure that Parse fails with too many positional args.`, t, func(t *ftt.Test) {
 		err := testParse(flags, []string{"one", "two"})
-		So(err, ShouldErrLike, "unexpected positional arguments")
+		assert.Loosely(t, err, should.ErrLike("unexpected positional arguments"))
 	})
-	Convey(`Make sure that Parse fails with input.`, t, func() {
+	ftt.Run(`Make sure that Parse fails with input.`, t, func(t *ftt.Test) {
 		err := testParse([]string{"-input", "hello", "-output", "goodbye"}, []string{path})
-		So(err, ShouldErrLike, "output location")
+		assert.Loosely(t, err, should.ErrLike("output location"))
 	})
-	Convey(`Make sure that Parse fails with bad key path.`, t, func() {
+	ftt.Run(`Make sure that Parse fails with bad key path.`, t, func(t *ftt.Test) {
 		err := testParse(flags, []string{"abcdefg"})
-		So(err, ShouldNotBeNil)
+		assert.Loosely(t, err, should.NotBeNil)
 	})
-	Convey(`Make sure that Parse works with everything set right.`, t, func() {
+	ftt.Run(`Make sure that Parse works with everything set right.`, t, func(t *ftt.Test) {
 		err := testParse(flags, []string{path})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 	})
 }

@@ -15,15 +15,16 @@
 package casclient
 
 import (
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"testing"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestIsLocalAddr(t *testing.T) {
 	t.Parallel()
 
-	Convey("isLocalAddr", t, func() {
+	ftt.Run("isLocalAddr", t, func(t *ftt.Test) {
 		var testdata = []struct {
 			addr string
 			want bool
@@ -37,8 +38,8 @@ func TestIsLocalAddr(t *testing.T) {
 		}
 		for _, td := range testdata {
 			isLocal, err := isLocalAddr(td.addr)
-			So(err, ShouldBeNil)
-			So(isLocal, ShouldEqual, td.want)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, isLocal, should.Equal(td.want))
 		}
 	})
 }

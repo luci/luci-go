@@ -25,8 +25,10 @@ import (
 	"testing"
 
 	"github.com/maruel/subcommands"
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/testfs"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 // integrationTestEnvVar is the name of the environment variable which controls
@@ -41,18 +43,18 @@ func runIntegrationTests() bool {
 
 // runCmd runs swarming commands appending common flags.
 // It skips if integration should not run.
-func runCmd(t *testing.T, cmd string, args ...string) int {
-	if !runIntegrationTests() {
-		t.Skipf("Skip integration tests")
-	}
+func runCmd(cmd string, args ...string) int {
 	args = append([]string{cmd, "-cas-instance", "chromium-swarm-dev"}, args...)
 	return subcommands.Run(getApplication(), args)
 }
 
 func TestArchiveAndDownloadCommand(t *testing.T) {
+	if !runIntegrationTests() {
+		t.Skipf("Skip integration tests")
+	}
 	t.Parallel()
 
-	Convey("archive", t, func() {
+	ftt.Run("archive", t, func(t *ftt.Test) {
 		uploadDir := t.TempDir()
 		os.WriteFile(filepath.Join(uploadDir, "foo"), []byte("hi"), 0600)
 
@@ -68,14 +70,14 @@ func TestArchiveAndDownloadCommand(t *testing.T) {
 			"-paths",
 			fmt.Sprintf("%s:%s", uploadDir, "foo"),
 		}
-		So(runCmd(t, "archive", archiveFlags...), ShouldEqual, 0)
+		assert.Loosely(t, runCmd("archive", archiveFlags...), should.BeZero)
 
 		digestBytes, err := os.ReadFile(digestPath)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		digest := string(digestBytes)
-		So(digest, ShouldEqual, "1ec750cf7c4ebc220a753a705229574873b3c650b939cf4a69df1af84b40b981/77")
+		assert.Loosely(t, digest, should.Equal("1ec750cf7c4ebc220a753a705229574873b3c650b939cf4a69df1af84b40b981/77"))
 
-		Convey("and download", func() {
+		t.Run("and download", func(t *ftt.Test) {
 			downloadJSONPath := filepath.Join(outDir, "download-stats.json")
 			downloadDir := filepath.Join(outDir, "out")
 
@@ -87,10 +89,10 @@ func TestArchiveAndDownloadCommand(t *testing.T) {
 				"-dir",
 				downloadDir,
 			}
-			So(runCmd(t, "download", downloadFlags...), ShouldEqual, 0)
+			assert.Loosely(t, runCmd("download", downloadFlags...), should.BeZero)
 			layout, err := testfs.Collect(downloadDir)
-			So(err, ShouldBeNil)
-			So(layout, ShouldResemble, map[string]string{"foo": "hi"})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, layout, should.Resemble(map[string]string{"foo": "hi"}))
 		})
 	})
 }

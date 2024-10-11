@@ -21,12 +21,13 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/flag/stringmapflag"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestConvertPyToGoArchiveCMDArgs(t *testing.T) {
-	Convey(`Archive command line arguments should be converted properly for Go.`, t, func() {
+	ftt.Run(`Archive command line arguments should be converted properly for Go.`, t, func(t *ftt.Test) {
 		data := []struct {
 			input    []string
 			expected []string
@@ -64,20 +65,20 @@ func TestConvertPyToGoArchiveCMDArgs(t *testing.T) {
 			},
 		}
 		for _, line := range data {
-			So(convertPyToGoArchiveCMDArgs(line.input), ShouldResemble, line.expected)
+			assert.Loosely(t, convertPyToGoArchiveCMDArgs(line.input), should.Resemble(line.expected))
 		}
 	})
 }
 
 func TestInvalidArchiveCMD(t *testing.T) {
-	Convey(`Archive should handle errors in command line arguments.`, t, func() {
+	ftt.Run(`Archive should handle errors in command line arguments.`, t, func(t *ftt.Test) {
 		_, err := parseArchiveCMD([]string(nil), absToOS("e:", "/tmp/bar"))
-		So(err.Error(), ShouldResemble, "-isolate must be specified")
+		assert.Loosely(t, err.Error(), should.Match("-isolate must be specified"))
 	})
 }
 
 func TestArchiveCMDParsing(t *testing.T) {
-	Convey(`Archive command line arguments should be parsed correctly.`, t, func() {
+	ftt.Run(`Archive command line arguments should be parsed correctly.`, t, func(t *ftt.Test) {
 		args := []string{
 			"--isolate", "../boz/bar.isolate",
 			"--path-variable", "DEPTH", "../..",
@@ -87,13 +88,13 @@ func TestArchiveCMDParsing(t *testing.T) {
 		root := absToOS("e:", "/tmp/bar")
 		opts, err := parseArchiveCMD(args, root)
 		base := filepath.Dir(root)
-		So(opts.Isolate, ShouldResemble, filepath.Join(base, "boz", "bar.isolate"))
-		So(err, ShouldBeNil)
-		So(stringmapflag.Value{"OS": "linux"}, ShouldResemble, opts.ConfigVariables)
+		assert.Loosely(t, opts.Isolate, should.Resemble(filepath.Join(base, "boz", "bar.isolate")))
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, stringmapflag.Value{"OS": "linux"}, should.Resemble(opts.ConfigVariables))
 		if runtime.GOOS == "windows" {
-			So(stringmapflag.Value{"PRODUCT_DIR": "../../out/Release", "EXECUTABLE_SUFFIX": ".exe", "DEPTH": "../.."}, ShouldResemble, opts.PathVariables)
+			assert.Loosely(t, stringmapflag.Value{"PRODUCT_DIR": "../../out/Release", "EXECUTABLE_SUFFIX": ".exe", "DEPTH": "../.."}, should.Resemble(opts.PathVariables))
 		} else {
-			So(stringmapflag.Value{"PRODUCT_DIR": "../../out/Release", "EXECUTABLE_SUFFIX": "", "DEPTH": "../.."}, ShouldResemble, opts.PathVariables)
+			assert.Loosely(t, stringmapflag.Value{"PRODUCT_DIR": "../../out/Release", "EXECUTABLE_SUFFIX": "", "DEPTH": "../.."}, should.Resemble(opts.PathVariables))
 		}
 	})
 }
@@ -101,14 +102,14 @@ func TestArchiveCMDParsing(t *testing.T) {
 // Verify that if the isolate path is absolute, we don't
 // accidentally interpret them as relative to the cwd.
 func TestArchiveAbsolutePaths(t *testing.T) {
-	Convey(`Archive command line should correctly handle absolute paths.`, t, func() {
+	ftt.Run(`Archive command line should correctly handle absolute paths.`, t, func(t *ftt.Test) {
 		root := absToOS("e:", "/tmp/bar/")
 		args := []string{
 			"--isolate", root + "foo.isolate",
 		}
 		opts, err := parseArchiveCMD(args, absToOS("x:", "/var/lib"))
-		So(err, ShouldBeNil)
-		So(opts.Isolate, ShouldResemble, root+"foo.isolate")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, opts.Isolate, should.Resemble(root+"foo.isolate"))
 	})
 }
 

@@ -23,9 +23,11 @@ import (
 	"github.com/maruel/subcommands"
 	"google.golang.org/protobuf/encoding/protojson"
 
-	. "github.com/smartystreets/goconvey/convey"
-
 	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/clipb"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/swarming/client/swarming"
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
@@ -51,7 +53,7 @@ func runIntegrationTests() bool {
 
 // runCmd runs swarming commands appending common flags.
 // It skips if integration should not run.
-func runCmd(t *testing.T, cmd string, args ...string) int {
+func runCmd(t testing.TB, cmd string, args ...string) int {
 	if !runIntegrationTests() {
 		t.Skipf("Skip integration tests")
 	}
@@ -62,33 +64,35 @@ func runCmd(t *testing.T, cmd string, args ...string) int {
 func TestBotsCommand(t *testing.T) {
 	t.Parallel()
 
-	Convey(`ok`, t, func() {
+	ftt.Run(`ok`, t, func(t *ftt.Test) {
 		dir := t.TempDir()
 		jsonPath := filepath.Join(dir, "out.json")
 
-		So(runCmd(t, "bots", "-json", jsonPath), ShouldEqual, 0)
+		assert.Loosely(t, runCmd(t, "bots", "-json", jsonPath), should.BeZero)
 	})
 }
 
 func TestTasksCommand(t *testing.T) {
 	t.Parallel()
 
-	Convey(`ok`, t, func() {
+	ftt.Run(`ok`, t, func(t *ftt.Test) {
 		dir := t.TempDir()
 		jsonPath := filepath.Join(dir, "out.json")
 
-		So(runCmd(t, "tasks", "-limit", "1", "-json", jsonPath), ShouldEqual, 0)
+		assert.Loosely(t, runCmd(t, "tasks", "-limit", "1", "-json", jsonPath), should.BeZero)
 	})
 }
 
 // triggerTask triggers a task and returns the triggered TaskRequest.
-func triggerTask(t *testing.T, args []string) *swarmingv2.TaskRequestMetadataResponse {
+func triggerTask(t testing.TB, args []string) *swarmingv2.TaskRequestMetadataResponse {
+	t.Helper()
+
 	dir := t.TempDir()
 	jsonPath := filepath.Join(dir, "out.json")
 	sbDir := t.TempDir()
 	sbPath := filepath.Join(sbDir, "secret_bytes.txt")
 	err := os.WriteFile(sbPath, []byte("This is secret!"), 0600)
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil, truth.LineContext())
 	args = append(args, []string{
 		"-d", "pool=infra.tests",
 		"-d", "os=Linux",
@@ -98,40 +102,43 @@ func triggerTask(t *testing.T, args []string) *swarmingv2.TaskRequestMetadataRes
 		"-secret-bytes-path", sbPath,
 		"--", "/bin/bash", "-c", "echo hi > ${ISOLATED_OUTDIR}/out",
 	}...)
-	So(runCmd(t, "trigger", args...), ShouldEqual, 0)
+	assert.Loosely(t, runCmd(t, "trigger", args...), should.BeZero, truth.LineContext())
 
-	results := readTriggerResults(jsonPath)
-	So(results.Tasks, ShouldHaveLength, 1)
+	results := readTriggerResults(t, jsonPath)
+	assert.Loosely(t, results.Tasks, should.HaveLength(1), truth.LineContext())
 	task := results.Tasks[0]
 	slice := task.Request.TaskSlices[0]
 	redactedSb := []byte("<REDACTED>")
-	So(slice.Properties.SecretBytes, ShouldEqual, redactedSb)
+	assert.Loosely(t, slice.Properties.SecretBytes, should.Match(redactedSb), truth.LineContext())
 	return task
 }
 
 // readTriggerResults reads TriggerResults from output json file.
-func readTriggerResults(jsonPath string) *clipb.SpawnTasksOutput {
+func readTriggerResults(t testing.TB, jsonPath string) *clipb.SpawnTasksOutput {
+	t.Helper()
 	resultsJSON, err := os.ReadFile(jsonPath)
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil, truth.LineContext())
 
 	results := &clipb.SpawnTasksOutput{}
 	err = protojson.Unmarshal(resultsJSON, results)
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil, truth.LineContext())
 
 	return results
 }
 
-func testCollectCommand(t *testing.T, taskID string) {
+func testCollectCommand(t testing.TB, taskID string) {
+	t.Helper()
 	dir := t.TempDir()
-	So(runCmd(t, "collect", "-output-dir", dir, taskID), ShouldEqual, 0)
+	assert.Loosely(t, runCmd(t, "collect", "-output-dir", dir, taskID), should.BeZero, truth.LineContext())
 	out, err := os.ReadFile(filepath.Join(dir, taskID, "out"))
-	So(err, ShouldBeNil)
-	So(string(out), ShouldResemble, "hi\n")
+	assert.Loosely(t, err, should.BeNil, truth.LineContext())
+	assert.Loosely(t, string(out), should.Match("hi\n"), truth.LineContext())
 }
 
-func runIntegrationTest(t *testing.T, triggerArgs []string) {
+func runIntegrationTest(t testing.TB, triggerArgs []string) {
+	t.Helper()
 	triggeredTask := triggerTask(t, triggerArgs)
-	So(runCmd(t, "request_show", triggeredTask.TaskId), ShouldEqual, 0)
+	assert.Loosely(t, runCmd(t, "request_show", triggeredTask.TaskId), should.BeZero, truth.LineContext())
 	testCollectCommand(t, triggeredTask.TaskId)
 }
 
@@ -139,7 +146,7 @@ func TestWithCAS(t *testing.T) {
 	t.Parallel()
 	t.Skip("no Linux bots in infra.tests dev pool")
 
-	Convey(`ok`, t, func() {
+	ftt.Run(`ok`, t, func(t *ftt.Test) {
 		// TODO(jwata): ensure the digest is uploaded on CAS.
 		// https://cas-viewer-dev.appspot.com/projects/chromium-swarm-dev/instances/default_instance/blobs/ad455795d66ac6d3bc0905f6a137dda1fb1d2de252a9f2a73329428fe1cf645a/77/tree
 		// Use the same digest with the output so that the content is kept on
@@ -184,17 +191,17 @@ const spawnTaskInputJSON = `
 func TestSpawnTasksCommand(t *testing.T) {
 	t.Parallel()
 
-	Convey(`ok`, t, func() {
+	ftt.Run(`ok`, t, func(t *ftt.Test) {
 		// prepare input file.
 		dir := t.TempDir()
 		inputPath := filepath.Join(dir, "input.json")
 		err := os.WriteFile(inputPath, []byte(spawnTaskInputJSON), 0600)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		outputPath := filepath.Join(dir, "output.json")
-		So(runCmd(t, "spawn_task", "-json-input", inputPath, "-json-output", outputPath), ShouldEqual, 0)
+		assert.Loosely(t, runCmd(t, "spawn_task", "-json-input", inputPath, "-json-output", outputPath), should.BeZero)
 
-		results := readTriggerResults(outputPath)
-		So(results.Tasks, ShouldHaveLength, 1)
+		results := readTriggerResults(t, outputPath)
+		assert.Loosely(t, results.Tasks, should.HaveLength(1))
 	})
 }

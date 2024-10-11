@@ -24,29 +24,29 @@ import (
 	"strings"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestConditionJson(t *testing.T) {
 	t.Parallel()
-	Convey(`Isolate should properly support JSON in conditional section of file.`, t, func() {
+	ftt.Run(`Isolate should properly support JSON in conditional section of file.`, t, func(t *ftt.Test) {
 		c := condition{Condition: "OS == \"Linux\""}
 		c.Variables.Files = []string{"generated"}
 		jsonData, err := json.Marshal(&c)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		t.Logf("Generated jsonData: %s", string(jsonData))
 		pc := condition{}
 		err = json.Unmarshal(jsonData, &pc)
-		So(err, ShouldBeNil)
-		So(pc, ShouldResemble, c)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, pc, should.Resemble(c))
 	})
 }
 
 func TestVariableValueOrder(t *testing.T) {
 	t.Parallel()
-	Convey(`Isolate should properly handle variable value ordering.`, t, func() {
+	ftt.Run(`Isolate should properly handle variable value ordering.`, t, func(t *ftt.Test) {
 		I := func(i int) variableValue { return variableValue{nil, &i} }
 		S := func(s string) variableValue { return variableValue{&s, nil} }
 		unbound := variableValue{}
@@ -65,24 +65,24 @@ func TestVariableValueOrder(t *testing.T) {
 			{1, S("a"), S("b")},
 		}
 		for _, e := range expectations {
-			So(e.res, ShouldResemble, e.l.compare(e.r))
-			So(-e.res, ShouldResemble, e.r.compare(e.l))
+			assert.Loosely(t, e.res, should.Resemble(e.l.compare(e.r)))
+			assert.Loosely(t, -e.res, should.Resemble(e.r.compare(e.l)))
 		}
 	})
 }
 
 func TestConfigNameComparison(t *testing.T) {
 	t.Parallel()
-	Convey(`Isolate should support comparison of config names.`, t, func() {
+	ftt.Run(`Isolate should support comparison of config names.`, t, func(t *ftt.Test) {
 		c := func(s ...string) configName { return configName(makeVVs(s...)) }
-		So(c().Equals(c()), ShouldBeTrue)
-		So(c("unbound").compare(c("1")), ShouldResemble, 1)
+		assert.Loosely(t, c().Equals(c()), should.BeTrue)
+		assert.Loosely(t, c("unbound").compare(c("1")), should.Match(1))
 	})
 }
 
 func TestProcessConditionBad(t *testing.T) {
 	t.Parallel()
-	Convey(`Isolate should handle bad condition formats.`, t, func() {
+	ftt.Run(`Isolate should handle bad condition formats.`, t, func(t *ftt.Test) {
 		expectations := []string{
 			"wrong condition1",
 			"invalidConditionOp is False",
@@ -91,14 +91,14 @@ func TestProcessConditionBad(t *testing.T) {
 		}
 		for _, e := range expectations {
 			_, err := processCondition(condition{Condition: e}, variablesValuesSet{})
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 		}
 	})
 }
 
 func TestConditionEvaluate(t *testing.T) {
 	t.Parallel()
-	Convey(`Isolate should properly evaluate conditions.`, t, func() {
+	ftt.Run(`Isolate should properly evaluate conditions.`, t, func(t *ftt.Test) {
 		const (
 			T int = 1
 			F int = 0
@@ -129,19 +129,19 @@ func TestConditionEvaluate(t *testing.T) {
 		}
 		for _, e := range expectations {
 			c, err := processCondition(condition{Condition: e.cond}, variablesValuesSet{})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			isTrue, err := c.evaluate(func(v string) variableValue {
 				if value, ok := e.vals[v]; ok {
 					return makeVariableValue(value)
 				}
-				assert(variableValue{}.isBound() == false)
+				must(variableValue{}.isBound() == false)
 				return variableValue{}
 			})
 			if e.exp == E {
-				So(err, ShouldUnwrapTo, errUnbound)
+				assert.Loosely(t, err, should.ErrLike(errUnbound))
 			} else {
-				So(err, ShouldBeNil)
-				So(e.exp == T, ShouldResemble, isTrue)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, e.exp == T, should.Resemble(isTrue))
 			}
 		}
 	})
@@ -149,7 +149,7 @@ func TestConditionEvaluate(t *testing.T) {
 
 func TestMatchConfigs(t *testing.T) {
 	t.Parallel()
-	Convey(`Isolate should properly match configs.`, t, func() {
+	ftt.Run(`Isolate should properly match configs.`, t, func(t *ftt.Test) {
 		unbound := "unbound" // Treated specially by makeVVs to create unbound variableValue.
 		expectations := []struct {
 			cond string
@@ -176,16 +176,16 @@ func TestMatchConfigs(t *testing.T) {
 		}
 		for _, e := range expectations {
 			c, err := processCondition(condition{Condition: e.cond}, variablesValuesSet{})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			out := c.matchConfigs(makeConfigVariableIndex(e.conf), e.all)
-			So(vvToStr2D(vvSort(out)), ShouldResemble, vvToStr2D(vvSort(e.out)))
+			assert.Loosely(t, vvToStr2D(vvSort(out)), should.Resemble(vvToStr2D(vvSort(e.out))))
 		}
 	})
 }
 
 func TestCartesianProductOfValues(t *testing.T) {
 	t.Parallel()
-	Convey(`Tests the cartesian product of values.`, t, func() {
+	ftt.Run(`Tests the cartesian product of values.`, t, func(t *ftt.Test) {
 		set := func(vs ...string) map[variableValueKey]variableValue {
 			out := map[variableValueKey]variableValue{}
 			for _, v := range makeVVs(vs...) {
@@ -195,10 +195,10 @@ func TestCartesianProductOfValues(t *testing.T) {
 		}
 		test := func(vvs variablesValuesSet, keys []string, expected ...[]variableValue) {
 			res, err := vvs.cartesianProductOfValues(keys)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			vvSort(expected)
 			vvSort(res)
-			So(vvToStr2D(res), ShouldResemble, vvToStr2D(expected))
+			assert.Loosely(t, vvToStr2D(res), should.Resemble(vvToStr2D(expected)))
 		}
 		keys := func(vs ...string) []string { return vs }
 
@@ -217,7 +217,7 @@ func TestCartesianProductOfValues(t *testing.T) {
 
 func TestParseBadIsolate(t *testing.T) {
 	t.Parallel()
-	Convey(`Isolate should handle bad formats.`, t, func() {
+	ftt.Run(`Isolate should handle bad formats.`, t, func(t *ftt.Test) {
 		// These tests make Python spill out errors into stderr, which might be confusing.
 		// However, when real isolate command runs, we want to see these errors.
 		badIsolates := []string{
@@ -231,14 +231,14 @@ func TestParseBadIsolate(t *testing.T) {
 		}
 		for _, badIsolate := range badIsolates {
 			_, err := processIsolate([]byte(badIsolate))
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 		}
 	})
 }
 
 func TestPythonToGoString(t *testing.T) {
 	t.Parallel()
-	Convey(`Isolate should properly transform from Python to Go.`, t, func() {
+	ftt.Run(`Isolate should properly transform from Python to Go.`, t, func(t *ftt.Test) {
 		expectations := []struct {
 			in, out, left string
 		}{
@@ -261,27 +261,27 @@ func TestPythonToGoString(t *testing.T) {
 		for _, e := range expectations {
 			goChunk, left, err := pythonToGoString([]rune(e.in))
 			t.Logf("in: `%s` eg: `%s` g: `%s` el: `%s` l: `%s` err: %s", e.in, e.out, goChunk, e.left, string(left), err)
-			So(string(left), ShouldResemble, e.left)
-			So(goChunk, ShouldResemble, e.out)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, string(left), should.Resemble(e.left))
+			assert.Loosely(t, goChunk, should.Resemble(e.out))
+			assert.Loosely(t, err, should.BeNil)
 		}
 	})
 }
 
 func TestPythonToGoStringError(t *testing.T) {
 	t.Parallel()
-	Convey(`Isolate should handle errors in transforming from Python to Go.`, t, func() {
+	ftt.Run(`Isolate should handle errors in transforming from Python to Go.`, t, func(t *ftt.Test) {
 		for _, e := range []string{`'"`, `"'`, `'\'`, `"\"`, `'""`, `"''`} {
 			goChunk, left, err := pythonToGoString([]rune(e))
 			t.Logf("in: `%s`, g: `%s`, l: `%s`, err: %s", e, goChunk, string(left), err)
-			So(err, ShouldUnwrapTo, errParseCondition)
+			assert.Loosely(t, err, should.ErrLike(errParseCondition))
 		}
 	})
 }
 
 func TestPythonToGoNonString(t *testing.T) {
 	t.Parallel()
-	Convey(`Isolate should handle invalid strings in transforming from Python to Go.`, t, func() {
+	ftt.Run(`Isolate should handle invalid strings in transforming from Python to Go.`, t, func(t *ftt.Test) {
 		expectations := []struct {
 			in, out, left string
 		}{
@@ -295,8 +295,8 @@ func TestPythonToGoNonString(t *testing.T) {
 		for _, e := range expectations {
 			goChunk, left := pythonToGoNonString([]rune(e.in))
 			t.Logf("in: `%s` eg: `%s` g: `%s` el: `%s` l: `%s`", e.in, e.out, goChunk, e.left, string(left))
-			So(string(left), ShouldResemble, e.left)
-			So(goChunk, ShouldResemble, e.out)
+			assert.Loosely(t, string(left), should.Resemble(e.left))
+			assert.Loosely(t, goChunk, should.Resemble(e.out))
 		}
 	})
 }
@@ -344,60 +344,60 @@ var sampleIsolateDataWithIncludes = addIncludesToSample(sampleIsolateData, sampl
 
 func TestProcessIsolate(t *testing.T) {
 	t.Parallel()
-	Convey(`Isolate should properly process and verify inputs.`, t, func() {
+	ftt.Run(`Isolate should properly process and verify inputs.`, t, func(t *ftt.Test) {
 		p, err := processIsolate([]byte(sampleIsolateDataWithIncludes))
-		So(err, ShouldBeNil)
-		So(p.conditions[0].condition, ShouldResemble, `(OS=="linux" and bit==64) or OS=="win"`)
-		So(p.conditions[0].variables.Files, ShouldHaveLength, 2)
-		So(p.includes, ShouldResemble, []string{"inc/included.isolate"})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, p.conditions[0].condition, should.Match(`(OS=="linux" and bit==64) or OS=="win"`))
+		assert.Loosely(t, p.conditions[0].variables.Files, should.HaveLength(2))
+		assert.Loosely(t, p.includes, should.Resemble([]string{"inc/included.isolate"}))
 
 		vars, ok := getSortedVarValues(p.varsValsSet, "OS")
-		So(ok, ShouldBeTrue)
-		So(vvToStr(vars), ShouldResemble, vvToStr(makeVVs("linux", "mac", "win")))
+		assert.Loosely(t, ok, should.BeTrue)
+		assert.Loosely(t, vvToStr(vars), should.Resemble(vvToStr(makeVVs("linux", "mac", "win"))))
 		vars, ok = getSortedVarValues(p.varsValsSet, "bit")
-		So(ok, ShouldBeTrue)
-		So(vvToStr(vars), ShouldResemble, vvToStr(makeVVs("32", "64")))
+		assert.Loosely(t, ok, should.BeTrue)
+		assert.Loosely(t, vvToStr(vars), should.Resemble(vvToStr(makeVVs("32", "64"))))
 	})
 }
 
 func TestLoadIsolateAsConfig(t *testing.T) {
 	t.Parallel()
-	Convey(`Isolate should properly load a config from a isolate file.`, t, func() {
+	ftt.Run(`Isolate should properly load a config from a isolate file.`, t, func(t *ftt.Test) {
 		root := "/dir"
 		if runtime.GOOS == "windows" {
 			root = "x:\\dir"
 		}
 		isolate, err := LoadIsolateAsConfig(root, []byte(sampleIsolateData))
-		So(err, ShouldBeNil)
-		So(isolate.ConfigVariables, ShouldResemble, []string{"OS", "bit"})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, isolate.ConfigVariables, should.Resemble([]string{"OS", "bit"}))
 	})
 }
 
 func TestLoadIsolateForConfigMissingVars(t *testing.T) {
 	t.Parallel()
-	Convey(`Isolate should properly handle missing variables when loading a config.`, t, func() {
+	ftt.Run(`Isolate should properly handle missing variables when loading a config.`, t, func(t *ftt.Test) {
 		isoData := []byte(sampleIsolateData)
 		root := "/dir"
 		if runtime.GOOS == "windows" {
 			root = "x:\\dir"
 		}
 		_, _, err := LoadIsolateForConfig(root, isoData, nil)
-		So(err, ShouldNotBeNil)
-		Convey(fmt.Sprintf("Verify error message: %s", err), func() {
-			So(err.Error(), ShouldContainSubstring, "variables were missing")
-			So(err.Error(), ShouldContainSubstring, "bit")
-			So(err.Error(), ShouldContainSubstring, "OS")
+		assert.Loosely(t, err, should.NotBeNil)
+		t.Run(fmt.Sprintf("Verify error message: %s", err), func(t *ftt.Test) {
+			assert.Loosely(t, err.Error(), should.ContainSubstring("variables were missing"))
+			assert.Loosely(t, err.Error(), should.ContainSubstring("bit"))
+			assert.Loosely(t, err.Error(), should.ContainSubstring("OS"))
 			_, _, err = LoadIsolateForConfig(root, isoData, map[string]string{"bit": "32"})
-			So(err, ShouldNotBeNil)
-			So(err.Error(), ShouldContainSubstring, "variables were missing")
-			So(err.Error(), ShouldContainSubstring, "OS")
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, err.Error(), should.ContainSubstring("variables were missing"))
+			assert.Loosely(t, err.Error(), should.ContainSubstring("OS"))
 		})
 	})
 }
 
 func TestLoadIsolateForConfig(t *testing.T) {
 	t.Parallel()
-	Convey(`Isolate should properly load and return config data from a isolate file.`, t, func() {
+	ftt.Run(`Isolate should properly load and return config data from a isolate file.`, t, func(t *ftt.Test) {
 		// Case linux64, matches first condition.
 		root := "/dir"
 		if runtime.GOOS == "windows" {
@@ -405,75 +405,75 @@ func TestLoadIsolateForConfig(t *testing.T) {
 		}
 		vars := map[string]string{"bit": "64", "OS": "linux"}
 		deps, dir, err := LoadIsolateForConfig(root, []byte(sampleIsolateData), vars)
-		So(err, ShouldBeNil)
-		So(dir, ShouldResemble, root)
-		So(deps, ShouldResemble, []string{"64linuxOrWin", filepath.Join("<(PRODUCT_DIR)", "unittest<(EXECUTABLE_SUFFIX)")})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, dir, should.Resemble(root))
+		assert.Loosely(t, deps, should.Resemble([]string{"64linuxOrWin", filepath.Join("<(PRODUCT_DIR)", "unittest<(EXECUTABLE_SUFFIX)")}))
 
 		// Case win64, matches only first condition.
 		vars = map[string]string{"bit": "64", "OS": "win"}
 		deps, dir, err = LoadIsolateForConfig(root, []byte(sampleIsolateData), vars)
-		So(err, ShouldBeNil)
-		So(dir, ShouldResemble, root)
-		So(deps, ShouldResemble, []string{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, dir, should.Resemble(root))
+		assert.Loosely(t, deps, should.Resemble([]string{
 			"64linuxOrWin",
 			filepath.Join("<(PRODUCT_DIR)", "unittest<(EXECUTABLE_SUFFIX)"),
-		})
+		}))
 
 		// Case mac64, matches only second condition.
 		vars = map[string]string{"bit": "64", "OS": "mac"}
 		deps, dir, err = LoadIsolateForConfig(root, []byte(sampleIsolateData), vars)
-		So(err, ShouldBeNil)
-		So(dir, ShouldResemble, root)
-		So(deps, ShouldBeEmpty)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, dir, should.Resemble(root))
+		assert.Loosely(t, deps, should.BeEmpty)
 
 		// Case win32, both first and second condition match.
 		vars = map[string]string{"bit": "32", "OS": "win"}
 		deps, dir, err = LoadIsolateForConfig(root, []byte(sampleIsolateData), vars)
-		So(err, ShouldBeNil)
-		So(dir, ShouldResemble, root)
-		So(deps, ShouldResemble, []string{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, dir, should.Resemble(root))
+		assert.Loosely(t, deps, should.Resemble([]string{
 			"64linuxOrWin",
 			filepath.Join("<(PRODUCT_DIR)", "unittest<(EXECUTABLE_SUFFIX)"),
-		})
+		}))
 	})
 }
 
 func TestLoadIsolateAsConfigWithIncludes(t *testing.T) {
 	t.Parallel()
-	Convey(`Isolate should load a config from isolate with includes.`, t, func() {
+	ftt.Run(`Isolate should load a config from isolate with includes.`, t, func(t *ftt.Test) {
 		tmpDir := t.TempDir()
 		err := os.Mkdir(filepath.Join(tmpDir, "inc"), 0777)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		err = os.WriteFile(filepath.Join(tmpDir, "inc", "included.isolate"), []byte(sampleIncIsolateData), 0777)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		// Test failures.
 		absIncData := addIncludesToSample(sampleIsolateData, "'includes':['/abs/path']")
 		_, _, err = LoadIsolateForConfig(tmpDir, []byte(absIncData), nil)
-		So(err, ShouldNotBeNil)
+		assert.Loosely(t, err, should.NotBeNil)
 
 		_, _, err = LoadIsolateForConfig(filepath.Join(tmpDir, "wrong-dir"),
 			[]byte(sampleIsolateDataWithIncludes), nil)
-		So(err, ShouldNotBeNil)
+		assert.Loosely(t, err, should.NotBeNil)
 
 		// Test Successful loading.
 		// Case mac32, matches only second condition from main isolate and one in included.
 		vars := map[string]string{"bit": "64", "OS": "linux"}
 		deps, dir, err := LoadIsolateForConfig(tmpDir, []byte(sampleIsolateDataWithIncludes), vars)
-		So(err, ShouldBeNil)
-		So(dir, ShouldResemble, filepath.Join(tmpDir, "inc"))
-		So(deps, ShouldResemble, []string{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, dir, should.Resemble(filepath.Join(tmpDir, "inc")))
+		assert.Loosely(t, deps, should.Resemble([]string{
 			filepath.Join("..", "64linuxOrWin"),
 			filepath.Join("<(DIR)", "inc_unittest"), // no rebasing for this.
 			filepath.Join("<(PRODUCT_DIR)", "unittest<(EXECUTABLE_SUFFIX)"),
 			"inc_file",
-		})
+		}))
 	})
 }
 
 func TestConfigSettingsUnionLeft(t *testing.T) {
 	t.Parallel()
-	Convey(`Isolate should properly handle config setting merging.`, t, func() {
+	ftt.Run(`Isolate should properly handle config setting merging.`, t, func(t *ftt.Test) {
 		left := &ConfigSettings{
 			Files:      []string{"../../le/f/t", "foo/"}, // Must be POSIX.
 			IsolateDir: absToOS("/tmp/bar"),              // In native path.
@@ -484,16 +484,16 @@ func TestConfigSettingsUnionLeft(t *testing.T) {
 		}
 
 		out, err := left.union(right)
-		So(err, ShouldBeNil)
-		So(out.IsolateDir, ShouldResemble, left.IsolateDir)
-		So(left.IsolateDir, ShouldResemble, absToOS("/tmp/bar"))
-		So(out.Files, ShouldResemble, []string{"../../le/f/t", "../../var/lib/bar/", "../../var/ri/g/ht", "foo/"})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, out.IsolateDir, should.Resemble(left.IsolateDir))
+		assert.Loosely(t, left.IsolateDir, should.Resemble(absToOS("/tmp/bar")))
+		assert.Loosely(t, out.Files, should.Resemble([]string{"../../le/f/t", "../../var/lib/bar/", "../../var/ri/g/ht", "foo/"}))
 	})
 }
 
 func TestConfigSettingsUnionRight(t *testing.T) {
 	t.Parallel()
-	Convey(`Isolate should properly handle config setting merging.`, t, func() {
+	ftt.Run(`Isolate should properly handle config setting merging.`, t, func(t *ftt.Test) {
 		left := &ConfigSettings{
 			Files:      []string{"../../le/f/t", "foo/"}, // Must be POSIX.
 			IsolateDir: absToOS("/tmp/bar"),              // In native path.
@@ -504,19 +504,19 @@ func TestConfigSettingsUnionRight(t *testing.T) {
 		}
 
 		out, err := left.union(right)
-		So(err, ShouldBeNil)
-		So(out.IsolateDir, ShouldResemble, left.IsolateDir)
-		So(right.IsolateDir, ShouldResemble, absToOS("/var/lib"))
-		So(out.Files, ShouldResemble, []string{"../../le/f/t", "../../var/lib/bar/", "../../var/ri/g/ht", "foo/"})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, out.IsolateDir, should.Resemble(left.IsolateDir))
+		assert.Loosely(t, right.IsolateDir, should.Resemble(absToOS("/var/lib")))
+		assert.Loosely(t, out.Files, should.Resemble([]string{"../../le/f/t", "../../var/lib/bar/", "../../var/ri/g/ht", "foo/"}))
 	})
 }
 
 func TestParseIsolate(t *testing.T) {
 	t.Parallel()
-	Convey("test parseIsolate having double quotation with escape", t, func() {
+	ftt.Run("test parseIsolate having double quotation with escape", t, func(t *ftt.Test) {
 		content := []byte(`{"variables": {"command": ["{\"test_args\": <(test_args)}"]}}`)
 		_, err := parseIsolate(content)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 	})
 }
 
@@ -583,7 +583,7 @@ func vvSort(vss [][]variableValue) [][]variableValue {
 }
 
 func addIncludesToSample(sample, includes string) string {
-	assert(sample[len(sample)-1] == '}')
+	must(sample[len(sample)-1] == '}')
 	return sample[:len(sample)-1] + includes + "\n}"
 }
 

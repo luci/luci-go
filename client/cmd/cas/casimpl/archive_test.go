@@ -16,54 +16,55 @@ package casimpl
 
 import (
 	"encoding/json"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"os"
 	"path/filepath"
 	"testing"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestGetRoot(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Basic`, t, func() {
+	ftt.Run(`Basic`, t, func(t *ftt.Test) {
 		dirs := make(scatterGather)
-		So(dirs.Add("wd1", "rel"), ShouldBeNil)
-		So(dirs.Add("wd1", "rel2"), ShouldBeNil)
+		assert.Loosely(t, dirs.Add("wd1", "rel"), should.BeNil)
+		assert.Loosely(t, dirs.Add("wd1", "rel2"), should.BeNil)
 
 		wd, err := getRoot(dirs)
-		So(err, ShouldBeNil)
-		So(wd, ShouldEqual, "wd1")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, wd, should.Equal("wd1"))
 
-		So(dirs.Add("wd2", "rel3"), ShouldBeNil)
+		assert.Loosely(t, dirs.Add("wd2", "rel3"), should.BeNil)
 
 		_, err = getRoot(dirs)
-		So(err, ShouldNotBeNil)
+		assert.Loosely(t, err, should.NotBeNil)
 	})
 }
 
 func TestLoadPathsJSON(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Basic`, t, func() {
+	ftt.Run(`Basic`, t, func(t *ftt.Test) {
 		dir := t.TempDir()
 		input := [][2]string{
 			{dir, "foo.txt"},
 			{dir, "bar.txt"},
 		}
 		b, err := json.Marshal(input)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		pathsJSON := filepath.Join(dir, "paths.json")
 		err = os.WriteFile(pathsJSON, b, 0o600)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		res, err := loadPathsJSON(pathsJSON)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		So(res, ShouldResemble, scatterGather{
+		assert.Loosely(t, res, should.Resemble(scatterGather{
 			"foo.txt": dir,
 			"bar.txt": dir,
-		})
+		}))
 	})
 }

@@ -23,9 +23,10 @@ import (
 	"strings"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-
 	"go.chromium.org/luci/common/system/filesystem"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func init() {
@@ -34,70 +35,70 @@ func init() {
 
 func TestReplaceVars(t *testing.T) {
 	t.Parallel()
-	Convey(`Variables replacement should be supported in isolate files.`, t, func() {
+	ftt.Run(`Variables replacement should be supported in isolate files.`, t, func(t *ftt.Test) {
 
 		opts := &ArchiveOptions{PathVariables: map[string]string{"VAR": "wonderful"}}
 
 		// Single replacement.
 		r, err := ReplaceVariables("hello <(VAR) world", opts)
-		So(err, ShouldBeNil)
-		So(r, ShouldResemble, "hello wonderful world")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, r, should.Match("hello wonderful world"))
 
 		// Multiple replacement.
 		r, err = ReplaceVariables("hello <(VAR) <(VAR) world", opts)
-		So(err, ShouldBeNil)
-		So(r, ShouldResemble, "hello wonderful wonderful world")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, r, should.Match("hello wonderful wonderful world"))
 
 		// Replacement of missing variable.
 		r, err = ReplaceVariables("hello <(MISSING) world", opts)
-		So(err.Error(), ShouldResemble, "no value for variable 'MISSING'")
+		assert.Loosely(t, err.Error(), should.Match("no value for variable 'MISSING'"))
 	})
 }
 
 func TestIgnoredPathsRegexp(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Ignored file extensions`, t, func() {
+	ftt.Run(`Ignored file extensions`, t, func(t *ftt.Test) {
 		regexStr := genExtensionsRegex("pyc", "swp")
 		re, err := regexp.Compile(regexStr)
-		So(err, ShouldBeNil)
-		So(re.MatchString("a.pyc"), ShouldBeTrue)
-		So(re.MatchString("foo/a.pyc"), ShouldBeTrue)
-		So(re.MatchString("/b.swp"), ShouldBeTrue)
-		So(re.MatchString(`foo\b.swp`), ShouldBeTrue)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, re.MatchString("a.pyc"), should.BeTrue)
+		assert.Loosely(t, re.MatchString("foo/a.pyc"), should.BeTrue)
+		assert.Loosely(t, re.MatchString("/b.swp"), should.BeTrue)
+		assert.Loosely(t, re.MatchString(`foo\b.swp`), should.BeTrue)
 
-		So(re.MatchString("a.py"), ShouldBeFalse)
-		So(re.MatchString("b.swppp"), ShouldBeFalse)
+		assert.Loosely(t, re.MatchString("a.py"), should.BeFalse)
+		assert.Loosely(t, re.MatchString("b.swppp"), should.BeFalse)
 	})
 
-	Convey(`Ignored directories`, t, func() {
+	ftt.Run(`Ignored directories`, t, func(t *ftt.Test) {
 		regexStr := genDirectoriesRegex("\\.git", "\\.hg", "\\.svn")
 		re, err := regexp.Compile(regexStr)
-		So(err, ShouldBeNil)
-		So(re.MatchString(".git"), ShouldBeTrue)
-		So(re.MatchString(".git/"), ShouldBeTrue)
-		So(re.MatchString("/.git/"), ShouldBeTrue)
-		So(re.MatchString("/.hg"), ShouldBeTrue)
-		So(re.MatchString("foo/.svn"), ShouldBeTrue)
-		So(re.MatchString(`.hg\`), ShouldBeTrue)
-		So(re.MatchString(`foo\.svn`), ShouldBeTrue)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, re.MatchString(".git"), should.BeTrue)
+		assert.Loosely(t, re.MatchString(".git/"), should.BeTrue)
+		assert.Loosely(t, re.MatchString("/.git/"), should.BeTrue)
+		assert.Loosely(t, re.MatchString("/.hg"), should.BeTrue)
+		assert.Loosely(t, re.MatchString("foo/.svn"), should.BeTrue)
+		assert.Loosely(t, re.MatchString(`.hg\`), should.BeTrue)
+		assert.Loosely(t, re.MatchString(`foo\.svn`), should.BeTrue)
 
-		So(re.MatchString(".get"), ShouldBeFalse)
-		So(re.MatchString("foo.git"), ShouldBeFalse)
-		So(re.MatchString(".svnnnn"), ShouldBeFalse)
+		assert.Loosely(t, re.MatchString(".get"), should.BeFalse)
+		assert.Loosely(t, re.MatchString("foo.git"), should.BeFalse)
+		assert.Loosely(t, re.MatchString(".svnnnn"), should.BeFalse)
 	})
 }
 
 func TestProcessIsolateFile(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Directory deps should end with osPathSeparator`, t, func() {
+	ftt.Run(`Directory deps should end with osPathSeparator`, t, func(t *ftt.Test) {
 		tmpDir := t.TempDir()
 		baseDir := filepath.Join(tmpDir, "baseDir")
 		secondDir := filepath.Join(tmpDir, "secondDir")
-		So(os.Mkdir(baseDir, 0700), ShouldBeNil)
-		So(os.Mkdir(secondDir, 0700), ShouldBeNil)
-		So(os.WriteFile(filepath.Join(baseDir, "foo"), []byte("foo"), 0600), ShouldBeNil)
+		assert.Loosely(t, os.Mkdir(baseDir, 0700), should.BeNil)
+		assert.Loosely(t, os.Mkdir(secondDir, 0700), should.BeNil)
+		assert.Loosely(t, os.WriteFile(filepath.Join(baseDir, "foo"), []byte("foo"), 0600), should.BeNil)
 		// Note that for "secondDir", its separator is omitted intentionally.
 		isolate := `{
 			'variables': {
@@ -110,30 +111,30 @@ func TestProcessIsolateFile(t *testing.T) {
 		}`
 
 		outDir := filepath.Join(tmpDir, "out")
-		So(os.Mkdir(outDir, 0700), ShouldBeNil)
+		assert.Loosely(t, os.Mkdir(outDir, 0700), should.BeNil)
 		isolatePath := filepath.Join(outDir, "my.isolate")
-		So(os.WriteFile(isolatePath, []byte(isolate), 0600), ShouldBeNil)
+		assert.Loosely(t, os.WriteFile(isolatePath, []byte(isolate), 0600), should.BeNil)
 
 		opts := &ArchiveOptions{
 			Isolate: isolatePath,
 		}
 
 		deps, _, err := ProcessIsolate(opts)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		for _, dep := range deps {
 			isDir, err := filesystem.IsDir(dep)
-			So(err, ShouldBeNil)
-			So(strings.HasSuffix(dep, osPathSeparator), ShouldEqual, isDir)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, strings.HasSuffix(dep, osPathSeparator), should.Equal(isDir))
 		}
 	})
 
-	Convey(`Allow missing files and dirs`, t, func() {
+	ftt.Run(`Allow missing files and dirs`, t, func(t *ftt.Test) {
 		tmpDir := t.TempDir()
 		dir1 := filepath.Join(tmpDir, "dir1")
-		So(os.Mkdir(dir1, 0700), ShouldBeNil)
+		assert.Loosely(t, os.Mkdir(dir1, 0700), should.BeNil)
 		dir2 := filepath.Join(tmpDir, "dir2")
-		So(os.Mkdir(dir2, 0700), ShouldBeNil)
-		So(os.WriteFile(filepath.Join(dir2, "foo"), []byte("foo"), 0600), ShouldBeNil)
+		assert.Loosely(t, os.Mkdir(dir2, 0700), should.BeNil)
+		assert.Loosely(t, os.WriteFile(filepath.Join(dir2, "foo"), []byte("foo"), 0600), should.BeNil)
 		isolate := `{
 			'variables': {
 				'files': [
@@ -146,9 +147,9 @@ func TestProcessIsolateFile(t *testing.T) {
 		}`
 
 		outDir := filepath.Join(tmpDir, "out")
-		So(os.Mkdir(outDir, 0700), ShouldBeNil)
+		assert.Loosely(t, os.Mkdir(outDir, 0700), should.BeNil)
 		isolatePath := filepath.Join(outDir, "my.isolate")
-		So(os.WriteFile(isolatePath, []byte(isolate), 0600), ShouldBeNil)
+		assert.Loosely(t, os.WriteFile(isolatePath, []byte(isolate), 0600), should.BeNil)
 
 		opts := &ArchiveOptions{
 			Isolate:             isolatePath,
@@ -156,7 +157,7 @@ func TestProcessIsolateFile(t *testing.T) {
 		}
 
 		_, _, err := ProcessIsolate(opts)
-		So(err, ShouldNotBeNil)
+		assert.Loosely(t, err, should.NotBeNil)
 
 		opts = &ArchiveOptions{
 			Isolate:             isolatePath,
@@ -164,7 +165,7 @@ func TestProcessIsolateFile(t *testing.T) {
 		}
 
 		deps, _, err := ProcessIsolate(opts)
-		So(err, ShouldBeNil)
-		So(deps, ShouldResemble, []string{dir1 + osPathSeparator, filepath.Join(dir2, "foo")})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, deps, should.Resemble([]string{dir1 + osPathSeparator, filepath.Join(dir2, "foo")}))
 	})
 }
