@@ -49,15 +49,18 @@ func sendOnBuildCompletion(ctx context.Context, bld *model.Build, inf *model.Bui
 			return errors.Annotate(ExportBigQuery(ctx, bld.ID), "failed to enqueue bigquery export task: %d", bld.ID).Err()
 		}
 		tks <- func() error {
-			// max_concurrent_builds does not support led builds.
-			if bld.Proto.Infra.GetLed().GetShadowedBucket() != "" {
-				return nil
-			}
 			bldr := &model.Builder{
 				ID:     bld.Proto.Builder.Builder,
 				Parent: model.BucketKey(ctx, bld.Proto.Builder.Project, bld.Proto.Builder.Bucket),
 			}
 			if err := datastore.Get(ctx, bldr); err != nil {
+				if errors.Is(err, datastore.ErrNoSuchEntity) {
+					// Builder not found. Could be
+					// * The build runs in a dynamic builder,
+					// * The builder is deleted while the build is still running.
+					// In either case it's fine to bypass checking max current builds.
+					return nil
+				}
 				return err
 			}
 			if bldr.Config.GetMaxConcurrentBuilds() > 0 {
