@@ -94,7 +94,7 @@ describe('<TimeRangeSelector />', () => {
     });
     expect(urlCallback).toHaveBeenLastCalledWith(
       expect.objectContaining({
-        search: {
+        searchParams: {
           time_option: CUSTOMIZE_OPTION,
           start_time: DateTime.fromFormat('06/10/2024 12:00 AM', 'MM/dd/yyyy t')
             .toUTC()
@@ -114,7 +114,7 @@ describe('<TimeRangeSelector />', () => {
     fireEvent.click(last7dMenuItem);
     expect(urlCallback).toHaveBeenLastCalledWith(
       expect.objectContaining({
-        search: {
+        searchParams: {
           time_option: '7d',
         },
       }),
@@ -140,7 +140,7 @@ describe('<TimeRangeSelector />', () => {
     fireEvent.click(last7dMenuItem);
     expect(urlCallback).toHaveBeenLastCalledWith(
       expect.objectContaining({
-        search: {
+        searchParams: {
           time_option: '7d',
         },
       }),
@@ -151,7 +151,7 @@ describe('<TimeRangeSelector />', () => {
     fireEvent.click(customiseMenuItem);
     expect(urlCallback).toHaveBeenLastCalledWith(
       expect.objectContaining({
-        search: {
+        searchParams: {
           time_option: CUSTOMIZE_OPTION,
           start_time: DateTime.fromFormat('08/08/2024 12:00 PM', 'MM/dd/yyyy t')
             .toUTC()

@@ -89,7 +89,7 @@ describe('<LogSearch />', () => {
     fireEvent.click(screen.getByTestId('search-button'));
     expect(urlCallback).toHaveBeenLastCalledWith(
       expect.objectContaining({
-        search: {
+        searchParams: {
           filter: JSON.stringify({
             testIDStr: 'test test id exact',
             isTestIDStrPrefix: false,

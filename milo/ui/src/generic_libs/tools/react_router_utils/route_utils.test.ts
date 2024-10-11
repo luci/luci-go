@@ -19,7 +19,7 @@
 
 import { RouteObject } from 'react-router-dom';
 
-import { regexpsForRoutes } from './react_router_utils';
+import { regexpsForRoutes } from './route_utils';
 
 describe('regexpsForRoutes', () => {
   // Test against LUCI UI's route definition to ensure all the cases we use are

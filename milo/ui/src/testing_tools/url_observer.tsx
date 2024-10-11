@@ -18,7 +18,8 @@ export const locationCallback = jest.fn((_path: string) => {});
 
 export interface Location {
   readonly pathname: string;
-  readonly search: { [key: string]: string };
+  readonly search: string;
+  readonly searchParams: { [key: string]: string };
   readonly hash: string;
 }
 
@@ -52,7 +53,10 @@ export function URLObserver({ callback = () => {} }: URLObserverProps) {
   callback({
     pathname: location.pathname,
     hash: location.hash,
-    search: Object.fromEntries(new URLSearchParams(location.search).entries()),
+    search: location.search,
+    searchParams: Object.fromEntries(
+      new URLSearchParams(location.search).entries(),
+    ),
   });
   return (
     <span data-testid="url">

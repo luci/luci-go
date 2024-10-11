@@ -122,7 +122,7 @@ describe('<RecentRegressions />', () => {
 
     expect(urlCallback).toHaveBeenLastCalledWith(
       expect.objectContaining({
-        search: {
+        searchParams: {
           cp: JSON.stringify({ testIdContain: 'contain' }),
         },
       }),

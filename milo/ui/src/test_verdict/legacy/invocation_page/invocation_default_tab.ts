@@ -12,5 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export * from './loader_utils';
-export * from './route_utils';
+import { redirectToChildPath } from '@/generic_libs/tools/react_router_utils';
+
+export const loader = redirectToChildPath('test-results');
