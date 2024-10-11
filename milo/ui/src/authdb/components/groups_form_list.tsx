@@ -209,7 +209,7 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
               </TableCell>
             </TableRow>
             {items && items.map((item, index) =>
-              <TableRow key={index} style={{ height: '34px' }} sx={{ borderBottom: '1px solid grey' }} className='item-row' data-testid={`item-row-${item.value}`}>
+              <TableRow key={index} style={{ height: '34px' }} sx={{ borderBottom: '1px solid rgb(224, 224, 224)' }} className='item-row' data-testid={`item-row-${item.value}`}>
                 <TableCell sx={{ p: 0, pt: '1px' }} style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', minHeight: '30px' }}>
                   <Checkbox sx={{ pt: 0, pb: 0 }} checked={item.checked} data-testid={`checkbox-button-${item.value}`} id={`${index}`} onChange={() => { handleChange(index) }} />
                   <Typography variant="body2">{item.value}</Typography>
@@ -238,7 +238,7 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
             {!addingItem &&
               <TableRow>
                 <TableCell>
-                  <Button sx={{ mt: '10px' }} variant="outlined" startIcon={<AddCircleIcon />} onClick={resetTextfield} data-testid='add-button'>
+                  <Button variant="outlined" startIcon={<AddCircleIcon />} onClick={resetTextfield} data-testid='add-button'>
                     Add
                   </Button>
                 </TableCell>

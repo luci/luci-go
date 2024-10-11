@@ -43,7 +43,7 @@ export function GroupsFormListReadonly({ initialItems, name } :GroupsFormListRea
         </TableCell>
       </TableRow>
       {items && items.map((item, index) =>
-        <TableRow key={index} style={{height: '34px'}} sx={{borderBottom: '1px solid grey'}} data-testid={`item-row-${item}`}>
+        <TableRow key={index} style={{height: '34px'}} sx={{borderBottom: '1px solid rgb(224, 224, 224)'}} data-testid={`item-row-${item}`}>
           <TableCell sx={{p: 0, pt: '1px'}} style={{minHeight: '30px'}}>
             <Typography variant="body2" sx={{ml: 1.5}}>{item}</Typography>
           </TableCell>

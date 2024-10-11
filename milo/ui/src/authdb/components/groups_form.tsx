@@ -45,6 +45,10 @@ const theme = createTheme({
   typography: {
     h6: {
       color: 'black',
+      margin: '0',
+      padding: '0',
+      fontSize: '1.17em',
+      fontWeight: 'bold',
     },
     subtitle1: {
       color: 'red',
@@ -56,6 +60,8 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           borderBottom: 'none',
+          paddingLeft: '0',
+          paddingBottom: '0',
         }
       }
     },
@@ -293,14 +299,14 @@ export function GroupsForm({name}: GroupsFormProps) {
     <Box sx={{ p: '20px', ml: '5px' }}>
       <ThemeProvider theme={theme}>
         <FormControl data-testid="groups-form" style={{ width: '100%' }}>
-          <Typography variant="h5" sx={{ pl: 1.5 }}> {name} </Typography>
+          <Typography variant="h5">{name}</Typography>
           {!isExternal &&
             <TableContainer sx={{ p: 0, width: '100%' }} >
               <Table onMouseEnter={() => setShowDescriptionEdit(true)} onMouseLeave={() => setShowDescriptionEdit(false)} data-testid='description-table'>
                 <TableBody>
                   <TableRow>
-                    <TableCell sx={{ pb: 0 }} style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', minHeight: '45px' }}>
-                      <Typography variant="h6"> Description</Typography>
+                    <TableCell style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', minHeight: '45px' }}>
+                      <Typography variant="h6">Description</Typography>
                       {(showDescriptionEdit || descriptionMode) && callerCanModify &&
                         <IconButton color='primary' onClick={changeDescriptionMode} sx={{ p: 0, ml: 1.5 }} data-testid='edit-description-icon'>
                           {descriptionMode
@@ -324,8 +330,8 @@ export function GroupsForm({name}: GroupsFormProps) {
               <Table onMouseEnter={() => setShowOwnersEdit(true)} onMouseLeave={() => setShowOwnersEdit(false)} data-testid='owners-table'>
                 <TableBody>
                   <TableRow >
-                    <TableCell sx={{ pb: 0 }} style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', minHeight: '45px' }}>
-                      <Typography variant="h6"> Owners</Typography>
+                    <TableCell style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', minHeight: '45px' }}>
+                      <Typography variant="h6">Owners</Typography>
                       {(showOwnersEdit || ownersMode) && callerCanModify &&
                         <IconButton color='primary' onClick={changeOwnersMode} sx={{ p: 0, ml: 1.5 }} data-testid='edit-owners-icon'>
                           {ownersMode
@@ -373,11 +379,11 @@ export function GroupsForm({name}: GroupsFormProps) {
                       </Button>
                     </>
                   }
-                  <div style={{ display: 'flex', flexDirection: 'row' }}>
-                    <Button variant="contained" disableElevation style={{ width: '15%' }} sx={{ mt: 1.5, ml: 1.5 }} onClick={submitForm} data-testid='submit-button' disabled={disableSubmit || !changedState}>
+                  <div style={{ display: 'flex', flexDirection: 'row-reverse' }}>
+                    <Button variant="contained" disableElevation style={{ width: '170px' }} sx={{ mt: 1.5, ml: 1.5 }} onClick={submitForm} data-testid='submit-button' disabled={disableSubmit || !changedState}>
                       Update Group
                     </Button>
-                    <Button variant="contained" color="error" disableElevation style={{ width: '15%' }} sx={{ mt: 1.5, ml: 1.5 }} onClick={() => setOpenDeleteDialog(true)} data-testid='delete-button'>
+                    <Button variant="contained" color="error" disableElevation style={{ width: '170px' }} sx={{ mt: 1.5, ml: 1.5 }} onClick={() => setOpenDeleteDialog(true)} data-testid='delete-button'>
                       Delete Group
                     </Button>
                   </div>

@@ -33,13 +33,22 @@ const theme = createTheme({
   typography: {
     h6: {
       color: 'black',
+      margin: '0',
+      padding: '0',
+      fontSize: '1.17em',
+      fontWeight: 'bold',
     },
+    subtitle1: {
+      color: 'red',
+      fontStyle: 'italic',
+    }
   },
   components: {
     MuiTableCell: {
       styleOverrides: {
         root: {
           borderBottom: 'none',
+          padding: '0',
         }
       }
     },
@@ -140,79 +149,81 @@ export function GroupsFormNew() {
   }
 
   return (
-    <Box sx={{ minHeight: '500px', p: '20px', ml: '5px' }}>
+    <Box sx={{ minHeight: '500px', p: '20px' }}>
       <ThemeProvider theme={theme}>
         <FormControl data-testid="groups-form-new" style={{ width: '100%' }}>
-          <Typography variant="h5" sx={{ pl: 1.5 }}> Creating New Group </Typography>
+          <Typography variant="h5"> Create new group </Typography>
           <TableContainer sx={{ p: 0, width: '100%' }} >
             <Table>
               <TableBody>
                 <TableRow>
-                  <TableCell sx={{ pb: 0 }} style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', minHeight: '45px' }}>
+                  <TableCell style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', minHeight: '45px' }}>
                     <Typography variant="h6"> Name</Typography>
                   </TableCell>
                 </TableRow>
                 <TableRow>
-                  <TableCell align='left' style={{ width: '95%' }} sx={{ pt: 0, pb: '8px' }}>
+                  <TableCell align='left' style={{ width: '95%' }} sx={{ pb: '8px' }}>
                     <TextField value={name} style={{ width: '100%' }} onChange={(e) => setName(e.target.value)} id='nameTextfield' data-testid='name-textfield' placeholder='required' error={nameErrorMessage !== ""} helperText={nameErrorMessage}></TextField>
                   </TableCell>
                 </TableRow>
                 <TableRow>
-                  <TableCell sx={{ pb: 0 }} style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', minHeight: '45px' }}>
+                  <TableCell style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', minHeight: '45px' }}>
                     <Typography variant="h6"> Description</Typography>
                   </TableCell>
                 </TableRow>
                 <TableRow>
-                  <TableCell align='left' style={{ width: '95%' }} sx={{ pt: 0, pb: '8px' }}>
+                  <TableCell align='left' style={{ width: '95%' }} sx={{ pb: '8px' }}>
                     <TextField value={description} style={{ width: '100%', minHeight: '60px' }} onChange={(e) => setDescription(e.target.value)} id='descriptionTextfield' data-testid='description-textfield' placeholder='required' error={descriptionErrorMessage !== ""} helperText={descriptionErrorMessage}></TextField>
                   </TableCell>
                 </TableRow>
                 <TableRow>
-                  <TableCell sx={{ pb: 0 }} style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', minHeight: '45px' }}>
+                  <TableCell style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', minHeight: '45px' }}>
                     <Typography variant="h6"> Owners</Typography>
                   </TableCell>
                 </TableRow>
                 <TableRow>
-                  <TableCell align='left' style={{ width: '95%' }} sx={{ pt: 0, pb: '8px' }}>
+                  <TableCell align='left' style={{ width: '95%' }} sx={{ pb: '8px' }}>
                     <TextField value={owners} style={{ width: '100%', minHeight: '60px' }} onChange={(e) => setOwners(e.target.value)} id='ownersTextfield' data-testid='owners-textfield' placeholder='administrators' error={ownersErrorMessage !== ""} helperText={ownersErrorMessage}></TextField>
                   </TableCell>
                 </TableRow>
                 <TableRow>
-                  <TableCell sx={{ pb: 0 }} style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', minHeight: '45px' }}>
+                  <TableCell style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', minHeight: '45px' }}>
                     <Typography variant="h6"> Members</Typography>
                   </TableCell>
                 </TableRow>
                 <TableRow>
-                  <TableCell align='left' style={{ width: '95%' }} sx={{ pt: 0, pb: '8px' }}>
+                  <TableCell align='left' style={{ width: '95%' }} sx={{ pb: '8px' }}>
                     <TextField placeholder='List of members, one per line' multiline value={members} style={{ width: '100%', minHeight: '60px' }} onChange={(e) => setMembers(e.target.value)} id='membersTextfield' data-testid='members-textfield' error={membersErrorMessage !== ""} helperText={membersErrorMessage}></TextField>
                   </TableCell>
                 </TableRow>
                 <TableRow>
-                  <TableCell sx={{ pb: 0 }} style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', minHeight: '45px' }}>
+                  <TableCell style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', minHeight: '45px' }}>
                     <Typography variant="h6"> Globs</Typography>
                   </TableCell>
                 </TableRow>
                 <TableRow>
-                  <TableCell align='left' style={{ width: '95%' }} sx={{ pt: 0, pb: '8px' }}>
+                  <TableCell align='left' style={{ width: '95%' }} sx={{ pb: '8px' }}>
                     <TextField placeholder='List of globs, one per line' multiline value={globs} style={{ width: '100%', minHeight: '60px' }} onChange={(e) => setGlobs(e.target.value)} id='globsTextfield' data-testid='globs-textfield' error={globsErrorMessage !== ""} helperText={globsErrorMessage}></TextField>
                   </TableCell>
                 </TableRow>
                 <TableRow>
-                  <TableCell sx={{ pb: 0 }} style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', minHeight: '45px' }}>
+                  <TableCell style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', minHeight: '45px' }}>
                     <Typography variant="h6"> Subgroups</Typography>
                   </TableCell>
                 </TableRow>
                 <TableRow>
-                  <TableCell align='left' style={{ width: '95%' }} sx={{ pt: 0, pb: '8px' }}>
+                  <TableCell align='left' style={{ width: '95%' }} sx={{ pb: '8px' }}>
                     <TextField placeholder='List of subgroups, one per line' multiline value={subgroups} style={{ width: '100%', minHeight: '60px' }} onChange={(e) => setSubgroups(e.target.value)} id='subgroupsTextfield' data-testid='subgroups-textfield' error={subgroupsErrorMessage !== ""} helperText={subgroupsErrorMessage}></TextField>
                   </TableCell>
                 </TableRow>
               </TableBody>
             </Table>
           </TableContainer>
-          <Button variant="contained" disableElevation style={{ width: '150px' }} sx={{ mt: 1.5, ml: '16px' }} onClick={createGroup} data-testid='create-button'>
-            Create Group
-          </Button>
+          <div style={{ display: 'flex', flexDirection: 'row-reverse' }}>
+            <Button variant="contained" style={{ width: '150px' }} sx={{ mt: 1.5 }} onClick={createGroup} data-testid='create-button'>
+              Create Group
+            </Button>
+          </div>
           <div style={{ padding: '5px' }}>
             {successCreatedGroup &&
               <Alert severity="success">Group created</Alert>
